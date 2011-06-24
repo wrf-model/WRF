@@ -3162,2401 +3162,3183 @@ j_loop_y_flux_5:DO j=ad_from7,j_end+1
   END IF
 END SUBROUTINE A_ADVECT_U
 
-   SUBROUTINE a_advect_v(v,a_v,v_old,a_v_old,tendency,a_tendency,ru,a_ru,rv, &
-   a_rv,rom,a_rom,mut,a_mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx, &
-   msfty,fzm,fzp,rdx,rdy,rdzw,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite, &
-   jts,jte,kts,kte)
-
-!PART I: DECLARATION OF VARIABLES
-
-   IMPLICIT NONE
-
-   INTEGER :: K0_ADJ,K1_ADJ,K2_ADJ,K3_ADJ
-   TYPE(grid_config_rec_type) :: config_flags
-   INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: v,a_v,v_old,a_v_old,ru,a_ru,rv, &
-   a_rv,rom,a_rom
-   REAL,DIMENSION(ims:ime,jms:jme) :: mut,a_mut
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: tendency,a_tendency
-   REAL,DIMENSION(ims:ime,jms:jme) :: msfux,msfuy,msfvx,msfvy,msftx,msfty
-   REAL,DIMENSION(kms:kme) :: fzm,fzp,rdzw
-   REAL :: rdx,rdy
-   INTEGER :: time_step
-   INTEGER :: i,j,k,itf,jtf,ktf
-   INTEGER :: i_start,i_end,j_start,j_end
-   INTEGER :: i_start_f,i_end_f,j_start_f,j_end_f
-   INTEGER :: jmin,jmax,jp,jm,imin,imax
-   REAL :: mrdx,mrdy,ub,a_ub,vb,a_vb,uw,a_uw,vw,a_vw,dup, &
-   a_dup,dum,a_dum
-   REAL,DIMENSION(its:ite,kts:kte) :: vflux,a_vflux
-   REAL,DIMENSION(its:ite+1,kts:kte) :: fqx,a_fqx
-   REAL,DIMENSION(its:ite,kts:kte,2) :: fqy,a_fqy
-   INTEGER :: horz_order
-   INTEGER :: vert_order
-   LOGICAL :: degrade_xs,degrade_ys
-   LOGICAL :: degrade_xe,degrade_ye
-   INTEGER :: jp1,jp0,jtmp
-   REAL :: flux3,Diff_flux3,flux4,Diff_flux4,flux5,Diff_flux5,flux6,Diff_flux6
-   REAL :: q_im3,a_q_im3,q_im2,a_q_im2,q_im1,a_q_im1,q_i,a_q_i,q_ip1,a_q_ip1, &
-   q_ip2,a_q_ip2,ua,a_ua,vel,a_vel
-
-   Diff_flux4(q_im2,a_q_im2, q_im1,a_q_im1, q_i,a_q_i, q_ip1,a_q_ip1, &
-   ua, a_ua) =(7.*(a_q_i +a_q_im1) -(a_q_ip1 +a_q_im2))/12.0
-   flux4(q_im2,q_im1,q_i,q_ip1,ua) =(7.*(q_i +q_im1) -(q_ip1 +q_im2))/12.0
-
-   Diff_flux3(q_im2,a_q_im2, q_im1,a_q_im1, q_i,a_q_i, q_ip1,a_q_ip1, &
-   ua, a_ua) =Diff_flux4(q_im2,a_q_im2,q_im1,a_q_im1,q_i,a_q_i,q_ip1, &
-   a_q_ip1,ua,a_ua) +(sign(1, time_step) *sign(1., ua)*((a_q_ip1 -a_q_im2) &
-   -3.*(a_q_i -a_q_im1))/12.0)
-   flux3(q_im2,q_im1,q_i,q_ip1,ua) =flux4(q_im2,q_im1,q_i,q_ip1,ua) +sign(1, time_step) &
-   *sign(1., ua)*((q_ip1 -q_im2) -3.*(q_i -q_im1))/12.0
-
-   Diff_flux6(q_im3, a_q_im3,q_im2, a_q_im2,q_im1, a_q_im1,q_i, a_q_i, &
-   q_ip1, a_q_ip1,q_ip2, a_q_ip2,ua, a_ua) =(37.*(a_q_i +a_q_im1) &
-   -8.*(a_q_ip1 +a_q_im2) +(a_q_ip2 +a_q_im3))/60.0
-   flux6(q_im3,q_im2,q_im1,q_i,q_ip1,q_ip2,ua) =(37.*(q_i +q_im1) -8.*(q_ip1 +q_im2) &
-   +(q_ip2 +q_im3))/60.0
-
-   Diff_flux5(q_im3, a_q_im3,q_im2, a_q_im2,q_im1, a_q_im1,q_i, a_q_i, &
-   q_ip1, a_q_ip1,q_ip2, a_q_ip2,ua, a_ua) =Diff_flux6(q_im3,a_q_im3,q_im2, &
-   a_q_im2,q_im1,a_q_im1,q_i,a_q_i,q_ip1,a_q_ip1,q_ip2,a_q_ip2,ua, &
-   a_ua) -(sign(1, time_step) *sign(1., ua)*((a_q_ip2 -a_q_im3) -5.*( &
-   a_q_ip1 -a_q_im2) +10.*(a_q_i -a_q_im1))/60.0)
-   flux5(q_im3,q_im2,q_im1,q_i,q_ip1,q_ip2,ua) =flux6(q_im3,q_im2,q_im1,q_i,q_ip1,q_ip2, &
-   ua) -sign(1, time_step) *sign(1., ua)*((q_ip2 -q_im3) -5.*(q_ip1 -q_im2) &
-   +10.*(q_i -q_im1))/60.0
-
-   LOGICAL :: specified
-
-   REAL :: Keep_Lpb9_vb
-   REAL :: Keep_Lpb11_vb
-   REAL :: Keep_Lpb17_mrdx
-   REAL :: Keep_Lpb19_mrdx
-   REAL :: Keep_Lpb19_ub
-   REAL :: Keep_Lpb19_dup
-   REAL :: Keep_Lpb19_dum
-   REAL :: a_Tmpv1,Tmpv001,a_Tmpv2,Tmpv002,a_Tmpv3,Tmpv003,a_Tmpv4,Tmpv004, &
-   a_Tmpv5,Tmpv005,a_Tmpv6,Tmpv006,a_Tmpv7,Tmpv007,a_Tmpv8,Tmpv008,a_Tmpv9,Tmpv009
-   REAL,DIMENSION(max(jds+1,jts):min(jte,jde-1)) :: Tmpv200
-   REAL,DIMENSION(kms:kme,MIN(ims,jms):MAX(ime,jme)) :: Tmpv300
-   REAL,DIMENSION(kms:kme,MIN(ims,jms):MAX(ime,jme)) :: Tmpv301
-   REAL,DIMENSION(kms:kme,MIN(ims,jms):MAX(ime,jme)) :: Tmpv302
-   REAL,DIMENSION(kms:kme,MIN(ims,jms):MAX(ime,jme)) :: Tmpv303
-
-   REAL :: gwalls, qwalls, kwalls
-   REAL :: vwalls(ims:ime)
-
-!PART II: CALCULATIONS OF B. S. TRAJECTORY
-
-!LPB[0]
-
-      specified = .false.
-
-!LPB[1]
-   if(config_flags%specified .or. config_flags%nested) specified = .true.
-
-!LPB[2]
-      ktf=MIN(kte,kde-1)
-      horz_order = config_flags%h_mom_adv_order
-      vert_order = config_flags%v_mom_adv_order
-
-!PART III: INITIALIZATION OF LOCAL ADJOINT PERTURBATIONS
-
-   a_ub =0.0
-   a_vb =0.0
-   a_uw =0.0
-   a_vw =0.0
-   a_dup =0.0
-   a_dum =0.0
-
-   Do K1_ADJ =kts, kte
-   Do K0_ADJ =its, ite
-   a_vflux(K0_ADJ,K1_ADJ) =0.0
-   End Do
-   End Do
-
-   Do K1_ADJ =kts, kte
-   Do K0_ADJ =its, ite+1
-   a_fqx(K0_ADJ,K1_ADJ) =0.0
-   End Do
-   End Do
-
-   Do K2_ADJ =1, 2
-   Do K1_ADJ =kts, kte
-   Do K0_ADJ =its, ite
-   a_fqy(K0_ADJ,K1_ADJ,K2_ADJ) =0.0
-   End Do
-   End Do
-   End Do
-
-   a_q_im3 =0.0
-   a_q_im2 =0.0
-   a_q_im1 =0.0
-   a_q_i =0.0
-   a_q_ip1 =0.0
-   a_q_ip2 =0.0
-   a_ua =0.0
-
-!PART IV: REVERSE/BACKWARD ACCUMULATIONS
-
-      i_start = its
-      i_end   = MIN(ite,ide-1)
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of advect_v in reverse (adjoint) mode:
+!   gradient     of useful results: rom tendency v v_old ru rv
+!                mut
+!   with respect to varying inputs: rom tendency v v_old ru rv
+!                mut
+!   RW status of diff variables: rom:incr tendency:in-out v:incr
+!                v_old:incr ru:incr rv:incr mut:incr
+SUBROUTINE A_ADVECT_V(v, vb0, v_old, v_oldb, tendency, tendencyb, ru, &
+&  rub, rv, rvb, rom, romb, mut, mutb, time_step, config_flags, msfux, &
+&  msfuy, msfvx, msfvy, msftx, msfty, fzm, fzp, rdx, rdy, rdzw, ids, ide&
+&  , jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte&
+&  , kts, kte)
+  IMPLICIT NONE
+! Input data
+  TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: v, v_old, ru&
+&  , rv, rom
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: vb0, v_oldb, rub, rvb, &
+&  romb
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mut
+  REAL, DIMENSION(ims:ime, jms:jme) :: mutb
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: tendency
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: tendencyb
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: msfux, msfuy, msfvx, &
+&  msfvy, msftx, msfty
+  REAL, DIMENSION(kms:kme), INTENT(IN) :: fzm, fzp, rdzw
+  REAL, INTENT(IN) :: rdx, rdy
+  INTEGER, INTENT(IN) :: time_step
+! Local data
+  INTEGER :: i, j, k, itf, jtf, ktf
+  INTEGER :: i_start, i_end, j_start, j_end
+  INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
+  INTEGER :: jmin, jmax, jp, jm, imin, imax
+  REAL :: mrdx, mrdy, ub, vb, uw, vw, dup, dum
+  REAL :: ubb, vbb, uwb, dupb, dumb
+  REAL, DIMENSION(its:ite, kts:kte) :: vflux
+  REAL, DIMENSION(its:ite, kts:kte) :: vfluxb
+  REAL, DIMENSION(its:ite + 1, kts:kte) :: fqx
+  REAL, DIMENSION(its:ite+1, kts:kte) :: fqxb
+  REAL, DIMENSION(its:ite, kts:kte, 2) :: fqy
+  REAL, DIMENSION(its:ite, kts:kte, 2) :: fqyb
+  INTEGER :: horz_order
+  INTEGER :: vert_order
+  LOGICAL :: degrade_xs, degrade_ys
+  LOGICAL :: degrade_xe, degrade_ye
+  INTEGER :: jp1, jp0, jtmp
+! definition of flux operators, 3rd, 4th, 5th or 6th order
+  REAL :: flux3, flux4, flux5, flux6
+  REAL :: q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua, vel
+  REAL :: velb
+  LOGICAL :: specified
+  INTEGER :: ad_from
+  INTEGER :: ad_to
+  INTEGER :: branch
+  INTEGER :: ad_from0
+  INTEGER :: ad_to0
+  INTEGER :: ad_from1
+  INTEGER :: ad_to1
+  INTEGER :: ad_from2
+  INTEGER :: ad_to2
+  INTEGER :: ad_from3
+  INTEGER :: ad_to3
+  INTEGER :: ad_from4
+  INTEGER :: ad_to4
+  INTEGER :: ad_from5
+  INTEGER :: ad_to5
+  INTEGER :: ad_from6
+  INTEGER :: ad_to6
+  INTEGER :: ad_from7
+  INTEGER :: ad_to7
+  INTEGER :: ad_from8
+  INTEGER :: ad_to8
+  INTEGER :: ad_from9
+  INTEGER :: ad_to9
+  INTEGER :: ad_from10
+  INTEGER :: ad_to10
+  INTEGER :: ad_from11
+  INTEGER :: ad_to11
+  INTEGER :: ad_from12
+  INTEGER :: ad_to12
+  INTEGER :: ad_from13
+  INTEGER :: ad_to13
+  INTEGER :: ad_from14
+  INTEGER :: ad_to14
+  INTEGER :: ad_from15
+  INTEGER :: ad_to15
+  INTEGER :: ad_from16
+  INTEGER :: ad_to16
+  INTEGER :: ad_from17
+  INTEGER :: ad_to17
+  INTEGER :: ad_from18
+  INTEGER :: ad_to18
+  INTEGER :: ad_from19
+  INTEGER :: ad_to19
+  INTEGER :: ad_from20
+  INTEGER :: ad_to20
+  INTEGER :: ad_from21
+  INTEGER :: ad_to21
+  INTEGER :: ad_from22
+  INTEGER :: ad_to22
+  INTEGER :: ad_from23
+  INTEGER :: ad_to23
+  INTEGER :: ad_from24
+  INTEGER :: ad_to24
+  INTEGER :: ad_from25
+  INTEGER :: ad_to25
+  INTEGER :: ad_from26
+  INTEGER :: ad_to26
+  INTEGER :: ad_from27
+  INTEGER :: ad_to27
+  INTEGER :: ad_from28
+  INTEGER :: ad_to28
+  INTEGER :: ad_from29
+  INTEGER :: ad_to29
+  INTEGER :: ad_from30
+  INTEGER :: ad_to30
+  INTEGER :: ad_from31
+  INTEGER :: ad_to31
+  INTEGER :: ad_from32
+  INTEGER :: ad_to32
+  INTEGER :: ad_from33
+  INTEGER :: ad_to33
+  INTEGER :: ad_from34
+  INTEGER :: ad_to34
+  INTEGER :: ad_from35
+  INTEGER :: ad_to35
+  INTEGER :: ad_from36
+  INTEGER :: ad_to36
+  INTEGER :: ad_from37
+  INTEGER :: ad_to37
+  INTEGER :: ad_from38
+  INTEGER :: ad_to38
+  INTEGER :: ad_from39
+  INTEGER :: ad_to39
+  INTEGER :: ad_from40
+  INTEGER :: ad_to40
+  INTEGER :: ad_from41
+  INTEGER :: ad_to41
+  INTEGER :: ad_from42
+  INTEGER :: ad_to42
+  INTEGER :: ad_from43
+  INTEGER :: ad_to43
+  INTEGER :: ad_from44
+  INTEGER :: ad_to44
+  INTEGER :: ad_from45
+  INTEGER :: ad_to45
+  INTEGER :: ad_from46
+  INTEGER :: ad_to46
+  INTEGER :: ad_from47
+  INTEGER :: ad_to47
+  INTEGER :: ad_from48
+  INTEGER :: ad_to48
+  INTEGER :: ad_from49
+  INTEGER :: ad_to49
+  INTEGER :: ad_from50
+  INTEGER :: ad_to50
+  INTEGER :: ad_from51
+  INTEGER :: ad_to51
+  INTEGER :: ad_from52
+  INTEGER :: ad_to52
+  REAL :: temp3
+  REAL :: temp29
+  REAL :: temp31b43
+  REAL :: temp2
+  INTEGER :: temp28
+  REAL :: temp31b42
+  REAL :: temp1
+  REAL :: temp27
+  REAL :: temp31b41
+  INTEGER :: temp0
+  REAL :: temp26
+  REAL :: temp31b40
+  REAL :: temp7b
+  REAL :: temp25
+  INTEGER :: temp24
+  REAL :: temp23
+  REAL :: temp22
+  REAL :: temp21
+  REAL :: temp35b3
+  INTEGER :: temp20
+  REAL :: temp35b2
+  REAL :: temp35b1
+  REAL :: temp35b0
+  REAL :: temp23b9
+  REAL :: temp23b8
+  REAL :: temp19b
+  REAL :: temp23b7
+  REAL :: temp23b6
+  REAL :: temp27b
+  REAL :: temp23b5
+  REAL :: temp35b
+  REAL :: tempb1
+  REAL :: temp23b4
+  REAL :: temp43b
+  REAL :: tempb0
+  REAL :: temp23b3
+  REAL :: temp23b2
+  REAL :: temp23b1
+  REAL :: temp23b0
+  REAL :: temp31b39
+  REAL :: temp31b38
+  REAL :: temp7b3
+  REAL :: temp31b37
+  REAL :: temp3b
+  REAL :: temp7b2
+  REAL :: temp31b36
+  REAL :: temp7b1
+  REAL :: temp31b35
+  REAL :: temp7b0
+  REAL :: temp23b15
+  REAL :: temp31b34
+  REAL :: temp19
+  REAL :: temp23b14
+  REAL :: temp31b33
+  REAL :: cb
+  REAL :: temp18
+  REAL :: temp23b13
+  REAL :: temp31b32
+  REAL :: temp17
+  REAL :: temp23b12
+  REAL :: temp31b31
+  REAL :: temp43b9
+  INTEGER :: temp16
+  REAL :: temp23b11
+  REAL :: temp31b30
+  REAL :: temp43b8
+  REAL :: temp15
+  REAL :: temp23b10
+  REAL :: temp43b7
+  REAL :: temp14
+  REAL :: temp11b1
+  REAL :: temp43b6
+  REAL :: temp13
+  REAL :: temp11b0
+  REAL :: temp43b5
+  INTEGER :: temp12
+  REAL :: temp43b4
+  REAL :: temp11
+  REAL :: temp43b3
+  REAL :: temp10
+  REAL :: temp43b2
+  REAL :: temp15b
+  REAL :: temp43b1
+  REAL :: temp46
+  REAL :: temp23b
+  REAL :: temp43b0
+  REAL :: temp45
+  REAL :: temp31b
+  INTEGER :: temp44
+  REAL :: temp43
+  REAL :: temp42
+  REAL :: temp19b3
+  REAL :: temp31b9
+  REAL :: temp41
+  REAL :: temp19b2
+  REAL :: temp31b8
+  INTEGER :: temp40
+  REAL :: temp19b1
+  REAL :: temp31b7
+  REAL :: temp19b0
+  REAL :: temp31b6
+  REAL :: temp31b5
+  REAL :: temp31b4
+  REAL :: temp31b3
+  REAL :: tempb
+  REAL :: temp31b2
+  REAL :: temp31b1
+  REAL :: temp31b0
+  REAL :: temp31b29
+  REAL :: temp31b28
+  REAL :: temp31b27
+  REAL :: temp31b26
+  REAL :: temp31b25
+  REAL :: temp31b24
+  REAL :: temp31b23
+  REAL :: temp31b22
+  REAL :: temp31b21
+  REAL :: temp11b
+  REAL :: temp31b20
+  REAL :: temp39b1
+  REAL :: temp39b0
+  REAL :: temp31b53
+  REAL :: temp39
+  REAL :: temp31b52
+  REAL :: temp38
+  REAL :: temp3b3
+  REAL :: temp31b51
+  REAL :: temp37
+  REAL :: temp3b2
+  REAL :: temp31b50
+  INTEGER :: temp36
+  REAL :: temp3b1
+  REAL :: temp35
+  REAL :: temp3b0
+  REAL :: temp34
+  REAL :: temp33
+  INTEGER :: temp32
+  REAL :: temp31
+  REAL :: temp30
+  REAL :: temp27b1
+  REAL :: temp27b0
+  REAL :: temp31b19
+  REAL :: temp31b18
+  REAL :: temp31b17
+  REAL :: temp15b3
+  REAL :: temp31b16
+  REAL :: temp
+  REAL :: temp15b2
+  REAL :: temp31b15
+  REAL :: temp15b1
+  REAL :: temp31b14
+  REAL :: temp47b6
+  REAL :: temp15b0
+  REAL :: temp31b13
+  REAL :: temp43b10
+  REAL :: temp47b5
+  REAL :: temp9
+  REAL :: temp31b12
+  REAL :: temp31b49
+  REAL :: temp47b4
+  INTEGER :: temp8
+  REAL :: temp31b11
+  REAL :: temp31b48
+  REAL :: temp39b
+  REAL :: temp47b3
+  REAL :: temp7
+  REAL :: temp31b10
+  REAL :: temp31b47
+  REAL :: temp47b
+  REAL :: temp47b2
+  REAL :: temp6
+  REAL :: temp31b46
+  REAL :: temp47b1
+  REAL :: temp5
+  REAL :: temp31b45
+  REAL :: temp47b0
+  INTEGER :: temp4
+  REAL :: temp31b44
+  specified = .false.
+  IF (config_flags%specified .OR. config_flags%nested) specified = &
+&      .true.
+  IF (kte .GT. kde - 1) THEN
+    ktf = kde - 1
+  ELSE
+    ktf = kte
+  END IF
+  horz_order = config_flags%h_mom_adv_order
+  vert_order = config_flags%v_mom_adv_order
+!  here is the choice of flux operators
+  IF (horz_order .EQ. 6) THEN
+!  determine boundary mods for flux operators
+!  We degrade the flux operators from 3rd/4th order
+!   to second order one gridpoint in from the boundaries for
+!   all boundary conditions except periodic and symmetry - these
+!   conditions have boundary zone data fill for correct application
+!   of the higher order flux stencils
+    degrade_xs = .true.
+    degrade_xe = .true.
+    degrade_ys = .true.
+    degrade_ye = .true.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 3) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 3) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 3) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 3) degrade_ye = .false.
+!--------------- y - advection first
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    j_end = jte
+!  higher order flux has a 5 or 7 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    j_start_f = j_start
+    j_end_f = j_end + 1
+    IF (degrade_ys) THEN
+      IF (jts .LT. jds + 1) THEN
+        j_start = jds + 1
+      ELSE
+        j_start = jts
+      END IF
+      j_start_f = jds + 3
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte
+      END IF
+      j_end_f = jde - 2
+    END IF
+!  compute fluxes, 5th or 6th order
+    jp1 = 2
+    jp0 = 1
+    ad_from45 = j_start
+j_loop_y_flux_6:DO j=ad_from45,j_end+1
+      IF (j .GE. j_start_f .AND. j .LE. j_end_f) THEN
+        DO k=kts,ktf
+          ad_from37 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from37)
+        END DO
+        CALL PUSHCONTROL3B(0)
+      ELSE IF (j .EQ. jds + 1) THEN
+!  we must be close to some boundary where we need to reduce the order of the stencil
+!  specified uses upstream normal wind at boundaries
+! 2nd order flux next to south boundary
+        DO k=kts,ktf
+          ad_from38 = i_start
+          DO i=ad_from38,i_end
+            CALL PUSHREAL8(vb)
+            vb = v(i, k, j-1)
+            IF (specified .AND. v(i, k, j) .LT. 0.) THEN
+              vb = v(i, k, j)
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHCONTROL1B(1)
+            END IF
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from38)
+        END DO
+        CALL PUSHCONTROL3B(1)
+      ELSE IF (j .EQ. jds + 2) THEN
+! third of 4th order flux 2 in from south boundary
+        DO k=kts,ktf
+          ad_from39 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from39)
+        END DO
+        CALL PUSHCONTROL3B(2)
+      ELSE IF (j .EQ. jde) THEN
+! 2nd order flux next to north boundary
+        DO k=kts,ktf
+          ad_from40 = i_start
+          DO i=ad_from40,i_end
+            CALL PUSHREAL8(vb)
+            vb = v(i, k, j)
+            IF (specified .AND. v(i, k, j-1) .GT. 0.) THEN
+              vb = v(i, k, j-1)
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHCONTROL1B(1)
+            END IF
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from40)
+        END DO
+        CALL PUSHCONTROL3B(3)
+      ELSE IF (j .EQ. jde - 1) THEN
+! 3rd or 4th order flux 2 in from north boundary
+        DO k=kts,ktf
+          ad_from41 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from41)
+        END DO
+        CALL PUSHCONTROL3B(4)
+      ELSE
+        CALL PUSHCONTROL3B(5)
+      END IF
+!  y flux-divergence into tendency
+! Comments on polar boundary conditions
+! No advection over the poles means tendencies (held from jds [S. pole]
+! to jde [N pole], i.e., on v grid) must be zero at poles
+! [tendency(jds) and tendency(jde)=0]
+      IF (config_flags%polar .AND. j .EQ. jds + 1) THEN
+        DO k=kts,ktf
+          ad_from42 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from42)
+        END DO
+        CALL PUSHCONTROL2B(0)
+      ELSE IF (config_flags%polar .AND. j .EQ. jde + 1) THEN
+! If j_end were set to jde in a special if statement apart from
+! degrade_ye, then we would hit the next conditional.  But since
+! we want the tendency to be zero anyway, not looping to jde+1
+! will produce the same effect.
+        DO k=kts,ktf
+          ad_from43 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from43)
+        END DO
+        CALL PUSHCONTROL2B(1)
+      ELSE IF (j .GT. j_start) THEN
+! Normal code
+        DO k=kts,ktf
+          ad_from44 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from44)
+        END DO
+        CALL PUSHCONTROL2B(2)
+      ELSE
+        CALL PUSHCONTROL2B(3)
+      END IF
+      jtmp = jp1
+      CALL PUSHINTEGER4(jp1)
+      jp1 = jp0
+      CALL PUSHINTEGER4(jp0)
+      jp0 = jtmp
+    END DO j_loop_y_flux_6
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from45)
+!  next, x - flux divergence
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    j_end = jte
+! Polar boundary conditions are like open or specified
+    IF ((config_flags%open_ys .OR. specified) .OR. config_flags%polar) &
+&    THEN
+      IF (jds + 1 .LT. jts) THEN
+        j_start = jts
+      ELSE
+        j_start = jds + 1
+      END IF
+    END IF
+    IF ((config_flags%open_ye .OR. specified) .OR. config_flags%polar) &
+&    THEN
+      IF (jde - 1 .GT. jte) THEN
+        j_end = jte
+      ELSE
+        j_end = jde - 1
+      END IF
+    END IF
+!  higher order flux has a 5 or 7 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    IF (degrade_xs) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+      IF (i_start + 2 .GT. ids + 3) THEN
+        i_start_f = ids + 3
+      ELSE
+        i_start_f = i_start + 2
+      END IF
+    END IF
+    IF (degrade_xe) THEN
+      IF (ide - 2 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 2
+      END IF
+      i_end_f = ide - 3
+    END IF
+    ad_from48 = j_start
+!  compute fluxes
+    DO j=ad_from48,j_end
+!  lower order fluxes close to boundaries (if not periodic or symmetric)
+      IF (degrade_xs) THEN
+        ad_from46 = i_start
+        DO i=ad_from46,i_start_f-1
+          IF (i .EQ. ids + 1) THEN
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (i .EQ. ids + 2) THEN
+            CALL PUSHCONTROL1B(1)
+          ELSE
+            CALL PUSHCONTROL1B(0)
+          END IF
+        END DO
+        CALL PUSHINTEGER4(ad_from46)
+        CALL PUSHCONTROL1B(0)
+      ELSE
+        CALL PUSHCONTROL1B(1)
+      END IF
+      IF (degrade_xe) THEN
+        DO i=i_end_f+1,i_end+1
+          IF (i .EQ. ide - 1) THEN
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (i .EQ. ide - 2) THEN
+            CALL PUSHCONTROL1B(1)
+          ELSE
+            CALL PUSHCONTROL1B(0)
+          END IF
+        END DO
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHCONTROL1B(1)
+      ELSE
+        CALL PUSHCONTROL1B(0)
+      END IF
+!  x flux-divergence into tendency
+      DO k=kts,ktf
+        ad_from47 = i_start
+        i = i_end + 1
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from47)
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from48)
+    CALL PUSHCONTROL3B(0)
+  ELSE IF (horz_order .EQ. 5) THEN
+!  5th order horizontal flux calculation
+!  This code is EXACTLY the same as the 6th order code
+!  EXCEPT the 5th order and 3rd operators are used in
+!  place of the 6th and 4th order operators
+!  determine boundary mods for flux operators
+!  We degrade the flux operators from 3rd/4th order
+!   to second order one gridpoint in from the boundaries for
+!   all boundary conditions except periodic and symmetry - these
+!   conditions have boundary zone data fill for correct application
+!   of the higher order flux stencils
+    degrade_xs = .true.
+    degrade_xe = .true.
+    degrade_ys = .true.
+    degrade_ye = .true.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 3) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 3) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 3) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 3) degrade_ye = .false.
+!--------------- y - advection first
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    j_end = jte
+!  higher order flux has a 5 or 7 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    j_start_f = j_start
+    j_end_f = j_end + 1
+    IF (degrade_ys) THEN
+      IF (jts .LT. jds + 1) THEN
+        j_start = jds + 1
+      ELSE
+        j_start = jts
+      END IF
+      j_start_f = jds + 3
+    END IF
+    IF (degrade_ye) THEN
+      IF (jte .GT. jde - 1) THEN
+        j_end = jde - 1
+      ELSE
+        j_end = jte
+      END IF
+      j_end_f = jde - 2
+    END IF
+!  compute fluxes, 5th or 6th order
+    jp1 = 2
+    jp0 = 1
+    ad_from7 = j_start
+j_loop_y_flux_5:DO j=ad_from7,j_end+1
+      IF (j .GE. j_start_f .AND. j .LE. j_end_f) THEN
+        DO k=kts,ktf
+          ad_from = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from)
+        END DO
+        CALL PUSHCONTROL3B(0)
+      ELSE IF (j .EQ. jds + 1) THEN
+!  we must be close to some boundary where we need to reduce the order of the stencil
+!  specified uses upstream normal wind at boundaries
+! 2nd order flux next to south boundary
+        DO k=kts,ktf
+          ad_from0 = i_start
+          DO i=ad_from0,i_end
+            CALL PUSHREAL8(vb)
+            vb = v(i, k, j-1)
+            IF (specified .AND. v(i, k, j) .LT. 0.) THEN
+              vb = v(i, k, j)
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHCONTROL1B(1)
+            END IF
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from0)
+        END DO
+        CALL PUSHCONTROL3B(1)
+      ELSE IF (j .EQ. jds + 2) THEN
+! third of 4th order flux 2 in from south boundary
+        DO k=kts,ktf
+          ad_from1 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from1)
+        END DO
+        CALL PUSHCONTROL3B(2)
+      ELSE IF (j .EQ. jde) THEN
+! 2nd order flux next to north boundary
+        DO k=kts,ktf
+          ad_from2 = i_start
+          DO i=ad_from2,i_end
+            CALL PUSHREAL8(vb)
+            vb = v(i, k, j)
+            IF (specified .AND. v(i, k, j-1) .GT. 0.) THEN
+              vb = v(i, k, j-1)
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHCONTROL1B(1)
+            END IF
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from2)
+        END DO
+        CALL PUSHCONTROL3B(3)
+      ELSE IF (j .EQ. jde - 1) THEN
+! 3rd or 4th order flux 2 in from north boundary
+        DO k=kts,ktf
+          ad_from3 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from3)
+        END DO
+        CALL PUSHCONTROL3B(4)
+      ELSE
+        CALL PUSHCONTROL3B(5)
+      END IF
+!  y flux-divergence into tendency
+! Comments on polar boundary conditions
+! No advection over the poles means tendencies (held from jds [S. pole]
+! to jde [N pole], i.e., on v grid) must be zero at poles
+! [tendency(jds) and tendency(jde)=0]
+      IF (config_flags%polar .AND. j .EQ. jds + 1) THEN
+        DO k=kts,ktf
+          ad_from4 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from4)
+        END DO
+        CALL PUSHCONTROL2B(0)
+      ELSE IF (config_flags%polar .AND. j .EQ. jde + 1) THEN
+! If j_end were set to jde in a special if statement apart from
+! degrade_ye, then we would hit the next conditional.  But since
+! we want the tendency to be zero anyway, not looping to jde+1
+! will produce the same effect.
+        DO k=kts,ktf
+          ad_from5 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from5)
+        END DO
+        CALL PUSHCONTROL2B(1)
+      ELSE IF (j .GT. j_start) THEN
+! Normal code
+        DO k=kts,ktf
+          ad_from6 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from6)
+        END DO
+        CALL PUSHCONTROL2B(2)
+      ELSE
+        CALL PUSHCONTROL2B(3)
+      END IF
+      jtmp = jp1
+      CALL PUSHINTEGER4(jp1)
+      jp1 = jp0
+      CALL PUSHINTEGER4(jp0)
+      jp0 = jtmp
+    END DO j_loop_y_flux_5
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from7)
+!  next, x - flux divergence
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    j_end = jte
+! Polar boundary conditions are like open or specified
+    IF ((config_flags%open_ys .OR. specified) .OR. config_flags%polar) &
+&    THEN
+      IF (jds + 1 .LT. jts) THEN
+        j_start = jts
+      ELSE
+        j_start = jds + 1
+      END IF
+    END IF
+    IF ((config_flags%open_ye .OR. specified) .OR. config_flags%polar) &
+&    THEN
+      IF (jde - 1 .GT. jte) THEN
+        j_end = jte
+      ELSE
+        j_end = jde - 1
+      END IF
+    END IF
+!  higher order flux has a 5 or 7 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    IF (degrade_xs) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+      IF (i_start + 2 .GT. ids + 3) THEN
+        i_start_f = ids + 3
+      ELSE
+        i_start_f = i_start + 2
+      END IF
+    END IF
+    IF (degrade_xe) THEN
+      IF (ide - 2 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 2
+      END IF
+      i_end_f = ide - 3
+    END IF
+    ad_from10 = j_start
+!  compute fluxes
+    DO j=ad_from10,j_end
+!  lower order fluxes close to boundaries (if not periodic or symmetric)
+      IF (degrade_xs) THEN
+        ad_from8 = i_start
+        DO i=ad_from8,i_start_f-1
+          IF (i .EQ. ids + 1) THEN
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (i .EQ. ids + 2) THEN
+            CALL PUSHCONTROL1B(1)
+          ELSE
+            CALL PUSHCONTROL1B(0)
+          END IF
+        END DO
+        CALL PUSHINTEGER4(ad_from8)
+        CALL PUSHCONTROL1B(0)
+      ELSE
+        CALL PUSHCONTROL1B(1)
+      END IF
+      IF (degrade_xe) THEN
+        DO i=i_end_f+1,i_end+1
+          IF (i .EQ. ide - 1) THEN
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (i .EQ. ide - 2) THEN
+            CALL PUSHCONTROL1B(1)
+          ELSE
+            CALL PUSHCONTROL1B(0)
+          END IF
+        END DO
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHCONTROL1B(1)
+      ELSE
+        CALL PUSHCONTROL1B(0)
+      END IF
+!  x flux-divergence into tendency
+      DO k=kts,ktf
+        ad_from9 = i_start
+        i = i_end + 1
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from9)
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from10)
+    CALL PUSHCONTROL3B(1)
+  ELSE IF (horz_order .EQ. 4) THEN
+!  determine boundary mods for flux operators
+!  We degrade the flux operators from 3rd/4th order
+!   to second order one gridpoint in from the boundaries for
+!   all boundary conditions except periodic and symmetry - these
+!   conditions have boundary zone data fill for correct application
+!   of the higher order flux stencils
+    degrade_xs = .true.
+    degrade_xe = .true.
+    degrade_ys = .true.
+    degrade_ye = .true.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 2) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 2) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 2) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 2) degrade_ye = .false.
+    IF (kte .GT. kde - 1) THEN
+      ktf = kde - 1
+    ELSE
+      ktf = kte
+    END IF
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    j_end = jte
+!  3rd or 4th order flux has a 5 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+!CJM May not work with tiling because defined in terms of domain dims
+    IF (degrade_ys) j_start = jds + 1
+    IF (degrade_ye) j_end = jde - 1
+!  compute fluxes
+!  specified uses upstream normal wind at boundaries
+    jp0 = 1
+    jp1 = 2
+    ad_from17 = j_start
+    DO j=ad_from17,j_end+1
+      IF (j .EQ. j_start .AND. degrade_ys) THEN
+        DO k=kts,ktf
+          ad_from11 = i_start
+          DO i=ad_from11,i_end
+            CALL PUSHREAL8(vb)
+            vb = v(i, k, j-1)
+            IF (specified .AND. v(i, k, j) .LT. 0.) THEN
+              vb = v(i, k, j)
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHCONTROL1B(1)
+            END IF
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from11)
+        END DO
+        CALL PUSHCONTROL2B(0)
+      ELSE IF (j .EQ. j_end + 1 .AND. degrade_ye) THEN
+        DO k=kts,ktf
+          ad_from12 = i_start
+          DO i=ad_from12,i_end
+            CALL PUSHREAL8(vb)
+            vb = v(i, k, j)
+            IF (specified .AND. v(i, k, j-1) .GT. 0.) THEN
+              vb = v(i, k, j-1)
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHCONTROL1B(1)
+            END IF
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from12)
+        END DO
+        CALL PUSHCONTROL2B(1)
+      ELSE
+        DO k=kts,ktf
+          ad_from13 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from13)
+        END DO
+        CALL PUSHCONTROL2B(2)
+      END IF
+! Comments on polar boundary conditions
+! No advection over the poles means tendencies (held from jds [S. pole]
+! to jde [N pole], i.e., on v grid) must be zero at poles
+! [tendency(jds) and tendency(jde)=0]
+      IF (config_flags%polar .AND. j .EQ. jds + 1) THEN
+        DO k=kts,ktf
+          ad_from14 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from14)
+        END DO
+        CALL PUSHCONTROL2B(0)
+      ELSE IF (config_flags%polar .AND. j .EQ. jde + 1) THEN
+! If j_end were set to jde in a special if statement apart from
+! degrade_ye, then we would hit the next conditional.  But since
+! we want the tendency to be zero anyway, not looping to jde+1
+! will produce the same effect.
+        DO k=kts,ktf
+          ad_from15 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from15)
+        END DO
+        CALL PUSHCONTROL2B(1)
+      ELSE IF (j .GT. j_start) THEN
+! Normal code
+        DO k=kts,ktf
+          ad_from16 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from16)
+        END DO
+        CALL PUSHCONTROL2B(2)
+      ELSE
+        CALL PUSHCONTROL2B(3)
+      END IF
+      jtmp = jp1
+      CALL PUSHINTEGER4(jp1)
+      jp1 = jp0
+      CALL PUSHINTEGER4(jp0)
+      jp0 = jtmp
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from17)
+!  next, x - flux divergence
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    j_end = jte
+! Polar boundary conditions are like open or specified
+    IF ((config_flags%open_ys .OR. specified) .OR. config_flags%polar) &
+&    THEN
+      IF (jds + 1 .LT. jts) THEN
+        j_start = jts
+      ELSE
+        j_start = jds + 1
+      END IF
+    END IF
+    IF ((config_flags%open_ye .OR. specified) .OR. config_flags%polar) &
+&    THEN
+      IF (jde - 1 .GT. jte) THEN
+        j_end = jte
+      ELSE
+        j_end = jde - 1
+      END IF
+    END IF
+!  3rd or 4th order flux has a 5 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    IF (degrade_xs) THEN
+      i_start = ids + 1
+      i_start_f = i_start + 1
+    END IF
+    IF (degrade_xe) THEN
+      i_end = ide - 2
+      i_end_f = ide - 2
+    END IF
+    ad_from19 = j_start
+!  compute fluxes
+    DO j=ad_from19,j_end
+!  second order flux close to boundaries (if not periodic or symmetric)
+      IF (degrade_xs) THEN
+        CALL PUSHCONTROL1B(0)
+      ELSE
+        CALL PUSHCONTROL1B(1)
+      END IF
+      IF (degrade_xe) THEN
+        CALL PUSHCONTROL1B(1)
+      ELSE
+        CALL PUSHCONTROL1B(0)
+      END IF
+!  x flux-divergence into tendency
+      DO k=kts,ktf
+        ad_from18 = i_start
+        i = i_end + 1
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from18)
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from19)
+    CALL PUSHCONTROL3B(2)
+  ELSE IF (horz_order .EQ. 3) THEN
+!  determine boundary mods for flux operators
+!  We degrade the flux operators from 3rd/4th order
+!   to second order one gridpoint in from the boundaries for
+!   all boundary conditions except periodic and symmetry - these
+!   conditions have boundary zone data fill for correct application
+!   of the higher order flux stencils
+    degrade_xs = .true.
+    degrade_xe = .true.
+    degrade_ys = .true.
+    degrade_ye = .true.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xs) .OR. &
+&        its .GT. ids + 2) degrade_xs = .false.
+    IF ((config_flags%periodic_x .OR. config_flags%symmetric_xe) .OR. &
+&        ite .LT. ide - 2) degrade_xe = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ys) .OR. &
+&        jts .GT. jds + 2) degrade_ys = .false.
+    IF ((config_flags%periodic_y .OR. config_flags%symmetric_ye) .OR. &
+&        jte .LT. jde - 2) degrade_ye = .false.
+    IF (kte .GT. kde - 1) THEN
+      ktf = kde - 1
+    ELSE
+      ktf = kte
+    END IF
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    j_end = jte
+!  3rd or 4th order flux has a 5 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+!CJM May not work with tiling because defined in terms of domain dims
+    IF (degrade_ys) j_start = jds + 1
+    IF (degrade_ye) j_end = jde - 1
+!  compute fluxes
+!  specified uses upstream normal wind at boundaries
+    jp0 = 1
+    jp1 = 2
+    ad_from26 = j_start
+    DO j=ad_from26,j_end+1
+      IF (j .EQ. j_start .AND. degrade_ys) THEN
+        DO k=kts,ktf
+          ad_from20 = i_start
+          DO i=ad_from20,i_end
+            CALL PUSHREAL8(vb)
+            vb = v(i, k, j-1)
+            IF (specified .AND. v(i, k, j) .LT. 0.) THEN
+              vb = v(i, k, j)
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHCONTROL1B(1)
+            END IF
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from20)
+        END DO
+        CALL PUSHCONTROL2B(0)
+      ELSE IF (j .EQ. j_end + 1 .AND. degrade_ye) THEN
+        DO k=kts,ktf
+          ad_from21 = i_start
+          DO i=ad_from21,i_end
+            CALL PUSHREAL8(vb)
+            vb = v(i, k, j)
+            IF (specified .AND. v(i, k, j-1) .GT. 0.) THEN
+              vb = v(i, k, j-1)
+              CALL PUSHCONTROL1B(0)
+            ELSE
+              CALL PUSHCONTROL1B(1)
+            END IF
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from21)
+        END DO
+        CALL PUSHCONTROL2B(1)
+      ELSE
+        DO k=kts,ktf
+          ad_from22 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from22)
+        END DO
+        CALL PUSHCONTROL2B(2)
+      END IF
+! Comments on polar boundary conditions
+! No advection over the poles means tendencies (held from jds [S. pole]
+! to jde [N pole], i.e., on v grid) must be zero at poles
+! [tendency(jds) and tendency(jde)=0]
+      IF (config_flags%polar .AND. j .EQ. jds + 1) THEN
+        DO k=kts,ktf
+          ad_from23 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from23)
+        END DO
+        CALL PUSHCONTROL2B(0)
+      ELSE IF (config_flags%polar .AND. j .EQ. jde + 1) THEN
+! If j_end were set to jde in a special if statement apart from
+! degrade_ye, then we would hit the next conditional.  But since
+! we want the tendency to be zero anyway, not looping to jde+1
+! will produce the same effect.
+        DO k=kts,ktf
+          ad_from24 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from24)
+        END DO
+        CALL PUSHCONTROL2B(1)
+      ELSE IF (j .GT. j_start) THEN
+! Normal code
+        DO k=kts,ktf
+          ad_from25 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from25)
+        END DO
+        CALL PUSHCONTROL2B(2)
+      ELSE
+        CALL PUSHCONTROL2B(3)
+      END IF
+      jtmp = jp1
+      CALL PUSHINTEGER4(jp1)
+      jp1 = jp0
+      CALL PUSHINTEGER4(jp0)
+      jp0 = jtmp
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from26)
+!  next, x - flux divergence
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    j_end = jte
+! Polar boundary conditions are like open or specified
+    IF ((config_flags%open_ys .OR. specified) .OR. config_flags%polar) &
+&    THEN
+      IF (jds + 1 .LT. jts) THEN
+        j_start = jts
+      ELSE
+        j_start = jds + 1
+      END IF
+    END IF
+    IF ((config_flags%open_ye .OR. specified) .OR. config_flags%polar) &
+&    THEN
+      IF (jde - 1 .GT. jte) THEN
+        j_end = jte
+      ELSE
+        j_end = jde - 1
+      END IF
+    END IF
+!  3rd or 4th order flux has a 5 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+    i_start_f = i_start
+    i_end_f = i_end + 1
+    IF (degrade_xs) THEN
+      i_start = ids + 1
+      i_start_f = i_start + 1
+    END IF
+    IF (degrade_xe) THEN
+      i_end = ide - 2
+      i_end_f = ide - 2
+    END IF
+    ad_from28 = j_start
+!  compute fluxes
+    DO j=ad_from28,j_end
+!  second order flux close to boundaries (if not periodic or symmetric)
+      IF (degrade_xs) THEN
+        CALL PUSHCONTROL1B(0)
+      ELSE
+        CALL PUSHCONTROL1B(1)
+      END IF
+      IF (degrade_xe) THEN
+        CALL PUSHCONTROL1B(1)
+      ELSE
+        CALL PUSHCONTROL1B(0)
+      END IF
+!  x flux-divergence into tendency
+      DO k=kts,ktf
+        ad_from27 = i_start
+        i = i_end + 1
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from27)
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from28)
+    CALL PUSHCONTROL3B(3)
+  ELSE IF (horz_order .EQ. 2) THEN
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    j_end = jte
+    IF (config_flags%open_ys) THEN
+      IF (jds + 1 .LT. jts) THEN
+        j_start = jts
+      ELSE
+        j_start = jds + 1
+      END IF
+    END IF
+    IF (config_flags%open_ye) THEN
+      IF (jde - 1 .GT. jte) THEN
+        j_end = jte
+      ELSE
+        j_end = jde - 1
+      END IF
+    END IF
+    IF (specified) THEN
+      IF (jds + 2 .LT. jts) THEN
+        j_start = jts
+      ELSE
+        j_start = jds + 2
+      END IF
+    END IF
+    IF (specified) THEN
+      IF (jde - 2 .GT. jte) THEN
+        j_end = jte
+      ELSE
+        j_end = jde - 2
+      END IF
+    END IF
+    IF (config_flags%polar) THEN
+      IF (jds + 1 .LT. jts) THEN
+        j_start = jts
+      ELSE
+        j_start = jds + 1
+      END IF
+    END IF
+    IF (config_flags%polar) THEN
+      IF (jde - 1 .GT. jte) THEN
+        j_end = jte
+      ELSE
+        j_end = jde - 1
+      END IF
+    END IF
+    ad_from30 = j_start
+    DO j=ad_from30,j_end
+      DO k=kts,ktf
+        ad_from29 = i_start
+        i = i_end + 1
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from29)
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from30)
+! Comments on polar boundary conditions
+! tendencies = 0 at poles, and polar points do not contribute at points
+! next to poles
+    IF (config_flags%polar) THEN
+      IF (jts .EQ. jds) THEN
+        DO k=kts,ktf
+          ad_from31 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from31)
+        END DO
+        CALL PUSHCONTROL1B(0)
+      ELSE
+        CALL PUSHCONTROL1B(1)
+      END IF
+      IF (jte .EQ. jde) THEN
+        DO k=kts,ktf
+          ad_from32 = i_start
+          i = i_end + 1
+          CALL PUSHINTEGER4(i - 1)
+          CALL PUSHINTEGER4(ad_from32)
+        END DO
+        CALL PUSHCONTROL2B(0)
+      ELSE
+        CALL PUSHCONTROL2B(1)
+      END IF
+    ELSE
+      CALL PUSHCONTROL2B(2)
+    END IF
+!  specified uses upstream normal wind at boundaries
+    IF (specified .AND. jts .LE. jds + 1) THEN
+      j = jds + 1
+      DO k=kts,ktf
+        ad_from33 = i_start
+        DO i=ad_from33,i_end
+          CALL PUSHREAL8(vb)
+! ADT eqn 45, 2nd term on RHS
+          vb = v(i, k, j-1)
+          IF (v(i, k, j) .LT. 0.) THEN
+            vb = v(i, k, j)
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHCONTROL1B(1)
+          END IF
+        END DO
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from33)
+      END DO
+      CALL PUSHCONTROL1B(0)
+    ELSE
+      CALL PUSHCONTROL1B(1)
+    END IF
+    IF (specified .AND. jte .GE. jde - 1) THEN
+      CALL PUSHINTEGER4(j)
+      j = jde - 1
+      DO k=kts,ktf
+        ad_from34 = i_start
+        DO i=ad_from34,i_end
+          CALL PUSHREAL8(vb)
+! ADT eqn 45, 2nd term on RHS
+          vb = v(i, k, j+1)
+          IF (v(i, k, j) .GT. 0.) THEN
+            vb = v(i, k, j)
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHCONTROL1B(1)
+          END IF
+        END DO
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from34)
+      END DO
+      CALL PUSHCONTROL1B(0)
+    ELSE
+      CALL PUSHCONTROL1B(1)
+    END IF
+    IF (.NOT.config_flags%periodic_x) THEN
+      IF (config_flags%open_xs .OR. specified) THEN
+        IF (ids + 1 .LT. its) THEN
+          i_start = its
+        ELSE
+          i_start = ids + 1
+        END IF
+      END IF
+      IF (config_flags%open_xe .OR. specified) THEN
+        IF (ide - 2 .GT. ite) THEN
+          i_end = ite
+        ELSE
+          i_end = ide - 2
+        END IF
+      END IF
+    END IF
+    IF (config_flags%polar) THEN
+      IF (jds + 1 .LT. jts) THEN
+        j_start = jts
+      ELSE
+        j_start = jds + 1
+      END IF
+    END IF
+    IF (config_flags%polar) THEN
+      IF (jde - 1 .GT. jte) THEN
+        j_end = jte
+      ELSE
+        j_end = jde - 1
+      END IF
+    END IF
+    ad_from36 = j_start
+    CALL PUSHINTEGER4(j)
+    DO j=ad_from36,j_end
+      DO k=kts,ktf
+        ad_from35 = i_start
+        i = i_end + 1
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from35)
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from36)
+    CALL PUSHCONTROL3B(4)
+  ELSE
+    CALL PUSHCONTROL3B(5)
+  END IF
+!  Comments on polar boundary condition
+!  Force tendency=0 at NP and SP
+!  We keep setting this everywhere, but it can't hurt...
+  IF (config_flags%polar .AND. jts .EQ. jds) THEN
+    CALL PUSHCONTROL1B(0)
+  ELSE
+    CALL PUSHCONTROL1B(1)
+  END IF
+  IF (config_flags%polar .AND. jte .EQ. jde) THEN
+    CALL PUSHCONTROL1B(0)
+  ELSE
+    CALL PUSHCONTROL1B(1)
+  END IF
+!  radiative lateral boundary condition in y for normal velocity (v)
+  IF (config_flags%open_ys .AND. jts .EQ. jds) THEN
+    CALL PUSHINTEGER4(i_start)
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      CALL PUSHINTEGER4(i_end)
+      i_end = ide - 1
+      CALL PUSHCONTROL1B(0)
+    ELSE
+      CALL PUSHINTEGER4(i_end)
+      i_end = ite
+      CALL PUSHCONTROL1B(1)
+    END IF
+    ad_from49 = i_start
+    DO i=ad_from49,i_end
+      DO k=kts,ktf
+        IF (rv(i, k, jts) - cb*mut(i, jts) .GT. 0.) THEN
+          CALL PUSHREAL8(vb)
+          vb = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(vb)
+          vb = rv(i, k, jts) - cb*mut(i, jts)
+          CALL PUSHCONTROL1B(1)
+        END IF
+      END DO
+    END DO
+    CALL PUSHINTEGER4(i - 1)
+    CALL PUSHINTEGER4(ad_from49)
+    CALL PUSHCONTROL1B(0)
+  ELSE
+    CALL PUSHCONTROL1B(1)
+  END IF
+  IF (config_flags%open_ye .AND. jte .EQ. jde) THEN
+    CALL PUSHINTEGER4(i_start)
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      CALL PUSHINTEGER4(i_end)
+      i_end = ide - 1
+      CALL PUSHCONTROL1B(0)
+    ELSE
+      CALL PUSHINTEGER4(i_end)
+      i_end = ite
+      CALL PUSHCONTROL1B(1)
+    END IF
+    ad_from50 = i_start
+    DO i=ad_from50,i_end
+      DO k=kts,ktf
+        IF (rv(i, k, jte) + cb*mut(i, jte-1) .LT. 0.) THEN
+          CALL PUSHREAL8(vb)
+          vb = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(vb)
+          vb = rv(i, k, jte) + cb*mut(i, jte-1)
+          CALL PUSHCONTROL1B(1)
+        END IF
+      END DO
+    END DO
+    CALL PUSHINTEGER4(i - 1)
+    CALL PUSHINTEGER4(ad_from50)
+    CALL PUSHCONTROL1B(1)
+  ELSE
+    CALL PUSHCONTROL1B(0)
+  END IF
+!  pick up the rest of the horizontal radiation boundary conditions.
+!  (these are the computations that don't require 'cb'.
+!  first, set to index ranges
+  j_start = jts
+  IF (jte .GT. jde) THEN
+    j_end = jde
+  ELSE
+    j_end = jte
+  END IF
+  jmin = jds
+  jmax = jde - 1
+  IF (config_flags%open_ys) THEN
+    IF (jds + 1 .LT. jts) THEN
       j_start = jts
-      j_end   = jte
-
-      IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-1,jte)
-
-!LPB[27]
-
-   IF(vert_order == 6) THEN
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv3 =a_tendency(i,k,j)
-   a_Tmpv2 =-a_Tmpv3
-   a_Tmpv1 =(msfvy(i,j)/msfvx(i,j))*rdzw(k)*a_Tmpv2
-   a_vflux(i,k+1) =a_vflux(i,k+1) +a_Tmpv1
-   a_vflux(i,k) =a_vflux(i,k) -a_Tmpv1
-   ENDDO
-   ENDDO
-   DO i =i_end, i_start, -1
-
-   k =ktf
-   a_Tmpv4 =a_vflux(i,k)
-   a_vflux(i,k) =0.0
-   Tmpv003 =fzm(k)*v(i,k,j) +fzp(k)*v(i,k-1,j)  
-   Tmpv002 =0.5*(rom(i,k,j)+rom(i,k,j-1))   
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i,k,j) =a_v(i,k,j) +fzm(k)*a_Tmpv3
-   a_v(i,k-1,j) =a_v(i,k-1,j) +fzp(k)*a_Tmpv3
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rom(i,k,j) =a_rom(i,k,j) +a_Tmpv1
-   a_rom(i,k,j-1) =a_rom(i,k,j-1) +a_Tmpv1
-   k =ktf-1
-   vel=0.5*(rom(i,k,j)+rom(i,k,j-1))  
-   Tmpv001 =flux4(v(i,k-2,j),v(i,k-1,j),v(i,k,j),v(i,k+1,j),-vel)  
-   a_Tmpv2 =a_vflux(i,k)
-   a_vflux(i,k) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel -Diff_flux4(v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j),0.0,v(i,k+1,j)  &
-   ,0.0,-vel,1.0)*a_Tmpv1
-   a_v(i,k+1,j) =a_v(i,k+1,j) +Diff_flux4(v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),1.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux4(v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,1.0,v(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k-1,j) =a_v(i,k-1,j) +Diff_flux4(v(i,k-2,j),0.0,v(i,k-1,j),1.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k-2,j) =a_v(i,k-2,j) +Diff_flux4(v(i,k-2,j),1.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rom(i,k,j) =a_rom(i,k,j) +a_Tmpv1
-   a_rom(i,k,j-1) =a_rom(i,k,j-1) +a_Tmpv1
-   k =kts+2
-   vel=0.5*(rom(i,k,j)+rom(i,k,j-1)) 
-   Tmpv001 =flux4(v(i,k-2,j),v(i,k-1,j),v(i,k,j),v(i,k+1,j),-vel) 
-   a_Tmpv2 =a_vflux(i,k)
-   a_vflux(i,k) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel -Diff_flux4(v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j),0.0,v(i,k+1,j)  &
-   ,0.0,-vel,1.0)*a_Tmpv1
-   a_v(i,k+1,j) =a_v(i,k+1,j) +Diff_flux4(v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),1.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux4(v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,1.0,v(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k-1,j) =a_v(i,k-1,j) +Diff_flux4(v(i,k-2,j),0.0,v(i,k-1,j),1.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k-2,j) =a_v(i,k-2,j) +Diff_flux4(v(i,k-2,j),1.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rom(i,k,j) =a_rom(i,k,j) +a_Tmpv1
-   a_rom(i,k,j-1) =a_rom(i,k,j-1) +a_Tmpv1
-   k =kts+1
-   a_Tmpv4 =a_vflux(i,k)
-   a_vflux(i,k) =0.0
-   Tmpv003 =fzm(k)*v(i,k,j) +fzp(k)*v(i,k-1,j)  
-   Tmpv002 =0.5*(rom(i,k,j)+rom(i,k,j-1))  
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i,k,j) =a_v(i,k,j) +fzm(k)*a_Tmpv3
-   a_v(i,k-1,j) =a_v(i,k-1,j) +fzp(k)*a_Tmpv3
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rom(i,k,j) =a_rom(i,k,j) +a_Tmpv1
-   a_rom(i,k,j-1) =a_rom(i,k,j-1) +a_Tmpv1
-   ENDDO
-   DO k =ktf-2, kts+3, -1
-   DO i =i_end, i_start, -1
-   vel=0.5*(rom(i,k,j)+rom(i,k,j-1))
-   Tmpv001 =flux6(v(i,k-3,j),v(i,k-2,j),v(i,k-1,j),v(i,k,j),v(i,k+1,j),v(i,k+2,j),-vel)
-
-   a_Tmpv2 =a_vflux(i,k)
-   a_vflux(i,k) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel -Diff_flux6(v(i,k-3,j),0.0,v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),0.0,v(i,k+2,j),0.0,-vel,1.0)*a_Tmpv1
-   a_v(i,k+2,j) =a_v(i,k+2,j) +Diff_flux6(v(i,k-3,j),0.0,v(i,k-2,j),0.0,v(i,k-1,j)  &
-   ,0.0,v(i,k,j),0.0,v(i,k+1,j),0.0,v(i,k+2,j),1.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k+1,j) =a_v(i,k+1,j) +Diff_flux6(v(i,k-3,j),0.0,v(i,k-2,j),0.0,v(i,k-1,j)  &
-   ,0.0,v(i,k,j),0.0,v(i,k+1,j),1.0,v(i,k+2,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux6(v(i,k-3,j),0.0,v(i,k-2,j),0.0,v(i,k-1,j)  &
-   ,0.0,v(i,k,j),1.0,v(i,k+1,j),0.0,v(i,k+2,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k-1,j) =a_v(i,k-1,j) +Diff_flux6(v(i,k-3,j),0.0,v(i,k-2,j),0.0,v(i,k-1,j)  &
-   ,1.0,v(i,k,j),0.0,v(i,k+1,j),0.0,v(i,k+2,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k-2,j) =a_v(i,k-2,j) +Diff_flux6(v(i,k-3,j),0.0,v(i,k-2,j),1.0,v(i,k-1,j)  &
-   ,0.0,v(i,k,j),0.0,v(i,k+1,j),0.0,v(i,k+2,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k-3,j) =a_v(i,k-3,j) +Diff_flux6(v(i,k-3,j),1.0,v(i,k-2,j),0.0,v(i,k-1,j)  &
-   ,0.0,v(i,k,j),0.0,v(i,k+1,j),0.0,v(i,k+2,j),0.0,-vel,0.0)*a_Tmpv1
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rom(i,k,j) =a_rom(i,k,j) +a_Tmpv1
-   a_rom(i,k,j-1) =a_rom(i,k,j-1) +a_Tmpv1
-   ENDDO
-   ENDDO
-   ENDDO
-
-   ELSE IF(vert_order == 5) THEN
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv3 =a_tendency(i,k,j)
-   a_Tmpv2 =-a_Tmpv3
-   a_Tmpv1 =(msfvy(i,j)/msfvx(i,j))*rdzw(k)*a_Tmpv2
-   a_vflux(i,k+1) =a_vflux(i,k+1) +a_Tmpv1
-   a_vflux(i,k) =a_vflux(i,k) -a_Tmpv1
-   ENDDO
-   ENDDO
-   DO i =i_end, i_start, -1
-
-   k =ktf
-   a_Tmpv4 =a_vflux(i,k)
-   a_vflux(i,k) =0.0
-   Tmpv003 =fzm(k)*v(i,k,j) +fzp(k)*v(i,k-1,j)  
-   Tmpv002 =0.5*(rom(i,k,j)+rom(i,k,j-1))  
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i,k,j) =a_v(i,k,j) +fzm(k)*a_Tmpv3
-   a_v(i,k-1,j) =a_v(i,k-1,j) +fzp(k)*a_Tmpv3
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rom(i,k,j) =a_rom(i,k,j) +a_Tmpv1
-   a_rom(i,k,j-1) =a_rom(i,k,j-1) +a_Tmpv1
-   k =ktf-1
-   vel=0.5*(rom(i,k,j)+rom(i,k,j-1))  
-   Tmpv001 =flux3(v(i,k-2,j),v(i,k-1,j),v(i,k,j),v(i,k+1,j),-vel)  
-   a_Tmpv2 =a_vflux(i,k)
-   a_vflux(i,k) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel -Diff_flux3(v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j),0.0,v(i,k+1,j)  &
-   ,0.0,-vel,1.0)*a_Tmpv1
-   a_v(i,k+1,j) =a_v(i,k+1,j) +Diff_flux3(v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),1.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux3(v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,1.0,v(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k-1,j) =a_v(i,k-1,j) +Diff_flux3(v(i,k-2,j),0.0,v(i,k-1,j),1.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k-2,j) =a_v(i,k-2,j) +Diff_flux3(v(i,k-2,j),1.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rom(i,k,j) =a_rom(i,k,j) +a_Tmpv1
-   a_rom(i,k,j-1) =a_rom(i,k,j-1) +a_Tmpv1
-   k =kts+2
-   vel=0.5*(rom(i,k,j)+rom(i,k,j-1))  
-   Tmpv001 =flux3(v(i,k-2,j),v(i,k-1,j),v(i,k,j),v(i,k+1,j),-vel)  
-   a_Tmpv2 =a_vflux(i,k)
-   a_vflux(i,k) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel -Diff_flux3(v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j),0.0,v(i,k+1,j)  &
-   ,0.0,-vel,1.0)*a_Tmpv1
-   a_v(i,k+1,j) =a_v(i,k+1,j) +Diff_flux3(v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),1.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux3(v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,1.0,v(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k-1,j) =a_v(i,k-1,j) +Diff_flux3(v(i,k-2,j),0.0,v(i,k-1,j),1.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k-2,j) =a_v(i,k-2,j) +Diff_flux3(v(i,k-2,j),1.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rom(i,k,j) =a_rom(i,k,j) +a_Tmpv1
-   a_rom(i,k,j-1) =a_rom(i,k,j-1) +a_Tmpv1
-   k =kts+1
-   a_Tmpv4 =a_vflux(i,k)
-   a_vflux(i,k) =0.0
-   Tmpv003 =fzm(k)*v(i,k,j) +fzp(k)*v(i,k-1,j)  
-   Tmpv002 =0.5*(rom(i,k,j)+rom(i,k,j-1))  
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i,k,j) =a_v(i,k,j) +fzm(k)*a_Tmpv3
-   a_v(i,k-1,j) =a_v(i,k-1,j) +fzp(k)*a_Tmpv3
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rom(i,k,j) =a_rom(i,k,j) +a_Tmpv1
-   a_rom(i,k,j-1) =a_rom(i,k,j-1) +a_Tmpv1
-   ENDDO
-   DO k =ktf-2, kts+3, -1
-   DO i =i_end, i_start, -1
-   vel=0.5*(rom(i,k,j)+rom(i,k,j-1))  
-   Tmpv001 =flux5(v(i,k-3,j),v(i,k-2,j),v(i,k-1,j),v(i,k,j),v(i,k+1,j),v(i,k+2,j),-vel) 
-
-   a_Tmpv2 =a_vflux(i,k)
-   a_vflux(i,k) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel -Diff_flux5(v(i,k-3,j),0.0,v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),0.0,v(i,k+2,j),0.0,-vel,1.0)*a_Tmpv1
-   a_v(i,k+2,j) =a_v(i,k+2,j) +Diff_flux5(v(i,k-3,j),0.0,v(i,k-2,j),0.0,v(i,k-1,j)  &
-   ,0.0,v(i,k,j),0.0,v(i,k+1,j),0.0,v(i,k+2,j),1.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k+1,j) =a_v(i,k+1,j) +Diff_flux5(v(i,k-3,j),0.0,v(i,k-2,j),0.0,v(i,k-1,j)  &
-   ,0.0,v(i,k,j),0.0,v(i,k+1,j),1.0,v(i,k+2,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux5(v(i,k-3,j),0.0,v(i,k-2,j),0.0,v(i,k-1,j)  &
-   ,0.0,v(i,k,j),1.0,v(i,k+1,j),0.0,v(i,k+2,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k-1,j) =a_v(i,k-1,j) +Diff_flux5(v(i,k-3,j),0.0,v(i,k-2,j),0.0,v(i,k-1,j)  &
-   ,1.0,v(i,k,j),0.0,v(i,k+1,j),0.0,v(i,k+2,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k-2,j) =a_v(i,k-2,j) +Diff_flux5(v(i,k-3,j),0.0,v(i,k-2,j),1.0,v(i,k-1,j)  &
-   ,0.0,v(i,k,j),0.0,v(i,k+1,j),0.0,v(i,k+2,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k-3,j) =a_v(i,k-3,j) +Diff_flux5(v(i,k-3,j),1.0,v(i,k-2,j),0.0,v(i,k-1,j)  &
-   ,0.0,v(i,k,j),0.0,v(i,k+1,j),0.0,v(i,k+2,j),0.0,-vel,0.0)*a_Tmpv1
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rom(i,k,j) =a_rom(i,k,j) +a_Tmpv1
-   a_rom(i,k,j-1) =a_rom(i,k,j-1) +a_Tmpv1
-   ENDDO
-   ENDDO
-   ENDDO
-
-   ELSE IF(vert_order == 4) THEN
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv3 =a_tendency(i,k,j)
-   a_Tmpv2 =-a_Tmpv3
-   a_Tmpv1 =(msfvy(i,j)/msfvx(i,j))*rdzw(k)*a_Tmpv2
-   a_vflux(i,k+1) =a_vflux(i,k+1) +a_Tmpv1
-   a_vflux(i,k) =a_vflux(i,k) -a_Tmpv1
-   ENDDO
-   ENDDO
-   DO i =i_end, i_start, -1
-   k =ktf
-   a_Tmpv4 =a_vflux(i,k)
-   a_vflux(i,k) =0.0
-   Tmpv003 =fzm(k)*v(i,k,j) +fzp(k)*v(i,k-1,j)  
-   Tmpv002 =0.5*(rom(i,k,j)+rom(i,k,j-1))  
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i,k,j) =a_v(i,k,j) +fzm(k)*a_Tmpv3
-   a_v(i,k-1,j) =a_v(i,k-1,j) +fzp(k)*a_Tmpv3
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rom(i,k,j) =a_rom(i,k,j) +a_Tmpv1
-   a_rom(i,k,j-1) =a_rom(i,k,j-1) +a_Tmpv1
-   k =kts+1
-   a_Tmpv4 =a_vflux(i,k)
-   a_vflux(i,k) =0.0
-   Tmpv003 =fzm(k)*v(i,k,j) +fzp(k)*v(i,k-1,j)  
-   Tmpv002 =0.5*(rom(i,k,j)+rom(i,k,j-1))  
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i,k,j) =a_v(i,k,j) +fzm(k)*a_Tmpv3
-   a_v(i,k-1,j) =a_v(i,k-1,j) +fzp(k)*a_Tmpv3
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rom(i,k,j) =a_rom(i,k,j) +a_Tmpv1
-   a_rom(i,k,j-1) =a_rom(i,k,j-1) +a_Tmpv1
-   ENDDO
-   DO k =ktf-1, kts+2, -1
-   DO i =i_end, i_start, -1
-   vel=0.5*(rom(i,k,j)+rom(i,k,j-1))
-   Tmpv001 =flux4(v(i,k-2,j),v(i,k-1,j),v(i,k,j),v(i,k+1,j),-vel)
-
-   a_Tmpv2 =a_vflux(i,k)
-   a_vflux(i,k) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel -Diff_flux4(v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j),0.0,v(i,k+1,j)  &
-   ,0.0,-vel,1.0)*a_Tmpv1
-   a_v(i,k+1,j) =a_v(i,k+1,j) +Diff_flux4(v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),1.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux4(v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,1.0,v(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k-1,j) =a_v(i,k-1,j) +Diff_flux4(v(i,k-2,j),0.0,v(i,k-1,j),1.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k-2,j) =a_v(i,k-2,j) +Diff_flux4(v(i,k-2,j),1.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rom(i,k,j) =a_rom(i,k,j) +a_Tmpv1
-   a_rom(i,k,j-1) =a_rom(i,k,j-1) +a_Tmpv1
-   ENDDO
-   ENDDO
-   ENDDO
-
-   ELSE IF(vert_order == 3) THEN
-
-   DO j =j_end, j_start, -1
-
-   DO k =ktf, kts, -1
-   gwalls =rdzw(k)
-   DO i =i_end, i_start, -1
-   a_Tmpv1 =-(msfvy(i,j)/msfvx(i,j))*gwalls*a_tendency(i,k,j)
-   a_vflux(i,k+1) =a_vflux(i,k+1) +a_Tmpv1
-   a_vflux(i,k) =a_vflux(i,k) -a_Tmpv1
-   ENDDO
-   ENDDO
-
-   DO i =i_end, i_start, -1
-   k =ktf
-   a_Tmpv4 =a_vflux(i,k)
-   a_vflux(i,k) =0.0
-   Tmpv003 =fzm(k)*v(i,k,j) +fzp(k)*v(i,k-1,j)  
-   Tmpv002 =0.5*(rom(i,k,j)+rom(i,k,j-1))  
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i,k,j) =a_v(i,k,j) +fzm(k)*a_Tmpv3
-   a_v(i,k-1,j) =a_v(i,k-1,j) +fzp(k)*a_Tmpv3
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rom(i,k,j) =a_rom(i,k,j) +a_Tmpv1
-   a_rom(i,k,j-1) =a_rom(i,k,j-1) +a_Tmpv1
-   k =kts+1
-   a_Tmpv4 =a_vflux(i,k)
-   a_vflux(i,k) =0.0
-   Tmpv003 =fzm(k)*v(i,k,j) +fzp(k)*v(i,k-1,j)  
-   Tmpv002 =0.5*(rom(i,k,j)+rom(i,k,j-1))  
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i,k,j) =a_v(i,k,j) +fzm(k)*a_Tmpv3
-   a_v(i,k-1,j) =a_v(i,k-1,j) +fzp(k)*a_Tmpv3
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rom(i,k,j) =a_rom(i,k,j) +a_Tmpv1
-   a_rom(i,k,j-1) =a_rom(i,k,j-1) +a_Tmpv1
-   ENDDO
-
-   DO k =ktf-1, kts+2, -1
-   DO i =i_end, i_start, -1
-   vel=0.5*(rom(i,k,j)+rom(i,k,j-1))
-
-   a_Tmpv2 =a_vflux(i,k)
-   a_vflux(i,k) =0.0
-   a_vel =flux3(v(i,k-2,j),v(i,k-1,j),v(i,k,j),v(i,k+1,j),-vel)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel -Diff_flux3(v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j),0.0,v(i,k+1,j)  &
-   ,0.0,-vel,1.0)*a_Tmpv1
-   a_v(i,k+1,j) =a_v(i,k+1,j) +Diff_flux3(v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),1.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux3(v(i,k-2,j),0.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,1.0,v(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k-1,j) =a_v(i,k-1,j) +Diff_flux3(v(i,k-2,j),0.0,v(i,k-1,j),1.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-   a_v(i,k-2,j) =a_v(i,k-2,j) +Diff_flux3(v(i,k-2,j),1.0,v(i,k-1,j),0.0,v(i,k,j)  &
-   ,0.0,v(i,k+1,j),0.0,-vel,0.0)*a_Tmpv1
-
-   a_rom(i,k,j) =a_rom(i,k,j) +0.5*a_vel
-   a_rom(i,k,j-1) =a_rom(i,k,j-1) +0.5*a_vel
-   ENDDO
-   ENDDO
-   ENDDO
-
-   ELSE IF(vert_order == 2) THEN
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv3 =a_tendency(i,k,j)
-   a_Tmpv2 =-a_Tmpv3
-   a_Tmpv1 =(msfvy(i,j)/msfvx(i,j))*rdzw(k)*a_Tmpv2
-   a_vflux(i,k+1) =a_vflux(i,k+1) +a_Tmpv1
-   a_vflux(i,k) =a_vflux(i,k) -a_Tmpv1
-   ENDDO
-   ENDDO
-   DO k =ktf, kts+1, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv4 =a_vflux(i,k)
-   a_vflux(i,k) =0.0
-   Tmpv003 =fzm(k)*v(i,k,j) +fzp(k)*v(i,k-1,j)  
-   Tmpv002 =0.5*(rom(i,k,j)+rom(i,k,j-1))  
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i,k,j) =a_v(i,k,j) +fzm(k)*a_Tmpv3
-   a_v(i,k-1,j) =a_v(i,k-1,j) +fzp(k)*a_Tmpv3
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rom(i,k,j) =a_rom(i,k,j) +a_Tmpv1
-   a_rom(i,k,j-1) =a_rom(i,k,j-1) +a_Tmpv1
-   ENDDO
-   ENDDO
-   ENDDO
-
-   ELSE
-   ENDIF
-
-!LPB[21]
-   DO i =i_end, i_start, -1
-   a_vflux(i,kte) =0.0
-   a_vflux(i,kts) =0.0
-   ENDDO
-
-!LPB[19]
+    ELSE
+      j_start = jds + 1
+    END IF
+    jmin = jds
+  END IF
+  IF (config_flags%open_ye) THEN
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+    jmax = jde - 1
+  END IF
+!  compute x (u) conditions for v, w, or scalar
+  IF (config_flags%open_xs .AND. its .EQ. ids) THEN
+    ad_from51 = j_start
+    DO j=ad_from51,j_end
+      CALL PUSHREAL8(mrdx)
+! ADT eqn 45, 1st term on RHS
+      mrdx = msfvy(its, j)*rdx
+      IF (jmax .GT. j) THEN
+        CALL PUSHINTEGER4(jp)
+        jp = j
+        CALL PUSHCONTROL1B(0)
+      ELSE
+        CALL PUSHINTEGER4(jp)
+        jp = jmax
+        CALL PUSHCONTROL1B(1)
+      END IF
+      IF (jmin .LT. j - 1) THEN
+        CALL PUSHINTEGER4(jm)
+        jm = j - 1
+        CALL PUSHCONTROL1B(0)
+      ELSE
+        CALL PUSHINTEGER4(jm)
+        jm = jmin
+        CALL PUSHCONTROL1B(1)
+      END IF
+      DO k=kts,ktf
+        uw = 0.5*(ru(its, k, jp)+ru(its, k, jm))
+        IF (uw .GT. 0.) THEN
+          CALL PUSHREAL8(ub)
+          ub = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(ub)
+          ub = uw
+          CALL PUSHCONTROL1B(1)
+        END IF
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from51)
+    CALL PUSHCONTROL1B(0)
+  ELSE
+    CALL PUSHCONTROL1B(1)
+  END IF
+  IF (config_flags%open_xe .AND. ite .EQ. ide) THEN
+    ad_from52 = j_start
+    DO j=ad_from52,j_end
+      CALL PUSHREAL8(mrdx)
+! ADT eqn 45, 1st term on RHS
+      mrdx = msfvy(ite-1, j)*rdx
+      IF (jmax .GT. j) THEN
+        CALL PUSHINTEGER4(jp)
+        jp = j
+        CALL PUSHCONTROL1B(0)
+      ELSE
+        CALL PUSHINTEGER4(jp)
+        jp = jmax
+        CALL PUSHCONTROL1B(1)
+      END IF
+      IF (jmin .LT. j - 1) THEN
+        CALL PUSHINTEGER4(jm)
+        jm = j - 1
+        CALL PUSHCONTROL1B(0)
+      ELSE
+        CALL PUSHINTEGER4(jm)
+        jm = jmin
+        CALL PUSHCONTROL1B(1)
+      END IF
+      DO k=kts,ktf
+        uw = 0.5*(ru(ite, k, jp)+ru(ite, k, jm))
+        IF (uw .LT. 0.) THEN
+          CALL PUSHREAL8(ub)
+          ub = 0.
+          CALL PUSHCONTROL1B(0)
+        ELSE
+          CALL PUSHREAL8(ub)
+          ub = uw
+          CALL PUSHCONTROL1B(1)
+        END IF
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    CALL PUSHINTEGER4(ad_from52)
+    CALL PUSHCONTROL1B(1)
+  ELSE
+    CALL PUSHCONTROL1B(0)
+  END IF
+  CALL PUSHINTEGER4(i_start)
+!-------------------- vertical advection
+!     ADT eqn 45 has 3rd term on RHS = -(1/mx) partial d/dz (rho v w)
+!     Here we have: - partial d/dz (v*rom) = - partial d/dz (v rho w / my)
+!     We therefore need to make a correction for advect_v
+!     since 'my' (map scale factor in y direction) isn't a function of z,
+!     we can do this using *(my/mx) (see eqn. 45 for example)
+  i_start = its
+  IF (ite .GT. ide - 1) THEN
+    CALL PUSHINTEGER4(i_end)
+    i_end = ide - 1
+    CALL PUSHCONTROL1B(0)
+  ELSE
+    CALL PUSHINTEGER4(i_end)
+    i_end = ite
+    CALL PUSHCONTROL1B(1)
+  END IF
+  j_start = jts
+  j_end = jte
+! Polar boundary conditions are like open or specified
+! We don't want to calculate vertical v tendencies at the N or S pole
+  IF ((config_flags%open_ys .OR. specified) .OR. config_flags%polar) &
+&  THEN
+    IF (jds + 1 .LT. jts) THEN
       j_start = jts
-      j_end   = MIN(jte,jde)
-      jmin    = jds
-      jmax    = jde-1
-
-      IF (config_flags%open_ys) THEN
-         j_start = MAX(jds+1, jts)
-         jmin = jds
-      ENDIF
-      IF (config_flags%open_ye) THEN
-         j_end = MIN(jte,jde-1)
-         jmax = jde-1
-      ENDIF
-
-   IF( (config_flags%open_xe) .and. (ite == ide) ) THEN
-   DO j =j_start, j_end
-   mrdx =msfvy(ite-1,j)*rdx
-   Tmpv200(j) =mrdx
-
-   jp =min(jmax, j)
-   jm =max(jmin, j-1)
-
-   DO k =kts, ktf
-   Tmpv001 =ru(ite,k,jp) +ru(ite,k,jm)
-   Tmpv002 =0.5*Tmpv001
-   uw =Tmpv002
-
-   Tmpv300(k,j) =uw
-   ub =max(uw, 0.)
-
-   Tmpv001 =ru(ite,k,jp) -ru(ite-1,k,jp)
-   dup =Tmpv001
-
-   Tmpv001 =ru(ite,k,jm) -ru(ite-1,k,jm)
-   dum =Tmpv001
-
-   Tmpv001 =v_old(ite-1,k,j) -v_old(ite-2,k,j)
-   Tmpv301(k,j) =Tmpv001
-   Tmpv002 =ub*Tmpv301(k,j)
-   Tmpv003 =dup +dum
-   Tmpv302(k,j) =Tmpv003
-   Tmpv004 =0.5*v(ite-1,k,j)*Tmpv302(k,j)
-   Tmpv005 =Tmpv002 +Tmpv004
-   Tmpv303(k,j) =Tmpv005
-   ENDDO
-   ENDDO
-   ENDIF
-
-   IF( (config_flags%open_xe) .and. (ite == ide) ) THEN
-
-   DO j =j_end, j_start, -1
-   mrdx =Tmpv200(j)
-   jp =min(jmax, j)
-   jm =max(jmin, j-1)
-
-   DO k =ktf, kts, -1
-   uw =Tmpv300(k,j)
-   ub =max(uw, 0.)
-
-   a_Tmpv7 =a_tendency(ite-1,k,j)
-   a_tendency(ite-1,k,j) =0.0
-   a_tendency(ite-1,k,j) =a_tendency(ite-1,k,j) +a_Tmpv7
-   a_Tmpv6 =-a_Tmpv7
-   a_Tmpv5 =mrdx*a_Tmpv6
-   a_Tmpv2 =a_Tmpv5
-   a_Tmpv4 =a_Tmpv5
-   a_v(ite-1,k,j) =a_v(ite-1,k,j) +0.5*Tmpv302(k,j)*a_Tmpv4
-   a_Tmpv3 =0.5*v(ite-1,k,j)*a_Tmpv4
-   a_dup =a_dup +a_Tmpv3
-   a_dum =a_dum +a_Tmpv3
-   a_ub =a_ub +Tmpv301(k,j)*a_Tmpv2
-   a_Tmpv1 =ub*a_Tmpv2
-   a_v_old(ite-1,k,j) =a_v_old(ite-1,k,j) +a_Tmpv1
-   a_v_old(ite-2,k,j) =a_v_old(ite-2,k,j) -a_Tmpv1
-   a_Tmpv1 =a_dum
-   a_dum =0.0
-   a_ru(ite,k,jm) =a_ru(ite,k,jm) +a_Tmpv1
-   a_ru(ite-1,k,jm) =a_ru(ite-1,k,jm) -a_Tmpv1
-   a_Tmpv1 =a_dup
-   a_dup =0.0
-   a_ru(ite,k,jp) =a_ru(ite,k,jp) +a_Tmpv1
-   a_ru(ite-1,k,jp) =a_ru(ite-1,k,jp) -a_Tmpv1
-
-   a_uw =a_uw +(1.0 +(1.0)*sign(1.0, uw -0.))*0.5*a_ub
-   a_ub =0.0
-   a_Tmpv2 =a_uw
-   a_uw =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_ru(ite,k,jp) =a_ru(ite,k,jp) +a_Tmpv1
-   a_ru(ite,k,jm) =a_ru(ite,k,jm) +a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ENDIF
-
-!LPB[17]
-
-   IF( (config_flags%open_xs) .and. (its == ids)) THEN
-   DO j =j_start, j_end
-   mrdx =msfvy(its,j)*rdx
-   Tmpv200(j) =mrdx
-
-   jp =min(jmax, j)
-   jm =max(jmin, j-1)
-
-   DO k =kts, ktf
-   Tmpv001 =ru(its,k,jp) +ru(its,k,jm)
-   Tmpv002 =0.5*Tmpv001
-   uw =Tmpv002
-
-   Tmpv300(k,j) =uw
-   ub =min(uw, 0.)
-
-   Tmpv001 =ru(its+1,k,jp) -ru(its,k,jp)
-   dup =Tmpv001
-
-   Tmpv001 =ru(its+1,k,jm) -ru(its,k,jm)
-   dum =Tmpv001
-
-   Tmpv001 =v_old(its+1,k,j) -v_old(its,k,j)
-   Tmpv301(k,j) =Tmpv001
-   Tmpv002 =ub*Tmpv301(k,j)
-   Tmpv003 =dup +dum
-   Tmpv302(k,j) =Tmpv003
-   Tmpv004 =0.5*v(its,k,j)*Tmpv302(k,j)
-   Tmpv005 =Tmpv002 +Tmpv004
-   Tmpv303(k,j) =Tmpv005
-   Tmpv006 =mrdx*Tmpv303(k,j)
-   Tmpv007 =tendency(its,k,j) -Tmpv006
-   tendency(its,k,j) =Tmpv007
-
-   ENDDO
-   ENDDO
-   ENDIF
-
-   IF( (config_flags%open_xs) .and. (its == ids)) THEN
-
-   DO j =j_end, j_start, -1
-   mrdx =Tmpv200(j)
-
-   jp =min(jmax, j)
-   jm =max(jmin, j-1)
-
-   DO k =ktf, kts, -1
-   uw =Tmpv300(k,j)
-   ub =min(uw, 0.)
-
-   a_Tmpv7 =a_tendency(its,k,j)
-   a_tendency(its,k,j) =0.0
-   a_tendency(its,k,j) =a_tendency(its,k,j) +a_Tmpv7
-   a_Tmpv6 =-a_Tmpv7
-   a_Tmpv5 =mrdx*a_Tmpv6
-   a_Tmpv2 =a_Tmpv5
-   a_Tmpv4 =a_Tmpv5
-   a_v(its,k,j) =a_v(its,k,j) +0.5*Tmpv302(k,j)*a_Tmpv4
-   a_Tmpv3 =0.5*v(its,k,j)*a_Tmpv4
-   a_dup =a_dup +a_Tmpv3
-   a_dum =a_dum +a_Tmpv3
-   a_ub =a_ub +Tmpv301(k,j)*a_Tmpv2
-   a_Tmpv1 =ub*a_Tmpv2
-   a_v_old(its+1,k,j) =a_v_old(its+1,k,j) +a_Tmpv1
-   a_v_old(its,k,j) =a_v_old(its,k,j) -a_Tmpv1
-   a_Tmpv1 =a_dum
-   a_dum =0.0
-   a_ru(its+1,k,jm) =a_ru(its+1,k,jm) +a_Tmpv1
-   a_ru(its,k,jm) =a_ru(its,k,jm) -a_Tmpv1
-   a_Tmpv1 =a_dup
-   a_dup =0.0
-   a_ru(its+1,k,jp) =a_ru(its+1,k,jp) +a_Tmpv1
-   a_ru(its,k,jp) =a_ru(its,k,jp) -a_Tmpv1
-
-   a_uw =a_uw +(1.0 -(1.0)*sign(1.0, uw -0.))*0.5*a_ub
-   a_ub =0.0
-   a_Tmpv2 =a_uw
-   a_uw =0.0
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_ru(its,k,jp) =a_ru(its,k,jp) +a_Tmpv1
-   a_ru(its,k,jm) =a_ru(its,k,jm) +a_Tmpv1
-   ENDDO
-
-   ENDDO
-
-   ENDIF
-
-!LPB[11]
-
-   IF( (config_flags%open_ye) .and. jte == jde ) THEN
-   i_start =its
-   i_end =min(ite, ide-1)
-   DO i =i_start, i_end
-   DO k =kts, ktf
-   Tmpv001 =rv(i,k,jte) +cb*mut(i,jte-1)
-   Tmpv300(k,i) =Tmpv001
-   vb =max(Tmpv300(k,i), 0.)
-   Tmpv301(k,i) =vb
-
-   Tmpv001 =v_old(i,k,jte) -v_old(i,k,jte-1)
-   Tmpv302(k,i) =Tmpv001
-   ENDDO
-   ENDDO
-   ENDIF
-
-   IF( (config_flags%open_ye) .and. jte == jde ) THEN
-   i_start =its
-   i_end =min(ite, ide-1)
-
-   DO i =i_end, i_start, -1
-   DO k =ktf, kts, -1
-   vb =Tmpv301(k,i)
-
-   a_Tmpv3 =a_tendency(i,k,jte)
-   a_tendency(i,k,jte) =0.0
-   a_tendency(i,k,jte) =a_tendency(i,k,jte) +a_Tmpv3
-   a_Tmpv2 =-a_Tmpv3
-   a_vb =a_vb +rdy*Tmpv302(k,i)*a_Tmpv2
-   a_Tmpv1 =rdy*vb*a_Tmpv2
-   a_v_old(i,k,jte) =a_v_old(i,k,jte) +a_Tmpv1
-   a_v_old(i,k,jte-1) =a_v_old(i,k,jte-1) -a_Tmpv1
-
-   a_Tmpv1=(1.0 +(1.0)*sign(1.0, Tmpv300(k,i) -0.))*0.5*a_vb
-   a_vb =0.0
-   a_rv(i,k,jte) =a_rv(i,k,jte) +a_Tmpv1
-   a_mut(i,jte-1) =a_mut(i,jte-1) +cb*a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ENDIF
-
-!LPB[9]
-
-   IF( (config_flags%open_ys) .and. jts == jds ) THEN
-   i_start =its
-   i_end =min(ite, ide-1)
-   DO i =i_start, i_end
-   DO k =kts, ktf
-   Tmpv001 =rv(i,k,jts) -cb*mut(i,jts)
-   Tmpv300(k,i) =Tmpv001
-   vb =min(Tmpv300(k,i), 0.)
-   Tmpv301(k,i) =vb
-
-   Tmpv001 =v_old(i,k,jts+1) -v_old(i,k,jts)
-   Tmpv302(k,i) =Tmpv001
-   ENDDO
-   ENDDO
-   ENDIF
-
-   IF( (config_flags%open_ys) .and. jts == jds ) THEN
-
-   DO i =i_end, i_start, -1
-   DO k =ktf, kts, -1
-   vb =Tmpv301(k,i)
-
-   a_Tmpv3 =a_tendency(i,k,jts)
-   a_tendency(i,k,jts) =0.0
-   a_tendency(i,k,jts) =a_tendency(i,k,jts) +a_Tmpv3
-   a_Tmpv2 =-a_Tmpv3
-   a_vb =a_vb +rdy*Tmpv302(k,i)*a_Tmpv2
-   a_Tmpv1 =rdy*vb*a_Tmpv2
-   a_v_old(i,k,jts+1) =a_v_old(i,k,jts+1) +a_Tmpv1
-   a_v_old(i,k,jts) =a_v_old(i,k,jts) -a_Tmpv1
-
-   a_Tmpv1=(1.0 -(1.0)*sign(1.0, Tmpv300(k,i) -0.))*0.5*a_vb
-   a_vb =0.0
-   a_rv(i,k,jts) =a_rv(i,k,jts) +a_Tmpv1
-   a_mut(i,jts) =a_mut(i,jts) -cb*a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ENDIF
-
-!LPB[7]
-
-   IF( config_flags%polar .AND. (jte == jde) ) THEN
-
-   DO i =ite, its, -1
-   DO k =ktf, kts, -1
-   a_tendency(i,k,jte) =0.0
-   ENDDO
-   ENDDO
-
-   END IF
-
-!LPB[6]
-
-   IF( config_flags%polar .AND. (jts == jds) ) THEN
-
-   DO i =ite, its, -1
-   DO k =ktf, kts, -1
-   a_tendency(i,k,jts) =0.0
-   ENDDO
-   ENDDO
-
-   END IF
-
-   IF( horz_order == 6 ) THEN
-   degrade_xs = .true.
-   degrade_xe = .true.
-   degrade_ys = .true.
-   degrade_ye = .true.
-
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xs .or. &
-       (its > ids+3)                ) degrade_xs = .false.
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xe .or. &
-       (ite < ide-3)                ) degrade_xe = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ys .or. &
-       (jts > jds+3)                ) degrade_ys = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ye .or. &
-       (jte < jde-3)                ) degrade_ye = .false.
-
-      i_start = its
-      i_end   = MIN(ite,ide-1)
-
-      j_start = jts
-      j_end   = jte
-      IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-1,jte)
-
-      i_start_f = i_start
-      i_end_f   = i_end+1
-
-      IF(degrade_xs) then
-        i_start = MAX(ids+1,its)
-        i_start_f = MIN(i_start+2,ids+3)
-      ENDIF
-
-      IF(degrade_xe) then
-        i_end = MIN(ide-2,ite)
-        i_end_f = ide-3
-      ENDIF
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   mrdx=msfvy(i,j)*rdx
-
-   a_Tmpv3 =a_tendency(i,k,j)
-   a_Tmpv2 =-a_Tmpv3
-   a_Tmpv1 =mrdx*a_Tmpv2
-   a_fqx(i+1,k) =a_fqx(i+1,k) +a_Tmpv1
-   a_fqx(i,k) =a_fqx(i,k) -a_Tmpv1
-
-   ENDDO
-   ENDDO
-
-   IF( degrade_xe ) THEN
-
-   DO i =i_end+1, i_end_f+1, -1
-
-   IF( i == ide-2 ) THEN
-
-   DO k =ktf, kts, -1
-   vel = 0.5*(ru(i,k,j)+ru(i,k,j-1))
-   Tmpv001 =flux4(v(i-2,k,j),v(i-1,k,j),v(i,k,j),v(i+1,k,j),vel)  
-
-   a_Tmpv2 =a_fqx(i,k)
-   a_fqx(i,k) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux4(v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j),0.0,v(i+1,k,j)  &
-   ,0.0,vel,1.0)*a_Tmpv1
-   a_v(i+1,k,j) =a_v(i+1,k,j) +Diff_flux4(v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),1.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux4(v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,1.0,v(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i-1,k,j) =a_v(i-1,k,j) +Diff_flux4(v(i-2,k,j),0.0,v(i-1,k,j),1.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i-2,k,j) =a_v(i-2,k,j) +Diff_flux4(v(i-2,k,j),1.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_ru(i,k,j) =a_ru(i,k,j) +a_Tmpv1
-   a_ru(i,k,j-1) =a_ru(i,k,j-1) +a_Tmpv1
-   ENDDO
-
-   ENDIF
-
-   IF( i == ide-1 ) THEN
-
-   DO k =ktf, kts, -1
-   a_Tmpv4 =a_fqx(i,k)
-   a_fqx(i,k) =0.0
-   Tmpv003 =v(i_end+1,k,j) +v(i_end,k,j)  
-   Tmpv002 =0.25*(ru(i_end+1,k,j)+ru(i_end+1,k,j-1))  
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i_end+1,k,j) =a_v(i_end+1,k,j) +a_Tmpv3
-   a_v(i_end,k,j) =a_v(i_end,k,j) +a_Tmpv3
-   a_Tmpv1 =0.25*a_Tmpv2
-   a_ru(i_end+1,k,j) =a_ru(i_end+1,k,j) +a_Tmpv1
-   a_ru(i_end+1,k,j-1) =a_ru(i_end+1,k,j-1) +a_Tmpv1
-   ENDDO
-
-   ENDIF
-   ENDDO
-
-   ENDIF
-
-   IF( degrade_xs ) THEN
-
-   DO i =i_start_f-1, i_start, -1
-
-   IF(i == ids+2) THEN
-
-   DO k =ktf, kts, -1
-   vel = 0.5*(ru(i,k,j)+ru(i,k,j-1))
-   Tmpv001 =flux4(v(i-2,k,j),v(i-1,k,j),v(i,k,j),v(i+1,k,j),vel)  
-
-   a_Tmpv2 =a_fqx(i,k)
-   a_fqx(i,k) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux4(v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j),0.0,v(i+1,k,j)  &
-   ,0.0,vel,1.0)*a_Tmpv1
-   a_v(i+1,k,j) =a_v(i+1,k,j) +Diff_flux4(v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),1.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux4(v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,1.0,v(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i-1,k,j) =a_v(i-1,k,j) +Diff_flux4(v(i-2,k,j),0.0,v(i-1,k,j),1.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i-2,k,j) =a_v(i-2,k,j) +Diff_flux4(v(i-2,k,j),1.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_ru(i,k,j) =a_ru(i,k,j) +a_Tmpv1
-   a_ru(i,k,j-1) =a_ru(i,k,j-1) +a_Tmpv1
-   ENDDO
-
-   ENDIF
-
-   IF(i == ids+1) THEN
-
-   DO k =ktf, kts, -1
-   a_Tmpv4 =a_fqx(i,k)
-   a_fqx(i,k) =0.0
-   Tmpv003 =v(i,k,j) +v(i-1,k,j)  
-   Tmpv002 =0.25*(ru(i,k,j)+ru(i,k,j-1))  
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i,k,j) =a_v(i,k,j) +a_Tmpv3
-   a_v(i-1,k,j) =a_v(i-1,k,j) +a_Tmpv3
-   a_Tmpv1 =0.25*a_Tmpv2
-   a_ru(i,k,j) =a_ru(i,k,j) +a_Tmpv1
-   a_ru(i,k,j-1) =a_ru(i,k,j-1) +a_Tmpv1
-   ENDDO
-
-   ENDIF
-   ENDDO
-
-   ENDIF
-   DO k =ktf, kts, -1
-   DO i =i_end_f, i_start_f, -1
-   vel = 0.5*(ru(i,k,j)+ru(i,k,j-1))
-   Tmpv001 =flux6(v(i-3,k,j),v(i-2,k,j),v(i-1,k,j),v(i,k,j),v(i+1,k,j),v(i+2,k,j),vel)  
-
-   a_Tmpv2 =a_fqx(i,k)
-   a_fqx(i,k) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux6(v(i-3,k,j),0.0,v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),0.0,v(i+2,k,j),0.0,vel,1.0)*a_Tmpv1
-   a_v(i+2,k,j) =a_v(i+2,k,j) +Diff_flux6(v(i-3,k,j),0.0,v(i-2,k,j),0.0,v(i-1,k,j)  &
-   ,0.0,v(i,k,j),0.0,v(i+1,k,j),0.0,v(i+2,k,j),1.0,vel,0.0)*a_Tmpv1
-   a_v(i+1,k,j) =a_v(i+1,k,j) +Diff_flux6(v(i-3,k,j),0.0,v(i-2,k,j),0.0,v(i-1,k,j)  &
-   ,0.0,v(i,k,j),0.0,v(i+1,k,j),1.0,v(i+2,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux6(v(i-3,k,j),0.0,v(i-2,k,j),0.0,v(i-1,k,j)  &
-   ,0.0,v(i,k,j),1.0,v(i+1,k,j),0.0,v(i+2,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i-1,k,j) =a_v(i-1,k,j) +Diff_flux6(v(i-3,k,j),0.0,v(i-2,k,j),0.0,v(i-1,k,j)  &
-   ,1.0,v(i,k,j),0.0,v(i+1,k,j),0.0,v(i+2,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i-2,k,j) =a_v(i-2,k,j) +Diff_flux6(v(i-3,k,j),0.0,v(i-2,k,j),1.0,v(i-1,k,j)  &
-   ,0.0,v(i,k,j),0.0,v(i+1,k,j),0.0,v(i+2,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i-3,k,j) =a_v(i-3,k,j) +Diff_flux6(v(i-3,k,j),1.0,v(i-2,k,j),0.0,v(i-1,k,j)  &
-   ,0.0,v(i,k,j),0.0,v(i+1,k,j),0.0,v(i+2,k,j),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_ru(i,k,j) =a_ru(i,k,j) +a_Tmpv1
-   a_ru(i,k,j-1) =a_ru(i,k,j-1) +a_Tmpv1
-   ENDDO
-   ENDDO
-   ENDDO
-
-      i_start = its
-      i_end   = MIN(ite,ide-1)
-      j_start = jts
-      j_end   = jte
-
-      j_start_f = j_start
-      j_end_f   = j_end+1
-
-      IF(degrade_ys) then
-        j_start = MAX(jts,jds+1)
-        j_start_f = jds+3
-      ENDIF
-
-      IF(degrade_ye) then
-        j_end = MIN(jte,jde-1)
-        j_end_f = jde-2
-      ENDIF
-
-     jp1 = mod(j_end+1-j_start+1,2)+1
-     jp0 = 2-mod(j_end+1-j_start+1,2)
-
-   DO j =j_end+1, j_start, -1
-
-   IF( config_flags%polar .AND. (j == jds+1) ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_tendency(i,k,j-1) =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( config_flags%polar .AND. (j == jde+1) ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_tendency(i,k,j-1) =0.0
-   ENDDO
-   ENDDO
-
-   ELSE
-
-   IF(j > j_start) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   mrdy=msfvy(i,j-1)*rdy
-
-   a_Tmpv3 =a_tendency(i,k,j-1)
-   a_Tmpv2 =-a_Tmpv3
-   a_Tmpv1 =mrdy*a_Tmpv2
-   a_fqy(i,k,jp1) =a_fqy(i,k,jp1) +a_Tmpv1
-   a_fqy(i,k,jp0) =a_fqy(i,k,jp0) -a_Tmpv1
-
-   ENDDO
-   ENDDO
-
-   ENDIF
-   END IF
-
-   IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   vel = 0.5*(rv(i,k,j)+rv(i,k,j-1))
-   Tmpv001 =flux6(v(i,k,j-3),v(i,k,j-2),v(i,k,j-1),v(i,k,j),v(i,k,j+1),v(i,k,j+2),vel)  
-
-   a_Tmpv2 =a_fqy(i,k,jp1)
-   a_fqy(i,k,jp1) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux6(v(i,k,j-3),0.0,v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),0.0,v(i,k,j+2),0.0,vel,1.0)*a_Tmpv1
-   a_v(i,k,j+2) =a_v(i,k,j+2) +Diff_flux6(v(i,k,j-3),0.0,v(i,k,j-2),0.0,v(i,k,j-1)  &
-   ,0.0,v(i,k,j),0.0,v(i,k,j+1),0.0,v(i,k,j+2),1.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j+1) =a_v(i,k,j+1) +Diff_flux6(v(i,k,j-3),0.0,v(i,k,j-2),0.0,v(i,k,j-1)  &
-   ,0.0,v(i,k,j),0.0,v(i,k,j+1),1.0,v(i,k,j+2),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux6(v(i,k,j-3),0.0,v(i,k,j-2),0.0,v(i,k,j-1)  &
-   ,0.0,v(i,k,j),1.0,v(i,k,j+1),0.0,v(i,k,j+2),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j-1) =a_v(i,k,j-1) +Diff_flux6(v(i,k,j-3),0.0,v(i,k,j-2),0.0,v(i,k,j-1)  &
-   ,1.0,v(i,k,j),0.0,v(i,k,j+1),0.0,v(i,k,j+2),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j-2) =a_v(i,k,j-2) +Diff_flux6(v(i,k,j-3),0.0,v(i,k,j-2),1.0,v(i,k,j-1)  &
-   ,0.0,v(i,k,j),0.0,v(i,k,j+1),0.0,v(i,k,j+2),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j-3) =a_v(i,k,j-3) +Diff_flux6(v(i,k,j-3),1.0,v(i,k,j-2),0.0,v(i,k,j-1)  &
-   ,0.0,v(i,k,j),0.0,v(i,k,j+1),0.0,v(i,k,j+2),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv1
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jds+1 ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv4 =a_fqy(i,k,jp1)
-   a_fqy(i,k,jp1) =0.0
-   vb = v(i,k,j-1)
-   IF (specified .AND. v(i,k,j) .LT. 0.)vb = v(i,k,j)
-   Tmpv003 =v(i,k,j) +vb
-   Tmpv002 =0.25*(rv(i,k,j)+rv(i,k,j-1))
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i,k,j) =a_v(i,k,j) +a_Tmpv3
-   a_vb =a_vb +a_Tmpv3
-   a_Tmpv1 =0.25*a_Tmpv2
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv1
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +a_Tmpv1
-
-   IF(specified .AND. v(i,k,j) .LT. 0.) THEN
-
-   a_v(i,k,j) =a_v(i,k,j) +a_vb
-   a_vb =0.0
-
-   END IF
-   a_v(i,k,j-1) =a_v(i,k,j-1) +a_vb
-   a_vb =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jds+2 ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   vel = 0.5*(rv(i,k,j)+rv(i,k,j-1))
-   Tmpv001 =flux4(v(i,k,j-2),v(i,k,j-1),v(i,k,j),v(i,k,j+1),vel)  
-
-   a_Tmpv2 =a_fqy(i,k,jp1)
-   a_fqy(i,k,jp1) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux4(v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j),0.0,v(i,k,j+1)  &
-   ,0.0,vel,1.0)*a_Tmpv1
-   a_v(i,k,j+1) =a_v(i,k,j+1) +Diff_flux4(v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),1.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux4(v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,1.0,v(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j-1) =a_v(i,k,j-1) +Diff_flux4(v(i,k,j-2),0.0,v(i,k,j-1),1.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j-2) =a_v(i,k,j-2) +Diff_flux4(v(i,k,j-2),1.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv1
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jde ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv4 =a_fqy(i,k,jp1)
-   a_fqy(i,k,jp1) =0.0
-   vb = v(i,k,j)
-   IF (specified .AND. v(i,k,j-1) .GT. 0.)vb = v(i,k,j-1)
-   Tmpv003 =vb +v(i,k,j-1)
-   Tmpv002 =0.25*(rv(i,k,j)+rv(i,k,j-1))
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_vb =a_vb +a_Tmpv3
-   a_v(i,k,j-1) =a_v(i,k,j-1) +a_Tmpv3
-   a_Tmpv1 =0.25*a_Tmpv2
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv1
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +a_Tmpv1
-
-   IF(specified .AND. v(i,k,j-1) .GT. 0.) THEN
-
-   a_v(i,k,j-1) =a_v(i,k,j-1) +a_vb
-   a_vb =0.0
-
-   END IF
-   a_v(i,k,j) =a_v(i,k,j) +a_vb
-   a_vb =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jde-1 ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   vel = 0.5*(rv(i,k,j)+rv(i,k,j-1))
-   Tmpv001 =flux4(v(i,k,j-2),v(i,k,j-1),v(i,k,j),v(i,k,j+1),vel)  
-
-   a_Tmpv2 =a_fqy(i,k,jp1)
-   a_fqy(i,k,jp1) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux4(v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j),0.0,v(i,k,j+1)  &
-   ,0.0,vel,1.0)*a_Tmpv1
-   a_v(i,k,j+1) =a_v(i,k,j+1) +Diff_flux4(v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),1.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux4(v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,1.0,v(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j-1) =a_v(i,k,j-1) +Diff_flux4(v(i,k,j-2),0.0,v(i,k,j-1),1.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j-2) =a_v(i,k,j-2) +Diff_flux4(v(i,k,j-2),1.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv1
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +a_Tmpv1
-   ENDDO
-   ENDDO
-
-   END IF
-   jtmp = jp1
-   jp1 = jp0
-   jp0 = jtmp
-
-   ENDDO
-
-   ELSE IF( horz_order == 5 ) THEN
-   degrade_xs = .true.
-   degrade_xe = .true.
-   degrade_ys = .true.
-   degrade_ye = .true.
-
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xs .or. &
-       (its > ids+3)                ) degrade_xs = .false.
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xe .or. &
-       (ite < ide-3)                ) degrade_xe = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ys .or. &
-       (jts > jds+3)                ) degrade_ys = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ye .or. &
-       (jte < jde-3)                ) degrade_ye = .false.
-
-      i_start = its
-      i_end   = MIN(ite,ide-1)
-
-      j_start = jts
-      j_end   = jte
-      IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-1,jte)
-
-      i_start_f = i_start
-      i_end_f   = i_end+1
-
-      IF(degrade_xs) then
-        i_start = MAX(ids+1,its)
-        i_start_f = MIN(i_start+2,ids+3)
-      ENDIF
-
-      IF(degrade_xe) then
-        i_end = MIN(ide-2,ite)
-        i_end_f = ide-3
-      ENDIF
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv1 =-msfvy(i,j)*rdx*a_tendency(i,k,j)
-   a_fqx(i+1,k) =a_fqx(i+1,k) +a_Tmpv1
-   a_fqx(i,k) =a_fqx(i,k) -a_Tmpv1
-   ENDDO
-   ENDDO
-
-   IF( degrade_xe ) THEN
-
-   DO i =i_end+1, i_end_f+1, -1
-
-   IF( i == ide-2 ) THEN
-
-   DO k =ktf, kts, -1
-   vel = 0.5*(ru(i,k,j)+ru(i,k,j-1))
-   Tmpv001 =flux3(v(i-2,k,j),v(i-1,k,j),v(i,k,j),v(i+1,k,j),vel)  
-
-   a_Tmpv2 =a_fqx(i,k)
-   a_fqx(i,k) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux3(v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j),0.0,v(i+1,k,j)  &
-   ,0.0,vel,1.0)*a_Tmpv1
-   a_v(i+1,k,j) =a_v(i+1,k,j) +Diff_flux3(v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),1.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux3(v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,1.0,v(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i-1,k,j) =a_v(i-1,k,j) +Diff_flux3(v(i-2,k,j),0.0,v(i-1,k,j),1.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i-2,k,j) =a_v(i-2,k,j) +Diff_flux3(v(i-2,k,j),1.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_ru(i,k,j) =a_ru(i,k,j) +a_Tmpv1
-   a_ru(i,k,j-1) =a_ru(i,k,j-1) +a_Tmpv1
-   ENDDO
-
-   ENDIF
-
-   IF( i == ide-1 ) THEN
-
-   DO k =ktf, kts, -1
-   a_Tmpv4 =a_fqx(i,k)
-   a_fqx(i,k) =0.0
-   Tmpv003 =v(i_end+1,k,j) +v(i_end,k,j)  
-   Tmpv002 =0.25*(ru(i_end+1,k,j)+ru(i_end+1,k,j-1))  
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i_end+1,k,j) =a_v(i_end+1,k,j) +a_Tmpv3
-   a_v(i_end,k,j) =a_v(i_end,k,j) +a_Tmpv3
-   a_Tmpv1 =0.25*a_Tmpv2
-   a_ru(i_end+1,k,j) =a_ru(i_end+1,k,j) +a_Tmpv1
-   a_ru(i_end+1,k,j-1) =a_ru(i_end+1,k,j-1) +a_Tmpv1
-   ENDDO
-
-   ENDIF
-   ENDDO
-
-   ENDIF
-
-   IF( degrade_xs ) THEN
-
-   DO i =i_start_f-1, i_start, -1
-
-   IF(i == ids+2) THEN
-
-   DO k =ktf, kts, -1
-   vel = 0.5*(ru(i,k,j)+ru(i,k,j-1))
-   Tmpv001 =flux3(v(i-2,k,j),v(i-1,k,j),v(i,k,j),v(i+1,k,j),vel)  
-
-   a_Tmpv2 =a_fqx(i,k)
-   a_fqx(i,k) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux3(v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j),0.0,v(i+1,k,j)  &
-   ,0.0,vel,1.0)*a_Tmpv1
-   a_v(i+1,k,j) =a_v(i+1,k,j) +Diff_flux3(v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),1.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux3(v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,1.0,v(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i-1,k,j) =a_v(i-1,k,j) +Diff_flux3(v(i-2,k,j),0.0,v(i-1,k,j),1.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i-2,k,j) =a_v(i-2,k,j) +Diff_flux3(v(i-2,k,j),1.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_ru(i,k,j) =a_ru(i,k,j) +a_Tmpv1
-   a_ru(i,k,j-1) =a_ru(i,k,j-1) +a_Tmpv1
-   ENDDO
-
-   ENDIF
-
-   IF(i == ids+1) THEN
-
-   DO k =ktf, kts, -1
-   a_Tmpv4 =a_fqx(i,k)
-   a_fqx(i,k) =0.0
-   Tmpv003 =v(i,k,j) +v(i-1,k,j)  
-   Tmpv002 =0.25*(ru(i,k,j)+ru(i,k,j-1))  
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i,k,j) =a_v(i,k,j) +a_Tmpv3
-   a_v(i-1,k,j) =a_v(i-1,k,j) +a_Tmpv3
-   a_Tmpv1 =0.25*a_Tmpv2
-   a_ru(i,k,j) =a_ru(i,k,j) +a_Tmpv1
-   a_ru(i,k,j-1) =a_ru(i,k,j-1) +a_Tmpv1
-   ENDDO
-
-   ENDIF
-   ENDDO
-
-   ENDIF
-   DO k =ktf, kts, -1
-   DO i =i_end_f, i_start_f, -1
-   vel = 0.5*(ru(i,k,j)+ru(i,k,j-1))
-
-   a_Tmpv2 =a_fqx(i,k)
-   a_fqx(i,k) =0.0
-   a_vel =flux5(v(i-3,k,j),v(i-2,k,j),v(i-1,k,j),v(i,k,j),v(i+1,k,j),v(i+2,k,j),vel)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux5(v(i-3,k,j),0.0,v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),0.0,v(i+2,k,j),0.0,vel,1.0)*a_Tmpv1
-   a_v(i+2,k,j) =a_v(i+2,k,j) +Diff_flux5(v(i-3,k,j),0.0,v(i-2,k,j),0.0,v(i-1,k,j)  &
-   ,0.0,v(i,k,j),0.0,v(i+1,k,j),0.0,v(i+2,k,j),1.0,vel,0.0)*a_Tmpv1
-   a_v(i+1,k,j) =a_v(i+1,k,j) +Diff_flux5(v(i-3,k,j),0.0,v(i-2,k,j),0.0,v(i-1,k,j)  &
-   ,0.0,v(i,k,j),0.0,v(i+1,k,j),1.0,v(i+2,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux5(v(i-3,k,j),0.0,v(i-2,k,j),0.0,v(i-1,k,j)  &
-   ,0.0,v(i,k,j),1.0,v(i+1,k,j),0.0,v(i+2,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i-1,k,j) =a_v(i-1,k,j) +Diff_flux5(v(i-3,k,j),0.0,v(i-2,k,j),0.0,v(i-1,k,j)  &
-   ,1.0,v(i,k,j),0.0,v(i+1,k,j),0.0,v(i+2,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i-2,k,j) =a_v(i-2,k,j) +Diff_flux5(v(i-3,k,j),0.0,v(i-2,k,j),1.0,v(i-1,k,j)  &
-   ,0.0,v(i,k,j),0.0,v(i+1,k,j),0.0,v(i+2,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i-3,k,j) =a_v(i-3,k,j) +Diff_flux5(v(i-3,k,j),1.0,v(i-2,k,j),0.0,v(i-1,k,j)  &
-   ,0.0,v(i,k,j),0.0,v(i+1,k,j),0.0,v(i+2,k,j),0.0,vel,0.0)*a_Tmpv1
-
-   a_ru(i,k,j) =a_ru(i,k,j) +0.5*a_vel
-   a_ru(i,k,j-1) =a_ru(i,k,j-1) +0.5*a_vel
-   ENDDO
-   ENDDO
-   ENDDO
-
-      i_start = its
-      i_end   = MIN(ite,ide-1)
-      j_start = jts
-      j_end   = jte
-
-      j_start_f = j_start
-      j_end_f   = j_end+1
-
-      IF(degrade_ys) then
-        j_start = MAX(jts,jds+1)
-        j_start_f = jds+3
-      ENDIF
-
-      IF(degrade_ye) then
-        j_end = MIN(jte,jde-1)
-        j_end_f = jde-2
-      ENDIF
-
-     jp1 = mod(j_end+1-j_start+1,2)+1
-     jp0 = 2-mod(j_end+1-j_start+1,2) 
-
-   DO j =j_end+1, j_start, -1
-
-   IF( config_flags%polar .AND. (j == jds+1) ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_tendency(i,k,j-1) =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( config_flags%polar .AND. (j == jde+1) ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_tendency(i,k,j-1) =0.0
-   ENDDO
-   ENDDO
-
-   ELSE
-
-   IF(j > j_start) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv1 =-msfvy(i,j-1)*rdy*a_tendency(i,k,j-1)
-   a_fqy(i,k,jp1) =a_fqy(i,k,jp1) +a_Tmpv1
-   a_fqy(i,k,jp0) =a_fqy(i,k,jp0) -a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ENDIF
-   END IF
-
-   IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   vel = 0.5*(rv(i,k,j)+rv(i,k,j-1))
-
-   a_Tmpv2 =a_fqy(i,k,jp1)
-   a_fqy(i,k,jp1) =0.0
-   a_vel =flux5(v(i,k,j-3),v(i,k,j-2),v(i,k,j-1),v(i,k,j),v(i,k,j+1),v(i,k,j+2),vel)*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux5(v(i,k,j-3),0.0,v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),0.0,v(i,k,j+2),0.0,vel,1.0)*a_Tmpv1
-   a_v(i,k,j+2) =a_v(i,k,j+2) +Diff_flux5(v(i,k,j-3),0.0,v(i,k,j-2),0.0,v(i,k,j-1)  &
-   ,0.0,v(i,k,j),0.0,v(i,k,j+1),0.0,v(i,k,j+2),1.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j+1) =a_v(i,k,j+1) +Diff_flux5(v(i,k,j-3),0.0,v(i,k,j-2),0.0,v(i,k,j-1)  &
-   ,0.0,v(i,k,j),0.0,v(i,k,j+1),1.0,v(i,k,j+2),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux5(v(i,k,j-3),0.0,v(i,k,j-2),0.0,v(i,k,j-1)  &
-   ,0.0,v(i,k,j),1.0,v(i,k,j+1),0.0,v(i,k,j+2),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j-1) =a_v(i,k,j-1) +Diff_flux5(v(i,k,j-3),0.0,v(i,k,j-2),0.0,v(i,k,j-1)  &
-   ,1.0,v(i,k,j),0.0,v(i,k,j+1),0.0,v(i,k,j+2),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j-2) =a_v(i,k,j-2) +Diff_flux5(v(i,k,j-3),0.0,v(i,k,j-2),1.0,v(i,k,j-1)  &
-   ,0.0,v(i,k,j),0.0,v(i,k,j+1),0.0,v(i,k,j+2),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j-3) =a_v(i,k,j-3) +Diff_flux5(v(i,k,j-3),1.0,v(i,k,j-2),0.0,v(i,k,j-1)  &
-   ,0.0,v(i,k,j),0.0,v(i,k,j+1),0.0,v(i,k,j+2),0.0,vel,0.0)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +0.5*a_vel
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +0.5*a_vel
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jds+1 ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv4 =a_fqy(i,k,jp1)
-   a_fqy(i,k,jp1) =0.0
-   vb = v(i,k,j-1)
-   IF (specified .AND. v(i,k,j) .LT. 0.)vb = v(i,k,j)
-   Tmpv003 =v(i,k,j) +vb
-   Tmpv002 =0.25*(rv(i,k,j)+rv(i,k,j-1))
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i,k,j) =a_v(i,k,j) +a_Tmpv3
-   a_vb =a_vb +a_Tmpv3
-   a_Tmpv1 =0.25*a_Tmpv2
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv1
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +a_Tmpv1
-
-   IF(specified .AND. v(i,k,j) .LT. 0.) THEN
-
-   a_v(i,k,j) =a_v(i,k,j) +a_vb
-   a_vb =0.0
-
-   END IF
-   a_v(i,k,j-1) =a_v(i,k,j-1) +a_vb
-   a_vb =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jds+2 ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   vel = 0.5*(rv(i,k,j)+rv(i,k,j-1))
-   Tmpv001 =flux3(v(i,k,j-2),v(i,k,j-1),v(i,k,j),v(i,k,j+1),vel)  
-
-   a_Tmpv2 =a_fqy(i,k,jp1)
-   a_fqy(i,k,jp1) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux3(v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j),0.0,v(i,k,j+1)  &
-   ,0.0,vel,1.0)*a_Tmpv1
-   a_v(i,k,j+1) =a_v(i,k,j+1) +Diff_flux3(v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),1.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux3(v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,1.0,v(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j-1) =a_v(i,k,j-1) +Diff_flux3(v(i,k,j-2),0.0,v(i,k,j-1),1.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j-2) =a_v(i,k,j-2) +Diff_flux3(v(i,k,j-2),1.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +0.5*a_vel
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +0.5*a_vel
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jde ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv4 =a_fqy(i,k,jp1)
-   a_fqy(i,k,jp1) =0.0
-   vb = v(i,k,j)
-   IF (specified .AND. v(i,k,j-1) .GT. 0.)vb = v(i,k,j-1)
-   Tmpv003 =vb +v(i,k,j-1)
-   Tmpv002 =0.25*(rv(i,k,j)+rv(i,k,j-1))
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_vb =a_vb +a_Tmpv3
-   a_v(i,k,j-1) =a_v(i,k,j-1) +a_Tmpv3
-   a_Tmpv1 =0.25*a_Tmpv2
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv1
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +a_Tmpv1
-
-   IF(specified .AND. v(i,k,j-1) .GT. 0.) THEN
-
-   a_v(i,k,j-1) =a_v(i,k,j-1) +a_vb
-   a_vb =0.0
-
-   END IF
-   a_v(i,k,j) =a_v(i,k,j) +a_vb
-   a_vb =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( j == jde-1 ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   vel = 0.5*(rv(i,k,j)+rv(i,k,j-1))
-   Tmpv001 =flux3(v(i,k,j-2),v(i,k,j-1),v(i,k,j),v(i,k,j+1),vel)  
-
-   a_Tmpv2 =a_fqy(i,k,jp1)
-   a_fqy(i,k,jp1) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux3(v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j),0.0,v(i,k,j+1)  &
-   ,0.0,vel,1.0)*a_Tmpv1
-   a_v(i,k,j+1) =a_v(i,k,j+1) +Diff_flux3(v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),1.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux3(v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,1.0,v(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j-1) =a_v(i,k,j-1) +Diff_flux3(v(i,k,j-2),0.0,v(i,k,j-1),1.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j-2) =a_v(i,k,j-2) +Diff_flux3(v(i,k,j-2),1.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-
-   a_rv(i,k,j) =a_rv(i,k,j) +0.5*a_vel
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +0.5*a_vel
-   ENDDO
-   ENDDO
-
-   END IF
-   jtmp = jp1
-   jp1 = jp0
-   jp0 = jtmp
-
-   ENDDO
-
-   ELSE IF( horz_order == 4 ) THEN
-   degrade_xs = .true.
-   degrade_xe = .true.
-   degrade_ys = .true.
-   degrade_ye = .true.
-
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xs .or. &
-       (its > ids+2)                ) degrade_xs = .false.
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xe .or. &
-       (ite < ide-2)                ) degrade_xe = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ys .or. &
-       (jts > jds+2)                ) degrade_ys = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ye .or. &
-       (jte < jde-2)                ) degrade_ye = .false.
-
-      i_start = its
-      i_end   = MIN(ite,ide-1)
-
-      j_start = jts
-      j_end   = jte
-      
-      IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-1,jte)
-
-      i_start_f = i_start
-      i_end_f   = i_end+1
-
-      IF(degrade_xs) then
-        i_start = ids+1
-        i_start_f = i_start+1
-      ENDIF
-
-      IF(degrade_xe) then
-        i_end = ide-2
-        i_end_f = ide-2
-      ENDIF
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   mrdx=msfvy(i,j)*rdx
-
-   a_Tmpv3 =a_tendency(i,k,j)
-   a_Tmpv2 =-a_Tmpv3
-   a_Tmpv1 =mrdx*a_Tmpv2
-   a_fqx(i+1,k) =a_fqx(i+1,k) +a_Tmpv1
-   a_fqx(i,k) =a_fqx(i,k) -a_Tmpv1
-
-   ENDDO
-   ENDDO
-
-   IF( degrade_xe ) THEN
-
-   DO k =ktf, kts, -1
-   a_Tmpv4 =a_fqx(i_end+1,k)
-   a_fqx(i_end+1,k) =0.0
-   Tmpv003 =v(i_end+1,k,j) +v(i_end,k,j)  
-   Tmpv002 =0.25*(ru(i_end+1,k,j)+ru(i_end+1,k,j-1))   
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i_end+1,k,j) =a_v(i_end+1,k,j) +a_Tmpv3
-   a_v(i_end,k,j) =a_v(i_end,k,j) +a_Tmpv3
-   a_Tmpv1 =0.25*a_Tmpv2
-   a_ru(i_end+1,k,j) =a_ru(i_end+1,k,j) +a_Tmpv1
-   a_ru(i_end+1,k,j-1) =a_ru(i_end+1,k,j-1) +a_Tmpv1
-   ENDDO
-
-   ENDIF
-
-   IF( degrade_xs ) THEN
-
-   DO k =ktf, kts, -1
-   a_Tmpv4 =a_fqx(i_start,k)
-   a_fqx(i_start,k) =0.0
-   Tmpv003 =v(i_start,k,j) +v(i_start-1,k,j)  
-   Tmpv002 =0.25*(ru(i_start,k,j)+ru(i_start,k,j-1))   
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i_start,k,j) =a_v(i_start,k,j) +a_Tmpv3
-   a_v(i_start-1,k,j) =a_v(i_start-1,k,j) +a_Tmpv3
-   a_Tmpv1 =0.25*a_Tmpv2
-   a_ru(i_start,k,j) =a_ru(i_start,k,j) +a_Tmpv1
-   a_ru(i_start,k,j-1) =a_ru(i_start,k,j-1) +a_Tmpv1
-   ENDDO
-
-   ENDIF
-   DO k =ktf, kts, -1
-   DO i =i_end_f, i_start_f, -1
-   vel = 0.5*(ru(i,k,j)+ru(i,k,j-1))
-   Tmpv001 =flux4(v(i-2,k,j),v(i-1,k,j),v(i,k,j),v(i+1,k,j),vel)  
-
-   a_Tmpv2 =a_fqx(i,k)
-   a_fqx(i,k) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux4(v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j),0.0,v(i+1,k,j)  &
-   ,0.0,vel,1.0)*a_Tmpv1
-   a_v(i+1,k,j) =a_v(i+1,k,j) +Diff_flux4(v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),1.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux4(v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,1.0,v(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i-1,k,j) =a_v(i-1,k,j) +Diff_flux4(v(i-2,k,j),0.0,v(i-1,k,j),1.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i-2,k,j) =a_v(i-2,k,j) +Diff_flux4(v(i-2,k,j),1.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_ru(i,k,j) =a_ru(i,k,j) +a_Tmpv1
-   a_ru(i,k,j-1) =a_ru(i,k,j-1) +a_Tmpv1
-   ENDDO
-   ENDDO
-   ENDDO
-
-   ktf=MIN(kte,kde-1)
-
-      i_start = its
-      i_end   = MIN(ite,ide-1)
-      j_start = jts
-      j_end   = jte
-
-      j_start_f = j_start
-      j_end_f   = j_end+1
-
-      IF(degrade_ys) then
-        j_start = jds+1
-        j_start_f = j_start+1
-      ENDIF
-
-      IF(degrade_ye) then
-        j_end = jde-1
-        j_end_f = jde-1
-      ENDIF
-
-     jp0 = 2-mod(j_end+1-j_start+1,2) 
-     jp1 = mod(j_end+1-j_start+1,2)+1
-
-
-   DO j =j_end+1, j_start, -1
-   IF( config_flags%polar .AND. (j == jds+1) ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_tendency(i,k,j-1) =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( config_flags%polar .AND. (j == jde+1) ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_tendency(i,k,j-1) =0.0
-   ENDDO
-   ENDDO
-
-   ELSE
-
-   IF( j > j_start) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   mrdy=msfvy(i,j-1)*rdy     
-
-   a_Tmpv3 =a_tendency(i,k,j-1)
-   a_Tmpv2 =-a_Tmpv3
-   a_Tmpv1 =mrdy*a_Tmpv2
-   a_fqy(i,k,jp1) =a_fqy(i,k,jp1) +a_Tmpv1
-   a_fqy(i,k,jp0) =a_fqy(i,k,jp0) -a_Tmpv1
-
-   ENDDO
-   ENDDO
-
-   END IF
-
-   END IF
-
-   IF((j == j_start) .and. degrade_ys) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv4 =a_fqy(i,k,jp1)
-   a_fqy(i,k,jp1) =0.0
-   vb = v(i,k,j-1)
-   IF (specified .AND. v(i,k,j) .LT. 0.)vb = v(i,k,j)
-   Tmpv003 =v(i,k,j) +vb
-   Tmpv002 =0.25*(rv(i,k,j)+rv(i,k,j-1)) 
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i,k,j) =a_v(i,k,j) +a_Tmpv3
-   a_vb =a_vb +a_Tmpv3
-   a_Tmpv1 =0.25*a_Tmpv2
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv1
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +a_Tmpv1
-
-   IF(specified .AND. v(i,k,j) .LT. 0.) THEN
-
-   a_v(i,k,j) =a_v(i,k,j) +a_vb
-   a_vb =0.0
-
-   END IF
-   a_v(i,k,j-1) =a_v(i,k,j-1) +a_vb
-   a_vb =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF((j == j_end+1) .and. degrade_ye) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv4 =a_fqy(i,k,jp1)
-   a_fqy(i,k,jp1) =0.0
-   vb = v(i,k,j)
-   IF (specified .AND. v(i,k,j-1) .GT. 0.)vb = v(i,k,j-1)
-   Tmpv003 =vb +v(i,k,j-1)
-   Tmpv002 =0.25*(rv(i,k,j)+rv(i,k,j-1)) 
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_vb =a_vb +a_Tmpv3
-   a_v(i,k,j-1) =a_v(i,k,j-1) +a_Tmpv3
-   a_Tmpv1 =0.25*a_Tmpv2
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv1
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +a_Tmpv1
-
-   IF(specified .AND. v(i,k,j-1) .GT. 0.) THEN
-
-   a_v(i,k,j-1) =a_v(i,k,j-1) +a_vb
-   a_vb =0.0
-
-   END IF
-   a_v(i,k,j) =a_v(i,k,j) +a_vb
-   a_vb =0.0
-   ENDDO
-   ENDDO
-
-   ELSE
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   vel = 0.5*(rv(i,k,j)+rv(i,k,j-1))
-   Tmpv001 =flux4(v(i,k,j-2),v(i,k,j-1),v(i,k,j),v(i,k,j+1),vel)  
-
-   a_Tmpv2 =a_fqy(i,k,jp1)
-   a_fqy(i,k,jp1) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux4(v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j),0.0,v(i,k,j+1)  &
-   ,0.0,vel,1.0)*a_Tmpv1
-   a_v(i,k,j+1) =a_v(i,k,j+1) +Diff_flux4(v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),1.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux4(v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,1.0,v(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j-1) =a_v(i,k,j-1) +Diff_flux4(v(i,k,j-2),0.0,v(i,k,j-1),1.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j-2) =a_v(i,k,j-2) +Diff_flux4(v(i,k,j-2),1.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv1
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +a_Tmpv1
-   ENDDO
-   ENDDO
-
-   END IF
-   jtmp = jp1
-   jp1 = jp0
-   jp0 = jtmp
-
-   ENDDO
-
-   ELSE IF( horz_order == 3 ) THEN
-   degrade_xs = .true.
-   degrade_xe = .true.
-   degrade_ys = .true.
-   degrade_ye = .true.
-
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xs .or. &
-       (its > ids+2)                ) degrade_xs = .false.
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xe .or. &
-       (ite < ide-2)                ) degrade_xe = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ys .or. &
-       (jts > jds+2)                ) degrade_ys = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ye .or. &
-       (jte < jde-2)                ) degrade_ye = .false.
-
-      i_start = its
-      i_end   = MIN(ite,ide-1)
-
-      j_start = jts
-      j_end   = jte
-      IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-1,jte)
-
-      i_start_f = i_start
-      i_end_f   = i_end+1
-
-      IF(degrade_xs) then
-        i_start = ids+1
-        i_start_f = i_start+1
-      ENDIF
-
-      IF(degrade_xe) then
-        i_end = ide-2
-        i_end_f = ide-2
-      ENDIF
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   mrdx=msfvy(i,j)*rdx
-
-   a_Tmpv3 =a_tendency(i,k,j)
-   a_Tmpv2 =-a_Tmpv3
-   a_Tmpv1 =mrdx*a_Tmpv2
-   a_fqx(i+1,k) =a_fqx(i+1,k) +a_Tmpv1
-   a_fqx(i,k) =a_fqx(i,k) -a_Tmpv1
-
-   ENDDO
-   ENDDO
-
-   IF( degrade_xe ) THEN
-
-   DO k =ktf, kts, -1
-   a_Tmpv4 =a_fqx(i_end+1,k)
-   a_fqx(i_end+1,k) =0.0
-   Tmpv003 =v(i_end+1,k,j) +v(i_end,k,j)  
-   Tmpv002 =0.25*(ru(i_end+1,k,j)+ru(i_end+1,k,j-1))   
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i_end+1,k,j) =a_v(i_end+1,k,j) +a_Tmpv3
-   a_v(i_end,k,j) =a_v(i_end,k,j) +a_Tmpv3
-   a_Tmpv1 =0.25*a_Tmpv2
-   a_ru(i_end+1,k,j) =a_ru(i_end+1,k,j) +a_Tmpv1
-   a_ru(i_end+1,k,j-1) =a_ru(i_end+1,k,j-1) +a_Tmpv1
-   ENDDO
-
-   ENDIF
-
-   IF( degrade_xs ) THEN
-
-   DO k =ktf, kts, -1
-   a_Tmpv4 =a_fqx(i_start,k)
-   a_fqx(i_start,k) =0.0
-   Tmpv003 =v(i_start,k,j) +v(i_start-1,k,j)  
-   Tmpv002 =0.25*(ru(i_start,k,j)+ru(i_start,k,j-1))   
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i_start,k,j) =a_v(i_start,k,j) +a_Tmpv3
-   a_v(i_start-1,k,j) =a_v(i_start-1,k,j) +a_Tmpv3
-   a_Tmpv1 =0.25*a_Tmpv2
-   a_ru(i_start,k,j) =a_ru(i_start,k,j) +a_Tmpv1
-   a_ru(i_start,k,j-1) =a_ru(i_start,k,j-1) +a_Tmpv1
-   ENDDO
-
-   ENDIF
-   DO k =ktf, kts, -1
-   DO i =i_end_f, i_start_f, -1
-   vel = 0.5*(ru(i,k,j)+ru(i,k,j-1))
-   Tmpv001 =flux3(v(i-2,k,j),v(i-1,k,j),v(i,k,j),v(i+1,k,j),vel)  
-
-   a_Tmpv2 =a_fqx(i,k)
-   a_fqx(i,k) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux3(v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j),0.0,v(i+1,k,j)  &
-   ,0.0,vel,1.0)*a_Tmpv1
-   a_v(i+1,k,j) =a_v(i+1,k,j) +Diff_flux3(v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),1.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux3(v(i-2,k,j),0.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,1.0,v(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i-1,k,j) =a_v(i-1,k,j) +Diff_flux3(v(i-2,k,j),0.0,v(i-1,k,j),1.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-   a_v(i-2,k,j) =a_v(i-2,k,j) +Diff_flux3(v(i-2,k,j),1.0,v(i-1,k,j),0.0,v(i,k,j)  &
-   ,0.0,v(i+1,k,j),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_ru(i,k,j) =a_ru(i,k,j) +a_Tmpv1
-   a_ru(i,k,j-1) =a_ru(i,k,j-1) +a_Tmpv1
-   ENDDO
-   ENDDO
-   ENDDO
-
-   ktf=MIN(kte,kde-1)
-
-      i_start = its
-      i_end   = MIN(ite,ide-1)
-      j_start = jts
-      j_end   = jte
-
-      j_start_f = j_start
-      j_end_f   = j_end+1
-
-      IF(degrade_ys) then
-        j_start = jds+1
-        j_start_f = j_start+1
-      ENDIF
-
-      IF(degrade_ye) then
-        j_end = jde-1
-        j_end_f = jde-1
-      ENDIF
-
-     jp0 = 2-mod(j_end+1-j_start+1,2) 
-     jp1 = mod(j_end+1-j_start+1,2)+1
-
-   DO j =j_end+1, j_start, -1
-   IF( config_flags%polar .AND. (j == jds+1) ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_tendency(i,k,j-1) =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF( config_flags%polar .AND. (j == jde+1) ) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_tendency(i,k,j-1) =0.0
-   ENDDO
-   ENDDO
-
-   ELSE
-
-   IF( j > j_start) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   mrdy=msfvy(i,j-1)*rdy
-
-   a_Tmpv3 =a_tendency(i,k,j-1)
-   a_Tmpv2 =-a_Tmpv3
-   a_fqy(i,k,jp0) =a_fqy(i,k,jp0) -a_Tmpv1
-
-   ENDDO
-   ENDDO
-
-   END IF
-
-   END IF
-
-   IF((j == j_start) .and. degrade_ys) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv4 =a_fqy(i,k,jp1)
-   a_fqy(i,k,jp1) =0.0
-   vb = v(i,k,j-1)
-   IF (specified .AND. v(i,k,j) .LT. 0.)vb = v(i,k,j)
-   Tmpv003 =v(i,k,j) +vb
-   Tmpv002 =0.25*(rv(i,k,j)+rv(i,k,j-1)) 
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_v(i,k,j) =a_v(i,k,j) +a_Tmpv3
-   a_vb =a_vb +a_Tmpv3
-   a_Tmpv1 =0.25*a_Tmpv2
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv1
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +a_Tmpv1
-
-   IF(specified .AND. v(i,k,j) .LT. 0.) THEN
-
-   a_v(i,k,j) =a_v(i,k,j) +a_vb
-   a_vb =0.0
-
-   END IF
-   a_v(i,k,j-1) =a_v(i,k,j-1) +a_vb
-   a_vb =0.0
-   ENDDO
-   ENDDO
-
-   ELSE IF((j == j_end+1) .and. degrade_ye) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv4 =a_fqy(i,k,jp1)
-   a_fqy(i,k,jp1) =0.0
-   vb = v(i,k,j)
-   IF (specified .AND. v(i,k,j-1) .GT. 0.)vb = v(i,k,j-1)
-   Tmpv003 =vb +v(i,k,j-1)
-   Tmpv002 =0.25*(rv(i,k,j)+rv(i,k,j-1)) 
-   a_Tmpv2 =Tmpv003*a_Tmpv4
-   a_Tmpv3 =Tmpv002*a_Tmpv4
-   a_vb =a_vb +a_Tmpv3
-   a_v(i,k,j-1) =a_v(i,k,j-1) +a_Tmpv3
-   a_Tmpv1 =0.25*a_Tmpv2
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv1
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +a_Tmpv1
-
-   IF(specified .AND. v(i,k,j-1) .GT. 0.) THEN
-
-   a_v(i,k,j-1) =a_v(i,k,j-1) +a_vb
-   a_vb =0.0
-
-   END IF
-   a_v(i,k,j) =a_v(i,k,j) +a_vb
-   a_vb =0.0
-   ENDDO
-   ENDDO
-
-   ELSE
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   vel = 0.5*(rv(i,k,j)+rv(i,k,j-1))
-   Tmpv001 =flux3(v(i,k,j-2),v(i,k,j-1),v(i,k,j),v(i,k,j+1),vel)  
-
-   a_Tmpv2 =a_fqy(i,k,jp1)
-   a_fqy(i,k,jp1) =0.0
-   a_vel =Tmpv001*a_Tmpv2
-   a_Tmpv1 =vel*a_Tmpv2
-   a_vel =a_vel +Diff_flux3(v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j),0.0,v(i,k,j+1)  &
-   ,0.0,vel,1.0)*a_Tmpv1
-   a_v(i,k,j+1) =a_v(i,k,j+1) +Diff_flux3(v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),1.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j) =a_v(i,k,j) +Diff_flux3(v(i,k,j-2),0.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,1.0,v(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j-1) =a_v(i,k,j-1) +Diff_flux3(v(i,k,j-2),0.0,v(i,k,j-1),1.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-   a_v(i,k,j-2) =a_v(i,k,j-2) +Diff_flux3(v(i,k,j-2),1.0,v(i,k,j-1),0.0,v(i,k,j)  &
-   ,0.0,v(i,k,j+1),0.0,vel,0.0)*a_Tmpv1
-
-   a_Tmpv2 =a_vel
-   a_Tmpv1 =0.5*a_Tmpv2
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv1
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +a_Tmpv1
-   ENDDO
-   ENDDO
-
-   END IF
-   jtmp = jp1
-   jp1 = jp0
-   jp0 = jtmp
-
-   ENDDO
-
-   ELSE IF( horz_order == 2 ) THEN
-      i_start = its
-      i_end   = MIN(ite,ide-1)
-      j_start = jts
-      j_end   = jte
-
-      IF ( config_flags%open_ys ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%open_ye ) j_end   = MIN(jde-1,jte)
-      IF ( specified ) j_start = MAX(jds+2,jts)
-      IF ( specified ) j_end   = MIN(jde-2,jte)
-      IF ( config_flags%polar ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%polar ) j_end   = MIN(jde-1,jte)
-
-      IF ( .NOT. config_flags%periodic_x ) THEN
-        IF ( config_flags%open_xs .or. specified ) i_start = MAX(ids+1,its)
-        IF ( config_flags%open_xe .or. specified ) i_end   = MIN(ide-2,ite)
-      ENDIF
-      IF ( config_flags%polar ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%polar ) j_end   = MIN(jde-1,jte)
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   mrdx=msfvy(i,j)*rdx
-
-   a_Tmpv9 =a_tendency(i,k,j)
-   a_Tmpv8 =-a_Tmpv9
-   a_Tmpv7 =mrdx*0.25*a_Tmpv8
-   a_Tmpv3 =a_Tmpv7
-   a_Tmpv6 =-a_Tmpv7
-   Tmpv005 =v(i,k,j) +v(i-1,k,j)  
-   Tmpv004 =ru(i,k,j) +ru(i,k,j-1)  
-   a_Tmpv4 =Tmpv005*a_Tmpv6
-   a_Tmpv5 =Tmpv004*a_Tmpv6
-   a_v(i,k,j) =a_v(i,k,j) +a_Tmpv5
-   a_v(i-1,k,j) =a_v(i-1,k,j) +a_Tmpv5
-   a_ru(i,k,j) =a_ru(i,k,j) +a_Tmpv4
-   a_ru(i,k,j-1) =a_ru(i,k,j-1) +a_Tmpv4
-   Tmpv002 =v(i+1,k,j) +v(i,k,j)  
-   Tmpv001 =ru(i+1,k,j) +ru(i+1,k,j-1)  
-   a_Tmpv1 =Tmpv002*a_Tmpv3
-   a_Tmpv2 =Tmpv001*a_Tmpv3
-   a_v(i+1,k,j) =a_v(i+1,k,j) +a_Tmpv2
-   a_v(i,k,j) =a_v(i,k,j) +a_Tmpv2
-   a_ru(i+1,k,j) =a_ru(i+1,k,j) +a_Tmpv1
-   a_ru(i+1,k,j-1) =a_ru(i+1,k,j-1) +a_Tmpv1
-
-   ENDDO
-   ENDDO
-   ENDDO
-
-      i_start = its
-      i_end   = MIN(ite,ide-1)
-      j_start = jts
-      j_end   = jte
-
-      IF ( config_flags%open_ys ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%open_ye ) j_end   = MIN(jde-1,jte)
-      IF ( specified ) j_start = MAX(jds+2,jts)
-      IF ( specified ) j_end   = MIN(jde-2,jte)
-      IF ( config_flags%polar ) j_start = MAX(jds+1,jts)
-      IF ( config_flags%polar ) j_end   = MIN(jde-1,jte)
-
-   IF( specified .AND. jte .GE. jde-1 ) THEN
-   j =jde-1
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   mrdy=msfvy(i,j)*rdy
-
-   a_Tmpv9 =a_tendency(i,k,j)
-   a_Tmpv8 =-a_Tmpv9
-   a_Tmpv7 =mrdy*0.25*a_Tmpv8
-   a_Tmpv3 =a_Tmpv7
-   a_Tmpv6 =-a_Tmpv7
-   Tmpv005 =v(i,k,j) +v(i,k,j-1)  
-   Tmpv004 =rv(i,k,j) +rv(i,k,j-1)  
-   a_Tmpv4 =Tmpv005*a_Tmpv6
-   a_Tmpv5 =Tmpv004*a_Tmpv6
-   a_v(i,k,j) =a_v(i,k,j) +a_Tmpv5
-   a_v(i,k,j-1) =a_v(i,k,j-1) +a_Tmpv5
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv4
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +a_Tmpv4
-   vb = v(i,k,j+1)
-   IF (v(i,k,j) .GT. 0.) vb = v(i,k,j)
-   Tmpv002 =vb +v(i,k,j)
-   Tmpv001 =rv(i,k,j+1) +rv(i,k,j)
-   a_Tmpv1 =Tmpv002*a_Tmpv3
-   a_Tmpv2 =Tmpv001*a_Tmpv3
-   a_vb =a_vb +a_Tmpv2
-   a_v(i,k,j) =a_v(i,k,j) +a_Tmpv2
-   a_rv(i,k,j+1) =a_rv(i,k,j+1) +a_Tmpv1
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv1
-
-   IF(v(i,k,j) .GT. 0.) THEN
-
-   a_v(i,k,j) =a_v(i,k,j) +a_vb
-   a_vb =0.0
-
-   END IF
-   a_v(i,k,j+1) =a_v(i,k,j+1) +a_vb
-   a_vb =0.0
-
-   ENDDO
-   ENDDO
-
-   ENDIF
-
-   IF( specified .AND. jts .LE. jds+1 ) THEN
-   j =jds+1
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   mrdy=msfvy(i,j)*rdy       
-
-   a_Tmpv9 =a_tendency(i,k,j)
-   a_Tmpv8 =-a_Tmpv9
-   a_Tmpv7 =mrdy*0.25*a_Tmpv8
-   a_Tmpv3 =a_Tmpv7
-   a_Tmpv6 =-a_Tmpv7
-   vb = v(i,k,j-1)
-   IF (v(i,k,j) .LT. 0.) vb = v(i,k,j)
-   Tmpv005 =v(i,k,j) +vb
-   Tmpv004 =rv(i,k,j) +rv(i,k,j-1)
-   a_Tmpv4 =Tmpv005*a_Tmpv6
-   a_Tmpv5 =Tmpv004*a_Tmpv6
-   a_v(i,k,j) =a_v(i,k,j) +a_Tmpv5
-   a_vb =a_vb +a_Tmpv5
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv4
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +a_Tmpv4
-   Tmpv002 =v(i,k,j+1) +v(i,k,j)  
-   Tmpv001 =rv(i,k,j+1) +rv(i,k,j)  
-   a_Tmpv1 =Tmpv002*a_Tmpv3
-   a_Tmpv2 =Tmpv001*a_Tmpv3
-   a_v(i,k,j+1) =a_v(i,k,j+1) +a_Tmpv2
-   a_v(i,k,j) =a_v(i,k,j) +a_Tmpv2
-   a_rv(i,k,j+1) =a_rv(i,k,j+1) +a_Tmpv1
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv1
-
-   IF(v(i,k,j) .LT. 0.) THEN
-
-   a_v(i,k,j) =a_v(i,k,j) +a_vb
-   a_vb =0.0
-
-   END IF
-   a_v(i,k,j-1) =a_v(i,k,j-1) +a_vb
-   a_vb =0.0
-
-   ENDDO
-   ENDDO
-
-   ENDIF
-
-   IF(config_flags%polar) THEN
-
-   IF(jts == jds) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_tendency(i,k,jds) =0.0
-   ENDDO
-   ENDDO
-
-   END IF
-
-   IF(jte == jde) THEN
-
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   a_tendency(i,k,jde) =0.0
-   ENDDO
-   ENDDO
-
-   END IF
-
-   END IF
-   DO j =j_end, j_start, -1
-   DO k =ktf, kts, -1
-   DO i =i_end, i_start, -1
-   mrdy=msfvy(i,j)*rdy
-
-   a_Tmpv9 =a_tendency(i,k,j)
-   a_Tmpv8 =-a_Tmpv9
-   a_Tmpv7 =mrdy*0.25*a_Tmpv8
-   a_Tmpv3 =a_Tmpv7
-   a_Tmpv6 =-a_Tmpv7
-   Tmpv005 =v(i,k,j) +v(i,k,j-1)  
-   Tmpv004 =rv(i,k,j) +rv(i,k,j-1)  
-   a_Tmpv4 =Tmpv005*a_Tmpv6
-   a_Tmpv5 =Tmpv004*a_Tmpv6
-   a_v(i,k,j) =a_v(i,k,j) +a_Tmpv5
-   a_v(i,k,j-1) =a_v(i,k,j-1) +a_Tmpv5
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv4
-   a_rv(i,k,j-1) =a_rv(i,k,j-1) +a_Tmpv4
-   Tmpv002 =v(i,k,j+1) +v(i,k,j)  
-   Tmpv001 =rv(i,k,j+1) +rv(i,k,j)  
-   a_Tmpv1 =Tmpv002*a_Tmpv3
-   a_Tmpv2 =Tmpv001*a_Tmpv3
-   a_v(i,k,j+1) =a_v(i,k,j+1) +a_Tmpv2
-   a_v(i,k,j) =a_v(i,k,j) +a_Tmpv2
-   a_rv(i,k,j+1) =a_rv(i,k,j+1) +a_Tmpv1
-   a_rv(i,k,j) =a_rv(i,k,j) +a_Tmpv1
-
-   ENDDO
-   ENDDO
-   ENDDO
-
-   ELSE IF( horz_order == 0 ) THEN
-   ELSE
-   ENDIF
-
-   END SUBROUTINE a_advect_v
-
+    ELSE
+      j_start = jds + 1
+    END IF
+  END IF
+  IF ((config_flags%open_ye .OR. specified) .OR. config_flags%polar) &
+&  THEN
+    IF (jde - 1 .GT. jte) THEN
+      j_end = jte
+    ELSE
+      j_end = jde - 1
+    END IF
+  END IF
+  IF (vert_order .EQ. 6) THEN
+    DO j=j_start,j_end
+      CALL PUSHINTEGER4(k)
+    END DO
+    vfluxb = 0.0
+    DO j=j_end,j_start,-1
+      DO k=ktf,kts,-1
+        DO i=i_end,i_start,-1
+          temp31b50 = -(msfvy(i, j)*rdzw(k)*tendencyb(i, k, j)/msfvx(i, &
+&            j))
+          vfluxb(i, k+1) = vfluxb(i, k+1) + temp31b50
+          vfluxb(i, k) = vfluxb(i, k) - temp31b50
+        END DO
+      END DO
+      CALL POPINTEGER4(k)
+      DO i=i_end,i_start,-1
+        k = ktf
+        temp31b44 = 0.5*(fzm(k)*v(i, k, j)+fzp(k)*v(i, k-1, j))*vfluxb(i&
+&          , k)
+        temp31b45 = 0.5*(rom(i, k, j)+rom(i, k, j-1))*vfluxb(i, k)
+        romb(i, k, j) = romb(i, k, j) + temp31b44
+        romb(i, k, j-1) = romb(i, k, j-1) + temp31b44
+        vb0(i, k, j) = vb0(i, k, j) + fzm(k)*temp31b45
+        vb0(i, k-1, j) = vb0(i, k-1, j) + fzp(k)*temp31b45
+        vfluxb(i, k) = 0.0
+        k = ktf - 1
+        vel = 0.5*(rom(i, k, j)+rom(i, k, j-1))
+        temp31b46 = vel*vfluxb(i, k)/12.0
+        velb = (7.*(v(i, k, j)+v(i, k-1, j))-v(i, k+1, j)-v(i, k-2, j))*&
+&          vfluxb(i, k)/12.0
+        vb0(i, k, j) = vb0(i, k, j) + 7.*temp31b46
+        vb0(i, k-1, j) = vb0(i, k-1, j) + 7.*temp31b46
+        vb0(i, k+1, j) = vb0(i, k+1, j) - temp31b46
+        vb0(i, k-2, j) = vb0(i, k-2, j) - temp31b46
+        vfluxb(i, k) = 0.0
+        romb(i, k, j) = romb(i, k, j) + 0.5*velb
+        romb(i, k, j-1) = romb(i, k, j-1) + 0.5*velb
+        k = kts + 2
+        vel = 0.5*(rom(i, k, j)+rom(i, k, j-1))
+        temp31b47 = vel*vfluxb(i, k)/12.0
+        velb = (7.*(v(i, k, j)+v(i, k-1, j))-v(i, k+1, j)-v(i, k-2, j))*&
+&          vfluxb(i, k)/12.0
+        vb0(i, k, j) = vb0(i, k, j) + 7.*temp31b47
+        vb0(i, k-1, j) = vb0(i, k-1, j) + 7.*temp31b47
+        vb0(i, k+1, j) = vb0(i, k+1, j) - temp31b47
+        vb0(i, k-2, j) = vb0(i, k-2, j) - temp31b47
+        vfluxb(i, k) = 0.0
+        romb(i, k, j) = romb(i, k, j) + 0.5*velb
+        romb(i, k, j-1) = romb(i, k, j-1) + 0.5*velb
+        k = kts + 1
+        temp31b48 = 0.5*(fzm(k)*v(i, k, j)+fzp(k)*v(i, k-1, j))*vfluxb(i&
+&          , k)
+        temp31b49 = 0.5*(rom(i, k, j)+rom(i, k, j-1))*vfluxb(i, k)
+        romb(i, k, j) = romb(i, k, j) + temp31b48
+        romb(i, k, j-1) = romb(i, k, j-1) + temp31b48
+        vb0(i, k, j) = vb0(i, k, j) + fzm(k)*temp31b49
+        vb0(i, k-1, j) = vb0(i, k-1, j) + fzp(k)*temp31b49
+        vfluxb(i, k) = 0.0
+      END DO
+      DO k=ktf-2,kts+3,-1
+        DO i=i_end,i_start,-1
+          vel = 0.5*(rom(i, k, j)+rom(i, k, j-1))
+          temp31b43 = vel*vfluxb(i, k)/60.0
+          velb = (37.*(v(i, k, j)+v(i, k-1, j))-8.*(v(i, k+1, j)+v(i, k-&
+&            2, j))+v(i, k+2, j)+v(i, k-3, j))*vfluxb(i, k)/60.0
+          vb0(i, k, j) = vb0(i, k, j) + 37.*temp31b43
+          vb0(i, k-1, j) = vb0(i, k-1, j) + 37.*temp31b43
+          vb0(i, k+1, j) = vb0(i, k+1, j) - 8.*temp31b43
+          vb0(i, k-2, j) = vb0(i, k-2, j) - 8.*temp31b43
+          vb0(i, k+2, j) = vb0(i, k+2, j) + temp31b43
+          vb0(i, k-3, j) = vb0(i, k-3, j) + temp31b43
+          vfluxb(i, k) = 0.0
+          romb(i, k, j) = romb(i, k, j) + 0.5*velb
+          romb(i, k, j-1) = romb(i, k, j-1) + 0.5*velb
+        END DO
+      END DO
+    END DO
+  ELSE IF (vert_order .EQ. 5) THEN
+    DO j=j_start,j_end
+      CALL PUSHINTEGER4(k)
+    END DO
+    vfluxb = 0.0
+    DO j=j_end,j_start,-1
+      DO k=ktf,kts,-1
+        DO i=i_end,i_start,-1
+          temp43b1 = -(msfvy(i, j)*rdzw(k)*tendencyb(i, k, j)/msfvx(i, j&
+&            ))
+          vfluxb(i, k+1) = vfluxb(i, k+1) + temp43b1
+          vfluxb(i, k) = vfluxb(i, k) - temp43b1
+        END DO
+      END DO
+      CALL POPINTEGER4(k)
+      DO i=i_end,i_start,-1
+        k = ktf
+        temp43b = 0.5*(fzm(k)*v(i, k, j)+fzp(k)*v(i, k-1, j))*vfluxb(i, &
+&          k)
+        temp43b0 = 0.5*(rom(i, k, j)+rom(i, k, j-1))*vfluxb(i, k)
+        romb(i, k, j) = romb(i, k, j) + temp43b
+        romb(i, k, j-1) = romb(i, k, j-1) + temp43b
+        vb0(i, k, j) = vb0(i, k, j) + fzm(k)*temp43b0
+        vb0(i, k-1, j) = vb0(i, k-1, j) + fzp(k)*temp43b0
+        vfluxb(i, k) = 0.0
+        k = ktf - 1
+        vel = 0.5*(rom(i, k, j)+rom(i, k, j-1))
+        temp39 = v(i, k+1, j) - v(i, k-2, j) - 3.*(v(i, k, j)-v(i, k-1, &
+&          j))
+        temp42 = SIGN(1., -vel)
+        temp41 = temp42/12.0
+        temp40 = SIGN(1, time_step)
+        temp39b = vel*vfluxb(i, k)
+        temp39b0 = temp39b/12.0
+        temp39b1 = temp40*temp41*temp39b
+        velb = ((7.*(v(i, k, j)+v(i, k-1, j))-v(i, k+1, j)-v(i, k-2, j))&
+&          /12.0+temp40*(temp41*temp39))*vfluxb(i, k)
+        vb0(i, k, j) = vb0(i, k, j) + 7.*temp39b0 - 3.*temp39b1
+        vb0(i, k-1, j) = vb0(i, k-1, j) + 3.*temp39b1 + 7.*temp39b0
+        vb0(i, k+1, j) = vb0(i, k+1, j) + temp39b1 - temp39b0
+        vb0(i, k-2, j) = vb0(i, k-2, j) - temp39b1 - temp39b0
+        vfluxb(i, k) = 0.0
+        romb(i, k, j) = romb(i, k, j) + 0.5*velb
+        romb(i, k, j-1) = romb(i, k, j-1) + 0.5*velb
+        k = kts + 2
+        vel = 0.5*(rom(i, k, j)+rom(i, k, j-1))
+        temp35 = v(i, k+1, j) - v(i, k-2, j) - 3.*(v(i, k, j)-v(i, k-1, &
+&          j))
+        temp38 = SIGN(1., -vel)
+        temp37 = temp38/12.0
+        temp36 = SIGN(1, time_step)
+        temp35b = vel*vfluxb(i, k)
+        temp35b0 = temp35b/12.0
+        temp35b1 = temp36*temp37*temp35b
+        velb = ((7.*(v(i, k, j)+v(i, k-1, j))-v(i, k+1, j)-v(i, k-2, j))&
+&          /12.0+temp36*(temp37*temp35))*vfluxb(i, k)
+        vb0(i, k, j) = vb0(i, k, j) + 7.*temp35b0 - 3.*temp35b1
+        vb0(i, k-1, j) = vb0(i, k-1, j) + 3.*temp35b1 + 7.*temp35b0
+        vb0(i, k+1, j) = vb0(i, k+1, j) + temp35b1 - temp35b0
+        vb0(i, k-2, j) = vb0(i, k-2, j) - temp35b1 - temp35b0
+        vfluxb(i, k) = 0.0
+        romb(i, k, j) = romb(i, k, j) + 0.5*velb
+        romb(i, k, j-1) = romb(i, k, j-1) + 0.5*velb
+        k = kts + 1
+        temp35b2 = 0.5*(fzm(k)*v(i, k, j)+fzp(k)*v(i, k-1, j))*vfluxb(i&
+&          , k)
+        temp35b3 = 0.5*(rom(i, k, j)+rom(i, k, j-1))*vfluxb(i, k)
+        romb(i, k, j) = romb(i, k, j) + temp35b2
+        romb(i, k, j-1) = romb(i, k, j-1) + temp35b2
+        vb0(i, k, j) = vb0(i, k, j) + fzm(k)*temp35b3
+        vb0(i, k-1, j) = vb0(i, k-1, j) + fzp(k)*temp35b3
+        vfluxb(i, k) = 0.0
+      END DO
+      DO k=ktf-2,kts+3,-1
+        DO i=i_end,i_start,-1
+          vel = 0.5*(rom(i, k, j)+rom(i, k, j-1))
+          temp31 = v(i, k+2, j) - v(i, k-3, j) + 10.*(v(i, k, j)-v(i, k-&
+&            1, j)) - 5.*(v(i, k+1, j)-v(i, k-2, j))
+          temp34 = SIGN(1., -vel)
+          temp33 = temp34/60.0
+          temp32 = SIGN(1, time_step)
+          temp31b51 = vel*vfluxb(i, k)
+          temp31b52 = temp31b51/60.0
+          temp31b53 = -(temp32*temp33*temp31b51)
+          velb = ((37.*(v(i, k, j)+v(i, k-1, j))-8.*(v(i, k+1, j)+v(i, k&
+&            -2, j))+v(i, k+2, j)+v(i, k-3, j))/60.0-temp32*(temp33*&
+&            temp31))*vfluxb(i, k)
+          vb0(i, k, j) = vb0(i, k, j) + 10.*temp31b53 + 37.*temp31b52
+          vb0(i, k-1, j) = vb0(i, k-1, j) + 37.*temp31b52 - 10.*&
+&            temp31b53
+          vb0(i, k+1, j) = vb0(i, k+1, j) - 5.*temp31b53 - 8.*temp31b52
+          vb0(i, k-2, j) = vb0(i, k-2, j) + 5.*temp31b53 - 8.*temp31b52
+          vb0(i, k+2, j) = vb0(i, k+2, j) + temp31b53 + temp31b52
+          vb0(i, k-3, j) = vb0(i, k-3, j) + temp31b52 - temp31b53
+          vfluxb(i, k) = 0.0
+          romb(i, k, j) = romb(i, k, j) + 0.5*velb
+          romb(i, k, j-1) = romb(i, k, j-1) + 0.5*velb
+        END DO
+      END DO
+    END DO
+  ELSE IF (vert_order .EQ. 4) THEN
+    DO j=j_start,j_end
+      CALL PUSHINTEGER4(k)
+    END DO
+    vfluxb = 0.0
+    DO j=j_end,j_start,-1
+      DO k=ktf,kts,-1
+        DO i=i_end,i_start,-1
+          temp43b7 = -(msfvy(i, j)*rdzw(k)*tendencyb(i, k, j)/msfvx(i, j&
+&            ))
+          vfluxb(i, k+1) = vfluxb(i, k+1) + temp43b7
+          vfluxb(i, k) = vfluxb(i, k) - temp43b7
+        END DO
+      END DO
+      CALL POPINTEGER4(k)
+      DO i=i_end,i_start,-1
+        k = ktf
+        temp43b3 = 0.5*(fzm(k)*v(i, k, j)+fzp(k)*v(i, k-1, j))*vfluxb(i&
+&          , k)
+        temp43b4 = 0.5*(rom(i, k, j)+rom(i, k, j-1))*vfluxb(i, k)
+        romb(i, k, j) = romb(i, k, j) + temp43b3
+        romb(i, k, j-1) = romb(i, k, j-1) + temp43b3
+        vb0(i, k, j) = vb0(i, k, j) + fzm(k)*temp43b4
+        vb0(i, k-1, j) = vb0(i, k-1, j) + fzp(k)*temp43b4
+        vfluxb(i, k) = 0.0
+        k = kts + 1
+        temp43b5 = 0.5*(fzm(k)*v(i, k, j)+fzp(k)*v(i, k-1, j))*vfluxb(i&
+&          , k)
+        temp43b6 = 0.5*(rom(i, k, j)+rom(i, k, j-1))*vfluxb(i, k)
+        romb(i, k, j) = romb(i, k, j) + temp43b5
+        romb(i, k, j-1) = romb(i, k, j-1) + temp43b5
+        vb0(i, k, j) = vb0(i, k, j) + fzm(k)*temp43b6
+        vb0(i, k-1, j) = vb0(i, k-1, j) + fzp(k)*temp43b6
+        vfluxb(i, k) = 0.0
+      END DO
+      DO k=ktf-1,kts+2,-1
+        DO i=i_end,i_start,-1
+          vel = 0.5*(rom(i, k, j)+rom(i, k, j-1))
+          temp43b2 = vel*vfluxb(i, k)/12.0
+          velb = (7.*(v(i, k, j)+v(i, k-1, j))-v(i, k+1, j)-v(i, k-2, j)&
+&            )*vfluxb(i, k)/12.0
+          vb0(i, k, j) = vb0(i, k, j) + 7.*temp43b2
+          vb0(i, k-1, j) = vb0(i, k-1, j) + 7.*temp43b2
+          vb0(i, k+1, j) = vb0(i, k+1, j) - temp43b2
+          vb0(i, k-2, j) = vb0(i, k-2, j) - temp43b2
+          vfluxb(i, k) = 0.0
+          romb(i, k, j) = romb(i, k, j) + 0.5*velb
+          romb(i, k, j-1) = romb(i, k, j-1) + 0.5*velb
+        END DO
+      END DO
+    END DO
+  ELSE IF (vert_order .EQ. 3) THEN
+    DO j=j_start,j_end
+      CALL PUSHINTEGER4(k)
+    END DO
+    vfluxb = 0.0
+    DO j=j_end,j_start,-1
+      DO k=ktf,kts,-1
+        DO i=i_end,i_start,-1
+          temp47b3 = -(msfvy(i, j)*rdzw(k)*tendencyb(i, k, j)/msfvx(i, j&
+&            ))
+          vfluxb(i, k+1) = vfluxb(i, k+1) + temp47b3
+          vfluxb(i, k) = vfluxb(i, k) - temp47b3
+        END DO
+      END DO
+      CALL POPINTEGER4(k)
+      DO i=i_end,i_start,-1
+        k = ktf
+        temp47b = 0.5*(fzm(k)*v(i, k, j)+fzp(k)*v(i, k-1, j))*vfluxb(i, &
+&          k)
+        temp47b0 = 0.5*(rom(i, k, j)+rom(i, k, j-1))*vfluxb(i, k)
+        romb(i, k, j) = romb(i, k, j) + temp47b
+        romb(i, k, j-1) = romb(i, k, j-1) + temp47b
+        vb0(i, k, j) = vb0(i, k, j) + fzm(k)*temp47b0
+        vb0(i, k-1, j) = vb0(i, k-1, j) + fzp(k)*temp47b0
+        vfluxb(i, k) = 0.0
+        k = kts + 1
+        temp47b1 = 0.5*(fzm(k)*v(i, k, j)+fzp(k)*v(i, k-1, j))*vfluxb(i&
+&          , k)
+        temp47b2 = 0.5*(rom(i, k, j)+rom(i, k, j-1))*vfluxb(i, k)
+        romb(i, k, j) = romb(i, k, j) + temp47b1
+        romb(i, k, j-1) = romb(i, k, j-1) + temp47b1
+        vb0(i, k, j) = vb0(i, k, j) + fzm(k)*temp47b2
+        vb0(i, k-1, j) = vb0(i, k-1, j) + fzp(k)*temp47b2
+        vfluxb(i, k) = 0.0
+      END DO
+      DO k=ktf-1,kts+2,-1
+        DO i=i_end,i_start,-1
+          vel = 0.5*(rom(i, k, j)+rom(i, k, j-1))
+          temp43 = v(i, k+1, j) - v(i, k-2, j) - 3.*(v(i, k, j)-v(i, k-1&
+&            , j))
+          temp46 = SIGN(1., -vel)
+          temp45 = temp46/12.0
+          temp44 = SIGN(1, time_step)
+          temp43b8 = vel*vfluxb(i, k)
+          temp43b9 = temp43b8/12.0
+          temp43b10 = temp44*temp45*temp43b8
+          velb = ((7.*(v(i, k, j)+v(i, k-1, j))-v(i, k+1, j)-v(i, k-2, j&
+&            ))/12.0+temp44*(temp45*temp43))*vfluxb(i, k)
+          vb0(i, k, j) = vb0(i, k, j) + 7.*temp43b9 - 3.*temp43b10
+          vb0(i, k-1, j) = vb0(i, k-1, j) + 3.*temp43b10 + 7.*temp43b9
+          vb0(i, k+1, j) = vb0(i, k+1, j) + temp43b10 - temp43b9
+          vb0(i, k-2, j) = vb0(i, k-2, j) - temp43b10 - temp43b9
+          vfluxb(i, k) = 0.0
+          romb(i, k, j) = romb(i, k, j) + 0.5*velb
+          romb(i, k, j-1) = romb(i, k, j-1) + 0.5*velb
+        END DO
+      END DO
+    END DO
+  ELSE IF (vert_order .EQ. 2) THEN
+    vfluxb = 0.0
+    DO j=j_end,j_start,-1
+      DO k=ktf,kts,-1
+        DO i=i_end,i_start,-1
+          temp47b6 = -(msfvy(i, j)*rdzw(k)*tendencyb(i, k, j)/msfvx(i, j&
+&            ))
+          vfluxb(i, k+1) = vfluxb(i, k+1) + temp47b6
+          vfluxb(i, k) = vfluxb(i, k) - temp47b6
+        END DO
+      END DO
+      DO k=ktf,kts+1,-1
+        DO i=i_end,i_start,-1
+          temp47b4 = 0.5*(fzm(k)*v(i, k, j)+fzp(k)*v(i, k-1, j))*vfluxb(&
+&            i, k)
+          temp47b5 = 0.5*(rom(i, k, j)+rom(i, k, j-1))*vfluxb(i, k)
+          romb(i, k, j) = romb(i, k, j) + temp47b4
+          romb(i, k, j-1) = romb(i, k, j-1) + temp47b4
+          vb0(i, k, j) = vb0(i, k, j) + fzm(k)*temp47b5
+          vb0(i, k-1, j) = vb0(i, k-1, j) + fzp(k)*temp47b5
+          vfluxb(i, k) = 0.0
+        END DO
+      END DO
+    END DO
+  END IF
+  CALL POPCONTROL1B(branch)
+  IF (branch .EQ. 0) THEN
+    CALL POPINTEGER4(i_end)
+  ELSE
+    CALL POPINTEGER4(i_end)
+  END IF
+  CALL POPINTEGER4(i_start)
+  CALL POPCONTROL1B(branch)
+  IF (branch .NE. 0) THEN
+    CALL POPINTEGER4(ad_from52)
+    CALL POPINTEGER4(ad_to52)
+    DO j=ad_to52,ad_from52,-1
+      DO k=ktf,kts,-1
+        dum = ru(ite, k, jm) - ru(ite-1, k, jm)
+        dup = ru(ite, k, jp) - ru(ite-1, k, jp)
+        temp31b41 = -(mrdx*tendencyb(ite-1, k, j))
+        temp31b42 = 0.5*v(ite-1, k, j)*temp31b41
+        ubb = (v_old(ite-1, k, j)-v_old(ite-2, k, j))*temp31b41
+        v_oldb(ite-1, k, j) = v_oldb(ite-1, k, j) + ub*temp31b41
+        v_oldb(ite-2, k, j) = v_oldb(ite-2, k, j) - ub*temp31b41
+        vb0(ite-1, k, j) = vb0(ite-1, k, j) + 0.5*(dup+dum)*temp31b41
+        dupb = temp31b42
+        dumb = temp31b42
+        rub(ite, k, jm) = rub(ite, k, jm) + dumb
+        rub(ite-1, k, jm) = rub(ite-1, k, jm) - dumb
+        rub(ite, k, jp) = rub(ite, k, jp) + dupb
+        rub(ite-1, k, jp) = rub(ite-1, k, jp) - dupb
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(ub)
+          uwb = 0.0
+        ELSE
+          CALL POPREAL8(ub)
+          uwb = ubb
+        END IF
+        rub(ite, k, jp) = rub(ite, k, jp) + 0.5*uwb
+        rub(ite, k, jm) = rub(ite, k, jm) + 0.5*uwb
+      END DO
+      CALL POPCONTROL1B(branch)
+      IF (branch .EQ. 0) THEN
+        CALL POPINTEGER4(jm)
+      ELSE
+        CALL POPINTEGER4(jm)
+      END IF
+      CALL POPCONTROL1B(branch)
+      IF (branch .EQ. 0) THEN
+        CALL POPINTEGER4(jp)
+      ELSE
+        CALL POPINTEGER4(jp)
+      END IF
+      CALL POPREAL8(mrdx)
+    END DO
+  END IF
+  CALL POPCONTROL1B(branch)
+  IF (branch .EQ. 0) THEN
+    CALL POPINTEGER4(ad_from51)
+    CALL POPINTEGER4(ad_to51)
+    DO j=ad_to51,ad_from51,-1
+      DO k=ktf,kts,-1
+        dum = ru(its+1, k, jm) - ru(its, k, jm)
+        dup = ru(its+1, k, jp) - ru(its, k, jp)
+        temp31b39 = -(mrdx*tendencyb(its, k, j))
+        temp31b40 = 0.5*v(its, k, j)*temp31b39
+        ubb = (v_old(its+1, k, j)-v_old(its, k, j))*temp31b39
+        v_oldb(its+1, k, j) = v_oldb(its+1, k, j) + ub*temp31b39
+        v_oldb(its, k, j) = v_oldb(its, k, j) - ub*temp31b39
+        vb0(its, k, j) = vb0(its, k, j) + 0.5*(dup+dum)*temp31b39
+        dupb = temp31b40
+        dumb = temp31b40
+        rub(its+1, k, jm) = rub(its+1, k, jm) + dumb
+        rub(its, k, jm) = rub(its, k, jm) - dumb
+        rub(its+1, k, jp) = rub(its+1, k, jp) + dupb
+        rub(its, k, jp) = rub(its, k, jp) - dupb
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(ub)
+          uwb = 0.0
+        ELSE
+          CALL POPREAL8(ub)
+          uwb = ubb
+        END IF
+        rub(its, k, jp) = rub(its, k, jp) + 0.5*uwb
+        rub(its, k, jm) = rub(its, k, jm) + 0.5*uwb
+      END DO
+      CALL POPCONTROL1B(branch)
+      IF (branch .EQ. 0) THEN
+        CALL POPINTEGER4(jm)
+      ELSE
+        CALL POPINTEGER4(jm)
+      END IF
+      CALL POPCONTROL1B(branch)
+      IF (branch .EQ. 0) THEN
+        CALL POPINTEGER4(jp)
+      ELSE
+        CALL POPINTEGER4(jp)
+      END IF
+      CALL POPREAL8(mrdx)
+    END DO
+  END IF
+  CALL POPCONTROL1B(branch)
+  IF (branch .NE. 0) THEN
+    CALL POPINTEGER4(ad_from50)
+    CALL POPINTEGER4(ad_to50)
+    DO i=ad_to50,ad_from50,-1
+      DO k=ktf,kts,-1
+        temp31b38 = -(rdy*tendencyb(i, k, jte))
+        vbb = (v_old(i, k, jte)-v_old(i, k, jte-1))*temp31b38
+        v_oldb(i, k, jte) = v_oldb(i, k, jte) + vb*temp31b38
+        v_oldb(i, k, jte-1) = v_oldb(i, k, jte-1) - vb*temp31b38
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(vb)
+        ELSE
+          CALL POPREAL8(vb)
+          rvb(i, k, jte) = rvb(i, k, jte) + vbb
+          mutb(i, jte-1) = mutb(i, jte-1) + cb*vbb
+        END IF
+      END DO
+    END DO
+    CALL POPCONTROL1B(branch)
+    IF (branch .EQ. 0) THEN
+      CALL POPINTEGER4(i_end)
+    ELSE
+      CALL POPINTEGER4(i_end)
+    END IF
+    CALL POPINTEGER4(i_start)
+  END IF
+  CALL POPCONTROL1B(branch)
+  IF (branch .EQ. 0) THEN
+    CALL POPINTEGER4(ad_from49)
+    CALL POPINTEGER4(ad_to49)
+    DO i=ad_to49,ad_from49,-1
+      DO k=ktf,kts,-1
+        temp31b37 = -(rdy*tendencyb(i, k, jts))
+        vbb = (v_old(i, k, jts+1)-v_old(i, k, jts))*temp31b37
+        v_oldb(i, k, jts+1) = v_oldb(i, k, jts+1) + vb*temp31b37
+        v_oldb(i, k, jts) = v_oldb(i, k, jts) - vb*temp31b37
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPREAL8(vb)
+        ELSE
+          CALL POPREAL8(vb)
+          rvb(i, k, jts) = rvb(i, k, jts) + vbb
+          mutb(i, jts) = mutb(i, jts) - cb*vbb
+        END IF
+      END DO
+    END DO
+    CALL POPCONTROL1B(branch)
+    IF (branch .EQ. 0) THEN
+      CALL POPINTEGER4(i_end)
+    ELSE
+      CALL POPINTEGER4(i_end)
+    END IF
+    CALL POPINTEGER4(i_start)
+  END IF
+  CALL POPCONTROL1B(branch)
+  IF (branch .EQ. 0) THEN
+    DO i=ite,its,-1
+      DO k=ktf,kts,-1
+        tendencyb(i, k, jte) = 0.0
+      END DO
+    END DO
+  END IF
+  CALL POPCONTROL1B(branch)
+  IF (branch .EQ. 0) THEN
+    DO i=ite,its,-1
+      DO k=ktf,kts,-1
+        tendencyb(i, k, jts) = 0.0
+      END DO
+    END DO
+  END IF
+  CALL POPCONTROL3B(branch)
+  IF (branch .LT. 3) THEN
+    IF (branch .EQ. 0) THEN
+      fqxb = 0.0
+      CALL POPINTEGER4(ad_from48)
+      CALL POPINTEGER4(ad_to48)
+      DO j=ad_to48,ad_from48,-1
+        DO k=ktf,kts,-1
+          CALL POPINTEGER4(ad_from47)
+          CALL POPINTEGER4(ad_to47)
+          DO i=ad_to47,ad_from47,-1
+            mrdx = msfvy(i, j)*rdx
+            fqxb(i+1, k) = fqxb(i+1, k) - mrdx*tendencyb(i, k, j)
+            fqxb(i, k) = fqxb(i, k) + mrdx*tendencyb(i, k, j)
+          END DO
+        END DO
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) THEN
+          CALL POPINTEGER4(ad_to46)
+          DO i=ad_to46,i_end_f+1,-1
+            CALL POPCONTROL1B(branch)
+            IF (branch .NE. 0) THEN
+              DO k=ktf,kts,-1
+                vel = 0.5*(ru(i, k, j)+ru(i, k, j-1))
+                temp31b36 = vel*fqxb(i, k)/12.0
+                velb = (7.*(v(i, k, j)+v(i-1, k, j))-v(i+1, k, j)-v(i-2&
+&                  , k, j))*fqxb(i, k)/12.0
+                vb0(i, k, j) = vb0(i, k, j) + 7.*temp31b36
+                vb0(i-1, k, j) = vb0(i-1, k, j) + 7.*temp31b36
+                vb0(i+1, k, j) = vb0(i+1, k, j) - temp31b36
+                vb0(i-2, k, j) = vb0(i-2, k, j) - temp31b36
+                fqxb(i, k) = 0.0
+                rub(i, k, j) = rub(i, k, j) + 0.5*velb
+                rub(i, k, j-1) = rub(i, k, j-1) + 0.5*velb
+              END DO
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              DO k=ktf,kts,-1
+                temp31b34 = 0.25*(v(i_end+1, k, j)+v(i_end, k, j))*fqxb(&
+&                  i, k)
+                temp31b35 = 0.25*(ru(i_end+1, k, j)+ru(i_end+1, k, j-1))&
+&                  *fqxb(i, k)
+                rub(i_end+1, k, j) = rub(i_end+1, k, j) + temp31b34
+                rub(i_end+1, k, j-1) = rub(i_end+1, k, j-1) + temp31b34
+                vb0(i_end+1, k, j) = vb0(i_end+1, k, j) + temp31b35
+                vb0(i_end, k, j) = vb0(i_end, k, j) + temp31b35
+                fqxb(i, k) = 0.0
+              END DO
+            END IF
+          END DO
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPINTEGER4(ad_from46)
+          DO i=i_start_f-1,ad_from46,-1
+            CALL POPCONTROL1B(branch)
+            IF (branch .NE. 0) THEN
+              DO k=ktf,kts,-1
+                vel = 0.5*(ru(i, k, j)+ru(i, k, j-1))
+                temp31b33 = vel*fqxb(i, k)/12.0
+                velb = (7.*(v(i, k, j)+v(i-1, k, j))-v(i+1, k, j)-v(i-2&
+&                  , k, j))*fqxb(i, k)/12.0
+                vb0(i, k, j) = vb0(i, k, j) + 7.*temp31b33
+                vb0(i-1, k, j) = vb0(i-1, k, j) + 7.*temp31b33
+                vb0(i+1, k, j) = vb0(i+1, k, j) - temp31b33
+                vb0(i-2, k, j) = vb0(i-2, k, j) - temp31b33
+                fqxb(i, k) = 0.0
+                rub(i, k, j) = rub(i, k, j) + 0.5*velb
+                rub(i, k, j-1) = rub(i, k, j-1) + 0.5*velb
+              END DO
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              DO k=ktf,kts,-1
+                temp31b31 = 0.25*(v(i, k, j)+v(i-1, k, j))*fqxb(i, k)
+                temp31b32 = 0.25*(ru(i, k, j)+ru(i, k, j-1))*fqxb(i, k)
+                rub(i, k, j) = rub(i, k, j) + temp31b31
+                rub(i, k, j-1) = rub(i, k, j-1) + temp31b31
+                vb0(i, k, j) = vb0(i, k, j) + temp31b32
+                vb0(i-1, k, j) = vb0(i-1, k, j) + temp31b32
+                fqxb(i, k) = 0.0
+              END DO
+            END IF
+          END DO
+        END IF
+        DO k=ktf,kts,-1
+          DO i=i_end_f,i_start_f,-1
+            vel = 0.5*(ru(i, k, j)+ru(i, k, j-1))
+            temp31b30 = vel*fqxb(i, k)/60.0
+            velb = (37.*(v(i, k, j)+v(i-1, k, j))-8.*(v(i+1, k, j)+v(i-2&
+&              , k, j))+v(i+2, k, j)+v(i-3, k, j))*fqxb(i, k)/60.0
+            vb0(i, k, j) = vb0(i, k, j) + 37.*temp31b30
+            vb0(i-1, k, j) = vb0(i-1, k, j) + 37.*temp31b30
+            vb0(i+1, k, j) = vb0(i+1, k, j) - 8.*temp31b30
+            vb0(i-2, k, j) = vb0(i-2, k, j) - 8.*temp31b30
+            vb0(i+2, k, j) = vb0(i+2, k, j) + temp31b30
+            vb0(i-3, k, j) = vb0(i-3, k, j) + temp31b30
+            fqxb(i, k) = 0.0
+            rub(i, k, j) = rub(i, k, j) + 0.5*velb
+            rub(i, k, j-1) = rub(i, k, j-1) + 0.5*velb
+          END DO
+        END DO
+      END DO
+      fqyb = 0.0
+      CALL POPINTEGER4(ad_from45)
+      CALL POPINTEGER4(ad_to45)
+      DO j=ad_to45,ad_from45,-1
+        CALL POPINTEGER4(jp0)
+        CALL POPINTEGER4(jp1)
+        CALL POPCONTROL2B(branch)
+        IF (branch .LT. 2) THEN
+          IF (branch .EQ. 0) THEN
+            DO k=ktf,kts,-1
+              CALL POPINTEGER4(ad_from42)
+              CALL POPINTEGER4(ad_to42)
+              DO i=ad_to42,ad_from42,-1
+                tendencyb(i, k, j-1) = 0.0
+              END DO
+            END DO
+          ELSE
+            DO k=ktf,kts,-1
+              CALL POPINTEGER4(ad_from43)
+              CALL POPINTEGER4(ad_to43)
+              DO i=ad_to43,ad_from43,-1
+                tendencyb(i, k, j-1) = 0.0
+              END DO
+            END DO
+          END IF
+        ELSE IF (branch .EQ. 2) THEN
+          DO k=ktf,kts,-1
+            CALL POPINTEGER4(ad_from44)
+            CALL POPINTEGER4(ad_to44)
+            DO i=ad_to44,ad_from44,-1
+              mrdy = msfvy(i, j-1)*rdy
+              fqyb(i, k, jp1) = fqyb(i, k, jp1) - mrdy*tendencyb(i, k, j&
+&                -1)
+              fqyb(i, k, jp0) = fqyb(i, k, jp0) + mrdy*tendencyb(i, k, j&
+&                -1)
+            END DO
+          END DO
+        END IF
+        CALL POPCONTROL3B(branch)
+        IF (branch .LT. 3) THEN
+          IF (branch .EQ. 0) THEN
+            DO k=ktf,kts,-1
+              CALL POPINTEGER4(ad_from37)
+              CALL POPINTEGER4(ad_to37)
+              DO i=ad_to37,ad_from37,-1
+                vel = 0.5*(rv(i, k, j)+rv(i, k, j-1))
+                temp31b23 = vel*fqyb(i, k, jp1)/60.0
+                velb = (37.*(v(i, k, j)+v(i, k, j-1))-8.*(v(i, k, j+1)+v&
+&                  (i, k, j-2))+v(i, k, j+2)+v(i, k, j-3))*fqyb(i, k, jp1&
+&                  )/60.0
+                vb0(i, k, j) = vb0(i, k, j) + 37.*temp31b23
+                vb0(i, k, j-1) = vb0(i, k, j-1) + 37.*temp31b23
+                vb0(i, k, j+1) = vb0(i, k, j+1) - 8.*temp31b23
+                vb0(i, k, j-2) = vb0(i, k, j-2) - 8.*temp31b23
+                vb0(i, k, j+2) = vb0(i, k, j+2) + temp31b23
+                vb0(i, k, j-3) = vb0(i, k, j-3) + temp31b23
+                fqyb(i, k, jp1) = 0.0
+                rvb(i, k, j) = rvb(i, k, j) + 0.5*velb
+                rvb(i, k, j-1) = rvb(i, k, j-1) + 0.5*velb
+              END DO
+            END DO
+          ELSE IF (branch .EQ. 1) THEN
+            DO k=ktf,kts,-1
+              CALL POPINTEGER4(ad_from38)
+              CALL POPINTEGER4(ad_to38)
+              DO i=ad_to38,ad_from38,-1
+                temp31b24 = 0.25*(v(i, k, j)+vb)*fqyb(i, k, jp1)
+                temp31b25 = 0.25*(rv(i, k, j)+rv(i, k, j-1))*fqyb(i, k, &
+&                  jp1)
+                rvb(i, k, j) = rvb(i, k, j) + temp31b24
+                rvb(i, k, j-1) = rvb(i, k, j-1) + temp31b24
+                vb0(i, k, j) = vb0(i, k, j) + temp31b25
+                vbb = temp31b25
+                fqyb(i, k, jp1) = 0.0
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  vb0(i, k, j) = vb0(i, k, j) + vbb
+                  vbb = 0.0
+                END IF
+                CALL POPREAL8(vb)
+                vb0(i, k, j-1) = vb0(i, k, j-1) + vbb
+              END DO
+            END DO
+          ELSE
+            DO k=ktf,kts,-1
+              CALL POPINTEGER4(ad_from39)
+              CALL POPINTEGER4(ad_to39)
+              DO i=ad_to39,ad_from39,-1
+                vel = 0.5*(rv(i, k, j)+rv(i, k, j-1))
+                temp31b26 = vel*fqyb(i, k, jp1)/12.0
+                velb = (7.*(v(i, k, j)+v(i, k, j-1))-v(i, k, j+1)-v(i, k&
+&                  , j-2))*fqyb(i, k, jp1)/12.0
+                vb0(i, k, j) = vb0(i, k, j) + 7.*temp31b26
+                vb0(i, k, j-1) = vb0(i, k, j-1) + 7.*temp31b26
+                vb0(i, k, j+1) = vb0(i, k, j+1) - temp31b26
+                vb0(i, k, j-2) = vb0(i, k, j-2) - temp31b26
+                fqyb(i, k, jp1) = 0.0
+                rvb(i, k, j) = rvb(i, k, j) + 0.5*velb
+                rvb(i, k, j-1) = rvb(i, k, j-1) + 0.5*velb
+              END DO
+            END DO
+          END IF
+        ELSE IF (branch .EQ. 3) THEN
+          DO k=ktf,kts,-1
+            CALL POPINTEGER4(ad_from40)
+            CALL POPINTEGER4(ad_to40)
+            DO i=ad_to40,ad_from40,-1
+              temp31b27 = 0.25*(vb+v(i, k, j-1))*fqyb(i, k, jp1)
+              temp31b28 = 0.25*(rv(i, k, j)+rv(i, k, j-1))*fqyb(i, k, &
+&                jp1)
+              rvb(i, k, j) = rvb(i, k, j) + temp31b27
+              rvb(i, k, j-1) = rvb(i, k, j-1) + temp31b27
+              vbb = temp31b28
+              vb0(i, k, j-1) = vb0(i, k, j-1) + temp31b28
+              fqyb(i, k, jp1) = 0.0
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                vb0(i, k, j-1) = vb0(i, k, j-1) + vbb
+                vbb = 0.0
+              END IF
+              CALL POPREAL8(vb)
+              vb0(i, k, j) = vb0(i, k, j) + vbb
+            END DO
+          END DO
+        ELSE IF (branch .EQ. 4) THEN
+          DO k=ktf,kts,-1
+            CALL POPINTEGER4(ad_from41)
+            CALL POPINTEGER4(ad_to41)
+            DO i=ad_to41,ad_from41,-1
+              vel = 0.5*(rv(i, k, j)+rv(i, k, j-1))
+              temp31b29 = vel*fqyb(i, k, jp1)/12.0
+              velb = (7.*(v(i, k, j)+v(i, k, j-1))-v(i, k, j+1)-v(i, k, &
+&                j-2))*fqyb(i, k, jp1)/12.0
+              vb0(i, k, j) = vb0(i, k, j) + 7.*temp31b29
+              vb0(i, k, j-1) = vb0(i, k, j-1) + 7.*temp31b29
+              vb0(i, k, j+1) = vb0(i, k, j+1) - temp31b29
+              vb0(i, k, j-2) = vb0(i, k, j-2) - temp31b29
+              fqyb(i, k, jp1) = 0.0
+              rvb(i, k, j) = rvb(i, k, j) + 0.5*velb
+              rvb(i, k, j-1) = rvb(i, k, j-1) + 0.5*velb
+            END DO
+          END DO
+        END IF
+      END DO
+    ELSE IF (branch .EQ. 1) THEN
+      fqxb = 0.0
+      CALL POPINTEGER4(ad_from10)
+      CALL POPINTEGER4(ad_to10)
+      DO j=ad_to10,ad_from10,-1
+        DO k=ktf,kts,-1
+          CALL POPINTEGER4(ad_from9)
+          CALL POPINTEGER4(ad_to9)
+          DO i=ad_to9,ad_from9,-1
+            mrdx = msfvy(i, j)*rdx
+            fqxb(i+1, k) = fqxb(i+1, k) - mrdx*tendencyb(i, k, j)
+            fqxb(i, k) = fqxb(i, k) + mrdx*tendencyb(i, k, j)
+          END DO
+        END DO
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) THEN
+          CALL POPINTEGER4(ad_to8)
+          DO i=ad_to8,i_end_f+1,-1
+            CALL POPCONTROL1B(branch)
+            IF (branch .NE. 0) THEN
+              DO k=ktf,kts,-1
+                vel = 0.5*(ru(i, k, j)+ru(i, k, j-1))
+                temp19 = v(i+1, k, j) - v(i-2, k, j) - 3.*(v(i, k, j)-v(&
+&                  i-1, k, j))
+                temp22 = SIGN(1., vel)
+                temp21 = temp22/12.0
+                temp20 = SIGN(1, time_step)
+                temp19b1 = vel*fqxb(i, k)
+                temp19b2 = temp19b1/12.0
+                temp19b3 = temp20*temp21*temp19b1
+                velb = ((7.*(v(i, k, j)+v(i-1, k, j))-v(i+1, k, j)-v(i-2&
+&                  , k, j))/12.0+temp20*(temp21*temp19))*fqxb(i, k)
+                vb0(i, k, j) = vb0(i, k, j) + 7.*temp19b2 - 3.*temp19b3
+                vb0(i-1, k, j) = vb0(i-1, k, j) + 3.*temp19b3 + 7.*&
+&                  temp19b2
+                vb0(i+1, k, j) = vb0(i+1, k, j) + temp19b3 - temp19b2
+                vb0(i-2, k, j) = vb0(i-2, k, j) - temp19b3 - temp19b2
+                fqxb(i, k) = 0.0
+                rub(i, k, j) = rub(i, k, j) + 0.5*velb
+                rub(i, k, j-1) = rub(i, k, j-1) + 0.5*velb
+              END DO
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              DO k=ktf,kts,-1
+                temp19b = 0.25*(v(i_end+1, k, j)+v(i_end, k, j))*fqxb(i&
+&                  , k)
+                temp19b0 = 0.25*(ru(i_end+1, k, j)+ru(i_end+1, k, j-1))*&
+&                  fqxb(i, k)
+                rub(i_end+1, k, j) = rub(i_end+1, k, j) + temp19b
+                rub(i_end+1, k, j-1) = rub(i_end+1, k, j-1) + temp19b
+                vb0(i_end+1, k, j) = vb0(i_end+1, k, j) + temp19b0
+                vb0(i_end, k, j) = vb0(i_end, k, j) + temp19b0
+                fqxb(i, k) = 0.0
+              END DO
+            END IF
+          END DO
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          CALL POPINTEGER4(ad_from8)
+          DO i=i_start_f-1,ad_from8,-1
+            CALL POPCONTROL1B(branch)
+            IF (branch .NE. 0) THEN
+              DO k=ktf,kts,-1
+                vel = 0.5*(ru(i, k, j)+ru(i, k, j-1))
+                temp15 = v(i+1, k, j) - v(i-2, k, j) - 3.*(v(i, k, j)-v(&
+&                  i-1, k, j))
+                temp18 = SIGN(1., vel)
+                temp17 = temp18/12.0
+                temp16 = SIGN(1, time_step)
+                temp15b1 = vel*fqxb(i, k)
+                temp15b2 = temp15b1/12.0
+                temp15b3 = temp16*temp17*temp15b1
+                velb = ((7.*(v(i, k, j)+v(i-1, k, j))-v(i+1, k, j)-v(i-2&
+&                  , k, j))/12.0+temp16*(temp17*temp15))*fqxb(i, k)
+                vb0(i, k, j) = vb0(i, k, j) + 7.*temp15b2 - 3.*temp15b3
+                vb0(i-1, k, j) = vb0(i-1, k, j) + 3.*temp15b3 + 7.*&
+&                  temp15b2
+                vb0(i+1, k, j) = vb0(i+1, k, j) + temp15b3 - temp15b2
+                vb0(i-2, k, j) = vb0(i-2, k, j) - temp15b3 - temp15b2
+                fqxb(i, k) = 0.0
+                rub(i, k, j) = rub(i, k, j) + 0.5*velb
+                rub(i, k, j-1) = rub(i, k, j-1) + 0.5*velb
+              END DO
+            END IF
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              DO k=ktf,kts,-1
+                temp15b = 0.25*(v(i, k, j)+v(i-1, k, j))*fqxb(i, k)
+                temp15b0 = 0.25*(ru(i, k, j)+ru(i, k, j-1))*fqxb(i, k)
+                rub(i, k, j) = rub(i, k, j) + temp15b
+                rub(i, k, j-1) = rub(i, k, j-1) + temp15b
+                vb0(i, k, j) = vb0(i, k, j) + temp15b0
+                vb0(i-1, k, j) = vb0(i-1, k, j) + temp15b0
+                fqxb(i, k) = 0.0
+              END DO
+            END IF
+          END DO
+        END IF
+        DO k=ktf,kts,-1
+          DO i=i_end_f,i_start_f,-1
+            vel = 0.5*(ru(i, k, j)+ru(i, k, j-1))
+            temp11 = v(i+2, k, j) - v(i-3, k, j) + 10.*(v(i, k, j)-v(i-1&
+&              , k, j)) - 5.*(v(i+1, k, j)-v(i-2, k, j))
+            temp14 = SIGN(1., vel)
+            temp13 = temp14/60.0
+            temp12 = SIGN(1, time_step)
+            temp11b = vel*fqxb(i, k)
+            temp11b0 = temp11b/60.0
+            temp11b1 = -(temp12*temp13*temp11b)
+            velb = ((37.*(v(i, k, j)+v(i-1, k, j))-8.*(v(i+1, k, j)+v(i-&
+&              2, k, j))+v(i+2, k, j)+v(i-3, k, j))/60.0-temp12*(temp13*&
+&              temp11))*fqxb(i, k)
+            vb0(i, k, j) = vb0(i, k, j) + 10.*temp11b1 + 37.*temp11b0
+            vb0(i-1, k, j) = vb0(i-1, k, j) + 37.*temp11b0 - 10.*&
+&              temp11b1
+            vb0(i+1, k, j) = vb0(i+1, k, j) - 5.*temp11b1 - 8.*temp11b0
+            vb0(i-2, k, j) = vb0(i-2, k, j) + 5.*temp11b1 - 8.*temp11b0
+            vb0(i+2, k, j) = vb0(i+2, k, j) + temp11b1 + temp11b0
+            vb0(i-3, k, j) = vb0(i-3, k, j) + temp11b0 - temp11b1
+            fqxb(i, k) = 0.0
+            rub(i, k, j) = rub(i, k, j) + 0.5*velb
+            rub(i, k, j-1) = rub(i, k, j-1) + 0.5*velb
+          END DO
+        END DO
+      END DO
+      fqyb = 0.0
+      CALL POPINTEGER4(ad_from7)
+      CALL POPINTEGER4(ad_to7)
+      DO j=ad_to7,ad_from7,-1
+        CALL POPINTEGER4(jp0)
+        CALL POPINTEGER4(jp1)
+        CALL POPCONTROL2B(branch)
+        IF (branch .LT. 2) THEN
+          IF (branch .EQ. 0) THEN
+            DO k=ktf,kts,-1
+              CALL POPINTEGER4(ad_from4)
+              CALL POPINTEGER4(ad_to4)
+              DO i=ad_to4,ad_from4,-1
+                tendencyb(i, k, j-1) = 0.0
+              END DO
+            END DO
+          ELSE
+            DO k=ktf,kts,-1
+              CALL POPINTEGER4(ad_from5)
+              CALL POPINTEGER4(ad_to5)
+              DO i=ad_to5,ad_from5,-1
+                tendencyb(i, k, j-1) = 0.0
+              END DO
+            END DO
+          END IF
+        ELSE IF (branch .EQ. 2) THEN
+          DO k=ktf,kts,-1
+            CALL POPINTEGER4(ad_from6)
+            CALL POPINTEGER4(ad_to6)
+            DO i=ad_to6,ad_from6,-1
+              mrdy = msfvy(i, j-1)*rdy
+              fqyb(i, k, jp1) = fqyb(i, k, jp1) - mrdy*tendencyb(i, k, j&
+&                -1)
+              fqyb(i, k, jp0) = fqyb(i, k, jp0) + mrdy*tendencyb(i, k, j&
+&                -1)
+            END DO
+          END DO
+        END IF
+        CALL POPCONTROL3B(branch)
+        IF (branch .LT. 3) THEN
+          IF (branch .EQ. 0) THEN
+            DO k=ktf,kts,-1
+              CALL POPINTEGER4(ad_from)
+              CALL POPINTEGER4(ad_to)
+              DO i=ad_to,ad_from,-1
+                vel = 0.5*(rv(i, k, j)+rv(i, k, j-1))
+                temp = v(i, k, j+2) - v(i, k, j-3) + 10.*(v(i, k, j)-v(i&
+&                  , k, j-1)) - 5.*(v(i, k, j+1)-v(i, k, j-2))
+                temp2 = SIGN(1., vel)
+                temp1 = temp2/60.0
+                temp0 = SIGN(1, time_step)
+                tempb = vel*fqyb(i, k, jp1)
+                tempb0 = tempb/60.0
+                tempb1 = -(temp0*temp1*tempb)
+                velb = ((37.*(v(i, k, j)+v(i, k, j-1))-8.*(v(i, k, j+1)+&
+&                  v(i, k, j-2))+v(i, k, j+2)+v(i, k, j-3))/60.0-temp0*(&
+&                  temp1*temp))*fqyb(i, k, jp1)
+                vb0(i, k, j) = vb0(i, k, j) + 10.*tempb1 + 37.*tempb0
+                vb0(i, k, j-1) = vb0(i, k, j-1) + 37.*tempb0 - 10.*&
+&                  tempb1
+                vb0(i, k, j+1) = vb0(i, k, j+1) - 5.*tempb1 - 8.*tempb0
+                vb0(i, k, j-2) = vb0(i, k, j-2) + 5.*tempb1 - 8.*tempb0
+                vb0(i, k, j+2) = vb0(i, k, j+2) + tempb1 + tempb0
+                vb0(i, k, j-3) = vb0(i, k, j-3) + tempb0 - tempb1
+                fqyb(i, k, jp1) = 0.0
+                rvb(i, k, j) = rvb(i, k, j) + 0.5*velb
+                rvb(i, k, j-1) = rvb(i, k, j-1) + 0.5*velb
+              END DO
+            END DO
+          ELSE IF (branch .EQ. 1) THEN
+            DO k=ktf,kts,-1
+              CALL POPINTEGER4(ad_from0)
+              CALL POPINTEGER4(ad_to0)
+              DO i=ad_to0,ad_from0,-1
+                temp3b = 0.25*(v(i, k, j)+vb)*fqyb(i, k, jp1)
+                temp3b0 = 0.25*(rv(i, k, j)+rv(i, k, j-1))*fqyb(i, k, &
+&                  jp1)
+                rvb(i, k, j) = rvb(i, k, j) + temp3b
+                rvb(i, k, j-1) = rvb(i, k, j-1) + temp3b
+                vb0(i, k, j) = vb0(i, k, j) + temp3b0
+                vbb = temp3b0
+                fqyb(i, k, jp1) = 0.0
+                CALL POPCONTROL1B(branch)
+                IF (branch .EQ. 0) THEN
+                  vb0(i, k, j) = vb0(i, k, j) + vbb
+                  vbb = 0.0
+                END IF
+                CALL POPREAL8(vb)
+                vb0(i, k, j-1) = vb0(i, k, j-1) + vbb
+              END DO
+            END DO
+          ELSE
+            DO k=ktf,kts,-1
+              CALL POPINTEGER4(ad_from1)
+              CALL POPINTEGER4(ad_to1)
+              DO i=ad_to1,ad_from1,-1
+                vel = 0.5*(rv(i, k, j)+rv(i, k, j-1))
+                temp3 = v(i, k, j+1) - v(i, k, j-2) - 3.*(v(i, k, j)-v(i&
+&                  , k, j-1))
+                temp6 = SIGN(1., vel)
+                temp5 = temp6/12.0
+                temp4 = SIGN(1, time_step)
+                temp3b1 = vel*fqyb(i, k, jp1)
+                temp3b2 = temp3b1/12.0
+                temp3b3 = temp4*temp5*temp3b1
+                velb = ((7.*(v(i, k, j)+v(i, k, j-1))-v(i, k, j+1)-v(i, &
+&                  k, j-2))/12.0+temp4*(temp5*temp3))*fqyb(i, k, jp1)
+                vb0(i, k, j) = vb0(i, k, j) + 7.*temp3b2 - 3.*temp3b3
+                vb0(i, k, j-1) = vb0(i, k, j-1) + 3.*temp3b3 + 7.*&
+&                  temp3b2
+                vb0(i, k, j+1) = vb0(i, k, j+1) + temp3b3 - temp3b2
+                vb0(i, k, j-2) = vb0(i, k, j-2) - temp3b3 - temp3b2
+                fqyb(i, k, jp1) = 0.0
+                rvb(i, k, j) = rvb(i, k, j) + 0.5*velb
+                rvb(i, k, j-1) = rvb(i, k, j-1) + 0.5*velb
+              END DO
+            END DO
+          END IF
+        ELSE IF (branch .EQ. 3) THEN
+          DO k=ktf,kts,-1
+            CALL POPINTEGER4(ad_from2)
+            CALL POPINTEGER4(ad_to2)
+            DO i=ad_to2,ad_from2,-1
+              temp7b = 0.25*(vb+v(i, k, j-1))*fqyb(i, k, jp1)
+              temp7b0 = 0.25*(rv(i, k, j)+rv(i, k, j-1))*fqyb(i, k, jp1)
+              rvb(i, k, j) = rvb(i, k, j) + temp7b
+              rvb(i, k, j-1) = rvb(i, k, j-1) + temp7b
+              vbb = temp7b0
+              vb0(i, k, j-1) = vb0(i, k, j-1) + temp7b0
+              fqyb(i, k, jp1) = 0.0
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                vb0(i, k, j-1) = vb0(i, k, j-1) + vbb
+                vbb = 0.0
+              END IF
+              CALL POPREAL8(vb)
+              vb0(i, k, j) = vb0(i, k, j) + vbb
+            END DO
+          END DO
+        ELSE IF (branch .EQ. 4) THEN
+          DO k=ktf,kts,-1
+            CALL POPINTEGER4(ad_from3)
+            CALL POPINTEGER4(ad_to3)
+            DO i=ad_to3,ad_from3,-1
+              vel = 0.5*(rv(i, k, j)+rv(i, k, j-1))
+              temp7 = v(i, k, j+1) - v(i, k, j-2) - 3.*(v(i, k, j)-v(i, &
+&                k, j-1))
+              temp10 = SIGN(1., vel)
+              temp9 = temp10/12.0
+              temp8 = SIGN(1, time_step)
+              temp7b1 = vel*fqyb(i, k, jp1)
+              temp7b2 = temp7b1/12.0
+              temp7b3 = temp8*temp9*temp7b1
+              velb = ((7.*(v(i, k, j)+v(i, k, j-1))-v(i, k, j+1)-v(i, k&
+&                , j-2))/12.0+temp8*(temp9*temp7))*fqyb(i, k, jp1)
+              vb0(i, k, j) = vb0(i, k, j) + 7.*temp7b2 - 3.*temp7b3
+              vb0(i, k, j-1) = vb0(i, k, j-1) + 3.*temp7b3 + 7.*temp7b2
+              vb0(i, k, j+1) = vb0(i, k, j+1) + temp7b3 - temp7b2
+              vb0(i, k, j-2) = vb0(i, k, j-2) - temp7b3 - temp7b2
+              fqyb(i, k, jp1) = 0.0
+              rvb(i, k, j) = rvb(i, k, j) + 0.5*velb
+              rvb(i, k, j-1) = rvb(i, k, j-1) + 0.5*velb
+            END DO
+          END DO
+        END IF
+      END DO
+    ELSE
+      fqxb = 0.0
+      CALL POPINTEGER4(ad_from19)
+      CALL POPINTEGER4(ad_to19)
+      DO j=ad_to19,ad_from19,-1
+        DO k=ktf,kts,-1
+          CALL POPINTEGER4(ad_from18)
+          CALL POPINTEGER4(ad_to18)
+          DO i=ad_to18,ad_from18,-1
+            mrdx = msfvy(i, j)*rdx
+            fqxb(i+1, k) = fqxb(i+1, k) - mrdx*tendencyb(i, k, j)
+            fqxb(i, k) = fqxb(i, k) + mrdx*tendencyb(i, k, j)
+          END DO
+        END DO
+        CALL POPCONTROL1B(branch)
+        IF (branch .NE. 0) THEN
+          DO k=ktf,kts,-1
+            temp23b7 = 0.25*(v(i_end+1, k, j)+v(i_end, k, j))*fqxb(i_end&
+&              +1, k)
+            temp23b8 = 0.25*(ru(i_end+1, k, j)+ru(i_end+1, k, j-1))*fqxb&
+&              (i_end+1, k)
+            rub(i_end+1, k, j) = rub(i_end+1, k, j) + temp23b7
+            rub(i_end+1, k, j-1) = rub(i_end+1, k, j-1) + temp23b7
+            vb0(i_end+1, k, j) = vb0(i_end+1, k, j) + temp23b8
+            vb0(i_end, k, j) = vb0(i_end, k, j) + temp23b8
+            fqxb(i_end+1, k) = 0.0
+          END DO
+        END IF
+        CALL POPCONTROL1B(branch)
+        IF (branch .EQ. 0) THEN
+          DO k=ktf,kts,-1
+            temp23b5 = 0.25*(v(i_start, k, j)+v(i_start-1, k, j))*fqxb(&
+&              i_start, k)
+            temp23b6 = 0.25*(ru(i_start, k, j)+ru(i_start, k, j-1))*fqxb&
+&              (i_start, k)
+            rub(i_start, k, j) = rub(i_start, k, j) + temp23b5
+            rub(i_start, k, j-1) = rub(i_start, k, j-1) + temp23b5
+            vb0(i_start, k, j) = vb0(i_start, k, j) + temp23b6
+            vb0(i_start-1, k, j) = vb0(i_start-1, k, j) + temp23b6
+            fqxb(i_start, k) = 0.0
+          END DO
+        END IF
+        DO k=ktf,kts,-1
+          DO i=i_end_f,i_start_f,-1
+            vel = 0.5*(ru(i, k, j)+ru(i, k, j-1))
+            temp23b4 = vel*fqxb(i, k)/12.0
+            velb = (7.*(v(i, k, j)+v(i-1, k, j))-v(i+1, k, j)-v(i-2, k, &
+&              j))*fqxb(i, k)/12.0
+            vb0(i, k, j) = vb0(i, k, j) + 7.*temp23b4
+            vb0(i-1, k, j) = vb0(i-1, k, j) + 7.*temp23b4
+            vb0(i+1, k, j) = vb0(i+1, k, j) - temp23b4
+            vb0(i-2, k, j) = vb0(i-2, k, j) - temp23b4
+            fqxb(i, k) = 0.0
+            rub(i, k, j) = rub(i, k, j) + 0.5*velb
+            rub(i, k, j-1) = rub(i, k, j-1) + 0.5*velb
+          END DO
+        END DO
+      END DO
+      fqyb = 0.0
+      CALL POPINTEGER4(ad_from17)
+      CALL POPINTEGER4(ad_to17)
+      DO j=ad_to17,ad_from17,-1
+        CALL POPINTEGER4(jp0)
+        CALL POPINTEGER4(jp1)
+        CALL POPCONTROL2B(branch)
+        IF (branch .LT. 2) THEN
+          IF (branch .EQ. 0) THEN
+            DO k=ktf,kts,-1
+              CALL POPINTEGER4(ad_from14)
+              CALL POPINTEGER4(ad_to14)
+              DO i=ad_to14,ad_from14,-1
+                tendencyb(i, k, j-1) = 0.0
+              END DO
+            END DO
+          ELSE
+            DO k=ktf,kts,-1
+              CALL POPINTEGER4(ad_from15)
+              CALL POPINTEGER4(ad_to15)
+              DO i=ad_to15,ad_from15,-1
+                tendencyb(i, k, j-1) = 0.0
+              END DO
+            END DO
+          END IF
+        ELSE IF (branch .EQ. 2) THEN
+          DO k=ktf,kts,-1
+            CALL POPINTEGER4(ad_from16)
+            CALL POPINTEGER4(ad_to16)
+            DO i=ad_to16,ad_from16,-1
+              mrdy = msfvy(i, j-1)*rdy
+              fqyb(i, k, jp1) = fqyb(i, k, jp1) - mrdy*tendencyb(i, k, j&
+&                -1)
+              fqyb(i, k, jp0) = fqyb(i, k, jp0) + mrdy*tendencyb(i, k, j&
+&                -1)
+            END DO
+          END DO
+        END IF
+        CALL POPCONTROL2B(branch)
+        IF (branch .EQ. 0) THEN
+          DO k=ktf,kts,-1
+            CALL POPINTEGER4(ad_from11)
+            CALL POPINTEGER4(ad_to11)
+            DO i=ad_to11,ad_from11,-1
+              temp23b = 0.25*(v(i, k, j)+vb)*fqyb(i, k, jp1)
+              temp23b0 = 0.25*(rv(i, k, j)+rv(i, k, j-1))*fqyb(i, k, jp1&
+&                )
+              rvb(i, k, j) = rvb(i, k, j) + temp23b
+              rvb(i, k, j-1) = rvb(i, k, j-1) + temp23b
+              vb0(i, k, j) = vb0(i, k, j) + temp23b0
+              vbb = temp23b0
+              fqyb(i, k, jp1) = 0.0
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                vb0(i, k, j) = vb0(i, k, j) + vbb
+                vbb = 0.0
+              END IF
+              CALL POPREAL8(vb)
+              vb0(i, k, j-1) = vb0(i, k, j-1) + vbb
+            END DO
+          END DO
+        ELSE IF (branch .EQ. 1) THEN
+          DO k=ktf,kts,-1
+            CALL POPINTEGER4(ad_from12)
+            CALL POPINTEGER4(ad_to12)
+            DO i=ad_to12,ad_from12,-1
+              temp23b1 = 0.25*(vb+v(i, k, j-1))*fqyb(i, k, jp1)
+              temp23b2 = 0.25*(rv(i, k, j)+rv(i, k, j-1))*fqyb(i, k, jp1&
+&                )
+              rvb(i, k, j) = rvb(i, k, j) + temp23b1
+              rvb(i, k, j-1) = rvb(i, k, j-1) + temp23b1
+              vbb = temp23b2
+              vb0(i, k, j-1) = vb0(i, k, j-1) + temp23b2
+              fqyb(i, k, jp1) = 0.0
+              CALL POPCONTROL1B(branch)
+              IF (branch .EQ. 0) THEN
+                vb0(i, k, j-1) = vb0(i, k, j-1) + vbb
+                vbb = 0.0
+              END IF
+              CALL POPREAL8(vb)
+              vb0(i, k, j) = vb0(i, k, j) + vbb
+            END DO
+          END DO
+        ELSE
+          DO k=ktf,kts,-1
+            CALL POPINTEGER4(ad_from13)
+            CALL POPINTEGER4(ad_to13)
+            DO i=ad_to13,ad_from13,-1
+              vel = 0.5*(rv(i, k, j)+rv(i, k, j-1))
+              temp23b3 = vel*fqyb(i, k, jp1)/12.0
+              velb = (7.*(v(i, k, j)+v(i, k, j-1))-v(i, k, j+1)-v(i, k, &
+&                j-2))*fqyb(i, k, jp1)/12.0
+              vb0(i, k, j) = vb0(i, k, j) + 7.*temp23b3
+              vb0(i, k, j-1) = vb0(i, k, j-1) + 7.*temp23b3
+              vb0(i, k, j+1) = vb0(i, k, j+1) - temp23b3
+              vb0(i, k, j-2) = vb0(i, k, j-2) - temp23b3
+              fqyb(i, k, jp1) = 0.0
+              rvb(i, k, j) = rvb(i, k, j) + 0.5*velb
+              rvb(i, k, j-1) = rvb(i, k, j-1) + 0.5*velb
+            END DO
+          END DO
+        END IF
+      END DO
+    END IF
+  ELSE IF (branch .EQ. 3) THEN
+    fqxb = 0.0
+    CALL POPINTEGER4(ad_from28)
+    CALL POPINTEGER4(ad_to28)
+    DO j=ad_to28,ad_from28,-1
+      DO k=ktf,kts,-1
+        CALL POPINTEGER4(ad_from27)
+        CALL POPINTEGER4(ad_to27)
+        DO i=ad_to27,ad_from27,-1
+          mrdx = msfvy(i, j)*rdx
+          fqxb(i+1, k) = fqxb(i+1, k) - mrdx*tendencyb(i, k, j)
+          fqxb(i, k) = fqxb(i, k) + mrdx*tendencyb(i, k, j)
+        END DO
+      END DO
+      CALL POPCONTROL1B(branch)
+      IF (branch .NE. 0) THEN
+        DO k=ktf,kts,-1
+          temp31b1 = 0.25*(v(i_end+1, k, j)+v(i_end, k, j))*fqxb(i_end+1&
+&            , k)
+          temp31b2 = 0.25*(ru(i_end+1, k, j)+ru(i_end+1, k, j-1))*fqxb(&
+&            i_end+1, k)
+          rub(i_end+1, k, j) = rub(i_end+1, k, j) + temp31b1
+          rub(i_end+1, k, j-1) = rub(i_end+1, k, j-1) + temp31b1
+          vb0(i_end+1, k, j) = vb0(i_end+1, k, j) + temp31b2
+          vb0(i_end, k, j) = vb0(i_end, k, j) + temp31b2
+          fqxb(i_end+1, k) = 0.0
+        END DO
+      END IF
+      CALL POPCONTROL1B(branch)
+      IF (branch .EQ. 0) THEN
+        DO k=ktf,kts,-1
+          temp31b = 0.25*(v(i_start, k, j)+v(i_start-1, k, j))*fqxb(&
+&            i_start, k)
+          temp31b0 = 0.25*(ru(i_start, k, j)+ru(i_start, k, j-1))*fqxb(&
+&            i_start, k)
+          rub(i_start, k, j) = rub(i_start, k, j) + temp31b
+          rub(i_start, k, j-1) = rub(i_start, k, j-1) + temp31b
+          vb0(i_start, k, j) = vb0(i_start, k, j) + temp31b0
+          vb0(i_start-1, k, j) = vb0(i_start-1, k, j) + temp31b0
+          fqxb(i_start, k) = 0.0
+        END DO
+      END IF
+      DO k=ktf,kts,-1
+        DO i=i_end_f,i_start_f,-1
+          vel = 0.5*(ru(i, k, j)+ru(i, k, j-1))
+          temp27 = v(i+1, k, j) - v(i-2, k, j) - 3.*(v(i, k, j)-v(i-1, k&
+&            , j))
+          temp30 = SIGN(1., vel)
+          temp29 = temp30/12.0
+          temp28 = SIGN(1, time_step)
+          temp27b = vel*fqxb(i, k)
+          temp27b0 = temp27b/12.0
+          temp27b1 = temp28*temp29*temp27b
+          velb = ((7.*(v(i, k, j)+v(i-1, k, j))-v(i+1, k, j)-v(i-2, k, j&
+&            ))/12.0+temp28*(temp29*temp27))*fqxb(i, k)
+          vb0(i, k, j) = vb0(i, k, j) + 7.*temp27b0 - 3.*temp27b1
+          vb0(i-1, k, j) = vb0(i-1, k, j) + 3.*temp27b1 + 7.*temp27b0
+          vb0(i+1, k, j) = vb0(i+1, k, j) + temp27b1 - temp27b0
+          vb0(i-2, k, j) = vb0(i-2, k, j) - temp27b1 - temp27b0
+          fqxb(i, k) = 0.0
+          rub(i, k, j) = rub(i, k, j) + 0.5*velb
+          rub(i, k, j-1) = rub(i, k, j-1) + 0.5*velb
+        END DO
+      END DO
+    END DO
+    fqyb = 0.0
+    CALL POPINTEGER4(ad_from26)
+    CALL POPINTEGER4(ad_to26)
+    DO j=ad_to26,ad_from26,-1
+      CALL POPINTEGER4(jp0)
+      CALL POPINTEGER4(jp1)
+      CALL POPCONTROL2B(branch)
+      IF (branch .LT. 2) THEN
+        IF (branch .EQ. 0) THEN
+          DO k=ktf,kts,-1
+            CALL POPINTEGER4(ad_from23)
+            CALL POPINTEGER4(ad_to23)
+            DO i=ad_to23,ad_from23,-1
+              tendencyb(i, k, j-1) = 0.0
+            END DO
+          END DO
+        ELSE
+          DO k=ktf,kts,-1
+            CALL POPINTEGER4(ad_from24)
+            CALL POPINTEGER4(ad_to24)
+            DO i=ad_to24,ad_from24,-1
+              tendencyb(i, k, j-1) = 0.0
+            END DO
+          END DO
+        END IF
+      ELSE IF (branch .EQ. 2) THEN
+        DO k=ktf,kts,-1
+          CALL POPINTEGER4(ad_from25)
+          CALL POPINTEGER4(ad_to25)
+          DO i=ad_to25,ad_from25,-1
+            mrdy = msfvy(i, j-1)*rdy
+            fqyb(i, k, jp1) = fqyb(i, k, jp1) - mrdy*tendencyb(i, k, j-1&
+&              )
+            fqyb(i, k, jp0) = fqyb(i, k, jp0) + mrdy*tendencyb(i, k, j-1&
+&              )
+          END DO
+        END DO
+      END IF
+      CALL POPCONTROL2B(branch)
+      IF (branch .EQ. 0) THEN
+        DO k=ktf,kts,-1
+          CALL POPINTEGER4(ad_from20)
+          CALL POPINTEGER4(ad_to20)
+          DO i=ad_to20,ad_from20,-1
+            temp23b9 = 0.25*(v(i, k, j)+vb)*fqyb(i, k, jp1)
+            temp23b10 = 0.25*(rv(i, k, j)+rv(i, k, j-1))*fqyb(i, k, jp1)
+            rvb(i, k, j) = rvb(i, k, j) + temp23b9
+            rvb(i, k, j-1) = rvb(i, k, j-1) + temp23b9
+            vb0(i, k, j) = vb0(i, k, j) + temp23b10
+            vbb = temp23b10
+            fqyb(i, k, jp1) = 0.0
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              vb0(i, k, j) = vb0(i, k, j) + vbb
+              vbb = 0.0
+            END IF
+            CALL POPREAL8(vb)
+            vb0(i, k, j-1) = vb0(i, k, j-1) + vbb
+          END DO
+        END DO
+      ELSE IF (branch .EQ. 1) THEN
+        DO k=ktf,kts,-1
+          CALL POPINTEGER4(ad_from21)
+          CALL POPINTEGER4(ad_to21)
+          DO i=ad_to21,ad_from21,-1
+            temp23b11 = 0.25*(vb+v(i, k, j-1))*fqyb(i, k, jp1)
+            temp23b12 = 0.25*(rv(i, k, j)+rv(i, k, j-1))*fqyb(i, k, jp1)
+            rvb(i, k, j) = rvb(i, k, j) + temp23b11
+            rvb(i, k, j-1) = rvb(i, k, j-1) + temp23b11
+            vbb = temp23b12
+            vb0(i, k, j-1) = vb0(i, k, j-1) + temp23b12
+            fqyb(i, k, jp1) = 0.0
+            CALL POPCONTROL1B(branch)
+            IF (branch .EQ. 0) THEN
+              vb0(i, k, j-1) = vb0(i, k, j-1) + vbb
+              vbb = 0.0
+            END IF
+            CALL POPREAL8(vb)
+            vb0(i, k, j) = vb0(i, k, j) + vbb
+          END DO
+        END DO
+      ELSE
+        DO k=ktf,kts,-1
+          CALL POPINTEGER4(ad_from22)
+          CALL POPINTEGER4(ad_to22)
+          DO i=ad_to22,ad_from22,-1
+            vel = 0.5*(rv(i, k, j)+rv(i, k, j-1))
+            temp23 = v(i, k, j+1) - v(i, k, j-2) - 3.*(v(i, k, j)-v(i, k&
+&              , j-1))
+            temp26 = SIGN(1., vel)
+            temp25 = temp26/12.0
+            temp24 = SIGN(1, time_step)
+            temp23b13 = vel*fqyb(i, k, jp1)
+            temp23b14 = temp23b13/12.0
+            temp23b15 = temp24*temp25*temp23b13
+            velb = ((7.*(v(i, k, j)+v(i, k, j-1))-v(i, k, j+1)-v(i, k, j&
+&              -2))/12.0+temp24*(temp25*temp23))*fqyb(i, k, jp1)
+            vb0(i, k, j) = vb0(i, k, j) + 7.*temp23b14 - 3.*temp23b15
+            vb0(i, k, j-1) = vb0(i, k, j-1) + 3.*temp23b15 + 7.*&
+&              temp23b14
+            vb0(i, k, j+1) = vb0(i, k, j+1) + temp23b15 - temp23b14
+            vb0(i, k, j-2) = vb0(i, k, j-2) - temp23b15 - temp23b14
+            fqyb(i, k, jp1) = 0.0
+            rvb(i, k, j) = rvb(i, k, j) + 0.5*velb
+            rvb(i, k, j-1) = rvb(i, k, j-1) + 0.5*velb
+          END DO
+        END DO
+      END IF
+    END DO
+  ELSE IF (branch .EQ. 4) THEN
+    CALL POPINTEGER4(ad_from36)
+    CALL POPINTEGER4(ad_to36)
+    DO j=ad_to36,ad_from36,-1
+      DO k=ktf,kts,-1
+        CALL POPINTEGER4(ad_from35)
+        CALL POPINTEGER4(ad_to35)
+        DO i=ad_to35,ad_from35,-1
+          mrdx = msfvy(i, j)*rdx
+          temp31b18 = -(mrdx*0.25*tendencyb(i, k, j))
+          temp31b19 = (v(i+1, k, j)+v(i, k, j))*temp31b18
+          temp31b20 = (ru(i+1, k, j)+ru(i+1, k, j-1))*temp31b18
+          temp31b21 = -((v(i, k, j)+v(i-1, k, j))*temp31b18)
+          temp31b22 = -((ru(i, k, j)+ru(i, k, j-1))*temp31b18)
+          rub(i+1, k, j) = rub(i+1, k, j) + temp31b19
+          rub(i+1, k, j-1) = rub(i+1, k, j-1) + temp31b19
+          vb0(i+1, k, j) = vb0(i+1, k, j) + temp31b20
+          vb0(i, k, j) = vb0(i, k, j) + temp31b22 + temp31b20
+          rub(i, k, j) = rub(i, k, j) + temp31b21
+          rub(i, k, j-1) = rub(i, k, j-1) + temp31b21
+          vb0(i-1, k, j) = vb0(i-1, k, j) + temp31b22
+        END DO
+      END DO
+    END DO
+    CALL POPINTEGER4(j)
+    CALL POPCONTROL1B(branch)
+    IF (branch .EQ. 0) THEN
+      DO k=ktf,kts,-1
+        CALL POPINTEGER4(ad_from34)
+        CALL POPINTEGER4(ad_to34)
+        DO i=ad_to34,ad_from34,-1
+          mrdy = msfvy(i, j)*rdy
+          temp31b13 = -(mrdy*0.25*tendencyb(i, k, j))
+          temp31b14 = (vb+v(i, k, j))*temp31b13
+          temp31b15 = (rv(i, k, j+1)+rv(i, k, j))*temp31b13
+          temp31b16 = -((v(i, k, j)+v(i, k, j-1))*temp31b13)
+          temp31b17 = -((rv(i, k, j)+rv(i, k, j-1))*temp31b13)
+          rvb(i, k, j+1) = rvb(i, k, j+1) + temp31b14
+          rvb(i, k, j) = rvb(i, k, j) + temp31b16 + temp31b14
+          vbb = temp31b15
+          vb0(i, k, j) = vb0(i, k, j) + temp31b17 + temp31b15
+          rvb(i, k, j-1) = rvb(i, k, j-1) + temp31b16
+          vb0(i, k, j-1) = vb0(i, k, j-1) + temp31b17
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            vb0(i, k, j) = vb0(i, k, j) + vbb
+            vbb = 0.0
+          END IF
+          CALL POPREAL8(vb)
+          vb0(i, k, j+1) = vb0(i, k, j+1) + vbb
+        END DO
+      END DO
+      CALL POPINTEGER4(j)
+    END IF
+    CALL POPCONTROL1B(branch)
+    IF (branch .EQ. 0) THEN
+      DO k=ktf,kts,-1
+        CALL POPINTEGER4(ad_from33)
+        CALL POPINTEGER4(ad_to33)
+        DO i=ad_to33,ad_from33,-1
+          mrdy = msfvy(i, j)*rdy
+          temp31b8 = -(mrdy*0.25*tendencyb(i, k, j))
+          temp31b9 = (v(i, k, j+1)+v(i, k, j))*temp31b8
+          temp31b10 = (rv(i, k, j+1)+rv(i, k, j))*temp31b8
+          temp31b11 = -((v(i, k, j)+vb)*temp31b8)
+          temp31b12 = -((rv(i, k, j)+rv(i, k, j-1))*temp31b8)
+          rvb(i, k, j+1) = rvb(i, k, j+1) + temp31b9
+          rvb(i, k, j) = rvb(i, k, j) + temp31b11 + temp31b9
+          vb0(i, k, j+1) = vb0(i, k, j+1) + temp31b10
+          vb0(i, k, j) = vb0(i, k, j) + temp31b12 + temp31b10
+          rvb(i, k, j-1) = rvb(i, k, j-1) + temp31b11
+          vbb = temp31b12
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            vb0(i, k, j) = vb0(i, k, j) + vbb
+            vbb = 0.0
+          END IF
+          CALL POPREAL8(vb)
+          vb0(i, k, j-1) = vb0(i, k, j-1) + vbb
+        END DO
+      END DO
+    END IF
+    CALL POPCONTROL2B(branch)
+    IF (branch .EQ. 0) THEN
+      DO k=ktf,kts,-1
+        CALL POPINTEGER4(ad_from32)
+        CALL POPINTEGER4(ad_to32)
+        DO i=ad_to32,ad_from32,-1
+          tendencyb(i, k, jde) = 0.0
+        END DO
+      END DO
+    ELSE IF (branch .NE. 1) THEN
+      GOTO 100
+    END IF
+    CALL POPCONTROL1B(branch)
+    IF (branch .EQ. 0) THEN
+      DO k=ktf,kts,-1
+        CALL POPINTEGER4(ad_from31)
+        CALL POPINTEGER4(ad_to31)
+        DO i=ad_to31,ad_from31,-1
+          tendencyb(i, k, jds) = 0.0
+        END DO
+      END DO
+    END IF
+ 100 CALL POPINTEGER4(ad_from30)
+    CALL POPINTEGER4(ad_to30)
+    DO j=ad_to30,ad_from30,-1
+      DO k=ktf,kts,-1
+        CALL POPINTEGER4(ad_from29)
+        CALL POPINTEGER4(ad_to29)
+        DO i=ad_to29,ad_from29,-1
+          mrdy = msfvy(i, j)*rdy
+          temp31b3 = -(mrdy*0.25*tendencyb(i, k, j))
+          temp31b4 = (v(i, k, j+1)+v(i, k, j))*temp31b3
+          temp31b5 = (rv(i, k, j+1)+rv(i, k, j))*temp31b3
+          temp31b6 = -((v(i, k, j)+v(i, k, j-1))*temp31b3)
+          temp31b7 = -((rv(i, k, j)+rv(i, k, j-1))*temp31b3)
+          rvb(i, k, j+1) = rvb(i, k, j+1) + temp31b4
+          rvb(i, k, j) = rvb(i, k, j) + temp31b6 + temp31b4
+          vb0(i, k, j+1) = vb0(i, k, j+1) + temp31b5
+          vb0(i, k, j) = vb0(i, k, j) + temp31b7 + temp31b5
+          rvb(i, k, j-1) = rvb(i, k, j-1) + temp31b6
+          vb0(i, k, j-1) = vb0(i, k, j-1) + temp31b7
+        END DO
+      END DO
+    END DO
+  END IF
+END SUBROUTINE A_ADVECT_V
    SUBROUTINE a_advect_scalar(field,a_field,field_old,a_field_old,tendency, &
    a_tendency,ru,a_ru,rv,a_rv,rom,a_rom,mut,a_mut,time_step,config_flags, &
    msfux,msfuy,msfvx,msfvy,msftx,msfty,fzm,fzp,rdx,rdy,rdzw,ids,ide,jds,jde,kds,kde,ims, &

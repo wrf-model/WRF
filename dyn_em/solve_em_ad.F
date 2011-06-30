@@ -6971,7 +6971,7 @@ end if
 
   grid%a_ph_tend = 0.
   grid%a_rw_tend = 0.
-  a_mu_tend = 0.
+  grid%a_mu_tend = 0.
   grid%a_t_tend = 0.
   a_moist_tend = 0. 
   a_scalar_tend = 0. 
@@ -9592,7 +9592,7 @@ if (config_flags % sw_call_spec_bdyupdate_ph) then
        DO ij = grid%num_tiles,1,-1
              CALL a_spec_bdyupdate_ph( ph_save, a_ph_save, grid%ph_2, grid%a_ph_2,       &
                                        ph_tend, grid%a_ph_tend,              &
-                                       mu_tend, a_mu_tend, grid%muts, grid%a_muts, dts_rk, &
+                                       mu_tend, grid%a_mu_tend, grid%muts, grid%a_muts, dts_rk, &
                                        'h'         , config_flags,      &
                                        grid%spec_zone,                  &
                                        ids,ide, jds,jde, kds,kde,       &
@@ -9720,7 +9720,7 @@ if (config_flags % sw_call_spec_bdyupdate) then
        !ZXOMP PRIVATE ( ij )
         DO ij = grid%num_tiles,1,-1
            CALL a_spec_bdyupdate ( grid%a_muts,     &
-                                   a_mu_tend, dts_rk, &
+                                   grid%a_mu_tend, dts_rk, &
                                    'm'         , config_flags, &
                                    grid%spec_zone,             &
                                    ids,ide, jds,jde, 1  ,1  ,        &
@@ -9748,7 +9748,7 @@ if (config_flags % sw_call_spec_bdyupdate) then
        !ZXOMP PRIVATE ( ij )
         DO ij = grid%num_tiles,1,-1
            CALL a_spec_bdyupdate ( grid%a_mu_2,     &
-                                   a_mu_tend, dts_rk, &
+                                   grid%a_mu_tend, dts_rk, &
                                    'm'         , config_flags, &
                                    grid%spec_zone,             &
                                    ids,ide, jds,jde, 1  ,1  ,        &
@@ -9843,7 +9843,7 @@ if (config_flags % sw_call_advance_mu_t) then
                               grid%ru_m,grid%a_ru_m, grid%rv_m,grid%a_rv_m, grid%ww_m,grid%a_ww_m, &
                               grid%t_2,grid%a_t_2, grid%t_save,grid%a_t_save, &
                               t_2save,a_t_2save, t_tend,grid%a_t_tend,             &
-                              mu_tend,a_mu_tend,                              &
+                              mu_tend,grid%a_mu_tend,                              &
                               grid%rdx, grid%rdy, dts_rk, grid%epssm,                       &
                               grid%dnw, grid%fnm, grid%fnp, grid%rdnw,                      &
                               grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv,            &
@@ -10498,7 +10498,7 @@ if (config_flags % sw_call_spec_bdyupdate_all) then
          CALL pop2restore (grid%mut,mu_tend, "mut,mu_tend") 
          CALL a_spec_bdyupdate_ph( ph_save, a_ph_save, grid%ph_2, grid%a_ph_2,       &
                                    ph_tend, grid%a_ph_tend,              &
-                                   mu_tend, a_mu_tend, grid%mut, grid%a_mut, dts_rk, &
+                                   mu_tend, grid%a_mu_tend, grid%mut, grid%a_mut, dts_rk, &
                                    'h'         , config_flags,      &
                                    grid%spec_zone,                  &
                                    ids,ide, jds,jde, kds,kde,       &
@@ -10511,7 +10511,7 @@ if (config_flags % sw_call_spec_bdyupdate_all) then
        ENDIF
 
        CALL a_spec_bdyupdate ( grid%a_mu_2,     &
-                               a_mu_tend, dts_rk, &
+                               grid%a_mu_tend, dts_rk, &
                                'm'         , config_flags, &
                                grid%spec_zone,             &
                                ids,ide, jds,jde, 1  ,1  ,        &
@@ -10650,7 +10650,7 @@ if (config_flags % sw_call_advance_all) then
                           grid%a_v_2, grid%rv_tend, grid%a_rv_tend, &
                           grid%a_w_2,      rw_tend,      grid%a_rw_tend, &
                           grid%a_t_2,       t_tend,      grid%a_t_tend, &
-                          grid%a_mu_2,                   a_mu_tend, &
+                          grid%a_mu_2,                   grid%a_mu_tend, &
                           grid%a_ph_2,     ph_tend,      grid%a_ph_tend, &
                           grid%muu, grid%a_muu, grid%muv, grid%a_muv, &
                           grid%mut, grid%a_mut,                       &
@@ -10703,7 +10703,7 @@ if (config_flags % sw_call_spec_bdy_dry) then
        CALL a_spec_bdy_dry ( config_flags,                                     &
                    grid%a_ru_tend, grid%a_rv_tend, &
                    grid%a_ph_tend, grid%a_t_tend,            &
-                   grid%a_rw_tend, a_mu_tend,           &
+                   grid%a_rw_tend, grid%a_mu_tend,           &
                    grid%a_u_btxs, grid%a_u_btxe, grid%a_u_btys, grid%a_u_btye, &
                    grid%a_v_btxs, grid%a_v_btxe, grid%a_v_btys, grid%a_v_btye, &
                    grid%a_ph_btxs, grid%a_ph_btxe, grid%a_ph_btys, grid%a_ph_btye, &
@@ -10750,7 +10750,7 @@ if (config_flags % sw_call_rk_addtend_dry) then
                     ph_tendf, a_ph_tendf, t_tendf, a_t_tendf,                         &
                     grid%u_save, grid%a_u_save, grid%v_save, grid%a_v_save,           &
                     w_save, a_w_save, ph_save, a_ph_save, grid%t_save, grid%a_t_save, &
-                    mu_tend, a_mu_tend, mu_tendf, a_mu_tendf, rk_step,        &
+                    mu_tend, grid%a_mu_tend, mu_tendf, a_mu_tendf, rk_step,        &
                     grid%h_diabatic, grid%a_h_diabatic, grid%mut, grid%a_mut, &
                     grid%msftx, grid%msfty, grid%msfux, grid%msfuy,           &
                     grid%msfvx, grid%msfvx_inv, grid%msfvy,          &
@@ -10793,7 +10793,7 @@ if (config_flags % sw_call_relax_bdy_dry) then
        CALL a_relax_bdy_dry ( config_flags,                             &
                 grid%a_u_save, grid%a_v_save, &
                 a_ph_save, grid%a_t_save,  &
-                a_w_save, a_mu_tend,            &
+                a_w_save, grid%a_mu_tend,            &
                 grid%a_ru, grid%a_rv,          &
                 grid%ph_2, grid%a_ph_2, grid%t_2, grid%a_t_2,    &
                 grid%w_2, grid%a_w_2, grid%a_mu_2, grid%mut, grid%a_mut, &
@@ -10874,7 +10874,7 @@ if (config_flags % sw_call_rk_tendency) then
                          rw_tend, grid%a_rw_tend, ph_tend, grid%a_ph_tend, t_tend, grid%a_t_tend, &
                          ru_tendf, a_ru_tendf, rv_tendf, a_rv_tendf, &
                          rw_tendf, a_rw_tendf, ph_tendf, a_ph_tendf, t_tendf, a_t_tendf, &
-                         mu_tend, a_mu_tend, &
+                         mu_tend, grid%a_mu_tend, &
                          grid%u_save, grid%a_u_save, grid%v_save, grid%a_v_save, &
                          w_save, a_w_save, ph_save, a_ph_save, &
                          grid%t_save, grid%a_t_save, mu_save, a_mu_save, &
@@ -10924,7 +10924,7 @@ else
                           grid%j_start(ij), grid%j_end(ij), &
                           1, 1 )
 
-       CALL a_zero_tend ( a_mu_tend,       &
+       CALL a_zero_tend ( grid%a_mu_tend,       &
                           ids, ide, jds, jde, 1, 1, &
                           ims, ime, jms, jme, 1, 1, &
                           grid%i_start(ij), grid%i_end(ij), &

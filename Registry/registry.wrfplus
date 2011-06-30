@@ -209,7 +209,7 @@ state    real   a_mut             ij     dyn_em      1          -               
 state    real   a_muts            ij     dyn_em      1          -                 "a_muts"
 i1       real   a_muave           ij     dyn_em      1          -
 i1       real   a_mu_save         ij     dyn_em      1          -
-i1       real   a_mu_tend         ij     dyn_em      1          -
+state    real   a_mu_tend         ij     dyn_em      1          -
 i1       real   a_mu_tendf        ij     dyn_em      1          -
 
 state    real   g_mu              ijb     dyn_em      2         -     \

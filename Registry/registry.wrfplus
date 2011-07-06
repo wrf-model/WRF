@@ -136,7 +136,7 @@ state    real   a_rw             ikj     dyn_em      1         Z      -         
 i1       real   a_ww1            ikj     dyn_em      1         Z
 state    real   a_ww_m           ikj     dyn_em      1         Z      r         "a_ww_m"   "time-avg mu-coupled eta-dot"    "Pa s-1"
 i1       real   a_wwp            ikj     dyn_em      1         Z
-state    real   a_rw_tend        ikj     dyn_em      1         Z
+i1       real   a_rw_tend        ikj     dyn_em      1         Z
 i1       real   a_rw_tendf       ikj     dyn_em      1         Z
 i1       real   a_w_save         ikj     dyn_em      1         Z
 
@@ -158,7 +158,7 @@ state    real   a_phb            ikj     dyn_em      1         Z     irhdus "a_p
 state    real   a_phb_fine       ikj     dyn_em      1         Z      -     "a_phb_fine"  "for nesting, temp holding interpolated coarse grid phb"  "m2 s-2"
 state    real   a_ph0            ikj     dyn_em      1         Z      r     "a_ph0"  "initial geopotential"     "m2 s-2"
 state    real   a_php            ikj     dyn_em      1         -      r     "a_php"  "geopotential"             "m2 s-2"
-state    real   a_ph_tend        ikj     dyn_em      1         Z
+i1       real   a_ph_tend        ikj     dyn_em      1         Z
 i1       real   a_ph_tendf       ikj     dyn_em      1         Z
 i1       real   a_ph_save        ikj     dyn_em      1         Z
 
@@ -177,7 +177,7 @@ state    real   a_t              ikjb     dyn_em      2         -     \
        i0rhusdf=(bdy_interp:dt)   "a_t"      "perturbation potential temperature (theta-t0)" "K"
 
 state    real   a_t_init         ikj     dyn_em      1         -      ir       "a_t_init" "initial potential temperature" "K"
-state    real   a_t_tend         ikj     dyn_em      1         -
+i1       real   a_t_tend         ikj     dyn_em      1         -
 i1       real   a_t_tendf        ikj     dyn_em      1         -
 state    real   a_tp             ikj     dyn_em      2         -
 i1       real   a_t_2save        ikj     dyn_em      1         -
@@ -209,7 +209,7 @@ state    real   a_mut             ij     dyn_em      1          -               
 state    real   a_muts            ij     dyn_em      1          -                 "a_muts"
 i1       real   a_muave           ij     dyn_em      1          -
 i1       real   a_mu_save         ij     dyn_em      1          -
-state    real   a_mu_tend         ij     dyn_em      1          -
+i1       real   a_mu_tend         ij     dyn_em      1          -
 i1       real   a_mu_tendf        ij     dyn_em      1          -
 
 state    real   g_mu              ijb     dyn_em      2         -     \

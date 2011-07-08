@@ -822,6 +822,13 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
 
                ! In OBSPROC, use "td" field to store "gpsref"
                iv%gpsref(nlocal(gpsref))%ref(i) = platform%each(i)%td
+
+               ! check height, only keep data below and above certain height
+               if ( iv%gpsref(nlocal(gpsref))%h(i) > top_km_gpsro*1000.0 .or. &
+                    iv%gpsref(nlocal(gpsref))%h(i) < bot_km_gpsro*1000.0 ) then
+                  iv%gpsref(nlocal(gpsref))%ref(i)%qc = -77
+               end if
+
                ! Keep the retrieved p and t (and q) as "field_type":   
                iv%gpsref(nlocal(gpsref))%p(i)   = platform%each(i)%p
                iv%gpsref(nlocal(gpsref))%t(i)   = platform%each(i)%t

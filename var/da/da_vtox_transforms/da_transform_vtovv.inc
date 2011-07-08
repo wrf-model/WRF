@@ -140,9 +140,8 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
          call da_transform_through_rf(grid, mz, be % v6 % rf_alpha, be % v6 % val, vv % v6, scaling)
 !        call da_transform_through_rf2(grid, mz, be % v6 % rf_alpha, be % v6 % val, vv % v6)
       endif
-   elseif( .not. use_rf )
-      write(*,'(a,": no da_transform_through_wavelet for v6")')__FILE__
-      call wrf_abort
+   elseif( .not. use_rf ) then
+      call da_error(__FILE__,__LINE__,(/"no da_transform_through_wavelet for v6"/))
    endif
 
    ! [2.7] Transform 7th control variable
@@ -157,9 +156,8 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
          call da_transform_through_rf(grid, mz, be % v7 % rf_alpha, be % v7 % val, vv % v7, scaling)
 !        call da_transform_through_rf2(grid, mz, be % v7 % rf_alpha, be % v7 % val, vv % v7)
       endif
-   elseif( .not. use_rf )
-      write(*,'(a,": no da_transform_through_wavelet for v7")')__FILE__
-      call wrf_abort
+   elseif( .not. use_rf ) then
+      call da_error(__FILE__,__LINE__,(/"no da_transform_through_wavelet for v7"/))
    endif
 
    ! [2.8] Transform 8th control variable
@@ -174,9 +172,8 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
          call da_transform_through_rf(grid, mz, be % v8 % rf_alpha, be % v8 % val, vv % v8, scaling)
 !        call da_transform_through_rf2(grid, mz, be % v8 % rf_alpha, be % v8 % val, vv % v8)
       endif
-   elseif( .not. use_rf )
-      write(*,'(a,": no da_transform_through_wavelet for v8")')__FILE__
-      call wrf_abort
+   elseif( .not. use_rf ) then
+      call da_error(__FILE__,__LINE__,(/"no da_transform_through_wavelet for v8"/))
    endif
 #endif
 

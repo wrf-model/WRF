@@ -167,7 +167,7 @@ program da_update_bc
    var3d(6)='QVAPOR'
 
    ! 2D need update
-   num2d=22
+   num2d=23
    varsf(1)='MUB'
    varsf(2)='MU'
    varsf(3)='MAPFAC_U'
@@ -190,6 +190,7 @@ program da_update_bc
    varsf(20)='IVGTYP'
    varsf(21)='ISLTYP'
    varsf(22)='SNOWC'
+   varsf(23)='XLAND'
 
    if ( domain_id > 1 ) then
       write(unit=stdout, fmt='(a,i2)') 'Nested domain ID=',domain_id
@@ -333,7 +334,7 @@ program da_update_bc
             deallocate(tsk_wrfvar)
 
          !hcl case ('TMN', 'SST', 'VEGFRA', 'ALBBCK', 'SEAICE') ;
-         case ('TMN', 'SST', 'VEGFRA', 'ALBBCK', 'SEAICE', 'LANDMASK') ;
+         case ('TMN', 'SST', 'VEGFRA', 'ALBBCK', 'SEAICE', 'LANDMASK', 'XLAND') ;
             if ( .not. update_low_bdy ) cycle
 
             allocate(full2d(dims(1), dims(2)))

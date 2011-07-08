@@ -467,7 +467,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 7, ACM2 (Pleim) PBL (ARW)
                                      = 8, Bougeault and Lacarrere (BouLac) PBL
                                      = 9, UW boundary layer scheme from CAM5 (CESM 1_0_1)
-                                     = 10, TEMF scheme (ARW only)
+                                     = 10, TEMF (Total Energy Mass Flux) scheme (ARW only)
                                      = 99, MRF scheme
 
  bldt (max_dom)                      = 0,       ; minutes between boundary-layer physics calls
@@ -818,6 +818,7 @@ The following are for observation nudging:
  base_pres                           = 10^5     ; real-data, em ONLY, base sea-level pres (Pa), DO NOT CHANGE
  base_lapse                          = 50.,     ; real-data, em ONLY, lapse rate (K), DO NOT CHANGE
  iso_temp                            = 0.,      ; real-data, em ONLY, reference temp in stratosphere
+ use_baseparam_fr_nml                = .f.,     ; whether to use base state parameters from the namelist
  khdif (max_dom)                     = 0,	; horizontal diffusion constant (m^2/s)
  kvdif (max_dom)                     = 0,	; vertical diffusion constant (m^2/s)
  smdiv (max_dom)                     = 0.1,	; divergence damping (0.1 is typical)

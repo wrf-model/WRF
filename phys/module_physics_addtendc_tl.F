@@ -36,7 +36,9 @@ SUBROUTINE g_update_phy_ten(rph_tendf,rt_tendf,g_rt_tendf,ru_tendf,g_ru_tendf,  
                       RQVSHTEN,RQCSHTEN,RQRSHTEN,RQISHTEN,RQSSHTEN,RQGSHTEN,&
                       RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RPHNDGDTEN,            &
                       RQVNDGDTEN,RMUNDGDTEN,                                &
+#if (WRFPLUS != 1)
                       rthfrten,rqvfrten,                                    & !fire
+#endif
                       n_moist,n_scalar,config_flags,rk_step,adv_moist_cond, &
                       ids, ide, jds, jde, kds, kde,                         &
                       ims, ime, jms, jme, kms, kme,                         &
@@ -111,9 +113,11 @@ SUBROUTINE g_update_phy_ten(rph_tendf,rt_tendf,g_rt_tendf,ru_tendf,g_ru_tendf,  
 
    REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN  ) :: RMUNDGDTEN
 
+#if (WRFPLUS != 1)
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN  ) ::   & ! fire
                                                        rthfrten, &
                                                        rqvfrten   
+#endif
 !------------------------------------------------------------------
 !  set up loop bounds for this grid's boundary conditions
 
@@ -170,6 +174,7 @@ SUBROUTINE g_update_phy_ten(rph_tendf,rt_tendf,g_rt_tendf,ru_tendf,g_ru_tendf,  
                       ims, ime, jms, jme, kms, kme,            &
                       its, ite, jts, jte, kts, kte             )
 
+#if (WRFPLUS != 1)
    if (config_flags%ifire .gt. 0)                              & ! fire
       CALL phy_fr_ten(config_flags,rk_step,n_moist,            &
                       rt_tendf,ru_tendf,rv_tendf,              &
@@ -178,6 +183,7 @@ SUBROUTINE g_update_phy_ten(rph_tendf,rt_tendf,g_rt_tendf,ru_tendf,g_ru_tendf,  
                       ids, ide, jds, jde, kds, kde,            &
                       ims, ime, jms, jme, kms, kme,            &
                       its, ite, jts, jte, kts, kte             )
+#endif
 
 END SUBROUTINE g_update_phy_ten
 
@@ -1523,6 +1529,7 @@ SUBROUTINE phy_fg_ten(config_flags,rk_step,n_moist,            &
 
 END SUBROUTINE phy_fg_ten
 
+#if (WRFPLUS != 1)
 !=================================================================
 SUBROUTINE phy_fr_ten(config_flags,rk_step,n_moist,            &
                       rt_tendf,ru_tendf,rv_tendf,              &
@@ -1585,6 +1592,7 @@ SUBROUTINE phy_fr_ten(config_flags,rk_step,n_moist,            &
    END SELECT
 
 END SUBROUTINE phy_fr_ten
+#endif
 
 !--------------------------------------------------- -------------------
 

@@ -2235,10 +2235,10 @@ state    real   dif_yyy          ikjy    -           1
 xpose XPOSE_SPECTRAL_NUDGING dyn_em dif_analysis,dif_xxx,dif_yyy
 ##
 
-include registry.fire
+#include registry.fire
 include registry.avgflx
 
 #ifdef WRFPLUS=1
 include registry.wrfplus
 #endif
-include registry.stoch
+#include registry.stoch

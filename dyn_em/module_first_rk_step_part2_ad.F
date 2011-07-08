@@ -320,7 +320,9 @@ BENCH_START(adj_update_phy_ten_tim)
                            grid%RUNDGDTEN,                                  &
                            grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RPHNDGDTEN,  &
                            grid%RQVNDGDTEN,grid%RMUNDGDTEN,                 &
+#if (WRFPLUS != 1)
                            grid%rthfrten,grid%rqvfrten,                     &  ! fire
+#endif
                            num_moist,num_scalar,config_flags,rk_step,       &
                            grid%adv_moist_cond,                             &
                            ids, ide, jds, jde, kds, kde,                    &

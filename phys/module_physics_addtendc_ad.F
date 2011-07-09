@@ -36,9 +36,7 @@ SUBROUTINE a_update_phy_ten(rph_tendf,rt_tendf,a_rt_tendf,ru_tendf,a_ru_tendf,  
                       RQVSHTEN,RQCSHTEN,RQRSHTEN,RQISHTEN,RQSSHTEN,RQGSHTEN,&
                       RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RPHNDGDTEN,            &
                       RQVNDGDTEN,RMUNDGDTEN,                                &
-#if (WRFPLUS != 1)
                       rthfrten,rqvfrten,                                    & !fire
-#endif
                       n_moist,n_scalar,config_flags,rk_step,adv_moist_cond, &
                       ids, ide, jds, jde, kds, kde,                         &
                       ims, ime, jms, jme, kms, kme,                         &
@@ -113,11 +111,9 @@ SUBROUTINE a_update_phy_ten(rph_tendf,rt_tendf,a_rt_tendf,ru_tendf,a_ru_tendf,  
 
    REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN  ) :: RMUNDGDTEN
 
-#if (WRFPLUS != 1)
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN  ) ::   & ! fire
                                                        rthfrten, &
                                                        rqvfrten   
-#endif
 !------------------------------------------------------------------
 !  set up loop bounds for this grid's boundary conditions
 

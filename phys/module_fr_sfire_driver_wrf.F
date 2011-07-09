@@ -5,7 +5,6 @@
 
 module module_fr_sfire_driver_wrf
 ! wrf-specific driver
-#if (WRFPLUS != 1)
 
 use module_fr_sfire_driver
 use module_fr_sfire_atm
@@ -143,6 +142,5 @@ subroutine sfire_driver_em_step (grid , config_flags               &
             
 end subroutine sfire_driver_em_step
 
-#endif
 end module module_fr_sfire_driver_wrf
 

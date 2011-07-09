@@ -23,10 +23,8 @@
    USE module_comm_dm
 
    USE module_physics_init
-#if (WRFPLUS != 1)
    USE module_fr_sfire_driver_wrf, ONLY : sfire_driver_em_init
    USE module_stoch, ONLY : SETUP_STOCH,rand_seed, update_stoch
-#endif
 #ifdef WRF_CHEM
    USE module_aerosols_sorgam, ONLY: sum_pm_sorgam
    USE module_gocart_aerosols, ONLY: sum_pm_gocart
@@ -123,7 +121,6 @@
       CALL wrf_error_fatal ( message )
    END IF
 
-#if (WRFPLUS != 1)
 !   --- SETUP AND INITIALIZE STOCHASTIC KINETIC ENERGY BACKSCATTER SCHEME ---
 
    IF ( (grid%id.eq.1) .AND. ( .NOT. grid%did_stoch ) ) THEN
@@ -153,7 +150,6 @@
     END SELECT stoch_force_select
     END IF
 !   --- END SETUP STOCHASTIC KINETIC ENERGY BACKSCATTER SCHEME ----------
-#endif
 
    IF ( config_flags%polar ) THEN
 !write(0,*)__FILE__,__LINE__,' clat ',ips,ipe,jps,jpe
@@ -1269,7 +1265,6 @@
 #  include "PERIOD_BDY_EM_CHEM.inc"
 #endif
 
-#if (WRFPLUS != 1)
 !  FIRE
 if(config_flags%ifire.eq.2)then
 
@@ -1280,7 +1275,6 @@ if(config_flags%ifire.eq.2)then
 
    CALL wrf_debug ( 100 , 'start_domain_em: After call to sfire_driver_em_init' )
 endif
-#endif
 
 
      CALL wrf_debug ( 100 , 'start_domain_em: Returning' )

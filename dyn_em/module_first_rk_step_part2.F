@@ -56,10 +56,8 @@ CONTAINS
     USE module_physics_addtendc, ONLY : update_phy_ten
 
     USE module_sfs_driver !JDM
-#if (WRFPLUS != 1)
     USE module_stoch, ONLY : update_stoch_ten, update_stoch , update_stoch_ten_subdomains,  & 
                              do_fftback_along_x,do_fftback_along_y,sp2gp_prep
-#endif
 
 
     IMPLICIT NONE
@@ -151,7 +149,6 @@ CONTAINS
 
    rk_step = 1
 
-#if (WRFPLUS != 1)
    stoch_force_select: SELECT CASE(config_flags%stoch_force_opt)
 
       CASE (STOCH_BACKSCATTER)
@@ -315,7 +312,6 @@ CONTAINS
          END IF
 
    END SELECT stoch_force_select
-#endif
 
 ! calculate_phy_tend
 
@@ -652,9 +648,7 @@ BENCH_START(update_phy_ten_tim)
                            grid%RUNDGDTEN,                                  &
                            grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RPHNDGDTEN,  &
                            grid%RQVNDGDTEN,grid%RMUNDGDTEN,                 &
-#if (WRFPLUS != 1)
                            grid%rthfrten,grid%rqvfrten,                     &  ! fire
-#endif
                            num_moist,num_scalar,config_flags,rk_step,       &
                            grid%adv_moist_cond,                             &
                            ids, ide, jds, jde, kds, kde,                    &

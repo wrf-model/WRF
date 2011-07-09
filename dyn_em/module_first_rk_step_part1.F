@@ -41,9 +41,7 @@ CONTAINS
     USE module_cumulus_driver, ONLY : cumulus_driver
     USE module_shallowcu_driver, ONLY : shallowcu_driver
     USE module_pbl_driver, ONLY : pbl_driver
-#if (WRFPLUS != 1)
     USE module_fr_sfire_driver_wrf, ONLY : sfire_driver_em_step
-#endif
     USE module_fddagd_driver, ONLY : fddagd_driver
     USE module_em, ONLY : init_zero_tendency
     USE module_force_scm
@@ -645,7 +643,6 @@ BENCH_START(pbl_driver_tim)
 
 BENCH_END(pbl_driver_tim)
 
-#if (WRFPLUS != 1)
 !*****
 ! fire 
 
@@ -671,7 +668,6 @@ BENCH_START(fire_driver_tim)
 
 BENCH_END(fire_driver_tim)
        ENDIF
-#endif
 
 
 ! cumulus para.

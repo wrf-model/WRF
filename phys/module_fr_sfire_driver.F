@@ -16,7 +16,6 @@
 module module_fr_sfire_driver
 ! use this module for standalone call, you only need to provide some mock-up wrf modules  
 
-#if (WRFPLUS != 1)
 use module_fr_sfire_model
 use module_fr_sfire_phys, only : fire_params , init_fuel_cats
 use module_fr_sfire_util
@@ -1399,5 +1398,4 @@ fire_advection          = config_flags%fire_advection
 
 end subroutine set_flags
 
-#endif
 end module module_fr_sfire_driver

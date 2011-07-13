@@ -1828,7 +1828,7 @@
      &             ,grid%SNOALB                                         &
      &             ,GRID%DX,GRID%DY,grid%f_ice_phy,grid%f_rain_phy,grid%f_rimef_phy    &
      &             ,grid%mp_restart_state,grid%tbpvs_state,grid%tbpvs0_state           &
-     &             ,.TRUE.,grid%moved,START_OF_SIMULATION                    &
+     &             ,ALLOWED_TO_READ,grid%moved,START_OF_SIMULATION                    &
      &             ,1                                                   & ! lagday
      &             ,IDS, IDE, JDS, JDE, KDS, KDE                        &
      &             ,IMS, IME, JMS, JME, KMS, KME                        &
@@ -1891,7 +1891,7 @@
 !
 !mp replace F*_PHY with values defined in module_initialize_real.F?
 #ifdef HWRF
-      IF (.NOT. RESTRT) THEN   !zhang
+      IF (.NOT. RESTRT .and. ALLOWED_TO_READ) THEN   !zhang
         moist = 0.0
         grid%f_ice = grid%f_ice_phy
         grid%f_rimef = grid%f_rimef_phy
@@ -1899,7 +1899,7 @@
       ENDIF                  !zhang
 #endif
 
-      IF (.NOT. RESTRT) THEN
+      IF (.NOT. RESTRT .and. ALLOWED_TO_READ) THEN
 ! Added by Greg Thompson, NCAR-RAL, for initializing water vapor
 ! mixing ratio (from NMM's specific humidity var) into moist array.
 

@@ -1932,8 +1932,8 @@ package   temfpblscheme  bl_pbl_physics==10          -             state:te_temf
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -
 package   gdscheme       cu_physics==3               -             -
-package   sasscheme      cu_physics==4               -             -
-package   osasscheme     cu_physics==94              -             -
+package   sasscheme      cu_physics==94              -             -
+package   osasscheme     cu_physics==4               -             -
 package   g3scheme       cu_physics==5               -             state:cugd_qvten,cugd_tten,cugd_qvtens,cugd_ttens,cugd_qcten,xmb_shallow,k22_shallow,kbcon_shallow,ktop_shallow
 package   camzmscheme    cu_physics==7               -             state:precz,zmdt,zmdq,zmdice,zmdliq,evaptzm,fzsntzm,evsntzm,evapqzm,zmflxprc,zmflxsnw,zmntprpd,zmntsnpd,zmeiheat,cmfmc,cmfmcdzm,preccdzm,pconvb,pconvt,cape,zmmtu,zmmtv,zmmu,zmmd,zmupgu,zmupgd,zmvpgu,zmvpgd,zmicuu,zmicud,zmicvu,zmicvd
 package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,RAINCV_A,RAINCV_B,GD_CLOUD_A,GD_CLOUD_B,GD_CLOUD2_A,GD_CLOUD2_B,kbcon_deep,ktop_deep,k22_deep

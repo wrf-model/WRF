@@ -1417,7 +1417,7 @@ CONTAINS
 !   END DO
 !   END DO
 
-   CALL a_curvature(ru,a_ru,rv,a_rv,rw,a_rw,u,a_u,v,a_v,w,a_w,ru_tend,  &
+   CALL a_curvature(ru,a_ru,rv,a_rv,rw,a_rw,u,a_u,v,a_v,w,ru_tend,  &
    a_ru_tend,rv_tend,a_rv_tend,rw_tend,a_rw_tend,config_flags,msfux,msfuy,msfvx,  &
 ! Revised by Ning Pan, 2010-07-30
 !   msfvy,msftx,msfty,xlat,a_xlat,fnm,fnp,rdx,rdy,ids,ide,jds,jde,kds,kde,ims,ime,jms,  &
@@ -1891,7 +1891,7 @@ CONTAINS
 !!   END DO
 
    CALL a_advect_scalar(t,a_t,t,a_t,t_tend,a_t_tend,ru,a_ru,rv,a_rv,ww,  &
-   a_ww,mut,a_mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fnm,  &
+   a_ww,mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fnm,  &
    fnp,rdx,rdy,rdnw,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
 !LPB[1]
@@ -2795,7 +2795,7 @@ END SUBROUTINE A_RK_ADDTEND_DRY
 
    CALL a_advect_scalar(scalar(ims,kms,jms,im),a_scalar(ims,kms,jms,im)  &
    ,scalar(ims,kms,jms,im),a_scalar(ims,kms,jms,im),advect_tend(ims,kms,jms)  &
-   ,a_advect_tend(ims,kms,jms),ru,a_ru,rv,a_rv,ww,a_ww,mut,a_mut,time_step,  &
+   ,a_advect_tend(ims,kms,jms),ru,a_ru,rv,a_rv,ww,a_ww,mut,time_step,  &
    config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fnm,fnp,rdx,rdy,rdnw,ids,ide,jds,  &
    jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 

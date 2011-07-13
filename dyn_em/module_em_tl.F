@@ -194,7 +194,7 @@ CONTAINS
  kme,its,ite,jts,jte,kts,kte)
 
  CALL g_advect_scalar(t,g_t,t,g_t,t_tend,g_t_tend,ru,g_ru,rv,g_rv, &
- ww,g_ww,mut,g_mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty, &
+ ww,g_ww,mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty, &
  fnm,fnp,rdx,rdy,rdnw,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
  IF( config_flags%cu_physics == GDSCHEME  .OR.       &
@@ -243,7 +243,7 @@ CONTAINS
  e,sina,cosa,fnm,fnp,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
  END IF
 
- CALL g_curvature(ru,g_ru,rv,g_rv,rw,g_rw,u,g_u,v,g_v,w,g_w, &
+ CALL g_curvature(ru,g_ru,rv,g_rv,rw,g_rw,u,g_u,v,g_v,w, &
  ru_tend,g_ru_tend,rv_tend,g_rv_tend,rw_tend,g_rw_tend,config_flags,msfux, &
 ! Revised by Ning Pan, 2010-07-30: xlat is a constant array
 ! msfuy,msfvx,msfvy,msftx,msfty,xlat,g_xlat,fnm,fnp,rdx,rdy,ids,ide,jds,jde,kds,kde, &
@@ -654,7 +654,7 @@ END SUBROUTINE G_RK_ADDTEND_DRY
 
  CALL g_advect_scalar(scalar(ims,kms,jms,im),g_scalar(ims,kms,jms,im) &
  ,scalar(ims,kms,jms,im),g_scalar(ims,kms,jms,im),advect_tend(ims,kms,jms) &
- ,g_advect_tend(ims,kms,jms),ru,g_ru,rv,g_rv,ww,g_ww,mut,g_mut, &
+ ,g_advect_tend(ims,kms,jms),ru,g_ru,rv,g_rv,ww,g_ww,mut, &
  time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fnm,fnp,rdx,rdy,rdnw,ids, &
  ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
  END IF

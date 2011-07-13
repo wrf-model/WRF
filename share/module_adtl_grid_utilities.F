@@ -1775,101 +1775,112 @@ END IF
    INTEGER, INTENT(IN) :: its, ite, jts, jte
    REAL, INTENT(INOUT) :: save
    INTEGER :: i, k, j, mm
+   INTEGER :: is, ie, js, je
 
-   DO j = jts,MIN(jte,jde-1)
+   is = its
+   ie = ite
+   js = jts
+   je = jte
+
+   IF (its .eq. ids) is = ims
+   IF (ite .eq. ide) ie = ime
+   IF (jts .eq. jds) js = jms
+   IF (jte .eq. jde) je = jme
+
+   DO j = js,je
    DO k = kts,kte-1
-   DO i = its,ite
+   DO i = is,ie
      save  = save + grid%a_u_2(i,k,j) * b_u_2(i,k,j)
    ENDDO
    ENDDO
    ENDDO
 
-   DO j = jts,jte
+   DO j = js,je
    DO k = kts,kte-1
-   DO i = its,MIN(ite,ide-1)
+   DO i = is,ie
      save  = save + grid%a_v_2(i,k,j) * b_v_2(i,k,j)
    ENDDO
    ENDDO
    ENDDO
 
-   DO j = jts,MIN(jte,jde-1)
+   DO j = js,je
    DO k = kts,kte
-   DO i = its,MIN(ite,ide-1)
+   DO i = is,ie
      save  = save + grid%a_w_2(i,k,j) * b_w_2(i,k,j)    &
                   + grid%a_ph_2(i,k,j) * b_ph_2(i,k,j)
    ENDDO
    ENDDO
    ENDDO
 
-   DO j = jts,MIN(jte,jde-1)
+   DO j = js,je
    DO k = kts,kte-1
-   DO i = its,MIN(ite,ide-1)
+   DO i = is,ie
      save  = save + grid%a_t_2(i,k,j) * b_t_2(i,k,j)
    ENDDO
    ENDDO
    ENDDO
 
-   DO j = jts,MIN(jte,jde-1)
+   DO j = js,je
    DO k = kts,kte-1
-   DO i = its,MIN(ite,ide-1)
+   DO i = is,ie
      save  = save + grid%a_tke_2(i,k,j) * b_tke_2(i,k,j)
    ENDDO
    ENDDO
    ENDDO
 
-   DO j = jts,MIN(jte,jde-1)
+   DO j = js,je
    DO k = kts,kte-1
-   DO i = its,MIN(ite,ide-1)
+   DO i = is,ie
      save  = save + grid%a_p(i,k,j) * b_p(i,k,j)
    ENDDO
    ENDDO
    ENDDO
 
-   DO j = jts,MIN(jte,jde-1)
+   DO j = js,je
    DO k = kts,kte-1
-   DO i = its,MIN(ite,ide-1)
+   DO i = is,ie
      save  = save + grid%a_al(i,k,j) * b_al(i,k,j)
    ENDDO
    ENDDO
    ENDDO
 
-   DO j = jts,MIN(jte,jde-1)
+   DO j = js,je
    DO k = kts,kte-1
-   DO i = its,MIN(ite,ide-1)
+   DO i = is,ie
      save  = save + grid%a_h_diabatic(i,k,j) * b_h_diabatic(i,k,j)
    ENDDO
    ENDDO
    ENDDO
 
-   DO j = jts,MIN(jte,jde-1)
-   DO i = its,MIN(ite,ide-1)
+   DO j = js,je
+   DO i = is,ie
      save  = save + grid%a_ustm(i,j) * b_ustm(i,j)
    ENDDO
    ENDDO
 
-   DO j = jts,MIN(jte,jde-1)
-   DO i = its,MIN(ite,ide-1)
+   DO j = js,je
+   DO i = is,ie
      save  = save + grid%a_hfx(i,j) * b_hfx(i,j)
    ENDDO
    ENDDO
 
-   DO j = jts,MIN(jte,jde-1)
-   DO i = its,MIN(ite,ide-1)
+   DO j = js,je
+   DO i = is,ie
      save  = save + grid%a_qfx(i,j) * b_qfx(i,j)
    ENDDO
    ENDDO
 
 
-   DO j = jts,MIN(jte,jde-1)
-   DO i = its,MIN(ite,ide-1)
+   DO j = js,je
+   DO i = is,ie
      save  = save + grid%a_mu_2(i,j) * b_mu_2(i,j)
    ENDDO
    ENDDO
 
    DO mm = PARAM_FIRST_SCALAR, num_moist
-   DO j = jts,MIN(jte,jde-1)
+   DO j = js,je
    DO k = kts,kte-1
-   DO i = its,MIN(ite,ide-1)
+   DO i = is,ie
      save  = save + grid%a_moist(i,k,j,mm) * b_moist(i,k,j,mm)
    ENDDO
    ENDDO
@@ -1888,7 +1899,7 @@ END IF
   
    DO j=1,spec_bdy_width
    DO k=kts,kte-1
-   DO i=jts,jte
+   DO i=js,je
       save=save + grid%a_u_bxs(i,k,j)*b_u_bxs(i,k,j)
       save=save + grid%a_u_bxe(i,k,j)*b_u_bxe(i,k,j)
       save=save + grid%a_v_bxs(i,k,j)*b_v_bxs(i,k,j)
@@ -1907,13 +1918,15 @@ END IF
 
    DO j=1,spec_bdy_width
    DO k=kts,kte
-   DO i=jts,jte
+   DO i=js,je
       save=save + grid%a_w_bxs(i,k,j)*b_w_bxs(i,k,j)
       save=save + grid%a_w_bxe(i,k,j)*b_w_bxe(i,k,j)
       save=save + grid%a_ph_bxs(i,k,j)*b_ph_bxs(i,k,j)
       save=save + grid%a_ph_bxe(i,k,j)*b_ph_bxe(i,k,j)
       save=save + grid%a_w_btxs(i,k,j)*b_w_btxs(i,k,j)
       save=save + grid%a_w_btxe(i,k,j)*b_w_btxe(i,k,j)
+
+
       save=save + grid%a_ph_btxs(i,k,j)*b_ph_btxs(i,k,j)
       save=save + grid%a_ph_btxe(i,k,j)*b_ph_btxe(i,k,j)
    ENDDO
@@ -1923,7 +1936,7 @@ END IF
    !$OMP MASTER
    DO j=1,spec_bdy_width
    DO k=kts,kte-1
-   DO i=its,ite
+   DO i=is,ie
       save=save + grid%a_u_bys(i,k,j)*b_u_bys(i,k,j)
       save=save + grid%a_u_bye(i,k,j)*b_u_bye(i,k,j)
       save=save + grid%a_v_bys(i,k,j)*b_v_bys(i,k,j)
@@ -1942,7 +1955,7 @@ END IF
 
    DO j=1,spec_bdy_width
    DO k=kts,kte
-   DO i=its,ite
+   DO i=is,ie
       save=save + grid%a_w_bys(i,k,j)*b_w_bys(i,k,j)
       save=save + grid%a_w_bye(i,k,j)*b_w_bye(i,k,j)
       save=save + grid%a_ph_bys(i,k,j)*b_ph_bys(i,k,j)
@@ -1958,7 +1971,7 @@ END IF
 
    DO j=1,spec_bdy_width
    DO k=1,1
-   DO i=jts,jte
+   DO i=js,je
       save=save + grid%a_mu_bxs(i,k,j)*b_mu_bxs(i,k,j)
       save=save + grid%a_mu_bxe(i,k,j)*b_mu_bxe(i,k,j)
       save=save + grid%a_mu_btxs(i,k,j)*b_mu_btxs(i,k,j)
@@ -1970,7 +1983,7 @@ END IF
    !$OMP MASTER
    DO j=1,spec_bdy_width
    DO k=1,1
-   DO i=its,ite
+   DO i=is,ie
       save=save + grid%a_mu_bys(i,k,j)*b_mu_bys(i,k,j)
       save=save + grid%a_mu_bye(i,k,j)*b_mu_bye(i,k,j)
       save=save + grid%a_mu_btys(i,k,j)*b_mu_btys(i,k,j)
@@ -1983,7 +1996,7 @@ END IF
    DO mm=PARAM_FIRST_SCALAR, num_moist
    DO j=1,spec_bdy_width
    DO k=kts,kte-1
-   DO i=jts,jte
+   DO i=js,je
       save=save + grid%a_moist_bxs(i,k,j,mm)*b_moist_bxs(i,k,j,mm)
       save=save + grid%a_moist_bxe(i,k,j,mm)*b_moist_bxe(i,k,j,mm)
       save=save + grid%a_moist_btxs(i,k,j,mm)*b_moist_btxs(i,k,j,mm)
@@ -1997,7 +2010,7 @@ END IF
    DO mm=PARAM_FIRST_SCALAR, num_moist
    DO j=1,spec_bdy_width
    DO k=kts,kte-1
-   DO i=its,ite
+   DO i=is,ie
       save=save + grid%a_moist_bys(i,k,j,mm)*b_moist_bys(i,k,j,mm)
       save=save + grid%a_moist_bye(i,k,j,mm)*b_moist_bye(i,k,j,mm)
       save=save + grid%a_moist_btys(i,k,j,mm)*b_moist_btys(i,k,j,mm)

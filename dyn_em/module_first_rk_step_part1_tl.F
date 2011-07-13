@@ -208,7 +208,6 @@ BENCH_START(g_init_zero_tend_tim)
 BENCH_END(g_init_zero_tend_tim)
 
 #ifdef DM_PARALLEL
-#     include "HALO_EM_PHYS_A.inc"
 #     include "HALO_EM_PHYS_A_TL.inc"
 #endif
 

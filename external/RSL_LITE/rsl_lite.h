@@ -6,6 +6,7 @@
 #      define RSL_LITE_EXCH_Y rsl_lite_exch_y
 #      define RSL_LITE_EXCH_X rsl_lite_exch_x
 #      define RSL_LITE_PACK  rsl_lite_pack
+#      define RSL_LITE_PACK_AD  rsl_lite_pack_ad
 #      define RSL_LITE_BCAST_MSGS rsl_lite_bcast_msgs
 #      define RSL_LITE_TO_CHILD_MSG rsl_lite_to_child_msg
 #      define RSL_LITE_TO_CHILD_INFO rsl_lite_to_child_info
@@ -34,6 +35,10 @@
 #      define F_PACK_INT f_pack_int
 #      define F_UNPACK_LINT f_unpack_lint
 #      define F_UNPACK_INT f_unpack_int
+#      define F_PACK_LINT_AD f_pack_lint_ad
+#      define F_PACK_INT_AD f_pack_int_ad
+#      define F_UNPACK_LINT_AD f_unpack_lint_ad
+#      define F_UNPACK_INT_AD f_unpack_int_ad
 #      define RSL_LITE_GET_HOSTNAME rsl_lite_get_hostname
 # else
 #   ifdef F2CSTYLE
@@ -43,6 +48,7 @@
 #      define RSL_LITE_EXCH_Y rsl_lite_exch_y__
 #      define RSL_LITE_EXCH_X rsl_lite_exch_x__
 #      define RSL_LITE_PACK  rsl_lite_pack__
+#      define RSL_LITE_PACK_AD  rsl_lite_pack_ad__
 #      define RSL_LITE_BCAST_MSGS rsl_lite_bcast_msgs__
 #      define RSL_LITE_TO_CHILD_MSG rsl_lite_to_child_msg__
 #      define RSL_LITE_TO_CHILD_INFO rsl_lite_to_child_info__
@@ -71,6 +77,10 @@
 #      define F_PACK_INT f_pack_int__
 #      define F_UNPACK_LINT f_unpack_lint__
 #      define F_UNPACK_INT f_unpack_int__
+#      define F_PACK_LINT_AD f_pack_lint_ad__
+#      define F_PACK_INT_AD f_pack_int_ad__
+#      define F_UNPACK_LINT_AD f_unpack_lint_ad__
+#      define F_UNPACK_INT_AD f_unpack_int_ad__
 #      define RSL_LITE_GET_HOSTNAME rsl_lite_get_hostname__
 #   else
 #      define RSL_LITE_ERROR_DUP1 rsl_error_dup1_
@@ -79,6 +89,7 @@
 #      define RSL_LITE_EXCH_Y rsl_lite_exch_y_
 #      define RSL_LITE_EXCH_X rsl_lite_exch_x_
 #      define RSL_LITE_PACK  rsl_lite_pack_
+#      define RSL_LITE_PACK_AD  rsl_lite_pack_ad_
 #      define RSL_LITE_BCAST_MSGS rsl_lite_bcast_msgs_
 #      define RSL_LITE_TO_CHILD_MSG rsl_lite_to_child_msg_
 #      define RSL_LITE_TO_CHILD_INFO rsl_lite_to_child_info_
@@ -107,6 +118,10 @@
 #      define F_PACK_INT f_pack_int_
 #      define F_UNPACK_LINT f_unpack_lint_
 #      define F_UNPACK_INT f_unpack_int_
+#      define F_PACK_LINT_AD f_pack_lint_ad_
+#      define F_PACK_INT_AD f_pack_int_ad_
+#      define F_UNPACK_LINT_AD f_unpack_lint_ad_
+#      define F_UNPACK_INT_AD f_unpack_int_ad_
 #      define RSL_LITE_GET_HOSTNAME rsl_lite_get_hostname_
 #   endif
 # endif

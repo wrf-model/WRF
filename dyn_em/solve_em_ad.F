@@ -44,9 +44,9 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
                  ,period_bdy_em_scalar_sub,period_bdy_em_tke_old_sub                       &
                  ,period_bdy_em_tracer2_sub,period_bdy_em_tracer_old_sub                   &
                  ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub         &
-                 ,halo_em_save_ad_sub,halo_em_e_3_ad_sub,halo_em_e_5_ad_sub                &
-                 ,halo_em_moist_e_3_ad_sub,halo_em_moist_e_5_ad_sub,halo_em_mu_ad_sub      &
-                 ,halo_em_ad_rk_tend0_sub
+                 ,halo_em_a_ad_sub,halo_em_d2_3_ad_sub,halo_em_d2_5_ad_sub                 &
+                 ,halo_em_e_3_ad_sub,halo_em_e_5_ad_sub,halo_em_moist_e_3_ad_sub           &
+                 ,halo_em_moist_e_5_ad_sub
 #endif
    USE module_utility
 ! Mediation layer modules
@@ -7008,6 +7008,37 @@ end if
   a_alpha = 0. 
   a_gamma = 0. 
 
+#ifdef DM_PARALLEL
+!-----------------------------------------------------------------------
+! see above
+!--------------------------------------------------------------
+   CALL wrf_debug ( 200 , ' call HALO_RK_E' )
+   IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+#    include "HALO_EM_E_3_AD.inc"
+   ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+#    include "HALO_EM_E_5_AD.inc"
+   ELSE
+     WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+     CALL wrf_error_fatal(TRIM(wrf_err_message))
+   ENDIF
+#endif
+
+#ifdef DM_PARALLEL
+   IF ( num_moist >= PARAM_FIRST_SCALAR  ) THEN
+!-----------------------------------------------------------------------
+! see above
+!--------------------------------------------------------------
+     CALL wrf_debug ( 200 , ' call HALO_RK_MOIST' )
+     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+#      include "HALO_EM_MOIST_E_3_AD.inc"
+     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+#      include "HALO_EM_MOIST_E_5_AD.inc"
+     ELSE
+       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
+     ENDIF
+   ENDIF
+
 ! [1] Adjoint of the part after Runge Kutta loop
 
 !==[adj_P9]===============================================================
@@ -7015,8 +7046,8 @@ end if
 
 !!!!! Need to include AD for halo (the same below). Ning Pan
 #ifdef DM_PARALLEL
-#  include "HALO_EM_C.inc"
-#  include "PERIOD_BDY_EM_E.inc"
+!#  include "HALO_EM_C.inc"
+!#  include "PERIOD_BDY_EM_E.inc"
 #endif
 
    CALL wrf_debug ( 10 , ' call a_set_w_surface' )
@@ -7092,18 +7123,18 @@ end if
 
 #ifdef DM_PARALLEL
    IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#    include "HALO_EM_D3_3.inc"
+!#    include "HALO_EM_D3_3.inc"
    ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#    include "HALO_EM_D3_5.inc"
+!#    include "HALO_EM_D3_5.inc"
    ELSE
       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
       CALL wrf_error_fatal(TRIM(wrf_err_message))
    ENDIF
-#  include "PERIOD_BDY_EM_D3.inc"
-#  include "PERIOD_BDY_EM_MOIST.inc"
-#  include "PERIOD_BDY_EM_CHEM.inc"
-#  include "PERIOD_BDY_EM_TRACER.inc"
-#  include "PERIOD_BDY_EM_SCALAR.inc"
+!#  include "PERIOD_BDY_EM_D3.inc"
+!#  include "PERIOD_BDY_EM_MOIST.inc"
+!#  include "PERIOD_BDY_EM_CHEM.inc"
+!#  include "PERIOD_BDY_EM_TRACER.inc"
+!#  include "PERIOD_BDY_EM_SCALAR.inc"
 #endif
 
 BENCH_START(adj_bc_2d_tim)
@@ -7260,8 +7291,8 @@ BENCH_END(adj_bc_2d_tim)
 !==[adj_P5]===============================================================
    IF (.not. config_flags%non_hydrostatic) THEN
 #ifdef DM_PARALLEL
-#    include "HALO_EM_HYDRO_UV.inc"
-#    include "PERIOD_EM_HYDRO_UV.inc"
+!#    include "HALO_EM_HYDRO_UV.inc"
+!#    include "PERIOD_EM_HYDRO_UV.inc"
 #endif
 
 #ifdef DEBUG_PLUS
@@ -7781,15 +7812,15 @@ BENCH_END(adj_advance_ppt_tim)
 !======[adj_P1.22.3]:tke==================================================
        IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
          IF ( (config_flags%tke_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
-#         include "HALO_EM_TKE_5.inc"
+!#         include "HALO_EM_TKE_5.inc"
          ELSE
-#         include "HALO_EM_TKE_3.inc"
+!#         include "HALO_EM_TKE_3.inc"
          ENDIF
        ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
          IF ( (config_flags%tke_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
-#         include "HALO_EM_TKE_7.inc"
+!#         include "HALO_EM_TKE_7.inc"
          ELSE
-#         include "HALO_EM_TKE_5.inc"
+!#         include "HALO_EM_TKE_5.inc"
          ENDIF
        ELSE
          WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
@@ -7800,15 +7831,15 @@ BENCH_END(adj_advance_ppt_tim)
        IF ( num_moist .GE. PARAM_FIRST_SCALAR ) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
            IF ( (config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
-#        include "HALO_EM_MOIST_E_5.inc"
+!#        include "HALO_EM_MOIST_E_5.inc"
            ELSE
-#        include "HALO_EM_MOIST_E_3.inc"
+!#        include "HALO_EM_MOIST_E_3.inc"
            END IF
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
            IF ( (config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
-#        include "HALO_EM_MOIST_E_7.inc"
+!#        include "HALO_EM_MOIST_E_7.inc"
            ELSE
-#        include "HALO_EM_MOIST_E_5.inc"
+!#        include "HALO_EM_MOIST_E_5.inc"
            END IF
          ELSE
            WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
@@ -7819,15 +7850,15 @@ BENCH_END(adj_advance_ppt_tim)
        IF ( num_scalar >= PARAM_FIRST_SCALAR ) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
            IF ( (config_flags%scalar_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
-#        include "HALO_EM_SCALAR_E_5.inc"
+!#        include "HALO_EM_SCALAR_E_5.inc"
            ELSE
-#        include "HALO_EM_SCALAR_E_3.inc"
+!#        include "HALO_EM_SCALAR_E_3.inc"
            ENDIF
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
            IF ( (config_flags%scalar_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
-#        include "HALO_EM_SCALAR_E_7.inc"
+!#        include "HALO_EM_SCALAR_E_7.inc"
            ELSE
-#        include "HALO_EM_SCALAR_E_5.inc"
+!#        include "HALO_EM_SCALAR_E_5.inc"
            ENDIF
          ELSE
            WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
@@ -7879,18 +7910,18 @@ BENCH_END(adj_advance_ppt_tim)
 
 #ifdef DM_PARALLEL
        IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#    include "HALO_EM_D2_3.inc"
+!#    include "HALO_EM_D2_3.inc"
        ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#    include "HALO_EM_D2_5.inc"
+!#    include "HALO_EM_D2_5.inc"
        ELSE
          WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
          CALL wrf_error_fatal(TRIM(wrf_err_message))
        ENDIF
-#  include "PERIOD_BDY_EM_D.inc"
-#  include "PERIOD_BDY_EM_MOIST2.inc"
-#  include "PERIOD_BDY_EM_CHEM2.inc"
-#  include "PERIOD_BDY_EM_TRACER2.inc"
-#  include "PERIOD_BDY_EM_SCALAR2.inc"
+!#  include "PERIOD_BDY_EM_D.inc"
+!#  include "PERIOD_BDY_EM_MOIST2.inc"
+!#  include "PERIOD_BDY_EM_CHEM2.inc"
+!#  include "PERIOD_BDY_EM_TRACER2.inc"
+!#  include "PERIOD_BDY_EM_SCALAR2.inc"
 #endif
 
 BENCH_START(adj_bc_end_tim)
@@ -8066,6 +8097,18 @@ end if
 
 BENCH_END(adj_bc_end_tim)
 
+#ifdef DM_PARALLEL
+       IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+#    include "HALO_EM_D2_3_AD.inc"
+       ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+#    include "HALO_EM_D2_5_AD.inc"
+       ELSE
+         WRITE(wrf_err_message,*)'solve_em_ad: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+         CALL wrf_error_fatal(TRIM(wrf_err_message))
+       ENDIF
+#endif
+
+
      ENDIF adj_rk_step_1_check
 
 !====[adj_P1.21]==========================================================
@@ -8127,9 +8170,9 @@ BENCH_END(adj_calc_p_rho_tim)
 !
 !--------------------------------------------------------------
 
-#  include "HALO_EM_D.inc"
+!#  include "HALO_EM_D.inc"
 ! WCS addition 11/19/08
-#  include "PERIOD_EM_DA.inc"
+!#  include "PERIOD_EM_DA.inc"
 #endif
 
 !====[adj_P1.20]==========================================================
@@ -8364,9 +8407,9 @@ BENCH_START(adj_tke_adv_tim)
 !======[P1.17.0_adj]======================================================
 #ifdef DM_PARALLEL
          IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#       include "HALO_EM_TKE_ADVECT_3.inc"
+!#       include "HALO_EM_TKE_ADVECT_3.inc"
          ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#       include "HALO_EM_TKE_ADVECT_5.inc"
+!#       include "HALO_EM_TKE_ADVECT_5.inc"
          ELSE
           WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
           CALL wrf_error_fatal(TRIM(wrf_err_message))
@@ -8821,9 +8864,9 @@ BENCH_END(adj_rk_scalar_tend_tim)
 #ifdef DM_PARALLEL
          IF (config_flags%tke_adv_opt /= ORIGINAL) THEN
            IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-#     include "HALO_EM_TKE_OLD_E_5.inc"
+!#     include "HALO_EM_TKE_OLD_E_5.inc"
            ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-#     include "HALO_EM_TKE_OLD_E_7.inc"
+!#     include "HALO_EM_TKE_OLD_E_7.inc"
            ELSE
              WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
              CALL wrf_error_fatal(TRIM(wrf_err_message))
@@ -8832,7 +8875,7 @@ BENCH_END(adj_rk_scalar_tend_tim)
 #endif
 
 #ifdef DM_PARALLEL
-#  include "PERIOD_BDY_EM_TKE_OLD.inc"
+!#  include "PERIOD_BDY_EM_TKE_OLD.inc"
 #endif
 
 !========[adj_P1.14.3]:tke================================================
@@ -8912,9 +8955,9 @@ end if
        IF (config_flags%scalar_adv_opt /= ORIGINAL) THEN
 #ifndef RSL
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-#     include "HALO_EM_SCALAR_OLD_E_5.inc"
+!#     include "HALO_EM_SCALAR_OLD_E_5.inc"
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-#     include "HALO_EM_SCALAR_OLD_E_7.inc"
+!#     include "HALO_EM_SCALAR_OLD_E_7.inc"
          ELSE
            WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
            CALL wrf_error_fatal(TRIM(wrf_err_message))
@@ -8927,7 +8970,7 @@ end if
 #endif
 
 #ifdef DM_PARALLEL
-#  include "PERIOD_BDY_EM_SCALAR_OLD.inc"
+!#  include "PERIOD_BDY_EM_SCALAR_OLD.inc"
 #endif
 !========[adj_P1.14.3]:scalar=============================================
          !ZXOMP PARALLEL DO   &
@@ -9011,9 +9054,9 @@ end if
 #ifdef DM_PARALLEL
        IF (config_flags%moist_adv_opt /= ORIGINAL) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-#     include "HALO_EM_MOIST_OLD_E_5.inc"
+!#     include "HALO_EM_MOIST_OLD_E_5.inc"
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-#     include "HALO_EM_MOIST_OLD_E_7.inc"
+!#     include "HALO_EM_MOIST_OLD_E_7.inc"
          ELSE
            WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
            CALL wrf_error_fatal(TRIM(wrf_err_message))
@@ -9022,7 +9065,7 @@ end if
 #endif
 
 #ifdef DM_PARALLEL
-#  include "PERIOD_BDY_EM_MOIST_OLD.inc"
+!#  include "PERIOD_BDY_EM_MOIST_OLD.inc"
 #endif
 
 !======[adj_P1.14.3]:moist================================================
@@ -9336,8 +9379,8 @@ BENCH_END(adj_calc_mu_uv_tim)
 !  muts   x
 !  mudf   x
 
-#      include "HALO_EM_C2.inc"
-#      include "PERIOD_BDY_EM_B3.inc"
+!#      include "HALO_EM_C2.inc"
+!#      include "PERIOD_BDY_EM_B3.inc"
 #endif
 
 !!!!! Need to code a_set_physical_bc3d and a_set_physical_bc2d
@@ -9809,7 +9852,7 @@ BENCH_END(adj_spec_bdy_t_tim)
 !  u_2               x
 !  v_2                          x
 !
-#     include "HALO_EM_C.inc"
+!#     include "HALO_EM_C.inc"
 #endif
 
 #ifdef DEBUG_PLUS
@@ -9926,7 +9969,7 @@ BENCH_END(adj_spec_bdy_uv_tim)
 !======[adj_P1.11.1]======================================================
 !      Adjoint of updating model variables of grid points except for those in spec zone: u,v
 #ifdef DM_PARALLEL
-#      include "PERIOD_BDY_EM_B.inc"
+!#      include "PERIOD_BDY_EM_B.inc"
 #endif
 
 #ifdef DEBUG_PLUS
@@ -10019,8 +10062,8 @@ BENCH_END(adj_advance_uv_tim)
 !  alt       x
 !  pb        x
 !--------------------------------------------------------------
-#      include "HALO_EM_B.inc"
-#      include "PERIOD_BDY_EM_B.inc"
+!#      include "HALO_EM_B.inc"
+!#      include "PERIOD_BDY_EM_B.inc"
 #endif
 
 BENCH_START(adj_set_phys_bc2_tim)
@@ -10772,7 +10815,7 @@ end if
 #endif
 
 #ifdef DM_PARALLEL
-#      include "HALO_EM_SAVE_AD.inc"
+!#      include "HALO_EM_SAVE_AD.inc"
 #endif
 !======[adj_P1.8.1]=======================================================
 !      Adjoint of calculating tendencies for grid points in relax zone
@@ -11217,14 +11260,14 @@ end if
 !  muv    x
 !  mut    x
 !--------------------------------------------------------------
-#    include "HALO_EM_A.inc"
+!#    include "HALO_EM_A.inc"
 #endif
 
 ! set boundary conditions on variables
 ! from big_step_prep for use in big_step_proc
 
 #ifdef DM_PARALLEL
-#  include "PERIOD_BDY_EM_A.inc"
+!#  include "PERIOD_BDY_EM_A.inc"
 #endif
 
 BENCH_START(adj_set_phys_bc_tim)
@@ -11308,12 +11351,13 @@ end if
 ! CHECK NECESSARY SUBROUTINE: rk_phys_bc_dry_1 }
 #endif
 
+BENCH_END(adj_set_phys_bc_tim)
+
 #ifdef DM_PARALLEL
 ! a_ru, a_rv
-#    include "HALO_EM_MU_AD.inc"
+!#    include "HALO_EM_MU_AD.inc"
+#    include "HALO_EM_A_AD.inc"
 #endif
-
-BENCH_END(adj_set_phys_bc_tim)
 
 !====[adj_P1.3]===========================================================
      CALL wrf_debug ( 200 , ' call a_rk_step_prep ' )
@@ -11416,65 +11460,6 @@ end if
 
        ENDIF
 
-#ifdef DM_PARALLEL
-!-----------------------------------------------------------------------
-! see above
-!--------------------------------------------------------------
-   CALL wrf_debug ( 200 , ' call HALO_RK_E' )
-   IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#    include "HALO_EM_E_3_AD.inc"
-   ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#    include "HALO_EM_E_5_AD.inc"
-   ELSE
-     WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-     CALL wrf_error_fatal(TRIM(wrf_err_message))
-   ENDIF
-#endif
-
-#ifdef DM_PARALLEL
-   IF ( num_moist >= PARAM_FIRST_SCALAR  ) THEN
-!-----------------------------------------------------------------------
-! see above
-!--------------------------------------------------------------
-     CALL wrf_debug ( 200 , ' call HALO_RK_MOIST' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#      include "HALO_EM_MOIST_E_3_AD.inc"
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#      include "HALO_EM_MOIST_E_5_AD.inc"
-     ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-     ENDIF
-   ENDIF
-   IF ( num_chem >= PARAM_FIRST_SCALAR ) THEN
-!-----------------------------------------------------------------------
-! see above
-!--------------------------------------------------------------
-     CALL wrf_debug ( 200 , ' call HALO_RK_CHEM' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#      include "HALO_EM_CHEM_E_3.inc"
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#      include "HALO_EM_CHEM_E_5.inc"
-     ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-     ENDIF
-   ENDIF
-   IF ( num_tracer >= PARAM_FIRST_SCALAR ) THEN
-!-----------------------------------------------------------------------
-! see above
-!--------------------------------------------------------------
-     CALL wrf_debug ( 200 , ' call HALO_RK_TRACER' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#      include "HALO_EM_TRACER_E_3.inc"
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#      include "HALO_EM_TRACER_E_5.inc"
-     ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-     ENDIF
-   ENDIF
-#endif
 !==[P12_adj]==============================================================
 !  Max values of CFL for adaptive time step scheme
 

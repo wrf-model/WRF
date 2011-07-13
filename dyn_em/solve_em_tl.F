@@ -22,18 +22,18 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
                   local_communicator, mytask, ntasks, ntasks_x, ntasks_y                   &
                  ,local_communicator_periodic, wrf_dm_maxval
    USE module_comm_dm, ONLY : &
-                  halo_em_a_sub,halo_em_b_sub,halo_em_c2_sub,halo_em_chem_e_3_sub          &
+                  halo_em_a_tl_sub,halo_em_b_tl_sub,halo_em_c2_tl_sub,halo_em_chem_e_3_sub          &
                  ,halo_em_chem_e_5_sub,halo_em_chem_e_7_sub,halo_em_chem_old_e_5_sub       &
-                 ,halo_em_chem_old_e_7_sub,halo_em_c_sub,halo_em_d2_3_sub                  &
-                 ,halo_em_d2_5_sub,halo_em_d3_3_sub,halo_em_d3_5_sub,halo_em_d_sub         &
-                 ,halo_em_e_3_sub,halo_em_e_5_sub,halo_em_hydro_uv_sub                     &
-                 ,halo_em_moist_e_3_sub,halo_em_moist_e_5_sub,halo_em_moist_e_7_sub        &
-                 ,halo_em_moist_old_e_5_sub,halo_em_moist_old_e_7_sub                      &
+                 ,halo_em_chem_old_e_7_sub,halo_em_c_tl_sub,halo_em_d2_3_tl_sub                  &
+                 ,halo_em_d2_5_tl_sub,halo_em_d3_3_tl_sub,halo_em_d3_5_tl_sub,halo_em_d_tl_sub         &
+                 ,halo_em_e_3_tl_sub,halo_em_e_5_tl_sub,halo_em_hydro_uv_tl_sub                     &
+                 ,halo_em_moist_e_3_tl_sub,halo_em_moist_e_5_tl_sub,halo_em_moist_e_7_tl_sub        &
+                 ,halo_em_moist_old_e_5_tl_sub,halo_em_moist_old_e_7_tl_sub                      &
                  ,halo_em_scalar_e_3_sub,halo_em_scalar_e_5_sub,halo_em_scalar_e_7_sub     &
-                 ,halo_em_scalar_old_e_5_sub,halo_em_scalar_old_e_7_sub,halo_em_tke_3_sub  &
-                 ,halo_em_tke_5_sub,halo_em_tke_7_sub,halo_em_tke_advect_3_sub             &
-                 ,halo_em_tke_advect_5_sub,halo_em_tke_old_e_5_sub                         &
-                 ,halo_em_tke_old_e_7_sub,halo_em_tracer_e_3_sub,halo_em_tracer_e_5_sub    &
+                 ,halo_em_scalar_old_e_5_sub,halo_em_scalar_old_e_7_sub,halo_em_tke_3_tl_sub  &
+                 ,halo_em_tke_5_tl_sub,halo_em_tke_7_tl_sub,halo_em_tke_advect_3_tl_sub             &
+                 ,halo_em_tke_advect_5_tl_sub,halo_em_tke_old_e_5_tl_sub                         &
+                 ,halo_em_tke_old_e_7_tl_sub,halo_em_tracer_e_3_sub,halo_em_tracer_e_5_sub    &
                  ,halo_em_tracer_e_7_sub,halo_em_tracer_old_e_5_sub                        &
                  ,halo_em_tracer_old_e_7_sub,period_bdy_em_a_sub                           &
                  ,period_bdy_em_b3_sub,period_bdy_em_b_sub,period_bdy_em_chem2_sub         &
@@ -43,21 +43,7 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
                  ,period_bdy_em_scalar2_sub,period_bdy_em_scalar_old_sub                   &
                  ,period_bdy_em_scalar_sub,period_bdy_em_tke_old_sub                       &
                  ,period_bdy_em_tracer2_sub,period_bdy_em_tracer_old_sub                   &
-                 ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub         &
-                 ,halo_em_a_tl_sub,halo_em_b_tl_sub,halo_em_c_tl_sub,halo_em_d_tl_sub      &
-                 ,period_bdy_em_a_tl_sub,period_bdy_em_b_tl_sub,period_bdy_em_d_tl_sub     &
-                 ,period_bdy_em_e_tl_sub,period_em_da_tl_sub,halo_em_c2_tl_sub             &
-                 ,period_bdy_em_b3_tl_sub,halo_em_tke_old_e_7_tl_sub,halo_em_e_3_tl_sub    &
-                 ,halo_em_tke_old_e_5_tl_sub,period_bdy_em_tke_old_tl_sub                  &
-                 ,halo_em_e_5_tl_sub,halo_em_d3_3_tl_sub,halo_em_d3_5_tl_sub               &
-                 ,period_bdy_em_d3_tl_sub,period_bdy_em_moist_tl_sub                       &
-                 ,halo_em_hydro_uv_tl_sub,period_em_hydro_uv_tl_sub                        &
-                 ,halo_em_tke_advect_3_tl_sub,halo_em_tke_advect_5_tl_sub                  &
-                 ,halo_em_d2_3_tl_sub,halo_em_d2_5_tl_sub,period_bdy_em_moist2_tl_sub      &
-                 ,halo_em_tke_3_tl_sub,halo_em_tke_5_tl_sub,halo_em_tke_7_tl_sub           &
-                 ,halo_em_moist_e_3_tl_sub,halo_em_moist_e_5_tl_sub                        &
-                 ,halo_em_moist_e_7_tl_sub,period_bdy_em_moist_old_tl_sub                  &
-                 ,halo_em_moist_old_e_5_tl_sub,halo_em_moist_old_e_7_tl_sub
+                 ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub 
 #endif
    USE module_utility
 ! Mediation layer modules
@@ -650,7 +636,6 @@ BENCH_END(g_step_prep_tim)
 !  muv    x
 !  mut    x
 !--------------------------------------------------------------
-#    include "HALO_EM_A.inc"
 #    include "HALO_EM_A_TL.inc"
 #endif
 
@@ -659,7 +644,6 @@ BENCH_END(g_step_prep_tim)
 
 #ifdef DM_PARALLEL
 #  include "PERIOD_BDY_EM_A.inc"
-#  include "PERIOD_BDY_EM_A_TL.inc"
 #endif
 
 BENCH_START(g_set_phys_bc_tim)
@@ -1723,10 +1707,8 @@ BENCH_END(g_small_step_prep_tim)
 !  alt       x
 !  pb        x
 !--------------------------------------------------------------
-#      include "HALO_EM_B.inc"
 #      include "HALO_EM_B_TL.inc"
 #      include "PERIOD_BDY_EM_B.inc"
-#      include "PERIOD_BDY_EM_B_TL.inc"
 #endif
 
 BENCH_START(g_set_phys_bc2_tim)
@@ -1952,7 +1934,6 @@ BENCH_END(g_set_phys_bc2_tim)
        ! Boundary condition time (or communication time).
 #ifdef DM_PARALLEL
 #      include "PERIOD_BDY_EM_B.inc"
-#      include "PERIOD_BDY_EM_B_TL.inc"
 #endif
 
        !$OMP PARALLEL DO   &
@@ -2121,7 +2102,6 @@ BENCH_END(g_spec_bdy_uv_tim)
 !  u_2               x
 !  v_2                          x
 !
-#     include "HALO_EM_C.inc"
 #     include "HALO_EM_C_TL.inc"
 #endif
 
@@ -2564,10 +2544,8 @@ BENCH_END(g_cald_p_rho_tim)
 !  muts   x
 !  mudf   x
 
-#      include "HALO_EM_C2.inc"
 #      include "HALO_EM_C2_TL.inc"
 #      include "PERIOD_BDY_EM_B3.inc"
-#      include "PERIOD_BDY_EM_B3_TL.inc"
 #endif
 
 BENCH_START(g_phys_bc_tim)
@@ -2992,10 +2970,8 @@ end if
 #ifdef DM_PARALLEL
        IF (config_flags%moist_adv_opt /= ORIGINAL) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-#     include "HALO_EM_MOIST_OLD_E_5.inc"
 #     include "HALO_EM_MOIST_OLD_E_5_TL.inc"
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-#     include "HALO_EM_MOIST_OLD_E_7.inc"
 #     include "HALO_EM_MOIST_OLD_E_7_TL.inc"
          ELSE
            WRITE(wrf_err_message,*)'solve_em_tl: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
@@ -3006,7 +2982,6 @@ end if
 
 #ifdef DM_PARALLEL
 #  include "PERIOD_BDY_EM_MOIST_OLD.inc"
-#  include "PERIOD_BDY_EM_MOIST_OLD_TL.inc"
 #endif
 
        !$OMP PARALLEL DO   &
@@ -3367,10 +3342,8 @@ end if
 #ifdef DM_PARALLEL
          IF (config_flags%tke_adv_opt /= ORIGINAL) THEN
            IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-#     include "HALO_EM_TKE_OLD_E_5.inc"
 #     include "HALO_EM_TKE_OLD_E_5_TL.inc"
            ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-#     include "HALO_EM_TKE_OLD_E_7.inc"
 #     include "HALO_EM_TKE_OLD_E_7_TL.inc"
            ELSE
              WRITE(wrf_err_message,*)'solve_em_tl: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
@@ -3381,7 +3354,6 @@ end if
 
 #ifdef DM_PARALLEL
 #  include "PERIOD_BDY_EM_TKE_OLD.inc"
-#  include "PERIOD_BDY_EM_TKE_OLD_TL.inc"
 #endif
 
          !$OMP PARALLEL DO   &
@@ -3433,11 +3405,9 @@ end if
 !
 !--------------------------------------------------------------
 
-#  include "HALO_EM_D.inc"
 #  include "HALO_EM_D_TL.inc"
 ! WCS addition 11/19/08
 #  include "PERIOD_EM_DA.inc"
-#  include "PERIOD_EM_DA_TL.inc"
 #endif
 
 !<DESCRIPTION>
@@ -3689,10 +3659,8 @@ BENCH_START(g_tke_adv_tim)
        TKE_advance: IF (config_flags%km_opt .eq. 2) then
 #ifdef DM_PARALLEL
          IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#       include "HALO_EM_TKE_ADVECT_3.inc"
 #       include "HALO_EM_TKE_ADVECT_3_TL.inc"
          ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#       include "HALO_EM_TKE_ADVECT_5.inc"
 #       include "HALO_EM_TKE_ADVECT_5_TL.inc"
          ELSE
           WRITE(wrf_err_message,*)'solve_em_tl: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
@@ -4880,19 +4848,15 @@ end if
 
 #ifdef DM_PARALLEL
        IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#    include "HALO_EM_D2_3.inc"
 #    include "HALO_EM_D2_3_TL.inc"
        ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#    include "HALO_EM_D2_5.inc"
 #    include "HALO_EM_D2_5_TL.inc"
        ELSE
          WRITE(wrf_err_message,*)'solve_em_tl: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
          CALL wrf_error_fatal(TRIM(wrf_err_message))
        ENDIF
 #  include "PERIOD_BDY_EM_D.inc"
-#  include "PERIOD_BDY_EM_D_TL.inc"
 #  include "PERIOD_BDY_EM_MOIST2.inc"
-#  include "PERIOD_BDY_EM_MOIST2_TL.inc"
 #  include "PERIOD_BDY_EM_CHEM2.inc"
 #  include "PERIOD_BDY_EM_TRACER2.inc"
 #  include "PERIOD_BDY_EM_SCALAR2.inc"
@@ -5127,18 +5091,14 @@ BENCH_END(g_bc_end_tim)
 
        IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
          IF ( (config_flags%tke_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
-#         include "HALO_EM_TKE_5.inc"
 #         include "HALO_EM_TKE_5_TL.inc"
          ELSE
-#         include "HALO_EM_TKE_3.inc"
 #         include "HALO_EM_TKE_3_TL.inc"
          ENDIF
        ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
          IF ( (config_flags%tke_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
-#         include "HALO_EM_TKE_7.inc"
 #         include "HALO_EM_TKE_7_TL.inc"
          ELSE
-#         include "HALO_EM_TKE_5.inc"
 #         include "HALO_EM_TKE_5_TL.inc"
          ENDIF
        ELSE
@@ -5149,18 +5109,14 @@ BENCH_END(g_bc_end_tim)
        IF ( num_moist .GE. PARAM_FIRST_SCALAR ) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
            IF ( (config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
-#        include "HALO_EM_MOIST_E_5.inc"
 #        include "HALO_EM_MOIST_E_5_TL.inc"
            ELSE
-#        include "HALO_EM_MOIST_E_3.inc"
 #        include "HALO_EM_MOIST_E_3_TL.inc"
            END IF
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
            IF ( (config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
-#        include "HALO_EM_MOIST_E_7.inc"
 #        include "HALO_EM_MOIST_E_7_TL.inc"
            ELSE
-#        include "HALO_EM_MOIST_E_5.inc"
 #        include "HALO_EM_MOIST_E_5_TL.inc"
            END IF
          ELSE
@@ -5899,10 +5855,8 @@ BENCH_END(g_moist_phys_end_tim)
 
    IF (.not. config_flags%non_hydrostatic) THEN
 #ifdef DM_PARALLEL
-#    include "HALO_EM_HYDRO_UV.inc"
 #    include "HALO_EM_HYDRO_UV_TL.inc"
 #    include "PERIOD_EM_HYDRO_UV.inc"
-#    include "PERIOD_EM_HYDRO_UV_TL.inc"
 #endif
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -6174,19 +6128,15 @@ end if
 
 #ifdef DM_PARALLEL
    IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#    include "HALO_EM_D3_3.inc"
 #    include "HALO_EM_D3_3_TL.inc"
    ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#    include "HALO_EM_D3_5.inc"
 #    include "HALO_EM_D3_5_TL.inc"
    ELSE
       WRITE(wrf_err_message,*)'solve_em_tl: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
       CALL wrf_error_fatal(TRIM(wrf_err_message))
    ENDIF
 #  include "PERIOD_BDY_EM_D3.inc"
-#  include "PERIOD_BDY_EM_D3_TL.inc"
 #  include "PERIOD_BDY_EM_MOIST.inc"
-#  include "PERIOD_BDY_EM_MOIST_TL.inc"
 #  include "PERIOD_BDY_EM_CHEM.inc"
 #  include "PERIOD_BDY_EM_TRACER.inc"
 #  include "PERIOD_BDY_EM_SCALAR.inc"
@@ -6395,10 +6345,8 @@ BENCH_END(g_bc_2d_tim)
 ! reset surface w for consistency
 
 #ifdef DM_PARALLEL
-#  include "HALO_EM_C.inc"
 #  include "HALO_EM_C_TL.inc"
 #  include "PERIOD_BDY_EM_E.inc"
-#  include "PERIOD_BDY_EM_E_TL.inc"
 #endif
 
    CALL wrf_debug ( 10 , ' call g_set_w_surface' )
@@ -6507,10 +6455,8 @@ end if
 !--------------------------------------------------------------
    CALL wrf_debug ( 200 , ' call HALO_RK_E' )
    IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#    include "HALO_EM_E_3.inc"
 #    include "HALO_EM_E_3_TL.inc"
    ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#    include "HALO_EM_E_5.inc"
 #    include "HALO_EM_E_5_TL.inc"
    ELSE
      WRITE(wrf_err_message,*)'solve_em_tl: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
@@ -6525,10 +6471,8 @@ end if
 !--------------------------------------------------------------
      CALL wrf_debug ( 200 , ' call HALO_RK_MOIST' )
      IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#      include "HALO_EM_MOIST_E_3.inc"
 #      include "HALO_EM_MOIST_E_3_TL.inc"
      ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#      include "HALO_EM_MOIST_E_5.inc"
 #      include "HALO_EM_MOIST_E_5_TL.inc"
      ELSE
        WRITE(wrf_err_message,*)'solve_em_tl: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order

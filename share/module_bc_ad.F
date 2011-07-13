@@ -1140,7 +1140,7 @@ CONTAINS
    TYPE(grid_config_rec_type),      INTENT(IN) :: config_flags
 
 
-   CALL a_relax_bdytend_core ( a_field, a_field_tend,  &
+   CALL a_relax_bdytend_core ( a_field, a_field_tend, &
                     a_field_bdy_xs, a_field_bdy_xe, &
                     a_field_bdy_ys, a_field_bdy_ye, &
                     a_field_bdy_tend_xs, a_field_bdy_tend_xe,  &
@@ -1211,380 +1211,508 @@ CONTAINS
 
    END SUBROUTINE a_relax_bdytend_tile
 
-   SUBROUTINE a_relax_bdytend_core ( a_field, a_field_tend, &
-                       a_field_bdy_xs, a_field_bdy_xe,  &
-                       a_field_bdy_ys, a_field_bdy_ye,  &
-                       a_field_bdy_tend_xs, a_field_bdy_tend_xe,  &
-                       a_field_bdy_tend_ys, a_field_bdy_tend_ye,  &
-                       variable_in, config_flags,             &
-                       spec_bdy_width, spec_zone, relax_zone, &
-                       dtbc, fcx, gcx,             &
-                       ids,ide, jds,jde, kds,kde,  & ! domain dims
-                       ims,ime, jms,jme, kms,kme,  & ! memory dims
-                       ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                       its,ite, jts,jte, kts,kte,  & ! patch  dims
-                       iXs,iXe, jXs,jXe, kXs,kXe   & ! field (1st arg) dims; might be tile or patch
-                       )
-
-!  spec_bdy_width is only used to dimension the boundary arrays.
-!  relax_zone is the inner edge of the boundary relaxation zone
-!  spec_zone is the width of the outer specified b.c.s
-
-   IMPLICIT NONE
-
-   INTEGER,   INTENT(IN) :: ids,ide, jds,jde, kds,kde
-   INTEGER,   INTENT(IN) :: ims,ime, jms,jme, kms,kme
-   INTEGER,   INTENT(IN) :: ips,ipe, jps,jpe, kps,kpe
-   INTEGER,   INTENT(IN) :: its,ite, jts,jte, kts,kte
-   INTEGER,   INTENT(IN) :: iXs,iXe, jXs,jXe, kXs,kXe
-   INTEGER,   INTENT(IN) :: spec_bdy_width, spec_zone, relax_zone
-   REAL,      INTENT(IN) :: dtbc
-   CHARACTER, INTENT(IN) :: variable_in
-
-   REAL, DIMENSION(iXs:iXe, kXs:kXe, jXs:jXe), INTENT(INOUT) :: a_field
-   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN   ) :: a_field_tend
-   REAL, DIMENSION(jms:jme, kds:kde, spec_bdy_width), INTENT(INOUT) :: a_field_bdy_xs, a_field_bdy_xe
-   REAL, DIMENSION(ims:ime, kds:kde, spec_bdy_width), INTENT(INOUT) :: a_field_bdy_ys, a_field_bdy_ye
-   REAL, DIMENSION(jms:jme, kds:kde, spec_bdy_width), INTENT(INOUT) :: a_field_bdy_tend_xs, a_field_bdy_tend_xe
-   REAL, DIMENSION(ims:ime, kds:kde, spec_bdy_width), INTENT(INOUT) :: a_field_bdy_tend_ys, a_field_bdy_tend_ye
-   REAL, DIMENSION(spec_bdy_width), INTENT(IN) :: fcx, gcx
-   TYPE(grid_config_rec_type),      INTENT(IN) :: config_flags
-
-   CHARACTER  :: variable
-   INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf, im1, ip1
-   INTEGER    :: b_dist, b_limit
-   REAL       :: a_fls0, a_fls1, a_fls2, a_fls3, a_fls4
-   LOGICAL    :: periodic_x
-
-
-   a_fls0 = 0.
-   a_fls1 = 0.
-   a_fls2 = 0.
-   a_fls3 = 0.
-   a_fls4 = 0.
-
-   periodic_x = config_flags%periodic_x
-   variable = variable_in
-
-   IF (variable == 'U') variable = 'u'
-   IF (variable == 'V') variable = 'v'
-   IF (variable == 'M') variable = 'm'
-   IF (variable == 'H') variable = 'h'
-
-   ibs = ids
-   ibe = ide-1
-   itf = min(ite,ide-1)
-   jbs = jds
-   jbe = jde-1
-   jtf = min(jte,jde-1)
-   ktf = kde-1
-   IF (variable == 'u') ibe = ide
-   IF (variable == 'u') itf = min(ite,ide)
-   IF (variable == 'v') jbe = jde
-   IF (variable == 'v') jtf = min(jte,jde)
-   IF (variable == 'm') ktf = kte
-   IF (variable == 'h') ktf = kte
-
-   IF (.NOT.periodic_x) THEN
-     IF (ibe - itf .lt. relax_zone) THEN
-! X-end boundary
-       DO i = min(itf,ibe-spec_zone), max(its,ibe-relax_zone+1), -1
-         b_dist = ibe - i
-         DO k = kts, ktf
-           DO j = min(jtf,jbe-b_dist-1), max(jts,b_dist+jbs+1), -1
-             a_fls0 = a_fls0 + ( fcx(b_dist+1)+gcx(b_dist+1)*4 ) * a_field_tend(i,k,j)
-             a_fls1 = a_fls1 - gcx(b_dist+1) * a_field_tend(i,k,j) 
-             a_fls2 = a_fls2 - gcx(b_dist+1) * a_field_tend(i,k,j) 
-             a_fls3 = a_fls3 - gcx(b_dist+1) * a_field_tend(i,k,j) 
-             a_fls4 = a_fls4 - gcx(b_dist+1) * a_field_tend(i,k,j) 
-
-             a_field_bdy_xe(j, k, b_dist+2) = a_field_bdy_xe(j, k, b_dist+2) + a_fls4
-             a_field_bdy_tend_xe(j, k, b_dist+2) = a_field_bdy_tend_xe(j, k, b_dist+2) &
-                                                 + dtbc * a_fls4
-             a_field(i-1,k,j) = a_field(i-1,k,j) - a_fls4
-             a_fls4 = 0.
-
-             a_field_bdy_xe(j, k, b_dist) = a_field_bdy_xe(j, k, b_dist) + a_fls3
-             a_field_bdy_tend_xe(j, k, b_dist) = a_field_bdy_tend_xe(j, k, b_dist) &
-                                               + dtbc * a_fls3
-             a_field(i+1,k,j) = a_field(i+1,k,j) - a_fls3
-             a_fls3 = 0.
-
-             a_field_bdy_xe(j+1, k, b_dist+1) = a_field_bdy_xe(j+1, k, b_dist+1) + a_fls2
-             a_field_bdy_tend_xe(j+1,k,b_dist+1) = a_field_bdy_tend_xe(j+1,k,b_dist+1) &
-                                                 + dtbc * a_fls2
-             a_field(i,k,j+1) = a_field(i,k,j+1) - a_fls2
-             a_fls2 = 0.
-
-             a_field_bdy_xe(j-1, k, b_dist+1) = a_field_bdy_xe(j-1, k, b_dist+1) + a_fls1
-             a_field_bdy_tend_xe(j-1,k,b_dist+1) = a_field_bdy_tend_xe(j-1,k,b_dist+1) &
-                                                 + dtbc * a_fls1
-             a_field(i,k,j-1) = a_field(i,k,j-1) - a_fls1
-             a_fls1 = 0.
-
-             a_field_bdy_xe(j, k, b_dist+1) = a_field_bdy_xe(j, k, b_dist+1) + a_fls0
-             a_field_bdy_tend_xe(j, k, b_dist+1) = a_field_bdy_tend_xe(j, k, b_dist+1) &
-                                                 + dtbc * a_fls0
-             a_field(i,k,j) = a_field(i,k,j) - a_fls0
-             a_fls0 = 0.
-           ENDDO
-         ENDDO
-       ENDDO
-
-       DO i = min(itf,ibe-spec_zone), max(its,ibe-relax_zone+1), -1
-         b_dist = ibe - i
-         IF (jtf < jbe-b_dist-1) THEN
-           DO k = kts, ktf
-             a_fls1 = a_fls1 - gcx(b_dist+1) * a_field_tend(i,k,jtf+1) 
-             a_field_bdy_xe(jtf, k, b_dist+1) = a_field_bdy_xe(jtf, k, b_dist+1) + a_fls1
-             a_field_bdy_tend_xe(jtf,k,b_dist+1) = a_field_bdy_tend_xe(jtf,k,b_dist+1) &
-                                                 + dtbc * a_fls1
-             a_field(i,k,jtf) = a_field(i,k,jtf) - a_fls1
-             a_fls1 = 0.
-           ENDDO
-         ENDIF
-         IF (jts > b_dist+jbs+1) THEN
-           DO k = kts, ktf
-             a_fls2 = a_fls2 - gcx(b_dist+1) * a_field_tend(i,k,jts-1) 
-             a_field_bdy_xe(jts, k, b_dist+1) = a_field_bdy_xe(jts, k, b_dist+1) + a_fls2
-             a_field_bdy_tend_xe(jts,k,b_dist+1) = a_field_bdy_tend_xe(jts,k,b_dist+1) &
-                                                 + dtbc * a_fls2
-             a_field(i,k,jts) = a_field(i,k,jts) - a_fls2
-             a_fls2 = 0.
-           ENDDO
-         ENDIF
-       ENDDO
-
-     ENDIF
-
-     IF (its - ibs .lt. relax_zone) THEN
-! X-start boundary
-       DO i = min(itf,ibs+relax_zone-1), max(its,ibs+spec_zone), -1
-         b_dist = i - ibs
-         DO k = kts, ktf
-           DO j = min(jtf,jbe-b_dist-1), max(jts,b_dist+jbs+1), -1
-             a_fls0 = a_fls0 + ( fcx(b_dist+1)+gcx(b_dist+1)*4 ) * a_field_tend(i,k,j)
-             a_fls1 = a_fls1 - gcx(b_dist+1) * a_field_tend(i,k,j) 
-             a_fls2 = a_fls2 - gcx(b_dist+1) * a_field_tend(i,k,j) 
-             a_fls3 = a_fls3 - gcx(b_dist+1) * a_field_tend(i,k,j) 
-             a_fls4 = a_fls4 - gcx(b_dist+1) * a_field_tend(i,k,j) 
-
-             a_field_bdy_xs(j, k, b_dist+2) = a_field_bdy_xs(j, k, b_dist+2) + a_fls4
-             a_field_bdy_tend_xs(j, k, b_dist+2) = a_field_bdy_tend_xs(j, k, b_dist+2) &
-                                                 + dtbc * a_fls4
-             a_field(i+1,k,j) = a_field(i+1,k,j) - a_fls4
-             a_fls4 = 0.
-
-             a_field_bdy_xs(j, k, b_dist) = a_field_bdy_xs(j, k, b_dist) + a_fls3
-             a_field_bdy_tend_xs(j, k, b_dist) = a_field_bdy_tend_xs(j, k, b_dist) &
-                                               + dtbc * a_fls3
-             a_field(i-1,k,j) = a_field(i-1,k,j) - a_fls3
-             a_fls3 = 0.
-
-             a_field_bdy_xs(j+1, k, b_dist+1) = a_field_bdy_xs(j+1, k, b_dist+1) + a_fls2
-             a_field_bdy_tend_xs(j+1,k,b_dist+1) = a_field_bdy_tend_xs(j+1,k,b_dist+1) &
-                                                 + dtbc * a_fls2
-             a_field(i,k,j+1) = a_field(i,k,j+1) - a_fls2
-             a_fls2 = 0.
-
-             a_field_bdy_xs(j-1, k, b_dist+1) = a_field_bdy_xs(j-1, k, b_dist+1) + a_fls1
-             a_field_bdy_tend_xs(j-1,k,b_dist+1) = a_field_bdy_tend_xs(j-1,k,b_dist+1) &
-                                                 + dtbc * a_fls1
-             a_field(i,k,j-1) = a_field(i,k,j-1) - a_fls1
-             a_fls1 = 0.
-
-             a_field_bdy_xs(j, k, b_dist+1) = a_field_bdy_xs(j, k, b_dist+1) + a_fls0
-             a_field_bdy_tend_xs(j, k, b_dist+1) = a_field_bdy_tend_xs(j, k, b_dist+1) &
-                                                 + dtbc * a_fls0
-             a_field(i,k,j) = a_field(i,k,j) - a_fls0
-             a_fls0 = 0.
-           ENDDO
-         ENDDO
-       ENDDO
-
-       DO i = min(itf,ibs+relax_zone-1), max(its,ibs+spec_zone), -1
-         b_dist = i - ibs
-         IF ( jtf < jbe-b_dist-1 ) THEN
-           DO k = kts, ktf
-             a_fls1 = a_fls1 - gcx(b_dist+1) * a_field_tend(i,k,jtf+1) 
-             a_field_bdy_xs(jtf, k, b_dist+1) = a_field_bdy_xs(jtf, k, b_dist+1) + a_fls1
-             a_field_bdy_tend_xs(jtf,k,b_dist+1) = a_field_bdy_tend_xs(jtf,k,b_dist+1) &
-                                                 + dtbc * a_fls1
-             a_field(i,k,jtf) = a_field(i,k,jtf) - a_fls1
-             a_fls1 = 0.
-           ENDDO
-         ENDIF
-         IF ( jts > b_dist+jbs+1 ) THEN
-           DO k = kts, ktf
-             a_fls2 = a_fls2 - gcx(b_dist+1) * a_field_tend(i,k,jts-1) 
-             a_field_bdy_xs(jts, k, b_dist+1) = a_field_bdy_xs(jts, k, b_dist+1) + a_fls2
-             a_field_bdy_tend_xs(jts,k,b_dist+1) = a_field_bdy_tend_xs(jts,k,b_dist+1) &
-                                                 + dtbc * a_fls2
-             a_field(i,k,jts) = a_field(i,k,jts) - a_fls2
-             a_fls2 = 0.
-           ENDDO
-         ENDIF
-       ENDDO
-     ENDIF
-
-   ENDIF
-
-   IF (jbe - jtf .lt. relax_zone) THEN
-! Y-end boundary
-     DO j = min(jtf,jbe-spec_zone), max(jts,jbe-relax_zone+1), -1
-       b_dist = jbe - j
-       b_limit = b_dist
-       IF(periodic_x)b_limit = 0
-       DO k = kts, ktf
-         DO i = min(itf,ibe-b_limit), max(its,b_limit+ibs), -1
-           im1 = max(i-1,ibs)
-           ip1 = min(i+1,ibe)
-
-           a_fls0 = a_fls0 + ( fcx(b_dist+1)+gcx(b_dist+1)*4 ) * a_field_tend(i,k,j)
-           a_fls1 = a_fls1 - gcx(b_dist+1) * a_field_tend(i,k,j) 
-           a_fls2 = a_fls2 - gcx(b_dist+1) * a_field_tend(i,k,j) 
-           a_fls3 = a_fls3 - gcx(b_dist+1) * a_field_tend(i,k,j) 
-           a_fls4 = a_fls4 - gcx(b_dist+1) * a_field_tend(i,k,j) 
-
-           a_field_bdy_ye(i, k, b_dist+2) = a_field_bdy_ye(i, k, b_dist+2) + a_fls4
-           a_field_bdy_tend_ye(i, k, b_dist+2) = a_field_bdy_tend_ye(i, k, b_dist+2) &
-                                               + dtbc * a_fls4
-           a_field(i,k,j-1) = a_field(i,k,j-1) - a_fls4
-           a_fls4 = 0.
-
-           a_field_bdy_ye(i, k, b_dist) = a_field_bdy_ye(i, k, b_dist) + a_fls3
-           a_field_bdy_tend_ye(i, k, b_dist) = a_field_bdy_tend_ye(i, k, b_dist) &
-                                             + dtbc * a_fls3
-           a_field(i,k,j+1) = a_field(i,k,j+1) - a_fls3
-           a_fls3 = 0.
-
-           a_field_bdy_ye(ip1, k, b_dist+1) = a_field_bdy_ye(ip1, k, b_dist+1) + a_fls2
-           a_field_bdy_tend_ye(ip1,k,b_dist+1) = a_field_bdy_tend_ye(ip1,k,b_dist+1) &
-                                               + dtbc * a_fls2
-           a_field(ip1,k,j) = a_field(ip1,k,j) - a_fls2
-           a_fls2 = 0.
-
-           a_field_bdy_ye(im1, k, b_dist+1) = a_field_bdy_ye(im1, k, b_dist+1) + a_fls1
-           a_field_bdy_tend_ye(im1,k,b_dist+1) = a_field_bdy_tend_ye(im1,k,b_dist+1) &
-                                               + dtbc * a_fls1
-           a_field(im1,k,j) = a_field(im1,k,j) - a_fls1
-           a_fls1 = 0.
-
-           a_field_bdy_ye(i, k, b_dist+1) = a_field_bdy_ye(i, k, b_dist+1) + a_fls0
-           a_field_bdy_tend_ye(i, k, b_dist+1) = a_field_bdy_tend_ye(i, k, b_dist+1) &
-                                               + dtbc * a_fls0
-           a_field(i,k,j) = a_field(i,k,j) - a_fls0
-           a_fls0 = 0.
-         ENDDO
-       ENDDO
-     ENDDO
-
-     DO j = min(jtf,jbe-spec_zone), max(jts,jbe-relax_zone+1), -1
-       b_dist = jbe - j
-       b_limit = b_dist
-       IF(periodic_x)b_limit = 0
-       IF (itf < ibe-b_limit) THEN
-         DO k = kts, ktf
-           a_fls1 = a_fls1 - gcx(b_dist+1) * a_field_tend(itf+1,k,j) 
-           a_field_bdy_ye(itf, k, b_dist+1) = a_field_bdy_ye(itf, k, b_dist+1) + a_fls1
-           a_field_bdy_tend_ye(itf,k,b_dist+1) = a_field_bdy_tend_ye(itf,k,b_dist+1) &
-                                               + dtbc * a_fls1
-           a_field(itf,k,j) = a_field(itf,k,j) - a_fls1
-           a_fls1 = 0.
-         ENDDO
-       ENDIF
-       IF (its > b_limit+ibs) THEN
-         DO k = kts, ktf
-           a_fls2 = a_fls2 - gcx(b_dist+1) * a_field_tend(its-1,k,j) 
-           a_field_bdy_ye(its, k, b_dist+1) = a_field_bdy_ye(its, k, b_dist+1) + a_fls2
-           a_field_bdy_tend_ye(its,k,b_dist+1) = a_field_bdy_tend_ye(its,k,b_dist+1) &
-                                               + dtbc * a_fls2
-           a_field(its,k,j) = a_field(its,k,j) - a_fls2
-           a_fls2 = 0.
-         ENDDO
-       ENDIF
-     ENDDO
-   ENDIF
-
-   IF (jts - jbs .lt. relax_zone) THEN
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of relax_bdytend_core in reverse (adjoint) mode:
+!   gradient     of useful results: field field_bdy_xe field_bdy_tend_xe
+!                field_tend field_bdy_xs field_bdy_tend_xs field_bdy_ye
+!                field_bdy_tend_ye field_bdy_ys field_bdy_tend_ys
+!   with respect to varying inputs: field field_bdy_xe field_bdy_tend_xe
+!                field_tend field_bdy_xs field_bdy_tend_xs field_bdy_ye
+!                field_bdy_tend_ye field_bdy_ys field_bdy_tend_ys
+!   RW status of diff variables: field:incr field_bdy_xe:incr field_bdy_tend_xe:incr
+!                field_tend:in-out field_bdy_xs:incr field_bdy_tend_xs:incr
+!                field_bdy_ye:incr field_bdy_tend_ye:incr field_bdy_ys:incr
+!                field_bdy_tend_ys:incr
+! domain dims
+! memory dims
+! patch  dims
+! patch  dims
+! field (1st arg) dims; might be tile or patch
+SUBROUTINE A_RELAX_BDYTEND_CORE(fieldb, field_tendb, &
+&  field_bdy_xsb, field_bdy_xeb&
+&  , field_bdy_ysb, field_bdy_yeb, &
+&  field_bdy_tend_xsb, field_bdy_tend_xeb, &
+&  field_bdy_tend_ysb, &
+&  field_bdy_tend_yeb, variable_in, config_flags, spec_bdy_width, &
+&  spec_zone, relax_zone, dtbc, fcx, gcx, ids, ide, jds, jde, kds, kde, &
+&  ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe, its, ite, &
+&  jts, jte, kts, kte, ixs, ixe, jxs, jxe, kxs, kxe)
+  IMPLICIT NONE
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde
+  INTEGER, INTENT(IN) :: ims, ime, jms, jme, kms, kme
+  INTEGER, INTENT(IN) :: ips, ipe, jps, jpe, kps, kpe
+  INTEGER, INTENT(IN) :: its, ite, jts, jte, kts, kte
+  INTEGER, INTENT(IN) :: ixs, ixe, jxs, jxe, kxs, kxe
+  INTEGER, INTENT(IN) :: spec_bdy_width, spec_zone, relax_zone
+  REAL, INTENT(IN) :: dtbc
+  CHARACTER, INTENT(IN) :: variable_in
+  REAL, DIMENSION(ixs:ixe, kxs:kxe, jxs:jxe) :: fieldb
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: field_tendb
+  REAL, DIMENSION(jms:jme, kds:kde, spec_bdy_width) :: field_bdy_xsb, &
+&  field_bdy_xeb
+  REAL, DIMENSION(ims:ime, kds:kde, spec_bdy_width) :: field_bdy_ysb, &
+&  field_bdy_yeb
+  REAL, DIMENSION(jms:jme, kds:kde, spec_bdy_width) :: &
+&  field_bdy_tend_xsb, field_bdy_tend_xeb
+  REAL, DIMENSION(ims:ime, kds:kde, spec_bdy_width) :: &
+&  field_bdy_tend_ysb, field_bdy_tend_yeb
+  REAL, DIMENSION(spec_bdy_width), INTENT(IN) :: fcx, gcx
+  TYPE(GRID_CONFIG_REC_TYPE) :: config_flags
+  CHARACTER :: variable
+  INTEGER :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf, im1, ip1
+  INTEGER :: b_dist, b_limit
+  REAL :: fls0, fls1, fls2, fls3, fls4
+  REAL :: fls0b, fls1b, fls2b, fls3b, fls4b
+  LOGICAL :: periodic_x
+  INTEGER :: branch
+  INTEGER :: ad_from
+  INTEGER :: ad_to
+  INTEGER :: ad_from0
+  INTEGER :: ad_to0
+  INTEGER :: ad_from1
+  INTEGER :: ad_to1
+  INTEGER :: ad_from2
+  INTEGER :: ad_to2
+  INTEGER :: min8
+  INTEGER :: min7
+  INTEGER :: min6
+  INTEGER :: min5
+  INTEGER :: min4
+  INTEGER :: min3
+  INTEGER :: min2
+  INTEGER :: min1
+  REAL :: tempb2
+  REAL :: tempb1
+  REAL :: tempb0
+  REAL :: tempb
+  INTEGER :: max8
+  INTEGER :: max7
+  INTEGER :: max6
+  INTEGER :: max5
+  INTEGER :: max4
+  INTEGER :: max3
+  INTEGER :: max2
+  INTEGER :: max1
+  periodic_x = config_flags%periodic_x
+  variable = variable_in
+  IF (variable .EQ. 'U') variable = 'u'
+  IF (variable .EQ. 'V') variable = 'v'
+  IF (variable .EQ. 'M') variable = 'm'
+  IF (variable .EQ. 'H') variable = 'h'
+  ibs = ids
+  ibe = ide - 1
+  IF (ite .GT. ide - 1) THEN
+    itf = ide - 1
+  ELSE
+    itf = ite
+  END IF
+  jbs = jds
+  jbe = jde - 1
+  IF (jte .GT. jde - 1) THEN
+    jtf = jde - 1
+  ELSE
+    jtf = jte
+  END IF
+  ktf = kde - 1
+  IF (variable .EQ. 'u') ibe = ide
+  IF (variable .EQ. 'u') THEN
+    IF (ite .GT. ide) THEN
+      itf = ide
+    ELSE
+      itf = ite
+    END IF
+  END IF
+  IF (variable .EQ. 'v') jbe = jde
+  IF (variable .EQ. 'v') THEN
+    IF (jte .GT. jde) THEN
+      jtf = jde
+    ELSE
+      jtf = jte
+    END IF
+  END IF
+  IF (variable .EQ. 'm') ktf = kte
+  IF (variable .EQ. 'h') ktf = kte
+  IF (jts - jbs .LT. relax_zone) THEN
+    IF (jts .LT. jbs + spec_zone) THEN
+      max1 = jbs + spec_zone
+    ELSE
+      max1 = jts
+    END IF
+    IF (jtf .GT. jbs + relax_zone - 1) THEN
+      min1 = jbs + relax_zone - 1
+    ELSE
+      min1 = jtf
+    END IF
 ! Y-start boundary
-     DO j = min(jtf,jbs+relax_zone-1), max(jts,jbs+spec_zone), -1
-       b_dist = j - jbs
-       b_limit = b_dist
-       IF(periodic_x)b_limit = 0
-       DO k = kts, ktf
-         DO i = min(itf,ibe-b_limit), max(its,b_limit+ibs), -1
-           im1 = max(i-1,ibs)
-           ip1 = min(i+1,ibe)
-
-           a_fls0 = a_fls0 + ( fcx(b_dist+1)+gcx(b_dist+1)*4 ) * a_field_tend(i,k,j)
-           a_fls1 = a_fls1 - gcx(b_dist+1) * a_field_tend(i,k,j) 
-           a_fls2 = a_fls2 - gcx(b_dist+1) * a_field_tend(i,k,j) 
-           a_fls3 = a_fls3 - gcx(b_dist+1) * a_field_tend(i,k,j) 
-           a_fls4 = a_fls4 - gcx(b_dist+1) * a_field_tend(i,k,j) 
-
-           a_field_bdy_ys(i, k, b_dist+2) = a_field_bdy_ys(i, k, b_dist+2) + a_fls4
-           a_field_bdy_tend_ys(i, k, b_dist+2) = a_field_bdy_tend_ys(i, k, b_dist+2) &
-                                               + dtbc * a_fls4
-           a_field(i,k,j+1) = a_field(i,k,j+1) - a_fls4
-           a_fls4 = 0.
-
-           a_field_bdy_ys(i, k, b_dist) = a_field_bdy_ys(i, k, b_dist) + a_fls3
-           a_field_bdy_tend_ys(i, k, b_dist) = a_field_bdy_tend_ys(i, k, b_dist) &
-                                             + dtbc * a_fls3
-           a_field(i,k,j-1) = a_field(i,k,j-1) - a_fls3
-           a_fls3 = 0.
-
-           a_field_bdy_ys(ip1, k, b_dist+1) = a_field_bdy_ys(ip1, k, b_dist+1) + a_fls2
-           a_field_bdy_tend_ys(ip1,k,b_dist+1) = a_field_bdy_tend_ys(ip1,k,b_dist+1) &
-                                               + dtbc * a_fls2
-           a_field(ip1,k,j) = a_field(ip1,k,j) - a_fls2
-           a_fls2 = 0.
-
-           a_field_bdy_ys(im1, k, b_dist+1) = a_field_bdy_ys(im1, k, b_dist+1) + a_fls1
-           a_field_bdy_tend_ys(im1,k,b_dist+1) = a_field_bdy_tend_ys(im1,k,b_dist+1) &
-                                               + dtbc * a_fls1
-           a_field(im1,k,j) = a_field(im1,k,j) - a_fls1
-           a_fls1 = 0.
-
-           a_field_bdy_ys(i, k, b_dist+1) = a_field_bdy_ys(i, k, b_dist+1) + a_fls0
-           a_field_bdy_tend_ys(i, k, b_dist+1) = a_field_bdy_tend_ys(i, k, b_dist+1) &
-                                               + dtbc * a_fls0
-           a_field(i,k,j) = a_field(i,k,j) - a_fls0
-           a_fls0 = 0.
-         ENDDO
-       ENDDO
-     ENDDO
-
-     DO j = min(jtf,jbs+relax_zone-1), max(jts,jbs+spec_zone), -1
-       b_dist = j - jbs
-       b_limit = b_dist
-       IF(periodic_x)b_limit = 0
-       IF (itf < ibe-b_limit ) THEN
-         DO k = kts, ktf
-           a_fls1 = a_fls1 - gcx(b_dist+1) * a_field_tend(itf+1,k,j) 
-           a_field_bdy_ys(itf, k, b_dist+1) = a_field_bdy_ys(itf, k, b_dist+1) + a_fls1
-           a_field_bdy_tend_ys(itf,k,b_dist+1) = a_field_bdy_tend_ys(itf,k,b_dist+1) &
-                                               + dtbc * a_fls1
-           a_field(itf,k,j) = a_field(itf,k,j) - a_fls1
-           a_fls1 = 0.
-         ENDDO
-       ENDIF
-       IF (its > b_limit+ibs ) THEN
-         DO k = kts, ktf
-           a_fls2 = a_fls2 - gcx(b_dist+1) * a_field_tend(its-1,k,j) 
-           a_field_bdy_ys(its, k, b_dist+1) = a_field_bdy_ys(its, k, b_dist+1) + a_fls2
-           a_field_bdy_tend_ys(its,k,b_dist+1) = a_field_bdy_tend_ys(its,k,b_dist+1) &
-                                               + dtbc * a_fls2
-           a_field(its,k,j) = a_field(its,k,j) - a_fls2
-           a_fls2 = 0.
-         ENDDO
-       ENDIF
-     ENDDO
-   ENDIF
-
-   END SUBROUTINE a_relax_bdytend_core
-
+    DO j=max1,min1
+      CALL PUSHINTEGER4(b_dist)
+      b_dist = j - jbs
+      b_limit = b_dist
+      IF (periodic_x) b_limit = 0
+      DO k=kts,ktf
+        IF (its .LT. b_limit + ibs) THEN
+          max2 = b_limit + ibs
+        ELSE
+          max2 = its
+        END IF
+        IF (itf .GT. ibe - b_limit) THEN
+          min2 = ibe - b_limit
+        ELSE
+          min2 = itf
+        END IF
+        ad_from = max2
+        DO i=ad_from,min2
+          IF (i - 1 .LT. ibs) THEN
+            CALL PUSHINTEGER4(im1)
+            im1 = ibs
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHINTEGER4(im1)
+            im1 = i - 1
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (i + 1 .GT. ibe) THEN
+            CALL PUSHINTEGER4(ip1)
+            ip1 = ibe
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHINTEGER4(ip1)
+            ip1 = i + 1
+            CALL PUSHCONTROL1B(1)
+          END IF
+        END DO
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from)
+      END DO
+    END DO
+    CALL PUSHCONTROL1B(0)
+  ELSE
+    CALL PUSHCONTROL1B(1)
+  END IF
+  IF (jbe - jtf .LT. relax_zone) THEN
+    IF (jts .LT. jbe - relax_zone + 1) THEN
+      max3 = jbe - relax_zone + 1
+    ELSE
+      max3 = jts
+    END IF
+    IF (jtf .GT. jbe - spec_zone) THEN
+      min3 = jbe - spec_zone
+    ELSE
+      min3 = jtf
+    END IF
+! Y-end boundary
+    DO j=max3,min3
+      CALL PUSHINTEGER4(b_dist)
+      b_dist = jbe - j
+      b_limit = b_dist
+      IF (periodic_x) b_limit = 0
+      DO k=kts,ktf
+        IF (its .LT. b_limit + ibs) THEN
+          max4 = b_limit + ibs
+        ELSE
+          max4 = its
+        END IF
+        IF (itf .GT. ibe - b_limit) THEN
+          min4 = ibe - b_limit
+        ELSE
+          min4 = itf
+        END IF
+        ad_from0 = max4
+        DO i=ad_from0,min4
+          IF (i - 1 .LT. ibs) THEN
+            CALL PUSHINTEGER4(im1)
+            im1 = ibs
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHINTEGER4(im1)
+            im1 = i - 1
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (i + 1 .GT. ibe) THEN
+            CALL PUSHINTEGER4(ip1)
+            ip1 = ibe
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHINTEGER4(ip1)
+            ip1 = i + 1
+            CALL PUSHCONTROL1B(1)
+          END IF
+        END DO
+        CALL PUSHINTEGER4(i - 1)
+        CALL PUSHINTEGER4(ad_from0)
+      END DO
+    END DO
+    CALL PUSHCONTROL1B(0)
+  ELSE
+    CALL PUSHCONTROL1B(1)
+  END IF
+  IF (.NOT.periodic_x) THEN
+    IF (its - ibs .LT. relax_zone) THEN
+      IF (its .LT. ibs + spec_zone) THEN
+        max5 = ibs + spec_zone
+      ELSE
+        max5 = its
+      END IF
+      IF (itf .GT. ibs + relax_zone - 1) THEN
+        min5 = ibs + relax_zone - 1
+      ELSE
+        min5 = itf
+      END IF
+! X-start boundary
+      DO i=max5,min5
+        CALL PUSHINTEGER4(b_dist)
+        b_dist = i - ibs
+        DO k=kts,ktf
+          IF (jts .LT. b_dist + jbs + 1) THEN
+            max6 = b_dist + jbs + 1
+          ELSE
+            max6 = jts
+          END IF
+          IF (jtf .GT. jbe - b_dist - 1) THEN
+            min6 = jbe - b_dist - 1
+          ELSE
+            min6 = jtf
+          END IF
+          ad_from1 = max6
+          j = min6 + 1
+          CALL PUSHINTEGER4(j - 1)
+          CALL PUSHINTEGER4(ad_from1)
+        END DO
+      END DO
+      CALL PUSHCONTROL1B(0)
+    ELSE
+      CALL PUSHCONTROL1B(1)
+    END IF
+    IF (ibe - itf .LT. relax_zone) THEN
+      IF (its .LT. ibe - relax_zone + 1) THEN
+        max7 = ibe - relax_zone + 1
+      ELSE
+        max7 = its
+      END IF
+      IF (itf .GT. ibe - spec_zone) THEN
+        min7 = ibe - spec_zone
+      ELSE
+        min7 = itf
+      END IF
+! X-end boundary
+      DO i=max7,min7
+        CALL PUSHINTEGER4(b_dist)
+        b_dist = ibe - i
+        DO k=kts,ktf
+          IF (jts .LT. b_dist + jbs + 1) THEN
+            max8 = b_dist + jbs + 1
+          ELSE
+            max8 = jts
+          END IF
+          IF (jtf .GT. jbe - b_dist - 1) THEN
+            min8 = jbe - b_dist - 1
+          ELSE
+            min8 = jtf
+          END IF
+          ad_from2 = max8
+          j = min8 + 1
+          CALL PUSHINTEGER4(j - 1)
+          CALL PUSHINTEGER4(ad_from2)
+        END DO
+      END DO
+      DO i=min7,max7,-1
+        DO k=ktf,kts,-1
+          CALL POPINTEGER4(ad_from2)
+          CALL POPINTEGER4(ad_to2)
+          DO j=ad_to2,ad_from2,-1
+            tempb2 = -(gcx(b_dist+1)*field_tendb(i, k, j))
+            fls0b = fcx(b_dist+1)*field_tendb(i, k, j) - 4.*tempb2
+            fls1b = tempb2
+            fls2b = tempb2
+            fls3b = tempb2
+            fls4b = tempb2
+            field_bdy_xeb(j, k, b_dist+2) = field_bdy_xeb(j, k, b_dist+2&
+&              ) + fls4b
+            field_bdy_tend_xeb(j, k, b_dist+2) = field_bdy_tend_xeb(j, k&
+&              , b_dist+2) + dtbc*fls4b
+            fieldb(i-1, k, j) = fieldb(i-1, k, j) - fls4b
+            field_bdy_xeb(j, k, b_dist) = field_bdy_xeb(j, k, b_dist) + &
+&              fls3b
+            field_bdy_tend_xeb(j, k, b_dist) = field_bdy_tend_xeb(j, k, &
+&              b_dist) + dtbc*fls3b
+            fieldb(i+1, k, j) = fieldb(i+1, k, j) - fls3b
+            field_bdy_xeb(j+1, k, b_dist+1) = field_bdy_xeb(j+1, k, &
+&              b_dist+1) + fls2b
+            field_bdy_tend_xeb(j+1, k, b_dist+1) = field_bdy_tend_xeb(j+&
+&              1, k, b_dist+1) + dtbc*fls2b
+            fieldb(i, k, j+1) = fieldb(i, k, j+1) - fls2b
+            field_bdy_xeb(j-1, k, b_dist+1) = field_bdy_xeb(j-1, k, &
+&              b_dist+1) + fls1b
+            field_bdy_tend_xeb(j-1, k, b_dist+1) = field_bdy_tend_xeb(j-&
+&              1, k, b_dist+1) + dtbc*fls1b
+            fieldb(i, k, j-1) = fieldb(i, k, j-1) - fls1b
+            field_bdy_xeb(j, k, b_dist+1) = field_bdy_xeb(j, k, b_dist+1&
+&              ) + fls0b
+            field_bdy_tend_xeb(j, k, b_dist+1) = field_bdy_tend_xeb(j, k&
+&              , b_dist+1) + dtbc*fls0b
+            fieldb(i, k, j) = fieldb(i, k, j) - fls0b
+          END DO
+        END DO
+        CALL POPINTEGER4(b_dist)
+      END DO
+    END IF
+    CALL POPCONTROL1B(branch)
+    IF (branch .EQ. 0) THEN
+      DO i=min5,max5,-1
+        DO k=ktf,kts,-1
+          CALL POPINTEGER4(ad_from1)
+          CALL POPINTEGER4(ad_to1)
+          DO j=ad_to1,ad_from1,-1
+            tempb1 = -(gcx(b_dist+1)*field_tendb(i, k, j))
+            fls0b = fcx(b_dist+1)*field_tendb(i, k, j) - 4.*tempb1
+            fls1b = tempb1
+            fls2b = tempb1
+            fls3b = tempb1
+            fls4b = tempb1
+            field_bdy_xsb(j, k, b_dist+2) = field_bdy_xsb(j, k, b_dist+2&
+&              ) + fls4b
+            field_bdy_tend_xsb(j, k, b_dist+2) = field_bdy_tend_xsb(j, k&
+&              , b_dist+2) + dtbc*fls4b
+            fieldb(i+1, k, j) = fieldb(i+1, k, j) - fls4b
+            field_bdy_xsb(j, k, b_dist) = field_bdy_xsb(j, k, b_dist) + &
+&              fls3b
+            field_bdy_tend_xsb(j, k, b_dist) = field_bdy_tend_xsb(j, k, &
+&              b_dist) + dtbc*fls3b
+            fieldb(i-1, k, j) = fieldb(i-1, k, j) - fls3b
+            field_bdy_xsb(j+1, k, b_dist+1) = field_bdy_xsb(j+1, k, &
+&              b_dist+1) + fls2b
+            field_bdy_tend_xsb(j+1, k, b_dist+1) = field_bdy_tend_xsb(j+&
+&              1, k, b_dist+1) + dtbc*fls2b
+            fieldb(i, k, j+1) = fieldb(i, k, j+1) - fls2b
+            field_bdy_xsb(j-1, k, b_dist+1) = field_bdy_xsb(j-1, k, &
+&              b_dist+1) + fls1b
+            field_bdy_tend_xsb(j-1, k, b_dist+1) = field_bdy_tend_xsb(j-&
+&              1, k, b_dist+1) + dtbc*fls1b
+            fieldb(i, k, j-1) = fieldb(i, k, j-1) - fls1b
+            field_bdy_xsb(j, k, b_dist+1) = field_bdy_xsb(j, k, b_dist+1&
+&              ) + fls0b
+            field_bdy_tend_xsb(j, k, b_dist+1) = field_bdy_tend_xsb(j, k&
+&              , b_dist+1) + dtbc*fls0b
+            fieldb(i, k, j) = fieldb(i, k, j) - fls0b
+          END DO
+        END DO
+        CALL POPINTEGER4(b_dist)
+      END DO
+    END IF
+  END IF
+  CALL POPCONTROL1B(branch)
+  IF (branch .EQ. 0) THEN
+    DO j=min3,max3,-1
+      DO k=ktf,kts,-1
+        CALL POPINTEGER4(ad_from0)
+        CALL POPINTEGER4(ad_to0)
+        DO i=ad_to0,ad_from0,-1
+          tempb0 = -(gcx(b_dist+1)*field_tendb(i, k, j))
+          fls0b = fcx(b_dist+1)*field_tendb(i, k, j) - 4.*tempb0
+          fls1b = tempb0
+          fls2b = tempb0
+          fls3b = tempb0
+          fls4b = tempb0
+          field_bdy_yeb(i, k, b_dist+2) = field_bdy_yeb(i, k, b_dist+2) &
+&            + fls4b
+          field_bdy_tend_yeb(i, k, b_dist+2) = field_bdy_tend_yeb(i, k, &
+&            b_dist+2) + dtbc*fls4b
+          fieldb(i, k, j-1) = fieldb(i, k, j-1) - fls4b
+          field_bdy_yeb(i, k, b_dist) = field_bdy_yeb(i, k, b_dist) + &
+&            fls3b
+          field_bdy_tend_yeb(i, k, b_dist) = field_bdy_tend_yeb(i, k, &
+&            b_dist) + dtbc*fls3b
+          fieldb(i, k, j+1) = fieldb(i, k, j+1) - fls3b
+          field_bdy_yeb(ip1, k, b_dist+1) = field_bdy_yeb(ip1, k, b_dist&
+&            +1) + fls2b
+          field_bdy_tend_yeb(ip1, k, b_dist+1) = field_bdy_tend_yeb(ip1&
+&            , k, b_dist+1) + dtbc*fls2b
+          fieldb(ip1, k, j) = fieldb(ip1, k, j) - fls2b
+          field_bdy_yeb(im1, k, b_dist+1) = field_bdy_yeb(im1, k, b_dist&
+&            +1) + fls1b
+          field_bdy_tend_yeb(im1, k, b_dist+1) = field_bdy_tend_yeb(im1&
+&            , k, b_dist+1) + dtbc*fls1b
+          fieldb(im1, k, j) = fieldb(im1, k, j) - fls1b
+          field_bdy_yeb(i, k, b_dist+1) = field_bdy_yeb(i, k, b_dist+1) &
+&            + fls0b
+          field_bdy_tend_yeb(i, k, b_dist+1) = field_bdy_tend_yeb(i, k, &
+&            b_dist+1) + dtbc*fls0b
+          fieldb(i, k, j) = fieldb(i, k, j) - fls0b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPINTEGER4(ip1)
+          ELSE
+            CALL POPINTEGER4(ip1)
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPINTEGER4(im1)
+          ELSE
+            CALL POPINTEGER4(im1)
+          END IF
+        END DO
+      END DO
+      CALL POPINTEGER4(b_dist)
+    END DO
+  END IF
+  CALL POPCONTROL1B(branch)
+  IF (branch .EQ. 0) THEN
+    DO j=min1,max1,-1
+      DO k=ktf,kts,-1
+        CALL POPINTEGER4(ad_from)
+        CALL POPINTEGER4(ad_to)
+        DO i=ad_to,ad_from,-1
+          tempb = -(gcx(b_dist+1)*field_tendb(i, k, j))
+          fls0b = fcx(b_dist+1)*field_tendb(i, k, j) - 4.*tempb
+          fls1b = tempb
+          fls2b = tempb
+          fls3b = tempb
+          fls4b = tempb
+          field_bdy_ysb(i, k, b_dist+2) = field_bdy_ysb(i, k, b_dist+2) &
+&            + fls4b
+          field_bdy_tend_ysb(i, k, b_dist+2) = field_bdy_tend_ysb(i, k, &
+&            b_dist+2) + dtbc*fls4b
+          fieldb(i, k, j+1) = fieldb(i, k, j+1) - fls4b
+          field_bdy_ysb(i, k, b_dist) = field_bdy_ysb(i, k, b_dist) + &
+&            fls3b
+          field_bdy_tend_ysb(i, k, b_dist) = field_bdy_tend_ysb(i, k, &
+&            b_dist) + dtbc*fls3b
+          fieldb(i, k, j-1) = fieldb(i, k, j-1) - fls3b
+          field_bdy_ysb(ip1, k, b_dist+1) = field_bdy_ysb(ip1, k, b_dist&
+&            +1) + fls2b
+          field_bdy_tend_ysb(ip1, k, b_dist+1) = field_bdy_tend_ysb(ip1&
+&            , k, b_dist+1) + dtbc*fls2b
+          fieldb(ip1, k, j) = fieldb(ip1, k, j) - fls2b
+          field_bdy_ysb(im1, k, b_dist+1) = field_bdy_ysb(im1, k, b_dist&
+&            +1) + fls1b
+          field_bdy_tend_ysb(im1, k, b_dist+1) = field_bdy_tend_ysb(im1&
+&            , k, b_dist+1) + dtbc*fls1b
+          fieldb(im1, k, j) = fieldb(im1, k, j) - fls1b
+          field_bdy_ysb(i, k, b_dist+1) = field_bdy_ysb(i, k, b_dist+1) &
+&            + fls0b
+          field_bdy_tend_ysb(i, k, b_dist+1) = field_bdy_tend_ysb(i, k, &
+&            b_dist+1) + dtbc*fls0b
+          fieldb(i, k, j) = fieldb(i, k, j) - fls0b
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPINTEGER4(ip1)
+          ELSE
+            CALL POPINTEGER4(ip1)
+          END IF
+          CALL POPCONTROL1B(branch)
+          IF (branch .EQ. 0) THEN
+            CALL POPINTEGER4(im1)
+          ELSE
+            CALL POPINTEGER4(im1)
+          END IF
+        END DO
+      END DO
+      CALL POPINTEGER4(b_dist)
+    END DO
+  END IF
+END SUBROUTINE A_RELAX_BDYTEND_CORE
 !------------------------------------------------------------------------
 
    SUBROUTINE a_spec_bdytend ( a_field_tend,           &

@@ -606,7 +606,14 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
 #endif
 
 !  CALL restore_grid ( head_grid )
-   CALL copy_g_to_a_adjtest ( head_grid )
+   !$OMP PARALLEL DO    &
+   !$OMP DEFAULT (SHARED) PRIVATE ( ij )
+   DO ij = 1 , head_grid%num_tiles
+      CALL copy_g_to_a_adjtest ( head_grid,                                           &
+                        head_grid%i_start(ij), head_grid%i_end(ij),                &
+                        head_grid%j_start(ij), head_grid%j_end(ij)                 )
+   END DO
+   !$OMP END PARALLEL DO
 
    ! Set the file names and interval for reading basic states.
    model_config_rec%auxinput6_inname = "auxhist6_d<domain>_<date>"

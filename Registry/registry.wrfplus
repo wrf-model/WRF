@@ -259,10 +259,12 @@ state    real   a_NCA            ij      misc        1         -      r        "
 state    real   a_p              ikj     dyn_em      1         -      irh       "a_p"           "perturbation pressure"         "Pa"
 state    real   a_al             ikj     dyn_em      1         -      r         "a_al"          "inverse perturbation density"  "m3 kg-1"
 state    real   a_alt            ikj     dyn_em      1         -      r         "a_alt"         "inverse density"               "m3 kg-1"
+state    real   a_pb             ikj     dyn_em      1         -      irhdus    "a_pb"          "BASE STATE PRESSURE "          "Pa"
 
 state    real   g_p              ikj     dyn_em      1         -      irh       "g_p"           "perturbation pressure"         "Pa"
 state    real   g_al             ikj     dyn_em      1         -      r         "g_al"          "inverse perturbation density"  "m3 kg-1"
 state    real   g_alt            ikj     dyn_em      1         -      r         "g_alt"         "inverse density"               "m3 kg-1"
+state    real   g_pb             ikj     dyn_em      1         -      irhdus    "g_pb"          "BASE STATE PRESSURE "          "Pa"
 
 #
 # Other dyn
@@ -586,6 +588,32 @@ state    real    a_CUBOT           ij     misc        1         -      r        
 state    REAL    g_CUPPT           ij     misc        1         -      r        "g_CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINC LAST CALL TO THE RADIATION"         ""
 state    REAL    a_CUPPT           ij     misc        1         -      r        "a_CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINC LAST CALL TO THE RADIATION"         ""
 
+# Chem Scalars
+state   real    -              ikjftb   g_chem        1         -     -    -
+state   real    -              ikjftb   a_chem        1         -     -    -
+#
+# Tracer Scalars: If you want full resolved and non-resolved dispersion, compile WRF-Chem
+#
+state   real    -          ikjftb  g_tracer        1         -     -    -
+state   real    g_tr17_1     ikjftb  g_tracer        1         -     irh    "g_tr17_1"         "g_tr17_1"          -
+state   real    g_tr17_2     ikjftb  g_tracer        1         -     irh    "g_tr17_2"         "g_tr17_2"          -
+state   real    g_tr17_3     ikjftb  g_tracer        1         -     irh    "g_tr17_3"         "g_tr17_3"          -
+state   real    g_tr17_4     ikjftb  g_tracer        1         -     irh    "g_tr17_4"         "g_tr17_4"          -
+state   real    g_tr17_5     ikjftb  g_tracer        1         -     irh    "g_tr17_5"         "g_tr17_5"          -
+state   real    g_tr17_6     ikjftb  g_tracer        1         -     irh    "g_tr17_6"         "g_tr17_6"          -
+state   real    g_tr17_7     ikjftb  g_tracer        1         -     irh    "g_tr17_7"         "g_tr17_7"          -
+state   real    g_tr17_8     ikjftb  g_tracer        1         -     irh    "g_tr17_8"         "g_tr17_8"
+
+state   real    -          ikjftb  a_tracer        1         -     -    -
+state   real    a_tr17_1     ikjftb  a_tracer        1         -     irh    "a_tr17_1"         "a_tr17_1"          -
+state   real    a_tr17_2     ikjftb  a_tracer        1         -     irh    "a_tr17_2"         "a_tr17_2"          -
+state   real    a_tr17_3     ikjftb  a_tracer        1         -     irh    "a_tr17_3"         "a_tr17_3"          -
+state   real    a_tr17_4     ikjftb  a_tracer        1         -     irh    "a_tr17_4"         "a_tr17_4"          -
+state   real    a_tr17_5     ikjftb  a_tracer        1         -     irh    "a_tr17_5"         "a_tr17_5"          -
+state   real    a_tr17_6     ikjftb  a_tracer        1         -     irh    "a_tr17_6"         "a_tr17_6"          -
+state   real    a_tr17_7     ikjftb  a_tracer        1         -     irh    "a_tr17_7"         "a_tr17_7"          -
+state   real    a_tr17_8     ikjftb  a_tracer        1         -     irh    "a_tr17_8"         "a_tr17_8"
+
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 # Package Declarations
@@ -606,60 +634,39 @@ package   jcdfi_on      jcdfi_diag==1                  -             state:jcdfi
 
 ### 8. Edit the Registry file and create a halo-exchange for x_1.
 
-halo      HALO_EM_TKE_C_TL dyn_em 8:g_u_2,g_v_2,g_z,g_zx,g_zy,g_rdz,g_rdzw,g_ustm
-halo      HALO_EM_TKE_D_TL dyn_em 8:g_defor11,g_defor22,g_defor33,g_defor12,g_defor13,g_defor23,g_div
-halo      HALO_EM_TKE_E_TL dyn_em 8:g_xkmv,g_xkmh,g_xkhv,g_xkhh,g_BN2,g_moist
-halo      HALO_EM_PHYS_DIFFUSION_TL dyn_em  4:g_defor11,g_defor22,g_defor12,g_defor13,g_defor23,g_div,g_xkmv,g_xkmh,g_xkhv,g_xkhh,g_tke_1,g_tke_2
-halo      HALO_EM_PHYS_PBL_TL dyn_em        4:g_rublten,g_rvblten
-halo      HALO_EM_PHYS_A_TL  dyn_em 4:g_u_2,g_v_2
-#halo      HALO_EM_AD_RK_TEND0 dyn_em 120:u_2,v_2,w_2,t_2,ph_2,ru,rv,rw,a_ru_tend,a_rv_tend,a_rw_tend,a_ph_tend,a_t_tend,a_mu_tend
-halo      HALO_EM_AD_RK_TEND0 dyn_em 120:u_2,v_2,w_2,t_2,ph_2,ru,rv,rw,a_ru_tend,a_rv_tend
-halo      HALO_EM_A_TL dyn_em  8:g_ru,g_rv,g_rw,g_ww,g_php,g_alt,g_al,g_p,g_muu,g_muv,g_mut
-halo      HALO_EM_B_TL dyn_em  4:g_ph_2,g_al,g_p,g_t_1,g_t_save,g_u_save,g_v_save,g_mu_1,g_mu_2,g_mudf,g_php,g_alt
-halo      HALO_EM_C_TL dyn_em  4:g_u_2,g_v_2
-halo      HALO_EM_D_TL dyn_em  24:g_ru_m,g_rv_m,g_ww_m,g_mut,g_muts
-halo      HALO_EM_C2_TL dyn_em 4:g_ph_2,g_al,g_p,g_mu_2,g_muts,g_mudf
-halo      HALO_EM_TKE_OLD_E_5_TL dyn_em   48:g_tke_1
-halo      HALO_EM_TKE_OLD_E_7_TL dyn_em   80:g_tke_1
-halo      HALO_EM_E_3_TL dyn_em 24:g_u_1,g_u_2,g_v_1,g_v_2,g_w_1,g_w_2,g_t_1,g_t_2,g_ph_1,g_ph_2,g_tke_1,g_tke_2,;4:g_mu_1,g_mu_2
-halo      HALO_EM_E_5_TL dyn_em 48:g_u_1,g_u_2,g_v_1,g_v_2,g_w_1,g_w_2,g_t_1,g_t_2,g_ph_1,g_ph_2,g_tke_1,g_tke_2,;4:g_mu_1,g_mu_2
-halo      HALO_EM_D3_3_TL dyn_em 24:g_u_1,g_u_2,g_v_1,g_v_2,g_w_1,g_w_2,g_t_1,g_t_2,g_ph_1,g_ph_2,g_tke_1,g_tke_2,g_moist,g_scalar;4:g_mu_1,g_mu_2
-halo      HALO_EM_D3_5_TL dyn_em 48:g_u_1,g_u_2,g_v_1,g_v_2,g_w_1,g_w_2,g_t_1,g_t_2,g_ph_1,g_ph_2,g_tke_1,g_tke_2,g_moist,g_scalar;4:g_mu_1,g_mu_2
-halo      HALO_EM_HYDRO_UV_TL   dyn_em 8:g_u_2,g_v_2
-halo      HALO_EM_TKE_ADVECT_3_TL dyn_em 24:g_tke_2
-halo      HALO_EM_TKE_ADVECT_5_TL dyn_em 48:g_tke_2
-halo      HALO_EM_D2_3_TL dyn_em 24:g_u_2,g_v_2,g_w_2,g_t_2,g_ph_2;24:g_moist,g_scalar;4:g_mu_2,g_al
-halo      HALO_EM_D2_5_TL dyn_em 48:g_u_2,g_v_2,g_w_2,g_t_2,g_ph_2;24:g_moist,g_scalar;4:g_mu_2,g_al
-halo      HALO_EM_TKE_3_TL dyn_em   24:g_tke_1,g_tke_2
-halo      HALO_EM_TKE_5_TL dyn_em   48:g_tke_1,g_tke_2
-halo      HALO_EM_TKE_7_TL dyn_em   80:g_tke_1,g_tke_2
-halo      HALO_EM_MOIST_E_3_TL dyn_em 24:g_moist
-halo      HALO_EM_MOIST_E_5_TL dyn_em 48:g_moist
-halo      HALO_EM_MOIST_E_7_TL dyn_em 80:g_moist
-halo      HALO_EM_MOIST_OLD_E_5_TL dyn_em 48:g_moist_old
-halo      HALO_EM_MOIST_OLD_E_7_TL dyn_em 80:g_moist_old
-period    PERIOD_BDY_EM_MOIST2_TL dyn_em 4:g_moist
-period    PERIOD_BDY_EM_A_TL dyn_em 2:g_ru,g_rv,g_rw,g_ww,g_php,g_alt,g_p,g_muu,g_muv,g_mut,g_ph_2,g_al
-period    PERIOD_BDY_EM_B_TL dyn_em 2:g_ru_tend,g_rv_tend,g_ph_2,g_al,g_p,g_t_1,g_t_save,g_u_save,g_v_save,g_mu_1,g_mu_2,g_mudf,g_php,g_alt
-period    PERIOD_BDY_EM_C_TL dyn_em 2:g_u_2,g_u_save,g_v_2,g_v_save,g_t_2,g_t_save,g_muv,msfvx,msfvy,muu,msfux,msfuy,msfvx_inv
-period    PERIOD_BDY_EM_D_TL dyn_em 3:g_u_2,g_v_2,g_w_2,g_t_2,g_ph_2,g_mu_2,g_tke_2
-period    PERIOD_BDY_EM_E_TL dyn_em 2:g_u_2,g_v_2,ht
-period    PERIOD_EM_DA_TL    dyn_em 2:g_ru_m,g_rv_m,g_ww_m,g_mut,g_muts
-period    PERIOD_BDY_EM_B3_TL dyn_em 2:g_ph_2,g_al,g_p,g_mu_2,g_muts,g_mudf
-period    PERIOD_BDY_EM_TKE_OLD_TL dyn_em 4:g_tke_1
-period    PERIOD_BDY_EM_D3_TL dyn_em 3:g_u_1,g_u_2,g_v_1,g_v_2,g_w_1,g_w_2,g_t_1,g_t_2,g_ph_1,g_ph_2,g_tke_1,g_tke_2,g_mu_1,g_mu_2
-period    PERIOD_BDY_EM_MOIST_TL dyn_em 4:g_moist
-period    PERIOD_EM_HYDRO_UV_TL dyn_em 1:g_u_2,g_v_2
-period    PERIOD_BDY_EM_MOIST_OLD_TL dyn_em 4:g_moist_old
-period    PERIOD_BDY_EM_A1_TL  dyn_em 3:g_rdzw,g_rdz,g_z,g_zx,g_zy,g_ustm
-period    PERIOD_BDY_EM_PHY_BC_TL dyn_em 2:g_rublten,g_rvblten,g_rucuten,g_rvcuten,g_xkmh,g_xkmv,g_xkhh,g_xkhv,g_div,g_defor11,g_defor22,g_defor12,g_defor13,g_defor23,g_defor33,g_tke_2
+halo_nta      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
+halo_nta      HALO_EM_B dyn_em 4:ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt,pb
+halo_nta      HALO_EM_C dyn_em    4:u_2,v_2
+halo_nta      HALO_EM_C2 dyn_em    4:ph_2,al,p,mu_2,muts,mudf
+halo_nta      HALO_EM_D dyn_em    24:ru_m,rv_m,ww_m,mut,muts
+halo_nta      HALO_EM_D2_3 dyn_em 24:u_2,v_2,w_2,t_2,ph_2;24:moist,chem,tracer,scalar;4:mu_2,al
+halo_nta      HALO_EM_D2_5 dyn_em 48:u_2,v_2,w_2,t_2,ph_2;24:moist,chem,tracer,scalar;4:mu_2,al
+halo_nta      HALO_EM_D3_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist,chem,tracer,scalar;4:mu_1,mu_2
+halo_nta      HALO_EM_D3_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist,chem,tracer,scalar;4:mu_1,mu_2
+halo_nta      HALO_EM_E_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
+halo_nta      HALO_EM_E_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
+halo_nta      HALO_EM_HYDRO_UV   dyn_em 8:u_2,v_2
+halo_nta      HALO_EM_MOIST_E_3 dyn_em 24:moist
+halo_nta      HALO_EM_MOIST_E_5 dyn_em 48:moist
+halo_nta      HALO_EM_MOIST_E_7 dyn_em 80:moist
+halo_nta      HALO_EM_MOIST_OLD_E_5 dyn_em 48:moist_old
+halo_nta      HALO_EM_MOIST_OLD_E_7 dyn_em 80:moist_old
+halo_nta      HALO_EM_TKE_C dyn_em 8:u_2,v_2,z,zx,zy,rdz,rdzw,ustm
+halo_nta      HALO_EM_TKE_D dyn_em 8:defor11,defor22,defor33,defor12,defor13,defor23,div
+halo_nta      HALO_EM_TKE_E dyn_em 8:xkmv,xkmh,xkhv,xkhh,BN2,moist
+halo_nta      HALO_EM_TKE_3 dyn_em   24:tke_1,tke_2
+halo_nta      HALO_EM_TKE_5 dyn_em   48:tke_1,tke_2
+halo_nta      HALO_EM_TKE_7 dyn_em   80:tke_1,tke_2
+halo_nta      HALO_EM_TKE_OLD_E_5 dyn_em   48:tke_1
+halo_nta      HALO_EM_TKE_OLD_E_7 dyn_em   80:tke_1
+halo_nta      HALO_EM_TKE_ADVECT_3 dyn_em 24:tke_2
+halo_nta      HALO_EM_TKE_ADVECT_5 dyn_em 48:tke_2
+halo_nta      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
+halo_nta      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten
+halo_nta      HALO_EM_PHYS_DIFFUSION dyn_em  4:defor11,defor22,defor12,defor13,defor23,div,xkmv,xkmh,xkhv,xkhh,tke_1,tke_2
 
-halo      HALO_EM_MU_AD dyn_em  4:a_muu,a_muv,a_mu_2,a_ru,a_rv
-halo      HALO_EM_SAVE_AD dyn_em  4:a_ph_save,a_t_save,a_u_save,a_v_save
-halo      HALO_EM_E_3_AD dyn_em 24:a_u_1,a_u_2,a_v_1,a_v_2,a_w_1,a_w_2,a_t_1,a_t_2,a_ph_1,a_ph_2,a_tke_1,a_tke_2,;4:a_mu_1,a_mu_2
-halo      HALO_EM_E_5_AD dyn_em 48:a_u_1,a_u_2,a_v_1,a_v_2,a_w_1,a_w_2,a_t_1,a_t_2,a_ph_1,a_ph_2,a_tke_1,a_tke_2,;4:a_mu_1,a_mu_2
-halo      HALO_EM_MOIST_E_3_AD dyn_em 24:a_moist
-halo      HALO_EM_MOIST_E_5_AD dyn_em 48:a_moist
+#halo      HALO_EM_MU_AD dyn_em  4:a_muu,a_muv,a_mu_2,a_ru,a_rv
+#halo      HALO_EM_SAVE_AD dyn_em  4:a_ph_save,a_t_save,a_u_save,a_v_save
 
 ##
 # BEGIN XTRAJ_TYPE DEFINITION:

@@ -49,8 +49,8 @@ CONTAINS
             ,halo_em_fdda_sub,halo_em_phys_diffusion_sub,halo_em_tke_3_sub &
             ,halo_em_tke_5_sub,halo_obs_nudge_sub,period_bdy_em_a1_sub,period_bdy_em_phy_bc_sub &
             ,period_bdy_em_fdda_bc_sub,period_bdy_em_chem_sub,halo_em_phys_cu_sub               &
-            ,halo_em_tke_c_tl_sub,halo_em_phys_pbl_tl_sub,period_bdy_em_a1_tl_sub               &
-            ,halo_em_tke_d_tl_sub,halo_em_tke_e_tl_sub,period_bdy_em_phy_bc_tl_sub              &
+            ,halo_em_tke_c_tl_sub,halo_em_phys_pbl_tl_sub                                       &
+            ,halo_em_tke_d_tl_sub,halo_em_tke_e_tl_sub                                          &
             ,halo_em_phys_diffusion_tl_sub,halo_em_tke_3_tl_sub,halo_em_tke_5_tl_sub
 #endif
 
@@ -380,10 +380,8 @@ BENCH_START(tl_comp_diff_metrics_tim)
 BENCH_END(tl_comp_diff_metrics_tim)
 
 #ifdef DM_PARALLEL
-#  include "HALO_EM_TKE_C.inc"
 #  include "HALO_EM_TKE_C_TL.inc"
 #  include "PERIOD_BDY_EM_A1.inc"
-#  include "PERIOD_BDY_EM_A1_TL.inc"
 #endif
 
 BENCH_START(tl_tke_diff_bc_tim)
@@ -468,7 +466,6 @@ BENCH_START(tl_deform_div_tim)
 BENCH_END(tl_deform_div_tim)
 
 #ifdef DM_PARALLEL
-#     include "HALO_EM_TKE_D.inc"
 #     include "HALO_EM_TKE_D_TL.inc"
 #endif
 
@@ -503,7 +500,6 @@ BENCH_START(tl_calc_tke_tim)
 BENCH_END(tl_calc_tke_tim)
 
 #ifdef DM_PARALLEL
-#     include "HALO_EM_TKE_E.inc"
 #     include "HALO_EM_TKE_E_TL.inc"
 #endif
 
@@ -511,7 +507,6 @@ BENCH_END(tl_calc_tke_tim)
 
 #ifdef DM_PARALLEL
 #      include "PERIOD_BDY_EM_PHY_BC.inc"
-#      include "PERIOD_BDY_EM_PHY_BC_TL.inc"
        IF ( config_flags%grid_fdda .eq. 1) THEN
 #      include "PERIOD_BDY_EM_FDDA_BC.inc"
        ENDIF
@@ -601,7 +596,6 @@ ENDIF
 !
 !-----------------------------------------------------------------------
        IF ( config_flags%bl_pbl_physics .ge. 1 ) THEN
-#      include "HALO_EM_PHYS_PBL.inc"
 #      include "HALO_EM_PHYS_PBL_TL.inc"
        ENDIF
        IF ( config_flags%shcu_physics .gt. 1 ) THEN
@@ -617,15 +611,12 @@ ENDIF
 #      include "HALO_EM_FDDA.inc"
        ENDIF
        IF ( config_flags%diff_opt .ge. 1 ) THEN
-#      include "HALO_EM_PHYS_DIFFUSION.inc"
 #      include "HALO_EM_PHYS_DIFFUSION_TL.inc"
        ENDIF
 
        IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#       include "HALO_EM_TKE_3.inc"
 #       include "HALO_EM_TKE_3_TL.inc"
        ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#       include "HALO_EM_TKE_5.inc"
 #       include "HALO_EM_TKE_5_TL.inc"
        ELSE
          WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order

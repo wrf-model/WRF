@@ -7038,6 +7038,7 @@ end if
        CALL wrf_error_fatal(TRIM(wrf_err_message))
      ENDIF
    ENDIF
+#endif
 
 ! [1] Adjoint of the part after Runge Kutta loop
 

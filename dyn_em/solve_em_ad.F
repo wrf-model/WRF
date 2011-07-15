@@ -46,7 +46,8 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
                  ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub         &
                  ,halo_em_a_ad_sub,halo_em_d2_3_ad_sub,halo_em_d2_5_ad_sub                 &
                  ,halo_em_e_3_ad_sub,halo_em_e_5_ad_sub,halo_em_moist_e_3_ad_sub           &
-                 ,halo_em_moist_e_5_ad_sub,halo_em_bdy_ad_sub
+                 ,halo_em_moist_e_5_ad_sub,halo_em_bdy_ad_sub,halo_em_b_ad_sub             &
+                 ,halo_em_c_ad_sub,halo_em_c2_ad_sub
 #endif
    USE module_utility
 ! Mediation layer modules
@@ -9487,6 +9488,9 @@ end if
 BENCH_END(adj_phys_bc_tim)
 
 !======[adj_P1.11.8]======================================================
+#ifdef DM_PARALLEL
+#      include "HALO_EM_C2_AD.inc"
+#endif
 !========[adj_P1.11.8.3]================================================
  BENCH_START(adj_cald_p_rho_tim)
 
@@ -9876,6 +9880,10 @@ end if
 BENCH_END(adj_advance_mu_t_tim)
        ENDDO
        !DDD END PARALLEL DO
+
+#ifdef DM_PARALLEL
+#     include "HALO_EM_C_AD.inc"
+#endif
 
 !======[adj_P1.11.3]======================================================
 !      Adjoint of updating model variables of grid points in spec zone: u,v
@@ -10298,6 +10306,9 @@ end if
 
 BENCH_END(adj_set_phys_bc2_tim)
 
+#ifdef DM_PARALLEL
+#      include "HALO_EM_B_AD.inc"
+#endif
 !====[adj_P1.9]===========================================================
 BENCH_START(adj_small_step_prep_tim)
 

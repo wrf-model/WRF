@@ -2660,6 +2660,7 @@ CONTAINS
 !c  initialize arrays
 !c
       do i=1,im
+        kcnv(i)=0
         cnvflg(i) = .true.
         rn(i)=0.
         kbot(i)=km+1

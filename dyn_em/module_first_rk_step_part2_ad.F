@@ -44,11 +44,10 @@ CONTAINS
     USE module_configure, ONLY : grid_config_rec_type, model_config_rec
 #ifdef DM_PARALLEL
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval, wrf_err_message, local_communicator_x, local_communicator_y
-    USE module_comm_dm, ONLY : halo_em_tke_c_sub,halo_em_tke_d_sub,halo_em_tke_e_sub            &
-            ,halo_em_phys_pbl_sub,halo_em_phys_shcu_sub &
-            ,halo_em_fdda_sub,halo_em_phys_diffusion_sub,halo_em_tke_3_sub &
-            ,halo_em_tke_5_sub,halo_obs_nudge_sub,period_bdy_em_a1_sub,period_bdy_em_phy_bc_sub &
-            ,period_bdy_em_fdda_bc_sub,period_bdy_em_chem_sub,halo_em_phys_cu_sub
+    USE module_comm_dm, ONLY : halo_em_tke_c_ad_sub,halo_em_tke_d_ad_sub,halo_em_tke_e_ad_sub    &
+            ,halo_em_phys_pbl_ad_sub &
+            ,halo_em_phys_diffusion_ad_sub,halo_em_tke_3_ad_sub &
+            ,halo_em_tke_5_ad_sub
 #endif
 
     USE module_driver_constants
@@ -356,20 +355,31 @@ BENCH_START(adj_update_phy_ten_tim)
        !$OMP END PARALLEL DO
 BENCH_END(adj_update_phy_ten_tim)
 
+#ifdef DM_PARALLEL
+       IF ( config_flags%bl_pbl_physics .ge. 1 ) THEN
+#      include "HALO_EM_PHYS_PBL_AD.inc"
+       ENDIF
+       IF ( config_flags%diff_opt .ge. 1 ) THEN
+#      include "HALO_EM_PHYS_DIFFUSION_AD.inc"
+       ENDIF
+
+       IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+#       include "HALO_EM_TKE_3_AD.inc"
+       ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+#       include "HALO_EM_TKE_5_AD.inc"
+       ELSE
+         WRITE(wrf_err_message,*)'solve_em_ad: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+         CALL wrf_error_fatal(TRIM(wrf_err_message))
+       ENDIF
+#endif
+
+
 IF ( ( config_flags%sfs_opt .GT. 0 ) .AND. ( config_flags%diff_opt .eq. 2 ) ) THEN
  CALL a_sfs_driver( grid, config_flags,     &
                   nba_mij,a_nba_mij, n_nba_mij,     & 
                   nba_rij,a_nba_rij, n_nba_rij      ) 
 
 ENDIF
-
-#ifdef DM_PARALLEL
-#      include "PERIOD_BDY_EM_PHY_BC.inc"
-       IF ( config_flags%grid_fdda .eq. 1) THEN
-#      include "PERIOD_BDY_EM_FDDA_BC.inc"
-       ENDIF
-#      include "PERIOD_BDY_EM_CHEM.inc"
-#endif
 
 BENCH_START(adj_phy_bc_tim)
        !$OMP PARALLEL DO   &
@@ -401,7 +411,7 @@ BENCH_END(adj_phy_bc_tim)
        IF(config_flags%diff_opt .eq. 2 .OR. config_flags%diff_opt .eq. 1) THEN
 
 #ifdef DM_PARALLEL
-#     include "HALO_EM_TKE_D.inc"
+#     include "HALO_EM_TKE_E_AD.inc"
 #endif
 
 BENCH_START(adj_calc_tke_tim)
@@ -435,7 +445,7 @@ BENCH_START(adj_calc_tke_tim)
 BENCH_END(adj_calc_tke_tim)
 
 #ifdef DM_PARALLEL
-#     include "HALO_EM_TKE_E.inc"
+#     include "HALO_EM_TKE_D_AD.inc"
 #endif
 
 BENCH_START(adj_deform_div_tim)
@@ -465,11 +475,6 @@ BENCH_START(adj_deform_div_tim)
          ENDDO
          !$OMP END PARALLEL DO
 BENCH_END(adj_deform_div_tim)
-
-#ifdef DM_PARALLEL
-#  include "HALO_EM_TKE_C.inc"
-#  include "PERIOD_BDY_EM_A1.inc"
-#endif
 
 BENCH_START(adj_tke_diff_bc_tim)
          !$OMP PARALLEL DO   &
@@ -523,6 +528,10 @@ BENCH_START(adj_tke_diff_bc_tim)
          ENDDO
          !$OMP END PARALLEL DO
 BENCH_END(adj_tke_diff_bc_tim)
+
+#ifdef DM_PARALLEL
+#  include "HALO_EM_TKE_C_AD.inc"
+#endif
 
 BENCH_START(adj_comp_diff_metrics_tim)
          !$OMP PARALLEL DO   &

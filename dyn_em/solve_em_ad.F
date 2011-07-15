@@ -46,7 +46,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
                  ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub         &
                  ,halo_em_a_ad_sub,halo_em_d2_3_ad_sub,halo_em_d2_5_ad_sub                 &
                  ,halo_em_e_3_ad_sub,halo_em_e_5_ad_sub,halo_em_moist_e_3_ad_sub           &
-                 ,halo_em_moist_e_5_ad_sub
+                 ,halo_em_moist_e_5_ad_sub,halo_em_bdy_ad_sub
 #endif
    USE module_utility
 ! Mediation layer modules
@@ -7008,38 +7008,6 @@ end if
   a_alpha = 0. 
   a_gamma = 0. 
 
-#ifdef DM_PARALLEL
-!-----------------------------------------------------------------------
-! see above
-!--------------------------------------------------------------
-   CALL wrf_debug ( 200 , ' call HALO_RK_E' )
-   IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#    include "HALO_EM_E_3_AD.inc"
-   ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#    include "HALO_EM_E_5_AD.inc"
-   ELSE
-     WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-     CALL wrf_error_fatal(TRIM(wrf_err_message))
-   ENDIF
-#endif
-
-#ifdef DM_PARALLEL
-   IF ( num_moist >= PARAM_FIRST_SCALAR  ) THEN
-!-----------------------------------------------------------------------
-! see above
-!--------------------------------------------------------------
-     CALL wrf_debug ( 200 , ' call HALO_RK_MOIST' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#      include "HALO_EM_MOIST_E_3_AD.inc"
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#      include "HALO_EM_MOIST_E_5_AD.inc"
-     ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-     ENDIF
-   ENDIF
-#endif
-
 ! [1] Adjoint of the part after Runge Kutta loop
 
 !==[adj_P9]===============================================================
@@ -11460,6 +11428,234 @@ end if
 #endif
 
        ENDIF
+
+#ifdef DM_PARALLEL
+!   Use a_u_1, a_v_1 etc as temporary buffers to do the halo exchange for bdy fields
+
+!  X-direction pack
+
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1
+      CALL bdy_fields_halo ( grid%a_u_1 , grid%a_v_1, grid%a_t_1, grid%a_ph_1, grid%a_mu_1, &
+                          0, 0, grid%spec_bdy_width      , &
+                          grid%a_u_bxs, grid%a_u_bxe, grid%a_u_bys, grid%a_u_bye, &
+                          grid%a_v_bxs, grid%a_v_bxe, grid%a_v_bys, grid%a_v_bye, &
+                          grid%a_t_bxs, grid%a_t_bxe, grid%a_t_bys, grid%a_t_bye, &
+                          grid%a_ph_bxs, grid%a_ph_bxe, grid%a_ph_bys, grid%a_ph_bye, &
+                          grid%a_mu_bxs, grid%a_mu_bxe, grid%a_mu_bys, grid%a_mu_bye, &
+                          ids, ide, jds, jde, kds, kde,     &
+                          ims, ime, jms, jme, kms, kme,     &
+                          grid%i_start(ij), grid%i_end(ij), &
+                          grid%j_start(ij), grid%j_end(ij), &
+                          k_start, k_end                   )
+   ENDDO
+   !$OMP END PARALLEL DO
+
+#    include "HALO_EM_BDY_AD.inc"
+
+!  X-direction unpack
+
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1
+      CALL bdy_fields_halo ( grid%a_u_1 , grid%a_v_1, grid%a_t_1, grid%a_ph_1, grid%a_mu_1, &
+                          1, 0, grid%spec_bdy_width      , &
+                          grid%a_u_bxs, grid%a_u_bxe, grid%a_u_bys, grid%a_u_bye, &
+                          grid%a_v_bxs, grid%a_v_bxe, grid%a_v_bys, grid%a_v_bye, &
+                          grid%a_t_bxs, grid%a_t_bxe, grid%a_t_bys, grid%a_t_bye, &
+                          grid%a_ph_bxs, grid%a_ph_bxe, grid%a_ph_bys, grid%a_ph_bye, &
+                          grid%a_mu_bxs, grid%a_mu_bxe, grid%a_mu_bys, grid%a_mu_bye, &
+                          ids, ide, jds, jde, kds, kde,     &
+                          ims, ime, jms, jme, kms, kme,     &
+                          grid%i_start(ij), grid%i_end(ij), &
+                          grid%j_start(ij), grid%j_end(ij), &
+                          k_start, k_end                   )
+   ENDDO
+   !$OMP END PARALLEL DO
+
+   grid%a_u_1 = 0.0
+   grid%a_v_1 = 0.0
+   grid%a_t_1 = 0.0
+   grid%a_ph_1 = 0.0
+   grid%a_mu_1 = 0.0
+
+!  X-direction pack
+
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1
+      CALL bdy_fields_halo ( grid%a_u_1 , grid%a_v_1, grid%a_t_1, grid%a_ph_1, grid%a_mu_1, &
+                          0, 0, grid%spec_bdy_width      , &         
+                          grid%a_u_btxs, grid%a_u_btxe, grid%a_u_btys, grid%a_u_btye, &
+                          grid%a_v_btxs, grid%a_v_btxe, grid%a_v_btys, grid%a_v_btye, &
+                          grid%a_t_btxs, grid%a_t_btxe, grid%a_t_btys, grid%a_t_btye, &
+                          grid%a_ph_btxs, grid%a_ph_btxe, grid%a_ph_btys, grid%a_ph_btye, &
+                          grid%a_mu_btxs, grid%a_mu_btxe, grid%a_mu_btys, grid%a_mu_btye, &
+                          ids, ide, jds, jde, kds, kde,     &
+                          ims, ime, jms, jme, kms, kme,     &
+                          grid%i_start(ij), grid%i_end(ij), &
+                          grid%j_start(ij), grid%j_end(ij), &
+                          k_start, k_end                   ) 
+   ENDDO
+   !$OMP END PARALLEL DO
+
+#    include "HALO_EM_BDY_AD.inc"
+
+!  X-direction unpack
+
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1
+      CALL bdy_fields_halo ( grid%a_u_1 , grid%a_v_1, grid%a_t_1, grid%a_ph_1, grid%a_mu_1, &
+                          1, 0, grid%spec_bdy_width      , &         
+                          grid%a_u_btxs, grid%a_u_btxe, grid%a_u_btys, grid%a_u_btye, &
+                          grid%a_v_btxs, grid%a_v_btxe, grid%a_v_btys, grid%a_v_btye, &
+                          grid%a_t_btxs, grid%a_t_btxe, grid%a_t_btys, grid%a_t_btye, &
+                          grid%a_ph_btxs, grid%a_ph_btxe, grid%a_ph_btys, grid%a_ph_btye, &
+                          grid%a_mu_btxs, grid%a_mu_btxe, grid%a_mu_btys, grid%a_mu_btye, &
+                          ids, ide, jds, jde, kds, kde,     &
+                          ims, ime, jms, jme, kms, kme,     &
+                          grid%i_start(ij), grid%i_end(ij), &
+                          grid%j_start(ij), grid%j_end(ij), &
+                          k_start, k_end                   ) 
+   ENDDO
+   !$OMP END PARALLEL DO
+
+   grid%a_u_1 = 0.0
+   grid%a_v_1 = 0.0
+   grid%a_t_1 = 0.0
+   grid%a_ph_1 = 0.0
+   grid%a_mu_1 = 0.0
+
+!  Y-direction pack
+
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1
+      CALL bdy_fields_halo ( grid%a_u_1 , grid%a_v_1, grid%a_t_1, grid%a_ph_1, grid%a_mu_1, &
+                          0, 1, grid%spec_bdy_width      , &
+                          grid%a_u_bxs, grid%a_u_bxe, grid%a_u_bys, grid%a_u_bye, &
+                          grid%a_v_bxs, grid%a_v_bxe, grid%a_v_bys, grid%a_v_bye, &
+                          grid%a_t_bxs, grid%a_t_bxe, grid%a_t_bys, grid%a_t_bye, &
+                          grid%a_ph_bxs, grid%a_ph_bxe, grid%a_ph_bys, grid%a_ph_bye, &
+                          grid%a_mu_bxs, grid%a_mu_bxe, grid%a_mu_bys, grid%a_mu_bye, &
+                          ids, ide, jds, jde, kds, kde,     &
+                          ims, ime, jms, jme, kms, kme,     &
+                          grid%i_start(ij), grid%i_end(ij), &
+                          grid%j_start(ij), grid%j_end(ij), &
+                          k_start, k_end                   )
+   ENDDO
+   !$OMP END PARALLEL DO
+
+#    include "HALO_EM_BDY_AD.inc"
+
+!  Y-direction pack
+
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1
+      CALL bdy_fields_halo ( grid%a_u_1 , grid%a_v_1, grid%a_t_1, grid%a_ph_1, grid%a_mu_1, &
+                          1, 1, grid%spec_bdy_width      , &
+                          grid%a_u_bxs, grid%a_u_bxe, grid%a_u_bys, grid%a_u_bye, &
+                          grid%a_v_bxs, grid%a_v_bxe, grid%a_v_bys, grid%a_v_bye, &
+                          grid%a_t_bxs, grid%a_t_bxe, grid%a_t_bys, grid%a_t_bye, &
+                          grid%a_ph_bxs, grid%a_ph_bxe, grid%a_ph_bys, grid%a_ph_bye, &
+                          grid%a_mu_bxs, grid%a_mu_bxe, grid%a_mu_bys, grid%a_mu_bye, &
+                          ids, ide, jds, jde, kds, kde,     &
+                          ims, ime, jms, jme, kms, kme,     &
+                          grid%i_start(ij), grid%i_end(ij), &
+                          grid%j_start(ij), grid%j_end(ij), &
+                          k_start, k_end                   )
+   ENDDO
+   !$OMP END PARALLEL DO
+
+   grid%a_u_1 = 0.0
+   grid%a_v_1 = 0.0
+   grid%a_t_1 = 0.0
+   grid%a_ph_1 = 0.0
+   grid%a_mu_1 = 0.0
+
+!  Y-direction pack
+
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1
+      CALL bdy_fields_halo ( grid%a_u_1 , grid%a_v_1, grid%a_t_1, grid%a_ph_1, grid%a_mu_1, &
+                          0, 1, grid%spec_bdy_width      , &
+                          grid%a_u_btxs, grid%a_u_btxe, grid%a_u_btys, grid%a_u_btye, &
+                          grid%a_v_btxs, grid%a_v_btxe, grid%a_v_btys, grid%a_v_btye, &
+                          grid%a_t_btxs, grid%a_t_btxe, grid%a_t_btys, grid%a_t_btye, &
+                          grid%a_ph_btxs, grid%a_ph_btxe, grid%a_ph_btys, grid%a_ph_btye, &
+                          grid%a_mu_btxs, grid%a_mu_btxe, grid%a_mu_btys, grid%a_mu_btye, &
+                          ids, ide, jds, jde, kds, kde,     &
+                          ims, ime, jms, jme, kms, kme,     &
+                          grid%i_start(ij), grid%i_end(ij), &
+                          grid%j_start(ij), grid%j_end(ij), &
+                          k_start, k_end                   )
+   ENDDO
+   !$OMP END PARALLEL DO
+
+#    include "HALO_EM_BDY_AD.inc"
+
+!  Y-direction unpack
+
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = grid%num_tiles,1,-1
+      CALL bdy_fields_halo ( grid%a_u_1 , grid%a_v_1, grid%a_t_1, grid%a_ph_1, grid%a_mu_1, &
+                          1, 1, grid%spec_bdy_width      , &
+                          grid%a_u_btxs, grid%a_u_btxe, grid%a_u_btys, grid%a_u_btye, &
+                          grid%a_v_btxs, grid%a_v_btxe, grid%a_v_btys, grid%a_v_btye, &
+                          grid%a_t_btxs, grid%a_t_btxe, grid%a_t_btys, grid%a_t_btye, &
+                          grid%a_ph_btxs, grid%a_ph_btxe, grid%a_ph_btys, grid%a_ph_btye, &
+                          grid%a_mu_btxs, grid%a_mu_btxe, grid%a_mu_btys, grid%a_mu_btye, &
+                          ids, ide, jds, jde, kds, kde,     &
+                          ims, ime, jms, jme, kms, kme,     &
+                          grid%i_start(ij), grid%i_end(ij), &
+                          grid%j_start(ij), grid%j_end(ij), &
+                          k_start, k_end                   )
+   ENDDO
+   !$OMP END PARALLEL DO
+
+   grid%a_u_1 = 0.0
+   grid%a_v_1 = 0.0
+   grid%a_t_1 = 0.0
+   grid%a_ph_1 = 0.0
+   grid%a_mu_1 = 0.0
+#endif
+
+#ifdef DM_PARALLEL
+!-----------------------------------------------------------------------
+! see above
+!--------------------------------------------------------------
+   CALL wrf_debug ( 200 , ' call HALO_RK_E' )
+   IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+#    include "HALO_EM_E_3_AD.inc"
+   ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+#    include "HALO_EM_E_5_AD.inc"
+   ELSE
+     WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+     CALL wrf_error_fatal(TRIM(wrf_err_message))
+   ENDIF
+#endif
+
+#ifdef DM_PARALLEL
+   IF ( num_moist >= PARAM_FIRST_SCALAR  ) THEN
+!-----------------------------------------------------------------------
+! see above
+!--------------------------------------------------------------
+     CALL wrf_debug ( 200 , ' call HALO_RK_MOIST' )
+     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+#      include "HALO_EM_MOIST_E_3_AD.inc"
+     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+#      include "HALO_EM_MOIST_E_5_AD.inc"
+     ELSE
+       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
+     ENDIF
+   ENDIF
+#endif
 
 !==[P12_adj]==============================================================
 !  Max values of CFL for adaptive time step scheme

@@ -420,7 +420,6 @@ SUBROUTINE G_RK_ADDTEND_DRY(ru_tend, ru_tendd, rv_tend, rv_tendd, &
   INTEGER :: min3
   INTEGER :: min2
   INTEGER :: min1
-  INTRINSIC MIN
   IF (jte .GT. jde - 1) THEN
     min1 = jde - 1
   ELSE
@@ -1311,8 +1310,6 @@ SUBROUTINE G_CALCULATE_PHY_TEND(config_flags, mu, mud, muu, muud, muv, &
   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: rmundgdten
   INTEGER :: i, k, j
   INTEGER :: itf, ktf, jtf, itsu, jtsv
-  INTRINSIC MAX
-  INTRINSIC MIN
   IF (ite .GT. ide - 1) THEN
     itf = ide - 1
   ELSE

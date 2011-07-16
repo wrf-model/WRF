@@ -3497,12 +3497,13 @@ ENDIF
  END SUBROUTINE stuff_bdytend_ijk
 
  SUBROUTINE bdy_fields_halo (data3du, data3dv, data3dt, data3dph, data3dmu, &
-                             dir, xy, spec_bdy_width,                       &
+                             data3dm, dir, xy, spec_bdy_width,              &
                              u_bxs,  u_bxe,  u_bys,  u_bye,                 &
                              v_bxs,  v_bxe,  v_bys,  v_bye,                 &
                              t_bxs,  t_bxe,  t_bys,  t_bye,                 &
                              ph_bxs, ph_bxe, ph_bys, ph_bye,                &
                              mu_bxs, mu_bxe, mu_bys, mu_bye,                &
+                             moist_bxs, moist_bxe, moist_bys, moist_bye,    &
                              ids, ide, jds, jde, kds, kde ,                 &
                              ims, ime, jms, jme, kms, kme ,                 &
                              its, ite, jts, jte, kts, kte )
@@ -3517,13 +3518,16 @@ ENDIF
     INTEGER , INTENT(IN) :: spec_bdy_width
     INTEGER , INTENT(IN) :: dir ! 0----pack ; 1----unpack
     INTEGER , INTENT(IN) :: xy  ! 0----X ; 1----Y
-    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(INOUT) :: data3du , data3dv, data3dt, data3dph
+    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(INOUT) :: data3du , data3dv, data3dt, &
+                                                                 data3dph, data3dm
     REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: data3dmu
     REAL , DIMENSION(jms:jme,kds:kde,spec_bdy_width) , INTENT(INOUT) :: u_bxs, u_bxe, v_bxs, v_bxe, &
-                                                                        t_bxs, t_bxe, ph_bxs, ph_bxe
+                                                                        t_bxs, t_bxe, ph_bxs, ph_bxe, &
+                                                                        moist_bxs, moist_bxe
     REAL , DIMENSION(jms:jme,1:1,spec_bdy_width) , INTENT(INOUT) :: mu_bxs, mu_bxe
     REAL , DIMENSION(ims:ime,kds:kde,spec_bdy_width) , INTENT(INOUT) :: u_bys, u_bye, v_bys, v_bye, &
-                                                                        t_bys, t_bye, ph_bys, ph_bye
+                                                                        t_bys, t_bye, ph_bys, ph_bye, &
+                                                                        moist_bys, moist_bye
     REAL , DIMENSION(ims:ime,1:1,spec_bdy_width) , INTENT(INOUT) :: mu_bys, mu_bye
 
    CALL bdy_fields_pack ( data3du, u_bxs, u_bxe, u_bys, u_bye,        &
@@ -3555,6 +3559,12 @@ ENDIF
                                     ids, ide, jds, jde, 1  , 1  ,     &
                                     ims, ime, jms, jme, 1  , 1  ,     &
                                     its, ite, jts, jte, 1  , 1        )
+
+   CALL bdy_fields_pack ( data3dm , moist_bxs, moist_bxe, moist_bys, moist_bye,       &
+                                    'T' , dir, xy, spec_bdy_width,    &
+                                    ids, ide, jds, jde, kds, kde,     &
+                                    ims, ime, jms, jme, kms, kme,     &
+                                    its, ite, jts, jte, kts, kte      )
 
 
  END SUBROUTINE bdy_fields_halo

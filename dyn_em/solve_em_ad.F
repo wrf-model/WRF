@@ -47,7 +47,9 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
                  ,halo_em_a_ad_sub,halo_em_d2_3_ad_sub,halo_em_d2_5_ad_sub                 &
                  ,halo_em_e_3_ad_sub,halo_em_e_5_ad_sub,halo_em_moist_e_3_ad_sub           &
                  ,halo_em_moist_e_5_ad_sub,halo_em_bdy_ad_sub,halo_em_b_ad_sub             &
-                 ,halo_em_c_ad_sub,halo_em_c2_ad_sub
+                 ,halo_em_c_ad_sub,halo_em_c2_ad_sub,halo_em_d_ad_sub                      &
+                 ,halo_em_moist_old_e_5_ad_sub,halo_em_moist_old_e_7_ad_sub                &
+                 ,halo_em_moist_e_7_ad_sub
 #endif
    USE module_utility
 ! Mediation layer modules
@@ -7801,15 +7803,15 @@ BENCH_END(adj_advance_ppt_tim)
        IF ( num_moist .GE. PARAM_FIRST_SCALAR ) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
            IF ( (config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
-!#        include "HALO_EM_MOIST_E_5.inc"
+#        include "HALO_EM_MOIST_E_5_AD.inc"
            ELSE
-!#        include "HALO_EM_MOIST_E_3.inc"
+#        include "HALO_EM_MOIST_E_3_AD.inc"
            END IF
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
            IF ( (config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
-!#        include "HALO_EM_MOIST_E_7.inc"
+#        include "HALO_EM_MOIST_E_7_AD.inc"
            ELSE
-!#        include "HALO_EM_MOIST_E_5.inc"
+#        include "HALO_EM_MOIST_E_5_AD.inc"
            END IF
          ELSE
            WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
@@ -7835,63 +7837,6 @@ BENCH_END(adj_advance_ppt_tim)
            CALL wrf_error_fatal(TRIM(wrf_err_message))
          ENDIF
        ENDIF
-#endif
-
-!======[adj_P1.22.2]======================================================
-!-----------------------------------------------------------
-!  Stencils for patch communications  (WCS, 29 June 2001)
-!
-!  here's where we need a wide comm stencil - these are the
-!  uncoupled variables so are used for high order calc in
-!  advection and mixong routines.
-!
-!
-!                                  * * * * * * *
-!                     * * * * *    * * * * * * *
-!            *        * * * * *    * * * * * * *
-!          * + *      * * + * *    * * * + * * *
-!            *        * * * * *    * * * * * * *
-!                     * * * * *    * * * * * * *
-!                                  * * * * * * *
-!
-! al        x
-!
-!  2D variable
-! mu_2      x
-!
-! (adv order <=4)
-! u_2                     x
-! v_2                     x
-! w_2                     x
-! t_2                     x
-! ph_2                    x
-!
-! (adv order <=6)
-! u_2                                    x
-! v_2                                    x
-! w_2                                    x
-! t_2                                    x
-! ph_2                                   x
-!
-!  4D variable
-! moist                   x
-! chem                    x
-! scalar                  x
-
-#ifdef DM_PARALLEL
-       IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-!#    include "HALO_EM_D2_3.inc"
-       ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-!#    include "HALO_EM_D2_5.inc"
-       ELSE
-         WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-         CALL wrf_error_fatal(TRIM(wrf_err_message))
-       ENDIF
-!#  include "PERIOD_BDY_EM_D.inc"
-!#  include "PERIOD_BDY_EM_MOIST2.inc"
-!#  include "PERIOD_BDY_EM_CHEM2.inc"
-!#  include "PERIOD_BDY_EM_TRACER2.inc"
-!#  include "PERIOD_BDY_EM_SCALAR2.inc"
 #endif
 
 BENCH_START(adj_bc_end_tim)
@@ -8826,6 +8771,10 @@ BENCH_END(adj_rk_scalar_tend_tim)
 
 !====[adj_P1.14]==========================================================
 
+#ifdef DM_PARALLEL
+#  include "HALO_EM_D_AD.inc"
+#endif
+
 !====[adj_P1.14]:tke======================================================
        IF ((config_flags%tke_adv_opt /= ORIGINAL) .and. (rk_step == rk_order) &
            .and. (config_flags%km_opt .eq. 2)                ) THEN
@@ -8842,10 +8791,6 @@ BENCH_END(adj_rk_scalar_tend_tim)
              CALL wrf_error_fatal(TRIM(wrf_err_message))
            ENDIF
          ENDIF
-#endif
-
-#ifdef DM_PARALLEL
-!#  include "PERIOD_BDY_EM_TKE_OLD.inc"
 #endif
 
 !========[adj_P1.14.3]:tke================================================
@@ -9020,24 +8965,6 @@ end if
 
      IF ((config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order)) THEN
 
-!======[P1.14.2_adj]:moist================================================
-#ifdef DM_PARALLEL
-       IF (config_flags%moist_adv_opt /= ORIGINAL) THEN
-         IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-!#     include "HALO_EM_MOIST_OLD_E_5.inc"
-         ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-!#     include "HALO_EM_MOIST_OLD_E_7.inc"
-         ELSE
-           WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
-           CALL wrf_error_fatal(TRIM(wrf_err_message))
-         ENDIF
-       ENDIF
-#endif
-
-#ifdef DM_PARALLEL
-!#  include "PERIOD_BDY_EM_MOIST_OLD.inc"
-#endif
-
 !======[adj_P1.14.3]:moist================================================
        !ZXOMP PARALLEL DO   &
        !ZXOMP PRIVATE ( ij )
@@ -9072,6 +8999,19 @@ end if
        !ZXOMP END PARALLEL DO
 
 !======[adj_P1.14.1]:moist================================================
+
+#ifdef DM_PARALLEL
+       IF (config_flags%moist_adv_opt /= ORIGINAL) THEN
+         IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
+#     include "HALO_EM_MOIST_OLD_E_5_AD.inc"
+         ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
+#     include "HALO_EM_MOIST_OLD_E_7_AD.inc"
+         ELSE
+           WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
+           CALL wrf_error_fatal(TRIM(wrf_err_message))
+         ENDIF
+       ENDIF
+#endif
 
          CALL wrf_debug ( 200 , ' call a_rk_update_scalar_pd' )
 #ifdef DEBUG_PLUS
@@ -11449,12 +11389,14 @@ end if
    !$OMP PRIVATE ( ij )
    DO ij = grid%num_tiles,1,-1
       CALL bdy_fields_halo ( grid%a_u_1 , grid%a_v_1, grid%a_t_1, grid%a_ph_1, grid%a_mu_1, &
-                          0, 0, grid%spec_bdy_width      , &
+                          grid%a_tke_1, 0, 0, grid%spec_bdy_width      , &
                           grid%a_u_bxs, grid%a_u_bxe, grid%a_u_bys, grid%a_u_bye, &
                           grid%a_v_bxs, grid%a_v_bxe, grid%a_v_bys, grid%a_v_bye, &
                           grid%a_t_bxs, grid%a_t_bxe, grid%a_t_bys, grid%a_t_bye, &
                           grid%a_ph_bxs, grid%a_ph_bxe, grid%a_ph_bys, grid%a_ph_bye, &
                           grid%a_mu_bxs, grid%a_mu_bxe, grid%a_mu_bys, grid%a_mu_bye, &
+                          a_moist_bxs(:,:,:,PARAM_FIRST_SCALAR), a_moist_bxe(:,:,:,PARAM_FIRST_SCALAR), &
+                          a_moist_bys(:,:,:,PARAM_FIRST_SCALAR), a_moist_bye(:,:,:,PARAM_FIRST_SCALAR), &
                           ids, ide, jds, jde, kds, kde,     &
                           ims, ime, jms, jme, kms, kme,     &
                           grid%i_start(ij), grid%i_end(ij), &
@@ -11471,12 +11413,14 @@ end if
    !$OMP PRIVATE ( ij )
    DO ij = grid%num_tiles,1,-1
       CALL bdy_fields_halo ( grid%a_u_1 , grid%a_v_1, grid%a_t_1, grid%a_ph_1, grid%a_mu_1, &
-                          1, 0, grid%spec_bdy_width      , &
+                          grid%a_tke_1, 1, 0, grid%spec_bdy_width      , &
                           grid%a_u_bxs, grid%a_u_bxe, grid%a_u_bys, grid%a_u_bye, &
                           grid%a_v_bxs, grid%a_v_bxe, grid%a_v_bys, grid%a_v_bye, &
                           grid%a_t_bxs, grid%a_t_bxe, grid%a_t_bys, grid%a_t_bye, &
                           grid%a_ph_bxs, grid%a_ph_bxe, grid%a_ph_bys, grid%a_ph_bye, &
                           grid%a_mu_bxs, grid%a_mu_bxe, grid%a_mu_bys, grid%a_mu_bye, &
+                          a_moist_bxs(:,:,:,PARAM_FIRST_SCALAR), a_moist_bxe(:,:,:,PARAM_FIRST_SCALAR), &
+                          a_moist_bys(:,:,:,PARAM_FIRST_SCALAR), a_moist_bye(:,:,:,PARAM_FIRST_SCALAR), &
                           ids, ide, jds, jde, kds, kde,     &
                           ims, ime, jms, jme, kms, kme,     &
                           grid%i_start(ij), grid%i_end(ij), &
@@ -11490,6 +11434,7 @@ end if
    grid%a_t_1 = 0.0
    grid%a_ph_1 = 0.0
    grid%a_mu_1 = 0.0
+   grid%a_tke_1 = 0.0
 
 !  X-direction pack
 
@@ -11497,12 +11442,14 @@ end if
    !$OMP PRIVATE ( ij )
    DO ij = grid%num_tiles,1,-1
       CALL bdy_fields_halo ( grid%a_u_1 , grid%a_v_1, grid%a_t_1, grid%a_ph_1, grid%a_mu_1, &
-                          0, 0, grid%spec_bdy_width      , &         
+                          grid%a_tke_1, 0, 0, grid%spec_bdy_width      , &         
                           grid%a_u_btxs, grid%a_u_btxe, grid%a_u_btys, grid%a_u_btye, &
                           grid%a_v_btxs, grid%a_v_btxe, grid%a_v_btys, grid%a_v_btye, &
                           grid%a_t_btxs, grid%a_t_btxe, grid%a_t_btys, grid%a_t_btye, &
                           grid%a_ph_btxs, grid%a_ph_btxe, grid%a_ph_btys, grid%a_ph_btye, &
                           grid%a_mu_btxs, grid%a_mu_btxe, grid%a_mu_btys, grid%a_mu_btye, &
+                          a_moist_btxs(:,:,:,PARAM_FIRST_SCALAR), a_moist_btxe(:,:,:,PARAM_FIRST_SCALAR), &
+                          a_moist_btys(:,:,:,PARAM_FIRST_SCALAR), a_moist_btye(:,:,:,PARAM_FIRST_SCALAR), &
                           ids, ide, jds, jde, kds, kde,     &
                           ims, ime, jms, jme, kms, kme,     &
                           grid%i_start(ij), grid%i_end(ij), &
@@ -11519,12 +11466,14 @@ end if
    !$OMP PRIVATE ( ij )
    DO ij = grid%num_tiles,1,-1
       CALL bdy_fields_halo ( grid%a_u_1 , grid%a_v_1, grid%a_t_1, grid%a_ph_1, grid%a_mu_1, &
-                          1, 0, grid%spec_bdy_width      , &         
+                          grid%a_tke_1, 1, 0, grid%spec_bdy_width      , &         
                           grid%a_u_btxs, grid%a_u_btxe, grid%a_u_btys, grid%a_u_btye, &
                           grid%a_v_btxs, grid%a_v_btxe, grid%a_v_btys, grid%a_v_btye, &
                           grid%a_t_btxs, grid%a_t_btxe, grid%a_t_btys, grid%a_t_btye, &
                           grid%a_ph_btxs, grid%a_ph_btxe, grid%a_ph_btys, grid%a_ph_btye, &
                           grid%a_mu_btxs, grid%a_mu_btxe, grid%a_mu_btys, grid%a_mu_btye, &
+                          a_moist_btxs(:,:,:,PARAM_FIRST_SCALAR), a_moist_btxe(:,:,:,PARAM_FIRST_SCALAR), &
+                          a_moist_btys(:,:,:,PARAM_FIRST_SCALAR), a_moist_btye(:,:,:,PARAM_FIRST_SCALAR), &
                           ids, ide, jds, jde, kds, kde,     &
                           ims, ime, jms, jme, kms, kme,     &
                           grid%i_start(ij), grid%i_end(ij), &
@@ -11538,6 +11487,7 @@ end if
    grid%a_t_1 = 0.0
    grid%a_ph_1 = 0.0
    grid%a_mu_1 = 0.0
+   grid%a_tke_1 = 0.0
 
 !  Y-direction pack
 
@@ -11545,12 +11495,14 @@ end if
    !$OMP PRIVATE ( ij )
    DO ij = grid%num_tiles,1,-1
       CALL bdy_fields_halo ( grid%a_u_1 , grid%a_v_1, grid%a_t_1, grid%a_ph_1, grid%a_mu_1, &
-                          0, 1, grid%spec_bdy_width      , &
+                          grid%a_tke_1, 0, 1, grid%spec_bdy_width      , &
                           grid%a_u_bxs, grid%a_u_bxe, grid%a_u_bys, grid%a_u_bye, &
                           grid%a_v_bxs, grid%a_v_bxe, grid%a_v_bys, grid%a_v_bye, &
                           grid%a_t_bxs, grid%a_t_bxe, grid%a_t_bys, grid%a_t_bye, &
                           grid%a_ph_bxs, grid%a_ph_bxe, grid%a_ph_bys, grid%a_ph_bye, &
                           grid%a_mu_bxs, grid%a_mu_bxe, grid%a_mu_bys, grid%a_mu_bye, &
+                          a_moist_bxs(:,:,:,PARAM_FIRST_SCALAR), a_moist_bxe(:,:,:,PARAM_FIRST_SCALAR), &
+                          a_moist_bys(:,:,:,PARAM_FIRST_SCALAR), a_moist_bye(:,:,:,PARAM_FIRST_SCALAR), &
                           ids, ide, jds, jde, kds, kde,     &
                           ims, ime, jms, jme, kms, kme,     &
                           grid%i_start(ij), grid%i_end(ij), &
@@ -11567,12 +11519,14 @@ end if
    !$OMP PRIVATE ( ij )
    DO ij = grid%num_tiles,1,-1
       CALL bdy_fields_halo ( grid%a_u_1 , grid%a_v_1, grid%a_t_1, grid%a_ph_1, grid%a_mu_1, &
-                          1, 1, grid%spec_bdy_width      , &
+                          grid%a_tke_1, 1, 1, grid%spec_bdy_width      , &
                           grid%a_u_bxs, grid%a_u_bxe, grid%a_u_bys, grid%a_u_bye, &
                           grid%a_v_bxs, grid%a_v_bxe, grid%a_v_bys, grid%a_v_bye, &
                           grid%a_t_bxs, grid%a_t_bxe, grid%a_t_bys, grid%a_t_bye, &
                           grid%a_ph_bxs, grid%a_ph_bxe, grid%a_ph_bys, grid%a_ph_bye, &
                           grid%a_mu_bxs, grid%a_mu_bxe, grid%a_mu_bys, grid%a_mu_bye, &
+                          a_moist_bxs(:,:,:,PARAM_FIRST_SCALAR), a_moist_bxe(:,:,:,PARAM_FIRST_SCALAR), &
+                          a_moist_bys(:,:,:,PARAM_FIRST_SCALAR), a_moist_bye(:,:,:,PARAM_FIRST_SCALAR), &
                           ids, ide, jds, jde, kds, kde,     &
                           ims, ime, jms, jme, kms, kme,     &
                           grid%i_start(ij), grid%i_end(ij), &
@@ -11586,6 +11540,7 @@ end if
    grid%a_t_1 = 0.0
    grid%a_ph_1 = 0.0
    grid%a_mu_1 = 0.0
+   grid%a_tke_1 = 0.0
 
 !  Y-direction pack
 
@@ -11593,12 +11548,14 @@ end if
    !$OMP PRIVATE ( ij )
    DO ij = grid%num_tiles,1,-1
       CALL bdy_fields_halo ( grid%a_u_1 , grid%a_v_1, grid%a_t_1, grid%a_ph_1, grid%a_mu_1, &
-                          0, 1, grid%spec_bdy_width      , &
+                          grid%a_tke_1, 0, 1, grid%spec_bdy_width      , &
                           grid%a_u_btxs, grid%a_u_btxe, grid%a_u_btys, grid%a_u_btye, &
                           grid%a_v_btxs, grid%a_v_btxe, grid%a_v_btys, grid%a_v_btye, &
                           grid%a_t_btxs, grid%a_t_btxe, grid%a_t_btys, grid%a_t_btye, &
                           grid%a_ph_btxs, grid%a_ph_btxe, grid%a_ph_btys, grid%a_ph_btye, &
                           grid%a_mu_btxs, grid%a_mu_btxe, grid%a_mu_btys, grid%a_mu_btye, &
+                          a_moist_btxs(:,:,:,PARAM_FIRST_SCALAR), a_moist_btxe(:,:,:,PARAM_FIRST_SCALAR), &
+                          a_moist_btys(:,:,:,PARAM_FIRST_SCALAR), a_moist_btye(:,:,:,PARAM_FIRST_SCALAR), &
                           ids, ide, jds, jde, kds, kde,     &
                           ims, ime, jms, jme, kms, kme,     &
                           grid%i_start(ij), grid%i_end(ij), &
@@ -11615,12 +11572,14 @@ end if
    !$OMP PRIVATE ( ij )
    DO ij = grid%num_tiles,1,-1
       CALL bdy_fields_halo ( grid%a_u_1 , grid%a_v_1, grid%a_t_1, grid%a_ph_1, grid%a_mu_1, &
-                          1, 1, grid%spec_bdy_width      , &
+                          grid%a_tke_1, 1, 1, grid%spec_bdy_width      , &
                           grid%a_u_btxs, grid%a_u_btxe, grid%a_u_btys, grid%a_u_btye, &
                           grid%a_v_btxs, grid%a_v_btxe, grid%a_v_btys, grid%a_v_btye, &
                           grid%a_t_btxs, grid%a_t_btxe, grid%a_t_btys, grid%a_t_btye, &
                           grid%a_ph_btxs, grid%a_ph_btxe, grid%a_ph_btys, grid%a_ph_btye, &
                           grid%a_mu_btxs, grid%a_mu_btxe, grid%a_mu_btys, grid%a_mu_btye, &
+                          a_moist_btxs(:,:,:,PARAM_FIRST_SCALAR), a_moist_btxe(:,:,:,PARAM_FIRST_SCALAR), &
+                          a_moist_btys(:,:,:,PARAM_FIRST_SCALAR), a_moist_btye(:,:,:,PARAM_FIRST_SCALAR), &
                           ids, ide, jds, jde, kds, kde,     &
                           ims, ime, jms, jme, kms, kme,     &
                           grid%i_start(ij), grid%i_end(ij), &
@@ -11634,6 +11593,7 @@ end if
    grid%a_t_1 = 0.0
    grid%a_ph_1 = 0.0
    grid%a_mu_1 = 0.0
+   grid%a_tke_1 = 0.0
 #endif
 
 #ifdef DM_PARALLEL

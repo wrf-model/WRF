@@ -1939,7 +1939,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                 RSQ=RX*RX+RY*RY
 ! THIS FUNCTION DECREASES WTIJ AS PSFC CHANGES WITHIN SEARCH RADIUS
                 DPRIM=SQRT(RSQ)
-                D=DPRIM+RINDX*DCON*ABS(psurf(n)-pbase(i,1))
+                D=DPRIM+RINDX*DCON*ABS(psurf(n)-.001*pbase(i,1))
                 DSQ=D*D
                 WTIJ(i)=(RIS-DSQ)/(RIS+DSQ)
                 WTIJ(i)=AMAX1(0.0,WTIJ(i))
@@ -2215,6 +2215,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
               endif
 
             else
+
 !----------------------------------------------------------------------
 !         ---   HANDLE MULTI-LEVEL OBSERVATIONS  ---
 !----------------------------------------------------------------------
@@ -2290,14 +2291,14 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                   .and. varobs(5,n+nn-1).gt.-800000.) then
                     pobhi=varobs(5,n+nn-1)
                     nhi=n+nn-1
-                    if(pobhi.lt.pijk .and. abs(pobhi-pijk).lt.20.) then
-                      go to 1502        ! within 200mb of obs height
+                    if(pobhi.lt.pijk .and. abs(pobhi-pijk).lt.0.5*maxsnd_gap) then
+                      go to 1502        ! within maxsnd_gap/2 of obs height
                     endif
                   endif
 
                 enddo
 
-! did not find any ob above within 200 mb, so jump out 
+! did not find any ob above within maxsnd_gap/2, so jump out 
                 go to 1501
  1502           continue
 
@@ -2307,14 +2308,14 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                   .and. varobs(5,nnjc).gt.-800000.) then
                     poblo=varobs(5,nnjc)
                     nlo=nnjc
-                    if(poblo.gt.pijk .and. abs(poblo-pijk).lt.20.) then
-                      go to 1505        ! within 200mb of obs height
+                    if(poblo.gt.pijk .and. abs(poblo-pijk).lt.0.5*maxsnd_gap) then
+                      go to 1505        ! within maxsnd_gap/2 of obs height
                     endif
                   endif
                 enddo
 !yliu end --
 
-! did not find any ob below within 200 mb, so jump out 
+! did not find any ob below within maxsnd_gap/2, so jump out 
                 go to 1501
  1505           continue
 

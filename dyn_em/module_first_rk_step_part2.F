@@ -182,7 +182,7 @@ CONTAINS
            !$OMP END PARALLEL DO
 
 !          Roll out into latitude bands and perform FFT along latitude bands 
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 #include "XPOSE_STOCH_BACK_U_REAL_z2x.inc"
 #include "XPOSE_STOCH_BACK_U_IMAG_z2x.inc"
 #include "XPOSE_STOCH_BACK_V_REAL_z2x.inc"

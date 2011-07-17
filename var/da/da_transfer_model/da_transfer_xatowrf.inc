@@ -528,7 +528,7 @@ subroutine da_transfer_xatowrf(grid)
 #endif
       end do
    end if
-
+#ifdef VAR4D
    IF ( var4d ) THEN
 
       ! We need to transfer LBC perturbation from model_grid to grid for output
@@ -584,7 +584,7 @@ subroutine da_transfer_xatowrf(grid)
       grid%moist_btye = grid%moist_btye + model_grid%g_moist_btye
 
    ENDIF
-
+#endif
    if (trace_use) call da_trace_exit("da_transfer_xatowrf")
 
 end subroutine da_transfer_xatowrf

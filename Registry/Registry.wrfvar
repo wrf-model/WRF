@@ -1750,7 +1750,7 @@ rconfig   integer   simulated_rad_ngrid     namelist,wrfvar14  1  0        - "si
 rconfig   logical   use_varbc               namelist,wrfvar14  1  .false.  - "use_varbc"               ""  ""
 rconfig   logical   freeze_varbc            namelist,wrfvar14  1  .false.  - "freeze_varbc"            ""  ""
 rconfig   real      varbc_factor            namelist,wrfvar14  1  1.0      - "varbc_factor"            ""  ""
-rconfig   integer   varbc_nbgerr            namelist,wrfvar14  1  1        - "varbc_nbgerr"            ""  ""
+rconfig   integer   varbc_nbgerr            namelist,wrfvar14  1  5000     - "varbc_nbgerr"            ""  ""
 rconfig   integer   varbc_nobsmin           namelist,wrfvar14  1  10       - "varbc_nobsmin"           ""  ""
 rconfig   logical   use_airs_mmr            namelist,wrfvar14  1  .false.  - "use_airs_mmr"            ""  ""
 rconfig   logical   airs_warmest_fov        namelist,wrfvar14  1  .false.  - "airs_warmest_fov"        ""  ""

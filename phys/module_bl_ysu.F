@@ -679,7 +679,8 @@ contains
        hgamt(i) = min(gamfac*hfx(i)/cp,gamcrt)
        hgamq(i) = min(gamfac*qfx(i),gamcrq)
        vpert = (hgamt(i)+ep1*thx(i,1)*hgamq(i))/bfac*afac
-       thermal(i) = thermal(i)+max(vpert,0.)
+! thermal perturbation limited in surface layer (from H. Shin, May 2011)
+       thermal(i) = thermal(i)+max(vpert,0.)*min(za(i,1)/(sfcfrac*hpbl(i)),1.0)
        hgamt(i) = max(hgamt(i),0.0)
        hgamq(i) = max(hgamq(i),0.0)
        brint    = -15.9*ust(i)*ust(i)/wspd(i)*wstar3(i)/(wscale(i)**4.)

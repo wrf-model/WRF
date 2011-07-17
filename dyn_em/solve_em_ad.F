@@ -49,7 +49,11 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
                  ,halo_em_moist_e_5_ad_sub,halo_em_bdy_ad_sub,halo_em_b_ad_sub             &
                  ,halo_em_c_ad_sub,halo_em_c2_ad_sub,halo_em_d_ad_sub                      &
                  ,halo_em_moist_old_e_5_ad_sub,halo_em_moist_old_e_7_ad_sub                &
-                 ,halo_em_moist_e_7_ad_sub
+                 ,halo_em_moist_e_7_ad_sub,halo_em_tke_advect_3_ad_sub                     &
+                 ,halo_em_tke_advect_5_ad_sub,halo_em_tke_old_e_5_ad_sub                   &
+                 ,halo_em_tke_old_e_7_ad_sub,halo_em_tke_3_ad_sub,halo_em_tke_5_ad_sub     &
+                 ,halo_em_tke_7_ad_sub,halo_em_hydro_uv_ad_sub,halo_em_d3_3_ad_sub         &
+                 ,halo_em_d3_5_ad_sub
 #endif
    USE module_utility
 ! Mediation layer modules
@@ -6869,89 +6873,6 @@ end if
 ! CHECK NECESSARY SUBROUTINE: diagnostic_output_calc }
 #endif
 
-!==[P11]==============================================================
-#ifdef DM_PARALLEL
-!-----------------------------------------------------------------------
-! see above
-!--------------------------------------------------------------
-   CALL wrf_debug ( 200 , ' call HALO_RK_E' )
-   IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#    include "HALO_EM_E_3.inc"
-   ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#    include "HALO_EM_E_5.inc"
-   ELSE
-     WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-     CALL wrf_error_fatal(TRIM(wrf_err_message))
-   ENDIF
-#endif
-
-#ifdef DM_PARALLEL
-   IF ( num_moist >= PARAM_FIRST_SCALAR  ) THEN
-!-----------------------------------------------------------------------
-! see above
-!--------------------------------------------------------------
-     CALL wrf_debug ( 200 , ' call HALO_RK_MOIST' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#      include "HALO_EM_MOIST_E_3.inc"
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#      include "HALO_EM_MOIST_E_5.inc"
-     ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-     ENDIF
-   ENDIF
-   IF ( num_chem >= PARAM_FIRST_SCALAR ) THEN
-!-----------------------------------------------------------------------
-! see above
-!--------------------------------------------------------------
-     CALL wrf_debug ( 200 , ' call HALO_RK_CHEM' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#      include "HALO_EM_CHEM_E_3.inc"
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#      include "HALO_EM_CHEM_E_5.inc"
-     ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-     ENDIF
-   ENDIF
-   IF ( num_tracer >= PARAM_FIRST_SCALAR ) THEN
-!-----------------------------------------------------------------------
-! see above
-!--------------------------------------------------------------
-     CALL wrf_debug ( 200 , ' call HALO_RK_TRACER' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#      include "HALO_EM_TRACER_E_3.inc"
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#      include "HALO_EM_TRACER_E_5.inc"
-     ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-     ENDIF
-   ENDIF
-   IF ( num_scalar >= PARAM_FIRST_SCALAR ) THEN
-!-----------------------------------------------------------------------
-! see above
-!--------------------------------------------------------------
-     CALL wrf_debug ( 200 , ' call HALO_RK_SCALAR' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#      include "HALO_EM_SCALAR_E_3.inc"
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#      include "HALO_EM_SCALAR_E_5.inc"
-     ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-     ENDIF
-   ENDIF
-#endif
-
-!==[P12]==============================================================
-! Move to the end of subroutine
-!!  Max values of CFL for adaptive time step scheme
-
-!   DEALLOCATE(max_vert_cfl_tmp)
-!   DEALLOCATE(max_horiz_cfl_tmp)
-
-!==[P13]==============================================================
    CALL wrf_debug ( 200 , ' call end of solve_em' )
 
 ! Finish timers if compiled with -DBENCH.
@@ -7053,60 +6974,6 @@ else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_set_w_surface ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: set_w_surface }
-#endif
-
-!==[adj_P7]===============================================================
-!-----------------------------------------------------------
-!  Stencils for patch communications  (WCS, 29 June 2001)
-!
-!  here's where we need a wide comm stencil - these are the
-!  uncoupled variables so are used for high order calc in
-!  advection and mixong routines.
-!
-!                              * * * * *
-!            *        * * *    * * * * *
-!          * + *      * + *    * * + * *
-!            *        * * *    * * * * *
-!                              * * * * *
-!
-!   grid%u_1                            x
-!   grid%u_2                            x
-!   grid%v_1                            x
-!   grid%v_2                            x
-!   grid%w_1                            x
-!   grid%w_2                            x
-!   grid%t_1                            x
-!   grid%t_2                            x
-!  grid%ph_1                            x
-!  grid%ph_2                            x
-!  grid%tke_1                           x
-!  grid%tke_2                           x
-!
-!    2D variables
-!  grid%mu_1     x
-!  grid%mu_2     x
-!
-!    4D variables
-!  moist                         x
-!   chem                         x
-! scalar                         x
-!----------------------------------------------------------
-
-
-#ifdef DM_PARALLEL
-   IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-!#    include "HALO_EM_D3_3.inc"
-   ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-!#    include "HALO_EM_D3_5.inc"
-   ELSE
-      WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-      CALL wrf_error_fatal(TRIM(wrf_err_message))
-   ENDIF
-!#  include "PERIOD_BDY_EM_D3.inc"
-!#  include "PERIOD_BDY_EM_MOIST.inc"
-!#  include "PERIOD_BDY_EM_CHEM.inc"
-!#  include "PERIOD_BDY_EM_TRACER.inc"
-!#  include "PERIOD_BDY_EM_SCALAR.inc"
 #endif
 
 BENCH_START(adj_bc_2d_tim)
@@ -7261,11 +7128,19 @@ end if
 BENCH_END(adj_bc_2d_tim)
 
 !==[adj_P5]===============================================================
-   IF (.not. config_flags%non_hydrostatic) THEN
+
 #ifdef DM_PARALLEL
-!#    include "HALO_EM_HYDRO_UV.inc"
-!#    include "PERIOD_EM_HYDRO_UV.inc"
+   IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+#    include "HALO_EM_D3_3_AD.inc"
+   ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+#    include "HALO_EM_D3_5_AD.inc"
+   ELSE                      
+      WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+      CALL wrf_error_fatal(TRIM(wrf_err_message))
+   ENDIF                     
 #endif
+
+   IF (.not. config_flags%non_hydrostatic) THEN
 
 #ifdef DEBUG_PLUS
 ! NPAN 04/23/10 + CHECK NECESSARY SUBROUTINE: diagnose_w{
@@ -7295,6 +7170,10 @@ else
    call wrf_debug ( -100 , ' SWITCH OFF ==> call a_diagnose_w ' )
 end if
 ! CHECK NECESSARY SUBROUTINE: diagnose_w }
+#endif
+
+#ifdef DM_PARALLEL
+#    include "HALO_EM_HYDRO_UV_AD.inc"
 #endif
 
    END IF
@@ -7784,15 +7663,15 @@ BENCH_END(adj_advance_ppt_tim)
 !======[adj_P1.22.3]:tke==================================================
        IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
          IF ( (config_flags%tke_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
-!#         include "HALO_EM_TKE_5.inc"
+#         include "HALO_EM_TKE_5_AD.inc"
          ELSE
-!#         include "HALO_EM_TKE_3.inc"
+#         include "HALO_EM_TKE_3_AD.inc"
          ENDIF
        ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
          IF ( (config_flags%tke_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
-!#         include "HALO_EM_TKE_7.inc"
+#         include "HALO_EM_TKE_7_AD.inc"
          ELSE
-!#         include "HALO_EM_TKE_5.inc"
+#         include "HALO_EM_TKE_5_AD.inc"
          ENDIF
        ELSE
          WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
@@ -8068,28 +7947,6 @@ BENCH_END(adj_calc_p_rho_tim)
 
 
 !====[P1.15_adj]==========================================================
-#ifdef DM_PARALLEL
-!
-!  Stencils for patch communications  (WCS, 29 June 2001)
-!
-!          * * * * *
-!          * * * * *
-!          * * + * *
-!          * * * * *
-!          * * * * *
-!
-! ru_m         x
-! rv_m         x
-! ww_m         x
-! mut          x
-!
-!--------------------------------------------------------------
-
-!#  include "HALO_EM_D.inc"
-! WCS addition 11/19/08
-!#  include "PERIOD_EM_DA.inc"
-#endif
-
 !====[adj_P1.20]==========================================================
 !  next the other scalar species
      adj_other_scalar_advance: IF (num_3d_s >= PARAM_FIRST_SCALAR)  THEN
@@ -8319,18 +8176,6 @@ end if
 !====[adj_P1.17]==========================================================
 BENCH_START(adj_tke_adv_tim)
        adj_TKE_advance: IF (config_flags%km_opt .eq. 2) then
-!======[P1.17.0_adj]======================================================
-#ifdef DM_PARALLEL
-         IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-!#       include "HALO_EM_TKE_ADVECT_3.inc"
-         ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-!#       include "HALO_EM_TKE_ADVECT_5.inc"
-         ELSE
-          WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-          CALL wrf_error_fatal(TRIM(wrf_err_message))
-         ENDIF
-#endif
-!======[adj_P1.17.2]======================================================
 
 !========[adj_P1.17.2.3]==================================================
            IF( config_flags%specified .or. config_flags%nested ) THEN
@@ -8498,6 +8343,16 @@ end if
 ! CHECK NECESSARY SUBROUTINE: rk_scalar_tend }
 #endif
 
+#ifdef DM_PARALLEL
+         IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+#       include "HALO_EM_TKE_ADVECT_3_AD.inc"
+         ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+#       include "HALO_EM_TKE_ADVECT_5_AD.inc"
+         ELSE
+          WRITE(wrf_err_message,*)'solve_em_ad: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+          CALL wrf_error_fatal(TRIM(wrf_err_message))
+         ENDIF
+#endif
 
         ENDIF adj_TKE_advance
 BENCH_END(adj_tke_adv_tim)
@@ -8780,19 +8635,6 @@ BENCH_END(adj_rk_scalar_tend_tim)
            .and. (config_flags%km_opt .eq. 2)                ) THEN
 
 !========[P1.14.2_adj]:tke================================================
-#ifdef DM_PARALLEL
-         IF (config_flags%tke_adv_opt /= ORIGINAL) THEN
-           IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-!#     include "HALO_EM_TKE_OLD_E_5.inc"
-           ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-!#     include "HALO_EM_TKE_OLD_E_7.inc"
-           ELSE
-             WRITE(wrf_err_message,*)'solve_em: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
-             CALL wrf_error_fatal(TRIM(wrf_err_message))
-           ENDIF
-         ENDIF
-#endif
-
 !========[adj_P1.14.3]:tke================================================
          !ZXOMP PARALLEL DO   &
          !ZXOMP PRIVATE ( ij )
@@ -8821,6 +8663,19 @@ end if
 
          END DO
          !ZXOMP END PARALLEL DO
+
+#ifdef DM_PARALLEL
+         IF (config_flags%tke_adv_opt /= ORIGINAL) THEN
+           IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
+#     include "HALO_EM_TKE_OLD_E_5_AD.inc"
+           ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
+#     include "HALO_EM_TKE_OLD_E_7_AD.inc"
+           ELSE
+             WRITE(wrf_err_message,*)'solve_em_ad: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
+             CALL wrf_error_fatal(TRIM(wrf_err_message))
+           ENDIF
+         ENDIF
+#endif
 
 !========[adj_P1.14.1]:tke================================================
            CALL wrf_debug ( 200 , ' call a_rk_update_scalar_pd' )
@@ -8884,9 +8739,6 @@ end if
   endif
 #endif
 
-#ifdef DM_PARALLEL
-!#  include "PERIOD_BDY_EM_SCALAR_OLD.inc"
-#endif
 !========[adj_P1.14.3]:scalar=============================================
          !ZXOMP PARALLEL DO   &
          !ZXOMP PRIVATE ( ij )
@@ -9271,27 +9123,6 @@ BENCH_END(adj_calc_mu_uv_tim)
      adj_small_steps : DO iteration = number_of_small_timesteps, 1 , -1
 
 !======[adj_P1.11.9]======================================================
-#ifdef DM_PARALLEL
-!
-!  Stencils for patch communications  (WCS, 29 June 2001)
-!
-!         *                     *
-!       * + *      * + *        +
-!         *                     *
-!
-!  ph_2   x
-!  al     x
-!  p      x
-!
-!  2D variables (x,y)
-!
-!  mu_2   x
-!  muts   x
-!  mudf   x
-
-!#      include "HALO_EM_C2.inc"
-!#      include "PERIOD_BDY_EM_B3.inc"
-#endif
 
 !!!!! Need to code a_set_physical_bc3d and a_set_physical_bc2d
 BENCH_START(adj_phys_bc_tim)
@@ -9754,19 +9585,6 @@ BENCH_END(adj_spec_bdy_t_tim)
 
 !======[adj_P1.11.4]======================================================
 !      Adjoint of updating model variables of grid points except for those in spec zone: mu,t
-#ifdef DM_PARALLEL
-!
-!  Stencils for patch communications  (WCS, 29 June 2001)
-!
-!         *                     *
-!       * + *      * + *        +
-!         *                     *
-!
-!  u_2               x
-!  v_2                          x
-!
-!#     include "HALO_EM_C.inc"
-#endif
 
 #ifdef DEBUG_PLUS
 if (config_flags % sw_call_advance_mu_t) then
@@ -9885,9 +9703,6 @@ BENCH_END(adj_spec_bdy_uv_tim)
 
 !======[adj_P1.11.1]======================================================
 !      Adjoint of updating model variables of grid points except for those in spec zone: u,v
-#ifdef DM_PARALLEL
-!#      include "PERIOD_BDY_EM_B.inc"
-#endif
 
 #ifdef DEBUG_PLUS
 if (config_flags % sw_call_advance_uv) then
@@ -9945,43 +9760,6 @@ BENCH_END(adj_advance_uv_tim)
      END DO adj_small_steps
 
 !====[adj_P1.10]==========================================================
-#ifdef DM_PARALLEL
-!-----------------------------------------------------------------------
-!  Stencils for patch communications  (WCS, 29 June 2001)
-!  Note:  the small size of this halo exchange reflects the
-!         fact that we are carrying the uncoupled variables
-!         as state variables in the mass coordinate model, as
-!         opposed to the coupled variables as in the height
-!         coordinate model.
-!
-!                              * * * * *
-!            *        * * *    * * * * *
-!          * + *      * + *    * * + * *
-!            *        * * *    * * * * *
-!                              * * * * *
-!
-!  3D variables - note staggering!  ph_2(Z), u_save(X), v_save(Y)
-!
-!  ph_2      x
-!  al        x
-!  p         x
-!  t_1       x
-!  t_save    x
-!  u_save    x
-!  v_save    x
-!
-!  the following are 2D (xy) variables
-!
-!  mu_1      x
-!  mu_2      x
-!  mudf      x
-!  php       x
-!  alt       x
-!  pb        x
-!--------------------------------------------------------------
-!#      include "HALO_EM_B.inc"
-!#      include "PERIOD_BDY_EM_B.inc"
-#endif
 
 BENCH_START(adj_set_phys_bc2_tim)
 
@@ -10734,9 +10512,6 @@ end if
 ! CHECK NECESSARY SUBROUTINE: rk_addtend_dry }
 #endif
 
-#ifdef DM_PARALLEL
-!#      include "HALO_EM_SAVE_AD.inc"
-#endif
 !======[adj_P1.8.1]=======================================================
 !      Adjoint of calculating tendencies for grid points in relax zone
      IF( (config_flags%specified .or. config_flags%nested) .and. rk_step == 1 ) THEN
@@ -10825,10 +10600,6 @@ if (config_flags % sw_call_rk_tendency) then
      CALL pop2restore (grid%ru,grid%rv,grid%rw,grid%ww, "ru,rv,rw,ww") 
      CALL pop2restore (grid%mu_2,grid%muu,grid%muv,grid%mut, "mu,muu,muv,mut") 
 
-! comment out as it might allocate huge memory sometimes, needs investigation
-!#ifdef DM_PARALLEL
-!#    include "HALO_EM_AD_RK_TEND0.inc"
-!#endif
      !ZXOMP PARALLEL DO   &
      !ZXOMP PRIVATE ( ij ) &
      DO ij = grid%num_tiles,1,-1
@@ -11149,46 +10920,6 @@ end if
      END IF adj_rk_step_is_one
 
 !====[adj_P1.4]===========================================================
-#ifdef DM_PARALLEL
-!-----------------------------------------------------------------------
-!  Stencils for patch communications  (WCS, 29 June 2001)
-!  Note:  the small size of this halo exchange reflects the
-!         fact that we are carrying the uncoupled variables
-!         as state variables in the mass coordinate model, as
-!         opposed to the coupled variables as in the height
-!         coordinate model.
-!
-!                           * * * * *
-!         *        * * *    * * * * *
-!       * + *      * + *    * * + * *
-!         *        * * *    * * * * *
-!                           * * * * *
-!
-!  3D variables - note staggering!  ru(X), rv(Y), ww(Z), php(Z)
-!
-!  ru     x
-!  rv     x
-!  ww     x
-!  php    x
-!  alt    x
-!  ph_2   x
-!  phb    x
-!
-!  the following are 2D (xy) variables
-!
-!  muu    x
-!  muv    x
-!  mut    x
-!--------------------------------------------------------------
-!#    include "HALO_EM_A.inc"
-#endif
-
-! set boundary conditions on variables
-! from big_step_prep for use in big_step_proc
-
-#ifdef DM_PARALLEL
-!#  include "PERIOD_BDY_EM_A.inc"
-#endif
 
 BENCH_START(adj_set_phys_bc_tim)
 
@@ -11274,8 +11005,6 @@ end if
 BENCH_END(adj_set_phys_bc_tim)
 
 #ifdef DM_PARALLEL
-! a_ru, a_rv
-!#    include "HALO_EM_MU_AD.inc"
 #    include "HALO_EM_A_AD.inc"
 #endif
 

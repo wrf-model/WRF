@@ -538,9 +538,9 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
      CALL wrf_debug ( 200 , ' call rk_step_prep ' )
 
 BENCH_START(step_prep_tim)
-        CALL push4backup (grid%mu_2, "mu")
-        CALL push4backup (grid%u_2,grid%v_2,grid%w_2, "u,v,w")
-        CALL push4backup (moist, "moist")
+        !CALL push4backup (grid%mu_2, "mu")
+        !CALL push4backup (grid%u_2,grid%v_2,grid%w_2, "u,v,w")
+        !CALL push4backup (moist, "moist")
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -762,7 +762,7 @@ BENCH_START(rk_tend_tim)
      CALL push4backup (grid%u_2,grid%v_2,grid%w_2,grid%t_2,grid%ph_2, "u,v,w,t,ph") 
      CALL push4backup (grid%al,grid%alt,grid%p,grid%php,cqu,cqv,cqw, &
                        "al,alt,p,php,cqu,cqv,cqw") 
-     CALL push4backup (grid%xkmh,grid%xkhh, "xkmh,xkhh") 
+     !CALL push4backup (grid%xkmh,grid%xkhh, "xkmh,xkhh") 
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -820,7 +820,7 @@ BENCH_END(rk_tend_tim)
 
 BENCH_START(relax_bdy_dry_tim)
      IF( (config_flags%specified .or. config_flags%nested) .and. rk_step == 1 ) THEN
-       CALL push4backup (grid%mut, "mut") 
+       !CALL push4backup (grid%mut, "mut") 
        CALL push4backup (grid%ph_2,grid%t_2,grid%w_2, "ph,t,w") 
      ENDIF
 
@@ -858,8 +858,8 @@ BENCH_START(relax_bdy_dry_tim)
 
      ENDIF
 
-     CALL push4backup (grid%mut, "mut") 
-     CALL push4backup (grid%h_diabatic, "h_diabatic") 
+     !CALL push4backup (grid%mut, "mut") 
+     !CALL push4backup (grid%h_diabatic, "h_diabatic") 
 
        CALL rk_addtend_dry( grid%ru_tend,  grid%rv_tend,  rw_tend,  ph_tend,  t_tend,  &
                             ru_tendf, rv_tendf, rw_tendf, ph_tendf, t_tendf, &
@@ -931,11 +931,11 @@ BENCH_END(relax_bdy_dry_tim)
 !</DESCRIPTION>
 
 BENCH_START(small_step_prep_tim)
-    CALL push4backup (grid%muu,grid%muv,grid%mut, "muu,muv,mut") 
+    !CALL push4backup (grid%muu,grid%muv,grid%mut, "muu,muv,mut") 
     IF ( rk_step == 1 ) THEN
       CALL push4backup (grid%mu_2, "mu_2")
       CALL push4backup (grid%u_2,grid%v_2,grid%t_2,grid%w_2,grid%p,grid%alt, &
-                        "u_2,v_2,t_2,w_2,p,alt") 
+                       "u_2,v_2,t_2,w_2,p,alt") 
     ELSE
       CALL push4backup (grid%mu_1, "mu_1")
       CALL push4backup (grid%u_1,grid%v_1,grid%t_1,grid%w_1, &
@@ -989,7 +989,7 @@ BENCH_START(small_step_prep_tim)
 
        IF (config_flags%non_hydrostatic) THEN
 
-         CALL push4backup (c2a,cqw, "c2a,cqw") 
+         !CALL push4backup (c2a,cqw, "c2a,cqw") 
          CALL push4backup (grid%mut, "mut") 
 
          CALL calc_coef_w( a,alpha,gamma,                    &
@@ -1260,7 +1260,7 @@ BENCH_END(spec_bdy_uv_tim)
 #     include "HALO_EM_C.inc"
 #endif
 
-       CALL push4backup (grid%muu,grid%muv,mu_tend, "muu,muv,mu_tend") 
+       !CALL push4backup (grid%muu,grid%muv,mu_tend, "muu,muv,mu_tend") 
        CALL push4backup (grid%ww,ww1,grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%t_save, &
                         "ww,ww_1,u,u_1,v,v_1,t_1") 
        !$OMP PARALLEL DO   &
@@ -1442,8 +1442,8 @@ BENCH_END(advance_w_tim)
 !  end acoustic integration polar filter for smallstep w, geopotential
 !-----------------------------------------------------------
 
-       CALL push4backup (grid%muu,grid%muv, "muu,muv") 
-       CALL push4backup (grid%u_save,grid%v_save, "u_lin,v_lin") 
+       !CALL push4backup (grid%muu,grid%muv, "muu,muv") 
+       !CALL push4backup (grid%u_save,grid%v_save, "u_lin,v_lin") 
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -1747,7 +1747,7 @@ BENCH_END(small_step_finish_tim)
 
      IF ((config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order)) THEN
 
-       CALL push4backup (grid%mu_1, "mu_1")
+       !CALL push4backup (grid%mu_1, "mu_1")
        CALL push4backup (moist_old(:,:,:,:),moist_tend(:,:,:,:), &
                         "moist_old,moist_tend")
        !$OMP PARALLEL DO   &
@@ -1812,9 +1812,9 @@ BENCH_END(small_step_finish_tim)
 
      IF ((config_flags%scalar_adv_opt /= ORIGINAL) .and. (rk_step == rk_order)) THEN
 
-       CALL push4backup (grid%mu_1, "mu_1")
-       CALL push4backup (scalar_old(:,:,:,:),scalar_tend(:,:,:,:), &
-                        "scalar_old,scalar_tend")
+       !CALL push4backup (grid%mu_1, "mu_1")
+       !CALL push4backup (scalar_old(:,:,:,:),scalar_tend(:,:,:,:), &
+       !                 "scalar_old,scalar_tend")
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
        DO ij = 1 , grid%num_tiles
@@ -2010,9 +2010,9 @@ BENCH_END(small_step_finish_tim)
        IF ((config_flags%tke_adv_opt /= ORIGINAL) .and. (rk_step == rk_order) &
            .and. (config_flags%km_opt .eq. 2)                ) THEN
 
-           CALL push4backup (grid%mu_1, "mu_1")
-           CALL push4backup (grid%tke_1,tke_tend, &
-                             "tke_1,tke_tend")
+           !CALL push4backup (grid%mu_1, "mu_1")
+           !CALL push4backup (grid%tke_1,tke_tend, &
+           !                  "tke_1,tke_tend")
          !$OMP PARALLEL DO   &
          !$OMP PRIVATE ( ij )
          DO ij = 1 , grid%num_tiles
@@ -2113,9 +2113,9 @@ BENCH_END(small_step_finish_tim)
 
            IF (grid%adv_moist_cond .or. im==p_qv ) THEN
 
-             IF ( rk_step == 1 ) CALL push4backup (grid%alt,grid%xkhh, "alt,xkhh")
-             CALL push4backup (grid%mu_1,grid%muts, "mu_1,muts")
-             CALL push4backup (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
+             !IF ( rk_step == 1 ) CALL push4backup (grid%alt,grid%xkhh, "alt,xkhh")
+             !CALL push4backup (grid%mu_1,grid%muts, "mu_1,muts")
+             !CALL push4backup (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
              CALL push4backup (moist(:,:,:,im),moist_old(:,:,:,im), &
                                "moist,moist_old")
              !$OMP PARALLEL DO   &
@@ -2155,7 +2155,7 @@ BENCH_START(rlx_bdy_scalar_tim)
                  IF ( im .EQ. P_QV .OR. config_flags%nested ) THEN
 
                    CALL push4backup (grid%mut, "mut") 
-                   CALL push4backup (moist(:,:,:,im), "moist") 
+                   !CALL push4backup (moist(:,:,:,im), "moist") 
                    CALL relax_bdy_scalar ( moist_tend(ims,kms,jms,im),         &
                                      moist(ims,kms,jms,im),  grid%mut,         &
                                      moist_bxs(jms,kms,1,im),moist_bxe(jms,kms,1,im), &
@@ -2192,7 +2192,7 @@ BENCH_END(rlx_bdy_scalar_tim)
              ENDDO moist_tile_loop_1
              !$OMP END PARALLEL DO
 
-             CALL push4backup ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
+             !CALL push4backup ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
              IF ( rk_step == 1 ) THEN
                CALL push4backup ( moist(:,:,:,im),moist_tend(:,:,:,im),advect_tend, &
                                  "moist,moist_tend,advect_tend" ) 
@@ -2233,7 +2233,7 @@ BENCH_START(flow_depbdy_tim)
                IF( config_flags%specified ) THEN
                  IF(im .ne. P_QV)THEN
 
-                   CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+                   !CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
                    CALL flow_dep_bdy  (  moist(ims,kms,jms,im),                 &
                                 grid%ru_m, grid%rv_m, config_flags,             &
                                 grid%spec_zone,                                 &
@@ -2270,10 +2270,10 @@ BENCH_START(tke_adv_tim)
          ENDIF
 #endif
 
-         IF ( rk_step == 1 ) CALL push4backup (grid%alt,grid%xkhh, "alt,xkhh")
-         CALL push4backup (grid%mu_1,grid%muts, "mu_1,muts")
+         !IF ( rk_step == 1 ) CALL push4backup (grid%alt,grid%xkhh, "alt,xkhh")
+         !CALL push4backup (grid%mu_1,grid%muts, "mu_1,muts")
          CALL push4backup (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
-         CALL push4backup (grid%tke_2,grid%tke_1, "tke_2,tke_1")
+         !CALL push4backup (grid%tke_2,grid%tke_1, "tke_2,tke_1")
          !$OMP PARALLEL DO   &
          !$OMP PRIVATE ( ij )
          tke_tile_loop_1: DO ij = 1 , grid%num_tiles
@@ -2306,14 +2306,14 @@ BENCH_START(tke_adv_tim)
          !$OMP END PARALLEL DO
 
 
-         CALL push4backup ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
-         IF ( rk_step == 1 ) THEN
-           CALL push4backup ( grid%tke_2,tke_tend,advect_tend, &
-                              "tke_2,tke_tend,advect_tend" ) 
-         ELSE
-           CALL push4backup ( grid%tke_1,tke_tend,advect_tend, &
-                              "tke_1,tke_tend,advect_tend" ) 
-         END IF 
+         !CALL push4backup ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
+         !IF ( rk_step == 1 ) THEN
+         !  CALL push4backup ( grid%tke_2,tke_tend,advect_tend, &
+         !                     "tke_2,tke_tend,advect_tend" ) 
+         !ELSE
+         !  CALL push4backup ( grid%tke_1,tke_tend,advect_tend, &
+         !                     "tke_1,tke_tend,advect_tend" ) 
+         !END IF 
          !$OMP PARALLEL DO   &
          !$OMP PRIVATE ( ij )
          tke_tile_loop_2: DO ij = 1 , grid%num_tiles
@@ -2340,7 +2340,7 @@ BENCH_START(tke_adv_tim)
 
 ! bound the tke (greater than 0, less than tke_upper_bound)
 
-           CALL push4backup (grid%tke_2, "tke")
+           !CALL push4backup (grid%tke_2, "tke")
            CALL bound_tke( grid%tke_2, grid%tke_upper_bound,    &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
@@ -2349,7 +2349,7 @@ BENCH_START(tke_adv_tim)
                            k_start    , k_end                  )
 
            IF( config_flags%specified .or. config_flags%nested ) THEN
-              CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+              !CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
               CALL flow_dep_bdy (  grid%tke_2,                 &
                                    grid%ru_m, grid%rv_m, config_flags,     &
                                    grid%spec_zone,             &
@@ -2654,11 +2654,11 @@ BENCH_END(tracer_adv_tim)
      other_scalar_advance: IF (num_3d_s >= PARAM_FIRST_SCALAR)  THEN
 
        scalar_variable_loop: do is = PARAM_FIRST_SCALAR, num_3d_s
-         IF ( rk_step == 1 ) CALL push4backup (grid%alt,grid%xkhh, "alt,xkhh")
-         CALL push4backup (grid%mu_1,grid%muts, "mu_1,muts")
-         CALL push4backup (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
-         CALL push4backup (scalar(:,:,:,is),scalar_old(:,:,:,is), &
-                             "scalar,scalar_old")
+         !IF ( rk_step == 1 ) CALL push4backup (grid%alt,grid%xkhh, "alt,xkhh")
+         !CALL push4backup (grid%mu_1,grid%muts, "mu_1,muts")
+         !CALL push4backup (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
+         !CALL push4backup (scalar(:,:,:,is),scalar_old(:,:,:,is), &
+         !                    "scalar,scalar_old")
          !OMP PARALLEL DO   &
          !OMP PRIVATE ( ij )
          scalar_tile_loop_1: DO ij = 1 , grid%num_tiles
@@ -2690,8 +2690,8 @@ BENCH_END(tracer_adv_tim)
 
            IF( config_flags%nested .and. (rk_step == 1) ) THEN
 
-               CALL push4backup (grid%mut, "mut") 
-               CALL push4backup (scalar(:,:,:,is), "scalar") 
+               !CALL push4backup (grid%mut, "mut") 
+               !CALL push4backup (scalar(:,:,:,is), "scalar") 
                CALL relax_bdy_scalar ( scalar_tend(ims,kms,jms,is),                            &
                                        scalar(ims,kms,jms,is),  grid%mut,                      &
                                        scalar_bxs(jms,kms,1,is),scalar_bxe(jms,kms,1,is),      &
@@ -2727,14 +2727,14 @@ BENCH_END(tracer_adv_tim)
          ENDDO scalar_tile_loop_1
          !OMP END PARALLEL DO
 
-         CALL push4backup ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
-         IF ( rk_step == 1 ) THEN
-           CALL push4backup ( scalar(:,:,:,is),scalar_tend(:,:,:,is),advect_tend, &
-                             "scalar,scalar_tend,advect_tend" ) 
-         ELSE
-           CALL push4backup ( scalar_old(:,:,:,is),scalar_tend(:,:,:,is),advect_tend, &
-                             "scalar_old,scalar_tend,advect_tend" ) 
-         END IF 
+         !CALL push4backup ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
+         !IF ( rk_step == 1 ) THEN
+         !  CALL push4backup ( scalar(:,:,:,is),scalar_tend(:,:,:,is),advect_tend, &
+         !                    "scalar,scalar_tend,advect_tend" ) 
+         !ELSE
+         !  CALL push4backup ( scalar_old(:,:,:,is),scalar_tend(:,:,:,is),advect_tend, &
+         !                    "scalar_old,scalar_tend,advect_tend" ) 
+         !END IF 
          !OMP PARALLEL DO   &
          !OMP PRIVATE ( ij )
          scalar_tile_loop_2: DO ij = 1 , grid%num_tiles
@@ -2762,7 +2762,7 @@ BENCH_END(tracer_adv_tim)
 
            IF( config_flags%specified ) THEN
 
-             CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+             !CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
              CALL flow_dep_bdy  ( scalar(ims,kms,jms,is),     &
                                   grid%ru_m, grid%rv_m, config_flags,   &
                                   grid%spec_zone,                  &
@@ -2786,8 +2786,8 @@ BENCH_END(tracer_adv_tim)
 
 
      CALL push4backup (grid%mu_2,grid%muts, "mu,muts")
-     CALL push4backup (grid%ph_2,grid%t_2, "ph,t")
-     CALL push4backup (moist, "moist")
+     !CALL push4backup (grid%ph_2,grid%t_2, "ph,t")
+     !CALL push4backup (moist, "moist")
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
      DO ij = 1 , grid%num_tiles
@@ -3068,8 +3068,8 @@ BENCH_START(bc_end_tim)
 BENCH_START(diag_w_tim)
          IF (.not. config_flags%non_hydrostatic) THEN
 
-           CALL push4backup (grid%muts, "muts")
-           CALL push4backup (ph_tend, "ph_tend")
+           !CALL push4backup (grid%muts, "muts")
+           !CALL push4backup (ph_tend, "ph_tend")
            CALL diagnose_w( ph_tend, grid%ph_2, grid%ph_1, grid%w_2, grid%muts, dt_rk,  &
                             grid%u_2, grid%v_2, grid%ht,                           &
                             grid%cf1, grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
@@ -3389,18 +3389,18 @@ BENCH_END(advance_ppt_tim)
 
    IF (config_flags%mp_physics /= 0)  then
 
-     CALL push4backup (grid%h_diabatic,"h_diabatic")
-     CALL push4backup (grid%z_at_w,"z_at_w")
-     CALL push4backup (grid%z,"z")
-     CALL push4backup (th_phy,"th_phy") 
-     CALL push4backup (p_phy,"p_phy")
-     CALL push4backup (pi_phy,"pi_phy") 
-     CALL push4backup (grid%ph_2,"ph_2")
-     CALL push4backup (dz8w,"dz8w")
+     !CALL push4backup (grid%h_diabatic,"h_diabatic")
+     !CALL push4backup (grid%z_at_w,"z_at_w")
+     !CALL push4backup (grid%z,"z")
+     !CALL push4backup (th_phy,"th_phy") 
+     !CALL push4backup (p_phy,"p_phy")
+     !CALL push4backup (pi_phy,"pi_phy") 
+     !CALL push4backup (grid%ph_2,"ph_2")
+     !CALL push4backup (dz8w,"dz8w")
      CALL push4backup (grid%p,"p")
-     CALL push4backup (grid%al,"al")
+     !CALL push4backup (grid%al,"al")
      CALL push4backup (grid%t_2,"t")
-     CALL push4backup (rho,"rho")
+     !CALL push4backup (rho,"rho")
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij, its, ite, jts, jte )
@@ -3444,12 +3444,12 @@ BENCH_END(moist_physics_prep_tim)
 BENCH_START(micro_driver_tim)
 
      CALL push4backup (moist,"moist")
-     CALL push4backup (pi_phy,"pi_phy")
-     CALL push4backup (dz8w,"dz8w")
-     CALL push4backup (p8w,"p8w")
-     CALL push4backup (rho,"rho")
+     !CALL push4backup (pi_phy,"pi_phy")
+     !CALL push4backup (dz8w,"dz8w")
+     !CALL push4backup (p8w,"p8w")
+     !CALL push4backup (rho,"rho")
      CALL push4backup (th_phy,"th_phy")
-     CALL push4backup (p_phy,"p_phy")
+     !CALL push4backup (p_phy,"p_phy")
 
      CALL microphysics_driver(                                            &
       &         DT=dtm             ,DX=grid%dx              ,DY=grid%dy   &
@@ -3684,9 +3684,9 @@ BENCH_START(moist_phys_end_tim)
 !  end filter for moist variables post-microphysics and end of timestep
 !-----------------------------------------------------------
 
-   CALL push4backup (grid%mu_2,grid%muts, "mu,muts")
-   CALL push4backup (grid%ph_2,grid%t_2, "ph,t")
-   CALL push4backup (moist, "moist")
+   !CALL push4backup (grid%mu_2,grid%muts, "mu,muts")
+   !CALL push4backup (grid%ph_2,grid%t_2, "ph,t")
+   !CALL push4backup (moist, "moist")
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij, its, ite, jts, jte, im, ii, jj, kk )
    scalar_tile_loop_1ba: DO ij = 1 , grid%num_tiles
@@ -3722,8 +3722,8 @@ BENCH_END(moist_phys_end_tim)
 #    include "PERIOD_EM_HYDRO_UV.inc"
 #endif
 
-     CALL push4backup (grid%muts, "muts")
-     CALL push4backup (ph_tend, "ph_tend")
+     !CALL push4backup (grid%muts, "muts")
+     !CALL push4backup (ph_tend, "ph_tend")
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
      DO ij = 1 , grid%num_tiles
@@ -3951,9 +3951,9 @@ BENCH_END(moist_phys_end_tim)
 
 BENCH_START(bc_2d_tim)
 
-   CALL push4backup (grid%u_2,grid%v_2,grid%w_2, grid%t_2, "u, v, w,t ")
-   CALL push4backup (grid%ph_2, "ph")
-   CALL push4backup (grid%mu_2, "mu")
+   !CALL push4backup (grid%u_2,grid%v_2,grid%w_2, grid%t_2, "u, v, w,t ")
+   !CALL push4backup (grid%ph_2, "ph")
+   !CALL push4backup (grid%mu_2, "mu")
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
@@ -4252,9 +4252,9 @@ BENCH_START(adj_bc_2d_tim)
                              grid%j_start(ij), grid%j_end(ij),        &
                              k_start    , k_end-1                    )
 
-     CALL pop2restore (grid%mu_2, "mu")
-     CALL pop2restore (grid%ph_2, "ph")
-     CALL pop2restore (grid%u_2,grid%v_2,grid%w_2, grid%t_2, "u, v, w,t ")
+     !CALL pop2restore (grid%mu_2, "mu")
+     !CALL pop2restore (grid%ph_2, "ph")
+     !CALL pop2restore (grid%u_2,grid%v_2,grid%w_2, grid%t_2, "u, v, w,t ")
      CALL a_set_phys_bc_dry_2( config_flags,                           &
                              grid%u_1,grid%a_u_1, grid%u_2,grid%a_u_2, &
                              grid%v_1,grid%a_v_1, grid%v_2,grid%a_v_2, &
@@ -4287,8 +4287,8 @@ BENCH_END(adj_bc_2d_tim)
 
    IF (.not. config_flags%non_hydrostatic) THEN
 
-     CALL pop2restore (ph_tend, "ph_tend")
-     CALL pop2restore (grid%muts, "muts")
+     !CALL pop2restore (ph_tend, "ph_tend")
+     !CALL pop2restore (grid%muts, "muts")
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
      DO ij = grid%num_tiles,1,-1  
@@ -4313,9 +4313,9 @@ BENCH_END(adj_bc_2d_tim)
 
 BENCH_START(adj_moist_phys_end_tim)
 
-   CALL pop2restore (moist, "moist")
-   CALL pop2restore (grid%ph_2,grid%t_2, "ph,t")
-   CALL pop2restore (grid%mu_2,grid%muts, "mu,muts")
+   !CALL pop2restore (moist, "moist")
+   !CALL pop2restore (grid%ph_2,grid%t_2, "ph,t")
+   !CALL pop2restore (grid%mu_2,grid%muts, "mu,muts")
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij, its, ite, jts, jte, im, ii, jj, kk )
 
@@ -4430,12 +4430,12 @@ BENCH_START(adj_micro_driver_tim)
 !Variables need to be saved: th, p, qv_curr, rho, pi_phy, dz8w, rainnc, rainncv
 !!!! Need to replace the variables marked as "!zzma" if other scheme will be added in the furture. (comments from zzma 01/10/2011)
 
-     CALL pop2restore (p_phy,"p_phy")
+     !CALL pop2restore (p_phy,"p_phy")
      CALL pop2restore (th_phy,"th_phy")
-     CALL pop2restore (rho,"rho")
-     CALL pop2restore (p8w,"p8w")
-     CALL pop2restore (dz8w,"dz8w")
-     CALL pop2restore (pi_phy,"pi_phy")
+     !CALL pop2restore (rho,"rho")
+     !CALL pop2restore (p8w,"p8w")
+     !CALL pop2restore (dz8w,"dz8w")
+     !CALL pop2restore (pi_phy,"pi_phy")
      CALL pop2restore (moist,"moist")
      CALL a_microphysics_driver(                                            &
       &         DT=dtm             ,DX=grid%dx              ,DY=grid%dy     &
@@ -4516,18 +4516,18 @@ BENCH_END(adj_micro_driver_tim)
 
      grid%a_sr = 0.
 
-     CALL pop2restore (rho,"rho")
+     !CALL pop2restore (rho,"rho")
      CALL pop2restore (grid%t_2,"t")
-     CALL pop2restore (grid%al,"al")
+     !CALL pop2restore (grid%al,"al")
      CALL pop2restore (grid%p,"p")
-     CALL pop2restore (dz8w,"dz8w")
-     CALL pop2restore (grid%ph_2,"ph_2")
-     CALL pop2restore (pi_phy,"pi_phy")
-     CALL pop2restore (p_phy,"p_phy")
-     CALL pop2restore (th_phy,"th_phy")
-     CALL pop2restore (grid%z,"z")
-     CALL pop2restore (grid%z_at_w,"z_at_w")
-     CALL pop2restore (grid%h_diabatic,"h_diabatic")
+     !CALL pop2restore (dz8w,"dz8w")
+     !CALL pop2restore (grid%ph_2,"ph_2")
+     !CALL pop2restore (pi_phy,"pi_phy")
+     !CALL pop2restore (p_phy,"p_phy")
+     !CALL pop2restore (th_phy,"th_phy")
+     !CALL pop2restore (grid%z,"z")
+     !CALL pop2restore (grid%z_at_w,"z_at_w")
+     !CALL pop2restore (grid%h_diabatic,"h_diabatic")
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij, its, ite, jts, jte )
@@ -4764,8 +4764,8 @@ BENCH_START(adj_bc_end_tim)
 BENCH_START(adj_diag_w_tim)
          IF (.not. config_flags%non_hydrostatic) THEN
 
-           CALL pop2restore (ph_tend, "ph_tend")
-           CALL pop2restore (grid%muts, "muts")
+           !CALL pop2restore (ph_tend, "ph_tend")
+           !CALL pop2restore (grid%muts, "muts")
            CALL a_diagnose_w( ph_tend,a_ph_tend, grid%ph_2,grid%a_ph_2,  grid%ph_1,grid%a_ph_1,     &
                           grid%w_2,grid%a_w_2, grid%muts,grid%a_muts, dt_rk,  &
                           grid%u_2,grid%a_u_2, grid%v_2,grid%a_v_2, grid%ht,  &
@@ -4809,8 +4809,8 @@ BENCH_END(adj_bc_end_tim)
 
 !    Adjoint of updating the pressure and density at the new time level
 
-     CALL pop2restore (moist, "moist")
-     CALL pop2restore (grid%ph_2,grid%t_2, "ph,t")
+     !CALL pop2restore (moist, "moist")
+     !CALL pop2restore (grid%ph_2,grid%t_2, "ph,t")
      CALL pop2restore (grid%mu_2,grid%muts, "mu,muts")
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -4845,7 +4845,7 @@ BENCH_END(adj_calc_p_rho_tim)
 
            IF( config_flags%specified ) THEN
 
-             CALL pop2restore ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+             !CALL pop2restore ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
              CALL a_flow_dep_bdy  ( a_scalar(ims,kms,jms,is),     &
                                   grid%ru_m, grid%rv_m, config_flags,   &
                                   grid%spec_zone,                  &
@@ -4860,14 +4860,14 @@ BENCH_END(adj_calc_p_rho_tim)
 
            CALL wrf_debug ( 200 , ' call a_rk_update_scalar scalar ' )
 
-           IF ( rk_step == 1 ) THEN
-             CALL pop2restore ( scalar(:,:,:,is),scalar_tend(:,:,:,is),advect_tend, &
-                                "scalar,scalar_tend,advect_tend" ) 
-           ELSE
-             CALL pop2restore ( scalar_old(:,:,:,is),scalar_tend(:,:,:,is),advect_tend,&
-                                "scalar_old,scalar_tend,advect_tend" ) 
-           END IF 
-           CALL pop2restore ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
+           !IF ( rk_step == 1 ) THEN
+           !  CALL pop2restore ( scalar(:,:,:,is),scalar_tend(:,:,:,is),advect_tend, &
+           !                     "scalar,scalar_tend,advect_tend" ) 
+           !ELSE
+           !  CALL pop2restore ( scalar_old(:,:,:,is),scalar_tend(:,:,:,is),advect_tend,&
+           !                     "scalar_old,scalar_tend,advect_tend" ) 
+           !END IF 
+           !CALL pop2restore ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
            tenddec = .false.
            CALL a_rk_update_scalar( scs=is, sce=is,                                       &
                                   scalar_1=scalar_old(ims,kms,jms,is),                    &
@@ -4912,8 +4912,8 @@ BENCH_END(adj_calc_p_rho_tim)
                                        grid%j_start(ij), grid%j_end(ij),                       &
                                        k_start, k_end                                          )
 
-               CALL pop2restore (scalar(:,:,:,is), "scalar") 
-               CALL pop2restore (grid%mut, "mut") 
+               !CALL pop2restore (scalar(:,:,:,is), "scalar") 
+               !CALL pop2restore (grid%mut, "mut") 
                CALL a_relax_bdy_scalar ( a_scalar_tend(ims,kms,jms,is),                        &
                                        scalar(ims,kms,jms,is),a_scalar(ims,kms,jms,is),        &
                                        grid%mut,grid%a_mut,                                    &
@@ -4935,11 +4935,11 @@ BENCH_END(adj_calc_p_rho_tim)
 
            CALL wrf_debug ( 200 , ' call a_rk_scalar_tend scalar ' )
 
-           CALL pop2restore (scalar(:,:,:,is),scalar_old(:,:,:,is), &
-                             "scalar,scalar_old")
-           CALL pop2restore (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
-           CALL pop2restore (grid%mu_1,grid%muts, "mu_1,muts")
-           IF ( rk_step == 1 ) CALL pop2restore (grid%alt,grid%xkhh, "alt,xkhh")
+           !CALL pop2restore (scalar(:,:,:,is),scalar_old(:,:,:,is), &
+           !                  "scalar,scalar_old")
+           !CALL pop2restore (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
+           !CALL pop2restore (grid%mu_1,grid%muts, "mu_1,muts")
+           !IF ( rk_step == 1 ) CALL pop2restore (grid%alt,grid%xkhh, "alt,xkhh")
 
            tenddec = .false.
            CALL a_rk_scalar_tend ( is, is, config_flags, tenddec, &
@@ -4983,7 +4983,7 @@ BENCH_START(adj_tke_adv_tim)
 
            IF( config_flags%specified .or. config_flags%nested ) THEN
 
-              CALL pop2restore ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+              !CALL pop2restore ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
               CALL a_flow_dep_bdy (  grid%a_tke_2,                   &
                                    grid%ru_m, grid%rv_m, config_flags, &
                                    grid%spec_zone,                              &
@@ -4995,7 +4995,7 @@ BENCH_START(adj_tke_adv_tim)
                                    k_start, k_end                               )
            ENDIF
 
-           CALL pop2restore (grid%tke_2, "tke")
+           !CALL pop2restore (grid%tke_2, "tke")
            CALL a_bound_tke( grid%tke_2,grid%a_tke_2, grid%tke_upper_bound,    &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
@@ -5005,14 +5005,14 @@ BENCH_START(adj_tke_adv_tim)
 
            CALL wrf_debug ( 200 , ' call a_rk_update_scalar tke' )
 
-           IF ( rk_step == 1 ) THEN
-             CALL pop2restore ( grid%tke_2,tke_tend,advect_tend, &
-                                "tke_2,tke_tend,advect_tend" ) 
-           ELSE
-             CALL pop2restore ( grid%tke_1,tke_tend,advect_tend,&
-                                "tke_1,tke_tend,advect_tend" ) 
-           END IF 
-           CALL pop2restore ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
+           !IF ( rk_step == 1 ) THEN
+           !  CALL pop2restore ( grid%tke_2,tke_tend,advect_tend, &
+           !                     "tke_2,tke_tend,advect_tend" ) 
+           !ELSE
+           !  CALL pop2restore ( grid%tke_1,tke_tend,advect_tend,&
+           !                     "tke_1,tke_tend,advect_tend" ) 
+           !END IF 
+           !CALL pop2restore ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
            tenddec = .false.
            CALL a_rk_update_scalar( scs=1,  sce=1,                                        &
                                   scalar_1=grid%tke_1, a_scalar_1=grid%a_tke_1,           & 
@@ -5040,10 +5040,10 @@ BENCH_START(adj_tke_adv_tim)
          ENDDO adj_tke_tile_loop_2
          !$OMP END PARALLEL DO
 
-         CALL pop2restore (grid%tke_2,grid%tke_1, "tke_2,tke_1")
+         !CALL pop2restore (grid%tke_2,grid%tke_1, "tke_2,tke_1")
          CALL pop2restore (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
-         CALL pop2restore (grid%mu_1,grid%muts, "mu_1,muts")
-         IF ( rk_step == 1 ) CALL pop2restore (grid%alt,grid%xkhh, "alt,xkhh")
+         !CALL pop2restore (grid%mu_1,grid%muts, "mu_1,muts")
+         !IF ( rk_step == 1 ) CALL pop2restore (grid%alt,grid%xkhh, "alt,xkhh")
          !$OMP PARALLEL DO   &
          !$OMP PRIVATE ( ij )
          adj_tke_tile_loop_1: DO ij = grid%num_tiles,1,-1
@@ -5108,7 +5108,7 @@ BENCH_START(adj_flow_depbdy_tim)
                IF( config_flags%specified ) THEN
                  IF(im .ne. P_QV)THEN
 
-                   CALL pop2restore ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+                   !CALL pop2restore ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
                    CALL a_flow_dep_bdy ( a_moist(ims,kms,jms,im),             &
                                          grid%ru_m, grid%rv_m, config_flags,  &
                                          grid%spec_zone,                      &
@@ -5136,7 +5136,7 @@ BENCH_START(adj_update_scal_tim)
                  CALL pop2restore ( moist_old(:,:,:,im),moist_tend(:,:,:,im),advect_tend, &
                                     "moist_old,moist_tend,advect_tend" ) 
                END IF 
-               CALL pop2restore ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
+               !CALL pop2restore ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
                CALL a_rk_update_scalar( scs=im, sce=im,                                &
                                scalar_1=moist_old(ims,kms,jms,im),                     &
                                a_scalar_1=a_moist_old(ims,kms,jms,im),                 &
@@ -5192,7 +5192,7 @@ BENCH_START(adj_rlx_bdy_scalar_tim)
                                      grid%j_start(ij), grid%j_end(ij),  &
                                      k_start, k_end )
 
-                   CALL pop2restore (moist(:,:,:,im), "moist") 
+                   !CALL pop2restore (moist(:,:,:,im), "moist") 
                    CALL pop2restore (grid%mut, "mut") 
                    CALL a_relax_bdy_scalar ( a_moist_tend(ims,kms,jms,im),            &
                                      moist(ims,kms,jms,im), a_moist(ims,kms,jms,im),  &
@@ -5222,9 +5222,9 @@ BENCH_START(adj_rk_scalar_tend_tim)
 
                CALL pop2restore (moist(:,:,:,im),moist_old(:,:,:,im), &
                                  "moist,moist_old")
-               CALL pop2restore (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
-               CALL pop2restore (grid%mu_1,grid%muts, "mu_1,muts")
-               IF ( rk_step == 1 ) CALL pop2restore (grid%alt,grid%xkhh, "alt,xkhh")
+               !CALL pop2restore (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
+               !CALL pop2restore (grid%mu_1,grid%muts, "mu_1,muts")
+               !IF ( rk_step == 1 ) CALL pop2restore (grid%alt,grid%xkhh, "alt,xkhh")
                CALL a_rk_scalar_tend (  im, im, config_flags, tenddec,       &
                            rk_step, dt_rk,                                   &
                            grid%ru_m, grid%a_ru_m, &
@@ -5295,9 +5295,9 @@ BENCH_END(adj_rk_scalar_tend_tim)
 #endif
 
 
-         CALL pop2restore (grid%tke_1,tke_tend, &
-                          "tke_1,tke_tend")
-         CALL pop2restore (grid%mu_1, "mu_1")
+         !CALL pop2restore (grid%tke_1,tke_tend, &
+         !                 "tke_1,tke_tend")
+         !CALL pop2restore (grid%mu_1, "mu_1")
          !$OMP PARALLEL DO   &
          !$OMP PRIVATE ( ij )
          DO ij = grid%num_tiles,1,-1
@@ -5360,9 +5360,9 @@ BENCH_END(adj_rk_scalar_tend_tim)
   endif
 #endif
 
-       CALL pop2restore (scalar_old(:,:,:,:),scalar_tend(:,:,:,:), &
-                        "scalar_old,scalar_tend")
-       CALL pop2restore (grid%mu_1, "mu_1")
+       !CALL pop2restore (scalar_old(:,:,:,:),scalar_tend(:,:,:,:), &
+       !                 "scalar_old,scalar_tend")
+       !CALL pop2restore (grid%mu_1, "mu_1")
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
        DO ij = grid%num_tiles,1,-1
@@ -5422,7 +5422,7 @@ BENCH_END(adj_rk_scalar_tend_tim)
 
        CALL pop2restore (moist_old(:,:,:,:),moist_tend(:,:,:,:), &
                         "moist_old,moist_tend")
-       CALL pop2restore (grid%mu_1, "mu_1")
+       !CALL pop2restore (grid%mu_1, "mu_1")
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
        DO ij = grid%num_tiles,1,-1
@@ -5673,8 +5673,8 @@ BENCH_END(adj_spec_bdynhyd_tim)
          ENDIF
 
 BENCH_START(adj_sumflux_tim)
-         CALL pop2restore (grid%u_save,grid%v_save, "u_lin,v_lin") 
-         CALL pop2restore (grid%muu,grid%muv, "muu,muv") 
+         !CALL pop2restore (grid%u_save,grid%v_save, "u_lin,v_lin") 
+         !CALL pop2restore (grid%muu,grid%muv, "muu,muv") 
          CALL a_sumflux ( grid%u_2,grid%a_u_2, grid%v_2,grid%a_v_2, grid%ww,grid%a_ww,            &
                           grid%u_save, grid%a_u_save, grid%v_save, grid%a_v_save, ww1, a_ww1,     &
                           grid%muu, grid%a_muu, grid%muv, grid%a_muv,                             &
@@ -5779,7 +5779,7 @@ BENCH_END(adj_spec_bdy_t_tim)
 
        CALL pop2restore (grid%ww,ww1,grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%t_save, &
                            "ww,ww_1,u,u_1,v,v_1,t_1") 
-       CALL pop2restore (grid%muu,grid%muv,mu_tend, "muu,muv,mu_tend") 
+       !CALL pop2restore (grid%muu,grid%muv,mu_tend, "muu,muv,mu_tend") 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
        DO ij = grid%num_tiles,1,-1
@@ -5992,7 +5992,7 @@ BENCH_START(adj_small_step_prep_tim)
        IF (config_flags%non_hydrostatic) THEN
 
          CALL pop2restore (grid%mut, "mut") 
-         CALL pop2restore (c2a,cqw, "c2a,cqw") 
+         !CALL pop2restore (c2a,cqw, "c2a,cqw") 
          CALL a_calc_coef_w( a,a_a,alpha,a_alpha,gamma,a_gamma, &
                              grid%mut,grid%a_mut, cqw,a_cqw,    &
                              grid%rdn, grid%rdnw, c2a,a_c2a,    &
@@ -6024,7 +6024,7 @@ BENCH_START(adj_small_step_prep_tim)
 
        IF ( rk_step == 1 ) THEN
          CALL pop2restore (grid%u_2,grid%v_2,grid%t_2,grid%w_2,grid%p,grid%alt, &
-                           "u_2,v_2,t_2,w_2,p,alt") 
+                          "u_2,v_2,t_2,w_2,p,alt") 
          CALL pop2restore (grid%mu_2, "mu_2")
        ELSE
          CALL pop2restore (grid%u_1,grid%v_1,grid%t_1,grid%w_1, &
@@ -6032,7 +6032,7 @@ BENCH_START(adj_small_step_prep_tim)
                            "u_1,v_1,t_1,w_1,u_2,v_2,t_2,w_2,p,alt") 
          CALL pop2restore (grid%mu_1, "mu_1")
        END IF 
-       CALL pop2restore (grid%muu,grid%muv,grid%mut, "muu,muv,mut") 
+       !CALL pop2restore (grid%muu,grid%muv,grid%mut, "muu,muv,mut") 
        CALL a_small_step_prep( grid%u_1,grid%a_u_1,grid%u_2,grid%a_u_2, &
                                grid%v_1,grid%a_v_1,grid%v_2,grid%a_v_2, &
                                grid%w_1,grid%a_w_1,grid%w_2,grid%a_w_2, &
@@ -6088,8 +6088,8 @@ BENCH_START(adj_relax_bdy_dry_tim)
 
      ENDIF
 
-     CALL pop2restore (grid%h_diabatic, "h_diabatic") 
-     CALL pop2restore (grid%mut, "mut") 
+     !CALL pop2restore (grid%h_diabatic, "h_diabatic") 
+     !CALL pop2restore (grid%mut, "mut") 
      CALL a_rk_addtend_dry ( grid%ru_tend, grid%a_ru_tend,  &
                              grid%rv_tend, grid%a_rv_tend,  &
                     rw_tend, a_rw_tend, ph_tend, a_ph_tend, t_tend, a_t_tend,         &
@@ -6111,7 +6111,7 @@ BENCH_START(adj_relax_bdy_dry_tim)
      IF( (config_flags%specified .or. config_flags%nested) .and. rk_step == 1 ) THEN
 
        CALL pop2restore (grid%ph_2,grid%t_2,grid%w_2, "ph,t,w") 
-       CALL pop2restore (grid%mut, "mut") 
+       !CALL pop2restore (grid%mut, "mut") 
        CALL a_relax_bdy_dry ( config_flags,                             &
                 grid%a_u_save, grid%a_v_save, &
                 a_ph_save, grid%a_t_save,  &
@@ -6161,7 +6161,7 @@ BENCH_END(adj_relax_bdy_dry_tim)
 
 BENCH_START(adj_rk_tend_tim)
 
-     CALL pop2restore (grid%xkmh,grid%xkhh, "xkmh,xkhh") 
+     !CALL pop2restore (grid%xkmh,grid%xkhh, "xkmh,xkhh") 
      CALL pop2restore (grid%al,grid%alt,grid%p,grid%php,cqu,cqv,cqw, &
                        "al,alt,p,php,cqu,cqv,cqw") 
      CALL pop2restore (grid%u_2,grid%v_2,grid%w_2,grid%t_2,grid%ph_2, "u,v,w,t,ph") 
@@ -6336,9 +6336,9 @@ BENCH_END(adj_set_phys_bc_tim)
 
 BENCH_START(adj_step_prep_tim)
 
-     CALL pop2restore (moist, "moist")
-     CALL pop2restore (grid%u_2,grid%v_2,grid%w_2, "u,v,w")
-     CALL pop2restore (grid%mu_2, "mu")
+     !CALL pop2restore (moist, "moist")
+     !CALL pop2restore (grid%u_2,grid%v_2,grid%w_2, "u,v,w")
+     !CALL pop2restore (grid%mu_2, "mu")
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
 

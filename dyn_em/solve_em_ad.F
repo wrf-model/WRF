@@ -2115,7 +2115,7 @@ BENCH_END(small_step_finish_tim)
 
              !IF ( rk_step == 1 ) CALL push4backup (grid%alt,grid%xkhh, "alt,xkhh")
              !CALL push4backup (grid%mu_1,grid%muts, "mu_1,muts")
-             !CALL push4backup (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
+             CALL push4backup (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
              CALL push4backup (moist(:,:,:,im),moist_old(:,:,:,im), &
                                "moist,moist_old")
              !$OMP PARALLEL DO   &
@@ -3630,7 +3630,8 @@ BENCH_START(moist_phys_end_tim)
 
    ENDIF  ! microphysics test
 
-#if 0 !  below is not used in adjoint
+#if 0 
+!  below is not used in adjoint
 !-----------------------------------------------------------
 !  filter for moist variables post-microphysics and end of timestep
 !-----------------------------------------------------------
@@ -4123,7 +4124,8 @@ BENCH_END(bc_2d_tim)
 
    CALL wrf_debug ( 200 , ' call end of solve_em' )
 
-#endif  !  not used in adjoint
+!  not used in adjoint
+#endif  
 ! Finish timers if compiled with -DBENCH.
 #include <bench_solve_em_end.h>
 
@@ -5223,7 +5225,7 @@ BENCH_START(adj_rk_scalar_tend_tim)
 
                CALL pop2restore (moist(:,:,:,im),moist_old(:,:,:,im), &
                                  "moist,moist_old")
-               !CALL pop2restore (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
+               CALL pop2restore (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
                !CALL pop2restore (grid%mu_1,grid%muts, "mu_1,muts")
                !IF ( rk_step == 1 ) CALL pop2restore (grid%alt,grid%xkhh, "alt,xkhh")
                CALL a_rk_scalar_tend (  im, im, config_flags, tenddec,       &

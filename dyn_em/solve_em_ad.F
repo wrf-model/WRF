@@ -3630,6 +3630,7 @@ BENCH_START(moist_phys_end_tim)
 
    ENDIF  ! microphysics test
 
+#if 0 !  below is not used in adjoint
 !-----------------------------------------------------------
 !  filter for moist variables post-microphysics and end of timestep
 !-----------------------------------------------------------
@@ -4039,7 +4040,6 @@ BENCH_START(bc_2d_tim)
    END DO tile_bc_loop_2
    !$OMP END PARALLEL DO
 BENCH_END(bc_2d_tim)
-
 ! Move to the end of subroutine
 !   IF( config_flags%specified .or. config_flags%nested ) THEN
 !     grid%dtbc = grid%dtbc + grid%dt
@@ -4123,6 +4123,7 @@ BENCH_END(bc_2d_tim)
 
    CALL wrf_debug ( 200 , ' call end of solve_em' )
 
+#endif  !  not used in adjoint
 ! Finish timers if compiled with -DBENCH.
 #include <bench_solve_em_end.h>
 

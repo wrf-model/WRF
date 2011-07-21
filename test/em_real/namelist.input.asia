@@ -1,6 +1,6 @@
  &time_control
  run_days                            = 0,
- run_hours                           = 6,
+ run_hours                           = 3,
  run_minutes                         = 0,
  run_seconds                         = 0,
  start_year                          = 2008, 2000, 2000,
@@ -12,7 +12,7 @@
  end_year                            = 2008, 2000, 2000,
  end_month                           = 12,   01,   01,
  end_day                             = 23,   25,   25,
- end_hour                            = 18,   12,   12,
+ end_hour                            = 15,   12,   12,
  end_minute                          = 00,   00,   00,
  end_second                          = 00,   00,   00,
  interval_seconds                    = 10800
@@ -116,7 +116,7 @@
  /
 
  &perturbation
- check_TL = .false.
+ check_TL = .true.
  check_AD = .true.
  check_u = .true.
  check_v = .true.

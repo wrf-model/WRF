@@ -3065,446 +3065,444 @@ END SUBROUTINE G_HORIZONTAL_PRESSURE_GRADIENT
 
  END SUBROUTINE g_w_damp
 
- SUBROUTINE g_horizontal_diffusion(name,field,g_field,tendency,g_tendency,mu, &
- g_mu,config_flags,msfux,msfuy,msfvx,msfvx_inv,msfvy,msftx,msfty,khdif,xkmhd, &
- g_xkmhd,rdx,rdy,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
-
- IMPLICIT NONE
-
- REAL :: Tmpv1,g_Tmpv1,Tmpv2,g_Tmpv2,Tmpv3,g_Tmpv3,Tmpv4,g_Tmpv4,Tmpv5, &
- g_Tmpv5,Tmpv6,g_Tmpv6
- TYPE(grid_config_rec_type) :: config_flags
- INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
- CHARACTER (LEN=1) :: name
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: field,g_field,xkmhd,g_xkmhd
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: tendency,g_tendency
- REAL,DIMENSION(ims:ime,jms:jme) :: mu,g_mu
- REAL,DIMENSION(ims:ime,jms:jme) :: msfux,msfuy,msfvx,msfvx_inv,msfvy,msftx,msfty
- REAL :: rdx,rdy,khdif
-
- INTEGER :: i,j,k,itf,jtf,ktf
- INTEGER :: i_start,i_end,j_start,j_end
-! Revised by Ning Pan, 2010-07-22
-! REAL :: mrdx,g_mrdx,mkrdxm,g_mkrdxm,mkrdxp,g_mkrdxp,mrdy,g_mrdy,mkrdym, &
- REAL :: mrdx,mkrdxm,g_mkrdxm,mkrdxp,g_mkrdxp,mrdy,mkrdym, &
- g_mkrdym,mkrdyp,g_mkrdyp
- LOGICAL :: specified
-
- specified =.false.
-
- if(config_flags%specified .or. config_flags%nested) specified =.true.
-
- ktf =min(kte,kde-1)
-
- IF(name .EQ. 'u') THEN
-
- i_start =its
-
- i_end =ite
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- IF( config_flags%open_xs .or. specified ) i_start =max(ids+1,its)
-
- IF( config_flags%open_xe .or. specified ) i_end =min(ide-1,ite)
-
- IF( config_flags%open_ys .or. specified ) j_start =max(jds+1,jts)
-
- IF( config_flags%open_ye .or. specified ) j_end =min(jde-2,jte)
-
- IF( config_flags%periodic_x ) i_start =its
-
- IF( config_flags%periodic_x ) i_end =ite
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =(msftx(i-1,j)/msfty(i-1,j))*mu(i-1,j)*g_xkmhd(i-1,k,j) +(msftx(i-1,j) &
-/msfty(i-1,j))*g_mu(i-1,j)*xkmhd(i-1,k,j) 
- Tmpv1 =(msftx(i-1,j)/msfty(i-1,j))*mu(i-1,j)*xkmhd(i-1,k,j)
-
- g_mkrdxm =g_Tmpv1*rdx
- mkrdxm =Tmpv1*rdx
-
- g_Tmpv1 =(msftx(i,j)/msfty(i,j))*mu(i,j)*g_xkmhd(i,k,j) +(msftx(i,j) &
-/msfty(i,j))*g_mu(i,j)*xkmhd(i,k,j) 
- Tmpv1 =(msftx(i,j)/msfty(i,j))*mu(i,j)*xkmhd(i,k,j)
-
- g_mkrdxp =g_Tmpv1*rdx
- mkrdxp =Tmpv1*rdx
-
-! g_mrdx =0.0  ! Remarked by Ning Pan, 2010-07-22
- mrdx =msfux(i,j) *msfuy(i,j) *rdx
-
- g_Tmpv1 =((msfuy(i,j)+msfuy(i,j-1))/(msfux(i,j)+msfux(i,j-1))) *0.25*(mu(i,j) &
- +mu(i,j-1) +mu(i-1,j-1) +mu(i-1,j))*0.25*(g_xkmhd(i,k,j) +g_xkmhd(i,k,j-1) &
- +g_xkmhd(i-1,k,j-1) +g_xkmhd(i-1,k,j)) +((msfuy(i,j)+msfuy(i,j-1))/(msfux(i,j) &
-+msfux(i,j-1))) *0.25*(g_mu(i,j) +g_mu(i,j-1) +g_mu(i-1,j-1) +g_mu(i-1, &
- j))*0.25*(xkmhd(i,k,j) +xkmhd(i,k,j-1) +xkmhd(i-1,k,j-1) +xkmhd(i-1,k,j)) 
- Tmpv1 =((msfuy(i,j)+msfuy(i,j-1))/(msfux(i,j)+msfux(i,j-1))) *0.25*(mu(i,j) &
- +mu(i,j-1) +mu(i-1,j-1) +mu(i-1,j))*0.25*(xkmhd(i,k,j) +xkmhd(i,k,j-1) &
- +xkmhd(i-1,k,j-1) +xkmhd(i-1,k,j))
-
- g_mkrdym =g_Tmpv1*rdy
- mkrdym =Tmpv1*rdy
-
- g_Tmpv1 =((msfuy(i,j)+msfuy(i,j+1))/(msfux(i,j)+msfux(i,j+1))) *0.25*(mu(i,j) &
- +mu(i,j+1) +mu(i-1,j+1) +mu(i-1,j))*0.25*(g_xkmhd(i,k,j) +g_xkmhd(i,k,j+1) &
- +g_xkmhd(i-1,k,j+1) +g_xkmhd(i-1,k,j)) +((msfuy(i,j)+msfuy(i,j+1))/(msfux(i,j) &
-+msfux(i,j+1))) *0.25*(g_mu(i,j) +g_mu(i,j+1) +g_mu(i-1,j+1) +g_mu(i-1, &
- j))*0.25*(xkmhd(i,k,j) +xkmhd(i,k,j+1) +xkmhd(i-1,k,j+1) +xkmhd(i-1,k,j)) 
- Tmpv1 =((msfuy(i,j)+msfuy(i,j+1))/(msfux(i,j)+msfux(i,j+1))) *0.25*(mu(i,j) &
- +mu(i,j+1) +mu(i-1,j+1) +mu(i-1,j))*0.25*(xkmhd(i,k,j) +xkmhd(i,k,j+1) &
- +xkmhd(i-1,k,j+1) +xkmhd(i-1,k,j))
-
- g_mkrdyp =g_Tmpv1*rdy
- mkrdyp =Tmpv1*rdy
-
-! g_mrdy =0.0  ! Remarked by Ning Pan, 2010-07-22
- mrdy =msfux(i,j) *msfuy(i,j) *rdy
-
- g_Tmpv1 =mkrdxp*(g_field(i+1,k,j) -g_field(i,k,j)) +g_mkrdxp*(field(i+1, &
- k,j) -field(i,k,j)) 
- Tmpv1 =mkrdxp*(field(i+1,k,j) -field(i,k,j))
-
- g_Tmpv2 =mkrdxm*(g_field(i,k,j) -g_field(i-1,k,j)) +g_mkrdxm*(field(i,k, &
- j) -field(i-1,k,j)) 
- Tmpv2 =mkrdxm*(field(i,k,j) -field(i-1,k,j))
-
-! Revised by Ning Pan, 2010-07-22
-! g_Tmpv3 =mrdx*(g_Tmpv1 -g_Tmpv2) +g_mrdx*(Tmpv1 -Tmpv2) 
- g_Tmpv3 =mrdx*(g_Tmpv1 -g_Tmpv2)
- Tmpv3 =mrdx*(Tmpv1 -Tmpv2)
-
- g_Tmpv4 =mkrdyp*(g_field(i,k,j+1) -g_field(i,k,j)) +g_mkrdyp*(field(i,k, &
- j+1) -field(i,k,j)) 
- Tmpv4 =mkrdyp*(field(i,k,j+1) -field(i,k,j))
-
- g_Tmpv5 =mkrdym*(g_field(i,k,j) -g_field(i,k,j-1)) +g_mkrdym*(field(i,k, &
- j) -field(i,k,j-1)) 
- Tmpv5 =mkrdym*(field(i,k,j) -field(i,k,j-1))
-
-! Revised by Ning Pan, 2010-07-22
-! g_Tmpv6 =mrdy*(g_Tmpv4 -g_Tmpv5) +g_mrdy*(Tmpv4 -Tmpv5) 
- g_Tmpv6 =mrdy*(g_Tmpv4 -g_Tmpv5)
- Tmpv6 =mrdy*(Tmpv4 -Tmpv5)
-
- g_tendency(i,k,j) =g_tendency(i,k,j) +(g_Tmpv3 +g_Tmpv6)
- tendency(i,k,j) =tendency(i,k,j) +(Tmpv3 +Tmpv6)
-
- ENDDO
- ENDDO
- ENDDO
- ELSE IF(name .EQ. 'v') THEN
-
- i_start =its
-
- i_end =min(ite,ide-1)
-
- j_start =jts
-
- j_end =jte
-
- IF( config_flags%open_xs .or. specified ) i_start =max(ids+1,its)
-
- IF( config_flags%open_xe .or. specified ) i_end =min(ide-2,ite)
-
- IF( config_flags%open_ys .or. specified ) j_start =max(jds+1,jts)
-
- IF( config_flags%open_ye .or. specified ) j_end =min(jde-1,jte)
-
- IF( config_flags%periodic_x ) i_start =its
-
- IF( config_flags%periodic_x ) i_end =min(ite,ide-1)
-
- IF( config_flags%polar ) j_start =max(jds+1,jts)
-
- IF( config_flags%polar ) j_end =min(jde-1,jte)
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =((msfvx(i,j)+msfvx(i-1,j))/(msfvy(i,j)+msfvy(i-1,j))) *0.25*(mu(i,j) &
- +mu(i,j-1) +mu(i-1,j-1) +mu(i-1,j))*0.25*(g_xkmhd(i,k,j) +g_xkmhd(i,k,j-1) &
- +g_xkmhd(i-1,k,j-1) +g_xkmhd(i-1,k,j)) +((msfvx(i,j)+msfvx(i-1,j))/(msfvy(i,j) &
-+msfvy(i-1,j))) *0.25*(g_mu(i,j) +g_mu(i,j-1) +g_mu(i-1,j-1) +g_mu(i-1, &
- j))*0.25*(xkmhd(i,k,j) +xkmhd(i,k,j-1) +xkmhd(i-1,k,j-1) +xkmhd(i-1,k,j)) 
- Tmpv1 =((msfvx(i,j)+msfvx(i-1,j))/(msfvy(i,j)+msfvy(i-1,j))) *0.25*(mu(i,j) &
- +mu(i,j-1) +mu(i-1,j-1) +mu(i-1,j))*0.25*(xkmhd(i,k,j) +xkmhd(i,k,j-1) &
- +xkmhd(i-1,k,j-1) +xkmhd(i-1,k,j))
-
- g_mkrdxm =g_Tmpv1*rdx
- mkrdxm =Tmpv1*rdx
-
- g_Tmpv1 =((msfvx(i,j)+msfvx(i+1,j))/(msfvy(i,j)+msfvy(i+1,j))) *0.25*(mu(i,j) &
- +mu(i,j-1) +mu(i+1,j-1) +mu(i+1,j))*0.25*(g_xkmhd(i,k,j) +g_xkmhd(i,k,j-1) &
- +g_xkmhd(i+1,k,j-1) +g_xkmhd(i+1,k,j)) +((msfvx(i,j)+msfvx(i+1,j))/(msfvy(i,j) &
-+msfvy(i+1,j))) *0.25*(g_mu(i,j) +g_mu(i,j-1) +g_mu(i+1,j-1) +g_mu(i+1, &
- j))*0.25*(xkmhd(i,k,j) +xkmhd(i,k,j-1) +xkmhd(i+1,k,j-1) +xkmhd(i+1,k,j)) 
- Tmpv1 =((msfvx(i,j)+msfvx(i+1,j))/(msfvy(i,j)+msfvy(i+1,j))) *0.25*(mu(i,j) &
- +mu(i,j-1) +mu(i+1,j-1) +mu(i+1,j))*0.25*(xkmhd(i,k,j) +xkmhd(i,k,j-1) &
- +xkmhd(i+1,k,j-1) +xkmhd(i+1,k,j))
-
- g_mkrdxp =g_Tmpv1*rdx
- mkrdxp =Tmpv1*rdx
-
-! g_mrdx =0.0  ! Remarked by Ning Pan, 2010-07-22
- mrdx =msfvx(i,j) *msfvy(i,j) *rdx
-
- g_mkrdym =(msfty(i,j-1)/msftx(i,j-1))*g_xkmhd(i,k,j-1)*rdy
- mkrdym =(msfty(i,j-1)/msftx(i,j-1))*xkmhd(i,k,j-1)*rdy
-
- g_mkrdyp =(msfty(i,j)/msftx(i,j))*g_xkmhd(i,k,j)*rdy
- mkrdyp =(msfty(i,j)/msftx(i,j))*xkmhd(i,k,j)*rdy
-
-! g_mrdy =0.0  ! Remarked by Ning Pan, 2010-07-22
- mrdy =msfvx(i,j) *msfvy(i,j) *rdy
-
- g_Tmpv1 =mkrdxp*(g_field(i+1,k,j) -g_field(i,k,j)) +g_mkrdxp*(field(i+1, &
- k,j) -field(i,k,j)) 
- Tmpv1 =mkrdxp*(field(i+1,k,j) -field(i,k,j))
-
- g_Tmpv2 =mkrdxm*(g_field(i,k,j) -g_field(i-1,k,j)) +g_mkrdxm*(field(i,k, &
- j) -field(i-1,k,j)) 
- Tmpv2 =mkrdxm*(field(i,k,j) -field(i-1,k,j))
-
-! Revised by Ning Pan, 2010-07-22
-! g_Tmpv3 =mrdx*(g_Tmpv1 -g_Tmpv2) +g_mrdx*(Tmpv1 -Tmpv2) 
- g_Tmpv3 =mrdx*(g_Tmpv1 -g_Tmpv2)
- Tmpv3 =mrdx*(Tmpv1 -Tmpv2)
-
- g_Tmpv4 =mkrdyp*(g_field(i,k,j+1) -g_field(i,k,j)) +g_mkrdyp*(field(i,k, &
- j+1) -field(i,k,j)) 
- Tmpv4 =mkrdyp*(field(i,k,j+1) -field(i,k,j))
-
- g_Tmpv5 =mkrdym*(g_field(i,k,j) -g_field(i,k,j-1)) +g_mkrdym*(field(i,k, &
- j) -field(i,k,j-1)) 
- Tmpv5 =mkrdym*(field(i,k,j) -field(i,k,j-1))
-
-! Revised by Ning Pan, 2010-07-22
-! g_Tmpv6 =mrdy*(g_Tmpv4 -g_Tmpv5) +g_mrdy*(Tmpv4 -Tmpv5) 
- g_Tmpv6 =mrdy*(g_Tmpv4 -g_Tmpv5)
- Tmpv6 =mrdy*(Tmpv4 -Tmpv5)
-
- g_tendency(i,k,j) =g_tendency(i,k,j) +(g_Tmpv3 +g_Tmpv6)
- tendency(i,k,j) =tendency(i,k,j) +(Tmpv3 +Tmpv6)
-
- ENDDO
- ENDDO
- ENDDO
- ELSE IF(name .EQ. 'w') THEN
-
- i_start =its
-
- i_end =min(ite,ide-1)
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- IF( config_flags%open_xs .or. specified ) i_start =max(ids+1,its)
-
- IF( config_flags%open_xe .or. specified ) i_end =min(ide-2,ite)
-
- IF( config_flags%open_ys .or. specified ) j_start =max(jds+1,jts)
-
- IF( config_flags%open_ye .or. specified ) j_end =min(jde-2,jte)
-
- IF( config_flags%periodic_x ) i_start =its
-
- IF( config_flags%periodic_x ) i_end =min(ite,ide-1)
-
- DO j =j_start,j_end
- DO k =kts+1,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =(msfux(i,j)/msfuy(i,j)) *0.25*(mu(i,j) +mu(i-1,j) +mu(i,j) +mu(i-1,j)) &
-*0.25*(g_xkmhd(i,k,j) +g_xkmhd(i-1,k,j) +g_xkmhd(i,k-1,j) +g_xkmhd(i-1,k- &
- 1,j)) +(msfux(i,j)/msfuy(i,j)) *0.25*(g_mu(i,j) +g_mu(i-1,j) +g_mu(i,j) &
- +g_mu(i-1,j))*0.25*(xkmhd(i,k,j) +xkmhd(i-1,k,j) +xkmhd(i,k-1,j) +xkmhd(i-1,k-1,j)) 
- Tmpv1 =(msfux(i,j)/msfuy(i,j)) *0.25*(mu(i,j) +mu(i-1,j) +mu(i,j) +mu(i-1,j)) &
-*0.25*(xkmhd(i,k,j) +xkmhd(i-1,k,j) +xkmhd(i,k-1,j) +xkmhd(i-1,k-1,j))
-
- g_mkrdxm =g_Tmpv1*rdx
- mkrdxm =Tmpv1*rdx
-
- g_Tmpv1 =(msfux(i+1,j)/msfuy(i+1,j)) *0.25*(mu(i+1,j) +mu(i,j) +mu(i+1,j) &
- +mu(i,j))*0.25*(g_xkmhd(i+1,k,j) +g_xkmhd(i,k,j) +g_xkmhd(i+1,k-1,j) &
- +g_xkmhd(i,k-1,j)) +(msfux(i+1,j)/msfuy(i+1,j)) *0.25*(g_mu(i+1,j) &
- +g_mu(i,j) +g_mu(i+1,j) +g_mu(i,j))*0.25*(xkmhd(i+1,k,j) +xkmhd(i,k,j) &
- +xkmhd(i+1,k-1,j) +xkmhd(i,k-1,j)) 
- Tmpv1 =(msfux(i+1,j)/msfuy(i+1,j)) *0.25*(mu(i+1,j) +mu(i,j) +mu(i+1,j) +mu(i,j)) &
-*0.25*(xkmhd(i+1,k,j) +xkmhd(i,k,j) +xkmhd(i+1,k-1,j) +xkmhd(i,k-1,j))
-
- g_mkrdxp =g_Tmpv1*rdx
- mkrdxp =Tmpv1*rdx
-
-! g_mrdx =0.0  ! Remarked by Ning Pan, 2010-07-22
- mrdx =msftx(i,j) *msfty(i,j) *rdx
-
- g_Tmpv1 =(msfvy(i,j) *msfvx_inv(i,j)) *0.25*(mu(i,j) +mu(i,j-1) +mu(i,j) &
- +mu(i,j-1))*0.25*(g_xkmhd(i,k,j) +g_xkmhd(i,k,j-1) +g_xkmhd(i,k-1,j) &
- +g_xkmhd(i,k-1,j-1)) +(msfvy(i,j) *msfvx_inv(i,j)) *0.25*(g_mu(i,j) &
- +g_mu(i,j-1) +g_mu(i,j) +g_mu(i,j-1))*0.25*(xkmhd(i,k,j) +xkmhd(i,k,j-1) &
- +xkmhd(i,k-1,j) +xkmhd(i,k-1,j-1)) 
- Tmpv1 =(msfvy(i,j) *msfvx_inv(i,j)) *0.25*(mu(i,j) +mu(i,j-1) +mu(i,j) +mu(i,j-1)) &
-*0.25*(xkmhd(i,k,j) +xkmhd(i,k,j-1) +xkmhd(i,k-1,j) +xkmhd(i,k-1,j-1))
-
- g_mkrdym =g_Tmpv1*rdy
- mkrdym =Tmpv1*rdy
-
- g_Tmpv1 =(msfvy(i,j+1) *msfvx_inv(i,j+1)) *0.25*(mu(i,j+1) +mu(i,j) +mu(i,j+1) &
- +mu(i,j))*0.25*(g_xkmhd(i,k,j+1) +g_xkmhd(i,k,j) +g_xkmhd(i,k-1,j+1) &
- +g_xkmhd(i,k-1,j)) +(msfvy(i,j+1) *msfvx_inv(i,j+1)) *0.25*(g_mu(i,j+1) &
- +g_mu(i,j) +g_mu(i,j+1) +g_mu(i,j))*0.25*(xkmhd(i,k,j+1) +xkmhd(i,k,j) &
- +xkmhd(i,k-1,j+1) +xkmhd(i,k-1,j)) 
- Tmpv1 =(msfvy(i,j+1) *msfvx_inv(i,j+1)) *0.25*(mu(i,j+1) +mu(i,j) +mu(i,j+1) &
- +mu(i,j))*0.25*(xkmhd(i,k,j+1) +xkmhd(i,k,j) +xkmhd(i,k-1,j+1) +xkmhd(i,k-1,j))
-
- g_mkrdyp =g_Tmpv1*rdy
- mkrdyp =Tmpv1*rdy
-
-! g_mrdy =0.0  ! Remarked by Ning Pan, 2010-07-22
- mrdy =msftx(i,j) *msfty(i,j) *rdy
-
- g_Tmpv1 =mkrdxp*(g_field(i+1,k,j) -g_field(i,k,j)) +g_mkrdxp*(field(i+1, &
- k,j) -field(i,k,j)) 
- Tmpv1 =mkrdxp*(field(i+1,k,j) -field(i,k,j))
-
- g_Tmpv2 =mkrdxm*(g_field(i,k,j) -g_field(i-1,k,j)) +g_mkrdxm*(field(i,k, &
- j) -field(i-1,k,j)) 
- Tmpv2 =mkrdxm*(field(i,k,j) -field(i-1,k,j))
-
-! Revised by Ning Pan, 2010-07-22
-! g_Tmpv3 =mrdx*(g_Tmpv1 -g_Tmpv2) +g_mrdx*(Tmpv1 -Tmpv2) 
- g_Tmpv3 =mrdx*(g_Tmpv1 -g_Tmpv2)
- Tmpv3 =mrdx*(Tmpv1 -Tmpv2)
-
- g_Tmpv4 =mkrdyp*(g_field(i,k,j+1) -g_field(i,k,j)) +g_mkrdyp*(field(i,k, &
- j+1) -field(i,k,j)) 
- Tmpv4 =mkrdyp*(field(i,k,j+1) -field(i,k,j))
-
- g_Tmpv5 =mkrdym*(g_field(i,k,j) -g_field(i,k,j-1)) +g_mkrdym*(field(i,k, &
- j) -field(i,k,j-1)) 
- Tmpv5 =mkrdym*(field(i,k,j) -field(i,k,j-1))
-
-! Revised by Ning Pan, 2010-07-22
-! g_Tmpv6 =mrdy*(g_Tmpv4 -g_Tmpv5) +g_mrdy*(Tmpv4 -Tmpv5) 
- g_Tmpv6 =mrdy*(g_Tmpv4 -g_Tmpv5)
- Tmpv6 =mrdy*(Tmpv4 -Tmpv5)
-
- g_tendency(i,k,j) =g_tendency(i,k,j) +(g_Tmpv3 +g_Tmpv6)
- tendency(i,k,j) =tendency(i,k,j) +(Tmpv3 +Tmpv6)
-
- ENDDO
- ENDDO
- ENDDO
- ELSE
-
- i_start =its
-
- i_end =min(ite,ide-1)
-
- j_start =jts
-
- j_end =min(jte,jde-1)
-
- IF( config_flags%open_xs .or. specified ) i_start =max(ids+1,its)
-
- IF( config_flags%open_xe .or. specified ) i_end =min(ide-2,ite)
-
- IF( config_flags%open_ys .or. specified ) j_start =max(jds+1,jts)
-
- IF( config_flags%open_ye .or. specified ) j_end =min(jde-2,jte)
-
- IF( config_flags%periodic_x ) i_start =its
-
- IF( config_flags%periodic_x ) i_end =min(ite,ide-1)
-
- DO j =j_start,j_end
- DO k =kts,ktf
- DO i =i_start,i_end
-
- g_Tmpv1 =(msfux(i,j)/msfuy(i,j)) *0.5*(xkmhd(i,k,j) +xkmhd(i-1,k,j)) &
-*0.5*(g_mu(i,j) +g_mu(i-1,j)) +(msfux(i,j)/msfuy(i,j)) *0.5*(g_xkmhd(i,k,j) &
- +g_xkmhd(i-1,k,j))*0.5*(mu(i,j) +mu(i-1,j)) 
- Tmpv1 =(msfux(i,j)/msfuy(i,j)) *0.5*(xkmhd(i,k,j) +xkmhd(i-1,k,j))*0.5*(mu(i,j) +mu(i-1,j))
-
- g_mkrdxm =g_Tmpv1*rdx
- mkrdxm =Tmpv1*rdx
-
- g_Tmpv1 =(msfux(i+1,j)/msfuy(i+1,j)) *0.5*(xkmhd(i+1,k,j) +xkmhd(i,k,j)) &
-*0.5*(g_mu(i+1,j) +g_mu(i,j)) +(msfux(i+1,j)/msfuy(i+1,j)) *0.5*(g_xkmhd(i+ &
- 1,k,j) +g_xkmhd(i,k,j))*0.5*(mu(i+1,j) +mu(i,j)) 
- Tmpv1 =(msfux(i+1,j)/msfuy(i+1,j)) *0.5*(xkmhd(i+1,k,j) +xkmhd(i,k,j)) &
-*0.5*(mu(i+1,j) +mu(i,j))
-
- g_mkrdxp =g_Tmpv1*rdx
- mkrdxp =Tmpv1*rdx
-
-! g_mrdx =0.0  ! Remarked by Ning Pan, 2010-07-22
- mrdx =msftx(i,j) *msfty(i,j) *rdx
-
- g_Tmpv1 =(msfvy(i,j) *msfvx_inv(i,j)) *0.5*(xkmhd(i,k,j) +xkmhd(i,k,j-1)) &
-*0.5*(g_mu(i,j) +g_mu(i,j-1)) +(msfvy(i,j) *msfvx_inv(i,j)) *0.5*(g_xkmhd(i, &
- k,j) +g_xkmhd(i,k,j-1))*0.5*(mu(i,j) +mu(i,j-1)) 
- Tmpv1 =(msfvy(i,j) *msfvx_inv(i,j)) *0.5*(xkmhd(i,k,j) +xkmhd(i,k,j-1))*0.5*(mu(i,j) &
- +mu(i,j-1))
-
- g_mkrdym =g_Tmpv1*rdy
- mkrdym =Tmpv1*rdy
-
- g_Tmpv1 =(msfvy(i,j+1) *msfvx_inv(i,j+1)) *0.5*(xkmhd(i,k,j+1) +xkmhd(i,k,j)) &
-*0.5*(g_mu(i,j+1) +g_mu(i,j)) +(msfvy(i,j+1) *msfvx_inv(i,j+1)) *0.5*( &
- g_xkmhd(i,k,j+1) +g_xkmhd(i,k,j))*0.5*(mu(i,j+1) +mu(i,j)) 
- Tmpv1 =(msfvy(i,j+1) *msfvx_inv(i,j+1)) *0.5*(xkmhd(i,k,j+1) +xkmhd(i,k,j)) &
-*0.5*(mu(i,j+1) +mu(i,j))
-
- g_mkrdyp =g_Tmpv1*rdy
- mkrdyp =Tmpv1*rdy
-
-! g_mrdy =0.0  ! Remarked by Ning Pan, 2010-07-22
- mrdy =msftx(i,j) *msfty(i,j) *rdy
-
- g_Tmpv1 =mkrdxp*(g_field(i+1,k,j) -g_field(i,k,j)) +g_mkrdxp*(field(i+1, &
- k,j) -field(i,k,j)) 
- Tmpv1 =mkrdxp*(field(i+1,k,j) -field(i,k,j))
-
- g_Tmpv2 =mkrdxm*(g_field(i,k,j) -g_field(i-1,k,j)) +g_mkrdxm*(field(i,k, &
- j) -field(i-1,k,j)) 
- Tmpv2 =mkrdxm*(field(i,k,j) -field(i-1,k,j))
-
-! Revised by Ning Pan, 2010-07-22
-! g_Tmpv3 =mrdx*(g_Tmpv1 -g_Tmpv2) +g_mrdx*(Tmpv1 -Tmpv2) 
- g_Tmpv3 =mrdx*(g_Tmpv1 -g_Tmpv2)
- Tmpv3 =mrdx*(Tmpv1 -Tmpv2)
-
- g_Tmpv4 =mkrdyp*(g_field(i,k,j+1) -g_field(i,k,j)) +g_mkrdyp*(field(i,k, &
- j+1) -field(i,k,j)) 
- Tmpv4 =mkrdyp*(field(i,k,j+1) -field(i,k,j))
-
- g_Tmpv5 =mkrdym*(g_field(i,k,j) -g_field(i,k,j-1)) +g_mkrdym*(field(i,k, &
- j) -field(i,k,j-1)) 
- Tmpv5 =mkrdym*(field(i,k,j) -field(i,k,j-1))
-
-! Revised by Ning Pan, 2010-07-22
-! g_Tmpv6 =mrdy*(g_Tmpv4 -g_Tmpv5) +g_mrdy*(Tmpv4 -Tmpv5) 
- g_Tmpv6 =mrdy*(g_Tmpv4 -g_Tmpv5)
- Tmpv6 =mrdy*(Tmpv4 -Tmpv5)
-
- g_tendency(i,k,j) =g_tendency(i,k,j) +(g_Tmpv3 +g_Tmpv6)
- tendency(i,k,j) =tendency(i,k,j) +(Tmpv3 +Tmpv6)
-
- ENDDO
- ENDDO
- ENDDO
- ENDIF
-
- END SUBROUTINE g_horizontal_diffusion
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of horizontal_diffusion in forward (tangent) mode:
+!   variations   of useful results: tendency
+!   with respect to varying inputs: field tendency xkmhd mu
+!   RW status of diff variables: field:in tendency:in-out xkmhd:in
+!                mu:in
+SUBROUTINE G_HORIZONTAL_DIFFUSION(name, field, fieldd, tendency, &
+&  tendencyd, mu, mud, config_flags, msfux, msfuy, msfvx, msfvx_inv, &
+&  msfvy, msftx, msfty, khdif, xkmhd, xkmhdd, rdx, rdy, ids, ide, jds, &
+&  jde, kds, kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte, kts, &
+&  kte)
+  IMPLICIT NONE
+! Input data
+  TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte
+  CHARACTER(len=1), INTENT(IN) :: name
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: field, xkmhd
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: fieldd, &
+&  xkmhdd
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: tendency
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: tendencyd
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mu
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mud
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: msfux, msfuy, msfvx, &
+&  msfvx_inv, msfvy, msftx, msfty
+  REAL, INTENT(IN) :: rdx, rdy, khdif
+! Local data
+  INTEGER :: i, j, k, itf, jtf, ktf
+  INTEGER :: i_start, i_end, j_start, j_end
+  REAL :: mrdx, mkrdxm, mkrdxp, mrdy, mkrdym, mkrdyp
+  REAL :: mkrdxmd, mkrdxpd, mkrdymd, mkrdypd
+  LOGICAL :: specified
+!<DESCRIPTION>
+!
+!  horizontal_diffusion computes the horizontal diffusion tendency
+!  on model horizontal coordinate surfaces.
+!
+!</DESCRIPTION>
+  specified = .false.
+  IF (config_flags%specified .OR. config_flags%nested) specified = &
+&      .true.
+  IF (kte .GT. kde - 1) THEN
+    ktf = kde - 1
+  ELSE
+    ktf = kte
+  END IF
+  IF (name .EQ. 'u') THEN
+    i_start = its
+    i_end = ite
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+    IF (config_flags%open_xs .OR. specified) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+    END IF
+    IF (config_flags%open_xe .OR. specified) THEN
+      IF (ide - 1 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 1
+      END IF
+    END IF
+    IF (config_flags%open_ys .OR. specified) THEN
+      IF (jds + 1 .LT. jts) THEN
+        j_start = jts
+      ELSE
+        j_start = jds + 1
+      END IF
+    END IF
+    IF (config_flags%open_ye .OR. specified) THEN
+      IF (jde - 2 .GT. jte) THEN
+        j_end = jte
+      ELSE
+        j_end = jde - 2
+      END IF
+    END IF
+    IF (config_flags%periodic_x) i_start = its
+    IF (config_flags%periodic_x) i_end = ite
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        DO i=i_start,i_end
+! The interior is grad: (m_x*d/dx), the exterior is div: (m_x*m_y*d/dx(/m_y))
+! setting up different averagings of m^2 partial d/dX and m^2 partial d/dY
+          mkrdxmd = msftx(i-1, j)*rdx*(mud(i-1, j)*xkmhd(i-1, k, j)+mu(i&
+&            -1, j)*xkmhdd(i-1, k, j))/msfty(i-1, j)
+          mkrdxm = msftx(i-1, j)/msfty(i-1, j)*mu(i-1, j)*xkmhd(i-1, k, &
+&            j)*rdx
+          mkrdxpd = msftx(i, j)*rdx*(mud(i, j)*xkmhd(i, k, j)+mu(i, j)*&
+&            xkmhdd(i, k, j))/msfty(i, j)
+          mkrdxp = msftx(i, j)/msfty(i, j)*mu(i, j)*xkmhd(i, k, j)*rdx
+          mrdx = msfux(i, j)*msfuy(i, j)*rdx
+          mkrdymd = (msfuy(i, j)+msfuy(i, j-1))*0.25**2*rdy*((mud(i, j)+&
+&            mud(i, j-1)+mud(i-1, j-1)+mud(i-1, j))*(xkmhd(i, k, j)+xkmhd&
+&            (i, k, j-1)+xkmhd(i-1, k, j-1)+xkmhd(i-1, k, j))+(mu(i, j)+&
+&            mu(i, j-1)+mu(i-1, j-1)+mu(i-1, j))*(xkmhdd(i, k, j)+xkmhdd(&
+&            i, k, j-1)+xkmhdd(i-1, k, j-1)+xkmhdd(i-1, k, j)))/(msfux(i&
+&            , j)+msfux(i, j-1))
+          mkrdym = (msfuy(i, j)+msfuy(i, j-1))/(msfux(i, j)+msfux(i, j-1&
+&            ))*0.25*(mu(i, j)+mu(i, j-1)+mu(i-1, j-1)+mu(i-1, j))*0.25*(&
+&            xkmhd(i, k, j)+xkmhd(i, k, j-1)+xkmhd(i-1, k, j-1)+xkmhd(i-1&
+&            , k, j))*rdy
+          mkrdypd = (msfuy(i, j)+msfuy(i, j+1))*0.25**2*rdy*((mud(i, j)+&
+&            mud(i, j+1)+mud(i-1, j+1)+mud(i-1, j))*(xkmhd(i, k, j)+xkmhd&
+&            (i, k, j+1)+xkmhd(i-1, k, j+1)+xkmhd(i-1, k, j))+(mu(i, j)+&
+&            mu(i, j+1)+mu(i-1, j+1)+mu(i-1, j))*(xkmhdd(i, k, j)+xkmhdd(&
+&            i, k, j+1)+xkmhdd(i-1, k, j+1)+xkmhdd(i-1, k, j)))/(msfux(i&
+&            , j)+msfux(i, j+1))
+          mkrdyp = (msfuy(i, j)+msfuy(i, j+1))/(msfux(i, j)+msfux(i, j+1&
+&            ))*0.25*(mu(i, j)+mu(i, j+1)+mu(i-1, j+1)+mu(i-1, j))*0.25*(&
+&            xkmhd(i, k, j)+xkmhd(i, k, j+1)+xkmhd(i-1, k, j+1)+xkmhd(i-1&
+&            , k, j))*rdy
+! need to do four-corners (t) for diffusion coefficient as there are
+! no values at u,v points
+! msfuy - has to be y as part of d/dY
+!         has to be u as we're at a u point
+          mrdy = msfux(i, j)*msfuy(i, j)*rdy
+! correctly averaged version of rho~ * m^2 * 
+!    [partial d/dX(partial du^/dX) + partial d/dY(partial du^/dY)]
+          tendencyd(i, k, j) = tendencyd(i, k, j) + mrdx*(mkrdxpd*(field&
+&            (i+1, k, j)-field(i, k, j))+mkrdxp*(fieldd(i+1, k, j)-fieldd&
+&            (i, k, j))-mkrdxmd*(field(i, k, j)-field(i-1, k, j))-mkrdxm*&
+&            (fieldd(i, k, j)-fieldd(i-1, k, j))) + mrdy*(mkrdypd*(field(&
+&            i, k, j+1)-field(i, k, j))+mkrdyp*(fieldd(i, k, j+1)-fieldd(&
+&            i, k, j))-mkrdymd*(field(i, k, j)-field(i, k, j-1))-mkrdym*(&
+&            fieldd(i, k, j)-fieldd(i, k, j-1)))
+          tendency(i, k, j) = tendency(i, k, j) + (mrdx*(mkrdxp*(field(i&
+&            +1, k, j)-field(i, k, j))-mkrdxm*(field(i, k, j)-field(i-1, &
+&            k, j)))+mrdy*(mkrdyp*(field(i, k, j+1)-field(i, k, j))-&
+&            mkrdym*(field(i, k, j)-field(i, k, j-1))))
+        END DO
+      END DO
+    END DO
+  ELSE IF (name .EQ. 'v') THEN
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    j_end = jte
+    IF (config_flags%open_xs .OR. specified) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+    END IF
+    IF (config_flags%open_xe .OR. specified) THEN
+      IF (ide - 2 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 2
+      END IF
+    END IF
+    IF (config_flags%open_ys .OR. specified) THEN
+      IF (jds + 1 .LT. jts) THEN
+        j_start = jts
+      ELSE
+        j_start = jds + 1
+      END IF
+    END IF
+    IF (config_flags%open_ye .OR. specified) THEN
+      IF (jde - 1 .GT. jte) THEN
+        j_end = jte
+      ELSE
+        j_end = jde - 1
+      END IF
+    END IF
+    IF (config_flags%periodic_x) i_start = its
+    IF (config_flags%periodic_x) THEN
+      IF (ite .GT. ide - 1) THEN
+        i_end = ide - 1
+      ELSE
+        i_end = ite
+      END IF
+    END IF
+    IF (config_flags%polar) THEN
+      IF (jds + 1 .LT. jts) THEN
+        j_start = jts
+      ELSE
+        j_start = jds + 1
+      END IF
+    END IF
+    IF (config_flags%polar) THEN
+      IF (jde - 1 .GT. jte) THEN
+        j_end = jte
+      ELSE
+        j_end = jde - 1
+      END IF
+    END IF
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        DO i=i_start,i_end
+          mkrdxmd = (msfvx(i, j)+msfvx(i-1, j))*0.25**2*rdx*((mud(i, j)+&
+&            mud(i, j-1)+mud(i-1, j-1)+mud(i-1, j))*(xkmhd(i, k, j)+xkmhd&
+&            (i, k, j-1)+xkmhd(i-1, k, j-1)+xkmhd(i-1, k, j))+(mu(i, j)+&
+&            mu(i, j-1)+mu(i-1, j-1)+mu(i-1, j))*(xkmhdd(i, k, j)+xkmhdd(&
+&            i, k, j-1)+xkmhdd(i-1, k, j-1)+xkmhdd(i-1, k, j)))/(msfvy(i&
+&            , j)+msfvy(i-1, j))
+          mkrdxm = (msfvx(i, j)+msfvx(i-1, j))/(msfvy(i, j)+msfvy(i-1, j&
+&            ))*0.25*(mu(i, j)+mu(i, j-1)+mu(i-1, j-1)+mu(i-1, j))*0.25*(&
+&            xkmhd(i, k, j)+xkmhd(i, k, j-1)+xkmhd(i-1, k, j-1)+xkmhd(i-1&
+&            , k, j))*rdx
+          mkrdxpd = (msfvx(i, j)+msfvx(i+1, j))*0.25**2*rdx*((mud(i, j)+&
+&            mud(i, j-1)+mud(i+1, j-1)+mud(i+1, j))*(xkmhd(i, k, j)+xkmhd&
+&            (i, k, j-1)+xkmhd(i+1, k, j-1)+xkmhd(i+1, k, j))+(mu(i, j)+&
+&            mu(i, j-1)+mu(i+1, j-1)+mu(i+1, j))*(xkmhdd(i, k, j)+xkmhdd(&
+&            i, k, j-1)+xkmhdd(i+1, k, j-1)+xkmhdd(i+1, k, j)))/(msfvy(i&
+&            , j)+msfvy(i+1, j))
+          mkrdxp = (msfvx(i, j)+msfvx(i+1, j))/(msfvy(i, j)+msfvy(i+1, j&
+&            ))*0.25*(mu(i, j)+mu(i, j-1)+mu(i+1, j-1)+mu(i+1, j))*0.25*(&
+&            xkmhd(i, k, j)+xkmhd(i, k, j-1)+xkmhd(i+1, k, j-1)+xkmhd(i+1&
+&            , k, j))*rdx
+          mrdx = msfvx(i, j)*msfvy(i, j)*rdx
+          mkrdymd = msfty(i, j-1)*rdy*xkmhdd(i, k, j-1)/msftx(i, j-1)
+          mkrdym = msfty(i, j-1)/msftx(i, j-1)*xkmhd(i, k, j-1)*rdy
+          mkrdypd = msfty(i, j)*rdy*xkmhdd(i, k, j)/msftx(i, j)
+          mkrdyp = msfty(i, j)/msftx(i, j)*xkmhd(i, k, j)*rdy
+          mrdy = msfvx(i, j)*msfvy(i, j)*rdy
+          tendencyd(i, k, j) = tendencyd(i, k, j) + mrdx*(mkrdxpd*(field&
+&            (i+1, k, j)-field(i, k, j))+mkrdxp*(fieldd(i+1, k, j)-fieldd&
+&            (i, k, j))-mkrdxmd*(field(i, k, j)-field(i-1, k, j))-mkrdxm*&
+&            (fieldd(i, k, j)-fieldd(i-1, k, j))) + mrdy*(mkrdypd*(field(&
+&            i, k, j+1)-field(i, k, j))+mkrdyp*(fieldd(i, k, j+1)-fieldd(&
+&            i, k, j))-mkrdymd*(field(i, k, j)-field(i, k, j-1))-mkrdym*(&
+&            fieldd(i, k, j)-fieldd(i, k, j-1)))
+          tendency(i, k, j) = tendency(i, k, j) + (mrdx*(mkrdxp*(field(i&
+&            +1, k, j)-field(i, k, j))-mkrdxm*(field(i, k, j)-field(i-1, &
+&            k, j)))+mrdy*(mkrdyp*(field(i, k, j+1)-field(i, k, j))-&
+&            mkrdym*(field(i, k, j)-field(i, k, j-1))))
+        END DO
+      END DO
+    END DO
+  ELSE IF (name .EQ. 'w') THEN
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+    IF (config_flags%open_xs .OR. specified) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+    END IF
+    IF (config_flags%open_xe .OR. specified) THEN
+      IF (ide - 2 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 2
+      END IF
+    END IF
+    IF (config_flags%open_ys .OR. specified) THEN
+      IF (jds + 1 .LT. jts) THEN
+        j_start = jts
+      ELSE
+        j_start = jds + 1
+      END IF
+    END IF
+    IF (config_flags%open_ye .OR. specified) THEN
+      IF (jde - 2 .GT. jte) THEN
+        j_end = jte
+      ELSE
+        j_end = jde - 2
+      END IF
+    END IF
+    IF (config_flags%periodic_x) i_start = its
+    IF (config_flags%periodic_x) THEN
+      IF (ite .GT. ide - 1) THEN
+        i_end = ide - 1
+      ELSE
+        i_end = ite
+      END IF
+    END IF
+    DO j=j_start,j_end
+      DO k=kts+1,ktf
+        DO i=i_start,i_end
+          mkrdxmd = msfux(i, j)*0.25**2*rdx*((2*mud(i, j)+2*mud(i-1, j))&
+&            *(xkmhd(i, k, j)+xkmhd(i-1, k, j)+xkmhd(i, k-1, j)+xkmhd(i-1&
+&            , k-1, j))+(mu(i, j)+mu(i-1, j)+mu(i, j)+mu(i-1, j))*(xkmhdd&
+&            (i, k, j)+xkmhdd(i-1, k, j)+xkmhdd(i, k-1, j)+xkmhdd(i-1, k-&
+&            1, j)))/msfuy(i, j)
+          mkrdxm = msfux(i, j)/msfuy(i, j)*0.25*(mu(i, j)+mu(i-1, j)+mu(&
+&            i, j)+mu(i-1, j))*0.25*(xkmhd(i, k, j)+xkmhd(i-1, k, j)+&
+&            xkmhd(i, k-1, j)+xkmhd(i-1, k-1, j))*rdx
+          mkrdxpd = msfux(i+1, j)*0.25**2*rdx*((2*mud(i+1, j)+2*mud(i, j&
+&            ))*(xkmhd(i+1, k, j)+xkmhd(i, k, j)+xkmhd(i+1, k-1, j)+xkmhd&
+&            (i, k-1, j))+(mu(i+1, j)+mu(i, j)+mu(i+1, j)+mu(i, j))*(&
+&            xkmhdd(i+1, k, j)+xkmhdd(i, k, j)+xkmhdd(i+1, k-1, j)+xkmhdd&
+&            (i, k-1, j)))/msfuy(i+1, j)
+          mkrdxp = msfux(i+1, j)/msfuy(i+1, j)*0.25*(mu(i+1, j)+mu(i, j)&
+&            +mu(i+1, j)+mu(i, j))*0.25*(xkmhd(i+1, k, j)+xkmhd(i, k, j)+&
+&            xkmhd(i+1, k-1, j)+xkmhd(i, k-1, j))*rdx
+          mrdx = msftx(i, j)*msfty(i, j)*rdx
+!         mkrdym=(msfvy(i,j)/msfvx(i,j))*   &
+          mkrdymd = msfvy(i, j)*msfvx_inv(i, j)*0.25**2*rdy*((2*mud(i, j&
+&            )+2*mud(i, j-1))*(xkmhd(i, k, j)+xkmhd(i, k, j-1)+xkmhd(i, k&
+&            -1, j)+xkmhd(i, k-1, j-1))+(mu(i, j)+mu(i, j-1)+mu(i, j)+mu(&
+&            i, j-1))*(xkmhdd(i, k, j)+xkmhdd(i, k, j-1)+xkmhdd(i, k-1, j&
+&            )+xkmhdd(i, k-1, j-1)))
+          mkrdym = msfvy(i, j)*msfvx_inv(i, j)*0.25*(mu(i, j)+mu(i, j-1)&
+&            +mu(i, j)+mu(i, j-1))*0.25*(xkmhd(i, k, j)+xkmhd(i, k, j-1)+&
+&            xkmhd(i, k-1, j)+xkmhd(i, k-1, j-1))*rdy
+!         mkrdyp=(msfvy(i,j+1)/msfvx(i,j+1))*   &
+          mkrdypd = msfvy(i, j+1)*msfvx_inv(i, j+1)*0.25**2*rdy*((2*mud(&
+&            i, j+1)+2*mud(i, j))*(xkmhd(i, k, j+1)+xkmhd(i, k, j)+xkmhd(&
+&            i, k-1, j+1)+xkmhd(i, k-1, j))+(mu(i, j+1)+mu(i, j)+mu(i, j+&
+&            1)+mu(i, j))*(xkmhdd(i, k, j+1)+xkmhdd(i, k, j)+xkmhdd(i, k-&
+&            1, j+1)+xkmhdd(i, k-1, j)))
+          mkrdyp = msfvy(i, j+1)*msfvx_inv(i, j+1)*0.25*(mu(i, j+1)+mu(i&
+&            , j)+mu(i, j+1)+mu(i, j))*0.25*(xkmhd(i, k, j+1)+xkmhd(i, k&
+&            , j)+xkmhd(i, k-1, j+1)+xkmhd(i, k-1, j))*rdy
+          mrdy = msftx(i, j)*msfty(i, j)*rdy
+          tendencyd(i, k, j) = tendencyd(i, k, j) + mrdx*(mkrdxpd*(field&
+&            (i+1, k, j)-field(i, k, j))+mkrdxp*(fieldd(i+1, k, j)-fieldd&
+&            (i, k, j))-mkrdxmd*(field(i, k, j)-field(i-1, k, j))-mkrdxm*&
+&            (fieldd(i, k, j)-fieldd(i-1, k, j))) + mrdy*(mkrdypd*(field(&
+&            i, k, j+1)-field(i, k, j))+mkrdyp*(fieldd(i, k, j+1)-fieldd(&
+&            i, k, j))-mkrdymd*(field(i, k, j)-field(i, k, j-1))-mkrdym*(&
+&            fieldd(i, k, j)-fieldd(i, k, j-1)))
+          tendency(i, k, j) = tendency(i, k, j) + (mrdx*(mkrdxp*(field(i&
+&            +1, k, j)-field(i, k, j))-mkrdxm*(field(i, k, j)-field(i-1, &
+&            k, j)))+mrdy*(mkrdyp*(field(i, k, j+1)-field(i, k, j))-&
+&            mkrdym*(field(i, k, j)-field(i, k, j-1))))
+        END DO
+      END DO
+    END DO
+  ELSE
+    i_start = its
+    IF (ite .GT. ide - 1) THEN
+      i_end = ide - 1
+    ELSE
+      i_end = ite
+    END IF
+    j_start = jts
+    IF (jte .GT. jde - 1) THEN
+      j_end = jde - 1
+    ELSE
+      j_end = jte
+    END IF
+    IF (config_flags%open_xs .OR. specified) THEN
+      IF (ids + 1 .LT. its) THEN
+        i_start = its
+      ELSE
+        i_start = ids + 1
+      END IF
+    END IF
+    IF (config_flags%open_xe .OR. specified) THEN
+      IF (ide - 2 .GT. ite) THEN
+        i_end = ite
+      ELSE
+        i_end = ide - 2
+      END IF
+    END IF
+    IF (config_flags%open_ys .OR. specified) THEN
+      IF (jds + 1 .LT. jts) THEN
+        j_start = jts
+      ELSE
+        j_start = jds + 1
+      END IF
+    END IF
+    IF (config_flags%open_ye .OR. specified) THEN
+      IF (jde - 2 .GT. jte) THEN
+        j_end = jte
+      ELSE
+        j_end = jde - 2
+      END IF
+    END IF
+    IF (config_flags%periodic_x) i_start = its
+    IF (config_flags%periodic_x) THEN
+      IF (ite .GT. ide - 1) THEN
+        i_end = ide - 1
+      ELSE
+        i_end = ite
+      END IF
+    END IF
+    DO j=j_start,j_end
+      DO k=kts,ktf
+        DO i=i_start,i_end
+          mkrdxmd = msfux(i, j)*0.5**2*rdx*((xkmhdd(i, k, j)+xkmhdd(i-1&
+&            , k, j))*(mu(i, j)+mu(i-1, j))+(xkmhd(i, k, j)+xkmhd(i-1, k&
+&            , j))*(mud(i, j)+mud(i-1, j)))/msfuy(i, j)
+          mkrdxm = msfux(i, j)/msfuy(i, j)*0.5*(xkmhd(i, k, j)+xkmhd(i-1&
+&            , k, j))*0.5*(mu(i, j)+mu(i-1, j))*rdx
+          mkrdxpd = msfux(i+1, j)*0.5**2*rdx*((xkmhdd(i+1, k, j)+xkmhdd(&
+&            i, k, j))*(mu(i+1, j)+mu(i, j))+(xkmhd(i+1, k, j)+xkmhd(i, k&
+&            , j))*(mud(i+1, j)+mud(i, j)))/msfuy(i+1, j)
+          mkrdxp = msfux(i+1, j)/msfuy(i+1, j)*0.5*(xkmhd(i+1, k, j)+&
+&            xkmhd(i, k, j))*0.5*(mu(i+1, j)+mu(i, j))*rdx
+          mrdx = msftx(i, j)*msfty(i, j)*rdx
+!         mkrdym=(msfvy(i,j)/msfvx(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy
+          mkrdymd = msfvy(i, j)*msfvx_inv(i, j)*0.5**2*rdy*((xkmhdd(i, k&
+&            , j)+xkmhdd(i, k, j-1))*(mu(i, j)+mu(i, j-1))+(xkmhd(i, k, j&
+&            )+xkmhd(i, k, j-1))*(mud(i, j)+mud(i, j-1)))
+          mkrdym = msfvy(i, j)*msfvx_inv(i, j)*0.5*(xkmhd(i, k, j)+xkmhd&
+&            (i, k, j-1))*0.5*(mu(i, j)+mu(i, j-1))*rdy
+!         mkrdyp=(msfvy(i,j+1)/msfvx(i,j+1))*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy
+          mkrdypd = msfvy(i, j+1)*msfvx_inv(i, j+1)*0.5**2*rdy*((xkmhdd(&
+&            i, k, j+1)+xkmhdd(i, k, j))*(mu(i, j+1)+mu(i, j))+(xkmhd(i, &
+&            k, j+1)+xkmhd(i, k, j))*(mud(i, j+1)+mud(i, j)))
+          mkrdyp = msfvy(i, j+1)*msfvx_inv(i, j+1)*0.5*(xkmhd(i, k, j+1)&
+&            +xkmhd(i, k, j))*0.5*(mu(i, j+1)+mu(i, j))*rdy
+          mrdy = msftx(i, j)*msfty(i, j)*rdy
+          tendencyd(i, k, j) = tendencyd(i, k, j) + mrdx*(mkrdxpd*(field&
+&            (i+1, k, j)-field(i, k, j))+mkrdxp*(fieldd(i+1, k, j)-fieldd&
+&            (i, k, j))-mkrdxmd*(field(i, k, j)-field(i-1, k, j))-mkrdxm*&
+&            (fieldd(i, k, j)-fieldd(i-1, k, j))) + mrdy*(mkrdypd*(field(&
+&            i, k, j+1)-field(i, k, j))+mkrdyp*(fieldd(i, k, j+1)-fieldd(&
+&            i, k, j))-mkrdymd*(field(i, k, j)-field(i, k, j-1))-mkrdym*(&
+&            fieldd(i, k, j)-fieldd(i, k, j-1)))
+          tendency(i, k, j) = tendency(i, k, j) + (mrdx*(mkrdxp*(field(i&
+&            +1, k, j)-field(i, k, j))-mkrdxm*(field(i, k, j)-field(i-1, &
+&            k, j)))+mrdy*(mkrdyp*(field(i, k, j+1)-field(i, k, j))-&
+&            mkrdym*(field(i, k, j)-field(i, k, j-1))))
+        END DO
+      END DO
+    END DO
+  END IF
+END SUBROUTINE G_HORIZONTAL_DIFFUSION
 
  SUBROUTINE g_horizontal_diffusion_3dmp(name,field,g_field,tendency, &
  g_tendency,mu,g_mu,config_flags,base_3d,msfux,msfuy,msfvx,msfvx_inv,msfvy, &

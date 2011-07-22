@@ -1319,7 +1319,8 @@ package   temfpblscheme  bl_pbl_physics==10          -             -
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -
 package   gdscheme       cu_physics==3               -             -
-package   sasscheme      cu_physics==4               -             -
+package   sasscheme      cu_physics==84              -             -
+package   osasscheme     cu_physics==4               -             -
 package   g3scheme       cu_physics==5               -             -
 package   camzmscheme    cu_physics==7               -             -
 package   tiedtkescheme  cu_physics==6               -             -

@@ -2073,6 +2073,8 @@
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==BMJSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
+     &   CONFIG_FLAGS%CU_PHYSICS==OSASSCHEME)RETURN
+      IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)RETURN
       
 !-----------------------------------------------------------------------
@@ -2306,7 +2308,7 @@
 !     CUMULUS DRIVER. THIS IS gopal's doing
 !
 
-      IF(CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)THEN
+      IF(CONFIG_FLAGS%CU_PHYSICS==OSASSCHEME .or. CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)THEN
 !
           IF(GRID%ID .EQ. 1)THEN   ! Both parent and nest set to 5 minutes for random number calls 
            IDT=MOD(NTSD,NCNVC)    
@@ -2514,7 +2516,7 @@
 !
           cps_select: SELECT CASE(config_flags%cu_physics)
 !
-          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME)
+          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,OSASSCHEME)
             IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
               MOIST_TRANS(I,K,J,P_QS)=MAX(0.,MOIST_TRANS(I,K,J,P_QS)+RQICUTEN(I,K,J)*DTCNVC+RQSCUTEN(I,K,J)*DTCNVC)
             ELSE

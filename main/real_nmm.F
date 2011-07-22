@@ -1120,7 +1120,8 @@ character *24 :: temp24 , temp24b
         IUNIT_GFS = 900 + LOOP - 1
         READ(IUNIT_GFS,iostat=ioerror) PDB,TB,QB,CWMB,UB,VB
         if(ioerror/=0) then
-           call wrf_error_fatal('Unable to read MAKBND output from unit 900.')
+           write(message,*) 'Unable to read MAKBND output from unit ',IUNIT_GFS
+           call wrf_error_fatal(message)
         endif
 
         ! Now copy the data into the temporary boundary arrays, and

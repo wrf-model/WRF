@@ -1061,6 +1061,44 @@ state    real  GSW              ij      misc        1         -      rd       "G
 state    real  GLW              ij      misc        1         -      rhd      "GLW"                   "DOWNWARD LONG WAVE FLUX AT GROUND SURFACE"            "W m-2"      
 state    real  SWNORM           ij      misc        1         -      rhd      "SWNORM"                "NORMAL SHORT WAVE FLUX AT GROUND SURFACE (SLOPE-DEPENDENT)"           "W m-2"      
 
+# CLWRF-WRF4G
+state    real  T2MIN            ij      misc        1         -      rh3      "T2MIN"                 "MINIMUM TEMPERATURE AT 2M HEIGHT IN CLWRFH HOURS"                      "K"
+state    real  T2MAX            ij      misc        1         -      rh3      "T2MAX"                 "MAXIMUM TEMPERATURE AT 2M HEIGHT IN CLWRFH HOURS"                      "K"
+state    real  TT2MIN           ij      misc        1         -      rh3      "TT2MIN"                 "TIME OF MINIMUM TEMPERATURE AT 2M HEIGHT IN CLWRFH HOURS"             "minute"
+state    real  TT2MAX           ij      misc        1         -      rh3      "TT2MAX"                 "TIME OF MAXIMUM TEMPERATURE AT 2M HEIGHT IN CLWRFH HOURS"             "minute"
+state    real  T2MEAN           ij      misc        1         -      rh3      "T2MEAN"                 "MEAN TEMPERATURE AT 2M HEIGHT IN CLWRFH HOURS"                        "K"
+state    real  T2STD            ij      misc        1         -      rh3      "T2STD"                  "STANDARD DEV. TEMPERATURE AT 2M HEIGHT IN CLWRFH HOURS"               "k"
+state    real  Q2MIN            ij      misc        1         -      rh3      "Q2MIN"                  "MINIMUM WATER VAPOR MIX. RAT. AT 2M HEIGHT IN CLWRFH HOURS"           "kg kg-1"
+state    real  Q2MAX            ij      misc        1         -      rh3      "Q2MAX"                  "MAXIMUM WATER VAPOR MIX. RAT. AT 2M HEIGHT IN CLWRFH HOURS"           "kg kg-1"
+state    real  TQ2MIN           ij      misc        1         -      rh3      "TQ2MIN"                 "TIME OF MINIMUM WATER VAPOR MIX. RAT. AT 2M HEIGHT IN CLWRFH HOURS"   "minute"
+state    real  TQ2MAX           ij      misc        1         -      rh3      "TQ2MAX"                 "TIME OF MAXIMUM WATER VAPOR MIX. RAT. AT 2M HEIGHT IN CLWRFH HOURS"   "minute"
+state    real  Q2MEAN           ij      misc        1         -      rh3      "Q2MEAN"                 "MEAN WATER VAPOR MIX. RAT. AT 2M HEIGHT IN CLWRFH HOURS"              "kg kg-1"
+state    real  Q2STD            ij      misc        1         -      rh3      "Q2STD"                  "STANDARD DEV. WATER VAPOR MIX. RAT. AT 2M HEIGHT IN CLWRFH HOURS"     "kg kg-1"
+state    real  SKINTEMPMIN      ij      misc        1         -      rh3      "SKINTEMPMIN"            "MINIMUM SKIN TEMPERATURE IN CLWRFH HOURS"                             "K"
+state    real  SKINTEMPMAX      ij      misc        1         -      rh3      "SKINTEMPMAX"            "MAXIMUM SKIN TEMPERATURE IN CLWRFH HOURS"                             "K"
+state    real  TSKINTEMPMIN     ij      misc        1         -      rh3      "TSKINTEMPMIN"           "TIME OF MINIMUM SKIN TEMPERATURE IN CLWRFH HOURS"                     "minute"
+state    real  TSKINTEMPMAX     ij      misc        1         -      rh3      "TSKINTEMPMAX"           "TIME OF MAXIMUM SKIN TEMPERATURE IN CLWRFH HOURS"                     "minute"
+state    real  SKINTEMPMEAN     ij      misc        1         -      rh3      "SKINTEMPMEAN"           "MEAN SKIN TEMPERATURE IN CLWRFH HOURS"                                "K"
+state    real  SKINTEMPSTD      ij      misc        1         -      rh3      "SKINTEMPSTD"            "STANDARD DEV. OF SKIN TEMPERATURE IN CLWRF HOURS"                     "K"
+state    real  U10MAX           ij      misc        1         -      rh3      "U10MAX"                 "MAXIMUM U AT 10M HEIGHT IN CLWRFH HOURS"                              "m s-1"
+state    real  V10MAX           ij      misc        1         -      rh3      "V10MAX"                 "MAXIMUM V AT 10M HEIGHT IN CLWRFH HOURS"                              "m s-1"
+state    real  SPDUV10MAX       ij      misc        1         -      rh3      "SPDUV10MAX"             "MAXIMUM WIND SPEED AT 10M HEIGHT IN CLWRFH HOURS"                     "m s-1"
+state    real  TSPDUV10MAX      ij      misc        1         -      rh3      "TSPDUV10MAX"            "TIME OF MAXIMUM WIND SPEED AT 10M HEIGHT IN CLWRFH HOURS"             "minute"
+state    real  U10MEAN          ij      misc        1         -      rh3      "U10MEAN"                "MEAN U AT 10M HEIGHT IN CLWRFH HOURS"                                 "m s-1"
+state    real  V10MEAN          ij      misc        1         -      rh3      "V10MEAN"                "MEAN V AT 10M HEIGHT IN CLWRFH HOURS"                                 "m s-1"
+state    real  SPDUV10MEAN      ij      misc        1         -      rh3      "SPDUV10MEAN"            "MEAN WIND SPEED AT 10M HEIGHT IN CLWRFH HOURS"                        "m s-1"
+state    real  U10STD           ij      misc        1         -      rh3      "U10STD"                 "STANDARD DEV. U AT 10M HEIGHT IN CLWRFH HOURS"                        "m s-1"
+state    real  V10STD           ij      misc        1         -      rh3      "V10STD"                 "STANDARD DEV. V AT 10M HEIGHT IN CLWRFH HOURS"                        "m s-1"
+state    real  SPDUV10STD       ij      misc        1         -      rh3      "SPDUV10STD"             "STANDARD DEV. WIND SPEED AT 10M HEIGHT IN CLWRFH HOURS"               "m s-1"
+state    real  RAINCVMAX        ij      misc        1         -      rh3      "RAINCVMAX"              "MAXIMUM CUMULUS PRECIPITATION FLUX IN CLWRFH HOURS"                   "kg m-2 s-1"
+state    real  RAINNCVMAX       ij      misc        1         -      rh3      "RAINNCVMAX"              "MAXIMUM GRID SCALE PRECIPITATION FLUX IN CLWRFH HOURS"                "kg m-2 s-1"
+state    real  TRAINCVMAX       ij      misc        1         -      rh3      "TRAINCVMAX"             "TIME OF MAXIMUM CUMULUS PRECIPITATION FLUX IN CLWRFH HOURS"           "minute"
+state    real  TRAINNCVMAX      ij      misc        1         -      rh3      "TRAINNCVMAX"            "TIME OF MAXIMUM GRID SCALE PRECIPITATION FLUX IN CLWRFH HOURS"        "minute"
+state    real  RAINCVMEAN       ij      misc        1         -      rh3      "RAINCVMEAN"             "MEAN CUMULUS PRECIPITATION FLUX IN CLWRFH HOURS"                      "kg m-2 s-1"
+state    real  RAINNCVMEAN      ij      misc        1         -      rh3      "RAINNCVMEAN"            "MEAN GRID SCALE PRECIPITATION FLUX IN CLWRFH HOURS"                   "kg m-2 s-1"
+state    real  RAINCVSTD        ij      misc        1         -      rh3      "RAINCVSTD"              "STANDARD DEV. CUMULUS PRECIPITATION FLUX IN CLWRFH HOURS"             "kg m-2 s-1"
+state    real  RAINNCVSTD       ij      misc        1         -      rh3      "RAINNCVSTD"             "STANDARD DEV. GRID SCALE PRECIPITATION IN FLUX CLWRFH HOURS"          "kg m-2 s-1"
+
 # upward and downward clearsky and total diagnostic fluxes for CAM radiation
 state    real  ACSWUPT          ij      misc        1         -      rhdu     "ACSWUPT"               "ACCUMULATED UPWELLING SHORTWAVE FLUX AT TOP"          "J m-2"
 state    real  ACSWUPTC         ij      misc        1         -      rhdu     "ACSWUPTC"              "ACCUMULATED UPWELLING CLEAR SKY SHORTWAVE FLUX AT TOP" "J m-2"
@@ -1371,6 +1409,7 @@ rconfig   logical adjust_input_times      namelist,time_control         1       
 rconfig   integer diag_print              namelist,time_control         1              0      -    "print out time series of model diagnostics"
 rconfig   logical nocolons                namelist,time_control         1             .false. -    "nocolons"
 rconfig   logical cycling                 namelist,time_control         1             .false. -    "true for cycling (using wrfout file as input data)"
+rconfig   integer output_diagnostics      namelist,time_control         1              0
 
 # DFI namelist
 rconfig   integer dfi_opt                namelist,dfi_control   1       0     rh   "dfi_opt"                  ""      ""
@@ -1963,6 +2002,7 @@ package   original         moist_adv_opt==0            -             -
 package   positivedef    moist_adv_opt==1            -             -
 package   monotonic      moist_adv_opt==2            -             -
 package   tracer_test1  tracer_opt==2       -             tracer:tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8
+package   maxmin_output  output_diagnostics==1           -    state:t2min,t2max,tt2min,tt2max,t2mean,t2std,q2min,q2max,tq2min,tq2max,q2mean,q2std,skintempmin,skintempmax,tskintempmin,tskintempmax,skintempmean,skintempstd,u10max,v10max,spduv10max,tspduv10max,u10mean,v10mean,spduv10mean,u10std,v10std,spduv10std,raincvmax,rainncvmax,traincvmax,trainncvmax,raincvmean,rainncvmean,raincvstd,rainncvstd
 
 package   dfi_setup      dfi_stage==0                -             -
 package   dfi_bck        dfi_stage==1                -             -

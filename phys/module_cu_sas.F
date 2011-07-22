@@ -2660,6 +2660,7 @@ CONTAINS
 !c  initialize arrays
 !c
       do i=1,im
+        kcnv(i)=0
         cnvflg(i) = .true.
         rn(i)=0.
         kbot(i)=km+1
@@ -2757,7 +2758,8 @@ CONTAINS
 !     
       do k = 1, km
         do i=1,im
-          if (prsl(i,k)*tx1(i) .gt. 0.04) kmax(i)  = k + 1
+          IF (prSL(I,K)*tx1(I) .GT. 0.04) KMAX(I)  = MIN(KM,K + 1)
+!2011bugfix          if (prsl(i,k)*tx1(i) .gt. 0.04) kmax(i)  = k + 1
           if (prsl(i,k)*tx1(i) .gt. 0.45) kbmax(i) = k + 1
           if (prsl(i,k)*tx1(i) .gt. 0.70) kbm(i)   = k + 1
         enddo

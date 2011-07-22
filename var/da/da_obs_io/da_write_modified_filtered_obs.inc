@@ -49,7 +49,7 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
    integer                      :: j, k, iost, nlevels
 
    integer            :: n, zero
-   real               :: es, qs, speed, dir, rh, rh_error, uu, vv
+   real               :: es, qs, speed, dir, rh, rh_error, uu, vv, zz, hh
    real               :: xmiss, height, height_error, pr_error, slp_error
    real               :: thick, thick_error,dir_error,speed_error
    real               :: td, td_error , elv_error, ships_pr_error
@@ -1531,11 +1531,20 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
 !cys           t, t_qc,  t_err,                             &   
 !cys           ref, ref_qc,  ref_err,                       &   
 !cys           rh, rh_qc, iv%gpsref(n)%q(k)%error
+
+!
+!  For GPSREF, convert the geopotential height to geometric height, then write
+!  out to filtered_obs (YRG, 06/15/2011):
+            hh = iv%gpsref(n)%h(k) / 1000.0
+            call da_geo2msl1 (hh, iv%info(gpsref)%lat(1,n), &
+                              iv%info(gpsref)%lon(1,n), zz)
+! ............................................................................
+
             write(ounit, fmt = trim (fmt_each_inv))         &
                p,  p_qc, slp_error,                         &
                missing_r, missing_data, xmiss,              &
                missing_r, missing_data, xmiss,              &
-               iv%gpsref(n)%h(k), zero, height_error,       &
+               zz*1000.0 , zero, height_error,              &
                t, t_qc,  t_err,                             &   
                ref, ref_qc,  ref_err,                       &   
                q, q_qc, q_err,                              &

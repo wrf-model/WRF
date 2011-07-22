@@ -603,7 +603,7 @@ module da_control
    integer :: itsy,itey,jtsy,jtey,ktsy,ktey
    integer :: itsx,itex,jtsx,jtex,ktsx,ktex
 
-   integer :: num_qcstat_conv(2,num_ob_indexes,num_ob_vars,npres_print)
+   integer :: num_qcstat_conv(2,num_ob_indexes,num_ob_vars,npres_print+1)
    character*4, parameter :: ob_vars(num_ob_vars) = (/'U   ','V   ','T   ',&
                                                       'Q   ','Ps  ','Spd ',&
                                                       'Tpw ','GpsR','Thic'/)
@@ -611,7 +611,7 @@ module da_control
                       250.0,  200.0, 150.0, 100.0, 50.0, 0./)
 
    real, parameter :: ppbot(npres_print) = (/ 1200.0, 999.9, 899.9, 799.0, 599.9, 399.9,  &
-                      299.9,  249.9, 199.9, 149.9, 99.9, 2000./)
+                      299.9,  249.9, 199.9, 149.9, 99.9, 49.9/)
 
    real*8, allocatable :: time_slots(:)
 

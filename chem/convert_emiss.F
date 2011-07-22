@@ -926,15 +926,15 @@ PROGRAM convert_emissions
 #endif
          if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_co)=dumc1(ips:ipe  ,jps:jpe  )
 
-#ifdef DM_PARALLEL
-       IF (wrf_dm_on_monitor()) THEN
-           read(92)dumc1(ids:ide  ,jds:jde  )
-       ENDIF
-       DM_BCAST_MACRO(dumc1)
-#else
-       read(92)dumc1(ids:ide  ,jds:jde  )
-#endif
-         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_ol2)=dumc1(ips:ipe  ,jps:jpe  )
+!#ifdef DM_PARALLEL
+!       IF (wrf_dm_on_monitor()) THEN
+!           read(92)dumc1(ids:ide  ,jds:jde  )
+!       ENDIF
+!       DM_BCAST_MACRO(dumc1)
+!#else
+!       read(92)dumc1(ids:ide  ,jds:jde  )
+!#endif
+!         if(itest.eq.1)grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_ol2)=dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1065,6 +1065,16 @@ PROGRAM convert_emissions
        read(92)dumc1(ids:ide  ,jds:jde  )
 #endif
          grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_sulf)=dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(dumc1)
+#else
+       read(92)dumc1(ids:ide  ,jds:jde  )
+#endif
+!        grid%emis_ant(ips:ipe  ,kps,jps:jpe  ,p_e_ash)=dumc1(ips:ipe  ,jps:jpe  )
 
      CLOSE(92)
 !
@@ -1248,15 +1258,15 @@ PROGRAM convert_emissions
 #endif
        grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_co) =dumc1(ips:ipe  ,jps:jpe  )
 
-#ifdef DM_PARALLEL
-       IF (wrf_dm_on_monitor()) THEN
-           read(93)dumc1(ids:ide  ,jds:jde  )
-       ENDIF
-     DM_BCAST_MACRO(dumc1)
-#else
-       read(93)dumc1(ids:ide  ,jds:jde  )
-#endif
-   !   grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_ol2) =dumc1(ips:ipe  ,jps:jpe  )
+!#ifdef DM_PARALLEL
+!       IF (wrf_dm_on_monitor()) THEN
+!           read(93)dumc1(ids:ide  ,jds:jde  )
+!       ENDIF
+!     DM_BCAST_MACRO(dumc1)
+!#else
+!       read(93)dumc1(ids:ide  ,jds:jde  )
+!#endif
+!   !   grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_ol2) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
@@ -1387,6 +1397,16 @@ PROGRAM convert_emissions
        read(93)dumc1(ids:ide  ,jds:jde  )
 #endif
        grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_sulf) =dumc1(ips:ipe  ,jps:jpe  )
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(93)dumc1(ids:ide  ,jds:jde  )
+       ENDIF
+     DM_BCAST_MACRO(dumc1)
+#else
+       read(93)dumc1(ids:ide  ,jds:jde  )
+#endif
+      grid%ebu_in(ips:ipe,1,  jps:jpe  ,p_ebu_in_ash) =dumc1(ips:ipe  ,jps:jpe  )
 
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN

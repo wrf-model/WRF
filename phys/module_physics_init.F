@@ -1173,7 +1173,7 @@ integer myproc
 !     gmt_start=start_hour+real(start_minute)/60.+real(start_second)/3600.
               CALL hwrfrainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
 !             CALL hwrfrainit(sfull,shalf,pptop,JULYR_start,MONTH,IDAY,GMT_start,&
-                           allowed_to_read ,                         &
+                            config_flags,allowed_to_read ,                         &
                            kds, kde, kms, kme, kts, kte     )
              hwrflw = .true.
 #endif
@@ -1242,7 +1242,7 @@ integer myproc
              CALL nl_get_start_month(id,month)
              CALL nl_get_start_day(id,iday)
              CALL hwrfrainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
-                           allowed_to_read,                          &
+                            config_flags,allowed_to_read,                          &
                            kds, kde, kms, kme, kts, kte     )
              ENDIF
 #endif

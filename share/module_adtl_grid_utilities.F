@@ -1090,7 +1090,6 @@ CONTAINS
    grid%g_ustm = factor*s_ustm
    grid%g_hfx = factor*s_hfx
    grid%g_qfx = factor*s_qfx
-   grid%g_h_diabatic = factor*s_h_diabatic
 
    grid%g_u_bxs = factor_u*s_u_bxs; grid%g_u_bxe = factor_u*s_u_bxe; grid%g_u_bys = factor_u*s_u_bys; grid%g_u_bye = factor_u*s_u_bye
    grid%g_u_btxs = factor_u*s_u_btxs; grid%g_u_btxe = factor_u*s_u_btxe; grid%g_u_btys = factor_u*s_u_btys; grid%g_u_btye = factor_u*s_u_btye
@@ -1163,6 +1162,7 @@ CONTAINS
    grid%g_rv_m = 0.0
    grid%g_ww_m = 0.0
    
+   grid%g_h_diabatic = 0.0
    grid%g_rainnc = 0.0
    grid%g_rainncv = 0.0
    grid%g_rainc = 0.0

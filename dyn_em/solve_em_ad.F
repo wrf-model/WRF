@@ -4899,6 +4899,8 @@ BENCH_END(adj_calc_p_rho_tim)
          ENDDO adj_scalar_tile_loop_2
          !$OMP END PARALLEL DO
 
+         !$OMP PARALLEL DO   &
+         !$OMP PRIVATE ( ij, its, ite, jts, jte )
          adj_scalar_tile_loop_1: DO ij = grid%num_tiles,1,-1
 
            IF( config_flags%nested .and. (rk_step == 1) ) THEN
@@ -6171,7 +6173,7 @@ BENCH_START(adj_rk_tend_tim)
      CALL pop2restore (grid%ru,grid%rv,grid%rw,grid%ww, "ru,rv,rw,ww") 
      CALL pop2restore (grid%mu_2,grid%muu,grid%muv,grid%mut, "mu,muu,muv,mut") 
      !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij ) &
+     !$OMP PRIVATE ( ij )
      DO ij = grid%num_tiles,1,-1
 
        CALL wrf_debug ( 200 , ' call a_rk_tendency' )

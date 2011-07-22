@@ -13,10 +13,11 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
    character*4, intent(in) :: filnam
    character*256, intent(in) :: timestr
 
-#ifdef VAR4D
-
    integer :: i, j, k, ndynopt
-   integer :: is, ie, js, je, ks, ke
+   integer :: is, ie, js, je, ks, ke, ierr
+
+   integer :: julyr, julday
+   real    :: gmt
 
    real    :: sdmd, s1md
    real :: g_press(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme, &
@@ -249,6 +250,8 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
 
    grid%xa%q(is:ie, js:je, ks:ke) = 0.0
 
+   if ( .not. adj_sens ) then
+#ifdef VAR4D
    call kj_swap (grid%g_u_2, model_grid%g_u_2, &
                  grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
    call kj_swap (grid%g_v_2, model_grid%g_v_2, &
@@ -271,10 +274,30 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
    enddo
 
    call push_ad_forcing (timestr)
+#endif
+   else
+      if ( grid%auxinput7_oid .NE. 0 ) then
+         call close_dataset ( grid%auxinput7_oid , config_flags , "DATASET=AUXINPUT7" )
+      endif
+
+      call open_w_dataset (grid%auxinput7_oid, trim(filnam), grid, config_flags, &
+                            output_auxinput7, "DATASET=AUXINPUT7", ierr)
+      if ( ierr .NE. 0 ) CALL wrf_error_fatal('Error opening '//trim(filnam))
+
+      start_date=current_date
+
+      call geth_julgmt(julyr, julday, gmt)
+      config_flags%gmt = gmt
+      config_flags%julyr = julyr
+      config_flags%julday = julday
+
+      call output_auxinput7 (grid%auxinput7_oid, grid , config_flags , ierr)
+      if ( ierr .NE. 0 ) CALL wrf_error_fatal('Error writing Gradient in auxinput7')
+      call close_dataset (grid%auxinput7_oid, config_flags, "DATASET=AUXINPUT7")
+   endif
 
    if (trace_use) call da_trace_exit("da_transfer_wrftltoxa_adj")
 
-#endif
 end subroutine da_transfer_wrftltoxa_adj
 
 

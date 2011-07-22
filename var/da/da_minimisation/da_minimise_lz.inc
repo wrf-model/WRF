@@ -57,7 +57,8 @@ subroutine da_minimise_lz(grid, config_flags,            &
    real*8                            :: sstwrk(2*ntmax-2)
    real                              :: bnds(ntmax)
    real                              :: adj_rhs, adj_sum_rhs ! < cv, cv >
-   real                              :: j_total, j0_total, rrmnew_norm
+   real                              :: j_total, j0_total
+   real                              :: dfs, dfsmax
    
    if (trace_use) call da_trace_entry("da_minimise_lz")
 
@@ -86,12 +87,12 @@ subroutine da_minimise_lz(grid, config_flags,            &
    j_grad_norm_target = beta(0)
 
    write(unit=stdout,fmt='("Starting outer iteration : ",i3)') it
-   write(unit=stdout,fmt=11) j0_total, beta(0),eps(it)*beta(0)
+   write(unit=stdout,fmt=11) j0_total, beta(0),eps(it)
 11 format('Starting cost function: ' ,1PD15.8,', Gradient: ',1PD15.8,/,&
-          'For this outer iteration gradient target is:       ',1PD15.8)
+          'For this outer iteration, the targeted reduction is:       ',1PD15.8)
    write(unit=stdout,fmt='(A)') &
       '----------------------------------------------------------'
-   write(unit=stdout,fmt='(A)') 'Iter    Cost Function         Gradient'
+   write(unit=stdout,fmt='(A)') 'Iter     Cost Function       Info Content'
 
    !-------------------------------------------------------------------------
    ! [2.0] Iteratively solve for minimum of cost function:
@@ -121,12 +122,16 @@ subroutine da_minimise_lz(grid, config_flags,            &
 	 c    = qhat(:,1)
 	 rho  = beta(0) / alpha(1)
 	 xhat = rho * qhat(:,1)
+         dfs  = da_dot_cv(cv_size, xhat, xhat, grid, mz, jp_start, jp_end)
+         dfsmax = dfs
       else
          mu      = beta(iter-1) / d(iter-1)
 	 d(iter) = alpha(iter) - beta(iter-1)*mu
 	 c       = qhat(:,iter) - mu*c
 	 rho     = - mu*d(iter-1)*rho / d(iter)
 	 xhat    = xhat + rho*c
+         dfs     = da_dot_cv(cv_size, rho*c, rho*c, grid, mz, jp_start, jp_end)
+         if (dfs > dfsmax) dfsmax = dfs
       end if
       
     ! Determine eigenvalues and eigenvectors of the Lanczos tri-diagonal matrix
@@ -145,16 +150,18 @@ subroutine da_minimise_lz(grid, config_flags,            &
       bnds(1:iter) = abs(beta(iter) * eignvec(iter,1:iter))
       neign        = COUNT(bnds(1:iter) <= bndlm)
                
-      rrmnew_norm = SQRT(da_dot_cv(cv_size, ghat, ghat, grid, mz, jp_start, jp_end))
-
-    ! Print Gradient (and Cost Function)
+    ! Print Cost Function and Infomation Content
     !-----------------------------------
       j_total = j0_total + 0.5 * da_dot_cv(cv_size,ghat0,xhat,grid,mz,jp_start,jp_end)
-      write(unit=stdout,fmt=12)iter, j_total, rrmnew_norm      	 
+      write(unit=stdout,fmt=12)iter, j_total, dfs      	 
 12    format(i3,5x,1PD15.8,5x,1PD15.8)
 
-      if (rrmnew_norm < eps(it) * j_grad_norm_target) exit      
+    ! Stop minimization based on Information Content
+    ! ----------------------------------------------
+      if (sqrt(dfs) < eps(it) * sqrt(dfsmax)) exit
 
+    ! Option to calculate J Cost Function explicitly
+    ! ----------------------------------------------
       if (calculate_cg_cost_fn) &
          call da_calculate_j(it, iter, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
 	                     be%cv%size_jl, xbx, be, iv, xhat, cv, re, y, j_cost, fhat, grid, config_flags)
@@ -182,11 +189,7 @@ subroutine da_minimise_lz(grid, config_flags,            &
 
    write(stdout,*) 'Ritz eigenvalues: ',eignval(iter:1:-1)     
    write(stdout,*) 'Number of converged eigenpairs: ', neign
-
-   if (adj_sens) &
-      call da_sensitivity(iter,grid,config_flags,cv_size,xbx,be,iv,xhat,qhat,cv,y,eignvec,eignval,shat)
-   
-   cv = cv + xhat
+   neign = iter
 
    if (trace_use) call da_trace_exit("da_minimise_lz")
 

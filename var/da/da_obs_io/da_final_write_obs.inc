@@ -10,7 +10,7 @@ subroutine da_final_write_obs(it,iv)
    type (iv_type), intent(in)    :: iv      ! O-B structure.
    integer                       :: n, k, iunit
    integer                       :: ios  ! Error code from MPI routines.
-   integer                       :: num_obs, num_sound_obs
+   integer                       :: num_obs, num_sound_obs, num_tamdar_obs
    character(len=filename_len), allocatable     :: filename(:)
    character(len=filename_len)                  :: file
 
@@ -378,6 +378,27 @@ subroutine da_final_write_obs(it,iv)
       do k = 0,num_procs-1
          call da_read_omb_tmp(filename(k),iunit,num_obs,'bogus',5)    
       end do
+   end if
+
+   !------------------------------------------------------------------
+   ! [18] writing Tamdar
+   !------------------------------------------------------------------
+
+   num_obs = 0
+   if (iv%info(tamdar)%nlocal > 0) then
+      do n = 1, iv%info(tamdar)%nlocal
+         if (iv%info(tamdar)%proc_domain(1,n)) num_obs = num_obs + 1
+      end do
+   end if
+   call da_proc_sum_int(num_obs)
+   if (num_obs > 0 .and. rootproc) then
+      write(omb_unit,'(a20,i8)')'tamdar', num_obs
+       num_tamdar_obs = num_obs
+      num_obs = 0
+      do k = 0,num_procs-1
+         call da_read_omb_tmp(filename(k),iunit,num_obs,'tamdar',6)
+      end do
+
    end if
 
    !------------------------------------------------------------------

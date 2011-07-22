@@ -5,8 +5,10 @@ module da_transfer_model
    !---------------------------------------------------------------------------
 
    use module_configure, only : grid_config_rec_type
+   use module_date_time, only : geth_julgmt, current_date, start_date
    use module_domain, only : domain, domain_clock_get
-   use module_io_domain, only : open_r_dataset, close_dataset, input_auxinput17
+   use module_io_domain, only : open_r_dataset, close_dataset, input_auxinput17, &
+      output_auxinput7, open_w_dataset
    use module_state_description, only : dyn_em_ad, dyn_em, dyn_em_tl, &
       p_qv, p_qh, p_qr, p_qi, p_qs, p_qg, p_qc, param_first_scalar, num_moist, &
       p_g_qv, p_g_qh, p_g_qr, p_g_qi, p_g_qs, p_g_qg, p_g_qc, &

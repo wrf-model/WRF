@@ -1,5 +1,5 @@
-subroutine da_sensitivity(iter, grid, config_flags, cv_size, xbx, be, iv, xhat, qhat, cv, y, &
-                          eignvec, eignval, shat)
+subroutine da_sensitivity(grid, config_flags, cv_size, xbx, be, iv, xhat, qhat, cv, y, &
+                          eignvec, eignval, neign)
 
    !-------------------------------------------------------------------------
    ! Purpose:        Compute observation sensitivity and impact
@@ -12,7 +12,6 @@ subroutine da_sensitivity(iter, grid, config_flags, cv_size, xbx, be, iv, xhat, 
 
    implicit none
 
-   integer,        intent(in)        :: iter                   ! Inner-loop iteration
    type(domain),   intent(inout)     :: grid
    type(grid_config_rec_type), intent(inout) :: config_flags
    integer,        intent(in)        :: cv_size                ! Total cv size
@@ -25,7 +24,7 @@ subroutine da_sensitivity(iter, grid, config_flags, cv_size, xbx, be, iv, xhat, 
    type (y_type),  intent(inout)     :: y                      ! y = H(x_inc) structure.
    real*8,         intent(in)        :: eignvec(ntmax, ntmax)
    real*8,         intent(in)        :: eignval(ntmax)
-   real,           intent(out)       :: shat(1:cv_size)        ! control variable (local).
+   integer,        intent(in)        :: neign                  ! Number of eigenpairs
    
    type (y_type)                     :: ktr         
 #ifdef CLOUD_CV
@@ -34,7 +33,8 @@ subroutine da_sensitivity(iter, grid, config_flags, cv_size, xbx, be, iv, xhat, 
    integer                           :: i, j, mz(7)
 #endif
    integer                           :: jp_start, jp_end       ! Start/end indices of Jp.
-   real                              :: amat(1:cv_size)           ! cv copy.
+   real                              :: shat(1:cv_size)        ! control variable (local).
+   real                              :: amat(1:cv_size)        ! cv copy.
    real                              :: ritz(ntmax, ntmax)
 #ifdef CLOUD_CV
     mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz,  be%v6%mz, be%v7%mz, be%v8%mz, be%alpha%mz, be % ne /)
@@ -51,9 +51,9 @@ subroutine da_sensitivity(iter, grid, config_flags, cv_size, xbx, be, iv, xhat, 
     ! Apply Analysis Error Covariance Matrix estimation (A) to dF/dx 
     !---------------------------------------------------------------
       amat = 0.0
-      do i = 1, iter
-         do j = 1, iter
-            ritz(i,j) = SUM( eignvec(i,1:iter) * (1.0/eignval(1:iter)) * eignvec(j,1:iter) )
+      do i = 1, neign
+         do j = 1, neign
+            ritz(i,j) = SUM( eignvec(i,1:neign) * (1.0/eignval(1:neign)) * eignvec(j,1:neign) )
 	    amat      = amat + qhat(:,i) * ritz(i,j) * &
 	                       da_dot_cv(cv_size, qhat(:,j), shat, grid, mz, jp_start, jp_end)
 	 end do
@@ -73,6 +73,6 @@ subroutine da_sensitivity(iter, grid, config_flags, cv_size, xbx, be, iv, xhat, 
       call da_deallocate_y(ktr)
 
     ! Adjoint test    
-      write(stdout,*) 'ADJOINT_TEST2:', da_dot_cv(cv_size, xhat, xhat, grid, mz, jp_start, jp_end)
+!      write(stdout,*) 'ADJOINT_TEST2:', da_dot_cv(cv_size, xhat, xhat, grid, mz, jp_start, jp_end)
 
 end subroutine da_sensitivity

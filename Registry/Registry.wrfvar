@@ -1609,6 +1609,8 @@ rconfig   real      eps                     namelist,wrfvar6  max_outer_iteratio
 rconfig   logical   precondition_cg         namelist,wrfvar6  1  .false.  -  "precondition_cg"         ""  ""
 rconfig   real      precondition_factor     namelist,wrfvar6  1  1.0      -  "precondition_factor"     ""  ""
 rconfig   logical   use_lanczos             namelist,wrfvar6  1  .false.  - "use_lanczos"              ""  ""
+rconfig   logical   read_lanczos            namelist,wrfvar6  1  .false.  - "read_lanczos"             ""  ""
+rconfig   logical   write_lanczos           namelist,wrfvar6  1  .false.  - "write_lanczos"            ""  ""
 rconfig   logical   orthonorm_gradient      namelist,wrfvar6  1  .false.  - "orthonorm_gradient"       ""  ""
 
 rconfig   integer   cv_options              namelist,wrfvar7  1  5        - "cv_options"               ""  ""

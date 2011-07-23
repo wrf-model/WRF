@@ -2233,7 +2233,7 @@ BENCH_START(flow_depbdy_tim)
                IF( config_flags%specified ) THEN
                  IF(im .ne. P_QV)THEN
 
-                   !CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+                   CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
                    CALL flow_dep_bdy  (  moist(ims,kms,jms,im),                 &
                                 grid%ru_m, grid%rv_m, config_flags,             &
                                 grid%spec_zone,                                 &
@@ -5113,7 +5113,7 @@ BENCH_START(adj_flow_depbdy_tim)
                IF( config_flags%specified ) THEN
                  IF(im .ne. P_QV)THEN
 
-                   !CALL pop2restore ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+                   CALL pop2restore ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
                    CALL a_flow_dep_bdy ( a_moist(ims,kms,jms,im),             &
                                          grid%ru_m, grid%rv_m, config_flags,  &
                                          grid%spec_zone,                      &

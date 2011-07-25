@@ -430,9 +430,9 @@ RECURSIVE SUBROUTINE integrate ( grid )
          IF ( grid%jcdfi_use .AND. config_flags%dyn_opt .EQ. dyn_em_ad ) THEN
             CALL jcdfi_add_forcing ( grid )
          ENDIF
-         IF ( config_flags%dyn_opt .EQ. dyn_em_ad ) THEN
-            CALL linkedlist_initialize
-         ENDIF
+         !IF ( config_flags%dyn_opt .EQ. dyn_em_ad ) THEN
+         !   CALL linkedlist_initialize
+         !ENDIF
 #endif
 
          ! Avoid double writes on nests if this is not really the last time;

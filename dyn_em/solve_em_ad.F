@@ -241,7 +241,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
 !  ENDIF
 
 !  Initialize linkedlist
-   CALL linkedlist_initialize
+   !CALL linkedlist_initialize
  
 !  set runge-kutta solver (2nd or 3rd order)
 
@@ -721,8 +721,14 @@ BENCH_END(set_phys_bc_tim)
        ENDIF
 #endif
 
-       CALL push4backup (grid%rublten,grid%rvblten,grid%rthblten,grid%rqvblten,grid%rthcuten,grid%rqvcuten,&
-                         "rublten,rvblten,rthblten,rqvblten,rthcuten,rqvcuten") 
+       !CALL push4backup (grid%rublten,grid%rvblten,grid%rthblten,grid%rqvblten,grid%rthcuten,grid%rqvcuten,&
+       !                  "rublten,rvblten,rthblten,rqvblten,rthcuten,rqvcuten") 
+       CALL PUSHREAL8ARRAY ( grid%rublten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%rvblten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%rthblten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%rqvblten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%rthcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%rqvcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
 
        CALL first_rk_step_part2 (    grid, config_flags         &
                              , moist , moist_tend               &
@@ -757,11 +763,31 @@ BENCH_END(set_phys_bc_tim)
 
 BENCH_START(rk_tend_tim)
 
-     CALL push4backup (grid%mu_2,grid%muu,grid%muv,grid%mut, "mu,muu,muv,mut") 
-     CALL push4backup (grid%ru,grid%rv,grid%rw,grid%ww, "ru,rv,rw,ww") 
-     CALL push4backup (grid%u_2,grid%v_2,grid%w_2,grid%t_2,grid%ph_2, "u,v,w,t,ph") 
-     CALL push4backup (grid%al,grid%alt,grid%p,grid%php,cqu,cqv,cqw, &
-                       "al,alt,p,php,cqu,cqv,cqw") 
+     !CALL push4backup (grid%mu_2,grid%muu,grid%muv,grid%mut, "mu,muu,muv,mut") 
+     CALL PUSHREAL8ARRAY ( grid%mu_2, (ime-ims+1)*(jme-jms+1) )
+     CALL PUSHREAL8ARRAY ( grid%muu, (ime-ims+1)*(jme-jms+1) )
+     CALL PUSHREAL8ARRAY ( grid%muv, (ime-ims+1)*(jme-jms+1) )
+     CALL PUSHREAL8ARRAY ( grid%mut, (ime-ims+1)*(jme-jms+1) )
+     !CALL push4backup (grid%ru,grid%rv,grid%rw,grid%ww, "ru,rv,rw,ww") 
+     CALL PUSHREAL8ARRAY ( grid%ru, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL PUSHREAL8ARRAY ( grid%rv, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL PUSHREAL8ARRAY ( grid%rw, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL PUSHREAL8ARRAY ( grid%ww, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     !CALL push4backup (grid%u_2,grid%v_2,grid%w_2,grid%t_2,grid%ph_2, "u,v,w,t,ph") 
+     CALL PUSHREAL8ARRAY ( grid%u_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL PUSHREAL8ARRAY ( grid%v_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL PUSHREAL8ARRAY ( grid%w_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL PUSHREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL PUSHREAL8ARRAY ( grid%ph_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     !CALL push4backup (grid%al,grid%alt,grid%p,grid%php,cqu,cqv,cqw, &
+     !                  "al,alt,p,php,cqu,cqv,cqw") 
+     CALL PUSHREAL8ARRAY ( grid%al, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL PUSHREAL8ARRAY ( grid%alt, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL PUSHREAL8ARRAY ( grid%p, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL PUSHREAL8ARRAY ( grid%php, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL PUSHREAL8ARRAY ( cqu, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL PUSHREAL8ARRAY ( cqv, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL PUSHREAL8ARRAY ( cqw, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
      !CALL push4backup (grid%xkmh,grid%xkhh, "xkmh,xkhh") 
 
      !$OMP PARALLEL DO   &
@@ -821,7 +847,10 @@ BENCH_END(rk_tend_tim)
 BENCH_START(relax_bdy_dry_tim)
      IF( (config_flags%specified .or. config_flags%nested) .and. rk_step == 1 ) THEN
        !CALL push4backup (grid%mut, "mut") 
-       CALL push4backup (grid%ph_2,grid%t_2,grid%w_2, "ph,t,w") 
+       !CALL push4backup (grid%ph_2,grid%t_2,grid%w_2, "ph,t,w") 
+       CALL PUSHREAL8ARRAY ( grid%ph_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%w_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
      ENDIF
 
      !$OMP PARALLEL DO &
@@ -933,14 +962,32 @@ BENCH_END(relax_bdy_dry_tim)
 BENCH_START(small_step_prep_tim)
     !CALL push4backup (grid%muu,grid%muv,grid%mut, "muu,muv,mut") 
     IF ( rk_step == 1 ) THEN
-      CALL push4backup (grid%mu_2, "mu_2")
-      CALL push4backup (grid%u_2,grid%v_2,grid%t_2,grid%w_2,grid%p,grid%alt, &
-                       "u_2,v_2,t_2,w_2,p,alt") 
+      !CALL push4backup (grid%mu_2, "mu_2")
+      CALL PUSHREAL8ARRAY ( grid%mu_2, (ime-ims+1)*(jme-jms+1) )
+      !CALL push4backup (grid%u_2,grid%v_2,grid%t_2,grid%w_2,grid%p,grid%alt, &
+      !                 "u_2,v_2,t_2,w_2,p,alt") 
+      CALL PUSHREAL8ARRAY ( grid%u_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+      CALL PUSHREAL8ARRAY ( grid%v_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+      CALL PUSHREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+      CALL PUSHREAL8ARRAY ( grid%w_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+      CALL PUSHREAL8ARRAY ( grid%p, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+      CALL PUSHREAL8ARRAY ( grid%alt, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
     ELSE
-      CALL push4backup (grid%mu_1, "mu_1")
-      CALL push4backup (grid%u_1,grid%v_1,grid%t_1,grid%w_1, &
-                        grid%u_2,grid%v_2,grid%t_2,grid%w_2,grid%p,grid%alt, &
-                        "u_1,v_1,t_1,w_1,u_2,v_2,t_2,w_2,p,alt") 
+      !CALL push4backup (grid%mu_1, "mu_1")
+      CALL PUSHREAL8ARRAY ( grid%mu_1, (ime-ims+1)*(jme-jms+1) )
+      !CALL push4backup (grid%u_1,grid%v_1,grid%t_1,grid%w_1, &
+      !                  grid%u_2,grid%v_2,grid%t_2,grid%w_2,grid%p,grid%alt, &
+      !                  "u_1,v_1,t_1,w_1,u_2,v_2,t_2,w_2,p,alt") 
+      CALL PUSHREAL8ARRAY ( grid%u_1, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+      CALL PUSHREAL8ARRAY ( grid%v_1, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+      CALL PUSHREAL8ARRAY ( grid%t_1, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+      CALL PUSHREAL8ARRAY ( grid%w_1, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+      CALL PUSHREAL8ARRAY ( grid%u_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+      CALL PUSHREAL8ARRAY ( grid%v_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+      CALL PUSHREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+      CALL PUSHREAL8ARRAY ( grid%w_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+      CALL PUSHREAL8ARRAY ( grid%p, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+      CALL PUSHREAL8ARRAY ( grid%alt, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
     END IF 
 
     !$OMP PARALLEL DO   &
@@ -973,8 +1020,15 @@ BENCH_START(small_step_prep_tim)
                              grid%j_start(ij), grid%j_end(ij),                        &
                              k_start    , k_end                                       )
 
-       CALL push4backup (grid%mu_2,grid%muts, "mu,muts") 
-       CALL push4backup (grid%alt,grid%ph_2,grid%t_2,grid%t_save,c2a, "alt,ph,t_2,t_1,c2a") 
+       !CALL push4backup (grid%mu_2,grid%muts, "mu,muts") 
+       CALL PUSHREAL8ARRAY ( grid%mu_2, (ime-ims+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%muts, (ime-ims+1)*(jme-jms+1) )
+       !CALL push4backup (grid%alt,grid%ph_2,grid%t_2,grid%t_save,c2a, "alt,ph,t_2,t_1,c2a") 
+       CALL PUSHREAL8ARRAY ( grid%alt, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%ph_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%t_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( c2a, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
 
        CALL calc_p_rho( grid%al, grid%p, grid%ph_2,                 &
                         grid%alt, grid%t_2, grid%t_save, c2a, pm1,  &
@@ -990,7 +1044,8 @@ BENCH_START(small_step_prep_tim)
        IF (config_flags%non_hydrostatic) THEN
 
          !CALL push4backup (c2a,cqw, "c2a,cqw") 
-         CALL push4backup (grid%mut, "mut") 
+         !CALL push4backup (grid%mut, "mut") 
+         CALL PUSHREAL8ARRAY ( grid%mut, (ime-ims+1)*(jme-jms+1) )
 
          CALL calc_coef_w( a,alpha,gamma,                    &
                            grid%mut, cqw,                    &
@@ -1145,8 +1200,18 @@ BENCH_END(set_phys_bc2_tim)
 #      include "PERIOD_BDY_EM_B.inc"
 #endif
 
-       CALL push4backup (grid%mu_2,grid%muu,grid%muv, "mu,muu,muv") 
-       CALL push4backup (grid%ph_2,grid%alt,grid%p,grid%al,grid%php,cqu,cqv, "ph,alt,p,al,php,cqu,cqv") 
+       !CALL push4backup (grid%mu_2,grid%muu,grid%muv, "mu,muu,muv") 
+       CALL PUSHREAL8ARRAY ( grid%mu_2, (ime-ims+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%muu, (ime-ims+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%muv, (ime-ims+1)*(jme-jms+1) )
+       !CALL push4backup (grid%ph_2,grid%alt,grid%p,grid%al,grid%php,cqu,cqv, "ph,alt,p,al,php,cqu,cqv") 
+       CALL PUSHREAL8ARRAY ( grid%ph_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%alt, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%p, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%al, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%php, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( cqu, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( cqv, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -1261,8 +1326,15 @@ BENCH_END(spec_bdy_uv_tim)
 #endif
 
        !CALL push4backup (grid%muu,grid%muv,mu_tend, "muu,muv,mu_tend") 
-       CALL push4backup (grid%ww,ww1,grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%t_save, &
-                        "ww,ww_1,u,u_1,v,v_1,t_1") 
+       !CALL push4backup (grid%ww,ww1,grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%t_save, &
+       !                 "ww,ww_1,u,u_1,v,v_1,t_1") 
+       CALL PUSHREAL8ARRAY ( grid%ww, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( ww1, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%u_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%u_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%v_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%v_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%t_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
        DO ij = 1 , grid%num_tiles
@@ -1376,11 +1448,32 @@ BENCH_END(spec_bdy_t_tim)
 BENCH_START(advance_w_tim)
          IF ( config_flags%non_hydrostatic ) THEN
 
-           CALL push4backup (grid%mut,muave,grid%muts, "mut,muave,muts") 
-           CALL push4backup (grid%u_2,grid%v_2,grid%w_2,rw_tend,grid%ww,w_save,t_2save,grid%t_2,grid%t_save, &
-                             "u,v,w,rw_tend,ww,w_save,t_2ave,t_2,t_1")
-           CALL push4backup (grid%ph_2,ph_save,ph_tend,c2a,cqw,grid%alt,a,alpha,gamma,     &
-                             "ph,ph_1,ph_tend,c2a,cqw,alt,a,alpha,gamma")
+           !CALL push4backup (grid%mut,muave,grid%muts, "mut,muave,muts") 
+           CALL PUSHREAL8ARRAY ( grid%mut, (ime-ims+1)*(jme-jms+1) )
+           CALL PUSHREAL8ARRAY ( muave, (ime-ims+1)*(jme-jms+1) )
+           CALL PUSHREAL8ARRAY ( grid%muts, (ime-ims+1)*(jme-jms+1) )
+           !CALL push4backup (grid%u_2,grid%v_2,grid%w_2,rw_tend,grid%ww,w_save,t_2save,grid%t_2,grid%t_save, &
+           !                  "u,v,w,rw_tend,ww,w_save,t_2ave,t_2,t_1")
+           CALL PUSHREAL8ARRAY ( grid%u_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL PUSHREAL8ARRAY ( grid%v_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL PUSHREAL8ARRAY ( grid%w_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL PUSHREAL8ARRAY ( rw_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL PUSHREAL8ARRAY ( grid%ww, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL PUSHREAL8ARRAY ( w_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL PUSHREAL8ARRAY ( t_2save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL PUSHREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL PUSHREAL8ARRAY ( grid%t_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           !CALL push4backup (grid%ph_2,ph_save,ph_tend,c2a,cqw,grid%alt,a,alpha,gamma,     &
+           !                  "ph,ph_1,ph_tend,c2a,cqw,alt,a,alpha,gamma")
+           CALL PUSHREAL8ARRAY ( grid%ph_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL PUSHREAL8ARRAY ( ph_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL PUSHREAL8ARRAY ( ph_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL PUSHREAL8ARRAY ( c2a, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL PUSHREAL8ARRAY ( cqw, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL PUSHREAL8ARRAY ( grid%alt, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL PUSHREAL8ARRAY ( a, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL PUSHREAL8ARRAY ( alpha, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL PUSHREAL8ARRAY ( gamma, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
 
            CALL advance_w( grid%w_2, rw_tend, grid%ww, w_save,         &
                            grid%u_2, grid%v_2,                         &
@@ -1470,8 +1563,13 @@ BENCH_END(sumflux_tim)
 BENCH_START(spec_bdynhyd_tim)
            IF (config_flags%non_hydrostatic)  THEN
 
-             CALL push4backup (ph_save,grid%ph_2,ph_tend, "ph_save,ph,ph_tend") 
-             CALL push4backup (mu_tend,grid%muts, "mu_tend,muts") 
+             !CALL push4backup (ph_save,grid%ph_2,ph_tend, "ph_save,ph,ph_tend") 
+             CALL PUSHREAL8ARRAY ( ph_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+             CALL PUSHREAL8ARRAY ( grid%ph_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+             CALL PUSHREAL8ARRAY ( ph_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+             !CALL push4backup (mu_tend,grid%muts, "mu_tend,muts") 
+             CALL PUSHREAL8ARRAY ( mu_tend, (ime-ims+1)*(jme-jms+1) )
+             CALL PUSHREAL8ARRAY ( grid%muts, (ime-ims+1)*(jme-jms+1) )
 
              CALL spec_bdyupdate_ph( ph_save, grid%ph_2, ph_tend,     &
                                      mu_tend, grid%muts, dts_rk,      &
@@ -1514,8 +1612,15 @@ BENCH_END(spec_bdynhyd_tim)
 
  BENCH_START(cald_p_rho_tim)
 
-          CALL push4backup (grid%mu_2,grid%muts, "mu,muts") 
-          CALL push4backup (grid%alt,grid%ph_2,grid%t_2,grid%t_save,c2a, "alt,ph,t_2,t_1,c2a") 
+          !CALL push4backup (grid%mu_2,grid%muts, "mu,muts") 
+          CALL PUSHREAL8ARRAY ( grid%mu_2, (ime-ims+1)*(jme-jms+1) )
+          CALL PUSHREAL8ARRAY ( grid%muts, (ime-ims+1)*(jme-jms+1) )
+          !CALL push4backup (grid%alt,grid%ph_2,grid%t_2,grid%t_save,c2a, "alt,ph,t_2,t_1,c2a") 
+          CALL PUSHREAL8ARRAY ( grid%alt, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+          CALL PUSHREAL8ARRAY ( grid%ph_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+          CALL PUSHREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+          CALL PUSHREAL8ARRAY ( grid%t_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+          CALL PUSHREAL8ARRAY ( c2a, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
           CALL calc_p_rho( grid%al, grid%p, grid%ph_2,                &
                           grid%alt, grid%t_2, grid%t_save, c2a, pm1,  &
                           grid%mu_2, grid%muts, grid%znu, t0,         &
@@ -1636,9 +1741,25 @@ BENCH_END(calc_mu_uv_tim)
 
 BENCH_START(small_step_finish_tim)
 
-       CALL push4backup (grid%mut,grid%muts,grid%muu,muus,grid%muv,muvs, "mut,muts,muu,muus,muv,muvs") 
-       CALL push4backup (grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%w_2,w_save,grid%t_2,grid%t_save, &
-                         grid%h_diabatic, "u,u_save,v,v_save,w,w_save,t,t_save,h_diabatic") 
+       !CALL push4backup (grid%mut,grid%muts,grid%muu,muus,grid%muv,muvs, "mut,muts,muu,muus,muv,muvs") 
+       CALL PUSHREAL8ARRAY ( grid%mut, (ime-ims+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%muts, (ime-ims+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%muu, (ime-ims+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( muus, (ime-ims+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%muv, (ime-ims+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( muvs, (ime-ims+1)*(jme-jms+1) )
+       !CALL push4backup (grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%w_2,w_save,grid%t_2,grid%t_save, &
+       !                  grid%h_diabatic, "u,u_save,v,v_save,w,w_save,t,t_save,h_diabatic") 
+       CALL PUSHREAL8ARRAY ( grid%u_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%u_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%v_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%v_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%w_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( w_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%t_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%h_diabatic, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+
        CALL small_step_finish( grid%u_2, grid%u_1, grid%v_2, grid%v_1, grid%w_2, grid%w_1, &
                                grid%t_2, grid%t_1, grid%ph_2, grid%ph_1, grid%ww, ww1,     &
                                grid%mu_2, grid%mu_1,                       &
@@ -1748,8 +1869,10 @@ BENCH_END(small_step_finish_tim)
      IF ((config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order)) THEN
 
        !CALL push4backup (grid%mu_1, "mu_1")
-       CALL push4backup (moist_old(:,:,:,:),moist_tend(:,:,:,:), &
-                        "moist_old,moist_tend")
+       !CALL push4backup (moist_old(:,:,:,:),moist_tend(:,:,:,:), &
+       !                 "moist_old,moist_tend")
+       CALL PUSHREAL8ARRAY ( moist_old, (ime-ims+1)*(kme-kms+1)*(jme-jms+1)*num_moist )
+       CALL PUSHREAL8ARRAY ( moist_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1)*num_moist )
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
        DO ij = 1 , grid%num_tiles
@@ -2115,9 +2238,14 @@ BENCH_END(small_step_finish_tim)
 
              !IF ( rk_step == 1 ) CALL push4backup (grid%alt,grid%xkhh, "alt,xkhh")
              !CALL push4backup (grid%mu_1,grid%muts, "mu_1,muts")
-             CALL push4backup (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
-             CALL push4backup (moist(:,:,:,im),moist_old(:,:,:,im), &
-                               "moist,moist_old")
+             !CALL push4backup (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
+             CALL PUSHREAL8ARRAY ( grid%ru_m, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+             CALL PUSHREAL8ARRAY ( grid%rv_m, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+             CALL PUSHREAL8ARRAY ( grid%ww_m, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+             !CALL push4backup (moist(:,:,:,im),moist_old(:,:,:,im), &
+             !                  "moist,moist_old")
+             CALL PUSHREAL8ARRAY ( moist(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+             CALL PUSHREAL8ARRAY ( moist_old(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
              !$OMP PARALLEL DO   &
              !$OMP PRIVATE ( ij )
              moist_tile_loop_1: DO ij = 1 , grid%num_tiles
@@ -2154,7 +2282,8 @@ BENCH_START(rlx_bdy_scalar_tim)
                IF( ( config_flags%specified .or. config_flags%nested ) .and. rk_step == 1 ) THEN
                  IF ( im .EQ. P_QV .OR. config_flags%nested ) THEN
 
-                   CALL push4backup (grid%mut, "mut") 
+                   !CALL push4backup (grid%mut, "mut") 
+                   CALL PUSHREAL8ARRAY ( grid%mut, (ime-ims+1)*(jme-jms+1) )
                    !CALL push4backup (moist(:,:,:,im), "moist") 
                    CALL relax_bdy_scalar ( moist_tend(ims,kms,jms,im),         &
                                      moist(ims,kms,jms,im),  grid%mut,         &
@@ -2194,11 +2323,17 @@ BENCH_END(rlx_bdy_scalar_tim)
 
              !CALL push4backup ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
              IF ( rk_step == 1 ) THEN
-               CALL push4backup ( moist(:,:,:,im),moist_tend(:,:,:,im),advect_tend, &
-                                 "moist,moist_tend,advect_tend" ) 
+               !CALL push4backup ( moist(:,:,:,im),moist_tend(:,:,:,im),advect_tend, &
+               !                  "moist,moist_tend,advect_tend" ) 
+               CALL PUSHREAL8ARRAY ( moist(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+               CALL PUSHREAL8ARRAY ( moist_tend(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+               CALL PUSHREAL8ARRAY ( advect_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
              ELSE
-               CALL push4backup ( moist_old(:,:,:,im),moist_tend(:,:,:,im),advect_tend, &
-                                 "moist_old,moist_tend,advect_tend" ) 
+               !CALL push4backup ( moist_old(:,:,:,im),moist_tend(:,:,:,im),advect_tend, &
+               !                  "moist_old,moist_tend,advect_tend" ) 
+               CALL PUSHREAL8ARRAY ( moist_old(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+               CALL PUSHREAL8ARRAY ( moist_tend(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+               CALL PUSHREAL8ARRAY ( advect_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
              END IF 
              !$OMP PARALLEL DO   &
              !$OMP PRIVATE ( ij )
@@ -2233,7 +2368,9 @@ BENCH_START(flow_depbdy_tim)
                IF( config_flags%specified ) THEN
                  IF(im .ne. P_QV)THEN
 
-                   CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+                   !CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+                   CALL PUSHREAL8ARRAY ( grid%ru_m, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+                   CALL PUSHREAL8ARRAY ( grid%rv_m, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
                    CALL flow_dep_bdy  (  moist(ims,kms,jms,im),                 &
                                 grid%ru_m, grid%rv_m, config_flags,             &
                                 grid%spec_zone,                                 &
@@ -2272,7 +2409,10 @@ BENCH_START(tke_adv_tim)
 
          !IF ( rk_step == 1 ) CALL push4backup (grid%alt,grid%xkhh, "alt,xkhh")
          !CALL push4backup (grid%mu_1,grid%muts, "mu_1,muts")
-         CALL push4backup (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
+         !CALL push4backup (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
+         CALL PUSHREAL8ARRAY ( grid%ru_m , (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL PUSHREAL8ARRAY ( grid%rv_m , (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL PUSHREAL8ARRAY ( grid%ww_m , (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
          !CALL push4backup (grid%tke_2,grid%tke_1, "tke_2,tke_1")
          !$OMP PARALLEL DO   &
          !$OMP PRIVATE ( ij )
@@ -2785,7 +2925,9 @@ BENCH_END(tracer_adv_tim)
  !  update the pressure and density at the new time level
 
 
-     CALL push4backup (grid%mu_2,grid%muts, "mu,muts")
+     !CALL push4backup (grid%mu_2,grid%muts, "mu,muts")
+     CALL PUSHREAL8ARRAY ( grid%mu_2, (ime-ims+1)*(jme-jms+1) )
+     CALL PUSHREAL8ARRAY ( grid%muts, (ime-ims+1)*(jme-jms+1) )
      !CALL push4backup (grid%ph_2,grid%t_2, "ph,t")
      !CALL push4backup (moist, "moist")
      !$OMP PARALLEL DO   &
@@ -3397,10 +3539,12 @@ BENCH_END(advance_ppt_tim)
      !CALL push4backup (pi_phy,"pi_phy") 
      !CALL push4backup (grid%ph_2,"ph_2")
      !CALL push4backup (dz8w,"dz8w")
-     CALL push4backup (grid%p,"p")
+     !CALL push4backup (grid%p,"p")
      !CALL push4backup (grid%al,"al")
-     CALL push4backup (grid%t_2,"t")
+     !CALL push4backup (grid%t_2,"t")
      !CALL push4backup (rho,"rho")
+     CALL PUSHREAL8ARRAY ( grid%p, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL PUSHREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij, its, ite, jts, jte )
@@ -3443,13 +3587,15 @@ BENCH_END(moist_physics_prep_tim)
 
 BENCH_START(micro_driver_tim)
 
-     CALL push4backup (moist,"moist")
+     !CALL push4backup (moist,"moist")
      !CALL push4backup (pi_phy,"pi_phy")
      !CALL push4backup (dz8w,"dz8w")
      !CALL push4backup (p8w,"p8w")
      !CALL push4backup (rho,"rho")
-     CALL push4backup (th_phy,"th_phy")
+     !CALL push4backup (th_phy,"th_phy")
      !CALL push4backup (p_phy,"p_phy")
+     CALL PUSHREAL8ARRAY ( moist, (ime-ims+1)*(kme-kms+1)*(jme-jms+1)*num_moist )
+     CALL PUSHREAL8ARRAY ( th_phy, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
 
      CALL microphysics_driver(                                            &
       &         DT=dtm             ,DX=grid%dx              ,DY=grid%dy   &
@@ -4433,13 +4579,15 @@ BENCH_START(adj_micro_driver_tim)
 !Variables need to be saved: th, p, qv_curr, rho, pi_phy, dz8w, rainnc, rainncv
 !!!! Need to replace the variables marked as "!zzma" if other scheme will be added in the furture. (comments from zzma 01/10/2011)
 
+     CALL POPREAL8ARRAY ( th_phy, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( moist, (ime-ims+1)*(kme-kms+1)*(jme-jms+1)*num_moist )
      !CALL pop2restore (p_phy,"p_phy")
-     CALL pop2restore (th_phy,"th_phy")
+     !CALL pop2restore (th_phy,"th_phy")
      !CALL pop2restore (rho,"rho")
      !CALL pop2restore (p8w,"p8w")
      !CALL pop2restore (dz8w,"dz8w")
      !CALL pop2restore (pi_phy,"pi_phy")
-     CALL pop2restore (moist,"moist")
+     !CALL pop2restore (moist,"moist")
      CALL a_microphysics_driver(                                            &
       &         DT=dtm             ,DX=grid%dx              ,DY=grid%dy     &
       &        ,DZ8W=dz8w          ,A_DZ8W=a_dz8w, F_ICE_PHY=grid%f_ice_phy &
@@ -4520,9 +4668,9 @@ BENCH_END(adj_micro_driver_tim)
      grid%a_sr = 0.
 
      !CALL pop2restore (rho,"rho")
-     CALL pop2restore (grid%t_2,"t")
+     !CALL pop2restore (grid%t_2,"t")
      !CALL pop2restore (grid%al,"al")
-     CALL pop2restore (grid%p,"p")
+     !CALL pop2restore (grid%p,"p")
      !CALL pop2restore (dz8w,"dz8w")
      !CALL pop2restore (grid%ph_2,"ph_2")
      !CALL pop2restore (pi_phy,"pi_phy")
@@ -4531,6 +4679,8 @@ BENCH_END(adj_micro_driver_tim)
      !CALL pop2restore (grid%z,"z")
      !CALL pop2restore (grid%z_at_w,"z_at_w")
      !CALL pop2restore (grid%h_diabatic,"h_diabatic")
+     CALL POPREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( grid%p, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij, its, ite, jts, jte )
@@ -4814,7 +4964,9 @@ BENCH_END(adj_bc_end_tim)
 
      !CALL pop2restore (moist, "moist")
      !CALL pop2restore (grid%ph_2,grid%t_2, "ph,t")
-     CALL pop2restore (grid%mu_2,grid%muts, "mu,muts")
+     CALL POPREAL8ARRAY ( grid%muts, (ime-ims+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( grid%mu_2, (ime-ims+1)*(jme-jms+1) )
+     !CALL pop2restore (grid%mu_2,grid%muts, "mu,muts")
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
      DO ij = grid%num_tiles,1,-1
@@ -5046,7 +5198,10 @@ BENCH_START(adj_tke_adv_tim)
          !$OMP END PARALLEL DO
 
          !CALL pop2restore (grid%tke_2,grid%tke_1, "tke_2,tke_1")
-         CALL pop2restore (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
+         CALL POPREAL8ARRAY ( grid%ww_m , (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%rv_m , (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%ru_m , (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         !CALL pop2restore (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
          !CALL pop2restore (grid%mu_1,grid%muts, "mu_1,muts")
          !IF ( rk_step == 1 ) CALL pop2restore (grid%alt,grid%xkhh, "alt,xkhh")
          !$OMP PARALLEL DO   &
@@ -5113,7 +5268,9 @@ BENCH_START(adj_flow_depbdy_tim)
                IF( config_flags%specified ) THEN
                  IF(im .ne. P_QV)THEN
 
-                   CALL pop2restore ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+                   CALL POPREAL8ARRAY ( grid%rv_m, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+                   CALL POPREAL8ARRAY ( grid%ru_m, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+                   !CALL pop2restore ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
                    CALL a_flow_dep_bdy ( a_moist(ims,kms,jms,im),             &
                                          grid%ru_m, grid%rv_m, config_flags,  &
                                          grid%spec_zone,                      &
@@ -5135,11 +5292,17 @@ BENCH_END(adj_flow_depbdy_tim)
 BENCH_START(adj_update_scal_tim)
 
                IF ( rk_step == 1 ) THEN
-                 CALL pop2restore ( moist(:,:,:,im),moist_tend(:,:,:,im),advect_tend, &
-                                    "moist,moist_tend,advect_tend" ) 
+                 !CALL pop2restore ( moist(:,:,:,im),moist_tend(:,:,:,im),advect_tend, &
+                 !                   "moist,moist_tend,advect_tend" ) 
+                 CALL POPREAL8ARRAY ( advect_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+                 CALL POPREAL8ARRAY ( moist_tend(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+                 CALL POPREAL8ARRAY ( moist(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
                ELSE
-                 CALL pop2restore ( moist_old(:,:,:,im),moist_tend(:,:,:,im),advect_tend, &
-                                    "moist_old,moist_tend,advect_tend" ) 
+                 !CALL pop2restore ( moist_old(:,:,:,im),moist_tend(:,:,:,im),advect_tend, &
+                 !                   "moist_old,moist_tend,advect_tend" ) 
+                 CALL POPREAL8ARRAY ( advect_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+                 CALL POPREAL8ARRAY ( moist_tend(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+                 CALL POPREAL8ARRAY ( moist_old(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
                END IF 
                !CALL pop2restore ( grid%mu_1,grid%mu_2, "mu_1,mu_2" )
                CALL a_rk_update_scalar( scs=im, sce=im,                                &
@@ -5198,7 +5361,8 @@ BENCH_START(adj_rlx_bdy_scalar_tim)
                                      k_start, k_end )
 
                    !CALL pop2restore (moist(:,:,:,im), "moist") 
-                   CALL pop2restore (grid%mut, "mut") 
+                   CALL POPREAL8ARRAY ( grid%mut, (ime-ims+1)*(jme-jms+1) )
+                   !CALL pop2restore (grid%mut, "mut") 
                    CALL a_relax_bdy_scalar ( a_moist_tend(ims,kms,jms,im),            &
                                      moist(ims,kms,jms,im), a_moist(ims,kms,jms,im),  &
                                      grid%mut, grid%a_mut,                            &
@@ -5225,9 +5389,14 @@ BENCH_END(adj_rlx_bdy_scalar_tim)
 
 BENCH_START(adj_rk_scalar_tend_tim)
 
-               CALL pop2restore (moist(:,:,:,im),moist_old(:,:,:,im), &
-                                 "moist,moist_old")
-               CALL pop2restore (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
+               CALL POPREAL8ARRAY ( moist_old(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+               CALL POPREAL8ARRAY ( moist(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+               !CALL pop2restore (moist(:,:,:,im),moist_old(:,:,:,im), &
+               !                  "moist,moist_old")
+               CALL POPREAL8ARRAY ( grid%ww_m, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+               CALL POPREAL8ARRAY ( grid%rv_m, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+               CALL POPREAL8ARRAY ( grid%ru_m, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+               !CALL pop2restore (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
                !CALL pop2restore (grid%mu_1,grid%muts, "mu_1,muts")
                !IF ( rk_step == 1 ) CALL pop2restore (grid%alt,grid%xkhh, "alt,xkhh")
                CALL a_rk_scalar_tend (  im, im, config_flags, tenddec,       &
@@ -5425,8 +5594,10 @@ BENCH_END(adj_rk_scalar_tend_tim)
        ENDIF
 #endif
 
-       CALL pop2restore (moist_old(:,:,:,:),moist_tend(:,:,:,:), &
-                        "moist_old,moist_tend")
+       !CALL pop2restore (moist_old(:,:,:,:),moist_tend(:,:,:,:), &
+       !                 "moist_old,moist_tend")
+       CALL POPREAL8ARRAY ( moist_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1)*num_moist )
+       CALL POPREAL8ARRAY ( moist_old, (ime-ims+1)*(kme-kms+1)*(jme-jms+1)*num_moist )
        !CALL pop2restore (grid%mu_1, "mu_1")
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -5501,9 +5672,24 @@ BENCH_START(adj_small_step_finish_tim)
        END IF
 
 
-       CALL pop2restore (grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%w_2,w_save,grid%t_2,grid%t_save, &
-                         grid%h_diabatic, "u,u_save,v,v_save,w,w_save,t,t_save,h_diabatic") 
-       CALL pop2restore (grid%mut,grid%muts,grid%muu,muus,grid%muv,muvs, "mut,muts,muu,muus,muv,muvs") 
+       CALL POPREAL8ARRAY ( grid%h_diabatic, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%t_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( w_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%w_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%v_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%v_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%u_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%u_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       !CALL pop2restore (grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%w_2,w_save,grid%t_2,grid%t_save, &
+       !                  grid%h_diabatic, "u,u_save,v,v_save,w,w_save,t,t_save,h_diabatic") 
+       CALL POPREAL8ARRAY ( muvs, (ime-ims+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%muv, (ime-ims+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( muus, (ime-ims+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%muu, (ime-ims+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%muts, (ime-ims+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%mut, (ime-ims+1)*(jme-jms+1) )
+       !CALL pop2restore (grid%mut,grid%muts,grid%muu,muus,grid%muv,muvs, "mut,muts,muu,muus,muv,muvs") 
        CALL a_small_step_finish( grid%u_2, grid%a_u_2, grid%u_1, &
                                  grid%v_2, grid%a_v_2, grid%v_1,  &
                                  grid%w_2, grid%a_w_2, grid%w_1,  &
@@ -5611,8 +5797,15 @@ BENCH_END(adj_phys_bc_tim)
        DO ij = grid%num_tiles,1,-1
 
 BENCH_START(adj_cald_p_rho_tim)
-         CALL pop2restore (grid%alt,grid%ph_2,grid%t_2,grid%t_save,c2a, "alt,ph,t_2,t_1,c2a") 
-         CALL pop2restore (grid%mu_2,grid%muts, "mu,muts") 
+         CALL POPREAL8ARRAY ( c2a, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%t_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%ph_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%alt, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         !CALL pop2restore (grid%alt,grid%ph_2,grid%t_2,grid%t_save,c2a, "alt,ph,t_2,t_1,c2a") 
+         CALL POPREAL8ARRAY ( grid%muts, (ime-ims+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%mu_2, (ime-ims+1)*(jme-jms+1) )
+         !CALL pop2restore (grid%mu_2,grid%muts, "mu,muts") 
          CALL a_calc_p_rho( grid%al, grid%a_al, grid%p, grid%a_p, grid%ph_2, grid%a_ph_2,           &
                             grid%alt, grid%a_alt, grid%t_2, grid%a_t_2, grid%t_save, grid%a_t_save, &
                             c2a, a_c2a, pm1, a_pm1, & 
@@ -5659,8 +5852,13 @@ BENCH_START(adj_spec_bdynhyd_tim)
 
              ENDIF
 
-             CALL pop2restore (mu_tend,grid%muts, "mu_tend,muts") 
-             CALL pop2restore (ph_save,grid%ph_2,ph_tend, "ph_save,ph,ph_tend") 
+             CALL POPREAL8ARRAY ( grid%muts, (ime-ims+1)*(jme-jms+1) )
+             CALL POPREAL8ARRAY ( mu_tend, (ime-ims+1)*(jme-jms+1) )
+             !CALL pop2restore (mu_tend,grid%muts, "mu_tend,muts") 
+             CALL POPREAL8ARRAY ( ph_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+             CALL POPREAL8ARRAY ( grid%ph_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+             CALL POPREAL8ARRAY ( ph_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+             !CALL pop2restore (ph_save,grid%ph_2,ph_tend, "ph_save,ph,ph_tend") 
              CALL a_spec_bdyupdate_ph( ph_save, a_ph_save, grid%ph_2, grid%a_ph_2,       &
                                        ph_tend, a_ph_tend,              &
                                        mu_tend, a_mu_tend, grid%muts, grid%a_muts, dts_rk, &
@@ -5708,11 +5906,32 @@ BENCH_END(adj_sumflux_tim)
 BENCH_START(adj_advance_w_tim)
          IF ( config_flags%non_hydrostatic ) THEN
 
-           CALL pop2restore (grid%ph_2,ph_save,ph_tend,c2a,cqw,grid%alt,a,alpha,gamma,     &
-                             "ph,ph_1,ph_tend,c2a,cqw,alt,a,alpha,gamma")
-           CALL pop2restore (grid%u_2,grid%v_2,grid%w_2,rw_tend,grid%ww,w_save,t_2save,grid%t_2,grid%t_save, &
-                             "u,v,w,rw_tend,ww,w_save,t_2ave,t_2,t_1")
-           CALL pop2restore (grid%mut,muave,grid%muts, "mut,muave,muts") 
+           CALL POPREAL8ARRAY ( gamma, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL POPREAL8ARRAY ( alpha, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL POPREAL8ARRAY ( a, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL POPREAL8ARRAY ( grid%alt, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL POPREAL8ARRAY ( cqw, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL POPREAL8ARRAY ( c2a, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL POPREAL8ARRAY ( ph_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL POPREAL8ARRAY ( ph_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL POPREAL8ARRAY ( grid%ph_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           !CALL pop2restore (grid%ph_2,ph_save,ph_tend,c2a,cqw,grid%alt,a,alpha,gamma,     &
+           !                  "ph,ph_1,ph_tend,c2a,cqw,alt,a,alpha,gamma")
+           CALL POPREAL8ARRAY ( grid%t_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL POPREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL POPREAL8ARRAY ( t_2save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL POPREAL8ARRAY ( w_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL POPREAL8ARRAY ( grid%ww, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL POPREAL8ARRAY ( rw_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL POPREAL8ARRAY ( grid%w_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL POPREAL8ARRAY ( grid%v_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           CALL POPREAL8ARRAY ( grid%u_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           !CALL pop2restore (grid%u_2,grid%v_2,grid%w_2,rw_tend,grid%ww,w_save,t_2save,grid%t_2,grid%t_save, &
+           !                  "u,v,w,rw_tend,ww,w_save,t_2ave,t_2,t_1")
+           CALL POPREAL8ARRAY ( grid%muts, (ime-ims+1)*(jme-jms+1) )
+           CALL POPREAL8ARRAY ( muave, (ime-ims+1)*(jme-jms+1) )
+           CALL POPREAL8ARRAY ( grid%mut, (ime-ims+1)*(jme-jms+1) )
+           !CALL pop2restore (grid%mut,muave,grid%muts, "mut,muave,muts") 
            CALL a_advance_w( grid%w_2,grid%a_w_2, rw_tend,a_rw_tend, grid%ww,grid%a_ww, w_save,a_w_save, &
                              grid%u_2,grid%a_u_2, grid%v_2,grid%a_v_2,                              &
                              grid%mu_2,grid%a_mu_2, grid%mut,grid%a_mut,                            &
@@ -5782,8 +6001,15 @@ BENCH_END(adj_spec_bdy_t_tim)
 
 !      Adjoint of updating model variables of grid points except for those in spec zone: mu,t
 
-       CALL pop2restore (grid%ww,ww1,grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%t_save, &
-                           "ww,ww_1,u,u_1,v,v_1,t_1") 
+       CALL POPREAL8ARRAY ( grid%t_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%v_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%v_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%u_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%u_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( ww1, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%ww, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       !CALL pop2restore (grid%ww,ww1,grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%t_save, &
+       !                    "ww,ww_1,u,u_1,v,v_1,t_1") 
        !CALL pop2restore (grid%muu,grid%muv,mu_tend, "muu,muv,mu_tend") 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -5859,8 +6085,18 @@ BENCH_END(adj_spec_bdy_uv_tim)
 !======[adj_P1.11.1]======================================================
 !      Adjoint of updating model variables of grid points except for those in spec zone: u,v
 
-       CALL pop2restore (grid%ph_2,grid%alt,grid%p,grid%al,grid%php,cqu,cqv, "ph,alt,p,al,php,cqu,cqv") 
-       CALL pop2restore (grid%mu_2,grid%muu,grid%muv, "mu,muu,muv") 
+       CALL POPREAL8ARRAY ( cqv, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( cqu, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%php, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%al, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%p, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%alt, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%ph_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       !CALL pop2restore (grid%ph_2,grid%alt,grid%p,grid%al,grid%php,cqu,cqv, "ph,alt,p,al,php,cqu,cqv") 
+       CALL POPREAL8ARRAY ( grid%muv, (ime-ims+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%muu, (ime-ims+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%mu_2, (ime-ims+1)*(jme-jms+1) )
+       !CALL pop2restore (grid%mu_2,grid%muu,grid%muv, "mu,muu,muv") 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
 
@@ -5996,7 +6232,8 @@ BENCH_START(adj_small_step_prep_tim)
 
        IF (config_flags%non_hydrostatic) THEN
 
-         CALL pop2restore (grid%mut, "mut") 
+         CALL POPREAL8ARRAY ( grid%mut, (ime-ims+1)*(jme-jms+1) )
+         !CALL pop2restore (grid%mut, "mut") 
          !CALL pop2restore (c2a,cqw, "c2a,cqw") 
          CALL a_calc_coef_w( a,a_a,alpha,a_alpha,gamma,a_gamma, &
                              grid%mut,grid%a_mut, cqw,a_cqw,    &
@@ -6011,8 +6248,15 @@ BENCH_START(adj_small_step_prep_tim)
 
        ENDIF
 
-       CALL pop2restore (grid%alt,grid%ph_2,grid%t_2,grid%t_save,c2a, "alt,ph,t_2,t_1,c2a") 
-       CALL pop2restore (grid%mu_2,grid%muts, "mu,muts") 
+       CALL POPREAL8ARRAY ( c2a, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%t_save, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%ph_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%alt, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       !CALL pop2restore (grid%alt,grid%ph_2,grid%t_2,grid%t_save,c2a, "alt,ph,t_2,t_1,c2a") 
+       CALL POPREAL8ARRAY ( grid%muts, (ime-ims+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%mu_2, (ime-ims+1)*(jme-jms+1) )
+       !CALL pop2restore (grid%mu_2,grid%muts, "mu,muts") 
        CALL a_calc_p_rho( grid%al,grid%a_al, grid%p,grid%a_p, grid%ph_2,grid%a_ph_2, &
                           grid%alt,grid%a_alt, grid%t_2,grid%a_t_2,   &
                           grid%t_save,grid%a_t_save, c2a,a_c2a, pm1,a_pm1,  &
@@ -6028,14 +6272,32 @@ BENCH_START(adj_small_step_prep_tim)
        CALL wrf_debug ( 200 , ' call a_small_step_prep ' )
 
        IF ( rk_step == 1 ) THEN
-         CALL pop2restore (grid%u_2,grid%v_2,grid%t_2,grid%w_2,grid%p,grid%alt, &
-                          "u_2,v_2,t_2,w_2,p,alt") 
-         CALL pop2restore (grid%mu_2, "mu_2")
+         CALL POPREAL8ARRAY ( grid%alt, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%p, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%w_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%v_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%u_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         !CALL pop2restore (grid%u_2,grid%v_2,grid%t_2,grid%w_2,grid%p,grid%alt, &
+         !                 "u_2,v_2,t_2,w_2,p,alt") 
+         CALL POPREAL8ARRAY ( grid%mu_2, (ime-ims+1)*(jme-jms+1) )
+         !CALL pop2restore (grid%mu_2, "mu_2")
        ELSE
-         CALL pop2restore (grid%u_1,grid%v_1,grid%t_1,grid%w_1, &
-                           grid%u_2,grid%v_2,grid%t_2,grid%w_2,grid%p,grid%alt, &
-                           "u_1,v_1,t_1,w_1,u_2,v_2,t_2,w_2,p,alt") 
-         CALL pop2restore (grid%mu_1, "mu_1")
+         CALL POPREAL8ARRAY ( grid%alt, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%p, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%w_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%v_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%u_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%w_1, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%t_1, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%v_1, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         CALL POPREAL8ARRAY ( grid%u_1, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+         !CALL pop2restore (grid%u_1,grid%v_1,grid%t_1,grid%w_1, &
+         !                  grid%u_2,grid%v_2,grid%t_2,grid%w_2,grid%p,grid%alt, &
+         !                  "u_1,v_1,t_1,w_1,u_2,v_2,t_2,w_2,p,alt") 
+         CALL POPREAL8ARRAY ( grid%mu_1, (ime-ims+1)*(jme-jms+1) )
+         !CALL pop2restore (grid%mu_1, "mu_1")
        END IF 
        !CALL pop2restore (grid%muu,grid%muv,grid%mut, "muu,muv,mut") 
        CALL a_small_step_prep( grid%u_1,grid%a_u_1,grid%u_2,grid%a_u_2, &
@@ -6115,7 +6377,10 @@ BENCH_START(adj_relax_bdy_dry_tim)
 
      IF( (config_flags%specified .or. config_flags%nested) .and. rk_step == 1 ) THEN
 
-       CALL pop2restore (grid%ph_2,grid%t_2,grid%w_2, "ph,t,w") 
+       CALL POPREAL8ARRAY ( grid%w_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%ph_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       !CALL pop2restore (grid%ph_2,grid%t_2,grid%w_2, "ph,t,w") 
        !CALL pop2restore (grid%mut, "mut") 
        CALL a_relax_bdy_dry ( config_flags,                             &
                 grid%a_u_save, grid%a_v_save, &
@@ -6167,11 +6432,31 @@ BENCH_END(adj_relax_bdy_dry_tim)
 BENCH_START(adj_rk_tend_tim)
 
      !CALL pop2restore (grid%xkmh,grid%xkhh, "xkmh,xkhh") 
-     CALL pop2restore (grid%al,grid%alt,grid%p,grid%php,cqu,cqv,cqw, &
-                       "al,alt,p,php,cqu,cqv,cqw") 
-     CALL pop2restore (grid%u_2,grid%v_2,grid%w_2,grid%t_2,grid%ph_2, "u,v,w,t,ph") 
-     CALL pop2restore (grid%ru,grid%rv,grid%rw,grid%ww, "ru,rv,rw,ww") 
-     CALL pop2restore (grid%mu_2,grid%muu,grid%muv,grid%mut, "mu,muu,muv,mut") 
+     CALL POPREAL8ARRAY ( cqw, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( cqv, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( cqu, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( grid%php, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( grid%p, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( grid%alt, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( grid%al, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     !CALL pop2restore (grid%al,grid%alt,grid%p,grid%php,cqu,cqv,cqw, &
+     !                  "al,alt,p,php,cqu,cqv,cqw") 
+     CALL POPREAL8ARRAY ( grid%ph_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( grid%w_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( grid%v_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( grid%u_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     !CALL pop2restore (grid%u_2,grid%v_2,grid%w_2,grid%t_2,grid%ph_2, "u,v,w,t,ph") 
+     CALL POPREAL8ARRAY ( grid%ww, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( grid%rw, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( grid%rv, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( grid%ru, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+     !CALL pop2restore (grid%ru,grid%rv,grid%rw,grid%ww, "ru,rv,rw,ww") 
+     CALL POPREAL8ARRAY ( grid%mut, (ime-ims+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( grid%muv, (ime-ims+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( grid%muu, (ime-ims+1)*(jme-jms+1) )
+     CALL POPREAL8ARRAY ( grid%mu_2, (ime-ims+1)*(jme-jms+1) )
+     !CALL pop2restore (grid%mu_2,grid%muu,grid%muv,grid%mut, "mu,muu,muv,mut") 
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
      DO ij = grid%num_tiles,1,-1
@@ -6221,8 +6506,14 @@ BENCH_END(adj_rk_tend_tim)
 
      adj_rk_step_is_one : IF (rk_step == 1) THEN ! only need to initialize diffusion tendencies
 
-       CALL pop2restore (grid%rublten,grid%rvblten,grid%rthblten,grid%rqvblten,grid%rthcuten,grid%rqvcuten,&
-                         "rublten,rvblten,rthblten,rqvblten,rthcuten,rqvcuten") 
+       CALL POPREAL8ARRAY ( grid%rqvcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%rthcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%rqvblten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%rthblten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%rvblten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%rublten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+       !CALL pop2restore (grid%rublten,grid%rvblten,grid%rthblten,grid%rqvblten,grid%rthcuten,grid%rqvcuten,&
+       !                  "rublten,rvblten,rthblten,rqvblten,rthcuten,rqvcuten") 
        CALL a_first_rk_step_part2 (   grid , config_flags   &
               , moist ,a_moist , moist_tend ,a_moist_tend   &
 !!!!! USE THE STATEMENTS REMARKED WHEN chem and tracer ARE NEEDED. Ning Pan, 2010-08-20

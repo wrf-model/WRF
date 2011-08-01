@@ -90,9 +90,6 @@ i1       real   g_w_save         ikj     dyn_em      1         Z
 # Geopotential
 state    real   a_ph             ikjb     dyn_em      2         Z     \
        irhusdf=(bdy_interp:dt)   "a_ph"   "perturbation geopotential"  "m2 s-2"
-state    real   a_phb            ikj     dyn_em      1         Z     irhdus "a_phb"  "base-state geopotential"  "m2 s-2"
-state    real   a_phb_fine       ikj     dyn_em      1         Z      -     "a_phb_fine"  "for nesting, temp holding interpolated coarse grid phb"  "m2 s-2"
-state    real   a_ph0            ikj     dyn_em      1         Z      r     "a_ph0"  "initial geopotential"     "m2 s-2"
 state    real   a_php            ikj     dyn_em      1         -      r     "a_php"  "geopotential"             "m2 s-2"
 i1       real   a_ph_tend        ikj     dyn_em      1         Z
 i1       real   a_ph_tendf       ikj     dyn_em      1         Z
@@ -100,9 +97,6 @@ i1       real   a_ph_save        ikj     dyn_em      1         Z
 
 state    real   g_ph             ikjb     dyn_em      2         Z     \
        i0rhusdf=(bdy_interp:dt)   "g_ph"   "perturbation geopotential"  "m2 s-2"
-state    real   g_phb            ikj     dyn_em      1         Z     irhdus "g_phb"  "base-state geopotential"  "m2 s-2"
-state    real   g_phb_fine       ikj     dyn_em      1         Z      -     "g_phb_fine"  "for nesting, temp holding interpolated coarse grid phb"  "m2 s-2"
-state    real   g_ph0            ikj     dyn_em      1         Z      r     "g_ph0"  "initial geopotential"     "m2 s-2"
 state    real   g_php            ikj     dyn_em      1         -      r     "g_php"  "geopotential"             "m2 s-2"
 i1       real   g_ph_tend        ikj     dyn_em      1         Z
 i1       real   g_ph_tendf       ikj     dyn_em      1         Z
@@ -112,7 +106,6 @@ i1       real   g_ph_save        ikj     dyn_em      1         Z
 state    real   a_t              ikjb     dyn_em      2         -     \
        i0rhusdf=(bdy_interp:dt)   "a_t"      "perturbation potential temperature (theta-t0)" "K"
 
-state    real   a_t_init         ikj     dyn_em      1         -      ir       "a_t_init" "initial potential temperature" "K"
 i1       real   a_t_tend         ikj     dyn_em      1         -
 i1       real   a_t_tendf        ikj     dyn_em      1         -
 state    real   a_tp             ikj     dyn_em      2         -
@@ -122,7 +115,6 @@ state    real   a_t_save         ikj     dyn_em      1         -               "
 state    real   g_t              ikjb     dyn_em      2         -     \
        i0rhusdf=(bdy_interp:dt)   "g_t"      "perturbation potential temperature (theta-t0)" "K"
 
-state    real   g_t_init         ikj     dyn_em      1         -      ir       "g_t_init" "initial potential temperature" "K"
 i1       real   g_t_tend         ikj     dyn_em      1         -
 i1       real   g_t_tendf        ikj     dyn_em      1         -
 state    real   g_tp             ikj     dyn_em      2         -
@@ -132,10 +124,6 @@ state    real   g_t_save         ikj     dyn_em      1         -               "
 # Mass
 state    real   a_mu              ijb     dyn_em      2         -     \
      irhusdf=(bdy_interp:dt)   "a_mu"  "perturbation dry air mass in column" "Pa"
-state    real   a_mub             ij     dyn_em      1         -     irhdus       "a_mub" "base state dry air mass in column" "Pa"
-state    real   a_mub_fine        ij     dyn_em      1         -      -           "a_mub_fine" "nest temp, holds interpolated coarse grid mub" "Pa"
-state    real   a_mub_save        ij     dyn_em      1         -      -           "a_mub_save" "nest temp, holds orig fine grid mub" "Pa"
-state    real   a_mu0             ij     dyn_em      1         -      i1          "a_mu0" "initial dry mass in column" "Pa"
 state    real   a_mudf            ij     dyn_em      1         -      -           "a_mudf" "" ""
 state    real   a_muu             ij     dyn_em      1          -                 "a_muu"
 i1       real   a_muus            ij     dyn_em      1          -
@@ -150,10 +138,6 @@ i1       real   a_mu_tendf        ij     dyn_em      1          -
 
 state    real   g_mu              ijb     dyn_em      2         -     \
      i0rhusdf=(bdy_interp:dt)   "g_mu"  "perturbation dry air mass in column" "Pa"
-state    real   g_mub             ij     dyn_em      1         -     irhdus       "g_mub" "base state dry air mass in column" "Pa"
-state    real   g_mub_fine        ij     dyn_em      1         -      -           "g_mub_fine" "nest temp, holds interpolated coarse grid mub" "Pa"
-state    real   g_mub_save        ij     dyn_em      1         -      -           "g_mub_save" "nest temp, holds orig fine grid mub" "Pa"
-state    real   g_mu0             ij     dyn_em      1         -      i1          "g_mu0" "initial dry mass in column" "Pa"
 state    real   g_mudf            ij     dyn_em      1         -      -           "g_mudf" "" ""
 state    real   g_muu             ij     dyn_em      1          -                 "g_muu"
 i1       real   g_muus            ij     dyn_em      1          -
@@ -195,12 +179,10 @@ state    real   a_NCA            ij      misc        1         -      r        "
 state    real   a_p              ikj     dyn_em      1         -      irh       "a_p"           "perturbation pressure"         "Pa"
 state    real   a_al             ikj     dyn_em      1         -      r         "a_al"          "inverse perturbation density"  "m3 kg-1"
 state    real   a_alt            ikj     dyn_em      1         -      r         "a_alt"         "inverse density"               "m3 kg-1"
-state    real   a_pb             ikj     dyn_em      1         -      irhdus    "a_pb"          "BASE STATE PRESSURE "          "Pa"
 
 state    real   g_p              ikj     dyn_em      1         -      irh       "g_p"           "perturbation pressure"         "Pa"
 state    real   g_al             ikj     dyn_em      1         -      r         "g_al"          "inverse perturbation density"  "m3 kg-1"
 state    real   g_alt            ikj     dyn_em      1         -      r         "g_alt"         "inverse density"               "m3 kg-1"
-state    real   g_pb             ikj     dyn_em      1         -      irhdus    "g_pb"          "BASE STATE PRESSURE "          "Pa"
 
 #
 # Other dyn
@@ -570,8 +552,13 @@ package   jcdfi_on      jcdfi_diag==1                  -             state:jcdfi
 
 ### 8. Edit the Registry file and create a halo-exchange for x_1.
 
+halo_nta      HALO_EM_INIT_1 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,ph_1,ph_2
+halo_nta      HALO_EM_INIT_2 dyn_em 48:t_1,t_2,mu_1,mu_2,tke_1,tke_2,ww
+halo_nta      HALO_EM_INIT_3 dyn_em 48:php,p,al,alt
+halo_nta      HALO_EM_INIT_4 dyn_em 48:h_diabatic
+halo_nta      HALO_EM_INIT_5 dyn_em 48:moist,scalar
 halo_nta      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
-halo_nta      HALO_EM_B dyn_em 4:ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt,pb
+halo_nta      HALO_EM_B dyn_em 4:ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt
 halo_nta      HALO_EM_C dyn_em    4:u_2,v_2
 halo_nta      HALO_EM_C2 dyn_em    4:ph_2,al,p,mu_2,muts,mudf
 halo_nta      HALO_EM_D dyn_em    24:ru_m,rv_m,ww_m,mut,muts

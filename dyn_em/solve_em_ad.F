@@ -4331,6 +4331,38 @@ BENCH_END(bc_2d_tim)
 
 ! [1] Adjoint of the part after Runge Kutta loop
 
+#ifdef DM_PARALLEL
+!-----------------------------------------------------------------------
+! see above
+!--------------------------------------------------------------
+   CALL wrf_debug ( 200 , ' call HALO_RK_E' )
+   IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+#    include "HALO_EM_E_3_AD.inc"
+   ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+#    include "HALO_EM_E_5_AD.inc"
+   ELSE
+     WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+     CALL wrf_error_fatal(TRIM(wrf_err_message))
+   ENDIF
+#endif
+
+#ifdef DM_PARALLEL
+   IF ( num_moist >= PARAM_FIRST_SCALAR  ) THEN
+!-----------------------------------------------------------------------
+! see above
+!--------------------------------------------------------------
+     CALL wrf_debug ( 200 , ' call HALO_RK_MOIST' )
+     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+#      include "HALO_EM_MOIST_E_3_AD.inc"
+     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+#      include "HALO_EM_MOIST_E_5_AD.inc"
+     ELSE
+       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
+     ENDIF
+   ENDIF
+#endif
+
 !  Adjoint of resetting surface w for consistency
 
    CALL wrf_debug ( 10 , ' call a_set_w_surface' )
@@ -4933,8 +4965,8 @@ BENCH_START(adj_diag_w_tim)
 BENCH_END(adj_diag_w_tim)
 
          CALL a_rk_phys_bc_dry_2( config_flags,                     &
-                                grid%u_2,grid%a_u_2, grid%v_2,grid%a_v_2, grid%w_2,grid%a_w_2, &
-                                grid%t_2,grid%a_t_2, grid%ph_2,grid%a_ph_2, grid%mu_2,grid%a_mu_2,   &
+                                grid%a_u_2, grid%a_v_2, grid%a_w_2, &
+                                grid%a_t_2, grid%a_ph_2, grid%a_mu_2,   &
                                 ids, ide, jds, jde, kds, kde,     &
                                 ims, ime, jms, jme, kms, kme,     &
                                 ips, ipe, jps, jpe, kps, kpe,     &
@@ -6916,39 +6948,6 @@ BENCH_END(adj_step_prep_tim)
    grid%a_tke_1 = 0.0
 #endif
 
-#ifdef DM_PARALLEL
-!-----------------------------------------------------------------------
-! see above
-!--------------------------------------------------------------
-   CALL wrf_debug ( 200 , ' call HALO_RK_E' )
-   IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#    include "HALO_EM_E_3_AD.inc"
-   ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#    include "HALO_EM_E_5_AD.inc"
-   ELSE
-     WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-     CALL wrf_error_fatal(TRIM(wrf_err_message))
-   ENDIF
-#endif
-
-#ifdef DM_PARALLEL
-   IF ( num_moist >= PARAM_FIRST_SCALAR  ) THEN
-!-----------------------------------------------------------------------
-! see above
-!--------------------------------------------------------------
-     CALL wrf_debug ( 200 , ' call HALO_RK_MOIST' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#      include "HALO_EM_MOIST_E_3_AD.inc"
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#      include "HALO_EM_MOIST_E_5_AD.inc"
-     ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-     ENDIF
-   ENDIF
-#endif
-
-!==[P12_adj]==============================================================
 !  Max values of CFL for adaptive time step scheme
 
    grid%itimestep = grid%itimestep - 1

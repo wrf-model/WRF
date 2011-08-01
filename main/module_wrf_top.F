@@ -433,7 +433,9 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
 
    ! Save the initial condition and boundary condition, x
    CALL allocate_grid ( )
-   CALL copy_grid_to_s ( head_grid )
+   CALL copy_grid_to_s ( head_grid , &
+                         head_grid%i_start(1), head_grid%i_end(1),                &
+                         head_grid%j_start(1), head_grid%j_end(1)                 )
 
    CALL       wrf_message ( "wrf: calling nonlinear integrate" )
    model_config_rec%dyn_opt = dyn_em
@@ -633,7 +635,7 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
    !$OMP PRIVATE ( ij ) &
    !$OMP REDUCTION (+:val_a)
    DO ij = 1 , head_grid%num_tiles
-     CALL inner_dot_a_b_adjtest ( head_grid, val_a,                                          &
+     CALL inner_dot_a_b_adjtest ( head_grid, val_a,                                  &
                           head_grid%i_start(ij), head_grid%i_end(ij),                &
                           head_grid%j_start(ij), head_grid%j_end(ij)                 )
    END DO
@@ -710,8 +712,10 @@ ENDIF
       head_grid%raincv = 0.0
    ENDIF
 
-   IF ( ASSOCIATED(xtraj_tail) ) xtraj_pointer => xtraj_tail
    head_grid%itimestep = 0
+   CALL start_domain ( head_grid , .TRUE. )
+
+   IF ( ASSOCIATED(xtraj_tail) ) xtraj_pointer => xtraj_tail
    CALL integrate ( head_grid )
 
    CALL       wrf_message ( "wrf: back from tangent linear integrate" )
@@ -807,6 +811,8 @@ ENDIF
 
    CALL integrate ( head_grid )
 
+   CALL start_domain ( head_grid , .TRUE. )
+
 !  Recover to NL model 
    model_config_rec%dyn_opt = dyn_em
 
@@ -877,6 +883,9 @@ ENDIF
       head_grid%rainc = 0.0
       head_grid%raincv = 0.0
    ENDIF
+
+   head_grid%itimestep = 0
+   CALL start_domain ( head_grid , .TRUE. )
 #endif
    CALL integrate ( head_grid )
    CALL       wrf_debug ( 100 , 'wrf: back from integrate' )

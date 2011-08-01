@@ -737,8 +737,8 @@ CONTAINS
 
 !---------------------------------------------------------------------
 
- SUBROUTINE a_rk_phys_bc_dry_2(config_flags,u,a_u,v,a_v,w,a_w,t,a_t,ph, &
- a_ph,mu,a_mu,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,ips,ipe,jps,jpe, &
+ SUBROUTINE a_rk_phys_bc_dry_2(config_flags,a_u,a_v,a_w,a_t,&
+ a_ph,a_mu,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,ips,ipe,jps,jpe, &
  kps,kpe,its,ite,jts,jte,kts,kte)
 
  IMPLICIT NONE
@@ -749,8 +749,8 @@ CONTAINS
  INTEGER :: ips,ipe,jps,jpe,kps,kpe
  INTEGER :: its,ite,jts,jte,kts,kte
  TYPE(grid_config_rec_type) config_flags
- REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: u,a_u,v,a_v,w,a_w,t,a_t,ph,a_ph
- REAL,DIMENSION(ims:ime,jms:jme) :: mu,a_mu
+ REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: a_u,a_v,a_w,a_t,a_ph
+ REAL,DIMENSION(ims:ime,jms:jme) :: a_mu
 
  CALL a_set_physical_bc3d(a_u,'U',config_flags,ids,ide,jds,jde,kds,kde,ims, &
  ime,jms,jme,kms,kme,ips,ipe,jps,jpe,kps,kpe,its,ite,jts,jte,kts,kte)

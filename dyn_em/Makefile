@@ -64,6 +64,8 @@ OBJS    = 		        \
 	solve_em_tl.o           \
 	solve_em_ad.o           \
         start_em.o              \
+        start_em_tl.o           \
+        start_em_ad.o           \
         shift_domain_em.o       \
         couple_or_uncouple_em.o \
         nest_init_utils.o	\
@@ -418,6 +420,35 @@ start_em.o:     module_bc_em.o \
 		../share/module_bc.o \
 		../share/module_date_time.o \
 		../phys/module_physics_init.o \
+		$(CF)
+
+start_em_tl.o:  module_bc_em_tl.o \
+		../frame/module_domain.o \
+		../frame/module_configure.o  \
+		../frame/module_state_description.o \
+		../frame/module_timing.o \
+		../frame/module_dm.o \
+		../frame/module_comm_dm.o \
+		../share/module_io_domain.o \
+		../share/module_model_constants.o \
+		../share/module_bc_tl.o \
+		../share/module_date_time.o \
+		../phys/module_physics_init.o \
+		$(CF)
+
+start_em_ad.o:  module_bc_em_ad.o \
+		../frame/module_domain.o \
+		../frame/module_configure.o  \
+		../frame/module_state_description.o \
+		../frame/module_timing.o \
+		../frame/module_dm.o \
+		../frame/module_comm_dm.o \
+		../share/module_io_domain.o \
+		../share/module_model_constants.o \
+		../share/module_bc_ad.o \
+		../share/module_date_time.o \
+		../phys/module_physics_init.o \
+		../share/mediation_pertmod_io.o \
 		$(CF)
 
 solve_em.o:     module_small_step_em.o \

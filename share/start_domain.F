@@ -18,6 +18,10 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 #if ((EM_CORE == 1) && (DA_CORE != 1))
 #    include "start_domain_em.int"
 #endif
+#if ((EM_CORE == 1) && (WRFPLUS == 1))
+#    include "start_domain_em_tl.int"
+#    include "start_domain_em_ad.int"
+#endif
 #if (NMM_CORE == 1)
 #    include "start_domain_nmm.int"
 #endif
@@ -32,11 +36,25 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
    CALL set_scalar_indices_from_config ( head_grid%id , idum1, idum2 )
 
 #if ((EM_CORE == 1) && (DA_CORE != 1))
-   CALL start_domain_em( grid, allowed_to_read  &
+   IF ( model_config_rec%dyn_opt .EQ. dyn_em_tl ) THEN
+      CALL g_start_domain_em( grid, allowed_to_read  &
 !
 # include <actual_new_args.inc>
 !
                          )
+   ELSE IF ( model_config_rec%dyn_opt .EQ. dyn_em_ad ) THEN
+      CALL a_start_domain_em( grid, allowed_to_read  &
+!
+# include <actual_new_args.inc>
+!
+                         )
+   ELSE
+      CALL start_domain_em( grid, allowed_to_read  &
+!
+# include <actual_new_args.inc>
+!
+                         )
+   ENDIF
 #endif
 #if (NMM_CORE == 1) 
    CALL start_domain_nmm( grid, allowed_to_read   &

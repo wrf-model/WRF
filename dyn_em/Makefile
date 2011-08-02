@@ -448,7 +448,6 @@ start_em_ad.o:  module_bc_em_ad.o \
 		../share/module_bc_ad.o \
 		../share/module_date_time.o \
 		../phys/module_physics_init.o \
-		../share/mediation_pertmod_io.o \
 		$(CF)
 
 solve_em.o:     module_small_step_em.o \

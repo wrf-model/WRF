@@ -7,7 +7,7 @@
 )
 
    USE module_domain, ONLY : domain, wrfu_timeinterval, get_ijk_from_grid, &
-        domain_setgmtetc, domain_clock_get
+        domain_setgmtetc
    USE module_state_description
    USE module_model_constants
    USE a_module_bc, ONLY : a_set_physical_bc2d
@@ -25,8 +25,6 @@
    USE module_physics_init
 
    USE module_model_constants
-
-   USE mediation_pertmod_io, ONLY : read_nl_xtraj
 
    IMPLICIT NONE
    !  Input data.
@@ -107,11 +105,6 @@
    ELSE
       first_trip_for_this_domain = .FALSE.
    END IF
-
-!  Read the basic states at 0, we need them below
-   CALL domain_clock_get( grid, current_timestr=timestr )
-   CALL read_nl_xtraj (timestr)
-
 
    IF ( .NOT. config_flags%restart .AND. &
         (( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ))) THEN

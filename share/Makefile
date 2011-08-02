@@ -179,6 +179,7 @@ mediation_force_domain.o: ../frame/module_domain.o ../frame/module_configure.o
 
 mediation_integrate.o: ../frame/module_domain.o ../frame/module_configure.o \
 			../frame/module_timing.o ../dyn_em/module_bc_em.o \
+			../frame/module_dm.o ../frame/module_comm_dm.o \
 			module_bc.o $(ESMF_MOD_DEPENDENCE) \
 			module_date_time.o module_bc_time_utilities.o \
 			module_compute_geop.o                         \

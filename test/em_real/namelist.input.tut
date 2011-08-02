@@ -105,6 +105,15 @@ end_hour=03,
 interval_seconds=21600,
 debug_level=0,
 /
+iofields_filename                   = "plus.io_config",
+ignore_iofields_warning             = .true.,
+io_form_auxhist8                    = 2,
+auxhist8_interval_h                 = 1,
+frames_per_auxhist8                 = 1,
+io_form_auxhist7                    = 2,
+auxhist7_interval_h                 = 6,
+frames_per_auxhist7                 = 1,
+
 &domains
 time_step=720,
 e_we=45,

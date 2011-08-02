@@ -40,6 +40,12 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    USE module_bc, ONLY : set_physical_bc3d
    USE esmf_timemod, ONLY : ESMF_TimeInc
 
+#ifdef DM_PARALLEL
+   USE module_dm, ONLY : ntasks_x, ntasks_y, &
+        local_communicator, mytask, ntasks
+   USE module_comm_dm, ONLY : halo_em_init_1_sub, halo_em_init_2_sub, halo_em_init_5_sub
+#endif
+
    IMPLICIT NONE
 
   ! Arguments
@@ -63,6 +69,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
                              ips , ipe , jps , jpe , kps , kpe, ij, im
    CHARACTER*80           :: timestr
 
+   REAL, POINTER :: moist(:,:,:,:), scalar(:,:,:,:), chem(:,:,:,:), tracer(:,:,:,:)
 
 #if (WRFPLUS == 1)
 ! In WRFPLUS NL run, boundary should be read before save xtraj.
@@ -190,22 +197,30 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
              CALL domain_clock_get( grid, current_time=currTime, start_time=startTime, &
                                     current_timestr=timestr )
              WRITE(message, FMT='(A,A)') 'read xtraj from file at time stamp:', TRIM(timestr)
-             CALL wrf_debug ( -500 , message )
+             CALL wrf_debug ( 0 , message )
           ENDIF
           IF ( config_flags%dyn_opt .EQ. dyn_em_ad .AND. ialarm .EQ. auxinput7_only ) THEN
              CALL domain_clock_get( grid, current_time=currTime, start_time=startTime, &
                                     current_timestr=timestr )
              WRITE(message, FMT='(A,A)') 'read ad. forcing from file at time stamp:', TRIM(timestr)
-             CALL wrf_debug ( -500 , message )
+             CALL wrf_debug ( 0 , message )
           ENDIF
-          IF ( (config_flags%dyn_opt .EQ. dyn_em_ad .OR. config_flags%dyn_opt .EQ. dyn_em_tl) &
-               .AND. ialarm .EQ. auxinput6_only .AND. &
-               grid%itimestep .NE. 0 ) THEN
+          IF ( ( config_flags%dyn_opt .EQ. dyn_em_ad .OR. config_flags%dyn_opt .EQ. dyn_em_tl ) &
+               .AND. ialarm .EQ. auxinput6_only ) THEN
              CALL get_ijk_from_grid (  grid ,                   &
                                        ids, ide, jds, jde, kds, kde,    &
                                        ims, ime, jms, jme, kms, kme,    &
                                        ips, ipe, jps, jpe, kps, kpe    )
 
+#ifdef DM_PARALLEL
+             moist  => grid%moist
+             scalar => grid%scalar
+             chem   => grid%chem
+             tracer => grid%tracer
+#  include "HALO_EM_INIT_1.inc"
+#  include "HALO_EM_INIT_2.inc"
+#  include "HALO_EM_INIT_5.inc"
+#endif
              DO ij = 1 , grid%num_tiles
                 CALL rk_phys_bc_dry_2( config_flags,                     &
                                        grid%u_2, grid%v_2, grid%w_2,     &
@@ -256,7 +271,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
          ENDIF
        ENDIF
        IF ( .NOT. grid%trajectory_io ) THEN
-          WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed for aux input ' , &
+          WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed from aux input ' , &
              ialarm - first_auxinput + 1, ' for domain ',grid%id
           CALL wrf_debug ( 0 , message )
        ENDIF
@@ -338,8 +353,8 @@ SUBROUTINE med_last_ad_solve_io ( grid , config_flags )
         CALL domain_clock_get( grid, current_time=currTime, start_time=startTime, &
                                current_timestr=timestr )
         WRITE(message, FMT='(A,A)') 'read ad. forcing from file at time stamp:', TRIM(timestr)
-        CALL wrf_debug ( -500 , message )
-        WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed for aux input ' , &
+        CALL wrf_debug ( 0 , message )
+        WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed from aux input ' , &
              AUXINPUT7_ALARM - first_auxinput + 1, ' for domain ',grid%id
         CALL wrf_debug ( 0 , message )
      ENDIF

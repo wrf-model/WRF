@@ -681,6 +681,7 @@ ENDIF
 
    CHARACTER*256 :: timestr
    INTEGER       :: rc
+   INTEGER       :: io_auxh7
 
    !  The forecast integration for the most coarse grid is now started.  The
    !  integration is from the first step (1) to the last step of the simulation.
@@ -712,11 +713,20 @@ ENDIF
       head_grid%raincv = 0.0
    ENDIF
 
+   IF ( .NOT. config_flags%trajectory_io ) THEN
+      CALL nl_get_io_form_auxhist7( head_grid%id, io_auxh7 )
+      CALL nl_set_io_form_auxhist7( head_grid%id, 0 )
+   ENDIF
+
    head_grid%itimestep = 0
    CALL start_domain ( head_grid , .TRUE. )
 
    IF ( ASSOCIATED(xtraj_tail) ) xtraj_pointer => xtraj_tail
    CALL integrate ( head_grid )
+
+   IF ( .NOT. config_flags%trajectory_io ) THEN
+      CALL nl_set_io_form_auxhist7( head_grid%id, io_auxh7 )
+   ENDIF
 
    CALL       wrf_message ( "wrf: back from tangent linear integrate" )
 
@@ -743,6 +753,7 @@ ENDIF
    INTEGER :: rc, runad
    REAL    :: timestep
    TYPE(WRFU_TimeInterval) :: run_interval
+   INTEGER       :: io_auxh8
 
    !  The forecast integration for the most coarse grid is now started.  The
    !  integration is from the first step (1) to the last step of the simulation.
@@ -809,7 +820,16 @@ ENDIF
       head_grid%itimestep = ceiling(real(runad)/timestep)
    ENDIF
 
+   IF ( .NOT. config_flags%trajectory_io ) THEN
+      CALL nl_get_io_form_auxhist8( head_grid%id, io_auxh8 )
+      CALL nl_set_io_form_auxhist8( head_grid%id, 0 )
+   ENDIF
+
    CALL integrate ( head_grid )
+
+   IF ( .NOT. config_flags%trajectory_io ) THEN
+      CALL nl_set_io_form_auxhist8( head_grid%id, io_auxh8 )
+   ENDIF
 
    CALL start_domain ( head_grid , .TRUE. )
 
@@ -848,8 +868,10 @@ ENDIF
 !<DESCRIPTION>
 !     WRF run routine.
 !</DESCRIPTION>
-   LOGICAL :: save_part1
 
+#if (WRFPLUS == 1)
+   integer :: io_auxh7, io_auxh8
+#endif
 !<DESCRIPTION>
 ! Once the top-level domain has been allocated, configured, and
 ! initialized, the model time integration is ready to proceed.  The start
@@ -864,8 +886,8 @@ ENDIF
    !  integration is from the first step (1) to the last step of the simulation.
 
    CALL       wrf_debug ( 100 , 'wrf: calling integrate' )
-   model_config_rec%dyn_opt = dyn_em
 #if (WRFPLUS == 1)
+   model_config_rec%dyn_opt = dyn_em
    IF ( config_flags%bl_pbl_physics .EQ. SURFDRAGSCHEME ) THEN
       head_grid%rublten = 0.0
       head_grid%rvblten = 0.0
@@ -884,10 +906,23 @@ ENDIF
       head_grid%raincv = 0.0
    ENDIF
 
+   IF ( .NOT. config_flags%trajectory_io ) THEN
+      CALL nl_get_io_form_auxhist7( head_grid%id, io_auxh7 )
+      CALL nl_get_io_form_auxhist8( head_grid%id, io_auxh8 )
+      CALL nl_set_io_form_auxhist7( head_grid%id, 0 )
+      CALL nl_set_io_form_auxhist8( head_grid%id, 0 )
+   ENDIF
+
    head_grid%itimestep = 0
    CALL start_domain ( head_grid , .TRUE. )
 #endif
    CALL integrate ( head_grid )
+
+   IF ( .NOT. config_flags%trajectory_io ) THEN
+      CALL nl_set_io_form_auxhist7( head_grid%id, io_auxh7 )
+      CALL nl_set_io_form_auxhist8( head_grid%id, io_auxh8 )
+   ENDIF
+
    CALL       wrf_debug ( 100 , 'wrf: back from integrate' )
 
    END SUBROUTINE wrf_run

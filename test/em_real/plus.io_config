@@ -4,26 +4,20 @@
 #
 # basic states output from non-linear integration
 #
-+:h:6:lu_index,znu,znw,zs,dzs,u,v,w,ph,t,mu,p,al,alt,alb,fnm,fnp,rdnw,rdn,dnw,dn,cfn,cfn1,q2,t2,th2,phb,pb
-+:h:6:u10,v10,rdx,rdy,dts,dtseps,resm,zetatop,cf1,cf2,cf3,fcx,gcx,dtbc,landmask,tslb,hfx,qfx,ustm,h_diabatic
-+:h:6:smois,sh2o,smcrel,seaice,ivgtyp,isltyp,vegfra,snow,snowh,canwat,sst,mapfac_m,mapfac_u,mapfac_v,f,e,sinalpha,cosalpha,hgt,mub,tke,psfc,snowc
-+:h:6:tsk,xlat,xlong,albbck,tmn,xland,znt,qvapor,qrain,qcloud,qice,qsnow,qgraup,qhail
++:h:6:u,v,w,ph,t,mu,p,al,h_diabatic,snowh,tsk,psfc,snowc,tslb,smois,dtbc,qvapor,qrain,qcloud,qice,qsnow,qgraup,qhail
 #
 # basic states input for adjoint and tangent linear integration
 #
-+:i:6:lu_index,znu,znw,zs,dzs,u,v,w,ph,t,mu,p,al,alt,alb,fnm,fnp,rdnw,rdn,dnw,dn,cfn,cfn1,q2,t2,th2,phb,pb
-+:i:6:u10,v10,rdx,rdy,dts,dtseps,resm,zetatop,cf1,cf2,cf3,fcx,gcx,dtbc,landmask,tslb,hfx,qfx,ustm,h_diabatic
-+:i:6:smois,sh2o,smcrel,seaice,ivgtyp,isltyp,vegfra,snow,snowh,canwat,sst,mapfac_m,mapfac_u,mapfac_v,f,e,sinalpha,cosalpha,hgt,mub,tke,psfc,snowc
-+:i:6:tsk,xlat,xlong,albbck,tmn,xland,znt,qvapor,qrain,qcloud,qice,qsnow,qgraup,qhail
++:i:6:u,v,w,ph,t,mu,p,al,h_diabatic,snowh,tsk,psfc,snowc,tslb,smois,dtbc,qvapor,qrain,qcloud,qice,qsnow,qgraup,qhail
 #
 # adjoint forcing input for adjoint integration
 #
-+:i:7:g_u,g_v,g_t,g_mu,g_ph,g_w,g_qvapor,g_qrain,g_qcloud,g_qice,g_qsnow,g_qgraup,g_qhail
++:i:7:g_u,g_v,g_t,g_mu,g_ph,g_w,g_qvapor,g_qrain,g_qcloud,g_qice,g_qsnow,g_qgraup,g_qhail,g_rainnc,g_rainncv,g_rainc,g_raincv
 #
 # perturbation output for tangent linear integration
 #
-+:h:8:g_u,g_v,g_t,g_mu,g_ph,g_w,g_qvapor,g_qrain,g_qcloud,g_qice,g_qsnow,g_qgraup,g_qhail
++:h:8:g_u,g_v,g_t,g_mu,g_ph,g_w,g_qvapor,g_qrain,g_qcloud,g_qice,g_qsnow,g_qgraup,g_qhail,g_rainnc,g_rainncv,g_rainc,g_raincv
 #
 # gradient output from adjoint integration at the beginning of the window
 #
-+:h:7:a_u,a_v,a_t,a_mu,a_ph,a_w,a_qvapor,a_qrain,a_qcloud,a_qice,a_qsnow,a_qgraup,a_qhail
++:h:7:a_u,a_v,a_t,a_mu,a_ph,a_w,a_qvapor,a_qrain,a_qcloud,a_qice,a_qsnow,a_qgraup,a_qhail,a_rainnc,a_rainncv,a_rainc,a_raincv

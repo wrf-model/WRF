@@ -91,7 +91,10 @@ use module_io
 #if (EM_CORE == 1)
      grid%press_adj = .FALSE.
 #endif
+#if (WRFPLUS != 1)
+!  for wrfplus, start_domain will be called in wrf_run
      CALL start_domain ( grid , .TRUE. )
+#endif
    ELSE
 
      IF ( wrf_dm_on_monitor() ) CALL start_timing

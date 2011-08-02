@@ -1097,9 +1097,11 @@ CONTAINS
                         p => p%next
                       ENDDO
                       IF ( .NOT. found ) THEN
+#if ( WRFPLUS != 1 )
                         WRITE(mess,*)'W A R N I N G : Unable to modify mask for ',TRIM(lookee),&
                                      '.  Variable not found. File: ',TRIM(fname),' at line ',lineno
                         CALL wrf_message(mess)
+#endif
                         gavewarning = .TRUE.
                       ENDIF
                       fieldno = fieldno + 1

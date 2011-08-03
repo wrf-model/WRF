@@ -4,11 +4,11 @@
 #
 # basic states output from non-linear integration
 #
-+:h:6:u,v,w,ph,t,mu,p,al,h_diabatic,snowh,tsk,psfc,snowc,tslb,smois,dtbc,qvapor,qrain,qcloud,qice,qsnow,qgraup,qhail
++:h:6:u,v,w,ph,t,mu,p,al,h_diabatic,snowh,tsk,psfc,snowc,tslb,smois,dtbc,rainnc,rainncv,rainc,raincv,qvapor,qrain,qcloud,qice,qsnow,qgraup,qhail
 #
 # basic states input for adjoint and tangent linear integration
 #
-+:i:6:u,v,w,ph,t,mu,p,al,h_diabatic,snowh,tsk,psfc,snowc,tslb,smois,dtbc,qvapor,qrain,qcloud,qice,qsnow,qgraup,qhail
++:i:6:u,v,w,ph,t,mu,p,al,h_diabatic,snowh,tsk,psfc,snowc,tslb,smois,dtbc,rainnc,rainncv,rainc,raincv,qvapor,qrain,qcloud,qice,qsnow,qgraup,qhail
 #
 # adjoint forcing input for adjoint integration
 #

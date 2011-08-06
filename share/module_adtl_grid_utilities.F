@@ -1140,8 +1140,8 @@ CONTAINS
    grid%mu_2 = s_mu_2
    grid%moist = s_moist
    grid%scalar = s_scalar
-   grid%tke_2 = s_tke_2
 
+   grid%tke_2 = s_tke_2
    grid%p = s_p
    grid%al = s_al
    grid%h_diabatic = s_h_diabatic

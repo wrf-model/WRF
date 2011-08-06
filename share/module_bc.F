@@ -3893,24 +3893,24 @@ ELSE   !  Y
        END DO
        END DO 
     ELSE IF ( char_stagger .EQ. 'M' ) THEN
-       DO k = kds , kde
        DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO k = kds , kde
        DO i = MAX(ids,its) , MIN(ide-1,ite)
           space_bdy_ys(i,k,j) = data3d(i,k,j)
        END DO
        END DO
        END DO 
     ELSE IF ( char_stagger .EQ. 'U' ) THEN
-       DO k = kds , kde - 1
        DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO k = kds , kde - 1
        DO i = MAX(ids,its) , MIN(ide,ite)
           space_bdy_ys(i,k,j) = data3d(i,k,j)
        END DO
        END DO
        END DO
     ELSE
-       DO k = kds , kde - 1
        DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO k = kds , kde - 1
        DO i = MAX(ids,its) , MIN(ide-1,ite)
           space_bdy_ys(i,k,j) = data3d(i,k,j)
        END DO

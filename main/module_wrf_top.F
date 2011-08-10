@@ -833,6 +833,12 @@ ENDIF
 
    CALL start_domain ( head_grid , .TRUE. )
 
+   IF ( .NOT. config_flags%trajectory_io ) THEN
+      config_flags%auxhist7_outname = "gradient_d<domain>_<date>"
+      CALL  med_hist_out ( head_grid , AUXHIST7_ALARM , config_flags )
+      CALL  wrf_debug ( 0 , 'Output gradient (not including LBC gradient)' )
+   ENDIF
+
 !  Recover to NL model 
    model_config_rec%dyn_opt = dyn_em
 

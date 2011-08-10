@@ -112,7 +112,8 @@ module_io_wrf.o: module_date_time.o \
 
 module_adtl_grid_utilities.o: ../frame/module_domain.o ../frame/module_configure.o ../frame/module_tiles.o ../frame/module_state_description.o
 
-mediation_pertmod_io.o: ../frame/module_domain.o ../frame/module_state_description.o
+mediation_pertmod_io.o: ../frame/module_domain.o ../frame/module_state_description.o  \
+			../frame/module_dm.o ../frame/module_comm_dm.o
 
 output_wrf.o:   ../frame/module_io.o ../frame/module_wrf_error.o \
                 ../frame/module_domain.o ../frame/module_state_description.o \

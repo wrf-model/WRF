@@ -5,6 +5,10 @@ MODULE mediation_pertmod_io
 
 USE module_domain, ONLY : domain, head_grid, get_ijk_from_grid
 USE module_state_description, ONLY : PARAM_FIRST_SCALAR, num_moist, num_scalar
+#ifdef DM_PARALLEL
+USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y
+USE module_comm_dm, ONLY : halo_em_e_ad_sub
+#endif
 
 TYPE pertmod_io
     CHARACTER*256 :: time                       ! time stamp
@@ -955,6 +959,26 @@ SUBROUTINE restore_xtraj (data)
       CALL wrf_error_fatal ( 'restore_xtraj:  ne is not equal to bytes_xtraj' )
 
 END SUBROUTINE restore_xtraj
+
+SUBROUTINE da_halo_em_e_ad ( data2dmu )
+
+    IMPLICIT NONE
+
+    REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: data2dmu
+
+    type (domain), pointer :: grid
+
+    grid => head_grid
+
+    grid%a_mu_1 = data2dmu
+
+#ifdef DM_PARALLEL
+#include "HALO_EM_E_AD.inc"
+#endif
+
+    data2dmu =grid%a_mu_1
+
+END SUBROUTINE da_halo_em_e_ad
 
 END MODULE mediation_pertmod_io
 

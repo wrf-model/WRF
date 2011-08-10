@@ -588,6 +588,7 @@ halo_nta      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo_nta      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten
 halo_nta      HALO_EM_PHYS_DIFFUSION dyn_em  4:defor11,defor22,defor12,defor13,defor23,div,xkmv,xkmh,xkhv,xkhh,tke_1,tke_2
 halo_nta      HALO_EM_BDY  dyn_em 4:u_1,v_1,ph_1,mu_1,t_1,tke_1
+halo_nta      HALO_EM_E  dyn_em 4:mu_1
 
 #halo      HALO_EM_MU_AD dyn_em  4:a_muu,a_muv,a_mu_2,a_ru,a_rv
 #halo      HALO_EM_SAVE_AD dyn_em  4:a_ph_save,a_t_save,a_u_save,a_v_save

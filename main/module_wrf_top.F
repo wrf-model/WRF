@@ -482,7 +482,7 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
    CALL copy_grid_to_b ( head_grid )
 
    ! Restore the x and assign the \delta x
-!  CALL restore_grid ( head_grid )
+   CALL restore_grid ( head_grid )
    CALL copy_s_to_g_adjtest ( head_grid, 1.0 )
 
    ! Set up basic states reading
@@ -575,7 +575,7 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
 
    CALL wrf_message(TRIM(wrf_err_message))
 
-!  CALL restore_grid ( head_grid )
+   CALL restore_grid ( head_grid )
    CALL copy_s_to_g_adjtest ( head_grid, 0.1 )
 
    CALL copy_g_to_b_adjtest ( head_grid )

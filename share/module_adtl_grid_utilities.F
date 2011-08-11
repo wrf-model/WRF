@@ -1131,24 +1131,6 @@ CONTAINS
    factor_mu =factor
    factor_moist =factor
 
-! restore the background
-   grid%u_2 = s_u_2
-   grid%v_2 = s_v_2
-   grid%w_2 = s_w_2
-   grid%ph_2 = s_ph_2
-   grid%t_2 = s_t_2
-   grid%mu_2 = s_mu_2
-   grid%moist = s_moist
-   grid%scalar = s_scalar
-
-   grid%tke_2 = s_tke_2
-   grid%p = s_p
-   grid%al = s_al
-   grid%h_diabatic = s_h_diabatic
-   grid%ustm = s_ustm
-   grid%hfx = s_hfx
-   grid%qfx = s_qfx
-
 ! I&O variables
    grid%g_u_2 = factor_u*s_u_2
    grid%g_v_2 = factor_v*s_v_2

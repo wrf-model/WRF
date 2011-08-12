@@ -207,23 +207,6 @@ CONTAINS
           do j=jts,jte
           do i=its,ite
           do k=kts,kte
-        conv_rho=r_q*4.828e-4/rho_phy(i,k,j)*dtstep/60./dz8w(i,k,j)
-        chem(i,k,j,p_so2)  =  chem(i,k,j,p_so2)                        &
-                         +ebu(i,k,j,p_ebu_so2)*conv_rho
-        chem(i,k,j,p_sulf)  =  chem(i,k,j,p_sulf)                        &
-                         +ebu(i,k,j,p_ebu_sulf)*conv_rho
-        chem(i,k,j,p_dms)  =  chem(i,k,j,p_dms)                        &
-                         +ebu(i,k,j,p_ebu_dms)*conv_rho
-        chem(i,k,j,p_oc1)  =  chem(i,k,j,p_oc1)                        &
-                         +r_q*ebu(i,k,j,p_ebu_oc)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
-        chem(i,k,j,p_bc1)  =  chem(i,k,j,p_bc1)                        &
-                         +r_q*ebu(i,k,j,p_ebu_bc)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
-        chem(i,k,j,p_p25)  =  chem(i,k,j,p_p25)                        &
-                         +r_q*ebu(i,k,j,p_ebu_pm25)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
-        chem(i,k,j,p_p10)  =  chem(i,k,j,p_p10)                        &
-                         +r_q*ebu(i,k,j,p_ebu_pm10)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
-        enddo
-        k=kts
         conv_rho=r_q*4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
         chem(i,k,j,p_so2)  =  chem(i,k,j,p_so2)                        &
                          +ebu(i,k,j,p_ebu_so2)*conv_rho
@@ -239,6 +222,7 @@ CONTAINS
                          +r_q*ebu(i,k,j,p_ebu_pm25)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
         chem(i,k,j,p_p10)  =  chem(i,k,j,p_p10)                        &
                          +r_q*ebu(i,k,j,p_ebu_pm10)/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)
+        enddo
         enddo
         enddo
       CASE (GOCARTRACM_KPP,GOCARTRADM2_KPP,GOCARTRADM2)

@@ -676,7 +676,41 @@ subroutine da_write_obs(it,ob, iv, re)
             end do
          end if
       end do
-  end if
+   end if
+
+   num_obs = 0
+   do n = 1, iv%info(tamdar)%nlocal
+      if (iv%info(tamdar)%proc_domain(1,n)) num_obs = num_obs + 1
+   end do
+   if (num_obs > 0) then
+      write(ounit,'(a20,i8)')'tamdar', num_obs
+      num_obs = 0
+      do n = 1, iv%info(tamdar)%nlocal
+         if (iv%info(tamdar)%proc_domain(1,n)) then
+            num_obs = num_obs + 1
+            write(ounit,'(i8)')iv%info(tamdar)%levels(n)
+            do k = 1, iv%info(tamdar)%levels(n)
+               write(ounit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))')&
+                  num_obs,k, iv%info(tamdar)%id(n), &  ! Station
+                  iv%info(tamdar)%lat(k,n), &       ! Latitude
+                  iv%info(tamdar)%lon(k,n), &       ! Longitude
+                  iv%tamdar(n)%p(k),        &       ! Obs Pressure
+                  ob%tamdar(n)%u(k),        &
+                  iv%tamdar(n)%u(k)%inv, iv%tamdar(n)%u(k)%qc, iv%tamdar(n)%u(k)%error, &
+                  re%tamdar(n)%u(k),        &
+                  ob%tamdar(n)%v(k),        &
+                  iv%tamdar(n)%v(k)%inv, iv%tamdar(n)%v(k)%qc, iv%tamdar(n)%v(k)%error, &
+                  re%tamdar(n)%v(k),        &
+                  ob%tamdar(n)%t(k),        &
+                  iv%tamdar(n)%t(k)%inv, iv%tamdar(n)%t(k)%qc, iv%tamdar(n)%t(k)%error, &
+                  re%tamdar(n)%t(k),        &
+                  ob%tamdar(n)%q(k),        &
+                  iv%tamdar(n)%q(k)%inv, iv%tamdar(n)%q(k)%qc, iv%tamdar(n)%q(k)%error, &
+                  re%tamdar(n)%q(k)
+            end do
+         end if
+      end do
+   end if
    
    close (ounit)
    call da_free_unit(ounit)

@@ -25,3 +25,6 @@ crtm_coeffs
    for their applications. Please read the CRTM USers Guide
    ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/REL-2.0.2/REL-2.0.2.CRTM_User_Guide.pdf
    for more detailed information.
+
+fso.io_config and plus.io_config
+   input file for WRF FSO runtime config of I/O streams

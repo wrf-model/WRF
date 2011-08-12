@@ -12,7 +12,6 @@ PROGRAM ideal
 #ifdef WRF_CHEM
    USE module_input_chem_data
    USE module_input_chem_bioemiss
-   USE module_input_chem_emissopt3
 #endif
 
    IMPLICIT NONE

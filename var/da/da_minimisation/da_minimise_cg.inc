@@ -208,8 +208,6 @@ subroutine da_minimise_cg(grid, config_flags,            &
     write(unit=stdout,fmt='(A)') &
       '----------------------------------------------------------'
 
-   cv = cv + xhat
-
    if (trace_use) call da_trace_exit("da_minimise_cg")
 
 end subroutine da_minimise_cg

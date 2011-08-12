@@ -1,0 +1,29 @@
+# input file for WRFPLUS runtime config of I/O streams
+# For additional information see README.io_config in top-level directory
+# Creator : Xin Zhang, MMM/NCAR, 2010-04-29
+#
+# basic states output from non-linear integration
+#
++:h:6:lu_index,znu,znw,zs,dzs,u,v,w,ph,t,mu,p,al,alt,alb,fnm,fnp,rdnw,rdn,dnw,dn,cfn,cfn1,q2,t2,th2
++:h:6:u10,v10,rdx,rdy,dts,dtseps,resm,zetatop,cf1,cf2,cf3,fcx,gcx,dtbc,landmask,tslb,hfx,qfx,ustm,h_diabatic
++:h:6:smois,sh2o,smcrel,seaice,ivgtyp,isltyp,vegfra,snow,snowh,canwat,sst,mapfac_m,mapfac_u,mapfac_v,f,e,sinalpha,cosalpha,hgt
++:h:6:tsk,xlat,xlong,albbck,tmn,xland,znt,qvapor
+#
+# basic states input for adjoint and tangent linear integration
+#
++:i:6:lu_index,znu,znw,zs,dzs,u,v,w,ph,t,mu,p,al,alt,alb,fnm,fnp,rdnw,rdn,dnw,dn,cfn,cfn1,q2,t2,th2
++:i:6:u10,v10,rdx,rdy,dts,dtseps,resm,zetatop,cf1,cf2,cf3,fcx,gcx,dtbc,landmask,tslb,hfx,qfx,ustm,h_diabatic
++:i:6:smois,sh2o,smcrel,seaice,ivgtyp,isltyp,vegfra,snow,snowh,canwat,sst,mapfac_m,mapfac_u,mapfac_v,f,e,sinalpha,cosalpha,hgt
++:i:6:tsk,xlat,xlong,albbck,tmn,xland,znt,qvapor
+#
+# adjoint forcing input for adjoint integration
+#
++:i:7:g_u,g_v,g_t,g_mu,g_ph,g_w,g_qvapor
+#
+# perturbation output for tangent linear integration
+#
++:h:8:g_u,g_v,g_t,g_mu,g_ph,g_p,g_w,g_qvapor
+#
+# gradient output from adjoint integration at the beginning of the window
+#
++:h:7:a_u,a_v,a_t,a_mu,a_ph,a_w,a_qvapor

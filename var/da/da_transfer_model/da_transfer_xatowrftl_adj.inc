@@ -12,8 +12,6 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
 
    character*4, intent(in) :: filnam
 
-#ifdef VAR4D
-
    ! Local variables
 
    integer :: i, j, k, bid, ierr, ii, jj, spec_bdy_width
@@ -39,6 +37,8 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
 
    if ( .not. adj_sens ) then
 
+#ifdef VAR4D
+
    call kj_swap_reverse (model_grid%a_u_2, grid%a_u_2, &
                  grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
    call kj_swap_reverse (model_grid%a_v_2, grid%a_v_2, &
@@ -62,6 +62,7 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
    enddo
 
    call da_transfer_wrftl_lbc_t0_adj ( grid )
+#endif
 
    else
 
@@ -327,7 +328,6 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
 
    if (trace_use) call da_trace_exit("da_transfer_xatowrftl_adj")
 
-#endif
 end subroutine da_transfer_xatowrftl_adj
 
 

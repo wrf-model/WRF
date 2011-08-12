@@ -2184,7 +2184,7 @@ endif
                !  surfaces, and folks have asked to do this option.
 
                IF ( ( flag_metgrid .EQ. 1 ) .AND. &
-                    ( flag_ptheta  .EQ. 1 ) .AND. &
+                    ( flag_ptheta  .EQ. 0 ) .AND. &
                     ( config_flags%adjust_heights ) .AND. &
                     ( lev500 .NE. 0 ) ) THEN
 

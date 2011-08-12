@@ -55,7 +55,7 @@ subroutine da_write_filtered_obs(it, grid, ob, iv, &
    real               :: td, td_error , elv_error, ships_pr_error
 
    real               :: slp_inv,speed_err,dir_err, p,p_err
-   real               :: t, t_err,ref, ref_err
+   real               :: t, t_err,ref, ref_err, geom_h, geop_h
    integer            :: thick_qc, t_qc, td_qc, rh_qc, height_qc
    integer            :: slp_qc, speed_qc, dir_qc,p_qc, ref_qc
 
@@ -1273,7 +1273,8 @@ subroutine da_write_filtered_obs(it, grid, ob, iv, &
 
             p    = ob%gpsref(n)%p(k)
             p_qc = iv%gpsref(n)%p(k)%qc 
-            if (iv%gpsref(n)%p(k)%qc <= fails_error_max) then
+            if (iv%gpsref(n)%p(k)%qc <= fails_error_max .and. &
+                .not.(iv%gpsref(n)%p(k)%qc == -5)) then
                p    = missing_r     
                p_qc = missing_data  
             end if
@@ -1293,17 +1294,23 @@ subroutine da_write_filtered_obs(it, grid, ob, iv, &
                ref    = missing_r     
                ref_qc = missing_data  
             end if
-
+!
+!  For GPSREF, convert the geopotential height to geometric height, then write
+!  out to filtered_obs (YRG, 06/15/2011):
+            geop_h = iv%gpsref(n)%h(k) / 1000.0
+            call da_geo2msl1 (geop_h, iv%info(gpsref)%lat(1,n), &
+                              iv%info(gpsref)%lon(1,n), geom_h)
+! ............................................................................
             write(ounit, fmt = trim (fmt_each))             &
                p,  p_qc, slp_error,                         &
                missing_r, missing_data, xmiss,              &
                missing_r, missing_data, xmiss,              &
-               iv%gpsref(n)%h(k), zero, height_error,       &
+               geom_h*1000.0,     zero, height_error,       &
                t, t_qc,  t_err,                             &   
                ref, ref_qc,  ref_err,                       &   
                rh, rh_qc, iv%gpsref(n)%q(k)%error
          end do 
-      end do 
+      end do
    end if
 
    !--------------------------------------------------------------------------

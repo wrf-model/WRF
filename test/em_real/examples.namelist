@@ -292,4 +292,15 @@ For a tropical channel configuration, set the following:
  &namelist_quilt
  nio_tasks_per_group = 2,
  nio_groups = 1,
+
+** for regional climate surface diagnostics such as max/min/mean/std of T2/Q2/wind/rainfall
+between selected output times (e.g. daily) in auxhist3
+
+ &time_control
+ output_diagnostics      = 1
+ auxhist3_outname        = 'wrfxtrm_d<domain>_<date>'
+ io_form_auxhist3        = 2
+ auxhist3_interval       = 1440
+ frames_per_auxhist3     = 1
+
  /

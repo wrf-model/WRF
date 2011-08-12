@@ -476,7 +476,7 @@ IF(guv > 0. ) then
 
 !Filter
 
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 # include "XPOSE_SPECTRAL_NUDGING_z2x.inc"
 
      CALL spectral_nudging_filter_3dx( grid%dif_xxx, xwavenum,    &
@@ -543,7 +543,7 @@ IF(guv > 0. ) then
 !
 ! Filter
 !
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 # include "XPOSE_SPECTRAL_NUDGING_z2x.inc"
      CALL spectral_nudging_filter_3dx( grid%dif_xxx, xwavenum,     &
                                 ids, ide, jds, jde, kds, kde,         &
@@ -613,7 +613,7 @@ IF(gt > 0. ) then
 
 !Filter
 
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 # include "XPOSE_SPECTRAL_NUDGING_z2x.inc"
 
      CALL spectral_nudging_filter_3dx( grid%dif_xxx, xwavenum,    &
@@ -685,7 +685,7 @@ IF(gph > 0. ) then
 
 !Filter
 
-#ifdef DM_PARALLEL
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 # include "XPOSE_SPECTRAL_NUDGING_z2x.inc"
 
      CALL spectral_nudging_filter_3dx( grid%dif_xxx, xwavenum,    &

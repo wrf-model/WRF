@@ -11,7 +11,8 @@ module da_gpsref
       max_error_bt, max_error_buv, gpsref,max_error_thickness, &
       pseudo_var, num_pseudo, kms,kme,kts,kte, trace_use_dull, &
       anal_type_verify,fails_error_max,pseudo_err,pseudo_x, pseudo_y, stdout, &
-      use_gpsrefobs, gpsref_thinning, pseudo_z,pseudo_val,max_error_ref, pseudo, jts, jte,its,ite
+      use_gpsrefobs, gpsref_thinning, pseudo_z,pseudo_val,max_error_ref, pseudo, &
+      jts, jte,its,ite, npres_print, pptop
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type, &
       maxmin_type, da_allocate_observations

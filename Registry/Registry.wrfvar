@@ -1609,6 +1609,8 @@ rconfig   real      eps                     namelist,wrfvar6  max_outer_iteratio
 rconfig   logical   precondition_cg         namelist,wrfvar6  1  .false.  -  "precondition_cg"         ""  ""
 rconfig   real      precondition_factor     namelist,wrfvar6  1  1.0      -  "precondition_factor"     ""  ""
 rconfig   logical   use_lanczos             namelist,wrfvar6  1  .false.  - "use_lanczos"              ""  ""
+rconfig   logical   read_lanczos            namelist,wrfvar6  1  .false.  - "read_lanczos"             ""  ""
+rconfig   logical   write_lanczos           namelist,wrfvar6  1  .false.  - "write_lanczos"            ""  ""
 rconfig   logical   orthonorm_gradient      namelist,wrfvar6  1  .false.  - "orthonorm_gradient"       ""  ""
 
 rconfig   integer   cv_options              namelist,wrfvar7  1  5        - "cv_options"               ""  ""
@@ -1750,7 +1752,7 @@ rconfig   integer   simulated_rad_ngrid     namelist,wrfvar14  1  0        - "si
 rconfig   logical   use_varbc               namelist,wrfvar14  1  .false.  - "use_varbc"               ""  ""
 rconfig   logical   freeze_varbc            namelist,wrfvar14  1  .false.  - "freeze_varbc"            ""  ""
 rconfig   real      varbc_factor            namelist,wrfvar14  1  1.0      - "varbc_factor"            ""  ""
-rconfig   integer   varbc_nbgerr            namelist,wrfvar14  1  1        - "varbc_nbgerr"            ""  ""
+rconfig   integer   varbc_nbgerr            namelist,wrfvar14  1  5000     - "varbc_nbgerr"            ""  ""
 rconfig   integer   varbc_nobsmin           namelist,wrfvar14  1  10       - "varbc_nobsmin"           ""  ""
 rconfig   logical   use_airs_mmr            namelist,wrfvar14  1  .false.  - "use_airs_mmr"            ""  ""
 rconfig   logical   airs_warmest_fov        namelist,wrfvar14  1  .false.  - "airs_warmest_fov"        ""  ""

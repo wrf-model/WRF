@@ -106,7 +106,7 @@
       call ATM_ANNOUNCE('ATM_CMP_START: Ocean_spec broadcast',2)
 
       call CMP_gnr_RECV(WM_id,1,MPI_INTEGER)
-      write(s,'(i2)') WM_id
+      write(s,'(i3)') WM_id
       call ATM_ANNOUNCE('back from CMP_INTEGER_RECV, WM id is '//s,2)
       call MPI_BCAST(WM_id,1,MPI_INTEGER, &
      &component_master_rank_local,MPI_COMM_Atmos,ierr)
@@ -336,11 +336,17 @@
         dtc=buf(1)
 
         if (Coupler_id.lt.0) then
-          if (gid.eq.1) then
-            dtc=dta*2            ! just having in mind that with gid=1
-          else                   ! dta value is 5 times its value with
-            dtc=dta*10           ! gid=2 (at this moment, 270s and 54s
-          end if                 ! respectively)
+           ! This section sets the coupling timestep when no coupling
+           ! is being done.  This relation must hold for the outermost domain:
+           !    dtc * N = dta * movemin
+           ! where N can be any integer greater than zero.
+          if(gid<1 .or. gid>3) then
+             write(s,'(1i8)') gid
+             call GLOB_ABORT(1,'invalid grid id '//s//'; I only know 1,2, and 3',1)
+          endif
+          dtc=dta
+          if(gid==2) dtc=dtc*3   ! domain 2 timestep = domain 1 timestep / 3
+          if(gid==3) dtc=dtc*9   ! domain 3 timestep = domain 1 timestep / 9
           write(s,'(1pe20.12)') dtc
           call ATM_ANNOUNCE('ATM_RECVdtc: C time step assigned '// &
      &    trim(s)//' : standalone mode',2)

@@ -170,6 +170,9 @@ contains
 #include "da_transform_vtoy_adj.inc"
 #include "da_adjoint_sensitivity.inc"
 #include "da_sensitivity.inc"
+#include "da_amat_mul.inc"
+#include "da_kmat_mul.inc"
+#include "da_lanczos_io.inc"
 #include "da_swap_xtraj.inc"
 #include "da_read_basicstates.inc"
 end module da_minimisation

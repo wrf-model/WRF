@@ -18,6 +18,7 @@
 #	stop the script.  Failed builds force an exit from the script.
 
 setenv WRF_NMM_NEST 1
+setenv HWRF 0
 set WHERE_AM_I = `pwd`
 
 if ( `uname` == AIX ) then

@@ -15,22 +15,22 @@ subroutine da_print_qcstat(it, iv, num_qcstat_conv)
 
 
    logical   :: write_head
-   character(1),dimension(110):: cline
+   character(1),dimension(115):: cline
    character(4),dimension(2):: typx
    integer,  allocatable :: count(:)
 !
    if (trace_use) call da_trace_entry("da_print_qcstat")
-   num = num_ob_indexes*num_ob_vars*(npres_print-1)
+   num = num_ob_indexes*num_ob_vars*(npres_print)
    allocate (count(2*num))
 
-  do k=1,110
+  do k=1,115
      cline(k) = '-'
   end do
   typx(1)='used'
   typx(2)='rej '
     count  = 0
     ii = 0    
-        do k = 1, npres_print - 1   
+        do k = 1, npres_print   
         do j = 1, num_ob_vars
         do i = 1, num_ob_indexes
           ii = ii + 1
@@ -50,7 +50,7 @@ subroutine da_print_qcstat(it, iv, num_qcstat_conv)
          (/"Cannot open file "//file/))
     num_qcstat_conv = 0
     ii = 0    
-        do k = 1, npres_print - 1   
+        do k = 1, npres_print    
         do j = 1, num_ob_vars
         do i = 1, num_ob_indexes
           ii = ii + 1
@@ -62,8 +62,8 @@ subroutine da_print_qcstat(it, iv, num_qcstat_conv)
 
         do j = 1, num_ob_vars
         do i = 1, num_ob_indexes
-         num_qcstat_conv(1,i,j,npres_print) = sum( num_qcstat_conv(1,i,j,1:npres_print-1) )  
-         num_qcstat_conv(2,i,j,npres_print) = sum( num_qcstat_conv(2,i,j,1:npres_print-1) )  
+         num_qcstat_conv(1,i,j,npres_print+1) = sum( num_qcstat_conv(1,i,j,1:npres_print) )  
+         num_qcstat_conv(2,i,j,npres_print+1) = sum( num_qcstat_conv(2,i,j,1:npres_print) )  
         end do
         end do
       write_head = .false.
@@ -72,25 +72,25 @@ subroutine da_print_qcstat(it, iv, num_qcstat_conv)
 51   format(110a1)
      write(ounit,50)it
 50   format(20x,'WRF-Var data utilization statistics for outer iteration ',i3,/)
-     write(ounit,510)'ptop',(pptop(k),k=1,npres_print)
-     write(ounit,511)'obs type','var','pbot',(ppbot(k),k=1,npres_print)
-510  format(15x,a8,1x,12(1x,f6.1))
-511  format(1x,a8,1x,a3,6x,a4,1x,12(1x,f6.1))
-     write(ounit,500) (cline(j),j=1,110)
-500  format(110a1)
+     write(ounit,510)'ptop',(pptop(k),k=1,npres_print), 0.0
+     write(ounit,511)'obs type','var','pbot',(ppbot(k),k=1,npres_print), 2000.0
+510  format(15x,a8,1x,13(1x,f6.1))
+511  format(1x,a8,1x,a3,6x,a4,1x,13(1x,f6.1))
+     write(ounit,500) (cline(j),j=1,115)
+500  format(115a1)
      write_head = .true.
      end if
     do j = 1, num_ob_vars
-     if( num_qcstat_conv(1,i,j,npres_print) > 0 )  then            
+     if( num_qcstat_conv(1,i,j,npres_print+1) > 0 )  then            
       write(ounit,700) obs_names(i),ob_vars(j),typx(1),&
-      ((num_qcstat_conv(1,i,j,k) - num_qcstat_conv(2,i,j,k)),k=1,npres_print)
-      write(ounit,701) typx(2), (num_qcstat_conv(2,i,j,k),k=1,npres_print)
+      ((num_qcstat_conv(1,i,j,k) - num_qcstat_conv(2,i,j,k)),k=1,npres_print+1)
+      write(ounit,701) typx(2), (num_qcstat_conv(2,i,j,k),k=1,npres_print+1)
 700 format(1x,a10,a3,2x,a4,3x, 25(1x,i6) )
 701 format(16x,a4,3x,25(1x,i6) )
      end if
     end do
    end do
-    write(ounit,500) (cline(j),j=1,110)
+    write(ounit,500) (cline(j),j=1,115)
   close (ounit) 
   call da_free_unit(ounit)
   end if

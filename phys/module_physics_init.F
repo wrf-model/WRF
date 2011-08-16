@@ -1173,7 +1173,7 @@ integer myproc
 !     gmt_start=start_hour+real(start_minute)/60.+real(start_second)/3600.
               CALL hwrfrainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
 !             CALL hwrfrainit(sfull,shalf,pptop,JULYR_start,MONTH,IDAY,GMT_start,&
-                           allowed_to_read ,                         &
+                            config_flags,allowed_to_read ,                         &
                            kds, kde, kms, kme, kts, kte     )
              hwrflw = .true.
 #endif
@@ -1242,7 +1242,7 @@ integer myproc
              CALL nl_get_start_month(id,month)
              CALL nl_get_start_day(id,iday)
              CALL hwrfrainit(sfull,shalf,pptop,JULYR,MONTH,IDAY,GMT,&
-                           allowed_to_read,                          &
+                            config_flags,allowed_to_read,                          &
                            kds, kde, kms, kme, kts, kte     )
              ENDIF
 #endif
@@ -1915,6 +1915,7 @@ integer myproc
    USE module_cu_gd,  ONLY : GDINIT
    USE module_cu_g3,  ONLY : G3INIT
    USE module_cu_sas
+   USE module_cu_osas
    USE module_cu_camzm_driver, ONLY : zm_conv_init
    USE module_cu_nsas
    USE module_cu_tiedtke
@@ -2050,6 +2051,15 @@ integer myproc
 #endif
      CASE (SASSCHEME)
           CALL sasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,       &
+                      RUCUTEN,RVCUTEN,                            &   ! gopal's doing for SAS
+                      restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &
+                      allowed_to_read ,                           &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
+
+     CASE (OSASSCHEME)
+          CALL osasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,      &
                       RUCUTEN,RVCUTEN,                            &   ! gopal's doing for SAS
                       restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &
                       allowed_to_read ,                           &

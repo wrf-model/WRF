@@ -113,7 +113,7 @@ else if ( ( `hostname | cut -c 1-2` == bs ) || ( `hostname` == tempest ) || ( `h
           ( `hostname | cut -c 1-2` == bv ) || ( `hostname | cut -c 1-2` == be ) ) then
 	set WRFREGDATAEM = /mmm/users/gill/WRF-data-EM
 	set WRFREGDATAEM = /mmm/users/gill/WRF_regression_data/processed
-	set WRFREGDATANMM = /rap/dtc/WRF-data-NMM
+	set WRFREGDATANMM = /rap/RJNTB/dtc//WRF-data-NMM
 else if ( ( `uname` == AIX ) && ( ( `hostname | cut -c 1-2` != bs ) && \
                                   ( `hostname | cut -c 1-2` != bv ) && ( `hostname | cut -c 1-2` != be ) ) ) then
 	set WRFREGDATAEM = /nbns/meso/wx22tb/regression_tests/WRF-data-EM
@@ -124,7 +124,7 @@ else
 		set WRFREGDATANMM = /users/gill/WRF-data-NMM
 	else if ( ( -d /mmm/users/gill/WRF-data-EM ) && ( -d /mmm/users/gill/WRF-data-NMM ) ) then
 		set WRFREGDATAEM = /mmm/users/gill/WRF-data-EM
-		set WRFREGDATANMM = /rap/dtc/WRF-data-NMM
+		set WRFREGDATANMM = /rap/RJNTB/dtc/WRF-data-NMM
 	else
 		echo "stick the WRF em and nmm data somewhere, and then fill in the shell vars"
 		echo "inside this script, you NEED WRFREGDATAEM and WRFREGDATANMM set"

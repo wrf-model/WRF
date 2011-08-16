@@ -27,10 +27,10 @@ subroutine da_obs_sensitivity(ktr, iv)
 
    integer                           :: i, j, k, n, inst
    integer                           :: npred, ipred
-   real                              :: ktd(25,nbvar)
+   real                              :: ktd(26,nbvar)
    real                              :: ktdrad(iv%num_inst)
    real                              :: ktbrad(iv%num_inst,npredmax) 
-   real                              :: ktd_global(25,nbvar)
+   real                              :: ktd_global(26,nbvar)
    real                              :: ktdrad_global(iv%num_inst)
    real                              :: ktbrad_global(iv%num_inst, npredmax) 
 
@@ -389,6 +389,29 @@ subroutine da_obs_sensitivity(ktr, iv)
 	       ktd(ssmi_rv,rv) = ktd(ssmi_rv,rv) + iv%ssmi_rv(n)%Speed%inv
 	    end do
 	 end if   
+
+         if (iv%info(tamdar)%nlocal > 0) then
+            do n=1, iv%info(tamdar)%nlocal
+               do k=1, iv%info(tamdar)%levels(n)
+                  if (.not. iv%info(tamdar)%proc_domain(k,n)) cycle
+                  iv%tamdar(n)%u(k)%sens = ktr%tamdar(n)%u(k) / (iv%tamdar(n)%u(k)%error **2)
+                  iv%tamdar(n)%v(k)%sens = ktr%tamdar(n)%v(k) / (iv%tamdar(n)%v(k)%error **2)
+                  iv%tamdar(n)%t(k)%sens = ktr%tamdar(n)%t(k) / (iv%tamdar(n)%t(k)%error **2)
+                  iv%tamdar(n)%q(k)%sens = ktr%tamdar(n)%q(k) / (iv%tamdar(n)%q(k)%error **2)
+
+                  iv%tamdar(n)%u(k)%inv  = iv%tamdar(n)%u(k)%inv * iv%tamdar(n)%u(k)%sens
+                  iv%tamdar(n)%v(k)%inv  = iv%tamdar(n)%v(k)%inv * iv%tamdar(n)%v(k)%sens
+                  iv%tamdar(n)%t(k)%inv  = iv%tamdar(n)%t(k)%inv * iv%tamdar(n)%t(k)%sens
+                  iv%tamdar(n)%q(k)%inv  = iv%tamdar(n)%q(k)%inv * iv%tamdar(n)%q(k)%sens
+
+                  ktd(tamdar,u) = ktd(tamdar,u) + iv%tamdar(n)%u(k)%inv
+                  ktd(tamdar,v) = ktd(tamdar,v) + iv%tamdar(n)%v(k)%inv
+                  ktd(tamdar,t) = ktd(tamdar,t) + iv%tamdar(n)%t(k)%inv
+                  ktd(tamdar,q) = ktd(tamdar,q) + iv%tamdar(n)%q(k)%inv
+               end do
+            end do
+         end if
+
 	       
          if (iv%num_inst > 0) then
             do inst = 1, iv%num_inst                                       ! loop for sensor
@@ -429,18 +452,19 @@ subroutine da_obs_sensitivity(ktr, iv)
             call wrf_dm_sum_reals(ktbrad(:,i), ktbrad_global(:,i))
 	 end do
          
-         write(stdout,*) 'Impact of Conventional Observations: U, V, T, P, Q, GPS'
-	 write(stdout,*) SUM(ktd_global,dim=1)
-	 write(stdout,*) 'Impact of Conventional Observations: Sound, Synop, Pilot, Satem, GeoAMV, PolarAMV, AIREP, GPSZTD, GPSRF, METAR'
-	 write(stdout,*) 'Ships, SSMI_RV, SSMI_TB, SSMT1, SSMT2, QSCAT, Profiler, Buoy, Bogus, Pseudo, Radar, AIRSR, Sonde_sfc, MTGIRS, TAMDAR'
-	 write(stdout,*) SUM(ktd_global,dim=2)
-	 write(stdout,*) 'Impact of Satellite Radiances for each instrument: '
-	 write(stdout,*) ktdrad_global
-	 write(stdout,*) 'Impact of Satellite Bias Correction for each predictor: ' 
-	 write(stdout,*) SUM(ktbrad_global,dim=1)
-	 write(stdout,*) 'Impact of Satellite Bias Correction for each instrument:' 
-	 write(stdout,*) SUM(ktbrad_global,dim=2)
-	 write(stdout,*) 'ADJOINT_TEST1:', SUM(ktd_global)+SUM(ktdrad_global)
+         write(stdout,'(A)') 'Impact of Conventional Observations: U, V, T, P, Q, GPS'
+         write(stdout,'(100e15.5)') SUM(ktd_global,dim=1)
+         write(stdout,'(A)') 'Impact of Conventional Observations: Sound, Synop, Pilot, Satem, GeoAMV, PolarAMV, AIREP,&
+                              GPSZTD, GPSRF, METAR, Ships, SSMI_RV, SSMI_TB, SSMT1, SSMT2, QSCAT, Profiler, Buoy, & 
+                              Bogus, Pseudo, Radar, Radiance, AIRSR, Sonde_sfc, MTGIRS, TAMDAR'
+         write(stdout,'(100e15.5)') SUM(ktd_global,dim=2)
+         write(stdout,'(A)') 'Impact of Satellite Radiances for each instrument: '
+         write(stdout,'(100e15.5)') ktdrad_global
+         write(stdout,'(A)') 'Impact of Satellite Bias Correction for each predictor: '
+         write(stdout,'(100e15.5)') SUM(ktbrad_global,dim=1)
+         write(stdout,'(A)') 'Impact of Satellite Bias Correction for each instrument:'
+         write(stdout,'(100e15.5)') SUM(ktbrad_global,dim=2)
+!        write(stdout,*) 'ADJOINT_TEST1:', SUM(ktd_global)+SUM(ktdrad_global)
 
    if (trace_use) call da_trace_exit("da_obs_sensitivity")
 

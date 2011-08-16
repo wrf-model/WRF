@@ -176,7 +176,6 @@
          call da_calculate_residual(iv, y, re)
          call da_calculate_grady(iv, re, jo_grad_y)
          call da_zero_x(grid%xa)
- 
 
          call da_transform_xtoy_adj(cv_size, xhat, grid, iv, jo_grad_y, grid%xa)
          call da_transform_xtoxa_adj(grid)
@@ -408,21 +407,34 @@
       call da_allocate_y (iv, y)
 
       if (use_lanczos) then
-         call da_minimise_lz( grid, config_flags, it, be % cv % size, & 
-            xbx, be, iv, j_grad_norm_target, xhat, qhat, cvt, re, y, j, eignvec, eignval, neign)  
+         if (read_lanczos) then
+            call da_lanczos_io('r',cv_size,ntmax,neign,eignvec,eignval,qhat)
+
+            call da_kmat_mul(grid,config_flags,it,cv_size,xbx, &
+                             be,iv,xhat,qhat,cvt,re,y,j,eignvec,eignval,neign)
+          ! Output Cost Function
+            call da_calculate_j(it, 1, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
+                             be%cv%size_jl, xbx, be, iv, xhat, cvt, re, y, j, xhat, grid, config_flags)
+         else
+            call da_minimise_lz(grid, config_flags, it, cv_size, xbx,& 
+                             be, iv, j_grad_norm_target, xhat, qhat, cvt, re, y, j, eignvec, eignval, neign)  
+
+         end if
+
+         if (write_lanczos) call da_lanczos_io('w',cv_size,ntmax,neign,eignvec,eignval,qhat)
+
+         if (adj_sens) call da_sensitivity(grid,config_flags,cv_size,xbx, &
+                                           be,iv,xhat,qhat,cvt,y,eignvec,eignval,neign)
+
 	 
-!	 do i = 1, neign
-!	    full_eignvec = SQRT(eignval(i)) * MATMUL(qhat(1:cv_size,1:neign), eignvec(1:neign,i))
-!            call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,full_eignvec,grid%vv,grid%vp)
-!            call da_transform_xtoxa (grid)   
-!            call da_transfer_xatoanalysis (it, xbx, grid, config_flags)
-!            write(UNIT=ci,FMT='(i2.2)') i
-!            call da_med_initialdata_output(grid, config_flags, 'wrfvar_output.e'//trim(ci))	    
-!	 end do   	    
       else
          call da_minimise_cg( grid, config_flags, it, be % cv % size, & 
             xbx, be, iv, j_grad_norm_target, xhat, cvt, re, y, j)
       end if
+ 
+      ! Update outer-loop control variable
+      cvt = cvt + xhat
+
       !------------------------------------------------------------------------
 
       ! reset cv to random noise

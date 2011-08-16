@@ -99,6 +99,14 @@ For SST updating (used only with sst_update=1):
  auxinput4_interval                  = 360      ; minutes generally matches time given by interval_seconds
  io_form_auxinput4                   = 2        ; IO format, required in V3.2
 
+For additional regional climate surface fields
+
+ output_diagnostics                  = 1        ; adds 36 surface diagnostic arrays (max/min/mean/std)
+ auxhist3_outname                    = 'wrfxtrm_d<domain>_<date>' ; file name for added diagnostics
+ io_form_auxhist3                    = 2        ; netcdf
+ auxhist3_interval                   = 1440     ; minutes between outputs (1440 gives daily max/min)
+ frames_per_auxhist3                 = 1        ; output times per file
+
 For observation nudging:
  auxinput11_interval                 = 10       ; interval in minutes for observation data. It should be 
                                                   set as or more frequently as obs_ionf (with unit of 

@@ -48,7 +48,8 @@ module da_wrfvar_top
       da_deallocate_y, da_zero_x
    use da_minimisation, only : da_get_innov_vector,da_minimise_cg, &
       da_minimise_lz, da_write_diagnostics, da_calculate_residual, &
-      da_calculate_grady
+      da_calculate_grady, da_sensitivity, da_lanczos_io, da_calculate_j, &
+      da_kmat_mul
    use da_obs, only : da_transform_xtoy_adj 
    use da_obs_io, only : da_write_filtered_obs, da_write_obs, da_final_write_obs , &
                          da_write_obs_etkf, da_write_modified_filtered_obs  !cys_change

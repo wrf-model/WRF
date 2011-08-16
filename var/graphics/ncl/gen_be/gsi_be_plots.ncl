@@ -104,7 +104,7 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"
    do k=1,nsig-2
       dsig(k)=0.5*(log(rsig(k-1))-log(rsig(k+1)))
    end do
-   dsig(nsig-1)=rsig(nsig-2)-rsig(nsig-1)
+   dsig(nsig-1)=log(rsig(nsig-2))-log(rsig(nsig-1))
  
    cov!0 = "var"
    cov!1 = "lev"
@@ -231,7 +231,19 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"
    end if
 
    hwll    = hwll*0.001 ; km
-   vzs     = vzs*0.001  ; km
+   do i = 0, nvar_tot-1
+      do j = 0, nlat+1
+         do k = 0, nsig-1
+            if ( .not. ismissing(vzs(i,j,k)) ) then
+               if ( vzs(i,j,k) .gt. 0.0 ) then
+                  vzs(i,j,k) = 1.0/vzs(i,j,k)/dsig(k)
+               else
+                  vzs(i,j,k) = 0.0
+               end if
+            end if
+         end do
+      end do
+   end do
    reg_t   = agv*1000000000.0
    reg_chi = bv
    reg_ps  = wgv*1000000000.0

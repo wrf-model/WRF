@@ -15,11 +15,11 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
    integer,          intent(inout) :: num_qcstat_conv(:,:,:,:)       
 
    integer :: n        ! Loop counter.
-   integer :: i, j, k  ! Index dimension.
-   real    :: dx, dxm  ! Interpolation weights.
+   integer :: i, j, k, kk  ! Index dimension.
+   real    :: dx, dxm, dz, dzm  ! Interpolation weights.
    real    :: dy, dym  ! Interpolation weights.
    real,allocatable :: model_ref(:,:) !Model gpsref at ob loc
-   real    :: v_h(kms:kme)     ! Model value h at ob
+   real    :: v_h(kms:kme), v_p(kms:kme)     ! Model value h at ob
 
    integer :: Iu_ref, l
    integer,allocatable :: used_lev(:,:) ! for obs. data thinning
@@ -43,13 +43,16 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
    real, allocatable :: dndz_obs(:),dndz_mod(:)
    real, allocatable :: dndz2_obs(:),dndz2_mod(:)
 
-   integer :: nn, na, nb, ntotal, nqc0, nqc1, nqc2, nqc3
+   integer :: nn, na, nb, ntotal, nqc0, nqc1, nqc2, nqc3, n_rej
    real    :: percnt
    real    :: height_below(5000)
    character(len=40) :: name_qc(5000)
+   character(len=2) :: c_it
 
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_gpsref")
 
+   n_rej = 0
+!
    ! GPS REF Pseudo OBS test:
 
    if ( (pseudo_var(1:3) == 'ref' .and. num_pseudo > 0) .and. &
@@ -140,8 +143,16 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
    do n=iv%info(gpsref)%n1,iv%info(gpsref)%n2
 
       do k=1, iv%info(gpsref)%levels(n)
-         if( iv%gpsref(n)%ref(k)%qc == fails_error_max .and. it > 1 ) &
-             iv%gpsref(n)%ref(k)%qc = 0
+!sychen        if( iv%gpsref(n)%ref(k)%qc == fails_error_max .and. it > 1 ) &
+!sychen            iv%gpsref(n)%ref(k)%qc = 0
+            if ( ( iv%gpsref(n)%ref(k)%qc == fails_error_max ) .or. &
+                 ( iv%gpsref(n)%ref(k)%qc == qc_below ) .or. &
+                 ( iv%gpsref(n)%ref(k)%qc == qc_middle ) .or. &
+                 ( iv%gpsref(n)%ref(k)%qc == qc_above ) .or. &
+                 ( iv%gpsref(n)%ref(k)%qc == qc_step1 ) .or. &
+                 ( iv%gpsref(n)%ref(k)%qc == qc_step2 ) ) then
+               if( it > 1 ) iv%gpsref(n)%ref(k)%qc = 0
+            endif
       end do
 
       ! Get cross pt. horizontal interpolation weights:
@@ -160,6 +171,9 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
          do k=kts,kte
             v_h(k) = dym*(dxm*grid%xb%h(i,j  ,k) + dx*grid%xb%h(i+1,j  ,k)) &
                    + dy *(dxm*grid%xb%h(i,j+1,k) + dx*grid%xb%h(i+1,j+1,k))
+!
+            v_p(k) = dym*(dxm*grid%xb%p(i,j  ,k) + dx*grid%xb%p(i+1,j  ,k)) &
+                   + dy *(dxm*grid%xb%p(i,j+1,k) + dx*grid%xb%p(i+1,j+1,k))
          end do
          do k=1, iv%info(gpsref)%levels(n)
             if (iv%gpsref(n)%h(k) > 0.0) &
@@ -171,6 +185,25 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
       else
          iv%info(gpsref)%zk(:,n) = pseudo_z
       end if
+
+!
+! To assign the retieved pressure to GPSREF data (YRG, 06/15/2011)............
+   do k=1, iv%info(gpsref)%levels(n)
+      kk = int (iv%info(gpsref)%zk(k,n))
+      if (kk >= kts .and. kk+1 <= kte) then
+        dz  = iv%info(gpsref)%zk(k,n) - real(kk)
+        dzm = 1.0 - dz
+        iv%gpsref(n)%p(k)%inv = v_p(kk  ) * dzm + v_p(kk+1) * dz 
+        ob%gpsref(n)%p(k) = iv%gpsref(n)%p(k)%inv
+        iv%gpsref(n)%p(k)%qc = -5
+      else
+        n_rej = n_rej + 1
+        write (*,'(a,3i6,i10,a,f15.3)') "GPSREF: n_rej, n, k, kk:", &
+                 n_rej, n, k, kk, "  zk=",iv%info(gpsref)%zk(k,n)
+      endif
+   end do
+!..............................................................................
+
    end do
 
    call da_convert_zk (iv%info(gpsref))
@@ -192,6 +225,15 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
          ob % gpsref(1)%ref(1) = model_ref(1,n) + iv %gpsref(1)%ref(1)%inv 
       end if
    end do
+
+! Skip over the special QC for gpsref (temporary mods, YRG, 06/12/2011):
+!   goto 12221
+
+!   ! Quality check 1: Gross error(departure from the background) check 
+
+    if (.not.(pseudo_var(1:3) == 'ref' .and. num_pseudo > 0) .and. check_max_iv ) &
+       call da_check_max_iv_gpsref(iv, it, num_qcstat_conv, 1)
+!   goto 12221
 
 ! refer to Poli et al. (2009) ------------------------------------------------
 ! flag if fit in each of these two qc steps for both of obs. and model
@@ -368,11 +410,12 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
        end if  ! end of if gpsref profiles
       end if
    end if  ! end of if verify check
+12221 continue
 
-!   ! Quality check 1: Gross error(departure from the background) check 
+! print out the amounts of obs. rejection   
 
     if (.not.(pseudo_var(1:3) == 'ref' .and. num_pseudo > 0) .and. check_max_iv ) &
-       call da_check_max_iv_gpsref(iv, it, num_qcstat_conv)
+       call da_check_max_iv_gpsref(iv, it, num_qcstat_conv, 2)
 
 ! ------------------------------------------------------------------------------
 !   GPSRO thinning  (Shu-Ya Chen 20090701)
@@ -440,7 +483,8 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
 
      DO n=iv%info(gpsref)%n1,iv%info(gpsref)%n2
      Iu_ref = 336
-     open (unit=Iu_ref, file='RO_Innov_'//iv%info(gpsref)%date_char(n), &
+     write(c_it,'(I2.2)') it
+     open (unit=Iu_ref, file='RO_Innov_'//iv%info(gpsref)%date_char(n)//'_'//c_it, &
            form='formatted')
            write(unit=Iu_ref, fmt='(/i5,2x,a,2x,a,2x,4f10.3,i5)') n, &
               iv%info(gpsref)%date_char(n), iv%info(gpsref)%id(n),  &

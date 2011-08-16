@@ -23,6 +23,7 @@ rconfig   logical jcdfi_use             namelist,perturbation          1     .fa
 rconfig   integer jcdfi_diag            namelist,perturbation          1           1 -    "jcdfi_diag"  "JcDFI diag. on/off"      ""
 rconfig   real    jcdfi_penalty         namelist,perturbation          1          1. -    "jcdfi_penalty"    "Penalty parameter for JcDF"      ""
 rconfig   logical enable_identity       namelist,perturbation          1      .false. -   "enable identity AD/TL model"                         ""      ""
+rconfig   logical var4d_detail_out      namelist,perturbation          1      .false. -   "true:output perturbation, gradient to disk"                         ""      ""
 
 #
 ######

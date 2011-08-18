@@ -1845,7 +1845,8 @@ integer myproc,i,j,k
 #if (WRFPLUS == 1)
    ! Avoid trying to re-read the boundary conditions if we are doing adjoint integration
    ! Boundary condition with perturbation should be read in tangent linear integration in the future.
-   IF ( config_flags%dyn_opt .EQ. dyn_em_ad .OR. config_flags%dyn_opt .EQ. dyn_em_tl) RETURN
+   IF ( (config_flags%dyn_opt .EQ. dyn_em_ad .OR. config_flags%dyn_opt .EQ. dyn_em_tl) .AND. &
+         config_flags%trajectory_io ) RETURN
 #endif
 
    IF ( grid%id .EQ. 1 .AND. config_flags%specified .AND. config_flags%io_form_boundary .GT. 0 ) THEN

@@ -128,8 +128,8 @@ subroutine da_minimise_cg(grid, config_flags,            &
 
    write(unit=stdout,fmt='("Starting outer iteration : ",i3)') it
    write(unit=stdout,fmt=11) j0_total, sqrt(rrmold), eps(it)*j_grad_norm_target
-11 format('Starting cost function: ' ,1PD15.8,', Gradient= ',1PD15.8,/,&
-          'For this outer iteration gradient target is:       ',1PD15.8)
+11 format('Starting cost function: ' ,1PD22.15,', Gradient= ',1PD22.15,/,&
+          'For this outer iteration gradient target is:       ',1PD22.15)
    write(unit=stdout,fmt='(A)') &
       '----------------------------------------------------------'
    write(unit=stdout,fmt='(A)') &
@@ -176,7 +176,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
     !-----------------------------------
       j_total = j0_total + 0.5 * da_dot_cv(cv_size,ghat0,xhat,grid,mz,jp_start,jp_end)
       write(unit=stdout,fmt=12)iter, j_total, rrmnew_norm, step         	 
-12    format(i3,5x,1PD15.8,5x,1PD15.8,5x,1PD15.8)
+12    format(i3,5x,1PD22.15,5x,1PD22.15,5x,1PD22.15)
 
       if (rrmnew_norm  < eps(it) * j_grad_norm_target) exit
 
@@ -204,7 +204,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
    rrmnew_norm = SQRT(da_dot_cv(cv_size,ghat,ghat,grid,mz,jp_start,jp_end))
 
     write(unit=stdout,fmt=15) iter, j_cost%total , rrmnew_norm
-15  format('Final: ',I3,' iter, J=',1PD15.8,', g=',1PD15.8)
+15  format('Final: ',I3,' iter, J=',1PD22.15,', g=',1PD22.15)
     write(unit=stdout,fmt='(A)') &
       '----------------------------------------------------------'
 

@@ -37,7 +37,7 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
 
       if ( var4d_lbc ) then 
          call da_get_2nd_firstguess ( grid )
-         call da_setup_firstguess( xbx, grid, config_flags)
+         call da_transfer_wrftoxb(xbx, grid, config_flags)
 
          shuffle = grid%xa
          jl_start    = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + 1

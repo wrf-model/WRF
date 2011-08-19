@@ -56,7 +56,7 @@ subroutine da_get_var_2d_real_cdf(file, var, data, i1, i2, time, debug)
       write(unit=stdout,fmt=*) ' error in 2d_var_real read, dimension problem '
       write(unit=stdout,fmt=*) i1, idims(1)
       write(unit=stdout,fmt=*) i2, idims(2)
-      write(unit=stdout,fmt=*) time, idims(4)
+      write(unit=stdout,fmt=*) time, idims(3)
       write(unit=stdout,fmt=*) ' error stop '
       stop
    end if

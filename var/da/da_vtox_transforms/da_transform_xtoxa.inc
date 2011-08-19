@@ -69,11 +69,6 @@ subroutine da_transform_xtoxa(grid)
 
    call da_pt_to_rho_lin(grid)
  
-   ! If test_transforms = .true., not "XToY" transform needed to do here:
-
-   if (.not.test_transforms) then
-      ! Exchange grid%xa halo region.
-
 #ifdef A2C
   if ((fg_format==fg_format_wrf_arw_regional  .or. &
        fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
@@ -104,6 +99,11 @@ subroutine da_transform_xtoxa(grid)
      jde = jde - 1
   end if
 #endif
+
+   ! If test_transforms = .true., not "XToY" transform needed to do here:
+
+   if (.not.test_transforms) then
+      ! Exchange grid%xa halo region.
 
       if (sfc_assi_options == 2) then
          call da_transform_xtowtq (grid)

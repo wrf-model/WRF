@@ -38,7 +38,7 @@ subroutine da_check_xtoy_adjoint(cv_size, cv, xbx, be, grid, config_flags, iv, y
    real, dimension(ims:ime, jms:jme, kms:kme) :: x6a2_w
    real, dimension(ims:ime, jms:jme)          :: x6a2_psfc
    real, dimension(ims:ime, jms:jme, kms:kme) :: x6a2_qcw, x6a2_qci, x6a2_qrn, x6a2_qsn, x6a2_qgr
-   integer :: nobwin, ndynopt, i, j, k, jl_start, jl_end
+   integer :: nobwin, i, j, k
    character(len=4) :: filnam
    character(len=256) :: timestr
    integer :: time_step_seconds
@@ -130,13 +130,12 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
 
       if ( var4d_lbc ) then
          call da_get_2nd_firstguess ( grid )
-         call da_setup_firstguess( xbx, grid, config_flags)
+         call da_transfer_wrftoxb(xbx, grid, config_flags)
 
+         call da_zero_x(grid%x6a)
          shuffle = grid%xa
-         jl_start    = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + 1
-         jl_end      = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_jl
          grid%xa  = grid%x6a
-         call da_transform_vtox(grid, be%cv%size_jl, xbx, be, grid%ep, cv(jl_start:jl_end), grid%vv6, grid%vp6)
+         call da_setup_testfield(grid)
          grid%xa  = shuffle
 
          x6a2_u(ims:ime, jms:jme, kms:kme) = grid%x6a%u(ims:ime, jms:jme, kms:kme)
@@ -456,25 +455,26 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
          enddo
       endif
 
-      ! for memory io, we need to up-side-down the adjoint forcing linked list generated in previous step.
-      call upsidedown_ad_forcing
+      if ( trajectory_io ) then
+         ! for memory io, we need to up-side-down the adjoint forcing linked list generated in previous step.
+         call upsidedown_ad_forcing
+      endif
 
       call da_ad_model
 
-      call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
-
       call da_zero_x(grid%x6a)
       if (var4d_lbc) then
-         !call domain_clock_get( grid, stop_timestr=timestr )
-         !call da_read_basicstates ( xbx, grid, config_flags, timestr )
          call da_get_2nd_firstguess ( grid )
-         call da_setup_firstguess( xbx, grid, config_flags)
+         call da_transfer_wrftoxb(xbx, grid, config_flags)
 
          call da_transfer_xatowrftl_adj_lbc(grid, config_flags, 'gr01')
 
          call domain_clock_get( grid, start_timestr=timestr )
          call da_read_basicstates ( xbx, grid, config_flags, timestr )
       end if
+
+      call da_zero_x(grid%xa)
+      call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
 #endif
    end if
 

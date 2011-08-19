@@ -4,7 +4,7 @@ module da_transfer_model
    ! Purpose: Transfer model states between different models
    !---------------------------------------------------------------------------
 
-   use module_configure, only : grid_config_rec_type
+   use module_configure, only : grid_config_rec_type, model_config_rec
    use module_date_time, only : geth_julgmt, current_date, start_date
    use module_domain, only : domain, domain_clock_get
    use module_io_domain, only : open_r_dataset, close_dataset, input_auxinput17, &
@@ -20,7 +20,8 @@ module da_transfer_model
       ntasks, data_order_xy
    use module_comm_dm, only : halo_xa_sub, halo_init_sub, halo_psichi_uv_adj_sub, &
                               halo_xb_sub, halo_xb_uv_sub, halo_em_c_sub, halo_em_c_tl_sub, &
-                              halo_xa_a_sub, halo_x6a_a_sub
+                              halo_xa_a_sub, halo_x6a_a_sub, halo_em_bdy_sub, halo_em_e_tl_sub, &
+                              halo_em_e_sub
 #endif
 
    use da_control, only : cos_xls, sin_xls, cos_xle, sin_xle, trace_use, &
@@ -33,9 +34,10 @@ module da_transfer_model
       truelat2_3dv, periodic_x,write_increments,max_ext_its, gravity, &
       kappa, print_detail_xa,rd_over_rv,t0, print_detail_xa, check_rh, adj_sens,&
       print_detail_xb,test_dm_exact,base_lapse,base_temp,vertical_ip,ptop, &
-      use_gpsztdobs, use_ssmitbobs, use_radarobs, use_radar_rf,use_radar_rle, use_radar_rr, dt_cloud_model, cp, use_ssmiretrievalobs, &
+      use_gpsztdobs, use_ssmitbobs, use_radarobs, use_radar_rf,use_radar_rle, use_radar_rr, &
+      dt_cloud_model, cp, use_ssmiretrievalobs, var4d_detail_out, &
       vertical_ip_sqrt_delta_p, vertical_ip_delta_p,check_rh_simple, check_rh_tpw, &
-      t_kelvin, num_fgat_time, num_pseudo, iso_temp, interval_seconds, &
+      t_kelvin, num_fgat_time, num_pseudo, iso_temp, interval_seconds, trajectory_io, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, qlimit
    use da_define_structures, only : xbx_type
@@ -61,11 +63,16 @@ module da_transfer_model
        kj_swap_reverse, model_config_flags, g_couple, g_stuff_bdy, a_couple, a_stuff_bdy, &
        g_stuff_bdytend, a_stuff_bdytend_old, a_stuff_bdytend_new, decouple, da_calc_2nd_fg, &
        ubdy3dtemp1 , vbdy3dtemp1 , tbdy3dtemp1 , pbdy3dtemp1 , qbdy3dtemp1, mbdy2dtemp1, &
-       ubdy3dtemp2 , vbdy3dtemp2 , tbdy3dtemp2 , pbdy3dtemp2 , qbdy3dtemp2, mbdy2dtemp2
+       ubdy3dtemp2 , vbdy3dtemp2 , tbdy3dtemp2 , pbdy3dtemp2 , qbdy3dtemp2, mbdy2dtemp2, &
+       da_bdy_fields_halo
    use module_bc, only : set_physical_bc2d
    use module_big_step_utilities_em, only : calc_mu_uv
    use g_module_big_step_utilities_em, only : g_calc_mu_uv
    use a_module_big_step_utilities_em, only : a_calc_mu_uv
+   USE module_io_wrf, only : auxinput8_alarm, auxhist8_alarm, auxhist7_alarm
+#ifdef DM_PARALLEL
+   use mediation_pertmod_io, only : da_halo_em_e_ad
+#endif
 #endif
 
    implicit none

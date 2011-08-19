@@ -109,18 +109,17 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
          call domain_clockprint(150, grid, 'get CurrTime from clock,')
       endif
 
-      ! for memory io, we need to up-side-down the adjoint forcing linked list generated in previous step.
-      call upsidedown_ad_forcing
+      if ( trajectory_io ) then
+         ! for memory io, we need to up-side-down the adjoint forcing linked list generated in previous step.
+          call upsidedown_ad_forcing
+      endif
 
       call da_ad_model
-
-      call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
-      call da_transform_vtox_adj(grid, be%cv%size_jb, xbx, be, ep, vp, vv, cv(1:be%cv%size_jb))
 
       call da_zero_x(grid%x6a)
       if (var4d_lbc) then
          call da_get_2nd_firstguess ( grid )
-         call da_setup_firstguess( xbx, grid, config_flags)
+         call da_transfer_wrftoxb(xbx, grid, config_flags)
 
          call da_transfer_xatowrftl_adj_lbc(grid, config_flags, 'gr01')
          shuffle = grid%xa
@@ -132,6 +131,10 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
 
          call da_read_basicstates ( xbx, grid, config_flags, timestr )
       end if
+
+      call da_zero_x(grid%xa)
+      call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
+      call da_transform_vtox_adj(grid, be%cv%size_jb, xbx, be, ep, vp, vv, cv(1:be%cv%size_jb))
 
 #endif
    else  ! not var4d

@@ -252,28 +252,45 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
 
    if ( .not. adj_sens ) then
 #ifdef VAR4D
-   call kj_swap (grid%g_u_2, model_grid%g_u_2, &
-                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   call kj_swap (grid%g_v_2, model_grid%g_v_2, &
-                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   call kj_swap (grid%g_w_2, model_grid%g_w_2, &
-                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   call kj_swap (grid%g_t_2, model_grid%g_t_2, &
-                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   call kj_swap (grid%g_ph_2, model_grid%g_ph_2, &
-                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   model_grid%g_mu_2 = grid%g_mu_2
-   model_grid%g_rainnc = grid%g_rainnc
-   model_grid%g_rainncv = grid%g_rainncv
-   model_grid%g_rainc = grid%g_rainc
-   model_grid%g_raincv = grid%g_raincv
+      if ( trajectory_io ) then
+         call kj_swap (grid%g_u_2, model_grid%g_u_2, &
+                       grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+         call kj_swap (grid%g_v_2, model_grid%g_v_2, &
+                       grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+         call kj_swap (grid%g_w_2, model_grid%g_w_2, &
+                       grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+         call kj_swap (grid%g_t_2, model_grid%g_t_2, &
+                       grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+         call kj_swap (grid%g_ph_2, model_grid%g_ph_2, &
+                       grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+         model_grid%g_mu_2 = grid%g_mu_2
+         model_grid%g_rainnc = grid%g_rainnc
+         model_grid%g_rainncv = grid%g_rainncv
+         model_grid%g_rainc = grid%g_rainc
+         model_grid%g_raincv = grid%g_raincv
 
-   do i = PARAM_FIRST_SCALAR, num_moist
-      call kj_swap (grid%g_moist(:,:,:,i), model_grid%g_moist(:,:,:,i), &
-                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   enddo
+         do i = PARAM_FIRST_SCALAR, num_moist
+            call kj_swap (grid%g_moist(:,:,:,i), model_grid%g_moist(:,:,:,i), &
+                          grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+         enddo
 
-   call push_ad_forcing (timestr)
+         call push_ad_forcing (timestr)
+
+      else
+         config_flags%auxhist8_outname = "af_d<domain>_<date>"
+         call  med_hist_out ( grid , AUXHIST8_ALARM , config_flags )
+         WRITE(message(1), FMT='(A,A)') 'Save  ad. forcing time_stamp:', TRIM(timestr)
+         CALL da_message ( message(1:1) )
+         config_flags%auxhist8_outname = "auxhist8_d<domain>_<date>"
+      endif
+
+      if ( var4d_detail_out ) then
+         config_flags%auxhist8_outname = "af_d<domain>_<date>"
+         call  med_hist_out ( grid , AUXHIST8_ALARM , config_flags )
+         WRITE(message(1), FMT='(A,A)') 'Save  ad. forcing time_stamp:', TRIM(timestr)
+         CALL da_message ( message(1:1) )
+         config_flags%auxhist8_outname = "auxhist8_d<domain>_<date>"
+      endif
 #endif
    else
       if ( grid%auxinput7_oid .NE. 0 ) then

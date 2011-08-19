@@ -1097,9 +1097,11 @@ CONTAINS
                         p => p%next
                       ENDDO
                       IF ( .NOT. found ) THEN
+#if ( DA_CORE != 1 )
                         WRITE(mess,*)'W A R N I N G : Unable to modify mask for ',TRIM(lookee),&
                                      '.  Variable not found. File: ',TRIM(fname),' at line ',lineno
                         CALL wrf_message(mess)
+#endif
                         gavewarning = .TRUE.
                       ENDIF
                       fieldno = fieldno + 1
@@ -1205,9 +1207,11 @@ CONTAINS
        ENDIF
      ENDIF
      IF ( count_em > 100 ) THEN
+#if ( DA_CORE != 1 )
        WRITE(mess,*)'ERROR module_domain:  Array size for you_warned_me2 is fixed at 100'
        CALL wrf_message(mess)
        CALL wrf_error_fatal('Did you really type > 100 fields into '//TRIM(fname)//' ?')
+#endif
      ELSE
        IF ( .NOT. you_warned_me2(count_em,id) ) THEN
          CALL wrf_message(mess)     ! Write warning message once for each field

@@ -4356,7 +4356,7 @@ integer myproc
       CALL mpi_allgatherv( MPI_IN_PLACE,                                  &
 #  else
       DO i = 1,elemsize*(km_e-km_s+1)
-        v_local(i) = v(i+km_s-1)
+        v_local(i) = v(i+elemsize*km_s-1)
       ENDDO
       CALL mpi_allgatherv( v_local,                                       &
 #  endif
@@ -4398,7 +4398,7 @@ integer myproc
       CALL mpi_allgatherv( MPI_IN_PLACE,                                  &
 #  else
       DO i = 1,elemsize*(km_e-km_s+1)
-        v_local(i) = v(i+km_s-1)
+        v_local(i) = v(i+elemsize*km_s-1)
       ENDDO
       CALL mpi_allgatherv( v_local,                                       &
 #  endif

@@ -110,3 +110,24 @@
  nio_tasks_per_group = 0,
  nio_groups = 1,
  /
+
+ &dfi_control
+ dfi_opt                             = 0
+ dfi_nfilter                         = 7
+ dfi_write_filtered_input            = .false.
+ dfi_write_dfi_history               = .false.
+ dfi_cutoff_seconds                  = 3600  
+ dfi_time_dim                        = 1000 
+ dfi_bckstop_year                    = 2000
+ dfi_bckstop_month                   = 01  
+ dfi_bckstop_day                     = 24  
+ dfi_bckstop_hour                    = 11  
+ dfi_bckstop_minute                  = 00  
+ dfi_bckstop_second                  = 00  
+ dfi_fwdstop_year                    = 2000
+ dfi_fwdstop_month                   = 01  
+ dfi_fwdstop_day                     = 24  
+ dfi_fwdstop_hour                    = 12  
+ dfi_fwdstop_minute                  = 30  
+ dfi_fwdstop_second                  = 00  
+ /

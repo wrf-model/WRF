@@ -4709,7 +4709,8 @@ END SUBROUTINE pole_point_bc
    INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, j_startv
    INTEGER :: i, j, k
    REAL    :: w1, w2, z0, z1, z2
-   REAL    :: qtot, n
+   REAL    :: qtot
+   INTEGER :: n
 
 !-----------------------------------------------------------------------
 

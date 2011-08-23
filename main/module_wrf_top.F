@@ -450,6 +450,13 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
    ! Force to turn off history output in this case
    CALL WRFU_AlarmRingerOff( head_grid%alarms( HISTORY_ALARM ), rc=rc )
    IF ( config_flags%check_TL ) THEN
+      IF ( config_flags%mp_physics .GT. 0 ) CALL nl_set_mp_physics (head_grid%id, 98)
+      IF ( config_flags%bl_pbl_physics .GT. 0 ) CALL nl_set_bl_pbl_physics (head_grid%id, 98)
+      IF ( config_flags%cu_physics .GT. 0 ) CALL nl_set_cu_physics (head_grid%id, 98)
+      CALL nl_set_ra_lw_physics (head_grid%id, 0)
+      CALL nl_set_ra_sw_physics (head_grid%id, 0)
+      CALL nl_set_sf_sfclay_physics (head_grid%id, 0)
+
       ! Force to turn off boundary input as we can only perturb the initial boundary condition.
       CALL nl_set_io_form_boundary( head_grid%id, 0 )
    ENDIF
@@ -586,6 +593,13 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
    CALL nl_set_auxinput6_interval_s (head_grid%id, time_step )
    CALL nl_set_io_form_auxinput6 ( head_grid%id, 2 )
    CALL nl_set_frames_per_auxinput6 ( head_grid%id, 1 )
+
+   IF ( config_flags%mp_physics .GT. 0 ) CALL nl_set_mp_physics (head_grid%id, 98)
+   IF ( config_flags%bl_pbl_physics .GT. 0 ) CALL nl_set_bl_pbl_physics (head_grid%id, 98)
+   IF ( config_flags%cu_physics .GT. 0 ) CALL nl_set_cu_physics (head_grid%id, 98)
+   CALL nl_set_ra_lw_physics (head_grid%id, 0)
+   CALL nl_set_ra_sw_physics (head_grid%id, 0)
+   CALL nl_set_sf_sfclay_physics (head_grid%id, 0)
 
    CALL wrf_run_tl
 

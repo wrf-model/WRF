@@ -1003,6 +1003,8 @@ SUBROUTINE add_forcing_to_ad ( grid )
    grid%a_rainc = grid%a_rainc + grid%g_rainc
    grid%a_raincv = grid%a_raincv + grid%g_raincv
 
+   grid%a_p = grid%a_p + grid%g_p
+
    ! Reset forcings for ZERO
    grid%g_u_2  = 0.0
    grid%g_v_2  = 0.0
@@ -1016,5 +1018,6 @@ SUBROUTINE add_forcing_to_ad ( grid )
    grid%g_rainc = 0.0
    grid%g_raincv = 0.0
 
+   grid%g_p = 0.0
 END SUBROUTINE add_forcing_to_ad
 

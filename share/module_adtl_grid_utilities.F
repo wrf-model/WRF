@@ -1065,15 +1065,15 @@ CONTAINS
 
    b_h_diabatic = grid%h_diabatic
 
+   b_p = grid%p
    b_rainnc = grid%rainnc
    b_rainncv = grid%rainncv
    b_rainc = grid%rainc
    b_raincv = grid%raincv
 
-!   b_scalar = grid%scalar
+   b_scalar = grid%scalar
 !   b_tke_2 = grid%tke_2
 
-!   b_p = grid%p
 !   b_al = grid%al
    
    RETURN
@@ -1364,6 +1364,14 @@ END IF
    ENDDO
 
    DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+     save  = save + grid%g_p(i,k,j) * grid%g_p(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = jts,MIN(jte,jde-1)
    DO i = its,MIN(ite,ide-1)
      save  = save + grid%g_rainnc(i,j) * grid%g_rainnc(i,j) &
                   + grid%g_rainncv(i,j) * grid%g_rainncv(i,j)
@@ -1460,6 +1468,14 @@ END IF
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
      save  = save + grid%g_h_diabatic(i,k,j) * grid%g_h_diabatic(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+     save  = save + grid%g_p(i,k,j) * grid%g_p(i,k,j)
    ENDDO
    ENDDO
    ENDDO
@@ -1623,6 +1639,15 @@ END IF
    ENDDO
 
    DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+     save  = save &
+                  + (grid%p(i,k,j)-b_p(i,k,j)) * (grid%p(i,k,j)-b_p(i,k,j))
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = jts,MIN(jte,jde-1)
    DO i = its,MIN(ite,ide-1)
      save  = save + (grid%rainnc(i,j)-b_rainnc(i,j)) * (grid%rainnc(i,j)-b_rainnc(i,j)) &
                   + (grid%rainncv(i,j)-b_rainncv(i,j)) * (grid%rainncv(i,j)-b_rainncv(i,j))
@@ -1761,10 +1786,17 @@ END IF
    ENDDO
    ENDDO
 
+   DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+      grid%a_p(i,k,j) = grid%g_p(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
 ! I&O variables
    grid%a_tke_1 = 0.0
    grid%a_tke_2 = 0.0
-   grid%a_p=0.0
    grid%a_al=0.0
 
 ! O variables
@@ -1896,13 +1928,13 @@ END IF
    ENDDO
    ENDDO
 
-   !DO j = jts,MIN(jte,jde-1)
-   !DO k = kts,kte-1
-   !DO i = its,MIN(ite,ide-1)
-   !  save  = save + grid%a_p(i,k,j) * b_p(i,k,j)
-   !ENDDO
-   !ENDDO
-   !ENDDO
+   DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+      save  = save + grid%a_p(i,k,j) * b_p(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
 
    !DO j = jts,MIN(jte,jde-1)
    !DO k = kts,kte-1

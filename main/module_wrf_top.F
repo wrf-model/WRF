@@ -24,6 +24,7 @@ MODULE module_wrf_top
                                           copy_g_to_a_adjtest, inner_dot_a_b_adjtest 
    USE mediation_pertmod_io, ONLY : xtraj_pointer, xtraj_head, xtraj_tail, xtraj_io_initialize
    USE module_nesting
+   USE module_io_domain, ONLY: close_dataset, wrf_inquire_opened
 #if (EM_CORE==1)
    USE module_state_description, ONLY : SURFDRAGSCHEME
 #endif
@@ -33,6 +34,8 @@ MODULE module_wrf_top
 #endif
 
    IMPLICIT NONE
+
+#include <wrf_io_flags.h>
 
    REAL    :: time
 
@@ -424,6 +427,9 @@ CONTAINS
    ! Force to read the lateral boundary condition here.
    CALL med_before_solve_io ( head_grid, config_flags )
 
+   ! Close boundary file, as it will be read again from start later
+   CALL close_dataset ( head_grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
+
    CALL init_domain_size ( head_grid, config_flags )
 
    ! Release linked list for trajectory
@@ -696,6 +702,8 @@ ENDIF
    CHARACTER*256 :: timestr
    INTEGER       :: rc
    INTEGER       :: io_auxh7
+   CHARACTER (LEN=80)      :: bdyname
+   INTEGER                 :: open_status
 
    !  The forecast integration for the most coarse grid is now started.  The
    !  integration is from the first step (1) to the last step of the simulation.
@@ -709,18 +717,18 @@ ENDIF
    ! Force to turn off history output in this case
    CALL WRFU_AlarmRingerOff( head_grid%alarms( HISTORY_ALARM ), rc=rc )
 
-   IF ( config_flags%bl_pbl_physics .EQ. SURFDRAGSCHEME ) THEN
+   IF ( model_config_rec%bl_pbl_physics(head_grid%id) .EQ. SURFDRAGSCHEME ) THEN
       head_grid%rublten = 0.0
       head_grid%rvblten = 0.0
       head_grid%rthblten = 0.0
       head_grid%rqvblten = 0.0
    ENDIF
-   IF ( config_flags%mp_physics .EQ. LSCONDSCHEME ) THEN
+   IF ( model_config_rec%mp_physics(head_grid%id) .EQ. LSCONDSCHEME ) THEN
       head_grid%h_diabatic = 0.0
       head_grid%rainnc = 0.0
       head_grid%rainncv = 0.0
    ENDIF
-   IF ( config_flags%cu_physics .EQ. DUCUSCHEME ) THEN
+   IF ( model_config_rec%cu_physics(head_grid%id) .EQ. DUCUSCHEME ) THEN
       head_grid%rthcuten = 0.0
       head_grid%rqvcuten = 0.0
       head_grid%rainc = 0.0
@@ -740,6 +748,13 @@ ENDIF
 
    IF ( .NOT. config_flags%trajectory_io ) THEN
       CALL nl_set_io_form_auxhist7( head_grid%id, io_auxh7 )
+   ENDIF
+
+   ! Close boundary file, as it will be read again from start
+   CALL construct_filename2a ( bdyname , config_flags%bdy_inname , head_grid%id , 2 , 'dummydate' )
+   CALL wrf_inquire_opened(head_grid%lbc_fid , TRIM(bdyname) , open_status , ierr ) 
+   IF ( open_status .EQ. WRF_FILE_OPENED_FOR_READ ) THEN
+      CALL close_dataset ( head_grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
    ENDIF
 
    CALL       wrf_message ( "wrf: back from tangent linear integrate" )
@@ -768,6 +783,8 @@ ENDIF
    REAL    :: timestep
    TYPE(WRFU_TimeInterval) :: run_interval
    INTEGER       :: io_auxh8
+   CHARACTER (LEN=80)      :: bdyname
+   INTEGER                 :: open_status
 
    !  The forecast integration for the most coarse grid is now started.  The
    !  integration is from the first step (1) to the last step of the simulation.
@@ -880,6 +897,13 @@ ENDIF
    head_grid%stop_subtime = domain_get_stop_time ( head_grid )
    CALL domain_clock_set( head_grid, time_step_seconds=model_config_rec%time_step )
 
+   ! Close boundary file, as it will be read again from start
+   CALL construct_filename2a ( bdyname , config_flags%bdy_inname , head_grid%id , 2 , 'dummydate' )
+   CALL wrf_inquire_opened(head_grid%lbc_fid , TRIM(bdyname) , open_status , ierr )
+   IF ( open_status .EQ. WRF_FILE_OPENED_FOR_READ ) THEN
+      CALL close_dataset ( head_grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
+   ENDIF
+
    CALL       wrf_message ( "wrf: back from adjoint integrate" )
 
    END SUBROUTINE wrf_run_ad
@@ -891,6 +915,8 @@ ENDIF
 
 #if (WRFPLUS == 1)
    integer :: io_auxh7, io_auxh8
+   CHARACTER (LEN=80)      :: bdyname
+   INTEGER                 :: open_status
 #endif
 !<DESCRIPTION>
 ! Once the top-level domain has been allocated, configured, and
@@ -908,18 +934,18 @@ ENDIF
    CALL       wrf_debug ( 100 , 'wrf: calling integrate' )
 #if (WRFPLUS == 1)
    model_config_rec%dyn_opt = dyn_em
-   IF ( config_flags%bl_pbl_physics .EQ. SURFDRAGSCHEME ) THEN
+   IF ( model_config_rec%bl_pbl_physics(head_grid%id) .EQ. SURFDRAGSCHEME ) THEN
       head_grid%rublten = 0.0
       head_grid%rvblten = 0.0
       head_grid%rthblten = 0.0
       head_grid%rqvblten = 0.0
    ENDIF
-   IF ( config_flags%mp_physics .EQ. LSCONDSCHEME ) THEN
+   IF ( model_config_rec%mp_physics(head_grid%id) .EQ. LSCONDSCHEME ) THEN
       head_grid%h_diabatic = 0.0
       head_grid%rainnc = 0.0
       head_grid%rainncv = 0.0
    ENDIF
-   IF ( config_flags%cu_physics .EQ. DUCUSCHEME ) THEN
+   IF ( model_config_rec%cu_physics(head_grid%id) .EQ. DUCUSCHEME ) THEN
       head_grid%rthcuten = 0.0
       head_grid%rqvcuten = 0.0
       head_grid%rainc = 0.0
@@ -938,10 +964,19 @@ ENDIF
 #endif
    CALL integrate ( head_grid )
 
+#if (WRFPLUS == 1)
    IF ( .NOT. config_flags%trajectory_io ) THEN
       CALL nl_set_io_form_auxhist7( head_grid%id, io_auxh7 )
       CALL nl_set_io_form_auxhist8( head_grid%id, io_auxh8 )
    ENDIF
+
+   ! Close boundary file, as it will be read again from start
+   CALL construct_filename2a ( bdyname , config_flags%bdy_inname , head_grid%id , 2 , 'dummydate' )
+   CALL wrf_inquire_opened(head_grid%lbc_fid , TRIM(bdyname) , open_status , ierr )
+   IF ( open_status .EQ. WRF_FILE_OPENED_FOR_READ ) THEN
+      CALL close_dataset ( head_grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
+   ENDIF
+#endif
 
    CALL       wrf_debug ( 100 , 'wrf: back from integrate' )
 

@@ -1842,13 +1842,6 @@ integer myproc,i,j,k
    IF ( (grid%dfi_opt .EQ. DFI_DDFI .OR. grid%dfi_opt .EQ. DFI_TDFI) .AND. grid%dfi_stage .EQ. DFI_FWD ) RETURN
 ! #endif
 
-#if (WRFPLUS == 1)
-   ! Avoid trying to re-read the boundary conditions if we are doing adjoint integration
-   ! Boundary condition with perturbation should be read in tangent linear integration in the future.
-   IF ( (config_flags%dyn_opt .EQ. dyn_em_ad .OR. config_flags%dyn_opt .EQ. dyn_em_tl) .AND. &
-         config_flags%trajectory_io ) RETURN
-#endif
-
    IF ( grid%id .EQ. 1 .AND. config_flags%specified .AND. config_flags%io_form_boundary .GT. 0 ) THEN
 
      CALL domain_clock_get( grid, current_time=currentTime, &
@@ -1858,7 +1851,14 @@ integer myproc,i,j,k
 
      IF ( ( lbc_read_time( currentTime ) ) .AND. &
           ( currentTime + stepTime .GE. stopTime ) .AND. &
-          ( currentTime .NE. startTime ) ) THEN
+          ( currentTime .NE. startTime ) .AND. &
+          ( config_flags%dyn_opt .NE. dyn_em_ad ) ) THEN
+       CALL wrf_debug( 100 , 'med_latbound_in: Skipping attempt to read lateral boundary file during last time step ' )
+
+     ELSE IF ( ( lbc_read_time( currentTime ) ) .AND. &
+          ( currentTime + stepTime .LE. stopTime ) .AND. &
+          ( currentTime .NE. startTime ) .AND. &
+          ( config_flags%dyn_opt .EQ. dyn_em_ad ) ) THEN
        CALL wrf_debug( 100 , 'med_latbound_in: Skipping attempt to read lateral boundary file during last time step ' )
 
      ELSE IF ( WRFU_AlarmIsRinging( grid%alarms( BOUNDARY_ALARM ), rc=rc ) ) THEN
@@ -1897,21 +1897,29 @@ integer myproc,i,j,k
           CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
        END IF
 ! #endif
-#if (WRFPLUS == 1)
-       ! In the beginning of the check, boundary will be read in advance to save it in s_xxx
-       ! It will be read again when the first NL model start to run.
-       IF ( (config_flags%dyn_opt .EQ. dyn_em_check) ) THEN
-          CALL wrf_debug( 100 , 'med_latbound_in: closing boundary file ' )
-          CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
-       END IF
-#endif
 
        CALL domain_clock_get( grid, current_time=currentTime )
-       DO WHILE (currentTime .GE. grid%next_bdy_time )         ! next_bdy_time is set by input_boundary from bdy file
-         CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
-         CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
-       ENDDO
-       CALL WRFU_AlarmSet( grid%alarms( BOUNDARY_ALARM ), RingTime=grid%next_bdy_time, rc=rc )
+       IF ( config_flags%dyn_opt .NE. dyn_em_ad ) THEN
+          DO WHILE (currentTime .GE. grid%next_bdy_time )         ! next_bdy_time is set by input_boundary from bdy file
+             CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
+             CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
+          ENDDO
+       ELSE
+          DO WHILE (currentTime .GT. grid%next_bdy_time )         ! next_bdy_time is set by input_boundary from bdy file
+             CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
+             CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
+          ENDDO
+       ENDIF
+       IF ( config_flags%dyn_opt .NE. dyn_em_ad ) THEN
+          CALL WRFU_AlarmSet( grid%alarms( BOUNDARY_ALARM ), RingTime=grid%next_bdy_time, rc=rc )
+       ELSE
+          CALL WRFU_AlarmSet( grid%alarms( BOUNDARY_ALARM ), RingTime=grid%this_bdy_time, rc=rc )
+          CALL wrf_inquire_opened(grid%lbc_fid , TRIM(bdyname) , open_status , ierr ) 
+          IF ( open_status .EQ. WRF_FILE_OPENED_FOR_READ ) THEN
+             CALL wrf_debug( 100 , 'med_latbound_in: closing boundary file ' )
+             CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
+          ENDIF
+       ENDIF
 
        IF ( ierr .NE. 0 .and. ierr .NE. WRF_WARN_NETCDF ) THEN
          WRITE( message, * ) 'med_latbound_in: error reading ',TRIM(bdyname), ' IERR = ',ierr

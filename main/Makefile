@@ -180,6 +180,7 @@ module_wrf_top.o: ../frame/module_machine.o \
                   ../frame/module_timing.o \
                   ../frame/module_wrf_error.o \
                   ../frame/module_state_description.o \
+                  ../share/module_io_domain.o \
                   ../share/mediation_pertmod_io.o \
                   $(ESMF_MOD_DEPENDENCE)
 

@@ -1024,13 +1024,13 @@ CONTAINS
    ENDDO
    ENDDO
 
-   s_tke_2 =  0.0
-   s_p = 0.0
-   s_al = 0.0
-   s_h_diabatic = 0.0
-   s_ustm = 0.0
-   s_hfx = 0.0
-   s_qfx = 0.0
+   s_tke_2 = grid%tke_2
+   s_p = grid%p
+   s_al = grid%al
+   s_h_diabatic = grid%h_diabatic
+   s_ustm = grid%ustm
+   s_hfx = grid%hfx
+   s_qfx = grid%qfx
    
    s_u_bxs = grid%u_bxs; s_u_bxe = grid%u_bxe; s_u_bys = grid%u_bys; s_u_bye = grid%u_bye
    s_u_btxs = grid%u_btxs; s_u_btxe = grid%u_btxe; s_u_btys = grid%u_btys; s_u_btye = grid%u_btye

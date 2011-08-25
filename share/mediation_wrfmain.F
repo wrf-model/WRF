@@ -97,6 +97,7 @@ use module_io
      save_dyn_opt = model_config_rec%dyn_opt
      model_config_rec%dyn_opt = dyn_em
 #endif
+     IF ( model_config_rec%dyn_opt .NE. dyn_em_check ) &
      CALL start_domain ( grid , .TRUE. )
 #if (WRFPLUS == 1)
      model_config_rec%dyn_opt = save_dyn_opt

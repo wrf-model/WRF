@@ -260,7 +260,8 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
 
 $validresponse = 0 ;
 
-@platforms = qw ( serial smpar dmpar dm+sm ) ;
+#@platforms = qw ( serial smpar dmpar dm+sm ) ;
+@platforms = qw ( serial dmpar ) ;
 
 # Display the choices to the user and get selection
 until ( $validresponse ) {

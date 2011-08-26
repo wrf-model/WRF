@@ -140,18 +140,12 @@ CONTAINS
 !
 !-------------------------------------------------------------------------------
 ! microphysics scheme --> ncloud 
-   if (mp_physics .eq. 1) then
+   if (mp_physics .eq. 0) then
      ncloud = 0
-   elseif ( mp_physics .eq. 2 .or. mp_physics .eq. 3 ) then
-     ncloud = 2
-   elseif ( mp_physics .eq. 5 ) then
-     ncloud = 3 
-   elseif ( mp_physics .eq. 4 .or. mp_physics .eq. 14 ) then
-     ncloud = 4
-   elseif ( mp_physics .eq. 9) then
-     ncloud = 6
+   elseif ( mp_physics .eq. 1 .or. mp_physics .eq. 3 ) then
+     ncloud = 1
    else
-     ncloud = 5
+     ncloud = 2
    endif  
 !
 !-------------------------------------------------------------------------------
@@ -378,7 +372,7 @@ CONTAINS
 !   slimsk   - real (ims:ime) land(1),sea(0), ice(2) flag
 !   dot      - real (ims:ime,kms:kme) vertical velocity
 !   jcap     - integer spectral truncation
-!   ncloud   - integer number of hydrometeors
+!   ncloud   - integer no_cloud(0),no_ice(1),cloud+ice(2)
 !   lat      - integer  current latitude index
 !
 ! output argument list:
@@ -2046,7 +2040,7 @@ CONTAINS
            if (k.ge.kbcon(i).and.k.le.ktcon(i)) then
              tem  = dellal(i,k) * xmb(i) * dt2
              tem1 = max(0.0, min(1.0, (tcr-t1(i,k))*tcrf))
-             if (ncloud.ge.4) then
+             if (ncloud.ge.2) then
                qi2(i,k) = qi2(i,k) + tem * tem1            ! ice
                qc2(i,k) = qc2(i,k) + tem *(1.0-tem1)       ! water
              else

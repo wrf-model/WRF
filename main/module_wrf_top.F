@@ -21,7 +21,7 @@ MODULE module_wrf_top
    USE module_adtl_grid_utilities, ONLY : allocate_grid, deallocate_grid, copy_grid_to_s, copy_grid_to_b, &
                                           restore_grid, inner_dot_g, add_grid, inner_dot, init_domain_size, &
                                           copy_s_to_g_adjtest, copy_g_to_b_adjtest, inner_dot_g_adjtest, &
-                                          copy_g_to_a_adjtest, inner_dot_a_b_adjtest 
+                                          copy_g_to_a_adjtest, inner_dot_a_b_adjtest, zero_out_ad 
    USE mediation_pertmod_io, ONLY : xtraj_pointer, xtraj_head, xtraj_tail, xtraj_io_initialize
    USE module_nesting
    USE module_io_domain, ONLY: close_dataset, wrf_inquire_opened
@@ -63,6 +63,8 @@ MODULE module_wrf_top
 
    CHARACTER (LEN=80)      :: rstname
    CHARACTER (LEN=80)      :: message
+ 
+   LOGICAL                 :: gradient_out = .FALSE.
 
    INTERFACE 
      SUBROUTINE Setup_Timekeeping( grid )
@@ -864,7 +866,7 @@ ENDIF
 
    CALL start_domain ( head_grid , .TRUE. )
 
-   IF ( .NOT. config_flags%trajectory_io ) THEN
+   IF ( .NOT. config_flags%trajectory_io .OR. gradient_out ) THEN
       config_flags%auxhist7_outname = "gradient_wrfplus_d<domain>_<date>"
       CALL  med_hist_out ( head_grid , AUXHIST7_ALARM , config_flags )
       CALL  wrf_debug ( 0 , 'Output gradient in WRFPLUS (not including LBC gradient)' )
@@ -907,6 +909,115 @@ ENDIF
    CALL       wrf_message ( "wrf: back from adjoint integrate" )
 
    END SUBROUTINE wrf_run_ad
+
+   SUBROUTINE wrf_run_ad_standalone( )
+!<DESCRIPTION>
+!     WRF adjoint code standalone run
+!</DESCRIPTION>
+
+!</DESCRIPTION>
+
+   INTEGER :: rc, time_step
+   CHARACTER*256 :: timestr
+
+   ! Return immediately if not dyn_em_ad
+   IF ( config_flags%dyn_opt .NE. dyn_em_ad ) RETURN
+
+   ! Force to turn off history output in this case
+   CALL WRFU_AlarmRingerOff( head_grid%alarms( HISTORY_ALARM ), rc=rc )
+
+   IF ( head_grid%trajectory_io ) THEN
+
+   ! Force to read the lateral boundary condition here.
+   !CALL med_before_solve_io ( head_grid, config_flags )
+
+   ! Close boundary file, as it will be read again from start later
+   !CALL close_dataset ( head_grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
+
+   CALL init_domain_size ( head_grid, config_flags )
+
+   ! Release linked list for trajectory
+   call xtraj_io_initialize
+
+   CALL       wrf_message ( "wrf: calling nonlinear integrate" )
+
+   ! Set up basic states output
+   CALL nl_get_time_step ( head_grid%id, time_step )
+   CALL nl_set_auxhist6_interval_s ( head_grid%id, time_step )
+   CALL nl_set_io_form_auxhist6 ( head_grid%id, 2 )
+   CALL nl_set_frames_per_auxhist6 ( head_grid%id, 1 )
+   CALL Setup_Timekeeping ( head_grid )
+
+   CALL wrf_run
+
+   ! Turn off basic states output
+   CALL nl_set_io_form_auxhist6 ( head_grid%id, 0 )
+   CALL nl_set_auxhist6_interval_s ( head_grid%id, 0 )
+   CALL Setup_Timekeeping ( head_grid )
+
+   CALL       wrf_message ( "wrf: back from nonlinear integrate" )
+
+   ENDIF 
+
+   ! Set the file names and interval for reading basic states.
+   model_config_rec%auxinput6_inname = "auxhist6_d<domain>_<date>"
+   CALL nl_get_time_step ( head_grid%id, time_step )
+   CALL nl_set_auxinput6_interval_s (head_grid%id, time_step )
+   CALL nl_set_io_form_auxinput6 ( head_grid%id, 2 )
+   CALL nl_set_frames_per_auxinput6 ( head_grid%id, 1 )
+
+   IF ( config_flags%mp_physics .GT. 0 ) CALL nl_set_mp_physics (head_grid%id, 98)
+   IF ( config_flags%bl_pbl_physics .GT. 0 ) CALL nl_set_bl_pbl_physics (head_grid%id, 98)
+   IF ( config_flags%cu_physics .GT. 0 ) CALL nl_set_cu_physics (head_grid%id, 0)
+   CALL nl_set_ra_lw_physics (head_grid%id, 0)
+   CALL nl_set_ra_sw_physics (head_grid%id, 0)
+   CALL nl_set_sf_sfclay_physics (head_grid%id, 0)
+
+   CALL zero_out_ad ( head_grid )
+
+   head_grid%g_u_1 = 0.0
+   head_grid%g_v_1 = 0.0
+   head_grid%g_w_1 = 0.0
+   head_grid%g_t_1 = 0.0
+   head_grid%g_ph_1 = 0.0
+   head_grid%g_mu_1 = 0.0
+   
+   head_grid%g_u_2 = 0.0
+   head_grid%g_v_2 = 0.0
+   head_grid%g_w_2 = 0.0
+   head_grid%g_t_2 = 0.0
+   head_grid%g_ph_2 = 0.0
+   head_grid%g_mu_2 = 0.0
+
+   head_grid%g_p = 0.0 
+   
+   head_grid%g_moist = 0.0
+   
+   head_grid%g_scalar = 0.0 
+   head_grid%g_rainnc  = 0.0 
+   head_grid%g_rainncv = 0.0
+   head_grid%g_rainc  = 0.0 
+   head_grid%g_raincv = 0.0
+
+   CALL domain_clock_get( head_grid, stop_timestr=timestr )
+   CALL domain_clock_set( head_grid, current_timestr=timestr )
+   config_flags%auxinput7_inname = "final_sens_d01"
+   config_flags%io_form_auxinput7 = 2
+   config_flags%frames_per_auxinput7 = 1
+   CALL med_auxinput_in ( head_grid, auxinput7_alarm, config_flags )
+   CALL  wrf_debug ( 0 , 'Read in final sensitivuty' )
+   config_flags%io_form_auxinput7 = 0
+   CALL domain_clock_get( head_grid, start_timestr=timestr )
+   CALL domain_clock_set( head_grid, current_timestr=timestr )
+
+   gradient_out = .TRUE.
+
+   CALL wrf_run_ad
+
+   ! Release linked list for trajectory
+   call xtraj_io_initialize
+
+   END SUBROUTINE wrf_run_ad_standalone
 
    SUBROUTINE wrf_run( )
 !<DESCRIPTION>

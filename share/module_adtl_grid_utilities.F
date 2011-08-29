@@ -1669,8 +1669,8 @@ END IF
    INTEGER, INTENT(IN) :: its, ite, jts, jte
    INTEGER :: i, k, j, mm
 
-   grid%a_u_1 = 0.0
-   grid%a_u_2 = 0.0
+   CALL zero_out_ad ( grid )
+
    IF (grid%check_u) THEN
       DO j = jts,MIN(jte,jde-1)
       DO k = kts,kte-1
@@ -1681,8 +1681,6 @@ END IF
       ENDDO
    END IF
 
-   grid%a_v_1 = 0.0
-   grid%a_v_2 = 0.0
    IF (grid%check_v) THEN
       DO j = jts,jte
       DO k = kts,kte-1
@@ -1693,8 +1691,6 @@ END IF
       ENDDO
    END IF
 
-   grid%a_w_1 = 0.0
-   grid%a_w_2 = 0.0
    IF (grid%check_w) THEN
       DO j = jts,MIN(jte,jde-1)
       DO k = kts,kte
@@ -1705,8 +1701,6 @@ END IF
       ENDDO
    END IF
 
-   grid%a_t_1 = 0.0
-   grid%a_t_2 = 0.0
    IF (grid%check_t) THEN
       DO j = jts,MIN(jte,jde-1)
       DO k = kts,kte-1
@@ -1717,8 +1711,6 @@ END IF
       ENDDO
    END IF
 
-   grid%a_ph_1 = 0.0
-   grid%a_ph_2 = 0.0
    IF (grid%check_ph) THEN
       DO j = jts,MIN(jte,jde-1)
       DO k = kts,kte
@@ -1729,8 +1721,6 @@ END IF
       ENDDO
    END IF
 
-   grid%a_mu_1 = 0.0
-   grid%a_mu_2 = 0.0
    IF (grid%check_mu) THEN
       DO j = jts,MIN(jte,jde-1)
       DO i = its,MIN(ite,ide-1)
@@ -1739,7 +1729,6 @@ END IF
       ENDDO
    END IF
 
-   grid%a_moist = 0.0
    IF (grid%check_moist) THEN
       DO mm = PARAM_FIRST_SCALAR, num_moist
       DO j = jts,MIN(jte,jde-1)
@@ -1752,7 +1741,6 @@ END IF
       ENDDO
    END IF
    
-   grid%a_scalar = 0.0
    DO mm = PARAM_FIRST_SCALAR, num_scalar
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
@@ -1763,7 +1751,6 @@ END IF
    ENDDO
    ENDDO
 
-   grid%a_h_diabatic = 0.0
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
@@ -1772,10 +1759,6 @@ END IF
    ENDDO
    ENDDO
 
-   grid%a_rainnc = 0.0
-   grid%a_rainncv = 0.0
-   grid%a_rainc = 0.0
-   grid%a_raincv = 0.0
    DO j = jts,MIN(jte,jde-1)
    DO i = its,MIN(ite,ide-1)
       grid%a_rainnc(i,j)  = grid%g_rainnc(i,j)
@@ -1793,6 +1776,43 @@ END IF
    ENDDO
    ENDDO
    ENDDO
+
+   RETURN
+  END SUBROUTINE copy_g_to_a_adjtest
+
+  SUBROUTINE zero_out_ad ( grid )
+   TYPE (domain), INTENT(INOUT) :: grid
+
+   grid%a_u_1 = 0.0
+   grid%a_u_2 = 0.0
+
+   grid%a_v_1 = 0.0
+   grid%a_v_2 = 0.0
+
+   grid%a_w_1 = 0.0
+   grid%a_w_2 = 0.0
+
+   grid%a_t_1 = 0.0
+   grid%a_t_2 = 0.0
+
+   grid%a_ph_1 = 0.0
+   grid%a_ph_2 = 0.0
+
+   grid%a_mu_1 = 0.0
+   grid%a_mu_2 = 0.0
+
+   grid%a_moist = 0.0
+   
+   grid%a_scalar = 0.0
+
+   grid%a_h_diabatic = 0.0
+
+   grid%a_rainnc = 0.0
+   grid%a_rainncv = 0.0
+   grid%a_rainc = 0.0
+   grid%a_raincv = 0.0
+
+   grid%a_p = 0.0
 
 ! I&O variables
    grid%a_tke_1 = 0.0
@@ -1868,7 +1888,7 @@ END IF
    grid%a_scalar_btxs = 0.0; grid%a_scalar_btxe = 0.0; grid%a_scalar_btys = 0.0; grid%a_scalar_btye = 0.0
 
    RETURN
-  END SUBROUTINE copy_g_to_a_adjtest
+  END SUBROUTINE zero_out_ad
 
   SUBROUTINE inner_dot_a_b_adjtest ( grid, save, its, ite, jts, jte )
    TYPE (domain), INTENT(IN) :: grid

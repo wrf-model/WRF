@@ -106,6 +106,7 @@ CONTAINS
               ,shadowmask,ht,dx,dy                 &
               ,SWUPFLX,SWUPFLXC,SWDNFLX,SWDNFLXC                          & ! Optional
               ,LWUPFLX,LWUPFLXC,LWDNFLX,LWDNFLXC                          & ! Optional
+              ,radtacttime                                                & 
                                                                           )
 
 
@@ -519,7 +520,7 @@ CONTAINS
      REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN)  :: ht
      INTEGER, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN) :: shadowmask
 
-
+   REAL , OPTIONAL, INTENT(INOUT) ::    radtacttime ! Storing the time in s when radiation is called next
 ! LOCAL  VAR
 
    REAL, DIMENSION( ims:ime, jms:jme ) ::             GLAT,GLON
@@ -539,7 +540,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_save,qc_save
 
    REAL    ::    next_rad_time
-   LOGICAL ::    run_param
+   LOGICAL ::    run_param , doing_adapt_dt , decided
 !------------------------------------------------------------------
 ! solar related variables are added to declaration
 !-------------------------------------------------
@@ -558,28 +559,62 @@ CONTAINS
 !                     and is also consistent with removal of offset in new XTIME
 ! also need to account for stepra=1 which always has zero modulo output
 
-!
-! Calculate whether or not to run the radiation step.
-! If CURR_SECS is passed in, we will calculate based upon that.  If it
-!   is not passed in, we'll do the old method of using the time STEP number
-!   
+   doing_adapt_dt = .FALSE.
+   IF ( PRESENT(adapt_step_flag) ) THEN
+      IF ( adapt_step_flag ) THEN
+         doing_adapt_dt = .TRUE.
+         IF ( radtacttime .eq. 0. ) THEN
+            radtacttime = CURR_SECS + radt*60.
+         END IF
+      END IF
+   END IF
 
-   IF ( (itimestep .EQ. 1) .OR. (MOD(itimestep,STEPRA) .EQ. 1 + ra_call_offset) .OR. &
-        (STEPRA .EQ. 1) ) THEN
-     run_param = .TRUE.
-   ELSE
-     run_param = .FALSE.
-   ENDIF
-   IF (PRESENT(adapt_step_flag)) THEN
-     IF ((adapt_step_flag)) THEN
-       IF ( (itimestep .EQ. 1) .OR. (radt .EQ. 0) .OR. &
-           ( CURR_SECS + dt >= ( INT( CURR_SECS / ( radt * 60 ) + 1 ) * radt * 60) ) ) THEN
-         run_param = .TRUE.
-       ELSE
-         run_param = .FALSE.
-       ENDIF
-     ENDIF
-   ENDIF
+!  Do we run through this scheme or not?
+
+!    Test 1:  If this is the initial model time, then yes.
+!                ITIMESTEP=1
+!    Test 2:  If the user asked for the radiation to be run every time step, then yes.
+!                RADT=0 or STEPRA=1
+!    Test 3:  If not adaptive dt, and this is on the requested radiation frequency, then yes.
+!                MOD(ITIMESTEP,STEPRA)=0 (or 1, depending on the offset setting)
+!    Test 4:  If using adaptive dt and the current time is past the last requested activate radiation time, then yes.
+!                CURR_SECS >= RADTACTTIME
+
+!  If we do run through the scheme, we set the flag run_param to TRUE and we set the decided flag
+!  to TRUE.  The decided flag says that one of these tests was able to say "yes", run the scheme.
+!  We only proceed to other tests if the previous tests all have left decided as FALSE.
+
+!  If we set run_param to TRUE and this is adaptive time stepping, we set the time to the next
+!  radiation run.
+
+   run_param = .FALSE.
+   decided = .FALSE.
+   IF ( ( .NOT. decided ) .AND. &
+        ( itimestep .EQ. 1 ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( ( radt .EQ. 0. ) .OR. ( stepra .EQ. 1 ) ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( .NOT. doing_adapt_dt ) .AND. &
+        ( MOD(itimestep,stepra) .EQ. 1+ra_call_offset ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( doing_adapt_dt ) .AND. &
+        ( curr_secs .GE. radtacttime ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+      radtacttime = curr_secs + radt*60
+   END IF
 
    Radiation_step: IF ( run_param ) then
 

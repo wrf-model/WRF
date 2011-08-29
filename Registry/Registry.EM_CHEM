@@ -353,7 +353,10 @@ state   real    zetatop        -        misc      -         -     irh       "zet
 state   real    cf1            -        misc      -         -     irh       "cf1"                   "2nd order extrapolation constant"         ""      
 state   real    cf2            -        misc      -         -     irh       "cf2"                   "2nd order extrapolation constant"         ""      
 state   real    cf3            -        misc      -         -     irh       "cf3"                   "2nd order extrapolation constant"         ""      
-state   integer number_at_same_level    -        -          -         -     -        "number_at_same_level"  ""         ""      
+state   integer number_at_same_level    -         -         -     -          -        "number_at_same_level"  ""         ""      
+state   real    radtacttime    -        -         -         -     -         "radtacttime"              "RADTACTTIME"         "LW SW ACTIVATION TIME in s"
+state   real    bldtacttime    -        -         -         -     -         "bldtacttime"              "BLDTACTTIME"         "PBL   ACTIVATION TIME in s"
+state   real    cudtacttime    -        -         -         -     -         "cudtacttime"              "CUDTACTTIME"         "CPS   ACTIVATION TIME in s"
 
 # State for derived time quantities.  
 state   integer itimestep      -        -          -         -     rh         "itimestep"             ""         ""      
@@ -1736,6 +1739,7 @@ rconfig   real    smdiv                   namelist,dynamics	max_domains    0.1  
 rconfig   real    emdiv                   namelist,dynamics	max_domains    0.01    h    "emdiv"         ""      ""
 rconfig   real    epssm                   namelist,dynamics	max_domains    .1      h    "epssm"         ""      ""
 rconfig   logical non_hydrostatic         namelist,dynamics	max_domains  .true.   irh  "non_hydrostatic"    ""   ""
+rconfig   logical use_input_w             namelist,dynamics	1            .false.  irh  "use_input_w"    ""   ""
 rconfig   integer time_step_sound         namelist,dynamics	max_domains    0       h     "time_step_sound"               ""      ""
 rconfig   integer     h_mom_adv_order     namelist,dynamics	max_domains    5       rh       "h_mom_adv_order"               ""      ""
 rconfig   integer     v_mom_adv_order     namelist,dynamics	max_domains    3       rh       "v_mom_adv_order"               ""      ""

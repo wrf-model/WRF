@@ -242,7 +242,10 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
 
 $validresponse = 0 ;
 
-@platforms = qw ( serial smpar dmpar dm+sm ) ;
+if ( $sw_wrf_core eq "4D_DA_CORE" ) 
+   { @platforms = qw ( serial dmpar ) ; }
+   else
+   { @platforms = qw ( serial smpar dmpar dm+sm ) ; }
 
 # Display the choices to the user and get selection
 until ( $validresponse ) {

@@ -128,12 +128,9 @@
 
 !   --- SETUP AND INITIALIZE STOCHASTIC KINETIC ENERGY BACKSCATTER SCHEME ---
 
-   IF ( (grid%id.eq.1) .AND. ( .NOT. grid%did_stoch ) ) THEN
-   grid%did_stoch = .TRUE.
-   stoch_force_select: SELECT CASE(config_flags%stoch_force_opt)
+   IF ( (grid%id==1).and.(grid%stoch_force_global_opt==1) .AND. ( .NOT. grid%did_stoch ) ) THEN
 
-   CASE (STOCH_BACKSCATTER)
-
+     grid%did_stoch = .TRUE.
      IF ( wrf_dm_on_monitor () ) THEN
        CALL rand_seed ( config_flags, grid%SEED1, grid%SEED2, grid%NENS )
      ENDIF
@@ -152,7 +149,6 @@
                       ims, ime, jms, jme, kms, kme,                      &
                       its, ite, jts, jte, kts, kte                       )
     
-    END SELECT stoch_force_select
     END IF
 !   --- END SETUP STOCHASTIC KINETIC ENERGY BACKSCATTER SCHEME ----------
 

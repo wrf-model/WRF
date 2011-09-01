@@ -48,11 +48,11 @@ CONTAINS
 
 
 ! NOOP
-   SUBROUTINE ESMF_Initialize( vm, defaultCalendar, rc )
+   SUBROUTINE ESMF_Initialize( vm, defaultcalkind, rc )
       USE esmf_basemod
       USE esmf_calendarmod
       TYPE(ESMF_VM),           INTENT(IN   ), OPTIONAL :: vm
-      TYPE(ESMF_CalendarType), INTENT(IN   ), OPTIONAL :: defaultCalendar
+      TYPE(ESMF_CalendarType), INTENT(IN   ), OPTIONAL :: defaultcalkind
       INTEGER,                 INTENT(  OUT), OPTIONAL :: rc
 
       TYPE(ESMF_CalendarType) :: defaultCalType
@@ -60,8 +60,8 @@ CONTAINS
 
       IF ( PRESENT( rc ) ) rc = ESMF_FAILURE
       ! Initialize the default time manager calendar
-      IF ( PRESENT(defaultCalendar) )THEN
-         defaultCalType = defaultCalendar
+      IF ( PRESENT(defaultcalkind) )THEN
+         defaultCalType = defaultcalkind
       ELSE
          defaultCalType = ESMF_CAL_NOLEAP
       END IF

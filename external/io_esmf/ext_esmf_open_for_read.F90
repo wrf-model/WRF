@@ -11,7 +11,7 @@ SUBROUTINE ext_esmf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDe
   ! Local declarations
   INTEGER :: i
   TYPE(ESMF_State), POINTER :: importstate
-  TYPE(ESMF_StateType) :: statetype
+  TYPE(ESMF_StateIntent_Flag) :: stateIntent
   INTEGER :: rc, itemCount
 
   CALL int_get_fresh_handle(i)
@@ -32,11 +32,11 @@ SUBROUTINE ext_esmf_open_for_read_begin( FileName , Comm_compute, Comm_io, SysDe
 !TODO:  Eventually, get smart about interacting with "needed" and "optional" 
 !TODO:  named state items
   CALL ESMF_StateGet( importstate, itemCount=itemCount, &
-                      statetype=statetype, rc=rc )
+                      stateintent=stateintent, rc=rc )
   IF ( rc /= ESMF_SUCCESS ) THEN
     CALL wrf_error_fatal("ext_esmf_open_for_read:  ESMF_ImportStateGet failed" )
   ENDIF
-  IF ( statetype /= ESMF_STATE_IMPORT ) THEN
+  IF ( stateintent /= ESMF_STATEINTENT_IMPORT ) THEN
     CALL wrf_error_fatal("ext_esmf_open_for_read:  not an import state" )
   ENDIF
   IF ( itemCount /= 0 ) THEN

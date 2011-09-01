@@ -286,7 +286,7 @@ SUBROUTINE xtraj_io_initialize
    !               vegfra, snow, canwat, sst, msft, msfu, msfv, f, e, sina, cosa,
    !               ht, xlat, xlong, albbck, tmn, xland, znt, mub,
    !               rainnc, rainncv, rainc, raincv, hfx, qfx, ustm
-   bytes_xtraj = bytes_xtraj + n2d*9
+   bytes_xtraj = bytes_xtraj + n2d*13
 
    ! 1D K variables: znu, znw, fnm, fnp, rdnw, rdn, dnw, dn
    !bytes_xtraj = bytes_xtraj + n1d*8
@@ -568,11 +568,11 @@ SUBROUTINE packup_xtraj (data)
    !               rainnc, rainncv, rainc, raincv
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%mu_2, (/n2d/))
    !ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%lu_index, (/n2d/))
-   !ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%q2, (/n2d/))
-   !ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%t2, (/n2d/))
+   ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%q2, (/n2d/))
+   ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%t2, (/n2d/))
    !ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%th2, (/n2d/))
-   !ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%u10, (/n2d/))
-   !ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%v10, (/n2d/))
+   ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%u10, (/n2d/))
+   ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%v10, (/n2d/))
    !ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%landmask, (/n2d/))
    !ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%xice, (/n2d/))
    !ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%ivgtyp, (/n2d/))
@@ -781,11 +781,11 @@ SUBROUTINE restore_xtraj (data)
    !               rainnc, rainncv, rainc, raincv
    ns =    ne+1 ; ne = ne+n2d ; head_grid%mu_2 = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
    !ns =    ne+1 ; ne = ne+n2d ; head_grid%lu_index = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
-   !ns =    ne+1 ; ne = ne+n2d ; head_grid%q2 = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
-   !ns =    ne+1 ; ne = ne+n2d ; head_grid%t2 = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
+   ns =    ne+1 ; ne = ne+n2d ; head_grid%q2 = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
+   ns =    ne+1 ; ne = ne+n2d ; head_grid%t2 = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
    !ns =    ne+1 ; ne = ne+n2d ; head_grid%th2 = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
-   !ns =    ne+1 ; ne = ne+n2d ; head_grid%u10 = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
-   !ns =    ne+1 ; ne = ne+n2d ; head_grid%v10 = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
+   ns =    ne+1 ; ne = ne+n2d ; head_grid%u10 = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
+   ns =    ne+1 ; ne = ne+n2d ; head_grid%v10 = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
    !ns =    ne+1 ; ne = ne+n2d ; head_grid%landmask = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
    !ns =    ne+1 ; ne = ne+n2d ; head_grid%xice = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
    !ns =    ne+1 ; ne = ne+n2d ; head_grid%ivgtyp = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))

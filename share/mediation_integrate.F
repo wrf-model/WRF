@@ -181,7 +181,11 @@ SUBROUTINE med_pre_nest_initial ( parent , newid , config_flags )
 #else
    USE module_domain	, ONLY : domain
 #endif
-   USE module_utility   , ONLY : WRFU_Time ! , WRFU_TimeEQ
+#ifdef ESMFIO
+   USE module_utility   , ONLY : WRFU_Time 
+#else
+   USE module_utility   , ONLY : WRFU_Time, WRFU_TimeEQ
+#endif
    USE module_timing
    USE module_io_domain
    USE module_configure	, ONLY : grid_config_rec_type
@@ -206,8 +210,11 @@ SUBROUTINE med_pre_nest_initial ( parent , newid , config_flags )
    CALL domain_clock_get( parent, current_timestr=timestr, start_time=strt_time, current_time=cur_time )
    CALL construct_filename2a ( rstname , config_flags%rst_inname , newid , 2 , timestr )
 
-!    IF ( config_flags%restart .AND. WRFU_TimeEQ(cur_time,strt_time) ) THEN
-    IF ( config_flags%restart .AND. (cur_time == strt_time) ) THEN
+#ifdef ESMFIO
+    IF ( config_flags%restart .AND. (cur_time .EQ. strt_time) ) THEN
+#else
+    IF ( config_flags%restart .AND. WRFU_TimeEQ(cur_time,strt_time) ) THEN
+#endif
      WRITE(message,*)'RESTART: nest, opening ',TRIM(rstname),' for reading header information only'
      CALL wrf_message ( message )
   ! note that the parent pointer is not strictly correct, but nest is not allocated yet and

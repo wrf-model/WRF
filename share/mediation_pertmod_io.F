@@ -44,8 +44,8 @@ SUBROUTINE adtl_initialize
    TYPE (ad_forcing_list), POINTER :: adtl_current
    INTEGER :: i
 
-   ! 3D variables: a_u, a_v, a_w, a_t, a_ph
-   bytes_ad_forcing = n3d*5
+   ! 3D variables: a_u, a_v, a_w, a_t, a_ph, a_p
+   bytes_ad_forcing = n3d*6
    ! 2D variables: a_mu, a_rainnc, a_rainncv, a_rainc, a_raincv
    bytes_ad_forcing = bytes_ad_forcing + 5*n2d
    ! Moist variables
@@ -488,6 +488,7 @@ SUBROUTINE packup_ad_forcing (data)
    ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%g_w_2, (/n3d/))
    ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%g_t_2, (/n3d/))
    ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%g_ph_2, (/n3d/))
+   ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%g_p, (/n3d/))
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%g_mu_2, (/n2d/))
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%g_rainnc, (/n2d/))
    ns =    ne+1 ; ne = ne+n2d ; data(ns:ne) = RESHAPE( head_grid%g_rainncv, (/n2d/))
@@ -519,6 +520,7 @@ SUBROUTINE restore_ad_forcing (data)
    ns =    ne+1 ; ne = ne+n3d ; head_grid%g_w_2 = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n3d ; head_grid%g_t_2 = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n3d ; head_grid%g_ph_2 = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
+   ns =    ne+1 ; ne = ne+n3d ; head_grid%g_p = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n2d ; head_grid%g_mu_2 = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n2d ; head_grid%g_rainnc = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))
    ns =    ne+1 ; ne = ne+n2d ; head_grid%g_rainncv = RESHAPE( data(ns:ne), (/ime-ims+1,jme-jms+1/))

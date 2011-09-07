@@ -854,7 +854,8 @@ contains
       TYPE (grid_config_rec_type)                       :: config_flags
 !
 ! Arguments
-     INTEGER, INTENT(OUT ) :: seed1, seed2, nens
+     INTEGER, INTENT(OUT) :: seed1, seed2
+     INTEGER, INTENT(IN ) :: nens
 
 ! Local
       integer            :: date_time(8)

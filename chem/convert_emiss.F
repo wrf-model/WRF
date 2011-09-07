@@ -123,12 +123,14 @@ PROGRAM convert_emissions
    INTEGER :: start_year , start_month , start_day , start_hour , start_minute , start_second
    INTEGER ::   end_year ,   end_month ,   end_day ,   end_hour ,   end_minute ,   end_second
    INTEGER :: interval_seconds , real_data_init_type
+   INTEGER :: int_sec
    INTEGER :: time_loop_max , time_loop
 
    REAL :: cen_lat, cen_lon, moad_cen_lat, truelat1, truelat2, gmt, stand_lon, dum1
    INTEGER :: map_proj, julyr, julday, iswater, isice, isurban, isoilwater
    INTEGER :: iswaterr,itest,beg_day,beg_hour
    INTEGER :: itime = 0
+   INTEGER :: inew_nei = 0
    INTEGER :: nv = 0
    INTEGER :: nv_f = 0
    INTEGER :: nv_g = 0
@@ -299,22 +301,23 @@ PROGRAM convert_emissions
    end_minute = model_config_rec%  end_minute(grid%id)
    end_second = model_config_rec%  end_second(grid%id)
 
-   interval_seconds    = config_flags%auxinput5_interval
-   if ( interval_seconds == 0 ) then
-     interval_seconds    = config_flags%auxinput5_interval_s
+   int_sec = 0
+   int_sec    = config_flags%auxinput5_interval
+   if ( int_sec == 0 ) then
+     int_sec    = config_flags%auxinput5_interval_s
    endif
-   if ( interval_seconds == 0 ) then
-     interval_seconds    = 60 * config_flags%auxinput5_interval_m
+   if ( int_sec == 0 ) then
+     int_sec    = 60 * config_flags%auxinput5_interval_m
    endif
-   if ( interval_seconds == 0 ) then
-     interval_seconds    = 3600 * config_flags%auxinput5_interval_h
+   if ( int_sec == 0 ) then
+     int_sec    = 3600 * config_flags%auxinput5_interval_h
    endif
-   if ( interval_seconds == 0 ) then
-     interval_seconds    = 86400 * config_flags%auxinput5_interval_d
+   if ( int_sec == 0 ) then
+     int_sec    = 86400 * config_flags%auxinput5_interval_d
    endif
-   if ( interval_seconds == 0 ) then
-     interval_seconds    = 2592000 * config_flags%auxinput5_interval_m
-   endif
+   CALL domain_clock_set( grid, &
+                          time_step_seconds=int_Sec )
+  
 
    real_data_init_type = model_config_rec%real_data_init_type
 
@@ -322,7 +325,7 @@ PROGRAM convert_emissions
            start_year,start_month,start_day,start_hour,start_minute,start_second
    WRITE (   end_date_char , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2)' ) &
              end_year,  end_month,  end_day,  end_hour,  end_minute,  end_second
-   print *,'START DATE ',start_date_char
+   print *,'START DATE ',start_date_char, int_sec, model_config_rec%interval_seconds
    print *,'END DATE ',end_date_char
 
 ! these are needed on some compilers, eg compaq/alpha, to
@@ -1523,7 +1526,7 @@ PROGRAM convert_emissions
    CALL  wrf_message ( message )
    current_date_char = start_date_char
    loop_count : DO
-      CALL geth_newdate ( next_date_char , current_date_char , interval_seconds )
+      CALL geth_newdate ( next_date_char , current_date_char , int_sec )
       IF      ( next_date_char .LT. end_date_char ) THEN
          time_loop = time_loop + 1
          write(message,FMT='(A,I4,A,A)') 'Time period #',time_loop,' to process = ',next_date_char
@@ -1641,6 +1644,8 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+
+     IF (inew_nei .eq. 1) THEN
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
@@ -1651,6 +1656,7 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no2)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     ENDIF
 
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
@@ -1860,7 +1866,8 @@ PROGRAM convert_emissions
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no3j)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
 
-!!! naai and naaj for aqmeii
+     IF (inew_nei .eq. 1) THEN
+!! naai and naaj for aqmeii
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
@@ -1879,6 +1886,7 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_naaj)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     ENDIF
 !
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
@@ -1984,7 +1992,7 @@ PROGRAM convert_emissions
      CALL  wrf_debug ( 100, message )
 
      current_date_char = current_date(1:19)
-     CALL geth_newdate ( next_date_char, current_date_char, int(interval_seconds) )
+     CALL geth_newdate ( next_date_char, current_date_char, int(int_sec) )
      current_date = next_date_char // '.0000'
 
      write(message,FMT='(A,A)') ' Date &  time ',Trim(current_date)
@@ -2034,7 +2042,7 @@ PROGRAM convert_emissions
      CALL  wrf_debug ( 100, message )
 
      current_date_char = current_date(1:19)
-     CALL geth_newdate ( next_date_char, current_date_char, int(interval_seconds) )
+     CALL geth_newdate ( next_date_char, current_date_char, int(int_sec) )
      current_date = next_date_char // '.0000'
 
      write(message,FMT='(A,A)') ' Date &  time ',Trim(current_date)
@@ -2135,6 +2143,7 @@ PROGRAM convert_emissions
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
 
+     IF (inew_nei .eq. 1) THEN
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
@@ -2145,6 +2154,7 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no2)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+      ENDIF
 !
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
@@ -2353,6 +2363,30 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_no3j)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+!
+!  AQMEII
+     IF (inew_nei .eq. 1) THEN
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_naai)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+!
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_naaj)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+     ENDIF
+!
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
@@ -2390,27 +2424,6 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_ecj)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
-!
-!
-#ifdef DM_PARALLEL
-     IF (wrf_dm_on_monitor()) THEN
-         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
-     ENDIF
-     DM_BCAST_MACRO(dumc0)
-#else
-         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
-#endif
-         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_naai)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
-!
-#ifdef DM_PARALLEL
-     IF (wrf_dm_on_monitor()) THEN
-         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
-     ENDIF
-     DM_BCAST_MACRO(dumc0)
-#else
-         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
-#endif
-         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_naaj)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
 !
 #ifdef DM_PARALLEL
      IF (wrf_dm_on_monitor()) THEN

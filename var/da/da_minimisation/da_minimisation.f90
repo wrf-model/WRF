@@ -27,7 +27,7 @@ module da_minimisation
    use da_buoy , only : da_calculate_grady_buoy, da_ao_stats_buoy, &
       da_oi_stats_buoy,da_get_innov_vector_buoy, da_residual_buoy, &
       da_jo_and_grady_buoy
-   use da_control, only : trace_use, var4d_bin, &
+   use da_control, only : trace_use, var4d_bin, trajectory_io, &
       var4d, rootproc,jcdfi_use,jcdfi_diag,ierr,comm,num_fgat_time, &
       var4d_lbc, stdout, eps, stats_unit, test_dm_exact, global, multi_inc, &
       calculate_cg_cost_fn,anal_type_randomcv,cv_size_domain,je_factor, &
@@ -133,7 +133,7 @@ module da_minimisation
    use da_tools_serial, only : da_get_unit,da_free_unit
    use da_tracing, only : da_trace_entry, da_trace_exit,da_trace
    use da_transfer_model, only : da_transfer_wrftltoxa,da_transfer_xatowrftl, &
-      da_transfer_xatowrftl_adj,da_setup_firstguess,da_transfer_wrftltoxa_adj
+      da_transfer_xatowrftl_adj,da_transfer_wrftltoxa_adj
 #if defined(RTTOV) || defined(CRTM)
    use da_varbc, only : da_varbc_tl,da_varbc_adj
 #endif
@@ -145,7 +145,9 @@ module da_minimisation
    use da_4dvar, only : da_tl_model, da_ad_model, model_grid, input_nl_xtraj, &
        kj_swap_reverse, upsidedown_ad_forcing
    use da_transfer_model, only : da_transfer_xatowrftl_lbc, da_transfer_xatowrftl_adj_lbc, &
-      da_transfer_wrftl_lbc_t0, da_transfer_wrftl_lbc_t0_adj, da_get_2nd_firstguess
+      da_transfer_wrftl_lbc_t0, da_transfer_wrftl_lbc_t0_adj, da_get_2nd_firstguess, &
+      da_transfer_wrftoxb
+   USE module_io_wrf, only : auxinput6_only
 #endif
 
    implicit none

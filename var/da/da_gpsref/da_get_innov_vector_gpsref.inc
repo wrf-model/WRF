@@ -198,8 +198,8 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
         iv%gpsref(n)%p(k)%qc = -5
       else
         n_rej = n_rej + 1
-        write (*,'(a,3i6,i10,a,f15.3)') "GPSREF: n_rej, n, k, kk:", &
-                 n_rej, n, k, kk, "  zk=",iv%info(gpsref)%zk(k,n)
+        !write (*,'(a,3i6,i10,a,f15.3)') "GPSREF: n_rej, n, k, kk:", &
+        !         n_rej, n, k, kk, "  zk=",iv%info(gpsref)%zk(k,n)
       endif
    end do
 !..............................................................................

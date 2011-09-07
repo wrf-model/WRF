@@ -534,6 +534,10 @@ while ( <CONFIGURE_DEFAULTS> )
         if ( $paropt eq 'dmpar' || $paropt eq 'dm+sm' ) { 
           if ( $sw_os ne "CYGWIN_NT" ) {
             $sw_comms_lib = "\$(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a" ;
+            if ( $sw_wrf_core eq "4D_DA_CORE" )
+            {
+              $sw_comms_lib = "\$(WRFPLUS_DIR)/external/RSL_LITE/librsl_lite.a" ;
+            }
           } else {
             $sw_comms_lib = "../external/RSL_LITE/librsl_lite.a" ;
           }

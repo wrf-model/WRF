@@ -191,7 +191,7 @@ BENCH_END(init_zero_tend_tim)
                         grid%ph_2, grid%phb, grid%t_2, grid%tsk, moist, num_moist,   &
                         rho,th_phy, p_phy, pi_phy, u_phy, v_phy,         &
                         p8w, t_phy, t8w, grid%z, grid%z_at_w, dz8w,      &
-                        grid%p_hyd, grid%p_hyd_w,                        &
+                        grid%p_hyd, grid%p_hyd_w, grid%dnw,              &
                         grid%fnm, grid%fnp, grid%znw, grid%p_top,        &
                         grid%rthraten,                                   &
                         grid%rthblten, grid%rublten, grid%rvblten,       &

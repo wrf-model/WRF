@@ -75,6 +75,7 @@
 #endif
 
    REAL :: qvf1, qvf2, qvf
+   REAL :: pfu, pfd, phm
    REAL :: MPDT
    REAL :: spongeweight
    LOGICAL :: first_trip_for_this_domain, start_of_simulation, fill_w_flag
@@ -417,9 +418,19 @@
             !  This field is on full levels.
 
             grid%phb(i,1,j) = grid%ht(i,j) * g
-            DO k  = 2,kte
-               grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
-            END DO
+
+            IF ( config_flags%hypsometric_opt .EQ. 1 ) THEN
+               DO k  = 2,kte
+                  grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
+               END DO
+            ELSE IF ( config_flags%hypsometric_opt .EQ. 2 ) THEN
+               DO k  = 2,kte
+                  pfu = grid%mub(i,j)*grid%znw(k)   + grid%p_top
+                  pfd = grid%mub(i,j)*grid%znw(k-1) + grid%p_top
+                  phm = grid%mub(i,j)*grid%znu(k-1) + grid%p_top
+                  grid%phb(i,k,j) = grid%phb(i,k-1,j) + grid%alb(i,k-1,j)*phm*LOG(pfd/pfu)
+               END DO
+            END IF
          END DO
       END DO
 
@@ -490,14 +501,34 @@
      ENDDO
     ENDIF
 
-! Use equations from calc_p_rho_phi to derive p and al from ph
+! Use equations from calc_p_rho_phi to derive p and al from ph: linear in log p
 
+    IF ( config_flags%hypsometric_opt .EQ. 1 ) THEN
+       DO j=jts,min(jte,jde-1)
+       DO k=kts,kte-1
+       DO i=its,min(ite,ide-1)
+          grid%al(i,k,j)=-1./(grid%mub(i,j)+grid%mu_1(i,j))*(grid%alb(i,k,j)*grid%mu_1(i,j)  &
+                     +grid%rdnw(k)*(grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)))
+       ENDDO
+       ENDDO
+       ENDDO
+    ELSE IF ( config_flags%hypsometric_opt .EQ. 2 ) THEN
+       DO j=jts,min(jte,jde-1)
+       DO k=kts,kte-1
+       DO i=its,min(ite,ide-1)
+          pfu = (grid%mub(i,j)+grid%mu_1(i,j))*grid%znw(k+1)+grid%p_top
+          pfd = (grid%mub(i,j)+grid%mu_1(i,j))*grid%znw(k)  +grid%p_top
+          phm = (grid%mub(i,j)+grid%mu_1(i,j))*grid%znu(k)  +grid%p_top
+          grid%al(i,k,j) = (grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)+grid%phb(i,k+1,j)-grid%phb(i,k,j)) &
+                            /phm/LOG(pfd/pfu)-grid%alb(i,k,j)
+       ENDDO
+       ENDDO
+       ENDDO
+    END IF
     DO j=jts,min(jte,jde-1)
     DO k=kts,kte-1
     DO i=its,min(ite,ide-1)
        qvf = 1.+rvovrd*moist(i,k,j,P_QV)
-       grid%al(i,k,j)=-1./(grid%mub(i,j)+grid%mu_1(i,j))*(grid%alb(i,k,j)*grid%mu_1(i,j)  &
-                  +grid%rdnw(k)*(grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)))
        grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_1(i,k,j))*qvf)/                     &
                   (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
                   -grid%pb(i,k,j)
@@ -506,42 +537,6 @@
     ENDDO
     ENDDO
     ENDDO
-
-#if 0
-     DO j = jts,min(jte,jde-1)
-
-       k = kte-1
-       DO i = its, min(ite,ide-1)
-         IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
-           qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k,j,P_QV))
-           qvf2 = 1./(1.+qvf1)
-           qvf1 = qvf1*qvf2
-           grid%p(i,k,j) = - 0.5*(grid%mu_1(i,j)+qvf1*grid%mub(i,j))/grid%rdnw(k)/qvf2
-           grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
-           qvf = 1. + rvovrd*moist(i,k,j,P_QV)
-           grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf*(((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
-           grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
-         ENDIF
-       ENDDO
-
-       DO k = kte-2, 1, -1
-       DO i = its, min(ite,ide-1)
-         IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
-           qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k+1,j,P_QV))
-           qvf2 = 1./(1.+qvf1)
-           qvf1 = qvf1*qvf2
-           grid%p(i,k,j) = grid%p(i,k+1,j) - (grid%mu_1(i,j) + qvf1*grid%mub(i,j))/qvf2/grid%rdn(k+1)
-           grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
-           qvf = 1. + rvovrd*moist(i,k,j,P_QV)
-           grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
-                        (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
-           grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
-         ENDIF
-       ENDDO
-       ENDDO
-
-     ENDDO
-#endif
 
    ENDIF
 

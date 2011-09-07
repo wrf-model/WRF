@@ -56,6 +56,7 @@
    REAL        :: p00, t00, a, tiso, p_surf, pd_surf, temp
 
    REAL :: qvf1, qvf2, qvf, a_qvf
+   REAL :: pfu, pfd, phm, a_pfu, a_pfd, a_phm
    REAL :: MPDT
    REAL :: spongeweight
    LOGICAL :: first_trip_for_this_domain, start_of_simulation, fill_w_flag
@@ -75,7 +76,7 @@
 
    INTEGER :: idex, jdex
    INTEGER :: im1,ip1,jm1,jp1
-   REAL :: temp2, temp1, temp0, temp0b, tempb 
+   REAL :: temp2, temp1, temp0, temp0b, tempb, tempb0 
    CHARACTER (LEN=256) :: timestr
 
    CALL get_ijk_from_grid ( grid ,                              &
@@ -165,9 +166,19 @@
             !  This field is on full levels.
 
             grid%phb(i,1,j) = grid%ht(i,j) * g
-            DO k  = 2,kte
-               grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
-            END DO
+
+            IF ( config_flags%hypsometric_opt .EQ. 1 ) THEN
+               DO k  = 2,kte
+                  grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
+               END DO
+            ELSE IF ( config_flags%hypsometric_opt .EQ. 2 ) THEN
+               DO k  = 2,kte
+                  pfu = grid%mub(i,j)*grid%znw(k)   + grid%p_top
+                  pfd = grid%mub(i,j)*grid%znw(k-1) + grid%p_top
+                  phm = grid%mub(i,j)*grid%znu(k-1) + grid%p_top
+                  grid%phb(i,k,j) = grid%phb(i,k-1,j) + grid%alb(i,k-1,j)*phm*LOG(pfd/pfu)
+               END DO
+            END IF
          END DO
       END DO
 
@@ -568,14 +579,28 @@
 
 ! Use equations from calc_p_rho_phi to derive p and al from ph
 
-    DO j=jts,min(jte,jde-1)
-    DO k=kts,kte-1
-    DO i=its,min(ite,ide-1)
-       grid%al(i,k,j)=-1./(grid%mub(i,j)+grid%mu_1(i,j))*(grid%alb(i,k,j)*grid%mu_1(i,j)  &
-                  +grid%rdnw(k)*(grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)))
-    ENDDO
-    ENDDO
-    ENDDO
+    IF ( config_flags%hypsometric_opt .EQ. 1 ) THEN
+       DO j=jts,min(jte,jde-1)
+       DO k=kts,kte-1
+       DO i=its,min(ite,ide-1)
+          grid%al(i,k,j)=-1./(grid%mub(i,j)+grid%mu_1(i,j))*(grid%alb(i,k,j)*grid%mu_1(i,j)  &
+                     +grid%rdnw(k)*(grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)))
+       ENDDO
+       ENDDO
+       ENDDO
+    ELSE IF ( config_flags%hypsometric_opt .EQ. 2 ) THEN
+       DO j=jts,min(jte,jde-1)
+       DO k=kts,kte-1
+       DO i=its,min(ite,ide-1)
+          pfu = (grid%mub(i,j)+grid%mu_1(i,j))*grid%znw(k+1)+grid%p_top
+          pfd = (grid%mub(i,j)+grid%mu_1(i,j))*grid%znw(k)  +grid%p_top
+          phm = (grid%mub(i,j)+grid%mu_1(i,j))*grid%znu(k)  +grid%p_top
+          grid%al(i,k,j) = (grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)+grid%phb(i,k+1,j)-grid%phb(i,k,j)) &
+                            /phm/LOG(pfd/pfu)-grid%alb(i,k,j)
+       ENDDO
+       ENDDO
+       ENDDO
+    END IF
 
     DO j=min(jte,jde-1),jts,-1
     DO k=kte-1,kts,-1
@@ -597,17 +622,49 @@
         grid%a_t_1(i,k,j) = grid%a_t_1(i,k,j) + qvf*temp0b
         a_qvf = temp1*temp0b
         grid%a_p(i,k,j) = 0.0
-        temp = grid%mub(i,j) + grid%mu_1(i,j)
-        tempb = -(grid%a_al(i,k,j)/temp)
-        grid%a_mu_1(i,j) = grid%a_mu_1(i,j) + (grid%alb(i,k,j)-(grid%alb(i,k,j)*grid%mu_1(i,j) &
-           +grid%rdnw(k)*(grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)))/temp)*tempb
-        grid%a_ph_1(i,k+1,j) = grid%a_ph_1(i,k+1,j) + grid%rdnw(k)*tempb
-        grid%a_ph_1(i,k,j) = grid%a_ph_1(i,k,j) - grid%rdnw(k)*tempb
-        grid%a_al(i,k,j) = 0.0
         grid%a_moist(i,k,j,P_QV) = grid%a_moist(i,k,j,P_QV) + rvovrd*a_qvf
     ENDDO
     ENDDO
     ENDDO
+
+    IF ( config_flags%hypsometric_opt .EQ. 1 ) THEN
+       DO j=min(jte,jde-1),jts,-1
+       DO k=kte-1,kts,-1
+       DO i=min(ite,ide-1),its,-1
+          temp = grid%mub(i,j) + grid%mu_1(i,j)
+          tempb = -(grid%a_al(i,k,j)/temp)
+          grid%a_mu_1(i,j) = grid%a_mu_1(i,j) + (grid%alb(i,k,j)-(grid%alb(i,k,j)*grid%mu_1(i,j) &
+             +grid%rdnw(k)*(grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)))/temp)*tempb
+          grid%a_ph_1(i,k+1,j) = grid%a_ph_1(i,k+1,j) + grid%rdnw(k)*tempb
+          grid%a_ph_1(i,k,j) = grid%a_ph_1(i,k,j) - grid%rdnw(k)*tempb
+          grid%a_al(i,k,j) = 0.0
+       ENDDO
+       ENDDO
+       ENDDO
+    ELSE IF ( config_flags%hypsometric_opt .EQ. 2 ) THEN
+       DO j=min(jte,jde-1),jts,-1
+       DO k=kte-1,kts,-1
+       DO i=min(ite,ide-1),its,-1
+          pfu = (grid%mub(i,j)+grid%mu_1(i,j))*grid%znw(k+1) + grid%p_top
+          phm = (grid%mub(i,j)+grid%mu_1(i,j))*grid%znu(k) + grid%p_top
+          pfd = (grid%mub(i,j)+grid%mu_1(i,j))*grid%znw(k) + grid%p_top
+          temp0 = pfd/pfu
+          temp1 = LOG(temp0)
+          temp = phm*temp1
+          tempb = grid%a_al(i,k,j)/temp
+          tempb0 = -((grid%phb(i,k+1,j)-grid%phb(i,k,j)+grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j))*tempb/temp)
+          temp0b = phm*tempb0/(temp0*pfu)
+          grid%a_ph_1(i,k+1,j) = grid%a_ph_1(i,k+1,j) + tempb
+          grid%a_ph_1(i,k,j) = grid%a_ph_1(i,k,j) - tempb
+          a_phm = temp1*tempb0
+          a_pfd = temp0b
+          a_pfu = -(temp0*temp0b)
+          grid%a_al(i,k,j) = 0.0
+          grid%a_mu_1(i,j) = grid%a_mu_1(i,j) + grid%znw(k)*a_pfd + grid%znw(k+1)*a_pfu + grid%znu(k)*a_phm
+       ENDDO
+       ENDDO
+       ENDDO
+    END IF
 
 !  if this is for a nested domain, the defined/interpolated fields are the _2
 

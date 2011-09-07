@@ -193,7 +193,7 @@ use module_scalar_tables
                         grid%ph_2, grid%phb, grid%t_2, grid%tsk, moist, num_moist,   &
                         rho,th_phy, p_phy, pi_phy, u_phy, v_phy,         &
                         p8w, t_phy, t8w, grid%z, grid%z_at_w, dz8w,      &
-                        grid%p_hyd, grid%p_hyd_w,                        &
+                        grid%p_hyd, grid%p_hyd_w, grid%dnw,              &
                         grid%fnm, grid%fnp, grid%znw, grid%p_top,        &
                         grid%rthraten,                                   &
                         grid%rthblten, grid%rublten, grid%rvblten,       &
@@ -438,6 +438,7 @@ BENCH_END(a_pbl_driver_tim)
                         p8w,a_p8w, grid%t_phy,grid%a_t_phy, t8w,a_t8w, grid%z,grid%a_z, &
                         grid%z_at_w,grid%a_z_at_w, dz8w,a_dz8w,               &
                         grid%p_hyd,grid%a_p_hyd, grid%p_hyd_w,grid%a_p_hyd_w, &
+                        grid%dnw,                                             &
                         grid%fnm, grid%fnp, grid%znw, grid%p_top,             &
                         grid%rthraten, grid%a_rthraten,                       &
                         grid%rthblten, grid%a_rthblten,                       &

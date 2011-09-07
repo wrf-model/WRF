@@ -32,11 +32,7 @@ subroutine da_uv_to_divergence_adj(grid, u, v, div)
 
    one_third = 1.0 / 3.0
 
-   if (test_transforms) then
-      is = its; ie = ite; js = jts; je = jte
-   else
-      is = its - 1; ie = ite + 1; js = jts - 1; je = jte + 1
-   end if
+   is = its - 1; ie = ite + 1; js = jts - 1; je = jte + 1
 
    if (.not. global .and. its == ids) is = ids+1
    if (.not. global .and. ite == ide) ie = ide-1
@@ -102,17 +98,15 @@ subroutine da_uv_to_divergence_adj(grid, u, v, div)
          ! This is only for adjoint, as we have to cross the processor boundary
          ! to get the contribution.
 
-         if (.not. test_transforms) then
-            grid%xp%vxy(its:ite, jts:jte) = div(its:ite, jts:jte, k)
+         grid%xp%vxy(its:ite, jts:jte) = div(its:ite, jts:jte, k)
 #ifdef DM_PARALLEL
 #include "HALO_2D_WORK.inc"
 #endif
 
-            div(is, js:je, k) = grid%xp%vxy(is, js:je)
-            div(ie, js:je, k) = grid%xp%vxy(ie, js:je)
-            div(is:ie, js, k) = grid%xp%vxy(is:ie, js)
-            div(is:ie, je, k) = grid%xp%vxy(is:ie, je)
-         end if
+         div(is, js:je, k) = grid%xp%vxy(is, js:je)
+         div(ie, js:je, k) = grid%xp%vxy(ie, js:je)
+         div(is:ie, js, k) = grid%xp%vxy(is:ie, js)
+         div(is:ie, je, k) = grid%xp%vxy(is:ie, je)
 
          do j = js, je
             do i = is, ie

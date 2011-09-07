@@ -62,6 +62,16 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
    enddo
 
    call da_transfer_wrftl_lbc_t0_adj ( grid )
+
+   ! output gradient here, without LBC control 
+   if ( .not. trajectory_io .or. var4d_detail_out ) then
+      config_flags%auxhist7_outname = "gradient_d<domain>_<date>"
+      call  med_hist_out ( grid , AUXHIST7_ALARM , config_flags )
+      WRITE(message(1), FMT='(A)') 'Output gradient at 0h (including LBC gradient)'
+      CALL da_message ( message(1:1) )
+      config_flags%auxhist7_outname = "auxhist7_d<domain>_<date>"
+   endif
+
 #endif
 
    else

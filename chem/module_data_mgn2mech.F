@@ -71,7 +71,7 @@ CONTAINS
 
   SUBROUTINE get_megan2mozcart_table
 !--------------------------------------------------------------------
-! For MEGAN v2.04 species conversion to CBMZ species 
+! For MEGAN v2.04 species conversion to MOZCART species 
 ! Based on Tan's MAP_CV2CBMZ.EXT; updated on 08/03/2007
 ! based on Rahul A. Zaveri's suggestions.
 !--------------------------------------------------------------------

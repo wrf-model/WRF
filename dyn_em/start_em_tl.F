@@ -56,6 +56,7 @@
    REAL        :: p00, t00, a, tiso, p_surf, pd_surf, temp
 
    REAL :: qvf1, qvf2, qvf, pwx1 ,g_qvf,g_pwx1, pwr1, g_pwr1
+   REAL :: pfu, pfd, phm, g_pfu, g_pfd, g_phm
    REAL :: MPDT
    REAL :: spongeweight
    LOGICAL :: first_trip_for_this_domain, start_of_simulation, fill_w_flag
@@ -164,9 +165,19 @@
             !  This field is on full levels.
 
             grid%phb(i,1,j) = grid%ht(i,j) * g
-            DO k  = 2,kte
-               grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
-            END DO
+
+            IF ( config_flags%hypsometric_opt .EQ. 1 ) THEN
+               DO k  = 2,kte
+                  grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
+               END DO
+            ELSE IF ( config_flags%hypsometric_opt .EQ. 2 ) THEN
+               DO k  = 2,kte
+                  pfu = grid%mub(i,j)*grid%znw(k)   + grid%p_top
+                  pfd = grid%mub(i,j)*grid%znw(k-1) + grid%p_top
+                  phm = grid%mub(i,j)*grid%znu(k-1) + grid%p_top
+                  grid%phb(i,k,j) = grid%phb(i,k-1,j) + grid%alb(i,k-1,j)*phm*LOG(pfd/pfu)
+               END DO
+            END IF
          END DO
       END DO
 
@@ -227,19 +238,48 @@
      ENDDO
     ENDIF
 
-! Use equations from calc_p_rho_phi to derive p and al from ph
+! Use equations from calc_p_rho_phi to derive p and al from ph: linear in log p
 
+    IF ( config_flags%hypsometric_opt .EQ. 1 ) THEN
+       DO j=jts,min(jte,jde-1)
+       DO k=kts,kte-1
+       DO i=its,min(ite,ide-1)
+          grid%g_al(i,k,j) = -((grid%alb(i,k,j)*grid%g_mu_1(i,j)+grid%rdnw(k)*(grid%g_ph_1(i,k+1,j) &
+             -grid%g_ph_1(i,k,j)))/(grid%mub(i,j)+grid%mu_1(i,j))-grid%g_mu_1(i,j)*(grid%alb(i,k,j) &
+             *grid%mu_1(i,j)+grid%rdnw(k)*(grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)))/(grid%mub(i,j)+grid%mu_1(i,j))**2)
+          grid%al(i,k,j)=-1./(grid%mub(i,j)+grid%mu_1(i,j))*(grid%alb(i,k,j)*grid%mu_1(i,j)  &
+                     +grid%rdnw(k)*(grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)))
+
+       ENDDO
+       ENDDO
+       ENDDO
+    ELSE IF ( config_flags%hypsometric_opt .EQ. 2 ) THEN
+       DO j=jts,min(jte,jde-1)
+       DO k=kts,kte-1
+       DO i=its,min(ite,ide-1)
+          pfu = (grid%mub(i,j)+grid%mu_1(i,j))*grid%znw(k+1)+grid%p_top
+          g_pfu = grid%g_mu_1(i,j)*grid%znw(k+1)
+          pfd = (grid%mub(i,j)+grid%mu_1(i,j))*grid%znw(k)  +grid%p_top
+          g_pfd = grid%g_mu_1(i,j)*grid%znw(k)
+          phm = (grid%mub(i,j)+grid%mu_1(i,j))*grid%znu(k)  +grid%p_top
+          g_phm = grid%g_mu_1(i,j)*grid%znu(k)
+
+          grid%g_al(i,k,j) = (((grid%g_ph_1(i,k+1,j)-grid%g_ph_1(i,k,j))*phm- &
+                 (grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)+grid%phb(i,k+1,j)-grid%phb(i,k,j)) &
+                 *g_phm)*LOG(pfd/pfu)/phm**2-(grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)+ &
+                 grid%phb(i,k+1,j)-grid%phb(i,k,j))*(g_pfd*pfu-pfd*g_pfu)/(phm*pfu*pfd))/LOG(pfd/pfu)**2
+
+          grid%al(i,k,j) = (grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)+grid%phb(i,k+1,j)-grid%phb(i,k,j)) &
+                            /phm/LOG(pfd/pfu)-grid%alb(i,k,j)
+       ENDDO
+       ENDDO
+       ENDDO
+    END IF
     DO j=jts,min(jte,jde-1)
     DO k=kts,kte-1
     DO i=its,min(ite,ide-1)
        g_qvf = rvovrd*g_moist(i,k,j,P_QV)
        qvf = 1.+rvovrd*moist(i,k,j,P_QV)
-
-       grid%g_al(i,k,j) = -((grid%alb(i,k,j)*grid%g_mu_1(i,j)+grid%rdnw(k)*(grid%g_ph_1(i,k+1,j) &
-          -grid%g_ph_1(i,k,j)))/(grid%mub(i,j)+grid%mu_1(i,j))-grid%g_mu_1(i,j)*(grid%alb(i,k,j) &
-          *grid%mu_1(i,j)+grid%rdnw(k)*(grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)))/(grid%mub(i,j)+grid%mu_1(i,j))**2)
-       grid%al(i,k,j)=-1./(grid%mub(i,j)+grid%mu_1(i,j))*(grid%alb(i,k,j)*grid%mu_1(i,j)  &
-                  +grid%rdnw(k)*(grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)))
 
        g_pwx1 = (r_d*(grid%g_t_1(i,k,j)*qvf+(t0+grid%t_1(i,k,j))*g_qvf)*p1000mb*&
           (grid%al(i,k,j)+grid%alb(i,k,j))-r_d*(t0+grid%t_1(i,k,j))*qvf*p1000mb*&

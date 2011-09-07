@@ -1529,16 +1529,18 @@ END SUBROUTINE A_COUPLE_MOMENTUM
 !   with respect to varying inputs: p al t muts ph moist mu
 !   RW status of diff variables: p:in-out al:in-out t:incr muts:incr
 !                ph:in-out moist:incr mu:incr
-SUBROUTINE A_CALC_P_RHO_PHI(moist, moistb, n_moist, al, alb0, alb, mu, &
-&  mub, muts, mutsb, ph, phb, p, pb0, pb, t, tb, p0, t0, znu, dnw, rdnw, &
-&  rdn, non_hydrostatic, ids, ide, jds, jde, kds, kde, ims, ime, jms, jme&
-&  , kms, kme, its, ite, jts, jte, kts, kte)
+SUBROUTINE A_CALC_P_RHO_PHI(moist, moistb, n_moist, hypsometric_opt, al&
+&  , alb0, alb, mu, mub, muts, mutsb, ph, phb0, phb, p, pb0, pb, t, tb, &
+&  p0, t0, ptop, znu, znw, dnw, rdnw, rdn, non_hydrostatic, ids, ide, jds&
+&  , jde, kds, kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte, kts&
+&  , kte)
   IMPLICIT NONE
 ! Input data
   LOGICAL, INTENT(IN) :: non_hydrostatic
   INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
 &  jme, kms, kme, its, ite, jts, jte, kts, kte
   INTEGER, INTENT(IN) :: n_moist
+  INTEGER, INTENT(IN) :: hypsometric_opt
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: alb, pb, t
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: tb
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme, n_moist), INTENT(IN) :: &
@@ -1546,27 +1548,35 @@ SUBROUTINE A_CALC_P_RHO_PHI(moist, moistb, n_moist, al, alb0, alb, mu, &
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme, n_moist) :: moistb
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: al, p
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: alb0, pb0
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: ph
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: phb
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: ph, phb
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: phb0
   REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mu, muts
   REAL, DIMENSION(ims:ime, jms:jme) :: mub, mutsb
-  REAL, DIMENSION(kms:kme), INTENT(IN) :: znu, dnw, rdnw, rdn
-  REAL, INTENT(IN) :: t0, p0
+  REAL, DIMENSION(kms:kme), INTENT(IN) :: znu, znw, dnw, rdnw, rdn
+  REAL, INTENT(IN) :: t0, p0, ptop
 ! Local stuff
   INTEGER :: i, j, k, itf, jtf, ktf, ispe
   REAL :: qvf, qtot, qf1, qf2
   REAL :: qvfb, qtotb, qf1b
   REAL, DIMENSION(its:ite) :: temp, cpovcv_v
   REAL, DIMENSION(its:ite) :: tempb
+  REAL :: pfu, phm, pfd
+  REAL :: pfub, phmb, pfdb
   INTEGER :: arg1
+  INTEGER :: branch
   REAL :: temp3
   REAL :: temp2
   REAL :: temp1
   REAL :: temp0
+  REAL :: temp16b
   REAL :: temp0b
   REAL :: temp3b
+  REAL :: temp18
+  REAL :: temp17
   REAL :: temp12b
+  REAL :: temp16
   REAL :: temp6b
+  REAL :: temp15
   REAL :: temp14
   REAL :: temp13
   REAL :: temp12
@@ -1574,10 +1584,12 @@ SUBROUTINE A_CALC_P_RHO_PHI(moist, moistb, n_moist, al, alb0, alb, mu, &
   REAL :: temp10
   REAL :: temp0b0
   REAL :: temp8b0
+  REAL :: temp14b
   REAL :: temp8b
   REAL :: temp3b0
+  REAL :: temp12b2
+  REAL :: temp12b1
   REAL :: temp12b0
-  REAL :: temp6b1
   REAL :: temp6b0
   REAL :: temp9
   REAL :: temp8
@@ -1603,15 +1615,47 @@ SUBROUTINE A_CALC_P_RHO_PHI(moist, moistb, n_moist, al, alb0, alb, mu, &
   ELSE
     ktf = kte
   END IF
+!#ifndef INTELMKL
   cpovcv_v = cpovcv
+!#endif
   IF (non_hydrostatic) THEN
+    IF (hypsometric_opt .EQ. 1) THEN
+      DO j=jts,jtf
+        DO k=kts,ktf
+          DO i=its,itf
+            al(i, k, j) = -(1./muts(i, j)*(alb(i, k, j)*mu(i, j)+rdnw(k)&
+&              *(ph(i, k+1, j)-ph(i, k, j))))
+          END DO
+        END DO
+      END DO
+      CALL PUSHCONTROL2B(0)
+    ELSE IF (hypsometric_opt .EQ. 2) THEN
+! The relation used to get specific volume, al, is: al = -dZ/dp,
+! where dp = mut * d(eta). The pressure depth, dp, is replaced with
+! p*(dp/p) ~ p*LOG((p+0.5dp)/(p-0.5dp)). Difference between dp and p*dLOG(p)
+! is as follows: p*dLOG(p) - dp = 1/12*(dp/p)**3 + 1/90*(dp/p)**5 + ...
+! Therefore, p*dLOG(p) is always larger than dp and the difference is
+! in proportion to dp/p. TKW, 02/16/2010
+      DO j=jts,jtf
+        DO k=kts,ktf
+          DO i=its,itf
+            pfu = muts(i, j)*znw(k+1) + ptop
+            pfd = muts(i, j)*znw(k) + ptop
+            phm = muts(i, j)*znu(k) + ptop
+            al(i, k, j) = (ph(i, k+1, j)-ph(i, k, j)+phb(i, k+1, j)-phb(&
+&              i, k, j))/phm/LOG(pfd/pfu) - alb(i, k, j)
+          END DO
+        END DO
+      END DO
+      CALL PUSHCONTROL2B(1)
+    ELSE
+      CALL PUSHCONTROL2B(2)
+    END IF
     IF (n_moist .GE. param_first_scalar) THEN
       DO j=jts,jtf
         DO k=kts,ktf
           DO i=its,itf
             qvf = 1. + rvovrd*moist(i, k, j, p_qv)
-            al(i, k, j) = -(1./muts(i, j)*(alb(i, k, j)*mu(i, j)+rdnw(k)&
-&              *(ph(i, k+1, j)-ph(i, k, j))))
             CALL PUSHREAL8(temp(i))
             temp(i) = r_d*(t0+t(i, k, j))*qvf/(p0*(al(i, k, j)+alb(i, k&
 &              , j)))
@@ -1630,251 +1674,295 @@ SUBROUTINE A_CALC_P_RHO_PHI(moist, moistb, n_moist, al, alb0, alb, mu, &
           DO i=itf,its,-1
             qvf = 1. + rvovrd*moist(i, k, j, p_qv)
             CALL POPREAL8(temp(i))
-            temp11 = p0*(alb(i, k, j)+al(i, k, j))
-            temp10 = t0 + t(i, k, j)
-            temp10b0 = r_d*tempb(i)/temp11
-            tb(i, k, j) = tb(i, k, j) + qvf*temp10b0
-            qvfb = temp10*temp10b0
-            alb0(i, k, j) = alb0(i, k, j) - temp10*qvf*p0*temp10b0/&
-&              temp11
+            temp15 = p0*(alb(i, k, j)+al(i, k, j))
+            temp14 = t0 + t(i, k, j)
+            temp14b = r_d*tempb(i)/temp15
+            tb(i, k, j) = tb(i, k, j) + qvf*temp14b
+            qvfb = temp14*temp14b
+            alb0(i, k, j) = alb0(i, k, j) - temp14*qvf*p0*temp14b/temp15
             tempb(i) = 0.0
-            temp10b1 = -(alb0(i, k, j)/muts(i, j))
-            mub(i, j) = mub(i, j) + alb(i, k, j)*temp10b1
-            phb(i, k+1, j) = phb(i, k+1, j) + rdnw(k)*temp10b1
-            phb(i, k, j) = phb(i, k, j) - rdnw(k)*temp10b1
-            mutsb(i, j) = mutsb(i, j) - (alb(i, k, j)*mu(i, j)+rdnw(k)*(&
-&              ph(i, k+1, j)-ph(i, k, j)))*temp10b1/muts(i, j)
-            alb0(i, k, j) = 0.0
             moistb(i, k, j, p_qv) = moistb(i, k, j, p_qv) + rvovrd*qvfb
           END DO
         END DO
       END DO
     ELSE
-      DO j=jts,jtf
-        DO k=kts,ktf
-          DO i=its,itf
-            al(i, k, j) = -(1./muts(i, j)*(alb(i, k, j)*mu(i, j)+rdnw(k)&
-&              *(ph(i, k+1, j)-ph(i, k, j))))
-          END DO
-        END DO
-      END DO
       DO j=jtf,jts,-1
         DO k=ktf,kts,-1
           DO i=itf,its,-1
-            temp14 = p0*(alb(i, k, j)+al(i, k, j))
-            temp13 = t0 + t(i, k, j)
-            temp12 = temp13/temp14
-            IF (r_d*temp12 .LE. 0.0 .AND. (cpovcv .EQ. 0.0 .OR. cpovcv &
+            temp18 = p0*(alb(i, k, j)+al(i, k, j))
+            temp17 = t0 + t(i, k, j)
+            temp16 = temp17/temp18
+            IF (r_d*temp16 .LE. 0.0 .AND. (cpovcv .EQ. 0.0 .OR. cpovcv &
 &                .NE. INT(cpovcv))) THEN
-              temp12b = 0.0
+              temp16b = 0.0
             ELSE
-              temp12b = r_d*cpovcv*(r_d*temp12)**(cpovcv-1)*p0*pb0(i, k&
-&                , j)/temp14
+              temp16b = r_d*cpovcv*(r_d*temp16)**(cpovcv-1)*p0*pb0(i, k&
+&                , j)/temp18
             END IF
-            tb(i, k, j) = tb(i, k, j) + temp12b
-            alb0(i, k, j) = alb0(i, k, j) - temp12*p0*temp12b
+            tb(i, k, j) = tb(i, k, j) + temp16b
+            alb0(i, k, j) = alb0(i, k, j) - temp16*p0*temp16b
             pb0(i, k, j) = 0.0
-            temp12b0 = -(alb0(i, k, j)/muts(i, j))
-            mub(i, j) = mub(i, j) + alb(i, k, j)*temp12b0
-            phb(i, k+1, j) = phb(i, k+1, j) + rdnw(k)*temp12b0
-            phb(i, k, j) = phb(i, k, j) - rdnw(k)*temp12b0
-            mutsb(i, j) = mutsb(i, j) - (alb(i, k, j)*mu(i, j)+rdnw(k)*(&
-&              ph(i, k+1, j)-ph(i, k, j)))*temp12b0/muts(i, j)
-            alb0(i, k, j) = 0.0
           END DO
         END DO
       END DO
     END IF
-  ELSE IF (n_moist .GE. param_first_scalar) THEN
-!  hydrostatic pressure, al, and ph1 calc; WCS, 5 sept 2001
-    DO j=jts,jtf
-! top layer
-      k = ktf
-      DO i=its,itf
-        qtot = 0.
-        DO ispe=param_first_scalar,n_moist
-          qtot = qtot + moist(i, k, j, ispe)
+    CALL POPCONTROL2B(branch)
+    IF (branch .EQ. 0) THEN
+      DO j=jtf,jts,-1
+        DO k=ktf,kts,-1
+          DO i=itf,its,-1
+            temp12b = -(alb0(i, k, j)/muts(i, j))
+            mub(i, j) = mub(i, j) + alb(i, k, j)*temp12b
+            phb0(i, k+1, j) = phb0(i, k+1, j) + rdnw(k)*temp12b
+            phb0(i, k, j) = phb0(i, k, j) - rdnw(k)*temp12b
+            mutsb(i, j) = mutsb(i, j) - (alb(i, k, j)*mu(i, j)+rdnw(k)*(&
+&              ph(i, k+1, j)-ph(i, k, j)))*temp12b/muts(i, j)
+            alb0(i, k, j) = 0.0
+          END DO
         END DO
-        qf2 = 1.
-        CALL PUSHREAL8(qf1)
-        qf1 = qtot*qf2
-        p(i, k, j) = -(0.5*(mu(i, j)+qf1*muts(i, j))/rdnw(k)/qf2)
-        qvf = 1. + rvovrd*moist(i, k, j, p_qv)
-        al(i, k, j) = r_d/p1000mb*(t(i, k, j)+t0)*qvf*((p(i, k, j)+pb(i&
-&          , k, j))/p1000mb)**cvpm - alb(i, k, j)
       END DO
-      CALL PUSHINTEGER4(k)
-! remaining layers, integrate down
-      DO k=ktf-1,kts,-1
+    ELSE IF (branch .EQ. 1) THEN
+      DO j=jtf,jts,-1
+        DO k=ktf,kts,-1
+          DO i=itf,its,-1
+            pfu = muts(i, j)*znw(k+1) + ptop
+            phm = muts(i, j)*znu(k) + ptop
+            pfd = muts(i, j)*znw(k) + ptop
+            temp12 = pfd/pfu
+            temp13 = LOG(temp12)
+            temp12b0 = alb0(i, k, j)/(phm*temp13)
+            temp12b1 = -((phb(i, k+1, j)-phb(i, k, j)+ph(i, k+1, j)-ph(i&
+&              , k, j))*temp12b0/(phm*temp13))
+            temp12b2 = phm*temp12b1/(temp12*pfu)
+            phb0(i, k+1, j) = phb0(i, k+1, j) + temp12b0
+            phb0(i, k, j) = phb0(i, k, j) - temp12b0
+            phmb = temp13*temp12b1
+            pfdb = temp12b2
+            pfub = -(temp12*temp12b2)
+            alb0(i, k, j) = 0.0
+            mutsb(i, j) = mutsb(i, j) + znw(k)*pfdb + znw(k+1)*pfub + &
+&              znu(k)*phmb
+          END DO
+        END DO
+      END DO
+    END IF
+  ELSE
+!  hydrostatic pressure, al, and ph1 calc; WCS, 5 sept 2001
+    IF (n_moist .GE. param_first_scalar) THEN
+      DO j=jts,jtf
+! top layer
+        k = ktf
         DO i=its,itf
           qtot = 0.
           DO ispe=param_first_scalar,n_moist
-            qtot = qtot + 0.5*(moist(i, k, j, ispe)+moist(i, k+1, j, &
-&              ispe))
+            qtot = qtot + moist(i, k, j, ispe)
           END DO
           qf2 = 1.
           CALL PUSHREAL8(qf1)
           qf1 = qtot*qf2
-          CALL PUSHREAL8(p(i, k, j))
-          p(i, k, j) = p(i, k+1, j) - (mu(i, j)+qf1*muts(i, j))/qf2/rdn(&
-&            k+1)
+          p(i, k, j) = -(0.5*(mu(i, j)+qf1*muts(i, j))/rdnw(k)/qf2)
           qvf = 1. + rvovrd*moist(i, k, j, p_qv)
           al(i, k, j) = r_d/p1000mb*(t(i, k, j)+t0)*qvf*((p(i, k, j)+pb(&
 &            i, k, j))/p1000mb)**cvpm - alb(i, k, j)
         END DO
-      END DO
-    END DO
-    DO j=jtf,jts,-1
-      DO k=ktf+1,2,-1
-        DO i=itf,its,-1
-          temp6b = -(dnw(k-1)*phb(i, k, j))
-          phb(i, k-1, j) = phb(i, k-1, j) + phb(i, k, j)
-          mutsb(i, j) = mutsb(i, j) + al(i, k-1, j)*temp6b
-          alb0(i, k-1, j) = alb0(i, k-1, j) + muts(i, j)*temp6b
-          mub(i, j) = mub(i, j) + alb(i, k-1, j)*temp6b
-          phb(i, k, j) = 0.0
-        END DO
-      END DO
-      DO k=kts,ktf-1,1
-        DO i=itf,its,-1
-          qvf = 1. + rvovrd*moist(i, k, j, p_qv)
-          temp5 = pb(i, k, j) + p(i, k, j)
-          temp4 = temp5/p1000mb
-          temp3 = t0 + t(i, k, j)
-          temp3b = r_d*temp4**cvpm*alb0(i, k, j)
-          tb(i, k, j) = tb(i, k, j) + qvf*temp3b/p1000mb
-          qvfb = temp3*temp3b/p1000mb
-          IF (.NOT.(temp4 .LE. 0.0 .AND. (cvpm .EQ. 0.0 .OR. cvpm .NE. &
-&              INT(cvpm)))) pb0(i, k, j) = pb0(i, k, j) + cvpm*temp4**(&
-&              cvpm-1)*temp3*qvf*r_d*alb0(i, k, j)/p1000mb**2
-          alb0(i, k, j) = 0.0
-          moistb(i, k, j, p_qv) = moistb(i, k, j, p_qv) + rvovrd*qvfb
-          qf2 = 1.
-          CALL POPREAL8(p(i, k, j))
-          temp3b0 = -(pb0(i, k, j)/(qf2*rdn(k+1)))
-          pb0(i, k+1, j) = pb0(i, k+1, j) + pb0(i, k, j)
-          mub(i, j) = mub(i, j) + temp3b0
-          qf1b = muts(i, j)*temp3b0
-          mutsb(i, j) = mutsb(i, j) + qf1*temp3b0
-          pb0(i, k, j) = 0.0
-          CALL POPREAL8(qf1)
-          qtotb = qf2*qf1b
-          DO ispe=n_moist,param_first_scalar,-1
-            moistb(i, k, j, ispe) = moistb(i, k, j, ispe) + 0.5*qtotb
-            moistb(i, k+1, j, ispe) = moistb(i, k+1, j, ispe) + 0.5*&
-&              qtotb
+        CALL PUSHINTEGER4(k)
+! remaining layers, integrate down
+        DO k=ktf-1,kts,-1
+          DO i=its,itf
+            qtot = 0.
+            DO ispe=param_first_scalar,n_moist
+              qtot = qtot + 0.5*(moist(i, k, j, ispe)+moist(i, k+1, j, &
+&                ispe))
+            END DO
+            qf2 = 1.
+            CALL PUSHREAL8(qf1)
+            qf1 = qtot*qf2
+            CALL PUSHREAL8(p(i, k, j))
+            p(i, k, j) = p(i, k+1, j) - (mu(i, j)+qf1*muts(i, j))/qf2/&
+&              rdn(k+1)
+            qvf = 1. + rvovrd*moist(i, k, j, p_qv)
+            al(i, k, j) = r_d/p1000mb*(t(i, k, j)+t0)*qvf*((p(i, k, j)+&
+&              pb(i, k, j))/p1000mb)**cvpm - alb(i, k, j)
           END DO
         END DO
       END DO
-      CALL POPINTEGER4(k)
-      DO i=itf,its,-1
-        qvf = 1. + rvovrd*moist(i, k, j, p_qv)
-        temp2 = pb(i, k, j) + p(i, k, j)
-        temp1 = temp2/p1000mb
-        temp0 = t0 + t(i, k, j)
-        temp0b = r_d*temp1**cvpm*alb0(i, k, j)
-        tb(i, k, j) = tb(i, k, j) + qvf*temp0b/p1000mb
-        qvfb = temp0*temp0b/p1000mb
-        IF (.NOT.(temp1 .LE. 0.0 .AND. (cvpm .EQ. 0.0 .OR. cvpm .NE. INT&
-&            (cvpm)))) pb0(i, k, j) = pb0(i, k, j) + cvpm*temp1**(cvpm-1)&
-&            *temp0*qvf*r_d*alb0(i, k, j)/p1000mb**2
-        alb0(i, k, j) = 0.0
-        moistb(i, k, j, p_qv) = moistb(i, k, j, p_qv) + rvovrd*qvfb
-        qf2 = 1.
-        temp0b0 = -(0.5*pb0(i, k, j)/(rdnw(k)*qf2))
-        mub(i, j) = mub(i, j) + temp0b0
-        qf1b = muts(i, j)*temp0b0
-        mutsb(i, j) = mutsb(i, j) + qf1*temp0b0
-        pb0(i, k, j) = 0.0
-        CALL POPREAL8(qf1)
-        qtotb = qf2*qf1b
-        DO ispe=n_moist,param_first_scalar,-1
-          moistb(i, k, j, ispe) = moistb(i, k, j, ispe) + qtotb
-        END DO
-      END DO
-    END DO
-  ELSE
-    DO j=jts,jtf
+      CALL PUSHCONTROL1B(0)
+    ELSE
+      DO j=jts,jtf
 ! top layer
-      k = ktf
-      DO i=its,itf
-        qtot = 0.
-        qf2 = 1.
-        qf1 = qtot*qf2
-        p(i, k, j) = -(0.5*(mu(i, j)+qf1*muts(i, j))/rdnw(k)/qf2)
-        qvf = 1.
-        al(i, k, j) = r_d/p1000mb*(t(i, k, j)+t0)*qvf*((p(i, k, j)+pb(i&
-&          , k, j))/p1000mb)**cvpm - alb(i, k, j)
-      END DO
-      CALL PUSHINTEGER4(k)
-! remaining layers, integrate down
-      DO k=ktf-1,kts,-1
+        k = ktf
         DO i=its,itf
           qtot = 0.
           qf2 = 1.
           qf1 = qtot*qf2
-          CALL PUSHREAL8(p(i, k, j))
-          p(i, k, j) = p(i, k+1, j) - (mu(i, j)+qf1*muts(i, j))/qf2/rdn(&
-&            k+1)
+          p(i, k, j) = -(0.5*(mu(i, j)+qf1*muts(i, j))/rdnw(k)/qf2)
           qvf = 1.
           al(i, k, j) = r_d/p1000mb*(t(i, k, j)+t0)*qvf*((p(i, k, j)+pb(&
 &            i, k, j))/p1000mb)**cvpm - alb(i, k, j)
         END DO
-      END DO
-    END DO
-    DO j=jtf,jts,-1
-      DO k=ktf+1,2,-1
-        DO i=itf,its,-1
-          temp10b = -(dnw(k-1)*phb(i, k, j))
-          phb(i, k-1, j) = phb(i, k-1, j) + phb(i, k, j)
-          mutsb(i, j) = mutsb(i, j) + al(i, k-1, j)*temp10b
-          alb0(i, k-1, j) = alb0(i, k-1, j) + muts(i, j)*temp10b
-          mub(i, j) = mub(i, j) + alb(i, k-1, j)*temp10b
-          phb(i, k, j) = 0.0
+        CALL PUSHINTEGER4(k)
+! remaining layers, integrate down
+        DO k=ktf-1,kts,-1
+          DO i=its,itf
+            qtot = 0.
+            qf2 = 1.
+            qf1 = qtot*qf2
+            CALL PUSHREAL8(p(i, k, j))
+            p(i, k, j) = p(i, k+1, j) - (mu(i, j)+qf1*muts(i, j))/qf2/&
+&              rdn(k+1)
+            qvf = 1.
+            al(i, k, j) = r_d/p1000mb*(t(i, k, j)+t0)*qvf*((p(i, k, j)+&
+&              pb(i, k, j))/p1000mb)**cvpm - alb(i, k, j)
+          END DO
         END DO
       END DO
-      DO k=kts,ktf-1,1
+      CALL PUSHCONTROL1B(1)
+    END IF
+    IF (hypsometric_opt .EQ. 1) THEN
+      DO j=jtf,jts,-1
+        DO k=ktf+1,2,-1
+          DO i=itf,its,-1
+            temp10b = -(dnw(k-1)*phb0(i, k, j))
+            phb0(i, k-1, j) = phb0(i, k-1, j) + phb0(i, k, j)
+            mutsb(i, j) = mutsb(i, j) + al(i, k-1, j)*temp10b
+            alb0(i, k-1, j) = alb0(i, k-1, j) + muts(i, j)*temp10b
+            mub(i, j) = mub(i, j) + alb(i, k-1, j)*temp10b
+            phb0(i, k, j) = 0.0
+          END DO
+        END DO
+      END DO
+    ELSE
+      DO j=jtf,jts,-1
+        DO k=ktf+1,kts+1,-1
+          DO i=itf,its,-1
+            pfu = muts(i, j)*znw(k) + ptop
+            phm = muts(i, j)*znu(k-1) + ptop
+            pfd = muts(i, j)*znw(k-1) + ptop
+            temp10 = pfd/pfu
+            temp10b0 = LOG(temp10)*phb0(i, k, j)
+            temp11 = alb(i, k-1, j) + al(i, k-1, j)
+            temp10b1 = temp11*phm*phb0(i, k, j)/(temp10*pfu)
+            phb0(i, k-1, j) = phb0(i, k-1, j) + phb0(i, k, j)
+            alb0(i, k-1, j) = alb0(i, k-1, j) + phm*temp10b0
+            phmb = temp11*temp10b0
+            pfdb = temp10b1
+            pfub = -(temp10*temp10b1)
+            phb0(i, k, j) = 0.0
+            mutsb(i, j) = mutsb(i, j) + znw(k-1)*pfdb + znw(k)*pfub + &
+&              znu(k-1)*phmb
+          END DO
+        END DO
+        DO i=itf,its,-1
+          phb0(i, kts, j) = 0.0
+        END DO
+      END DO
+    END IF
+    CALL POPCONTROL1B(branch)
+    IF (branch .EQ. 0) THEN
+      DO j=jtf,jts,-1
+        DO k=kts,ktf-1,1
+          DO i=itf,its,-1
+            qvf = 1. + rvovrd*moist(i, k, j, p_qv)
+            temp5 = pb(i, k, j) + p(i, k, j)
+            temp4 = temp5/p1000mb
+            temp3 = t0 + t(i, k, j)
+            temp3b = r_d*temp4**cvpm*alb0(i, k, j)
+            tb(i, k, j) = tb(i, k, j) + qvf*temp3b/p1000mb
+            qvfb = temp3*temp3b/p1000mb
+            IF (.NOT.(temp4 .LE. 0.0 .AND. (cvpm .EQ. 0.0 .OR. cvpm .NE.&
+&                INT(cvpm)))) pb0(i, k, j) = pb0(i, k, j) + cvpm*temp4**(&
+&                cvpm-1)*temp3*qvf*r_d*alb0(i, k, j)/p1000mb**2
+            alb0(i, k, j) = 0.0
+            moistb(i, k, j, p_qv) = moistb(i, k, j, p_qv) + rvovrd*qvfb
+            qf2 = 1.
+            CALL POPREAL8(p(i, k, j))
+            temp3b0 = -(pb0(i, k, j)/(qf2*rdn(k+1)))
+            pb0(i, k+1, j) = pb0(i, k+1, j) + pb0(i, k, j)
+            mub(i, j) = mub(i, j) + temp3b0
+            qf1b = muts(i, j)*temp3b0
+            mutsb(i, j) = mutsb(i, j) + qf1*temp3b0
+            pb0(i, k, j) = 0.0
+            CALL POPREAL8(qf1)
+            qtotb = qf2*qf1b
+            DO ispe=n_moist,param_first_scalar,-1
+              moistb(i, k, j, ispe) = moistb(i, k, j, ispe) + 0.5*qtotb
+              moistb(i, k+1, j, ispe) = moistb(i, k+1, j, ispe) + 0.5*&
+&                qtotb
+            END DO
+          END DO
+        END DO
+        CALL POPINTEGER4(k)
+        DO i=itf,its,-1
+          qvf = 1. + rvovrd*moist(i, k, j, p_qv)
+          temp2 = pb(i, k, j) + p(i, k, j)
+          temp1 = temp2/p1000mb
+          temp0 = t0 + t(i, k, j)
+          temp0b = r_d*temp1**cvpm*alb0(i, k, j)
+          tb(i, k, j) = tb(i, k, j) + qvf*temp0b/p1000mb
+          qvfb = temp0*temp0b/p1000mb
+          IF (.NOT.(temp1 .LE. 0.0 .AND. (cvpm .EQ. 0.0 .OR. cvpm .NE. &
+&              INT(cvpm)))) pb0(i, k, j) = pb0(i, k, j) + cvpm*temp1**(&
+&              cvpm-1)*temp0*qvf*r_d*alb0(i, k, j)/p1000mb**2
+          alb0(i, k, j) = 0.0
+          moistb(i, k, j, p_qv) = moistb(i, k, j, p_qv) + rvovrd*qvfb
+          qf2 = 1.
+          temp0b0 = -(0.5*pb0(i, k, j)/(rdnw(k)*qf2))
+          mub(i, j) = mub(i, j) + temp0b0
+          qf1b = muts(i, j)*temp0b0
+          mutsb(i, j) = mutsb(i, j) + qf1*temp0b0
+          pb0(i, k, j) = 0.0
+          CALL POPREAL8(qf1)
+          qtotb = qf2*qf1b
+          DO ispe=n_moist,param_first_scalar,-1
+            moistb(i, k, j, ispe) = moistb(i, k, j, ispe) + qtotb
+          END DO
+        END DO
+      END DO
+    ELSE
+      DO j=jtf,jts,-1
+        DO k=kts,ktf-1,1
+          DO i=itf,its,-1
+            qvf = 1.
+            temp9 = pb(i, k, j) + p(i, k, j)
+            temp8 = temp9/p1000mb
+            temp8b = r_d*qvf*alb0(i, k, j)
+            tb(i, k, j) = tb(i, k, j) + temp8**cvpm*temp8b/p1000mb
+            IF (.NOT.(temp8 .LE. 0.0 .AND. (cvpm .EQ. 0.0 .OR. cvpm .NE.&
+&                INT(cvpm)))) pb0(i, k, j) = pb0(i, k, j) + cvpm*temp8**(&
+&                cvpm-1)*(t0+t(i, k, j))*temp8b/p1000mb**2
+            alb0(i, k, j) = 0.0
+            qf2 = 1.
+            qtot = 0.
+            qf1 = qtot*qf2
+            CALL POPREAL8(p(i, k, j))
+            temp8b0 = -(pb0(i, k, j)/(qf2*rdn(k+1)))
+            pb0(i, k+1, j) = pb0(i, k+1, j) + pb0(i, k, j)
+            mub(i, j) = mub(i, j) + temp8b0
+            mutsb(i, j) = mutsb(i, j) + qf1*temp8b0
+            pb0(i, k, j) = 0.0
+          END DO
+        END DO
+        CALL POPINTEGER4(k)
         DO i=itf,its,-1
           qvf = 1.
-          temp9 = pb(i, k, j) + p(i, k, j)
-          temp8 = temp9/p1000mb
-          temp8b = r_d*qvf*alb0(i, k, j)
-          tb(i, k, j) = tb(i, k, j) + temp8**cvpm*temp8b/p1000mb
-          IF (.NOT.(temp8 .LE. 0.0 .AND. (cvpm .EQ. 0.0 .OR. cvpm .NE. &
-&              INT(cvpm)))) pb0(i, k, j) = pb0(i, k, j) + cvpm*temp8**(&
-&              cvpm-1)*(t0+t(i, k, j))*temp8b/p1000mb**2
+          temp7 = pb(i, k, j) + p(i, k, j)
+          temp6 = temp7/p1000mb
+          temp6b = r_d*qvf*alb0(i, k, j)
+          tb(i, k, j) = tb(i, k, j) + temp6**cvpm*temp6b/p1000mb
+          IF (.NOT.(temp6 .LE. 0.0 .AND. (cvpm .EQ. 0.0 .OR. cvpm .NE. &
+&              INT(cvpm)))) pb0(i, k, j) = pb0(i, k, j) + cvpm*temp6**(&
+&              cvpm-1)*(t0+t(i, k, j))*temp6b/p1000mb**2
           alb0(i, k, j) = 0.0
           qf2 = 1.
           qtot = 0.
           qf1 = qtot*qf2
-          CALL POPREAL8(p(i, k, j))
-          temp8b0 = -(pb0(i, k, j)/(qf2*rdn(k+1)))
-          pb0(i, k+1, j) = pb0(i, k+1, j) + pb0(i, k, j)
-          mub(i, j) = mub(i, j) + temp8b0
-          mutsb(i, j) = mutsb(i, j) + qf1*temp8b0
+          temp6b0 = -(0.5*pb0(i, k, j)/(rdnw(k)*qf2))
+          mub(i, j) = mub(i, j) + temp6b0
+          mutsb(i, j) = mutsb(i, j) + qf1*temp6b0
           pb0(i, k, j) = 0.0
         END DO
       END DO
-      CALL POPINTEGER4(k)
-      DO i=itf,its,-1
-        qvf = 1.
-        temp7 = pb(i, k, j) + p(i, k, j)
-        temp6 = temp7/p1000mb
-        temp6b0 = r_d*qvf*alb0(i, k, j)
-        tb(i, k, j) = tb(i, k, j) + temp6**cvpm*temp6b0/p1000mb
-        IF (.NOT.(temp6 .LE. 0.0 .AND. (cvpm .EQ. 0.0 .OR. cvpm .NE. INT&
-&            (cvpm)))) pb0(i, k, j) = pb0(i, k, j) + cvpm*temp6**(cvpm-1)&
-&            *(t0+t(i, k, j))*temp6b0/p1000mb**2
-        alb0(i, k, j) = 0.0
-        qf2 = 1.
-        qtot = 0.
-        qf1 = qtot*qf2
-        temp6b1 = -(0.5*pb0(i, k, j)/(rdnw(k)*qf2))
-        mub(i, j) = mub(i, j) + temp6b1
-        mutsb(i, j) = mutsb(i, j) + qf1*temp6b1
-        pb0(i, k, j) = 0.0
-      END DO
-    END DO
+    END IF
   END IF
 END SUBROUTINE A_CALC_P_RHO_PHI
 
@@ -11932,7 +12020,7 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
 &  moistb, n_moist, rho, rhob, th_phy, th_phyb, p_phy, p_phyb, pi_phy, &
 &  pi_phyb, u_phy, u_phyb, v_phy, v_phyb, p8w, p8wb, t_phy, t_phyb, t8w, &
 &  t8wb, z, zb, z_at_w, z_at_wb, dz8w, dz8wb, p_hyd, p_hydb, p_hyd_w, &
-&  p_hyd_wb, fzm, fzp, znw, p_top, rthraten, rthratenb, rthblten, &
+&  p_hyd_wb, dnw, fzm, fzp, znw, p_top, rthraten, rthratenb, rthblten, &
 &  rthbltenb, rublten, rubltenb, rvblten, rvbltenb, rqvblten, rqvbltenb, &
 &  rqcblten, rqcbltenb, rqiblten, rqibltenb, rucuten, rucutenb, rvcuten, &
 &  rvcutenb, rthcuten, rthcutenb, rqvcuten, rqvcutenb, rqccuten, &
@@ -11967,7 +12055,7 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: pb0, ub, vb, altb, phb0&
 &  , tb
   REAL, DIMENSION(kms:kme), INTENT(IN) :: fzm, fzp
-  REAL, DIMENSION(kms:kme), INTENT(IN) :: znw
+  REAL, DIMENSION(kms:kme), INTENT(IN) :: znw, dnw
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthraten
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: rthratenb
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rucuten, &
@@ -11995,54 +12083,49 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
   INTEGER :: i, j, k
   REAL :: w1, w2, z0, z1, z2
   REAL :: w1b, w2b, z0b, z1b, z2b
-  REAL :: e_vapor
+  REAL :: qtot
+  REAL :: qtotb
+  INTEGER :: n
   INTEGER :: branch
-  REAL :: temp2
-  REAL :: temp1
   REAL :: temp0
-  INTRINSIC EXP
   REAL :: tempb4
   REAL :: tempb3
   REAL :: tempb2
   REAL :: tempb1
   REAL :: tempb0
-  INTRINSIC MAX
-  REAL :: temp3b
-  REAL :: temp3b29
-  REAL :: temp3b28
-  REAL :: temp3b27
-  REAL :: temp3b26
-  REAL :: temp3b25
-  REAL :: temp3b24
-  REAL :: temp3b23
-  REAL :: temp3b22
+  REAL :: temp1b29
+  REAL :: temp1b28
+  REAL :: temp1b27
+  REAL :: temp1b26
+  REAL :: temp1b25
+  REAL :: temp1b24
+  REAL :: temp1b23
+  REAL :: temp1b22
+  REAL :: temp1b21
+  REAL :: temp1b20
   REAL :: tempb
-  REAL :: temp3b21
-  REAL :: temp3b20
-  REAL :: temp3b9
-  REAL :: temp3b8
-  INTRINSIC LOG
-  REAL :: temp3b7
-  REAL :: temp3b6
-  REAL :: temp3b5
-  REAL :: temp3b4
-  REAL :: temp3b3
-  REAL :: temp3b2
-  REAL :: temp3b1
-  REAL :: temp3b0
-  REAL :: temp3b19
-  REAL :: temp3b18
-  REAL :: temp3b17
-  REAL :: temp3b16
-  REAL :: temp3b15
-  REAL :: temp3b14
-  REAL :: temp3b13
-  REAL :: temp3b12
-  REAL :: temp3b11
-  INTRINSIC MIN
-  REAL :: temp3b10
+  REAL :: temp1b19
+  REAL :: temp1b18
+  REAL :: temp1b17
+  REAL :: temp1b16
+  REAL :: temp1b15
+  REAL :: temp1b14
+  REAL :: temp1b13
+  REAL :: temp1b12
+  REAL :: temp1b11
+  REAL :: temp1b10
+  REAL :: temp1b9
+  REAL :: temp1b8
+  REAL :: temp1b7
   REAL :: temp1b
+  REAL :: temp1b6
   REAL :: temp
+  REAL :: temp1b5
+  REAL :: temp1b4
+  REAL :: temp1b3
+  REAL :: temp1b2
+  REAL :: temp1b1
+  REAL :: temp1b0
 !-----------------------------------------------------------------------
 !<DESCRIPTION>
 !
@@ -12090,23 +12173,22 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
       END DO
     END DO
   END DO
-  DO j=j_start,j_end
-    DO k=k_start,kte-1
-      DO i=i_start,i_end
-        dz8w(i, k, j) = z_at_w(i, k+1, j) - z_at_w(i, k, j)
-      END DO
-    END DO
-  END DO
-  DO j=j_start,j_end
-    DO i=i_start,i_end
-      dz8w(i, kte, j) = 0.
-    END DO
-  END DO
 !  compute z at p points or half levels (average of z at full levels)
   DO j=j_start,j_end
     DO k=k_start,k_end
       DO i=i_start,i_end
         z(i, k, j) = 0.5*(z_at_w(i, k, j)+z_at_w(i, k+1, j))
+      END DO
+    END DO
+  END DO
+  DO j=j_start,j_end
+    DO k=kte-1,k_start,-1
+      DO i=i_start,i_end
+        CALL PUSHREAL8(qtot)
+        qtot = 0.
+        DO n=param_first_scalar,n_moist
+          qtot = qtot + moist(i, k, j, n)
+        END DO
       END DO
     END DO
   END DO
@@ -12230,10 +12312,10 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
       DO j=j_end,j_start,-1
         DO k=kte,k_start,-1
           DO i=i_end,i_start,-1
-            temp3b28 = rphndgdtenb(i, k, j)/mu(i, j)
-            mub(i, j) = mub(i, j) - rphndgdten(i, k, j)*temp3b28/mu(i, j&
+            temp1b28 = rphndgdtenb(i, k, j)/mu(i, j)
+            mub(i, j) = mub(i, j) - rphndgdten(i, k, j)*temp1b28/mu(i, j&
 &              )
-            rphndgdtenb(i, k, j) = temp3b28
+            rphndgdtenb(i, k, j) = temp1b28
           END DO
         END DO
       END DO
@@ -12242,10 +12324,10 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
         DO j=j_end,j_start,-1
           DO k=k_end,k_start,-1
             DO i=i_end,i_start,-1
-              temp3b29 = rqvndgdtenb(i, k, j)/mu(i, j)
-              mub(i, j) = mub(i, j) - rqvndgdten(i, k, j)*temp3b29/mu(i&
+              temp1b29 = rqvndgdtenb(i, k, j)/mu(i, j)
+              mub(i, j) = mub(i, j) - rqvndgdten(i, k, j)*temp1b29/mu(i&
 &                , j)
-              rqvndgdtenb(i, k, j) = temp3b29
+              rqvndgdtenb(i, k, j) = temp1b29
             END DO
           END DO
         END DO
@@ -12254,29 +12336,29 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
     DO j=j_end,j_start,-1
       DO k=k_end,k_start,-1
         DO i=i_end,i_start,-1
-          temp3b27 = rthndgdtenb(i, k, j)/mu(i, j)
-          mub(i, j) = mub(i, j) - rthndgdten(i, k, j)*temp3b27/mu(i, j)
-          rthndgdtenb(i, k, j) = temp3b27
+          temp1b27 = rthndgdtenb(i, k, j)/mu(i, j)
+          mub(i, j) = mub(i, j) - rthndgdten(i, k, j)*temp1b27/mu(i, j)
+          rthndgdtenb(i, k, j) = temp1b27
         END DO
       END DO
     END DO
     DO j=j_end,j_startv,-1
       DO k=k_end,k_start,-1
         DO i=i_end,i_start,-1
-          temp3b26 = rvndgdtenb(i, k, j)/muv(i, j)
-          muvb(i, j) = muvb(i, j) - rvndgdten(i, k, j)*temp3b26/muv(i, j&
+          temp1b26 = rvndgdtenb(i, k, j)/muv(i, j)
+          muvb(i, j) = muvb(i, j) - rvndgdten(i, k, j)*temp1b26/muv(i, j&
 &            )
-          rvndgdtenb(i, k, j) = temp3b26
+          rvndgdtenb(i, k, j) = temp1b26
         END DO
       END DO
     END DO
     DO j=j_end,j_start,-1
       DO k=k_end,k_start,-1
         DO i=i_end,i_startu,-1
-          temp3b25 = rundgdtenb(i, k, j)/muu(i, j)
-          muub(i, j) = muub(i, j) - rundgdten(i, k, j)*temp3b25/muu(i, j&
+          temp1b25 = rundgdtenb(i, k, j)/muu(i, j)
+          muub(i, j) = muub(i, j) - rundgdten(i, k, j)*temp1b25/muu(i, j&
 &            )
-          rundgdtenb(i, k, j) = temp3b25
+          rundgdtenb(i, k, j) = temp1b25
         END DO
       END DO
     END DO
@@ -12286,9 +12368,9 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
     DO j=j_end,j_start,-1
       DO i=i_end,i_start,-1
         DO k=k_end,k_start,-1
-          temp3b24 = rqvftenb(i, k, j)/mu(i, j)
-          mub(i, j) = mub(i, j) - rqvften(i, k, j)*temp3b24/mu(i, j)
-          rqvftenb(i, k, j) = temp3b24
+          temp1b24 = rqvftenb(i, k, j)/mu(i, j)
+          mub(i, j) = mub(i, j) - rqvften(i, k, j)*temp1b24/mu(i, j)
+          rqvftenb(i, k, j) = temp1b24
         END DO
       END DO
     END DO
@@ -12298,9 +12380,9 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
   DO j=j_end,j_start,-1
     DO i=i_end,i_start,-1
       DO k=k_end,k_start,-1
-        temp3b23 = rthftenb(i, k, j)/mu(i, j)
-        mub(i, j) = mub(i, j) - rthften(i, k, j)*temp3b23/mu(i, j)
-        rthftenb(i, k, j) = temp3b23
+        temp1b23 = rthftenb(i, k, j)/mu(i, j)
+        mub(i, j) = mub(i, j) - rthften(i, k, j)*temp1b23/mu(i, j)
+        rthftenb(i, k, j) = temp1b23
       END DO
     END DO
   END DO
@@ -12309,9 +12391,9 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
     DO j=j_end,j_start,-1
       DO k=k_end,k_start,-1
         DO i=i_end,i_start,-1
-          temp3b22 = rqibltenb(i, k, j)/mu(i, j)
-          mub(i, j) = mub(i, j) - rqiblten(i, k, j)*temp3b22/mu(i, j)
-          rqibltenb(i, k, j) = temp3b22
+          temp1b22 = rqibltenb(i, k, j)/mu(i, j)
+          mub(i, j) = mub(i, j) - rqiblten(i, k, j)*temp1b22/mu(i, j)
+          rqibltenb(i, k, j) = temp1b22
         END DO
       END DO
     END DO
@@ -12323,9 +12405,9 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
     DO j=j_end,j_start,-1
       DO k=k_end,k_start,-1
         DO i=i_end,i_start,-1
-          temp3b21 = rqcbltenb(i, k, j)/mu(i, j)
-          mub(i, j) = mub(i, j) - rqcblten(i, k, j)*temp3b21/mu(i, j)
-          rqcbltenb(i, k, j) = temp3b21
+          temp1b21 = rqcbltenb(i, k, j)/mu(i, j)
+          mub(i, j) = mub(i, j) - rqcblten(i, k, j)*temp1b21/mu(i, j)
+          rqcbltenb(i, k, j) = temp1b21
         END DO
       END DO
     END DO
@@ -12335,9 +12417,9 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
     DO j=j_end,j_start,-1
       DO k=k_end,k_start,-1
         DO i=i_end,i_start,-1
-          temp3b20 = rqvbltenb(i, k, j)/mu(i, j)
-          mub(i, j) = mub(i, j) - rqvblten(i, k, j)*temp3b20/mu(i, j)
-          rqvbltenb(i, k, j) = temp3b20
+          temp1b20 = rqvbltenb(i, k, j)/mu(i, j)
+          mub(i, j) = mub(i, j) - rqvblten(i, k, j)*temp1b20/mu(i, j)
+          rqvbltenb(i, k, j) = temp1b20
         END DO
       END DO
     END DO
@@ -12345,15 +12427,15 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
   DO j=j_end,j_start,-1
     DO k=k_end,k_start,-1
       DO i=i_end,i_start,-1
-        temp3b19 = rubltenb(i, k, j)/mu(i, j)
-        temp3b18 = rvbltenb(i, k, j)/mu(i, j)
-        temp3b17 = rthbltenb(i, k, j)/mu(i, j)
-        mub(i, j) = mub(i, j) - rvblten(i, k, j)*temp3b18/mu(i, j) - &
-&          rublten(i, k, j)*temp3b19/mu(i, j) - rthblten(i, k, j)*&
-&          temp3b17/mu(i, j)
-        rthbltenb(i, k, j) = temp3b17
-        rvbltenb(i, k, j) = temp3b18
-        rubltenb(i, k, j) = temp3b19
+        temp1b19 = rubltenb(i, k, j)/mu(i, j)
+        temp1b18 = rvbltenb(i, k, j)/mu(i, j)
+        temp1b17 = rthbltenb(i, k, j)/mu(i, j)
+        mub(i, j) = mub(i, j) - rvblten(i, k, j)*temp1b18/mu(i, j) - &
+&          rublten(i, k, j)*temp1b19/mu(i, j) - rthblten(i, k, j)*&
+&          temp1b17/mu(i, j)
+        rthbltenb(i, k, j) = temp1b17
+        rvbltenb(i, k, j) = temp1b18
+        rubltenb(i, k, j) = temp1b19
       END DO
     END DO
   END DO
@@ -12362,9 +12444,9 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
     DO j=j_end,j_start,-1
       DO i=i_end,i_start,-1
         DO k=k_end,k_start,-1
-          temp3b16 = rqgshtenb(i, k, j)/mu(i, j)
-          mub(i, j) = mub(i, j) - rqgshten(i, k, j)*temp3b16/mu(i, j)
-          rqgshtenb(i, k, j) = temp3b16
+          temp1b16 = rqgshtenb(i, k, j)/mu(i, j)
+          mub(i, j) = mub(i, j) - rqgshten(i, k, j)*temp1b16/mu(i, j)
+          rqgshtenb(i, k, j) = temp1b16
         END DO
       END DO
     END DO
@@ -12376,9 +12458,9 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
     DO j=j_end,j_start,-1
       DO i=i_end,i_start,-1
         DO k=k_end,k_start,-1
-          temp3b15 = rqsshtenb(i, k, j)/mu(i, j)
-          mub(i, j) = mub(i, j) - rqsshten(i, k, j)*temp3b15/mu(i, j)
-          rqsshtenb(i, k, j) = temp3b15
+          temp1b15 = rqsshtenb(i, k, j)/mu(i, j)
+          mub(i, j) = mub(i, j) - rqsshten(i, k, j)*temp1b15/mu(i, j)
+          rqsshtenb(i, k, j) = temp1b15
         END DO
       END DO
     END DO
@@ -12388,9 +12470,9 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
     DO j=j_end,j_start,-1
       DO i=i_end,i_start,-1
         DO k=k_end,k_start,-1
-          temp3b14 = rqishtenb(i, k, j)/mu(i, j)
-          mub(i, j) = mub(i, j) - rqishten(i, k, j)*temp3b14/mu(i, j)
-          rqishtenb(i, k, j) = temp3b14
+          temp1b14 = rqishtenb(i, k, j)/mu(i, j)
+          mub(i, j) = mub(i, j) - rqishten(i, k, j)*temp1b14/mu(i, j)
+          rqishtenb(i, k, j) = temp1b14
         END DO
       END DO
     END DO
@@ -12400,9 +12482,9 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
     DO j=j_end,j_start,-1
       DO i=i_end,i_start,-1
         DO k=k_end,k_start,-1
-          temp3b13 = rqrshtenb(i, k, j)/mu(i, j)
-          mub(i, j) = mub(i, j) - rqrshten(i, k, j)*temp3b13/mu(i, j)
-          rqrshtenb(i, k, j) = temp3b13
+          temp1b13 = rqrshtenb(i, k, j)/mu(i, j)
+          mub(i, j) = mub(i, j) - rqrshten(i, k, j)*temp1b13/mu(i, j)
+          rqrshtenb(i, k, j) = temp1b13
         END DO
       END DO
     END DO
@@ -12412,9 +12494,9 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
     DO j=j_end,j_start,-1
       DO i=i_end,i_start,-1
         DO k=k_end,k_start,-1
-          temp3b12 = rqcshtenb(i, k, j)/mu(i, j)
-          mub(i, j) = mub(i, j) - rqcshten(i, k, j)*temp3b12/mu(i, j)
-          rqcshtenb(i, k, j) = temp3b12
+          temp1b12 = rqcshtenb(i, k, j)/mu(i, j)
+          mub(i, j) = mub(i, j) - rqcshten(i, k, j)*temp1b12/mu(i, j)
+          rqcshtenb(i, k, j) = temp1b12
         END DO
       END DO
     END DO
@@ -12424,9 +12506,9 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
     DO j=j_end,j_start,-1
       DO i=i_end,i_start,-1
         DO k=k_end,k_start,-1
-          temp3b11 = rqvshtenb(i, k, j)/mu(i, j)
-          mub(i, j) = mub(i, j) - rqvshten(i, k, j)*temp3b11/mu(i, j)
-          rqvshtenb(i, k, j) = temp3b11
+          temp1b11 = rqvshtenb(i, k, j)/mu(i, j)
+          mub(i, j) = mub(i, j) - rqvshten(i, k, j)*temp1b11/mu(i, j)
+          rqvshtenb(i, k, j) = temp1b11
         END DO
       END DO
     END DO
@@ -12434,15 +12516,15 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
   DO j=j_end,j_start,-1
     DO i=i_end,i_start,-1
       DO k=k_end,k_start,-1
-        temp3b10 = rushtenb(i, k, j)/mu(i, j)
-        temp3b9 = rvshtenb(i, k, j)/mu(i, j)
-        temp3b8 = rthshtenb(i, k, j)/mu(i, j)
-        mub(i, j) = mub(i, j) - rvshten(i, k, j)*temp3b9/mu(i, j) - &
-&          rushten(i, k, j)*temp3b10/mu(i, j) - rthshten(i, k, j)*temp3b8&
+        temp1b10 = rushtenb(i, k, j)/mu(i, j)
+        temp1b9 = rvshtenb(i, k, j)/mu(i, j)
+        temp1b8 = rthshtenb(i, k, j)/mu(i, j)
+        mub(i, j) = mub(i, j) - rvshten(i, k, j)*temp1b9/mu(i, j) - &
+&          rushten(i, k, j)*temp1b10/mu(i, j) - rthshten(i, k, j)*temp1b8&
 &          /mu(i, j)
-        rthshtenb(i, k, j) = temp3b8
-        rvshtenb(i, k, j) = temp3b9
-        rushtenb(i, k, j) = temp3b10
+        rthshtenb(i, k, j) = temp1b8
+        rvshtenb(i, k, j) = temp1b9
+        rushtenb(i, k, j) = temp1b10
       END DO
     END DO
   END DO
@@ -12451,9 +12533,9 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
     DO j=j_end,j_start,-1
       DO i=i_end,i_start,-1
         DO k=k_end,k_start,-1
-          temp3b7 = rqscutenb(i, k, j)/mu(i, j)
-          mub(i, j) = mub(i, j) - rqscuten(i, k, j)*temp3b7/mu(i, j)
-          rqscutenb(i, k, j) = temp3b7
+          temp1b7 = rqscutenb(i, k, j)/mu(i, j)
+          mub(i, j) = mub(i, j) - rqscuten(i, k, j)*temp1b7/mu(i, j)
+          rqscutenb(i, k, j) = temp1b7
         END DO
       END DO
     END DO
@@ -12465,9 +12547,9 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
     DO j=j_end,j_start,-1
       DO i=i_end,i_start,-1
         DO k=k_end,k_start,-1
-          temp3b6 = rqicutenb(i, k, j)/mu(i, j)
-          mub(i, j) = mub(i, j) - rqicuten(i, k, j)*temp3b6/mu(i, j)
-          rqicutenb(i, k, j) = temp3b6
+          temp1b6 = rqicutenb(i, k, j)/mu(i, j)
+          mub(i, j) = mub(i, j) - rqicuten(i, k, j)*temp1b6/mu(i, j)
+          rqicutenb(i, k, j) = temp1b6
         END DO
       END DO
     END DO
@@ -12477,9 +12559,9 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
     DO j=j_end,j_start,-1
       DO i=i_end,i_start,-1
         DO k=k_end,k_start,-1
-          temp3b5 = rqrcutenb(i, k, j)/mu(i, j)
-          mub(i, j) = mub(i, j) - rqrcuten(i, k, j)*temp3b5/mu(i, j)
-          rqrcutenb(i, k, j) = temp3b5
+          temp1b5 = rqrcutenb(i, k, j)/mu(i, j)
+          mub(i, j) = mub(i, j) - rqrcuten(i, k, j)*temp1b5/mu(i, j)
+          rqrcutenb(i, k, j) = temp1b5
         END DO
       END DO
     END DO
@@ -12489,9 +12571,9 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
     DO j=j_end,j_start,-1
       DO i=i_end,i_start,-1
         DO k=k_end,k_start,-1
-          temp3b4 = rqccutenb(i, k, j)/mu(i, j)
-          mub(i, j) = mub(i, j) - rqccuten(i, k, j)*temp3b4/mu(i, j)
-          rqccutenb(i, k, j) = temp3b4
+          temp1b4 = rqccutenb(i, k, j)/mu(i, j)
+          mub(i, j) = mub(i, j) - rqccuten(i, k, j)*temp1b4/mu(i, j)
+          rqccutenb(i, k, j) = temp1b4
         END DO
       END DO
     END DO
@@ -12501,9 +12583,9 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
     DO j=j_end,j_start,-1
       DO i=i_end,i_start,-1
         DO k=k_end,k_start,-1
-          temp3b3 = rqvcutenb(i, k, j)/mu(i, j)
-          mub(i, j) = mub(i, j) - rqvcuten(i, k, j)*temp3b3/mu(i, j)
-          rqvcutenb(i, k, j) = temp3b3
+          temp1b3 = rqvcutenb(i, k, j)/mu(i, j)
+          mub(i, j) = mub(i, j) - rqvcuten(i, k, j)*temp1b3/mu(i, j)
+          rqvcutenb(i, k, j) = temp1b3
         END DO
       END DO
     END DO
@@ -12511,15 +12593,15 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
   DO j=j_end,j_start,-1
     DO i=i_end,i_start,-1
       DO k=k_end,k_start,-1
-        temp3b2 = rucutenb(i, k, j)/mu(i, j)
-        temp3b1 = rvcutenb(i, k, j)/mu(i, j)
-        temp3b0 = rthcutenb(i, k, j)/mu(i, j)
-        mub(i, j) = mub(i, j) - rvcuten(i, k, j)*temp3b1/mu(i, j) - &
-&          rucuten(i, k, j)*temp3b2/mu(i, j) - rthcuten(i, k, j)*temp3b0/&
+        temp1b2 = rucutenb(i, k, j)/mu(i, j)
+        temp1b1 = rvcutenb(i, k, j)/mu(i, j)
+        temp1b0 = rthcutenb(i, k, j)/mu(i, j)
+        mub(i, j) = mub(i, j) - rvcuten(i, k, j)*temp1b1/mu(i, j) - &
+&          rucuten(i, k, j)*temp1b2/mu(i, j) - rthcuten(i, k, j)*temp1b0/&
 &          mu(i, j)
-        rthcutenb(i, k, j) = temp3b0
-        rvcutenb(i, k, j) = temp3b1
-        rucutenb(i, k, j) = temp3b2
+        rthcutenb(i, k, j) = temp1b0
+        rvcutenb(i, k, j) = temp1b1
+        rucutenb(i, k, j) = temp1b2
       END DO
     END DO
   END DO
@@ -12528,9 +12610,9 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
     DO j=j_end,j_start,-1
       DO k=k_end,k_start,-1
         DO i=i_end,i_start,-1
-          temp3b = rthratenb(i, k, j)/mu(i, j)
-          mub(i, j) = mub(i, j) - rthraten(i, k, j)*temp3b/mu(i, j)
-          rthratenb(i, k, j) = temp3b
+          temp1b = rthratenb(i, k, j)/mu(i, j)
+          mub(i, j) = mub(i, j) - rthraten(i, k, j)*temp1b/mu(i, j)
+          rthratenb(i, k, j) = temp1b
         END DO
       END DO
     END DO
@@ -12547,15 +12629,14 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
   DO j=j_end,j_start,-1
     DO k=k_start,kte-1,1
       DO i=i_end,i_start,-1
-        temp2 = alt(i, k, j)
-        temp1 = dz8w(i, k, j)/temp2
-        temp1b = (moist(i, k, j, p_qv)+1.)*g*p_hyd_wb(i, k, j)/temp2
         p_hyd_wb(i, k+1, j) = p_hyd_wb(i, k+1, j) + p_hyd_wb(i, k, j)
-        moistb(i, k, j, p_qv) = moistb(i, k, j, p_qv) + g*temp1*p_hyd_wb&
-&          (i, k, j)
-        dz8wb(i, k, j) = dz8wb(i, k, j) + temp1b
-        altb(i, k, j) = altb(i, k, j) - temp1*temp1b
+        qtotb = -(dnw(k)*mu(i, j)*p_hyd_wb(i, k, j))
+        mub(i, j) = mub(i, j) - dnw(k)*(qtot+1.)*p_hyd_wb(i, k, j)
         p_hyd_wb(i, k, j) = 0.0
+        DO n=n_moist,param_first_scalar,-1
+          moistb(i, k, j, n) = moistb(i, k, j, n) + qtotb
+        END DO
+        CALL POPREAL8(qtot)
       END DO
     END DO
   END DO

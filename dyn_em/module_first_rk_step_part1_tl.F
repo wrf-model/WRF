@@ -227,6 +227,7 @@ BENCH_END(g_init_zero_tend_tim)
                         p8w,g_p8w, grid%t_phy,grid%g_t_phy, t8w,g_t8w, grid%z,grid%g_z, &
                         grid%z_at_w,grid%g_z_at_w, dz8w,g_dz8w,               &
                         grid%p_hyd,grid%g_p_hyd, grid%p_hyd_w,grid%g_p_hyd_w, &
+                        grid%dnw,                                             &
                         grid%fnm, grid%fnp, grid%znw, grid%p_top,             &
                         grid%rthraten, grid%g_rthraten,                       &
                         grid%rthblten, grid%g_rthblten,                       &

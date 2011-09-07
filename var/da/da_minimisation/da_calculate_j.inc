@@ -65,11 +65,10 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
 #endif
    je_start = cv_size_jb + 1
    je_end   = cv_size_jb + cv_size_je
-   jl_start = cv_size_jb + cv_size_je + 1
-   jl_end = cv_size_jb + cv_size_je + cv_size_jl
-
    jp_start = cv_size_jb + cv_size_je + 1
    jp_end   = cv_size_jb + cv_size_je + cv_size_jp
+   jl_start = cv_size_jb + cv_size_je + cv_size_jp + 1
+   jl_end =   cv_size_jb + cv_size_je + cv_size_jp + cv_size_jl
 
    call da_allocate_y(iv, jo_grad_y)
 

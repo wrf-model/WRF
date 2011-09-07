@@ -696,7 +696,8 @@ BENCH_END(set_phys_bc_tim)
                              , rw_tendf, t_tendf                &
                              , ph_tendf, mu_tendf               &
                              , tke_tend                         &
-                             , adapt_step_flag , curr_secs      &
+                             , config_flags%use_adaptive_time_step &
+                             , curr_secs                        &
                              , psim , psih , wspd , gz1oz0      &
                              , br , chklowq                     &
                              , cu_act_flag , hol , th_phy       &
@@ -2936,10 +2937,10 @@ BENCH_END(tracer_adv_tim)
 
 BENCH_START(calc_p_rho_tim)
 
-       CALL calc_p_rho_phi( moist, num_3d_m,                  &
+       CALL calc_p_rho_phi( moist, num_3d_m, config_flags%hypsometric_opt,  &
                             grid%al, grid%alb, grid%mu_2, grid%muts,  &
-                            grid%ph_2, grid%p, grid%pb, grid%t_2,     &
-                            p0, t0, grid%znu, grid%dnw, grid%rdnw,    &
+                            grid%ph_2, grid%phb, grid%p, grid%pb, grid%t_2,     &
+                            p0, t0, grid%p_top, grid%znu, grid%znw, grid%dnw, grid%rdnw,    &
                             grid%rdn, config_flags%non_hydrostatic,   &
                             ids, ide, jds, jde, kds, kde,     &
                             ims, ime, jms, jme, kms, kme,     &
@@ -3851,10 +3852,10 @@ BENCH_START(moist_phys_end_tim)
      jte = min(grid%j_end(ij),jde-1-sz)
 
 
-     CALL calc_p_rho_phi( moist, num_3d_m,                &
+     CALL calc_p_rho_phi( moist, num_3d_m, config_flags%hypsometric_opt,        &
                           grid%al, grid%alb, grid%mu_2, grid%muts,              &
-                          grid%ph_2, grid%p, grid%pb, grid%t_2,                 &
-                          p0, t0, grid%znu, grid%dnw, grid%rdnw,           &
+                          grid%ph_2, grid%phb, grid%p, grid%pb, grid%t_2,                 &
+                          p0, t0, grid%p_top,grid%znu, grid%znw, grid%dnw, grid%rdnw,     &
                           grid%rdn, config_flags%non_hydrostatic,             &
                           ids, ide, jds, jde, kds, kde,     &
                           ims, ime, jms, jme, kms, kme,     &
@@ -4577,10 +4578,10 @@ BENCH_START(adj_moist_phys_end_tim)
      jte = min(grid%j_end(ij),jde-1-sz)
 
 
-     CALL a_calc_p_rho_phi( moist,a_moist, num_3d_m,        &
+     CALL a_calc_p_rho_phi( moist,a_moist, num_3d_m, config_flags%hypsometric_opt,   &
                           grid%al,grid%a_al, grid%alb, grid%mu_2,grid%a_mu_2, grid%muts,grid%a_muts, &
-                          grid%ph_2,grid%a_ph_2, grid%p,grid%a_p, grid%pb, grid%t_2,grid%a_t_2,      &
-                          p0, t0, grid%znu, grid%dnw, grid%rdnw,   &
+                          grid%ph_2,grid%a_ph_2, grid%phb,grid%p,grid%a_p, grid%pb, grid%t_2,grid%a_t_2,      &
+                          p0, t0, grid%p_top, grid%znu, grid%znw, grid%dnw, grid%rdnw,   &
                           grid%rdn, config_flags%non_hydrostatic,  &
                           ids, ide, jds, jde, kds, kde,     &
                           ims, ime, jms, jme, kms, kme,     &
@@ -5070,10 +5071,10 @@ BENCH_END(adj_bc_end_tim)
 
 BENCH_START(adj_calc_p_rho_tim)
 
-       CALL a_calc_p_rho_phi( moist,a_moist, num_3d_m,         &
+       CALL a_calc_p_rho_phi( moist,a_moist, num_3d_m, config_flags%hypsometric_opt,   &
                              grid%al,grid%a_al, grid%alb, grid%mu_2,grid%a_mu_2, grid%muts,grid%a_muts, &
-                             grid%ph_2,grid%a_ph_2, grid%p,grid%a_p, grid%pb, grid%t_2,grid%a_t_2,      &
-                             p0, t0, grid%znu, grid%dnw, grid%rdnw,   &
+                             grid%ph_2,grid%a_ph_2, grid%phb,grid%p,grid%a_p, grid%pb, grid%t_2,grid%a_t_2,      &
+                             p0, t0, grid%p_top,grid%znu, grid%znw,grid%dnw, grid%rdnw,   &
                              grid%rdn, config_flags%non_hydrostatic,  &
                              ids, ide, jds, jde, kds, kde,     &
                              ims, ime, jms, jme, kms, kme,     &
@@ -6663,7 +6664,8 @@ BENCH_END(adj_rk_tend_tim)
                              , rw_tendf, a_rw_tendf, t_tendf , a_t_tendf    &
                              , ph_tendf, a_ph_tendf, mu_tendf , a_mu_tendf  &
                              , tke_tend, a_tke_tend             &
-                             , adapt_step_flag , curr_secs      &
+                             , config_flags%use_adaptive_time_step &
+                             , curr_secs      &
                              , psim , psih , wspd , gz1oz0      &
                              , br , chklowq                     &
                              , cu_act_flag , hol , th_phy , a_th_phy      &

@@ -19,7 +19,7 @@ subroutine da_tl_model ()
    ! Set up perturbation output at each slots
    model_config_rec%auxhist8_outname = "tl_d<domain>_<date>"
    call nl_set_auxhist8_interval_s ( head_grid%id, var4d_bin ) 
-   call nl_set_auxhist8_begin_s ( head_grid%id, var4d_bin )
+   call nl_set_auxhist8_begin_s ( head_grid%id, 0 )
    call nl_set_auxhist8_end_h ( head_grid%id, 999 )
    call nl_set_io_form_auxhist8 ( head_grid%id, 2 )
    call nl_set_frames_per_auxhist8 ( head_grid%id, 1 )
@@ -108,12 +108,12 @@ subroutine da_tl_model ()
    call nl_set_sf_sfclay_physics (head_grid%id, 0)
    if (original_bl_pbl_physics .gt. 0) &
       call nl_set_bl_pbl_physics (head_grid%id, 98)
-   call nl_set_cu_physics (head_grid%id, 0)
-   call nl_set_mp_zero_out (head_grid%id, 0)
+   call nl_set_cu_physics (head_grid%id, 0) 
+   !call nl_set_mp_zero_out (head_grid%id, 0)
    !call nl_set_sf_surface_physics (head_grid%id, 1)
    call nl_set_ifsnow (head_grid%id, 1)
    call nl_set_icloud (head_grid%id, 0)
-   call nl_set_isfflx (head_grid%id, 0)
+   !call nl_set_isfflx (head_grid%id, 0)
 
    ! WRF model time-stepping.  Calls integrate().
    call wrf_run_tl
@@ -125,11 +125,11 @@ subroutine da_tl_model ()
    call nl_set_sf_sfclay_physics (head_grid%id, original_sf_sfclay_physics)
    call nl_set_bl_pbl_physics (head_grid%id, original_bl_pbl_physics)
    call nl_set_cu_physics (head_grid%id, original_cu_physics)
-   call nl_set_mp_zero_out (head_grid%id, original_mp_zero_out)
+   !call nl_set_mp_zero_out (head_grid%id, original_mp_zero_out)
    !call nl_set_sf_surface_physics (head_grid%id, original_sf_surface_physics)
    call nl_set_ifsnow (head_grid%id, original_ifsnow)
    call nl_set_icloud (head_grid%id, original_icloud)
-   call nl_set_isfflx (head_grid%id, original_isfflx)
+   !call nl_set_isfflx (head_grid%id, original_isfflx)
 
    ! Turn off auxinput2 reading and auxhist8 output
 

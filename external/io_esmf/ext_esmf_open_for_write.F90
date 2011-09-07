@@ -11,7 +11,7 @@ SUBROUTINE ext_esmf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysD
   ! Local declarations
   INTEGER :: i
   TYPE(ESMF_State), POINTER :: exportstate
-  TYPE(ESMF_StateType) :: statetype
+  TYPE(ESMF_StateIntent_Flag) :: stateintent
   INTEGER :: rc, itemCount
 
   CALL int_get_fresh_handle(i)
@@ -32,11 +32,11 @@ SUBROUTINE ext_esmf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysD
 !TODO:  Eventually, get smart about interacting with "needed" and "optional" 
 !TODO:  named state items
   CALL ESMF_StateGet( exportstate, itemCount=itemCount, &
-                      statetype=statetype, rc=rc )
+                      stateintent=stateintent, rc=rc )
   IF ( rc /= ESMF_SUCCESS ) THEN
     CALL wrf_error_fatal("ext_esmf_open_for_write:  ESMF_ExportStateGet failed" )
   ENDIF
-  IF ( statetype /= ESMF_STATE_EXPORT ) THEN
+  IF ( stateintent /= ESMF_STATEINTENT_EXPORT ) THEN
     CALL wrf_error_fatal("ext_esmf_open_for_write:  not an export state" )
   ENDIF
   IF ( itemCount /= 0 ) THEN

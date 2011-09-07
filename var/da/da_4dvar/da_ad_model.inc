@@ -143,6 +143,8 @@ subroutine da_ad_model ()
    head_grid%g_ph_2 = 0.0
    head_grid%g_mu_2 = 0.0
 
+   head_grid%g_p = 0.0
+
    head_grid%g_moist = 0.0
 
    head_grid%g_scalar = 0.0

@@ -63,7 +63,7 @@ CONTAINS
     USE a_module_physics_addtendc, ONLY : a_update_phy_ten
 
 !   USE module_sfs_driver
-!   USE module_stoch, ONLY : update_stoch_ten, update_stoch , update_stoch_ten_subdomains,  & 
+!   USE module_stoch, ONLY : update_stoch_ten, update_stoch , calculate_stoch_ten,  & 
 !                            do_fftback_along_x,do_fftback_along_y,sp2gp_prep
 
     USE a_module_sfs_driver

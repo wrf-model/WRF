@@ -5,7 +5,8 @@ MODULE module_quilt_outbuf_ops
 ! servers to assemble fields ("quilting") and write them to disk.  
 !</PRE>
 !</DESCRIPTION>
-  INTEGER, PARAMETER :: tabsize = 1000
+  INTEGER, PARAMETER :: tabsize = 5
+  ! The number of entries in outpatch_table (up to a maximum of tabsize)
   INTEGER, SAVE      :: num_entries
 
 ! ARP, for PNC-enabled quilting, 02/06/2010
@@ -30,7 +31,8 @@ MODULE module_quilt_outbuf_ops
     INTEGER                            :: nPatch
     ! How many of the patches remain active in PatchList
     INTEGER                            :: nActivePatch
-    TYPE(varpatch), DIMENSION(tabsize) :: PatchList
+    TYPE(varpatch), ALLOCATABLE, DIMENSION(:) :: PatchList
+!    TYPE(varpatch), DIMENSION(tabsize) :: PatchList
   END TYPE outpatchlist
 
   TYPE(outpatchlist), DIMENSION(tabsize), SAVE :: outpatch_table
@@ -85,18 +87,23 @@ CONTAINS
       outpatch_table(i)%DimNames(1:3) = ""
       outpatch_table(i)%DomainStart(1:3) = 0
       outpatch_table(i)%DomainEnd(1:3)   = 0
-      outpatch_table(i)%npatch           = 0
-      outpatch_table(i)%nActivePatch     = 0
       ! We don't free any memory here - that is done immediately after the
       ! write of each patch is completed
-      DO j = 1, tabsize
+      DO j = 1, outpatch_table(i)%npatch
          outpatch_table(i)%PatchList(j)%forDeletion   = .FALSE.
          outpatch_table(i)%PatchList(j)%PatchStart(:) = 0
          outpatch_table(i)%PatchList(j)%PatchEnd(:)   = 0
          outpatch_table(i)%PatchList(j)%PatchExtent(:)= 0
-         NULLIFY( outpatch_table(i)%PatchList(j)%rptr )
-         NULLIFY( outpatch_table(i)%PatchList(j)%iptr )
+         IF (ALLOCATED(outpatch_table(i)%PatchList)) THEN
+            IF (ASSOCIATED(outpatch_table(i)%PatchList(j)%rptr)) &
+               NULLIFY( outpatch_table(i)%PatchList(j)%rptr )
+            IF (ASSOCIATED(outpatch_table(i)%PatchList(j)%iptr)) &
+               NULLIFY( outpatch_table(i)%PatchList(j)%iptr )
+            DEALLOCATE(outpatch_table(i)%PatchList)
+         ENDIF
       END DO
+      outpatch_table(i)%npatch           = 0
+      outpatch_table(i)%nActivePatch     = 0
 #else
       outbuf_table(i)%VarName = ""
       outbuf_table(i)%DateStr = ""
@@ -111,6 +118,7 @@ CONTAINS
 #endif
 
     ENDDO
+write(0,*)'initializing num_entries to 0 '
     num_entries = 0
   END SUBROUTINE init_outbuf
 
@@ -137,7 +145,6 @@ CONTAINS
     INTEGER               :: DomainDesc ! dummy
     INTEGER               :: Status
     INTEGER               :: ipatch, icnt
- !   INTEGER, DIMENSION(1) :: count_in, count_out
     INTEGER, ALLOCATABLE, DIMENSION(:) :: count_buf
     INTEGER               :: min_count
     LOGICAL               :: do_indep_write ! If no. of patches differs between
@@ -182,44 +189,26 @@ CONTAINS
           ! only use pNetCDF in collective mode for the same no. of writes
           ! on each IO server. Any other patches will have to be written in
           ! independent mode.
-!!$          count_in(1) = outpatch_table(ii)%npatch
-!!$          CALL MPI_AllReduce( count_in, count_out, 1, MPI_INTEGER,  &
-!!$                              MPI_MIN, local_comm, Status )
-!!$          WRITE(mess,*) 'ARPDBG: Min. no. of patches is ',count_out(1)
-!!$          CALL wrf_message(mess)
-!!$          WRITE(mess,*) 'ARPDBG: I have ',count_in(1),' patches.'
-!!$          CALL wrf_message(mess)
           do_indep_write = .FALSE.
           count_buf(:) = 0
           min_count = outpatch_table(ii)%nActivePatch
-!          WRITE(mess,*) 'ARPDBG: before gather, I have ',min_count,' patches.'
-!          CALL wrf_message(mess)
 
           CALL MPI_AllGather(min_count, 1, MPI_INTEGER,      &
 	                     count_buf, 1, MPI_INTEGER, &
 	                     local_comm, Status)
-!          count_buf(mytask+1) = outpatch_table(ii)%npatch
-!          CALL MPI_AllGather(MPI_IN_PLACE,0, MPI_DATATYPE_NULL, &
-!	                     count_buf, ntasks, MPI_INTEGER,    &
-!	                     local_comm, Status)
 
           ! Work out the minimum no. of patches on any IO Server and whether 
           ! or not we will have to enter independent IO mode.
           min_count = outpatch_table(ii)%nActivePatch
           DO jj=1,ntasks, 1
              IF(count_buf(jj) < min_count) min_count = count_buf(jj)
-             IF(outpatch_table(ii)%npatch /= count_buf(jj)) do_indep_write = .TRUE.
+             IF(outpatch_table(ii)%nActivePatch /= count_buf(jj)) do_indep_write = .TRUE.
 
           END DO
 
 !          WRITE(mess,*) 'ARPDBG: Min. no. of patches is ', min_count
 !          CALL wrf_message(mess)
 !          WRITE(mess,*) 'ARPDBG: I have ',count_buf(mytask+1),' patches.'
-!          CALL wrf_message(mess)
-
-!          WRITE(mess,"('Field: ',I3, ' domain start = ',3I4)")  ii, outpatch_table(ii)%DomainStart(1:3)
-!          CALL wrf_message(mess)
-!          WRITE(mess,"(10x,' domain end   = ',3I4)")  outpatch_table(ii)%DomainEnd(1:3)
 !          CALL wrf_message(mess)
 
           IF ( outpatch_table(ii)%FieldType .EQ. WRF_FLOAT ) THEN
@@ -272,8 +261,8 @@ CONTAINS
                 ! We must do the next few patches (if any) in independent IO 
                 ! mode as not all of the IO Servers have the same no. of 
                 ! patches. 
-                ! outpatch_table(ii)%npatch holds the no. of live patches for 
-                ! this IO Server
+                ! outpatch_table(ii)%nActivePatch holds the no. of live patches
+                ! for this IO Server
 
                 CALL ext_pnc_start_independent_mode(DataHandle, Status)
 
@@ -719,7 +708,6 @@ integer i,j
          CALL wrf_error_fatal("stitch_outbuf_patches: unrecognised Field Type")
       END IF
 
-
 !     CALL end_timing("stitch_outbuf_patches: deleting replicated patches")
 
       RETURN
@@ -739,18 +727,14 @@ integer i,j
     END IF
 
     JoinedPatches(:,:) = -1
+    ! Initialise these arrays to catch failures in the above allocate on
+    ! linux-based systems (e.g. Cray XE) where allocation only actually 
+    ! performed when requested memory is touched.
+    PatchCount(:) = 0
+    OldPatchStart(:,:) = 0
+
     NULLIFY(ibuffer)
     NULLIFY(rbuffer)
-
-#if 0
-!    ! ARPDBG
-    WRITE(mess,*) "--------------------------"
-    CALL wrf_message(mess)
-    WRITE(mess,"('Field ',I3,': domain end = ', 3I4)") &
-                  ibuf, outpatch_table(ibuf)%DomainEnd(1:3)
-    CALL wrf_message(mess)
-    WRITE(mess,*) "stitch_outbuf_patches: initial list of patches:"
-    CALL wrf_message(mess)
 
     DO jpatch=1,outpatch_table(ibuf)%npatch,1
 
@@ -761,20 +745,7 @@ integer i,j
        ! Store the location of each patch for use after we've decided how to 
        ! stitch them together
        OldPatchStart(:,jpatch) = outpatch_table(ibuf)%PatchList(jpatch)%PatchStart(:)
-
-       WRITE(mess,"('Patch ',I3,': [',I3,': ',I3,'],[',I3,':',I3,'],[',I3,':',I3,']')") jpatch,  &
-             outpatch_table(ibuf)%PatchList(jpatch)%PatchStart(1), &
-             outpatch_table(ibuf)%PatchList(jpatch)%PatchEnd(1),   &
-             outpatch_table(ibuf)%PatchList(jpatch)%PatchStart(2), &
-             outpatch_table(ibuf)%PatchList(jpatch)%PatchEnd(2),   &
-             outpatch_table(ibuf)%PatchList(jpatch)%PatchStart(3), &
-             outpatch_table(ibuf)%PatchList(jpatch)%PatchEnd(3)
-       CALL wrf_message(mess)
     END DO
-    WRITE(mess,*) "--------------------------"
-    CALL wrf_message(mess)
-    ! ARPDBGend
-#endif
 
     ! Search through patches to find pairs that we can stitch together
     ipatch = 1
@@ -787,7 +758,7 @@ integer i,j
 
        INNER: DO jpatch=ipatch+1,outpatch_table(ibuf)%npatch,1
 
-          IF(outpatch_table(ibuf)%PatchList(ipatch)%forDeletion )THEN
+          IF(outpatch_table(ibuf)%PatchList(jpatch)%forDeletion )THEN
              CYCLE INNER
           END IF
 
@@ -819,8 +790,8 @@ integer i,j
                 outpatch_table(ibuf)%PatchList(ipatch)%PatchStart(1) = &
                          outpatch_table(ibuf)%PatchList(jpatch)%PatchStart(1)
                 CALL merge_patches(ibuf, ipatch, jpatch)
+
                 ! Go again...
-!                CALL wrf_message('Re-starting search...')
                 ipatch = 1
                 CYCLE OUTER
              END IF
@@ -851,8 +822,8 @@ integer i,j
                 outpatch_table(ibuf)%PatchList(ipatch)%PatchEnd(1) = &
                         outpatch_table(ibuf)%PatchList(jpatch)%PatchEnd(1)
                 CALL merge_patches(ibuf, ipatch, jpatch)
+
                 ! Go again...
-!                CALL wrf_message('Re-starting search...')
 		ipatch = 1
 		CYCLE OUTER
               END IF
@@ -881,8 +852,8 @@ integer i,j
                  outpatch_table(ibuf)%PatchList(ipatch)%PatchStart(2) = &
                          outpatch_table(ibuf)%PatchList(jpatch)%PatchStart(2)
                  CALL merge_patches(ibuf, ipatch, jpatch)
+
                  ! Go again...
-!                 CALL wrf_message('Re-starting search...')
                  ipatch = 1
                  CYCLE OUTER
               END IF
@@ -910,8 +881,8 @@ integer i,j
                  outpatch_table(ibuf)%PatchList(ipatch)%PatchEnd(2) = &
                          outpatch_table(ibuf)%PatchList(jpatch)%PatchEnd(2)
                  CALL merge_patches(ibuf, ipatch, jpatch)
+
                  ! Go again...
-!                 CALL wrf_message('Re-starting search...')
                  ipatch = 1
                  CYCLE OUTER                 
               END IF
@@ -940,8 +911,8 @@ integer i,j
                  outpatch_table(ibuf)%PatchList(ipatch)%PatchStart(3) = &
                          outpatch_table(ibuf)%PatchList(jpatch)%PatchStart(3)
                  CALL merge_patches(ibuf, ipatch, jpatch)
+
                  ! Go again...
-!                 CALL wrf_message('Re-starting search...')
                  ipatch = 1
                  CYCLE OUTER                 
               END IF
@@ -969,8 +940,8 @@ integer i,j
                  outpatch_table(ibuf)%PatchList(ipatch)%PatchEnd(3) = &
                          outpatch_table(ibuf)%PatchList(jpatch)%PatchEnd(3)
                  CALL merge_patches(ibuf, ipatch, jpatch)
+
                  ! Go again...
-!                 CALL wrf_message('Re-starting search...')
                  ipatch = 1
                  CYCLE OUTER                 
               END IF
@@ -982,24 +953,19 @@ integer i,j
 
     END DO OUTER
 
-#if 0
-    ! ARPDBG
-    CALL wrf_message("--------------------------")
-    CALL wrf_message("Final list of patches:")
-
     npatches = 0
 
     DO jpatch=1,outpatch_table(ibuf)%npatch,1
 
        IF ( outpatch_table(ibuf)%PatchList(jpatch)%forDeletion ) CYCLE
 
-       WRITE(mess,"('Patch ',I3,': [',I3,': ',I3,'],[',I3,':',I3,'],[',I3,':',I3,']')") jpatch, outpatch_table(ibuf)%PatchList(jpatch)%PatchStart(1), &
-             outpatch_table(ibuf)%PatchList(jpatch)%PatchEnd(1),   &
-             outpatch_table(ibuf)%PatchList(jpatch)%PatchStart(2), &
-             outpatch_table(ibuf)%PatchList(jpatch)%PatchEnd(2),   &
-             outpatch_table(ibuf)%PatchList(jpatch)%PatchStart(3), &
-             outpatch_table(ibuf)%PatchList(jpatch)%PatchEnd(3)
-       CALL wrf_message(mess)
+!       WRITE(mess,"('Patch ',I3,': [',I3,': ',I3,'],[',I3,':',I3,'],[',I3,':',I3,']')") jpatch, outpatch_table(ibuf)%PatchList(jpatch)%PatchStart(1), &
+!             outpatch_table(ibuf)%PatchList(jpatch)%PatchEnd(1),   &
+!             outpatch_table(ibuf)%PatchList(jpatch)%PatchStart(2), &
+!             outpatch_table(ibuf)%PatchList(jpatch)%PatchEnd(2),   &
+!             outpatch_table(ibuf)%PatchList(jpatch)%PatchStart(3), &
+!             outpatch_table(ibuf)%PatchList(jpatch)%PatchEnd(3)
+!       CALL wrf_message(mess)
 
        ! Count how many patches we're left with
        npatches = npatches + 1
@@ -1034,7 +1000,7 @@ integer i,j
 
              ii = JoinedPatches(ipatch, jpatch)
 
-             ! Work out where to put it - the PatchList(i)PatchStart() has been
+             ! Work out where to put it - the PatchList(i)%PatchStart() has been
              ! updated to hold the start of the newly quilted patch i. It will
              ! therefore be less than or equal to the starts of each of the 
              ! constituent patches.
@@ -1100,8 +1066,6 @@ integer i,j
 
     WRITE(mess,*) "--------------------------"
     CALL wrf_message(mess)
-    ! ARPDBGend
-#endif
 
     ! Record how many patches we're left with
     outpatch_table(ibuf)%nPatch = npatches
@@ -1240,15 +1204,16 @@ END MODULE module_quilt_outbuf_ops
 ! on inbuf will result;  may want to make a module program at some point 
   SUBROUTINE store_patch_in_outbuf_pnc( inbuf_r, inbuf_i, DateStr, VarName , &
                                         FieldType, MemoryOrder, Stagger,     &
-                                        DimNames,&
+                                        DimNames ,                &
                                         DomainStart , DomainEnd , &
                                         MemoryStart , MemoryEnd , &
-                                        PatchStart  , PatchEnd )
+                                        PatchStart  , PatchEnd  , &
+                                        ntasks )
 !<DESCRIPTION>
 !<PRE>
 ! This routine stores a patch in an array within an element of the 
 ! outpatch_table%PatchList data structure.  DateStr, VarName, and 
-! MemoryOrder are used to uniquely identify which element of outbuf_table is 
+! MemoryOrder are used to uniquely identify which element of outpatch_table is 
 ! associated with this array.  If no element is associated, then this routine 
 ! first assigns an unused element and allocates space within that element.  
 ! This routine also stores DateStr, VarName, 
@@ -1260,11 +1225,15 @@ END MODULE module_quilt_outbuf_ops
     USE module_timing
     IMPLICIT NONE
 #include "wrf_io_flags.h"
-    INTEGER ,                INTENT(IN) :: FieldType
-    REAL    , DIMENSION(*) , INTENT(IN) :: inbuf_r
-    INTEGER , DIMENSION(*) , INTENT(IN) :: inbuf_i
-    INTEGER , DIMENSION(3) , INTENT(IN) :: DomainStart , DomainEnd , MemoryStart , MemoryEnd , PatchStart , PatchEnd
-    CHARACTER*(*)    , INTENT(IN) :: DateStr , VarName, MemoryOrder , Stagger, DimNames(3)
+    INTEGER ,               INTENT(IN) :: FieldType
+    REAL    , DIMENSION(*), INTENT(IN) :: inbuf_r
+    INTEGER , DIMENSION(*), INTENT(IN) :: inbuf_i
+    INTEGER , DIMENSION(3), INTENT(IN) :: DomainStart, DomainEnd, MemoryStart,&
+                                          MemoryEnd , PatchStart , PatchEnd
+    CHARACTER*(*)         , INTENT(IN) :: DateStr , VarName, MemoryOrder , &
+                                          Stagger, DimNames(3)
+    INTEGER, INTENT(IN) :: ntasks ! Number of compute tasks associated with 
+                                  ! this IO server
 ! Local
     CHARACTER*256         :: mess
     INTEGER               :: l,m,n,ii,jj,ipatch,ierr
@@ -1293,7 +1262,10 @@ END MODULE module_quilt_outbuf_ops
     ENDDO
     IF ( .NOT. found ) THEN
       num_entries = num_entries + 1
-
+      IF(num_entries > tabsize)THEN
+         WRITE(mess,*) 'Number of entries in outpatch_table has exceeded tabsize (',tabsize,') in module_quilt_outbuf_ops::store_patch_in_outbuf_pnc'
+         CALL wrf_error_fatal(mess)
+      END IF
       outpatch_table(num_entries)%npatch = 0
 
       outpatch_table(num_entries)%VarName     = TRIM(VarName)
@@ -1306,6 +1278,29 @@ END MODULE module_quilt_outbuf_ops
       outpatch_table(num_entries)%DomainStart = DomainStart
       outpatch_table(num_entries)%DomainEnd   = DomainEnd
       outpatch_table(num_entries)%FieldType   = FieldType
+      ! Allocate the table for the list of patches for this output - it
+      ! will have as many entries as there are compute tasks associated with
+      ! this IO server.
+      IF ( ALLOCATED(outpatch_table(num_entries)%PatchList) ) &
+         DEALLOCATE(outpatch_table(num_entries)%PatchList)
+      ALLOCATE(outpatch_table(num_entries)%PatchList(ntasks), Stat=ierr)
+      IF(ierr /= 0)THEN
+         WRITE(mess,*)'num_entries ',num_entries,' ntasks ',ntasks,' ierr ',ierr
+         CALL wrf_message(mess)
+         WRITE(mess,*)'Allocation for ',ntasks, &
+                      ' patches in store_patch_in_outbuf_pnc() failed.'
+         CALL wrf_error_fatal( mess )
+      ENDIF
+      ! Initialise the list of patches
+      DO ii=1, ntasks, 1
+         outpatch_table(num_entries)%PatchList(ii)%forDeletion = .FALSE.
+         NULLIFY(outpatch_table(num_entries)%PatchList(ii)%rptr)
+         NULLIFY(outpatch_table(num_entries)%PatchList(ii)%iptr)
+         outpatch_table(num_entries)%PatchList(ii)%PatchStart(:) = 0
+         outpatch_table(num_entries)%PatchList(ii)%PatchEnd(:) = 0
+         outpatch_table(num_entries)%PatchList(ii)%PatchExtent(:) = 0
+      END DO 
+
       ii = num_entries
 
       WRITE(mess,*)'Adding field entry no. ',num_entries

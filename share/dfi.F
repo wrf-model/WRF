@@ -226,7 +226,7 @@
    SUBROUTINE dfi_fwd_init ( grid )
 
       USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time
-      USE module_utility
+      USE module_utility, ONLY : WRFU_ClockSet
       USE module_state_description
 
       IMPLICIT NONE

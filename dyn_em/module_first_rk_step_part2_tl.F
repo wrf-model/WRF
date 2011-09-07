@@ -64,7 +64,7 @@ CONTAINS
     USE g_module_physics_addtendc, ONLY : g_update_phy_ten
 
     USE g_module_sfs_driver
-    USE module_stoch, ONLY : update_stoch_ten, update_stoch , update_stoch_ten_subdomains,  & 
+    USE module_stoch, ONLY : update_stoch_ten, update_stoch , calculate_stoch_ten,  & 
                              do_fftback_along_x,do_fftback_along_y,sp2gp_prep
 
     IMPLICIT NONE
@@ -152,9 +152,7 @@ CONTAINS
     rk_step = 1
 
 !!!!! REPLACE WITH g_??? WHEN CONSTRUCTING TL OF PHYSICS. Xing Zhang
-   stoch_force_select: SELECT CASE(config_flags%stoch_force_opt)
-
-      CASE (STOCH_BACKSCATTER)
+   IF (grid%stoch_force_global_opt==1) then
 
          IF ( grid%id .EQ. 1 ) THEN
 
@@ -250,10 +248,10 @@ CONTAINS
                               ids, ide, jds, jde, kds, kde,     &
                               ims, ime, jms, jme, kms, kme,     &
                               ips, ipe, jps, jpe, kps, kpe,     &
-                              imsx,imex,jmsx,jmex,kmsx,kmex,    &
-                              ipsx,ipex,jpsx,jpex,kpsx,kpex,    &
-                              imsy,imey,jmsy,jmey,kmsy,kmey,    &
-                              ipsy,ipey,jpsy,jpey,kpsy,kpey,    &
+                              ims,ime,jms,jme,kms,kme,    &
+                              ips,ipe,jps,jpe,kps,kpe,    &
+                              ims,ime,jms,jme,kms,kme,    &
+                              ips,ipe,jps,jpe,kps,kpe,    &
                               k_start , k_end                   &
                              )
             call do_fftback_along_y(                            & 
@@ -263,10 +261,10 @@ CONTAINS
                               ids, ide, jds, jde, kds, kde,     &
                               ims, ime, jms, jme, kms, kme,     &
                               ips, ipe, jps, jpe, kps, kpe,     &
-                              imsx,imex,jmsx,jmex,kmsx,kmex,    &
-                              ipsx,ipex,jpsx,jpex,kpsx,kpex,    &
-                              imsy,imey,jmsy,jmey,kmsy,kmey,    &
-                              ipsy,ipey,jpsy,jpey,kpsy,kpey,    &
+                              ims,ime,jms,jme,kms,kme,    &
+                              ips,ipe,jps,jpe,kps,kpe,    &
+                              ims,ime,jms,jme,kms,kme,    &
+                              ips,ipe,jps,jpe,kps,kpe,    &
                               k_start , k_end                   &
                              )
 #endif
@@ -275,11 +273,12 @@ CONTAINS
              !$OMP PRIVATE ( ij )
              DO ij = 1 , grid%num_tiles
                CALL wrf_debug ( 200 , ' call update_stoch_ten' )
-               CALL update_stoch_ten(ru_tendf, rv_tendf, t_tendf,           &
+               CALL calculate_stoch_ten(ru_tendf, rv_tendf, t_tendf,            &
                                grid%ru_tendf_stoch,                          &
                                grid%rv_tendf_stoch,                          &
                                grid%rt_tendf_stoch,                          &
                                grid%RU_REAL,grid%RV_REAL,grid%RT_REAL,       & 
+                               grid%mu_2 , grid%mub,                         &
                                ids, ide, jds, jde, kds, kde,                 &
                                ims, ime, jms, jme, kms, kme,                 &
                                grid%i_start(ij), grid%i_end(ij),             &
@@ -289,16 +288,22 @@ CONTAINS
 
              ENDDO
              !$OMP END PARALLEL DO
-         ELSE ! (grid%id .NE> 1)
+         END IF !grid%id==1
+    ENDIF !toch_force_global_opt 
+
+    stoch_force_select: SELECT CASE(config_flags%stoch_force_opt)
+
+      CASE (STOCH_BACKSCATTER)
 
           !$OMP PARALLEL DO   &
           !$OMP PRIVATE ( ij )
           DO ij = 1 , grid%num_tiles
-               CALL wrf_debug ( 200 , ' call update_stoch_ten_subdomains' )
-                CALL update_stoch_ten_subdomains(ru_tendf, rv_tendf, t_tendf,&
+               CALL wrf_debug ( 200 , ' call update_stoch_ten' )
+                CALL update_stoch_ten(ru_tendf, rv_tendf, t_tendf,&
                                grid%ru_tendf_stoch,                          &
                                grid%rv_tendf_stoch,                          &
                                grid%rt_tendf_stoch,                          &
+                               grid%mu_2 , grid%mub,                         &
                                ids, ide, jds, jde, kds, kde,                 &
                                ims, ime, jms, jme, kms, kme,                 &
                                grid%i_start(ij), grid%i_end(ij),             &
@@ -308,7 +313,6 @@ CONTAINS
 
            ENDDO
            !$OMP END PARALLEL DO
-         END IF
 
    END SELECT stoch_force_select
 

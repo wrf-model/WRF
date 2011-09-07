@@ -27,7 +27,7 @@
 !.. Remaining values should probably be left alone.
 !..
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
-!..Last modified: 03 Aug 2011
+!..Last modified: 26 Aug 2011
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
 !+---+-----------------------------------------------------------------+
@@ -1415,10 +1415,8 @@
          if (temp(k).lt.T_0 .and. (rc(k)+rr(k)).gt.1.E-5) then
             xslw1 = 5. + alog10(max(1.E-5, min(1.E-2, (rc(k)+rr(k)))))
          else
-            xslw1 = 0.
+            xslw1 = 0.0001
          endif
-!..OLD   ygra1 = 5. + alog10(max(1.E-5, min(1.E-2, rg(k))))
-!..OLD   zans1 = 3.324 + (3./(5.*xslw1*ygra1/(5.*xslw1+1.+0.25*ygra1)+1.+0.25*ygra1))
          ygra1 = 4.302 + alog10(max(5.E-5, min(5.E-2, rg(k))))
          zans1 = 3.565 + (90./(50.*xslw1*ygra1/(5./xslw1+1.+0.25*ygra1)+30.+15.*ygra1))
          N0_exp = 10.**(zans1)
@@ -2316,10 +2314,8 @@
          if (temp(k).lt.T_0 .and. (rc(k)+rr(k)).gt.1.E-5) then
             xslw1 = 5. + alog10(max(1.E-5, min(1.E-2, (rc(k)+rr(k)))))
          else
-            xslw1 = 0.
+            xslw1 = 0.0001
          endif
-!..OLD   ygra1 = 5. + alog10(max(1.E-5, min(1.E-2, rg(k))))
-!..OLD   zans1 = 3.324 + (3./(5.*xslw1*ygra1/(5.*xslw1+1.+0.25*ygra1)+1.+0.25*ygra1))
          ygra1 = 4.302 + alog10(max(5.E-5, min(5.E-2, rg(k))))
          zans1 = 3.565 + (90./(50.*xslw1*ygra1/(5./xslw1+1.+0.25*ygra1)+30.+15.*ygra1))
          N0_exp = 10.**(zans1)
@@ -2361,7 +2357,7 @@
           if (xrc.gt. 0.0) then
              prw_vcd(k) = clap*odt
           else
-             prw_vcd(k) = -rc(k)/rho(k)*odt
+             prw_vcd(k) = -rc(k)/rho(k)*odts
           endif
 
           qcten(k) = qcten(k) + prw_vcd(k)
@@ -2473,6 +2469,9 @@
           vtr = rhof(k)*av_r*crg(7)/crg(12) * lamr**cre(12)             &
                       *((lamr+fv_r)**(-cre(7)))
           vtnrk(k) = vtr
+         else
+          vtrk(k) = vtrk(k+1)
+          vtnrk(k) = vtnrk(k+1)
          endif
 
          if (MAX(vtrk(k),vtnrk(k)) .gt. 1.E-3) then
@@ -2502,6 +2501,9 @@
 ! Goal: less prominent size sorting
            vti = rhof(k)*av_i*cig(6)/cig(7) * ilami**bv_i
            vtnik(k) = vti
+          else
+           vtik(k) = vtik(k+1)
+           vtnik(k) = vtnik(k+1)
           endif
 
           if (vtik(k) .gt. 1.E-3) then
@@ -2536,6 +2538,8 @@
            else
             vtsk(k) = vts*vts_boost(k)
            endif
+          else
+            vtsk(k) = vtsk(k+1)
           endif
 
           if (vtsk(k) .gt. 1.E-3) then
@@ -2560,6 +2564,8 @@
            else
             vtgk(k) = vtg
            endif
+          else
+            vtgk(k) = vtgk(k+1)
           endif
 
           if (vtgk(k) .gt. 1.E-3) then

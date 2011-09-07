@@ -122,7 +122,7 @@
 
     dryrun        = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
 
-    WRITE(wrf_err_message,*)'input_wrf: dryrun = ',dryrun
+    WRITE(wrf_err_message,*)'input_wrf: dryrun = ',dryrun,' switch ',switch
     CALL wrf_debug( 300 , wrf_err_message )
 
     check_if_dryrun : IF ( .NOT. dryrun ) THEN

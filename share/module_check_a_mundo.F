@@ -83,6 +83,21 @@
          END IF
       ENDDO
 
+#if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+! Check that if stochastic perturbations are turned on in any domain, 
+! if so, set grid%stoch_force_global_opt=1 
+!-----------------------------------------------------------------------
+
+   model_config_rec % stoch_force_global_opt=0  !also set in registry.stoch
+ ! check if stochastic perturbations are turned on in any domain
+   DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % stoch_force_opt(i) .EQ. 1)  then 
+           model_config_rec % stoch_force_global_opt=1 
+         endif
+   ENDDO 
+#endif
+
 !-----------------------------------------------------------------------
 ! If sst_update = 0, set io_form_auxinput4 to 0 so WRF will not try to
 ! input the data; auxinput_interval must also be 0

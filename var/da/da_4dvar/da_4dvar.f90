@@ -14,6 +14,8 @@ use mediation_pertmod_io, only : xtraj_io_initialize, adtl_initialize, &
              save_ad_forcing, read_ad_forcing, read_nl_xtraj, save_tl_pert, &
              read_tl_pert, swap_ad_forcing
 use module_configure, only :  model_to_grid_config_rec, grid_config_rec_type
+use module_domain, only : wrfu_timeinterval
+use module_utility
 use module_big_step_utilities_em, only : calc_mu_uv
 use g_module_big_step_utilities_em, only : g_calc_mu_uv
 use a_module_big_step_utilities_em, only : a_calc_mu_uv

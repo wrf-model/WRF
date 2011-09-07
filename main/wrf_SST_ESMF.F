@@ -28,7 +28,10 @@ MODULE module_sst_component_top
 ! routines that are called when SST is run as an ESMF component.  
 !</DESCRIPTION>
 
-   USE ESMF_Mod
+! Updated for ESMF 5.2.0r  -- see:
+!  http://www.earthsystemmodeling.org/esmf_releases/public/ESMF_5_2_0r/InterfaceChanges520to520r.pdf
+!   USE ESMF_Mod  
+   USE ESMF
    USE module_esmf_extensions
    USE module_metadatautils, ONLY: AttachTimesToState
 
@@ -219,8 +222,8 @@ CONTAINS
 !     stuffs the file data into the SST exportState.  
 !</DESCRIPTION>
 
-     #include <wrf_status_codes.h>
-     #include <wrf_io_flags.h>
+#include <wrf_status_codes.h>
+#include <wrf_io_flags.h>
 
      ! Local variables
      CHARACTER (LEN=19) :: date_string
@@ -449,8 +452,8 @@ CONTAINS
        ENDDO
      ENDDO LANDMASK_COMPARE
      IF ( landmask_ok ) THEN
-       WRITE(str,*) 'compare_data: LANDMASK compares OK'
-       CALL wrf_debug ( 100 , TRIM(str) )
+       WRITE(str,*) 'TESTING data returned from WRF through ESMF: LANDMASK compares OK'
+       CALL wrf_debug ( 0 , TRIM(str) )
      ELSE
        CALL wrf_error_fatal ( TRIM(str) )
      ENDIF
@@ -470,8 +473,8 @@ CONTAINS
        ENDDO
      ENDDO SST_COMPARE
      IF ( sst_ok ) THEN
-       WRITE(str,*) 'compare_data: SST compares OK'
-       CALL wrf_debug ( 100 , TRIM(str) )
+       WRITE(str,*) 'TESTING data returned from WRF through ESMF: SST compares OK'
+       CALL wrf_debug ( 0 , TRIM(str) )
      ELSE
        CALL wrf_error_fatal ( TRIM(str) )
      ENDIF
@@ -609,7 +612,7 @@ CONTAINS
 !write(0,*)__FILE__,__LINE__,ips,jps,ipe,jpe
      out_sst_field = ESMF_FieldCreate(                 &
                        esmfgrid, tmp_data_out_sst,     &
-                       copyflag=ESMF_DATA_REF,         &
+                       datacopyflag=ESMF_DATACOPY_REFERENCE,         &
                        staggerloc=ESMF_STAGGERLOC_CENTER,          &
                        name=TRIM(datanames(SST_INDX)), &
                        rc=rc )
@@ -646,7 +649,7 @@ CONTAINS
      CALL wrf_debug ( 100, 'sst_component_init2: calling ESMF_FieldCreate(out_landmask_field)' )
      out_landmask_field = ESMF_FieldCreate(                      &
                             esmfgrid, tmp_data_out_landmask,     &
-                            copyflag=ESMF_DATA_REF,              &
+                            datacopyflag=ESMF_DATACOPY_REFERENCE,              &
                             staggerloc=ESMF_STAGGERLOC_CENTER,          &
                             name=TRIM(datanames(LANDMASK_INDX)), &
 !                            lbounds=(/ips,jps/),                 &
@@ -676,7 +679,7 @@ CONTAINS
      CALL wrf_debug ( 100, 'sst_component_init2: calling ESMF_FieldCreate(in_sst_field)' )
      in_sst_field = ESMF_FieldCreate(                 &
                       esmfgrid, tmp_data_in_sst,      &
-                      copyflag=ESMF_DATA_REF,         &
+                      datacopyflag=ESMF_DATACOPY_REFERENCE,         &
                       staggerloc=ESMF_STAGGERLOC_CENTER,          &
                       name=TRIM(datanames(SST_INDX)), &
 !                      lbounds=(/ips,jps/),            &
@@ -706,7 +709,7 @@ CONTAINS
      CALL wrf_debug ( 100, 'sst_component_init2: calling ESMF_FieldCreate(in_landmask_field)' )
      in_landmask_field = ESMF_FieldCreate(                      &
                            esmfgrid, tmp_data_in_landmask,      &
-                           copyflag=ESMF_DATA_REF,              &
+                           datacopyflag=ESMF_DATACOPY_REFERENCE,              &
                            staggerloc=ESMF_STAGGERLOC_CENTER,          &
                            name=TRIM(datanames(LANDMASK_INDX)), &
 !                           lbounds=(/ips,jps/),                 &
@@ -731,20 +734,20 @@ CONTAINS
      ENDIF
 
      ! attach ESMF_Field to importState
-     CALL ESMF_StateAdd( importState, in_sst_field, rc=rc )
+     CALL ESMF_StateAdd( importState, fieldList=(/in_sst_field/), rc=rc )
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal ( 'ESMF_StateAdd(in_sst_field) failed' )
      ENDIF
-     CALL ESMF_StateAdd( importState, in_landmask_field, rc=rc )
+     CALL ESMF_StateAdd( importState, fieldList=(/in_landmask_field/), rc=rc )
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal ( 'ESMF_StateAdd(in_landmask_field) failed' )
      ENDIF
      ! attach ESMF_Field to exportState
-     CALL ESMF_StateAdd( exportState, out_sst_field, rc=rc )
+     CALL ESMF_StateAdd( exportState, fieldList=(/out_sst_field/), rc=rc )
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal ( 'ESMF_StateAdd(out_sst_field) failed' )
      ENDIF
-     CALL ESMF_StateAdd( exportState, out_landmask_field, rc=rc )
+     CALL ESMF_StateAdd( exportState, fieldList=(/out_landmask_field/), rc=rc )
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal ( 'ESMF_StateAdd(out_landmask_field) failed' )
      ENDIF
@@ -933,7 +936,9 @@ MODULE module_sst_setservices
                                        sst_component_run1,   &
                                        sst_component_run2,   &
                                        sst_component_finalize
-   USE ESMF_Mod
+!  Updated for ESMF 5.2.0r 
+!   USE ESMF_Mod
+   USE ESMF
 
    IMPLICIT NONE
 
@@ -970,32 +975,32 @@ CONTAINS
 
      finalrc = ESMF_SUCCESS
      ! Register the callback routines.
-     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETINIT, &
-                                     sst_component_init1, 1, rc)
+     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_METHOD_INITIALIZE, &
+                                     sst_component_init1, phase=1, rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
         WRITE(str,*) 'ESMF_GridCompSetEntryPoint(sst_component_init1) failed with rc = ', rc
         CALL wrf_error_fatal ( TRIM(str) )
      ENDIF
-     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETINIT, &
-                                     sst_component_init2, 2, rc)
+     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_METHOD_INITIALIZE, &
+                                     sst_component_init2, phase=2, rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
         WRITE(str,*) 'ESMF_GridCompSetEntryPoint(sst_component_init2) failed with rc = ', rc
         CALL wrf_error_fatal ( TRIM(str) )
      ENDIF
-     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETRUN, &
-                                     sst_component_run1, 1, rc)
+     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_METHOD_RUN, &
+                                     sst_component_run1, phase=1, rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
         WRITE(str,*) 'ESMF_GridCompSetEntryPoint(sst_component_run1) failed with rc = ', rc
         CALL wrf_error_fatal ( TRIM(str) )
      ENDIF
-     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETRUN, &
-                                     sst_component_run2, 2, rc)
+     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_METHOD_RUN, &
+                                     sst_component_run2, phase=2, rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
         WRITE(str,*) 'ESMF_GridCompSetEntryPoint(sst_component_run2) failed with rc = ', rc
         CALL wrf_error_fatal ( TRIM(str) )
      ENDIF
-     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETFINAL, &
-                                     sst_component_finalize, ESMF_SINGLEPHASE, rc)
+     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_METHOD_FINALIZE, &
+                                     sst_component_finalize, rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
         WRITE(str,*) 'ESMF_GridCompSetEntryPoint(sst_component_finalize) failed with rc = ', rc
         CALL wrf_error_fatal ( TRIM(str) )
@@ -1027,7 +1032,9 @@ END MODULE module_sst_setservices
 
 MODULE module_wrfsst_coupler
 
-    USE ESMF_Mod
+! Updated for ESMF 5.2.0r
+!    USE ESMF_Mod
+    USE ESMF
 
     IMPLICIT NONE
     
@@ -1076,18 +1083,18 @@ CONTAINS
 
       ! Register the callback routines.
 
-      call ESMF_CplCompSetEntryPoint(comp, ESMF_SETINIT, WRFSSTCpl_init, &
-                                     ESMF_SINGLEPHASE, rc)
+      call ESMF_CplCompSetEntryPoint(comp, ESMF_METHOD_INITIALIZE, WRFSSTCpl_init, &
+                                     rc=rc)
       IF ( rc /= ESMF_SUCCESS ) THEN
         CALL wrf_error_fatal ( 'ESMF_CplCompSetEntryPoint(WRFSSTCpl_init) failed' )
       ENDIF
-      call ESMF_CplCompSetEntryPoint(comp, ESMF_SETRUN, WRFSSTCpl_run, &
-                                     ESMF_SINGLEPHASE, rc)
+      call ESMF_CplCompSetEntryPoint(comp, ESMF_METHOD_RUN, WRFSSTCpl_run, &
+                                     rc=rc)
       IF ( rc /= ESMF_SUCCESS ) THEN
         CALL wrf_error_fatal ( 'ESMF_CplCompSetEntryPoint(WRFSSTCpl_run) failed' )
       ENDIF
-      call ESMF_CplCompSetEntryPoint(comp, ESMF_SETFINAL, WRFSSTCpl_final, &
-                                     ESMF_SINGLEPHASE, rc)
+      call ESMF_CplCompSetEntryPoint(comp, ESMF_METHOD_FINALIZE, WRFSSTCpl_final, &
+                                     rc=rc)
       IF ( rc /= ESMF_SUCCESS ) THEN
         CALL wrf_error_fatal ( 'ESMF_CplCompSetEntryPoint(WRFSSTCpl_final) failed' )
       ENDIF
@@ -1152,7 +1159,8 @@ CONTAINS
 
 
       ELSE
-        CALL wrf_error_fatal ( 'WRFSSTCpl_init:  invalid importState name' )
+        WRITE(str,*)'WRFSSTCpl_init:  invalid importState name: ',TRIM(importstatename)
+        CALL wrf_error_fatal ( TRIM(str) )
       ENDIF
 
       ! set up field names
@@ -1169,6 +1177,7 @@ CONTAINS
 
 
     SUBROUTINE WRFSSTCpl_run(comp, importState, exportState, clock, rc)
+      USE ESMF
       TYPE(ESMF_CplComp), INTENT(INOUT) :: comp
       TYPE(ESMF_State), INTENT(INOUT) :: importState, exportState
       TYPE(ESMF_Clock), INTENT(INOUT) :: clock
@@ -1189,10 +1198,6 @@ CONTAINS
 ! provided by the ESMF core team.  
 
       ! Local variables
-character*256 :: mename
-character*256 :: melist(100)
-integer :: mecount
-TYPE(ESMF_StateItemType) :: metypelist(100)
       TYPE(ESMF_Field) :: src_field, dst_field
       TYPE(ESMF_Array) :: src_array, dst_array
       TYPE(ESMF_RouteHandle) :: routehandle
@@ -1202,6 +1207,7 @@ TYPE(ESMF_StateItemType) :: metypelist(100)
       CHARACTER(LEN=ESMF_MAXSTR) :: SST_exportStatename, WRF_exportStatename
       INTEGER :: i
       CHARACTER(LEN=256) :: directionString
+      LOGICAL :: neededFlag(1)
 
       WRITE(str,*) 'WRFSSTCpl_run: begin'
       CALL wrf_debug ( 100 , TRIM(str) )
@@ -1232,7 +1238,8 @@ TYPE(ESMF_StateItemType) :: metypelist(100)
         fromWRF = .FALSE.
         directionString = 'SSTtoWRF'
       ELSE
-        CALL wrf_error_fatal ( 'WRFSSTCpl_run:  invalid importState name' )
+        WRITE(str,*)'WRFSSTCpl_run:  invalid importState name: ',TRIM(importstatename)
+        CALL wrf_error_fatal ( TRIM(str) )
       ENDIF
       WRITE(str,*) 'WRFSSTCpl_run: fromWRF = ',fromWRF
       CALL wrf_debug ( 100 , TRIM(str) )
@@ -1253,16 +1260,6 @@ TYPE(ESMF_StateItemType) :: metypelist(100)
                      '> from import state'
         CALL wrf_debug ( 100 , TRIM(str) )
 
-!CALL ESMF_StateGet( importState, name=mename, itemCount=mecount, itemNameList=melist, stateitemtypelist=metypelist, rc=rc )
-!write(0,*)'importState mename ',trim(mename)
-!write(0,*)'importState mecount ',mecount
-!do i = 1,mecount
-!write(0,*)i,trim(melist(i))
-!enddo
-!do i = 1,mecount
-!write(0,*)i,metypelist(i)
-!enddo
-
         CALL ESMF_StateGet( importState, TRIM(datanames(1)), src_field, &
                                  rc=rc )
         IF ( rc /= ESMF_SUCCESS ) THEN
@@ -1276,16 +1273,6 @@ TYPE(ESMF_StateItemType) :: metypelist(100)
         WRITE(str,*) 'WRFSSTCpl_run: grabbing first field <',TRIM(datanames(1)), &
                      '> from export state'
         CALL wrf_debug ( 100 , TRIM(str) )
-
-!CALL ESMF_StateGet( exportState, name=mename, itemCount=mecount, itemNameList=melist, stateitemtypelist=metypelist, rc=rc )
-!write(0,*)'Exportstate mename ',trim(mename)
-!write(0,*)'Exportstate mecount ',mecount
-!do i = 1,mecount
-!write(0,*)i,trim(melist(i))
-!enddo
-!do i = 1,mecount
-!write(0,*)i,metypelist(i)
-!enddo
 
         CALL ESMF_StateGet( exportState, TRIM(datanames(1)), dst_field, &
                                  rc=rc )
@@ -1335,12 +1322,13 @@ TYPE(ESMF_StateItemType) :: metypelist(100)
           fromSST_rh_ready = .TRUE.
         ENDIF
         DO i=1, datacount
-          WRITE(str,*) 'WRFSSTCpl_run: calling ESMF_StateSetNeeded(importState, ',TRIM(datanames(i)),')'
+          WRITE(str,*) 'WRFSSTCpl_run: calling ESMF_AttributeSet(importState, ',TRIM(datanames(i))//':needed',')'
           CALL wrf_debug ( 100 , TRIM(str) )
-          CALL ESMF_StateSetNeeded( importState, TRIM(datanames(i)), &
-                                    ESMF_NEEDED, rc=rc )
+!5.2.0r          CALL ESMF_StateSetNeeded( importState, TRIM(datanames(i)), &
+!5.2.0r                                    ESMF_NEEDED, rc=rc )
+          CALL ESMF_AttributeSet( importState, name=TRIM(datanames(i))//':needed',value=.true.,rc=rc)
           IF ( rc /= ESMF_SUCCESS ) THEN
-            WRITE(str,*) 'WRFSSTCpl_run:  ESMF_StateSetNeeded(',TRIM(datanames(i)),') failed'
+            WRITE(str,*) 'WRFSSTCpl_run:  ESMF_AttributeSet(',TRIM(datanames(i))//':needed',') failed'
             CALL wrf_error_fatal ( str )
           ENDIF
         ENDDO
@@ -1363,14 +1351,25 @@ TYPE(ESMF_StateItemType) :: metypelist(100)
         WRITE(str,*) 'WRFSSTCpl_run: grabbing field <',TRIM(datanames(i)),'>'
         CALL wrf_debug ( 100 , TRIM(str) )
         ! check isneeded flag here
-        IF ( .NOT. ESMF_StateIsNeeded( importState, TRIM(datanames(i)), rc=rc ) ) THEN 
-          IF ( rc /= ESMF_SUCCESS ) THEN
-            WRITE(str,*) 'WRFSSTCpl_run:  ESMF_StateIsNeeded(',TRIM(datanames(i)),') failed'
-            CALL wrf_error_fatal ( str )
+!5.2.0r        IF ( .NOT. ESMF_StateIsNeeded( importState, TRIM(datanames(i)), rc=rc ) ) THEN 
+!5.2.0r         IF ( rc /= ESMF_SUCCESS ) THEN
+!5.2.0r            WRITE(str,*) 'WRFSSTCpl_run:  ESMF_StateIsNeeded(',TRIM(datanames(i)),') failed'
+!5.2.0r            CALL wrf_error_fatal ( str )
+!5.2.0r          ENDIF
+!5.2.0r          WRITE(str,*) 'WRFSSTCpl_run: skipping field <',TRIM(datanames(i)),'>'
+!5.2.0r          CALL wrf_debug ( 100 , TRIM(str) )
+!5.2.0r          CYCLE
+!5.2.0r        ENDIF
+        CALL ESMF_AttributeGet(importState,name=TRIM(datanames(i))//':needed',valueList=neededFlag,rc=rc)
+        IF ( rc == ESMF_SUCCESS ) THEN
+          IF ( .NOT. neededFlag(1) ) THEN
+            WRITE(str,*) 'WRFSSTCpl_run: skipping field <',TRIM(datanames(i)),'>'
+            CALL wrf_debug ( 100 , TRIM(str) )
+            CYCLE
           ENDIF
-          WRITE(str,*) 'WRFSSTCpl_run: skipping field <',TRIM(datanames(i)),'>'
-          CALL wrf_debug ( 100 , TRIM(str) )
-          CYCLE
+        ELSE
+          WRITE(str,*) 'WRFSSTCpl_run:  ESMF_AttributeGet(',TRIM(datanames(i))//':needed',') failed'
+          CALL wrf_error_fatal ( str )
         ENDIF
 
         WRITE(str,*) 'WRFSSTCpl_run: processing field <',TRIM(datanames(i)),'>'
@@ -1563,7 +1562,9 @@ PROGRAM wrf_SST_ESMF
    ! WRF-SST coupler registration routine
    USE module_wrfsst_coupler, ONLY: WRFSSTCpl_register
    ! ESMF module, defines all ESMF data types and procedures
-   USE ESMF_Mod
+! Updated for ESMF 5.2.0r
+!   USE ESMF_Mod
+   USE ESMF
    ! Not-yet-implemented ESMF features
    USE module_esmf_extensions
    ! Component-independent utilities
@@ -1612,9 +1613,9 @@ integer(ESMF_KIND_I4) :: timevals(6)
    ! Initialize ESMF, get the default Global VM, and set
    ! the default calendar to be Gregorian.
 #ifdef NO_LEAP_CALENDAR
-   CALL ESMF_Initialize( vm=vm, defaultCalendar=ESMF_CAL_NOLEAP, defaultlogtype=ESMF_LOG_MULTI,rc=rc )
+   CALL ESMF_Initialize( vm=vm, defaultCalKind=ESMF_CALKIND_NOLEAP, logkindflag=ESMF_LOGKIND_MULTI,rc=rc )
 #else
-   CALL ESMF_Initialize( vm=vm, defaultCalendar=ESMF_CAL_GREGORIAN, defaultlogtype=ESMF_LOG_MULTI,rc=rc )
+   CALL ESMF_Initialize( vm=vm, defaultCalKind=ESMF_CALKIND_GREGORIAN, logkindflag=ESMF_LOGKIND_MULTI,rc=rc )
 #endif
    IF ( rc /= ESMF_SUCCESS ) THEN
      PRINT *, 'wrf_SST_ESMF:  ESMF_Initialize failed'
@@ -1642,39 +1643,39 @@ integer(ESMF_KIND_I4) :: timevals(6)
    ENDIF
 
    ! Create empty import and export states for WRF
-   importStateWRF = ESMF_StateCreate(stateName="WRF Import State", statetype=ESMF_STATE_IMPORT, rc=rc)
+   importStateWRF = ESMF_StateCreate(name="WRF Import State", stateintent=ESMF_STATEINTENT_IMPORT, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      PRINT *, 'wrf_SST_ESMF:  ESMF_StateCreate(WRF Import State) failed'
    ENDIF
-   exportStateWRF = ESMF_StateCreate(stateName="WRF Export State", statetype=ESMF_STATE_EXPORT, rc=rc)
+   exportStateWRF = ESMF_StateCreate(name="WRF Export State", stateintent=ESMF_STATEINTENT_EXPORT, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      PRINT *, 'wrf_SST_ESMF:  ESMF_StateCreate(WRF Export State) failed'
    ENDIF
 
    ! Create empty import and export states for SST
-   importStateSST = ESMF_StateCreate(stateName="SST Import State", statetype=ESMF_STATE_IMPORT, rc=rc)
+   importStateSST = ESMF_StateCreate(name="SST Import State", stateintent=ESMF_STATEINTENT_IMPORT, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      PRINT *, 'wrf_SST_ESMF:  ESMF_StateCreate(SST Import State) failed'
    ENDIF
-   exportStateSST = ESMF_StateCreate(stateName="SST Export State", statetype=ESMF_STATE_EXPORT, rc=rc)
+   exportStateSST = ESMF_StateCreate(name="SST Export State", stateintent=ESMF_STATEINTENT_EXPORT, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      PRINT *, 'wrf_SST_ESMF:  ESMF_StateCreate(SST Export State) failed'
    ENDIF
 
    ! Register the WRF Gridded Component
-   CALL ESMF_GridCompSetServices(compGriddedWRF, WRF_register, rc)
+   CALL ESMF_GridCompSetServices(compGriddedWRF, WRF_register, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      PRINT *, 'wrf_SST_ESMF:  ESMF_GridCompSetServices(compGriddedWRF) failed'
    ENDIF
 
    ! Register the SST Gridded Component
-   CALL ESMF_GridCompSetServices(compGriddedSST, SST_register, rc)
+   CALL ESMF_GridCompSetServices(compGriddedSST, SST_register, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      PRINT *, 'wrf_SST_ESMF:  ESMF_GridCompSetServices(compGriddedSST) failed'
    ENDIF
 
    ! Register the WRF-SST Coupler Component
-   CALL ESMF_CplCompSetServices(compCplWRFSST, WRFSSTCpl_register, rc)
+   CALL ESMF_CplCompSetServices(compCplWRFSST, WRFSSTCpl_register, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      PRINT *, 'wrf_SST_ESMF:  ESMF_CplCompSetServices failed'
    ENDIF
@@ -1710,8 +1711,8 @@ integer(ESMF_KIND_I4) :: timevals(6)
    ! Phase 1 init returns WRF time and decomposition information as
    ! exportState metadata.
    PRINT *, 'DEBUG wrf_SST_ESMF:  calling phase-1 WRF init (wrf_component_init1)'
-   CALL ESMF_GridCompInitialize(compGriddedWRF, importStateWRF, &
-                                exportStateWRF, driverClock, phase=1, rc=rc)
+   CALL ESMF_GridCompInitialize(compGriddedWRF, importstate=importStateWRF, &
+                                exportstate=exportStateWRF, clock=driverClock, phase=1, rc=rc)
 thecount = size(timevals)
 call esmf_attributeget(exportstatewrf,'ComponentCouplingInterval',timevals,itemcount=thecount,rc=rc)
 !write(0,*) 'exportStateWRF year ',timevals(1),__LINE__
@@ -1729,8 +1730,8 @@ call esmf_attributeget(exportstatewrf,'ComponentCouplingInterval',timevals,itemc
    ! Phase 1 init returns SST time information as
    ! exportState metadata.
    PRINT *, 'DEBUG wrf_SST_ESMF:  calling phase-1 SST init (sst_component_init1)'
-   CALL ESMF_GridCompInitialize(compGriddedSST, importStateSST, &
-                                exportStateSST, driverClock, phase=1, rc=rc)
+   CALL ESMF_GridCompInitialize(compGriddedSST, importstate=importStateSST, &
+                                exportstate=exportStateSST, clock=driverClock, phase=1, rc=rc)
 thecount = size(timevals)
 call esmf_attributeget(exportstatesst,'ComponentCouplingInterval',timevals,itemcount=thecount,rc=rc)
 !write(0,*) 'exportStateSST year ',timevals(1),__LINE__
@@ -1753,13 +1754,9 @@ call esmf_attributeget(exportstatesst,'ComponentCouplingInterval',timevals,itemc
    IF ( rc /= ESMF_SUCCESS ) THEN
      CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_StateCreate(tmpState) failed' )
    ENDIF
-   CALL ESMF_StateAdd( tmpState, exportStateWRF, rc )
+   CALL ESMF_StateAdd( tmpState, nestedStateList=(/exportStateWRF,exportStateSST/), rc=rc )
    IF ( rc /= ESMF_SUCCESS ) THEN
-     CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_StateAdd(exportStateWRF) failed' )
-   ENDIF
-   CALL ESMF_StateAdd( tmpState, exportStateSST, rc )
-   IF ( rc /= ESMF_SUCCESS ) THEN
-     CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_StateAdd(exportStateSST) failed' )
+     CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_StateAdd(exportStateWRF,exportStateSST) failed' )
    ENDIF
    CALL GetTimesFromStates( tmpState, startTime, stopTime, couplingInterval )
    CALL ESMF_TimeIntervalGet( couplingInterval, TimeString=couplingIntervalString, &
@@ -1768,12 +1765,12 @@ call esmf_attributeget(exportstatesst,'ComponentCouplingInterval',timevals,itemc
      CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_TimeIntervalGet failed' )
    ENDIF
    CALL wrf_debug( 100, 'wrf_SST_ESMF:  couplingInterval = '//TRIM(couplingIntervalString) )
-   CALL ESMF_StateDestroy( tmpState, rc )
+   CALL ESMF_StateDestroy( tmpState, rc=rc )
    IF ( rc /= ESMF_SUCCESS ) THEN
      CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_StateDestroy(tmpState) failed' )
    ENDIF
    ! update driver clock
-   CALL ESMF_ClockDestroy(driverClock, rc)
+   CALL ESMF_ClockDestroy(driverClock, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_ClockDestroy failed' )
    ENDIF
@@ -1789,15 +1786,15 @@ call esmf_attributeget(exportstatesst,'ComponentCouplingInterval',timevals,itemc
 
    ! initialize WRF-SST Coupler
    PRINT *, 'DEBUG wrf_SST_ESMF:  calling phase-1 CPL init (WRFSSTCpl_init)'
-   CALL ESMF_CplCompInitialize(compCplWRFSST, exportStateWRF, &
-                               importStateSST, driverClock, rc=rc)
+   CALL ESMF_CplCompInitialize(compCplWRFSST, importstate=exportStateWRF, &
+                               exportstate=importStateSST, clock=driverClock, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_CplCompInitialize(WRF -> SST) failed' )
    ENDIF
 
 ! TBH:  this bit is not needed, but would be in general
-!   CALL ESMF_CplCompInitialize(compCplWRFSST, exportStateSST, &
-!                               importStateWRF, driverClock, rc=rc)
+!   CALL ESMF_CplCompInitialize(compCplWRFSST, importstate=exportStateSST, &
+!                               exportstate=importStateWRF, clock=driverClock, rc=rc)
 !   IF ( rc /= ESMF_SUCCESS ) THEN
 !     CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_CplCompInitialize(SST -> WRF) failed' )
 !   ENDIF
@@ -1805,8 +1802,8 @@ call esmf_attributeget(exportstatesst,'ComponentCouplingInterval',timevals,itemc
    ! initialize SST, phase 2
    WRITE(str,'(A)') 'PROGRAM wrf_SST_ESMF: Calling phase-2 init for SST (sst_component_init2)'
    CALL wrf_debug ( 100 , TRIM(str) )
-   CALL ESMF_GridCompInitialize(compGriddedSST, importStateSST, &
-                                exportStateSST, driverClock, phase=2, rc=rc)
+   CALL ESMF_GridCompInitialize(compGriddedSST, importstate=importStateSST, &
+                                exportstate=exportStateSST, clock=driverClock, phase=2, rc=rc)
    WRITE(str,'(A)') 'PROGRAM wrf_SST_ESMF: back from phase-2 init for SST'
    CALL wrf_debug ( 100 , TRIM(str) )
    IF ( rc /= ESMF_SUCCESS ) THEN
@@ -1817,8 +1814,8 @@ call esmf_attributeget(exportstatesst,'ComponentCouplingInterval',timevals,itemc
    ! Phase 2 init sets up WRF importState and exportState.
    WRITE(str,'(A)') 'PROGRAM wrf_SST_ESMF: Calling phase-2 init for WRF (wrf_component_init2)'
    CALL wrf_debug ( 100 , TRIM(str) )
-   CALL ESMF_GridCompInitialize(compGriddedWRF, importStateWRF, &
-                                exportStateWRF, driverClock, phase=2, rc=rc)
+   CALL ESMF_GridCompInitialize(compGriddedWRF, importstate=importStateWRF, &
+                                exportstate=exportStateWRF, clock=driverClock, phase=2, rc=rc)
    WRITE(str,'(A)') 'PROGRAM wrf_SST_ESMF: back from phase-2 init for WRF'
    CALL wrf_debug ( 100 , TRIM(str) )
    IF ( rc /= ESMF_SUCCESS ) THEN
@@ -1830,7 +1827,7 @@ call esmf_attributeget(exportstatesst,'ComponentCouplingInterval',timevals,itemc
    ! Run...
    ! main time-stepping loop
    timestepdebug = 0
-   DO WHILE ( .NOT. ESMF_ClockIsStopTime(driverClock, rc) )
+   DO WHILE ( .NOT. ESMF_ClockIsStopTime(driverClock, rc=rc) )
 
      timestepdebug = timestepdebug + 1
      WRITE(str,'(A,I8)') 'PROGRAM wrf_SST_ESMF: Top of time-stepping loop, timestepdebug = ',timestepdebug
@@ -1841,8 +1838,8 @@ call esmf_attributeget(exportstatesst,'ComponentCouplingInterval',timevals,itemc
      ! Run SST phase 1
      WRITE(str,'(A)') 'PROGRAM wrf_SST_ESMF: Calling phase-1 run for SST (sst_component_run1)'
      CALL wrf_debug ( 100 , TRIM(str) )
-     CALL ESMF_GridCompRun(compGriddedSST, importStateSST, exportStateSST, &
-                           driverClock, phase=1, rc=rc)
+     CALL ESMF_GridCompRun(compGriddedSST, importstate=importStateSST, exportstate=exportStateSST, &
+                           clock=driverClock, phase=1, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_GridCompRun(SST phase 1) failed' )
      ENDIF
@@ -1852,8 +1849,8 @@ call esmf_attributeget(exportstatesst,'ComponentCouplingInterval',timevals,itemc
      ! couple SST export -> WRF import
      WRITE(str,'(A)') 'PROGRAM wrf_SST_ESMF: Calling run for CPL SST->WRF (WRFSSTCpl_run)'
      CALL wrf_debug ( 100 , TRIM(str) )
-     CALL ESMF_CplCompRun(compCplWRFSST, exportStateSST, &
-                          importStateWRF, driverClock, rc=rc)
+     CALL ESMF_CplCompRun(compCplWRFSST, importstate=exportStateSST, &
+                          exportstate=importStateWRF, clock=driverClock, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_CplCompRun(SST -> WRF) failed' )
      ENDIF
@@ -1863,8 +1860,8 @@ call esmf_attributeget(exportstatesst,'ComponentCouplingInterval',timevals,itemc
      ! Run WRF
      WRITE(str,'(A)') 'PROGRAM wrf_SST_ESMF: Calling run for WRF (wrf_component_run)'
      CALL wrf_debug ( 100 , TRIM(str) )
-     CALL ESMF_GridCompRun(compGriddedWRF, importStateWRF, exportStateWRF, &
-                           driverClock, rc=rc)
+     CALL ESMF_GridCompRun(compGriddedWRF, importstate=importStateWRF, exportstate=exportStateWRF, &
+                           clock=driverClock, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_GridCompRun(WRF) failed' )
      ENDIF
@@ -1874,8 +1871,8 @@ call esmf_attributeget(exportstatesst,'ComponentCouplingInterval',timevals,itemc
      ! couple WRF export -> SST import
      WRITE(str,'(A)') 'PROGRAM wrf_SST_ESMF: Calling run for CPL WRF->SST (WRFSSTCpl_run)'
      CALL wrf_debug ( 100 , TRIM(str) )
-     CALL ESMF_CplCompRun(compCplWRFSST, exportStateWRF, &
-                          importStateSST, driverClock, rc=rc)
+     CALL ESMF_CplCompRun(compCplWRFSST, importstate=exportStateWRF, &
+                          exportstate=importStateSST, clock=driverClock, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_CplCompRun(WRF -> SST) failed' )
      ENDIF
@@ -1885,8 +1882,8 @@ call esmf_attributeget(exportstatesst,'ComponentCouplingInterval',timevals,itemc
      ! Run SST phase 2
      WRITE(str,'(A)') 'PROGRAM wrf_SST_ESMF: Calling phase-2 run for SST (sst_component_run2)'
      CALL wrf_debug ( 100 , TRIM(str) )
-     CALL ESMF_GridCompRun(compGriddedSST, importStateSST, exportStateSST, &
-                           driverClock, phase=2, rc=rc)
+     CALL ESMF_GridCompRun(compGriddedSST, importstate=importStateSST, exportstate=exportStateSST, &
+                           clock=driverClock, phase=2, rc=rc)
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_GridCompRun(SST phase 2) failed' )
      ENDIF
@@ -1912,50 +1909,50 @@ call esmf_attributeget(exportstatesst,'ComponentCouplingInterval',timevals,itemc
    CALL wrf_debug ( 100 , TRIM(str) )
 
    ! clean up SST
-   CALL ESMF_GridCompFinalize(compGriddedSST, importStateSST, exportStateSST, &
-                              driverClock, rc=rc)
+   CALL ESMF_GridCompFinalize(compGriddedSST, importstate=importStateSST, exportstate=exportStateSST, &
+                              clock=driverClock, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_GridCompFinalize(compGriddedSST) failed' )
    ENDIF
  
    ! clean up compCplWRFSST
-   CALL ESMF_CplCompFinalize( compCplWRFSST, exportStateWRF, importStateSST, &
-                              driverClock, rc=rc)
+   CALL ESMF_CplCompFinalize( compCplWRFSST, importstate=exportStateWRF, exportstate=importStateSST, &
+                              clock=driverClock, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_CplCompFinalize(compCplWRFSST) failed' )
    ENDIF
  
    ! clean up WRF
    ! must do this AFTER clean up of SST since SST uses WRF IOAPI
-   CALL ESMF_GridCompFinalize(compGriddedWRF, importStateWRF, exportStateWRF, &
-                              driverClock, rc=rc)
+   CALL ESMF_GridCompFinalize(compGriddedWRF, importstate=importStateWRF, exportstate=exportStateWRF, &
+                              clock=driverClock, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_GridCompFinalize(compGriddedWRF) failed' )
    ENDIF
  
    ! Clean up
 
-   CALL ESMF_GridCompDestroy(compGriddedWRF, rc)
+   CALL ESMF_GridCompDestroy(compGriddedWRF, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_GridCompDestroy(compGriddedWRF) failed' )
    ENDIF
-   CALL ESMF_StateDestroy(importStateWRF, rc)
+   CALL ESMF_StateDestroy(importStateWRF, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_StateDestroy(importStateWRF) failed' )
    ENDIF
-   CALL ESMF_StateDestroy(exportStateWRF, rc)
+   CALL ESMF_StateDestroy(exportStateWRF, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_StateDestroy(exportStateWRF) failed' )
    ENDIF
-   CALL ESMF_StateDestroy(importStateSST, rc)
+   CALL ESMF_StateDestroy(importStateSST, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_StateDestroy(importStateSST) failed' )
    ENDIF
-   CALL ESMF_StateDestroy(exportStateSST, rc)
+   CALL ESMF_StateDestroy(exportStateSST, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_StateDestroy(exportStateSST) failed' )
    ENDIF
-   CALL ESMF_ClockDestroy(driverClock, rc)
+   CALL ESMF_ClockDestroy(driverClock, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_ClockDestroy(driverClock) failed' )
    ENDIF

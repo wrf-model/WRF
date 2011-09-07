@@ -124,6 +124,7 @@ dx=120000,
 dy=120000,
 smooth_option=0,
 nproc_x=0,
+hypsometric_opt=2,
 /
 &fdda
 /

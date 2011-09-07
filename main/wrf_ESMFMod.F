@@ -28,7 +28,7 @@ MODULE module_metadatautils
 !
 !TODO:  Refactor to remove duplication of hard-coded names.  
 !
-   USE ESMF_Mod
+   USE ESMF
 
    IMPLICIT NONE
 
@@ -192,7 +192,7 @@ CONTAINS
    ! ESMF_States into a single ESMF_State.  If times differ, an attempt 
    ! is made to reconcile them.  
    SUBROUTINE GetTimesFromStates( state, startTime, stopTime, couplingInterval )
-   USE ESMF_Mod
+   USE ESMF
      TYPE(ESMF_State),        INTENT(INOUT) :: state
      TYPE(ESMF_Time),         INTENT(INOUT) :: startTime
      TYPE(ESMF_Time),         INTENT(INOUT) :: stopTime
@@ -200,7 +200,7 @@ CONTAINS
      ! locals
      INTEGER :: rc
      INTEGER :: numItems, numStates, i, istate
-     TYPE(ESMF_StateItemType), ALLOCATABLE :: itemTypes(:)
+     TYPE(ESMF_StateItem_Flag), ALLOCATABLE :: itemTypes(:)
      TYPE(ESMF_State) :: tmpState
      CHARACTER (len=ESMF_MAXSTR), ALLOCATABLE :: itemNames(:)
      TYPE(ESMF_Time),         ALLOCATABLE :: startTimes(:)
@@ -223,7 +223,7 @@ CONTAINS
      ! allocate an array to hold the names of all items
      ALLOCATE( itemNames(numItems) )
      ! get the item types and names
-     CALL ESMF_StateGet(state, stateitemtypeList=itemTypes, &
+     CALL ESMF_StateGet(state, itemtypeList=itemTypes, &
                         itemNameList=itemNames, rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
        WRITE(str,*) 'ESMF_StateGet itemTypes failed with rc = ', rc
@@ -262,8 +262,8 @@ CONTAINS
        IF ( istate .EQ. 1 ) THEN
         ! this presupposes that 1 of the child states exist and has
         ! valid times in it.  Use that one.
-          CALL write(mess,'WARNING: Only ',TRIM(itemNames(1)), &
-                          ' is valid and has time info in it.  Using that.')
+          WRITE(mess,*)'WARNING: Only ',TRIM(itemNames(1)),&
+                       ' is valid and has time info in it.  Using that.'
           CALL wrf_message(mess) 
           CALL ESMF_StateGet( state, itemName=TRIM(itemNames(1)), &
                               nestedState=tmpState, rc=rc )
@@ -325,21 +325,30 @@ CONTAINS
          stopTime = stopTimes(i)
          couplingInterval = couplingIntervals(i)
        ELSE
-         IF ( startTimes(i) /= startTime ) THEN
-           CALL wrf_message ( 'ReconcileTimes:  inconsistent startTimes. Using first.' )
-           startTimes(i) = startTime
+!jm         IF ( startTimes(i) /= startTime ) THEN
+!jm           CALL wrf_message ( 'ReconcileTimes:  inconsistent startTimes. Using first.' )
+!jm           startTimes(i) = startTime
+!jm         ENDIF
+!jm         IF ( stopTimes(i) /= stopTime ) THEN
+!jm           CALL wrf_message ( 'ReconcileTimes:  inconsistent stopTimes. Using first.' )
+!jm           stopTimes(i) = stopTime
+!jm         ENDIF
+         IF ( startTimes(i) > startTime ) THEN
+           CALL wrf_message ( 'ReconcileTimes:  inconsistent startTimes. Using later.' )
+           startTime = startTimes(i)
          ENDIF
-         IF ( stopTimes(i) /= stopTime ) THEN
-           CALL wrf_message ( 'ReconcileTimes:  inconsistent stopTimes. Using first.' )
-           stopTimes(i) = stopTime
+         IF ( stopTimes(i) < stopTime ) THEN
+           CALL wrf_message ( 'ReconcileTimes:  inconsistent stopTimes. Using earlier.' )
+           stopTime = stopTimes(i)
          ENDIF
          IF ( couplingIntervals(i) /= couplingInterval ) THEN
            CALL wrf_message ( 'ReconcileTimes:  inconsistent couplingIntervals. Using first.' )
            couplingIntervals(i) = couplingInterval
          ENDIF
        ENDIF
-
      ENDDO
+     stopTimes = stopTime
+     startTimes = startTime
 
    END SUBROUTINE ReconcileTimes
 
@@ -484,7 +493,7 @@ MODULE module_wrf_component_top
 ! when WRF is run as an ESMF component.  
 !</DESCRIPTION>
 
-   USE ESMF_Mod
+   USE ESMF
    USE module_wrf_top, ONLY : wrf_init, wrf_run, wrf_finalize
    USE module_domain, ONLY : head_grid, get_ijk_from_grid
    USE module_state_description
@@ -659,33 +668,35 @@ CONTAINS
      INTEGER :: ips, ipe, jps, jpe, kps, kpe
      INTEGER :: domdesc
      LOGICAL :: bdy_mask(4)
-     TYPE(ESMF_StateType) :: statetype
      INTEGER :: itemCount, i
+     TYPE(ESMF_StateIntent_Flag) :: stateintent
      CHARACTER (ESMF_MAXSTR) :: statename
      CHARACTER (ESMF_MAXSTR), ALLOCATABLE :: itemNames(:)
-     TYPE(ESMF_StateItemType), ALLOCATABLE :: itemTypes(:)
+     TYPE(ESMF_StateItem_Flag), ALLOCATABLE :: itemTypes(:)
 
      CALL wrf_debug ( 100, 'wrf_component_init2():  begin' )
+
      ! check exportState
      CALL ESMF_StateGet( exportState, itemCount=itemCount, &
-                         statetype=statetype, rc=rc )
+                         stateintent=stateintent, rc=rc )
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal("wrf_component_init2:  ESMF_StateGet(exportState) failed" )
      ENDIF
      WRITE (str,*) 'wrf_component_init2: exportState itemCount = ', itemCount
      CALL wrf_debug ( 100 , TRIM(str) )
-     IF ( statetype /= ESMF_STATE_EXPORT ) THEN
+     IF ( stateintent /= ESMF_STATEINTENT_EXPORT ) THEN
        CALL wrf_error_fatal("wrf_component_init2:  exportState is not an export state" )
      ENDIF
+
      ! check importState
      CALL ESMF_StateGet( importState, itemCount=itemCount, &
-                         statetype=statetype, rc=rc )
+                         stateintent=stateintent, rc=rc )
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal("wrf_component_init2:  ESMF_StateGet(importState) failed" )
      ENDIF
      WRITE (str,*) 'wrf_component_init2: importState itemCount = ', itemCount
      CALL wrf_debug ( 100 , TRIM(str) )
-     IF ( statetype /= ESMF_STATE_IMPORT ) THEN
+     IF ( stateintent /= ESMF_STATEINTENT_IMPORT ) THEN
        CALL wrf_error_fatal("wrf_component_init2:  importState is not an import state" )
      ENDIF
 
@@ -709,11 +720,11 @@ CONTAINS
      WRITE (str,*) 'wrf_component_init2: EXAMINING importState...'
      CALL wrf_debug ( 100 , TRIM(str) )
      CALL ESMF_StateGet( importState, itemCount=itemCount, &
-                         statetype=statetype, name=statename, rc=rc )
+                         stateintent=stateintent, name=statename, rc=rc )
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal("wrf_component_init2:  ESMF_StateGet(importState) failed B" )
      ENDIF
-     IF ( statetype /= ESMF_STATE_IMPORT ) THEN
+     IF ( stateintent /= ESMF_STATEINTENT_IMPORT ) THEN
        CALL wrf_error_fatal("wrf_component_init2:  importState is not an import state" )
      ENDIF
      WRITE (str,*) 'wrf_component_init2: importState <',TRIM(statename), &
@@ -721,7 +732,7 @@ CONTAINS
      CALL wrf_debug ( 100 , TRIM(str) )
      ALLOCATE ( itemNames(itemCount), itemTypes(itemCount) )
      CALL ESMF_StateGet( importState, itemNameList=itemNames, &
-                         stateitemtypeList=itemTypes, rc=rc )
+                         itemtypeList=itemTypes, rc=rc )
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal("wrf_component_init2:  ESMF_StateGet(importState) failed C" )
      ENDIF
@@ -739,11 +750,11 @@ CONTAINS
      WRITE (str,*) 'wrf_component_init2: EXAMINING exportState...'
      CALL wrf_debug ( 100 , TRIM(str) )
      CALL ESMF_StateGet( exportState, itemCount=itemCount, &
-                         statetype=statetype, name=statename, rc=rc )
+                         stateintent=stateintent, name=statename, rc=rc )
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal("wrf_component_init2:  ESMF_StateGet(exportState) failed B" )
      ENDIF
-     IF ( statetype /= ESMF_STATE_EXPORT ) THEN
+     IF ( stateintent /= ESMF_STATEINTENT_EXPORT ) THEN
        CALL wrf_error_fatal("wrf_component_init2:  exportState is not an export state" )
      ENDIF
      WRITE (str,*) 'wrf_component_init2: exportState <',TRIM(statename), &
@@ -751,7 +762,7 @@ CONTAINS
      CALL wrf_debug ( 100 , TRIM(str) )
      ALLOCATE ( itemNames(itemCount), itemTypes(itemCount) )
      CALL ESMF_StateGet( exportState, itemNameList=itemNames, &
-                         stateitemtypeList=itemTypes, rc=rc )
+                         itemtypeList=itemTypes, rc=rc )
      IF ( rc /= ESMF_SUCCESS ) THEN
        CALL wrf_error_fatal("wrf_component_init2:  ESMF_StateGet(exportState) failed C" )
      ENDIF
@@ -1038,7 +1049,7 @@ CONTAINS
      CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
      CALL set_scalar_indices_from_config ( grid%id , idum1 , idum2 )
 
-     stream = 0
+     stream = 0 
      ierr = 0
 
 #include "med_open_esmf_calls.inc"
@@ -1059,7 +1070,7 @@ MODULE module_wrf_setservices
                                        wrf_component_init2, &
                                        wrf_component_run,   &
                                        wrf_component_finalize
-   USE ESMF_Mod
+   USE ESMF
 
    IMPLICIT NONE
 
@@ -1095,23 +1106,23 @@ CONTAINS
 
      rc = ESMF_SUCCESS
      ! Register the callback routines.
-     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETINIT, &
-                                     wrf_component_init1, 1, rc)
+     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_METHOD_INITIALIZE, &
+                                     wrf_component_init1, phase=1, rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
         CALL wrf_error_fatal ( 'wrf_register:  ESMF_GridCompSetEntryPoint(wrf_component_init1) failed' )
      ENDIF
-     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETINIT, &
-                                     wrf_component_init2, 2, rc)
+     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_METHOD_INITIALIZE, &
+                                     wrf_component_init2, phase=2, rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
         CALL wrf_error_fatal ( 'wrf_register:  ESMF_GridCompSetEntryPoint(wrf_component_init2) failed' )
      ENDIF
-     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETRUN, &
-                                     wrf_component_run, ESMF_SINGLEPHASE, rc)
+     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_METHOD_RUN, &
+                                     wrf_component_run,  rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
         CALL wrf_error_fatal ( 'wrf_register:  ESMF_GridCompSetEntryPoint(wrf_component_run) failed' )
      ENDIF
-     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_SETFINAL, &
-                                     wrf_component_finalize, ESMF_SINGLEPHASE, rc)
+     call ESMF_GridCompSetEntryPoint(gcomp, ESMF_METHOD_FINALIZE, &
+                                     wrf_component_finalize,  rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
         CALL wrf_error_fatal ( 'wrf_register:  ESMF_GridCompSetEntryPoint(wrf_component_finalize) failed' )
      ENDIF

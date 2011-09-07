@@ -211,7 +211,7 @@ write(0,*)__FILE__,__LINE__,'ext_esmf_read_field PatchEnd  ', PatchEnd(1:esmf_ra
     tmpField = ESMF_FieldCreate(         &
                  grid( DataHandle )%ptr, &
                  tmp_esmf_r4_ptr,        &
-                 copyflag=ESMF_DATA_REF, &
+                 datacopyflag=ESMF_DATACOPY_REFERENCE, &
                  staggerloc=ESMF_STAGGERLOC_CENTER,    &
                  name=TRIM(VarName),     &
                  rc=rc )
@@ -227,7 +227,7 @@ write(0,*)__FILE__,__LINE__,'ext_esmf_read_field PatchEnd  ', PatchEnd(1:esmf_ra
     ! Add the Field to the import state...  
 !TODO:  for now, just build ESMF_Fields and stuff them in
 !TODO:  later, use a single ESMF_Bundle
-    CALL ESMF_StateAdd( importstate, tmpField, rc=rc )
+    CALL ESMF_StateAdd( importstate, (/tmpField/), rc=rc ) ! 5.2.0r only accepts arrays, use array constructor
     IF ( rc /= ESMF_SUCCESS ) THEN
       CALL wrf_error_fatal("ext_esmf_read_field:  ESMF_StateAddField failed" )
     ENDIF

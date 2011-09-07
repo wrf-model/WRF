@@ -260,8 +260,10 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
 
 $validresponse = 0 ;
 
-#@platforms = qw ( serial smpar dmpar dm+sm ) ;
-@platforms = qw ( serial dmpar ) ;
+if ( ($sw_wrf_core eq "WRF_PLUS_CORE") || ($sw_wrf_core eq "4D_DA_CORE") ) 
+   { @platforms = qw ( serial dmpar ) ; }
+   else
+   { @platforms = qw ( serial smpar dmpar dm+sm ) ; }
 
 # Display the choices to the user and get selection
 until ( $validresponse ) {
@@ -419,9 +421,17 @@ while ( <CONFIGURE_DEFAULTS> )
     if ( $sw_esmflib_path && $sw_esmfinc_path )
       {
       $_ =~ s:CONFIGURE_ESMF_FLAG:-DESMFIO:g ;
-      $_ =~ s:ESMFIOLIB:-L$sw_esmflib_path -lesmf -L\$\(WRF_SRC_ROOT_DIR\)/external/io_esmf -lwrfio_esmf \$\(ESMF_LIB_FLAGS\):g ;
-      $_ =~ s:ESMFIOEXTLIB:-L$sw_esmflib_path -lesmf -L\$\(WRF_SRC_ROOT_DIR\)/external/io_esmf -lwrfio_esmf \$\(ESMF_LIB_FLAGS\):g ;
+# pre 5.2.0r
+#      $_ =~ s:ESMFIOLIB:-L$sw_esmflib_path -lesmf -L\$\(WRF_SRC_ROOT_DIR\)/external/io_esmf -lwrfio_esmf \$\(ESMF_LIB_FLAGS\):g ;
+#      $_ =~ s:ESMFIOEXTLIB:-L$sw_esmflib_path -lesmf -L\$\(WRF_SRC_ROOT_DIR\)/external/io_esmf -lwrfio_esmf \$\(ESMF_LIB_FLAGS\):g ;
+# post 5.2.0r
+      $_ =~ s:ESMFIOLIB:\$\(ESMF_F90LINKPATHS\) \$\(ESMF_F90ESMFLINKLIBS\) -L\$\(WRF_SRC_ROOT_DIR\)/external/io_esmf -lwrfio_esmf: ;
+      $_ =~ s:ESMFIOEXTLIB:\$\(ESMF_IO_LIB\): ;
+
+     
       $_ =~ s:ESMFLIBFLAG:\$\(ESMF_LDFLAG\):g ;
+#      $_ =~ s:ESMFINCLUDEGOESHERE:'include $(ESMFLIB)/esmf.mk': ;
+
       }
     else
       {
@@ -577,6 +587,8 @@ while ( <ARCH_PREAMBLE> )
     $_ =~ s:ESMFIOINC:-I\$\(WRF_SRC_ROOT_DIR\)/external/io_esmf:g ;
     $_ =~ s:ESMFIODEFS:-DESMFIO:g ;
     $_ =~ s:ESMFTARGET:wrfio_esmf:g ;
+    $_ =~ s:\# ESMFINCLUDEGOESHERE:include \$\(ESMFLIB\)/esmf.mk: ;
+
     }
   else
     {

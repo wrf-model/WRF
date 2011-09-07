@@ -25,6 +25,7 @@ CONTAINS
              ,EP2,SVP1,SVP2,SVP3,SVPT0                       &  ! constant variable
              ,STEPCU,CU_ACT_FLAG,warm_rain,CUTOP,CUBOT       &
              ,QV                                             &
+             ,CUDTACTTIME                                    &
             ! optionals
              ,RTHCUTEN,RQVCUTEN                              &
                                                              )
@@ -43,6 +44,7 @@ CONTAINS
    REAL,         INTENT(IN   ) :: XLV
    REAL,         INTENT(IN   ) :: CP,RD,RV,G,EP2
    REAL,         INTENT(IN   ) :: SVP1,SVP2,SVP3,SVPT0
+   REAL,         INTENT(INOUT) :: CUDTACTTIME 
 
    INTEGER,      INTENT(IN   ) :: KTAU           
 

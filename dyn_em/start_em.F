@@ -15,10 +15,11 @@
    USE module_configure, ONLY : grid_config_rec_type
    USE module_tiles, ONLY : set_tiles
 #ifdef DM_PARALLEL
-   USE module_dm, ONLY : wrf_dm_min_real, wrf_dm_maxval, ntasks_x, ntasks_y, &
+   USE module_dm, ONLY : wrf_dm_min_real, wrf_dm_max_real, wrf_dm_maxval, &
+        ntasks_x, ntasks_y, &
         local_communicator_periodic, local_communicator, mytask, ntasks 
 #else
-   USE module_dm, ONLY : wrf_dm_min_real
+   USE module_dm, ONLY : wrf_dm_min_real, wrf_dm_max_real
 #endif
    USE module_comm_dm
 
@@ -96,6 +97,9 @@
    INTEGER :: idex, jdex
    INTEGER :: im1,ip1,jm1,jp1
    REAL :: hx,hy,pi
+
+   REAL :: w_max, w_min
+   LOGICAL :: w_needs_to_be_set
 
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
@@ -890,21 +894,62 @@
 ! above that.
 
    IF ( ( start_of_simulation .OR. config_flags%cycling ) .AND. ( .NOT. config_flags%restart ) ) THEN
-   fill_w_flag = .true.
-   CALL set_w_surface(  config_flags, grid%znw, fill_w_flag,             &
-                        grid%w_1, grid%ht, grid%u_1, grid%v_1, grid%cf1, &
-                        grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
-                        ids, ide, jds, jde, kds, kde,                    &
-                        ims, ime, jms, jme, kms, kme,                    &
-                        its, ite, jts, jte, kts, kte                     )
-   CALL set_w_surface(  config_flags, grid%znw, fill_w_flag,             &
-                        grid%w_2, grid%ht, grid%u_2, grid%v_2, grid%cf1, &
-                        grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
-                        ids, ide, jds, jde, kds, kde,                    &
-                        ims, ime, jms, jme, kms, kme,                    &
-                        its, ite, jts, jte, kts, kte                     ) 
 
-! finished setting kinematic condition for w at the surface
+! If W already exists (not zero), then we leave it alone.  How to do this?  We find the
+! max/min on this node at the surface.  If parallel, we collect the max/min from all procs.
+! If the max/min throughout the entire domain at the surface is identically 0, then we say 
+! that the W field is NOT initialized, and we run the set_w_surface routines for the 
+! two time levels of W.  If the field is already initialized, we do NOT run those two
+! routines.
+
+      w_max = grid%w_2(its,1,jts)
+      w_min = grid%w_2(its,1,jts)
+      DO j = jts, MIN(jte,jde-1)
+         DO i = its, MIN(ite,ide-1)
+         w_max = MAX ( w_max , grid%w_2(i,1,j) )
+         w_min = MIN ( w_min , grid%w_2(i,1,j) )
+         END DO
+      END DO
+#ifdef DM_PARALLEL
+      w_max = wrf_dm_max_real ( w_max )
+      w_min = wrf_dm_min_real ( w_min )
+#endif
+
+      IF ( ( ABS(w_max) .LT. 1.E-6 ) .AND. &
+           ( ABS(w_min) .LT. 1.E-6 ) ) THEN
+         w_needs_to_be_set = .TRUE.
+         ! Force use_input_w to false, if there is no input w
+         IF ( config_flags%use_input_w ) THEN
+            config_flags%use_input_w = .FALSE.
+            CALL nl_set_use_input_w (grid%id, .FALSE.)
+         ENDIF
+      ELSE
+         IF ( config_flags%use_input_w ) THEN
+            w_needs_to_be_set = .FALSE.
+         ELSE
+            w_needs_to_be_set = .TRUE.
+         END IF
+      END IF
+
+      IF ( w_needs_to_be_set ) THEN
+
+         ! setting kinematic condition for w at the surface
+
+         fill_w_flag = .true.
+         CALL set_w_surface(  config_flags, grid%znw, fill_w_flag,             &
+                              grid%w_1, grid%ht, grid%u_1, grid%v_1, grid%cf1, &
+                              grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
+                              ids, ide, jds, jde, kds, kde,                    &
+                              ims, ime, jms, jme, kms, kme,                    &
+                              its, ite, jts, jte, kts, kte                     )
+         CALL set_w_surface(  config_flags, grid%znw, fill_w_flag,             &
+                              grid%w_2, grid%ht, grid%u_2, grid%v_2, grid%cf1, &
+                              grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
+                              ids, ide, jds, jde, kds, kde,                    &
+                              ims, ime, jms, jme, kms, kme,                    &
+                              its, ite, jts, jte, kts, kte                     ) 
+      END IF
+
 
 ! set up slope-radiation constant arrays based on topography
        DO j = jts,min(jte,jde-1)

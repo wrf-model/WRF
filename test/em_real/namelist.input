@@ -112,6 +112,7 @@
  m_opt                      = 0,      1,      1,     
  mix_full_fields            = .true., .true., .true.,
  mix_isotropic              = 0,      1,      1,     
+ use_input_w                = .true.,
 /
 
  &bdy_control

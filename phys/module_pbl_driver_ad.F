@@ -22,7 +22,8 @@ CONTAINS
 ! Wind Turbine Parameterizations
 ! variables required for camuwpbl scheme
 SUBROUTINE a_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
-&  , adapt_step_flag, rublten, a_rublten, rvblten, a_rvblten, rthblten, a_rthblten, tsk&
+&  , adapt_step_flag, bldtacttime                                       &
+&  , rublten, a_rublten, rvblten, a_rvblten, rthblten, a_rthblten, tsk&
 &  , xland, znt, ht, ust, pblh, hfx, qfx, grdflx, u_phy, a_u_phy, v_phy, &
 &  a_v_phy, th_phy, rho, p_phy, pi_phy, p8w, t_phy, dz8w, z, a_z, exch_h, &
 &  exch_m, akhs, akms, thz0, qz0, uz0, vz0, qsfc, f, lowlyr, u10, v10, t2&
@@ -222,6 +223,7 @@ SUBROUTINE a_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
   REAL, INTENT(IN), OPTIONAL :: bldt
   REAL, INTENT(IN), OPTIONAL :: curr_secs
   LOGICAL, INTENT(IN), OPTIONAL :: adapt_step_flag
+  REAL, INTENT(INOUT),OPTIONAL    ::     bldtacttime 
 ! Optional for Wind Turbine Parameterizations
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN), OPTIONAL :: &
 &  phb
@@ -400,13 +402,10 @@ SUBROUTINE a_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
   LOGICAL :: flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg
   CHARACTER(len=256) :: message
   REAL :: next_bl_time
-  LOGICAL :: run_param
+  LOGICAL :: run_param, doing_adapt_dt , decided
   LOGICAL :: do_adapt
   INTEGER :: iu_bep, iurb, idiff
   REAL :: seamask, thsk, zzz, unew, vnew, tnew, qnew, umom, vmom
-  EXTERNAL WRF_MESSAGE
-  EXTERNAL WRF_DEBUG
-  EXTERNAL WRF_ERROR_FATAL
   LOGICAL :: result1
 !------------------------------------------------------------------
 !
@@ -417,35 +416,79 @@ SUBROUTINE a_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
   INTEGER :: ad_from0
   INTEGER :: ad_to1
   INTEGER :: branch
-  INTRINSIC MOD
   INTEGER :: min2
   INTEGER :: min1
-  INTRINSIC PRESENT
-  INTRINSIC INT
-  INTRINSIC MIN
 !print *,flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg,' flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg'
 !print *,f_qv, f_qc, f_qr, f_qi, f_qs, f_qg,' f_qv, f_qc, f_qr, f_qi, f_qs, f_qg'
   IF (bl_pbl_physics .EQ. 0) RETURN
 
 ! RAINBL in mm (Accumulation between PBL calls)
 !
-! Modified for adaptive time step
-!
-    IF (itimestep .EQ. 1 .OR. MOD(itimestep, stepbl) .EQ. 0) THEN
-      run_param = .true.
-    ELSE
-      run_param = .false.
-    END IF
-    IF (PRESENT(adapt_step_flag)) THEN
-      IF (adapt_step_flag) THEN
-        IF ((itimestep .EQ. 1 .OR. bldt .EQ. 0) .OR. curr_secs + dt .GE.&
-&            INT(curr_secs/(bldt*60)+1)*bldt*60) THEN
-          run_param = .true.
-        ELSE
-          run_param = .false.
-        END IF
+   doing_adapt_dt = .FALSE.
+   IF ( PRESENT(adapt_step_flag) ) THEN
+      IF ( adapt_step_flag ) THEN
+         doing_adapt_dt = .TRUE.
+         IF ( bldtacttime .eq. 0. ) THEN
+            bldtacttime = CURR_SECS + bldt*60.
+         END IF
       END IF
-    END IF
+   END IF
+
+!  Do we run through this scheme or not?
+
+!    Test 1:  If this is the initial model time, then yes.
+!                ITIMESTEP=1
+!    Test 2:  If the user asked for the pbl to be run every time step, then yes.
+!                BLDT=0 or STEPBL=1
+!    Test 3:  If not adaptive dt, and this is on the requested pbl frequency, then yes.
+!                MOD(ITIMESTEP,STEPBL)=0
+!    Test 4:  If using adaptive dt and the current time is past the last requested activate pbl time, then yes.
+!                CURR_SECS >= BLDTACTTIME
+
+!  If we do run through the scheme, we set the flag run_param to TRUE and we set the decided flag
+!  to TRUE.  The decided flag says that one of these tests was able to say "yes", run the scheme.
+!  We only proceed to other tests if the previous tests all have left decided as FALSE.
+
+!  If we set run_param to TRUE and this is adaptive time stepping, we set the time to the next
+!  pbl run.
+
+   run_param = .FALSE.
+   decided = .FALSE.
+   IF ( ( .NOT. decided ) .AND. &
+        ( itimestep .EQ. 1 ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( PRESENT(bldt) )THEN
+      IF ( ( .NOT. decided ) .AND. &
+           ( ( bldt .EQ. 0. ) .OR. ( stepbl .EQ. 1 ) ) ) THEN
+         run_param   = .TRUE.
+         decided     = .TRUE.
+      END IF
+   ELSE
+      IF ( ( .NOT. decided ) .AND. &
+                                   ( stepbl .EQ. 1 )   ) THEN
+         run_param   = .TRUE.
+         decided     = .TRUE.
+      END IF
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( .NOT. doing_adapt_dt ) .AND. &
+        ( MOD(itimestep,stepbl) .EQ. 0 ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( doing_adapt_dt ) .AND. &
+        ( curr_secs .GE. bldtacttime ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+      bldtacttime = curr_secs + bldt*60
+   END IF
+
     IF (run_param) THEN
       DO ij=num_tiles,1,-1
           ite = i_end(ij)

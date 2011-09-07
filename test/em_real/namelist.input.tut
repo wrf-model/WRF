@@ -156,6 +156,7 @@ dampcoef=0.01,
 time_step_sound=4,
 base_temp=290.0,
 use_baseparam_fr_nml=true,
+use_input_w=true,
 /
 &bdy_control
 specified=true,

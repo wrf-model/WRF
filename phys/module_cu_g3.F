@@ -4361,7 +4361,7 @@ CONTAINS
 !------- LIQUID WATER CONTENT IN cloud after rainout
 !
         clw_all(i,k)=QC(I,K)-QRCH
-        QRC(I,K)=(QC(I,K)-QRCH)/(1.+C0*DZ)
+        QRC(I,K)=(QC(I,K)-QRCH)/(1.+C0*DZ*zu(i,k))
         if(qrc(i,k).lt.0.)then
           qrc(i,k)=0.
         endif

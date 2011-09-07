@@ -15,6 +15,7 @@ CONTAINS
                      ,p,g_p,pi,rho,g_rho                              &
                  ! --Other arguments
                      ,itimestep,dt,dx,cudt,curr_secs,adapt_step_flag  &
+                     ,cudtacttime                                     &
                      ,rainc,raincv,g_raincv,pratec,g_pratec,nca       &
                      ,z,g_z,z_at_w,dz8w,g_dz8w,mavail,pblh,p8w,psfc,tsk          &
                      ,tke_pbl, ust                                    &
@@ -344,7 +345,8 @@ CONTAINS
    REAL,  INTENT(IN   ),OPTIONAL :: CUDT
    REAL,  INTENT(IN   ),OPTIONAL :: CURR_SECS
    LOGICAL,INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
-   REAL   :: cudt_pass, curr_secs_pass
+   REAL,  INTENT(INOUT ),OPTIONAL :: cudtacttime                 
+   REAL   :: cudt_pass, curr_secs_pass,cudtacttime_pass          
    LOGICAL :: adapt_step_flag_pass
 
    INTEGER,      INTENT(IN   ), OPTIONAL    ::   mp_physics
@@ -437,8 +439,10 @@ CONTAINS
 
    if (.not. PRESENT(CUDT)) then
       cudt_pass = -1
+      cudtacttime_pass = -1
    else
       cudt_pass = cudt
+      cudtacttime_pass = cudtacttime
    endif
 
    if (.not. PRESENT(adapt_step_flag)) then
@@ -504,6 +508,7 @@ CONTAINS
                ,WARM_RAIN=warm_rain                             &    !
                ,CUTOP=htop, g_CUTOP=g_htop, CUBOT=hbot, g_CUBOT=g_hbot  &    ! from other scheme
                ,QV=qv_curr, g_QV=g_qv_curr                      &    !
+               ,CUDTACTTIME=cudtacttime_pass                    & 
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &    !
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &    !
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &    !
@@ -528,7 +533,15 @@ CONTAINS
          pratec(:,:) = tmppratec(:,:)
          g_pratec(:,:) = g_tmppratec(:,:)
       endif
-          CALL wrf_debug(200,'returning from g_cumulus_driver')
+
+      ! Copy cudtacttime back if necessary
+
+      if ( PRESENT(CUDTACTTIME) ) then
+         cudtacttime = cudtacttime_pass
+      end if
+
+      CALL wrf_debug(200,'returning from g_cumulus_driver')
+
    END SUBROUTINE g_cumulus_driver
 
 END MODULE g_module_cumulus_driver

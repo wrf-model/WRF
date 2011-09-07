@@ -15,6 +15,7 @@ CONTAINS
                      ,p,a_p,pi,rho,a_rho                              &
                  ! --Other arguments
                      ,itimestep,dt,dx,cudt,curr_secs,adapt_step_flag  &
+                     ,cudtacttime                                     & 
                      ,rainc,raincv,a_raincv,pratec,a_pratec,nca       &
                      ,z,a_z,z_at_w,dz8w,a_dz8w,mavail,pblh,p8w,psfc,tsk          &
                      ,tke_pbl, ust                                    &
@@ -344,7 +345,8 @@ CONTAINS
    REAL,  INTENT(IN   ),OPTIONAL :: CUDT
    REAL,  INTENT(IN   ),OPTIONAL :: CURR_SECS
    LOGICAL,INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
-   REAL   :: cudt_pass, curr_secs_pass
+   REAL,  INTENT(INOUT ),OPTIONAL :: cudtacttime                 
+   REAL   :: cudt_pass, curr_secs_pass,cudtacttime_pass         
    LOGICAL :: adapt_step_flag_pass
 
    INTEGER,      INTENT(IN   ), OPTIONAL    ::   mp_physics
@@ -442,8 +444,10 @@ CONTAINS
 
    if (.not. PRESENT(CUDT)) then
       cudt_pass = -1
+      cudtacttime_pass = -1
    else
       cudt_pass = cudt
+      cudtacttime_pass = cudtacttime
    endif
 
    if (.not. PRESENT(adapt_step_flag)) then
@@ -515,6 +519,7 @@ CONTAINS
                ,WARM_RAIN=warm_rain                             &    !
                ,CUTOP=htop, a_CUTOP=a_htop, CUBOT=hbot, a_CUBOT=a_hbot    &    ! from other scheme
                ,QV=qv_curr , a_QV=a_qv_curr                     &    !
+               ,CUDTACTTIME=cudtacttime_pass                    &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &    !
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &    !
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &    !
@@ -541,7 +546,14 @@ CONTAINS
       a_tmppratec(:,:) = 0.
    end if
 
-          CALL wrf_debug(200,'returning from a_cumulus_driver')
+   ! Copy cudtacttime back if necessary
+
+   if ( PRESENT(CUDTACTTIME) ) then
+      cudtacttime = cudtacttime_pass
+   end if
+
+   CALL wrf_debug(200,'returning from a_cumulus_driver')
+
    END SUBROUTINE a_cumulus_driver
 
 END MODULE a_module_cumulus_driver

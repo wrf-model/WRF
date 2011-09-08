@@ -685,7 +685,7 @@ endif
       CALL wrf_put_dom_ti_integer ( fid , 'COMPRESSION' , config_flags%compression , 1 , ierr )
     ENDIF
 
-#if (EM_CORE == 1)
+#if ( (EM_CORE == 1) && (DA_CORE != 1) )
       save_topo_orig = grid%save_topo_from_real
 
 ! todo jm
@@ -1234,7 +1234,7 @@ endif
       ENDIF
     ENDIF
 
-#if (EM_CORE == 1)
+#if ( (EM_CORE == 1) && (DA_CORE != 1) )
       grid%save_topo_from_real = save_topo_orig
 #endif
 

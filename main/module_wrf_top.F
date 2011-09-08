@@ -868,6 +868,8 @@ ENDIF
 
    IF ( .NOT. config_flags%trajectory_io .OR. gradient_out ) THEN
       config_flags%auxhist7_outname = "gradient_wrfplus_d<domain>_<date>"
+      config_flags%io_form_auxhist7 = 2
+      CALL nl_set_io_form_auxhist7 ( head_grid%id, 2 )
       CALL  med_hist_out ( head_grid , AUXHIST7_ALARM , config_flags )
       CALL  wrf_debug ( 0 , 'Output gradient in WRFPLUS (not including LBC gradient)' )
    ENDIF
@@ -1003,6 +1005,7 @@ ENDIF
    CALL domain_clock_set( head_grid, current_timestr=timestr )
    config_flags%auxinput7_inname = "final_sens_d01"
    config_flags%io_form_auxinput7 = 2
+   CALL nl_set_io_form_auxinput7 ( head_grid%id, 2 )
    config_flags%frames_per_auxinput7 = 1
    CALL med_auxinput_in ( head_grid, auxinput7_alarm, config_flags )
    CALL  wrf_debug ( 0 , 'Read in final sensitivuty' )

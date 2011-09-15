@@ -43,6 +43,7 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
    grid%g_moist   = 0.0
    grid%g_mu_2 = 0.0
    grid%g_ph_2 = 0.0
+   grid%g_p = 0.0
    grid%g_rainnc = 0.0
    grid%g_rainncv = 0.0
    grid%g_rainc = 0.0
@@ -200,18 +201,20 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
    ! [3.0] COMPUTE pressure increments 
    !---------------------------------------------------------------------------
 
-   g_press(is:ie,js:je,ks:ke+1)=0.0
-   do k=ks,ke
-      do j=js,je
-         do i=is,ie
-            g_press(i,j,k+1)=g_press(i,j,k+1)+0.5*grid%xa%p(i,j,k)
-            g_press(i,j,k )=g_press(i,j,k )+0.5*grid%xa%p(i,j,k)
-            grid%g_moist(i,j,k,P_G_QV)=grid%g_moist(i,j,k,P_G_QV)-(grid%mu_2(i,j)+grid%mub(i,j))*g_press(i,j,k)*grid%dn(k)
-            grid%g_mu_2(i,j)=grid%g_mu_2(i,j)-g_press(i,j,k)*(1.0+grid%moist(i,j,k,P_QV))*grid%dn(k)
-            g_press(i,j,k+1)=g_press(i,j,k+1)+g_press(i,j,k)
-         end do
-      end do
-   end do
+!  g_press(is:ie,js:je,ks:ke+1)=0.0
+!  do k=ks,ke
+!     do j=js,je
+!        do i=is,ie
+!           g_press(i,j,k+1)=g_press(i,j,k+1)+0.5*grid%xa%p(i,j,k)
+!           g_press(i,j,k )=g_press(i,j,k )+0.5*grid%xa%p(i,j,k)
+!           grid%g_moist(i,j,k,P_G_QV)=grid%g_moist(i,j,k,P_G_QV)-(grid%mu_2(i,j)+grid%mub(i,j))*g_press(i,j,k)*grid%dn(k)
+!           grid%g_mu_2(i,j)=grid%g_mu_2(i,j)-g_press(i,j,k)*(1.0+grid%moist(i,j,k,P_QV))*grid%dn(k)
+!           g_press(i,j,k+1)=g_press(i,j,k+1)+g_press(i,j,k)
+!        end do
+!     end do
+!  end do
+
+   grid%g_p(is:ie, js:je, ks:ke) = grid%g_p(is:ie, js:je, ks:ke) + grid%xa%p(is:ie, js:je, ks:ke)
 
    grid%xa%p(is:ie, js:je, ks:ke) = 0.0
 
@@ -262,6 +265,8 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
          call kj_swap (grid%g_t_2, model_grid%g_t_2, &
                        grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
          call kj_swap (grid%g_ph_2, model_grid%g_ph_2, &
+                       grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+         call kj_swap (grid%g_p, model_grid%g_p, &
                        grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
          model_grid%g_mu_2 = grid%g_mu_2
          model_grid%g_rainnc = grid%g_rainnc

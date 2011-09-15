@@ -177,7 +177,7 @@ i1       real   w_save         ijk     dyn_em      1         Z
 state    real   w_subs         |       dyn_em      1         -      i3rh      "W_SUBS" "large-scale vertical velocity" "m s-1"
 state    real   w_subs_tend    |       dyn_em      1         -      i3rh      "W_SUBS_TEND" "tendency large-scale vertical velocity" "m s-1"
 state    real   a_w            ijk     misc        2         Z      rh        "A_W"                        "z-wind component"   "m s-1"
-state    real   g_w            ijk     misc        2         Z      rh        "A_W"                        "z-wind component"   "m s-1"
+state    real   g_w            ijk     misc        2         Z      rh        "G_W"                        "z-wind component"   "m s-1"
 
 # Geopotential
 state    real   ph             ijkb     dyn_em      2         Z     \
@@ -306,6 +306,8 @@ state    real   zy             ijk     dyn_em      1         Y      -         " 
 state    real   rdz            ijk     dyn_em      1         Z      -         " "  " "  " "   
 state    real   rdzw           ijk     dyn_em      1         Z      -         " "  " "  " "   
 state    real   pb             ijk     dyn_em      1         -      irhdus    "pb"          "BASE STATE PRESSURE "          "Pa"
+state    real   a_p            ijk     dyn_em      1         -      rh        "a_p"         "perturbation pressure"         "Pa"
+state    real   g_p            ijk     dyn_em      1         -      rh        "g_p"         "perturbation pressure"         "Pa"
 
 #                                               
 # Other dyn                                             

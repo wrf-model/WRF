@@ -349,7 +349,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
       ! In case of var4d, pb etc. will be recalculated in start_em with realsize=8, 
       ! Howvwer, the originals are computed with realsize=4.
-      if ( no_ppb .or. var4d ) then
+      if ( no_ppb ) then
          do k=kts,kte
             do i=its,ite
                ! The base specific volume (from real.init.code)
@@ -751,6 +751,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       loc_psac_mean = tmpvar*sum(arrayglobal(ids:ide,jds:jde))
       deallocate(arrayglobal)
    else
+      loc_latc_mean = 0.0
       loc_psac_mean = tmpvar*sum(grid%xb % psac(its:ite,jts:jte))
    end if
 

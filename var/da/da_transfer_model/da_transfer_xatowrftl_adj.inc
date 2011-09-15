@@ -49,6 +49,8 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
                  grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
    call kj_swap_reverse (model_grid%a_ph_2, grid%a_ph_2, &
                  grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap_reverse (model_grid%a_p, grid%a_p, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
 
    grid%a_mu_2 = model_grid%a_mu_2
    grid%a_rainnc  = model_grid%a_rainnc
@@ -244,6 +246,17 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
    !---------------------------------------------------------------------------
 
    a_press(its:ite,jts:jte,kts:kte+1)=0.0
+
+   do k=kte,kts,-1
+      do j=jts,jte
+         do i=its,ite
+            grid%xa%p(i,j,k)= grid%xa%p(i,j,k)+grid%a_p(i,j,k)
+         end do
+      end do
+   end do
+
+   grid%a_p = 0.0
+
    do k=kte,kts,-1
       do j=jts,jte
          do i=its,ite

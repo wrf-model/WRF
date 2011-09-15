@@ -41,6 +41,9 @@ subroutine da_obs_sensitivity(ktr, iv)
    ktdrad = 0.0
    ktbrad = 0.0
 
+   ktdrad_global = 0.0
+   ktbrad_global = 0.0
+
    call da_get_unit(iunit)
        
         if (num_pseudo > 0) then
@@ -449,11 +452,14 @@ subroutine da_obs_sensitivity(ktr, iv)
             call wrf_dm_sum_reals(ktd(:,i), ktd_global(:,i))
 	 end do
 
-	 call wrf_dm_sum_reals(ktdrad, ktdrad_global)
+         if ( iv%num_inst > 0 ) &
+	    call wrf_dm_sum_reals(ktdrad, ktdrad_global)
 
-	 do i = 1, npredmax 
-            call wrf_dm_sum_reals(ktbrad(:,i), ktbrad_global(:,i))
-	 end do
+         if ( iv%num_inst > 0 ) then
+	    do i = 1, npredmax 
+               call wrf_dm_sum_reals(ktbrad(:,i), ktbrad_global(:,i))
+	    end do
+         endif
          
          write(stdout,'(A)') 'Impact of Conventional Observations: U, V, T, P, Q, GPS'
          write(stdout,'(100e15.5)') SUM(ktd_global,dim=1)
@@ -461,6 +467,8 @@ subroutine da_obs_sensitivity(ktr, iv)
                               GPSZTD, GPSRF, METAR, Ships, SSMI_RV, SSMI_TB, SSMT1, SSMT2, QSCAT, Profiler, Buoy, & 
                               Bogus, Pseudo, Radar, Radiance, AIRSR, Sonde_sfc, MTGIRS, TAMDAR'
          write(stdout,'(100e15.5)') SUM(ktd_global,dim=2)
+
+         if ( iv%num_inst > 0 ) then
          write(stdout,'(A)') 'Impact of Satellite Radiances for each instrument: '
          write(stdout,'(100e15.5)') ktdrad_global
          write(stdout,'(A)') 'Impact of Satellite Bias Correction for each predictor: '
@@ -468,6 +476,7 @@ subroutine da_obs_sensitivity(ktr, iv)
          write(stdout,'(A)') 'Impact of Satellite Bias Correction for each instrument:'
          write(stdout,'(100e15.5)') SUM(ktbrad_global,dim=2)
 !        write(stdout,*) 'ADJOINT_TEST1:', SUM(ktd_global)+SUM(ktdrad_global)
+         endif
 
          ! output the impact for ploting
          open(unit=iunit,file='obs_impact',form='formatted')
@@ -479,12 +488,14 @@ subroutine da_obs_sensitivity(ktr, iv)
                               'GPSZTD', 'GPSRF', 'METAR', 'Ships', 'SSMI_RV', 'SSMI_TB', 'SSMT1', 'SSMT2', 'QSCAT', 'Profiler', 'Buoy', &
                               'Bogus', 'Pseudo', 'Radar', 'Radiance', 'AIRSR', 'Sonde_sfc', 'MTGIRS', 'TAMDAR'
          write(iunit,'(26(e15.5,2x))') SUM(ktd_global,dim=2)
+         if ( iv%num_inst > 0 ) then
          write(iunit,'(A)') 'Impact of Satellite Radiances for each instrument: '
          write(iunit,'(100e15.5)') ktdrad_global
          write(iunit,'(A)') 'Impact of Satellite Bias Correction for each predictor: '
          write(iunit,'(100e15.5)') SUM(ktbrad_global,dim=1)
          write(iunit,'(A)') 'Impact of Satellite Bias Correction for each instrument:'
          write(iunit,'(100e15.5)') SUM(ktbrad_global,dim=2)
+         endif
 
          close(iunit)
 

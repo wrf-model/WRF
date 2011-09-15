@@ -690,7 +690,9 @@ endif
 
 ! todo jm
     IF ( (first_history .LE. switch .AND. switch .LE. last_history ) .OR. &
-         ( (switch .EQ. input_only) .AND. (program_name(1:7) .NE. 'REAL_EM') ) .OR. &
+         ( (switch .EQ. input_only) .AND. &
+           (program_name(1:7) .NE. 'REAL_EM') .AND. &
+           (grid%dfi_opt .EQ. DFI_NODFI ) ) .OR. &
          ( switch .EQ. restart_only    ) ) THEN
 
          ! This flag sets the switch which defines the topography as the original

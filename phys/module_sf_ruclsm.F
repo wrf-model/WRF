@@ -2956,6 +2956,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
         fsn=1.
         fso=0.
         hsn=snhei
+        cvw=cw
 
           NZS1=NZS-1
           NZS2=NZS-2

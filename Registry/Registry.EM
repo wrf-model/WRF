@@ -355,9 +355,9 @@ state   real    cf1            -        misc      -         -     irh       "cf1
 state   real    cf2            -        misc      -         -     irh       "cf2"                   "2nd order extrapolation constant"         ""      
 state   real    cf3            -        misc      -         -     irh       "cf3"                   "2nd order extrapolation constant"         ""      
 state   integer number_at_same_level    -         -         -     -          -        "number_at_same_level"  ""         ""      
-state   real    radtacttime    -        -         -         -     -         "radtacttime"              "RADTACTTIME"         "LW SW ACTIVATION TIME in s"
-state   real    bldtacttime    -        -         -         -     -         "bldtacttime"              "BLDTACTTIME"         "PBL   ACTIVATION TIME in s"
-state   real    cudtacttime    -        -         -         -     -         "cudtacttime"              "CUDTACTTIME"         "CPS   ACTIVATION TIME in s"
+state   real    radtacttime    -        -         -         -     r         "radtacttime"              "RADTACTTIME"         "LW SW ACTIVATION TIME in s"
+state   real    bldtacttime    -        -         -         -     r         "bldtacttime"              "BLDTACTTIME"         "PBL   ACTIVATION TIME in s"
+state   real    cudtacttime    -        -         -         -     r         "cudtacttime"              "CUDTACTTIME"         "CPS   ACTIVATION TIME in s"
 
 # State for derived time quantities.  
 state   integer itimestep      -        -          -         -     rh         "itimestep"             ""         ""      

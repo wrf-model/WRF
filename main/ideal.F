@@ -168,7 +168,7 @@ PROGRAM ideal
               message = 'INITIALIZING CHEMISTRY WITH OLD SIMULATION'
               CALL  wrf_message ( message )
 
-              CALL input_ext_chem_file( grid )
+              CALL med_read_wrf_chem_input ( grid , config_flags)
               IF(grid%emiss_opt == ECPTEC .or. grid%emiss_opt == GOCART_ECPTEC   &
                                          .or. grid%biomass_burn_opt == BIOMASSB) THEN
                  message = 'READING EMISSIONS DATA OPT 3'

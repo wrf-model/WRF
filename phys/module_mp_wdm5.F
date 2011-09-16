@@ -104,6 +104,7 @@ CONTAINS
 !  Implemented by Kyo-Sun Lim and Jimy Dudhia (NCAR) Winter 2008
 !
 !  Reference) Lim and Hong (LH, 2010) Mon. Wea. Rev. 
+!             Juang and Hong (JH, 2010) Mon. Wea. Rev.
 !             Hong, Dudhia, Chen (HDC, 2004) Mon. Wea. Rev.
 !             Hong and Lim (HL, 2006) J. Korean Meteor. Soc.
 !             Cohard and Pinty (CP, 2000) Quart. J. Roy. Meteor. Soc.
@@ -786,7 +787,6 @@ CONTAINS
             snow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.+snow(i)
         endif 
         endif
-!       if(fallsum.gt.0.)sr(i)= snowncv(i)/(rainncv(i)+1.e-12)
         if(fallsum.gt.0.)sr(i)= tstepsnow(i)/(rainncv(i)+1.e-12)
       enddo
 !
@@ -958,7 +958,8 @@ CONTAINS
           lenconcr = max(1.2*lencon,qcrmin)
           if(avedia(i,k,1).gt.di15) then
             taucon = 3.7/den(i,k)/qci(i,k,1)/(0.5e6*rslopec(i,k)-7.5)
-            praut(i,k) = lencon/taucon
+            taucon = max(taucon, 1.e-12)
+            praut(i,k) = lencon/(taucon*den(i,k))
             praut(i,k) = min(max(praut(i,k),0.),qci(i,k,1)/dtcld)
 !---------------------------------------------------------------
 ! nraut: auto conversion rate from cloud to rain [LH A6][CP 18 & 19]

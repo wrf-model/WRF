@@ -389,10 +389,12 @@ subroutine da_obs_sensitivity(ktr, iv)
             do n=1, iv%info(ssmi_rv)%nlocal
 	       if (.not. iv%info(ssmi_rv)%proc_domain(1,n)) cycle
 	       iv%ssmi_rv(n)%Speed%sens = ktr%ssmi_rv(n)%Speed / (iv%ssmi_rv(n)%Speed%error **2)
+ 	       iv%ssmi_rv(n)%tpw%sens = ktr%ssmi_rv(n)%tpw / (iv%ssmi_rv(n)%tpw%error **2)
 	       
 	       iv%ssmi_rv(n)%Speed%inv  = iv%ssmi_rv(n)%Speed%inv * iv%ssmi_rv(n)%Speed%sens
+ 	       iv%ssmi_rv(n)%tpw%inv  = iv%ssmi_rv(n)%tpw%inv * iv%ssmi_rv(n)%tpw%sens
 	       
-	       ktd(ssmi_rv,rv) = ktd(ssmi_rv,rv) + iv%ssmi_rv(n)%Speed%inv
+ 	       ktd(ssmi_rv,rv) = ktd(ssmi_rv,rv) + iv%ssmi_rv(n)%Speed%inv + iv%ssmi_rv(n)%tpw%inv
 	    end do
 	 end if   
 

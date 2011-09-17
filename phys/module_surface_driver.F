@@ -837,8 +837,10 @@ CONTAINS
           ENDDO
         ENDIF
         IF(XLAND(i,j) .GT. 1.5) THEN
-          TSK(i,j)   =SST(i,j)
-          TSLB(i,1,j)=SST(i,j)
+          IF ( SST(i,j) .LT. 350. .and. SST(i,j) .GT. 250.) THEN
+            TSK(i,j)   =SST(i,j)
+            TSLB(i,1,j)=SST(i,j)
+          ENDIF
         ENDIF
         IF ( XLAND(i,j) .LT. 1.5 .AND. XICEM(I,J) .GE. XICE_THRESHOLD .AND. XICE(I,J) .LT. XICE_THRESHOLD ) THEN
 ! sea-ice point turns to water point

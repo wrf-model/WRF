@@ -465,9 +465,10 @@ subroutine da_obs_sensitivity(ktr, iv)
          
          write(stdout,'(A)') 'Impact of Conventional Observations: U, V, T, P, Q, GPS'
          write(stdout,'(100e15.5)') SUM(ktd_global,dim=1)
-         write(stdout,'(A)') 'Impact of Conventional Observations: Sound, Synop, Pilot, Satem, GeoAMV, PolarAMV, AIREP,&
-                              GPSZTD, GPSRF, METAR, Ships, SSMI_RV, SSMI_TB, SSMT1, SSMT2, QSCAT, Profiler, Buoy, & 
-                              Bogus, Pseudo, Radar, Radiance, AIRSR, Sonde_sfc, MTGIRS, TAMDAR'
+         write(stdout,'(26(A10,2x))') 'Sound', 'Synop', 'Pilot', 'Satem', 'GeoAMV', 'PolarAMV', 'AIREP',&
+                              'GPSZTD', 'GPSRF', 'METAR', 'Ships', 'SSMI_RV', 'SSMI_TB', &
+                              'SSMT1', 'SSMT2', 'QSCAT', 'Profiler', 'Buoy', &
+                              'Bogus', 'Pseudo', 'Radar', 'Radiance', 'AIRSR', 'Sonde_sfc', 'MTGIRS', 'TAMDAR'
          write(stdout,'(100e15.5)') SUM(ktd_global,dim=2)
 
          if ( iv%num_inst > 0 ) then
@@ -487,7 +488,8 @@ subroutine da_obs_sensitivity(ktr, iv)
          write(iunit,'(6(A5,2x))') 'U', 'V', 'T', 'P', 'Q', 'GPS'
          write(iunit,'(6(e15.5,2x))') SUM(ktd_global,dim=1)
          write(iunit,'(26(A10,2x))') 'Sound', 'Synop', 'Pilot', 'Satem', 'GeoAMV', 'PolarAMV', 'AIREP',&
-                              'GPSZTD', 'GPSRF', 'METAR', 'Ships', 'SSMI_RV', 'SSMI_TB', 'SSMT1', 'SSMT2', 'QSCAT', 'Profiler', 'Buoy', &
+                              'GPSZTD', 'GPSRF', 'METAR', 'Ships', 'SSMI_RV', 'SSMI_TB', &
+                              'SSMT1', 'SSMT2', 'QSCAT', 'Profiler', 'Buoy', &
                               'Bogus', 'Pseudo', 'Radar', 'Radiance', 'AIRSR', 'Sonde_sfc', 'MTGIRS', 'TAMDAR'
          write(iunit,'(26(e15.5,2x))') SUM(ktd_global,dim=2)
          if ( iv%num_inst > 0 ) then

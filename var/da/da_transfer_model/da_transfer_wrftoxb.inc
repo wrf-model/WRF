@@ -605,6 +605,13 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    end do
    !$OMP END PARALLEL DO
 
+   if ( var4d ) then ! for 4dvar, we use these variables from model
+      grid%xb%u10 = grid%u10
+      grid%xb%v10 = grid%v10
+      grid%xb%t2 = grid%t2
+      grid%xb%q2 = grid%q2
+   endif
+
 #ifdef VAR4D
    CALL set_physical_bc2d( grid%xb%grid_box_area, 't', config_flags, &
                            ids, ide, jds, jde,    &
@@ -765,6 +772,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       end do
       deallocate(arrayglobal)
    else
+      loc_latc_mean = 0.0
       do j=jts,jte
          loc_latc_mean(j) = tmpvar*sum(grid%xb % lat(its:ite, j))
       end do

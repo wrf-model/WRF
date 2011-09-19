@@ -64,7 +64,7 @@ module da_transfer_model
        g_stuff_bdytend, a_stuff_bdytend_old, a_stuff_bdytend_new, decouple, da_calc_2nd_fg, &
        ubdy3dtemp1 , vbdy3dtemp1 , tbdy3dtemp1 , pbdy3dtemp1 , qbdy3dtemp1, mbdy2dtemp1, &
        ubdy3dtemp2 , vbdy3dtemp2 , tbdy3dtemp2 , pbdy3dtemp2 , qbdy3dtemp2, mbdy2dtemp2, &
-       da_bdy_fields_halo
+       wbdy3dtemp1,  wbdy3dtemp2, da_bdy_fields_halo
    use module_bc, only : set_physical_bc2d
    use module_big_step_utilities_em, only : calc_mu_uv
    use g_module_big_step_utilities_em, only : g_calc_mu_uv

@@ -47,13 +47,15 @@ subroutine da_transfer_xatowrf(grid)
 
    ! To keep the background PH perturbation:
 
-   do j=jts,jte
-      do i=its,ite
-         do k=kts, kte+1
-            ph_cgrid(i,j,k) = grid%ph_2(i,j,k)
+   if (.not. var4d ) then
+      do j=jts,jte
+         do i=its,ite
+            do k=kts, kte+1
+               ph_cgrid(i,j,k) = grid%ph_2(i,j,k)
+            end do
          end do
       end do
-   end do
+   endif
 
    !---------------------------------------------------------------------------
    ! [1.0] Get the mixing ratio of moisture first, as it its easy.
@@ -92,6 +94,8 @@ subroutine da_transfer_xatowrf(grid)
    ! [3.0] compute pressure increments 
    !---------------------------------------------------------------------------
 
+   if ( .not. var4d ) then ! for 4dvar, it is usefulless
+
    ! Tangent linear code for grid%xa%p (based on WRF "real.init.code") 
    ! developed by Y.-R. Guo 05/13/2004:
 
@@ -123,6 +127,18 @@ subroutine da_transfer_xatowrf(grid)
       end do
    end do
 
+   else
+    
+   do k=kts, kte
+     do j=jts,jte
+        do i=its,ite
+           grid%xa%p(i,j,k) = 0
+        end do
+     end do
+   end do
+
+   endif 
+
    ! update perturbation pressure
 
    do k=kts, kte
@@ -132,6 +148,7 @@ subroutine da_transfer_xatowrf(grid)
         end do
      end do
    end do
+
 
    ! Adjust grid%xa%q to makte grid%xb%q + grid%xa%q > 0.0
 
@@ -214,30 +231,42 @@ subroutine da_transfer_xatowrf(grid)
             ! To compute the theta increment with the full fitelds:
             grid%t_2(i,j,k) = t_full*(base_pres/p_full)**kappa - t0
 
-            ! The full fiteld of analysis ph:
-            ph_full  = ph_full  &
-                       - grid%xb%dnw(k) * (grid%xb%psac(i,j)+mu_cgrid(i,j)) / rho_dry
+            if ( .not. var4d ) then
+               ! The full fiteld of analysis ph:
+               ph_full  = ph_full  &
+                          - grid%xb%dnw(k) * (grid%xb%psac(i,j)+mu_cgrid(i,j)) / rho_dry
 
-            ! background hydrostatic phi:
-            ph_xb_hd  = ph_xb_hd  &
-                       - grid%xb%dnw(k) * grid%xb%psac(i,j) / grid%xb%rho(i,j,k)
+               ! background hydrostatic phi:
+               ph_xb_hd  = ph_xb_hd  &
+                          - grid%xb%dnw(k) * grid%xb%psac(i,j) / grid%xb%rho(i,j,k)
 
-            ! The analysis perturbation = Hydro_ph - base_ph + nonhydro_xb_ph:
-            grid%ph_2(i,j,k+1) = ph_full - grid%phb(i,j,k+1) &
-                            + (grid%xb%hf(i,j,k+1)*gravity - ph_xb_hd)
+               ! The analysis perturbation = Hydro_ph - base_ph + nonhydro_xb_ph:
+               grid%ph_2(i,j,k+1) = ph_full - grid%phb(i,j,k+1) &
+                               + (grid%xb%hf(i,j,k+1)*gravity - ph_xb_hd)
+            endif
          end do
       end do
    end do
 
    ! To compute the geopotential height increment:
 
-   do k=kts, kte+1
-     do j=jts,jte
-        do i=its,ite
-           ph_cgrid(i,j,k) = grid%ph_2(i,j,k) - ph_cgrid(i,j,k)
+   if ( .not. var4d ) then
+      do k=kts, kte+1
+        do j=jts,jte
+           do i=its,ite
+              ph_cgrid(i,j,k) = grid%ph_2(i,j,k) - ph_cgrid(i,j,k)
+           end do
         end do
-     end do
-   end do
+      end do
+   else
+      do k=kts, kte+1
+        do j=jts,jte
+           do i=its,ite
+              ph_cgrid(i,j,k) = 0.0
+           end do
+        end do
+      end do
+   endif
 
 
    ! ========================
@@ -541,6 +570,10 @@ subroutine da_transfer_xatowrf(grid)
       grid%v_bxe = grid%v_bxe + model_grid%g_v_bxe
       grid%v_bys = grid%v_bys + model_grid%g_v_bys
       grid%v_bye = grid%v_bye + model_grid%g_v_bye
+      grid%w_bxs = grid%w_bxs + model_grid%g_w_bxs
+      grid%w_bxe = grid%w_bxe + model_grid%g_w_bxe
+      grid%w_bys = grid%w_bys + model_grid%g_w_bys
+      grid%w_bye = grid%w_bye + model_grid%g_w_bye
       grid%t_bxs = grid%t_bxs + model_grid%g_t_bxs
       grid%t_bxe = grid%t_bxe + model_grid%g_t_bxe
       grid%t_bys = grid%t_bys + model_grid%g_t_bys
@@ -566,6 +599,10 @@ subroutine da_transfer_xatowrf(grid)
       grid%v_btxe = grid%v_btxe + model_grid%g_v_btxe
       grid%v_btys = grid%v_btys + model_grid%g_v_btys
       grid%v_btye = grid%v_btye + model_grid%g_v_btye
+      grid%w_btxs = grid%w_btxs + model_grid%g_w_btxs
+      grid%w_btxe = grid%w_btxe + model_grid%g_w_btxe
+      grid%w_btys = grid%w_btys + model_grid%g_w_btys
+      grid%w_btye = grid%w_btye + model_grid%g_w_btye
       grid%t_btxs = grid%t_btxs + model_grid%g_t_btxs
       grid%t_btxe = grid%t_btxe + model_grid%g_t_btxe
       grid%t_btys = grid%t_btys + model_grid%g_t_btys

@@ -177,7 +177,7 @@ i1       real   w_save         ijk     dyn_em      1         Z
 state    real   w_subs         |       dyn_em      1         -      i3rh      "W_SUBS" "large-scale vertical velocity" "m s-1"
 state    real   w_subs_tend    |       dyn_em      1         -      i3rh      "W_SUBS_TEND" "tendency large-scale vertical velocity" "m s-1"
 state    real   a_w            ijk     misc        2         Z      rh        "A_W"                        "z-wind component"   "m s-1"
-state    real   g_w            ijk     misc        2         Z      rh        "A_W"                        "z-wind component"   "m s-1"
+state    real   g_w            ijk     misc        2         Z      rh        "G_W"                        "z-wind component"   "m s-1"
 
 # Geopotential
 state    real   ph             ijkb     dyn_em      2         Z     \
@@ -306,6 +306,8 @@ state    real   zy             ijk     dyn_em      1         Y      -         " 
 state    real   rdz            ijk     dyn_em      1         Z      -         " "  " "  " "   
 state    real   rdzw           ijk     dyn_em      1         Z      -         " "  " "  " "   
 state    real   pb             ijk     dyn_em      1         -      irhdus    "pb"          "BASE STATE PRESSURE "          "Pa"
+state    real   a_p            ijk     dyn_em      1         -      rh        "a_p"         "perturbation pressure"         "Pa"
+state    real   g_p            ijk     dyn_em      1         -      rh        "g_p"         "perturbation pressure"         "Pa"
 
 #                                               
 # Other dyn                                             
@@ -381,7 +383,10 @@ state   real    zetatop        -        misc      -         -     irh       "zet
 state   real    cf1            -        misc      -         -     irh       "cf1"                   "2nd order extrapolation constant"         ""      
 state   real    cf2            -        misc      -         -     irh       "cf2"                   "2nd order extrapolation constant"         ""      
 state   real    cf3            -        misc      -         -     irh       "cf3"                   "2nd order extrapolation constant"         ""      
-state   integer number_at_same_level    -        -          -         -     -        "number_at_same_level"  ""         ""      
+state   integer number_at_same_level    -         -         -     -          -        "number_at_same_level"  ""         ""      
+state   real    radtacttime    -        -         -         -     r         "radtacttime"              "RADTACTTIME"         "LW SW ACTIVATION TIME in s"
+state   real    bldtacttime    -        -         -         -     r         "bldtacttime"              "BLDTACTTIME"         "PBL   ACTIVATION TIME in s"
+state   real    cudtacttime    -        -         -         -     r         "cudtacttime"              "CUDTACTTIME"         "CPS   ACTIVATION TIME in s"
 
 # State for derived time quantities.  
 state   integer itimestep      -        -          -         -     rh         "itimestep"             ""         ""      
@@ -977,10 +982,9 @@ state    real    dlg_bep       ijk     misc        1         Z      -        "dl
 state    real    dl_u_bep      ijk     misc        1         Z      -        "dl_u_bep"              "urban length scale"        "m"
 state    real    sf_bep        ijk     misc        1         Z      -        "sf_bep"                "surface grid"              "-"
 state    real    vl_bep        ijk     misc        1         Z      -        "vl_bep"                "volume grid"               "-"
-# BOULAC PBL variables
-state    real   tke_pbl        ijk     misc        1         -      rh        "tke_pbl"               "TKE FROM Bougeault and Lacarrere"      "m2 s-2"
-state    real   el_pbl        ijk     misc        1         -       h        "el_pbl"               "Length scale FROM Bougeault and Lacarrere"      "m"
-# Diagnostic PBL variables
+state    real   tke_pbl        ikj     misc        1         -      rh       "tke_pbl"              "TKE from PBL"      "m2 s-2"
+state    real   el_pbl         ikj     misc        1         -      h        "el_pbl"               "Length scale from PBL"      "m"
+# Diagnostic BOULAC PBL variables
 state    real   wu_tur         ijk     misc        1         -      r        "wu_tur"               "Turbulent flux of momentum(x)"      "m2 s-2"
 state    real   wv_tur         ijk     misc        1         -      r        "wv_tur"               "Turbulent flux of momentum(y)"      "m2 s-2"
 state    real   wt_tur         ijk     misc        1         -      r        "wt_tur"               "Turbulent flux of temperature"      "K m s-1"
@@ -1885,10 +1889,12 @@ rconfig   integer e_vert                  namelist,domains	max_domains    31    
 rconfig   integer num_metgrid_levels      namelist,domains	1              27      irh    "num_metgrid_levels"                ""      ""
 rconfig   integer num_metgrid_soil_levels namelist,domains	1             4        irh    "num_metgrid_soil_levels"               "number of input levels or layers in 3D sm, st, sw arrays"      ""
 rconfig   real    p_top_requested         namelist,domains      1              5000    irh    "p_top_requested" "Pa"      ""
+rconfig   logical interp_theta            namelist,domains	1              .true.  irh    "interp_theta"  "inside real, vertically interpolate theta (T) or temperature (F)"  ""
 rconfig   integer interp_type             namelist,domains	1              2       irh    "interp_type"  "1=interp in pressure, 2=interp in LOG pressure"  ""
 rconfig   integer vert_refine_fact        namelist,domains      1              1       irh    "vertical refinment factor for ndown"  ""
 rconfig   integer extrap_type             namelist,domains	1              2       irh    "extrap_type"  "1= use 2 lowest levels, 2=constant"  ""
 rconfig   integer t_extrap_type           namelist,domains	1              2       irh    "t_extrap_type"  "1=isothermal, 2=6.5 K/km, 3=adiabatic"   ""
+rconfig   integer hypsometric_opt         namelist,domains      1              1       irh    "hypsometric_opt"  "Z relates P, 1=linearly, 2=LOG-linearly"  ""
 rconfig   logical lowest_lev_from_sfc     namelist,domains	1             .false.  irh    "lowest_lev_from_sfc"                ""      ""
 rconfig   logical use_levels_below_ground namelist,domains	1             .true.   irh    "use_levels_below_ground"   "T/F: use input data levels below input sfc pres" ""
 rconfig   logical use_tavg_for_tsk        namelist,domains	1             .false.  irh    "use_tavg_for_tsk"   "T/F: use diurnal avg sfc temp for tsk" ""
@@ -1986,7 +1992,7 @@ rconfig   integer ISFFLX                  namelist,physics 	1             1     
 rconfig   integer IFSNOW                  namelist,physics	1             0       irh    "IFSNOW"                        ""      ""
 rconfig   integer ICLOUD                  namelist,physics	1             1       irh    "ICLOUD"                        ""      ""
 rconfig   real    swrad_scat              namelist,physics	1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
-rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=hybrid (not yet implemented)"      ""
+rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=dominant cateogry from metgrid"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""
 rconfig   integer num_urban_layers        namelist,physics      1            400       irh    "num_urban_layers"               ""      ""
 rconfig   integer num_months              namelist,physics      1            12       irh    "num_months"               ""      ""
@@ -2190,6 +2196,7 @@ rconfig   real    smdiv                   namelist,dynamics	max_domains    0.1  
 rconfig   real    emdiv                   namelist,dynamics	max_domains    0.01    h    "emdiv"         ""      ""
 rconfig   real    epssm                   namelist,dynamics	max_domains    .1      h    "epssm"         ""      ""
 rconfig   logical non_hydrostatic         namelist,dynamics	max_domains  .true.   irh  "non_hydrostatic"    ""   ""
+rconfig   logical use_input_w             namelist,dynamics	1            .false.  irh  "use_input_w"    ""   ""
 rconfig   integer time_step_sound         namelist,dynamics	max_domains    0       h     "time_step_sound"               ""      ""
 rconfig   integer     h_mom_adv_order     namelist,dynamics	max_domains    5       rh       "h_mom_adv_order"               ""      ""
 rconfig   integer     v_mom_adv_order     namelist,dynamics	max_domains    3       rh       "v_mom_adv_order"               ""      ""

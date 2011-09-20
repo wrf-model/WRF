@@ -893,6 +893,11 @@ module da_define_structures
       integer :: size5l      ! Size of CV array of 5th variable lbc error.
    end type cv_type
 
+   type qhat_type
+      integer          :: i
+      real, allocatable:: values(:) ! qhat_type used in da_minimise_cg
+   end type qhat_type
+
    type be_subtype
       integer           :: mz          ! Vertical truncation of errors.
       integer           :: max_wave    ! Global only - horizontal spectral truncation.

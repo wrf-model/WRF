@@ -75,6 +75,9 @@ subroutine da_nl_model (it)
    call nl_set_io_form_auxhist6 ( head_grid%id, 0 ) 
    call nl_set_auxhist6_interval_s ( head_grid%id, 0 ) 
    call Setup_Timekeeping ( head_grid )
+
+   ! Turn off boundary input from now.
+   CALL nl_set_io_form_boundary( head_grid%id, 0 )
 	
    if (trace_use_dull) call da_trace_exit("da_nl_model")
 

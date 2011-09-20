@@ -95,8 +95,8 @@ CONTAINS
           IF ( id .EQ. p%id ) THEN
             DO j=jts,jtf
               DO i=its,itf
-                IF (xlat_v(i,j) .LE. p%lat .AND. p%lat .LT. xlat_v(i+1,j) .AND. &
-                    xlong_u(i,j).LE. p%lon .AND. p%lon .LT. xlong_u(i,j+1)) THEN
+                IF (xlat_v(i,j) .LE. p%lat .AND. p%lat .LT. xlat_v(i,j+1) .AND. &
+                    xlong_u(i,j).LE. p%lon .AND. p%lon .LT. xlong_u(i+1,j)) THEN
                   p%i=i
                   p%j=j
                 ENDIF

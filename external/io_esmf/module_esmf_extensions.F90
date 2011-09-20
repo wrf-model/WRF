@@ -24,7 +24,7 @@
 
 MODULE module_esmf_extensions
 
-  USE ESMF_Mod
+  USE ESMF
 
   IMPLICIT NONE
 
@@ -407,7 +407,8 @@ CONTAINS
                               d_r8, h_r8, m_r8, s_r8, &
                               ms_r8, us_r8, ns_r8, &
                               sN, sD, &
-                              calendar, calendarType, timeZone, &
+! 5.2.0r                              calendar, calendarType, timeZone, &
+                              calendar, timeZone, &
                               timeString, timeStringISOFrac, &
                               dayOfWeek, midMonth, &
                               dayOfYear,  dayOfYear_r8, &
@@ -436,7 +437,7 @@ CONTAINS
       integer(ESMF_KIND_I4),   intent(out), optional :: sN
       integer(ESMF_KIND_I4),   intent(out), optional :: sD
       type(ESMF_Calendar),     intent(out), optional :: calendar
-      type(ESMF_CalendarType), intent(out), optional :: calendarType
+! 5.2.0r      type(ESMF_CalendarType), intent(out), optional :: calendarType
       integer,                 intent(out), optional :: timeZone
       character (len=*),       intent(out), optional :: timeString
       character (len=*),       intent(out), optional :: timeStringISOFrac
@@ -459,7 +460,8 @@ CONTAINS
                                     d_r8=d_r8, h_r8=h_r8, m_r8=m_r8, s_r8=s_r8, &
                                     ms_r8=ms_r8, us_r8=us_r8, ns_r8=ns_r8, &
                                     sN=sN, sD=sD, &
-                                    calendar=calendar, calendarType=calendarType, timeZone=timeZone, &
+! 5.2.0r                                    calendar=calendar, calendarType=calendarType, timeZone=timeZone, &
+                                    calendar=calendar,                            timeZone=timeZone, &
                                     timeString=timeString, timeStringISOFrac=timeStringISOFrac, &
                                     dayOfWeek=dayOfWeek, midMonth=midMonth, &
                                     dayOfYear=dayOfYear,  dayOfYear_R8=dayOfYear_r8, &

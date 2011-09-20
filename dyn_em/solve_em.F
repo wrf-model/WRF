@@ -655,7 +655,8 @@ BENCH_END(set_phys_bc_tim)
                              , rw_tendf, t_tendf                &
                              , ph_tendf, mu_tendf               &
                              , tke_tend                         &
-                             , adapt_step_flag , curr_secs      &
+                             , config_flags%use_adaptive_time_step &
+                             , curr_secs                        &
                              , psim , psih , wspd , gz1oz0      &
                              , br , chklowq                     &
                              , cu_act_flag , hol , th_phy       &
@@ -2566,10 +2567,10 @@ BENCH_END(tracer_adv_tim)
 
 BENCH_START(calc_p_rho_tim)
 
-       CALL calc_p_rho_phi( moist, num_3d_m,                &
+       CALL calc_p_rho_phi( moist, num_3d_m, config_flags%hypsometric_opt,             &
                             grid%al, grid%alb, grid%mu_2, grid%muts,              &
-                            grid%ph_2, grid%p, grid%pb, grid%t_2,                 &
-                            p0, t0, grid%znu, grid%dnw, grid%rdnw,           &
+                            grid%ph_2, grid%phb, grid%p, grid%pb, grid%t_2,                 &
+                            p0, t0, grid%p_top, grid%znu, grid%znw, grid%dnw, grid%rdnw,           &
                             grid%rdn, config_flags%non_hydrostatic,             &
                             ids, ide, jds, jde, kds, kde,     &
                             ims, ime, jms, jme, kms, kme,     &
@@ -3413,10 +3414,10 @@ BENCH_START(moist_phys_end_tim)
      jts = max(grid%j_start(ij),jds+sz)
      jte = min(grid%j_end(ij),jde-1-sz)
 
-     CALL calc_p_rho_phi( moist, num_3d_m,                &
+     CALL calc_p_rho_phi( moist, num_3d_m, config_flags%hypsometric_opt,             &
                           grid%al, grid%alb, grid%mu_2, grid%muts,              &
-                          grid%ph_2, grid%p, grid%pb, grid%t_2,                 &
-                          p0, t0, grid%znu, grid%dnw, grid%rdnw,           &
+                          grid%ph_2, grid%phb, grid%p, grid%pb, grid%t_2,                 &
+                          p0, t0, grid%p_top, grid%znu, grid%znw, grid%dnw, grid%rdnw,           &
                           grid%rdn, config_flags%non_hydrostatic,             &
                           ids, ide, jds, jde, kds, kde,     &
                           ims, ime, jms, jme, kms, kme,     &

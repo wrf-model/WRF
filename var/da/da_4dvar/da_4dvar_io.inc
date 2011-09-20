@@ -3,9 +3,16 @@ subroutine init_4dvar
 
    implicit none
 
-   integer :: idum1, idum2
+   integer :: idum1, idum2, run_seconds ,rc
+   TYPE(WRFU_TimeInterval) :: run_length
 
    if (trace_use_dull) call da_trace_entry("init_4dvar")
+
+   run_length = head_grid%stop_subtime - head_grid%start_subtime
+   CALL WRFU_TimeIntervalGet( run_length, S=run_seconds, rc=rc )
+
+   if ( run_seconds .gt. config_flags%interval_seconds ) &
+      CALL wrf_error_fatal('In 4D-Var assimilation window, lateral boundary update is not allowed.')   
 
    ! Save the some physics options, as they will be changed in TL and AD model.
    call nl_get_mp_physics (head_grid%id, original_mp_physics) 

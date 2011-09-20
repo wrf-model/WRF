@@ -108,21 +108,26 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam, timestr)
          end do
       end do
    end do
-   do j=js,je
-      do i=is,ie
-         grid%g_ph_2(i,j,ks)=0.0
-         do k=ks,ke
-            rho_cgrid=grid%xb%rho(i,j,k) &
-                      *(grid%xa%p(i,j,k)/grid%xb%p(i,j,k) &
-                      -grid%xa%t(i,j,k)/grid%xb%t(i,j,k) &
-                      -0.61*grid%xa%q(i,j,k)/(1.0+0.61*grid%xb%q(i,j,k)))
-            grid%g_ph_2(i,j,k+1)=grid%g_ph_2(i,j,k) &
-               -(g_press(i,j,k+1)-g_press(i,j,k) &
-               +(grid%ph_2(i,j,k+1)-grid%ph_2(i,j,k))*rho_cgrid) &
-               /grid%xb%rho(i,j,k)
-         end do
-      end do
-   end do
+!  do j=js,je
+!     do i=is,ie
+!        grid%g_ph_2(i,j,ks)=0.0
+!        do k=ks,ke
+!           rho_cgrid=grid%xb%rho(i,j,k) &
+!                     *(grid%xa%p(i,j,k)/grid%xb%p(i,j,k) &
+!                     -grid%xa%t(i,j,k)/grid%xb%t(i,j,k) &
+!                     -0.61*grid%xa%q(i,j,k)/(1.0+0.61*grid%xb%q(i,j,k)))
+!           grid%g_ph_2(i,j,k+1)=grid%g_ph_2(i,j,k) &
+!              -(g_press(i,j,k+1)-g_press(i,j,k) &
+!              +(grid%ph_2(i,j,k+1)-grid%ph_2(i,j,k))*rho_cgrid) &
+!              /grid%xb%rho(i,j,k)
+!        end do
+!     end do
+!  end do
+
+   grid%g_ph_2 = 0.0
+
+   grid%xa%p = 0.0
+   grid%g_p = grid%xa%p
 
    deallocate (g_press)
 
@@ -319,6 +324,8 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam, timestr)
    call kj_swap (grid%g_t_2, model_grid%g_t_2, &
                  grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
    call kj_swap (grid%g_ph_2, model_grid%g_ph_2, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap (grid%g_p, model_grid%g_p, &
                  grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
    model_grid%g_mu_2 = grid%g_mu_2
    model_grid%g_rainnc  = 0.0

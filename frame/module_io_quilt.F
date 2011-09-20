@@ -373,7 +373,7 @@ MODULE module_wrf_quilt
             ! once (e.g. commands) to the IO server of my group.
             compute_group_master(j) = (me .EQ. 0)
 
-            IF( compute_group_master(j) ) WRITE(*,*) mytask,': ARPDBG : I will talk to IO server in group ',j
+!            IF( compute_group_master(j) ) WRITE(*,*) mytask,': ARPDBG : I will talk to IO server in group ',j
          ENDIF
          ENDIF
       ENDDO
@@ -1786,7 +1786,7 @@ okay_to_w = .false.
        ENDDO !} while(icurs < obufsize)
 
 ! Now, for each field, retrieve headers and patches (data) from the internal 
-! buffers and collect them all on the I/O quilt server "root" task.
+! buffers
        CALL init_retrieve_pieces_of_field
 ! Retrieve header and all patches for the first field from the internal 
 ! buffers.  
@@ -2241,7 +2241,8 @@ okay_to_w = .false.
                                                      DimNames, &
                                                      DomainStart , DomainEnd ,&
                                                      MemoryStart , MemoryEnd ,&
-                                                     PatchStart , PatchEnd )
+                                                     PatchStart , PatchEnd, &
+                                                     ntasks_io_group-1 )
                       stored_write_record = .true.
 
 !!$                      IF(VarName .eq. "PSFC")THEN
@@ -2254,16 +2255,17 @@ okay_to_w = .false.
                     ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
                       CALL mpi_type_size( MPI_INTEGER, ftypesize, ierr )
 #ifdef PNETCDF_QUILT
-                      CALL store_patch_in_outbuf_pnc ( dummybuf, & 
-                                                   obuf(icurs/itypesize), &
-                                                   TRIM(DateStr), &
-                                                   TRIM(VarName) , &
-                                                   FieldType, &
-                                                   TRIM(MemoryOrder), &
+                      CALL store_patch_in_outbuf_pnc ( dummybuf,             & 
+                                                   obuf(icurs/itypesize) ,   &
+                                                   TRIM(DateStr) ,           &
+                                                   TRIM(VarName) ,           &
+                                                   FieldType,                &
+                                                   TRIM(MemoryOrder) ,       &
                                                    TRIM(Stagger), DimNames,  &
                                                    DomainStart , DomainEnd , &
                                                    MemoryStart , MemoryEnd , &
-                                                   PatchStart , PatchEnd )
+                                                   PatchStart , PatchEnd   , &
+                                                   ntasks_io_group-1 )
                       stored_write_record = .true.
 #endif
                     ELSE IF ( FieldType .EQ. WRF_LOGICAL ) THEN
@@ -3133,8 +3135,9 @@ SUBROUTINE wrf_quilt_set_time ( DataHandle, Data,  Status )
 ! this data so if PNETCDF_QUILT is defined then we assume that's what's being used.
 #ifdef PNETCDF_QUILT
       IF(compute_group_master(1) )THEN
-! ARPDBG - actually only want to send one time header to each IO server as 
-! can't tell that's what they are on the IO servers themselves
+! Only want to send one time header to each IO server as 
+! can't tell that's what they are on the IO servers themselves - therefore use
+! the compute_group_master process.
          CALL int_gen_ti_header_char( hdrbuf, hdrbufsize, itypesize, &
                                       DataHandle, "TIMESTAMP", "", Data, int_set_time )
       ELSE

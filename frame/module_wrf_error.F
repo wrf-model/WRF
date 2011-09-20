@@ -20,6 +20,9 @@ CONTAINS
 END MODULE module_wrf_error
 
 SUBROUTINE wrf_message( str )
+#ifdef ESMFIO
+  USE ESMF
+#endif
   IMPLICIT NONE
   CHARACTER*(*) str
 #if defined( DM_PARALLEL ) && ! defined( STUBMPI) 
@@ -28,23 +31,33 @@ SUBROUTINE wrf_message( str )
   FLUSH(0)
 # endif
 #endif
+#ifdef ESMFIO
+  CALL ESMF_LogWrite(TRIM(str),ESMF_LOGMSG_INFO)
+#endif
   print*, TRIM(str)
 END SUBROUTINE wrf_message
 
 ! intentionally write to stderr only
 SUBROUTINE wrf_message2( str )
+#ifdef ESMFIO
+  USE ESMF
+#endif
   IMPLICIT NONE
   CHARACTER*(*) str
   write(0,*) str
 # ifdef _WIN32
   FLUSH(0)
 # endif
+#ifdef ESMFIO
+  CALL ESMF_LogWrite(TRIM(str),ESMF_LOGMSG_INFO)
+#endif
 END SUBROUTINE wrf_message2
 
 SUBROUTINE wrf_error_fatal3( file_str, line, str )
   USE module_wrf_error
 #ifdef ESMFIO
-  USE ESMF_Mod
+! 5.2.0r  USE ESMF_Mod
+  USE ESMF
 #endif
   IMPLICIT NONE
   CHARACTER*(*) file_str
@@ -71,7 +84,8 @@ SUBROUTINE wrf_error_fatal3( file_str, line, str )
   CALL wrf_message2( '-------------------------------------------' )
 #endif
 #ifdef ESMFIO
-  CALL esmf_finalize(terminationflag=ESMF_ABORT)
+! 5.2.0r  CALL esmf_finalize(terminationflag=ESMF_ABORT)
+  CALL esmf_finalize(endflag=ESMF_END_ABORT)
 #endif
   CALL wrf_abort
 END SUBROUTINE wrf_error_fatal3

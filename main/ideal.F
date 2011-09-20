@@ -72,9 +72,9 @@ PROGRAM ideal
 
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
 #ifdef NO_LEAP_CALENDAR
-   CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_NOLEAP, rc=rc )
+   CALL WRFU_Initialize( defaultCalKind=WRFU_CAL_NOLEAP, rc=rc )
 #else
-   CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN, rc=rc )
+   CALL WRFU_Initialize( defaultCalKind=WRFU_CAL_GREGORIAN, rc=rc )
 #endif
    CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
 
@@ -168,7 +168,7 @@ PROGRAM ideal
               message = 'INITIALIZING CHEMISTRY WITH OLD SIMULATION'
               CALL  wrf_message ( message )
 
-              CALL input_ext_chem_file( grid )
+              CALL med_read_wrf_chem_input ( grid , config_flags)
               IF(grid%emiss_opt == ECPTEC .or. grid%emiss_opt == GOCART_ECPTEC   &
                                          .or. grid%biomass_burn_opt == BIOMASSB) THEN
                  message = 'READING EMISSIONS DATA OPT 3'

@@ -1549,7 +1549,7 @@ CONTAINS
         write(6,345) indx(i), j, tstar(indx(i)), tsp(i), ip
 345   format(2X, ' I, J, OLD T*, NEW T*, NPTS ', 2I5, 2E14.8, I5)
 
-        write(6,350) reflect, sigt4, shfx, alevp, delten, diffot
+!       write(6,350) reflect, sigt4, shfx, alevp, delten, diffot
 350   format(2X, ' REFLECT, SIGT4, SHFX, ALEVP, DELTEN, DIFFOT ', &
             6E14.8)
 

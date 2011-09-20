@@ -174,9 +174,9 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
 
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
 #ifdef NO_LEAP_CALENDAR
-   CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_NOLEAP, rc=rc )
+   CALL WRFU_Initialize( defaultCalKind=WRFU_CAL_NOLEAP, rc=rc )
 #else
-   CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN, rc=rc )
+   CALL WRFU_Initialize( defaultCalKind=WRFU_CAL_GREGORIAN, rc=rc )
 #endif
    CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
 

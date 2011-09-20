@@ -49,6 +49,8 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
                  grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
    call kj_swap_reverse (model_grid%a_ph_2, grid%a_ph_2, &
                  grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+   call kj_swap_reverse (model_grid%a_p, grid%a_p, &
+                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
 
    grid%a_mu_2 = model_grid%a_mu_2
    grid%a_rainnc  = model_grid%a_rainnc
@@ -234,19 +236,30 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
    !---------------------------------------------------------------------------
 
    a_press(its:ite,jts:jte,kts:kte+1)=0.0
+
    do k=kte,kts,-1
       do j=jts,jte
          do i=its,ite
-            rho_cgrid=-(grid%ph_2(i,j,k+1)-grid%ph_2(i,j,k))*grid%a_ph_2(i,j,k+1)/grid%xb%rho(i,j,k)
-            a_press(i,j,k )=a_press(i,j,k )+grid%a_ph_2(i,j,k+1)/grid%xb%rho(i,j,k)
-            a_press(i,j,k+1)=a_press(i,j,k+1)-grid%a_ph_2(i,j,k+1)/grid%xb%rho(i,j,k)
-            grid%a_ph_2(i,j,k ) =grid%a_ph_2(i,j,k)   +grid%a_ph_2(i,j,k+1)
-            grid%xa%q(i,j,k)=grid%xa%q(i,j,k)-grid%xb%rho(i,j,k)*0.61*rho_cgrid/(1.0+0.61*grid%xb%q(i,j,k))
-            grid%xa%t(i,j,k)=grid%xa%t(i,j,k)-grid%xb%rho(i,j,k)*rho_cgrid/grid%xb%t(i,j,k)
-            grid%xa%p(i,j,k)= grid%xa%p(i,j,k)+grid%xb%rho(i,j,k)*rho_cgrid/grid%xb%p(i,j,k)
+            grid%xa%p(i,j,k)= grid%xa%p(i,j,k)+grid%a_p(i,j,k)
          end do
       end do
    end do
+
+   grid%a_p = 0.0
+
+!  do k=kte,kts,-1
+!     do j=jts,jte
+!        do i=its,ite
+!           rho_cgrid=-(grid%ph_2(i,j,k+1)-grid%ph_2(i,j,k))*grid%a_ph_2(i,j,k+1)/grid%xb%rho(i,j,k)
+!           a_press(i,j,k )=a_press(i,j,k )+grid%a_ph_2(i,j,k+1)/grid%xb%rho(i,j,k)
+!           a_press(i,j,k+1)=a_press(i,j,k+1)-grid%a_ph_2(i,j,k+1)/grid%xb%rho(i,j,k)
+!           grid%a_ph_2(i,j,k ) =grid%a_ph_2(i,j,k)   +grid%a_ph_2(i,j,k+1)
+!           grid%xa%q(i,j,k)=grid%xa%q(i,j,k)-grid%xb%rho(i,j,k)*0.61*rho_cgrid/(1.0+0.61*grid%xb%q(i,j,k))
+!           grid%xa%t(i,j,k)=grid%xa%t(i,j,k)-grid%xb%rho(i,j,k)*rho_cgrid/grid%xb%t(i,j,k)
+!           grid%xa%p(i,j,k)= grid%xa%p(i,j,k)+grid%xb%rho(i,j,k)*rho_cgrid/grid%xb%p(i,j,k)
+!        end do
+!     end do
+!  end do
 
    do k=kts,kte
       do j=jts,jte

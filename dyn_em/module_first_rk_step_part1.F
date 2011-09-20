@@ -191,7 +191,7 @@ BENCH_END(init_zero_tend_tim)
                         grid%ph_2, grid%phb, grid%t_2, grid%tsk, moist, num_moist,   &
                         rho,th_phy, p_phy, pi_phy, u_phy, v_phy,         &
                         p8w, t_phy, t8w, grid%z, grid%z_at_w, dz8w,      &
-                        grid%p_hyd, grid%p_hyd_w,                        &
+                        grid%p_hyd, grid%p_hyd_w, grid%dnw,              &
                         grid%fnm, grid%fnp, grid%znw, grid%p_top,        &
                         grid%rthraten,                                   &
                         grid%rthblten, grid%rublten, grid%rvblten,       &
@@ -330,6 +330,7 @@ BENCH_START(rad_driver_tim)
      &        ,M_PS_1=grid%m_ps_1, M_PS_2=grid%m_ps_2, AEROSOLC_1=grid%aerosolc_1        &
      &        ,AEROSOLC_2=grid%aerosolc_2, M_HYBI0=grid%m_hybi                      &
      &        ,ABSTOT=grid%abstot, ABSNXT=grid%absnxt, EMSTOT=grid%emstot                &
+     &        ,RADTACTTIME=grid%radtacttime                                         &  
 #ifdef WRF_CHEM
      &        ,CU_RAD_FEEDBACK=config_flags%cu_rad_feedback                &
      &        ,AER_RA_FEEDBACK=config_flags%aer_ra_feedback                &
@@ -391,6 +392,7 @@ BENCH_START(surf_driver_tim)
      &        ,P8W=grid%p_hyd_w            ,PBLH=grid%pblh          ,PI_PHY=pi_phy      &
      &        ,PSFC=grid%psfc          ,PSHLTR=grid%pshltr      ,PSIH=psih          &
      &        ,BLDT=grid%bldt     ,CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag  &
+     &        ,BLDTACTTIME=grid%bldtacttime                                              & 
      &        ,PSIM=psim          ,P_PHY=grid%p_hyd        ,Q10=grid%q10            &
      &        ,Q2=grid%q2              ,QFX=grid%qfx            ,QSFC=grid%qsfc          &
      &        ,QSHLTR=grid%qshltr      ,QZ0=grid%qz0            ,RAINCV=grid%raincv      &
@@ -545,6 +547,7 @@ BENCH_START(pbl_driver_tim)
      &         AKHS=grid%akhs          ,AKMS=grid%akms                              &
      &        ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics                           &
      &        ,BLDT=grid%bldt, CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag &
+     &        ,BLDTACTTIME=grid%bldtacttime                               &  
      &        ,BR=br              ,CHKLOWQ=chklowq    ,CT=grid%ct                   &
      &        ,DT=grid%dt              ,DX=grid%dx              ,DZ8W=dz8w          &
      &        ,EXCH_H=grid%exch_h     ,EXCH_M=grid%exch_m                           &
@@ -685,6 +688,7 @@ BENCH_START(cu_driver_tim)
                  ! Other arguments
      &             ,ITIMESTEP=grid%itimestep ,DT=grid%dt      ,DX=grid%dx              &
      &             ,CUDT=grid%cudt,CURR_SECS=curr_secs,ADAPT_STEP_FLAG=adapt_step_flag &
+     &             ,CUDTACTTIME=grid%cudtacttime                                       & 
      &             ,RAINC=grid%rainc   ,RAINCV=grid%raincv   ,PRATEC=grid%pratec       &
      &             ,NCA=grid%nca                                                       &
      &             ,HTOP=grid%cutop     ,HBOT=grid%cubot       ,KPBL=grid%kpbl         &

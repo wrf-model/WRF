@@ -322,6 +322,10 @@
             model_grid%v_bxe = grid%v_bxe
             model_grid%v_bys = grid%v_bys
             model_grid%v_bye = grid%v_bye
+            model_grid%w_bxs = grid%w_bxs
+            model_grid%w_bxe = grid%w_bxe
+            model_grid%w_bys = grid%w_bys
+            model_grid%w_bye = grid%w_bye
             model_grid%t_bxs = grid%t_bxs
             model_grid%t_bxe = grid%t_bxe
             model_grid%t_bys = grid%t_bys
@@ -347,6 +351,10 @@
             model_grid%v_btxe = grid%v_btxe
             model_grid%v_btys = grid%v_btys
             model_grid%v_btye = grid%v_btye
+            model_grid%w_btxs = grid%w_btxs
+            model_grid%w_btxe = grid%w_btxe
+            model_grid%w_btys = grid%w_btys
+            model_grid%w_btye = grid%w_btye
             model_grid%t_btxs = grid%t_btxs
             model_grid%t_btxe = grid%t_btxe
             model_grid%t_btys = grid%t_btys
@@ -454,7 +462,7 @@
       ! [8.6] Only when use_radarobs = .false. and calc_w_increment =.true.,
       !       the w_increment need to be diagnosed:
 
-      if (calc_w_increment .and. .not. use_radarobs) then
+      if (calc_w_increment .and. .not. use_radarobs .and. .not. var4d) then
          call da_uvprho_to_w_lin (grid)
 
 #ifdef DM_PARALLEL

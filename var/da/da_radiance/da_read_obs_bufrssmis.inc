@@ -24,13 +24,15 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
 
    integer(i_kind), parameter :: bufsat_dmsp16 = 249  ! DMSP16 BUFR identifier
    integer(i_kind), parameter :: bufsat_dmsp17 = 285  ! DMSP17 BUFR identifier
+   integer(i_kind), parameter :: bufsat_dmsp18 = 286  ! DMSP18 BUFR identifier
    integer(i_kind), parameter :: n1bhdr = 15
    integer(i_kind), parameter :: maxchanl = 24
    real(r_kind),    parameter :: tbmin = 70.0_r_kind
    real(r_kind),    parameter :: tbmax = 320.0_r_kind
 
    character(80) :: hdr1b
-   data hdr1b /'SAID FOVN YEAR MNTH DAYS HOUR MINU SECO CLAT CLON SLNM ORBN SELV SURF RAINF'/
+   !data hdr1b /'SAID FOVN YEAR MNTH DAYS HOUR MINU SECO CLAT CLON SLNM ORBN SELV SURF RAINF'/
+   data hdr1b /'SAID FOVN YEAR MNTH DAYS HOUR MINU SECO CLAT CLON SLNM ORBN SELV SFLG RFLAG'/
    character(10) :: date
    character(8)  :: subset, subfgn
    character(20) :: filename
@@ -156,7 +158,8 @@ bufrfile:  do ibufr=1,numbufr
 
 ! Set various variables depending on type of data to be read
 
-   subfgn = 'NC003003'
+   !subfgn = 'NC003003'
+   subfgn = 'NC021201'
    incangl = 53.2_r_kind
 
    subset_loop: do while (ireadmg(lnbufr,subset,idate)==0)
@@ -205,6 +208,8 @@ bufrfile:  do ibufr=1,numbufr
             satellite_id = 16
          else if (nint(bfr1bhdr(bufr_satellite_id)) == bufsat_dmsp17) then
             satellite_id = 17
+         else if (nint(bfr1bhdr(bufr_satellite_id)) == bufsat_dmsp18) then
+            satellite_id = 18
          end if
 
          ! 3.3 Find wrfvar instrument index from RTTOV instrument triplet

@@ -141,6 +141,8 @@ subroutine da_ad_model ()
    head_grid%g_ph_2 = 0.0
    head_grid%g_mu_2 = 0.0
 
+   head_grid%g_p = 0.0
+
    head_grid%g_moist = 0.0
 
    head_grid%g_rainnc  = 0.0
@@ -162,6 +164,8 @@ subroutine da_ad_model ()
    call nl_set_ifsnow (head_grid%id, 1)
    call nl_set_icloud (head_grid%id, 0)
    call nl_set_isfflx (head_grid%id, 0)
+
+   if ( model_config_rec%var4d_detail_out ) gradient_out = .true.
 
    ! WRF model time-stepping.  Calls integrate().
    call wrf_run_ad

@@ -27,7 +27,7 @@
 !.. Remaining values should probably be left alone.
 !..
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
-!..Last modified: 21 Nov 2010
+!..Last modified: 26 Aug 2011
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
 !+---+-----------------------------------------------------------------+
@@ -81,7 +81,7 @@
 !.. y-intercept for an exponential distrib and proper values are
 !.. computed based on same mixing ratio and total number concentration.
       REAL, PARAMETER, PRIVATE:: gonv_min = 1.E4
-      REAL, PARAMETER, PRIVATE:: gonv_max = 1.E6
+      REAL, PARAMETER, PRIVATE:: gonv_max = 3.E6
 
 !..Mass power law relations:  mass = am*D**bm
 !.. Snow from Field et al. (2005), others assume spherical form.
@@ -127,7 +127,7 @@
 !.. because of truncation problems in snow/ice growth.
       REAL, PARAMETER, PRIVATE:: R1 = 1.E-12
       REAL, PARAMETER, PRIVATE:: R2 = 1.E-8
-      REAL, PARAMETER, PRIVATE:: eps = 1.E-29
+      REAL, PARAMETER, PRIVATE:: eps = 1.E-15
 
 !..Constants in Cooper curve relation for cloud ice number.
       REAL, PARAMETER, PRIVATE:: TNO = 5.0
@@ -1096,7 +1096,7 @@
 !+---+
 
       debug_flag = .false.
-      if (ii.eq.315 .and. jj.eq.2) debug_flag = .true.
+!     if (ii.eq.315 .and. jj.eq.2) debug_flag = .true.
 
       no_micro = .true.
       dtsave = dt
@@ -1415,10 +1415,10 @@
          if (temp(k).lt.T_0 .and. (rc(k)+rr(k)).gt.1.E-5) then
             xslw1 = 5. + alog10(max(1.E-5, min(1.E-2, (rc(k)+rr(k)))))
          else
-            xslw1 = 0.
+            xslw1 = 0.0001
          endif
-         ygra1 = 5. + alog10(max(1.E-5, min(1.E-2, rg(k))))
-         zans1 = 3.324 + (3./(5.*xslw1*ygra1/(5.*xslw1+1.+0.25*ygra1)+1.+0.25*ygra1))
+         ygra1 = 4.302 + alog10(max(5.E-5, min(5.E-2, rg(k))))
+         zans1 = 3.565 + (90./(50.*xslw1*ygra1/(5./xslw1+1.+0.25*ygra1)+30.+15.*ygra1))
          N0_exp = 10.**(zans1)
          N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
          N0_min = MIN(N0_exp, N0_min)
@@ -1466,6 +1466,7 @@
           pnr_rcr(k) = Ef_rr * 8.*nr(k)*rr(k)
          endif
 
+         mvd_c(k) = D0c
          if (.not. L_qc(k)) CYCLE
          xDc = MAX(D0c*1.E6, ((rc(k)/(am_r*Nt_c))**obmr) * 1.E6)
          lamc = (Nt_c*am_r* ccg(2) * ocg1 / rc(k))**obmr
@@ -2313,10 +2314,10 @@
          if (temp(k).lt.T_0 .and. (rc(k)+rr(k)).gt.1.E-5) then
             xslw1 = 5. + alog10(max(1.E-5, min(1.E-2, (rc(k)+rr(k)))))
          else
-            xslw1 = 0.
+            xslw1 = 0.0001
          endif
-         ygra1 = 5. + alog10(max(1.E-5, min(1.E-2, rg(k))))
-         zans1 = 3.324 + (3./(5.*xslw1*ygra1/(5.*xslw1+1.+0.25*ygra1)+1.+0.25*ygra1))
+         ygra1 = 4.302 + alog10(max(5.E-5, min(5.E-2, rg(k))))
+         zans1 = 3.565 + (90./(50.*xslw1*ygra1/(5./xslw1+1.+0.25*ygra1)+30.+15.*ygra1))
          N0_exp = 10.**(zans1)
          N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
          N0_min = MIN(N0_exp, N0_min)
@@ -2356,7 +2357,7 @@
           if (xrc.gt. 0.0) then
              prw_vcd(k) = clap*odt
           else
-             prw_vcd(k) = -rc(k)/rho(k)*odt
+             prw_vcd(k) = -rc(k)/rho(k)*odts
           endif
 
           qcten(k) = qcten(k) + prw_vcd(k)
@@ -2468,6 +2469,9 @@
           vtr = rhof(k)*av_r*crg(7)/crg(12) * lamr**cre(12)             &
                       *((lamr+fv_r)**(-cre(7)))
           vtnrk(k) = vtr
+         else
+          vtrk(k) = vtrk(k+1)
+          vtnrk(k) = vtnrk(k+1)
          endif
 
          if (MAX(vtrk(k),vtnrk(k)) .gt. 1.E-3) then
@@ -2497,6 +2501,9 @@
 ! Goal: less prominent size sorting
            vti = rhof(k)*av_i*cig(6)/cig(7) * ilami**bv_i
            vtnik(k) = vti
+          else
+           vtik(k) = vtik(k+1)
+           vtnik(k) = vtnik(k+1)
           endif
 
           if (vtik(k) .gt. 1.E-3) then
@@ -2531,6 +2538,8 @@
            else
             vtsk(k) = vts*vts_boost(k)
            endif
+          else
+            vtsk(k) = vtsk(k+1)
           endif
 
           if (vtsk(k) .gt. 1.E-3) then
@@ -2555,6 +2564,8 @@
            else
             vtgk(k) = vtg
            endif
+          else
+            vtgk(k) = vtgk(k+1)
           endif
 
           if (vtgk(k) .gt. 1.E-3) then

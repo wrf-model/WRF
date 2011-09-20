@@ -347,7 +347,9 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       cvpm =  - (1.0 - gas_constant/cp)
       cpovcv = cp / (cp - gas_constant)
 
-      if (no_ppb) then
+      ! In case of var4d, pb etc. will be recalculated in start_em with realsize=8, 
+      ! Howvwer, the originals are computed with realsize=4.
+      if ( no_ppb ) then
          do k=kts,kte
             do i=its,ite
                ! The base specific volume (from real.init.code)
@@ -603,6 +605,13 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    end do
    !$OMP END PARALLEL DO
 
+   if ( var4d ) then ! for 4dvar, we use these variables from model
+      grid%xb%u10 = grid%u10
+      grid%xb%v10 = grid%v10
+      grid%xb%t2 = grid%t2
+      grid%xb%q2 = grid%q2
+   endif
+
 #ifdef VAR4D
    CALL set_physical_bc2d( grid%xb%grid_box_area, 't', config_flags, &
                            ids, ide, jds, jde,    &
@@ -749,6 +758,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       loc_psac_mean = tmpvar*sum(arrayglobal(ids:ide,jds:jde))
       deallocate(arrayglobal)
    else
+      loc_latc_mean = 0.0
       loc_psac_mean = tmpvar*sum(grid%xb % psac(its:ite,jts:jte))
    end if
 
@@ -762,6 +772,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       end do
       deallocate(arrayglobal)
    else
+      loc_latc_mean = 0.0
       do j=jts,jte
          loc_latc_mean(j) = tmpvar*sum(grid%xb % lat(its:ite, j))
       end do

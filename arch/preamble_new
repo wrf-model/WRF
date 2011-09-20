@@ -81,6 +81,9 @@ ESMF_IO_DEFS        = ESMFIODEFS
 # select build target for external/io_esmf vs. external/esmf_time_f90
 ESMF_TARGET         = ESMFTARGET
 
+# ESMFINCLUDEGOESHERE
+
+
 ##############################################################################
 
 LIBWRFLIB = libwrflib.a

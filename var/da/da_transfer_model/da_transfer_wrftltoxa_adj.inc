@@ -43,6 +43,7 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
    grid%g_moist   = 0.0
    grid%g_mu_2 = 0.0
    grid%g_ph_2 = 0.0
+   grid%g_p = 0.0
    grid%g_rainnc = 0.0
    grid%g_rainncv = 0.0
    grid%g_rainc = 0.0
@@ -200,18 +201,20 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
    ! [3.0] COMPUTE pressure increments 
    !---------------------------------------------------------------------------
 
-   g_press(is:ie,js:je,ks:ke+1)=0.0
-   do k=ks,ke
-      do j=js,je
-         do i=is,ie
-            g_press(i,j,k+1)=g_press(i,j,k+1)+0.5*grid%xa%p(i,j,k)
-            g_press(i,j,k )=g_press(i,j,k )+0.5*grid%xa%p(i,j,k)
-            grid%g_moist(i,j,k,P_G_QV)=grid%g_moist(i,j,k,P_G_QV)-(grid%mu_2(i,j)+grid%mub(i,j))*g_press(i,j,k)*grid%dn(k)
-            grid%g_mu_2(i,j)=grid%g_mu_2(i,j)-g_press(i,j,k)*(1.0+grid%moist(i,j,k,P_QV))*grid%dn(k)
-            g_press(i,j,k+1)=g_press(i,j,k+1)+g_press(i,j,k)
-         end do
-      end do
-   end do
+!  g_press(is:ie,js:je,ks:ke+1)=0.0
+!  do k=ks,ke
+!     do j=js,je
+!        do i=is,ie
+!           g_press(i,j,k+1)=g_press(i,j,k+1)+0.5*grid%xa%p(i,j,k)
+!           g_press(i,j,k )=g_press(i,j,k )+0.5*grid%xa%p(i,j,k)
+!           grid%g_moist(i,j,k,P_G_QV)=grid%g_moist(i,j,k,P_G_QV)-(grid%mu_2(i,j)+grid%mub(i,j))*g_press(i,j,k)*grid%dn(k)
+!           grid%g_mu_2(i,j)=grid%g_mu_2(i,j)-g_press(i,j,k)*(1.0+grid%moist(i,j,k,P_QV))*grid%dn(k)
+!           g_press(i,j,k+1)=g_press(i,j,k+1)+g_press(i,j,k)
+!        end do
+!     end do
+!  end do
+
+   grid%g_p(is:ie, js:je, ks:ke) = grid%g_p(is:ie, js:je, ks:ke) + grid%xa%p(is:ie, js:je, ks:ke)
 
    grid%xa%p(is:ie, js:je, ks:ke) = 0.0
 
@@ -252,28 +255,47 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
 
    if ( .not. adj_sens ) then
 #ifdef VAR4D
-   call kj_swap (grid%g_u_2, model_grid%g_u_2, &
-                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   call kj_swap (grid%g_v_2, model_grid%g_v_2, &
-                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   call kj_swap (grid%g_w_2, model_grid%g_w_2, &
-                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   call kj_swap (grid%g_t_2, model_grid%g_t_2, &
-                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   call kj_swap (grid%g_ph_2, model_grid%g_ph_2, &
-                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   model_grid%g_mu_2 = grid%g_mu_2
-   model_grid%g_rainnc = grid%g_rainnc
-   model_grid%g_rainncv = grid%g_rainncv
-   model_grid%g_rainc = grid%g_rainc
-   model_grid%g_raincv = grid%g_raincv
+      if ( trajectory_io ) then
+         call kj_swap (grid%g_u_2, model_grid%g_u_2, &
+                       grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+         call kj_swap (grid%g_v_2, model_grid%g_v_2, &
+                       grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+         call kj_swap (grid%g_w_2, model_grid%g_w_2, &
+                       grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+         call kj_swap (grid%g_t_2, model_grid%g_t_2, &
+                       grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+         call kj_swap (grid%g_ph_2, model_grid%g_ph_2, &
+                       grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+         call kj_swap (grid%g_p, model_grid%g_p, &
+                       grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+         model_grid%g_mu_2 = grid%g_mu_2
+         model_grid%g_rainnc = grid%g_rainnc
+         model_grid%g_rainncv = grid%g_rainncv
+         model_grid%g_rainc = grid%g_rainc
+         model_grid%g_raincv = grid%g_raincv
 
-   do i = PARAM_FIRST_SCALAR, num_moist
-      call kj_swap (grid%g_moist(:,:,:,i), model_grid%g_moist(:,:,:,i), &
-                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   enddo
+         do i = PARAM_FIRST_SCALAR, num_moist
+            call kj_swap (grid%g_moist(:,:,:,i), model_grid%g_moist(:,:,:,i), &
+                          grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+         enddo
 
-   call push_ad_forcing (timestr)
+         call push_ad_forcing (timestr)
+
+      else
+         config_flags%auxhist8_outname = "af_d<domain>_<date>"
+         call  med_hist_out ( grid , AUXHIST8_ALARM , config_flags )
+         WRITE(message(1), FMT='(A,A)') 'Save  ad. forcing time_stamp:', TRIM(timestr)
+         CALL da_message ( message(1:1) )
+         config_flags%auxhist8_outname = "auxhist8_d<domain>_<date>"
+      endif
+
+      if ( var4d_detail_out ) then
+         config_flags%auxhist8_outname = "af_d<domain>_<date>"
+         call  med_hist_out ( grid , AUXHIST8_ALARM , config_flags )
+         WRITE(message(1), FMT='(A,A)') 'Save  ad. forcing time_stamp:', TRIM(timestr)
+         CALL da_message ( message(1:1) )
+         config_flags%auxhist8_outname = "auxhist8_d<domain>_<date>"
+      endif
 #endif
    else
       if ( grid%auxinput7_oid .NE. 0 ) then

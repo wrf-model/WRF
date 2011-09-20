@@ -131,6 +131,11 @@
 
       CALL Setup_Timekeeping (grid)
 
+      !tgs 7apr11 - need to call start_domain here to reset bc initialization for negative dt
+      CALL start_domain ( grid , .TRUE. )
+      !tgs 7apr11 - save arrays should be done after start_domain to get correct grid%p field
+      CALL dfi_save_arrays ( grid )
+
       ! set physics options to zero
       CALL nl_set_mp_physics( grid%id, 0 )
       CALL nl_set_ra_lw_physics( grid%id, 0 )
@@ -207,7 +212,8 @@
 
       CALL WRFU_ClockSet(grid%domain_clock, currTime=grid%start_subtime, rc=rc)
 
-      CALL dfi_save_arrays ( grid )
+!tgs 7apr11 - this call has been moved up
+!     CALL dfi_save_arrays ( grid )
       CALL dfi_clear_accumulation( grid )
       CALL optfil_driver(grid)
 
@@ -220,7 +226,7 @@
    SUBROUTINE dfi_fwd_init ( grid )
 
       USE module_domain, ONLY : domain, head_grid, domain_get_stop_time, domain_get_start_time
-      USE module_utility
+      USE module_utility, ONLY : WRFU_ClockSet
       USE module_state_description
 
       IMPLICIT NONE

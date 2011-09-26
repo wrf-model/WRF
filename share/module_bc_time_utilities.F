@@ -6,6 +6,8 @@ MODULE module_bc_time_utilities
 
   Type(WRFU_Time), PRIVATE, SAVE :: time_to_read_again
 
+character*256 mess
+
 CONTAINS
 
   LOGICAL FUNCTION lbc_read_time ( xtime )

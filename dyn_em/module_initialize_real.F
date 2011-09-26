@@ -129,6 +129,7 @@ integer::oops1,oops2
 
       INTEGER :: lev500 , loop_count
       REAL    :: zl , zu , pl , pu , z500 , dz500 , tvsfc , dpmu
+      REAL    :: pfu, pfd, phm
 
       LOGICAL , PARAMETER :: want_full_levels = .TRUE.
       LOGICAL , PARAMETER :: want_half_levels = .FALSE.
@@ -929,6 +930,8 @@ integer::oops1,oops2
                    ( flag_soilhgt .EQ. 1 ) .AND. &
                    ( flag_slp     .EQ. 1 ) .AND. &
                    ( .NOT. config_flags%sfcp_to_sfcp ) ) THEN
+            WRITE(a_message,FMT='(A)') 'Using sfcprs3 to compute psfc'
+            CALL wrf_message ( a_message )
             CALL sfcprs3(grid%ght_gc, grid%p_gc, grid%ht, &
                          grid%pslv_gc, grid%psfc, &
                          ids , ide , jds , jde , 1   , num_metgrid_levels , &
@@ -937,12 +940,16 @@ integer::oops1,oops2
          ELSE IF ( ( flag_psfc    .EQ. 1 ) .AND. &
                    ( flag_soilhgt .EQ. 1 ) .AND. &
                    ( config_flags%sfcp_to_sfcp ) ) THEN
+            WRITE(a_message,FMT='(A)') 'Using sfcprs2 to compute psfc'
+            CALL wrf_message ( a_message )
             CALL sfcprs2(grid%t_gc, grid%qv_gc, grid%ght_gc, grid%psfc_gc, grid%ht, &
                          grid%tavgsfc, grid%p_gc, grid%psfc, we_have_tavgsfc, &
                          ids , ide , jds , jde , 1   , num_metgrid_levels , &
                          ims , ime , jms , jme , 1   , num_metgrid_levels , &
                          its , ite , jts , jte , 1   , num_metgrid_levels )
          ELSE IF ( flag_slp     .EQ. 1 ) THEN
+            WRITE(a_message,FMT='(A)') 'Using sfcprs  to compute psfc'
+            CALL wrf_message ( a_message )
             CALL sfcprs (grid%t_gc, grid%qv_gc, grid%ght_gc, grid%pslv_gc, grid%ht, &
                          grid%tavgsfc, grid%p_gc, grid%psfc, we_have_tavgsfc, &
                          ids , ide , jds , jde , 1   , num_metgrid_levels , &
@@ -1023,12 +1030,15 @@ integer::oops1,oops2
                                its , ite , jts , jte , kts , kte )
          END IF
 
-         !  The input field is temperature, we want potential temp.
+         IF ( config_flags%interp_theta ) THEN
 
-         CALL t_to_theta ( grid%t_gc , grid%p_gc , p00 , &
-                           ids , ide , jds , jde , 1   , num_metgrid_levels , &
-                           ims , ime , jms , jme , 1   , num_metgrid_levels , &
-                           its , ite , jts , jte , 1   , num_metgrid_levels )
+            !  The input field is temperature, we want potential temp.
+
+            CALL t_to_theta ( grid%t_gc , grid%p_gc , p00 , &
+                              ids , ide , jds , jde , 1   , num_metgrid_levels , &
+                              ims , ime , jms , jme , 1   , num_metgrid_levels , &
+                              its , ite , jts , jte , 1   , num_metgrid_levels )
+         END IF
 
          IF ( flag_slp .EQ. 1 ) THEN
 
@@ -1120,6 +1130,12 @@ integer::oops1,oops2
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
 
+         !  Depending on the setting of interp_theta = T/F, t_gc is is either theta Xor 
+         !  temperature, and that means that the t_2 field is also the associated field.
+         !  It is better to interpolate temperature and potential temperature in LOG(p),
+         !  regardless of requested default.
+
+         interp_type = 2
          CALL vert_interp ( grid%t_gc , grid%pd_gc , grid%t_2               , grid%pb , &
                             num_metgrid_levels , 'T' , &
                             interp_type , lagrange_order , t_extrap_type , &
@@ -1128,7 +1144,11 @@ integer::oops1,oops2
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
+         interp_type = grid%interp_type
      
+         !  It is better to interpolate pressure in p regardless default options
+
+         interp_type = 1
          CALL vert_interp ( grid%p_gc , grid%pd_gc , grid%p               , grid%pb , &
                             num_metgrid_levels , 'T' , &
                             interp_type , lagrange_order , t_extrap_type , &
@@ -1137,6 +1157,7 @@ integer::oops1,oops2
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
                             its , ite , jts , jte , kts , kte )
+         interp_type = grid%interp_type
 
          !  Do not have full pressure on eta levels, get a first guess at Qv by using
          !  dry pressure.  The use of u_1 (rh) and v_1 (temperature) is temporary.
@@ -1144,10 +1165,13 @@ integer::oops1,oops2
          !  eta surfaces.
 
          grid%v_1 = grid%t_2
-         CALL theta_to_t ( grid%v_1 , grid%p  , p00 , &
-                           ids , ide , jds , jde , kds , kde , &
-                           ims , ime , jms , jme , kms , kme , &
-                           its , ite , jts , jte , kts , kte )
+
+         IF ( config_flags%interp_theta ) THEN
+            CALL theta_to_t ( grid%v_1 , grid%p  , p00 , &
+                              ids , ide , jds , jde , kds , kde , &
+                              ims , ime , jms , jme , kms , kme , &
+                              its , ite , jts , jte , kts , kte )
+         END IF
 
          IF      ( config_flags%rh2qv_method .eq. 1 ) THEN
             CALL rh_to_mxrat1(grid%u_1, grid%v_1, grid%p , moist(:,:,:,P_QV) ,       &
@@ -1169,6 +1193,13 @@ integer::oops1,oops2
                               ids , ide , jds , jde , kds , kde ,                    &
                               ims , ime , jms , jme , kms , kme ,                    &
                               its , ite , jts , jte , kts , kte-1 )
+         END IF
+
+         IF ( .NOT. config_flags%interp_theta ) THEN
+            CALL t_to_theta ( grid%t_2 , grid%p , p00 , &
+                              ids , ide , jds , jde , kds , kde , &
+                              ims , ime , jms , jme , kms , kme , &
+                              its , ite , jts , jte , kts , kte )
          END IF
 
          num_3d_m = num_moist
@@ -2033,9 +2064,21 @@ endif
             !  This field is on full levels.
 
             grid%phb(i,1,j) = grid%ht(i,j) * g
-            DO k  = 2,kte
-               grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
-            END DO
+            IF (grid%hypsometric_opt == 1) THEN
+               DO k  = 2,kte
+                  grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
+               END DO
+            ELSE IF (grid%hypsometric_opt == 2) THEN
+               DO k = 2,kte
+                  pfu = grid%mub(i,j)*grid%znw(k)   + grid%p_top
+                  pfd = grid%mub(i,j)*grid%znw(k-1) + grid%p_top
+                  phm = grid%mub(i,j)*grid%znu(k-1) + grid%p_top
+                  grid%phb(i,k,j) = grid%phb(i,k-1,j) + grid%alb(i,k-1,j)*phm*LOG(pfd/pfu)
+               END DO
+            ELSE
+               CALL wrf_error_fatal( 'initialize_real: hypsometric_opt should be 1 or 2' )
+            END IF
+
          END DO
       END DO
 
@@ -2154,12 +2197,30 @@ endif
                !  This is the hydrostatic equation used in the model after the small timesteps.  In
                !  the model, grid%al (inverse density) is computed from the geopotential.
 
-               DO k  = 2,kte
-                  grid%ph_2(i,k,j) = grid%ph_2(i,k-1,j) - &
-                                grid%dnw(k-1) * ( (grid%mub(i,j)+grid%mu_2(i,j))*grid%al(i,k-1,j) &
-                              + grid%mu_2(i,j)*grid%alb(i,k-1,j) )
-                  grid%ph0(i,k,j) = grid%ph_2(i,k,j) + grid%phb(i,k,j)
-               END DO
+               IF (grid%hypsometric_opt == 1) THEN
+                  DO k  = 2,kte
+                     grid%ph_2(i,k,j) = grid%ph_2(i,k-1,j) - &
+                                   grid%dnw(k-1) * ( (grid%mub(i,j)+grid%mu_2(i,j))*grid%al(i,k-1,j) &
+                                 + grid%mu_2(i,j)*grid%alb(i,k-1,j) )
+                     grid%ph0(i,k,j) = grid%ph_2(i,k,j) + grid%phb(i,k,j)
+                  END DO
+               ELSE IF (grid%hypsometric_opt == 2) THEN
+                ! Alternative hydrostatic eq.: dZ = -al*p*dLOG(p), where p is dry pressure.
+                ! Note that al*p approximates Rd*T and dLOG(p) does z.
+                ! Here T varies mostly linear with z, the first-order integration produces better result.
+
+                  grid%ph_2(i,1,j) = grid%phb(i,1,j)
+                  DO k = 2,kte
+                     pfu = grid%mu0(i,j)*grid%znw(k)   + grid%p_top
+                     pfd = grid%mu0(i,j)*grid%znw(k-1) + grid%p_top
+                     phm = grid%mu0(i,j)*grid%znu(k-1) + grid%p_top
+                     grid%ph_2(i,k,j) = grid%ph_2(i,k-1,j) + grid%alt(i,k-1,j)*phm*LOG(pfd/pfu)
+                  END DO
+
+                  DO k = 1,kte
+                     grid%ph_2(i,k,j) = grid%ph_2(i,k,j) - grid%phb(i,k,j)
+                  END DO
+               END IF
 #else
                !  Get the perturbation geopotential from the 3d height array from WPS.
 
@@ -2281,7 +2342,7 @@ endif
          DO j = jts, min(jde-1,jte)
             DO i = its, min(ide-1,ite)
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-               p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
+!              p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
 !              grid%psfc(i,j)=p_surf + grid%p(i,1,j)
                grid%th2(i,j)=grid%t2(i,j)*(p00/(grid%p(i,1,j)+grid%pb(i,1,j)))**(r_d/cp)
             END DO
@@ -2290,7 +2351,8 @@ endif
             DO j = jts, min(jde-1,jte)
                DO i = its, min(ide-1,ite)
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-                  grid%q2(i,j)=moist(i,1,j,P_QV)
+!                 grid%q2(i,j)=moist(i,1,j,P_QV)
+                  grid%q2(i,j)=grid%qv_gc(i,1,j)
                END DO
             END DO
          END IF
@@ -2377,6 +2439,7 @@ endif
                                      i, j, k
 
       REAL    :: temp, temp_int
+      REAL    :: pfu, pfd, phm
 
       SELECT CASE ( model_data_order )
          CASE ( DATA_ORDER_ZXY )
@@ -2503,9 +2566,20 @@ endif
             !  This field is on full levels.
 
             grid%phb(i,1,j) = grid%ht_fine(i,j) * g
-            DO k  = 2,kte
-               grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
-            END DO
+            IF (grid%hypsometric_opt == 1) THEN
+              DO k = 2,kte
+                 grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
+              END DO
+            ELSE IF (grid%hypsometric_opt == 2) THEN
+              DO k = 2,kte
+                 pfu = grid%mub(i,j)*grid%znw(k)   + grid%p_top
+                 pfd = grid%mub(i,j)*grid%znw(k-1) + grid%p_top
+                 phm = grid%mub(i,j)*grid%znu(k-1) + grid%p_top
+                 grid%phb(i,k,j) = grid%phb(i,k-1,j) + grid%alb(i,k-1,j)*phm*LOG(pfd/pfu)
+              END DO
+            ELSE
+              CALL wrf_error_fatal( 'initialize_real: hypsometric_opt should be 1 or 2' )
+            END IF
          END DO
       END DO
 
@@ -2561,12 +2635,32 @@ endif
             !  This is the hydrostatic equation used in the model after the small timesteps.  In
             !  the model, grid%al (inverse density) is computed from the geopotential.
 
-            DO k  = 2,kte
-               grid%ph_2(i,k,j) = grid%ph_2(i,k-1,j) - &
-                             grid%dnw(k-1) * ( (grid%mub(i,j)+grid%mu_2(i,j))*grid%al(i,k-1,j) &
-                           + grid%mu_2(i,j)*grid%alb(i,k-1,j) )
-               grid%ph0(i,k,j) = grid%ph_2(i,k,j) + grid%phb(i,k,j)
-            END DO
+            IF (grid%hypsometric_opt == 1) THEN
+               DO k  = 2,kte
+                  grid%ph_2(i,k,j) = grid%ph_2(i,k-1,j) - &
+                                grid%dnw(k-1) * ( (grid%mub(i,j)+grid%mu_2(i,j))*grid%al(i,k-1,j) &
+                              + grid%mu_2(i,j)*grid%alb(i,k-1,j) )
+                  grid%ph0(i,k,j) = grid%ph_2(i,k,j) + grid%phb(i,k,j)
+               END DO
+            ELSE IF (grid%hypsometric_opt == 2) THEN
+
+             ! Alternative hydrostatic eq.: dZ = -al*p*dLOG(p), where p is dry pressure.
+             ! Note that al*p approximates Rd*T and dLOG(p) does z.
+             ! Here T varies mostly linear with z, the first-order integration produces better result.
+
+               grid%ph_2(i,1,j) = grid%phb(i,1,j)
+               DO k = 2,kte
+                  pfu = grid%mu0(i,j)*grid%znw(k)   + grid%p_top
+                  pfd = grid%mu0(i,j)*grid%znw(k-1) + grid%p_top
+                  phm = grid%mu0(i,j)*grid%znu(k-1) + grid%p_top
+                  grid%ph_2(i,k,j) = grid%ph_2(i,k-1,j) + grid%alt(i,k-1,j)*phm*LOG(pfd/pfu)
+               END DO
+
+               DO k = 1,kte
+                  grid%ph_2(i,k,j) = grid%ph_2(i,k,j) - grid%phb(i,k,j)
+               END DO
+
+            END IF
 
          END DO
       END DO

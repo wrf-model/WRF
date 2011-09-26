@@ -953,9 +953,9 @@ END SUBROUTINE calc_alt
 
 !----------------------------------------------------------------------
 
-SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
-                            al, alb, mu, muts, ph, p, pb,  &
-                            t, p0, t0, znu, dnw, rdnw,     &
+SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
+                            al, alb, mu, muts, ph, phb, p, pb,     &
+                            t, p0, t0, ptop, znu, znw, dnw, rdnw,  &
                             rdn, non_hydrostatic,          &
                             ids, ide, jds, jde, kds, kde,  &
                             ims, ime, jms, jme, kms, kme,  &
@@ -972,6 +972,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
                                       its, ite, jts, jte, kts, kte 
 
   INTEGER ,          INTENT(IN   ) :: n_moist
+  INTEGER ,          INTENT(IN   ) :: hypsometric_opt
 
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: alb,  &
                                                                    pb,   &
@@ -981,20 +982,20 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
 
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(  OUT) :: al, p
 
-  REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: ph
+  REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: ph, phb
 
   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN   ) :: mu, muts
 
-  REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: znu, dnw, rdnw, rdn
+  REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: znu, znw, dnw, rdnw, rdn
 
-  REAL,   INTENT(IN   ) :: t0, p0
+  REAL,   INTENT(IN   ) :: t0, p0, ptop
 
   ! Local stuff
 
   INTEGER :: i, j, k, itf, jtf, ktf, ispe
   REAL    :: qvf, qtot, qf1, qf2
   REAL, DIMENSION( its:ite) :: temp,cpovcv_v
-
+  REAL    :: pfu, phm, pfd
 
 !<DESCRIPTION>
 !
@@ -1019,16 +1020,44 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
 
   IF (non_hydrostatic) THEN
 
+      IF (hypsometric_opt == 1) THEN
+        DO j=jts,jtf
+        DO k=kts,ktf
+        DO i=its,itf
+          al(i,k,j)=-1./muts(i,j)*(alb(i,k,j)*mu(i,j) + rdnw(k)*(ph(i,k+1,j)-ph(i,k,j)))
+        END DO
+        END DO
+        END DO
+      ELSE IF (hypsometric_opt == 2) THEN
+
+        ! The relation used to get specific volume, al, is: al = -dZ/dp,
+        ! where dp = mut * d(eta). The pressure depth, dp, is replaced with
+        ! p*(dp/p) ~ p*LOG((p+0.5dp)/(p-0.5dp)). Difference between dp and p*dLOG(p)
+        ! is as follows: p*dLOG(p) - dp = 1/12*(dp/p)**3 + 1/90*(dp/p)**5 + ...
+        ! Therefore, p*dLOG(p) is always larger than dp and the difference is
+        ! in proportion to dp/p. TKW, 02/16/2010
+
+        DO j=jts,jtf
+        DO k=kts,ktf
+        DO i=its,itf
+          pfu = muts(i,j)*znw(k+1)+ptop
+          pfd = muts(i,j)*znw(k)  +ptop
+          phm = muts(i,j)*znu(k)  +ptop
+          al(i,k,j) = (ph(i,k+1,j)-ph(i,k,j)+phb(i,k+1,j)-phb(i,k,j))/phm/LOG(pfd/pfu)-alb(i,k,j)
+        END DO
+        END DO
+        END DO
+      ELSE
+        CALL wrf_error_fatal ( 'calc_p_rho_phi: hypsometric_opt should be 1 or 2' )
+      END IF
+
       IF (n_moist >= PARAM_FIRST_SCALAR ) THEN  
 
         DO j=jts,jtf
         DO k=kts,ktf
         DO i=its,itf
           qvf = 1.+rvovrd*moist(i,k,j,P_QV)
-          al(i,k,j)=-1./muts(i,j)*(alb(i,k,j)*mu(i,j)  &
-                     +rdnw(k)*(ph(i,k+1,j)-ph(i,k,j)))
-          temp(i)=(r_d*(t0+t(i,k,j))*qvf)/                 &
-                        (p0*(al(i,k,j)+alb(i,k,j)))
+          temp(i)=(r_d*(t0+t(i,k,j))*qvf)/(p0*(al(i,k,j)+alb(i,k,j)))
         ENDDO
 #ifdef INTELMKL
         CALL VPOWX ( itf-its+1, temp(its), cpovcv, p(its,k,j) )
@@ -1047,8 +1076,6 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
         DO j=jts,jtf
         DO k=kts,ktf
         DO i=its,itf
-          al(i,k,j)=-1./muts(i,j)*(alb(i,k,j)*mu(i,j)  &
-                     +rdnw(k)*(ph(i,k+1,j)-ph(i,k,j)))
           p(i,k,j)=p0*( (r_d*(t0+t(i,k,j)))/                     &
                         (p0*(al(i,k,j)+alb(i,k,j))) )**cpovcv  &
                            -pb(i,k,j)
@@ -1101,20 +1128,6 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
             ENDDO
           ENDDO
 
-          DO k=2,ktf+1  ! integrate hydrostatic equation for geopotential
-            DO i=its,itf
-
-!              ph(i,k,j) = ph(i,k-1,j) - (1./rdnw(k-1))*(       &
-!                           (muts(i,j)+mu(i,j))*al(i,k-1,j)+    &
-!                            mu(i,j)*alb(i,k-1,j)  )
-              ph(i,k,j) = ph(i,k-1,j) - (dnw(k-1))*(           &
-                           (muts(i,j))*al(i,k-1,j)+            &
-                            mu(i,j)*alb(i,k-1,j)  )
-                                                   
-
-            ENDDO
-          ENDDO
-
         ENDDO
 
       ELSE
@@ -1149,21 +1162,44 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist,                &
             ENDDO
           ENDDO
 
+        ENDDO
+
+     END IF
+
+     IF (hypsometric_opt == 1) THEN
+        DO j=jts,jtf
           DO k=2,ktf+1  ! integrate hydrostatic equation for geopotential
             DO i=its,itf
-
-!              ph(i,k,j) = ph(i,k-1,j) - (1./rdnw(k-1))*(       &
-!                           (muts(i,j)+mu(i,j))*al(i,k-1,j)+    &
-!                            mu(i,j)*alb(i,k-1,j)  )
               ph(i,k,j) = ph(i,k-1,j) - (dnw(k-1))*(           &
                            (muts(i,j))*al(i,k-1,j)+            &
                             mu(i,j)*alb(i,k-1,j)  )
-                                                   
-
             ENDDO
           ENDDO
-
         ENDDO
+     ELSE 
+
+     ! Revised hypsometric eq.: dZ=-al*p*dLOG(p), where p is dry pressure
+
+      DO j=jts,jtf
+        DO i=its,itf
+           ph(i,kts,j) = phb(i,kts,j)
+        END DO
+
+        DO k=kts+1,ktf+1
+          DO i=its,itf
+            pfu = muts(i,j)*znw(k)  +ptop
+            pfd = muts(i,j)*znw(k-1)+ptop
+            phm = muts(i,j)*znu(k-1)+ptop
+            ph(i,k,j) = ph(i,k-1,j) + (al(i,k-1,j)+alb(i,k-1,j))*phm*LOG(pfd/pfu)
+          ENDDO
+        ENDDO
+
+        DO k=kts,ktf+1
+          DO i=its,itf
+             ph(i,k,j) = ph(i,k,j) - phb(i,k,j)
+          END DO
+        END DO
+      END DO
 
      END IF
 
@@ -4556,7 +4592,7 @@ END SUBROUTINE pole_point_bc
                          rho, th_phy, p_phy , pi_phy ,                &  ! output
                          u_phy, v_phy, p8w, t_phy, t8w,               &  ! output
                          z, z_at_w, dz8w,                             &  ! output
-                         p_hyd, p_hyd_w,                              &  ! output
+                         p_hyd, p_hyd_w, dnw,                         &  ! output
                          fzm, fzp, znw, p_top,                        &  ! params
                          RTHRATEN,                                    &
                          RTHBLTEN, RUBLTEN, RVBLTEN,                  &
@@ -4623,7 +4659,8 @@ END SUBROUTINE pole_point_bc
    REAL , DIMENSION( kms:kme ) ,           INTENT(IN   ) ::     fzm,   &
                                                                 fzp
 
-   REAL , DIMENSION( kms:kme ) ,           INTENT(IN   ) ::     znw
+   REAL , DIMENSION( kms:kme ) ,           INTENT(IN   ) ::     znw, &
+                                                                dnw
 
    REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ),                   &
           INTENT(INOUT)   ::                               RTHRATEN  
@@ -4672,7 +4709,8 @@ END SUBROUTINE pole_point_bc
    INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, j_startv
    INTEGER :: i, j, k
    REAL    :: w1, w2, z0, z1, z2
-   REAL    :: e_vapor
+   REAL    :: qtot
+   INTEGER :: n
 
 !-----------------------------------------------------------------------
 
@@ -4799,13 +4837,15 @@ END SUBROUTINE pole_point_bc
     enddo
     enddo
 
-    e_vapor = 0.
     do j = j_start,j_end
     do k = kte-1, k_start, -1
     do i = i_start, i_end
-!      e_vapor = 1./alt(i,k,j)*moist(i,k,j,P_QV)*g*dz8w(i,k,j) 
-!      p_hyd_w(i,k,j) = p_hyd_w(i,k+1,j)+e_vapor
-       p_hyd_w(i,k,j) = p_hyd_w(i,k+1,j)+1./alt(i,k,j)*(1.+moist(i,k,j,P_QV))*g*dz8w(i,k,j)
+       qtot = 0.
+       do n = PARAM_FIRST_SCALAR,n_moist
+              qtot = qtot + moist(i,k,j,n)
+       enddo
+       p_hyd_w(i,k,j) = p_hyd_w(i,k+1,j) - (1.+qtot)*mu(i,j)*dnw(k)
+!      p_hyd_w(i,k,j) = p_hyd_w(i,k+1,j)+1./alt(i,k,j)*(1.+moist(i,k,j,P_QV))*g*dz8w(i,k,j)
     enddo
     enddo
     enddo

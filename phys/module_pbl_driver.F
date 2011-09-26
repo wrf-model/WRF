@@ -8,6 +8,7 @@ CONTAINS
    SUBROUTINE pbl_driver(                                          &
                   itimestep,dt,u_frame,v_frame                     &
                  ,bldt,curr_secs,adapt_step_flag                   &
+                 ,bldtacttime                                      & 
                  ,rublten,rvblten,rthblten                         &
                  ,tsk,xland,znt,ht                                 &
                  ,ust,pblh,hfx,qfx,grdflx                          &
@@ -299,6 +300,7 @@ CONTAINS
    REAL,       INTENT(IN   ),OPTIONAL    ::     bldt
    REAL,       INTENT(IN   ),OPTIONAL    ::     curr_secs
    LOGICAL,    INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
+   REAL,       INTENT(INOUT),OPTIONAL    ::     bldtacttime  
 ! Optional for Wind Turbine Parameterizations
    REAL, DIMENSION( ims:ime, kms:kme ,jms:jme ), &
          INTENT(IN), OPTIONAL    :: phb
@@ -546,7 +548,7 @@ CONTAINS
    LOGICAL :: flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg
    CHARACTER*256 :: message
    REAL    :: next_bl_time
-   LOGICAL :: run_param
+   LOGICAL :: run_param , doing_adapt_dt , decided
    LOGICAL :: do_adapt
    integer iu_bep,iurb,idiff
    real seamask,thsk,zzz,unew,vnew,tnew,qnew,umom,vmom
@@ -583,26 +585,74 @@ CONTAINS
 !print *,f_qv, f_qc, f_qr, f_qi, f_qs, f_qg,' f_qv, f_qc, f_qr, f_qi, f_qs, f_qg'
 
   if (bl_pbl_physics .eq. 0) return
+
 ! RAINBL in mm (Accumulation between PBL calls)
 !
-! Modified for adaptive time step
-!
-  IF ( (itimestep .EQ. 1) .OR. (MOD(itimestep,STEPBL) .EQ. 0) ) THEN
-    run_param = .TRUE.
-  ELSE
-    run_param = .FALSE.
-  ENDIF
+   doing_adapt_dt = .FALSE.
+   IF ( PRESENT(adapt_step_flag) ) THEN
+      IF ( adapt_step_flag ) THEN
+         doing_adapt_dt = .TRUE.
+         IF ( bldtacttime .eq. 0. ) THEN
+            bldtacttime = CURR_SECS + bldt*60.
+         END IF
+      END IF
+   END IF
 
-  IF (PRESENT(adapt_step_flag)) THEN
-    IF ((adapt_step_flag)) THEN
-      IF ( (itimestep .EQ. 1) .OR. (bldt .EQ. 0) .OR. &
-           ( CURR_SECS + dt >= ( INT( CURR_SECS / ( bldt * 60 ) + 1 ) * bldt * 60) ) ) THEN
-        run_param = .TRUE.
-      ELSE
-        run_param = .FALSE.
-      ENDIF
-    ENDIF
-  ENDIF
+!  Do we run through this scheme or not?
+
+!    Test 1:  If this is the initial model time, then yes.
+!                ITIMESTEP=1
+!    Test 2:  If the user asked for the pbl to be run every time step, then yes.
+!                BLDT=0 or STEPBL=1
+!    Test 3:  If not adaptive dt, and this is on the requested pbl frequency, then yes.
+!                MOD(ITIMESTEP,STEPBL)=0
+!    Test 4:  If using adaptive dt and the current time is past the last requested activate pbl time, then yes.
+!                CURR_SECS >= BLDTACTTIME
+
+!  If we do run through the scheme, we set the flag run_param to TRUE and we set the decided flag
+!  to TRUE.  The decided flag says that one of these tests was able to say "yes", run the scheme.
+!  We only proceed to other tests if the previous tests all have left decided as FALSE.
+
+!  If we set run_param to TRUE and this is adaptive time stepping, we set the time to the next
+!  pbl run.
+
+   run_param = .FALSE.
+   decided = .FALSE.
+   IF ( ( .NOT. decided ) .AND. &
+        ( itimestep .EQ. 1 ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( PRESENT(bldt) )THEN
+      IF ( ( .NOT. decided ) .AND. &
+           ( ( bldt .EQ. 0. ) .OR. ( stepbl .EQ. 1 ) ) ) THEN
+         run_param   = .TRUE.
+         decided     = .TRUE.
+      END IF
+   ELSE
+      IF ( ( .NOT. decided ) .AND. &
+                                   ( stepbl .EQ. 1 )   ) THEN
+         run_param   = .TRUE.
+         decided     = .TRUE.
+      END IF
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( .NOT. doing_adapt_dt ) .AND. &
+        ( MOD(itimestep,stepbl) .EQ. 0 ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( doing_adapt_dt ) .AND. &
+        ( curr_secs .GE. bldtacttime ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+      bldtacttime = curr_secs + bldt*60
+   END IF
+
 
  IF (run_param) THEN
   radiation = .false.
@@ -629,12 +679,14 @@ CONTAINS
          DTBL = dt
       ELSE
          if (do_adapt) then
-            call wrf_message("WARNING: When using an adaptive time-step the boundary layer"// &
-                             " time-step should be 0 (i.e., equivalent to model time-step).  "// &
-                             "In order to proceed, for boundary layer calculations, the "// &
-                             "boundary layer time-step"// &
-                             " will be rounded to the nearest minute, possibly resulting in"// &
-                             " innacurate results.")
+            IF ( curr_secs .LT. 2. * dt ) THEN
+               call wrf_message("WARNING: When using an adaptive time-step the boundary layer"// &
+                                " time-step should be 0 (i.e., equivalent to model time-step).  ")
+               call wrf_message("In order to proceed, for boundary layer calculations, the "// &
+                                "boundary layer time-step"// &
+                                 " will be rounded to the nearest minute," )
+                call wrf_message("possibly resulting in innacurate results.")
+            END IF
             DTBL=bldt*60
          else
             DTBL=DT*STEPBL

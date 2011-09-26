@@ -15,10 +15,11 @@
    USE module_configure, ONLY : grid_config_rec_type
    USE module_tiles, ONLY : set_tiles
 #ifdef DM_PARALLEL
-   USE module_dm, ONLY : wrf_dm_min_real, wrf_dm_maxval, ntasks_x, ntasks_y, &
+   USE module_dm, ONLY : wrf_dm_min_real, wrf_dm_max_real, wrf_dm_maxval, &
+        ntasks_x, ntasks_y, &
         local_communicator_periodic, local_communicator, mytask, ntasks 
 #else
-   USE module_dm, ONLY : wrf_dm_min_real
+   USE module_dm, ONLY : wrf_dm_min_real, wrf_dm_max_real
 #endif
    USE module_comm_dm
 
@@ -75,6 +76,7 @@
 #endif
 
    REAL :: qvf1, qvf2, qvf
+   REAL :: pfu, pfd, phm
    REAL :: MPDT
    REAL :: spongeweight
    LOGICAL :: first_trip_for_this_domain, start_of_simulation, fill_w_flag
@@ -95,6 +97,9 @@
    INTEGER :: idex, jdex
    INTEGER :: im1,ip1,jm1,jp1
    REAL :: hx,hy,pi
+
+   REAL :: w_max, w_min
+   LOGICAL :: w_needs_to_be_set
 
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
@@ -123,12 +128,9 @@
 
 !   --- SETUP AND INITIALIZE STOCHASTIC KINETIC ENERGY BACKSCATTER SCHEME ---
 
-   IF ( (grid%id.eq.1) .AND. ( .NOT. grid%did_stoch ) ) THEN
-   grid%did_stoch = .TRUE.
-   stoch_force_select: SELECT CASE(config_flags%stoch_force_opt)
+   IF ( (grid%id==1).and.(grid%stoch_force_global_opt==1) .AND. ( .NOT. grid%did_stoch ) ) THEN
 
-   CASE (STOCH_BACKSCATTER)
-
+     grid%did_stoch = .TRUE.
      IF ( wrf_dm_on_monitor () ) THEN
        CALL rand_seed ( config_flags, grid%SEED1, grid%SEED2, grid%NENS )
      ENDIF
@@ -147,7 +149,6 @@
                       ims, ime, jms, jme, kms, kme,                      &
                       its, ite, jts, jte, kts, kte                       )
     
-    END SELECT stoch_force_select
     END IF
 !   --- END SETUP STOCHASTIC KINETIC ENERGY BACKSCATTER SCHEME ----------
 
@@ -417,9 +418,19 @@
             !  This field is on full levels.
 
             grid%phb(i,1,j) = grid%ht(i,j) * g
-            DO k  = 2,kte
-               grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
-            END DO
+
+            IF ( config_flags%hypsometric_opt .EQ. 1 ) THEN
+               DO k  = 2,kte
+                  grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
+               END DO
+            ELSE IF ( config_flags%hypsometric_opt .EQ. 2 ) THEN
+               DO k  = 2,kte
+                  pfu = grid%mub(i,j)*grid%znw(k)   + grid%p_top
+                  pfd = grid%mub(i,j)*grid%znw(k-1) + grid%p_top
+                  phm = grid%mub(i,j)*grid%znu(k-1) + grid%p_top
+                  grid%phb(i,k,j) = grid%phb(i,k-1,j) + grid%alb(i,k-1,j)*phm*LOG(pfd/pfu)
+               END DO
+            END IF
          END DO
       END DO
 
@@ -490,14 +501,34 @@
      ENDDO
     ENDIF
 
-! Use equations from calc_p_rho_phi to derive p and al from ph
+! Use equations from calc_p_rho_phi to derive p and al from ph: linear in log p
 
+    IF ( config_flags%hypsometric_opt .EQ. 1 ) THEN
+       DO j=jts,min(jte,jde-1)
+       DO k=kts,kte-1
+       DO i=its,min(ite,ide-1)
+          grid%al(i,k,j)=-1./(grid%mub(i,j)+grid%mu_1(i,j))*(grid%alb(i,k,j)*grid%mu_1(i,j)  &
+                     +grid%rdnw(k)*(grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)))
+       ENDDO
+       ENDDO
+       ENDDO
+    ELSE IF ( config_flags%hypsometric_opt .EQ. 2 ) THEN
+       DO j=jts,min(jte,jde-1)
+       DO k=kts,kte-1
+       DO i=its,min(ite,ide-1)
+          pfu = (grid%mub(i,j)+grid%mu_1(i,j))*grid%znw(k+1)+grid%p_top
+          pfd = (grid%mub(i,j)+grid%mu_1(i,j))*grid%znw(k)  +grid%p_top
+          phm = (grid%mub(i,j)+grid%mu_1(i,j))*grid%znu(k)  +grid%p_top
+          grid%al(i,k,j) = (grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)+grid%phb(i,k+1,j)-grid%phb(i,k,j)) &
+                            /phm/LOG(pfd/pfu)-grid%alb(i,k,j)
+       ENDDO
+       ENDDO
+       ENDDO
+    END IF
     DO j=jts,min(jte,jde-1)
     DO k=kts,kte-1
     DO i=its,min(ite,ide-1)
        qvf = 1.+rvovrd*moist(i,k,j,P_QV)
-       grid%al(i,k,j)=-1./(grid%mub(i,j)+grid%mu_1(i,j))*(grid%alb(i,k,j)*grid%mu_1(i,j)  &
-                  +grid%rdnw(k)*(grid%ph_1(i,k+1,j)-grid%ph_1(i,k,j)))
        grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_1(i,k,j))*qvf)/                     &
                   (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
                   -grid%pb(i,k,j)
@@ -506,42 +537,6 @@
     ENDDO
     ENDDO
     ENDDO
-
-#if 0
-     DO j = jts,min(jte,jde-1)
-
-       k = kte-1
-       DO i = its, min(ite,ide-1)
-         IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
-           qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k,j,P_QV))
-           qvf2 = 1./(1.+qvf1)
-           qvf1 = qvf1*qvf2
-           grid%p(i,k,j) = - 0.5*(grid%mu_1(i,j)+qvf1*grid%mub(i,j))/grid%rdnw(k)/qvf2
-           grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
-           qvf = 1. + rvovrd*moist(i,k,j,P_QV)
-           grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf*(((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
-           grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
-         ENDIF
-       ENDDO
-
-       DO k = kte-2, 1, -1
-       DO i = its, min(ite,ide-1)
-         IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
-           qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k+1,j,P_QV))
-           qvf2 = 1./(1.+qvf1)
-           qvf1 = qvf1*qvf2
-           grid%p(i,k,j) = grid%p(i,k+1,j) - (grid%mu_1(i,j) + qvf1*grid%mub(i,j))/qvf2/grid%rdn(k+1)
-           grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
-           qvf = 1. + rvovrd*moist(i,k,j,P_QV)
-           grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
-                        (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
-           grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
-         ENDIF
-       ENDDO
-       ENDDO
-
-     ENDDO
-#endif
 
    ENDIF
 
@@ -895,21 +890,57 @@
 ! above that.
 
    IF ( ( start_of_simulation .OR. config_flags%cycling ) .AND. ( .NOT. config_flags%restart ) ) THEN
-   fill_w_flag = .true.
-   CALL set_w_surface(  config_flags, grid%znw, fill_w_flag,             &
-                        grid%w_1, grid%ht, grid%u_1, grid%v_1, grid%cf1, &
-                        grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
-                        ids, ide, jds, jde, kds, kde,                    &
-                        ims, ime, jms, jme, kms, kme,                    &
-                        its, ite, jts, jte, kts, kte                     )
-   CALL set_w_surface(  config_flags, grid%znw, fill_w_flag,             &
-                        grid%w_2, grid%ht, grid%u_2, grid%v_2, grid%cf1, &
-                        grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
-                        ids, ide, jds, jde, kds, kde,                    &
-                        ims, ime, jms, jme, kms, kme,                    &
-                        its, ite, jts, jte, kts, kte                     ) 
 
-! finished setting kinematic condition for w at the surface
+! If W already exists (not zero), then we leave it alone.  How to do this?  We find the
+! max/min on this node at the surface.  If parallel, we collect the max/min from all procs.
+! If the max/min throughout the entire domain at the surface is identically 0, then we say 
+! that the W field is NOT initialized, and we run the set_w_surface routines for the 
+! two time levels of W.  If the field is already initialized, we do NOT run those two
+! routines.
+
+      w_max = grid%w_2(its,1,jts)
+      w_min = grid%w_2(its,1,jts)
+      DO j = jts, MIN(jte,jde-1)
+         DO i = its, MIN(ite,ide-1)
+         w_max = MAX ( w_max , grid%w_2(i,1,j) )
+         w_min = MIN ( w_min , grid%w_2(i,1,j) )
+         END DO
+      END DO
+#ifdef DM_PARALLEL
+      w_max = wrf_dm_max_real ( w_max )
+      w_min = wrf_dm_min_real ( w_min )
+#endif
+
+      IF ( ( ABS(w_max) .LT. 1.E-6 ) .AND. &
+           ( ABS(w_min) .LT. 1.E-6 ) ) THEN
+         w_needs_to_be_set = .TRUE.
+      ELSE
+         IF ( config_flags%use_input_w ) THEN
+            w_needs_to_be_set = .FALSE.
+         ELSE
+            w_needs_to_be_set = .TRUE.
+         END IF
+      END IF
+
+      IF ( w_needs_to_be_set ) THEN
+
+         ! setting kinematic condition for w at the surface
+
+         fill_w_flag = .true.
+         CALL set_w_surface(  config_flags, grid%znw, fill_w_flag,             &
+                              grid%w_1, grid%ht, grid%u_1, grid%v_1, grid%cf1, &
+                              grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
+                              ids, ide, jds, jde, kds, kde,                    &
+                              ims, ime, jms, jme, kms, kme,                    &
+                              its, ite, jts, jte, kts, kte                     )
+         CALL set_w_surface(  config_flags, grid%znw, fill_w_flag,             &
+                              grid%w_2, grid%ht, grid%u_2, grid%v_2, grid%cf1, &
+                              grid%cf2, grid%cf3, grid%rdx, grid%rdy, grid%msftx, grid%msfty, &
+                              ids, ide, jds, jde, kds, kde,                    &
+                              ims, ime, jms, jme, kms, kme,                    &
+                              its, ite, jts, jte, kts, kte                     ) 
+      END IF
+
 
 ! set up slope-radiation constant arrays based on topography
        DO j = jts,min(jte,jde-1)

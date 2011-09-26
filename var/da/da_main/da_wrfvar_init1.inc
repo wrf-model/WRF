@@ -22,7 +22,7 @@ subroutine da_wrfvar_init1(no_init1)
    !</DESCRIPTION>
 
    ! FIX? keep this version so netcdf files are the same until near release
-   program_name = "WRFVAR V3.3 (COMPATIBLE WITH WRF V3.3) MODEL"
+   program_name = "WRFVAR V3.3.1 (COMPATIBLE WITH WRF V3.3.1) MODEL"
    ! program_name = "WRFVAR "//release_version
 
    ! Initialize WRF modules:  
@@ -30,7 +30,11 @@ subroutine da_wrfvar_init1(no_init1)
    if (.NOT. present(no_init1)) then
       call init_modules (1)
       ! Initialize utilities (time manager, etc.)
-      call wrfu_initialize (defaultCalendar=WRFU_CAL_GREGORIAN)
+#ifdef NO_LEAP_CALENDAR
+      call wrfu_initialize (defaultCalKind=WRFU_CAL_NOLEAP)
+#else
+      call wrfu_initialize (defaultCalKind=WRFU_CAL_GREGORIAN)
+#endif
    end if
    ! Phase 2 resumes after mpi_init() (if it is called)
    call init_modules (2)

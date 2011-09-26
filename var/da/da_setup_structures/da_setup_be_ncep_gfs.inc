@@ -15,7 +15,7 @@ subroutine da_setup_be_ncep_gfs( grid, be )
    IMPLICIT NONE
 
    type (domain), intent(in)   :: grid
-   TYPE (be_type), INTENT(OUT) :: be                    ! Back. errors structure.
+   TYPE (be_type), INTENT(INOUT) :: be                  ! Back. errors structure.
 
    INTEGER                     :: ij,ijk                ! Scalar.
    INTEGER                     :: i, j, k, ic, jc       ! Loop counters.

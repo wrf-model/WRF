@@ -15,7 +15,8 @@ subroutine da_check_xtoy_adjoint_buoy(iv, y, adjtest_lhs, pertile_lhs)
    if (trace_use_dull) call da_trace_entry("da_check_xtoy_adjoint_buoy")
 
    do n=iv%info(buoy)%n1, iv%info(buoy)%n2
-      if (iv%info(buoy)%zk(1,n) < 1.0) then
+      if (iv%info(buoy)%zk(1,n) < 1.0 .and. sfc_assi_options == 1 .or. &
+          iv%buoy(n)%p%qc < 0 .and. sfc_assi_options == 2) then
          y%buoy(n)%u = 0.0
          y%buoy(n)%v = 0.0
          y%buoy(n)%t = 0.0

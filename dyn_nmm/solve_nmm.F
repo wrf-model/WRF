@@ -1767,6 +1767,7 @@
 #if (NMM_CORE==1)                  
      &                 ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%store_rand             &
 #endif
+     &             ,config_flags%sas_pgcon                             &
      &             ,grid%avcnvc,grid%acutim,grid%ihe,grid%ihw                              &
      &             ,GRID,CONFIG_FLAGS                                  &
      &             ,grid%NRND1                                              & ! NRND1 for random num restart

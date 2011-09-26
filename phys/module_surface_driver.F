@@ -87,7 +87,7 @@ CONTAINS
      &          ,usemonalb                                            &
      &          ,noahres                                              &
              !  Optional adaptive time step
-     &          ,bldt,curr_secs,adapt_step_flag                       &
+     &          ,bldt,curr_secs,adapt_step_flag,bldtacttime           & 
          ! Optional urban with BEP
      &          ,sf_urban_physics,gmt,xlat,xlong,julday               &
      &          ,num_urban_layers                                     & !multi-layer urban
@@ -469,6 +469,7 @@ CONTAINS
    REAL,       INTENT(IN   ),OPTIONAL    ::     bldt
    REAL,       INTENT(IN   ),OPTIONAL    ::     curr_secs
    LOGICAL,    INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
+   REAL,       INTENT(INOUT),OPTIONAL    ::     bldtacttime  
 
 !  arguments for NCAR surface physics
 
@@ -739,7 +740,7 @@ CONTAINS
 !------------------------------------------------------------------
    CHARACTER*256 :: message
    REAL    :: next_bl_time
-   LOGICAL :: run_param
+   LOGICAL :: run_param , doing_adapt_dt , decided
    LOGICAL :: do_adapt
 !
 !
@@ -748,7 +749,6 @@ CONTAINS
 
 
   if (sf_sfclay_physics .eq. 0) return
-! if (sf_sfclay_physics .eq. 0 .or. sf_surface_physics.eq.0) return
 
   if ( fractional_seaice == 0 ) then
      xice_threshold = 0.5
@@ -837,8 +837,10 @@ CONTAINS
           ENDDO
         ENDIF
         IF(XLAND(i,j) .GT. 1.5) THEN
-          TSK(i,j)   =SST(i,j)
-          TSLB(i,1,j)=SST(i,j)
+          IF ( SST(i,j) .LT. 350. .and. SST(i,j) .GT. 250.) THEN
+            TSK(i,j)   =SST(i,j)
+            TSLB(i,1,j)=SST(i,j)
+          ENDIF
         ENDIF
         IF ( XLAND(i,j) .LT. 1.5 .AND. XICEM(I,J) .GE. XICE_THRESHOLD .AND. XICE(I,J) .LT. XICE_THRESHOLD ) THEN
 ! sea-ice point turns to water point
@@ -906,26 +908,65 @@ CONTAINS
 !
 ! Modified for adaptive time step
 !
+   doing_adapt_dt = .FALSE.
+   IF ( PRESENT(adapt_step_flag) ) THEN
+      IF ( adapt_step_flag ) THEN
+         doing_adapt_dt = .TRUE.
+      END IF
+   END IF
 
-  IF ( (itimestep .EQ. 1) .OR. (MOD(itimestep,STEPBL) .EQ. 0) ) THEN
-    run_param = .TRUE.
-  ELSE
-    run_param = .FALSE.
-  ENDIF
-  IF (PRESENT(adapt_step_flag)) THEN
-    IF ((adapt_step_flag)) THEN
-      IF ( (itimestep .EQ. 1) .OR. (bldt .EQ. 0) .OR. &
-           ( CURR_SECS + dt >= ( INT( CURR_SECS / ( bldt * 60 ) + 1 ) * bldt * 60) ) ) THEN
-        run_param = .TRUE.
-      ELSE
-        run_param = .FALSE.
-      ENDIF
-    ENDIF
-  ENDIF
+!  Do we run through this scheme or not?
+
+!    Test 1:  If this is the initial model time, then yes.
+!                ITIMESTEP=1
+!    Test 2:  If the user asked for the surface to be run every time step, then yes.
+!                BLDT=0 or STEPBL=1
+!    Test 3:  If not adaptive dt, and this is on the requested surface frequency, then yes.
+!                MOD(ITIMESTEP,STEPBL)=0
+!    Test 4:  If using adaptive dt and the current time is past the last requested activate surface time, then yes.
+!                CURR_SECS >= BLDTACTTIME
+
+!  If we do run through the scheme, we set the flag run_param to TRUE and we set the decided flag
+!  to TRUE.  The decided flag says that one of these tests was able to say "yes", run the scheme.
+!  We only proceed to other tests if the previous tests all have left decided as FALSE.
+
+   run_param = .FALSE.
+   decided = .FALSE.
+   IF ( ( .NOT. decided ) .AND. &
+        ( itimestep .EQ. 1 ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( PRESENT(bldt) )THEN
+      IF ( ( .NOT. decided ) .AND. &
+           ( ( bldt .EQ. 0. ) .OR. ( stepbl .EQ. 1 ) ) ) THEN
+         run_param   = .TRUE.
+         decided     = .TRUE.
+      END IF
+   ELSE
+      IF ( ( .NOT. decided ) .AND. &
+                                   ( stepbl .EQ. 1 )   ) THEN
+         run_param   = .TRUE.
+         decided     = .TRUE.
+      END IF
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( .NOT. doing_adapt_dt ) .AND. &
+        ( MOD(itimestep,stepbl) .EQ. 0 ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( doing_adapt_dt ) .AND. &
+        ( curr_secs .GE. bldtacttime ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
 
   IF ( run_param ) then
-
-! IF (itimestep .eq. 1 .or. mod(itimestep,STEPBL) .eq. 0) THEN
 
   radiation = .false.
   frpcpn = .false.
@@ -981,12 +1022,14 @@ CONTAINS
           DTBL = dt
        ELSE
           if (do_adapt) then
-             call wrf_message("WARNING: When using an adaptive time-step the boundary layer"// &
-                              " time-step should be 0 (i.e., equivalent to model time-step).  "// &
-                              "In order to proceed, for boundary layer calculations, the "// &
-                              "boundary layer time-step"// &
-                              " will be rounded to the nearest minute, possibly resulting in"// &
-                              " innacurate results.")
+             IF ( curr_secs .LT. 2. * dt ) THEN
+                call wrf_message("WARNING: When using an adaptive time-step the boundary layer"// &
+                                 " time-step should be 0 (i.e., equivalent to model time-step)." )
+                call wrf_message("In order to proceed, for surface calculations, the "// &
+                                 "boundary layer time-step"// &
+                                 " will be rounded to the nearest minute," )
+                call wrf_message("possibly resulting in innacurate results.")
+             END IF
              DTBL=bldt*60
           else
              DTBL=DT*STEPBL

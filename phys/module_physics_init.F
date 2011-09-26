@@ -901,9 +901,11 @@ integer myproc
         DO i = its, itf
           IS=nint(lu_index(i,j))
           ! only do this check on read-in data
-          IF(IS.LT.0.OR.IS.GT.LUN.AND.allowed_to_read)THEN
-            WRITE ( wrf_err_message , * ) 'ERROR: LANDUSE OUTSIDE RANGE =',IS,' AT ',I,J,' LUN= ',LUN
-            CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
+          IF(allowed_to_read)THEN
+             IF(IS.LT.0.OR.IS.GT.LUN)THEN
+               WRITE ( wrf_err_message , * ) 'ERROR: LANDUSE OUTSIDE RANGE =',IS,' AT ',I,J,' LUN= ',LUN
+               CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
+             ENDIF
           ENDIF
 !   SET NO-DATA POINTS (IS=0) TO WATER
           IF(IS.EQ.0)THEN

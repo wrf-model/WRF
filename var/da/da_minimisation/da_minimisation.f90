@@ -48,7 +48,7 @@ module da_minimisation
       ims, ime, jms, jme, kms, kme
    use da_define_structures, only : iv_type, y_type, j_type, be_type, &
       xbx_type, jo_type, da_allocate_y,da_zero_x,da_zero_y,da_deallocate_y, &
-      da_zero_vp_type
+      da_zero_vp_type, qhat_type
    use da_obs, only : da_transform_xtoy_adj,da_transform_xtoy, &
       da_add_noise_to_ob,da_random_omb_all, da_obs_sensitivity
    use da_geoamv, only : da_calculate_grady_geoamv, da_ao_stats_geoamv, &

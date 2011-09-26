@@ -23,6 +23,8 @@ subroutine da_transform_xtoxa(grid)
    ! [4.0]: Move the following:
    !----------------------------------------------------------------------
 
+   if ( .not. var4d ) then ! for 4dvar the xa%p is come from the model
+
    do j=jts,jte
       do i=its,ite
         if ((fg_format==fg_format_wrf_arw_regional) .or. &
@@ -66,6 +68,8 @@ subroutine da_transform_xtoxa(grid)
          end if
       end do
    end do
+
+   endif ! only for 3dvar
 
    call da_pt_to_rho_lin(grid)
  
@@ -145,7 +149,7 @@ subroutine da_transform_xtoxa(grid)
    ! Compute w increments using Richardson's eqn.
 
    if ( Use_RadarObs ) then
-      call da_uvprho_to_w_lin(grid)
+      if ( .not. var4d) call da_uvprho_to_w_lin(grid)
 
       do k=kts,kte
          do j=jts,jte

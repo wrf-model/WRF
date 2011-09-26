@@ -1884,6 +1884,7 @@
 #if (NMM_CORE==1)    
      &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand               &                  
 #endif
+     &                 ,PGCON                                           &
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
      &                 ,GRID,CONFIG_FLAGS                               &
      &                 ,NRND1                                              &  ! NRND1 for random no restart
@@ -1924,6 +1925,7 @@
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
      &                     ,N_MOIST,NCNVC,NTSD,NRADS,NRADL
 !
+      REAL, INTENT(IN) :: PGCON
       INTEGER, DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: LPBL
@@ -2400,6 +2402,7 @@
      &                 ,RUCUTEN=DUCUDT, RVCUTEN=DVCUDT, MOMMIX=MOMMIX   &
                        ,store_rand=store_rand                           &
 #endif
+     &                 ,pgcon=pgcon                                     &
                   ! Selection argument
      &                 ,CU_PHYSICS=CONFIG_FLAGS%CU_PHYSICS              &
                   ! Moisture tracer arguments

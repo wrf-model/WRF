@@ -219,15 +219,14 @@ CONTAINS
 !
    integer :: i
    real :: e1
-   real, dimension( its:ite)    ::  wstr, ang, wm
+   real, dimension( its:ite)    ::  wstr, wm
    real, dimension( its:ite)    ::  z0t
    real, dimension( its:ite) :: dthdz, dqtdz, dudz, dvdz
    real, dimension( its:ite) :: lepsmin
    real, dimension( its:ite) :: thetav
-   real, dimension( its:ite) :: zt,zm
-   real, dimension( its:ite) :: N2, S, Ri, beta, ftau, fth, ratio
+   real, dimension( its:ite) :: N2, S, Ri, beta, fth, ratio
    real, dimension( its:ite) :: TKE, TE2
-   real, dimension( its:ite) :: ustrtilde, linv, leps
+   real, dimension( its:ite) :: ustrtilde, linv
    real, dimension( its:ite) :: km, kh
    real, dimension( its:ite) :: qsfc_air
 !!-------------------------------------------------------------------
@@ -239,10 +238,6 @@ CONTAINS
 
       ! WA 1/6/10 This routine just populates HFX, QFX, and TSK
       ! with the suitable converted forcing values.
-
-      ! Surface fluxes
-      ust(i) = sqrt(ftau(i)/ftau0) * sqrt(u1d(i)**2. + v1d(i)**2.) * leps(i) / log(zm(i)/znt(i)) / zt(i)
-      ang(i) = atan2(v1d(i),u1d(i))
 
       ! Populate surface heat and moisture fluxes
       hfx(i) = hfx_force

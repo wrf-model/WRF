@@ -36,7 +36,6 @@ subroutine da_tl_model ()
 
    head_grid%g_scalar = 0.0
    head_grid%g_tke_2 = 0.0
-   head_grid%g_p = 0.0
    head_grid%g_al = 0.0
    head_grid%g_ustm = 0.0
    head_grid%g_hfx = 0.0

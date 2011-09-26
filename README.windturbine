@@ -82,4 +82,8 @@ It works with the MYNN PBL and modifies the QKE field representing 2xTKE
 to include the TKE produced by wind turbines. QKE is advected as a part
 of the scalar 4D tracer array in WRF.
 
+Reference: Fitch, A.C., Olson, J.B., Lundquist, J.K., Dudhia, J., Gupta, A.K.,
+Michalakes, J., Barstad, I. Local and Mesoscale Impacts of Wind Farms
+as Parameterized in a Mesoscale NWP Model. Manuscript in preparation. 
+
 

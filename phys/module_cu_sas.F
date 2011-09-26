@@ -14,8 +14,10 @@ CONTAINS
 #if (NMM_CORE == 1)
                  STORE_RAND,MOMMIX, & ! gopal's doing
 #endif
+                 PGCON,                                             &
                  P_QI,P_FIRST_SCALAR,                               & 
                  CUDT, CURR_SECS, ADAPT_STEP_FLAG,                  &
+                 CUDTACTTIME,                                       & 
                  ids,ide, jds,jde, kds,kde,                         &
                  ims,ime, jms,jme, kms,kme,                         &
                  its,ite, jts,jte, kts,kte                          )
@@ -116,7 +118,8 @@ CONTAINS
       REAL,    INTENT(IN) ::                                            &
                                         DT
 
-
+      REAL, OPTIONAL, INTENT(IN) :: PGCON
+      REAL(kind=kind_phys)       :: PGCON_USE
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::      &
                                         RQCCUTEN,                       &
                                         RQICUTEN,                       &
@@ -163,7 +166,8 @@ CONTAINS
 ! Adaptive time-step variables
       REAL,  INTENT(IN   ) :: CUDT
       REAL,  INTENT(IN   ) :: CURR_SECS
-      LOGICAL,INTENT(IN   ) :: ADAPT_STEP_FLAG
+      LOGICAL,INTENT(IN   ) , OPTIONAL :: ADAPT_STEP_FLAG
+      REAL,  INTENT (INOUT) :: CUDTACTTIME       
 
 !--------------------------- LOCAL VARS ------------------------------
 
@@ -221,7 +225,7 @@ CONTAINS
                                         KX,                             &
                                         NCLOUD 
 
-      LOGICAL :: run_param
+      LOGICAL :: run_param , doing_adapt_dt , decided
 
       DATA IGPVS/0/
 
@@ -229,24 +233,76 @@ CONTAINS
 !
 !***  CHECK TO SEE IF THIS IS A CONVECTION TIMESTEP
 !
-      if (adapt_step_flag) then
-         if ( (ITIMESTEP .eq. 0) .or. (cudt .eq. 0) .or. &
-         ( CURR_SECS + dt >= ( int( CURR_SECS / ( cudt * 60 ) ) + 1 ) * cudt * 60 ) ) then
-         run_param = .TRUE.
-      else
-         run_param = .FALSE.
-      endif
 
-      else
-         if (MOD(ITIMESTEP,STEPCU) .EQ. 0 .or. ITIMESTEP .eq. 0) then
-            run_param = .TRUE.
-         else
-            run_param = .FALSE.
-         endif
-      endif
+!  Initialization for adaptive time step.
+
+   doing_adapt_dt = .FALSE.
+   IF ( PRESENT(adapt_step_flag) ) THEN
+      IF ( adapt_step_flag ) THEN
+         doing_adapt_dt = .TRUE.
+         IF ( cudtacttime .EQ. 0. ) THEN
+            cudtacttime = curr_secs + cudt*60.
+         END IF
+      END IF
+   END IF
+
+!  Do we run through this scheme or not?
+
+!    Test 1:  If this is the initial model time, then yes.
+!                ITIMESTEP=1
+!    Test 2:  If the user asked for the cumulus to be run every time step, then yes.
+!                CUDT=0 or STEPCU=1
+!    Test 3:  If not adaptive dt, and this is on the requested cumulus frequency, then yes.
+!                MOD(ITIMESTEP,STEPCU)=0
+!    Test 4:  If using adaptive dt and the current time is past the last requested activate cumulus time, then yes.
+!                CURR_SECS >= CUDTACTTIME
+
+!  If we do run through the scheme, we set the flag run_param to TRUE and we set the decided flag
+!  to TRUE.  The decided flag says that one of these tests was able to say "yes", run the scheme.
+!  We only proceed to other tests if the previous tests all have left decided as FALSE.
+
+!  If we set run_param to TRUE and this is adaptive time stepping, we set the time to the next
+!  cumulus run.
+
+   decided = .FALSE.
+   run_param = .FALSE.
+   IF ( ( .NOT. decided ) .AND. &
+        ( itimestep .EQ. 1 ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( ( cudt .EQ. 0. ) .OR. ( stepcu .EQ. 1 ) ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( .NOT. doing_adapt_dt ) .AND. &
+        ( MOD(itimestep,stepcu) .EQ. 0 ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( doing_adapt_dt ) .AND. &
+        ( curr_secs .GE. cudtacttime ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+      cudtacttime = curr_secs + cudt*60
+   END IF
 
 !-----------------------------------------------------------------------
 
+      if(present(pgcon)) then
+         pgcon_use  = pgcon
+      else
+!        pgcon_use  = 0.7     ! Gregory et al. (1997, QJRMS)
+         pgcon_use  = 0.55    ! Zhang & Wu (2003,JAS)
+         ! 0.55 is a physically-based value used by GFS
+         ! HWRF uses 0.2, for model tuning purposes
+      endif
 
    IF(run_param) THEN
 
@@ -370,7 +426,7 @@ CONTAINS
 
       CALL SASCNVN(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,                  &
                   QL,Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,                    &
-                  KTOP,KCNV,SLIMSK,DOT,NCLOUD)
+                  KTOP,KCNV,SLIMSK,DOT,NCLOUD,PGCON_USE)
 
 !      CALL SASCNV(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,                  &
 !                  QL,Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,                    &
@@ -2535,7 +2591,7 @@ CONTAINS
 
       subroutine sascnvn(im,ix,km,jcap,delt,del,prsl,ps,phil,ql,   & 
      &     q1,t1,u1,v1,rcs,cldwrk,rn,kbot,ktop,kcnv,slimsk,        &
-     &     dot,ncloud)                         
+     &     dot,ncloud,pgcon)                         
 !     &     dot,ncloud,ud_mf,dd_mf,dt_mf)                         
 !    &     dot,ncloud,ud_mf,dd_mf,dt_mf,me)
 !
@@ -2591,8 +2647,10 @@ CONTAINS
      &                     w3l,     w3s,     w4,      w4l,         &
      &                     w4s,     xdby,    xpw,     xpwd,        &
      &                     xqrch,   mbdt,    tem,                  &
-     &                     ptem,    ptem1,   pgcon                 
+     &                     ptem,    ptem1
 !
+      real(kind=kind_phys), intent(in) :: pgcon
+
       integer              kb(im), kbcon(im), kbcon1(im),          &
      &                     ktcon(im), ktcon1(im),                  &
      &                     jmin(im), lmin(im), kbmax(im),          &
@@ -2655,6 +2713,7 @@ CONTAINS
 !
 !c-----------------------------------------------------------------------
 !
+
       km1 = km - 1
 !c
 !c  initialize arrays
@@ -2730,8 +2789,6 @@ CONTAINS
       xlamde  = 1.0e-4
       xlamdd  = 1.0e-4
 !
-!     pgcon   = 0.7     ! Gregory et al. (1997, QJRMS)
-      pgcon   = 0.55    ! Zhang & Wu (2003,JAS)
       fjcap   = (float(jcap) / 126.) ** 2
       val     =           1.
       fjcap   = max(fjcap,val)
@@ -3207,7 +3264,7 @@ CONTAINS
 !c  specify upper limit of mass flux at cloud base
 !c
 !      val1 = 0.5        ! qingfu test
-      val1 = 0.2        ! qingfu test
+!      val1 = 0.2        ! qingfu test  
 !      val1 = 0.1        ! qingfu test
       do i = 1, im
         if(cnvflg(i)) then
@@ -3216,7 +3273,7 @@ CONTAINS
           k = kbcon(i)
           dp = 1000. * del(i,k)
           xmbmax(i) = dp / (g * dt2)
-          xmbmax(i) = min(val1,xmbmax(i))
+!          xmbmax(i) = min(val1,xmbmax(i))
 !
 !         tem = dp / (g * dt2)
 !         xmbmax(i) = min(tem, xmbmax(i))
@@ -4356,7 +4413,7 @@ CONTAINS
 
       subroutine shalcnv(im,ix,km,jcap,delt,del,prsl,ps,phil,ql,    &
      &     q1,t1,u1,v1,rcs,rn,kbot,ktop,kcnv,slimsk,                &
-     &     dot,ncloud,hpbl,sflx)
+     &     dot,ncloud,hpbl,sflx,pgcon)
 !     &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf)
 !    &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,me)
 !
@@ -4412,8 +4469,8 @@ CONTAINS
      &                     val2,    w1,      w1l,     w1s,         &
      &                     w2,      w2l,     w2s,     w3,          &
      &                     w3l,     w3s,     w4,      w4l,         &
-     &                     w4s,     tem,     ptem,    ptem1,       &
-     &                     pgcon
+     &                     w4s,     tem,     ptem,    ptem1
+     real(kind=kind_phys), intent(in) :: pgcon
 !
       integer              kb(im), kbcon(im), kbcon1(im),          &
      &                     ktcon(im), ktcon1(im),                  &
@@ -4517,8 +4574,6 @@ CONTAINS
       evfact  = 0.3
       evfactl = 0.3
 !
-!     pgcon   = 0.7     ! Gregory et al. (1997, QJRMS)
-      pgcon   = 0.55    ! Zhang & Wu (2003,JAS)
       fjcap   = (float(jcap) / 126.) ** 2
       val     =           1.
       fjcap   = max(fjcap,val)

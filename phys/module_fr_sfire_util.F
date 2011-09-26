@@ -1209,7 +1209,7 @@ do j=jts,jte
 	if(r.ne.a(i,j))then
            write(6,*)'Reading file ',trim(filename)
            write(6,*)'value at position ',i,j,' cannot be converted to integer'
-           write(6,*)'read ',a(i,j),' converted as',k,' converted as ',r
+           write(6,*)'read ',a(i,j),' converted as',ia(i,j),' converted as ',r
 	   msg=trim(filename)//' is not integer file'
 	   call crash(msg)
         endif

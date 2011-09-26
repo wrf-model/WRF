@@ -519,7 +519,7 @@ gen_med_open_esmf_calls ( FILE *fp )
   {
      fprintf(fp,"CALL nl_get_io_form_auxinput%d( 1, io_form )\n",i) ;
      fprintf(fp,"IF ( use_package( io_form ) == IO_ESMF ) THEN\n") ;
-     fprintf(fp,"  stream = %d\n",i) ;
+     fprintf(fp,"  stream = first_auxinput + %d\n",i-1) ;
      fprintf(fp,"  CALL open_aux_u( grid, config_flags, stream, AUXINPUT%d_ALARM,       &\n",i) ;
      fprintf(fp,"                   config_flags%%auxinput%d_inname, grid%%auxinput%d_oid, &\n",i,i) ;
      fprintf(fp,"                   input_auxinput%d, ierr )\n",i) ;
@@ -531,7 +531,7 @@ gen_med_open_esmf_calls ( FILE *fp )
   {
      fprintf(fp,"CALL nl_get_io_form_auxhist%d( 1, io_form )\n",i) ;
      fprintf(fp,"IF ( use_package( io_form ) == IO_ESMF ) THEN\n") ;
-     fprintf(fp,"  stream = %d\n",i) ;
+     fprintf(fp,"  stream = first_auxhist + %d\n",i-1) ;
      fprintf(fp,"  CALL open_hist_w( grid, config_flags, stream, AUXHIST%d_ALARM,       &\n",i) ;
      fprintf(fp,"                    config_flags%%auxhist%d_outname, grid%%auxhist%d_oid, &\n",i,i) ;
      fprintf(fp,"                    output_auxhist%d, fname, n2, ierr )\n",i) ;

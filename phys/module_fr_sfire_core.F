@@ -1732,7 +1732,7 @@ real,dimension(tims:time,tjms:tjme)::rra,grada,speeda,tanphia
             nvy=diffCy/scale
                       
             ! wind speed in direction of spread
-            ! speed =  vx(i,j)*nvx + vy(i,j)*nvy
+            speed =  fp%vx(i,j)*nvx + fp%vy(i,j)*nvy
         
     
             ! get rate of spread from wind speed and slope
@@ -1765,7 +1765,7 @@ real,dimension(tims:time,tjms:tjme)::rra,grada,speeda,tanphia
                     advy=0
                 endif
 
-                ! tanphi =  dzdxf*nvx + dzdyf*nvy
+                tanphi =  fp%dzdxf(i,j)*nvx + fp%dzdyf(i,j)*nvy
 		! advection from slope direction 
                 if(abs(tanphi)>eps) then
                     advx=advx+fp%dzdxf(i,j)*ros_slope/tanphi

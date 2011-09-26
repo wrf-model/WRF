@@ -269,10 +269,12 @@ CONTAINS
       enddo
       enddo
       DO I = its,itf
-         umean(i)=umean(i)/pmean(i)
-         vmean(i)=vmean(i)/pmean(i)
-         direction(i)=(atan2(umean(i),vmean(i))+3.1415926)*57.29578
-         if(direction(i).gt.360.)direction(i)=direction(i)-360.
+         if(pmean(i).gt.0)then
+            umean(i)=umean(i)/pmean(i)
+            vmean(i)=vmean(i)/pmean(i)
+            direction(i)=(atan2(umean(i),vmean(i))+3.1415926)*57.29578
+            if(direction(i).gt.360.)direction(i)=direction(i)-360.
+         endif
       ENDDO
       DO K=kts,ktf-1
       DO I = its,itf
@@ -4026,7 +4028,7 @@ CONTAINS
 !------- LIQUID WATER CONTENT IN cloud after rainout
 !
         clw_all(i,k)=QC(I,K)-QRCH
-        QRC(I,K)=(QC(I,K)-QRCH)/(1.+C0*DZ)
+        QRC(I,K)=(QC(I,K)-QRCH)/(1.+C0*DZ*zu(i,k))
         if(qrc(i,k).lt.0.)then
           qrc(i,k)=0.
         endif

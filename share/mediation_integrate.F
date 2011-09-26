@@ -181,7 +181,11 @@ SUBROUTINE med_pre_nest_initial ( parent , newid , config_flags )
 #else
    USE module_domain	, ONLY : domain
 #endif
+#ifdef ESMFIO
+   USE module_utility   , ONLY : WRFU_Time 
+#else
    USE module_utility   , ONLY : WRFU_Time, WRFU_TimeEQ
+#endif
    USE module_timing
    USE module_io_domain
    USE module_configure	, ONLY : grid_config_rec_type
@@ -206,7 +210,11 @@ SUBROUTINE med_pre_nest_initial ( parent , newid , config_flags )
    CALL domain_clock_get( parent, current_timestr=timestr, start_time=strt_time, current_time=cur_time )
    CALL construct_filename2a ( rstname , config_flags%rst_inname , newid , 2 , timestr )
 
+#ifdef ESMFIO
+    IF ( config_flags%restart .AND. (cur_time .EQ. strt_time) ) THEN
+#else
     IF ( config_flags%restart .AND. WRFU_TimeEQ(cur_time,strt_time) ) THEN
+#endif
      WRITE(message,*)'RESTART: nest, opening ',TRIM(rstname),' for reading header information only'
      CALL wrf_message ( message )
   ! note that the parent pointer is not strictly correct, but nest is not allocated yet and
@@ -1294,7 +1302,7 @@ RECURSIVE SUBROUTINE med_restart_out ( grid , config_flags )
    USE module_timing
    USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
-   USE module_bc_time_utilities
+!   USE module_bc_time_utilities
    USE module_utility
 
    IMPLICIT NONE
@@ -1420,7 +1428,7 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
    USE module_timing
    USE module_io_domain
    USE module_configure	, ONLY : grid_config_rec_type
-   USE module_bc_time_utilities
+!   USE module_bc_time_utilities
    USE module_utility
 
    IMPLICIT NONE
@@ -1497,7 +1505,7 @@ SUBROUTINE med_auxinput_in ( grid , stream, config_flags )
    USE module_io_domain
   ! Model layer
    USE module_configure	, ONLY : grid_config_rec_type
-   USE module_bc_time_utilities
+!   USE module_bc_time_utilities
    USE module_utility
 
    IMPLICIT NONE
@@ -1598,7 +1606,7 @@ SUBROUTINE med_latbound_in ( grid , config_flags )
    USE module_timing
    USE module_configure	, ONLY : grid_config_rec_type
   ! Model layer
-   USE module_bc_time_utilities
+!   USE module_bc_time_utilities
    USE module_utility
 
    IMPLICIT NONE
@@ -1637,12 +1645,19 @@ integer myproc,i,j,k
                                   stop_time=stopTime,       &
                                   time_step=stepTime )
 
-     IF ( ( lbc_read_time( currentTime ) ) .AND. &
-          ( currentTime + stepTime .GE. stopTime ) .AND. &
-          ( currentTime .NE. startTime ) ) THEN
-       CALL wrf_debug( 100 , 'med_latbound_in: Skipping attempt to read lateral boundary file during last time step ' )
-
-     ELSE IF ( WRFU_AlarmIsRinging( grid%alarms( BOUNDARY_ALARM ), rc=rc ) ) THEN
+!jm 20110828
+!jm The test below never worked because set_time_time_read_again is never called to store a 
+!jm time that lbc_read_time can compare with currentTime (see module_bc_time_utilities). This means 
+!jm lbc_read_time will never return anything but false -- will also generate an ESMF error that the 
+!jm stored time was never initialized.  Removing that branch from the conditional.
+!jm     IF ( ( lbc_read_time( currentTime ) ) .AND. &
+!jm          ( currentTime + stepTime .GE. stopTime ) .AND. &
+!jm          ( currentTime .NE. startTime ) ) THEN
+!jm       CALL wrf_debug( 100 , 'med_latbound_in: Skipping attempt to read lateral boundary file during last time step ' )
+!jm
+!jm     ELSE IF ( WRFU_AlarmIsRinging( grid%alarms( BOUNDARY_ALARM ), rc=rc ) ) THEN
+!jm 20110828
+     IF ( WRFU_AlarmIsRinging( grid%alarms( BOUNDARY_ALARM ), rc=rc ) ) THEN
        CALL wrf_debug ( 100 , 'in med_latbound_in preparing to read' )
        CALL WRFU_AlarmRingerOff( grid%alarms( BOUNDARY_ALARM ), rc=rc )
        IF ( wrf_dm_on_monitor() ) CALL start_timing
@@ -1774,7 +1789,7 @@ SUBROUTINE open_aux_u ( grid , config_flags, stream, alarm_id, &
    USE module_io_domain
   ! Model layer
    USE module_configure	, ONLY : grid_config_rec_type
-   USE module_bc_time_utilities
+!   USE module_bc_time_utilities
    USE module_utility
 
    IMPLICIT NONE
@@ -1810,16 +1825,16 @@ SUBROUTINE open_aux_u ( grid , config_flags, stream, alarm_id, &
      ENDIF
      CALL construct_filename2a ( fname , auxinput_inname, &
                                  grid%id , 2 , timestr )
-     IF      ( stream .EQ. 10 ) THEN
+     IF      ( stream-first_input .EQ. 10 ) THEN
        WRITE(n2,'("DATASET=AUXINPUT10")')
-     ELSE IF ( stream .EQ. 11 ) THEN
+     ELSE IF ( stream-first_input .EQ. 11 ) THEN
        WRITE(n2,'("DATASET=AUXINPUT11")')
-     ELSE IF ( stream .GE. 10 ) THEN
+     ELSE IF ( stream-first_input .GE. 10 ) THEN
        WRITE(n2,'("DATASET=AUXINPUT",I2)')stream-first_input
      ELSE
        WRITE(n2,'("DATASET=AUXINPUT",I1)')stream-first_input
      ENDIF
-     WRITE ( message , '("open_aux_u : opening ",A," for reading. ")') TRIM ( fname )
+     WRITE ( message , '("open_aux_u : opening ",A," for reading. DATASET ",A)') TRIM ( fname ),TRIM(n2)
      CALL wrf_debug( 1, message )
 !<DESCRIPTION>
 !
@@ -1847,7 +1862,7 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    USE module_io_domain
   ! Model layer
    USE module_configure	, ONLY : grid_config_rec_type
-   USE module_bc_time_utilities
+!   USE module_bc_time_utilities
    USE module_utility
 
    IMPLICIT NONE
@@ -1885,9 +1900,9 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    ENDIF
    CALL construct_filename2a ( fname , hist_outname, &
                                grid%id , 2 , timestr )
-   IF ( stream .EQ. history_only ) THEN
+   IF ( stream-first_history .EQ. history_only ) THEN
      WRITE(n2,'("DATASET=HISTORY")')
-   ELSE IF ( stream .GE. 10 ) THEN
+   ELSE IF ( stream-first_history .GE. 10 ) THEN
      WRITE(n2,'("DATASET=AUXHIST",I2)')stream-first_history
    ELSE
      WRITE(n2,'("DATASET=AUXHIST",I1)')stream-first_history

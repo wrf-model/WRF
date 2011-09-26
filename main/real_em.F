@@ -13,7 +13,11 @@ PROGRAM real_data
         initial_config, get_config_as_buffer, set_config_as_buffer
    USE module_timing
    USE module_state_description, ONLY : realonly
+#ifdef NO_LEAP_CALENDAR
+   USE module_symbols_util, ONLY: wrfu_cal_noleap
+#else
    USE module_symbols_util, ONLY: wrfu_cal_gregorian
+#endif
    USE module_check_a_mundo
 #ifdef WRF_CHEM
    USE module_input_chem_data
@@ -102,9 +106,9 @@ real::t1,t2
    CALL       wrf_debug ( 100 , 'real_em: calling init_modules ' )
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
 #ifdef NO_LEAP_CALENDAR
-   CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_NOLEAP, rc=rc )
+   CALL WRFU_Initialize( defaultCalKind=WRFU_CAL_NOLEAP, rc=rc )
 #else
-   CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN, rc=rc )
+   CALL WRFU_Initialize( defaultCalKind=WRFU_CAL_GREGORIAN, rc=rc )
 #endif
    CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
 

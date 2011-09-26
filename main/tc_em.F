@@ -12,7 +12,11 @@ PROGRAM tc_data
         initial_config, get_config_as_buffer, set_config_as_buffer
    USE module_timing
    USE module_state_description, ONLY : realonly
+#ifdef NO_LEAP_CALENDAR
+   USE module_symbols_util, ONLY: wrfu_cal_noleap
+#else
    USE module_symbols_util, ONLY: wrfu_cal_gregorian
+#endif
    USE module_utility, ONLY : WRFU_finalize
 
    IMPLICIT NONE
@@ -91,9 +95,9 @@ PROGRAM tc_data
    CALL       wrf_debug ( 100 , 'real_em: calling init_modules ' )
    CALL init_modules(1)   ! Phase 1 returns after MPI_INIT() (if it is called)
 #ifdef NO_LEAP_CALENDAR
-   CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_NOLEAP, rc=rc )
+   CALL WRFU_Initialize( defaultCalKind=WRFU_CAL_NOLEAP, rc=rc )
 #else
-   CALL WRFU_Initialize( defaultCalendar=WRFU_CAL_GREGORIAN, rc=rc )
+   CALL WRFU_Initialize( defaultCalKind=WRFU_CAL_GREGORIAN, rc=rc )
 #endif
    CALL init_modules(2)   ! Phase 2 resumes after MPI_INIT() (if it is called)
 
@@ -2248,7 +2252,6 @@ END SUBROUTINE mass2_Vstag
 
 !-----------------------------------------------------------------------------------------
 ! Take the derivative of psi in the ns direction.
-    upos = - dpsi/dy
     upos(:,:,:) = -999.
     DO k=1,nz
 

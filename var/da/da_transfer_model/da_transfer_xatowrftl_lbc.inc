@@ -22,7 +22,7 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
    real, allocatable, dimension(:,:,:) :: g_press
 #else
    real, allocatable, dimension(:,:,:) :: utmp, vtmp, g_press
-   real, allocatable, dimension(:,:,:) :: g_u, g_v, g_ph
+   real, allocatable, dimension(:,:,:) :: g_u, g_v, g_ph, g_w
    real, allocatable, dimension(:,:) ::   g_mu
    real, allocatable, dimension(:,:,:) :: g_moist, g_t
 #endif
@@ -37,6 +37,7 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
    IF ( ALLOCATED ( pbdy3dtemp2 ) ) DEALLOCATE ( pbdy3dtemp2 )
    IF ( ALLOCATED ( qbdy3dtemp2 ) ) DEALLOCATE ( qbdy3dtemp2 )
    IF ( ALLOCATED ( mbdy2dtemp2 ) ) DEALLOCATE ( mbdy2dtemp2 )
+   IF ( ALLOCATED ( wbdy3dtemp2 ) ) DEALLOCATE ( wbdy3dtemp2 )
 
    ALLOCATE ( ubdy3dtemp2(ims:ime,jms:jme,kms:kme) )
    ALLOCATE ( vbdy3dtemp2(ims:ime,jms:jme,kms:kme) )
@@ -44,6 +45,7 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
    ALLOCATE ( pbdy3dtemp2(ims:ime,jms:jme,kms:kme) )
    ALLOCATE ( qbdy3dtemp2(ims:ime,jms:jme,kms:kme) )
    ALLOCATE ( mbdy2dtemp2(ims:ime,1:1,    jms:jme) )
+   ALLOCATE ( wbdy3dtemp2(ims:ime,jms:jme,kms:kme) )
 
    ubdy3dtemp2 = 0.0
    vbdy3dtemp2 = 0.0
@@ -51,6 +53,7 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
    pbdy3dtemp2 = 0.0
    qbdy3dtemp2 = 0.0
    mbdy2dtemp2 = 0.0
+   wbdy3dtemp2 = 0.0
 
    spec_bdy_width =  grid%spec_bdy_width
 
@@ -192,21 +195,23 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
 
    allocate ( g_ph(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme, grid%xp%kms:grid%xp%kme) )
 
-   do j=js,je
-      do i=is,ie
-         g_ph(i,j,ks)=0.0
-         do k=ks,ke
-            rho_cgrid=grid%xb%rho(i,j,k) &
-                      *(grid%x6a%p(i,j,k)/grid%xb%p(i,j,k) &
-                      -grid%x6a%t(i,j,k)/grid%xb%t(i,j,k) &
-                      -0.61*grid%x6a%q(i,j,k)/(1.0+0.61*grid%xb%q(i,j,k)))
-            g_ph(i,j,k+1)=g_ph(i,j,k) &
-               -(g_press(i,j,k+1)-g_press(i,j,k) &
-               +(grid%ph_2(i,j,k+1)-grid%ph_2(i,j,k))*rho_cgrid) &
-               /grid%xb%rho(i,j,k)
-         end do
-      end do
-   end do
+!  do j=js,je
+!     do i=is,ie
+!        g_ph(i,j,ks)=0.0
+!        do k=ks,ke
+!           rho_cgrid=grid%xb%rho(i,j,k) &
+!                     *(grid%x6a%p(i,j,k)/grid%xb%p(i,j,k) &
+!                     -grid%x6a%t(i,j,k)/grid%xb%t(i,j,k) &
+!                     -0.61*grid%x6a%q(i,j,k)/(1.0+0.61*grid%xb%q(i,j,k)))
+!           g_ph(i,j,k+1)=g_ph(i,j,k) &
+!              -(g_press(i,j,k+1)-g_press(i,j,k) &
+!              +(grid%ph_2(i,j,k+1)-grid%ph_2(i,j,k))*rho_cgrid) &
+!              /grid%xb%rho(i,j,k)
+!        end do
+!     end do
+!  end do
+
+   g_ph = 0.0
 
    CALL g_couple ( model_config_flags, grid%mu_2 , g_mu, grid%mub , pbdy3dtemp2 , grid%ph_2, g_ph, 'h' , grid%msfty , &
                    grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
@@ -354,6 +359,27 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
 
    IF ( var4d_lbc ) THEN
 
+   allocate ( g_w(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme, grid%xp%kms:grid%xp%kme) )
+
+   g_w = 0.0
+
+   CALL g_couple ( model_config_flags, grid%mu_2 , g_mu, grid%mub , wbdy3dtemp2 , grid%w_2, g_w, 'h' , grid%msfty , &
+                   grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+                   grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
+                   grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
+   ENDIF
+
+   CALL g_stuff_bdytend ( wbdy3dtemp2 , wbdy3dtemp1 , REAL(interval_seconds) ,                 &
+                                      model_grid%g_w_btxs, model_grid%g_w_btxe,   &
+                                      model_grid%g_w_btys, model_grid%g_w_btye,   &
+                                      'W' , &
+                                      spec_bdy_width      , &
+                                      grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+                                      grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
+                                      grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
+
+   IF ( var4d_lbc ) THEN
+
    !---------------------------------------------------------------------------
    ! [7.0] tidy up
    !---------------------------------------------------------------------------
@@ -361,6 +387,7 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
    deallocate (g_v)
    deallocate (g_mu)
    deallocate (g_moist)
+   deallocate (g_w)
    deallocate (g_t)
 
    ENDIF
@@ -369,6 +396,7 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
    DEALLOCATE ( vbdy3dtemp2 )
    DEALLOCATE ( tbdy3dtemp2 )
    DEALLOCATE ( pbdy3dtemp2 )
+   DEALLOCATE ( wbdy3dtemp2 )
    DEALLOCATE ( qbdy3dtemp2 )
    DEALLOCATE ( mbdy2dtemp2 )
 
@@ -376,6 +404,7 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
    DEALLOCATE ( vbdy3dtemp1 )
    DEALLOCATE ( tbdy3dtemp1 )
    DEALLOCATE ( pbdy3dtemp1 )
+   DEALLOCATE ( wbdy3dtemp1 )
    DEALLOCATE ( qbdy3dtemp1 )
    DEALLOCATE ( mbdy2dtemp1 )
 

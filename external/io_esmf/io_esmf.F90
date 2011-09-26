@@ -1,7 +1,8 @@
 
 MODULE module_ext_esmf
 
-  USE ESMF_Mod
+! 5.2.0r  USE ESMF_Mod
+  USE ESMF
   USE module_esmf_extensions
 
   IMPLICIT NONE
@@ -124,7 +125,7 @@ END SUBROUTINE get_value
     INTEGER :: rc
 
     ! get current ESMF virtual machine for communication
-    CALL ESMF_VMGetCurrent(vm, rc)
+    CALL ESMF_VMGetCurrent(vm, rc=rc)
     IF ( rc /= ESMF_SUCCESS ) THEN
       WRITE( msg,* ) 'Error in ESMF_VMGetCurrent', &
                      __FILE__ ,                    &
@@ -135,7 +136,8 @@ END SUBROUTINE get_value
     allSnd = 0_ESMF_KIND_I4
     allSnd(pe) = inval
     ! Hack due to lack of ESMF_VMAllGather().  
-    CALL ESMF_VMAllReduce(vm, allSnd, allRcv, numprocs, ESMF_SUM, rc=rc )
+! 5.2.0r    CALL ESMF_VMAllReduce(vm, allSnd, allRcv, numprocs, ESMF_SUM, rc=rc )
+    CALL ESMF_VMAllReduce(vm, allSnd, allRcv, numprocs, ESMF_REDUCE_SUM, rc=rc )
     IF ( rc /= ESMF_SUCCESS ) THEN
       WRITE( msg,* ) 'Error in ESMF_VMAllReduce', &
                      __FILE__ ,                     &
@@ -343,7 +345,7 @@ END MODULE module_ext_esmf
       ! First, determine number of tasks and number of tasks in each decomposed 
       ! dimension (ESMF 2.2.0 is restricted to simple task layouts)
       ! get current ESMF virtual machine and inquire...  
-      CALL ESMF_VMGetCurrent(vm, rc)
+      CALL ESMF_VMGetCurrent(vm, rc=rc)
       IF ( rc /= ESMF_SUCCESS ) THEN
         WRITE( msg,* ) 'Error in ESMF_VMGetCurrent', &
                        __FILE__ ,                    &
@@ -431,10 +433,6 @@ CALL wrf_debug ( 5 , TRIM(msg) )
       jds = DomainStart(2); jde = DomainEnd(2); 
       ips = PatchStart(1);  ipe = PatchEnd(1); 
       jps = PatchStart(2);  jpe = PatchEnd(2); 
-write(0,*)__FILE__,__LINE__,'DomainStart ',DomainStart(1:2)
-write(0,*)__FILE__,__LINE__,'DomainEnd   ',DomainEnd(1:2)
-write(0,*)__FILE__,__LINE__,'PatchStart ',PatchStart(1:2)
-write(0,*)__FILE__,__LINE__,'PatchEnd   ',PatchEnd(1:2)
       globalXcount = ide - ids  ! in other words, the number of points from ids to ide-1 inclusive
       globalYcount = jde - jds  ! in other words, the number of points from jds to jde-1 inclusive
       ! task-local numbers of points in patch for staggered arrays
@@ -570,7 +568,8 @@ CALL wrf_debug ( 5 , TRIM(msg) )
 !write(0,*)'calling ESMF_GridCreateShapeTile for grid named ',trim(gridname)
 !write(0,*)'calling ESMF_GridCreateShapeTile dimXCount ',dimXCount
 !write(0,*)'calling ESMF_GridCreateShapeTile dimYCount ',dimYCount
-      esmfgrid = ESMF_GridCreateShapeTile(  &
+! 5.2.0r      esmfgrid = ESMF_GridCreateShapeTile(  &
+      esmfgrid = ESMF_GridCreate(  &
                  countsPerDEDim1=dimXCount , &
                  countsPerDEDim2=dimYcount , &
                  coordDep1=(/1/) , &
@@ -587,7 +586,7 @@ CALL wrf_debug ( 5 , TRIM(msg) )
       CALL ESMF_GridGetCoord(esmfgrid,coordDim=1,localDE=0, &
                  staggerloc=ESMF_STAGGERLOC_CENTER, &
                  computationalLBound=lbnd,computationalUBound=ubnd, &
-                 fptr=coordX2d, &
+                 farrayptr=coordX2d, &
                  rc=rc)
 
       DO i=lbnd(1),ubnd(1)
@@ -596,7 +595,7 @@ CALL wrf_debug ( 5 , TRIM(msg) )
       CALL ESMF_GridGetCoord(esmfgrid,coordDim=2,localDE=0, &
                  staggerloc=ESMF_STAGGERLOC_CENTER, &
                  computationalLBound=lbnd,computationalUBound=ubnd, &
-                 fptr=coordY2d,                             &
+                 farrayptr=coordY2d,                             &
                  rc=rc)
       DO i=lbnd(1),ubnd(1)
         coordY2d(i) = (i-1)*1.0
@@ -866,7 +865,7 @@ SUBROUTINE ext_esmf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo
   CHARACTER*(*) :: SysDepInfo
   INTEGER ,       INTENT(OUT) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_open_for_read not supported yet')
+  CALL wrf_debug(1,'ext_esmf_open_for_read not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN  
 END SUBROUTINE ext_esmf_open_for_read
@@ -1024,7 +1023,7 @@ SUBROUTINE ext_esmf_ioclose ( DataHandle, Status )
   TYPE(state_ptr) :: states(2)
   TYPE(ESMF_State), POINTER :: state
   INTEGER :: numItems, numFields, i, istate
-  TYPE(ESMF_StateItemType), ALLOCATABLE :: itemTypes(:)
+  TYPE(ESMF_StateItem_Flag), ALLOCATABLE :: itemTypes(:)
   TYPE(ESMF_Field) :: tmpField
   REAL, POINTER :: tmp_ptr(:,:)
   CHARACTER (len=ESMF_MAXSTR), ALLOCATABLE :: itemNames(:)
@@ -1066,7 +1065,8 @@ SUBROUTINE ext_esmf_ioclose ( DataHandle, Status )
         ! allocate an array to hold the names of all items
         ALLOCATE( itemNames(numItems) )
         ! get the item types and names
-        CALL ESMF_StateGet(state, stateitemtypeList=itemTypes, &
+!5.2.0r        CALL ESMF_StateGet(state, stateitemtypeList=itemTypes, &
+        CALL ESMF_StateGet(state, itemtypeList=itemTypes, &
                            itemNameList=itemNames, rc=rc)
         IF ( rc /= ESMF_SUCCESS) THEN
           WRITE(str,*) 'ext_esmf_ioclose:  ESMF_StateGet itemTypes failed with rc = ', rc
@@ -1161,7 +1161,7 @@ SUBROUTINE ext_esmf_get_next_time ( DataHandle, DateStr, Status )
   IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
     CALL wrf_error_fatal("io_esmf.F90: ext_esmf_get_next_time: DataHandle not opened" )
   ENDIF
-  CALL wrf_message( "ext_esmf_get_next_time() not supported yet")
+  CALL wrf_debug(1, "ext_esmf_get_next_time() not supported yet")
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_next_time
@@ -1173,7 +1173,7 @@ SUBROUTINE ext_esmf_set_time ( DataHandle, DateStr, Status )
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: DateStr
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message( "ext_esmf_set_time() not supported yet")
+  CALL wrf_debug(1, "ext_esmf_set_time() not supported yet")
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_set_time
@@ -1198,7 +1198,7 @@ SUBROUTINE ext_esmf_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , S
   IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
     CALL wrf_error_fatal("io_esmf.F90: ext_esmf_get_var_info: DataHandle not opened" )
   ENDIF
-  CALL wrf_message( "ext_esmf_get_var_info() not supported yet")
+  CALL wrf_debug(1, "ext_esmf_get_var_info() not supported yet")
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_info
@@ -1217,7 +1217,7 @@ SUBROUTINE ext_esmf_get_next_var ( DataHandle, VarName, Status )
   IF ( .NOT. int_handle_in_use( DataHandle ) ) THEN
     CALL wrf_error_fatal("external/io_esmf/io_esmf.F90: ext_esmf_get_next_var: DataHandle not opened" )
   ENDIF
-  CALL wrf_message( "ext_esmf_get_next_var() not supported yet")
+  CALL wrf_debug(1, "ext_esmf_get_next_var() not supported yet")
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_next_var
@@ -1232,7 +1232,7 @@ SUBROUTINE ext_esmf_get_dom_ti_real ( DataHandle,Element,   Data, Count, Outcoun
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Outcount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message( "ext_esmf_get_dom_ti_real() not supported yet")
+  CALL wrf_debug(1, "ext_esmf_get_dom_ti_real() not supported yet")
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_dom_ti_real 
@@ -1246,7 +1246,7 @@ SUBROUTINE ext_esmf_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Status
   real ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message( "ext_esmf_put_dom_ti_real() not supported yet")
+  CALL wrf_debug(1, "ext_esmf_put_dom_ti_real() not supported yet")
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_ti_real 
@@ -1261,7 +1261,7 @@ SUBROUTINE ext_esmf_get_dom_ti_double ( DataHandle,Element,   Data, Count, Outco
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_get_dom_ti_double not supported yet')
+  CALL wrf_debug(1,'ext_esmf_get_dom_ti_double not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_dom_ti_double 
@@ -1275,7 +1275,7 @@ SUBROUTINE ext_esmf_put_dom_ti_double ( DataHandle,Element,   Data, Count,  Stat
   real*8 ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_put_dom_ti_double not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_dom_ti_double not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_ti_double 
@@ -1302,7 +1302,7 @@ SUBROUTINE ext_esmf_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Outc
     Data(1) = grid( DataHandle )%kde_save
     Outcount = 1
   ELSE
-    CALL wrf_message('ext_esmf_get_dom_ti_integer not fully supported yet')
+    CALL wrf_debug(1,'ext_esmf_get_dom_ti_integer not fully supported yet')
     Status = WRF_WARN_NOTSUPPORTED
   ENDIF
 
@@ -1318,7 +1318,7 @@ SUBROUTINE ext_esmf_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  Sta
   INTEGER ,       INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_put_dom_ti_integer not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_dom_ti_integer not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_ti_integer 
@@ -1333,7 +1333,7 @@ SUBROUTINE ext_esmf_get_dom_ti_logical ( DataHandle,Element,   Data, Count, Outc
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_get_dom_ti_logical not supported yet')
+  CALL wrf_debug(1,'ext_esmf_get_dom_ti_logical not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_dom_ti_logical 
@@ -1347,7 +1347,7 @@ SUBROUTINE ext_esmf_put_dom_ti_logical ( DataHandle,Element,   Data, Count,  Sta
   logical ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_put_dom_ti_logical not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_dom_ti_logical not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_ti_logical 
@@ -1360,7 +1360,7 @@ SUBROUTINE ext_esmf_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
   CHARACTER*(*) :: Element
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_get_dom_ti_char not supported yet')
+  CALL wrf_debug(1,'ext_esmf_get_dom_ti_char not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_dom_ti_char 
@@ -1373,7 +1373,7 @@ SUBROUTINE ext_esmf_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
   CHARACTER*(*) :: Element
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_put_dom_ti_char not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_dom_ti_char not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_ti_char 
@@ -1389,7 +1389,7 @@ SUBROUTINE ext_esmf_get_dom_td_real ( DataHandle,Element, DateStr,  Data, Count,
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_get_dom_td_real not supported yet')
+  CALL wrf_debug(1,'ext_esmf_get_dom_td_real not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_dom_td_real 
@@ -1404,7 +1404,7 @@ SUBROUTINE ext_esmf_put_dom_td_real ( DataHandle,Element, DateStr,  Data, Count,
   real ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_put_dom_td_real not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_dom_td_real not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_td_real 
@@ -1420,7 +1420,7 @@ SUBROUTINE ext_esmf_get_dom_td_double ( DataHandle,Element, DateStr,  Data, Coun
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_get_dom_td_double not supported yet')
+  CALL wrf_debug(1,'ext_esmf_get_dom_td_double not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_dom_td_double 
@@ -1435,7 +1435,7 @@ SUBROUTINE ext_esmf_put_dom_td_double ( DataHandle,Element, DateStr,  Data, Coun
   real*8 ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_put_dom_td_double not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_dom_td_double not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_td_double 
@@ -1451,7 +1451,7 @@ SUBROUTINE ext_esmf_get_dom_td_integer ( DataHandle,Element, DateStr,  Data, Cou
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_get_dom_td_integer not supported yet')
+  CALL wrf_debug(1,'ext_esmf_get_dom_td_integer not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_dom_td_integer 
@@ -1466,7 +1466,7 @@ SUBROUTINE ext_esmf_put_dom_td_integer ( DataHandle,Element, DateStr,  Data, Cou
   integer ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_put_dom_td_integer not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_dom_td_integer not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_td_integer 
@@ -1482,7 +1482,7 @@ SUBROUTINE ext_esmf_get_dom_td_logical ( DataHandle,Element, DateStr,  Data, Cou
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_get_dom_td_logical not supported yet')
+  CALL wrf_debug(1,'ext_esmf_get_dom_td_logical not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_dom_td_logical 
@@ -1497,7 +1497,7 @@ SUBROUTINE ext_esmf_put_dom_td_logical ( DataHandle,Element, DateStr,  Data, Cou
   logical ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_put_dom_td_logical not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_dom_td_logical not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_td_logical 
@@ -1511,7 +1511,7 @@ SUBROUTINE ext_esmf_get_dom_td_char ( DataHandle,Element, DateStr,  Data,  Statu
   CHARACTER*(*) :: DateStr
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_get_dom_td_char not supported yet')
+  CALL wrf_debug(1,'ext_esmf_get_dom_td_char not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_dom_td_char 
@@ -1525,7 +1525,7 @@ SUBROUTINE ext_esmf_put_dom_td_char ( DataHandle,Element, DateStr,  Data,  Statu
   CHARACTER*(*) :: DateStr
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_put_dom_td_char not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_dom_td_char not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_dom_td_char 
@@ -1541,7 +1541,7 @@ SUBROUTINE ext_esmf_get_var_ti_real ( DataHandle,Element,  Varname, Data, Count,
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_get_var_ti_real not supported yet')
+  CALL wrf_debug(1,'ext_esmf_get_var_ti_real not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_ti_real 
@@ -1556,7 +1556,7 @@ SUBROUTINE ext_esmf_put_var_ti_real ( DataHandle,Element,  Varname, Data, Count,
   real ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_put_var_ti_real not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_var_ti_real not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_ti_real 
@@ -1572,7 +1572,7 @@ SUBROUTINE ext_esmf_get_var_ti_double ( DataHandle,Element,  Varname, Data, Coun
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_get_var_ti_double not supported yet')
+  CALL wrf_debug(1,'ext_esmf_get_var_ti_double not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_ti_double 
@@ -1587,7 +1587,7 @@ SUBROUTINE ext_esmf_put_var_ti_double ( DataHandle,Element,  Varname, Data, Coun
   real*8 ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_put_var_ti_double not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_var_ti_double not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_ti_double 
@@ -1603,7 +1603,7 @@ SUBROUTINE ext_esmf_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Cou
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_get_var_ti_integer not supported yet')
+  CALL wrf_debug(1,'ext_esmf_get_var_ti_integer not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_ti_integer 
@@ -1618,7 +1618,7 @@ SUBROUTINE ext_esmf_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Cou
   integer ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_put_var_ti_integer not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_var_ti_integer not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_ti_integer 
@@ -1634,7 +1634,7 @@ SUBROUTINE ext_esmf_get_var_ti_logical ( DataHandle,Element,  Varname, Data, Cou
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_get_var_ti_logical not supported yet')
+  CALL wrf_debug(1,'ext_esmf_get_var_ti_logical not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_ti_logical 
@@ -1649,7 +1649,7 @@ SUBROUTINE ext_esmf_put_var_ti_logical ( DataHandle,Element,  Varname, Data, Cou
   logical ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_put_var_ti_logical not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_var_ti_logical not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_ti_logical 
@@ -1665,7 +1665,7 @@ SUBROUTINE ext_esmf_get_var_ti_char ( DataHandle,Element,  Varname, Data,  Statu
   INTEGER ,       INTENT(OUT) :: Status
   INTEGER locDataHandle, code
   CHARACTER*132 locElement, locVarName
-  CALL wrf_message('ext_esmf_get_var_ti_char not supported yet')
+  CALL wrf_debug(1,'ext_esmf_get_var_ti_char not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_ti_char 
@@ -1681,7 +1681,7 @@ SUBROUTINE ext_esmf_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Statu
   INTEGER ,       INTENT(OUT) :: Status
   REAL dummy
   INTEGER                 :: Count
-  CALL wrf_message('ext_esmf_put_var_ti_char not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_var_ti_char not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_ti_char 
@@ -1698,7 +1698,7 @@ SUBROUTINE ext_esmf_get_var_td_real ( DataHandle,Element,  DateStr,Varname, Data
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_get_var_td_real not supported yet')
+  CALL wrf_debug(1,'ext_esmf_get_var_td_real not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_td_real 
@@ -1714,7 +1714,7 @@ SUBROUTINE ext_esmf_put_var_td_real ( DataHandle,Element,  DateStr,Varname, Data
   real ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_put_var_td_real not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_var_td_real not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_td_real 
@@ -1731,7 +1731,7 @@ SUBROUTINE ext_esmf_get_var_td_double ( DataHandle,Element,  DateStr,Varname, Da
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_get_var_td_double not supported yet')
+  CALL wrf_debug(1,'ext_esmf_get_var_td_double not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_td_double 
@@ -1747,7 +1747,7 @@ SUBROUTINE ext_esmf_put_var_td_double ( DataHandle,Element,  DateStr,Varname, Da
   real*8 ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_put_var_td_double not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_var_td_double not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_td_double 
@@ -1764,7 +1764,7 @@ SUBROUTINE ext_esmf_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, D
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_get_var_td_integer not supported yet')
+  CALL wrf_debug(1,'ext_esmf_get_var_td_integer not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_td_integer 
@@ -1780,7 +1780,7 @@ SUBROUTINE ext_esmf_put_var_td_integer ( DataHandle,Element,  DateStr,Varname, D
   integer ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_put_var_td_integer not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_var_td_integer not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_td_integer 
@@ -1797,7 +1797,7 @@ SUBROUTINE ext_esmf_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, D
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_get_var_td_logical not supported yet')
+  CALL wrf_debug(1,'ext_esmf_get_var_td_logical not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_td_logical 
@@ -1813,7 +1813,7 @@ SUBROUTINE ext_esmf_put_var_td_logical ( DataHandle,Element,  DateStr,Varname, D
   logical ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_put_var_td_logical not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_var_td_logical not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_td_logical 
@@ -1828,7 +1828,7 @@ SUBROUTINE ext_esmf_get_var_td_char ( DataHandle,Element,  DateStr,Varname, Data
   CHARACTER*(*) :: VarName 
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_get_var_td_char not supported yet')
+  CALL wrf_debug(1,'ext_esmf_get_var_td_char not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_get_var_td_char 
@@ -1843,7 +1843,7 @@ SUBROUTINE ext_esmf_put_var_td_char ( DataHandle,Element,  DateStr,Varname, Data
   CHARACTER*(*) :: VarName 
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_message('ext_esmf_put_var_td_char not supported yet')
+  CALL wrf_debug(1,'ext_esmf_put_var_td_char not supported yet')
   Status = WRF_WARN_NOTSUPPORTED
   RETURN
 END SUBROUTINE ext_esmf_put_var_td_char 

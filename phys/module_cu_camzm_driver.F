@@ -25,6 +25,7 @@ SUBROUTINE camzm_driver(                                      &
              ,u_phy, v_phy, hfx, qfx, cldfra                  &
              ,tpert_camuwpbl                                  &
              ,dx, dt, stepcu, cudt, curr_secs, adapt_step_flag&
+             ,cudtacttime                                     & 
              ,cape_out, mu_out, md_out, zmdt, zmdq            &
              ,rliq_out, dlf_out                               &
              ,pconvb, pconvt, cubot, cutop, raincv, pratec    &
@@ -144,10 +145,13 @@ SUBROUTINE camzm_driver(                                      &
                                  dt, & !domain time step (s)
                                  dx    !grid spacing (m)
 
+  REAL, INTENT (INOUT) :: &
+                        cudtacttime    !for adaptive time stepping, next to to run scheme (s)   
+
   INTEGER, DIMENSION( ims:ime, jms:jme), INTENT(IN) :: &
                                kpbl    !index of PBL level
 
-  LOGICAL, INTENT(IN) :: &
+  LOGICAL, INTENT(IN), OPTIONAL :: &
                     adapt_step_flag    !using adaptive time steps?
 
 ! Local variables...
@@ -242,25 +246,70 @@ SUBROUTINE camzm_driver(                                      &
   INTEGER :: ncol          !number of atmospheric columns in chunk
   LOGICAL, DIMENSION(3) :: l_qt    !logical switches for constituent tendency presence
   LOGICAL, DIMENSION(2) :: l_windt !logical switches for wind tendency presence
-  LOGICAL :: run_param     !flag for handling alternate cumulus call freq.
+  LOGICAL :: run_param , & !flag for handling alternate cumulus call freq.
+             doing_adapt_dt , decided
 !
 ! Check to see if this is a convection timestep...
 !
-  if (adapt_step_flag) then
-     if ( (itimestep==0) .or. (cudt<=0) .or. &
-          ( curr_secs+dt >= ( int(curr_secs/( cudt*60 )) + 1 )*cudt*60 ) ) then
-        run_param = .TRUE.
-     else
-        run_param = .FALSE.
-     endif
 
-  else
-     if (mod(itimestep,stepcu)==0 .or. itimestep==0) then
-        run_param = .TRUE.
-     else
-        run_param = .FALSE.
-     endif
-  endif
+!  Initialization for adaptive time step.
+
+   doing_adapt_dt = .FALSE.
+   IF ( PRESENT(adapt_step_flag) ) THEN
+      IF ( adapt_step_flag ) THEN
+         doing_adapt_dt = .TRUE.
+         IF ( cudtacttime .EQ. 0. ) THEN
+            cudtacttime = curr_secs + cudt*60.
+         END IF
+      END IF
+   END IF
+
+!  Do we run through this scheme or not?
+
+!    Test 1:  If this is the initial model time, then yes.
+!                ITIMESTEP=1
+!    Test 2:  If the user asked for the cumulus to be run every time step, then yes.
+!                CUDT=0 or STEPCU=1
+!    Test 3:  If not adaptive dt, and this is on the requested cumulus frequency, then yes.
+!                MOD(ITIMESTEP,STEPCU)=0
+!    Test 4:  If using adaptive dt and the current time is past the last requested activate cumulus time, then yes.
+!                CURR_SECS >= CUDTACTTIME
+
+!  If we do run through the scheme, we set the flag run_param to TRUE and we set the decided flag
+!  to TRUE.  The decided flag says that one of these tests was able to say "yes", run the scheme.
+!  We only proceed to other tests if the previous tests all have left decided as FALSE.
+
+!  If we set run_param to TRUE and this is adaptive time stepping, we set the time to the next
+!  cumulus run.
+
+   decided = .FALSE.
+   run_param = .FALSE.
+   IF ( ( .NOT. decided ) .AND. &
+        ( itimestep .EQ. 1 ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( ( cudt .EQ. 0. ) .OR. ( stepcu .EQ. 1 ) ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( .NOT. doing_adapt_dt ) .AND. &
+        ( MOD(itimestep,stepcu) .EQ. 0 ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( doing_adapt_dt ) .AND. &
+        ( curr_secs .GE. cudtacttime ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+      cudtacttime = curr_secs + cudt*60
+   END IF
 
   !Leave the subroutine if it is not yet time to call the cumulus param
   if( .not. run_param ) return

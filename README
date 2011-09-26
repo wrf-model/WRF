@@ -1,4 +1,4 @@
-WRF Model Version 3.3 (April 6, 2011)
+WRF Model Version 3.3.1 (Sept 16, 2011)
 http://wrf-model.org/users/users.php
 
 ------------------------
@@ -25,6 +25,16 @@ infringement actions.
 
 ======================================
 This is the main directory for the WRF Version 3 source code release.
+======================================
+
+V3.3.1 Release Notes (9/16/11) (rev 5130):
+-------------------
+
+This is a bug fix release. The detailed updates for WRF-ARW can be found at
+http://www.mmm.ucar.edu/wrf/users/wrfv3.3/updates-3.3.1.html,
+and for WRF-NMM at
+http://www.dtcenter.org/wrf-nmm/users/model/wrfv3/updates.php
+
 ======================================
 
 V3.3 Release Notes:

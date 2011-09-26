@@ -293,17 +293,11 @@
         dtc=buf(1)
 
         if (Coupler_id.lt.0) then
-           ! This section sets the coupling timestep when no coupling
-           ! is being done.  This relation must hold for the outermost domain:
-           !    dtc * N = dta * movemin
-           ! where N can be any integer greater than zero.
-          if(gid<1 .or. gid>3) then
-             write(s,'(1i8)') gid
-             call GLOB_ABORT(1,'invalid grid id '//s//'; I only know 1,2, and 3',1)
-          endif
-          dtc=dta
-          if(gid==2) dtc=dtc*3   ! domain 2 timestep = domain 1 timestep / 3
-          if(gid==3) dtc=dtc*9   ! domain 3 timestep = domain 1 timestep / 9
+          if (gid.eq.1) then
+            dtc=dta*2            ! just having in mind that with gid=1
+          else                   ! dta value is 5 times its value with
+            dtc=dta*10           ! gid=2 (at this moment, 270s and 54s
+          end if                 ! respectively)
           write(s,'(1pe20.12)') dtc
           call ATM_ANNOUNCE('ATM_RECVdtc: C time step assigned '// &
      &    trim(s)//' : standalone mode',2)

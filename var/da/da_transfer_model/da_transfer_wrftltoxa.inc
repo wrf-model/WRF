@@ -39,29 +39,39 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam, timestr)
 
    allocate (g_press(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme,grid%xp%kms:grid%xp%kme))
 
+   if ( trajectory_io ) then
+      call pop_tl_pert (timestr)
 
-   call pop_tl_pert (timestr)
-
-   call kj_swap_reverse (model_grid%g_u_2, grid%g_u_2, &
-                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   call kj_swap_reverse (model_grid%g_v_2, grid%g_v_2, &
-                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   call kj_swap_reverse (model_grid%g_w_2, grid%g_w_2, &
-                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   call kj_swap_reverse (model_grid%g_t_2, grid%g_t_2, &
-                 grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   call kj_swap_reverse (model_grid%g_ph_2, grid%g_ph_2, &
-                grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   grid%g_mu_2 = model_grid%g_mu_2
-   grid%g_rainnc = model_grid%g_rainnc
-   grid%g_rainncv = model_grid%g_rainncv
-   grid%g_rainc = model_grid%g_rainc
-   grid%g_raincv = model_grid%g_raincv
-
-   do i = PARAM_FIRST_SCALAR, num_moist
-      call kj_swap_reverse (model_grid%g_moist(:,:,:,i), grid%g_moist(:,:,:,i), &
+      call kj_swap_reverse (model_grid%g_u_2, grid%g_u_2, &
                     grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
-   enddo
+      call kj_swap_reverse (model_grid%g_v_2, grid%g_v_2, &
+                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+      call kj_swap_reverse (model_grid%g_w_2, grid%g_w_2, &
+                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+      call kj_swap_reverse (model_grid%g_t_2, grid%g_t_2, &
+                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+      call kj_swap_reverse (model_grid%g_ph_2, grid%g_ph_2, &
+                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+      call kj_swap_reverse (model_grid%g_p, grid%g_p, &
+                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+
+      grid%g_mu_2 = model_grid%g_mu_2
+      grid%g_rainnc = model_grid%g_rainnc
+      grid%g_rainncv = model_grid%g_rainncv
+      grid%g_rainc = model_grid%g_rainc
+      grid%g_raincv = model_grid%g_raincv
+
+      do i = PARAM_FIRST_SCALAR, num_moist
+         call kj_swap_reverse (model_grid%g_moist(:,:,:,i), grid%g_moist(:,:,:,i), &
+                       grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+      enddo
+
+      if ( var4d_detail_out ) &
+         call  med_hist_out ( grid , AUXHIST8_ALARM , config_flags )
+   else
+      config_flags%auxinput8_inname = "tl_d<domain>_<date>"
+      call med_auxinput_in ( grid, AUXINPUT8_ALARM, config_flags )
+   endif
 
    !---------------------------------------------------------------------------
    ! [1.0] Get the specific humidity increments from mixing ratio increments
@@ -95,18 +105,20 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam, timestr)
    ! [3.0] COMPUTE pressure increments 
    !---------------------------------------------------------------------------
 
-   do j=js,je
-      do i=is,ie
-         g_press(i,j,ke+1)=0.0
-         do k=ke,ks,-1
-            g_press(i,j,k)=g_press(i,j,k+1) &
-               -(grid%g_mu_2(i,j)*(1.0+grid%moist(i,j,k,P_QV)) &
-               +(grid%mu_2(i,j)+grid%mub(i,j))* &
-               grid%g_moist(i,j,k,P_G_QV))*grid%dn(k)
-            grid%xa%p(i,j,k)=0.5*(g_press(i,j,k)+g_press(i,j,k+1))
-         end do
-      end do
-   end do
+!  do j=js,je
+!     do i=is,ie
+!        g_press(i,j,ke+1)=0.0
+!        do k=ke,ks,-1
+!           g_press(i,j,k)=g_press(i,j,k+1) &
+!              -(grid%g_mu_2(i,j)*(1.0+grid%moist(i,j,k,P_QV)) &
+!              +(grid%mu_2(i,j)+grid%mub(i,j))* &
+!              grid%g_moist(i,j,k,P_G_QV))*grid%dn(k)
+!           grid%xa%p(i,j,k)=0.5*(g_press(i,j,k)+g_press(i,j,k+1))
+!        end do
+!     end do
+!  end do
+
+   grid%xa%p = grid%g_p
 
    !---------------------------------------------------------------------------
    ! [4.0] convert theta increments to t increments

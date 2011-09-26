@@ -56,6 +56,7 @@ module module_stoch
 
 !     --------- Others -------------------------------------------------
       REAL, PARAMETER:: RPI= 3.141592653589793 !4.0*atan(1.0) 
+      REAL, PARAMETER:: CP= 1006 ! specific heat of dry air in J/(Kg*K)= m^2/(K* s^2)
 
       save
 
@@ -205,6 +206,11 @@ contains
       ENDDO
       ENDDO
       ZGAMMAN=4.0*ZGAMMAN !account for all quadrants, although only one is Filled
+
+!     A value TOT_BACKSCAT_PSI=xx m^2/S^3 means that in each gridbox and on average,
+!     a dissipation rate of D=TOT_BACKSCAT_PSI m^2/s^3 is backscattered onto the resolved streamfunction
+!     The resulting units for ZCONSTF0 are  sqrt(m^2/(s^3*s)) = m^2/s^2, which is the unit of dpsi/dt
+!     Note, that the unit of IK has the unit m here.
       ZCONSTF0=SQRT(ALPH*TOT_BACKSCAT_PSI/(float(itime_step)*ZSIGMA2_EPS*ZGAMMAN))/(2*RPI)
 
       ZCHIT    =  0.0
@@ -229,7 +235,11 @@ contains
       ENDDO
       ENDDO
       ZGAMMAN=4.0*ZGAMMAN !account for all quadrants, although only one is Filled
-      ZCONSTF0T=SQRT(ALPH*TOT_BACKSCAT_T/(float(itime_step)*ZSIGMA2_EPS*ZGAMMAN))/(2*RPI)
+
+!     A value TOT_BACKSCAT_T= xx m^2/S^3  means that in each gridbox and on average,
+!     a dissipation rate of D=TOT_BACKSCAT_T m^2/s^3 is backscattered onto the resolved temperture pattern
+!     The resulting units for ZCONSTF0T are m^2/s^3* (K* s^2)/m^2 = K/s , which is the unit of dT/dt
+      ZCONSTF0T=TOT_BACKSCAT_T /cp* SQRT(ALPH/(ZSIGMA2_EPS*ZGAMMAN))/(2*RPI)
 
 !     Now the wavenumber-dependent amplitudes
 !     Note: There are symmetries and anti-symmetries to ensure real-valued back transforms
@@ -407,10 +417,11 @@ contains
 !     ------------------------------------------------------------------
 !************** ADD STOCHASTIC TENDENCIES TO PHYSICAL TENDENCIES********
 !     ------------------------------------------------------------------
-      SUBROUTINE UPDATE_STOCH_TEN(                                  &
+      SUBROUTINE CALCULATE_STOCH_TEN(                                  &
                        ru_tendf,rv_tendf,t_tendf,                   &
                        GPUFORC,GPVFORC,GPTFORC,                     &
                        ru_real,rv_real,rt_real,                     &
+                       mu,mub,                                      & 
                        ids, ide, jds, jde, kds, kde,                &
                        ims, ime, jms, jme, kms, kme,                &
                        its, ite, jts, jte, kts, kte,                &
@@ -428,14 +439,16 @@ contains
        REAL , DIMENSION(ims:ime , kms:kme, jms:jme),INTENT(IN) ::   &
                                         ru_real,rv_real,rt_real
 
+
+       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: mu,mub
+
        INTEGER :: I,J,K
        REAL    :: dt
-    
+
        DO j = jts,MIN(jde-1,jte)
          DO k = kts,kte-1
            DO i = its,ite 
              GPUFORC(i,k,j)= ru_real(i,k,j)
-             ru_tendf(i,k,j) = ru_tendf(i,k,j) + GPUFORC(i,k,j)
            ENDDO
          ENDDO
        ENDDO
@@ -444,25 +457,24 @@ contains
          DO k = kts,kte-1
            DO i = its,MIN(ide-1,ite)
              GPVFORC(i,k,j)= rv_real(i,k,j)
-             rv_tendf(i,k,j) = rv_tendf(i,k,j) +  GPVFORC(i,k,j)
            ENDDO
          ENDDO
        ENDDO
-
+ 
        DO j = jts,MIN(jde-1,jte)
          DO k = kts,kte-1
            DO i = its,MIN(ide-1,ite)
              GPTFORC(i,k,j)= rt_real(i,k,j)
-             t_tendf(i,k,j) = t_tendf(i,k,j) +  GPTFORC(i,k,j)
            ENDDO
          ENDDO
        ENDDO
 
-       END SUBROUTINE UPDATE_STOCH_TEN
+       END SUBROUTINE CALCULATE_STOCH_TEN
 !     ------------------------------------------------------------------
 
-      SUBROUTINE UPDATE_STOCH_TEN_SUBDOMAINS(ru_tendf,rv_tendf,t_tendf, &
+      SUBROUTINE UPDATE_STOCH_TEN(ru_tendf,rv_tendf,t_tendf, &
                        GPUFORC,GPVFORC,GPTFORC,                    &
+                       mu,mub,                                      & 
                        ids, ide, jds, jde, kds, kde,                &
                        ims, ime, jms, jme, kms, kme,                &
                        its, ite, jts, jte, kts, kte,                &
@@ -476,16 +488,19 @@ contains
        REAL , DIMENSION(ims:ime , kms:kme, jms:jme),INTENT(INOUT) :: &
                                        ru_tendf, rv_tendf, t_tendf
 
-       REAL , DIMENSION(ims:ime , kms:kme, jms:jme),INTENT(IN) :: &
+       !REAL , DIMENSION(ims:ime , kms:kme, jms:jme),INTENT(IN) :: &
+       REAL , DIMENSION(ims:ime , kms:kme, jms:jme)           :: &
                                        GPUFORC,GPVFORC,GPTFORC 
 
+       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: mu,mub
+
        INTEGER :: I,J,K
-       REAL  :: dt
+       REAL  :: dt,xm
 
        DO j = jts,MIN(jde-1,jte)
          DO k = kts,kte-1
            DO i = its,ite 
-             ru_tendf(i,k,j) = ru_tendf(i,k,j) +  GPUFORC(i,k,j) 
+             ru_tendf(i,k,j) = ru_tendf(i,k,j) +  GPUFORC(i,k,j)  * (mu(i,j)+mub(i,j)) 
            ENDDO
          ENDDO
        ENDDO
@@ -493,7 +508,7 @@ contains
        DO j = jts,jte
          DO i = its,MIN(ide-1,ite)
            DO k = kts,kte-1
-             rv_tendf(i,k,j) = rv_tendf(i,k,j) +  GPVFORC(i,k,j) 
+             rv_tendf(i,k,j) = rv_tendf(i,k,j) +  GPVFORC(i,k,j) *  (mu(i,j)+mub(i,j)) 
            ENDDO
          ENDDO
        ENDDO
@@ -501,12 +516,12 @@ contains
        DO j = jts,MIN(jde-1,jte)
          DO k = kts,kte-1
            DO i = its,MIN(ide-1,ite)
-             t_tendf(i,k,j) = t_tendf(i,k,j) + GPTFORC(i,k,j) 
+             t_tendf(i,k,j) = t_tendf(i,k,j) + GPTFORC(i,k,j) * (mu(i,j)+mub(i,j))
            ENDDO
          ENDDO
        ENDDO
 
-       END SUBROUTINE UPDATE_STOCH_TEN_SUBDOMAINS
+       END SUBROUTINE UPDATE_STOCH_TEN
 !     ------------------------------------------------------------------
 !!************** TRANSFORM FROM SPHERICAL HARMONICS TO GRIDPOILT SPACE**
 !     ------------------------------------------------------------------
@@ -839,7 +854,8 @@ contains
       TYPE (grid_config_rec_type)                       :: config_flags
 !
 ! Arguments
-     INTEGER, INTENT(OUT ) :: seed1, seed2, nens
+     INTEGER, INTENT(OUT) :: seed1, seed2
+     INTEGER, INTENT(IN ) :: nens
 
 ! Local
       integer            :: date_time(8)
@@ -886,6 +902,7 @@ contains
                 config_flags%cu_physics
  
  
+        idiv=2;
         seed1 = newtime+iphys+nens*1000000
         seed2 = mod(newtime+iphys+nens*1000000,idiv)
         if(is_print) print *,'Rand_seed (iphys/newtime/idiv):',iphys,newtime,idiv,nens

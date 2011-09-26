@@ -15,6 +15,7 @@ CONTAINS
                      ,p,pi,rho                                        &
                  ! --Other arguments
                      ,itimestep,dt,dx,cudt,curr_secs,adapt_step_flag  &
+                     ,cudtacttime                                     & 
                      ,rainc,raincv,pratec,nca                         &
                      ,z,z_at_w,dz8w,mavail,pblh,p8w,psfc,tsk          &
                      ,tke_pbl, ust                                    &
@@ -46,6 +47,8 @@ CONTAINS
                      ,zmmtu, zmmtv, zmupgu, zmupgd, zmvpgu, zmvpgd    &
                      ,zmicuu, zmicud, zmicvu, zmicvd, zmdice, zmdliq  &
                      ,k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow &
+                 ! Optional arguments for SAS scheme
+                     ,pgcon                                           &
                  ! Optional arguments for NSAS scheme
                      ,mp_physics                                      &
                  ! Optional moisture and other tendencies
@@ -287,6 +290,8 @@ CONTAINS
    INTEGER,      INTENT(IN   )    ::   STEPCU
    LOGICAL,      INTENT(IN   )    ::   warm_rain
 
+   REAL, INTENT(IN), OPTIONAL :: pgcon
+
    INTEGER,DIMENSION( ims:ime, jms:jme ),                        &
            INTENT(IN ) ::                                LOWLYR
 
@@ -345,7 +350,8 @@ CONTAINS
    REAL,  INTENT(IN   ),OPTIONAL :: CUDT
    REAL,  INTENT(IN   ),OPTIONAL :: CURR_SECS
    LOGICAL,INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
-   REAL   :: cudt_pass, curr_secs_pass
+   REAL,  INTENT(INOUT ),OPTIONAL :: cudtacttime                 
+   REAL   :: cudt_pass, curr_secs_pass,cudtacttime_pass          
    LOGICAL :: adapt_step_flag_pass
 
    INTEGER,      INTENT(IN   ), OPTIONAL    ::   mp_physics
@@ -454,8 +460,10 @@ CONTAINS
 
    if (.not. PRESENT(CUDT)) then
       cudt_pass = -1
+      cudtacttime_pass = -1
    else
       cudt_pass = cudt
+      cudtacttime_pass = cudtacttime
    endif
 
    if (.not. PRESENT(adapt_step_flag)) then
@@ -534,6 +542,7 @@ CONTAINS
                 DT=dt ,KTAU=itimestep ,DX=dx , CUDT=cudt_pass   &
                ,CURR_SECS=curr_secs_pass                        &
                ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
+               ,CUDTACTTIME=cudtacttime_pass                    & 
                ,RHO=rho                                         &
                ,U=u ,V=v ,TH=th ,T=t ,W=w                       &
                ,PCPS=p ,PI=pi                                   &
@@ -567,6 +576,7 @@ CONTAINS
                ,CUDT=cudt_pass                                  &
                ,CURR_SECS=curr_secs_pass                        &
                ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
+               ,CUDTACTTIME=cudtacttime_pass                    & 
                ,CUTOP=htop, CUBOT=hbot, KPBL=kpbl               &
                ,DZ8W=dz8w ,PINT=p8w, PMID=p, PI=pi              &
                ,CP=cp ,R=r_d ,ELWV=xlv ,ELIV=xls ,G=g           &
@@ -588,6 +598,7 @@ CONTAINS
                ,CUDT=cudt_pass                                  &
                ,CURR_SECS=curr_secs_pass                        &
                ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
+               ,CUDTACTTIME=cudtacttime_pass                    & 
                ,RAINCV=raincv, PRATEC=tmppratec, NCA=nca        &
                ,DZ8W=dz8w                                       &
                ,PCPS=p, PI=pi ,W0AVG=W0AVG                      &
@@ -674,11 +685,13 @@ CONTAINS
 #if (NMM_CORE==1)
                ,store_rand=store_rand  &
                ,MOMMIX=MOMMIX  &
+               ,pgcon=pgcon &
 #endif
                ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
                ,CUDT=cudt_pass                                  &
                ,CURR_SECS=curr_secs_pass                        &
                ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
+               ,CUDTACTTIME=cudtacttime_pass                    & 
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
@@ -710,6 +723,7 @@ CONTAINS
                ,CUDT=cudt_pass                                  &
                ,CURR_SECS=curr_secs_pass                        &
                ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
+               ,CUDTACTTIME=cudtacttime_pass                    & 
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
@@ -798,7 +812,9 @@ CONTAINS
                ,TPERT_CAMUWPBL=tpert2d                              &
                ,DX=dx, DT=dt, STEPCU=stepcu, CUDT=cudt              &
                ,CURR_SECS=curr_secs                                 &
-               ,ADAPT_STEP_FLAG=adapt_step_flag, CAPE_OUT=cape      &
+               ,ADAPT_STEP_FLAG=adapt_step_flag                     &
+               ,CUDTACTTIME=cudtacttime_pass                        & 
+               ,CAPE_OUT=cape                                       &
                ,MU_OUT=zmmu, MD_OUT=zmmd                            &
                ,ZMDT=zmdt, ZMDQ=zmdq, DLF_OUT=dlf, RLIQ_OUT=rliq    &
                ,PCONVT=pconvt, PCONVB=pconvb, CUBOT=hbot, CUTOP=htop&
@@ -839,6 +855,7 @@ CONTAINS
                ,CUDT=cudt_pass                                  &
                ,CURR_SECS=curr_secs_pass                        &
                ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
+               ,CUDTACTTIME=cudtacttime_pass                    & 
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
@@ -865,6 +882,7 @@ CONTAINS
                 CU_ACT_FLAG=CU_ACT_FLAG,CUDT=cudt_pass,         &
                 CURR_SECS=curr_secs_pass,                       &
                 ADAPT_STEP_FLAG=adapt_step_flag_pass,           &
+                CUDTACTTIME=cudtacttime_pass,                   & 
                 RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN,            &
                 RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN,            &
                 RUCUTEN=RUCUTEN,RVCUTEN=RVCUTEN,                &
@@ -926,13 +944,21 @@ CONTAINS
    endif
 #endif
 
-      !
-      ! Copy pratec back to output array, if necessary.
-      !
-      if (PRESENT(PRATEC)) then
-         pratec(:,:) = tmppratec(:,:)
-      endif
-          CALL wrf_debug(200,'returning from cumulus_driver')
+
+   ! Copy pratec back to output array, if necessary.
+
+   if (PRESENT(PRATEC)) then
+      pratec(:,:) = tmppratec(:,:)
+   endif
+
+   ! Copy cudtacttime back if necessary
+
+   if ( PRESENT(CUDTACTTIME) ) then
+      cudtacttime = cudtacttime_pass
+   end if
+
+   CALL wrf_debug(200,'returning from cumulus_driver')
+
    END SUBROUTINE cumulus_driver
 
 END MODULE module_cumulus_driver

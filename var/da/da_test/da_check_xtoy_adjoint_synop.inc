@@ -15,14 +15,21 @@ subroutine da_check_xtoy_adjoint_synop(iv, y, adjtest_lhs, pertile_lhs)
    if (trace_use_dull) call da_trace_entry("da_check_xtoy_adjoint_synop")
 
    do n=iv%info(synop)%n1, iv%info(synop)%n2
-      if (iv%info(synop)%zk(1,n) < 1.0 .and. sfc_assi_options == 1 .or. &
-          iv%synop(n)%p%qc < 0 .and. sfc_assi_options == 2 ) then
+      if (iv%info(synop)%zk(1,n) < 1.0 .and. sfc_assi_options /= 2) then
          y%synop(n)%u = 0.0
          y%synop(n)%v = 0.0
          y%synop(n)%t = 0.0
          y%synop(n)%p = 0.0
          y%synop(n)%q = 0.0
          cycle
+      end if
+
+      if ( sfc_assi_options == 2 ) then
+          if (iv%synop(n)%u%qc < 0) y%synop(n)%u = 0.0
+          if (iv%synop(n)%v%qc < 0) y%synop(n)%v = 0.0
+          if (iv%synop(n)%t%qc < 0) y%synop(n)%t = 0.0
+          if (iv%synop(n)%p%qc < 0) y%synop(n)%p = 0.0
+          if (iv%synop(n)%q%qc < 0) y%synop(n)%q = 0.0
       end if
 
       y%synop(n)%u = y%synop(n)%u/typical_u_rms

@@ -59,6 +59,7 @@ MODULE module_mp_HWRF
 !GFDL           the onset of condensation
 !GFDL (new) * RHgrd_in  - "RHgrd" for the inner domain
 !GFDL (new) * RHgrd_out - "RHgrd" for the outer domain
+!HWRF 6/11/2010 mod - use lower RHgrd_out for p < 850 hPa
 !  * T_ICE - temperature (C) threshold at which all remaining liquid water
 !            is glaciated to ice
 !  * T_ICE_init - maximum temperature (C) at which ice nucleation occurs
@@ -77,6 +78,7 @@ MODULE module_mp_HWRF
 !     &  RHgrd=1.                                                        &
      &  RHgrd_in=1.                                                     &  !GFDL
      & ,RHgrd_out=0.975                                                 &  !GFDL
+     & ,P_RHgrd_out=850.E2                                              &  !HWRF 6/11/2010
      & ,T_ICE=-40.                                                      &  !GFDL
 !GFDL     & ,T_ICE=-30.                                                 &
      & ,T_ICEK=T0C+T_ICE                                                &
@@ -234,6 +236,26 @@ MODULE module_mp_HWRF
          APREC (i,j)=0.
          PREC  (i,j)=0.
          SR    (i,j)=0.
+      ENDDO
+      ENDDO
+
+!-- 6/11/2010: Update QT, F_ice, F_rain arrays
+      DO j = jts,jte
+      DO k = kts,kte
+      DO i = its,ite
+         QT(I,K,J)=QC(I,K,J)+QR(I,K,J)+QI(I,K,J)
+         IF (QI(I,K,J) <= EPSQ) THEN
+            F_ICE_PHY(I,K,J)=0.
+            IF (T_PHY(I,K,J) < T_ICEK) F_ICE_PHY(I,K,J)=1.
+         ELSE
+            F_ICE_PHY(I,K,J)=MAX( 0., MIN(1., QI(I,K,J)/QT(I,K,J) ) )
+         ENDIF
+         IF (QR(I,K,J) <= EPSQ) THEN
+            F_RAIN_PHY(I,K,J)=0.
+         ELSE
+            F_RAIN_PHY(I,K,J)=QR(I,K,J)/(QR(I,K,J)+QC(I,K,J))
+         ENDIF
+      ENDDO
       ENDDO
       ENDDO
 
@@ -483,8 +505,9 @@ MODULE module_mp_HWRF
             QW_col(L)=QW
 !GFDL => New.  Added RHC_col to allow for height- and grid-dependent values for
 !GFDL          the relative humidity threshold for condensation ("RHgrd")
+!6/11/2010 mod - Use lower RHgrd_out threshold for < 850 hPa
 !------------------------------------------------------------
-            IF(GID .EQ. 1 .AND. L .LE. 10)THEN  ! gopal's doing based on GFDL
+            IF(GID .EQ. 1 .AND. P_col(L)<P_RHgrd_out) THEN  ! gopal's doing based on GFDL
               RHC_col(L)=RHgrd_out        
             ELSE
               RHC_col(L)=RHgrd_in       
@@ -866,6 +889,7 @@ MODULE module_mp_HWRF
 !    
           ESW=1000.*FPVS0(TK)              ! Saturation vapor pressure w/r/t water
           QSW=EPS*ESW/(PP-ESW)             ! Saturation mixing ratio w/r/t water
+          QSI = QSW                        ! Initialize variable
           WS=QSW                           ! General saturation mixing ratio (water/ice)
           IF (TC .LT. 0.) THEN
             ESI=1000.*FPVS(TK)             ! Saturation vapor pressure w/r/t ice
@@ -1844,13 +1868,13 @@ MODULE module_mp_HWRF
      &   'VENTIL2=',SFACTOR*VENTI2(INDEXS),                                &
      & '{} VENTIS=',VENTIS,'DIDEP=',DIDEP
    !
-            IF (PIDEP.GT.0. .AND. PCOND.NE.0.)                             &
-     &        WRITE(6,"(4(a12,g11.4,1x))")                                 &
-     & '{} DENOMW=',DENOMW,'DENOMWI=',DENOMWI,'DENOMF=',DENOMF,            &
-     &    'DUM2=',PCOND-PIACW
+!            IF (PIDEP.GT.0. .AND. PCOND.NE.0.)                             &
+!     &        WRITE(6,"(4(a12,g11.4,1x))")                                 &
+!     & '{} DENOMW=',DENOMW,'DENOMWI=',DENOMWI,'DENOMF=',DENOMF,            &
+!     &    'DUM2=',PCOND-PIACW
    !
-            IF (FWS .GT. 0.) WRITE(6,"(4(a12,g11.4,1x))")                  &
-     & '{} FWS=',FWS                     
+!            IF (FWS .GT. 0.) WRITE(6,"(4(a12,g11.4,1x))")                  &
+!     & '{} FWS=',FWS                     
    !
             DUM=PIMLT+PICND-PIEVP
             IF (DUM.GT. 0.) WRITE(6,"(4(a12,g11.4,1x))")                   &

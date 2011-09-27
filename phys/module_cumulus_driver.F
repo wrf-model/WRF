@@ -46,6 +46,8 @@ CONTAINS
                      ,zmmtu, zmmtv, zmupgu, zmupgd, zmvpgu, zmvpgd    &
                      ,zmicuu, zmicud, zmicvu, zmicvd, zmdice, zmdliq  &
                      ,k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow &
+                 ! Optional arguments for SAS scheme
+                     ,pgcon                                           &
                  ! Optional arguments for NSAS scheme
                      ,mp_physics                                      &
                  ! Optional moisture and other tendencies
@@ -286,6 +288,8 @@ CONTAINS
    INTEGER,      INTENT(IN   )    ::                 cu_physics  
    INTEGER,      INTENT(IN   )    ::   STEPCU
    LOGICAL,      INTENT(IN   )    ::   warm_rain
+
+   REAL, INTENT(IN), OPTIONAL :: pgcon
 
    INTEGER,DIMENSION( ims:ime, jms:jme ),                        &
            INTENT(IN ) ::                                LOWLYR
@@ -674,6 +678,7 @@ CONTAINS
 #if (NMM_CORE==1)
                ,store_rand=store_rand  &
                ,MOMMIX=MOMMIX  &
+               ,pgcon=pgcon &
 #endif
                ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
                ,CUDT=cudt_pass                                  &

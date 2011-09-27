@@ -1336,6 +1336,9 @@
 #if (NMM_CORE==1)
      &               ,DISHEAT=DISHEAT                                 &
 #endif
+#if (HWRF==1)
+     &               ,GFS_ALPHA=GRID%GFS_ALPHA                        &
+#endif
                 ! Optional args
      &               ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &               ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &

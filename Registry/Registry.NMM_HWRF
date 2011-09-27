@@ -1106,6 +1106,7 @@ rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .f
 rconfig   real h_diff                     namelist,physics      max_domains  0.1      irh    "nmm input 9"
 rconfig   integer movemin                 namelist,physics      max_domains  10       irh    "nmm input 12"
 
+rconfig   real    gfs_alpha               namelist,physics      max_domains  1        irh    "gfs_alpha" "GFS pbl boundary depth multiplier" ""
 
 # Dynamics
 # dynamics option (see package definitions, below)

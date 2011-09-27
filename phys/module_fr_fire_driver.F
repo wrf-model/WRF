@@ -104,6 +104,7 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
     fp%fgip => grid%fgip     ! a rate of spread formula coeff 
     fp%ischap => grid%ischap ! a rate of spread formula switch
     fp%iboros => grid%iboros ! Ib divided by ROS
+    fp%fmc_g => grid%fmc_g   ! fuel moisture, ground
             
     ! get ignition data 
     call fire_ignition_convert (config_flags,fire_max_ignitions,fire_ignition_longlat, &
@@ -1553,6 +1554,7 @@ fire_viscosity_bg       = config_flags%fire_viscosity_bg
 fire_viscosity_band     = config_flags%fire_viscosity_band 
 fire_viscosity_ngp      = config_flags%fire_viscosity_ngp
 fire_slope_factor       = config_flags%fire_slope_factor 
+fire_fmc_read           = config_flags%fire_fmc_read
 
 
 

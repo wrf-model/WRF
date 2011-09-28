@@ -14,7 +14,6 @@ CONTAINS
 #if (NMM_CORE == 1)
                  STORE_RAND,MOMMIX, & ! gopal's doing
 #endif
-                 PGCON,                                             &
                  P_QI,P_FIRST_SCALAR,                               & 
                  CUDT, CURR_SECS, ADAPT_STEP_FLAG,                  &
                  ids,ide, jds,jde, kds,kde,                         &
@@ -117,8 +116,7 @@ CONTAINS
       REAL,    INTENT(IN) ::                                            &
                                         DT
 
-      REAL, OPTIONAL, INTENT(IN) :: PGCON
-      REAL(kind=kind_phys)       :: PGCON_USE
+
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::      &
                                         RQCCUTEN,                       &
                                         RQICUTEN,                       &
@@ -249,14 +247,6 @@ CONTAINS
 
 !-----------------------------------------------------------------------
 
-      if(present(pgcon)) then
-         pgcon_use  = pgcon
-      else
-!        pgcon_use  = 0.7     ! Gregory et al. (1997, QJRMS)
-         pgcon_use  = 0.2    ! Zhang & Wu (2003,JAS)
-         ! 0.55 is a physically-based value used by GFS
-         ! HWRF uses 0.2, for model tuning purposes
-      endif
 
    IF(run_param) THEN
 
@@ -380,7 +370,7 @@ CONTAINS
 
       CALL SASCNVN(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,                  &
                   QL,Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,                    &
-                  KTOP,KCNV,SLIMSK,DOT,NCLOUD,PGCON_USE)
+                  KTOP,KCNV,SLIMSK,DOT,NCLOUD)
 
 !      CALL SASCNV(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,                  &
 !                  QL,Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,                    &
@@ -2545,7 +2535,7 @@ CONTAINS
 
       subroutine sascnvn(im,ix,km,jcap,delt,del,prsl,ps,phil,ql,   & 
      &     q1,t1,u1,v1,rcs,cldwrk,rn,kbot,ktop,kcnv,slimsk,        &
-     &     dot,ncloud,pgcon)                         
+     &     dot,ncloud)                         
 !     &     dot,ncloud,ud_mf,dd_mf,dt_mf)                         
 !    &     dot,ncloud,ud_mf,dd_mf,dt_mf,me)
 !
@@ -2601,10 +2591,8 @@ CONTAINS
      &                     w3l,     w3s,     w4,      w4l,         &
      &                     w4s,     xdby,    xpw,     xpwd,        &
      &                     xqrch,   mbdt,    tem,                  &
-     &                     ptem,    ptem1
+     &                     ptem,    ptem1,   pgcon                 
 !
-      real(kind=kind_phys), intent(in) :: pgcon
-
       integer              kb(im), kbcon(im), kbcon1(im),          &
      &                     ktcon(im), ktcon1(im),                  &
      &                     jmin(im), lmin(im), kbmax(im),          &
@@ -2742,6 +2730,9 @@ CONTAINS
       xlamde  = 1.0e-4
       xlamdd  = 1.0e-4
 !
+!     pgcon   = 0.7     ! Gregory et al. (1997, QJRMS)
+!      pgcon   = 0.55    ! Zhang & Wu (2003,JAS)
+      pgcon  = 0.2
       fjcap   = (float(jcap) / 126.) ** 2
       val     =           1.
       fjcap   = max(fjcap,val)
@@ -4366,7 +4357,7 @@ CONTAINS
 
       subroutine shalcnv(im,ix,km,jcap,delt,del,prsl,ps,phil,ql,    &
      &     q1,t1,u1,v1,rcs,rn,kbot,ktop,kcnv,slimsk,                &
-     &     dot,ncloud,hpbl,sflx,pgcon)
+     &     dot,ncloud,hpbl,sflx)
 !     &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf)
 !    &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,me)
 !
@@ -4422,8 +4413,8 @@ CONTAINS
      &                     val2,    w1,      w1l,     w1s,         &
      &                     w2,      w2l,     w2s,     w3,          &
      &                     w3l,     w3s,     w4,      w4l,         &
-     &                     w4s,     tem,     ptem,    ptem1
-     real(kind=kind_phys), intent(in) :: pgcon
+     &                     w4s,     tem,     ptem,    ptem1,       &
+     &                     pgcon
 !
       integer              kb(im), kbcon(im), kbcon1(im),          &
      &                     ktcon(im), ktcon1(im),                  &
@@ -4527,6 +4518,9 @@ CONTAINS
       evfact  = 0.3
       evfactl = 0.3
 !
+!     pgcon   = 0.7     ! Gregory et al. (1997, QJRMS)
+!      pgcon   = 0.55    ! Zhang & Wu (2003,JAS)
+      pgcon = 0.2
       fjcap   = (float(jcap) / 126.) ** 2
       val     =           1.
       fjcap   = max(fjcap,val)

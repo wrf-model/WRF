@@ -10,6 +10,7 @@
      &           )
 !----------------------------------------------------------------------
 !
+      USE MODULE_HIFREQ, only : hifreq_open
       USE MODULE_DOMAIN
       USE MODULE_DRIVER_CONSTANTS
       USE module_model_constants
@@ -69,6 +70,10 @@
 #ifdef HWRF
   LOGICAL :: ANAL   !zhang's doing, added for analysis option
 #endif
+
+  INTEGER :: parent_id, nestid, max_dom
+  LOGICAL :: grid_allowed, nestless
+
       INTEGER :: IDS,IDE,JDS,JDE,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                                &
      &          ,IPS,IPE,JPS,JPE,KPS,KPE
@@ -111,7 +116,7 @@
       REAL :: TSTART
 !zhang's doing ends
 #endif
-#ifdef HWRFX
+#ifdef HWRF
 !     gopal's doing for the moving nest (MSLP computation)
 !-----------------------------------------------------------------------------------------------------
       REAL, PARAMETER                                       :: LAPSR=6.5E-3, GI=1./G,D608=0.608
@@ -198,6 +203,12 @@
 !----------------------------------------------------------------------
 !
 
+      if(grid%id==3) then
+         grid%force_sst=1
+      else
+         grid%force_sst=2
+      endif
+
       CALL GET_IJK_FROM_GRID(GRID,                                     &
      &                       IDS,IDE,JDS,JDE,KDS,KDE,                  &
      &                       IMS,IME,JMS,JME,KMS,KME,                  &
@@ -266,6 +277,12 @@
          CALL WRF_ERROR_FATAL(wrf_err_message)
       END IF
 
+#if (HWRF==1)
+      if(grid%vortex_tracker<1 .or. grid%vortex_tracker>3) then
+         write(wrf_err_message,*)' domain ',grid%id,' has an invalid value ',grid%vortex_tracker,' for grid%vortex_tracker.  It must be 1, 2 or 3.'
+      endif
+#endif
+      
 !!!!!!tlb
 !!!! For now, set NPES to 1
       NPES=1
@@ -470,6 +487,35 @@
       JFS=JPS
       JFE=MIN(JPE,JDE-1)
       IFE=MIN(IPE,IDE-1)
+
+! Begin Sam Trahan's doing for high-frequency output
+      if(allowed_to_read .and. config_flags%high_freq) then
+        if(grid%id==config_flags%high_dom) then
+           call HIFREQ_OPEN(grid,config_flags)
+        elseif(config_flags%high_dom==-99) then
+          nestless=.true.
+           CALL nl_get_max_dom( 1, max_dom )
+           nestdo: do nestid=2,max_dom
+              call nl_get_grid_allowed(nestid,grid_allowed)
+              if(grid_allowed) then
+                 call nl_get_parent_id(nestid,parent_id)
+                 if(parent_id==grid%id) then
+                    write(message,'("Domain ",I0," does not have hifreq out (can have a child).")') grid%id
+                    nestless=.false.
+                    exit nestdo
+                 endif
+              endif
+           enddo nestdo
+           if(nestless) then
+              call HIFREQ_OPEN(grid,config_flags)
+           endif
+        else
+           write(message,'("Domain ",I0," does not have hifreq out.")') grid%id
+        endif
+      else
+        write(message,'("Domain ",I0," is not being initialized.")') grid%id
+      endif
+! end of Sam Trahan's doing
 !
 #ifdef HWRF
 !zhang's doing
@@ -1449,7 +1495,7 @@
       ENDIF    !zhang 
 #endif
 
-#ifdef HWRFX
+      hwrfx_mslp: if(grid%vortex_tracker /= 1) then
 ! XUEJIN's doing
 ! add to output MSLP at the initial time
 !
@@ -1493,7 +1539,7 @@
       ENDDO
      ENDDO
 
-#endif
+  endif hwrfx_mslp
 
 
 #ifndef NO_RESTRICT_ACCEL

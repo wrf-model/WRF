@@ -24,6 +24,7 @@
                                               ,NTASKS_Y
       USE MODULE_COMM_DM
 #endif
+      USE MODULE_HIFREQ,                ONLY: HIFREQ_WRITE, HIFREQ_OPEN
       USE MODULE_IGWAVE_ADJUST,         ONLY: PDTE,PFDHT,DDAMP,VTOA
       USE MODULE_ADVECTION,             ONLY: ADVE,VAD2,HAD2            &
                                              ,ADV2,MONO                 &
@@ -101,7 +102,8 @@
       CHARACTER(80) :: MESSAGE
 !
 !***  For precip assimilation:
-      INTEGER :: ISTAT
+      INTEGER :: ISTAT,DOM
+      LOGICAL :: HF
       REAL,ALLOCATABLE,SAVE,DIMENSION(:,:,:) :: PPTDAT
 !
 !-----------------------------------------------------------------------
@@ -2258,14 +2260,15 @@
 #else
                       ,GRID%MOVED,grid%MVNEST,grid%ntsd,GRID%NPHS     &
 #endif
+                      ,GRID%VORTEX_TRACKER                            &
                       ,IDS,IDF,JDS,JDF,KDS,KDE                        & ! MOVEMIN is defined in
                       ,IMS,IME,JMS,JME,KMS,KME                        & ! Registry
                       ,ITS,ITE,JTS,JTE,KTS,KTE              )           ! FOR NEST:DT=18,NPHS=3
    CALL wrf_debug ( 100 , 'nmm stats_for_move: after advection' )
    ENDIF
 #endif
+   hwrfx_mlsp: if(grid%vortex_tracker /= 1) then
 
-#ifdef HWRFX
 !    output MSLP over parent domain for diagonostic purposes. outputs are hourly.
 !    This is gopal's doing
 
@@ -2280,9 +2283,7 @@
 
 
      ENDIF
-
-#endif
-
+   endif hwrfx_mlsp
 !#define COPY_OUT
 !#include <scalar_derefs.inc>
 #ifdef HWRF
@@ -2302,6 +2303,24 @@
 !
 #endif
 
+!--------------------------------------------------------------------------------------------------------------
+!
+!      HIGH FREQUENCY OUTPUT    (STORM CENTER, MIN MSLP, MAX WINDS)
+!          FOR NEST DOMAIN (9KM)        KWON 2011.4, TRAHAN 2011.6
+!
+!--------------------------------------------------------------------------------------------------------------
+!
+     IF(grid%hifreq_lun /= 0) THEN
+        CALL HIFREQ_WRITE(grid%hifreq_lun,GRID%NTSD,GRID%DT,GRID%HLAT,GRID%HLON    &
+                      ,GRID%U10,GRID%V10,grid%pint,grid%t,grid%q                   &
+                      ,grid%fis,grid%pd,grid%pdtop,grid%deta1,grid%deta2           &
+                      ,IDS,IDF,JDS,JDF,KDS,KDE                                     &
+                      ,IMS,IME,JMS,JME,KMS,KME                                     &
+                      ,ITS,ITE,JTS,JTE,KTS,KTE   )
+     ENDIF
+!
+!-------------------  END OF HIGH FREQUENCY OUTPUT MODULE  ----------------------------
+ 
 
       Return
 !----------------------------------------------------------------------

@@ -313,7 +313,7 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
 
 !   Determine the weights of nested grid h points nearest to H points of parent domain 
 
-#ifdef HWRFX
+  if(nest%vortex_tracker /= 1) then
     CALL G2T2H_new(    nest%IIH,nest%JJH,                            & ! output grid index in parent grid
                        nest%HBWGT1,nest%HBWGT2,                      & ! output weights in terms of parent grid
                        nest%HBWGT3,nest%HBWGT4,                      &
@@ -322,7 +322,7 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                        IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
                        IMS,IME,JMS,JME,KMS,KME,            &
                        ITS,ITE,JTS,JTE,KTS,KTE      )
-#else
+  else
     CALL G2T2H( nest%IIH,nest%JJH,                       & ! output grid index on nested grid
                 nest%HBWGT1,nest%HBWGT2,                 & ! output weights on the nested grid 
                 nest%HBWGT3,nest%HBWGT4,                 &
@@ -333,12 +333,12 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                 IDS,IDE,JDS,JDE,KDS,KDE,                         & ! 
                 IMS,IME,JMS,JME,KMS,KME,                         & ! nested grid configuration
                 ITS,ITE,JTS,JTE,KTS,KTE                          ) !
-#endif
+  endif
 
 
 !   Determine the weights of nested grid v points nearest to V points of parent domain
 
-#ifdef HWRFX
+  if(nest%vortex_tracker /= 1) then
     CALL G2T2V_new(    nest%IIV,nest%JJV,                            & ! output grid index in parent grid
                        nest%VBWGT1,nest%VBWGT2,                      & ! output weights in terms of parent grid
                        nest%VBWGT3,nest%VBWGT4,                      &
@@ -347,7 +347,7 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                        IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
                        IMS,IME,JMS,JME,KMS,KME,            &
                        ITS,ITE,JTS,JTE,KTS,KTE      )
-#else
+  else
     CALL G2T2V( nest%IIV,nest%JJV,                       & ! output grid index on nested grid
                 nest%VBWGT1,nest%VBWGT2,                 & ! output weights on the nested grid
                 nest%VBWGT3,nest%VBWGT4,                 &
@@ -358,7 +358,7 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                 IDS,IDE,JDS,JDE,KDS,KDE,                         & !
                 IMS,IME,JMS,JME,KMS,KME,                         & ! nested grid configuration
                 ITS,ITE,JTS,JTE,KTS,KTE                          ) !
-#endif
+  endif
 
 !*** CHECK WEIGHTS AT MASS AND VELOCITY POINTS
 
@@ -1518,8 +1518,10 @@ END SUBROUTINE EARTH_LATLON
                 IMS,IME,JMS,JME,KMS,KME,                 &
                 ITS,ITE,JTS,JTE,KTS,KTE      )
     END SELECT
+#if defined(EXPENSIVE_HWRF_DEBUG_STUFF)
        write(0,105)"NEW H WEIGHTS:",I,J,IIH(i,j),JJH(i,j),HBWGT1(I,J),HBWGT2(I,J),HBWGT3(I,J),HBWGT4(I,J), &
                                 HBWGT1(I,J)+HBWGT2(I,J)+HBWGT3(I,J)+HBWGT4(I,J)
+#endif
   105  format(a,4i4,5f7.3)
  END DO
  END DO
@@ -2536,6 +2538,7 @@ END SUBROUTINE BASE_STATE_PARENT
 
       II=9999 !67 !35 !50   !4
       JJ=9999 !31 !73 !115  !192
+#if defined(EXPENSIVE_HWRF_DEBUG_STUFF)
       IF(I.eq.II.and.J.eq.JJ)THEN
         WRITE(message,*)'DEBUG in SPLINE1:HSO= ',xnew(1:nold)
         CALL wrf_debug(1,trim(message))
@@ -2545,6 +2548,7 @@ END SUBROUTINE BASE_STATE_PARENT
          CALL wrf_debug(1,trim(message))
         ENDDO 
       ENDIF 
+#endif
 
 !
       NOLDM1=NOLD-1
@@ -2619,10 +2623,12 @@ END SUBROUTINE BASE_STATE_PARENT
 
 !  debug
 
+#if defined(EXPENSIVE_HWRF_DEBUG_STUFF)
       if(i.eq.ii.and.j.eq.jj)then
         write(message,*) 'DEBUG:: k1,xnew(k1),ynew(k1): ', k1,xnew(k1),ynew(k1)
         CALL wrf_debug(1,trim(message))
       endif
+#endif
 
 !
   600 K1=K1+1
@@ -3078,8 +3084,6 @@ SUBROUTINE med_initialize_nest_nmm( grid &
  REAL, PARAMETER:: SALP=2.60
  REAL, PARAMETER:: SNUP=0.040
  REAL, PARAMETER:: W_NMM=0.08
- REAL, PARAMETER:: COAC=0.75
- REAL, PARAMETER:: CODAMP=6.4
  REAL, PARAMETER:: TWOM=.00014584
  REAL, PARAMETER:: CP=1004.6
  REAL, PARAMETER:: DFC=1.0    
@@ -3102,6 +3106,8 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 
  CHARACTER(LEN=255) :: message
 
+ REAL:: COAC, CODAMP
+
    !  Definitions of dummy arguments to solve
 #include <dummy_new_decl.inc>
 
@@ -3116,6 +3122,11 @@ SUBROUTINE med_initialize_nest_nmm( grid &
                              ims, ime, jms, jme, kms, kme,    &
                              its, ite, jts, jte, kts, kte     )
 
+   call nl_get_coac(grid%id,coac)
+   write(0,*) 'FIXME: REMOVE THIS DEBUG WRITE STATEMENT.  COAC=',COAC
+
+   call nl_get_codamp(grid%id,codamp)
+   write(0,*) 'FIXME: REMOVE THIS DEBUG WRITE STATEMENT.  CODAMP=',CODAMP
 
 !=================================================================================
 !

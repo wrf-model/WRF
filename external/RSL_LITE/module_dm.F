@@ -1088,6 +1088,77 @@ CONTAINS
 #endif
    END FUNCTION wrf_dm_sum_integer
 
+   SUBROUTINE wrf_dm_minloc_real ( val, lat, lon, z, idex, jdex )
+      IMPLICIT NONE
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+      REAL val, lat, lon, z
+      INTEGER idex, jdex, ierr
+      INTEGER dex(2)
+      REAL vll(4)
+      INTEGER dex_all (2,ntasks)
+      REAL vll_all(4,ntasks)
+      INTEGER i
+
+      vll= (/ val, lat, lon, z /)
+
+      dex(1) = idex ; dex(2) = jdex
+      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, local_communicator, ierr )
+      CALL mpi_allgather ( vll, 4, getrealmpitype(), vll_all , 4, getrealmpitype(), local_communicator, ierr )
+      val = vll_all(1,1) ; lat = vll_all(2,1)
+      lon = vll_all(3,1) ; z = vll_all(4,1)
+      idex = dex_all(1,1) ; jdex = dex_all(2,1)
+      DO i = 2, ntasks
+        IF ( vll_all(1,i) .LT. val ) THEN
+           val = vll_all(1,i)
+           lat = vll_all(2,i)
+           lon = vll_all(3,i)
+           z = vll_all(4,i)
+           idex = dex_all(1,i)
+           jdex = dex_all(2,i)
+        ENDIF
+      ENDDO
+#else
+      REAL val,lat,lon,z
+      INTEGER idex, jdex, ierr
+#endif
+   END SUBROUTINE wrf_dm_minloc_real
+   SUBROUTINE wrf_dm_maxloc_real ( val, lat, lon, z, idex, jdex )
+      IMPLICIT NONE
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+      REAL val, lat, lon, z
+      INTEGER idex, jdex, ierr
+      INTEGER dex(2)
+      REAL vll(4)
+      INTEGER dex_all (2,ntasks)
+      REAL vll_all(4,ntasks)
+      INTEGER i
+
+      vll= (/ val, lat, lon, z /)
+
+      dex(1) = idex ; dex(2) = jdex
+      CALL mpi_allgather ( dex, 2, MPI_INTEGER, dex_all , 2, MPI_INTEGER, local_communicator, ierr )
+      CALL mpi_allgather ( vll, 4, getrealmpitype(), vll_all , 4, getrealmpitype(), local_communicator, ierr )
+      val = vll_all(1,1) ; lat = vll_all(2,1)
+      lon = vll_all(3,1) ; z = vll_all(4,1)
+      idex = dex_all(1,1) ; jdex = dex_all(2,1)
+      DO i = 2, ntasks
+        IF ( vll_all(1,i) .GT. val ) THEN
+           val = vll_all(1,i)
+           lat = vll_all(2,i)
+           lon = vll_all(3,i)
+           z = vll_all(4,i)
+           idex = dex_all(1,i)
+           jdex = dex_all(2,i)
+        ENDIF
+      ENDDO
+#else
+      REAL val,lat,lon,z
+      INTEGER idex, jdex, ierr
+#endif
+   END SUBROUTINE wrf_dm_maxloc_real
+
    INTEGER FUNCTION wrf_dm_bxor_integer ( inval )
       IMPLICIT NONE
 #ifndef STUBMPI
@@ -3738,7 +3809,7 @@ END
       USE module_configure, ONLY : grid_config_rec_type
       USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
                             ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width
-      USE module_comm_dm, ONLY : HALO_NMM_FORCE_DOWN1_sub
+      USE module_comm_dm, ONLY : HALO_NMM_FORCE_DOWN1_sub, HALO_NMM_FORCE_DOWN_SST_sub
       IMPLICIT NONE
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
@@ -3791,6 +3862,10 @@ integer myproc
                                 ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe    )
+
+      IF(ngrid%force_sst(1) == 1) then
+#include "HALO_NMM_FORCE_DOWN_SST.inc"
+      ENDIF
 
 #include "HALO_NMM_FORCE_DOWN1.inc"
 

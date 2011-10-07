@@ -37,7 +37,8 @@ subroutine convtrans_prep(gd_cloud,gd_cloud2,gd_cloud_a,         &
   REAL, DIMENSION( ims:ime, jms:jme ),                           &
        INTENT(INOUT ) :: raincv_a,raincv_b
   INTEGER, INTENT(IN) :: ktau,cu_phys
-  INTEGER  :: stepave, stepave_count
+  INTEGER  :: stepave
+  INTEGER, SAVE  :: stepave_count
   REAL, INTENT(IN) :: curr_secs
   REAL, INTENT(IN) :: convtrans_avglen_m, dt
   LOGICAL, INTENT(IN) :: adapt_step_flag

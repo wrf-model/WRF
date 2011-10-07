@@ -108,7 +108,6 @@
           INTENT(INOUT   ) ::                                        &
                                ttday,tcosz,xlat,xlong
    REAL,  DIMENSION( ims:ime ,  jms:jme )         ,         &
-          OPTIONAL,                                                  &
           INTENT(INOUT   ) ::                                        &
                                raincv_a,raincv_b
    real, INTENT (IN) :: g
@@ -238,6 +237,12 @@ call wrf_message("**************************************************************
    endif
    endif
 
+   if ( config_flags%cu_diag == 1) then
+   if ( config_flags%cu_physics /= 3 .AND. config_flags%cu_physics /= 5) then
+         call wrf_error_fatal(" Time averaged variables (cu_diag = 1) requires cu_physics = 3 or 5")
+   endif
+   endif
+
    if ( config_flags%chem_conv_tr == 1 .and. config_flags%cu_diag == 0) then
          call wrf_error_fatal("ERROR: chem_conv_tr=1 requires cu_diag=1")
    endif
@@ -345,6 +350,7 @@ call wrf_message("**************************************************************
        end do
        end do
     end if
+    IF ( config_flags%cu_diag == 1 ) THEN
     do j=jts,jte
        do k=kts,kte
           do i=its,ite
@@ -357,11 +363,12 @@ call wrf_message("**************************************************************
           end do
        end do
     end do
+    ENDIF
     do j=jts,jte
-          do i=its,ite
-            if(present(raincv_a) ) raincv_a(i,j)=0.
-            if(present(raincv_b) ) raincv_b(i,j)=0.
-       end do
+         do i=its,ite
+           raincv_a(i,j)=0.
+           raincv_b(i,j)=0.
+      end do
     end do
 
 !   RETURN IF CHEMISTRY IS NOT RUNNING

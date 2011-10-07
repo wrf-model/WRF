@@ -42,7 +42,7 @@ cv_options=5,
 &wrfvar9
 /
 &wrfvar10
-test_transforms=false,
+test_transforms=true,
 /
 &wrfvar11
 cv_options_hum=1,

@@ -2532,7 +2532,13 @@ okay_to_w = .false.
        ! provide the communicator for the integration tasks to RSL
        IF ( compute_node ) THEN
           CALL wrf_set_dm_communicator( mpi_comm_local )
+#ifdef HWRF
+          call ATM_SET_COMM(mpi_comm_local)
+#endif
        ELSE
+#ifdef HWRF
+          call ATM_LEAVE_COUPLING()
+#endif
           CALL quilt    ! will not return on io server tasks
        ENDIF
 #endif

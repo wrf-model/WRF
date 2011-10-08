@@ -22,6 +22,8 @@ MODULES =                 		\
         module_initialize_real.o        \
         module_PRECIP_ADJUST.o          \
 	module_HIFREQ.o                 \
+	module_TERRAIN.o                \
+	module_SMOOTH_TERRAIN.o         \
 	$(CASE_MODULE)
 
 # moved into share/Makefile
@@ -62,9 +64,13 @@ solve_nmm.o:   module_BC_NMM.o \
                module_BNDRY_COND.o module_PHYSICS_CALLS.o \
                module_CTLBLK.o module_HIFREQ.o
 
-module_ADVECTION.o: ../share/module_MPP.o module_INDX.o
+NMM_NEST_UTILS1.o: module_TERRAIN.o module_SMOOTH_TERRAIN.o \
+	../frame/module_dm.o ../frame/module_domain.o \
+	../frame/module_configure.o ../frame/module_timing.o
 
 start_domain_nmm.o: module_HIFREQ.o
+
+module_ADVECTION.o: ../share/module_MPP.o module_INDX.o
 
 module_MPPINIT.o: ../share/module_MPP.o 
 

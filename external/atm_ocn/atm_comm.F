@@ -72,6 +72,39 @@
 !C
 !C***********************************************************************
 !C
+      SUBROUTINE ATM_SET_COMM(new_atm_comm)
+        USE ATM_cc
+        integer, intent(in) :: new_atm_comm
+
+!       This routine is called when the atmospheric model wants to
+!       remove processors from taking part in coupling so that they
+!       can perform I/O or diagnostics.  Any processors that will
+!       continue to be in MPI_COMM_Atmos must call this routine, and
+!       any processors that will leave MPI_COMM_Atmos must call
+!       ATM_LEAVE_COUPLING.
+
+        MPI_COMM_Atmos=new_atm_comm
+      end
+!C
+!C***********************************************************************
+!C
+      SUBROUTINE ATM_LEAVE_COUPLING()
+        USE ATM_cc
+
+!       This routine is called when the atmospheric model wants to
+!       remove processors from taking part in coupling so that they
+!       can perform I/O or diagnostics.  Any processors that will
+!       continue to be in MPI_COMM_Atmos must call ATM_SET_COMM, and
+!       any processors that will leave MPI_COMM_Atmos must call
+!       this routine.
+
+!       Currently, there is nothing we have to do here.
+        return
+
+      end
+!C
+!C***********************************************************************
+!C
       SUBROUTINE ATM_CMP_START(atm_comm)
 
       USE ATM_cc

@@ -150,8 +150,12 @@ state   real   ducudt       ijk     misc        1         -    rh  "UMMIX" "U TE
 state   real   dvcudt       ijk     misc        1         -    rh  "VMMIX" "V TENDENCY  MOMENTUM MIXING IN SAS"
 # For random number in SAS convection in HWRF
 
-state  real    store_rand  ij    dyn_nmm   1      -      rh      "RANDOM"  "RANDOM NUMBER FOR SAS"                       ""
-state  integer nrnd1        k    dyn_nmm   1      -      r       "NRND1"   "Receives seed for random number generator"   ""
+state integer randstate1     ij     dyn_nmm     1      -    r  "randstate1" "random number generator state word 1"
+state integer randstate2     ij     dyn_nmm     1      -    r  "randstate2" "random number generator state word 2"
+state integer randstate3     ij     dyn_nmm     1      -    r  "randstate3" "random number generator state word 3"
+state integer randstate4     ij     dyn_nmm     1      -    r  "randstate4" "random number generator state word 4"
+state real    random         ij     dyn_nmm     1      -    rh "random" "random number in [0,1) used by SAS"
+rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
 
 #
 # module_MASKS
@@ -979,6 +983,7 @@ rconfig   logical rdlai2d                 namelist,physics      1            .fa
 rconfig   integer  gwd_opt                namelist,physics    max_domains    0       irh    "gwd_opt"      "activate gravity wave drag: 0=off, 1=ARW, 2=NMM"   ""
 rconfig   integer iz0tlnd                 namelist,physics      1            0         h     "iz0tlnd"    "switch to control land thermal roughness length"   ""
 rconfig   real    sas_pgcon               namelist,physics      max_domains  0.55      irh   "sas_pgcon"   "convectively forced pressure gradient factor (SAS scheme)" ""
+rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
 
 # nmm variables
 rconfig   integer idtad                   namelist,physics     max_domains    2       irh    "idtad"  "fundamental timesteps between calls to NMM passive advection scheme"
@@ -986,6 +991,7 @@ rconfig   integer nsoil                   namelist,physics     max_domains    4 
 rconfig   integer nphs                    namelist,physics     max_domains   10       irh    "nphs"  "fundamental timesteps between calls to NMM turbulence"
 rconfig   integer ncnvc                   namelist,physics     max_domains   10       irh    "ncnvc"  "fundamental timesteps between calls to NMM convection"
 rconfig   integer nrads                   namelist,physics     max_domains  200       irh    "nrads"  "fundamental timesteps between calls to NMM shortwave radiation"
+rconfig   integer nrand                   namelist,physics     max_domains   10       irh    "nrand"  "fundamental timesteps between random number generator updates (0=use ncnvc)"
 rconfig   integer nradl                   namelist,physics     max_domains  200       irh    "nradl"  "fundamental timesteps between calls to NMM longwave radiation"
 rconfig   real    tprec                   namelist,physics     max_domains    3.      irh    "tprec"  "number of hours in bucket for total precipitation"
 rconfig   real    theat                   namelist,physics     max_domains    6.      irh    "theat"  "number of hours in bucket for gridscale and convective heating rates"

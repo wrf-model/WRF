@@ -49,7 +49,6 @@ module_state_description.o : module_state_description.F
 output_wrf.o : output_wrf.F
 solve_interface.o : solve_interface.F
 start_domain.o : start_domain.F
-start_domain_nmm.o : start_domain_nmm.F
 start_em.o : start_em.F
 wrf_bdyin.o : wrf_bdyin.F
 wrf_bdyout.o : wrf_bdyout.F
@@ -86,7 +85,6 @@ module_tiles.o \
 output_wrf.o \
 solve_interface.o \
 start_domain.o \
-start_domain_nmm.o \
 shift_domain_nmm.o \
 start_em.o \
 wrf_fddaobs_in.o \

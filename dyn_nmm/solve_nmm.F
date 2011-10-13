@@ -13,11 +13,13 @@
 !
      &           )
 !-----------------------------------------------------------------------
+        use module_timing
       USE MODULE_DOMAIN,                ONLY : DOMAIN, GET_IJK_FROM_GRID
       USE MODULE_CONFIGURE,             ONLY : GRID_CONFIG_REC_TYPE
       USE MODULE_MODEL_CONSTANTS
       USE MODULE_STATE_DESCRIPTION
       USE MODULE_CTLBLK
+      use MODULE_RANDOM,                ONLY : rand_grid_r4
 #ifdef DM_PARALLEL
       USE MODULE_DM,                    ONLY : LOCAL_COMMUNICATOR       &
                                               ,MYTASK,NTASKS,NTASKS_X   &
@@ -88,10 +90,10 @@
 !zhang's doing
       INTEGER,SAVE :: NTSD_restart1,NTSD_restart2,NTSD_restart3
 #endif
-      integer :: ierr
+      integer :: ierr,nrand,idt
       INTEGER,SAVE :: NTSD_restart
 !     INTEGER :: MPI_COMM_COMP,MYPE,MYPROC,NPES
-      INTEGER :: MYPROC
+      INTEGER :: MYPROC,imid,jmid
       INTEGER :: KVH,NTSD_rad,RC
       INTEGER :: NUM_OZMIXM,NUM_AEROSOLC
 !
@@ -102,7 +104,7 @@
       CHARACTER(80) :: MESSAGE
 !
 !***  For precip assimilation:
-      INTEGER :: ISTAT,DOM
+      INTEGER :: ISTAT,DOM,one
       LOGICAL :: HF
       REAL,ALLOCATABLE,SAVE,DIMENSION(:,:,:) :: PPTDAT
 !
@@ -507,6 +509,38 @@
 !
       btim=timef()
 !
+!-----------------------------------------------------------------------
+!***  UPDATE RANDOM NUMBERS IF REQUIRED
+!-----------------------------------------------------------------------
+
+      IF(CONFIG_FLAGS%CU_PHYSICS==OSASSCHEME .or. CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)THEN
+!
+         nrand=config_flags%nrand
+         if(nrand==0) nrand=grid%ncnvc
+         if(nrand==0) nrand=1
+         IDT=MOD(grid%NTSD,nrand)
+ 
+         IF(IDT.EQ.0 .OR. grid%NTSD .EQ. 0)THEN
+            call start_timing
+            call wrf_message('Update random numbers...')
+            one=1
+
+            imid=(its+ite)/2   ;   jmid=(jts+jte)/2
+
+            write(0,'(A,": random(",I0,",",I0,") = ",E15.10)') 'before call',imid,jmid,grid%random(imid,jmid)
+
+            call rand_grid_r4(grid%randstate1,grid%randstate2, &
+                              grid%randstate3,grid%randstate4, &
+                              grid%random, &
+                              IDS,IDE,JDS,JDE,one,one, &
+                              IMS,IME,JMS,JME,one,one, &
+                              ITS,ITE,JTS,JTE,one,one)
+
+            write(0,'(A,": random(",I0,",",I0,") = ",E15.10)') 'after call',imid,jmid,grid%random(imid,jmid)
+
+            call end_timing('Updating random numbers')
+         ENDIF    ! for IF(IDT.EQ.0 .OR. NTSD .EQ. 0)
+      ENDIF
 !-----------------------------------------------------------------------
 !***  ZERO OUT ACCUMULATED QUANTITIES WHEN NEEDED.
 !-----------------------------------------------------------------------
@@ -1745,6 +1779,8 @@
        ENDIF
 !
 !----------------------------------------------------------------------
+       call wrf_message('call cucnvc')
+       call start_timing
         CALL CUCNVC(grid%ntsd,GRID%DT,GRID%NCNVC,GRID%NRADS,GRID%NRADL      &
      &             ,GPS,RESTRT,grid%hydro,grid%cldefi,N_MOIST,GRID%ENSDIM        &
      &             ,MOIST                                              &
@@ -1767,16 +1803,16 @@
      &             ,grid%htop,grid%hbot,grid%htopd,grid%hbotd,grid%htops,grid%hbots                  &
      &             ,RTHBLTEN,RQVBLTEN,RTHRATEN                         & 
 #if (NMM_CORE==1)                  
-     &                 ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%store_rand             &
+     &                 ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random             &
 #endif
      &             ,config_flags%sas_pgcon                             &
      &             ,grid%avcnvc,grid%acutim,grid%ihe,grid%ihw                              &
      &             ,GRID,CONFIG_FLAGS                                  &
-     &             ,grid%NRND1                                              & ! NRND1 for random num restart
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
      &             ,IMS,IME,JMS,JME,KMS,KME                            &
      &             ,IPS,IPE,JPS,JPE,KPS,KPE                            &
      &             ,ITS,ITE,JTS,JTE,KTS,KTE)
+        call end_timing('cucnvc')
 !----------------------------------------------------------------------
 !
         cucnvc_tim=cucnvc_tim+timef()-btimx

@@ -10,8 +10,10 @@
      &           )
 !----------------------------------------------------------------------
 !
+      USE MODULE_TIMING
       USE MODULE_HIFREQ, only : hifreq_open
       USE MODULE_DOMAIN
+      USE MODULE_RANDOM, only : srand_grid, rand_grid_r4
       USE MODULE_DRIVER_CONSTANTS
       USE module_model_constants
       USE MODULE_CONFIGURE
@@ -71,7 +73,8 @@
   LOGICAL :: ANAL   !zhang's doing, added for analysis option
 #endif
 
-  INTEGER :: parent_id, nestid, max_dom
+  integer(kind=4) :: random_seed
+  INTEGER :: parent_id, nestid, max_dom,one
   LOGICAL :: grid_allowed, nestless
 
       INTEGER :: IDS,IDE,JDS,JDE,KDS,KDE                               &
@@ -202,6 +205,7 @@
 !**********************************************************************
 !----------------------------------------------------------------------
 !
+      call start_timing
 
       if(grid%id==3) then
          grid%force_sst=1
@@ -488,6 +492,32 @@
       JFE=MIN(JPE,JDE-1)
       IFE=MIN(IPE,IDE-1)
 
+      if((allowed_to_read.and..not.(restrt)) .or. .not.allowed_to_read) then
+         IF(CONFIG_FLAGS%CU_PHYSICS==OSASSCHEME .or. CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)THEN
+            ! Reset random number generator at first initialization,
+            ! or after a nest move.  (Need to reset after a nest move
+            ! or the leading edge will be filled with 3x3 areas with
+            ! the same random number generator state.)
+            random_seed=config_flags%random_seed + grid%ntsd
+            
+            write(message,'(A,I0,A,I0)') 'Resetting random number for domain ',grid%id,' with seed ',random_seed
+            call wrf_message(message)
+            one=1
+            call srand_grid(grid%randstate1,grid%randstate2, &
+                            grid%randstate3,grid%randstate4, &
+                            IDS,IDE,JDS,JDE,one,one, &
+                            IMS,IME,JMS,JME,one,one, &
+                            IPS,IPE,JPS,JPE,one,one,random_seed)
+            call rand_grid_r4(grid%randstate1,grid%randstate2, &
+                              grid%randstate3,grid%randstate4, &
+                              grid%random, &
+                              IDS,IDE,JDS,JDE,one,one, &
+                              IMS,IME,JMS,JME,one,one, &
+                              IPS,IPE,JPS,JPE,one,one)
+         else
+            grid%random = 0.0
+         endif
+      endif
 ! Begin Sam Trahan's doing for high-frequency output
       if(allowed_to_read .and. config_flags%high_freq) then
         if(grid%id==config_flags%high_dom) then
@@ -800,7 +830,6 @@
       NSTART = INT(grid%TSTART*TSPH+0.5)
 !
       grid%ntsd = NSTART
-
 
 !! want non-zero values for grid%nprec, grid%nheat type vars to avoid problems
 !! with mod statements below.
@@ -2280,6 +2309,9 @@
 #endif
 !#define COPY_OUT
 !#include <scalar_derefs.inc>
+
+   write(message,*) "Timing for start_domain on d",grid%id
+   call end_timing(message)
 
    RETURN
 

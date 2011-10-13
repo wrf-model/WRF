@@ -17,7 +17,8 @@ MODULES =                       \
 	module_compute_geop.o           \
 	module_soil_pre.o		\
 	module_check_a_mundo.o		\
-	module_llxy.o
+	module_llxy.o \
+	module_random.o
 
 OBJS    = 		\
 	dfi.o				\
@@ -42,7 +43,8 @@ OBJS    = 		\
         wrf_bdyin.o             	\
         wrf_tsin.o                      \
         landread.o			\
-	setfeenv.o
+	setfeenv.o                      \
+	bobrand.o
 
 
 NMM_MODULES = 
@@ -74,6 +76,7 @@ nmm_contrib : $(NMM_OBJS) $(NMM_MODULES)
 clean:
 	@ echo 'use the clean script'
 
+module_random.o: bobrand.o
 
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
 

@@ -190,9 +190,9 @@ program da_verif_grid
      
         time_loop_3d : do 
               
-        print*,' processing exp: ',iexp,' 3d var: ',trim(var3d(ivar)),' for time: ',hdate
 !----------------------------------------------------------------------------
            call build_hdate(hdate, time)
+           print*,' processing exp: ',iexp,' 3d var: ',trim(var3d(ivar)),' for time: ',hdate
 
            if ( hdate > hend ) exit time_loop_3d
 
@@ -212,6 +212,8 @@ program da_verif_grid
 
            verif_file = trim(verif_dirs(iexp))//'/'//pdate//'/'//trim(filename)
 
+!          print*,' control_file  : ', trim(control_file)
+!          print*,' verif_file    : ', trim(verif_file)
 
 !  Get the dimensions of the both files and check
            call get_dimensions(control_file,nx1,ny1,nz1)
@@ -333,9 +335,9 @@ program da_verif_grid
      
         time_loop_2d : do 
               
-        print*,' processing exp: ',iexp,' 2d var: ',trim(var2d(ivar)),' for time: ',hdate
 !----------------------------------------------------------------------------
            call build_hdate(hdate, time )
+           print*,' processing exp: ',iexp,' 2d var: ',trim(var2d(ivar)),' for time: ',hdate
 
            if ( hdate > hend ) exit time_loop_2d
 

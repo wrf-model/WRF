@@ -2419,14 +2419,20 @@ SUBROUTINE ext_gr1_put_var_td_char ( DataHandle,Element,  DateStr,Varname, &
   CHARACTER*(*) :: VarName 
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
-  CHARACTER(len=1000) :: tmpstr(1)
+  CHARACTER(len=1000) :: tmpstr
   INTEGER             :: idx
 
   call wrf_debug ( DEBUG , 'Entering ext_gr1_put_var_td_char')
 
   if (committed(DataHandle)) then
 
-     write(tmpstr(idx),*)Data
+    
+     DO idx=1,LEN(Data)
+        tmpstr(idx:idx)=Data(idx:idx)
+     END DO
+     DO idx=LEN(Data)+1,1000
+        tmpstr(idx:idx)=' '
+     END DO
 
      CALL gr1_build_string (td_output(DataHandle), &
           Varname//';'//DateStr//';'//Element, tmpstr, 1, Status)

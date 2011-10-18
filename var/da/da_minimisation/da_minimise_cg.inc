@@ -47,7 +47,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
    real                              :: ghat(1:cv_size)        ! cv copy.
    real                              :: ghat0(1:cv_size)       ! cv copy.
    real                              :: phat(1:cv_size)        ! cv copy.
-   real, allocatable                 :: qhat(:,:)              ! cv copy.
+   type(qhat_type), allocatable      :: qhat(:)                ! cv copy.
    real                              :: apdotp,step,rrmold,rrmnew,ratio 
    real                              :: ob_grad, rrmnew_norm, gdot
    real                              :: j_total, j0_total
@@ -122,8 +122,9 @@ subroutine da_minimise_cg(grid, config_flags,            &
    j_grad_norm_target = sqrt (rrmold)
 
    if (orthonorm_gradient) then
-      allocate(qhat(1:cv_size, 0:ntmax))
-      qhat(:,0) = ghat / sqrt(rrmold)
+      allocate(qhat(0:ntmax))
+      allocate(qhat(0)%values(1:cv_size))
+      qhat(0)%values = ghat / sqrt(rrmold)
    end if
 
    write(unit=stdout,fmt='("Starting outer iteration : ",i3)') it
@@ -156,8 +157,8 @@ subroutine da_minimise_cg(grid, config_flags,            &
     ! Orthonormalize new gradient (using modified Gramm-Schmidt algorithm)
       if (orthonorm_gradient) then
          do i = iter-1, 0, -1
-            gdot = da_dot_cv(cv_size, ghat, qhat(:,i), grid, mz, jp_start, jp_end)
-            ghat = ghat - gdot * qhat(:,i)
+            gdot = da_dot_cv(cv_size, ghat, qhat(i)%values, grid, mz, jp_start, jp_end)
+            ghat = ghat - gdot * qhat(i)%values
          end do
       end if
       
@@ -167,7 +168,11 @@ subroutine da_minimise_cg(grid, config_flags,            &
       ratio = 0.0
       if (rrmold .gt. 0.0) ratio = rrmnew/rrmold
 
-      if (orthonorm_gradient) qhat(:,iter) = ghat / rrmnew_norm
+      if (orthonorm_gradient) then
+         allocate(qhat(iter)%values(1:cv_size))
+         qhat(iter)%values = ghat / rrmnew_norm
+      end if
+
       phat         = - precon * ghat       + ratio * phat
 
       rrmold=rrmnew
@@ -189,7 +194,15 @@ subroutine da_minimise_cg(grid, config_flags,            &
    ! End of the minimization of cost function
    !-------------------------------------------------------------------------
    iter = MIN(iter, ntmax)
-   if (orthonorm_gradient) deallocate(qhat)
+
+   ! Free memory used for reorthonormalization
+   !------------------------------------------
+   if (orthonorm_gradient) then
+      do i = iter-1, 0, -1
+         if (allocated(qhat(i)%values)) deallocate(qhat(i)%values)
+      end do
+      deallocate(qhat)
+   end if
    
    write(unit=stdout,fmt='(A)') &
       '----------------------------------------------------------'

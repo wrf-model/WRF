@@ -15,7 +15,7 @@ subroutine da_check_xtoy_adjoint_metar(iv, y, adjtest_lhs, pertile_lhs)
    if (trace_use_dull) call da_trace_entry("da_check_xtoy_adjoint_metar")
 
    do n=iv%info(metar)%n1, iv%info(metar)%n2
-      if (iv%info(metar)%zk(1,n) < 1.0) then
+      if (iv%info(metar)%zk(1,n) < 1.0 .and. sfc_assi_options /= 2) then
          y%metar(n)%u = 0.0
          y%metar(n)%v = 0.0
          y%metar(n)%t = 0.0
@@ -23,6 +23,14 @@ subroutine da_check_xtoy_adjoint_metar(iv, y, adjtest_lhs, pertile_lhs)
          y%metar(n)%q = 0.0
 
          cycle
+      end if
+
+      if ( sfc_assi_options == 2 ) then
+          if (iv%metar(n)%u%qc < 0) y%metar(n)%u = 0.0
+          if (iv%metar(n)%v%qc < 0) y%metar(n)%v = 0.0
+          if (iv%metar(n)%t%qc < 0) y%metar(n)%t = 0.0
+          if (iv%metar(n)%p%qc < 0) y%metar(n)%p = 0.0
+          if (iv%metar(n)%q%qc < 0) y%metar(n)%q = 0.0
       end if
 
       y%metar(n)%u = y%metar(n)%u/typical_u_rms

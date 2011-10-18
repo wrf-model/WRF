@@ -6,7 +6,7 @@ module da_transfer_model
 
    use module_configure, only : grid_config_rec_type, model_config_rec
    use module_date_time, only : geth_julgmt, current_date, start_date
-   use module_domain, only : domain, domain_clock_get
+   use module_domain, only : domain, domain_clock_get, x_type, vp_type, ep_type
    use module_io_domain, only : open_r_dataset, close_dataset, input_auxinput17, &
       output_auxinput7, open_w_dataset
    use module_state_description, only : dyn_em_ad, dyn_em, dyn_em_tl, &
@@ -40,7 +40,7 @@ module da_transfer_model
       t_kelvin, num_fgat_time, num_pseudo, iso_temp, interval_seconds, trajectory_io, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, qlimit
-   use da_define_structures, only : xbx_type
+   use da_define_structures, only : xbx_type, be_type
    use da_grid_definitions, only : da_set_map_para
    use da_par_util, only : da_patch_to_global
    use da_physics, only : da_check_rh_simple,da_roughness_from_lanu, &
@@ -64,7 +64,7 @@ module da_transfer_model
        g_stuff_bdytend, a_stuff_bdytend_old, a_stuff_bdytend_new, decouple, da_calc_2nd_fg, &
        ubdy3dtemp1 , vbdy3dtemp1 , tbdy3dtemp1 , pbdy3dtemp1 , qbdy3dtemp1, mbdy2dtemp1, &
        ubdy3dtemp2 , vbdy3dtemp2 , tbdy3dtemp2 , pbdy3dtemp2 , qbdy3dtemp2, mbdy2dtemp2, &
-       da_bdy_fields_halo
+       wbdy3dtemp1,  wbdy3dtemp2, da_bdy_fields_halo
    use module_bc, only : set_physical_bc2d
    use module_big_step_utilities_em, only : calc_mu_uv
    use g_module_big_step_utilities_em, only : g_calc_mu_uv

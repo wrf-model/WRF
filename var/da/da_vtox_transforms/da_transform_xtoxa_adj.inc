@@ -46,7 +46,7 @@ subroutine da_transform_xtoxa_adj(grid)
          end do
       end do
 
-      call da_uvprho_to_w_adj(grid)
+      if ( .not. var4d ) call da_uvprho_to_w_adj(grid)
    end if
 
    if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
@@ -86,6 +86,9 @@ subroutine da_transform_xtoxa_adj(grid)
    end if
  
    call da_pt_to_rho_adj(grid)
+
+   if ( .not. var4d ) then
+
    do j=jts,jte
       do i=its,ite
          if ((fg_format==fg_format_wrf_arw_regional) .or. &
@@ -133,6 +136,8 @@ subroutine da_transform_xtoxa_adj(grid)
          end if
       end do
    end do
+
+   endif ! only for 3dvar
 
    if (global) then     
       call da_set_boundary_xa(grid)

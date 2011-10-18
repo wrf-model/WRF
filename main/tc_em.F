@@ -2252,7 +2252,6 @@ END SUBROUTINE mass2_Vstag
 
 !-----------------------------------------------------------------------------------------
 ! Take the derivative of psi in the ns direction.
-    upos = - dpsi/dy
     upos(:,:,:) = -999.
     DO k=1,nz
 

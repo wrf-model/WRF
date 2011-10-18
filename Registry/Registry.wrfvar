@@ -177,7 +177,7 @@ i1       real   w_save         ijk     dyn_em      1         Z
 state    real   w_subs         |       dyn_em      1         -      i3rh      "W_SUBS" "large-scale vertical velocity" "m s-1"
 state    real   w_subs_tend    |       dyn_em      1         -      i3rh      "W_SUBS_TEND" "tendency large-scale vertical velocity" "m s-1"
 state    real   a_w            ijk     misc        2         Z      rh        "A_W"                        "z-wind component"   "m s-1"
-state    real   g_w            ijk     misc        2         Z      rh        "A_W"                        "z-wind component"   "m s-1"
+state    real   g_w            ijk     misc        2         Z      rh        "G_W"                        "z-wind component"   "m s-1"
 
 # Geopotential
 state    real   ph             ijkb     dyn_em      2         Z     \
@@ -306,6 +306,8 @@ state    real   zy             ijk     dyn_em      1         Y      -         " 
 state    real   rdz            ijk     dyn_em      1         Z      -         " "  " "  " "   
 state    real   rdzw           ijk     dyn_em      1         Z      -         " "  " "  " "   
 state    real   pb             ijk     dyn_em      1         -      irhdus    "pb"          "BASE STATE PRESSURE "          "Pa"
+state    real   a_p            ijk     dyn_em      1         -      rh        "a_p"         "perturbation pressure"         "Pa"
+state    real   g_p            ijk     dyn_em      1         -      rh        "g_p"         "perturbation pressure"         "Pa"
 
 #                                               
 # Other dyn                                             
@@ -382,9 +384,9 @@ state   real    cf1            -        misc      -         -     irh       "cf1
 state   real    cf2            -        misc      -         -     irh       "cf2"                   "2nd order extrapolation constant"         ""      
 state   real    cf3            -        misc      -         -     irh       "cf3"                   "2nd order extrapolation constant"         ""      
 state   integer number_at_same_level    -         -         -     -          -        "number_at_same_level"  ""         ""      
-state   real    radtacttime    -        -         -         -     -         "radtacttime"              "RADTACTTIME"         "LW SW ACTIVATION TIME in s"
-state   real    bldtacttime    -        -         -         -     -         "bldtacttime"              "BLDTACTTIME"         "PBL   ACTIVATION TIME in s"
-state   real    cudtacttime    -        -         -         -     -         "cudtacttime"              "CUDTACTTIME"         "CPS   ACTIVATION TIME in s"
+state   real    radtacttime    -        -         -         -     r         "radtacttime"              "RADTACTTIME"         "LW SW ACTIVATION TIME in s"
+state   real    bldtacttime    -        -         -         -     r         "bldtacttime"              "BLDTACTTIME"         "PBL   ACTIVATION TIME in s"
+state   real    cudtacttime    -        -         -         -     r         "cudtacttime"              "CUDTACTTIME"         "CPS   ACTIVATION TIME in s"
 
 # State for derived time quantities.  
 state   integer itimestep      -        -          -         -     rh         "itimestep"             ""         ""      
@@ -980,10 +982,9 @@ state    real    dlg_bep       ijk     misc        1         Z      -        "dl
 state    real    dl_u_bep      ijk     misc        1         Z      -        "dl_u_bep"              "urban length scale"        "m"
 state    real    sf_bep        ijk     misc        1         Z      -        "sf_bep"                "surface grid"              "-"
 state    real    vl_bep        ijk     misc        1         Z      -        "vl_bep"                "volume grid"               "-"
-# BOULAC PBL variables
-state    real   tke_pbl        ijk     misc        1         -      rh        "tke_pbl"               "TKE FROM Bougeault and Lacarrere"      "m2 s-2"
-state    real   el_pbl        ijk     misc        1         -       h        "el_pbl"               "Length scale FROM Bougeault and Lacarrere"      "m"
-# Diagnostic PBL variables
+state    real   tke_pbl        ikj     misc        1         -      rh       "tke_pbl"              "TKE from PBL"      "m2 s-2"
+state    real   el_pbl         ikj     misc        1         -      h        "el_pbl"               "Length scale from PBL"      "m"
+# Diagnostic BOULAC PBL variables
 state    real   wu_tur         ijk     misc        1         -      r        "wu_tur"               "Turbulent flux of momentum(x)"      "m2 s-2"
 state    real   wv_tur         ijk     misc        1         -      r        "wv_tur"               "Turbulent flux of momentum(y)"      "m2 s-2"
 state    real   wt_tur         ijk     misc        1         -      r        "wt_tur"               "Turbulent flux of temperature"      "K m s-1"
@@ -1668,6 +1669,7 @@ rconfig   logical   use_html                namelist,wrfvar9  1  .true.    - "us
 rconfig   logical   warnings_are_fatal      namelist,wrfvar9  1  .false.   - "warnings_are_fatal"      ""  ""
 
 rconfig   logical   test_transforms         namelist,wrfvar10  1  .false.  - "test_transforms"         ""  ""  
+rconfig   logical   test_gradient           namelist,wrfvar10  1  .false.  - "test_gradient"           ""  ""  
 rconfig   logical   test_statistics         namelist,wrfvar10  1  .false.  - "test_statistics"         ""  ""  
 rconfig   logical   interpolate_stats       namelist,wrfvar10  1  .true.   - "interpolate_stats"       ""  ""  
 rconfig   real      be_eta                  namelist,wrfvar10 99  0.0      - "interpolate_stats"       ""  ""
@@ -2184,6 +2186,7 @@ rconfig   integer km_opt_dfi              namelist,dynamics	1             1     
 rconfig   integer damp_opt                namelist,dynamics	1             0       irh    "damp_opt"              ""      ""
 rconfig   integer rad_nudge               namelist,dynamics	1             0       irh    "rad_nudge"             ""      ""
 rconfig   integer gwd_opt                 namelist,dynamics    1             0       irh    "gwd_opt"              ""      ""
+rconfig   real    sas_pgcon               namelist,physics      max_domains  0.55      irh   "sas_pgcon"   "convectively forced pressure gradient factor (SAS scheme)" ""
 rconfig   real    zdamp                   namelist,dynamics	max_domains    5000.   h    "zdamp"         ""      ""
 rconfig   real    dampcoef                namelist,dynamics     max_domains    0.      h    "dampcoef"              ""      ""
 rconfig   real    khdif                   namelist,dynamics	max_domains    0       h    "khdif"         ""      ""
@@ -2642,7 +2645,7 @@ period    PERIOD_EM_DA dyn_em 2:ru_m,rv_m,ww_m,mut,muts
 ##                                                
 
 halo      HALO_INIT          dyn_em 24:xb%map_factor,xb%psac,xb%rough,xb%xland,xb%landmask,xb%tgrn,xb%u,xb%v,xb%w,xb%wh,xb%t,xb%p,xb%q,xb%qrn,xb%qcw,xb%qci,xb%qt,xb%rho,xb%rh,xb%h,xb%hf,xb%u10,xb%v10,xb%t2,xb%q2,xb%terr,xb%psfc,xb%regime,xb%ztd,xb%tpw,xb%speed,xb%tb19v,xb%tb19h,xb%tb22v,xb%tb37v,xb%tb37h,xb%tb85v,xb%tb85h,xb%ref,xb%delt,xb%slp,xb%coefx,xb%coefy,xb%coefz,xb%tsk,xb%smois,xb%tslb,xb%xice,xb%ivgtyp,xb%isltyp,xb%vegfra,xb%snowh,xb%snow
-halo      HALO_PSICHI_UV     dyn_em 24:vp%v1,vp%v2,xb%cori,xb%rho,xa%u,xa%v,xa%psfc
+halo      HALO_PSICHI_UV     dyn_em 24:vp%v1,vp%v2,vp6%v1,vp6%v2,xb%cori,xb%rho,xa%u,xa%v,xa%psfc
 halo      HALO_BAL_EQN_ADJ   dyn_em 24:xp%v1z
 halo      HALO_PSICHI_UV_ADJ dyn_em 24:xa%u,xa%v,xa%psfc
 halo      HALO_XA_A          dyn_em 4:xa%u,xa%v

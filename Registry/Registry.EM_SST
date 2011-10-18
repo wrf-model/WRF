@@ -355,9 +355,9 @@ state   real    cf1            -        misc      -         -     irh       "cf1
 state   real    cf2            -        misc      -         -     irh       "cf2"                   "2nd order extrapolation constant"         ""      
 state   real    cf3            -        misc      -         -     irh       "cf3"                   "2nd order extrapolation constant"         ""      
 state   integer number_at_same_level    -         -         -     -          -        "number_at_same_level"  ""         ""      
-state   real    radtacttime    -        -         -         -     -         "radtacttime"              "RADTACTTIME"         "LW SW ACTIVATION TIME in s"
-state   real    bldtacttime    -        -         -         -     -         "bldtacttime"              "BLDTACTTIME"         "PBL   ACTIVATION TIME in s"
-state   real    cudtacttime    -        -         -         -     -         "cudtacttime"              "CUDTACTTIME"         "CPS   ACTIVATION TIME in s"
+state   real    radtacttime    -        -         -         -     r         "radtacttime"              "RADTACTTIME"         "LW SW ACTIVATION TIME in s"
+state   real    bldtacttime    -        -         -         -     r         "bldtacttime"              "BLDTACTTIME"         "PBL   ACTIVATION TIME in s"
+state   real    cudtacttime    -        -         -         -     r         "cudtacttime"              "CUDTACTTIME"         "CPS   ACTIVATION TIME in s"
 
 # State for derived time quantities.  
 state   integer itimestep      -        -          -         -     rh         "itimestep"             ""         ""      
@@ -846,10 +846,9 @@ state    real    dlg_bep       ikj     misc        1         Z      -        "dl
 state    real    dl_u_bep      ikj     misc        1         Z      -        "dl_u_bep"              "urban length scale"        "m"
 state    real    sf_bep        ikj     misc        1         Z      -        "sf_bep"                "surface grid"              "-"
 state    real    vl_bep        ikj     misc        1         Z      -        "vl_bep"                "volume grid"               "-"
-# BOULAC PBL variables
-state    real   tke_pbl        ikj     misc        1         -      rh        "tke_pbl"               "TKE FROM Bougeault and Lacarrere"      "m2 s-2"
-state    real   el_pbl        ikj     misc        1         -       h        "el_pbl"               "Length scale FROM Bougeault and Lacarrere"      "m"
-# Diagnostic PBL variables
+state    real   tke_pbl        ikj     misc        1         -      rh       "tke_pbl"              "TKE from PBL"      "m2 s-2"
+state    real   el_pbl         ikj     misc        1         -      h        "el_pbl"               "Length scale from PBL"      "m"
+# Diagnostic BOULAC PBL variables
 state    real   wu_tur         ikj     misc        1         -      r        "wu_tur"               "Turbulent flux of momentum(x)"      "m2 s-2"
 state    real   wv_tur         ikj     misc        1         -      r        "wv_tur"               "Turbulent flux of momentum(y)"      "m2 s-2"
 state    real   wt_tur         ikj     misc        1         -      r        "wt_tur"               "Turbulent flux of temperature"      "K m s-1"
@@ -1754,6 +1753,7 @@ rconfig   integer km_opt_dfi              namelist,dynamics	1             1     
 rconfig   integer damp_opt                namelist,dynamics	1             0       irh    "damp_opt"              ""      ""
 rconfig   integer rad_nudge               namelist,dynamics	1             0       irh    "rad_nudge"             ""      ""
 rconfig   integer gwd_opt                 namelist,dynamics     1             0       irh    "gwd_opt"              ""      ""
+rconfig   real    sas_pgcon               namelist,physics      max_domains  0.55      irh   "sas_pgcon"   "convectively forced pressure gradient factor (SAS scheme)" ""
 rconfig   real    zdamp                   namelist,dynamics	max_domains    5000.   h    "zdamp"         ""      ""
 rconfig   real    dampcoef                namelist,dynamics     max_domains    0.      h    "dampcoef"              ""      ""
 rconfig   real    khdif                   namelist,dynamics	max_domains    0       h    "khdif"         ""      ""
@@ -1983,7 +1983,7 @@ package   sasscheme      cu_physics==84              -             -
 package   osasscheme     cu_physics==4               -             -
 package   g3scheme       cu_physics==5               -             state:cugd_qvten,cugd_tten,cugd_qvtens,cugd_ttens,cugd_qcten,xmb_shallow,k22_shallow,kbcon_shallow,ktop_shallow
 package   camzmscheme    cu_physics==7               -             state:precz,zmdt,zmdq,zmdice,zmdliq,evaptzm,fzsntzm,evsntzm,evapqzm,zmflxprc,zmflxsnw,zmntprpd,zmntsnpd,zmeiheat,cmfmc,cmfmcdzm,preccdzm,pconvb,pconvt,cape,zmmtu,zmmtv,zmmu,zmmd,zmupgu,zmupgd,zmvpgu,zmvpgd,zmicuu,zmicud,zmicvu,zmicvd
-package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,RAINCV_A,RAINCV_B,GD_CLOUD_A,GD_CLOUD_B,GD_CLOUD2_A,GD_CLOUD2_B,kbcon_deep,ktop_deep,k22_deep
+package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,GD_CLOUD_A,GD_CLOUD_B,GD_CLOUD2_A,GD_CLOUD2_B,kbcon_deep,ktop_deep,k22_deep
 package   tiedtkescheme  cu_physics==6               -             -
 package   nsasscheme     cu_physics==14              -             -
 package   kfscheme       cu_physics==99              -             -

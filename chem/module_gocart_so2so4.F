@@ -17,7 +17,10 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
          INTENT(INOUT ) ::                                   chem
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
-          INTENT(IN   ) ::                     t_phy,gd,gd_cldfr
+          INTENT(IN   ) ::                     t_phy,gd
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                        &
+          OPTIONAL,                                                        &
+          INTENT(IN   ) ::                     gd_cldfr
 
    integer :: i,k,j
    real :: tc2,tc3,h2o2,cldf
@@ -28,7 +31,11 @@ CONTAINS
 !         if(p_qc.gt.1)then
 !            if(moist(i,k,j,p_qc).gt.0 )cldf=1.
 !         endif
-          cldf=gd_cldfr(i,k,j)
+          if(present(gd_cldfr) ) then
+            cldf=gd_cldfr(i,k,j)
+          elseif(p_qc.gt.1)then
+               if(moist(i,k,j,p_qc).gt.0 )cldf=1.
+          endif
           tc2=chem(i,k,j,p_so2)
           IF (cldf > 0.0 .AND. tc2 > 0.0 .AND. t_phy(i,k,j) > 258.0) THEN
              tc3=chem(i,k,j,p_sulf)

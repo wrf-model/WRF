@@ -168,6 +168,8 @@ subroutine da_ad_model ()
    call nl_set_icloud (head_grid%id, 0)
    !call nl_set_isfflx (head_grid%id, 0)
 
+   if ( model_config_rec%var4d_detail_out ) gradient_out = .true.
+
    ! WRF model time-stepping.  Calls integrate().
    call wrf_run_ad
 	

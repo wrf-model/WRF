@@ -281,6 +281,7 @@ BENCH_START(a_cu_driver_tim)
      &             ,ZMICVU=grid%zmicvu, ZMICVD=grid%zmicvd                &
      &             ,ZMDICE=grid%zmdice, ZMDLIQ=grid%zmdliq                &
                  ! Selection flag
+     &             ,pgcon=config_flags%sas_pgcon                          &
      &             ,CU_PHYSICS=config_flags%cu_physics                    &
      &             ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics            &
      &             ,SF_SFCLAY_PHYSICS=config_flags%sf_sfclay_physics      &

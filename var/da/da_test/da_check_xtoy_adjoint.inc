@@ -264,7 +264,7 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
    ! Compute w increments using Richardson's eqn.
 
    if ( Use_RadarObs ) then
-      call da_uvprho_to_w_lin(grid)
+      if ( .not. var4d ) call da_uvprho_to_w_lin(grid)
 
       do k=kts,kte
          do j=jts,jte
@@ -356,7 +356,7 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
          end do
       end do
 
-      call da_uvprho_to_w_adj(grid)
+      if ( .not. var4d ) call da_uvprho_to_w_adj(grid)
    end if
 
    if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
@@ -406,6 +406,7 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
          grid%g_w_2 = 0.0
          grid%g_t_2 = 0.0
          grid%g_ph_2 = 0.0
+         grid%g_p = 0.0
          grid%g_mu_2 = 0.0
          grid%g_moist = 0.0
          grid%g_rainnc = 0.0

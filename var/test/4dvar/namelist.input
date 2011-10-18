@@ -42,13 +42,13 @@ cv_options=5,
 &wrfvar9
 /
 &wrfvar10
-test_transforms=false,
+test_transforms=true,
 /
 &wrfvar11
 cv_options_hum=1,
 check_rh=0,
 sfc_assi_options=1,
-calculate_cg_cost_fn=true,
+calculate_cg_cost_fn=false,
 /
 &wrfvar12
 /
@@ -88,7 +88,7 @@ end_month=02,
 end_day=05,
 end_hour=18,
 interval_seconds=21600,
-debug_level=-300,
+debug_level=0,
 /
 &domains
 time_step=360,

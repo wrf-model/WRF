@@ -52,6 +52,9 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam, timestr)
                     grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
       call kj_swap_reverse (model_grid%g_ph_2, grid%g_ph_2, &
                     grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+      call kj_swap_reverse (model_grid%g_p, grid%g_p, &
+                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+
       grid%g_mu_2 = model_grid%g_mu_2
       grid%g_rainnc = model_grid%g_rainnc
       grid%g_rainncv = model_grid%g_rainncv
@@ -102,18 +105,20 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam, timestr)
    ! [3.0] COMPUTE pressure increments 
    !---------------------------------------------------------------------------
 
-   do j=js,je
-      do i=is,ie
-         g_press(i,j,ke+1)=0.0
-         do k=ke,ks,-1
-            g_press(i,j,k)=g_press(i,j,k+1) &
-               -(grid%g_mu_2(i,j)*(1.0+grid%moist(i,j,k,P_QV)) &
-               +(grid%mu_2(i,j)+grid%mub(i,j))* &
-               grid%g_moist(i,j,k,P_G_QV))*grid%dn(k)
-            grid%xa%p(i,j,k)=0.5*(g_press(i,j,k)+g_press(i,j,k+1))
-         end do
-      end do
-   end do
+!  do j=js,je
+!     do i=is,ie
+!        g_press(i,j,ke+1)=0.0
+!        do k=ke,ks,-1
+!           g_press(i,j,k)=g_press(i,j,k+1) &
+!              -(grid%g_mu_2(i,j)*(1.0+grid%moist(i,j,k,P_QV)) &
+!              +(grid%mu_2(i,j)+grid%mub(i,j))* &
+!              grid%g_moist(i,j,k,P_G_QV))*grid%dn(k)
+!           grid%xa%p(i,j,k)=0.5*(g_press(i,j,k)+g_press(i,j,k+1))
+!        end do
+!     end do
+!  end do
+
+   grid%xa%p = grid%g_p
 
    !---------------------------------------------------------------------------
    ! [4.0] convert theta increments to t increments

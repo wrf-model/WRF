@@ -3330,7 +3330,7 @@ SUBROUTINE wrf_quilt_ioexit( Status )
   INCLUDE 'mpif.h'
 #include "intio_tags.h"
   INTEGER ,       INTENT(OUT) :: Status
-  INTEGER                     :: DataHandle
+  INTEGER                     :: DataHandle, actual_iserver
   INTEGER i, itypesize, tasks_in_group, comm_io_group, me, ierr 
   REAL dummy
 
@@ -3358,7 +3358,22 @@ SUBROUTINE wrf_quilt_ioexit( Status )
 #endif
 
   DO iserver = 1, nio_groups
-    CALL get_mpi_comm_io_groups( comm_io_group , iserver )
+    if(poll_servers) then
+       ! We're using server polling mode, so we must call
+       ! *_find_server to receive the mpi_ssend sent by the servers,
+       ! otherwise WRF will hang at the mpi_x_reduce below.
+
+       call wrf_quilt_find_server(actual_iserver)
+
+       ! The actual_iserver is now set to the next available I/O server.
+       ! That may not be the same as iserver, but that's okay as long
+       ! as we run through this loop exactly nio_groups times.
+    else
+       ! Not using server polling, so just access servers in numeric order.
+       actual_iserver=iserver
+    endif
+
+    CALL get_mpi_comm_io_groups( comm_io_group , actual_iserver )
 
     CALL mpi_x_comm_size( comm_io_group , tasks_in_group , ierr )
     CALL mpi_comm_rank( comm_io_group , me , ierr )

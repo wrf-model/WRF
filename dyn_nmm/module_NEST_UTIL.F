@@ -452,7 +452,11 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
             SQWS(I,J) =  (U(I,J,9)*U(I,J,9) + V(I,J,9)*V(I,J,9)           &
                       +   U(I,J,10)*U(I,J,10) + V(I,J,10)*V(I,J,10)       &
                       +   U(I,J,11)*U(I,J,11) + V(I,J,11)*V(I,J,11))/3.0
+#ifdef HWRF
+            PDYN(I,J) =   MSLP(I,J)
+#else
             PDYN(I,J) =   MSLP(I,J)  + 1.1*SQWS(I,J)/2.0
+#endif
         ENDDO
       ENDDO
 

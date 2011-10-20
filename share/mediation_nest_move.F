@@ -1207,11 +1207,11 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
 
 ! PURPOSE: DECIDE THE DIRECTION OF MOVE
 !    Two modes:
-!        vortex_tracker=2 -- use results of STATS_FOR_MOVE to follow
+!        vortex_tracker=3 -- use results of STATS_FOR_MOVE to follow
 !          the vortex center.  If the vortex is more than 3 X
 !          gridpoints or 6 Y gridpoints from the center, then
 !          move to follow it.
-!        vortex_tracker=3 -- follow this domain's nest.  Only works
+!        vortex_tracker=2 -- follow this domain's nest.  Only works
 !          if this domain has a nest, otherwise this domain is
 !          stationary.  If the nest domain is more than 3 X
 !          gridpoints or 6 Y gridpoints from the center, then move
@@ -1368,6 +1368,11 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
             IF((grid%YLOC_2-grid%YLOC_1) .GE. 3)THEN
                move_cd_y  = -1 ! will be changed to -2 automatically by caller
             ENDIF
+         ELSE IF ((grid%YLOC_2-grid%YLOC_1) .GE. 3 .and. grid%vortex_tracker==1) THEN
+            ! Original HWRF tracker had a less sensitive north motion test.
+            ! Only one parent gridpoint of north distance is required.  The
+            ! nest will actually move two parent gridpoints though.
+            move_cd_y  = 2
          ELSE IF ((grid%YLOC_2-grid%YLOC_1) .GE. 6)THEN 
             move_cd_y  = 2 
          ELSE IF ((grid%YLOC_1-grid%YLOC_2) .GE. 6)THEN    ! wait for the move

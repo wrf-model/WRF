@@ -303,6 +303,8 @@ while ( <CONFIGURE_DEFAULTS> )
     close CONFIGURE_DEFAULTS ;
     if ( $sw_opt_level eq "-f" ) {
       open CONFIGURE_DEFAULTS, "cat ./arch/postamble_new ./arch/noopt_exceptions_f |"  or die "horribly" ;
+    } elsif ( $sw_opt_level eq "oldf" ) {
+      open CONFIGURE_DEFAULTS, "cat ./arch/postamble_new ./arch/noopt_exceptions_oldf |"  or die "horribly" ;
     } else {
       open CONFIGURE_DEFAULTS, "cat ./arch/postamble_new ./arch/noopt_exceptions |"  or die "horribly" ;
     }

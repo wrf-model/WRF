@@ -564,8 +564,14 @@ contains
 
          ! Find h0 (should eventually be interpolated for smoothness)
          if (thetav(i,k) > thetav(i,1) .AND. h0idx(i) .EQ. 1) then
-            h0idx(i) = k
-            h0(i) = zm(i,k)
+         ! WA 9/28/11 limit h0 as for hd and hct
+            if (zm(i,k) < hmax) then
+               h0idx(i) = k
+               h0(i) = zm(i,k)
+            else
+               h0idx(i) = k
+               h0(i) = hmax
+            end if
          end if
       end do
 
@@ -1058,6 +1064,9 @@ contains
          convection_TKE_surface_src(i) = 0.
       end if
       te_temfx(i,1) = max(te_temfx(i,1), (leps(i,1) / Cgamma * (ust(i)**2. * S(i,1) + convection_TKE_surface_src(i)))**(2./3.))
+      if (te_temfx(i,1) > 20.0) then
+         te_temfx(i,1) = 20.0    ! WA 9/28/11 limit max TE
+      end if
       sfcFTE(i) = -(km(i,1)+km(i,2)) / 2. * (te_temfx(i,2)-te_temfx(i,1)) / dzm(i,2)
 
       do kt = 1,kte
@@ -1076,8 +1085,8 @@ contains
       end do
       te_temfx(i,kte) = 0.0   ! WA 4/2/10
       do kt = 2,kte-1
-         if (te_temfx(i,kt) > 30.0) then      ! WA DEBUG
-            te_temfx(i,kt) = 30.0    ! WA TEST limit max TE
+         if (te_temfx(i,kt) > 20.0) then
+            te_temfx(i,kt) = 20.0    ! WA 9/29/11 reduce limit max TE from 30
          end if
       end do
 

@@ -133,6 +133,9 @@
 #else
      &,            adjppt_tim
 #endif
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      real,save :: loadimbal_tim,previmbal_tim
+#endif
       real,save :: exch_tim_max
       real :: btim,btimx
       real :: et_max,this_tim
@@ -399,9 +402,17 @@
         uv_htov_tim=0.
         exch_tim_max=0.
         adjppt_tim=0.
+#ifdef NMM_FIND_LOAD_IMBALANCE
+        previmbal_tim=0.
+        loadimbal_tim=0.
+#endif
       endif
 !-----------------------------------------------------------------------
       N_MOIST=NUM_MOIST
+
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(previmbal_tim)
+#endif
 !
       DO J=MYJS_P4,MYJE_P4
         grid%iheg(J)=MOD(J+1,2)
@@ -443,7 +454,9 @@
 !-----------------------------------------------------------------------------
 !
       CALL wrf_debug ( 100 , 'nmm: in patch' )
-
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
       btimx=timef()
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_ZZ.inc"
@@ -571,6 +584,9 @@
 #endif
         FIRST=.TRUE.
 !       call hpm_init()
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
         btimx=timef()
 !emc_2010_bugfix_h50
         grid%mommix=amin1(grid%mommix,1.0)
@@ -631,6 +647,9 @@
 #endif
 !
 !-----------------------------------------------------------------------
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_A.inc"
 #endif
@@ -745,6 +764,9 @@
 !***  PRESSURE TENDENCY, SIGMA DOT, VERTICAL PART OF OMEGA-ALPHA
 !-----------------------------------------------------------------------
 !
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
       btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
@@ -778,6 +800,9 @@
 !***  ADVECTION OF grid%t, grid%u, AND grid%v
 !-----------------------------------------------------------------------
 !
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
       btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
@@ -826,6 +851,9 @@
 !-----------------------------------------------------------------------
         idtadt_block: IF(MOD(grid%ntsd,IDTADT)==0) THEN
 !-----------------------------------------------------------------------
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
           btimx=timef()
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_I.inc"
@@ -1012,6 +1040,9 @@
       idtadc_block: IF(MOD(grid%ntsd,IDTADC)==0) THEN
 !
 !-----------------------------------------------------------------------
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
         btimx=timef()
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_I_2.inc"
@@ -1132,6 +1163,9 @@
 !***  HORIZONTAL ADVECTION OF HEIGHT
 !-----------------------------------------------------------------------
 !
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
       btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
@@ -1161,6 +1195,9 @@
 !***  ADVECTION OF grid%w
 !-----------------------------------------------------------------------
 !
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
       btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
@@ -1275,6 +1312,9 @@
 !-----------------------------------------------------------------------
 !
       idtad_block: IF(MOD(grid%ntsd,GRID%IDTAD)==0)THEN
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
         btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
@@ -1662,6 +1702,9 @@
 
 #endif
 !
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
         btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
@@ -1692,6 +1735,9 @@
 !*** STORE ORIGINAL TEMPERATURE ARRAY
 !----------------------------------------------------------------------
 !
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
         btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
@@ -1736,6 +1782,9 @@
      &   CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME .or.                       &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN                       ! 
 !
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
         btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
@@ -1833,6 +1882,9 @@
      &     CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN 
 !emc_2010_bugfix_h50
 !
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
         btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
@@ -1942,6 +1994,9 @@
 !***  LATERAL DIFFUSION
 !----------------------------------------------------------------------
 !
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
       btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
@@ -1987,6 +2042,9 @@
 !***  UPDATING BOUNDARY VALUES AT HEIGHT POINTS
 !----------------------------------------------------------------------
 !
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
       btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
@@ -2051,6 +2109,9 @@
 !***  PRESSURE GRD, CORIOLIS, DIVERGENCE, AND HORIZ PART OF OMEGA-ALPHA
 !----------------------------------------------------------------------
 !
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
       btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
@@ -2095,6 +2156,9 @@
 !***  DIVERGENCE DAMPING
 !----------------------------------------------------------------------
 !
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
       btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
@@ -2123,6 +2187,9 @@
 !
       IF(FIRST.AND.grid%ntsd==0)THEN
         FIRST=.FALSE.
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
         btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
@@ -2147,6 +2214,9 @@
 !***  UPDATING BOUNDARY VALUES AT VELOCITY POINTS
 !----------------------------------------------------------------------
 !
+#ifdef NMM_FIND_LOAD_IMBALANCE
+      call blockf(loadimbal_tim)
+#endif
       btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
@@ -2204,6 +2274,9 @@
      &       +cltend_tim+cucnvc_tim+gsmdrive_tim+hdiff_tim             &
      &       +bocoh_tim+pfdht_tim+ddamp_tim+bocov_tim+uv_htov_tim      &
      &       +exch_tim+adjppt_tim
+#if defined(NMM_FIND_LOAD_IMBALANCE)
+      sum_tim=sum_tim + loadimbal_tim + previmbal_tim
+#endif
 !
       if(mod(grid%ntsd,n_print_time)==0)then
         write(message,*)' grid%ntsd=',grid%ntsd,' solve_tim=',solve_tim*1.e-3          &
@@ -2253,6 +2326,13 @@
         call wrf_message(trim(message))
         write(message,*)' exch_tim=',exch_tim*1.e-3,' pct=',exch_tim/sum_tim*100.
         call wrf_message(trim(message))
+#ifdef NMM_FIND_LOAD_IMBALANCE
+        write(message,*)' loadimbal_tim=',loadimbal_tim*1.e-3,' pct=',loadimbal_tim/sum_tim*100.
+        call wrf_message(trim(message))
+        write(message,*)' previmbal_tim=',previmbal_tim*1.e-3,' pct=',previmbal_tim/sum_tim*100.
+        call wrf_message(trim(message))
+#endif
+
 !        call time_stats(exch_tim,'exchange',grid%ntsd,mype,npes,mpi_comm_comp)
 !        write(message,*)' exch_tim_max=',exch_tim_max*1.e-3
 !        call wrf_message(trim(message))
@@ -3248,3 +3328,24 @@
       timef=timef*1000
 #endif
       END FUNCTION TIMEF
+#if defined(NMM_FIND_LOAD_IMBALANCE)
+      SUBROUTINE BLOCKF(block_tim)
+#if defined(DM_PARALLEL)
+        use module_dm, only : local_communicator
+        implicit none
+        interface
+           function timef()
+             real*8 timef
+           end function timef
+        end interface
+        integer :: ierr
+        real, intent(inout) :: block_tim
+        real*8 :: when
+        when=timef()
+        call mpi_barrier(local_communicator,ierr)
+        block_tim=real(block_tim+(timef()-when))
+#else
+        return
+#endif
+      END SUBROUTINE BLOCKF
+#endif

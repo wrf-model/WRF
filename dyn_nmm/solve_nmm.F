@@ -3237,8 +3237,14 @@
       END SUBROUTINE FIELD_STATS
 !----------------------------------------------------------------------
       FUNCTION TIMEF()
+      implicit none
       REAL*8 TIMEF
+#if defined(OLD_TIMERS)
       INTEGER :: IC,IR
       CALL SYSTEM_CLOCK(COUNT=IC,COUNT_RATE=IR)
       TIMEF=REAL(IC)/REAL(IR)*1000.0
-      END
+#else
+      call hires_timer(timef)
+      timef=timef*1000
+#endif
+      END FUNCTION TIMEF

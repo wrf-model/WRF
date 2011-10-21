@@ -65,7 +65,8 @@ OBJS    =       \
                 wrf_shutdown.o             \
                 wrf_debug.o                \
                 libmassv.o                 \
-                collect_on_comm.o
+                collect_on_comm.o          \
+                hires_timer.o
 
 #compile as a .o but do not link into the main library
 SPECIAL =       module_internal_header_util.o pack_utils.o
@@ -198,6 +199,8 @@ module_dm.o: module_machine.o module_state_description.o module_wrf_error.o \
 		module_timing.o \
 		module_comm_nesting_dm.o \
 		module_configure.o module_comm_dm.o
+
+module_timing.o: hires_timer.o
 
 module_comm_dm.o: module_comm_dm_0.o module_comm_dm_1.o module_comm_dm_2.o module_comm_dm_3.o module_comm_dm_4.o
 

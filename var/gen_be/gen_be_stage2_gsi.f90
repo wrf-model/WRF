@@ -25,7 +25,7 @@ program gen_be_stage2_gsi
    integer              :: nx,ny,nz,ni,nj,nk,dim1,dim2,dim3,ncat
    integer              :: nml_unit,ncases,ncount,member
    real                 :: lat_bins_in_deg
-   integer              :: less_q_from_top, debug
+   integer              :: less_levels_from_top, debug
    real                 :: ds, angle,ncount_inv,min_xlat 
    logical              :: fstat
 
@@ -37,7 +37,7 @@ program gen_be_stage2_gsi
    integer              :: i,j,n, ierror, npes, mype
 !
    namelist /gen_be_stage2_gsi_nl/debug,stage1_gsi_dir,nx,ny,nz, fstat,&
-             less_q_from_top, lat_bins_in_deg
+             less_levels_from_top, lat_bins_in_deg
 
    integer              :: num_aeros
    integer, parameter   :: num_aeros_max = 200
@@ -65,7 +65,7 @@ program gen_be_stage2_gsi
 
     stage1_gsi_dir = '/ptmp/rizvi/data/con200/run_gen_be_gsi/working/stage1_gsi'
     nx = 44 ; ny = 44 ; nz = 27 ; lat_bins_in_deg = 1.0
-    less_q_from_top = 0 ; fstat= .false. ; debug = 0
+    less_levels_from_top = 0 ; fstat= .false. ; debug = 0
  
    call get_aero_info(process_aero,aeros_to_process,num_aeros)
 
@@ -174,7 +174,7 @@ program gen_be_stage2_gsi
 
     if( debug > 0  .and. mype==0)write(6,*)'calling compute_variance_and_len_scale'
      call compute_variance_and_len_scales(nx,ny,nz,ncat,&
-         npes,mype,debug, ncases, less_q_from_top,filen, &
+         npes,mype,debug, ncases, less_levels_from_top,filen, &
          mapfac_x,mapfac_y, ds, rlat, xlat,xlon,sigl,f,anew,bnew,wnew, nlat,count, &
          process_aero,num_aeros,aeros_to_process(1:num_aeros) )
 
@@ -234,14 +234,12 @@ program gen_be_stage2_gsi
     real                       :: p8(1:nz),p88(1:nz),b8(1:nz),x8(1:nz)
 
 !   
-    real                       :: mean_field, inv_nxny
     integer                    :: npeloop, moop, loop 
     integer                    :: i,j,l,ll,n, ierror
     integer                    :: k,k2,km,kn,kp,kz,kv,kd,kt,kq,kq2,kvd,kvp,kvt,kvq
 !
 
     if( debug > 0  .and. mype==0)write(6,*)'in compute_reg_coef'
-   inv_nxny= 1.0/float(nx*ny)
 
 !if(mype==3)then
 !tmp4=f
@@ -285,22 +283,6 @@ program gen_be_stage2_gsi
     if( debug > 0  .and. mype==0)write(6,*)' calling read_wrf_arw for case: ',moop 
 
       call read_wrf_arw(trim(filen(loop)),nx,ny,nz, mype, sf,vp,t1,q,q2,p) 
-
-    ! Remove mean field:
-      mean_field = sum(p(1:nx,1:ny)) * inv_nxny
-      p(1:nx,1:ny) = p(1:nx,1:ny) - mean_field
-    do k = 1, nz
-      mean_field = sum(sf(1:nx,1:ny,k)) * inv_nxny
-      sf(1:nx,1:ny,k) = sf(1:nx,1:ny,k) - mean_field
-      mean_field = sum(vp(1:nx,1:ny,k)) * inv_nxny
-      t1(1:nx,1:ny,k) = t1(1:nx,1:ny,k) - mean_field
-      mean_field = sum(t1(1:nx,1:ny,k)) * inv_nxny
-      t1(1:nx,1:ny,k) = t1(1:nx,1:ny,k) - mean_field
-      mean_field = sum(q(1:nx,1:ny,k)) * inv_nxny
-      q(1:nx,1:ny,k) = q(1:nx,1:ny,k) - mean_field
-      mean_field = sum(q2(1:nx,1:ny,k)) * inv_nxny
-      q2(1:nx,1:ny,k) = q2(1:nx,1:ny,k) - mean_field
-    end do
 
 ! rizvi
 ! compute <psi,chi> and <psi,psi> covariance matrix
@@ -572,7 +554,7 @@ anew=0.
  
 
   subroutine compute_variance_and_len_scales(nx,ny,nz,ncat, &
-              npes,mype,debug, ncases, less_q_from_top, filen, &
+              npes,mype,debug, ncases, less_levels_from_top, filen, &
               mapfac_x,mapfac_y, ds,rlat, &
               xlat,xlon,sigl,f,anew,bnew,wnew, nlat,count,process_aero,num_aeros,aeros_to_process) ! added aeros
 !
@@ -588,10 +570,11 @@ anew=0.
 !   real, parameter           :: mpi_rtype=mpi_real8
 #endif
 
-   real, parameter           :: rbig = 100000000., rsmall = 0.00000001
+   real   , parameter    :: rsmall = 1.0e-30          ! small number to assign with hydrometeor
+   real   , parameter    :: rbig   = 1.0e30           ! big number to assign with hydrometeor
 
    integer, intent(in)       :: nx,ny,nz,ncat
-   integer, intent(in)       :: npes,mype,debug,ncases,less_q_from_top
+   integer, intent(in)       :: npes,mype,debug,ncases,less_levels_from_top
    character(120), intent(in):: filen(ncases)
    integer, intent(in)       :: nlat(1:nx,1:ny)
    real,    intent(in)       :: mapfac_x(1:nx,1:ny),mapfac_y(1:nx,1:ny)
@@ -832,7 +815,7 @@ anew=0.
 
    enddo
 !!!!!!!!!!!!q
-   do l=1,nz- less_q_from_top
+   do l=1,nz- less_levels_from_top
         kq=nz*4+1+l
           do j=1,ny
           do i=1,nx
@@ -845,7 +828,7 @@ anew=0.
           end do
    end do
 
-   do l=1,nz- less_q_from_top
+   do l=1,nz- less_levels_from_top
        kq=nz*3+1+l
        lq=nz*3+l
           do j=1,ny
@@ -939,7 +922,7 @@ ENDDO   ! LOOP
          hlt_aero = hlt_aero/(float(ncases))
       end if
 
-   do l= nz - less_q_from_top +1 , nz
+   do l= nz - less_levels_from_top +1 , nz
        kq2=nz*4+1+l
        kq=nz*3+1+l
        lq=nz*3+l
@@ -1054,11 +1037,11 @@ ENDDO   ! LOOP
 ! Now fix vert corr for q
   l = 4    
   ll=(l-1)*nz
-  do k=1,nz-less_q_from_top
+  do k=1,nz-less_levels_from_top
   kp=k+1
   km=k
   if(k==1)km=2
-  if(kp==nz-less_q_from_top+1)kp=nz-less_q_from_top-1
+  if(kp==nz-less_levels_from_top+1)kp=nz-less_levels_from_top-1
   km=km+ll
   kp=kp+ll
   if( abs(2.-vorrt(1,km)-vorrt(1,kp) ) > 0 ) then

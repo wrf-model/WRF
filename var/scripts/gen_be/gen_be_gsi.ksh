@@ -128,7 +128,7 @@ if $RUN_GEN_BE_GSI_STAGE2; then
     ny = ${NUM_SN},
     nz = ${NUM_LEVELS},
     lat_bins_in_deg  = ${LAT_BINS_IN_DEG},
-    less_q_from_top  = ${LESS_Q_FROM_TOP},
+    less_levels_from_top  = ${LESS_LEVELS_FROM_TOP},
     debug  = ${DEBUG} /
 EOF
 

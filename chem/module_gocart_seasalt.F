@@ -96,10 +96,10 @@ CONTAINS
      chem(i,kts,j,p_seas_4)=tc(4)*converi
      endif
 ! for output diagnostics
-!    emis_seas(i,1,j,p_eseas1)=bems(1)
-!    emis_seas(i,1,j,p_eseas2)=bems(2)
-!    emis_seas(i,1,j,p_eseas3)=bems(3)
-!    emis_seas(i,1,j,p_eseas4)=bems(4)
+     emis_seas(i,1,j,p_eseas1)=bems(1)
+     emis_seas(i,1,j,p_eseas2)=bems(2)
+     emis_seas(i,1,j,p_eseas3)=bems(3)
+     emis_seas(i,1,j,p_eseas4)=bems(4)
      endif
   enddo
   enddo

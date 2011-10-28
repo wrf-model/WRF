@@ -15,7 +15,7 @@ CONTAINS
    SUBROUTINE GRELLDRVCT(DT,itimestep,DX,                           &
               rho_phy,RAINCV,chem,                                  &
               U,V,t_phy,moist,dz8w,p_phy,                           &
-              XLV,CP,G,r_v,z,cu_co_ten,                             &
+              XLV,CP,G,r_v,z,cu_co_ten,ktop_out,                    &
               k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow,   &
               ishallow,num_moist,numgas,num_chem,chemopt,scalaropt, &
               ids,ide, jds,jde, kds,kde,                            &
@@ -55,6 +55,7 @@ CONTAINS
           INTENT(INOUT   ) ::                                   &
                                                     cu_co_ten
 
+   INTEGER,  DIMENSION( ims:ime , jms:jme  ) , INTENT(  OUT) :: ktop_out
 
 !
    REAL, INTENT(IN   ) :: DT, DX
@@ -218,6 +219,7 @@ CONTAINS
             ENDDO
        ENDDO
 
+      ktop_out(its:itf,J) = ktop(its:itf)
 
  100    continue
 

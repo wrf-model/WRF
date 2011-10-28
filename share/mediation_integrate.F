@@ -171,6 +171,9 @@ SUBROUTINE med_after_solve_io ( grid , config_flags )
    ! Compute time series variables
    CALL calc_ts(grid)
 
+   ! Compute track variables 
+   CALL track_driver(grid)
+
    RETURN
 END SUBROUTINE med_after_solve_io
 

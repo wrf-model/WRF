@@ -160,8 +160,8 @@
  {158:118 } MCO3+CH3O2=2 CH2O+HO2+CH3CO3{+CO2} : ARR2(2.e-12_dp, -500._dp, TEMP) ;
  {159:119 } MCO3+CH3CO3=CH3O2+CH2O+CH3CO3{+2*CO2} : ARR2(4.6e-12_dp, -530._dp, TEMP) ;
  {160:120 } MCO3+MCO3=2 CH2O+2 CH3CO3{+2*CO2} : ARR2(2.3e-12_dp, -530._dp, TEMP) ;
- {161:121 } MCO3+NO2+M=MPAN{+M}            : 1.1e-11_dp*temp/(300._dp*c_m) ;
- {162:122 } MPAN+M=MCO3+NO2{+M}            : 1.2221e17_dp*temp*exp( -14000._dp/temp )/(300._dp*c_m) ;
+ {161:121 } MCO3+NO2+M=MPAN{+M}            : 1.1e-11_dp*300._dp/(temp*c_m) ;
+ {162:122 } MPAN+M=MCO3+NO2{+M}            : 1.2221e17_dp*300._dp*exp( -14000._dp/temp )/(temp*c_m) ;
  {163:123 } C10H16+OH=TERPO2               : ARR2(1.2e-11_dp, -444._dp, TEMP) ;
  {164:124 } C10H16+O3=.7 OH+MVK+MACR+HO2   : ARR2(1.e-15_dp, 732._dp, TEMP) ;
  {165:125 } C10H16+NO3=TERPO2+NO2          : ARR2(1.2e-12_dp, -490._dp, TEMP) ;

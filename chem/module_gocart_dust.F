@@ -85,7 +85,7 @@ CONTAINS
   do j=jbegc,jendc
   do i=ibegc,iendc
 !
-! donṫ do dust over water!!!
+! no dust over water!!!
 !
      if(xland(i,j).lt.1.5)then
      ilwi(1,1)=1
@@ -101,7 +101,7 @@ CONTAINS
      w10m(1,1)=sqrt(u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j))
      airmas(1,1)=-(p8w(i,kts+1,j)-p8w(i,kts,j))*dx*dx/g
 !
-! we donṫ trust the u10,v10 values, is model layers are very thin near surface
+! don't trust the u10,v10 values, is model layers are very thin near surface
 !
      if(dz8w(i,kts,j).lt.12.)w10m=sqrt(u_phy(i,kts,j)*u_phy(i,kts,j)+v_phy(i,kts,j)*v_phy(i,kts,j))
      erodin(1,1,1,1)=erod(i,j,1)!/dx/dx
@@ -150,11 +150,11 @@ CONTAINS
      chem(i,kts,j,p_dust_5)=tc(5)*converi
      endif
 ! for output diagnostics
-!    emis_dust(i,1,j,p_edust1)=bems(1)
-!    emis_dust(i,1,j,p_edust2)=bems(2)
-!    emis_dust(i,1,j,p_edust3)=bems(3)
-!    emis_dust(i,1,j,p_edust4)=bems(4)
-!    emis_dust(i,1,j,p_edust5)=bems(5)
+     emis_dust(i,1,j,p_edust1)=bems(1)
+     emis_dust(i,1,j,p_edust2)=bems(2)
+     emis_dust(i,1,j,p_edust3)=bems(3)
+     emis_dust(i,1,j,p_edust4)=bems(4)
+     emis_dust(i,1,j,p_edust5)=bems(5)
      endif
   enddo
   enddo

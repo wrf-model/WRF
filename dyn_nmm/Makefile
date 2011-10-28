@@ -91,4 +91,8 @@ module_GWD.o: ../frame/module_dm.o
 
 module_initialize_real.o: ../share/module_model_constants.o
 
+start_domain_nmm.o: module_ADVECTION.o module_BNDRY_COND.o module_CTLBLK.o \
+                    module_DIFFUSION_NMM.o module_GWD.o module_NONHY_DYNAM.o \
+                    module_IGWAVE_ADJUST.o
+
 # DO NOT DELETE

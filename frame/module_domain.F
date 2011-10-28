@@ -921,6 +921,23 @@ CONTAINS
       grid%ntsloc        = 0
       grid%ntsloc_domain = 0
 
+#if (EM_CORE == 1)
+! Allocate storage for track metadata
+      ALLOCATE( grid%track_time_in( grid%track_loc_in ) )
+      ALLOCATE( grid%track_lat_in( grid%track_loc_in ) )
+      ALLOCATE( grid%track_lon_in( grid%track_loc_in ) )
+
+      ALLOCATE( grid%track_time_domain( grid%track_loc_in ) )
+      ALLOCATE( grid%track_lat_domain( grid%track_loc_in ) )
+      ALLOCATE( grid%track_lon_domain( grid%track_loc_in ) )
+      ALLOCATE( grid%track_i( grid%track_loc_in ) )
+      ALLOCATE( grid%track_j( grid%track_loc_in ) )
+
+      grid%track_loc        = 0
+      grid%track_loc_domain = 0
+      grid%track_have_calculated = .FALSE.
+      grid%track_have_input      = .FALSE.
+#endif
 #ifdef DM_PARALLEL
       CALL wrf_get_dm_communicator ( grid%communicator )
       CALL wrf_dm_define_comms( grid )
@@ -1097,11 +1114,9 @@ CONTAINS
                         p => p%next
                       ENDDO
                       IF ( .NOT. found ) THEN
-#if ( DA_CORE != 1 )
                         WRITE(mess,*)'W A R N I N G : Unable to modify mask for ',TRIM(lookee),&
                                      '.  Variable not found. File: ',TRIM(fname),' at line ',lineno
                         CALL wrf_message(mess)
-#endif
                         gavewarning = .TRUE.
                       ENDIF
                       fieldno = fieldno + 1
@@ -1207,11 +1222,9 @@ CONTAINS
        ENDIF
      ENDIF
      IF ( count_em > 100 ) THEN
-#if ( DA_CORE != 1 )
        WRITE(mess,*)'ERROR module_domain:  Array size for you_warned_me2 is fixed at 100'
        CALL wrf_message(mess)
-       CALL wrf_error_fatal('Did you really type > 100 fields into '//TRIM(fname)//' ?')
-#endif
+       CALL wrf_error_fatal('Did you really type > 100 fields into ', TRIM(fname) ,' ?')
      ELSE
        IF ( .NOT. you_warned_me2(count_em,id) ) THEN
          CALL wrf_message(mess)     ! Write warning message once for each field
@@ -1595,6 +1608,39 @@ CONTAINS
       IF ( ASSOCIATED( grid%ts_filename ) ) THEN
         DEALLOCATE( grid%ts_filename )
       ENDIF 
+#if (EM_CORE == 1)
+      IF ( ASSOCIATED( grid%track_time_in ) ) THEN
+        DEALLOCATE( grid%track_time_in )
+      ENDIF
+ 
+      IF ( ASSOCIATED( grid%track_lat_in ) ) THEN
+        DEALLOCATE( grid%track_lat_in )
+      ENDIF
+ 
+      IF ( ASSOCIATED( grid%track_lon_in ) ) THEN
+        DEALLOCATE( grid%track_lon_in )
+      ENDIF
+ 
+      IF ( ASSOCIATED( grid%track_i ) ) THEN
+        DEALLOCATE( grid%track_i )
+      ENDIF
+ 
+      IF ( ASSOCIATED( grid%track_j ) ) THEN
+        DEALLOCATE( grid%track_j )
+      ENDIF
+
+      IF ( ASSOCIATED( grid%track_time_domain ) ) THEN
+        DEALLOCATE( grid%track_time_domain )
+      ENDIF
+ 
+      IF ( ASSOCIATED( grid%track_lat_domain ) ) THEN
+        DEALLOCATE( grid%track_lat_domain )
+      ENDIF
+ 
+      IF ( ASSOCIATED( grid%track_lon_domain ) ) THEN
+        DEALLOCATE( grid%track_lon_domain )
+      ENDIF
+#endif
       DEALLOCATE( grid )
       NULLIFY( grid )
 

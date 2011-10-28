@@ -221,5 +221,18 @@ MODULE module_domain_type
       LOGICAL :: have_calculated_tslocs
       LOGICAL :: have_displayed_alloc_stats   ! used in module_alloc_space to display alloc stats; only do it once.
 
+! Track location information
+      CHARACTER (LEN=19), POINTER, DIMENSION(:) ::  track_time_in
+      REAL, POINTER, DIMENSION(:) :: track_lat_in, track_lon_in
+
+      INTEGER :: track_loc, track_loc_domain
+      INTEGER :: track_next_time
+      INTEGER, POINTER, DIMENSION(:) :: track_i, track_j
+
+      CHARACTER (LEN=19), POINTER, DIMENSION(:) ::  track_time_domain
+      REAL, POINTER, DIMENSION(:) :: track_lat_domain, track_lon_domain
+
+      LOGICAL :: track_have_calculated
+      LOGICAL :: track_have_input
    END TYPE domain
 END MODULE module_domain_type

@@ -47,6 +47,7 @@
 ! USE module_convtrans_prep
   USE module_dry_dep_driver
   USE module_emissions_driver
+  USE module_ltng_cpm, only: adjust_ktop
   USE module_input_tracer, only: set_tracer
   USE module_wetscav_driver, only: wetscav_driver
   USE module_wetdep_ls, only:wetdep_ls
@@ -55,6 +56,9 @@
                                      chem_dbg,      &
 #endif
                                      get_last_gas,mozcart_lbc_set
+  USE module_upper_bc_driver, only: upper_bc_driver
+  USE module_tropopause,      only: tropopause_driver
+
    IMPLICIT NONE
 
    !  Input data.
@@ -352,6 +356,7 @@
   num_3d_s        = num_scalar
   numgas          = get_last_gas(config_flags%chem_opt)
   numgas_aqfrac   = 0    !will be set upon allocation of gas_aqfrac
+
 
 
 #if ( EM_CORE == 1 )
@@ -751,11 +756,34 @@
        end if
 #endif
 
+!-- set upper boundary condition
+!   if( config_flags%have_bcs_upper )then
+!      call wrf_debug(15,'set upper boundary condition')
+!      call tropopause_driver( grid%id, grid%dt, current_date_char,         &
+!                              t_phy, p_phy, p8w, zmid, z_at_w,             &
+!                              grid%tropo_lev, grid%tropo_p,  grid%tropo_z, &
+!                              ids, ide, jds, jde, kds, kde,                &
+!                              ims, ime, jms, jme, kms, kme,                &
+!                              its, ite, jts, jte, kts, kte                 )
+!      call upper_bc_driver  ( grid%id, grid%dt, current_date_char, &
+!                              chem, p_phy, p8w, grid%tropo_lev,    &
+!                              ids,ide, jds,jde, kds,kde,           &
+!                              ims,ime, jms,jme, kms,kme,           &
+!                              its,ite, jts,jte, kts,kte            )
+!   endif
+
 
 !--- emissions
 
     if(config_flags%emiss_inpt_opt > 0)then
       call wrf_debug(15,'calling emissions driver')
+
+      ! limit ktop by WMO tropopause for cpm ltng param
+      call adjust_ktop ( grid%ktop, grid%ktop_adj, t_phy, z_at_w, zmid,               &
+               ids,ide, jds,jde, kds,kde,                                             &
+               ims,ime, jms,jme, kms,kme,                                             &
+               its,ite, jts,jte, kts,kte                                              &
+                     )
 
       call emissions_driver(grid%id,ktau,grid%dt,grid%DX,                                  &
               adapt_step_flag, curr_secs,                                                  &
@@ -811,7 +839,7 @@
               grid%temp_upper, grid%temp_lower, grid%N_IC, grid%N_CG,                      &
               grid%lflash_data, grid%ic_flshrate, grid%cg_flshrate,                        &
               grid%flashrate_factor, grid%flashrate_method, grid%iccg_method,              &
-              grid%cellcount_method,                                                       &
+              grid%cellcount_method,grid%ktop_adj,                                             &
          ! stuff for aircraft emissions
               emis_aircraft,                                                               &   
               ids,ide, jds,jde, kds,kde,                                                   &
@@ -903,6 +931,11 @@
               grid%ph_acetp,grid%ph_xooh,grid%ph_isooh,grid%ph_alkooh,                &
               grid%ph_mekooh,grid%ph_tolooh,grid%ph_terpooh,grid%ph_mvk,              &
               grid%ph_glyald,grid%ph_hyac,                                            &
+              config_flags%track_tuv_lev,                                             &
+              config_flags%track_rad_num,                                             &
+              config_flags%track_tuv_num,                                             &
+              grid%radfld,grid%adjcoe,grid%phrate,                                    &
+              grid%track_wc,grid%track_zref,                                          &
               grid%tauaer1,grid%tauaer2,grid%tauaer3,grid%tauaer4,                    &
               grid%gaer1,grid%gaer2,grid%gaer3,grid%gaer4,                            &
               grid%waer1,grid%waer2,grid%waer3,grid%waer4,                            &
@@ -1034,6 +1067,7 @@
 #endif
              p_phy,XLV,CP,G,r_v,                                                      &
              z_at_w,grid%cu_co_ten,                                                   &
+             grid%ktop, &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
              config_flags%ishallow,num_moist,numgas,num_chem,config_flags%chem_opt,0, &
              ids,ide, jds,jde, kds,kde,                                               &
@@ -1064,6 +1098,7 @@
 #endif
              p_phy,XLV,CP,G,r_v,                                                      &
              z_at_w, grid%cu_co_ten,                                                  &
+             grid%ktop, &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
              config_flags%ishallow,num_moist,0,num_tracer,0,config_flags%tracer_opt,  &
              ids,ide, jds,jde, kds,kde,                                               &
@@ -1312,13 +1347,16 @@ CALL kpp_mechanism_driver (chem,                                                
 #if (EM_CORE == 1)
               rri,t_phy,moist,p8w,t8w,                                                &
 #endif
-              p_phy,chem,rho,grid%cldfra,                                             &
+              grid%dx, grid%dy,                                                       &
+              p_phy,chem,rho,grid%cldfra,grid%cldfra2,                                &
+              grid%rainprod,grid%evapprod,grid%hno3_col_mdel,                         &
               grid%qlsink,grid%precr,grid%preci,grid%precs,grid%precg,                &
-              gas_aqfrac, numgas_aqfrac,                                              &
+              gas_aqfrac, numgas_aqfrac,dz8w,                                         &
               grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,                      &
               grid%asulf,grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,                &
               grid%cvalk1,grid%cvole1,grid%cvapi1,grid%cvapi2,                        &
               grid%cvlim1,grid%cvlim2,                                                &
+              grid%qv_b4mp, grid%qc_b4mp, grid%qi_b4mp, grid%qs_b4mp,                 &
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &
               its,ite, jts,jte, kts,kte)                                              
@@ -1398,6 +1436,22 @@ end if !Chemistry time step check
                                ims,ime, jms,jme, kms,kme,       & ! memory dims
                                its,ite, jts,jte, kts,kte )
    END SELECT tracer2
+
+!-- set upper boundary condition
+    if( config_flags%have_bcs_upper )then
+       call wrf_debug(15,'set upper boundary condition')
+       call tropopause_driver( grid%id, grid%dt, current_date_char,         &
+                               t_phy, p_phy, p8w, zmid, z_at_w,             &
+                               grid%tropo_lev, grid%tropo_p,  grid%tropo_z, &
+                               ids, ide, jds, jde, kds, kde,                &
+                               ims, ime, jms, jme, kms, kme,                &
+                               its, ite, jts, jte, kts, kte                 )
+       call upper_bc_driver  ( grid%id, grid%dt, current_date_char, &
+                               chem, p_phy, p8w, grid%tropo_lev,    &
+                               ids,ide, jds,jde, kds,kde,           &
+                               ims,ime, jms,jme, kms,kme,           &
+                               its,ite, jts,jte, kts,kte            )
+    endif
 
 
 # if ( EM_CORE == 1 ) 

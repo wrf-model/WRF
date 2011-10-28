@@ -320,7 +320,7 @@ MODULE module_input_chem_data
         real, pointer :: ch4_lbc(:,:)
         real, pointer :: n2o_lbc(:,:)
         real, pointer :: h2_lbc(:,:)
-        logical       :: allocated
+        logical       :: is_allocated
       end type lbc_concentration
 
       type(lbc_concentration), allocatable :: fixed_lbc(:)
@@ -3451,10 +3451,10 @@ real, intent(in)    :: chem(ims:ime,kms:kme,jms:jme,num_chem)
      end if
      write(err_msg,*) 'lbc_init: initializing ',max_dom,' domains'
      call wrf_message( trim(err_msg) )
-     fixed_lbc(:)%allocated = .false.
+     fixed_lbc(:)%is_allocated = .false.
    endif
 
-   if( .not. fixed_lbc(id)%allocated ) then
+   if( .not. fixed_lbc(id)%is_allocated ) then
      if( p_ch4 > 1 ) then
        allocate( fixed_lbc(id)%ch4_lbc(its:ite,jts:jte),stat=astat )
        if( astat /= 0 ) then
@@ -3477,7 +3477,7 @@ real, intent(in)    :: chem(ims:ime,kms:kme,jms:jme,num_chem)
        end if
        fixed_lbc(id)%h2_lbc(its:ite,jts:jte) = chem(its:ite,kts,jts:jte,p_h2)
      end if
-     fixed_lbc(id)%allocated = .true.
+     fixed_lbc(id)%is_allocated = .true.
    end if
 
 END SUBROUTINE mozcart_lbc_init

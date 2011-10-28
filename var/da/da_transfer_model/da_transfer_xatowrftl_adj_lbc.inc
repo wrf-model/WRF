@@ -39,7 +39,7 @@ subroutine da_transfer_xatowrftl_adj_lbc(grid, config_flags, filnam)
    ALLOCATE ( pbdy3dtemp2(ims:ime,jms:jme,kms:kme) )
    ALLOCATE ( qbdy3dtemp2(ims:ime,jms:jme,kms:kme) )
    ALLOCATE ( mbdy2dtemp2(ims:ime,1:1,    jms:jme) )
-   ALLOCATE ( wbdy3dtemp2(ims:ime,jms:jme,kms:kme) )
+!  ALLOCATE ( wbdy3dtemp2(ims:ime,jms:jme,kms:kme) )
 
    ubdy3dtemp2 = 0.0 
    vbdy3dtemp2 = 0.0 
@@ -47,20 +47,20 @@ subroutine da_transfer_xatowrftl_adj_lbc(grid, config_flags, filnam)
    pbdy3dtemp2 = 0.0 
    qbdy3dtemp2 = 0.0 
    mbdy2dtemp2 = 0.0 
-   wbdy3dtemp2 = 0.0 
+!  wbdy3dtemp2 = 0.0 
 
    !---------------------------------------------------------------------------
    ! [6.5] Add adjoint from LBC
    !---------------------------------------------------------------------------
 
-   CALL a_stuff_bdytend_new ( wbdy3dtemp2 , REAL(interval_seconds) ,                 &
-                              model_grid%a_w_btxs, model_grid%a_w_btxe,     &
-                              model_grid%a_w_btys, model_grid%a_w_btye,     &
-                              'W' , &
-                              spec_bdy_width      , &
-                              grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
-                              grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
-                              grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
+!  CALL a_stuff_bdytend_new ( wbdy3dtemp2 , REAL(interval_seconds) ,                 &
+!                             model_grid%a_w_btxs, model_grid%a_w_btxe,     &
+!                             model_grid%a_w_btys, model_grid%a_w_btye,     &
+!                             'W' , &
+!                             spec_bdy_width      , &
+!                             grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+!                             grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
+!                             grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
    CALL a_stuff_bdytend_new ( ubdy3dtemp2 , REAL(interval_seconds) ,                 &
                               model_grid%a_u_btxs, model_grid%a_u_btxe,     &
@@ -116,10 +116,14 @@ subroutine da_transfer_xatowrftl_adj_lbc(grid, config_flags, filnam)
                               grid%sm31, grid%em31, grid%sm32, grid%em32, 1, 1, &
                               grid%sp31, grid%ep31, grid%sp32, grid%ep32, 1, 1 )
 
-   CALL a_couple ( model_config_flags, grid%mu_2 , grid%a_mu_2, grid%mub , wbdy3dtemp2 , grid%w_2, grid%a_w_2, 'h' , grid%msfty , &
-                   grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
-                   grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
-                   grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
+#ifdef DM_PARALLEL
+#include "HALO_EM_E.inc"
+#endif
+   
+!  CALL a_couple ( model_config_flags, grid%mu_2 , grid%a_mu_2, grid%mub , wbdy3dtemp2 , grid%w_2, grid%a_w_2, 'h' , grid%msfty , &
+!                  grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+!                  grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
+!                  grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
    CALL a_couple ( model_config_flags, grid%mu_2 , grid%a_mu_2, grid%mub , ubdy3dtemp2 , grid%u_2 , grid%a_u_2 , 'u' , grid%msfuy , &
                    grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
@@ -157,14 +161,14 @@ subroutine da_transfer_xatowrftl_adj_lbc(grid, config_flags, filnam)
    call da_halo_em_e_ad ( grid%a_mu_2 )
 #endif  
 
-!  model_grid%a_w_btxs = 0.0
-!  model_grid%a_w_btxe = 0.0
-!  model_grid%a_w_btys = 0.0
-!  model_grid%a_w_btye = 0.0
-!  model_grid%a_w_bxs = 0.0
-!  model_grid%a_w_bxe = 0.0
-!  model_grid%a_w_bys = 0.0
-!  model_grid%a_w_bye = 0.0
+   model_grid%a_w_btxs = 0.0
+   model_grid%a_w_btxe = 0.0
+   model_grid%a_w_btys = 0.0
+   model_grid%a_w_btye = 0.0
+   model_grid%a_w_bxs = 0.0
+   model_grid%a_w_bxe = 0.0
+   model_grid%a_w_bys = 0.0
+   model_grid%a_w_bye = 0.0
 
    DEALLOCATE ( ubdy3dtemp2 )
    DEALLOCATE ( vbdy3dtemp2 )
@@ -172,7 +176,7 @@ subroutine da_transfer_xatowrftl_adj_lbc(grid, config_flags, filnam)
    DEALLOCATE ( pbdy3dtemp2 )
    DEALLOCATE ( qbdy3dtemp2 )
    DEALLOCATE ( mbdy2dtemp2 )
-   DEALLOCATE ( wbdy3dtemp2 )
+!  DEALLOCATE ( wbdy3dtemp2 )
 
 #ifndef A2C
    !---------------------------------------------------------------------------

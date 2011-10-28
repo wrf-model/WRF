@@ -129,7 +129,11 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
       call da_transfer_xatowrftl(grid, config_flags, 'tl01', timestr)
 
       if ( var4d_lbc ) then
-         call da_get_2nd_firstguess ( grid )
+         call domain_clock_get (grid, stop_timestr=timestr)
+         call domain_clock_set( grid, current_timestr=timestr )
+         grid%u_2 = u6_2 ; grid%v_2 = v6_2; grid%t_2 = t6_2;
+         grid%w_2 = w6_2 ; grid%mu_2 = mu6_2 ; grid%ph_2 =ph6_2
+         grid%moist = moist6; grid%p = p6; grid%psfc = psfc6
          call da_transfer_wrftoxb(xbx, grid, config_flags)
 
          call da_zero_x(grid%x6a)
@@ -156,6 +160,7 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
          call da_transfer_xatowrftl_lbc(grid, config_flags, 'tl01')
 
          call domain_clock_get( grid, start_timestr=timestr )
+         call domain_clock_set( grid, current_timestr=timestr )
          call da_read_basicstates ( xbx, grid, config_flags, timestr )
       else
          call da_transfer_xatowrftl_lbc(grid, config_flags, 'tl01')
@@ -465,12 +470,17 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
 
       call da_zero_x(grid%x6a)
       if (var4d_lbc) then
-         call da_get_2nd_firstguess ( grid )
+         call domain_clock_get (grid, stop_timestr=timestr)
+         call domain_clock_set( grid, current_timestr=timestr )
+         grid%u_2 = u6_2 ; grid%v_2 = v6_2; grid%t_2 = t6_2;
+         grid%w_2 = w6_2 ; grid%mu_2 = mu6_2 ; grid%ph_2 =ph6_2
+         grid%moist = moist6; grid%p = p6; grid%psfc = psfc6
          call da_transfer_wrftoxb(xbx, grid, config_flags)
 
          call da_transfer_xatowrftl_adj_lbc(grid, config_flags, 'gr01')
 
          call domain_clock_get( grid, start_timestr=timestr )
+         call domain_clock_set( grid, current_timestr=timestr )
          call da_read_basicstates ( xbx, grid, config_flags, timestr )
       end if
 

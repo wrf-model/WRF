@@ -38,6 +38,10 @@ REAL , DIMENSION(:,:,:) , ALLOCATABLE  :: ubdy3dtemp1 , vbdy3dtemp1 , tbdy3dtemp
 REAL , DIMENSION(:,:,:) , ALLOCATABLE  :: ubdy3dtemp2 , vbdy3dtemp2 , tbdy3dtemp2 , pbdy3dtemp2 , qbdy3dtemp2
 REAL , DIMENSION(:,:,:) , ALLOCATABLE  :: mbdy2dtemp1,  mbdy2dtemp2 , wbdy3dtemp1 , wbdy3dtemp2
 
+REAL , DIMENSION(:,:,:) , ALLOCATABLE  :: u6_2, v6_2, w6_2, t6_2, ph6_2, p6
+REAL , DIMENSION(:,:,:,:) , ALLOCATABLE  :: moist6
+REAL , DIMENSION(:,:) , ALLOCATABLE  :: mu6_2, psfc6
+
 contains
 
 #include "da_nl_model.inc"

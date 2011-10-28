@@ -143,7 +143,8 @@ module da_minimisation
    use da_lapack, only : dsteqr
 #ifdef VAR4D
    use da_4dvar, only : da_tl_model, da_ad_model, model_grid, input_nl_xtraj, &
-       kj_swap_reverse, upsidedown_ad_forcing
+       kj_swap_reverse, upsidedown_ad_forcing, u6_2, v6_2, w6_2, t6_2, ph6_2, p6, &
+      mu6_2, psfc6, moist6
    use da_transfer_model, only : da_transfer_xatowrftl_lbc, da_transfer_xatowrftl_adj_lbc, &
       da_transfer_wrftl_lbc_t0, da_transfer_wrftl_lbc_t0_adj, da_get_2nd_firstguess, &
       da_transfer_wrftoxb

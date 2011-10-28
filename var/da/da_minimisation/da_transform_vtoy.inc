@@ -36,7 +36,11 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
       call da_transfer_xatowrftl(grid, config_flags, 'tl01', timestr)
 
       if ( var4d_lbc ) then 
-         call da_get_2nd_firstguess ( grid )
+         call domain_clock_get (grid, stop_timestr=timestr1)
+         call domain_clock_set( grid, current_timestr=timestr1 )
+         grid%u_2 = u6_2 ; grid%v_2 = v6_2; grid%t_2 = t6_2;
+         grid%w_2 = w6_2 ; grid%mu_2 = mu6_2 ; grid%ph_2 =ph6_2
+         grid%moist = moist6; grid%p = p6; grid%psfc = psfc6
          call da_transfer_wrftoxb(xbx, grid, config_flags)
 
          shuffle = grid%xa
@@ -48,8 +52,9 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
 
          call da_transfer_xatowrftl_lbc(grid, config_flags, 'tl01')
 
-         call domain_clock_get( grid, start_timestr=timestr )
-         call da_read_basicstates ( xbx, grid, config_flags, timestr )
+         call domain_clock_get( grid, start_timestr=timestr1 )
+         call domain_clock_set( grid, current_timestr=timestr1 )
+         call da_read_basicstates ( xbx, grid, config_flags, timestr1 )
       else
          call da_transfer_xatowrftl_lbc(grid, config_flags, 'tl01')
       endif

@@ -1725,7 +1725,8 @@ integer::oops1,oops2
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
                         IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-                        grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) + lqmi(grid%isltyp(i,j)) , 0.005 )
+                        grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) , 0.005 )
+!                        grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) + lqmi(grid%isltyp(i,j)) , 0.005 )
                      END DO
                   END DO
                   DO j = jts, MIN(jde-1,jte)
@@ -1750,7 +1751,8 @@ integer::oops1,oops2
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
                         IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-                        grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) - lqmi(grid%isltyp(i,j)) , 0.005 )
+                        grid%smois(i,:,j) = MAX ( grid%smois(i,:,j)  , 0.005 )
+!                        grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) - lqmi(grid%isltyp(i,j)) , 0.005 )
                      END DO
                   END DO
                ELSE IF ( flag_soil_levels == 1 ) THEN
@@ -1765,7 +1767,8 @@ integer::oops1,oops2
                   DO j = jts, MIN(jde-1,jte)
                      DO i = its, MIN(ide-1,ite)
                         IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-                        grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) + lqmi(grid%isltyp(i,j)) , 0.005 )
+                        grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) , 0.005 )
+!                        grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) + lqmi(grid%isltyp(i,j)) , 0.005 )
                      END DO
                   END DO
                END IF

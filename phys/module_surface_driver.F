@@ -31,6 +31,7 @@ CONTAINS
      &          ,albbck,embck,lh,sh2o,shdmax,shdmin,z0                &
      &          ,flqc,flhc,psfc,sst,sstsk,dtw,sst_update,sst_skin,t2,emiss               &
      &          ,sf_sfclay_physics,sf_surface_physics,ra_lw_physics   &
+     &          ,mosaic_lu,mosaic_soil                                &
      &          ,landusef,soilctop,soilcbot,ra,rs,nlcat,nscat,vegf_px & ! PX-LSM
      &          ,snowncv, anal_interval, lai, pxlsm_smois_init        & ! PX-LSM
      &          ,pxlsm_soil_nudge                                     & ! PX-LSM
@@ -339,7 +340,7 @@ CONTAINS
 
    INTEGER, INTENT(IN)::   FRACTIONAL_SEAICE
 
-   INTEGER, INTENT(IN)::   NLCAT
+   INTEGER, INTENT(IN)::   NLCAT, mosaic_lu, mosaic_soil
    INTEGER, INTENT(IN)::   NSCAT
 
    INTEGER, INTENT(IN) :: sf_sfclay_physics, sf_surface_physics,      &
@@ -1750,10 +1751,12 @@ CONTAINS
                 dz8w,p8w,t_phy,qv_curr,qc_curr,rho,             & !p8w in [pa]
                 glw,gsw,emiss,chklowq,                          &
                 chs,flqc,flhc,mavail,canwat,vegfra,albedo,znt,  &
-                z0,snoalb, albbck,                              &   !new
+                z0,snoalb, albbck, lai,                         &   !new
+                mminlu, landusef, nlcat, mosaic_lu,             &
+                mosaic_soil, soilctop, nscat,                   &   !new
                 qsfc,qsg,qvg,qcg,dew,soilt1,tsnav,              &
                 tmn,ivgtyp,isltyp,xland,                        &
-                isice,xice,xice_threshold,                      &
+                iswater,isice,xice,xice_threshold,              &
                 cp,rovcp,g,xlv,stbolt,                          &
                 smois,sh2o,smstav,smstot,tslb,tsk,hfx,qfx,lh,   &
                 sfcrunoff,udrunoff,sfcexc,                      &

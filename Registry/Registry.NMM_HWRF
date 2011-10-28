@@ -1059,6 +1059,8 @@ rconfig   real    swrad_scat              namelist,physics      1             1 
 rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=hybrid (not yet implemented)"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""
 rconfig   integer num_urban_layers        namelist,physics      1            400       irh    "num_urban_layers"               ""      ""
+rconfig   integer mosaic_lu               namelist,physics      1             0       irh     "mosaic_lu"             ""      ""
+rconfig   integer mosaic_soil             namelist,physics      1             0       irh     "mosaic_soil"           ""      ""
 rconfig   integer maxiens                 namelist,physics	1             1       irh    "maxiens"                    ""      ""
 rconfig   integer maxens                  namelist,physics	1             3       irh    "maxens"                    ""      ""
 rconfig   integer maxens2                 namelist,physics	1             3       irh    "maxens2"                    ""      ""

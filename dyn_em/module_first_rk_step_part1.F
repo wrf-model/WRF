@@ -528,6 +528,8 @@ BENCH_START(surf_driver_tim)
      &        ,QSG=grid%qsg,QVG=grid%qvg,QCG=grid%qcg,SOILT1=grid%soilt1,TSNAV=grid%tsnav & ! ruc lsm
      &        ,SMFR3D=grid%smfr3d,KEEPFR3DFLAG=grid%keepfr3dflag,DEW=grid%dew             & ! ruc lsm
      &        ,POTEVP=grid%POTEVP, SNOPCX=grid%SNOPCX, SOILTB=grid%SOILTB                 & ! ruc lsm
+     &        ,MOSAIC_LU=config_flags%mosaic_lu                           &   ! RUC LSM
+     &        ,MOSAIC_SOIL=config_flags%mosaic_soil                       &   ! RUC LSM
      &        ,ISURBAN=isurban, MMINLU=TRIM(mminlu)                       &
      &        ,SNOTIME = grid%SNOTIME                                     &
      &        ,RDLAI2D=config_flags%rdlai2d                               &
@@ -674,10 +676,10 @@ BENCH_END(fire_driver_tim)
 
 #if ( WRF_DFI_RADAR == 1 )
       do_capsupress=0
-      if (config_flags%dfi_radar == 1) then
+!      if (config_flags%dfi_radar == 1) then
          if(grid%dfi_stage == DFI_FWD ) do_capsupress=1
          if(grid%itimestep <= 31 .and. grid%dfi_stage == DFI_FST ) do_capsupress=1
-      endif
+!      endif
 #endif
 
 BENCH_START(cu_driver_tim)

@@ -1247,6 +1247,8 @@
      &          ,TSNAV=TSNAV,SMFR3D=SMFR3D,KEEPFR3DFLAG=KEEPFR3DFLAG    &
      &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB,SR=SR        &
      &          ,DEW=DEW                                                &
+     &          ,MOSAIC_LU=CONFIG_FLAGS%MOSAIC_LU                       &
+     &          ,MOSAIC_SOIL=CONFIG_FLAGS%MOSAIC_SOIL                   &
 ! for URBAN
      &          ,NUM_ROOF_LAYERS=NUM_ROOF_LAYERS                        & ! urban
      &          ,NUM_WALL_LAYERS=NUM_WALL_LAYERS                        & ! urban

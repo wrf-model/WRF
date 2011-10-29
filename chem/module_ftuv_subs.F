@@ -230,7 +230,7 @@
                           o3top, o2top, albedo, z, tlev,         & 
                           tlay, airlev, rh, xlwc, o3,            &
                           acb1, acb2, aoc1, aoc2, aant,          & 
-                          aso4, asal, prate )
+                          aso4, asal, prate, adjcoe, radfld )
 
       use module_wave_data, only : nw, tuv_jmax, deltaw, sflx,   &
                                    c20, c40, c60, c80, sq
@@ -264,6 +264,8 @@
       real(dp), intent(in)    :: aso4(nz)
       real(dp), intent(in)    :: asal(nz)
       real(dp), intent(out)   :: prate(nz,tuv_jmax)
+      real(dp), intent(out)   :: adjcoe(nz,tuv_jmax)
+      real(dp), intent(out)   :: radfld(nz,nw-1)
 !----------------------------------------------------------
 ! ... local variables
 !----------------------------------------------------------
@@ -282,7 +284,7 @@
 !----------------------------------------------------------
 ! ... fast-j adj
 !----------------------------------------------------------
-      real(dp), dimension(nz,tuv_jmax) :: adjcoe, adjcoe1, adjcoe2
+      real(dp), dimension(nz,tuv_jmax) :: adjcoe1, adjcoe2
 !----------------------------------------------------------
 ! ... solar zenith angle
 ! slant pathlengths in spherical geometry
@@ -312,7 +314,7 @@
 !--------------------------------------------------------------
 ! ... spectral irradiance and actinic flux (scalar irradiance):
 !--------------------------------------------------------------
-      real(dp), dimension(nz,nw-1) :: radfld, radxx
+      real(dp), dimension(nz,nw-1) :: radxx
 !-------------------------------------------------------------
 ! ... j-values:
 !-------------------------------------------------------------

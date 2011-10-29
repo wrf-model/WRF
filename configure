@@ -738,7 +738,7 @@ EOF
         echo This installation NetCDF is 64-bit
         if [ \( $SFC_MULTI_ABI -ne 1 -a "$SFC_arch" != "64-bit" \) \
             -o \( $SCC_MULTI_ABI -ne 1 -a "$SCC_arch" != "64-bit" \) \
-            -o \( $CCOMP_MULTI_ABI -ne 1 -a "CCOMP_arch" != "64-bit" \) ]; then
+            -o \( $CCOMP_MULTI_ABI -ne 1 -a "$CCOMP_arch" != "64-bit" \) ]; then
             rm configure.wrf.edit
             echo One of Compilers is 32-bit and doesn\'t support cross-compiling.
             echo Please check your NetCDF lib and compiler

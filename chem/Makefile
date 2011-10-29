@@ -71,7 +71,7 @@ MODULES =                           \
   module_wave_data.o                \
   module_ctrans_aqchem.o            \
   module_ctrans_grell.o             \
-  module_convtrans_prep.o             \
+  module_convtrans_prep.o           \
   module_emissions_anthropogenics.o \
   module_cbmz_initmixrats.o         \
   module_cbm4_initmixrats.o         \
@@ -79,14 +79,19 @@ MODULES =                           \
   module_data_rrtmgaeropt.o         \
   module_mosaic_initmixrats.o       \
   module_mosaic_wetscav.o           \
-  module_wetdep_ls.o           \
+  module_mozcart_wetscav.o          \
+  module_wetdep_ls.o                \
   module_cmu_dvode_solver.o         \
   module_cmu_bulkaqchem.o           \
   module_mosaic_cloudchem.o         \
   module_wetscav_driver.o           \
   module_lightning_driver.o         \
   module_ltng_crm.o                 \
+  module_ltng_cpm.o                 \
   module_mixactivate_wrappers.o     \
+  module_interpolate.o              \
+  module_tropopause.o               \
+  module_upper_bc_driver.o          \
   module_aer_drydep.o
 
 
@@ -114,9 +119,11 @@ clean:
 
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
 
-module_lightning_driver.o: module_ltng_crm.o
+module_lightning_driver.o: module_ltng_crm.o module_ltng_cpm.o
 
 module_ltng_crm.o:
+
+module_ltng_cpm.o:
 
 module_mixactivate_wrappers.o: ../phys/module_mixactivate.o module_data_sorgam.o
 
@@ -230,6 +237,8 @@ module_mosaic_addemiss.o: module_data_mosaic_asect.o
 
 module_mosaic_wetscav.o: module_dep_simple.o
 
+module_mozcart_wetscav.o:
+
 module_aerosols_sorgam.o: module_data_sorgam.o module_mosaic_addemiss.o module_radm.o module_mosaic_wetscav.o
 
 module_mosaic_drydep.o: module_peg_util.o module_data_mosaic_asect.o module_data_mosaic_other.o module_mosaic_driver.o
@@ -268,9 +277,15 @@ module_convtrans_prep.o:
 
 module_aer_drydep.o: module_aerosols_sorgam.o module_mosaic_drydep.o
 
-chem_driver.o: module_radm.o module_convtrans_prep.o module_chem_utilities.o module_data_radm2.o module_dep_simple.o module_bioemi_simple.o module_vertmx_wrf.o module_phot_mad.o module_aerosols_sorgam.o module_data_cbmz.o module_cbmz.o module_wetscav_driver.o dry_dep_driver.o emissions_driver.o module_input_tracer.o module_input_tracer_data.o
+module_interpolate.o:
 
-chemics_init.o: module_cbm4_initmixrats.o module_cbmz_initmixrats.o module_gocart_aerosols.o module_data_gocart_dust.o module_data_gocart_seas.o module_data_gocartchem.o module_gocart_chem.o module_dep_simple.o module_ftuv_driver.o module_phot_mad.o module_gocart_chem.o module_aerosols_sorgam.o module_mixactivate_wrappers.o module_mosaic_driver.o module_input_chem_data.o
+module_tropopause.o: module_interpolate.o
+
+module_upper_bc_driver.o: module_tropopause.o
+
+chem_driver.o: module_radm.o module_convtrans_prep.o module_chem_utilities.o module_data_radm2.o module_dep_simple.o module_bioemi_simple.o module_vertmx_wrf.o module_phot_mad.o module_aerosols_sorgam.o module_data_cbmz.o module_cbmz.o module_wetscav_driver.o dry_dep_driver.o emissions_driver.o module_input_tracer.o module_input_tracer_data.o module_tropopause.o module_upper_bc_driver.o module_ltng_cpm.o
+
+chemics_init.o: module_cbm4_initmixrats.o module_cbmz_initmixrats.o module_gocart_aerosols.o module_data_gocart_dust.o module_data_gocart_seas.o module_data_gocartchem.o module_gocart_chem.o module_dep_simple.o module_ftuv_driver.o module_phot_mad.o module_gocart_chem.o module_aerosols_sorgam.o module_mixactivate_wrappers.o module_mosaic_driver.o module_input_chem_data.o module_tropopause.o module_upper_bc_driver.o
 
 aerosol_driver.o: module_data_sorgam.o module_aerosols_sorgam.o module_mosaic_driver.o
 
@@ -286,7 +301,7 @@ emissions_driver.o: module_add_emiss_burn.o module_data_radm2.o module_radm.o mo
 
 dry_dep_driver.o: module_data_radm2.o module_aer_drydep.o module_dep_simple.o module_aerosols_sorgam.o module_mosaic_drydep.o ../phys/module_mixactivate.o
 
-module_wetscav_driver.o: module_mosaic_wetscav.o module_aerosols_sorgam.o
+module_wetscav_driver.o: module_mosaic_wetscav.o module_aerosols_sorgam.o module_mozcart_wetscav.o
 
 convert_emiss : convert_emiss.o
 	$(RANLIB) ../main/$(LIBWRFLIB)

@@ -33,6 +33,7 @@
    USE module_phot_mad
 
    USE module_ftuv_driver, only : ftuv_init
+   USE module_mozcart_wetscav, only : wetscav_mozcart_init
    USE module_aerosols_sorgam
    USE module_dep_simple
    USE module_data_gocart_dust
@@ -49,6 +50,9 @@
                                           last_chem_time,            &
                                           setup_gasprofile_maps
    USE module_mixactivate_wrappers, only: mosaic_mixactivate_init
+   USE module_upper_bc_driver, only: upper_bc_init
+   USE module_tropopause,      only: tropopause_init
+
    IMPLICIT NONE
 
    real  , intent(in) :: bioemdt,photdt,chemdt,dt,gmt
@@ -190,10 +194,10 @@ call wrf_message("**************************************************************
        call wrf_message("WARNING: sea salt option 1 currently works only with the GOCART aerosol option.")
    endif
 
-   if ( config_flags%biomass_burn_opt == 1 ) then
+   if ( config_flags%biomass_burn_opt > 0 .or. config_flags%biomass_burn_opt < 4 ) then
        CALL wrf_debug(15,'calling biomass burning')
    endif
-   if( config_flags%chem_opt == MOZCART_KPP ) then
+   if( config_flags%chem_opt == MOZCART_KPP .or. config_flags%chem_opt == MOZART_KPP ) then
        write(message_txt,*) 'chem_init: calling mozcart_lbc_init for domain ',id
        call wrf_message( trim(message_txt) )
        call mozcart_lbc_init( chem, num_chem, id, &
@@ -202,15 +206,26 @@ call wrf_message("**************************************************************
    endif
 
    if ( config_flags%wetscav_onoff == 1 ) then
-      if(  ( config_flags%chem_opt >= 8 .AND. config_flags%chem_opt <= 13) .OR.  &
-           ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36) ) then
-           call wrf_debug( 15, 'Chemics_init: Wet scavenging turned on' )
-      else
-        call wrf_error_fatal("ERROR: wet scavenging option requires chem_opt = 9 through 12 or 31 to 35 to function.")
-      endif
-      if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10) then
-        call wrf_error_fatal("ERROR: wet scavenging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) to function.")
-      endif
+     if( config_flags%chem_opt /= MOZART_KPP .and. &
+         config_flags%chem_opt /= MOZCART_KPP ) then
+       if(  ( config_flags%chem_opt >= 8 .AND. config_flags%chem_opt <= 13) .OR.  &
+            ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36) ) then
+         call wrf_debug( 15, 'Chemics_init: Wet scavenging turned on' )
+       else
+         call wrf_error_fatal("ERROR: wet scavenging option requires chem_opt = 8 through 13 or 31 to 36 to function.")
+       endif
+       if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10) then
+         call wrf_error_fatal("ERROR: wet scavenging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) to function.")
+       endif
+     elseif( id == 1 ) then
+       if ( config_flags%mp_physics /= 8 ) then
+         call wrf_error_fatal("ERROR: wet scavenging option for MOZART,MOZCART requires mp_phys = 8 (Thompson) to function.")
+       else
+         write(message_txt,*) 'chem_init: calling wetscav_mozcart_init for domain ',id
+         call wrf_message( trim(message_txt) )
+         call wetscav_mozcart_init( id, numgas, config_flags )
+       endif
+     endif
    endif
 
    if ( config_flags%cldchem_onoff == 1 ) then
@@ -218,7 +233,7 @@ call wrf_message("**************************************************************
            ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36) ) then
            call wrf_debug( 15, 'Chemics_init: Cloud chemistry turned on' )
       else
-        call wrf_error_fatal("ERROR: cloud chemistry option requires chem_opt = 9 through 12 or 31 to 35 to function.")
+        call wrf_error_fatal("ERROR: cloud chemistry option requires chem_opt = 8 through 13 or 31 to 36 to function.")
       endif
       if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 ) then
         call wrf_error_fatal("ERROR: cloud chemistry option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) to function.")
@@ -260,10 +275,6 @@ call wrf_message("**************************************************************
     IF (mminlu_loc .NE. 'USGS') THEN
       call wrf_error_fatal(" ERROR: CHEM_INIT: Chemistry routines function with USGS data. Need to change land use option. ")
     ENDIF
-
-     IF (config_flags%bio_emiss_opt == 3 .AND. bioemdt*60. /= dt ) THEN
-        call wrf_error_fatal(" ERROR: CHEM_INIT: bioemdt needs to match the model time_step. ")
-     ENDIF
 
     if( .NOT. config_flags%restart ) then
        do j=jts,jte
@@ -410,7 +421,7 @@ call wrf_message("**************************************************************
       CASE (FTUV)
         CALL wrf_debug(00,'call ftuv phot initialization')
         call ftuv_init( id, its, ite, jts, jte, kte, &
-                        ide, jde, config_flags%chem_opt )
+                        ide, jde, config_flags )
 
   END SELECT phot_select
 !
@@ -627,7 +638,7 @@ call wrf_message("**************************************************************
         endif
      CASE (GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
        CALL wrf_debug(15,'call GOCARTRACM_KPP chem/aerosols initialization')
-        ch_dust(:,:)=0.8D-9
+        ch_dust(:,:)=0.8e-9
         ch_ss(:,:)=1.
         if(config_flags%chem_in_opt == 0 )then
         if( .NOT. config_flags%restart )then
@@ -657,7 +668,7 @@ call wrf_message("**************************************************************
 !        config_flags%phot_opt  = 0
        endif
        CALL wrf_debug(15,'call dust aerosols initialization')
-        ch_dust(:,:)=0.8D-9
+        ch_dust(:,:)=0.8e-9
            do j=jts,jte
               do k=kts,kte
                  do i=its,ite
@@ -673,7 +684,7 @@ call wrf_message("**************************************************************
 !        config_flags%phot_opt  = 0
        endif
        CALL wrf_debug(15,'call GOCART chem/aerosols initialization')
-        ch_dust(:,:)=0.8D-9
+        ch_dust(:,:)=0.8e-9
         ch_ss(:,:)=1.
         if( .NOT. config_flags%restart )then
         if(config_flags%chem_in_opt == 0 )then
@@ -726,7 +737,7 @@ call wrf_message("**************************************************************
           enddo
       CASE (MOZCART_KPP)
         CALL wrf_debug(15,'MOZCART dust initialization')
-        ch_dust(:,:) = 0.8e-9_8
+        ch_dust(:,:) = 0.8e-9
 
      CASE (RADM2SORG, RADM2SORG_AQ, RACMSORG_AQ, RADM2SORG_KPP, RACMSORG_KPP, RACM_ESRLSORG_KPP, CBMZSORG, CBMZSORG_AQ)
        CALL wrf_debug(15,'call MADE/SORGAM aerosols initialization')
@@ -786,7 +797,7 @@ call wrf_message("**************************************************************
          enddo
       enddo
    enddo
-        ch_dust(:,:)=0.8D-9
+        ch_dust(:,:)=0.8e-9
         ch_ss(:,:)=1.
 
 !
@@ -867,6 +878,22 @@ call wrf_message("**************************************************************
        call wrf_debug( 15, "Setting last_chem_time to model start time-dt" )
        call WRFU_TimeIntervalSet(tmpTimeInterval, s_=real(dt,8))
        last_chem_time(id) = domain_get_current_time(grid) - tmpTimeInterval
+    end if
+
+! 
+!-- initialization upper bounary and tropopause modules
+!
+    if( config_flags%have_bcs_upper ) then
+        CALL wrf_debug(00,'call upper boundary initialization')
+        call upper_bc_init( id, xlat, dt, config_flags,  &
+                            ids,ide, jds,jde, kds,kde,   &
+                            ims,ime, jms,jme, kms,kme,   &
+                            its,ite, jts,jte, kts,kte    )
+
+        call tropopause_init( id, xlat, xlong, config_flags, &
+                            ids,ide, jds,jde, kds,kde,       &
+                            ims,ime, jms,jme, kms,kme,       &
+                            its,ite, jts,jte, kts,kte        )
     end if
 
     END SUBROUTINE chem_init

@@ -39,6 +39,8 @@ SUBROUTINE microphysics_driver(                                          &
                       ,snownc,    snowncv                                &
                       ,hailnc,    hailncv                                &
                       ,graupelnc, graupelncv                             &
+                      ,rainprod, evapprod                                &
+                      ,qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp                &
                       ,refl_10cm                                         & ! HM, 9/22/09, add for refl
 ! YLIN
 ! Added the RI_CURR array to the call
@@ -310,6 +312,12 @@ SUBROUTINE microphysics_driver(                                          &
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(IN) :: qrcuten, qscuten, qicuten
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(INOUT) :: rainprod, evapprod
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(INOUT) :: qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          OPTIONAL,                                                &
          INTENT(IN) :: mu
@@ -488,6 +496,13 @@ SUBROUTINE microphysics_driver(                                          &
                   PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
                   PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR) .AND.  &
                   PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) ) THEN
+               IF ( PRESENT( qc_b4mp ) .and. present( qi_b4mp ) .and. &
+                    present( qs_b4mp ) .and. present( qv_b4mp ) ) then
+                 qv_b4mp(its:ite,kts:kte,jts:jte) = qv_curr(its:ite,kts:kte,jts:jte)
+                 qc_b4mp(its:ite,kts:kte,jts:jte) = qc_curr(its:ite,kts:kte,jts:jte)
+                 qi_b4mp(its:ite,kts:kte,jts:jte) = qi_curr(its:ite,kts:kte,jts:jte)
+                 qs_b4mp(its:ite,kts:kte,jts:jte) = qs_curr(its:ite,kts:kte,jts:jte)
+               ENDIF
              CALL mp_gt_driver(                          &
                      QV=qv_curr,                         &
                      QC=qc_curr,                         &
@@ -509,7 +524,9 @@ SUBROUTINE microphysics_driver(                                          &
                      SNOWNCV=SNOWNCV,                    &
                      GRAUPELNC=GRAUPELNC,                &
                      GRAUPELNCV=GRAUPELNCV,              &
-                     SR=SR                               &
+                     SR=SR,                              &
+                     RAINPROD=rainprod,                  &
+                     EVAPPROD=evapprod                   &
 !                    refl_10cm, grid_clock, grid_alarms, &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &

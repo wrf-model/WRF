@@ -724,7 +724,7 @@
                               RAINNC, RAINNCV, &
                               SNOWNC, SNOWNCV, &
                               GRAUPELNC, GRAUPELNCV, &
-                              SR, &
+                              SR, rainprod, evapprod, &
 !                             refl_10cm, grid_clock, grid_alarms, &
                               ids,ide, jds,jde, kds,kde, &             ! domain dims
                               ims,ime, jms,jme, kms,kme, &             ! memory dims
@@ -738,6 +738,8 @@
                             its,ite, jts,jte, kts,kte
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           qv, qc, qr, qi, qs, qg, ni, nr, th
+      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
+                          rainprod, evapprod
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN):: &
                           pii, p, dz
       REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT):: &
@@ -755,7 +757,7 @@
 !..Local variables
       REAL, DIMENSION(kts:kte):: &
                           qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
-                          nr1d, t1d, p1d, dz1d, dBZ
+                          nr1d, t1d, p1d, dz1d, dBZ, rainprod1d, evapprod1d
       REAL, DIMENSION(its:ite, jts:jte):: pcp_ra, pcp_sn, pcp_gr, pcp_ic
       REAL:: dt, pptrain, pptsnow, pptgraul, pptice
       REAL:: qc_max, qr_max, qs_max, qi_max, qg_max, ni_max, nr_max
@@ -854,6 +856,7 @@
          call mp_thompson(qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
                       nr1d, t1d, p1d, dz1d, &
                       pptrain, pptsnow, pptgraul, pptice, &
+                      rainprod1d, evapprod1d, &
                       kts, kte, dt, i, j)
 
          pcp_ra(i,j) = pptrain
@@ -881,6 +884,8 @@
             qg(i,k,j) = qg1d(k)
             ni(i,k,j) = ni1d(k)
             nr(i,k,j) = nr1d(k)
+            rainprod(i,k,j) = rainprod1d(k)
+            evapprod(i,k,j) = evapprod1d(k)
             th(i,k,j) = t1d(k)/pii(i,k,j)
             if (qc1d(k) .gt. qc_max) then
              imax_qc = i
@@ -1007,6 +1012,7 @@
       subroutine mp_thompson (qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
                           nr1d, t1d, p1d, dzq, &
                           pptrain, pptsnow, pptgraul, pptice, &
+                          rainprod, evapprod, &
                           kts, kte, dt, ii, jj)
 
       implicit none
@@ -1015,7 +1021,7 @@
       INTEGER, INTENT(IN):: kts, kte, ii, jj
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: &
                           qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
-                          nr1d, t1d, p1d
+                          nr1d, t1d, p1d, rainprod, evapprod
       REAL, DIMENSION(kts:kte), INTENT(IN):: dzq
       REAL, INTENT(INOUT):: pptrain, pptsnow, pptgraul, pptice
       REAL, INTENT(IN):: dt
@@ -1181,6 +1187,8 @@
          prg_rcs(k) = 0.
          prg_rcg(k) = 0.
          prg_ihm(k) = 0.
+         rainprod(k) = 0.
+         evapprod(k) = 0.
       enddo
 
 !+---+-----------------------------------------------------------------+
@@ -2372,6 +2380,12 @@
          endif
       enddo
 
+      do k = kts, kte
+        rainprod(k) = prr_wau(k) + prr_rcw(k) + prs_scw(k) + prg_scw(k) + prs_iau(k) &
+                                 + prg_gcw(k) + prs_sci(k) + prr_rci(k)
+!       rainprod(k) = max( 0.,rainprod(k) )
+!       rainprod(k) = max( 0.,qrten(k)+qsten(k) )
+      enddo
 !+---+-----------------------------------------------------------------+
 !.. If still subsaturated, allow rain to evaporate, following
 !.. Srivastava & Coen (1992).
@@ -2430,7 +2444,7 @@
           temp(k) = t1d(k) + DT*tten(k)
           rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
          endif
-
+         evapprod(k) = prv_rev(k)
       enddo
 
 !+---+-----------------------------------------------------------------+

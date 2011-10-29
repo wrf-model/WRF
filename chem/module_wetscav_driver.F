@@ -15,12 +15,15 @@ CONTAINS
 
 !===========================================================================
 !===========================================================================
-      subroutine wetscav_driver (id,ktau,dtstep,ktauc,config_flags,        &
-               dtstepc,alt,t_phy,moist,p8w,t8w,p_phy,chem,rho_phy,cldfra,  &
-	       qlsink,precr,preci,precs,precg,                             &
-	       gas_aqfrac, numgas_aqfrac,                                  &
+      subroutine wetscav_driver( id, ktau, dtstep, ktauc, config_flags,    &
+               dtstepc, alt, t_phy, moist, p8w,                            &
+               t8w, dx, dy, p_phy, chem,                                   &
+               rho_phy, cldfra, cldfra2, rainprod, evapprod,               &
+               hno3_col_mdel, qlsink, precr, preci, precs, precg,          &
+	       gas_aqfrac, numgas_aqfrac, dz8w,                            &
 	       h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,           &
-               cvaro2,cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,&
+               cvaro2,cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,           &
+               qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp,                         &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
@@ -42,6 +45,7 @@ CONTAINS
    USE module_configure
    USE module_state_description
    USE module_model_constants
+   USE module_mozcart_wetscav, only:  wetscav_mozcart
    USE module_mosaic_wetscav, only:  wetscav_cbmz_mosaic
    USE module_aerosols_sorgam, only:  wetscav_sorgam_driver
 
@@ -128,6 +132,7 @@ CONTAINS
                                       id, ktau, ktauc, numgas_aqfrac
 
       REAL,      INTENT(IN   ) :: dtstep,dtstepc
+      REAL,      INTENT(IN   ) :: dx, dy
 !
 ! moisture variables
 !
@@ -154,12 +159,25 @@ CONTAINS
 ! input from meteorology
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
           INTENT(IN   ) ::                                          &
-                                                        alt,        &
+                                                      alt,          &
                                                       t_phy,        &
                                                       p_phy,        &
-                                                     t8w,p8w,       &
+                                                      t8w,          &
+                                                      p8w,          &
+                                                      dz8w,         &
 	                            qlsink,precr,preci,precs,precg, &
                                                     rho_phy,cldfra
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
+         INTENT(INOUT ) ::                             cldfra2,     &
+                                                       rainprod,    &
+                                                       evapprod
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
+         INTENT(IN) ::                                 qc_b4mp,     &
+                                                       qv_b4mp,     &
+                                                       qi_b4mp,     &
+                                                       qs_b4mp
+   REAL,  DIMENSION( ims:ime , jms:jme )         ,                  &
+         INTENT(INOUT ) ::                             hno3_col_mdel
 !
 
 ! LOCAL  VAR
@@ -214,6 +232,19 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
+   CASE (MOZART_KPP,MOZCART_KPP)
+       CALL wrf_debug(15,'wetscav_driver calling wetscav_mozcart')
+       call wetscav_mozcart( id, ktau, dtstep, ktauc, config_flags,             &
+                             dtstepc, t_phy, p8w, t8w, p_phy,                   &
+                             chem, rho_phy, cldfra2, rainprod, evapprod,        &
+                             qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp,                &
+                             gas_aqfrac, numgas_aqfrac, dz8w, dx, dy,           &
+                             moist(ims,kms,jms,p_qv), moist(ims,kms,jms,p_qc),  &
+                             moist(ims,kms,jms,p_qi), moist(ims,kms,jms,p_qs),  &
+                             hno3_col_mdel,                                     &
+                             ids,ide, jds,jde, kds,kde,                         &
+                             ims,ime, jms,jme, kms,kme,                         &
+                             its,ite, jts,jte, kts,kte                          )
 
    CASE DEFAULT
 

@@ -752,10 +752,6 @@ is_mozcart_species : &
 !-----------------------------------------------------------------------
                       gas_emis = mozcart_per_megan(icount) * E_megan2(p_of_megan2mozcart(icount))
 !-----------------------------------------------------------------------
-! Increase gas-phase concentrations (in ppmv) due to biogenic emissions
-!-----------------------------------------------------------------------
-                      chem(i,kts,j,p_in_chem) = chem(i,kts,j,p_in_chem) + gas_emis*emis2ppm
-!-----------------------------------------------------------------------
 ! Add emissions to diagnostic output variables.
 ! ebio_xxx (mol km-2 hr-1) were originally used by the 
 ! BEIS3.11 biogenic emissions module. 
@@ -848,10 +844,6 @@ is_mozcart_species : &
                       ! Emission rate for mechanism species in mol km-2 hr-1
                       gas_emis = radm2_per_megan(icount) * E_megan2(p_of_megan2radm2(icount))
 
-                      ! Increase gas-phase concentrations (in ppmv) due to
-                      ! biogenic emissions
-                      chem(i,kts,j,p_in_chem) = chem(i,kts,j,p_in_chem) + gas_emis*emis2ppm
-
                       ! Add emissions to diagnostic output variables.
                       ! ebio_xxx (mol km-2 hr-1) were originally used by the 
                       ! BEIS3.11 biogenic emissions module. 
@@ -920,10 +912,6 @@ is_mozcart_species : &
 
                       ! Emission rate of mechanism species in mol km-2 hr-1
                       gas_emis =  racm_per_megan(icount) * E_megan2(p_of_megan2racm(icount))
-
-                      ! Increase gas-phase concentrations (in ppmv) due to
-                      ! biogenic emissions
-                      chem(i,kts,j,p_in_chem) = chem(i,kts,j,p_in_chem) + gas_emis * emis2ppm
 
                       ! Add emissions to diagnostic output variables.
                       ! ebio_xxx (mol km-2 hr-1) were originally used by the 
@@ -1008,11 +996,6 @@ is_mozcart_species : &
                       ! Emission rate of mechanism species in mol km-2 hr-1
                       gas_emis = cbmz_per_megan(icount) * E_megan2(p_of_megan2cbmz(icount))
 
-                      ! Increase gas-phase concentrations (in ppmv) due to
-                      ! biogenic emissions
-                      chem(i,kts,j,p_in_chem) = chem(i,kts,j,p_in_chem) + gas_emis * emis2ppm !for eg. p_in_chem=p_iso for cbmz species
-                                                                                              !make another table for sorgam species (such as api and lim) 
-                                                                                              ! similar to racm table
 
                       ! Add emissions to diagnostic output variables.
                       ! ebio_xxx (mol km-2 hr-1) were originally used by the 
@@ -1077,10 +1060,6 @@ is_mozcart_species : &
 
                       ! Emission rate for mechanism species in mol km-2 hr-1
                       gas_emis = saprcnov_per_megan(icount) * E_megan2(p_of_megan2saprcnov(icount))
-
-                      ! Increase gas-phase concentrations (in ppmv) due to
-                      ! biogenic emissions
-                      chem(i,kts,j,p_in_chem) = chem(i,kts,j,p_in_chem) + gas_emis*emis2ppm
 
                       ! Add emissions to diagnostic output variables.
                       ! ebio_xxx (mol km-2 hr-1) were originally used by the

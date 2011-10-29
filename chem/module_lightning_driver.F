@@ -20,7 +20,8 @@ SUBROUTINE lightning_driver(                                            &
                       ,lflash_data, flashrate_factor                    &
                       ,flashrate_method, iccg_method                    &
                       ,cellcount_method                                 &
-                      ,ic_fr, cg_fr)
+                      ,ic_fr, cg_fr                                     &
+                      ,xland,ktop )
 
 ! Framework
    USE module_state_description
@@ -35,6 +36,7 @@ SUBROUTINE lightning_driver(                                            &
 ! *** add new modules of schemes here
 
    USE module_ltng_crm
+   USE module_ltng_cpm
     
 !----------------------------------------------------------------------
    ! This driver calls subroutines for the lightning-NOx parameterization.
@@ -178,6 +180,9 @@ SUBROUTINE lightning_driver(                                            &
    INTEGER, INTENT(IN   )  ::   iccg_method
    INTEGER, INTENT(IN   )  ::   cellcount_method
 
+! For CPM lightning
+   INTEGER, DIMENSION( ims:ime , jms:jme ) , INTENT(IN) :: ktop
+   REAL,    DIMENSION( ims:ime , jms:jme ) , INTENT(IN) :: xland
 ! LOCAL  VAR
 
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme )          :: dbz
@@ -190,6 +195,8 @@ SUBROUTINE lightning_driver(                                            &
 
 
    if (lightning .eq. 0) return
+   IF ((itimestep*time_step < float(lightning_start_seconds)) .or. &
+        (MOD((itimestep*time_step),float(lightning_time_step)) .ne. 0.)) return
 
      ltng_select: SELECT CASE(lightning)
 
@@ -248,7 +255,21 @@ SUBROUTINE lightning_driver(                                            &
 !
 !        CASE (REGALLEN)
 !             CALL wrf_debug ( 100 , 'lightning_driver: calling Allen and Pickering scheme' )
+        CASE (CPMPRO)
 
+              CALL wrf_debug ( 100 , 'lightning: calling CPMPRO(Price-Rind-Ott)' )
+              CALL wrf_debug ( 100 , 'calling ltng_cpm from lightning_driver')
+              CALL ltng_cpm (itimestep,time_step,                  &
+                     t_phy,rho,                                    &
+                     c_no,s_ic,s_cg,                               & ! s_ic here is total ltng, s_cg is decaying ltng
+                     tracer_opt,                                   &
+                     ids,ide, jds,jde, kds,kde,                    &
+                     ims,ime, jms,jme, kms,kme,                    &
+                     its,ite, jts,jte, kts,kte,                    &
+                     dx,dy,z,ht,xlat,                              &
+                     lightning_time_step,                          &
+                     lightning_start_seconds,N_IC,                 & ! N_IC here is total ltng
+                     flashrate_factor,ic_fr,xland,ktop )
 
       CASE DEFAULT 
 

@@ -1692,9 +1692,13 @@ integer myproc
       CASE (RUCLSMSCHEME)
 !          if(isfc .ne. 2)CALL wrf_error_fatal &
 !           ( 'module_physics_init: use myjsfc and myjpbl scheme for this lsm option' )
-           CALL ruclsminit( SH2O,SMFR3D,TSLB,SMOIS,ISLTYP,IVGTYP,XICE,  &
+           CALL ruclsminit( SH2O,SMFR3D,TSLB,SMOIS,ISLTYP,IVGTYP,MMINLU,XICE,  &
                      mavail,num_soil_layers, config_flags%iswater,      &
-                     config_flags%isice, restart,                  &
+#if (NMM_CORE == 1)
+                     config_flags%isice, z0, restart,                  &
+#else
+                     config_flags%isice, znt, restart,                  &
+#endif
                      allowed_to_read ,                             &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &

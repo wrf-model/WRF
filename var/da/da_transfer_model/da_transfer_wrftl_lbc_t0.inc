@@ -22,7 +22,7 @@ subroutine da_transfer_wrftl_lbc_t0 (grid)
    IF ( ALLOCATED ( pbdy3dtemp1 ) ) DEALLOCATE ( pbdy3dtemp1 )
    IF ( ALLOCATED ( qbdy3dtemp1 ) ) DEALLOCATE ( qbdy3dtemp1 )
    IF ( ALLOCATED ( mbdy2dtemp1 ) ) DEALLOCATE ( mbdy2dtemp1 )
-   IF ( ALLOCATED ( wbdy3dtemp1 ) ) DEALLOCATE ( wbdy3dtemp1 )
+!  IF ( ALLOCATED ( wbdy3dtemp1 ) ) DEALLOCATE ( wbdy3dtemp1 )
 
    ALLOCATE ( ubdy3dtemp1(ims:ime,jms:jme,kms:kme) )
    ALLOCATE ( vbdy3dtemp1(ims:ime,jms:jme,kms:kme) )
@@ -30,7 +30,7 @@ subroutine da_transfer_wrftl_lbc_t0 (grid)
    ALLOCATE ( pbdy3dtemp1(ims:ime,jms:jme,kms:kme) )
    ALLOCATE ( qbdy3dtemp1(ims:ime,jms:jme,kms:kme) )
    ALLOCATE ( mbdy2dtemp1(ims:ime,1:1,    jms:jme) )
-   ALLOCATE ( wbdy3dtemp1(ims:ime,jms:jme,kms:kme) )
+!  ALLOCATE ( wbdy3dtemp1(ims:ime,jms:jme,kms:kme) )
 
    ubdy3dtemp1 = 0.0
    vbdy3dtemp1 = 0.0
@@ -38,7 +38,7 @@ subroutine da_transfer_wrftl_lbc_t0 (grid)
    pbdy3dtemp1 = 0.0
    qbdy3dtemp1 = 0.0
    mbdy2dtemp1 = 0.0
-   wbdy3dtemp1 = 0.0
+!  wbdy3dtemp1 = 0.0
 
    spec_bdy_width =  grid%spec_bdy_width
 
@@ -71,10 +71,10 @@ subroutine da_transfer_wrftl_lbc_t0 (grid)
                    grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
                    grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
-   CALL g_couple ( model_config_flags, grid%mu_2 , grid%g_mu_2, grid%mub , wbdy3dtemp1 , grid%w_2, grid%g_w_2, 'h' , grid%msfty , &
-                   grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
-                   grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
-                   grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
+!  CALL g_couple ( model_config_flags, grid%mu_2 , grid%g_mu_2, grid%mub , wbdy3dtemp1 , grid%w_2, grid%g_w_2, 'h' , grid%msfty , &
+!                  grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+!                  grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
+!                  grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
    DO j = grid%sp32 , MIN(grid%ed32-1,grid%ep32)
       DO i = grid%sp31 , MIN(grid%ed31-1,grid%ep31)
@@ -119,21 +119,21 @@ subroutine da_transfer_wrftl_lbc_t0 (grid)
                                     grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
                                     grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
-   CALL g_stuff_bdy ( wbdy3dtemp1 , model_grid%g_w_bxs, model_grid%g_w_bxe, model_grid%g_w_bys, model_grid%g_w_bye, &
-                                    'W' , spec_bdy_width      , &
-                                    grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
-                                    grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
-                                    grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
+!  CALL g_stuff_bdy ( wbdy3dtemp1 , model_grid%g_w_bxs, model_grid%g_w_bxe, model_grid%g_w_bys, model_grid%g_w_bye, &
+!                                   'W' , spec_bdy_width      , &
+!                                   grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
+!                                   grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
+!                                   grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
-!  model_grid%g_w_bxs = 0.0
-!  model_grid%g_w_bxe = 0.0
-!  model_grid%g_w_bys = 0.0
-!  model_grid%g_w_bye = 0.0
+   model_grid%g_w_bxs = 0.0
+   model_grid%g_w_bxe = 0.0
+   model_grid%g_w_bys = 0.0
+   model_grid%g_w_bye = 0.0
 
-!  model_grid%g_w_btxs = 0.0
-!  model_grid%g_w_btxe = 0.0
-!  model_grid%g_w_btys = 0.0
-!  model_grid%g_w_btye = 0.0
+   model_grid%g_w_btxs = 0.0
+   model_grid%g_w_btxe = 0.0
+   model_grid%g_w_btys = 0.0
+   model_grid%g_w_btye = 0.0
 
    if (trace_use) call da_trace_exit("da_transfer_wrftl_lbc_t0")
 

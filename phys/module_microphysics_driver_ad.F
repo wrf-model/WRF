@@ -44,6 +44,8 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
                       ,snownc,    snowncv                                &
                       ,hailnc,    hailncv                                &
                       ,graupelnc, graupelncv                             &
+                      ,rainprod, evapprod                                &
+                      ,qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp                &
                       ,refl_10cm                                         & ! HM, 9/22/09, add for refl
 ! YLIN
 ! Added the RI_CURR array to the call
@@ -317,6 +319,12 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(IN) :: qrcuten, qscuten, qicuten
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(INOUT) :: rainprod, evapprod
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(INOUT) :: qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          OPTIONAL,                                                &
          INTENT(IN) :: mu

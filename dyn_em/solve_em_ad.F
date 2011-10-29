@@ -3648,6 +3648,9 @@ BENCH_START(micro_driver_tim)
       &        , QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG               &
       &        , QH_CURR=moist(ims,kms,jms,P_QH), F_QH=F_QH               & ! for milbrandt2mom
       &        , QNDROP_CURR=scalar(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP &
+      &        , RAINPROD=grid%rainprod, EVAPPROD=grid%evapprod           &
+      &        , QV_B4MP=grid%qv_b4mp,QC_B4MP=grid%qc_b4mp                &
+      &        , QI_B4MP=grid%qi_b4mp, QS_B4MP=grid%qs_b4mp               &
       &        , QT_CURR=scalar(ims,kms,jms,P_QT), F_QT=F_QT              &
       &        , QNN_CURR=scalar(ims,kms,jms,P_QNN), F_QNN=F_QNN          &
       &        , QNI_CURR=scalar(ims,kms,jms,P_QNI), F_QNI=F_QNI          &
@@ -4739,6 +4742,9 @@ BENCH_START(adj_micro_driver_tim)
       &        , QG_CURR=moist(ims,kms,jms,P_QG),A_QG_CURR=a_moist(ims,kms,jms,P_QG), F_QG=F_QG               &
       &        , QH_CURR=moist(ims,kms,jms,P_QH),A_QH_CURR=a_moist(ims,kms,jms,P_QH), F_QH=F_QH               & ! for milbrandt2mom
       &        , QNDROP_CURR=scalar(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP &
+      &        , RAINPROD=grid%rainprod, EVAPPROD=grid%evapprod           &
+      &        , QV_B4MP=grid%qv_b4mp,QC_B4MP=grid%qc_b4mp                &
+      &        , QI_B4MP=grid%qi_b4mp, QS_B4MP=grid%qs_b4mp               &
       &        , QT_CURR=scalar(ims,kms,jms,P_QT), F_QT=F_QT              &
       &        , QNN_CURR=scalar(ims,kms,jms,P_QNN), F_QNN=F_QNN          &
       &        , QNI_CURR=scalar(ims,kms,jms,P_QNI), F_QNI=F_QNI          &

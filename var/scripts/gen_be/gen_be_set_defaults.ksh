@@ -103,7 +103,7 @@ export WORK_DIR=${WORK_DIR:-$RUN_DIR/working}     # Working directory
 export STAGE0_DIR=${STAGE0_DIR:-$WORK_DIR/stage0} # Output for stage0.
 export STAGE0_GSI_DIR=${STAGE0_GSI_DIR:-$WORK_DIR/stage0_gsi} # Output for GSI stage0.
 export STAGE1_GSI_DIR=${STAGE1_GSI_DIR:-$WORK_DIR/stage1_gsi} # Output for GSI stage0.
-export LESS_Q_FROM_TOP=${LESS_Q_FROM_TOP:-0}
+export LESS_LEVELS_FROM_TOP=${LESS_LEVELS_FROM_TOP:-0}
 export LAT_BINS_IN_DEG=${LAT_BINS_IN_DEG:-1.0}
 
 

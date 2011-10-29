@@ -48,7 +48,7 @@
         integer          :: npft
         integer          :: months
         INTEGER, pointer :: seasonal_wes(:,:,:,:)
-        logical          :: allocated
+        logical          :: is_allocated
       end type wesely_pft
 
       type(wesely_pft), allocatable :: seasonal_pft(:)
@@ -151,7 +151,7 @@ SUBROUTINE wesely_driver( id, ktau, dtstep, config_flags, current_month,  &
 ! necessary for aerosols (module dependent)         
 !-----------------------------------------------------------
       real :: rcx(numgas)
-                                                     
+
 !-----------------------------------------------------------
 ! .. Intrinsic Functions
 !-----------------------------------------------------------
@@ -247,7 +247,7 @@ tile_lon_loop : &
             end if
          end do tile_lon_loop
       end do tile_lat_loop
-
+     
 !-----------------------------------------------------------
 ! For the additional CBMZ species, assign similar RADM counter parts for
 ! now. Short lived species get a zero velocity since dry dep should be
@@ -426,6 +426,7 @@ tile_lon_loop : &
                ddvel(i,j,p_xoh)     = 0.
                ddvel(i,j,p_isopn)   = 0.
                ddvel(i,j,p_meko2)   = 0.
+               ddvel(i,j,p_sulf)    = 0.
                ddvel(i,j,p_dms)     = 0.
             end do
          end do
@@ -1192,6 +1193,7 @@ is_nh3: if( p_nh3 > 1 ) then
         integer :: dimid
         integer :: varid
         integer :: max_dom
+        integer :: cpos, slen
         integer :: lon_e, lat_e
         integer :: iend, jend
         integer, allocatable :: input_wes_seasonal(:,:,:,:)
@@ -2369,7 +2371,7 @@ is_cbm4_kpp : &
 ! Correction of diff. coefficient
 !--------------------------------------------------
           dvj(l) = dvj(l)*(293.15/298.15)**1.75
-          sc = 0.15/dvj(l)                             ! Schmidt Number at 20°C   
+          sc = 0.15/dvj(l)                             ! Schmidt Number at 20C
           dratio(l) = 0.242/dvj(l)                     ! of water vapor and gas at
 !--------------------------------------------------
 ! Ratio of diffusion coefficient
@@ -2481,7 +2483,7 @@ is_cbm4_kpp : &
           hstar4(l) = hstar(l) ! preliminary              
 ! Correction of diff. coeff
           dvj(l) = dvj(l)*(293.15/298.15)**1.75
-          sc = 0.15/dvj(l) ! Schmidt Number at 20°C   
+          sc = 0.15/dvj(l) ! Schmidt Number at 20C
           dratio(l) = 0.242/dvj(l) !                                            ! of water vapor and gas at
 ! Ratio of diffusion coeffi
           scpr23(l) = (sc/0.72)**(2./3.) ! (Schmidt # / Prandtl #)**
@@ -2692,15 +2694,26 @@ is_mozart : &
           endif
           write(err_msg,*) 'dep_init: initializing for ',max_dom,' domains'
           CALL wrf_message( trim(err_msg) )
-          seasonal_pft(:)%allocated = .false.
+          seasonal_pft(:)%is_allocated = .false.
         endif
 seasonal_pft_allocated : &
-        IF( .not. seasonal_pft(id)%allocated ) then
+        IF( .not. seasonal_pft(id)%is_allocated ) then
         IF( wrf_dm_on_monitor() ) THEN
          write(id_num,'(i3)') 100+id
          err_msg = 'dep_init: initializing domain ' // id_num(2:3)
          CALL wrf_message( trim(err_msg) )
-         filename = 'wrf_season_wes_usgs_d' // id_num(2:3) // '.nc'
+         cpos = index( config_flags%wes_seasonal_inname, '<domain>' )
+         if( cpos > 0 ) then
+           filename = ' '
+           filename = config_flags%wes_seasonal_inname(:cpos-1) // 'd' // id_num(2:3)
+           cpos = cpos + 8
+           slen = len_trim( config_flags%wes_seasonal_inname )
+           if( cpos < slen ) then
+             filename(len_trim(filename)+1:) = config_flags%wes_seasonal_inname(cpos:slen)
+           endif
+         else
+           filename = trim( config_flags%wes_seasonal_inname )
+         endif
          err_msg = 'dep_init: failed to open file ' // trim(filename)
          call handle_ncerr( nf_open( trim(filename), nf_noclobber, ncid ), trim(err_msg) )
 !---------------------------------------------------------------------
@@ -2745,7 +2758,7 @@ seasonal_pft_allocated : &
             call wrf_message( 'dep_init: failed to allocate seasonal_wes' )
             call wrf_abort
          end if
-         seasonal_pft(id)%allocated = .true.
+         seasonal_pft(id)%is_allocated = .true.
 !---------------------------------------------------------------------
 !	... read array
 !---------------------------------------------------------------------

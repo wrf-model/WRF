@@ -1288,6 +1288,11 @@
 
 #if (DA_CORE != 1)
     CALL wrf_tsin( grid , ierr )
+#if (EM_CORE == 1)
+    if (config_flags%track_loc_in > 0 ) then
+       call track_input( grid , ierr )
+    end if
+#endif
 #endif
 
     WRITE(wrf_err_message,*)'input_wrf: end, fid = ',fid

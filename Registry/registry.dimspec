@@ -70,4 +70,9 @@ dimspec    ]       2     namelist=kfire                    z     klevs_for_fire
 dimspec    %       2     namelist=kdvel                    z     klevs_for_dvel
 dimspec    airc    2     namelist=kemit_aircraft           z     ac_emissions_zdim
 dimspec    .       3     namelist=erosion_dim              z     dust_erosion_dimension
+dimspec    tc      -     namelist=track_chem_num           c     track_chem_num
+dimspec    tr      -     namelist=track_rad_num            c     track_rad_num
+dimspec    tt      -     namelist=track_tuv_num            c     track_tuv_num
+dimspec    tz      -     namelist=track_tuv_lev            c     track_tuv_lev
 endif
+dimspec    tl      -     namelist=track_loc_in             c     track_loc_in

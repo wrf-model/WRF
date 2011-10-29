@@ -52,6 +52,7 @@ CONTAINS
          lflash_data, ic_fr, cg_fr,                                        &
          flashrate_factor, flashrate_method, iccg_method,                  &
          cellcount_method,                                                 &
+         ktop, &
          !            end suff for lightning
          ! stuff for aircraft emissions
          emis_aircraft,                                                    &
@@ -222,6 +223,7 @@ CONTAINS
       INTEGER, INTENT(IN   )  ::  flashrate_method                           ! flashrate calculation method
       INTEGER, INTENT(IN   )  ::  iccg_method                                ! choosing ic to cg ratio method
       INTEGER, INTENT(IN   )  ::  cellcount_method                           ! choosing tile_wide or domain_wide method
+      INTEGER, DIMENSION( ims:ime , jms:jme ) , INTENT(IN) :: ktop
 !     end stuff for lightning NO
 
       REAL(KIND=8), INTENT(IN   ) ::                                   &
@@ -336,7 +338,9 @@ CONTAINS
       ENDIF
 
       do_plumerisefire = .false.
-      IF ( config_flags%biomass_burn_opt == BIOMASSB_MOZC .OR. config_flags%biomass_burn_opt == BIOMASSB ) then
+      IF ( config_flags%biomass_burn_opt == BIOMASSB_MOZC .OR. &
+           config_flags%biomass_burn_opt == BIOMASSB_MOZ  .OR. &
+           config_flags%biomass_burn_opt == BIOMASSB ) then
         IF ( ktau==1 ) then
            do_plumerisefire = .true.
         ELSE IF ( adapt_step_flag ) THEN
@@ -376,7 +380,7 @@ CONTAINS
            firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr,        &
            config_flags, t_phy,moist,                                      &
            rho_phy,vvel,u_phy,v_phy,p_phy,                                 &
-           emis_ant,z_at_w,z,                                              &
+           emis_ant,z_at_w,z,config_flags%scale_fire_emiss,                &
            ids,ide, jds,jde, kds,kde,                                      &
            ims,ime, jms,jme, kms,kme,                                      &
            its,ite, jts,jte, kts,kte                                       )
@@ -455,7 +459,7 @@ CONTAINS
 !!! ***********   FIRE AND CHEM ****************************************
 !
     fire_select:  SELECT CASE(config_flags%biomass_burn_opt)
-     CASE (BIOMASSB,BIOMASSB_MOZC)
+     CASE (BIOMASSB,BIOMASSB_MOZC,BIOMASSB_MOZ)
 !      if( do_plumerisefire )then
 !         CALL wrf_debug(15,'fire emissions: calling biomassb')
 !         write(0,*)ktau,stepfirepl
@@ -569,15 +573,14 @@ CONTAINS
          CALL WRF_MESSAGE (message)
        ENDIF
        call wrf_debug(15,'emissions_driver calling add_anthropogenics')
-       call add_anthropogenics(id,dtstep,dz8w,config_flags,rho_phy,chem,&
-            emis_ant,emis_aircraft,                                     &
+       call add_anthropogenics(id,dtstep,dz8w,config_flags,rho_phy,alt, &
+            chem, emis_ant,emis_aircraft,                               &
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
        call wrf_debug(15,'emissions_driver calling add_biogenics')
        ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
        ! module
-       if ( config_flags%bio_emiss_opt .ne. megan2 ) then 
        call add_biogenics(id,dtstep,dz8w,config_flags, rho_phy,chem,    &
             e_bio,ne_area,                                              &
             ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
@@ -586,7 +589,6 @@ CONTAINS
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
-       end if 
        IF(config_flags%emiss_inpt_opt == EMISS_INPT_MOZCEM ) then
          do j=jts,jte  
            do i=its,ite  
@@ -596,7 +598,7 @@ CONTAINS
                 chem(i,k,j,p_p25) = chem(i,k,j,p_p25) + emis_ant(i,k,j,p_e_pm_25)*conv
                 chem(i,k,j,p_bc1) = chem(i,k,j,p_bc1) + emis_ant(i,k,j,p_e_bc)*conv
                 chem(i,k,j,p_oc1) = chem(i,k,j,p_oc1) + emis_ant(i,k,j,p_e_oc)*conv
-                chem(i,k,j,p_so4) = chem(i,k,j,p_so4) + emis_ant(i,k,j,p_e_sulf)*conv
+                chem(i,k,j,p_sulf) = chem(i,k,j,p_sulf) + emis_ant(i,k,j,p_e_sulf)*conv*mwdry/mw_so4_aer*1.e-3
              end do
            end do
          end do
@@ -623,13 +625,11 @@ CONTAINS
        call wrf_debug(15,'emissions_driver calling cbmz_addemiss_bio')
        ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
        ! module
-       if ( config_flags%bio_emiss_opt .ne. megan2 ) then 
          call cbmz_addemiss_bio( id, dtstep, dz8w, config_flags,         &
               rho_phy, chem, e_bio, ne_area, emis_ant(ims,kms,jms,p_e_iso),&
               ids,ide, jds,jde, kds,kde,                                 &
               ims,ime, jms,jme, kms,kme,                                 &
               its,ite, jts,jte, kts,kte                                  )
-       endif
 
     CASE (CHEM_TRACER)
        do j=jts,jte  
@@ -903,15 +903,14 @@ CONTAINS
          CALL WRF_MESSAGE (message)
        ENDIF
        call wrf_debug(15,'emissions_driver calling add_anthropogenics')
-       call add_anthropogenics(id,dtstep,dz8w,config_flags,rho_phy,chem,&
-            emis_ant,emis_aircraft,                                     &
+       call add_anthropogenics(id,dtstep,dz8w,config_flags,rho_phy,alt, &
+            chem, emis_ant,emis_aircraft,                               &
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
        call wrf_debug(15,'emissions_driver calling add_biogenics')
        ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
        ! module
-       if ( config_flags%bio_emiss_opt .ne. megan2 ) then
        call add_biogenics(id,dtstep,dz8w,config_flags,rho_phy,chem,     &
             e_bio,ne_area,                                              &
             ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
@@ -920,7 +919,6 @@ CONTAINS
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
-       end if 
 
        end if ! emiss_inpt_opt /= 3
 
@@ -1089,7 +1087,7 @@ CONTAINS
                   N_IC,N_CG,lflash_data,flashrate_factor,  &
                   flashrate_method,iccg_method,            &
                   cellcount_method,                        &
-                  ic_fr,cg_fr)
+                  ic_fr,cg_fr,xland,ktop)
 
    END IF
 

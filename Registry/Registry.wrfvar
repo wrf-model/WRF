@@ -1960,6 +1960,9 @@ rconfig   logical   perturb_input   namelist,domains    1              .false. h
 rconfig   real      eta_levels      namelist,domains    max_eta        -1.
 rconfig   real      max_dz          namelist,domains    1               1000.
 
+# track input
+rconfig   integer   track_loc_in    namelist,domains    1               0       -    "Number of track locations input"   ""    ""
+
 # TC (tropical cyclone bogusing)
 rconfig   logical insert_bogus_storm   namelist,tc     	1              .false. irh    "insert_bogus_storm"   "T/F for inserting a bogus typhoon"      "flag"
 rconfig   logical remove_storm         namelist,tc     	1              .false. irh    "remove_storm"  "T/F for only removing the original typhoon"  "flag"

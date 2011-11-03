@@ -390,9 +390,21 @@
       call da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid , config_flags)
       
 
-      if (test_transforms) then
-         call da_check (grid, config_flags, cv_size, xbx, be, grid%ep, iv, &
+      if (test_transforms .or. test_gradient) then
+
+         if (test_gradient) then
+            call da_allocate_y (iv, re)
+            call da_allocate_y (iv, y)
+            call da_check_gradient (grid, config_flags, cv_size, xhat, cvt, 1.0e-10, 8, &
+                         xbx, be, iv, y, re, j)
+            call da_deallocate_y (re)
+            call da_deallocate_y (y)
+         endif
+
+         if (test_transforms) then
+            call da_check (grid, config_flags, cv_size, xbx, be, grid%ep, iv, &
                         grid%vv, grid%vp, y)
+         endif
 
          ! No point continuing, as data corrupted
          call da_wrfvar_finalize

@@ -2402,7 +2402,7 @@
      &                 ,RUCUTEN=DUCUDT, RVCUTEN=DVCUDT, MOMMIX=MOMMIX   &
                        ,store_rand=store_rand                           &
 #endif
-     &                 ,pgcon=pgcon                                     &
+     &                 ,pgcon=config_flags%sas_pgcon                    &
                   ! Selection argument
      &                 ,CU_PHYSICS=CONFIG_FLAGS%CU_PHYSICS              &
                   ! Moisture tracer arguments

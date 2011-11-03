@@ -23,7 +23,7 @@ export NUM_WE=44     # 1 point less than stagger points
 export NUM_SN=44     # 1 point less than stagger points 
 export NUM_LEVELS=27 # 1 point less than stagger points
 
-export LESS_Q_FROM_TOP=0      # Exclude levels from top for moisture statistics
+export LESS_LEVELS_FROM_TOP=0 # Exclude levels from top for moisture statistics
 export LAT_BINS_IN_DEG=5.0    # Lat bins (in deg) for BE stats
 export DEBUG=0      
 

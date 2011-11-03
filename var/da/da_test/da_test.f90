@@ -5,7 +5,7 @@ module da_test
    !---------------------------------------------------------------------------
 
    use module_configure, only : grid_config_rec_type
-   use module_dm, only : wrf_dm_sum_real
+   use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_integer
 
 #ifdef DM_PARALLEL
    use module_dm, only : local_communicator, &
@@ -41,17 +41,17 @@ module da_test
       use_gpsztdobs, Use_Radar_rf, use_rad, crtm_cloud, cloud_cv_options, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, cv_options, cv_size, &
-      cloud_cv_options, cp, gas_constant
+      cloud_cv_options, cp, gas_constant, test_dm_exact, cv_size_domain
 
    use da_define_structures, only : da_zero_x,da_zero_vp_type,da_allocate_y, &
-      da_deallocate_y,be_type, xbx_type, iv_type, y_type
+      da_deallocate_y,be_type, xbx_type, iv_type, y_type, j_type, da_initialize_cv
    use da_dynamics, only : da_uv_to_divergence,da_uv_to_vorticity, &
       da_psichi_to_uv, da_psichi_to_uv_adj
    use da_ffts, only : da_solve_poissoneqn_fct
    use da_minimisation, only : da_transform_vtoy_adj,da_transform_vtoy, da_swap_xtraj, &
-       da_read_basicstates
+       da_read_basicstates, da_calculate_j
    use da_obs, only : da_transform_xtoy,da_transform_xtoy_adj
-   use da_par_util, only : da_patch_to_global, da_system
+   use da_par_util, only : da_patch_to_global, da_system, da_cv_to_global
 #ifdef DM_PARALLEL
    use da_par_util1, only : true_mpi_real
 #endif
@@ -86,6 +86,8 @@ module da_test
 #endif
 
    implicit none
+
+   private :: da_dot_cv, da_dot
 
 #ifdef DM_PARALLEL
    include 'mpif.h'
@@ -123,6 +125,8 @@ contains
 #include "da_check_xtoy_adjoint_rad.inc"
 #include "da_transform_xtovp.inc"
 #include "da_check.inc"
+#include "da_dot.inc"
+#include "da_dot_cv.inc"
 #include "da_check_xtoy_adjoint_pseudo.inc"
 #include "da_check_xtoy_adjoint_qscat.inc"
 #include "da_check_xtoy_adjoint_ssmt1.inc"
@@ -135,5 +139,6 @@ contains
 #include "da_set_tst_trnsf_fld.inc"
 #include "da_check_vtoy_adjoint.inc"
 #include "da_get_y_lhs_value.inc"
+#include "da_check_gradient.inc"
 
 end module da_test

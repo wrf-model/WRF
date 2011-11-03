@@ -318,8 +318,6 @@ CONTAINS
       deallocate(itemp)
 #endif
 
-        grid%DT=float(grid%TIME_STEP)
-
         NNXP=min(ITE,IDE-1)
         NNYP=min(JTE,JDE-1)
 

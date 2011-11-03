@@ -685,8 +685,8 @@ CONTAINS
 #if (NMM_CORE==1)
                ,store_rand=store_rand  &
                ,MOMMIX=MOMMIX  &
-               ,pgcon=pgcon &
 #endif
+               ,pgcon=pgcon &
                ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
                ,CUDT=cudt_pass                                  &
                ,CURR_SECS=curr_secs_pass                        &
@@ -891,6 +891,7 @@ CONTAINS
                 XLAND=XLAND,DZ8W=dz8w,W=w,U3D=u,V3D=v,          &
                 HPBL=pblh,HFX=hfx,QFX=qfx,                      & 
                 MP_PHYSICS=mp_physics,                          & 
+                pgcon=pgcon,                                    &
                 P_QC=p_qc,P_QI=p_qi,                            &
                 P_FIRST_SCALAR=param_first_scalar               &
                ,CP=cp,CLIQ=cliq,CPV=cpv,G=g,XLV=xlv,R_D=r_d     &

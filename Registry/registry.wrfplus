@@ -439,7 +439,7 @@ state   real    g_qh             ikjftb   g_moist       1         -     \
 state   real   jcdfi_u           ikj   misc        1         -     -    "U_JCDFI"               "u accumulation array"          "   "
 state   real   jcdfi_v           ikj   misc        1         -     -    "V_JCDFI"               "v accumulation array"          "   "
 state   real   jcdfi_t           ikj   misc        1         -     -    "T_JCDFI"               "t accumulation array"          "   "
-state   real   jcdfi_mu          ij    misc        1         -     -    "MU_JCDFI"  "perturbation dry air mass in column" "Pa"
+state   real   jcdfi_p           ikj   misc        1         -     -    "P_JCDFI"               "p accumulation array"          "Pa"
 
 # Other Scalars
 state   real    -              ikjftb  a_scalar      1         -     -   -

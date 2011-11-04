@@ -57,7 +57,7 @@
     grid%jcdfi_u  = 0.0
     grid%jcdfi_v  = 0.0
     grid%jcdfi_t  = 0.0
-    grid%jcdfi_mu = 0.0
+    grid%jcdfi_p  = 0.0
 
  END SUBROUTINE jcdfi_zero_forcing
 
@@ -78,7 +78,7 @@
     grid%jcdfi_u  = grid%jcdfi_u  + hn * grid%g_u_2
     grid%jcdfi_v  = grid%jcdfi_v  + hn * grid%g_v_2
     grid%jcdfi_t  = grid%jcdfi_t  + hn * grid%g_t_2
-    grid%jcdfi_mu = grid%jcdfi_mu + hn * grid%g_mu_2
+    grid%jcdfi_p  = grid%jcdfi_p  + hn * grid%g_p
 
  END SUBROUTINE jcdfi_tl
 
@@ -97,6 +97,6 @@
     grid%a_u_2  = grid%a_u_2  + hn * grid%jcdfi_u 
     grid%a_v_2  = grid%a_v_2  + hn * grid%jcdfi_v
     grid%a_t_2  = grid%a_t_2  + hn * grid%jcdfi_t 
-    grid%a_mu_2 = grid%a_mu_2 + hn * grid%jcdfi_mu 
+    grid%a_p    = grid%a_p    + hn * grid%jcdfi_p
  END SUBROUTINE jcdfi_add_forcing
 

@@ -11,6 +11,20 @@ subroutine da_wrfvar_finalize
 
    if (trace_use) call da_trace_entry ("da_wrfvar_finalize")
 
+#ifdef VAR4D
+   if ( var4d_lbc ) then
+      if (ALLOCATED(u6_2)) deallocate (u6_2)
+      if (ALLOCATED(v6_2)) deallocate (v6_2)
+      if (ALLOCATED(w6_2)) deallocate (w6_2)
+      if (ALLOCATED(t6_2)) deallocate (t6_2)
+      if (ALLOCATED(ph6_2)) deallocate (ph6_2)
+      if (ALLOCATED(mu6_2)) deallocate (mu6_2)
+      if (ALLOCATED(moist6)) deallocate (moist6)
+      if (ALLOCATED(p6)) deallocate (p6)
+      if (ALLOCATED(psfc6)) deallocate (psfc6)
+   endif
+#endif
+
    grid => head_grid
 
    deallocate (grid%parents)

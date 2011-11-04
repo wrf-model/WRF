@@ -181,16 +181,12 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
                   pertile_lhs = pertile_lhs - config_flags%jcdfi_penalty * model_grid%jcdfi_v(i,k,j)**2 * &
                         grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
                   pertile_lhs = pertile_lhs - config_flags%jcdfi_penalty * model_grid%jcdfi_t(i,k,j)**2 * &
-                        cp/280.*grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+                        (9.81/3.0)**2*grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+                  pertile_lhs = pertile_lhs - config_flags%jcdfi_penalty * model_grid%jcdfi_p(i,k,j)**2 * &
+                        (1.0/300.)**2*grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
                enddo
             enddo
          enddo 
-         do j = jms, jme
-            do i = ims, ime  
-               pertile_lhs = pertile_lhs - config_flags%jcdfi_penalty * model_grid%jcdfi_mu(i,j)**2 * gas_constant * &
-                     280./(1.0e5**2)*grid%xb%grid_box_area(i,j)/whole_area
-            enddo
-         enddo
 
          ! We can not calculate the Y just with tile.
          partial_lhs = pertile_lhs
@@ -449,16 +445,13 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
                   model_grid%jcdfi_v(i,k,j) = -1.0 * config_flags%jcdfi_penalty * model_grid%jcdfi_v(i,k,j) * &
                         grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
                   model_grid%jcdfi_t(i,k,j) = -1.0 * config_flags%jcdfi_penalty * model_grid%jcdfi_t(i,k,j) * &
-                        cp/280.0*grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+                        (9.81/3.0)**2*grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+                  model_grid%jcdfi_p(i,k,j) = -1.0 * config_flags%jcdfi_penalty * model_grid%jcdfi_p(i,k,j) * &
+                        (1.0/300.)**2*grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
                enddo
             enddo
          enddo
-         do j = jms, jme
-            do i = ims, ime
-               model_grid%jcdfi_mu(i,j) = -1.0 * config_flags%jcdfi_penalty * model_grid%jcdfi_mu(i,j) * gas_constant * &
-                     280./(1.0e5**2)*grid%xb%grid_box_area(i,j)/whole_area
-            enddo
-         enddo
+
       endif
 
       if ( trajectory_io ) then

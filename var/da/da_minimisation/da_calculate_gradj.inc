@@ -43,6 +43,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    real             :: grad_js(cv_size)
    real             :: grad_jl(cv_size)
    real             :: gnorm_j, gnorm_jo, gnorm_jb, gnorm_je, gnorm_jp, gnorm_js, gnorm_jl
+   logical          :: jcdf_flag
 
    ! Variables for VarBC background constraint
    integer                           :: jp_start, jp_end       ! Start/end indices of Jp.
@@ -74,6 +75,8 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    grad_js = 0.0
    grad_jl = 0.0
 
+   jcdf_flag = .false.
+
    !-------------------------------------------------------------------------
    ! [1.0] calculate grad_v (jo):
    !-------------------------------------------------------------------------
@@ -81,8 +84,9 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    
    if (present(re)) then
       call da_calculate_grady(iv, re, jo_grad_y)   
+      if ( iter > 0) jcdf_flag = .true.
       call da_transform_vtoy_adj(cv_size, be, grid%ep, grad_jo, iv, &
-              grid%vp, grid%vv, grid%vp6, grid%vv6, xbx, jo_grad_y, grid, config_flags, .false.)
+              grid%vp, grid%vv, grid%vp6, grid%vv6, xbx, jo_grad_y, grid, config_flags, jcdf_flag)
    else
       call da_transform_vtoy(cv_size, be, grid%ep, cv, iv, grid%vp, &
               grid%vv, grid%vp6, grid%vv6, xbx, y, grid, config_flags)

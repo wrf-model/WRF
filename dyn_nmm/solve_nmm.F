@@ -746,17 +746,12 @@
 !-----------------------------------------------------------------------
 #ifdef HWRF
 ! Coupling insertion:->
-!
-!zhang's doing      call ATM_TSTEP_INIT(NTSD,grid%NPHS,GRID%ID,grid%NPHS*grid%dt, &
       call ATM_TSTEP_INIT(NTSD_current,grid%NPHS,GRID%ID,grid%NPHS*grid%dt, &
-!end of zhang's doing
       ids,idf,jds,jdf,its,ite,jts,jte,ims,ime,jms,jme,           &
                        kds,kde,kts,kte,kms,kme,                  &
                        grid%HLON,grid%HLAT,grid%VLON,grid%VLAT,grid%sm,                   &
-                       grid%i_parent_start,grid%j_parent_start)
-!     CALL ATM_RECVdtc(NPHS*dt) <-  now called from ATM_TSTEP_INIT with no arg.
-!     CALL ATM_SENDGRIDS(HLON,HLAT,VLON,VLAT) <- now called from ATM_TSTEP_INIT
-!     CALL ATM_SENDSLM(grid%sm)                    <- now called from ATM_TSTEP_INIT
+                       grid%i_parent_start,grid%j_parent_start,  &
+                       grid%guessdtc,grid%dtc)
 !<-:coupling insertion
 !
 #endif

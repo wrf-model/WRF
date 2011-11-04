@@ -127,6 +127,12 @@ state    real   hlon_gc        ij       dyn_nmm      1     -     i1      "XLONG_
 state    real   hlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_M" "latitude, positive north" "degrees"
 
 ##############################################################
+# Variables for coupling
+
+state    real   dtc            -        dyn_nmm      1     -     irh     "DTC"      "Coupling timestep"                           "s"
+state    real   guessdtc       -        dyn_nmm      1     -     irh     "GUESSDTC" "Guessed Coupling Timestep for Uncoupled Run" "s"
+
+##############################################################
 # Variables for nmm dynamics                                            
 #
 # module_BC

@@ -353,7 +353,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 2, Lin et al. scheme
                                      = 3, WSM 3-class simple ice scheme
                                      = 4, WSM 5-class scheme
-                                     = 5, Ferrier (new Eta) microphysics
+                                     = 5, Ferrier (new Eta) microphysics, operational High-Resolution Window version
                                      = 6, WSM 6-class graupel scheme
                                      = 7, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
                                      = 8, Thompson scheme (new for V3.1)
@@ -362,6 +362,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 13, SBU_YLIN scheme
                                      = 14, WDM 5-class scheme
                                      = 16, WDM 6-class scheme
+                                     = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
  fields .LT. a critcal value to zero

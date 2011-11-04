@@ -1,13 +1,12 @@
 !WRF:MODEL_MP:PHYSICS
 !
-MODULE module_mp_etanew
+MODULE module_mp_etaold
 !
 !-----------------------------------------------------------------------
       REAL,PRIVATE,SAVE ::  ABFR, CBFR, CIACW, CIACR, C_N0r0,           &
      &  CN0r0, CN0r_DMRmin, CN0r_DMRmax, CRACW, CRAUT, ESW0,            &
      &  RFmax, RQR_DR1, RQR_DR2, RQR_DR3, RQR_DRmin,                    &
-     &  RQR_DRmax, RR_DRmin, RR_DR1, RR_DR2, RR_DR3, RR_DR4,            &
-     &  RR_DR5, RR_DRmax
+     &  RQR_DRmax, RR_DRmin, RR_DR1, RR_DR2, RR_DR3, RR_DRmax
 !
       INTEGER, PRIVATE,PARAMETER :: MY_T1=1, MY_T2=35
       REAL,PRIVATE,DIMENSION(MY_T1:MY_T2),SAVE :: MY_GROWTH
@@ -19,7 +18,7 @@ MODULE module_mp_etanew
       REAL, PRIVATE,DIMENSION(MDImin:MDImax) ::                         &
      &      ACCRI,SDENS,VSNOWI,VENTI1,VENTI2
 !
-      REAL, PRIVATE,PARAMETER :: DMRmin=.05e-3, DMRmax=1.e-3,          &
+      REAL, PRIVATE,PARAMETER :: DMRmin=.05e-3, DMRmax=.45e-3,          &
      &      DelDMR=1.e-6,XMRmin=1.e6*DMRmin, XMRmax=1.e6*DMRmax
       INTEGER, PRIVATE,PARAMETER :: MDRmin=XMRmin, MDRmax=XMRmax                   
       REAL, PRIVATE,DIMENSION(MDRmin:MDRmax)::                          &
@@ -45,13 +44,9 @@ MODULE module_mp_etanew
 !--- CLIMIT/CLIMIT1 are lower limits for treating accumulated precipitation
      &  ,CLIMIT=10.*EPSQ, CLIMIT1=-CLIMIT                               &
      &  ,C1=1./3.                                                       &
-     &  ,DMR1=.1E-3, DMR2=.2E-3, DMR3=.32E-3, DMR4=0.45E-3              &
-     &  ,DMR5=0.67E-3                                                   &
-     &  ,XMR1=1.e6*DMR1, XMR2=1.e6*DMR2, XMR3=1.e6*DMR3                 &
-     &  ,XMR4=1.e6*DMR4, XMR5=1.e6*DMR5
-!
-      INTEGER, PARAMETER :: MDR1=XMR1, MDR2=XMR2, MDR3=XMR3, MDR4=XMR4  &
-     &  , MDR5=XMR5
+     &  ,DMR1=.1E-3, DMR2=.2E-3, DMR3=.32E-3                            &
+     &  ,XMR1=1.e6*DMR1, XMR2=1.e6*DMR2, XMR3=1.e6*DMR3
+      INTEGER, PARAMETER :: MDR1=XMR1, MDR2=XMR2, MDR3=XMR3
 !
 ! ======================================================================
 !--- Important tunable parameters that are exported to other modules
@@ -61,7 +56,7 @@ MODULE module_mp_etanew
 !  * T_ICE_init - maximum temperature (C) at which ice nucleation occurs
 !  * NLImax - maximum number concentrations (m**-3) of large ice (snow/graupel/sleet) 
 !  * NLImin - minimum number concentrations (m**-3) of large ice (snow/graupel/sleet) 
-!  * N0r0 - assumed intercept (m**-4) of rain drops if drop diameters are between 0.2 and 1.0 mm
+!  * N0r0 - assumed intercept (m**-4) of rain drops if drop diameters are between 0.2 and 0.45 mm
 !  * N0rmin - minimum intercept (m**-4) for rain drops 
 !  * NCW - number concentrations of cloud droplets (m**-3)
 !  * FLARGE1, FLARGE2 - number fraction of large ice to total (large+snow) ice 
@@ -77,9 +72,9 @@ MODULE module_mp_etanew
      & ,NLImin=1.E3                                                     &
      & ,N0r0=8.E6                                                       &
      & ,N0rmin=1.E4                                                     &
-     & ,NCW=250.E6                                                      &
+     & ,NCW=100.E6                                                      &
      & ,FLARGE1=1.                                                      &
-     & ,FLARGE2=.2
+     & ,FLARGE2=.03         ! Improved simulated GOES radiances
 !--- Other public variables passed to other routines:
       REAL,PUBLIC,SAVE ::  QAUT0
       REAL, PUBLIC,DIMENSION(MDImin:MDImax) :: MASSI
@@ -89,7 +84,7 @@ MODULE module_mp_etanew
 
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
-      SUBROUTINE ETAMP_NEW (itimestep,DT,DX,DY,                         &
+      SUBROUTINE ETAMP_OLD (itimestep,DT,DX,DY,                         &
      &                      dz8w,rho_phy,p_phy,pi_phy,th_phy,qv,qt,     &
      &                      LOWLYR,SR,                                  &
      &                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           &
@@ -320,7 +315,7 @@ MODULE module_mp_etanew
 
 !-----------------------------------------------------------------------
 
-  END SUBROUTINE ETAMP_NEW
+  END SUBROUTINE ETAMP_OLD
 
 !-----------------------------------------------------------------------
 
@@ -380,8 +375,8 @@ MODULE module_mp_etanew
 !LOCAL VARIABLES
 !-----------------------------------------------------------------------
 !
-#define CACHE_FRIENDLY_MP_ETANEW
-#ifdef CACHE_FRIENDLY_MP_ETANEW
+#define CACHE_FRIENDLY_MP_ETAOLD
+#ifdef CACHE_FRIENDLY_MP_ETAOLD
 #  define TEMP_DIMS  kts:kte,its:ite,jts:jte
 #  define TEMP_DEX   L,I,J
 #else
@@ -779,8 +774,8 @@ MODULE module_mp_etanew
 !
 !------------------------------------------------------------------------- 
 !
-!--- Mean rain drop diameters varying from 50 microns (0.05 mm) to 1000 microns 
-!      (1 mm), assuming an exponential size distribution.  
+!--- Mean rain drop diameters varying from 50 microns (0.05 mm) to 450 microns 
+!      (0.45 mm), assuming an exponential size distribution.  
 !
 !------------------------------------------------------------------------- 
 !------- Key parameters, local variables, & important comments ---------
@@ -1189,7 +1184,7 @@ MODULE module_mp_etanew
       !--- Collection of cloud water by large ice particles ("snow")
       !    PIACWI=PIACW for riming, PIACWI=0 for shedding
       !
-              FWS=MIN(.1, CIACW*VEL_INC*NLICE*ACCRI(INDEXS)/PP**C1)
+              FWS=MIN(1., CIACW*VEL_INC*NLICE*ACCRI(INDEXS)/PP**C1)
               PIACW=FWS*QW
               IF (TC .LT. 0.) PIACWI=PIACW    ! Large ice riming
             ENDIF           ! End IF (QLICE .GT. EPSQ)
@@ -1436,7 +1431,6 @@ MODULE module_mp_etanew
         !
                 INDEXR=INT( 1.225E3*RR**.2017 + .5 )
                 INDEXR=MAX( MDR1, MIN(INDEXR, MDR2) )
-
               ELSE IF (RR .LE. RR_DR3) THEN
         !
         !--- Best fit to mass-weighted fall speeds (V) from rain lookup tables 
@@ -1448,50 +1442,24 @@ MODULE module_mp_etanew
         !
                 INDEXR=INT( 1.3006E3*RR**.2083 + .5 )
                 INDEXR=MAX( MDR2, MIN(INDEXR, MDR3) )
-
-              ELSE IF (RR .LE. RR_DR4) THEN
-        !
-        !--- Best fit to mass-weighted fall speeds (V) from rain lookup tables
-        !      for mean diameters (Dr) between 0.32 and 0.45 mm:
-        !      V(Dr)=963.0*Dr**.666, V in m/s and Dr in m
-        !      RR = PI*1000.*N0r0*963.0*Dr**(4+.666) = 2.4205e13*Dr**4.666,
-        !        RR in kg/(m**2*s)
-        !      Dr (m) = 1.354e-3*RR**.2143 -> Dr (microns) = 1.354e3*RR**.2143
-        !
-                INDEXR=INT( 1.354E3*RR**.2143 + .5 )
-                INDEXR=MAX( MDR3, MIN(INDEXR, MDR4) )
-
-              ELSE IF (RR .LE. RR_DR5) THEN
-        !
-        !--- Best fit to mass-weighted fall speeds (V) from rain lookup tables
-        !      for mean diameters (Dr) between 0.45 and 0.675 mm:
-        !      V(Dr)=309.0*Dr**.5185, V in m/s and Dr in m
-        !      RR = PI*1000.*N0r0*309.0*Dr**(4+.5185) = 7.766e12*Dr**4.5185,
-        !        RR in kg/(m**2*s)
-        !      Dr (m) = 1.404e-3*RR**.2213 -> Dr (microns) = 1.404e3*RR**.2213
-        !
-                INDEXR=INT( 1.404E3*RR**.2213 + .5 )
-                INDEXR=MAX( MDR4, MIN(INDEXR, MDR5) )
-
               ELSE IF (RR .LE. RR_DRmax) THEN
-
         !
-        !--- Best fit to mass-weighted fall speeds (V) from rain lookup tables
-        !      for mean diameters (Dr) between 0.675 and 1.0 mm:
-        !      V(Dr)=85.81Dr**.343, V in m/s and Dr in m
-        !      RR = PI*1000.*N0r0*85.81*Dr**(4+.343) = 2.1566e12*Dr**4.343,
+        !--- Best fit to mass-weighted fall speeds (V) from rain lookup tables 
+        !      for mean diameters (Dr) between 0.32 and 0.45 mm:
+        !      V(Dr)=944.8*Dr**.6636, V in m/s and Dr in m
+        !      RR = PI*1000.*N0r0*944.8*Dr**(4+.6636) = 2.3745e13*Dr**4.6636,
         !        RR in kg/(m**2*s)
-        !      Dr (m) = 1.4457e-3*RR**.2303 -> Dr (microns) = 1.4457e3*RR**.2303
+        !      Dr (m) = 1.355e-3*RR**.2144 -> Dr (microns) = 1.355e3*RR**.2144
         !
-                INDEXR=INT( 1.4457E3*RR**.2303 + .5 )
-                INDEXR=MAX( MDR5, MIN(INDEXR, MDRmax) )
-
-               ELSE
-
-        !--- Assume fixed mean diameter of rain (1.0 mm) for high rain rates,
+                INDEXR=INT( 1.355E3*RR**.2144 + .5 )
+                INDEXR=MAX( MDR3, MIN(INDEXR, MDRmax) )
+              ELSE 
+        !
+        !--- Assume fixed mean diameter of rain (0.45 mm) for high rain rates, 
+        !      instead vary N0r with rain rate
+        !
                 INDEXR=MDRmax
-              ENDIF              ! End IF (RR .LE. RR_DRmin) etc.
-
+              ENDIF              ! End IF (RR .LE. RR_DRmin) etc. 
               VRAIN1=GAMMAR*VRAIN(INDEXR)
             ENDIF              ! End IF (ARAIN .LE. 0.)
             INDEXR1=INDEXR     ! For debugging only
@@ -1511,11 +1479,6 @@ MODULE module_mp_etanew
             ELSE
               N0r=N0r0
               INDEXR=MAX( XMRmin, MIN(CN0r0*RQR**.25, XMRmax) )
-            ENDIF
-            IF (RQR .LE. EPSQ) THEN
-              VRAIN1=0.
-            ELSE
-              VRAIN1=GAMMAR*VRAIN(INDEXR)
             ENDIF
    !
             IF (TC .LT. T_ICE) THEN
@@ -1550,7 +1513,7 @@ MODULE module_mp_etanew
                 PREVP=MAX(DUM, PRLOSS)
               ELSE IF (QW .GT. EPSQ) THEN
                 FWR=CRACW*GAMMAR*N0r*ACCRR(INDEXR)
-                PRACW=MIN(.1,FWR)*QW
+                PRACW=MIN(1.,FWR)*QW
               ENDIF           ! End IF (DWVr.LT.0. .AND. DUM.LE.EPSQ)
       !
               IF (TC.LT.0. .AND. TCC.LT.0.) THEN
@@ -1565,7 +1528,7 @@ MODULE module_mp_etanew
             !
             !--- Freezing of rain by collisions w/ large ice
             !
-                  DUM=VRAIN1      !-- was DUM=GAMMAR*VRAIN(INDEXR)
+                  DUM=GAMMAR*VRAIN(INDEXR)
                   DUM1=DUM-VSNOW
             !
             !--- DUM2 - Difference in spectral fall speeds of rain and
@@ -1745,18 +1708,13 @@ MODULE module_mp_etanew
             ELSE IF (RR .LE. RR_DR3) THEN
               IDR=INT( 1.3006E3*RR**.2083 + .5 )
               IDR=MAX( MDR2, MIN(IDR, MDR3) )
-            ELSE IF (RR .LE. RR_DR4) THEN
-              IDR=INT( 1.354E3*RR**.2143 + .5 )
-              IDR=MAX( MDR3, MIN(IDR, MDR4) )
-            ELSE IF (RR .LE. RR_DR5) THEN
-              IDR=INT( 1.404E3*RR**.2213 + .5 )
-              IDR=MAX( MDR4, MIN(IDR, MDR5) )
-            ELSE
-              IDR=INT( 1.4457E3*RR**.2303 + .5 )
-              IDR=MAX( MDR5, MIN(IDR, MDRmax) )
+            ELSE IF (RR .LE. RR_DRmax) THEN
+              IDR=INT( 1.355E3*RR**.2144 + .5 )
+              IDR=MAX( MDR3, MIN(IDR, MDRmax) )
+            ELSE 
+              IDR=MDRmax
             ENDIF              ! End IF (RR .LE. RR_DRmin)
-!            VRAIN2=GAMMAR*VRAIN(IDR)
-            VRAIN2=.5*(VRAIN1+GAMMAR*VRAIN(IDR))
+            VRAIN2=GAMMAR*VRAIN(IDR)
             QRnew=TOT_RAINnew/(THICK+BLDTRH*VRAIN2)
             IF (QRnew .LE. EPSQ) QRnew=0.
             IF (QR.GT.0. .AND. QRnew.NE.0.) THEN
@@ -2085,7 +2043,7 @@ nsteps = 0
 ! SH 0211/2002
 
 !-----------------------------------------------------------------------
-      SUBROUTINE ETANEWinit (GSMDT,DT,DELX,DELY,LOWLYR,restart,         &
+      SUBROUTINE ETAOLDinit (GSMDT,DT,DELX,DELY,LOWLYR,restart,         &
      &   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,                              &
      &   MP_RESTART_STATE,TBPVS_STATE,TBPVS0_STATE,                     &
      &   ALLOWED_TO_READ,                                               &
@@ -2106,7 +2064,7 @@ nsteps = 0
 !   * Creates lookup tables for saturation vapor pressure w/r/t water & ice
 !-------------------------------------------------------------------------------
 !     
-! USAGE: CALL ETANEWinit FROM SUBROUTINE GSMDRIVE AT MODEL START TIME
+! USAGE: CALL ETAOLDinit FROM SUBROUTINE GSMDRIVE AT MODEL START TIME
 !
 !   INPUT ARGUMENT LIST:
 !       DTPH - physics time step (s)
@@ -2258,12 +2216,12 @@ nsteps = 0
         CALL wrf_dm_bcast_bytes ( etampnew_unit1 , IWORDSIZE )
 !
         IF ( etampnew_unit1 < 0 ) THEN
-          CALL wrf_error_fatal ( 'module_mp_etanew: ETANEWinit: Can not find '// &
+          CALL wrf_error_fatal ( 'module_mp_etaold: ETAOLDinit: Can not find '// &
                                  'unused fortran unit to read in lookup table.' )
         ENDIF
 !
         IF ( wrf_dm_on_monitor() ) THEN
-          OPEN(UNIT=etampnew_unit1,FILE="ETAMPNEW_DATA.expanded_rain",  &
+          OPEN(UNIT=etampnew_unit1,FILE="ETAMPNEW_DATA",                  &
      &        FORM="UNFORMATTED",STATUS="OLD",ERR=9061)
 !
           READ(etampnew_unit1) VENTR1
@@ -2311,17 +2269,16 @@ nsteps = 0
 !
 !--- CIACW is used in calculating riming rates
 !      The assumed effective collection efficiency of cloud water rimed onto
-!      ice is =0.1 :
+!      ice is =0.5 below:
 !
-        CIACW=0.1*DTPH*0.25*PI*(1.E5)**C1
-
+        CIACW=DTPH*0.25*PI*0.5*(1.E5)**C1
 !
 !--- CIACR is used in calculating freezing of rain colliding with large ice
-!      The assumed collection efficiency is 0.5
+!      The assumed collection efficiency is 1.0
 !
-        CIACR=0.5*PI*DTPH
+        CIACR=PI*DTPH
 !
-!--- Based on rain lookup tables for mean diameters from 0.05 to 1.0 mm
+!--- Based on rain lookup tables for mean diameters from 0.05 to 0.45 mm
 !    * Four different functional relationships of mean drop diameter as 
 !      a function of rain rate (RR), derived based on simple fits to 
 !      mass-weighted fall speeds of rain as functions of mean diameter
@@ -2331,17 +2288,12 @@ nsteps = 0
         RR_DR1=N0r0*RRATE(MDR1)         ! RR for mean drop diameter of .10 mm
         RR_DR2=N0r0*RRATE(MDR2)         ! RR for mean drop diameter of .20 mm
         RR_DR3=N0r0*RRATE(MDR3)         ! RR for mean drop diameter of .32 mm
-        RR_DR4=N0r0*RRATE(MDR4)         ! RR for mean drop diameter of .45 mm
-        RR_DR5=N0r0*RRATE(MDR5)         ! RR for mean drop diameter of .675 mm
+        RR_DRmax=N0r0*RRATE(MDRmax)     ! RR for mean drop diameter of .45 mm
 !
         RQR_DRmin=N0r0*MASSR(MDRmin)    ! Rain content for mean drop diameter of .05 mm
-
-!        RQR_DR1=N0r0*MASSR(MDR1)        ! Rain content for mean drop diameter of .10 mm
-!        RQR_DR2=N0r0*MASSR(MDR2)        ! Rain content for mean drop diameter of .20 mm
-!        RQR_DR3=N0r0*MASSR(MDR3)        ! Rain content for mean drop diameter of .32 mm
-!        RQR_DR4=N0r0*MASSR(MDR4)        ! Rain content for mean drop diameter of .45 mm
-!        RQR_DR5=N0r0*MASSR(MDR5)        ! Rain content for mean drop diameter of .675 mm
-
+        RQR_DR1=N0r0*MASSR(MDR1)        ! Rain content for mean drop diameter of .10 mm
+        RQR_DR2=N0r0*MASSR(MDR2)        ! Rain content for mean drop diameter of .20 mm
+        RQR_DR3=N0r0*MASSR(MDR3)        ! Rain content for mean drop diameter of .32 mm
         RQR_DRmax=N0r0*MASSR(MDRmax)    ! Rain content for mean drop diameter of .45 mm
         C_N0r0=PI*RHOL*N0r0
         CN0r0=1.E6/C_N0r0**.25
@@ -2349,9 +2301,9 @@ nsteps = 0
         CN0r_DMRmax=1./(PI*RHOL*DMRmax**4)
 !
 !--- CRACW is used in calculating collection of cloud water by rain (an
-!      assumed collection efficiency of 0.1)
+!      assumed collection efficiency of 1.0)
 !
-        CRACW=0.1*DTPH*0.25*PI
+        CRACW=DTPH*0.25*PI*1.0
 !
         ESW0=1000.*FPVS0(T0C)     ! Saturation vapor pressure at 0C
         RFmax=1.1**Nrime          ! Maximum rime factor allowed
@@ -2429,12 +2381,12 @@ nsteps = 0
 !
 9061 CONTINUE
       WRITE( errmess , '(A,I4)' )                                        &
-       'module_mp_etanew: error opening ETAMPNEW_DATA.expanded_rain on unit ' &
+       'module_mp_etaold: error opening ETAMPNEW_DATA on unit '          &
      &, etampnew_unit1
       CALL wrf_error_fatal(errmess)
 !
 !-----------------------------------------------------------------------
-      END SUBROUTINE ETANEWinit
+      END SUBROUTINE ETAOLDinit
 !
       SUBROUTINE MY_GROWTH_RATES (DTPH)
 !     SUBROUTINE MY_GROWTH_RATES (DTPH,MY_GROWTH)
@@ -2471,7 +2423,7 @@ nsteps = 0
 !-----------------------------------------------------------------------
 !
       DT_ICE=(DTPH/600.)**1.5
-      MY_GROWTH=DT_ICE*MY_600*1.e-3     ! Convert from g to kg
+      MY_GROWTH=DT_ICE*MY_600*1.E-3     ! Convert from g to kg
 !
 !-----------------------------------------------------------------------
 !
@@ -2668,4 +2620,4 @@ nsteps = 0
 !
       END FUNCTION FPVSX0
 !
-      END MODULE module_mp_etanew
+      END MODULE module_mp_etaold

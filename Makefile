@@ -272,8 +272,9 @@ em_real : wrf
 	  ( cd test/em_esmf_exp ; /bin/rm -f wrf_SST_ESMF.exe ; ln -s ../../main/wrf_SST_ESMF.exe . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f real.exe ; ln -s ../../main/real.exe . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ) ; \
-	  ( cd test/em_esmf_exp ; /bin/rm -f ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ; \
                ln -sf ../../run/ETAMPNEW_DATA . ;                      \
+               ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;                      \
                ln -sf ../../run/RRTM_DATA . ;                          \
                ln -sf ../../run/RRTMG_LW_DATA . ;                      \
                ln -sf ../../run/RRTMG_SW_DATA . ;                      \
@@ -304,8 +305,9 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f ndown.exe ; ln -s ../../main/ndown.exe . )
 	( cd test/em_real ; /bin/rm -f nup.exe ; ln -s ../../main/nup.exe . )
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ;    \
+	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ;    \
              ln -sf ../../run/ETAMPNEW_DATA . ;                     \
+             ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;                     \
              ln -sf ../../run/RRTM_DATA . ;                         \
              ln -sf ../../run/RRTMG_LW_DATA . ;                      \
              ln -sf ../../run/RRTMG_SW_DATA . ;                      \
@@ -473,8 +475,9 @@ nmm_real : nmm_wrf
 	( cd test/nmm_real ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/nmm_real ; /bin/rm -f real_nmm.exe ; ln -s ../../main/real_nmm.exe . )
 	( cd test/nmm_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
-	( cd test/nmm_real ; /bin/rm -f ETAMPNEW_DATA RRTM_DATA ;    \
+	( cd test/nmm_real ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA ;    \
 	     ln -sf ../../run/ETAMPNEW_DATA . ;                     \
+	     ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;                     \
 	     ln -sf ../../run/RRTM_DATA . ;                         \
 	     if [ $(RWORDSIZE) -eq 8 ] ; then                       \
 	        ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \

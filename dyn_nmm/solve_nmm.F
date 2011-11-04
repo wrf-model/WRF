@@ -26,7 +26,9 @@
                                               ,NTASKS_Y
       USE MODULE_COMM_DM
 #endif
+#ifdef HWRF
       USE MODULE_HIFREQ,                ONLY: HIFREQ_WRITE, HIFREQ_OPEN
+#endif
       USE MODULE_IGWAVE_ADJUST,         ONLY: PDTE,PFDHT,DDAMP,VTOA
       USE MODULE_ADVECTION,             ONLY: ADVE,VAD2,HAD2            &
                                              ,ADV2,MONO                 &
@@ -2383,6 +2385,7 @@
    CALL wrf_debug ( 100 , 'nmm stats_for_move: after advection' )
    ENDIF
 #endif
+#ifdef HWRF
    hwrfx_mlsp: if(grid%vortex_tracker /= 1) then
 
 !    output MSLP over parent domain for diagonostic purposes. outputs are hourly.
@@ -2400,6 +2403,8 @@
 
      ENDIF
    endif hwrfx_mlsp
+#endif
+
 !#define COPY_OUT
 !#include <scalar_derefs.inc>
 #ifdef HWRF
@@ -2426,6 +2431,7 @@
 !
 !--------------------------------------------------------------------------------------------------------------
 !
+#ifdef HWRF
      IF(grid%hifreq_lun /= 0) THEN
         CALL HIFREQ_WRITE(grid%hifreq_lun,GRID%NTSD,GRID%DT,GRID%HLAT,GRID%HLON    &
                       ,GRID%U10,GRID%V10,grid%pint,grid%t,grid%q                   &
@@ -2434,6 +2440,7 @@
                       ,IMS,IME,JMS,JME,KMS,KME                                     &
                       ,ITS,ITE,JTS,JTE,KTS,KTE   )
      ENDIF
+#endif
 !
 !-------------------  END OF HIGH FREQUENCY OUTPUT MODULE  ----------------------------
  

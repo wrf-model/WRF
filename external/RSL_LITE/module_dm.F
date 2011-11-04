@@ -3809,7 +3809,11 @@ END
       USE module_configure, ONLY : grid_config_rec_type
       USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
                             ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width
+#ifdef HWRF
       USE module_comm_dm, ONLY : HALO_NMM_FORCE_DOWN1_sub, HALO_NMM_FORCE_DOWN_SST_sub
+#else
+      USE module_comm_dm, ONLY : HALO_NMM_FORCE_DOWN1_sub
+#endif
       IMPLICIT NONE
 !
       TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
@@ -3863,9 +3867,11 @@ integer myproc
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe    )
 
+#ifdef HWRF
       IF(ngrid%force_sst(1) == 1) then
 #include "HALO_NMM_FORCE_DOWN_SST.inc"
       ENDIF
+#endif
 
 #include "HALO_NMM_FORCE_DOWN1.inc"
 

@@ -11,7 +11,9 @@
 !----------------------------------------------------------------------
 !
       USE MODULE_TIMING
+#ifdef HWRF
       USE MODULE_HIFREQ, only : hifreq_open
+#endif
       USE MODULE_DOMAIN
       USE MODULE_RANDOM, only : srand_grid, rand_grid_r4
       USE MODULE_DRIVER_CONSTANTS
@@ -207,11 +209,13 @@
 !
       call start_timing
 
+#ifdef HWRF
       if(grid%id==3) then
          grid%force_sst=1
       else
          grid%force_sst=2
       endif
+#endif
 
       CALL GET_IJK_FROM_GRID(GRID,                                     &
      &                       IDS,IDE,JDS,JDE,KDS,KDE,                  &
@@ -518,7 +522,8 @@
             grid%random = 0.0
          endif
       endif
-! Begin Sam Trahan's doing for high-frequency output
+! Begin HWRF update for high-frequency output
+#ifdef HWRF
       if(allowed_to_read .and. config_flags%high_freq) then
         if(grid%id==config_flags%high_dom) then
            call HIFREQ_OPEN(grid,config_flags)
@@ -545,7 +550,8 @@
       else
         write(message,'("Domain ",I0," is not being initialized.")') grid%id
       endif
-! end of Sam Trahan's doing
+! end of high-freq output
+#endif
 !
 #ifdef HWRF
 !zhang's doing
@@ -1524,6 +1530,7 @@
       ENDIF    !zhang 
 #endif
 
+#ifdef HWRF
       hwrfx_mslp: if(grid%vortex_tracker /= 1) then
 ! XUEJIN's doing
 ! add to output MSLP at the initial time
@@ -1569,6 +1576,7 @@
      ENDDO
 
   endif hwrfx_mslp
+#endif
 
 
 #ifndef NO_RESTRICT_ACCEL

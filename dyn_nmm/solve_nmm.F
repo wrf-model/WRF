@@ -339,8 +339,12 @@
       ENDIF
 !
       GRID%SIGMA=1 
-      grid%hydro=.FALSE.
-!
+
+      IF (config_flags%non_hydrostatic) THEN
+        grid%hydro=.FALSE.
+      ELSE
+        grid%hydro=.TRUE.
+      ENDIF
 !
       IDF=IDE-1
       JDF=JDE-1
@@ -359,7 +363,6 @@
       KTE=MIN(KPE,KDF)
 !-----------------------------------------------------------------------
 !
-      write(0,*)'grid%ntsd=',grid%ntsd
       if(grid%ntsd==0)then
         write(message,*)' its=',its,' ite=',ite
         call wrf_message(trim(message))
@@ -1185,7 +1188,7 @@
       CALL HADZ(grid%ntsd,GRID%DT,grid%hydro,grid%hbm2,grid%deta1,grid%deta2,grid%pdtop               &
      &         ,grid%dx_nmm,grid%dy_nmm,grid%fad                                       &
      &         ,grid%few,grid%fns,grid%fne,grid%fse                                         &
-     &         ,grid%pdsl,grid%u,grid%v,grid%w,grid%z,WP                                    &
+     &         ,grid%pdsl,grid%u,grid%v,grid%w,grid%z,WP,grid%BARO                          &
      &         ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                         &
      &         ,IDS,IDF,JDS,JDF,KDS,KDE                                 &
      &         ,IMS,IME,JMS,JME,KMS,KME                                 &
@@ -1216,13 +1219,13 @@
 !
 
       CALL EPS(grid%ntsd,GRID%DT,grid%hydro,grid%dx_nmm,grid%dy_nmm,grid%fad                     &
-     &        ,grid%deta1,grid%deta2,grid%pdtop,grid%pt                                     &
+     &        ,grid%aeta1,grid%deta1,grid%deta2,grid%pdtop,grid%pt                                     &
      &        ,grid%hbm2,grid%hbm3                                                &
      &        ,grid%pdsl,grid%pdslo,grid%pint,grid%rtop,grid%petdt,grid%pdwdt                         &
      &        ,grid%dwdt,grid%dwdtmn,grid%dwdtmx                                       &
      &        ,grid%fns,grid%few,grid%fne,grid%fse                                          &
-     &        ,grid%t,grid%u,grid%v,grid%w,grid%q,grid%cwm                                            &
-     &        ,grid%def3d,grid%hdac                                                &
+     &        ,grid%t,grid%u,grid%v,grid%w,grid%w_tot,grid%q,grid%cwm                                            &
+     &        ,grid%def3d,grid%hdac,grid%baro                                              &
      &        ,WP                                                 &
      &        ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                          &
      &        ,IDS,IDF,JDS,JDF,KDS,KDE                                  &

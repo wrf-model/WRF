@@ -584,8 +584,8 @@ SUBROUTINE output_gts_31 (max_number_of_obs, obs, number_of_obs, windex,&
       if (ntotal == 0) then
          WRITE(0,'(A,I6,A)') "Ntotal=",ntotal, &
                             " No observations other than SSMI is written out."
-         CLOSE (UNIT = 99) 
-         RETURN
+!        CLOSE (UNIT = 99) 
+!        RETURN
       endif
 
 ! 1.3 FILE HEADER FOR NEW FORMAT

@@ -47,15 +47,13 @@ subroutine da_transfer_xatowrf(grid)
 
    ! To keep the background PH perturbation:
 
-   if (.not. var4d ) then
-      do j=jts,jte
-         do i=its,ite
-            do k=kts, kte+1
-               ph_cgrid(i,j,k) = grid%ph_2(i,j,k)
+   do j=jts,jte
+      do i=its,ite
+         do k=kts, kte+1
+            ph_cgrid(i,j,k) = grid%ph_2(i,j,k)
             end do
-         end do
       end do
-   endif
+   end do
 
    !---------------------------------------------------------------------------
    ! [1.0] Get the mixing ratio of moisture first, as it its easy.
@@ -231,43 +229,30 @@ subroutine da_transfer_xatowrf(grid)
             ! To compute the theta increment with the full fitelds:
             grid%t_2(i,j,k) = t_full*(base_pres/p_full)**kappa - t0
 
-            if ( .not. var4d ) then
-               ! The full fiteld of analysis ph:
-               ph_full  = ph_full  &
-                          - grid%xb%dnw(k) * (grid%xb%psac(i,j)+mu_cgrid(i,j)) / rho_dry
+            ! The full fiteld of analysis ph:
+            ph_full  = ph_full  &
+                       - grid%xb%dnw(k) * (grid%xb%psac(i,j)+mu_cgrid(i,j)) / rho_dry
 
-               ! background hydrostatic phi:
-               ph_xb_hd  = ph_xb_hd  &
-                          - grid%xb%dnw(k) * grid%xb%psac(i,j) / grid%xb%rho(i,j,k)
+            ! background hydrostatic phi:
+            ph_xb_hd  = ph_xb_hd  &
+                       - grid%xb%dnw(k) * grid%xb%psac(i,j) / grid%xb%rho(i,j,k)
 
-               ! The analysis perturbation = Hydro_ph - base_ph + nonhydro_xb_ph:
-               grid%ph_2(i,j,k+1) = ph_full - grid%phb(i,j,k+1) &
-                               + (grid%xb%hf(i,j,k+1)*gravity - ph_xb_hd)
-            endif
+            ! The analysis perturbation = Hydro_ph - base_ph + nonhydro_xb_ph:
+            grid%ph_2(i,j,k+1) = ph_full - grid%phb(i,j,k+1) &
+                            + (grid%xb%hf(i,j,k+1)*gravity - ph_xb_hd)
          end do
       end do
    end do
 
    ! To compute the geopotential height increment:
 
-   if ( .not. var4d ) then
-      do k=kts, kte+1
-        do j=jts,jte
-           do i=its,ite
-              ph_cgrid(i,j,k) = grid%ph_2(i,j,k) - ph_cgrid(i,j,k)
-           end do
+   do k=kts, kte+1
+     do j=jts,jte
+        do i=its,ite
+           ph_cgrid(i,j,k) = grid%ph_2(i,j,k) - ph_cgrid(i,j,k)
         end do
-      end do
-   else
-      do k=kts, kte+1
-        do j=jts,jte
-           do i=its,ite
-              ph_cgrid(i,j,k) = 0.0
-           end do
-        end do
-      end do
-   endif
-
+     end do
+   end do
 
    ! ========================
    ! Write out the increment:

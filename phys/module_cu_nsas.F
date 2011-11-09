@@ -15,6 +15,7 @@ CONTAINS
                      hpbl,hfx,qfx,                                             &
                      mp_physics,                                               &
                      p_qc,p_qi,p_first_scalar,                                 &
+                     pgcon,                                                    &
                      cp,cliq,cpv,g,xlv,r_d,r_v,ep_1,ep_2,                      &
                      cice,xls,psat,f_qi,f_qc,                                  &
                      ids,ide, jds,jde, kds,kde,                                &
@@ -66,6 +67,7 @@ CONTAINS
   real,     intent(in   )   ::      cp,cliq,cpv,g,xlv,r_d,r_v,ep_1,ep_2,       &
                                     cice,xls,psat
   real,     intent(in   )   ::      dt
+  real,     optional, intent(in   )   ::      pgcon
 !
   real,     dimension( ims:ime, kms:kme, jms:jme ),optional                  , &
             intent(inout)   ::                                       rthcuten, &
@@ -138,6 +140,7 @@ CONTAINS
   integer, dimension (its:ite)  ::                                       kbot, &
                                                                          ktop, &
                                                                           kuo
+  real    :: pgcon_use
   logical :: run_param , doing_adapt_dt , decided
   integer ::  i,j,k,kp
 !
@@ -216,6 +219,16 @@ CONTAINS
    END IF
 
 !-------------------------------------------------------------------------------
+
+      if(present(pgcon)) then
+         pgcon_use  = pgcon
+      else
+!        pgcon_use  = 0.7     ! Gregory et al. (1997, QJRMS)
+         pgcon_use  = 0.55    ! Zhang & Wu (2003,JAS)
+         ! 0.55 is a physically-based value used by GFS
+         ! HWRF uses 0.2, for model tuning purposes
+      endif
+
    if(run_param) then
       do j=jts,jte
         do i=its,ite
@@ -278,6 +291,7 @@ CONTAINS
               cp_=cp,cliq_=cliq,cvap_=cpv,g_=g,hvap_=xlv,                      &
               rd_=r_d,rv_=r_v,fv_=ep_1,ep2=ep_2,                               &
               cice=cice,xls=xls,psat=psat,                                     &
+              pgcon=pgcon_use,                                                 &
               ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,               &
               ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,               &
               its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
@@ -300,6 +314,7 @@ CONTAINS
               rd_=r_d,rv_=r_v,fv_=ep_1,ep2=ep_2,                               &
               cice=cice,xls=xls,psat=psat,                                     &
               hpbl=hpbl(ims,j),hfx=hfx(ims,j),qfx=qfx(ims,j),                  &
+              pgcon=pgcon_use,                                                 &
               ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde,               &
               ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme,               &
               its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
@@ -368,6 +383,7 @@ CONTAINS
             kuo,                                                               &
             lat,slimsk,dot,u1,v1,cp_,cliq_,cvap_,g_,hvap_,rd_,rv_,fv_,ep2,     &
             cice,xls,psat,                                                     &
+            pgcon,                                                             &
             ids,ide, jds,jde, kds,kde,                                         &
             ims,ime, jms,jme, kms,kme,                                         &
             its,ite, jts,jte, kts,kte)
@@ -461,7 +477,6 @@ CONTAINS
    real,parameter  ::  betal  = 0.05,   betas  = 0.05
    real,parameter  ::  pdpdwn = 0.0,    pdetrn = 200.0
    real,parameter  ::  c0     = 0.002,  c1     = 0.002
-   real,parameter  ::  pgcon = 0.55
    real,parameter  ::  xlamdd = 1.0e-4, xlamde = 1.0e-4
    real,parameter  ::  clam   = 0.1,    cxlamu = 1.0e-4
    real,parameter  ::  aafac  = 0.1
@@ -506,6 +521,7 @@ CONTAINS
    real            ::  rain(its:ite)
    integer         ::  kbot(its:ite),ktop(its:ite),kuo(its:ite)
    real            ::  slimsk(ims:ime)
+   real            ::  pgcon
 !
 !
 !  local variables and arrays
@@ -2214,6 +2230,7 @@ CONTAINS
                  cp_,cliq_,cvap_,g_,hvap_,rd_,rv_,fv_,ep2,                     &
                  cice,xls,psat,                                                &
                  hpbl,hfx,qfx,                                                 &
+                 pgcon,                                                        &
                  ids,ide, jds,jde, kds,kde,                                    &
                  ims,ime, jms,jme, kms,kme,                                    &
                  its,ite, jts,jte, kts,kte)
@@ -2274,6 +2291,7 @@ CONTAINS
 !
    real            ::  rain(its:ite)
    integer         ::  kbot(its:ite),ktop(its:ite)
+   real            ::  pgcon
 !
 !  local variables and arrays
 !
@@ -2301,8 +2319,7 @@ CONTAINS
                        val2,    w1,      w1l,     w1s,                         &
                        w2,      w2l,     w2s,     w3,                          &
                        w3l,     w3s,     w4,      w4l,                         &
-                       w4s,     tem,     ptem,    ptem1,                       &
-                       pgcon
+                       w4s,     tem,     ptem,    ptem1
 !
    integer         ::  kb(its:ite), kbcon(its:ite), kbcon1(its:ite),           &
                        ktcon(its:ite), ktcon1(its:ite),                        &
@@ -2417,7 +2434,8 @@ CONTAINS
       betaw   = .03
       evfact  = 0.3
       evfactl = 0.3
-      pgcon   = 0.55    ! Zhang & Wu (2003,JAS)
+! namelist parameter...
+!      pgcon   = 0.55    ! Zhang & Wu (2003,JAS)
       val     =           1.
 !
 ! define miscellaneous values

@@ -15,7 +15,7 @@ export RUN_GEN_BE_GSI_STAGE0=true
 export RUN_GEN_BE_GSI_STAGE1=true
 export RUN_GEN_BE_GSI_STAGE2=true
 
-export LESS_Q_FROM_TOP=0      # Exclude levels from top for moisture statistics
+export LESS_LEVELS_FROM_TOP=0 # Exclude levels from top for moisture statistics
 export LAT_BINS_IN_DEG=5.0    # Lat bins (in deg) for BE stats
 export DEBUG=0      
 

@@ -15,8 +15,7 @@ subroutine da_check_xtoy_adjoint_tamdar_sfc(iv, y, adjtest_lhs, pertile_lhs)
    if (trace_use_dull) call da_trace_entry("da_check_xtoy_adjoint_tamdar_sfc")
 
    do n=iv%info(tamdar)%n1, iv%info(tamdar)%n2
-      if (iv%info(tamdar)%zk(1,n) < 1.0 .and. sfc_assi_options == 1 .or. &
-          iv%tamdar_sfc(n)%p%qc < 0 .and. sfc_assi_options == 2) then
+      if (iv%info(tamdar)%zk(1,n) < 1.0 .and. sfc_assi_options /= 2) then
          y%tamdar_sfc(n)%u = 0.0
          y%tamdar_sfc(n)%v = 0.0
          y%tamdar_sfc(n)%t = 0.0
@@ -24,6 +23,14 @@ subroutine da_check_xtoy_adjoint_tamdar_sfc(iv, y, adjtest_lhs, pertile_lhs)
          y%tamdar_sfc(n)%q = 0.0
 
          cycle
+      end if
+
+      if ( sfc_assi_options == 2 ) then
+          if (iv%tamdar_sfc(n)%u%qc < 0) y%tamdar_sfc(n)%u = 0.0
+          if (iv%tamdar_sfc(n)%v%qc < 0) y%tamdar_sfc(n)%v = 0.0
+          if (iv%tamdar_sfc(n)%t%qc < 0) y%tamdar_sfc(n)%t = 0.0
+          if (iv%tamdar_sfc(n)%p%qc < 0) y%tamdar_sfc(n)%p = 0.0
+          if (iv%tamdar_sfc(n)%q%qc < 0) y%tamdar_sfc(n)%q = 0.0
       end if
 
       y%tamdar_sfc(n)%u = y%tamdar_sfc(n)%u/typical_u_rms

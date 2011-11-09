@@ -294,10 +294,6 @@ i1       real   cqu            ikj     dyn_em      1         -     -
 i1       real   cqv            ikj     dyn_em      1         -     -
 i1       real   cqw            ikj     dyn_em      1         -     -
 i1       real   pm1            ikj     dyn_em      1         -     -
-state    real   sr             ij      dyn_em      1         -      irh         "sr" "fraction of frozen precipitation"
-state    real   potevp         ij      dyn_em      1         -       rh         "potevp" "accumulated potential evaporation" "W m-2"
-state    real   snopcx         ij      dyn_em      1         -       rh         "snopcx" "snow phase change heat flux" "W m-2"
-state    real   soiltb         ij      dyn_em      1         -        h         "soiltb" "bottom soil temperature" "K"
 state    real    fnm            k       dyn_em      1         -     irh       "fnm"  "upper weight for vertical stretching"  ""
 state    real    fnp            k       dyn_em      1         -     irh       "fnp"  "lower weight for vertical stretching"  ""
 state    real    rdnw           k       dyn_em      1         -     irh       "rdnw"  "inverse d(eta) values between full (w) levels"   ""
@@ -306,7 +302,6 @@ state    real    dnw            k       dyn_em      1         -     irh       "d
 state    real    dn             k       dyn_em      1         -     irh       "dn " "d(eta) values between half (mass) levels"   ""
 state    real    t_base         k       dyn_em      1         -     ir        "t_base"               "BASE STATE T IN IDEALIZED CASES"         "K"      
 state    real    z              ikj     dyn_em      1         -     -         " " " " " "
-#i1       real    mu_3d          ikj     dyn_em      1         -                                          
 state    real    z_at_w         ikj     dyn_em      1         Z 
 state    real    cfn            -       misc      -         -     irh       "cfn"    "extrapolation constant"  ""
 state    real    cfn1           -       misc      -         -     irh       "cfn1"   "extrapolation constant"  ""
@@ -384,9 +379,6 @@ state    real    xi                   -       misc     -     -    r
 state    real    xj                   -       misc     -     -    r
 state    real    vc_i                 -       misc     -     -    r
 state    real    vc_j                 -       misc     -     -    r
-
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Scalar (4D) arrays
@@ -545,7 +537,8 @@ state   real   soilt020            ij    misc          1     -     i1      "SOIL
 state   real   soilt040            ij    misc          1     -     i1      "SOILT040"      "LAYER SOIL TEMPERATURE" "K"
 state   real   soilt160            ij    misc          1     -     i1      "SOILT160"      "LAYER SOIL TEMPERATURE" "K"
 state   real   soilt300            ij    misc          1     -     i1      "SOILT300"      "LAYER SOIL TEMPERATURE" "K"
-state   real   landmask            ij    misc          1     -     i012rhd=(interp_fcnm)u=(copy_fcnm)   "LANDMASK"      "LAND MASK (1 FOR LAND, 0 FOR WATER)"  ""
+# added to output 5 for ESMF
+state   real   landmask            ij    misc          1     -     i012rh05d=(interp_fcnm)u=(copy_fcnm)   "LANDMASK"      "LAND MASK (1 FOR LAND, 0 FOR WATER)"  ""
 state   real   topostdv            ij    misc          1     -     i12     "TOPOSTDV"      "ELEVATION STD DEV"  "m"
 state   real   toposlpx            ij    misc          1     -     i012rdu "TOPOSLPX"      "ELEVATION X SLOPE"  ""
 state   real   toposlpy            ij    misc          1     -     i012rdu "TOPOSLPY"      "ELEVATION Y SLOPE"  ""
@@ -595,8 +588,8 @@ state    real   DZG             l        em      -            Z     r        "DZ
 # lsm State Variables
 
 state    real   SMOIS            ilj     -          1         Z     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SMOIS"            "SOIL MOISTURE"     "m3 m-3"
-state    real   SMCREL           ilj     -          1         Z     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SMCREL"           "RELATIVE SOIL MOISTURE" ""
 state    real   SH2O             ilj     -          1         Z     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SH2O"             "SOIL LIQUID WATER" "m3 m-3"
+state    real   SMCREL           ilj     -          1         Z     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "SMCREL"           "RELATIVE SOIL MOISTURE" ""
 state    real   XICE             ij     misc        1         -     i0124rhd=(interp_mask_water_field:lu_index,isice)u=(copy_fcnm)  "SEAICE"             "SEA ICE FLAG"  ""
 state    real   XICEM            ij     misc        1         -     rhd=(interp_mask_water_field:lu_index,isice)u=(copy_fcnm)  "XICEM"             "SEA ICE FLAG (PREVIOUS STEP)"  ""
 state    real   SMSTAV           ij     misc        1         -      rd=(interp_mask_land_field:lu_index)       "SMSTAV"           "MOISTURE AVAILABILITY" ""
@@ -823,7 +816,7 @@ state    real    HTOPR           ij     misc        1         -      r        "H
 state    real    HBOTR           ij     misc        1         -      r        "HBOTR"                "BOT OF CONVECTION LEVEL FOR RADIATION"    ""
 state    real    CUTOP           ij     misc        1         -      r        "CUTOP"                "TOP OF CONVECTION LEVEL FROM CUMULUS PAR"    ""
 state    real    CUBOT           ij     misc        1         -      r        "CUBOT"                "BOT OF CONVECTION LEVEL FROM CUMULUS PAR"    ""
-state    REAL    CUPPT           ij     misc        1         -      r        "CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINC LAST CALL TO THE RADIATION"         ""
+state    real    CUPPT           ij     misc        1         -      r        "CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINC LAST CALL TO THE RADIATION"         ""
 state    real   rswtoa           ij     misc        1         -      -
 state    real   rlwtoa           ij     misc        1         -      -
 state    real   czmean           ij     misc        1         -      -
@@ -1025,8 +1018,8 @@ state    real  GD_CLOUD2_B       ikj      misc        1         -      r      "G
 state integer  STEPAVE_COUNT     -        misc        1         -      r      "STEPAVE_COUNT"        "time steps contained in averages for convective transport" ""
 
 #
-state    real  RTHFTEN          ikj     misc        1         -      r        "RTHFTEN"               "TEMPERATURE TENDENCY USED IN GRELL CUMULUS SCHEME"  "K s-1"      
-state    real  RQVFTEN          ikj     misc        1         -      r        "RQVFTEN"               "MOISTURE TENDENCY USED IN GRELL CUMULUS SCHEME"     "kg s-1"
+state    real  RTHFTEN          ikj     misc        1         -      r        "RTHFTEN"               "TOTAL ADVECTIVE POTENTIAL TEMPERATURE TENDENCY"  "K s-1"
+state    real  RQVFTEN          ikj     misc        1         -      r        "RQVFTEN"               "TOTAL ADVECTIVE MOISTURE TENDENCY"     "kg kg-1 s-1"
 
 state integer  STEPCU          -        misc        1         -      r        "STEPCU"                "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN CONVECTION CALLS"  ""
                                                 
@@ -1230,6 +1223,10 @@ state    real  dfi_SNOWC        ij      misc        1         -      r        "S
 state    real  MAVAIL           ij      misc        1         -      r        "MAVAIL"                "SURFACE MOISTURE AVAILABILITY"                ""
                                                 
 state   real   tkesfcf          ij      misc        1         -      r        "tkesfcf"               "TKE AT THE SURFACE"                           "m2 s-2"      
+state    real   sr             ij      dyn_em      1         -      irh         "sr" "fraction of frozen precipitation"
+state    real   potevp         ij      dyn_em      1         -       rh         "potevp" "accumulated potential evaporation" "W m-2"
+state    real   snopcx         ij      dyn_em      1         -       rh         "snopcx" "snow phase change heat flux" "W m-2"
+state    real   soiltb         ij      dyn_em      1         -        h         "soiltb" "bottom soil temperature" "K"
                                                 
 state integer  STEPBL          -        misc        1         -      r        "STEPBL"                "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN PBL CALLS" ""      
 state    real  taucldi         ikj      misc        1         -      r       "TAUCLDI"               "CLOUD OPTICAL THICKNESS FOR ICE"              ""
@@ -1554,9 +1551,8 @@ rconfig   integer cugd_avedx              namelist,physics      1            1  
 rconfig   integer clos_choice             namelist,physics      1             0       rh    "clos_choice"                    ""      ""
 rconfig   integer imomentum               namelist,physics      1             0       rh    "imomentum"                    "momentum transport in G3 scheme"      ""
 rconfig   integer ishallow                namelist,physics      1             0       rh    "ishallow"  "shallow convection in G3 scheme"      ""
-rconfig   integer     chem_opt            namelist,physics	max_domains    0       rh       "chem_opt"              ""      ""
 rconfig   real    convtrans_avglen_m      namelist,physics      1             30      rh    "convtrans_avglen_m"  "averaging time for convective transport output variables (minutes)"      ""
-rconfig   integer clos_choice             namelist,physics      1             0       rh    "clos_choice"                    ""      ""
+rconfig   integer     chem_opt            namelist,physics	max_domains    0       rh       "chem_opt"              ""      ""
 rconfig   integer num_land_cat            namelist,physics	1            24       -      "num_land_cat"                  ""      ""
 rconfig   integer num_soil_cat            namelist,physics	1            16       -      "num_soil_cat"                  ""      ""
 rconfig   integer mp_zero_out             namelist,physics	1             0       -      "mp_zero_out"  "microphysics fields set to zero  0=no action taken, 1=all fields but Qv, 2=all fields including Qv"      "flag"
@@ -1726,6 +1722,7 @@ rconfig   integer km_opt_dfi              namelist,dynamics	1             1     
 rconfig   integer damp_opt                namelist,dynamics	1             0       irh    "damp_opt"              ""      ""
 rconfig   integer rad_nudge               namelist,dynamics	1             0       irh    "rad_nudge"             ""      ""
 rconfig   integer gwd_opt                 namelist,dynamics    1             0       irh    "gwd_opt"              ""      ""
+rconfig   real    sas_pgcon               namelist,physics      max_domains  0.55      irh   "sas_pgcon"   "convectively forced pressure gradient factor (SAS scheme)" ""
 rconfig   real    zdamp                   namelist,dynamics	max_domains    5000.   h    "zdamp"         ""      ""
 rconfig   real    dampcoef                namelist,dynamics     max_domains    0.      h    "dampcoef"              ""      ""
 rconfig   real    khdif                   namelist,dynamics	max_domains    0       h    "khdif"         ""      ""
@@ -1887,6 +1884,7 @@ package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,q
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr
 
+package   nodfimoist        mp_physics_dfi==-1       -             -
 package   passiveqv_dfi     mp_physics_dfi==0        -             dfi_moist:dfi_qv
 package   kesslerscheme_dfi mp_physics_dfi==1        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr
 package   linscheme_dfi     mp_physics_dfi==2        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
@@ -1898,7 +1896,7 @@ package   gsfcgcescheme_dfi mp_physics_dfi==7        -             dfi_moist:dfi
 package   thompson_dfi      mp_physics_dfi==8        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr
 package   milbrandt2mom_dfi mp_physics_dfi==9        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh
 package   morr_two_moment_dfi  mp_physics_dfi==10    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qns,dfi_qnr,dfi_qng
-package   sbu_ylinscheme_dfi    mp_physics==13           -         dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;state:rimi
+#package   sbu_ylinscheme_dfi    mp_physics==13           -         dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;state:rimi
 package   wdm5scheme_dfi    mp_physics_dfi==14       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr
 package   wdm6scheme_dfi    mp_physics_dfi==16       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr
 
@@ -1957,7 +1955,7 @@ package   sasscheme      cu_physics==84              -             -
 package   osasscheme     cu_physics==4               -             -
 package   g3scheme       cu_physics==5               -             state:cugd_qvten,cugd_tten,cugd_qvtens,cugd_ttens,cugd_qcten,xmb_shallow,k22_shallow,kbcon_shallow,ktop_shallow
 package   camzmscheme    cu_physics==7               -             state:precz,zmdt,zmdq,zmdice,zmdliq,evaptzm,fzsntzm,evsntzm,evapqzm,zmflxprc,zmflxsnw,zmntprpd,zmntsnpd,zmeiheat,cmfmc,cmfmcdzm,preccdzm,pconvb,pconvt,cape,zmmtu,zmmtv,zmmu,zmmd,zmupgu,zmupgd,zmvpgu,zmvpgd,zmicuu,zmicud,zmicvu,zmicvd
-package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,RAINCV_A,RAINCV_B,GD_CLOUD_A,GD_CLOUD_B,GD_CLOUD2_A,GD_CLOUD2_B,kbcon_deep,ktop_deep,k22_deep
+package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,GD_CLOUD_A,GD_CLOUD_B,GD_CLOUD2_A,GD_CLOUD2_B,kbcon_deep,ktop_deep,k22_deep
 package   tiedtkescheme  cu_physics==6               -             -
 package   nsasscheme     cu_physics==14              -             -
 package   kfscheme       cu_physics==99              -             -

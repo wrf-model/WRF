@@ -689,7 +689,10 @@ CONTAINS
    REAL, DIMENSION( kts:kte, 4 ),  &
          INTENT(IN)                                   :: wzfac ! 1: u, 2: v, 3: t, 4: q
    REAL, DIMENSION( its:ite, jts:jte)                 :: wndcor_u, wndcor_v
-   REAL, DIMENSION( its-2:ite+1, jts-2:jte+1)         :: blw_old, blw_new
+!BPR BEGIN
+!  REAL, DIMENSION( its-2:ite+1, jts-2:jte+1)         :: blw_old, blw_new
+   REAL, DIMENSION( its-2:ite+2, jts-2:jte+2)         :: blw_old, blw_new
+!BPR END
    REAL, DIMENSION( its:ite, kts:kte, jts:jte)        :: qsat
 
    REAL                                               :: m, b=1.8, blw, rindx, x
@@ -926,8 +929,12 @@ CONTAINS
      rindx = rinblw*1000.0/dx
      m = -0.8*2.0/rindx
 
-     DO j=MAX(jts-2,jds),MIN(jtf+1,jde-1)
-     DO i=MAX(its-2,ids),MIN(itf+1,ide-1)
+!BPR BEGIN
+!    DO j=MAX(jts-2,jds),MIN(jtf+1,jde-1)
+!    DO i=MAX(its-2,ids),MIN(itf+1,ide-1)
+     DO j=MAX(jts-2,jds),MIN(jtf+2,jde-1)
+     DO i=MAX(its-2,ids),MIN(itf+2,ide-1)
+!BPR END
        IF( odis_ndg_old(i,j) < 0.5*rinblw ) THEN
          blw_old(i,j) = 1.0
        ELSE
@@ -945,10 +952,16 @@ CONTAINS
      ENDDO
 
 ! Smoother applies one point outside the tile, but one point in from boundaries
-     CALL smther(blw_old, its-2,itf+1, jts-2,jtf+1, 1, &
-                 MAX(its-2,ids+1), MIN(ite+1,ide-2), MAX(jts-2,jds+1), MIN(jte+1,jde-2))
-     CALL smther(blw_new, its-2,itf+1, jts-2,jtf+1, 1, &
-                 MAX(its-2,ids+1), MIN(ite+1,ide-2), MAX(jts-2,jds+1), MIN(jte+1,jde-2))
+!BPR BEGIN
+!    CALL smther(blw_old, its-2,itf+1, jts-2,jtf+1, 1, &
+!                MAX(its-2,ids+1), MIN(ite+1,ide-2), MAX(jts-2,jds+1), MIN(jte+1,jde-2))
+     CALL smther(blw_old, its-2,itf+2, jts-2,jtf+2, 1, &
+                 MAX(its-1,ids+1), MIN(ite+1,ide-2), MAX(jts-1,jds+1), MIN(jte+1,jde-2))
+!    CALL smther(blw_new, its-2,itf+1, jts-2,jtf+1, 1, &
+!                MAX(its-2,ids+1), MIN(ite+1,ide-2), MAX(jts-2,jds+1), MIN(jte+1,jde-2))
+     CALL smther(blw_new, its-2,itf+2, jts-2,jtf+2, 1, &
+                 MAX(its-1,ids+1), MIN(ite+1,ide-2), MAX(jts-1,jds+1), MIN(jte+1,jde-2))
+!BPR END
 
      WHERE ( blw_old > 1.0)
         blw_old = 1.0

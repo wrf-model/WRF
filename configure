@@ -397,11 +397,12 @@ if [ -n "$WRF_NMM_CORE" ]; then
       if [ $HWRF = 1 ]; then
         echo building WRF with HWRF option
         compileflags="${compileflags}!-DHWRF=1"
-        if [ -n "$HWRFX" ]; then
-          if [ $HWRFX = 1 ]; then
-            compileflags="${compileflags}!-DHWRFX=1"
-          fi
-        fi
+      fi
+    fi
+    if [ -n "$IBM_REDUCE_BUG_WORKAROUND" ]; then
+      if [ $IBM_REDUCE_BUG_WORKAROUND = 1 ]; then
+        echo adding IBM_REDUCE_BUG_WORKAROUND flag for some IBM systems
+        compileflags="${compileflags}!-DIBM_REDUCE_BUG_WORKAROUND"
       fi
     fi
   fi

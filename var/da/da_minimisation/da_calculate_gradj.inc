@@ -84,7 +84,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    
    if (present(re)) then
       call da_calculate_grady(iv, re, jo_grad_y)   
-      if ( iter > 0) jcdf_flag = .true.
+      if ( iter > 0 .and. test_gradient ) jcdf_flag = .true.
       call da_transform_vtoy_adj(cv_size, be, grid%ep, grad_jo, iv, &
               grid%vp, grid%vv, grid%vp6, grid%vv6, xbx, jo_grad_y, grid, config_flags, jcdf_flag)
    else

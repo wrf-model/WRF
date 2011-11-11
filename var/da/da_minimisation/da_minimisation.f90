@@ -34,7 +34,7 @@ module da_minimisation
       jb_factor,ntmax,omb_add_noise,write_iv_rad_ascii,use_obs_errfac, &
       rtm_option,rtm_option_rttov, rtm_option_crtm, anal_type_verify, &
       write_filtered_rad,omb_set_rand,use_rad,var_scaling2,var_scaling1, &
-      var_scaling4,var_scaling5,var_scaling3, jo_unit, &
+      var_scaling4,var_scaling5,var_scaling3, jo_unit, test_gradient, &
       print_detail_grad,omb_set_rand,grad_unit,cost_unit, num_pseudo, cv_options, &
       cv_size_domain_je,cv_size_domain_jb, cv_size_domain_jp, cv_size_domain_js, cv_size_domain_jl, &
       sound, mtgirs, sonde_sfc, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &

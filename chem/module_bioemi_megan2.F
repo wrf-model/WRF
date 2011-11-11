@@ -430,7 +430,7 @@ CONTAINS
        ! get p_of_megan2cbmz(:), p_of_cbmz(:), and cbmz_per_megan(:)
        CALL get_megan2cbmz_table
 
-    CASE ( MOZART_KPP, MOZCART_KPP )
+    CASE ( MOZART_KPP, MOZCART_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP )
        ! get p_of_megan2mozcart(:), p_of_mozcart(:), and mozcart_per_megan(:)
        CALL get_megan2mozcart_table
 
@@ -733,7 +733,7 @@ CONTAINS
           !...
           GAS_MECH_SELECT: SELECT CASE (config_flags%chem_opt)
 
-          CASE ( MOZART_KPP, MOZCART_KPP )
+          CASE ( MOZART_KPP, MOZCART_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP )
 
              DO icount = 1, n_megan2mozcart
 !-----------------------------------------------------------------------

@@ -176,6 +176,10 @@ call wrf_message("**************************************************************
        CALL wrf_debug(15,'calling SAPRC99_MOSAIC_4BIN_VBS2_4BIN from chem_driver')
        call wrf_message("WARNING: SAPRC99_MOSAIC_4BIN_VBS2_4BIN chemistry option is highly experimental and not recommended for use.")
        call wrf_error_fatal("WARNING: SAPRC99_MOSAIC_4BIN_VBS2_4BIN chemistry option is useable but does not fully pass regtesting. It is recommended that you contact Jerome.Fast@pnl.gov for information regarding this option.")
+     CASE (MOZART_MOSAIC_4BIN_VBS0_KPP )
+       CALL wrf_debug(15,'calling MOZART_MOSAIC_4BIN_VBS0_KPP from chem_driver')
+       call wrf_message("WARNING: MOZART_MOSAIC_4BIN_VBS0_KPP chemistry option is highly experimental and not recommended for use.")
+ !!      call wrf_error_fatal("WARNING: MOZART_MOSAIC_4BIN_VBS0_KPP chemistry option is useable but does not fully pass regtestint.????")
      CASE (RADM2SORG_AQ )
        CALL wrf_debug(15,'calling RADM2/MADE/SORGAM with AQ chemistry from chem_driver')
        call wrf_message("WARNING: RADM2SORG_AQ chemistry option is experimental and not yet fully tested.")
@@ -521,6 +525,41 @@ call wrf_message("**************************************************************
           enddo
         endif 
 
+        CASE (MOZART_MOSAIC_4BIN_VBS0_KPP)
+        if(config_flags%chem_in_opt == 0 )then
+                   grid%vbs_nbin=0
+          do j=jts,jte
+             do k=kts,kte
+                do i=its,ite
+          !         chem(i,k,j,p_co2)=370.
+          !         chem(i,k,j,p_ch4)=1.7
+         if (p_ant1_c.gt.1)    chem(i,k,j,p_ant1_c)=0.0
+         if (p_ant2_c.gt.1)    chem(i,k,j,p_ant2_c)=0.0
+         if (p_ant3_c.gt.1)    chem(i,k,j,p_ant3_c)=0.0
+         if (p_ant4_c.gt.1)    chem(i,k,j,p_ant4_c)=0.0
+         if (p_ant1_o.gt.1)    chem(i,k,j,p_ant1_o)=0.0
+         if (p_ant2_o.gt.1)    chem(i,k,j,p_ant2_o)=0.0
+         if (p_ant3_o.gt.1)    chem(i,k,j,p_ant3_o)=0.0
+         if (p_ant4_o.gt.1)    chem(i,k,j,p_ant4_o)=0.0
+         if (p_biog1_c.gt.1)    chem(i,k,j,p_biog1_c)=0.0
+         if (p_biog2_c.gt.1)    chem(i,k,j,p_biog2_c)=0.0
+         if (p_biog3_c.gt.1)    chem(i,k,j,p_biog3_c)=0.0
+         if (p_biog4_c.gt.1)    chem(i,k,j,p_biog4_c)=0.0
+         if (p_biog1_o.gt.1)    chem(i,k,j,p_biog1_o)=0.0
+         if (p_biog2_o.gt.1)    chem(i,k,j,p_biog2_o)=0.0
+         if (p_biog3_o.gt.1)    chem(i,k,j,p_biog3_o)=0.0
+         if (p_biog4_o.gt.1)    chem(i,k,j,p_biog4_o)=0.0
+         if (p_smpa.gt.1)       chem(i,k,j,p_smpa)=0.0
+         if (p_smpbb.gt.1)       chem(i,k,j,p_smpbb)=0.0
+
+         chem(i,k,j,p_voca)=0.0
+         chem(i,k,j,p_vocbb)=0.0
+
+
+                enddo
+             enddo
+          enddo
+        endif
 
 
 
@@ -779,7 +818,7 @@ call wrf_message("**************************************************************
 
      CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
            CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
-           SAPRC99_MOSAIC_4BIN_VBS2_KPP )
+           SAPRC99_MOSAIC_4BIN_VBS2_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP )
        call wrf_debug(15,'call MOSAIC aerosols initialization')
        call init_data_mosaic_asect(is_aerosol)
        if(config_flags%chem_in_opt == 0 )then
@@ -1355,6 +1394,50 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_corn,"corn"
   case (CBMZ_MOSAIC_4BIN)
      print*,p_so4_a01,"so4_a01"
+     print*,p_no3_a01,"no3_a01"
+     print*,p_cl_a01,"cl_a01"
+     print*,p_nh4_a01,"nh4_a01"
+     print*,p_na_a01,"na_a01"
+     print*,p_oin_a01,"oin_a01"
+     print*,p_oc_a01,"oc_a01"
+     print*,p_bc_a01,"bc_a01"
+     print*,p_hysw_a01,"hysw_a01"
+     print*,p_water_a01,"water_a01"
+     print*,p_num_a01,"num_a01"
+     print*,p_so4_a02,"so4_a02"
+     print*,p_no3_a02,"no3_a02"
+     print*,p_cl_a02,"cl_a02"
+     print*,p_nh4_a02,"nh4_a02"
+     print*,p_na_a02,"na_a02"
+     print*,p_oin_a02,"oin_a02"
+     print*,p_oc_a02,"oc_a02"
+     print*,p_bc_a02,"bc_a02"
+     print*,p_hysw_a02,"hysw_a02"
+     print*,p_water_a02,"water_a02"
+     print*,p_num_a02,"num_a02"
+     print*,p_so4_a03,"so4_a03"
+     print*,p_no3_a03,"no3_a03"
+     print*,p_cl_a03,"cl_a03"
+     print*,p_nh4_a03,"nh4_a03"
+     print*,p_na_a03,"na_a03"
+     print*,p_oin_a03,"oin_a03"
+     print*,p_oc_a03,"oc_a03"
+     print*,p_bc_a03,"bc_a03"
+     print*,p_hysw_a03,"hysw_a03"
+     print*,p_water_a03,"water_a03"
+     print*,p_num_a03,"num_a03"
+     print*,p_so4_a04,"so4_a04"
+     print*,p_no3_a04,"no3_a04"
+     print*,p_cl_a04,"cl_a04"
+     print*,p_nh4_a04,"nh4_a04"
+     print*,p_na_a04,"na_a04"
+     print*,p_oin_a04,"oin_a04"
+     print*,p_oc_a04,"oc_a04"
+     print*,p_bc_a04,"bc_a04"
+     print*,p_hysw_a04,"hysw_a04"
+     print*,p_water_a04,"water_a04"
+     print*,p_num_a04,"num_a04"
+  case (MOZART_MOSAIC_4BIN_VBS0_KPP )
      print*,p_no3_a01,"no3_a01"
      print*,p_cl_a01,"cl_a01"
      print*,p_nh4_a01,"nh4_a01"

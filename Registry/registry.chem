@@ -67,6 +67,8 @@ state    real  e_mek          i+jf     emis_ant     1         Z      i5h    "E_M
 state    real  e_toluene      i+jf     emis_ant     1         Z      i5h    "E_TOLUENE"    "EMISSIONS TOLUENE"           "mol km^-2 hr^-1"
 state    real  e_isop         i+jf     emis_ant     1         Z      i5h    "E_ISOP"       "EMISSIONS ISOP"              "mol km^-2 hr^-1"
 state    real  e_c10h16       i+jf     emis_ant     1         Z      i5h    "E_C10H16"     "EMISSIONS C10H16"            "mol km^-2 hr^-1"
+state   real    e_voca          i+jf    emis_ant        1       Z       i5      "E_VOCA"        "VOCA emissions"        "mol km^-2 hr^-1"
+state   real    e_vocbb         i+jf    emis_ant        1       Z       i5      "E_VOCBB"       "VOCBB emissions"        "mol km^-2 hr^-1"
 
 # Additional CBMZ and MOSAIC emission variables...
 state    real  e_no2          i+jf     emis_ant     1         Z      i5     "E_NO2"                "EMISSIONS NO2"                 "mol km^-2 hr^-1"
@@ -80,6 +82,8 @@ state    real  e_orgi_a          i+jf     emis_ant     1         Z      i5     "
 state    real  e_orgj_a          i+jf     emis_ant     1         Z      i5     "E_ORGJ_A"                "EMISSIONS ORGJ_A AER"       "ug/m3 m/s"
 state    real  e_orgi_bb          i+jf     emis_ant     1         Z      i5     "E_ORGI_BB"                "EMISSIONS ORGI_BB AER"       "ug/m3 m/s"
 state    real  e_orgj_bb          i+jf     emis_ant     1         Z      i5     "E_ORGJ_BB"                "EMISSIONS ORGJ_BB AER"       "ug/m3 m/s"
+state    real  e_co_a          i+jf     emis_ant     1         Z      i5     "E_CO_A"                "EMISSIONS CO_A AER"       "ug/m3 m/s"
+state    real  e_co_bb          i+jf     emis_ant     1         Z      i5     "E_CO_BB"                "EMISSIONS CO_BB AER"       "ug/m3 m/s"
 
 # GOCART
 state    real  e_bc          i+jf     emis_ant     1         Z      i5     "E_BC"                "EMISSIONS BC AER"       "ug/m3 m/s"
@@ -589,6 +593,12 @@ state    real  ant_v2          ikj     misc          1         -      r         
 state    real  ant_v3          ikj     misc          1         -      r         "ant_v3"                  "ant_v3"                                "ug m^-3"
 state    real  ant_v4          ikj     misc          1         -      r         "ant_v4"                  "ant_v4"                                "ug m^-3"
 state    integer  vbs_nbin      v         misc          1         -      r        "vbs_nbin"                  "vbs_nbin"                                ""
+state    real  smpa_v1          ikj     misc          1         -      rh        "smpa_v1"                  "smpa_v1"                                "ug m^-3"
+state    real  smpbb_v1          ikj     misc          1         -      rh        "smpbb_v1"                  "smpbb_v1"                                "ug m^-3"
+state    real  asmpsoa_a01      ikj     misc          1         -      rh        "asmpsoa_a01"             "asmpsoa_a01"                              "ug m^-3"
+state    real  asmpsoa_a02      ikj     misc          1         -      rh        "asmpsoa_a02"             "asmpsoa_a02"                              "ug m^-3"
+state    real  asmpsoa_a03      ikj     misc          1         -      rh        "asmpsoa_a03"             "asmpsoa_a03"                              "ug m^-3"
+state    real  asmpsoa_a04      ikj     misc          1         -      rh        "asmpsoa_a04"             "asmpsoa_a04"                              "ug m^-3"
 
 
 # photolysis rates
@@ -897,6 +907,8 @@ state   real   biog1_o       ikjftb   chem        1         -   i0{12}rhusdf=(bd
 state   real   biog2_o       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "biog2_o"         "biog2_o concentration"        "ppmv"
 state   real   biog3_o       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "biog3_o"         "biog3_o concentration"        "ppmv"
 state   real   biog4_o       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "biog4_o"         "biog4_o concentration"        "ppmv"
+state   real   smpa       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "smpa"         "smpa concentration"        "ppmv"
+state   real   smpbb       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "smpbb"         "smpbb concentration"        "ppmv"
 
 
 
@@ -1096,6 +1108,8 @@ state   real    ro2_n           ikjftb  chem    1       -       i0{12}rhusdf=(bd
 state   real    cco_o2          ikjftb  chem    1       -       i0{12}rhusdf=(bdy_interp:dt) "cco_o2"        "CCO_O2 concentration"  "ppmv"
 state   real    bzco_o2         ikjftb  chem    1       -       i0{12}rhusdf=(bdy_interp:dt) "bzco_o2"       "BZCO_O2 concentration" "ppmv"
 state   real    ma_rco3         ikjftb  chem    1       -       i0{12}rhusdf=(bdy_interp:dt) "ma_rco3"       "MA_RCO3 concentration" "ppmv"
+state   real    voca            ikjftb  chem    1       -       i0{12}rhusdf=(bdy_interp:dt) "voca"   "VOCA concentration"    "ppmv"
+state   real    vocbb           ikjftb  chem    1       -       i0{12}rhusdf=(bdy_interp:dt) "vocbb"  "VOCBB concentration"    "ppmv"
 
 
 #Aerosol variables inside the chem array...
@@ -1269,6 +1283,8 @@ state   real   opcg5_f_o_a01  ikjftb   chem      1         -   i0{12}rhusdf=(bdy
 state   real   opcg6_f_o_a01  ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "opcg6_f_o_a01"    "opcg6_f_o, aerosol bin 01"  "ug/kg-dryair"
 state   real   opcg7_f_o_a01  ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "opcg7_f_o_a01"    "opcg7_f_o, aerosol bin 01"  "ug/kg-dryair"
 state   real   opcg8_f_o_a01  ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "opcg8_f_o_a01"    "opcg8_f_o, aerosol bin 01"  "ug/kg-dryair"
+state   real   smpa_a01     ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "smpa_a01"       "smpa, aerosol bin 01"  "ug/kg-dryair"
+state   real   smpbb_a01    ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "smpbb_a01"       "smpbb, aerosol bin 01"  "ug/kg-dryair"
 state   real   ant1_c_a01     ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "ant1_c_a01"       "ant1_c, aerosol bin 01"  "ug/kg-dryair"
 state   real   ant2_c_a01     ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "ant2_c_a01"       "ant2_c, aerosol bin 01"  "ug/kg-dryair"
 state   real   ant3_c_a01     ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "ant3_c_a01"       "ant3_c, aerosol bin 01"  "ug/kg-dryair"
@@ -1375,6 +1391,8 @@ state   real   opcg5_f_o_a02  ikjftb   chem      1         -   i0{12}rhusdf=(bdy
 state   real   opcg6_f_o_a02  ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "opcg6_f_o_a02"    "opcg6_f_o, aerosol bin 01"  "ug/kg-dryair"
 state   real   opcg7_f_o_a02  ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "opcg7_f_o_a02"    "opcg7_f_o, aerosol bin 01"  "ug/kg-dryair"
 state   real   opcg8_f_o_a02  ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "opcg8_f_o_a02"    "opcg8_f_o, aerosol bin 01"  "ug/kg-dryair"
+state   real   smpa_a02    ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "smpa_a02"       "smpa, aerosol bin 02"  "ug/kg-dryair"
+state   real   smpbb_a02    ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "smpbb_a02"       "smpbb, aerosol bin 02"  "ug/kg-dryair"
 state   real   ant1_c_a02     ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "ant1_c_a02"       "ant1_c, aerosol bin 01"  "ug/kg-dryair"
 state   real   ant2_c_a02     ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "ant2_c_a02"       "ant2_c, aerosol bin 01"  "ug/kg-dryair"
 state   real   ant3_c_a02     ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "ant3_c_a02"       "ant3_c, aerosol bin 01"  "ug/kg-dryair"
@@ -1481,6 +1499,8 @@ state   real   opcg5_f_o_a03  ikjftb   chem      1         -   i0{12}rhusdf=(bdy
 state   real   opcg6_f_o_a03  ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "opcg6_f_o_a03"    "opcg6_f_o, aerosol bin 01"  "ug/kg-dryair"
 state   real   opcg7_f_o_a03  ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "opcg7_f_o_a03"    "opcg7_f_o, aerosol bin 01"  "ug/kg-dryair"
 state   real   opcg8_f_o_a03  ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "opcg8_f_o_a03"    "opcg8_f_o, aerosol bin 01"  "ug/kg-dryair"
+state   real   smpa_a03    ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "smpa_a03"       "smpa, aerosol bin 03"  "ug/kg-dryair"
+state   real   smpbb_a03    ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "smpbb_a03"       "smpbb, aerosol bin 03"  "ug/kg-dryair"
 state   real   ant1_c_a03     ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "ant1_c_a03"       "ant1_c, aerosol bin 01"  "ug/kg-dryair"
 state   real   ant2_c_a03     ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "ant2_c_a03"       "ant2_c, aerosol bin 01"  "ug/kg-dryair"
 state   real   ant3_c_a03     ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "ant3_c_a03"       "ant3_c, aerosol bin 01"  "ug/kg-dryair"
@@ -1587,6 +1607,8 @@ state   real   opcg5_f_o_a04  ikjftb   chem      1         -   i0{12}rhusdf=(bdy
 state   real   opcg6_f_o_a04  ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "opcg6_f_o_a04"    "opcg6_f_o, aerosol bin 01"  "ug/kg-dryair"
 state   real   opcg7_f_o_a04  ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "opcg7_f_o_a04"    "opcg7_f_o, aerosol bin 01"  "ug/kg-dryair"
 state   real   opcg8_f_o_a04  ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "opcg8_f_o_a04"    "opcg8_f_o, aerosol bin 01"  "ug/kg-dryair"
+state   real   smpa_a04    ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "smpa_a04"       "smpa, aerosol bin 04"  "ug/kg-dryair"
+state   real   smpbb_a04    ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "smpbb_a04"       "smpbb, aerosol bin 04"  "ug/kg-dryair"
 state   real   ant1_c_a04     ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "ant1_c_a04"       "ant1_c, aerosol bin 01"  "ug/kg-dryair"
 state   real   ant2_c_a04     ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "ant2_c_a04"       "ant2_c, aerosol bin 01"  "ug/kg-dryair"
 state   real   ant3_c_a04     ikjftb   chem      1         -   i0{12}rhusdf=(bdy_interp:dt)  "ant3_c_a04"       "ant3_c, aerosol bin 01"  "ug/kg-dryair"
@@ -2309,6 +2331,8 @@ package saprc99_kpp    chem_opt==195   -       chem:o3,h2o2,no,no2,no3,n2o5,hono
 
 package saprc99_mosaic_4bin_vbs2_kpp    chem_opt==198   -       chem:o3,h2o2,no,no2,no3,n2o5,hono,hno3,hno4,so2,h2so4,co,hcho,ccho,rcho,acet,mek,hcooh,meoh,etoh,cco_oh,rco_oh,gly,mgly,bacl,cres,bald,isoprod,methacro,mvk,prod2,dcb1,dcb2,dcb3,ethene,isoprene,c2h6,c3h8,c2h2,c3h6,alk3,alk4,alk5,aro1,aro2,ole1,ole2,terp,rno3,nphe,phen,pan,pan2,pbzn,ma_pan,co2,cco_ooh,rco_o2,rco_ooh,xn,xc,ho,ho2,c_o2,cooh,rooh,ro2_r,r2o2,ro2_n,cco_o2,bzco_o2,ma_rco3,sesq,pcg1_b_c,pcg2_b_c,pcg1_b_o,pcg2_b_o,opcg1_b_c,opcg1_b_o,pcg1_f_c,pcg2_f_c,pcg1_f_o,pcg2_f_o,opcg1_f_c,opcg1_f_o,psd1,psd2,nh3,hcl,nume,den,ant1_c,ant1_o,biog1_c,biog1_o,ch4,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,pcg1_b_c_a01,pcg2_b_c_a01,pcg1_b_o_a01,pcg2_b_o_a01,opcg1_b_c_a01,opcg1_b_o_a01,pcg1_f_c_a01,pcg2_f_c_a01,pcg1_f_o_a01,pcg2_f_o_a01,opcg1_f_c_a01,opcg1_f_o_a01,ant1_c_a01,ant1_o_a01,biog1_c_a01,biog1_o_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,pcg1_b_c_a02,pcg2_b_c_a02,pcg1_b_o_a02,pcg2_b_o_a02,opcg1_b_c_a02,opcg1_b_o_a02,pcg1_f_c_a02,pcg2_f_c_a02,pcg1_f_o_a02,pcg2_f_o_a02,opcg1_f_c_a02,opcg1_f_o_a02,ant1_c_a02,ant1_o_a02,biog1_c_a02,biog1_o_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,pcg1_b_c_a03,pcg2_b_c_a03,pcg1_b_o_a03,pcg2_b_o_a03,opcg1_b_c_a03,opcg1_b_o_a03,pcg1_f_c_a03,pcg2_f_c_a03,pcg1_f_o_a03,pcg2_f_o_a03,opcg1_f_c_a03,opcg1_f_o_a03,ant1_c_a03,ant1_o_a03,biog1_c_a03,biog1_o_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,pcg1_b_c_a04,pcg2_b_c_a04,pcg1_b_o_a04,pcg2_b_o_a04,opcg1_b_c_a04,opcg1_b_o_a04,pcg1_f_c_a04,pcg2_f_c_a04,pcg1_f_o_a04,pcg2_f_o_a04,opcg1_f_c_a04,opcg1_f_o_a04,ant1_c_a04,ant1_o_a04,biog1_c_a04,biog1_o_a04,num_a04,ca_a01,ca_a02,ca_a03,ca_a04,co3_a01,co3_a02,co3_a03,co3_a04
 
+# using an empirical soa scheme for anthropogenic and biomass burning sources
+package mozart_mosaic_4bin_vbs0_kpp    chem_opt==199   -       chem:o3,o1d_cb4,o,no,no2,no3,n2o5,hno3,hno4,so2,ho,ho2,h2o2,sulf,co,hcho,ch3ooh,ch3o2,ch4,h2,eo2,ch3cooh,c2h4,n2o,ch3oh,aco3,acet,mgly,paa,gly,c3h6ooh,pan,mpan,macr,mvk,c3h6,etooh,prooh,acetp,xooh,onitr,isooh,acetol,glyald,mek,eto2,open,alkooh,mekooh,tolooh,terpooh,ald,mco3,c2h5oh,eo,c2h6,c3h8,pro2,po2,aceto2,bigene,bigalk,eneo2,alko2,isopr,iso2,mvko2,mvkooh,hydrald,xo2,c10h16,terpo2,tol,cres,to2,xoh,onit,isopn,dms,nh3,nume,den,voca,vocbb,smpa,smpbb,biog1_c,biog1_o,meko2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,smpa_a01,smpbb_a01,biog1_c_a01,biog1_o_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,smpa_a02,smpbb_a02,biog1_c_a02,biog1_o_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,smpa_a03,smpbb_a03,biog1_c_a03,biog1_o_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,smpa_a04,smpbb_a04,biog1_c_a04,biog1_o_a04,num_a04,ca_a01,ca_a02,ca_a03,ca_a04,co3_a01,co3_a02,co3_a03,co3_a04
 
 # KPP mechanism from MATCH-MPI Mainz used for global chemistry
 package   nmhc9_kpp     chem_opt==200                   -             chem:o3,h2o2,ch4,op1,hcho,ch3oh,co,hno3,no3,n2o5,hno4,no,no2,isopr,mvk,iso2,isooh,mvko2,mvkooh,ison,aca,acol,hcooh,mpan,naca,pan,pa,paa,mglo,c2h6,eTooh,ald,c3h8,pRooh,acet,acooh,eTo2,pRo2,aco2,c3h6,c3h6ooh,c2h4,c4h10,buooh,mek,mekooh,mEcoco,c3h6o2,c4h9o2,meko2,onit,pRono2,ch3o2,acetol,acetp,aceto2,ch3cooh,c4h9ooh,mEoh,ho,ho2,mEo2,mEo2no2
@@ -2336,6 +2360,7 @@ package   gocart_ecptec   emiss_opt==6                   -             emis_ant:
 package   mozem           emiss_opt==7                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16
 package   mozcem          emiss_opt==8                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16,e_pm_10,e_pm_25,e_bc,e_oc,e_sulf
 package   vash    emiss_opt==9                   -             emis_ant:e_vash1,e_vash2,e_vash3,e_vash4,e_vash5,e_vash6,e_vash7,e_vash8,e_vash9,e_vash10
+package   mozmem           emiss_opt==10                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_co_a,e_orgj_a,e_co_bb,e_orgj_bb,e_voca,e_vocbb
 package   esaprcnov       emiss_opt==13                  -             emis_ant:e_so2,e_c2h6,e_c3h8,e_c2h2,e_alk3,e_alk4,e_alk5,e_ethene,e_c3h6,e_ole1,e_ole2,e_aro1,e_aro2,e_hcho,e_ccho,e_rcho,e_acet,e_mek,e_isoprene,e_terp,e_sesq,e_co,e_no,e_no2,e_phen,e_cres,e_meoh,e_gly,e_mgly,e_bacl,e_isoprod,e_methacro,e_mvk,e_prod2,e_ch4,e_bald,e_hcooh,e_cco_oh,e_rco_oh,e_nh3,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_orgi_a,e_orgj_a,e_orgi_bb,e_orgj_bb
 
 
@@ -2383,6 +2408,7 @@ package   emiss_inpt_pnnl_cm          emiss_inpt_opt==101          -            
 package   emiss_inpt_pnnl_rs          emiss_inpt_opt==102          -             -
 package   emiss_inpt_cb4              emiss_inpt_opt==103          -             -
 package   emiss_inpt_mozcem           emiss_inpt_opt==111          -             -
+package   emiss_inpt_mozmem           emiss_inpt_opt==112          -             -
 
 # gas/aer_bc/ic_default     = bc/ic in "standard(=grell)" wrf-chem for radm2-sorgam species,
 #                                   and first-cut implementation for cbmz-mosaic species

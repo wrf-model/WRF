@@ -449,6 +449,10 @@
      CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP)
        CALL wrf_debug(15,'calling saprc99_mosaic_4bin_vbs2_kpp from chem_driver')
        haveaer = .false.
+     CASE (MOZART_MOSAIC_4BIN_VBS0_KPP) 
+       CALL wrf_debug(15,'calling mozart_mosaic_4bin_vbs0_kpp from chem_driver')
+       haveaer = .true.
+
      CASE (CBMZSORG)
        CALL wrf_debug(15,'calling cbmzsorg aerosols from chem_driver')
        haveaer = .true.
@@ -697,7 +701,8 @@
 ! setup ftuv column density timing
 !------------------------------------------------------------------------
       if( config_flags%chem_opt == MOZART_KPP .or. &                               
-          config_flags%chem_opt == MOZCART_KPP ) then                              
+          config_flags%chem_opt == MOZCART_KPP .or. &
+         config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP) then
         if( config_flags%phot_opt == FTUV ) then
           CALL ftuv_timestep_init( grid%id, grid%julday )
         endif
@@ -854,8 +859,7 @@
               ids,ide, jds,jde, kds,kde,                                                   &
               ims,ime, jms,jme, kms,kme,                                                   &
               its,ite,jts,jte,kts,kte)
-              if( config_flags%chem_opt == MOZART_KPP .or. &                               
-                  config_flags%chem_opt == MOZCART_KPP ) then                              
+              if( config_flags%chem_opt == MOZCART_KPP ) then
                  call mozcart_lbc_set( chem, num_chem, grid%id, &
                                        ims, ime, jms, jme, kms, kme,    &                  
                                        its, ite, jts, jte, kts )                           
@@ -1012,8 +1016,7 @@
                  ims,ime, jms,jme, kms,kme,                                           &
                  its,ite,jts,jte,kts,kte)
                  
-            if( config_flags%chem_opt == MOZART_KPP .or. &
-               config_flags%chem_opt == MOZCART_KPP ) then
+            if( config_flags%chem_opt == MOZCART_KPP ) then
                call mozcart_lbc_set( chem, num_chem, grid%id, &
                                      ims, ime, jms, jme, kms, kme,    & 
                                      its, ite, jts, jte, kts )
@@ -1083,8 +1086,7 @@
              ids,ide, jds,jde, kds,kde,                                               &
              ims,ime, jms,jme, kms,kme,                                               &
              its,ite,jts,jte,kts,k_end)
-             if( config_flags%chem_opt == MOZART_KPP .or. &
-                 config_flags%chem_opt == MOZCART_KPP ) then
+             if( config_flags%chem_opt == MOZCART_KPP ) then
                      call mozcart_lbc_set( chem, num_chem, grid%id, &
                                  ims, ime, jms, jme, kms, kme,    &
                                  its, ite, jts, jte, kts )
@@ -1207,8 +1209,7 @@ CALL kpp_mechanism_driver (chem,                                                
    ids,ide, jds,jde, kds,kde,                                                         &
    ims,ime, jms,jme, kms,kme,                                                         &
    its,ite,jts,jte,kts,kte)
-          if( config_flags%chem_opt == MOZART_KPP .or. &
-              config_flags%chem_opt == MOZCART_KPP ) then
+          if( config_flags%chem_opt == MOZCART_KPP ) then
              call mozcart_lbc_set( chem, num_chem, grid%id, &
                                    ims, ime, jms, jme, kms, kme,    &
                                     its, ite, jts, jte, kts )
@@ -1406,14 +1407,17 @@ end if !Chemistry time step check
            grid%bbsoa_a01,grid%bbsoa_a02,grid%bbsoa_a03,grid%bbsoa_a04,               &
            grid%hsoa_a01,grid%hsoa_a02,grid%hsoa_a03,grid%hsoa_a04,                   &
            grid%biog_a01,grid%biog_a02,grid%biog_a03,grid%biog_a04,                   &
+           grid%asmpsoa_a01,grid%asmpsoa_a02,grid%asmpsoa_a03,grid%asmpsoa_a04,                   &
            grid%arosoa_a01,grid%arosoa_a02,grid%arosoa_a03,grid%arosoa_a04,           &
            grid%totoa_a01,grid%totoa_a02,grid%totoa_a03,grid%totoa_a04,               &
            grid%hsoa_c,grid%hsoa_o,grid%bbsoa_c,grid%bbsoa_o,                         &
            grid%biog_v1,grid%biog_v2,grid%biog_v3,grid%biog_v4,                       &
            grid%ant_v1,grid%ant_v2,grid%ant_v3,grid%ant_v4,                           &
+           grid%smpa_v1,grid%smpbb_v1,                           &
              ids,ide, jds,jde, kds,kde,                                               &
              ims,ime, jms,jme, kms,kme,                                               &
              its,ite, jts,jte, kts,kte             )
+
 
 ! Fill top level to prevent spurious interpolation results (no extrapolation)
       do nv=1,num_chem

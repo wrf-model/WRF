@@ -376,6 +376,10 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
   case (MOZCART_KPP)
      call wrf_debug("setup_profile_maps: nothing done for mozcart_kpp")
 
+  case (MOZART_MOSAIC_4BIN_VBS0_KPP)
+     call wrf_debug("setup_profile_maps: nothing done for mozart_mosaic_4bin_vbs0__kpp")
+
+
   case default
      call wrf_error_fatal("setup_profile_maps: could not decipher chem_opt value")
 
@@ -2504,6 +2508,9 @@ SUBROUTINE input_chem_profile (si_grid)
         get_last_gas = p_meko2
 
      case (MOZCART_KPP)
+        get_last_gas = p_meko2
+
+     case (MOZART_MOSAIC_4BIN_VBS0_KPP)
         get_last_gas = p_meko2
 
      case default

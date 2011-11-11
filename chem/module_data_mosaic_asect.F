@@ -302,6 +302,8 @@
         integer, save :: mastercompindx_opcg6_f_o_aer = -999888777
         integer, save :: mastercompindx_opcg7_f_o_aer = -999888777
         integer, save :: mastercompindx_opcg8_f_o_aer = -999888777
+        integer, save :: mastercompindx_smpa_aer = -999888777
+        integer, save :: mastercompindx_smpbb_aer = -999888777
         integer, save :: mastercompindx_ant1_c_aer = -999888777
         integer, save :: mastercompindx_ant2_c_aer = -999888777
         integer, save :: mastercompindx_ant3_c_aer = -999888777
@@ -421,6 +423,8 @@
           lptr_opcg6_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
           lptr_opcg7_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
           lptr_opcg8_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
+          lptr_smpa_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_smpbb_aer(maxd_asize, maxd_atype, maxd_aphase),    &
           lptr_ant1_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
           lptr_ant2_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
           lptr_ant3_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
@@ -529,6 +533,8 @@
         real, parameter :: mw_opcg6_f_o_aer = 250.0
         real, parameter :: mw_opcg7_f_o_aer = 250.0
         real, parameter :: mw_opcg8_f_o_aer = 250.0
+        real, parameter :: mw_smpa_aer = 250
+        real, parameter :: mw_smpbb_aer = 250
         real, parameter :: mw_ant1_c_aer = 250
         real, parameter :: mw_ant2_c_aer = 250
         real, parameter :: mw_ant3_c_aer = 250
@@ -629,6 +635,8 @@
         real, parameter :: dens_opcg6_f_o_aer = 1.0
         real, parameter :: dens_opcg7_f_o_aer = 1.0
         real, parameter :: dens_opcg8_f_o_aer = 1.0
+        real, parameter :: dens_smpa_aer = 1.0
+        real, parameter :: dens_smpbb_aer = 1.0
         real, parameter :: dens_ant1_c_aer = 1.0
         real, parameter :: dens_ant2_c_aer = 1.0
         real, parameter :: dens_ant3_c_aer = 1.0
@@ -732,6 +740,8 @@
         real, parameter :: hygro_opcg6_f_o_aer = 0.14
         real, parameter :: hygro_opcg7_f_o_aer = 0.14
         real, parameter :: hygro_opcg8_f_o_aer = 0.14
+        real, parameter :: hygro_smpa_aer = 0.14
+        real, parameter :: hygro_smpbb_aer = 0.14
         real, parameter :: hygro_ant1_c_aer = 0.14
         real, parameter :: hygro_ant2_c_aer = 0.14
         real, parameter :: hygro_ant3_c_aer = 0.14

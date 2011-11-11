@@ -319,7 +319,7 @@ CONTAINS
         enddo
         enddo
         enddo
-      CASE (MOZART_KPP,MOZCART_KPP)
+      CASE (MOZART_KPP,MOZCART_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP )
         if( biomass_burn_opt == BIOMASSB_MOZC .or. biomass_burn_opt == BIOMASSB_MOZ ) then
           do j=jts,jte
             do k=kts,kte

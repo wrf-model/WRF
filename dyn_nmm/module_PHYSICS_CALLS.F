@@ -174,6 +174,7 @@
       REAL,DIMENSION(KMS:KME-1) :: QL,TL
 !
       REAL,DIMENSION(IMS:IME,JMS:JME) :: CUPPTR,CZEN,HBOTR,HTOPR        &
+     &                                  ,SWCF, LWCF                     &
      &                                  ,PDSL,REXNSFC,SWNETDN           &
      &                                  ,TOT,TOTLWDN,TOTSWDN,TOTSWDNC   &
      &                                  ,TSFC,XLAND,XLAT,XLON
@@ -302,6 +303,8 @@
           CUPPTR(I,J)=CUPPT(I,J)   ! Temporary array set to zero in radiation
           HTOPR(I,J) =0.
           HBOTR(I,J) =0.
+          SWCF(I,J) =0.
+          LWCF(I,J) =0.
 !
 !-- NOTE:  HBOTR, HTOPR are passed into radiation and set equal to HBOT, HTOP.  HBOT, HTOP are
 !          reset to clear sky values to be used by the ARW.  At the bottom of this subroutine,
@@ -386,6 +389,7 @@
      &                 ,ACFRST=ACFRST,NCFRST=NCFRST                     &
      &                 ,ACFRCV=ACFRCV,NCFRCV=NCFRCV                     &
      &                 ,F_ICE_PHY=F_ICE,F_RAIN_PHY=F_RAIN               &
+     &                 ,LWCF=LWCF,SWCF=SWCF                             &
      &                 ,QV=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV      &
      &                 ,QC=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC      &
      &                 ,QR=MOIST_TRANS(IMS,KMS,JMS,P_QR),F_QR=F_QR      &

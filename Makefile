@@ -285,6 +285,7 @@ em_real : wrf
                ln -sf ../../run/ozone_plev.formatted . ;               \
                if [ $(RWORDSIZE) -eq 8 ] ; then                        \
                   ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
+                  ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
                   ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA         ;   \
                   ln -sf ../../run/RRTMG_LW_DATA_DBL RRTMG_LW_DATA ;   \
                   ln -sf ../../run/RRTMG_SW_DATA_DBL RRTMG_SW_DATA ;   \
@@ -318,6 +319,7 @@ em_real : wrf
              ln -sf ../../run/ozone_plev.formatted . ;                         \
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
+                ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
                 ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA ;          \
                 ln -sf ../../run/RRTMG_LW_DATA_DBL RRTMG_LW_DATA ;  \
                 ln -sf ../../run/RRTMG_SW_DATA_DBL RRTMG_SW_DATA ;  \
@@ -481,6 +483,7 @@ nmm_real : nmm_wrf
 	     ln -sf ../../run/RRTM_DATA . ;                         \
 	     if [ $(RWORDSIZE) -eq 8 ] ; then                       \
 	        ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
+                ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
 	        ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA ;          \
 	     fi )
 	( cd test/nmm_real ; /bin/rm -f GENPARM.TBL ; ln -s ../../run/GENPARM.TBL . )

@@ -133,6 +133,11 @@ state   real    e_hcooh         i+jf    emis_ant        1       Z       i5      
 state   real    e_cco_oh        i+jf    emis_ant        1       Z       i5      "E_CCO_OH"      "CCO_OH emissions"      "mol km^-2 hr^-1"
 state   real    e_rco_oh        i+jf    emis_ant        1       Z       i5      "E_RCO_OH"      "RCO_OH emissions"      "mol km^-2 hr^-1"
 
+# SESQ and MBO fluxes for the new SOA_VBS mechanism
+state    real  sebio_sesq     ij      misc        1         -      i06r     "sebio_sesq"       "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_sesq      ij      misc        1         -      h        "ebio_sesq"        "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_mbo      ij      misc        1         -      i06r     "sebio_mbo"        "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_mbo       ij      misc        1         -      h        "ebio_mbo"         "Actual biog emiss"  "mol km^-2 hr^-1"
 
 # dust and seas emission arrays
 state   real     -          i{dust}jf      emis_dust      -        -        -         -                    "Dust Emissions"         ""
@@ -406,6 +411,9 @@ state    real  EFmegan        ij{nm}     misc        1         -      -        "
 state    real  backg_oh       ikj     misc        1         -      i08r    "BACKG_OH"       "Background OH for Aerosol-GOcart option"       "volume mixing ratio"
 state    real  backg_h2o2     ikj     misc        1         -      i08r    "BACKG_H2O2"     "Background H2O2 for Aerosol-GOcart option"     "volume mixing ratio"
 state    real  backg_no3      ikj     misc        1         -      i08r    "BACKG_NO3"      "Background NO3 for Aerosol-GOcart option"      "volume mixing ratio"
+
+# These 3D arrays are output from the SOA module for different purposes
+state    real  br_rto         ikj     misc        1         -      h        "BRNCH_RTO"      "branching ratio to determine NOx condition"  ""            "ug m^-3"
 
 #
 # following used for volcanic eruptions only
@@ -925,6 +933,19 @@ state   real   lim         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_
 state   real   dien        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)   "dien"          "DIEN concentration"        "ppmv"
 state   real   macr        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)   "macr"          "MACR concentration"        "ppmv"
 
+# MBO is a separate species in the RACM_SOA_VBS_KPP mechanism:
+state   real   mbo         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)   "mbo"           "MBO (2-Methyl-3-Buten-2-ol) concentration"         "ppmv"
+
+# condensable organic vapors for the RACM_SOA_VBS_KPP mechanism:
+state    real  cvasoa1    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "cvasoa1"      "cond.vapor from ASOA1"       "ppmv"
+state    real  cvasoa2    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "cvasoa2"      "cond.vapor from ASOA2"       "ppmv"
+state    real  cvasoa3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "cvasoa3"      "cond.vapor from ASOA3"       "ppmv"
+state    real  cvasoa4    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "cvasoa4"      "cond.vapor from ASOA4"       "ppmv"
+state    real  cvbsoa1    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "cvbsoa1"      "cond.vapor from BSOA1"       "ppmv"
+state    real  cvbsoa2    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "cvbsoa2"      "cond.vapor from BSOA2"       "ppmv"
+state    real  cvbsoa3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "cvbsoa3"      "cond.vapor from BSOA3"       "ppmv"
+state    real  cvbsoa4    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "cvbsoa4"      "cond.vapor from BSOA4"       "ppmv"
+
 #Additional CBMZ gas variables inside the chem array...
 
 state   real   hcl         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "hcl"           "HCL concentration"         "ppmv"
@@ -1156,6 +1177,25 @@ state   real   soila       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_
 state   real   nu0         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nu0"           "Aitken mode number"         "#/kg-dryair"
 state   real   ac0         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ac0"           "Accumulation mode number"         "#/kg-dryair"
 state   real   corn        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "corn"          "Coarse mode number"        "#/kg-dryair"
+
+# new species for the RACM_SOA_VBS mechanism
+state   real   asoa1j     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa1j"       "SOA Anth. org. conc. with  C* value=1    ug/m^3 Acc. mode"      "ug/kg-dryair"
+state   real   asoa1i     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa1i"       "SOA Anth. org. conc. with  C* value=1    ug/m^3 Aitken mode"    "ug/kg-dryair"
+state   real   asoa2j     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa2j"       "SOA Anth. org. conc. with  C* value=10   ug/m^3 Acc. mode"      "ug/kg-dryair"
+state   real   asoa2i     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa2i"       "SOA Anth. org. conc. with  C* value=10   ug/m^3 Aitken mode"    "ug/kg-dryair"
+state   real   asoa3j     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa3j"       "SOA Anth. org. conc. with  C* value=100  ug/m^3 Acc. mode"      "ug/kg-dryair"
+state   real   asoa3i     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa3i"       "SOA Anth. org. conc. with  C* value=100  ug/m^3 Aitken mode"    "ug/kg-dryair"
+state   real   asoa4j     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa4j"       "SOA Anth. org. conc. with  C* value=1000 ug/m^3 Acc. mode"      "ug/kg-dryair"
+state   real   asoa4i     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa4i"       "SOA Anth. org. conc. with  C* value=1000 ug/m^3 Aitken mode"    "ug/kg-dryair"
+state   real   bsoa1j     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa1j"       "SOA Biog. org. conc. with  C* value=1    ug/m^3 Acc. mode"      "ug/kg-dryair"
+state   real   bsoa1i     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa1i"       "SOA Biog. org. conc. with  C* value=1    ug/m^3 Aitken mode"    "ug/kg-dryair"
+state   real   bsoa2j     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa2j"       "SOA Biog. org. conc. with  C* value=10   ug/m^3 Acc. mode"      "ug/kg-dryair"
+state   real   bsoa2i     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa2i"       "SOA Biog. org. conc. with  C* value=10   ug/m^3 Aitken mode"    "ug/kg-dryair"
+state   real   bsoa3j     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa3j"       "SOA Biog. org. conc. with  C* value=100  ug/m^3 Acc. mode"      "ug/kg-dryair"
+state   real   bsoa3i     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa3i"       "SOA Biog. org. conc. with  C* value=100  ug/m^3 Aitken mode"    "ug/kg-dryair"
+state   real   bsoa4j     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa4j"       "SOA Biog. org. conc. with  C* value=1000 ug/m^3 Acc. mode"      "ug/kg-dryair"
+state   real   bsoa4i     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa4i"       "SOA Biog. org. conc. with  C* value=1000 ug/m^3 Aitken mode"    "ug/kg-dryair"
+
 #cloud-phase aerosol
 state   real   so4cwj      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "so4cwj"         "Sulfate conc. Acc. mode in cloud"       "ug/kg-dryair"
 state   real   so4cwi      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "so4cwi"         "Sulfate conc. Aitken mode in cloud"       "ug/kg-dryair"
@@ -2257,6 +2297,9 @@ rconfig   character   wes_seasonal_inname namelist,chem          max_domains    
 
 rconfig   integer        chemdiag        namelist,chem        max_domains        0      -     "Chemical tendency diagnostics"   ""    ""
 
+# additional namelist variables to control deposition of the organic condensable vapors
+rconfig   real        depo_fact           namelist,chem          max_domains    0       rh    "deposition factor for SOA vapors"      ""      ""
+
 # track input
 rconfig   integer    track_chem_num       namelist,chem       1               0       -    "number of track chem requested"    ""    ""
 rconfig   character  track_chem_name      namelist,chem       max_trackchem   ""      -    "name of track chem requested"      ""    ""
@@ -2309,6 +2352,9 @@ package   racmsorg_kpp      chem_opt==105                  -            chem:so2
 package   radm2sorg_kpp     chem_opt==106                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn
 
 package   racm_esrlsorg_kpp      chem_opt==107                  -            chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,hace,ishp,ison,mahp,mpan,nald,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn
+
+# new scheme for better SOA simulations
+package   racm_soa_vbs_kpp  chem_opt==108                  -         chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,hace,ishp,ison,mahp,mpan,nald,sesq,mbo,cvasoa1,cvasoa2,cvasoa3,cvasoa4,cvbsoa1,cvbsoa2,cvbsoa3,cvbsoa4,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,asoa1j,asoa1i,asoa2j,asoa2i,asoa3j,asoa3i,asoa4j,asoa4i,bsoa1j,bsoa1i,bsoa2j,bsoa2i,bsoa3j,bsoa3i,bsoa4j,bsoa4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn
 
 package   cbm4_kpp          chem_opt==110                  -          chem:no,no2,no3,n2o5,hono,hno3,pna,nh3,so2,sulf,o1d_cb4,o,ho,o3,h2o2,hcho,ald2,c2o3,pan,par,ror,ole,eth,tol,cres,to2,cro,open,xyl,mgly,iso,xo2,xo2n,co,ho2
 # KPP mechanism from mozart
@@ -2380,7 +2426,7 @@ package   wesely        gas_drydep_opt==1            -             -
 package   depvel1  diagnostic_chem==1                -             dvel:dvel_o3,dvel_no,dvel_no2,dvel_nh3,dvel_hno3,dvel_hno4,dvel_h2o2,dvel_co,dvel_ch3ooh,dvel_hcho,dvel_ch3oh,dvel_eo2,dvel_ald,dvel_ch3cooh,dvel_acet,dvel_mgly,dvel_paa,dvel_pooh,dvel_pan,dvel_mpan,dvel_mco3,dvel_mvkooh,dvel_c2h5oh,dvel_etooh,dvel_prooh,dvel_acetp,dvel_onit,dvel_onitr,dvel_isooh,dvel_acetol,dvel_glyald,dvel_hydrald,dvel_alkooh,dvel_mekooh,dvel_tolooh,dvel_xooh,dvel_so2,dvel_so4,dvel_terpooh
 #
 package   gunther1      bio_emiss_opt==1             -             -
-package   beis313       bio_emiss_opt==2             -             -
+package   beis314       bio_emiss_opt==2             -             -
 package   megan2        bio_emiss_opt==3             -             state:mebio_isop,mebio_apin,mebio_bcar,mebio_acet,mebio_mbo,mebio_no,msebio_isop,mlai,pftp_bt,pftp_nt,pftp_sb,pftp_hb,mtsa,mswdown,EFmegan
 # the following arrays only needed for burn options
 package   biomassb      biomass_burn_opt==1             -          state:mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr;ebu:ebu_no,ebu_no2,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,ebu_api,ebu_lim,ebu_tol,ebu_csl,ebu_hcho,ebu_ald,ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_so2,ebu_nh3,ebu_oc,ebu_bc,ebu_sulf,ebu_dms;ebu_in:ebu_in_no,ebu_in_co,ebu_in_co2,ebu_in_eth,ebu_in_hc3,ebu_in_hc5,ebu_in_hc8,ebu_in_ete,ebu_in_olt,ebu_in_oli,ebu_in_pm25,ebu_in_pm10,ebu_in_dien,ebu_in_iso,ebu_in_api,ebu_in_lim,ebu_in_tol,ebu_in_csl,ebu_in_hcho,ebu_in_ald,ebu_in_xyl,ebu_in_ket,ebu_in_macr,ebu_in_ora1,ebu_in_ora2,ebu_in_so2,ebu_in_nh3,ebu_in_oc,ebu_in_bc,ebu_in_sulf,ebu_in_dms,ebu_in_ash

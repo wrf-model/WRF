@@ -2,6 +2,7 @@
 !   WRF-chem V3.1 : Original version of chem_driver written by Georg Grell (ESRL/GSD)
 !                   Further developments, bugfixes and improvements  by
 !                   William Gustafson (PNNL), Marc Salzmann (GFDL), and Georg Grell
+! 10/12/2011 - Ravan Ahmadov (NOAA) updated to include the RACM_SOA_VBS option
 !
 #if ( NMM_CORE == 1 )
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -44,7 +45,9 @@
   USE module_gocart_so2so4
   USE module_aer_opt_out,only: aer_opt_out
   USE module_ctrans_grell
-! USE module_convtrans_prep
+! USE module_aerosols_soa_vbs, only:
+  USE module_data_soa_vbs, only: ldrog_vbs
+!
   USE module_dry_dep_driver
   USE module_emissions_driver
   USE module_ltng_cpm, only: adjust_ktop
@@ -95,7 +98,10 @@
 !
 #if ( NMM_CORE == 1 )
       real, dimension(grid%sm31:grid%em31,grid%sm33:grid%em33,grid%sm32:grid%em32) ::vcsulf_old,vcso2_old
-      real, dimension(grid%sm31:grid%em31,grid%sm33:grid%em33,grid%sm32:grid%em32,ldrog) ::vdrog3,vcso2_old
+      real, dimension(grid%sm31:grid%em31,grid%sm33:grid%em33,grid%sm32:grid%em32,ldrog) ::vdrog3
+
+      real, dimension(grid%sm31:grid%em31,grid%sm33:grid%em33,grid%sm32:grid%em32,ldrog_vbs) ::vdrog3_vbs 
+      
       real, dimension(grid%sm31:grid%em31,grid%sm33:grid%em33,grid%sm32:grid%em32) ::n2o5_het
       REAL,DIMENSION(grid%sm31:grid%em31,grid%sm33:grid%em33,grid%sm32:grid%em32) ::              &
                                                               p_phy,u_phy,v_phy                   &
@@ -111,6 +117,9 @@
 #if ( EM_CORE == 1 )
       real, dimension(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) ::vcsulf_old,vcso2_old,vch2o2_old
       real, dimension(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33,ldrog) ::vdrog3
+
+      real, dimension(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33,ldrog_vbs) ::vdrog3_vbs
+
       real, dimension(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) ::n2o5_het 
       REAL,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) ::              &
                                                               p_phy,u_phy,v_phy                   &
@@ -305,7 +314,6 @@
   ENDIF
 
 ! ..
-
 !
 ! Some stuff for convective transport...
 !
@@ -430,6 +438,9 @@
        haveaer = .false.
      CASE (RACMSORG_KPP)
        CALL wrf_debug(15,'calling racmsorg_kpp aerosols driver from chem_driver')
+       haveaer = .false.
+     CASE (RACM_SOA_VBS_KPP)
+       CALL wrf_debug(15,'calling racm_soa_vbs_kpp aerosols driver from chem_driver')
        haveaer = .false.
      CASE (GOCART_SIMPLE)
        CALL wrf_debug(15,'calling only gocart aerosols driver from chem_driver')
@@ -636,7 +647,6 @@
       ENDDO     
 #endif
 
-
       do nv=1,num_chem
          do j=jps,jpe
             do k=kps,kpe
@@ -648,7 +658,7 @@
       enddo
       select case (config_flags%chem_opt)
       case (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
-            RACM_ESRLSORG_KPP,RACMSORG_AQ, RACMSORG_AQCHEM, RACMSORG_KPP)
+            RACM_ESRLSORG_KPP,RACMSORG_AQ,RACMSORG_KPP, RACMSORG_AQCHEM, RACM_SOA_VBS_KPP)
          do j=jps,jpe
             do k=kps,kpe
                do i=ips,ipe
@@ -669,10 +679,7 @@
                enddo
             enddo
          enddo
-
-
       end select
-
 
       vdrog3=0.
 #if ( EM_CORE == 1 )
@@ -823,11 +830,13 @@
               grid%sebio_xyl,grid%sebio_hc3,grid%sebio_ete,grid%sebio_olt,                 &
               grid%sebio_ket,grid%sebio_ald,grid%sebio_hcho,grid%sebio_eth,                &
               grid%sebio_ora2,grid%sebio_co,grid%sebio_nr,                                 &
+              grid%sebio_sesq,grid%sebio_mbo,                                              &
               grid%noag_grow,grid%noag_nongrow,grid%nononag,grid%slai,                     &
               grid%ebio_iso,grid%ebio_oli,grid%ebio_api,grid%ebio_lim,grid%ebio_xyl,       &
               grid%ebio_hc3,grid%ebio_ete,grid%ebio_olt,grid%ebio_ket,grid%ebio_ald,       &
               grid%ebio_hcho,grid%ebio_eth,grid%ebio_ora2,grid%ebio_co,grid%ebio_nr,       &
-              grid%ebio_no,grid%ebio_c10h16,grid%ebio_tol,grid%ebio_bigalk,                &
+              grid%ebio_no,grid%ebio_sesq,grid%ebio_mbo,                                   &
+              grid%ebio_c10h16,grid%ebio_tol,grid%ebio_bigalk,                             &
               grid%ebio_ch3oh,grid%ebio_acet,grid%ebio_nh3,grid%ebio_no2,                  &
               grid%ebio_c2h5oh,grid%ebio_ch3cooh,grid%ebio_mek,grid%ebio_bigene,           &
               grid%ebio_c2h6,grid%ebio_c2h4,grid%ebio_c3h6,grid%ebio_c3h8,grid%ebio_so2,   &
@@ -1001,7 +1010,7 @@
 #if (EM_CORE == 1)
                  grid%gmt,ijulian,t_phy,moist,scalar,p8w,t8w,vvel,                &
 #endif
-                 rri,p_phy,chem,tracer,rho,dz8w,grid%exch_h,grid%hfx,grid%dx,         &
+                 rri,p_phy,chem,tracer,rho,dz8w,rh,grid%exch_h,grid%hfx,grid%dx,      & 
                  grid%cldfra, grid%cldfra_old,grid%raincv_b,seasin,dustin,            &
 	         grid%ccn1, grid%ccn2, grid%ccn3, grid%ccn4, grid%ccn5, grid%ccn6,    &
                  grid%qndropsource,grid%ivgtyp,grid%tsk,grid%gsw,grid%vegfra,pbl_h,   &
@@ -1202,7 +1211,7 @@ CALL kpp_mechanism_driver (chem,                                                
 #if (EM_CORE == 1)
    moist,                                                                             &
 #endif
-   vdrog3, ldrog,                                                                     &
+   vdrog3, ldrog, vdrog3_vbs, ldrog_vbs,                                              &
 !
 #include <call_to_kpp_mech_drive.inc>
 !
@@ -1221,7 +1230,7 @@ CALL kpp_mechanism_driver (chem,                                                
    endif
 
    so2so4_select: SELECT CASE(config_flags%chem_opt)
-     CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP)
+     CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP,RACM_SOA_VBS_KPP)
        CALL wrf_debug(15,'gocart so2-so4 conversion')
           call  so2so4(chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,           &
          grid%gd_cloud_b, grid%gd_cldfr,                                    &
@@ -1232,8 +1241,6 @@ CALL kpp_mechanism_driver (chem,                                                
      CASE DEFAULT
        CALL wrf_debug(15,'no gocart so2-so4 conversion')
    END SELECT so2so4_select                              
-
-
 
 !
 #endif
@@ -1318,15 +1325,15 @@ CALL kpp_mechanism_driver (chem,                                                
 #if (EM_CORE == 1)
               rri,t_phy,moist,grid%aerwrf,p8w,t8w,                                    &
 #endif
-              p_phy,chem,rho,dz8w,                                                    &
+              p_phy,chem,rho,dz8w, rh,                                                & 
               zmid,z_at_w,grid%vbs_nbin,                                              &
               grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,           &
               grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,   &
               grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,vcsulf_old,             &
-              vdrog3,                                                                 &
+              vdrog3,vdrog3_vbs,grid%br_rto,                                          &
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &
-              its,ite,jts,jte,kts,kte)
+              its,ite,jts,jte,kts,kte                                                 )
 
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
        if( (its <= CHEM_DBG_I .and. ite >= CHEM_DBG_I) .and.                          &

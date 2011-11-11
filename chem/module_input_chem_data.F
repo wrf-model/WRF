@@ -338,7 +338,8 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
 
   select case(chem_opt)
   case (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
-        RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM, RACM_ESRLSORG_KPP, RACMSORG_KPP, &
+        RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM,           &
+        RACM_ESRLSORG_KPP, RACMSORG_KPP, RACM_SOA_VBS_KPP,                          &
         GOCARTRACM_KPP, GOCARTRADM2,GOCARTRADM2_KPP,CHEM_TRACER, CHEM_TRACE2)
      call setup_gasprofile_map_radm_racm
 
@@ -1144,7 +1145,6 @@ SUBROUTINE input_chem_profile (si_grid)
         ea1 = exp(0.125*l2sginia)
         ec1 = exp(0.125*l2sginic)
 
-
         esn04 = en1**4
         esa04 = ea1**4
         esc04 = ec1**4
@@ -1531,8 +1531,8 @@ SUBROUTINE input_chem_profile (si_grid)
             config_flags%chem_opt == GOCARTRACM_KPP .or.      &
             config_flags%chem_opt == RACMSORG_KPP .or.      &
             config_flags%chem_opt == RACM_ESRLSORG_KPP .or.      &
-            config_flags%chem_opt == RACM_MIM_KPP .or.      &
-            config_flags%chem_opt == RACMSORG_KPP ) then
+            config_flags%chem_opt == RACM_SOA_VBS_KPP .or.      & 
+            config_flags%chem_opt == RACM_MIM_KPP ) then
           i_bdy_method = 9
         end if
         if (config_flags%chem_opt == RACMPM_KPP ) then
@@ -1861,15 +1861,14 @@ SUBROUTINE input_chem_profile (si_grid)
         if (config_flags%chem_opt == RACM_KPP .or.          &
             config_flags%chem_opt == GOCARTRACM_KPP .or.      &
             config_flags%chem_opt == RACMSORG_KPP .or.      &
+            config_flags%chem_opt == RACM_SOA_VBS_KPP .or.      & 
             config_flags%chem_opt == RACM_ESRLSORG_KPP .or.      &
-            config_flags%chem_opt == RACM_MIM_KPP .or.      &
-            config_flags%chem_opt == RACMSORG_KPP ) then
+            config_flags%chem_opt == RACM_MIM_KPP ) then
           i_bdy_method = 9
         end if
         if (config_flags%chem_opt == RACMPM_KPP ) then
           i_bdy_method = 9
         end if
-
 
       else if ((ic .ge. p_so4aj) .and. (ic .le. p_corn)) then
           i_bdy_method = 2
@@ -2474,8 +2473,9 @@ SUBROUTINE input_chem_profile (si_grid)
         get_last_gas = 0
 
      case (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
-           RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM, RACM_ESRLSORG_KPP, RACMSORG_KPP, &
-	       GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
+           RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM,           &
+           RACM_ESRLSORG_KPP, RACMSORG_KPP, RACM_SOA_VBS_KPP, & 
+	   GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
         get_last_gas = p_ho2
 
      case (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP)

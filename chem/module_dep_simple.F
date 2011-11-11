@@ -136,7 +136,7 @@ SUBROUTINE wesely_driver( id, ktau, dtstep, config_flags, current_month,  &
 !--------------------------------------------------
 ! .. Local Scalars
 !--------------------------------------------------
-      REAL    ::  clwchem, dvfog, dvpart, pa, rad
+      REAL    ::  clwchem, dvfog, dvpart, pa, rad, dep_vap
       REAL    ::  rhchem, ta, ustar, vegfrac, z1, zntt
       INTEGER :: i, iland, iprt, iseason, j, jce, jcs, n, nr, ipr,jpr,nvr
       LOGICAL :: highnh3, rainflag, vegflag, wetflag
@@ -156,6 +156,8 @@ SUBROUTINE wesely_driver( id, ktau, dtstep, config_flags, current_month,  &
 ! .. Intrinsic Functions
 !-----------------------------------------------------------
       INTRINSIC max, min                             
+
+      dep_vap= config_flags%depo_fact
 
       CALL wrf_debug(15,'in dry_dep_wesely')
 
@@ -312,7 +314,25 @@ tile_lon_loop : &
             end do
          end do
       end if
+!
+     if  (config_flags%chem_opt == RACM_SOA_VBS_KPP)   then
+         do j=jts,jte
+            do i=its,ite
+               ddvel(i,j,p_cvasoa1) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvasoa2) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvasoa3) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvasoa4) = dep_vap*ddvel(i,j,p_hno3)
 
+               ddvel(i,j,p_cvbsoa1) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvbsoa2) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvbsoa3) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvbsoa4) = dep_vap*ddvel(i,j,p_hno3)
+
+               ddvel(i,j,p_sesq)    = 0.
+               ddvel(i,j,p_mbo)     = 0.
+            end do
+         end do
+      end if
 !-----------------------------------------------------------
 ! For the additional CBM4 species, assign similar RADM counter parts for
 ! now. Short lived species get a zero velocity since dry dep should be

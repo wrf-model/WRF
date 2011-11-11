@@ -552,7 +552,7 @@ em_core :
 	if [ $(WRF_CHEM) -eq 0 ] ; then \
 		CF= ; \
 	else \
-		CF=$(CHEM_FILES) ; \
+		CF="$(CHEM_FILES)" ; \
 	fi
 	( cd dyn_em ; $(MAKE) $(J) CF="$(CF)" )
 

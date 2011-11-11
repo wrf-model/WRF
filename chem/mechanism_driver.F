@@ -121,7 +121,7 @@
             max(chem(its:ite,kts:kte,jts:jte,p_h2o2),epsilc)
 
 
-     CASE (RADM2, RADM2SORG, RADM2SORG_AQ)
+     CASE (RADM2, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM)
        CALL wrf_debug(15,'calling radm2_driver from mechanism_driver')
        if (config_flags%chem_opt /= RADM2) then
           vcsulf_old(its:ite,kts:kte,jts:jte) = &
@@ -138,7 +138,7 @@
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
 
-     CASE (RACMSORG_KPP,RADM2SORG_KPP,RACMSORG_AQ,RACM_ESRLSORG_KPP)
+     CASE (RACMSORG_KPP,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM,RACM_ESRLSORG_KPP)
        vcsulf_old(its:ite,kts:kte,jts:jte) = &
           max(chem(its:ite,kts:kte,jts:jte,p_sulf),epsilc)
 

@@ -12,9 +12,9 @@
 
       SUBROUTINE cloudchem_driver(                                   &
                id, ktau, ktauc, dtstep, dtstepc, config_flags,       &
-               t_phy, p_phy, rho_phy, alt,                           &
-	       moist, cldfra, ph_no2,                                &
-	       chem, gas_aqfrac, numgas_aqfrac,                      &
+               t_phy, p_phy, rho_phy, alt, dz8w,                     &
+               moist, cldfra, ph_no2,                                &
+               chem, gas_aqfrac, numgas_aqfrac,                      &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
@@ -30,6 +30,7 @@
    USE module_model_constants
    USE module_mosaic_cloudchem, only: mosaic_cloudchem_driver
    USE module_sorgam_cloudchem, only: sorgam_cloudchem_driver
+   USE module_sorgam_aqchem, only: sorgam_aqchem_driver
 
    !  This driver calls subroutines for wet scavenging.
    !
@@ -132,6 +133,7 @@
                                 p_phy,                              &
                                 rho_phy,                            &
                                 alt,                                &
+                                dz8w,                               &
                                 cldfra,                             &
                                 ph_no2
 !
@@ -186,6 +188,19 @@
             id, ktau, ktauc, dtstepc, config_flags,   &
             p_phy, t_phy, rho_phy, alt,               &
             cldfra, ph_no2,                           &
+            moist, chem,                              &
+            gas_aqfrac, numgas_aqfrac,                &
+            ids,ide, jds,jde, kds,kde,                &
+            ims,ime, jms,jme, kms,kme,                &
+            its,ite, jts,jte, kts,kte )
+
+   CASE ( RADM2SORG_AQCHEM, RACMSORG_AQCHEM )
+
+       call wrf_debug(15, &
+       'cloudchem_driver calling sorgam_aqchem_driver')
+       call sorgam_aqchem_driver(                  &
+            id, ktau, ktauc, dtstepc, config_flags,   &
+            p_phy, t_phy, rho_phy, alt, dz8w,         &
             moist, chem,                              &
             gas_aqfrac, numgas_aqfrac,                &
             ids,ide, jds,jde, kds,kde,                &

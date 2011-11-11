@@ -53,6 +53,7 @@ MODULES =                           \
   module_mosaic_coag.o              \
   module_mosaic_driver.o            \
   module_mosaic_drydep.o            \
+  module_sorgam_aqchem.o            \
   module_sorgam_cloudchem.o         \
   module_aerosols_sorgam.o          \
   module_add_emis_cptec.o           \
@@ -271,7 +272,7 @@ module_fastj_mie.o:
 
 module_optical_averaging.o: module_data_sorgam.o module_data_rrtmgaeropt.o
 
-module_ctrans_grell.o: module_dep_simple.o
+module_ctrans_grell.o: module_dep_simple.o module_input_chem_data.o
 
 module_convtrans_prep.o:
 
@@ -302,6 +303,8 @@ emissions_driver.o: module_add_emiss_burn.o module_data_radm2.o module_radm.o mo
 dry_dep_driver.o: module_data_radm2.o module_aer_drydep.o module_dep_simple.o module_aerosols_sorgam.o module_mosaic_drydep.o ../phys/module_mixactivate.o
 
 module_wetscav_driver.o: module_mosaic_wetscav.o module_aerosols_sorgam.o module_mozcart_wetscav.o
+
+module_sorgam_aqchem.o: module_ctrans_aqchem.o module_data_sorgam.o
 
 convert_emiss : convert_emiss.o
 	$(RANLIB) ../main/$(LIBWRFLIB)

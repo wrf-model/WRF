@@ -408,6 +408,15 @@
      CASE (RADM2SORG_AQ)
        CALL wrf_debug(15,'calling radm2sorg_aq aerosols driver from chem_driver')
        haveaer = .true.
+     CASE (RACMSORG_AQ)
+       CALL wrf_debug(15,'calling racmsorg_aq aerosols driver from chem_driver')
+       haveaer = .true.
+     CASE (RADM2SORG_AQCHEM)
+       CALL wrf_debug(15,'calling radm2sorg_aqchem aerosols driver from chem_driver')
+       haveaer = .true.
+     CASE (RACMSORG_AQCHEM)
+       CALL wrf_debug(15,'calling racmsorg_aqchem aerosols driver from chem_driver')
+       haveaer = .true.
      CASE (RACM_KPP)
        CALL wrf_debug(15,'calling racm_kpp from chem_driver')
      CASE (RACMPM_KPP)
@@ -634,8 +643,8 @@
          enddo
       enddo
       select case (config_flags%chem_opt)
-      case (RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
-            RACM_ESRLSORG_KPP,RACMSORG_AQ,  RACMSORG_KPP)
+      case (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
+            RACM_ESRLSORG_KPP,RACMSORG_AQ, RACMSORG_AQCHEM, RACMSORG_KPP)
          do j=jps,jpe
             do k=kps,kpe
                do i=ips,ipe
@@ -1067,9 +1076,10 @@
 #endif
              p_phy,XLV,CP,G,r_v,                                                      &
              z_at_w,grid%cu_co_ten,                                                   &
-             grid%ktop, &
+             grid%ktop,grid%wd_no3_cu,grid%wd_so4_cu,                                 &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
              config_flags%ishallow,num_moist,numgas,num_chem,config_flags%chem_opt,0, &
+             config_flags%wetscav_onoff,                                              &
              ids,ide, jds,jde, kds,kde,                                               &
              ims,ime, jms,jme, kms,kme,                                               &
              its,ite,jts,jte,kts,k_end)
@@ -1098,9 +1108,10 @@
 #endif
              p_phy,XLV,CP,G,r_v,                                                      &
              z_at_w, grid%cu_co_ten,                                                  &
-             grid%ktop, &
+             grid%ktop,grid%wd_no3_cu,grid%wd_so4_cu,                                 &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
              config_flags%ishallow,num_moist,0,num_tracer,0,config_flags%tracer_opt,  &
+             config_flags%wetscav_onoff,                                              &
              ids,ide, jds,jde, kds,kde,                                               &
              ims,ime, jms,jme, kms,kme,                                               &
              its,ite,jts,jte,kts,k_end)
@@ -1278,7 +1289,7 @@ CALL kpp_mechanism_driver (chem,                                                
 
         call cloudchem_driver(                                                        &
                grid%id, ktau, grid%ktauc, grid%dt, dtstepc, config_flags,             &
-               t_phy, p_phy, rho, rri,                                                &
+               t_phy, p_phy, rho, rri, dz8w,                                          &
 #if (NMM_CORE == 1)
                moist_trans, grid%cldfra, grid%ph_no2,                                 &
 #endif
@@ -1356,6 +1367,7 @@ CALL kpp_mechanism_driver (chem,                                                
               grid%asulf,grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,                &
               grid%cvalk1,grid%cvole1,grid%cvapi1,grid%cvapi2,                        &
               grid%cvlim1,grid%cvlim2,                                                &
+              grid%wd_no3_sc,grid%wd_so4_sc,                                          &
               grid%qv_b4mp, grid%qc_b4mp, grid%qi_b4mp, grid%qs_b4mp,                 &
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &

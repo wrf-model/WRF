@@ -159,6 +159,7 @@
       LOGICAL :: E_BDY,N_BDY,S_BDY,W_BDY,WARM_RAIN,ADV_MOIST_COND
       LOGICAL :: START_OF_SIMULATION
       LOGICAL :: LRESTART
+      LOGICAL :: ETAMP_Regional, ICE1_indx, ICE2_indx
 
 
       integer :: jam,retval
@@ -1933,21 +1934,26 @@
           enddo
 
           IF (.not. ( (maxval(grid%f_ice)+maxval(grid%f_rain)) .gt. EPSQ) ) THEN
+            ETAMP_Regional=.FALSE.    !-- Regional NAM or HRW (Ferrier) microphysics
+            if (model_config_rec%mp_physics(grid%id).EQ.ETAMPOLD .OR.          &
+     &          model_config_rec%mp_physics(grid%id).EQ.ETAMPNEW )             &
+     &          ETAMP_Regional=.TRUE.
             CALL wrf_message(' computing grid%f_ice')
             do i_m = 2, num_moist
+               ICE1_indx=.FALSE.
+               IF (i_m==P_qi .or. i_m==P_qg ) ICE1_indx=.TRUE.
+               ICE2_indx=ICE1_indx
+               IF (i_m==P_qs) ICE2_indx=.TRUE.
             DO J=JFS,JFE
             DO K=KPS,KPE
             DO I=IFS,IFE
-              IF ( (moist(I,J,K,i_m).gt.EPSQ) .and. &
-     &               ( (i_m.eq.p_qi).or.(i_m.eq.p_qs).or.(i_m.eq.p_qg) ) ) THEN
+              IF (ETAMP_Regional .AND. ICE1_indx) THEN
+                 moist(I,J,K,p_qs)=moist(I,J,K,p_qs)+moist(I,J,K,i_m)
+                 moist(I,J,K,i_m) =0.
+              ENDIF
+              IF ( moist(I,J,K,i_m)>EPSQ .AND. ICE2_indx) THEN
                  grid%f_ice(I,K,J) = grid%f_ice(I,K,J) + moist(I,J,K,i_m)
               ENDIF
-              if (model_config_rec%mp_physics(grid%id).EQ.ETAMPNEW) then
-                if ((i_m.eq.p_qi).or.(i_m.eq.p_qg) ) then
-                  moist(I,J,K,p_qs)=moist(I,J,K,p_qs)+moist(I,J,K,i_m)
-                  moist(I,J,K,i_m) =0.
-                endif
-              endif
             enddo
             enddo
             enddo
@@ -2094,7 +2100,7 @@
                 IDS,IDE, JDS,JDE, KDS,KDE,                                  &
                 IMS,IME, JMS,JME, KMS,KME,                                  &
                 ITS,ITE, JTS,JTE, KTS,KTE-1                                 )
-        CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_KPP)
+        CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP)
 !!!       write(0,*)'sum pm '
            CALL SUM_PM_SORGAM (                                             &
                 RRI, CHEM, H2OAJ, H2OAI,                              &

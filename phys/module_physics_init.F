@@ -1052,7 +1052,7 @@ integer myproc
    LOGICAL :: etalw = .false.
    LOGICAL :: hwrflw= .false.
    LOGICAL :: camlw = .false.
-   LOGICAL :: etamp = .false.
+!   LOGICAL :: etamp = .false.
    LOGICAL :: acswalloc = .false.
    LOGICAL :: aclwalloc = .false.
    integer :: month,iday
@@ -1097,12 +1097,12 @@ integer myproc
 
 !-- find out which microphysics option is used first
 
-   mp_select: SELECT CASE(config_flags%mp_physics)
-
-        CASE (ETAMPNEW)
-             etamp = .true.
-
-   END SELECT mp_select
+!   mp_select: SELECT CASE(config_flags%mp_physics)
+!
+!        CASE (ETAMPNEW)
+!             etamp = .true.
+!
+!   END SELECT mp_select
 
 !-- chose long wave radiation scheme
 
@@ -2213,6 +2213,7 @@ integer myproc
    USE module_mp_wsm5
    USE module_mp_wsm6
    USE module_mp_etanew
+   USE module_mp_etaold
 #if (NMM_CORE == 1)
    USE module_mp_HWRF
 #endif
@@ -2306,6 +2307,16 @@ integer myproc
           CALL wdm5init(rhoair0,rhowater,rhosnow,cliq,cpv,n_ccn0,allowed_to_read )
      CASE (WDM6SCHEME)
           CALL wdm6init(rhoair0,rhowater,rhosnow,cliq,cpv,n_ccn0,allowed_to_read )
+     CASE (ETAMPOLD)
+         adv_moist_cond = .false.
+         CALL etaoldinit (MPDT,DT,DX,DY,LOWLYR,restart,           &
+                          F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,       &
+                          mp_restart_state,tbpvs_state,tbpvs0_state,&
+                          allowed_to_read,                        &
+                          ids, ide, jds, jde, kds, kde,           &
+                          ims, ime, jms, jme, kms, kme,           &
+                          its, ite, jts, jte, kts, kte            )
+
 
      CASE DEFAULT
 

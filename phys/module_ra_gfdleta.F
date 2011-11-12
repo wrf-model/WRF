@@ -5,9 +5,7 @@ MODULE MODULE_RA_GFDLETA
       USE MODULE_CONFIGURE,ONLY : GRID_CONFIG_REC_TYPE
       USE MODULE_MODEL_CONSTANTS
 #ifdef FERRIER_GFDL
-      USE MODULE_MP_ETANEW, ONLY :                                      &
-     & RHgrd,T_ICE,FPVS,QAUT0,XMImax,XMIexp,MDImin,MDImax,MASSI,        &
-     & FLARGE1,FLARGE2,NLImin,NLImax
+      USE MODULE_MP_ETANEW, ONLY : FPVS,GPVS
 #endif
       INTEGER,PARAMETER :: NL=81
       INTEGER,PARAMETER :: NBLY=15
@@ -58,10 +56,8 @@ MODULE MODULE_RA_GFDLETA
       LOGICAL, PRIVATE,SAVE :: SDprint=.FALSE.
 
 
-#ifndef FERRIER_GFDL
       REAL, PRIVATE, PARAMETER :: RHgrd=1.0
       REAL, PRIVATE, PARAMETER :: T_ice=-40.0
-#endif
 
 !
 !--- Important parameters for cloud properties - see extensive comments in
@@ -111,6 +107,12 @@ CONTAINS
 !***********************************************************************
 !-----------------------------------------------------------------------
 !
+!--- In case ETAMPNEW microphysics is not called, initialize lookup tables for
+!    saturation vapor pressures (only FPVS is used in radiation, which calculates
+!    vapor pressure w/r/t water for T>=0C and w/r/t ice for T<0C).
+!
+      CALL GPVS
+
 !***  INITIALIZE DIAGNOSTIC LOW,MIDDLE,HIGH CLOUD LAYER PRESSURE LIMITS.
 !
       LTOP(1)=0
@@ -168,14 +170,6 @@ CONTAINS
         AXSD(I)=GAUSIN(XSD)
         if (SDprint) print *,'I, XSD, AXSD =',I,XSD,AXSD(I)
       ENDDO
-!! !***
-!! !***  MESO STANDARD DEVIATION OF EK AND MAHRT'S CLOUD COVER ALOGRITHM
-!! !***
-!!         SDM=-0.03-0.00015*DX+0.02*LOG(DX)  ! meso SD
-!!         if (SDprint) print *,'DX, SDM=',DX,SDM
-!       if (SDprint) print *,                                            &
-!     & 'RHgrd,T_ICE,NLImin,NLImax,FLARGE1,FLARGE2,MDImin,MDImax=',&
-!     &  RHgrd,T_ICE,NLImin,NLImax,FLARGE1,FLARGE2,MDImin,MDImax
 !
 !-----------------------------------------------------------------------
       END SUBROUTINE GFDLETAINIT
@@ -619,7 +613,7 @@ CONTAINS
       REAL    :: CL1,CL2,CR1,DPCL,QSUM,PRS1,PRS2,DELP,TCLD,DD,EE,AA,FF
       REAL    :: BB,GG,FCTR,PDSLIJ,CFRAVG,SNOMM
       REAL    :: THICK,CONVPRATE,CLFR,ESAT,QSAT,RHUM,QCLD
-      REAL    :: RHtot,RRHO,FLARGE,FSMALL,DSNOW,SDM,QPCLDY,DIFCLD
+      REAL    :: RHtot,SDM
       REAL    :: TauC,CTauL,CTauS,  CFSmax,CFCmax
       INTEGER :: I,J,MYJS,MYJE,MYIS,MYIE,NTSPH,NRADPP,ITIMSW,ITIMLW,    &
      &           JD,II
@@ -886,27 +880,6 @@ CONTAINS
     !--- Revised cloud cover parameterization (temporarily ignore rain)
     !
             RHtot=(WV+QCLD)/QSAT                !--- Total relative humidity
-!!    !
-!!    !--- QOVRCST is the amount of cloud condensate associated with full
-!!    !    overcast, PCLDY is an arbitrary factor for partial cloudiness
-!!    !
-!!            TCLD=TMID(I,LL)-T0C                 !--- Air temp in deg C
-!!            RRHO=(R_D*TMID(I,LL)*(1.+EP_1*QMID(I,LL)))/PMID(I,LL)
-!!            IF (TCLD .GE. 0.) THEN
-!!               QOVRCST(I,LL)=QAUT0*RRHO
-!!            ELSE
-!!               IF (TCLD.GE.-8. .AND. TCLD.LE.-3.) THEN
-!!                  FLARGE=FLARGE1
-!!               ELSE
-!!                  FLARGE=FLARGE2
-!!               ENDIF
-!!               FSMALL=(1.-FLARGE)/FLARGE
-!!               DSNOW=XMImax*EXP(XMIexp*TCLD)
-!!               INDEXS=MAX(MDImin, MIN(MDImax, INT(DSNOW)))
-!!               QOVRCST(I,LL)=NLImax*( FSMALL*MASSI(MDImin)              &
-!!     &                               +MASSI(INDEXS) )*RRHO
-!!            ENDIF                 !--- End IF (TCLD .GE. 0.)
-!!            QOVRCST(I,LL)=PCLDY*QOVRCST(I,LL)
             LCNVT=NINT(CUTOP(I,J))+LVLIJ
             LCNVT=MIN(LM,LCNVT)
             LCNVB=NINT(CUBOT(I,J))+LVLIJ
@@ -946,20 +919,6 @@ CONTAINS
                ENDIF        !--- End IF (ARG .LE. XSDmin) 
             ENDIF           !--- IF (ARG.LE.DXSD2 .AND. ARG.GE.DXSD2N)
             CSMID(I,LL)=CLFR
-!!  !
-!!  !--- Here the condensate is adjusted to be only over the cloudy area
-!!  !
-!!            IF (CLFR.GT.0. .AND. QCLD.LE.0.) THEN
-!!  !
-!!  !--- Put in modest amounts of cloud water & cloud ice for partially cloudy grids
-!!  !
-!!               QPCLDY=MIN(.01*QSAT, QOVRCST(I,LL))
-!!               IF (TCLD .GE. H0) THEN
-!!                  QWMID(I,LL)=QPCLDY
-!!               ELSE
-!!                  QIMID(I,LL)=QPCLDY
-!!               ENDIF
-!!            ENDIF          !--- End IF (CLFR.GT.0. .AND. QCLD.LE.0.) 
 255       CONTINUE         !--- End DO L=1,LML
       ENDDO                !--- End DO I=MYIS,MYIE
 !

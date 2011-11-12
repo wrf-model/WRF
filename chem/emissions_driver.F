@@ -25,10 +25,12 @@ CONTAINS
          sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,                &
          sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,                &   
          sebio_hcho,sebio_eth,sebio_ora2,sebio_co,sebio_nr,                &
+         sebio_sesq,sebio_mbo,                                             & 
          noag_grow,noag_nongrow,nononag,slai,                              &
          ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,                     &
          ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,                     &
          ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,             &
+         ebio_sesq, ebio_mbo,                                              & 
          ebio_c10h16,ebio_tol,ebio_bigalk,ebio_ch3oh,ebio_acet,            &
          ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,              &
          ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,ebio_so2,     &
@@ -67,7 +69,7 @@ CONTAINS
   USE module_model_constants, only : mwdry
   USE module_emissions_anthropogenics
   USE module_bioemi_simple
-  USE module_bioemi_beis313
+  USE module_bioemi_beis314
   USE module_bioemi_megan2
   USE module_aerosols_sorgam, only: sorgam_addemiss
   USE module_cbmz_addemiss
@@ -79,6 +81,8 @@ CONTAINS
   USE module_add_emiss_burn
   USE module_plumerise1
   USE module_lightning_driver
+  USE module_aerosols_soa_vbs, only: soa_vbs_addemiss
+  
   IMPLICIT NONE
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -164,10 +168,12 @@ CONTAINS
                sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,      &
                sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,      &
                sebio_hcho,sebio_eth,sebio_ora2,sebio_co,sebio_nr,      &
+               sebio_sesq,sebio_mbo,                                   & 
                noag_grow,noag_nongrow,nononag,slai,                    &
                ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,           &
                ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,           &
                ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,   &
+               ebio_sesq,ebio_mbo,                                     & 
                ebio_c10h16,ebio_tol,ebio_bigalk, ebio_ch3oh,ebio_acet, &
                ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,    &
                ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,    &
@@ -499,32 +505,35 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
        endif
-     CASE (BEIS313)
+     CASE (BEIS314)
        if( do_bioemiss ) then
-         beis313_check_mechanism_ok: SELECT CASE(config_flags%chem_opt)
-            CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
-                  RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_KPP,RACM_ESRLSORG_KPP, &
+         beis314_check_mechanism_ok: SELECT CASE(config_flags%chem_opt) 
+            CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
+                  RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ,RACMSORG_AQCHEM,            &
+                  RACMSORG_KPP,RACM_ESRLSORG_KPP, RACM_SOA_VBS_KPP,                           &
                   CBM4_KPP, NMHC9_KPP, GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
             CASE DEFAULT 
                CALL wrf_error_fatal( &
-                  "emissions_driver: beis3.1.3 biogenic emis. implemented for RADM2 & RACM only")
-         END SELECT beis313_check_mechanism_ok
-         CALL wrf_debug(15,'biogenic emissions: calling beis3.1.3')
-         call bio_emissions_beis313(id,config_flags,ktau,curr_secs,    &
+                  "emissions_driver: beis3.1.4 biogenic emis. implemented for RADM2 & RACM only")
+         END SELECT beis314_check_mechanism_ok
+         CALL wrf_debug(15,'biogenic emissions: calling beis3.1.4')
+         call bio_emissions_beis314(id,config_flags,ktau,curr_secs,    &
                dtstep,julday,gmt,xlat,xlong,t_phy,p_phy,gsw,           &
                sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,      &
                sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,      &
                sebio_hcho,sebio_eth,sebio_ora2,sebio_co,sebio_nr,      &
+               sebio_sesq,sebio_mbo,                                   &
                noag_grow,noag_nongrow,nononag,slai,                    &
                ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,           &
                ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,           &
                ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,   &
+               ebio_sesq,ebio_mbo,                                     &
                ids,ide, jds,jde, kds,kde,                              &
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
        endif
 
-     CASE (MEGAN2) 
+     CASE (MEGAN2)
        if(ktau.eq.1.or.mod(ktau,stepbioe).eq.0)then                        
          CALL wrf_debug(15,'biogenic emissions: calling megan v2.04')  
          call bio_emissions_megan2(id,config_flags,ktau,dtstep,        &
@@ -563,9 +572,9 @@ CONTAINS
 !!! **************** END BIOGENICS, ADD EMISSIONS FOR VARIOUS PACKAGES
 !
     gas_addemiss_select: SELECT CASE(config_flags%chem_opt)
-    CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
-          RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_KPP, &
-          RACM_ESRLSORG_KPP, MOZART_KPP, MOZCART_KPP)
+    CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
+          RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM, RACMSORG_KPP, RACM_SOA_VBS_KPP, & 
+          RACM_ESRLSORG_KPP, MOZART_KPP, MOZCART_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP )
        IF(config_flags%emiss_inpt_opt /= 3 ) then
        IF(config_flags%kemit .GT. kte-ksub) THEN
          k=config_flags%kemit
@@ -586,6 +595,7 @@ CONTAINS
             ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
             ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,               &
             ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,       &
+            ebio_sesq,ebio_mbo,                                         & 
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
@@ -605,6 +615,23 @@ CONTAINS
        end if 
 
        end if ! emiss_inpt_opt /= 3
+
+    IF(config_flags%emiss_opt == 10 ) then
+       do j=jts,jte
+          do i=its,ite
+             do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+
+                chem(i,k,j,p_voca)  = chem(i,k,j,p_voca)                       &
+                     +emis_ant(i,k,j,p_e_co_a)*conv*0.08*28./250.
+                chem(i,k,j,p_vocbb)  = chem(i,k,j,p_vocbb)                       &
+                     +emis_ant(i,k,j,p_e_co_bb)*conv*0.08*28./250.
+
+             end do
+          end do
+       end do
+     endif
+
 !For SAPRC99 need to define SAPRC99_addemiss_anthro and SAPRC99_addemiss_bio
 !so did not add saprcnov packages here
     CASE (CBMZ, CBMZ_BB, CBMZ_BB_KPP, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, &
@@ -916,6 +943,7 @@ CONTAINS
             ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
             ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,               &
             ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,       &
+            ebio_sesq,ebio_mbo,                                         & 
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
@@ -1022,8 +1050,8 @@ CONTAINS
 
     aer_addemiss_select: SELECT CASE(config_flags%chem_opt)
 
-    CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP, &
-          RACMSORG_AQ,RACMSORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ)
+    CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP, &
+          RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ)
        call wrf_debug(15,'emissions_driver calling sorgam_addemiss')
        call sorgam_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,  &
             ebu,                                                        &
@@ -1039,11 +1067,29 @@ CONTAINS
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    CASE (RACM_SOA_VBS_KPP)
+       call wrf_debug(15,'emissions_driver calling soa_vbs_addemiss')
+       call soa_vbs_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,  &
+            ebu,                                                        &
+            slai,ust,smois,ivgtyp,isltyp,                               &
+            emis_ant,dust_emiss_active,                                 &
+            seasalt_emiss_active,config_flags%kemit,                    &
+            config_flags%biomass_burn_opt,                              &
+            config_flags%num_soil_layers,config_flags%emiss_opt,        &
+            config_flags%dust_opt,                                      &
+            ktau,p8w,u_phy,v_phy,rho_phy,g,dx,erod,                     &
+            ids,ide, jds,jde, kds,kde,                                  &
+            ims,ime, jms,jme, kms,kme,                                  &
+            its,ite, jts,jte, kts,kte                                   )
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
 !Added the aerosol case SAPRC99_MOSAIC_4BIN_VBS2_KPP to call mosaic addemiss
     CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, & 
           CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
           CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, & 
-          CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
+          CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,SAPRC99_MOSAIC_4BIN_VBS2_KPP,&
+          MOZART_MOSAIC_4BIN_VBS0_KPP   )
        call wrf_debug(15,'emissions_driver calling mosaic_addemiss')
        call mosaic_addemiss( id, dtstep, u10, v10, alt, dz8w, xland,     &
             config_flags, chem, slai, ust, smois, ivgtyp, isltyp,        &

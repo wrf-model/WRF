@@ -136,7 +136,7 @@ SUBROUTINE wesely_driver( id, ktau, dtstep, config_flags, current_month,  &
 !--------------------------------------------------
 ! .. Local Scalars
 !--------------------------------------------------
-      REAL    ::  clwchem, dvfog, dvpart, pa, rad
+      REAL    ::  clwchem, dvfog, dvpart, pa, rad, dep_vap
       REAL    ::  rhchem, ta, ustar, vegfrac, z1, zntt
       INTEGER :: i, iland, iprt, iseason, j, jce, jcs, n, nr, ipr,jpr,nvr
       LOGICAL :: highnh3, rainflag, vegflag, wetflag
@@ -157,10 +157,13 @@ SUBROUTINE wesely_driver( id, ktau, dtstep, config_flags, current_month,  &
 !-----------------------------------------------------------
       INTRINSIC max, min                             
 
+      dep_vap= config_flags%depo_fact
+
       CALL wrf_debug(15,'in dry_dep_wesely')
 
       if( config_flags%chem_opt /= MOZART_KPP .and. &
-          config_flags%chem_opt /= MOZCART_KPP ) then
+          config_flags%chem_opt /= MOZCART_KPP .and. &
+          config_flags%chem_opt /= MOZART_MOSAIC_4BIN_VBS0_KPP ) then
          if( julday < 90 .or. julday > 270 ) then
             iseason = 2
             CALL wrf_debug(15,'setting iseason to 2')
@@ -177,7 +180,8 @@ tile_lon_loop : &
             iprt  = 0
             iland = ivgtyp(i,j)
             if( config_flags%chem_opt == MOZART_KPP .or. &
-                config_flags%chem_opt == MOZCART_KPP ) then
+                config_flags%chem_opt == MOZCART_KPP .or. &
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
                if( snowh(i,j) < .01 ) then 
                   iseason = seasonal_pft(id)%seasonal_wes(i,j,iland,current_month)
                else
@@ -222,7 +226,8 @@ tile_lon_loop : &
                      iseason, numgas, wetflag, rainflag, highnh3, &
                      iprt, moist(i,kts,j,p_qv), p8w(i,kts,j), config_flags%chem_opt )
             if( config_flags%chem_opt /= MOZART_KPP .and. &
-                config_flags%chem_opt /= MOZCART_KPP ) then
+                config_flags%chem_opt /= MOZCART_KPP .and. &
+          config_flags%chem_opt /= MOZART_MOSAIC_4BIN_VBS0_KPP)  then
                srfres(1:numgas-2) = rcx(1:numgas-2)
                srfres(numgas-1:numgas) = 0.
             else
@@ -240,9 +245,10 @@ tile_lon_loop : &
 !      ddvel(i,j,1:numgas-2)=ddvel0d(1:numgas-2)
 !-----------------------------------------------------------
             ddvel(i,j,1:numgas) = ddvel0d(1:numgas)
-            if ( (config_flags%chem_opt == RADM2         ) .or.   &
-                 (config_flags%chem_opt == RADM2SORG     ) .or.   &
-                 (config_flags%chem_opt == RADM2SORG_AQ) ) then
+            if ( (config_flags%chem_opt == RADM2           ) .or.   &
+                 (config_flags%chem_opt == RADM2SORG       ) .or.   &
+                 (config_flags%chem_opt == RADM2SORG_AQ    ) .or.   &
+                 (config_flags%chem_opt == RADM2SORG_AQCHEM) ) then
                      ddvel(i,j,p_hcl)         = ddvel(i,j,p_hno3)
             end if
          end do tile_lon_loop
@@ -308,7 +314,25 @@ tile_lon_loop : &
             end do
          end do
       end if
+!
+     if  (config_flags%chem_opt == RACM_SOA_VBS_KPP)   then
+         do j=jts,jte
+            do i=its,ite
+               ddvel(i,j,p_cvasoa1) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvasoa2) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvasoa3) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvasoa4) = dep_vap*ddvel(i,j,p_hno3)
 
+               ddvel(i,j,p_cvbsoa1) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvbsoa2) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvbsoa3) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvbsoa4) = dep_vap*ddvel(i,j,p_hno3)
+
+               ddvel(i,j,p_sesq)    = 0.
+               ddvel(i,j,p_mbo)     = 0.
+            end do
+         end do
+      end if
 !-----------------------------------------------------------
 ! For the additional CBM4 species, assign similar RADM counter parts for
 ! now. Short lived species get a zero velocity since dry dep should be
@@ -379,7 +403,8 @@ tile_lon_loop : &
 ! For mozart
 !-----------------------------------------------------------
       if( config_flags%chem_opt == MOZART_KPP .or. &
-          config_flags%chem_opt == MOZCART_KPP )   then
+          config_flags%chem_opt == MOZCART_KPP .or. &
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP )   then
          do j=jts,jte
             do i=its,ite
                ddvel(i,j,p_mpan)    = ddvel(i,j,p_mpan)/3.
@@ -428,6 +453,12 @@ tile_lon_loop : &
                ddvel(i,j,p_meko2)   = 0.
                ddvel(i,j,p_sulf)    = 0.
                ddvel(i,j,p_dms)     = 0.
+            if ( config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+               ddvel(i,j,p_voca)     = 0.
+               ddvel(i,j,p_vocbb)     = 0.
+               ddvel(i,j,p_smpa)        = 0
+               ddvel(i,j,p_smpbb)        = 0 
+            end if
             end do
          end do
       end if
@@ -520,7 +551,7 @@ END SUBROUTINE wesely_driver
 !----------------------------------------------------------------------
 !     SPECIAL TREATMENT FOR HNO3, HNO4, H2O2, PAA
 !----------------------------------------------------------------------
-is_mozart :  if( chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP ) then
+is_mozart :  if( chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP ) then 
                  if( n == p_hno3 ) then
                     hstary(n) = 2.6e6*exp( 8700.*wrk )*1.e5
                  else if( n == p_hno4 ) then
@@ -533,7 +564,7 @@ is_mozart :  if( chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP ) then
              endif is_mozart
              rmx = 1./(hstary(n)/3000. + 100.*f0(n))
              rsmx = rs*dratio(n) + rmx
-             if( (chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP) .and. &
+             if( (chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP .or. chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) .and. &
                  iseason /= 4 .and. p_pan > 1 ) then
                 if( iland /= iswater_temp .and. n == p_pan ) then
 !-------------------------------------------------------------------------------------
@@ -1215,7 +1246,7 @@ is_nh3: if( p_nh3 > 1 ) then
 include 'netcdf.inc'
 
 #else
-      if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP ) then
+      if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP .or. config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
          call wrf_message( 'dep_init: mozart,mozcart chem option requires netcdf' )
          call wrf_abort
       end if
@@ -1504,7 +1535,8 @@ is_cbm4_kpp : &
 
         if (config_flags%chem_opt /= CBM4_KPP) then
            if( config_flags%chem_opt == MOZART_KPP .or. &
-               config_flags%chem_opt == MOZCART_KPP ) then
+               config_flags%chem_opt == MOZCART_KPP .or. &
+               config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
               hstar(p_o3)      = 1.15E-2
               hstar(p_co)      = 1.e-3
               hstar(p_h2o2)    = 8.33E+4
@@ -1621,7 +1653,8 @@ is_cbm4_kpp : &
 !     [-DH/R]=K
 !--------------------------------------------------
         if( config_flags%chem_opt == MOZART_KPP .or. &
-            config_flags%chem_opt == MOZCART_KPP ) then
+            config_flags%chem_opt == MOZCART_KPP .or. &
+            config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
            dhr(p_o3)      = 2560.
            dhr(p_h2o2)    = 7379.
            dhr(p_hcho)    = 6425.
@@ -1692,7 +1725,8 @@ is_cbm4_kpp : &
 !     [f0]=1
 !--------------------------------------------------
         if( config_flags%chem_opt == MOZART_KPP .or. &
-            config_flags%chem_opt == MOZCART_KPP ) then
+            config_flags%chem_opt == MOZCART_KPP .or. &
+            config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
            f0(p_hcho)    = small_value
            f0(p_ch3ooh)  = .1
            f0(p_ch3oh)   = small_value
@@ -1759,7 +1793,8 @@ is_cbm4_kpp : &
 !     [DV]=cm2/s (assumed: 1/SQRT(molar mass) when not known)
 !--------------------------------------------------
         if( config_flags%chem_opt == MOZART_KPP .or. &
-            config_flags%chem_opt == MOZCART_KPP ) then
+            config_flags%chem_opt == MOZCART_KPP .or. &
+            config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
            dvj(p_o3)      = 0.144
            dvj(p_h2o2)    = 0.1715
            dvj(p_hcho)    = 0.1825
@@ -2681,7 +2716,8 @@ is_cbm4_kpp : &
 !---------------------------------------------------------------------
 is_mozart : &
       if( config_flags%chem_opt == MOZART_KPP .or. &
-          config_flags%chem_opt == MOZCART_KPP ) then
+          config_flags%chem_opt == MOZCART_KPP .or. &
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
 !---------------------------------------------------------------------
 !	... allocate column_density type
 !---------------------------------------------------------------------

@@ -198,6 +198,7 @@ CONTAINS
          ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,                 &
          ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,                 &
          ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,         &
+         ebio_sesq,ebio_mbo,                                           & 
          ids,ide, jds,jde, kds,kde,                                    &
          ims,ime, jms,jme, kms,kme,                                    &
          its,ite, jts,jte, kts,kte                                     )
@@ -221,12 +222,9 @@ CONTAINS
          INTENT(IN ) ::                                                    &
          ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,                     &
          ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,                     &
-         ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no
-
+         ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,             &
+         ebio_sesq,ebio_mbo 
 !
-! 
-!
-
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,               &
           INTENT(IN   ) ::                                                 &
                                           rho_phy,dz8w
@@ -275,8 +273,8 @@ CONTAINS
                   e_bio(i,j,p_ol2-1)*conv_rho
  100  continue
 !     enddo
-     CASE (BEIS313)
-     CALL wrf_debug(100,'adding biogenic emissions: beis3.1.3')
+     CASE (BEIS314)
+     CALL wrf_debug(100,'adding biogenic emissions: beis3.1.4')
       do j=jts,jte  
       do i=its,ite  
         conv_rho=4.828e-4/rho_phy(i,kts,j)*dtstep/(dz8w(i,kts,j)*60.)
@@ -318,6 +316,13 @@ CONTAINS
                   ebio_lim(i,j)*conv_rho
         if(p_ete.gt.1)chem(i,kts,j,p_ete)=chem(i,kts,j,p_ete)+ &
                   ebio_ete(i,j)*conv_rho
+
+! SESQ and MBO are added, it works for RACM_SOA_VBS_KPP option
+        if(p_sesq.gt.1)chem(i,kts,j,p_sesq)=chem(i,kts,j,p_sesq)+ &
+                  ebio_sesq(i,j)*conv_rho
+        if(p_mbo.gt.1)chem(i,kts,j,p_mbo)=chem(i,kts,j,p_mbo)+ &
+                  ebio_mbo(i,j)*conv_rho
+
       enddo
       enddo
      CASE (MEGAN2)

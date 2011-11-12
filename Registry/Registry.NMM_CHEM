@@ -1208,6 +1208,7 @@ package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,q
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr
 package   etamp_hwrf    mp_physics==85               -             moist:qv,qc,qr,qi,qs
+package   etampold      mp_physics==95               -             moist:qv,qc,qr,qs
 
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             -

@@ -27,6 +27,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
    character*256 :: timestr, timestr1
    integer       :: i, j, k
    real          :: subarea, whole_area
+   real          :: f_flag
 
    character(len=4) :: filnam
 
@@ -41,7 +42,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
          model_grid%jcdfi_u = 0.0
          model_grid%jcdfi_v = 0.0
          model_grid%jcdfi_t = 0.0
-         model_grid%jcdfi_mu = 0.0
+         model_grid%jcdfi_p = 0.0
       endif
 
       if (jcdfi_use .and. jcdf_flag ) then
@@ -49,24 +50,24 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
          subarea = SUM ( grid%xb%grid_box_area(its:ite,jts:jte) )
          whole_area = wrf_dm_sum_real(subarea)
 
-         ! Multipled by -1.0 because the calulated gradient of Jo will be multiplied by -1.0 
+         ! Multipled by -1.0 because the dnw is negative, multiplied by -1.0 again to revert the direction.
+
+         f_flag = 1.0 ! -1.0*-1.0
+
+         if ( test_gradient ) f_flag = -1.0 ! compensate for negative dnw
 
          do j = jms, jme
             do k = kms, kme
                do i = ims, ime
-                  model_grid%jcdfi_u(i,k,j) = config_flags%jcdfi_penalty * model_grid%jcdfi_u(i,k,j) * &
+                  model_grid%jcdfi_u(i,k,j) = f_flag*config_flags%jcdfi_penalty * model_grid%jcdfi_u(i,k,j) * &
                         grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
-                  model_grid%jcdfi_v(i,k,j) = config_flags%jcdfi_penalty * model_grid%jcdfi_v(i,k,j) * &
+                  model_grid%jcdfi_v(i,k,j) = f_flag*config_flags%jcdfi_penalty * model_grid%jcdfi_v(i,k,j) * &
                         grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
-                  model_grid%jcdfi_t(i,k,j) = config_flags%jcdfi_penalty * model_grid%jcdfi_t(i,k,j) * &
-                        cp/280.0*grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+                  model_grid%jcdfi_t(i,k,j) = f_flag*config_flags%jcdfi_penalty * model_grid%jcdfi_t(i,k,j) * &
+                        (9.81/3.0)**2*grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
+                  model_grid%jcdfi_p(i,k,j) = f_flag*config_flags%jcdfi_penalty * model_grid%jcdfi_p(i,k,j) * &
+                        (1.0/300.)**2*grid%xb%grid_box_area(i,j)/whole_area*grid%xb%dnw(k)
                enddo
-            enddo
-         enddo
-         do j = jms, jme
-            do i = ims, ime
-               model_grid%jcdfi_mu(i,j) = config_flags%jcdfi_penalty * model_grid%jcdfi_mu(i,j) * gas_constant * &
-                     280.0/(1.0e5**2)*grid%xb%grid_box_area(i,j)/whole_area
             enddo
          enddo
 

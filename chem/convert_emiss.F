@@ -147,17 +147,16 @@ PROGRAM convert_emissions
    CHARACTER (LEN=12)       :: dname2
    CHARACTER (LEN=256)      :: timestr
 
-
+! MBO is separated, SESQ is added
 ! Number of reference emission and LAI files to open
-   INTEGER, PARAMETER :: numfil=19
+   INTEGER, PARAMETER :: numfil=21
    INTEGER            :: status,system
 ! Filenames of reference emissions and LAI
    CHARACTER*100 onefil
    CHARACTER*12 emfil(numfil)
    DATA emfil/'ISO','OLI','API','LIM','XYL','HC3','ETE','OLT',  &
-              'KET','ALD','HCHO','ETH','ORA2','CO','NR',        &
+              'KET','ALD','HCHO','ETH','ORA2','CO','NR','SESQ','MBO',       &
               'NOAG_GROW','NOAG_NONGROW','NONONAG','ISOP'/
-
 
 ! these are needed on some compilers, eg compaq/alpha, to
 ! permit pass by reference through the registry generated
@@ -2463,7 +2462,7 @@ PROGRAM convert_emissions
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !    NOW DO BIOGENIC EMISSIONS FILE
 !
-    if(CONFIG_FLAGS%BIO_EMISS_OPT == BEIS313 ) then
+    if(CONFIG_FLAGS%BIO_EMISS_OPT == BEIS314 ) then
 
    write(message,FMT='(A)') ' READ BIOGENIC EMISSIONS '
    CALL  wrf_debug ( 100, message )
@@ -2652,6 +2651,7 @@ PROGRAM convert_emissions
 #endif
               grid%sebio_co(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
        ENDIF
+
        IF(i.EQ.15)then
 #ifdef DM_PARALLEL
            IF (wrf_dm_on_monitor()) THEN
@@ -2663,7 +2663,33 @@ PROGRAM convert_emissions
 #endif
               grid%sebio_nr(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
        ENDIF
+
+! SESQ and MBO are added
        IF(i.EQ.16)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%sebio_sesq(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+
+       IF(i.EQ.17)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+       ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+         READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%sebio_mbo(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+!
+       IF(i.EQ.18)then
 #ifdef DM_PARALLEL
            IF (wrf_dm_on_monitor()) THEN
              READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
@@ -2674,7 +2700,8 @@ PROGRAM convert_emissions
 #endif
               grid%noag_grow(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
        ENDIF
-       IF(i.EQ.17)then
+
+       IF(i.EQ.19)then
 #ifdef DM_PARALLEL
            IF (wrf_dm_on_monitor()) THEN
              READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
@@ -2685,7 +2712,8 @@ PROGRAM convert_emissions
 #endif
               grid%noag_nongrow(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
        ENDIF
-       IF(i.EQ.18)then
+
+       IF(i.EQ.20)then
 #ifdef DM_PARALLEL
            IF (wrf_dm_on_monitor()) THEN
              READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
@@ -2696,7 +2724,8 @@ PROGRAM convert_emissions
 #endif
               grid%nononag(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
        ENDIF
-       IF(i.EQ.19)then
+
+       IF(i.EQ.21)then
 #ifdef DM_PARALLEL
            IF (wrf_dm_on_monitor()) THEN
              READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
@@ -2733,7 +2762,7 @@ PROGRAM convert_emissions
 
    CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT6" )
 
-    endif  !    BIO_EMIS_OPT = BEIS313
+    endif  !    BIO_EMIS_OPT = BEIS314
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     DEALLOCATE ( dumc0 )

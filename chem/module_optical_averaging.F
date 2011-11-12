@@ -221,8 +221,8 @@
 !                 call peg_message( lunerr, msg )
    chem_select: SELECT CASE(config_flags%chem_opt)
 !
-   CASE (RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
-         RACM_ESRLSORG_KPP, RACMSORG_AQ,  RACMSORG_KPP, CBMZSORG, CBMZSORG_AQ)
+   CASE (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
+         RACM_ESRLSORG_KPP, RACMSORG_AQ, RACMSORG_AQCHEM, RACMSORG_KPP, CBMZSORG, CBMZSORG_AQ)
      call optical_prep_modal(nbin_o, chem, alt,                        &
 !         h2oai, h2oaj, refindx, radius_wet, number_bin,               &
 !         radius_core, refindx_core, refindx_shell,                    &
@@ -238,7 +238,7 @@
          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ,                     &
          CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN,                   &
          CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,             &
-         SAPRC99_MOSAIC_4BIN_VBS2_KPP)
+         SAPRC99_MOSAIC_4BIN_VBS2_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP ) 
      call optical_prep_sectional(nbin_o, chem, alt,                    &
           totoa_a01,totoa_a02,totoa_a03,totoa_a04,                     &
 !         refindx, radius_wet, number_bin,                             &

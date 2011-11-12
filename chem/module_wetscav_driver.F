@@ -9,6 +9,8 @@
 
 MODULE module_wetscav_driver
 
+  REAL, PARAMETER :: mwso4 = 96.00   ! Molecular mass of SO4-- (g/mol)
+  REAL, PARAMETER :: mwno3 = 62.0    ! Molecular mass of NO3- (g/mol)
 
 CONTAINS
 
@@ -23,6 +25,7 @@ CONTAINS
 	       gas_aqfrac, numgas_aqfrac, dz8w,                            &
 	       h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,           &
                cvaro2,cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,           &
+               wd_no3,wd_so4,                                              &
                qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp,                         &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
@@ -156,6 +159,10 @@ CONTAINS
            h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
            cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2
 !
+! Accumulated wet deposition
+!
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_no3,wd_so4
+!
 ! input from meteorology
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
           INTENT(IN   ) ::                                          &
@@ -185,6 +192,10 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme, num_chem ) :: qsrflx ! column change due to scavening
    REAL ::  tmp_minval = 1.0e7
 
+!
+! Wet deposition over the current time step
+!
+  REAL, DIMENSION( ims:ime , jms:jme ) :: wdi_no3,wdi_so4
 
 !-----------------------------------------------------------------
 
@@ -199,7 +210,7 @@ CONTAINS
 !
    cps_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE ( RADM2SORG_AQ, RACMSORG_AQ )
+   CASE ( RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM )
        CALL wrf_debug(15,'wetscav_driver calling sorgam_wetscav_driver' )
        call wetscav_sorgam_driver (id,ktau,dtstep,ktauc,config_flags,      &
                dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,        &
@@ -250,6 +261,38 @@ CONTAINS
 
    END SELECT cps_select
 
+   ! Calculate wet deposition of the species by accumulating their (negative)
+   ! column change. It is assumed that all precipitation reaches the ground.
+   
+    SELECT CASE(config_flags%chem_opt)
+      
+      CASE ( RADM2SORG_AQCHEM,RACMSORG_AQCHEM )
+      
+      do jj=jts,jte
+        do ii=its,ite
+          
+          ! Nitrate wet deposition over the current time step:
+          wdi_no3(ii,jj) = - 0.001*qsrflx(ii,jj,p_no3cwj)/mwno3 &
+                           - 0.001*qsrflx(ii,jj,p_no3cwi)/mwno3  ! mmol/m2
+          
+          ! Accumulated nitrate wet deposition:
+          wd_no3(ii,jj) = wd_no3(ii,jj) + wdi_no3(ii,jj)         ! mmol/m2
+          
+          ! Sulfate wet deposition over the current time step:
+          wdi_so4(ii,jj) = - 0.001*qsrflx(ii,jj,p_so4cwj)/mwso4 &
+                           - 0.001*qsrflx(ii,jj,p_so4cwi)/mwso4 &
+                           - qsrflx(ii,jj,p_sulf) &
+                           - qsrflx(ii,jj,p_so2)                 ! mmol/m2
+          
+          ! Accumulated sulfate wet deposition:
+          wd_so4(ii,jj) = wd_so4(ii,jj) + wdi_so4(ii,jj)         ! mmol/m2
+          
+        enddo
+      enddo
+    
+    CASE DEFAULT
+      
+    END SELECT
    end subroutine wetscav_driver
 
 

@@ -48,7 +48,7 @@ CONTAINS
                      ,zmicuu, zmicud, zmicvu, zmicvd, zmdice, zmdliq  &
                      ,k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow &
                  ! Optional arguments for SAS scheme
-                     ,pgcon                                           &
+                     ,pgcon,sas_mass_flux                             &
                  ! Optional arguments for NSAS scheme
                      ,mp_physics                                      &
                  ! Optional moisture and other tendencies
@@ -290,7 +290,7 @@ CONTAINS
    INTEGER,      INTENT(IN   )    ::   STEPCU
    LOGICAL,      INTENT(IN   )    ::   warm_rain
 
-   REAL, INTENT(IN), OPTIONAL :: pgcon
+   REAL, INTENT(IN), OPTIONAL :: pgcon,sas_mass_flux
 
    INTEGER,DIMENSION( ims:ime, jms:jme ),                        &
            INTENT(IN ) ::                                LOWLYR
@@ -685,7 +685,7 @@ CONTAINS
 #if (NMM_CORE==1)
                ,store_rand=store_rand  &
                ,MOMMIX=MOMMIX  &
-               ,pgcon=pgcon &
+               ,pgcon=pgcon,sas_mass_flux=sas_mass_flux &
 #endif
                ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
                ,CUDT=cudt_pass                                  &

@@ -1849,7 +1849,7 @@
 #if (NMM_CORE==1)                  
      &                 ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random             &
 #endif
-     &             ,config_flags%sas_pgcon                             &
+     &             ,config_flags%sas_pgcon,config_flags%sas_mass_flux  &
      &             ,grid%avcnvc,grid%acutim,grid%ihe,grid%ihw                              &
      &             ,GRID,CONFIG_FLAGS                                  &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &

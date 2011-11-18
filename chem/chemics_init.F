@@ -688,7 +688,7 @@ call wrf_message("**************************************************************
         endif
      CASE (GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
        CALL wrf_debug(15,'call GOCARTRACM_KPP chem/aerosols initialization')
-        ch_dust(:,:)=0.8e-9
+        ch_dust(:,:)=0.8D-9
         ch_ss(:,:)=1.
         if(config_flags%chem_in_opt == 0 )then
         if( .NOT. config_flags%restart )then
@@ -718,7 +718,9 @@ call wrf_message("**************************************************************
 !        config_flags%phot_opt  = 0
        endif
        CALL wrf_debug(15,'call dust aerosols initialization')
-        ch_dust(:,:)=0.8e-9
+        ch_dust(:,:)=0.8D-9
+        if(config_flags%chem_in_opt == 0 )then
+        if( .NOT. config_flags%restart )then
            do j=jts,jte
               do k=kts,kte
                  do i=its,ite
@@ -728,13 +730,15 @@ call wrf_message("**************************************************************
                  enddo
                enddo
            enddo
+         endif
+         endif
      CASE (GOCART_SIMPLE)
        if(config_flags%phot_opt .NE. 0 )then
          call wrf_error_fatal("GOCART simple initialization, phot_opt  MUST BE ZERO")
 !        config_flags%phot_opt  = 0
        endif
        CALL wrf_debug(15,'call GOCART chem/aerosols initialization')
-        ch_dust(:,:)=0.8e-9
+        ch_dust(:,:)=0.8D-9
         ch_ss(:,:)=1.
         if( .NOT. config_flags%restart )then
         if(config_flags%chem_in_opt == 0 )then
@@ -787,7 +791,7 @@ call wrf_message("**************************************************************
           enddo
       CASE (MOZCART_KPP)
         CALL wrf_debug(15,'MOZCART dust initialization')
-        ch_dust(:,:) = 0.8e-9
+        ch_dust(:,:) = 0.8D-9
 
      CASE (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM, RADM2SORG_KPP, &
            RACMSORG_KPP, RACM_ESRLSORG_KPP, CBMZSORG, CBMZSORG_AQ)
@@ -875,7 +879,7 @@ call wrf_message("**************************************************************
          enddo
       enddo
    enddo
-        ch_dust(:,:)=0.8e-9
+        ch_dust(:,:)=0.8D-9
         ch_ss(:,:)=1.
 
 !

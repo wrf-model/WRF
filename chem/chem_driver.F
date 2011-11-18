@@ -796,7 +796,7 @@
 
 !--- emissions
 
-    if(config_flags%emiss_inpt_opt > 0)then
+    if(config_flags%emiss_inpt_opt > 0 .or. config_flags%dust_opt > 0)then
       call wrf_debug(15,'calling emissions driver')
 
       ! limit ktop by WMO tropopause for cpm ltng param
@@ -841,6 +841,8 @@
               grid%ebio_c2h5oh,grid%ebio_ch3cooh,grid%ebio_mek,grid%ebio_bigene,           &
               grid%ebio_c2h6,grid%ebio_c2h4,grid%ebio_c3h6,grid%ebio_c3h8,grid%ebio_so2,   &
               grid%ebio_dms,                                                               &
+              grid%clayfrac,grid%sandfrac,grid%dust_alpha,grid%dust_gamma,grid%dust_smtune,&
+              grid%snowh,grid%zs,                                                          &
 #if (NMM_CORE == 1)
               grid%T2,grid%RSWIN,                                                         &
 #endif

@@ -34,6 +34,7 @@ MODULES =                           \
   module_gocart_chem.o                     \
   module_gocart_so2so4.o                     \
   module_gocart_dust.o                     \
+  module_gocart_dust_afwa.o                \
   module_gocart_seasalt.o                     \
   module_gocart_dmsemis.o                     \
   module_gocart_settling.o                     \
@@ -137,6 +138,8 @@ module_chem.utilities.o:
 module_radm.o: module_data_sorgam.o module_data_radm2.o
 
 module_gocart_dust.o: module_data_gocart_dust.o
+
+module_gocart_dust_afwa.o: module_data_gocart_dust.o
 
 module_gocart_seasalt.o: module_data_gocart_seas.o
 
@@ -306,7 +309,7 @@ mechanism_driver.o: module_data_radm2.o module_radm.o module_aerosols_sorgam.o m
 
 optical_driver.o: module_optical_averaging.o
 
-emissions_driver.o: module_add_emiss_burn.o module_data_radm2.o module_radm.o module_bioemi_simple.o module_bioemi_beis314.o module_bioemi_megan2.o module_emissions_anthropogenics.o module_cbmz_addemiss.o module_mosaic_addemiss.o module_aerosols_sorgam.o module_aerosols_soa_vbs.o module_plumerise1.o module_gocart_dust.o module_gocart_seasalt.o module_lightning_driver.o
+emissions_driver.o: module_add_emiss_burn.o module_data_radm2.o module_radm.o module_bioemi_simple.o module_bioemi_beis314.o module_bioemi_megan2.o module_emissions_anthropogenics.o module_cbmz_addemiss.o module_mosaic_addemiss.o module_aerosols_sorgam.o module_aerosols_soa_vbs.o module_plumerise1.o module_gocart_dust.o module_gocart_dust_afwa.o module_gocart_seasalt.o module_lightning_driver.o
 
 dry_dep_driver.o: module_data_radm2.o module_aer_drydep.o module_dep_simple.o module_aerosols_sorgam.o module_aerosols_soa_vbs.o module_mosaic_drydep.o ../phys/module_mixactivate.o
 

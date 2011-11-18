@@ -5561,6 +5561,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 !
    do I=1,NSLTYPE
       porosity(i)=maxsmc(i)
+      drypoint(i)=drysmc(i)
    enddo
 #endif
 

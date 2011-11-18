@@ -412,6 +412,9 @@ state    real  backg_oh       ikj     misc        1         -      i08r    "BACK
 state    real  backg_h2o2     ikj     misc        1         -      i08r    "BACKG_H2O2"     "Background H2O2 for Aerosol-GOcart option"     "volume mixing ratio"
 state    real  backg_no3      ikj     misc        1         -      i08r    "BACKG_NO3"      "Background NO3 for Aerosol-GOcart option"      "volume mixing ratio"
 
+state    real  clayfrac       ij      misc        1         -      i01r    "CLAYFRAC"       "Clay fraction in each grid cell (0-1)"      "none"
+state    real  sandfrac       ij      misc        1         -      i01r    "SANDFRAC"       "Sand fraction in each grid cell (0-1)"      "none"
+
 # These 3D arrays are output from the SOA module for different purposes
 state    real  br_rto         ikj     misc        1         -      h        "BRNCH_RTO"      "branching ratio to determine NOx condition"  ""            "ug m^-3"
 
@@ -2297,6 +2300,11 @@ rconfig   character   wes_seasonal_inname namelist,chem          max_domains    
 
 rconfig   integer        chemdiag        namelist,chem        max_domains        0      -     "Chemical tendency diagnostics"   ""    ""
 
+# Dust tuning constant for AFWA GOCART (dust_opt=3)
+rconfig   real        dust_alpha          namelist,chem          1    1.      rh    "dust_alpha"    "dust tuning constant"    "m^-1"
+rconfig   real        dust_gamma          namelist,chem          1    1.      rh    "dust_gamma"    "erodibility exponential tuning const"    ""
+rconfig   real        dust_smtune         namelist,chem          1    1.      rh    "dust_smtune"   "soil moisture tuning constant"    ""
+
 # additional namelist variables to control deposition of the organic condensable vapors
 rconfig   real        depo_fact           namelist,chem          max_domains    0       rh    "deposition factor for SOA vapors"      ""      ""
 
@@ -2437,6 +2445,7 @@ package   opt_out      opt_pars_out==1             -          ext_coef:extcof3,e
 
 # dust and sea salt packages
 package   dustgocart    dust_opt==1                  -              emis_dust:edust1,edust2,edust3,edust4,edust5 
+package   dustgocartafwa   dust_opt==3               -              emis_dust:edust1,edust2,edust3,edust4,edust5
 package   seasgocart    seas_opt==1                  -              emis_seas:eseas1,eseas2,eseas3,eseas4
 package   dmsgocart    dmsemis_opt==1                  -              -
 package   volume_approx    aer_op_opt==1                -             -

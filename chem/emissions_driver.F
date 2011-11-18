@@ -35,6 +35,8 @@ CONTAINS
          ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,              &
          ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,ebio_so2,     &
          ebio_dms,                                                         &
+         clayfrac,sandfrac,dust_alpha,dust_gamma,dust_smtune,              &
+         snowh,zs,                                                         &
          ! stuff for MEGAN v2.04                                                 
          T2,swdown,                                                        &
          nmegan,EFmegan,                                                   &
@@ -74,6 +76,7 @@ CONTAINS
   USE module_aerosols_sorgam, only: sorgam_addemiss
   USE module_cbmz_addemiss
   USE gocart_dust
+  USE gocart_dust_afwa
   USE gocart_seasalt
   USE module_dms_emis
   USE module_mosaic_addemiss
@@ -159,6 +162,17 @@ CONTAINS
                                                      xlat,                 &
                                                      xlong,                &
                                                      znt
+   REAL, DIMENSION( ims:ime , jms:jme )                  ,                 &
+         OPTIONAL,                                                         &
+         INTENT(IN   ) ::                                                  &
+                                                     clayfrac,             &
+                                                     sandfrac,             &
+                                                     snowh
+   REAL, INTENT(IN   ) ::                            dust_alpha,           &
+                                                     dust_gamma,           &
+                                                     dust_smtune
+  REAL, DIMENSION( config_flags%num_soil_layers ) ,                        &
+      INTENT(IN   ) ::                               zs
   REAL, DIMENSION( ims:ime, config_flags%num_soil_layers, jms:jme ) ,      &
       INTENT(INOUT) ::                               smois
 
@@ -437,6 +451,15 @@ CONTAINS
         call gocart_dust_driver(ktau,dtstep,config_flags,julday,alt,t_phy,moist,u_phy,  &
          v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,dustin,           &
          ivgtyp,isltyp,vegfra,xland,xlat,xlong,gsw,dx,g,emis_dust,        &
+         ids,ide, jds,jde, kds,kde,                                        &
+         ims,ime, jms,jme, kms,kme,                                        &
+         its,ite, jts,jte, kts,kte                                         )
+      CASE (DUSTGOCARTAFWA)
+        CALL wrf_debug(15,'AFWA modified Gocart dust emissions')
+        call gocart_dust_afwa_driver(ktau,dtstep,config_flags,julday,alt,t_phy,moist,u_phy,  &
+         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,dustin,snowh,zs,   &
+         ivgtyp,isltyp,vegfra,xland,xlat,xlong,gsw,dx,g,emis_dust,         &
+         ust,znt,clayfrac,sandfrac,dust_alpha,dust_gamma,dust_smtune,      &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )

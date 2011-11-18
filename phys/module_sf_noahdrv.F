@@ -1418,6 +1418,7 @@ CONTAINS
 !
    do I=1,NSLTYPE
       porosity(i)=maxsmc(i)
+      drypoint(i)=drysmc(i)
    enddo
 #endif
 

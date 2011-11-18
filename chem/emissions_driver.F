@@ -15,7 +15,7 @@ CONTAINS
          bioemdt,stepbioe,                                                 &
          config_flags,gmt,julday,alt,t_phy,moist,p8w,t8w,u_phy,            &
          v_phy,vvel,e_bio,p_phy,chem,rho_phy,dz8w,ne_area,emis_ant,        &
-         tsk,erod,g,emis_seas,emis_dust,tracer,                            &
+         emis_vol,tsk,erod,g,emis_seas,emis_dust,tracer,                   &
          ebu, ebu_in,mean_fct_agtf,mean_fct_agef,                          &
          mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,          &
          firesize_agsv,firesize_aggr,                                      &
@@ -67,7 +67,7 @@ CONTAINS
   USE module_configure
   USE module_state_description
   USE module_data_radm2
-  USE module_data_sorgam, only : mw_so4_aer
+  USE module_data_sorgam, only : mw_so4_aer,anthfac,factnumn,factnuma,factnumc
   USE module_model_constants, only : mwdry
   USE module_emissions_anthropogenics
   USE module_bioemi_simple
@@ -111,6 +111,9 @@ CONTAINS
    REAL, DIMENSION( ims:ime, 1:config_flags%kemit, jms:jme,num_emis_ant),&
          INTENT(IN ) ::                                                    &
          emis_ant
+   REAL, DIMENSION( ims:ime,  kms:kme, jms:jme,num_emis_vol),              &
+         INTENT(INOUT ) ::                                                 &
+         emis_vol
    REAL, DIMENSION( ims:ime, jms:jme),&
          INTENT(IN ) ::                                                 &
          dms_0,tsk,erup_beg,erup_end
@@ -250,7 +253,11 @@ CONTAINS
            curr_secs
 
       REAL :: gmtp,gmtm
-      Integer :: endhr,endmin,beghr,begmin
+      integer :: curr_hours,ivolcano
+      Integer :: endhr,endmin,beghr,begmin,ko,kk4,kl,k_initial,k_final
+      real :: emiss_ash_mass,emiss_ash_height,so2_mass,vert_mass_dist(kts:kte)
+      real :: eh
+      real :: area,x1,percen_mass_umbrel,base_umbrel,ashz_above_vent
 
       REAL, INTENT(IN   ) ::                                           &
            bioemdt, dtstep, dx, gmt, g
@@ -283,6 +290,11 @@ CONTAINS
 ! As of NOV 2008 these only are used for MOSAIC and SORGAM
 ! gocart  dust and seasalt will only work for GOCART and SORGAM
 !
+       percen_mass_umbrel=.75
+       base_umbrel=.25    ! fraction
+
+      ivolcano=0
+      area=dx*dx
       dust_emiss_active    = 0
       seasalt_emiss_active = 0
       if(config_flags%dust_opt >= 2 )dust_emiss_active    = 1
@@ -291,18 +303,170 @@ CONTAINS
 ! Setup the timing flags...
 ! (methodology is adapated from module_radiation_driver.F)
 !
-      if(config_flags%emiss_opt == 9)then
+      if(config_flags%emiss_opt_vol == 1 .or. config_flags%emiss_opt_vol == 2)then
 ! for volcanic ash transport, vash variables are in mix ratio here...
       do_ex_volcanoe = .false.
       gmtp=curr_secs/3600.
+      curr_hours=curr_secs/3600.
       gmtp=mod(gmt+gmtp,24.)
          gmtm=curr_secs/60.
          gmtm=mod(gmtm,60.)
          write(0,*) 'gmtp,gmtm,curr_secs = ',gmtp,gmtm,curr_secs
       do j=jts,jte
       do i=its,ite
-         if(emis_ant(i,kts,j,p_e_vash1).le.0.)cycle
-! ! erup_beg is julday*1000+hour
+        if(erup_end(i,j).le.0)cycle
+        so2_mass=1.5e4*3600.*1.e9/64./area
+          if(curr_hours.ge.9 .and. curr_hours.lt.19)then
+             emiss_ash_mass=7.41e9/area*1.e9/(3600.*6)
+             emiss_ash_height=7333.  !9000.
+!            eh=2600.*(emiss_ash_height*.0005)**4.1494
+             eh=5.71e5
+             emiss_ash_mass=eh*1.e9/area
+! Brad's values
+             emiss_ash_mass=5.71e5/area*1.e9
+             emiss_ash_height=7334.
+             
+             write(0,*)'adjusted ash mass = ',emiss_ash_mass
+          else if(curr_hours.ge.19 .and. curr_hours.lt.28)then
+             emiss_ash_mass=1.56e9/area*1.e9/(3600.*12)
+             emiss_ash_height=3834
+!            eh=2600.*(emiss_ash_height*.0005)**4.1494
+             eh=3.87e4
+             emiss_ash_mass=eh*1.e9/area
+
+! Brad's values
+             emiss_ash_mass=3.87e4/area*1.e9
+             emiss_ash_height=3834.
+             write(0,*)'adjusted ash mass = ',emiss_ash_mass
+          else if(curr_hours.ge.28 .and. curr_hours.lt.35)then
+             emiss_ash_mass=1.31e9/area*1.e9/(3600.*7)
+             emiss_ash_height=4334.
+!            eh=2600.*(emiss_ash_height*.0005)**4.1494
+             eh=6.44e4
+             emiss_ash_mass=eh*1.e9/area
+
+! Brad's values
+             emiss_ash_mass=6.44e4/area*1.e9
+             emiss_ash_height=4334.
+             write(0,*)'adjusted ash mass = ',emiss_ash_mass
+          else if(curr_hours.ge.35 .and. curr_hours.lt.69)then
+             emiss_ash_mass=1.31e9/area*1.e9/(3600.*34)
+!            emiss_ash_height=3334.
+             emiss_ash_height=4334.
+!            eh=2600.*(emiss_ash_height*.0005)**4.1494
+!            eh=2.17e4
+             eh=6.44e4
+             emiss_ash_mass=eh*1.e9/area
+
+! Brad's values
+             emiss_ash_mass=6.44e4/area*1.e9
+             emiss_ash_height=4334.
+             write(0,*)'adjusted ash mass = ',emiss_ash_mass
+          else if(curr_hours.ge.69 .and. curr_hours.lt.102)then
+             emiss_ash_mass=4.4e9/area*1.e9/(3600.*15)
+             emiss_ash_height=6584.
+!            eh=2600.*(emiss_ash_height*.0005)**4.1494
+             eh=3.65e5
+             emiss_ash_mass=eh*1.e9/area
+
+! Brad's values
+             emiss_ash_mass=3.65e5/area*1.e9
+             emiss_ash_height=6584.
+             write(0,*)'adjusted ash mass = ',emiss_ash_mass
+          else if(curr_hours.ge.102 )then
+             emiss_ash_mass=1.56e9/area*1.e9/(3600.*15)
+             emiss_ash_height=3334.
+!            eh=2600.*(emiss_ash_height*.0005)**4.1494
+             eh=2.17e4
+             emiss_ash_mass=eh*1.e9/area
+
+! Brad's values
+             emiss_ash_mass=2.17e4/area*1.e9
+             emiss_ash_height=3334.
+             write(0,*)'adjusted ash mass = ',emiss_ash_mass
+          endif ! curr_hours
+       if(curr_hours.eq.9 .or. curr_hours.eq.19 .or. curr_hours.eq.28 &
+          .or. curr_hours.eq.35 .or. curr_hours.eq.69 .or. curr_hours.eq.102 )then
+! volcanic emissions
+!       
+             ashz_above_vent=emiss_ash_height+z_at_w(i,kts,j)
+!            write(6,*)'found and adjusted active volcano at j,kts,kpe = ',j,kts,kte 
+!            write(6,*)emiss_ash_height,emiss_ash_mass,ashz_above_vent
+             do k=kte-1,kts,-1
+!               write(6,*)k,z_at_w(i,k,j)
+                if(z_at_w(i,k,j) < ashz_above_vent)then
+                  k_final=k+1
+                  exit
+                endif !inner
+             enddo
+             do k=kte-1,kts,-1
+               if(z_at_w(i,k,j) < (1.-base_umbrel)*ashz_above_vent)then
+                  k_initial=k
+                  exit
+                endif !inner
+             enddo
+             vert_mass_dist=0.
+             write(0,*)k_initial,k_final,kte
+           !- parabolic vertical distribution between k_initial and k_final
+               kk4 = k_final-k_initial+2
+               do ko=1,kk4-1
+                   kl=ko+k_initial-1
+                   vert_mass_dist(kl) = 6.*percen_mass_umbrel* float(ko)    &
+                                /float(kk4)**2 * (1. - float(ko)/float(kk4))
+               enddo
+               if(sum(vert_mass_dist(kts:kte)) .ne. percen_mass_umbrel) then
+                 x1= ( percen_mass_umbrel- sum(vert_mass_dist(kts:kte)) )   &
+                      /float(k_final-k_initial+1)
+                   do ko=k_initial,k_final
+!- values between 0 and 1.
+                     vert_mass_dist(ko) = vert_mass_dist(ko)+ x1
+                   enddo
+               endif !inner
+
+!linear detrainment from vent to base of umbrella
+               do ko=1,k_initial-1
+                  vert_mass_dist(ko)=float(ko)/float(k_initial-1)
+               enddo
+               x1=sum(vert_mass_dist(1:k_initial-1))
+               do ko=1,k_initial-1
+                   vert_mass_dist(ko)=(1.-percen_mass_umbrel)*vert_mass_dist(ko)/x1
+               enddo
+               do ko=1,k_final
+                 emis_vol(i,ko,j,p_e_vash1)=.22*vert_mass_dist(ko)*emiss_ash_mass
+                 emis_vol(i,ko,j,p_e_vash2)=.05*vert_mass_dist(ko)*emiss_ash_mass
+                 emis_vol(i,ko,j,p_e_vash3)=.4*vert_mass_dist(ko)*emiss_ash_mass
+                 emis_vol(i,ko,j,p_e_vash4)=.05*vert_mass_dist(ko)*emiss_ash_mass
+                 emis_vol(i,ko,j,p_e_vash5)=.245*vert_mass_dist(ko)*emiss_ash_mass
+                 emis_vol(i,ko,j,p_e_vash6)=.12*vert_mass_dist(ko)*emiss_ash_mass
+                 emis_vol(i,ko,j,p_e_vash7)=.11*vert_mass_dist(ko)*emiss_ash_mass
+                 emis_vol(i,ko,j,p_e_vash8)=.08*vert_mass_dist(ko)*emiss_ash_mass
+                 emis_vol(i,ko,j,p_e_vash9)=.05*vert_mass_dist(ko)*emiss_ash_mass
+                 emis_vol(i,ko,j,p_e_vash10)=.035*vert_mass_dist(ko)*emiss_ash_mass
+                 if(config_flags%emiss_opt_vol == 2)emis_vol(i,ko,j,p_e_vso2)=vert_mass_dist(ko)*so2_mass
+               enddo
+                 do ko=k_final+1,kte
+                   emis_vol(i,ko,j,p_e_vash1)=0.
+                   emis_vol(i,ko,j,p_e_vash2)=0.
+                   emis_vol(i,ko,j,p_e_vash3)=0.
+                   emis_vol(i,ko,j,p_e_vash4)=0.
+                   emis_vol(i,ko,j,p_e_vash5)=0.
+                   emis_vol(i,ko,j,p_e_vash6)=0.
+                   emis_vol(i,ko,j,p_e_vash7)=0.
+                   emis_vol(i,ko,j,p_e_vash8)=0.
+                   emis_vol(i,ko,j,p_e_vash9)=0.
+                   emis_vol(i,ko,j,p_e_vash10)=0.
+                   if(config_flags%emiss_opt_vol == 2)emis_vol(i,ko,j,p_e_vso2)=0.
+                   enddo
+          endif ! curr_hours
+      enddo ! i
+      enddo ! j
+!
+!
+! now we got volcanoc emissions, they need to be added to chem array
+!
+      do j=jts,jte
+      do i=its,ite
+         if(emis_vol(i,kts,j,p_e_vash1).le.0.)cycle
 !
 !   erup_end is continuation in minutes
 !
@@ -314,48 +478,103 @@ CONTAINS
          endmin=00.
          write(0,*)'beghr,endhr = ',beghr,endhr,erup_beg(i,j),erup_end(i,j)
          write(0,*)'begday,endday,julday = ',begday,endday,julday
-         if(begday.ge.julday .and. beghr.le.gmtp)then
+         if(julday.ge.begday .and. julday.le.endday)then
             write(0,*)'endhr,endmin,beghr,begmin = ',endhr,endmin,beghr,begmin
             if(endhr.lt.int(gmtp) .and. endday.le.julday)then
                write(0,*) 'not do volcano stuf at gmtp = ',gmtp
+               emis_vol(i,k,j,1:num_emis_vol)=0.
             ENDIF
             if(endhr.eq.int(gmtp))then
                if(endmin.le.gmtm)then
-                  write(0,*) 'do volcano stuf at gmtp,endmin = ',gmtp,endmin
+                  write(0,*) 'do volcano stuff1 at gmtp,endmin = ',gmtp,endmin
+                  ivolcano=1
+               endif !endmin.le.gmtm
+            endif !endhr.eq.int(gmtp)
+          endif ! julday.ge.begday .and. julday.le.endday
+            IF(endhr.gt.gmtp .or. ((endhr.le.gmtp) .and. (endday.gt.julday)))then
+               write(0,*) 'do volcano stuff2 at gmtp = ',gmtp,endmin
+            endif
+      volc_select:  SELECT CASE(config_flags%chem_opt)
+      CASE (GOCART_SIMPLE,MOZCART_KPP,GOCARTRADM2,GOCARTRACM_KPP,GOCARTRADM2_KPP)
+               write(0,*)'case gocart'
+        CALL wrf_debug(15,'Adding volcanic emissions')
                   do k=kts,kte
-                   conv=alt(i,k,j)*dtstep/dz8w(i,k,j)
-                   chem(i,k,j,p_vash_1)=chem(i,k,j,p_vash_1)+emis_ant(i,k,j,p_e_vash1)*conv
-                   chem(i,k,j,p_vash_2)=chem(i,k,j,p_vash_2)+emis_ant(i,k,j,p_e_vash2)*conv
-                   chem(i,k,j,p_vash_3)=chem(i,k,j,p_vash_3)+emis_ant(i,k,j,p_e_vash3)*conv
-                   chem(i,k,j,p_vash_4)=chem(i,k,j,p_vash_4)+emis_ant(i,k,j,p_e_vash4)*conv
-                   chem(i,k,j,p_vash_5)=chem(i,k,j,p_vash_5)+emis_ant(i,k,j,p_e_vash5)*conv
-                   chem(i,k,j,p_vash_6)=chem(i,k,j,p_vash_6)+emis_ant(i,k,j,p_e_vash6)*conv
-                   chem(i,k,j,p_vash_7)=chem(i,k,j,p_vash_7)+emis_ant(i,k,j,p_e_vash7)*conv
-                   chem(i,k,j,p_vash_8)=chem(i,k,j,p_vash_8)+emis_ant(i,k,j,p_e_vash8)*conv
-                   chem(i,k,j,p_vash_9)=chem(i,k,j,p_vash_9)+emis_ant(i,k,j,p_e_vash9)*conv
-                   chem(i,k,j,p_vash_10)=chem(i,k,j,p_vash_10)+emis_ant(i,k,j,p_e_vash10)*conv
+                    conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                    chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                   &
+                     +emis_vol(i,k,j,p_e_vso2)*conv
                   enddo
-               endif
-            ELSE IF(endhr.gt.gmtp .or. ((endhr.le.gmtp) .and. (endday.gt.julday)))then
-               write(0,*) 'do volcano stuuf at gmtp = ',gmtp,endmin
                do k=kts,kte
                 conv=alt(i,k,j)*dtstep/dz8w(i,k,j)
-                chem(i,k,j,p_vash_1)=chem(i,k,j,p_vash_1)+emis_ant(i,k,j,p_e_vash1)*conv
-                chem(i,k,j,p_vash_2)=chem(i,k,j,p_vash_2)+emis_ant(i,k,j,p_e_vash2)*conv
-                chem(i,k,j,p_vash_3)=chem(i,k,j,p_vash_3)+emis_ant(i,k,j,p_e_vash3)*conv
-                chem(i,k,j,p_vash_4)=chem(i,k,j,p_vash_4)+emis_ant(i,k,j,p_e_vash4)*conv
-                chem(i,k,j,p_vash_5)=chem(i,k,j,p_vash_5)+emis_ant(i,k,j,p_e_vash5)*conv
-                chem(i,k,j,p_vash_6)=chem(i,k,j,p_vash_6)+emis_ant(i,k,j,p_e_vash6)*conv
-                chem(i,k,j,p_vash_7)=chem(i,k,j,p_vash_7)+emis_ant(i,k,j,p_e_vash7)*conv
-                chem(i,k,j,p_vash_8)=chem(i,k,j,p_vash_8)+emis_ant(i,k,j,p_e_vash8)*conv
-                chem(i,k,j,p_vash_9)=chem(i,k,j,p_vash_9)+emis_ant(i,k,j,p_e_vash9)*conv
-                chem(i,k,j,p_vash_10)=chem(i,k,j,p_vash_10)+emis_ant(i,k,j,p_e_vash10)*conv
+                chem(i,k,j,p_p25)=chem(i,k,j,p_p25)+.5*emis_vol(i,k,j,p_e_vash4)*conv
+                chem(i,k,j,p_p10)=chem(i,k,j,p_p10)     &
+                                 +.5*emis_vol(i,k,j,p_e_vash4)*conv &
+                                 +emis_vol(i,k,j,p_e_vash3)*conv    &
+                                 +.5*emis_vol(i,k,j,p_e_vash2)*conv
                enddo
-            ENDIF
-         endif
+      CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACMSORG_KPP,RACMSORG_AQ,RACM_ESRLSORG_KPP)
+        write(0,*)'do later'
+                  do k=kts,kte
+                    conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                    chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                 &
+                     +emis_vol(i,k,j,p_e_vso2)*conv
+! aerosols for MADE/SORGAM
+                    conv=alt(i,k,j)*dtstep/dz8w(i,k,j)
+                    chem(i,k,j,p_p25i) = chem(i,k,j,p_p25i)                &
+                     +.25*emis_vol(i,k,j,p_e_vash4)*conv
+                    chem(i,k,j,p_nu0) = chem(i,k,j,p_nu0)                  &
+                     +.25*anthfac*factnumn*emis_vol(i,k,j,p_e_vash4)*conv
+                    chem(i,k,j,p_ac0) = chem(i,k,j,p_ac0)                  &
+                     +.75*anthfac*factnuma*emis_vol(i,k,j,p_e_vash4)*conv
+                    chem(i,k,j,p_p25j) = chem(i,k,j,p_p25j)                &
+                     +.75*emis_vol(i,k,j,p_e_vash4)*conv
+                    chem(i,k,j,p_antha) = chem(i,k,j,p_antha)              &
+                     +emis_vol(i,k,j,p_e_vash3)*conv !                      &
+!                     +.5*emis_vol(i,k,j,p_e_vash2)*conv
+                    chem(i,k,j,p_corn) = chem(i,k,j,p_corn)                &
+                     +anthfac*factnumc*emis_vol(i,k,j,p_e_vash3)*conv !     & 
+!                     +anthfac*factnumc*.5*emis_vol(i,k,j,p_e_vash2)*conv
+                  enddo
+      CASE (CHEM_VOLC)
+               write(0,*)'case chem_volc'
+               do k=kts,kte
+                 conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                 chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                   &
+                  +emis_vol(i,k,j,p_e_vso2)*conv
+               enddo
+               do k=kts,kte
+                conv=alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_vash_1)=chem(i,k,j,p_vash_1)+emis_vol(i,k,j,p_e_vash1)*conv
+                chem(i,k,j,p_vash_2)=chem(i,k,j,p_vash_2)+emis_vol(i,k,j,p_e_vash2)*conv
+                chem(i,k,j,p_vash_3)=chem(i,k,j,p_vash_3)+emis_vol(i,k,j,p_e_vash3)*conv
+                chem(i,k,j,p_vash_4)=chem(i,k,j,p_vash_4)+emis_vol(i,k,j,p_e_vash4)*conv
+                chem(i,k,j,p_vash_5)=chem(i,k,j,p_vash_5)+emis_vol(i,k,j,p_e_vash5)*conv
+                chem(i,k,j,p_vash_6)=chem(i,k,j,p_vash_6)+emis_vol(i,k,j,p_e_vash6)*conv
+                chem(i,k,j,p_vash_7)=chem(i,k,j,p_vash_7)+emis_vol(i,k,j,p_e_vash7)*conv
+                chem(i,k,j,p_vash_8)=chem(i,k,j,p_vash_8)+emis_vol(i,k,j,p_e_vash8)*conv
+                chem(i,k,j,p_vash_9)=chem(i,k,j,p_vash_9)+emis_vol(i,k,j,p_e_vash9)*conv
+                chem(i,k,j,p_vash_10)=chem(i,k,j,p_vash_10)+emis_vol(i,k,j,p_e_vash10)*conv
+               enddo
+      CASE (CHEM_VASH)
+               write(0,*)'case chem_vash'
+               do k=kts,kte
+                conv=alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_vash_1)=chem(i,k,j,p_vash_1)+emis_vol(i,k,j,p_e_vash1)*conv
+                chem(i,k,j,p_vash_2)=chem(i,k,j,p_vash_2)+emis_vol(i,k,j,p_e_vash2)*conv
+                chem(i,k,j,p_vash_3)=chem(i,k,j,p_vash_3)+emis_vol(i,k,j,p_e_vash3)*conv
+                chem(i,k,j,p_vash_4)=chem(i,k,j,p_vash_4)+emis_vol(i,k,j,p_e_vash4)*conv
+                chem(i,k,j,p_vash_5)=chem(i,k,j,p_vash_5)+emis_vol(i,k,j,p_e_vash5)*conv
+                chem(i,k,j,p_vash_6)=chem(i,k,j,p_vash_6)+emis_vol(i,k,j,p_e_vash6)*conv
+                chem(i,k,j,p_vash_7)=chem(i,k,j,p_vash_7)+emis_vol(i,k,j,p_e_vash7)*conv
+                chem(i,k,j,p_vash_8)=chem(i,k,j,p_vash_8)+emis_vol(i,k,j,p_e_vash8)*conv
+                chem(i,k,j,p_vash_9)=chem(i,k,j,p_vash_9)+emis_vol(i,k,j,p_e_vash9)*conv
+                chem(i,k,j,p_vash_10)=chem(i,k,j,p_vash_10)+emis_vol(i,k,j,p_e_vash10)*conv
+               enddo
+      CASE DEFAULT
+      END SELECT volc_select
+!!!!!!
       enddo
       enddo
-      ENDIF
+      ENDIF! config_flags%emiss_opt_vol == 1 .or. config_flags%emiss_opt_vol == 2
 
       do_plumerisefire = .false.
       IF ( config_flags%biomass_burn_opt == BIOMASSB_MOZC .OR. &

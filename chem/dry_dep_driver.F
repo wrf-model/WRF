@@ -592,7 +592,7 @@ CONTAINS
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
-   CASE (CHEM_VASH)
+   CASE (CHEM_VASH, CHEM_VOLC)
        CALL wrf_debug(15,'call vash settling routine')
          call vash_settling_driver(dtstep,config_flags,t_phy,moist,        &
          chem,rho_phy,dz8w,p8w,p_phy,                                      &

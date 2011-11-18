@@ -26,12 +26,14 @@ MODULES = \
 	module_bl_gfs.o \
 	module_bl_myjpbl.o \
 	module_bl_qnsepbl.o \
+	module_bl_qnsepbl09.o \
 	module_bl_acm.o \
 	module_bl_mynn.o \
 	module_bl_gwdo.o \
 	module_bl_myjurb.o \
 	module_bl_boulac.o \
 	module_bl_camuwpbl_driver.o \
+	module_bl_mfshconvpbl.o \
 	module_cu_camuwshcu_driver.o \
 	module_cu_camuwshcu.o \
 	module_cu_camzm_driver.o \
@@ -95,6 +97,8 @@ MODULES = \
 	module_sf_pxsfclay.o \
 	module_sf_temfsfclay.o \
 	module_sf_idealscmsfclay.o \
+	module_sf_scmflux.o \
+	module_sf_scmskintemp.o \
 	module_physics_addtendc.o \
 	module_physics_init.o \
 	module_gfs_machine.o \
@@ -162,6 +166,8 @@ module_bl_myjurb.o: ../share/module_model_constants.o
 module_bl_boulac.o: ../share/module_model_constants.o
 
 module_bl_qnsepbl.o: ../share/module_model_constants.o
+
+module_bl_qnsepbl09.o: ../share/module_model_constants.o
 
 module_bl_gfs.o: module_gfs_machine.o \
 		 module_gfs_physcons.o
@@ -382,11 +388,13 @@ module_physics_init.o : \
 		module_bl_acm.o			\
 		module_bl_myjpbl.o		\
 		module_bl_qnsepbl.o		\
+		module_bl_qnsepbl09.o		\
 		module_bl_mynn.o                \
 		module_bl_myjurb.o              \
 		module_bl_boulac.o              \
 		module_bl_camuwpbl_driver.o     \
 		module_bl_temf.o              \
+		module_bl_mfshconvpbl.o         \
 		module_cu_kf.o			\
 	        module_cu_g3.o                  \
 		module_cu_kfeta.o		\
@@ -468,6 +476,7 @@ module_pbl_driver.o:  \
 		module_bl_myjpbl.o \
 		module_bl_myjurb.o \
 		module_bl_qnsepbl.o \
+		module_bl_qnsepbl09.o \
 		module_bl_acm.o \
 		module_bl_ysu.o \
 		module_bl_mrf.o \
@@ -478,6 +487,7 @@ module_pbl_driver.o:  \
 		module_bl_gwdo.o \
 		module_wind_fitch.o \
 		module_bl_temf.o \
+		module_bl_mfshconvpbl.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o 
@@ -524,6 +534,8 @@ module_surface_driver.o: \
 		module_sf_tmnupdate.o		\
 		module_sf_temfsfclay.o		\
 		module_sf_idealscmsfclay.o	\
+		module_sf_scmflux.o		\
+		module_sf_scmskintemp.o		\
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o  

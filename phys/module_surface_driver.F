@@ -29,7 +29,8 @@ CONTAINS
      &          ,xicem,isice,iswater,ct,tke_pbl                       &
 #endif
      &          ,albbck,embck,lh,sh2o,shdmax,shdmin,z0                &
-     &          ,flqc,flhc,psfc,sst,sstsk,dtw,sst_update,sst_skin,t2,emiss               &
+     &          ,flqc,flhc,psfc,sst,sstsk,dtw,sst_update,sst_skin     &
+     &          ,scm_force_skintemp,scm_force_flux,t2,emiss           &
      &          ,sf_sfclay_physics,sf_surface_physics,ra_lw_physics   &
      &          ,mosaic_lu,mosaic_soil                                &
      &          ,landusef,soilctop,soilcbot,ra,rs,nlcat,nscat,vegf_px & ! PX-LSM
@@ -149,11 +150,13 @@ CONTAINS
    USE module_sf_pxsfclay
    USE module_sf_pxlsm
    USE module_sf_temfsfclay
-   USE module_sf_idealscmsfclay
 #if ( EM_CORE==1)
    USE module_sf_mynn
    USE module_sf_oml
+   USE module_sf_idealscmsfclay
 #endif
+   USE module_sf_scmflux       
+   USE module_sf_scmskintemp
 
 #if ( NMM_CORE == 1 )
    USE module_sf_gfdl
@@ -345,7 +348,8 @@ CONTAINS
 
    INTEGER, INTENT(IN) :: sf_sfclay_physics, sf_surface_physics,      &
                           sf_urban_physics,ra_lw_physics, sst_update
-   INTEGER, INTENT(IN),OPTIONAL :: sst_skin, tmn_update
+   INTEGER, INTENT(IN),OPTIONAL :: sst_skin, tmn_update,              &
+                                   scm_force_skintemp, scm_force_flux 
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
      &           i_start,i_end,j_start,j_end
@@ -1069,6 +1073,36 @@ CONTAINS
 ! DX varies spatially in NMM, therefore, SFCLAY cannot be called
 ! because it takes a scalar DX. NMM passes in a dummy value for this
 ! scalar.  NEEDS FURTHER ATTENTION. JM 20050215
+       IF(PRESENT(SCM_FORCE_FLUX))THEN
+         IF (scm_force_flux .EQ. 1) THEN
+! surface forcing by observed fluxes
+         CALL scmflux(u_phytmp, v_phytmp, t_phy, qv_curr, p_phy, dz8w,   &
+                     cp, rovcp, xlv, psfc, cpm, xland,                   &
+                     psim, psih, hfx, qfx, lh, tsk, flhc, flqc,          &
+                     znt, gz1oz0, wspd,                                  &
+                     julian_in, karman, p1000mb,                         &
+                     itimestep,chklowq,                                  &
+                     ids, ide, jds, jde, kds, kde,                       &
+                     ims, ime, jms, jme, kms, kme,                       &
+                     i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte   )
+         ENDIF
+       ENDIF
+       IF(PRESENT(SCM_FORCE_SKINTEMP))THEN
+         IF (scm_force_skintemp .EQ. 1) THEN
+! surface forcing by observed skin temperature
+         CALL scmskintemp(tsk, julian_in, itimestep,                     &
+                     ids, ide, jds, jde, kds, kde,                       &
+                     ims, ime, jms, jme, kms, kme,                       &
+                     i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte   )
+         ENDIF
+!         IF (scm_force_skintemp .EQ. 2) THEN
+! surface forcing by gabls2 skin temperature
+!         CALL scmgabls2(tsk, itimestep, dt,                              &
+!                     ids, ide, jds, jde, kds, kde,                       &
+!                     ims, ime, jms, jme, kms, kme,                       &
+!                     i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte   )
+!         ENDIF
+       ENDIF
        IF (PRESENT(qv_curr)                            .AND.    &
            PRESENT(mol)        .AND.  PRESENT(regime)  .AND.    &
                                                       .TRUE. ) THEN
@@ -1102,7 +1136,7 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
-               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux  )
 #if ( EM_CORE==1)
            DO j = j_start(ij),j_end(ij)
            DO i = i_start(ij),i_end(ij)
@@ -1218,6 +1252,30 @@ CONTAINS
        ENDIF
 
       CASE (QNSESFCSCHEME)
+       IF(PRESENT(SCM_FORCE_FLUX))THEN
+         IF (scm_force_flux .EQ. 1) THEN
+! surface forcing by observed fluxes
+         CALL scmflux(u_phytmp, v_phytmp, t_phy, qv_curr, p_phy, dz8w,   &
+                     cp, rovcp, xlv, psfc, cpm, xland,                   &
+                     psim, psih, hfx, qfx, lh, tsk, flhc, flqc,          &
+                     znt, gz1oz0, wspd,                                  &
+                     julian_in, karman, p1000mb,                         &
+                     itimestep,chklowq,                                  &
+                     ids, ide, jds, jde, kds, kde,                       &
+                     ims, ime, jms, jme, kms, kme,                       &
+                     i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte   )
+         ENDIF
+       ENDIF
+       IF(PRESENT(SCM_FORCE_SKINTEMP))THEN
+         IF (scm_force_skintemp .EQ. 1) THEN
+! surface forcing by observed skin temperature
+         CALL scmskintemp(tsk, julian_in, itimestep,                     &
+                     ids, ide, jds, jde, kds, kde,                       &
+                     ims, ime, jms, jme, kms, kme,                       &
+                     i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte   )
+         ENDIF
+       ENDIF
+
        IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr) .AND.    &
                                                       .TRUE. ) THEN
             CALL wrf_debug(100,'in QNSESFC')
@@ -1235,7 +1293,8 @@ CONTAINS
               u10,v10,tshltr,th10,qshltr,q10,pshltr,               &
               ids,ide, jds,jde, kds,kde,                           &
               ims,ime, jms,jme, kms,kme,                           &
-              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+              i_start(ij),i_end(ij), j_start(ij),j_end(ij),     &
+              kts,kte,scm_force_flux    )
        ELSE
          CALL wrf_error_fatal('Lacking arguments for QNSESFC in surface driver')
        ENDIF

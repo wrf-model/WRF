@@ -103,6 +103,10 @@ CONTAINS
                          ,te_temf          & ! WA 12/21/09
                          ,cf3d_temf        & ! WA 9/27/10
                          ,wm_temf          & ! WA 2/22/11
+                         ,mfshconv                             & ! Optional for qnse
+                         ,massflux_EDKF, entr_EDKF, detr_EDKF  & ! Optional for qnse
+                         ,thl_up, thv_up, rt_up                & ! Optional for qnse
+                         ,rv_up, rc_up, u_up, v_up, frac_up    & ! Optional for qnse
                          )
 
 !-----------------------------------------------------------------
@@ -232,6 +236,15 @@ CONTAINS
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
              RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,EXCH_H,TKE_PBL
+
+  LOGICAL, INTENT(IN), OPTIONAL ::  mfshconv ! WRF JP
+  REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT), OPTIONAL :: &
+                                            massflux_EDKF, entr_EDKF, detr_EDKF & 
+                                                   ,thl_up, thv_up, rt_up       &
+                                                   ,rv_up, rc_up, u_up, v_up    &
+                                                   ,frac_up
+
+
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
              cugd_tten,cugd_ttens,cugd_qvten,                &
              cugd_qvtens,cugd_qcten
@@ -552,7 +565,11 @@ integer myproc
    CALL bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,        &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
-                num_soil_layers,TKE_PBL,                        &
+                num_soil_layers,TKE_PBL,mfshconv,               &
+                massflux_EDKF, entr_EDKF, detr_EDKF, & 
+                thl_up, thv_up, rt_up,       &
+                rv_up, rc_up, u_up, v_up,    &
+                frac_up, &
                 EXCH_H,VEGFRA,                                  &
                 SNOW,SNOWC, CANWAT,SMSTAV,                      &
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
@@ -1267,7 +1284,11 @@ integer myproc
    SUBROUTINE bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,  &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
-                num_soil_layers,TKE_PBL,                        &
+                num_soil_layers,TKE_PBL,mfshconv,               &
+                massflux_EDKF, entr_EDKF, detr_EDKF, & 
+                thl_up, thv_up, rt_up,       &
+                rv_up, rc_up, u_up, v_up,    &
+                frac_up, &
                 EXCH_H,VEGFRA,                                  &
                 SNOW,SNOWC, CANWAT,SMSTAV,                      &
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
@@ -1333,6 +1354,8 @@ integer myproc
    USE module_bl_boulac
    USE module_bl_camuwpbl_driver, ONLY :  camuwpblinit
    USE module_bl_qnsepbl
+   USE module_bl_qnsepbl09
+   USE module_bl_mfshconvpbl
 #if ( EM_CORE == 1 )
    USE module_bl_mynn
    USE module_bl_temf
@@ -1402,12 +1425,20 @@ integer myproc
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
                                                            RUBLTEN, &
                                                            RVBLTEN, &
- 						          EXCH_H,   &
+                                                          EXCH_H,   &
                                                           RTHBLTEN, &
                                                           RQVBLTEN, &
                                                           RQCBLTEN, &
                                                           RQIBLTEN, &
                                                           TKE_PBL
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT), OPTIONAL :: &
+                              massflux_EDKF, entr_EDKF, detr_EDKF & 
+                                     ,thl_up, thv_up, rt_up       &
+                                     ,rv_up, rc_up, u_up, v_up    &
+                                     ,frac_up
+
+  LOGICAL, INTENT(IN), OPTIONAL ::  mfshconv ! WRF JP
+
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::     TSK
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::  TMN
    CHARACTER(LEN=*), INTENT(IN)   :: MMINLU
@@ -1818,6 +1849,31 @@ integer myproc
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
+           
+           IF ( PRESENT (mfshconv) ) THEN
+              if (mfshconv) &
+              CALL mfshconvpblinit( massflux_EDKF, entr_EDKF, detr_EDKF & 
+                                    ,thl_up, thv_up, rt_up              &
+                                    ,rv_up, rc_up, u_up, v_up           &
+                                    ,frac_up, restart,                  &
+                                    allowed_to_read ,                   &
+                                    ids, ide, jds, jde, kds, kde,       &
+                                    ims, ime, jms, jme, kms, kme,       &
+                                    its, ite, jts, jte, kts, kte   )  
+           ENDIF
+
+      CASE (QNSEPBL09SCHEME)
+           if(isfc .ne. 4)CALL wrf_error_fatal &
+            ( 'module_physics_init: use qnsesfc scheme for this pbl option' )
+           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+           CALL qnsepblinit09(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
+                        TKE_PBL,EXCH_H,restart,               &
+                        allowed_to_read ,                     &
+                        ids, ide, jds, jde, kds, kde,         &
+                        ims, ime, jms, jme, kms, kme,         &
+                        its, ite, jts, jte, kts, kte          )
+
 #if (NMM_CORE != 1)
       CASE (BOULACSCHEME)
            if(isfc .ne. 1 .and. isfc .ne. 2)CALL wrf_error_fatal &

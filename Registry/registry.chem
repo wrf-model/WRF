@@ -19,6 +19,9 @@ state   integer last_chem_time_second    -  misc    -         -      r       "la
 #
 state   integer emissframes      -          -          -         -      -       "emissframes"           ""         ""
 state   integer fireemissframes  -        -          -        -        -      "fireemissframes"       ""         ""
+#
+# Anthropogenic emissions
+#
 state   real     -            i+jf     emis_ant     -         -      -       -                     "Anthropogenic Emissions"         ""
 state    real  e_iso          i+jf     emis_ant     1         Z      i5r    "E_ISO"               "Isoprene EMISSIONS (Anth. for RADM/RACM, Anth+Bio for CBMZ)"  "mol km^-2 hr^-1"
 state    real  e_so2          i+jf     emis_ant     1         Z      i5r    "E_SO2"               "EMISSIONS"          "mol km^-2 hr^-1"
@@ -89,17 +92,6 @@ state    real  e_co_bb          i+jf     emis_ant     1         Z      i5     "E
 state    real  e_bc          i+jf     emis_ant     1         Z      i5     "E_BC"                "EMISSIONS BC AER"       "ug/m3 m/s"
 state    real  e_oc          i+jf     emis_ant     1         Z      i5     "E_OC"                "EMISSIONS BC AER"       "ug/m3 m/s"
 state    real  e_sulf        i+jf     emis_ant     1         Z      i5     "E_sulf"              "EMISSIONS SO4"          "mol km^-2 hr^-1"
-# volcanic ash emissions
-state    real  e_vash1          i+jf     emis_ant     1         Z      i5h    "E_VASH1"                "EMISSIONS VOLCANIC ASH BIN 1"                 "ug/m3 m/s"
-state    real  e_vash2          i+jf     emis_ant     1         Z      i5     "E_VASH2"                "EMISSIONS VOLCANIC ASH BIN 2"                 "ug/m3 m/s"
-state    real  e_vash3          i+jf     emis_ant     1         Z      i5     "E_VASH3"                "EMISSIONS VOLCANIC ASH BIN 3"                 "ug/m3 m/s"
-state    real  e_vash4          i+jf     emis_ant     1         Z      i5     "E_VASH4"                "EMISSIONS VOLCANIC ASH BIN 4"                 "ug/m3 m/s"
-state    real  e_vash5          i+jf     emis_ant     1         Z      i5     "E_VASH5"                "EMISSIONS VOLCANIC ASH BIN 5"                 "ug/m3 m/s"
-state    real  e_vash6          i+jf     emis_ant     1         Z      i5     "E_VASH6"                "EMISSIONS VOLCANIC ASH BIN 6"                 "ug/m3 m/s"
-state    real  e_vash7          i+jf     emis_ant     1         Z      i5     "E_VASH7"                "EMISSIONS VOLCANIC ASH BIN 7"                 "ug/m3 m/s"
-state    real  e_vash8          i+jf     emis_ant     1         Z      i5     "E_VASH8"                "EMISSIONS VOLCANIC ASH BIN 8"                 "ug/m3 m/s"
-state    real  e_vash9          i+jf     emis_ant     1         Z      i5     "E_VASH9"                "EMISSIONS VOLCANIC ASH BIN 9"                 "ug/m3 m/s"
-state    real  e_vash10         i+jf     emis_ant     1         Z      i5     "E_VASH10"               "EMISSIONS VOLCANIC ASH BIN 10"                 "ug/m3 m/s"
 
 #SAPRCNOV additional emissions, automatically created using diff_mechEmiss_wrfRegistry.m script (pablo-saide@uiowa.edu)
 state   real    e_c2h2          i+jf    emis_ant        1       Z       i5      "E_C2H2"        "C2H2 emissions"        "mol km^-2 hr^-1"
@@ -151,6 +143,22 @@ state    real  eseas1       i{dust}jf      emis_seas      1         Z      -    
 state    real  eseas2       i{dust}jf      emis_seas      1         Z      -     "ESEAS2"         "Sea-Salt emissions bin2 "  ""
 state    real  eseas3       i{dust}jf      emis_seas      1         Z      -     "ESEAS3"         "Sea-Salt emissions bin3 "  ""
 state    real  eseas4       i{dust}jf      emis_seas      1         Z      -     "ESEAS4"         "Sea-Salt emissions bin4 "  ""
+#
+# volcanic ash emissions
+#
+state   real     -              ikjf     emis_vol     -         -      -       -                      "Volcanic Emissions"         ""
+state    real  e_vash1          ikjf     emis_vol     1         Z      i{13}r    "E_VASH1"               "Volcanic Emissions, bin1"   "ug/m2/s"
+state    real  e_vash2          ikjf     emis_vol     1         Z      i{13}r    "E_VASH2"               "Volcanic Emissions, bin2"   "ug/m2/s"
+state    real  e_vash3          ikjf     emis_vol     1         Z      i{13}r    "E_VASH3"               "Volcanic Emissions, bin3"   "ug/m2/s"
+state    real  e_vash4          ikjf     emis_vol     1         Z      i{13}r    "E_VASH4"               "Volcanic Emissions, bin4"   "ug/m2/s"
+state    real  e_vash5          ikjf     emis_vol     1         Z      i{13}r    "E_VASH5"               "Volcanic Emissions, bin5"   "ug/m2/s"
+state    real  e_vash6          ikjf     emis_vol     1         Z      i{13}r    "E_VASH6"               "Volcanic Emissions, bin6"   "ug/m2/s"
+state    real  e_vash7          ikjf     emis_vol     1         Z      i{13}r    "E_VASH7"               "Volcanic Emissions, bin7"   "ug/m2/s"
+state    real  e_vash8          ikjf     emis_vol     1         Z      i{13}r    "E_VASH8"               "Volcanic Emissions, bin8"   "ug/m2/s"
+state    real  e_vash9          ikjf     emis_vol     1         Z      i{13}r    "E_VASH9"               "Volcanic Emissions, bin9"   "ug/m2/s"
+state    real  e_vash10         ikjf     emis_vol     1         Z      i{13}r    "E_VASH10"              "Volcanic Emissions, bin10"  "ug/m2/s"
+state    real  e_vso2           ikjf     emis_vol     1         Z      i{13}r    "E_VSO2"                "Volcanic Emissions, SO2"    "mol/m2/h"
+#
 # biomassburning emission arrays (used by fire plume rise)
 state   real     -          ikjf    ebu      -        -        -         -                    "Biomass burnung Emissions"         ""
 state    real  ebu_no       ikjf     ebu           1         Z        -      "ebu_no"        "biomass burning emiss"  "mol km^-2 hr^-1"
@@ -411,6 +419,9 @@ state    real  EFmegan        ij{nm}     misc        1         -      -        "
 state    real  backg_oh       ikj     misc        1         -      i08r    "BACKG_OH"       "Background OH for Aerosol-GOcart option"       "volume mixing ratio"
 state    real  backg_h2o2     ikj     misc        1         -      i08r    "BACKG_H2O2"     "Background H2O2 for Aerosol-GOcart option"     "volume mixing ratio"
 state    real  backg_no3      ikj     misc        1         -      i08r    "BACKG_NO3"      "Background NO3 for Aerosol-GOcart option"      "volume mixing ratio"
+
+state    real  clayfrac       ij      misc        1         -      i01r    "CLAYFRAC"       "Clay fraction in each grid cell (0-1)"      "none"
+state    real  sandfrac       ij      misc        1         -      i01r    "SANDFRAC"       "Sand fraction in each grid cell (0-1)"      "none"
 
 # These 3D arrays are output from the SOA module for different purposes
 state    real  br_rto         ikj     misc        1         -      h        "BRNCH_RTO"      "branching ratio to determine NOx condition"  ""            "ug m^-3"
@@ -2265,6 +2276,7 @@ rconfig   integer     aer_drydep_opt      namelist,chem          max_domains    
 rconfig   integer     diagnostic_chem     namelist,chem          max_domains    1       rh    "diagnostic_chem"     ""      ""
 rconfig   integer     aer_aerodynres_opt  namelist,chem          max_domains    1       rh    "aer_aerodynres_opt"  ""      ""
 rconfig   integer     emiss_opt           namelist,chem          max_domains    4       rh    "emiss_opt"           ""      ""
+rconfig   integer     emiss_opt_vol       namelist,chem          max_domains    4       rh    "emiss_opt_vol"       ""      ""
 rconfig   integer     dust_opt            namelist,chem          1              0       rh    "dust_opt"            ""      ""
 rconfig   integer     dmsemis_opt         namelist,chem          1              0       rh    "dmsemis_opt"         ""      ""
 rconfig   integer     seas_opt            namelist,chem          1              0       rh    "seas_opt"            ""      ""
@@ -2296,6 +2308,11 @@ rconfig   character   exo_coldens_inname  namelist,chem          max_domains    
 rconfig   character   wes_seasonal_inname namelist,chem          max_domains    "wrf_season_wes_usgs_<domain>.nc"      h    "name of wesely seasonal infile"  ""      ""
 
 rconfig   integer        chemdiag        namelist,chem        max_domains        0      -     "Chemical tendency diagnostics"   ""    ""
+
+# Dust tuning constant for AFWA GOCART (dust_opt=3)
+rconfig   real        dust_alpha          namelist,chem          1    1.      rh    "dust_alpha"    "dust tuning constant"    "m^-1"
+rconfig   real        dust_gamma          namelist,chem          1    1.      rh    "dust_gamma"    "erodibility exponential tuning const"    ""
+rconfig   real        dust_smtune         namelist,chem          1    1.      rh    "dust_smtune"   "soil moisture tuning constant"    ""
 
 # additional namelist variables to control deposition of the organic condensable vapors
 rconfig   real        depo_fact           namelist,chem          max_domains    0       rh    "deposition factor for SOA vapors"      ""      ""
@@ -2396,6 +2413,9 @@ package   gocartradm2     chem_opt==303                   -             chem:so2
 package   chem_vash   chem_opt==400              -             chem:vash_1,vash_2,vash_3,vash_4,vash_5,vash_6,vash_7,vash_8,vash_9,vash_10
 # dust only (per AFWA request)
 package   dust   chem_opt==401              -             chem:dust_1,dust_2,dust_3,dust_4,dust_5
+# volc ash plus SO2 and Sulf
+package   chem_volc   chem_opt==402              -             chem:so2,sulf,vash_1,vash_2,vash_3,vash_4,vash_5,vash_6,vash_7,vash_8,vash_9,vash_10
+#
 #emission package definitions
 #
 package   eradm           emiss_opt==2                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3
@@ -2405,10 +2425,11 @@ package   ecptec          emiss_opt==5                   -             emis_ant:
 package   gocart_ecptec   emiss_opt==6                   -             emis_ant:e_so2,e_sulf,e_bc,e_oc,e_pm_25,e_pm_10
 package   mozem           emiss_opt==7                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16
 package   mozcem          emiss_opt==8                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16,e_pm_10,e_pm_25,e_bc,e_oc,e_sulf
-package   vash    emiss_opt==9                   -             emis_ant:e_vash1,e_vash2,e_vash3,e_vash4,e_vash5,e_vash6,e_vash7,e_vash8,e_vash9,e_vash10
 package   mozmem           emiss_opt==10                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_co_a,e_orgj_a,e_co_bb,e_orgj_bb,e_voca,e_vocbb
 package   esaprcnov       emiss_opt==13                  -             emis_ant:e_so2,e_c2h6,e_c3h8,e_c2h2,e_alk3,e_alk4,e_alk5,e_ethene,e_c3h6,e_ole1,e_ole2,e_aro1,e_aro2,e_hcho,e_ccho,e_rcho,e_acet,e_mek,e_isoprene,e_terp,e_sesq,e_co,e_no,e_no2,e_phen,e_cres,e_meoh,e_gly,e_mgly,e_bacl,e_isoprod,e_methacro,e_mvk,e_prod2,e_ch4,e_bald,e_hcooh,e_cco_oh,e_rco_oh,e_nh3,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_orgi_a,e_orgj_a,e_orgi_bb,e_orgj_bb
-
+#
+package   vash    emiss_opt_vol==1                   -             emis_vol:e_vash1,e_vash2,e_vash3,e_vash4,e_vash5,e_vash6,e_vash7,e_vash8,e_vash9,e_vash10
+package   vashso2 emiss_opt_vol==2                   -             emis_vol:e_vash1,e_vash2,e_vash3,e_vash4,e_vash5,e_vash6,e_vash7,e_vash8,e_vash9,e_vash10,e_vso2
 
 #
 #package   seasalt_pnnl    emiss_ssalt_opt==1                   -             -
@@ -2437,6 +2458,7 @@ package   opt_out      opt_pars_out==1             -          ext_coef:extcof3,e
 
 # dust and sea salt packages
 package   dustgocart    dust_opt==1                  -              emis_dust:edust1,edust2,edust3,edust4,edust5 
+package   dustgocartafwa   dust_opt==3               -              emis_dust:edust1,edust2,edust3,edust4,edust5
 package   seasgocart    seas_opt==1                  -              emis_seas:eseas1,eseas2,eseas3,eseas4
 package   dmsgocart    dmsemis_opt==1                  -              -
 package   volume_approx    aer_op_opt==1                -             -

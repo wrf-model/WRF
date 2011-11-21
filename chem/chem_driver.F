@@ -512,6 +512,8 @@
        CALL wrf_debug(15,'calling mozcart driver from chem_driver')
     CASE (CHEM_TRACER,CHEM_TRACE2)
        CALL wrf_debug(15,'tracer mode: only doing emissions and dry dep in chem_driver')
+    CASE (CHEM_VOLC)
+       CALL wrf_debug(15,'Full Volcanic Ash mode: doing emissions (SO2 + ASH), settling, and subgrid transport in chem_driver')
     CASE (CHEM_VASH)
        CALL wrf_debug(15,'Volcanic Ash mode: only doing emissions, settling, and subgrid transport in chem_driver')
     CASE (DUST)
@@ -796,7 +798,7 @@
 
 !--- emissions
 
-    if(config_flags%emiss_inpt_opt > 0)then
+    if(config_flags%emiss_inpt_opt > 0 .or. config_flags%dust_opt > 0)then
       call wrf_debug(15,'calling emissions driver')
 
       ! limit ktop by WMO tropopause for cpm ltng param
@@ -817,7 +819,7 @@
 #if (EM_CORE == 1 )
               grid%gmt,ijulian,rri,t_phy,moist,p8w,t8w,u_phy,v_phy,vvel,               &
 #endif
-              grid%e_bio,p_phy,chem,rho,dz8w,grid%ne_area,emis_ant,grid%tsk,               &
+              grid%e_bio,p_phy,chem,rho,dz8w,grid%ne_area,emis_ant,emis_vol,grid%tsk,      &
               grid%erod,g,emis_seas,emis_dust,tracer, &
               ebu , ebu_in,grid%mean_fct_agtf,grid%mean_fct_agef,grid%mean_fct_agsv,       &
               grid%mean_fct_aggr,grid%firesize_agtf, &
@@ -841,6 +843,8 @@
               grid%ebio_c2h5oh,grid%ebio_ch3cooh,grid%ebio_mek,grid%ebio_bigene,           &
               grid%ebio_c2h6,grid%ebio_c2h4,grid%ebio_c3h6,grid%ebio_c3h8,grid%ebio_so2,   &
               grid%ebio_dms,                                                               &
+              grid%clayfrac,grid%sandfrac,grid%dust_alpha,grid%dust_gamma,grid%dust_smtune,&
+              grid%snowh,grid%zs,                                                          &
 #if (NMM_CORE == 1)
               grid%T2,grid%RSWIN,                                                         &
 #endif
@@ -895,6 +899,7 @@
       if( do_photstep .and. &
            config_flags%chem_opt /= CHEM_TRACER .and. &
            config_flags%chem_opt /= CHEM_VASH .and. &
+           config_flags%chem_opt /= CHEM_VOLC .and. &
            config_flags%chem_opt /= DUST .and. &
            config_flags%chem_opt /= CHEM_TRACE2 ) then
          call wrf_debug(15,'calling optical driver')
@@ -928,6 +933,7 @@
       if( do_photstep .and. &
            config_flags%chem_opt /= CHEM_TRACER .and. &
            config_flags%chem_opt /= CHEM_VASH .and. &
+           config_flags%chem_opt /= CHEM_VOLC .and. &
            config_flags%chem_opt /= DUST .and. &
            config_flags%chem_opt /= CHEM_TRACE2 ) then
          call wrf_debug(15,'calling photolysis driver')
@@ -1147,6 +1153,7 @@
      if( do_chemstep .and.                           &
           config_flags%chem_opt /= CHEM_TRACER .and. &
           config_flags%chem_opt /= CHEM_VASH .and. &
+          config_flags%chem_opt /= CHEM_VOLC .and. &
           config_flags%chem_opt /= DUST .and. &
           config_flags%chem_opt /= CHEM_TRACE2 ) then
 
@@ -1389,6 +1396,20 @@ CALL kpp_mechanism_driver (chem,                                                
        end if
 
 end if !Chemistry time step check
+!
+! do so2 to sulf conversion for full volc case
+! since we do not have h2o2 as a variable, pass in p_h2o2 as zero
+! will have to use backgrund value
+!
+        if(config_flags%chem_opt == CHEM_VOLC)then
+          CALL wrf_debug(15,'gocart so2-so4 conversion')
+          call  so2so4(chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,           &
+         grid%gd_cloud_b, grid%gd_cldfr,                                    &
+         NUM_CHEM,NUM_MOIST,                                                &
+         ids,ide, jds,jde, kds,kde,                                         &
+         ims,ime, jms,jme, kms,kme,                                         &
+         its,ite, jts,jte, kts,kte                                          )
+        endif
 !
 !   now do wet removal; first LS if there is no explicit aqeous phase
 !

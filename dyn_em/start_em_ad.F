@@ -559,6 +559,9 @@
                       grid%TYR, grid%TYRA, grid%TDLY, grid%TLAG, grid%NYEAR, grid%NDAY,grid%tmn_update, &
                       grid%achfx, grid%aclhf, grid%acgrdflx                 &
                       ,grid%te_temf,grid%cf3d_temf,grid%wm_temf        & ! WA
+                      ,grid%mfshconv,grid%massflux_EDKF, grid%entr_EDKF, grid%detr_EDKF  & 
+                      ,grid%thl_up,grid%thv_up,grid%rt_up                                &
+                      ,grid%rv_up,grid%rc_up,grid%u_up,grid%v_up,grid%frac_up            &
                       )
        ENDIF   !tgs
 #endif

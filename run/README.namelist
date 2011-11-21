@@ -468,7 +468,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, YSU scheme
                                      = 2, Mellor-Yamada-Janjic TKE scheme
                                      = 3, NCEP Global Forecast System scheme (NMM only)
-                                     = 4, Quasi-Normal Scale Elimination PBL
+                                     = 4, Eddy-diffusivity Mass Flux, Quasi-Normal Scale Elimination PBL
+                                     = 94, Quasi-Normal Scale Elimination PBL
                                      = 5, MYNN 2.5 level TKE scheme, works with
                                           sf_sfclay_physics=1 or 2 as well as 5
                                      = 6, MYNN 3rd level TKE scheme, works only

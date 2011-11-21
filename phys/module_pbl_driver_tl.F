@@ -63,8 +63,11 @@ CONTAINS
 #if (NMM_CORE != 1)
                ,wu_tur,wv_tur,wt_tur,wq_tur &
 #endif
-               ,a_e_bep,b_e_bep,dlg_bep                              &
-               ,dl_u_bep                                             &
+               ,a_e_bep,b_e_bep,dlg_bep,dl_u_bep           &
+               ,wthv_mf, lm_bl89                           &
+               ,mfshconv, massflux_EDKF, entr_EDKF, detr_EDKF    & 
+               ,thl_up, thv_up, rt_up ,rv_up, rc_up, u_up, v_up    &
+               ,frac_up,rc_mf                                      & 
 ! Wind Turbine Parameterizations
                ,phb,xlat_u,xlong_u,xlat_v,xlong_v,id                 &
 ! variables required for camuwpbl scheme
@@ -77,14 +80,14 @@ CONTAINS
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
-                   SURFDRAGSCHEME, TEMFPBLSCHEME, SURFDRAGSCHEME, &
+                   SURFDRAGSCHEME, TEMFPBLSCHEME, QNSEPBL09SCHEME, &
                    p_qi,param_first_scalar 
    USE module_wind_generic, ONLY : windspec
 #else
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
                    , QNSEPBLSCHEME, p_qi,param_first_scalar &
-                   , TEMFPBLSCHEME                          &
+                   , TEMFPBLSCHEME, QNSEPBL09SCHEME         &
                    , MYJSFCSCHEME
 #endif
 
@@ -94,6 +97,7 @@ CONTAINS
 
    USE module_bl_myjpbl
    USE module_bl_qnsepbl
+   USE module_bl_qnsepbl09
    USE module_bl_ysu
    USE module_bl_mrf
    USE module_bl_gfs
@@ -104,6 +108,7 @@ CONTAINS
    USE g_module_bl_surface_drag
    USE module_bl_camuwpbl_driver, only:CAMUWPBL
    USE module_bl_temf
+   USE module_bl_mfshconvpbl
 #if (EM_CORE==1)
    USE module_bl_mynn
    USE module_wind_fitch
@@ -115,6 +120,7 @@ CONTAINS
    !      1. ysupbl
    !      2. myjpbl
    !      4. qnsepbl
+   !     94. qnsepbl09 (old version)
    !      5. mynnpbl2
    !      6. mynnpbl3
    !      7. acmpbl
@@ -510,6 +516,18 @@ CONTAINS
                                                               oa1,oa2,oa3,oa4, &
                                                               ol1,ol2,ol3,ol4
 
+! Variables and Diagnostic for QNSE and EDKF JP
+   LOGICAL, INTENT(IN), OPTIONAL ::  mfshconv ! WRF JP
+
+   REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,  &
+               INTENT(INOUT)    ::    massflux_EDKF, entr_EDKF, detr_EDKF & 
+                                     ,thl_up, thv_up, rt_up       &
+                                     ,rv_up, rc_up, u_up, v_up    &
+                                     ,frac_up,rc_mf  
+   REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL   &
+                                ::    wthv_mf, lm_bl89
+
+
 !  LOCAL  VAR
 
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::v_phytmp
@@ -541,6 +559,15 @@ CONTAINS
 
    REAL, ALLOCATABLE, DIMENSION( :, :, : )::sf         ! surfaces
    REAL, ALLOCATABLE, DIMENSION( :, :, : )::vl         ! volumes
+
+
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rumften     ! U shallow convection tendency   
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rvmften     ! V shallow convection tendency  
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rqvmften    ! QV shallow convection tendency 
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rqcmften    ! QC shallow convection tendency
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rthmften    ! TH shallow convection tendency
+!  REAL, ALLOCATABLE, DIMENSION( :, :, : )::wthv_mf     ! Buoyancy production from shallow convection mf scheme
+!  REAL, ALLOCATABLE, DIMENSION( :, :, : )::lm_bl89     ! Buoyancy production from shallow convection mf scheme
 
    REAL    :: DTMIN,DTBL
 !
@@ -726,6 +753,24 @@ CONTAINS
      ALLOCATE (vl(ims:ime,kms:kme,jms:jme) )       ! volumes
    ENDIF
 
+! Allocation of local arrays for shallow convection mass flux scheme
+   IF ( bl_pbl_physics .EQ. QNSEPBLSCHEME ) THEN
+! need to fix later: ww
+     IF ( PRESENT (MFSHCONV) )THEN
+     IF ( MFSHCONV )THEN
+       ALLOCATE (rumften(ims:ime,kms:kme,jms:jme)) 
+       ALLOCATE (rvmften(ims:ime,kms:kme,jms:jme)) 
+       ALLOCATE (rqvmften(ims:ime,kms:kme,jms:jme)) 
+       ALLOCATE (rqcmften(ims:ime,kms:kme,jms:jme)) 
+       ALLOCATE (rthmften(ims:ime,kms:kme,jms:jme))
+       rumften(:,:,:)=0.
+       rvmften(:,:,:)=0.
+       rqcmften(:,:,:)=0.
+       rqvmften(:,:,:)=0.
+       rthmften(:,:,:)=0.
+     ENDIF
+     ENDIF
+   ENDIF
 
 ! SAVE OLD VALUES
 
@@ -771,6 +816,19 @@ CONTAINS
          ENDIF
       ENDDO
       ENDDO
+
+      IF (bl_pbl_physics .EQ. QNSEPBLSCHEME ) THEN
+         IF ( PRESENT ( wthv_mf ) .AND. PRESENT ( LM_BL89 ) ) THEN
+           DO j=j_start(ij),j_end(ij)
+           DO i=i_start(ij),i_end(ij)
+           DO k=kms,kme
+              wthv_mf(i,k,j) = 0.
+              lm_bl89(i,k,j) = 0.
+           ENDDO
+           ENDDO
+           ENDDO
+         ENDIF
+      ENDIF
 
 #if (NMM_CORE != 1)
       IF ( idiff.eq.1 ) THEN
@@ -1134,8 +1192,80 @@ CONTAINS
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                                                         .TRUE.  ) THEN
+             IF ( PRESENT (MFSHCONV) )THEN
+               IF ( MFSHCONV )THEN
+               CALL wrf_debug(100,'in MFSHCONVPBL')
+               CALL mfshconvpbl(DT=dt,STEPBL=stepbl,HT=ht,DZ=dz8w         &
+                    ,RHO=rho,PMID=p_phy,PINT=p8w,TH=th_phy,EXNER=pi_phy   &
+                    ,QV=qv_curr, QC=qc_curr                    &
+                    ,U=u_phy,V=v_phy                                      &
+                    ,HFX=hfx, QFX=qfx,TKE=tke_pbl                         &
+                    ,RUBLTEN=rumften,RVBLTEN=rvmften,RTHBLTEN=rthmften    &
+                    ,RQVBLTEN=rqvmften,RQCBLTEN=rqcmften                  &
+                    ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE      &
+                    ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME      &
+                    ,ITS=ITS,ITE=ITE,JTS=JTS,JTE=JTE,KTS=KTS,KTE=KTE      &
+                    ,KRR=2,MASSFLUX_EDKF=massflux_EDKF                    &
+                    ,ENTR_EDKF=entr_EDKF, DETR_EDKF=detr_EDKF             & 
+                    ,THL_UP=thl_up, THV_UP=thv_up, RT_UP=rt_up            &
+                    ,RV_UP=rv_up,RC_UP=rc_up, U_UP=u_up, V_UP=v_up        &
+                    ,FRAC_UP=frac_up, RC_MF=rc_mf,WTHV=wthv_mf            &
+                    ,PLM_BL89=lm_bl89    ) 
+               ENDIF   
+             ENDIF   
+
              CALL wrf_debug(100,'in QNSEPBL')
              CALL qnsepbl(                                           &
+               DT=dt,STEPBL=stepbl,HT=ht,DZ=dz8w                    &
+              ,PMID=p_phy,PINT=p8w,TH=th_phy,T=t_phy,EXNER=pi_phy   &
+              ,QV=qv_curr, CWM=qc_curr                              &
+              ,U=u_phy,V=v_phy,RHO=rho                              &
+              ,TSK=tsk,QSFC=qsfc,CHKLOWQ=chklowq,THZ0=thz0          &
+              ,QZ0=qz0,UZ0=uz0,VZ0=vz0,CORF=f                       &
+              ,LOWLYR=lowlyr                                        &
+              ,XLAND=xland,SICE=xice,SNOW=snow                      &
+              ,TKE=tke_pbl,EXCH_H=exch_h,EXCH_M=exch_m,USTAR=ust,ZNT=znt      &
+              ,EL_MYJ=el_pbl,PBLH=pblh,KPBL=kpbl,CT=ct              &
+              ,AKHS=akhs,AKMS=akms,ELFLX=lh                         &
+              ,HFX=hfx,WTHV_MF=wthv_mf,LM_BL89=lm_bl89              & 
+              ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten    &
+              ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                  &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+                                                                    )
+             IF ( PRESENT (MFSHCONV) )THEN
+               IF (MFSHCONV)THEN
+! need to be fixed later: ww
+               rublten(:,:,:)=rublten(:,:,:)+rumften(:,:,:)
+               rvblten(:,:,:)=rvblten(:,:,:)+rvmften(:,:,:)
+               rthblten(:,:,:)=rthblten(:,:,:)+rthmften(:,:,:)
+               rqvblten(:,:,:)=rqvblten(:,:,:)+rqvmften(:,:,:)
+               rqcblten(:,:,:)=rqcblten(:,:,:)+rqcmften(:,:,:)
+               ENDIF   
+             ENDIF   
+
+            ELSE
+               WRITE ( message , FMT = '(A,4(L1,1X))' )             &
+                 'present: '//                                      &
+                 'qv_curr, '//                                      &
+                 'qc_curr, '//                                      &
+                 'rqvblten, '//                                     &
+                 'rqcblten = ' ,                                    &
+                  PRESENT( qv_curr ) ,                              &
+                  PRESENT( qc_curr ) ,                              &
+                  PRESENT( rqvblten ) ,                             &
+                  PRESENT( rqcblten )
+               CALL wrf_debug(0,message)
+               CALL wrf_error_fatal('Lack arguments to call QNSE pbl')
+           ENDIF
+
+      CASE (QNSEPBL09SCHEME)
+           IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
+                PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
+                                                        .TRUE.  ) THEN
+             CALL wrf_debug(100,'in QNSEPBL09')
+             CALL qnsepbl09(                                        &
                DT=dt,STEPBL=stepbl,HT=ht,DZ=dz8w                    &
               ,PMID=p_phy,PINT=p8w,TH=th_phy,T=t_phy,EXNER=pi_phy   &
               ,QV=qv_curr, CWM=qc_curr                              &
@@ -1165,7 +1295,7 @@ CONTAINS
                   PRESENT( rqvblten ) ,                             &
                   PRESENT( rqcblten )
                CALL wrf_debug(0,message)
-               CALL wrf_error_fatal('Lack arguments to call QNSE pbl')
+               CALL wrf_error_fatal('Lack arguments to call old QNSE pbl')
            ENDIF
 
       CASE (ACMPBLSCHEME)
@@ -1427,6 +1557,18 @@ CONTAINS
       
      ENDIF       !idiff
 #endif
+
+     IF ( bl_pbl_physics .EQ. QNSEPBLSCHEME ) THEN
+       IF ( PRESENT ( MFSHCONV)) THEN
+       IF (MFSHCONV)THEN
+          DEALLOCATE(rumften)
+          DEALLOCATE (rvmften)
+          DEALLOCATE (rqvmften)
+          DEALLOCATE (rqcmften)
+          DEALLOCATE (rthmften)
+       ENDIF
+       ENDIF
+     END IF
 
    ENDDO
    !$OMP END PARALLEL DO

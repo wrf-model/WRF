@@ -694,7 +694,7 @@ BENCH_END(g_set_phys_bc_tim)
                              , imsy,imey,jmsy,jmey,kmsy,kmey    &
                              , ipsy,ipey,jpsy,jpey,kpsy,kpey    &
                              , k_start , k_end                  &
-                             , f_flux                           &
+                             , f_flux , wthv_mf, lm_bl89        &
                              )
 
 #ifdef DM_PARALLEL

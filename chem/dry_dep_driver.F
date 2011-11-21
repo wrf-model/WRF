@@ -324,8 +324,9 @@ CONTAINS
 
        idrydep_onoff = 1
        aer_mech_id_select: SELECT CASE(config_flags%chem_opt)
-          CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,RACM_ESRLSORG_KPP,RACM_ESRLSORG_KPP, &
-                CBMZSORG,CBMZSORG_AQ,RACM_SOA_VBS_KPP)
+          CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP, &
+                RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP, &
+                CBMZSORG,CBMZSORG_AQ)
              aer_mech_id = 1
           CASE (RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP)
              aer_mech_id = 2
@@ -591,7 +592,7 @@ CONTAINS
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
-   CASE (CHEM_VASH)
+   CASE (CHEM_VASH, CHEM_VOLC)
        CALL wrf_debug(15,'call vash settling routine')
          call vash_settling_driver(dtstep,config_flags,t_phy,moist,        &
          chem,rho_phy,dz8w,p8w,p_phy,                                      &

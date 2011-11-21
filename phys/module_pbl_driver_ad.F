@@ -41,14 +41,16 @@ SUBROUTINE a_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 &  f_qi, f_qs, f_qg, frc_urb2d, a_u_bep, a_v_bep, a_t_bep, a_q_bep, &
 &  b_u_bep, b_v_bep, b_t_bep, b_q_bep, sf_bep, vl_bep, sf_sfclay_physics&
 &  , sf_urban_physics, tke_pbl, el_pbl, wu_tur, wv_tur, wt_tur, wq_tur, &
-&  a_e_bep, b_e_bep, dlg_bep, dl_u_bep, phb, xlat_u, xlong_u, xlat_v, &
+&  a_e_bep, b_e_bep, dlg_bep, dl_u_bep, wthv_mf, lm_bl89, mfshconv, massflux_EDKF, &
+&  entr_EDKF, detr_EDKF, thl_up, thv_up, rt_up ,rv_up, rc_up, u_up, v_up, &
+&  frac_up, rc_mf, phb, xlat_u, xlong_u, xlat_v, & 
 &  xlong_v, id, z_at_w, cldfra, rthratenlw, tauresx2d, tauresy2d, tpert2d&
 &  , qpert2d, wpert2d)
   USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
-                   SURFDRAGSCHEME, TEMFPBLSCHEME, &
+                   SURFDRAGSCHEME, TEMFPBLSCHEME, QNSEPBL09SCHEME, &
                    p_qi,param_first_scalar
 
   USE module_model_constants
@@ -359,6 +361,18 @@ SUBROUTINE a_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 !
   REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN) :: var2d, &
 &  oc12d, oa1, oa2, oa3, oa4, ol1, ol2, ol3, ol4
+
+! Variables and Diagnostic for QNSE and EDKF JP
+   LOGICAL, INTENT(IN), OPTIONAL ::  mfshconv ! WRF JP
+
+   REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,  &
+               INTENT(INOUT)    ::    massflux_EDKF, entr_EDKF, detr_EDKF & 
+                                     ,thl_up, thv_up, rt_up       &
+                                     ,rv_up, rc_up, u_up, v_up    &
+                                     ,frac_up,rc_mf  
+   REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL   &
+                                ::    wthv_mf, lm_bl89
+
 !  LOCAL  VAR
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: v_phytmp
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: u_phytmp
@@ -391,6 +405,15 @@ SUBROUTINE a_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
   REAL, DIMENSION(:, :, :), ALLOCATABLE :: sf
 ! volumes
   REAL, DIMENSION(:, :, :), ALLOCATABLE :: vl
+
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rumften     ! U shallow convection tendency   
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rvmften     ! V shallow convection tendency  
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rqvmften    ! QV shallow convection tendency 
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rqcmften    ! QC shallow convection tendency
+   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rthmften    ! TH shallow convection tendency
+!  REAL, ALLOCATABLE, DIMENSION( :, :, : )::wthv_mf     ! Buoyancy production from shallow convection mf scheme
+!  REAL, ALLOCATABLE, DIMENSION( :, :, : )::lm_bl89     ! Buoyancy production from shallow convection mf scheme
+
   REAL :: dtmin, dtbl
 !
   INTEGER :: initflag

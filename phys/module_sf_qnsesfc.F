@@ -77,7 +77,7 @@ CONTAINS
      &                 ,U10,V10,TSHLTR,TH10,QSHLTR,Q10,PSHLTR          &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                 ,IMS,IME,JMS,JME,KMS,KME                        &
-     &                 ,ITS,ITE,JTS,JTE,KTS,KTE)
+     &                 ,ITS,ITE,JTS,JTE,KTS,KTE,SCM_FORCE_FLUX  )
 !----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -100,10 +100,10 @@ CONTAINS
      &                                                     ,T,TH       &
      &                                                     ,U,V   
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: FLX_LH,HFX,PSHLTR &
-     &                                              ,QFX,Q10,QSHLTR    &
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: PSHLTR,Q10,QSHLTR &
      &                                              ,TH10,TSHLTR       &
      &                                              ,U10,V10
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: FLX_LH,HFX,QFX 
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: AKHS,AKMS       &
      &                                                ,PBLH,QSFC
@@ -116,6 +116,9 @@ CONTAINS
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: CHS,CHS2,CQS2     &
      &                                              ,CPM,CT,FLHC,FLQC  &
      &                                              ,QGH 
+
+     INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX  ! JP 
+
 !----------------------------------------------------------------------
 !***
 !***  LOCAL VARIABLES
@@ -296,8 +299,10 @@ CONTAINS
      &               ,QSHLTR(I,J),Q10(I,J),PSHLTR(I,J)                 &
      &               ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
-     &               ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZHK(LMH+1))
+     &               ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZHK(LMH+1)           &
+     &               ,SCM_FORCE_FLUX) 
 !
+
 !***  REMOVE SUPERATURATION AT 2M AND 10M
 !
           RAPA=APESFC
@@ -338,7 +343,7 @@ CONTAINS
      &                 ,U10,V10,TH02,TH10,Q02,Q10,PSHLTR               &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                 ,IMS,IME,JMS,JME,KMS,KME                        &
-     &                 ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZSFC)
+     &                 ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZSFC,SCM_FORCE_FLUX)
 !     ****************************************************************
 !     *                                                              *
 !     *                       SURFACE LAYER                          *
@@ -356,13 +361,18 @@ CONTAINS
       INTEGER,INTENT(IN) :: NTSD
 !
       REAL,INTENT(IN) :: CWMLOW,PBLH,PLOW,QLOW,PSFC,SEAMASK,ZSFC       &
-     &                  ,THELOW,THLOW,THS,TLOW,TZ0,ULOW,VLOW,WETM,ZSL  &
+     &                  ,THELOW,THLOW,THS,TLOW,ULOW,VLOW,WETM,ZSL  &
      &                  ,Z0BASE
 !
-      REAL,INTENT(OUT) :: CHS,CHS2,CPM,CQS2,CT,FLHC,FLQC,FLX_LH,HFX    &
-     &                   ,PSHLTR,Q02,Q10,QFX,QGH,RIB,RLMO,TH02,TH10,U10,V10
+      REAL,INTENT(OUT) :: CHS,CHS2,CPM,CQS2,CT,FLHC,FLQC,    &
+     &                   PSHLTR,Q02,Q10,QGH,RIB,RLMO,TH02,TH10,U10,V10
 !
-      REAL,INTENT(INOUT) :: AKHS,AKMS,QZ0,THZ0,USTAR,UZ0,VZ0,Z0,QS
+      REAL,INTENT(INOUT) :: FLX_LH,HFX,QFX  
+!
+      REAL,INTENT(INOUT) :: AKHS,AKMS,QZ0,THZ0,USTAR,UZ0,VZ0,Z0,QS,TZ0
+
+      INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
+
 !----------------------------------------------------------------------
 !***
 !***  LOCAL VARIABLES
@@ -399,6 +409,8 @@ CONTAINS
       ELSE
         BTGH=BTGX*1000.
       ENDIF
+
+      RLOW=PLOW/(R_D*TLOW)
 !
 !----------------------------------------------------------------------
 !
@@ -603,6 +615,7 @@ CONTAINS
 !
         ZT=ZU*ZTFC
         THZ0=THS
+!       RLOW=PLOW/(R_D*TLOW)          
 !
         ZQ=ZT
         QZ0=QS
@@ -715,6 +728,8 @@ CONTAINS
             USTARK=USTAR*VKARMAN
             AKMS=MAX(USTARK/SIMM,CXCHL)
             AKHS=MAX(USTARK/SIMH,CXCHL)
+            THZ0=HFX/(AKHS*RLOW*CP)+THLOW
+            TZ0=(PSFC*1.E-5)**CAPA*THZ0
 !
 !----------------------------------------------------------------------
 !***  BELJAARS CORRECTION FOR USTAR
@@ -941,12 +956,15 @@ CONTAINS
 !***  SET OTHER WRF DRIVER ARRAYS
 !----------------------------------------------------------------------
 !
-      RLOW=PLOW/(R_D*TLOW)
       CHS=AKHS
       CHS2=AKHS02
       CQS2=AKHS02
-      HFX=-RLOW*CP*HSFLX
-      QFX=-RLOW*HLFLX*WETM
+      IF ( PRESENT(SCM_FORCE_FLUX) ) THEN              
+         IF (SCM_FORCE_FLUX.EQ.0) THEN              
+           HFX=-RLOW*CP*HSFLX
+           QFX=-RLOW*HLFLX*WETM
+         ENDIF
+      ENDIF
       FLX_LH=XLV*QFX
       FLHC=RLOW*CP*AKHS
       FLQC=RLOW*AKHS*WETM

@@ -547,7 +547,7 @@ package   dyn_em_tl     dyn_opt==202                 -             -
 package   dyn_em_ad     dyn_opt==302                 -             -
 
 package   jcdfi_off     jcdfi_diag==0                  -             -
-package   jcdfi_on      jcdfi_diag==1                  -             state:jcdfi_u,dfi_v,jcdfi_t,jcdfi_mu
+package   jcdfi_on      jcdfi_diag==1                  -             state:jcdfi_u,dfi_v,jcdfi_t,jcdfi_p
 
 ## communications                                               
 

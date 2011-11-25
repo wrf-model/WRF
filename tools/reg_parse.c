@@ -533,7 +533,8 @@ reg_parse( FILE * infile )
                   set_mask( field_struct->io_mask , unitid   ) ;
                 }
               }
-              i += iii ;
+/* avoid infinite loop.  iii can go negative if the '}' is at the end of the line. */
+              if ( iii > 0 ) i += iii ;
               continue ;
             } else {
               fprintf(stderr,"registry syntax error: unmatched {} in the io string for definition of %s\n",tokens[FIELD_SYM]) ;

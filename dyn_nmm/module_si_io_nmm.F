@@ -1622,6 +1622,15 @@ print *,'------------------> skipping ', var_info%name(1:8)
 
           CALL  nl_set_map_proj( grid%id, igarb)
 
+      VarName='FLAG_SNOWH'
+      call retrieve_index(index,VarName,varname_all,nrecs,iret)
+        call mpi_file_read_at(iunit,file_offset(index)+5*4,     &
+                              igarb,1,mpi_integer4,             &
+                              mpi_status_ignore, ierr)
+        write(0,*) 'ierr, igarb for FLAG_SNOWH: ', ierr,igarb
+        flag_snowh=igarb
+
+
     hor_size=(IDE-IDS)*(JDE-JDS)
 
     varName='PRES'
@@ -1703,6 +1712,17 @@ print *,'------------------> skipping ', var_info%name(1:8)
         DO J=JTS,min(JTE,JDE-1)
          DO I=ITS,min(ITE,IDE-1)
            grid%snow(I,J)=dumdata(I,J,1)
+         ENDDO
+        ENDDO
+
+    varName='SNOWH'
+    CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
+    CALL mpi_file_read_at(iunit,file_offset(index+1),     &
+                             dumdata,hor_size,mpi_real4,             &
+                             mpi_status_ignore, ierr)
+        DO J=JTS,min(JTE,JDE-1)
+         DO I=ITS,min(ITE,IDE-1)
+           grid%snowh(I,J)=dumdata(I,J,1)
          ENDDO
         ENDDO
 

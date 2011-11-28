@@ -144,6 +144,7 @@ real_em.o: \
 	../share/module_date_time.o \
 	../share/module_optional_input.o \
 	../share/module_bc_time_utilities.o \
+        ../dyn_em/module_wps_io_arw.o \
 	$(ESMF_MOD_DEPENDENCE)
 #	../chem/module_input_chem_data.o \
 #	../chem/module_input_chem_bioemiss.o \

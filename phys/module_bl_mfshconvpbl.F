@@ -24,11 +24,17 @@ REAL,PARAMETER :: XLSTT=2.8345E+6   ! Sublimation heat constant
                                !  temperature
 REAL,PARAMETER :: XGAMW = (XCL - XCPV) / XRV! Constants for saturation vapor
 REAL,PARAMETER :: XBETAW= (XLVTT/XRV) + (XGAMW * XTT)
-REAL,PARAMETER :: XALPW= LOG(611.14) + (XBETAW /XTT) + (XGAMW *LOG(XTT))
+!The use of intrinsics in an initialization expressions is a F2003 feature.
+!For backward compatibility, hard coded Log(644.11) & Log(XTT) here
+!REAL,PARAMETER :: XALPW= LOG(611.14) + (XBETAW /XTT) + (XGAMW *LOG(XTT))
+REAL,PARAMETER :: LOG_611_14 = 6.415326
+REAL,PARAMETER :: LOG_XTT    = 5.610058
+REAL,PARAMETER :: XALPW= LOG_611_14 + (XBETAW /XTT) + (XGAMW *LOG_XTT)
                                 !  pressure  function
 REAL,PARAMETER :: XGAMI  = (XCI - XCPV) / XRV
 REAL,PARAMETER :: XBETAI = (XLSTT/XRV) + (XGAMI * XTT)
-REAL,PARAMETER :: XALPI  = LOG(611.14) + (XBETAI /XTT) + (XGAMI *LOG(XTT))
+!REAL,PARAMETER :: XALPI  = LOG(611.14) + (XBETAI /XTT) + (XGAMI *LOG(XTT))
+REAL,PARAMETER :: XALPI  = LOG_611_14 + (XBETAI /XTT) + (XGAMI *LOG_XTT)
 REAL,PARAMETER :: XLINI = 0.32
 
 

@@ -72,6 +72,7 @@ MODULES = \
         module_ra_cam_support.o \
         module_ra_cam.o \
 	module_ra_gfdleta.o \
+        module_ra_flg.o \
 	module_ra_HWRF.o \
 	module_ra_hs.o  \
 	module_sf_sfclay.o \
@@ -309,6 +310,9 @@ module_ra_cam.o: module_ra_cam_support.o \
 		 module_cam_support.o \
                 ../frame/module_wrf_error.o
 
+module_ra_flg.o: ../frame/module_wrf_error.o \
+		../frame/module_dm.o
+
 module_mp_lin.o : ../frame/module_wrf_error.o
 
 module_mp_sbu_ylin.o : ../frame/module_wrf_error.o \
@@ -369,6 +373,7 @@ module_physics_init.o : \
 		module_ra_gfdleta.o		\
 		module_ra_HWRF.o		\
 		module_ra_hs.o			\
+                module_ra_flg.o                 \
 		module_sf_sfclay.o		\
 		module_sf_slab.o		\
 		module_sf_myjsfc.o		\
@@ -507,6 +512,7 @@ module_radiation_driver.o: \
 		module_ra_gfdleta.o \
 		module_ra_HWRF.o \
 		module_ra_hs.o \
+                module_ra_flg.o \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
 		../frame/module_dm.o \

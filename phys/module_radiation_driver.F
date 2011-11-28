@@ -122,8 +122,8 @@ CONTAINS
                                        ,HWRFSWSCHEME, HWRFLWSCHEME  &
 #endif
                                        ,goddardlwscheme                 & 
-                                       ,goddardswscheme                   
-
+                                       ,goddardswscheme                 &  
+                                       ,FLGLWSCHEME, FLGSWSCHEME
 
    USE module_model_constants
    USE module_wrf_error , ONLY : wrf_err_message
@@ -143,6 +143,7 @@ CONTAINS
    USE module_ra_hs         , ONLY : hsrad
 
    USE module_ra_goddard    , ONLY : goddardrad
+   USE module_ra_flg        , ONLY : RAD_FLG
 
 
 
@@ -335,6 +336,8 @@ CONTAINS
                                                             SNOW 
    REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ),  OPTIONAL,    &
           INTENT(IN   ) ::                                  OZMIXM
+
+   REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ) :: OZFLG
 
    REAL,  DIMENSION(levsiz), OPTIONAL, INTENT(IN )  ::     PIN
 
@@ -541,6 +544,7 @@ CONTAINS
 
    REAL    ::    next_rad_time
    LOGICAL ::    run_param , doing_adapt_dt , decided
+   LOGICAL ::    flg_lw, flg_sw
 !------------------------------------------------------------------
 ! solar related variables are added to declaration
 !-------------------------------------------------
@@ -1060,6 +1064,49 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,            &
                      its,ite, jts,jte, kts,kte            )
 
+! -- add by Jin Kong 10/2011
+        CASE (FLGLWSCHEME)
+          CALL wrf_debug (100, 'CALL Fu-Liou-Gu')
+          flg_lw  = .true.
+!test Jin Kong 11/01/2011 for ozone
+          ozflg = 0.
+!test over
+          CALL RAD_FLG(                               &
+               peven=p8w,podd=p,t8w=t8w,degrees=t     &
+              ,pi3d=pi,o3=ozflg                       &
+              ,G=G,CP=CP                              &
+              ,albedo=ALBEDO,tskin=tsk                &
+              ,h2o=QV,cld_iccld=QI,cld_wlcld=QC       &
+              ,cld_prwc=QR,cld_pgwc=QG,cld_snow=QS    &
+              ,F_QV=F_QV,F_QC=F_QC,F_QR=F_QR          &
+              ,F_QI=F_QI,F_QS=F_QS,F_QG=F_QG          &
+              ,warm_rain=warm_rain                    &
+              ,cloudstrf=CLDFRA                       &
+              ,emiss=EMISS                            &
+              ,air_den=rho                            &
+              ,dz3d=dz8w                              &
+              ,SOLCON=SOLCON                          &
+              ,declin=DECLIN                          &
+              ,xtime=xtime, xlong=xlong, xlat=xlat    &
+              ,JULDAY=JULDAY                          &
+              ,gmt=gmt, radt=radt, degrad=degrad      &
+              ,dtcolumn=dt                            &
+              ,ids=ids,ide=ide,jds=jds,jde=jde        &
+              ,kds=kds,kde=kde                        &     
+              ,ims=ims,idim=ime,jms=jms,jdim=jme      &
+              ,kms=kms,kmax=kme                       &
+              ,its=its,ite=ite,jts=jts,jte=jte        &
+              ,kts=kts,kte=kte                        &
+		      ,uswtop=RSWTOA,ulwtop=RLWTOA            &
+		      ,NETSWBOT=GSW,DLWBOT=GLW                &
+		      ,DSWBOT=SWDOWN,deltat=RTHRATEN          &
+		      ,dtshort=RTHRATENSW,dtlongwv=RTHRATENLW &
+              )
+
+          CALL wrf_debug(100, 'a4 Fu_Liou-Gu')
+! -- end 
+
+
         CASE DEFAULT
   
              WRITE( wrf_err_message , * ) 'The longwave option does not exist: lw_physics = ', lw_physics
@@ -1402,6 +1449,13 @@ CONTAINS
 'You have selected a longwave radiation option, but not a shortwave option (sw_physics = 0, lw_physics = ',lw_physics,')'
              CALL wrf_error_fatal ( wrf_err_message )
            END IF
+
+! -- add by Jin Kong 10/2011
+!--- the following FLGSWSCHEME is for testing only
+        CASE (FLGSWSCHEME)
+          flg_sw = .true.
+!--- No need to do anything since the short and long wave is calculted in one program
+! -- end 
 
         CASE DEFAULT
 

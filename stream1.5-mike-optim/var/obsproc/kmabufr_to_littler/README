@@ -1,0 +1,31 @@
+Yong-Run Guo, 04/27/2006
+
+This kmabufr converter program is fully tested in PC Linux with pgi compiler
+by Jim Bresch and Yong-Run Guo.
+
+In this directory,
+
+1, kma_bufr_src            ---- code to convert kma bufr obs to little_r obs
+
+2, KMABUFR_to_LITTLE_R.csh ---- a shell script to compile and run 
+                                the convertor program
+
+3, kma_bufr_obs            ---- a set of the kma bufr obs data files 
+                                as an example.
+
+4, README file.
+
+Before run KMABUFR_to_LITTLE_R.csh, you should
+
+(1) Build the ecmwf library first;
+
+    The ECMWF bufr library, while freeware, is licensed and 
+    cannot be distributed with OBSPROC.
+
+(2) Modify kma_bufr_src/Makefile to set the correct ecmwf library;
+
+(3) Creat a "flist" file under the data directory 
+    (here it is "kma_bufr_obs", see kma_bufr_obs/README.KMABUFR for details).
+
+(4) Edit KMABUFR_to_LITTLE_R.csh to provide the correct directories.
+

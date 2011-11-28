@@ -1,0 +1,507 @@
+.------------------------------------------------------------------------------.
+| ------------   USER DEFINITIONS FOR TABLE-A TABLE-B TABLE D   -------------- |
+|------------------------------------------------------------------------------|
+| MNEMONIC | NUMBER | DESCRIPTION                                              |
+|----------|--------|----------------------------------------------------------|
+|          |        |                                                          |
+| NC021021 | A61221 | MTYP 021-021 PROCESSED HIRS-2 1B Tb DATA (NOAA-14)       |
+*  ** MSG TYPE 021-021 NO LONGER PRODUCED AFTER SEPTEMBER 2006 **              |
+| NC021022 | A61222 | MTYP 021-022 PROCESSED MSU    1B Tb DATA (NOAA-14)       |
+*  ** MSG TYPE 021-022 NO LONGER PRODUCED AFTER SEPTEMBER 2006 **              |
+| NC021023 | A61223 | MTYP 021-023 PROC AMSU-A 1B Tb DATA(NOAA-15-18,METOP-2)  |
+| NC021024 | A61224 | MTYP 021-024 PROCESSED AMSU-B 1B Tb DATA (NOAA-15-17)    |
+| NC021025 | A61225 | MTYP 021-025 PROCESSED HIRS-3 1B Tb DATA (NOAA-15-17)    |
+| NC021027 | A61234 | MTYP 021-027 PROCESSED MHS Tb DATA (NOAA-18, METOP-2)    |
+| NC021028 | A61245 | MTYP 021-028 PROC. HIRS-4 1B Tb DATA (NOAA-18, METOP-2)  |
+| NC021033 | A56033 | MTYP 021-033 EARS AMSU-A 1C Tb DATA (NOAA-15-17)         |
+| NC021034 | A56034 | MTYP 021-034 EARS AMSU-B 1C Tb DATA (NOAA-15-17)         |
+| NC021035 | A56035 | MTYP 021-035 EARS HIRS-3 1C Tb DATA (NOAA-15-17)         |
+| NC021041 | A61244 | MTYP 021-041 PROCESSED GOES IMAGER Tb DATA               |
+| NC021051 | A61246 | MTYP 021-051 PROC. AVHRR(GAC) 1B Tb-CLEAR &  SEA (N-17)  |
+| NC021052 | A61247 | MTYP 021-052 PROC. AVHRR(GAC) 1B Tb-CLD OR   LAND(N-17)  |
+| NC021053 | A61248 | MTYP 021-053 PROC. AVHRR(GAC) 1B Tb-CLEAR &  SEA (N-18)  |
+| NC021054 | A61249 | MTYP 021-054 PROC. AVHRR(GAC) 1B Tb-CLOUD OR LAND(N-18)  |
+| NC021123 | A61227 | MTYP 021-123 PROC AMSU-A 1B Ta DATA(NOAA-15-18,METOP-2)  |
+| NC021241 | A61207 | MTYP 021-241 IASI 1C RADIANCE DATA(VARBL CHNS)(METOP-2)  |
+| NC021249 | A50243 | MTYP 021-249 EVERY  FOV AIRS/AMSU-A/HSB 1B DATA (AQUA)   |
+| NC021250 | A50250 | MTYP 021-250 CENTER FOV AIRS/AMSU-A/HSB 1B DATA (AQUA)   |
+*  ** MESSAGE TYPE 021-250 NO LONGER PRODUCED AFTER AUGUST 2007 **             |
+| NC021251 | A50251 | MTYP 021-251 ATOVS AMSU-A RADIANCE DATA                  |
+*                ** MESSAGE TYPE 021-251 NOT YET AVAILABLE **                  |
+| NC021252 | A50252 | MTYP 021-252 ATOVS AMSU-B RADIANCE DATA                  |
+*                ** MESSAGE TYPE 021-252 NOT YET AVAILABLE **                  |
+| NC021253 | A50253 | MTYP 021-253 AIRS PRINCIPAL COMPONENTS                   |
+*                ** MESSAGE TYPE 021-253 NOT YET AVAILABLE **                  |
+| NC021254 | A50254 | MTYP 021-254 AMSR-E CHANNEL DATA                         |
+| NC021255 | A61233 | MTYP 021-255 WARMEST FOV AIRS/AMSU-A/HSB 1B DATA (AQUA)  |
+*  ** MESSAGE TYPE 021-255 NO LONGER PRODUCED AFTER AUGUST 2007 **             |
+|          |        |                                                          |
+| ATOVAMUA | 310009 | ATOVS AMSU-A REPORT                                      |
+| ATOVAMUB | 310010 | ATOVS AMSU-B REPORT                                      |
+| ATFOV    | 310011 | ATOVS FIELD OF VIEW VARIABLES                            |
+| ATCHV    | 310012 | ATOVS CHANNEL VARIABLES                                  |
+| SCO1C3IN | 310050 | SATELLITE COLOCATED 1C REPORTS WITH 3 INSTRUMENTS        |
+| SPITSEQN | 310051 | SATELLITE POSITION AND INSTRUMENT TEMPERATURES           |
+| SITPSEQN | 310052 | SATELLITE INSTRUMENT TYPE AND POSITION                   |
+| SCBTSEQN | 310053 | SAT CHANNELS AND BRIGHT TEMPS WITH EXPANDED CHANNEL SET  |
+| SVCASEQN | 310054 | SAT VISB CHANNELS AND ALBEDOS WITH EXPANDED CHANNEL SET  |
+| SATRCPRC | 310055 | SATELLITE RADIANCE/CHANNEL PRINCIPAL COMPONENTS          |
+|          |        |                                                          |
+| AMSUSPOT | 350202 | AMSU-A SPOT SEQUENCE (AQUA SATELLITE)                    |
+| AMSUCHAN | 350203 | AMSU-A CHANNEL SEQUENCE (AQUA SATELLITE)                 |
+| HSBSPOT  | 350204 | HSB (HUMIDITY) SPOT SEQUENCE (AQUA SATELLITE)            |
+| HSBCHAN  | 350205 | HSB (HUMIDITY) CHANNEL SEQUENCE (AQUA SATELLITE)         |
+| INTMS    | 350207 | SATELLITE INSTRUMENT TEMPERATURES                        |
+| AIRSPC   | 350208 | AIRS PRINCIPAL COMPONENT SEQUENCE                        |
+| AIRSCORE | 350209 | AIRS PRINCIPAL COMPONENT FITS TO DATA SEQUENCE           |
+| AVCSEQ   | 350212 | AVHRR (GAC) CHANNEL SEQUENCE                             |
+|          |        |                                                          |
+| BID      | 352001 | BULLETIN HEADER DATA                                     |
+| RCPTIM   | 352003 | REPORT RECEIPT TIME DATA                                 |
+|          |        |                                                          |
+| IASIL1CB | 340002 | IASI LEVEL 1C BAND DESCRIPTION SEQUENCE                  |
+| IASIL1CS | 340004 | IASI LEVEL 1C AVHRR SINGLE SCENE SEQUENCE                |
+| IASICHN  | 361137 | IASI LEVEL 1C SCALED RADIANCE SEQUENCE                   |
+| AVHRCHN  | 361139 | IASI LEVEL 1C MEAN AND STANDARD DEVIATION RADIANCE SEQ   |
+| BRITCSTC | 361171 | BRIGHTNESS TEMPERATURE SEQUENCE #2                       |
+| BRIT     | 361182 | BRIGHTNESS TEMPERATURE SEQUENCE                          |
+| RADS     | 361191 | RADIANCE SEQUENCE                                        |
+| AMSRCHAN | 361193 | AMSR-E CHANNEL SEQUENCE (AQUA SATELLITE)                 |
+| AMSRDICE | 361194 | AMSR-E 2 CHANNEL 4 SPOT SOUNDING SEQUENCE (AQUA SAT)     |
+|          |        |                                                          |
+| SAID     | 001007 | SATELLITE IDENTIFIER                                     |
+| GCLONG   | 001031 | ORIGINATING/GENERATING CENTER                            |
+| OGCE     | 001033 | IDENTIFICATION OF ORIGINATING/GENERATING CENTER          |
+| GSES     | 001034 | IDENTIFICATION OF ORIGINATING/GENERATING SUB-CENTER      |
+|          |        |                                                          |
+| SIID     | 002019 | SATELLITE INSTRUMENTS                                    |
+| SCLF     | 002020 | SATELLITE CLASSIFICATION                                 |
+| SIDU     | 002021 | SATELLITE INSTRUMENT DATA USED IN PROCESSING             |
+| SSNX     | 002028 | SEGMENT SIZE AT NADIR IN X DIRECTION                     |
+| SSNY     | 002029 | SEGMENT SIZE AT NADIR IN Y DIRECTION                     |
+| SSIN     | 002048 | SATELLITE SENSOR INDICATOR                               |
+| INCN     | 002150 | TOVS/ATOVS/AVHRR INSTRUMENTATION CHANNEL NUMBER          |
+| RAID     | 002151 | RADIOMETER IDENTIFIER                                    |
+| SIDP     | 002152 | SATELLITE INSTRUMENT DATA USED IN PROCESSING             |
+| SCCF     | 002153 | SATELLITE CHANNEL CENTER FREQUENCY                       |
+| SCBW     | 002154 | SATELLITE CHANNEL BAND WIDTH                             |
+| RDTP     | 002166 | RADIANCE TYPE                                            |
+| RDCM     | 002167 | RADIANCE COMPUTATIONAL METHOD                            |
+|          |        |                                                          |
+| YEAR     | 004001 | YEAR                                                     |
+| MNTH     | 004002 | MONTH                                                    |
+| DAYS     | 004003 | DAY                                                      |
+| HOUR     | 004004 | HOUR                                                     |
+| MINU     | 004005 | MINUTE                                                   |
+| SECO     | 004006 | SECOND                                                   |
+| RCYR     | 004200 | YEAR   - TIME OF RECEIPT                                 |
+| RCMO     | 004201 | MONTH  - TIME OF RECEIPT                                 |
+| RCDY     | 004202 | DAY    - TIME OF RECEIPT                                 |
+| RCHR     | 004203 | HOUR   - TIME OF RECEIPT                                 |
+| RCMI     | 004204 | MINUTE - TIME OF RECEIPT                                 |
+|          |        |                                                          |
+| CLATH    | 005001 | LATITUDE (HIGH ACCURACY)                                 |
+| CLAT     | 005002 | LATITUDE (COARSE ACCURACY)                               |
+| BEARAZ   | 005021 | BEARING OR AZIMUTH                                       |
+| SOLAZI   | 005022 | SOLAR AZIMUTH                                            |
+| ORBN     | 005040 | ORBIT NUMBER                                             |
+| SLNM     | 005041 | SCAN LINE NUMBER                                         |
+| CHNM     | 005042 | CHANNEL NUMBER                                           |
+| FOVN     | 005043 | FIELD OF VIEW NUMBER                                     |
+| YAPCG    | 005060 | Y ANGULAR POSITION OF CENTER OF GRAVITY                  |
+| ZAPCG    | 005061 | Z ANGULAR POSITION OF CENTER OF GRAVITY                  |
+|          |        |                                                          |
+| CLONH    | 006001 | LONGITUDE (HIGH ACCURACY)                                |
+| CLON     | 006002 | LONGITUDE (COARSE ACCURACY)                              |
+|          |        |                                                          |
+| SELV     | 007001 | HEIGHT OF STATION                                        |
+| HMSL     | 007002 | HEIGHT OR ALTITUDE                                       |
+| SAZA     | 007024 | SATELLITE ZENITH ANGLE                                   |
+| SOZA     | 007025 | SOLAR ZENITH ANGLE                                       |
+|          |        |                                                          |
+| LSQL     | 008012 | LAND/SEA QUALIFIER                                       |
+| FOST     | 008023 | FIRST ORDER STATISTICS                                   |
+| TAPQ     | 008070 | TOVS/ATOVS PRODUCT IDENTIFIER                            |
+| RCTS     | 008202 | RECEIPT TIME SIGNIFICANCE                                |
+|          |        |                                                          |
+| HOLS     | 010001 | HEIGHT OF LAND SURFACE                                   |
+|          |        |                                                          |
+| TMBRST   | 012063 | BRIGHTNESS TEMPERATURE                                   |
+| TMINST   | 012064 | INSTRUMENT TEMPERATURE                                   |
+| SDTB     | 012065 | STANDARD DEVIATION BRIGHTNESS TEMPERATURE                |
+| SPRD     | 012075 | SPECTRAL RADIANCE                                        |
+| RDNE     | 012076 | RADIANCE                                                 |
+| TMBR     | 012163 | BRIGHTNESS TEMPERATURE (HIGH ACCURACY)                   |
+*                ** FOR MESSAGE TYPE NC021123 TMBR HOLDS ANTENNA TEMPERATURE   |
+| CSTC     | 012206 | COLD SPACE TEMPERATURE CORRECTION                        |
+|          |        |                                                          |
+| ALBD     | 014027 | ALBEDO                                                   |
+| CHRAD    | 014045 | CHANNEL RADIANCE                                         |
+| SCRA     | 014046 | SCALED IASI RADIANCE                                     |
+| SMRA     | 014047 | SCALED MEAN AVHRR RADIANCE                               |
+| SSDR     | 014048 | SCALED STANDARD DEVIATION OF AVHRR RADIANCE              |
+| LOGCT    | 014204 | LOG10 OF CLOUD TEST RESULTS                              |
+|          |        |                                                          |
+| TOCC     | 020010 | CLOUD COVER (TOTAL)                                      |
+| CLTP     | 020012 | CLOUD TYPE                                               |
+| CLDMNT   | 020081 | CLOUD AMOUNT IN SEGMENT                                  |
+| NCLDMNT  | 020082 | AMOUNT SEGMENT CLOUD FREE                                |
+| CLAVR    | 020199 | CLOUD FROM AVHRR (CLAVR) CLOUD MASK                      |
+|          |        |                                                          |
+| APCOMP   | 025050 | PRINCIPAL COMPONENT SCORE                                |
+| AVHCST   | 025051 | AVHRR CHANNEL COMBINATION                                |
+| APCFIT   | 025052 | LOG OF PRINCIPAL COMPONENTS NORMALIZED FIT TO DATA       |
+| MJFC     | 025070 | MAJOR FRAME COUNT                                        |
+| SACV     | 025075 | SATELLITE ANTENNA CORRECTIONS VERSION NUMBER             |
+| LOGRCW   | 025076 | LOG-10 OF (TEMPERATURE-RADIANCE CENTRAL WAVENUMBER)      |
+| BWCC1    | 025077 | BANDWIDTH CORRECTION COEFFICIENT 1 FOR ATOVS             |
+| BWCC2    | 025078 | BANDWIDTH CORRECTION COEFFICIENT 2 FOR ATOVS             |
+| ASFI     | 025079 | ALBEDO-RADIANCE SOLAR FILTERED IRRADIANCE FOR ATOVS      |
+| AEFW     | 025080 | ALBEDO-RADIANCE EQUIVALENT FILTER WIDTH FOR ATOVS        |
+| FCPH     | 025085 | FRACTION OF CLEAR PIXELS IN HIRS FOV                     |
+| STCH     | 025140 | START CHANNEL                                            |
+| ENCH     | 025141 | END CHANNEL                                              |
+| CHSF     | 025142 | CHANNEL SCALE FACTOR                                     |
+|          |        |                                                          |
+| NPPR     | 030021 | NUMBER OF PIXELS PER ROW                                 |
+| NPPC     | 030022 | NUMBER OF PIXELS PER COLUMN                              |
+|          |        |                                                          |
+| PCCF     | 033007 | PERCENT CONFIDENCE                                       |
+| SLSF     | 033030 | SCAN LINE STATUS FLAGS FOR ATOVS                         |
+| SLQF     | 033031 | SCAN LINE QUALITY FLAGS FOR ATOVS                        |
+| ACQF     | 033032 | CHANNEL QUALITY FLAGS FOR ATOVS                          |
+| FOVQ     | 033033 | FIELD OF VIEW QUALITY FLAGS FOR ATOVS                    |
+| QGFQ     | 033060 | INDIVIDUAL IASI-SYSTEM QUALITY FLAG                      |
+| QGQI     | 033061 | INSTR. NOISE PERF. INDICATOR (SPECTRAL & RADIOMETRIC)    |
+| QGQIL    | 033062 | GEOMETRIC QUALITY INDEX INDICATOR                        |
+| QGQIR    | 033063 | INSTR. NOISE PERF. INDICATOR (RADIOMETRIC CALIBRATION)   |
+| QGQIS    | 033064 | INSTRUMENT NOISE PERF. INDICATOR (SPECTRAL CALIBRATION)  |
+| QGSSQ    | 033065 | OUTPUT OF TEC FUNCTION                                   |
+|          |        |                                                          |
+| BUHD     | 035021 | BULLETIN BEING MONITORED (TTAAii)                        |
+| BULTIM   | 035022 | BULLETIN BEING MONITORED (YYGGgg)                        |
+| BORG     | 035023 | BULLETIN BEING MONITORED (CCCC)                          |
+| BBB      | 035194 | BULLETIN BEING MONITORED (BBB)                           |
+| SEQNUM   | 035195 | CHANNEL SEQUENCE NUMBER                                  |
+|          |        |                                                          |
+|------------------------------------------------------------------------------|
+| MNEMONIC | SEQUENCE                                                          |
+|----------|-------------------------------------------------------------------|
+|          |                                                                   |
+* **  FINAL SUBSET STRUCTURE IN MSG TYPE 021-021, DISCONTINUED  SEP 2006  **   |
+| NC021021 | YEAR     MNTH     DAYS     HOUR     MINU     SECO                 |
+| NC021021 | CLAT     CLON     SAID     SIID     FOVN     LSQL                 |
+| NC021021 | SAZA     SOZA     HOLS     202127   HMSL     202000               |
+| NC021021 | "BRIT"20                                                          |
+|          |                                                                   |
+* **  FINAL SUBSET STRUCTURE IN MSG TYPE 021-022, DISCONTINUED  SEP 2006  **   |
+| NC021022 | YEAR     MNTH     DAYS     HOUR     MINU     SECO                 |
+| NC021022 | CLAT     CLON     SAID     SIID     FOVN     LSQL                 |
+| NC021022 | SAZA     SOZA     HOLS     202127   HMSL     202000               |
+| NC021022 | "BRIT"4                                                           |
+|          |                                                                   |
+| NC021023 | YEAR     MNTH     DAYS     HOUR     MINU     SECO                 |
+| NC021023 | CLAT     CLON     SAID     SIID     FOVN     LSQL                 |
+| NC021023 | SAZA     SOZA     HOLS     202127   HMSL     202000               |
+| NC021023 | SOLAZI   BEARAZ                                                   |
+| NC021023 | "BRITCSTC"15                                                      |
+|          |                                                                   |
+| NC021024 | YEAR     MNTH     DAYS     HOUR     MINU     SECO                 |
+| NC021024 | CLAT     CLON     SAID     SIID     FOVN     LSQL                 |
+| NC021024 | SAZA     SOZA     HOLS     202127   HMSL     202000               |
+| NC021024 | SOLAZI   BEARAZ                                                   |
+| NC021024 | "BRITCSTC"5                                                       |
+|          |                                                                   |
+| NC021025 | YEAR     MNTH     DAYS     HOUR     MINU     SECO                 |
+| NC021025 | CLAT     CLON     SAID     SIID     FOVN     LSQL                 |
+| NC021025 | SAZA     SOZA     HOLS     202127   HMSL     202000               |
+| NC021025 | SOLAZI   BEARAZ                                                   |
+| NC021025 | "BRIT"20                                                          |
+|          |                                                                   |
+| NC021027 | YEAR     MNTH     DAYS     HOUR     MINU     SECO                 |
+| NC021027 | CLAT     CLON     SAID     SIID     FOVN     LSQL                 |
+| NC021027 | SAZA     SOZA     HOLS     202127   HMSL     202000               |
+| NC021027 | SOLAZI   BEARAZ                                                   |
+| NC021027 | "BRITCSTC"5                                                       |
+|          |                                                                   |
+| NC021028 | YEAR     MNTH     DAYS     HOUR     MINU     SECO                 |
+| NC021028 | CLAT     CLON     SAID     SIID     FOVN     LSQL                 |
+| NC021028 | SAZA     SOZA     HOLS     202127   HMSL     202000               |
+| NC021028 | SOLAZI   BEARAZ                                                   |
+| NC021028 | "BRIT"20                                                          |
+|          |                                                                   |
+| NC021033 | ATFOV    "ATCHV"15                                                |
+| NC021033 | BID      RCPTIM                                                   |
+|          |                                                                   |
+| NC021034 | ATFOV    "ATCHV"5                                                 |
+| NC021034 | BID      RCPTIM                                                   |
+|          |                                                                   |
+| NC021035 | ATFOV    "ATCHV"19    INCN     ASFI     AEFW     ACQF     CHRAD   |
+| NC021035 | BID      RCPTIM                                                   |
+|          |                                                                   |
+| NC021041 | SAID GCLONG SCLF SSNX SSNY NPPR NPPC YEAR MNTH DAYS               |
+| NC021041 | HOUR MINU SECO   CLAT CLON SAZA SOZA LSQL  "RADS"6                |
+|          |                                                                   |
+| NC021051 | YEAR     MNTH     DAYS     HOUR     MINU                          |
+| NC021051 | 202129   201132   SECO     201000   202000                        |
+| NC021051 | CLATH    CLONH    SAID     201129   FOVN     201000               |
+| NC021051 | SAZA     SOZA                                                     |
+| NC021051 | CLAVR    "AVCSEQ"5                                                |
+|          |                                                                   |
+| NC021052 | YEAR     MNTH     DAYS     HOUR     MINU                          |
+| NC021052 | 202129   201132   SECO     201000   202000                        |
+| NC021052 | CLATH    CLONH    SAID     201129   FOVN     201000               |
+| NC021052 | SAZA     SOZA                                                     |
+| NC021052 | CLAVR    "AVCSEQ"5                                                |
+|          |                                                                   |
+| NC021053 | YEAR     MNTH     DAYS     HOUR     MINU                          |
+| NC021053 | 202129   201132   SECO     201000   202000                        |
+| NC021053 | CLATH    CLONH    SAID     201129   FOVN     201000               |
+| NC021053 | SAZA     SOZA                                                     |
+| NC021053 | CLAVR    "AVCSEQ"5                                                |
+|          |                                                                   |
+| NC021054 | YEAR     MNTH     DAYS     HOUR     MINU                          |
+| NC021054 | 202129   201132   SECO     201000   202000                        |
+| NC021054 | CLATH    CLONH    SAID     201129   FOVN     201000               |
+| NC021054 | SAZA     SOZA                                                     |
+| NC021054 | CLAVR    "AVCSEQ"5                                                |
+|          |                                                                   |
+| NC021123 | YEAR     MNTH     DAYS     HOUR     MINU     SECO                 |
+| NC021123 | CLAT     CLON     SAID     SIID     FOVN     LSQL                 |
+| NC021123 | SAZA     SOZA     HOLS     202127   HMSL     202000               |
+| NC021123 | SOLAZI   BEARAZ                                                   |
+| NC021123 | "BRITCSTC"15                                                      |
+|          |                                                                   |
+| NC021241 | SAID     GCLONG   SIID     SCLF     YEAR     MNTH     DAYS        |
+| NC021241 | HOUR     MINU     202131   201138   SECO     201000   202000      |
+| NC021241 | CLATH    CLONH    SAZA     BEARAZ   SOZA     SOLAZI               |
+| NC021241 | FOVN     ORBN     201133   SLNM     201000                        |
+| NC021241 | 201132   MJFC     201000   202126   SELV     202000               |
+| NC021241 | QGFQ     QGQI     QGQIL    QGQIR    QGQIS    QGSSQ                |
+| NC021241 | "IASIL1CB"10      (IASICHN)                                       |
+| NC021241 | SIID     AVHCST   "IASIL1CS"7                                     |
+|          |                                                                   |
+| NC021249 | SCO1C3IN                                                          |
+|          |                                                                   |
+* **  FINAL SUBSET STRUCTURE IN MSG TYPE 021-250, DISCONTINUED  ~JUL 2007  **  |
+| NC021250 | SCO1C3IN                                                          |
+|          |                                                                   |
+| NC021251 | ATOVAMUA                                                          |
+|          |                                                                   |
+| NC021252 | ATOVAMUB                                                          |
+|          |                                                                   |
+| NC021253 | SATRCPRC                                                          |
+|          |                                                                   |
+| NC021254 | SPITSEQN SITPSEQN "AMSRCHAN"12  "AMSRDICE"4                       |
+|          |                                                                   |
+* **  FINAL SUBSET STRUCTURE IN MSG TYPE 021-255, DISCONTINUED  ~JUL 2007  **  |
+| NC021255 | SCO1C3IN                                                          |
+|          |                                                                   |
+| SCO1C3IN | SPITSEQN SITPSEQN (SCBTSEQN)  "SVCASEQN"4  TOCC                   |
+| SCO1C3IN |          AMSUSPOT "AMSUCHAN"15                                    |
+| SCO1C3IN |          HSBSPOT  "HSBCHAN"5                                      |
+|          |                                                                   |
+| ATOVAMUA | ATFOV    "ATCHV"15                                                |
+|          |                                                                   |
+| ATOVAMUB | ATFOV    "ATCHV"5                                                 |
+|          |                                                                   |
+| SATRCPRC | SPITSEQN SITPSEQN "AIRSCORE"20 (AIRSPC)                           |
+|          |                                                                   |
+| BRIT     | CHNM     TMBR                                                     |
+| BRITCSTC | CHNM     TMBR   CSTC                                              |
+| RADS     | SIDP RDTP  RDCM SCCF SCBW SPRD RDNE                               |
+| RADS     | 201132 202129 TMBRST 202000 201000 CLDMNT NCLDMNT                 |
+| RADS     | CLTP 202129 SDTB 202000 PCCF                                      |
+|          |                                                                   |
+| SPITSEQN | SAID     ORBN     201133   SLNM     201000                        |
+| SPITSEQN | 201132   MJFC     201000   202126   SELV    202000   SOZA         |
+| SPITSEQN | SOLAZI   "INTMS"9                                                 |
+|          |                                                                   |
+| SITPSEQN | SIID     YEAR     MNTH     DAYS     HOUR     MINU                 |
+| SITPSEQN | 202131   201138   SECO     201000   202000                        |
+| SITPSEQN | CLATH    CLONH    SAZA     BEARAZ   FOVN                          |
+|          |                                                                   |
+| SCBTSEQN | 201134 CHNM 201000 LOGRCW ACQF TMBR                               |
+|          |                                                                   |
+| AIRSCORE | LOGRCW APCFIT                                                     |
+|          |                                                                   |
+| AMSUSPOT | SIID     YEAR     MNTH     DAYS     HOUR     MINU                 |
+| AMSUSPOT | 202131   201138   SECO     201000   202000                        |
+| AMSUSPOT | CLATH    CLONH    SAZA     BEARAZ   FOVN                          |
+|          |                                                                   |
+| AMSUCHAN | 201134 CHNM 201000 LOGRCW ACQF TMBR                               |
+|          |                                                                   |
+| HSBSPOT  | SIID     YEAR     MNTH     DAYS     HOUR     MINU                 |
+| HSBSPOT  | 202131   201138   SECO     201000   202000                        |
+| HSBSPOT  | CLATH    CLONH    SAZA     BEARAZ   FOVN                          |
+|          |                                                                   |
+| HSBCHAN  | 201134 CHNM 201000 LOGRCW ACQF TMBR                               |
+|          |                                                                   |
+| SVCASEQN | 201134 CHNM 201000 LOGRCW ACQF                                    |
+| SVCASEQN | 201131 202129 FOST ALBD FOST ALBD FOST 202000 201000              |
+|          |                                                                   |
+| AMSRCHAN | 201134 CHNM 201000 LOGRCW ACQF TMBR                               |
+|          |                                                                   |
+| AMSRDICE | SITPSEQN 201129 FOVN 201000 "AMSRCHAN"2                           |
+|          |                                                                   |
+| INTMS    | RAID     TMINST                                                   |
+|          |                                                                   |
+| AIRSPC   | APCOMP                                                            |
+|          |                                                                   |
+| ATFOV    | TAPQ     OGCE     GSES     TAPQ     OGCE     GSES                 |
+| ATFOV    | SAID     SSIN     ORBN     SACV     201133   SLNM     201000      |
+| ATFOV    | FOVN     MJFC     SLSF     SLQF     YEAR     MNTH     DAYS        |
+| ATFOV    | HOUR     MINU     202131   201138   SECO     201000   202000      |
+| ATFOV    | CLATH    CLONH    202126   SELV     202000   SAZA     BEARAZ      |
+| ATFOV    | SOZA     SOLAZI   FOVQ     RAID     TMINST   RAID     TMINST      |
+| ATFOV    | RAID     TMINST   RAID     TMINST                                 |
+|          |                                                                   |
+| ATCHV    | INCN     LOGRCW   BWCC1    BWCC2    ACQF                          |
+| ATCHV    | 201132   202129   TMBRST   202000   201000                        |
+|          |                                                                   |
+| AVCSEQ   | INCN     ALBD     TMBR                                            |
+|          |                                                                   |
+| IASIL1CB | STCH     ENCH     CHSF                                            |
+| IASIL1CS | YAPCG    ZAPCG    FCPH     "AVHRCHN"6                             |
+| IASICHN  | 201136   CHNM     201000   SCRA                                   |
+| AVHRCHN  | CHNM     CHSF     SMRA     CHSF    SSDR                           |
+|          |                                                                   |
+| BID      | SEQNUM  BUHD  BORG  BULTIM  BBB                                   |
+|          |                                                                   |
+| RCPTIM   | RCTS   RCYR    RCMO    RCDY    RCHR    RCMI                       |
+|          |                                                                   |
+|------------------------------------------------------------------------------|
+| MNEMONIC | SCAL | REFERENCE   | BIT | UNITS                    |-------------|
+|----------|------|-------------|-----|--------------------------|-------------|
+|          |      |             |     |                          |-------------|
+| SAID     |    0 |           0 |  10 | CODE TABLE               |-------------|
+| GCLONG   |    0 |           0 |  16 | CODE TABLE               |-------------|
+| OGCE     |    0 |           0 |   8 | CODE TABLE               |-------------|
+| GSES     |    0 |           0 |   8 | CODE TABLE               |-------------|
+| SIID     |    0 |           0 |  11 | CODE TABLE               |-------------|
+| SCLF     |    0 |           0 |   9 | CODE TABLE               |-------------|
+| SIDU     |    0 |           0 |   9 | FLAG TABLE               |-------------|
+| SSNX     |    0 |           0 |  18 | M                        |-------------|
+| SSNY     |    0 |           0 |  18 | M                        |-------------|
+| SSIN     |    0 |           0 |   4 | CODE TABLE               |-------------|
+| INCN     |    0 |           0 |   6 | CODE TABLE               |-------------|
+| RAID     |    0 |           0 |  11 | CODE TABLE               |-------------|
+| SIDP     |    0 |           0 |  31 | FLAG TABLE               |-------------|
+| SCCF     |   -8 |           0 |  26 | HZ                       |-------------|
+| SCBW     |   -8 |           0 |  26 | HZ                       |-------------|
+| RDTP     |    0 |           0 |   4 | CODE TABLE               |-------------|
+| RDCM     |    0 |           0 |   4 | CODE TABLE               |-------------|
+| YEAR     |    0 |           0 |  12 | YEAR                     |-------------|
+| MNTH     |    0 |           0 |   4 | MONTH                    |-------------|
+| DAYS     |    0 |           0 |   6 | DAY                      |-------------|
+| HOUR     |    0 |           0 |   5 | HOUR                     |-------------|
+| MINU     |    0 |           0 |   6 | MINUTE                   |-------------|
+|          |      |             |     |                          |-------------|
+| SECO     |    0 |           0 |   6 | SECOND                   |-------------|
+* SECO stored   3 *           0 *  16 * SECOND (NC021033-035,241,250-255 only) *
+* SECO stored   1 *           0 *  10 * SECOND (NC021051-054 only)             *
+|          |      |             |     |                          |-------------|
+| RCYR     |    0 |           0 |  12 | YEAR                     |-------------|
+| RCMO     |    0 |           0 |   4 | MONTH                    |-------------|
+| RCDY     |    0 |           0 |   6 | DAY                      |-------------|
+| RCHR     |    0 |           0 |   5 | HOUR                     |-------------|
+| RCMI     |    0 |           0 |   6 | MINUTE                   |-------------|
+| CLATH    |    5 |    -9000000 |  25 | DEGREE                   |-------------|
+| CLAT     |    2 |       -9000 |  15 | DEGREE                   |-------------|
+| BEARAZ   |    2 |           0 |  16 | DEGREE TRUE              |-------------|
+| SOLAZI   |    2 |           0 |  16 | DEGREE TRUE              |-------------|
+| ORBN     |    0 |           0 |  24 | NUMERIC                  |-------------|
+|          |      |             |     |                          |-------------|
+| SLNM     |    0 |           0 |   8 | NUMERIC                  |-------------|
+* SLNM stored   0 *           0 *  13 * NUMERIC                                *
+|          |      |             |     |                          |-------------|
+| CHNM     |    0 |           0 |   6 | NUMERIC                  |-------------|
+* CHNM stored   0 *           0 *  12 * NUMERIC (NC021250,254,255 only)        *
+* CHNM stored   0 *           0 *  14 * NUMERIC (NC021241 only)                *
+|          |      |             |     |                          |-------------|
+| FOVN     |    0 |           0 |   8 | NUMERIC                  |-------------|
+* FOVN stored   0 *           0 *   9 * NUMERIC (NC021026,254 only)            *
+|          |      |             |     |                          |-------------|
+| YAPCG    |    6 |    -8000000 |  24 | DEGREE                   |-------------|
+| ZAPCG    |    6 |    -8000000 |  24 | DEGREE                   |-------------|
+| CLONH    |    5 |   -18000000 |  26 | DEGREE                   |-------------|
+| CLON     |    2 |      -18000 |  16 | DEGREE                   |-------------|
+|          |      |             |     |                          |-------------|
+| SELV     |    0 |        -400 |  15 | M                        |-------------|
+* SELV stored  -2 *        -400 *  15 * M                                      *
+|          |      |             |     |                          |-------------|
+| HMSL     |   -1 |         -40 |  16 | M                        |-------------|
+* HMSL stored  -2 *         -40 *  16 * M                                      *
+|          |      |             |     |                          |-------------|
+| SAZA     |    2 |       -9000 |  15 | DEGREE                   |-------------|
+| SOZA     |    2 |       -9000 |  15 | DEGREE                   |-------------|
+| LSQL     |    0 |           0 |   2 | CODE TABLE               |-------------|
+|          |      |             |     |                          |-------------|
+| FOST     |    0 |           0 |   6 | CODE TABLE               |-------------|
+* FOST  stored  1 *           0 |   9 * CODE TABLE (NC021250,255 only)         *
+|          |      |             |     |                          |-------------|
+| TAPQ     |    0 |           0 |   4 | CODE TABLE               |-------------|
+| RCTS     |    0 |           0 |   6 | CODE TABLE               |-------------|
+| HOLS     |    0 |        -400 |  15 | M                        |-------------|
+|          |      |             |     |                          |-------------|
+| TMBRST   |    1 |           0 |  12 | KELVIN                   |-------------|
+* TMBRST stored 2 *           0 |  16 * KELVIN                                 *
+|          |      |             |     |                          |-------------|
+| TMINST   |    1 |           0 |  12 | K                        |-------------|
+| SDTB     |    1 |           0 |  12 | KELVIN                   |-------------|
+* SDTB stored   2 *           0 *  12 * DEGREES KELVIN                         *
+| SPRD     |   -3 |           0 |  16 | WM**(-3)SR**(-1)         |-------------|
+| RDNE     |    3 |           0 |  16 | WM**(-2)SR**(-1)         |-------------|
+| TMBR     |    2 |           0 |  16 | KELVIN                   |-------------|
+| CSTC     |    2 |           0 |  10 | KELVIN                   |-------------|
+|          |      |             |     |                          |-------------|
+| ALBD     |    0 |           0 |   7 | %                        |-------------|
+* ALBD  stored  1 *           0 |  10 * % (NC021250,255 only)                  *
+|          |      |             |     |                          |-------------|
+| CHRAD    |    0 |           0 |  11 | W M**-2 SR**-1 CM**-1    |-------------|
+| SCRA     |    0 |           0 |  16 | W M**-2 SR**-1 M**-1     |-------------|
+| SMRA     |    0 |           0 |  31 | W M**-2 SR**-1 M**-1     |-------------|
+| SSDR     |    0 |           0 |  31 | W M**-2 SR**-1 M**-1     |-------------|
+| LOGCT    |    2 |        -300 |  10 | NUMERIC                  |-------------|
+| TOCC     |    0 |           0 |   7 | %                        |-------------|
+| CLTP     |    0 |           0 |   6 | CODE TABLE               |-------------|
+| CLDMNT   |    0 |           0 |   7 | %                        |-------------|
+| NCLDMNT  |    0 |           0 |   7 | %                        |-------------|
+| CLAVR    |    0 |           0 |   3 | CODE TABLE               |-------------|
+| APCOMP   |    4 |     -131072 |  18 | NUMERIC                  |-------------|
+| AVHCST   |    0 |           0 |   7 | FLAG TABLE               |-------------|
+| APCFIT   |    4 |           0 |  15 | NUMERIC                  |-------------|
+|          |      |             |     |                          |-------------|
+| MJFC     |    0 |           0 |   4 | NUMERIC                  |-------------|
+* MJFC  stored  0 *           0 |   8 * NUMERIC (NC021241,250,253-255 only)    *
+|          |      |             |     |                          |-------------|
+| SACV     |    0 |           0 |   5 | NUMERIC                  |-------------|
+| LOGRCW   |    8 |           0 |  30 | LOG/M                    |-------------|
+| BWCC1    |    5 |     -100000 |  18 | NUMERIC                  |-------------|
+| BWCC2    |    5 |           0 |  17 | NUMERIC                  |-------------|
+| ASFI     |    4 |           0 |  24 | W M**-2                  |-------------|
+| AEFW     |   10 |           0 |  14 | M                        |-------------|
+| FCPH     |    0 |           0 |   7 | NUMERIC                  |-------------|
+| STCH     |    0 |           0 |  14 | NUMERIC                  |-------------|
+| ENCH     |    0 |           0 |  14 | NUMERIC                  |-------------|
+| CHSF     |    0 |           0 |   6 | NUMERIC                  |-------------|
+| NPPR     |    0 |           0 |  12 | NUMERIC                  |-------------|
+| NPPC     |    0 |           0 |  12 | NUMERIC                  |-------------|
+| PCCF     |    0 |           0 |   7 | PERCENT                  |-------------|
+| SLSF     |    0 |           0 |  24 | FLAG TABLE               |-------------|
+| SLQF     |    0 |           0 |  24 | FLAG TABLE               |-------------|
+| ACQF     |    0 |           0 |  24 | FLAG TABLE               |-------------|
+| QGFQ     |    0 |           0 |   2 | CODE TABLE               |-------------|
+| QGQI     |    0 |           0 |   7 | %                        |-------------|
+| QGQIL    |    0 |           0 |   7 | %                        |-------------|
+| QGQIR    |    0 |           0 |   7 | %                        |-------------|
+| QGQIS    |    0 |           0 |   7 | %                        |-------------|
+| QGSSQ    |    0 |           0 |  24 | NUMERIC                  |-------------|
+| FOVQ     |    0 |           0 |  24 | FLAG TABLE               |-------------|
+| BUHD     |    0 |           0 |  48 | CCITT IA5                |-------------|
+| BULTIM   |    0 |           0 |  48 | CCITT IA5                |-------------|
+| BORG     |    0 |           0 |  32 | CCITT IA5                |-------------|
+| BBB      |    0 |           0 |  48 | CCITT IA5                |-------------|
+| SEQNUM   |    0 |           0 |  32 | CCITT IA5                |-------------|
+|          |      |             |     |                          |-------------|
+`------------------------------------------------------------------------------'

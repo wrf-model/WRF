@@ -1,0 +1,65 @@
+#!/bin/csh -f
+
+set nonomatch
+
+
+foreach dir ( frame chem share dyn_em dyn_exp dyn_nmm phys main tools )
+  if ( -d $dir ) then
+    ( cd $dir ; echo $dir ; /bin/rm -f core wrf *.f90 *.exe *.kmo *.mod *.o *.obj *.inc *.F90 *.a \
+                      db_* Warnings module_state_description.F module_dm.F gmeta \
+                      wrfdata whatiread rsl.* show_domain* )
+  endif
+end
+
+if ( -d var ) then
+  ( cd var ; make clean )
+endif
+
+( cd tools/CodeBase ; make clean )
+
+( cd inc ; /bin/rm -f *.inc namelist.default )
+
+
+set echo
+set arg="$1"
+if ( "$arg" == '-a' || "$arg" == '-aa' ) then
+  if ( -d var ) then
+    ( cd var ; make superclean )
+    ( cd var/obsproc ; make clean )
+  endif
+  if ( -f configure.wrf ) then
+    /bin/cp configure.wrf configure.wrf.backup
+    /bin/rm -f configure.wrf
+  endif
+  if ( -f Registry/Registry ) then
+    /bin/cp Registry/Registry Registry/Registry.backup
+    /bin/rm -f Registry/Registry
+  endif
+  /bin/rm -fr ./netcdf_links
+  /bin/rm -fr tools/code_dbase
+  ( cd external ; make -i superclean )
+  ( cd external/io_grib1/WGRIB ; make clean )
+  ( cd external/atm_ocn ; make clean )
+  ( cd tools ; /bin/rm -f registry gen_comms.c fseeko_test fseeko64_test )
+  ( cd inc; /bin/rm -f dm_comm_cpp_flags wrf_io_flags.h wrf_status_codes.h )
+  if ( "$arg" != '-aa' ) then
+    ( cd run ; /bin/rm -f gm* out* fort* ideal* *.exe ; \
+	  /bin/cp -f namelist.input namelist.input.backup ; \
+	  /bin/rm -f namelist.input ) >& /dev/null
+    ( cd test/exp_real ; /bin/rm -f gm* out* fort* real* )
+    ( cd test ; rm -f */*.exe */ETAMPNEW_DATA */GENPARM.TBL */LANDUSE.TBL */README.namelist \
+	  */RRTM_DATA */SOILPARM.TBL */VEGPARM.TBL */URBPARM.TBL */grib2map.tbl \
+	  */CAM_ABS_DATA */CAM_AEROPT_DATA */RRTMG_LW_DATA */RRTMG_SW_DATA \
+	  */ozone.formatted */ozone_lat.formatted */ozone_plev.formatted \
+	  */gribmap.txt */tr??t?? */co2_trans) >& /dev/null
+  endif
+endif
+
+#cms++
+
+if ( -d chem ) then
+  if ( -e chem/KPP )then
+    ( cd chem/KPP; ./clean_kpp ) 
+  endif
+endif
+#cms--

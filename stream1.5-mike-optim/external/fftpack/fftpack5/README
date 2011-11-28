@@ -1,0 +1,174 @@
+
+FFTPACK5 - a FORTRAN library of fast Fourier transforms
+
+Authors:  Paul N. Swarztrauber and Richard A. Valent
+
+$Id: README,v 1.2 2004/06/17 21:59:51 rodney Exp $
+
+Website
+-------
+
+http://www.scd.ucar.edu/css/software/fftpack5
+
+
+Documentation
+-------------
+
+Documentation is provided in PDF format in the file fftpack5.pdf.
+This information is also available in HTML format at the above
+website.  Information about building the library follows below,
+as well as a synopsis of the library.
+
+
+Compiling Library
+-----------------   
+
+[Editor's note - this refers to the original build, 
+not the WRF modified build.]
+
+The included Makefile if configured to build a static
+library on most currently availble unix and unix-like
+operating systems.  The given make targets (type "make"
+without any arguments for a list of targets) correspond
+to compiler names; e.g. intel = Intel F95 compiler, 
+gnu = GNU g77 compiler, sun = Sun Solaris compiler, etc.
+
+The source code is by default configured for single precision
+real numbers.  If double precision is desired, the Makefile must
+be modified with the appropriate compiler options for promoting
+real to double precision as well as promoting constants to double
+precision (this is often "-r8" on some, but not all, compilers).
+
+
+Complex Transform Routines
+__________________________
+
+CFFT1I    1D complex initialization
+CFFT1B    1D complex backward
+CFFT1F    1D complex forward
+
+CFFT2I    2D complex initialization
+CFFT2B    2D complex backward
+CFFT2F    2D complex forward
+
+CFFTMI    multiple complex initialization
+CFFTMB    multiple complex backward
+CFFTMF    multiple complex forward
+
+
+Real Transform Routines
+_______________________
+
+RFFT1I    1D real initialization
+RFFT1B    1D real backward
+RFFT1F    1D real forward
+
+RFFT2I    2D real initialization
+RFFT2B    2D real backward
+RFFT2F    2D real forward
+
+RFFTMI    multiple real initialization
+RFFTMB    multiple real backward
+RFFTMF    multiple real forward
+
+
+Real Cosine Transform Routines
+______________________________
+
+COST1I    1D real cosine initialization
+COST1B    1D real cosine backward
+COST1F    1D real cosine forward
+
+COSTMI    multiple real cosine initialization
+COSTMB    multiple real cosine backward
+COSTMF    multiple real cosine forward
+
+
+Real Sine Transform Routines
+____________________________
+
+SINT1I    1D real sine initialization
+SINT1B    1D real sine backward
+SINT1F    1D real sine forward
+
+SINTMI    multiple real sine initialization
+SINTMB    multiple real sine backward
+SINTMF    multiple real sine forward
+
+
+Real Quarter-Cosine Transform Routines
+______________________________________
+
+COSQ1I    1D real quarter-cosine initialization
+COSQ1B    1D real quarter-cosine backward
+COSQ1F    1D real quarter-cosine forward
+
+COSQMI    multiple real quarter-cosine initialization
+COSQMB    multiple real quarter-cosine backward
+COSQMF    multiple real quarter-cosine forward
+
+
+Real Quarter-Sine Transform Routines
+____________________________________
+
+SINQ1I    1D real quarter-sine initialization
+SINQ1B    1D real quarter-sine backward
+SINQ1F    1D real quarter-sine forward
+
+SINQMI    multiple real quarter-sine initialization
+SINQMB    multiple real quarter-sine backward
+SINQMF    multiple real quarter-sine forward
+
+
+Library FFTPACK5 contains 1D, 2D, and multiple fast Fourier
+subroutines, written in Fortran 77, for transforming real and complex
+data, real even and odd wave data, and real even and odd quarter-wave
+data.
+
+All of the FFTPACK5 routines listed above are grouped in triplets
+e.g. {CFFT1I, CFFT1F, CFFT1B}.  The suffix "I" denotes "initialize",
+"F" denotes "forward" (as in "forward transform") and "B" denotes
+"backward".  In an application program, before calling "B" or "F"
+routines for the first time, or before calling them with a different
+length, users must initialize an array by calling the "I" routine of
+the appropriate pair or triplet.  Note that "I" routines need not be
+called each time before a "B" or "F" routine is called.
+
+All of the transform routines in FFTPACK5 are normalized.
+
+Error messages are written to unit 6 by routine XERFFT.  The
+standard version of XERFFT issues an error message and halts execution,
+so that no FFTPACK routine will return to the calling program with
+error return IER different than zero.  Users may consider modifying the
+STOP statement in order to call system-specific exception-handling
+facilities.
+
+FFTPACK5 is written in standard Fortran 77 except for several
+instances where arrays of type REAL or COMPLEX are passed to a
+subroutine and used as a different type.
+
+ (1) "Vectorizing the Fast Fourier Transforms", by Paul Swarztrauber,
+     Parallel Computations, G. Rodrigue, ed., Academic Press,
+     New York 1982.
+
+ (2) "Fast Fourier Transforms Algorithms for Vector Computers", by
+     Paul Swarztrauber, Parallel Computing, (1984) pp.45-63.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

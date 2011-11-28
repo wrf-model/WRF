@@ -1,0 +1,264 @@
+#EQUATIONS { -------- NMHC9(b) ---------------------------------------------------------- }
+{ background+isoprene(MIM)+ethane+propane+propylene+ethene+n-butane chemistry }
+{ Modified MATCH-MPIC mechansim based on: von Kuhlmann, R., Lawrence, M. G., Crutzen, P. J., and Rasch, P. J. 2003: A model
+  for studies of tropospheric ozone and nonmethane hydrocarbons: Model description and 
+  ozone results. J. Geophys. Res., 108, doi:10.1029/2002JD002893 }
+{ this file is based on RvKs Version, 09/2003: Time-stamp: <2004-06-28 16:27:25 kuhlmann> }
+{ NOTE: equation numbering is not used by KPP but by the budget routines in MATCH-MPIC}
+
+{ last changed: M. Salzmann: started adaptation for WRF-Chem, UNFINISHED!!!}
+{ !!!!WARNING: DO NOT USE UNLESS IMPLEMENTATION IS FINISHED!!!!}
+{          DO NOT YET DISTRIBUTE   }
+{ hetn2o5 not implemented, not all photolysis rates calculated, not all species initialized/emitted, soluble species not scavenged,  ... }
+
+{ --------------------- background: CH4-CO-NOx-HOx chemistry ------------------------- }
+{ hetn2o5 NOT IMPLEMENTED}
+
+{1} O3 + hv = O1D                    :  j(Pj_o31d) ;
+{2} O1D + M = O3                     : .7902_dp*2.1D-11*exp(115._dp/TEMP)+.20946_dp*3.2D-11*exp(70._dp/TEMP); {new:Rav02,JPL03, also added~1% to N2-rate due to noble gases}
+{3} O1D + H2O = 2 OH                 : 2.2D-10; {JPL03}
+{4} M {=O2} + hv = 2 O3              : min(1.D-11,.20946_dp*j(Pj_O2));  {xxc}
+{5} O3 + OH = HO2                    : 1.7D-12*exp(-940._dp/TEMP); {JPL03new}
+{6} O3 + HO2 = OH                    : 1.0D-14*exp(-490._dp/TEMP); {JPL03new}
+{7} HO2 + OH = H2O                   : 4.8D-11*exp(250._dp/TEMP); {JPL03}
+{8} 2 HO2 = H2O2                     : RHO2HO2(C_M,C_H2O,TEMP);{JPL03+new:Chris02}
+{9} H2O2 + hv = 2 OH                 : j(Pj_h2o2);
+{10} OH + H2O2 = HO2                 : 2.9D-12*exp(-160._dp/TEMP); {JPL03}
+{11} OH + CO  = HO2 {+ CO2}          : 1.57D-13 + 3.54D-33*C_M; {McCabe et al. 2001}
+{12} CH4 + OH = MeO2 + H2O           : 1.85D-20*exp(2.82_dp*log(TEMP)-987._dp/TEMP); {Atkinson 2003, ACP}
+{13} CH4 + O1D = .75 MeO2 + .75 OH + .25 HCHO + .4 HO2 {+.05 H2} : 1.5D-10; {JPL03=Atk02, new}
+{14} MeO2 + HO2 = MeOOH {+ O2}       : 4.1D-13*exp(750._dp/TEMP)/(1._dp+1._dp/497.7_dp*EXP(1160._dp/TEMP)); {JPL03new, br.: Elrod et al. 2001}
+{15} MeO2 + HO2 = HCHO + H2O {+ O2}  : 4.1D-13*exp(750._dp/TEMP)/(1._dp+497.7_dp*EXP(-1160._dp/TEMP)); {JPL03new, br.: Elrod et al. 2001}
+{16} MeO2 + NO = HCHO + HO2 + NO2    : 2.8D-12*exp(300._dp/TEMP); {JPL03, MCM.1% MeONO2,J.Crowley<1D-5,+oth.path.,Tyn01:<0._dp5%}
+{17} 2 MeO2 = 2 HCHO + 2 HO2         : 9.5D-14*exp(390._dp/TEMP)/(1._dp+1._dp/26.2_dp*EXP(1130._dp/TEMP)); {JPL03}
+{18} 2 MeO2 = HCHO + MeOH            : 9.5D-14*exp(390._dp/TEMP)/(1._dp+26.2_dp*EXP(-1130._dp/TEMP)); {JPL03}
+{19} MeO2 + NO3 = HCHO + HO2 + NO2   : 1.3D-12; {Atk02}
+{20} MeOOH + hv = HCHO + HO2 + OH    : j(Pj_ch3o2h); {xxc}
+{21} MeOOH + OH = .7 MeO2 + .3 HCHO + .3 OH : RCH3OOHOH(TEMP); {JPL03, potentially CH3OH as product, see comment below}
+{22} HCHO + hv {+ 2 O2} = CO + 2 HO2 : j(Pj_ch2or);
+{23} HCHO + hv = CO {+ H2}           : j(Pj_ch2om);
+{24} HCHO + OH = CO + HO2 + H2O      : 9.52D-18*exp(2.03_dp*log(TEMP)+636._dp/TEMP); {new: Sivakumaran et al. 2003}
+{25} HCHO + NO3 = HNO3 + CO + HO2    : 3.4D-13*exp(-1900._dp/TEMP); {JPL03, E/R ass. same as ALD+NO3}
+{26} NO + O3 = NO2 {+O2}             : 3.0D-12*exp(-1500._dp/TEMP); {JPL03}
+{27} NO + HO2 = NO2 + OH             : 3.5D-12*exp(250._dp/TEMP); {JPL03}
+{28} NO2 + hv =  NO + O3             : j(Pj_no2); {xxc}
+{29} NO2 + O3 =  NO3                 : 1.2D-13*exp(-2450._dp/TEMP); {JPL03}
+{30} NO2 + OH {+M} = HNO3            : TROE2(C_M,TEMP,.933_dp,2.85D-30,-2.67_dp,3.13D-11,363._dp); {Dransfield '99}
+{31} NO2 + HO2 {+M} = HNO4           : RJPL(1.8D-31,3.2_dp,4.7D-12,1.4_dp,C_M,TEMP);{JPL03}
+{32} HNO3 + hv = OH + NO2            : j(Pj_hno3);
+{33} OH + HNO3 {+M} =  NO3           : RHNO3(C_M,TEMP); {JPL03}
+{34} NO3 + hv {+O2} = NO2 + O3       : j(Pj_no3o);
+{35} NO3 + hv = NO                   : j(Pj_no3o2);
+{36} NO3 + NO = 2 NO2                : 1.5D-11*exp(170._dp/TEMP); {JPL03}
+{37} NO3 + NO2 {+M} =  N2O5          : RJPL(2.D-30,4.4_dp,1.4D-12,.7_dp,C_M,TEMP); {JPL03}
+{38} NO3 + HO2 = NO2 + OH            : 3.5D-12; {JPL03, maybe some (<30%) HNO3 formation, see comment C14}
+{39} N2O5 + hv  =  NO3 + NO2         : j(Pj_N2O5); {xxc}
+{40} N2O5 {+M}  =  NO3 + NO2         : RJPL(2.D-30,4.4_dp,1.4D-12,.7_dp,C_M,TEMP)/(3.D-27*exp(10990._dp/TEMP)); {JPL03}
+{41} N2O5 = 2 HNO3                   : 3.D-7*TEMP; {xxc hetn2o5(i) ~10D-5,Dentener&Crutzen93}
+{42} N2O5 + H2O = 2 HNO3             : 2.5D-22+C_H2O*1.8D-39; {Wahner et al. 1998, JPL03 <2.D-21}
+{43} HNO4 + hv = .39 NO3 + .39 OH + .61 NO2 + .61 HO2 : j(Pj_HNO4_2);{xxc Atk97,p.599,S.Sander:.56 +-.17 NO2 yield}
+{44} HNO4 {+M} = HO2 + NO2           : RJPL(1.8D-31,3.2_dp,4.7D-12,1.4_dp,C_M,TEMP)/(2.1D-27*exp(10900._dp/TEMP)); {JPL03}
+{45} HNO4 + OH = NO2 + H2O {+O2}     : 1.3D-12*exp(380._dp/TEMP); {JPL03, poss. H2O2+NO3}
+{46} M{=H2} + OH {+O2} = HO2 + H2O   : 5.31D-7*5.5D-12*exp(-2000._dp/TEMP); {JPL03, fixed H2 (531ppb) Novelli '99}
+{47} MeOH + OH = HCHO + HO2          : 7.3D-12*exp(-620._dp/TEMP); {JPL03new, possibly other products}
+{48} MeO2 + NO2 = MeO2NO2            : RJPL(1.3D-30,4.0_dp,7.5D-12,2.0_dp,C_M,TEMP); {Tyn01 /= JPL03}
+{49} MeO2NO2 {+M} = MeO2 + NO2       : RJPL(1.3D-30,4.0_dp,7.5D-12,2.0_dp,C_M,TEMP)/(1.3D-28*exp(11200._dp/TEMP)); {JPL03}
+{50} MeO2NO2 + hv = .61 MeO2 + .61 NO2 + .39 HCHO + .39 NO3 : j(Pj_HNO4_2); {as HNO4+hv, overtones uncertain}
+
+{ ---------  isoprene oxidation chemistry ---  ref. in Poeschl et al 2000: "MIM" ----- }
+
+{51} ISOP + OH = ISO2                      : 2.54D-11*exp(410._dp/TEMP);
+{52} ISOP + NO3 = ISON                     : 3.03D-12*exp(-446._dp/TEMP);
+{53} ISOP + O3 = .28 HCOOH + .65 MVK + .1 MVKO2  + .1 PA + .14 CO + .58 HCHO + .09 H2O2 + .08 MeO2 + .25 OH + .25 HO2 {ca. +.22 CO2} : 7.86D-15*exp(-1913._dp/TEMP);
+{54} ISO2 + HO2 = ISOOH                    : 2.22D-13*exp(1300._dp/TEMP);{new: Boyd et al.,2003, T: generic}
+{55} ISO2 + NO = .88 NO2 + .88 MVK + .88 HCHO + .88 HO2 + .12 ISON : 2.54D-12*exp(360._dp/TEMP); {new: 12% nitrates: Sprengnether et al. 2002}
+{56} ISOOH + hv = MVK + HCHO + HO2 + OH    : j(Pj_ch3o2h);
+{57} ISOOH + OH = MVK + OH                 : 1.D-10;
+{58} MVK + OH = MVKO2                      : .5_dp*(4.1D-12*exp(452._dp/TEMP)+1.9D-11*exp(175._dp/TEMP));
+{59} MVK + hv = PA + HCHO + CO + HO2       : .019_dp*j(Pj_ch2om)+.015_dp*j(Pj_MGLO);{rvk99=.0372*.5,.0305*.5} {xxc}
+{60} MVK + O3 = .45 HCOOH + .9 MGLO + .1 PA + .19 OH + .22 CO + .32 HO2 {ca. +.15 CO2} : .5_dp*(1.36D-15*exp(-2112._dp/TEMP)+7.51D-16*exp(-1521._dp/TEMP));
+{61} MVKO2 + NO = NO2 + .25 PA + .25 ACETOL + .75 HCHO + .25 CO + .75 HO2 + .5 MGLO {ca. +.125 CO2} :  2.54D-12*exp(360._dp/TEMP);
+{62} MVKO2 + HO2 = MVKOOH                  : 1.82D-13*exp(1300._dp/TEMP);
+{63} MVKOOH + hv = OH + .5 MGLO + .25 ACETOL + .75 HCHO + .75 HO2 + .25 PA + .25 CO {ca. +.125 CO2} :  j(Pj_ch3o2h); 
+{64} MVKOOH + OH = MVKO2                   : 3.D-11;
+{65} ISON + OH = ACETOL + NACA             : 1.3D-11;
+{66} ISON + hv = MVK + HCHO + NO2 + HO2    : 3.7_dp*j(Pj_PAN) ;{rvk99=iC3H7ONO2}
+{67} MVKO2 + NO2 = MPAN                    : .25_dp*RJPL(9.7D-29,5.6_dp,9.3D-12,1.5_dp,C_M,TEMP);
+{68} 2 ISO2 = 2 MVK + HCHO + HO2 {+CO2}                     : 2.D-12;
+{69} 2 MVKO2 = ACETOL + MGLO + .5 CO + .5 HCHO + HO2 {+CO2} : 2.D-12;
+{70} ISO2 + MeO2 = .5 MVK + 1.25 HCHO + HO2 + .25 MGLO + .25 ACETOL + .25 MeOH : 2.D-12;{rate:~other RO2+MeO2 reactions; Villnave&Lesclaux96,products:Poeschl}
+{71} MVKO2 + MeO2 = .5 MGLO + .375 ACETOL + .125 PA + 1.125 HCHO + .875 HO2 + .125 CO + .25 MeOH : 2.D-12;{same citation as above}
+
+{ --- next part is actually ethane chemistry, but also necessary for isoprene-only runs  ------------ }
+
+{72} MGLO + OH = PA + CO                   : 8.4D-13*exp(830._dp/TEMP);{Tyndall et al.,Int.J.Chem.Kinet.1995,Atk99: 1.5D-11,for products: see also Atk97,p.621,Atk02: 1.5D-11 +-20\%}
+{73} MGLO + hv = PA + CO + HO2             : j(Pj_MGLO); {xxc}
+{74} ACETOL + OH = MGLO + HO2              : 3.D-12; {Atk02, Orlando et al. 1999: 2-3% PA+HCHO}
+{75} ACETOL + hv = PA + HCHO + HO2         : .074_dp*j(Pj_ch2or); {rvk 99,new: Orlando, 1999 q.y. 0.65 included}
+{76} PA + HO2 = PAA                        : 4.3D-13*exp(1040._dp/TEMP)/(1._dp+1._dp/37._dp*exp(660._dp/TEMP)); {Tyn01=JPL03}
+{77} PA + HO2 = CH3COOH + O3               : 4.3D-13*exp(1040._dp/TEMP)/(1._dp+37._dp*exp(-660._dp/TEMP)); {Tyn01=JPL03}
+{78} PA + NO = MeO2 + NO2 {+CO2}           : 8.1D-12*exp(270._dp/TEMP); {Tyn01=JPL03}
+{79} PA + NO2 = PAN                        : RJPL(9.7D-29,5.6_dp,9.3D-12,1.5_dp,C_M,TEMP);{JPL03new /= Tyn01, Tyn01 is 0-14\% faster,14\% in PBL}
+{80} PA + MeO2 = HCHO + HO2 + MeO2         : 2.0D-12*exp(500._dp/TEMP)/(1._dp+1._dp/2.2D6*exp(3820._dp/TEMP));{Tyn01=JPL03,br.JPL97; JPL03: 0.9 at 298K}
+{81} PA + MeO2 = CH3COOH + HCHO            : 2.0D-12*exp(500._dp/TEMP)/(1._dp+2.2D6* exp(-3820._dp/TEMP));{Tyn01=JPL03,br.:JPL97; JPL03: 0.1 at 298K}
+{82} 2 PA = 2 MeO2 { + 2 CO2 +O2}          : 2.5D-12*exp(500._dp/TEMP); {Tyn01 /= JPL03 =2.9D-12*exp(500/T), typo???}
+{83} PA + NO3 = MeO2 + NO2 {+CO2}          : 4.D-12; {K&S 96,MCM}
+{84} PAA + hv = MeO2 + OH                  : .025_dp*j(Pj_ch2or);{rvk99,Giguerre&Olmos56 extrapol. 300-340nm}
+{85} PAA + OH = PA                         : 3.8D-12*exp(200._dp/TEMP);{as MeOOH+OH, different products used in RACM}
+{86} PAN + OH = HCHO + NO2 {+CO2}          : 2.D-14; {JPL03:<4.D-14(products unknown), could probably skip this}
+{87} PAN + hv = PA + NO2                   : j(Pj_PAN); 
+{88} PAN {+M} = PA + NO2                   : RJPL(9.7D-29,5.6_dp,9.3D-12,1.5_dp,C_M,TEMP)/(9.D-29*exp(14000._dp/TEMP)); {JPL03}
+{89} MPAN + OH = ACETOL + NO2 {+CO2}       : 3.2D-11;{new: Orlando02, 9x faster than old(MCM) rate, other products! PA,HCHO}
+{90} MPAN {+M} = MVKO2 + NO2               : RJPL(9.7D-29,5.6_dp,9.3D-12,1.5_dp,C_M,TEMP)/(9.D-29*exp(14000._dp/TEMP)); {Roberts&Bertman92}
+{91} MPAN + hv = ACETOL + NO2 {+CO2}       : j(Pj_PAN); {as PAN+hv,MCM}
+{92} CH3COOH + OH = MeO2 + H2O {+CO2}      : 4.D-13*exp(200._dp/TEMP); {JPL03}
+{93} HCOOH + OH = HO2 {+CO2}               : 4.D-13; {JPL03}
+{94} NACA + OH = NO2 + HCHO + CO           : 5.6D-12*exp(270._dp/TEMP); {MIM, as CH3CHO+OH}
+{95} NACA + hv = NO2 + HCHO + CO           : .19_dp*j(Pj_ch2or);{ass.=j(ALD)}
+
+{-------------- ethane chemistry --(part that is not involved in isoprene-only runs------------ }
+
+{96} C2H6 + OH = EtO2 + H2O                :  1.49D-17*TEMP*TEMP*exp(-499._dp/TEMP); {Atkinson 2003, ACP}
+{97} EtO2 + HO2 = EtOOH                    :  7.5D-13*exp(700._dp/TEMP); {JPL03~Tyn01}
+{98} EtO2 + MeO2 = .75 HCHO + HO2 + .75 ALD + .25 MeOH {+ .25 EtOH} : 1.6D-13*exp(195._dp/TEMP);{K&S96+JPL03}
+{99} EtO2 + PA = .82 MeO2 + ALD + .82 HO2 + .18 CH3COOH : 4.9D-12*exp(211._dp/TEMP);{Atk99(=Villnave&Lesclaux96),K&S96 for E/A, Prod.}
+{100} EtO2 + NO = ALD + HO2 + NO2          :  2.7D-12*exp(350._dp/TEMP); {Tyn01, MCM: 0.9%EtONO2, Tyn01:<1.4%}
+{101} EtO2 + NO3 = ALD + HO2 + NO2         :  2.3D-12; {Atk99}
+{102} ALD + OH = PA + H2O                  :  5.6D-12*exp(270._dp/TEMP); {JPL03,CH3+HCOOH channel <0.03, HO2+CH3COOH <0.02, IUPAC based on Crowley: 4.4D-12*exp(365+-40/TEMP)}
+{103} ALD + hv = MeO2 + HO2 + CO           :  .19_dp*j(Pj_ch2or); {rvk 99}
+{104} ALD + NO3 = PA + HNO3                :  1.4D-12*exp(-1900._dp/TEMP); {JPL03}
+{105} EtOOH + hv = ALD + HO2 + OH          :  j(Pj_ch3o2h); 
+{106} EtOOH + OH = .3 EtO2 + .7 ALD + .7 OH : RCH3OOHOH(TEMP);{as MeOOH+OH,br.:~MCM~Poisson2000}
+
+{ -------------------------- propane chemistry (only iso-branch) --------------------- }
+
+{107} C3H8 + OH = .82 PrO2 + .18 EtO2 + H2O : 1.65D-17*TEMP*TEMP*exp(-87._dp/TEMP);{rate: Atkinson 2003 (ACP),EtO2~nPrO2->PAN param. PPN-formation}
+{108} PrO2 + NO = .96 ACET + .96 HO2 + .96 NO2 + .04 PrONO2 : 2.7D-12*exp(360._dp/TEMP); {rate:Atk99,PrO2=i-PrO2,yields for 298K,1atm}
+{109} PrO2 + HO2 = PrOOH                   :  1.9D-13*exp(1300._dp/TEMP); {Atk97,generic,p.225}
+{110} PrO2 + MeO2 = ACET + .8 HCHO + .8 HO2 + .2 MeOH : 2.0D-14*exp(-886._dp/TEMP); {rate:K&S96+JPL03,branch:~Poisson2000}
+{111} PrOOH + hv = ACET + HO2 + OH         :  j(Pj_ch3o2h);
+{112} PrOOH + OH = 0.3 PrO2 + 0.7 ACET + 0.7 OH : RCH3OOHOH(TEMP); {ass. same as MeOOH+OH,br.as EtOOH+OH}
+{113} PrONO2 + hv = ACET + NO2 + HO2       :  3.7_dp*j(Pj_PAN);{rvk99}
+{114} PrONO2 + OH = ACET + NO2             :  6.2D-13*exp(-230._dp/TEMP); {Atk99}
+{115} ACET + OH = ACETO2 + H2O             :  1.33D-13+3.82D-11*exp(-2000._dp/TEMP); {JPL03new~Gierczak03, 0.96+-0.11 yield, acetic acid <1\%, possibly ~<5\% PA+CH3OH (methanol)?}
+{116} ACET + hv = PA + MeO2                :  j(Pj_ACET);{j(i,14) xxc}
+{117} ACETO2 + NO = NO2 + PA + HCHO        :  2.9D-12*exp(300._dp/TEMP);{JPL03~=Tyn01: 2.8D-12...}
+{118} ACETO2 + HO2 = ACETP                 :  8.6D-13*exp(700._dp/TEMP);{JPL03=Tyn01}
+{119} ACETO2 + MeO2 = .5 MGLO + .5 MeOH + .3 PA + .8 HCHO + .3 HO2 + .2 ACETOL : 7.5D-13*exp(500._dp/TEMP);{JPL03=Tyn01}
+{120} ACETP + OH = .3 ACETO2 + .7 MGLO + .7 OH : RCH3OOHOH(TEMP);{as MeOOH+OH, branching: ~Poisson2000}
+{121} ACETP + hv = PA + HO2 + OH           :  j(Pj_ch3o2h); 
+
+{ -------------------------- propylene chemistry ------------------------------------- }
+
+{122} C3H6 + OH {+M + O2} = C3H6O2         : RALKE(8.D-27,3.5_dp,3.D-11,0.5_dp,C_M,TEMP); {Atk99}
+{123} C3H6 + O3 = .57 HCHO + .47 ALD + .33 OH + .26 HO2 + .07 MeO2 + .06 EtO2 + .23 PA + .04 MGLO + .06 CH4 + .31 CO + .22 HCOOH + .03 MeOH {+0.13CO2} : 6.5D-15*exp(-1900._dp/TEMP);{JPL03,Zaveri&Peters99,OLET+O3}
+{124} C3H6 + NO3 = ONIT                    : 4.6D-13*exp(-1155._dp/TEMP);{Atk99}
+{125} C3H6O2 + NO = .98 ALD + .98 HCHO + .98 HO2 + .98 NO2 + .02 ONIT : 4.2D-12*exp(180._dp/TEMP);{NCAR Master Mec.,Nitr.Yield:MCM}
+{126} C3H6O2 + HO2 = C3H6OOH               : 6.5D-13*exp(650._dp/TEMP); {NCAR Master Mec.}
+{127} C3H6OOH + OH = .5 C3H6O2 + .5 ACETOL + .5 OH + H2O : 3.8D-12*exp(200._dp/TEMP); {NCAR Master Mec.}
+{128} C3H6OOH + hv = ALD + HCHO + OH + HO2 : j(Pj_ch3o2h);{products: MCM}
+
+{ -------------------------- ethene chemistry  (parameterized into C3H6) ------------- }
+
+{129} C2H4 + OH {+M+O2} = .6666667 C3H6O2  : RJPL(1.D-28,0.8_dp,8.8D-12,0._dp,C_H2O,TEMP); {JPL03, see IMAGES/MOZART}
+{130} C2H4 + O3 = HCHO + .22 HO2 + 0.12 OH + .23 CO + .54 HCOOH {+.1 H2 + 0.23CO2} : 1.2D-14*exp(-2630._dp/TEMP);{JPL03,Neeb98~Z&P99}
+
+{ ------------- higher alkanes chemistry (n-butane as surrogate) --------------------- }
+
+{131} C4H10 + OH = C4H9O2 + H2O                              : 1.81D-17*TEMP*TEMP*exp(114._dp/TEMP);{Atkinson 2003, ACP, corrected sign}
+{132} C4H9O2 + NO = .84 NO2 + .56 MEK + .56 HO2 + .28 EtO2 + .84 ALD + .16 ONIT : 2.7D-12*exp(360._dp/TEMP);{16%Nitr.Yield:Z&P99,other yields:Poisson2000(1:3)}
+{133} C4H9O2 + HO2 = C4H9OOH                                 : 1.9D-13*exp(1300._dp/TEMP); {Atk97,generic,p.225}
+{134} C4H9O2 + MeO2 = .88 MEK + .68 HCHO + 1.23 HO2 + .12 ALD + .12 EtO2 + .18 MeOH : 9.46D-14*exp(431._dp/TEMP);{branch:~Poisson2000}
+{135} C4H9OOH + OH = .15 C4H9O2 + .85 MEK + .85 OH + .85 H2O : RCH3OOHOH(TEMP);{as MeOOH,branch.:~MCM+Poisson2000}
+{136} C4H9OOH + hv = OH + .67 MEK + .67 HO2 + .33 EtO2 + .33 ALD :  j(Pj_ch3o2h) ;
+{137} MEK + hv = PA + EtO2                                   : .42_dp*j(Pj_ch2or);{rvk99,~7.*J_ACETONE}
+{138} MEK + OH = MEKO2                                       : 1.3D-12*exp(-25._dp/TEMP);{Atk02}
+{139} MEKO2 + NO = .985 ALD + .985 PA + .985 NO2 + .015 ONIT : 2.7D-12*exp(360._dp/TEMP); {same as PrO2+NO,Atk99,Nitr.Yield:MCM}
+{140} MEKO2 + HO2 = MEKOOH                                   : 1.9D-13*exp(1300._dp/TEMP); {Atk97,generic,p.225}
+{141} MEKOOH + OH = .8 MeCOCO + .8 OH + .2 MEKO2             : RCH3OOHOH(TEMP); {as MeOOH,branch.:~MCM~Poisson2000}
+{142} MEKOOH + hv = PA + ALD + OH                            : j(Pj_ch3o2h); {same as MeOOH}
+{143} MeCOCO + hv = 2 PA                                     : 2.15_dp * j(Pj_MGLO); {MCM;ratio:MGLO+hv}
+{144} ONIT + OH = MEK + NO2 {+H2O}                           : 1.7D-12; {Atk99,for 1-C4H9ONO2}
+{145} ONIT + hv = NO2 + .67 MEK + .67 HO2 + .33 EtO2 + .33 ALD : 3.7_dp*j(Pj_PAN);{as i-C3H7ONO2,prod.:wie:Poisson}
+
+{ -----------------------------------  comments ---------------------------------------
+General procedure: priority for the use of reaction rates and product distributions
+
+  1. JPL2003, Sander et al. 2003, Evaluation Number 14
+  2. Tyn01: Tyndall et al. 2001 (JGR,106,12157--12182)
+  3. Atkinson et al. 1999, Web Version - August 1999
+  4. Atkinson et al. 1997 (Book)
+  5. MCM, Jenkins et al. 1997, e.g. nitrate yields and branching ratios of RO2+RO2
+  6. K&S96: Kirchner and Stockwell 1996, for some RO2+R'O2 rates or estimate of E/R
+   
+Some mechanistic parts were based on and other sources:
+  - isoprene Chemistry: MIM (Mainz Isoprene Mechanism), Poeschl et al. 2000
+      changes: - added ISO2+MeO2 and MVKO2+MeO2 reactions
+               - use newer nitrate yield from Sprengnether et al. 2002
+  - simple alkene representation: NCAR Master Mechanism/MOZART/IMAGES, except:
+            C3H6+O3: used products of Zaveri & Peters, 1999 (CBM-Z, denoted Z&P99)
+                     for terminal olefins
+            C2H4+O3: used products of Neeb et al. 1998
+  - n-butane mechanism from Poisson et al 2000 (JAC)
+       but using fixed product yields for RO2+RO2 reactions (checked with MCM)
+       and ROOH+OH (MCM)
+       average alkyl nitrate formation of 16% assumed (Zaveri & Peters, 1999)
+
+Other single exceptions
+  - some photolysis rates based on correlations to existing ones: von Kuhlmann et al.'03
+  - NO2 + OH : used full Troe expression from Dansfield et al. 1999
+  - n-C3H7O2 is parameterised into C2H5O2, thus giving PAN instead of PPN
+  - higher alkohols (C>=2) and higher aldehydes (C>=3) omitted (--> small loss of C)
+
+Recent changes (older changes see in older equation files) ----------------------------
+NMHC7 --> NMHC8 (~ 05/2001)
+  - included O2 photolysis
+  - use Mentel et al. 1996 for N2O5 + H2O (--> 0.1 of het. rate, glob. ave.)
+    (later a minor update to Wahner et al. 1998 made)
+NMHC8 --> NMHC9 (09/2003)
+  - full update to JPL 2003 recommendations (comments: JPL03new = changed rate, 
+                                                       JPL03 = old rate unchanged)
+  - updated alkane+OH rates: Atkinson 2003 (ACPD)
+  - CO + OH rate updated to McCabe et al. 2001 (GRL,28,3135-3138)
+  - 2 HO2 --> H2O2 rate updated to results of Christensen et al. (2002) 
+    (GRL,29(9),10.1029/2001GL014525)
+  - O(1D)+N2 rate updated to Ravishankara et al. 2002 (GRL,15,10.1029/2002GL014850), 
+    also rate adjusted for noble gases (assumed like N2)
+  - replaced dangerous F(1),F(2) expressions (--> C_M,C_H2O)
+  - removed dangerous RCONST expressions (now repeat expression or use statement function)
+  - added HCHO channel in CH3O3 + HO2 based on Elrod et al. 2001 
+    (--> 0.11 yield at 298K, 0.31 at 218K)
+  - removed acetic acid channel in ACET+OH based on Gierczak et al. 2003.
+  - acetol as product of AcO2+MeO2 and C3H6OOH+OH added
+  - acetol quantum yield (average: 0.65) of Orlando et al. (1999) added 
+    (Atm.Env.,33,1621-1629)
+  - new rate for HCHO + OH (Sivakumaran et al. 2003, soon in Atkinson et al. 200X eval)
+  - increased nitrate yield from ISO2+NO to 12% (was 4.4%!) (Sprengnether et al. 2002)
+  - use Boyd et al. (2003) measurement for ISO2 + HO2 instead of MCM estimate
+  - MPAN + OH rate now based on Orlando et al. (2002) measurement 
+    (previously MCM estimate, now 9x faster)
+  - added  C3H6OOH + hv (for consistency)
+  - added CH4 + O(1D) reaction (better methane loss in the stratosphere)
+  - added chemistry of CH3O2NO2 (=MeO2NO2): thermal equilibrium, photolysis as HNO4
+  - Note: MeO2NO2 + OH = HCHO + NO3 + HO2 not included, guessed rate constant based on
+    analogies: CH3OH vs CH3ONO2, CH3OH vs CH3O2H: ~1.D-13 (8D-14 to 3D-13) --> too slow
+NMHC9 --> NMHC9(b): some minor additional changes
+  - butane + OH rate corrected
+  - EtO2 + MeO2 rate and products changed using methodology of Kirchner and Stockwell 96, but
+    more recent MeO2 + MeO2 data from JPL03 (from Tyndall et al. 2001)
+  - dto. for PrO2 + MeO2, here additionally consider that only i-PrO2 (secondary radicals) are treated
+  - changed order (MeO2NO2 now after background CH4-CO-NOx-HOx chemistry) 
+
+Other comments, future improvements:
+  - could expand ethene chemistry (following Orlando 1999, instead of the simple param.)
+  - treatment of nitratoalkyl peroxy radicals (Zaveri & Peters 99: ONIT+OH-->NAP ...)
+  - potentially methanol formed from MeOOH + OH 
+    ( e.g. --> = .18 MeO2 + .27 HCHO + .27 OH + .55 MeOH + .55 HO2
+      this product distrib. was suggested by P. Warneck + Crutzen, and tested:
+      --> gives too much MeOH in UT )
+  - possibly include methyl nitrate (arctic marine source of NOx)
+  - check for MIM reduction (see Geiger et al., 2003), but dont cut photolysis rates
+  - check effect of PAN+hv rate and product uncertainties:
+      rate: try 2x old,  products possibly some NO3 produced: Harwood et al., JPC-A, 2003
+         0.41 (MeO2 + NO3 + CO2) + 0.59 (PA + NO2) at 308 nm (0.19 NO3 at 248 nm)
+}

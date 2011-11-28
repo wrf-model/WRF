@@ -1,0 +1,54 @@
+#!/bin/csh
+
+# Bare bones little script that compiles every architecture on a machine
+# JM, 2004 10 13
+
+/bin/rm -f testomatic.log
+
+# First find out how many we got on this box.
+
+if ( ! -e configure ) then
+   echo 'Can not find configure script.  Running in the top level directory?'
+   exit 2
+endif
+
+set n = `((echo '-1' | ./configure) | sed '1,/Please select from among the following supported platforms/d' ) | grep '^  [ 1-9][0-9]' | wc | awk '{print $1}' `
+
+echo "Number of options to test: $n" >>& testomatic.log
+
+set i=1
+while ( $i <= $n )
+
+  echo "$i -------------- clean ----------------" >>& testomatic.log
+
+  clean -a >>& testomatic.log
+
+  echo "$i -------------- configure ----------------" >>& testomatic.log
+
+  echo $i | configure  >>& testomatic.log
+
+  echo "$i -------------- compile  ----------------" >>& testomatic.log
+
+  compile em_real >>& testomatic.log
+
+  if ( ( -e main/wrf.exe ) && ( -e main/real.exe ) && ( -e main/ndown.exe ) ) then
+    if ( ( -x main/wrf.exe ) && ( -x main/real.exe ) && ( -x main/ndown.exe ) ) then
+
+      echo "$i -------------- build ok  ---------------" >>& testomatic.log
+
+    else
+
+      echo "$i -------------- build, not exec  --------" >>& testomatic.log
+    
+    endif
+
+  else
+
+    echo "$i -------------- broken build  -----------" >>& testomatic.log
+
+  endif
+
+  @ i += 1
+
+end
+

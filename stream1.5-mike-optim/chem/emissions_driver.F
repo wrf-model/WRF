@@ -1,0 +1,1099 @@
+!
+!   WRF-chem V3.0 : Original version of emission_driver written by Georg Grell (ESRL/GSD)
+!                   Further developments, bugfixes and improvements  by
+!                   William Gustafson (PNNL), Serena Chung (WSU), 
+!                   Saulo Freitas (CPTEC), and Georg Grell
+!
+!
+MODULE module_emissions_driver
+   IMPLICIT NONE
+CONTAINS
+
+    subroutine emissions_driver(id,ktau,dtstep,DX,                         &
+         adapt_step_flag,curr_secs,                                        &
+         plumerisefire_frq,stepfirepl,                                     &
+         bioemdt,stepbioe,                                                 &
+         config_flags,gmt,julday,alt,t_phy,moist,p8w,t8w,u_phy,            &
+         v_phy,vvel,e_bio,p_phy,chem,rho_phy,dz8w,ne_area,emis_ant,        &
+         tsk,erod,g,emis_seas,emis_dust,tracer,                            &
+         ebu, ebu_in,mean_fct_agtf,mean_fct_agef,                          &
+         mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,          &
+         firesize_agsv,firesize_aggr,                                      &
+         u10,v10,ivgtyp,isltyp,gsw,vegfra,rmol,ust,znt,dms_0,              &
+         erup_beg,erup_end,                                                &
+         xland,xlat,xlong,z_at_w,z,smois,dustin,seasin,                    &
+         sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,                &
+         sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,                &   
+         sebio_hcho,sebio_eth,sebio_ora2,sebio_co,sebio_nr,                &
+         noag_grow,noag_nongrow,nononag,slai,                              &
+         ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,                     &
+         ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,                     &
+         ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,             &
+         ebio_c10h16,ebio_tol,ebio_bigalk,ebio_ch3oh,ebio_acet,            &
+         ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,              &
+         ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,ebio_so2,     &
+         ebio_dms,                                                         &
+         ! stuff for MEGAN v2.04                                                 
+         T2,swdown,                                                        &
+         nmegan,EFmegan,                                                   &
+         msebio_isop,                                                      &
+         mlai,                                                             &
+         pftp_bt, pftp_nt, pftp_sb, pftp_hb,                               &
+         mtsa,                                                             &
+         mswdown,                                                          &
+         mebio_isop, mebio_apin, mebio_bpin, mebio_bcar,                   &
+         mebio_acet, mebio_mbo, mebio_no,                                  &
+         current_month,                                                    &
+         ! end stuff for MEGAN v2.04
+         !            stuff for lightning NOx
+         ter_ht, dy,                                                       &
+         ltng_timestep, ltng_startsec, passive_ltng,                       &
+         temp_upper, temp_lower, N_IC, N_CG,                               &
+         lflash_data, ic_fr, cg_fr,                                        &
+         flashrate_factor, flashrate_method, iccg_method,                  &
+         cellcount_method,                                                 &
+         !            end suff for lightning
+         ! stuff for aircraft emissions
+         emis_aircraft,                                                    &
+         ids,ide, jds,jde, kds,kde,                                        &
+         ims,ime, jms,jme, kms,kme,                                        &
+         its,ite, jts,jte, kts,kte                                         )
+!----------------------------------------------------------------------
+  USE module_configure
+  USE module_state_description
+  USE module_data_radm2
+  USE module_data_sorgam, only : mw_so4_aer
+  USE module_model_constants, only : mwdry
+  USE module_emissions_anthropogenics
+  USE module_bioemi_simple
+  USE module_bioemi_beis313
+  USE module_bioemi_megan2
+  USE module_aerosols_sorgam, only: sorgam_addemiss
+  USE module_cbmz_addemiss
+  USE gocart_dust
+  USE gocart_seasalt
+  USE module_dms_emis
+  USE module_mosaic_addemiss
+  USE module_add_emis_cptec
+  USE module_add_emiss_burn
+  USE module_plumerise1
+  USE module_lightning_driver
+  IMPLICIT NONE
+
+   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
+
+   INTEGER,      INTENT(IN   ) :: id,julday, ne_area,                      &
+                                  ids,ide, jds,jde, kds,kde,               &
+                                  ims,ime, jms,jme, kms,kme,               &
+                                  its,ite, jts,jte, kts,kte
+   INTEGER,      INTENT(IN   ) ::                                          &
+                                  ktau,stepbioe,stepfirepl
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),                &
+         INTENT(IN ) ::                                   moist
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),                 &
+         INTENT(INOUT ) ::                                   chem
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_tracer ),               &
+         INTENT(INOUT ) ::                                   tracer
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_ebu ),                  &
+         INTENT(INOUT ) ::                                   ebu
+   REAL, DIMENSION( ims:ime, 1, jms:jme, num_ebu_in ),                     &
+         INTENT(INOUT ) ::                                   ebu_in
+   REAL, DIMENSION( ims:ime, jms:jme, ne_area ),                           &
+         INTENT(INOUT ) ::                               e_bio
+   REAL, DIMENSION( ims:ime, 1:config_flags%kemit, jms:jme,num_emis_ant),&
+         INTENT(IN ) ::                                                    &
+         emis_ant
+   REAL, DIMENSION( ims:ime, jms:jme),&
+         INTENT(IN ) ::                                                 &
+         dms_0,tsk,erup_beg,erup_end
+   REAL, DIMENSION( ims:ime, jms:jme,3),&
+         INTENT(IN ) ::                                                 &
+         erod
+   REAL, DIMENSION( ims:ime, jms:jme,5),&
+         INTENT(INOUT ) ::                                                 &
+         dustin,seasin
+   REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_dust),   &
+         OPTIONAL, INTENT(INOUT ) ::                                       &
+         emis_dust
+   REAL, DIMENSION( ims:ime, 1, jms:jme,num_emis_seas),   &
+         OPTIONAL,                                                         &
+         INTENT(INOUT ) ::                                                 &
+         emis_seas
+
+   REAL, DIMENSION( ims:ime,  jms:jme ),                                   &
+         OPTIONAL,                                                         &
+         INTENT(IN ) ::                                                    &
+           mean_fct_agtf,mean_fct_agef,                                    &
+           mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,        &
+           firesize_agsv,firesize_aggr
+
+!
+! 
+!
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,               &
+          INTENT(IN   ) ::                                                 &
+                                                        alt,               &
+                                                      t_phy,               &
+                                                      p_phy,               &
+                                                      dz8w,                &
+                                              t8w,p8w,z_at_w , z ,         &
+                                              u_phy,v_phy,vvel,rho_phy
+   INTEGER,DIMENSION( ims:ime , jms:jme )                  ,               &
+          INTENT(IN   ) ::                                                 &
+                                                     ivgtyp,               &
+                                                     isltyp
+   REAL,  DIMENSION( ims:ime , jms:jme )                   ,               &
+          INTENT(IN   ) ::                                                 &
+                                                     u10,                  &
+                                                     v10,                  &
+                                                     gsw,                  &
+                                                  vegfra,                  &
+                                                     rmol,                 &
+                                                     ust,                  &
+                                                     xland,                &
+                                                     xlat,                 &
+                                                     xlong,                &
+                                                     znt
+  REAL, DIMENSION( ims:ime, config_flags%num_soil_layers, jms:jme ) ,      &
+      INTENT(INOUT) ::                               smois
+
+   REAL,  DIMENSION( ims:ime , jms:jme )                   ,               &
+         OPTIONAL,                                                         &
+          INTENT(INOUT   ) ::                                                 &
+               sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,      &
+               sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,      &
+               sebio_hcho,sebio_eth,sebio_ora2,sebio_co,sebio_nr,      &
+               noag_grow,noag_nongrow,nononag,slai,                    &
+               ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,           &
+               ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,           &
+               ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,   &
+               ebio_c10h16,ebio_tol,ebio_bigalk, ebio_ch3oh,ebio_acet, &
+               ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,    &
+               ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,    &
+               ebio_so2,ebio_dms
+
+
+   ! stuff for MEGAN v2.04...most of these arrays are optional and package dependent 
+   !  as declared in registry.chem
+
+   integer, intent(in   ) :: nmegan
+   real, dimension (ims:ime, jms:jme , nmegan) ,                       &
+         OPTIONAL,                                                         &
+        intent(inout) ::                                               &
+        EFmegan
+
+
+   real, dimension (ims:ime, jms:jme ) ,                               &
+         OPTIONAL,                                                         &
+        intent(in) ::                                                  &
+        msebio_isop,                                                   &
+        pftp_bt, pftp_nt, pftp_sb, pftp_hb
+
+   real, dimension (ims:ime, jms:jme, 12 ) ,                           &
+         OPTIONAL,                                                         &
+        intent(in) ::                                                  &
+        mlai, mtsa, mswdown
+
+   real, dimension (ims:ime, jms:jme ) ,                               &
+         OPTIONAL,                                                         &
+        intent(inout) ::                                               &
+        mebio_isop, mebio_apin, mebio_bpin, mebio_bcar,                &
+        mebio_acet, mebio_mbo, mebio_no
+
+   real, dimension (ims:ime, jms:jme ) ,                               &
+        intent(in) ::                                                  &
+        T2, swdown
+
+   integer, intent(in) :: current_month
+
+   ! end stuff for MEGAN v2.04
+!     stuff for lightning NO
+      REAL,  DIMENSION( ims:ime , jms:jme ) ,                          &
+         INTENT(IN)   ::                      ter_ht                         ! terrain height
+      REAL,    INTENT(IN   )  ::  dy
+      REAL,    INTENT(IN   )  ::  temp_upper, temp_lower, N_IC, N_CG         ! upper/lower T(K) modes of vert distrib, nbr of IC and CG flashes
+      INTEGER, INTENT(IN   )  ::  ltng_timestep, ltng_startsec,        &     ! timestep for ltng data, starting time for lightning data
+                                  passive_ltng, lflash_data                  ! flag for putting LNOx into only the scalar array, 
+                                                                             ! flag to choose observed or simulated flash rate
+      REAL , DIMENSION( ims:ime , jms:jme ) ,                       &
+        INTENT(INOUT)   ::                            ic_fr,           &     ! cumulative number of intracloud flashes (diagnostic)
+                                                      cg_fr                  ! cumulative number of cloud-to-ground flashes (diagnostic)
+      REAL,    INTENT(IN   )  ::  flashrate_factor                           ! factor to adjust predicted flashrates -- for PR prediction
+      INTEGER, INTENT(IN   )  ::  flashrate_method                           ! flashrate calculation method
+      INTEGER, INTENT(IN   )  ::  iccg_method                                ! choosing ic to cg ratio method
+      INTEGER, INTENT(IN   )  ::  cellcount_method                           ! choosing tile_wide or domain_wide method
+!     end stuff for lightning NO
+
+      REAL(KIND=8), INTENT(IN   ) ::                                   &
+           curr_secs
+
+      REAL :: gmtp,gmtm
+      Integer :: endhr,endmin,beghr,begmin
+
+      REAL, INTENT(IN   ) ::                                           &
+           bioemdt, dtstep, dx, gmt, g
+
+      INTEGER, INTENT(IN   ) ::                                        &
+           plumerisefire_frq
+
+      LOGICAL, INTENT(IN   ) ::                                        &
+           adapt_step_flag
+!     stuff for aircraft emissions
+
+      REAL, DIMENSION( ims:ime, 1:config_flags%kemit_aircraft, jms:jme,num_emis_aircraft), &
+            OPTIONAL, INTENT(IN ) :: emis_aircraft 
+!
+! Local variables...
+!
+      INTEGER :: begday,endday,i, j, k, ksub, dust_emiss_active, seasalt_emiss_active
+      REAL :: conv,conv3,conv4,oconv3,oconv4
+      CHARACTER (LEN=80) :: message
+      LOGICAL :: do_bioemiss, do_plumerisefire,do_ex_volcanoe
+
+! ..
+! ..
+! .. Intrinsic Functions ..
+      INTRINSIC max, min
+! ..
+
+! Flags for turning on or off sea salt and/or dust emissions...
+! for PNNL modules:   >0 = sea salt/dust emissions turned on
+! As of NOV 2008 these only are used for MOSAIC and SORGAM
+! gocart  dust and seasalt will only work for GOCART and SORGAM
+!
+      dust_emiss_active    = 0
+      seasalt_emiss_active = 0
+      if(config_flags%dust_opt >= 2 )dust_emiss_active    = 1
+      if(config_flags%seas_opt == 2 )seasalt_emiss_active = 1
+!
+! Setup the timing flags...
+! (methodology is adapated from module_radiation_driver.F)
+!
+      if(config_flags%emiss_opt == 9)then
+! for volcanic ash transport, vash variables are in mix ratio here...
+      do_ex_volcanoe = .false.
+      gmtp=curr_secs/3600.
+      gmtp=mod(gmt+gmtp,24.)
+         gmtm=curr_secs/60.
+         gmtm=mod(gmtm,60.)
+         write(0,*) 'gmtp,gmtm,curr_secs = ',gmtp,gmtm,curr_secs
+      do j=jts,jte
+      do i=its,ite
+         if(emis_ant(i,kts,j,p_e_vash1).le.0.)cycle
+! ! erup_beg is julday*1000+hour
+!
+!   erup_end is continuation in minutes
+!
+         begday=int(erup_beg(i,j))/1000
+         beghr=int(erup_beg(i,j))-begday*1000
+         begmin=00.
+         endhr=beghr+int(erup_end(i,j)/60.)
+         endday=begday+endhr/24
+         endmin=00.
+         write(0,*)'beghr,endhr = ',beghr,endhr,erup_beg(i,j),erup_end(i,j)
+         write(0,*)'begday,endday,julday = ',begday,endday,julday
+         if(begday.ge.julday .and. beghr.le.gmtp)then
+            write(0,*)'endhr,endmin,beghr,begmin = ',endhr,endmin,beghr,begmin
+            if(endhr.lt.int(gmtp) .and. endday.le.julday)then
+               write(0,*) 'not do volcano stuf at gmtp = ',gmtp
+            ENDIF
+            if(endhr.eq.int(gmtp))then
+               if(endmin.le.gmtm)then
+                  write(0,*) 'do volcano stuf at gmtp,endmin = ',gmtp,endmin
+                  do k=kts,kte
+                   conv=alt(i,k,j)*dtstep/dz8w(i,k,j)
+                   chem(i,k,j,p_vash_1)=chem(i,k,j,p_vash_1)+emis_ant(i,k,j,p_e_vash1)*conv
+                   chem(i,k,j,p_vash_2)=chem(i,k,j,p_vash_2)+emis_ant(i,k,j,p_e_vash2)*conv
+                   chem(i,k,j,p_vash_3)=chem(i,k,j,p_vash_3)+emis_ant(i,k,j,p_e_vash3)*conv
+                   chem(i,k,j,p_vash_4)=chem(i,k,j,p_vash_4)+emis_ant(i,k,j,p_e_vash4)*conv
+                   chem(i,k,j,p_vash_5)=chem(i,k,j,p_vash_5)+emis_ant(i,k,j,p_e_vash5)*conv
+                   chem(i,k,j,p_vash_6)=chem(i,k,j,p_vash_6)+emis_ant(i,k,j,p_e_vash6)*conv
+                   chem(i,k,j,p_vash_7)=chem(i,k,j,p_vash_7)+emis_ant(i,k,j,p_e_vash7)*conv
+                   chem(i,k,j,p_vash_8)=chem(i,k,j,p_vash_8)+emis_ant(i,k,j,p_e_vash8)*conv
+                   chem(i,k,j,p_vash_9)=chem(i,k,j,p_vash_9)+emis_ant(i,k,j,p_e_vash9)*conv
+                   chem(i,k,j,p_vash_10)=chem(i,k,j,p_vash_10)+emis_ant(i,k,j,p_e_vash10)*conv
+                  enddo
+               endif
+            ELSE IF(endhr.gt.gmtp .or. ((endhr.le.gmtp) .and. (endday.gt.julday)))then
+               write(0,*) 'do volcano stuuf at gmtp = ',gmtp,endmin
+               do k=kts,kte
+                conv=alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_vash_1)=chem(i,k,j,p_vash_1)+emis_ant(i,k,j,p_e_vash1)*conv
+                chem(i,k,j,p_vash_2)=chem(i,k,j,p_vash_2)+emis_ant(i,k,j,p_e_vash2)*conv
+                chem(i,k,j,p_vash_3)=chem(i,k,j,p_vash_3)+emis_ant(i,k,j,p_e_vash3)*conv
+                chem(i,k,j,p_vash_4)=chem(i,k,j,p_vash_4)+emis_ant(i,k,j,p_e_vash4)*conv
+                chem(i,k,j,p_vash_5)=chem(i,k,j,p_vash_5)+emis_ant(i,k,j,p_e_vash5)*conv
+                chem(i,k,j,p_vash_6)=chem(i,k,j,p_vash_6)+emis_ant(i,k,j,p_e_vash6)*conv
+                chem(i,k,j,p_vash_7)=chem(i,k,j,p_vash_7)+emis_ant(i,k,j,p_e_vash7)*conv
+                chem(i,k,j,p_vash_8)=chem(i,k,j,p_vash_8)+emis_ant(i,k,j,p_e_vash8)*conv
+                chem(i,k,j,p_vash_9)=chem(i,k,j,p_vash_9)+emis_ant(i,k,j,p_e_vash9)*conv
+                chem(i,k,j,p_vash_10)=chem(i,k,j,p_vash_10)+emis_ant(i,k,j,p_e_vash10)*conv
+               enddo
+            ENDIF
+         endif
+      enddo
+      enddo
+      ENDIF
+
+      do_plumerisefire = .false.
+      IF ( config_flags%biomass_burn_opt == BIOMASSB_MOZC .OR. config_flags%biomass_burn_opt == BIOMASSB ) then
+        IF ( ktau==1 ) then
+           do_plumerisefire = .true.
+        ELSE IF ( adapt_step_flag ) THEN
+           IF ( (plumerisefire_frq<=0) .or. &
+                ( curr_secs+real(dtstep,8)+0.01 >= &
+                ( INT( curr_secs/real(plumerisefire_frq*60.,8)+1,8 )*real(plumerisefire_frq*60.,8) ) ) &
+                ) then
+              do_plumerisefire = .true.
+           ENDIF
+        ELSE IF ( (MOD(ktau,stepfirepl)==0) .or. (stepfirepl==1) ) THEN
+           do_plumerisefire = .true.
+        ENDIF
+      ENDIF
+
+      do_bioemiss = .false.
+      IF ( ktau==1 ) then
+         do_bioemiss = .true.
+      ELSE IF ( adapt_step_flag ) THEN
+         IF ( (bioemdt<=0) .or. &
+              ( curr_secs+real(dtstep,8)+0.01 >= &
+              ( INT( curr_secs/real(bioemdt*60.,8)+1,8 )*real(bioemdt*60.,8) ) ) &
+              ) then
+            do_bioemiss = .true.
+         ENDIF
+      ELSE IF ( (MOD(ktau,stepbioe)==0) .or. (stepbioe==1) ) THEN
+         do_bioemiss = .true.
+      ENDIF
+!
+! we are doing the plumerise/fire emissions first, they may be needed for chem and tracer arrays
+!
+       if( do_plumerisefire )then
+          CALL wrf_debug(15,'fire emissions: calling biomassb')
+          write(0,*)ktau,stepfirepl
+          call plumerise_driver (id,ktau,dtstep,                           &
+           ebu,ebu_in,                                                     &
+           mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,        &
+           firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr,        &
+           config_flags, t_phy,moist,                                      &
+           rho_phy,vvel,u_phy,v_phy,p_phy,                                 &
+           emis_ant,z_at_w,z,                                              &
+           ids,ide, jds,jde, kds,kde,                                      &
+           ims,ime, jms,jme, kms,kme,                                      &
+           its,ite, jts,jte, kts,kte                                       )
+        endif
+!
+! Only Scalar?
+!
+      tracer_select:  SELECT CASE(config_flags%tracer_opt)
+      CASE (TRACER_SMOKE,TRACER_TEST2)
+          CALL wrf_debug(15,'tracer fire emissions: calling biomassb, only CO')
+!
+! here for tracers only, set chem_opt to zero. Chem species are handled later!
+!
+       call add_emis_burn(id,dtstep,ktau,dz8w,rho_phy,tracer,&
+            julday,gmt,xlat,xlong,t_phy,p_phy,                           &
+            ebu,0,config_flags%tracer_opt,config_flags%biomass_burn_opt,     &
+            num_tracer,ids,ide, jds,jde, kds,kde,                                   &
+            ims,ime, jms,jme, kms,kme,                                   &
+            its,ite, jts,jte, kts,kte                                    )
+      CASE DEFAULT
+        CALL wrf_debug(15,'No tracer option selected')
+      END SELECT tracer_select
+
+!
+! Gocart emissions...
+!
+      seasalt_select:  SELECT CASE(config_flags%seas_opt)
+      CASE (SEASGOCART)
+        CALL wrf_debug(15,'Gocart sea salt emissions')
+         call gocart_seasalt_driver(ktau,dtstep,config_flags,julday,alt,t_phy,moist,u_phy,  &
+         v_phy,chem,rho_phy,dz8w,u10,v10,p8w,z_at_w,                  &
+         xland,xlat,xlong,dx,g,emis_seas, seasin,&
+         ids,ide, jds,jde, kds,kde,                                        &
+         ims,ime, jms,jme, kms,kme,                                        &
+         its,ite, jts,jte, kts,kte                                         )
+
+      CASE DEFAULT 
+        if(seasalt_emiss_active.eq.1) then 
+           CALL wrf_debug(15,'MOSAIC or SORGAM sea salt emissions')
+        else
+           CALL wrf_debug(15,'no sea salt emissions')
+        end if
+      END SELECT seasalt_select
+
+      dust_select:  SELECT CASE(config_flags%dust_opt)
+      CASE (DUSTGOCART)
+        CALL wrf_debug(15,'Gocart dust emissions')
+        call gocart_dust_driver(ktau,dtstep,config_flags,julday,alt,t_phy,moist,u_phy,  &
+         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,dustin,           &
+         ivgtyp,isltyp,vegfra,xland,xlat,xlong,gsw,dx,g,emis_dust,        &
+         ids,ide, jds,jde, kds,kde,                                        &
+         ims,ime, jms,jme, kms,kme,                                        &
+         its,ite, jts,jte, kts,kte                                         )
+      CASE DEFAULT 
+        if(dust_emiss_active.eq.1) then
+            CALL wrf_debug(15,'MOSAIC or SORGAM dust emissions')
+        else
+             CALL wrf_debug(15,'no dust emissions')
+        end if
+      END SELECT dust_select
+
+      dms_select:  SELECT CASE(config_flags%dmsemis_opt)
+      CASE (DMSGOCART)
+        CALL wrf_debug(15,'Gocart dms emissions')
+        call gocart_dmsemis(dtstep,config_flags,alt,t_phy,u_phy,  &
+         v_phy,chem,rho_phy,dz8w,u10,v10,p8w,dms_0,tsk,                  &
+         ivgtyp,isltyp,xland,dx,g, &
+         ids,ide, jds,jde, kds,kde,                                        &
+         ims,ime, jms,jme, kms,kme,                                        &
+         its,ite, jts,jte, kts,kte                                         )
+      CASE DEFAULT 
+        CALL wrf_debug(15,'no dms emissions')
+      END SELECT dms_select
+
+    ksub=0
+!!! ***********   FIRE AND CHEM ****************************************
+!
+    fire_select:  SELECT CASE(config_flags%biomass_burn_opt)
+     CASE (BIOMASSB,BIOMASSB_MOZC)
+!      if( do_plumerisefire )then
+!         CALL wrf_debug(15,'fire emissions: calling biomassb')
+!         write(0,*)ktau,stepfirepl
+!        call plumerise_driver (id,ktau,dtstep,                            &
+!          ebu,ebu_in,                                                     &
+!          mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,              &
+!          firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr,              &
+!          config_flags, t_phy,moist,                                      &
+!          chem,rho_phy,vvel,u_phy,v_phy,p_phy,                       &
+!          emis_ant,z_at_w,z,                                                       &
+!          ids,ide, jds,jde, kds,kde,                                      &
+!          ims,ime, jms,jme, kms,kme,                                      &
+!          its,ite, jts,jte, kts,kte                                       )
+
+!      endif
+       CALL wrf_debug(15,'fire emissions: adding biomassb emissions')
+       call add_emis_burn(id,dtstep,ktau,dz8w,rho_phy,chem,&
+            julday,gmt,xlat,xlong,t_phy,p_phy,                           &
+            ebu,config_flags%chem_opt,0,config_flags%biomass_burn_opt,     &
+            num_chem,ids,ide, jds,jde, kds,kde,                                   &
+            ims,ime, jms,jme, kms,kme,                                   &
+            its,ite, jts,jte, kts,kte                                    )
+     CASE DEFAULT 
+       CALL wrf_debug(15,'no biomass burning')
+    END SELECT fire_select
+!!**************** END FIRE, BEGIN BIOGENIC EMISSIONS
+!
+    bioem_select: SELECT CASE(config_flags%bio_emiss_opt)
+     CASE (GUNTHER1)
+       if(ktau.eq.1.or.mod(ktau,stepbioe).eq.0)then
+          CALL wrf_debug(15,'biogenic emissions: calling Gunther1')
+          call bio_emissions(id,ktau,dtstep,DX,config_flags,               &
+               gmt,julday,t_phy,moist,p8w,t8w,                             &
+               e_bio,p_phy,chem,rho_phy,dz8w,ne_area,                      &
+               ivgtyp,gsw,vegfra,rmol,ust,znt,xlat,xlong,z_at_w,           &
+               ids,ide, jds,jde, kds,kde,                                  &
+               ims,ime, jms,jme, kms,kme,                                  &
+               its,ite, jts,jte, kts,kte                                   )
+       endif
+     CASE (BEIS313)
+       if( do_bioemiss ) then
+         beis313_check_mechanism_ok: SELECT CASE(config_flags%chem_opt)
+            CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
+                  RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_KPP,RACM_ESRLSORG_KPP, &
+                  CBM4_KPP, NMHC9_KPP, GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
+            CASE DEFAULT 
+               CALL wrf_error_fatal( &
+                  "emissions_driver: beis3.1.3 biogenic emis. implemented for RADM2 & RACM only")
+         END SELECT beis313_check_mechanism_ok
+         CALL wrf_debug(15,'biogenic emissions: calling beis3.1.3')
+         call bio_emissions_beis313(id,config_flags,ktau,curr_secs,    &
+               dtstep,julday,gmt,xlat,xlong,t_phy,p_phy,gsw,           &
+               sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,      &
+               sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,      &
+               sebio_hcho,sebio_eth,sebio_ora2,sebio_co,sebio_nr,      &
+               noag_grow,noag_nongrow,nononag,slai,                    &
+               ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,           &
+               ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,           &
+               ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,   &
+               ids,ide, jds,jde, kds,kde,                              &
+               ims,ime, jms,jme, kms,kme,                              &
+               its,ite, jts,jte, kts,kte                               )
+       endif
+
+     CASE (MEGAN2) 
+       if(ktau.eq.1.or.mod(ktau,stepbioe).eq.0)then                        
+         CALL wrf_debug(15,'biogenic emissions: calling megan v2.04')  
+         call bio_emissions_megan2(id,config_flags,ktau,dtstep,        &
+               curr_secs,julday,gmt,xlat,xlong,p_phy,rho_phy,dz8w,     &
+               chem,ne_area,                                           &
+               current_month,                                          &
+               T2,swdown,                                              &
+               nmegan, EFmegan, msebio_isop,                           &
+               mlai,                                                   &
+               pftp_bt, pftp_nt, pftp_sb, pftp_hb,                     &
+               mtsa,                                                   &
+               mswdown,                                                &
+               mebio_isop, mebio_apin, mebio_bpin, mebio_bcar,         &
+               mebio_acet, mebio_mbo, mebio_no,                        &
+               ebio_iso,ebio_oli,ebio_api,ebio_lim,                    &
+               ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,           &
+               ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_no,           &
+               ebio_c10h16,ebio_tol,ebio_bigalk, ebio_ch3oh,ebio_acet,         &
+               ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,            &
+               ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,ebio_so2,   &
+               ebio_dms,                                                       &
+               e_bio,                                                  &
+               ids,ide, jds,jde, kds,kde,                              &
+               ims,ime, jms,jme, kms,kme,                              &
+               its,ite, jts,jte, kts,kte                               )
+       endif
+
+     CASE DEFAULT 
+       if( do_bioemiss ) &
+            e_bio(its:ite,jts:jte,1:ne_area) = 0.
+!wig: May need to zero out all ebio_xxx arrays too if they are incorporated
+!     into CBMZ/MOSAIC.
+                                                     
+    END SELECT bioem_select
+
+!!! **************** END BIOGENICS, ADD EMISSIONS FOR VARIOUS PACKAGES
+!
+    gas_addemiss_select: SELECT CASE(config_flags%chem_opt)
+    CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
+          RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_KPP, &
+          RACM_ESRLSORG_KPP, MOZART_KPP, MOZCART_KPP)
+       IF(config_flags%emiss_inpt_opt /= 3 ) then
+       IF(config_flags%kemit .GT. kte-ksub) THEN
+         k=config_flags%kemit
+         write(message,'(" WARNING: EMISSIONS_DRIVER: KEMIT > KTE ",3i6)') kme,kte-ksub,k
+         CALL WRF_MESSAGE (message)
+       ENDIF
+       call wrf_debug(15,'emissions_driver calling add_anthropogenics')
+       call add_anthropogenics(id,dtstep,dz8w,config_flags,rho_phy,chem,&
+            emis_ant,emis_aircraft,                                     &
+            ids,ide, jds,jde, kds,kde,                                  &
+            ims,ime, jms,jme, kms,kme,                                  &
+            its,ite, jts,jte, kts,kte                                   )
+       call wrf_debug(15,'emissions_driver calling add_biogenics')
+       ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
+       ! module
+       if ( config_flags%bio_emiss_opt .ne. megan2 ) then 
+       call add_biogenics(id,dtstep,dz8w,config_flags, rho_phy,chem,    &
+            e_bio,ne_area,                                              &
+            ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
+            ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,               &
+            ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,       &
+            ids,ide, jds,jde, kds,kde,                                  &
+            ims,ime, jms,jme, kms,kme,                                  &
+            its,ite, jts,jte, kts,kte                                   )
+       end if 
+       IF(config_flags%emiss_inpt_opt == EMISS_INPT_MOZCEM ) then
+         do j=jts,jte  
+           do i=its,ite  
+              do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_p10) = chem(i,k,j,p_p10) + emis_ant(i,k,j,p_e_pm_10)*conv
+                chem(i,k,j,p_p25) = chem(i,k,j,p_p25) + emis_ant(i,k,j,p_e_pm_25)*conv
+                chem(i,k,j,p_bc1) = chem(i,k,j,p_bc1) + emis_ant(i,k,j,p_e_bc)*conv
+                chem(i,k,j,p_oc1) = chem(i,k,j,p_oc1) + emis_ant(i,k,j,p_e_oc)*conv
+                chem(i,k,j,p_so4) = chem(i,k,j,p_so4) + emis_ant(i,k,j,p_e_sulf)*conv
+             end do
+           end do
+         end do
+       end if 
+
+       end if ! emiss_inpt_opt /= 3
+!For SAPRC99 need to define SAPRC99_addemiss_anthro and SAPRC99_addemiss_bio
+!so did not add saprcnov packages here
+    CASE (CBMZ, CBMZ_BB, CBMZ_BB_KPP, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, &
+          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, & 
+          CBMZSORG, CBMZSORG_AQ, CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, &
+          CBMZ_MOSAIC_KPP, &
+          CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
+       IF(config_flags%kemit .GT. kte-ksub) THEN
+          message = ' EMISSIONS_DRIVER: KEMIT > KME '
+          CALL WRF_ERROR_FATAL (message)
+       ENDIF
+       call wrf_debug(15,'emissions_driver calling cbmz_addemiss_anthro')
+       call cbmz_addemiss_anthro( id, dtstep, dz8w, config_flags,        &
+            rho_phy, chem,                                               &
+            emis_ant,alt,ids,ide, jds,jde, kds,kde,                      &
+            ims,ime, jms,jme, kms,kme,                                   &
+            its,ite, jts,jte, kts,kte                                    )
+       call wrf_debug(15,'emissions_driver calling cbmz_addemiss_bio')
+       ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
+       ! module
+       if ( config_flags%bio_emiss_opt .ne. megan2 ) then 
+         call cbmz_addemiss_bio( id, dtstep, dz8w, config_flags,         &
+              rho_phy, chem, e_bio, ne_area, emis_ant(ims,kms,jms,p_e_iso),&
+              ids,ide, jds,jde, kds,kde,                                 &
+              ims,ime, jms,jme, kms,kme,                                 &
+              its,ite, jts,jte, kts,kte                                  )
+       endif
+
+    CASE (CHEM_TRACER)
+       do j=jts,jte  
+          do i=its,ite  
+             do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                   &
+                     +emis_ant(i,k,j,p_e_so2)*conv
+                chem(i,k,j,p_co)  = chem(i,k,j,p_co)                     &
+                     +emis_ant(i,k,j,p_e_co)*conv
+                chem(i,k,j,p_no)  = chem(i,k,j,p_no)                     &
+                     +emis_ant(i,k,j,p_e_co)*conv
+                chem(i,k,j,p_ald)  = chem(i,k,j,p_ald)                   &
+                     +emis_ant(i,k,j,p_e_co)*conv
+                chem(i,k,j,p_hcho)  = chem(i,k,j,p_hcho)                 &
+                     +emis_ant(i,k,j,p_e_co)*conv
+                chem(i,k,j,p_ora2)  = chem(i,k,j,p_ora2)                 &
+                     +emis_ant(i,k,j,p_e_co)*conv
+             end do
+          end do
+       end do
+
+    CASE (SAPRC99_KPP) !FIX FOR SAPRC07A
+     if(config_flags%emiss_opt == 13 ) then
+       do j=jts,jte
+          do i=its,ite
+             do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                             &
+                     +emis_ant(i,k,j,p_e_so2)*conv
+                chem(i,k,j,p_c2h6)  = chem(i,k,j,p_c2h6)                           &
+                     +emis_ant(i,k,j,p_e_c2h6)*conv
+                chem(i,k,j,p_c3h8)  = chem(i,k,j,p_c3h8)                           &
+                     +emis_ant(i,k,j,p_e_c3h8)*conv
+                chem(i,k,j,p_c2h2)  = chem(i,k,j,p_c2h2)                           &
+                     +emis_ant(i,k,j,p_e_c2h2)*conv
+                chem(i,k,j,p_alk3)  = chem(i,k,j,p_alk3)                           &
+                     +emis_ant(i,k,j,p_e_alk3)*conv
+                chem(i,k,j,p_alk4)  = chem(i,k,j,p_alk4)                           &
+                     +emis_ant(i,k,j,p_e_alk4)*conv
+                chem(i,k,j,p_alk5)  = chem(i,k,j,p_alk5)                           &
+                     +emis_ant(i,k,j,p_e_alk5)*conv
+                chem(i,k,j,p_ethene)  = chem(i,k,j,p_ethene)                       &
+                     +emis_ant(i,k,j,p_e_ethene)*conv
+                chem(i,k,j,p_c3h6)  = chem(i,k,j,p_c3h6)                           &
+                     +emis_ant(i,k,j,p_e_c3h6)*conv
+                chem(i,k,j,p_ole1)  = chem(i,k,j,p_ole1)                           &
+                     +emis_ant(i,k,j,p_e_ole1)*conv
+                chem(i,k,j,p_ole2)  = chem(i,k,j,p_ole2)                           &
+                     +emis_ant(i,k,j,p_e_ole2)*conv
+                chem(i,k,j,p_aro1)  = chem(i,k,j,p_aro1)                           &
+                     +emis_ant(i,k,j,p_e_aro1)*conv
+                chem(i,k,j,p_aro2)  = chem(i,k,j,p_aro2)                           &
+                     +emis_ant(i,k,j,p_e_aro2)*conv
+                chem(i,k,j,p_hcho)  = chem(i,k,j,p_hcho)                           &
+                     +emis_ant(i,k,j,p_e_hcho)*conv
+                chem(i,k,j,p_ccho)  = chem(i,k,j,p_ccho)                           &
+                     +emis_ant(i,k,j,p_e_ccho)*conv
+                chem(i,k,j,p_rcho)  = chem(i,k,j,p_rcho)                           &
+                     +emis_ant(i,k,j,p_e_rcho)*conv
+                chem(i,k,j,p_acet)  = chem(i,k,j,p_acet)                           &
+                     +emis_ant(i,k,j,p_e_acet)*conv
+                chem(i,k,j,p_mek)  = chem(i,k,j,p_mek)                             &
+                     +emis_ant(i,k,j,p_e_mek)*conv
+                chem(i,k,j,p_isoprene)  = chem(i,k,j,p_isoprene)                   &
+                     +emis_ant(i,k,j,p_e_isoprene)*conv
+                chem(i,k,j,p_terp)  = chem(i,k,j,p_terp)                           &
+                     +emis_ant(i,k,j,p_e_terp)*conv
+                chem(i,k,j,p_sesq)  = chem(i,k,j,p_sesq)                           &
+                     +emis_ant(i,k,j,p_e_sesq)*conv
+                chem(i,k,j,p_co)  = chem(i,k,j,p_co)                               &
+                     +emis_ant(i,k,j,p_e_co)*conv
+                chem(i,k,j,p_no)  = chem(i,k,j,p_no)                               &
+                     +emis_ant(i,k,j,p_e_no)*conv
+                chem(i,k,j,p_no2)  = chem(i,k,j,p_no2)                             &
+                     +emis_ant(i,k,j,p_e_no2)*conv
+                chem(i,k,j,p_phen)  = chem(i,k,j,p_phen)                           &
+                     +emis_ant(i,k,j,p_e_phen)*conv
+                chem(i,k,j,p_cres)  = chem(i,k,j,p_cres)                           &
+                     +emis_ant(i,k,j,p_e_cres)*conv
+                chem(i,k,j,p_meoh)  = chem(i,k,j,p_meoh)                           &
+                     +emis_ant(i,k,j,p_e_meoh)*conv
+                chem(i,k,j,p_gly)  = chem(i,k,j,p_gly)                             &
+                     +emis_ant(i,k,j,p_e_gly)*conv
+                chem(i,k,j,p_mgly)  = chem(i,k,j,p_mgly)                           &
+                     +emis_ant(i,k,j,p_e_mgly)*conv
+                chem(i,k,j,p_bacl)  = chem(i,k,j,p_bacl)                           &
+                     +emis_ant(i,k,j,p_e_bacl)*conv
+                chem(i,k,j,p_isoprod)  = chem(i,k,j,p_isoprod)                     &
+                     +emis_ant(i,k,j,p_e_isoprod)*conv
+                chem(i,k,j,p_methacro)  = chem(i,k,j,p_methacro)                   &
+                     +emis_ant(i,k,j,p_e_methacro)*conv
+                chem(i,k,j,p_mvk)  = chem(i,k,j,p_mvk)                             &
+                     +emis_ant(i,k,j,p_e_mvk)*conv
+                chem(i,k,j,p_prod2)  = chem(i,k,j,p_prod2)                         &
+                     +emis_ant(i,k,j,p_e_prod2)*conv
+                chem(i,k,j,p_ch4)  = chem(i,k,j,p_ch4)                             &
+                     +emis_ant(i,k,j,p_e_ch4)*conv
+                chem(i,k,j,p_bald)  = chem(i,k,j,p_bald)                           &
+                     +emis_ant(i,k,j,p_e_bald)*conv
+                chem(i,k,j,p_hcooh)  = chem(i,k,j,p_hcooh)                         &
+                     +emis_ant(i,k,j,p_e_hcooh)*conv
+                chem(i,k,j,p_cco_oh)  = chem(i,k,j,p_cco_oh)                       &
+                     +emis_ant(i,k,j,p_e_cco_oh)*conv
+                chem(i,k,j,p_rco_oh)  = chem(i,k,j,p_rco_oh)                       &
+                     +emis_ant(i,k,j,p_e_rco_oh)*conv
+
+             end do
+          end do
+       end do
+      else
+       do j=jts,jte
+          do i=its,ite
+             do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                   &
+                     +emis_ant(i,k,j,p_e_so2)*conv
+                chem(i,k,j,p_co)  = chem(i,k,j,p_co)                     &
+                     +emis_ant(i,k,j,p_e_co)*conv
+                chem(i,k,j,p_no)  = chem(i,k,j,p_no)                     &
+                     +emis_ant(i,k,j,p_e_co)*conv
+                chem(i,k,j,p_hcho)  = chem(i,k,j,p_hcho)                 &
+                     +emis_ant(i,k,j,p_e_hcho)*conv
+             end do
+          end do
+       end do
+      endif
+
+                  
+
+    CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP) !FIX FOR SAPRC07A
+     if(config_flags%emiss_opt == 13 ) then
+       do j=jts,jte
+          do i=its,ite
+             do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                conv3 = (dtstep/dz8w(i,k,j))*alt(i,k,j)*28/250*1e-3! Molecular weight of C(15)H(27)N(0.3)O(4.5)
+                conv4= (dtstep/dz8w(i,k,j))*alt(i,k,j)*28/226*1e-3  ! Molecular weight of C(15)H(27)N(0.3)O(0.9)
+                oconv3= (dtstep/dz8w(i,k,j))*alt(i,k,j)*28/283*1e-3*4.5 !For biomass there are 4.5 moles of ) /mole of C15H27N0.3
+                oconv4=(dtstep/dz8w(i,k,j))*alt(i,k,j)*28/226*1e-3*0.9  !For fossil there are 0.9 moles of O per mole of C15H27N0.3
+                chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                             &
+                     +emis_ant(i,k,j,p_e_so2)*conv
+                chem(i,k,j,p_c2h6)  = chem(i,k,j,p_c2h6)                           &
+                     +emis_ant(i,k,j,p_e_c2h6)*conv
+                chem(i,k,j,p_c3h8)  = chem(i,k,j,p_c3h8)                           &
+                     +emis_ant(i,k,j,p_e_c3h8)*conv
+                chem(i,k,j,p_c2h2)  = chem(i,k,j,p_c2h2)                           &
+                     +emis_ant(i,k,j,p_e_c2h2)*conv
+                chem(i,k,j,p_alk3)  = chem(i,k,j,p_alk3)                           &
+                     +emis_ant(i,k,j,p_e_alk3)*conv
+                chem(i,k,j,p_alk4)  = chem(i,k,j,p_alk4)                           &
+                     +emis_ant(i,k,j,p_e_alk4)*conv
+                chem(i,k,j,p_alk5)  = chem(i,k,j,p_alk5)                           &
+                     +emis_ant(i,k,j,p_e_alk5)*conv
+                chem(i,k,j,p_ethene)  = chem(i,k,j,p_ethene)                       &
+                     +emis_ant(i,k,j,p_e_ethene)*conv
+                chem(i,k,j,p_c3h6)  = chem(i,k,j,p_c3h6)                           &
+                     +emis_ant(i,k,j,p_e_c3h6)*conv
+                chem(i,k,j,p_ole1)  = chem(i,k,j,p_ole1)                           &
+                     +emis_ant(i,k,j,p_e_ole1)*conv
+                chem(i,k,j,p_ole2)  = chem(i,k,j,p_ole2)                           &
+                     +emis_ant(i,k,j,p_e_ole2)*conv
+                chem(i,k,j,p_aro1)  = chem(i,k,j,p_aro1)                           &
+                     +emis_ant(i,k,j,p_e_aro1)*conv
+                chem(i,k,j,p_aro2)  = chem(i,k,j,p_aro2)                           &
+                     +emis_ant(i,k,j,p_e_aro2)*conv
+                chem(i,k,j,p_hcho)  = chem(i,k,j,p_hcho)                           &
+                     +emis_ant(i,k,j,p_e_hcho)*conv
+                chem(i,k,j,p_ccho)  = chem(i,k,j,p_ccho)                           &
+                     +emis_ant(i,k,j,p_e_ccho)*conv
+                chem(i,k,j,p_rcho)  = chem(i,k,j,p_rcho)                           &
+                     +emis_ant(i,k,j,p_e_rcho)*conv
+                chem(i,k,j,p_acet)  = chem(i,k,j,p_acet)                           &
+                     +emis_ant(i,k,j,p_e_acet)*conv
+                chem(i,k,j,p_mek)  = chem(i,k,j,p_mek)                             &
+                     +emis_ant(i,k,j,p_e_mek)*conv
+                chem(i,k,j,p_isoprene)  = chem(i,k,j,p_isoprene)                   &
+                     +emis_ant(i,k,j,p_e_isoprene)*conv
+                chem(i,k,j,p_terp)  = chem(i,k,j,p_terp)                           &
+                     +emis_ant(i,k,j,p_e_terp)*conv
+                chem(i,k,j,p_sesq)  = chem(i,k,j,p_sesq)                           &
+                     +emis_ant(i,k,j,p_e_sesq)*conv
+                chem(i,k,j,p_co)  = chem(i,k,j,p_co)                               &
+                     +emis_ant(i,k,j,p_e_co)*conv
+                chem(i,k,j,p_no)  = chem(i,k,j,p_no)                               &
+                     +emis_ant(i,k,j,p_e_no)*conv
+                chem(i,k,j,p_no2)  = chem(i,k,j,p_no2)                             &
+                     +emis_ant(i,k,j,p_e_no2)*conv
+                chem(i,k,j,p_phen)  = chem(i,k,j,p_phen)                           &
+                     +emis_ant(i,k,j,p_e_phen)*conv
+                chem(i,k,j,p_cres)  = chem(i,k,j,p_cres)                           &
+                     +emis_ant(i,k,j,p_e_cres)*conv
+                chem(i,k,j,p_meoh)  = chem(i,k,j,p_meoh)                           &
+                     +emis_ant(i,k,j,p_e_meoh)*conv
+                chem(i,k,j,p_gly)  = chem(i,k,j,p_gly)                             &
+                     +emis_ant(i,k,j,p_e_gly)*conv
+                chem(i,k,j,p_mgly)  = chem(i,k,j,p_mgly)                           &
+                     +emis_ant(i,k,j,p_e_mgly)*conv
+                chem(i,k,j,p_bacl)  = chem(i,k,j,p_bacl)                           &
+                     +emis_ant(i,k,j,p_e_bacl)*conv
+                chem(i,k,j,p_isoprod)  = chem(i,k,j,p_isoprod)                     &
+                     +emis_ant(i,k,j,p_e_isoprod)*conv
+                chem(i,k,j,p_methacro)  = chem(i,k,j,p_methacro)                   &
+                     +emis_ant(i,k,j,p_e_methacro)*conv
+                chem(i,k,j,p_mvk)  = chem(i,k,j,p_mvk)                             &
+                     +emis_ant(i,k,j,p_e_mvk)*conv
+                chem(i,k,j,p_prod2)  = chem(i,k,j,p_prod2)                         &
+                     +emis_ant(i,k,j,p_e_prod2)*conv
+                chem(i,k,j,p_ch4)  = chem(i,k,j,p_ch4)                             &
+                     +emis_ant(i,k,j,p_e_ch4)*conv
+                chem(i,k,j,p_bald)  = chem(i,k,j,p_bald)                           &
+                     +emis_ant(i,k,j,p_e_bald)*conv
+                chem(i,k,j,p_hcooh)  = chem(i,k,j,p_hcooh)                         &
+                     +emis_ant(i,k,j,p_e_hcooh)*conv
+                chem(i,k,j,p_cco_oh)  = chem(i,k,j,p_cco_oh)                       &
+                     +emis_ant(i,k,j,p_e_cco_oh)*conv
+                chem(i,k,j,p_rco_oh)  = chem(i,k,j,p_rco_oh)                       &
+                     +emis_ant(i,k,j,p_e_rco_oh)*conv
+                chem(i,k,j,p_nh3)  = chem(i,k,j,p_nh3)                       &
+                     +emis_ant(i,k,j,p_e_nh3)*conv
+
+!Use OM/OC of 1.25 for fossil and OM:OC of 1.57 for biomass
+! O:C=0.06,H:C=1.8, N:C=0.02 for fossil : OM/OC=(16*0.06+12+14*0.02+12)/12=1.25
+!O:C=0.3 H:C=1.8, N:C=0.02 for biomass, OM/OC=1.57 for biomass
+
+        chem(i,k,j,p_pcg1_b_c)  =  chem(i,k,j,p_pcg1_b_c)                        &
+        +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*1.17
+        chem(i,k,j,p_pcg2_b_c)  =  chem(i,k,j,p_pcg2_b_c)                        &
+        +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*7.605
+        chem(i,k,j,p_pcg1_f_c)  =  chem(i,k,j,p_pcg1_f_c)                        &
+        +(emis_ant(i,k,j,p_e_orgi_a)*2/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*1.17
+        chem(i,k,j,p_pcg2_f_c)  =  chem(i,k,j,p_pcg2_f_c)                        &
+        +(emis_ant(i,k,j,p_e_orgi_a)*2/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*7.605
+        chem(i,k,j,p_pcg1_b_o)  =  chem(i,k,j,p_pcg1_b_o)                        &
+        +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*0.40
+        chem(i,k,j,p_pcg2_b_o)  =  chem(i,k,j,p_pcg2_b_o)                        &
+        +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*2.60
+        chem(i,k,j,p_pcg1_f_o)  =  chem(i,k,j,p_pcg1_f_o)                        &
+        +(emis_ant(i,k,j,p_e_orgi_a)*2/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*0.08
+        chem(i,k,j,p_pcg2_f_o)  =  chem(i,k,j,p_pcg2_f_o)                        &
+        +(emis_ant(i,k,j,p_e_orgi_a)*2/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*0.52
+
+
+             end do
+          end do
+       end do
+      else
+       do j=jts,jte
+          do i=its,ite
+             do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                   &
+                     +emis_ant(i,k,j,p_e_so2)*conv
+                chem(i,k,j,p_co)  = chem(i,k,j,p_co)                     &
+                     +emis_ant(i,k,j,p_e_co)*conv
+                chem(i,k,j,p_no)  = chem(i,k,j,p_no)                     &
+                     +emis_ant(i,k,j,p_e_co)*conv
+                chem(i,k,j,p_hcho)  = chem(i,k,j,p_hcho)                 &
+                     +emis_ant(i,k,j,p_e_hcho)*conv
+             end do
+          end do
+       end do
+      endif
+
+
+    CASE (GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
+       IF(config_flags%emiss_inpt_opt /= 3 ) then
+       IF(config_flags%kemit .GT. kte-ksub) THEN
+         k=config_flags%kemit
+         write(message,'(" WARNING: EMISSIONS_DRIVER: KEMIT > KTE ",3i6)') kme,kte-ksub,k
+         CALL WRF_MESSAGE (message)
+       ENDIF
+       call wrf_debug(15,'emissions_driver calling add_anthropogenics')
+       call add_anthropogenics(id,dtstep,dz8w,config_flags,rho_phy,chem,&
+            emis_ant,emis_aircraft,                                     &
+            ids,ide, jds,jde, kds,kde,                                  &
+            ims,ime, jms,jme, kms,kme,                                  &
+            its,ite, jts,jte, kts,kte                                   )
+       call wrf_debug(15,'emissions_driver calling add_biogenics')
+       ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
+       ! module
+       if ( config_flags%bio_emiss_opt .ne. megan2 ) then
+       call add_biogenics(id,dtstep,dz8w,config_flags,rho_phy,chem,     &
+            e_bio,ne_area,                                              &
+            ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
+            ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,               &
+            ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,       &
+            ids,ide, jds,jde, kds,kde,                                  &
+            ims,ime, jms,jme, kms,kme,                                  &
+            its,ite, jts,jte, kts,kte                                   )
+       end if 
+
+       end if ! emiss_inpt_opt /= 3
+
+!
+! simple fix for now for emiss_opt=3
+!
+       do j=jts,jte  
+          do i=its,ite  
+             do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                chem(i,k,j,p_bc1)  = chem(i,k,j,p_bc1)                     &
+                     +(emis_ant(i,k,j,p_e_eci)+emis_ant(i,k,j,p_e_ecj))*alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_oc1)  = chem(i,k,j,p_oc1)                     &
+                     +(emis_ant(i,k,j,p_e_orgj)+emis_ant(i,k,j,p_e_orgi))*alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_p25)  = chem(i,k,j,p_p25)                     &
+                     +(emis_ant(i,k,j,p_e_pm25j)+emis_ant(i,k,j,p_e_pm25i) &
+                     + emis_ant(i,k,j,p_e_no3j)+emis_ant(i,k,j,p_e_no3i))  &
+                     *alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_sulf)  = chem(i,k,j,p_sulf)                   &
+                     +(emis_ant(i,k,j,p_e_so4i)+emis_ant(i,k,j,p_e_so4j))*alt(i,k,j)*dtstep/dz8w(i,k,j)*mwdry/mw_so4_aer*1.e-3
+             end do
+          end do
+       end do
+
+    CASE (GOCART_SIMPLE)
+!
+! simple fix for now
+!
+!
+       if(config_flags%emiss_opt <=  5  ) then
+       do j=jts,jte  
+          do i=its,ite  
+             do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                   &
+                     +emis_ant(i,k,j,p_e_so2)*conv
+                chem(i,k,j,p_bc1)  = chem(i,k,j,p_bc1)                     &
+                     +(emis_ant(i,k,j,p_e_eci)+emis_ant(i,k,j,p_e_ecj))*alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_oc1)  = chem(i,k,j,p_oc1)                     &
+                     +(emis_ant(i,k,j,p_e_eci)+emis_ant(i,k,j,p_e_ecj))*7.*alt(i,k,j)*dtstep/dz8w(i,k,j)
+!                    +(emis_ant(i,k,j,p_e_orgj)+emis_ant(i,k,j,p_e_orgi))*alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_p25)  = chem(i,k,j,p_p25)                     &
+                     +(emis_ant(i,k,j,p_e_pm25j)+emis_ant(i,k,j,p_e_pm25i) &
+                     +emis_ant(i,k,j,p_e_no3j)+emis_ant(i,k,j,p_e_no3i))   &
+                     *alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_sulf)  = chem(i,k,j,p_sulf)                   &
+                     +(emis_ant(i,k,j,p_e_so4i)+emis_ant(i,k,j,p_e_so4j))  &
+                     *alt(i,k,j)*dtstep/dz8w(i,k,j)*mwdry/mw_so4_aer*1.e-3
+             end do
+          end do
+       end do
+       endif
+!
+! next for global gocart emissions
+!
+       if(config_flags%emiss_opt == 6  ) then
+       do j=jts,jte  
+          do i=its,ite  
+             do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                   &
+                     +emis_ant(i,k,j,p_e_so2)*conv
+                chem(i,k,j,p_bc1)  = chem(i,k,j,p_bc1)                     &
+                     +(emis_ant(i,k,j,p_e_bc))*alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_oc1)  = chem(i,k,j,p_oc1)                     &
+                     +(emis_ant(i,k,j,p_e_oc))*alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_p25)  = chem(i,k,j,p_p25)                     &
+                     +(emis_ant(i,k,j,p_e_pm_25))   &
+                     *alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_p10)  = chem(i,k,j,p_p10)                     &
+                     +(emis_ant(i,k,j,p_e_pm_10))   &
+                     *alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_sulf)  = chem(i,k,j,p_sulf)                   &
+                     +emis_ant(i,k,j,p_e_sulf)*conv
+             end do
+          end do
+       end do
+       endif
+! do this here for now, quick and dirty
+
+    CASE DEFAULT
+       call wrf_debug(15,'emissions_driver NOT CALLING gas add_... routines')
+
+    END SELECT gas_addemiss_select
+!
+! special treatment for these emissions. They come in only at one time 
+! (global emissions data set used here), and then a durnal variation is added on in this routine
+!
+    emiss_select: SELECT CASE(config_flags%emiss_inpt_opt)
+    CASE (EMISS_INPT_CPTEC)
+       call wrf_debug(15,'emissions_driver calling add_emiss_cptec')
+       call add_emis_cptec(id,dtstep,ktau,dz8w,config_flags,rho_phy,chem,&
+            julday,gmt,xlat,xlong,t_phy,p_phy,                           &
+            emis_ant,                                                    &
+            ids,ide, jds,jde, kds,kde,                                   &
+            ims,ime, jms,jme, kms,kme,                                   &
+            its,ite, jts,jte, kts,kte                                    )
+    CASE DEFAULT
+       call wrf_debug(15,'emissions_driver not calling add_emiss_cptec')
+    END SELECT emiss_select
+
+    aer_addemiss_select: SELECT CASE(config_flags%chem_opt)
+
+    CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP, &
+          RACMSORG_AQ,RACMSORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ)
+       call wrf_debug(15,'emissions_driver calling sorgam_addemiss')
+       call sorgam_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,  &
+            ebu,                                                        &
+            slai,ust,smois,ivgtyp,isltyp,                               &
+            emis_ant,dust_emiss_active,                                 &
+            seasalt_emiss_active,config_flags%kemit,                    &
+            config_flags%biomass_burn_opt,                              &
+            config_flags%num_soil_layers,config_flags%emiss_opt,        &
+!jdf
+            config_flags%dust_opt,                                      &
+            ktau,p8w,u_phy,v_phy,rho_phy,g,dx,erod,                     &
+!jdf
+            ids,ide, jds,jde, kds,kde,                                  &
+            ims,ime, jms,jme, kms,kme,                                  &
+            its,ite, jts,jte, kts,kte                                   )
+!Added the aerosol case SAPRC99_MOSAIC_4BIN_VBS2_KPP to call mosaic addemiss
+    CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, & 
+          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
+          CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, & 
+          CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
+       call wrf_debug(15,'emissions_driver calling mosaic_addemiss')
+       call mosaic_addemiss( id, dtstep, u10, v10, alt, dz8w, xland,     &
+            config_flags, chem, slai, ust, smois, ivgtyp, isltyp,        &
+!jdf
+            emis_ant,ebu,config_flags%biomass_burn_opt,                  &
+            config_flags%dust_opt,                                       &
+            ktau,p8w,u_phy,v_phy,rho_phy,g,dx,erod,                      &
+!jdf
+            dust_emiss_active, seasalt_emiss_active,                     &
+            ids,ide, jds,jde, kds,kde,                                   &
+            ims,ime, jms,jme, kms,kme,                                   &
+            its,ite, jts,jte, kts,kte                                    )
+
+    CASE DEFAULT
+       call wrf_debug(15,'emissions_driver NOT CALLING aer add_... routines')
+
+    END SELECT aer_addemiss_select
+!        
+!    production of NO from lightning
+!    code from Mary Barth with contributions from:
+!    Lesley Ott, Ken Pickering (crm_decaria scheme)
+!    Christelle Barthe (crm_barthe scheme)    -- not included yet
+!    Regional-scale LNOx schemes from MOZART provided by Louisa Emmons    -- not included yet
+!
+  IF (config_flags%lightning_opt  /= 0)  then
+    
+       CALL lightning_driver(t_phy, p_phy, rho_phy,        &
+                  u_phy, v_phy, vvel,                      &
+                  ter_ht,xlat,xlong,dx,dy,z,               &
+                  moist,                                   &
+                  ids,ide, jds,jde, kds,kde,               &
+                  ims,ime, jms,jme, kms,kme,               &
+                  its,ite, jts,jte, kts,kte,               &
+                  chem(ims,kms,jms,p_no),                  &
+                  tracer(ims,kms,jms,p_tr18_1),            &
+                  tracer(ims,kms,jms,p_tr18_2),            &
+                  config_flags%tracer_opt,                 &
+                  config_flags%lightning_opt, ktau,        &
+                  dtstep, ltng_timestep, ltng_startsec,    &
+                  passive_ltng,temp_upper,temp_lower,      &
+                  N_IC,N_CG,lflash_data,flashrate_factor,  &
+                  flashrate_method,iccg_method,            &
+                  cellcount_method,                        &
+                  ic_fr,cg_fr)
+
+   END IF
+
+
+    END subroutine emissions_driver
+
+END module module_emissions_driver

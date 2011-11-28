@@ -3360,7 +3360,117 @@
      ENDDO
 
   END SUBROUTINE interp_hnear_nmm
+  SUBROUTINE force_sst_nmm    (cfld,                                 &  ! CD field
+                               cids, cide, ckds, ckde, cjds, cjde,   &
+                               cims, cime, ckms, ckme, cjms, cjme,   &
+                               cits, cite, ckts, ckte, cjts, cjte,   &
+                               nfld,                                 &  ! ND field
+                               nids, nide, nkds, nkde, njds, njde,   &
+                               nims, nime, nkms, nkme, njms, njme,   &
+                               nits, nite, nkts, nkte, njts, njte,   &
+                               shw,                                  &  ! stencil half width for interp
+                               imask,                                &  ! interpolation mask
+                               xstag, ystag,                         &  ! staggering of field
+                               ipos, jpos,                           &  ! Position of lower left of nest in CD
+                               nri, nrj,                             &  ! nest ratios                         
+                               CII, IIH, CJJ, JJH, CBWGT1, HBWGT1,   &  ! south-western grid locs and weights 
+                               CBWGT2, HBWGT2, CBWGT3, HBWGT3,       &  ! note that "C"ourse grid ones are
+                               CBWGT4, HBWGT4, CCSST, CSST           )  ! just dummys
+     USE module_timing
+     IMPLICIT NONE
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj
+     LOGICAL, INTENT(IN) :: xstag, ystag
+
+     REAL, DIMENSION ( cims:cime, cjms:cjme ) :: cfld
+     REAL, DIMENSION ( nims:nime, njms:njme ) :: nfld
+     REAL,    DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CBWGT1,CBWGT2,CBWGT3,CBWGT4    ! dummy
+     REAL,    DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
+     INTEGER, DIMENSION ( cims:cime, cjms:cjme ), INTENT(IN) :: CII,CJJ                        ! dummy
+     INTEGER, DIMENSION ( nims:nime, njms:njme ), INTENT(IN) :: IIH,JJH
+     INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
+     INTEGER , INTENT(IN) :: csst(*), ccsst(*)
+!    local
+
+     LOGICAL  FLIP
+     INTEGER  i,j,k,n
+     REAL     SUM,AMAXVAL
+     REAL,    DIMENSION (4, nims:nime, njms:njme ) :: NBWGT
+
+     if(csst(1) /= 1) return
+
 !
+!*** INDEX CONVENTIONS
+!***                     NBWGT4=0
+!***                      4
+!***
+!***
+!***
+!***                   h
+!***             1                 2
+!***            NBWGT1=1           NBWGT2=0
+!***
+!***
+!***                      3
+!***                     NBWGT3=0
+
+     DO J=NJTS,MIN(NJTE,NJDE-1)
+      DO I=NITS,MIN(NITE,NIDE-1)
+            NBWGT(1,I,J)=HBWGT1(I,J)
+            NBWGT(2,I,J)=HBWGT2(I,J)
+            NBWGT(3,I,J)=HBWGT3(I,J)
+            NBWGT(4,I,J)=HBWGT4(I,J)
+      ENDDO
+     ENDDO
+
+     DO J=NJTS,MIN(NJTE,NJDE-1)
+      DO I=NITS,MIN(NITE,NIDE-1)
+          AMAXVAL=0.
+          DO N=1,4
+            AMAXVAL=amax1(NBWGT(N,I,J),AMAXVAL)
+          ENDDO
+
+          FLIP=.TRUE.
+          SUM=0.0
+          DO N=1,4
+             IF(AMAXVAL .EQ. NBWGT(N,I,J) .AND. FLIP)THEN
+               NBWGT(N,I,J)=1.0
+               FLIP=.FALSE.
+             ELSE
+               NBWGT(N,I,J)=0.0
+             ENDIF
+             SUM=SUM+NBWGT(N,I,J)
+             IF(SUM .GT. 1.0)CALL wrf_error_fatal ( "horizontal interp error - interp_hnear_nmm" )
+          ENDDO
+      ENDDO
+     ENDDO
+
+       DO J=NJTS,MIN(NJTE,NJDE-1)
+        DO I=NITS,MIN(NITE,NIDE-1)
+            IF(MOD(JJH(I,J),2) .NE. 0)THEN    ! 1,3,5,7 
+                NFLD(I,J) = NBWGT(1,I,J)*CFLD(IIH(I,J),  JJH(I,J)  ) &
+                          + NBWGT(2,I,J)*CFLD(IIH(I,J)+1,JJH(I,J)  ) &
+                          + NBWGT(3,I,J)*CFLD(IIH(I,J),  JJH(I,J)-1) &
+                          + NBWGT(4,I,J)*CFLD(IIH(I,J),  JJH(I,J)+1)
+            ELSE
+                NFLD(I,J) = NBWGT(1,I,J)*CFLD(IIH(I,J),  JJH(I,J)  ) &
+                          + NBWGT(2,I,J)*CFLD(IIH(I,J)+1,JJH(I,J)  ) &
+                          + NBWGT(3,I,J)*CFLD(IIH(I,J)+1,JJH(I,J)-1) &
+                          + NBWGT(4,I,J)*CFLD(IIH(I,J)+1,JJH(I,J)+1)
+            ENDIF
+        ENDDO
+       ENDDO
+
+
+     END SUBROUTINE force_sst_nmm
 !=======================================================================================
 !  E grid nearest neighbour interpolation for H points.
 !  This routine assumes cfld and nfld are in IKJ or ILJ

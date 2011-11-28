@@ -4,6 +4,14 @@
 !#define mpi_x_comm_size(i,j,k)  Mpi_Comm_Size ( i,j,k ) ; write(0,*) __LINE__
 #define mpi_x_comm_size(i,j,k)  Mpi_Comm_Size ( i,j,k )
 
+! Workaround for bug in the IBM MPI implementation.  Look near the
+! bottom of this file for an explanation.
+#ifdef IBM_REDUCE_BUG_WORKAROUND
+#define mpi_x_reduce(sb,rb,c,dt,op,r,com,ierr) reduce_add_integer(sb,rb,c,r,com)
+#else
+#define mpi_x_reduce(sb,rb,c,dt,op,r,com,ierr) MPI_Reduce(sb,rb,c,dt,op,r,com,ierr)
+#endif
+
 MODULE module_wrf_quilt
 !<DESCRIPTION>
 !<PRE>
@@ -60,6 +68,7 @@ MODULE module_wrf_quilt
   USE module_timing
 
   INTEGER, PARAMETER :: int_num_handles = 99
+  INTEGER, PARAMETER :: max_servers = int_num_handles+1  ! why +1?
   LOGICAL, DIMENSION(int_num_handles) :: okay_to_write, int_handle_in_use, okay_to_commit
   INTEGER, DIMENSION(int_num_handles) :: int_num_bytes_to_write, io_form
   REAL, POINTER,SAVE :: int_local_output_buffer(:)
@@ -70,12 +79,16 @@ MODULE module_wrf_quilt
   INTEGER          :: server_for_handle(int_num_handles)
   INTEGER          :: reduced(2), reduced_dummy(2)
   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+
+  INTEGER :: mpi_comm_avail,availrank
+  LOGICAL :: in_avail=.false., poll_servers=.false.
+
   INTEGER nio_groups
 #ifdef DM_PARALLEL
   INTEGER :: mpi_comm_local
   LOGICAL :: compute_node
-  LOGICAL :: compute_group_master(100)
-  INTEGER :: mpi_comm_io_groups(100)
+  LOGICAL :: compute_group_master(max_servers)
+  INTEGER :: mpi_comm_io_groups(max_servers)
   INTEGER :: nio_tasks_in_group
   INTEGER :: nio_tasks_per_group
   INTEGER :: ncompute_tasks
@@ -86,6 +99,15 @@ MODULE module_wrf_quilt
   INTEGER comm_io_servers, iserver, hdrbufsize, obufsize
   INTEGER, DIMENSION(4096)     :: hdrbuf
   INTEGER, DIMENSION(int_num_handles)     :: handle
+#endif
+
+#ifdef IBM_REDUCE_BUG_WORKAROUND
+! Workaround for bug in the IBM MPI implementation.  Look near the
+! bottom of this file for an explanation.
+  interface reduce_add_integer
+     module procedure reduce_add_int_arr
+     module procedure reduce_add_int_scl
+  end interface
 #endif
 
   CONTAINS
@@ -107,9 +129,15 @@ MODULE module_wrf_quilt
         IF ( server_for_handle ( dhandle ) .GE. 1 ) THEN
           get_server_id = server_for_handle ( dhandle )
         ELSE
-          prev_server_for_handle = mod ( prev_server_for_handle + 1 , nio_groups )
-          server_for_handle( dhandle ) = prev_server_for_handle+1
-          get_server_id = prev_server_for_handle+1
+           IF(poll_servers) THEN
+              ! Poll server group masters to find an inactive I/O server group:
+              call wrf_quilt_find_server(server_for_handle(dhandle))
+           ELSE
+              ! Server polling is disabled, so cycle through servers:
+              prev_server_for_handle = mod ( prev_server_for_handle + 1 , nio_groups )
+              server_for_handle( dhandle ) = prev_server_for_handle+1
+           ENDIF
+           get_server_id=server_for_handle(dhandle)
         ENDIF
       ELSE
          CALL wrf_message('module_io_quilt: get_server_id bad dhandle' )
@@ -126,6 +154,11 @@ MODULE module_wrf_quilt
          CALL wrf_message('module_io_quilt: set_server_id bad dhandle' )
        ENDIF
     END SUBROUTINE set_server_id
+
+    LOGICAL FUNCTION get_poll_servers() 
+      implicit none
+      get_poll_servers=poll_servers
+    end FUNCTION get_poll_servers
 
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
     SUBROUTINE int_get_fresh_handle( retval )
@@ -237,7 +270,6 @@ MODULE module_wrf_quilt
       INTEGER                     :: i, j, ii, comdup, ierr, niotasks, n_groups, iisize
       INTEGER, DIMENSION(ntasks)  :: icolor
       CHARACTER*128 mess
-
       INTEGER :: io_form_setting
       INTEGER :: me
       INTEGER :: k, m, nprocx, nprocy
@@ -347,6 +379,58 @@ MODULE module_wrf_quilt
                             mpi_comm_io_groups(j),ierr)
       ENDDO
 
+#ifdef PNETCDF_QUILT
+      if(poll_servers) then
+         poll_servers=.false.
+         call wrf_message('Warning: server polling does not work with pnetcdf_quilt.  Disabled poll_servers.')
+      else
+#endif
+         if(nio_groups==1) then
+            poll_servers=.false.
+            call wrf_message('Server polling is useless with one io group.  Disabled poll_servers.')
+         endif
+#ifdef PNETCDF_QUILT
+      endif
+#endif
+
+      if(poll_servers) then
+         ! If server polling is enabled, we need to create mpi_comm_avail, 
+         ! which contains the monitor process, and the I/O server master process
+         ! for each I/O server group.  This will be used in the routines
+         ! wrf_quilt_find_server and wrf_quilt_server_ready to find inactive
+         ! I/O servers for new data handles in get_server_id.
+
+         ! The "in_avail" is set to true iff I am in the mpi_comm_avail.
+
+         call mpi_comm_rank(mpi_comm_wrld,me,ierr)
+
+         icolor=MPI_UNDEFINED
+         in_avail=.false.
+
+         if(wrf_dm_on_monitor()) then
+            in_avail=.true. ! monitor process is in mpi_comm_avail
+         endif
+         icolor(1)=1
+
+         do j=1,n_groups
+            i=ncompute_tasks+j*nio-1
+            if(me+1==i) then
+               in_avail=.true. ! I/O server masters are in mpi_comm_avail
+            endif
+            icolor(i)=1
+         enddo
+
+         CALL MPI_Comm_dup(mpi_comm_wrld,comdup,ierr)
+         CALL MPI_Comm_split(comdup,icolor(me+1),me, &
+                             mpi_comm_avail,ierr)
+
+         availrank=MPI_UNDEFINED
+         if(in_avail) then
+            call mpi_comm_rank(mpi_comm_avail,availrank,ierr)
+         endif
+
+      endif
+
       compute_group_master = .FALSE.
       compute_node         = .FALSE.
 
@@ -364,7 +448,7 @@ MODULE module_wrf_quilt
          ! If I am an I/O server for this group then make that group's
          ! communicator the first element in the mpi_comm_io_groups array 
          ! (I will ignore all of the other elements).
-         IF ( me+1 .EQ. iisize ) THEN
+         IF (ncompute_tasks+(j-1)*nio .LE. mytask .AND. mytask .LT. ncompute_tasks+j*nio) THEN
             mpi_comm_io_groups(1) = mpi_comm_io_groups(j)
          ELSE
             compute_node = .TRUE.
@@ -455,6 +539,7 @@ MODULE module_wrf_quilt
       INTEGER, EXTERNAL :: use_package
       LOGICAL           :: stored_write_record, retval
       INTEGER iii, jjj, vid, CC, DD
+      LOGICAL           :: call_server_ready
 
 logical okay_to_w
 character*120 sysline
@@ -493,6 +578,8 @@ character*120 sysline
 #ifdef GRIB2
       CALL ext_gr2_ioinit( SysDepInfo, ierr)
 #endif
+
+      call_server_ready = .true. ! = true when the server is ready for a new file
 
       okay_to_commit = .false.
       stored_write_record = .false.
@@ -544,15 +631,21 @@ okay_to_w = .false.
 ! *bytes* in this code so conversion to "count" (number of Fortran words) is 
 ! required for Fortran indexing and MPI calls.  
 !</DESCRIPTION>
+
+         if(poll_servers .and. call_server_ready) then
+            call_server_ready=.false.
+            ! Send a message to the monitor telling it we're ready
+            ! for a new data handle.
+            call wrf_quilt_server_ready()
+         endif
+
         ! wait for info from compute tasks in the I/O group that we're ready to rock
         ! obufsize will contain number of *bytes*
 !CALL start_timing()
         ! first element of reduced is obufsize, second is DataHandle 
         ! if needed (currently needed only for ioclose).
         reduced_dummy = 0
-        CALL MPI_Reduce( reduced_dummy, reduced, 2, MPI_INTEGER,  &
-                         MPI_SUM, mytask_io_group,          &
-                         mpi_comm_io_groups(1), ierr )
+        CALL mpi_x_reduce( reduced_dummy, reduced, 2, MPI_INTEGER, MPI_SUM, mytask_io_group, mpi_comm_io_groups(1), ierr )
         obufsize = reduced(1)
 !CALL end_timing("MPI_Reduce at top of forever loop") 
 !JMDEBUGwrite(0,*)'obufsize = ',obufsize
@@ -624,6 +717,12 @@ okay_to_w = .false.
           ! DataHandle is provided as second element of reduced
           CALL int_gen_handle_header( obuf, obufsize, itypesize, &
                                       reduced(2) , int_ioclose )
+
+          if(poll_servers) then 
+             ! Once we're done closing, we need to tell the master
+             ! process that we're ready for more data.
+             call_server_ready=.true.
+          endif
         ENDIF
 
 !write(0,*)'calling init_store_piece_of_field'
@@ -805,9 +904,7 @@ okay_to_w = .false.
         CALL retrieve_pieces_of_field ( obuf , VarName, obufsize, sz, retval )
 ! Sum sizes of all headers and patches (data) for this field from all I/O 
 ! servers in this I/O server group onto the I/O server "root".
-        CALL MPI_Reduce( sz, bigbufsize, 1, MPI_INTEGER,  &
-                         MPI_SUM, ntasks_local_group-1,         &
-                         mpi_comm_local, ierr )
+        CALL mpi_x_reduce( sz, bigbufsize, 1, MPI_INTEGER, MPI_SUM, ntasks_local_group-1, mpi_comm_local, ierr )
 !write(0,*)'seed: sz ',sz,' bigbufsize ',bigbufsize,' VarName ', TRIM(VarName),' retval ',retval
 
 ! Loop until there are no more fields to retrieve from the internal buffers.
@@ -1373,9 +1470,7 @@ okay_to_w = .false.
         CALL retrieve_pieces_of_field ( obuf , VarName, obufsize, sz, retval )
 ! Sum sizes of all headers and patches (data) for this field from all I/O 
 ! servers in this I/O server group onto the I/O server "root".
-        CALL MPI_Reduce( sz, bigbufsize, 1, MPI_INTEGER,  &
-                         MPI_SUM, ntasks_local_group-1,         &
-                         mpi_comm_local, ierr )
+        CALL mpi_x_reduce( sz, bigbufsize, 1, MPI_INTEGER,MPI_SUM, ntasks_local_group-1,mpi_comm_local, ierr )
 ! Then, return to the top of the loop to collect headers and data from all 
 ! I/O servers in this I/O server group onto the I/O server "root" and handle 
 ! the next batch of commands.  
@@ -1541,9 +1636,7 @@ okay_to_w = .false.
         ! first element of reduced is obufsize, second is DataHandle 
         ! if needed (currently needed only for ioclose).
         reduced_dummy = 0
-        CALL MPI_Reduce( reduced_dummy, reduced, 2, MPI_INTEGER,  &
-                         MPI_SUM, mytask_io_group,          &
-                         mpi_comm_io_groups(1), ierr )
+        CALL mpi_x_reduce( reduced_dummy, reduced, 2, MPI_INTEGER, MPI_SUM, mytask_io_group, mpi_comm_io_groups(1), ierr )
         obufsize = reduced(1)
 !CALL end_timing("MPI_Reduce at top of forever loop") 
 !JMDEBUGwrite(0,*)'obufsize = ',obufsize
@@ -2456,12 +2549,12 @@ okay_to_w = .false.
       IMPLICIT NONE
       INCLUDE 'mpif.h'
       INTEGER i
-      NAMELIST /namelist_quilt/ nio_tasks_per_group, nio_groups
+      NAMELIST /namelist_quilt/ nio_tasks_per_group, nio_groups, poll_servers
       INTEGER ntasks, mytask, ierr, io_status
 #  if defined(_OPENMP) && defined(MPI2_THREAD_SUPPORT)
       INTEGER thread_support_provided, thread_support_requested
 #endif
-      INTEGER mpi_comm_here
+      INTEGER mpi_comm_here, temp_poll
       LOGICAL mpi_inited
       LOGICAL esmf_coupling
 
@@ -2505,6 +2598,7 @@ okay_to_w = .false.
         OPEN ( unit=27, file="namelist.input", form="formatted", status="old" )
         nio_groups = 1
         nio_tasks_per_group  = 0
+        poll_servers = .false.
         READ ( 27 , NML = namelist_quilt, IOSTAT=io_status )
         IF (io_status .NE. 0) THEN
           CALL wrf_error_fatal( "ERROR reading namelist namelist_quilt" )
@@ -2516,28 +2610,246 @@ okay_to_w = .false.
                                  "ESMF coupling with quilt tasks") ;
           ENDIF
         ENDIF
+        if(poll_servers) then
+           temp_poll=1
+        else
+           temp_poll=0
+        endif
       ENDIF
+
       CALL mpi_bcast( nio_tasks_per_group  , 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
       CALL mpi_bcast( nio_groups , 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
+      CALL mpi_bcast( temp_poll , 1 , MPI_INTEGER , 0 , mpi_comm_here, ierr )
+
+      poll_servers = (temp_poll == 1)
 
       CALL setup_quilt_servers( nio_tasks_per_group,            &
                                 mytask,               &
                                 ntasks,               &
                                 nio_groups,           &
                                 nio_tasks_in_group,   &
-                                mpi_comm_here,       &
+                                mpi_comm_here,        &
                                 mpi_comm_local,       &
                                 mpi_comm_io_groups)
 
        ! provide the communicator for the integration tasks to RSL
        IF ( compute_node ) THEN
           CALL wrf_set_dm_communicator( mpi_comm_local )
+#ifdef HWRF
+          call ATM_SET_COMM(mpi_comm_local)
+#endif
        ELSE
+#ifdef HWRF
+          call ATM_LEAVE_COUPLING()
+#endif
           CALL quilt    ! will not return on io server tasks
        ENDIF
 #endif
       RETURN
     END SUBROUTINE init_module_wrf_quilt
+
+
+#ifdef IBM_REDUCE_BUG_WORKAROUND
+
+    ! These three subroutines re-implement MPI_Reduce on MPI_INTEGER
+    ! with OP=MPI_ADD.
+
+    ! This is a workaround for a bug in the IBM MPI implementation.
+    ! Some MPI processes will get stuck in MPI_Reduce and not
+    ! return until the PREVIOUS I/O server group finishes writing.
+
+    ! This workaround replaces the MPI_Reduce call with many 
+    ! MPI_Send and MPI_Recv calls that perform the sum on the
+    ! root of the communicator.
+
+    ! There are two reduce routines: one for a sum of scalars
+    ! and one for a sum of arrays.  The get_reduce_tag generates
+    ! MPI tags for the communication.
+
+  integer function get_reduce_tag(root,comm)
+    implicit none
+    include 'mpif.h'
+    integer, intent(in) :: comm,root
+    integer :: i,j, tag, here
+    integer :: ierr,me,size
+
+    integer, pointer :: nexttags(:)
+    integer, target :: dummy(1)
+    character(255) :: message
+    integer(kind=4) :: comm4,hashed
+
+    integer, parameter :: hashsize = 113 ! should be prime, >max_servers+1
+    integer, parameter :: tagloop = 100000 ! number of tags reserved per communicator
+    integer, parameter :: origin = 1031102 ! lowest tag number we'll use
+    integer, save :: nexttag=origin ! next tag to use for a new communicator
+    integer, save :: comms(hashsize)=-1, firsttag(hashsize)=0, curtag(hashsize)=0
+
+    ! If integers are not four bytes, this implementation will still
+    ! work, but it may be inefficient (O(N) lookup instead of O(1)).
+    ! To fix that, an eight byte hash function would be needed, but
+    ! integers are four bytes in WRF, so that is not a problem right
+    ! now.
+
+    comm4=comm
+    call int_hash(comm4,hashed)
+    hashed=mod(abs(hashed),hashsize)+1
+    if(hashed<0) call wrf_error_fatal('hashed<0')
+
+    do i=0,hashsize-1
+       j=1+mod(i+hashed-1,hashsize)
+
+       if(firsttag(j)/=0 .and. comms(j)==comm) then
+          ! Found the communicator
+          if(curtag(j)-firsttag(j) >= tagloop) then
+             ! Hit the max tag number so we need to reset.
+             ! To make sure >tagloop reduces don't happen 
+             ! before someone finishes an old reduce, we 
+             ! have an MPI_Barrier here.
+             !call wrf_message('Hit tagloop limit so calling mpi_barrier in get_reduce_tag...')
+             call mpi_barrier(comm,ierr)
+             if(ierr/=0) call wrf_error_fatal('cannot call mpi_barrier')
+             !call wrf_message('  ...back from mpi_barrier in get_reduce_tag.')
+
+             curtag(j)=firsttag(j)
+          endif
+
+          tag=curtag(j)
+          curtag(j)=tag+1
+          get_reduce_tag=tag
+          return
+       endif
+    enddo
+
+
+    ! ==================== HANDLE NEW COMMUNICATORS ====================
+
+    !write(message,'("Found a new communicator ",I0," in get_reduce_tag, so making a tag range for it")') comm
+
+    ! If we get here, the communicator is new to us, so we need
+    ! to add it to the hash and give it a new tag.  
+
+    ! First, figure out where we'll put the tag in the hashtable
+    here=-1
+    do i=0,hashsize-1
+       j=1+mod(i+hashed-1,hashsize)
+
+       if(firsttag(j)==0) then
+          here=j
+          exit
+       endif
+    enddo
+    if(here==-1) call wrf_error_fatal('no room in hashtable; increase hashsize in get_reduce_tag (should be >max_servers+1)')
+
+    ! Now, find out the new tag's number.  To do this, we need to
+    ! get the next tag number that is not used by any ranks.
+
+    call mpi_comm_rank(comm,me,ierr)
+    if(ierr/=0) call wrf_error_fatal('cannot call mpi_comm_rank')
+
+    call mpi_comm_size(comm,size,ierr)
+    if(ierr/=0) call wrf_error_fatal('cannot call mpi_comm_size')
+
+    if(me==root) then
+       allocate(nexttags(size))
+    else
+       nexttags=>dummy
+    endif
+
+    call mpi_gather(nexttag,1,MPI_INTEGER,nexttags,1,MPI_INTEGER,root,comm,ierr)
+    if(ierr/=0) call wrf_error_fatal('cannot call mpi_gather')
+
+    if(me==root) then
+       nexttag=max(nexttag,maxval(nexttags))
+       deallocate(nexttags)
+    endif
+    call mpi_bcast(nexttag,1,MPI_INTEGER,root,comm,ierr)
+
+    comms(here)=comm
+    firsttag(here)=nexttag
+    curtag(here)=nexttag
+    get_reduce_tag=nexttag
+
+    !write(message,'("Stored comm ",I0," with tag ",I0,"=",I0," in hash element ",I0)') &
+    !     comms(here),firsttag(here),curtag(here),here
+    !call wrf_message(message)
+
+    nexttag=nexttag+tagloop
+
+  end function get_reduce_tag
+  subroutine reduce_add_int_scl(send,recv,count,root,comm)
+    implicit none
+    include 'mpif.h'
+    integer, intent(in) :: count,root,comm
+    integer, intent(inout) :: recv
+    integer, intent(in) :: send
+    integer :: me, size, ierr, you, temp, tag
+    character*255 :: message
+    if(root<0) call wrf_error_fatal('root is less than 0')
+
+    tag=get_reduce_tag(root,comm)
+
+    !write(message,'("Send/recv to tag ",I0)') tag
+    !call wrf_message(message)
+
+    call mpi_comm_rank(comm,me,ierr)
+    if(ierr/=0) call wrf_error_fatal('cannot call mpi_comm_rank')
+
+    call mpi_comm_size(comm,size,ierr)
+    if(ierr/=0) call wrf_error_fatal('cannot call mpi_comm_size')
+
+    if(root>=size) call wrf_error_fatal('root is beyond highest communicator rank')
+
+    if(me==root) then
+       recv=send
+       do you=0,size-2
+          call mpi_recv(temp,1,MPI_INTEGER,MPI_ANY_SOURCE,tag,comm,MPI_STATUS_IGNORE,ierr)
+          if(ierr/=0) call wrf_error_fatal('error calling mpi_recv')
+          recv=recv+temp
+       enddo
+    else
+       call mpi_send(send,1,MPI_INTEGER,root,tag,comm,ierr)
+       if(ierr/=0) call wrf_error_fatal('error calling mpi_send')
+    endif
+  end subroutine reduce_add_int_scl
+  subroutine reduce_add_int_arr(sendbuf,recvbuf,count,root,comm)
+    implicit none
+    include 'mpif.h'
+    integer, intent(in) :: count,root,comm
+    integer, intent(in) :: sendbuf(count)
+    integer, intent(inout) :: recvbuf(count)
+    integer :: me, size, ierr, you, tempbuf(count), tag
+    character*255 :: message
+
+    if(root<0) call wrf_error_fatal('root is less than 0')
+
+    tag=get_reduce_tag(root,comm)
+
+    !write(message,'("Send/recv to tag ",I0)') tag
+    !call wrf_message(message)
+
+    call mpi_comm_rank(comm,me,ierr)
+    if(ierr/=0) call wrf_error_fatal('cannot call mpi_comm_rank')
+
+    call mpi_comm_size(comm,size,ierr)
+    if(ierr/=0) call wrf_error_fatal('cannot call mpi_comm_size')
+
+    if(root>=size) call wrf_error_fatal('root is beyond highest communicator rank')
+
+    if(me==root) then
+       recvbuf=sendbuf
+       do you=0,size-2
+          call mpi_recv(tempbuf,count,MPI_INTEGER,MPI_ANY_SOURCE,tag,comm,MPI_STATUS_IGNORE,ierr)
+          if(ierr/=0) call wrf_error_fatal('error calling mpi_recv')
+          recvbuf=recvbuf+tempbuf
+       enddo
+    else
+       call mpi_send(sendbuf,count,MPI_INTEGER,root,tag,comm,ierr)
+       if(ierr/=0) call wrf_error_fatal('error calling mpi_send')
+    endif
+  end subroutine reduce_add_int_arr
+#endif
+
+
 END MODULE module_wrf_quilt
 
 !<DESCRIPTION>
@@ -2651,9 +2963,7 @@ SUBROUTINE wrf_quilt_open_for_write_begin( FileName , Comm_compute, Comm_io, Sys
 #else
   IF ( wrf_dm_on_monitor() )  reduced(2) = i 
 #endif
-  CALL MPI_Reduce( reduced, reduced_dummy, 2, MPI_INTEGER,  &
-                   MPI_SUM, tasks_in_group-1,          &   ! root = nio_tasks_in_group-1 is me
-                   comm_io_group, ierr )
+  CALL mpi_x_reduce( reduced, reduced_dummy, 2, MPI_INTEGER, MPI_SUM, tasks_in_group-1, comm_io_group, ierr )
 !!JMTIMING   CALL end_timing("MPI_Reduce in wrf_quilt_open_for_write_begin")
 
   ! send data to the i/o processor
@@ -2729,9 +3039,7 @@ SUBROUTINE wrf_quilt_open_for_write_commit( DataHandle , Status )
 #else
   IF ( wrf_dm_on_monitor() )  reduced(2) = DataHandle
 #endif
-  CALL MPI_Reduce( reduced, reduced_dummy, 2, MPI_INTEGER,  &
-                   MPI_SUM, tasks_in_group-1,          &   ! root = nio_tasks_in_group-1 is me
-                   comm_io_group, ierr )
+  CALL mpi_x_reduce( reduced, reduced_dummy, 2, MPI_INTEGER, MPI_SUM, tasks_in_group-1, comm_io_group, ierr )
 !!JMTIMING   CALL end_timing("MPI_Reduce in wrf_quilt_open_for_write_commit")
 
   ! send data to the i/o processor
@@ -2892,9 +3200,7 @@ SUBROUTINE wrf_quilt_iosync ( DataHandle, Status )
 #else
     IF ( wrf_dm_on_monitor() )  reduced(2) = DataHandle
 #endif
-    CALL MPI_Reduce( reduced, reduced_dummy, 2, MPI_INTEGER,  &
-                     MPI_SUM, tasks_in_group-1,          &   ! root = nio_tasks_in_group-1 is me
-                     comm_io_group, ierr )
+    CALL mpi_x_reduce( reduced, reduced_dummy, 2, MPI_INTEGER, MPI_SUM, tasks_in_group-1, comm_io_group, ierr )
 !    CALL end_timing("MPI_Reduce in wrf_quilt_iosync")
 
     ! send data to the i/o processor
@@ -2981,9 +3287,7 @@ SUBROUTINE wrf_quilt_ioclose ( DataHandle, Status )
 #else
   IF ( wrf_dm_on_monitor() )  reduced(2) = DataHandle
 #endif
-  CALL MPI_Reduce( reduced, reduced_dummy, 2, MPI_INTEGER,  &
-                   MPI_SUM, tasks_in_group-1,          &   ! root = nio_tasks_in_group-1 is me
-                   comm_io_group, ierr )
+  CALL mpi_x_reduce( reduced, reduced_dummy, 2, MPI_INTEGER, MPI_SUM, tasks_in_group-1, comm_io_group, ierr )
 !!JMTIMING   CALL end_timing("MPI_Reduce in ioclose")
 
 #if 0
@@ -3026,7 +3330,7 @@ SUBROUTINE wrf_quilt_ioexit( Status )
   INCLUDE 'mpif.h'
 #include "intio_tags.h"
   INTEGER ,       INTENT(OUT) :: Status
-  INTEGER                     :: DataHandle
+  INTEGER                     :: DataHandle, actual_iserver
   INTEGER i, itypesize, tasks_in_group, comm_io_group, me, ierr 
   REAL dummy
 
@@ -3054,7 +3358,22 @@ SUBROUTINE wrf_quilt_ioexit( Status )
 #endif
 
   DO iserver = 1, nio_groups
-    CALL get_mpi_comm_io_groups( comm_io_group , iserver )
+    if(poll_servers) then
+       ! We're using server polling mode, so we must call
+       ! *_find_server to receive the mpi_ssend sent by the servers,
+       ! otherwise WRF will hang at the mpi_x_reduce below.
+
+       call wrf_quilt_find_server(actual_iserver)
+
+       ! The actual_iserver is now set to the next available I/O server.
+       ! That may not be the same as iserver, but that's okay as long
+       ! as we run through this loop exactly nio_groups times.
+    else
+       ! Not using server polling, so just access servers in numeric order.
+       actual_iserver=iserver
+    endif
+
+    CALL get_mpi_comm_io_groups( comm_io_group , actual_iserver )
 
     CALL mpi_x_comm_size( comm_io_group , tasks_in_group , ierr )
     CALL mpi_comm_rank( comm_io_group , me , ierr )
@@ -3063,9 +3382,7 @@ SUBROUTINE wrf_quilt_ioexit( Status )
     hdrbufsize = -100 
     reduced = 0
     IF ( me .eq. 0 ) reduced(1) = hdrbufsize 
-    CALL MPI_Reduce( reduced, reduced_dummy, 2, MPI_INTEGER,  &
-                     MPI_SUM, tasks_in_group-1,          &   ! root = nio_tasks_in_group-1 is me
-                     comm_io_group, ierr )
+    CALL mpi_x_reduce( reduced, reduced_dummy, 2, MPI_INTEGER, MPI_SUM, tasks_in_group-1, comm_io_group, ierr )
 
   ENDDO
   Status = 0
@@ -3164,9 +3481,7 @@ SUBROUTINE wrf_quilt_set_time ( DataHandle, Data,  Status )
 #else
       IF ( wrf_dm_on_monitor() )  reduced(2) = DataHandle
 #endif
-      CALL MPI_Reduce( reduced, reduced_dummy, 2, MPI_INTEGER,  &
-                       MPI_SUM, tasks_in_group-1,          &   ! root = nio_tasks_in_group-1 is me
-                       comm_io_group, ierr )
+      CALL mpi_x_reduce( reduced, reduced_dummy, 2, MPI_INTEGER, MPI_SUM, tasks_in_group-1, comm_io_group, ierr )
       ! send data to the i/o processor
       CALL collect_on_comm_debug(__FILE__,__LINE__, comm_io_group,            &
                             onebyte,                       &
@@ -3283,9 +3598,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Statu
 #else
       IF ( wrf_dm_on_monitor() )  reduced(2) = DataHandle
 #endif
-      CALL MPI_Reduce( reduced, reduced_dummy, 2, MPI_INTEGER,  &
-                       MPI_SUM, tasks_in_group-1,          &   ! root = nio_tasks_in_group-1 is me
-                       comm_io_group, ierr )
+      CALL mpi_x_reduce( reduced, reduced_dummy, 2, MPI_INTEGER, MPI_SUM, tasks_in_group-1, comm_io_group, ierr )
 !!JMTIMING       CALL end_timing("MPI_Reduce in wrf_quilt_put_dom_ti_real")
       ! send data to the i/o processor
       CALL collect_on_comm_debug(__FILE__,__LINE__, comm_io_group,            &
@@ -3444,9 +3757,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  St
 #else
       IF ( wrf_dm_on_monitor() )  reduced(2) = DataHandle
 #endif
-      CALL MPI_Reduce( reduced, reduced_dummy, 2, MPI_INTEGER,  &
-                       MPI_SUM, tasks_in_group-1,          &   ! root = nio_tasks_in_group-1 is me
-                       comm_io_group, ierr )
+      CALL mpi_x_reduce( reduced, reduced_dummy, 2, MPI_INTEGER, MPI_SUM, tasks_in_group-1, comm_io_group, ierr )
 
 !!JMTIMING       CALL end_timing("MPI_Reduce in wrf_quilt_put_dom_ti_integer")
       ! send data to the i/o processor
@@ -3615,9 +3926,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
 #endif
 !call mpi_comm_rank( comm_io_group , me, ierr )
 
-      CALL MPI_Reduce( reduced, reduced_dummy, 2, MPI_INTEGER,  &
-                       MPI_SUM, tasks_in_group-1,          &   ! nio_tasks_in_group-1 is me
-                       comm_io_group, ierr )
+      CALL mpi_x_reduce( reduced, reduced_dummy, 2, MPI_INTEGER, MPI_SUM, tasks_in_group-1, comm_io_group, ierr )
 
 !!JMTIMING       CALL end_timing("MPI_Reduce in wrf_quilt_put_dom_ti_char")
       ! send data to the i/o processor
@@ -4152,9 +4461,7 @@ SUBROUTINE wrf_quilt_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Stat
 #else
       IF ( wrf_dm_on_monitor() )  reduced(2) = DataHandle
 #endif
-      CALL MPI_Reduce( reduced, reduced_dummy, 2, MPI_INTEGER,  &
-                       MPI_SUM, tasks_in_group-1,          &   ! root = nio_tasks_in_group-1 is me
-                       comm_io_group, ierr )
+      CALL mpi_x_reduce( reduced, reduced_dummy, 2, MPI_INTEGER, MPI_SUM, tasks_in_group-1, comm_io_group, ierr )
 !!JMTIMING       CALL end_timing("MPI_Reduce in wrf_quilt_put_var_ti_char")
       ! send data to the i/o processor
       CALL collect_on_comm_debug(__FILE__,__LINE__, comm_io_group,            &
@@ -4575,9 +4882,7 @@ SUBROUTINE wrf_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
 #else
       IF ( wrf_dm_on_monitor() )  reduced(2) = DataHandle
 #endif
-      CALL MPI_Reduce( reduced, reduced_dummy, 2, MPI_INTEGER,  &
-                       MPI_SUM, tasks_in_group-1,          &   ! root = nio_tasks_in_group-1 is me
-                       comm_io_group, ierr )
+      CALL mpi_x_reduce( reduced, reduced_dummy, 2, MPI_INTEGER, MPI_SUM, tasks_in_group-1, comm_io_group, ierr )
 !!ARPTIMING      CALL end_timing("MPI_Reduce in wrf_quilt_write_field dryrun")
       ! send data to the i/o processor
 
@@ -4653,6 +4958,89 @@ SUBROUTINE wrf_quilt_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , 
 #endif
 RETURN
 END SUBROUTINE wrf_quilt_get_var_info
+
+subroutine wrf_quilt_find_server(iserver)
+
+  ! This routine is called by the compute processes when they need an
+  ! I/O server to write out a new file.  Upon return, this routine will
+  ! set iserver to the next available I/O server group.  
+
+  ! A mpi_recv to all of mpi_comm_avail is used to implement this, and
+  ! that recv will not return until an I/O server group calls
+  ! wrf_quilt_server_ready to signal that it is ready for a new file.
+
+#if defined( DM_PARALLEL ) && !defined( STUBMPI )
+  use module_wrf_quilt, only : in_avail, mpi_comm_avail, mpi_comm_local
+
+  implicit none
+  INCLUDE 'mpif.h'
+  integer, intent(inout) :: iserver
+  integer :: ierr
+  character(255) :: message
+
+  call wrf_message('Polling I/O servers...')
+
+  if(in_avail) then
+     call mpi_recv(iserver,1,MPI_INTEGER,MPI_ANY_SOURCE,0,mpi_comm_avail,MPI_STATUS_IGNORE,ierr)
+     if(ierr/=0) then
+        call wrf_error_fatal('mpi_recv failed in wrf_quilt_find_server')
+     endif
+  endif
+
+  call mpi_bcast(iserver,1,MPI_INTEGER,0,mpi_comm_local,ierr)
+  if(ierr/=0) then
+     call wrf_error_fatal('mpi_bcast failed in wrf_quilt_find_server')
+  endif
+
+  write(message,'("I/O server ",I0," is ready for operations.")') iserver
+  call wrf_message(message)
+
+#endif
+
+end subroutine wrf_quilt_find_server
+subroutine wrf_quilt_server_ready()
+
+  ! This routine is called by the I/O server group's master process once the
+  ! I/O server group is done writing its current file, and is waiting for
+  ! a new one.  This information is passed to the monitor process by a 
+  ! blocking send from the I/O server master process to the monitor.  
+
+  ! All processes in an I/O group must call this routine, and this routine
+  ! will not return (in any process) until the monitor process signals 
+  ! that it wants the I/O server group to write a file.  That signal is
+  ! sent in a call to wrf_quilt_find_server on the compute processes.
+
+#if defined( DM_PARALLEL ) && !defined( STUBMPI )
+  use module_wrf_quilt, only : mpi_comm_local, in_avail, availrank, mpi_comm_avail
+
+  implicit none
+  INCLUDE 'mpif.h'
+  integer :: ierr
+
+  write(0,*) 'Entering wrf_quilt_server_ready.'
+
+  call mpi_barrier(mpi_comm_local,ierr)
+  if(ierr/=0) then
+     call wrf_error_fatal('mpi_barrier failed in wrf_quilt_server_ready')
+  endif
+
+  if(in_avail) then
+     write(0,'("mpi_ssend ioserver=",I0," in wrf_quilt_server_ready")') availrank
+     call mpi_ssend(availrank,1,MPI_INTEGER,0,0,mpi_comm_avail,ierr)
+     if(ierr/=0) then
+        call wrf_error_fatal('mpi_ssend failed in wrf_quilt_server_ready')
+     endif
+  endif
+
+  call mpi_barrier(mpi_comm_local,ierr)
+  if(ierr/=0) then
+     call wrf_error_fatal('mpi_barrier failed in wrf_quilt_server_ready')
+  endif
+
+  write(0,*) 'Leaving wrf_quilt_server_ready.'
+#endif
+
+end subroutine wrf_quilt_server_ready
 
 SUBROUTINE get_mpi_comm_io_groups( retval, isrvr )
 !<DESCRIPTION>

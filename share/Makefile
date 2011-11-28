@@ -17,6 +17,7 @@ MODULES =                       \
 	module_compute_geop.o           \
 	module_soil_pre.o		\
 	module_check_a_mundo.o		\
+        module_random.o \
 	module_llxy.o
 
 OBJS    = 		\
@@ -44,6 +45,7 @@ OBJS    = 		\
         landread.o			\
         track_driver.o                  \
         track_input.o                   \
+        bobrand.o                       \
 	setfeenv.o
 
 
@@ -304,5 +306,7 @@ wrf_restartin.o                 : ../frame/module_domain.o \
 wrf_tsin.o	                : ../frame/module_domain.o
 
 track_input.o                   : ../frame/module_domain.o
+
+module_random.o: bobrand.o
 
 # DO NOT DELETE

@@ -10,7 +10,12 @@
      &           )
 !----------------------------------------------------------------------
 !
+      USE MODULE_TIMING
+#ifdef HWRF
+      USE MODULE_HIFREQ, only : hifreq_open
+#endif
       USE MODULE_DOMAIN
+      USE MODULE_RANDOM, only : srand_grid, rand_grid_r4
       USE MODULE_DRIVER_CONSTANTS
       USE module_model_constants
       USE MODULE_CONFIGURE
@@ -69,6 +74,11 @@
 #ifdef HWRF
   LOGICAL :: ANAL   !zhang's doing, added for analysis option
 #endif
+
+  integer(kind=4) :: random_seed
+  INTEGER :: parent_id, nestid, max_dom,one
+  LOGICAL :: grid_allowed, nestless
+
       INTEGER :: IDS,IDE,JDS,JDE,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                                &
      &          ,IPS,IPE,JPS,JPE,KPS,KPE
@@ -111,7 +121,7 @@
       REAL :: TSTART
 !zhang's doing ends
 #endif
-#ifdef HWRFX
+#ifdef HWRF
 !     gopal's doing for the moving nest (MSLP computation)
 !-----------------------------------------------------------------------------------------------------
       REAL, PARAMETER                                       :: LAPSR=6.5E-3, GI=1./G,D608=0.608
@@ -198,6 +208,15 @@
 !**********************************************************************
 !----------------------------------------------------------------------
 !
+      call start_timing
+
+#ifdef HWRF
+      if(grid%id==3) then
+         grid%force_sst=1
+      else
+         grid%force_sst=2
+      endif
+#endif
 
       CALL GET_IJK_FROM_GRID(GRID,                                     &
      &                       IDS,IDE,JDS,JDE,KDS,KDE,                  &
@@ -267,6 +286,12 @@
          CALL WRF_ERROR_FATAL(wrf_err_message)
       END IF
 
+#if (HWRF==1)
+      if(grid%vortex_tracker<1 .or. grid%vortex_tracker>3) then
+         write(wrf_err_message,*)' domain ',grid%id,' has an invalid value ',grid%vortex_tracker,' for grid%vortex_tracker.  It must be 1, 2 or 3.'
+      endif
+#endif
+      
 !!!!!!tlb
 !!!! For now, set NPES to 1
       NPES=1
@@ -471,6 +496,63 @@
       JFS=JPS
       JFE=MIN(JPE,JDE-1)
       IFE=MIN(IPE,IDE-1)
+
+      if((allowed_to_read.and..not.(restrt)) .or. .not.allowed_to_read) then
+         IF(CONFIG_FLAGS%CU_PHYSICS==OSASSCHEME .or. CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)THEN
+            ! Reset random number generator at first initialization,
+            ! or after a nest move.  (Need to reset after a nest move
+            ! or the leading edge will be filled with 3x3 areas with
+            ! the same random number generator state.)
+            random_seed=config_flags%random_seed + grid%ntsd
+            
+            write(message,'(A,I0,A,I0)') 'Resetting random number for domain ',grid%id,' with seed ',random_seed
+            call wrf_message(message)
+            one=1
+            call srand_grid(grid%randstate1,grid%randstate2, &
+                            grid%randstate3,grid%randstate4, &
+                            IDS,IDE,JDS,JDE,one,one, &
+                            IMS,IME,JMS,JME,one,one, &
+                            IPS,IPE,JPS,JPE,one,one,random_seed)
+            call rand_grid_r4(grid%randstate1,grid%randstate2, &
+                              grid%randstate3,grid%randstate4, &
+                              grid%random, &
+                              IDS,IDE,JDS,JDE,one,one, &
+                              IMS,IME,JMS,JME,one,one, &
+                              IPS,IPE,JPS,JPE,one,one)
+         else
+            grid%random = 0.0
+         endif
+      endif
+! Begin HWRF update for high-frequency output
+#ifdef HWRF
+      if(allowed_to_read .and. config_flags%high_freq) then
+        if(grid%id==config_flags%high_dom) then
+           call HIFREQ_OPEN(grid,config_flags)
+        elseif(config_flags%high_dom==-99) then
+          nestless=.true.
+           CALL nl_get_max_dom( 1, max_dom )
+           nestdo: do nestid=2,max_dom
+              call nl_get_grid_allowed(nestid,grid_allowed)
+              if(grid_allowed) then
+                 call nl_get_parent_id(nestid,parent_id)
+                 if(parent_id==grid%id) then
+                    write(message,'("Domain ",I0," does not have hifreq out (can have a child).")') grid%id
+                    nestless=.false.
+                    exit nestdo
+                 endif
+              endif
+           enddo nestdo
+           if(nestless) then
+              call HIFREQ_OPEN(grid,config_flags)
+           endif
+        else
+           write(message,'("Domain ",I0," does not have hifreq out.")') grid%id
+        endif
+      else
+        write(message,'("Domain ",I0," is not being initialized.")') grid%id
+      endif
+! end of high-freq output
+#endif
 !
 #ifdef HWRF
 !zhang's doing
@@ -755,7 +837,6 @@
       NSTART = INT(grid%TSTART*TSPH+0.5)
 !
       grid%ntsd = NSTART
-
 
 !! want non-zero values for grid%nprec, grid%nheat type vars to avoid problems
 !! with mod statements below.
@@ -1450,7 +1531,8 @@
       ENDIF    !zhang 
 #endif
 
-#ifdef HWRFX
+#ifdef HWRF
+      hwrfx_mslp: if(grid%vortex_tracker /= 1) then
 ! XUEJIN's doing
 ! add to output MSLP at the initial time
 !
@@ -1494,6 +1576,7 @@
       ENDDO
      ENDDO
 
+  endif hwrfx_mslp
 #endif
 
 
@@ -2240,6 +2323,9 @@
 #endif
 !#define COPY_OUT
 !#include <scalar_derefs.inc>
+
+   write(message,*) "Timing for start_domain on d",grid%id
+   call end_timing(message)
 
    RETURN
 

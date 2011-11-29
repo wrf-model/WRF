@@ -326,6 +326,7 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
 #else
                           ,MOVED,MVNEST,NTSD,NPHS                &
 #endif
+                          ,vortex_tracker                        &
                           ,IDS,IDE,JDS,JDE,KDS,KDE               &
                           ,IMS,IME,JMS,JME,KMS,KME               &
                           ,ITS,ITE,JTS,JTE,KTS,KTE               )
@@ -338,6 +339,11 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
 !
 ! ABSTRACT:
 !         THIS ROUTINE COMPUTES SOME STATS REQUIRED FOR AUTOMATIC GRID MOTION 
+!         THERE ARE THREE DIFFERENT MODES:
+!             vortex_tracker=1 -- follow vortex using old algorithm
+!             vortex_tracker=2 -- follow child
+!             vortex_tracker=3 -- follow vortex using new HRD algorithm
+!               otherwise   -- do nothing
 ! PROGRAM HISTORY LOG:
 !   05-18-2005  : gopal
 !
@@ -357,6 +363,7 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
       LOGICAL,EXTERNAL                                      :: wrf_dm_on_monitor
       LOGICAL,INTENT(INOUT)                                 :: MVNEST  ! NMM SWITCH FOR GRID MOTION
       LOGICAL,INTENT(IN)                                    :: MOVED
+      INTEGER,INTENT(IN)                                    :: vortex_tracker
       INTEGER,INTENT(IN)                                    :: IDS,IDE,JDS,JDE,KDS,KDE   &
                                                               ,IMS,IME,JMS,JME,KMS,KME   &
                                                               ,ITS,ITE,JTS,JTE,KTS,KTE   &
@@ -367,10 +374,8 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
 #endif
 !
       INTEGER, INTENT(OUT)                                  :: XLOC,YLOC
-#ifdef HWRFX
       INTEGER                                               :: NXLOC,NYLOC
       REAL                                                  :: NSUM1,NSUM2,NSUM3
-#endif
       REAL, DIMENSION(KMS:KME),                 INTENT(IN)  :: DETA1,DETA2
       REAL,                                     INTENT(IN)  :: PDTOP,PTOP
       REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(IN)  :: FIS,PD,SM
@@ -381,11 +386,7 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
 
 #ifdef HWRF
 !zhang's doing
-#ifdef HWRFX
       INTEGER,INTENT(INOUT)                                 :: NTIME0
-#else
-      INTEGER                                               :: NTIME0
-#endif
       LOGICAL,INTENT(IN)                                    :: RESTART
 #else
       INTEGER,SAVE                                          :: NTIME0
@@ -452,7 +453,7 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
                       +   U(I,J,10)*U(I,J,10) + V(I,J,10)*V(I,J,10)       &
                       +   U(I,J,11)*U(I,J,11) + V(I,J,11)*V(I,J,11))/3.0
 #ifdef HWRF
-            PDYN(I,J) =   MSLP(I,J)  
+            PDYN(I,J) =   MSLP(I,J)
 #else
             PDYN(I,J) =   MSLP(I,J)  + 1.1*SQWS(I,J)/2.0
 #endif
@@ -490,8 +491,11 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
         ENDDO
       ENDDO
 
+!   BEGIN OLD TRACKER CODE ----------------------------------------------------
+    old_tracker_1: if(vortex_tracker == 1) then
+!
 !     DETERMINE THE LOCATION OF CENTER OF THE CIRCULATION DEFINED BY MIJ AND FIND THE CORRESPONDING MSLP 
-
+!
       STMP0=MAXGBL_PDYN*100.                 ! define arbitrary maximum
       MINGBL_MIJ=MINVAL(MIJ(ITS:ITF,JTS:JTF))
       DO J = JTS, MIN(JTE,JDE)
@@ -506,7 +510,12 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
 
       CALL WRF_DM_MINVAL(MINGBL_MIJ,XLOC,YLOC)
       CALL WRF_DM_MINVAL(STMP0,IDUM,JDUM)
-#ifdef HWRFX
+   endif old_tracker_1
+!   END OLD TRACKER CODE ------------------------------------------------------
+
+
+!   BEGIN HRD TRACKER CODE ----------------------------------------------------
+    hwrfx_tracker: if(vortex_tracker == 3) then
 !     USE CENTROID TO FIND THE CENTER    Xuejin's doing
 
       NSUM1=0.0
@@ -519,9 +528,6 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
           NSUM1 = NSUM1 + I*(105000.1 - PDYN(I,J))
           NSUM2 = NSUM2 + J*(105000.1 - PDYN(I,J))
           NSUM3 = NSUM3 + (105000.1 - PDYN(I,J))
-!         NSUM1 = NSUM1 + I*(PCUT+0.1 - PDYN(I,J))
-!         NSUM2 = NSUM2 + J*(PCUT+0.1 - PDYN(I,J))
-!         NSUM3 = NSUM3 + (PCUT+0.1 - PDYN(I,J))
 !         WRITE(0,*)'TEST',NSUM1,I,J,0.01*(105000.0 - PDYN(I,J)),PDYN(I,J) 
         ENDIF
        ENDDO
@@ -538,9 +544,13 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
       XLOC = NXLOC
       YLOC = NYLOC
 
-#endif
+    endif hwrfx_tracker
+!   END HRD TRACKER CODE ------------------------------------------------------
+ 
 
+!   BEGIN OLD TRACKER CODE ----------------------------------------------------
 !     DETERMINE THE MAXIMUM MSLP AT ABOUT 18 GRID POINTS AWAY FROM THE STORM CENTER 
+    old_tracker_2: if ( vortex_tracker == 1 ) then
 
       STMP1=0.0
       DO J = JTS, MIN(JTE,JDE)
@@ -572,6 +582,10 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
 !     OTHER TIME STEP OR SO  
 
       PGR=STMP1-STMP0
+   endif old_tracker_2
+!   END OLD TRACKER CODE ------------------------------------------------
+
+ 
       XDIFF=ABS(XLOC - IDE/2)
       YDIFF=ABS(YLOC - JDE/2)
 #ifdef HWRF
@@ -582,16 +596,23 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
 #endif
       DTMOVE=NTSD-NTIME0                    ! TIME INTERVAL SINCE THE PREVIOUS MOVE
 !
-#ifdef HWRFX
+!    DECIDE IF NEST MOTION SHOULD HAPPEN
+!
+    if(vortex_tracker == 3) then
+      ! Using new HRD tracker.  Move if centroid moved.
        IF(XDIFF .GE. 1 .OR. YDIFF .GE. 2) THEN
         MVNEST=.TRUE.
         NTIME0=NTSD
        ELSE
+        ! Centroid has not moved one parent gridpoint yet.
         MVNEST=.FALSE.
-        WRITE(0,*)'SUSPEND MOTION: DTMOVE=',DTMOVE,'LESS THAN 3 MINUTS'
-        WRITE(0,*)'SUSPEND MOTION: NTIME0=',NTIME0
        ENDIF
-#else
+    elseif(vortex_tracker==2) then
+       ! Tracking child domain.  Nest motion check happens in
+       ! direction_of_move2, but we MUST set mvnest=true here:
+       MVNEST=.TRUE.
+    elseif(vortex_tracker==1) then
+      ! Using old HWRF tracker.  Decide if it wants to move.
       IF(DTMOVE .LE. 45 .OR. PGR .LE. 200.)THEN
         WRITE(0,*)'SUSPEND MOTION: SMALL DTMOVE OR WEAK PGF:','DTMOVE=',DTMOVE,'PGR=',PGR
         MVNEST=.FALSE.                               ! SET STATIC GRID
@@ -613,7 +634,10 @@ SUBROUTINE STATS_FOR_MOVE (XLOC,YLOC,PDYN,MSLP,SQWS              &
       ELSE
         MVNEST=.TRUE.
       ENDIF
-#endif
+   else
+      ! Not using any valid trackers, so set MVNEST to false.
+      MVNEST=.false.
+   endif
 
       RETURN
 

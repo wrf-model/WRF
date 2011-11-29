@@ -34,6 +34,9 @@ CONTAINS
 #if (NMM_CORE==1)
                  ,DISHEAT                                          &
 #endif
+#if (HWRF==1)
+                 ,gfs_alpha                                        &
+#endif
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,i_start,i_end, j_start,j_end, kts,kte, num_tiles &
@@ -299,7 +302,9 @@ CONTAINS
 #if (NMM_CORE==1)
    LOGICAL,      INTENT(IN   )    ::   DISHEAT ! (for HWRF)
 #endif
-
+#if defined(HWRF)
+   REAL,       INTENT(IN)         ::   gfs_alpha
+#endif
    REAL,       DIMENSION( kms:kme ),                              &
                OPTIONAL, INTENT(IN   )    ::               znu,   &
                                                            znw
@@ -1077,6 +1082,9 @@ CONTAINS
               ,DT=dtbl,KPBL2D=kpbl,EP1=ep_1,KARMAN=karman           &
 #if (NMM_CORE==1)
               ,DISHEAT=DISHEAT                                      &
+#endif
+#if defined(HWRF)
+              ,ALPHA=gfs_alpha                                      &
 #endif
               ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &

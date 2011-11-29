@@ -1201,6 +1201,9 @@ integer myproc
                          ids, ide, jds, jde, kds, kde, &
                          ims, ime, jms, jme, kms, kme, &
                          its, ite, jts, jte, kts, kte )
+
+        CASE (FLGLWSCHEME)
+
         CASE DEFAULT
 
    END SELECT lwrad_select
@@ -1265,6 +1268,8 @@ integer myproc
                            kds, kde, kms, kme, kts, kte     )
              ENDIF
 #endif
+        CASE (FLGSWSCHEME)
+
         CASE DEFAULT
 
    END SELECT swrad_select

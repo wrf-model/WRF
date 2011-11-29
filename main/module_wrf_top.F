@@ -33,6 +33,9 @@ MODULE module_wrf_top
    USE module_dm, ONLY : wrf_dm_initialize, wrf_dm_sum_real
 #endif
 
+   USE module_date_time, ONLY : current_date, start_date
+   USE module_io_domain, ONLY : open_w_dataset, output_boundary
+
    IMPLICIT NONE
 
 #include <wrf_io_flags.h>
@@ -919,8 +922,9 @@ ENDIF
 
 !</DESCRIPTION>
 
-   INTEGER :: rc, time_step
+   INTEGER :: rc, time_step, id, ierr
    CHARACTER*256 :: timestr
+   CHARACTER (LEN=80) :: bdyname
 
    ! Return immediately if not dyn_em_ad
    IF ( config_flags%dyn_opt .NE. dyn_em_ad ) RETURN
@@ -1016,6 +1020,15 @@ ENDIF
    gradient_out = .TRUE.
 
    CALL wrf_run_ad
+
+!-- Output gradient in boundary
+   CALL construct_filename1( bdyname , 'gradient_wrfbdy' , head_grid%id , 2 )
+   CALL open_w_dataset ( id, TRIM(bdyname) , head_grid , config_flags , output_boundary , "DATASET=BOUNDARY", ierr )
+   IF ( ierr .NE. 0 ) THEN
+      CALL wrf_error_fatal( 'real: error opening wrfbdy for writing' )
+   END IF
+   print *,'Output LBC gradient valid between these times ',current_date, ' ',start_date
+   CALL output_boundary ( id, head_grid , config_flags , ierr )
 
    ! Release linked list for trajectory
    call xtraj_io_initialize

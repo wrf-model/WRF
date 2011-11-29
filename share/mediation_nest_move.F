@@ -29,7 +29,7 @@ SUBROUTINE med_nest_move ( parent, nest )
    TYPE (grid_config_rec_type)   :: config_flags
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
    LOGICAL, EXTERNAL :: should_not_move
-#ifdef HWRFX
+#ifdef HWRF
 !XUEJIN added for HWRFx
    INTEGER                  :: k,idum1,idum2 
    INTEGER                  :: ITS,ITE,JTS,JTE,KTS,KTE
@@ -89,7 +89,7 @@ SUBROUTINE med_nest_move ( parent, nest )
                                     IMS,IME,JMS,JME,KMS,KME, &
                                     IPS,IPE,JPS,JPE,KPS,KPE  )
 !
-#ifdef HWRFX
+#ifdef HWRF
 !XUEJIN added for HWRFx
          USE MODULE_MODEL_CONSTANTS
 #else
@@ -134,7 +134,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 #include <dummy_new_decl.inc>
      END SUBROUTINE shift_domain_nmm
 #endif
-#ifdef HWRFX 
+#ifdef HWRF
 ! XUEJIN added this directive here to exclude the ARW code
 #else
      LOGICAL FUNCTION time_for_move ( parent , nest , dx , dy )
@@ -160,7 +160,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 #endif
 #endif
 
-#ifdef HWRFX 
+#ifdef HWRF
 ! XUEJIN added this directive here to exclude the ARW code
 #else
      SUBROUTINE  input_terrain_rsmas ( grid ,                  &
@@ -1179,7 +1179,7 @@ LOGICAL FUNCTION should_not_move ( id )
   should_not_move = retval
 END FUNCTION
 
-#ifdef HWRFX
+#ifdef HWRF
 #if (NMM_CORE == 1 && NMM_NEST == 1)
 LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
    USE module_domain
@@ -1187,113 +1187,262 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
    USE module_dm
    IMPLICIT NONE
 ! arguments
-   TYPE(domain) , POINTER    :: parent, grid
+   TYPE(domain) , POINTER    :: parent, grid, kid
    LOGICAL, EXTERNAL         :: wrf_dm_on_monitor
    INTEGER, INTENT(OUT)      :: move_cd_x , move_cd_y
+   CHARACTER*256 mess
 ! local
-   INTEGER     :: coral_dist, kid
-   INTEGER     :: dw, de, ds, dn, pgr, idum, jdum
+   INTEGER     :: coral_dist, ikid
+   INTEGER     :: dw, de, ds, dn, idum, jdum
    INTEGER     :: cids, cide, cjds, cjde, ckds, ckde, &
                   cims, cime, cjms, cjme, ckms, ckme, &
                   cips, cipe, cjps, cjpe, ckps, ckpe, &
                   nids, nide, njds, njde, nkds, nkde, &
                   nims, nime, njms, njme, nkms, nkme, &
                   nips, nipe, njps, njpe, nkps, nkpe
-! AUTHOR: XUEJIN ZHANG
-! ORIGINAL DATE: 10/12/2009
-! Modified: 2/28/2010
-! PURPOSE: DEICDE THE DIRECTION OF MOVE
-! executable
-!
-! Simplifying assumption: domains in moving nest simulations have only
-! one parent and only one child.
-! XUEJIN comment out 10/12/2009
-!  IF   ( grid%num_nests .GT. 1 ) THEN
-!    CALL wrf_error_fatal ( 'domains in moving nest simulations can have only 1 nest' )
-!  ENDIF
-!  kid = 1
+   real :: dx,dy,kid_ic,kid_jc,my_ic,my_jc,pgr,pgrn
+   real, parameter :: pmult=1.35
+   integer :: inew,jnew
+   logical :: abort
 
-!  SWITCH OFF NEST MOTION IF TOO CLOSE TO ANY OF THE BOUNDARIES
+! PURPOSE: DECIDE THE DIRECTION OF MOVE
+!    Two modes:
+!        vortex_tracker=3 -- use results of STATS_FOR_MOVE to follow
+!          the vortex center.  If the vortex is more than 3 X
+!          gridpoints or 6 Y gridpoints from the center, then
+!          move to follow it.
+!        vortex_tracker=2 -- follow this domain's nest.  Only works
+!          if this domain has a nest, otherwise this domain is
+!          stationary.  If the nest domain is more than 3 X
+!          gridpoints or 6 Y gridpoints from the center, then move
+!          to follow it. (Added by Sam Trahan, April 1, 2011)
+! RETURN VALUE: TRUE if domain should move, FALSE otherwise.
+! OUTPUTS:
+!        move_cd_x = number of parent gridpoints to move in X
+!        move_cd_y = number of parent gridpoints to move in Y
+!        grid%moved = TRUE if domain should move, FALSE otherwise.
+! AUTHOR: XUEJIN ZHANG, October 12, 2009
+! MODIFIED: XUEJIN ZHANG, February 28, 2010
+! MODIFIED: SAM TRAHAN, April 1, 2011 to add vortex_tracker, and the
+!         nest-following vortex tracker (option 2)
 
-   coral_dist=grid%ed31/grid%parent_grid_ratio
-   IF(grid%i_parent_start .le. 5 .or. (grid%i_parent_start+coral_dist) .ge. parent%ed31 - 5)THEN  
-     grid%mvnest=.false.
-     WRITE(0,*)'MOVING SHUT OFF BECAUSE NEST IS CLOSE TO EAST/WEST BOUNDARY'
+
+
+   abort=.false. ! will be set to .true. if any safety checks fail
+
+
+
+   ! INITIALIZE NEST MOTION TO DISABLED
+   move_cd_x=0
+   move_cd_y=0
+   direction_of_move2 = .false.
+   grid%moved = .false.
+
+   ! Simplifying assumption: domains in moving nest simulations have
+   ! only one parent and only one child.
+   if(grid%num_nests .gt. 1) then
+      write(mess,'("d",I0,": not moving because it has more than one nest")') grid%id
+      call WRF_MESSAGE(trim(mess))
+      abort=.true.
+   endif
+
+   !  SWITCH OFF NEST MOTION IF TOO CLOSE TO ANY OF THE BOUNDARIES
+
+   coral_dist=(grid%ed31+grid%parent_grid_ratio-1)/grid%parent_grid_ratio
+   IF(grid%i_parent_start .le. 5) then
+      abort=.true.
+      write(mess,'("d",I0,": cannot move: too close to parent d",I0," -X boundary")') grid%id,parent%id
+      call wrf_message(trim(mess))
+   ELSEIF((grid%i_parent_start+coral_dist) .ge. parent%ed31 - 5)THEN  
+      abort=.true.
+      write(mess,'("d",I0,": cannot move: too close to parent d",I0," +X boundary")') grid%id,parent%id
+      call wrf_message(trim(mess))
+  ENDIF
+
+   coral_dist=(grid%ed32+grid%parent_grid_ratio-1)/grid%parent_grid_ratio
+   IF(grid%j_parent_start .le. 5) THEN
+      abort=.true.
+      write(mess,'("d",I0,": cannot move: too close to parent d",I0," -Y boundary")') grid%id,parent%id
+      call wrf_message(trim(mess))
+   ELSEIF((grid%j_parent_start+coral_dist) .ge. parent%ed32 - 5)THEN
+      abort=.true.
+      write(mess,'("d",I0,": cannot move: too close to parent d",I0," +Y boundary")') grid%id,parent%id
+      call wrf_message(trim(mess))
    ENDIF
-!
-   coral_dist=grid%ed32/grid%parent_grid_ratio
-   IF(grid%j_parent_start .le. 5 .OR. (grid%j_parent_start+coral_dist) .ge. parent%ed32 - 5)THEN
-     grid%mvnest=.false.
-     WRITE(0,*)'MOVING SHUT OFF BECAUSE NEST IS CLOSE TO NORTH/SOUTH BOUNDARY'
-   ENDIF
+   !
+   !  DETERMINE AUTOMATICALLY THE DIRECTION OF GRID MOTION
+   !
+   can_move: if(grid%num_moves.eq.-99 .and. grid%mvnest .and. .not. abort) then
 
-!
-!  DETERMINE AUTOMATICALLY THE DIRECTION OF GRID MOTION
-!
-   WRITE(0,*)'PROBLEM MAY BE HERE',grid%id,grid%mvnest,grid%num_moves,grid%num_nests
-   WRITE(0,*)'PROBLEM MAY BE HERE',grid%XLOC_1,grid%XLOC_2,grid%YLOC_1,grid%YLOC_2 
+      if(wrf_dm_on_monitor() .and. .not. abort) then
+         WRITE(mess,*)'vortex tracking: id,mvnest,num_moves,num_nests: ', &
+              grid%id,grid%mvnest,grid%num_moves,grid%num_nests
+         call wrf_debug(1,mess)
+         
+         WRITE(mess,*)'vortex tracking: xloc_1,xloc_2,yloc_y,yloc_2,vortex_tracker: ', &
+              grid%XLOC_1,grid%XLOC_2,grid%YLOC_1,grid%YLOC_2,grid%vortex_tracker
+         call wrf_debug(1,mess)
+      endif
 
-!  IF(grid%num_nests.EQ.0 .AND. grid%num_moves.EQ.-99 .AND. grid%mvnest)THEN 
-   IF(grid%num_moves.EQ.-99 .AND. grid%mvnest)THEN
-      IF((grid%XLOC_1-grid%XLOC_2) .GE. 3)THEN 
-         move_cd_x  = -1
-         IF((grid%YLOC_2-grid%YLOC_1) .GE. 3)THEN
-            WRITE(0,*)'HURRICANE IS MOVING IN THE NORTH EAST DIRECTION',grid%id
-            WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1, &
-                      'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
-            move_cd_y  = +1
-         ELSE
-            WRITE(0,*)'HURRICANE IS MOVING IN THE EASTERLY FLOW',grid%id
-            WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1, &
-                      'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
-            move_cd_y  =  0
+      nest_following: IF(grid%vortex_tracker==2)THEN
+         ! Follow child
+         pgr=grid%parent_grid_ratio+0.01
+         pgrn=grid%parent_grid_ratio-0.01
+         
+         kid=>grid%nests(1)%ptr ! find my kid
+         
+         ! find my center location
+         my_ic = grid%ed31/2.0
+         my_jc = grid%ed32/2.0
+         
+         ! find my kid's center location in my grid
+         kid_ic = kid%i_parent_start + kid%ed31/2.0/kid%parent_grid_ratio - 1
+         kid_jc = kid%j_parent_start + kid%ed32/2.0/kid%parent_grid_ratio - 1
+         
+         ! How far is the kid's center from my center?
+         dx=kid_ic-my_ic
+         dy=kid_jc-my_jc
+
+         if(wrf_dm_on_monitor()) then
+            write(mess,'("d",I0," following nest d",I0,": parent ",F0.1,"x",F0.1," nest ",F0.1,"x",F0.1," move ",F0.1,"x",F0.1)') &
+                 grid%id,kid%id,my_ic,my_jc,kid_ic,kid_jc,dx,dy
+            call wrf_debug(1,trim(mess))
+         endif
+
+         ! Now decide where to move based on relative center locations.
+         if(dx<-pgr) then
+            move_cd_x=-1
+         elseif(dx>pgr) then
+            move_cd_x=1
+         endif
+
+         if(dy>2.*pgr) then
+            move_cd_y=2
+         elseif(dy<-2.*pgr) then
+            move_cd_y=-2
+         endif
+
+         ! REDUCE EXTRANEOUS MOTION
+
+         ! If we're only moving in the X direction, or only in the Y
+         ! direction, then require that the difference in center
+         ! locations be slightly more than one parent gridpoint before
+         ! moving.
+
+         ! This prevents the situation where d03 is moving diagonally,
+         ! and d02 will move once the X direction and then later on in
+         ! the Y direction.  Instead, it will perform a single move in
+         ! the X&Y direction.
+         if(move_cd_x==0 .and. move_cd_y/=0) then
+            ! Only moving in Y direction.
+            if(dy>-2.*pmult*pgrn .and. dy<2.*pmult*pgrn) then
+               ! Child has not moved 2*pmult parent points yet.
+               move_cd_y=0
+            endif
+         endif
+         if(move_cd_x/=0 .and. move_cd_y==0) then
+            ! Only moving in X direction.
+            if(dx>-pmult*pgrn .and. dx<pmult*pgrn) then
+               ! Child has not moved pmult parent points yet.
+               move_cd_x=0
+            endif
+         endif
+
+         ! Inform the user.
+         if(wrf_dm_on_monitor()) then
+            if(move_cd_x/=0 .or. move_cd_y/=0) then
+               write(mess,'("d",I0," moving x",SP,I0," y",I0,SS," to follow d",I0)') &
+                    grid%id,move_cd_x,move_cd_y,kid%id
+               call wrf_debug(1,trim(mess))
+            endif
+         endif
+      endif nest_following
+      vortex_following: IF(grid%vortex_tracker==3 .or. grid%vortex_tracker==1)THEN
+         IF((grid%XLOC_1-grid%XLOC_2) .GE. 3)THEN 
+            move_cd_x  = -1
+            IF((grid%YLOC_2-grid%YLOC_1) .GE. 3)THEN
+               move_cd_y  = +1 ! will be changed to 2 automatically by caller
+            ENDIF
+         ELSE IF((grid%XLOC_2-grid%XLOC_1) .GE. 3)THEN        
+            move_cd_x  = +1 
+            IF((grid%YLOC_2-grid%YLOC_1) .GE. 3)THEN
+               move_cd_y  = -1 ! will be changed to -2 automatically by caller
+            ENDIF
+         ELSE IF ((grid%YLOC_2-grid%YLOC_1) .GE. 3 .and. grid%vortex_tracker==1) THEN
+            ! Original HWRF tracker had a less sensitive north motion test.
+            ! Only one parent gridpoint of north distance is required.  The
+            ! nest will actually move two parent gridpoints though.
+            move_cd_y  = 2
+         ELSE IF ((grid%YLOC_2-grid%YLOC_1) .GE. 6)THEN 
+            move_cd_y  = 2 
+         ELSE IF ((grid%YLOC_1-grid%YLOC_2) .GE. 6)THEN    ! wait for the move
+            move_cd_y  = -2 
          ENDIF
-         direction_of_move2= .TRUE. 
-         grid%moved = .TRUE.
-      ELSE IF((grid%XLOC_2-grid%XLOC_1) .GE. 3)THEN        
-         move_cd_x  = +1 
-         IF((grid%YLOC_2-grid%YLOC_1) .GE. 3)THEN
-            WRITE(0,*)'HURRICANE IS MOVING IN THE NORTH WEST DIRECTION',grid%id
-            WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1,  &
-                      'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
-            move_cd_y  = -1
-         ELSE
-           WRITE(0,*)'HURRICANE IN THE WESTERLY CURRENT',grid%id
-           WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1,   &
-                     'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
-           move_cd_y  =  0
-         ENDIF
-         direction_of_move2= .TRUE.
-         grid%moved = .TRUE.
-      ELSE IF ((grid%YLOC_2-grid%YLOC_1) .GE. 6)THEN 
-        WRITE(0,*)'HURRICANE IS MOVING NORTHWARD',grid%id
-        WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1,      &
-                  'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
-        move_cd_x  = 0 
-        move_cd_y  = 2 
-        direction_of_move2= .TRUE.
-        grid%moved = .TRUE.
-      ELSE IF ((grid%YLOC_1-grid%YLOC_2) .GE. 6)THEN    ! wait for the move
-        WRITE(0,*)'STRANGE: HURRICANE IS MOVING SOUTHWARD, MAY BE DUE TO INITIAL MANUVARE',grid%id
-        WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1,      &
-                  'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
-        move_cd_x  =  0
-        move_cd_y  = -2 
-        direction_of_move2= .TRUE.
-        grid%moved = .TRUE.
-      ELSE
-        move_cd_x  =  0 
-        move_cd_y  =  0 
-        direction_of_move2= .FALSE.
-        grid%moved = .FALSE.        
-      ENDIF
-   ELSE
-    move_cd_x  =  0
-    move_cd_y  =  0
-    direction_of_move2= .FALSE.
-    grid%moved = .FALSE.      
-   ENDIF
 
+         if(wrf_dm_on_monitor()) then
+            if(move_cd_x/=0 .or. move_cd_y/=0) then
+               write(mess,'("d",I0," moving x",SP,I0," y",I0,SS," to follow vortex")') &
+                    grid%id,move_cd_x,move_cd_y
+               call wrf_debug(1,trim(mess))
+            endif
+         endif
+      ENDIF vortex_following
+   endif can_move
+
+   ! Abort motion if any child domain would end up within this
+   ! domain's coral distance or outside of this domain.
+   nest_safety: IF ( grid%num_nests .GT. 0 .and. ( move_cd_x/=0 .or. move_cd_y/=0 ) ) THEN
+     abort=.false.
+     nest_loop: do ikid=1,grid%num_nests
+        kid=>grid%nests(ikid)%ptr
+        inew=kid%i_parent_start-move_cd_x*kid%parent_grid_ratio
+        jnew=kid%j_parent_start-move_cd_y*kid%parent_grid_ratio
+        
+        coral_dist=(kid%ed31+kid%parent_grid_ratio-1)/kid%parent_grid_ratio
+        IF(inew <= 5)THEN  
+           abort=.true.
+           write(mess,'("d",I0,": cannot move: nest d",I0," would be too close to -X bdy")') grid%id,kid%id
+           call wrf_message(mess)
+        ELSEIF((inew+coral_dist) >= grid%ed31 - 5) THEN
+           abort=.true.
+           write(mess,'("d",I0,": cannot move: nest d",I0," would be too close to +X bdy")') grid%id,kid%id
+           call wrf_message(mess)
+        ENDIF
+
+        coral_dist=(kid%ed32+kid%parent_grid_ratio-1)/kid%parent_grid_ratio
+        IF(jnew .le. 5)THEN
+           abort=.true.
+           write(mess,'("d",I0,": cannot move: nest d",I0," would be too close to -Y bdy")') grid%id,kid%id
+           call wrf_message(mess)
+        ELSEIF((jnew+coral_dist) .ge. grid%ed32 - 5) THEN
+           abort=.true.
+           write(mess,'("d",I0,": cannot move: nest d",I0," would be too close to +Y bdy")') grid%id,kid%id
+           call wrf_message(mess)
+        ENDIF
+     enddo nest_loop
+  ENDIF nest_safety
+
+  if(abort) then
+     grid%mvnest=.false.
+     move_cd_x=0
+     move_cd_y=0
+     grid%moved=.false.
+     direction_of_move2=.false.
+     grid%mvnest=.false.
+     write(mess,'("d",I0,"; motion has been aborted.")') grid%id
+     call wrf_message(mess)
+  endif
+  
+  if(move_cd_x/=0 .or. move_cd_y/=0) then
+     direction_of_move2 = .true.
+     grid%moved = .true.
+     if(grid%vortex_tracker==2) then
+        grid%ntime0 = grid%ntsd
+     else
+        ! other vortex trackers set NTIME0 in STATS_FOR_MOVE
+     endif
+  endif
+  
   RETURN
 
 END FUNCTION direction_of_move2
@@ -1378,14 +1527,29 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
      CALL wrf_error_fatal ( 'domains in moving nest simulations can have only 1 nest' )
    ENDIF
    kid = 1
-     write(0,*) 'grid%num_nests=',grid%num_nests
+   write(0,*) 'grid%num_nests=',grid%num_nests
+
+   direction_of_move = direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
+
+   if(grid%vortex_tracker == 1) then
+      return ! Old HWRF tracker has nothing more to do.
+   endif
+
 !
 ! find out if this is the innermost nest (will not have kids)
    IF   ( grid%num_nests .EQ. 0 ) THEN
-     ! code that executes on innermost nest
-     direction_of_move = direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
-     par => grid%parents(1)%ptr
-     nst => grid
+      ! code that executes on innermost nest
+
+      !------------------- BEGIN DEAD CODE -------------------
+
+      ! SGT: disabled this code because it does nothing (it's a very
+      ! expensive and complicated no-op).
+
+      ! Unless someone knows of a good reason for it to be here,
+      ! it should be deleted.
+      if(0==1) then
+         par => grid%parents(1)%ptr
+         nst => grid
 
 100  CONTINUE
        CALL get_ijk_from_grid (  nst ,                               &
@@ -1413,35 +1577,35 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
          nst => par
          par => nst%parents(1)%ptr
          GOTO 100
-     ENDIF
+     ENDIF  ! bottom of until loop
+     endif
+     !-------------------- END DEAD CODE --------------------
 
-! bottom of until loop
      direction_of_move = ( move_cd_x .NE. 0 ) .OR. ( move_cd_y .NE. 0 )
 
    ELSE
-     CALL get_ijk_from_grid (  grid%nests(kid)%ptr ,               &
-                               nids, nide, njds, njde, nkds, nkde, &
-                               nims, nime, njms, njme, nkms, nkme, &
-                               nips, nipe, njps, njpe, nkps, nkpe  )
-     CALL get_ijk_from_grid (  grid ,                              &
-                               cids, cide, cjds, cjde, ckds, ckde, &
-                               cims, cime, cjms, cjme, ckms, ckme, &
-                               cips, cipe, cjps, cjpe, ckps, ckpe  )
-     CALL nl_get_parent_grid_ratio ( grid%nests(kid)%ptr%id , pgr )
      ! move this domain (the parent containing the moving nest)
      ! in a direction that reestablishes the distance from 
      ! the boundary.
-     move_cd_x = 0
-     move_cd_y = 0
-     direction_of_move = direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
-
      IF ( direction_of_move ) THEN
        IF ( grid%id .EQ. 1 ) THEN
 
          CALL wrf_message( 'DANGER: Nest has moved too close to boundary of outermost domain.' )
+         move_cd_x = 0
+         move_cd_y = 0
          direction_of_move = .FALSE.
 
        ELSE
+          CALL get_ijk_from_grid (  grid%nests(kid)%ptr ,               &
+               nids, nide, njds, njde, nkds, nkde, &
+               nims, nime, njms, njme, nkms, nkme, &
+               nips, nipe, njps, njpe, nkps, nkpe  )
+          CALL get_ijk_from_grid (  grid ,                              &
+               cids, cide, cjds, cjde, ckds, ckde, &
+               cims, cime, cjms, cjme, ckms, ckme, &
+               cips, cipe, cjps, cjpe, ckps, ckpe  )
+          CALL nl_get_parent_grid_ratio ( grid%nests(kid)%ptr%id , pgr )
+
          ! need to adjust the intermediate domain of the nest in relation to this
          ! domain since we're moving
          IF(MOD(move_cd_y,2) .NE. 0)THEN
@@ -1570,9 +1734,10 @@ LOGICAL FUNCTION nest_roam ( parent , grid , move_cd_x, move_cd_y )
 END FUNCTION nest_roam
 
 
-!ADDED BY YOUNG KWON FOR VORTEX FOLLOWING NEST MOVE
 
-LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
+
+LOGICAL FUNCTION direction_of_move_old ( parent , grid , move_cd_x, move_cd_y )
+  !ADDED BY YOUNG KWON FOR VORTEX FOLLOWING NEST MOVE
    USE module_domain, ONLY : domain
 !   USE module_configure
 !   USE module_dm
@@ -1636,7 +1801,7 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
                       'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
             move_cd_y  =  0
          ENDIF
-         direction_of_move= .TRUE. 
+         direction_of_move_old= .TRUE. 
          grid%moved = .TRUE.
       ELSE IF((grid%XLOC_2-grid%XLOC_1) .GE. 3)THEN        
          move_cd_x  = +1 
@@ -1651,7 +1816,7 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
                      'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
            move_cd_y  =  0
          ENDIF
-         direction_of_move= .TRUE.
+         direction_of_move_old= .TRUE.
          grid%moved = .TRUE.
       ELSE IF ((grid%YLOC_2-grid%YLOC_1) .GE. 3)THEN 
         WRITE(0,*)'HURRICANE IS MOVING NORTHWARD'
@@ -1659,7 +1824,7 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
                   'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
         move_cd_x  = 0 
         move_cd_y  = 2 
-        direction_of_move= .TRUE.
+        direction_of_move_old= .TRUE.
         grid%moved = .TRUE.
       ELSE IF ((grid%YLOC_1-grid%YLOC_2) .GE. 6)THEN    ! wait for the move
         WRITE(0,*)'STRANGE: HURRICANE IS MOVING SOUTHWARD, MAY BE DUE TO INITIAL MANUVARE'
@@ -1667,24 +1832,24 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
                   'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
         move_cd_x  =  0
         move_cd_y  = -2 
-        direction_of_move= .TRUE.
+        direction_of_move_old= .TRUE.
         grid%moved = .TRUE.
       ELSE
         move_cd_x  =  0 
         move_cd_y  =  0 
-        direction_of_move= .FALSE.
+        direction_of_move_old= .FALSE.
         grid%moved = .FALSE.        
       ENDIF
    ELSE
     move_cd_x  =  0
     move_cd_y  =  0
-    direction_of_move= .FALSE.
+    direction_of_move_old= .FALSE.
     grid%moved = .FALSE.      
    ENDIF
 
   RETURN
 
-END FUNCTION direction_of_move 
+END FUNCTION direction_of_move_old
 
 #endif
 #endif

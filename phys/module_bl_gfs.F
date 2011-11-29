@@ -16,6 +16,9 @@ CONTAINS
 #if (NMM_CORE==1)
                   DISHEAT,                                         &
 #endif
+#if (HWRF==1)
+                  ALPHA,                                           &
+#endif
                   ids,ide, jds,jde, kds,kde,                       &
                   ims,ime, jms,jme, kms,kme,                       &
                   its,ite, jts,jte, kts,kte                        )
@@ -69,6 +72,7 @@ CONTAINS
 !-- rvovrd      R_v divided by R_d (dimensionless)
 !-- EP1         constant for virtual temperature (R_v/R_d - 1) (dimensionless)
 !-- KARMAN      Von Karman constant
+!-- ALPHA       boundary depth scaling factor
 !-- ids         start index for i in domain
 !-- ide         end index for i in domain
 !-- jds         start index for j in domain
@@ -200,6 +204,12 @@ CONTAINS
                                         FMTMP,                          &
                                         RRHOX
 
+#if (HWRF == 1)
+      REAL      ::      ALPHA
+#else
+      REAL, PARAMETER:: ALPHA=1.0
+#endif
+
       INTEGER, DIMENSION( its:ite ) ::                                  &
                                         KPBL 
 
@@ -214,7 +224,7 @@ CONTAINS
                                         KX,                             &
                                         L,                              & 
                                         NTRAC
- 
+
    IM=ITE-ITS+1
    KX=KTE-KTS+1
    KTEM=KTE-1
@@ -302,7 +312,8 @@ CONTAINS
       CALL MONINP(IM,IM,KX,NTRAC,DV,DU,TAU,RTG,U1,V1,T1,Q1,             &
                   PSK,RBSOIL,FM,FH,TSEA,QSS,HEAT,EVAP,STRESS,           &
                   SPD1,KPBL,PRSI,DEL,PRSL,PRSLK,PHII,PHIL,RCL,          &
-                  DELTIM,DUSFC,DVSFC,DTSFC,DQSFC,HPBL,HGAMT,HGAMQ)
+                  DELTIM,DUSFC,DVSFC,DTSFC,DQSFC,HPBL,HGAMT,HGAMQ,      &
+                  ALPHA)
 
 !============================================================================
 !    ADD  IN  DISSIPATIVE HEATING .... v*dv. This is Bob's doing
@@ -431,7 +442,7 @@ CONTAINS
      &     PSK,RBSOIL,FM,FH,TSEA,QSS,HEAT,EVAP,STRESS,SPD1,KPBL,        &
 !    &     PSK,RBSOIL,CD,CH,FM,FH,TSEA,QSS,DPHI,SPD1,KPBL,              &
      &     PRSI,DEL,PRSL,PRSLK,PHII,PHIL,RCL,DELTIM,                    &
-     &     DUSFC,DVSFC,DTSFC,DQSFC,HPBL,HGAMT,HGAMQ)
+     &     DUSFC,DVSFC,DTSFC,DQSFC,HPBL,HGAMT,HGAMQ,ALPHA)
 !
       USE MODULE_GFS_MACHINE, ONLY : kind_phys
       USE MODULE_GFS_PHYSCONS, grav => con_g, RD => con_RD, CP => con_CP &
@@ -447,6 +458,7 @@ CONTAINS
       integer IX, IM, KM, ntrac, KPBL(IM)
 !
       real(kind=kind_phys) DELTIM
+      real :: ALPHA
       real(kind=kind_phys) DV(IM,KM),     DU(IM,KM),                    &
      &                     TAU(IM,KM),    RTG(IM,KM,ntrac),             &
      &                     U1(IX,KM),     V1(IX,KM),                    &
@@ -751,8 +763,12 @@ CONTAINS
 !    &                (HPBL(I)-ZL1(I))), ZFMIN)
                ZFAC = MAX((1.-(ZI(I,K+1)-ZL(I,1))/                      &
      &                (HPBL(I)-ZL(I,1))), ZFMIN)
+!
+!              alpha factor (0-1.0) is multiplied to profile function to reduce the effect
+!              height of the Hurricane Boundary Layer. This is gopal's doing
+!
                DKU(i,k) = XKZO + WSCALE(I)*VK*ZI(I,K+1)                 &
-     &                         * ZFAC**PFAC
+     &                         *ALPHA* ZFAC**PFAC
                DKT(i,k) = DKU(i,k)*PRINV
                DKO(i,k) = (DKU(i,k)-XKZO)*PRINV
                DKU(i,k) = MIN(DKU(i,k),DKMAX)

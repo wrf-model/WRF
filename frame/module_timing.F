@@ -4,15 +4,27 @@
 MODULE module_timing
 
    INTEGER, PARAMETER, PRIVATE :: cnmax = 30
-   INTEGER, PRIVATE, DIMENSION(cnmax) :: count_int1 , count_rate_int1 , count_max_int1
-   INTEGER, PRIVATE, DIMENSION(cnmax) :: count_int2 , count_rate_int2 , count_max_int2
    INTEGER, PRIVATE :: cn = 0 
    REAL, PRIVATE    :: elapsed_seconds , elapsed_seconds_total = 0
+
+#if defined(OLD_TIMERS)
+   INTEGER, PRIVATE, DIMENSION(cnmax) :: count_int1 , count_rate_int1 , count_max_int1
+   INTEGER, PRIVATE, DIMENSION(cnmax) :: count_int2 , count_rate_int2 , count_max_int2
    REAL, PRIVATE    :: cpu_1 , cpu_2 , cpu_seconds , cpu_seconds_total = 0
+#else
+   REAL(kind=8) :: epoch_seconds_hires(cnmax)
+#endif
 
 CONTAINS
 
    SUBROUTINE init_module_timing
+#if defined(OLD_TIMERS)
+      ! Nothing to do here.
+#else
+      ! Initialize the high-res timer.  This is optional, but will allow
+      ! higher precision.  Read hires_timer.c for details.
+      call init_hires_timer()
+#endif
       cn = 0
    END SUBROUTINE init_module_timing
 
@@ -26,8 +38,13 @@ CONTAINS
         CALL wrf_error_fatal( 'module_timing: clock nesting error (too many nests)' )
         RETURN
       ENDIF
+
+#if defined(OLD_TIMERS)
       CALL SYSTEM_CLOCK ( count_int1(cn) , count_rate_int1(cn) , count_max_int1(cn) )
 !     CALL CPU_TIME ( cpu_1 )
+#else
+      call hires_timer(epoch_seconds_hires(cn))
+#endif
 
    END SUBROUTINE start_timing
 
@@ -35,7 +52,7 @@ CONTAINS
    SUBROUTINE end_timing ( string )
    
       IMPLICIT NONE
-
+      REAL(kind=8) :: now_hires
       CHARACTER *(*) :: string
 
       IF ( cn .lt. 1 ) THEN
@@ -44,6 +61,7 @@ CONTAINS
         CALL wrf_error_fatal( 'module_timing: clock nesting error, cn>cnmax' ) 
       ENDIF
 
+#if defined(OLD_TIMERS)
       CALL SYSTEM_CLOCK ( count_int2(cn) , count_rate_int2(cn) , count_max_int2(cn) )
 !     CALL CPU_TIME ( cpu_2 )
 
@@ -53,6 +71,11 @@ CONTAINS
 
       count_int2(cn) = count_int2(cn) - count_int1(cn)
       elapsed_seconds = REAL(count_int2(cn)) / REAL(count_rate_int2(cn))
+#else
+      call hires_timer(now_hires)
+      ! The REAL() here should convert to default real from REAL(kind=8)
+      elapsed_seconds = REAL(now_hires-epoch_seconds_hires(cn))
+#endif
       elapsed_seconds_total = elapsed_seconds_total + elapsed_seconds
 
       WRITE(6,'(A,A,A,F10.5,A)') 'Timing for ',TRIM(string),': ',elapsed_seconds,' elapsed seconds.'

@@ -313,7 +313,7 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
 
 !   Determine the weights of nested grid h points nearest to H points of parent domain 
 
-#ifdef HWRFX
+  if(nest%vortex_tracker /= 1) then
     CALL G2T2H_new(    nest%IIH,nest%JJH,                            & ! output grid index in parent grid
                        nest%HBWGT1,nest%HBWGT2,                      & ! output weights in terms of parent grid
                        nest%HBWGT3,nest%HBWGT4,                      &
@@ -322,7 +322,7 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                        IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
                        IMS,IME,JMS,JME,KMS,KME,            &
                        ITS,ITE,JTS,JTE,KTS,KTE      )
-#else
+  else
     CALL G2T2H( nest%IIH,nest%JJH,                       & ! output grid index on nested grid
                 nest%HBWGT1,nest%HBWGT2,                 & ! output weights on the nested grid 
                 nest%HBWGT3,nest%HBWGT4,                 &
@@ -333,12 +333,12 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                 IDS,IDE,JDS,JDE,KDS,KDE,                         & ! 
                 IMS,IME,JMS,JME,KMS,KME,                         & ! nested grid configuration
                 ITS,ITE,JTS,JTE,KTS,KTE                          ) !
-#endif
+  endif
 
 
 !   Determine the weights of nested grid v points nearest to V points of parent domain
 
-#ifdef HWRFX
+  if(nest%vortex_tracker /= 1) then
     CALL G2T2V_new(    nest%IIV,nest%JJV,                            & ! output grid index in parent grid
                        nest%VBWGT1,nest%VBWGT2,                      & ! output weights in terms of parent grid
                        nest%VBWGT3,nest%VBWGT4,                      &
@@ -347,7 +347,7 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                        IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
                        IMS,IME,JMS,JME,KMS,KME,            &
                        ITS,ITE,JTS,JTE,KTS,KTE      )
-#else
+  else
     CALL G2T2V( nest%IIV,nest%JJV,                       & ! output grid index on nested grid
                 nest%VBWGT1,nest%VBWGT2,                 & ! output weights on the nested grid
                 nest%VBWGT3,nest%VBWGT4,                 &
@@ -358,7 +358,7 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                 IDS,IDE,JDS,JDE,KDS,KDE,                         & !
                 IMS,IME,JMS,JME,KMS,KME,                         & ! nested grid configuration
                 ITS,ITE,JTS,JTE,KTS,KTE                          ) !
-#endif
+  endif
 
 !*** CHECK WEIGHTS AT MASS AND VELOCITY POINTS
 
@@ -1518,8 +1518,10 @@ END SUBROUTINE EARTH_LATLON
                 IMS,IME,JMS,JME,KMS,KME,                 &
                 ITS,ITE,JTS,JTE,KTS,KTE      )
     END SELECT
+#if defined(EXPENSIVE_HWRF_DEBUG_STUFF)
        write(0,105)"NEW H WEIGHTS:",I,J,IIH(i,j),JJH(i,j),HBWGT1(I,J),HBWGT2(I,J),HBWGT3(I,J),HBWGT4(I,J), &
                                 HBWGT1(I,J)+HBWGT2(I,J)+HBWGT3(I,J)+HBWGT4(I,J)
+#endif
   105  format(a,4i4,5f7.3)
  END DO
  END DO
@@ -2536,6 +2538,7 @@ END SUBROUTINE BASE_STATE_PARENT
 
       II=9999 !67 !35 !50   !4
       JJ=9999 !31 !73 !115  !192
+#if defined(EXPENSIVE_HWRF_DEBUG_STUFF)
       IF(I.eq.II.and.J.eq.JJ)THEN
         WRITE(message,*)'DEBUG in SPLINE1:HSO= ',xnew(1:nold)
         CALL wrf_debug(1,trim(message))
@@ -2545,6 +2548,7 @@ END SUBROUTINE BASE_STATE_PARENT
          CALL wrf_debug(1,trim(message))
         ENDDO 
       ENDIF 
+#endif
 
 !
       NOLDM1=NOLD-1
@@ -2619,10 +2623,12 @@ END SUBROUTINE BASE_STATE_PARENT
 
 !  debug
 
+#if defined(EXPENSIVE_HWRF_DEBUG_STUFF)
       if(i.eq.ii.and.j.eq.jj)then
         write(message,*) 'DEBUG:: k1,xnew(k1),ynew(k1): ', k1,xnew(k1),ynew(k1)
         CALL wrf_debug(1,trim(message))
       endif
+#endif
 
 !
   600 K1=K1+1
@@ -2637,8 +2643,9 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
  USE module_domain
  USE module_configure
  USE module_timing
-
+ USE module_TERRAIN
  USE wrfsi_static
+ USE module_SMOOTH_TERRAIN
 
  IMPLICIT NONE
 
@@ -2657,9 +2664,8 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
  INTEGER                           :: parent_grid_ratio
  INTEGER                           :: n,i,j,ii,jj,nnxp,nnyp
  INTEGER                           :: i_start,j_start,level
- REAL, ALLOCATABLE, DIMENSION(:,:) :: data1     ! for highres topo
- REAL, ALLOCATABLE, DIMENSION(:,:) :: avc_big, lnd_big, lah_big, loh_big
- REAL, ALLOCATABLE, DIMENSION(:,:) :: avc_nest, lnd_nest, lah_nest, loh_nest
+ REAL, DIMENSION(1,1), TARGET      :: nothing
+ REAL                              :: lah_nest_11, loh_nest_11
  INTEGER                           :: im_big, jm_big, i_add
  INTEGER                           :: im, jm
  CHARACTER(LEN=6)                  :: nestpath
@@ -2702,19 +2708,25 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
                                                 "HANIS     ", &
                                                 "HSLOP     ", &
                                                 "HANGL     ", &
-                                                "HZMAX     ", &
+                                                "HZMAX     ", & 
                                                 "HGT_M     " /)
 
  integer, parameter :: IO_BIN=1, IO_NET=2
 
  integer :: io_form_input
+ integer :: itsok,iteok,jtsok,jteok
 
  CHARACTER(LEN=512) :: message
 
+ write(message,'("Nest d",I2," entering nest_terrain")') nest%id
+ call wrf_debug(1,trim(message))
+
+ call START_TIMING()
+
  write(message,*)"in NEST_TERRAIN config_flags%io_form_input = ", config_flags%io_form_input
- CALL wrf_message(trim(message))
+ CALL wrf_debug(2,trim(message))
  write(message,*)"in NEST_TERRAIN config_flags%auxinput1_inname = ", config_flags%auxinput1_inname
- CALL wrf_message(trim(message))
+ CALL wrf_debug(2,trim(message))
 
  io_form_input = config_flags%io_form_input
  if (config_flags%auxinput1_inname(1:7) == "met_nmm") then
@@ -2752,246 +2764,136 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 
       NNXP=IDE-1
       NNYP=JDE-1
+      im = NNXP
+      jm = NNYP
 
-      ALLOCATE(DATA1(1:NNXP,1:NNYP))
-!
-!
-!--- Read in high resolution topography
-!
-      IF ( wrf_dm_on_monitor() ) THEN                    ! first assign a status
-!
-!      This part of the code is Dusan's doing. Extended by gopal for multiple nest (Feb 19,2005)
-!
+       ! Find nesting depth:
        call find_ijstart_level (nest,i_start,j_start,level)
        write(message,*)" nest%id =", nest%id , " i_start,j_start,level =", i_start,j_start,level
-       CALL wrf_message(trim(message))
-
-       write(nestpath,"(a4,i1,a1)") 'nest',level,'/'
-
-       if ( level > 0 ) then
-
-          if (input_type == 1) then
-!
-!        si version of the static file
-!
-             CALL get_wrfsi_static_dims(nestpath, im_big, jm_big)
-             ALLOCATE (avc_big(im_big,jm_big))
-             ALLOCATE (lnd_big(im_big,jm_big))
-             ALLOCATE (lah_big(im_big,jm_big))
-             ALLOCATE (loh_big(im_big,jm_big))
-             CALL get_wrfsi_static_2d(nestpath, 'avc', avc_big)
-             CALL get_wrfsi_static_2d(nestpath, 'lnd', lnd_big)
-             CALL get_wrfsi_static_2d(nestpath, 'lah', lah_big)
-             CALL get_wrfsi_static_2d(nestpath, 'loh', loh_big)
-
-          else if (input_type == 2) then
-!
-!        WPS version of the static file
-!
-
-#ifdef INTIO
-             if (io_form_input == IO_BIN) write(input_fname,"(A,I2.2,A)") "geo_nmm_nest.l",level,".int"
-#endif
-#ifdef NETCDF
-             if (io_form_input == IO_NET) write(input_fname,"(A,I2.2,A)") "geo_nmm_nest.l",level,".nc"
-#endif
-
-             comm_1 = 1
-             comm_2 = 1
-
-#ifdef INTIO
-             if (io_form_input == IO_BIN) &
-                call ext_int_open_for_read(trim(input_fname), comm_1, comm_2, 'sysdep info', handle, istatus)
-#endif
-#ifdef NETCDF
-             if (io_form_input == IO_NET) &
-                call ext_ncd_open_for_read(trim(input_fname), comm_1, comm_2, 'sysdep info', handle, istatus)
-#endif
-             if (istatus /= 0) CALL wrf_error_fatal('NEST_TERRAIN error after ext_XXX_open_for_read '//trim(input_fname))
-
-
-             do n=1,24
-
-             cname = name(n)
-
-             domain_start = 1
-             domain_end = 1
-#ifdef INTIO
-             if (io_form_input == IO_BIN) &
-                call ext_int_get_var_info(handle, cname, ndim, memorder, stagger, domain_start, domain_end, wrftype, istatus)
-#endif
-#ifdef NETCDF
-             if (io_form_input == IO_NET) &
-                call ext_ncd_get_var_info(handle, cname, ndim, memorder, stagger, domain_start, domain_end, wrftype, istatus)
-#endif
-             print *, "cname=", cname
-             print *, "istatus=", istatus
-             print *, "ndim=", ndim
-             print *, "memorder=", memorder
-             print *, "stagger=", stagger
-             print *, "domain_start=", domain_start
-             print *, "domain_end=", domain_end
-             print *, "wrftype=", wrftype
-
-
-             if (allocated(real_domain)) deallocate(real_domain)
-             allocate(real_domain(domain_start(1):domain_end(1), domain_start(2):domain_end(2), domain_start(3):domain_end(3)))
-
-#ifdef INTIO
-             if (io_form_input == IO_BIN) then
-                call ext_int_read_field(handle, '0000-00-00_00:00:00', cname, real_domain, wrftype, &
-                                        1, 1, 0, memorder, stagger, &
-                                        dimnames, domain_start, domain_end, domain_start, domain_end, &
-                                        domain_start, domain_end, istatus)
-             end if
-#endif
-#ifdef NETCDF
-             if (io_form_input == IO_NET) then
-                call ext_ncd_read_field(handle, '0000-00-00_00:00:00', cname, real_domain, wrftype, &
-                                        1, 1, 0, memorder, stagger, &
-                                        dimnames, domain_start, domain_end, domain_start, domain_end, &
-                                        domain_start, domain_end, istatus)
-             end if
-#endif
-             print *, "istatus=", istatus
-
-             im_big = domain_end(1)
-             jm_big = domain_end(2)
-             if (cname(1:10) == "XLAT_M    ") then
-                ALLOCATE (lah_big(im_big,jm_big))
-                do j=1,jm_big
-                do i=1,im_big
-                   lah_big(i,j) = real_domain(i,j,1)
-                end do
-                end do
-             else if (cname(1:10) == "XLONG_M   ") then
-                ALLOCATE (loh_big(im_big,jm_big))
-                do j=1,jm_big
-                do i=1,im_big
-                   loh_big(i,j) = real_domain(i,j,1)
-                end do
-                end do
-             else if (cname(1:10) == "LANDMASK  ") then
-                ALLOCATE (lnd_big(im_big,jm_big))
-                do j=1,jm_big
-                do i=1,im_big
-                   lnd_big(i,j) = real_domain(i,j,1)
-                end do
-                end do
-             else if (cname(1:10) == "HGT_M     ") then
-                ALLOCATE (avc_big(im_big,jm_big))
-                do j=1,jm_big
-                do i=1,im_big
-                   avc_big(i,j) = real_domain(i,j,1)
-                end do
-                end do
-             end if
-
-             end do
-
-#ifdef INTIO
-             if (io_form_input == IO_BIN) then
-                call ext_int_ioclose(handle, istatus)
-             end if
-#endif
-#ifdef NETCDF
-             if (io_form_input == IO_NET) then
-                call ext_ncd_ioclose(handle, istatus)
-             end if
-#endif
-
-          else
-             CALL wrf_error_fatal('NEST_TERRAIN wrong input_type')
-          end if
-
-       else
+       CALL wrf_debug(2,trim(message))
+       if ( level <= 0 ) then
           CALL wrf_error_fatal('this routine NEST_TERRAIN should not be called for top-level domain')
        end if
 
-! select subdomain from big fine grid
+      ! Monitor process stores high-resolution topography:
+#ifdef DM_PARALLEL
+      monitor_only: IF ( wrf_dm_on_monitor() ) THEN
+#endif
+         call wrf_debug(1,'NEST_TERRAIN MASTER PROCESS')
+         call MASTER(IDS,IDE,JDS,JDE)
+#ifdef DM_PARALLEL
+      ELSE
+         call wrf_debug(1,'NEST_TERRAIN SLAVE PROCESS')
+         call SLAVE(IDS,IDE,JDS,JDE)
+      ENDIF monitor_only
+#endif
 
-        im = NNXP
-        jm = NNYP
+      if(config_flags%terrain_smoothing==2) then     
+         call wrf_debug(1,'Call fast smoother (smooth_terrain)')
+         call smooth_terrain(nest,12,12, &
+              IDS,IDE,JDS,JDE,KDS,KDE, &
+              IMS,IME,JMS,JME,KMS,KME, &
+              ITS,ITE,JTS,JTE,KTS,KTE)
+      elseif(config_flags%terrain_smoothing==1) then
+         continue ! already handled this case in the call to MASTER
+      elseif(config_flags%terrain_smoothing==0) then
+         call wrf_debug(1,'Terrain smoothing is disabled.')
+      else
+         write(message,*) 'Invalid option for terrain_smoothing: ',config_flags%terrain_smoothing
+         call wrf_error_fatal(message)
+      endif
 
-        ALLOCATE (avc_nest(im,jm))
-        ALLOCATE (lnd_nest(im,jm))
-        ALLOCATE (lah_nest(im,jm))
-        ALLOCATE (loh_nest(im,jm))
+     DO J = jts,jte
+        DO I = its,ite
+           nest%hres_fis(i,j)=9.81*nest%hres_avc(i,j)
+        ENDDO
+     ENDDO
 
-        i_add = mod(j_start+1,2) 
-        DO j=1,jm
-        DO i=1,im
-           avc_nest(i,j) = avc_big(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
-           lnd_nest(i,j) = lnd_big(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
-           lah_nest(i,j) = lah_big(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
-           loh_nest(i,j) = loh_big(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
-        END DO
-        END DO
+     write(message,'("Nest d",I0," nest_terrain")') nest%id
+     call END_TIMING(trim(message))
 
-        WRITE(message,*)'SOME MATCHING TEST i_parent_start, j_parent_start',i_parent_start,j_parent_start
+CONTAINS
+#ifdef DM_PARALLEL
+  SUBROUTINE SLAVE(IDS,IDE,JDS,JDE)
+    IMPLICIT NONE
+    integer, intent(in) :: IDS,IDE,JDS,JDE
+    REAL, DIMENSION(1,1) :: avc_nest,lnd_nest
+
+     call wrf_debug(1,'call wrf_global_to_patch_real in nest_terrain')
+     call wrf_global_to_patch_real(avc_nest,nest%hres_avc,nest%domdesc,'z','xy', &
+                                   ids,   ide-1, jds,   jde-1, 1, 1, &
+                                   ims,   ime,   jms,   jme,   1, 1, &
+                                   its,   ite,   jts,   jte,   1, 1)
+     call wrf_global_to_patch_real(lnd_nest,nest%hres_lnd,nest%domdesc,'z','xy', &
+                                   ids,   ide-1, jds,   jde-1, 1, 1, &
+                                   ims,   ime,   jms,   jme,   1, 1, &
+                                   its,   ite,   jts,   jte,   1, 1)
+     call wrf_debug(1,'back from wrf_global_to_patch_real in nest_terrain')
+
+
+  END SUBROUTINE SLAVE
+#endif
+  SUBROUTINE MASTER(IDS,IDE,JDS,JDE)
+    IMPLICIT NONE
+    integer, intent(in) :: IDS,IDE,JDS,JDE
+    REAL, DIMENSION(IDS:IDE,JDS:JDE)     :: avc_nest, lnd_nest
+    type(nmm_terrain), pointer :: tr
+
+    nullify(tr)
+    
+    tr=>terrain_for(level,input_type,io_form_input)
+
+    ! select subdomain from big fine grid
+    i_add = mod(j_start+1,2) 
+    DO j=1,jm
+       DO i=1,im
+          avc_nest(i,j) = tr%avc(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
+          lnd_nest(i,j) = tr%lnd(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
+       END DO
+    END DO
+
+    i=1 ; j=1
+    lah_nest_11 = tr%lah(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
+    loh_nest_11 = tr%loh(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
+
+    IF(ABS(lah_nest_11-nest%HLAT(1,1)) .GE. 0.5 .OR.  & 
+         ABS(loh_nest_11-nest%HLON(1,1)) .GE. 0.5)THEN 
+
+       WRITE(message,*)'SOME MATCHING TEST i_parent_start, j_parent_start',i_parent_start,j_parent_start
        CALL wrf_message(trim(message))
        CALL wrf_message('WRFSI LAT      COMPUTED LAT')
-        WRITE(message,*)lah_nest(1,1),nest%HLAT(1,1)
+       WRITE(message,*)lah_nest_11,nest%HLAT(1,1)
        CALL wrf_message(trim(message))
        CALL wrf_message('WRFSI LON      COMPUTED LON')
-        WRITE(message,*)loh_nest(1,1),nest%HLON(1,1)
+       WRITE(message,*)loh_nest_11,nest%HLON(1,1)
        CALL wrf_message(trim(message))
 
-        IF(ABS(lah_nest(1,1)-nest%HLAT(1,1)) .GE. 0.5 .OR.  & 
-           ABS(loh_nest(1,1)-nest%HLON(1,1)) .GE. 0.5)THEN 
-            CALL wrf_message('CHECK WRFSI CONFIGURATION AND INPUT HIGH RESOLUTION TOPOGRAPHY AND/OR GRID RATIO') 
-            CALL wrf_error_fatal('LATLON MISMATCH: ERROR READING static FILE FOR THE NEST')
-        ENDIF
+       CALL wrf_message('CHECK WRFSI CONFIGURATION AND INPUT HIGH RESOLUTION TOPOGRAPHY AND/OR GRID RATIO') 
+       CALL wrf_error_fatal('LATLON MISMATCH: ERROR READING static FILE FOR THE NEST')
+    ENDIF
 
-        call smdhld(im,jm,avc_nest,1.0-lnd_nest,12,12)
+    if(config_flags%terrain_smoothing==1) then
+       call wrf_debug(1,'Call slow smoother (smdhld).')
+       call smdhld(ids,ide,jds,jde,avc_nest,lnd_nest,12,12)
+    endif
 
-!-------------4-point averaging of mountains along inner boundary-------
-
-        do i=1,im-1
-            avc_nest(i,2)=0.25*(avc_nest(i,1)+avc_nest(i+1,1)+ &
-           &                    avc_nest(i,3)+avc_nest(i+1,3))
-        enddo
-
-        do i=1,im-1
-            avc_nest(i,jm-1)=0.25*(avc_nest(i,jm-2)+avc_nest(i+1,jm-2)+ &
-           &                       avc_nest(i,jm)+avc_nest(i+1,jm))
-        enddo
-
-        do j=4,jm-3,2
-            avc_nest(1,j)=0.25*(avc_nest(1,j-1)+avc_nest(2,j-1)+ &
-           &                    avc_nest(1,j+1)+avc_nest(2,j+1))
-        enddo
-
-        do j=4,jm-3,2
-            avc_nest(im-1,j)=0.25*(avc_nest(im-1,j-1)+avc_nest(im,j-1)+ &
-           &                     avc_nest(im-1,j+1)+avc_nest(im,j+1))
-        enddo
-
-        DO J = 1,NNYP
-         DO I = 1,NNXP
-            DATA1(I,J) = 9.81*avc_nest(I,J)
-         ENDDO
-        ENDDO
-
-        DEALLOCATE (avc_big,lnd_big)
-        DEALLOCATE (avc_nest,lnd_nest)
-!
-      ENDIF
-
-      CALL wrf_dm_bcast_bytes (DATA1,NNXP*NNYP*RWORDSIZE)
-
-      DO J=JDS,JDE
-       DO I =IDS,IDE
-        IF(I.GE.ITS .AND. I .LE. MIN(ide-1,ite) .AND. J.GE.JTS  .AND. J .LE. MIN(jde-1,jte))THEN
-          nest%hres_fis(I,J)=DATA1(I,J)
-        ENDIF
-       ENDDO
-      ENDDO
-
-      DEALLOCATE(DATA1)
-      CALL wrf_message('end of NEST_TERRAIN')
-
+#ifdef DM_PARALLEL
+    call wrf_debug(1,'call wrf_global_to_patch_real in nest_terrain')
+    call wrf_global_to_patch_real(avc_nest,nest%hres_avc,nest%domdesc,'z','xy', &
+                                  ids,   ide-1, jds,   jde-1, 1, 1, &
+                                  ims,   ime,   jms,   jme,   1, 1, &
+                                  its,   ite,   jts,   jte,   1, 1)
+    call wrf_global_to_patch_real(lnd_nest,nest%hres_lnd,nest%domdesc,'z','xy', &
+                                  ids,   ide-1, jds,   jde-1, 1, 1, &
+                                  ims,   ime,   jms,   jme,   1, 1, &
+                                  its,   ite,   jts,   jte,   1, 1)
+    call wrf_debug(1,'back from wrf_global_to_patch_real in nest_terrain')
+#endif
+  END SUBROUTINE MASTER
+     
 END SUBROUTINE NEST_TERRAIN
+
+
 !===========================================================================================
 
 
@@ -3078,7 +2980,7 @@ SUBROUTINE med_initialize_nest_nmm( grid &
  REAL, PARAMETER:: SALP=2.60
  REAL, PARAMETER:: SNUP=0.040
  REAL, PARAMETER:: W_NMM=0.08
- REAL, PARAMETER:: COAC=0.75
+! REAL, PARAMETER:: COAC=0.75
  REAL, PARAMETER:: CODAMP=6.4
  REAL, PARAMETER:: TWOM=.00014584
  REAL, PARAMETER:: CP=1004.6
@@ -3100,6 +3002,8 @@ SUBROUTINE med_initialize_nest_nmm( grid &
  REAL, PARAMETER:: ERAD=6371200.
  REAL, PARAMETER:: DTR=0.01745329
 
+ REAL :: COAC
+
  CHARACTER(LEN=255) :: message
 
    !  Definitions of dummy arguments to solve
@@ -3120,6 +3024,8 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 !=================================================================================
 !
 !
+
+   call nl_get_coac(grid%id,coac)
 
     DT=grid%dt         !float(TIME_STEP)/parent_time_step_ratio
     NNXP=min(ITE,IDE-1)
@@ -3273,12 +3179,22 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 
 !  Check land water interface
 
+!     The write(20,*) statements below were very slow on Jet when using
+!     the intel compiler (added hours to the runtime).  The fix
+!     suggested by Chris Harrop was to send messages to wrf_message
+!     instead:
+
     DO J = JTS, MIN(JTE,JDE-1)
      DO I = ITS,MIN(ITE,IDE-1)
       IF(grid%sm(I,J).GT.0.9 .AND. grid%vegfra(I,J) .NE. 0) THEN
+#if defined(USE_SLOW_INTERFACE_CHECK)
+        WRITE(20,*)'PROBLEM AT THE LAND-WATER INTERFACE (VEGFRA):', &
+             I,J,grid%sm(I-1,J),grid%vegfra(I-1,j),grid%sm(I,J),grid%vegfra(I,J)
+#else
         WRITE(message,*)'PROBLEM AT THE LAND-WATER INTERFACE (VEGFRA):', &
              I,J,grid%sm(I-1,J),grid%vegfra(I-1,j),grid%sm(I,J),grid%vegfra(I,J)
         CALL wrf_message(trim(message))
+#endif
       ENDIF
 !
 #if defined(HWRF)
@@ -3287,9 +3203,14 @@ SUBROUTINE med_initialize_nest_nmm( grid &
       ! land and sea points).
 #else
       IF(grid%sm(I,J).GT.0.9 .AND. grid%nmm_tsk(I,J) .NE. 0) THEN
+#if defined(USE_SLOW_INTERFACE_CHECK)
+        WRITE(20,*)'PROBLEM AT THE LAND-WATER INTERFACE (NMM_TSK):', &
+             I,J,grid%sm(I-1,J),grid%nmm_tsk(I-1,J),grid%sm(I,J),grid%nmm_tsk(I,J)
+#else
         WRITE(message,*)'PROBLEM AT THE LAND-WATER INTERFACE (NMM_TSK):', &
              I,J,grid%sm(I-1,J),grid%nmm_tsk(I-1,J),grid%sm(I,J),grid%nmm_tsk(I,J)
         CALL wrf_message(trim(message))
+#endif
       ENDIF
 #endif
      ENDDO
@@ -3649,133 +3570,6 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 
 END SUBROUTINE med_initialize_nest_nmm
 !======================================================================
-
-      subroutine smdhld(ime,jme,h,s,lines,nsmud)
-      character(len=255) :: message
-      dimension ihw(jme),ihe(jme)
-      dimension h(ime,jme),s(ime,jme) &
-     &         ,hbms(ime,jme),hne(ime,jme),hse(ime,jme)
-!-----------------------------------------------------------------------
-          do j=1,jme
-      ihw(j)=-mod(j,2)
-      ihe(j)=ihw(j)+1
-          enddo
-!-----------------------------------------------------------------------
-
-              do j=1,jme
-          do i=1,ime
-      hbms(i,j)=1.-s(i,j)
-          enddo
-              enddo
-!
-      jmelin=jme-lines+1
-      ibas=lines/2
-      m2l=mod(lines,2)
-!
-              do j=lines,jmelin
-          ihl=ibas+mod(j,2)+m2l*mod(j+1,2)
-          ihh=ime-ibas-m2l*mod(j+1,2)
-
-!
-          do i=ihl,ihh
-      hbms(i,j)=0.
-          enddo
-              enddo
-!-----------------------------------------------------------------------
-                  do ks=1,nsmud
-
-                write(message,*) 'H(1,1): ', h(1,1)
-                CALL wrf_message(trim(message))
-                write(message,*) 'H(3,1): ', h(1,1)
-                CALL wrf_message(trim(message))
-!-----------------------------------------------------------------------
-              do j=1,jme-1
-          do i=1,ime-1
-      hne(i,j)=h(i+ihe(j),j+1)-h(i,j)
-          enddo
-              enddo
-              do j=2,jme
-          do i=1,ime-1
-      hse(i,j)=h(i+ihe(j),j-1)-h(i,j)
-          enddo
-              enddo
-!
-              do j=2,jme-1
-          do i=1+mod(j,2),ime-1
-      h(i,j)=(hne(i,j)-hne(i+ihw(j),j-1) &
-     &       +hse(i,j)-hse(i+ihw(j),j+1))*hbms(i,j)*0.125+h(i,j)
-          enddo
-              enddo
-!-----------------------------------------------------------------------
-
-!!!         smooth around boundary somehow?
-
-!       special treatment for four corners
-
-        if (hbms(1,1) .eq. 1) then
-        h(1,1)=0.75*h(1,1)+0.125*h(1+ihe(1),2)+ &
-     &                            0.0625*(h(2,1)+h(1,3))
-        endif
-
-        if (hbms(ime,1) .eq. 1) then
-        h(ime,1)=0.75*h(ime,1)+0.125*h(ime+ihw(1),2)+ &
-     &                            0.0625*(h(ime-1,1)+h(ime,3))
-        endif
-
-        if (hbms(1,jme) .eq. 1) then
-        h(1,jme)=0.75*h(1,jme)+0.125*h(1+ihe(jme),jme-1)+ &
-     &                            0.0625*(h(2,jme)+h(1,jme-2))
-        endif
-
-        if (hbms(ime,jme) .eq. 1) then
-        h(ime,jme)=0.75*h(ime,jme)+0.125*h(ime+ihw(jme),jme-1)+ &
-     &                            0.0625*(h(ime-1,jme)+h(ime,jme-2))
-        endif
-
-
-!       S bound
-
-        J=1
-        do I=2,ime-1
-        if (hbms(I,J) .eq. 1) then
-        h(I,J)=0.75*h(I,J)+0.125*(h(I+ihw(J),J+1)+h(I+ihe(J),J+1))
-        endif
-        enddo
-
-!       N bound
-
-        J=JME
-        do I=2,ime-1
-        if (hbms(I,J) .eq. 1) then
-        h(I,J)=0.75*h(I,J)+0.125*(h(I+ihw(J),J-1)+h(I+ihe(J),J-1))
-        endif
-        enddo
-
-!       W bound
-
-        I=1
-        do J=3,jme-2
-        if (hbms(I,J) .eq. 1) then
-        h(I,J)=0.75*h(I,J)+0.125*(h(I+ihe(J),J+1)+h(I+ihe(J),J-1))
-        endif
-        enddo
-
-!       E bound
-
-        I=IME
-        do J=3,jme-2
-        if (hbms(I,J) .eq. 1) then
-        h(I,J)=0.75*h(I,J)+0.125*(h(I+ihw(J),J+1)+h(I+ihw(J),J-1))
-        endif
-        enddo
-
-
-                      enddo   ! end ks loop
-
-
-!-----------------------------------------------------------------------
-      return
-      end subroutine smdhld
 
 !--------------------------------------------------------------------------------------
 #if 0

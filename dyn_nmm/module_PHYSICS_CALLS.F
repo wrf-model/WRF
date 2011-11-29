@@ -1347,6 +1347,9 @@
 #if (NMM_CORE==1)
      &               ,DISHEAT=DISHEAT                                 &
 #endif
+#if (HWRF==1)
+     &               ,GFS_ALPHA=GRID%GFS_ALPHA                        &
+#endif
                 ! Optional args
      &               ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &               ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &
@@ -1900,7 +1903,6 @@
 #endif
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
      &                 ,GRID,CONFIG_FLAGS                               &
-     &                 ,NRND1                                              &  ! NRND1 for random no restart
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
      &                 ,IMS,IME,JMS,JME,KMS,KME                         &
      &                 ,IPS,IPE,JPS,JPE,KPS,KPE                         &
@@ -2054,7 +2056,6 @@
       INTEGER :: DTEMP_CHECK=2.0
       REAL :: TCHANGE
 !  random number restart
-      INTEGER,DIMENSION(:),INTENT(INOUT) ::   NRND1
       INTEGER, SAVE  :: nfirst
       data nfirst /0/
 #if (NMM_CORE==1)
@@ -2313,56 +2314,6 @@
 
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
 #if (NMM_CORE==1)
-!#ifdef HWRF
-!
-!-----------------------------------------------------------------------
-!
-!     SAS CONVECTION NEEDS RANDOM NUMBER WHICH IS STORED HERE FOR 
-!     EACH OF THE DOMAIN AND THEN THEY ARE PASSED ON INTO THE
-!     CUMULUS DRIVER. THIS IS gopal's doing
-!
-
-      IF(CONFIG_FLAGS%CU_PHYSICS==OSASSCHEME .or. CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)THEN
-!
-          IF(GRID%ID .EQ. 1)THEN   ! Both parent and nest set to 5 minutes for random number calls 
-           IDT=MOD(NTSD,NCNVC)    
-          ELSE
-           IDT=MOD(NTSD,5*NCNVC)
-          ENDIF
- 
-          IF(IDT.EQ.0 .OR. NTSD .EQ. 0)THEN
-!$omp parallel do                                                       &
-!$omp& private(i,j)
-             IF (wrf_dm_on_monitor()) THEN   !!!! For bit reproducibility of random numbers 
-             if (restart .and. nfirst .eq. 0 ) then
-             call random_seed(put=nrnd1)
-             nfirst=1
-             endif
-             call random_seed(get=nrnd1)
-              DO J=JDS,JDE       !JTS,JTE
-               DO I=IDS,IDE      !ITS,ITE       
-                  CALL RANDOM_NUMBER(rnd1)
-                  DATA1(I,J)=rnd1(2) 
-               ENDDO
-              ENDDO
-             ENDIF
-             CALL wrf_dm_bcast_bytes (DATA1,IDE*JDE*RWORDSIZE)  !!! broadcast random nos. to other processors
-
-             DO J=JDS,JDE
-               DO I =IDS,IDE
-                 IF(I.GE.ITS .AND. I .LE. MIN(ide,ite) .AND. J.GE.JTS  .AND. J .LE. MIN(jde,jte))THEN
-                  STORE_RAND(I,J)=DATA1(I,J)
-                 ENDIF
-               ENDDO
-             ENDDO
-!
-          ENDIF    ! for IF(IDT.EQ.0 .OR. NTSD .EQ. 0)
-!
-      ELSE
-!jm        STORE_RAND(I,J) = 0.0
-        STORE_RAND = 0.0
-      ENDIF
-
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
         DO K=KMS,KME
@@ -2373,7 +2324,6 @@
         ENDDO
         ENDDO
         ENDDO
-!#endif
 #endif
       CALL CUMULUS_DRIVER(GRID                                          &
      &                 ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &

@@ -297,6 +297,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 !  USE module_input_chem_emissopt3
 #endif
 
+   USE module_wps_io_arw
    USE module_date_time
    USE module_utility
 
@@ -325,6 +326,9 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
    INTEGER :: time_loop_max , loop, rc
    INTEGER :: julyr , julday 
+   INTEGER :: io_form_auxinput1
+   INTEGER, EXTERNAL :: use_package
+   LOGICAL :: using_binary_wrfsi
    REAL :: gmt
 real::t1,t2,t3,t4
 
@@ -401,6 +405,18 @@ real::t1,t2,t3,t4
       WRITE ( wrf_err_message , FMT='(A,A)' )'med_sidata_input: calling open_r_dataset for ', &
                                              TRIM(config_flags%auxinput1_inname)
       CALL wrf_debug ( 100 , wrf_err_message )
+
+      IF (config_flags%auxinput1_inname(1:10) .eq. 'real_input') THEN
+         using_binary_wrfsi=.true.
+      ENDIF
+
+      CALL nl_get_io_form_auxinput1( 1, io_form_auxinput1 )
+
+      SELECT CASE ( use_package(io_form_auxinput1) )
+#ifdef NETCDF
+      CASE ( IO_NETCDF   )
+
+
       IF ( config_flags%auxinput1_inname(1:8) .NE. 'wrf_real' ) THEN
          CALL construct_filename4a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , &
                                     current_date_char , config_flags%io_form_auxinput1 )
@@ -433,7 +449,41 @@ real::t1,t2,t3,t4
       CALL       wrf_debug ( 100 , 'med_sidata_input: calling optional_input' )
       CALL optional_input ( grid , idsi , config_flags )
 
-      !  Initialize the mother domain for this time period with input data.
+      !  Close this file that is output from the SI and input to this pre-proc.
+      CALL       wrf_debug ( 100 , 'med_sidata_input: back from init_domain' )
+      CALL close_dataset ( idsi , config_flags , "DATASET=AUXINPUT1" )
+#endif
+#ifdef INTIO
+      CASE ( IO_INTIO )
+
+!      !  Possible optional SI input.  This sets flags used by init_domain.
+!
+      IF ( loop .EQ. 1 ) THEN
+         CALL  wrf_debug (100, 'med_sidata_input: call init_module_optional_input' )
+         CALL init_module_optional_input ( grid , config_flags )
+      END IF
+
+      IF (using_binary_wrfsi) THEN
+
+        current_date_char(11:11)='_'
+!        CALL read_si ( grid, current_date_char )
+        CALL wrf_error_fatal("not supporting binary WRFSI in this code")
+        current_date_char(11:11)='T'
+
+      ELSE
+
+        write(message,*) 'binary WPS branch'
+        CALL wrf_message(message)
+        current_date_char(11:11)='_'
+        CALL construct_filename4a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char , &
+                                     config_flags%io_form_auxinput1 )
+
+        CALL read_wps ( grid, trim(si_inpname), current_date_char, config_flags%num_metgrid_levels )
+      ENDIF
+#endif
+      CASE DEFAULT
+        CALL wrf_error_fatal('real: not valid io_form_auxinput1')
+      END SELECT
 
       CALL       wrf_debug ( 100 , 'med_sidata_input: calling init_domain' )
       grid%input_from_file = .true.
@@ -442,11 +492,6 @@ real::t1,t2,t3,t4
       WRITE ( wrf_err_message , FMT='(A,I10,A)' ) 'Timing for processing ',NINT(t4-t3) ,' s.'
       CALL wrf_debug( 0, wrf_err_message )
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-
-      !  Close this file that is output from the SI and input to this pre-proc.
-
-      CALL       wrf_debug ( 100 , 'med_sidata_input: back from init_domain' )
-      CALL close_dataset ( idsi , config_flags , "DATASET=AUXINPUT1" )
 
 #ifdef WRF_CHEM
       IF ( loop == 1 ) THEN

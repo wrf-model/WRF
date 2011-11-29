@@ -1372,11 +1372,11 @@ program da_update_bc
 
    end if ! end of update second time level LBC for var4d_lbc
 
- end if
+   deallocate(mub)
+   deallocate(msfu)
+   deallocate(msfv)
 
- deallocate(mub)
- deallocate(msfu)
- deallocate(msfv)
+ end if ! end if update_lateral_bdy
 
  write(unit=stdout,fmt=*) &
     '=================================================================='

@@ -26,6 +26,7 @@ MODULES =                 		\
         module_bc_em_tl.o               \
         module_bc_em_ad.o               \
         module_init_utilities.o         \
+        module_wps_io_arw.o             \
 	module_damping_em.o		\
 	module_polarfft.o		\
         module_force_scm.o              \

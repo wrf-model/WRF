@@ -22,6 +22,7 @@ MODULES =                       \
 	module_adtl_grid_utilities.o	\
 	mediation_pertmod_io.o	\
 	module_linked_lisk2.o	\
+        module_random.o \
 	module_llxy.o
 
 OBJS    = 		\
@@ -50,6 +51,7 @@ OBJS    = 		\
 	jcdfi.o                         \
         track_driver.o                  \
         track_input.o                   \
+        bobrand.o                       \
 	setfeenv.o
 
 
@@ -324,5 +326,7 @@ wrf_tsin.o	                : ../frame/module_domain.o
 
 jcdfi.o                         : ../frame/module_domain.o ../frame/module_configure.o 
 track_input.o                   : ../frame/module_domain.o
+
+module_random.o: bobrand.o
 
 # DO NOT DELETE

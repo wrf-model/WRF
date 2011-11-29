@@ -176,9 +176,12 @@ state  logical moved       -     misc       1      -     r
 
 state   real   ducudt       ijk     misc        1         -    rh  "UMMIX" "U TENDENCY  MOMENTUM MIXING IN SAS"
 state   real   dvcudt       ijk     misc        1         -    rh  "VMMIX" "V TENDENCY  MOMENTUM MIXING IN SAS"
-# For random number in SAS convection in HWRF
 
-state real store_rand        ij     dyn_nmm     1      -    rh  "RANDOM" "RANDOM NUMBER FOR SAS"
+state integer randstate1     ij     dyn_nmm     1      -    r  "randstate1" "random number generator state word 1"
+state integer randstate2     ij     dyn_nmm     1      -    r  "randstate2" "random number generator state word 2"
+state integer randstate3     ij     dyn_nmm     1      -    r  "randstate3" "random number generator state word 3"
+state integer randstate4     ij     dyn_nmm     1      -    r  "randstate4" "random number generator state word 4"
+state real    random         ij     dyn_nmm     1      -    rh "random" "random number in [0,1) used by SAS"
 
 # Location of the SOUTH-WEST nested pointed in terms of parent grid
 
@@ -205,11 +208,17 @@ state  real   HLAT        ij     dyn_nmm     1      -      h01d=(test_nmm:IIH,JJ
 state  real   VLON        ij     dyn_nmm     1      -      irh
 state  real   VLAT        ij     dyn_nmm     1      -      irh
 
+state integer hifreq_lun   -     dyn_nmm     0      -      -
+
+
 #
 rconfig  real wbd0    derived   max_domains    0       - "wbd0"                  "western boundary of the domain"
 rconfig  real sbd0    derived   max_domains    0       - "sbd0"                  "southern boundary of the domain"
 #for HWRF: 
 rconfig   logical analysis               namelist,time_control    max_domains        .false.      irh   "days"     "analysis control for the nested domain"
+
+rconfig   logical  high_freq        namelist,time_control    1      .true.    irh   "high frequency output"   "flag for high frequency output"
+rconfig   integer  high_dom         namelist,time_control    1      -99       irh   "domain"   "domain for high frequency output (-99 means all domains without children)"
 
 state  real   PSTD      k      dyn_nmm     1      Z      r
 state  integer KZMAX    -      dyn_nmm     -      -      r
@@ -219,6 +228,8 @@ state  real   Q3D       ijk    dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH)f=
 #end of HWRF: 
 
 state  real HRES_FIS    ij     dyn_nmm     1      -      r  "HRES_FIS" "HIGH RESOLUTION TERRAIN DATA FOR NESTED DOMAIN"
+state  real HRES_AVC    ij     dyn_nmm     1      -      -  "HRES_AVC" "TEMPORARY STORAGE OF HRES_FIS/9.81"
+state  real HRES_LND    ij     dyn_nmm     1      -      -  "HRES_LND" "TEMPORARY STORAGE OF HIGH-RES LND"
 
 #
 # module_MASKS
@@ -800,7 +811,8 @@ state    real   ACSNOM           ij     misc        1         -     irh       "A
 state    real   RMOL             ij     misc        1         -     ir       "RMOL"               ""         ""
 state    real   SNOW             ij     misc        1         -     i01rh       "SNOW"                 "SNOW WATER EQUIVALENT"         "kg m-2"
 state    real   CANWAT           ij     misc        1         -     i01rh       "CANWAT"               "CANOPY WATER" ""
-state    real   SST              ij     misc        1         -     i014rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4       "SST"                  "SEA SURFACE TEMPERATURE" "K"
+state  integer  FORCE_SST        k      misc        1         -     -        "FORCE_SST"          "IF FORCE_SST(1) IS 1, FEED SST FROM PARENT EVERY DT" ""
+state    real   SST              ij     misc        1         -     i014rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)       "SST"                  "SEA SURFACE TEMPERATURE" "K"
 state    real   WEASD            ij     misc        1         -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" "kg m-2"
 state    real  ZNT              ij      misc        1         -     irh        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
@@ -942,6 +954,7 @@ rconfig   integer JULYR                   namelist,time_control         max_doma
 rconfig   integer JULDAY                  namelist,time_control         max_domains    1       hr    "JULDAY"                ""      ""
 rconfig   real    GMT                     namelist,time_control         max_domains    0.      hr    "GMT"           ""      ""
 #for HWRF: end 
+rconfig   character  high_freq_outname namelist,time_control           1  "hifreq_d<domain>.htcf"          -     "name of hifreq output file"   ""      ""
 rconfig   character  input_inname      namelist,time_control		1  "wrfinput_d<domain>"          -     "name of input   infile"   ""      ""
 rconfig   character  input_outname     namelist,time_control		1  "wrfinput_d<domain>"          -     "name of input   outfile"  ""      ""
 rconfig   character  bdy_inname        namelist,time_control		1  "wrfbdy_d<domain>"            -     "name of boundary infile"  ""      ""
@@ -1050,6 +1063,10 @@ rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    0     
 rconfig   real    BLDT                    namelist,physics	max_domains    0       h    "BLDT"          ""      ""
 rconfig   integer     cu_physics          namelist,physics	max_domains    0       rh       "cu_physics"            ""      ""
 rconfig   integer shcu_physics            namelist,physics      max_domains    0       rh   "shcu_physics"  ""      ""
+
+rconfig   integer vortex_tracker          namelist,physics      max_domains    1      -      "vortex_tracker" "Vortex Tracking Algorithm" ""
+rconfig   real      gfs_alpha             namelist,physics      max_domains    1       irh      "boundary depth factor"  "" ""
+
 rconfig   real    CUDT                    namelist,physics	max_domains    0       h    "CUDT"          ""      ""
 rconfig   real    GSMDT                   namelist,physics	max_domains    0       h    "GSMDT"          ""      ""
 rconfig   integer ISFFLX                  namelist,physics 	1             1       irh    "ISFFLX"                        ""      ""
@@ -1082,12 +1099,14 @@ rconfig   logical rdlai2d                 namelist,physics      1            .fa
 rconfig   integer  gwd_opt                namelist,physics    max_domains    2       irh    "gwd_opt"      "activate gravity wave drag: 0=off, 1=ARW, 2=NMM"   ""
 rconfig   integer iz0tlnd                 namelist,physics      1            0         h     "iz0tlnd"    "switch to control land thermal roughness length"   ""
 rconfig   real    sas_pgcon               namelist,physics      max_domains  0.55      irh   "sas_pgcon"   "convectively forced pressure gradient factor (SAS scheme)" ""
+rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
 
 # nmm variables
 rconfig   integer idtad                   namelist,physics     max_domains    2       irh    "idtad"  "fundamental timesteps between calls to NMM passive advection scheme"
 rconfig   integer nsoil                   namelist,physics     max_domains    4       irh    "nsoil"  "number of soil layers"
 rconfig   integer nphs                    namelist,physics     max_domains   10       irh    "nphs"  "fundamental timesteps between calls to NMM turbulence"
 rconfig   integer ncnvc                   namelist,physics     max_domains   10       irh    "ncnvc"  "fundamental timesteps between calls to NMM convection"
+rconfig   integer nrand                   namelist,physics     max_domains   10       irh    "nrand"  "fundamental timesteps between random number generator updates (0=use ncnvc)"
 rconfig   integer nrads                   namelist,physics     max_domains  200       irh    "nrads"  "fundamental timesteps between calls to NMM shortwave radiation"
 rconfig   integer nradl                   namelist,physics     max_domains  200       irh    "nradl"  "fundamental timesteps between calls to NMM longwave radiation"
 rconfig   real    tprec                   namelist,physics     max_domains    385.      irh    "tprec"  "number of hours in bucket for total precipitation"
@@ -1109,7 +1128,6 @@ rconfig   integer cam_abs_dim2            namelist,physics      1             1 
 rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .false.  -     "feedback cumulus to radiation"  ""
 rconfig   real h_diff                     namelist,physics      max_domains  0.1      irh    "nmm input 9"
 rconfig   integer movemin                 namelist,physics      max_domains  10       irh    "nmm input 12"
-
 
 # Dynamics
 # dynamics option (see package definitions, below)
@@ -1153,7 +1171,7 @@ rconfig   real    coac                    namelist,dynamics     max_domains   1.
 rconfig   real    slophc                  namelist,dynamics     max_domains   6.363961e-3     irh  "slophc"  "Maximum model level slope (dZ/dy) for which hor diffusion is applied" ""
 rconfig   real    wp                      namelist,dynamics     max_domains   0.    irh  "wp"  "Off-centering weight in the updating of nonhyrostatic eps"
 
-
+rconfig   integer terrain_smoothing       namelist,dynamics     1             1     irh  "parallel_smooth" "nest_terrain smoothing method 0=none, 1=old, 2=new"
 
 # Bdy_control
 rconfig   integer spec_bdy_width          namelist,bdy_control		1             5       irh    "spec_bdy_width"                ""      ""
@@ -1291,6 +1309,7 @@ package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             -
 package   rrtmg_lwscheme  ra_lw_physics==4           -             -
 package   goddardlwscheme  ra_lw_physics==5          -             -
+package   flglwscheme   ra_lw_physics==7             -             -
 package   gfdllwscheme  ra_lw_physics==99            -             -
 package   hwrflwscheme  ra_lw_physics==98
 
@@ -1299,6 +1318,7 @@ package   gsfcswscheme  ra_sw_physics==2             -             -
 package   camswscheme   ra_sw_physics==3             -             -
 package   rrtmg_swscheme  ra_sw_physics==4           -             -
 package   goddardswscheme  ra_sw_physics==5          -             -
+package   flgswscheme   ra_sw_physics==7             -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -
 package   hwrfswscheme  ra_sw_physics==98
 package   heldsuarez    ra_lw_physics==31            -             -
@@ -1460,3 +1480,6 @@ halo      HALO_NMM_SAS_A  dyn_nmm 24:uz0h,vz0h,hbm2
 halo      HALO_NMM_SAS_B  dyn_nmm 24:ducudt,dvcudt
 halo      HALO_TRACERS dyn_nmm 48:szj,s1z,spz,tcs
 
+halo HALO_NMM_FORCE_DOWN_SST dyn_nmm 120:sst
+
+halo HALO_NMM_TERRAIN_SMOOTH   dyn_nmm      24:HRES_AVC

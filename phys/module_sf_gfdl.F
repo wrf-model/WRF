@@ -832,17 +832,13 @@ CONTAINS
           windmks=wind(i)*.01
           znott=0.2375*exp(-0.5250*windmks) + 0.0025*exp(-0.0211*windmks)
           znott=0.01*znott
-!  go back to mon/obv  et al for below 7m/s
+!  go back to moon et al for below 7m/s
           if(windmks.le. 7.)                         &
-          znott = 0.01*zot (i)
-!   end of kwon correction....
-!  put in patch to increase znott from thermal to mom vaules 20-40m/s
-   if(windmks.ge.20.) then
-!   znot4020=(.163e-2)-(.104e-4)   
-   znott   =1.636e-14 * windmks**6.8905                        
-   endif
+          znott = (0.0185/9.8*(7.59e-8*wind(i)**2+   &
+                                  2.46e-4*wind(i))**2)
 ! back to cgs
           zot (i) = 100.*znott
+!   end of kwon correction....
 !     in hwrf, thermal znot(zot) is passed as argument zoc
 !     in hwrf, momentum znot is recalculated internally
               zoc(i)=-(0.0185/9.8*(7.59e-8*wind(i)**2+   &
@@ -850,19 +846,17 @@ CONTAINS
             if(wind(i).ge.1250.0)   &
              zoc(i)=-(.000739793 * wind(i) -0.58)/10
         if(wind(i).ge.3000.)   then
+        windmks=wind(i)*.01
 !       kwon znotm
         znotm   = yz   +windmks*y1   +windmks**2*y2   +windmks**3*y3   +windmks**4*y4 !powell 2003
 !       back to cgs
         zoc(i)  = 100.*znotm
         endif
-!
-!       in this version set thermal znot = momentum znot of powell 2003 above 40m/s
-         if(windmks.ge.40.) zot (i) = zoc(i)
+        endif
+
 !------------------------------------------------------------------------
 !     where necessary modify zo values over ocean.
 !------------------------------------------------------------------------
-        endif
-
 
       enddo
 
@@ -1531,7 +1525,7 @@ CONTAINS
         write(6,345) indx(i), j, tstar(indx(i)), tsp(i), ip
 345   format(2X, ' I, J, OLD T*, NEW T*, NPTS ', 2I5, 2E14.8, I5)
 
-!       write(6,350) reflect, sigt4, shfx, alevp, delten, diffot
+        write(6,350) reflect, sigt4, shfx, alevp, delten, diffot
 350   format(2X, ' REFLECT, SIGT4, SHFX, ALEVP, DELTEN, DIFFOT ', &
             6E14.8)
 

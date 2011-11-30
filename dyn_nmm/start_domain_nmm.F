@@ -3,6 +3,57 @@
 !#define NO_UPSTREAM_ADVECTION
 !----------------------------------------------------------------------
 !
+#ifdef HWRF
+        SUBROUTINE GUESS_COUPLING_TIMESTEP(gridid,DTC)
+          USE module_configure
+          implicit none
+          real, intent(out) :: DTC
+          integer, intent(in) :: gridid
+          type(grid_config_rec_type) :: config_flags
+          character*255 :: message
+
+          real :: dt
+          integer :: nphs,movemin
+          if(model_config_rec%max_dom>=2) then
+             ! Normally, in an HWRF simulation, domain 2 has
+             ! dt*nphs*movemin = coupling timestep
+             ! So if there is a domain 2, we'll use that to
+             ! guess the coupling timestep.
+             if(gridid==1) then
+                ! The first time this routine is called, it is for domain 1,
+                ! and domain 2 has not been created yet.  That means domain
+                ! 2 still has its dt set to the internal WRF default of 2.
+                ! To get domain 2's correct dt, we get domain 1's dt and 
+                ! divide by 3
+                call wrf_message('Guessing coupling timestep from d01''s dt/3 and d02''s nphs and movemin...')
+                call model_to_grid_config_rec(1,model_config_rec,config_flags)
+                dt=config_flags%dt/3
+                call model_to_grid_config_rec(2,model_config_rec,config_flags)
+             else
+                call wrf_message('Guessing coupling timestep from d02 settings...')
+                call model_to_grid_config_rec(2,model_config_rec,config_flags)
+                dt=config_flags%dt
+             endif
+          else
+             ! Someone is doing a single domain run, so guess the 
+             ! coupling timestep using the 
+             call wrf_message('Guessing coupling timestep from d01 settings because there is no d02...')
+             call model_to_grid_config_rec(1,model_config_rec,config_flags)
+          endif
+          nphs=config_flags%nphs
+          movemin=config_flags%movemin
+
+          dtc = dt*nphs*movemin
+388       format("dtc=dt*nphs*movemin = ",F0.3,"=",F0.3,"*",I0,"*",I0)
+          write(message,388) dtc,dt,nphs,movemin
+          call wrf_message(message)
+        END SUBROUTINE GUESS_COUPLING_TIMESTEP
+#endif
+!
+!----------------------------------------------------------------------
+!
+!----------------------------------------------------------------------
+!
       SUBROUTINE START_DOMAIN_NMM(GRID, allowed_to_read                &
 !
 #include <dummy_new_args.inc>
@@ -228,6 +279,11 @@
       JTE=JPE
       KTS=KPS
       KTE=KPE
+
+#ifdef HWRF
+      call guess_coupling_timestep(grid%id,grid%guessdtc)
+      grid%dtc=0
+#endif
 
       CALL model_to_grid_config_rec(grid%id,model_config_rec           &
      &                             ,config_flags)

@@ -497,7 +497,7 @@
       IFE=MIN(IPE,IDE-1)
 
       if((allowed_to_read.and..not.(restrt)) .or. .not.allowed_to_read) then
-         IF(CONFIG_FLAGS%CU_PHYSICS==OSASSCHEME .or. CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)THEN
+         randif: IF(in_use_for_config(grid%id,'random'))THEN
             ! Reset random number generator at first initialization,
             ! or after a nest move.  (Need to reset after a nest move
             ! or the leading edge will be filled with 3x3 areas with
@@ -518,9 +518,7 @@
                               IDS,IDE,JDS,JDE,one,one, &
                               IMS,IME,JMS,JME,one,one, &
                               IPS,IPE,JPS,JPE,one,one)
-         else
-            grid%random = 0.0
-         endif
+         endif randif
       endif
 ! Begin HWRF update for high-frequency output
 #ifdef HWRF

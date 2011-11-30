@@ -647,7 +647,7 @@
      &                ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR,EMBCK          &
      &                ,U10,V10,TH10,Q10,TSHLTR,QSHLTR,PSHLTR            &
      &                ,T2,QSG,QVG,QCG,SOILT1,TSNAV,SMFR3D,KEEPFR3DFLAG  &
-     &                ,TWBS,QWBS,TAUX,TAUY,SFCSHX,SFCLHX,SFCEVP                   &
+     &                ,TWBS,QWBS,TAUX,TAUY,SFCSHX,SFCLHX,SFCEVP,RTHRATEN&
      &                ,POTEVP,POTFLX,SUBSHX                             &
      &                ,APHTIM,ARDSW,ARDLW,ASRFC                         &
      &                ,RSWOUT,RSWTOA,RLWTOA                             &
@@ -662,6 +662,7 @@
      &                ,GRID,CONFIG_FLAGS                                &
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,DISHEAT                                          &
+     &                ,HPBL2D, EVAP2D, HEAT2D                           &  !Kwon S&P
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -715,6 +716,8 @@
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: ISLTYP,IVGTYP
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) ::  HPBL2D, EVAP2D, HEAT2D   !Kwon S&P
+!
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: LPBL
 !
       REAL,INTENT(IN) :: DT,PDTOP,PT
@@ -723,6 +726,8 @@
       REAL,INTENT(INOUT) :: APHTIM,ARDSW,ARDLW,ASRFC
 !
       REAL,DIMENSION(KMS:KME-1),INTENT(IN) :: AETA1,AETA2,DETA1,DETA2
+!
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: RTHRATEN     !Kwon S&P
 !
       REAL,DIMENSION(KMS:KME),INTENT(IN) :: DFRLG,ETA1,ETA2
 !
@@ -1334,12 +1339,13 @@
      &               ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &               ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
 #if (NMM_CORE==1)
-     &               ,DISHEAT=DISHEAT                                 &
+     &               ,DISHEAT=DISHEAT,  RTHRATEN=RTHRATEN             &
 #endif
+     &               ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D     &    !Kwon S&P
+                ! Optional args
 #if (HWRF==1)
      &               ,GFS_ALPHA=GRID%GFS_ALPHA                        &
 #endif
-                ! Optional args
      &               ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &               ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &
      &               ,QI_CURR=MOIST_TRANS(IMS,KMS,JMS,PQ_I),F_QI=FQ_I &
@@ -1888,6 +1894,8 @@
      &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand               &                  
 #endif
      &                 ,PGCON                                           &
+     &                 ,shalconv,shal_pgcon                             & ! shallow conv
+     &                 ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon S&P
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
      &                 ,GRID,CONFIG_FLAGS                               &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
@@ -1927,10 +1935,13 @@
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
      &                     ,N_MOIST,NCNVC,NTSD,NRADS,NRADL
 !
-      REAL, INTENT(IN) :: PGCON
+      REAL, INTENT(IN) :: PGCON,sas_mass_flux,shal_pgcon
+      INTEGER, INTENT(IN) :: shalconv
       INTEGER, DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: LPBL
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: HPBL2D,EVAP2D,HEAT2D     !Kwon S&P
 !
       REAL,INTENT(IN) :: DT,GPS,PDTOP,PT
 !
@@ -2352,7 +2363,9 @@
      &                 ,RUCUTEN=DUCUDT, RVCUTEN=DVCUDT, MOMMIX=MOMMIX   &
                        ,store_rand=store_rand                           &
 #endif
-     &                 ,pgcon=config_flags%sas_pgcon                    &
+     &                 ,HPBL2D=HPBL2D,EVAP2D=EVAP2D,HEAT2D=HEAT2D       &     !Kwon S&P
+     &                 ,pgcon=pgcon,sas_mass_flux=sas_mass_flux         &
+     &                 ,shalconv=shalconv,shal_pgcon=shal_pgcon         &
                   ! Selection argument
      &                 ,CU_PHYSICS=CONFIG_FLAGS%CU_PHYSICS              &
                   ! Moisture tracer arguments

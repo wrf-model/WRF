@@ -116,6 +116,7 @@
 !
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: TTEN,QTEN
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RTHRATEN,RTHBLTEN,RQVBLTEN
+      REAL,ALLOCATABLE,DIMENSION(:,:) :: HEAT2D,EVAP2D                   !FOR NEW GFS SHALLOW CON AND PBL (GFS S&P, Kwon)
 !
 !-----------------------------------------------------------------------
 !
@@ -323,6 +324,18 @@
       ALLOCATE(RTHBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
       ALLOCATE(RQVBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
       ALLOCATE(RTHRATEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
+
+      ! HEAT2D, EVAP2D are used by GFS 2010 PBL and SAS schemes:
+      if(in_use_for_config(grid%id,'hpbl2d')) then
+         ALLOCATE(HEAT2D(IMS:IME,JMS:JME),STAT=ISTAT) !S&P Kwon
+         ALLOCATE(EVAP2D(IMS:IME,JMS:JME),STAT=ISTAT) !S&P Kwon
+      else
+         ! If we get here, HEAD2D and EVAP2D are unneeded, so we only
+         ! allocate one array element.  We don't even need to do that,
+         ! except to keep compilers in heavy debug mode from
+         ! complaining about sending unallocated arrays to CUCNVC.
+         ALLOCATE(HEAT2D(1,1),EVAP2D(1,1))
+      endif
 #ifdef WRF_CHEM
   NUMGAS          = GET_LAST_GAS(CONFIG_FLAGS%CHEM_OPT)
 #endif
@@ -531,7 +544,7 @@
 !***  UPDATE RANDOM NUMBERS IF REQUIRED
 !-----------------------------------------------------------------------
 
-      IF(CONFIG_FLAGS%CU_PHYSICS==OSASSCHEME .or. CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)THEN
+      randif: IF(in_use_for_config(grid%id,'random')) THEN
 !
          nrand=config_flags%nrand
          if(nrand==0) nrand=grid%ncnvc
@@ -558,7 +571,7 @@
 
             call end_timing('Updating random numbers')
          ENDIF    ! for IF(IDT.EQ.0 .OR. NTSD .EQ. 0)
-      ENDIF
+      ENDIF randif
 !-----------------------------------------------------------------------
 !***  ZERO OUT ACCUMULATED QUANTITIES WHEN NEEDED.
 !-----------------------------------------------------------------------
@@ -1643,7 +1656,7 @@
      &            ,grid%u10,grid%v10,grid%th10,grid%q10,grid%tshltr,grid%qshltr,grid%pshltr               &
      &            ,grid%t2,grid%qsg,grid%qvg,grid%qcg,grid%soilt1,grid%tsnav,grid%smfr3d,grid%keepfr3dflag     &
 #if (NMM_CORE==1)
-     &            ,grid%twbs,grid%qwbs,grid%taux,grid%tauy,grid%sfcshx,grid%sfclhx,grid%sfcevp                      &
+     &            ,grid%twbs,grid%qwbs,grid%taux,grid%tauy,grid%sfcshx,grid%sfclhx,grid%sfcevp,RTHRATEN                      &
 #else
      &            ,grid%twbs,grid%qwbs,grid%sfcshx,grid%sfclhx,grid%sfcevp                      &
 #endif
@@ -1664,6 +1677,7 @@
      &            ,GRID,CONFIG_FLAGS                                   &
      &            ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                     &
      &            ,GRID%DISHEAT                                             &
+     &            ,GRID%HPBL2D, EVAP2D, HEAT2D                              &  !S&P Kwon
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -1860,6 +1874,8 @@
      &                 ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random             &
 #endif
      &             ,config_flags%sas_pgcon                             &
+     &             ,config_flags%sas_shal_conv,config_flags%sas_shal_pgcon &
+     &             ,grid%hpbl2d,evap2d,heat2d                            &
      &             ,grid%avcnvc,grid%acutim,grid%ihe,grid%ihw                              &
      &             ,GRID,CONFIG_FLAGS                                  &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &

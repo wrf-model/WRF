@@ -49,6 +49,8 @@ CONTAINS
                      ,k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow &
                  ! Optional arguments for SAS scheme
                      ,pgcon                                           &
+                     ,shalconv,shal_pgcon                             &
+                     ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon for SAS2010 shallow convection
                  ! Optional arguments for NSAS scheme
                      ,mp_physics                                      &
                  ! Optional moisture and other tendencies
@@ -290,7 +292,8 @@ CONTAINS
    INTEGER,      INTENT(IN   )    ::   STEPCU
    LOGICAL,      INTENT(IN   )    ::   warm_rain
 
-   REAL, INTENT(IN), OPTIONAL :: pgcon
+   REAL, INTENT(IN), OPTIONAL :: pgcon,shal_pgcon,sas_mass_flux
+   INTEGER, INTENT(IN), OPTIONAL :: shalconv
 
    INTEGER,DIMENSION( ims:ime, jms:jme ),                        &
            INTENT(IN ) ::                                LOWLYR
@@ -358,6 +361,10 @@ CONTAINS
 #if (NMM_CORE==1)
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
                     INTENT(IN) ::  STORE_RAND
+!
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    !Kwon for sas2010 shallow convection
+                    INTENT(INOUT) ::  HPBL2D, EVAP2D, HEAT2D
+!
    REAL,            INTENT(INOUT) :: mommix
 #endif
 
@@ -683,10 +690,11 @@ CONTAINS
                ,CU_ACT_FLAG=CU_ACT_FLAG                         &
                ,P_QC=p_qc                                       &
 #if (NMM_CORE==1)
-               ,store_rand=store_rand  &
                ,MOMMIX=MOMMIX  &
 #endif
-               ,pgcon=pgcon &
+               ,pgcon=pgcon,sas_mass_flux=sas_mass_flux         &
+               ,shalconv=shalconv,shal_pgcon=shal_pgcon         &
+               ,hpbl2d=hpbl2d,evap2d=evap2d,heat2d=heat2d       &
                ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
                ,CUDT=cudt_pass                                  &
                ,CURR_SECS=curr_secs_pass                        &

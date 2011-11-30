@@ -12,9 +12,11 @@ CONTAINS
                  DZ8W,PCPS,P8W,XLAND,CU_ACT_FLAG,                   &
                  P_QC,                                              & 
 #if (NMM_CORE == 1)
-                 STORE_RAND,MOMMIX, & ! gopal's doing
+                 MOMMIX, & ! gopal's doing
 #endif
                  PGCON,                                             &
+                 shalconv,shal_pgcon,                               &
+                 HPBL2D,EVAP2D,HEAT2D,                              & !Kwon for shallow convection
                  P_QI,P_FIRST_SCALAR,                               & 
                  CUDT, CURR_SECS, ADAPT_STEP_FLAG,                  &
                  CUDTACTTIME,                                       & 
@@ -118,8 +120,10 @@ CONTAINS
       REAL,    INTENT(IN) ::                                            &
                                         DT
 
-      REAL, OPTIONAL, INTENT(IN) :: PGCON
-      REAL(kind=kind_phys)       :: PGCON_USE
+      REAL, OPTIONAL, INTENT(IN) :: PGCON,sas_mass_flux,shal_pgcon
+      INTEGER, OPTIONAL, INTENT(IN) :: shalconv
+      REAL(kind=kind_phys)       :: PGCON_USE,SHAL_PGCON_USE,massf
+      INTEGER :: shalconv_use
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::      &
                                         RQCCUTEN,                       &
                                         RQICUTEN,                       &
@@ -130,10 +134,10 @@ CONTAINS
                                         RVCUTEN                             
 #if (NMM_CORE == 1)
       REAL,    INTENT(IN) ::    MOMMIX
-   REAL, DIMENSION( ims:ime , jms:jme ),                                &
-                         INTENT(IN) :: STORE_RAND
-
 #endif
+
+      REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,                   &
+                         INTENT(IN) :: HPBL2D,EVAP2D,HEAT2D                !Kwon for sha
 
       REAL,    DIMENSION(ims:ime, jms:jme), INTENT(IN) ::               &
                                         XLAND
@@ -187,7 +191,7 @@ CONTAINS
                                         RCS,                            &
                                         RN,                             &
                                         SLIMSK,                         &
-                                        XKT2
+                                        HPBL,EVAP,HEAT                     !Kwon for shallow convection
 
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte+1) ::       &
                                         PRSI                            
@@ -295,16 +299,80 @@ CONTAINS
 
 !-----------------------------------------------------------------------
 
+      if(present(shalconv)) then
+         shalconv_use=shalconv
+      else
+#if (NMM_CORE==1)
+         shalconv_use=0
+#else
+#if (EM_CORE==1)
+         shalconv_use=1
+#else
+         shalconv_use=0
+#endif
+#endif
+      endif
+
       if(present(pgcon)) then
          pgcon_use  = pgcon
       else
 !        pgcon_use  = 0.7     ! Gregory et al. (1997, QJRMS)
-         pgcon_use  = 0.55    ! Zhang & Wu (2003,JAS)
-         ! 0.55 is a physically-based value used by GFS
-         ! HWRF uses 0.2, for model tuning purposes
+         pgcon_use  = 0.55    ! Zhang & Wu (2003,JAS), used in GFS (25km res spectral)
+!        pgcon_use  = 0.2     ! HWRF, for model tuning purposes
+!        pgcon_use  = 0.3     ! GFDL, or so I am told
+
+         ! For those attempting to tune pgcon:
+
+         ! The value of 0.55 comes from an observational study of
+         ! synoptic-scale deep convection and 0.7 came from an
+         ! incorrect fit to the same data.  That value is likely
+         ! correct for deep convection at gridscales near that of GFS,
+         ! but is questionable in shallow convection, or for scales
+         ! much finer than synoptic scales.
+
+         ! Then again, the assumptions of SAS break down when the
+         ! gridscale is near the convection scale anyway.  In a large
+         ! storm such as a hurricane, there is often no environment to
+         ! detrain into since adjancent gridsquares are also undergoing
+         ! active convection.  Each gridsquare will no longer have many
+         ! updrafts and downdrafts.  At sub-convective timescales, you
+         ! will find unstable columns for many (say, 5 second length)
+         ! timesteps in a real atmosphere during a convection cell's
+         ! lifetime, so forcing it to be neutrally stable is unphysical.
+
+         ! Hence, in scales near the convection scale (cells have
+         ! ~0.5-4km diameter in hurricanes), this parameter is more of a
+         ! tuning parameter to get a scheme that is inappropriate for
+         ! that resolution to do a reasonable job.
+
+         ! Your mileage might vary.
+
+         ! - Sam Trahan
       endif
 
-   IF(run_param) THEN
+      if(present(sas_mass_flux)) then
+         massf=sas_mass_flux
+         ! Use this to reduce the fluxes added by SAS to prevent
+         ! computational instability as a result of large fluxes.
+      else
+         massf=9e9 ! large number to disable check
+      endif
+
+      if(present(shal_pgcon)) then
+         if(shal_pgcon>=0) then
+            shal_pgcon_use  = shal_pgcon
+         else
+            ! shal_pgcon<0 means use deep pgcon
+            shal_pgcon_use  = pgcon_use
+         endif
+      else
+         ! Default: Same as deep convection pgcon
+         shal_pgcon_use  = pgcon_use
+         ! Read the warning above though.  It may be advisable for
+         ! these to be different.  
+      endif
+
+   if_run_param: IF(run_param) THEN
 
       DO J=JTS,JTE
          DO I=ITS,ITE
@@ -332,7 +400,7 @@ CONTAINS
 
 !-------------  J LOOP (OUTER) --------------------------------------------------
 
-   DO J=jts,jte
+   big_outer_j_loop: DO J=jts,jte
 
 ! --------------- compute zi and zl -----------------------------------------
       DO i=its,ite
@@ -359,37 +427,21 @@ CONTAINS
 
 ! --------------- end compute zi and zl -------------------------------------
 
-
-
-!    Based on some important findings from Morris Bender, XKT2 was defined in
-!    terms of random number instead of random number based cloud tops
-!    Also, these random numbers are stored and are changed only once in
-!    approximately 5 minutes interval now. This is gopal's doing for HWRF.
-
-!     call random_number(XKT2)
-
-#if (EM_CORE == 1)
-!    XKT2 was defined in terms of random number instead of random number based cloud tops
-!    ZCX
-     call init_random_seed()
-     call random_number(XKT2)
-#ifdef REGTEST
-! for regtest only
-     xkt2 = 0.1
-#endif
-#endif
-!
-#if (NMM_CORE == 1)
-      DO i=its,ite
-         XKT2(i) = STORE_RAND(i,j)
-      ENDDO
-#endif
-
       DO i=its,ite
         PS(i)=PSFC(i,j)*.001
         RCS(i)=1.
         SLIMSK(i)=ABS(XLAND(i,j)-2.)
       ENDDO
+
+#if (NMM_CORE == 1)
+      if(shalconv_use==1) then
+      DO i=its,ite
+         HPBL(I) = HPBL2D(I,J)          !kwon for shallow convection
+         EVAP(I) = EVAP2D(I,J)          !kwon for shallow convection
+         HEAT(I) = HEAT2D(I,J)          !kwon for shallow convection
+      ENDDO
+      endif
+#endif
 
       DO i=its,ite
         PRSI(i,kts)=PS(i)
@@ -428,15 +480,24 @@ CONTAINS
                   QL,Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,                    &
                   KTOP,KCNV,SLIMSK,DOT,NCLOUD,PGCON_USE)
 
-!      CALL SASCNV(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,                  &
-!                  QL,Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,                    &
-!                  KTOP,KCNV,SLIMSK,DOT,XKT2,NCLOUD) 
-
-!!!   make more like GFDL ... eliminate shallow convection.....
-!!!   CALL SHALCV(IM,IM,KX,DELT,DEL,PRSI,PRSL,PRSLK,KCNV,Q1,T1,DPSHC)
+      if_shallow_conv: if(shalconv_use==1) then
+#if (NMM_CORE == 1)
+         ! NMM calls the new shallow convection developed by J Han
+         ! (Added to WRF by Y.Kwon)
+        call shalcnv(im,im,kx,jcap,delt,del,prsl,ps,phil,ql,        &
+     &               q1,t1,u1,v1,rcs,rn,kbot,ktop,kcnv,slimsk,      &
+     &               dot,ncloud,hpbl,heat,evap,shal_pgcon_use)
+#else
 #if (EM_CORE == 1)
-      CALL SHALCV(IM,IM,KX,DELT,DEL,PRSI,PRSL,PRSLK,KCNV,Q1,T1,DPSHC)
+        ! NOTE: ARW should be able to call the new shalcnv here, but
+        ! they need to add the three new variables, so I'm leaving the
+        ! old shallow convection call here - Sam Trahan
+        CALL OLD_ARW_SHALCV(IM,IM,KX,DELT,DEL,PRSI,PRSL,PRSLK,KCNV,Q1,T1,DPSHC)
+#else
+        ! Shallow convection is untested for other cores.
 #endif
+#endif
+     endif if_shallow_conv
 
       DO I=ITS,ITE
         RAINCV(I,J)=RN(I)*1000./STEPCU
@@ -487,9 +548,9 @@ CONTAINS
         ENDDO
       ENDIF
 
-   ENDDO    ! Outer most J loop
+   ENDDO big_outer_j_loop    ! Outer most J loop
 
-   ENDIF
+   ENDIF if_run_param
 
    END SUBROUTINE CU_SAS
 
@@ -2286,9 +2347,9 @@ CONTAINS
       RETURN
    END SUBROUTINE SASCNV
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! ------------------------------------------------------------------------
 
-      SUBROUTINE SHALCV(IM,IX,KM,DT,DEL,PRSI,PRSL,PRSLK,KUO,Q,T,DPSHC)
+      SUBROUTINE OLD_ARW_SHALCV(IM,IX,KM,DT,DEL,PRSI,PRSL,PRSLK,KUO,Q,T,DPSHC)
 !
       USE MODULE_GFS_MACHINE , ONLY : kind_phys
       USE MODULE_GFS_PHYSCONS, grav => con_g, CP => con_CP, HVAP => con_HVAP &
@@ -2463,7 +2524,8 @@ CONTAINS
       ENDDO
 !-----------------------------------------------------------------------
       RETURN
-      END SUBROUTINE SHALCV
+      END SUBROUTINE OLD_ARW_SHALCV
+
 !-----------------------------------------------------------------------
       SUBROUTINE TRIDI2T3(L,N,CL,CM,CU,R1,R2,AU,A1,A2)
 !yt      INCLUDE DBTRIDI2;
@@ -4411,104 +4473,93 @@ CONTAINS
       return
       end subroutine sascnvn      
 
-      subroutine shalcnv(im,ix,km,jcap,delt,del,prsl,ps,phil,ql,    &
-     &     q1,t1,u1,v1,rcs,rn,kbot,ktop,kcnv,slimsk,                &
-     &     dot,ncloud,hpbl,sflx,pgcon)
-!     &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf)
-!    &     dot,ncloud,hpbl,heat,evap,ud_mf,dt_mf,me)
+      subroutine shalcnv(im,ix,km,jcap,delt,del,prsl,ps,phil,ql,   &
+     &     q1,t1,u1,v1,rcs,rn,kbot,ktop,kcnv,slimsk,               &
+     &     dot,ncloud,hpbl,heat,evap,pgcon)
 !
-      USE MODULE_GFS_MACHINE, ONLY : kind_phys
-      USE MODULE_GFS_FUNCPHYS , ONLY : fpvs
-      USE MODULE_GFS_PHYSCONS, grav => con_g, cp => con_cp           &
-     &,             hvap => con_hvap                                 &
-     &,             rv => con_rv, fv => con_fvirt, t0c => con_t0c    &
-     &,             rd => con_rd, cvap => con_cvap, cliq => con_cliq &
+      use MODULE_GFS_machine , only : kind_phys
+      use MODULE_GFS_funcphys , only : fpvs
+      use MODULE_GFS_physcons, grav => con_g, cp => con_cp, hvap => con_hvap         &
+     &,             rv => con_rv, fv => con_fvirt, t0c => con_t0c         &
+     &,             rd => con_rd, cvap => con_cvap, cliq => con_cliq      &
      &,             eps => con_eps, epsm1 => con_epsm1
-
-!      use machine , only : kind_phys
-!      use funcphys , only : fpvs
-!      use physcons, grav => con_g, cp => con_cp, hvap => con_hvap      &
-!     &,             rv => con_rv, fv => con_fvirt, t0c => con_t0c      &
-!     &,             rd => con_rd, cvap => con_cvap, cliq => con_cliq   &
-!     &,             eps => con_eps, epsm1 => con_epsm1
       implicit none
 !
-      integer            im, ix,  km, jcap, ncloud,                &
-     &                   kbot(im), ktop(im), kcnv(im) 
-!    &,                  me
+      integer            im, ix,  km, jcap, ncloud,                       &
+     &                   kbot(im), ktop(im), kcnv(im)                   
       real(kind=kind_phys) delt
-      real(kind=kind_phys) ps(im),     del(ix,km),  prsl(ix,km),   &
-     &                     ql(ix,km,2),q1(ix,km),   t1(ix,km),     &
-     &                     u1(ix,km),  v1(ix,km),   rcs(im),       &
-     &                     rn(im),     slimsk(im),                 &
-     &                     dot(ix,km), phil(ix,km), hpbl(im),      & 
-     &                     heat(im),   evap(im)
-! hchuang code change mass flux output
+      real(kind=kind_phys) ps(im),     del(ix,km),  prsl(ix,km),          &
+     &                     ql(ix,km,2),q1(ix,km),   t1(ix,km),            &
+     &                     u1(ix,km),  v1(ix,km),   rcs(im),              &
+     &                     rn(im),     slimsk(im),                        &
+     &                     dot(ix,km), phil(ix,km), hpbl(im),             &
+     &                     heat(im),   evap(im)                           
 !     &,                    ud_mf(im,km),dt_mf(im,km)
+
+      real  ud_mf(im,km),dt_mf(im,km)
 !
       integer              i,j,indx, jmn, k, kk, latd, lond, km1
       integer              kpbl(im)
 !
-      real(kind=kind_phys) c0,      cpoel,   dellat,  delta,       &
-     &                     desdt,   deta,    detad,   dg,          &
-     &                     dh,      dhh,     dlnsig,  dp,          &
-     &                     dq,      dqsdp,   dqsdt,   dt,          &
-     &                     dt2,     dtmax,   dtmin,   dv1h,        &
-     &                     dv1q,    dv2h,    dv2q,    dv1u,        &
-     &                     dv1v,    dv2u,    dv2v,    dv3q,        &
-     &                     dv3h,    dv3u,    dv3v,    clam,        &
-     &                     dz,      dz1,     e1,                   &
-     &                     el2orc,  elocp,   aafac,                &
-     &                     es,      etah,    h1,      dthk,        &
-     &                     evef,    evfact,  evfactl, fact1,       &
-     &                     fact2,   factor,  fjcap,                &
-     &                     g,       gamma,   pprime,  betaw,       &
-     &                     qlk,     qrch,    qs,      c1,          &
-     &                     rain,    rfact,   shear,   tem1,        &
-     &                     tem2,    terr,    val,     val1,        &
-     &                     val2,    w1,      w1l,     w1s,         &
-     &                     w2,      w2l,     w2s,     w3,          &
-     &                     w3l,     w3s,     w4,      w4l,         &
-     &                     w4s,     tem,     ptem,    ptem1
-     real(kind=kind_phys), intent(in) :: pgcon
+      real(kind=kind_phys) c0,      cpoel,   dellat,  delta,        &
+     &                     desdt,   deta,    detad,   dg,           &
+     &                     dh,      dhh,     dlnsig,  dp,           &
+     &                     dq,      dqsdp,   dqsdt,   dt,           &
+     &                     dt2,     dtmax,   dtmin,   dv1h,         &
+     &                     dv1q,    dv2h,    dv2q,    dv1u,         &
+     &                     dv1v,    dv2u,    dv2v,    dv3q,         &
+     &                     dv3h,    dv3u,    dv3v,    clam,         &
+     &                     dz,      dz1,     e1,                    &
+     &                     el2orc,  elocp,   aafac,                 &
+     &                     es,      etah,    h1,      dthk,         &
+     &                     evef,    evfact,  evfactl, fact1,        &
+     &                     fact2,   factor,  fjcap,                 &
+     &                     g,       gamma,   pprime,  betaw,        &
+     &                     qlk,     qrch,    qs,      c1,           &
+     &                     rain,    rfact,   shear,   tem1,         &
+     &                     tem2,    terr,    val,     val1,         &
+     &                     val2,    w1,      w1l,     w1s,          &
+     &                     w2,      w2l,     w2s,     w3,           &
+     &                     w3l,     w3s,     w4,      w4l,          &
+     &                     w4s,     tem,     ptem,    ptem1,        &
+     &                     pgcon
 !
-      integer              kb(im), kbcon(im), kbcon1(im),          &
-     &                     ktcon(im), ktcon1(im),                  &
+      integer              kb(im), kbcon(im), kbcon1(im),           &
+     &                     ktcon(im), ktcon1(im),                   &
      &                     kbm(im), kmax(im)
 !
-      real(kind=kind_phys) aa1(im),                                &
-     &                     delhbar(im), delq(im),   delq2(im),     &
-     &                     delqbar(im), delqev(im), deltbar(im),   &
-     &                     deltv(im),   edt(im),                   &
-     &                     wstar(im),   sflx(im),                  &
-     &                     pdot(im),    po(im,km),                 &
-     &                     qcond(im),   qevap(im),  hmax(im),      &
-     &                     rntot(im),   vshear(im),                &
-     &                     xlamud(im),  xmb(im),    xmbmax(im),    &
+      real(kind=kind_phys) aa1(im),                                 &
+     &                     delhbar(im), delq(im),   delq2(im),      &
+     &                     delqbar(im), delqev(im), deltbar(im),    &
+     &                     deltv(im),   edt(im),                    &
+     &                     wstar(im),   sflx(im),                   &
+     &                     pdot(im),    po(im,km),                  &
+     &                     qcond(im),   qevap(im),  hmax(im),       &
+     &                     rntot(im),   vshear(im),                 &
+     &                     xlamud(im),  xmb(im),    xmbmax(im),     &
      &                     delubar(im), delvbar(im)
 !c
       real(kind=kind_phys) cincr, cincrmax, cincrmin
 !cc
 !c  physical parameters
       parameter(g=grav)
-      parameter(cpoel=cp/hvap,elocp=hvap/cp,                       &
+      parameter(cpoel=cp/hvap,elocp=hvap/cp,                            &
      &          el2orc=hvap*hvap/(rv*cp))
       parameter(terr=0.,c0=.002,c1=5.e-4,delta=fv)
       parameter(fact1=(cvap-cliq)/rv,fact2=hvap/rv-fact1*t0c)
       parameter(cincrmax=180.,cincrmin=120.,dthk=25.)
       parameter(h1=0.33333333)
 !c  local variables and arrays
-      real(kind=kind_phys) pfld(im,km),    to(im,km),     qo(im,km),   &
+      real(kind=kind_phys) pfld(im,km),    to(im,km),     qo(im,km),    &
      &                     uo(im,km),      vo(im,km),     qeso(im,km)
 !c  cloud water
-!     real(kind=kind_phys) qlko_ktcon(im), dellal(im,km), tvo(im,km),
-      real(kind=kind_phys) qlko_ktcon(im), dellal(im,km),                &
-     &                     dbyo(im,km),    zo(im,km),     xlamue(im,km), &
-     &                     heo(im,km),     heso(im,km),                  &
-     &                     dellah(im,km),  dellaq(im,km),                &
-     &                     dellau(im,km),  dellav(im,km), hcko(im,km),   &
-     &                     ucko(im,km),    vcko(im,km),   qcko(im,km),   &
-     &                     eta(im,km),     zi(im,km),     pwo(im,km),    &
+      real(kind=kind_phys) qlko_ktcon(im), dellal(im,km),                   &
+     &                     dbyo(im,km),    zo(im,km),     xlamue(im,km),    &
+     &                     heo(im,km),     heso(im,km),                     &
+     &                     dellah(im,km),  dellaq(im,km),                   &
+     &                     dellau(im,km),  dellav(im,km), hcko(im,km),      &
+     &                     ucko(im,km),    vcko(im,km),   qcko(im,km),      &
+     &                     eta(im,km),     zi(im,km),     pwo(im,km),       &
      &                     tx1(im)
 !
       logical totflg, cnvflg(im), flg(im)
@@ -4522,9 +4573,9 @@ CONTAINS
 !c
 !c  compute surface buoyancy flux
 !c
-!      do i=1,im
-!        sflx(i) = heat(i)+fv*t1(i,1)*evap(i)
-!      enddo
+      do i=1,im
+        sflx(i) = heat(i)+fv*t1(i,1)*evap(i)
+      enddo
 !c
 !c  initialize arrays
 !c
@@ -4547,12 +4598,12 @@ CONTAINS
         vshear(i) = 0.
       enddo
 ! hchuang code change
-!      do k = 1, km
-!        do i = 1, im
-!          ud_mf(i,k) = 0.
-!          dt_mf(i,k) = 0.
-!        enddo
-!      enddo
+      do k = 1, km
+        do i = 1, im
+          ud_mf(i,k) = 0.
+          dt_mf(i,k) = 0.
+        enddo
+      enddo
 !!
       totflg = .true.
       do i=1,im
@@ -4605,7 +4656,7 @@ CONTAINS
         kbm(i)   = min(kbm(i),kmax(i))
       enddo
 !c
-!c  hydrostatic height assume zero terr and compute
+!!c  hydrostatic height assume zero terr and compute
 !c  updraft entrainment rate as an inverse function of height
 !c
       do k = 1, km
@@ -4752,9 +4803,9 @@ CONTAINS
             val2      =           1.e-10
             qo(i,k)   = max(qo(i,k), val2 )
 !           qo(i,k)   = min(qo(i,k),qeso(i,k))
-            heo(i,k)  = .5 * g * (zo(i,k) + zo(i,k+1)) +            &
+            heo(i,k)  = .5 * g * (zo(i,k) + zo(i,k+1)) +                  &
      &                  cp * to(i,k) + hvap * qo(i,k)
-            heso(i,k) = .5 * g * (zo(i,k) + zo(i,k+1)) +            &
+            heso(i,k) = .5 * g * (zo(i,k) + zo(i,k+1)) +                  &
      &                  cp * to(i,k) + hvap * qeso(i,k)
             uo(i,k)   = .5 * (uo(i,k) + uo(i,k+1))
             vo(i,k)   = .5 * (vo(i,k) + vo(i,k+1))
@@ -4899,11 +4950,11 @@ CONTAINS
               factor = 1. + tem - tem1
               ptem = 0.5 * tem + pgcon
               ptem1= 0.5 * tem - pgcon
-              hcko(i,k) = ((1.-tem1)*hcko(i,k-1)+tem*0.5*         &
+              hcko(i,k) = ((1.-tem1)*hcko(i,k-1)+tem*0.5*                        &
      &                     (heo(i,k)+heo(i,k-1)))/factor
-              ucko(i,k) = ((1.-tem1)*ucko(i,k-1)+ptem*uo(i,k)     &
+              ucko(i,k) = ((1.-tem1)*ucko(i,k-1)+ptem*uo(i,k)                    &
      &                     +ptem1*uo(i,k-1))/factor
-              vcko(i,k) = ((1.-tem1)*vcko(i,k-1)+ptem*vo(i,k)     &
+              vcko(i,k) = ((1.-tem1)*vcko(i,k-1)+ptem*vo(i,k)                    &
      &                     +ptem1*vo(i,k-1))/factor
               dbyo(i,k) = hcko(i,k) - heso(i,k)
             endif
@@ -4985,7 +5036,6 @@ CONTAINS
 !c
 !c  specify upper limit of mass flux at cloud base
 !c
-      val1=1.0        ! qingfu test
       do i = 1, im
         if(cnvflg(i)) then
 !         xmbmax(i) = .1
@@ -4993,7 +5043,6 @@ CONTAINS
           k = kbcon(i)
           dp = 1000. * del(i,k)
           xmbmax(i) = dp / (g * dt2)
-          xmbmax(i) = min(val1,xmbmax(i))      ! qingfu test
 !
 !         tem = dp / (g * dt2)
 !         xmbmax(i) = min(tem, xmbmax(i))
@@ -5014,13 +5063,13 @@ CONTAINS
             if(k.gt.kb(i).and.k.lt.ktcon(i)) then
               dz    = zi(i,k) - zi(i,k-1)
               gamma = el2orc * qeso(i,k) / (to(i,k)**2)
-              qrch = qeso(i,k)                      &
+              qrch = qeso(i,k)                                      &
      &             + gamma * dbyo(i,k) / (hvap * (1. + gamma))
 !cj
               tem  = 0.5 * (xlamue(i,k)+xlamue(i,k-1)) * dz
               tem1 = 0.5 * xlamud(i) * dz
               factor = 1. + tem - tem1
-              qcko(i,k) = ((1.-tem1)*qcko(i,k-1)+tem*0.5*     &
+              qcko(i,k) = ((1.-tem1)*qcko(i,k-1)+tem*0.5*           &
      &                     (qo(i,k)+qo(i,k-1)))/factor
 !cj
               dq = eta(i,k) * (qcko(i,k) - qrch)
@@ -5055,15 +5104,15 @@ CONTAINS
             if(k.ge.kbcon(i).and.k.lt.ktcon(i)) then
               dz1 = zo(i,k+1) - zo(i,k)
               gamma = el2orc * qeso(i,k) / (to(i,k)**2)
-              rfact =  1. + delta * cp * gamma               &
+              rfact =  1. + delta * cp * gamma                 &
      &                 * to(i,k) / hvap
-              aa1(i) = aa1(i) +                              &
-     &                 dz1 * (g / (cp * to(i,k)))            &
-     &                 * dbyo(i,k) / (1. + gamma)            &
+              aa1(i) = aa1(i) +                                &
+     &                 dz1 * (g / (cp * to(i,k)))              &
+     &                 * dbyo(i,k) / (1. + gamma)              &
      &                 * rfact
               val = 0.
-              aa1(i)=aa1(i)+                                 &
-     &                 dz1 * g * delta *                     &
+              aa1(i)=aa1(i)+                                   &
+     &                 dz1 * g * delta *                       &
      &                 max(val,(qeso(i,k) - qo(i,k)))
             endif
           endif
@@ -5101,11 +5150,11 @@ CONTAINS
             if(k.ge.ktcon(i).and.k.lt.kbm(i)) then
               dz1 = zo(i,k+1) - zo(i,k)
               gamma = el2orc * qeso(i,k) / (to(i,k)**2)
-              rfact =  1. + delta * cp * gamma           &
+              rfact =  1. + delta * cp * gamma                            &
      &                 * to(i,k) / hvap
-              aa1(i) = aa1(i) +                          &
-     &                 dz1 * (g / (cp * to(i,k)))        &
-     &                 * dbyo(i,k) / (1. + gamma)        &
+              aa1(i) = aa1(i) +                                           &
+     &                 dz1 * (g / (cp * to(i,k)))                         &
+     &                 * dbyo(i,k) / (1. + gamma)                         &
      &                 * rfact
               if(aa1(i).lt.0.) then
                 ktcon1(i) = k
@@ -5125,13 +5174,13 @@ CONTAINS
             if(k.ge.ktcon(i).and.k.lt.ktcon1(i)) then
               dz    = zi(i,k) - zi(i,k-1)
               gamma = el2orc * qeso(i,k) / (to(i,k)**2)
-              qrch = qeso(i,k)                            &
+              qrch = qeso(i,k)                                            &
      &             + gamma * dbyo(i,k) / (hvap * (1. + gamma))
 !cj
               tem  = 0.5 * (xlamue(i,k)+xlamue(i,k-1)) * dz
               tem1 = 0.5 * xlamud(i) * dz
               factor = 1. + tem - tem1
-              qcko(i,k) = ((1.-tem1)*qcko(i,k-1)+tem*0.5*    &
+              qcko(i,k) = ((1.-tem1)*qcko(i,k-1)+tem*0.5*                  &
      &                     (qo(i,k)+qo(i,k-1)))/factor
 !cj
               dq = eta(i,k) * (qcko(i,k) - qrch)
@@ -5175,7 +5224,7 @@ CONTAINS
         if(cnvflg(i)) then
           k = ktcon(i) - 1
           gamma = el2orc * qeso(i,k) / (to(i,k)**2)
-          qrch = qeso(i,k)                                    &
+          qrch = qeso(i,k)                                             &
      &         + gamma * dbyo(i,k) / (hvap * (1. + gamma))
           dq = qcko(i,k) - qrch
 !c
@@ -5188,7 +5237,7 @@ CONTAINS
         endif
       enddo
       endif
-!c
+!!c
 !c--- compute precipitation efficiency in terms of windshear
 !c
       do i = 1, im
@@ -5200,7 +5249,7 @@ CONTAINS
         do i = 1, im
           if (cnvflg(i)) then
             if(k.gt.kb(i).and.k.le.ktcon(i)) then
-              shear= sqrt((uo(i,k)-uo(i,k-1)) ** 2          &
+              shear= sqrt((uo(i,k)-uo(i,k-1)) ** 2                       &
      &                  + (vo(i,k)-vo(i,k-1)) ** 2)
               vshear(i) = vshear(i) + shear
             endif
@@ -5210,7 +5259,7 @@ CONTAINS
       do i = 1, im
         if(cnvflg(i)) then
           vshear(i) = 1.e3 * vshear(i) / (zi(i,ktcon(i))-zi(i,kb(i)))
-          e1=1.591-.639*vshear(i)                           &
+          e1=1.591-.639*vshear(i)                                               &
      &       +.0953*(vshear(i)**2)-.00496*(vshear(i)**3)
           edt(i)=1.-e1
           val =         .9
@@ -5259,30 +5308,30 @@ CONTAINS
               tem  = 0.5 * (xlamue(i,k)+xlamue(i,k-1))
               tem1 = xlamud(i)
 !cj
-              dellah(i,k) = dellah(i,k) +             &
-     &     ( eta(i,k)*dv1h - eta(i,k-1)*dv3h          &
-     &    -  tem*eta(i,k-1)*dv2h*dz                   &
-     &    +  tem1*eta(i,k-1)*.5*(hcko(i,k)+hcko(i,k-1))*dz   &
+              dellah(i,k) = dellah(i,k) +                        &
+     &     ( eta(i,k)*dv1h - eta(i,k-1)*dv3h                     &
+     &    -  tem*eta(i,k-1)*dv2h*dz                              &
+     &    +  tem1*eta(i,k-1)*.5*(hcko(i,k)+hcko(i,k-1))*dz       &
      &         ) *g/dp
 !cj
-              dellaq(i,k) = dellaq(i,k) +             &
-     &     ( eta(i,k)*dv1q - eta(i,k-1)*dv3q          &
-     &    -  tem*eta(i,k-1)*dv2q*dz                   &
-     &    +  tem1*eta(i,k-1)*.5*(qcko(i,k)+qcko(i,k-1))*dz   &
+              dellaq(i,k) = dellaq(i,k) +                        &
+     &     ( eta(i,k)*dv1q - eta(i,k-1)*dv3q                     &
+     &    -  tem*eta(i,k-1)*dv2q*dz                              &
+     &    +  tem1*eta(i,k-1)*.5*(qcko(i,k)+qcko(i,k-1))*dz       &
      &         ) *g/dp
 !cj
-              dellau(i,k) = dellau(i,k) +             &
-     &     ( eta(i,k)*dv1u - eta(i,k-1)*dv3u          &
-     &    -  tem*eta(i,k-1)*dv2u*dz                   &
-     &    +  tem1*eta(i,k-1)*.5*(ucko(i,k)+ucko(i,k-1))*dz   &
-     &    -  pgcon*eta(i,k-1)*(dv1u-dv3u)             &
+              dellau(i,k) = dellau(i,k) +                        &
+     &     ( eta(i,k)*dv1u - eta(i,k-1)*dv3u                     &
+     &    -  tem*eta(i,k-1)*dv2u*dz                              &
+     &    +  tem1*eta(i,k-1)*.5*(ucko(i,k)+ucko(i,k-1))*dz       &
+     &    -  pgcon*eta(i,k-1)*(dv1u-dv3u)                        &
      &         ) *g/dp
 !cj
-              dellav(i,k) = dellav(i,k) +             &
-     &     ( eta(i,k)*dv1v - eta(i,k-1)*dv3v          &
-     &    -  tem*eta(i,k-1)*dv2v*dz                   &
-     &    +  tem1*eta(i,k-1)*.5*(vcko(i,k)+vcko(i,k-1))*dz  &
-     &    -  pgcon*eta(i,k-1)*(dv1v-dv3v)             &
+              dellav(i,k) = dellav(i,k) +                        &
+     &     ( eta(i,k)*dv1v - eta(i,k-1)*dv3v                     &
+     &    -  tem*eta(i,k-1)*dv2v*dz                              &
+     &    +  tem1*eta(i,k-1)*.5*(vcko(i,k)+vcko(i,k-1))*dz       &
+     &    -  pgcon*eta(i,k-1)*(dv1v-dv3v)                        &
      &         ) *g/dp
 !cj
             endif
@@ -5297,21 +5346,21 @@ CONTAINS
           indx = ktcon(i)
           dp = 1000. * del(i,indx)
           dv1h = heo(i,indx-1)
-          dellah(i,indx) = eta(i,indx-1) *           &
+          dellah(i,indx) = eta(i,indx-1) *                      &
      &                     (hcko(i,indx-1) - dv1h) * g / dp
           dv1q = qo(i,indx-1)
-          dellaq(i,indx) = eta(i,indx-1) *           &
+          dellaq(i,indx) = eta(i,indx-1) *                      &
      &                     (qcko(i,indx-1) - dv1q) * g / dp
           dv1u = uo(i,indx-1)
-          dellau(i,indx) = eta(i,indx-1) *           &
+          dellau(i,indx) = eta(i,indx-1) *                      &
      &                     (ucko(i,indx-1) - dv1u) * g / dp
           dv1v = vo(i,indx-1)
-          dellav(i,indx) = eta(i,indx-1) *           &
+          dellav(i,indx) = eta(i,indx-1) *                      &
      &                     (vcko(i,indx-1) - dv1v) * g / dp
 !c
 !c  cloud water
 !c
-          dellal(i,indx) = eta(i,indx-1) *           &
+          dellal(i,indx) = eta(i,indx-1) *                      &
      &                     qlko_ktcon(i) * g / dp
         endif
       enddo
@@ -5420,7 +5469,7 @@ CONTAINS
               if(slimsk(i).eq.1.) evef=edt(i) * evfactl
 !             if(slimsk(i).eq.1.) evef=.07
 !c             if(slimsk(i).ne.1.) evef = 0.
-              qcond(i) = evef * (q1(i,k) - qeso(i,k))           &
+              qcond(i) = evef * (q1(i,k) - qeso(i,k))                            &
      &                 / (1. + el2orc * qeso(i,k) / t1(i,k)**2)
               dp = 1000. * del(i,k)
               if(rn(i).gt.0..and.qcond(i).lt.0.) then
@@ -5428,7 +5477,7 @@ CONTAINS
                 qevap(i) = min(qevap(i), rn(i)*1000.*g/dp)
                 delq2(i) = delqev(i) + .001 * qevap(i) * dp / g
               endif
-              if(rn(i).gt.0..and.qcond(i).lt.0..and.           &
+              if(rn(i).gt.0..and.qcond(i).lt.0..and.                            &
      &           delq2(i).gt.rntot(i)) then
                 qevap(i) = 1000.* g * (rntot(i) - delqev(i)) / dp
                 flg(i) = .false.
@@ -5487,6 +5536,7 @@ CONTAINS
           if (cnvflg(i)) then
             if (k.gt.kb(i).and.k.le.ktcon(i)) then
               tem  = dellal(i,k) * xmb(i) * dt2
+!             tem1 = max(0.0,  min(1.0,  (tcr-t1(i,k))*tcrf))
               tem1 = max(val2, min(val1, (tcr-t1(i,k))*tcrf))
               if (ql(i,k,2) .gt. -999.0) then
                 ql(i,k,1) = ql(i,k,1) + tem * tem1            ! ice
@@ -5503,40 +5553,23 @@ CONTAINS
 !
 ! hchuang code change
 !
-!      do k = 1, km
-!        do i = 1, im
-!          if(cnvflg(i)) then
-!            if(k.ge.kb(i) .and. k.lt.ktop(i)) then
-!              ud_mf(i,k) = eta(i,k) * xmb(i) * dt2
-!            endif
-!          endif
-!        enddo
-!      enddo
-!      do i = 1, im
-!        if(cnvflg(i)) then
-!           k = ktop(i)-1
-!           dt_mf(i,k) = ud_mf(i,k)
-!        endif
-!      enddo
+      do k = 1, km
+        do i = 1, im
+          if(cnvflg(i)) then
+            if(k.ge.kb(i) .and. k.lt.ktop(i)) then
+              ud_mf(i,k) = eta(i,k) * xmb(i) * dt2
+            endif
+          endif
+        enddo
+      enddo
+      do i = 1, im
+        if(cnvflg(i)) then
+           k = ktop(i)-1
+           dt_mf(i,k) = ud_mf(i,k)
+        endif
+      enddo
 !!
       return
-      end subroutine shalcnv
-#if (EM_CORE == 1)
-!   random seeds - ZCX
-      SUBROUTINE init_random_seed()
-            INTEGER :: i, n, clock
-            INTEGER, DIMENSION(:), ALLOCATABLE :: seed
-
-            CALL RANDOM_SEED(size = n)
-            ALLOCATE(seed(n))
-
-            CALL SYSTEM_CLOCK(COUNT=clock)
-
-            seed = clock + 37 * (/ (i - 1, i = 1, n) /)
-            CALL RANDOM_SEED(PUT = seed)
-
-            DEALLOCATE(seed)
-      END SUBROUTINE
-#endif
+    end subroutine shalcnv
       END MODULE module_cu_sas
 

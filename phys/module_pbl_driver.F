@@ -32,8 +32,9 @@ CONTAINS
               ! 
                  ,qke,tsq,qsq,cov,rmol,ch,qcg,grav_settling        &
 #if (NMM_CORE==1)
-                 ,DISHEAT                                          &
+                 ,DISHEAT,RTHRATEN                                 &
 #endif
+                 ,HPBL2D, EVAP2D, HEAT2D                           &   !Kwon FOR SHAL. CON.
 #if (HWRF==1)
                  ,gfs_alpha                                        &
 #endif
@@ -79,14 +80,14 @@ CONTAINS
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
-                   TEMFPBLSCHEME, &
+                   TEMFPBLSCHEME,GFS2011SCHEME, &
                    p_qi,param_first_scalar 
    USE module_wind_generic, ONLY : windspec
 #else
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
                    , QNSEPBLSCHEME, p_qi,param_first_scalar &
-                   , TEMFPBLSCHEME                          &
+                   , TEMFPBLSCHEME,GFS2011SCHEME            &
                    , MYJSFCSCHEME
 #endif
 
@@ -99,6 +100,7 @@ CONTAINS
    USE module_bl_ysu
    USE module_bl_mrf
    USE module_bl_gfs
+   USE module_bl_gfs2011, only: bl_gfs2011
    USE module_bl_acm
    USE module_bl_gwdo
    USE module_bl_myjurb
@@ -293,7 +295,11 @@ CONTAINS
    LOGICAL,      INTENT(IN   )    ::   warm_rain
 #if (NMM_CORE==1)
    LOGICAL,      INTENT(IN   )    ::   DISHEAT ! (for HWRF)
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN   )   ::   RTHRATEN !Kwon for GFS PBL
 #endif
+   REAL, DIMENSION( ims:ime , jms:jme ),                         &
+                    INTENT(OUT) ::  HPBL2D, EVAP2D, HEAT2D                 !Kwon for Shallow Convection
+
 #if defined(HWRF)
    REAL,       INTENT(IN)         ::   gfs_alpha
 #endif
@@ -1031,6 +1037,49 @@ CONTAINS
 #if defined(HWRF)
               ,ALPHA=gfs_alpha                                      &
 #endif
+              ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar          &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+                                                                    )
+           ELSE
+               WRITE ( message , FMT = '(A,4(L1,1X))' )             &
+                 'present: '//                                      &
+                 'qv_curr, '//                                      &
+                 'qc_curr, '//                                      &
+                 'rqvblten, '//                                     &
+                 'rqcblten = ',                                     &
+                  PRESENT( qv_curr ) ,                              &
+                  PRESENT( qc_curr ) ,                              &
+                  PRESENT( rqvblten ) ,                             &
+                  PRESENT( rqcblten )
+               CALL wrf_debug(0,message)
+               CALL wrf_error_fatal('Lack arguments to call GFS pbl')
+           ENDIF
+
+      CASE (GFS2011SCHEME)
+           IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
+                PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
+                                                        .TRUE.  ) THEN
+             CALL wrf_debug(100,'in GFS')
+             CALL bl_gfs2011(                                       &
+               U3D=u_phytmp,V3D=v_phytmp                            &
+              ,TH3D=th_phy,T3D=t_phy                                &
+              ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
+              ,P3D=p_phy,PI3D=pi_phy                                &
+              ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten    &
+              ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                  &
+              ,RQIBLTEN=rqiblten                                    &
+              ,CP=cp,G=g,ROVCP=rcp,R=r_d,ROVG=rovg                  &
+              ,DZ8W=dz8w,z=z,PSFC=psfc                              &
+              ,UST=ust,PBL=pblh,PSIM=psim,PSIH=psih                 &
+              ,HFX=hfx,QFX=qfx,TSK=tskold,GZ1OZ0=gz1oz0             &
+              ,WSPD=wspd,BR=br                                      &
+              ,DT=dtbl,KPBL2D=kpbl,EP1=ep_1,KARMAN=karman           &
+#if (NMM_CORE==1)
+              ,DISHEAT=DISHEAT,RTHRATEN=RTHRATEN                    &
+#endif
+              ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D          &   !Kwon add FOR SHAL. CON.
               ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &

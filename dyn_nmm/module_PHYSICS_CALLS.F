@@ -1893,8 +1893,6 @@
 #if (NMM_CORE==1)    
      &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand               &                  
 #endif
-     &                 ,PGCON                                           &
-     &                 ,shalconv,shal_pgcon                             & ! shallow conv
      &                 ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon S&P
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
      &                 ,GRID,CONFIG_FLAGS                               &
@@ -1935,8 +1933,6 @@
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
      &                     ,N_MOIST,NCNVC,NTSD,NRADS,NRADL
 !
-      REAL, INTENT(IN) :: PGCON,sas_mass_flux,shal_pgcon
-      INTEGER, INTENT(IN) :: shalconv
       INTEGER, DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: LPBL
@@ -2364,8 +2360,10 @@
                        ,store_rand=store_rand                           &
 #endif
      &                 ,HPBL2D=HPBL2D,EVAP2D=EVAP2D,HEAT2D=HEAT2D       &     !Kwon S&P
-     &                 ,pgcon=pgcon,sas_mass_flux=sas_mass_flux         &
-     &                 ,shalconv=shalconv,shal_pgcon=shal_pgcon         &
+     &                 ,pgcon=config_flags%sas_pgcon                    &
+     &                 ,sas_mass_flux=config_flags%sas_mass_flux        &
+     &                 ,shalconv=config_flags%sas_shal_conv             &
+     &                 ,shal_pgcon=config_flags%sas_shal_pgcon          &
                   ! Selection argument
      &                 ,CU_PHYSICS=CONFIG_FLAGS%CU_PHYSICS              &
                   ! Moisture tracer arguments

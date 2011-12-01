@@ -14,7 +14,7 @@ CONTAINS
 #if (NMM_CORE == 1)
                  MOMMIX, & ! gopal's doing
 #endif
-                 PGCON,                                             &
+                 PGCON,sas_mass_flux,                               &
                  shalconv,shal_pgcon,                               &
                  HPBL2D,EVAP2D,HEAT2D,                              & !Kwon for shallow convection
                  P_QI,P_FIRST_SCALAR,                               & 

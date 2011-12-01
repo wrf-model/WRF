@@ -312,6 +312,8 @@ state  real   mixht     ij    dyn_nmm   1    -     rh        "MIXHT"            
 state  real   ustar     ij    dyn_nmm   1    -     irhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "USTAR"    "Friction velocity"                    "m s-1"
 state  real   z0        ij    dyn_nmm   1    -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "Z0"       "Roughness height"                     "m"
 state  real   hpbl2d    ij    dyn_nmm   1    -     irh        "HPBL2D"     "HEIGHT OF PBL from new2010 GFS pbl"                       "m"
+state  real   heat2d    ij    dyn_nmm   1    -     irh        "HEAT2D"     "" ""
+state  real   evap2d    ij    dyn_nmm   1    -     irh        "EVAP2D"     "" ""
 state  real   z0base    ij    dyn_nmm   1    -     ir       "Z0BASE"   "Base roughness height"                "m"
 state  real   ths       ij    dyn_nmm   1    -     irhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "THS"      "Surface potential temperature"        "K"
 state  real   mavail    ij    dyn_nmm   1    -     i
@@ -1250,7 +1252,7 @@ package   pxlsmscheme    sf_surface_physics==7       -             -
 package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             -
 package   gfsscheme      bl_pbl_physics==3           -             -
-package   gfs2011scheme  bl_pbl_physics==83          -             state:hpbl2d
+package   gfs2011scheme  bl_pbl_physics==83          -             state:hpbl2d,heat2d,evap2d
 package   qnsepblscheme  bl_pbl_physics==4           -             -
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             - 
@@ -1261,7 +1263,7 @@ package   temfpblscheme  bl_pbl_physics==10          -             -
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -
 package   gdscheme       cu_physics==3               -             -
-package   sasscheme      cu_physics==84              -             -
+package   sasscheme      cu_physics==84              -             state:hpbl2d,heat2d,evap2d
 package   osasscheme     cu_physics==4               -             state:randstate1,randstate2,randstate3,randstate4,random
 package   g3scheme       cu_physics==5               -             -
 package   tiedtkescheme  cu_physics==6               -             -

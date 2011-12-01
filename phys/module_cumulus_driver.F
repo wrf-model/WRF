@@ -48,7 +48,7 @@ CONTAINS
                      ,zmicuu, zmicud, zmicvu, zmicvd, zmdice, zmdliq  &
                      ,k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow &
                  ! Optional arguments for SAS scheme
-                     ,pgcon                                           &
+                     ,pgcon,sas_mass_flux                             &
                      ,shalconv,shal_pgcon                             &
                      ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon for SAS2010 shallow convection
                  ! Optional arguments for NSAS scheme

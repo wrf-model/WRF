@@ -478,7 +478,7 @@ CONTAINS
 
       CALL SASCNVN(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,                  &
                   QL,Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,                    &
-                  KTOP,KCNV,SLIMSK,DOT,NCLOUD,PGCON_USE)
+                  KTOP,KCNV,SLIMSK,DOT,NCLOUD,PGCON_USE,massf)
 
       if_shallow_conv: if(shalconv_use==1) then
 #if (NMM_CORE == 1)
@@ -2653,7 +2653,7 @@ CONTAINS
 
       subroutine sascnvn(im,ix,km,jcap,delt,del,prsl,ps,phil,ql,   & 
      &     q1,t1,u1,v1,rcs,cldwrk,rn,kbot,ktop,kcnv,slimsk,        &
-     &     dot,ncloud,pgcon)                         
+     &     dot,ncloud,pgcon,sas_mass_flux)                         
 !     &     dot,ncloud,ud_mf,dd_mf,dt_mf)                         
 !    &     dot,ncloud,ud_mf,dd_mf,dt_mf,me)
 !
@@ -2672,7 +2672,7 @@ CONTAINS
       integer            im, ix,  km, jcap, ncloud,                &
      &                   kbot(im), ktop(im), kcnv(im) 
 !    &,                  me
-      real(kind=kind_phys) delt
+      real(kind=kind_phys) delt,sas_mass_flux
       real(kind=kind_phys) ps(im),     del(ix,km),  prsl(ix,km),   &
      &                     ql(ix,km,2),q1(ix,km),   t1(ix,km),     &
      &                     u1(ix,km),  v1(ix,km),   rcs(im),       &
@@ -3325,9 +3325,6 @@ CONTAINS
 !c
 !c  specify upper limit of mass flux at cloud base
 !c
-!      val1 = 0.5        ! qingfu test
-!      val1 = 0.2        ! qingfu test  
-!      val1 = 0.1        ! qingfu test
       do i = 1, im
         if(cnvflg(i)) then
 !         xmbmax(i) = .1
@@ -3335,7 +3332,7 @@ CONTAINS
           k = kbcon(i)
           dp = 1000. * del(i,k)
           xmbmax(i) = dp / (g * dt2)
-!          xmbmax(i) = min(val1,xmbmax(i))
+          xmbmax(i) = min(sas_mass_flux,xmbmax(i))
 !
 !         tem = dp / (g * dt2)
 !         xmbmax(i) = min(tem, xmbmax(i))

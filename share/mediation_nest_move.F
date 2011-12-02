@@ -1801,7 +1801,7 @@ LOGICAL FUNCTION direction_of_move_old ( parent , grid , move_cd_x, move_cd_y )
                       'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
             move_cd_y  =  0
          ENDIF
-         direction_of_move= .TRUE. 
+         direction_of_move_old= .TRUE. 
          grid%moved = .TRUE.
       ELSE IF((grid%XLOC_2-grid%XLOC_1) .GE. 3)THEN        
          move_cd_x  = +1 
@@ -1816,7 +1816,7 @@ LOGICAL FUNCTION direction_of_move_old ( parent , grid , move_cd_x, move_cd_y )
                      'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
            move_cd_y  =  0
          ENDIF
-         direction_of_move= .TRUE.
+         direction_of_move_old= .TRUE.
          grid%moved = .TRUE.
       ELSE IF ((grid%YLOC_2-grid%YLOC_1) .GE. 3)THEN 
         WRITE(0,*)'HURRICANE IS MOVING NORTHWARD'
@@ -1824,7 +1824,7 @@ LOGICAL FUNCTION direction_of_move_old ( parent , grid , move_cd_x, move_cd_y )
                   'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
         move_cd_x  = 0 
         move_cd_y  = 2 
-        direction_of_move= .TRUE.
+        direction_of_move_old= .TRUE.
         grid%moved = .TRUE.
       ELSE IF ((grid%YLOC_1-grid%YLOC_2) .GE. 6)THEN    ! wait for the move
         WRITE(0,*)'STRANGE: HURRICANE IS MOVING SOUTHWARD, MAY BE DUE TO INITIAL MANUVARE'
@@ -1832,24 +1832,24 @@ LOGICAL FUNCTION direction_of_move_old ( parent , grid , move_cd_x, move_cd_y )
                   'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
         move_cd_x  =  0
         move_cd_y  = -2 
-        direction_of_move= .TRUE.
+        direction_of_move_old= .TRUE.
         grid%moved = .TRUE.
       ELSE
         move_cd_x  =  0 
         move_cd_y  =  0 
-        direction_of_move= .FALSE.
+        direction_of_move_old= .FALSE.
         grid%moved = .FALSE.        
       ENDIF
    ELSE
     move_cd_x  =  0
     move_cd_y  =  0
-    direction_of_move= .FALSE.
+    direction_of_move_old= .FALSE.
     grid%moved = .FALSE.      
    ENDIF
 
   RETURN
 
-END FUNCTION direction_of_move 
+END FUNCTION direction_of_move_old
 
 #endif
 #endif

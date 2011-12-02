@@ -382,12 +382,14 @@ MODULE module_wrf_quilt
 #ifdef PNETCDF_QUILT
       if(poll_servers) then
          poll_servers=.false.
-         call wrf_error_fatal('Warning: server polling does not work with pnetcdf_quilt.  Disabled poll_servers.')
+!LPC         call wrf_error_fatal('Warning: server polling does not work with pnetcdf_quilt.  Disabled poll_servers.')
+         call wrf_message('Warning: server polling does not work with pnetcdf_quilt.  Disabled poll_servers.')
       else
 #endif
          if(nio_groups==1) then
             poll_servers=.false.
-            call wrf_error_fatal('Server polling is useless with one io group.  Disabled poll_servers.')
+!LPC            call wrf_error_fatal('Server polling is useless with one io group.  Disabled poll_servers.')
+            call wrf_message('Server polling is useless with one io group.  Disabled poll_servers.')
          endif
 #ifdef PNETCDF_QUILT
       endif
@@ -4969,6 +4971,7 @@ subroutine wrf_quilt_find_server(iserver)
   ! that recv will not return until an I/O server group calls
   ! wrf_quilt_server_ready to signal that it is ready for a new file.
 
+#if defined( DM_PARALLEL ) && !defined( STUBMPI )
   use module_wrf_quilt, only : in_avail, mpi_comm_avail, mpi_comm_local
 
   implicit none
@@ -4994,6 +4997,8 @@ subroutine wrf_quilt_find_server(iserver)
   write(message,'("I/O server ",I0," is ready for operations.")') iserver
   call wrf_message(message)
 
+#endif
+
 end subroutine wrf_quilt_find_server
 subroutine wrf_quilt_server_ready()
 
@@ -5007,6 +5012,7 @@ subroutine wrf_quilt_server_ready()
   ! that it wants the I/O server group to write a file.  That signal is
   ! sent in a call to wrf_quilt_find_server on the compute processes.
 
+#if defined( DM_PARALLEL ) && !defined( STUBMPI )
   use module_wrf_quilt, only : mpi_comm_local, in_avail, availrank, mpi_comm_avail
 
   implicit none
@@ -5034,6 +5040,8 @@ subroutine wrf_quilt_server_ready()
   endif
 
   write(0,*) 'Leaving wrf_quilt_server_ready.'
+#endif
+
 end subroutine wrf_quilt_server_ready
 
 SUBROUTINE get_mpi_comm_io_groups( retval, isrvr )

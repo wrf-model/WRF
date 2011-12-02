@@ -328,6 +328,7 @@
       grid%cg_flshrate(:,:) = 0.
      ENDIF
   ENDIF
+  if(config_flags%cu_diag == 0 ) grid%raincv_b(:,:) = grid%raincv(:,:)
 
 #if ( NMM_CORE == 1 )
 !***  IN NMM SET CONTROLS FOR TILES TO PATCHES

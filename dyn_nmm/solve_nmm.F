@@ -26,7 +26,9 @@
                                               ,NTASKS_Y
       USE MODULE_COMM_DM
 #endif
+#ifdef HWRF
       USE MODULE_HIFREQ,                ONLY: HIFREQ_WRITE, HIFREQ_OPEN
+#endif
       USE MODULE_IGWAVE_ADJUST,         ONLY: PDTE,PFDHT,DDAMP,VTOA
       USE MODULE_ADVECTION,             ONLY: ADVE,VAD2,HAD2            &
                                              ,ADV2,MONO                 &
@@ -321,6 +323,7 @@
       ALLOCATE(RTHBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
       ALLOCATE(RQVBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
       ALLOCATE(RTHRATEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
+
 #ifdef WRF_CHEM
   NUMGAS          = GET_LAST_GAS(CONFIG_FLAGS%CHEM_OPT)
 #endif
@@ -337,8 +340,12 @@
       ENDIF
 !
       GRID%SIGMA=1 
-      grid%hydro=.FALSE.
-!
+
+      IF (config_flags%non_hydrostatic) THEN
+        grid%hydro=.FALSE.
+      ELSE
+        grid%hydro=.TRUE.
+      ENDIF
 !
       IDF=IDE-1
       JDF=JDE-1
@@ -357,7 +364,6 @@
       KTE=MIN(KPE,KDF)
 !-----------------------------------------------------------------------
 !
-      write(0,*)'grid%ntsd=',grid%ntsd
       if(grid%ntsd==0)then
         write(message,*)' its=',its,' ite=',ite
         call wrf_message(trim(message))
@@ -526,7 +532,7 @@
 !***  UPDATE RANDOM NUMBERS IF REQUIRED
 !-----------------------------------------------------------------------
 
-      IF(CONFIG_FLAGS%CU_PHYSICS==OSASSCHEME .or. CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)THEN
+      randif: IF(in_use_for_config(grid%id,'random')) THEN
 !
          nrand=config_flags%nrand
          if(nrand==0) nrand=grid%ncnvc
@@ -553,7 +559,7 @@
 
             call end_timing('Updating random numbers')
          ENDIF    ! for IF(IDT.EQ.0 .OR. NTSD .EQ. 0)
-      ENDIF
+      ENDIF randif
 !-----------------------------------------------------------------------
 !***  ZERO OUT ACCUMULATED QUANTITIES WHEN NEEDED.
 !-----------------------------------------------------------------------
@@ -1178,7 +1184,7 @@
       CALL HADZ(grid%ntsd,GRID%DT,grid%hydro,grid%hbm2,grid%deta1,grid%deta2,grid%pdtop               &
      &         ,grid%dx_nmm,grid%dy_nmm,grid%fad                                       &
      &         ,grid%few,grid%fns,grid%fne,grid%fse                                         &
-     &         ,grid%pdsl,grid%u,grid%v,grid%w,grid%z,WP                                    &
+     &         ,grid%pdsl,grid%u,grid%v,grid%w,grid%z,WP,grid%BARO                          &
      &         ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                         &
      &         ,IDS,IDF,JDS,JDF,KDS,KDE                                 &
      &         ,IMS,IME,JMS,JME,KMS,KME                                 &
@@ -1209,13 +1215,13 @@
 !
 
       CALL EPS(grid%ntsd,GRID%DT,grid%hydro,grid%dx_nmm,grid%dy_nmm,grid%fad                     &
-     &        ,grid%deta1,grid%deta2,grid%pdtop,grid%pt                                     &
+     &        ,grid%aeta1,grid%deta1,grid%deta2,grid%pdtop,grid%pt                                     &
      &        ,grid%hbm2,grid%hbm3                                                &
      &        ,grid%pdsl,grid%pdslo,grid%pint,grid%rtop,grid%petdt,grid%pdwdt                         &
      &        ,grid%dwdt,grid%dwdtmn,grid%dwdtmx                                       &
      &        ,grid%fns,grid%few,grid%fne,grid%fse                                          &
-     &        ,grid%t,grid%u,grid%v,grid%w,grid%q,grid%cwm                                            &
-     &        ,grid%def3d,grid%hdac                                                &
+     &        ,grid%t,grid%u,grid%v,grid%w,grid%w_tot,grid%q,grid%cwm                                            &
+     &        ,grid%def3d,grid%hdac,grid%baro                                              &
      &        ,WP                                                 &
      &        ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                          &
      &        ,IDS,IDF,JDS,JDF,KDS,KDE                                  &
@@ -1633,7 +1639,7 @@
      &            ,grid%u10,grid%v10,grid%th10,grid%q10,grid%tshltr,grid%qshltr,grid%pshltr               &
      &            ,grid%t2,grid%qsg,grid%qvg,grid%qcg,grid%soilt1,grid%tsnav,grid%smfr3d,grid%keepfr3dflag     &
 #if (NMM_CORE==1)
-     &            ,grid%twbs,grid%qwbs,grid%taux,grid%tauy,grid%sfcshx,grid%sfclhx,grid%sfcevp                      &
+     &            ,grid%twbs,grid%qwbs,grid%taux,grid%tauy,grid%sfcshx,grid%sfclhx,grid%sfcevp,RTHRATEN                      &
 #else
      &            ,grid%twbs,grid%qwbs,grid%sfcshx,grid%sfclhx,grid%sfcevp                      &
 #endif
@@ -1654,6 +1660,7 @@
      &            ,GRID,CONFIG_FLAGS                                   &
      &            ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                     &
      &            ,GRID%DISHEAT                                             &
+     &            ,GRID%HPBL2D, GRID%EVAP2D, GRID%HEAT2D               &  !S&P Kwon
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -1849,8 +1856,8 @@
 #if (NMM_CORE==1)                  
      &                 ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random             &
 #endif
-     &             ,config_flags%sas_pgcon,config_flags%sas_mass_flux  &
-     &             ,grid%avcnvc,grid%acutim,grid%ihe,grid%ihw                              &
+     &             ,grid%hpbl2d,grid%evap2d,grid%heat2d                &
+     &             ,grid%avcnvc,grid%acutim,grid%ihe,grid%ihw          &
      &             ,GRID,CONFIG_FLAGS                                  &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
      &             ,IMS,IME,JMS,JME,KMS,KME                            &
@@ -2378,6 +2385,7 @@
    CALL wrf_debug ( 100 , 'nmm stats_for_move: after advection' )
    ENDIF
 #endif
+#ifdef HWRF
    hwrfx_mlsp: if(grid%vortex_tracker /= 1) then
 
 !    output MSLP over parent domain for diagonostic purposes. outputs are hourly.
@@ -2395,6 +2403,8 @@
 
      ENDIF
    endif hwrfx_mlsp
+#endif
+
 !#define COPY_OUT
 !#include <scalar_derefs.inc>
 #ifdef HWRF
@@ -2421,6 +2431,7 @@
 !
 !--------------------------------------------------------------------------------------------------------------
 !
+#ifdef HWRF
      IF(grid%hifreq_lun /= 0) THEN
         CALL HIFREQ_WRITE(grid%hifreq_lun,GRID%NTSD,GRID%DT,GRID%HLAT,GRID%HLON    &
                       ,GRID%U10,GRID%V10,grid%pint,grid%t,grid%q                   &
@@ -2429,6 +2440,7 @@
                       ,IMS,IME,JMS,JME,KMS,KME                                     &
                       ,ITS,ITE,JTS,JTE,KTS,KTE   )
      ENDIF
+#endif
 !
 !-------------------  END OF HIGH FREQUENCY OUTPUT MODULE  ----------------------------
  

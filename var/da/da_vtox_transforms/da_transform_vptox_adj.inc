@@ -63,8 +63,11 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
             end do
          end do
       end do
+      !$OMP END PARALLEL DO
 #ifdef CLOUD_CV
 !qc
+      !$OMP PARALLEL DO &
+      !$OMP PRIVATE ( ij )
       do ij = 1 , grid%num_tiles
          do k = kts,kte
             do j = grid%j_start(ij),grid%j_end(ij)
@@ -80,8 +83,11 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
             end do
          end do
       end do
+      !$OMP END PARALLEL DO
 !     vp%v6  = 0.0
 !qr
+      !$OMP PARALLEL DO &
+      !$OMP PRIVATE ( ij )
       do ij = 1 , grid%num_tiles
          do k = kts,kte
             do j = grid%j_start(ij),grid%j_end(ij)
@@ -97,7 +103,10 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
             end do
          end do
       end do
+      !$OMP END PARALLEL DO
 !ice
+      !$OMP PARALLEL DO &
+      !$OMP PRIVATE ( ij )
       do ij = 1 , grid%num_tiles
          do k = kts, kte
             do j = grid%j_start(ij), grid%j_end(ij)
@@ -113,9 +122,9 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
             enddo
          enddo
       enddo
+      !$OMP END PARALLEL DO
 !      vp%v8 = 0.0
 #endif
-      !$OMP END PARALLEL DO
    end if
   else ! no rf or cloud radiance
       ! Pseudo RH --> Water vapor mixing ratio:

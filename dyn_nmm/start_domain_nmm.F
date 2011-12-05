@@ -1510,6 +1510,9 @@
           grid%pint(I,J,K)=grid%eta1(K)*grid%pdtop+grid%eta2(K)*grid%pdsl(I,J)+grid%pt
           grid%z(I,J,K)=grid%pint(I,J,K)
           grid%w(I,J,K)=0.
+#ifdef IDEAL_NMM_TC
+             grid%f(I,J)=0.5*GRID%DT*3.15656e-5 ! IDEAL CASE 0.5*DT*f (and not f!)
+#endif
         ENDDO
         ENDDO
         ENDDO

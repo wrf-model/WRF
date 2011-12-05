@@ -472,6 +472,20 @@ gocart_conv : wrf
 
 #### nmm converter
 
+### Idealized NMM tropical cyclone case
+nmm_tropical_cyclone : nmm_wrf
+	@ echo '--------------------------------------'
+	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=nmm IDEAL_CASE=tropical_cyclone nmm_ideal )
+	( cd test/nmm_tropical_cyclone ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
+	( cd test/nmm_tropical_cyclone ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
+	( cd test/nmm_tropical_cyclone ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
+	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
+	( cd run ; if test -f namelist.input ; then \
+		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
+		/bin/rm -f namelist.input ; ln -s ../test/nmm_tropical_cyclone/namelist.input . )
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
+
 nmm_real : nmm_wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=nmm IDEAL_CASE=real real_nmm )

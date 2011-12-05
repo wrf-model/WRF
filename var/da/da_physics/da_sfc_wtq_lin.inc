@@ -1,6 +1,6 @@
 subroutine da_sfc_wtq_lin(psfc, tg, ps, ts, qs, us, vs, regime,           &
    psfc_prime,tg_prime,ps_prime,ts_prime,qs_prime, &
-   us_prime,vs_prime, hs,roughness,xland,          &
+   us_prime,vs_prime, hs,roughness,xland,dx,         & ! Modified by Eric Chiang (JULY 2010)
    u10_prime,v10_prime,t2_prime,q2_prime) 
 
    !---------------------------------------------------------------------------
@@ -78,7 +78,7 @@ subroutine da_sfc_wtq_lin(psfc, tg, ps, ts, qs, us, vs, regime,           &
    real :: psit, psit2, psiq, psiq2
    real :: gzsoz0, gz10oz0, gz2oz0
    real :: eg, qg, tvg, tvs
-   real :: ths, thg, thvs, thvg
+   real :: ths, thg, thvs, thvg, vsgd, vsgd2, dx
    real :: zq0, z0
 
    real :: Vc2_prime, Va2_prime, V2_prime
@@ -90,7 +90,7 @@ subroutine da_sfc_wtq_lin(psfc, tg, ps, ts, qs, us, vs, regime,           &
    real :: psit_prime, psit2_prime, &
            psiq_prime, psiq2_prime
    real :: qg_prime, tvg_prime, tvs_prime
-   real :: ths_prime, thg_prime, thvs_prime, thvg_prime
+   real :: ths_prime, thg_prime, thvs_prime, thvg_prime 
 
    real, parameter :: ka = 2.4E-5
 
@@ -199,9 +199,17 @@ subroutine da_sfc_wtq_lin(psfc, tg, ps, ts, qs, us, vs, regime,           &
       Vc2_prime = 0.0
       Vc2 = 0.0
    end if
-   
-   V2_prime  = Va2_prime+ Vc2_prime
-   V2  = Va2 + Vc2
+ 
+   ! Calculate Mahrt and Sun low-res correction                    ! Add by Eric Chiang ( July 2010 )
+   ! dx is a constant, so vsgd is also a constant, 
+   ! the perturnations of vsgd and vsgd2 are zero. (YRG, 09/15/2011)
+                                     
+   vsgd = 0.32 * (max(dx/5000.-1.,0.))**0.33                       ! Add by Eric Chiang ( July 2010 )
+   vsgd2 = vsgd * vsgd                                             ! Add by Eric Chiang ( July 2010 )
+
+   ! V2_prime should be computed before used below. (YRG, 09/15/2011)    
+   V2_prime = Va2_prime + Vc2_prime
+   V2  = Va2 + Vc2 + vsgd2                                         ! Modified by Eric Chiang ( July 2010 )
 
    ! 4.2 Bulk richardson number
    !     ----------------------

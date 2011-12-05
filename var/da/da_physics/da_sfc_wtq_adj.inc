@@ -1,6 +1,7 @@
+
 subroutine da_sfc_wtq_adj (psfc, tg, ps, ts, qs, us, vs, regime,& 
    psfc_prime, tg_prime, ps_prime, ts_prime, qs_prime, &
-   us_prime, vs_prime,  hs, roughness, xland,          & 
+   us_prime, vs_prime,  hs, roughness, xland, dx,      & 
    u10_prime, v10_prime, t2_prime, q2_prime) 
 
    !---------------------------------------------------------------------------
@@ -79,6 +80,7 @@ subroutine da_sfc_wtq_adj (psfc, tg, ps, ts, qs, us, vs, regime,&
    real :: gzsoz0, gz10oz0, gz2oz0
    real :: eg, qg, tvg, tvs
    real :: ths, thg, thvs, thvg
+   real :: vsgd, vsgd2, dx                 ! Add by Eric Chiang (AUG 2010)
    real :: zq0, z0
    real :: ust_s, hol_s, psim_s, psim2_s, psimz_s, psih_s, psih2_s, psihz_s
 
@@ -228,8 +230,12 @@ subroutine da_sfc_wtq_adj (psfc, tg, ps, ts, qs, us, vs, regime,&
    else
       Vc2 = 0.0
    end if
+
+   ! Calculate Mahrt and Sun low-res correction         ! Add by Eric Chiang ( AUG 2010 )
+   vsgd = 0.32 * (max(dx/5000.-1.,0.))**0.33            ! Add by Eric Chiang ( AUG 2010 )
+   vsgd2 = vsgd * vsgd                                  ! Add by Eric Chiang ( AUG 2010 )
    
-   V2  = Va2 + Vc2
+   V2  = Va2 + Vc2 + vsgd2                              ! Modified by Eric Chiang ( AUG 2010 ) 
 
    ! 4.2 Bulk richardson number
    !     ----------------------
@@ -784,7 +790,6 @@ subroutine da_sfc_wtq_adj (psfc, tg, ps, ts, qs, us, vs, regime,&
 
    Va2_prime = V2_prime
    Vc2_prime = V2_prime
-   V2_prime = 0.0
 
    if (thvg >= thvs) then
      thvg_prime = thvg_prime + 4.0 * Vc2_prime

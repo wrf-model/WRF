@@ -108,6 +108,7 @@ WRFVAR_OBJS = \
    wrf_ext_write_field.o \
    collect_on_comm.o \
    start_domain.o \
+   hires_timer.o \
    module_streams.o \
    module_comm_dm.o \
    module_comm_dm_0.o \
@@ -240,6 +241,9 @@ da_rad_diags.exe : da_rad_diags.o
 
 wrf_num_bytes_between.o :
 	$(CC) -c $(CFLAGS) wrf_num_bytes_between.c
+
+hires_timer.o :
+	$(CC) -c $(CFLAGS) hires_timer.c
 
 module_state_description.F : ../../Registry/$(REGISTRY)
 	(cd $(WRF_SRC_ROOT_DIR); tools/registry $(ARCHFLAGS) -DNEW_BDYS Registry/$(REGISTRY) ; cd $(WRF_SRC_ROOT_DIR)/var/build )

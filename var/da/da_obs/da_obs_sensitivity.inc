@@ -15,7 +15,7 @@ subroutine da_obs_sensitivity(ktr, iv)
    type (y_type), intent(in)         :: ktr         
    type (iv_type), intent(inout)     :: iv      
    
-   integer, parameter                :: nbvar = 6
+   integer, parameter                :: nbvar = 7
    integer, parameter                :: npredmax = 8
 
    integer, parameter                :: u     = 1
@@ -24,6 +24,7 @@ subroutine da_obs_sensitivity(ktr, iv)
    integer, parameter                :: p     = 4
    integer, parameter                :: q     = 5
    integer, parameter                :: rv    = 6
+   integer, parameter                :: mx    = 7
 
    integer                           :: i, j, k, n, inst
    integer                           :: npred, ipred
@@ -355,7 +356,7 @@ subroutine da_obs_sensitivity(ktr, iv)
 	       
 	          iv%satem(n)%thickness(k)%inv  = iv%satem(n)%thickness(k)%inv * iv%satem(n)%thickness(k)%sens
 	       
-	          ktd(satem,rv) = ktd(satem,rv) + iv%satem(n)%thickness(k)%inv
+	          ktd(satem,mx) = ktd(satem,mx) + iv%satem(n)%thickness(k)%inv
                end do
 	    end do
 	 end if   
@@ -394,7 +395,7 @@ subroutine da_obs_sensitivity(ktr, iv)
 	       iv%ssmi_rv(n)%Speed%inv  = iv%ssmi_rv(n)%Speed%inv * iv%ssmi_rv(n)%Speed%sens
  	       iv%ssmi_rv(n)%tpw%inv  = iv%ssmi_rv(n)%tpw%inv * iv%ssmi_rv(n)%tpw%sens
 	       
- 	       ktd(ssmi_rv,rv) = ktd(ssmi_rv,rv) + iv%ssmi_rv(n)%Speed%inv + iv%ssmi_rv(n)%tpw%inv
+ 	       ktd(ssmi_rv,mx) = ktd(ssmi_rv,mx) + iv%ssmi_rv(n)%Speed%inv + iv%ssmi_rv(n)%tpw%inv
 	    end do
 	 end if   
 
@@ -463,7 +464,7 @@ subroutine da_obs_sensitivity(ktr, iv)
 	    end do
          endif
          
-         write(stdout,'(A)') 'Impact of Conventional Observations: U, V, T, P, Q, GPS'
+         write(stdout,'(A)') 'Impact of Conventional Observations: U, V, T, P, Q, GPS, SATEM'
          write(stdout,'(100e15.5)') SUM(ktd_global,dim=1)
          write(stdout,'(26(A10,2x))') 'Sound', 'Synop', 'Pilot', 'Satem', 'GeoAMV', 'PolarAMV', 'AIREP',&
                               'GPSZTD', 'GPSRF', 'METAR', 'Ships', 'SSMI_RV', 'SSMI_TB', &
@@ -485,8 +486,8 @@ subroutine da_obs_sensitivity(ktr, iv)
          open(unit=iunit,file='obs_impact',form='formatted')
 
          write(iunit,'(A)') 'Impact of Conventional Observations: '
-         write(iunit,'(6(A5,2x))') 'U', 'V', 'T', 'P', 'Q', 'GPS'
-         write(iunit,'(6(e15.5,2x))') SUM(ktd_global,dim=1)
+         write(iunit,'(7(A5,2x))') 'U', 'V', 'T', 'P', 'Q', 'GPS', 'SATEM'
+         write(iunit,'(7(e15.5,2x))') SUM(ktd_global,dim=1)
          write(iunit,'(26(A10,2x))') 'Sound', 'Synop', 'Pilot', 'Satem', 'GeoAMV', 'PolarAMV', 'AIREP',&
                               'GPSZTD', 'GPSRF', 'METAR', 'Ships', 'SSMI_RV', 'SSMI_TB', &
                               'SSMT1', 'SSMT2', 'QSCAT', 'Profiler', 'Buoy', &

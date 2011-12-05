@@ -146,6 +146,7 @@ CONTAINS
    USE module_sf_qnsesfc
    USE module_sf_gfs
    USE module_sf_noahdrv
+   USE module_sf_noah_seaice_drv
    USE module_sf_ruclsm
    USE module_sf_pxsfclay
    USE module_sf_pxlsm
@@ -1667,6 +1668,18 @@ CONTAINS
                 b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
                 )
+
+         call seaice_noah( t_phy, qv_curr, p8w, dz8w, num_soil_layers, dt, frpcpn, sr, &
+              &            glw, swdown, rainbl, snoalb, qgh, xice, xice_threshold,     &
+              &            tslb, emiss, albedo, albbck, z0, tsk, snow, snowc, snowh,   &
+              &            chs, chs2, cqs2,                                            &
+              &            br, znt, lh, hfx, qfx, potevp, grdflx, qsfc, acsnow,        &
+              &            acsnom, snopcx, sfcrunoff, noahres,                         &
+              &            b_t_bep, b_q_bep, rho,                                      &
+              &            ids,ide, jds,jde, kds,kde,                                  &
+              &            ims,ime, jms,jme, kms,kme,                                  &
+              &            i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
+
          
          IF ( FRACTIONAL_SEAICE == 1 ) THEN
             ! LSM Returns full land/ice values, no fractional values.

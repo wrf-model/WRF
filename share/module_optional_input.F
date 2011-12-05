@@ -242,6 +242,7 @@ CONTAINS
       IF (  ( model_config_rec%sf_surface_physics(grid%id) .EQ. 1 ) .OR. &
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 2 ) .OR. &
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 3 ) .OR. &
+            ( model_config_rec%sf_surface_physics(grid%id) .EQ. 4 ) .OR. &
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 7 ) .OR. &
             ( model_config_rec%sf_surface_physics(grid%id) .EQ. 88 ) ) THEN
    

@@ -70,6 +70,21 @@
  sf_urban_physics                    = 0,     0,     0,
  /
 
+ &noah_mp
+ dveg     = 2, 2, 2,
+ opt_crs  = 1, 1, 1,
+ opt_btr  = 1, 1, 1,
+ opt_run  = 1, 1, 1,
+ opt_sfc  = 2, 2, 2,
+ opt_frz  = 1, 1, 1,
+ opt_inf  = 1, 1, 1,
+ opt_rad  = 1, 1, 1,
+ opt_alb  = 2, 2, 2,
+ opt_snf  = 1, 1, 1,
+ opt_tbot = 2, 2, 2,
+ opt_stc  = 1, 1, 1,
+ /
+
  &fdda
  /
 

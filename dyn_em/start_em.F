@@ -715,6 +715,14 @@
                       grid%FGDT,grid%stepfg,                        &     ! Optional
                       grid%cugd_tten,grid%cugd_ttens,grid%cugd_qvten,        &   ! Optional
                       grid%cugd_qvtens,grid%cugd_qcten,                 &   ! Optional
+                      grid%ISNOWXY, grid%ZSNSOXY, grid%TSNOXY,                                  &   ! Optional Noah-MP
+                      grid%SNICEXY, grid%SNLIQXY, grid%TVXY, grid%TGXY, grid%CANICEXY,          &   ! Optional Noah-MP
+                      grid%CANLIQXY, grid%EAHXY, grid%TAHXY, grid%CMXY,                         &   ! Optional Noah-MP
+                      grid%CHXY, grid%FWETXY, grid%SNEQVOXY, grid%ALBOLDXY, grid%QSNOWXY,       &   ! Optional Noah-MP
+                      grid%WSLAKEXY, grid%ZWTXY, grid%WAXY, grid%WTXY, grid%LFMASSXY, grid%RTMASSXY, & ! Optional Noah-MP
+                      grid%STMASSXY, grid%WOODXY, grid%STBLCPXY, grid%FASTCPXY,                 &   ! Optional Noah-MP
+                      grid%XSAIXY,                                                              &   ! Optional Noah-MP
+                      grid%T2MVXY, grid%T2MBXY, grid%CHSTARXY,                                  &   ! Optional Noah-MP
                       grid%DZR, grid%DZB, grid%DZG,                          & !Optional urban
                       grid%TR_URB2D,grid%TB_URB2D,grid%TG_URB2D,grid%TC_URB2D,    & !Optional urban
                       grid%QC_URB2D, grid%XXXR_URB2D,grid%XXXB_URB2D,        & !Optional urban

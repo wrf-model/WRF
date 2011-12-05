@@ -36,6 +36,19 @@ CONTAINS
      &          ,landusef,soilctop,soilcbot,ra,rs,nlcat,nscat,vegf_px & ! PX-LSM
      &          ,snowncv, anal_interval, lai, pxlsm_smois_init        & ! PX-LSM
      &          ,pxlsm_soil_nudge                                     & ! PX-LSM
+     &          ,idveg, iopt_crs, iopt_btr, iopt_run, iopt_sfc, iopt_frz, iopt_inf     &
+     &          ,iopt_rad ,iopt_alb ,iopt_snf ,iopt_tbot, iopt_stc                     & 
+     &          ,isnowxy  ,tvxy     ,tgxy     ,canicexy                                &
+     &          ,canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy                          &
+     &          ,fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,wslakexy ,zwtxy    ,waxy      &
+     &          ,wtxy     ,tsnoxy   ,zsnsoxy  ,snicexy  ,snliqxy  ,lfmassxy ,rtmassxy  &
+     &          ,stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy                        &
+     &          ,tradxy   ,tsxy     ,neexy    ,gppxy    ,nppxy    ,fvegxy   ,qinxy     &
+     &          ,runsfxy  ,runsbxy  ,ecanxy   ,edirxy   ,etranxy  ,fsaxy    ,firaxy    &
+     &          ,aparxy   ,psnxy    ,savxy    ,sagxy                                   &
+     &          ,fsnoxy                                                                &
+     &          ,t2mvxy   ,t2mbxy   ,chstarxy ,rssunxy  ,rsshaxy  ,bgapxy   ,wgapxy    &    
+     &          ,gapxy    ,tgvxy    ,tgbxy    ,q2mvxy   ,q2mbxy   ,chvxy    ,chbxy     &
 #if ( EM_CORE==1)
      &          ,ch,tsq,qsq,cov                                       & ! MYNN
 #endif
@@ -115,6 +128,7 @@ CONTAINS
                                        ,QNSESFCSCHEME             &
                                        ,GFSSFCSCHEME              &
                                        ,PXSFCSCHEME               &
+                                       ,NOAHMPSCHEME              &
                                        ,TEMFSFCSCHEME             &
                                        ,IDEALSCMSFCSCHEME         &
                                        ,SLABSCHEME                &
@@ -128,6 +142,7 @@ CONTAINS
                                        ,QNSESFCSCHEME             &
                                        ,GFSSFCSCHEME              &
                                        ,PXSFCSCHEME               &
+                                       ,NOAHMPSCHEME              &
                                        ,SLABSCHEME                &
                                        ,LSMSCHEME                 &
                                        ,RUCLSMSCHEME              &
@@ -145,12 +160,14 @@ CONTAINS
    USE module_sf_myjsfc
    USE module_sf_qnsesfc
    USE module_sf_gfs
-   USE module_sf_noahdrv
+   USE module_sf_noahdrv, only : lsm
+   USE module_sf_noahmpdrv, only : noahmplsm
    USE module_sf_noah_seaice_drv
    USE module_sf_ruclsm
    USE module_sf_pxsfclay
    USE module_sf_pxlsm
    USE module_sf_temfsfclay
+   USE module_sf_noah_seaice_drv
 #if ( EM_CORE==1)
    USE module_sf_mynn
    USE module_sf_oml
@@ -486,6 +503,17 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SHDMAX
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SHDMIN
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::   Z0
+
+   INTEGER, OPTIONAL, INTENT(IN) :: idveg, iopt_crs, iopt_btr, iopt_run, iopt_sfc, iopt_frz, iopt_inf, iopt_rad, iopt_alb, iopt_snf, iopt_tbot, iopt_stc
+   INTEGER, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) :: ISNOWXY
+   REAL, OPTIONAL, DIMENSION(ims:ime ,-2:num_soil_layers, jms:jme), INTENT(INOUT) :: zsnsoxy
+   REAL, OPTIONAL, DIMENSION(ims:ime ,-2:0,               jms:jme), INTENT(INOUT) :: tsnoxy, snicexy, snliqxy
+   REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) :: tvxy, tgxy, canicexy, canliqxy, eahxy, tahxy, cmxy, chxy,               &
+        fwetxy, sneqvoxy, alboldxy, qsnowxy, wslakexy, zwtxy, waxy, wtxy, lfmassxy, rtmassxy, stmassxy, woodxy, stblcpxy, fastcpxy,       &
+        xsaixy, tradxy, tsxy, neexy, gppxy, nppxy, fvegxy, qinxy, runsfxy, runsbxy, ecanxy, edirxy, etranxy, fsaxy, firaxy,               &
+        aparxy, psnxy, savxy, sagxy, fsnoxy, q2mvxy, q2mbxy
+   REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) ::  t2mvxy   ,t2mbxy   ,chstarxy, rssunxy, rsshaxy, bgapxy,wgapxy,gapxy , &
+        tgvxy ,tgbxy, chvxy, chbxy
 
 ! Variables for multi-layer UCM
    REAL, OPTIONAL, INTENT(IN  )   ::                                   GMT 
@@ -1781,6 +1809,217 @@ CONTAINS
 
        ELSE
          CALL wrf_error_fatal('Lacking arguments for LSM in surface driver')
+       ENDIF
+
+     CASE (NOAHMPSCHEME)
+       IF (PRESENT(qv_curr)    .AND.  PRESENT(rainbl)        .AND.    &
+!          PRESENT(emiss)      .AND.  PRESENT(t2)            .AND.    &
+!          PRESENT(declin) .AND.  PRESENT(coszen)    .AND.    &
+!          PRESENT(hrang)  .AND. PRESENT( xlat_urb2d)    .AND.    &
+!          PRESENT(dzr)       .AND.    &
+!          PRESENT( dzb)            .AND. PRESENT(dzg)       .AND.    &
+!          PRESENT(tr_urb2d) .AND. PRESENT(tb_urb2d)         .AND.    &
+!          PRESENT(tg_urb2d) .AND. PRESENT(tc_urb2d) .AND.            &
+!          PRESENT(qc_urb2d) .AND. PRESENT(uc_urb2d) .AND.            &
+!          PRESENT(xxxr_urb2d) .AND. PRESENT(xxxb_urb2d) .AND.        &
+!          PRESENT(xxxg_urb2d) .AND.                                  &
+!          PRESENT(xxxc_urb2d) .AND. PRESENT(trl_urb3d) .AND.         &
+!          PRESENT(tbl_urb3d)   .AND. PRESENT(tgl_urb3d)  .AND.       &
+!          PRESENT(sh_urb2d) .AND. PRESENT(lh_urb2d)  .AND.           &
+!          PRESENT(g_urb2d)   .AND. PRESENT(rn_urb2d) .AND.           &
+!          PRESENT(ts_urb2d)                          .AND.           &
+!          PRESENT(frc_urb2d) .AND. PRESENT(utype_urb2d)   .AND.      &
+                                                      .TRUE. ) THEN
+!------------------------------------------------------------------
+         IF( PRESENT(sr) ) THEN
+           frpcpn=.true.
+         ENDIF
+
+         IF ( FRACTIONAL_SEAICE == 1) THEN
+            ! The fields passed to LSM need to represent the full ice values, not
+            ! the fractional values.  Convert ALBEDO and EMISS from the blended value 
+            ! to a value representing only the sea-ice portion.   Albedo over open 
+            ! water is taken to be 0.08. Emissivity over open water is taken to be 0.98
+            DO j = j_start(ij) , j_end(ij)
+               DO i = i_start(ij) , i_end(ij)
+                  IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1 ) ) THEN
+                     ALBEDO(I,J) = (ALBEDO(I,J)-(1.-XICE(I,J))*0.08)/XICE(I,J)
+                     EMISS(I,J) = (EMISS(I,J)-(1.-XICE(I,J))*0.98)/XICE(I,J)
+                  ENDIF
+               ENDDO
+            ENDDO
+
+            IF ( isisfc ) THEN
+               ! Use surface layer routine values from the ice portion of grid point
+            ELSE
+               !
+               ! We don't have surface layer routine values at this time, so
+               ! just use what we have.  Use ice component of TSK
+               !
+               CALL get_local_ice_tsk( ims, ime, jms, jme,                   &
+                                       i_start(ij), i_end(ij),               &
+                                       j_start(ij), j_end(ij),               &
+                                       itimestep, .false., tice2tsk_if2cold, &
+                                       XICE, XICE_THRESHOLD,                 &
+                                       SST, TSK, TSK_SEA, TSK_LOCAL )
+
+               DO j = j_start(ij) , j_end(ij)
+                  DO i = i_start(ij) , i_end(ij)
+                     TSK(i,j) = TSK_LOCAL(i,j)
+                  ENDDO
+               ENDDO
+            ENDIF
+         ENDIF
+
+         CALL wrf_debug(100,'in NOAHMP DRV')
+         CALL noahmplsm(dz8w,qv_curr,p8w,t_phy,tsk,                 &
+                hfx,qfx,lh,grdflx,qgh,gsw,swdown,glw,smstav,smstot,    &
+                sfcrunoff,udrunoff,ivgtyp,isltyp,vegfra,        &
+                albedo,albbck,znt,z0, tmn,xland,xice, xice_threshold, isice,emiss, embck,    &
+                snowc,qsfc,rainbl,                              &
+                num_soil_layers,dtbl,dzs,itimestep,             &
+                smois,tslb,snow,canwat,                         &
+                chs, chs2, cqs2, cpm,rcp,SR,chklowq,qz0,        &
+                myj,br,frpcpn,                                  &
+                sh2o,snowh,                                     & !h
+                u_phy,v_phy,                                    & !I
+                coszen, xlat_urb2d,                             & !I
+                snoalb,                                         & !I
+                snotime,                                        & !io
+                acsnom,acsnow,                                  & !o
+                idveg    ,iopt_crs ,iopt_btr ,iopt_run ,iopt_sfc ,iopt_frz ,iopt_inf , &
+                iopt_rad ,iopt_alb ,iopt_snf ,iopt_tbot,iopt_stc ,                     &
+                isnowxy  ,tvxy     ,tgxy     ,canicexy ,                               &
+                canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy     ,                     &
+                fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,wslakexy ,zwtxy    ,waxy     , &
+                wtxy     ,tsnoxy   ,zsnsoxy  ,snicexy  ,snliqxy  ,lfmassxy ,rtmassxy , &
+                stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,lai      ,xsaixy   ,           &
+                tradxy   ,tsxy     ,neexy    ,gppxy    ,nppxy    ,fvegxy   ,qinxy    , &
+                runsfxy  ,runsbxy  ,ecanxy   ,edirxy   ,etranxy  ,fsaxy    ,firaxy   , &
+                aparxy   ,psnxy    ,savxy    ,sagxy    ,                               &
+                fsnoxy   ,YR       ,JULIAN_IN,                                         &
+                potevp,                                         & !o
+!jref:start
+                qc_curr     ,pblh   ,isurban  ,iz0tlnd  ,dx      ,     & !I 
+                chstarxy , t2mvxy   ,t2mbxy   ,rssunxy  ,rsshaxy , bgapxy, &
+                wgapxy , gapxy ,tgvxy ,tgbxy ,q2mvxy ,q2mbxy, shdmax ,chvxy,chbxy , & !O 
+!jref:end
+                ids,ide, jds,jde, kds,kde,                      &
+                ims,ime, jms,jme, kms,kme,                      &
+                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
+
+         call seaice_noah( t_phy, qv_curr, p8w, dz8w, num_soil_layers, dt, frpcpn, sr, &
+              &            glw, swdown, rainbl, snoalb, qgh, xice, xice_threshold,     &
+              &            tslb, emiss, albedo, albbck, z0, tsk, snow, snowc, snowh,   &
+              &            chs, chs2, cqs2,                                            &
+              &            br, znt, lh, hfx, qfx, potevp, grdflx, qsfc, acsnow,        &
+              &            acsnom, snopcx, sfcrunoff, noahres,                         &
+              &            b_t_bep, b_q_bep, rho,                                      &
+              &            ids,ide, jds,jde, kds,kde,                                  &
+              &            ims,ime, jms,jme, kms,kme,                                  &
+              &            i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
+
+         IF ( FRACTIONAL_SEAICE == 1 ) THEN
+            ! LSM Returns full land/ice values, no fractional values.
+            ! We return to a fractional component here.  SFLX currently hard-wires
+            ! emissivity over sea ice to 0.98, the same value as over open water, so
+            ! the fractional consideration doesn't have any effect for emissivity.
+            DO j=j_start(ij),j_end(ij)
+               DO i=i_start(ij),i_end(ij)
+                  IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                     albedo(i,j) = ( albedo(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
+                     emiss(i,j) = ( emiss(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.98  )
+                  ENDIF
+               ENDDO
+            ENDDO
+
+            IF ( isisfc ) THEN
+               DO j=j_start(ij),j_end(ij)
+                  DO i=i_start(ij),i_end(ij)
+                     IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                        !  Weighted average of fields between ice-cover values and open-water values.
+                        flhc(i,j) = ( flhc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * flhc_sea(i,j) )
+                        flqc(i,j) = ( flqc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * flqc_sea(i,j) )
+                        cpm(i,j)  = ( cpm(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * cpm_sea(i,j)  )
+                        cqs2(i,j) = ( cqs2(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * cqs2_sea(i,j) )
+                        chs2(i,j) = ( chs2(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * chs2_sea(i,j) )
+                        chs(i,j)  = ( chs(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * chs_sea(i,j)  )
+                        qsfc(i,j) = ( qsfc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qsfc_sea(i,j) )
+                        qgh(i,j)  = ( qgh(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qgh_sea(i,j)  )
+                        qz0(i,j)  = ( qz0(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qz0_sea(i,j)  )
+                        hfx(i,j)  = ( hfx(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * hfx_sea(i,j)  )
+                        qfx(i,j)  = ( qfx(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qfx_sea(i,j)  )
+                        lh(i,j)   = ( lh(i,j)   * XICE(i,j) ) + ( (1.0-XICE(i,j)) * lh_sea(i,j)   )
+                        tsk(i,j)  = ( tsk(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * tsk_sea(i,j)  )
+                     ENDIF
+                  ENDDO
+               ENDDO
+            ELSE
+               DO j = j_start(ij) , j_end(ij)
+                  DO i = i_start(ij) , i_end(ij)
+                     IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                        ! Compute TSK as the open-water and ice-cover average
+                        tsk(i,j) = ( tsk(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * tsk_sea(i,j) )
+                     ENDIF
+                  ENDDO
+               ENDDO
+            ENDIF
+         ENDIF
+           DO j=j_start(ij),j_end(ij)
+           DO i=i_start(ij),i_end(ij)
+!              CHKLOWQ(I,J)= 1.0
+               SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
+               SFCEXC(I,J)= CHS(I,J)
+               IF(PRESENT(ACHFX))ACHFX(I,J)=ACHFX(I,J) + HFX(I,J)*DT
+               IF(PRESENT(ACLHF))ACLHF(I,J)=ACLHF(I,J) + LH(I,J)*DT
+               IF(PRESENT(ACGRDFLX))ACGRDFLX(I,J)=ACGRDFLX(I,J) + GRDFLX(I,J)*DT
+
+               ! Check that SFCDIAGS can declare these as intent(out)
+               T2(I,J)  = -1.E36
+               TH2(I,J) = -1.E36
+               Q2(I,J)  = -1.E36
+           ENDDO
+           ENDDO
+           
+!jref: sfc diagnostics
+           DO j=j_start(ij),j_end(ij)
+           DO i=i_start(ij),i_end(ij)
+              IF (IVGTYP(I,J) == ISWATER .OR. IVGTYP(I,J) == ISICE) THEN
+                 IF(CQS2(I,J).lt.1.E-5) then
+                   Q2(I,J)=QSFC(I,J)
+                 ELSE
+                   Q2(I,J) = QSFC(I,J) - QFX(I,J)/(PSFC(I,J)/(R_d * TSK(I,J))*CQS2(I,J))
+                 ENDIF
+                 IF(CHS2(I,J).lt.1.E-5) then
+                   T2(I,J) = TSK(I,J) 
+                 ELSE
+                   T2(I,J) = TSK(I,J) - HFX(I,J)/(PSFC(I,J)/(R_d * TSK(I,J))*CP*CHS2(I,J))
+                 ENDIF
+                   TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**ROVCP
+              ELSEIF (IVGTYP(I,J) == ISURBAN ) THEN
+                   Q2(I,J)  = q2mbxy(i,j)
+                   T2(I,J)  = t2mbxy(i,j)
+                   TH2(I,J) = T2(i,j)*(1.E5/PSFC(i,j))**RCP
+              ELSE
+                 T2(I,J)  = fvegxy(i,j)*t2mvxy(i,j) + (1.-fvegxy(i,j))*t2mbxy(i,j)
+                 Q2(I,J)  = fvegxy(i,j)*q2mvxy(i,j) + (1.-fvegxy(i,j))*q2mbxy(i,j)
+                 TH2(I,J) = T2(i,j)*(1.E5/PSFC(i,j))**RCP
+              ENDIF
+           ENDDO
+           ENDDO
+           
+!          CALL SFCDIAGS(HFX,QFX,TSK,QSFC,CHS2,CQS2,T2,TH2,Q2,      &
+!                     PSFC,CP,R_d,RCP,                              &
+!                     ids,ide, jds,jde, kds,kde,                    &
+!                     ims,ime, jms,jme, kms,kme,                    &
+!             i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+
+!jref: sfc diagnostics end
+
+!------------------------------------------------------------------
+
+       ELSE
+         CALL wrf_error_fatal('Lacking arguments for NOAHMPLSM in surface driver')
        ENDIF
 
      CASE (RUCLSMSCHEME)

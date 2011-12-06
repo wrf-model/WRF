@@ -679,7 +679,6 @@ CONTAINS
       real :: yz,y1,y2,y3,y4,windmks,znott,znotm
       integer:: i,j,ii,iq,nnest,icnt,ngd,ip
 
-      data amask/ -98.0/
 !-----------------------------------------------------------------------
 !     internal variables
 !-----------------------------------------------------------------------

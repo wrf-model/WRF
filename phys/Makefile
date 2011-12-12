@@ -76,6 +76,7 @@ MODULES = \
 	module_ra_HWRF.o \
 	module_ra_hs.o  \
 	module_sf_sfclay.o \
+	module_sf_sfclayrev.o \
 	module_sf_gfs.o \
 	module_sf_gfdl.o \
 	module_sf_slab.o  \
@@ -392,6 +393,7 @@ module_physics_init.o : \
 		module_ra_hs.o			\
                 module_ra_flg.o                 \
 		module_sf_sfclay.o		\
+		module_sf_sfclayrev.o		\
 		module_sf_slab.o		\
 		module_sf_myjsfc.o		\
 		module_sf_mynn.o                \
@@ -544,6 +546,7 @@ module_radiation_driver.o: \
 
 module_surface_driver.o: \
 		module_sf_sfclay.o		\
+		module_sf_sfclayrev.o		\
 		module_sf_slab.o		\
 		module_sf_myjsfc.o		\
 		module_sf_qnsesfc.o		\

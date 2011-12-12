@@ -23,6 +23,9 @@ contains
                   dt,kpbl2d,                                                   &
                   exch_h,                                                      &
                   u10,v10,                                                     &
+! paj
+                  ctopo,ctopo2,                                        &
+!
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
                   its,ite, jts,jte, kts,kte,                                   &
@@ -134,8 +137,11 @@ contains
 !
    real,     dimension( ims:ime, kms:kme, jms:jme )                          , &
              intent(inout)   ::                                        exch_h
+!
+! ... paj: u10,v10 now inout
+!
    real,     dimension( ims:ime, jms:jme )                                   , &
-             intent(in   )   ::                                           u10, &
+             intent(inout   )   ::                                           u10, &
                                                                           v10
 !
    real,     dimension( ims:ime, jms:jme )                                   , &
@@ -162,6 +168,12 @@ contains
   integer,   dimension( ims:ime, jms:jme )                                   , &
              intent(out  )   ::                                        kpbl2d
   logical, intent(in)        ::                                       flag_qi
+!
+! paj
+!
+   real, optional,  dimension( ims:ime, jms:jme )                                   , &  !mchen
+             intent(in   )   ::                                         ctopo, &
+                                                                        ctopo2
 !optional
    real,     dimension( ims:ime, jms:jme )                                   , &
              optional                                                        , &
@@ -241,6 +253,9 @@ contains
               ,dt=dt,rcl=1.0,kpbl1d=kpbl2d(ims,j)                              &
               ,exch_hx=exch_h(ims,kms,j)                                       &
               ,u10=u10(ims,j),v10=v10(ims,j)                                   &
+!paj
+              ,ctopo=ctopo(ims,j),ctopo2=ctopo2(ims,j)                   &
+!
               ,gz1oz0=gz1oz0(ims,j)                                            &
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
@@ -270,6 +285,9 @@ contains
                   dt,rcl,kpbl1d,                                               &
                   exch_hx,                                                     &
                   u10,v10,                                                     &
+!paj: topo_wind
+                  ctopo,ctopo2,                                             &
+!
                   gz1oz0,                                                      &
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
@@ -390,6 +408,10 @@ contains
    real,     dimension( ims:ime, kms:kme )                                   , &
              intent(in   )   ::                                            ux, &
                                                                            vx
+! paj
+   real, optional, dimension( ims:ime )                                              , &
+             intent(in   )   ::                                         ctopo, &   !mchen
+                                                                         ctopo2
 !optional
    real,     dimension( ims:ime )                                            , &
              optional                                                        , &
@@ -433,8 +455,10 @@ contains
    real,    dimension( ims:ime, kms:kme )                                    , &
             intent(inout)   ::                                        exch_hx
 !
+! paj. u10, v10 now inout
+!
    real,    dimension( ims:ime )                                             , & 
-            intent(in  )    ::                                            u10, &
+            intent(inout  )    ::                                            u10, &
                                                                           v10
    real,    dimension( its:ite )    ::                                         &
                                                                          brcr, &
@@ -1129,9 +1153,16 @@ contains
      enddo
    enddo
 !
+! paj: ctopo=1 if topo_wind=0 (default) 
+!
    do i = its,ite
+    if(present(ctopo)) then    !mchen  add this line to make sure NMM can still work with YSU PBL 
+     ad(i,1) = 1.+ctopo(i)*ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2                    &
+              *(wspd1(i)/wspd(i))**2
+    else !mchen
      ad(i,1) = 1.+ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2                    &
               *(wspd1(i)/wspd(i))**2
+    endif !mchen
      f1(i,1) = ux(i,1)
      f2(i,1) = vx(i,1)
    enddo
@@ -1196,6 +1227,16 @@ contains
        dvsfc(i) = dvsfc(i) + vtend*conwrc*del(i,k)
      enddo
    enddo
+!
+! paj: ctopo2=1 if topo_wind=0 (default)
+!
+   do i = its,ite
+     if(present(ctopo).and.present(ctopo2)) then   ! mchen for NMM 
+     u10(i) = ctopo2(i)*u10(i)+(1-ctopo2(i))*ux(i,1)
+     v10(i) = ctopo2(i)*v10(i)+(1-ctopo2(i))*vx(i,1)
+     endif  !mchen
+   enddo
+
 !
 !---- end of vertical diffusion
 !

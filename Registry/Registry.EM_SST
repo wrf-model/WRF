@@ -92,6 +92,8 @@ state    real   prho_gc        igj      dyn_em      1        Z     i1  "PTHETA" 
 state    real   xlat_gc        ij       dyn_em      1        -     i1  "XLAT_M" "latitude, positive north" "degrees"
 state    real   xlong_gc       ij       dyn_em      1        -     i1  "XLONG_M" "longitude, positive east" "degrees"
 state    real   ht_gc          ij       dyn_em      1        -     i1  "HGT_M" "topography elevation" "m"
+state    real   var_sso        ij       dyn_em      1        -     i01hr "var_sso" "variance of subgrid-scale orography" "m2"
+state    real   lap_hgt        ij       dyn_em      1        -     hr    "lap_hgt" "Laplacian of orography" "m"
 state    real   tsk_gc         ij       dyn_em      1        -     i1  "SKINTEMP"  "skin temperature"  "K"
 state    real   tavgsfc        ij       dyn_em      1        -     i1  "TAVGSFC"  "daily mean of surface air temperature"  "K"
 state    real   tmn_gc         ij       dyn_em      1        -     i1  "SOILTEMP"  "annual mean deep soil temperature"  "K"
@@ -849,6 +851,10 @@ state   real   OL1              ij     misc        1         -     i012rhdus "OL
 state   real   OL2              ij     misc        1         -     i012rhdus "OL2"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
 state   real   OL3              ij     misc        1         -     i012rhdus "OL3"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
 state   real   OL4              ij     misc        1         -     i012rhdus "OL4"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
+
+# Additional for topo_wind
+state    real   ctopo             ij      misc        1         -     rh          "ctopo"              "Correction for topography"       ""
+state    real   ctopo2            ij      misc        1         -     rh          "ctopo2"             "Correction for topography 2"     ""
 
 # BEP urban scheme  variables
 state    real    a_u_bep       ikj     misc        1         Z      -        "a_u_bep"               "IMPLICIT FOR X-COMP."      "s-1"
@@ -1635,6 +1641,7 @@ rconfig   integer iz0tlnd                 namelist,physics      1            0  
 rconfig   real    shadlen                 namelist,physics      1            25000.    -     "shadow_length" "maximum length of orographic shadow" "m"
 rconfig   integer slope_rad               namelist,physics      max_domains    0       -     "slope_rad"  "1: use slope-dependent radiation, 0:not" ""
 rconfig   integer topo_shading            namelist,physics      max_domains    0       -     "topo_shading" "1: apply topographic shading to radiation, 0:not" ""
+rconfig   integer topo_wind               namelist,physics      max_domains    0       -     "topo_wind"  "1: improve effects topography over surface wind, 0:not" ""
 rconfig   integer no_mp_heating           namelist,physics      1              0       -     "no_mp_heating" "switch to turn of latent heating in mp schemes"   ""
 rconfig   integer fractional_seaice       namelist,physics      1              0       -     "fractional_seaice" "Fractional sea-ice option"
 rconfig   logical tice2tsk_if2cold        namelist,physics      1              .false. -     "tice2tsk_if2cold" "Avoid low ice temps when ice frac and Tsk are inconsistent"
@@ -1982,6 +1989,7 @@ package   gfssfcscheme   sf_sfclay_physics==3        -             -
 package   qnsesfcscheme  sf_sfclay_physics==4        -             -
 package   mynnsfcscheme  sf_sfclay_physics==5        -             scalar:qke;state:tsq,qsq,cov
 package   pxsfcscheme    sf_sfclay_physics==7        -             -
+package   sfclayrevscheme sf_sfclay_physics==11        -             -
 
 package   noahucmscheme  sf_urban_physics==1         -             state:trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep
 package   bepscheme      sf_urban_physics==2         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d

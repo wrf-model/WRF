@@ -609,6 +609,8 @@ BENCH_START(pbl_driver_tim)
      &        ,WARM_RAIN=grid%warm_rain                    ,WSPD=wspd          &
      &        ,XICE=grid%xice          ,XLAND=grid%xland        ,Z=grid%z                &
      &        ,ZNT=grid%znt                                                    &
+! paj: topo_wind
+     &        ,CTOPO=grid%ctopo,CTOPO2=grid%ctopo2                                   &
 ! variables added for BEP
      &          ,FRC_URB2D=grid%frc_urb2d                                                  &
      &          ,A_U_BEP=grid%a_u_bep,A_V_BEP=grid%a_v_bep,A_T_BEP=grid%a_t_bep          &

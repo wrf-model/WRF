@@ -1398,6 +1398,7 @@ integer myproc
                 TML,T0ML,HML,H0ML,HUML,HVML,TMOML               ) !Optional oml
 !--------------------------------------------------------------------
    USE module_sf_sfclay
+   USE module_sf_sfclayrev
    USE module_sf_slab
    USE module_sf_pxsfclay
    USE module_bl_ysu
@@ -1659,6 +1660,9 @@ integer myproc
 
       CASE (SFCLAYSCHEME)
            CALL sfclayinit( allowed_to_read )
+           isfc = 1
+      CASE (SFCLAYREVSCHEME)
+!           CALL sfclayinit( allowed_to_read )
            isfc = 1
       CASE (PXSFCSCHEME)
            CALL pxsfclayinit( allowed_to_read )

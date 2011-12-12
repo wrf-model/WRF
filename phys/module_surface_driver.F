@@ -2720,7 +2720,7 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte)
 !                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd           )
-     USE module_sf_mynn
+     USE module_sf_mynn, ONLY: sfclay_mynn
      implicit none
 
      INTEGER,  INTENT(IN )   ::        ids,ide, jds,jde, kds,kde,  &

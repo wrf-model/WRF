@@ -12,7 +12,7 @@ subroutine da_get_var_diagnostics( iv, j)
    integer                      :: num_stats_tot
    integer                      :: i,k
    real                         :: jo_radiance
-   real                         :: temp(76)
+   real                         :: temp(77)
 
    if (trace_use) call da_trace_entry("da_get_var_diagnostics")
 
@@ -98,7 +98,7 @@ subroutine da_get_var_diagnostics( iv, j)
    temp(74) = j % jo % tamdar_sfc_t
    temp(75) = j % jo % tamdar_sfc_p
    temp(76) = j % jo % tamdar_sfc_q
-
+   temp(77) = j % jo % rain_r
 
    call da_proc_sum_real(temp(:))
 
@@ -180,6 +180,7 @@ subroutine da_get_var_diagnostics( iv, j)
    j % jo % tamdar_sfc_t    = temp(74)
    j % jo % tamdar_sfc_p    = temp(75)
    j % jo % tamdar_sfc_q    = temp(76)
+   j % jo % rain_r          = temp(77)
 
    if (use_rad) then
       jo_radiance = 0.0
@@ -412,6 +413,13 @@ subroutine da_get_var_diagnostics( iv, j)
                                j % jo % buoy_t, iv % buoy_ef_t, &
                                j % jo % buoy_p, iv % buoy_ef_p, &
                                j % jo % buoy_q, iv % buoy_ef_q                                
+      end if
+
+      if (iv%info(rain)%ntotal > 0) then
+         write(unit=jo_unit,fmt='(a30,2i8,10f15.5)')' rainfall  obs, Jo(actual)  = ', &
+                               iv%info(rain)%ntotal, iv%nstats(rain), &
+                               j % jo % rain_r, iv % rain_ef_r, &
+                               0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0
       end if
 
       if (iv%info(profiler)%ntotal > 0) then

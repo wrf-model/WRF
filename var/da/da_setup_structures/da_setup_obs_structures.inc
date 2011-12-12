@@ -31,8 +31,8 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_radarobs .OR. use_radar_rv .OR. use_radar_rf .OR. use_satemobs .OR. &
       use_geoamvobs .OR. use_polaramvobs .OR. use_airepobs .OR. use_tamdarobs .OR. &
       use_gpspwobs .OR. use_gpsztdobs .OR. use_gpsrefobs .OR. use_ssmiretrievalobs .OR. &
-      use_ssmitbobs .OR. use_ssmt1obs .OR. use_ssmt2obs .OR. use_qscatobs .or. &
-      use_airsretobs ) then
+      use_ssmitbobs .OR. use_ssmt1obs .OR. use_ssmt2obs .OR. use_qscatobs .OR. &
+      use_airsretobs .OR. use_rainobs ) then
  
       use_obsgts = .true.
    else
@@ -93,6 +93,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_obsgts           = .false.
       use_rad              = .false.
       use_airsretobs       = .false.
+      use_rainobs          = .false.
    end if
     
    if (use_pseudo_rad .or. num_pseudo > 0) then
@@ -132,6 +133,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_obsgts           = .true.
       use_rad              = .false.
       use_airsretobs       = .false.
+      use_rainobs          = .false.
       ob_format = ob_format_ascii
    end if
 
@@ -212,7 +214,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
    do i=1,num_fgat_time
       write(unit=stdout, fmt='(3x,a,i2)') 'ob time ', i
       do j=1,num_ob_indexes
-         if(j.eq.27)cycle
+         if(j.eq.27)cycle 
          if (use_gpsztdobs .and.obs_names(j) == 'gpspw         ' ) then
             ob_name = 'gpsztd        '
          else

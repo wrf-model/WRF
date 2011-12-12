@@ -99,6 +99,7 @@ module da_wrfvar_top
    use da_sound, only : da_oi_stats_sound, da_oi_stats_sonde_sfc
    use da_ssmi, only : da_oi_stats_ssmt1, da_oi_stats_ssmt2, da_oi_stats_ssmi_tb, da_oi_stats_ssmi_rv
    use da_synop, only : da_oi_stats_synop  
+   use da_rain, only : da_oi_stats_rain
 
    use da_wrf_interfaces
 

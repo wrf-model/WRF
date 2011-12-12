@@ -51,7 +51,7 @@ subroutine da_transform_xtoy(cv_size, cv, grid, iv, y)
    if (iv%info(radar)%nlocal          > 0) call da_transform_xtoy_radar    (grid, iv, y)
    if (iv%info(bogus)%nlocal          > 0) call da_transform_xtoy_bogus    (grid, iv, y)
    if (iv%info(airsr)%nlocal          > 0) call da_transform_xtoy_airsr    (grid, iv, y)
-
+   if (iv%info(rain)%nlocal           > 0) call da_transform_xtoy_rain     (grid, iv, y)
    if (iv%info(pseudo)%nlocal         > 0) call da_transform_xtoy_pseudo   (grid, iv, y)
 
    if (use_rad) then

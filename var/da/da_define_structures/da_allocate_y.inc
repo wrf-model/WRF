@@ -290,6 +290,11 @@ subroutine da_allocate_y (iv, y)
       y % buoy(1:y % nlocal(buoy)) % q = 0.0
    end if
 
+   if (y % nlocal(rain) > 0) then
+      allocate (y % rain(1:y % nlocal(rain)))
+      y % rain(1:y % nlocal(rain)) % rain = 0.0
+   end if
+
    if (y % num_inst > 0) then
       allocate (y % instid(1:y % num_inst))
       do i = 1,  y % num_inst

@@ -23,6 +23,7 @@ WRFVAR_OBJS = \
    da_airep.o \
    da_pilot.o \
    da_radar.o \
+   da_rain.o \
    da_gpspw.o \
    da_gpsref.o \
    da_ssmi.o \

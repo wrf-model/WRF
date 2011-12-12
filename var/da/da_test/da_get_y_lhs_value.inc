@@ -42,7 +42,7 @@ subroutine da_get_y_lhs_value (iv, y, partial_lhs, pertile_lhs, adj_ttl_lhs)
    if (iv%info(buoy)%nlocal           > 0) call da_check_xtoy_adjoint_buoy     (iv, y, partial_lhs, pertile_lhs) 
    if (iv%info(bogus)%nlocal          > 0) call da_check_xtoy_adjoint_bogus    (iv, y, partial_lhs, pertile_lhs) 
    if (iv%info(radiance)%nlocal       > 0) call da_check_xtoy_adjoint_rad      (iv, y, partial_lhs, pertile_lhs) 
-
+   if (iv%info(rain)%nlocal           > 0) call da_check_xtoy_adjoint_rain     (iv, y, partial_lhs, pertile_lhs)
    ! FIX? consider using dm_sum_real
 #ifdef DM_PARALLEL
    call mpi_allreduce( partial_lhs, adj_ttl_lhs, 1, true_mpi_real, mpi_sum, comm, ierr) 

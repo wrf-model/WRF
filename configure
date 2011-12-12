@@ -300,8 +300,7 @@ fi
 
 if [ "$wrf_core" = "DA_CORE" ]; then
    if [ -n "$WRFPLUS_DIR" ] ; then
-      echo "To compile WRFDA without 4DVAR, please remove \$WRFPLUS_DIR from environment. "
-      exit
+      unset WRFPLUS_DIR
    fi
 fi
 

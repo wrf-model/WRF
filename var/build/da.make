@@ -190,8 +190,12 @@ da_utils : \
            da_bias_verif.exe \
            da_rad_diags.exe
 
-da_verif_obs.exe : da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o
-	$(SFC) $(LDFLAGS) -o $@ da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o
+da_verif_obs.exe : da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o ${WRFVAR_OBJS}
+	if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+        $(FC) $(LDFLAGS) -o $@ da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o $(MODULE_DIRS) $(ESMF_IO_INC) da_control.o -L. -lwrfvar -L$(WRFPLUS_DIR)/main -lwrflib $(LIB) module_machine.o ; \
+        else \
+        $(FC) $(LDFLAGS) -o $@ da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o $(MODULE_DIRS) $(ESMF_IO_INC) module_quilt_outbuf_ops.o da_control.o -L. -lwrfvar $(LIB) module_machine.o ; \
+        fi
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_verif_grid.exe : da_verif_grid.o da_verif_grid_control.o da_netcdf_interface.o $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
@@ -279,7 +283,7 @@ init_modules.o :
 
 da_bias_verif.o da_bias_scan.o da_bias_sele.o da_bias_airmass.o da_rad_diags.o \
 da_tune_obs_hollingsworth1.o da_tune_obs_hollingsworth2.o da_tune_obs_desroziers.o \
-da_verif_obs_control.o da_verif_obs_init.o da_verif_grid_control.o \
+da_verif_obs_control.o da_verif_obs_init.o da_verif_grid_control.o da_verif_obs.o \
 da_verif_grid.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b

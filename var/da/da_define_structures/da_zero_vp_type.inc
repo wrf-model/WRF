@@ -20,6 +20,7 @@ subroutine da_zero_vp_type( vp )
    if (associated(vp % v6)) vp % v6(:,:,:) = 0.0
    if (associated(vp % v7)) vp % v7(:,:,:) = 0.0
    if (associated(vp % v8)) vp % v8(:,:,:) = 0.0
+   if (associated(vp % v9)) vp % v9(:,:,:) = 0.0
 #endif
    ! Flow-dependent control variables:
    if (associated(vp % alpha) ) vp % alpha(:,:,:,:) = 0.0

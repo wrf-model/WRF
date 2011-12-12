@@ -1677,6 +1677,7 @@ rconfig   real      var_scaling5            namelist,wrfvar7  max_outer_iteratio
 rconfig   real      var_scaling6            namelist,wrfvar7  max_outer_iterations  1.0      - "var_scaling6"             ""  ""
 rconfig   real      var_scaling7            namelist,wrfvar7  max_outer_iterations  1.0      - "var_scaling7"             ""  ""
 rconfig   real      var_scaling8            namelist,wrfvar7  max_outer_iterations  1.0      - "var_scaling8"             ""  ""
+rconfig   real      var_scaling9            namelist,wrfvar7  max_outer_iterations  1.0      - "var_scaling9"             ""  ""
 rconfig   real      len_scaling1            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling1"             ""  ""
 rconfig   real      len_scaling2            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling2"             ""  ""
 rconfig   real      len_scaling3            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling3"             ""  ""
@@ -1685,6 +1686,7 @@ rconfig   real      len_scaling5            namelist,wrfvar7  max_outer_iteratio
 rconfig   real      len_scaling6            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling6"             ""  ""
 rconfig   real      len_scaling7            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling7"             ""  ""
 rconfig   real      len_scaling8            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling8"             ""  ""
+rconfig   real      len_scaling9            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling9"             ""  ""
 rconfig   real      je_factor               namelist,wrfvar7  1  1.0      - "je_factor"                ""  ""
 rconfig   real      power_truncation        namelist,wrfvar7  1  1.0      - "power_truncation"         ""  ""
 
@@ -1740,6 +1742,7 @@ rconfig   real      max_vert_var5           namelist,wrfvar13  1  99.0     - "ma
 rconfig   real      max_vert_var6           namelist,wrfvar13  1  99.0     - "max_vert_var6"           ""  ""
 rconfig   real      max_vert_var7           namelist,wrfvar13  1  99.0     - "max_vert_var7"           ""  ""
 rconfig   real      max_vert_var8           namelist,wrfvar13  1  99.0     - "max_vert_var8"           ""  ""
+rconfig   real      max_vert_var9           namelist,wrfvar13  1  99.0     - "max_vert_var9"           ""  ""
 rconfig   real      max_vert_var_alpha      namelist,wrfvar13  1  99.0     - "max_vert_var_alpha"      ""  ""
 rconfig   real      psi_chi_factor          namelist,wrfvar13  1  1.0      - "psi_chi_factor"          ""  ""
 rconfig   real      psi_t_factor            namelist,wrfvar13  1  1.0      - "psi_t_factor"            ""  ""
@@ -2732,6 +2735,7 @@ typedef vp_type real    v5                      ijk      -         1        -   
 typedef vp_type real    v6                      ijk      -         1        -       -
 typedef vp_type real    v7                      ijk      -         1        -       -
 typedef vp_type real    v8                      ijk      -         1        -       -
+typedef vp_type real    v9                      ijk      -         1        -       -
 typedef vp_type real    alpha                   ijk9     -         1        -       -
 # END VP_TYPE DEFINITION
 

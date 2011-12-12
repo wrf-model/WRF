@@ -37,7 +37,7 @@ module da_vtox_transforms
       alphacv_method_vp, alphacv_method_xa, vertical_ip_0, trace_use_dull, &
       ips,ipe,jps,jpe,kps,kpe, cv_size, cv_options, cv_options_hum, cloud_cv_options, &
       use_background_errors,do_normalize,use_rf,len_scaling1, len_scaling2, len_scaling3, len_scaling4, &
-      len_scaling5, len_scaling6, len_scaling7, len_scaling8
+      len_scaling5, len_scaling6, len_scaling7, len_scaling8, len_scaling9
 #endif
 
    use da_define_structures, only : be_type, xbx_type,da_zero_vp_type,da_zero_x

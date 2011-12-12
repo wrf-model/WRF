@@ -12,6 +12,15 @@ subroutine da_print_stats_pseudo(stats_unit, nu, nv, nt, np, nq, pseudo)
 
    if (trace_use_dull) call da_trace_entry("da_print_stats_pseudo")
 
+#ifdef CLOUD_CV
+   write(unit=stats_unit, fmt='(6a/)') &
+        '   var             ', &
+        'u (m/s)     n    k    ', &
+        'v (m/s)     n    k    ', &
+        't (K)       n    k    ', &
+        'p (Pa)      n    k    ', &
+        pseudo_var(1:3), ' (kg/kg)   n    k'
+#else
    write(unit=stats_unit, fmt='(6a/)') &
         '   var             ', &
         'u (m/s)     n    k    ', &
@@ -19,7 +28,7 @@ subroutine da_print_stats_pseudo(stats_unit, nu, nv, nt, np, nq, pseudo)
         't (K)       n    k    ', &
         'p (Pa)      n    k    ', &
         'q (kg/kg)   n    k'
-
+#endif
    write(unit=stats_unit, fmt='(a,i16,4i22)') &
         '  Number: ', nu, nv, nt, np, nq
 

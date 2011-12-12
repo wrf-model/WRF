@@ -873,7 +873,8 @@ module da_define_structures
 #ifdef CLOUD_CV
       integer :: size6c      ! Complex size of CV array of 6th variable error.
       integer :: size7c      ! Complex size of CV array of 7th variable error.
-      integer :: size8c      ! Complex size of CV array of 7th variable error.
+      integer :: size8c      ! Complex size of CV array of 8th variable error.
+      integer :: size9c      ! Complex size of CV array of 9th variable error.
 #endif
       integer :: size_alphac ! Size of alpha control variable (complex).
       integer :: size1       ! Size of CV array of 1st variable error.
@@ -884,7 +885,8 @@ module da_define_structures
 #ifdef CLOUD_CV
       integer :: size6       ! Size of CV array of 6th variable error.
       integer :: size7       ! Size of CV array of 7th variable error.
-      integer :: size8       ! Size of CV array of 7th variable error.
+      integer :: size8       ! Size of CV array of 8th variable error.
+      integer :: size9       ! Size of CV array of 9th variable error.
 #endif
       integer :: size1l      ! Size of CV array of 1st variable lbc error.
       integer :: size2l      ! Size of CV array of 2nd variable lbc error.
@@ -927,6 +929,7 @@ module da_define_structures
       type (be_subtype) :: v6
       type (be_subtype) :: v7
       type (be_subtype) :: v8
+      type (be_subtype) :: v9
 #endif
       type (be_subtype) :: alpha
       real*8, pointer     :: pb_vert_reg(:,:,:)

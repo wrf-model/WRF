@@ -30,12 +30,12 @@ module da_setup_structures
       cv_size_domain_je, cv_size_domain,ensdim_alpha, alpha_vertloc, alpha_hydrometeors, &
       lat_stats_option,alpha_std_dev,sigma_alpha,alpha_corr_scale, &
       len_scaling1, len_scaling2, len_scaling3, len_scaling4, len_scaling5,&
-      len_scaling6, len_scaling7, len_scaling8,&
+      len_scaling6, len_scaling7, len_scaling8, len_scaling9, &
       max_vert_var1, max_vert_var2, max_vert_var3, max_vert_var4, max_vert_var5, &
-      max_vert_var6, max_vert_var7, max_vert_var8, max_vert_var_alpha, &
+      max_vert_var6, max_vert_var7, max_vert_var8, max_vert_var9, max_vert_var_alpha, &
       print_detail_be, test_statistics, do_normalize, use_rf, &
       var_scaling1, var_scaling2, var_scaling3, var_scaling4, &
-      var_scaling5, var_scaling6, var_scaling7, var_scaling8, &
+      var_scaling5, var_scaling6, var_scaling7, var_scaling8, var_scaling9, &
       vert_corr,max_vert_var5,power_truncation,alpha_truncation, &
       print_detail_regression,gas_constant, use_airsretobs, &
       filename_len, use_ssmisobs, gravity, t_triple, use_hirs4obs, use_mhsobs, &

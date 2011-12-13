@@ -1379,7 +1379,7 @@ CONTAINS
         xff_shal(1:9)=0.
         if(ierr5(i).eq.0)then
           xkshal=(xaa3(i)-aa3(i))/mbdt_s
-          if(xkshal.gt.0.)xkshal=+1.e6
+          if(xkshal.ge.0.)xkshal=+1.e6
           if(xkshal.gt.-1.e-4 .and. xkshal.lt.0.)xkshal=-1.e-4
           xff_shal(1)=max(0.,-(aa3(i)-aa3_0(i))/(xkshal*dtime))
           xff_shal(2)=max(0.,-(aa3(i)-aa3_0(i))/(xkshal*dtime))

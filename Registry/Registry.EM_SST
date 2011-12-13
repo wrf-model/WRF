@@ -754,6 +754,18 @@ state    real   SOLCON            -     misc        1         -      r       "SO
 state    real   SMFR3D           ilj    misc        1         Z      r        "SMFR3D"               "SOIL ICE" ""
 state    real   KEEPFR3DFLAG     ilj    misc        1         Z      r        "KEEPFR3DFLAG"          "FLAG - 1. FROZEN SOIL YES, 0 - NO"             ""
 
+state    real   SWVISDIR          ij    misc        1         Z      r        "SWVISDIR"              "SWR VIS DIR component"  ""
+state    real   SWVISDIF          ij    misc        1         Z      r        "SWVISDIF"              "SWR VIS DIF component"  ""
+state    real   SWNIRDIR          ij    misc        1         Z      r        "SWNIRDIR"              "SWR NIR DIR component"  ""
+state    real   SWNIRDIF          ij    misc        1         Z      r        "SWNIRDIF"              "SWR NIR DIF component"  ""
+state    real   ALSWVISDIR        ij    misc        1         Z      r        "ALSWVISDIR"            "ALB VIS DIR component"  ""
+state    real   ALSWVISDIF        ij    misc        1         Z      r        "ALSWVISDIF"            "ALB VIS DIF component"  ""
+state    real   ALSWNIRDIR        ij    misc        1         Z      r        "ALSWNIRDIR"            "ALB NIR DIR component"  ""
+state    real   ALSWNIRDIF        ij    misc        1         Z      r        "ALSWNIRDIF"            "ALB NIR DIF component"  ""
+
+# SSiB variables
+include registry.ssib
+
 # Additional for P-X PBL and LSM
 state    real   RA               ij     misc        1         -      r        "RA"           "AERODYNAMIC RESISTANCE"   "s m-1"
 state    real   RS               ij     misc        1         -      r        "RS"           "SURFACE RESISTANCE"       "s m-1"
@@ -2000,6 +2012,7 @@ package   lsmscheme      sf_surface_physics==2       -             -
 package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1
 package   noahmpscheme   sf_surface_physics==4       -             -
 package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old
+package   ssibscheme     sf_surface_physics==8       -             state:ssib_fm,ssib_fh,ssib_cm,ssibxdd,ssib_br,ssib_lhf,ssib_shf,ssib_ghf,ssib_egs,ssib_eci,ssib_ect,ssib_egi,ssib_egt,ssib_sdn,ssib_sup,ssib_ldn,ssib_lup,ssib_wat,ssib_shc,ssib_shg,ssib_lai,ssib_vcf,ssib_z00,ssib_veg,isnow,swe,snowden,snowdepth,tkair,dzo1,wo1,tssn1,tssno1,bwo1,bto1,cto1,fio1,flo1,bio1,blo1,ho1,dzo2,wo2,tssn2,tssno2,bwo2,bto2,cto2,fio2,flo2,bio2,blo2,ho2,dzo3,wo3,tssn3,tssno3,bwo3,bto3,cto3,fio3,flo3,bio3,blo3,ho3,dzo4,wo4,tssn4,tssno4,bwo4,bto4,cto4,fio4,flo4,bio4,blo4,ho4
 package   temfsfcscheme  sf_sfclay_physics==10       -             state:wm_temf
 package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 

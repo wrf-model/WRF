@@ -8544,7 +8544,13 @@
              taucmcl ,ssacmcl ,asmcmcl ,fsfcmcl , &
              ciwpmcl ,clwpmcl ,reicmcl ,relqmcl , &
              tauaer  ,ssaaer  ,asmaer  ,ecaer   , &
-             swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc)
+             swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc,  &
+! --------- Add the following four compenants for ssib shortwave down radiation ---!
+! -------------------      by Zhenxin 2011-06-20      --------------------------------!
+             sibvisdir, sibvisdif, sibnirdir, sibnirdif          &
+                                                                )
+! ----------------------  End,  Zhenxin 2011-06-20    --------------------------------!
+
 
 ! ------- Description -------
 
@@ -8743,6 +8749,14 @@
                                                       !    Dimensions: (ncol,nlay+1)
       real(kind=rb), intent(out) :: swdflx(:,:)       ! Total sky shortwave downward flux (W/m2)
                                                       !    Dimensions: (ncol,nlay+1)
+      real(kind=rb), intent(out) :: sibvisdir(:,:)    ! visible direct downward flux  (W/m2)
+                                                      !    Dimensions: (ncol,nlay+1) Zhenxin (2011/06/20)
+      real(kind=rb), intent(out) :: sibvisdif(:,:)    ! visible diffusion downward flux  (W/m2)
+                                                      !    Dimensions: (ncol,nlay+1) Zhenxin (2011/06/20)
+      real(kind=rb), intent(out) :: sibnirdir(:,:)    ! Near IR direct downward flux  (W/m2)
+                                                      !    Dimensions: (ncol,nlay+1)  Zhenxin (2011/06/20)
+      real(kind=rb), intent(out) :: sibnirdif(:,:)    ! Near IR diffusion downward flux  (W/m2)
+                                                      !    Dimensions: (ncol,nlay+1) Zhenxin (2011/06/20)
       real(kind=rb), intent(out) :: swhr(:,:)         ! Total sky shortwave radiative heating rate (K/d)
                                                       !    Dimensions: (ncol,nlay)
       real(kind=rb), intent(out) :: swuflxc(:,:)      ! Clear sky shortwave upward flux (W/m2)
@@ -9142,15 +9156,24 @@
             swdflx(iplon,i) = zbbfd(i)
             uvdflx(i) = zuvfd(i)
             nidflx(i) = znifd(i)
+
 !  Direct/diffuse fluxes
             dirdflux(i) = zbbfddir(i)
             difdflux(i) = swdflx(iplon,i) - dirdflux(i)
 !  UV/visible direct/diffuse fluxes
             dirdnuv(i) = zuvfddir(i)
             difdnuv(i) = zuvfd(i) - dirdnuv(i)
+!  ------- Zhenxin add vis/uv downwards dir or dif here --!
+            sibvisdir(iplon,i) = dirdnuv(i)
+            sibvisdif(iplon,i) = difdnuv(i)
+!  ----- End of Zhenxin addition  ------------!
 !  Near-IR direct/diffuse fluxes
             dirdnir(i) = znifddir(i)
             difdnir(i) = znifd(i) - dirdnir(i)
+!  ---------Zhenxin add nir downwards dir and dif here --!
+            sibnirdir(iplon,i) = dirdnir(i)
+            sibnirdif(iplon,i) = difdnir(i)
+!  --------    End of Zhenxin addition 2011-05  ---------!
          enddo
 
 !  Total and clear sky net fluxes
@@ -9578,6 +9601,11 @@ CONTAINS
                        xland, xice, snow,                         &
                        qv3d, qc3d, qr3d,                          &
                        qi3d, qs3d, qg3d,                          &
+                       alswvisdir, alswvisdif,                    &  !Zhenxin ssib alb comp (06/20/2011)
+                       alswnirdir, alswnirdif,                    &  !Zhenxin ssib alb comp (06/20/2011)
+                       swvisdir, swvisdif,                        &  !Zhenxin ssib swr comp (06/20/2011)
+                       swnirdir, swnirdif,                        &  !Zhenxin ssib swi comp (06/20/2011)
+                       sf_surface_physics,                        &  !Zhenxin
                        f_qv, f_qc, f_qr, f_qi, f_qs, f_qg,        &
                        tauaer300,tauaer400,tauaer600,tauaer999,   & ! czhao 
                        gaer300,gaer400,gaer600,gaer999,           & ! czhao 
@@ -9631,6 +9659,22 @@ CONTAINS
                                                             SNOW, &
                                                              TSK, &
                                                           ALBEDO
+!
+!!! -------------------  Zhenxin (2011-06/20) ------------------
+   REAL, DIMENSION( ims:ime, jms:jme )                         , &
+         INTENT(IN)     ::                            ALSWVISDIR, &     ! ssib albedo of sw and lw
+                                                      ALSWVISDIF, &
+                                                      ALSWNIRDIR, &
+                                                      ALSWNIRDIF
+
+   REAL, DIMENSION( ims:ime, jms:jme )                         , &
+         INTENT(OUT)    ::                              SWVISDIR, &
+                                                        SWVISDIF, &
+                                                        SWNIRDIR, &
+                                                        SWNIRDIF        ! ssib sw dir and diff rad
+   INTEGER, INTENT(IN) :: sf_surface_physics                            ! ssib para
+
+!  ----------------------- end Zhenxin --------------------------
 !
    REAL, INTENT(IN  )   ::                                   R,G
 !
@@ -9765,7 +9809,11 @@ CONTAINS
     real, dimension( 1, kts:kte+2 )  ::                   swuflx, &
                                                           swdflx, &
                                                          swuflxc, &
-                                                         swdflxc
+                                                         swdflxc, &
+                                                       sibvisdir, &  ! Zhenxin 2011-06-20
+                                                       sibvisdif, &
+                                                       sibnirdir, &
+                                                       sibnirdif     ! Zhenxin 2011-06-20
     real, dimension( 1, kts:kte+1 )  ::                     swhr, &
                                                            swhrc
 
@@ -10109,10 +10157,30 @@ CONTAINS
 
 ! Set surface albedo for direct and diffuse radiation in UV/visible and
 ! near-IR spectral regions
+! -------------- Zhenxin 2011-06-20 ----------- !
+
+! ------- 1.  Commented by Zhenxin 2011-06-20 for SSiB coupling modified ---- !
+!         asdir(ncol) = albedo(i,j)
+!         asdif(ncol) = albedo(i,j)
+!         aldir(ncol) = albedo(i,j)
+!         aldif(ncol) = albedo(i,j)
+! -------    End of Comments    ------ !
+
+! ------- 2. New Addiation  ------ !
+    IF ( sf_surface_physics .eq. 8 .AND. XLAND(i,j) .LT. 1.5) THEN
+         asdir(ncol) = ALSWVISDIR(I,J)
+         asdif(ncol) = ALSWVISDIF(I,J)
+         aldir(ncol) = ALSWNIRDIR(I,J)
+         aldif(ncol) = ALSWNIRDIF(I,J)
+    ELSE
          asdir(ncol) = albedo(i,j)
          asdif(ncol) = albedo(i,j)
          aldir(ncol) = albedo(i,j)
          aldif(ncol) = albedo(i,j)
+    ENDIF
+
+! ---------- End of Addiation ------!
+! ----------  End of fds_Zhenxin 2011-06-20   --------------!
 
 ! Define cloud optical properties for radiation (inflgsw = 0)
 ! This option is not currently active
@@ -10398,7 +10466,11 @@ CONTAINS
              taucmcl ,ssacmcl ,asmcmcl ,fsfcmcl , &
              ciwpmcl ,clwpmcl ,reicmcl ,relqmcl , &
              tauaer  ,ssaaer  ,asmaer  ,ecaer   , &
-             swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc)
+             swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, &
+! -----          Zhenxin added for ssib coupiling 2011-06-20 --------!
+             sibvisdir, sibvisdif, sibnirdir, sibnirdif          &
+                                                        )
+! --------------------   End of addiation by Zhenxin 2011-06-20 ------!
 
 ! Output net absorbed shortwave surface flux and shortwave cloud forcing
 ! at the top of atmosphere (W/m2)
@@ -10415,6 +10487,12 @@ CONTAINS
             swupb(i,j)     = swuflx(1,1)
             swupbc(i,j)    = swuflxc(1,1)
             swdnb(i,j)     = swdflx(1,1)
+! Added by Zhenxin for 4 compenants of swdown radiation
+            swvisdir(i,j)  = sibvisdir(1,1)
+            swvisdif(i,j)  = sibvisdif(1,1)
+            swnirdir(i,j)  = sibnirdir(1,1)
+            swnirdif(i,j)  = sibnirdif(1,1)
+!  Ended, Zhenxin (2011/06/20)
             swdnbc(i,j)    = swdflxc(1,1)
          endif
 
@@ -10447,6 +10525,10 @@ CONTAINS
             swupbc(i,j)    = 0.
             swdnb(i,j)     = 0.
             swdnbc(i,j)    = 0.
+            swvisdir(i,j)  = 0.  ! Add by Zhenxin (2011/06/20)
+            swvisdif(i,j)  = 0.
+            swnirdir(i,j)  = 0.
+            swnirdif(i,j)  = 0.  ! Add by Zhenxin (2011/06/20)
          endif
 
       endif

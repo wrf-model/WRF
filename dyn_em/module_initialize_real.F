@@ -1459,19 +1459,28 @@ integer::oops1,oops2
             IF ( num_st_levels_input .LT. 2 ) THEN
                CALL wrf_error_fatal ( 'Not enough soil temperature data for P-X LSM scheme.')
             END IF
+!---------- fds (06/2010) ---------------------------------
+         CASE (SSIBSCHEME)
+            IF ( num_st_levels_input .LT. 2 ) THEN
+               CALL wrf_error_fatal ( 'Not enough soil temperature data for SSIB LSM scheme.')
+            END IF
+!--------------------------------------------------------
 
       END SELECT enough_data
 
       interpolate_soil_tmw : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
-         CASE ( SLABSCHEME , LSMSCHEME, NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME )
+         CASE ( SLABSCHEME , LSMSCHEME, NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME, SSIBSCHEME )
             CALL process_soil_real ( grid%tsk , grid%tmn , grid%tavgsfc,  &
                                   grid%landmask , grid%sst , grid%ht, grid%toposoil, &
                                   st_input , sm_input , sw_input , &
                                   st_levels_input , sm_levels_input , sw_levels_input , &
                                   grid%zs , grid%dzs , grid%tslb , grid%smois , grid%sh2o , &
-                                  flag_sst , flag_tavgsfc, &
-                                  flag_soilhgt, flag_soil_layers, flag_soil_levels, &
+                                  flag_sst , flag_tavgsfc, flag_soilhgt,&
+                                  grid%st000010, grid%st010200, grid%sm000010, grid%sm010200, & !fds 
+                                  grid%st010040, grid%st040100, grid%st100200, & 
+                                  grid%sm010040, grid%sm040100, grid%sm100200, & 
+                                  flag_soil_layers, flag_soil_levels, &
                                   ids , ide , jds , jde , kds , kde , &
                                   ims , ime , jms , jme , kms , kme , &
                                   its , ite , jts , jte , kts , kte , &
@@ -1614,7 +1623,7 @@ integer::oops1,oops2
 
       fix_tsk_tmn : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
-         CASE ( SLABSCHEME , LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME )
+         CASE ( SLABSCHEME , LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME, SSIBSCHEME )
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
@@ -1800,6 +1809,7 @@ integer::oops1,oops2
                      IF ( ( model_config_rec%sf_surface_physics(grid%id) .NE. LSMSCHEME    ) .AND. &
                           ( model_config_rec%sf_surface_physics(grid%id) .NE. NOAHMPSCHEME ) .AND. &
                           ( model_config_rec%sf_surface_physics(grid%id) .NE. RUCLSMSCHEME ).AND. &
+                          ( model_config_rec%sf_surface_physics(grid%id) .NE. SSIBSCHEME ).AND. & !fds 
                           ( model_config_rec%sf_surface_physics(grid%id) .NE. PXLSMSCHEME ) ) THEN
                         print *,'error in the grid%tslb'
                         print *,'i,j=',i,j
@@ -1821,8 +1831,8 @@ integer::oops1,oops2
                                  grid%tslb(i,ns,j) = ( grid%tsk(i,j)*(3.0 - grid%zs(ns)) + &
                                                        grid%tmn(i,j)*(0.0 - grid%zs(ns)) ) /(3.0 - 0.0)
                               END DO
-                           CASE ( LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME )
-                              CALL wrf_error_fatal ( 'Assigned constant soil moisture to 0.3, stopping')
+                           CASE ( LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME, SSIBSCHEME )
+!                             CALL wrf_error_fatal ( 'Assigned constant soil moisture to 0.3, stopping')
                               DO ns = 1 , model_config_rec%num_soil_layers
                                  grid%tslb(i,ns,j) = ( grid%tsk(i,j)*(3.0 - grid%zs(ns)) + &
                                                        grid%tmn(i,j)*(0.0 - grid%zs(ns)) ) /(3.0 - 0.0)

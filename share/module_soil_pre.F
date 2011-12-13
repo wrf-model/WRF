@@ -595,6 +595,9 @@ print *,'WATER CHANGE = ',change_water
                                 st_levels_input , sm_levels_input , sw_levels_input , &
                                 zs , dzs , tslb , smois , sh2o , &
                                 flag_sst , flag_tavgsfc, flag_soilhgt, &
+                                st000010, st010200, sm000010, sm010200, & !fds
+                                 st010040 , st040100 , st100200, &
+                                 sm010040 , sm040100 , sm100200, &
                                 flag_soil_layers, flag_soil_levels, &
                                 ids , ide , jds , jde , kds , kde , &
                                 ims , ime , jms , jme , kms , kme , &
@@ -613,6 +616,11 @@ print *,'WATER CHANGE = ',change_water
                               num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc
 
       INTEGER , INTENT(IN) :: flag_sst, flag_tavgsfc
+!--------fds (06/2010)----------------------------
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: st000010, st010200, sm000010, sm010200, &
+                                 st010040 , st040100 , st100200, &
+                                 sm010040 , sm040100 , sm100200
+!-------------------------------------------------
       INTEGER , INTENT(IN) :: flag_soil_layers, flag_soil_levels, flag_soilhgt
 
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: landmask , sst
@@ -763,7 +771,7 @@ print *,'WATER CHANGE = ',change_water
 
       adjust_soil : SELECT CASE ( sf_surface_physics )
 
-         CASE ( SLABSCHEME , LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME )
+         CASE ( SLABSCHEME , LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME, SSIBSCHEME )
             CALL adjust_soil_temp_new ( tmn , sf_surface_physics , tsk , ht ,            &
                                         toposoil , landmask , st_input, st_levels_input, &
                                         flag_soilhgt , flag_tavgsfc ,                    &
@@ -833,6 +841,22 @@ print *,'WATER CHANGE = ',change_water
                                  ids , ide , jds , jde , kds , kde , &
                                  ims , ime , jms , jme , kms , kme , &
                                  its , ite , jts , jte , kts , kte )
+!----------fds (06/2010)-------------------------------
+      ELSE IF ( ( sf_surface_physics .EQ. 8 ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
+         CALL init_soil_8_real ( tsk , tmn , smois , sh2o , tslb , &
+                         st_input , sm_input , sw_input , landmask , sst , &
+                         zs , dzs , &
+                         st_levels_input , sm_levels_input , sw_levels_input , &
+         num_soil_layers , num_st_levels_input , num_sm_levels_input , num_sw_levels_input , &
+                        num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc , &
+                                 flag_sst , flag_soil_layers , flag_soil_levels , &
+                                 st000010, st010200, sm000010, sm010200, &
+                                 st010040 , st040100 , st100200, &
+                                 sm010040 , sm040100 , sm100200, &
+                                 ids , ide , jds , jde , kds , kde , &
+                                 ims , ime , jms , jme , kms , kme , &
+                                 its , ite , jts , jte , kts , kte )
+!-----------------------------------------------------
       END IF
 
    END SUBROUTINE process_soil_real
@@ -2237,10 +2261,117 @@ cycle
       END IF
 
    END SUBROUTINE init_soil_7_real
+!------------SSIB (fds 06/2010)-----------------------------
+   SUBROUTINE init_soil_8_real ( tsk , tmn , smois , sh2o , tslb , &
+                                 st_input , sm_input , sw_input , landmask , sst , &
+                                 zs , dzs , &
+                                 st_levels_input , sm_levels_input , sw_levels_input , &
+           num_soil_layers , num_st_levels_input , num_sm_levels_input ,  num_sw_levels_input , &
+                             num_st_levels_alloc , num_sm_levels_alloc ,  num_sw_levels_alloc , &
+                                 flag_sst , flag_soil_layers , flag_soil_levels , &
+                                 st000010, st010200, sm000010, sm010200, &
+                                 st010040 , st040100 , st100200, &
+                                 sm010040 , sm040100 , sm100200, &
+                                 ids , ide , jds , jde , kds , kde , &
+                                 ims , ime , jms , jme , kms , kme , &
+                                 its , ite , jts , jte , kts , kte )
+
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN) :: num_soil_layers , &
+                              num_st_levels_input , num_sm_levels_input , num_sw_levels_input , &
+                              num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc , &
+                              ids , ide , jds , jde , kds , kde , &
+                              ims , ime , jms , jme , kms , kme , &
+                              its , ite , jts , jte , kts , kte
+
+      INTEGER , INTENT(IN) :: flag_sst, flag_soil_layers , flag_soil_levels
+
+      INTEGER , DIMENSION(1:num_st_levels_input) , INTENT(INOUT) :: st_levels_input
+      INTEGER , DIMENSION(1:num_sm_levels_input) , INTENT(INOUT) :: sm_levels_input
+      INTEGER , DIMENSION(1:num_sw_levels_input) , INTENT(INOUT) :: sw_levels_input
+
+      REAL , DIMENSION(ims:ime,1:num_st_levels_alloc,jms:jme) , INTENT(INOUT) :: st_input
+      REAL , DIMENSION(ims:ime,1:num_sm_levels_alloc,jms:jme) , INTENT(INOUT) :: sm_input
+      REAL , DIMENSION(ims:ime,1:num_sw_levels_alloc,jms:jme) , INTENT(INOUT) :: sw_input
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: landmask , sst
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: st000010, st010200, st010040 , st040100 , st100200
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: sm000010, sm010200, sm010040 , sm040100 , sm100200
+
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: tmn
+      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: tsk
+      REAL , DIMENSION(num_soil_layers) :: zs , dzs
+
+      REAL , DIMENSION(ims:ime,num_soil_layers,jms:jme) , INTENT(OUT) :: tslb , smois , sh2o
+
+      REAL , ALLOCATABLE , DIMENSION(:) :: zhave
+
+      INTEGER :: i , j , l , lout , lin , lwant , lhave , num
+      REAL :: temp
+      LOGICAL :: found_levels
+
+      found_levels = .false.
+
+!      write(message, FMT='(A)') ' Prepare SSiB LSM soil fields'
+!fds (06/2010)
+!-- SSiB needs NCEP/NCAR reanalysis soil temperature and moisture at 0-10cm and 10-200cm --
+      IF ( flag_soil_layers == 1 ) THEN
+                  DO j = jts , MIN(jde-1,jte)
+                     DO i = its , MIN(ide-1,ite)
+                        tslb(i,1,j) = st000010(i,j)
+                        tslb(i,2,j) = st010040(i,j)
+                        tslb(i,3,j) = st040100(i,j)
+                        smois(i,1,j) = sm000010(i,j)
+                        smois(i,2,j) = sm010040(i,j)
+                        smois(i,3,j) = sm040100(i,j)
+! temporary fix (JD) for missing 4-layer input - use 2 instead
+                        if(tslb(i,2,j) .lt. 10.)tslb(i,2,j) = st000010(i,j)
+                        if(smois(i,2,j) .lt. 0.01)smois(i,2,j) = sm000010(i,j)
+                        if(tslb(i,3,j) .lt. 10.)tslb(i,3,j) = st010200(i,j)
+                        if(smois(i,3,j) .lt. 0.01)smois(i,3,j) = sm010200(i,j)
+                     END DO
+                  END DO
+      ELSE
+          CALL wrf_debug ( 0 , 'SSiB LSM needs 0-10 cm soil t')
+          CALL wrf_debug ( 0 , 'SSiB LSM needs 0-10 cm soil m')
+          CALL wrf_debug ( 0 , 'SSiB LSM needs 10-200 cm soil t')
+          CALL wrf_debug ( 0 , 'SSiB LSM needs 10-200 cm soil m')
+      ENDIF
+
+         !  Over water, put in reasonable values for soil temperature and moisture.  These won't be
+         !  used, but they will make a more continuous plot.
+
+         IF ( flag_sst .EQ. 1 ) THEN
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF ( landmask(i,j) .LT. 0.5 ) THEN
+                     DO l = 1 , num_soil_layers
+                        tslb(i,l,j)= sst(i,j)
+                        smois(i,l,j)= 1.0
+                        sh2o (i,l,j)= 1.0
+                     END DO
+                  END IF
+               END DO
+            END DO
+         ELSE
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF ( landmask(i,j) .LT. 0.5 ) THEN
+                     DO l = 1 , num_soil_layers
+                        tslb(i,l,j)= tsk(i,j)
+                        smois(i,l,j)= 1.0
+                        sh2o (i,l,j)= 1.0
+                     END DO
+                  END IF
+               END DO
+            END DO
+         END IF
+
+   END SUBROUTINE init_soil_8_real
+!--------------------------------------------------------
 
    SUBROUTINE aggregate_categories_part1  ( landuse_frac , iswater , num_veg_cat , mminlu )
       IMPLICIT NONE
-
       INTEGER , INTENT(IN) :: iswater
       INTEGER , INTENT(IN) :: num_veg_cat
       CHARACTER (LEN=4) , INTENT(IN) :: mminlu

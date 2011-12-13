@@ -455,6 +455,8 @@ state   real    qnn            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QNCCN"         "CCN Number concentration" "# kg(-1)"
 state   real    qnc            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QNCLOUD"       "cloud water Number concentration" "# kg(-1)"
+state   real    qvolg          ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QVGRAUPEL"     "Graupel Particle Volume" "m(3) kg(-1)"
 state   real    -              ikjftb  dfi_scalar      1         -     -   -
 state   real    dfi_qndrop     ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNDROP"    "Droplet number mixing ratio"        "# kg-1"
@@ -474,6 +476,10 @@ state   real    dfi_qnn        ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNCC"      "CNN Number concentration"   "# kg(-1)"
 state   real    dfi_qnc        ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNCLOUD"   "Cloud Number concentration" "# kg(-1)"
+state   real    dfi_qvolg      ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt) "DFI_QVGRAUPEL"     "Graupel Particle Volume" "m(3) kg(-1)"
+#state   real    dfi_qvolh     ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)  "DFI_QVHAIL"        "Hail Particle Volume" "m(3) kg(-1)"
 
 include registry.chem
 
@@ -1814,6 +1820,7 @@ rconfig   integer     h_mom_adv_order     namelist,dynamics	max_domains    5    
 rconfig   integer     v_mom_adv_order     namelist,dynamics	max_domains    3       rh       "v_mom_adv_order"               ""      ""
 rconfig   integer     h_sca_adv_order     namelist,dynamics	max_domains    5       rh       "h_sca_adv_order"               ""      ""
 rconfig   integer     v_sca_adv_order     namelist,dynamics	max_domains    3       rh       "v_sca_adv_order"               ""      ""
+rconfig   integer  momentum_adv_opt       namelist,dynamics     max_domains    1       rh    "momentum_adv_opt"      "weno RK3 transport switch"      ""
 rconfig   integer  moist_adv_opt          namelist,dynamics	max_domains    1       rh    "moist_adv_opt"         "positive-definite RK3 transport switch"      ""
 rconfig   integer  moist_adv_dfi_opt      namelist,dynamics	max_domains    0       rh    "moist_adv_dfi_opt"    "positive-definite RK3 transport switch"      ""
 rconfig   integer  chem_adv_opt           namelist,dynamics	max_domains    1       rh    "chem_adv_opt"          "positive-definite RK3 transport switch"      ""
@@ -1956,6 +1963,8 @@ package   morr_two_moment  mp_physics==10            -             moist:qv,qc,q
 package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs;state:rimi
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr
+package   nssl_2mom     mp_physics==17                -            state:refl_10cm;moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qvolg
+package   nssl_2momccn  mp_physics==18                -            state:refl_10cm;moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qnc,qnr,qni,qns,qng,qnh,qvolg
 package   etampold      mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 
 package   nodfimoist        mp_physics_dfi==-1       -             -
@@ -1973,6 +1982,8 @@ package   morr_two_moment_dfi  mp_physics_dfi==10    -             dfi_moist:dfi
 #package   sbu_ylinscheme_dfi    mp_physics==13           -         dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;state:rimi
 package   wdm5scheme_dfi    mp_physics_dfi==14       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr
 package   wdm6scheme_dfi    mp_physics_dfi==16       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr
+package   nssl_2mom_dfi     mp_physics_dfi==17       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh,dfi_qvolg
+package   nssl_2mom_dficcn  mp_physics_dfi==18       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh,dfi_qvolg
 package   etampold_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs;dfi_scalar:dfi_qt
 
 package   noprogn       progn==0                     -             -
@@ -2059,9 +2070,13 @@ package   bucketropt     bucketr_opt==1             -              state:i_rainc
 
 package   restofwrf      use_wps_input==0            -             -
 
+package   original_mom   momentum_adv_opt==1
+package   weno_mom       momentum_adv_opt==3
+
 package   original       moist_adv_opt==0            -             -
 package   positivedef    moist_adv_opt==1            -             -
 package   monotonic      moist_adv_opt==2            -             -
+package   weno_scalar    moist_adv_opt==3            -             -
 package   maxmin_output  output_diagnostics==1            -    state:t2min,t2max,tt2min,tt2max,t2mean,t2std,q2min,q2max,tq2min,tq2max,q2mean,q2std,skintempmin,skintempmax,tskintempmin,tskintempmax,skintempmean,skintempstd,u10max,v10max,spduv10max,tspduv10max,u10mean,v10mean,spduv10mean,u10std,v10std,spduv10std,raincvmax,rainncvmax,traincvmax,trainncvmax,raincvmean,rainncvmean,raincvstd,rainncvstd
 
 package   dfi_setup      dfi_stage==0                -             -

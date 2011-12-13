@@ -61,6 +61,7 @@ MODULES = \
 	module_mp_gsfcgce.o \
 	module_mp_morr_two_moment.o \
 	module_mp_milbrandt2mom.o \
+	module_mp_nssl_2mom.o \
 	module_mp_wdm5.o \
 	module_mp_wdm6.o \
 	module_ra_sw.o  \
@@ -328,6 +329,9 @@ module_mp_sbu_ylin.o : ../frame/module_wrf_error.o \
 module_mp_milbrandt2mom.o : ../frame/module_wrf_error.o \
 		../share/module_model_constants.o
 
+module_mp_nssl_2mom.o : ../frame/module_wrf_error.o \
+		../share/module_model_constants.o
+
 module_mp_thompson.o : ../frame/module_wrf_error.o 
 
 module_ra_goddard.o : ../frame/module_wrf_error.o
@@ -449,6 +453,7 @@ module_physics_init.o : \
 		module_mp_gsfcgce.o 		\
                 module_mp_morr_two_moment.o     \
                 module_mp_milbrandt2mom.o     \
+                module_mp_nssl_2mom.o         \
 		module_mp_wdm5.o		\
 		module_mp_wdm6.o		\
 		module_cam_physconst.o		\
@@ -471,6 +476,7 @@ module_microphysics_driver.o: \
 		module_mp_gsfcgce.o 		\
                 module_mp_morr_two_moment.o     \
                 module_mp_milbrandt2mom.o     \
+                module_mp_nssl_2mom.o         \
 		module_mp_wdm5.o module_mp_wdm6.o \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \

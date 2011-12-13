@@ -1286,7 +1286,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! fix 053011
 !            AIN(K) = DUM*AI
 ! AA revision 4/1/11: Ikawa and Saito 1991 air-density correction 
-            AIN(K) = (RHOSU/RHO(K))**0.35
+            AIN(K) = (RHOSU/RHO(K))**0.35*AI
             ARN(K) = DUM*AR
             ASN(K) = DUM*AS
 !            ACN(K) = DUM*AC

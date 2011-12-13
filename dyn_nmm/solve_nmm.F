@@ -545,7 +545,7 @@
 !***  UPDATE RANDOM NUMBERS IF REQUIRED
 !-----------------------------------------------------------------------
 
-      IF(CONFIG_FLAGS%CU_PHYSICS==OSASSCHEME .or. CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)THEN
+      randif: IF(in_use_for_config(grid%id,'random')) THEN
 !
          nrand=config_flags%nrand
          if(nrand==0) nrand=grid%ncnvc
@@ -572,7 +572,7 @@
 
             call end_timing('Updating random numbers')
          ENDIF    ! for IF(IDT.EQ.0 .OR. NTSD .EQ. 0)
-      ENDIF
+      ENDIF randif
 !-----------------------------------------------------------------------
 !***  ZERO OUT ACCUMULATED QUANTITIES WHEN NEEDED.
 !-----------------------------------------------------------------------
@@ -765,17 +765,12 @@
 !-----------------------------------------------------------------------
 #ifdef HWRF
 ! Coupling insertion:->
-!
-!zhang's doing      call ATM_TSTEP_INIT(NTSD,grid%NPHS,GRID%ID,grid%NPHS*grid%dt, &
       call ATM_TSTEP_INIT(NTSD_current,grid%NPHS,GRID%ID,grid%NPHS*grid%dt, &
-!end of zhang's doing
       ids,idf,jds,jdf,its,ite,jts,jte,ims,ime,jms,jme,           &
                        kds,kde,kts,kte,kms,kme,                  &
                        grid%HLON,grid%HLAT,grid%VLON,grid%VLAT,grid%sm,                   &
-                       grid%i_parent_start,grid%j_parent_start)
-!     CALL ATM_RECVdtc(NPHS*dt) <-  now called from ATM_TSTEP_INIT with no arg.
-!     CALL ATM_SENDGRIDS(HLON,HLAT,VLON,VLAT) <- now called from ATM_TSTEP_INIT
-!     CALL ATM_SENDSLM(grid%sm)                    <- now called from ATM_TSTEP_INIT
+                       grid%i_parent_start,grid%j_parent_start,  &
+                       grid%guessdtc,grid%dtc)
 !<-:coupling insertion
 !
 #endif
@@ -1657,7 +1652,7 @@
      &            ,grid%u10,grid%v10,grid%th10,grid%q10,grid%tshltr,grid%qshltr,grid%pshltr               &
      &            ,grid%t2,grid%qsg,grid%qvg,grid%qcg,grid%soilt1,grid%tsnav,grid%smfr3d,grid%keepfr3dflag     &
 #if (NMM_CORE==1)
-     &            ,grid%twbs,grid%qwbs,grid%taux,grid%tauy,grid%sfcshx,grid%sfclhx,grid%sfcevp                      &
+     &            ,grid%twbs,grid%qwbs,grid%taux,grid%tauy,grid%sfcshx,grid%sfclhx,grid%sfcevp,RTHRATEN                      &
 #else
      &            ,grid%twbs,grid%qwbs,grid%sfcshx,grid%sfclhx,grid%sfcevp                      &
 #endif
@@ -1678,6 +1673,7 @@
      &            ,GRID,CONFIG_FLAGS                                   &
      &            ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                     &
      &            ,GRID%DISHEAT                                             &
+     &            ,GRID%HPBL2D, GRID%EVAP2D, GRID%HEAT2D               &  !S&P Kwon
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -1873,7 +1869,8 @@
 #if (NMM_CORE==1)                  
      &                 ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random             &
 #endif
-     &             ,grid%avcnvc,grid%acutim,grid%ihe,grid%ihw                              &
+     &             ,grid%hpbl2d,grid%evap2d,grid%heat2d                &
+     &             ,grid%avcnvc,grid%acutim,grid%ihe,grid%ihw          &
      &             ,GRID,CONFIG_FLAGS                                  &
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
      &             ,IMS,IME,JMS,JME,KMS,KME                            &

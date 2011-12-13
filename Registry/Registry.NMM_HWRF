@@ -127,6 +127,12 @@ state    real   hlon_gc        ij       dyn_nmm      1     -     i1      "XLONG_
 state    real   hlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_M" "latitude, positive north" "degrees"
 
 ##############################################################
+# Variables for coupling
+
+state    real   dtc            -        dyn_nmm      1     -     irh     "DTC"      "Coupling timestep" "s"
+state    real   guessdtc       -        dyn_nmm      1     -     irh     "GUESSDTC" "Guessed Coupling Timestep for Uncoupled Run" "s"
+
+##############################################################
 # Variables for nmm dynamics                                            
 #
 # module_BC
@@ -365,6 +371,9 @@ state integer lpbl      ij    dyn_nmm   1    -     ir       "LPBL"     "Model la
 state  real   mixht     ij    dyn_nmm   1    -     rh        "MIXHT"                 "MXL HEIGHT"              "m"
 state  real   ustar     ij    dyn_nmm   1    -     irhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "USTAR"    "Friction velocity"                    "m s-1"
 state  real   z0        ij    dyn_nmm   1    -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "Z0"       "Roughness height"                     "m"
+state  real   hpbl2d    ij    dyn_nmm   1    -     irh        "HPBL2D"     "HEIGHT OF PBL from new GFS pbl" "m"
+state  real   heat2d    ij    dyn_nmm   1    -     irh        "HEAT2D"     "" ""
+state  real   evap2d    ij    dyn_nmm   1    -     irh        "EVAP2D"     "" ""
 state  real   z0base    ij    dyn_nmm   1    -     ir       "Z0BASE"   "Base roughness height"                "m"
 state  real   ths       ij    dyn_nmm   1    -     irhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "THS"      "Surface potential temperature"        "K"
 state  real   mavail    ij    dyn_nmm   1    -     i
@@ -1099,6 +1108,9 @@ rconfig   logical rdlai2d                 namelist,physics      1            .fa
 rconfig   integer  gwd_opt                namelist,physics    max_domains    2       irh    "gwd_opt"      "activate gravity wave drag: 0=off, 1=ARW, 2=NMM"   ""
 rconfig   integer iz0tlnd                 namelist,physics      1            0         h     "iz0tlnd"    "switch to control land thermal roughness length"   ""
 rconfig   real    sas_pgcon               namelist,physics      max_domains  0.55      irh   "sas_pgcon"   "convectively forced pressure gradient factor (SAS scheme)" ""
+rconfig   real    sas_shal_pgcon          namelist,physics      max_domains  -1        irh   "sas_shal_pgcon"   "convectively forced pressure gradient factor, -1 means use sas_pgcon (SAS shallow conv)" ""
+rconfig   integer sas_shal_conv           namelist,physics     max_domains    0        -     "sas_shal_conv"   "1=enable shallow convection in SAS (must use bl_pbl_physics=83)"
+rconfig   real    sas_mass_flux           namelist,physics      max_domains  9e9       -     "sas_mass_flux"   "mass flux limit (SAS scheme)" ""
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
 
 # nmm variables
@@ -1342,6 +1354,7 @@ package   pxlsmscheme    sf_surface_physics==7       -             -
 package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             -
 package   gfsscheme      bl_pbl_physics==3           -             -
+package   gfs2011scheme  bl_pbl_physics==83          -             state:hpbl2d,heat2d,evap2d
 package   qnsepblscheme  bl_pbl_physics==4           -             -
 package   qnsepbl09scheme  bl_pbl_physics==94        -             -
 package   acmpblscheme   bl_pbl_physics==7           -             -
@@ -1353,8 +1366,8 @@ package   temfpblscheme  bl_pbl_physics==10          -             -
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -
 package   gdscheme       cu_physics==3               -             -
-package   sasscheme      cu_physics==84              -             -
-package   osasscheme     cu_physics==4               -             -
+package   sasscheme      cu_physics==84              -             state:hpbl2d,heat2d,evap2d
+package   osasscheme     cu_physics==4               -             state:randstate1,randstate2,randstate3,randstate4,random
 package   g3scheme       cu_physics==5               -             -
 package   camzmscheme    cu_physics==7               -             -
 package   tiedtkescheme  cu_physics==6               -             -

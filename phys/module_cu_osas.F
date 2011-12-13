@@ -11,9 +11,7 @@ CONTAINS
                  U3D,V3D,W,T3D,QV3D,QC3D,QI3D,PI3D,RHO3D,           &
                  DZ8W,PCPS,P8W,XLAND,CU_ACT_FLAG,                   &
                  P_QC,                                              & 
-#if (NMM_CORE == 1)
                  STORE_RAND,MOMMIX, & ! gopal's doing
-#endif
                  P_QI,P_FIRST_SCALAR,                               & 
                  CUDT, CURR_SECS, ADAPT_STEP_FLAG,                  &
                  CUDTACTTIME,                                       & 
@@ -126,12 +124,9 @@ CONTAINS
       REAL, DIMENSION(ims:ime, jms:jme, kms:kme), INTENT(INOUT) ::      &
                                         RUCUTEN,                        &  ! gopal's doing for SAS
                                         RVCUTEN                            ! gopal's doing for SAS 
-#if (NMM_CORE == 1)
-      REAL,    INTENT(IN) ::    MOMMIX
-      REAL, DIMENSION( ims:ime , jms:jme ),                             &
+      REAL, OPTIONAL,   INTENT(IN) ::    MOMMIX
+      REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,                   &
                          INTENT(IN) :: STORE_RAND
-
-#endif
 
       REAL,    DIMENSION(ims:ime, jms:jme), INTENT(IN) ::               &
                                         XLAND

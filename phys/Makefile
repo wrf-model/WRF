@@ -24,6 +24,7 @@ MODULES = \
 	module_bl_ysu.o \
 	module_bl_mrf.o \
 	module_bl_gfs.o \
+	module_bl_gfs2011.o \
 	module_bl_myjpbl.o \
 	module_bl_qnsepbl.o \
 	module_bl_qnsepbl09.o \
@@ -179,6 +180,9 @@ module_bl_qnsepbl.o: ../share/module_model_constants.o
 module_bl_qnsepbl09.o: ../share/module_model_constants.o
 
 module_bl_gfs.o: module_gfs_machine.o \
+		 module_gfs_physcons.o
+
+module_bl_gfs2011.o: module_gfs_machine.o \
 		 module_gfs_physcons.o
 
 module_bl_mynn.o: ../share/module_model_constants.o
@@ -419,6 +423,7 @@ module_physics_init.o : \
 		module_bl_ysu.o		        \
 		module_bl_mrf.o			\
 		module_bl_gfs.o			\
+		module_bl_gfs2011.o		\
 		module_bl_acm.o			\
 		module_bl_myjpbl.o		\
 		module_bl_qnsepbl.o		\
@@ -519,6 +524,7 @@ module_pbl_driver.o:  \
                 module_bl_boulac.o \
 		module_bl_camuwpbl_driver.o \
 		module_bl_gfs.o \
+		module_bl_gfs2011.o \
 		module_bl_mynn.o \
 		module_bl_gwdo.o \
 		module_wind_fitch.o \

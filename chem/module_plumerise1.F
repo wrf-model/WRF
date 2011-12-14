@@ -26,9 +26,9 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
            config_flags, t_phy,moist,                                     &
            rho_phy,vvel,u_phy,v_phy,p_phy,                              &
            emis_ant,z_at_w,z,scale_fire_emiss,                                      &
-         ids,ide, jds,jde, kds,kde,                                        &
-         ims,ime, jms,jme, kms,kme,                                        &
-         its,ite, jts,jte, kts,kte                                         )
+           ids,ide, jds,jde, kds,kde,                                        &
+           ims,ime, jms,jme, kms,kme,                                        &
+           its,ite, jts,jte, kts,kte                                         )
 
   USE module_configure
   USE module_model_constants
@@ -171,18 +171,16 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
                ebu(i,kts,j,p_ebu_mvk)=ebu_in(i,1,j,p_ebu_in_mvk)
             enddo
          enddo
-         if( config_flags%biomass_burn_opt == BIOMASSB_MOZC ) then
-           do j=jts,jte
-             do i=its,ite
-               ebu(i,kts,j,p_ebu_pm10) = ebu_in(i,1,j,p_ebu_in_pm10)
-               ebu(i,kts,j,p_ebu_pm25) = ebu_in(i,1,j,p_ebu_in_pm25)
-               ebu(i,kts,j,p_ebu_oc) = ebu_in(i,1,j,p_ebu_in_oc)
-               ebu(i,kts,j,p_ebu_bc) = ebu_in(i,1,j,p_ebu_in_bc)
-             enddo
-           enddo
-         endif
+       elseif ( config_flags%biomass_burn_opt == BIOMASSB_GHG ) then
+         do j=jts,jte
+            do i=its,ite
+               ebu(i,kts,j,p_ebu_co)  = ebu_in(i,1,j,p_ebu_in_co)
+               ebu(i,kts,j,p_ebu_co2) = ebu_in(i,1,j,p_ebu_in_co2)
+               ebu(i,kts,j,p_ebu_ch4) = ebu_in(i,1,j,p_ebu_in_ch4)
+            enddo
+          enddo
        endif
-
+!
        do nv=1,num_ebu
           do j=jts,jte
             do k=kts+1,kte

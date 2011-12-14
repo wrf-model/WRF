@@ -287,7 +287,7 @@ call wrf_message("**************************************************************
 !   ENDIF
 
     CALL nl_get_mminlu( 1, mminlu_loc )
-    IF (mminlu_loc .NE. 'USGS') THEN
+    IF ( (mminlu_loc .NE. 'USGS') .AND. (config_flags%chem_opt/=16 .OR. config_flags%chem_opt/=17) ) THEN
       call wrf_error_fatal(" ERROR: CHEM_INIT: Chemistry routines function with USGS data. Need to change land use option. ")
     ENDIF
 
@@ -397,6 +397,14 @@ call wrf_message("**************************************************************
       end do
     end do
 
+!--------------------------------------------------------------------------------------------------------
+ if  ( (config_flags%chem_opt == 16) .OR. (config_flags%chem_opt == 17) )   then
+        ! Read VPRM parameters and put them into wrfinput file
+        CALL VPRM_par_initialize ( config_flags%vprm_class, &
+                                   grid%rad_vprm, grid%lambda_vprm, grid%alpha_vprm, grid%resp_vprm )
+ end if
+!--------------------------------------------------------------------------------------------------------
+!
 !   RETURN IF CHEMISTRY IS NOT RUNNING
     IF ( config_flags%chem_opt == 0 ) RETURN
 
@@ -979,6 +987,114 @@ call wrf_message("**************************************************************
     end if
 
     END SUBROUTINE chem_init
+
+!---------------------------------------------------------------------------------------------
+!Subroutine initializes VPRM parameters from text files in the run/GHG/ folders
+!
+SUBROUTINE VPRM_par_initialize(L, rad_vprm,lambda_vprm, alpha_vprm, resp_vprm  )
+   
+! VPRM parameters initialization section
+   
+IMPLICIT NONE
+!CHARACTER*(*), INTENT(IN)               ::  file_vprm
+INTEGER, INTENT(IN)                     ::  L
+!REAL, DIMENSION(L), INTENT(INOUT)       ::  rad_vprm, lambda_vprm, alpha_vprm, resp_vprm
+REAL, DIMENSION(8), INTENT(OUT) ::  rad_vprm, lambda_vprm, alpha_vprm, resp_vprm
+
+INTEGER                    ::  ierr,i
+REAL, DIMENSION(8,4)      ::  vprm_par
+   
+DATA vprm_par /261.0, 324.0, 206.0, 363.0, 682.0, 757.0, 157.0, 0.0, &
+               -0.2492, -0.1729, -0.2555, -0.08736, -0.1141, -0.15330, -0.13335, 0.00000, &
+               0.3301, 0.3258, 0.3422, 0.0239, 0.0049, 0.2680, 0.0269, 0.0000, &
+               0., 0., 0., 0., 0., 0., 0., 0./
+
+rad_vprm=     vprm_par(1:8,1)
+lambda_vprm=  vprm_par(1:8,2)
+alpha_vprm=   vprm_par(1:8,3)
+resp_vprm=    vprm_par(1:8,4)
+
+END SUBROUTINE VPRM_par_initialize
+!******************************************************************************
+!Subroutine initializes the termite emission parameters provided by Sanderson et al. 1996
+!
+   SUBROUTINE termite_initialize(          term_id,                                                 &
+                                           biom_01,biom_02,biom_03,biom_04,biom_05,biom_06,biom_07, &
+                                           biom_08,biom_09,biom_10,biom_11,biom_12,biom_13,biom_14, &
+                                           emch4_01,emch4_02,emch4_03,emch4_04,emch4_05,emch4_06,   &
+                                           emch4_07,emch4_08,emch4_09,emch4_10,emch4_11,emch4_12,  &
+                                           emch4_13,emch4_14,                                       &
+                                           emco2_01,emco2_02,emco2_03,emco2_04,emco2_05,emco2_06,   &
+                                           emco2_07,emco2_08,emco2_09,emco2_10,emco2_11,emco2_12,   &
+                                           emco2_13,emco2_14                                        )
+
+! parameters for termite emission initialization
+
+IMPLICIT NONE
+!CHARACTER*(*), INTENT(IN)               :: file_term
+INTEGER, INTENT(IN)                     :: term_id
+REAL, INTENT(INOUT)                     :: biom_01,biom_02,biom_03,biom_04,biom_05,biom_06,biom_07
+REAL, INTENT(INOUT)                     :: biom_08,biom_09,biom_10,biom_11,biom_12,biom_13,biom_14
+REAL, INTENT(INOUT)                     :: emch4_01,emch4_02,emch4_03,emch4_04,emch4_05,emch4_06
+REAL, INTENT(INOUT)                     :: emch4_07,emch4_08,emch4_09,emch4_10,emch4_11,emch4_12
+REAL, INTENT(INOUT)                     :: emch4_13,emch4_14
+REAL, INTENT(INOUT)                     :: emco2_01,emco2_02,emco2_03,emco2_04,emco2_05,emco2_06
+REAL, INTENT(INOUT)                     :: emco2_07,emco2_08,emco2_09,emco2_10,emco2_11,emco2_12
+REAL, INTENT(INOUT)                     :: emco2_13,emco2_14
+
+INTEGER                    ::  ierr,i,j
+REAL, DIMENSION(14,3)      ::  term_em
+
+DATA term_em / 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, &
+               0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, &
+               0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0  /
+
+biom_01  =  term_em(1,1)
+biom_02  =  term_em(2,1)
+biom_03  =  term_em(3,1)
+biom_04  =  term_em(4,1)
+biom_05  =  term_em(5,1)
+biom_06  =  term_em(6,1)
+biom_07  =  term_em(7,1)
+biom_08  =  term_em(8,1)
+biom_09  =  term_em(9,1)
+biom_10  =  term_em(10,1)
+biom_11  =  term_em(11,1)
+biom_12  =  term_em(12,1)
+biom_13  =  term_em(13,1)
+biom_14  =  term_em(14,1)
+
+emch4_01 =  term_em(1,2)
+emch4_02 =  term_em(2,2)
+emch4_03 =  term_em(3,2)
+emch4_04 =  term_em(4,2)
+emch4_05 =  term_em(5,2)
+emch4_06 =  term_em(6,2)
+emch4_07 =  term_em(7,2)
+emch4_08 =  term_em(8,2)
+emch4_09 =  term_em(9,2)
+emch4_10 =  term_em(10,2)
+emch4_11 =  term_em(11,2)
+emch4_12 =  term_em(12,2)
+emch4_13 =  term_em(13,2)
+emch4_14 =  term_em(14,2)
+
+emco2_01 =  term_em(1,3)
+emco2_02 =  term_em(2,3)
+emco2_03 =  term_em(3,3)
+emco2_04 =  term_em(4,3)
+emco2_05 =  term_em(5,3)
+emco2_06 =  term_em(6,3)
+emco2_07 =  term_em(7,3)
+emco2_08 =  term_em(8,3)
+emco2_09 =  term_em(9,3)
+emco2_10 =  term_em(10,3)
+emco2_11 =  term_em(11,3)
+emco2_12 =  term_em(12,3)
+emco2_13 =  term_em(13,3)
+emco2_14 =  term_em(14,3)
+
+END SUBROUTINE termite_initialize
 
 !-----------------------------------------------------------------------
 #ifdef CHEM_DBG_I

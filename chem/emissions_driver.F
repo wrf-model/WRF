@@ -60,6 +60,12 @@ CONTAINS
          !            end suff for lightning
          ! stuff for aircraft emissions
          emis_aircraft,                                                    &
+
+         ! stuff for GHG fluxes
+         vprm_par,rad_vprm,lambda_vprm,alpha_vprm,resp_vprm,               &
+         xtime,tslb,wet_in,rainc,rainnc,potevp,sfcevp,lu_index,            &
+         eghg_bio,biomt_par,emit_par,                                      &
+
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -85,6 +91,7 @@ CONTAINS
   USE module_plumerise1
   USE module_lightning_driver
   USE module_aerosols_soa_vbs, only: soa_vbs_addemiss
+  USE module_ghg_fluxes 
   
   IMPLICIT NONE
 
@@ -164,7 +171,15 @@ CONTAINS
                                                      xland,                &
                                                      xlat,                 &
                                                      xlong,                &
-                                                     znt
+                                                     znt,                  &
+
+! Add for the GHG_tracer option
+                                                     rainc,                &
+                                                     rainnc,               &
+                                                     potevp,               &
+                                                     sfcevp,               &
+                                                     lu_index
+
    REAL, DIMENSION( ims:ime , jms:jme )                  ,                 &
          OPTIONAL,                                                         &
          INTENT(IN   ) ::                                                  &
@@ -177,7 +192,7 @@ CONTAINS
   REAL, DIMENSION( config_flags%num_soil_layers ) ,                        &
       INTENT(IN   ) ::                               zs
   REAL, DIMENSION( ims:ime, config_flags%num_soil_layers, jms:jme ) ,      &
-      INTENT(INOUT) ::                               smois
+      INTENT(INOUT ) ::                             smois, tslb    
 
    REAL,  DIMENSION( ims:ime , jms:jme )                   ,               &
          OPTIONAL,                                                         &
@@ -271,6 +286,18 @@ CONTAINS
 
       REAL, DIMENSION( ims:ime, 1:config_flags%kemit_aircraft, jms:jme,num_emis_aircraft), &
             OPTIONAL, INTENT(IN ) :: emis_aircraft 
+!
+! stuff for ghg tracer
+
+      REAL, DIMENSION(ims:ime, config_flags%vprm_class, jms:jme, num_vprm_par), INTENT(IN)   ::  vprm_par
+      REAL, DIMENSION(ims:ime, jms:jme, num_eghg_bio), INTENT(INOUT ) :: eghg_bio
+
+      REAL, DIMENSION(num_vprm_par) :: rad_vprm,lambda_vprm,alpha_vprm,resp_vprm
+      REAL, DIMENSION(ims:ime,jms:jme, num_wet_in), INTENT(IN)    :: wet_in
+      REAL, DIMENSION(num_biomt_par), INTENT(IN) :: biomt_par
+      REAL, DIMENSION(num_emit_par), INTENT(IN) :: emit_par
+      REAL, INTENT(IN) :: xtime
+! end ghg tracer stuff
 !
 ! Local variables...
 !
@@ -579,6 +606,7 @@ CONTAINS
       do_plumerisefire = .false.
       IF ( config_flags%biomass_burn_opt == BIOMASSB_MOZC .OR. &
            config_flags%biomass_burn_opt == BIOMASSB_MOZ  .OR. &
+           config_flags%biomass_burn_opt == BIOMASSB_GHG  .OR. &
            config_flags%biomass_burn_opt == BIOMASSB ) then
         IF ( ktau==1 ) then
            do_plumerisefire = .true.
@@ -707,7 +735,7 @@ CONTAINS
 !!! ***********   FIRE AND CHEM ****************************************
 !
     fire_select:  SELECT CASE(config_flags%biomass_burn_opt)
-     CASE (BIOMASSB,BIOMASSB_MOZC,BIOMASSB_MOZ)
+     CASE (BIOMASSB,BIOMASSB_MOZC,BIOMASSB_MOZ,BIOMASSB_GHG)
 !      if( do_plumerisefire )then
 !         CALL wrf_debug(15,'fire emissions: calling biomassb')
 !         write(0,*)ktau,stepfirepl
@@ -920,6 +948,57 @@ CONTAINS
              end do
           end do
        end do
+!
+    CASE(CO2_TRACER,GHG_TRACER)  ! for ghg_tracer package
+
+      ! Update the biospheric CO2 fluxes
+   CALL VPRM(            ids,ide, jds,jde,                   &
+                         ims,ime, jms,jme,                   &
+                         its,ite, jts,jte,                   &
+
+                         vprm_par,rad_vprm,lambda_vprm,      &
+                         alpha_vprm,resp_vprm,               &
+                         config_flags%vprm_class,T2,swdown,  &
+                         eghg_bio                            )
+
+  ! Update the biospheric CH4 fluxes if the GHG option is called
+   if (p_ch4 .GT. 1) then
+
+   CALL KAPLAN(          ids,ide, jds,jde,                                        &
+                         ims,ime, jms,jme,                                        &
+                         its,ite, jts,jte,                                        &
+
+                         xtime, tslb, smois, wet_in,                              &
+                         isltyp,tsk,eghg_bio,                                     &
+                         config_flags%num_soil_layers,config_flags%wpeat,         &
+                         config_flags%wflood                                      )
+
+   CALL SOILUPTAKE(      ids,ide, jds,jde,                                        &
+                         ims,ime, jms,jme,                                        &
+                         its,ite, jts,jte,                                        &
+
+                         smois, isltyp, eghg_bio,                                 &
+                         rainc, rainnc,                                           &
+                         potevp, sfcevp, lu_index, T2, xtime,                     &
+                         config_flags%num_soil_layers, wet_in                     )
+
+   CALL termite(         ids,ide, jds,jde,                                        &
+                         ims,ime, jms,jme,                                        &
+                         its,ite, jts,jte,                                        &
+
+                         xtime,eghg_bio,ivgtyp,                                   &
+                         biomt_par,emit_par                                       )
+
+   end if
+
+   ! Add all the GHG fluxes to chem species
+   CALL add_ghg_fluxes(  ids,ide, jds,jde, kds,kde,          &
+                         ims,ime, jms,jme, kms,kme,          &
+                         its,ite, jts,jte, kts,kte,          &
+
+                         dtstep,dz8w,config_flags,rho_phy,  &
+                         chem,emis_ant,eghg_bio              )
+!**************************************************************************************************
 
     CASE (SAPRC99_KPP) !FIX FOR SAPRC07A
      if(config_flags%emiss_opt == 13 ) then

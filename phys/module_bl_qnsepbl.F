@@ -185,8 +185,9 @@
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: AKHS,AKMS
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME)                          &
-     &    ,INTENT(OUT) ::                      EL_MYJ                  &
-     &                                        ,RQCBLTEN,RQVBLTEN       &
+     &    ,INTENT(OUT) ::                                   EL_MYJ
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME)                          &
+     &    ,INTENT(INOUT) ::                    RQCBLTEN,RQVBLTEN       &
      &                                        ,RTHBLTEN                &
      &                                        ,RUBLTEN,RVBLTEN        
 !
@@ -539,9 +540,9 @@
             DQDT=(QK(KFLIP)-QOLD)*RDTTURBL
             DCDT=(CWMK(KFLIP)-CWM(I,K,J))*RDTTURBL
 !
-            RTHBLTEN(I,K,J)=DTDT
-            RQVBLTEN(I,K,J)=DQDT/(1.-QK(KFLIP))**2
-            RQCBLTEN(I,K,J)=DCDT
+            RTHBLTEN(I,K,J)=DTDT + RTHBLTEN(I,K,J)
+            RQVBLTEN(I,K,J)=DQDT/(1.-QK(KFLIP))**2 + RQVBLTEN(I,K,J)
+            RQCBLTEN(I,K,J)=DCDT + RQCBLTEN(I,K,J)
           ENDDO
 !
 !*** Begin debugging
@@ -645,8 +646,8 @@
             KFLIP=KTE+1-K
             DUDT=(UK(KFLIP)-U(I,K,J))*RDTTURBL
             DVDT=(VK(KFLIP)-V(I,K,J))*RDTTURBL
-            RUBLTEN(I,K,J)=DUDT
-            RVBLTEN(I,K,J)=DVDT
+            RUBLTEN(I,K,J)=DUDT + RUBLTEN(I,K,J)
+            RVBLTEN(I,K,J)=DVDT + RVBLTEN(I,K,J)
           ENDDO
 !
         ENDDO

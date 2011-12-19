@@ -1318,8 +1318,8 @@ package   gfssfcscheme   sf_sfclay_physics==3        -             -
 package   gfdlsfcscheme  sf_sfclay_physics==88       -             -
 package   qnsesfcscheme  sf_sfclay_physics==4        -             -
 package   pxsfcscheme    sf_sfclay_physics==7        -             -
-package   sfclayrevscheme sf_sfclay_physics==11        -             -
 package   temfsfcscheme  sf_sfclay_physics==10       -             -
+package   sfclayrevscheme sf_sfclay_physics==11        -             -
 package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 
 package   slabscheme     sf_surface_physics==1       -             -

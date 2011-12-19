@@ -2187,10 +2187,12 @@ package   restofwrf      use_wps_input==0            -             -
 package   original_mom   momentum_adv_opt==1
 package   weno_mom       momentum_adv_opt==3
 
-package   original         moist_adv_opt==0            -             -
+package   original       moist_adv_opt==0            -             -
 package   positivedef    moist_adv_opt==1            -             -
 package   monotonic      moist_adv_opt==2            -             -
 package   weno_scalar    moist_adv_opt==3            -             -
+package   wenopd_scalar  moist_adv_opt==4            -             -
+
 package   tracer_test1  tracer_opt==2       -             tracer:tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8
 package   maxmin_output  output_diagnostics==1            -    state:t2min,t2max,tt2min,tt2max,t2mean,t2std,q2min,q2max,tq2min,tq2max,q2mean,q2std,skintempmin,skintempmax,tskintempmin,tskintempmax,skintempmean,skintempstd,u10max,v10max,spduv10max,tspduv10max,u10mean,v10mean,spduv10mean,u10std,v10std,spduv10std,raincvmax,rainncvmax,traincvmax,trainncvmax,raincvmean,rainncvmean,raincvstd,rainncvstd
 

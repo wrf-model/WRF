@@ -2582,6 +2582,8 @@ package   original       moist_adv_opt==0            -             -
 package   positivedef    moist_adv_opt==1            -             -
 package   monotonic      moist_adv_opt==2            -             -
 package   weno_scalar    moist_adv_opt==3            -             -
+package   wenopd_scalar  moist_adv_opt==4            -             -
+
 #package   tracer_test1  tracer_opt==2       -             tracer:tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8
 
 package   dfi_setup      dfi_stage==0                -             -

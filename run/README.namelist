@@ -363,7 +363,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 14, WDM 5-class scheme
                                      = 16, WDM 6-class scheme
                                      = 17, NSSL 2-moment 4-ice scheme (steady background CCN)
-                                     = 18, NSSL 2-moment 4-ice scheme with predicted CCN (better for idealized)
+                                     = 18, NSSL 2-moment 4-ice scheme with predicted CCN (better for idealized than real cases)
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
@@ -490,6 +490,8 @@ Namelist variables for controlling the adaptive time step option:
                                                 the value is set in Registry.NMM but is
                                                 overridden by namelist value; bldt will
                                                 be computed from this.
+ mfshconv (max_dom)                  = .false., ; whether to turn on new QNSE.
+                                     = .true.,  turn on the new QNSE
 
  cu_physics (max_dom)                cumulus option
                                      = 0, no cumulus
@@ -855,7 +857,10 @@ The following are for observation nudging:
  h_sca_adv_order (max_dom)           = 5,       ; horizontal scalar advection order
  v_sca_adv_order (max_dom)           = 3,       ; vertical scalar advection order
 
-                                                ; advection options for scalar variables: 0=simple, 1=positive definite, 2=monotonic
+ momentum_adv_opt                    = 1,       ; advection options for momentum variables: 
+                                                  1=original, 3 = 5th-order WENO
+                                                ; advection options for scalar variables: 0=simple, 1=positive definite,
+                                                  2=monotonic, 3=5th order WENO, 4=5th-order WENO with positive definite filter
  moist_adv_opt (max_dom)             = 1        ; for moisture
  scalar_adv_opt (max_dom)            = 1        ; for scalars
  chem_adv_opt (max_dom)              = 1        ; for chem variables

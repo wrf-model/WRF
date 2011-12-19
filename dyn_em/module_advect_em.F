@@ -7708,6 +7708,901 @@ END SUBROUTINE advect_scalar_pd
 
 !----------------------------------------------------------------
 
+SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
+                                ru, rv, rom,                   &
+                                mut, mub, mu_old,              &
+                                time_step, config_flags,       &
+                                msfux, msfuy, msfvx, msfvy,    &
+                                msftx, msfty,                  &
+                                fzm, fzp,                      &
+                                rdx, rdy, rdzw, dt,            &
+                                ids, ide, jds, jde, kds, kde,  &
+                                ims, ime, jms, jme, kms, kme,  &
+                                its, ite, jts, jte, kts, kte  )
+
+!  this is a first cut at a positive definite advection option
+!  for scalars in WRF.  This version is memory intensive ->
+!  we save 3d arrays of x, y and z both high and low order fluxes
+!  (six in all).  Alternatively, we could sweep in a direction 
+!  and lower the cost considerably.
+
+!  uses the Smolarkiewicz MWR 1989 approach, with addition of first-order
+!  fluxes initially
+
+!  WCS, 3 December 2002, 24 February 2003
+
+!
+! ERM Dec. 2011: replaced 5th-order fluxes with 5th-order WENO (Weighted
+! Essentially Non-Oscillatory) scheme
+! See Jiang and Shu, 1996, J. Comp. Phys. v. 126, 202-223; 
+! Shu 2003, Int. J. Comp. Fluid Dyn. v. 17 107-118; 
+!
+
+   IMPLICIT NONE
+   
+   ! Input data
+   
+   TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
+
+   INTEGER ,                 INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
+                                              ims, ime, jms, jme, kms, kme, &
+                                              its, ite, jts, jte, kts, kte
+
+   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(IN   ) :: field,     &
+                                                                      field_old, &
+                                                                      ru,    &
+                                                                      rv,    &
+                                                                      rom
+
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mut, mub, mu_old
+   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: tendency
+
+   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfux,  &
+                                                                    msfuy,  &
+                                                                    msfvx,  &
+                                                                    msfvy,  &
+                                                                    msftx,  &
+                                                                    msfty
+
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
+                                                                  fzp,  &
+                                                                  rdzw
+
+   REAL ,                                        INTENT(IN   ) :: rdx,  &
+                                                                  rdy,  &
+                                                                  dt
+   INTEGER ,                                     INTENT(IN   ) :: time_step
+
+   ! Local data
+   
+   INTEGER :: i, j, k, itf, jtf, ktf
+   INTEGER :: i_start, i_end, j_start, j_end
+   INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
+   INTEGER :: jmin, jmax, jp, jm, imin, imax
+
+   REAL    :: mrdx, mrdy, ub, vb, uw, vw, mu
+
+!  storage for high and low order fluxes
+
+   REAL,  DIMENSION( its-1:ite+2, kts:kte, jts-1:jte+2  ) :: fqx, fqy, fqz
+   REAL,  DIMENSION( its-1:ite+2, kts:kte, jts-1:jte+2  ) :: fqxl, fqyl, fqzl
+
+   INTEGER :: horz_order, vert_order
+   
+   LOGICAL :: degrade_xs, degrade_ys
+   LOGICAL :: degrade_xe, degrade_ye
+
+   INTEGER :: jp1, jp0, jtmp
+
+   REAL :: flux_out, ph_low, scale
+   REAL, PARAMETER :: eps=1.e-20
+
+    real            :: dir, vv
+    real            :: ue,vs,vn,wb,wt
+    real, parameter :: f30 =  7./12., f31 = 1./12.
+    real, parameter :: f50 = 37./60., f51 = 2./15., f52 = 1./60.
+
+    real               :: qim2, qim1, qi, qip1, qip2
+    double precision               :: beta0, beta1, beta2, f0, f1, f2, wi0, wi1, wi2, sumwk
+    double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps1=1.0d-18
+    integer, parameter :: pw = 2
+
+
+! definition of flux operators, 3rd, 4th, 5th or 6th order
+
+   REAL    :: flux3, flux4, flux5, flux6, flux_upwind
+   REAL    :: q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua, vel, cr
+
+      flux4(q_im2, q_im1, q_i, q_ip1, ua) =                     &
+            (7./12.)*(q_i + q_im1) - (1./12.)*(q_ip1 + q_im2)
+
+      flux3(q_im2, q_im1, q_i, q_ip1, ua) =                     &
+           flux4(q_im2, q_im1, q_i, q_ip1, ua) +                &
+           sign(1,time_step)*sign(1.,ua)*(1./12.)*((q_ip1 - q_im2)-3.*(q_i-q_im1))
+
+      flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
+            (37./60.)*(q_i+q_im1) - (2./15.)*(q_ip1+q_im2)      &
+            +(1./60.)*(q_ip2+q_im3)
+
+      flux5(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
+           flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua)    &
+            -sign(1,time_step)*sign(1.,ua)*(1./60.)*(           &
+              (q_ip2-q_im3)-5.*(q_ip1-q_im2)+10.*(q_i-q_im1) )
+
+      flux_upwind(q_im1, q_i, cr ) = 0.5*min( 1.0,(cr+abs(cr)))*q_im1 &
+                                    +0.5*max(-1.0,(cr-abs(cr)))*q_i
+
+!      flux_upwind(q_im1, q_i, cr ) = 0.5*(1.+sign(1.,cr))*q_im1 &
+!                                    +0.5*(1.-sign(1.,cr))*q_i
+!      flux_upwind(q_im1, q_i, cr ) = 0.
+
+    REAL     :: dx,dy,dz
+
+    LOGICAL, PARAMETER :: pd_limit = .true.
+
+! set order for the advection schemes
+
+!  write(6,*) ' in pd advection routine '
+
+    ! Empty arrays just in case:
+    IF (config_flags%polar) THEN
+       fqx(:,:,:)  = 0.
+       fqy(:,:,:)  = 0.
+       fqz(:,:,:)  = 0.
+       fqxl(:,:,:) = 0.
+       fqyl(:,:,:) = 0.
+       fqzl(:,:,:) = 0.
+    END IF
+
+  ktf=MIN(kte,kde-1)
+  horz_order = config_flags%h_sca_adv_order
+  vert_order = config_flags%v_sca_adv_order
+
+!  determine boundary mods for flux operators
+!  We degrade the flux operators from 3rd/4th order
+!   to second order one gridpoint in from the boundaries for
+!   all boundary conditions except periodic and symmetry - these
+!   conditions have boundary zone data fill for correct application
+!   of the higher order flux stencils
+
+   degrade_xs = .true.
+   degrade_xe = .true.
+   degrade_ys = .true.
+   degrade_ye = .true.
+
+!  begin with horizontal flux divergence
+!  here is the choice of flux operators
+
+
+!  horizontal_order_test : IF( horz_order == 6 ) THEN
+
+!    ELSE IF( horz_order == 5 ) THEN
+
+   IF( config_flags%periodic_x   .or. &
+       config_flags%symmetric_xs .or. &
+       (its > ids+3)                ) degrade_xs = .false.
+   IF( config_flags%periodic_x   .or. &
+       config_flags%symmetric_xe .or. &
+       (ite < ide-4)                ) degrade_xe = .false.
+   IF( config_flags%periodic_y   .or. &
+       config_flags%symmetric_ys .or. &
+       (jts > jds+3)                ) degrade_ys = .false.
+   IF( config_flags%periodic_y   .or. &
+       config_flags%symmetric_ye .or. &
+       (jte < jde-4)                ) degrade_ye = .false.
+
+!--------------- y - advection first
+
+!--  y flux compute; these bounds are for periodic and sym b.c.
+
+      ktf=MIN(kte,kde-1)
+      i_start = its-1
+      i_end   = MIN(ite,ide-1)+1
+      j_start = jts-1
+      j_end   = MIN(jte,jde-1)+1
+      j_start_f = j_start
+      j_end_f   = j_end+1
+
+!--  modify loop bounds if open or specified
+
+!      IF(degrade_xs) i_start = MAX(its-1,ids-1)
+!      IF(degrade_xe) i_end   = MIN(ite+1,ide-2)
+      IF(degrade_xs) i_start = MAX(its-1,ids)
+      IF(degrade_xe) i_end   = MIN(ite+1,ide-1)
+
+      IF(degrade_ys) then
+        j_start = MAX(jts-1,jds+1)
+        j_start_f = jds+3
+      ENDIF
+
+      IF(degrade_ye) then
+        j_end = MIN(jte+1,jde-2)
+        j_end_f = jde-3
+      ENDIF
+
+!  compute fluxes, 5th order
+
+      j_loop_y_flux_5 : DO j = j_start, j_end+1
+
+      IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN ! use full stencil
+
+        DO k=kts,ktf
+        DO i = i_start, i_end
+
+          dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
+          mu = 0.5*(mut(i,j)+mut(i,j-1))
+          vel = rv(i,k,j)
+          cr = vel*dt/dy/mu
+          fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
+
+         IF ( vel .ge. 0.0 ) THEN
+            qip2 = field(i,k,j+1)
+            qip1 = field(i,k,j  )
+            qi   = field(i,k,j-1)
+            qim1 = field(i,k,j-2)
+            qim2 = field(i,k,j-3)
+          ELSE
+            qip2 = field(i,k,j-2)
+            qip1 = field(i,k,j-1)
+            qi   = field(i,k,j  )
+            qim1 = field(i,k,j+1)
+            qim2 = field(i,k,j+2)
+         ENDIF
+    
+         f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
+         f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
+         f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
+    
+         beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
+         beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
+         beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
+    
+         wi0 = gi0 / (eps1 + beta0)**pw
+         wi1 = gi1 / (eps1 + beta1)**pw
+         wi2 = gi2 / (eps1 + beta2)**pw
+    
+         sumwk = wi0 + wi1 + wi2
+    
+          fqy( i, k, j ) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
+
+!          fqy( i, k, j  ) = vel*flux5(                                  &
+!                  field(i,k,j-3), field(i,k,j-2), field(i,k,j-1),       &
+!                  field(i,k,j  ), field(i,k,j+1), field(i,k,j+2),  vel )
+
+          fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
+
+        ENDDO
+        ENDDO
+
+      ELSE IF ( j == jds+1 ) THEN   ! 2nd order flux next to south boundary
+
+            DO k=kts,ktf
+            DO i = i_start, i_end
+
+              dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
+              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              vel = rv(i,k,j)
+              cr = vel*dt/dy/mu
+              fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
+
+              fqy(i,k, j) = 0.5*rv(i,k,j)*          &
+                     (field(i,k,j)+field(i,k,j-1))
+
+              fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
+
+            ENDDO
+            ENDDO
+
+      ELSE IF  ( j == jds+2 ) THEN  ! third of 4th order flux 2 in from south boundary
+
+            DO k=kts,ktf
+            DO i = i_start, i_end
+
+              dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
+              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              vel = rv(i,k,j)
+              cr = vel*dt/dy/mu
+              fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
+
+              fqy( i, k, j ) = vel*flux3(              &
+                   field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel )
+              fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
+
+            ENDDO
+            ENDDO
+
+      ELSE IF ( j == jde-1 ) THEN  ! 2nd order flux next to north boundary
+
+            DO k=kts,ktf
+            DO i = i_start, i_end
+
+              dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
+              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              vel = rv(i,k,j)
+              cr = vel*dt/dy/mu
+              fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
+
+              fqy(i, k, j ) = 0.5*rv(i,k,j)*      &
+                     (field(i,k,j)+field(i,k,j-1))
+              fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
+
+            ENDDO
+            ENDDO
+
+      ELSE IF ( j == jde-2 ) THEN  ! 3rd or 4th order flux 2 in from north boundary
+
+            DO k=kts,ktf
+            DO i = i_start, i_end
+
+              dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
+              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              vel = rv(i,k,j)
+              cr = vel*dt/dy/mu
+              fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
+
+              fqy( i, k, j) = vel*flux3(             &
+                   field(i,k,j-2),field(i,k,j-1),    &
+                   field(i,k,j),field(i,k,j+1),vel )
+              fqy(i,k,j) = fqy(i,k,j) - fqyl(i,k,j)
+
+            ENDDO
+            ENDDO
+
+      ENDIF
+
+   ENDDO j_loop_y_flux_5
+
+!  next, x flux
+
+!--  these bounds are for periodic and sym conditions
+
+      i_start = its-1
+      i_end   = MIN(ite,ide-1)+1
+      i_start_f = i_start
+      i_end_f   = i_end+1
+
+      j_start = jts-1
+      j_end   = MIN(jte,jde-1)+1
+
+!--  modify loop bounds for open and specified b.c
+
+!      IF(degrade_ys) j_start = MAX(jts-1,jds+1)
+!      IF(degrade_ye) j_end   = MIN(jte+1,jde-2)
+      IF(degrade_ys) j_start = MAX(jts-1,jds)
+      IF(degrade_ye) j_end   = MIN(jte+1,jde-1)
+
+      IF(degrade_xs) then
+        i_start = MAX(ids+1,its-1)
+        i_start_f = ids+3
+      ENDIF
+
+      IF(degrade_xe) then
+        i_end = MIN(ide-2,ite+1)
+        i_end_f = ide-3
+      ENDIF
+
+!  compute fluxes
+
+      DO j = j_start, j_end
+
+!  5th order flux
+
+        DO k=kts,ktf
+        DO i = i_start_f, i_end_f
+
+          dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
+          mu = 0.5*(mut(i,j)+mut(i-1,j))
+          vel = ru(i,k,j)
+          cr = vel*dt/dx/mu
+          fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
+
+
+         IF ( vel .ge. 0.0 ) THEN
+            qip2 = field(i+1,k,j)
+            qip1 = field(i,  k,j)
+            qi   = field(i-1,k,j)
+            qim1 = field(i-2,k,j)
+            qim2 = field(i-3,k,j)
+          ELSE
+            qip2 = field(i-2,k,j)
+            qip1 = field(i-1,k,j)
+            qi   = field(i,  k,j)
+            qim1 = field(i+1,k,j)
+            qim2 = field(i+2,k,j)
+         ENDIF
+    
+         f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
+         f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
+         f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
+    
+         beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
+         beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
+         beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
+    
+         wi0 = gi0 / (eps1 + beta0)**pw
+         wi1 = gi1 / (eps1 + beta1)**pw
+         wi2 = gi2 / (eps1 + beta2)**pw
+    
+         sumwk = wi0 + wi1 + wi2
+    
+         fqx(i,k,j) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
+
+!          fqx( i,k,j ) = vel*flux5( field(i-3,k,j), field(i-2,k,j),  &
+!                                         field(i-1,k,j), field(i  ,k,j),  &
+!                                         field(i+1,k,j), field(i+2,k,j),  &
+!                                         vel                             )
+          fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
+
+        ENDDO
+        ENDDO
+
+!  lower order fluxes close to boundaries (if not periodic or symmetric)
+
+        IF( degrade_xs ) THEN
+
+          DO i=i_start,i_start_f-1
+
+            IF(i == ids+1) THEN ! second order
+              DO k=kts,ktf
+                dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
+                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                vel = ru(i,k,j)/mu
+                cr = vel*dt/dx
+                fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
+                fqx(i,k,j) = 0.5*(ru(i,k,j)) &
+                       *(field(i,k,j)+field(i-1,k,j))
+                fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
+              ENDDO
+            ENDIF
+
+            IF(i == ids+2) THEN  ! third order
+              DO k=kts,ktf
+                dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
+                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                vel = ru(i,k,j)
+                cr = vel*dt/dx/mu
+                fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
+                fqx( i,k,j ) = vel*flux3( field(i-2,k,j), field(i-1,k,j),  &
+                                          field(i  ,k,j), field(i+1,k,j),  &
+                                          vel                             )
+                fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
+              ENDDO
+            ENDIF
+
+          ENDDO
+
+        ENDIF
+
+        IF( degrade_xe ) THEN
+
+          DO i = i_end_f+1, i_end+1
+
+            IF( i == ide-1 ) THEN ! second order flux next to the boundary
+              DO k=kts,ktf
+                dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
+                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                vel = ru(i,k,j)
+                cr = vel*dt/dx/mu
+                fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
+                fqx(i,k,j) = 0.5*(ru(i,k,j))      &
+                       *(field(i,k,j)+field(i-1,k,j))
+                fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
+              ENDDO
+            ENDIF
+
+
+            IF( i == ide-2 ) THEN ! third order flux one in from the boundary
+              DO k=kts,ktf
+                dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
+                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                vel = ru(i,k,j)
+                cr = vel*dt/dx/mu
+                fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
+                fqx( i,k,j ) = vel*flux3( field(i-2,k,j), field(i-1,k,j),  &
+                                          field(i  ,k,j), field(i+1,k,j),  &
+                                          vel                             )
+                fqx(i,k,j) = fqx(i,k,j) - fqxl(i,k,j)
+              ENDDO
+            ENDIF
+
+          ENDDO
+
+        ENDIF
+
+      ENDDO  ! enddo for outer J loop
+
+!--- end of 5th order horizontal flux calculation
+
+!   ELSE
+
+!      WRITE ( wrf_err_message , * ) 'module_advect: advect_scalar_pd, h_order not known ',horz_order
+!      CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+
+!   ENDIF horizontal_order_test
+
+!  pick up the rest of the horizontal radiation boundary conditions.
+!  (these are the computations that don't require 'cb'.
+!  first, set to index ranges
+
+      i_start = its
+      i_end   = MIN(ite,ide-1)
+      j_start = jts
+      j_end   = MIN(jte,jde-1)
+
+!  compute x (u) conditions for v, w, or scalar
+
+   IF( (config_flags%open_xs) .and. (its == ids) ) THEN
+
+       DO j = j_start, j_end
+       DO k = kts, ktf
+         ub = MIN( 0.5*(ru(its,k,j)+ru(its+1,k,j)), 0. )
+         tendency(its,k,j) = tendency(its,k,j)                     &
+               - rdx*(                                             &
+                       ub*(   field_old(its+1,k,j)                 &
+                            - field_old(its  ,k,j)   ) +           &
+                       field(its,k,j)*(ru(its+1,k,j)-ru(its,k,j))  &
+                                                                )
+       ENDDO
+       ENDDO
+
+   ENDIF
+
+   IF( (config_flags%open_xe) .and. (ite == ide) ) THEN
+
+       DO j = j_start, j_end
+       DO k = kts, ktf
+         ub = MAX( 0.5*(ru(ite-1,k,j)+ru(ite,k,j)), 0. )
+         tendency(i_end,k,j) = tendency(i_end,k,j)                   &
+               - rdx*(                                               &
+                       ub*(  field_old(i_end  ,k,j)                  &
+                           - field_old(i_end-1,k,j) ) +              &
+                       field(i_end,k,j)*(ru(ite,k,j)-ru(ite-1,k,j))  &
+                                                                    )
+       ENDDO
+       ENDDO
+
+   ENDIF
+
+   IF( (config_flags%open_ys) .and. (jts == jds) ) THEN
+
+       DO i = i_start, i_end
+       DO k = kts, ktf
+         vb = MIN( 0.5*(rv(i,k,jts)+rv(i,k,jts+1)), 0. )
+         tendency(i,k,jts) = tendency(i,k,jts)                     &
+               - rdy*(                                             &
+                       vb*(  field_old(i,k,jts+1)                  &
+                           - field_old(i,k,jts  ) ) +              &
+                       field(i,k,jts)*(rv(i,k,jts+1)-rv(i,k,jts))  &
+                                                                )
+       ENDDO
+       ENDDO
+
+   ENDIF
+
+   IF( (config_flags%open_ye) .and. (jte == jde)) THEN
+
+       DO i = i_start, i_end
+       DO k = kts, ktf
+         vb = MAX( 0.5*(rv(i,k,jte-1)+rv(i,k,jte)), 0. )
+         tendency(i,k,j_end) = tendency(i,k,j_end)                   &
+               - rdy*(                                               &
+                       vb*(   field_old(i,k,j_end  )                 &
+                            - field_old(i,k,j_end-1) ) +             &
+                       field(i,k,j_end)*(rv(i,k,jte)-rv(i,k,jte-1))  &
+                                                                    )
+       ENDDO
+       ENDDO
+
+   ENDIF
+
+   IF( (config_flags%polar) .and. (jts == jds) ) THEN
+
+       ! Assuming rv(i,k,jds) = 0.
+       DO i = i_start, i_end
+       DO k = kts, ktf
+         vb = MIN( 0.5*rv(i,k,jts+1), 0. )
+         tendency(i,k,jts) = tendency(i,k,jts)                     &
+               - rdy*(                                             &
+                       vb*(  field_old(i,k,jts+1)                  &
+                           - field_old(i,k,jts  ) ) +              &
+                       field(i,k,jts)*rv(i,k,jts+1)                &
+                                                                )
+       ENDDO
+       ENDDO
+
+   ENDIF
+
+   IF( (config_flags%polar) .and. (jte == jde)) THEN
+
+       ! Assuming rv(i,k,jde) = 0.
+       DO i = i_start, i_end
+       DO k = kts, ktf
+         vb = MAX( 0.5*rv(i,k,jte-1), 0. )
+         tendency(i,k,j_end) = tendency(i,k,j_end)                   &
+               - rdy*(                                               &
+                       vb*(   field_old(i,k,j_end  )                 &
+                            - field_old(i,k,j_end-1) ) +             &
+                       field(i,k,j_end)*(-rv(i,k,jte-1))             &
+                                                                    )
+       ENDDO
+       ENDDO
+
+   ENDIF
+
+!-------------------- vertical advection
+
+!-- loop bounds for periodic or sym conditions
+
+      i_start = its-1
+      i_end   = MIN(ite,ide-1)+1
+      j_start = jts-1
+      j_end   = MIN(jte,jde-1)+1
+
+!-- loop bounds for open or specified conditions
+
+    IF(degrade_xs) i_start = MAX(its-1,ids)
+    IF(degrade_xe) i_end   = MIN(ite+1,ide-1)
+    IF(degrade_ys) j_start = MAX(jts-1,jds)
+    IF(degrade_ye) j_end   = MIN(jte+1,jde-1)
+
+!    vert_order_test : IF (vert_order == 6) THEN    
+
+
+!    ELSE IF (vert_order == 5) THEN    
+
+      DO j = j_start, j_end
+
+         DO i = i_start, i_end
+           fqz(i,1,j)  = 0.
+           fqzl(i,1,j) = 0.
+           fqz(i,kde,j)  = 0.
+           fqzl(i,kde,j) = 0.
+         ENDDO
+
+         DO k=kts+3,ktf-2
+         DO i = i_start, i_end
+           dz = 2./(rdzw(k)+rdzw(k-1))
+           mu = 0.5*(mut(i,j)+mut(i,j))
+           vel = rom(i,k,j)
+           cr = vel*dt/dz/mu
+           fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
+
+
+         IF( -vel .ge. 0.0 ) THEN
+            qip2 = field(i,k+1,j)
+            qip1 = field(i,k  ,j)
+            qi   = field(i,k-1,j)
+            qim1 = field(i,k-2,j)
+            qim2 = field(i,k-3,j)
+          ELSE
+            qip2 = field(i,k-2,j)
+            qip1 = field(i,k-1,j)
+            qi   = field(i,k  ,j)
+            qim1 = field(i,k+1,j)
+            qim2 = field(i,k+2,j)
+         ENDIF
+    
+         f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
+         f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
+         f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
+    
+         beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
+         beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
+         beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
+    
+         wi0 = gi0 / (eps1 + beta0)**pw
+         wi1 = gi1 / (eps1 + beta1)**pw
+         wi2 = gi2 / (eps1 + beta2)**pw
+    
+         sumwk = wi0 + wi1 + wi2
+    
+          fqz(i,k,j) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
+
+!           fqz(i,k,j) = vel*flux5( field(i,k-3,j), field(i,k-2,j), field(i,k-1,j),      &
+!                                   field(i,k  ,j), field(i,k+1,j), field(i,k+2,j),  -vel )
+           fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+         ENDDO
+         ENDDO
+
+         DO i = i_start, i_end
+
+           k=kts+1
+           dz = 2./(rdzw(k)+rdzw(k-1))
+           mu = 0.5*(mut(i,j)+mut(i,j))
+           vel = rom(i,k,j)
+           cr = vel*dt/dz/mu
+           fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
+           fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
+           fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+
+           k=kts+2
+           dz = 2./(rdzw(k)+rdzw(k-1))
+           mu = 0.5*(mut(i,j)+mut(i,j))
+           vel = rom(i,k,j)
+           cr = vel*dt/dz/mu
+           fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
+
+           fqz(i,k,j) = vel*flux3(                      &
+                   field(i,k-2,j), field(i,k-1,j),      &
+                   field(i,k  ,j), field(i,k+1,j),  -vel )
+           fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+
+           k=ktf-1
+           dz = 2./(rdzw(k)+rdzw(k-1))
+           mu = 0.5*(mut(i,j)+mut(i,j))
+           vel = rom(i,k,j)
+           cr = vel*dt/dz/mu
+           fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
+
+           fqz(i,k,j) = vel*flux3(                      &
+                   field(i,k-2,j), field(i,k-1,j),      &
+                   field(i,k  ,j), field(i,k+1,j),  -vel )
+           fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+
+           k=ktf
+           dz = 2./(rdzw(k)+rdzw(k-1))
+           mu = 0.5*(mut(i,j)+mut(i,j))
+           vel = rom(i,k,j)
+           cr = vel*dt/dz/mu
+           fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
+           fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
+           fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+
+         ENDDO
+
+      ENDDO
+
+
+!   ELSE
+
+!      WRITE (wrf_err_message,*) ' advect_scalar_pd, v_order not known ',vert_order
+!      CALL wrf_error_fatal ( wrf_err_message )
+
+!   ENDIF vert_order_test
+
+   IF (pd_limit) THEN
+
+! positive definite filter
+
+   i_start = its-1
+   i_end   = MIN(ite,ide-1)+1
+   j_start = jts-1
+   j_end   = MIN(jte,jde-1)+1
+
+!-- loop bounds for open or specified conditions
+
+   IF(degrade_xs) i_start = MAX(its-1,ids)
+   IF(degrade_xe) i_end   = MIN(ite+1,ide-1)
+   IF(degrade_ys) j_start = MAX(jts-1,jds)
+   IF(degrade_ye) j_end   = MIN(jte+1,jde-1)
+
+   IF(config_flags%specified .or. config_flags%nested) THEN
+     IF (degrade_xs) i_start = MAX(its-1,ids+1)
+     IF (degrade_xe) i_end   = MIN(ite+1,ide-2)
+     IF (degrade_ys) j_start = MAX(jts-1,jds+1)
+     IF (degrade_ye) j_end   = MIN(jte+1,jde-2)
+   END IF
+
+   IF(config_flags%open_xs) THEN
+     IF (degrade_xs) i_start = MAX(its-1,ids+1)
+   END IF
+   IF(config_flags%open_xe) THEN
+     IF (degrade_xe) i_end   = MIN(ite+1,ide-2)
+   END IF
+   IF(config_flags%open_ys) THEN
+     IF (degrade_ys) j_start = MAX(jts-1,jds+1)
+   END IF
+   IF(config_flags%open_ye) THEN
+     IF (degrade_ye) j_end   = MIN(jte+1,jde-2)
+   END IF
+   ! ADT note:
+   ! We don't want to change j_start and j_end
+   ! for polar BC's since we want to calculate
+   ! fluxes for directions other than y at the
+   ! edge
+
+!-- here is the limiter...
+
+   DO j=j_start, j_end
+   DO k=kts, ktf
+   DO i=i_start, i_end
+
+     ph_low = (mub(i,j)+mu_old(i,j))*field_old(i,k,j)        &
+                - dt*( msftx(i,j)*msfty(i,j)*(               &
+                       rdx*(fqxl(i+1,k,j)-fqxl(i,k,j)) +     &
+                       rdy*(fqyl(i,k,j+1)-fqyl(i,k,j))  )    &
+                      +msfty(i,j)*rdzw(k)*(fqzl(i,k+1,j)-fqzl(i,k,j)) )
+
+     flux_out = dt*( (msftx(i,j)*msfty(i,j))*(                    &
+                                rdx*(  max(0.,fqx (i+1,k,j))      &
+                                      -min(0.,fqx (i  ,k,j)) )    &
+                               +rdy*(  max(0.,fqy (i,k,j+1))      &
+                                      -min(0.,fqy (i,k,j  )) ) )  &
+                +msfty(i,j)*rdzw(k)*(  min(0.,fqz (i,k+1,j))      &
+                                      -max(0.,fqz (i,k  ,j)) )   )
+
+     IF( flux_out .gt. ph_low ) THEN
+
+       scale = max(0.,ph_low/(flux_out+eps))
+       IF( fqx (i+1,k,j) .gt. 0.) fqx(i+1,k,j) = scale*fqx(i+1,k,j)
+       IF( fqx (i  ,k,j) .lt. 0.) fqx(i  ,k,j) = scale*fqx(i  ,k,j)
+       IF( fqy (i,k,j+1) .gt. 0.) fqy(i,k,j+1) = scale*fqy(i,k,j+1)
+       IF( fqy (i,k,j  ) .lt. 0.) fqy(i,k,j  ) = scale*fqy(i,k,j  )
+!  note: z flux is opposite sign in mass coordinate because 
+!  vertical coordinate decreases with increasing k
+       IF( fqz (i,k+1,j) .lt. 0.) fqz(i,k+1,j) = scale*fqz(i,k+1,j)
+       IF( fqz (i,k  ,j) .gt. 0.) fqz(i,k  ,j) = scale*fqz(i,k  ,j)
+
+     END IF
+
+   ENDDO
+   ENDDO
+   ENDDO
+
+   END IF
+
+! add in the pd-limited flux divergence
+
+  i_start = its
+  i_end   = MIN(ite,ide-1)
+  j_start = jts
+  j_end   = MIN(jte,jde-1)
+
+  DO j = j_start, j_end
+  DO k = kts, ktf
+  DO i = i_start, i_end
+
+     tendency (i,k,j) = tendency(i,k,j)                           &
+                            -rdzw(k)*( fqz (i,k+1,j)-fqz (i,k,j)  &
+                                      +fqzl(i,k+1,j)-fqzl(i,k,j))
+
+  ENDDO
+  ENDDO
+  ENDDO
+
+! x flux divergence
+!
+  IF(degrade_xs) i_start = MAX(its,ids+1)
+  IF(degrade_xe) i_end   = MIN(ite,ide-2)
+
+  DO j = j_start, j_end
+  DO k = kts, ktf
+  DO i = i_start, i_end
+
+     ! Un-"canceled" map scale factor, ADT Eq. 48
+     tendency (i,k,j) = tendency(i,k,j)                           &
+               - msftx(i,j)*( rdx*( fqx (i+1,k,j)-fqx (i,k,j)     &
+                                   +fqxl(i+1,k,j)-fqxl(i,k,j))   )
+
+  ENDDO
+  ENDDO
+  ENDDO
+
+! y flux divergence
+!
+  i_start = its
+  i_end   = MIN(ite,ide-1)
+  IF(degrade_ys) j_start = MAX(jts,jds+1)
+  IF(degrade_ye) j_end   = MIN(jte,jde-2)
+
+  DO j = j_start, j_end
+  DO k = kts, ktf
+  DO i = i_start, i_end
+
+     ! Un-"canceled" map scale factor, ADT Eq. 48
+     ! It is correct to use msftx (and not msfty), per W. Skamarock, 20080606
+     tendency (i,k,j) = tendency(i,k,j)                           &
+               - msftx(i,j)*( rdy*( fqy (i,k,j+1)-fqy (i,k,j)     &
+                                   +fqyl(i,k,j+1)-fqyl(i,k,j))   )
+
+  ENDDO
+  ENDDO
+  ENDDO
+
+END SUBROUTINE advect_scalar_wenopd
+
+!----------------------------------------------------------------
+
 SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
                                   h_tendency, z_tendency,        & 
                                   ru, rv, rom,                   &
@@ -8669,7 +9564,9 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
                              ims, ime, jms, jme, kms, kme,  &
                              its, ite, jts, jte, kts, kte  )
 !
-! 5th-order WENO scheme adapted from COMMAS
+! 5th-order WENO (Weighted Essentially Non-Oscillatory) scheme adapted from COMMAS.  
+! See Jiang and Shu, 1996, J. Comp. Phys. v. 126, 202-223; 
+! Shu 2003, Int. J. Comp. Fluid Dyn. v. 17 107-118;  Also used by Bryan 2005, Mon. Wea. Rev.
 !
    IMPLICIT NONE
    
@@ -9348,6 +10245,12 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
                         ims, ime, jms, jme, kms, kme,  &
                         its, ite, jts, jte, kts, kte  )
 
+!
+! 5th-order WENO (Weighted Essentially Non-Oscillatory) scheme adapted from COMMAS.  
+! See Jiang and Shu, 1996, J. Comp. Phys. v. 126, 202-223; 
+! Shu 2003, Int. J. Comp. Fluid Dyn. v. 17 107-118;  Also used by Bryan 2005, Mon. Wea. Rev.
+!
+
    IMPLICIT NONE
    
    ! Input data
@@ -9985,6 +10888,12 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
                         ids, ide, jds, jde, kds, kde,  &
                         ims, ime, jms, jme, kms, kme,  &
                         its, ite, jts, jte, kts, kte  )
+
+!
+! 5th-order WENO (Weighted Essentially Non-Oscillatory) scheme adapted from COMMAS.  
+! See Jiang and Shu, 1996, J. Comp. Phys. v. 126, 202-223; 
+! Shu 2003, Int. J. Comp. Fluid Dyn. v. 17 107-118;  Also used by Bryan 2005, Mon. Wea. Rev.
+!
 
    IMPLICIT NONE
    
@@ -10671,6 +11580,12 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
                          ids, ide, jds, jde, kds, kde,  &
                          ims, ime, jms, jme, kms, kme,  &
                          its, ite, jts, jte, kts, kte  )
+
+!
+! 5th-order WENO (Weighted Essentially Non-Oscillatory) scheme adapted from COMMAS.  
+! See Jiang and Shu, 1996, J. Comp. Phys. v. 126, 202-223; 
+! Shu 2003, Int. J. Comp. Fluid Dyn. v. 17 107-118;  Also used by Bryan 2005, Mon. Wea. Rev.
+!
 
    IMPLICIT NONE
    

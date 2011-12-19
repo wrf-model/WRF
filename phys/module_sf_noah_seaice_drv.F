@@ -2,7 +2,8 @@ module module_sf_noah_seaice_drv
   use module_sf_noah_seaice
   implicit none
 contains
-  subroutine seaice_noah( T3D, QV3D, P8W3D, DZ8W, NUM_SOIL_LAYERS, DT, FRPCPN, SR,      &
+  subroutine seaice_noah( SEAICE_ALBEDO_OPT,                                            &
+       &                  T3D, QV3D, P8W3D, DZ8W, NUM_SOIL_LAYERS, DT, FRPCPN, SR,      &
        &                  GLW, SWDOWN, RAINBL, SNOALB2D, QGH, XICE, XICE_THRESHOLD,     &
        &                  TSLB, EMISS, ALBEDO, ALBBCK, Z02D, TSK, SNOW, SNOWC, SNOWH2D, &
        &                  CHS, CHS2, CQS2,                                              &
@@ -13,6 +14,8 @@ contains
        &                  IMS, IME, JMS, JME, KMS, KME,                                 &
        &                  ITS, ITE, JTS, JTE, KTS, KTE  )
     implicit none
+
+    INTEGER, INTENT(IN)       ::               SEAICE_ALBEDO_OPT
 
     INTEGER, INTENT(IN)       ::                            IDS, &
          &                                                  IDE, &
@@ -109,6 +112,7 @@ contains
     REAL    :: SNOALB
     REAL    :: TBOT
 
+    REAL    :: ALBEDOK
     REAL    :: ALBBRD
     REAL    :: Z0BRD
     REAL    :: EMISSI
@@ -304,20 +308,19 @@ contains
           RUNOFF1          = -1.E36
           Q1               = -1.E36
 
-          call sflx_seaice(I, J, FFROZP, DT, ZLVL, NSOIL,             &    !C
+          call sflx_seaice(I, J, SEAICE_ALBEDO_OPT,                         &    !C
+               &           FFROZP, DT, ZLVL, NSOIL,                         &    !C
                &           LWDN, SOLNET, SFCPRS, PRCP, SFCTMP, Q2,          &    !F
                &           TH2, Q2SAT, DQSDT2,                              &    !I
                &           ALBBRD, SNOALB, TBOT, Z0BRD, Z0, EMISSI,         &    !S
-               &           T1, STC, SNOWH, SNEQV, CH,                       &    !H
+               &           T1, STC, SNOWH, SNEQV, ALBEDOK, CH,              &    !H
                &           ETA, SHEAT, ETA_KINEMATIC, FDOWN,                &    !O
                &           ESNOW, DEW, ETP, SSOIL, FLX1, FLX2, FLX3,        &    !O
                &           SNOMLT, SNCOVR,                                  &    !O
                &           RUNOFF1, Q1, RIBB)
 
-          ! Force albedo from sea-ice to 0.80?
-          ALBEDO(I,J)  = 0.80
-
           ! Update our 2d arrays with results from SFLX_SEAICE
+          ALBEDO(I,J)  = ALBEDOK
           EMISS(I,J)   = EMISSI
           ALBBCK(I,J)  = ALBBRD
           TSK(I,J)     = T1

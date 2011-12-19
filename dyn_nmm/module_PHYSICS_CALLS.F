@@ -880,6 +880,7 @@
 !
       INTEGER :: NUM_ROOF_LAYERS,NUM_WALL_LAYERS,NUM_ROAD_LAYERS   ! urban
       INTEGER :: FRACTIONAL_SEAICE
+      INTEGER :: SEAICE_ALBEDO_OPT
 !
       INTEGER :: IGS,IGE,JGS,JGE, PQ_I   !BSF
       LOGICAL :: FQ_I, ETAMP_PHYSICS,ETAMP_Regional            !BSF
@@ -905,6 +906,11 @@
       FRACTIONAL_SEAICE = CONFIG_FLAGS%FRACTIONAL_SEAICE
       IF ( FRACTIONAL_SEAICE == 1 ) THEN
          CALL WRF_ERROR_FATAL("NMM cannot use FRACTIONAL_SEAICE = 1.")
+      ENDIF
+
+      SEAICE_ALBEDO_OPT = CONFIG_FLAGS%SEAICE_ALBEDO_OPT
+      IF ( SEAICE_ALBEDO_OPT /= 0 ) THEN
+         CALL WRF_ERROR_FATAL("NMM must use SEAICE_ALBEDO_OPT = 0")
       ENDIF
 !
       DTPHS=NPHS*DT
@@ -1206,6 +1212,7 @@
      &          ,GZ1OZ0=GZ1OZ0,HFX=TWBS                                 &
      &          ,HT=SFCZ,IFSNOW=IDUMMY,ISFFLX=ISFFLX                    &
      &          ,FRACTIONAL_SEAICE=FRACTIONAL_SEAICE                    &
+     &          ,SEAICE_ALBEDO_OPT=SEAICE_ALBEDO_OPT                    &
      &          ,TICE2TSK_IF2COLD=CONFIG_FLAGS%TICE2TSK_IF2COLD         &
      &          ,ISLTYP=ISLTYP                                          &
      &          ,ITIMESTEP=NTSD,IVGTYP=IVGTYP,LOWLYR=LOWLYR             &

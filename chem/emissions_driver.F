@@ -309,7 +309,7 @@ CONTAINS
 ! ..
 ! ..
 ! .. Intrinsic Functions ..
-      INTRINSIC max, min
+!     INTRINSIC max, min
 ! ..
 
 ! Flags for turning on or off sea salt and/or dust emissions...

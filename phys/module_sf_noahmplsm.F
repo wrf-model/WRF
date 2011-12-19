@@ -921,13 +921,6 @@ contains
     ELSE
       ALBEDO = -999.9
     END IF
-
-!KWM   !IF(SWDOWN > 1.E-8 ) THEN   !KWM
-!KWM   IF(SWDOWN /= 0.0 ) THEN    !KWM
-!KWM     ALBEDO = FSR / SWDOWN    !KWM
-!KWM   ELSE                       !KWM
-!KWM     ALBEDO = 0.25            !KWM
-!KWM   END IF                     !KWM
     
 
   END SUBROUTINE NOAHMP_SFLX

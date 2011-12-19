@@ -29,7 +29,7 @@ program da_verif_obs
    use da_verif_obs_init, only : initialize_surface_type, initialize_upr_type, &
       initialize_gpspw_type, initialize_gpsref_type, da_advance_cymdh , &
       initialize_t_tab      
-   use da_tools, only : map_info, proj_merc, proj_ps,proj_lc,proj_latlon, &
+   use da_verif_tools, only : map_info, proj_merc, proj_ps,proj_lc,proj_latlon, &
       da_llxy_wrf,da_xyll,da_map_set
   
    implicit none

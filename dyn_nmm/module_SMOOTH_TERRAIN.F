@@ -1,4 +1,5 @@
 module module_SMOOTH_TERRAIN
+#if (NMM_NEST == 1)
 contains
   subroutine smooth_terrain(grid,lines,nsmud, &
        IDS,IDE,JDS,JDE,KDS,KDE, &
@@ -396,4 +397,5 @@ contains
     !-----------------------------------------------------------------------
     return
   end subroutine smdhld
+#endif
 end module module_SMOOTH_TERRAIN

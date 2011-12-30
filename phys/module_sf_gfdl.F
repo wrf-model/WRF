@@ -978,7 +978,7 @@ CONTAINS
 
       if (ip .EQ. 0) go to 170
       do i = 1,ip
-        szetam(i) = 1.0e+50
+        szetam(i) = 1.0e+30
         sgzm(i)   = 0.0e+00
         szeta(i)  = zeta(istb(i))
         ifz(i)    = 1
@@ -1193,7 +1193,7 @@ CONTAINS
       do i = 1,iq
         uzeta (i) = zeta(iutb(i))
         ifz   (i) = 1
-        uzetam(i) = 1.0e+50
+        uzetam(i) = 1.0e+30
         ugzm  (i) = 0.0e+00
       enddo
 
@@ -1525,7 +1525,7 @@ CONTAINS
         write(6,345) indx(i), j, tstar(indx(i)), tsp(i), ip
 345   format(2X, ' I, J, OLD T*, NEW T*, NPTS ', 2I5, 2E14.8, I5)
 
-        write(6,350) reflect, sigt4, shfx, alevp, delten, diffot
+!       write(6,350) reflect, sigt4, shfx, alevp, delten, diffot
 350   format(2X, ' REFLECT, SIGT4, SHFX, ALEVP, DELTEN, DIFFOT ', &
             6E14.8)
 

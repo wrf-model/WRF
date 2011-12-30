@@ -15,6 +15,9 @@
                ph_rooh,ph_xooh,ph_isopooh,ph_alkooh,                     &
                ph_mekooh,ph_tolooh,ph_terpooh,ph_mvk,                    &
                ph_glyald,ph_hyac,                                        &
+               nref0, nw0, tuv_jmax0,                                    &
+               ph_radfld, ph_adjcoe, ph_prate,                           &
+               wc, zref,                                                 &
                tauaer1,tauaer2,tauaer3,tauaer4,                          &
                gaer1,gaer2,gaer3,gaer4,                                  &
                waer1,waer2,waer3,waer4,                                  &
@@ -66,6 +69,17 @@
            ph_xooh,ph_isopooh,ph_alkooh,ph_mekooh,ph_tolooh,           &
            ph_terpooh,ph_mvk,ph_glyald,ph_hyac
 
+   INTEGER,      INTENT(IN   ) :: nref0, nw0, tuv_jmax0 
+   real, dimension( ims:ime, nref0, jms:jme, nw0 ),                    &
+            intent(out  ) :: ph_radfld
+   real, dimension( ims:ime, nref0, jms:jme, tuv_jmax0 ),              &
+            intent(out  ) :: ph_adjcoe
+   real, dimension( ims:ime, nref0, jms:jme, tuv_jmax0 ),              &
+            intent(out  ) :: ph_prate
+   real, dimension(nw0),                                               &
+            intent(out  ) :: wc
+   real, dimension(nref0),                                             &
+            intent(out  ) :: zref
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &  
          OPTIONAL,                                                     &
          INTENT(INOUT ) ::                                             &
@@ -174,6 +188,8 @@
                               ph_alkooh,ph_mekooh,ph_tolooh,ph_terpooh,&
                               ph_n2o5,ph_mvk,ph_glyald,ph_hyac,        &
                               ivgtyp,                                  &
+                              ph_radfld, ph_adjcoe, ph_prate,          &
+                              wc,zref,                                 &
                               ids,ide, jds,jde, kds,kde,               &
                               ims,ime, jms,jme, kms,kme,               &
                               its,ite, jts,jte, kts,kte                )

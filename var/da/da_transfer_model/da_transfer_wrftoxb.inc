@@ -15,7 +15,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    integer :: i, j, k, ij
 
-   real    :: theta, tmpvar
+   real    :: theta, tmpvar, alt
 
    real, dimension(ims:ime,jms:jme) :: rgh_fac
 
@@ -33,6 +33,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    real, allocatable :: arrayglobal(:,:)
 
    logical:: no_ppb
+
+   real, dimension(ims:ime,kms:kme) :: pf
 
 #ifdef A2C
    real   :: uu, vv
@@ -86,7 +88,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    grid%xb % ptop = ptop
       
    !---------------------------------------------------------------------------
-   ! Convert WRF fitelds to xb:
+   ! Convert WRF fields to xb:
    !---------------------------------------------------------------------------
 
    if (print_detail_xb) then
@@ -348,7 +350,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       cpovcv = cp / (cp - gas_constant)
 
       ! In case of var4d, pb etc. will be recalculated in start_em with realsize=8, 
-      ! Howvwer, the originals are computed with realsize=4.
+      ! However, the originals are computed with realsize=4.
       if ( no_ppb ) then
          do k=kts,kte
             do i=its,ite
@@ -378,6 +380,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       else
          do k=kts,kte
             do i=its,ite
+#ifndef TKW_
                ppb = grid%pb(i,j,k)
                temp = MAX ( iso_temp, base_temp + base_lapse*log(ppb/base_pres) )
                ttb  = temp * (base_pres/ppb)**kappa
@@ -392,6 +395,15 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
                grid%xb%p(i,j,k) = grid%pb(i,j,k) + grid%p(i,j,k)
                ! total density
                grid%xb%rho(i,j,k)= 1.0 / (albn+aln)
+#else
+               grid%xb%p(i,j,k) = grid%pb(i,j,k) + grid%p(i,j,k)
+               theta = t0 + grid%t_2(i,j,k)
+               qvf1 = 1.0 + grid%moist(i,j,k,P_QV) / rd_over_rv
+               ! inverse density via the equation of state
+               alt = gas_constant*theta*qvf1/base_pres*(grid%xb%p(i,j,k)/base_pres)**cvpm         
+               ! total density
+               grid%xb%rho(i,j,k)= 1.0/alt
+#endif
             end do
          end do
       endif
@@ -403,12 +415,38 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
          end do
       end do
 
+#ifdef TKW_
+      ! Compute full-level pressure
+      do i=its,ite
+         pf(i,kte+1) = ptop 
+         pf(i,kts)   = grid%psfc(i,j)
+      end do
+      do k=kts+1,kte
+         do i=its,ite
+            pf(i,k) = (grid%dnw(k-1)*grid%xb%p(i,j,k)+grid%dnw(k)*grid%xb%p(i,j,k-1))/(grid%dnw(k-1)+grid%dnw(k))
+         end do
+      end do
+#endif
+
       do k=kts,kte
          do i=its,ite
             grid%xb%u(i,j,k) = 0.5*(grid%u_2(i,j,k)+grid%u_2(i+1,j,k))
             grid%xb%v(i,j,k) = 0.5*(grid%v_2(i,j,k)+grid%v_2(i,j+1,k))
             grid%xb%wh(i,j,k)= 0.5*(grid%xb%w(i,j,k)+grid%xb%w(i,j,k+1))
+#ifndef TKW_
             grid%xb%h(i,j,k) = 0.5*(grid%xb%hf(i,j,k)+grid%xb%hf(i,j,k+1))
+#else
+         !  grid%xb%h(i,j,k) = 0.5*(grid%xb%hf(i,j,k)+grid%xb%hf(i,j,k+1))
+
+         !  This is almost correct for pressure, but not for height. 
+         !  Arithmetic mean of full-level heights is always higher than the actual,
+         !  leading to a biased model for height-based observations (e.g., GPS RO)
+         !  and surface variables (2-meter TQ and 10-meter wind).
+         !  wee 11/22/2011
+
+            grid%xb%h(i,j,k) = grid%xb%hf(i,j,k)+(grid%xb%hf(i,j,k+1)-grid%xb%hf(i,j,k)) &
+                 *LOG(pf(i,k)/grid%xb%p(i,j,k))/LOG(pf(i,k)/pf(i,k+1))
+#endif
 
             if ( num_pseudo == 0 ) then
                grid%moist(i,j,k,P_QV) = max(grid%moist(i,j,k,P_QV), qlimit)
@@ -426,6 +464,11 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
             if (size(grid%moist,dim=4) >= 4) then
                grid%xb%qcw(i,j,k) = max(grid%moist(i,j,k,p_qc), 0.0)
                grid%xb%qrn(i,j,k) = max(grid%moist(i,j,k,p_qr), 0.0)
+!rizvi For doing single obs test with radiance one need to ensure non-zero hydrometeor
+!  For doing so uncomment following two cards below
+!               grid%xb%qcw(i,j,k) = 0.0001                             
+!               grid%xb%qrn(i,j,k) = 0.0001                             
+
                grid%xb%qt (i,j,k) = grid%xb%q(i,j,k) + grid%xb%qcw(i,j,k) + &
                   grid%xb%qrn(i,j,k)
             end if
@@ -433,6 +476,10 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
             if (size(grid%moist,dim=4) >= 6) then
                grid%xb%qci(i,j,k) = max(grid%moist(i,j,k,p_qi), 0.0)
                grid%xb%qsn(i,j,k) = max(grid%moist(i,j,k,p_qs), 0.0)
+!rizvi For doing single obs test with radiance one need to ensure non-zero hydrometeor
+!  For doing so uncomment following two cards below
+!               grid%xb%qci(i,j,k) = 0.0001                             
+!               grid%xb%qsn(i,j,k) = 0.0001                             
             end if
 
             if (size(grid%moist,dim=4) >= 7) then
@@ -596,21 +643,20 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
             grid%xb%u(i,j,kts), grid%xb%v(i,j,kts), &
 #endif
             grid%xb%p(i,j,kts+1), grid%xb%t(i,j,kts+1), grid%xb%q(i,j,kts+1), &
-            height,  grid%xb%rough(i,j),grid%xb%xland(i,j), &
+            height,  grid%xb%rough(i,j),grid%xb%xland(i,j), grid%xb%ds, & ! Modified by Eric Chiang (NOV 2010) 
             grid%xb%u10(i,j), grid%xb%v10(i,j), grid%xb%t2(i,j), &
             grid%xb%q2(i,j), grid%xb%regime(i,j))
+  
+            grid%xb%u10(i,j) = grid%u10(i,j)         ! Add by Eric Chiang (NOV 2010)
+            grid%xb%v10(i,j) = grid%v10(i,j)         ! Add by Eric Chiang (NOV 2010)
+            grid%xb%t2(i,j) = grid%t2(i,j)           ! Add by Eric Chiang (NOV 2010)
+            grid%xb%q2(i,j) = grid%q2(i,j)           ! Add by Eric Chiang (NOV 2010)
+
       end do
    end do
 
    end do
    !$OMP END PARALLEL DO
-
-   if ( var4d ) then ! for 4dvar, we use these variables from model
-      grid%xb%u10 = grid%u10
-      grid%xb%v10 = grid%v10
-      grid%xb%t2 = grid%t2
-      grid%xb%q2 = grid%q2
-   endif
 
 #ifdef VAR4D
    CALL set_physical_bc2d( grid%xb%grid_box_area, 't', config_flags, &

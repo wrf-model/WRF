@@ -14,6 +14,7 @@ MODULES =                 		\
         module_solvedebug_em.o    	\
         module_bc_em.o                  \
         module_init_utilities.o         \
+        module_wps_io_arw.o             \
 	module_damping_em.o		\
 	module_polarfft.o		\
         module_force_scm.o              \

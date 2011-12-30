@@ -13,6 +13,7 @@ MODULE module_physics_init
    USE module_state_description
    USE module_model_constants
    USE module_configure, ONLY : grid_config_rec_type
+!  USE module_ssib_veg , ONLY : init_module_ssib_veg !fds (SSiB constants)
 
 CONTAINS
 
@@ -69,6 +70,14 @@ CONTAINS
                          FGDT,STEPFG,                            &    ! Optional
                          cugd_tten,cugd_ttens,cugd_qvten,        &    ! Optional
                          cugd_qvtens,cugd_qcten,                 &    ! Optional
+                         ISNOWXY, ZSNSOXY, TSNOXY,                        & ! Optional Noah-MP
+                         SNICEXY, SNLIQXY, TVXY, TGXY, CANICEXY,          & ! Optional Noah-MP
+                         CANLIQXY, EAHXY, TAHXY, CMXY,                    & ! Optional Noah-MP
+                         CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,       & ! Optional Noah-MP
+                         WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY, & ! Optional Noah-MP
+                         STMASSXY, WOODXY, STBLCPXY, FASTCPXY,            & ! Optional Noah-MP
+                         XSAIXY,                                          & ! Optional Noah-MP
+                         T2MVXY, T2MBXY, CHSTARXY ,                       & ! Optional Noah-MP
 !                        num_roof_layers,num_wall_layers,        & !Optional urban
 !                        num_road_layers,                        & !Optional urban
                          DZR, DZB, DZG,                          & !Optional urban
@@ -103,6 +112,9 @@ CONTAINS
                          ,te_temf          & ! WA 12/21/09
                          ,cf3d_temf        & ! WA 9/27/10
                          ,wm_temf          & ! WA 2/22/11
+                         ,massflux_EDKF, entr_EDKF, detr_EDKF  & ! Optional for qnse
+                         ,thl_up, thv_up, rt_up                & ! Optional for qnse
+                         ,rv_up, rc_up, u_up, v_up, frac_up    & ! Optional for qnse
                          )
 
 !-----------------------------------------------------------------
@@ -232,6 +244,14 @@ CONTAINS
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
              RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,EXCH_H,TKE_PBL
+
+  REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT), OPTIONAL :: &
+                                            massflux_EDKF, entr_EDKF, detr_EDKF & 
+                                                   ,thl_up, thv_up, rt_up       &
+                                                   ,rv_up, rc_up, u_up, v_up    &
+                                                   ,frac_up
+
+
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
              cugd_tten,cugd_ttens,cugd_qvten,                &
              cugd_qvtens,cugd_qcten
@@ -247,6 +267,41 @@ CONTAINS
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT),OPTIONAL :: TYRA
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT),OPTIONAL :: TDLY
    REAL,     DIMENSION( ims:ime , 1:lagday , jms:jme ) , INTENT(INOUT),OPTIONAL :: TLAG
+
+!Noah-MP
+
+
+   INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ISNOWXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:num_soil_layers, jms:jme) :: ZSNSOXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0, jms:jme) :: TSNOXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0, jms:jme) :: SNICEXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0, jms:jme) :: SNLIQXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: TVXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: TGXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CANICEXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CANLIQXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: EAHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: TAHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CMXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: FWETXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: SNEQVOXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ALBOLDXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QSNOWXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WSLAKEXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ZWTXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WAXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WTXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: LFMASSXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: RTMASSXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: STMASSXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WOODXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: STBLCPXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: FASTCPXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: XSAIXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MVXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MBXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CHSTARXY
 
 !mp
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::   &
@@ -366,6 +421,7 @@ CONTAINS
    REAL    :: oml_hml0
    LOGICAL :: usemonalb
    LOGICAL :: rdmaxalb
+   LOGICAL :: mfshconv
 
    INTEGER :: i, j, k, itf, jtf, n
 integer myproc
@@ -375,6 +431,7 @@ integer myproc
    sf_urban_physics=config_flags%sf_urban_physics
    usemonalb=config_flags%usemonalb
    rdmaxalb=config_flags%rdmaxalb
+   mfshconv=config_flags%mfshconv
 #if ( EM_CORE == 1 )
    obs_twindo_cg=model_config_rec%obs_twindo(1)
    obs_twindo=config_flags%obs_twindo
@@ -552,7 +609,11 @@ integer myproc
    CALL bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,        &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
-                num_soil_layers,TKE_PBL,                        &
+                num_soil_layers,TKE_PBL,mfshconv,               &
+                massflux_EDKF, entr_EDKF, detr_EDKF, & 
+                thl_up, thv_up, rt_up,       &
+                rv_up, rc_up, u_up, v_up,    &
+                frac_up, &
                 EXCH_H,VEGFRA,                                  &
                 SNOW,SNOWC, CANWAT,SMSTAV,                      &
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
@@ -565,6 +626,14 @@ integer myproc
 #endif
                 SFCEVP,GRDFLX,                                  &
                 TRIM (MMINLU_LOC),                              &
+                ISNOWXY, ZSNSOXY, TSNOXY,                       &
+                SNICEXY, SNLIQXY, TVXY, TGXY, CANICEXY,         &
+                CANLIQXY, EAHXY, TAHXY, CMXY,                   &
+                CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,      &
+                WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY,&
+                STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
+                XSAIXY,                                         &
+                T2MVXY,T2MBXY,CHSTARXY ,                        &
                 allowed_to_read ,                               &
                 start_of_simulation ,                           &
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
@@ -848,10 +917,12 @@ integer myproc
         IF(FOUND_LU)THEN
           LUN=LUCATS
           NSN=LUSEAS
+            IF(LUTYPE.NE.'SSIB') THEN !this is not really true for ssib lsm (fds)
             PRINT *, 'LANDUSE TYPE = "' // TRIM (LUTYPE) // '" FOUND',        &
                    LUCATS,' CATEGORIES',LUSEAS,' SEASONS',     &
                    ' WATER CATEGORY = ',ISWATER,               &
                    ' SNOW CATEGORY = ',ISICE
+            ENDIF
         ENDIF
         DO ls=1,luseas
           if ( wrf_dm_on_monitor() ) then
@@ -972,7 +1043,16 @@ integer myproc
         lu_state(curs) = THERIN(cats,seas)        ; curs = curs + 1
       ENDDO
     ENDDO
-
+!
+!-- fds (07/2010)
+!-- SSIB's 12-category vegetation parameters are defined in module_ssib_veg
+!-- Data in LANDUSE.TBL is only used temporarily until the first
+!-- call to SSIB, and also to set water/ice points properties
+!    IF(MMINLU.EQ.'SSIB')THEN
+!       CALL init_module_ssib_veg
+!       CALL wrf_message ( 'READING SSIB VEGETATION PARAMETERS' )
+!    ENDIF
+!
 
    END SUBROUTINE landuse_init
 
@@ -1052,7 +1132,7 @@ integer myproc
    LOGICAL :: etalw = .false.
    LOGICAL :: hwrflw= .false.
    LOGICAL :: camlw = .false.
-   LOGICAL :: etamp = .false.
+!   LOGICAL :: etamp = .false.
    LOGICAL :: acswalloc = .false.
    LOGICAL :: aclwalloc = .false.
    integer :: month,iday
@@ -1097,12 +1177,12 @@ integer myproc
 
 !-- find out which microphysics option is used first
 
-   mp_select: SELECT CASE(config_flags%mp_physics)
-
-        CASE (ETAMPNEW)
-             etamp = .true.
-
-   END SELECT mp_select
+!   mp_select: SELECT CASE(config_flags%mp_physics)
+!
+!        CASE (ETAMPNEW)
+!             etamp = .true.
+!
+!   END SELECT mp_select
 
 !-- chose long wave radiation scheme
 
@@ -1184,6 +1264,9 @@ integer myproc
                          ids, ide, jds, jde, kds, kde, &
                          ims, ime, jms, jme, kms, kme, &
                          its, ite, jts, jte, kts, kte )
+
+        CASE (FLGLWSCHEME)
+
         CASE DEFAULT
 
    END SELECT lwrad_select
@@ -1248,6 +1331,8 @@ integer myproc
                            kds, kde, kms, kme, kts, kte     )
              ENDIF
 #endif
+        CASE (FLGSWSCHEME)
+
         CASE DEFAULT
 
    END SELECT swrad_select
@@ -1267,7 +1352,11 @@ integer myproc
    SUBROUTINE bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,  &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
-                num_soil_layers,TKE_PBL,                        &
+                num_soil_layers,TKE_PBL,mfshconv,               &
+                massflux_EDKF, entr_EDKF, detr_EDKF, & 
+                thl_up, thv_up, rt_up,       &
+                rv_up, rc_up, u_up, v_up,    &
+                frac_up, &
                 EXCH_H,VEGFRA,                                  &
                 SNOW,SNOWC, CANWAT,SMSTAV,                      &
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
@@ -1280,6 +1369,14 @@ integer myproc
 #endif
                 SFCEVP,GRDFLX,                                  &
                 MMINLU,                                         &
+                ISNOWXY, ZSNSOXY, TSNOXY,                       &
+                SNICEXY, SNLIQXY, TVXY, TGXY, CANICEXY,         &
+                CANLIQXY, EAHXY, TAHXY, CMXY,                   &
+                CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,      &
+                WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY,&
+                STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
+                XSAIXY,                                         &
+                T2MVXY, T2MBXY ,CHSTARXY,                       &
                 allowed_to_read,                                &
                 start_of_simulation,                            &
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
@@ -1313,6 +1410,7 @@ integer myproc
                 TML,T0ML,HML,H0ML,HUML,HVML,TMOML               ) !Optional oml
 !--------------------------------------------------------------------
    USE module_sf_sfclay
+   USE module_sf_sfclayrev
    USE module_sf_slab
    USE module_sf_pxsfclay
    USE module_bl_ysu
@@ -1323,6 +1421,7 @@ integer myproc
    USE module_sf_myjsfc
    USE module_sf_qnsesfc
    USE module_sf_noahdrv
+   USE module_sf_noahmpdrv
    USE module_sf_urban
    USE module_sf_bep                                  !BEP
    USE module_sf_bep_bem
@@ -1334,6 +1433,8 @@ integer myproc
    USE module_bl_boulac
    USE module_bl_camuwpbl_driver, ONLY :  camuwpblinit
    USE module_bl_qnsepbl
+   USE module_bl_qnsepbl09
+   USE module_bl_mfshconvpbl
 #if ( EM_CORE == 1 )
    USE module_bl_mynn
    USE module_bl_temf
@@ -1403,12 +1504,20 @@ integer myproc
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
                                                            RUBLTEN, &
                                                            RVBLTEN, &
- 						          EXCH_H,   &
+                                                          EXCH_H,   &
                                                           RTHBLTEN, &
                                                           RQVBLTEN, &
                                                           RQCBLTEN, &
                                                           RQIBLTEN, &
                                                           TKE_PBL
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT), OPTIONAL :: &
+                              massflux_EDKF, entr_EDKF, detr_EDKF & 
+                                     ,thl_up, thv_up, rt_up       &
+                                     ,rv_up, rc_up, u_up, v_up    &
+                                     ,frac_up
+
+  LOGICAL, INTENT(IN)           ::  mfshconv ! WRF JP
+
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::     TSK
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::  TMN
    CHARACTER(LEN=*), INTENT(IN)   :: MMINLU
@@ -1421,6 +1530,40 @@ integer myproc
             INTENT(OUT) :: te_temf, cf3d_temf !WA 
    REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ) , &
             INTENT(OUT) :: wm_temf
+
+!Noah-MP
+
+   INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ISNOWXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:num_soil_layers, jms:jme) :: ZSNSOXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0, jms:jme) :: TSNOXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0, jms:jme) :: SNICEXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0, jms:jme) :: SNLIQXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: TVXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: TGXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CANICEXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CANLIQXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: EAHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: TAHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CMXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: FWETXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: SNEQVOXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ALBOLDXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QSNOWXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WSLAKEXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ZWTXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WAXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WTXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: LFMASSXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: RTMASSXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: STMASSXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WOODXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: STBLCPXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: FASTCPXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: XSAIXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MVXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MBXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CHSTARXY
 
 !URBAN
 !   REAL, DIMENSION(1:num_roof_layers), INTENT(INOUT) :: DZR  !Optional urban
@@ -1530,6 +1673,9 @@ integer myproc
 
       CASE (SFCLAYSCHEME)
            CALL sfclayinit( allowed_to_read )
+           isfc = 1
+      CASE (SFCLAYREVSCHEME)
+!           CALL sfclayinit( allowed_to_read )
            isfc = 1
       CASE (PXSFCSCHEME)
            CALL pxsfclayinit( allowed_to_read )
@@ -1689,18 +1835,39 @@ integer myproc
              ENDIF
           ENDIF
 !
+      CASE (NOAHMPSCHEME)
+          CALL NOAHMP_INIT(MMINLU, SNOW,SNOWH,CANWAT,ISLTYP,                                &
+                     TSLB,SMOIS,SH2O,DZS, FNDSOILW, FNDSNOWH,                               &
+                     TSK,isnowxy  ,tvxy     ,tgxy     ,canicexy ,                           &
+                     canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy     ,                     &
+                     fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,wslakexy ,zwtxy    ,waxy     , &
+                     wtxy     ,tsnoxy   ,zsnsoxy  ,snicexy  ,snliqxy  ,lfmassxy ,rtmassxy , &
+                     stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy   ,                     &
+                     t2mvxy   ,t2mbxy   ,chstarxy ,            &
+                     num_soil_layers, restart,                 &
+                     allowed_to_read ,                         &
+                     ids,ide, jds,jde, kds,kde,                &
+                     ims,ime, jms,jme, kms,kme,                &
+                     its,ite, jts,jte, kts,kte                 )
+
       CASE (RUCLSMSCHEME)
 !          if(isfc .ne. 2)CALL wrf_error_fatal &
 !           ( 'module_physics_init: use myjsfc and myjpbl scheme for this lsm option' )
-           CALL ruclsminit( SH2O,SMFR3D,TSLB,SMOIS,ISLTYP,IVGTYP,XICE,  &
+           CALL ruclsminit( SH2O,SMFR3D,TSLB,SMOIS,ISLTYP,IVGTYP,MMINLU,XICE,  &
                      mavail,num_soil_layers, config_flags%iswater,      &
-                     config_flags%isice, restart,                  &
+#if (NMM_CORE == 1)
+                     config_flags%isice, z0, restart,                  &
+#else
+                     config_flags%isice, znt, restart,                  &
+#endif
                      allowed_to_read ,                             &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
 
       CASE (PXLSMSCHEME)
+          if(config_flags%num_land_cat .ne. 24) CALL wrf_error_fatal &
+            ( 'module_physics_init: 24 cat USGS must be used with PX LSM option' )
           CALL LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,  &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,        &
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS, &
@@ -1711,6 +1878,21 @@ integer myproc
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
                      its,ite, jts,jte, kts,kte                 )
+
+!--------------fds (06/2010)-----------------------------------
+     CASE  (SSIBSCHEME)
+!SSiB only works with sfclay and YSU schemes. Check this here!
+          if(isfc .ne. 1)CALL wrf_error_fatal &
+           ( 'module_physics_init: use sfclay scheme with SSiB' )
+          if(config_flags%bl_pbl_physics .ne. 1)CALL wrf_error_fatal &
+           ( 'module_physics_init: use ysu scheme with SSiB' )
+! Add radiation scheme 4 (RRTMg) for SSiB, By Zhenxin 2011-06-20 ************************
+          if(config_flags%ra_lw_physics .eq. 2 .or. config_flags%ra_lw_physics .gt. 4)CALL wrf_error_fatal &
+           ( 'module_physics_init: SSiB only works with rrtm, cam scheme or rrtmg scheme (lw_phys=1,3,4)' )
+          if(config_flags%ra_sw_physics .eq. 2 .or. config_flags%ra_sw_physics .gt. 4)CALL wrf_error_fatal &
+           ( 'module_physics_init: SSiB only works with rrtm, cam scheme or rrtmg scheme (sw_phys=1,3,4)' )
+! End of Adding radiation scheme 4 (RRTMg) for SSiB, By Zhenxin 2011-06-20 **************
+!--------------------------------------------------------------
 
       CASE DEFAULT
 
@@ -1783,6 +1965,7 @@ integer myproc
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
+#if (NMM_CORE == 1)
       CASE (GFS2011SCHEME)
            if(isfc .ne. 2)CALL wrf_error_fatal &
             ( 'module_physics_init: use myjsfc scheme for this pbl option' )
@@ -1796,6 +1979,7 @@ integer myproc
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
+#endif
       CASE (MYJPBLSCHEME)
            if(isfc .ne. 2)CALL wrf_error_fatal &
             ( 'module_physics_init: use myjsfc scheme for this pbl option' )
@@ -1826,6 +2010,31 @@ integer myproc
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
+           
+!          IF ( PRESENT (mfshconv) ) THEN
+              if (mfshconv) &
+              CALL mfshconvpblinit( massflux_EDKF, entr_EDKF, detr_EDKF & 
+                                    ,thl_up, thv_up, rt_up              &
+                                    ,rv_up, rc_up, u_up, v_up           &
+                                    ,frac_up, restart,                  &
+                                    allowed_to_read ,                   &
+                                    ids, ide, jds, jde, kds, kde,       &
+                                    ims, ime, jms, jme, kms, kme,       &
+                                    its, ite, jts, jte, kts, kte   )  
+!          ENDIF
+
+      CASE (QNSEPBL09SCHEME)
+           if(isfc .ne. 4)CALL wrf_error_fatal &
+            ( 'module_physics_init: use qnsesfc scheme for this pbl option' )
+           IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
+            ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
+           CALL qnsepblinit09(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
+                        TKE_PBL,EXCH_H,restart,               &
+                        allowed_to_read ,                     &
+                        ids, ide, jds, jde, kds, kde,         &
+                        ims, ime, jms, jme, kms, kme,         &
+                        its, ite, jts, jte, kts, kte          )
+
 #if (NMM_CORE != 1)
       CASE (BOULACSCHEME)
            if(isfc .ne. 1 .and. isfc .ne. 2)CALL wrf_error_fatal &
@@ -2203,6 +2412,7 @@ integer myproc
    USE module_mp_wsm5
    USE module_mp_wsm6
    USE module_mp_etanew
+   USE module_mp_etaold
 #if (NMM_CORE == 1)
    USE module_mp_HWRF
 #endif
@@ -2212,6 +2422,9 @@ integer myproc
 !  USE module_mp_milbrandt3mom
    USE module_mp_wdm5
    USE module_mp_wdm6
+#if (EM_CORE==1)
+   USE module_mp_nssl_2mom
+#endif
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
@@ -2294,6 +2507,21 @@ integer myproc
           CALL wdm5init(rhoair0,rhowater,rhosnow,cliq,cpv,n_ccn0,allowed_to_read )
      CASE (WDM6SCHEME)
           CALL wdm6init(rhoair0,rhowater,rhosnow,cliq,cpv,n_ccn0,allowed_to_read )
+#if (EM_CORE==1)
+     CASE (NSSL_2MOM)
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme)
+     CASE (NSSL_2MOMCCN)
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme)
+#endif
+     CASE (ETAMPOLD)
+         adv_moist_cond = .false.
+         CALL etaoldinit (MPDT,DT,DX,DY,LOWLYR,restart,           &
+                          F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,       &
+                          mp_restart_state,tbpvs_state,tbpvs0_state,&
+                          allowed_to_read,                        &
+                          ids, ide, jds, jde, kds, kde,           &
+                          ims, ime, jms, jme, kms, kme,           &
+                          its, ite, jts, jte, kts, kte            )
 
      CASE DEFAULT
 

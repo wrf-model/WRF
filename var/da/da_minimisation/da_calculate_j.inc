@@ -34,7 +34,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    type (y_type)    :: jo_grad_y ! Grad_y(jo)
    real             :: cv_xhat_jb(cv_size_jb), cv_xhat_je(cv_size_je), cv_xhat_jl(cv_size_jl)
 #ifdef CLOUD_CV
-   integer          :: mz(10)
+   integer          :: mz(11)
 #else
    integer          :: mz(7)
 #endif
@@ -59,17 +59,16 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    ! [0.0] initialization:
    !-------------------------------------------------------------------------
 #ifdef CLOUD_CV
-   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%v6%mz, be%v7%mz,be%v8%mz, be%alpha%mz, be % ne /)
+   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%v6%mz, be%v7%mz,be%v8%mz, be%v9%mz, be%alpha%mz, be % ne /)
 #else
    mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be % ne /)
 #endif
    je_start = cv_size_jb + 1
    je_end   = cv_size_jb + cv_size_je
-   jl_start = cv_size_jb + cv_size_je + 1
-   jl_end = cv_size_jb + cv_size_je + cv_size_jl
-
    jp_start = cv_size_jb + cv_size_je + 1
    jp_end   = cv_size_jb + cv_size_je + cv_size_jp
+   jl_start = cv_size_jb + cv_size_je + cv_size_jp + 1
+   jl_end =   cv_size_jb + cv_size_je + cv_size_jp + cv_size_jl
 
    call da_allocate_y(iv, jo_grad_y)
 
@@ -110,7 +109,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
       subarea = SUM ( grid%xb%grid_box_area(its:ite,jts:jte) )
       whole_area = wrf_dm_sum_real(subarea)
 
-      ! Multipled by -1.0 because the calulated gradient of Jo will be multiplied by -1.0
+      ! Multipled by -1.0 because the dnw is negative
 
       do jj = jms, jme
          do k = kms, kme
@@ -120,14 +119,10 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
                j%jc = j%jc - 0.5 * config_flags%jcdfi_penalty * model_grid%jcdfi_v(i,k,jj)**2 * &
                      grid%xb%grid_box_area(i,jj)/whole_area*grid%xb%dnw(k)
                j%jc = j%jc - 0.5 * config_flags%jcdfi_penalty * model_grid%jcdfi_t(i,k,jj)**2 * &
-                     cp/280.0*grid%xb%grid_box_area(i,jj)/whole_area*grid%xb%dnw(k)
+                     (9.81/3.0)**2*grid%xb%grid_box_area(i,jj)/whole_area*grid%xb%dnw(k)
+               j%jc = j%jc - 0.5 * config_flags%jcdfi_penalty * model_grid%jcdfi_p(i,k,jj)**2 * &
+                     (1.0/300.)**2*grid%xb%grid_box_area(i,jj)/whole_area*grid%xb%dnw(k)
             enddo
-         enddo
-      enddo
-      do jj = jms, jme
-         do i = ims, ime 
-            j%jc = j%jc - 0.5 * config_flags%jcdfi_penalty * model_grid%jcdfi_mu(i,jj)**2 * gas_constant * &
-                  280.0/(1.0e5**2)*grid%xb%grid_box_area(i,jj)/whole_area
          enddo
       enddo
 

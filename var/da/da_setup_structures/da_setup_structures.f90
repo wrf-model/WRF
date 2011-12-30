@@ -17,7 +17,7 @@ module da_setup_structures
       truelat1_3dv,xlonc,t0,num_fft_factors,pi,print_detail_spectral, global, print_detail_obs, &
       use_radar_rf, num_ob_indexes,kts, kte, time_window_max, time_window_min, &
       max_fgat_time, num_fgat_time, dt_cloud_model, &
-      use_ssmiretrievalobs,use_radarobs,use_ssmitbobs,use_qscatobs, num_procs, &
+      use_ssmiretrievalobs,use_radarobs,use_ssmitbobs,use_qscatobs, num_procs, use_rainobs, &
       num_pseudo, missing, ob_format, ob_format_bufr,ob_format_ascii, ob_format_madis, &
       use_airepobs, use_tamdarobs, test_dm_exact, use_amsuaobs, use_amsubobs, &
       use_airsobs, use_bogusobs, sfc_assi_options, use_eos_amsuaobs, &
@@ -30,19 +30,19 @@ module da_setup_structures
       cv_size_domain_je, cv_size_domain,ensdim_alpha, alpha_vertloc, alpha_hydrometeors, &
       lat_stats_option,alpha_std_dev,sigma_alpha,alpha_corr_scale, &
       len_scaling1, len_scaling2, len_scaling3, len_scaling4, len_scaling5,&
-      len_scaling6, len_scaling7, len_scaling8,&
+      len_scaling6, len_scaling7, len_scaling8, len_scaling9, &
       max_vert_var1, max_vert_var2, max_vert_var3, max_vert_var4, max_vert_var5, &
-      max_vert_var6, max_vert_var7, max_vert_var8, max_vert_var_alpha, &
+      max_vert_var6, max_vert_var7, max_vert_var8, max_vert_var9, max_vert_var_alpha, &
       print_detail_be, test_statistics, do_normalize, use_rf, &
       var_scaling1, var_scaling2, var_scaling3, var_scaling4, &
-      var_scaling5, var_scaling6, var_scaling7, var_scaling8, &
+      var_scaling5, var_scaling6, var_scaling7, var_scaling8, var_scaling9, &
       vert_corr,max_vert_var5,power_truncation,alpha_truncation, &
       print_detail_regression,gas_constant, use_airsretobs, &
       filename_len, use_ssmisobs, gravity, t_triple, use_hirs4obs, use_mhsobs, &
       vert_corr_2, alphacv_method_xa, vert_evalue_global, &
       vert_evalue_local, obs_names, num_ob_indexes, &
       sound, mtgirs,tamdar, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
-      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, &
+      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, rain, &
       bogus, buoy, qscat, radiance, pseudo, trace_use_dull, kts,kte, &
       use_simulated_rad, use_pseudo_rad, pseudo_rad_platid, pseudo_rad_satid, &
       pseudo_rad_senid, rtminit_nsensor, rtminit_platform, rtminit_satid, &
@@ -61,7 +61,7 @@ module da_setup_structures
    use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info, da_store_obs_grid_info_bufr
    use da_obs_io, only : da_read_obs_bufr,da_read_obs_radar, &
       da_scan_obs_radar,da_scan_obs_ascii,da_read_obs_ascii, &
-      da_read_obs_bufrgpsro
+      da_read_obs_bufrgpsro, da_scan_obs_rain, da_read_obs_rain
    use da_par_util, only : da_patch_to_global
 #if defined(RTTOV) || defined(CRTM)
    use da_radiance, only : da_setup_radiance_structures

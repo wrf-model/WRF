@@ -568,7 +568,7 @@ CONTAINS
      SLDPTH(NS)=DZS(NS)
      ENDDO
 
-   DO J=jts,jte
+     JLOOP : DO J=jts,jte
 
       IF(ITIMESTEP.EQ.1)THEN
         DO 50 I=its,ite
@@ -612,7 +612,7 @@ CONTAINS
       ENDIF                                                               ! end of initialization over ocean
 
 !-----------------------------------------------------------------------
-      DO 100 I=its,ite
+      ILOOP : DO I=its,ite
 ! surface pressure
         PSFC=P8w3D(i,1,j)
 ! pressure in middle of lowest layer
@@ -757,11 +757,11 @@ CONTAINS
         RIBB=RIB(I,J)
 !FEI: temporaray arrays above need to be changed later by using SI
 
-          DO 70 NS=1,NSOIL
+          DO NS=1,NSOIL
             SMC(NS)=SMOIS(I,NS,J)
             STC(NS)=TSLB(I,NS,J)                                          !STEMP
             SWC(NS)=SH2O(I,NS,J)
-   70     CONTINUE
+          ENDDO
 !
           if ( (SNEQV.ne.0..AND.SNOWHK.eq.0.).or.(SNOWHK.le.SNEQV) )THEN
             SNOWHK= 5.*SNEQV
@@ -825,12 +825,26 @@ CONTAINS
            endif
 #endif
 
-
           IF (rdlai2d) THEN
              xlai = lai(i,j)
           endif
 
-       CALL SFLX (FFROZP, ICE, ISURBAN, DT,ZLVL,NSOIL,SLDPTH,     &    !C
+    IF ( XICE(I,J) >= XICE_THRESHOLD ) THEN
+
+       ! Sea-ice case
+
+       DO NS = 1, NSOIL
+          SH2O(I,NS,J) = 1.0
+       ENDDO
+       LAI(I,J) = 0.01
+
+       CYCLE ILOOP
+
+    ELSE
+
+       ! Land and glacial land.
+
+       CALL SFLX (I,J,ICE,FFROZP, ISURBAN, DT,ZLVL,NSOIL,SLDPTH,  &    !C
                  LOCAL,                                           &    !L
                  LUTYPE, SLTYPE,                                  &    !CL
                  LWDN,SOLDN,SOLNET,SFCPRS,PRCP,SFCTMP,Q2K,DUMMY,         &    !F
@@ -851,7 +865,7 @@ CONTAINS
                  SNOTIME1,                                        &
                  RIBB,                                            &
                  SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT)
-
+    ENDIF
 
        lai(i,j) = xlai
 
@@ -1163,9 +1177,8 @@ CONTAINS
 
         ENDIF                                                           ! endif of land-sea test
 
-  100 CONTINUE                                                          ! of I loop
-
-   ENDDO                                                                ! of J loop
+      ENDDO ILOOP                                                       ! of I loop
+   ENDDO JLOOP                                                          ! of J loop
 
       IF (SF_URBAN_PHYSICS == 2) THEN
 
@@ -1418,6 +1431,7 @@ CONTAINS
 !
    do I=1,NSLTYPE
       porosity(i)=maxsmc(i)
+      drypoint(i)=drysmc(i)
    enddo
 #endif
 

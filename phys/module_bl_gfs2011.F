@@ -14,8 +14,9 @@ CONTAINS
                   HFX,QFX,TSK,GZ1OZ0,WSPD,BR,                      &
                   DT,KPBL2D,EP1,KARMAN,                            &
 #if (NMM_CORE==1)
-                  DISHEAT, RTHRATEN,                               &    !Kwon add RTHRATEN 
+                  DISHEAT,                                         &
 #endif
+                  RTHRATEN,                                        &    !Kwon add RTHRATEN 
                   HPBL2D, EVAP2D, HEAT2D,                          &    !Kwon add FOR SHAL. CON.
                   ids,ide, jds,jde, kds,kde,                       &
                   ims,ime, jms,jme, kms,kme,                       &
@@ -97,8 +98,12 @@ CONTAINS
 
 #if (NMM_CORE==1)
       LOGICAL , INTENT(IN)::            DISHEAT                                    !gopal's doing
-      REAL,  DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) ::  RTHRATEN         !Kwon
 #endif
+      REAL,  DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) ::  RTHRATEN         !Kwon
+      REAL,  DIMENSION(ims:ime, jms:jme), INTENT(OUT) ::              &
+                                        HPBL2D,                         &    !ADDED BY KWON FOR SHALLOW CONV.
+                                        EVAP2D,                         &    !ADDED BY KWON FOR SHALLOW CONV.
+                                        HEAT2D                               !ADDED BY KWON FOR SHALLOW CONV.
 
       REAL,    INTENT(IN) ::                                            &
                                         CP,                             &
@@ -149,11 +154,6 @@ CONTAINS
 
       INTEGER, DIMENSION(ims:ime, jms:jme), INTENT(OUT) ::              &
                                         KPBL2D                         
-!
-      REAL,    DIMENSION(ims:ime, jms:jme), INTENT(OUT) ::              &
-                                        HPBL2D,                         &    !ADDED BY KWON FOR SHALLOW CONV.
-                                        EVAP2D,                         &    !ADDED BY KWON FOR SHALLOW CONV.
-                                        HEAT2D                               !ADDED BY KWON FOR SHALLOW CONV.
 
 
 !--------------------------- LOCAL VARS ------------------------------
@@ -265,7 +265,11 @@ CONTAINS
           U1(I,K) = U3D(i,k,j)
           V1(I,K) = V3D(i,k,j)
           T1(I,K) = T3D(i,k,j)
+#ifdef NMM_CORE
           THRATEN(I,K) = RTHRATEN(I,K,J)
+#else
+          THRATEN(I,K) = 0.0
+#endif
           Q1(I,K,1) = QV3D(i,k,j)/(1.+QV3D(i,k,j))
           Q1(I,K,2) = QC3D(i,k,j)/(1.+QC3D(i,k,j))
           PRSL(I,K)=P3D(i,k,j)*.001

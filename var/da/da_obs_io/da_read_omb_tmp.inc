@@ -25,8 +25,9 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in, nc)
                    p_obs, p_inv, p_error, p_inc, &
                    q_obs, q_inv, q_error, q_inc, &
                    ref_obs, ref_inv, ref_error, ref_inc, &
-                   spd_obs, spd_inv, spd_err, spd_inc
-   integer     :: u_qc, v_qc, t_qc, p_qc, q_qc, tpw_qc, spd_qc, ref_qc
+                   spd_obs, spd_inv, spd_err, spd_inc,   &
+		   rain_obs, rain_inv, rain_error, rain_inc
+   integer     :: u_qc, v_qc, t_qc, p_qc, q_qc, tpw_qc, spd_qc, ref_qc, rain_qc
 
    if (trace_use_dull) call da_trace_entry("da_read_omb_tmp")
 
@@ -468,7 +469,30 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in, nc)
          if (if_write) exit reports
          cycle reports
 
+      case ('rain' )          
+         if (num_obs > 0) then
+            do n = 1, num_obs    
+               read(unit_in,'(i8)') levels
+               if (if_write) write(omb_unit,'(i8)')levels
+               num = num + 1
+               do k = 1, levels
+                  read(unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
+                     kk,l, stn_id, &          ! Station
+                     lat, lon, height, &       ! Lat/lon, height   
+                     rain_obs, rain_inv, rain_qc, rain_error, rain_inc 
+                  if (if_write) &
+                     write(omb_unit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
+                        num,k,stn_id, &          ! Station
+                        lat, lon, height, &       ! Lat/lon, height   
+                        rain_obs, rain_inv, rain_qc, rain_error, rain_inc 
+               end do
+            end do
+         end if
+         if (if_write) exit reports
+         cycle reports
+
       case default;
+                  
 
          write(unit=message(1), fmt='(a,a20,a,i3)') &
             'Got unknown obs_type string:', trim(iv_type),' on unit ',unit_in

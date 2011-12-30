@@ -23,7 +23,7 @@
                 ! The first time this routine is called, it is for domain 1,
                 ! and domain 2 has not been created yet.  That means domain
                 ! 2 still has its dt set to the internal WRF default of 2.
-                ! To get domain 2's correct dt, we get domain 1's dt and 
+                ! To get domain 2's correct dt, we get domain 1's dt and
                 ! divide by 3
                 call wrf_message('Guessing coupling timestep from d01''s dt/3 and d02''s nphs and movemin...')
                 call model_to_grid_config_rec(1,model_config_rec,config_flags)
@@ -35,8 +35,8 @@
                 dt=config_flags%dt
              endif
           else
-             ! Someone is doing a single domain run, so guess the 
-             ! coupling timestep using the 
+             ! Someone is doing a single domain run, so guess the
+             ! coupling timestep using the
              call wrf_message('Guessing coupling timestep from d01 settings because there is no d02...')
              call model_to_grid_config_rec(1,model_config_rec,config_flags)
           endif
@@ -220,6 +220,7 @@
       LOGICAL :: E_BDY,N_BDY,S_BDY,W_BDY,WARM_RAIN,ADV_MOIST_COND
       LOGICAL :: START_OF_SIMULATION
       LOGICAL :: LRESTART
+      LOGICAL :: ETAMP_Regional, ICE1_indx, ICE2_indx
 
 
       integer :: jam,retval
@@ -574,6 +575,8 @@
                               IDS,IDE,JDS,JDE,one,one, &
                               IMS,IME,JMS,JME,one,one, &
                               IPS,IPE,JPS,JPE,one,one)
+         else
+            grid%random = 0.0
          endif randif
       endif
 ! Begin HWRF update for high-frequency output
@@ -1563,6 +1566,9 @@
           grid%pint(I,J,K)=grid%eta1(K)*grid%pdtop+grid%eta2(K)*grid%pdsl(I,J)+grid%pt
           grid%z(I,J,K)=grid%pint(I,J,K)
           grid%w(I,J,K)=0.
+#ifdef IDEAL_NMM_TC
+             grid%f(I,J)=0.5*GRID%DT*3.15656e-5 ! IDEAL CASE 0.5*DT*f (and not f!)
+#endif
         ENDDO
         ENDDO
         ENDDO
@@ -2070,21 +2076,26 @@
           enddo
 
           IF (.not. ( (maxval(grid%f_ice)+maxval(grid%f_rain)) .gt. EPSQ) ) THEN
+            ETAMP_Regional=.FALSE.    !-- Regional NAM or HRW (Ferrier) microphysics
+            if (model_config_rec%mp_physics(grid%id).EQ.ETAMPOLD .OR.          &
+     &          model_config_rec%mp_physics(grid%id).EQ.ETAMPNEW )             &
+     &          ETAMP_Regional=.TRUE.
             CALL wrf_message(' computing grid%f_ice')
             do i_m = 2, num_moist
+               ICE1_indx=.FALSE.
+               IF (i_m==P_qi .or. i_m==P_qg ) ICE1_indx=.TRUE.
+               ICE2_indx=ICE1_indx
+               IF (i_m==P_qs) ICE2_indx=.TRUE.
             DO J=JFS,JFE
             DO K=KPS,KPE
             DO I=IFS,IFE
-              IF ( (moist(I,J,K,i_m).gt.EPSQ) .and. &
-     &               ( (i_m.eq.p_qi).or.(i_m.eq.p_qs).or.(i_m.eq.p_qg) ) ) THEN
+              IF (ETAMP_Regional .AND. ICE1_indx) THEN
+                 moist(I,J,K,p_qs)=moist(I,J,K,p_qs)+moist(I,J,K,i_m)
+                 moist(I,J,K,i_m) =0.
+              ENDIF
+              IF ( moist(I,J,K,i_m)>EPSQ .AND. ICE2_indx) THEN
                  grid%f_ice(I,K,J) = grid%f_ice(I,K,J) + moist(I,J,K,i_m)
               ENDIF
-              if (model_config_rec%mp_physics(grid%id).EQ.ETAMPNEW) then
-                if ((i_m.eq.p_qi).or.(i_m.eq.p_qg) ) then
-                  moist(I,J,K,p_qs)=moist(I,J,K,p_qs)+moist(I,J,K,i_m)
-                  moist(I,J,K,i_m) =0.
-                endif
-              endif
             enddo
             enddo
             enddo
@@ -2231,7 +2242,7 @@
                 IDS,IDE, JDS,JDE, KDS,KDE,                                  &
                 IMS,IME, JMS,JME, KMS,KME,                                  &
                 ITS,ITE, JTS,JTE, KTS,KTE-1                                 )
-        CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_KPP)
+        CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP)
 !!!       write(0,*)'sum pm '
            CALL SUM_PM_SORGAM (                                             &
                 RRI, CHEM, H2OAJ, H2OAI,                              &

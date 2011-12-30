@@ -171,6 +171,9 @@ SUBROUTINE med_after_solve_io ( grid , config_flags )
    ! Compute time series variables
    CALL calc_ts(grid)
 
+   ! Compute track variables 
+   CALL track_driver(grid)
+
    RETURN
 END SUBROUTINE med_after_solve_io
 
@@ -1224,7 +1227,7 @@ SUBROUTINE med_analysis_in ( grid , config_flags )
                          config_flags , "DATASET=RESTART", ierr )
 
    IF ( ierr .NE. 0 ) THEN
-      ! Could not open the analysis file, so yell at user.
+      ! Could not open the analysis file, so notify user.
 
       write(message,'(A,I0,A,A,A)') 'WARNING: Domain ',grid%id,' analysis file ',trim(rstname),' is missing.'
       call wrf_message(message)
@@ -1245,6 +1248,8 @@ SUBROUTINE med_analysis_in ( grid , config_flags )
       END IF
       CALL close_dataset ( rid , config_flags , "DATASET=RESTART" )
    ENDIF
+
+   RETURN
 
 END SUBROUTINE med_analysis_in
 !=========================================================================================================
@@ -1918,10 +1923,6 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    ELSE
      WRITE(n2,'("DATASET=AUXHIST",I1)')stream-first_history
    ENDIF
-#if (DA_CORE == 1)
-   len_n2 = LEN_TRIM(n2)
-   WRITE(n2(len_n2+1:len_n2+19),'(",REAL_OUTPUT_SIZE=4")')
-#endif
    IF ( oid .eq. 0 ) THEN
      WRITE ( message , '("open_hist_w : opening ",A," for writing. ")') TRIM ( fname )
      CALL wrf_debug( 1, message )
@@ -2596,6 +2597,10 @@ RECURSIVE SUBROUTINE med_namelist_out ( grid , config_flags )
    TYPE (grid_config_rec_type)            :: kid_config_flags
 
 !zhang new
+   IF ( wrf_dm_on_monitor() ) THEN
+     CALL start_timing
+   END IF
+
    prefix = "wrfnamelist_d<domain>_<date>"
    nout = 99
 

@@ -101,7 +101,7 @@
 !
       REAL :: DT_INV,FICE,FRAIN,GPS,QI,QR,QW,WC,WP
 !
-      LOGICAL :: LAST_TIME,OPERATIONAL_PHYSICS
+      LOGICAL :: LAST_TIME,OPERATIONAL_PHYSICS,ETAMP_PHYSICS
 !
       CHARACTER(80) :: MESSAGE
 !
@@ -294,6 +294,20 @@
       CALL SET_TILES(GRID,IDS,IDE,JDS,JDE,IPS,IPE,JPS,JPE)
 !
 !-----------------------------------------------------------------------
+!***  SET FLAG FOR NAM, HRW, or HWRF (Ferrier-based) microphysics
+!-----------------------------------------------------------------------
+!
+      ETAMP_PHYSICS=.FALSE.
+!
+      IF (CONFIG_FLAGS%MP_PHYSICS == ETAMPNEW .OR.                 &
+     &    CONFIG_FLAGS%MP_PHYSICS == ETAMPOLD .OR.                 &
+     &    CONFIG_FLAGS%MP_PHYSICS == ETAMP_HWRF ) THEN
+!
+         ETAMP_PHYSICS=.TRUE.
+!
+      ENDIF
+!
+!-----------------------------------------------------------------------
 !***  SET FLAG FOR THE OPERATIONAL PHYSICS SUITE.
 !***  THIS WILL BE USED TO SAVE CLOCKTIME BY SKIPPING
 !***  FREQUENT UPDATES OF THE MOIST ARRAY AND INSTEAD
@@ -307,8 +321,8 @@
      &   CONFIG_FLAGS%SF_SFCLAY_PHYSICS==MYJSFCSCHEME.AND.              &
      &   CONFIG_FLAGS%BL_PBL_PHYSICS   ==MYJPBLSCHEME.AND.              &
      &   CONFIG_FLAGS%CU_PHYSICS       ==BMJSCHEME.AND.                 &
-     &   (CONFIG_FLAGS%MP_PHYSICS       ==ETAMPNEW.or.                  &
-     &    CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF))THEN
+     &   ETAMP_PHYSICS ) THEN
+
 !
         OPERATIONAL_PHYSICS=.TRUE.
 !
@@ -323,7 +337,6 @@
       ALLOCATE(RTHBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
       ALLOCATE(RQVBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
       ALLOCATE(RTHRATEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
-
 #ifdef WRF_CHEM
   NUMGAS          = GET_LAST_GAS(CONFIG_FLAGS%CHEM_OPT)
 #endif
@@ -662,7 +675,7 @@
 !
 !-----------------------------------------------------------------------
 #ifdef DM_PARALLEL
-      IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW.and.CONFIG_FLAGS%MP_PHYSICS/=ETAMP_HWRF)THEN
+      IF (.NOT.ETAMP_PHYSICS) THEN
 #    include "HALO_NMM_A_3.inc"
       ENDIF
 #endif
@@ -844,7 +857,7 @@
 !-----------------------------------------------------------------------
 !
 !mp - allow for it to be applied in the no-physics realm
-        IF(config_flags%MP_PHYSICS/=ETAMPNEW.and.CONFIG_FLAGS%MP_PHYSICS/=ETAMP_HWRF.and.CONFIG_FLAGS%MP_PHYSICS/=0) THEN
+        IF(.NOT.ETAMP_PHYSICS.and.CONFIG_FLAGS%MP_PHYSICS/=0) THEN
           WRITE( wrf_err_message , * ) 'EULER advection works only with ETAMPNEW microphysics.'
           CALL wrf_error_fatal ( wrf_err_message )
         ENDIF
@@ -1241,7 +1254,7 @@
       IF(MOD(grid%ntsd,GRID%IDTAD)==0)THEN
         btimx=timef()
 !
-        vad2_micro_check: IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW.or.CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF)THEN
+        vad2_micro_check: IF (ETAMP_PHYSICS) THEN
           CALL VAD2(grid%ntsd,GRID%DT,GRID%IDTAD,grid%dx_nmm,grid%dy_nmm               &
      &             ,grid%aeta1,grid%aeta2,grid%deta1,grid%deta2,grid%pdsl,grid%pdtop,grid%hbm2             &
      &             ,grid%q,grid%q2,grid%cwm,grid%petdt                                      &
@@ -1323,7 +1336,7 @@
 #endif
 !
 #ifdef DM_PARALLEL
-        IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW.and.CONFIG_FLAGS%MP_PHYSICS/=ETAMP_HWRF)THEN
+        IF (.NOT.ETAMP_PHYSICS) THEN
 #    include "HALO_NMM_I_3.inc"
         ENDIF
 #endif
@@ -1338,7 +1351,7 @@
         btimx=timef()
 !
 !-----------------------------------------------------------------------
-        had2_micro_check: IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW.or.CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF)THEN
+        had2_micro_check: IF (ETAMP_PHYSICS) THEN
 !-----------------------------------------------------------------------
 !
           CALL HAD2(                                                   &
@@ -1398,7 +1411,7 @@
               MOIST(I,J,K,P_QC)=QW
               MOIST(I,J,K,P_QR)=QR
 
-              if (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW.or.CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF)then
+              IF (ETAMP_PHYSICS) THEN
 #ifdef HWRF
                  MOIST(I,J,K,P_QI)=QI
                  MOIST(I,J,K,P_QS)=0.
@@ -1747,7 +1760,7 @@
 #endif
 !
 #ifdef DM_PARALLEL
-        IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW.and.CONFIG_FLAGS%MP_PHYSICS/=ETAMP_HWRF)THEN
+        IF (.NOT.ETAMP_PHYSICS) THEN
 #    include "HALO_NMM_J_3.inc"
         ENDIF
 #endif
@@ -2121,7 +2134,7 @@
 #endif
 !
 #ifdef DM_PARALLEL
-      IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW.and.CONFIG_FLAGS%MP_PHYSICS/=ETAMP_HWRF)THEN
+      IF (ETAMP_PHYSICS) THEN
 #    include "HALO_NMM_A_3.inc"
       ENDIF
 #endif

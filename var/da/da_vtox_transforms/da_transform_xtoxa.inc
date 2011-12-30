@@ -73,11 +73,6 @@ subroutine da_transform_xtoxa(grid)
 
    call da_pt_to_rho_lin(grid)
  
-   ! If test_transforms = .true., not "XToY" transform needed to do here:
-
-   if (.not.test_transforms) then
-      ! Exchange grid%xa halo region.
-
 #ifdef A2C
   if ((fg_format==fg_format_wrf_arw_regional  .or. &
        fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
@@ -108,6 +103,11 @@ subroutine da_transform_xtoxa(grid)
      jde = jde - 1
   end if
 #endif
+
+   ! If test_transforms = .true., not "XToY" transform needed to do here:
+
+   if (.not.test_transforms) then
+      ! Exchange grid%xa halo region.
 
       if (sfc_assi_options == 2) then
          call da_transform_xtowtq (grid)
@@ -166,7 +166,6 @@ subroutine da_transform_xtoxa(grid)
 
    if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
     if ( cloud_cv_options == 1 )then
-      print*,'Options: set CLOUD_CV and cloud_cv_options to 2 or 3 !'
       ! Partition of hydrometeor increments via warm rain process
       call da_moist_phys_lin(grid)
     end if

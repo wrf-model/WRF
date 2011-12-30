@@ -412,11 +412,11 @@ CONTAINS
     ! SHC  (11/08/2007)
     GAS_MECH_SELECT1: SELECT CASE (config_flags%chem_opt)
              
-    CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP,GOCARTRADM2, GOCARTRADM2_KPP)
+    CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP,GOCARTRADM2, GOCARTRADM2_KPP)
        ! get p_of_radm2cbmz(:), p_of_radm2(:), and radm2_per_megan(:)
        CALL get_megan2radm2_table
 
-    CASE (RACMSORG_AQ, RACM_ESRLSORG_KPP, RACM_KPP, GOCARTRACM_KPP, RACMSORG_KPP, RACM_MIM_KPP, RACMPM_KPP )
+    CASE (RACMSORG_AQ, RACMSORG_AQCHEM, RACM_ESRLSORG_KPP, RACM_KPP, GOCARTRACM_KPP, RACMSORG_KPP, RACM_MIM_KPP, RACMPM_KPP)
              
        ! get p_of_megan2racm(:), p_of_racm(:), and racm_per_megan(:)
        CALL get_megan2racm_table
@@ -430,7 +430,7 @@ CONTAINS
        ! get p_of_megan2cbmz(:), p_of_cbmz(:), and cbmz_per_megan(:)
        CALL get_megan2cbmz_table
 
-    CASE ( MOZART_KPP, MOZCART_KPP )
+    CASE ( MOZART_KPP, MOZCART_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP )
        ! get p_of_megan2mozcart(:), p_of_mozcart(:), and mozcart_per_megan(:)
        CALL get_megan2mozcart_table
 
@@ -733,7 +733,7 @@ CONTAINS
           !...
           GAS_MECH_SELECT: SELECT CASE (config_flags%chem_opt)
 
-          CASE ( MOZART_KPP, MOZCART_KPP )
+          CASE ( MOZART_KPP, MOZCART_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP )
 
              DO icount = 1, n_megan2mozcart
 !-----------------------------------------------------------------------
@@ -751,10 +751,6 @@ is_mozcart_species : &
 ! Emission rate for mechanism species in mol km-2 hr-1
 !-----------------------------------------------------------------------
                       gas_emis = mozcart_per_megan(icount) * E_megan2(p_of_megan2mozcart(icount))
-!-----------------------------------------------------------------------
-! Increase gas-phase concentrations (in ppmv) due to biogenic emissions
-!-----------------------------------------------------------------------
-                      chem(i,kts,j,p_in_chem) = chem(i,kts,j,p_in_chem) + gas_emis*emis2ppm
 !-----------------------------------------------------------------------
 ! Add emissions to diagnostic output variables.
 ! ebio_xxx (mol km-2 hr-1) were originally used by the 
@@ -832,7 +828,7 @@ is_mozcart_species : &
                 END IF use_megan_emission
              END DO
 
-          CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP,GOCARTRADM2, GOCARTRADM2_KPP)
+          CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP,GOCARTRADM2, GOCARTRADM2_KPP)
 
              DO icount = 1, n_megan2radm2
 
@@ -847,10 +843,6 @@ is_mozcart_species : &
                       
                       ! Emission rate for mechanism species in mol km-2 hr-1
                       gas_emis = radm2_per_megan(icount) * E_megan2(p_of_megan2radm2(icount))
-
-                      ! Increase gas-phase concentrations (in ppmv) due to
-                      ! biogenic emissions
-                      chem(i,kts,j,p_in_chem) = chem(i,kts,j,p_in_chem) + gas_emis*emis2ppm
 
                       ! Add emissions to diagnostic output variables.
                       ! ebio_xxx (mol km-2 hr-1) were originally used by the 
@@ -905,7 +897,7 @@ is_mozcart_species : &
                 
              END DO
 
-           CASE (RACMSORG_AQ, RACM_ESRLSORG_KPP, RACM_KPP, GOCARTRACM_KPP, RACMSORG_KPP, RACM_MIM_KPP, RACMPM_KPP )
+           CASE (RACMSORG_AQ, RACMSORG_AQCHEM, RACM_ESRLSORG_KPP, RACM_KPP, GOCARTRACM_KPP, RACMSORG_KPP, RACM_MIM_KPP, RACMPM_KPP)
 
              DO icount = 1, n_megan2racm
 
@@ -920,10 +912,6 @@ is_mozcart_species : &
 
                       ! Emission rate of mechanism species in mol km-2 hr-1
                       gas_emis =  racm_per_megan(icount) * E_megan2(p_of_megan2racm(icount))
-
-                      ! Increase gas-phase concentrations (in ppmv) due to
-                      ! biogenic emissions
-                      chem(i,kts,j,p_in_chem) = chem(i,kts,j,p_in_chem) + gas_emis * emis2ppm
 
                       ! Add emissions to diagnostic output variables.
                       ! ebio_xxx (mol km-2 hr-1) were originally used by the 
@@ -1008,11 +996,6 @@ is_mozcart_species : &
                       ! Emission rate of mechanism species in mol km-2 hr-1
                       gas_emis = cbmz_per_megan(icount) * E_megan2(p_of_megan2cbmz(icount))
 
-                      ! Increase gas-phase concentrations (in ppmv) due to
-                      ! biogenic emissions
-                      chem(i,kts,j,p_in_chem) = chem(i,kts,j,p_in_chem) + gas_emis * emis2ppm !for eg. p_in_chem=p_iso for cbmz species
-                                                                                              !make another table for sorgam species (such as api and lim) 
-                                                                                              ! similar to racm table
 
                       ! Add emissions to diagnostic output variables.
                       ! ebio_xxx (mol km-2 hr-1) were originally used by the 
@@ -1077,10 +1060,6 @@ is_mozcart_species : &
 
                       ! Emission rate for mechanism species in mol km-2 hr-1
                       gas_emis = saprcnov_per_megan(icount) * E_megan2(p_of_megan2saprcnov(icount))
-
-                      ! Increase gas-phase concentrations (in ppmv) due to
-                      ! biogenic emissions
-                      chem(i,kts,j,p_in_chem) = chem(i,kts,j,p_in_chem) + gas_emis*emis2ppm
 
                       ! Add emissions to diagnostic output variables.
                       ! ebio_xxx (mol km-2 hr-1) were originally used by the

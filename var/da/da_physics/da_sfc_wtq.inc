@@ -1,5 +1,5 @@
 subroutine da_sfc_wtq (psfc, tg, ps, ts, qs, us, vs, ps2, ts2, qs2, &
-   hs, roughness, xland, u10, v10, t2, q2, regime) 
+   hs, roughness, xland, dx, u10, v10, t2, q2, regime) 
 
    !---------------------------------------------------------------------------
    ! Purpose: Calculate the  10m wind, 2m temperature and moisture based on the
@@ -21,6 +21,8 @@ subroutine da_sfc_wtq (psfc, tg, ps, ts, qs, us, vs, ps2, ts2, qs2, &
    !   ps, ts, qs, us, vs, hs : model variable at lowlest half sigma level
    !   ps2, ts2, qs2          : model variables at the second lowest half 
    !                            sigma level
+   !   Add by Eric Chiang ( July 2010 )
+   !   dx  (m)                : horizontal resolution
    !
    !
    !  Constants:
@@ -79,7 +81,7 @@ subroutine da_sfc_wtq (psfc, tg, ps, ts, qs, us, vs, ps2, ts2, qs2, &
    real :: psit, psit2, psiq, psiq2
    real :: gzsoz0, gz10oz0, gz2oz0
    real :: eg, qg, tvg, tvs, tvs2
-   real :: ths, thg, thvs, thvg, thvs2
+   real :: ths, thg, thvs, thvg, thvs2, vsgd, vsgd2, dx
    real :: zq0, z0
 
    real, parameter :: ka = 2.4E-5
@@ -121,7 +123,7 @@ subroutine da_sfc_wtq (psfc, tg, ps, ts, qs, us, vs, ps2, ts2, qs2, &
 
    ! 2.2 Compute Virtual temperature on the second lowest half sigma level
 
-   tvs2  = ts2 * (1.0 + 0.608 * qs2)
+   ! tvs2  = ts2 * (1.0 + 0.608 * qs2) , Modified by Eric Chiang , don't need tvs2 (July 2010)
 
    ! 2.3 Convert ground virtual temperature assuming it's saturated
 
@@ -146,7 +148,7 @@ subroutine da_sfc_wtq (psfc, tg, ps, ts, qs, us, vs, ps2, ts2, qs2, &
 
    ! 4.2 Virtual potential temperature on the second lowest half sigma level
 
-   thvs2 = tvs2 * (1000.0 / (ps2/100.0)) ** rcp
+   ! thvs2 = tvs2 * (1000.0 / (ps2/100.0)) ** rcp , Modified by Eric Chiang , don't need thvs2 (July 2010)
 
    ! 4.3 Virtual potential temperature at ground
 
@@ -168,8 +170,12 @@ subroutine da_sfc_wtq (psfc, tg, ps, ts, qs, us, vs, ps2, ts2, qs2, &
    else
       Vc2 = 0.0
    end if
+
+   ! Calculate Mahrt and Sun low-res correction         ! Add by Eric Chiang ( July 2010 )
+   vsgd = 0.32 * (max(dx/5000.-1.,0.))**0.33            ! Add by Eric Chiang ( July 2010 )
+   vsgd2 = vsgd * vsgd                                  ! Add by Eric Chiang ( July 2010 )
    
-   V2  = Va2 + Vc2
+   V2  = Va2 + Vc2 + vsgd2                              ! Add by Eric Chiang ( July 2010 )  
 
    ! 5.2 Bulk richardson number
 
@@ -207,7 +213,7 @@ subroutine da_sfc_wtq (psfc, tg, ps, ts, qs, us, vs, ps2, ts2, qs2, &
       psihz = psimz
       psih2 = psim2
 
-   else if ((rib .EQ. 0.0) .or. (rib.LT.0.0 .and. thvs2.GT.thvs)) then
+   else if (rib .EQ. 0.0) then ! Modified by Eric Chiang ( July 2010 )
       ! 6.3 Unstable Forced convection (REGIME 3)
 
       regime = 3.1

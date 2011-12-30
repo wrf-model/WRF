@@ -46,6 +46,7 @@ module_integrate.o : module_integrate.F
 module_io_mm5.o : module_io_mm5.F
 module_io_wrf.o : module_io_wrf.F
 module_si_io.o : module_si_io.F
+module_wps_io_arw.o : module_wps_io_arw.F
 module_state_description.o : module_state_description.F 
 output_wrf.o : output_wrf.F
 solve_interface.o : solve_interface.F
@@ -83,6 +84,7 @@ module_integrate.o \
 module_io_mm5.o \
 module_io_wrf.o \
 module_si_io.o \
+module_wps_io_arw.o \
 module_tiles.o \
 output_wrf.o \
 solve_interface.o \

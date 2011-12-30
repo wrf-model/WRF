@@ -182,6 +182,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                          fnm, fnp, rdn, rdnw,                             &
                          dt, rdx, rdy, khdif, kvdif, xkmhd, xkhh,         &
                          diff_6th_opt, diff_6th_factor,                   &
+                         adv_opt,                                         &
                          dampcoef,zdamp,damp_opt,rad_nudge,               &
                          cf1, cf2, cf3, cfn, cfn1, n_moist,               &
                          non_hydrostatic, top_lid,                        &
@@ -294,6 +295,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                                                 kvdif
    INTEGER, INTENT( IN ) :: diff_6th_opt
    REAL,    INTENT( IN ) :: diff_6th_factor
+   INTEGER, INTENT( IN ) :: adv_opt
 
    INTEGER, INTENT( IN ) :: damp_opt, rad_nudge
 
@@ -389,7 +391,10 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
    !  advection tendencies
    CALL nl_get_time_step ( 1, time_step )
 
-   CALL advect_u ( u, u , ru_tend, ru, rv, ww,   &
+
+    IF( (rk_step == 3) .and. ( adv_opt == WENO_MOM ) ) THEN
+
+     CALL advect_weno_u ( u, u , ru_tend, ru, rv, ww, &
                    mut, time_step, config_flags, &
                    msfux, msfuy, msfvx, msfvy,   &
                    msftx, msfty,                 &
@@ -398,7 +403,21 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                    ims, ime, jms, jme, kms, kme, &
                    its, ite, jts, jte, kts, kte )
 
-   CALL advect_v ( v, v , rv_tend, ru, rv, ww,   &
+     ELSE
+     
+     CALL advect_u ( u, u , ru_tend, ru, rv, ww, &
+                   mut, time_step, config_flags, &
+                   msfux, msfuy, msfvx, msfvy,   &
+                   msftx, msfty,                 &
+                   fnm, fnp, rdx, rdy, rdnw,     &
+                   ids, ide, jds, jde, kds, kde, &
+                   ims, ime, jms, jme, kms, kme, &
+                   its, ite, jts, jte, kts, kte )
+      ENDIF
+
+     IF( (rk_step == 3) .and. ( adv_opt == WENO_MOM ) ) THEN
+
+     CALL advect_weno_v ( v, v , rv_tend, ru, rv, ww,  &
                    mut, time_step, config_flags, &
                    msfux, msfuy, msfvx, msfvy,   &
                    msftx, msfty,                 &
@@ -407,8 +426,22 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                    ims, ime, jms, jme, kms, kme, &
                    its, ite, jts, jte, kts, kte )
 
-   IF (non_hydrostatic)                          &
-     CALL advect_w ( w, w, rw_tend, ru, rv, ww,    &
+    ELSE
+     
+     CALL advect_v ( v, v , rv_tend, ru, rv, ww,  &
+                   mut, time_step, config_flags, &
+                   msfux, msfuy, msfvx, msfvy,   &
+                   msftx, msfty,                 &
+                   fnm, fnp, rdx, rdy, rdnw,     &
+                   ids, ide, jds, jde, kds, kde, &
+                   ims, ime, jms, jme, kms, kme, &
+                   its, ite, jts, jte, kts, kte )
+    ENDIF
+
+
+   IF (non_hydrostatic) THEN
+     IF( (rk_step == 3) .and. ( adv_opt == WENO_MOM ) ) THEN
+     CALL advect_weno_w ( w, w, rw_tend, ru, rv, ww,    &
                      mut, time_step, config_flags, &
                      msfux, msfuy, msfvx, msfvy,   &
                      msftx, msfty,                 &
@@ -417,6 +450,18 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                      ims, ime, jms, jme, kms, kme, &
                      its, ite, jts, jte, kts, kte )
 
+     ELSE
+     
+     CALL advect_w ( w, w, rw_tend, ru, rv, ww,    &
+                     mut, time_step, config_flags, &
+                     msfux, msfuy, msfvx, msfvy,   &
+                     msftx, msfty,                 &
+                     fnm, fnp, rdx, rdy, rdn,      &
+                     ids, ide, jds, jde, kds, kde, &
+                     ims, ime, jms, jme, kms, kme, &
+                     its, ite, jts, jte, kts, kte )
+     ENDIF
+   ENDIF
 !  theta flux divergence
 
      CALL advect_scalar ( t, t, t_tend, ru, rv, ww,     &
@@ -951,6 +996,34 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                                         ids, ide, jds, jde, kds, kde,       &
                                         ims, ime, jms, jme, kms, kme,       &
                                         its, ite, jts, jte, kts, kte     )
+
+      ELSE IF( (rk_step == 3) .and. (adv_opt == WENO_SCALAR) ) THEN
+
+        CALL advect_scalar_weno ( scalar(ims,kms,jms,im),        &
+                                 scalar(ims,kms,jms,im),        &
+                                 advect_tend(ims,kms,jms),      &
+                                 ru, rv, ww, mut, time_step,    &
+                                 config_flags,                  &
+                                 msfux, msfuy, msfvx, msfvy,    &
+                                 msftx, msfty, fnm, fnp,        &
+                                 rdx, rdy, rdnw,                &
+                                 ids, ide, jds, jde, kds, kde,  &
+                                 ims, ime, jms, jme, kms, kme,  &
+                                 its, ite, jts, jte, kts, kte  )
+
+      ELSEIF( (rk_step == 3) .and. (adv_opt == WENOPD_SCALAR) ) THEN
+
+        CALL advect_scalar_wenopd   ( scalar(ims,kms,jms,im),             &
+                                      scalar_old(ims,kms,jms,im),         &
+                                      advect_tend(ims,kms,jms),           &
+                                      ru, rv, ww, mut, mub, mu_old,       &
+                                      time_step, config_flags,            &
+                                      msfux, msfuy, msfvx, msfvy,         &
+                                      msftx, msfty, fnm, fnp,             &
+                                      rdx, rdy, rdnw,dt,                  &
+                                      ids, ide, jds, jde, kds, kde,       &
+                                      ims, ime, jms, jme, kms, kme,       &
+                                      its, ite, jts, jte, kts, kte     )
 
       ELSE
 

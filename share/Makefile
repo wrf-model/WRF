@@ -43,8 +43,10 @@ OBJS    = 		\
         wrf_bdyin.o             	\
         wrf_tsin.o                      \
         landread.o			\
-	setfeenv.o                      \
-	bobrand.o
+        track_driver.o                  \
+        track_input.o                   \
+        bobrand.o                       \
+	setfeenv.o
 
 
 NMM_MODULES = 
@@ -84,7 +86,7 @@ solve_interface.o: solve_em.int ../frame/module_domain.o ../frame/module_configu
 		../frame/module_timing.o ../frame/module_driver_constants.o \
 		../frame/module_wrf_error.o
 
-start_domain.o: start_domain_em.int wrf_timeseries.o ../frame/module_domain.o ../frame/module_configure.o
+start_domain.o: start_domain_em.int wrf_timeseries.o track_driver.o  ../frame/module_domain.o ../frame/module_configure.o
 
 module_bc.o: ../frame/module_configure.o ../frame/module_state_description.o \
 		../frame/module_wrf_error.o
@@ -116,6 +118,14 @@ wrf_timeseries.o: wrf_tsin.o \
 		../frame/module_domain.o \
 		../frame/module_configure.o \
 		../frame/module_dm.o
+
+track_driver.o: track_input.o \
+                module_model_constants.o \
+                module_llxy.o \
+                ../frame/module_domain.o \
+                ../frame/module_configure.o \
+                ../frame/module_state_description.o \
+                ../frame/module_dm.o
 
 input_wrf.o:    ../frame/module_io.o ../frame/module_wrf_error.o \
                 ../frame/module_domain.o ../frame/module_state_description.o \
@@ -296,5 +306,8 @@ wrf_restartin.o                 : ../frame/module_domain.o \
                                 ../frame/module_configure.o ../frame/module_io.o module_io_wrf.o module_bc_time_utilities.o
 wrf_tsin.o	                : ../frame/module_domain.o
 
+track_input.o                   : ../frame/module_domain.o
+
+module_random.o: bobrand.o
 
 # DO NOT DELETE

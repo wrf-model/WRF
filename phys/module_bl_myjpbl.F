@@ -8,7 +8,8 @@
 !
 !-----------------------------------------------------------------------
 !
-! REFERENCES:  Janjic (2001), NCEP Office Note 437
+! REFERENCES:  Janjic (2002), NCEP Office Note 437
+!              Mellor and Yamada (1982), Rev. Geophys. Space Phys.
 !
 ! ABSTRACT:
 !     MYJ UPDATES THE TURBULENT KINETIC ENERGY WITH THE PRODUCTION/
@@ -217,13 +218,13 @@
       INTEGER,DIMENSION(ITS:ITE,JTS:JTE) :: LPBL
 !
       REAL :: AKHS_DENS,AKMS_DENS,APEX,DELTAZ,DQDT,DTDIF,DTDT          &   !BSF
-     &       ,DTTURBL,DUDT,DVDT,EXNSFC,PSFC,PTOP,QFC1,QLOW,QOLD,qx     &
+     &       ,DTTURBL,DUDT,DVDT,EXNSFC,PSFC,PTOP,QFC1,QLOW,QOLD        &
      &       ,RATIOMX,RDTTURBL,RG,RWMSK,SEAMASK,THNEW,THOLD,TX         &
      &       ,ULOW,VLOW,WMSK
 !
       REAL, DIMENSION(NSPECS:NSPECE) :: CLOW,CTS,SZ0  !BSF
 !
-      REAL,DIMENSION(KTS:KTE) :: CWMK,Q2K,QK,thk,THvK,TK,UK,VK         & !BSF
+      REAL,DIMENSION(KTS:KTE) :: CWMK,PK,Q2K,QK,THEK,TK,UK,VK          & !BSF
      &                          ,QCWK,QCIK,QCSK,QCRK,QCGK  !BSF
 !
       REAL, DIMENSION(NSPECS:NSPECE,KTS:KTE) :: SPECIES
@@ -236,7 +237,7 @@
 !
       REAL,DIMENSION(KTS:KTE,ITS:ITE) :: RHOK
 !
-      REAL,DIMENSION(ITS:ITE,KTS:KTE,JTS:JTE) :: APE,THv, CWM  !BSF
+      REAL,DIMENSION(ITS:ITE,KTS:KTE,JTS:JTE) :: APE,THE, CWM  !BSF
 !
       REAL,DIMENSION(ITS:ITE,KTS:KTE-1,JTS:JTE) :: AKH,AKM
 !
@@ -328,13 +329,11 @@
           APE(I,K,J)=APEX
           TX=T(I,K,J)
           CWM(I,K,J)=QCW(I,K,J)                          !BSF
-          ratiomx=qv(i,k,j)
-          qx=ratiomx/(1.+ratiomx)
           IF (flQI) CWM(I,K,J)=CWM(I,K,J)+QCI(I,K,J)     !BSF
 !BSF          IF (flQS) CWM(I,K,J)=CWM(I,K,J)+QCS(I,K,J)
 !BSF          IF (flQR) CWM(I,K,J)=CWM(I,K,J)+QCR(I,K,J)
 !BSF          IF (flQG) CWM(I,K,J)=CWM(I,K,J)+QCG(I,K,J)
-          THv(I,K,J)=(qx*0.608+(1.-cwm(i,k,j)))*TH(I,K,J)
+          THE(I,K,J)=(CWM(I,K,J)*(-ELOCP/TX)+1.)*TH(I,K,J)
         ENDDO
       ENDDO
       ENDDO
@@ -365,7 +364,11 @@
           DO K=KTE,KTS,-1
             KFLIP=KTE+1-K
             TK(K)=T(I,KFLIP,J)
-            THvK(K)=THv(I,KFLIP,J)
+            THEK(K)=THE(I,KFLIP,J)
+            RATIOMX=QV(I,KFLIP,J)
+            QK(K)=RATIOMX/(1.+RATIOMX)
+            CWMK(K)=CWM(I,KFLIP,J)
+            PK(K)=PMID(I,KFLIP,J)
             UK(K)=U(I,KFLIP,J)
             VK(K)=V(I,KFLIP,J)
 !
@@ -393,7 +396,7 @@
 !***
 !***  FIND THE MIXING LENGTH
 !***
-          CALL MIXLEN(LMH,UK,VK,THvK                                   &
+          CALL MIXLEN(LMH,UK,VK,TK,THEK,QK,CWMK                        &
      &               ,Q2K,ZHK,GM,GH,EL                                 &
      &               ,PBLH(I,J),LPBL(I,J),LMXL,CT(I,J),MIXHT(I,J)      &    !PLee (3/07)
      &               ,IDS,IDE,JDS,JDE,KDS,KDE                          &
@@ -437,7 +440,7 @@
             AKH(I,K,J)=AKHK(K)
             AKM(I,K,J)=AKMK(K)
             DELTAZ=0.5*(ZHK(KFLIP)-ZHK(KFLIP+2))
-            EXCH_H(I,K+1,J)=AKHK(KFLIP)*DELTAZ
+            EXCH_H(I,K,J)=AKHK(KFLIP)*DELTAZ
           ENDDO
 !
 !----------------------------------------------------------------------
@@ -457,7 +460,7 @@
             KFLIP=KTE+1-K
             Q2K(KFLIP)=AMAX1(Q2K(KFLIP),EPSQ2)
             TKE_MYJ(I,K,J)=0.5*Q2K(KFLIP)
-            IF(KFLIP/=KTE)EL_MYJ(I,K,J)=EL(KFLIP)   ! EL IS NOT DEFINED AT KTE (ground surface)
+            IF(K<KTE)EL_MYJ(I,K,J)=EL(KFLIP)   ! EL IS NOT DEFINED AT KTE (ground surface)
           ENDDO
 !
         ENDDO
@@ -489,13 +492,13 @@
 !
           DO K=KTE,KTS,-1
             KFLIP=KTE+1-K
-            THK(K)=TH(I,KFLIP,J)
+            THEK(K)=THE(I,KFLIP,J)
             RATIOMX=QV(I,KFLIP,J)
             QK(K)=RATIOMX/(1.+RATIOMX)
             CWMK(K)=CWM(I,KFLIP,J)
             QCWK(K)=QCW(I,KFLIP,J)
 !BSF  Begin:
-            SPECIES(1,K)=THK(K)
+            SPECIES(1,K)=THEK(K)
             SPECIES(2,K)=QK(K)
             SPECIES(3,K)=QCWK(K)
             NSP=3
@@ -602,7 +605,7 @@
 !***
 !BSF Begin:
           DO K=KTS,KTE
-            THK (K)=SPECIES(1,K)
+            THEK(K)=SPECIES(1,K)
             QK  (K)=SPECIES(2,K)
             QCWK(K)=SPECIES(3,K)
             CWMK(K)=QCWK(K)
@@ -633,7 +636,7 @@
           DO K=KTS,KTE
             KFLIP=KTE+1-K
             THOLD=TH(I,K,J)
-            THNEW=THK(KFLIP)
+            THNEW=THEK(KFLIP)+CWMK(KFLIP)*ELOCP*APE(I,K,J)
             DTDT=(THNEW-THOLD)*RDTTURBL
             QOLD=QV(I,K,J)/(1.+QV(I,K,J))
             DQDT=(QK(KFLIP)-QOLD)*RDTTURBL
@@ -773,7 +776,7 @@
 !   *                                                                *
 !   ******************************************************************
 !
-     &(LMH,U,V,THv,Q2,Z,GM,GH,EL,PBLH,LPBL,LMXL,CT,MIXHT               &    !PLee(3/07)
+     &(LMH,U,V,T,THE,Q,CWM,Q2,Z,GM,GH,EL,PBLH,LPBL,LMXL,CT,MIXHT       &    !PLee(3/07)
      &,IDS,IDE,JDS,JDE,KDS,KDE                                         &
      &,IMS,IME,JMS,JME,KMS,KME                                         &
      &,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -790,7 +793,7 @@
 !
       INTEGER,INTENT(OUT) :: LMXL,LPBL
 !
-      REAL,DIMENSION(KTS:KTE),INTENT(IN) :: Q2,THv,U,V
+      REAL,DIMENSION(KTS:KTE),INTENT(IN) :: CWM,Q,Q2,T,THE,U,V
 !
       REAL,DIMENSION(KTS:KTE+1),INTENT(IN) :: Z
 !
@@ -805,8 +808,8 @@
 !***
       INTEGER :: K,LPBLM
 !
-      REAL :: ADEN,BDEN,AUBR,BUBR,BLMX,EL0,ELOQ2X,GHL,GML              &
-     &       ,QOL2ST,QOL2UN,QDZL,RDZ,SQ,SREL,SZQ,VKRMZ
+      REAL :: A,ADEN,B,BDEN,AUBR,BUBR,BLMX,EL0,ELOQ2X,GHL,GML           &
+     &       ,QOL2ST,QOL2UN,QDZL,RDZ,SQ,SREL,SZQ,TEM,THM,VKRMZ
 !
       REAL,DIMENSION(KTS:KTE) :: Q1
 !
@@ -828,7 +831,8 @@
 !
 !--------------THE HEIGHT OF THE PBL------------------------------------
 !
- 110  PBLH=Z(LPBL+1)-Z(LMH+1)
+ 110  PBLH=Z(LPBL)-Z(LMH+1)
+!!!LPC 110  PBLH=Z(LPBL+1)-Z(LMH+1)
 !
 !-----------------------------------------------------------------------
       DO K=KTS,LMH
@@ -836,7 +840,7 @@
       ENDDO
 !
       DO K=1,LMH-1
-        DTH(K)=THv(K)-THv(K+1)
+        DTH(K)=THE(K)-THE(K+1)
       ENDDO
 !
       DO K=LMH-2,1,-1
@@ -853,7 +857,16 @@
         GML=((U(K)-U(K+1))**2+(V(K)-V(K+1))**2)*RDZ*RDZ
         GM(K)=MAX(GML,EPSGM)
 !
-        ghl=dth(k)*rdz
+        TEM=(T(K)+T(K+1))*0.5
+        THM=(THE(K)+THE(K+1))*0.5
+!
+        A=THM*P608
+        B=(ELOCP/TEM-1.-P608)*THM
+!
+        GHL=(DTH(K)*((Q(K)+Q(K+1)+CWM(K)+CWM(K+1))*(0.5*P608)+1.)      &
+     &     +(Q(K)-Q(K+1)+CWM(K)-CWM(K+1))*A                            &
+     &     +(CWM(K)-CWM(K+1))*B)*RDZ
+!
         IF(ABS(GHL)<=EPSGH)GHL=EPSGH
 !
         GH(K)=GHL

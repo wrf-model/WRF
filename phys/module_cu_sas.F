@@ -11,9 +11,7 @@ CONTAINS
                  U3D,V3D,W,T3D,QV3D,QC3D,QI3D,PI3D,RHO3D,           &
                  DZ8W,PCPS,P8W,XLAND,CU_ACT_FLAG,                   &
                  P_QC,                                              & 
-#if (NMM_CORE == 1)
                  MOMMIX, & ! gopal's doing
-#endif
                  PGCON,sas_mass_flux,                               &
                  shalconv,shal_pgcon,                               &
                  HPBL2D,EVAP2D,HEAT2D,                              & !Kwon for shallow convection
@@ -132,9 +130,7 @@ CONTAINS
       REAL, DIMENSION(ims:ime, jms:jme, kms:kme), INTENT(INOUT) ::      &
                                         RUCUTEN,                        &  
                                         RVCUTEN                             
-#if (NMM_CORE == 1)
-      REAL,    INTENT(IN) ::    MOMMIX
-#endif
+      REAL, OPTIONAL,   INTENT(IN) ::    MOMMIX
 
       REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,                   &
                          INTENT(IN) :: HPBL2D,EVAP2D,HEAT2D                !Kwon for sha

@@ -216,6 +216,7 @@ module da_control
    real, parameter    :: typical_w_rms = 0.1     ! m/s
    real, parameter    :: typical_rv_rms = 1.0    ! m/s
    real, parameter    :: typical_rf_rms = 1.0    ! dBZ
+   real, parameter    :: typical_rain_rms = 1.0   ! mm  
 
    ! The following typical mean squared values depend on control variable. They   
    ! are calculated in da_setup_background_errors and used in the VvToVp adjoint 
@@ -451,7 +452,7 @@ module da_control
 
    integer, parameter            :: maxsensor = 30
 
-   integer, parameter :: num_ob_indexes = 27
+   integer, parameter :: num_ob_indexes = 28
    integer, parameter :: npres_print = 12
 
 
@@ -486,6 +487,7 @@ module da_control
    integer, parameter :: mtgirs    = 25
    integer, parameter :: tamdar    = 26
    integer, parameter :: tamdar_sfc = 27
+   integer, parameter :: rain      = 28
 
    character(len=14), parameter :: obs_names(num_ob_indexes) = (/ &
       "sound         ", &
@@ -514,17 +516,17 @@ module da_control
       "sonde_sfc     ", &
       "mtgirs        ", &
       "tamdar        ", &
-      "tamdar_sfc    " &
-
+      "tamdar_sfc    ", &
+      "rain          " &  
    /)
 
    integer, parameter :: max_no_fm = 290
 
-   integer, parameter :: num_ob_vars=9
+   integer, parameter :: num_ob_vars=10
 
    logical, parameter :: in_report(num_ob_vars,2) = reshape((/&
      .false.,.false.,.false.,.false.,.false.,.false.,.false.,.false.,.false., & ! sound
-     .true.,.true.,.true.,.true.,.true.,.true.,.false.,.false.,.false./), &
+     .true.,.true.,.true.,.true.,.true.,.true.,.false.,.false.,.false.,.false.,.false./), &
      (/num_ob_vars,2/))
 
    integer, parameter :: report_h   = 1
@@ -606,7 +608,7 @@ module da_control
    integer :: num_qcstat_conv(2,num_ob_indexes,num_ob_vars,npres_print+1)
    character*4, parameter :: ob_vars(num_ob_vars) = (/'U   ','V   ','T   ',&
                                                       'Q   ','Ps  ','Spd ',&
-                                                      'Tpw ','GpsR','Thic'/)
+                                                      'Tpw ','GpsR','Thic','Rain'/)
    real, parameter :: pptop(1:npres_print) = (/ 1000.0, 900.0, 800.0, 600.0, 400.0, 300.0,  &
                       250.0,  200.0, 150.0, 100.0, 50.0, 0./)
 

@@ -225,10 +225,6 @@ CONTAINS
                                         L,                              & 
                                         NTRAC
 
-#if (HWRF == 1)
-   write(0,*) 'FIXME: REMOVE THIS DEBUG WRITE STATEMENT.  ALPHA=',ALPHA
-#endif
- 
    IM=ITE-ITS+1
    KX=KTE-KTS+1
    KTEM=KTE-1

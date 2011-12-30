@@ -212,10 +212,13 @@ CONTAINS
 ! limit to positive h change
         if(h.lt.hold)h=hold
 
-!       if(h.ne.0.)then
-! no change unless tml is warmer than layer mean temp tmol or tsk-5 (see omlinit)
-        if(tml.ge.tmoml .and. h.ne.0.)then
-          tml=max(t0ml - Gam*(h-h0) + 0.5*Gam*h + A2/h, tmoml)
+        if(h.ne.0.)then
+! no change unless tml is warmer than layer mean temp tmoml or tsk-5 (see omlinit)
+          if(tml.ge.tmoml)then
+            tml=max(t0ml - Gam*(h-h0) + 0.5*Gam*h + A2/h, tmoml)
+          else 
+            tml=tmoml
+          endif
           u=hu2/h
           v=hv2/h
         else

@@ -48,7 +48,7 @@
         integer          :: npft
         integer          :: months
         INTEGER, pointer :: seasonal_wes(:,:,:,:)
-        logical          :: allocated
+        logical          :: is_allocated
       end type wesely_pft
 
       type(wesely_pft), allocatable :: seasonal_pft(:)
@@ -136,7 +136,7 @@ SUBROUTINE wesely_driver( id, ktau, dtstep, config_flags, current_month,  &
 !--------------------------------------------------
 ! .. Local Scalars
 !--------------------------------------------------
-      REAL    ::  clwchem, dvfog, dvpart, pa, rad
+      REAL    ::  clwchem, dvfog, dvpart, pa, rad, dep_vap
       REAL    ::  rhchem, ta, ustar, vegfrac, z1, zntt
       INTEGER :: i, iland, iprt, iseason, j, jce, jcs, n, nr, ipr,jpr,nvr
       LOGICAL :: highnh3, rainflag, vegflag, wetflag
@@ -151,16 +151,19 @@ SUBROUTINE wesely_driver( id, ktau, dtstep, config_flags, current_month,  &
 ! necessary for aerosols (module dependent)         
 !-----------------------------------------------------------
       real :: rcx(numgas)
-                                                     
+
 !-----------------------------------------------------------
 ! .. Intrinsic Functions
 !-----------------------------------------------------------
       INTRINSIC max, min                             
 
+      dep_vap= config_flags%depo_fact
+
       CALL wrf_debug(15,'in dry_dep_wesely')
 
       if( config_flags%chem_opt /= MOZART_KPP .and. &
-          config_flags%chem_opt /= MOZCART_KPP ) then
+          config_flags%chem_opt /= MOZCART_KPP .and. &
+          config_flags%chem_opt /= MOZART_MOSAIC_4BIN_VBS0_KPP ) then
          if( julday < 90 .or. julday > 270 ) then
             iseason = 2
             CALL wrf_debug(15,'setting iseason to 2')
@@ -177,7 +180,8 @@ tile_lon_loop : &
             iprt  = 0
             iland = ivgtyp(i,j)
             if( config_flags%chem_opt == MOZART_KPP .or. &
-                config_flags%chem_opt == MOZCART_KPP ) then
+                config_flags%chem_opt == MOZCART_KPP .or. &
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
                if( snowh(i,j) < .01 ) then 
                   iseason = seasonal_pft(id)%seasonal_wes(i,j,iland,current_month)
                else
@@ -222,7 +226,8 @@ tile_lon_loop : &
                      iseason, numgas, wetflag, rainflag, highnh3, &
                      iprt, moist(i,kts,j,p_qv), p8w(i,kts,j), config_flags%chem_opt )
             if( config_flags%chem_opt /= MOZART_KPP .and. &
-                config_flags%chem_opt /= MOZCART_KPP ) then
+                config_flags%chem_opt /= MOZCART_KPP .and. &
+          config_flags%chem_opt /= MOZART_MOSAIC_4BIN_VBS0_KPP)  then
                srfres(1:numgas-2) = rcx(1:numgas-2)
                srfres(numgas-1:numgas) = 0.
             else
@@ -240,14 +245,15 @@ tile_lon_loop : &
 !      ddvel(i,j,1:numgas-2)=ddvel0d(1:numgas-2)
 !-----------------------------------------------------------
             ddvel(i,j,1:numgas) = ddvel0d(1:numgas)
-            if ( (config_flags%chem_opt == RADM2         ) .or.   &
-                 (config_flags%chem_opt == RADM2SORG     ) .or.   &
-                 (config_flags%chem_opt == RADM2SORG_AQ) ) then
+            if ( (config_flags%chem_opt == RADM2           ) .or.   &
+                 (config_flags%chem_opt == RADM2SORG       ) .or.   &
+                 (config_flags%chem_opt == RADM2SORG_AQ    ) .or.   &
+                 (config_flags%chem_opt == RADM2SORG_AQCHEM) ) then
                      ddvel(i,j,p_hcl)         = ddvel(i,j,p_hno3)
             end if
          end do tile_lon_loop
       end do tile_lat_loop
-
+     
 !-----------------------------------------------------------
 ! For the additional CBMZ species, assign similar RADM counter parts for
 ! now. Short lived species get a zero velocity since dry dep should be
@@ -308,7 +314,25 @@ tile_lon_loop : &
             end do
          end do
       end if
+!
+     if  (config_flags%chem_opt == RACM_SOA_VBS_KPP)   then
+         do j=jts,jte
+            do i=its,ite
+               ddvel(i,j,p_cvasoa1) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvasoa2) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvasoa3) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvasoa4) = dep_vap*ddvel(i,j,p_hno3)
 
+               ddvel(i,j,p_cvbsoa1) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvbsoa2) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvbsoa3) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_cvbsoa4) = dep_vap*ddvel(i,j,p_hno3)
+
+               ddvel(i,j,p_sesq)    = 0.
+               ddvel(i,j,p_mbo)     = 0.
+            end do
+         end do
+      end if
 !-----------------------------------------------------------
 ! For the additional CBM4 species, assign similar RADM counter parts for
 ! now. Short lived species get a zero velocity since dry dep should be
@@ -379,7 +403,8 @@ tile_lon_loop : &
 ! For mozart
 !-----------------------------------------------------------
       if( config_flags%chem_opt == MOZART_KPP .or. &
-          config_flags%chem_opt == MOZCART_KPP )   then
+          config_flags%chem_opt == MOZCART_KPP .or. &
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP )   then
          do j=jts,jte
             do i=its,ite
                ddvel(i,j,p_mpan)    = ddvel(i,j,p_mpan)/3.
@@ -426,7 +451,14 @@ tile_lon_loop : &
                ddvel(i,j,p_xoh)     = 0.
                ddvel(i,j,p_isopn)   = 0.
                ddvel(i,j,p_meko2)   = 0.
+               ddvel(i,j,p_sulf)    = 0.
                ddvel(i,j,p_dms)     = 0.
+            if ( config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+               ddvel(i,j,p_voca)     = 0.
+               ddvel(i,j,p_vocbb)     = 0.
+               ddvel(i,j,p_smpa)        = 0
+               ddvel(i,j,p_smpbb)        = 0 
+            end if
             end do
          end do
       end if
@@ -519,7 +551,7 @@ END SUBROUTINE wesely_driver
 !----------------------------------------------------------------------
 !     SPECIAL TREATMENT FOR HNO3, HNO4, H2O2, PAA
 !----------------------------------------------------------------------
-is_mozart :  if( chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP ) then
+is_mozart :  if( chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP ) then 
                  if( n == p_hno3 ) then
                     hstary(n) = 2.6e6*exp( 8700.*wrk )*1.e5
                  else if( n == p_hno4 ) then
@@ -532,7 +564,7 @@ is_mozart :  if( chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP ) then
              endif is_mozart
              rmx = 1./(hstary(n)/3000. + 100.*f0(n))
              rsmx = rs*dratio(n) + rmx
-             if( (chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP) .and. &
+             if( (chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP .or. chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) .and. &
                  iseason /= 4 .and. p_pan > 1 ) then
                 if( iland /= iswater_temp .and. n == p_pan ) then
 !-------------------------------------------------------------------------------------
@@ -1192,6 +1224,7 @@ is_nh3: if( p_nh3 > 1 ) then
         integer :: dimid
         integer :: varid
         integer :: max_dom
+        integer :: cpos, slen
         integer :: lon_e, lat_e
         integer :: iend, jend
         integer, allocatable :: input_wes_seasonal(:,:,:,:)
@@ -1213,7 +1246,7 @@ is_nh3: if( p_nh3 > 1 ) then
 include 'netcdf.inc'
 
 #else
-      if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP ) then
+      if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP .or. config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
          call wrf_message( 'dep_init: mozart,mozcart chem option requires netcdf' )
          call wrf_abort
       end if
@@ -1502,7 +1535,8 @@ is_cbm4_kpp : &
 
         if (config_flags%chem_opt /= CBM4_KPP) then
            if( config_flags%chem_opt == MOZART_KPP .or. &
-               config_flags%chem_opt == MOZCART_KPP ) then
+               config_flags%chem_opt == MOZCART_KPP .or. &
+               config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
               hstar(p_o3)      = 1.15E-2
               hstar(p_co)      = 1.e-3
               hstar(p_h2o2)    = 8.33E+4
@@ -1619,7 +1653,8 @@ is_cbm4_kpp : &
 !     [-DH/R]=K
 !--------------------------------------------------
         if( config_flags%chem_opt == MOZART_KPP .or. &
-            config_flags%chem_opt == MOZCART_KPP ) then
+            config_flags%chem_opt == MOZCART_KPP .or. &
+            config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
            dhr(p_o3)      = 2560.
            dhr(p_h2o2)    = 7379.
            dhr(p_hcho)    = 6425.
@@ -1690,7 +1725,8 @@ is_cbm4_kpp : &
 !     [f0]=1
 !--------------------------------------------------
         if( config_flags%chem_opt == MOZART_KPP .or. &
-            config_flags%chem_opt == MOZCART_KPP ) then
+            config_flags%chem_opt == MOZCART_KPP .or. &
+            config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
            f0(p_hcho)    = small_value
            f0(p_ch3ooh)  = .1
            f0(p_ch3oh)   = small_value
@@ -1757,7 +1793,8 @@ is_cbm4_kpp : &
 !     [DV]=cm2/s (assumed: 1/SQRT(molar mass) when not known)
 !--------------------------------------------------
         if( config_flags%chem_opt == MOZART_KPP .or. &
-            config_flags%chem_opt == MOZCART_KPP ) then
+            config_flags%chem_opt == MOZCART_KPP .or. &
+            config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
            dvj(p_o3)      = 0.144
            dvj(p_h2o2)    = 0.1715
            dvj(p_hcho)    = 0.1825
@@ -2369,7 +2406,7 @@ is_cbm4_kpp : &
 ! Correction of diff. coefficient
 !--------------------------------------------------
           dvj(l) = dvj(l)*(293.15/298.15)**1.75
-          sc = 0.15/dvj(l)                             ! Schmidt Number at 20°C   
+          sc = 0.15/dvj(l)                             ! Schmidt Number at 20C
           dratio(l) = 0.242/dvj(l)                     ! of water vapor and gas at
 !--------------------------------------------------
 ! Ratio of diffusion coefficient
@@ -2481,7 +2518,7 @@ is_cbm4_kpp : &
           hstar4(l) = hstar(l) ! preliminary              
 ! Correction of diff. coeff
           dvj(l) = dvj(l)*(293.15/298.15)**1.75
-          sc = 0.15/dvj(l) ! Schmidt Number at 20°C   
+          sc = 0.15/dvj(l) ! Schmidt Number at 20C
           dratio(l) = 0.242/dvj(l) !                                            ! of water vapor and gas at
 ! Ratio of diffusion coeffi
           scpr23(l) = (sc/0.72)**(2./3.) ! (Schmidt # / Prandtl #)**
@@ -2679,7 +2716,8 @@ is_cbm4_kpp : &
 !---------------------------------------------------------------------
 is_mozart : &
       if( config_flags%chem_opt == MOZART_KPP .or. &
-          config_flags%chem_opt == MOZCART_KPP ) then
+          config_flags%chem_opt == MOZCART_KPP .or. &
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
 !---------------------------------------------------------------------
 !	... allocate column_density type
 !---------------------------------------------------------------------
@@ -2692,15 +2730,26 @@ is_mozart : &
           endif
           write(err_msg,*) 'dep_init: initializing for ',max_dom,' domains'
           CALL wrf_message( trim(err_msg) )
-          seasonal_pft(:)%allocated = .false.
+          seasonal_pft(:)%is_allocated = .false.
         endif
 seasonal_pft_allocated : &
-        IF( .not. seasonal_pft(id)%allocated ) then
+        IF( .not. seasonal_pft(id)%is_allocated ) then
         IF( wrf_dm_on_monitor() ) THEN
          write(id_num,'(i3)') 100+id
          err_msg = 'dep_init: initializing domain ' // id_num(2:3)
          CALL wrf_message( trim(err_msg) )
-         filename = 'wrf_season_wes_usgs_d' // id_num(2:3) // '.nc'
+         cpos = index( config_flags%wes_seasonal_inname, '<domain>' )
+         if( cpos > 0 ) then
+           filename = ' '
+           filename = config_flags%wes_seasonal_inname(:cpos-1) // 'd' // id_num(2:3)
+           cpos = cpos + 8
+           slen = len_trim( config_flags%wes_seasonal_inname )
+           if( cpos < slen ) then
+             filename(len_trim(filename)+1:) = config_flags%wes_seasonal_inname(cpos:slen)
+           endif
+         else
+           filename = trim( config_flags%wes_seasonal_inname )
+         endif
          err_msg = 'dep_init: failed to open file ' // trim(filename)
          call handle_ncerr( nf_open( trim(filename), nf_noclobber, ncid ), trim(err_msg) )
 !---------------------------------------------------------------------
@@ -2745,7 +2794,7 @@ seasonal_pft_allocated : &
             call wrf_message( 'dep_init: failed to allocate seasonal_wes' )
             call wrf_abort
          end if
-         seasonal_pft(id)%allocated = .true.
+         seasonal_pft(id)%is_allocated = .true.
 !---------------------------------------------------------------------
 !	... read array
 !---------------------------------------------------------------------

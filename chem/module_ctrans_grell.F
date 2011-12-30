@@ -1,23 +1,32 @@
-!WRF:MODEL_LAYER:PHYSICS
+!WRF:ODEL_LAYER:PHYSICS
 !
 
 MODULE module_ctrans_grell
 USE module_cu_gd
 USE module_dep_simple
-USE module_state_description, only:p_co,p_qv,p_so2,p_o3,p_sulf,p_nh3,p_h2o2, &
-                              p_paa,p_hno3,p_n2o5,p_so4aj,p_nh4aj,p_no3aj,   &
+USE module_state_description, only:p_co,p_qv,p_so2,p_hno3,p_hno4,p_n2o5,p_nh3,p_h2o2, &
+                              p_o3,p_ora1,p_op1,p_paa,p_sulf,p_so4aj,p_nh4aj,p_no3aj, &
                               p_bc1,p_bc2,p_oc1,p_oc2,p_seas_1,p_seas_2,     &
                               p_seas_3,p_seas_4,p_dms
 
+  REAL, PARAMETER :: qcldwtr_cutoff = 1.0e-6 ! kg/kg
+  
+  REAL, PARAMETER :: mwdry = 28.966  ! Molecular mass of dry air (g/mol)
+  REAL, PARAMETER :: mwso4 = 96.00   ! Molecular mass of SO4-- (g/mol)
+  REAL, PARAMETER :: mwno3 = 62.0    ! Molecular mass of NO3- (g/mol)
+  REAL, PARAMETER :: mwnh4 = 18.0985 ! Molecular mass of NH4+ (g/mol)
+  
 CONTAINS
 
 !-------------------------------------------------------------
    SUBROUTINE GRELLDRVCT(DT,itimestep,DX,                           &
               rho_phy,RAINCV,chem,                                  &
               U,V,t_phy,moist,dz8w,p_phy,                           &
-              XLV,CP,G,r_v,z,cu_co_ten,                             &
+              XLV,CP,G,r_v,z,cu_co_ten,ktop_out,                    &
+              wd_no3,wd_so4,                                        &
               k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow,   &
               ishallow,num_moist,numgas,num_chem,chemopt,scalaropt, &
+              wetscav_onoff,                                        &
               ids,ide, jds,jde, kds,kde,                            &
               ims,ime, jms,jme, kms,kme,                            &
               its,ite, jts,jte, kts,kte                             )
@@ -27,11 +36,12 @@ CONTAINS
    IMPLICIT NONE
 !-------------------------------------------------------------
    INTEGER,      INTENT(IN   ) ::                               &
-                                  numgas,chemopt,scalaropt, &
+                                  numgas,chemopt,scalaropt,     &
                                   ids,ide, jds,jde, kds,kde,    &
                                   ims,ime, jms,jme, kms,kme,    &
                                   its,ite, jts,jte, kts,kte,    &
-                                  ishallow,num_chem,num_moist
+                                  ishallow,num_chem,num_moist,  &
+                                  wetscav_onoff
 
    INTEGER,      INTENT(IN   ) :: ITIMESTEP
 
@@ -55,6 +65,7 @@ CONTAINS
           INTENT(INOUT   ) ::                                   &
                                                     cu_co_ten
 
+   INTEGER,  DIMENSION( ims:ime , jms:jme  ) , INTENT(  OUT) :: ktop_out
 
 !
    REAL, INTENT(IN   ) :: DT, DX
@@ -67,13 +78,20 @@ CONTAINS
          INTENT(IN) ::        RAINCV, xmb_shallow
    INTEGER, DIMENSION( ims:ime , jms:jme ),                        &
          INTENT(IN) ::   k22_shallow,kbcon_shallow,ktop_shallow
-
+!
+! Accumulated wet deposition
+!
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_no3,wd_so4
 ! LOCAL VARS
      real,    dimension (its:ite,kts:kte) ::                    &
         OUTT,OUTQ,OUTQC
      real,    dimension (its:ite)         ::                    &
         pret, ter11
-
+! Auxiliary wet deposition variables
+   REAL, DIMENSION (its:ite,num_chem)         :: wetdep_1d
+   REAL, DIMENSION (ims:ime,jms:jme,num_chem) :: wetdep_2d
+! Wet deposition over the current time step
+   REAL, DIMENSION( ims:ime , jms:jme ) :: wdi_no3,wdi_so4
 !
 ! basic environmental input includes moisture convergence (mconv)
 ! omega (omeg), windspeed (us,vs), and a flag (aaeq) to turn off
@@ -92,6 +110,8 @@ CONTAINS
    REAL    :: tcrit,dp,dq,epsilc
    INTEGER :: itf,jtf,ktf,iopt
    epsilc=1.e-30
+   wetdep_1d(:,:)   = 0.0
+   wetdep_2d(:,:,:) = 0.0
 !  return
 !  ipr=111
 !  jpr=40
@@ -168,8 +188,9 @@ CONTAINS
 !
       CALL CUP_ct(ktop,k23,kbcon3,ktop3,xmb3,                  &
            tracer,j,AAEQ,T,Q,TER11,PRET,P,tracert,tracert3,    &
-           hstary,DT,PSUR,US,VS,tcrit,                         &
+           hstary,DT,PSUR,US,VS,tcrit,wetdep_1d,               &
            xlv,r_v,cp,g,ipr,jpr,npr,num_chem,chemopt,scalaropt,&
+           wetscav_onoff,                                      &
            ishallow,numgas,ids,ide, jds,jde, kds,kde,          &
            ims,ime, jms,jme, kms,kme,                          &
            its,ite, jts,jte, kts,kte                           )
@@ -218,15 +239,39 @@ CONTAINS
             ENDDO
        ENDDO
 
+    wetdep_2d(its:ite,j,:) = wetdep_1d(its:ite,:)
+      ktop_out(its:itf,J) = ktop(its:itf)
 
  100    continue
 
+   ! Calculate the wet deposition over the time step:
+   
+   wdi_no3(:,:) = 0.0
+   wdi_so4(:,:) = 0.0
+   
+   ! We use the indices of the chem array that point to aerosol outside of cloud water,
+   ! because that's what the cumulus scheme operates with.
+   
+   if (p_no3aj .gt.1) wdi_no3(its:ite,jts:jte) = wdi_no3(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_no3aj)*dt*0.001/mwno3 ! mmol/m2
+   if (p_hno3  .gt.1) wdi_no3(its:ite,jts:jte) = wdi_no3(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_hno3)*dt              ! mmol/m2
+   if (p_hno4  .gt.1) wdi_no3(its:ite,jts:jte) = wdi_no3(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_hno4)*dt              ! mmol/m2
+   
+   if (p_so4aj .gt.1) wdi_so4(its:ite,jts:jte) = wdi_so4(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_so4aj)*dt*0.001/mwso4 ! mmol/m2
+   if (p_sulf  .gt.1) wdi_so4(its:ite,jts:jte) = wdi_so4(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_sulf)*dt              ! mmol/m2
+   if (p_so2   .gt.1) wdi_so4(its:ite,jts:jte) = wdi_so4(its:ite,jts:jte) + wetdep_2d(its:ite,jts:jte,p_so2)*dt               ! mmol/m2
+   
+   ! Update the accumulated wet deposition:
+   
+   wd_no3(its:ite,jts:jte) = wd_no3(its:ite,jts:jte) + wdi_no3(its:ite,jts:jte) ! mmol/m2
+   wd_so4(its:ite,jts:jte) = wd_so4(its:ite,jts:jte) + wdi_so4(its:ite,jts:jte) ! mmol/m2
+   
    END SUBROUTINE GRELLDRVCT
 
 
    SUBROUTINE CUP_ct(ktop,k23,kbcon3,ktop3,xmb3,tracer,J,AAEQ,T,Q,Z1,  &
               PRE,P,tracert,tracert3,hstary,DTIME,PSUR,US,VS,TCRIT,    &
-              xl,rv,cp,g,ipr,jpr,npr,num_chem,chemopt,scalaropt,       &
+              wetdep,xl,rv,cp,g,ipr,jpr,npr,num_chem,chemopt,scalaropt,&
+              wetscav_onoff,                                           &
               ishallow,numgas,ids,ide, jds,jde, kds,kde,               &
               ims,ime, jms,jme, kms,kme,                               &
               its,ite, jts,jte, kts,kte                                )
@@ -236,7 +281,7 @@ CONTAINS
      integer                                                           &
         ,intent (in   )                   ::                           &
         num_chem,ids,ide, jds,jde, kds,kde,                            &
-        ims,ime, jms,jme, kms,kme,scalaropt,ishallow,                  &
+        ims,ime, jms,jme, kms,kme,scalaropt,wetscav_onoff,ishallow,    &
         its,ite, jts,jte, kts,kte,ipr,jpr,npr,chemopt,numgas
      integer, intent (in   )              ::                           &
         j
@@ -366,7 +411,7 @@ CONTAINS
      real,    dimension (its:ite,kts:kte,num_chem)       ::             &
         tr_c,tr_up,tr_dd,tr_dd3,tre_cup,tr_pw,tr_pwd
      real,    dimension (its:ite,num_chem)         ::                   &
-        trkb
+        trkb,wetdep
      integer,    dimension (its:ite) ::                                &
        kzdown,KDET,K22,KB,JMIN,kstabi,kstabm,                     &   !-lxz
        ierr,KBMAX,ierr5
@@ -741,9 +786,11 @@ CONTAINS
 !      if(j.eq.jpr)print *,'calling up_tracer'
        call cup_up_tracer(ierr,tcrit,t,pre,z_cup,p,tracer,tre_cup,tr_up,tr_pw, &
                    tr_c,hstary,pw,clw_all,kbcon,ktop,cd,mentr_rate,zu,k22,&
-                   numgas,chemopt,scalaropt,ids,ide, jds,jde, kds,kde, &
+                   numgas,chemopt,scalaropt,wetscav_onoff, &
+                   ids,ide, jds,jde, kds,kde, &
                    ims,ime, jms,jme, kms,kme, &
-                   its,ite, jts,jte, kts,kte,ipr,jpr,j,npr,num_chem,'deep')
+                   its,ite, jts,jte, kts,kte, &
+                   ipr,jpr,j,npr,num_chem,'deep')
 !      if(j.eq.jpr)print *,'called up_tracer'
 !
 ! for shallow convection, only 3 subroutines required
@@ -755,9 +802,11 @@ CONTAINS
            its,ite, jts,jte, kts,kte)
        call cup_up_tracer(ierr5,tcrit,t,pre,z_cup,p,tracer,tre_cup,tr3_up,tr3_pw, &
                    tr3_c,hstary,pw3,clw_all3,kbcon3,ktop3,cd3,mentr_rate3,zu3,k23,&
-                   numgas,chemopt,scalaropt,ids,ide, jds,jde, kds,kde, &
+                   numgas,chemopt,scalaropt,wetscav_onoff, &
+                   ids,ide, jds,jde, kds,kde, &
                    ims,ime, jms,jme, kms,kme, &
-                   its,ite, jts,jte, kts,kte,ipr,jpr,j,npr,num_chem,'shallow')
+                   its,ite, jts,jte, kts,kte, &
+                   ipr,jpr,j,npr,num_chem,'shallow')
       call cup_dellas_tr(ierr5,z_cup,p_cup,tr_dd3,edt3,zd3,cdd3,      &
            tracer,tracert3,j,mentrd_rate,zu3,g,xmb3,                &
            cd3,tr3_up,ktop3,k23,kbcon3,mentr_rate3,jmin,tre_cup,kdet, &
@@ -768,8 +817,8 @@ CONTAINS
        endif
 
        call cup_dd_tracer(ierr,z_cup,qrcd,tracer,tre_cup,tr_up,tr_dd, &
-                    tr_pw,tr_pwd,jmin,cdd,mentrd_rate,zd,pwdper,k22,        &
-                    num_chem,ids,ide, jds,jde, kds,kde, &
+                    tr_pw,tr_pwd,jmin,cdd,mentrd_rate,zd,pwdper,wetdep,xmb,k22, &
+                    numgas,ids,ide, jds,jde, kds,kde, &
                     ims,ime, jms,jme, kms,kme, &
                     its,ite, jts,jte, kts,kte)
        if(j.eq.jpr)print *,'called dd_tracer'
@@ -1117,128 +1166,75 @@ END subroutine cup_env_clev_tr
 
    SUBROUTINE  cup_up_tracer(ierr,tcrit,t,pre,z_cup,p,tracer,tre_cup,tr_up, &
                 tr_pw,tr_c,hstary,cupclw,clw_all,kbcon,ktop,cd,mentr_rate,zu,k22,  &
-                          numgas,chemopt,scalaropt,ids,ide, jds,jde, kds,kde, &
+                          numgas,chemopt,scalaropt,wetscav_onoff,ids,ide, jds,jde, kds,kde, &
                           ims,ime, jms,jme, kms,kme, &
                           its,ite, jts,jte, kts,kte,ipr,jpr,j,npr,num_chem,name)
 ! USE module_configure
-! USE module_state_description
+  USE module_state_description, only: RADM2SORG_AQCHEM,RACMSORG_AQCHEM,GOCART_SIMPLE
   USE module_ctrans_aqchem
+  USE module_input_chem_data, only: get_last_gas
         implicit none
 ! Aqeuous species pointers INCLUDE File
 
 !...........PARAMETERS and their descriptions:
 
-      INTEGER      NGAS            ! number of gas phase species for AQCHEM
-      PARAMETER  ( NGAS  = 11 )
-
-      INTEGER      NAER            ! number of aerosol species for AQCHEM
-      PARAMETER  ( NAER  = 23 )
+      INTEGER, PARAMETER :: NGAS = 12  ! number of gas-phase species for AQCHEM
+      INTEGER, PARAMETER :: NAER = 36  ! number of aerosol species for AQCHEM
+      INTEGER, PARAMETER :: NLIQS = 41 ! number of liquid-phase species in AQCHEM
 
 !...pointers for the AQCHEM array GAS
 
-      INTEGER      LSO2            ! local pointer to SO2
-      PARAMETER  ( LSO2   =  1 )
-
-      INTEGER      LHNO3           ! local pointer to HNO3
-      PARAMETER  ( LHNO3  =  2 )
-
-      INTEGER      LN2O5           ! local pointer to N2O5
-      PARAMETER  ( LN2O5  =  3 )
-      INTEGER      LCO2            ! local pointer to CO2
-      PARAMETER  ( LCO2   =  4 )
-
-      INTEGER      LNH3            ! local pointer to NH3
-      PARAMETER  ( LNH3   =  5 )
-
-      INTEGER      LH2O2           ! local pointer to H2O2
-      PARAMETER  ( LH2O2  =  6 )
-
-      INTEGER      LO3             ! local pointer to O3
-      PARAMETER  ( LO3    =  7 )
-
-      INTEGER      LFOA            ! local pointer to FOA
-      PARAMETER  ( LFOA   =  8 )
-
-      INTEGER      LMHP            ! local pointer to MHP
-      PARAMETER  ( LMHP   =  9 )
-
-      INTEGER      LPAA            ! local pointer to PAA
-      PARAMETER  ( LPAA   = 10 )
-
-      INTEGER      LH2SO4          ! local pointer to H2SO4
-      PARAMETER  ( LH2SO4 = 11 )
+      INTEGER, PARAMETER :: LSO2    =  1  ! Sulfur Dioxide
+      INTEGER, PARAMETER :: LHNO3   =  2  ! Nitric Acid
+      INTEGER, PARAMETER :: LN2O5   =  3  ! Dinitrogen Pentoxide
+      INTEGER, PARAMETER :: LCO2    =  4  ! Carbon Dioxide
+      INTEGER, PARAMETER :: LNH3    =  5  ! Ammonia
+      INTEGER, PARAMETER :: LH2O2   =  6  ! Hydrogen Perioxide
+      INTEGER, PARAMETER :: LO3     =  7  ! Ozone
+      INTEGER, PARAMETER :: LFOA    =  8  ! Formic Acid
+      INTEGER, PARAMETER :: LMHP    =  9  ! Methyl Hydrogen Peroxide
+      INTEGER, PARAMETER :: LPAA    = 10  ! Peroxyacidic Acid
+      INTEGER, PARAMETER :: LH2SO4  = 11  ! Sulfuric Acid
+      INTEGER, PARAMETER :: LHCL    = 12  ! Hydrogen Chloride
 
 !...pointers for the AQCHEM array AEROSOL
 
-      INTEGER      LSO4AKN         ! local pointer to SO4I aerosol
-      PARAMETER  ( LSO4AKN =  1 )
-
-      INTEGER      LSO4ACC         ! local pointer to SO4 aerosol
-      PARAMETER  ( LSO4ACC =  2 )
-
-      INTEGER      LNH4AKN         ! local pointer to NH4I aerosol
-      PARAMETER  ( LNH4AKN =  3 )
-
-      INTEGER      LNH4ACC         ! local pointer to NH4 aerosol
-      PARAMETER  ( LNH4ACC =  4 )
-
-      INTEGER      LNO3AKN         ! local pointer to NO3I aerosol
-      PARAMETER  ( LNO3AKN =  5 )
-
-      INTEGER      LNO3ACC         ! local pointer to NO3 aerosol
-      PARAMETER  ( LNO3ACC =  6 )
-
-      INTEGER      LNO3COR         ! local pointer to course aerosol nitrate
-      PARAMETER  ( LNO3COR =  7 )
-
-      INTEGER      LORGAKN         ! local pointer to organic I aerosol
-      PARAMETER  ( LORGAKN =  8 )
-
-      INTEGER      LORGACC         ! local pointer to organic aerosol
-      PARAMETER  ( LORGACC =  9 )
-
-      INTEGER      LPRIAKN         ! local pointer to primary I aerosol
-      PARAMETER  ( LPRIAKN = 10 )
-
-      INTEGER      LPRIACC         ! local pointer to primary aerosol
-      PARAMETER  ( LPRIACC = 11 )
-
-      INTEGER      LPRICOR         ! local pointer to primary I aerosol
-      PARAMETER  ( LPRICOR = 12 )
-
-      INTEGER      LCACO3          ! local pointer to CaCO3 aerosol
-      PARAMETER  ( LCACO3  = 13 )
-
-      INTEGER      LMGCO3          ! local pointer to MgCO3 aerosol
-      PARAMETER  ( LMGCO3  = 14 )
-
-      INTEGER      LNACL           ! local pointer to NaCl aerosol
-      PARAMETER  ( LNACL   = 15 )
-
-      INTEGER      LA3FE           ! local pointer to Fe+++ aerosol
-      PARAMETER  ( LA3FE   = 16 )
-
-      INTEGER      LB2MN           ! local pointer to Mn++ aerosol
-      PARAMETER  ( LB2MN   = 17 )
-
-      INTEGER      LKCL            ! local pointer to NaCl aerosol
-      PARAMETER  ( LKCL    = 18 )
-
-      INTEGER      LNUMAKN         ! local pointer to # Aitken aerosol
-      PARAMETER  ( LNUMAKN = 19 )
-
-      INTEGER      LNUMACC         ! local pointer to # accumulation aerosol
-      PARAMETER  ( LNUMACC = 20 )
-
-      INTEGER      LNUMCOR         ! local pointer to # coarse aerosol
-      PARAMETER  ( LNUMCOR = 21 )
-
-      INTEGER      LSRFAKN         ! local pointer to sfc area Aitken aerosol
-      PARAMETER  ( LSRFAKN = 22 )
-
-      INTEGER      LSRFACC         ! local pntr to sfc area accumulation aerosol
-      PARAMETER  ( LSRFACC = 23 )
-
+      INTEGER, PARAMETER :: LSO4AKN  =  1  ! Aitken-mode Sulfate
+      INTEGER, PARAMETER :: LSO4ACC  =  2  ! Accumulation-mode Sulfate
+      INTEGER, PARAMETER :: LSO4COR  =  3  ! Coarse-mode Sulfate
+      INTEGER, PARAMETER :: LNH4AKN  =  4  ! Aitken-mode Ammonium
+      INTEGER, PARAMETER :: LNH4ACC  =  5  ! Accumulation-mode Ammonium
+      INTEGER, PARAMETER :: LNO3AKN  =  6  ! Aitken-mode Nitrate
+      INTEGER, PARAMETER :: LNO3ACC  =  7  ! Accumulation-mode Nitrate
+      INTEGER, PARAMETER :: LNO3COR  =  8  ! Coarse-mode Nitrate
+      INTEGER, PARAMETER :: LORGAAKN =  9  ! Aitken-mode anthropogenic SOA
+      INTEGER, PARAMETER :: LORGAACC = 10  ! Accumulation-mode anthropogenic SOA
+      INTEGER, PARAMETER :: LORGPAKN = 11  ! Aitken-mode primary organic aerosol
+      INTEGER, PARAMETER :: LORGPACC = 12  ! Accumulation-mode primary organic aerosol
+      INTEGER, PARAMETER :: LORGBAKN = 13  ! Aitken-mode biogenic SOA
+      INTEGER, PARAMETER :: LORGBACC = 14  ! Accumulation-mode biogenic SOA
+      INTEGER, PARAMETER :: LECAKN   = 15  ! Aitken-mode elemental carbon
+      INTEGER, PARAMETER :: LECACC   = 16  ! Accumulation-mode elemental carbon
+      INTEGER, PARAMETER :: LPRIAKN  = 17  ! Aitken-mode primary aerosol
+      INTEGER, PARAMETER :: LPRIACC  = 18  ! Accumulation-mode primary aerosol
+      INTEGER, PARAMETER :: LPRICOR  = 19  ! Coarse-mode primary aerosol
+      INTEGER, PARAMETER :: LNAAKN   = 20  ! Aitken-mode Sodium
+      INTEGER, PARAMETER :: LNAACC   = 21  ! Accumulation-mode Sodium
+      INTEGER, PARAMETER :: LNACOR   = 22  ! Coarse-mode Sodium
+      INTEGER, PARAMETER :: LCLAKN   = 23  ! Aitken-mode Chloride ion
+      INTEGER, PARAMETER :: LCLACC   = 24  ! Accumulation-mode Chloride ion
+      INTEGER, PARAMETER :: LCLCOR   = 25  ! Coarse-mode Chloride ion
+      INTEGER, PARAMETER :: LNUMAKN  = 26  ! Aitken-mode number
+      INTEGER, PARAMETER :: LNUMACC  = 27  ! Accumulation-mode number
+      INTEGER, PARAMETER :: LNUMCOR  = 28  ! Coarse-mode number
+      INTEGER, PARAMETER :: LSRFAKN  = 29  ! Aitken-mode surface area
+      INTEGER, PARAMETER :: LSRFACC  = 30  ! Accumulation-mode surface area
+      INTEGER, PARAMETER :: LNACL    = 31  ! Sodium Chloride aerosol for AE3 only {depreciated in AE4}
+      INTEGER, PARAMETER :: LCACO3   = 32  ! Calcium Carbonate aerosol (place holder)
+      INTEGER, PARAMETER :: LMGCO3   = 33  ! Magnesium Carbonate aerosol (place holder)
+      INTEGER, PARAMETER :: LA3FE    = 34  ! Iron aerosol (place holder)
+      INTEGER, PARAMETER :: LB2MN    = 35  ! Manganese aerosol (place holder)
+      INTEGER, PARAMETER :: LK       = 36  ! Potassium aerosol (Cl- tracked separately) (place holder)
 
 !
 !  on input
@@ -1249,8 +1245,9 @@ END subroutine cup_env_clev_tr
      integer                                                           &
         ,intent (in   )                   ::                           &
                          numgas,ids,ide, jds,jde, kds,kde,scalaropt,   &
+                         wetscav_onoff,                                &
                          num_chem,ims,ime, jms,jme, kms,kme,chemopt,   &
-                            its,ite, jts,jte, kts,kte,ipr,jpr,j,npr
+                         its,ite, jts,jte, kts,kte,ipr,jpr,j,npr
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (in  )                   ::                           &
         z_cup,cd,zu,p,hstary,t
@@ -1288,24 +1285,26 @@ END subroutine cup_env_clev_tr
      integer                              ::                           &
         iall,i,k,iwd,nv
      real                                 ::                           &
-        trcc,trch,dh,qrch,c0,dz,radius,airm,dens
+        trcc,trch,dh,c0,dz,radius,airm,dens
      integer                              ::                           &
        itf,ktf,iaer,igas
-!
-! aerosol scavenging coeffs for aitken mode
-!
-           real alfa0,alfa2,alfa3,alpha_gocart
-! output variables
-! hpwdep h+ deposition
-      real, dimension (ngas) :: gas,gaswdep
-      real, dimension (naer) :: aerosol,aerwdep
-          real hpwdep
-     alfa0=0.
-         alfa2=0.
-         alfa3=0.
-       gas(lco2)=340.
-         taucld=1800.
-         qrch=0.
+     
+     ! Gas/aqueous phase partitioning for wet scavenging/deposition of gas
+     ! phase and aerosol species:
+     real aq_gas_ratio
+     
+     ! Array index of the last gas species:
+     integer last_gas
+     
+     ! I/O for AQCHEM:
+     
+     real precip ! Precipitation rate (mm/h)
+     real, dimension (ngas) :: gas,gaswdep
+     real, dimension (naer) :: aerosol,aerwdep
+     real, dimension (nliqs) :: liquid
+     real hpwdep
+     real alfa0,alfa2,alfa3 ! Aerosol scavenging coefficients for Aitken mode
+     
      itf=MIN(ite,ide-1)
      ktf=MIN(kte,kde-1)
 
@@ -1316,21 +1315,25 @@ END subroutine cup_env_clev_tr
 !
 !--- no precip for small clouds
 !
-!       if(mentr_rate.gt.0.)then
-!         radius=.2/mentr_rate
-!         if(radius.lt.900.)c0=0.
-        if(name.eq.'shallow')c0=0.
-!         if(radius.lt.900.)iall=0
-!       endif
-        do nv=2,num_chem
-        do k=kts,ktf
-        do i=its,itf
-          tr_pw(i,k,nv)=0.
-          if(ierr(i).eq.0)tr_up(i,k,nv)=tre_cup(i,k,nv)
-          tr_c(i,k,nv)=0.
-        enddo
-        enddo
-        enddo
+!      if(mentr_rate.gt.0.)then
+!        radius=.2/mentr_rate
+!        if(radius.lt.900.)c0=0.
+      if(name.eq.'shallow')c0=0.
+!        if(radius.lt.900.)iall=0
+!      endif
+      do nv=2,num_chem
+      do k=kts,ktf
+      do i=its,itf
+        ! Initialize species mass in rain water:
+        tr_pw(i,k,nv)=0.
+        ! Initialize species mass in updraft:
+        if(ierr(i).eq.0)tr_up(i,k,nv)=tre_cup(i,k,nv)
+        ! Initialize species mass in cloud + rain water:
+        tr_c(i,k,nv)=0.
+      enddo
+      enddo
+      enddo
+      
       do nv=2,num_chem
       do i=its,itf
       if(ierr(i).eq.0.)then
@@ -1340,258 +1343,249 @@ END subroutine cup_env_clev_tr
       endif
       enddo
       enddo
-      if(j.eq.jpr)print *,'p_so2,o_o3 = ',p_so2,p_o3
-        DO 100 k=kts+1,ktf-1
-        DO 100 i=its,itf
-         AEROSOL=0.
-         GAS=0.
-         IF(ierr(i).ne.0)GO TO 100
-         IF(K.Lt.KBCON(I))GO TO 100
-         IF(K.Gt.KTOP(I)+1)GO TO 100
-         DZ=Z_cup(i,K)-Z_cup(i,K-1)
-         if(cupclw(i,k).le.0.)cupclw(i,k)=0.
-         if(clw_all(i,k).le.0.)clw_all(i,k)=0.
-!
-!------    1. steady state plume equation, for what could
-!------       be in cloud before anything happens (kg/kg)
-!------       tr_up would be the concentration if tr would be conserved
-!
-!
-        do nv=2,num_chem
+      
+      DO 100 k=kts+1,ktf-1
+      DO 100 i=its,itf
+      
+      IF(ierr(i).ne.0)GO TO 100
+      IF(K.Lt.KBCON(I))GO TO 100
+      IF(K.Gt.KTOP(I)+1)GO TO 100
+      
+      DZ=Z_cup(i,K)-Z_cup(i,K-1)
+      
+      if(cupclw(i,k).le.0.)cupclw(i,k)=0.
+      if(clw_all(i,k).le.0.)clw_all(i,k)=0.
+      
+      !
+      ! Steady state plume equation, for what could be in cloud before anything
+      ! happens (kg/kg). tr_up would be the concentration if tracers were conserved.
+      !
+      
+      do nv=2,num_chem
         if(i.eq.ipr.and.j.eq.jpr.and.nv.eq.npr)print *,k,tr_up(i,K-1,nv),tr_up(i,K,nv),tr_pw(i,k-1,nv),clw_all(i,k),cupclw(i,k)
         tr_up(i,K,nv)=(tr_up(i,K-1,nv)*(1.-.5*CD(i,K)*DZ)+mentr_rate* &
-                DZ*tracer(i,K-1,nv))/(1.+mentr_rate*DZ-.5*cd(i,k)*dz)
+          DZ*tracer(i,K-1,nv))/(1.+mentr_rate*DZ-.5*cd(i,k)*dz)
         tr_up(i,k,nv)=max(1.e-16,tr_up(i,K,nv))
-        enddo
-!
-! sources or sinks due to aq chem
-!
-
-!!!!!!!! the following only for made/sorgam !!!!!!!!!!
-        if(chemopt.eq.2)then
-           dens=1000.*p(i,k)*100./t(i,k)/287./28.9628
-           airm=dens*dz
-!...gas concentrations (ppm)
-
-      GAS( LCO2 )  = 370.0
-       GAS( LFOA )  = 0.0 ! ???
-       GAS( LMHP )  = 0.0 ! ???
-
-      GAS( LSO2 )  = tr_up(i,k,p_so2)
-      GAS( LH2SO4 )  = tr_up(i,k,p_sulf)
-      GAS( LNH3 )  = tr_up(i,k,p_nh3)
-      GAS( LH2O2 ) = tr_up(i,k,p_h2o2)
-
-      GAS( LO3 )   = tr_up(i,k,p_o3)
-      GAS( LPAA )  = tr_up(i,k,p_paa)
-      GAS( LHNO3 ) = tr_up(i,k,p_hno3)
-      GAS( LN2O5 ) = tr_up(i,k,p_n2o5)
-!...convert to mol/mol
-
-      DO IGAS=1,NGAS
-        GAS( IGAS ) = GAS( IGAS ) * 1.0E-6
-      END DO
-
-!...aerosol concentrations (ug/m3)
-
-!      AEROSOL( LSO4ACC ) = 20.0
-!      AEROSOL( LNH4ACC ) = 6.65
-!      AEROSOL( LNO3ACC ) = 10.0
-!      AEROSOL( LNACL )   = 1.71
-!!      AEROSOL( LA3FE )   = 0.5
-!      AEROSOL( LB2MN )   = 0.02
-!      AEROSOL( LNO3COR ) = 0.0
-       AEROSOL( LORGACC ) = 0.0
-       AEROSOL( LPRIACC ) = 0.0
-!      AEROSOL( LCACO3 )  = 3.05
-!      AEROSOL( LMGCO3 )  = 0.0
-
-      AEROSOL( LSO4ACC ) = tr_up(i,k,p_so4aj)
-      AEROSOL( LNH4ACC ) = tr_up(i,k,p_nh4aj)
-      AEROSOL( LNO3ACC ) = tr_up(i,k,p_no3aj)
-      AEROSOL( LNACL )   = 0.
-      AEROSOL( LA3FE )   = .5
-      AEROSOL( LB2MN )   = .02
-      AEROSOL( LNO3COR ) = 0.
-!     AEROSOL( LORGACC ) = tr_up(i,k,) + tr_up(i,k,) + tr_up(i,k,)
-!     AEROSOL( LPRIACC ) = tr_up(i,k,) + tr_up(i,k,)
-      AEROSOL( LCACO3 )  = 0.
-      AEROSOL( LMGCO3 )  = 0.
-
-
-!...convert to mol/mol
-!
-
-!      DO IAER=1,NAER
-!        AEROSOL( IAER ) = AEROSOL( IAER ) * 1.0E-6 * CTHK1
-!     &                  / ( SGRAERMW( IAER ) * AIRM )
-!      END DO
-      DO IAER=1,NAER
-        AEROSOL( IAER ) = AEROSOL( IAER ) * 1.0E-6
-      END DO
-! first clw is water, second is total
-
-     GASWDEP=0.
-     AERWDEP=0.
-     HPWDEP=0.
-!    if(clw_all(i,k).gt.1.e-12)then
-!    if(cupclw(i,k).gt.1.e-12)then
-!     CALL AQCHEM (t(i,k),p(i,k)*100.,taucld,cupclw(i,k)/3600.,           &
-!        clw_all(i,k)*dens,clw_all(i,k)*dens,airm,ALFA0,ALFA2,ALFA3,GAS,  &
-!                  AEROSOL, GASWDEP, AERWDEP, HPWDEP )
-!    endif
-!    endif
-
-
-
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!
-!            FOLLOWING FOR WET DEPOSITION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!
-       do nv=2,num_chem
-          tr_c(i,k,nv)=0.
-                  tr_pw(i,k,nv)=c0*dz*tr_C(I,K,nv)*zu(i,k)
-        if(tr_c(i,k,nv).le.0.)then
-          tr_c(i,k,nv)=0.
+      enddo
+      
+      !
+      ! Aqueous chemistry
+      !
+      
+      if ((chemopt .EQ. RADM2SORG_AQCHEM) .OR. &
+          (chemopt .EQ. RACMSORG_AQCHEM) &
+          ) then
+        
+        !
+        ! For MADE/SORGAM derived schemes with aqueous chemistry
+        !
+        
+        ! Air mass density
+        dens = 0.1*p(i,k)/t(i,k)*mwdry/8.314472 ! kg/m3
+        
+        ! Column air number density:
+        airm = 1000.0*dens*dz/mwdry ! mol/m2
+        
+        ! Wet scavenging initialization for AQCHEM
+        
+        GASWDEP = 0.0
+        AERWDEP = 0.0
+        HPWDEP  = 0.0
+        
+        ! We provide a precipitation rate and aerosol scavenging rates of zero,
+        ! in order to prevent wet scavenging in AQCHEM (it is treated later):
+        
+        precip = 0.0 ! mm/hr
+        
+        alfa0 = 0.0
+        alfa2 = 0.0
+        alfa3 = 0.0
+        
+        ! Gas phase concentrations before aqueous phase chemistry
+        ! (with units conversion ppm -> mol/mol)
+        
+        gas(:) = 0.0
+        
+        gas(lco2)   = 380.0e-6
+        
+        gas(lso2)   = tr_up(i,k,p_so2)*1.0e-6
+        gas(lhno3)  = tr_up(i,k,p_hno3)*1.0e-6
+        gas(ln2o5)  = tr_up(i,k,p_n2o5)*1.0e-6
+        gas(lnh3)   = tr_up(i,k,p_nh3)*1.0e-6
+        gas(lh2o2)  = tr_up(i,k,p_h2o2)*1.0e-6
+        gas(lo3)    = tr_up(i,k,p_o3)*1.0e-6
+        gas(lfoa)   = tr_up(i,k,p_ora1)*1.0e-6
+        gas(lmhp)   = tr_up(i,k,p_op1)*1.0e-6
+        gas(lpaa)   = tr_up(i,k,p_paa)*1.0e-6
+        gas(lh2so4) = tr_up(i,k,p_sulf)*1.0e-6
+        
+        ! Aerosol mass concentrations before aqueous phase chemistry
+        ! (with units conversion ug/kg -> mol/mol). Although AQCHEM
+        ! accounts for much of the aerosol compounds in MADE, they are
+        ! not treated at the moment by AQCHEM, as the mapping between
+        ! the organic compound groups in MADE and AQCHEM is not obvious.
+        
+        aerosol(:) = 0.0
+        
+        ! We assume all accumulation mode particles are activated in cumulus clouds:
+        
+        aerosol(lso4acc) = tr_up(i,k,p_so4aj)*1.0e-9*mwdry/mwso4
+        aerosol(lnh4acc) = tr_up(i,k,p_nh4aj)*1.0e-9*mwdry/mwnh4
+        aerosol(lno3acc) = tr_up(i,k,p_no3aj)*1.0e-9*mwdry/mwno3
+        
+        ! Cloud lifetime:
+        taucld = 1800.0
+      
+        if (clw_all(i,k)*dens .gt. qcldwtr_cutoff) then ! Cloud water > threshold
+          CALL AQCHEM( &
+           t(i,k), &
+           p(i,k)*100., &
+           taucld, &
+           precip, &
+           clw_all(i,k)*dens, &
+           clw_all(i,k)*dens, &
+           airm, &
+           ALFA0, &
+           ALFA2, &
+           ALFA3, &
+           GAS, &
+           AEROSOL, &
+           LIQUID, &
+           GASWDEP, &
+           AERWDEP, &
+           HPWDEP)
         endif
-           enddo
-!
-!--- iall.eq.1, if all cloudwater goes to rain
-!
-        if(iall.eq.1)then
-          tr_c(i,k,nv)=0.
-          tr_pw(i,k,nv)=(tr_c(I,K,nv)-QRCH)*zu(i,k)
-          if(tr_pw(i,k,nv).lt.0.)tr_pw(i,k,nv)=0.
-        endif
+        
+        ! Gas phase concentrations after aqueous phase chemistry
+        ! (with units conversion mol/mol -> ppm)
+        
+        tr_up(i,k,p_so2)  =  gas(lso2)*1.0e6
+        tr_up(i,k,p_hno3) =  gas(lhno3)*1.0e6
+        tr_up(i,k,p_n2o5) =  gas(ln2o5)*1.0e6
+        tr_up(i,k,p_nh3)  =  gas(lnh3)*1.0e6
+        tr_up(i,k,p_h2o2) =  gas(lh2o2)*1.0e6
+        tr_up(i,k,p_o3)   =  gas(lo3)*1.0e6
+        tr_up(i,k,p_ora1) =  gas(lfoa)*1.0e6
+        tr_up(i,k,p_op1)  =  gas(lmhp)*1.0e6
+        tr_up(i,k,p_paa)  =  gas(lpaa)*1.0e6
+        tr_up(i,k,p_sulf) =  gas(lh2so4)*1.0e6
+        
+        ! Aerosol mass concentrations
+        ! (with units conversion mol/mol -> ug/kg)
+        
+        tr_up(i,k,p_so4aj) = aerosol(lso4acc)*1.0e9*mwso4/mwdry
+        tr_up(i,k,p_nh4aj) = aerosol(lnh4acc)*1.0e9*mwnh4/mwdry
+        tr_up(i,k,p_no3aj) = aerosol(lno3acc)*1.0e9*mwno3/mwdry
 
-!
-!----- set next level
-!        tr_up(I,K,nv)=tr_c(I,K,nv)+qrch
-      tr_up(i,k,p_so2)=gas(lso2)*1.e6
-      tr_up(i,k,p_sulf)=gas(lh2so4)*1.e6
-      tr_up(i,k,p_nh3)=gas(lnh3)*1.e6
-      tr_up(i,k,p_h2o2)=gas(lh2o2)*1.e6
-
-      tr_up(i,k,p_o3)=gas(lo3)*1.e6
-      tr_up(i,k,p_paa)=gas(lpaa)*1.e6
-      tr_up(i,k,p_hno3)=gas(lhno3)*1.e6
-      tr_up(i,k,p_n2o5)=gas(ln2o5)*1.e6
-      tr_up(i,k,p_so4aj)=AEROSOL( LSO4ACC )*1.e6
-      tr_up(i,k,p_nh4aj)=AEROSOL( LNH4ACC )*1.e6
-      tr_up(i,k,p_no3aj)=AEROSOL( LNO3ACC ) *1.e6
-
-      tr_pw(i,k,p_so2)=gaswdep(lso2)*1.e6
-      tr_pw(i,k,p_sulf)=gaswdep(lh2so4)*1.e6
-      tr_pw(i,k,p_nh3)=gaswdep(lnh3)*1.e6
-      tr_pw(i,k,p_h2o2)=gaswdep(lh2o2)*1.e6
-
-      tr_pw(i,k,p_o3)=gaswdep(lo3)*1.e6
-      tr_pw(i,k,p_paa)=gaswdep(lpaa)*1.e6
-      tr_pw(i,k,p_hno3)=gaswdep(lhno3)*1.e6
-      tr_pw(i,k,p_n2o5)=gaswdep(ln2o5)*1.e6
-      tr_pw(i,k,p_so4aj)=AERwdep( LSO4ACC )*1.e6
-      tr_pw(i,k,p_nh4aj)=AERwdep( LNH4ACC )*1.e6
-
-      tr_pw(i,k,p_no3aj)=AERwdep( LNO3ACC ) *1.e6
-      if(i.eq.ipr.and.j.eq.jpr)then
-          write(6,*)'a',tr_up(i,k,npr),tracer(i,K-1,npr),tr_pw(i,k,npr)
       endif
-      else    ! NOT MADE SORGAM
-       do nv=2,num_chem
-! we definitely need wet deposition for sulf
-! tr_c would be conc_mxr for other tracers, like:
-!              partialp=1.e-6*qc(i,k)*29./wtm(name)*p(i,k)/1013.
-!              conc_equi=partialp*hstary(i,k)
-!
-!--- conc_mxr would be "my" qc-qrch (Kg/Kg)
-!
-!              conc_mxr=conc_equi*cupclw(i,j,k)*wtm(name)
-
-! setting it to zero, takes away wet deposition for now
-          tr_c(i,k,nv)=0.
-          tr_pw(i,k,nv)=c0*dz*tr_C(I,K,nv)*zu(i,k)
-        if(tr_c(i,k,nv).le.0.)then
-          tr_c(i,k,nv)=0.
+      
+      if (wetscav_onoff == 1) then
+        
+        ! Determine the array index of the first non-gas species:
+        last_gas = get_last_gas(chemopt)
+        
+        if ((chemopt .EQ. RADM2SORG_AQCHEM) .OR. &
+            (chemopt .EQ. RACMSORG_AQCHEM) &
+            ) then
+          
+          do nv=2,num_chem
+            
+            aq_gas_ratio = 0.0
+            
+            ! Fraction of gas phase species that partions into the liquid phase:
+            
+            if (nv.eq.p_so2)  aq_gas_ratio = 1.0
+            if (nv.eq.p_sulf) aq_gas_ratio = 1.0
+            if (nv.eq.p_nh3)  aq_gas_ratio = 1.0
+            if (nv.eq.p_hno3) aq_gas_ratio = 1.0
+            
+            ! Assume that all non-gas species (aerosol mass and number)
+            ! partion completely into the liquid phase:
+            
+            if (nv.gt.last_gas) aq_gas_ratio = 1.0
+            
+            if (aq_gas_ratio > 0.0) then
+              tr_c(i,k,nv)  = aq_gas_ratio*tr_up(i,k,nv) ! Amount of species cloud + rain water
+              trch          = tr_up(i,k,nv)-tr_c(i,k,nv) ! Amount of species remaining in gas phase
+              trcc          = (tr_up(i,k,nv)-trch)/(1.+c0*dz*zu(i,k)) ! Amount of species cloud + rain water
+              tr_pw(i,k,nv) = c0*dz*trcc*zu(i,k) ! Amount of species in rain water
+              tr_up(i,k,nv) = trcc+trch ! Total amount of species in updraft = conc in liq water (trcc) + conc in gas phase (trch)
+            endif
+            
+          enddo
+        
         endif
-!
-! here comes nonzero stuff
-!
-        if(nv.eq.p_sulf.and.p_sulf.gt.1.and.chemopt.ne.300.and.chemopt.ne.301)then
-               tr_c(i,k,nv)=tr_up(i,k,nv)
-               trch=tr_up(i,k,nv)-tr_c(i,k,nv)
-               trcc=(tr_up(i,k,nv)-trch)/(1.+c0*dz*zu(i,k))
-               tr_pw(i,k,nv)=c0*dz*trcc*zu(i,k)
-               tr_up(i,k,nv)=trcc
-!
-! for gocart assuming scavenging factor of .6
-!
-        else if(chemopt.ge.300)then
-          alpha_gocart = .5    ! scavenging factor
-          if(nv.le. numgas)alpha_gocart=0.
-          if(nv.eq.p_bc1 .or. nv.eq.p_oc1 .or. nv.eq.p_dms)alpha_gocart=0.
-          if(nv.eq.p_sulf .or. nv.eq.p_seas_1 .or. nv.eq.p_seas_2)alpha_gocart=1.
-          if(nv.eq.p_seas_3 .or. nv.eq.p_seas_4)alpha_gocart=1.
-          if(nv.eq.p_bc2 .or. nv.eq.p_oc2)alpha_gocart=0.8
+        
+        if (chemopt.ge.GOCART_SIMPLE) then
+          
+          ! GOCART: assume a gas/liquid phase partitioning ratio of 0.6 for
+          ! total sulfate (p_sulf) and all aerosol species:
+          
+          do nv=2,num_chem
+            
+            aq_gas_ratio = 0.0
+            
+            if (nv.gt.numgas) aq_gas_ratio = 0.5
+            if (nv.eq.p_bc1 .or. nv.eq.p_oc1 .or. nv.eq.p_dms) aq_gas_ratio=0.
+            if (nv.eq.p_sulf .or. nv.eq.p_seas_1 .or. nv.eq.p_seas_2) aq_gas_ratio=1.
+            if (nv.eq.p_seas_3 .or. nv.eq.p_seas_4) aq_gas_ratio=1.
+            if (nv.eq.p_bc2 .or. nv.eq.p_oc2) aq_gas_ratio=0.8
 
-!       else if((chemopt.ge.300.and.nv.gt.numgas).or.(chemopt.ge.300.and.nv.eq.p_sulf))then
-               tr_c(i,k,nv)=alpha_gocart*tr_up(i,k,nv)
-               trch=tr_up(i,k,nv)-tr_c(i,k,nv)
-               trcc=(tr_up(i,k,nv)-trch)/(1.+c0*dz*zu(i,k))
-               tr_pw(i,k,nv)=c0*dz*trcc*zu(i,k)
-               tr_up(i,k,nv)=trcc+trch  !conc total = conc in liq water      (= trcc )
-                                        !            + conc in air            (= trch    )
-
+            if (aq_gas_ratio > 0.0) then
+              tr_c(i,k,nv)  = aq_gas_ratio*tr_up(i,k,nv) ! Amount of species cloud + rain water
+              trch          = tr_up(i,k,nv)-tr_c(i,k,nv) ! Amount of species remaining in gas phase
+              trcc          = (tr_up(i,k,nv)-trch)/(1.+c0*dz*zu(i,k)) ! Amount of species cloud + rain water
+              tr_pw(i,k,nv) = c0*dz*trcc*zu(i,k) ! Amount of species in rain water
+              tr_up(i,k,nv) = trcc+trch ! Total amount of species in updraft = conc in liq water (trcc) + conc in gas phase (trch)
+            endif
+            
+          enddo
+          
         endif
-        enddo   ! enddo nv
-!
-!--- iall.eq.1, if all cloudwater goes to rain
-!
-!       if(iall.eq.1)then
-!         tr_c(i,k,nv)=0.
-!         tr_pw(i,k,nv)=(tr_c(I,K,nv)-QRCH)*zu(i,k)
-!         if(tr_pw(i,k,nv).lt.0.)tr_pw(i,k,nv)=0.
-!       endif
-      endif ! END CHEMOPT
-
- 100     CONTINUE
-
+      
+      endif
+      
+100   CONTINUE
 
 END subroutine cup_up_tracer
 
 
-
-   SUBROUTINE  cup_dd_tracer(ierr,z_cup,qrcd,tracer,tre_cup,tr_up,tr_dd, &
-                          tr_pw,tr_pwd,jmin,cdd,entr,zd,pwdper,k22,      &
-                          num_chem,ids,ide, jds,jde, kds,kde, &
+  SUBROUTINE  cup_dd_tracer(ierr,z_cup,qrcd,tracer,tre_cup,tr_up,tr_dd, &
+                          tr_pw,tr_pwd,jmin,cdd,entr,zd,pwdper,wetdep,xmb,k22, &
+                          numgas,ids,ide, jds,jde, kds,kde, &
                           ims,ime, jms,jme, kms,kme, &
                           its,ite, jts,jte, kts,kte)
-! USE module_configure
-! USE module_state_description
+  USE module_configure
+  USE module_state_description
+  USE module_model_constants, only: mwdry
+
         implicit none
 !
 !  on input
 !
-
+  
    ! only local wrf dimensions are need as of now in this routine
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-                         num_chem,ids,ide, jds,jde, kds,kde,           &
+                               numgas,ids,ide, jds,jde, kds,kde,       &
                                   ims,ime, jms,jme, kms,kme,           &
                                   its,ite, jts,jte, kts,kte
      real,    dimension (its:ite,kts:kte)                              &
-        ,intent (in  )                   ::                           &
-       pwdper,zd,cdd,qrcd,z_cup
-     real,    dimension (its:ite,kts:kte,1:num_chem)                  &
-        ,intent (inout  )                   ::                           &
+        ,intent (in  )                   ::                            &
+       pwdper,zd,cdd,qrcd,z_cup 
+     real,    dimension (its:ite)                                      &
+        ,intent (in  )                   ::                            &
+       xmb
+     real,    dimension (its:ite,kts:kte,1:num_chem)                   &
+        ,intent (inout  )                   ::                         &
         tr_dd,tr_pwd,tr_up
-     real,    dimension (its:ite,kts:kte,1:num_chem)                  &
-        ,intent (in  )                   ::                           &
+     real,    dimension (its:ite,kts:kte,1:num_chem)                   &
+        ,intent (in  )                   ::                            &
         tre_cup,tracer,tr_pw
-     real,    dimension (its:ite,1:num_chem) :: pwav
+     real,    dimension (its:ite,1:num_chem)                           &
+        ,intent (out  )                   ::                           &
+         wetdep
 
   ! entr= entrainment rate
      real                                                              &
@@ -1601,7 +1595,7 @@ END subroutine cup_up_tracer
         ,intent (in   )                   ::                           &
         jmin
    ! ierr error value, maybe modified in this routine
-
+  
      integer, dimension (its:ite)                                      &
         ,intent (inout)                   ::                           &
         ierr,k22
@@ -1609,87 +1603,116 @@ END subroutine cup_up_tracer
 !
 
      integer                              ::                           &
-        iall,i,k,nv,ki
+        iall,i,k,nv,ki,kj
      real                                 ::                           &
-        dh,qrch,c0,dz,radius
+        dh,c0,dz,radius
      integer                              ::                           &
        itf,ktf
-         logical iaer (num_chem)
-         iaer = .false.
 
-        if(p_so4aj.gt.1)iaer(p_so4aj) = .true.
-        if(p_nh4aj.gt.1)iaer(p_nh4aj) = .true.
-        if(p_no3aj.gt.1)iaer(p_no3aj) = .true.
+     real                                 ::                           &
+       evaporate,condensate
 
-     itf=MIN(ite,ide-1)
-     ktf=MIN(kte,kde-1)
-!
-      qrch=0.
-      do nv=2,num_chem
-      do k=kts+0,kte
+      itf=MIN(ite,ide-1)
+      ktf=MIN(kte,kde-1)
+      
+      ! Initialize the tracer amount that evaporated from rain water:
+      tr_pwd(its:ite,kts:kte,1:num_chem) = 0.0
+      
+      ! Initialize wet deposition:
+      wetdep(its:ite,1:num_chem) = 0.0
+      
+      ! Calculate wet deposition with re-evaporation (based on wet scavenging in cup_up_tracer);
+      ! assume no gas takeup by rain during fall for now
+      
       do i=its,ite
-         tr_dd(i,k,nv)=0.
-         tr_pwd(i,k,nv)=0.
+        
+        IF(ierr(I).eq.0)then
+            
+          do nv=1,numgas ! Only gas phase species evaporate along with rain water
+            
+            do k=ktf,kts,-1 ! Descending loop over all levels
+              
+              ! Start with initializing the condensate with the tracer amount in rain water on this level:
+              condensate = tr_pw(i,k,nv)
+              
+              do kj=k,kts,-1 ! Descending loop over this and lower levels
+                ! Evaporated tracer amount at the current level:
+                evaporate = condensate*pwdper(i,kj)
+                ! Accumulate the evaporated tracer amount:
+                tr_pwd(i,kj,nv) = tr_pwd(i,kj,nv) + evaporate
+                ! Remove the evaporated tracer amount from the condensate:
+                condensate = max(0.0,condensate - evaporate)
+              enddo
+              
+            enddo
+            
+            ! Calculate the wet deposition as the column integral over the
+            ! tracer amount in rain water - evaporated tracer amount:
+            
+            do k=kts,ktf
+              wetdep(i,nv) = wetdep(i,nv) + tr_pw(i,k,nv) - tr_pwd(i,k,nv)
+            enddo
+            
+            wetdep(i,nv) = max(0.0,wetdep(i,nv))
+            
+          enddo
+          
+        endif
+        
       enddo
-      enddo
+      
+      ! In downdraft, do only transport of tracers
+      
       do i=its,ite
-      pwav(i,nv)=0.
-      IF(ierr(I).eq.0)then
-      do k=kts,ktf
-        pwav(i,nv)=pwav(i,nv)+tr_pw(i,k,nv)
+        
+        IF(ierr(I).eq.0)then
+          
+          do nv=1,num_chem
+            tr_dd(i,jmin(i),nv)=tre_cup(i,jmin(i),nv) ! Tracer amount in downdraft
+          enddo
+          
+          do ki=jmin(i)-1,1,-1
+            DZ=Z_cup(i,ki+1)-Z_cup(i,ki)
+            do nv=1,num_chem
+              tr_dd(i,ki,nv)=(tr_dd(i,ki+1,nv)*(1.-.5*CDD(i,ki)*DZ) &
+               +entr*DZ*tracer(i,ki,nv) &
+                )/(1.+entr*DZ-.5*CDD(i,ki)*DZ)
+            enddo
+            
+          enddo
+          
+        endif
+        
       enddo
-      endif
+      
+      ! Add evaporation from rain water:
+      
+      do i=its,ite
+        IF(ierr(I).eq.0)then
+          do nv=1,num_chem
+            do k=kts,ktf
+              tr_dd(i,k,nv) = tr_dd(i,k,nv) + tr_pwd(i,k,nv)
+            enddo
+          enddo
+        endif
       enddo
+      
+      ! To obtain wet deposition, multiply with base mass flux; units are given
+      ! assuming that the base mass flux units [xmb] = kg(air)/m2/s:
+      
+      do nv=1,num_chem
+        if (nv <= numgas) then
+          do i=its,itf
+            wetdep(i,nv)=wetdep(i,nv)*xmb(i)/mwdry ! mmol/m2/s for gas phase species
+          enddo
+        else
+          do i=its,itf
+            wetdep(i,nv)=wetdep(i,nv)*xmb(i) ! ug/m2/s for aerosol mass, #/m2/s for aerosol number
+          enddo
+        endif
       enddo
-!
-!--- in downdraft, do only transport of tracers, other
-!--- than evaporation of part of the rainwater (see below)
-!
-      do 100 i=its,ite
-      IF(ierr(I).eq.0)then
-!
-!--- assume no gas takeup by rain during falling
-!--- for now
-!
-!
-      if(jmin(i).lt.3)write(0,*)i,jmin(i)
-      do nv=2,num_chem
-         tr_dd(i,jmin(i),nv)=tre_cup(i,jmin(i),nv)
-      enddo
-      do ki=jmin(i)-1,1,-1
-         DZ=Z_cup(i,Ki+1)-Z_cup(i,Ki)
-         do nv=2,num_chem
-         tr_pwd(i,jmin(i),nv)=0.
-         tr_dd(i,Ki,nv)=(tr_dd(i,Ki+1,nv)*(1.-.5*CDD(i,Ki)*DZ) &
-                  +entr*DZ*tracer(i,Ki,nv)                     &
-                  )/(1.+entr*DZ-.5*CDD(i,Ki)*DZ)
-!
-!--- if tracer conserved
-!
-         qrch=tr_dd(i,Ki,nv)
-!
-!--- part of dissolved liquid phase material that is being evaporated
-!     need percentage of rainwater that evaporates at level
-!     pwdper
-!     qcd=qcd+pwdper
-!
-!        tr_pwd(i,ki,nv)=pwdper(i,ki)*pwav(i,nv)
-         if(iaer(nv))then
-             tr_pwd(i,ki,nv)=0.
-         else
-             tr_pwd(i,ki,nv)=pwdper(i,ki)*pwav(i,nv)
-         endif
-         tr_dd(i,ki,nv)=qrch+tr_pwd(i,ki,nv)
-      enddo
-!
-!--- end loop over nv
-      enddo
-      endif
-100    continue
 
 END subroutine cup_dd_tracer
-
-
 
 
    SUBROUTINE neg_check_ct(name,pret,ktop,epsilc,dt,q,outq,iopt,num_chem,    &

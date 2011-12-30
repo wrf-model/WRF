@@ -32,6 +32,7 @@ subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
    real                             :: vp2_v6(ims:ime,jms:jme,kms:kme)
    real                             :: vp2_v7(ims:ime,jms:jme,kms:kme)
    real                             :: vp2_v8(ims:ime,jms:jme,kms:kme)
+   real                             :: vp2_v9(ims:ime,jms:jme,kms:kme)
 #endif
    real                             :: vp2_alpha(ims:ime,jms:jme,kms:kme,1:ne)
 
@@ -101,6 +102,7 @@ subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
    vp2_v6(:,:,:) = vp % v6(:,:,:)
    vp2_v7(:,:,:) = vp % v7(:,:,:)
    vp2_v8(:,:,:) = vp % v8(:,:,:)
+   vp2_v9(:,:,:) = vp % v9(:,:,:)
 #endif
 
    if (be % ne > 0) vp2_alpha(:,:,:,:) = vp % alpha(:,:,:,:)
@@ -260,6 +262,8 @@ subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
       adj_par_rhs
    adj_par_rhs = sum(vp % v8(its:ite,jts:jte,:) * vp2_v8(its:ite,jts:jte,:)) + &
       adj_par_rhs
+   adj_par_rhs = sum(vp % v9(its:ite,jts:jte,:) * vp2_v9(its:ite,jts:jte,:)) + &
+      adj_par_rhs
 #endif
    if (be % ne > 0) then
       adj_par_rhs = sum(vp % alpha(its:ite,jts:jte,kts:kte,:) * &
@@ -297,6 +301,7 @@ subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
    vp % v6(:,:,:) = vp2_v6(:,:,:)
    vp % v7(:,:,:) = vp2_v7(:,:,:)
    vp % v8(:,:,:) = vp2_v8(:,:,:)
+   vp % v9(:,:,:) = vp2_v9(:,:,:)
 #endif
    if (be % ne > 0) vp % alpha(:,:,:,:) = vp2_alpha(:,:,:,:)
 

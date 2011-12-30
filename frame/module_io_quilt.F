@@ -382,13 +382,11 @@ MODULE module_wrf_quilt
 #ifdef PNETCDF_QUILT
       if(poll_servers) then
          poll_servers=.false.
-!LPC         call wrf_error_fatal('Warning: server polling does not work with pnetcdf_quilt.  Disabled poll_servers.')
          call wrf_message('Warning: server polling does not work with pnetcdf_quilt.  Disabled poll_servers.')
       else
 #endif
          if(nio_groups==1) then
             poll_servers=.false.
-!LPC            call wrf_error_fatal('Server polling is useless with one io group.  Disabled poll_servers.')
             call wrf_message('Server polling is useless with one io group.  Disabled poll_servers.')
          endif
 #ifdef PNETCDF_QUILT

@@ -1,0 +1,191 @@
+subroutine da_scan_obs_rain (iv, filename)
+
+   !---------------------------------------------------------------------------
+   ! Purpose: Scan the rain observation file
+   !---------------------------------------------------------------------------
+
+   implicit none
+
+   type (iv_type),    intent(inout) :: iv
+   character(len=*),  intent(in)    :: filename
+   integer                       :: i, j, n, iost, nlevels, fm
+   integer                       :: file_rain
+   integer                       :: iunit
+
+   type (rain_single_level_type) :: platform
+
+   character (len = 120)         :: char_file_rain
+   character (len = 120)         :: fmt_name
+   character (len = 160)         :: info_string
+   logical                       :: outside, outside_all
+   integer                       :: n_dup, ndup
+
+   real*8                        :: obs_time
+   integer                       :: iyear, imonth, iday, ihour, imin
+
+   if (trace_use) call da_trace_entry("da_scan_obs_rain")
+
+   ! 1. open file
+   ! ============
+   call da_get_unit(iunit)
+   open(unit   = iunit,     &
+        FILE   = trim(filename), &
+        FORM   = 'FORMATTED',  &
+        ACCESS = 'SEQUENTIAL', &
+        iostat =  iost,     &
+        STATUS = 'OLD')
+
+   if (iost /= 0) then
+      write(unit=message(1),fmt='(A,I5,A)') &
+         "Error",iost," opening rainfall obs file "//trim(filename)
+      call da_warning(__FILE__,__LINE__,message(1:1))
+      call da_free_unit(iunit) 
+      if (trace_use) call da_trace_exit("da_scan_obs_rain")
+      return
+   end if
+
+   ! 2. read rainfall data
+   ! ===================
+
+   ! 2.1 read first line
+   !     ---------------
+
+   read (unit=iunit, fmt = '(A)', iostat = iost) char_file_rain
+
+   ! 2.2 process error
+
+   if (iost /= 0) then
+      ! Does matter if present and unreadable
+      call da_error(__FILE__,__LINE__, &
+         (/"Cannot read rainfall file"/))
+   end if
+
+   ! 2.3read header info
+
+   head_info: do
+
+      read (unit=iunit, fmt = '(A)', iostat = iost) info_string
+
+      if (iost /= 0) then
+         write(unit=message(1),fmt='(A,I3,A,I3)') &
+            "Error",iost,"reading rainfall obs header on unit",iunit
+         call da_warning(__FILE__,__LINE__,message(1:1))
+      if (trace_use) call da_trace_exit("da_scan_obs_rain")
+         return
+      end if
+
+      if (info_string(1:6) == 'EACH  ') exit
+
+   end do head_info
+
+   ! 2.3 total rainfall data info
+
+   read (unit=char_file_rain (8:14),fmt='(I7)', iostat = iost) file_rain
+
+   ! 2.4 skip one lines
+
+   read (unit=iunit, fmt = '(A)', iostat = iost)
+
+   ! 3. read rain data
+
+   reports:   do n = 1, file_rain
+
+      ! 3.1 read station general info
+
+      read (unit = iunit, iostat = iost, &
+         fmt = '(A12,1X,A19,1X,I6,2(F12.3,2X),F8.1,1X,A5)') &
+         platform % info % platform,  &
+         platform % info % date_char, &
+         platform % info % levels,    &
+         platform % info % lat,       &
+         platform % info % lon,       &
+         platform % info % elv,       &
+         platform % info % id 
+
+      if (print_detail_rain) then
+         write(unit=stdout, fmt = '(A12,1X,A19,1X,I6,2(F12.3,2X),F8.1,1X,A5)') &
+            platform % info % platform,  &
+            platform % info % date_char, &
+            platform % info % levels,    &
+            platform % info % lat,       &
+            platform % info % lon,       &
+            platform % info % elv,       &
+            platform % info % id
+      end if         
+
+      read(unit=platform % info % platform (4:6), fmt='(I3)') fm
+
+      ! 3.2 read rainfall data 
+
+      platform%each (1) = rain_each_type(missing_r, missing, -1.0,&
+         field_type(missing_r, missing, missing_r, missing, missing_r))
+
+      read (unit = iunit, fmt = '(F12.3,F12.3,I4,F12.3)') &
+         platform % each (1) % height,             &
+         platform % each (1) % rain % inv,         &
+         platform % each (1) % rain % qc,          &
+         platform % each (1) % rain % error       
+
+     ! 3.3 Check if outside of the time range:
+
+      read (platform%info%date_char,'(i4,4(1x,i2))') &
+            iyear, imonth, iday, ihour, imin
+      call da_get_julian_time (iyear,imonth,iday,ihour,imin,obs_time)
+      if ( obs_time < time_slots(0) .or. &
+           obs_time >= time_slots(num_fgat_time) ) then
+         cycle
+      endif
+
+      call da_llxy (platform%info, platform%loc, outside, outside_all)
+
+      nlevels = platform%info%levels
+
+      if (outside_all) then
+         cycle reports
+      end if
+
+      ! 3.4  Loop over duplicating obs for global
+      n_dup = 1
+      if (global .and. &
+         (platform%loc%i == ids .or. platform%loc%i == ide)) n_dup= 2
+  
+      if (test_transforms) ndup = 1
+   
+      do n_dup = 1, n_dup
+         select case (fm)
+
+         case (129)
+            if (iv%info(rain)%nlocal > max_rain_input) then
+               write(unit=message(1),fmt='(A,I6,A,I6)') &
+                  ' rain #= ',iv%info(rain)%nlocal, ' > max_rain_input = ', max_rain_input
+               call da_error(__FILE__,__LINE__,message(1:1))
+            end if
+            iv%info(rain)%ntotal = iv%info(rain)%ntotal + 1
+            if (outside) cycle reports
+            iv%info(rain)%nlocal = iv%info(rain)%nlocal + 1
+
+
+         case default;
+            write(unit=message(1), fmt='(a)') 'unsaved obs found:'
+            write(unit=message(2), fmt='(2a)') &
+               'platform%info%platform=', platform%info%platform
+            write(unit=message(3), fmt='(a, i3)') &
+                 'platform%info%levels=', platform%info%levels
+            call da_warning(__FILE__,__LINE__,message(1:3))
+            cycle
+         end select
+
+         iv%info(rain)%max_lev = 1 
+
+      end do        !  loop over duplicate
+   end do reports
+
+   close (iunit)
+   call da_free_unit(iunit)
+
+   if (trace_use) call da_trace_exit("da_scan_obs_rain")
+
+
+end subroutine da_scan_obs_rain
+
+

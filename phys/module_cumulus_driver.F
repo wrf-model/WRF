@@ -59,10 +59,7 @@ CONTAINS
                      ,rqvblten,rqvften                                &
                      ,rucuten,rvcuten                                 &
                      ,rthcuten,rthraten,rthblten,rthften              &
-#if (NMM_CORE==1)
-                 ! for hwrf-sas                      --- 3.2 CLEANUP TODO -- THESE SHOULD BE OPTIONAL, NOT #IF/#ENDIF
                      ,mommix,store_rand                               &
-#endif
 ! Optional variables for tiedtke scheme - add by ZCX&YQW 
                      ,znu                                             &
                  ! Optional moisture tracer flags 
@@ -362,12 +359,13 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
                     INTENT(IN) ::  STORE_RAND
 !
-   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    !Kwon for sas2010 shallow convection
-                    INTENT(INOUT) ::  HPBL2D, EVAP2D, HEAT2D
 !
    REAL,            INTENT(INOUT) :: mommix
 #endif
 
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    !Kwon for sas2010 shallow convection
+                    INTENT(INOUT) ::  HPBL2D, EVAP2D, HEAT2D
+!
    REAL, DIMENSION( ims:ime, jms:jme, kms:kme ),                 &
                    INTENT(INOUT) :: rucuten,rvcuten
 !
@@ -689,9 +687,7 @@ CONTAINS
                ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND            &
                ,CU_ACT_FLAG=CU_ACT_FLAG                         &
                ,P_QC=p_qc                                       &
-#if (NMM_CORE==1)
                ,MOMMIX=MOMMIX  &
-#endif
                ,pgcon=pgcon,sas_mass_flux=sas_mass_flux         &
                ,shalconv=shalconv,shal_pgcon=shal_pgcon         &
                ,hpbl2d=hpbl2d,evap2d=evap2d,heat2d=heat2d       &
@@ -723,10 +719,8 @@ CONTAINS
                ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND            &
                ,CU_ACT_FLAG=CU_ACT_FLAG                         &
                ,P_QC=p_qc                                       &
-#if (NMM_CORE==1)
                ,store_rand=store_rand  &
                ,MOMMIX=MOMMIX  &
-#endif
                ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
                ,CUDT=cudt_pass                                  &
                ,CURR_SECS=curr_secs_pass                        &

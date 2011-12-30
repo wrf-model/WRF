@@ -3,13 +3,14 @@
 !                   Further developments, bugfixes and improvements  by
 !                   William Gustafson (PNNL),Rainer Schmitz (University of Chile)  and Georg Grell
 !
+! 10/12/2011 - Ravan Ahmadov (NOAA) updated to include the RACM_SOA_VBS option
 !
       SUBROUTINE aerosols_driver (id,curr_secs,ktau,dtstep,ktauc,          &
                config_flags,dtstepc,dx,                                    &
-               alt,t_phy,moist,aerwrf,p8w,t8w,p_phy,chem,rho_phy,dz8w,     &
+               alt,t_phy,moist,aerwrf,p8w,t8w,p_phy,chem,rho_phy,dz8w,rh,  &
                z,z_at_w,vbs_nbin,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,  &
                cvaro2,cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,vcsulf_old,&
-               vdrog3,                                                     &
+               vdrog3, vdrog3_vbs,brch_ratio,                               &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
@@ -25,11 +26,14 @@
    USE module_gocart_aerosols
    USE module_data_sorgam
    USE module_mosaic_driver, only:  mosaic_aerchem_driver
+   USE module_aerosols_soa_vbs, only: soa_vbs_driver
+   USE module_data_soa_vbs, only: ldrog_vbs
 
    !  This driver calls subroutines for aerosols parameterizations.
    !
    !  1. MADE-SORGAM
    !  2. MOSAIC
+   !  3. MADE-SOA_VBS
 
 !----------------------------------------------------------------------
    IMPLICIT NONE
@@ -125,7 +129,7 @@
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                    &
          INTENT(INOUT ) ::                                          &
            h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
-           cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2
+           cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,brch_ratio
 !
 ! arrays for aerosol/radiation feedback
 !
@@ -138,6 +142,10 @@
    REAL,  DIMENSION(ims:ime,kms:kme-0,jms:jme,ldrog),               &
                INTENT(IN   ) ::                                     &
                                                      VDROG3
+
+   REAL,  DIMENSION(ims:ime,kms:kme-0,jms:jme,ldrog_vbs),           &
+               INTENT(IN   ) ::                                     &
+                                                     VDROG3_VBS
 !
 ! input from meteorology
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
@@ -146,6 +154,7 @@
                                                       t_phy,        &
                                                       p_phy,        &
                                                       dz8w,         &
+                                                      rh,           & 
                                                       z    ,        &
                                             t8w,p8w,z_at_w ,        &
                                                     rho_phy
@@ -174,7 +183,7 @@
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
-   CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP)
+   CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP)
        CALL wrf_debug(15,'aerosols_driver calling sorgam_driver')
        do ii=its,ite
           do kk=kts,kte
@@ -195,7 +204,7 @@
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
 
-   CASE (RACMSORG_AQ,RACMSORG_KPP,RACM_ESRLSORG_KPP)
+   CASE (RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP,RACM_ESRLSORG_KPP)
 ! ???? are separate cases needed here for radm2sorg and racmsorg packages ????
        CALL wrf_debug(15,'aerosols_driver calling sorgam_driver')
        do ii=its,ite
@@ -218,7 +227,7 @@
                its,ite, jts,jte, kts,kte                                )
 
    CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, &
-         CBMZ_MOSAIC_8BIN_AQ, SAPRC99_MOSAIC_4BIN_VBS2_KPP,  &
+         CBMZ_MOSAIC_8BIN_AQ, SAPRC99_MOSAIC_4BIN_VBS2_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP,  &
          CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
        CALL wrf_debug(15,'aerosols_driver calling mosaic_aerchem_driver')
        CALL mosaic_aerchem_driver(                                      &
@@ -228,6 +237,27 @@
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
+
+   CASE ( RACM_SOA_VBS_KPP )
+       CALL wrf_debug(15,'aerosols_driver calling soa_vbs_driver')
+       do ii=its,ite
+          do kk=kts,kte
+             do jj=jts,jte
+                if(chem(ii,kk,jj,p_nu0).lt.1.e07)then
+                   chem(ii,kk,jj,p_nu0)=1.e7
+                endif
+             enddo
+          enddo
+       enddo
+       call soa_vbs_driver ( id,ktauc,dtstepc,t_phy,moist,aerwrf,p8w,t8w, &
+            alt,p_phy,chem,rho_phy,dz8w,rh,z,z_at_w,                 &
+            h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,               &
+            vcsulf_old,vdrog3_vbs,                                   &
+            config_flags%kemit,brch_ratio,                           &
+            ids,ide, jds,jde, kds,kde,                               &
+            ims,ime, jms,jme, kms,kme,                               &
+            its,ite, jts,jte, kts,kte                                ) 
+!--------------------------------------------------------------------------------------------------
 
    CASE DEFAULT 
 
@@ -250,19 +280,24 @@
              bbsoa_a01,bbsoa_a02,bbsoa_a03,bbsoa_a04,                  &
              hsoa_a01,hsoa_a02,hsoa_a03,hsoa_a04,                      &
              biog_a01,biog_a02,biog_a03,biog_a04,                      &
+             asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04,              &
              arosoa_a01,arosoa_a02,arosoa_a03,arosoa_a04,              &
              totoa_a01,totoa_a02,totoa_a03,totoa_a04,                  &
              hsoa_c,hsoa_o,bbsoa_c,bbsoa_o,                            &
              biog_v1,biog_v2,biog_v3,biog_v4,                          &
              ant_v1,ant_v2,ant_v3,ant_v4,                              &
+             smpa_v1,smpbb_v1,                              &
              ids,ide, jds,jde, kds,kde,                                &
              ims,ime, jms,jme, kms,kme,                                &
              its,ite, jts,jte, kts,kte                                  )
 
+
    USE module_configure
    USE module_aerosols_sorgam, only: sum_pm_sorgam
-   USE module_mosaic_driver, only: sum_pm_mosaic,sum_pm_mosaic_vbs2,sum_vbs9,sum_vbs2
+   USE module_mosaic_driver, only: sum_pm_mosaic,sum_pm_mosaic_vbs2,sum_pm_mosaic_vbs0,sum_vbs9,sum_vbs2,sum_vbs0
    USE module_gocart_aerosols, only: sum_pm_gocart
+   USE module_aerosols_soa_vbs, only: sum_pm_soa_vbs
+
    IMPLICIT NONE
 
    INTEGER,      INTENT(IN   )    ::                                   &
@@ -292,8 +327,11 @@
              totoa_a01,totoa_a02,totoa_a03,totoa_a04,                  &
              hsoa_c,hsoa_o,bbsoa_c,bbsoa_o,                            &
              biog_v1,biog_v2,biog_v3,biog_v4,                          &
-             ant_v1,ant_v2,ant_v3,ant_v4
-           
+             ant_v1,ant_v2,ant_v3,ant_v4,                         &
+             smpa_v1,                          &
+             smpbb_v1,                          &
+             asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04
+ 
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
 !
@@ -310,15 +348,25 @@
             ims,ime, jms,jme, kms,kme,                                 &
             its,ite, jts,jte, kts,kte                                  )
 
-   CASE (RADM2SORG,RADM2SORG_AQ,RACMSORG_AQ,RADM2SORG_KPP,RACMSORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ)
+   CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RACMSORG_AQ,RACMSORG_AQCHEM,RADM2SORG_KPP,RACMSORG_KPP,RACM_ESRLSORG_KPP, &
+         CBMZSORG,CBMZSORG_AQ)
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_sorgam')
        CALL sum_pm_sorgam (                                            &
             alt, chem, h2oaj, h2oai,                                   &
             pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                &
-            config_flags%dust_opt,ids,ide, jds,jde, kds,kde,            &
+            config_flags%dust_opt,ids,ide, jds,jde, kds,kde,           &
             ims,ime, jms,jme, kms,kme,                                 &
             its,ite, jts,jte, kts,kte                                  )
 
+   CASE (RACM_SOA_VBS_KPP)
+       CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_soa_vbs')
+       CALL sum_pm_soa_vbs (                                           &
+            alt, chem, h2oaj, h2oai,                                   &
+            pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                &
+            config_flags%dust_opt,ids,ide, jds,jde, kds,kde,           &
+            ims,ime, jms,jme, kms,kme,                                 &
+            its,ite, jts,jte, kts,kte                                  )
+!
    CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
          CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_mosaic')
@@ -353,6 +401,34 @@
              hsoa_c,hsoa_o,bbsoa_c,bbsoa_o,                            &
              biog_v1,biog_v2,biog_v3,biog_v4,                          &
              ant_v1,ant_v2,ant_v3,ant_v4,                              &
+             ids,ide, jds,jde, kds,kde,                                &
+             ims,ime, jms,jme, kms,kme,                                &
+             its,ite, jts,jte, kts,kte                                  )
+
+   CASE (MOZART_MOSAIC_4BIN_VBS0_KPP)
+
+       CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_mosaic_vbs0')
+       call sum_pm_mosaic_vbs0 (                                       &
+            alt, chem,                                                 &
+            pm2_5_dry, pm2_5_water, pm2_5_dry_ec, pm10,                &
+            ids,ide, jds,jde, kds,kde,                                 &
+            ims,ime, jms,jme, kms,kme,                                 &
+            its,ite, jts,jte, kts,kte                                  )
+
+       CALL wrf_debug(15,'sum_pm_driver: calling sum_vbs0')
+       call sum_vbs0 (                                                 &
+             alt, chem,                                                &
+             hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
+             bboa_a01,bboa_a02,bboa_a03,bboa_a04,                      &
+             soa_a01,soa_a02,soa_a03,soa_a04,                          &
+             bbsoa_a01,bbsoa_a02,bbsoa_a03,bbsoa_a04,                  &
+             biog_a01,biog_a02,biog_a03,biog_a04,                      &
+             asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04,              &
+             arosoa_a01,arosoa_a02,arosoa_a03,arosoa_a04,              &
+             totoa_a01,totoa_a02,totoa_a03,totoa_a04,                  &
+             biog_v1,biog_v2,biog_v3,biog_v4,                          &
+             ant_v1,ant_v2,ant_v3,ant_v4,                              &
+             smpa_v1,smpbb_v1,                              &
              ids,ide, jds,jde, kds,kde,                                &
              ims,ime, jms,jme, kms,kme,                                &
              its,ite, jts,jte, kts,kte                                  )

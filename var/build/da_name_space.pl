@@ -71,6 +71,8 @@ module_comm_nesting_dm
 module_state_description
 module_wrf_error
 module_wrf_quilt
+wrf_quilt_find_server
+wrf_quilt_server_ready
 multi_files
 nl_get_
 nl_set_

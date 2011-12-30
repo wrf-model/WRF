@@ -1088,6 +1088,7 @@ CONTAINS
 #endif
    END FUNCTION wrf_dm_sum_integer
 
+#ifdef HWRF
    SUBROUTINE wrf_dm_minloc_real ( val, lat, lon, z, idex, jdex )
       IMPLICIT NONE
 #ifndef STUBMPI
@@ -1158,6 +1159,7 @@ CONTAINS
       INTEGER idex, jdex, ierr
 #endif
    END SUBROUTINE wrf_dm_maxloc_real
+#endif
 
    INTEGER FUNCTION wrf_dm_bxor_integer ( inval )
       IMPLICIT NONE

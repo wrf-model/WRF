@@ -32,12 +32,15 @@ character*256 :: timestr
 ! Define some variables to save the NL physical option
 integer :: original_mp_physics, original_ra_lw_physics, original_ra_sw_physics, &
            original_sf_sfclay_physics, original_bl_pbl_physics, original_cu_physics, &
-           original_mp_zero_out, original_sf_surface_physics, original_ifsnow, &
-           original_icloud, original_isfflx
+           original_ifsnow, original_icloud
 
 REAL , DIMENSION(:,:,:) , ALLOCATABLE  :: ubdy3dtemp1 , vbdy3dtemp1 , tbdy3dtemp1 , pbdy3dtemp1 , qbdy3dtemp1
 REAL , DIMENSION(:,:,:) , ALLOCATABLE  :: ubdy3dtemp2 , vbdy3dtemp2 , tbdy3dtemp2 , pbdy3dtemp2 , qbdy3dtemp2
 REAL , DIMENSION(:,:,:) , ALLOCATABLE  :: mbdy2dtemp1,  mbdy2dtemp2 , wbdy3dtemp1 , wbdy3dtemp2
+
+REAL , DIMENSION(:,:,:) , ALLOCATABLE  :: u6_2, v6_2, w6_2, t6_2, ph6_2, p6
+REAL , DIMENSION(:,:,:,:) , ALLOCATABLE  :: moist6
+REAL , DIMENSION(:,:) , ALLOCATABLE  :: mu6_2, psfc6
 
 contains
 

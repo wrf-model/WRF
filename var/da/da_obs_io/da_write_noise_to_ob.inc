@@ -377,7 +377,7 @@ subroutine da_write_noise_to_ob (iv)
    end if
 
    !------------------------------------------------------------------
-   !  writing AIRS retrievals
+   ! [18] writing AIRS retrievals
    !------------------------------------------------------------------
    
    num_obs = 0
@@ -396,7 +396,7 @@ subroutine da_write_noise_to_ob (iv)
     end if
 
    !------------------------------------------------------------------
-   ! writing gpsref
+   ! [19] writing gpsref
    !------------------------------------------------------------------
 
    num_obs = 0
@@ -416,7 +416,7 @@ subroutine da_write_noise_to_ob (iv)
 
 
    !------------------------------------------------------------------
-   ! writing Radiance data:  
+   ! [20] writing Radiance data:  
    !------------------------------------------------------------------
 
    if (iv%num_inst > 0) then
@@ -445,6 +445,26 @@ subroutine da_write_noise_to_ob (iv)
          end do                           ! end loop for channel
       end do                            ! end loop for sensor
    end if
+
+   !------------------------------------------------------------------
+   ! [21] writing RAIN 
+   !------------------------------------------------------------------
+
+   num_obs = 0
+   if (iv%info(rain)%nlocal > 0) then
+      do n = 1, iv%info(rain)%nlocal
+         if (iv%info(rain)%proc_domain(1,n)) num_obs = num_obs + 1
+      end do
+   end if
+   call da_proc_sum_int(num_obs)
+   if (num_obs > 0 .and. rootproc) then
+      write(rand_unit,'(a20,i8)')'rain', num_obs
+      num_obs = 0
+      do k = 0,num_procs-1
+         call da_read_rand_unit(filename(k),iunit,num_obs,'rain',4)
+      end do
+   end if
+
 
    call da_free_unit (iunit)
 !rizvi   call da_free_unit (rand_unit)

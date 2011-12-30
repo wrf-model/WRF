@@ -2805,7 +2805,11 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 
      DO J = jts,jte
         DO I = its,ite
+#ifdef IDEAL_NMM_TC
+           nest%hres_fis(I,J)= 0.0 ! idealized
+#else
            nest%hres_fis(i,j)=9.81*nest%hres_avc(i,j)
+#endif
         ENDDO
      ENDDO
 
@@ -2840,13 +2844,15 @@ CONTAINS
     type(nmm_terrain), pointer :: tr
 
     nullify(tr)
+    avc_nest=0
+    lnd_nest=0
     
     tr=>terrain_for(level,input_type,io_form_input)
 
     ! select subdomain from big fine grid
     i_add = mod(j_start+1,2) 
-    DO j=1,jm
-       DO i=1,im
+    DO j=jds,jde
+       DO i=ids,ide
           avc_nest(i,j) = tr%avc(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
           lnd_nest(i,j) = tr%lnd(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
        END DO
@@ -2869,7 +2875,9 @@ CONTAINS
        CALL wrf_message(trim(message))
 
        CALL wrf_message('CHECK WRFSI CONFIGURATION AND INPUT HIGH RESOLUTION TOPOGRAPHY AND/OR GRID RATIO') 
+#ifndef IDEAL_NMM_TC
        CALL wrf_error_fatal('LATLON MISMATCH: ERROR READING static FILE FOR THE NEST')
+#endif
     ENDIF
 
     if(config_flags%terrain_smoothing==1) then

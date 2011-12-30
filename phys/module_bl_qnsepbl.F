@@ -144,7 +144,8 @@
      &                 ,TSK,QSFC,CHKLOWQ,THZ0,QZ0,UZ0,VZ0,CORF         &
      &                 ,LOWLYR,XLAND,SICE,SNOW                         &
      &                 ,TKE,EXCH_H,EXCH_M,USTAR,ZNT,EL_MYJ,PBLH,KPBL,CT &
-     &                 ,AKHS,AKMS,ELFLX                                &
+     &                 ,AKHS,AKMS,ELFLX,HFX                            & !JP HFX
+     &                 ,LM_BL89,WTHV_MF                                        &
      &                 ,RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN     &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                 ,IMS,IME,JMS,JME,KMS,KME                        &
@@ -167,21 +168,26 @@
       REAL,INTENT(IN) :: DT
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: HT,SICE,SNOW       &
-     &                                             ,TSK,XLAND
+     &                                             ,TSK,XLAND,HFX  
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: CWM,DZ     &
      &                                                     ,EXNER      &
      &                                                     ,PMID,PINT  &
      &                                                     ,QV,RHO     &
-     &                                                     ,T,TH,U,V   
+     &                                                     ,T,TH,U,V    
+
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN),OPTIONAL ::   &
+     &                                                      WTHV_MF    &
+     &                                                     ,LM_BL89 
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: PBLH
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: AKHS,AKMS
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME)                          &
-     &    ,INTENT(OUT) ::                      EL_MYJ                  &
-     &                                        ,RQCBLTEN,RQVBLTEN       &
+     &    ,INTENT(OUT) ::                                   EL_MYJ
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME)                          &
+     &    ,INTENT(INOUT) ::                    RQCBLTEN,RQVBLTEN       &
      &                                        ,RTHBLTEN                &
      &                                        ,RUBLTEN,RVBLTEN        
 !
@@ -205,9 +211,10 @@
       REAL :: AKHS_DENS,AKMS_DENS,APEX,DCDT,DELTAZ,DQDT,DTDIF,DTDT     &
      &       ,DTTURBL,DUDT,DVDT,EXNSFC,PSFC,PTOP,QFC1,QLOW,QOLD        &
      &       ,RATIOMX,RDTTURBL,RG,RWMSK,SEAMASK,THNEW,THOLD,TX         &
-     &       ,ULOW,VLOW,WMSK
+     &       ,ULOW,VLOW,WMSK,RLOW 
 !
-      REAL,DIMENSION(KTS:KTE) :: CWMK,PK,Q2K,QK,THEK,TK,UK,VK
+      REAL,DIMENSION(KTS:KTE) :: CWMK,PK,Q2K,QK,THEK,TK,UK,VK,&
+                                WTHV_MFK,LM_BL89K
 !
       REAL,DIMENSION(KTS:KTE-1) :: AKHK,AKMK,EL,RI,GH,S2
 !
@@ -324,7 +331,17 @@
 !***  TKE=0.5*(q**2) ==> q**2=2.*TKE
 !
             Q2K(K)=2.*TKE(I,KFLIP,J)
-!
+
+!****  buoyancy flux of mass flux shallow convection scheme
+! ww: need to modify NMM to use shallow conv
+            IF ( PRESENT (WTHV_MF) .AND. PRESENT (LM_BL89) ) THEN
+              WTHV_MFK(K)=WTHV_MF(I,KFLIP,J)
+              LM_BL89K(K)=LM_BL89(I,KFLIP,J)
+            ELSE
+              WTHV_MFK(K)=0.
+              LM_BL89K(K)=0.
+            ENDIF
+
 !***  COMPUTE THE HEIGHTS OF THE LAYER INTERFACES
 !
             ZHK(K)=ZINT(I,K,J)
@@ -347,7 +364,7 @@
 !***
           CALL MIXLEN(LMH,UK,VK,TK,THEK,QK,CWMK                        &
      &               ,Q2K,ZHK,USTAR(I,J),CORF(I,J),S2,GH,RI,EL         &
-     &               ,PBLH(I,J),LPBL(I,J),LMXL,CT(I,J)                 &
+     &               ,PBLH(I,J),LPBL(I,J),LMXL,CT(I,J),LM_BL89K        &
      &               ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -389,8 +406,8 @@
 !***
 !
           CALL PRODQ2(LMH,DTTURBL,USTAR(I,J),S2,RI,Q2K,EL,ZHK,AKMK,AKHK &
-     &               ,IDS,IDE,JDS,JDE,KDS,KDE                          &
-     &               ,IMS,IME,JMS,JME,KMS,KME                          &
+     &               ,WTHV_MFK,IDS,IDE,JDS,JDE,KDS,KDE                  &
+     &               ,IMS,IME,JMS,JME,KMS,KME                           &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
 !----------------------------------------------------------------------
@@ -421,12 +438,19 @@
 !
 !***  CONVERT SURFACE SENSIBLE TEMPERATURE TO POTENTIAL TEMPERATURE.
 !
+
       DO J=JTS,JTE
       DO I=ITS,ITE
         PSFC=PINT(I,LOWLYR(I,J),J)
-        THSK(I,J)=TSK(I,J)*(1.E5/PSFC)**CAPA
+        RLOW=PSFC/(R_D*T(I,1,J))          
+
+        THSK(I,J)=THZ0(I,J)
+        THSK(I,J)=HFX(I,J)/(AKHS(I,J)*RLOW*CP)+TH(I,1,J)
+
       ENDDO
       ENDDO
+
+
 !
 !----------------------------------------------------------------------
 !
@@ -516,9 +540,9 @@
             DQDT=(QK(KFLIP)-QOLD)*RDTTURBL
             DCDT=(CWMK(KFLIP)-CWM(I,K,J))*RDTTURBL
 !
-            RTHBLTEN(I,K,J)=DTDT
-            RQVBLTEN(I,K,J)=DQDT/(1.-QK(KFLIP))**2
-            RQCBLTEN(I,K,J)=DCDT
+            RTHBLTEN(I,K,J)=DTDT + RTHBLTEN(I,K,J)
+            RQVBLTEN(I,K,J)=DQDT/(1.-QK(KFLIP))**2 + RQVBLTEN(I,K,J)
+            RQCBLTEN(I,K,J)=DCDT + RQCBLTEN(I,K,J)
           ENDDO
 !
 !*** Begin debugging
@@ -622,8 +646,8 @@
             KFLIP=KTE+1-K
             DUDT=(UK(KFLIP)-U(I,K,J))*RDTTURBL
             DVDT=(VK(KFLIP)-V(I,K,J))*RDTTURBL
-            RUBLTEN(I,K,J)=DUDT
-            RVBLTEN(I,K,J)=DVDT
+            RUBLTEN(I,K,J)=DUDT + RUBLTEN(I,K,J)
+            RVBLTEN(I,K,J)=DVDT + RVBLTEN(I,K,J)
           ENDDO
 !
         ENDDO
@@ -647,7 +671,7 @@
 !   ******************************************************************
 !
      &(LMH,U,V,T,THE,Q,CWM,Q2,Z,USTAR,CORF                             &
-     &,S2,GH,RI,EL,PBLH,LPBL,LMXL,CT                                   &
+     &,S2,GH,RI,EL,PBLH,LPBL,LMXL,CT,LM_BL89                           &
      &,IDS,IDE,JDS,JDE,KDS,KDE                                         &
      &,IMS,IME,JMS,JME,KMS,KME                                         &
      &,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -664,7 +688,7 @@
 !
       INTEGER,INTENT(OUT) :: LMXL,LPBL
 !
-      REAL,DIMENSION(KTS:KTE),INTENT(IN) :: CWM,Q,Q2,T,THE,U,V
+      REAL,DIMENSION(KTS:KTE),INTENT(IN) :: CWM,Q,Q2,T,THE,U,V,LM_BL89
 !
       REAL,DIMENSION(KTS:KTE+1),INTENT(IN) :: Z
 !
@@ -835,7 +859,7 @@
 !
       DO K=LPBL+1,LMH-2
         SREL=MIN(((REL(K-1)+REL(K+1))*0.5+REL(K))*0.5,REL(K))
-        EL(K)=MAX(SREL*ELM(K),EPSL)
+        EL(K)=MAX(SREL*ELM(K),EPSL)      
       ENDDO
 !
 !----------------------------------------------------------------------
@@ -867,7 +891,7 @@
 !   *                                                                *
 !   ******************************************************************
 !
-     &(LMH,DTTURBL,USTAR,S2,RI,Q2,EL,Z,AKM,AKH                         &
+     &(LMH,DTTURBL,USTAR,S2,RI,Q2,EL,Z,AKM,AKH,WTHV_MF                 &
      &,IDS,IDE,JDS,JDE,KDS,KDE                                         &
      &,IMS,IME,JMS,JME,KMS,KME                                         &
      &,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -888,7 +912,11 @@
 !
       REAL,DIMENSION(KTS:KTE+1),INTENT(IN) :: Z
 !
+
+      REAL,DIMENSION(KTS:KTE),INTENT(IN) :: WTHV_MF
+
       REAL,DIMENSION(KTS:KTE),INTENT(INOUT) :: Q2
+
 !----------------------------------------------------------------------
 !***
 !***  LOCAL VARIABLES
@@ -917,7 +945,7 @@
 !***  BUOYANCY PRODUCTION
 !
         BPR=AKHL*EN2
-!
+!        BPR=BPR-WTHV_MF(K)
 !***  DISSIPATION
 !
         DIS=CEPS*(0.5*Q2L)**1.5/EL(K)

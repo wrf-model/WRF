@@ -9,6 +9,7 @@ CONTAINS
                              , scm_th_adv, scm_qv_adv                        &
                              , scm_ql_adv                                    &
                              , scm_wind_adv, scm_vert_adv                    &
+                             , scm_th_t_tend, scm_qv_t_tend                  &
                              , scm_soilT_force, scm_soilQ_force              &
                              , scm_force_th_largescale                       &
                              , scm_force_qv_largescale                       &
@@ -29,6 +30,7 @@ CONTAINS
                              , u_upstream_y, u_upstream_y_tend               &
                              , v_upstream_x, v_upstream_x_tend               &
                              , v_upstream_y, v_upstream_y_tend               &
+                             , th_t_tend, qv_t_tend                          &
                              , tau_x, tau_x_tend                             &
                              , tau_y, tau_y_tend                             &
                              ,th_largescale                                  &
@@ -76,7 +78,9 @@ CONTAINS
                                                 scm_force_th_largescale, &
                                                 scm_force_qv_largescale, &
                                                 scm_force_ql_largescale, &
-                                                scm_force_wind_largescale
+                                                scm_force_wind_largescale,&
+                                                scm_th_t_tend,&
+                                                scm_qv_t_tend
 
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN   ) :: z, th, qv, ql
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN   ) :: u, v
@@ -102,6 +106,8 @@ CONTAINS
    REAL, DIMENSION(num_force_layers), INTENT (IN) :: u_upstream_y_tend
    REAL, DIMENSION(num_force_layers), INTENT (IN) :: v_upstream_x_tend
    REAL, DIMENSION(num_force_layers), INTENT (IN) :: v_upstream_y_tend
+   REAL, DIMENSION(num_force_layers), INTENT (IN) :: th_t_tend 
+   REAL, DIMENSION(num_force_layers), INTENT (IN) :: qv_t_tend  
    REAL, DIMENSION(num_force_layers), INTENT (IN) :: tau_x_tend
    REAL, DIMENSION(num_force_layers), INTENT (IN) :: tau_y_tend
 
@@ -156,6 +162,7 @@ CONTAINS
    REAL                         :: u_x, u_y, v_x, v_y
    REAL, DIMENSION(kms:kme)     :: th_adv_tend, qv_adv_tend, ql_adv_tend
    REAL, DIMENSION(kms:kme)     :: u_adv_tend, v_adv_tend
+   REAL, DIMENSION(kms:kme)     :: th_t_tend_interp, qv_t_tend_interp
    REAL, DIMENSION(kms:kme)     :: dthdz, dudz, dvdz, dqvdz, dqldz
    REAL                         :: w
    REAL, DIMENSION(kms:kme)     :: w_dthdz, w_dudz, w_dvdz, w_dqvdz, w_dqldz
@@ -255,7 +262,9 @@ CONTAINS
      w_dvdz      = 0.0
      adv_timescale_x = 0.0
      adv_timescale_y = 0.0
-     
+     th_t_tend_interp =0.0
+     qv_t_tend_interp =0.0
+ 
 ! now interpolate forcing to model vertical grid
 
 !    if ( debug ) print*,' z u_base v_base '
@@ -374,8 +383,23 @@ CONTAINS
        endif
     endif
 
-! Large scale forcing starts here 1/8/10 WA
 
+
+    if ( scm_th_t_tend ) then
+       do k = kms,kme-1
+          th_t_tend_interp(k) = interp_0(th_t_tend,z_force,z(ids,k,jds),num_force_layers) 
+       enddo
+    endif
+
+    if ( scm_qv_t_tend ) then
+       do k = kms,kme-1
+          qv_t_tend_interp(k) = interp_0(qv_t_tend,z_force,z(ids,k,jds),num_force_layers) 
+          write(*,'(i3, f20.15)') k, qv_t_tend_interp(k)
+       enddo
+    endif
+
+
+! Large scale forcing starts here 1/8/10 WA
     if ( scm_force_th_largescale .or. scm_force_qv_largescale .or. scm_force_ql_largescale .or. scm_force_wind_largescale ) then
        do k = kms,kme-1
           ls_timescale(k) = interp_0(tau_largescale,z_force,z(ids,k,jds),num_force_layers)
@@ -475,10 +499,10 @@ CONTAINS
     if(j==1) CALL wrf_debug ( 100, message )
     do i = ims,ime
        thten(i,k,j) = thten(i,k,j) + th_adv_tend(k) +              &
-                      0.5*(w_dthdz(k) + w_dthdz(k+1))              &
+                      0.5*(w_dthdz(k) + w_dthdz(k+1)) + th_t_tend_interp(k)&
                       + th_ls_tend(k)
        qvten(i,k,j) = qvten(i,k,j) + qv_adv_tend(k) +              &
-                      0.5*(w_dqvdz(k) + w_dqvdz(k+1))              &
+                      0.5*(w_dqvdz(k) + w_dqvdz(k+1)) + qv_t_tend_interp(k)&
                       + qv_ls_tend(k)
        qlten(i,k,j) = qlten(i,k,j) + ql_adv_tend(k) +              &
                       0.5*(w_dqldz(k) + w_dqldz(k+1))              &
@@ -487,7 +511,7 @@ CONTAINS
                       0.5*(w_dudz(k) + w_dudz(k+1))                &
                       + u_ls_tend(k)
        vten(i,k,j)  = vten(i,k,j) + v_adv_tend(k) +                &
-                      0.5*(w_dvdz(k) + w_dvdz(k+1))                &
+                      0.5*(w_dvdz(k) + w_dvdz(k+1))                & 
                       + v_ls_tend(k)
     enddo
     enddo

@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define LINELEN 8192
+#define STRINGLEN 1024
 int drop_comment( char *);
 int change_to_lower( char *, int );
 
@@ -8,13 +10,13 @@ int
 main( int argc , char *argv[] )
 {
   FILE *fp ;
-  char linei[2048] ;
-  char lineo[8*2048] ;
-  char wrf_error_fatal_str[256] ;
-  char surface_driver_str[256] ;
-  char radiation_driver_str[256] ;
-  char cumulus_driver_str[256] ;
-  char pbl_driver_str[256] ;
+  char linei[LINELEN] ;
+  char lineo[8*LINELEN] ;
+  char wrf_error_fatal_str[STRINGLEN] ;
+  char surface_driver_str[STRINGLEN] ;
+  char radiation_driver_str[STRINGLEN] ;
+  char cumulus_driver_str[STRINGLEN] ;
+  char pbl_driver_str[STRINGLEN] ;
   char *p, *q, *r ;
   char firstp ;
   int state, ns, ns2 ;
@@ -29,7 +31,7 @@ main( int argc , char *argv[] )
     fprintf(stderr,"cannot open %s for reading\n",argv[1]) ;
     exit(2) ;
   }
-  while ( fgets( linei, 2048, fp ) != NULL ) {
+  while ( fgets( linei, LINELEN, fp ) != NULL ) {
     lineo[0] = '\0' ;
     if ( linei[0] != '#' ) drop_comment( linei ) ;
     inacall = 0 ;
@@ -77,7 +79,7 @@ main( int argc , char *argv[] )
                   ) {
           strcpy(lineo,p+3+ns) ;
           inparen = 1 ;
-          while ( fgets( linei, 2048, fp ) != NULL ) {
+          while ( fgets( linei, LINELEN, fp ) != NULL ) {
             for ( q = linei ; *q ; q++ ) {
               if (*q=='!') { *q = '\n' ; *(q+1) = '\0' ; break ; }
             }

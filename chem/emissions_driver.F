@@ -15,7 +15,7 @@ CONTAINS
          bioemdt,stepbioe,                                                 &
          config_flags,gmt,julday,alt,t_phy,moist,p8w,t8w,u_phy,            &
          v_phy,vvel,e_bio,p_phy,chem,rho_phy,dz8w,ne_area,emis_ant,        &
-         tsk,erod,g,emis_seas,emis_dust,tracer,                            &
+         emis_vol,tsk,erod,g,emis_seas,emis_dust,tracer,                   &
          ebu, ebu_in,mean_fct_agtf,mean_fct_agef,                          &
          mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,          &
          firesize_agsv,firesize_aggr,                                      &
@@ -25,14 +25,18 @@ CONTAINS
          sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,                &
          sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,                &   
          sebio_hcho,sebio_eth,sebio_ora2,sebio_co,sebio_nr,                &
+         sebio_sesq,sebio_mbo,                                             & 
          noag_grow,noag_nongrow,nononag,slai,                              &
          ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,                     &
          ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,                     &
          ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,             &
+         ebio_sesq, ebio_mbo,                                              & 
          ebio_c10h16,ebio_tol,ebio_bigalk,ebio_ch3oh,ebio_acet,            &
          ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,              &
          ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,ebio_so2,     &
          ebio_dms,                                                         &
+         clayfrac,sandfrac,dust_alpha,dust_gamma,dust_smtune,              &
+         snowh,zs,                                                         &
          ! stuff for MEGAN v2.04                                                 
          T2,swdown,                                                        &
          nmegan,EFmegan,                                                   &
@@ -52,9 +56,16 @@ CONTAINS
          lflash_data, ic_fr, cg_fr,                                        &
          flashrate_factor, flashrate_method, iccg_method,                  &
          cellcount_method,                                                 &
+         ktop, &
          !            end suff for lightning
          ! stuff for aircraft emissions
          emis_aircraft,                                                    &
+
+         ! stuff for GHG fluxes
+         vprm_par,rad_vprm,lambda_vprm,alpha_vprm,resp_vprm,               &
+         xtime,tslb,wet_in,rainc,rainnc,potevp,sfcevp,lu_index,            &
+         eghg_bio,biomt_par,emit_par,                                      &
+
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
@@ -62,15 +73,16 @@ CONTAINS
   USE module_configure
   USE module_state_description
   USE module_data_radm2
-  USE module_data_sorgam, only : mw_so4_aer
+  USE module_data_sorgam, only : mw_so4_aer,anthfac,factnumn,factnuma,factnumc
   USE module_model_constants, only : mwdry
   USE module_emissions_anthropogenics
   USE module_bioemi_simple
-  USE module_bioemi_beis313
+  USE module_bioemi_beis314
   USE module_bioemi_megan2
   USE module_aerosols_sorgam, only: sorgam_addemiss
   USE module_cbmz_addemiss
   USE gocart_dust
+  USE gocart_dust_afwa
   USE gocart_seasalt
   USE module_dms_emis
   USE module_mosaic_addemiss
@@ -78,6 +90,9 @@ CONTAINS
   USE module_add_emiss_burn
   USE module_plumerise1
   USE module_lightning_driver
+  USE module_aerosols_soa_vbs, only: soa_vbs_addemiss
+  USE module_ghg_fluxes 
+  
   IMPLICIT NONE
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -103,6 +118,9 @@ CONTAINS
    REAL, DIMENSION( ims:ime, 1:config_flags%kemit, jms:jme,num_emis_ant),&
          INTENT(IN ) ::                                                    &
          emis_ant
+   REAL, DIMENSION( ims:ime,  kms:kme, jms:jme,num_emis_vol),              &
+         INTENT(INOUT ) ::                                                 &
+         emis_vol
    REAL, DIMENSION( ims:ime, jms:jme),&
          INTENT(IN ) ::                                                 &
          dms_0,tsk,erup_beg,erup_end
@@ -153,9 +171,28 @@ CONTAINS
                                                      xland,                &
                                                      xlat,                 &
                                                      xlong,                &
-                                                     znt
+                                                     znt,                  &
+
+! Add for the GHG_tracer option
+                                                     rainc,                &
+                                                     rainnc,               &
+                                                     potevp,               &
+                                                     sfcevp,               &
+                                                     lu_index
+
+   REAL, DIMENSION( ims:ime , jms:jme )                  ,                 &
+         OPTIONAL,                                                         &
+         INTENT(IN   ) ::                                                  &
+                                                     clayfrac,             &
+                                                     sandfrac,             &
+                                                     snowh
+   REAL, INTENT(IN   ) ::                            dust_alpha,           &
+                                                     dust_gamma,           &
+                                                     dust_smtune
+  REAL, DIMENSION( config_flags%num_soil_layers ) ,                        &
+      INTENT(IN   ) ::                               zs
   REAL, DIMENSION( ims:ime, config_flags%num_soil_layers, jms:jme ) ,      &
-      INTENT(INOUT) ::                               smois
+      INTENT(INOUT ) ::                             smois, tslb    
 
    REAL,  DIMENSION( ims:ime , jms:jme )                   ,               &
          OPTIONAL,                                                         &
@@ -163,10 +200,12 @@ CONTAINS
                sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,      &
                sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,      &
                sebio_hcho,sebio_eth,sebio_ora2,sebio_co,sebio_nr,      &
+               sebio_sesq,sebio_mbo,                                   & 
                noag_grow,noag_nongrow,nononag,slai,                    &
                ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,           &
                ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,           &
                ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,   &
+               ebio_sesq,ebio_mbo,                                     & 
                ebio_c10h16,ebio_tol,ebio_bigalk, ebio_ch3oh,ebio_acet, &
                ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,    &
                ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,    &
@@ -222,13 +261,18 @@ CONTAINS
       INTEGER, INTENT(IN   )  ::  flashrate_method                           ! flashrate calculation method
       INTEGER, INTENT(IN   )  ::  iccg_method                                ! choosing ic to cg ratio method
       INTEGER, INTENT(IN   )  ::  cellcount_method                           ! choosing tile_wide or domain_wide method
+      INTEGER, DIMENSION( ims:ime , jms:jme ) , INTENT(IN) :: ktop
 !     end stuff for lightning NO
 
       REAL(KIND=8), INTENT(IN   ) ::                                   &
            curr_secs
 
       REAL :: gmtp,gmtm
-      Integer :: endhr,endmin,beghr,begmin
+      integer :: curr_hours,ivolcano
+      Integer :: endhr,endmin,beghr,begmin,ko,kk4,kl,k_initial,k_final
+      real :: emiss_ash_mass,emiss_ash_height,so2_mass,vert_mass_dist(kts:kte)
+      real :: eh
+      real :: area,x1,percen_mass_umbrel,base_umbrel,ashz_above_vent
 
       REAL, INTENT(IN   ) ::                                           &
            bioemdt, dtstep, dx, gmt, g
@@ -243,6 +287,18 @@ CONTAINS
       REAL, DIMENSION( ims:ime, 1:config_flags%kemit_aircraft, jms:jme,num_emis_aircraft), &
             OPTIONAL, INTENT(IN ) :: emis_aircraft 
 !
+! stuff for ghg tracer
+
+      REAL, DIMENSION(ims:ime, config_flags%vprm_class, jms:jme, num_vprm_par), INTENT(IN)   ::  vprm_par
+      REAL, DIMENSION(ims:ime, jms:jme, num_eghg_bio), INTENT(INOUT ) :: eghg_bio
+
+      REAL, DIMENSION(num_vprm_par) :: rad_vprm,lambda_vprm,alpha_vprm,resp_vprm
+      REAL, DIMENSION(ims:ime,jms:jme, num_wet_in), INTENT(IN)    :: wet_in
+      REAL, DIMENSION(num_biomt_par), INTENT(IN) :: biomt_par
+      REAL, DIMENSION(num_emit_par), INTENT(IN) :: emit_par
+      REAL, INTENT(IN) :: xtime
+! end ghg tracer stuff
+!
 ! Local variables...
 !
       INTEGER :: begday,endday,i, j, k, ksub, dust_emiss_active, seasalt_emiss_active
@@ -253,7 +309,7 @@ CONTAINS
 ! ..
 ! ..
 ! .. Intrinsic Functions ..
-      INTRINSIC max, min
+!     INTRINSIC max, min
 ! ..
 
 ! Flags for turning on or off sea salt and/or dust emissions...
@@ -261,6 +317,11 @@ CONTAINS
 ! As of NOV 2008 these only are used for MOSAIC and SORGAM
 ! gocart  dust and seasalt will only work for GOCART and SORGAM
 !
+       percen_mass_umbrel=.75
+       base_umbrel=.25    ! fraction
+
+      ivolcano=0
+      area=dx*dx
       dust_emiss_active    = 0
       seasalt_emiss_active = 0
       if(config_flags%dust_opt >= 2 )dust_emiss_active    = 1
@@ -269,18 +330,170 @@ CONTAINS
 ! Setup the timing flags...
 ! (methodology is adapated from module_radiation_driver.F)
 !
-      if(config_flags%emiss_opt == 9)then
+      if(config_flags%emiss_opt_vol == 1 .or. config_flags%emiss_opt_vol == 2)then
 ! for volcanic ash transport, vash variables are in mix ratio here...
       do_ex_volcanoe = .false.
       gmtp=curr_secs/3600.
+      curr_hours=curr_secs/3600.
       gmtp=mod(gmt+gmtp,24.)
          gmtm=curr_secs/60.
          gmtm=mod(gmtm,60.)
          write(0,*) 'gmtp,gmtm,curr_secs = ',gmtp,gmtm,curr_secs
       do j=jts,jte
       do i=its,ite
-         if(emis_ant(i,kts,j,p_e_vash1).le.0.)cycle
-! ! erup_beg is julday*1000+hour
+        if(erup_end(i,j).le.0)cycle
+        so2_mass=1.5e4*3600.*1.e9/64./area
+          if(curr_hours.ge.9 .and. curr_hours.lt.19)then
+             emiss_ash_mass=7.41e9/area*1.e9/(3600.*6)
+             emiss_ash_height=7333.  !9000.
+!            eh=2600.*(emiss_ash_height*.0005)**4.1494
+             eh=5.71e5
+             emiss_ash_mass=eh*1.e9/area
+! Brad's values
+             emiss_ash_mass=5.71e5/area*1.e9
+             emiss_ash_height=7334.
+             
+             write(0,*)'adjusted ash mass = ',emiss_ash_mass
+          else if(curr_hours.ge.19 .and. curr_hours.lt.28)then
+             emiss_ash_mass=1.56e9/area*1.e9/(3600.*12)
+             emiss_ash_height=3834
+!            eh=2600.*(emiss_ash_height*.0005)**4.1494
+             eh=3.87e4
+             emiss_ash_mass=eh*1.e9/area
+
+! Brad's values
+             emiss_ash_mass=3.87e4/area*1.e9
+             emiss_ash_height=3834.
+             write(0,*)'adjusted ash mass = ',emiss_ash_mass
+          else if(curr_hours.ge.28 .and. curr_hours.lt.35)then
+             emiss_ash_mass=1.31e9/area*1.e9/(3600.*7)
+             emiss_ash_height=4334.
+!            eh=2600.*(emiss_ash_height*.0005)**4.1494
+             eh=6.44e4
+             emiss_ash_mass=eh*1.e9/area
+
+! Brad's values
+             emiss_ash_mass=6.44e4/area*1.e9
+             emiss_ash_height=4334.
+             write(0,*)'adjusted ash mass = ',emiss_ash_mass
+          else if(curr_hours.ge.35 .and. curr_hours.lt.69)then
+             emiss_ash_mass=1.31e9/area*1.e9/(3600.*34)
+!            emiss_ash_height=3334.
+             emiss_ash_height=4334.
+!            eh=2600.*(emiss_ash_height*.0005)**4.1494
+!            eh=2.17e4
+             eh=6.44e4
+             emiss_ash_mass=eh*1.e9/area
+
+! Brad's values
+             emiss_ash_mass=6.44e4/area*1.e9
+             emiss_ash_height=4334.
+             write(0,*)'adjusted ash mass = ',emiss_ash_mass
+          else if(curr_hours.ge.69 .and. curr_hours.lt.102)then
+             emiss_ash_mass=4.4e9/area*1.e9/(3600.*15)
+             emiss_ash_height=6584.
+!            eh=2600.*(emiss_ash_height*.0005)**4.1494
+             eh=3.65e5
+             emiss_ash_mass=eh*1.e9/area
+
+! Brad's values
+             emiss_ash_mass=3.65e5/area*1.e9
+             emiss_ash_height=6584.
+             write(0,*)'adjusted ash mass = ',emiss_ash_mass
+          else if(curr_hours.ge.102 )then
+             emiss_ash_mass=1.56e9/area*1.e9/(3600.*15)
+             emiss_ash_height=3334.
+!            eh=2600.*(emiss_ash_height*.0005)**4.1494
+             eh=2.17e4
+             emiss_ash_mass=eh*1.e9/area
+
+! Brad's values
+             emiss_ash_mass=2.17e4/area*1.e9
+             emiss_ash_height=3334.
+             write(0,*)'adjusted ash mass = ',emiss_ash_mass
+          endif ! curr_hours
+       if(curr_hours.eq.9 .or. curr_hours.eq.19 .or. curr_hours.eq.28 &
+          .or. curr_hours.eq.35 .or. curr_hours.eq.69 .or. curr_hours.eq.102 )then
+! volcanic emissions
+!       
+             ashz_above_vent=emiss_ash_height+z_at_w(i,kts,j)
+!            write(6,*)'found and adjusted active volcano at j,kts,kpe = ',j,kts,kte 
+!            write(6,*)emiss_ash_height,emiss_ash_mass,ashz_above_vent
+             do k=kte-1,kts,-1
+!               write(6,*)k,z_at_w(i,k,j)
+                if(z_at_w(i,k,j) < ashz_above_vent)then
+                  k_final=k+1
+                  exit
+                endif !inner
+             enddo
+             do k=kte-1,kts,-1
+               if(z_at_w(i,k,j) < (1.-base_umbrel)*ashz_above_vent)then
+                  k_initial=k
+                  exit
+                endif !inner
+             enddo
+             vert_mass_dist=0.
+             write(0,*)k_initial,k_final,kte
+           !- parabolic vertical distribution between k_initial and k_final
+               kk4 = k_final-k_initial+2
+               do ko=1,kk4-1
+                   kl=ko+k_initial-1
+                   vert_mass_dist(kl) = 6.*percen_mass_umbrel* float(ko)    &
+                                /float(kk4)**2 * (1. - float(ko)/float(kk4))
+               enddo
+               if(sum(vert_mass_dist(kts:kte)) .ne. percen_mass_umbrel) then
+                 x1= ( percen_mass_umbrel- sum(vert_mass_dist(kts:kte)) )   &
+                      /float(k_final-k_initial+1)
+                   do ko=k_initial,k_final
+!- values between 0 and 1.
+                     vert_mass_dist(ko) = vert_mass_dist(ko)+ x1
+                   enddo
+               endif !inner
+
+!linear detrainment from vent to base of umbrella
+               do ko=1,k_initial-1
+                  vert_mass_dist(ko)=float(ko)/float(k_initial-1)
+               enddo
+               x1=sum(vert_mass_dist(1:k_initial-1))
+               do ko=1,k_initial-1
+                   vert_mass_dist(ko)=(1.-percen_mass_umbrel)*vert_mass_dist(ko)/x1
+               enddo
+               do ko=1,k_final
+                 emis_vol(i,ko,j,p_e_vash1)=.22*vert_mass_dist(ko)*emiss_ash_mass
+                 emis_vol(i,ko,j,p_e_vash2)=.05*vert_mass_dist(ko)*emiss_ash_mass
+                 emis_vol(i,ko,j,p_e_vash3)=.4*vert_mass_dist(ko)*emiss_ash_mass
+                 emis_vol(i,ko,j,p_e_vash4)=.05*vert_mass_dist(ko)*emiss_ash_mass
+                 emis_vol(i,ko,j,p_e_vash5)=.245*vert_mass_dist(ko)*emiss_ash_mass
+                 emis_vol(i,ko,j,p_e_vash6)=.12*vert_mass_dist(ko)*emiss_ash_mass
+                 emis_vol(i,ko,j,p_e_vash7)=.11*vert_mass_dist(ko)*emiss_ash_mass
+                 emis_vol(i,ko,j,p_e_vash8)=.08*vert_mass_dist(ko)*emiss_ash_mass
+                 emis_vol(i,ko,j,p_e_vash9)=.05*vert_mass_dist(ko)*emiss_ash_mass
+                 emis_vol(i,ko,j,p_e_vash10)=.035*vert_mass_dist(ko)*emiss_ash_mass
+                 if(config_flags%emiss_opt_vol == 2)emis_vol(i,ko,j,p_e_vso2)=vert_mass_dist(ko)*so2_mass
+               enddo
+                 do ko=k_final+1,kte
+                   emis_vol(i,ko,j,p_e_vash1)=0.
+                   emis_vol(i,ko,j,p_e_vash2)=0.
+                   emis_vol(i,ko,j,p_e_vash3)=0.
+                   emis_vol(i,ko,j,p_e_vash4)=0.
+                   emis_vol(i,ko,j,p_e_vash5)=0.
+                   emis_vol(i,ko,j,p_e_vash6)=0.
+                   emis_vol(i,ko,j,p_e_vash7)=0.
+                   emis_vol(i,ko,j,p_e_vash8)=0.
+                   emis_vol(i,ko,j,p_e_vash9)=0.
+                   emis_vol(i,ko,j,p_e_vash10)=0.
+                   if(config_flags%emiss_opt_vol == 2)emis_vol(i,ko,j,p_e_vso2)=0.
+                   enddo
+          endif ! curr_hours
+      enddo ! i
+      enddo ! j
+!
+!
+! now we got volcanoc emissions, they need to be added to chem array
+!
+      do j=jts,jte
+      do i=its,ite
+         if(emis_vol(i,kts,j,p_e_vash1).le.0.)cycle
 !
 !   erup_end is continuation in minutes
 !
@@ -292,51 +505,109 @@ CONTAINS
          endmin=00.
          write(0,*)'beghr,endhr = ',beghr,endhr,erup_beg(i,j),erup_end(i,j)
          write(0,*)'begday,endday,julday = ',begday,endday,julday
-         if(begday.ge.julday .and. beghr.le.gmtp)then
+         if(julday.ge.begday .and. julday.le.endday)then
             write(0,*)'endhr,endmin,beghr,begmin = ',endhr,endmin,beghr,begmin
             if(endhr.lt.int(gmtp) .and. endday.le.julday)then
                write(0,*) 'not do volcano stuf at gmtp = ',gmtp
+               emis_vol(i,k,j,1:num_emis_vol)=0.
             ENDIF
             if(endhr.eq.int(gmtp))then
                if(endmin.le.gmtm)then
-                  write(0,*) 'do volcano stuf at gmtp,endmin = ',gmtp,endmin
+                  write(0,*) 'do volcano stuff1 at gmtp,endmin = ',gmtp,endmin
+                  ivolcano=1
+               endif !endmin.le.gmtm
+            endif !endhr.eq.int(gmtp)
+          endif ! julday.ge.begday .and. julday.le.endday
+            IF(endhr.gt.gmtp .or. ((endhr.le.gmtp) .and. (endday.gt.julday)))then
+               write(0,*) 'do volcano stuff2 at gmtp = ',gmtp,endmin
+            endif
+      volc_select:  SELECT CASE(config_flags%chem_opt)
+      CASE (GOCART_SIMPLE,MOZCART_KPP,GOCARTRADM2,GOCARTRACM_KPP,GOCARTRADM2_KPP)
+               write(0,*)'case gocart'
+        CALL wrf_debug(15,'Adding volcanic emissions')
                   do k=kts,kte
-                   conv=alt(i,k,j)*dtstep/dz8w(i,k,j)
-                   chem(i,k,j,p_vash_1)=chem(i,k,j,p_vash_1)+emis_ant(i,k,j,p_e_vash1)*conv
-                   chem(i,k,j,p_vash_2)=chem(i,k,j,p_vash_2)+emis_ant(i,k,j,p_e_vash2)*conv
-                   chem(i,k,j,p_vash_3)=chem(i,k,j,p_vash_3)+emis_ant(i,k,j,p_e_vash3)*conv
-                   chem(i,k,j,p_vash_4)=chem(i,k,j,p_vash_4)+emis_ant(i,k,j,p_e_vash4)*conv
-                   chem(i,k,j,p_vash_5)=chem(i,k,j,p_vash_5)+emis_ant(i,k,j,p_e_vash5)*conv
-                   chem(i,k,j,p_vash_6)=chem(i,k,j,p_vash_6)+emis_ant(i,k,j,p_e_vash6)*conv
-                   chem(i,k,j,p_vash_7)=chem(i,k,j,p_vash_7)+emis_ant(i,k,j,p_e_vash7)*conv
-                   chem(i,k,j,p_vash_8)=chem(i,k,j,p_vash_8)+emis_ant(i,k,j,p_e_vash8)*conv
-                   chem(i,k,j,p_vash_9)=chem(i,k,j,p_vash_9)+emis_ant(i,k,j,p_e_vash9)*conv
-                   chem(i,k,j,p_vash_10)=chem(i,k,j,p_vash_10)+emis_ant(i,k,j,p_e_vash10)*conv
+                    conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                    chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                   &
+                     +emis_vol(i,k,j,p_e_vso2)*conv
                   enddo
-               endif
-            ELSE IF(endhr.gt.gmtp .or. ((endhr.le.gmtp) .and. (endday.gt.julday)))then
-               write(0,*) 'do volcano stuuf at gmtp = ',gmtp,endmin
                do k=kts,kte
                 conv=alt(i,k,j)*dtstep/dz8w(i,k,j)
-                chem(i,k,j,p_vash_1)=chem(i,k,j,p_vash_1)+emis_ant(i,k,j,p_e_vash1)*conv
-                chem(i,k,j,p_vash_2)=chem(i,k,j,p_vash_2)+emis_ant(i,k,j,p_e_vash2)*conv
-                chem(i,k,j,p_vash_3)=chem(i,k,j,p_vash_3)+emis_ant(i,k,j,p_e_vash3)*conv
-                chem(i,k,j,p_vash_4)=chem(i,k,j,p_vash_4)+emis_ant(i,k,j,p_e_vash4)*conv
-                chem(i,k,j,p_vash_5)=chem(i,k,j,p_vash_5)+emis_ant(i,k,j,p_e_vash5)*conv
-                chem(i,k,j,p_vash_6)=chem(i,k,j,p_vash_6)+emis_ant(i,k,j,p_e_vash6)*conv
-                chem(i,k,j,p_vash_7)=chem(i,k,j,p_vash_7)+emis_ant(i,k,j,p_e_vash7)*conv
-                chem(i,k,j,p_vash_8)=chem(i,k,j,p_vash_8)+emis_ant(i,k,j,p_e_vash8)*conv
-                chem(i,k,j,p_vash_9)=chem(i,k,j,p_vash_9)+emis_ant(i,k,j,p_e_vash9)*conv
-                chem(i,k,j,p_vash_10)=chem(i,k,j,p_vash_10)+emis_ant(i,k,j,p_e_vash10)*conv
+                chem(i,k,j,p_p25)=chem(i,k,j,p_p25)+.5*emis_vol(i,k,j,p_e_vash4)*conv
+                chem(i,k,j,p_p10)=chem(i,k,j,p_p10)     &
+                                 +.5*emis_vol(i,k,j,p_e_vash4)*conv &
+                                 +emis_vol(i,k,j,p_e_vash3)*conv    &
+                                 +.5*emis_vol(i,k,j,p_e_vash2)*conv
                enddo
-            ENDIF
-         endif
+      CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACMSORG_KPP,RACMSORG_AQ,RACM_ESRLSORG_KPP)
+        write(0,*)'do later'
+                  do k=kts,kte
+                    conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                    chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                 &
+                     +emis_vol(i,k,j,p_e_vso2)*conv
+! aerosols for MADE/SORGAM
+                    conv=alt(i,k,j)*dtstep/dz8w(i,k,j)
+                    chem(i,k,j,p_p25i) = chem(i,k,j,p_p25i)                &
+                     +.25*emis_vol(i,k,j,p_e_vash4)*conv
+                    chem(i,k,j,p_nu0) = chem(i,k,j,p_nu0)                  &
+                     +.25*anthfac*factnumn*emis_vol(i,k,j,p_e_vash4)*conv
+                    chem(i,k,j,p_ac0) = chem(i,k,j,p_ac0)                  &
+                     +.75*anthfac*factnuma*emis_vol(i,k,j,p_e_vash4)*conv
+                    chem(i,k,j,p_p25j) = chem(i,k,j,p_p25j)                &
+                     +.75*emis_vol(i,k,j,p_e_vash4)*conv
+                    chem(i,k,j,p_antha) = chem(i,k,j,p_antha)              &
+                     +emis_vol(i,k,j,p_e_vash3)*conv !                      &
+!                     +.5*emis_vol(i,k,j,p_e_vash2)*conv
+                    chem(i,k,j,p_corn) = chem(i,k,j,p_corn)                &
+                     +anthfac*factnumc*emis_vol(i,k,j,p_e_vash3)*conv !     & 
+!                     +anthfac*factnumc*.5*emis_vol(i,k,j,p_e_vash2)*conv
+                  enddo
+      CASE (CHEM_VOLC)
+               write(0,*)'case chem_volc'
+               do k=kts,kte
+                 conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                 chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)                   &
+                  +emis_vol(i,k,j,p_e_vso2)*conv
+               enddo
+               do k=kts,kte
+                conv=alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_vash_1)=chem(i,k,j,p_vash_1)+emis_vol(i,k,j,p_e_vash1)*conv
+                chem(i,k,j,p_vash_2)=chem(i,k,j,p_vash_2)+emis_vol(i,k,j,p_e_vash2)*conv
+                chem(i,k,j,p_vash_3)=chem(i,k,j,p_vash_3)+emis_vol(i,k,j,p_e_vash3)*conv
+                chem(i,k,j,p_vash_4)=chem(i,k,j,p_vash_4)+emis_vol(i,k,j,p_e_vash4)*conv
+                chem(i,k,j,p_vash_5)=chem(i,k,j,p_vash_5)+emis_vol(i,k,j,p_e_vash5)*conv
+                chem(i,k,j,p_vash_6)=chem(i,k,j,p_vash_6)+emis_vol(i,k,j,p_e_vash6)*conv
+                chem(i,k,j,p_vash_7)=chem(i,k,j,p_vash_7)+emis_vol(i,k,j,p_e_vash7)*conv
+                chem(i,k,j,p_vash_8)=chem(i,k,j,p_vash_8)+emis_vol(i,k,j,p_e_vash8)*conv
+                chem(i,k,j,p_vash_9)=chem(i,k,j,p_vash_9)+emis_vol(i,k,j,p_e_vash9)*conv
+                chem(i,k,j,p_vash_10)=chem(i,k,j,p_vash_10)+emis_vol(i,k,j,p_e_vash10)*conv
+               enddo
+      CASE (CHEM_VASH)
+               write(0,*)'case chem_vash'
+               do k=kts,kte
+                conv=alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_vash_1)=chem(i,k,j,p_vash_1)+emis_vol(i,k,j,p_e_vash1)*conv
+                chem(i,k,j,p_vash_2)=chem(i,k,j,p_vash_2)+emis_vol(i,k,j,p_e_vash2)*conv
+                chem(i,k,j,p_vash_3)=chem(i,k,j,p_vash_3)+emis_vol(i,k,j,p_e_vash3)*conv
+                chem(i,k,j,p_vash_4)=chem(i,k,j,p_vash_4)+emis_vol(i,k,j,p_e_vash4)*conv
+                chem(i,k,j,p_vash_5)=chem(i,k,j,p_vash_5)+emis_vol(i,k,j,p_e_vash5)*conv
+                chem(i,k,j,p_vash_6)=chem(i,k,j,p_vash_6)+emis_vol(i,k,j,p_e_vash6)*conv
+                chem(i,k,j,p_vash_7)=chem(i,k,j,p_vash_7)+emis_vol(i,k,j,p_e_vash7)*conv
+                chem(i,k,j,p_vash_8)=chem(i,k,j,p_vash_8)+emis_vol(i,k,j,p_e_vash8)*conv
+                chem(i,k,j,p_vash_9)=chem(i,k,j,p_vash_9)+emis_vol(i,k,j,p_e_vash9)*conv
+                chem(i,k,j,p_vash_10)=chem(i,k,j,p_vash_10)+emis_vol(i,k,j,p_e_vash10)*conv
+               enddo
+      CASE DEFAULT
+      END SELECT volc_select
+!!!!!!
       enddo
       enddo
-      ENDIF
+      ENDIF! config_flags%emiss_opt_vol == 1 .or. config_flags%emiss_opt_vol == 2
 
       do_plumerisefire = .false.
-      IF ( config_flags%biomass_burn_opt == BIOMASSB_MOZC .OR. config_flags%biomass_burn_opt == BIOMASSB ) then
+      IF ( config_flags%biomass_burn_opt == BIOMASSB_MOZC .OR. &
+           config_flags%biomass_burn_opt == BIOMASSB_MOZ  .OR. &
+           config_flags%biomass_burn_opt == BIOMASSB_GHG  .OR. &
+           config_flags%biomass_burn_opt == BIOMASSB ) then
         IF ( ktau==1 ) then
            do_plumerisefire = .true.
         ELSE IF ( adapt_step_flag ) THEN
@@ -376,7 +647,7 @@ CONTAINS
            firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr,        &
            config_flags, t_phy,moist,                                      &
            rho_phy,vvel,u_phy,v_phy,p_phy,                                 &
-           emis_ant,z_at_w,z,                                              &
+           emis_ant,z_at_w,z,config_flags%scale_fire_emiss,                &
            ids,ide, jds,jde, kds,kde,                                      &
            ims,ime, jms,jme, kms,kme,                                      &
            its,ite, jts,jte, kts,kte                                       )
@@ -430,6 +701,15 @@ CONTAINS
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
+      CASE (DUSTGOCARTAFWA)
+        CALL wrf_debug(15,'AFWA modified Gocart dust emissions')
+        call gocart_dust_afwa_driver(ktau,dtstep,config_flags,julday,alt,t_phy,moist,u_phy,  &
+         v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,dustin,snowh,zs,   &
+         ivgtyp,isltyp,vegfra,xland,xlat,xlong,gsw,dx,g,emis_dust,         &
+         ust,znt,clayfrac,sandfrac,dust_alpha,dust_gamma,dust_smtune,      &
+         ids,ide, jds,jde, kds,kde,                                        &
+         ims,ime, jms,jme, kms,kme,                                        &
+         its,ite, jts,jte, kts,kte                                         )
       CASE DEFAULT 
         if(dust_emiss_active.eq.1) then
             CALL wrf_debug(15,'MOSAIC or SORGAM dust emissions')
@@ -455,7 +735,7 @@ CONTAINS
 !!! ***********   FIRE AND CHEM ****************************************
 !
     fire_select:  SELECT CASE(config_flags%biomass_burn_opt)
-     CASE (BIOMASSB,BIOMASSB_MOZC)
+     CASE (BIOMASSB,BIOMASSB_MOZC,BIOMASSB_MOZ,BIOMASSB_GHG)
 !      if( do_plumerisefire )then
 !         CALL wrf_debug(15,'fire emissions: calling biomassb')
 !         write(0,*)ktau,stepfirepl
@@ -495,32 +775,35 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
        endif
-     CASE (BEIS313)
+     CASE (BEIS314)
        if( do_bioemiss ) then
-         beis313_check_mechanism_ok: SELECT CASE(config_flags%chem_opt)
-            CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
-                  RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_KPP,RACM_ESRLSORG_KPP, &
+         beis314_check_mechanism_ok: SELECT CASE(config_flags%chem_opt) 
+            CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
+                  RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ,RACMSORG_AQCHEM,            &
+                  RACMSORG_KPP,RACM_ESRLSORG_KPP, RACM_SOA_VBS_KPP,                           &
                   CBM4_KPP, NMHC9_KPP, GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
             CASE DEFAULT 
                CALL wrf_error_fatal( &
-                  "emissions_driver: beis3.1.3 biogenic emis. implemented for RADM2 & RACM only")
-         END SELECT beis313_check_mechanism_ok
-         CALL wrf_debug(15,'biogenic emissions: calling beis3.1.3')
-         call bio_emissions_beis313(id,config_flags,ktau,curr_secs,    &
+                  "emissions_driver: beis3.1.4 biogenic emis. implemented for RADM2 & RACM only")
+         END SELECT beis314_check_mechanism_ok
+         CALL wrf_debug(15,'biogenic emissions: calling beis3.1.4')
+         call bio_emissions_beis314(id,config_flags,ktau,curr_secs,    &
                dtstep,julday,gmt,xlat,xlong,t_phy,p_phy,gsw,           &
                sebio_iso,sebio_oli,sebio_api,sebio_lim,sebio_xyl,      &
                sebio_hc3,sebio_ete,sebio_olt,sebio_ket,sebio_ald,      &
                sebio_hcho,sebio_eth,sebio_ora2,sebio_co,sebio_nr,      &
+               sebio_sesq,sebio_mbo,                                   &
                noag_grow,noag_nongrow,nononag,slai,                    &
                ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,           &
                ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,           &
                ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,   &
+               ebio_sesq,ebio_mbo,                                     &
                ids,ide, jds,jde, kds,kde,                              &
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
        endif
 
-     CASE (MEGAN2) 
+     CASE (MEGAN2)
        if(ktau.eq.1.or.mod(ktau,stepbioe).eq.0)then                        
          CALL wrf_debug(15,'biogenic emissions: calling megan v2.04')  
          call bio_emissions_megan2(id,config_flags,ktau,dtstep,        &
@@ -559,9 +842,9 @@ CONTAINS
 !!! **************** END BIOGENICS, ADD EMISSIONS FOR VARIOUS PACKAGES
 !
     gas_addemiss_select: SELECT CASE(config_flags%chem_opt)
-    CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
-          RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_KPP, &
-          RACM_ESRLSORG_KPP, MOZART_KPP, MOZCART_KPP)
+    CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
+          RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM, RACMSORG_KPP, RACM_SOA_VBS_KPP, & 
+          RACM_ESRLSORG_KPP, MOZART_KPP, MOZCART_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP )
        IF(config_flags%emiss_inpt_opt /= 3 ) then
        IF(config_flags%kemit .GT. kte-ksub) THEN
          k=config_flags%kemit
@@ -569,24 +852,23 @@ CONTAINS
          CALL WRF_MESSAGE (message)
        ENDIF
        call wrf_debug(15,'emissions_driver calling add_anthropogenics')
-       call add_anthropogenics(id,dtstep,dz8w,config_flags,rho_phy,chem,&
-            emis_ant,emis_aircraft,                                     &
+       call add_anthropogenics(id,dtstep,dz8w,config_flags,rho_phy,alt, &
+            chem, emis_ant,emis_aircraft,                               &
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
        call wrf_debug(15,'emissions_driver calling add_biogenics')
        ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
        ! module
-       if ( config_flags%bio_emiss_opt .ne. megan2 ) then 
        call add_biogenics(id,dtstep,dz8w,config_flags, rho_phy,chem,    &
             e_bio,ne_area,                                              &
             ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
             ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,               &
             ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,       &
+            ebio_sesq,ebio_mbo,                                         & 
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
-       end if 
        IF(config_flags%emiss_inpt_opt == EMISS_INPT_MOZCEM ) then
          do j=jts,jte  
            do i=its,ite  
@@ -596,13 +878,30 @@ CONTAINS
                 chem(i,k,j,p_p25) = chem(i,k,j,p_p25) + emis_ant(i,k,j,p_e_pm_25)*conv
                 chem(i,k,j,p_bc1) = chem(i,k,j,p_bc1) + emis_ant(i,k,j,p_e_bc)*conv
                 chem(i,k,j,p_oc1) = chem(i,k,j,p_oc1) + emis_ant(i,k,j,p_e_oc)*conv
-                chem(i,k,j,p_so4) = chem(i,k,j,p_so4) + emis_ant(i,k,j,p_e_sulf)*conv
+                chem(i,k,j,p_sulf) = chem(i,k,j,p_sulf) + emis_ant(i,k,j,p_e_sulf)*conv*mwdry/mw_so4_aer*1.e-3
              end do
            end do
          end do
        end if 
 
        end if ! emiss_inpt_opt /= 3
+
+    IF(config_flags%emiss_opt == 10 ) then
+       do j=jts,jte
+          do i=its,ite
+             do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+
+                chem(i,k,j,p_voca)  = chem(i,k,j,p_voca)                       &
+                     +emis_ant(i,k,j,p_e_co_a)*conv*0.08*28./250.
+                chem(i,k,j,p_vocbb)  = chem(i,k,j,p_vocbb)                       &
+                     +emis_ant(i,k,j,p_e_co_bb)*conv*0.08*28./250.
+
+             end do
+          end do
+       end do
+     endif
+
 !For SAPRC99 need to define SAPRC99_addemiss_anthro and SAPRC99_addemiss_bio
 !so did not add saprcnov packages here
     CASE (CBMZ, CBMZ_BB, CBMZ_BB_KPP, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, &
@@ -623,13 +922,11 @@ CONTAINS
        call wrf_debug(15,'emissions_driver calling cbmz_addemiss_bio')
        ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
        ! module
-       if ( config_flags%bio_emiss_opt .ne. megan2 ) then 
          call cbmz_addemiss_bio( id, dtstep, dz8w, config_flags,         &
               rho_phy, chem, e_bio, ne_area, emis_ant(ims,kms,jms,p_e_iso),&
               ids,ide, jds,jde, kds,kde,                                 &
               ims,ime, jms,jme, kms,kme,                                 &
               its,ite, jts,jte, kts,kte                                  )
-       endif
 
     CASE (CHEM_TRACER)
        do j=jts,jte  
@@ -651,6 +948,57 @@ CONTAINS
              end do
           end do
        end do
+!
+    CASE(CO2_TRACER,GHG_TRACER)  ! for ghg_tracer package
+
+      ! Update the biospheric CO2 fluxes
+   CALL VPRM(            ids,ide, jds,jde,                   &
+                         ims,ime, jms,jme,                   &
+                         its,ite, jts,jte,                   &
+
+                         vprm_par,rad_vprm,lambda_vprm,      &
+                         alpha_vprm,resp_vprm,               &
+                         config_flags%vprm_class,T2,swdown,  &
+                         eghg_bio                            )
+
+  ! Update the biospheric CH4 fluxes if the GHG option is called
+   if (p_ch4 .GT. 1) then
+
+   CALL KAPLAN(          ids,ide, jds,jde,                                        &
+                         ims,ime, jms,jme,                                        &
+                         its,ite, jts,jte,                                        &
+
+                         xtime, tslb, smois, wet_in,                              &
+                         isltyp,tsk,eghg_bio,                                     &
+                         config_flags%num_soil_layers,config_flags%wpeat,         &
+                         config_flags%wflood                                      )
+
+   CALL SOILUPTAKE(      ids,ide, jds,jde,                                        &
+                         ims,ime, jms,jme,                                        &
+                         its,ite, jts,jte,                                        &
+
+                         smois, isltyp, eghg_bio,                                 &
+                         rainc, rainnc,                                           &
+                         potevp, sfcevp, lu_index, T2, xtime,                     &
+                         config_flags%num_soil_layers, wet_in                     )
+
+   CALL termite(         ids,ide, jds,jde,                                        &
+                         ims,ime, jms,jme,                                        &
+                         its,ite, jts,jte,                                        &
+
+                         xtime,eghg_bio,ivgtyp,                                   &
+                         biomt_par,emit_par                                       )
+
+   end if
+
+   ! Add all the GHG fluxes to chem species
+   CALL add_ghg_fluxes(  ids,ide, jds,jde, kds,kde,          &
+                         ims,ime, jms,jme, kms,kme,          &
+                         its,ite, jts,jte, kts,kte,          &
+
+                         dtstep,dz8w,config_flags,rho_phy,  &
+                         chem,emis_ant,eghg_bio              )
+!**************************************************************************************************
 
     CASE (SAPRC99_KPP) !FIX FOR SAPRC07A
      if(config_flags%emiss_opt == 13 ) then
@@ -903,24 +1251,23 @@ CONTAINS
          CALL WRF_MESSAGE (message)
        ENDIF
        call wrf_debug(15,'emissions_driver calling add_anthropogenics')
-       call add_anthropogenics(id,dtstep,dz8w,config_flags,rho_phy,chem,&
-            emis_ant,emis_aircraft,                                     &
+       call add_anthropogenics(id,dtstep,dz8w,config_flags,rho_phy,alt, &
+            chem, emis_ant,emis_aircraft,                               &
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
        call wrf_debug(15,'emissions_driver calling add_biogenics')
        ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
        ! module
-       if ( config_flags%bio_emiss_opt .ne. megan2 ) then
        call add_biogenics(id,dtstep,dz8w,config_flags,rho_phy,chem,     &
             e_bio,ne_area,                                              &
             ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
             ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,               &
             ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,       &
+            ebio_sesq,ebio_mbo,                                         & 
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
-       end if 
 
        end if ! emiss_inpt_opt /= 3
 
@@ -1024,8 +1371,8 @@ CONTAINS
 
     aer_addemiss_select: SELECT CASE(config_flags%chem_opt)
 
-    CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP, &
-          RACMSORG_AQ,RACMSORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ)
+    CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP, &
+          RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ)
        call wrf_debug(15,'emissions_driver calling sorgam_addemiss')
        call sorgam_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,  &
             ebu,                                                        &
@@ -1041,11 +1388,29 @@ CONTAINS
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    CASE (RACM_SOA_VBS_KPP)
+       call wrf_debug(15,'emissions_driver calling soa_vbs_addemiss')
+       call soa_vbs_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,  &
+            ebu,                                                        &
+            slai,ust,smois,ivgtyp,isltyp,                               &
+            emis_ant,dust_emiss_active,                                 &
+            seasalt_emiss_active,config_flags%kemit,                    &
+            config_flags%biomass_burn_opt,                              &
+            config_flags%num_soil_layers,config_flags%emiss_opt,        &
+            config_flags%dust_opt,                                      &
+            ktau,p8w,u_phy,v_phy,rho_phy,g,dx,erod,                     &
+            ids,ide, jds,jde, kds,kde,                                  &
+            ims,ime, jms,jme, kms,kme,                                  &
+            its,ite, jts,jte, kts,kte                                   )
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
 !Added the aerosol case SAPRC99_MOSAIC_4BIN_VBS2_KPP to call mosaic addemiss
     CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, & 
           CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
           CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, & 
-          CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
+          CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,SAPRC99_MOSAIC_4BIN_VBS2_KPP,&
+          MOZART_MOSAIC_4BIN_VBS0_KPP   )
        call wrf_debug(15,'emissions_driver calling mosaic_addemiss')
        call mosaic_addemiss( id, dtstep, u10, v10, alt, dz8w, xland,     &
             config_flags, chem, slai, ust, smois, ivgtyp, isltyp,        &
@@ -1089,7 +1454,7 @@ CONTAINS
                   N_IC,N_CG,lflash_data,flashrate_factor,  &
                   flashrate_method,iccg_method,            &
                   cellcount_method,                        &
-                  ic_fr,cg_fr)
+                  ic_fr,cg_fr,xland,ktop)
 
    END IF
 

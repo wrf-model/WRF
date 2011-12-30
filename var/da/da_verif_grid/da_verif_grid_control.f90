@@ -24,6 +24,9 @@ module da_verif_grid_control
   integer, parameter                     :: second_unit = 12
   integer, parameter                     :: time_series_unit = 20
   integer, parameter                     :: time_average_unit = 21
+  integer, parameter                     :: unit_all   = 70
+  integer, parameter                     :: unit_land  = 71
+  integer, parameter                     :: unit_water = 72
 !-----------------------------------------------------------------
   character (len=512)                    :: profile_time_series_3d
   character (len=512)                    :: time_series_2d
@@ -64,6 +67,7 @@ module da_verif_grid_control
   character(len=20)                      :: score_names(max_num_scores)
   character (len=1)                      :: vertical_type
   character (len=20)                     :: verification_file_string
+  integer                                :: istart, iend, jstart, jend
 
 !-----------------------------------------------------------------
 
@@ -73,6 +77,7 @@ module da_verif_grid_control
   namelist /control_times/ start_year, start_month, start_day, start_hour, &
                 end_year, end_month, end_day, end_hour, interval_hour
   namelist /control_vars/ num3dvar, var3d, num2dvar, var2d
+  namelist /sub_domain/ istart, iend, jstart, jend
 
 
   data vert_levels  /1000.0, 925.0, 850.0, 700.0, 500.0, 400.0, 300.0, 250.0, &

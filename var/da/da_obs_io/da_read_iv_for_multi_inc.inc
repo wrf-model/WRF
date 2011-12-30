@@ -120,7 +120,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
 
    ! [4] sonde_sfc obs:
 
-   if (iv%info(sound)%plocal(iv%time)-iv%info(sound)%plocal(iv%time-1) > 0) then
+   if (iv%info(sonde_sfc)%plocal(iv%time)-iv%info(sonde_sfc)%plocal(iv%time-1) > 0) then
 
        open(unit=unit_in,file=trim(filename)//'.sonde_sfc',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
@@ -133,15 +133,15 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                            (/"Cannot find sonde_sfc marker. "/))
        gn = 0
-       do n = iv%info(sound)%plocal(iv%time-1) + 1, &
-              iv%info(sound)%plocal(iv%time)
+       do n = iv%info(sonde_sfc)%plocal(iv%time-1) + 1, &
+              iv%info(sonde_sfc)%plocal(iv%time)
           call da_search_obs (ob_type_string, unit_in, num_obs, n, iv, found_flag)
           if (found_flag .eqv. .false.) &
               call da_error(__FILE__,__LINE__, &
                            (/"Cannot find sonde_sfc obs. "/))
           gn = gn + 1
        end do
-       if (gn /= iv%info(sound)%plocal(iv%time)-iv%info(sound)%plocal(iv%time-1)) &
+       if (gn /= iv%info(sonde_sfc)%plocal(iv%time)-iv%info(sonde_sfc)%plocal(iv%time-1)) &
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
@@ -355,6 +355,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
    if (iv%info(pilot)%plocal(iv%time)-iv%info(pilot)%plocal(iv%time-1) > 0) then
 
        open(unit=unit_in,file=trim(filename)//'.pilot',form='formatted',status='old',iostat=ios)
+
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
              (/"Cannot open file"//filename/))

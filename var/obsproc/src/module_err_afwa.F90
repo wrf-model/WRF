@@ -824,6 +824,8 @@ upper_level: DO WHILE (ASSOCIATED (current))
 
             current % meas % rh % error = current % meas % thickness % data
 
+            current % meas % pressure % error = 0.0
+            current % meas % height % error = 0.0
 !            current % meas % pressure % error = intplin (pres, err % level, &
 !                                                       err % sound % pres)
 !

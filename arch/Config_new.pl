@@ -4,7 +4,7 @@
 # 
 # Be sure to run as ./configure (to avoid getting a system configure command by mistake)
 #
-select((select(STDOUT), $|=1)[0]);
+
 $sw_perl_path = perl ;
 $sw_netcdf_path = "" ;
 $sw_pnetcdf_path = "" ;
@@ -303,8 +303,6 @@ while ( <CONFIGURE_DEFAULTS> )
     close CONFIGURE_DEFAULTS ;
     if ( $sw_opt_level eq "-f" ) {
       open CONFIGURE_DEFAULTS, "cat ./arch/postamble_new ./arch/noopt_exceptions_f |"  or die "horribly" ;
-    } elsif ( $sw_opt_level eq "oldf" ) {
-      open CONFIGURE_DEFAULTS, "cat ./arch/postamble_new ./arch/noopt_exceptions_oldf |"  or die "horribly" ;
     } else {
       open CONFIGURE_DEFAULTS, "cat ./arch/postamble_new ./arch/noopt_exceptions |"  or die "horribly" ;
     }
@@ -526,6 +524,10 @@ while ( <CONFIGURE_DEFAULTS> )
         if ( $paropt eq 'dmpar' || $paropt eq 'dm+sm' ) { 
           if ( $sw_os ne "CYGWIN_NT" ) {
             $sw_comms_lib = "\$(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a" ;
+            if ( $sw_wrf_core eq "4D_DA_CORE" )
+            {
+              $sw_comms_lib = "\$(WRFPLUS_DIR)/external/RSL_LITE/librsl_lite.a" ;
+            }
           } else {
             $sw_comms_lib = "../external/RSL_LITE/librsl_lite.a" ;
           }

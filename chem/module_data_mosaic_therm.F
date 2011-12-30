@@ -38,14 +38,16 @@
       integer, save :: nbin_a = 999888777
 
 ! mosaic-specific parameters
+! Alma added 2 smp species - just before the traditional ant1_c 
+! SOA is treated using a simplified approach for anthropogenic and biomass burning species based on Hodzic and Jimenez, GMD, 2011
       integer ngas_ioa, ngas_soa, ngas_volatile,	&
               naer, naercomp, nelectrolyte, nsalt,	&
               nsoluble, ncation, nanion
       parameter(ngas_ioa = 5)	! inorganic volatile aerosol species that have a gaseous counterpart
-      parameter(ngas_soa = 68+16)	! volatile soa species that have a gaseous counterpart
+      parameter(ngas_soa = 68+2+16)	! volatile soa species that have a gaseous counterpart
       parameter(ngas_volatile = ngas_ioa + ngas_soa)
-      parameter(naer = 11+68+16)	! num of chemical species per bin (inorg + oc + bc + oin + soa)
-      parameter(naercomp = 26+68+16)	! num of electrolytes + oc, bc, oin, & soa
+      parameter(naer = 11+68+2+16)	! num of chemical species per bin (inorg + oc + bc + oin + soa)
+      parameter(naercomp = 26+68+2+16)	! num of electrolytes + oc, bc, oin, & soa
       parameter(nelectrolyte = 22) ! num of electrolytes
       parameter(nsalt    = 15)	! num of soluble salts
       parameter(nsoluble = 20)	! num of soluble electrolytes
@@ -120,7 +122,8 @@
       iopcg7_f_o_g,iopcg8_f_o_g,iant1_c_g,iant2_c_g,iant3_c_g, &
       iant4_c_g,ibiog1_c_g,ibiog2_c_g,ibiog3_c_g,ibiog4_c_g, &
       iant1_o_g,iant2_o_g,iant3_o_g, &
-      iant4_o_g,ibiog1_o_g,ibiog2_o_g,ibiog3_o_g,ibiog4_o_g
+      iant4_o_g,ibiog1_o_g,ibiog2_o_g,ibiog3_o_g,ibiog4_o_g, &
+      ismpa_g,ismpbb_g
 
 
  
@@ -150,6 +153,7 @@
       iopcg7_f_c_a,iopcg8_f_c_a,iopcg1_f_o_a,iopcg2_f_o_a,&
       iopcg3_f_o_a,iopcg4_f_o_a,iopcg5_f_o_a,iopcg6_f_o_a,&
       iopcg7_f_o_a,iopcg8_f_o_a, &
+      ismpa_a,ismpbb_a, &
       iant1_c_a,iant2_c_a,iant3_c_a, &
       iant4_c_a,ibiog1_c_a,ibiog2_c_a,ibiog3_c_a,ibiog4_c_a, &
       iant1_o_a,iant2_o_a,iant3_o_a, &
@@ -186,6 +190,7 @@
       jopcg7_f_c,jopcg8_f_c,jopcg1_f_o,jopcg2_f_o,&
       jopcg3_f_o,jopcg4_f_o,jopcg5_f_o,jopcg6_f_o,&
       jopcg7_f_o,jopcg8_f_o, &
+      jsmpa,jsmpbb, &
       jant1_c,jant2_c,jant3_c, &
       jant4_c,jbiog1_c,jbiog2_c,jbiog3_c,jbiog4_c, &
       jant1_o,jant2_o,jant3_o, &

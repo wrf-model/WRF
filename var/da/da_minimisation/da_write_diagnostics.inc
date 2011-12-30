@@ -58,6 +58,7 @@ subroutine da_write_diagnostics(it, grid,num_qcstat_conv, ob, iv, re, y, j)
    if (iv%info(radar)%ntotal    > 0) call da_oi_stats_radar    (stats_unit, iv)
    if (iv%info(bogus)%ntotal    > 0) call da_oi_stats_bogus    (stats_unit, iv)
    if (iv%info(airsr)%ntotal    > 0) call da_oi_stats_airsr    (stats_unit, iv)
+   if (iv%info(rain)%ntotal     > 0) call da_oi_stats_rain     (stats_unit, iv)
 
 #if defined(RTTOV) || defined(CRTM)
    if (iv%num_inst > 0) call da_oi_stats_rad (stats_unit, iv)
@@ -97,6 +98,7 @@ if (.not. anal_type_verify) then
    if (iv%info(radar)%ntotal    > 0) call da_ao_stats_radar    (stats_unit, iv, re)
    if (iv%info(bogus)%ntotal    > 0) call da_ao_stats_bogus    (stats_unit, iv, re)
    if (iv%info(airsr)%ntotal    > 0) call da_ao_stats_airsr    (stats_unit, iv, re)
+   if (iv%info(rain)%ntotal     > 0) call da_ao_stats_rain     (stats_unit, iv, re)  
 
 #if defined(CRTM) || defined(RTTOV)
    if (iv%num_inst > 0) call da_ao_stats_rad (stats_unit, iv, re)

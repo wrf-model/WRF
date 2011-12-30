@@ -7,8 +7,8 @@ CONTAINS
 ! this may be done differently for different chemical mechanisms
 ! in the future. aerosols are already added somewhere else....
 !
-   subroutine add_anthropogenics(id,dtstep,dz8w,config_flags,rho_phy,chem, &
-               emis_ant, emis_aircraft,                                    &
+   subroutine add_anthropogenics(id,dtstep,dz8w,config_flags,rho_phy,alt,  &
+               chem, emis_ant, emis_aircraft,                              &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
@@ -16,6 +16,8 @@ CONTAINS
   USE module_configure
   USE module_state_description
   USE module_data_radm2
+  USE module_data_sorgam, only : mw_so4_aer
+  USE module_model_constants, only : mwdry
    IMPLICIT NONE
 
 ! .. Parameters ..
@@ -38,7 +40,8 @@ CONTAINS
          INTENT(IN ) ::                                                    &
                emis_ant        
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                           &
-         INTENT(IN ) ::        rho_phy
+         INTENT(IN ) ::        rho_phy,                                    &
+                               alt
 
 !
 ! 
@@ -55,7 +58,7 @@ CONTAINS
          OPTIONAL,INTENT(IN ) ::  emis_aircraft
 
     integer i,j,k
-    real :: conv_rho
+    real :: conv_rho, conv_rho_aer
 !--- deposition and emissions stuff
 
 
@@ -63,7 +66,7 @@ CONTAINS
 ! ..
 ! .. Intrinsic Functions ..
 
-         call wrf_debug(15,'add_anhropogenics')
+         call wrf_debug(15,'add_anthropogenics')
 !       
 ! add emissions
 !
@@ -112,6 +115,7 @@ CONTAINS
         chem(i,k,j,p_nh3)  = chem(i,k,j,p_nh3)                         &
                          +emis_ant(i,k,j,p_e_nh3)*conv_rho
         if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP ) then
+           conv_rho_aer = alt(i,k,j)*dtstep/dz8w(i,k,j)
            chem(i,k,j,p_bigalk) = chem(i,k,j,p_bigalk) + emis_ant(i,k,j,p_e_bigalk)*conv_rho
            chem(i,k,j,p_bigene) = chem(i,k,j,p_bigene) + emis_ant(i,k,j,p_e_bigene)*conv_rho
            chem(i,k,j,p_c2h4)   = chem(i,k,j,p_c2h4)  + emis_ant(i,k,j,p_e_c2h4)*conv_rho
@@ -127,7 +131,13 @@ CONTAINS
            chem(i,k,j,p_tol)    = chem(i,k,j,p_tol) + emis_ant(i,k,j,p_e_toluene)*conv_rho
            chem(i,k,j,p_isopr)  = chem(i,k,j,p_isopr) + emis_ant(i,k,j,p_e_isop)*conv_rho
            chem(i,k,j,p_c10h16) = chem(i,k,j,p_c10h16) + emis_ant(i,k,j,p_e_c10h16)*conv_rho
-           chem(i,k,j,p_no2)    = chem(i,k,j,p_no2) + emis_ant(i,k,j,p_e_no2)*conv_rho
+           chem(i,k,j,p_sulf)   = chem(i,k,j,p_sulf) + conv_rho_aer*emis_ant(i,k,j,p_e_sulf)*mwdry/mw_so4_aer*1.e-3
+           if( config_flags%chem_opt == MOZCART_KPP ) then
+             chem(i,k,j,p_p10) = chem(i,k,j,p_p10) + conv_rho_aer*emis_ant(i,k,j,p_e_pm_10)
+             chem(i,k,j,p_p25) = chem(i,k,j,p_p25) + conv_rho_aer*emis_ant(i,k,j,p_e_pm_25)
+             chem(i,k,j,p_oc1) = chem(i,k,j,p_oc1) + conv_rho_aer*emis_ant(i,k,j,p_e_oc)
+             chem(i,k,j,p_bc1) = chem(i,k,j,p_bc1) + conv_rho_aer*emis_ant(i,k,j,p_e_bc)
+           endif
           else
         chem(i,k,j,p_csl)  =  chem(i,k,j,p_csl)                        &
                          +emis_ant(i,k,j,p_e_csl)*conv_rho
@@ -188,6 +198,7 @@ CONTAINS
          ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,                 &
          ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,                 &
          ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,         &
+         ebio_sesq,ebio_mbo,                                           & 
          ids,ide, jds,jde, kds,kde,                                    &
          ims,ime, jms,jme, kms,kme,                                    &
          its,ite, jts,jte, kts,kte                                     )
@@ -211,17 +222,15 @@ CONTAINS
          INTENT(IN ) ::                                                    &
          ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,                     &
          ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,                     &
-         ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no
-
+         ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,             &
+         ebio_sesq,ebio_mbo 
 !
-! 
-!
-
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,               &
           INTENT(IN   ) ::                                                 &
                                           rho_phy,dz8w
     integer i,j,k,n
     real :: conv_rho
+    real :: con2ppm(its:ite,jts:jte)
 !--- deposition and emissions stuff
 ! .. Parameters ..       
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags     
@@ -264,8 +273,8 @@ CONTAINS
                   e_bio(i,j,p_ol2-1)*conv_rho
  100  continue
 !     enddo
-     CASE (BEIS313)
-     CALL wrf_debug(100,'adding biogenic emissions: beis3.1.3')
+     CASE (BEIS314)
+     CALL wrf_debug(100,'adding biogenic emissions: beis3.1.4')
       do j=jts,jte  
       do i=its,ite  
         conv_rho=4.828e-4/rho_phy(i,kts,j)*dtstep/(dz8w(i,kts,j)*60.)
@@ -307,8 +316,28 @@ CONTAINS
                   ebio_lim(i,j)*conv_rho
         if(p_ete.gt.1)chem(i,kts,j,p_ete)=chem(i,kts,j,p_ete)+ &
                   ebio_ete(i,j)*conv_rho
+
+! SESQ and MBO are added, it works for RACM_SOA_VBS_KPP option
+        if(p_sesq.gt.1)chem(i,kts,j,p_sesq)=chem(i,kts,j,p_sesq)+ &
+                  ebio_sesq(i,j)*conv_rho
+        if(p_mbo.gt.1)chem(i,kts,j,p_mbo)=chem(i,kts,j,p_mbo)+ &
+                  ebio_mbo(i,j)*conv_rho
+
       enddo
       enddo
+     CASE (MEGAN2)
+      do j = jts,jte
+        con2ppm(its:ite,j) = dtstep/(dz8w(its:ite,kts,j)*60.)
+      end do
+      do n = 1,ne_area
+        if( any( e_bio(its:ite,jts:jte,n) /= 0. ) ) then
+          do j = jts,jte  
+            chem(its:ite,kts,j,n+1) = chem(its:ite,kts,j,n+1) &
+                                    + con2ppm(its:ite,j)*e_bio(its:ite,j,n)
+          end do
+        endif
+      end do
+
      CASE DEFAULT
 
    END SELECT bioem_select

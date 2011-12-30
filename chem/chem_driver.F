@@ -2,6 +2,7 @@
 !   WRF-chem V3.1 : Original version of chem_driver written by Georg Grell (ESRL/GSD)
 !                   Further developments, bugfixes and improvements  by
 !                   William Gustafson (PNNL), Marc Salzmann (GFDL), and Georg Grell
+! 10/12/2011 - Ravan Ahmadov (NOAA) updated to include the RACM_SOA_VBS option
 !
 #if ( NMM_CORE == 1 )
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -44,9 +45,12 @@
   USE module_gocart_so2so4
   USE module_aer_opt_out,only: aer_opt_out
   USE module_ctrans_grell
-! USE module_convtrans_prep
+! USE module_aerosols_soa_vbs, only:
+  USE module_data_soa_vbs, only: ldrog_vbs
+!
   USE module_dry_dep_driver
   USE module_emissions_driver
+  USE module_ltng_cpm, only: adjust_ktop
   USE module_input_tracer, only: set_tracer
   USE module_wetscav_driver, only: wetscav_driver
   USE module_wetdep_ls, only:wetdep_ls
@@ -55,6 +59,9 @@
                                      chem_dbg,      &
 #endif
                                      get_last_gas,mozcart_lbc_set
+  USE module_upper_bc_driver, only: upper_bc_driver
+  USE module_tropopause,      only: tropopause_driver
+
    IMPLICIT NONE
 
    !  Input data.
@@ -91,7 +98,10 @@
 !
 #if ( NMM_CORE == 1 )
       real, dimension(grid%sm31:grid%em31,grid%sm33:grid%em33,grid%sm32:grid%em32) ::vcsulf_old,vcso2_old
-      real, dimension(grid%sm31:grid%em31,grid%sm33:grid%em33,grid%sm32:grid%em32,ldrog) ::vdrog3,vcso2_old
+      real, dimension(grid%sm31:grid%em31,grid%sm33:grid%em33,grid%sm32:grid%em32,ldrog) ::vdrog3
+
+      real, dimension(grid%sm31:grid%em31,grid%sm33:grid%em33,grid%sm32:grid%em32,ldrog_vbs) ::vdrog3_vbs 
+      
       real, dimension(grid%sm31:grid%em31,grid%sm33:grid%em33,grid%sm32:grid%em32) ::n2o5_het
       REAL,DIMENSION(grid%sm31:grid%em31,grid%sm33:grid%em33,grid%sm32:grid%em32) ::              &
                                                               p_phy,u_phy,v_phy                   &
@@ -107,6 +117,9 @@
 #if ( EM_CORE == 1 )
       real, dimension(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) ::vcsulf_old,vcso2_old,vch2o2_old
       real, dimension(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33,ldrog) ::vdrog3
+
+      real, dimension(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33,ldrog_vbs) ::vdrog3_vbs
+
       real, dimension(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) ::n2o5_het 
       REAL,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33) ::              &
                                                               p_phy,u_phy,v_phy                   &
@@ -301,7 +314,6 @@
   ENDIF
 
 ! ..
-
 !
 ! Some stuff for convective transport...
 !
@@ -354,6 +366,7 @@
   numgas_aqfrac   = 0    !will be set upon allocation of gas_aqfrac
 
 
+
 #if ( EM_CORE == 1 )
 
    !  Compute these starting and stopping locations for each tile and number of tiles.
@@ -403,6 +416,15 @@
      CASE (RADM2SORG_AQ)
        CALL wrf_debug(15,'calling radm2sorg_aq aerosols driver from chem_driver')
        haveaer = .true.
+     CASE (RACMSORG_AQ)
+       CALL wrf_debug(15,'calling racmsorg_aq aerosols driver from chem_driver')
+       haveaer = .true.
+     CASE (RADM2SORG_AQCHEM)
+       CALL wrf_debug(15,'calling radm2sorg_aqchem aerosols driver from chem_driver')
+       haveaer = .true.
+     CASE (RACMSORG_AQCHEM)
+       CALL wrf_debug(15,'calling racmsorg_aqchem aerosols driver from chem_driver')
+       haveaer = .true.
      CASE (RACM_KPP)
        CALL wrf_debug(15,'calling racm_kpp from chem_driver')
      CASE (RACMPM_KPP)
@@ -416,6 +438,9 @@
        haveaer = .false.
      CASE (RACMSORG_KPP)
        CALL wrf_debug(15,'calling racmsorg_kpp aerosols driver from chem_driver')
+       haveaer = .false.
+     CASE (RACM_SOA_VBS_KPP)
+       CALL wrf_debug(15,'calling racm_soa_vbs_kpp aerosols driver from chem_driver')
        haveaer = .false.
      CASE (GOCART_SIMPLE)
        CALL wrf_debug(15,'calling only gocart aerosols driver from chem_driver')
@@ -435,6 +460,10 @@
      CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP)
        CALL wrf_debug(15,'calling saprc99_mosaic_4bin_vbs2_kpp from chem_driver')
        haveaer = .false.
+     CASE (MOZART_MOSAIC_4BIN_VBS0_KPP) 
+       CALL wrf_debug(15,'calling mozart_mosaic_4bin_vbs0_kpp from chem_driver')
+       haveaer = .true.
+
      CASE (CBMZSORG)
        CALL wrf_debug(15,'calling cbmzsorg aerosols from chem_driver')
        haveaer = .true.
@@ -483,11 +512,15 @@
        CALL wrf_debug(15,'calling mozcart driver from chem_driver')
     CASE (CHEM_TRACER,CHEM_TRACE2)
        CALL wrf_debug(15,'tracer mode: only doing emissions and dry dep in chem_driver')
+    CASE (CHEM_VOLC)
+       CALL wrf_debug(15,'Full Volcanic Ash mode: doing emissions (SO2 + ASH), settling, and subgrid transport in chem_driver')
     CASE (CHEM_VASH)
        CALL wrf_debug(15,'Volcanic Ash mode: only doing emissions, settling, and subgrid transport in chem_driver')
     CASE (DUST)
        CALL wrf_debug(15,'Dust only mode: only doing emissions, settling, and subgrid transport chem_driver')
-     CASE DEFAULT
+    CASE (CO2_TRACER,GHG_TRACER)
+      CALL wrf_debug(15,'Greenhouse gas mode: fluxes and transport of GHG')
+    CASE DEFAULT
        if(config_flags%tracer_opt > 0 )then
        CALL wrf_debug(15,'only doing tracer transport in chem_driver')
        else
@@ -618,7 +651,6 @@
       ENDDO     
 #endif
 
-
       do nv=1,num_chem
          do j=jps,jpe
             do k=kps,kpe
@@ -629,8 +661,8 @@
          enddo
       enddo
       select case (config_flags%chem_opt)
-      case (RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
-            RACM_ESRLSORG_KPP,RACMSORG_AQ,  RACMSORG_KPP)
+      case (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
+            RACM_ESRLSORG_KPP,RACMSORG_AQ,RACMSORG_KPP, RACMSORG_AQCHEM, RACM_SOA_VBS_KPP)
          do j=jps,jpe
             do k=kps,kpe
                do i=ips,ipe
@@ -651,10 +683,7 @@
                enddo
             enddo
          enddo
-
-
       end select
-
 
       vdrog3=0.
 #if ( EM_CORE == 1 )
@@ -683,7 +712,8 @@
 ! setup ftuv column density timing
 !------------------------------------------------------------------------
       if( config_flags%chem_opt == MOZART_KPP .or. &                               
-          config_flags%chem_opt == MOZCART_KPP ) then                              
+          config_flags%chem_opt == MOZCART_KPP .or. &
+         config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP) then
         if( config_flags%phot_opt == FTUV ) then
           CALL ftuv_timestep_init( grid%id, grid%julday )
         endif
@@ -751,11 +781,34 @@
        end if
 #endif
 
+!-- set upper boundary condition
+!   if( config_flags%have_bcs_upper )then
+!      call wrf_debug(15,'set upper boundary condition')
+!      call tropopause_driver( grid%id, grid%dt, current_date_char,         &
+!                              t_phy, p_phy, p8w, zmid, z_at_w,             &
+!                              grid%tropo_lev, grid%tropo_p,  grid%tropo_z, &
+!                              ids, ide, jds, jde, kds, kde,                &
+!                              ims, ime, jms, jme, kms, kme,                &
+!                              its, ite, jts, jte, kts, kte                 )
+!      call upper_bc_driver  ( grid%id, grid%dt, current_date_char, &
+!                              chem, p_phy, p8w, grid%tropo_lev,    &
+!                              ids,ide, jds,jde, kds,kde,           &
+!                              ims,ime, jms,jme, kms,kme,           &
+!                              its,ite, jts,jte, kts,kte            )
+!   endif
+
 
 !--- emissions
 
-    if(config_flags%emiss_inpt_opt > 0)then
+    if(config_flags%emiss_inpt_opt > 0 .or. config_flags%dust_opt > 0)then
       call wrf_debug(15,'calling emissions driver')
+
+      ! limit ktop by WMO tropopause for cpm ltng param
+      call adjust_ktop ( grid%ktop, grid%ktop_adj, t_phy, z_at_w, zmid,               &
+               ids,ide, jds,jde, kds,kde,                                             &
+               ims,ime, jms,jme, kms,kme,                                             &
+               its,ite, jts,jte, kts,kte                                              &
+                     )
 
       call emissions_driver(grid%id,ktau,grid%dt,grid%DX,                                  &
               adapt_step_flag, curr_secs,                                                  &
@@ -768,7 +821,7 @@
 #if (EM_CORE == 1 )
               grid%gmt,ijulian,rri,t_phy,moist,p8w,t8w,u_phy,v_phy,vvel,               &
 #endif
-              grid%e_bio,p_phy,chem,rho,dz8w,grid%ne_area,emis_ant,grid%tsk,               &
+              grid%e_bio,p_phy,chem,rho,dz8w,grid%ne_area,emis_ant,emis_vol,grid%tsk,      &
               grid%erod,g,emis_seas,emis_dust,tracer, &
               ebu , ebu_in,grid%mean_fct_agtf,grid%mean_fct_agef,grid%mean_fct_agsv,       &
               grid%mean_fct_aggr,grid%firesize_agtf, &
@@ -781,15 +834,19 @@
               grid%sebio_xyl,grid%sebio_hc3,grid%sebio_ete,grid%sebio_olt,                 &
               grid%sebio_ket,grid%sebio_ald,grid%sebio_hcho,grid%sebio_eth,                &
               grid%sebio_ora2,grid%sebio_co,grid%sebio_nr,                                 &
+              grid%sebio_sesq,grid%sebio_mbo,                                              &
               grid%noag_grow,grid%noag_nongrow,grid%nononag,grid%slai,                     &
               grid%ebio_iso,grid%ebio_oli,grid%ebio_api,grid%ebio_lim,grid%ebio_xyl,       &
               grid%ebio_hc3,grid%ebio_ete,grid%ebio_olt,grid%ebio_ket,grid%ebio_ald,       &
               grid%ebio_hcho,grid%ebio_eth,grid%ebio_ora2,grid%ebio_co,grid%ebio_nr,       &
-              grid%ebio_no,grid%ebio_c10h16,grid%ebio_tol,grid%ebio_bigalk,                &
+              grid%ebio_no,grid%ebio_sesq,grid%ebio_mbo,                                   &
+              grid%ebio_c10h16,grid%ebio_tol,grid%ebio_bigalk,                             &
               grid%ebio_ch3oh,grid%ebio_acet,grid%ebio_nh3,grid%ebio_no2,                  &
               grid%ebio_c2h5oh,grid%ebio_ch3cooh,grid%ebio_mek,grid%ebio_bigene,           &
               grid%ebio_c2h6,grid%ebio_c2h4,grid%ebio_c3h6,grid%ebio_c3h8,grid%ebio_so2,   &
               grid%ebio_dms,                                                               &
+              grid%clayfrac,grid%sandfrac,grid%dust_alpha,grid%dust_gamma,grid%dust_smtune,&
+              grid%snowh,grid%zs,                                                          &
 #if (NMM_CORE == 1)
               grid%T2,grid%RSWIN,                                                         &
 #endif
@@ -811,14 +868,21 @@
               grid%temp_upper, grid%temp_lower, grid%N_IC, grid%N_CG,                      &
               grid%lflash_data, grid%ic_flshrate, grid%cg_flshrate,                        &
               grid%flashrate_factor, grid%flashrate_method, grid%iccg_method,              &
-              grid%cellcount_method,                                                       &
+              grid%cellcount_method,grid%ktop_adj,                                             &
          ! stuff for aircraft emissions
-              emis_aircraft,                                                               &   
+              emis_aircraft,                                                               &
+
+         ! stuff for ghg fluxes
+              vprm_par,grid%rad_vprm,grid%lambda_vprm,                                     &
+              grid%alpha_vprm,grid%resp_vprm,grid%xtime,                                   &
+              grid%TSLB,wet_in,grid%RAINC,grid%RAINNC,                                     &
+              grid%potevp,grid%SFCEVP,grid%LU_INDEX,                                       &
+              eghg_bio,biomt_par,emit_par,                                                 &
+
               ids,ide, jds,jde, kds,kde,                                                   &
               ims,ime, jms,jme, kms,kme,                                                   &
               its,ite,jts,jte,kts,kte)
-              if( config_flags%chem_opt == MOZART_KPP .or. &                               
-                  config_flags%chem_opt == MOZCART_KPP ) then                              
+              if( config_flags%chem_opt == MOZCART_KPP ) then
                  call mozcart_lbc_set( chem, num_chem, grid%id, &
                                        ims, ime, jms, jme, kms, kme,    &                  
                                        its, ite, jts, jte, kts )                           
@@ -845,8 +909,11 @@
       if( do_photstep .and. &
            config_flags%chem_opt /= CHEM_TRACER .and. &
            config_flags%chem_opt /= CHEM_VASH .and. &
+           config_flags%chem_opt /= CHEM_VOLC .and. &
            config_flags%chem_opt /= DUST .and. &
-           config_flags%chem_opt /= CHEM_TRACE2 ) then
+           config_flags%chem_opt /= CHEM_TRACE2 .and. &
+           config_flags%chem_opt /= CO2_TRACER  .and. &
+           config_flags%chem_opt /= GHG_TRACER ) then
          call wrf_debug(15,'calling optical driver')
          call optical_driver (grid%id,curr_secs,grid%dt,config_flags,haveaer,         &
               chem,dz8w,rri,rh,                                                       &
@@ -878,8 +945,11 @@
       if( do_photstep .and. &
            config_flags%chem_opt /= CHEM_TRACER .and. &
            config_flags%chem_opt /= CHEM_VASH .and. &
+           config_flags%chem_opt /= CHEM_VOLC .and. &
            config_flags%chem_opt /= DUST .and. &
-           config_flags%chem_opt /= CHEM_TRACE2 ) then
+           config_flags%chem_opt /= CHEM_TRACE2 .and. &
+           config_flags%chem_opt /= CO2_TRACER  .and. &
+           config_flags%chem_opt /= GHG_TRACER  ) then
          call wrf_debug(15,'calling photolysis driver')
          call photolysis_driver (grid%id,curr_secs,ktau,grid%dt,                      &
               config_flags,haveaer,                                                   &
@@ -903,6 +973,11 @@
               grid%ph_acetp,grid%ph_xooh,grid%ph_isooh,grid%ph_alkooh,                &
               grid%ph_mekooh,grid%ph_tolooh,grid%ph_terpooh,grid%ph_mvk,              &
               grid%ph_glyald,grid%ph_hyac,                                            &
+              config_flags%track_tuv_lev,                                             &
+              config_flags%track_rad_num,                                             &
+              config_flags%track_tuv_num,                                             &
+              grid%radfld,grid%adjcoe,grid%phrate,                                    &
+              grid%track_wc,grid%track_zref,                                          &
               grid%tauaer1,grid%tauaer2,grid%tauaer3,grid%tauaer4,                    &
               grid%gaer1,grid%gaer2,grid%gaer3,grid%gaer4,                            &
               grid%waer1,grid%waer2,grid%waer3,grid%waer4,                            &
@@ -955,7 +1030,7 @@
 #if (EM_CORE == 1)
                  grid%gmt,ijulian,t_phy,moist,scalar,p8w,t8w,vvel,                &
 #endif
-                 rri,p_phy,chem,tracer,rho,dz8w,grid%exch_h,grid%hfx,grid%dx,         &
+                 rri,p_phy,chem,tracer,rho,dz8w,rh,grid%exch_h,grid%hfx,grid%dx,      & 
                  grid%cldfra, grid%cldfra_old,grid%raincv_b,seasin,dustin,            &
 	         grid%ccn1, grid%ccn2, grid%ccn3, grid%ccn4, grid%ccn5, grid%ccn6,    &
                  grid%qndropsource,grid%ivgtyp,grid%tsk,grid%gsw,grid%vegfra,pbl_h,   &
@@ -970,8 +1045,7 @@
                  ims,ime, jms,jme, kms,kme,                                           &
                  its,ite,jts,jte,kts,kte)
                  
-            if( config_flags%chem_opt == MOZART_KPP .or. &
-               config_flags%chem_opt == MOZCART_KPP ) then
+            if( config_flags%chem_opt == MOZCART_KPP ) then
                call mozcart_lbc_set( chem, num_chem, grid%id, &
                                      ims, ime, jms, jme, kms, kme,    & 
                                      its, ite, jts, jte, kts )
@@ -1034,13 +1108,14 @@
 #endif
              p_phy,XLV,CP,G,r_v,                                                      &
              z_at_w,grid%cu_co_ten,                                                   &
+             grid%ktop,grid%wd_no3_cu,grid%wd_so4_cu,                                 &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
              config_flags%ishallow,num_moist,numgas,num_chem,config_flags%chem_opt,0, &
+             config_flags%wetscav_onoff,                                              &
              ids,ide, jds,jde, kds,kde,                                               &
              ims,ime, jms,jme, kms,kme,                                               &
              its,ite,jts,jte,kts,k_end)
-             if( config_flags%chem_opt == MOZART_KPP .or. &
-                 config_flags%chem_opt == MOZCART_KPP ) then
+             if( config_flags%chem_opt == MOZCART_KPP ) then
                      call mozcart_lbc_set( chem, num_chem, grid%id, &
                                  ims, ime, jms, jme, kms, kme,    &
                                  its, ite, jts, jte, kts )
@@ -1064,8 +1139,10 @@
 #endif
              p_phy,XLV,CP,G,r_v,                                                      &
              z_at_w, grid%cu_co_ten,                                                  &
+             grid%ktop,grid%wd_no3_cu,grid%wd_so4_cu,                                 &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
              config_flags%ishallow,num_moist,0,num_tracer,0,config_flags%tracer_opt,  &
+             config_flags%wetscav_onoff,                                              &
              ids,ide, jds,jde, kds,kde,                                               &
              ims,ime, jms,jme, kms,kme,                                               &
              its,ite,jts,jte,kts,k_end)
@@ -1090,8 +1167,11 @@
      if( do_chemstep .and.                           &
           config_flags%chem_opt /= CHEM_TRACER .and. &
           config_flags%chem_opt /= CHEM_VASH .and. &
+          config_flags%chem_opt /= CHEM_VOLC .and. &
           config_flags%chem_opt /= DUST .and. &
-          config_flags%chem_opt /= CHEM_TRACE2 ) then
+          config_flags%chem_opt /= CHEM_TRACE2 .and. &
+          config_flags%chem_opt /= CO2_TRACER  .and. &
+          config_flags%chem_opt /= GHG_TRACER ) then
 
 !
 ! chemical mechanisms
@@ -1154,15 +1234,14 @@ CALL kpp_mechanism_driver (chem,                                                
 #if (EM_CORE == 1)
    moist,                                                                             &
 #endif
-   vdrog3, ldrog,                                                                     &
+   vdrog3, ldrog, vdrog3_vbs, ldrog_vbs,                                              &
 !
 #include <call_to_kpp_mech_drive.inc>
 !
    ids,ide, jds,jde, kds,kde,                                                         &
    ims,ime, jms,jme, kms,kme,                                                         &
    its,ite,jts,jte,kts,kte)
-          if( config_flags%chem_opt == MOZART_KPP .or. &
-              config_flags%chem_opt == MOZCART_KPP ) then
+          if( config_flags%chem_opt == MOZCART_KPP ) then
              call mozcart_lbc_set( chem, num_chem, grid%id, &
                                    ims, ime, jms, jme, kms, kme,    &
                                     its, ite, jts, jte, kts )
@@ -1174,7 +1253,7 @@ CALL kpp_mechanism_driver (chem,                                                
    endif
 
    so2so4_select: SELECT CASE(config_flags%chem_opt)
-     CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP)
+     CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP,RACM_SOA_VBS_KPP)
        CALL wrf_debug(15,'gocart so2-so4 conversion')
           call  so2so4(chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,           &
          grid%gd_cloud_b, grid%gd_cldfr,                                    &
@@ -1185,8 +1264,6 @@ CALL kpp_mechanism_driver (chem,                                                
      CASE DEFAULT
        CALL wrf_debug(15,'no gocart so2-so4 conversion')
    END SELECT so2so4_select                              
-
-
 
 !
 #endif
@@ -1243,7 +1320,7 @@ CALL kpp_mechanism_driver (chem,                                                
 
         call cloudchem_driver(                                                        &
                grid%id, ktau, grid%ktauc, grid%dt, dtstepc, config_flags,             &
-               t_phy, p_phy, rho, rri,                                                &
+               t_phy, p_phy, rho, rri, dz8w,                                          &
 #if (NMM_CORE == 1)
                moist_trans, grid%cldfra, grid%ph_no2,                                 &
 #endif
@@ -1271,15 +1348,15 @@ CALL kpp_mechanism_driver (chem,                                                
 #if (EM_CORE == 1)
               rri,t_phy,moist,grid%aerwrf,p8w,t8w,                                    &
 #endif
-              p_phy,chem,rho,dz8w,                                                    &
+              p_phy,chem,rho,dz8w, rh,                                                & 
               zmid,z_at_w,grid%vbs_nbin,                                              &
               grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,           &
               grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,   &
               grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,vcsulf_old,             &
-              vdrog3,                                                                 &
+              vdrog3,vdrog3_vbs,grid%br_rto,                                          &
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &
-              its,ite,jts,jte,kts,kte)
+              its,ite,jts,jte,kts,kte                                                 )
 
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
        if( (its <= CHEM_DBG_I .and. ite >= CHEM_DBG_I) .and.                          &
@@ -1312,13 +1389,17 @@ CALL kpp_mechanism_driver (chem,                                                
 #if (EM_CORE == 1)
               rri,t_phy,moist,p8w,t8w,                                                &
 #endif
-              p_phy,chem,rho,grid%cldfra,                                             &
+              grid%dx, grid%dy,                                                       &
+              p_phy,chem,rho,grid%cldfra,grid%cldfra2,                                &
+              grid%rainprod,grid%evapprod,grid%hno3_col_mdel,                         &
               grid%qlsink,grid%precr,grid%preci,grid%precs,grid%precg,                &
-              gas_aqfrac, numgas_aqfrac,                                              &
+              gas_aqfrac, numgas_aqfrac,dz8w,                                         &
               grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,                      &
               grid%asulf,grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,                &
               grid%cvalk1,grid%cvole1,grid%cvapi1,grid%cvapi2,                        &
               grid%cvlim1,grid%cvlim2,                                                &
+              grid%wd_no3_sc,grid%wd_so4_sc,                                          &
+              grid%qv_b4mp, grid%qc_b4mp, grid%qi_b4mp, grid%qs_b4mp,                 &
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &
               its,ite, jts,jte, kts,kte)                                              
@@ -1331,6 +1412,20 @@ CALL kpp_mechanism_driver (chem,                                                
        end if
 
 end if !Chemistry time step check
+!
+! do so2 to sulf conversion for full volc case
+! since we do not have h2o2 as a variable, pass in p_h2o2 as zero
+! will have to use backgrund value
+!
+        if(config_flags%chem_opt == CHEM_VOLC)then
+          CALL wrf_debug(15,'gocart so2-so4 conversion')
+          call  so2so4(chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,           &
+         grid%gd_cloud_b, grid%gd_cldfr,                                    &
+         NUM_CHEM,NUM_MOIST,                                                &
+         ids,ide, jds,jde, kds,kde,                                         &
+         ims,ime, jms,jme, kms,kme,                                         &
+         its,ite, jts,jte, kts,kte                                          )
+        endif
 !
 !   now do wet removal; first LS if there is no explicit aqeous phase
 !
@@ -1356,14 +1451,17 @@ end if !Chemistry time step check
            grid%bbsoa_a01,grid%bbsoa_a02,grid%bbsoa_a03,grid%bbsoa_a04,               &
            grid%hsoa_a01,grid%hsoa_a02,grid%hsoa_a03,grid%hsoa_a04,                   &
            grid%biog_a01,grid%biog_a02,grid%biog_a03,grid%biog_a04,                   &
+           grid%asmpsoa_a01,grid%asmpsoa_a02,grid%asmpsoa_a03,grid%asmpsoa_a04,                   &
            grid%arosoa_a01,grid%arosoa_a02,grid%arosoa_a03,grid%arosoa_a04,           &
            grid%totoa_a01,grid%totoa_a02,grid%totoa_a03,grid%totoa_a04,               &
            grid%hsoa_c,grid%hsoa_o,grid%bbsoa_c,grid%bbsoa_o,                         &
            grid%biog_v1,grid%biog_v2,grid%biog_v3,grid%biog_v4,                       &
            grid%ant_v1,grid%ant_v2,grid%ant_v3,grid%ant_v4,                           &
+           grid%smpa_v1,grid%smpbb_v1,                           &
              ids,ide, jds,jde, kds,kde,                                               &
              ims,ime, jms,jme, kms,kme,                                               &
              its,ite, jts,jte, kts,kte             )
+
 
 ! Fill top level to prevent spurious interpolation results (no extrapolation)
       do nv=1,num_chem
@@ -1398,6 +1496,22 @@ end if !Chemistry time step check
                                ims,ime, jms,jme, kms,kme,       & ! memory dims
                                its,ite, jts,jte, kts,kte )
    END SELECT tracer2
+
+!-- set upper boundary condition
+    if( config_flags%have_bcs_upper )then
+       call wrf_debug(15,'set upper boundary condition')
+       call tropopause_driver( grid%id, grid%dt, current_date_char,         &
+                               t_phy, p_phy, p8w, zmid, z_at_w,             &
+                               grid%tropo_lev, grid%tropo_p,  grid%tropo_z, &
+                               ids, ide, jds, jde, kds, kde,                &
+                               ims, ime, jms, jme, kms, kme,                &
+                               its, ite, jts, jte, kts, kte                 )
+       call upper_bc_driver  ( grid%id, grid%dt, current_date_char, &
+                               chem, p_phy, p8w, grid%tropo_lev,    &
+                               ids,ide, jds,jde, kds,kde,           &
+                               ims,ime, jms,jme, kms,kme,           &
+                               its,ite, jts,jte, kts,kte            )
+    endif
 
 
 # if ( EM_CORE == 1 ) 

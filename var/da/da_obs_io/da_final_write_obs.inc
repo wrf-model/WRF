@@ -402,7 +402,7 @@ subroutine da_final_write_obs(it,iv)
    end if
 
    !------------------------------------------------------------------
-   ! writing AIRS retrievals:
+   ! [19] writing AIRS retrievals:
    !------------------------------------------------------------------
 
    num_obs = 0
@@ -421,7 +421,7 @@ subroutine da_final_write_obs(it,iv)
    end if
 
    !------------------------------------------------------------------
-   ! writing GPS refractivity
+   ! [20] writing GPS refractivity
    !------------------------------------------------------------------
 
    num_obs = 0
@@ -438,6 +438,26 @@ subroutine da_final_write_obs(it,iv)
          call da_read_omb_tmp(filename(k),iunit,num_obs,'gpsref',6)    
       end do
    end if
+
+   !------------------------------------------------------------------
+   ! [21] writing rain 
+   !------------------------------------------------------------------
+   
+   num_obs = 0
+   if (iv%info(rain)%nlocal > 0) then
+      do n = 1, iv%info(rain)%nlocal
+         if(iv%info(rain)%proc_domain(1,n)) num_obs = num_obs + 1
+      end do
+   end if
+   call da_proc_sum_int(num_obs)
+   if (num_obs > 0 .and. rootproc) then
+      write(omb_unit,'(a20,i8)')'rain', num_obs  
+      num_obs = 0
+      do k = 0,num_procs-1
+         call da_read_omb_tmp(filename(k),iunit,num_obs,'rain',4)    
+      end do
+   end if
+
 
    if (rootproc) then
       close(iunit)

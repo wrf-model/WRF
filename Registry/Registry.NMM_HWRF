@@ -129,7 +129,7 @@ state    real   hlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_M
 ##############################################################
 # Variables for coupling
 
-state    real   dtc            -        dyn_nmm      1     -     irh     "DTC"      "Coupling timestep"                           "s"
+state    real   dtc            -        dyn_nmm      1     -     irh     "DTC"      "Coupling timestep" "s"
 state    real   guessdtc       -        dyn_nmm      1     -     irh     "GUESSDTC" "Guessed Coupling Timestep for Uncoupled Run" "s"
 
 ##############################################################
@@ -371,7 +371,7 @@ state integer lpbl      ij    dyn_nmm   1    -     ir       "LPBL"     "Model la
 state  real   mixht     ij    dyn_nmm   1    -     rh        "MIXHT"                 "MXL HEIGHT"              "m"
 state  real   ustar     ij    dyn_nmm   1    -     irhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "USTAR"    "Friction velocity"                    "m s-1"
 state  real   z0        ij    dyn_nmm   1    -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "Z0"       "Roughness height"                     "m"
-state  real   hpbl2d    ij    dyn_nmm   1    -     irh        "HPBL2D"     "HEIGHT OF PBL from new GFS pbl"                       "m"
+state  real   hpbl2d    ij    dyn_nmm   1    -     irh        "HPBL2D"     "HEIGHT OF PBL from new GFS pbl" "m"
 state  real   heat2d    ij    dyn_nmm   1    -     irh        "HEAT2D"     "" ""
 state  real   evap2d    ij    dyn_nmm   1    -     irh        "EVAP2D"     "" ""
 state  real   z0base    ij    dyn_nmm   1    -     ir       "Z0BASE"   "Base roughness height"                "m"
@@ -1069,6 +1069,7 @@ rconfig   real    radt                    namelist,physics	max_domains    0     
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0       rh       "sf_sfclay_physics"             ""      ""
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0       rh       "sf_surface_physics"            ""      ""
 rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    0       rh       "bl_pbl_physics"                ""      ""
+rconfig   logical     mfshconv            namelist,physics      max_domains    .false.  rh       "mfshconv"         "To activate mass flux scheme with qnse true or false"      ""
 rconfig   real    BLDT                    namelist,physics	max_domains    0       h    "BLDT"          ""      ""
 rconfig   integer     cu_physics          namelist,physics	max_domains    0       rh       "cu_physics"            ""      ""
 rconfig   integer shcu_physics            namelist,physics      max_domains    0       rh   "shcu_physics"  ""      ""
@@ -1085,6 +1086,8 @@ rconfig   real    swrad_scat              namelist,physics      1             1 
 rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=hybrid (not yet implemented)"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""
 rconfig   integer num_urban_layers        namelist,physics      1            400       irh    "num_urban_layers"               ""      ""
+rconfig   integer mosaic_lu               namelist,physics      1             0       irh     "mosaic_lu"             ""      ""
+rconfig   integer mosaic_soil             namelist,physics      1             0       irh     "mosaic_soil"           ""      ""
 rconfig   integer maxiens                 namelist,physics	1             1       irh    "maxiens"                    ""      ""
 rconfig   integer maxens                  namelist,physics	1             3       irh    "maxens"                    ""      ""
 rconfig   integer maxens2                 namelist,physics	1             3       irh    "maxens2"                    ""      ""
@@ -1097,6 +1100,7 @@ rconfig   integer mp_zero_out             namelist,physics	1             0      
 rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8      -      "mp_zero_out_thresh"  "minimum threshold for non-Qv moist fields, below are set to zero"  "kg/kg"
 rconfig   real    seaice_threshold        namelist,physics      1            271       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
 rconfig   integer fractional_seaice       namelist,physics      1            0        -     "fractional_seiace" "Fractional sea-ice option"
+rconfig   integer seaice_albedo_opt       namelist,physics      1            0        -     "seaice_albedo_opt" "Method for setting albedo over sea ice"
 rconfig   logical tice2tsk_if2cold        namelist,physics      1              .false. -     "tice2tsk_if2cold" "Avoid low ice temps when ice frac and Tsk are inconsistent"
 rconfig   integer sst_update              namelist,physics      1            0        i01rh    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
 rconfig   integer sf_urban_physics        namelist,physics      max_domains  0         h    "sf_urban_physics"   "activate urban model  0=no, 1=Noah_UCM 2=BEP_UCM"   ""
@@ -1293,6 +1297,7 @@ package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,q
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr
 package   etamp_hwrf    mp_physics==85               -             moist:qv,qc,qr,qi,qs
+package   etampold      mp_physics==95               -             moist:qv,qc,qr,qs
 
 package   nodfimoist        mp_physics_dfi==-1       -             -
 package   passiveqv_dfi     mp_physics_dfi==0        -             dfi_moist:dfi_qv
@@ -1309,6 +1314,7 @@ package   morr_two_moment_dfi  mp_physics_dfi==10    -             dfi_moist:dfi
 package   sbu_ylinscheme_dfi    mp_physics==13           -         dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs
 package   wdm5scheme_dfi    mp_physics_dfi==14       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr
 package   wdm6scheme_dfi    mp_physics_dfi==16       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr
+package   etampold_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs
 
 # package   noprogn       progn==0                     -             -
 # package   progndrop     progn==1                     -             scalar:qndrop;dfi_scalar:dfi_qndrop
@@ -1317,6 +1323,7 @@ package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             -
 package   rrtmg_lwscheme  ra_lw_physics==4           -             -
 package   goddardlwscheme  ra_lw_physics==5          -             -
+package   flglwscheme   ra_lw_physics==7             -             -
 package   gfdllwscheme  ra_lw_physics==99            -             -
 package   hwrflwscheme  ra_lw_physics==98
 
@@ -1325,6 +1332,7 @@ package   gsfcswscheme  ra_sw_physics==2             -             -
 package   camswscheme   ra_sw_physics==3             -             -
 package   rrtmg_swscheme  ra_sw_physics==4           -             -
 package   goddardswscheme  ra_sw_physics==5          -             -
+package   flgswscheme   ra_sw_physics==7             -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -
 package   hwrfswscheme  ra_sw_physics==98
 package   heldsuarez    ra_lw_physics==31            -             -
@@ -1336,18 +1344,22 @@ package   gfdlsfcscheme  sf_sfclay_physics==88       -             -
 package   qnsesfcscheme  sf_sfclay_physics==4        -             -
 package   pxsfcscheme    sf_sfclay_physics==7        -             -
 package   temfsfcscheme  sf_sfclay_physics==10       -             -
+package   sfclayrevscheme sf_sfclay_physics==11        -             -
 package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
 package   ruclsmscheme   sf_surface_physics==3       -             -
+package   noahmpscheme   sf_surface_physics==4       -             -
 package   gfdlslab       sf_surface_physics==88      -             -
 package   pxlsmscheme    sf_surface_physics==7       -             -
+package   ssibscheme     sf_surface_physics==8       -             -
 package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             -
 package   gfsscheme      bl_pbl_physics==3           -             -
 package   gfs2011scheme  bl_pbl_physics==83          -             state:hpbl2d,heat2d,evap2d
 package   qnsepblscheme  bl_pbl_physics==4           -             -
+package   qnsepbl09scheme  bl_pbl_physics==94        -             -
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             - 
 package   camuwpblscheme bl_pbl_physics==9           -             -

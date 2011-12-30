@@ -35,7 +35,9 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
    ! [3] Transform to model variable space:
    !--------------------------------------------------------------------------
 
-  if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
+  if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) .or. &
+       (grid%pseudo_var(1:1).eq.'q' .and. grid%pseudo_var(2:2).ne.' ') .or.  &
+       (grid%pseudo_var(1:1).eq.'Q' .and. grid%pseudo_var(2:2).ne.' ') ) then
    if ( cloud_cv_options == 1 ) then
       ! Pseudo RH --> Total water mixing ratio:
       !$OMP PARALLEL DO &
@@ -65,65 +67,58 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
       end do
       !$OMP END PARALLEL DO
 #ifdef CLOUD_CV
-!qc
+!qcloud
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij )
       do ij = 1 , grid%num_tiles
          do k = kts,kte
             do j = grid%j_start(ij),grid%j_end(ij)
                do i =  its, ite
-                 if(cloud_cv_options == 2)then
-                  vp%v6(i,j,k)  = vp%v6(i,j,k) + grid%xa%qcw(i,j,k) * grid%xb%qs(i,j,k)
-                 elseif(cloud_cv_options == 3)then
                   vp%v6(i,j,k)  = vp%v6(i,j,k) + grid%xa%qcw(i,j,k)
-!                 elseif(mcv_options.eq.4)then
-!                  vp%v6(i,j,k)  = 0.0
-                 endif
                end do
             end do
          end do
       end do
       !$OMP END PARALLEL DO
-!     vp%v6  = 0.0
-!qr
+!qrain
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij )
       do ij = 1 , grid%num_tiles
          do k = kts,kte
             do j = grid%j_start(ij),grid%j_end(ij)
                do i =  its, ite
-                 if(cloud_cv_options == 2)then
-                  vp%v7(i,j,k)  = vp%v7(i,j,k) + grid%xa%qrn(i,j,k) * grid%xb%qs(i,j,k)
-                 elseif(cloud_cv_options == 3)then
                   vp%v7(i,j,k)  = vp%v7(i,j,k) + grid%xa%qrn(i,j,k)
-!                 elseif(mcv_options.eq.4)then
-!                  vp%v7(i,j,k)  = 0.0
-                 endif
                end do
             end do
          end do
       end do
       !$OMP END PARALLEL DO
-!ice
+!qice
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij )
       do ij = 1 , grid%num_tiles
          do k = kts, kte
             do j = grid%j_start(ij), grid%j_end(ij)
                do i = its, ite
-                 if(cloud_cv_options == 2)then
-                  vp%v8(i,j,k)  = vp%v8(i,j,k) + grid%xa%qci(i,j,k) * grid%xb%qs(i,j,k)
-                 elseif(cloud_cv_options == 3)then
                   vp%v8(i,j,k)  = vp%v8(i,j,k) + grid%xa%qci(i,j,k)
-!                elseif(mcv_options.eq.4)then
-!                  vp%v8(i,j,k)  = 0.0
-                 endif
                enddo
             enddo
          enddo
       enddo
       !$OMP END PARALLEL DO
-!      vp%v8 = 0.0
+!qsnow
+      !$OMP PARALLEL DO &
+      !$OMP PRIVATE ( ij )
+      do ij = 1 , grid%num_tiles
+         do k = kts, kte
+            do j = grid%j_start(ij), grid%j_end(ij)
+               do i = its, ite
+                  vp%v9(i,j,k)  = vp%v9(i,j,k) + grid%xa%qsn(i,j,k)
+               enddo
+            enddo
+         enddo
+      enddo
+      !$OMP END PARALLEL DO
 #endif
    end if
   else ! no rf or cloud radiance

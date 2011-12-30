@@ -23,20 +23,20 @@ module da_test
 
    use da_control, only : trace_use,ierr, trace_use_dull, comm,global,stdout,rootproc, &
       sfc_assi_options,typical_qrn_rms,typical_qci_rms,jcdfi_use, jcdfi_diag, &
-      typical_u_rms,typical_v_rms,typical_w_rms,typical_t_rms, typical_p_rms, &
+      typical_u_rms,typical_v_rms,typical_w_rms,typical_t_rms, typical_p_rms, typical_rain_rms, &
       typical_q_rms,typical_qcw_rms,print_detail_testing,typical_rh_rms, &
       fg_format, fg_format_wrf_arw_global, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
       typical_rf_rms,typical_rv_rms, typical_thickness_rms, typical_tb19v_rms,typical_tb37h_rms, &
       typical_tb85h_rms,typical_tb37v_rms,typical_tb85v_rms,typical_tb22v_rms, &
       typical_tb19h_rms,typical_speed_rms,typical_tpw_rms,typical_ref_rms, &
-      cv_options_hum,inv_typ_vp5_sumsq,inv_typ_vp1_sumsq, &
+      cv_options_hum,inv_typ_vp5_sumsq,inv_typ_vp1_sumsq, trajectory_io, &
       inv_typ_vp3_sumsq,inv_typ_vp2_sumsq,inv_typ_vpalpha_sumsq, &
       inv_typ_vp4_sumsq,typical_rho_rms,balance_geo,balance_cyc,balance_type, &
       balance_geocyc, var4d, num_fgat_time,cv_options_hum_specific_humidity, &
       cv_options_hum_relative_humidity, ids, ide, jds, jde, kds, kde, &
       sound, mtgirs, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
-      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, tamdar,&
-      bogus, buoy, qscat, pseudo, radiance, use_radarobs, use_ssmiretrievalobs, &
+      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, tamdar,rain, &
+      bogus, buoy, qscat, pseudo, radiance, use_radarobs, use_ssmiretrievalobs,use_rainobs, &
       use_gpsrefobs, use_ssmt1obs, use_ssmitbobs, use_ssmt2obs, use_gpspwobs,&
       use_gpsztdobs, Use_Radar_rf, use_rad, crtm_cloud, cloud_cv_options, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
@@ -68,7 +68,7 @@ module da_test
    use da_tools_serial, only : da_get_unit,da_free_unit
    use da_tracing, only : da_trace_entry,da_trace_exit
    use da_transfer_model, only : da_transfer_wrftltoxa,da_transfer_xatowrftl, &
-      da_transfer_xatowrftl_adj,da_transfer_wrftltoxa_adj, da_setup_firstguess
+      da_transfer_xatowrftl_adj,da_transfer_wrftltoxa_adj,da_transfer_wrftoxb
    ! Don't use, as we pass a 3D array into a 1D one
    ! use da_wrf_interfaces, only : wrf_dm_bcast_real
    use da_wrf_interfaces, only : wrf_debug, wrf_shutdown
@@ -82,7 +82,8 @@ module da_test
       da_transform_bal_adj
 #ifdef VAR4D
    use da_transfer_model, only : da_transfer_xatowrftl_lbc, da_transfer_xatowrftl_adj_lbc, da_get_2nd_firstguess
-   use da_4dvar, only : model_grid, da_tl_model, da_ad_model, input_nl_xtraj, upsidedown_ad_forcing
+   use da_4dvar, only : model_grid, da_tl_model, da_ad_model, input_nl_xtraj, upsidedown_ad_forcing, &
+       u6_2, v6_2, w6_2, t6_2, ph6_2, p6, mu6_2, psfc6, moist6
 #endif
 
    implicit none
@@ -115,6 +116,7 @@ contains
 #include "da_check_xtoy_adjoint_polaramv.inc"
 #include "da_check_xtoy_adjoint_ships.inc"
 #include "da_check_xtoy_adjoint_radar.inc"
+#include "da_check_xtoy_adjoint_rain.inc"
 #include "da_check_xtoy_adjoint_bogus.inc"
 #include "da_check_xtoy_adjoint_sound.inc"
 #include "da_check_xtoy_adjoint_sonde_sfc.inc"

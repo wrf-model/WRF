@@ -139,7 +139,7 @@
       call ATM_ANNOUNCE('ATM_CMP_START: Ocean_spec broadcast',2)
 
       call CMP_gnr_RECV(WM_id,1,MPI_INTEGER)
-      write(s,'(i2)') WM_id
+      write(s,'(i4)') WM_id
       call ATM_ANNOUNCE('back from CMP_INTEGER_RECV, WM id is '//s,2)
       call MPI_BCAST(WM_id,1,MPI_INTEGER, &
      &component_master_rank_local,MPI_COMM_Atmos,ierr)

@@ -643,10 +643,12 @@ endif
       CALL wrf_put_dom_ti_integer ( fid , 'JULDAY' ,  config_flags%julday , 1 , ierr )
 #endif
     ENDIF
-#if (NMM_CORE == 1)
-        ! MMINLU='USGS'
-#endif
     CALL wrf_put_dom_ti_integer ( fid , 'MAP_PROJ' ,  config_flags%map_proj , 1 , ierr )
+
+    IF(MMINLU(1:4) == 'USGS') THEN
+      MMINLU='USGS'
+    ENDIF
+	
     IF(MMINLU(1:1) .EQ. " ")THEN
        CALL wrf_put_dom_ti_char ( fid , 'MMINLU',  "    "       , ierr )
     ELSE

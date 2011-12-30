@@ -1,4 +1,5 @@
 &control_param
+da_bdy_file        = './wrfvar_bdyout'
 wrfvar_output_file = './wrfvar_output'
 wrf_bdy_file       = './wrfbdy_d01'
 wrf_input          = './wrfinput_d01'
@@ -7,5 +8,6 @@ cycling = .false.
 debug   = .true.
 low_bdy_only = .false.             
 update_lsm = .false. 
+var4d = .false.
 /
 

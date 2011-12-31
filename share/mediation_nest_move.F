@@ -1210,12 +1210,15 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
 !        vortex_tracker=3 -- use results of STATS_FOR_MOVE to follow
 !          the vortex center.  If the vortex is more than 3 X
 !          gridpoints or 6 Y gridpoints from the center, then
-!          move to follow it.
+!          move to follow it.  This is the HWRF-X algorithm.
 !        vortex_tracker=2 -- follow this domain's nest.  Only works
 !          if this domain has a nest, otherwise this domain is
 !          stationary.  If the nest domain is more than 3 X
 !          gridpoints or 6 Y gridpoints from the center, then move
 !          to follow it. (Added by Sam Trahan, April 1, 2011)
+!        vortex_tracker=4 -- more advanced tracker that is less likely
+!          to jump to other low pressure systems, and less confused
+!          by MSLP noise.  (Added by Sam Trahan, September, 2011.)
 ! RETURN VALUE: TRUE if domain should move, FALSE otherwise.
 ! OUTPUTS:
 !        move_cd_x = number of parent gridpoints to move in X
@@ -1357,6 +1360,29 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
             endif
          endif
       endif nest_following
+      revised_nest_motion: if(grid%vortex_tracker==4) then
+         if((grid%XLOC_1-grid%XLOC_2) .GE. 3) then
+            move_cd_x=-1
+         elseif((grid%XLOC_2-grid%XLOC_1) .GE. 3) then
+            move_cd_x=1
+         else
+            move_cd_x=0
+         endif
+         if((grid%YLOC_2-grid%YLOC_1) .GE. 6) then
+            move_cd_y=2
+         elseif((grid%YLOC_1-grid%YLOC_2) .GE. 6) then
+            move_cd_y=-2
+         else
+            move_cd_y=0
+         endif
+         if(wrf_dm_on_monitor()) then
+            if(move_cd_x/=0 .or. move_cd_y/=0) then
+               write(mess,'("d",I0," moving x",SP,I0," y",I0,SS," to follow vortex")') &
+                    grid%id,move_cd_x,move_cd_y
+               call wrf_debug(1,trim(mess))
+            endif
+         endif
+      endif revised_nest_motion
       vortex_following: IF(grid%vortex_tracker==3 .or. grid%vortex_tracker==1)THEN
          IF((grid%XLOC_1-grid%XLOC_2) .GE. 3)THEN 
             move_cd_x  = -1

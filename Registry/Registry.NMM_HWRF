@@ -578,6 +578,14 @@ state integer iup_adh   ij   dyn_nmm     1    -    -
 state integer iup_adv   ij   dyn_nmm     1    -    -
 state integer imicrogram -   misc        -    -    r   "imicrogram"  "flag 0/1 0=mixratio, 1=mcrograms/m3"  ""
 
+#
+# Vortex Tracker #4 Variables
+#
+state  real   distsq    ij     dyn_nmm     1      -      irh       "DISTSQ"  "Approximate square of distance from nest center for vortex tracker #4" "m2"
+state  real   weightout ij     dyn_nmm     1      -      irh       "WEIGHTOUT"  "Vortex center finder weight array for vortex tracker #4" ""
+state integer mslp_noisy ij    dyn_nmm     1      -      irh       "MSLP_NOISY"  "0=okay, 1=noisy MSLP, 2=outside search radius, 3=boundary (vortex tracker #4)" ""
+
+
 #                                               
 # table entries are of the form                                         
 #<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>   
@@ -1115,6 +1123,18 @@ rconfig   integer sas_shal_conv           namelist,physics     max_domains    0 
 rconfig   real    sas_mass_flux           namelist,physics      max_domains  9e9       -     "sas_mass_flux"   "mass flux limit (SAS scheme)" ""
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
 
+# Vortex Tracking (physics namelist)
+rconfig   integer vortex_tracker          namelist,physics      max_domains    1      -      "vortex_tracker" "Vortex Tracking Algorithm" ""
+# Only for algorithm 4:
+rconfig   real    vt4_radius              namelist,physics      max_domains  150000.  -      "vt4_radius"     "Vortex Search Radius for vortex tracker #4" "m"
+rconfig   real    vt4_weightexp           namelist,physics      max_domains  1.       -      "vt4_weightexp"  "Vortex Search Weight Exponent for vortex tracker #4" ""
+rconfig   real    vt4_pmax                namelist,physics      max_domains  -1.      -      "vt4_pmax"       "Vortex Search Max Pressure for vortex tracker #4 (<0 = actual max pressure in search radius)" "Pa"
+
+rconfig   real    vt4_noise_pmax          namelist,physics      max_domains  103000.  -      "vt4_noise_pmax" "Noise Removal: Maximum Realistic MSLP" "Pa"
+rconfig   real    vt4_noise_pmin          namelist,physics      max_domains  85000.   -      "vt4_noise_pmin" "Noise Removal: Minimum Realistic MSLP" "Pa"
+rconfig   real    vt4_noise_dpdr          namelist,physics      max_domains  0.6      -      "vt4_noise_dpdr" "Noise Removal: Maximum Realistic dMSLP/dr" "Pa/m"
+rconfig   integer vt4_noise_iter          namelist,physics      max_domains  2        -      "vt4_noise_iter" "Noise Removal: number of iterations" ""
+
 # nmm variables
 rconfig   integer idtad                   namelist,physics     max_domains    2       irh    "idtad"  "fundamental timesteps between calls to NMM passive advection scheme"
 rconfig   integer nsoil                   namelist,physics     max_domains    4       irh    "nsoil"  "number of soil layers"
@@ -1280,6 +1300,8 @@ rconfig integer td_pwfy        namelist,physics 1 1      - - ""  "southwest corn
 #### 9. Edit the Registry file to set up '5' as the value of the
 **** namelist variable dyn_opt that means to select our exp dyncore.
 package   dyn_exp       dyn_opt==5                   -             -
+
+package   vt4           vortex_tracker==4            -             state:weightout,mslp_noisy,distsq
 
 #package   passivec1     chem_opt==0                  -
 package   passiveqv     mp_physics==0                -             moist:qv
@@ -1501,3 +1523,6 @@ halo      HALO_TRACERS dyn_nmm 48:szj,s1z,spz,tcs
 halo HALO_NMM_FORCE_DOWN_SST dyn_nmm 120:sst
 
 halo HALO_NMM_TERRAIN_SMOOTH   dyn_nmm      24:HRES_AVC
+
+halo HALO_NMM_VT4_MSLP  dyn_nmm 8:mslp
+halo HALO_NMM_VT4_NOISE dyn_nmm 8:mslp_noisy

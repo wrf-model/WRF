@@ -61,6 +61,7 @@
      &           )
 !----------------------------------------------------------------------
 !
+      USE MODULE_STATS_FOR_MOVE, only: vorttrak_init
       USE MODULE_TIMING
 #ifdef HWRF
       USE MODULE_HIFREQ, only : hifreq_open
@@ -348,6 +349,12 @@
       endif
 #endif
       
+#if (HWRF==1)
+      if(grid%vortex_tracker<1 .or. grid%vortex_tracker>3) then
+         write(wrf_err_message,*)' domain ',grid%id,' has an invalid value ',grid%vortex_tracker,' for grid%vortex_tracker.  It must be 1, 2 or 3.'
+      endif
+#endif
+      
 !!!!!!tlb
 !!!! For now, set NPES to 1
       NPES=1
@@ -610,6 +617,15 @@
 ! end of high-freq output
 #endif
 !
+#ifdef HWRF
+! Begin Sam Trahan's doing for vortex_tracker=4 option
+         call VORTTRAK_INIT(grid,config_flags,       &
+                            IDS,IDE,JDS,JDE,KDS,KDE, &
+                            IMS,IME,JMS,JME,KMS,KME, &
+                            ITS,ITE,JTS,JTE,KTS,KTE)
+
+! End Sam Trahan's doing for vortex_tracker=4 option
+#endif
 #ifdef HWRF
 !zhang's doing
   IF((.NOT.RESTRT .AND. .NOT.ANAL) .OR. .NOT.allowed_to_read)THEN

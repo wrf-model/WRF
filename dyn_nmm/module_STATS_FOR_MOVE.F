@@ -273,7 +273,7 @@ contains
                            ITS,ITE,JTS,JTE,KTS,KTE
     real :: dp2,dy2,dx2,pdiff,dp2max
     integer :: i,j,nprint
-    logical :: iadd
+    integer :: iadd
     character*255 :: message
     
     dy2=dy_nmm*dy_nmm*4

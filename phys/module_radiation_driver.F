@@ -129,7 +129,9 @@ CONTAINS
                                        ,FLGLWSCHEME, FLGSWSCHEME
 
    USE module_model_constants
+#ifndef HWRF
    USE module_wrf_error , ONLY : wrf_err_message
+#endif
 
 ! *** add new modules of schemes here
 
@@ -566,6 +568,9 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(OUT) :: COSZEN
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(OUT) :: HRANG
 !------------------------------------------------------------------
+#ifdef HWRF
+   CHARACTER(len=265) :: wrf_err_message
+#endif
 
    CALL wrf_debug (1, 'Top of Radiation Driver')
 !  WRITE ( wrf_err_message , * ) 'itimestep = ',itimestep,', dt = ',dt,', lw and sw options = ',lw_physics,sw_physics

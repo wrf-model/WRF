@@ -62,6 +62,7 @@ module da_setup_structures
    use da_obs_io, only : da_read_obs_bufr,da_read_obs_radar, &
       da_scan_obs_radar,da_scan_obs_ascii,da_read_obs_ascii, &
       da_read_obs_bufrgpsro, da_scan_obs_rain, da_read_obs_rain
+   use da_par_util1, only : da_proc_sum_real, da_proc_sum_int, da_proc_sum_ints
    use da_par_util, only : da_patch_to_global
 #if defined(RTTOV) || defined(CRTM)
    use da_radiance, only : da_setup_radiance_structures
@@ -101,6 +102,7 @@ contains
 #include "da_interpolate_regcoeff.inc"
 #include "da_rescale_background_errors.inc"
 #include "da_scale_background_errors.inc"
+#include "da_scale_background_errors_cv3.inc"
 #include "da_setup_background_errors.inc"
 #include "da_setup_be_global.inc"
 #include "da_setup_be_ncep_gfs.inc"

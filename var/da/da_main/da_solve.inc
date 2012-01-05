@@ -279,6 +279,9 @@
       if (it > 1 .and. cv_options == 5) then
          print '(/10X,"===> Re-set BE SCALINGS for outer-loop=",i2)', it
          call  da_scale_background_errors ( be, it )
+      else if (it > 1 .and. cv_options == 3) then
+         print '(/10X,"===> Re-set CV3 BE SCALINGS for outer-loop=",i2)', it
+         call  da_scale_background_errors_cv3 ( grid, be, it )
       endif
 
       call da_initialize_cv (cv_size, xhat)

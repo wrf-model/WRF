@@ -289,19 +289,19 @@ subroutine da_setup_be_regional(xb, be)
          'Using the averaged regression coefficients for unbalanced part'
 
       do k=1,nk
-         be%reg_psi_ps  (1:num_bins2d,k) = sum(be%reg_psi_ps  (1:num_bins2d,k))/float(num_bins2d)
-         be%reg_ps_u_rh (1:num_bins2d,k) = sum(be%reg_ps_u_rh (1:num_bins2d,k))/float(num_bins2d)
-         be%reg_chi_u_ps(1:num_bins2d,k) = sum(be%reg_chi_u_ps(1:num_bins2d,k))/float(num_bins2d)
+         be%reg_psi_ps  (1:num_bins2d,k) = sum(be%reg_psi_ps  (1:num_bins2d,k))/dble(num_bins2d)
+         be%reg_ps_u_rh (1:num_bins2d,k) = sum(be%reg_ps_u_rh (1:num_bins2d,k))/dble(num_bins2d)
+         be%reg_chi_u_ps(1:num_bins2d,k) = sum(be%reg_chi_u_ps(1:num_bins2d,k))/dble(num_bins2d)
       end do
 
       do m=1,nk
          do k=1,nk
 
-           be%reg_psi_t  (1:num_bins2d,k,m)= sum(be%reg_psi_t(1:num_bins2d,k,m))/float(num_bins2d)
-           be%reg_psi_rh    (1:num_bins2d,k,m)= sum(be%reg_psi_rh  (1:num_bins2d,k,m))/float(num_bins2d)
-           be%reg_chi_u_t(1:num_bins2d,k,m)= sum(be%reg_chi_u_t(1:num_bins2d,k,m))/float(num_bins2d)
-           be%reg_chi_u_rh  (1:num_bins2d,k,m)= sum(be%reg_chi_u_rh  (1:num_bins2d,k,m))/float(num_bins2d)
-           be%reg_t_u_rh (1:num_bins2d,k,m)= sum(be%reg_t_u_rh (1:num_bins2d,k,m))/float(num_bins2d)
+           be%reg_psi_t  (1:num_bins2d,k,m)= sum(be%reg_psi_t(1:num_bins2d,k,m))/dble(num_bins2d)
+           be%reg_psi_rh    (1:num_bins2d,k,m)= sum(be%reg_psi_rh  (1:num_bins2d,k,m))/dble(num_bins2d)
+           be%reg_chi_u_t(1:num_bins2d,k,m)= sum(be%reg_chi_u_t(1:num_bins2d,k,m))/dble(num_bins2d)
+           be%reg_chi_u_rh  (1:num_bins2d,k,m)= sum(be%reg_chi_u_rh  (1:num_bins2d,k,m))/dble(num_bins2d)
+           be%reg_t_u_rh (1:num_bins2d,k,m)= sum(be%reg_t_u_rh (1:num_bins2d,k,m))/dble(num_bins2d)
 
          end do
       end do

@@ -42,8 +42,8 @@ subroutine da_transfer_xatowrf(grid)
            qvf1, qvf2, qvf1_b, qvf2_b
 
    real :: uu, vv, ps1, ps2, ts1, ts2, qv1, qv2, height
-   real :: zs1, zs2, pf2, theta, thetam, mu_full, pfu, pfd, phm, cvpm, p2m
-   real, dimension(kms:kme) :: ald, pfl, ph
+   real :: zs1, zs2, pf2, theta, thetam, mu_full, pfu, pfd, phm, cvpm, tv2, p2m
+   real, dimension(kms:kme) :: ald, ph
 
    if (trace_use) call da_trace_entry("da_transfer_xatowrf")
 
@@ -509,18 +509,13 @@ subroutine da_transfer_xatowrf(grid)
                        grid%phb(i,j,kts+1)+grid%ph_2(i,j,kts+1))/gravity
          height = height - grid%ht(i,j)
 #else
-       ! height = 0.5*(grid%phb(i,j,kts)+grid%ph_2(i,j,kts)+ &
-       !               grid%phb(i,j,kts+1)+grid%ph_2(i,j,kts+1))/gravity
-       ! height = height - grid%ht(i,j)
-
-       ! Height is in proportion to log pressure: wee 11/22/2011
          zs1 = (grid%phb(i,j,kts)+grid%ph_2(i,j,kts))/gravity
          zs2 = (grid%phb(i,j,kts+1)+grid%ph_2(i,j,kts+1))/gravity
-
-       ! Pressure at the full level second from bottom
-         pf2 = (grid%dnw(kts)*ps2+grid%dnw(kts+1)*ps1)/(grid%dnw(kts)+grid%dnw(kts+1))
-
-         height = (zs2-zs1)*LOG(grid%psfc(i,j)/ps1)/LOG(grid%psfc(i,j)/pf2)
+         mu_full = grid%mub(i,j)+grid%mu_2(i,j)
+         pfu = mu_full*grid%znw(kts+1) + grid%p_top
+         pfd = mu_full*grid%znw(kts)   + grid%p_top
+         phm = mu_full*grid%znu(kts)   + grid%p_top
+         height = (zs2-zs1)*LOG(pfd/phm)/LOG(pfd/pfu)
 #endif
          if (height <= 0.0) then
             message(1) = "Negative height found"
@@ -537,11 +532,16 @@ subroutine da_transfer_xatowrf(grid)
 #ifndef TKW_
             grid%th2(i,j) = grid%t2(i,j)*(base_pres/ps1)**kappa
 #else
-            ! This is obviously incorrect: wee 11/22/2011
-            ! grid%th2(i,j) = grid%t2(i,j)*(base_pres/ps1)**kappa
+           ! This is obviously incorrect: wee 11/22/2011
+           ! grid%th2(i,j) = grid%t2(i,j)*(base_pres/ps1)**kappa
 
-            ! 2-m pressure: Ground level and first half level are used
-            p2m = grid%psfc(i,j)*EXP(-2.0/height*LOG(grid%psfc(i,j)/ps1))
+           ! 2-m pressure: Ground level and first half level are used
+           ! p2m = grid%psfc(i,j)*EXP(-2.0/height*LOG(grid%psfc(i,j)/ps1))
+
+           ! This is a good enough approximation for a very shallow layer (2m)
+           ! p = psfc*EXP(-gdz/RTv), where dz is 2m
+            tv2 = grid%t2(i,j)*(1.0+0.608*grid%q2(i,j))
+            p2m = grid%psfc(i,j)*EXP(-2.0*gravity/(gas_constant*tv2))
             grid%th2(i,j) = grid%t2(i,j)*(base_pres/p2m)**kappa
 #endif
       end do

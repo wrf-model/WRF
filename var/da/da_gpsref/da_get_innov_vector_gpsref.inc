@@ -48,6 +48,7 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
    real    :: height_below(5000)
    character(len=40) :: name_qc(5000)
    character(len=2) :: c_it
+   character(len=7) :: c_nt
 
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_gpsref")
 
@@ -477,14 +478,15 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
        END DO
     END IF
 
-     goto 12345
+    goto 12345
 
 ! Write out GPS Ref data:
 
      DO n=iv%info(gpsref)%n1,iv%info(gpsref)%n2
      Iu_ref = 336
      write(c_it,'(I2.2)') it
-     open (unit=Iu_ref, file='RO_Innov_'//iv%info(gpsref)%date_char(n)//'_'//c_it, &
+     c_nt=iv%info(gpsref)%name(n)(8:11)//iv%info(gpsref)%name(n)(28:30)
+     open (unit=Iu_ref, file='RO_Innov_'//iv%info(gpsref)%date_char(n)//'_'//c_nt//'.'//c_it, &
            form='formatted')
            write(unit=Iu_ref, fmt='(/i5,2x,a,2x,a,2x,4f10.3,i5)') n, &
               iv%info(gpsref)%date_char(n), iv%info(gpsref)%id(n),  &

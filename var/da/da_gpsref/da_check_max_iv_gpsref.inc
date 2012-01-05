@@ -5,6 +5,12 @@ subroutine da_check_max_iv_gpsref(iv,it, num_qcstat_conv, opt)
    ! Update:
    !    Removed Outerloop check as it is done in da_get_innov
    !    Author: Syed RH Rizvi,  MMM/NESL/NCAR,  Date: 07/12/2009
+   !
+   !    Added argument: opt = 1, max error check, and count the total num. of obs;
+   !                    opt = 2, only count the rejected num. of obs by all of QC
+   !                             procedures specified for GPSREF.
+   !        
+   !                             Shu-Ya Chen and Y.-R. Guo, 12/30/2011  
    !-----------------------------------------------------------------------
 
    implicit none
@@ -28,29 +34,29 @@ subroutine da_check_max_iv_gpsref(iv,it, num_qcstat_conv, opt)
    do n = iv%info(gpsref)%n1,iv%info(gpsref)%n2
       do k = 1, iv%info(gpsref)%levels(n)
         call da_get_print_lvl(iv%gpsref(n)%p(k)%inv,ipr)
+        if (iv%gpsref(n)%p(k)%inv == missing_r) ipr = 1
         failed=.false.
-        if( iv%gpsref(n)%ref(k)%qc >= obs_qc_pointer )  then
+        if( iv%gpsref(n)%ref(k)%qc >= obs_qc_pointer ) &
         call da_max_error_qc(it, iv%info(gpsref), n, iv%gpsref(n)%ref(k), max_error_ref, failed)  
-          if( iv%info(gpsref)%proc_domain(k,n) ) then
-                   num_qcstat_conv(1,gpsref,8,ipr) = num_qcstat_conv(1,gpsref,8,ipr) + 1
-          end if
-        end if
-
+        if( iv%info(gpsref)%proc_domain(k,n) ) &
+                 num_qcstat_conv(1,gpsref,8,ipr) = num_qcstat_conv(1,gpsref,8,ipr) + 1
       end do
    end do
          ENDIF
-
+  
          IF ( opt == 2 ) THEN
    do n = iv%info(gpsref)%n1,iv%info(gpsref)%n2
       do k = 1, iv%info(gpsref)%levels(n)
         call da_get_print_lvl(iv%gpsref(n)%p(k)%inv,ipr)
+        if (iv%gpsref(n)%p(k)%inv == missing_r) ipr = 1
         failed=.false.
         if ( ( iv%gpsref(n)%ref(k)%qc == fails_error_max ) .or. &
              ( iv%gpsref(n)%ref(k)%qc == qc_below ) .or. &
              ( iv%gpsref(n)%ref(k)%qc == qc_middle ) .or. &
              ( iv%gpsref(n)%ref(k)%qc == qc_above ) .or. &
              ( iv%gpsref(n)%ref(k)%qc == qc_step1 ) .or. &
-             ( iv%gpsref(n)%ref(k)%qc == qc_step2 ) ) then 
+             ( iv%gpsref(n)%ref(k)%qc == qc_step2 ) .or. &
+             ( iv%gpsref(n)%ref(k)%qc == missing_data ) ) then 
              failed=.true.
         endif
             if(failed) then

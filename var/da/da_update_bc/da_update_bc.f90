@@ -1378,6 +1378,10 @@ program da_update_bc
 
  end if ! end if update_lateral_bdy
 
+ deallocate(times)
+ deallocate(thisbdytime)
+ deallocate(nextbdytime)
+
  write(unit=stdout,fmt=*) &
     '=================================================================='
  if ( update_lateral_bdy ) then

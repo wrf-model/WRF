@@ -29,6 +29,12 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
    real    :: distance_h       ! cal. h-difference between obs and model
    real,allocatable :: min_dis(:)   ! minimum difference
                                                ! hor. location.
+! t_iwabuchi 20111216 linear-log interpolation for N
+   real, allocatable :: log_ref(:,:,:)   ! for log (N)
+
+! t_iwabuchi 20111216 T for QC 
+   real, allocatable :: int_t(:,:,:)     ! for T
+
    ! For quality control
 
    real   , parameter :: h_1 = 7000.0, h_2 = 25000.0
@@ -49,6 +55,12 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
    character(len=40) :: name_qc(5000)
    character(len=2) :: c_it
    character(len=7) :: c_nt
+
+! t_iwabuchii 20111216 GSI regional QC scheme
+   real :: g_height, g_lat, cutoff, stddev     ! QC cutoff GSI
+   integer, parameter :: qc_cutoff = -36
+   real, allocatable :: model_t(:,:)  ! Model value t at ob location
+
 
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_gpsref")
 
@@ -138,6 +150,11 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
 
    model_ref(:,:) = 0.0
 
+! t_iwabuchi 20111216 (hmn) allocate model_t for GSI regional QC
+   allocate (model_t(iv%info(gpsref)%max_lev,iv%info(gpsref)%n1:iv%info(gpsref)%n2))
+   model_t(:,:) = 0.0
+
+
    allocate (used_lev(kms:kme,iv%info(gpsref)%n1:iv%info(gpsref)%n2))
    used_lev(:,:) = missing_data 
 
@@ -209,9 +226,28 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
 
    call da_convert_zk (iv%info(gpsref))
 
-   call da_interp_lin_3d (grid%xb%ref, iv%info(gpsref), model_ref)
+! t_iwabuchi 20111216 (hmn's update) linear interpolation of log(n) 
+!   call da_interp_lin_3d (grid%xb%ref, iv%info(gpsref), model_ref)
+   allocate (log_ref(ims:ime, jms:jme, kms:kme))
+   log_ref = log(grid%xb%ref)
+   call da_interp_lin_3d (log_ref, iv%info(gpsref), model_ref)
+   deallocate(log_ref)
+   allocate (int_t(ims:ime, jms:jme, kms:kme))
+   int_t = grid%xb%t
+   call da_interp_lin_3d (int_t, iv%info(gpsref), model_t)
+   deallocate(int_t)
+! t_iwabuchi END 
+
 
    do n=iv%info(gpsref)%n1,iv%info(gpsref)%n2
+
+! t_iwabuchi 20111216 compute exp of log (N)
+   do k = 1, iv%info(gpsref)%levels(n)
+     model_ref(k,n)=exp(model_ref(k,n))
+!     model_t(k,n)=exp(model_t(k,n))
+   end do
+! t_iwabuchi END
+
       if ( (.not.(pseudo_var(1:3) == 'ref' .and. num_pseudo > 0)) .or. &
            it > 1 ) then
          do k = 1, iv%info(gpsref)%levels(n)
@@ -277,9 +313,13 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
                            ((iv%gpsref(n)%h(k+1)-iv%gpsref(n)%h(k-1))/1000.)
             end do
             do k=1, top_level
+! hmn 20111206
+               if (iv%gpsref(n)%ref(k)%qc /= missing_data) then
                if ((dndz_obs(k) < -50.) .or. (dndz_mod(k) < -50.)) then
                iv%gpsref(n)%ref(k)%qc = qc_step1
 !               print*,'QC_STEP1:',n,k,iv%gpsref(n)%h(k)/1000.,dndz_obs(k),dndz_mod(k)
+               end if
+! hmn 20111206 
                end if
             end do
 
@@ -303,10 +343,14 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
                             ((iv%gpsref(n)%h(k+1)-iv%gpsref(n)%h(k-1))/1000.)
             end do
             do k=1, top_level
+! hmn 20111206
+               if (iv%gpsref(n)%ref(k)%qc /= missing_data) then
                if ((abs(dndz2_obs(k)) > 100.) .or. (abs(dndz2_mod(k)) > 100.)) then
                iv%gpsref(n)%ref(k)%qc = qc_step2
 !               print*,'QC_STEP2:',n,k,iv%gpsref(n)%h(k)/1000.,dndz2_obs(k),dndz2_mod(k)
                end if
+               end if
+
             end do
           end if ! end of if pseudo check
 
@@ -317,6 +361,126 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
 !
 ! End of Poli's check. (2009) -------------------------------------------------
 ! 
+
+
+! t_iwabuchi 20111216 GSI's regional QC
+! START GSI-QC REGIONAL TI-GSI -------------------------------------------------
+! ------------------------------------------------------------------------------
+! GSI-QC Implementation, Ted Iwabuchi
+!   First release: 2011-03-04
+!   Review 3.3.1 : 2011-12-16
+!
+! HISTORY:
+!   2011-05-04 : bug in formula fixed
+!   2011-05-11 : add abs, and validated
+!   2011-06-06 : reviewd, added comments
+!   2011-12-16 : implemented for 3.3.1
+!
+! SUMMARY:
+! Modified version of Cucurull, 2010 for NCEP GSI-Global DA
+! NCEP-GSI regional DA  setupref.f90
+!
+!   O-B cutoff depending on assigned std dev for each height and latitude
+!
+!  > 30                                           all observation is rejected
+!  11 - 30 km    0.25 + 0.5 cos (lambda)   [c1]   3
+!   9 - 11 km    (11-h)/2 x c2 + (h-9)/2 x c1     3
+!   6 -  9 km    0.5 (if T<= 240)          [c2]   3
+!                0.01 x T^2 - 0.455 T + 52.075 (if T>240)
+!   4 -  6 km    (6-h)/2 x c3 + (h-4)/2 x c2    3
+!   0 -  4 km    1+2.5 cos (lambda)        [c3]   1
+!
+!   h, lambda, T
+! ------------------------------------------------------------------------------
+!
+! REFERENCES:
+!   GSI code: comGSI_v3Beta/src/main/setupref.f90
+!
+!
+! NOTES:
+!  See TI-GSI blocks, and don't forget to declare type of variables
+!  used in this block:
+!
+! 1  real :: g_height, g_lat, cutoff, stddev     ! QC cutoff GSI
+! 2  real, allocatable :: model_t(:,:)  ! Model value t at ob location
+! 3  integer, parameter :: qc_cutoff = -36
+!
+
+!  process refracticity data n from n1 to n2
+!
+   do n=iv%info(gpsref)%n1,iv%info(gpsref)%n2
+       do k=1,iv%info(gpsref)%levels(n)
+         if (model_ref(k,n) > 0.0) top_level=k
+
+         g_height = iv%gpsref(n)% h(k)
+         g_lat    = cos ( radian * iv%info(gpsref)%lat(k,n) )
+
+         if (     g_height >= 0.0     .and. g_height < 4000.0) then
+           cutoff = 1.0
+           stddev = 1.0 + 2.5 * g_lat
+
+         else if (g_height >= 4000.0  .and. g_height < 6000.0) then
+           cutoff = 3.0
+           if (model_t(k,n) <= 240.0) then
+             stddev = 0.5
+           else
+             stddev = 0.001 * model_t(k,n) * model_t(k,n) - 0.455 * model_t(k,n) + 52.075
+           endif
+           stddev = (6000.0 - g_height)/2000.0 * (1.0 + 2.5 * g_lat)  &
+                    + (g_height - 4000.0)/2000.0 * stddev
+
+         else if (g_height >= 6000.0  .and. g_height < 9000.0) then
+           cutoff = 3.0
+           if (model_t(k,n) <= 240.0) then
+             stddev = 0.5
+           else
+!            0.01 x T^2 - 0.455 T + 52.075 (if T>240)
+             stddev = 0.001 * model_t(k,n) * model_t(k,n) - 0.455 * model_t(k,n) + 52.075
+           end if
+
+         else if (g_height >= 9000.0  .and. g_height < 11000.0) then
+           cutoff = 3.0
+           if (model_t(k,n) <= 240.0) then
+             stddev = 0.5
+           else
+             stddev = 0.001 * model_t(k,n) * model_t(k,n) - 0.455 * model_t(k,n) + 52.075
+           endif
+           stddev = (11000.0 - g_height)/2000.0 * stddev  &
+                   + (g_height - 9000)/2000.0 * (0.25 + 0.5 * g_lat)
+
+
+         else if (g_height >= 11000.0 .and. g_height < 30000.0) then
+           cutoff = 3.0
+           stddev = 0.25 + 0.5 * g_lat
+
+         else if (g_height >= 30000.0 ) then
+           cutoff = 0.0
+
+         endif
+! hmn 20111206
+               if (iv%gpsref(n)%ref(k)%qc /= missing_data) then
+! Check innovation, stddev, and cutoff
+         if (abs(iv%gpsref(n)%ref(k)%inv) >= stddev * cutoff) then
+           iv%gpsref(n)%ref(k)%qc = qc_cutoff
+! hmn 20111202
+!           qc_36(k,n)=1
+! qc flag
+         endif
+! hmn 20111206
+               end if
+
+       end do
+   end do
+
+   deallocate (model_t)
+!
+! End   GSI-QC REGIONAL TI-GSI ------------------------------------------------
+! 
+! t_iwabuchi END 
+
+
+
+
    do n=iv%info(gpsref)%n1,iv%info(gpsref)%n2
       ! Quality check 2: Error percentage check.
 
@@ -331,7 +495,9 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
                percnt = 2.0 * abs(iv%gpsref(n)%ref(k)%inv / &
                  (ob%gpsref(n)%ref(k) + model_ref(k,n)))
 
-               if (iv%gpsref(n)%ref(k)%qc >= obs_qc_pointer) then
+! hmn 20111206
+!              if (iv%gpsref(n)%ref(k)%qc >= obs_qc_pointer) then
+               if (iv%gpsref(n)%ref(k)%qc /= missing_data) then
 
                   if (iv%gpsref(n)%h(k) < h_1) then
                      if (percnt > pcnt1) iv%gpsref(n)%ref(k)%qc = qc_below
@@ -381,8 +547,14 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
             do na = 1,nn
                if (iv%info(gpsref)%name(n) == name_qc(na)) then
                   do k=1, iv%info(gpsref)%levels(n)
+! hmn 20111202
                      if (iv%gpsref(n)%h(k) < height_below(na) .and. &
-                         iv%gpsref(n)%ref(k)%qc >= 0) iv%gpsref(n)%ref(k)%qc = qc_below
+!                        iv%gpsref(n)%ref(k)%qc >= 0) then
+! hmn 20111206
+                         iv%gpsref(n)%ref(k)%qc /= missing_data) then
+                       iv%gpsref(n)%ref(k)%qc = qc_below
+                     end if
+
                   end do
                   exit
                end if
@@ -401,7 +573,10 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
              if ( iv%gpsref(na)%ref(1)%qc == qc_below) then
                 do nb = iv%info(gpsref)%n1, iv%info(gpsref)%n2
                    if ( iv%info(gpsref)%id(nb) == iv%info(gpsref)%id(na) .and. &
-                        iv%gpsref(nb)%ref(1)%qc >= obs_qc_pointer .and.        &
+! hmn 20111206
+!                        iv%gpsref(nb)%ref(1)%qc >= obs_qc_pointer .and.        &
+                        iv%gpsref(n)%ref(1)%qc /= missing_data .and.            &
+
                         iv%gpsref(nb)%h(1) <= iv%gpsref(na)%h(1)   ) then
                       iv%gpsref(nb)%ref(1)%qc = qc_below
                    end if

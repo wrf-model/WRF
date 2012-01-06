@@ -84,6 +84,7 @@
       ENDDO
 
 #if (EM_CORE == 1)
+
 !-----------------------------------------------------------------------
 ! Check for consistency in the Noah-MP options
 !-----------------------------------------------------------------------
@@ -91,51 +92,82 @@
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec%sf_surface_physics(i) == NOAHMPSCHEME ) THEN
 
-            IF ( model_config_rec%bl_pbl_physics(i) == YSUSCHEME ) THEN
+            IF ( model_config_rec%sf_sfclay_physics(i) == SFCLAYSCHEME ) THEN
 
-               ! YSUSCHEME ( bl_pbl_physics == 1 ) needs to run with Noah-MP opt_sfc option == 1, 2 or 4
-               IF ( ( model_config_rec%opt_sfc(i) /= 1 ) .AND. ( model_config_rec%opt_sfc(i) /= 2 ) .AND. &
-                    ( model_config_rec%opt_sfc(i) /= 4 ) ) THEN
-                  wrf_err_message = " --- ERROR:  YSU PBL scheme with Noah-MP requires "
-                  CALL wrf_message ( TRIM ( wrf_err_message ) ) 
-                  wrf_err_message = " --- Noah-MP option OPT_SFC == 1, 2, or 4."
+               ! SFCLAYSCHEME with NOAHMPSCHEME needs to run with Noah-MP opt_sfc option == 4
+               IF ( model_config_rec%opt_sfc(i) /= 4 ) THEN
+
+                  write(wrf_err_message, '(" --- sf_sfclay_physics == ", I2, " (SFCLAY scheme) with Noah-MP (sf_surface_physics == ", I2, ")")') SFCLAYSCHEME, NOAHMPSCHEME
                   CALL wrf_message ( TRIM ( wrf_err_message ) ) 
 
-                  write (wrf_err_message, '(" --- Current namelist has OPT_SFC = ", I10)') model_config_rec%opt_sfc(i)
+                  wrf_err_message = " --- requires Noah-MP namelist option OPT_SFC == 4."
                   CALL wrf_message ( TRIM ( wrf_err_message ) ) 
+
+                  wrf_err_message = " --- Switching to Noah-MP option OPT_SFC == 4"
+                  CALL wrf_message ( TRIM ( wrf_err_message ) )
+
+                  model_config_rec%opt_sfc(i) = 4
                   
-
-                  wrf_err_message = " --- Change namelist option BL_PBL_PHYSICS or OPT_SFC."
-                  call wrf_error_fatal ( TRIM ( wrf_err_message ) ) 
                END IF
 
-            ELSE IF ( model_config_rec%bl_pbl_physics(i) == MYJPBLSCHEME ) THEN
+            ELSE IF ( model_config_rec%sf_sfclay_physics(i) == MYJSFCSCHEME ) THEN
 
-            ! MYJPBLSCHEME ( bl_pbl_physics == 2) needs to run with Noah-MP opt_sfc option == 3
+               ! MYJSFCSCHEME with NOAHMPSCHEME needs to run with Noah-MP opt_sfc option == 3
                IF ( ( model_config_rec%opt_sfc(i) /= 3 ) ) THEN
-                  wrf_err_message = " --- ERROR:  MYJ PBL scheme with Noah-MP requires "
+
+                  write(wrf_err_message, '(" --- sf_sfclay_physics == ", I2, " (SFCLAY scheme) with Noah-MP (sf_surface_physics == ", I2, ")")') MYJSFCSCHEME, NOAHMPSCHEME
                   CALL wrf_message ( TRIM ( wrf_err_message ) ) 
-                  wrf_err_message = " --- Noah-MP option OPT_SFC == 3."
+                  wrf_err_message = " --- requires Noah-MP option OPT_SFC == 3."
                   CALL wrf_message ( TRIM ( wrf_err_message ) ) 
 
-                  write (wrf_err_message, '(" --- Current namelist has OPT_SFC = ", I10)') model_config_rec%opt_sfc(i)
+                  write (wrf_err_message, '(" --- Switching to Noah-MP option OPT_SFC == 3)')
                   CALL wrf_message ( TRIM ( wrf_err_message ) ) 
-                  
-                  wrf_err_message = " --- Change namelist option BL_PBL_PHYSICS or OPT_SFC."
-                  call wrf_error_fatal ( TRIM ( wrf_err_message ) ) 
+
+                  model_config_rec%opt_sfc(i) = 3
+
                END IF
 
             ELSE
 
-               wrf_err_message = " --- ERROR:  Noah-MP LSM scheme works only with bl_pbl_physics 1 or 2."
-               CALL wrf_message ( TRIM ( wrf_err_message ) )
-               wrf_err_message = " --- Change bl_pbl_physics or sf_surface_physics namelist option."
+               write(wrf_err_message, '(" --- ERROR:  Noah-MP LSM scheme (sf_surface_physics==", I2, ")")') NOAHMPSCHEME
+               CALL wrf_message ( TRIM ( wrf_err_message ) ) 
+               write(wrf_err_message, '("             works only with sf_sfclay_physics ", I2, " or ", I2, ".")') SFCLAYSCHEME, MYJSFCSCHEME
                CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
 
             END IF
 
+            ! Noah-MP does not work with the urban schemes
+
+            IF ( model_config_rec%sf_urban_physics(i) /= 0 ) THEN
+               WRITE(wrf_err_message, '(" --- ERROR:   Noah-MP LSM scheme (sf_surface_physics==", I2, ")")') NOAHMPSCHEME
+               CALL wrf_message ( TRIM ( wrf_err_message ) )
+               WRITE(wrf_err_message, '("              does not work with urban physics schemes")')
+               CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
+            ENDIF
+
          END IF
       END DO
+
+!------------------------------------------------------------------------
+! Mills (2011) sea-ice albedo treatment only for Noah LSM and Noah-MP LSM
+!------------------------------------------------------------------------
+      IF ( model_config_rec%seaice_albedo_opt == 1 ) THEN
+         DO i = 1, model_config_rec % max_dom
+            IF ( ( model_config_rec%sf_surface_physics(i) /= LSMSCHEME ) .AND. &
+                 ( model_config_rec%sf_surface_physics(i) /= NOAHMPSCHEME ) ) THEN
+
+               write (wrf_err_message, '(" --- ERROR:   seaice_albedo_opt == 1 works only with ")')
+               CALL wrf_message ( TRIM ( wrf_err_message ) )
+               write (wrf_err_message, '("              sf_surface_physics == ", I2, " (Noah) or ", I2, " (Noah-MP).")') LSMSCHEME, NOAHMPSCHEME
+               call wrf_error_fatal ( TRIM ( wrf_err_message ) )
+
+            END IF
+            
+         END DO
+
+      END IF
+
+
 #endif
 
 #if (EM_CORE == 1)

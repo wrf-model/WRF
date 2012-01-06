@@ -2844,13 +2844,15 @@ CONTAINS
     type(nmm_terrain), pointer :: tr
 
     nullify(tr)
+    avc_nest = 0.0
+    lnd_nest = 0.0
     
     tr=>terrain_for(level,input_type,io_form_input)
 
     ! select subdomain from big fine grid
     i_add = mod(j_start+1,2) 
-    DO j=1,jm
-       DO i=1,im
+    DO j=1,jde
+       DO i=1,ide
           avc_nest(i,j) = tr%avc(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
           lnd_nest(i,j) = tr%lnd(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
        END DO

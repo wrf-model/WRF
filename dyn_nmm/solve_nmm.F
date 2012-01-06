@@ -1795,6 +1795,7 @@
       IF(MOD(grid%ntsd,GRID%NCNVC)==0.AND.                              &
      &   (CONFIG_FLAGS%CU_PHYSICS.eq.KFETASCHEME .or.                     &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME .or.                       &
+     &   CONFIG_FLAGS%CU_PHYSICS.eq.NSASSCHEME .or.                       &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN                       ! 
 !
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -1863,10 +1864,11 @@
      &             ,grid%pdtop,grid%pt,grid%pd,grid%res,grid%pint,grid%t,grid%q,grid%cwm,grid%tcucn                 &
      &             ,grid%omgalf,grid%u,grid%v,grid%w,grid%z,grid%fis,grid%w0avg                           &
      &             ,grid%prec,grid%acprec,grid%cuprec,grid%cuppt,grid%cprate                    &
-     &             ,grid%sm,grid%hbm2,grid%lpbl,grid%cnvbot,grid%cnvtop                         &
+     &             ,grid%sm,grid%hbm2,grid%pblh,grid%lpbl,grid%cnvbot,grid%cnvtop                         &
      &             ,grid%htop,grid%hbot,grid%htopd,grid%hbotd,grid%htops,grid%hbots                  &
      &             ,RTHBLTEN,RQVBLTEN,RTHRATEN                         & 
 #if (NMM_CORE==1)                  
+     &             ,grid%twbs,grid%qwbs                                &
      &                 ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random             &
 #endif
      &             ,grid%hpbl2d,grid%evap2d,grid%heat2d                &
@@ -1894,6 +1896,7 @@
 !emc_2010_bugfix_h50
         IF(MOD(grid%ntsd, GRID%NCNVC).eq.0.and.                 &
      &    (CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME.or.            &
+     &     CONFIG_FLAGS%CU_PHYSICS.eq.NSASSCHEME.or.            &
      &     CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN 
 !emc_2010_bugfix_h50
 !

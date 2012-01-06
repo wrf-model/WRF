@@ -121,6 +121,7 @@ wrf_timeseries.o: wrf_tsin.o \
 track_driver.o: track_input.o \
                 module_model_constants.o \
                 module_llxy.o \
+                module_date_time.o \
                 ../frame/module_domain.o \
                 ../frame/module_configure.o \
                 ../frame/module_state_description.o \

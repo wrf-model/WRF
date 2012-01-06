@@ -798,6 +798,12 @@ state    real   wm_temf        ij      misc        1         -     rh        "wm
 
 # MYNN PBL variables
 state   real   qke             ikjftb  scalar      1         -      i0rhusdf=(bdy_interp:dt) "qke"               "twice TKE FROM MYNN"      "m2 s-2"
+state   real   EL_MYNN         ikj     misc        1         -      h        "el_mynn"            "MIXING LENGTH FROM MELLOR-YAMADA-Nak-Niino"     "m"
+state   real   qSHEAR          ikj     misc        1         -      -        "qSHEAR"            "TKE Production - shear"          "m2 s-2"
+state   real   qBUOY           ikj     misc        1         -      -        "qBUOY"             "TKE Production - buoyancy"       "m2 s-2"
+state   real   qDISS           ikj     misc        1         -      -        "qDISS"             "TKE dissipation"                 "m2 s-2"
+state   real   qWT             ikj     misc        1         -      -        "qWT"               "TKE vertical transport"          "m2 s-2"
+state   real   dqke            ikj     misc        1         -      -        "Dtke"              "TKE change"                     "m2 s-2"
 state   real   tsq             ikj     misc        1         -      r        "tsq"               "liquid water pottemp variance"      "K2"
 state   real   qsq             ikj     misc        1         -      r        "qsq"               "liquid water variance"      "(kg/kg)**2"
 state   real   cov             ikj     misc        1         -      r        "cov"               "liquid water-liquid water pottemp covaria\

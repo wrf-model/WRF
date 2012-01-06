@@ -797,7 +797,7 @@ FORMAT_FIXED    =       -qfixed
 FORMAT_FREE     =       -qfree=f90
 FCSUFFIX        =       -qsuffix=f=f90
 BYTESWAPIO      =       
-FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=32767 $(FORMAT_FREE) $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
+FCBASEOPTS_NO_G =       -w -qspill=81920 $(FORMAT_FREE) $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =       

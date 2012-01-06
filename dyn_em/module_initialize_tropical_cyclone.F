@@ -631,7 +631,7 @@ CONTAINS
     ! reference (total) pressure:
     do k=1,kref
     do i=1,nref
-      pref(i,k) = p0*( ( pi0(k)+piref(i1,k)+(piref(i2,k)-piref(i1,k))*frac )**(cp/r_d) )
+      pref(i,k) = p0*( ( pi0(k)+piref(i,k) )**(cp/r_d) )
     enddo
     enddo
 

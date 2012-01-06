@@ -522,29 +522,55 @@ write(0,*) 'got past pmax'
           enddo
        enddo
     else
-       ! General loop for exponents other than 1:
-       do j = max(jds+2,jts), min(jte,jde-3)
-          do i = max(ids+1,its), min(ite,ide-2)
-             if(noisy(i,j)==0) then
-                weight = pmax - mslp(i,j)
-                if(weight>0) then
-                   if(weight>maxweight) maxweight=weight
-                   weight=(weight/pmax)**searchpow
-                   weightout(i,j)=weight
-                   xweight=weight/ycount(i)
-                   yweight=weight/xcount(j)
-                   xsum=xsum + i*xweight
-                   ysum=ysum + j*yweight
-                   xwsum=xwsum + xweight
-                   ywsum=ywsum + yweight
+       if_sqrt: if(abs(searchpow-0.5)<1e-5) then
+          call wrf_message('got into pow=0.5 loop')
+          do j = max(jds+2,jts), min(jte,jde-3)
+             do i = max(ids+1,its), min(ite,ide-2)
+                if(noisy(i,j)==0) then
+                   weight = pmax - mslp(i,j)
+                   if(weight>0) then
+                      if(weight>maxweight) maxweight=weight
+                      weight=sqrt(weight/pmax)
+                      weightout(i,j)=weight
+                      xweight=weight/ycount(i)
+                      yweight=weight/xcount(j)
+                      xsum=xsum + i*xweight
+                      ysum=ysum + j*yweight
+                      xwsum=xwsum + xweight
+                      ywsum=ywsum + yweight
+                   else
+                      weightout(i,j)=0
+                   end if
                 else
                    weightout(i,j)=0
-                end if
-             else
-                weightout(i,j)=0
-             endif
+                endif
+             enddo
           enddo
-       enddo
+       else
+          ! General loop for exponents other than 1:
+          do j = max(jds+2,jts), min(jte,jde-3)
+             do i = max(ids+1,its), min(ite,ide-2)
+                if(noisy(i,j)==0) then
+                   weight = pmax - mslp(i,j)
+                   if(weight>0) then
+                      if(weight>maxweight) maxweight=weight
+                      weight=(weight/pmax)**searchpow
+                      weightout(i,j)=weight
+                      xweight=weight/ycount(i)
+                      yweight=weight/xcount(j)
+                      xsum=xsum + i*xweight
+                      ysum=ysum + j*yweight
+                      xwsum=xwsum + xweight
+                      ywsum=ywsum + yweight
+                   else
+                      weightout(i,j)=0
+                   end if
+                else
+                   weightout(i,j)=0
+                endif
+             enddo
+          enddo
+       endif if_sqrt
     endif if_pow_1
 
     if(maxweight<=0) then

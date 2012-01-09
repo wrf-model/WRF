@@ -479,12 +479,18 @@
           WRITE(wrf_err_message,*)'input_wrf: global attribute SF_SURFACE_PHYSICS returns ', itmp
           CALL wrf_debug ( 300 , wrf_err_message )
           IF ( config_flags%sf_surface_physics /= itmp ) THEN
-             call wrf_message("----------------- ERROR -------------------")
-             WRITE(wrf_err_message,'("namelist    : sf_surface_physics = ",I10)') config_flags%sf_surface_physics
-             call wrf_message(wrf_err_message)
-             WRITE(wrf_err_message,'("input files : SF_SURFACE_PHYSICS = ",I10, " (from wrfinput files).")') itmp
-             call wrf_message(wrf_err_message)
-             call wrf_error_fatal("Mismatch between namelist and global attribute SF_SURFACE_PHYSICS")
+             IF ( ( config_flags%sf_surface_physics == LSMSCHEME ) .and. ( itmp == NOAHMPSCHEME ) ) then
+                ! All is well.  Noah-MP and Noah have compatible wrfinput files.
+             ELSE IF ( ( config_flags%sf_surface_physics == NOAHMPSCHEME ) .and. ( itmp == LSMSCHEME ) ) then
+                ! All is well.  Noah-MP and Noah have compatible wrfinput files.
+             ELSE
+                call wrf_message("----------------- ERROR -------------------")
+                WRITE(wrf_err_message,'("namelist    : sf_surface_physics = ",I10)') config_flags%sf_surface_physics
+                call wrf_message(wrf_err_message)
+                WRITE(wrf_err_message,'("input files : SF_SURFACE_PHYSICS = ",I10, " (from wrfinput files).")') itmp
+                call wrf_message(wrf_err_message)
+                call wrf_error_fatal("Mismatch between namelist and global attribute SF_SURFACE_PHYSICS")
+             END IF
           END IF
        END IF
     END IF
@@ -1286,6 +1292,11 @@
 
 #if (DA_CORE != 1)
     CALL wrf_tsin( grid , ierr )
+#if (EM_CORE == 1)
+    if (config_flags%track_loc_in > 0 ) then
+       call track_input( grid , ierr )
+    end if
+#endif
 #endif
 
     WRITE(wrf_err_message,*)'input_wrf: end, fid = ',fid

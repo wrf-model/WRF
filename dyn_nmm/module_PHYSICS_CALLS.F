@@ -174,6 +174,7 @@
       REAL,DIMENSION(KMS:KME-1) :: QL,TL
 !
       REAL,DIMENSION(IMS:IME,JMS:JME) :: CUPPTR,CZEN,HBOTR,HTOPR        &
+     &                                  ,SWCF, LWCF                     &
      &                                  ,PDSL,REXNSFC,SWNETDN           &
      &                                  ,TOT,TOTLWDN,TOTSWDN,TOTSWDNC   &
      &                                  ,TSFC,XLAND,XLAT,XLON
@@ -302,6 +303,8 @@
           CUPPTR(I,J)=CUPPT(I,J)   ! Temporary array set to zero in radiation
           HTOPR(I,J) =0.
           HBOTR(I,J) =0.
+          SWCF(I,J) =0.
+          LWCF(I,J) =0.
 !
 !-- NOTE:  HBOTR, HTOPR are passed into radiation and set equal to HBOT, HTOP.  HBOT, HTOP are
 !          reset to clear sky values to be used by the ARW.  At the bottom of this subroutine,
@@ -386,6 +389,7 @@
      &                 ,ACFRST=ACFRST,NCFRST=NCFRST                     &
      &                 ,ACFRCV=ACFRCV,NCFRCV=NCFRCV                     &
      &                 ,F_ICE_PHY=F_ICE,F_RAIN_PHY=F_RAIN               &
+     &                 ,LWCF=LWCF,SWCF=SWCF                             &
      &                 ,QV=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV      &
      &                 ,QC=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC      &
      &                 ,QR=MOIST_TRANS(IMS,KMS,JMS,P_QR),F_QR=F_QR      &
@@ -647,7 +651,7 @@
      &                ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR,EMBCK          &
      &                ,U10,V10,TH10,Q10,TSHLTR,QSHLTR,PSHLTR            &
      &                ,T2,QSG,QVG,QCG,SOILT1,TSNAV,SMFR3D,KEEPFR3DFLAG  &
-     &                ,TWBS,QWBS,TAUX,TAUY,SFCSHX,SFCLHX,SFCEVP                   &
+     &                ,TWBS,QWBS,TAUX,TAUY,SFCSHX,SFCLHX,SFCEVP,RTHRATEN&
      &                ,POTEVP,POTFLX,SUBSHX                             &
      &                ,APHTIM,ARDSW,ARDLW,ASRFC                         &
      &                ,RSWOUT,RSWTOA,RLWTOA                             &
@@ -662,6 +666,7 @@
      &                ,GRID,CONFIG_FLAGS                                &
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,DISHEAT                                          &
+     &                ,HPBL2D, EVAP2D, HEAT2D                           &  !Kwon S&P
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -715,6 +720,8 @@
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: ISLTYP,IVGTYP
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) ::  HPBL2D, EVAP2D, HEAT2D   !Kwon S&P
+!
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: LPBL
 !
       REAL,INTENT(IN) :: DT,PDTOP,PT
@@ -723,6 +730,8 @@
       REAL,INTENT(INOUT) :: APHTIM,ARDSW,ARDLW,ASRFC
 !
       REAL,DIMENSION(KMS:KME-1),INTENT(IN) :: AETA1,AETA2,DETA1,DETA2
+!
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: RTHRATEN     !Kwon S&P
 !
       REAL,DIMENSION(KMS:KME),INTENT(IN) :: DFRLG,ETA1,ETA2
 !
@@ -871,9 +880,10 @@
 !
       INTEGER :: NUM_ROOF_LAYERS,NUM_WALL_LAYERS,NUM_ROAD_LAYERS   ! urban
       INTEGER :: FRACTIONAL_SEAICE
+      INTEGER :: SEAICE_ALBEDO_OPT
 !
       INTEGER :: IGS,IGE,JGS,JGE, PQ_I   !BSF
-      LOGICAL :: FQ_I                    !BSF
+      LOGICAL :: FQ_I, ETAMP_PHYSICS,ETAMP_Regional            !BSF
 
       CHARACTER(len=255) :: message
 !dbg integer :: kpblmin,kpblmax,lpblmin,lpblmax    !dbg
@@ -896,6 +906,11 @@
       FRACTIONAL_SEAICE = CONFIG_FLAGS%FRACTIONAL_SEAICE
       IF ( FRACTIONAL_SEAICE == 1 ) THEN
          CALL WRF_ERROR_FATAL("NMM cannot use FRACTIONAL_SEAICE = 1.")
+      ENDIF
+
+      SEAICE_ALBEDO_OPT = CONFIG_FLAGS%SEAICE_ALBEDO_OPT
+      IF ( SEAICE_ALBEDO_OPT /= 0 ) THEN
+         CALL WRF_ERROR_FATAL("NMM must use SEAICE_ALBEDO_OPT = 0")
       ENDIF
 !
       DTPHS=NPHS*DT
@@ -1197,6 +1212,7 @@
      &          ,GZ1OZ0=GZ1OZ0,HFX=TWBS                                 &
      &          ,HT=SFCZ,IFSNOW=IDUMMY,ISFFLX=ISFFLX                    &
      &          ,FRACTIONAL_SEAICE=FRACTIONAL_SEAICE                    &
+     &          ,SEAICE_ALBEDO_OPT=SEAICE_ALBEDO_OPT                    &
      &          ,TICE2TSK_IF2COLD=CONFIG_FLAGS%TICE2TSK_IF2COLD         &
      &          ,ISLTYP=ISLTYP                                          &
      &          ,ITIMESTEP=NTSD,IVGTYP=IVGTYP,LOWLYR=LOWLYR             &
@@ -1224,6 +1240,7 @@
      &          ,SF_SFCLAY_PHYSICS=CONFIG_FLAGS%SF_SFCLAY_PHYSICS       &
      &          ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS     &
      &          ,RA_LW_PHYSICS=CONFIG_FLAGS%RA_LW_PHYSICS               &
+     &          ,RA_SW_PHYSICS=CONFIG_FLAGS%RA_SW_PHYSICS               &
      &          ,LAI=GRID%LAI,IZ0TLND=CONFIG_FLAGS%IZ0TLND              &
      &          ,SF_URBAN_PHYSICS=SF_URBAN_PHYSICS                      &
 !     &          ,GMT=GMT,XLAT=XLAT,XLONG=XLONG,JULDAY=JULDAY            &
@@ -1247,6 +1264,8 @@
      &          ,TSNAV=TSNAV,SMFR3D=SMFR3D,KEEPFR3DFLAG=KEEPFR3DFLAG    &
      &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB,SR=SR        &
      &          ,DEW=DEW                                                &
+     &          ,MOSAIC_LU=CONFIG_FLAGS%MOSAIC_LU                       &
+     &          ,MOSAIC_SOIL=CONFIG_FLAGS%MOSAIC_SOIL                   &
 ! for URBAN
      &          ,NUM_ROOF_LAYERS=NUM_ROOF_LAYERS                        & ! urban
      &          ,NUM_WALL_LAYERS=NUM_WALL_LAYERS                        & ! urban
@@ -1294,10 +1313,15 @@
       ENDDO
       ENDDO
 !
-!BSF: Logical FQ_I index PQ_I are set to values associated with snow
-!     for the ETAMPNEW scheme so that they can be mixed by the PBL schemes.
+!-- ETAMP_Regional logical is true for regional NAM (ETAMPOLD) or HRW (ETAMPNEW) microphysics
 !
-      IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+      ETAMP_Regional=.FALSE.
+      IF (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW .OR.                        &
+     &    CONFIG_FLAGS%MP_PHYSICS==ETAMPOLD) ETAMP_Regional=.TRUE.
+!
+      IF(ETAMP_Regional) THEN
+!-- Logical FQ_I and index PQ_I are set to values associated with snow
+!   for the regional (NAM, HWRF) versions of the microphysics
          FQ_I=F_QS
          PQ_I=P_QS
       ELSE
@@ -1328,15 +1352,20 @@
      &               ,KPBL=KPBL,CT=CT,LH=ELFLX,SNOW=SNOW,XICE=SICE    &
      &               ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics      &
      &               ,RA_LW_PHYSICS=config_flags%ra_lw_physics        &
+     &               ,MFSHCONV=config_flags%mfshconv                  &  ! work with QNSE PBL
      &               ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
      &               ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME &
      &               ,I_START=GRID%I_START,I_END=GRID%I_END           &
      &               ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &               ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
 #if (NMM_CORE==1)
-     &               ,DISHEAT=DISHEAT                                 &
+     &               ,DISHEAT=DISHEAT,  RTHRATEN=RTHRATEN             &
+#endif
+#if (HWRF==1)
+     &               ,GFS_ALPHA=GRID%GFS_ALPHA                        &
 #endif
                 ! Optional args
+     &               ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D     &    !Kwon S&P
      &               ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &               ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &
      &               ,QI_CURR=MOIST_TRANS(IMS,KMS,JMS,PQ_I),F_QI=FQ_I &
@@ -1625,6 +1654,9 @@
 !
       E_BDY=(ITE>=IDE)
 !
+      ETAMP_PHYSICS=ETAMP_Regional
+      IF (CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF) ETAMP_PHYSICS=.TRUE.
+!
 !$omp parallel do                                                       &
 !$omp& private(dqdt,dtdt,i,iend,j,k,qi,qold,qr,qw,ratiomx,i_m)
       DO K=KTS,KTE
@@ -1643,7 +1675,7 @@
           MOIST(I,J,K,P_QV)=MAX(EPSQ,(MOIST(I,J,K,P_QV)+RQVBLTEN(I,K,J)*DTPHS) )
           CWM(I,J,K)=0.
 !
-          IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW.and.CONFIG_FLAGS%MP_PHYSICS/=etamp_hwrf)THEN
+          pbl_check1: IF (.NOT.ETAMP_PHYSICS) THEN
             DO I_M=1,N_MOIST
               IF(I_M==P_QC) THEN
                 MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQCBLTEN(I,K,J)*DTPHS) )
@@ -1658,27 +1690,27 @@
               ENDIF
               IF(I_M/=P_QV) CWM(I,J,K)=CWM(I,J,K)+MOIST(I,J,K,I_M)
             ENDDO
-          ELSE
+          ELSE pbl_check1
 !
 !-- Allow vertical mixing to modify cloud ice + snow for ETAMPNEW
 !
             QW=MAX(0.,MOIST(I,J,K,P_QC)+RQCBLTEN(I,K,J)*DTPHS )
-            if(CONFIG_FLAGS%MP_PHYSICS.eq.etampnew)then
-             QI=MAX(0.,MOIST(I,J,K,P_QS)+RQIBLTEN(I,K,J)*DTPHS )  !-- Total ice
-!BSF            QR=MAX(0.,MOIST(I,J,K,P_QR)+RQRBLTEN(I,K,J)*DTPHS )
-             QR=MAX(0.,MOIST(I,J,K,P_QR) )
-             MOIST(I,J,K,P_QC)=QW
-             MOIST(I,J,K,P_QS)=QI
-             MOIST(I,J,K,P_QR)=QR
-            elseif(CONFIG_FLAGS%MP_PHYSICS.eq.etamp_hwrf)then
-             QI=MAX(0.,MOIST(I,J,K,P_QI)+RQIBLTEN(I,K,J)*DTPHS )  !-- Total ice
-!BSF            QR=MAX(0.,MOIST(I,J,K,P_QR)+RQRBLTEN(I,K,J)*DTPHS )
-             QR=MAX(0.,MOIST(I,J,K,P_QR) )
-             MOIST(I,J,K,P_QC)=QW
-             MOIST(I,J,K,P_QI)=QI
-             MOIST(I,J,K,P_QR)=QR
-            endif
-             CWM(I,J,K)=QW+QI+QR
+            pbl_check2:  IF (ETAMP_Regional) THEN
+              QI=MAX(0.,MOIST(I,J,K,P_QS)+RQIBLTEN(I,K,J)*DTPHS )  !-- Total ice
+!BSF              QR=MAX(0.,MOIST(I,J,K,P_QR)+RQRBLTEN(I,K,J)*DTPHS )
+              QR=MAX(0.,MOIST(I,J,K,P_QR) )
+              MOIST(I,J,K,P_QC)=QW
+              MOIST(I,J,K,P_QS)=QI
+              MOIST(I,J,K,P_QR)=QR
+            ELSE IF (CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF) THEN    !-- pbl_check2
+              QI=MAX(0.,MOIST(I,J,K,P_QI)+RQIBLTEN(I,K,J)*DTPHS )  !-- Total ice
+!BSF              QR=MAX(0.,MOIST(I,J,K,P_QR)+RQRBLTEN(I,K,J)*DTPHS )
+              QR=MAX(0.,MOIST(I,J,K,P_QR) )
+              MOIST(I,J,K,P_QC)=QW
+              MOIST(I,J,K,P_QI)=QI
+              MOIST(I,J,K,P_QR)=QR
+            ENDIF pbl_check2
+            CWM(I,J,K)=QW+QI+QR
 !
             IF(QI<=EPSQ)THEN
               F_ICE(I,K,J)=0.
@@ -1692,7 +1724,7 @@
               F_RAIN(I,K,J)=QR/(QW+QR)
             ENDIF
 !
-          ENDIF     !-- IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW)THEN
+          ENDIF pbl_check1
 !
           Q2(I,J,K)=2.*TKE(I,K,J)
         ENDDO
@@ -1884,10 +1916,9 @@
 #if (NMM_CORE==1)    
      &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand               &                  
 #endif
-     &                 ,PGCON                                           &
+     &                 ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon S&P
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
      &                 ,GRID,CONFIG_FLAGS                               &
-     &                 ,NRND1                                              &  ! NRND1 for random no restart
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
      &                 ,IMS,IME,JMS,JME,KMS,KME                         &
      &                 ,IPS,IPE,JPS,JPE,KPS,KPE                         &
@@ -1925,11 +1956,12 @@
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
      &                     ,N_MOIST,NCNVC,NTSD,NRADS,NRADL
 !
-      REAL, INTENT(IN) :: PGCON
       INTEGER, DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: LPBL
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: HPBL2D,EVAP2D,HEAT2D     !Kwon S&P
+!`
       REAL,INTENT(IN) :: DT,GPS,PDTOP,PT
 !
       REAL,INTENT(INOUT) :: ACUTIM,AVCNVC
@@ -2031,7 +2063,7 @@
 !
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS
 !
-      LOGICAL :: RESTART,WARM_RAIN
+      LOGICAL :: RESTART,WARM_RAIN,ETAMP_Regional
       LOGICAL,DIMENSION(IMS:IME,JMS:JME) :: CU_ACT_FLAG
 !
       CHARACTER(LEN=255) :: message
@@ -2042,7 +2074,6 @@
       INTEGER :: DTEMP_CHECK=2.0
       REAL :: TCHANGE
 !  random number restart
-      INTEGER,DIMENSION(:),INTENT(INOUT) ::   NRND1
       INTEGER, SAVE  :: nfirst
       data nfirst /0/
 #if (NMM_CORE==1)
@@ -2301,56 +2332,6 @@
 
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
 #if (NMM_CORE==1)
-!#ifdef HWRF
-!
-!-----------------------------------------------------------------------
-!
-!     SAS CONVECTION NEEDS RANDOM NUMBER WHICH IS STORED HERE FOR 
-!     EACH OF THE DOMAIN AND THEN THEY ARE PASSED ON INTO THE
-!     CUMULUS DRIVER. THIS IS gopal's doing
-!
-
-      IF(CONFIG_FLAGS%CU_PHYSICS==OSASSCHEME .or. CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)THEN
-!
-          IF(GRID%ID .EQ. 1)THEN   ! Both parent and nest set to 5 minutes for random number calls 
-           IDT=MOD(NTSD,NCNVC)    
-          ELSE
-           IDT=MOD(NTSD,5*NCNVC)
-          ENDIF
- 
-          IF(IDT.EQ.0 .OR. NTSD .EQ. 0)THEN
-!$omp parallel do                                                       &
-!$omp& private(i,j)
-             IF (wrf_dm_on_monitor()) THEN   !!!! For bit reproducibility of random numbers 
-             if (restart .and. nfirst .eq. 0 ) then
-             call random_seed(put=nrnd1)
-             nfirst=1
-             endif
-             call random_seed(get=nrnd1)
-              DO J=JDS,JDE       !JTS,JTE
-               DO I=IDS,IDE      !ITS,ITE       
-                  CALL RANDOM_NUMBER(rnd1)
-                  DATA1(I,J)=rnd1(2) 
-               ENDDO
-              ENDDO
-             ENDIF
-             CALL wrf_dm_bcast_bytes (DATA1,IDE*JDE*RWORDSIZE)  !!! broadcast random nos. to other processors
-
-             DO J=JDS,JDE
-               DO I =IDS,IDE
-                 IF(I.GE.ITS .AND. I .LE. MIN(ide,ite) .AND. J.GE.JTS  .AND. J .LE. MIN(jde,jte))THEN
-                  STORE_RAND(I,J)=DATA1(I,J)
-                 ENDIF
-               ENDDO
-             ENDDO
-!
-          ENDIF    ! for IF(IDT.EQ.0 .OR. NTSD .EQ. 0)
-!
-      ELSE
-!jm        STORE_RAND(I,J) = 0.0
-        STORE_RAND = 0.0
-      ENDIF
-
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
         DO K=KMS,KME
@@ -2361,7 +2342,6 @@
         ENDDO
         ENDDO
         ENDDO
-!#endif
 #endif
       CALL CUMULUS_DRIVER(GRID                                          &
      &                 ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
@@ -2496,6 +2476,12 @@
 !***  UPDATE TEMPERATURE, SPECIFIC HUMIDITY, AND HEATING.
 !-----------------------------------------------------------------------
 !
+!-- ETAMP_Regional logical is true for regional NAM (ETAMPOLD) or HRW (ETAMPNEW) microphysics
+!
+      ETAMP_Regional=.FALSE.
+      IF (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW .OR.                        &
+     &    CONFIG_FLAGS%MP_PHYSICS==ETAMPOLD) ETAMP_Regional=.TRUE.
+!
 !$omp parallel do                                                       &
 !$omp& private(dqdt,dtdt,i,iendx,j,k,tchange)
       DO K=KTS,KTE
@@ -2520,7 +2506,7 @@
           cps_select: SELECT CASE(config_flags%cu_physics)
 !
           CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,OSASSCHEME)
-            IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW)THEN
+            IF (ETAMP_Regional) THEN
               MOIST_TRANS(I,K,J,P_QS)=MAX(0.,MOIST_TRANS(I,K,J,P_QS)+RQICUTEN(I,K,J)*DTCNVC+RQSCUTEN(I,K,J)*DTCNVC)
             ELSE
               MOIST_TRANS(I,K,J,P_QI)=MAX(0.,MOIST_TRANS(I,K,J,P_QI)+RQICUTEN(I,K,J)*DTCNVC)
@@ -2696,7 +2682,15 @@
 !
 !-----------------------------------------------------------------------
 !
-      IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW.and.config_flags%mp_physics/=etamp_hwrf)THEN
+!-- QT_PRESENT logical is true for regional NAM (ETAMPOLD), HRW (ETAMPNEW),
+!   or HWRF (ETAMP_HWRF) microphysics
+!
+      QT_PRESENT=.FALSE.
+      IF (CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW .OR.                        &
+     &    CONFIG_FLAGS%MP_PHYSICS==ETAMPOLD .OR.                        &
+     &    CONFIG_FLAGS%MP_PHYSICS==ETAMP_HWRF) QT_PRESENT=.TRUE.
+!
+      micro_check1: IF(.NOT.QT_PRESENT) THEN
         DO N=1,N_SCALAR
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
@@ -2708,15 +2702,9 @@
           ENDDO
           ENDDO
         ENDDO
-      ENDIF
+      ENDIF micro_check1
 !
 !-----------------------------------------------------------------------
-!
-      IF(CONFIG_FLAGS%MP_PHYSICS==ETAMPNEW.or.config_flags%mp_physics==etamp_hwrf)THEN
-        QT_PRESENT=.TRUE.
-      ELSE
-        QT_PRESENT=.FALSE.
-      ENDIF
 !
       DTPHS=NPHS*DT
       RDTPHS=1./DTPHS
@@ -2894,7 +2882,7 @@
 !
 !-----------------------------------------------------------------------
 !
-      IF(CONFIG_FLAGS%MP_PHYSICS/=ETAMPNEW.and.config_flags%mp_physics/=etamp_hwrf)THEN
+      micro_check2: IF (.NOT.QT_PRESENT) THEN
         DO N=1,N_SCALAR
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
@@ -2906,7 +2894,7 @@
           ENDDO
           ENDDO
         ENDDO
-      ENDIF
+      ENDIF micro_check2
 !
 !-----------------------------------------------------------------------
 !

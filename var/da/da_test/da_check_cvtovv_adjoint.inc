@@ -58,7 +58,8 @@ subroutine da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cv, vv)
                + sum(vv % v5(its:ite,jts:jte,1:be%v5%mz)**2) &
                + sum(vv % v6(its:ite,jts:jte,1:be%v6%mz)**2) &
                + sum(vv % v7(its:ite,jts:jte,1:be%v7%mz)**2) &
-               + sum(vv % v8(its:ite,jts:jte,1:be%v8%mz)**2)
+               + sum(vv % v8(its:ite,jts:jte,1:be%v8%mz)**2) &
+               + sum(vv % v9(its:ite,jts:jte,1:be%v9%mz)**2)
 #else
    adj_par_lhs = sum(vv % v1(its:ite,jts:jte,1:be%v1%mz)**2) &
                + sum(vv % v2(its:ite,jts:jte,1:be%v2%mz)**2) &

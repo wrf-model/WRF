@@ -136,6 +136,29 @@ subroutine da_wrfvar_init2
 
    if ((config_flags%real_data_init_type == 1) .or. &
        (config_flags%real_data_init_type == 3)) then
+#ifdef VAR4D
+      if ( var4d_lbc ) then
+         call da_med_initialdata_input (head_grid, config_flags, 'fg02')
+         ALLOCATE(u6_2(head_grid%sm31:head_grid%em31,head_grid%sm32:head_grid%em32,head_grid%sm33:head_grid%em33))
+         ALLOCATE(v6_2(head_grid%sm31:head_grid%em31,head_grid%sm32:head_grid%em32,head_grid%sm33:head_grid%em33))
+         ALLOCATE(w6_2(head_grid%sm31:head_grid%em31,head_grid%sm32:head_grid%em32,head_grid%sm33:head_grid%em33))
+         ALLOCATE(t6_2(head_grid%sm31:head_grid%em31,head_grid%sm32:head_grid%em32,head_grid%sm33:head_grid%em33))
+         ALLOCATE(ph6_2(head_grid%sm31:head_grid%em31,head_grid%sm32:head_grid%em32,head_grid%sm33:head_grid%em33))
+         ALLOCATE(moist6(head_grid%sm31:head_grid%em31,head_grid%sm32:head_grid%em32,head_grid%sm33:head_grid%em33,num_moist))
+         ALLOCATE(p6(head_grid%sm31:head_grid%em31,head_grid%sm32:head_grid%em32,head_grid%sm33:head_grid%em33))
+         ALLOCATE(mu6_2(head_grid%sm31:head_grid%em31,head_grid%sm32:head_grid%em32))
+         ALLOCATE(psfc6(head_grid%sm31:head_grid%em31,head_grid%sm32:head_grid%em32))
+         u6_2 = head_grid%u_2
+         v6_2 = head_grid%v_2
+         w6_2 = head_grid%w_2
+         t6_2 = head_grid%t_2
+         ph6_2 = head_grid%ph_2
+         moist6 = head_grid%moist
+         p6 = head_grid%p
+         mu6_2 = head_grid%mu_2
+         psfc6 = head_grid%psfc
+      endif 
+#endif
       call da_med_initialdata_input (head_grid, config_flags, 'fg')
       if ( var4d ) call med_latbound_in ( head_grid, config_flags )
    end if

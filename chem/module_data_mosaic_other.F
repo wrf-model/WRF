@@ -107,6 +107,8 @@
         integer, save :: kopcg6_f_o  = -999888777
         integer, save :: kopcg7_f_o  = -999888777
         integer, save :: kopcg8_f_o  = -999888777
+        integer, save :: ksmpa  = -999888777
+        integer, save :: ksmpbb  = -999888777
         integer, save :: kant1_c  = -999888777
         integer, save :: kant2_c  = -999888777
         integer, save :: kant3_c  = -999888777

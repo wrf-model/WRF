@@ -26,6 +26,11 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
          USE module_domain
          TYPE (domain) :: grid
       END SUBROUTINE calc_ts_locations
+
+      SUBROUTINE calc_track_locations( grid )
+         USE module_domain
+         TYPE (domain) :: grid
+      END SUBROUTINE calc_track_locations
 #endif
    END INTERFACE
 
@@ -55,6 +60,7 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 
 #if (DA_CORE != 1)
    CALL calc_ts_locations( grid )
+   CALL calc_track_locations( grid )
 #endif
 
 END SUBROUTINE start_domain

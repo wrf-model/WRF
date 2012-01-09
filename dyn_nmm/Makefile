@@ -21,15 +21,17 @@ MODULES =                 		\
         module_si_io_nmm.o              \
         module_initialize_real.o        \
         module_PRECIP_ADJUST.o          \
+	module_HIFREQ.o                 \
+	module_TERRAIN.o                \
+	module_SMOOTH_TERRAIN.o         \
 	$(CASE_MODULE)
 
 # moved into share/Makefile
 #        module_MPP.o              	\
-
 #        module_INDX.o                   \
 
 # possible CASE_MODULE settings
-#	module_initialize_nmm.o        
+#	module_initialize_tropical_cyclone.o        
 
 OBJS    = 		          	\
 	init_modules_nmm.o  		\
@@ -59,7 +61,14 @@ solve_nmm.o:   module_BC_NMM.o \
                module_IGWAVE_ADJUST.o module_ADVECTION.o  \
                module_NONHY_DYNAM.o module_DIFFUSION_NMM.o    \
                module_BNDRY_COND.o module_PHYSICS_CALLS.o \
-               module_CTLBLK.o
+               module_CTLBLK.o module_HIFREQ.o \
+               ../share/module_random.o 
+
+NMM_NEST_UTILS1.o: module_TERRAIN.o module_SMOOTH_TERRAIN.o \
+	../frame/module_dm.o ../frame/module_domain.o \
+	../frame/module_configure.o ../frame/module_timing.o
+
+module_ADVECTION.o: ../share/module_MPP.o module_INDX.o
 
 module_ADVECTION.o: ../share/module_MPP.o module_INDX.o
 
@@ -68,6 +77,9 @@ module_MPPINIT.o: ../share/module_MPP.o
 module_DIFFUSION_NMM.o: ../share/module_MPP.o module_INDX.o
 
 module_IGWAVE_ADJUST.o: ../share/module_MPP.o module_INDX.o module_TIMERS.o
+
+module_HIFREQ.o: module_NEST_UTIL.o ../frame/module_dm.o \
+	../frame/module_domain.o ../frame/module_configure.o
 
 module_PHYSICS_CALLS.o: \
 		../frame/module_domain.o		\
@@ -90,5 +102,12 @@ module_PHYSICS_CALLS.o: \
 module_GWD.o: ../frame/module_dm.o
 
 module_initialize_real.o: ../share/module_model_constants.o
+
+module_initialize_tropical_cyclone.o: ../share/module_model_constants.o
+
+start_domain_nmm.o: module_ADVECTION.o module_BNDRY_COND.o module_CTLBLK.o \
+                    module_DIFFUSION_NMM.o module_GWD.o module_NONHY_DYNAM.o \
+                    module_IGWAVE_ADJUST.o \
+                    module_HIFREQ.o ../share/module_random.o
 
 # DO NOT DELETE

@@ -108,15 +108,15 @@
 !    return
 !  ENDIF
    select case (config_flags%chem_opt)
-   case ( RADM2SORG,           RADM2SORG_KPP,      RADM2SORG_AQ, &
-          GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ,  &
+   case ( RADM2SORG,           RADM2SORG_KPP,      RADM2SORG_AQ, RADM2SORG_AQCHEM, &
+          GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ,  RACMSORG_AQCHEM, &
           GOCARTRACM_KPP,      GOCARTRADM2_KPP,    GOCARTRADM2,  &
           RACM_ESRLSORG_KPP,   MOZCART_KPP,                      &
           CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_KPP,   &
           CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZSORG, CBMZSORG_AQ, &
           CBMZ_MOSAIC_DMS_4BIN,    CBMZ_MOSAIC_DMS_8BIN,   &
           CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &    
-          SAPRC99_MOSAIC_4BIN_VBS2_KPP )
+          SAPRC99_MOSAIC_4BIN_VBS2_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP )
       processingAerosols = .true.
       call wrf_debug(15,'optical driver: process aerosols true')
    case default
@@ -132,16 +132,16 @@
 ! SHELL: shell-core approach, placeholder
 !
    select case (config_flags%chem_opt)
-   case ( RADM2SORG, RACM_ESRLSORG_KPP, RADM2SORG_KPP, RADM2SORG_AQ, &
+   case ( RADM2SORG, RACM_ESRLSORG_KPP, RADM2SORG_KPP, RADM2SORG_AQ, RADM2SORG_AQCHEM, &
           GOCARTRACM_KPP,      GOCARTRADM2_KPP,    GOCARTRADM2,      &
-          GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ,      &
+          GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ,      RACMSORG_AQCHEM, &
           CBMZSORG,            CBMZSORG_AQ,        MOZCART_KPP       )
      nbin_o = 8
    case (CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_KPP,  &
          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
          CBMZ_MOSAIC_DMS_4BIN,    CBMZ_MOSAIC_DMS_8BIN,   &
          CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &    
-         SAPRC99_MOSAIC_4BIN_VBS2_KPP )
+         SAPRC99_MOSAIC_4BIN_VBS2_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP )
      nbin_o = nbin_a
    end select
 !

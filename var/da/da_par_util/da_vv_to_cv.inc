@@ -197,11 +197,30 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
       rcv(cv_s:cv_e) = RESHAPE(vv % v8(is:ie,js:je,1:mz), (/ijm/))
 #endif
    end if
+   ! Store v9
+   mz = mzs(9)
+   if (mz > 0) then
+      ijm = ix * jy * mz
+      cv_s = cv_e + 1
+      cv_e = cv_s + ijm - 1
+#ifdef NORESHAPE
+      do k=1,mz
+         do j=js,je
+            do i=is,ie
+               ijk = ijk + 1
+               rcv(ijk) = vv%v9(i,j,k)
+            end do
+         end do
+      end do
+#else
+      rcv(cv_s:cv_e) = RESHAPE(vv % v9(is:ie,js:je,1:mz), (/ijm/))
+#endif
+   end if
 #endif
 #ifdef CLOUD_CV
    ! Store alpha:
-   mz = mzs(9)
-   ne = mzs(10)
+   mz = mzs(10)
+   ne = mzs(11)
 #else
    ! Store alpha:
    mz = mzs(6)

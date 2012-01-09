@@ -36,6 +36,9 @@
    integer   :: max_yyyy,max_mm,max_dd,max_hh,max_mn,max_ss
    character :: s
    real*8    :: time_min, time_max 
+   integer   :: jl_start, jl_end
+   character(len=256) :: timestr1
+   type(x_type) :: shuffle
    
    if (trace_use) call da_trace_entry("da_solve")
 
@@ -463,7 +466,7 @@
       end if
 
       ! [8.5] Update latest analysis solution:
-
+  
       if (.not. var4d) then
          call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp)
       else
@@ -541,6 +544,34 @@
      end if
 
    end do
+
+   ! output wrfvar analysis
+
+   if ((config_flags%real_data_init_type == 1) .or. &
+       (config_flags%real_data_init_type == 3)) then
+      call da_med_initialdata_output (head_grid, config_flags)
+#ifdef VAR4D
+      !if (var4d) call da_med_initialdata_output_lbc (head_grid , config_flags)
+      if ( var4d_lbc ) then
+         call domain_clock_get (grid, stop_timestr=timestr1)
+         call domain_clock_set( grid, current_timestr=timestr1 )
+         call da_med_initialdata_input (grid, config_flags, 'fg02')
+         call da_setup_firstguess(xbx, grid, config_flags)
+         shuffle = grid%xa
+         jl_start    = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + 1
+         jl_end      = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_jl
+         grid%xa  = grid%x6a
+         call da_transform_vtox(grid, be%cv%size_jl, xbx, be, grid%ep, &
+              xhat(jl_start:jl_end), grid%vv6, grid%vp6)
+         grid%xa  = shuffle
+         call da_transfer_xatoanalysis (it, xbx, grid, config_flags)
+         call da_med_initialdata_output (grid, config_flags,'ana02')
+         call domain_clock_get (grid, start_timestr=timestr1)
+         call domain_clock_set( grid, current_timestr=timestr1 )
+      endif
+#endif
+      call med_shutdown_io (head_grid, config_flags)
+   end if
 
    !---------------------------------------------------------------------------
    ! [9.0] Tidy up:

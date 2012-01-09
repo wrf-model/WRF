@@ -115,7 +115,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
 
    ! [4] sonde_sfc obs:
 
-   if (iv%info(sound)%plocal(iv%time) - iv%info(sound)%plocal(iv%time-1) > 0) then
+   if (iv%info(sonde_sfc)%plocal(iv%time) - iv%info(sonde_sfc)%plocal(iv%time-1) > 0) then
 
       open (unit=ounit,file=trim(filename)//'.sonde_sfc',form='formatted',status='replace', &
          iostat=ios)

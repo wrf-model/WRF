@@ -320,7 +320,7 @@ MODULE module_input_chem_data
         real, pointer :: ch4_lbc(:,:)
         real, pointer :: n2o_lbc(:,:)
         real, pointer :: h2_lbc(:,:)
-        logical       :: allocated
+        logical       :: is_allocated
       end type lbc_concentration
 
       type(lbc_concentration), allocatable :: fixed_lbc(:)
@@ -337,8 +337,9 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
   integer, intent(in) :: chem_opt, numgas
 
   select case(chem_opt)
-  case (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
-        RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACM_ESRLSORG_KPP, RACMSORG_KPP, &
+  case (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
+        RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM,           &
+        RACM_ESRLSORG_KPP, RACMSORG_KPP, RACM_SOA_VBS_KPP,                          &
         GOCARTRACM_KPP, GOCARTRADM2,GOCARTRADM2_KPP,CHEM_TRACER, CHEM_TRACE2)
      call setup_gasprofile_map_radm_racm
 
@@ -368,6 +369,8 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
      call wrf_debug("setup_profile_maps: nothing done for gocart simple")
   case (CHEM_VASH)
      call wrf_debug("setup_profile_maps: nothing done for volcanic ash")
+  case (CHEM_VOLC)
+     call wrf_debug("setup_profile_maps: nothing done for volcanic ash")
   case (DUST)
      call wrf_debug("setup_profile_maps: nothing done for volcanic ash")
   case (MOZART_KPP)
@@ -375,6 +378,10 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
 
   case (MOZCART_KPP)
      call wrf_debug("setup_profile_maps: nothing done for mozcart_kpp")
+
+  case (MOZART_MOSAIC_4BIN_VBS0_KPP)
+     call wrf_debug("setup_profile_maps: nothing done for mozart_mosaic_4bin_vbs0__kpp")
+
 
   case default
      call wrf_error_fatal("setup_profile_maps: could not decipher chem_opt value")
@@ -847,6 +854,8 @@ SUBROUTINE input_chem_profile (si_grid)
       si_grid%chem(ims:ime,kms:kme,jms:jme,p_TRACER_1 ) = 0.08
    ELSE IF ( si_grid%chem_opt == CHEM_VASH ) THEN
       si_grid%chem(ims:ime,kms:kme,jms:jme,1:numgas ) = 0.
+   ELSE IF ( si_grid%chem_opt == CHEM_VOLC ) THEN
+      si_grid%chem(ims:ime,kms:kme,jms:jme,1:numgas ) = 0.
    ELSE IF ( si_grid%chem_opt == DUST ) THEN
       si_grid%chem(ims:ime,kms:kme,jms:jme,1:numgas ) = 0.
    ELSE IF ( si_grid%chem_opt == GOCART_SIMPLE ) THEN
@@ -1139,7 +1148,6 @@ SUBROUTINE input_chem_profile (si_grid)
         en1 = exp(0.125*l2sginin)
         ea1 = exp(0.125*l2sginia)
         ec1 = exp(0.125*l2sginic)
-
 
         esn04 = en1**4
         esa04 = ea1**4
@@ -1527,8 +1535,8 @@ SUBROUTINE input_chem_profile (si_grid)
             config_flags%chem_opt == GOCARTRACM_KPP .or.      &
             config_flags%chem_opt == RACMSORG_KPP .or.      &
             config_flags%chem_opt == RACM_ESRLSORG_KPP .or.      &
-            config_flags%chem_opt == RACM_MIM_KPP .or.      &
-            config_flags%chem_opt == RACMSORG_KPP ) then
+            config_flags%chem_opt == RACM_SOA_VBS_KPP .or.      & 
+            config_flags%chem_opt == RACM_MIM_KPP ) then
           i_bdy_method = 9
         end if
         if (config_flags%chem_opt == RACMPM_KPP ) then
@@ -1857,15 +1865,14 @@ SUBROUTINE input_chem_profile (si_grid)
         if (config_flags%chem_opt == RACM_KPP .or.          &
             config_flags%chem_opt == GOCARTRACM_KPP .or.      &
             config_flags%chem_opt == RACMSORG_KPP .or.      &
+            config_flags%chem_opt == RACM_SOA_VBS_KPP .or.      & 
             config_flags%chem_opt == RACM_ESRLSORG_KPP .or.      &
-            config_flags%chem_opt == RACM_MIM_KPP .or.      &
-            config_flags%chem_opt == RACMSORG_KPP ) then
+            config_flags%chem_opt == RACM_MIM_KPP ) then
           i_bdy_method = 9
         end if
         if (config_flags%chem_opt == RACMPM_KPP ) then
           i_bdy_method = 9
         end if
-
 
       else if ((ic .ge. p_so4aj) .and. (ic .le. p_corn)) then
           i_bdy_method = 2
@@ -2469,9 +2476,10 @@ SUBROUTINE input_chem_profile (si_grid)
      case (0)
         get_last_gas = 0
 
-     case (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_KPP, &
-           RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACM_ESRLSORG_KPP, RACMSORG_KPP, &
-	       GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
+     case (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
+           RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM,           &
+           RACM_ESRLSORG_KPP, RACMSORG_KPP, RACM_SOA_VBS_KPP, & 
+	   GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
         get_last_gas = p_ho2
 
      case (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
@@ -2498,12 +2506,17 @@ SUBROUTINE input_chem_profile (si_grid)
         get_last_gas = p_ho2
      case (CHEM_VASH)
         get_last_gas = 0
+     case (CHEM_VOLC)
+        get_last_gas = p_sulf
      case (DUST)
         get_last_gas = 0
      case (MOZART_KPP)
         get_last_gas = p_meko2
 
      case (MOZCART_KPP)
+        get_last_gas = p_meko2
+
+     case (MOZART_MOSAIC_4BIN_VBS0_KPP)
         get_last_gas = p_meko2
 
      case default
@@ -3451,10 +3464,10 @@ real, intent(in)    :: chem(ims:ime,kms:kme,jms:jme,num_chem)
      end if
      write(err_msg,*) 'lbc_init: initializing ',max_dom,' domains'
      call wrf_message( trim(err_msg) )
-     fixed_lbc(:)%allocated = .false.
+     fixed_lbc(:)%is_allocated = .false.
    endif
 
-   if( .not. fixed_lbc(id)%allocated ) then
+   if( .not. fixed_lbc(id)%is_allocated ) then
      if( p_ch4 > 1 ) then
        allocate( fixed_lbc(id)%ch4_lbc(its:ite,jts:jte),stat=astat )
        if( astat /= 0 ) then
@@ -3477,7 +3490,7 @@ real, intent(in)    :: chem(ims:ime,kms:kme,jms:jme,num_chem)
        end if
        fixed_lbc(id)%h2_lbc(its:ite,jts:jte) = chem(its:ite,kts,jts:jte,p_h2)
      end if
-     fixed_lbc(id)%allocated = .true.
+     fixed_lbc(id)%is_allocated = .true.
    end if
 
 END SUBROUTINE mozcart_lbc_init

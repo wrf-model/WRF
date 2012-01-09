@@ -16,12 +16,12 @@
 
       implicit none
 
-      integer,parameter:: ND=2
+      integer,parameter:: ND=3
       integer Ocean_spec /-1/, WM_id /-10/
       integer NSF
       integer NSF_WM
-      real dtc,           &       !<- Coupling period
-     &     dta,           &     !<- AM time step ("physical")
+      real dtc,              &  !<- Coupling period
+     &     dta,              &  !<- AM time step ("physical")
      &     dta2dtc              !<- AM time step / Coupling period
       integer i_dtc2dta /100/   !<- Coupling period / AM time step
       integer & !,dimension(ND)::
@@ -35,11 +35,11 @@
      &                    kind_lonlat=kind_R
       integer MPI_kind_R, &
      &MPI_kind_sfcflux,MPI_kind_SST,MPI_kind_SLM,MPI_kind_lonlat
-      integer n_ts(ND) /0,0/, gid
+      integer n_ts(ND) /0,0,0/, gid
       integer rc /5/
       real,parameter:: &
-     &   SLM_OS_value=1.,  &!<-must be real open sea mask value in AM
-     &   unrealistically_low_SST=0.01, & ! <- must be unreal low but >=0.,
+     &   SLM_OS_value=1., & !<-must be real open sea mask value in AM
+     &   unrealistically_low_SST=0.01, &  ! <- must be unreal low but >=0.,
                                        ! see interp. --- check!
      &   unrealistically_low_SV=-1.E30, &
                      ! <- must be negative unreal low surface flux
@@ -59,7 +59,7 @@
       END TYPE SF_ARRAY
 
       TYPE (SST_ARRAY), dimension(ND):: SST_cc
-      TYPE (SF_ARRAY), dimension(ND):: sf
+      TYPE (SF_ARRAY), dimension(min(ND,2)):: sf
 
       character*12 sgid
 
@@ -69,6 +69,39 @@
       SAVE
 
       END MODULE ATM_cc
+!C
+!C***********************************************************************
+!C
+      SUBROUTINE ATM_SET_COMM(new_atm_comm)
+        USE ATM_cc
+        integer, intent(in) :: new_atm_comm
+
+!       This routine is called when the atmospheric model wants to
+!       remove processors from taking part in coupling so that they
+!       can perform I/O or diagnostics.  Any processors that will
+!       continue to be in MPI_COMM_Atmos must call this routine, and
+!       any processors that will leave MPI_COMM_Atmos must call
+!       ATM_LEAVE_COUPLING.
+
+        MPI_COMM_Atmos=new_atm_comm
+      end
+!C
+!C***********************************************************************
+!C
+      SUBROUTINE ATM_LEAVE_COUPLING()
+        USE ATM_cc
+
+!       This routine is called when the atmospheric model wants to
+!       remove processors from taking part in coupling so that they
+!       can perform I/O or diagnostics.  Any processors that will
+!       continue to be in MPI_COMM_Atmos must call ATM_SET_COMM, and
+!       any processors that will leave MPI_COMM_Atmos must call
+!       this routine.
+
+!       Currently, there is nothing we have to do here.
+        return
+
+      end
 !C
 !C***********************************************************************
 !C
@@ -106,7 +139,7 @@
       call ATM_ANNOUNCE('ATM_CMP_START: Ocean_spec broadcast',2)
 
       call CMP_gnr_RECV(WM_id,1,MPI_INTEGER)
-      write(s,'(i3)') WM_id
+      write(s,'(i4)') WM_id
       call ATM_ANNOUNCE('back from CMP_INTEGER_RECV, WM id is '//s,2)
       call MPI_BCAST(WM_id,1,MPI_INTEGER, &
      &component_master_rank_local,MPI_COMM_Atmos,ierr)
@@ -184,14 +217,18 @@
       subroutine ATM_TSTEP_INIT(NTSD,NPHS,gid_,dta_, &
      &ids_,idf_,jds_,jdf_,its_,ite_,jts_,jte_,ims_,ime_,jms_,jme_, &
        !<-"domain"         !<-"tile"           !<-"memory" (tile+halo)
-     &kds_,kde_,kts_,kte_,kms_,kme_, &
+     &kds_,kde_,kts_,kte_,kms_,kme_,&
      &HLON,HLAT,VLON,VLAT, &
      &SLM, &
-     &i_parent_start,j_parent_start)
+     &i_parent_start,j_parent_start,&
+     &guessdtc,dtc_)
 
       USE ATM_cc
 
       implicit none
+
+      real, intent(in) :: guessdtc
+      real, intent(out) :: dtc_
 
       integer NTSD,NPHS,gid_
       real dta_
@@ -210,8 +247,8 @@
 !C
 
       gid=gid_
-      call GLOB_ABORT((gid-1)*(gid-2), &
-     &'Abort: in ATM_TSTEP_INIT gid is neither 1 nor 2',rc)
+      call GLOB_ABORT((gid-1)*(gid-2)*(gid-3), &
+     &'Abort: in ATM_TSTEP_INIT gid is neither 1 nor 2 nor 3',rc)
       KDT=NTSD/NPHS+1
       PHYS=MOD(NTSD,NPHS).eq.0 ! .and. gid.eq.1 <-removed to bring MG in
       dta=dta_ 
@@ -241,7 +278,8 @@
       call GLOB_ABORT(KDT-n_ts(gid), &
      &'Abort: in ATM_TSTEP_INIT KDT, n_ts(gid) differ '//s,rc)
 
-      call ATM_RECVdtc
+      call ATM_RECVdtc(guessdtc)
+      dtc_=dtc
 
       zeroSF=((n_ts(gid)-1)/i_dtc2dta)*i_dtc2dta .eq. n_ts(gid)-1
       nrmSF=(n_ts(gid)/i_dtc2dta)*i_dtc2dta .eq. n_ts(gid)
@@ -274,11 +312,15 @@
 
       NGP=(idf-ids+1)*(jdf-jds+1)
 
+      IF (n_ts(gid).eq.1) THEN
+
       call ATM_ANNOUNCE('ATM_TSTEP_INIT to allocate sf, SST_cc',3)
 
-      IF (n_ts(gid).eq.1) THEN
+      IF (gid.le.2) THEN !** innermost grid not active in coupling **
         allocate(sf(gid)%a(ims:ime,jms:jme,NSF))
+      END IF !** innermost grid not active in coupling **
         allocate(SST_cc(gid)%a(ims:ime,jms:jme))
+
       END IF
 
       if (gid.eq.2) then
@@ -296,9 +338,13 @@
         end if
       end if
 
+      IF (gid.le.2) THEN !** innermost grid not active in coupling **
+
       CALL ATM_SENDGRIDS(HLON,HLAT,VLON,VLAT)
 
       CALL ATM_SENDSLM(SLM)
+
+      END IF !** innermost grid not active in coupling **
 
       if (VerbLev.ge.2) print*,'AM: ATM_TSTEP_INIT: returning ',gid, &
      &n_ts(gid),ids,idf,jds,jdf,its,ite,jts,jte,ims,ime,jms,jme,NGP,NSF
@@ -308,12 +354,13 @@
 !C
 !C***********************************************************************
 !C
-      SUBROUTINE ATM_RECVdtc
+      SUBROUTINE ATM_RECVdtc(guessdtc)
 
       USE ATM_cc
 
       implicit none
 
+      real,intent(in) :: guessdtc
       real(kind=kind_R) buf(1),dtc2dta
       integer ierr,i
       logical first/.true./
@@ -336,17 +383,7 @@
         dtc=buf(1)
 
         if (Coupler_id.lt.0) then
-           ! This section sets the coupling timestep when no coupling
-           ! is being done.  This relation must hold for the outermost domain:
-           !    dtc * N = dta * movemin
-           ! where N can be any integer greater than zero.
-          if(gid<1 .or. gid>3) then
-             write(s,'(1i8)') gid
-             call GLOB_ABORT(1,'invalid grid id '//s//'; I only know 1,2, and 3',1)
-          endif
-          dtc=dta
-          if(gid==2) dtc=dtc*3   ! domain 2 timestep = domain 1 timestep / 3
-          if(gid==3) dtc=dtc*9   ! domain 3 timestep = domain 1 timestep / 9
+          dtc=guessdtc
           write(s,'(1pe20.12)') dtc
           call ATM_ANNOUNCE('ATM_RECVdtc: C time step assigned '// &
      &    trim(s)//' : standalone mode',2)
@@ -401,6 +438,8 @@
 !c     IF (gid.ne.1) RETURN ! only "parent grid" dim. and coor. are sent
 
       IF (.not.PHYS .or. n_ts(gid).ne.1) RETURN
+
+      IF (gid.gt.2) RETURN ! innermost grid's dim. / coor. are not sent
       
 !temporarily excluded      if (Coupler_id.lt.0) return    !   <- standalone mode
 
@@ -449,6 +488,8 @@
 
 !c     IF (gid.ne.1) RETURN  !  only "parent grid" mask is sent
       IF (.not.PHYS .or. n_ts(gid).ne.1) RETURN
+
+      IF (gid.gt.2) RETURN ! innermost grid's mask is not sent
       
 !temporarily excluded      if (Coupler_id.lt.0) return    !   <- standalone mode
 
@@ -459,6 +500,7 @@
       call CMP_gnr_SEND(SLM_g,NGP,MPI_kind_SLM)
       call CMP_gnr_SEND(SLM_g,NGP,MPI_kind_SLM)
            ! Coupler requires as many copies of mask as there are grids
+           ! [and mask array is the same for H- (=t-) and V- grids]
 
       call ATM_ANNOUNCE('(BP) ATM_SENDSLM: returning',2)
 
@@ -481,6 +523,9 @@
 !C
 
       IF (.not.PHYS) RETURN
+
+      IF (gid.gt.2) RETURN ! nothing is done to get innermost grid's
+                           ! SST ** IN THIS PRELIMINARY VERSION **
 
       call ATM_ANNOUNCE('ATM_GETSST entered (PHYS=.true.)',3)
 
@@ -510,7 +555,7 @@
         if (abs(SLM(i,j)-SLM_OS_value).lt.0.01) then 
                                   ! i.e. if it is OS (open sea) AMGP
                                   !
-          if (SST_cc(gid)%a(i,j).gt.unrealistically_low_SST)  &
+          if (SST_cc(gid)%a(i,j).gt.unrealistically_low_SST) &
                                           ! i.e. if there is a valid
                                           ! result of interpolation from
                                           ! OMG for this AMGP
@@ -543,6 +588,9 @@
 !C
 
       IF (.not.PHYS) RETURN
+
+      IF (gid.gt.2) RETURN
+
 ! Debug insertion:->
 !c     if (PREC(ims+3,jms+3).ne.0 .or. PREC(ims+5,jms+5).ne.0) then
 !c       print*,'ATM_DOFLUXES,gid,n_ts(gid),PREC(3,3),PREC(5,5): ',
@@ -630,6 +678,8 @@
 !C
 
       if (.not.PHYS) RETURN
+
+      IF (gid.gt.2) RETURN
 
       if (.not.sendSF) then
         call ATM_ANNOUNCE( &

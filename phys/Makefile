@@ -24,14 +24,17 @@ MODULES = \
 	module_bl_ysu.o \
 	module_bl_mrf.o \
 	module_bl_gfs.o \
+	module_bl_gfs2011.o \
 	module_bl_myjpbl.o \
 	module_bl_qnsepbl.o \
+	module_bl_qnsepbl09.o \
 	module_bl_acm.o \
 	module_bl_mynn.o \
 	module_bl_gwdo.o \
 	module_bl_myjurb.o \
 	module_bl_boulac.o \
 	module_bl_camuwpbl_driver.o \
+	module_bl_mfshconvpbl.o \
 	module_cu_camuwshcu_driver.o \
 	module_cu_camuwshcu.o \
 	module_cu_camzm_driver.o \
@@ -53,11 +56,13 @@ MODULES = \
 	module_mp_wsm5.o \
 	module_mp_wsm6.o \
 	module_mp_etanew.o \
+        module_mp_etaold.o \
 	module_mp_HWRF.o \
 	module_mp_thompson.o \
 	module_mp_gsfcgce.o \
 	module_mp_morr_two_moment.o \
 	module_mp_milbrandt2mom.o \
+	module_mp_nssl_2mom.o \
 	module_mp_wdm5.o \
 	module_mp_wdm6.o \
 	module_ra_sw.o  \
@@ -69,14 +74,22 @@ MODULES = \
         module_ra_cam_support.o \
         module_ra_cam.o \
 	module_ra_gfdleta.o \
+        module_ra_flg.o \
 	module_ra_HWRF.o \
 	module_ra_hs.o  \
 	module_sf_sfclay.o \
+	module_sf_sfclayrev.o \
 	module_sf_gfs.o \
 	module_sf_gfdl.o \
 	module_sf_slab.o  \
 	module_sf_noahdrv.o  \
 	module_sf_noahlsm.o  \
+        module_sf_ssib.o  \
+	module_sf_noah_seaice.o \
+	module_sf_noah_seaice_drv.o \
+	module_sf_noahlsm_glacial_only.o \
+	module_sf_noahmpdrv.o \
+	module_sf_noahmplsm.o \
         module_sf_urban.o  \
         module_sf_bep.o  \
         module_sf_bep_bem.o \
@@ -94,6 +107,8 @@ MODULES = \
 	module_sf_pxsfclay.o \
 	module_sf_temfsfclay.o \
 	module_sf_idealscmsfclay.o \
+	module_sf_scmflux.o \
+	module_sf_scmskintemp.o \
 	module_physics_addtendc.o \
 	module_physics_init.o \
 	module_gfs_machine.o \
@@ -162,7 +177,12 @@ module_bl_boulac.o: ../share/module_model_constants.o
 
 module_bl_qnsepbl.o: ../share/module_model_constants.o
 
+module_bl_qnsepbl09.o: ../share/module_model_constants.o
+
 module_bl_gfs.o: module_gfs_machine.o \
+		 module_gfs_physcons.o
+
+module_bl_gfs2011.o: module_gfs_machine.o \
 		 module_gfs_physcons.o
 
 module_bl_mynn.o: ../share/module_model_constants.o
@@ -302,12 +322,18 @@ module_ra_cam.o: module_ra_cam_support.o \
 		 module_cam_support.o \
                 ../frame/module_wrf_error.o
 
+module_ra_flg.o: ../frame/module_wrf_error.o \
+		../frame/module_dm.o
+
 module_mp_lin.o : ../frame/module_wrf_error.o
 
 module_mp_sbu_ylin.o : ../frame/module_wrf_error.o \
                    ../share/module_model_constants.o
 
 module_mp_milbrandt2mom.o : ../frame/module_wrf_error.o \
+		../share/module_model_constants.o
+
+module_mp_nssl_2mom.o : ../frame/module_wrf_error.o \
 		../share/module_model_constants.o
 
 module_mp_thompson.o : ../frame/module_wrf_error.o 
@@ -329,6 +355,20 @@ module_sf_noahdrv.o: module_sf_noahlsm.o module_data_gocart_dust.o \
                      module_sf_urban.o module_sf_bep.o module_sf_bep_bem.o 
 
 module_sf_noahlsm.o: ../share/module_model_constants.o
+
+module_sf_ssib.o: ../share/module_model_constants.o  
+
+module_sf_noah_seaice_drv.o:	module_sf_noah_seaice.o
+
+module_sf_noah_seaice.o: 	module_sf_noahlsm.o ../share/module_model_constants.o
+
+module_sf_noahmpdrv.o: module_sf_noahmplsm.o module_sf_noahdrv.o ../share/module_model_constants.o module_ra_gfdleta.o module_data_gocart_dust.o \
+                     module_sf_urban.o module_sf_noah_seaice.o module_sf_noahlsm_glacial_only.o module_sf_myjsfc.o
+
+module_sf_noahlsm_glacial_only.o: module_sf_noahlsm.o module_sf_noahmplsm.o
+
+module_sf_noahmplsm.o:	../share/module_model_constants.o \
+			module_sf_myjsfc.o
 
 module_sf_bep.o: ../share/module_model_constants.o module_sf_urban.o
 
@@ -362,7 +402,9 @@ module_physics_init.o : \
 		module_ra_gfdleta.o		\
 		module_ra_HWRF.o		\
 		module_ra_hs.o			\
+                module_ra_flg.o                 \
 		module_sf_sfclay.o		\
+		module_sf_sfclayrev.o		\
 		module_sf_slab.o		\
 		module_sf_myjsfc.o		\
 		module_sf_mynn.o                \
@@ -371,21 +413,27 @@ module_physics_init.o : \
 		module_sf_pxsfclay.o		\
 		module_sf_noahlsm.o		\
 		module_sf_noahdrv.o		\
+                module_sf_ssib.o                \
+		module_sf_noahmplsm.o		\
+		module_sf_noahmpdrv.o		\
                 module_sf_bep.o                 \
                 module_sf_bep_bem.o             \
 		module_sf_ruclsm.o		\
 		module_sf_pxlsm.o		\
-		module_bl_ysu.o			\
+		module_bl_ysu.o		        \
 		module_bl_mrf.o			\
 		module_bl_gfs.o			\
+		module_bl_gfs2011.o		\
 		module_bl_acm.o			\
 		module_bl_myjpbl.o		\
 		module_bl_qnsepbl.o		\
+		module_bl_qnsepbl09.o		\
 		module_bl_mynn.o                \
 		module_bl_myjurb.o              \
 		module_bl_boulac.o              \
 		module_bl_camuwpbl_driver.o     \
 		module_bl_temf.o              \
+		module_bl_mfshconvpbl.o         \
 		module_cu_kf.o			\
 	        module_cu_g3.o                  \
 		module_cu_kfeta.o		\
@@ -401,6 +449,7 @@ module_physics_init.o : \
 		module_mp_wsm5.o		\
 		module_mp_wsm6.o		\
 		module_mp_etanew.o		\
+                module_mp_etaold.o              \
 		module_mp_HWRF.o		\
 		module_fdda_psufddagd.o		\
 		module_fdda_spnudging.o         \
@@ -409,6 +458,7 @@ module_physics_init.o : \
 		module_mp_gsfcgce.o 		\
                 module_mp_morr_two_moment.o     \
                 module_mp_milbrandt2mom.o     \
+                module_mp_nssl_2mom.o         \
 		module_mp_wdm5.o		\
 		module_mp_wdm6.o		\
 		module_cam_physconst.o		\
@@ -426,11 +476,12 @@ module_microphysics_driver.o: \
 		module_mp_kessler.o  module_mp_sbu_ylin.o module_mp_lin.o \
 		module_mp_wsm3.o module_mp_wsm5.o \
 		module_mp_wsm6.o module_mp_etanew.o \
-		module_mp_HWRF.o  \
+		module_mp_etaold.o module_mp_HWRF.o  \
 		module_mp_thompson.o            \
 		module_mp_gsfcgce.o 		\
                 module_mp_morr_two_moment.o     \
                 module_mp_milbrandt2mom.o     \
+                module_mp_nssl_2mom.o         \
 		module_mp_wdm5.o module_mp_wdm6.o \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
@@ -466,16 +517,19 @@ module_pbl_driver.o:  \
 		module_bl_myjpbl.o \
 		module_bl_myjurb.o \
 		module_bl_qnsepbl.o \
+		module_bl_qnsepbl09.o \
 		module_bl_acm.o \
 		module_bl_ysu.o \
 		module_bl_mrf.o \
                 module_bl_boulac.o \
 		module_bl_camuwpbl_driver.o \
 		module_bl_gfs.o \
+		module_bl_gfs2011.o \
 		module_bl_mynn.o \
 		module_bl_gwdo.o \
 		module_wind_fitch.o \
 		module_bl_temf.o \
+		module_bl_mfshconvpbl.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o 
@@ -495,6 +549,7 @@ module_radiation_driver.o: \
 		module_ra_gfdleta.o \
 		module_ra_HWRF.o \
 		module_ra_hs.o \
+                module_ra_flg.o \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
 		../frame/module_dm.o \
@@ -507,12 +562,16 @@ module_radiation_driver.o: \
 
 module_surface_driver.o: \
 		module_sf_sfclay.o		\
+		module_sf_sfclayrev.o		\
 		module_sf_slab.o		\
 		module_sf_myjsfc.o		\
 		module_sf_qnsesfc.o		\
 		module_sf_pxsfclay.o		\
 		module_sf_gfs.o  		\
+		module_sf_noah_seaice_drv.o	\
 		module_sf_noahdrv.o		\
+                module_sf_ssib.o                \
+		module_sf_noahmpdrv.o		\
 		module_sf_ruclsm.o		\
 		module_sf_pxlsm.o		\
 		module_sf_mynn.o                \
@@ -522,6 +581,8 @@ module_surface_driver.o: \
 		module_sf_tmnupdate.o		\
 		module_sf_temfsfclay.o		\
 		module_sf_idealscmsfclay.o	\
+		module_sf_scmflux.o		\
+		module_sf_scmskintemp.o		\
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o  

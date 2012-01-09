@@ -90,6 +90,8 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
    iv % radar_ef_rv = 1.0
    iv % radar_ef_rf = 1.0
 
+   iv % rain_ef_r  = 1.0
+
    iv % bogus_ef_u = 1.0
    iv % bogus_ef_v = 1.0
    iv % bogus_ef_t = 1.0
@@ -480,6 +482,14 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
                iv%bogus(n)% q(k) % qc = missing_data
          end do
          ob % bogus(n) % slp = iv % bogus(n) % slp % inv
+      end do
+   end if
+
+   ! [2.20] Transfer rain obs:
+
+   if (iv%info(rain)%nlocal > 0) then
+      do n = 1, iv%info(rain)%nlocal
+            ob % rain(n) % rain = iv % rain(n) % rain % inv
       end do
    end if
 

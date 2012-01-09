@@ -54,7 +54,7 @@ subroutine da_transform_xtowtq_adj (grid)
             grid%xa%psfc(i,j), grid%xa%tgrn(i,j), &
             grid%xa%p(i,j,kts), grid%xa%t(i,j,kts), grid%xa%q(i,j,kts), &
             grid%xa%u(i,j,kts), grid%xa%v(i,j,kts), &
-            height      , grid%xb%rough(i,j), grid%xb%xland(i,j), &
+            height      , grid%xb%rough(i,j), grid%xb%xland(i,j), grid%xb%ds, & ! Modified by Eric Chiang (AUG 2010) 
             grid%xa%u10(i,j),grid%xa%v10(i,j), &
             grid%xa%t2 (i,j),grid%xa%q2 (i,j))
 

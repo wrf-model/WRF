@@ -1678,9 +1678,7 @@ subroutine da_setup_obs_structures_madis( ob, iv)
                            ntotal_out,sfclev)
       iv%info(sound)%nlocal = nlocal_out
 
-      print*,'I am here',size(p),nsta,max_raoblev,nlev
       deallocate (p)
-      print*,'I am here 0'
       deallocate (q)
       deallocate (t)
       deallocate (z)

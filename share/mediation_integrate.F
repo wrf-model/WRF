@@ -171,6 +171,9 @@ SUBROUTINE med_after_solve_io ( grid , config_flags )
    ! Compute time series variables
    CALL calc_ts(grid)
 
+   ! Compute track variables 
+   CALL track_driver(grid)
+
    RETURN
 END SUBROUTINE med_after_solve_io
 
@@ -1224,15 +1227,28 @@ SUBROUTINE med_analysis_in ( grid , config_flags )
                          config_flags , "DATASET=RESTART", ierr )
 
    IF ( ierr .NE. 0 ) THEN
-!    CALL WRF_message( message )
-     CALL WRF_ERROR_FATAL('NESTED DOMAIN ERROR: FOR ANALYSIS SET TO TRUE, YOU NEED wrfanal FILE')
+      ! Could not open the analysis file, so notify user.
+
+      write(message,'(A,I0,A,A,A)') 'WARNING: Domain ',grid%id,' analysis file ',trim(rstname),' is missing.'
+      call wrf_message(message)
+      write(message,'(A,I0,A)') '-------> Domain ',grid%id,' running as a cold start (interp from parent).'
+      call wrf_message(message)
+
+      WRITE ( message , FMT = '("Failing to read restart for domain ",I8)' ) grid%id
+      CALL end_timing ( TRIM(message) )
+
+      return
+   ELSE
+      ! Was able to open the analysis file.  Read it as a restart file.
+
+      CALL input_restart ( rid, grid , config_flags , ierr )
+      IF ( wrf_dm_on_monitor() ) THEN
+         WRITE ( message , FMT = '("Reading restart for domain ",I8)' ) grid%id
+         CALL end_timing ( TRIM(message) )
+      END IF
+      CALL close_dataset ( rid , config_flags , "DATASET=RESTART" )
    ENDIF
-   CALL input_restart ( rid, grid , config_flags , ierr )
-   IF ( wrf_dm_on_monitor() ) THEN
-     WRITE ( message , FMT = '("Reading restart for domain ",I8)' ) grid%id
-     CALL end_timing ( TRIM(message) )
-   END IF
-   CALL close_dataset ( rid , config_flags , "DATASET=RESTART" )
+
    RETURN
 
 END SUBROUTINE med_analysis_in

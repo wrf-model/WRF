@@ -96,8 +96,6 @@ state    real   hlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_M
 # The following arrays were added to avoid using _b and _bt arrays for nesting.
 # This is gopal' doing:
 
-state  integer    nrnd1    z    dyn_nmm     1      -      r    "NRND1"
-
 #for HWRF: zhang's doing: added a 'r' at end to store these variables in restart file
 state  real    pdnest_b     ij      dyn_nmm     1      -      r
 state  real    pdnest_bt    ij      dyn_nmm     1      -      r
@@ -136,9 +134,12 @@ state  logical moved       -     misc       1      -     r
 
 state   real   ducudt       ijk     misc        1         -    rh  "UMMIX" "U TENDENCY  MOMENTUM MIXING IN SAS"
 state   real   dvcudt       ijk     misc        1         -    rh  "VMMIX" "V TENDENCY  MOMENTUM MIXING IN SAS"
-# For random number in SAS convection in HWRF
+state integer randstate1     ij     dyn_nmm     1      -    r  "randstate1" "random number generator state word 1"
+state integer randstate2     ij     dyn_nmm     1      -    r  "randstate2" "random number generator state word 2"
+state integer randstate3     ij     dyn_nmm     1      -    r  "randstate3" "random number generator state word 3"
+state integer randstate4     ij     dyn_nmm     1      -    r  "randstate4" "random number generator state word 4"
+state real    random         ij     dyn_nmm     1      -    rh "random" "random number in [0,1) used by SAS"
 
-state real store_rand        ij     dyn_nmm     1      -    rh  "RANDOM" "RANDOM NUMBER FOR SAS"
 
 # Location of the SOUTH-WEST nested pointed in terms of parent grid
 
@@ -179,6 +180,8 @@ state  real   Q3D       ijk    dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH)f=
 #end of HWRF: 
 
 state  real HRES_FIS    ij     dyn_nmm     1      -      r  "HRES_FIS" "HIGH RESOLUTION TERRAIN DATA FOR NESTED DOMAIN"
+state  real HRES_AVC    ij     dyn_nmm     1      -      -  "HRES_AVC" "TEMPORARY STORAGE OF HRES_FIS/9.81"
+state  real HRES_LND    ij     dyn_nmm     1      -      -  "HRES_LND" "TEMPORARY STORAGE OF HIGH-RES LND"
 
 #
 # module_MASKS
@@ -308,6 +311,10 @@ state integer lpbl      ij    dyn_nmm   1    -     ir       "LPBL"     "Model la
 state  real   mixht     ij    dyn_nmm   1    -     rh        "MIXHT"                 "MXL HEIGHT"              "m"
 state  real   ustar     ij    dyn_nmm   1    -     irhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "USTAR"    "Friction velocity"                    "m s-1"
 state  real   z0        ij    dyn_nmm   1    -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "Z0"       "Roughness height"                     "m"
+state  real   hpbl2d    ij    dyn_nmm   1    -     irh        "HPBL2D"     "HEIGHT OF PBL from new2010 GFS pbl"
+   "m"
+state  real   heat2d    ij    dyn_nmm   1    -     irh        "HEAT2D"     "" ""
+state  real   evap2d    ij    dyn_nmm   1    -     irh        "EVAP2D"     "" ""
 state  real   z0base    ij    dyn_nmm   1    -     ir       "Z0BASE"   "Base roughness height"                "m"
 state  real   ths       ij    dyn_nmm   1    -     irhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "THS"      "Surface potential temperature"        "K"
 state  real   mavail    ij    dyn_nmm   1    -     i
@@ -1011,6 +1018,7 @@ rconfig   real    radt                    namelist,physics	max_domains    0     
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0       rh       "sf_sfclay_physics"             ""      ""
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0       rh       "sf_surface_physics"            ""      ""
 rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    0       rh       "bl_pbl_physics"                ""      ""
+rconfig   logical     mfshconv            namelist,physics      max_domains    .false.  rh       "mfshconv"         "To activate mass flux scheme with qnse true or false"      ""
 rconfig   real    BLDT                    namelist,physics	max_domains    0       h    "BLDT"          ""      ""
 rconfig   integer     cu_physics          namelist,physics	max_domains    0       rh       "cu_physics"            ""      ""
 rconfig   integer shcu_physics            namelist,physics      max_domains    0       rh   "shcu_physics"  ""      ""
@@ -1024,6 +1032,8 @@ rconfig   real    swrad_scat              namelist,physics      1             1 
 rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=hybrid (not yet implemented)"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""
 rconfig   integer num_urban_layers        namelist,physics      1            400       irh    "num_urban_layers"               ""      ""
+rconfig   integer mosaic_lu               namelist,physics      1             0       irh     "mosaic_lu"             ""      ""
+rconfig   integer mosaic_soil             namelist,physics      1             0       irh     "mosaic_soil"           ""      ""
 rconfig   integer maxiens                 namelist,physics	1             1       irh    "maxiens"                    ""      ""
 rconfig   integer maxens                  namelist,physics	1             3       irh    "maxens"                    ""      ""
 rconfig   integer maxens2                 namelist,physics	1             3       irh    "maxens2"                    ""      ""
@@ -1035,6 +1045,7 @@ rconfig   integer mp_zero_out             namelist,physics	1             0      
 rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8      -      "mp_zero_out_thresh"  "minimum threshold for non-Qv moist fields, below are set to zero"  "kg/kg"
 rconfig   real    seaice_threshold        namelist,physics      1            271       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
 rconfig   integer fractional_seaice       namelist,physics      1            0        -     "fractional_seiace" "Fractional sea-ice option"
+rconfig   integer seaice_albedo_opt       namelist,physics      1            0        -     "seaice_albedo_opt" "Method for setting albedo over sea ice"
 rconfig   logical tice2tsk_if2cold        namelist,physics      1              .false. -     "tice2tsk_if2cold" "Avoid low ice temps when ice frac and Tsk are inconsistent"
 rconfig   integer sst_update              namelist,physics      1            0        i01rh    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
 rconfig   integer sf_urban_physics        namelist,physics      max_domains  0         h    "sf_urban_physics"     "activate urban model  0=no, 1=Noah_UCM, 2=BEP_UCM"   ""
@@ -1044,12 +1055,17 @@ rconfig   logical rdlai2d                 namelist,physics      1            .fa
 rconfig   integer  gwd_opt                namelist,physics    max_domains    0       irh    "gwd_opt"      "activate gravity wave drag: 0=off, 1=ARW, 2=NMM"   ""
 rconfig   integer iz0tlnd                 namelist,physics      1            0         h     "iz0tlnd"    "switch to control land thermal roughness length"   ""
 rconfig   real    sas_pgcon               namelist,physics      max_domains  0.55      irh   "sas_pgcon"   "convectively forced pressure gradient factor (SAS scheme)" ""
+rconfig   real    sas_shal_pgcon          namelist,physics      max_domains  -1        irh   "sas_shal_pgcon"   "convectively forced pressure gradient factor, -1 means use sas_pgcon (SAS shallow conv)" ""
+rconfig   integer sas_shal_conv           namelist,physics     max_domains    0        -     "sas_shal_conv"   "1=enable shallow convection in SAS (must use bl_pbl_physics=83)"
+rconfig   real    sas_mass_flux           namelist,physics      max_domains  9e9       -     "sas_mass_flux"   "mass flux limit (SAS scheme)" ""
+rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
 
 # nmm variables
 rconfig   integer idtad                   namelist,physics     max_domains    2       irh    "idtad"  "fundamental timesteps between calls to NMM passive advection scheme"
 rconfig   integer nsoil                   namelist,physics     max_domains    4       irh    "nsoil"  "number of soil layers"
 rconfig   integer nphs                    namelist,physics     max_domains   10       irh    "nphs"  "fundamental timesteps between calls to NMM turbulence"
 rconfig   integer ncnvc                   namelist,physics     max_domains   10       irh    "ncnvc"  "fundamental timesteps between calls to NMM convection"
+rconfig   integer nrand                   namelist,physics     max_domains   10       irh    "nrand"  "fundamental timesteps between random number generator updates (0=use ncnvc)"
 rconfig   integer nrads                   namelist,physics     max_domains  200       irh    "nrads"  "fundamental timesteps between calls to NMM shortwave radiation"
 rconfig   integer nradl                   namelist,physics     max_domains  200       irh    "nradl"  "fundamental timesteps between calls to NMM longwave radiation"
 rconfig   real    tprec                   namelist,physics     max_domains    3.      irh    "tprec"  "number of hours in bucket for total precipitation"
@@ -1206,11 +1222,13 @@ package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,q
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr
 package   etamp_hwrf    mp_physics==85               -             moist:qv,qc,qr,qi,qs
+package   etampold      mp_physics==95               -             moist:qv,qc,qr,qs
 
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             -
 package   rrtmg_lwscheme  ra_lw_physics==4           -             -
 package   goddardlwscheme  ra_lw_physics==5          -             -
+package   flglwscheme   ra_lw_physics==7             -             -
 package   gfdllwscheme  ra_lw_physics==99            -             moist:qv,qc,qr,qi
 package   hwrflwscheme  ra_lw_physics==98
 
@@ -1219,6 +1237,7 @@ package   gsfcswscheme  ra_sw_physics==2             -             -
 package   camswscheme   ra_sw_physics==3             -             -
 package   rrtmg_swscheme  ra_sw_physics==4           -             -
 package   goddardswscheme  ra_sw_physics==5          -             -
+package   flgswscheme   ra_sw_physics==7             -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -
 package   hwrfswscheme  ra_sw_physics==98
 package   heldsuarez    ra_lw_physics==31            -             -
@@ -1230,17 +1249,23 @@ package   gfdlsfcscheme  sf_sfclay_physics==88       -             -
 package   qnsesfcscheme  sf_sfclay_physics==4        -             -
 package   pxsfcscheme    sf_sfclay_physics==7        -             -
 package   temfsfcscheme  sf_sfclay_physics==10       -             -
+package   sfclayrevscheme sf_sfclay_physics==11        -             -
 package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
 package   ruclsmscheme   sf_surface_physics==3       -             -
+package   noahmpscheme   sf_surface_physics==4       -             -
 package   gfdlslab       sf_surface_physics==88      -             -
 package   pxlsmscheme    sf_surface_physics==7       -             -
+package   ssibscheme     sf_surface_physics==8       -             -
 package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             -
 package   gfsscheme      bl_pbl_physics==3           -             -
+package   gfs2011scheme  bl_pbl_physics==83          -             state:hpbl2d,heat2d,evap2d
+package   gfs2011scheme  bl_pbl_physics==83          -             state:hpbl2d,heat2d,evap2d
 package   qnsepblscheme  bl_pbl_physics==4           -             -
+package   qnsepbl09scheme  bl_pbl_physics==94        -             -
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             - 
 package   camuwpblscheme bl_pbl_physics==9           -             -
@@ -1250,8 +1275,8 @@ package   temfpblscheme  bl_pbl_physics==10          -             -
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -
 package   gdscheme       cu_physics==3               -             -
-package   sasscheme      cu_physics==84              -             -
-package   osasscheme     cu_physics==4               -             -
+package   sasscheme      cu_physics==84              -             state:hpbl2d,heat2d,evap2d
+package   osasscheme     cu_physics==4               -             state:randstate1,randstate2,randstate3,randstate4,random
 package   g3scheme       cu_physics==5               -             -
 package   tiedtkescheme  cu_physics==6               -             -
 package   camzmscheme    cu_physics==7               -             -
@@ -1373,6 +1398,7 @@ halo      HALO_NMM_TURBL_B  dyn_nmm 8:dudt,dvdt
 
 halo HALO_NMM_ZZ  dyn_nmm 8:pdnest_b,unest_b,vnest_b,tnest_b,qnest_b,cwmnest_b,q2nest_b,pdnest_bt,unest_bt,vnest_bt,tnest_bt,qnest_bt,cwmnest_bt,q2nest_bt
 halo HALO_NMM_TRACK dyn_nmm 120:sm,pdyn,mslp,sqws
+halo HALO_NMM_TERRAIN_SMOOTH   dyn_nmm      24:HRES_AVC
 halo HALO_NMM_INTERP_DOWN1 dyn_nmm 120:sm,fis,t,u,v,q,q2,z3d,q3d,t3d,pd,albase,nmm_tsk,mxsnal,tg,islope,cmc,soiltb,vegfrc,sh2o,smc,stc,toposoil,xice,ivgtyp,isltyp,vegfra,sst,weasd,snowh,hlat,hlon,z0,landmask,cwm,ustar,ths,qsh,cldefi,pshltr,dwdt,acprec,thz0,qz0,uz0,vz0,htop,hbot,cuppt,rlwtt,rswtt,t_adj,f_ice,f_rain,f_rimef
 halo HALO_NMM_FORCE_DOWN1 dyn_nmm 120:t,u,v,q,q2,cwm,z3d,q3d,t3d  #,qv,qc,qr,qi,qs,qg
 halo HALO_NMM_WEIGHTS dyn_nmm 48:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4

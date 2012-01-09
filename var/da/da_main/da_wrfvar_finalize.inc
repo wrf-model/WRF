@@ -11,16 +11,19 @@ subroutine da_wrfvar_finalize
 
    if (trace_use) call da_trace_entry ("da_wrfvar_finalize")
 
-   ! output wrfvar analysis
-
-   if ((config_flags%real_data_init_type == 1) .or. &
-       (config_flags%real_data_init_type == 3)) then
-      call da_med_initialdata_output (head_grid, config_flags)
 #ifdef VAR4D
-      if (var4d) call da_med_initialdata_output_lbc (head_grid , config_flags)
+   if ( var4d_lbc ) then
+      if (ALLOCATED(u6_2)) deallocate (u6_2)
+      if (ALLOCATED(v6_2)) deallocate (v6_2)
+      if (ALLOCATED(w6_2)) deallocate (w6_2)
+      if (ALLOCATED(t6_2)) deallocate (t6_2)
+      if (ALLOCATED(ph6_2)) deallocate (ph6_2)
+      if (ALLOCATED(mu6_2)) deallocate (mu6_2)
+      if (ALLOCATED(moist6)) deallocate (moist6)
+      if (ALLOCATED(p6)) deallocate (p6)
+      if (ALLOCATED(psfc6)) deallocate (psfc6)
+   endif
 #endif
-      call med_shutdown_io (head_grid, config_flags)
-   end if
 
    grid => head_grid
 
@@ -38,6 +41,20 @@ subroutine da_wrfvar_finalize
 #include "deallocs.inc"
 
    deallocate (grid)
+
+#ifdef VAR4D
+   if ( var4d_lbc ) then
+      if (ALLOCATED(u6_2)) deallocate (u6_2)
+      if (ALLOCATED(v6_2)) deallocate (v6_2)
+      if (ALLOCATED(w6_2)) deallocate (w6_2)
+      if (ALLOCATED(t6_2)) deallocate (t6_2)
+      if (ALLOCATED(ph6_2)) deallocate (ph6_2)
+      if (ALLOCATED(mu6_2)) deallocate (mu6_2)
+      if (ALLOCATED(moist6)) deallocate (moist6)
+      if (ALLOCATED(p6)) deallocate (p6)
+      if (ALLOCATED(psfc6)) deallocate (psfc6)
+   endif
+#endif
 
 #if defined(RTTOV) || defined(CRTM)
    if (allocated(num_tovs_before)) deallocate (num_tovs_before)

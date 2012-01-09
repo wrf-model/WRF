@@ -34,11 +34,11 @@ module da_minimisation
       jb_factor,ntmax,omb_add_noise,write_iv_rad_ascii,use_obs_errfac, &
       rtm_option,rtm_option_rttov, rtm_option_crtm, anal_type_verify, &
       write_filtered_rad,omb_set_rand,use_rad,var_scaling2,var_scaling1, &
-      var_scaling4,var_scaling5,var_scaling3, jo_unit, &
+      var_scaling4,var_scaling5,var_scaling3, jo_unit, test_gradient, &
       print_detail_grad,omb_set_rand,grad_unit,cost_unit, num_pseudo, cv_options, &
       cv_size_domain_je,cv_size_domain_jb, cv_size_domain_jp, cv_size_domain_js, cv_size_domain_jl, &
       sound, mtgirs, sonde_sfc, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
-      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, &
+      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, rain, &
       bogus, buoy, qscat,pseudo, radiance, monitor_on, max_ext_its, use_rttov_kmatrix,&
       use_crtm_kmatrix,precondition_cg, precondition_factor, use_varbc, varbc_factor, &
       num_procs, myproc, use_gpspwobs, use_gpsztdobs, pseudo_var, num_pseudo, &
@@ -105,6 +105,11 @@ module da_minimisation
    use da_radar, only :  da_calculate_grady_radar, da_ao_stats_radar, &
       da_oi_stats_radar, da_get_innov_vector_radar, da_residual_radar, &
       da_jo_and_grady_radar
+
+   use da_rain, only :  da_calculate_grady_rain, da_ao_stats_rain, &
+      da_oi_stats_rain, da_get_innov_vector_rain, da_residual_rain, &
+      da_jo_and_grady_rain
+
    use da_reporting, only : da_message, da_warning, da_error
    use da_satem, only : da_calculate_grady_satem, da_ao_stats_satem, &
       da_oi_stats_satem, da_get_innov_vector_satem, da_residual_satem, &
@@ -143,7 +148,8 @@ module da_minimisation
    use da_lapack, only : dsteqr
 #ifdef VAR4D
    use da_4dvar, only : da_tl_model, da_ad_model, model_grid, input_nl_xtraj, &
-       kj_swap_reverse, upsidedown_ad_forcing
+       kj_swap_reverse, upsidedown_ad_forcing, u6_2, v6_2, w6_2, t6_2, ph6_2, p6, &
+      mu6_2, psfc6, moist6
    use da_transfer_model, only : da_transfer_xatowrftl_lbc, da_transfer_xatowrftl_adj_lbc, &
       da_transfer_wrftl_lbc_t0, da_transfer_wrftl_lbc_t0_adj, da_get_2nd_firstguess
 #endif

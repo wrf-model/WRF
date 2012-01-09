@@ -585,7 +585,6 @@ CONTAINS
 !-----------------------------------------------------------------------
 
       integer, parameter :: icntx = 30
-      data amask/ -98.0/
 
       integer, dimension(1   :ime) :: ifz
       integer, dimension(1   :ime) :: indx
@@ -672,13 +671,13 @@ CONTAINS
       real :: ux1,ugz,x10,uzo,uq,ux2,ux3,xtan,xden,y10,uzet1o,ugz10
       real :: szet2, zal2,ugz2 
       real :: rovcp,boycon,cmo2,psps1,zog,enrca,rca,cmo1,amask,en,ca,a,c
-      real :: ip,sgz,zal10,szet10,fmz,szo,sq,fmzo,rzeta1,zal1g,szetao,rzeta2,zal2g
+      real :: sgz,zal10,szet10,fmz,szo,sq,fmzo,rzeta1,zal1g,szetao,rzeta2,zal2g
       real :: hcap,xks,pith,teps,diffot,delten,alevp,psps2,alfus,nstep
       real :: shfx,sigt4,reflect
       real :: cor1,cor2,szetho,zal2gh,cons_p000001,cons_7,vis,ustar,restar,rat
       real :: wndm,ckg
       real :: yz,y1,y2,y3,y4,windmks,znott,znotm
-      integer:: i,j,ii,iq,nnest,icnt,ngd
+      integer:: i,j,ii,iq,nnest,icnt,ngd,ip
 
 !-----------------------------------------------------------------------
 !     internal variables
@@ -702,6 +701,7 @@ CONTAINS
       equivalence (table(129),table3(1))
       equivalence (table(183),table4(1))
 
+      data amask/ -98.0/
 !-----------------------------------------------------------------------
 !     tables used to obtain the vapor pressures or saturated vapor 
 !     pressure
@@ -832,17 +832,13 @@ CONTAINS
           windmks=wind(i)*.01
           znott=0.2375*exp(-0.5250*windmks) + 0.0025*exp(-0.0211*windmks)
           znott=0.01*znott
-!  go back to mon/obv  et al for below 7m/s
+!  go back to moon et al for below 7m/s
           if(windmks.le. 7.)                         &
-          znott = 0.01*zot (i)
-!   end of kwon correction....
-!  put in patch to increase znott from thermal to mom vaules 20-40m/s
-   if(windmks.ge.20.) then
-!   znot4020=(.163e-2)-(.104e-4)   
-   znott   =1.636e-14 * windmks**6.8905                        
-   endif
+          znott = (0.0185/9.8*(7.59e-8*wind(i)**2+   &
+                                  2.46e-4*wind(i))**2)
 ! back to cgs
           zot (i) = 100.*znott
+!   end of kwon correction....
 !     in hwrf, thermal znot(zot) is passed as argument zoc
 !     in hwrf, momentum znot is recalculated internally
               zoc(i)=-(0.0185/9.8*(7.59e-8*wind(i)**2+   &
@@ -850,19 +846,17 @@ CONTAINS
             if(wind(i).ge.1250.0)   &
              zoc(i)=-(.000739793 * wind(i) -0.58)/10
         if(wind(i).ge.3000.)   then
+        windmks=wind(i)*.01
 !       kwon znotm
         znotm   = yz   +windmks*y1   +windmks**2*y2   +windmks**3*y3   +windmks**4*y4 !powell 2003
 !       back to cgs
         zoc(i)  = 100.*znotm
         endif
-!
-!       in this version set thermal znot = momentum znot of powell 2003 above 40m/s
-         if(windmks.ge.40.) zot (i) = zoc(i)
+        endif
+
 !------------------------------------------------------------------------
 !     where necessary modify zo values over ocean.
 !------------------------------------------------------------------------
-        endif
-
 
       enddo
 

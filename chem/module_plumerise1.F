@@ -25,10 +25,10 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
            firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr,              &
            config_flags, t_phy,moist,                                     &
            rho_phy,vvel,u_phy,v_phy,p_phy,                              &
-           emis_ant,z_at_w,z,                                                       &
-         ids,ide, jds,jde, kds,kde,                                        &
-         ims,ime, jms,jme, kms,kme,                                        &
-         its,ite, jts,jte, kts,kte                                         )
+           emis_ant,z_at_w,z,scale_fire_emiss,                                      &
+           ids,ide, jds,jde, kds,kde,                                        &
+           ims,ime, jms,jme, kms,kme,                                        &
+           its,ite, jts,jte, kts,kte                                         )
 
   USE module_configure
   USE module_model_constants
@@ -72,6 +72,9 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
                  z,z_at_w,vvel,u_phy,v_phy,rho_phy,p_phy
       REAL,      INTENT(IN   ) ::                                          &
                              dtstep
+
+   LOGICAL,      INTENT(IN   ) :: scale_fire_emiss
+
 !
 ! Local variables...
 !
@@ -90,6 +93,13 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
       ffirs=0.
       nspecies=num_ebu
 !     write(0,*)'plumerise'
+
+      if( scale_fire_emiss ) then
+        if( config_flags%chem_opt /= MOZCART_KPP .and. &
+            config_flags%chem_opt /= MOZART_KPP ) then
+          call wrf_error_fatal("Fire emission scaling only supported for MOZART_KPP, MOZCART_KPP chem options")
+        endif
+      endif
 
        if ( config_flags%biomass_burn_opt == BIOMASSB ) then
          do j=jts,jte
@@ -119,44 +129,39 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
                ebu(i,kts,j,p_ebu_macr)=ebu_in(i,1,j,p_ebu_in_macr)
                ebu(i,kts,j,p_ebu_ora1)=ebu_in(i,1,j,p_ebu_in_ora1)
                ebu(i,kts,j,p_ebu_ora2)=ebu_in(i,1,j,p_ebu_in_ora2)
-               ebu(i,kts,j,p_ebu_sulf)=ebu_in(i,1,j,p_ebu_in_sulf)
+!              ebu(i,kts,j,p_ebu_sulf)=ebu_in(i,1,j,p_ebu_in_sulf)
                ebu(i,kts,j,p_ebu_bc)=ebu_in(i,1,j,p_ebu_in_bc)
                ebu(i,kts,j,p_ebu_oc)=ebu_in(i,1,j,p_ebu_in_oc)
                ebu(i,kts,j,p_ebu_so2)=ebu_in(i,1,j,p_ebu_in_so2)
                ebu(i,kts,j,p_ebu_dms)=ebu_in(i,1,j,p_ebu_in_dms)
             enddo
          enddo
-       elseif ( config_flags%biomass_burn_opt == BIOMASSB_MOZC ) then
+       elseif ( config_flags%biomass_burn_opt == BIOMASSB_MOZC .or. &
+                config_flags%biomass_burn_opt == BIOMASSB_MOZ ) then
          do j=jts,jte
             do i=its,ite
                ebu(i,kts,j,p_ebu_no)=ebu_in(i,1,j,p_ebu_in_no)
                ebu(i,kts,j,p_ebu_co)=ebu_in(i,1,j,p_ebu_in_co)
-               ebu(i,kts,j,p_ebu_bigalk) = ebu_in(i,1,j,p_ebu_bigalk)
-               ebu(i,kts,j,p_ebu_bigene) = ebu_in(i,1,j,p_ebu_bigene)
-               ebu(i,kts,j,p_ebu_c2h4) = ebu_in(i,1,j,p_ebu_c2h4)
-               ebu(i,kts,j,p_ebu_c2h5oh) = ebu_in(i,1,j,p_ebu_c2h5oh)
-               ebu(i,kts,j,p_ebu_c2h6) = ebu_in(i,1,j,p_ebu_c2h6)
-               ebu(i,kts,j,p_ebu_c3h6) = ebu_in(i,1,j,p_ebu_c3h6)
-               ebu(i,kts,j,p_ebu_c3h8) = ebu_in(i,1,j,p_ebu_c3h8)
+               ebu(i,kts,j,p_ebu_bigalk) = ebu_in(i,1,j,p_ebu_in_bigalk)
+               ebu(i,kts,j,p_ebu_bigene) = ebu_in(i,1,j,p_ebu_in_bigene)
+               ebu(i,kts,j,p_ebu_c2h4) = ebu_in(i,1,j,p_ebu_in_c2h4)
+               ebu(i,kts,j,p_ebu_c2h5oh) = ebu_in(i,1,j,p_ebu_in_c2h5oh)
+               ebu(i,kts,j,p_ebu_c2h6) = ebu_in(i,1,j,p_ebu_in_c2h6)
+               ebu(i,kts,j,p_ebu_c3h6) = ebu_in(i,1,j,p_ebu_in_c3h6)
+               ebu(i,kts,j,p_ebu_c3h8) = ebu_in(i,1,j,p_ebu_in_c3h8)
                ebu(i,kts,j,p_ebu_ch2o) = ebu_in(i,1,j,p_ebu_in_ch2o)
                ebu(i,kts,j,p_ebu_ch3cho) = ebu_in(i,1,j,p_ebu_in_ch3cho)
-               ebu(i,kts,j,p_ebu_ch3coch3) = ebu_in(i,1,j,p_ebu_ch3coch3)
-               ebu(i,kts,j,p_ebu_ch3oh) = ebu_in(i,1,j,p_ebu_ch3oh)
+               ebu(i,kts,j,p_ebu_ch3coch3) = ebu_in(i,1,j,p_ebu_in_ch3coch3)
+               ebu(i,kts,j,p_ebu_ch3oh) = ebu_in(i,1,j,p_ebu_in_ch3oh)
                ebu(i,kts,j,p_ebu_mek) = ebu_in(i,1,j,p_ebu_in_mek)
                ebu(i,kts,j,p_ebu_so2) = ebu_in(i,1,j,p_ebu_in_so2)
-               ebu(i,kts,j,p_ebu_sulf) = ebu_in(i,1,j,p_ebu_in_sulf)
                ebu(i,kts,j,p_ebu_toluene) = ebu_in(i,1,j,p_ebu_in_toluene)
                ebu(i,kts,j,p_ebu_nh3) = ebu_in(i,1,j,p_ebu_in_nh3)
-               ebu(i,kts,j,p_ebu_pm10) = ebu_in(i,1,j,p_ebu_in_pm10)
-               ebu(i,kts,j,p_ebu_pm25) = ebu_in(i,1,j,p_ebu_in_pm25)
-               ebu(i,kts,j,p_ebu_oc) = ebu_in(i,1,j,p_ebu_in_oc)
-               ebu(i,kts,j,p_ebu_bc) = ebu_in(i,1,j,p_ebu_in_bc)
-               ebu(i,kts,j,p_ebu_dms)=ebu_in(i,1,j,p_ebu_in_dms)
                ebu(i,kts,j,p_ebu_no2)=ebu_in(i,1,j,p_ebu_in_no2)
                ebu(i,kts,j,p_ebu_open) = ebu_in(i,1,j,p_ebu_in_open)
                ebu(i,kts,j,p_ebu_c10h16) = ebu_in(i,1,j,p_ebu_in_c10h16)
                ebu(i,kts,j,p_ebu_mgly) = ebu_in(i,1,j,p_ebu_in_mgly)
-               ebu(i,kts,j,p_ebu_ch3cooh) = ebu_in(i,1,j,p_ebu_ch3cooh)
+               ebu(i,kts,j,p_ebu_ch3cooh) = ebu_in(i,1,j,p_ebu_in_ch3cooh)
                ebu(i,kts,j,p_ebu_cres) = ebu_in(i,1,j,p_ebu_in_cres)
                ebu(i,kts,j,p_ebu_glyald) = ebu_in(i,1,j,p_ebu_in_glyald)
                ebu(i,kts,j,p_ebu_gly)=ebu_in(i,1,j,p_ebu_in_gly)
@@ -166,8 +171,16 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
                ebu(i,kts,j,p_ebu_mvk)=ebu_in(i,1,j,p_ebu_in_mvk)
             enddo
          enddo
+       elseif ( config_flags%biomass_burn_opt == BIOMASSB_GHG ) then
+         do j=jts,jte
+            do i=its,ite
+               ebu(i,kts,j,p_ebu_co)  = ebu_in(i,1,j,p_ebu_in_co)
+               ebu(i,kts,j,p_ebu_co2) = ebu_in(i,1,j,p_ebu_in_co2)
+               ebu(i,kts,j,p_ebu_ch4) = ebu_in(i,1,j,p_ebu_in_ch4)
+            enddo
+          enddo
        endif
-
+!
        do nv=1,num_ebu
           do j=jts,jte
             do k=kts+1,kte
@@ -249,61 +262,68 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
               enddo
             enddo
 
+has_total_emissions : &
+            if( scale_fire_emiss ) then
 is_mozcart : &
-            if( config_flags%chem_opt == MOZCART_KPP .and. &
-                config_flags%biomass_burn_opt == BIOMASSB_MOZC ) then
+              if( (config_flags%chem_opt == MOZCART_KPP .and. &
+                   config_flags%biomass_burn_opt == BIOMASSB_MOZC) .or. &
+                  (config_flags%chem_opt == MOZART_KPP .and. &
+                   config_flags%biomass_burn_opt == BIOMASSB_MOZ) ) then
 !-------------------------------------------------------------------
 ! we input total emissions instead of smoldering emissions:
 ! ratio of smolderling to total
 !-------------------------------------------------------------------
-              sum = 0.
-              do k = kts,kte
-                sum = sum + ebu(i,k,j,p_ebu_co)
-              end do
-              if( sum > 0. ) then             
-                ratio = ebu(i,kts,j,p_ebu_co)/sum
-              else
-                ratio = 0.
-              endif
+                sum = 0.
+                do k = kts,kte
+                  sum = sum + ebu(i,k,j,p_ebu_co)
+                end do
+                if( sum > 0. ) then             
+                  ratio = ebu(i,kts,j,p_ebu_co)/sum
+                else
+                  ratio = 0.
+                endif
 
-              do k = kts,kte
-               ebu(i,k,j,p_ebu_no) = ebu(i,k,j,p_ebu_no)*ratio
-               ebu(i,k,j,p_ebu_co) = ebu(i,k,j,p_ebu_co)*ratio
-               ebu(i,k,j,p_ebu_bigalk) = ebu(i,k,j,p_ebu_bigalk)*ratio
-               ebu(i,k,j,p_ebu_bigene) = ebu(i,k,j,p_ebu_bigene)*ratio
-               ebu(i,k,j,p_ebu_c2h4)   = ebu(i,k,j,p_ebu_c2h4)*ratio
-               ebu(i,k,j,p_ebu_c2h5oh) = ebu(i,k,j,p_ebu_c2h5oh)*ratio
-               ebu(i,k,j,p_ebu_c2h6) = ebu(i,k,j,p_ebu_c2h6)*ratio
-               ebu(i,k,j,p_ebu_c3h6) = ebu(i,k,j,p_ebu_c3h6)*ratio
-               ebu(i,k,j,p_ebu_c3h8) = ebu(i,k,j,p_ebu_c3h8)*ratio
-               ebu(i,k,j,p_ebu_ch2o) = ebu(i,k,j,p_ebu_ch2o)*ratio
-               ebu(i,k,j,p_ebu_ch3cho) = ebu(i,k,j,p_ebu_ch3cho)*ratio
-               ebu(i,k,j,p_ebu_ch3coch3) = ebu(i,k,j,p_ebu_ch3coch3)*ratio
-               ebu(i,k,j,p_ebu_ch3oh)    = ebu(i,k,j,p_ebu_ch3oh)*ratio
-               ebu(i,k,j,p_ebu_mek) = ebu(i,k,j,p_ebu_mek)*ratio
-               ebu(i,k,j,p_ebu_so2) = ebu(i,k,j,p_ebu_so2)*ratio
-               ebu(i,k,j,p_ebu_sulf) = ebu(i,k,j,p_ebu_sulf)*ratio
-               ebu(i,k,j,p_ebu_toluene) = ebu(i,k,j,p_ebu_toluene)*ratio
-               ebu(i,k,j,p_ebu_nh3) = ebu(i,k,j,p_ebu_nh3)*ratio
-               ebu(i,k,j,p_ebu_pm10) = ebu(i,k,j,p_ebu_pm10)*ratio
-               ebu(i,k,j,p_ebu_pm25) = ebu(i,k,j,p_ebu_pm25)*ratio
-               ebu(i,k,j,p_ebu_oc)  = ebu(i,k,j,p_ebu_oc)*ratio
-               ebu(i,k,j,p_ebu_bc)  = ebu(i,k,j,p_ebu_bc)*ratio
-               ebu(i,k,j,p_ebu_dms)  = ebu(i,k,j,p_ebu_dms)*ratio
-               ebu(i,k,j,p_ebu_no2)  = ebu(i,k,j,p_ebu_no2)*ratio
-               ebu(i,k,j,p_ebu_open) = ebu(i,k,j,p_ebu_open)*ratio
-               ebu(i,k,j,p_ebu_c10h16) = ebu(i,k,j,p_ebu_c10h16)*ratio
-               ebu(i,k,j,p_ebu_mgly) = ebu(i,k,j,p_ebu_mgly)*ratio
-               ebu(i,k,j,p_ebu_ch3cooh) = ebu(i,k,j,p_ebu_ch3cooh)*ratio
-               ebu(i,k,j,p_ebu_cres) = ebu(i,k,j,p_ebu_cres)*ratio
-               ebu(i,k,j,p_ebu_glyald) = ebu(i,k,j,p_ebu_glyald)*ratio
-               ebu(i,k,j,p_ebu_gly) = ebu(i,k,j,p_ebu_gly)*ratio
-               ebu(i,k,j,p_ebu_acetol) = ebu(i,k,j,p_ebu_acetol)*ratio
-               ebu(i,k,j,p_ebu_isop) = ebu(i,k,j,p_ebu_isop)*ratio
-               ebu(i,k,j,p_ebu_macr) = ebu(i,k,j,p_ebu_macr)*ratio
-               ebu(i,k,j,p_ebu_mvk)  = ebu(i,k,j,p_ebu_mvk)*ratio
-              end do
-            end if is_mozcart
+                do k = kts,kte
+                  ebu(i,k,j,p_ebu_no) = ebu(i,k,j,p_ebu_no)*ratio
+                  ebu(i,k,j,p_ebu_co) = ebu(i,k,j,p_ebu_co)*ratio
+                  ebu(i,k,j,p_ebu_bigalk) = ebu(i,k,j,p_ebu_bigalk)*ratio
+                  ebu(i,k,j,p_ebu_bigene) = ebu(i,k,j,p_ebu_bigene)*ratio
+                  ebu(i,k,j,p_ebu_c2h4)   = ebu(i,k,j,p_ebu_c2h4)*ratio
+                  ebu(i,k,j,p_ebu_c2h5oh) = ebu(i,k,j,p_ebu_c2h5oh)*ratio
+                  ebu(i,k,j,p_ebu_c2h6) = ebu(i,k,j,p_ebu_c2h6)*ratio
+                  ebu(i,k,j,p_ebu_c3h6) = ebu(i,k,j,p_ebu_c3h6)*ratio
+                  ebu(i,k,j,p_ebu_c3h8) = ebu(i,k,j,p_ebu_c3h8)*ratio
+                  ebu(i,k,j,p_ebu_ch2o) = ebu(i,k,j,p_ebu_ch2o)*ratio
+                  ebu(i,k,j,p_ebu_ch3cho) = ebu(i,k,j,p_ebu_ch3cho)*ratio
+                  ebu(i,k,j,p_ebu_ch3coch3) = ebu(i,k,j,p_ebu_ch3coch3)*ratio
+                  ebu(i,k,j,p_ebu_ch3oh)    = ebu(i,k,j,p_ebu_ch3oh)*ratio
+                  ebu(i,k,j,p_ebu_mek) = ebu(i,k,j,p_ebu_mek)*ratio
+                  ebu(i,k,j,p_ebu_so2) = ebu(i,k,j,p_ebu_so2)*ratio
+                  ebu(i,k,j,p_ebu_toluene) = ebu(i,k,j,p_ebu_toluene)*ratio
+                  ebu(i,k,j,p_ebu_nh3) = ebu(i,k,j,p_ebu_nh3)*ratio
+                  ebu(i,k,j,p_ebu_no2)  = ebu(i,k,j,p_ebu_no2)*ratio
+                  ebu(i,k,j,p_ebu_open) = ebu(i,k,j,p_ebu_open)*ratio
+                  ebu(i,k,j,p_ebu_c10h16) = ebu(i,k,j,p_ebu_c10h16)*ratio
+                  ebu(i,k,j,p_ebu_mgly) = ebu(i,k,j,p_ebu_mgly)*ratio
+                  ebu(i,k,j,p_ebu_ch3cooh) = ebu(i,k,j,p_ebu_ch3cooh)*ratio
+                  ebu(i,k,j,p_ebu_cres) = ebu(i,k,j,p_ebu_cres)*ratio
+                  ebu(i,k,j,p_ebu_glyald) = ebu(i,k,j,p_ebu_glyald)*ratio
+                  ebu(i,k,j,p_ebu_gly) = ebu(i,k,j,p_ebu_gly)*ratio
+                  ebu(i,k,j,p_ebu_acetol) = ebu(i,k,j,p_ebu_acetol)*ratio
+                  ebu(i,k,j,p_ebu_isop) = ebu(i,k,j,p_ebu_isop)*ratio
+                  ebu(i,k,j,p_ebu_macr) = ebu(i,k,j,p_ebu_macr)*ratio
+                  ebu(i,k,j,p_ebu_mvk)  = ebu(i,k,j,p_ebu_mvk)*ratio
+                end do
+                if( config_flags%chem_opt == MOZCART_KPP ) then
+                  do k = kts,kte
+                    ebu(i,k,j,p_ebu_pm10) = ebu(i,k,j,p_ebu_pm10)*ratio
+                    ebu(i,k,j,p_ebu_pm25) = ebu(i,k,j,p_ebu_pm25)*ratio
+                    ebu(i,k,j,p_ebu_oc)  = ebu(i,k,j,p_ebu_oc)*ratio
+                    ebu(i,k,j,p_ebu_bc)  = ebu(i,k,j,p_ebu_bc)*ratio
+                  end do
+                endif
+              end if is_mozcart
+            end if has_total_emissions
 
           enddo
           enddo

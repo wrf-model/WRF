@@ -23,6 +23,7 @@ WRFVAR_OBJS = \
    da_airep.o \
    da_pilot.o \
    da_radar.o \
+   da_rain.o \
    da_gpspw.o \
    da_gpsref.o \
    da_ssmi.o \
@@ -108,6 +109,7 @@ WRFVAR_OBJS = \
    wrf_ext_write_field.o \
    collect_on_comm.o \
    start_domain.o \
+   hires_timer.o \
    module_streams.o \
    module_comm_dm.o \
    module_comm_dm_0.o \
@@ -189,8 +191,8 @@ da_utils : \
            da_bias_verif.exe \
            da_rad_diags.exe
 
-da_verif_obs.exe : da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o
-	$(SFC) $(LDFLAGS) -o $@ da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o
+da_verif_obs.exe : da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o da_verif_tools.o
+	$(SFC) $(LDFLAGS) -o $@ da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o da_verif_tools.o -L$(NETCDFPATH)/lib -lnetcdf
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_verif_grid.exe : da_verif_grid.o da_verif_grid_control.o da_netcdf_interface.o $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
@@ -241,6 +243,9 @@ da_rad_diags.exe : da_rad_diags.o
 wrf_num_bytes_between.o :
 	$(CC) -c $(CFLAGS) wrf_num_bytes_between.c
 
+hires_timer.o :
+	$(CC) -c $(CFLAGS) hires_timer.c
+
 module_state_description.F : ../../Registry/$(REGISTRY)
 	(cd $(WRF_SRC_ROOT_DIR); tools/registry $(ARCHFLAGS) -DNEW_BDYS Registry/$(REGISTRY) ; cd $(WRF_SRC_ROOT_DIR)/var/build )
 	$(LN) $(WRF_SRC_ROOT_DIR)/frame/module_state_description.F .
@@ -275,7 +280,7 @@ init_modules.o :
 
 da_bias_verif.o da_bias_scan.o da_bias_sele.o da_bias_airmass.o da_rad_diags.o \
 da_tune_obs_hollingsworth1.o da_tune_obs_hollingsworth2.o da_tune_obs_desroziers.o \
-da_verif_obs_control.o da_verif_obs_init.o da_verif_grid_control.o \
+da_verif_obs_control.o da_verif_obs_init.o da_verif_grid_control.o da_verif_obs.o \
 da_verif_grid.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b

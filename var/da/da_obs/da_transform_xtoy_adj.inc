@@ -55,7 +55,7 @@ subroutine da_transform_xtoy_adj(cv_size, cv, grid, iv, jo_grad_y, jo_grad_x)
    if (iv%info(bogus)%nlocal    > 0) call da_transform_xtoy_bogus_adj    (grid, iv, jo_grad_y, jo_grad_x)
    if (iv%info(airsr)%nlocal    > 0) call da_transform_xtoy_airsr_adj    (iv, jo_grad_y, jo_grad_x)
    if (iv%info(pseudo)%nlocal   > 0) call da_transform_xtoy_pseudo_adj   (iv, jo_grad_y, jo_grad_x)
-
+   if (iv%info(rain)%nlocal     > 0) call da_transform_xtoy_rain_adj     (grid, iv, jo_grad_y, jo_grad_x)
 #if defined(CRTM) || defined(RTTOV)
    if (use_rad) then
       if (rtm_option == rtm_option_rttov) then

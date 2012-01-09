@@ -17,7 +17,7 @@ module da_define_structures
       put_rand_seed, seed_array1, seed_array2, missing_r, &
       sound, synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, &
-      mtgirs, tamdar, tamdar_sfc, pseudo, radar, radiance, airsr, sonde_sfc, &
+      mtgirs, tamdar, tamdar_sfc, pseudo, radar, radiance, airsr, sonde_sfc, rain, &
       trace_use_dull,comm, num_pseudo
 
    use da_tracing, only : da_trace_entry, da_trace_exit
@@ -250,6 +250,40 @@ module da_define_structures
       type (model_loc_type)                   :: loc
       type (radar_each_level_type)            :: each(max_ob_levels)
    end type radar_multi_level_type
+
+   type rain_stn_type
+      character (len = 5)    :: platform      ! Data type
+      character (len = 12)   :: name          ! Station name
+      character (len = 19)   :: date_char     ! CCYY-MM-DD_HH:MM:SS date
+      integer                :: numobs        ! number of Obs
+      integer                :: levels        ! number of levels
+      real                   :: lat           ! Latitude in degree
+      real                   :: lon           ! Longitude in degree
+      real                   :: elv           ! Elevation in 
+   end type rain_stn_type
+
+   type rain_type
+      real                    :: height    
+      integer                 :: height_qc 
+      type (stn_loc_type)     :: stn_loc
+      type (field_type)       :: model_rainc    
+      type (field_type)       :: model_rainnc   
+      type (field_type)       :: rain             
+   end type rain_type
+
+   type rain_each_type
+      real                   :: height         ! Height in m
+      integer                :: height_qc      ! Height QC
+      real                   :: zk             ! MM5 k-coordinates
+      type (field_type)      :: rain
+   end type rain_each_type
+
+   type rain_single_level_type
+      type (rain_stn_type)                    :: stn
+      type (info_type)                        :: info
+      type (model_loc_type)                   :: loc
+      type (rain_each_type)                   :: each(1)
+   end type rain_single_level_type
 
    ! [3.2] Innovation vector structure:
 
@@ -558,6 +592,7 @@ module da_define_structures
       real    :: radar_ef_rv, radar_ef_rf, radar_ef_rr
       real    :: bogus_ef_u, bogus_ef_v, bogus_ef_t, bogus_ef_p, bogus_ef_q, bogus_ef_slp
       real    :: airsr_ef_t,  airsr_ef_q
+      real    :: rain_ef_r
 
       type (infa_type) :: info(num_ob_indexes)
 
@@ -588,6 +623,7 @@ module da_define_structures
       type (mtgirs_type)   , pointer :: mtgirs(:)
       type (tamdar_type)   , pointer :: tamdar(:)
       type (synop_type)    , pointer :: tamdar_sfc(:)
+      type (rain_type)     , pointer :: rain(:)
 
       real :: missing
       real :: ptop
@@ -621,6 +657,7 @@ module da_define_structures
       type (bad_info_type)       :: rr
       type (bad_info_type)       :: slp
       type (bad_info_type)       :: rad
+      type (bad_info_type)       :: rain
    end type bad_data_type
 
    type count_obs_number_type
@@ -761,6 +798,10 @@ module da_define_structures
       real, pointer                    :: tb(:,:)
    end type residual_instid_type
 
+   type residual_rain_type
+      real :: rain
+   end type residual_rain_type 
+
    type y_type
       integer :: nlocal(num_ob_indexes)
       integer :: ntotal(num_ob_indexes)
@@ -794,6 +835,7 @@ module da_define_structures
       type (residual_pilot_type),    pointer :: profiler(:) ! Same as pilot type
       type (residual_radar_type),    pointer :: radar(:)
       type (residual_instid_type),   pointer :: instid(:)
+      type (residual_rain_type),     pointer :: rain(:)
    end type y_type
 
    !--------------------------------------------------------------------------
@@ -844,6 +886,7 @@ module da_define_structures
       real                :: radar_rv, radar_rf, radar_rr
       real                :: bogus_u, bogus_v, bogus_t, bogus_q, bogus_slp
       real                :: airsr_t, airsr_q
+      real                :: rain_r
       type(jo_type_rad), pointer       :: rad(:)
    end type jo_type
 
@@ -873,7 +916,8 @@ module da_define_structures
 #ifdef CLOUD_CV
       integer :: size6c      ! Complex size of CV array of 6th variable error.
       integer :: size7c      ! Complex size of CV array of 7th variable error.
-      integer :: size8c      ! Complex size of CV array of 7th variable error.
+      integer :: size8c      ! Complex size of CV array of 8th variable error.
+      integer :: size9c      ! Complex size of CV array of 9th variable error.
 #endif
       integer :: size_alphac ! Size of alpha control variable (complex).
       integer :: size1       ! Size of CV array of 1st variable error.
@@ -884,7 +928,8 @@ module da_define_structures
 #ifdef CLOUD_CV
       integer :: size6       ! Size of CV array of 6th variable error.
       integer :: size7       ! Size of CV array of 7th variable error.
-      integer :: size8       ! Size of CV array of 7th variable error.
+      integer :: size8       ! Size of CV array of 8th variable error.
+      integer :: size9       ! Size of CV array of 9th variable error.
 #endif
       integer :: size1l      ! Size of CV array of 1st variable lbc error.
       integer :: size2l      ! Size of CV array of 2nd variable lbc error.
@@ -927,6 +972,7 @@ module da_define_structures
       type (be_subtype) :: v6
       type (be_subtype) :: v7
       type (be_subtype) :: v8
+      type (be_subtype) :: v9
 #endif
       type (be_subtype) :: alpha
       real*8, pointer     :: pb_vert_reg(:,:,:)

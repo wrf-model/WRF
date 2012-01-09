@@ -590,7 +590,7 @@ subroutine da_write_y (iv, y)
       end do                                   ! end loop for sensor
    end if
 
-   ! Transfer gpsref obs:
+   ! [19] Transfer gpsref obs:
 
    if (iv%info(gpsref)%nlocal > 0) then
       num_obs = 0
@@ -613,7 +613,7 @@ subroutine da_write_y (iv, y)
       end if
    end if
 
-   ! Transfer tamdar obs:
+   ! [20] Transfer tamdar obs:
 
    if (iv%info(tamdar)%nlocal > 0) then
       num_obs = 0
@@ -661,6 +661,27 @@ subroutine da_write_y (iv, y)
       end if
    end if
 
+   ! [21] Transfer rainfall obs:
+
+   if (iv%info(rain)%nlocal > 0) then
+      num_obs = 0
+      do n = 1, iv%info(rain)%nlocal
+         if (iv%info(rain)%proc_domain(1,n)) num_obs = num_obs + 1
+      end do
+      if (num_obs > 0) then
+         write(ounit,'(a20,i8)')'rain', num_obs
+         num_obs = 0
+         do n = 1, iv%info(rain)%nlocal
+            if (iv%info(rain)%proc_domain(1,n)) then
+               num_obs = num_obs + 1
+               write(ounit,'(i8)')  1
+               call da_check_missing(iv%rain(n)%rain%qc, y%rain(n)%rain, f1)
+               write(ounit,'(2i8,7e15.7)')num_obs, 1, f1, dum,dum,dum,dum, &
+                  dum,dum
+            end if
+         end do
+      end if
+   end if
 
    close (ounit)
    call da_free_unit(ounit)

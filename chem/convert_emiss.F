@@ -105,7 +105,9 @@ PROGRAM convert_emissions
 ! Volcanic stuff
 !     
    real, allocatable, dimension (:,:) :: ash_mass,ash_height,erup_dt
+   real, allocatable, dimension (:,:) :: so2_mass, volc_vent
    real, allocatable, dimension (:) :: vert_mass_dist
+   real, dimension(10) :: size_dist
    real :: x1,percen_mass_umbrel,base_umbrel,ashz_above_vent
 
 
@@ -145,17 +147,16 @@ PROGRAM convert_emissions
    CHARACTER (LEN=12)       :: dname2
    CHARACTER (LEN=256)      :: timestr
 
-
+! MBO is separated, SESQ is added
 ! Number of reference emission and LAI files to open
-   INTEGER, PARAMETER :: numfil=19
+   INTEGER, PARAMETER :: numfil=21
    INTEGER            :: status,system
 ! Filenames of reference emissions and LAI
    CHARACTER*100 onefil
    CHARACTER*12 emfil(numfil)
    DATA emfil/'ISO','OLI','API','LIM','XYL','HC3','ETE','OLT',  &
-              'KET','ALD','HCHO','ETH','ORA2','CO','NR',        &
+              'KET','ALD','HCHO','ETH','ORA2','CO','NR','SESQ','MBO',       &
               'NOAG_GROW','NOAG_NONGROW','NONONAG','ISOP'/
-
 
 ! these are needed on some compilers, eg compaq/alpha, to
 ! permit pass by reference through the registry generated
@@ -359,8 +360,10 @@ PROGRAM convert_emissions
      ALLOCATE( tmp3(ids:ide,jds:jde,3) )
      ALLOCATE( interpolate(ids:ide,kds:kde,jds:jde) )
      ALLOCATE( gocart_lev(iklev))
-     if(config_flags%emiss_opt == 9 ) then
+     if(config_flags%emiss_opt_vol == 1 .or. config_flags%emiss_opt_vol == 2) then
         ALLOCATE( ash_mass(ids:ide,jds:jde) )
+        ALLOCATE( so2_mass(ids:ide,jds:jde) )
+        ALLOCATE( volc_vent(ids:ide,jds:jde) )
         ALLOCATE( ash_height(ids:ide,jds:jde) )
         ALLOCATE( erup_dt(ids:ide,jds:jde) )
         ALLOCATE( vert_mass_dist(kds:kde) )
@@ -376,6 +379,7 @@ PROGRAM convert_emissions
 !
    if(config_flags%chem_opt == GOCART_SIMPLE               &
       .or.    config_flags%chem_opt == GOCARTRACM_KPP      &
+      .or.    config_flags%chem_opt == CHEM_VOLC           &
       .or.    config_flags%dmsemis_opt == DMSGOCART        &
       .or.    config_flags%dust_opt  ==   DUSTGOCART       &
                                                            ) then
@@ -489,6 +493,7 @@ PROGRAM convert_emissions
 
     idum1 = 1
     IF( (config_flags%chem_opt == GOCART_SIMPLE) .OR. &
+        (config_flags%chem_opt == CHEM_VOLC)     .OR. &
         (config_flags%chem_opt == GOCARTRACM_KPP) ) then
 ! interpolate 3d fields to WRF in vertical
 !
@@ -606,7 +611,7 @@ PROGRAM convert_emissions
    DEALLOCATE( tmp2)
    DEALLOCATE( tmp3)
    DEALLOCATE( interpolate )
-     if(config_flags%emiss_opt == 9 ) then
+      if(config_flags%emiss_opt_vol == 1 .or. config_flags%emiss_opt_vol == 2) then
      write(message, FMT='(A,4I6)') ' I am reading global volcanic emissions, dims: =',ids, ide-1, jds, jde-1
      call wrf_message( TRIM( message ) )
      CALL construct_filename1 ( bdyname , 'volc' , grid%id , 2 )
@@ -638,6 +643,29 @@ PROGRAM convert_emissions
        read(unit=dname2(9:10), FMT='(I2)')beg_hour
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
+           read(92)size_dist
+       ENDIF
+       DM_BCAST_MACRO(size_dist)
+       write(0,*)size_dist
+#else
+       read(92)size_dist
+#endif
+       write(0,*)'size_dist = ',size_dist,ids,ide,jds,jde
+     if(config_flags%emiss_opt_vol == 2 ) then
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do so2 '
+           read(92)so2_mass(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(so2_mass)
+           write(0,*)maxval(so2_mass)
+#else
+           write(0,*)'now do so2-s '
+       read(92)so2_mass(ids:ide  ,jds:jde  )
+#endif
+     endif ! config_flags%emiss_opt_vol == 2 
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
            read(92)ash_mass(ids:ide  ,jds:jde  )
        ENDIF
        DM_BCAST_MACRO(ash_mass)
@@ -652,6 +680,16 @@ PROGRAM convert_emissions
 #else
        read(92)ash_height(ids:ide  ,jds:jde  )
 #endif
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           read(92)volc_vent(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(volc_vent)
+           write(0,*)maxval(volc_vent)
+#else
+       read(92)volc_vent(ids:ide  ,jds:jde  )
+#endif
+
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
            read(92)erup_dt(ids:ide  ,jds:jde  )
@@ -671,8 +709,8 @@ PROGRAM convert_emissions
        base_umbrel=.25    ! fraction
        do j=jps,jpe
        do i=ips,ipe
-         ashz_above_vent=ash_height(i,j)+zlevel(i,kps,j)
          if(erup_dt(i,j).le.0.)CYCLE
+         ashz_above_vent=ash_height(i,j)+volc_vent(i,j) !zlevel(i,kps,j)
 !        write(0,*)'found active volcano at i,j,kps,kpe = ',i,j,kps,kpe
 !        write(0,*)ash_height(i,j),ash_mass(i,j),erup_dt(i,j),ashz_above_vent
          do k=kpe-1,kps,-1
@@ -692,7 +730,7 @@ PROGRAM convert_emissions
          enddo
 !        write(0,*)'k_init = ',k_initial
          vert_mass_dist=0.
-           k_initial=int((k_final+k_initial)*0.5)
+!srf     k_initial=int((k_final+k_initial)*0.5)
             
            !- parabolic vertical distribution between k_initial and k_final
            kk4 = k_final-k_initial+2
@@ -723,17 +761,18 @@ PROGRAM convert_emissions
                
                do ko=1,k_final
 !                vert_mass_dist(ko) = vert_mass_dist(ko)+ x1 !- values between 0 and 1.
-!                write(0,*)'k,vert_mass_dist = ',ko,vert_mass_dist(ko)
-                 grid%emis_ant(i,ko,j,p_e_vash1)=.02*vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_ant(i,ko,j,p_e_vash2)=.04*vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_ant(i,ko,j,p_e_vash3)=.11*vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_ant(i,ko,j,p_e_vash4)=.09*vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_ant(i,ko,j,p_e_vash5)=.09*vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_ant(i,ko,j,p_e_vash6)=.13*vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_ant(i,ko,j,p_e_vash7)=.16*vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_ant(i,ko,j,p_e_vash8)=.16*vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_ant(i,ko,j,p_e_vash9)=.1*vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_ant(i,ko,j,p_e_vash10)=.1*vert_mass_dist(ko)*ash_mass(i,j)
+!                write(0,*)'k,vert_mass_dist = ',ko,vert_mass_dist(ko),zlevel(i,ko,j)
+                 grid%emis_vol(i,ko,j,p_e_vash1)=size_dist(1)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash2)=size_dist(2)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash3)=size_dist(3)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash4)=size_dist(4)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash5)=size_dist(5)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash6)=size_dist(6)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash7)=size_dist(7)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash8)=size_dist(8)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash9)=size_dist(9)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash10)=size_dist(10)*vert_mass_dist(ko)*ash_mass(i,j)
+                 if(config_flags%emiss_opt_vol == 2)grid%emis_vol(i,ko,j,p_e_vso2)=vert_mass_dist(ko)*so2_mass(i,j)
                enddo
                grid%erup_beg(i,j)=float(grid%julday)*1000.+float(beg_hour)
                grid%erup_end(i,j)=grid%erup_beg(i,j)+erup_dt(i,j)
@@ -751,19 +790,21 @@ PROGRAM convert_emissions
          write(message, FMT='(A)') ' NO TIME DEPENDENCE IN THIS DATASET'
 ! emissions from  volcanoes (prep_chem_sources)
 !              
-         CALL construct_filename1( inpname , 'wrfchemi' , grid%id , 2 )
-         CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput5 , "DATASET=AUXINPUT5", ierr )
+         CALL construct_filename1( inpname , 'wrfchemv' , grid%id , 2 )
+         CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput13, "DATASET=AUXINPUT13", ierr )
                
-         CALL output_auxinput5 ( id1 , grid , config_flags , ierr )
+         CALL output_auxinput13( id1 , grid , config_flags , ierr )
        
-         CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT5" )
+         CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT13" )
 
 
      endif
 !!!!!!!!!!!!!!!!!!!! end volcanic stuff
 !        
-     if(config_flags%emiss_opt == 9 ) then 
+     if(config_flags%emiss_opt_vol == 1 .or. config_flags%emiss_opt_vol == 2) then 
         DEALLOCATE( ash_mass )
+        DEALLOCATE( so2_mass )
+        DEALLOCATE( volc_vent )
         DEALLOCATE( ash_height )
         DEALLOCATE( erup_dt)
         DEALLOCATE( zlevel)
@@ -2450,7 +2491,7 @@ PROGRAM convert_emissions
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !    NOW DO BIOGENIC EMISSIONS FILE
 !
-    if(CONFIG_FLAGS%BIO_EMISS_OPT == BEIS313 ) then
+    if(CONFIG_FLAGS%BIO_EMISS_OPT == BEIS314 ) then
 
    write(message,FMT='(A)') ' READ BIOGENIC EMISSIONS '
    CALL  wrf_debug ( 100, message )
@@ -2639,6 +2680,7 @@ PROGRAM convert_emissions
 #endif
               grid%sebio_co(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
        ENDIF
+
        IF(i.EQ.15)then
 #ifdef DM_PARALLEL
            IF (wrf_dm_on_monitor()) THEN
@@ -2650,7 +2692,33 @@ PROGRAM convert_emissions
 #endif
               grid%sebio_nr(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
        ENDIF
+
+! SESQ and MBO are added
        IF(i.EQ.16)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+           ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%sebio_sesq(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+
+       IF(i.EQ.17)then
+#ifdef DM_PARALLEL
+           IF (wrf_dm_on_monitor()) THEN
+             READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+       ENDIF
+         DM_BCAST_MACRO(dumc1)
+#else
+         READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
+#endif
+              grid%sebio_mbo(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
+       ENDIF
+!
+       IF(i.EQ.18)then
 #ifdef DM_PARALLEL
            IF (wrf_dm_on_monitor()) THEN
              READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
@@ -2661,7 +2729,8 @@ PROGRAM convert_emissions
 #endif
               grid%noag_grow(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
        ENDIF
-       IF(i.EQ.17)then
+
+       IF(i.EQ.19)then
 #ifdef DM_PARALLEL
            IF (wrf_dm_on_monitor()) THEN
              READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
@@ -2672,7 +2741,8 @@ PROGRAM convert_emissions
 #endif
               grid%noag_nongrow(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
        ENDIF
-       IF(i.EQ.18)then
+
+       IF(i.EQ.20)then
 #ifdef DM_PARALLEL
            IF (wrf_dm_on_monitor()) THEN
              READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
@@ -2683,7 +2753,8 @@ PROGRAM convert_emissions
 #endif
               grid%nononag(ips:ipe  ,jps:jpe  ) = dumc1(ips:ipe  ,jps:jpe  )
        ENDIF
-       IF(i.EQ.19)then
+
+       IF(i.EQ.21)then
 #ifdef DM_PARALLEL
            IF (wrf_dm_on_monitor()) THEN
              READ(26,'(12E9.2)') dumc1(ids:ide-1,jds:jde-1)
@@ -2720,7 +2791,7 @@ PROGRAM convert_emissions
 
    CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT6" )
 
-    endif  !    BIO_EMIS_OPT = BEIS313
+    endif  !    BIO_EMIS_OPT = BEIS314
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     DEALLOCATE ( dumc0 )

@@ -49,6 +49,10 @@ MODULE module_driver_constants
 
    INTEGER , PARAMETER :: max_eta         =   501
 
+   !  The maximum number of trackchem
+
+   INTEGER , PARAMETER :: max_trackchem   =   100
+
    !  The maximum number of outer iterations (for DA minimisation)
 
    INTEGER , PARAMETER :: max_outer_iterations = 10

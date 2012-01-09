@@ -2,6 +2,7 @@
 !   WRF-chem V3.2 : Original version of dry_dep_driver written by Georg Grell (ESRL/GSD)
 !                   VERTMX was originally developed by Mariusz Pagowski and modified by
 !                   Richard C. Easter (PNNL)
+! 10/11/2011 - Ravan Ahmadov (NOAA) updated to include the RACM_SOA_VBS option
 !
 !WRF:MODEL_LAYER:CHEMICS
 !
@@ -12,7 +13,7 @@ CONTAINS
 
     subroutine dry_dep_driver(id,curr_secs,ktau,dtstep,config_flags,      &
                gmt,julday,t_phy,moist,scalar,p8w,t8w,w,alt,               &
-               p_phy,chem,tracer,rho_phy,dz8w,exch_h,hfx,dx,              &
+               p_phy,chem,tracer,rho_phy,dz8w,rh,exch_h,hfx,dx,           &  
                cldfra, cldfra_old,raincv,seasin,dustin,                   &
                ccn1, ccn2, ccn3, ccn4, ccn5, ccn6, nsource,               &
                ivgtyp,tsk,gsw,vegfra,pbl,rmol,ust,znt,xlat,xlong,z,z_at_w,&
@@ -38,7 +39,9 @@ CONTAINS
   USE module_gocart_drydep
   USE module_mosaic_drydep, only:  mosaic_drydep_driver
   USE module_mixactivate_wrappers, only: mosaic_mixactivate, sorgam_mixactivate
-  USE module_aer_drydep, only:  aer_drydep_driver
+  USE module_aer_drydep
+  USE module_aerosols_soa_vbs, only: soa_vbs_depdriver
+
   IMPLICIT NONE
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -78,6 +81,7 @@ CONTAINS
                                                         alt,    &
                                                       p_phy,    &
                                                       dz8w,     &
+                                                        rh,     &
                                               t8w,p8w,z_at_w ,  &
                                                             w,  &
                                               exch_h,rho_phy,z
@@ -199,7 +203,11 @@ CONTAINS
                   ids,ide, jds,jde, kds,kde,                              &
                   ims,ime, jms,jme, kms,kme,                              &
                   its,ite, jts,jte, kts,kte )
-            if(config_flags%diagnostic_chem == DEPVEL1) then
+          ENDIF
+          if( config_flags%diagnostic_chem == DEPVEL1 .and. &
+              (config_flags%chem_opt == MOZCART_KPP .or. &
+              config_flags%chem_opt == MOZART_KPP   .or. & 
+              config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP) ) then
                do j = jts,jte
                   dvel(its:ite,1,j,p_dvel_o3) = m2cm*ddvel(its:ite,j,p_o3)
                   dvel(its:ite,1,j,p_dvel_no) = m2cm*ddvel(its:ite,j,p_no)
@@ -241,8 +249,7 @@ CONTAINS
                   dvel(its:ite,1,j,p_dvel_pan) = m2cm*ddvel(its:ite,j,p_pan)
                   dvel(its:ite,1,j,p_dvel_terpooh) = m2cm*ddvel(its:ite,j,p_terpooh)
                enddo
-            endif
-          ENDIF
+          endif
        ELSEIF ( config_flags%chem_opt == GOCART_SIMPLE ) then
           call wesely_driver(id,ktau,dtstep,                              &
                config_flags,current_month,                                &
@@ -317,12 +324,14 @@ CONTAINS
 
        idrydep_onoff = 1
        aer_mech_id_select: SELECT CASE(config_flags%chem_opt)
-          CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ)
+          CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP, &
+                RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP, &
+                CBMZSORG,CBMZSORG_AQ)
              aer_mech_id = 1
-          CASE (RACMSORG_AQ,RACMSORG_KPP)
+          CASE (RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP)
              aer_mech_id = 2
           CASE ( CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, &
-                 CBMZ_MOSAIC_8BIN_AQ,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
+                 CBMZ_MOSAIC_8BIN_AQ,SAPRC99_MOSAIC_4BIN_VBS2_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP,  &
                  CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
              aer_mech_id = 3
           CASE DEFAULT
@@ -342,7 +351,7 @@ CONTAINS
        else if (config_flags%aer_drydep_opt <= 99) then
 
    adrydep_select: SELECT CASE(config_flags%chem_opt)
-     CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ)
+     CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ)
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR AEROSOLS/RADM')
        call sorgam_depdriver (id,config_flags,ktau,dtstep,              &
                ust,t_phy,moist,p8w,t8w,rmol,znt,pbl,                    &
@@ -354,7 +363,7 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
-     CASE (RACMSORG_AQ,RACMSORG_KPP)
+     CASE (RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP)
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR AEROSOLS/RACM')
        call sorgam_depdriver (id,config_flags,ktau,dtstep,              &
                ust,t_phy,moist,p8w,t8w,rmol,znt,pbl,                    &
@@ -368,7 +377,7 @@ CONTAINS
                its,ite, jts,jte, kts,kte                                )
      CASE ( CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
           CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
-          SAPRC99_MOSAIC_4BIN_VBS2_KPP )
+          SAPRC99_MOSAIC_4BIN_VBS2_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP  )
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR MOSAIC AEROSOLS')
        call mosaic_drydep_driver(                                       &
                id, curr_secs, ktau, dtstep, config_flags,               &
@@ -379,6 +388,18 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
+     CASE ( RACM_SOA_VBS_KPP )
+       CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR SOA_VBS AEROSOLS')
+       call soa_vbs_depdriver (id,config_flags,ktau,dtstep,             &
+               ust,t_phy,moist,p8w,t8w,rmol,znt,pbl,                    &
+               alt,p_phy,chem,rho_phy,dz8w,rh,z,z_at_w,                 &
+               h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,               &
+               aer_res,ddvel(:,:,numgas+1:num_chem),                    &
+               num_chem-numgas,                                         &
+               ids,ide, jds,jde, kds,kde,                               &
+               ims,ime, jms,jme, kms,kme,                               &
+               its,ite, jts,jte, kts,kte                                )
+!
      CASE DEFAULT
                                                      
      END SELECT adrydep_select
@@ -456,18 +477,18 @@ CONTAINS
 !!$!     if e_co > 0., the grid cell should not be over water
 !!$!     if e_co > 200, the grid cell should be over a large urban region
 !!$!
-!!$      if (sf_urban_physics .eq. 0) then
-!!$        if (e_co(i,kts,j) .gt. 0) then
-!!$           ekmfull(kts:kts+10) = max(ekmfull(kts:kts+10),1.)
-!!$        endif
-!!$        if (e_co(i,kts,j) .gt. 200) then
-!!$           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
-!!$        endif
-!!$      endif
-!
-      do k=kts,kte
-         zz(k)=z(i,k,j)-z_at_w(i,kts,j)
-      enddo
+     if (sf_urban_physics .eq. 0) then
+      if (e_co(i,kts,j) .gt. 0) then
+          ekmfull(kts:kts+10) = max(ekmfull(kts:kts+10),1.)
+       endif
+       if (e_co(i,kts,j) .gt. 200) then
+          ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+       endif
+     endif
+
+     do k=kts,kte
+        zz(k)=z(i,k,j)-z_at_w(i,kts,j)
+     enddo
 !
 !   vertical mixing routine (including deposition)
 !   need to be careful here with that dumm tracer in spot 1
@@ -482,7 +503,7 @@ CONTAINS
          enddo
 
          mix_select: SELECT CASE(config_flags%chem_opt)
-         CASE (RADM2SORG_AQ, RACMSORG_AQ, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
+         CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
               CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
             if(.not.is_aerosol(nv))then ! mix gases not aerosol
                call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
@@ -536,7 +557,7 @@ CONTAINS
 
    mixactivate_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE (RADM2SORG_AQ, RACMSORG_AQ)
+   CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM)
       CALL wrf_debug(15,'call mixactivate for sorgam aerosol')
       call sorgam_mixactivate (                        &
 		id, ktau, dtstep, config_flags, idrydep_onoff,   &
@@ -563,7 +584,7 @@ CONTAINS
    CASE DEFAULT
    END SELECT mixactivate_select
    settling_select: SELECT CASE(config_flags%chem_opt)
-   CASE (DUST,GOCART_SIMPLE,GOCARTRACM_KPP,MOZCART_KPP,RADM2SORG,RADM2SORG_AQ)
+   CASE (DUST,GOCART_SIMPLE,GOCARTRACM_KPP,MOZCART_KPP,RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM)
        CALL wrf_debug(0,'call gocart settling routine')
          call gocart_settling_driver(dtstep,config_flags,t_phy,moist,  &
          chem,rho_phy,dz8w,p8w,p_phy,         &
@@ -571,7 +592,7 @@ CONTAINS
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
-   CASE (CHEM_VASH)
+   CASE (CHEM_VASH, CHEM_VOLC)
        CALL wrf_debug(15,'call vash settling routine')
          call vash_settling_driver(dtstep,config_flags,t_phy,moist,        &
          chem,rho_phy,dz8w,p8w,p_phy,                                      &

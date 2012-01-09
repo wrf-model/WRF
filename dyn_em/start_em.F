@@ -100,6 +100,9 @@
 
    REAL :: w_max, w_min
    LOGICAL :: w_needs_to_be_set
+!  
+! paj: define variable local
+   REAL    :: alpha
 
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
@@ -715,6 +718,14 @@
                       grid%FGDT,grid%stepfg,                        &     ! Optional
                       grid%cugd_tten,grid%cugd_ttens,grid%cugd_qvten,        &   ! Optional
                       grid%cugd_qvtens,grid%cugd_qcten,                 &   ! Optional
+                      grid%ISNOWXY, grid%ZSNSOXY, grid%TSNOXY,                                  &   ! Optional Noah-MP
+                      grid%SNICEXY, grid%SNLIQXY, grid%TVXY, grid%TGXY, grid%CANICEXY,          &   ! Optional Noah-MP
+                      grid%CANLIQXY, grid%EAHXY, grid%TAHXY, grid%CMXY,                         &   ! Optional Noah-MP
+                      grid%CHXY, grid%FWETXY, grid%SNEQVOXY, grid%ALBOLDXY, grid%QSNOWXY,       &   ! Optional Noah-MP
+                      grid%WSLAKEXY, grid%ZWTXY, grid%WAXY, grid%WTXY, grid%LFMASSXY, grid%RTMASSXY, & ! Optional Noah-MP
+                      grid%STMASSXY, grid%WOODXY, grid%STBLCPXY, grid%FASTCPXY,                 &   ! Optional Noah-MP
+                      grid%XSAIXY,                                                              &   ! Optional Noah-MP
+                      grid%T2MVXY, grid%T2MBXY, grid%CHSTARXY,                                  &   ! Optional Noah-MP
                       grid%DZR, grid%DZB, grid%DZG,                          & !Optional urban
                       grid%TR_URB2D,grid%TB_URB2D,grid%TG_URB2D,grid%TC_URB2D,    & !Optional urban
                       grid%QC_URB2D, grid%XXXR_URB2D,grid%XXXB_URB2D,        & !Optional urban
@@ -738,6 +749,9 @@
                       grid%TYR, grid%TYRA, grid%TDLY, grid%TLAG, grid%NYEAR, grid%NDAY,grid%tmn_update, &
                       grid%achfx, grid%aclhf, grid%acgrdflx                 &
                       ,grid%te_temf,grid%cf3d_temf,grid%wm_temf        & ! WA
+                      ,grid%massflux_EDKF, grid%entr_EDKF, grid%detr_EDKF                & 
+                      ,grid%thl_up,grid%thv_up,grid%rt_up                                &
+                      ,grid%rv_up,grid%rc_up,grid%u_up,grid%v_up,grid%frac_up            &
                       )
        ENDIF   !tgs
 
@@ -943,6 +957,8 @@
 
 
 ! set up slope-radiation constant arrays based on topography
+! paj: also computes laplacian for topo_wind
+!
        DO j = jts,min(jte,jde-1)
        DO i = its, min(ite,ide-1)
           im1 = max(i-1,ids)
@@ -951,6 +967,7 @@
           jp1 = min(j+1,jde-1)
           grid%toposlpx(i,j)=(grid%ht(ip1,j)-grid%ht(im1,j))*grid%msftx(i,j)*grid%rdx/(ip1-im1)
           grid%toposlpy(i,j)=(grid%ht(i,jp1)-grid%ht(i,jm1))*grid%msfty(i,j)*grid%rdy/(jp1-jm1)
+          grid%lap_hgt(i,j)=(grid%ht(ip1,j)+grid%ht(im1,j)+grid%ht(i,jp1)+grid%ht(i,jm1)-grid%ht(i,j)*4.)/4.
              hx = grid%toposlpx(i,j)
              hy = grid%toposlpy(i,j)
              pi = 4.*atan(1.)
@@ -970,6 +987,42 @@
              endif
        ENDDO
        ENDDO
+!
+! paj: computes ct and ct2 for topo_wind
+!
+       grid%ctopo=1.
+       grid%ctopo2=1.
+!
+       if (config_flags%topo_wind.eq.1) then
+         DO j = jts,min(jte,jde-1)
+         DO i = its, min(ite,ide-1)
+            grid%ctopo(i,j)=sqrt(grid%var_sso(i,j))
+            if (grid%ctopo(i,j).le.2.718) then
+            grid%ctopo(i,j)=1.
+            else
+            grid%ctopo(i,j)=alog(grid%ctopo(i,j))
+            endif
+!
+            if (grid%lap_hgt(i,j).gt.-10.) then
+              grid%ctopo(i,j)=grid%ctopo(i,j)
+            else
+               if (grid%lap_hgt(i,j).ge.-20) then
+                 alpha=(grid%lap_hgt(i,j)+20.)/10.
+                 grid%ctopo(i,j)=alpha*grid%ctopo(i,j)+(1+alpha)
+               else
+                  if (grid%lap_hgt(i,j).ge.-30.) then
+                  grid%ctopo(i,j)=(grid%lap_hgt(i,j)+30.)/10.
+                  grid%ctopo2(i,j)=(grid%lap_hgt(i,j)+30.)/10.
+                  else
+                  grid%ctopo(i,j)=0.
+                  grid%ctopo2(i,j)=0.
+                  endif
+               endif
+            endif
+         ENDDO
+         ENDDO
+       endif
+
    END IF
 
    CALL set_physical_bc3d( grid%w_1 , 'W' , config_flags ,                 &
@@ -1172,7 +1225,7 @@
                 ids,ide, jds,jde, kds,kde,                                  &
                 ims,ime, jms,jme, kms,kme,                                  &
                 its,ite, jts,jte, kts,kte-1                                 )
-        case (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_KPP)
+        case (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP)
            call sum_pm_sorgam (                                             &
                 grid%alt, chem, grid%h2oaj, grid%h2oai,                                    &
                 grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,                 &

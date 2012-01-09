@@ -27,3 +27,9 @@
   
     REAL,      INTENT(INOUT) ::                                     &
                       vdrog3(ims:ime,kms:kme-0,jms:jme,ldrog)
+
+! RAR: needed for MADE_SOA_VBS option
+    INTEGER, INTENT ( IN ) :: ldrog_vbs
+  
+    REAL,      INTENT(INOUT) ::                                     &
+                      vdrog3_vbs(ims:ime,kms:kme-0,jms:jme,ldrog_vbs)

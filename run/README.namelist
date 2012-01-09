@@ -353,7 +353,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 2, Lin et al. scheme
                                      = 3, WSM 3-class simple ice scheme
                                      = 4, WSM 5-class scheme
-                                     = 5, Ferrier (new Eta) microphysics
+                                     = 5, Ferrier (new Eta) microphysics, operational High-Resolution Window version
                                      = 6, WSM 6-class graupel scheme
                                      = 7, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
                                      = 8, Thompson scheme (new for V3.1)
@@ -362,6 +362,9 @@ Namelist variables for controlling the adaptive time step option:
                                      = 13, SBU_YLIN scheme
                                      = 14, WDM 5-class scheme
                                      = 16, WDM 6-class scheme
+                                     = 17, NSSL 2-moment 4-ice scheme (steady background CCN)
+                                     = 18, NSSL 2-moment 4-ice scheme with predicted CCN (better for idealized than real cases)
+                                     = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
  fields .LT. a critcal value to zero
@@ -467,7 +470,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, YSU scheme
                                      = 2, Mellor-Yamada-Janjic TKE scheme
                                      = 3, NCEP Global Forecast System scheme (NMM only)
-                                     = 4, Quasi-Normal Scale Elimination PBL
+                                     = 4, Eddy-diffusivity Mass Flux, Quasi-Normal Scale Elimination PBL
+                                     = 94, Quasi-Normal Scale Elimination PBL
                                      = 5, MYNN 2.5 level TKE scheme, works with
                                           sf_sfclay_physics=1 or 2 as well as 5
                                      = 6, MYNN 3rd level TKE scheme, works only
@@ -486,6 +490,8 @@ Namelist variables for controlling the adaptive time step option:
                                                 the value is set in Registry.NMM but is
                                                 overridden by namelist value; bldt will
                                                 be computed from this.
+ mfshconv (max_dom)                  = .false., ; whether to turn on new QNSE.
+                                     = .true.,  turn on the new QNSE
 
  cu_physics (max_dom)                cumulus option
                                      = 0, no cumulus
@@ -606,6 +612,9 @@ Namelist variables for controlling the adaptive time step option:
  oml_gamma                           = 0.14     ; oml deep water lapse rate (K m-1)
  isftcflx                            = 0        ; alternative Ck, Cd formulation for tropical storm application (0=default, 1=new, 2=Garratt)
  fractional_seaice                   = 0        ; treat sea-ice as fractional field (1) or ice/no-ice flag (0)
+ seaice_albedo_opt                   = 0        ; option to set albedo over sea ice
+                                                ; 0 = seaice albedo is a constant 0.80
+                                                ; 1 = seaice albedo is f(Tair,Tskin,Snow) follwing Mills (2011) for Arctic Ocean
  tice2tsk_if2cold                    = .false.  ; set Tice to Tsk to avoid unrealistically low sea ice temperatures
  iz0tlnd                             = 0        ; thermal roughness length for sfclay and myjsfc (0 - old, 1 - veg dependent Czil)
  mp_tend_lim                         = 10.,     ; limit on temp tendency from mp latent heating from radar data assimilation
@@ -848,7 +857,10 @@ The following are for observation nudging:
  h_sca_adv_order (max_dom)           = 5,       ; horizontal scalar advection order
  v_sca_adv_order (max_dom)           = 3,       ; vertical scalar advection order
 
-                                                ; advection options for scalar variables: 0=simple, 1=positive definite, 2=monotonic
+ momentum_adv_opt                    = 1,       ; advection options for momentum variables: 
+                                                  1=original, 3 = 5th-order WENO
+                                                ; advection options for scalar variables: 0=simple, 1=positive definite,
+                                                  2=monotonic, 3=5th order WENO, 4=5th-order WENO with positive definite filter
  moist_adv_opt (max_dom)             = 1        ; for moisture
  scalar_adv_opt (max_dom)            = 1        ; for scalars
  chem_adv_opt (max_dom)              = 1        ; for chem variables

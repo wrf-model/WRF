@@ -20,9 +20,9 @@ $(SOLVER)_wrf_SST_ESMF : wrf_ESMFMod.o wrf_SST_ESMF.o ../main/module_wrf_top.o
 	$(RANLIB) $(LIBWRFLIB)
 	$(LD) -o wrf_SST_ESMF.exe $(LDFLAGS) wrf_SST_ESMF.o wrf_ESMFMod.o ../main/module_wrf_top.o $(LIBWRFLIB) $(LIB)
 
-$(SOLVER)_ideal : module_initialize ideal.o
+$(SOLVER)_ideal : module_initialize ideal_$(SOLVER).o
 	$(RANLIB) $(LIBWRFLIB)
-	$(LD) -o ideal.exe $(LDFLAGS) ideal.o ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o $(LIBWRFLIB) $(LIB)
+	$(LD) -o ideal.exe $(LDFLAGS) ideal_$(SOLVER).o ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o $(LIBWRFLIB) $(LIB)
 
 $(SOLVER)_real : module_initialize real_$(SOLVER).o ndown_$(SOLVER).o nup_$(SOLVER).o tc_$(SOLVER).o
 	$(RANLIB) $(LIBWRFLIB)
@@ -84,7 +84,7 @@ convert_em.o: \
 	../share/module_io_domain.o \
 	$(ESMF_MOD_DEPENDENCE)
 
-ideal.o: \
+ideal_em.o: \
 	../frame/module_machine.o \
 	../frame/module_domain.o \
 	../frame/module_driver_constants.o \
@@ -94,6 +94,12 @@ ideal.o: \
 	../share/module_io_domain.o \
 	../dyn_$(SOLVER)/$(CASE_MODULE) \
 	$(ESMF_MOD_DEPENDENCE)
+
+ideal_nmm.o: \
+	../dyn_$(SOLVER)/$(CASE_MODULE) \
+	../share/module_optional_input.o \
+	../share/module_io_domain.o \
+	../share/input_wrf.o 
 
 ndown_em.o: \
 	../frame/module_machine.o \
@@ -144,6 +150,7 @@ real_em.o: \
 	../share/module_date_time.o \
 	../share/module_optional_input.o \
 	../share/module_bc_time_utilities.o \
+        ../dyn_em/module_wps_io_arw.o \
 	$(ESMF_MOD_DEPENDENCE)
 #	../chem/module_input_chem_data.o \
 #	../chem/module_input_chem_bioemiss.o \

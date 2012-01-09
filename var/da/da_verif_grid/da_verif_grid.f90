@@ -13,7 +13,7 @@ program da_verif_grid
    !               number of pressure levels 
    !---------------------------------------------------------------------------
 
-   use da_verif_grid_control, only : control_main, control_times, control_vars, &
+   use da_verif_grid_control, only : control_main, control_times, control_vars, sub_domain, &
        max_3d_variables, max_2d_variables,num_vert_levels,verification_file_string,&
        missing,namelist_unit,time_series_unit, time_series_2d, profile_time_series_3d,&
        filename, stime, etime, hstart, hend, hdate, date, pdate, vert_levels, &
@@ -21,7 +21,8 @@ program da_verif_grid
        num_verifying_experiments, verify_forecast_hour, domain, control_exp_dir, verif_dirs, &
        out_dirs,start_year, end_year, start_month, end_month, start_day, end_day, &
        start_hour, end_hour,start_minutes, end_minutes, start_seconds, end_seconds,interval_hour, &
-       num3dvar, num2dvar, var3d, var2d, num_scores, score_names, vertical_type                         
+       num3dvar, num2dvar, var3d, var2d, num_scores, score_names, vertical_type, &
+       istart, iend, jstart, jend, unit_all, unit_land, unit_water
 
    use da_netcdf_interface, only : da_get_dims_cdf, da_get_gl_att_int_cdf, da_get_gl_att_real_cdf, &
       da_get_var_3d_real_cdf, da_get_var_2d_real_cdf, da_get_var_2d_int_cdf
@@ -29,8 +30,10 @@ program da_verif_grid
    implicit none
 
    character (len=512) :: control_file, verif_file
-   character (len=512) :: out_dir
+   character (len=512) :: out_dir, outname_all, outname_land, outname_water
 
+   integer, parameter                   :: imiss = -99
+   real, parameter                      :: rmiss = -99.99
    integer                              :: time_loop_count
    integer                              :: time(6), ptime(6)
    integer                              :: nx1, ny1, nz1
@@ -40,6 +43,7 @@ program da_verif_grid
    character (len=10)                   :: sdate
    character (len=20)                   :: file_string, domain_string, out_hr
    logical, allocatable,dimension(:)    :: first_score
+   logical                              :: exist_file1, exist_file2
 
    real, allocatable, dimension(:,:,:)  :: data_out1, data_out2
    real, allocatable, dimension(:,:,:)  :: u1, u2, v1, v2       
@@ -47,7 +51,13 @@ program da_verif_grid
    real, allocatable, dimension(:,:,:)  :: sum3d, asum3d, sqr3d, diff, absdiff, sqdiff
    real, allocatable, dimension(:,:)    :: score_avg_prof
    real, allocatable, dimension(:)      :: avg_prof
+   real, allocatable, dimension(:,:)    :: landmask  ! 1 for land, 0 for water
+   integer, parameter                   :: island = 1, iswater = 0
    integer, allocatable, dimension(:)   :: num_counter
+   integer, allocatable, dimension(:,:,:)  :: mask_count
+   real, allocatable, dimension(:,:,:)  :: mask_stats ! 1st dimension: 1:bias, 2:rmse, 3:abias
+                                                      ! 2nd dimension: 1:all, 2:land, 3:water
+                                                      ! 3rd dimension: number of vertical levels
    
 !----------------------------------------------------------------------------
    verify_forecast_hour = 0
@@ -121,6 +131,17 @@ program da_verif_grid
          stop
       endif
    
+      read(unit=namelist_unit, nml = sub_domain , iostat = io_status )
+     
+      if(io_status /= 0) then
+         print *, 'Error reading sub_domain'
+         istart = 1
+         iend   = 10000
+         jstart = 1
+         jend   = 10000
+         !stop
+      endif
+   
       close(unit=namelist_unit)
    endif
 !----------------------------------------------------------------------------
@@ -173,6 +194,10 @@ program da_verif_grid
 !---------------------------------------------------------------------
 !--For 3D variables
 !---------------------------------------------------------------------
+      allocate( avg_prof(num_vert_levels) )
+      allocate( num_counter(num_vert_levels) )
+      allocate( score_avg_prof(num_scores, num_vert_levels) )
+
       loop_3d : do ivar=1,num3dvar
 
 !  Open profile units
@@ -181,6 +206,12 @@ program da_verif_grid
         open(time_series_unit, file=profile_time_series_3d,form='formatted', &
                                status='unknown')
        
+        outname_all   = trim(profile_time_series_3d)//'_sub'
+        outname_land  = trim(profile_time_series_3d)//'_sub_land'
+        outname_water = trim(profile_time_series_3d)//'_sub_water'
+        open(unit_all,   file=trim(outname_all),  form='formatted', status='unknown')
+        open(unit_land,  file=trim(outname_land), form='formatted', status='unknown')
+        open(unit_water, file=trim(outname_water),form='formatted', status='unknown')
 !----------------------------------------------------------------------------
 !
 !----------------------------------------------------------------------------
@@ -212,6 +243,24 @@ program da_verif_grid
 
            verif_file = trim(verif_dirs(iexp))//'/'//pdate//'/'//trim(filename)
 
+           inquire(file=trim(control_file), exist=exist_file1)
+           inquire(file=trim(verif_file), exist=exist_file2)
+           if ( (.not. exist_file1) .or. (.not. exist_file2) ) then
+              avg_prof       = rmiss
+              num_counter    = imiss
+              score_avg_prof = rmiss
+              call write_profile(date, score_avg_prof, num_counter, num_vert_levels, num_scores, &
+                                 time_series_unit) 
+              call write_profile(date, score_avg_prof, num_counter, num_vert_levels, num_scores, unit_all)
+              call write_profile(date, score_avg_prof, num_counter, num_vert_levels, num_scores, unit_land)
+              call write_profile(date, score_avg_prof, num_counter, num_vert_levels, num_scores, unit_water)
+              call advance_date(time,interval_hour) 
+              if ( .not. exist_file1 ) print*, trim(control_file), ' file not found'
+              if ( .not. exist_file2 ) print*, trim(verif_file), ' file not found'
+              print*, 'skipping date ', date
+              cycle time_loop_3d
+           end if
+
 !          print*,' control_file  : ', trim(control_file)
 !          print*,' verif_file    : ', trim(verif_file)
 
@@ -235,6 +284,16 @@ program da_verif_grid
                sum3d = 0.0
                asum3d = 0.0
                sqr3d = 0.0
+
+               if ( ivar == 1 ) then
+                  allocate(landmask(nx,ny))
+                  call da_get_var_2d_real_cdf(verif_file,"LANDMASK", landmask, nx, ny, 1, .false.) 
+                  istart = max(1, istart)
+                  iend   = min(nx, iend)
+                  jstart = max(1, jstart)
+                  jend   = min(ny, jend)
+               end if
+
              endif
            endif
            allocate(diff(nx,ny,num_vert_levels))
@@ -270,10 +329,6 @@ program da_verif_grid
            deallocate(data_out2)
            end if
 
-
-           allocate( avg_prof(num_vert_levels) )
-           allocate( num_counter(num_vert_levels) )
-           allocate( score_avg_prof(num_scores, num_vert_levels) )
            do iscore = 1, num_scores
              if ( trim(score_names(iscore)) == 'BIAS' ) then
                 call domain_average( diff, avg_prof, num_counter, nx, ny, num_vert_levels, missing,0)
@@ -286,9 +341,17 @@ program da_verif_grid
            enddo
            call write_profile(date, score_avg_prof, num_counter, num_vert_levels, num_scores, &
                               time_series_unit) 
-           deallocate( avg_prof )
-           deallocate( num_counter )
-           deallocate( score_avg_prof )
+
+           allocate(mask_stats(3,3,nz))
+           allocate(mask_count(3,3,nz))
+           call mask_domain_average( diff,    mask_stats(1,:,:), mask_count(1,:,:), nx, ny, num_vert_levels, missing,0)
+           call mask_domain_average( sqdiff,  mask_stats(2,:,:), mask_count(2,:,:), nx, ny, num_vert_levels, missing,1)
+           call mask_domain_average( absdiff, mask_stats(3,:,:), mask_count(3,:,:), nx, ny, num_vert_levels, missing,0)
+           call write_profile(date, mask_stats(:,1,:), mask_count(1,1,:), num_vert_levels, 3, unit_all) 
+           call write_profile(date, mask_stats(:,2,:), mask_count(1,2,:), num_vert_levels, 3, unit_land) 
+           call write_profile(date, mask_stats(:,3,:), mask_count(1,3,:), num_vert_levels, 3, unit_water) 
+           deallocate(mask_stats)
+           deallocate(mask_count)
            
            call get_sum(sum3d,diff,nx,ny,num_vert_levels,missing)
            call get_sum(asum3d,absdiff,nx,ny,num_vert_levels,missing)
@@ -304,9 +367,10 @@ program da_verif_grid
 
         enddo  time_loop_3d       ! time loop over
 
-
-
         close(time_series_unit)
+        close(unit_all)
+        close(unit_land)
+        close(unit_water)
         deallocate(sum3d)
         deallocate(asum3d)
         deallocate(sqr3d)
@@ -314,9 +378,17 @@ program da_verif_grid
      enddo loop_3d
      print*, ' successful completion of loop_3d '
 
+     deallocate( avg_prof )
+     deallocate( num_counter )
+     deallocate( score_avg_prof )
+
 !--------------------------------------------------------------------------------
 !--Loop For 2D variables
 !--------------------------------------------------------------------------------
+     allocate( avg_prof(1) )
+     allocate( num_counter(1) )
+     allocate( score_avg_prof(num_scores, 1) )
+
      loop_2d : do ivar = 1, num2dvar
 
 !  Open profile units
@@ -325,6 +397,12 @@ program da_verif_grid
         open(time_series_unit, file=time_series_2d,form='formatted', &
                                status='unknown')
        
+        outname_all   = trim(time_series_2d)//'_sub'
+        outname_land  = trim(time_series_2d)//'_sub_land'
+        outname_water = trim(time_series_2d)//'_sub_water'
+        open(unit_all,   file=trim(outname_all),  form='formatted', status='unknown')
+        open(unit_land,  file=trim(outname_land), form='formatted', status='unknown')
+        open(unit_water, file=trim(outname_water),form='formatted', status='unknown')
 !----------------------------------------------------------------------------
 !
 !----------------------------------------------------------------------------
@@ -354,6 +432,25 @@ program da_verif_grid
            endif
 
            verif_file = trim(verif_dirs(iexp))//'/'//pdate//'/'//trim(filename)
+
+           inquire(file=trim(control_file), exist=exist_file1)
+           inquire(file=trim(verif_file), exist=exist_file2)
+           if ( (.not. exist_file1) .or. (.not. exist_file2) ) then
+              avg_prof       = rmiss
+              num_counter    = imiss
+              score_avg_prof = rmiss
+              call write_profile(date, score_avg_prof, num_counter, 1, num_scores, &
+                                 time_series_unit) 
+              call write_profile(date, score_avg_prof, num_counter, 1, num_scores, unit_all)
+              call write_profile(date, score_avg_prof, num_counter, 1, num_scores, unit_land)
+              call write_profile(date, score_avg_prof, num_counter, 1, num_scores, unit_water)
+              call advance_date(time,interval_hour) 
+              if ( .not. exist_file1 ) print*, trim(control_file), ' file not found'
+              if ( .not. exist_file2 ) print*, trim(verif_file), ' file not found'
+              print*, 'skipping date ', date
+              cycle time_loop_2d
+           end if
+
 !
 !  Get the dimensions of the both files and check
            call get_dimensions(control_file,nx1,ny1,nz1)
@@ -394,9 +491,6 @@ program da_verif_grid
            deallocate(data_out1)
            deallocate(data_out2)
 
-           allocate( avg_prof(1) )
-           allocate( num_counter(1) )
-           allocate( score_avg_prof(num_scores, 1) )
            do iscore = 1, num_scores
              if ( trim(score_names(iscore)) == 'BIAS' ) then
                 call domain_average( diff, avg_prof, num_counter, nx, ny, 1, missing,0)
@@ -409,10 +503,18 @@ program da_verif_grid
            enddo
            call write_profile(date, score_avg_prof, num_counter, 1, num_scores, &
                               time_series_unit)
-           deallocate( avg_prof )
-           deallocate( num_counter )
-           deallocate( score_avg_prof )
 
+           allocate(mask_stats(3,3,1))
+           allocate(mask_count(3,3,1))
+           call mask_domain_average( diff,    mask_stats(1,:,:), mask_count(1,:,:), nx, ny, 1, missing,0)
+           call mask_domain_average( sqdiff,  mask_stats(2,:,:), mask_count(2,:,:), nx, ny, 1, missing,1)
+           call mask_domain_average( absdiff, mask_stats(3,:,:), mask_count(3,:,:), nx, ny, 1, missing,0)
+           call write_profile(date, mask_stats(:,1,:), mask_count(1,1,:), 1, 3, unit_all) 
+           call write_profile(date, mask_stats(:,2,:), mask_count(1,2,:), 1, 3, unit_land) 
+           call write_profile(date, mask_stats(:,3,:), mask_count(1,3,:), 1, 3, unit_water) 
+           deallocate(mask_stats)
+           deallocate(mask_count)
+           
            call get_sum(sum3d,diff,nx,ny,1,missing)
            call get_sum(asum3d,absdiff,nx,ny,1,missing)
            call get_sum(sqr3d,sqdiff,nx,ny,1,missing)
@@ -428,15 +530,24 @@ program da_verif_grid
         enddo  time_loop_2d
         
         close(time_series_unit)
+        close(unit_all)
+        close(unit_land)
+        close(unit_water)
         deallocate(sum3d)
         deallocate(asum3d)
         deallocate(sqr3d)
 
      enddo loop_2d
+
+     deallocate( avg_prof )
+     deallocate( num_counter )
+     deallocate( score_avg_prof )
+
      print*, ' successful completion of loop_2d '
    print*,' Finished Experiment : ', trim(verif_dirs(iexp))
    enddo loop_verif_exp
 
+   deallocate(landmask)
 !-----------------------------------------------------
 
    contains  
@@ -1703,6 +1814,62 @@ program da_verif_grid
   end subroutine domain_average
 !------------------------------------------------------------------
   
+  subroutine mask_domain_average(var, avg_prof, counter, nx, ny, nz, missing,isq)
+
+  integer, intent(in)                                 :: nx,ny,nz,isq
+  real, intent(in), dimension(nx,ny,nz)               :: var
+  integer, intent(out), dimension(3,nz)               :: counter
+  real, intent(out), dimension(3,nz)                  :: avg_prof
+  real, intent(in)                                    :: missing
+
+  integer                                             :: i,j,k,imask
+  integer                                             :: icount(3)
+  real                                                :: dsum(3)
+  real                                                :: dmiss
+  integer                                             :: imiss
+
+  ! 1: all, 2:land, 3:water
+
+  dmiss = -99.99
+  imiss = -99
+  do k = 1, nz
+     icount = 0
+     dsum = 0.0
+     do j = 1, ny
+        do i = 1, nx
+           if ( var(i,j,k) /= missing ) then
+              if ( i>=istart .and. i<=iend .and. &
+                   j>=jstart .and. j<=jend ) then
+                  icount(1) = icount(1) + 1
+                  dsum(1) = dsum(1) + var(i,j,k)
+                  if ( int(landmask(i,j)) == island ) then
+                     icount(2) = icount(2) + 1
+                     dsum(2) = dsum(2) + var(i,j,k)
+                  else if ( int(landmask(i,j)) == iswater ) then
+                     icount(3) = icount(3) + 1
+                     dsum(3) = dsum(3) + var(i,j,k)
+                  end if
+              end if
+           end if
+        end do
+     end do
+     avg_prof(:,k) = dmiss
+     counter(:,k) = imiss
+     do imask = 1, 3
+        if ( icount(imask) /= 0 ) then
+           counter(imask,k) = icount(imask)
+           if ( isq .eq. 0 ) then
+             avg_prof(imask,k) = dsum(imask)/float(icount(imask))
+           else
+             avg_prof(imask,k) = sqrt(dsum(imask)/float(icount(imask)))
+           end if
+        end if
+     end do
+  enddo
+
+  end subroutine mask_domain_average
+!------------------------------------------------------------------
+
   subroutine get_sum(dsum, dvar, nx, ny, nz, missing)
     
     integer, intent(in)                               :: nx, ny, nz

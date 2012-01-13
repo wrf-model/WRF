@@ -252,7 +252,7 @@ program da_update_bc
    east_end=0
    north_end=0
 
-   cdfid = ncopn(da_file, NCNOWRIT, io_status )
+   cdfid = ncopn(da_file, NCWRITE, io_status )
 
    ! For 2D variables
    ! Get mu, mub, msfu, and msfv
@@ -1375,12 +1375,11 @@ program da_update_bc
    deallocate(mub)
    deallocate(msfu)
    deallocate(msfv)
+   deallocate(times)
+   deallocate(thisbdytime)
+   deallocate(nextbdytime)
 
  end if ! end if update_lateral_bdy
-
- deallocate(times)
- deallocate(thisbdytime)
- deallocate(nextbdytime)
 
  write(unit=stdout,fmt=*) &
     '=================================================================='

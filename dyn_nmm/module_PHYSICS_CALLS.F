@@ -1266,6 +1266,8 @@
      &          ,DEW=DEW                                                &
      &          ,MOSAIC_LU=CONFIG_FLAGS%MOSAIC_LU                       &
      &          ,MOSAIC_SOIL=CONFIG_FLAGS%MOSAIC_SOIL                   &
+     &          ,LANDUSEF=grid%landusef                                 &
+     &          ,SOILCTOP=grid%soilctop                                 &
 ! for URBAN
      &          ,NUM_ROOF_LAYERS=NUM_ROOF_LAYERS                        & ! urban
      &          ,NUM_WALL_LAYERS=NUM_WALL_LAYERS                        & ! urban

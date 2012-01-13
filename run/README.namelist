@@ -221,6 +221,12 @@ Namelist variables specifically for the WPS input for real:
                                                   default is option 1, the old MM5 method; option 2 uses a WMO 
                                                   recommended method (WMO-No. 49, corrigendum, August 2000) - 
                                                   there is a difference between the two methods though small
+ interp_theta                        = .false.  ; If set to .false., it will vertically interpolate temperature 
+                                                  instead of potential temperature, which may reduce bias when 
+                                                  compared with input data
+ hypsometric_opt                     = .false.  ; If set to .ture., it uses an alternative way (less biased 
+                                                  when compared agaist input data) to compute height in program 
+                                                  real and pressure in model (ARW only). 
  p_top_requested                     = 5000     ; p_top (Pa) to use in the model
  ptsgm                               = 42000.   ; FOR NMM:  defines the pressure interface dividing
                                                 ;           the terrain following portion of the hybrid vertical
@@ -397,6 +403,7 @@ Namelist variables for controlling the adaptive time step option:
                                           also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 4, rrtmg scheme
                                      = 5, Goddard longwave scheme
+                                     = 7, UCLA scheme 
                                      = 31, Earth Held-Suarez forcing
                                      = 99, GFDL (Eta) longwave (semi-supported)
                                           also must use co2tf = 1 for ARW
@@ -407,8 +414,9 @@ Namelist variables for controlling the adaptive time step option:
                                      = 2, Goddard short wave
                                      = 3, cam scheme
                                           also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
-                                     = 5, Goddard shortwave scheme
                                      = 4, rrtmg scheme
+                                     = 5, Goddard shortwave scheme
+                                     = 7, UCLA scheme
                                      = 99, GFDL (Eta) longwave (semi-supported)
                                           also must use co2tf = 1 for ARW
 
@@ -449,13 +457,16 @@ Namelist variables for controlling the adaptive time step option:
                                      = 5, MYNN surface layer
                                      = 7, Pleim-Xiu surface layer (ARW only)
                                      = 10, TEMF surface layer (ARW only)
+                                     = 11, Modified Monin-Obukhov scheme
 
  sf_surface_physics (max_dom)        land-surface option (old bl_surface_physics option)
                                      = 0, no surface temp prediction
                                      = 1, thermal diffusion scheme
                                      = 2, Unified Noah land-surface model
                                      = 3, RUC land-surface model
+                                     = 4, Noah Multi-Parameter model
                                      = 7, Pleim-Xiu LSM (ARW)
+                                     = 8, Simplified Simple Biosphere Model (SSiB)
 
  sf_urban_physics(max_dom)           = 0, ; activate urban canopy model (in Noah LSM only)
                                      = 0: no

@@ -182,6 +182,20 @@ How to compile and run?
       compile em_scm_xy
       compile em_tropical_cyclone
 
+  Notes: 1. If you are going to create model output file that is more than 2Gb,
+      you should consider using netCDF large file support function. To activate
+      this, one must set the environment variable WRFIO_NCD_LARGE_FILE_SUPPORT.
+      In c-shell environment, do
+
+      setenv WRFIO_NCD_LARGE_FILE_SUPPORT 1
+
+      2. Since V3.2, we support using multiple processors for compilation. The
+      default number of processors used is 2. But if you have any problem with
+      compilation, please try using one processor to compile. To do this, set
+      the following environment variable before compile:
+
+      setenv J "-j 1"
+
 - If sucessful, this will create either real.exe or ideal.exe and wrf.exe
   in directory main/, and the appropriate executables will be linked into
   the test directoires under test/case_name, or run/.

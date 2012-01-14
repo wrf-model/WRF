@@ -1071,6 +1071,9 @@
 !***********************************************************************
       SUBROUTINE DDAMP(NTSD,DT,DETA1,DETA2,PDSL,PDTOP,DIV,HBM2          &
      &                ,T,U,V,DDMPU,DDMPV                                &
+#ifdef HWRF
+     &                ,MOVE_COUNTDOWN,DAMP_GRID,DAMP_SCALE              &
+#endif
      &                ,IHE,IHW,IVE,IVW                                  &              
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
@@ -1126,6 +1129,12 @@
 !
       INTEGER,INTENT(IN) :: NTSD
 !
+#ifdef HWRF
+      INTEGER, INTENT(INOUT) :: MOVE_COUNTDOWN
+      REAL, INTENT(IN) :: DAMP_SCALE
+      REAL, DIMENSION(IMS:IME,JMS:JME), INTENT(IN) :: DAMP_GRID
+#endif
+!
       REAL,INTENT(IN) :: DT,PDTOP
 !
       REAL,DIMENSION(KMS:KME-1),INTENT(IN) :: DETA1,DETA2
@@ -1166,6 +1175,8 @@
 !
       FCXM=1.
 !
+!$omp parallel do
+!$omp& private(i,j)
       DO J=MYJS_P2,MYJE_P2
       DO I=MYIS_P2,MYIE_P2
         PDE (I,J)=PDSL(I,J)+PDTOP
@@ -1174,7 +1185,8 @@
       ENDDO
 !
       DO K=KTS,KTE
-!$omp parallel do
+!$omp parallel do                                                       &
+!$omp& private(i,j)
         DO J=MYJS_P2,MYJE_P2
         DO I=MYIS_P2,MYIE_P2
           DIVE(I,J)=DIV(I,J,K)*HBM2(I,J)+DIVE(I,J)
@@ -1183,9 +1195,14 @@
       ENDDO
 !
 !$omp parallel do                                                       &
-!$omp& private(i,j,rdpdx,rdpdy)
+!$omp& private(i,j,rdpdx,rdpdy,fcxm)
       DO J=MYJS2,MYJE2
       DO I=MYIS1_P1,MYIE1_P1
+#ifdef HWRF
+        IF(MOVE_COUNTDOWN>0) THEN
+           FCXM=1.0+MOVE_COUNTDOWN*DAMP_SCALE*DAMP_GRID(I,J)
+        ENDIF
+#endif
         RDPDX=DDMPU(I,J)*FCXM                                           &
      &       /(PDE(I+IVW(J),J)  +PDE(I+IVE(J),J))    
         RDPDY=DDMPV(I,J)*FCXM                                           &
@@ -1201,9 +1218,9 @@
       FCIM=1.
 !
 !$omp parallel do                                                       &
-!$omp& private(dpde,i,j,k,rdpdx,rdpdy)
+!$omp& private(dpde,i,j,k,rdpdx,rdpdy,fcim)
 !
-      DO K=KTS,KTE
+      fcim_loop: DO K=KTS,KTE
 !
 !-----------------------------------------------------------------------
 !
@@ -1216,6 +1233,11 @@
 !
         DO J=MYJS2,MYJE2
         DO I=MYIS1_P1,MYIE1_P1
+#ifdef HWRF
+        IF(MOVE_COUNTDOWN>0) THEN
+           FCIM=1.0+MOVE_COUNTDOWN*DAMP_SCALE*DAMP_GRID(I,J)
+        ENDIF
+#endif
           RDPDX=DDMPU(I,J)*FCIM                                        &
      &         /(DPDE(I+IVW(J),J)  +DPDE(I+IVE(J),J))
           RDPDY=DDMPV(I,J)*FCIM                                        &
@@ -1229,10 +1251,15 @@
 !
 !-----------------------------------------------------------------------
 !
-      ENDDO 
+      ENDDO fcim_loop
 !
 !-----------------------------------------------------------------------
 !
+
+#ifdef HWRF
+      if(MOVE_COUNTDOWN>0)  MOVE_COUNTDOWN=MOVE_COUNTDOWN-1
+#endif
+
       END SUBROUTINE DDAMP
 !
 !-----------------------------------------------------------------------

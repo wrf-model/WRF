@@ -272,33 +272,42 @@ contains
                            IMS,IME,JMS,JME,KMS,KME, &
                            ITS,ITE,JTS,JTE,KTS,KTE
     real :: dp2,dy2,dx2,pdiff,dp2max
-    integer :: i,j,nprint
+    integer :: i,j
     integer :: iadd
+
+#ifdef EXPENSIVE_HWRF_DEBUG_STUFF
     character*255 :: message
+    integer :: nprint
+
+    nprint=10
+#endif
     
     dy2=dy_nmm*dy_nmm*4
     dp2max=dpdr*dpdr
 
-    nprint=10
 
     do j=jts,min(jte,jde-1)
        iadd=mod(j,2)-1
        do i=its,min(ite,ide-1)
           noisetype: if(mslp(i,j)>pmax) then
+#ifdef EXPENSIVE_HWRF_DEBUG_STUFF
              if(nprint>0) then
 3088            format('MSLP(',I0,',',I0,') = ',F0.3,' > pmax = ',F0.3)
                 write(message,3088) i,j,mslp(i,j),pmax
                 call wrf_message(message)
                 nprint=nprint-1
              endif
+#endif
              noisy(i,j)=1
           elseif(mslp(i,j)<pmin) then
+#ifdef EXPENSIVE_HWRF_DEBUG_STUFF
              if(nprint>0) then
 3089            format('MSLP(',I0,',',I0,') = ',F0.3,' < pmin = ',F0.3)
                 write(message,3089) i,j,mslp(i,j),pmin
                 call wrf_message(message)
                 nprint=nprint-1
              endif
+#endif
              noisy(i,j)=1
           else
              dx2=dx_nmm(i,j)*dx_nmm(i,j)*4
@@ -309,12 +318,14 @@ contains
                 dp2=pdiff*pdiff/(dx2+dy2)
                 if(dp2>dp2max) then
                    noisy(i,j)=1
+#ifdef EXPENSIVE_HWRF_DEBUG_STUFF
                    if(nprint>0) then
 3091                  format('dpdr(',I0,',',I0,') in NE-SW dir = ',F0.5,' > dpdrmax = ',F0.5)
                       write(message,3091) i,j,sqrt(dp2),sqrt(dp2max)
                       call wrf_message(message)
                       nprint=nprint-1
                    endif
+#endif
                    cycle
                 endif
 
@@ -323,12 +334,14 @@ contains
                 dp2=pdiff*pdiff/(dx2+dy2)
                 if(dp2>dp2max) then
                    noisy(i,j)=1
+#ifdef EXPENSIVE_HWRF_DEBUG_STUFF
                    if(nprint>0) then
 3092                  format('dpdr(',I0,',',I0,') in SE-NW dir = ',F0.5,' > dpdrmax = ',F0.5)
                       write(message,3092) i,j,sqrt(dp2),sqrt(dp2max)
                       call wrf_message(message)
                       nprint=nprint-1
                    endif
+#endif
                    cycle
                 endif
              endif notbdy
@@ -431,7 +444,6 @@ contains
 
     ! Get the number of points in the X and Y directions along each
     ! row and column.
-write(0,*) 'GOT BEFORE XYCOUNT LOOPS'
     myxcount=0
     myycount=0
     do j=jps,min(jpe,jde-1)
@@ -448,30 +460,23 @@ write(0,*) 'GOT BEFORE XYCOUNT LOOPS'
           endif
        enddo
     enddo
-    do j=jps,min(jpe,jde-1)
-       write(0,'("myxcount(",I0,") = ",I0)') j,myxcount(j)
-    enddo
-    do i=ips,min(ipe,ide-1)
-       write(0,'("myycount(",I0,") = ",I0)') i,myycount(i)
-    enddo
 #ifdef DM_PARALLEL
-write(0,*) 'GOT TO X ALLREDUCE WITH N=',jpe-jps+1
     call MPI_Allreduce(myxcount,xcount,jpe-jps+1,MPI_INTEGER,MPI_SUM,local_communicator_x,ierr)
-write(0,*) 'GOT TO Y ALLREDUCE WITH N=',ipe-ips+1,' ierr=',ierr
     call MPI_Allreduce(myycount,ycount,ipe-ips+1,MPI_INTEGER,MPI_SUM,local_communicator_y,ierr)
-write(0,*) 'GOT PAST ALLREDUCE with ierr=',ierr
 #else
       xcount=myxcount
       ycount=myycount
 #endif
+#ifdef EXPENSIVE_HWRF_DEBUG_STUFF
     do j=jps,min(jpe,jde-1)
        write(message,'("xcount(",I0,") = ",I0)') j,xcount(j)
-       call wrf_debug(1,message)
+       call wrf_debug(5,message)
     enddo
     do i=ips,min(ipe,ide-1)
        write(message,'("ycount(",I0,") = ",I0)') i,ycount(i)
-       call wrf_debug(1,message)
+       call wrf_debug(5,message)
     enddo
+#endif EXPENSIVE_HWRF_DEBUG_STUFF
 
     ! Find maximum pressure if requested
     findpmax: if(searchpmax<0.0) then
@@ -490,7 +495,6 @@ write(0,*) 'GOT PAST ALLREDUCE with ierr=',ierr
     else
        pmax=searchpmax
     endif findpmax
-write(0,*) 'got past pmax'
     ! Find vortex location.
 
     xsum=0.0 ; ysum=0.0 ; xwsum=0.0 ; ywsum=0.0
@@ -498,7 +502,7 @@ write(0,*) 'got past pmax'
 
     if_pow_1: if(abs(searchpow-1.0)<1e-5) then
        ! Special copy of loop for exponent of 1, for efficiency
-       call wrf_message('got into pow=1 loop')
+       call wrf_debug(10,'got into pow=1 loop')
        do j = max(jds+2,jts), min(jte,jde-3)
           do i = max(ids+1,its), min(ite,ide-2)
              if(noisy(i,j)==0) then
@@ -523,7 +527,7 @@ write(0,*) 'got past pmax'
        enddo
     else
        if_sqrt: if(abs(searchpow-0.5)<1e-5) then
-          call wrf_message('got into pow=0.5 loop')
+          call wrf_debug(10,'got into pow=0.5 loop')
           do j = max(jds+2,jts), min(jte,jde-3)
              do i = max(ids+1,its), min(ite,ide-2)
                 if(noisy(i,j)==0) then
@@ -574,13 +578,12 @@ write(0,*) 'got past pmax'
     endif if_pow_1
 
     if(maxweight<=0) then
-       call wrf_message('No valid points found in this tile.')
+       call wrf_debug(1,'No valid points found in this tile.')
     else
        write(message,'("Max weight was ",F0.3)') maxweight
-       call wrf_message(message)
+       call wrf_debug(1,message)
     endif
 
-write(0,*) 'got past if pow 1'
     xwsum = wrf_dm_sum_real(xwsum)
     
     no_vortex: if(xwsum <= 0) then
@@ -601,9 +604,9 @@ write(0,*) 'got past if pow 1'
        centroid_x = xsum/xwsum
        centroid_y = ysum/ywsum
 
-383    format("XSUM=",F0.3," YSUM=",F0.3," XWSUM=",F0.3," YWSUM=",F0.3, &
-              " Center=(",I0,",",I0,")", &
-              " Centroid=(",F0.3,",",F0.3,")")
+ 383   format("XSUM=",F0.3," YSUM=",F0.3," XWSUM=",F0.3," YWSUM=",F0.3, &
+       " Center=(",I0,",",I0,")", &
+       " Centroid=(",F0.3,",",F0.3,")")
        write(message,383) xsum,ysum,xwsum,ywsum,cx,cy,centroid_x,centroid_y
        call wrf_message(message)
     endif no_vortex
@@ -626,13 +629,11 @@ write(0,*) 'got past if pow 1'
        enddo
     enddo
 
-write(0,*) 'got past no vortex'
     xdiff=abs(centroid_x-real(cx))/3.0
     ydiff=abs(centroid_y-real(cy))/6.0
     if(xdiff>=1. .or. ydiff>=1.) then
-       ! We have moved >1.25 parent gridpoints in X
-       ! or >2.5 parent gridpoints in Y, so trigger
-       ! a nest move:
+       ! We have moved >1 parent gridpoints in X or >2 parent
+       ! gridpoints in Y, so trigger a nest move:
        mvnest=.true.
        xloc=nint(centroid_x)
        yloc=nint(centroid_y)
@@ -773,7 +774,6 @@ write(0,*) 'got past no vortex'
 
     IMPLICIT NONE
     !
-    LOGICAL,EXTERNAL                                      :: wrf_dm_on_monitor
     LOGICAL,INTENT(INOUT)                                 :: MVNEST  ! NMM SWITCH FOR GRID MOTION
     LOGICAL,INTENT(IN)                                    :: MOVED
     INTEGER,INTENT(IN)                                    :: vortex_tracker
@@ -892,8 +892,10 @@ write(0,*) 'got past no vortex'
        XLOC = NXLOC
        YLOC = NYLOC
 
-       WRITE(0,*)'NEW CALC',NSUM1,NSUM2,NSUM3
-       WRITE(0,*)'XLOC,YLOC',NXLOC,XLOC,NYLOC,YLOC
+       WRITE(message,*)'NEW CALC',NSUM1,NSUM2,NSUM3
+       call wrf_debug(1,message)
+       WRITE(message,*)'XLOC,YLOC',NXLOC,XLOC,NYLOC,YLOC
+       call wrf_debug(1,message)
 
     endif hwrfx_tracker
     !   END HWRF-X TRACKER CODE ---------------------------------------------------
@@ -964,22 +966,28 @@ write(0,*) 'got past no vortex'
     elseif(vortex_tracker==1) then
        ! Using old HWRF tracker.  Decide if it wants to move.
        IF(DTMOVE .LE. 45 .OR. PGR .LE. 200.)THEN
-          WRITE(0,*)'SUSPEND MOTION: SMALL DTMOVE OR WEAK PGF:','DTMOVE=',DTMOVE,'PGR=',PGR
+          WRITE(message,*)'SUSPEND MOTION: SMALL DTMOVE OR WEAK PGF:','DTMOVE=',DTMOVE,'PGR=',PGR
+          call wrf_debug(1,message)
           MVNEST=.FALSE.                               ! SET STATIC GRID
        ELSE IF(STMP0 .GE. STMP1)THEN
-          WRITE(0,*)'SUSPEND MOTION: THERE IS NO VORTEX IN THE DOMAIN:','STMP0=',STMP0,'STMP1=',STMP1
+          WRITE(message,*)'SUSPEND MOTION: THERE IS NO VORTEX IN THE DOMAIN:','STMP0=',STMP0,'STMP1=',STMP1
+          call wrf_debug(1,message)
           MVNEST=.FALSE.
        ELSE IF(XDIFF .GT. 24 .OR. YDIFF .GT. 24)THEN
-          WRITE(0,*)'SUSPEND MOTION: LOST VORTEX ','DTMOVE=',DTMOVE,'XDIFF=',XDIFF,'YDIFF=',YDIFF
+          WRITE(message,*)'SUSPEND MOTION: LOST VORTEX ','DTMOVE=',DTMOVE,'XDIFF=',XDIFF,'YDIFF=',YDIFF
+          call wrf_debug(1,message)
           MVNEST=.FALSE.
        ELSE IF(SMOUT .LE. 0.2 .AND. XDIFF .GT. 12 .AND. YDIFF .GT. 12)THEN
-          WRITE(0,*)'SUSPEND MOTION: VORTEX LOST OVER LAND ','DTMOVE=',DTMOVE,'XDIFF=',XDIFF,'YDIFF=',YDIFF
+          WRITE(message,*)'SUSPEND MOTION: VORTEX LOST OVER LAND ','DTMOVE=',DTMOVE,'XDIFF=',XDIFF,'YDIFF=',YDIFF
+          call wrf_debug(1,message)
           MVNEST=.FALSE.
        ELSE IF(SMOUT .LE. 0.2 .AND. PGR .LE. 400.)THEN
-          WRITE(0,*)'SUSPEND MOTION: VORTEX WEAK OVER LAND ','SMOUT=',SMOUT,'PGR=',PGR
+          WRITE(message,*)'SUSPEND MOTION: VORTEX WEAK OVER LAND ','SMOUT=',SMOUT,'PGR=',PGR
+          call wrf_debug(1,message)
           MVNEST=.FALSE.
        ELSE IF(SMOUT .LE. 0.2 .AND. DTMOVE .GE. 1500)THEN
-          WRITE(0,*)'SUSPEND MOTION: STOP MOTION  OVER LAND','SMOUT=',SMOUT,'DTMOVE=',DTMOVE
+          WRITE(message,*)'SUSPEND MOTION: STOP MOTION  OVER LAND','SMOUT=',SMOUT,'DTMOVE=',DTMOVE
+          call wrf_debug(1,message)
           MVNEST=.FALSE.
        ELSE
           MVNEST=.TRUE.

@@ -19,6 +19,10 @@ CONTAINS
 
 END MODULE module_wrf_error
 
+! wrf_message: ordinary message
+!   Write to stderr to ensure immediate output
+!   Write to stdout for buffered output.
+!   When running in quiet mode (WRF_QUIETLY), stderr is disabled.
 SUBROUTINE wrf_message( str )
 #ifdef ESMFIO
   USE ESMF
@@ -26,7 +30,9 @@ SUBROUTINE wrf_message( str )
   IMPLICIT NONE
   CHARACTER*(*) str
 #if defined( DM_PARALLEL ) && ! defined( STUBMPI) 
+# if ! defined( WRF_QUIETLY )
   write(0,*) TRIM(str)
+# endif
 # ifdef _WIN32
   FLUSH(0)
 # endif
@@ -37,7 +43,11 @@ SUBROUTINE wrf_message( str )
   print*, TRIM(str)
 END SUBROUTINE wrf_message
 
-! intentionally write to stderr only
+! Intentionally write to stderr only
+! This is set to stderr, even in quiet mode (WRF_QUIETLY), because
+! it is used for potentially fatal error or warning messages and
+! we want the message to get to the log file before any crash 
+! or MPI_Abort happens.
 SUBROUTINE wrf_message2( str )
 #ifdef ESMFIO
   USE ESMF
@@ -66,7 +76,39 @@ SUBROUTINE wrf_error_fatal3( file_str, line, str )
   CHARACTER*256 :: line_str
 
   write(line_str,'(i6)') line
-#if defined( DM_PARALLEL ) && ! defined( STUBMPI )
+
+#if defined(WRF_QUIETLY)
+ ! ------------------------- QUIET MODE ERRORS -------------------------
+ ! In quiet mode, print to stderr, then stdout.  Fatal errors are
+ ! intentionally not quiet.  Two calls are needed since wrf_message
+ ! only sends to stdout in quiet mode.  Note that MPI and non-MPI
+ ! quiet modes are both handled here.
+
+  CALL wrf_message2( '-------------- FATAL CALLED ---------------' )
+  CALL wrf_message( '-------------- FATAL CALLED ---------------' )
+  ! only print file and line if line is positive
+  IF ( line > 0 ) THEN
+    CALL wrf_message2( 'FATAL CALLED FROM FILE:  '//file_str//'  LINE:  '//TRIM(line_str) )
+    CALL wrf_message( 'FATAL CALLED FROM FILE:  '//file_str//'  LINE:  '//TRIM(line_str) )
+  ENDIF
+  CALL wrf_message2( trim(str) )
+  CALL wrf_message( str )
+  CALL wrf_message2( '-------------------------------------------' )
+  CALL wrf_message( '-------------------------------------------' )
+
+  ! Flush stdout, otherwise some messages may not be printed since
+  ! stdout is usually buffered
+  flush(6)
+
+  ! Flush stderr just in case
+  flush(0)
+#else
+
+# if defined( DM_PARALLEL ) && ! defined( STUBMPI )
+  ! -------------------------- MPI MODE ERRORS --------------------------
+  ! In non-quiet MPI mode, print to stdout and stderr, but we only
+  ! need a single wrf_message call for this.
+
   CALL wrf_message( '-------------- FATAL CALLED ---------------' )
   ! only print file and line if line is positive
   IF ( line > 0 ) THEN
@@ -74,7 +116,10 @@ SUBROUTINE wrf_error_fatal3( file_str, line, str )
   ENDIF
   CALL wrf_message( str )
   CALL wrf_message( '-------------------------------------------' )
-#else
+
+# else
+  ! ------------------------ NON-MPI MODE ERRORS ------------------------
+  ! In non-MPI, non-quiet mode, send everything to stderr, except for
   CALL wrf_message2( '-------------- FATAL CALLED ---------------' )
   ! only print file and line if line is positive
   IF ( line > 0 ) THEN
@@ -82,6 +127,7 @@ SUBROUTINE wrf_error_fatal3( file_str, line, str )
   ENDIF
   CALL wrf_message2( str )
   CALL wrf_message2( '-------------------------------------------' )
+# endif
 #endif
 #ifdef ESMFIO
 ! 5.2.0r  CALL esmf_finalize(terminationflag=ESMF_ABORT)

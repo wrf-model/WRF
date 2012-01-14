@@ -79,7 +79,7 @@ CONTAINS
       elapsed_seconds_total = elapsed_seconds_total + elapsed_seconds
 
       WRITE(6,'(A,A,A,F10.5,A)') 'Timing for ',TRIM(string),': ',elapsed_seconds,' elapsed seconds.'
-#if defined(DM_PARALLEL) && ! defined(STUBMPI)
+#if defined(DM_PARALLEL) && ! defined(STUBMPI) && !defined(WRF_QUIETLY)
       WRITE(0,'(A,A,A,F10.5,A)') 'Timing for ',TRIM(string),': ',elapsed_seconds,' elapsed seconds.'
 #endif
 

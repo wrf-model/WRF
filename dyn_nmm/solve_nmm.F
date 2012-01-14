@@ -560,7 +560,8 @@
 
             imid=(its+ite)/2   ;   jmid=(jts+jte)/2
 
-            write(0,'(A,": random(",I0,",",I0,") = ",E15.10)') 'before call',imid,jmid,grid%random(imid,jmid)
+            write(message,'(A,": random(",I0,",",I0,") = ",E15.10)') 'before call',imid,jmid,grid%random(imid,jmid)
+            call wrf_debug(3,message)
 
             call rand_grid_r4(grid%randstate1,grid%randstate2, &
                               grid%randstate3,grid%randstate4, &
@@ -569,7 +570,8 @@
                               IMS,IME,JMS,JME,one,one, &
                               ITS,ITE,JTS,JTE,one,one)
 
-            write(0,'(A,": random(",I0,",",I0,") = ",E15.10)') 'after call',imid,jmid,grid%random(imid,jmid)
+            write(message,'(A,": random(",I0,",",I0,") = ",E15.10)') 'after call',imid,jmid,grid%random(imid,jmid)
+            call wrf_debug(3,message)
 
             call end_timing('Updating random numbers')
          ENDIF    ! for IF(IDT.EQ.0 .OR. NTSD .EQ. 0)
@@ -2189,11 +2191,15 @@
 !
       btimx=timef()
 !
-      CALL DDAMP(grid%ntsd,GRID%DT,grid%deta1,grid%deta2,grid%pdsl,grid%pdtop,grid%div,grid%hbm2          &
-     &          ,grid%t,grid%u,grid%v,grid%ddmpu,grid%ddmpv                                     &
-     &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                       &
-     &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
-     &          ,IMS,IME,JMS,JME,KMS,KME                               &
+      CALL DDAMP(grid%ntsd,GRID%DT,grid%deta1,grid%deta2,grid%pdsl      &
+     &          ,grid%pdtop,grid%div,grid%hbm2                          &
+     &          ,grid%t,grid%u,grid%v,grid%ddmpu,grid%ddmpv             &
+#ifdef HWRF
+     &          ,grid%MOVE_COUNTDOWN,grid%DAMP_GRID,grid%DAMP_SCALE     &
+#endif
+     &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                    &
+     &          ,IDS,IDF,JDS,JDF,KDS,KDE                                &
+     &          ,IMS,IME,JMS,JME,KMS,KME                                &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
       ddamp_tim=ddamp_tim+timef()-btimx
@@ -2401,7 +2407,7 @@
 !    This is gopal's doing
 
      IF(grid%id .EQ. 1 .AND. MOD(grid%NTSD,n_print_time)==0)THEN
-      WRITE(0,*)'COMPUTING MSLP OVER THE PARENT DOMAIN'
+      call wrf_debug(1,'COMPUTING MSLP OVER THE PARENT DOMAIN')
 
       CALL MSLP_DIAG (grid%MSLP,grid%PINT,grid%T,grid%Q                &
                      ,grid%FIS,grid%PD,grid%DETA1,grid%DETA2,grid%PDTOP     &

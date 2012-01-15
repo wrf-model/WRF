@@ -2237,7 +2237,7 @@ BENCH_END(small_step_finish_tim)
 
            IF (grid%adv_moist_cond .or. im==p_qv ) THEN
 
-             !IF ( rk_step == 1 ) CALL push4backup (grid%alt,grid%xkhh, "alt,xkhh")
+             IF ( rk_step == 1 ) CALL push4backup (grid%alt,grid%xkhh, "alt,xkhh")
              !CALL push4backup (grid%mu_1,grid%muts, "mu_1,muts")
              !CALL push4backup (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
              CALL PUSHREAL8ARRAY ( grid%ru_m, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
@@ -5502,7 +5502,7 @@ BENCH_START(adj_rk_scalar_tend_tim)
                CALL POPREAL8ARRAY ( grid%ru_m, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
                !CALL pop2restore (grid%ru_m,grid%rv_m,grid%ww_m, "ru_m,rv_m,ww_m")
                !CALL pop2restore (grid%mu_1,grid%muts, "mu_1,muts")
-               !IF ( rk_step == 1 ) CALL pop2restore (grid%alt,grid%xkhh, "alt,xkhh")
+               IF ( rk_step == 1 ) CALL pop2restore (grid%alt,grid%xkhh, "alt,xkhh")
                CALL a_rk_scalar_tend (  im, im, config_flags, tenddec,       &
                            rk_step, dt_rk,                                   &
                            grid%ru_m, grid%a_ru_m, &

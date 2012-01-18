@@ -2405,6 +2405,14 @@
 !***  DEEP (PRECIPITATING) CONVECTION.
 !
       CF_HI=CONFIG_FLAGS%HISTORY_INTERVAL
+
+      if(CF_HI<1e-5) then
+         CF_HI = config_flags%history_interval_s/60.   &
+               + config_flags%history_interval_m       &
+               + config_flags%history_interval_h*3600. &
+               + config_flags%history_interval_d*3600.*24.
+      endif
+
       N_TIMSTPS_OUTPUT=NINT(60.*CF_HI/DT)
       MNTO=MOD(NTSD,N_TIMSTPS_OUTPUT)
 !

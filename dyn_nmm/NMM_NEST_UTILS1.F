@@ -2489,137 +2489,146 @@ SUBROUTINE BASE_STATE_PARENT ( Z3d,Q3d,T3d,PSTD,        &
 
 END SUBROUTINE BASE_STATE_PARENT
 !=============================================================================
-SUBROUTINE SPLINE1(I,J,JTBX,NOLD,XOLD,YOLD,Y2,NNEW,XNEW,YNEW,P,Q)
-  !
-  !   ******************************************************************
-  !   *                                                                *
-  !   *  THIS IS A ONE-DIMENSIONAL CUBIC SPLINE FITTING ROUTINE        *
-  !   *  PROGRAMED FOR A SMALL SCALAR MACHINE.                         *
-  !   *                                                                *
-  !   *  PROGRAMER Z. JANJIC                                           *
-  !   *                                                                *
-  !   *  NOLD - NUMBER OF GIVEN VALUES OF THE FUNCTION.  MUST BE GE 3. *
-  !   *  XOLD - LOCATIONS OF THE POINTS AT WHICH THE VALUES OF THE     *
-  !   *         FUNCTION ARE GIVEN.  MUST BE IN ASCENDING ORDER.       *
-  !   *  YOLD - THE GIVEN VALUES OF THE FUNCTION AT THE POINTS XOLD.   *
-  !   *  Y2   - THE SECOND DERIVATIVES AT THE POINTS XOLD.  IF NATURAL *
-  !   *         SPLINE IS FITTED Y2(1)=0. AND Y2(NOLD)=0. MUST BE      *
-  !   *         SPECIFIED.                                             *
-  !   *  NNEW - NUMBER OF VALUES OF THE FUNCTION TO BE CALCULATED.     *
-  !   *  XNEW - LOCATIONS OF THE POINTS AT WHICH THE VALUES OF THE     *
-  !   *         FUNCTION ARE CALCULATED.  XNEW(K) MUST BE GE XOLD(1)   *
-  !   *         AND LE XOLD(NOLD).                                     *
-  !   *  YNEW - THE VALUES OF THE FUNCTION TO BE CALCULATED.           *
-  !   *  P, Q - AUXILIARY VECTORS OF THE LENGTH NOLD-2.                *
-  !   *                                                                *
-  !   ******************************************************************
-  !---------------------------------------------------------------------
-  IMPLICIT NONE
-  !---------------------------------------------------------------------
-  INTEGER,INTENT(IN) :: I,J,JTBX,NNEW,NOLD
-  REAL,DIMENSION(JTBX),INTENT(IN) :: XNEW,XOLD,YOLD
-  REAL,DIMENSION(JTBX),INTENT(INOUT) :: P,Q,Y2
-  REAL,DIMENSION(JTBX),INTENT(OUT) :: YNEW
-  !
-  INTEGER :: II,JJ,K,K1,K2,KOLD,NOLDM1
-  REAL :: AK,BK,CK,DEN,DX,DXC,DXL,DXR,DYDXL,DYDXR                 &
-       ,RDX,RTDXC,X,XK,XSQ,Y2K,Y2KP1
-  LOGICAL :: found
-  !---------------------------------------------------------------------
+      SUBROUTINE SPLINE1(I,J,JTBX,NOLD,XOLD,YOLD,Y2,NNEW,XNEW,YNEW,P,Q)
+!
+!   ******************************************************************
+!   *                                                                *
+!   *  THIS IS A ONE-DIMENSIONAL CUBIC SPLINE FITTING ROUTINE        *
+!   *  PROGRAMED FOR A SMALL SCALAR MACHINE.                         *
+!   *                                                                *
+!   *  PROGRAMER Z. JANJIC                                           *
+!   *                                                                *
+!   *  NOLD - NUMBER OF GIVEN VALUES OF THE FUNCTION.  MUST BE GE 3. *
+!   *  XOLD - LOCATIONS OF THE POINTS AT WHICH THE VALUES OF THE     *
+!   *         FUNCTION ARE GIVEN.  MUST BE IN ASCENDING ORDER.       *
+!   *  YOLD - THE GIVEN VALUES OF THE FUNCTION AT THE POINTS XOLD.   *
+!   *  Y2   - THE SECOND DERIVATIVES AT THE POINTS XOLD.  IF NATURAL *
+!   *         SPLINE IS FITTED Y2(1)=0. AND Y2(NOLD)=0. MUST BE      *
+!   *         SPECIFIED.                                             *
+!   *  NNEW - NUMBER OF VALUES OF THE FUNCTION TO BE CALCULATED.     *
+!   *  XNEW - LOCATIONS OF THE POINTS AT WHICH THE VALUES OF THE     *
+!   *         FUNCTION ARE CALCULATED.  XNEW(K) MUST BE GE XOLD(1)   *
+!   *         AND LE XOLD(NOLD).                                     *
+!   *  YNEW - THE VALUES OF THE FUNCTION TO BE CALCULATED.           *
+!   *  P, Q - AUXILIARY VECTORS OF THE LENGTH NOLD-2.                *
+!   *                                                                *
+!   ******************************************************************
+!---------------------------------------------------------------------
+      IMPLICIT NONE
+!---------------------------------------------------------------------
+      INTEGER,INTENT(IN) :: I,J,JTBX,NNEW,NOLD
+      REAL,DIMENSION(JTBX),INTENT(IN) :: XNEW,XOLD,YOLD
+      REAL,DIMENSION(JTBX),INTENT(INOUT) :: P,Q,Y2
+      REAL,DIMENSION(JTBX),INTENT(OUT) :: YNEW
+!
+      INTEGER :: II,JJ,K,K1,K2,KOLD,NOLDM1
+      REAL :: AK,BK,CK,DEN,DX,DXC,DXL,DXR,DYDXL,DYDXR                 &
+             ,RDX,RTDXC,X,XK,XSQ,Y2K,Y2KP1
+      CHARACTER(LEN=255) :: message
+!---------------------------------------------------------------------
 
-  !     debug
+!     debug
 
-  II=9999
-  JJ=9999
-  !
-  NOLDM1=NOLD-1
-  !
-  DXL=XOLD(2)-XOLD(1)
-  DXR=XOLD(3)-XOLD(2)
-  DYDXL=(YOLD(2)-YOLD(1))/DXL
-  DYDXR=(YOLD(3)-YOLD(2))/DXR
-  RTDXC=0.5/(DXL+DXR)
-  !
-  P(1)= RTDXC*(6.*(DYDXR-DYDXL)-DXL*Y2(1))
-  Q(1)=-RTDXC*DXR
-  !
-  loop100: do k=3,nold-1
-     DXL=DXR
-     DYDXL=DYDXR
-     DXR=XOLD(K+1)-XOLD(K)
-     DYDXR=(YOLD(K+1)-YOLD(K))/DXR
-     DXC=DXL+DXR
-     DEN=1./(DXL*Q(K-2)+DXC+DXC)
+      II=9999 !67 !35 !50   !4
+      JJ=9999 !31 !73 !115  !192
+#if defined(EXPENSIVE_HWRF_DEBUG_STUFF)
+      IF(I.eq.II.and.J.eq.JJ)THEN
+        WRITE(message,*)'DEBUG in SPLINE1:HSO= ',xnew(1:nold)
+        CALL wrf_debug(1,trim(message))
+        DO K=1,NOLD
+         WRITE(message,*)'DEBUG in SPLINE1:L,ZETAI,PINTI= ' &
+                        ,K,YOLD(K),XOLD(K)
+         CALL wrf_debug(1,trim(message))
+        ENDDO 
+      ENDIF 
+#endif
 
-     P(K-1)= DEN*(6.*(DYDXR-DYDXL)-DXL*P(K-2))
-     Q(K-1)=-DEN*DXR
-  enddo loop100
+!
+      NOLDM1=NOLD-1
+!
+      DXL=XOLD(2)-XOLD(1)
+      DXR=XOLD(3)-XOLD(2)
+      DYDXL=(YOLD(2)-YOLD(1))/DXL
+      DYDXR=(YOLD(3)-YOLD(2))/DXR
+      RTDXC=0.5/(DXL+DXR)
+!
+      P(1)= RTDXC*(6.*(DYDXR-DYDXL)-DXL*Y2(1))
+      Q(1)=-RTDXC*DXR
+!
+      IF(NOLD.EQ.3)GO TO 150
+!---------------------------------------------------------------------
+      K=3
+!
+  100 DXL=DXR
+      DYDXL=DYDXR
+      DXR=XOLD(K+1)-XOLD(K)
+      DYDXR=(YOLD(K+1)-YOLD(K))/DXR
+      DXC=DXL+DXR
+      DEN=1./(DXL*Q(K-2)+DXC+DXC)
+!
+      P(K-1)= DEN*(6.*(DYDXR-DYDXL)-DXL*P(K-2))
+      Q(K-1)=-DEN*DXR
+!
+      K=K+1
+      IF(K.LT.NOLD)GO TO 100
+!-----------------------------------------------------------------------
+  150 K=NOLDM1
+!
+  200 Y2(K)=P(K-1)+Q(K-1)*Y2(K+1)
+!
+      K=K-1
+      IF(K.GT.1)GO TO 200
+!-----------------------------------------------------------------------
+      K1=1
+!
+  300 XK=XNEW(K1)
+!
+      DO 400 K2=2,NOLD
+!
+      IF(XOLD(K2).GT.XK)THEN
+        KOLD=K2-1
+        GO TO 450
+      ENDIF
+!
+  400 CONTINUE
+!
+      YNEW(K1)=YOLD(NOLD)
+      GO TO 600
+!
+  450 IF(K1.EQ.1)GO TO 500
+      IF(K.EQ.KOLD)GO TO 550
+!
+  500 K=KOLD
+!
+      Y2K=Y2(K)
+      Y2KP1=Y2(K+1)
+      DX=XOLD(K+1)-XOLD(K)
+      RDX=1./DX
+!
+      AK=.1666667*RDX*(Y2KP1-Y2K)
+      BK=0.5*Y2K
+      CK=RDX*(YOLD(K+1)-YOLD(K))-.1666667*DX*(Y2KP1+Y2K+Y2K)
+!
+  550 X=XK-XOLD(K)
+      XSQ=X*X
+!
+      YNEW(K1)=AK*XSQ*X+BK*XSQ+CK*X+YOLD(K)
 
-  loop200: do k=noldm1,2,-1
-     Y2(K)=P(K-1)+Q(K-1)*Y2(K+1)
-  enddo loop200
+!  debug
 
-  !-----------------------------------------------------------------------
+#if defined(EXPENSIVE_HWRF_DEBUG_STUFF)
+      if(i.eq.ii.and.j.eq.jj)then
+        write(message,*) 'DEBUG:: k1,xnew(k1),ynew(k1): ', k1,xnew(k1),ynew(k1)
+        CALL wrf_debug(1,trim(message))
+      endif
+#endif
 
-  k=1
-  loop300: do K1=1,NNEW
-     !
-     XK=XNEW(K1)
+!
+  600 K1=K1+1
+      IF(K1.LE.NNEW)GO TO 300
 
-     if(XK<=XOLD(1)) then
-        ! Maintain erroneous old behavior
-        kold=1
-        found=.true.
-     elseif(XK>=XOLD(NOLD)) then
-        found=.false.
-     else
-        before=1
-        after=NOLD
-        
-        binsearch: do
-           if(before+1==after) then
-              xold=before
-              exit binsearch
-           endif
-           
-           middle=(after+before)/2
-           if(xk>xold(middle)) then
-              before=middle
-           else
-              after=middle
-           endif
-        enddo binsearch
-        found=.true.
-     endif
-     
-     iffound: if(.not.found) then
-        YNEW(K1)=YOLD(NOLD)
-     else
-        if(k1==1 .or. k.ne.kold) then
-           K=KOLD
-
-           Y2K=Y2(K)
-           Y2KP1=Y2(K+1)
-           DX=XOLD(K+1)-XOLD(K)
-           RDX=1./DX
-
-           AK=.1666667*RDX*(Y2KP1-Y2K)
-           BK=0.5*Y2K
-           CK=RDX*(YOLD(K+1)-YOLD(K))-.1666667*DX*(Y2KP1+Y2K+Y2K)
-        endif
-        X=XK-XOLD(K)
-        XSQ=X*X
-
-        YNEW(K1)=AK*XSQ*X+BK*XSQ+CK*X+YOLD(K)
-     endif iffound
-  enddo loop300
-
-!     tock=tock+1
-
-     
-!   write(6,*) 'spline2 tick/tock = ',real(tick)/real(tock)
-
-END SUBROUTINE SPLINE1
+      RETURN
+      END SUBROUTINE SPLINE1
 !---------------------------------------------------------------------
 
 SUBROUTINE NEST_TERRAIN ( nest, config_flags )

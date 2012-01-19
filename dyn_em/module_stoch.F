@@ -368,20 +368,28 @@ contains
           ENDDO
         ENDDO
       ELSE
-        CALL RANDOM_NUMBER(ZRANDNOSS1)
-        CALL RANDOM_NUMBER(ZRANDNOSC1)
-        CALL RANDOM_NUMBER(ZRANDNOSS2)
-        CALL RANDOM_NUMBER(ZRANDNOSC2)
+        DO IK=jds,jde
+          DO IL=ids,ide
+            CALL RANDOM_NUMBER(z)
+            ZRANDNOSS1(IL,IK)=z-0.5
+            CALL RANDOM_NUMBER(z)
+            ZRANDNOSC1(IL,IK)=z-0.5
+            CALL RANDOM_NUMBER(z)
+            ZRANDNOSS2(IL,IK)=z-0.5
+            CALL RANDOM_NUMBER(z)
+            ZRANDNOSC2(IL,IK)=z-0.5
+          ENDDO
+        ENDDO
       ENDIF
 
 !     Note: There are symmetries and anti-symmetries to ensure real-valued back transforms
       DO IK=jts,jte
       if (IK.le.(KMAX/2)) then
         DO IL=its,ite
-          SPSTREAMFORCC(IL,IK)  = (1.-ALPH)*SPSTREAMFORCC(IL,IK) + SPSTREAM_AMP(IL,IK)*(ZRANDNOSC1(IL,IK)-0.5)
-          SPSTREAMFORCS(IL,IK)  = (1.-ALPH)*SPSTREAMFORCS(IL,IK) + SPSTREAM_AMP(IL,IK)*(ZRANDNOSS1(IL,IK)-0.5)
-          SPTFORCC(IL,IK)       = (1.-ALPH)*SPTFORCC(IL,IK)      + SPT_AMP(IL,IK)     *(ZRANDNOSC2(IL,IK)-0.5)
-          SPTFORCS(IL,IK)       = (1.-ALPH)*SPTFORCS(IL,IK)      + SPT_AMP(IL,IK)     *(ZRANDNOSS2(IL,IK)-0.5)
+          SPSTREAMFORCC(IL,IK)  = (1.-ALPH)*SPSTREAMFORCC(IL,IK) + SPSTREAM_AMP(IL,IK)*(ZRANDNOSC1(IL,IK))
+          SPSTREAMFORCS(IL,IK)  = (1.-ALPH)*SPSTREAMFORCS(IL,IK) + SPSTREAM_AMP(IL,IK)*(ZRANDNOSS1(IL,IK))
+          SPTFORCC(IL,IK)       = (1.-ALPH)*SPTFORCC(IL,IK)      + SPT_AMP(IL,IK)     *(ZRANDNOSC2(IL,IK))
+          SPTFORCS(IL,IK)       = (1.-ALPH)*SPTFORCS(IL,IK)      + SPT_AMP(IL,IK)     *(ZRANDNOSS2(IL,IK))
         ENDDO
       endif
       ENDDO
@@ -391,22 +399,22 @@ contains
         DO IL=its,ite
         if (IL>1) then
           SPSTREAMFORCC(IL,IK)=   (1.-ALPH)*      SPSTREAMFORCC(IL,IK) + &
-                                                  SPSTREAM_AMP(IL,IK) * (ZRANDNOSC1(LMAX-IL+2,KMAX-IK+2)-0.5)
+                                                  SPSTREAM_AMP(IL,IK) * ZRANDNOSC1(LMAX-IL+2,KMAX-IK+2)
           SPSTREAMFORCS(IL,IK)= -((1.-ALPH)*(-1.0*SPSTREAMFORCS(IL,IK))+ & 
-                                                  SPSTREAM_AMP(IL,IK) * (ZRANDNOSS1(LMAX-IL+2,KMAX-IK+2)-0.5))
+                                                  SPSTREAM_AMP(IL,IK) * ZRANDNOSS1(LMAX-IL+2,KMAX-IK+2))
           SPTFORCC(IL,IK)=   (1.-ALPH)*      SPTFORCC(IL,IK) + &
-                                                  SPT_AMP(IL,IK) * (ZRANDNOSC2(LMAX-IL+2,KMAX-IK+2)-0.5)
+                                                  SPT_AMP(IL,IK) * ZRANDNOSC2(LMAX-IL+2,KMAX-IK+2)
           SPTFORCS(IL,IK)= -((1.-ALPH)*(-1.0*SPTFORCS(IL,IK))+ & 
-                                                  SPT_AMP(IL,IK) * (ZRANDNOSS2(LMAX-IL+2,KMAX-IK+2)-0.5))
+                                                  SPT_AMP(IL,IK) * ZRANDNOSS2(LMAX-IL+2,KMAX-IK+2))
         else
           SPSTREAMFORCC(1,IK) =   (1.-ALPH) *     SPSTREAMFORCC(1,IK)  + & 
-                                                  SPSTREAM_AMP(1,IK)  * (ZRANDNOSC1(1,KMAX-IK+2)-0.5)
+                                                  SPSTREAM_AMP(1,IK)  * ZRANDNOSC1(1,KMAX-IK+2)
           SPSTREAMFORCS(1,IK) = -((1.-ALPH)*(-1.0*SPSTREAMFORCS(1,IK))+ & 
-                                                  SPSTREAM_AMP(1,IK)  * (ZRANDNOSS1(1,KMAX-IK+2)-0.5))
+                                                  SPSTREAM_AMP(1,IK)  * ZRANDNOSS1(1,KMAX-IK+2))
           SPTFORCC(1,IK) =   (1.-ALPH) *     SPTFORCC(1,IK)  + & 
-                                                  SPT_AMP(1,IK)  * (ZRANDNOSC2(1,KMAX-IK+2)-0.5)
+                                                  SPT_AMP(1,IK)  * ZRANDNOSC2(1,KMAX-IK+2)
           SPTFORCS(1,IK) = -((1.-ALPH)*(-1.0*SPTFORCS(1,IK))+ & 
-                                                  SPT_AMP(1,IK)  * (ZRANDNOSS2(1,KMAX-IK+2)-0.5))
+                                                  SPT_AMP(1,IK)  * ZRANDNOSS2(1,KMAX-IK+2))
          endif
        ENDDO
      endif

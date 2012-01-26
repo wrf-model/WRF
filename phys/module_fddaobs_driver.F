@@ -66,7 +66,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
 
 !-----------------------------------------------------------------------
   USE module_domain
-  USE module_bc
+  ! USE module_bc  seems to not be needed
   USE module_model_constants, ONLY : g, rcp
   USE module_fddaobs_rtfdda
 

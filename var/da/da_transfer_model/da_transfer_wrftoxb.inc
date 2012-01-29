@@ -596,21 +596,20 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
             grid%xb%u(i,j,kts), grid%xb%v(i,j,kts), &
 #endif
             grid%xb%p(i,j,kts+1), grid%xb%t(i,j,kts+1), grid%xb%q(i,j,kts+1), &
-            height,  grid%xb%rough(i,j),grid%xb%xland(i,j), &
+            height,  grid%xb%rough(i,j),grid%xb%xland(i,j), grid%xb%ds, & ! Modified by Eric Chiang (NOV 2010) 
             grid%xb%u10(i,j), grid%xb%v10(i,j), grid%xb%t2(i,j), &
             grid%xb%q2(i,j), grid%xb%regime(i,j))
+  
+            grid%xb%u10(i,j) = grid%u10(i,j)         ! Add by Eric Chiang (NOV 2010)
+            grid%xb%v10(i,j) = grid%v10(i,j)         ! Add by Eric Chiang (NOV 2010)
+            grid%xb%t2(i,j) = grid%t2(i,j)           ! Add by Eric Chiang (NOV 2010)
+            grid%xb%q2(i,j) = grid%q2(i,j)           ! Add by Eric Chiang (NOV 2010)
+
       end do
    end do
 
    end do
    !$OMP END PARALLEL DO
-
-   if ( var4d ) then ! for 4dvar, we use these variables from model
-      grid%xb%u10 = grid%u10
-      grid%xb%v10 = grid%v10
-      grid%xb%t2 = grid%t2
-      grid%xb%q2 = grid%q2
-   endif
 
 #ifdef VAR4D
    CALL set_physical_bc2d( grid%xb%grid_box_area, 't', config_flags, &

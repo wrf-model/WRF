@@ -458,7 +458,7 @@ subroutine da_transfer_xatowrf(grid)
          call da_sfc_wtq(grid%psfc(i,j), grid%tsk(i,j), &
             ps1, ts1, qv1, uu, vv, &
             ps2, ts2, qv2, &
-            height,  grid%xb%rough(i,j),grid%xb%xland(i,j), &
+            height,  grid%xb%rough(i,j),grid%xb%xland(i,j), grid%xb%ds, &
             grid%u10(i,j), grid%v10(i,j), grid%t2(i,j), &
             grid%q2(i,j), grid%xb%regime(i,j))
          grid%th2(i,j) = grid%t2(i,j)*(base_pres/ps1)**kappa

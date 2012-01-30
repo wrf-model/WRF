@@ -94,6 +94,7 @@ MODULES = \
 	module_sf_slab.o  \
 	module_sf_noahdrv.o  \
 	module_sf_noahlsm.o  \
+        module_sf_ssib.o  \
 	module_sf_noah_seaice.o \
 	module_sf_noah_seaice_drv.o \
 	module_sf_noahlsm_glacial_only.o \
@@ -375,6 +376,8 @@ module_sf_noahdrv.o: module_sf_noahlsm.o module_data_gocart_dust.o \
 
 module_sf_noahlsm.o: ../share/module_model_constants.o
 
+module_sf_ssib.o: ../share/module_model_constants.o  
+
 module_sf_noah_seaice_drv.o:	module_sf_noah_seaice.o
 
 module_sf_noah_seaice.o: 	module_sf_noahlsm.o ../share/module_model_constants.o
@@ -441,13 +444,14 @@ module_physics_init.o : \
 		module_sf_pxsfclay.o		\
 		module_sf_noahlsm.o		\
 		module_sf_noahdrv.o		\
+                module_sf_ssib.o                \
 		module_sf_noahmplsm.o		\
 		module_sf_noahmpdrv.o		\
                 module_sf_bep.o                 \
                 module_sf_bep_bem.o             \
 		module_sf_ruclsm.o		\
 		module_sf_pxlsm.o		\
-		module_bl_ysu.o			\
+		module_bl_ysu.o		        \
 		module_bl_mrf.o			\
 		module_bl_gfs.o			\
 		module_bl_acm.o			\
@@ -690,6 +694,7 @@ module_surface_driver.o: \
 		module_sf_gfs.o  		\
 		module_sf_noah_seaice_drv.o	\
 		module_sf_noahdrv.o		\
+                module_sf_ssib.o                \
 		module_sf_noahmpdrv.o		\
 		module_sf_ruclsm.o		\
 		module_sf_pxlsm.o		\

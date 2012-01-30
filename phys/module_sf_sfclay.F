@@ -811,7 +811,7 @@ CONTAINS
 !-----COMPUTE SURFACE MOIST FLUX:                                               
 !
 !     IF(IDRY.EQ.1)GOTO 390
-     IF ( PRESENT(ISFTCFLX) ) THEN
+     IF ( PRESENT(SCM_FORCE_FLUX) ) THEN
         IF (SCM_FORCE_FLUX.EQ.1) GOTO 405                                     
      ENDIF
 !                                                                               

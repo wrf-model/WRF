@@ -287,7 +287,7 @@ CONTAINS
 !
 
 
-   INTEGER,    INTENT(IN   )    ::     bl_pbl_physics, ra_lw_physics,sf_sfclay_physics,sf_urban_physics 
+   INTEGER,    INTENT(IN   )    ::     bl_pbl_physics, ra_lw_physics,sf_sfclay_physics,sf_urban_physics
 
    INTEGER,    INTENT(IN   )    ::     ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
@@ -975,6 +975,7 @@ CONTAINS
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                 PRESENT( rqiblten )                           .AND. &
                 PRESENT( hol      ) ) THEN
+!
              CALL ysu(                                              &
                U3D=u_phytmp,V3D=v_phytmp,TH3D=th_phy,T3D=t_phy      &
               ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
@@ -1052,7 +1053,7 @@ CONTAINS
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
-                                                                    )
+                                                                    ) 
            ELSE
                WRITE ( message , FMT = '(A,5(L1,1X))' )             &
                  'present: '//                                      &

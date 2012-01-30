@@ -13,6 +13,7 @@ MODULE module_physics_init
    USE module_state_description
    USE module_model_constants
    USE module_configure, ONLY : grid_config_rec_type
+!  USE module_ssib_veg , ONLY : init_module_ssib_veg !fds (SSiB constants)
 
 CONTAINS
 
@@ -916,10 +917,12 @@ integer myproc
         IF(FOUND_LU)THEN
           LUN=LUCATS
           NSN=LUSEAS
+            IF(LUTYPE.NE.'SSIB') THEN !this is not really true for ssib lsm (fds)
             PRINT *, 'LANDUSE TYPE = "' // TRIM (LUTYPE) // '" FOUND',        &
                    LUCATS,' CATEGORIES',LUSEAS,' SEASONS',     &
                    ' WATER CATEGORY = ',ISWATER,               &
                    ' SNOW CATEGORY = ',ISICE
+            ENDIF
         ENDIF
         DO ls=1,luseas
           if ( wrf_dm_on_monitor() ) then
@@ -1040,7 +1043,16 @@ integer myproc
         lu_state(curs) = THERIN(cats,seas)        ; curs = curs + 1
       ENDDO
     ENDDO
-
+!
+!-- fds (07/2010)
+!-- SSIB's 12-category vegetation parameters are defined in module_ssib_veg
+!-- Data in LANDUSE.TBL is only used temporarily until the first
+!-- call to SSIB, and also to set water/ice points properties
+!    IF(MMINLU.EQ.'SSIB')THEN
+!       CALL init_module_ssib_veg
+!       CALL wrf_message ( 'READING SSIB VEGETATION PARAMETERS' )
+!    ENDIF
+!
 
    END SUBROUTINE landuse_init
 
@@ -1866,6 +1878,21 @@ integer myproc
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
                      its,ite, jts,jte, kts,kte                 )
+
+!--------------fds (06/2010)-----------------------------------
+     CASE  (SSIBSCHEME)
+!SSiB only works with sfclay and YSU schemes. Check this here!
+          if(isfc .ne. 1)CALL wrf_error_fatal &
+           ( 'module_physics_init: use sfclay scheme with SSiB' )
+          if(config_flags%bl_pbl_physics .ne. 1)CALL wrf_error_fatal &
+           ( 'module_physics_init: use ysu scheme with SSiB' )
+! Add radiation scheme 4 (RRTMg) for SSiB, By Zhenxin 2011-06-20 ************************
+          if(config_flags%ra_lw_physics .eq. 2 .or. config_flags%ra_lw_physics .gt. 4)CALL wrf_error_fatal &
+           ( 'module_physics_init: SSiB only works with rrtm, cam scheme or rrtmg scheme (lw_phys=1,3,4)' )
+          if(config_flags%ra_sw_physics .eq. 2 .or. config_flags%ra_sw_physics .gt. 4)CALL wrf_error_fatal &
+           ( 'module_physics_init: SSiB only works with rrtm, cam scheme or rrtmg scheme (sw_phys=1,3,4)' )
+! End of Adding radiation scheme 4 (RRTMg) for SSiB, By Zhenxin 2011-06-20 **************
+!--------------------------------------------------------------
 
       CASE DEFAULT
 

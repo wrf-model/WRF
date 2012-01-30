@@ -106,7 +106,10 @@ CONTAINS
               ,shadowmask,ht,dx,dy                 &
               ,SWUPFLX,SWUPFLXC,SWDNFLX,SWDNFLXC                          & ! Optional
               ,LWUPFLX,LWUPFLXC,LWDNFLX,LWDNFLXC                          & ! Optional
-              ,radtacttime                                                & 
+              ,radtacttime                                                &
+              ,ALSWVISDIR, ALSWVISDIF, ALSWNIRDIR, ALSWNIRDIF             & !fds ssib alb comp (06/2010)
+              ,SWVISDIR, SWVISDIF, SWNIRDIR, SWNIRDIF                     & !fds ssib swr comp (06/2010)
+              ,SF_SURFACE_PHYSICS                                         & !fds
                                                                           )
 
 
@@ -430,8 +433,19 @@ CONTAINS
          INTENT(INOUT)  ::                                  SWCF, &
                                                             LWCF, &
                                                              OLR
-
-
+! ---- fds (06/2010) ssib alb components ------------
+   REAL, DIMENSION( ims:ime, jms:jme ),          OPTIONAL ,       &
+         INTENT(IN   )  ::                            ALSWVISDIR, &
+                                                      ALSWVISDIF, &
+                                                      ALSWNIRDIR, &
+                                                      ALSWNIRDIF
+! ---- fds (06/2010) ssib swr components ------------
+   REAL, DIMENSION( ims:ime, jms:jme ),          OPTIONAL ,       &
+         INTENT(OUT  )  ::                              SWVISDIR, &
+                                                        SWVISDIF, &
+                                                        SWNIRDIR, &
+                                                        SWNIRDIF
+   INTEGER,    OPTIONAL, INTENT(IN   )    ::  sf_surface_physics
 !
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          INTENT(IN   )  ::                                  XLAT, &
@@ -554,8 +568,8 @@ CONTAINS
 !------------------------------------------------------------------
 
    CALL wrf_debug (1, 'Top of Radiation Driver')
-   WRITE ( wrf_err_message , * ) 'itimestep = ',itimestep,', dt = ',dt,', lw and sw options = ',lw_physics,sw_physics
-   CALL wrf_debug (1, wrf_err_message )
+!  WRITE ( wrf_err_message , * ) 'itimestep = ',itimestep,', dt = ',dt,', lw and sw options = ',lw_physics,sw_physics
+!  CALL wrf_debug (1, wrf_err_message )
    if (lw_physics .eq. 0 .and. sw_physics .eq. 0)         return
 
 ! ra_call_offset = -1 gives old method where radiation may be called just before output
@@ -969,7 +983,7 @@ CONTAINS
              IF ( PRESENT( OZMIXM ) .AND. PRESENT( PIN ) .AND. &
                   PRESENT(M_PS_1) .AND. PRESENT(M_PS_2) .AND.  &
                   PRESENT(M_HYBI0) .AND. PRESENT(AEROSOLC_1)    &
-                  .AND. PRESENT(AEROSOLC_2) ) THEN
+                  .AND. PRESENT(AEROSOLC_2).AND. PRESENT(ALSWVISDIR) ) THEN
              CALL CAMRAD(RTHRATENLW=RTHRATEN,RTHRATENSW=RTHRATENSW,    &
                      dolw=.true.,dosw=.false.,                         &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
@@ -990,6 +1004,11 @@ CONTAINS
                     ,QI3D=qi                                           &
                     ,QS3D=qs                                           &
                     ,QG3D=qg                                           &
+                    ,ALSWVISDIR=alswvisdir ,ALSWVISDIF=alswvisdif      &  !fds ssib alb comp (06/2010)
+                    ,ALSWNIRDIR=alswnirdir ,ALSWNIRDIF=alswnirdif      &  !fds ssib alb comp (06/2010)
+                    ,SWVISDIR=swvisdir ,SWVISDIF=swvisdif              &  !fds ssib swr comp (06/2010)
+                    ,SWNIRDIR=swnirdir ,SWNIRDIF=swnirdif              &  !fds ssib swr comp (06/2010)
+                    ,SF_SURFACE_PHYSICS=sf_surface_physics             &  !fds
                     ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                     &
                     ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
                     ,f_ice_phy=f_ice_phy,f_rain_phy=f_rain_phy         &
@@ -1278,7 +1297,7 @@ CONTAINS
              IF ( PRESENT( OZMIXM ) .AND. PRESENT( PIN ) .AND. &
                   PRESENT(M_PS_1) .AND. PRESENT(M_PS_2) .AND.  &
                   PRESENT(M_HYBI0) .AND. PRESENT(AEROSOLC_1)    &
-                  .AND. PRESENT(AEROSOLC_2) ) THEN
+                  .AND. PRESENT(AEROSOLC_2) .AND. PRESENT(ALSWVISDIR)) THEN
              CALL CAMRAD(RTHRATENLW=RTHRATEN,RTHRATENSW=RTHRATENSW,    &
                      dolw=.false.,dosw=.true.,                         &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
@@ -1299,6 +1318,11 @@ CONTAINS
                     ,QI3D=qi                                           &
                     ,QS3D=qs                                           &
                     ,QG3D=qg                                           &
+                    ,ALSWVISDIR=alswvisdir ,ALSWVISDIF=alswvisdif      &  !fds ssib alb comp (06/2010)
+                    ,ALSWNIRDIR=alswnirdir ,ALSWNIRDIF=alswnirdif      &  !fds ssib alb comp (06/2010)
+                    ,SWVISDIR=swvisdir ,SWVISDIF=swvisdif              &  !fds ssib swr comp (06/2010)
+                    ,SWNIRDIR=swnirdir ,SWNIRDIF=swnirdif              &  !fds ssib swr comp (06/2010)
+                    ,SF_SURFACE_PHYSICS=sf_surface_physics             &  !fds
                     ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                     &
                     ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
                     ,f_ice_phy=f_ice_phy,f_rain_phy=f_rain_phy         &
@@ -1350,6 +1374,11 @@ CONTAINS
                      XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                      QV3D=qv,QC3D=qc,QR3D=qr,                          &
                      QI3D=qi,QS3D=qs,QG3D=qg,                          &
+                     ALSWVISDIR=alswvisdir ,ALSWVISDIF=alswvisdif,     &  !Zhenxin ssib alb comp (06/2010)
+                     ALSWNIRDIR=alswnirdir ,ALSWNIRDIF=alswnirdif,     &  !Zhenxin ssib alb comp (06/2010)
+                     SWVISDIR=swvisdir ,SWVISDIF=swvisdif,             &  !Zhenxin ssib swr comp (06/2010)
+                     SWNIRDIR=swnirdir ,SWNIRDIF=swnirdif,             &  !Zhenxin ssib swr comp (06/2010)
+                     SF_SURFACE_PHYSICS=sf_surface_physics,            &  !Zhenxin ssib sw_phy   (06/2010)
                      F_QV=f_qv,F_QC=f_qc,F_QR=f_qr,                    &
                      F_QI=f_qi,F_QS=f_qs,F_QG=f_qg,                    &
 #ifdef WRF_CHEM

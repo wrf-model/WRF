@@ -85,6 +85,61 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
+! Check for consistency in the Noah-MP options
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%sf_surface_physics(i) == NOAHMPSCHEME ) THEN
+
+            IF ( model_config_rec%bl_pbl_physics(i) == YSUSCHEME ) THEN
+
+               ! YSUSCHEME ( bl_pbl_physics == 1 ) needs to run with Noah-MP opt_sfc option == 1, 2 or 4
+               IF ( ( model_config_rec%opt_sfc(i) /= 1 ) .AND. ( model_config_rec%opt_sfc(i) /= 2 ) .AND. &
+                    ( model_config_rec%opt_sfc(i) /= 4 ) ) THEN
+                  wrf_err_message = " --- ERROR:  YSU PBL scheme with Noah-MP requires "
+                  CALL wrf_message ( TRIM ( wrf_err_message ) ) 
+                  wrf_err_message = " --- Noah-MP option OPT_SFC == 1, 2, or 4."
+                  CALL wrf_message ( TRIM ( wrf_err_message ) ) 
+
+                  write (wrf_err_message, '(" --- Current namelist has OPT_SFC = ", I10)') model_config_rec%opt_sfc(i)
+                  CALL wrf_message ( TRIM ( wrf_err_message ) ) 
+                  
+
+                  wrf_err_message = " --- Change namelist option BL_PBL_PHYSICS or OPT_SFC."
+                  call wrf_error_fatal ( TRIM ( wrf_err_message ) ) 
+               END IF
+
+            ELSE IF ( model_config_rec%bl_pbl_physics(i) == MYJPBLSCHEME ) THEN
+
+            ! MYJPBLSCHEME ( bl_pbl_physics == 2) needs to run with Noah-MP opt_sfc option == 3
+               IF ( ( model_config_rec%opt_sfc(i) /= 3 ) ) THEN
+                  wrf_err_message = " --- ERROR:  MYJ PBL scheme with Noah-MP requires "
+                  CALL wrf_message ( TRIM ( wrf_err_message ) ) 
+                  wrf_err_message = " --- Noah-MP option OPT_SFC == 3."
+                  CALL wrf_message ( TRIM ( wrf_err_message ) ) 
+
+                  write (wrf_err_message, '(" --- Current namelist has OPT_SFC = ", I10)') model_config_rec%opt_sfc(i)
+                  CALL wrf_message ( TRIM ( wrf_err_message ) ) 
+                  
+                  wrf_err_message = " --- Change namelist option BL_PBL_PHYSICS or OPT_SFC."
+                  call wrf_error_fatal ( TRIM ( wrf_err_message ) ) 
+               END IF
+
+            ELSE
+
+               wrf_err_message = " --- ERROR:  Noah-MP LSM scheme works only with bl_pbl_physics 1 or 2."
+               CALL wrf_message ( TRIM ( wrf_err_message ) )
+               wrf_err_message = " --- Change bl_pbl_physics or sf_surface_physics namelist option."
+               CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
+
+            END IF
+
+         END IF
+      END DO
+#endif
+
+#if (EM_CORE == 1)
+!-----------------------------------------------------------------------
 ! Check that if stochastic perturbations are turned on in any domain, 
 ! if so, set grid%stoch_force_global_opt=1 
 !-----------------------------------------------------------------------

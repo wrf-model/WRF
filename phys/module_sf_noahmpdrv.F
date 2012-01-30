@@ -828,6 +828,8 @@ CONTAINS
             &    SNOTIME1,                                        &
             &    RIBB)
 
+       tgb    = sfctmp ! Bare ground temperature will be the surface temperature over glacial points. 
+       tgv    = 0.0    ! Temperature under vegetation undefined over glacial points.
        swe    = swe*1000.
        plai   = 0.01  ! Should make this zero?
        smc    = 1.00

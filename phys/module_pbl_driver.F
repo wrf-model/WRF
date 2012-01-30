@@ -22,6 +22,8 @@ CONTAINS
                  ,stepbl,warm_rain                                 &
                  ,kpbl,mixht,ct,lh,snow,xice                       &
                  ,znu, znw, mut, p_top                             &
+! paj
+                 ,ctopo,ctopo2                                   &
               ! OPTIONAL for TEMF scheme
                  ,te_temf,km_temf,kh_temf                     &
                  ,shf_temf,qf_temf,uw_temf,vw_temf                &
@@ -513,6 +515,10 @@ CONTAINS
                                                                         oc12d, &
                                                               oa1,oa2,oa3,oa4, &
                                                               ol1,ol2,ol3,ol4
+! paj
+   REAL, OPTIONAL,   DIMENSION( ims:ime , jms:jme ),                    &  !mchen
+               INTENT(IN   )    ::                        CTOPO, &
+                                                          CTOPO2
 
 ! Variables and Diagnostic for QNSE and EDKF JP
    LOGICAL, INTENT(IN), OPTIONAL ::  mfshconv ! WRF JP
@@ -984,6 +990,9 @@ CONTAINS
               ,PSIM=psim,PSIH=psih,XLAND=xland                      &
               ,HFX=hfx,QFX=qfx,GZ1OZ0=gz1oz0                        &
               ,U10=u10,V10=v10                                      &
+! paj
+              ,CTOPO=ctopo,CTOPO2=ctopo2                &
+!
               ,WSPD=wspd,BR=br,DT=dtbl,KPBL2D=kpbl                  &
               ,EP1=ep_1,EP2=ep_2,KARMAN=karman                      &
               ,EXCH_H=exch_h,REGIME=regime                          &

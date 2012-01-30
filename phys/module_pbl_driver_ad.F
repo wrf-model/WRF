@@ -29,7 +29,7 @@ SUBROUTINE a_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 &  exch_m, akhs, akms, thz0, qz0, uz0, vz0, qsfc, f, lowlyr, u10, v10, t2&
 &  , psim, psih, gz1oz0, wspd, br, chklowq, bl_pbl_physics, ra_lw_physics&
 &  , dx, stepbl, warm_rain, kpbl, mixht, ct, lh, snow, xice, znu, znw, &
-&  mut, p_top, te_temf, km_temf, kh_temf, shf_temf, qf_temf, uw_temf, &
+&  mut, p_top, ctopo, ctopo2, te_temf, km_temf, kh_temf, shf_temf, qf_temf, uw_temf, &
 &  vw_temf, hd_temf, lcl_temf, hct_temf, wupd_temf, mf_temf, thup_temf, &
 &  qtup_temf, qlup_temf, exch_temf, cf3d_temf, cfm_temf, flhc, flqc, qke&
 &  , tsq, qsq, cov, rmol, ch, qcg, grav_settling, ids, ide, jds, jde, kds&
@@ -361,7 +361,10 @@ SUBROUTINE a_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 !
   REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN) :: var2d, &
 &  oc12d, oa1, oa2, oa3, oa4, ol1, ol2, ol3, ol4
-
+! paj
+   REAL, OPTIONAL,   DIMENSION( ims:ime , jms:jme ),                    &  !mchen
+               INTENT(IN   )    ::                        CTOPO, &
+                                                          CTOPO2
 ! Variables and Diagnostic for QNSE and EDKF JP
    LOGICAL, INTENT(IN), OPTIONAL ::  mfshconv ! WRF JP
 

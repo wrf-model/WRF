@@ -69,6 +69,14 @@ CONTAINS
                          FGDT,STEPFG,                            &    ! Optional
                          cugd_tten,cugd_ttens,cugd_qvten,        &    ! Optional
                          cugd_qvtens,cugd_qcten,                 &    ! Optional
+                         ISNOWXY, ZSNSOXY, TSNOXY,                        & ! Optional Noah-MP
+                         SNICEXY, SNLIQXY, TVXY, TGXY, CANICEXY,          & ! Optional Noah-MP
+                         CANLIQXY, EAHXY, TAHXY, CMXY,                    & ! Optional Noah-MP
+                         CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,       & ! Optional Noah-MP
+                         WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY, & ! Optional Noah-MP
+                         STMASSXY, WOODXY, STBLCPXY, FASTCPXY,            & ! Optional Noah-MP
+                         XSAIXY,                                          & ! Optional Noah-MP
+                         T2MVXY, T2MBXY, CHSTARXY ,                       & ! Optional Noah-MP
 !                        num_roof_layers,num_wall_layers,        & !Optional urban
 !                        num_road_layers,                        & !Optional urban
                          DZR, DZB, DZG,                          & !Optional urban
@@ -260,6 +268,41 @@ CONTAINS
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT),OPTIONAL :: TYRA
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT),OPTIONAL :: TDLY
    REAL,     DIMENSION( ims:ime , 1:lagday , jms:jme ) , INTENT(INOUT),OPTIONAL :: TLAG
+
+!Noah-MP
+
+
+   INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ISNOWXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:num_soil_layers, jms:jme) :: ZSNSOXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0, jms:jme) :: TSNOXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0, jms:jme) :: SNICEXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0, jms:jme) :: SNLIQXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: TVXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: TGXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CANICEXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CANLIQXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: EAHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: TAHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CMXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: FWETXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: SNEQVOXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ALBOLDXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QSNOWXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WSLAKEXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ZWTXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WAXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WTXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: LFMASSXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: RTMASSXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: STMASSXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WOODXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: STBLCPXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: FASTCPXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: XSAIXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MVXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MBXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CHSTARXY
 
 !mp
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::   &
@@ -582,6 +625,14 @@ integer myproc
 #endif
                 SFCEVP,GRDFLX,                                  &
                 TRIM (MMINLU_LOC),                              &
+                ISNOWXY, ZSNSOXY, TSNOXY,                       &
+                SNICEXY, SNLIQXY, TVXY, TGXY, CANICEXY,         &
+                CANLIQXY, EAHXY, TAHXY, CMXY,                   &
+                CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,      &
+                WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY,&
+                STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
+                XSAIXY,                                         &
+                T2MVXY,T2MBXY,CHSTARXY ,                        &
                 allowed_to_read ,                               &
                 start_of_simulation ,                           &
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
@@ -1306,6 +1357,14 @@ integer myproc
 #endif
                 SFCEVP,GRDFLX,                                  &
                 MMINLU,                                         &
+                ISNOWXY, ZSNSOXY, TSNOXY,                       &
+                SNICEXY, SNLIQXY, TVXY, TGXY, CANICEXY,         &
+                CANLIQXY, EAHXY, TAHXY, CMXY,                   &
+                CHXY, FWETXY, SNEQVOXY, ALBOLDXY, QSNOWXY,      &
+                WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY,&
+                STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
+                XSAIXY,                                         &
+                T2MVXY, T2MBXY ,CHSTARXY,                       &
                 allowed_to_read,                                &
                 start_of_simulation,                            &
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
@@ -1348,6 +1407,7 @@ integer myproc
    USE module_sf_myjsfc
    USE module_sf_qnsesfc
    USE module_sf_noahdrv
+   USE module_sf_noahmpdrv
    USE module_sf_urban
    USE module_sf_bep                                  !BEP
    USE module_sf_bep_bem
@@ -1457,6 +1517,40 @@ integer myproc
             INTENT(OUT) :: te_temf, cf3d_temf !WA 
    REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ) , &
             INTENT(OUT) :: wm_temf
+
+!Noah-MP
+
+   INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ISNOWXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:num_soil_layers, jms:jme) :: ZSNSOXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0, jms:jme) :: TSNOXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0, jms:jme) :: SNICEXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0, jms:jme) :: SNLIQXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: TVXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: TGXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CANICEXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CANLIQXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: EAHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: TAHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CMXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: FWETXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: SNEQVOXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ALBOLDXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QSNOWXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WSLAKEXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ZWTXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WAXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WTXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: LFMASSXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: RTMASSXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: STMASSXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: WOODXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: STBLCPXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: FASTCPXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: XSAIXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MVXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MBXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CHSTARXY
 
 !URBAN
 !   REAL, DIMENSION(1:num_roof_layers), INTENT(INOUT) :: DZR  !Optional urban
@@ -1725,6 +1819,21 @@ integer myproc
              ENDIF
           ENDIF
 !
+      CASE (NOAHMPSCHEME)
+          CALL NOAHMP_INIT(MMINLU, SNOW,SNOWH,CANWAT,ISLTYP,                                &
+                     TSLB,SMOIS,SH2O,DZS, FNDSOILW, FNDSNOWH,                               &
+                     TSK,isnowxy  ,tvxy     ,tgxy     ,canicexy ,                           &
+                     canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy     ,                     &
+                     fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,wslakexy ,zwtxy    ,waxy     , &
+                     wtxy     ,tsnoxy   ,zsnsoxy  ,snicexy  ,snliqxy  ,lfmassxy ,rtmassxy , &
+                     stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy   ,                     &
+                     t2mvxy   ,t2mbxy   ,chstarxy ,            &
+                     num_soil_layers, restart,                 &
+                     allowed_to_read ,                         &
+                     ids,ide, jds,jde, kds,kde,                &
+                     ims,ime, jms,jme, kms,kme,                &
+                     its,ite, jts,jte, kts,kte                 )
+
       CASE (RUCLSMSCHEME)
 !          if(isfc .ne. 2)CALL wrf_error_fatal &
 !           ( 'module_physics_init: use myjsfc and myjpbl scheme for this lsm option' )

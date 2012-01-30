@@ -1,5 +1,5 @@
 MODULE module_sf_noahlsm
-  USE module_model_constants
+  USE module_model_constants, only : CP, R_D, XLF, XLV, RHOWATER, STBOLT, KARMAN
 
 !   REAL, PARAMETER    :: CP = 1004.5
   REAL, PARAMETER      :: RD = 287.04, SIGMA = 5.67E-8,                 &
@@ -39,11 +39,12 @@ MODULE module_sf_noahlsm
 
         CHARACTER*256  :: err_message
 
+        integer, private :: iloc, jloc
 !
 CONTAINS
 !
 
-      SUBROUTINE SFLX (FFROZP,ICE,ISURBAN,DT,ZLVL,NSOIL,SLDPTH,         &    !C
+      SUBROUTINE SFLX (IILOC,JJLOC,ICE,FFROZP,ISURBAN,DT,ZLVL,NSOIL,SLDPTH,         &    !C
                        LOCAL,                                           &    !L
                        LLANDUSE, LSOIL,                                 &    !CL
                        LWDN,SOLDN,SOLNET,SFCPRS,PRCP,SFCTMP,Q2,SFCSPD,  &    !F
@@ -95,7 +96,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 ! 1. CONFIGURATION INFORMATION (C):
 ! ----------------------------------------------------------------------
-!   ICE        SEA-ICE FLAG  (=1: SEA-ICE, =0: LAND (NO ICE), --1 LAND-ICE).
+!   ICE        SEA-ICE FLAG  (=1: SEA-ICE, =0: LAND (NO ICE), =-1 LAND-ICE).
 !   DT         TIMESTEP (SEC) (DT SHOULD NOT EXCEED 3600 SECS, RECOMMEND
 !                1800 SECS OR LESS)
 !   ZLVL       HEIGHT (M) ABOVE GROUND OF ATMOSPHERIC FORCING VARIABLES
@@ -268,6 +269,8 @@ CONTAINS
 
 ! DECLARATIONS - LOGICAL AND CHARACTERS
 ! ----------------------------------------------------------------------
+
+      INTEGER, INTENT(IN) :: IILOC, JJLOC
       LOGICAL, INTENT(IN)::  LOCAL
       LOGICAL            ::  FRZGRA, SNOWNG
       CHARACTER (LEN=256), INTENT(IN)::  LLANDUSE, LSOIL
@@ -329,39 +332,36 @@ CONTAINS
       PARAMETER (LVH2O = 2.501E+6)
       PARAMETER (LSUBS = 2.83E+6)
       PARAMETER (R = 287.04)
+
 ! ----------------------------------------------------------------------
 !   INITIALIZATION
 ! ----------------------------------------------------------------------
-         RUNOFF1 = 0.0
-         RUNOFF2 = 0.0
-         RUNOFF3 = 0.0
-         SNOMLT = 0.0
+      ILOC = IILOC
+      JLOC = JJLOC
+
+      RUNOFF1 = 0.0
+      RUNOFF2 = 0.0
+      RUNOFF3 = 0.0
+      SNOMLT = 0.0
 
 ! ----------------------------------------------------------------------
 !  THE VARIABLE "ICE" IS A FLAG DENOTING SEA-ICE / LAND-ICE / ICE-FREE LAND
 !     SEA-ICE CASE,          ICE =  1
 !     NON-GLACIAL LAND,      ICE =  0
-!     GLACIAL-ICE LAND,      ICE = -1
-      IF (ICE /= 0) SHDFAC = 0.0
-! ----------------------------------------------------------------------
-! SEA-ICE LAYERS ARE EQUAL THICKNESS AND SUM TO 3 METERS
-! ----------------------------------------------------------------------
-         IF (ICE == 1) THEN
-            DO KZ = 1,NSOIL
-               ZSOIL (KZ) = -3.* FLOAT (KZ)/ FLOAT (NSOIL)
-            END DO
+!     GLACIAL ICE,           ICE = -1
+      IF (ICE == 1) call wrf_error_fatal("Sea-ice point in Noah-LSM")
+      IF (ICE == -1) SHDFAC = 0.0
 
 ! ----------------------------------------------------------------------
 ! CALCULATE DEPTH (NEGATIVE) BELOW GROUND FROM TOP SKIN SFC TO BOTTOM OF
 !   EACH SOIL LAYER.  NOTE:  SIGN OF ZSOIL IS NEGATIVE (DENOTING BELOW
 !   GROUND)
 ! ----------------------------------------------------------------------
-         ELSE
-            ZSOIL (1) = - SLDPTH (1)
-            DO KZ = 2,NSOIL
-               ZSOIL (KZ) = - SLDPTH (KZ) + ZSOIL (KZ -1)
-            END DO
-         END IF
+      ZSOIL (1) = - SLDPTH (1)
+      DO KZ = 2,NSOIL
+         ZSOIL (KZ) = - SLDPTH (KZ) + ZSOIL (KZ -1)
+      END DO
+
 ! ----------------------------------------------------------------------
 ! NEXT IS CRUCIAL CALL TO SET THE LAND-SURFACE PARAMETERS, INCLUDING
 ! SOIL-TYPE AND VEG-TYPE DEPENDENT PARAMETERS.
@@ -442,29 +442,18 @@ CONTAINS
          FRZGRA = .FALSE.
 
 ! ----------------------------------------------------------------------
-! OVER SEA-ICE OR GLACIAL-ICE, IF S.W.E. (SNEQV) BELOW THRESHOLD LOWER
-! BOUND (0.01 M FOR SEA-ICE, 0.10 M FOR GLACIAL-ICE), THEN SET AT LOWER
-! BOUND
-! ----------------------------------------------------------------------
-! IF SEA-ICE CASE, ASSIGN DEFAULT WATER-EQUIV SNOW ON TOP
-! ----------------------------------------------------------------------
-         IF (ICE == 1) THEN
-            ! Sea-ice case
-            IF ( SNEQV < 0.01 ) THEN
-               SNEQV = 0.01
-               SNOWH = 0.05
-            ENDIF
-         ELSE IF ( ICE == -1 ) THEN
-            ! Land-ice case
+         IF ( ICE == -1 ) THEN
+            !
+            ! FOR GLACIAL ICE, IF S.W.E. (SNEQV) BELOW THRESHOLD LOWER
+            ! BOUND (0.10 M FOR GLACIAL ICE), THEN SET AT LOWER BOUND.
+            !
             IF ( SNEQV < 0.10 ) THEN
                SNEQV = 0.10
                SNOWH = 0.50
             ENDIF
-         END IF
-! ----------------------------------------------------------------------
-! FOR SEA-ICE AND GLACIAL-ICE CASES, SET SMC AND SH20 VALUES = 1.0
-! ----------------------------------------------------------------------
-         IF ( ICE /= 0 ) THEN
+            !
+            ! FOR GLACIAL ICE, SET SMC AND SH20 VALUES = 1.0
+            !
             DO KZ = 1,NSOIL
                SMC(KZ) = 1.0
                SH2O(KZ) = 1.0
@@ -523,7 +512,7 @@ CONTAINS
 ! kmh 09/04/2006 set Snow Density at 0.2 g/cm**3
 ! for "cold permanent ice" or new "dry" snow
 !
-           IF ( (ICE /= 0) .and. SNCOVR .GT. 0.99 ) THEN
+           IF ( (ICE == -1) .and. (SNCOVR .GT. 0.99) ) THEN
 !  if soil temperature less than 268.15 K, treat as typical Antarctic/Greenland snow firn
               IF ( STC(1) .LT. (TFREEZ - 5.) ) SNDENS = 0.2
               IF ( SNOWNG .AND. (T1.LT.273.) .AND. (SFCTMP.LT.273.) ) SNDENS=0.2
@@ -538,65 +527,46 @@ CONTAINS
 ! ----------------------------------------------------------------------
          ELSE
             PRCPF = PRCP
-         END IF
+         ENDIF
 ! ----------------------------------------------------------------------
 ! DETERMINE SNOWCOVER AND ALBEDO OVER LAND.
 ! ----------------------------------------------------------------------
 ! ----------------------------------------------------------------------
 ! IF SNOW DEPTH=0, SET SNOW FRACTION=0, ALBEDO=SNOW FREE ALBEDO.
 ! ----------------------------------------------------------------------
-         IF (ICE == 0 .OR. ICE == -1) THEN
-            IF (SNEQV  == 0.0) THEN
-               SNCOVR = 0.0
-               ALBEDO = ALB
-               EMISSI = EMBRD
-            ELSE
+         IF (SNEQV  == 0.0) THEN
+            SNCOVR = 0.0
+            ALBEDO = ALB
+            EMISSI = EMBRD
+         ELSE
 ! ----------------------------------------------------------------------
 ! DETERMINE SNOW FRACTIONAL COVERAGE.
 ! DETERMINE SURFACE ALBEDO MODIFICATION DUE TO SNOWDEPTH STATE.
 ! ----------------------------------------------------------------------
-              CALL SNFRAC (SNEQV,SNUP,SALP,SNOWH,SNCOVR)
-!   Don't limit snow cover fraction over permanent ice kmh 2008/03/25
-            if ( ICE == 0 ) then
-              SNCOVR = MIN(SNCOVR,0.98)
-            endif
-              CALL ALCALC (ALB,SNOALB,EMBRD,SHDFAC,SHDMIN,SNCOVR,T1,ALBEDO,EMISSI,   &
-                         DT,SNOWNG,SNOTIME1,LVCOEF)
-            END IF
+            CALL SNFRAC (SNEQV,SNUP,SALP,SNOWH,SNCOVR)
+
+            ! kmh 2008/03/25
+            ! Don't limit snow cover fraction over permanent ice
+            IF ( ICE == 0 ) SNCOVR = MIN(SNCOVR,0.98)
+
+            CALL ALCALC (ALB,SNOALB,EMBRD,SHDFAC,SHDMIN,SNCOVR,T1, &
+                 ALBEDO,EMISSI,DT,SNOWNG,SNOTIME1,LVCOEF)
+         ENDIF
 ! ----------------------------------------------------------------------
-! SNOW COVER, ALBEDO OVER SEA-ICE, GLACIAL ICE
+! THERMAL CONDUCTIVITY FOR GLACIAL ICE CASE
 ! ----------------------------------------------------------------------
-         ELSE
-            SNCOVR = 1.0
-!
-! Albedo of sea ice
-!
-! This value should vary seasonally. 0.65 may be good for Arctic Ocean summer bare ice
-!   value could be as low as 0.4 for Arctic bare ice and melt pond combo (Perovich data)
-!   0.82 may be good for Arctic spring/fall sea ice (Perovich data)
-!   0.81 may be good for Antarctic sea ice (Wendler et al. December cruise data)
-!
-            ALBEDO = 0.80
-!
-            EMISSI = 0.98
-         END IF
-! ----------------------------------------------------------------------
-! THERMAL CONDUCTIVITY FOR SEA-ICE CASE, GLACIAL-ICE CASE
-! ----------------------------------------------------------------------
-         IF ( (ICE == 1) .or. (ICE == -1) ) THEN
+         IF ( ICE == -1 ) THEN
             DF1 = 2.2
-!
-! kmh 09/03/2006
-! kmh 03/25/2008  change SNCOVR threshold to 0.97
-!
-! only apply (small) DF1 conductivity for permanent land ice
-            IF ( (ICE == -1) ) THEN
-               IF (  SNCOVR .GT. 0.97 ) THEN
-                  DF1 = SNCOND
-               ENDIF
+            !
+            ! kmh 09/03/2006
+            ! kmh 03/25/2008  change SNCOVR threshold to 0.97
+            !
+            ! only apply (small) DF1 conductivity for permanent land ice
+            !
+            IF (  SNCOVR .GT. 0.97 ) THEN
+               DF1 = SNCOND
             ENDIF
-!
-         ELSE
+         ELSEIF ( ICE == 0 ) THEN
 ! ----------------------------------------------------------------------
 ! NEXT CALCULATE THE SUBSURFACE HEAT FLUX, WHICH FIRST REQUIRES
 ! CALCULATION OF THE THERMAL DIFFUSIVITY.  TREATMENT OF THE
@@ -669,7 +639,7 @@ CONTAINS
 ! MID-LAYER SOIL TEMPERATURE
 ! ----------------------------------------------------------------------
             DF1 = DF1A * SNCOVR + DF1* (1.0- SNCOVR)
-            IF ( ICE /= 0 ) then
+            IF ( ICE == -1 ) then
                !  kmh  12/15/2005  correct for too deep snow layer
                !  kmh  09/03/2006  adjust DTOT
                IF ( DTOT .GT. 2.*DSOIL ) then
@@ -847,7 +817,7 @@ CONTAINS
          SSOIL = -1.0* SSOIL
 
 ! ----------------------------------------------------------------------
-!  FOR THE CASE OF LAND (BUT NOT GLACIAL-ICE):
+!  FOR THE CASE OF LAND (BUT NOT GLACIAL ICE):
 !  CONVERT RUNOFF3 (INTERNAL LAYER RUNOFF FROM SUPERSAT) FROM M TO M S-1
 !  AND ADD TO SUBSURFACE RUNOFF/DRAINAGE/BASEFLOW.  RUNOFF2 IS ALREADY
 !  A RATE AT THIS POINT
@@ -879,12 +849,11 @@ CONTAINS
             ELSE
               SOILW = SOILWW / SOILWM
             END IF
-         ELSE
+         ELSEIF ( ICE == -1 ) THEN
 ! ----------------------------------------------------------------------
-! FOR THE CASE OF SEA-ICE (ICE=1) OR GLACIAL-ICE (ICE=-1), ADD ANY
-! SNOWMELT DIRECTLY TO SURFACE RUNOFF (RUNOFF1) SINCE THERE IS NO
-! SOIL MEDIUM, AND THUS NO CALL TO SUBROUTINE SMFLX (FOR SOIL MOISTURE
-! TENDENCY).
+! FOR THE CASE OF GLACIAL ICE (ICE == -1), ADD ANY SNOWMELT DIRECTLY TO
+! SURFACE RUNOFF (RUNOFF1) SINCE THERE IS NO SOIL MEDIUM, AND THUS NO
+! CALL TO SUBROUTINE SMFLX (FOR SOIL MOISTURE TENDENCY).
 ! ----------------------------------------------------------------------
             RUNOFF1 = SNOMLT/DT
            SOILWM = 0.0
@@ -1739,18 +1708,19 @@ CONTAINS
   END SUBROUTINE HRT
 ! ----------------------------------------------------------------------
 
-      SUBROUTINE HRTICE (RHSTS,STC,TBOT,ICE,NSOIL,ZSOIL,YY,ZZ1,DF1,AI,BI,CI)
+      SUBROUTINE HRTICE_GLACIAL (RHSTS,STC,TBOT,NSOIL,ZSOIL,YY,ZZ1,DF1, &
+           AI,BI,CI)
 
 ! ----------------------------------------------------------------------
-! SUBROUTINE HRTICE
+! SUBROUTINE HRTICE_GLACIAL
 ! ----------------------------------------------------------------------
 ! CALCULATE THE RIGHT HAND SIDE OF THE TIME TENDENCY TERM OF THE SOIL
-! THERMAL DIFFUSION EQUATION IN THE CASE OF SEA-ICE (ICE=1) OR GLACIAL
-! ICE (ICE=-1). COMPUTE (PREPARE) THE MATRIX COEFFICIENTS FOR THE
-! TRI-DIAGONAL MATRIX OF THE IMPLICIT TIME SCHEME.
+! THERMAL DIFFUSION EQUATION IN THE CASE OF GLACIAL ICE (ICE == -1). 
+! COMPUTE (PREPARE) THE MATRIX COEFFICIENTS FOR THE TRI-DIAGONAL MATRIX
+! OF THE IMPLICIT TIME SCHEME.
 !
-! (NOTE:  THIS SUBROUTINE ONLY CALLED FOR SEA-ICE OR GLACIAL ICE, BUT
-! NOT FOR NON-GLACIAL LAND (ICE = 0).
+! (NOTE:  THIS SUBROUTINE ONLY CALLED FOR GLACIAL ICE (ICE == -1), BUT
+! NOT FOR NON-GLACIAL LAND (ICE == 0).
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
 
@@ -1763,7 +1733,6 @@ CONTAINS
       REAL, DIMENSION(1:NSOIL), INTENT(IN) :: STC, ZSOIL
       REAL, DIMENSION(1:NSOIL), INTENT(OUT):: RHSTS
       REAL,                     INTENT(IN) :: TBOT
-      INTEGER,                  INTENT(IN) :: ICE
       REAL                   :: DDZ,DDZ2,DENOM,DTSDZ,DTSDZ2,SSOIL,       &
                                 ZBOT
       REAL                   :: HCPCT
@@ -1771,43 +1740,22 @@ CONTAINS
       REAL :: DF1N
       REAL :: ZMD
 
-! ----------------------------------------------------------------------
-! SET A NOMINAL UNIVERSAL VALUE OF THE SEA-ICE SPECIFIC HEAT CAPACITY,
-! HCPCT = 1880.0*917.0.
-! ----------------------------------------------------------------------
-      IF ( ICE == 1 ) THEN
-         ! Sea-ice values
-         HCPCT = 1.72396E+6
-      ELSEIF (ICE == -1) THEN
-! SET A NOMINAL UNIVERSAL VALUE OF GLACIAL-ICE SPECIFIC HEAT CAPACITY,
+!   SET A NOMINAL UNIVERSAL VALUE OF GLACIAL ICE SPECIFIC HEAT CAPACITY,
 !   HCPCT = 2100.0*900.0 = 1.89000E+6 (SOURCE:  BOB GRUMBINE, 2005)
 !   TBOT PASSED IN AS ARGUMENT, VALUE FROM GLOBAL DATA SET
-         !
-         ! A least-squares fit for the four points provided by
-         ! Keith Hines for the Yen (1981) values for Antarctic
-         ! snow firn.
-         !
-         HCPCT = 1.E6 * (0.8194 - 0.1309*0.5*ZSOIL(1))
-         DF1K = DF1
-      ENDIF
 
-! ----------------------------------------------------------------------
-! THE INPUT ARGUMENT DF1 IS A UNIVERSALLY CONSTANT VALUE OF SEA-ICE
-! THERMAL DIFFUSIVITY, SET IN ROUTINE SNOPAC AS DF1 = 2.2.
-! ----------------------------------------------------------------------
-! SET ICE PACK DEPTH.  USE TBOT AS ICE PACK LOWER BOUNDARY TEMPERATURE
-! (THAT OF UNFROZEN SEA WATER AT BOTTOM OF SEA ICE PACK).  ASSUME ICE
-! PACK IS OF N=NSOIL LAYERS SPANNING A UNIFORM CONSTANT ICE PACK
-! THICKNESS AS DEFINED BY ZSOIL(NSOIL) IN ROUTINE SFLX.
-! ----------------------------------------------------------------------
+      !
+      ! A least-squares fit for the four points provided by
+      ! Keith Hines for the Yen (1981) values for Antarctic
+      ! snow firn.
+      !
+      HCPCT = 1.E6 * (0.8194 - 0.1309*0.5*ZSOIL(1))
+      DF1K = DF1
+
 ! ----------------------------------------------------------------------
 ! CALC THE MATRIX COEFFICIENTS AI, BI, AND CI FOR THE TOP LAYER
 ! ----------------------------------------------------------------------
-      IF (ICE == 1) THEN
-         ZBOT = ZSOIL (NSOIL)
-      ELSE IF (ICE == -1) THEN
-         ZBOT = -25.0
-      ENDIF
+      ZBOT = -25.0
       DDZ = 1.0 / ( -0.5 * ZSOIL (2) )
       AI (1) = 0.0
       CI (1) = (DF1 * DDZ) / (ZSOIL (1) * HCPCT)
@@ -1835,7 +1783,6 @@ CONTAINS
       DF1N = DF1
       DO K = 2,NSOIL
 
-       IF ( ICE == -1 ) THEN
           ZMD = 0.5 * (ZSOIL(K)+ZSOIL(K-1))
           ! For the land-ice case
 ! kmh 09/03/2006 use Yen (1981)'s values for Antarctic snow firn
@@ -1856,7 +1803,7 @@ CONTAINS
           ! from Yen (1981) for Antarctic snow firn.  Not optimal, but
           ! probably better than just a constant.
           DF1N = 0.32333 - ( 0.10073 * ZMD )
-       ENDIF
+
 ! ----------------------------------------------------------------------
 ! CALC THE VERTICAL SOIL TEMP GRADIENT THRU THIS LAYER.
 ! ----------------------------------------------------------------------
@@ -1902,7 +1849,7 @@ CONTAINS
          DDZ = DDZ2
       END DO
 ! ----------------------------------------------------------------------
-  END SUBROUTINE HRTICE
+  END SUBROUTINE HRTICE_GLACIAL
 ! ----------------------------------------------------------------------
 
       SUBROUTINE HSTEP (STCOUT,STCIN,RHSTS,DT,NSOIL,AI,BI,CI)
@@ -2168,10 +2115,12 @@ CONTAINS
 ! PREPARE PARTIAL QUANTITIES FOR PENMAN EQUATION.
 ! ----------------------------------------------------------------------
         EMISSI=EMISSI_IN
-        IF (ICE==0) THEN
+        IF ( ICE == 0 ) THEN
+           ! Non-glacial land
            ELCP1  = (1.0-SNCOVR)*ELCP  + SNCOVR*ELCP*LSUBS/LSUBC
            LVS    = (1.0-SNCOVR)*LSUBC + SNCOVR*LSUBS
-        ELSE
+        ELSEIF ( ICE == -1 ) THEN
+           ! Glacial ice
            IF ( T1 > 273.15 ) THEN
               ELCP1=ELCP
               LVS=LSUBC
@@ -2537,28 +2486,29 @@ CONTAINS
 ! HRT ROUTINE CALCS THE RIGHT HAND SIDE OF THE SOIL TEMP DIF EQN
 ! ----------------------------------------------------------------------
 
-! ----------------------------------------------------------------------
-! SEA-ICE CASE, GLACIAL ICE CASE
-! ----------------------------------------------------------------------
-      IF ( ICE /= 0 ) THEN
+      IF ( ICE == -1 ) THEN
+         ! Glacial ice case
 
-         CALL HRTICE (RHSTS,STC,TBOT,ICE,NSOIL,ZSOIL,YY,ZZ1,DF1,AI,BI,CI)
+         CALL HRTICE_GLACIAL (RHSTS,STC,TBOT,NSOIL,ZSOIL,YY,ZZ1,DF1,&
+              AI,BI,CI)
 
          CALL HSTEP (STCF,STC,RHSTS,DT,NSOIL,AI,BI,CI)
 
-! ----------------------------------------------------------------------
-! LAND-MASS CASE
-! ----------------------------------------------------------------------
-      ELSE
+      ELSEIF ( ICE == 0 ) THEN
+
+         ! Non-glacial land case
+
          CALL HRT (RHSTS,STC,SMC,SMCMAX,NSOIL,ZSOIL,YY,ZZ1,TBOT,        &
                     ZBOT,PSISAT,SH2O,DT,                                &
                     BEXP,F1,DF1,QUARTZ,CSOIL,AI,BI,CI,VEGTYP,ISURBAN)
 
          CALL HSTEP (STCF,STC,RHSTS,DT,NSOIL,AI,BI,CI)
-      END IF
+
+      ENDIF
+
       DO I = 1,NSOIL
          STC (I) = STCF (I)
-      END DO
+      ENDDO
 
 ! ----------------------------------------------------------------------
 ! IN THE NO SNOWPACK CASE (VIA ROUTINE NOPAC BRANCH,) UPDATE THE GRND
@@ -2901,9 +2851,9 @@ CONTAINS
 ! ----------------------------------------------------------------------
 ! EXECUTABLE CODE BEGINS HERE:
 ! ----------------------------------------------------------------------
-! IF SEA-ICE (ICE=1) OR GLACIAL-ICE (ICE=-1), SNOWCOVER FRACTION = 1.0,
+! IF GLACIAL ICE (ICE == -1), SNOWCOVER FRACTION = 1.0,
 ! AND SUBLIMATION IS AT THE POTENTIAL RATE.
-! FOR NON-GLACIAL LAND (ICE=0), IF SNOWCOVER FRACTION < 1.0, TOTAL
+! FOR NON-GLACIAL LAND (ICE == 0), IF SNOWCOVER FRACTION < 1.0, TOTAL
 ! EVAPORATION < POTENTIAL DUE TO NON-POTENTIAL CONTRIBUTION FROM
 ! NON-SNOW COVERED FRACTION.
 ! ----------------------------------------------------------------------
@@ -2949,22 +2899,22 @@ CONTAINS
          IF ( ( RIBB >= 0.1 ) .AND. ( FDOWN > 150.0 ) ) THEN
             ETP=(MIN(ETP*(1.0-RIBB),0.)*SNCOVR/0.980 + ETP*(0.980-SNCOVR))/0.980
          ENDIF
-        IF(ETP == 0.) BETA = 0.0
-        ETP1 = ETP * 0.001
+         IF(ETP == 0.) BETA = 0.0
+         ETP1 = ETP * 0.001
          DEW = -ETP1
          ESNOW2 = ETP1*DT
          ETANRG = ETP*((1.-SNCOVR)*LSUBC + SNCOVR*LSUBS)
       ELSE
          ETP1 = ETP * 0.001
-         IF ( ICE /= 0 ) THEN
-            ! SEA-ICE AND GLACIAL-ICE CASE
+         IF ( ICE == -1 ) THEN
+            ! GLACIAL ICE CASE
             ESNOW = ETP
             ESNOW1 = ESNOW*0.001
             ESNOW2 = ESNOW1*DT
             ETANRG = ESNOW*LSUBS
-         ELSE IF ( ICE ==  0) THEN
+         ELSEIF ( ICE ==  0) THEN
             ! NON-GLACIAL LAND CASE
-             IF (SNCOVR <  1.) THEN
+            IF (SNCOVR <  1.) THEN
                CALL EVAPO (ETNS1,SMC,NSOIL,CMC,ETP1,DT,ZSOIL,           &
                             SH2O,                                       &
                             SMCMAX,BEXP,PC,SMCWLT,DKSAT,DWSAT,          &
@@ -2991,16 +2941,13 @@ CONTAINS
                ETNS = ETNS1*1000.
 ! ----------------------------------------------------------------------
 
-!   end IF (SNCOVR .lt. 1.)
-            END IF
-!   end IF (ICE .ne. 1)
-         END IF
+            ENDIF
+         ENDIF
          ESNOW = ETP*SNCOVR
          ESNOW1 = ESNOW*0.001
          ESNOW2 = ESNOW1*DT
          ETANRG = ESNOW*LSUBS + ETNS*LSUBC
-!   end IF (ETP .le. 0.0)
-      END IF
+      ENDIF
 
 ! ----------------------------------------------------------------------
 ! IF PRECIP IS FALLING, CALCULATE HEAT FLUX FROM SNOW SFC TO NEWLY
@@ -3080,7 +3027,7 @@ CONTAINS
 ! BETA<1
 ! SNOWPACK HAS SUBLIMATED AWAY, SET DEPTH TO ZERO.
 ! ----------------------------------------------------------------------
-         IF ( ICE /= 0 ) then
+         IF ( ICE == -1 ) then
             ! kmh  12/15/2005 modify SSOIL
             ! kmh  09/03/2006 modify DTOT
             IF ( DTOT .GT. 2.0*DSOIL ) THEN
@@ -3142,7 +3089,7 @@ CONTAINS
 ! IF NON-GLACIAL LAND, ADD SNOWMELT RATE (EX) TO PRECIP RATE TO BE USED
 ! IN SUBROUTINE SMFLX (SOIL MOISTURE EVOLUTION) VIA INFILTRATION.
 !
-! FOR SEA-ICE AND GLACIAL-ICE, THE SNOWMELT WILL BE ADDED TO SUBSURFACE
+! FOR GLACIAL ICE, THE SNOWMELT WILL BE ADDED TO SUBSURFACE
 ! RUNOFF/BASEFLOW LATER NEAR THE END OF SFLX (AFTER RETURN FROM CALL TO
 ! SUBROUTINE SNOPAC)
 ! ----------------------------------------------------------------------
@@ -3152,10 +3099,9 @@ CONTAINS
 ! SET THE EFFECTIVE POTNL EVAPOTRANSP (ETP1) TO ZERO SINCE THIS IS SNOW
 ! CASE, SO SURFACE EVAP NOT CALCULATED FROM EDIR, EC, OR ETT IN SMFLX
 ! (BELOW).
-! IF SEAICE (ICE==1) SKIP CALL TO SMFLX.
 ! SMFLX RETURNS UPDATED SOIL MOISTURE VALUES FOR NON-GLACIAL LAND.
-! IF SEA-ICE (ICE==1) OR GLACIAL-ICE (ICE==-1), SKIP CALL TO SMFLX,
-! SINCE NO SOIL MEDIUM FOR SEA-ICE OR GLACIAL-ICE.
+! IF GLACIAL ICE (ICE == -1), SKIP CALL TO SMFLX,
+! SINCE NO SOIL MEDIUM FOR GLACIAL ICE.
 ! ----------------------------------------------------------------------
       END IF
       IF (ICE == 0) THEN
@@ -3205,19 +3151,8 @@ CONTAINS
             SNCOND = 1.
             SNCOVR = 0.
          END IF
-      ELSEIF (ICE == 1) THEN
-         ! SEA-ICE
-         IF (ESD .GE. 0.01) THEN
-            CALL SNOWPACK (ESD,DT,SNOWH,SNDENS,T1,YY)
-        ELSE
-           ESD = 0.01
-           SNOWH = 0.05
-           !KWM???? SNDENS =
-           !KWM???? SNCOND =
-           SNCOVR = 1.0
-        ENDIF
       ELSEIF (ICE == -1) THEN
-         ! GLACIAL-ICE
+         ! GLACIAL ICE
          IF (ESD .GE. 0.10) THEN
             CALL SNOWPACK (ESD,DT,SNOWH,SNDENS,T1,YY)
          ELSE
@@ -3291,7 +3226,7 @@ CONTAINS
 
 !      DSX = SNDENS*((DEXP(BFAC*ESDC)-1.)/(BFAC*ESDC))
 ! ----------------------------------------------------------------------
-! THE FUNCTION OF THE FORM (e**x-1)/x IMBEDDED IN ABOVE EXPRESSION
+! THE FUNCTION OF THE FORM (e**x-1)/x EMBEDDED IN ABOVE EXPRESSION
 ! FOR DSX WAS CAUSING NUMERICAL DIFFICULTIES WHEN THE DENOMINATOR "x"
 ! (I.E. BFAC*ESDC) BECAME ZERO OR APPROACHED ZERO (DESPITE THE FACT THAT
 ! THE ANALYTICAL FUNCTION (e**x-1)/x HAS A WELL DEFINED LIMIT AS
@@ -3399,7 +3334,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SNOW_NEW
 ! ----------------------------------------------------------------------
-! CALCULATE SNOW DEPTH AND DENSITITY TO ACCOUNT FOR THE NEW SNOWFALL.
+! CALCULATE SNOW DEPTH AND DENSITY TO ACCOUNT FOR THE NEW SNOWFALL.
 ! NEW VALUES OF SNOW DEPTH & DENSITY RETURNED.
 
 ! TEMP    AIR TEMPERATURE (K)

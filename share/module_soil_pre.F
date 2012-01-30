@@ -148,7 +148,7 @@ CONTAINS
                CALL wrf_debug ( 0 , message )
             END IF
 
-         CASE ( LSMSCHEME , RUCLSMSCHEME )
+         CASE ( LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME )
             num_seaice_changes = 0
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
@@ -223,7 +223,7 @@ CONTAINS
 
          CASE ( SLABSCHEME )
 
-         CASE ( LSMSCHEME )
+         CASE ( LSMSCHEME , NOAHMPSCHEME )
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
@@ -683,6 +683,8 @@ print *,'WATER CHANGE = ',change_water
 
          CASE (LSMSCHEME)
 
+         CASE (NOAHMPSCHEME)
+
          CASE (RUCLSMSCHEME)
 
          CASE (PXLSMSCHEME)
@@ -761,7 +763,7 @@ print *,'WATER CHANGE = ',change_water
 
       adjust_soil : SELECT CASE ( sf_surface_physics )
 
-         CASE ( SLABSCHEME , LSMSCHEME , RUCLSMSCHEME, PXLSMSCHEME )
+         CASE ( SLABSCHEME , LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME )
             CALL adjust_soil_temp_new ( tmn , sf_surface_physics , tsk , ht ,            &
                                         toposoil , landmask , st_input, st_levels_input, &
                                         flag_soilhgt , flag_tavgsfc ,                    &
@@ -784,6 +786,18 @@ print *,'WATER CHANGE = ',change_water
                                  its , ite , jts , jte , kts , kte )
 
       ELSE IF ( ( sf_surface_physics .EQ. LSMSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
+         CALL init_soil_depth_2 ( zs , dzs , num_soil_layers )
+         CALL init_soil_2_real ( tsk , tmn , smois , sh2o , tslb , &
+                                 st_input , sm_input , sw_input , landmask , sst , &
+                                 zs , dzs , &
+                                 st_levels_input , sm_levels_input , sw_levels_input , &
+                                 num_soil_layers , num_st_levels_input , num_sm_levels_input , num_sw_levels_input , &
+                                 num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc , &
+                                 flag_sst , flag_soil_layers , flag_soil_levels , &
+                                 ids , ide , jds , jde , kds , kde , &
+                                 ims , ime , jms , jme , kms , kme , &
+                                 its , ite , jts , jte , kts , kte )
+      ELSE IF ( ( sf_surface_physics .EQ. NOAHMPSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_2 ( zs , dzs , num_soil_layers )
          CALL init_soil_2_real ( tsk , tmn , smois , sh2o , tslb , &
                                  st_input , sm_input , sw_input , landmask , sst , &
@@ -870,6 +884,14 @@ print *,'WATER CHANGE = ',change_water
                                   ids,ide, jds,jde, kds,kde,             &
                                   ims,ime, jms,jme, kms,kme,             &
                                   its,ite, jts,jte, kts,kte              )
+      ELSE IF ( ( sf_surface_physics .EQ. NOAHMPSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
+         CALL init_soil_depth_2 ( zs , dzs , num_soil_layers )
+         CALL init_soil_2_ideal ( xland,xice,vegfra,snow,canwat,         &
+                                  ivgtyp,isltyp,tslb,smois,tmn,          &
+                                  num_soil_layers,                       &
+                                  ids,ide, jds,jde, kds,kde,             &
+                                  ims,ime, jms,jme, kms,kme,             &
+                                  its,ite, jts,jte, kts,kte              )
       ELSE IF ( ( sf_surface_physics .EQ. RUCLSMSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_3 ( zs , dzs , num_soil_layers )
 
@@ -912,7 +934,7 @@ print *,'WATER CHANGE = ',change_water
 
        SELECT CASE ( sf_surface_physics )
 
-         CASE (LSMSCHEME)
+         CASE ( LSMSCHEME , NOAHMPSCHEME )
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
@@ -2969,6 +2991,29 @@ endif
 !                             ids , ide , jds , jde , kds , kde , &
 !                             ims , ime , jms , jme , kms , kme , &
 !                             its , ite , jts , jte , kts , kte )
+      ELSE IF ( ( sf_surface_physics .EQ. NOAHMPSCHEME .or. sf_surface_physics .eq. 88 ) .AND. &
+                ( num_soil_layers .GT. 1 ) ) THEN
+         CALL init_soil_depth_2 ( zs , dzs , num_soil_layers )
+         CALL init_soil_2_real ( tsk , tmn , smois , sh2o , tslb , &
+                                 st_input , sm_input , sw_input , landmask , sst , &
+                                 zs , dzs , &
+                                 st_levels_input , sm_levels_input , sw_levels_input , &
+                                 num_soil_layers , num_st_levels_input , num_sm_levels_input , num_sw_levels_input , &
+                                 num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc , &
+                                 flag_sst , flag_soilt000 , flag_soilm000 , &
+                                 ids , ide , jds , jde , kds , kde , &
+                                 ims , ime , jms , jme , kms , kme , &
+                                 its , ite , jts , jte , kts , kte )
+!        CALL init_soil_old ( tsk , tmn , &
+!                             smois , tslb , zs , dzs , num_soil_layers , &
+!                             st000010_input , st010040_input , st040100_input , st100200_input , &
+!                             st010200_input , &
+!                             sm000010_input , sm010040_input , sm040100_input , sm100200_input , &
+!                             sm010200_input , &
+!                             landmask_input , sst_input , &
+!                             ids , ide , jds , jde , kds , kde , &
+!                             ims , ime , jms , jme , kms , kme , &
+!                             its , ite , jts , jte , kts , kte )
       ELSE IF ( ( sf_surface_physics .EQ. RUCLSMSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_3 ( zs , dzs , num_soil_layers )
          CALL init_soil_3_real ( tsk , tmn , smois , tslb , &
@@ -3025,6 +3070,14 @@ endif
                                 ims,ime, jms,jme, kms,kme,               &
                                 its,ite, jts,jte, kts,kte                )
       ELSE IF ( ( sf_surface_physics .EQ. LSMSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
+         CALL init_soil_depth_2 ( zs , dzs , num_soil_layers )
+         CALL init_soil_2_ideal ( xland,xice,vegfra,snow,canwat,         &
+                                  ivgtyp,isltyp,tslb,smois,tmn,          &
+                                  num_soil_layers,                       &
+                                  ids,ide, jds,jde, kds,kde,             &
+                                  ims,ime, jms,jme, kms,kme,             &
+                                  its,ite, jts,jte, kts,kte              )
+      ELSE IF ( ( sf_surface_physics .EQ. NOAHMPSCHEME ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
          CALL init_soil_depth_2 ( zs , dzs , num_soil_layers )
          CALL init_soil_2_ideal ( xland,xice,vegfra,snow,canwat,         &
                                   ivgtyp,isltyp,tslb,smois,tmn,          &

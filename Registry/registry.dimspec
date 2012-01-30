@@ -42,6 +42,8 @@ dimspec    n       -     constant=(0:6)                    c
 endif
 
 dimspec    l       2     namelist=num_soil_layers          z     soil_layers
+dimspec    snly    2     namelist=num_snow_layers          z     snow_layers
+dimspec    snsl    2     namelist=num_snso_layers          z     snso_layers
 dimspec    ulay    2     namelist=num_urban_layers         z     urban_layers
 dimspec    u       2     namelist=num_land_cat             z     land_cat
 dimspec    s       2     namelist=num_soil_cat             z     soil_cat

@@ -119,6 +119,8 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
          call da_get_innov_vector_profiler  (it,num_qcstat_conv, grid, ob, iv)
       if (iv%info(buoy)%nlocal      > 0) &
          call da_get_innov_vector_buoy      (it,num_qcstat_conv, grid, ob, iv)
+      if (iv%info(rain)%nlocal     > 0) &          
+         call da_get_innov_vector_rain     (it, num_qcstat_conv,grid, ob, iv)  
 
 #if defined(CRTM) || defined(RTTOV)
       if (use_rad                           ) call da_get_innov_vector_radiance (it, grid, ob, iv)

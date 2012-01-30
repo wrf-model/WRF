@@ -38,7 +38,7 @@ module da_minimisation
       print_detail_grad,omb_set_rand,grad_unit,cost_unit, num_pseudo, cv_options, &
       cv_size_domain_je,cv_size_domain_jb, cv_size_domain_jp, cv_size_domain_js, cv_size_domain_jl, &
       sound, mtgirs, sonde_sfc, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
-      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, &
+      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, rain, &
       bogus, buoy, qscat,pseudo, radiance, monitor_on, max_ext_its, use_rttov_kmatrix,&
       use_crtm_kmatrix,precondition_cg, precondition_factor, use_varbc, varbc_factor, &
       num_procs, myproc, use_gpspwobs, use_gpsztdobs, pseudo_var, num_pseudo, &
@@ -105,6 +105,11 @@ module da_minimisation
    use da_radar, only :  da_calculate_grady_radar, da_ao_stats_radar, &
       da_oi_stats_radar, da_get_innov_vector_radar, da_residual_radar, &
       da_jo_and_grady_radar
+
+   use da_rain, only :  da_calculate_grady_rain, da_ao_stats_rain, &
+      da_oi_stats_rain, da_get_innov_vector_rain, da_residual_rain, &
+      da_jo_and_grady_rain
+
    use da_reporting, only : da_message, da_warning, da_error
    use da_satem, only : da_calculate_grady_satem, da_ao_stats_satem, &
       da_oi_stats_satem, da_get_innov_vector_satem, da_residual_satem, &

@@ -56,6 +56,7 @@ subroutine da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
       vp % v6(its:ite,jts:jte,kts:kte) = vv % v6(its:ite,jts:jte,kts:kte)
       vp % v7(its:ite,jts:jte,kts:kte) = vv % v7(its:ite,jts:jte,kts:kte)
       vp % v8(its:ite,jts:jte,kts:kte) = vv % v8(its:ite,jts:jte,kts:kte)
+      vp % v9(its:ite,jts:jte,kts:kte) = vv % v9(its:ite,jts:jte,kts:kte)
 #endif
       if (be % ne > 0) then
          vp % alpha(its:ite,jts:jte,kts:kte,1:be%ne) = vv%alpha(its:ite,jts:jte,kts:kte,1:be%ne)

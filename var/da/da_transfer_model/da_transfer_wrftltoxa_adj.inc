@@ -44,9 +44,7 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
    grid%g_mu_2 = 0.0
    grid%g_ph_2 = 0.0
    grid%g_p = 0.0
-   grid%g_rainnc = 0.0
    grid%g_rainncv = 0.0
-   grid%g_rainc = 0.0
    grid%g_raincv = 0.0
    !---------------------------------------------------------------------------
    ! [6.0] ALL THE SIMPLE ONES

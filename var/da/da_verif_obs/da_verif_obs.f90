@@ -16,7 +16,7 @@ program da_verif_obs
    
    use da_verif_obs_control, only : surface_type, upr_type, gpspw_type, &
       gpsref_type, record1, record2, record3, &
-      record4, record5, stats_value, exp_dirs, out_dirs, nstd,nstdh, &
+      record4, record5, record6, stats_value, exp_dirs, out_dirs, nstd,nstdh, &
       rmiss, diag_unit_out, nml_unit, alpha, &
       diag_unit_in, info_unit, exp_num, end_date, file_path_string, &
       if_plot_bias, if_plot_airsret, if_plot_airep,if_plot_abias, &
@@ -24,14 +24,16 @@ program da_verif_obs
       if_plot_profiler, if_plot_polaramv, if_plot_qscat, if_plot_rmse, &
       if_plot_sound, if_plot_sonde_sfc, if_plot_synop, if_plot_surface, &
       if_plot_upr, if_plot_ships, if_plot_metar, interval, stdp, start_date, &
-      if_plot_geoamv, stdh, num_miss
+      if_plot_geoamv, stdh, num_miss, &
+      wrf_file, istart, iend, jstart, jend
    use da_verif_obs_init, only : initialize_surface_type, initialize_upr_type, &
       initialize_gpspw_type, initialize_gpsref_type, da_advance_cymdh , &
       initialize_t_tab      
-      
+   use da_tools, only : map_info, proj_merc, proj_ps,proj_lc,proj_latlon, &
+      da_llxy_wrf,da_xyll,da_map_set
   
    implicit none
-                                          ! Typically 12 hours
+
    integer      :: num_obs 
    character*20 :: obs_type, dummy_c
    
@@ -51,6 +53,7 @@ program da_verif_obs
    character*10 :: date, new_date             ! Current date (ccyymmddhh).
    integer      :: sdate, cdate, edate        ! Starting, current ending dates.
    logical      :: if_write, is_file
+   logical, allocatable :: l_skip(:)
 
    character(len=512)     :: out_dir,filename
    type (surface_type)    :: surface
@@ -58,6 +61,12 @@ program da_verif_obs
    type (gpspw_type)      :: gpspw
    type (gpsref_type)     :: gpsref, ggpsref
 
+   integer :: nx, ny, nz, num_date, idate
+   real    :: dx, cen_lat, cen_lon, truelat1, truelat2, stand_lon
+   integer :: map_proj_wrf
+   logical :: l_got_info, inside
+
+   inside = .true.
 
    nml_unit      = 10
    diag_unit_in  = 50
@@ -91,6 +100,12 @@ program da_verif_obs
    if_plot_airsret   = .false.
 
    file_path_string = 'wrfvar/gts_omb_oma_01'
+   wrf_file = 'foo.nc'
+
+   istart = 1
+   iend   = 10000
+   jstart = 1
+   jend   = 10000
 
    ! Read in namelist information defined in module define_cons_types
 
@@ -127,36 +142,74 @@ program da_verif_obs
       write (*,*) 'error in reading namelist record5'
       stop
    end if
+   read ( unit=nml_unit, nml=record6, iostat=ier )
+   if ( ier /= 0 ) then
+      write (*,*) 'error in reading namelist record6'
+      !stop
+   else
+      write ( unit=*, nml = record6 )
+   end if
    close(nml_unit)
    call initialize_t_tab
-   
+
+   call get_fileinfo
+   if ( l_got_info ) then
+      call set_mapinfo
+      istart = max(1, istart)
+      iend   = min(nx, iend)
+      jstart = max(1, jstart)
+      jend   = min(ny, jend)
+   end if
+
+   if_plot_surface = .false.
+   if (if_plot_synop .or. if_plot_metar .or. if_plot_ships .or. if_plot_buoy .or. &
+        if_plot_sonde_sfc .or. if_plot_qscat   ) if_plot_surface = .true.
+
+   if_plot_upr = .false.
+   if (if_plot_sound .or. if_plot_pilot .or. if_plot_profiler   .or.    &
+       if_plot_geoamv .or. if_plot_polaramv  .or. if_plot_airep .or.    &
+       if_plot_airsret) if_plot_upr= .true.
+
+   read(start_date(1:10), fmt='(i10)')sdate
+   read(end_date(1:10), fmt='(i10)')edate
+   write(6,'(4a)')' Diag Starting date ', start_date, ' Ending date ', end_date
+   write(6,'(a,i8,a)')' Interval between dates = ', interval, ' hours.'
+
+   num_date = 0
+   date = start_date
+   do while ( date <= end_date )
+      num_date = num_date + 1
+      call da_advance_cymdh(date, interval, date)
+   end do
+   allocate(l_skip(num_date))
+   l_skip(:) = .false.
+
+   ! check for missing dates
+   idate = 0  ! index of date
+   date = start_date
+   do while ( date <= end_date )
+      idate = idate + 1
+      do iexp = 1, exp_num
+         filename = TRIM(exp_dirs(iexp))//'/'//date//'/'//trim(file_path_string)
+         inquire ( file=trim(filename), exist=is_file)
+         if ( .not. is_file ) then
+            l_skip(idate) = .true.
+         end if
+         if ( l_skip(idate) ) exit
+      end do
+      call da_advance_cymdh(date, interval, date)
+   end do
+
    !---------------------------------------------------------------------------
    ! Loop over experiments 
 
    do iexp  =1,exp_num
 
-      if_plot_surface = .false.
-      if (if_plot_synop .or. if_plot_metar .or. if_plot_ships .or. if_plot_buoy .or. &
-           if_plot_sonde_sfc .or. if_plot_qscat   ) if_plot_surface = .true.
-
-      if_plot_upr = .false.
-      if (if_plot_sound .or. if_plot_pilot .or. if_plot_profiler   .or.    &
-          if_plot_geoamv .or. if_plot_polaramv  .or. if_plot_airep .or.    &
-          if_plot_airsret                                                  &
-      ) if_plot_upr= .true.
-
-      !                                          ! Typically 12 hours
-      read(start_date(1:10), fmt='(i10)')sdate
-      read(end_date(1:10), fmt='(i10)')edate
-      write(6,'(4a)')' Diag Starting date ', start_date, ' Ending date ', end_date
-      write(6,'(a,i8,a)')' Interval between dates = ', interval, ' hours.'
-
+      idate = 0
       date = start_date
-      cdate = sdate
       cdate = sdate
       call initialize_upr_type(gupr)
       call initialize_gpsref_type(ggpsref)
-
 
       do while ( cdate <= edate )         
          ! Initialize various types
@@ -165,17 +218,46 @@ program da_verif_obs
          call initialize_gpspw_type(gpspw)
          call initialize_gpsref_type(gpsref)
 
-         ! construct file name
+         idate = idate + 1
 
+         ! construct file name
          filename = TRIM(exp_dirs(iexp))//'/'//date//'/'//trim(file_path_string)
 
-         ! check if the file exists, then open the file
-
          inquire ( file=trim(filename), exist=is_file) 
-         if ( .not. is_file ) then
-            write(0,*) 'can not find the file: ', trim(filename)
-            stop
+         if ( l_skip(idate) .or. .not. is_file ) then
+            print*, 'skipping file ', trim(filename)
+            !stop
+            !  Write output on outunit
+            out_dir=trim(out_dirs(iexp))
+            if (if_plot_surface  )  then
+               call write_diag_single_level(out_dir,diag_unit_out,date,'surface_u',surface%uomb,surface%uoma)     
+               call write_diag_single_level(out_dir,diag_unit_out,date,'surface_v',surface%vomb,surface%voma)     
+               call write_diag_single_level(out_dir,diag_unit_out,date,'surface_t',surface%tomb,surface%toma)     
+               call write_diag_single_level(out_dir,diag_unit_out,date,'surface_p',surface%pomb,surface%poma)     
+               call write_diag_single_level(out_dir,diag_unit_out,date,'surface_q',surface%qomb,surface%qoma)     
+            end if      
+
+            if (if_plot_gpspw )  then
+               call write_diag_single_level(out_dir,diag_unit_out,date,'gpspw_tpw',gpspw%tpwomb,gpspw%tpwoma)     
+            end if
+
+            if (if_plot_gpsref  )  then
+             call write_diag_multi_level_h(out_dir,diag_unit_out,date,'gps_ref',gpsref%refomb,gpsref%refoma)
+            end if
+
+            if (if_plot_upr ) then
+               call write_diag_multi_level(out_dir,diag_unit_out,date,'upr_u',upr%uomb,upr%uoma)
+               call write_diag_multi_level(out_dir,diag_unit_out,date,'upr_v',upr%vomb,upr%voma)
+               call write_diag_multi_level(out_dir,diag_unit_out,date,'upr_t',upr%tomb,upr%toma)
+               call write_diag_multi_level(out_dir,diag_unit_out,date,'upr_q',upr%qomb,upr%qoma)
+            end if
+            !     Calculate next date:
+            call da_advance_cymdh( date, interval, new_date )
+            date = new_date
+            read(date(1:10), fmt='(i10)')cdate
+            cycle
          end if
+
          open (unit=diag_unit_in, file=trim(filename), form='formatted',   &
                   status='old', iostat=ier)
 1           continue
@@ -274,11 +356,14 @@ program da_verif_obs
                                   p_obs, p_inv, p_qc, p_error, p_inc, &
                                   q_obs, q_inv, q_qc, q_error, q_inc
                   if (if_write) then
-                     if (u_qc >=  0) call update_stats(surface%uomb, surface%uoma, u_inv, u_inc)
-                     if (v_qc >=  0) call update_stats(surface%vomb, surface%voma, v_inv, v_inc)
-                     if (t_qc >=  0) call update_stats(surface%tomb, surface%toma, t_inv, t_inc)
-                     if (p_qc >=  0) call update_stats(surface%pomb, surface%poma, p_inv, p_inc)
-                     if (q_qc >=  0) call update_stats(surface%qomb, surface%qoma, q_inv, q_inc)
+                     if ( l_got_info ) call check_domain(lat, lon, inside)
+                     if ( inside ) then
+                        if (u_qc >=  0) call update_stats(surface%uomb, surface%uoma, u_inv, u_inc)
+                        if (v_qc >=  0) call update_stats(surface%vomb, surface%voma, v_inv, v_inc)
+                        if (t_qc >=  0) call update_stats(surface%tomb, surface%toma, t_inv, t_inc)
+                        if (p_qc >=  0) call update_stats(surface%pomb, surface%poma, p_inv, p_inc)
+                        if (q_qc >=  0) call update_stats(surface%qomb, surface%qoma, q_inv, q_inc)
+                     end if
                   end if
                end do      !  loop over levels
             end do      !  loop over Obs    
@@ -299,15 +384,17 @@ program da_verif_obs
 
                   if (if_write .and. press > 0 ) then
                      call get_std_pr_level(press, npr, stdp, nstd) 
-                   if( u_qc >= 0 .and. npr > 0 ) then
-                     call update_stats(upr%uomb(npr),upr%uoma(npr),u_inv,u_inc)
-                     call update_stats(gupr%uomb(npr),gupr%uoma(npr),u_inv,u_inc)
-                   endif
-                   if( v_qc >= 0 .and. npr > 0 ) then
-                    call update_stats(upr%vomb(npr),upr%voma(npr),v_inv,v_inc)
-                    call update_stats(gupr%vomb(npr),gupr%voma(npr),v_inv,v_inc)
-                   endif
-
+                     if ( l_got_info ) call check_domain(lat, lon, inside)
+                     if ( inside ) then
+                        if( u_qc >= 0 .and. npr > 0 ) then
+                           call update_stats(upr%uomb(npr),upr%uoma(npr),u_inv,u_inc)
+                           call update_stats(gupr%uomb(npr),gupr%uoma(npr),u_inv,u_inc)
+                        endif
+                        if( v_qc >= 0 .and. npr > 0 ) then
+                          call update_stats(upr%vomb(npr),upr%voma(npr),v_inv,v_inc)
+                          call update_stats(gupr%vomb(npr),gupr%voma(npr),v_inv,v_inc)
+                        endif
+                     end if
                   end if
                end do      !  loop over levels
             end do      !  loop over Obs    
@@ -326,7 +413,10 @@ program da_verif_obs
                      lat, lon, dummy, &       ! Lat/lon, dummy    
                      tpw_obs, tpw_inv, tpw_qc, tpw_err, tpw_inc
                   if (if_write) then
-                     if (tpw_qc >=  0) call update_stats(gpspw%tpwomb,gpspw%tpwoma,tpw_inv,tpw_inc)
+                     if ( l_got_info ) call check_domain(lat, lon, inside)
+                     if ( inside ) then
+                        if (tpw_qc >=  0) call update_stats(gpspw%tpwomb,gpspw%tpwoma,tpw_inv,tpw_inc)
+                     end if
                   end if
                end do      !  loop over levels
             end do      !  loop over Obs    
@@ -351,23 +441,25 @@ program da_verif_obs
                      q_obs, q_inv, q_qc, q_error, q_inc
                   if (if_write .and. press > 0 ) then
                      call get_std_pr_level(press, npr, stdp, nstd) 
-
-                   if( u_qc >= 0 .and. npr > 0 ) then
-                     call update_stats(upr%uomb(npr),upr%uoma(npr),u_inv,u_inc)
-                     call update_stats(gupr%uomb(npr),gupr%uoma(npr),u_inv,u_inc)
-                   endif
-                   if( v_qc >= 0 .and. npr > 0 ) then
-                    call update_stats(upr%vomb(npr),upr%voma(npr),v_inv,v_inc)
-                    call update_stats(gupr%vomb(npr),gupr%voma(npr),v_inv,v_inc)
-                   endif
-                   if( t_qc >= 0 .and. npr > 0 )  then
-                    call update_stats(upr%tomb(npr),upr%toma(npr),t_inv,t_inc)
-                    call update_stats(gupr%tomb(npr),gupr%toma(npr),t_inv,t_inc)
-                   endif
-                   if( q_qc >= 0 .and. npr > 0 )  then
-                    call update_stats(upr%qomb(npr),upr%qoma(npr),q_inv,q_inc)
-                    call update_stats(gupr%qomb(npr),gupr%qoma(npr),q_inv,q_inc)
-                   endif
+                     if ( l_got_info ) call check_domain(lat, lon, inside)
+                     if ( inside ) then
+                        if( u_qc >= 0 .and. npr > 0 ) then
+                           call update_stats(upr%uomb(npr),upr%uoma(npr),u_inv,u_inc)
+                           call update_stats(gupr%uomb(npr),gupr%uoma(npr),u_inv,u_inc)
+                        endif
+                        if( v_qc >= 0 .and. npr > 0 ) then
+                          call update_stats(upr%vomb(npr),upr%voma(npr),v_inv,v_inc)
+                          call update_stats(gupr%vomb(npr),gupr%voma(npr),v_inv,v_inc)
+                        endif
+                        if( t_qc >= 0 .and. npr > 0 )  then
+                          call update_stats(upr%tomb(npr),upr%toma(npr),t_inv,t_inc)
+                          call update_stats(gupr%tomb(npr),gupr%toma(npr),t_inv,t_inc)
+                        endif
+                        if( q_qc >= 0 .and. npr > 0 )  then
+                          call update_stats(upr%qomb(npr),upr%qoma(npr),q_inv,q_inc)
+                          call update_stats(gupr%qomb(npr),gupr%qoma(npr),q_inv,q_inc)
+                        endif
+                     end if
 !
                   end if
                 end do      !  loop over levels
@@ -389,18 +481,21 @@ program da_verif_obs
                      t_obs, t_inv, t_qc, t_error, t_inc    
                   if (if_write .and. press > 0 ) then
                      call get_std_pr_level(press, npr, stdp, nstd) 
-                   if( u_qc >= 0 .and. npr > 0 ) then
-                    call update_stats(upr%uomb(npr),upr%uoma(npr),u_inv,u_inc)
-                    call update_stats(gupr%uomb(npr),gupr%uoma(npr),u_inv,u_inc)
-                   endif
-                   if( v_qc >= 0 .and. npr > 0 ) then
-                    call update_stats(upr%vomb(npr),upr%voma(npr),v_inv,v_inc)
-                    call update_stats(gupr%vomb(npr),gupr%voma(npr),v_inv,v_inc)
-                   endif
-                   if( t_qc >= 0 .and. npr > 0 ) then
-                    call update_stats(upr%tomb(npr),upr%toma(npr),t_inv,t_inc)
-                    call update_stats(gupr%tomb(npr),gupr%toma(npr),t_inv,t_inc)
-                   endif
+                     if ( l_got_info ) call check_domain(lat, lon, inside)
+                     if ( inside ) then
+                        if( u_qc >= 0 .and. npr > 0 ) then
+                          call update_stats(upr%uomb(npr),upr%uoma(npr),u_inv,u_inc)
+                          call update_stats(gupr%uomb(npr),gupr%uoma(npr),u_inv,u_inc)
+                        endif
+                        if( v_qc >= 0 .and. npr > 0 ) then
+                          call update_stats(upr%vomb(npr),upr%voma(npr),v_inv,v_inc)
+                          call update_stats(gupr%vomb(npr),gupr%voma(npr),v_inv,v_inc)
+                        endif
+                        if( t_qc >= 0 .and. npr > 0 ) then
+                           call update_stats(upr%tomb(npr),upr%toma(npr),t_inv,t_inc)
+                           call update_stats(gupr%tomb(npr),gupr%toma(npr),t_inv,t_inc)
+                        endif
+                     end if
 
                   end if
                end do      !  loop over levels
@@ -423,14 +518,17 @@ program da_verif_obs
                      v_obs, v_inv, v_qc, v_error, v_inc
                   if (if_write .and. press > 0 ) then
                      call get_std_pr_level(press, npr, stdp, nstd) 
-                   if( u_qc >= 0 .and. npr > 0 ) then
-                       call update_stats(upr%uomb(npr),upr%uoma(npr),u_inv,u_inc)
-                       call update_stats(gupr%uomb(npr),gupr%uoma(npr),u_inv,u_inc)
-                   endif
-                   if( v_qc >= 0 .and. npr > 0 ) then
-                       call update_stats(upr%vomb(npr),upr%voma(npr),v_inv,v_inc)
-                       call update_stats(gupr%vomb(npr),gupr%voma(npr),v_inv,v_inc)
-                   endif
+                     if ( l_got_info ) call check_domain(lat, lon, inside)
+                     if ( inside ) then
+                        if( u_qc >= 0 .and. npr > 0 ) then
+                           call update_stats(upr%uomb(npr),upr%uoma(npr),u_inv,u_inc)
+                           call update_stats(gupr%uomb(npr),gupr%uoma(npr),u_inv,u_inc)
+                        endif
+                        if( v_qc >= 0 .and. npr > 0 ) then
+                           call update_stats(upr%vomb(npr),upr%voma(npr),v_inv,v_inc)
+                           call update_stats(gupr%vomb(npr),gupr%voma(npr),v_inv,v_inc)
+                        endif
+                     end if
 
                   end if
                end do      !  loop over levels
@@ -517,8 +615,11 @@ program da_verif_obs
                      u_obs, u_inv, u_qc, u_error, u_inc, & 
                      v_obs, v_inv, v_qc, v_error, v_inc
                   if (if_write) then
-                     if (u_qc >=  0) call update_stats(surface%uomb,surface%uoma,u_inv,u_inc)
-                     if (v_qc >=  0) call update_stats(surface%vomb,surface%voma,v_inv,v_inc)
+                     if ( l_got_info ) call check_domain(lat, lon, inside)
+                     if ( inside ) then
+                        if (u_qc >=  0) call update_stats(surface%uomb,surface%uoma,u_inv,u_inc)
+                        if (v_qc >=  0) call update_stats(surface%vomb,surface%voma,v_inv,v_inc)
+                     end if
                   end if
                end do      !  loop over levels
             end do      !  loop over obs    
@@ -537,9 +638,12 @@ program da_verif_obs
                          ref_obs, ref_inv, ref_qc, ref_err, ref_inc
             if (if_write .and. height > 0.0) then
                call get_std_ht_level(height, nht, stdh, nstdh)
-               if ( ref_qc >=  0) then
-                  call update_stats(gpsref%refomb(nht),gpsref%refoma(nht),ref_inv,ref_inc)
-                  call update_stats(ggpsref%refomb(nht),ggpsref%refoma(nht),ref_inv,ref_inc)
+               if ( l_got_info ) call check_domain(lat, lon, inside)
+               if ( inside ) then
+                  if ( ref_qc >=  0) then
+                     call update_stats(gpsref%refomb(nht),gpsref%refoma(nht),ref_inv,ref_inc)
+                     call update_stats(ggpsref%refomb(nht),ggpsref%refoma(nht),ref_inv,ref_inc)
+                  end if
                end if
             end if
          END DO      !  loop over levels
@@ -561,14 +665,17 @@ program da_verif_obs
                      q_obs, q_inv, q_qc, q_error, q_inc
                   if (if_write .and. press > 0 ) then
                      call get_std_pr_level(press, npr, stdp, nstd) 
-                   if( t_qc >= 0 .and. npr > 0 ) then
-                    call update_stats(upr%tomb(npr),upr%toma(npr),t_inv,t_inc)
-                    call update_stats(gupr%tomb(npr),gupr%toma(npr),t_inv,t_inc)
-                   endif
-                   if( q_qc >= 0 .and. npr > 0 ) then
-                    call update_stats(upr%qomb(npr),upr%qoma(npr),q_inv,q_inc)
-                    call update_stats(gupr%qomb(npr),gupr%qoma(npr),q_inv,q_inc)
-                   endif
+                     if ( l_got_info ) call check_domain(lat, lon, inside)
+                     if ( inside ) then
+                        if( t_qc >= 0 .and. npr > 0 ) then
+                           call update_stats(upr%tomb(npr),upr%toma(npr),t_inv,t_inc)
+                           call update_stats(gupr%tomb(npr),gupr%toma(npr),t_inv,t_inc)
+                        endif
+                        if( q_qc >= 0 .and. npr > 0 ) then
+                           call update_stats(upr%qomb(npr),upr%qoma(npr),q_inv,q_inc)
+                           call update_stats(gupr%qomb(npr),gupr%qoma(npr),q_inv,q_inc)
+                        endif
+                     end if
                   end if
                end do      !  loop over levels
             end do      !  loop over obs    
@@ -966,5 +1073,71 @@ end subroutine write_diag_multi_level
      if (abs(t_val) >= alpha(k-1,2)) sigt=1.
 
     end subroutine sig_test
+
+
+   subroutine get_fileinfo
+      implicit none
+#include "netcdf.inc"
+      integer :: iost(12)
+      integer :: ncid
+      l_got_info = .false.
+      iost(1) = nf_open(trim(wrf_file), NF_NOWRITE, ncid)
+      if ( iost(1) /= NF_NOERR ) then
+         print*, 'INFO: wrf_file: '//trim(wrf_file)//' does not exist for retrieving mapping info'
+         return
+      else
+         print*, 'Retrieving mapping info from wrf_file: ',trim(wrf_file)
+      end if
+      iost(2)  = nf_get_att_int(ncid, NF_GLOBAL, 'WEST-EAST_GRID_DIMENSION', nx)
+      iost(3)  = nf_get_att_int(ncid, NF_GLOBAL, 'SOUTH-NORTH_GRID_DIMENSION', ny)
+      iost(4)  = nf_get_att_int(ncid, NF_GLOBAL, 'BOTTOM-TOP_GRID_DIMENSION', nz)
+      iost(5)  = nf_get_att_double(ncid, NF_GLOBAL, 'DX', dx)
+      iost(6)  = nf_get_att_double(ncid, NF_GLOBAL, 'CEN_LAT', cen_lat)
+      iost(7)  = nf_get_att_double(ncid, NF_GLOBAL, 'CEN_LON', cen_lon)
+      iost(8)  = nf_get_att_double(ncid, NF_GLOBAL, 'TRUELAT1', truelat1)
+      iost(9)  = nf_get_att_double(ncid, NF_GLOBAL, 'TRUELAT2', truelat2)
+      iost(10) = nf_get_att_double(ncid, NF_GLOBAL, 'STAND_LON', stand_lon)
+      iost(11) = nf_get_att_int(ncid, NF_GLOBAL, 'MAP_PROJ', map_proj_wrf)
+      iost(12) = nf_close(ncid)
+      if ( .not. any(iost/=NF_NOERR) ) then
+         l_got_info = .true.
+      end if
+      print*, 'nx, ny, nz, dx, map_proj, cen_lat, cen_lon, truelat1, truelat2, stand_lon = ', &
+         nx, ny, nz, dx, map_proj_wrf, cen_lat, cen_lon, truelat1, truelat2, stand_lon
+   end subroutine get_fileinfo
+
+   subroutine set_mapinfo
+      implicit none
+      integer :: map_proj_util
+      real    :: xref, yref
+      real :: start_x, start_y
+      xref = nx/2.0
+      yref = ny/2.0
+      if ( map_proj_wrf == 0 .or. map_proj_wrf == 6 ) then
+         map_proj_util = proj_latlon
+      else if ( map_proj_wrf == 3 ) then
+         map_proj_util = proj_merc
+      else if ( map_proj_wrf == 1 ) then
+         map_proj_util = proj_lc
+      else if ( map_proj_wrf == 2 ) then
+         map_proj_util = proj_ps
+      end if
+      call da_map_set(map_proj_util, cen_lat,cen_lon, xref, yref, dx, &
+         stand_lon, truelat1, truelat2, truelat1, stand_lon, map_info)
+      !call da_llxy_wrf(map_info, cen_lat, cen_lon, start_x, start_y)
+   end subroutine set_mapinfo
+
+   subroutine check_domain(lat, lon, inside)
+      implicit none
+      real,    intent(in)  :: lat, lon
+      logical, intent(out) :: inside
+      real                 :: xx, yy
+      call da_llxy_wrf(map_info, lat, lon, xx, yy)
+      inside = .false.
+      if ( xx >= istart .and. xx <= iend .and.  &
+           yy >= jstart .and. yy <= jend ) then
+         inside = .true.
+      end if
+   end subroutine check_domain
 
 end program da_verif_obs

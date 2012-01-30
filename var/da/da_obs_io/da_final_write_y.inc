@@ -390,7 +390,7 @@ subroutine da_final_write_y(iv)
    end if
 
    !------------------------------------------------------------------
-   ! writing AIRS retrievals:
+   ! [18] writing AIRS retrievals:
    !------------------------------------------------------------------
    
    num_obs = 0
@@ -409,7 +409,7 @@ subroutine da_final_write_y(iv)
    end if
 
    !------------------------------------------------------------------
-   ! writing Radiance data:
+   ! [19] writing Radiance data:
    !------------------------------------------------------------------
 
    if (iv%num_inst > 0) then
@@ -439,7 +439,7 @@ subroutine da_final_write_y(iv)
       end do                                   ! end loop for sensor
    end if
    !------------------------------------------------------------------
-   ! writing gpsref:
+   ! [20] writing gpsref:
    !------------------------------------------------------------------
    
    num_obs = 0
@@ -456,6 +456,26 @@ subroutine da_final_write_y(iv)
          call da_read_y_unit(trim(filename(k)),ounit,num_obs,'gpsref',6)    
       end do
    end if
+
+   !------------------------------------------------------------------
+   ! [21] writing RAIN  
+   !------------------------------------------------------------------
+
+   num_obs = 0
+   if (iv%info(rain)%nlocal > 0) then      
+      do n = 1, iv%info(rain)%nlocal       
+         if (iv%info(rain)%proc_domain(1,n)) num_obs = num_obs + 1
+      end do
+   end if   
+   call da_proc_sum_int(num_obs)
+   if (rootproc .and. num_obs > 0) then
+      write(ounit,'(a20,i8)')'rain', num_obs
+      num_obs = 0
+      do k = 0,num_procs-1                        
+         call da_read_y_unit(trim(filename(k)),ounit,num_obs,'rain',4)
+      end do
+   end if      
+
 
    !------------------------------------------------------------------
 

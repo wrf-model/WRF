@@ -95,6 +95,9 @@ subroutine da_calculate_residual(iv, y, re)
    if (iv%info(buoy)%nlocal > 0) &
       call da_residual_buoy(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
 
+    if (iv%info(rain)%nlocal > 0) &
+      call da_residual_rain(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
+
 #if defined(RTTOV) || defined(CRTM)
    if (iv%num_inst > 0) &
       call da_residual_rad(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)

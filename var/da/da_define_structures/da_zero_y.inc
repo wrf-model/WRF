@@ -257,7 +257,7 @@ subroutine da_zero_y( iv, y, value )
       y % buoy(1:y % nlocal(buoy)) % q = value
    end if
 
-   ! Initialize buoy:
+   ! Initialize radar:
    if ( y % nlocal(radar) > 0 ) then
       do n = 1, y % nlocal(radar)
          nlevels = iv % info(radar) % levels(n)
@@ -266,6 +266,12 @@ subroutine da_zero_y( iv, y, value )
          y % radar(n) % rf(1:nlevels) = value
       end do
    end if
+
+   ! Initialize rain:
+   if ( y % nlocal(rain) > 0 ) then
+          y % rain(1:y % nlocal(rain)) % rain = value
+   end if
+
    ! Initialize AIRS retrievals:
 
    if ( y % nlocal(airsr) > 0 ) then

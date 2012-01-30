@@ -2805,7 +2805,11 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
 
      DO J = jts,jte
         DO I = its,ite
+#ifdef IDEAL_NMM_TC
+           nest%hres_fis(I,J)= 0.0 ! idealized
+#else
            nest%hres_fis(i,j)=9.81*nest%hres_avc(i,j)
+#endif
         ENDDO
      ENDDO
 
@@ -2869,7 +2873,9 @@ CONTAINS
        CALL wrf_message(trim(message))
 
        CALL wrf_message('CHECK WRFSI CONFIGURATION AND INPUT HIGH RESOLUTION TOPOGRAPHY AND/OR GRID RATIO') 
+#ifndef IDEAL_NMM_TC
        CALL wrf_error_fatal('LATLON MISMATCH: ERROR READING static FILE FOR THE NEST')
+#endif
     ENDIF
 
     if(config_flags%terrain_smoothing==1) then

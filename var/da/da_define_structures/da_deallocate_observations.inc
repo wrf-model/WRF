@@ -146,6 +146,7 @@ subroutine da_deallocate_observations (iv)
       deallocate (iv%radar)
    end if
 
+   if (iv%info(rain)%nlocal > 0) deallocate (iv%rain)
    if (iv%info(gpspw)%nlocal > 0) deallocate (iv%gpspw)
 
    if (iv%info(gpsref)%nlocal > 0) then

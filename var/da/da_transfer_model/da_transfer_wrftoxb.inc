@@ -426,6 +426,11 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
             if (size(grid%moist,dim=4) >= 4) then
                grid%xb%qcw(i,j,k) = max(grid%moist(i,j,k,p_qc), 0.0)
                grid%xb%qrn(i,j,k) = max(grid%moist(i,j,k,p_qr), 0.0)
+!rizvi For doing single obs test with radiance one need to ensure non-zero hydrometeor
+!  For doing so uncomment following two cards below
+!               grid%xb%qcw(i,j,k) = 0.0001                             
+!               grid%xb%qrn(i,j,k) = 0.0001                             
+
                grid%xb%qt (i,j,k) = grid%xb%q(i,j,k) + grid%xb%qcw(i,j,k) + &
                   grid%xb%qrn(i,j,k)
             end if
@@ -433,6 +438,10 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
             if (size(grid%moist,dim=4) >= 6) then
                grid%xb%qci(i,j,k) = max(grid%moist(i,j,k,p_qi), 0.0)
                grid%xb%qsn(i,j,k) = max(grid%moist(i,j,k,p_qs), 0.0)
+!rizvi For doing single obs test with radiance one need to ensure non-zero hydrometeor
+!  For doing so uncomment following two cards below
+!               grid%xb%qci(i,j,k) = 0.0001                             
+!               grid%xb%qsn(i,j,k) = 0.0001                             
             end if
 
             if (size(grid%moist,dim=4) >= 7) then

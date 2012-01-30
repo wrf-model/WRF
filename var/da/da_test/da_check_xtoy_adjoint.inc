@@ -328,11 +328,15 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
       if (iv%info(buoy)%nlocal     > 0) call da_check_xtoy_adjoint_buoy     (iv, y, partial_lhs, pertile_lhs)
       if (iv%info(bogus)%nlocal    > 0) call da_check_xtoy_adjoint_bogus    (iv, y, partial_lhs, pertile_lhs)
       if (iv%num_inst     > 0) call da_check_xtoy_adjoint_rad      (iv, y, partial_lhs, pertile_lhs)
+      if (iv%info(rain)%nlocal     > 0) call da_check_xtoy_adjoint_rain     (iv, y, partial_lhs, pertile_lhs)
 
       !----------------------------------------------------------------------
       ! [5.0] Perform adjoint operation:
       !----------------------------------------------------------------------
       call da_zero_x (grid%xa)
+
+      grid%g_rainc=0
+      grid%g_rainnc=0
 
       call da_transform_xtoy_adj (cv_size, cv, grid, iv, y, grid%xa)
 
@@ -410,9 +414,9 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
          grid%g_p = 0.0
          grid%g_mu_2 = 0.0
          grid%g_moist = 0.0
-         grid%g_rainnc = 0.0
+       !  grid%g_rainnc = 0.0
          grid%g_rainncv = 0.0
-         grid%g_rainc = 0.0
+       !  grid%g_rainc = 0.0
          grid%g_raincv = 0.0
 
          write(unit=filnam,fmt='(a2,i2.2)') 'af',nobwin

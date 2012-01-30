@@ -52,6 +52,7 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
       vv % v6(its:ite,jts:jte,kts:kte) = vp % v6(its:ite,jts:jte,kts:kte)
       vv % v7(its:ite,jts:jte,kts:kte) = vp % v7(its:ite,jts:jte,kts:kte)
       vv % v8(its:ite,jts:jte,kts:kte) = vp % v8(its:ite,jts:jte,kts:kte)
+      vv % v9(its:ite,jts:jte,kts:kte) = vp % v9(its:ite,jts:jte,kts:kte)
 #endif
    !  Uv for alpha is an identity transform:
       if (be % ne > 0) then

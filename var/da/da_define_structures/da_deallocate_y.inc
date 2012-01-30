@@ -24,6 +24,7 @@ subroutine da_deallocate_y(y)
 
    if (y % nlocal(metar) > 0) deallocate (y % metar)
 
+   if (y % nlocal(rain) > 0)  deallocate (y % rain)
 
    if (y % nlocal(sound) > 0) then
       do n = 1, y % nlocal(sound)

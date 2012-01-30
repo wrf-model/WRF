@@ -28,8 +28,6 @@ subroutine da_transform_vtovv_adj(grid, cv_size, be, cv, vv)
    !-------------------------------------------------------------------------
 
    ! [2.1] Transform 1st control variable:
-!  print*,'cv_size= ',cv_size
-!  print*,be % v1 % mz,be % v2 % mz, be % v3 % mz,be % v4 % mz,be % v5 % mz,be % v6 % mz,be % v7 % mz
    mz = be % v1 % mz
    s(3)=s(1)+mz-1
    if( do_normalize )call da_transform_rescale(mz,be%sd(:,:,s(1):s(3)),vv%v1)
@@ -160,6 +158,21 @@ subroutine da_transform_vtovv_adj(grid, cv_size, be, cv, vv)
    elseif( .not. use_rf ) then
       call da_error(__FILE__,__LINE__,(/"no da_transform_through_wavelet_adj for v8"/))
    endif
+
+   ! [2.9] Transform 9th control variable
+
+   mz = be % v9 % mz
+   if( use_rf .and. mz > 0 .and. len_scaling9(1) /= 0.0) then
+      if(cloud_cv_options == 1)then
+         vv % v9 = 0.0
+      elseif(cloud_cv_options == 2)then
+         call da_transform_through_rf_adj(grid, mz, be % v9 % rf_alpha, be % v9 % val, vv % v9)
+      elseif(cloud_cv_options == 3)then
+         call da_transform_through_rf_adj(grid, mz, be % v9 % rf_alpha, be % v9 % val, vv % v9, scaling)
+      endif
+   elseif( .not. use_rf ) then
+      call da_error(__FILE__,__LINE__,(/"no da_transform_through_wavelet_adj for v9"/))
+   endif
 #endif
 
    ! [2.9] Transform alpha control variable
@@ -191,7 +204,7 @@ subroutine da_transform_vtovv_adj(grid, cv_size, be, cv, vv)
       !-------------------------------------------------------------------------
 !     cv=0.0
 #ifdef CLOUD_CV
-      call da_vv_to_cv( vv, grid%xp, (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz,  be%v6%mz, be%v7%mz, be%v8%mz, be%alpha%mz, be%ne /), &
+      call da_vv_to_cv( vv, grid%xp, (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz,  be%v6%mz, be%v7%mz, be%v8%mz,be%v9%mz, be%alpha%mz, be%ne /), &
                         cv_size, cv)
 #else
       call da_vv_to_cv( vv, grid%xp, (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be%ne /), cv_size, cv)

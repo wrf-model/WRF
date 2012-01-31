@@ -872,7 +872,7 @@ CONTAINS
 
           CALL wrf_debug(100,'in cu_tiedtke')
           CALL CU_TIEDTKE(                                      &
-                DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &
+                DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU,HFX=hfx &
                ,RAINCV=RAINCV,PRATEC=tmppratec,QFX=qfx,ZNU=znu  &
                ,U3D=u,V3D=v,W=w,T3D=t,PI3D=pi,RHO3D=rho         &
                ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &

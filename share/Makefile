@@ -94,13 +94,13 @@ solve_interface.o: solve_em.int ../frame/module_domain.o ../frame/module_configu
 start_domain.o: start_domain_em.int wrf_timeseries.o track_driver.o  ../frame/module_domain.o ../frame/module_configure.o
 
 module_bc.o: ../frame/module_configure.o ../frame/module_state_description.o \
-		../frame/module_wrf_error.o
+		../frame/module_wrf_error.o module_model_constants.o
 
 module_bc_tl.o: ../frame/module_configure.o ../frame/module_state_description.o \
-		../frame/module_wrf_error.o
+		../frame/module_wrf_error.o module_model_constants.o
 
 module_bc_ad.o: ../frame/module_configure.o ../frame/module_state_description.o \
-		../frame/module_wrf_error.o
+		../frame/module_wrf_error.o module_model_constants.o
 
 module_bc_time_utilities.o: $(ESMF_MOD_DEPENDENCE)
 
@@ -138,6 +138,7 @@ wrf_timeseries.o: wrf_tsin.o \
 track_driver.o: track_input.o \
                 module_model_constants.o \
                 module_llxy.o \
+                module_date_time.o \
                 ../frame/module_domain.o \
                 ../frame/module_configure.o \
                 ../frame/module_state_description.o \
@@ -191,14 +192,17 @@ mediation_feedback_domain.o: ../frame/module_domain.o ../frame/module_configure.
 mediation_force_domain.o: ../frame/module_domain.o ../frame/module_configure.o
 
 mediation_integrate.o: ../frame/module_domain.o ../frame/module_configure.o \
-			../frame/module_timing.o ../dyn_em/module_bc_em.o \
+			../frame/module_timing.o \
 			../frame/module_dm.o ../frame/module_comm_dm.o \
-			module_bc.o $(ESMF_MOD_DEPENDENCE) \
+			$(ESMF_MOD_DEPENDENCE) \
 			module_date_time.o module_bc_time_utilities.o \
 			module_compute_geop.o                         \
-			module_io_domain.o mediation_pertmod_io.o  \
-			$(ESMF_MOD_DEPENDENCE)
+			module_io_domain.o mediation_pertmod_io.o \
+			module_bc.o ../dyn_em/module_bc_em.o
 
+# Repeat the dependece of module_bc_em.o here to force module_bc is compiled before module_bc_em
+../dyn_em/module_bc_em.o: module_bc.o ../frame/module_configure.o \
+		../frame/module_wrf_error.o
 
 mediation_interp_domain.o: ../frame/module_domain.o ../frame/module_configure.o \
 			../frame/module_timing.o

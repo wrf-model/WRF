@@ -29,9 +29,6 @@ DA_CONVERTOR_MODULES = $(DA_CONVERTOR_MOD_DIR) $(INCLUDE_MODULES)
 #EXP_MODULE_DIR = -I../dyn_exp
 #EXP_MODULES =  $(EXP_MODULE_DIR)
 
-# set this in the compile script now
-J = -j6
-
 NMM_MODULE_DIR = -I../dyn_nmm
 NMM_MODULES =  $(NMM_MODULE_DIR)
 

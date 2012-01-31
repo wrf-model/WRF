@@ -1446,8 +1446,10 @@ SUBROUTINE med_analysis_in ( grid , config_flags )
       write(message,'(A,I0,A)') '-------> Domain ',grid%id,' running as a cold start (interp from parent).'
       call wrf_message(message)
 
-      WRITE ( message , FMT = '("Failing to read restart for domain ",I8)' ) grid%id
-      CALL end_timing ( TRIM(message) )
+      IF ( wrf_dm_on_monitor() ) THEN
+         WRITE (message, '("Failing to read restart for domain ",I8)') grid%id
+         CALL end_timing ( TRIM(message) )
+      END IF
 
       return
    ELSE

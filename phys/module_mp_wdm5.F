@@ -435,7 +435,7 @@ CONTAINS
         rainncv(i) = 0.
         if(PRESENT (snowncv) .AND. PRESENT (snow)) snowncv(i) = 0.
         sr(i) = 0.
-! new local array to catch step snow 
+! new local array to catch step snow
         tstepsnow(i) = 0.
       enddo
 !
@@ -780,13 +780,13 @@ CONTAINS
           rainncv(i) = fallsum*delz(i,1)/denr*dtcld*1000. + rainncv(i)
           rain(i) = fallsum*delz(i,1)/denr*dtcld*1000.+rain(i)
         endif
-        if(fallsum_qsi.gt.0.) then
-            tstepsnow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + tstepsnow(i)
-        if (PRESENT (snowncv) .and. PRESENT (snow)) then 
+       if(fallsum_qsi.gt.0.) then
+          tstepsnow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + tstepsnow(i)
+          if (PRESENT (snowncv) .and. PRESENT (snow)) then 
             snowncv(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snowncv(i)
             snow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.+snow(i)
+          endif
         endif 
-        endif
         if(fallsum.gt.0.)sr(i)= tstepsnow(i)/(rainncv(i)+1.e-12)
       enddo
 !
@@ -1364,7 +1364,7 @@ CONTAINS
             ncr(i,k,2) = max(ncr(i,k,2)+(-nraut(i,k)-nccol(i,k)-nracw(i,k)     &
                         -nsacw(i,k))*dtcld,0.)
             ncr(i,k,3) = max(ncr(i,k,3)+(nraut(i,k)+nseml(i,k)-nrcol(i,k)      &
-                          )*dtcld,0.)
+                        )*dtcld,0.)
             xlf = xls-xl(i,k)
             xlwork2 = -xl(i,k)*(prevp(i,k)+psevp(i,k))
             t(i,k) = t(i,k)-xlwork2/cpm(i,k)*dtcld
@@ -1405,7 +1405,7 @@ CONTAINS
 ! re-compute the mean-volume drop diameter            [LH A10]
 ! for raindrop distribution
 !-----------------------------------------------------------------
-          avedia(i,k,2) = rslope(i,k,1)*((24.)**(.3333333))       
+          avedia(i,k,2) = rslope(i,k,1)*((24.)**(.3333333))
 !----------------------------------------------------------------
 ! Nrevp_s: evaporation/condensation rate of rain   [LH A14]
 !        (NR->NC)

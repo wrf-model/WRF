@@ -221,6 +221,12 @@ Namelist variables specifically for the WPS input for real:
                                                   default is option 1, the old MM5 method; option 2 uses a WMO 
                                                   recommended method (WMO-No. 49, corrigendum, August 2000) - 
                                                   there is a difference between the two methods though small
+ interp_theta                        = .false.  ; If set to .false., it will vertically interpolate temperature 
+                                                  instead of potential temperature, which may reduce bias when 
+                                                  compared with input data
+ hypsometric_opt                     = .false.  ; If set to .ture., it uses an alternative way (less biased 
+                                                  when compared agaist input data) to compute height in program 
+                                                  real and pressure in model (ARW only). 
  p_top_requested                     = 5000     ; p_top (Pa) to use in the model
  ptsgm                               = 42000.   ; FOR NMM:  defines the pressure interface dividing
                                                 ;           the terrain following portion of the hybrid vertical
@@ -397,6 +403,7 @@ Namelist variables for controlling the adaptive time step option:
                                           also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 4, rrtmg scheme
                                      = 5, Goddard longwave scheme
+                                     = 7, UCLA scheme 
                                      = 31, Earth Held-Suarez forcing
                                      = 99, GFDL (Eta) longwave (semi-supported)
                                           also must use co2tf = 1 for ARW
@@ -407,8 +414,9 @@ Namelist variables for controlling the adaptive time step option:
                                      = 2, Goddard short wave
                                      = 3, cam scheme
                                           also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
-                                     = 5, Goddard shortwave scheme
                                      = 4, rrtmg scheme
+                                     = 5, Goddard shortwave scheme
+                                     = 7, UCLA scheme
                                      = 99, GFDL (Eta) longwave (semi-supported)
                                           also must use co2tf = 1 for ARW
 
@@ -449,13 +457,16 @@ Namelist variables for controlling the adaptive time step option:
                                      = 5, MYNN surface layer
                                      = 7, Pleim-Xiu surface layer (ARW only)
                                      = 10, TEMF surface layer (ARW only)
+                                     = 11, Modified Monin-Obukhov scheme
 
  sf_surface_physics (max_dom)        land-surface option (old bl_surface_physics option)
                                      = 0, no surface temp prediction
                                      = 1, thermal diffusion scheme
                                      = 2, Unified Noah land-surface model
                                      = 3, RUC land-surface model
+                                     = 4, Noah-MP land-surface model (see additional &noah_mp namelist)
                                      = 7, Pleim-Xiu LSM (ARW)
+                                     = 8, Simplified Simple Biosphere Model (SSiB)
 
  sf_urban_physics(max_dom)           = 0, ; activate urban canopy model (in Noah LSM only)
                                      = 0: no
@@ -648,6 +659,46 @@ Options for stochastic kinetic-energy backscatter scheme:
                                                   change the run. When running an ensemble, this can be
                                                   ensemble member number, so that each ensemble member gets a
                                                   different random number stream, hence a different perturbed run.
+
+Options for use with the Noah-MP Land Surface Model:
+
+&noah_mp
+ dveg                               = 2,        ; Noah-MP Dynamic Vegetation option:
+                                                ;    0 = Off (LAI from table; FVEG = shdfac)
+                                                ;    1 = On
+                                                ;    2 = Off (LAI from table; FVEG calculated)
+                                                ;    3 = Off (LAI from table; FVEG = maximum veg. fraction)
+ opt_crs                            = 1,        ; Noah-MP Stomatal Resistance option:
+                                                ;    1 = Ball-Berry; 2 = Jarvis
+ opt_btr                            = 1,        ; Noah-MP Soil Moisture Factor for Stomatal Resistance
+                                                ;    1 = Noah; 2 = CLM; 3 = SSiB
+ opt_run                            = 1,        ; Noah-MP Runoff and Groundwater option
+                                                ;    1 = TOPMODEL with groundwater
+                                                ;    2 = TOPMODEL with equilibrium water table
+                                                ;    3 = original surface and subsurface runoff (free drainage)
+                                                ;    4 = BATS surface and subsurface runoff (free drainage)
+ opt_frz                            = 1,        ; Noah-MP Supercooled Liquid Water option
+                                                ;    1 = No iteration; 2 = Koren's iteration
+ opt_inf                            = 1,        ; Noah-MP Soil Permeability option
+                                                ;    1 = Linear effects, more permeable;
+                                                ;    2 = Non-linear effects, less permeable
+ opt_rad                            = 1,        ; Noah-MP Radiative Transfer option
+                                                ;    1 = Modified two-stream;
+                                                ;    2 = Two-stream applied to grid-cell
+                                                ;    3 = Two-stream applied to vegetated fraction
+ opt_alb                            = 2,        ; Noah-MP Ground Surface Albedo option
+                                                ;    1 = BATS; 2 = CLASS
+ opt_snf                            = 1,        ; Noah-MP Precipitation Partitioning between snow and rain
+                                                ;    1 = Jordan (1991)
+                                                ;    2 = BATS:  Snow when SFCTMP < TFRZ+2.2
+                                                ;    3 = Snow when SFCTMP < TFRZ
+ opt_tbot                           = 2,        ; Noah-MP Soil Temperature Lower Boundary Condition
+                                                ;    1 = Zero heat flux
+                                                ;    2 = TBOT at 8 m from input file
+ opt_stc                            = 1,        ; Noah-MP Snow/Soil temperature time scheme
+                                                ;    1 = semi-implicit
+                                                ;    2 = full-implicit
+ /
 
  &fdda
  grid_fdda (max_dom)                 = 1        ; grid-nudging fdda on (=0 off) for each domain

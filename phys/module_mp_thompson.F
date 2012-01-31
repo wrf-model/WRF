@@ -738,7 +738,7 @@
                             its,ite, jts,jte, kts,kte
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           qv, qc, qr, qi, qs, qg, ni, nr, th
-      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
+      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT),optional:: &
                           rainprod, evapprod
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN):: &
                           pii, p, dz
@@ -757,7 +757,8 @@
 !..Local variables
       REAL, DIMENSION(kts:kte):: &
                           qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
-                          nr1d, t1d, p1d, dz1d, dBZ, rainprod1d, evapprod1d
+                          nr1d, t1d, p1d, dz1d, dBZ, &
+                          rainprod1d, evapprod1d
       REAL, DIMENSION(its:ite, jts:jte):: pcp_ra, pcp_sn, pcp_gr, pcp_ic
       REAL:: dt, pptrain, pptsnow, pptgraul, pptice
       REAL:: qc_max, qr_max, qs_max, qi_max, qg_max, ni_max, nr_max
@@ -884,8 +885,8 @@
             qg(i,k,j) = qg1d(k)
             ni(i,k,j) = ni1d(k)
             nr(i,k,j) = nr1d(k)
-            rainprod(i,k,j) = rainprod1d(k)
-            evapprod(i,k,j) = evapprod1d(k)
+            if(present(rainprod)) rainprod(i,k,j) = rainprod1d(k)
+            if(present(evapprod)) evapprod(i,k,j) = evapprod1d(k)
             th(i,k,j) = t1d(k)/pii(i,k,j)
             if (qc1d(k) .gt. qc_max) then
              imax_qc = i

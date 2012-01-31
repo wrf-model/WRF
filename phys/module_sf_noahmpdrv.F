@@ -1153,8 +1153,8 @@ CONTAINS
              IF ( SALB > -999 ) THEN
                 ALBEDO(I,J)  = salb
              ENDIF
-!jref         TSK(I,J)     = tradxy   (i,j)
-             TSK(I,J)     = tstarxy  (i,j)
+             TSK(I,J)     = tradxy   (i,j)
+!KWM          TSK(I,J)     = tstarxy  (i,j)
 !niu          POTEVP(I,J)  = ???
 !jref         CHS2(I,J)    = chxy     (i,j)
 

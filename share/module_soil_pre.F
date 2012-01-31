@@ -2569,7 +2569,7 @@ FUNCTION skip_middle_points_t ( ids , ide , jds , jde , &
 
    INTEGER , PARAMETER :: slop = 0
 
-   IF ( subtleties_exist ) THEN
+   IF ( ( subtleties_exist ) .OR. ( ide .EQ. 3 ) .OR. ( jde .EQ. 3 ) ) THEN
       skip_it = .FALSE.
    ELSE
       IF ( ( i_in .GE. ids+width+slop ) .AND. ( i_in .LE. ide-1-width-slop )   .AND. &

@@ -121,7 +121,7 @@ module_advect_em.o: ../share/module_bc.o \
 module_bc_em.o: ../share/module_bc.o ../frame/module_configure.o \
 		../frame/module_wrf_error.o
 
-module_bc_em_tl.o: module_bc_em.o ../share/module_bc.o ../frame/module_configure.o \
+module_bc_em_tl.o: ../share/module_bc.o ../frame/module_configure.o \
 		../share/module_bc_tl.o	\
 		../frame/module_wrf_error.o
 

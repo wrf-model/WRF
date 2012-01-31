@@ -38,7 +38,7 @@
     REAL    gmt, cen_lat, cen_lon, bdyfrq , truelat1 , truelat2 , moad_cen_lat , stand_lon
     INTEGER km_opt, diff_opt, damp_opt,  &
             mp_physics, ra_lw_physics, ra_sw_physics, sf_sfclay_physics, &
-            sf_surface_physics, bl_pbl_physics, cu_physics
+            sf_surface_physics, bl_pbl_physics, cu_physics, hypsometric_opt
     REAL    khdif, kvdif, swrad_scat, dampcoef
     INTEGER sf_urban_physics, w_damping, smooth_option, feedback, surface_input_source, sst_update
 #if (EM_CORE == 1)
@@ -114,15 +114,15 @@
                               ims, ime, jms, jme, kms, kme,    &
                               ips, ipe, jps, jpe, kps, kpe    )
 
-    call nl_get_diff_opt      ( 1, diff_opt                      )
-    call nl_get_km_opt        ( 1, km_opt                        )
-    call nl_get_damp_opt      ( 1, damp_opt                      )
-    call nl_get_dampcoef      ( grid%id,  dampcoef            )
-    call nl_get_khdif         ( grid%id,  khdif               )
-    call nl_get_kvdif         ( grid%id,  kvdif               )
-    call nl_get_mp_physics    ( grid%id,  mp_physics          )
-    call nl_get_ra_lw_physics ( grid%id,  ra_lw_physics       )
-    call nl_get_ra_sw_physics ( grid%id,  ra_sw_physics           )
+    call nl_get_diff_opt           ( 1, diff_opt                  )
+    call nl_get_km_opt             ( 1, km_opt                    )
+    call nl_get_damp_opt           ( 1, damp_opt                  )
+    call nl_get_dampcoef           ( grid%id,  dampcoef           )
+    call nl_get_khdif              ( grid%id,  khdif              )
+    call nl_get_kvdif              ( grid%id,  kvdif              )
+    call nl_get_mp_physics         ( grid%id,  mp_physics         )
+    call nl_get_ra_lw_physics      ( grid%id,  ra_lw_physics      )
+    call nl_get_ra_sw_physics      ( grid%id,  ra_sw_physics      )
     call nl_get_sf_sfclay_physics  ( grid%id,  sf_sfclay_physics  )
     call nl_get_sf_surface_physics ( grid%id,  sf_surface_physics )
     call nl_get_bl_pbl_physics     ( grid%id,  bl_pbl_physics     )
@@ -138,6 +138,7 @@
     call nl_get_w_damping            ( 1      ,  w_damping            )
 
 #if (EM_CORE == 1)
+    call nl_get_hypsometric_opt    ( 1, hypsometric_opt           )
     CALL nl_get_moist_adv_opt  ( grid%id , moist_adv_opt )
     CALL nl_get_scalar_adv_opt ( grid%id , scalar_adv_opt )
     CALL nl_get_tke_adv_opt    ( grid%id , tke_adv_opt )
@@ -473,6 +474,7 @@ endif
       CALL wrf_put_dom_ti_integer ( fid, 'GRID_SFDDA', grid_sfdda , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'SGFDDA_INTERVAL_M', sgfdda_interval_m , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'SGFDDA_END_H', sgfdda_end_h , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'HYPSOMETRIC_OPT', hypsometric_opt , 1 , ierr )
 #endif
 
       IF ( switch .EQ. history_only ) THEN

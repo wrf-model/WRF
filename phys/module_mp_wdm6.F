@@ -326,7 +326,7 @@ CONTAINS
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
         pcact, prevp, psdep, pgdep, praut, psaut, pgaut,          &
         pracw, psacw, pgacw, pgacr, pgacs, psaci, pgmlt, praci,   &
-        piacr, pracs, psacr, pgaci, pseml, pgeml       
+        piacr, pracs, psacr, pgaci, pseml, pgeml
   REAL, DIMENSION( its:ite , kts:kte ) :: paacw
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
         nraut, nracw, ncevp, nccol, nrcol,                        &
@@ -790,23 +790,23 @@ CONTAINS
           rainncv(i) = fallsum*delz(i,kts)/denr*dtcld*1000. + rainncv(i)
           rain(i) = fallsum*delz(i,kts)/denr*dtcld*1000. + rain(i)
         endif
-        if(fallsum_qsi.gt.0.) then
-            tstepsnow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + tstepsnow(i)
-        IF ( PRESENT (snowncv) .AND. PRESENT (snow)) THEN
+        If(fallsum_qsi.gt.0.) then
+          tstepsnow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + tstepsnow(i)
+          IF( PRESENT (snowncv) .AND. PRESENT (snow)) THEN
             snowncv(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snowncv(i)     
             snow(i) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snow(i)
+          ENDIF
         ENDIF
-        endif
-        if(fallsum_qg.gt.0.) then
-            tstepgraup(i) = fallsum_qg*delz(i,kts)/denr*dtcld*1000.            &
+        IF(fallsum_qg.gt.0.) then
+          tstepgraup(i) = fallsum_qg*delz(i,kts)/denr*dtcld*1000.              &
                             + tstepgraup(i)
-        IF ( PRESENT (graupelncv) .AND. PRESENT (graupel)) THEN
+          IF( PRESENT (graupelncv) .AND. PRESENT (graupel)) THEN
             graupelncv(i) = fallsum_qg*delz(i,kts)/denr*dtcld*1000.            &  
                             + graupelncv(i)
             graupel(i) = fallsum_qg*delz(i,kts)/denr*dtcld*1000. + graupel(i)
+          ENDIF
         ENDIF
-        endif
-        if(fallsum.gt.0.) sr(i) = (tstepsnow(i) + tstepgraup(i))               &  
+        if(fallsum.gt.0.) sr(i) = (tstepsnow(i) + tstepgraup(i))               &
                                   /(rainncv(i)+1.e-12)
       enddo
 !
@@ -1042,9 +1042,9 @@ CONTAINS
 ! Nrevp: evaporation/condensation rate of rain   [LH A14] 
 !        (NR->NCCN) 
 !----------------------------------------------------------------
-              if(prevp(i,k).eq.-qrs(i,k,1)/dtcld) then 
+              if(prevp(i,k).eq.-qrs(i,k,1)/dtcld) then
                 ncr(i,k,1) = ncr(i,k,1)+ncr(i,k,3)
-                ncr(i,k,3) = 0. 
+                ncr(i,k,3) = 0.
               endif
             else
 !
@@ -1413,7 +1413,7 @@ CONTAINS
 !     cloud water
 !
             value = max(qmin,qci(i,k,1))
-            source = (praut(i,k)+pracw(i,k)+paacw(i,k)+paacw(i,k))&
+            source = (praut(i,k)+pracw(i,k)+paacw(i,k)+paacw(i,k))             &
                     *dtcld
             if (source.gt.value) then
               factor = value/source
@@ -1556,7 +1556,7 @@ CONTAINS
 !     cloud water
 !
             value = max(qmin,qci(i,k,1))
-            source= (praut(i,k)+pracw(i,k)+paacw(i,k)+paacw(i,k)) &
+            source= (praut(i,k)+pracw(i,k)+paacw(i,k)+paacw(i,k))              &
                    *dtcld
             if (source.gt.value) then
               factor = value/source
@@ -1634,7 +1634,7 @@ CONTAINS
             qci(i,k,1) = max(qci(i,k,1)-(praut(i,k)+pracw(i,k)                 &
                     +paacw(i,k)+paacw(i,k))*dtcld,0.)
             qrs(i,k,1) = max(qrs(i,k,1)+(praut(i,k)+pracw(i,k)                 &
-                    +prevp(i,k)+paacw(i,k)+paacw(i,k)-pseml(i,k)  &
+                    +prevp(i,k)+paacw(i,k)+paacw(i,k)-pseml(i,k)               &
                     -pgeml(i,k))*dtcld,0.)
             qrs(i,k,2) = max(qrs(i,k,2)+(psevp(i,k)-pgacs(i,k)                 &
                     +pseml(i,k))*dtcld,0.)
@@ -1689,9 +1689,9 @@ CONTAINS
                      rslope3,work1,workn,its,ite,kts,kte)
       do k = kts, kte
         do i = its, ite
-!-----------------------------------------------------------------             
+!-----------------------------------------------------------------
 ! re-compute the mean-volume drop diameter       [LH A10]
-! for raindrop distribution                          
+! for raindrop distribution
 !-----------------------------------------------------------------
           avedia(i,k,2) = rslope(i,k,1)*((24.)**(.3333333))
 !----------------------------------------------------------------
@@ -1706,7 +1706,7 @@ CONTAINS
 !        (QR->QC)
 !----------------------------------------------------------------
             qci(i,k,1) = qci(i,k,1)+qrs(i,k,1)
-            qrs(i,k,1) = 0.    
+            qrs(i,k,1) = 0.
           endif
         enddo
       enddo

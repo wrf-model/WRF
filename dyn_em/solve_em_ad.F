@@ -2907,8 +2907,9 @@ BENCH_END(tracer_adv_tim)
 
            IF( config_flags%specified ) THEN
 
-             !CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
-             CALL flow_dep_bdy  ( scalar(ims,kms,jms,is),     &
+             IF(is .ne. P_QNN)THEN
+               !CALL push4backup ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+               CALL flow_dep_bdy  ( scalar(ims,kms,jms,is),     &
                                   grid%ru_m, grid%rv_m, config_flags,   &
                                   grid%spec_zone,                  &
                                   ids,ide, jds,jde, kds,kde,  & ! domain dims
@@ -2917,6 +2918,17 @@ BENCH_END(tracer_adv_tim)
                                   grid%i_start(ij), grid%i_end(ij),  &
                                   grid%j_start(ij), grid%j_end(ij),  &
                                   k_start, k_end                    )
+             ELSE
+               CALL flow_dep_bdy_qnn  ( scalar(ims,kms,jms,is),     &
+                                  grid%ru_m, grid%rv_m, config_flags,   &
+                                  grid%spec_zone,                  &
+                                  ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                  ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                  ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                  grid%i_start(ij), grid%i_end(ij),  &
+                                  grid%j_start(ij), grid%j_end(ij),  &
+                                  k_start, k_end                    )
+             ENDIF
 
            ENDIF
 
@@ -5147,8 +5159,9 @@ BENCH_END(adj_calc_p_rho_tim)
 
            IF( config_flags%specified ) THEN
 
-             !CALL pop2restore ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
-             CALL a_flow_dep_bdy  ( a_scalar(ims,kms,jms,is),     &
+             IF(is .ne. P_QNN)THEN
+               !CALL pop2restore ( grid%ru_m,grid%rv_m, "ru_m,rv_m" )
+               CALL a_flow_dep_bdy  ( a_scalar(ims,kms,jms,is),     &
                                   grid%ru_m, grid%rv_m, config_flags,   &
                                   grid%spec_zone,                  &
                                   ids,ide, jds,jde, kds,kde,  & ! domain dims
@@ -5157,6 +5170,18 @@ BENCH_END(adj_calc_p_rho_tim)
                                   grid%i_start(ij), grid%i_end(ij),  &
                                   grid%j_start(ij), grid%j_end(ij),  &
                                   k_start, k_end                    )
+             ELSE
+               CALL a_flow_dep_bdy_qnn  ( scalar(ims,kms,jms,is),     &
+                                  a_scalar(ims,kms,jms,is),     &
+                                  grid%ru_m, grid%rv_m, config_flags,   &
+                                  grid%spec_zone,                  &
+                                  ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                  ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                  ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                  grid%i_start(ij), grid%i_end(ij),  &
+                                  grid%j_start(ij), grid%j_end(ij),  &
+                                  k_start, k_end                    )
+             ENDIF
 
            ENDIF
 

@@ -13421,7 +13421,11 @@ END SUBROUTINE nssl_2mom_driver
              ENDIF
              
              tmp = Min(1.0,1.e3*(an(ix,jy,kz,ls))*db(ix,jy,kz))
+#if 0
              gtmp(ix,kz) = Max( 1.0d0*gtmp(ix,kz), 750.0*(tmp)**1.98)
+#else
+             IF ( 750.0*(tmp)**1.98 .GT. gtmp(ix,kz) ) gtmp(ix,kz) = 750.0*(tmp)**1.98
+#endif
              dtmps = gtmp(ix,kz)
              dtmp(ix,kz) = dtmp(ix,kz) + gtmp(ix,kz)
             ELSE

@@ -120,7 +120,7 @@
                   wrf_err_message = " --- requires Noah-MP option OPT_SFC == 3."
                   CALL wrf_message ( TRIM ( wrf_err_message ) ) 
 
-                  write (wrf_err_message, '(" --- Switching to Noah-MP option OPT_SFC == 3)')
+                  write (wrf_err_message, '(" --- Switching to Noah-MP option OPT_SFC == 3")')
                   CALL wrf_message ( TRIM ( wrf_err_message ) ) 
 
                   model_config_rec%opt_sfc(i) = 3

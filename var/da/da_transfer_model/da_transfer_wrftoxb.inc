@@ -34,7 +34,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    logical:: no_ppb
 
-   real, dimension(ims:ime,kms:kme) :: pf
+   real, dimension(ims:ime,kms:kme) :: pf, pp
 
 #ifdef A2C
    real   :: uu, vv
@@ -417,15 +417,13 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
 #ifdef TKW_
       ! Compute full-level pressure
+! The full and half level dry hydrostatic pressure is easily computed (YRG, 12/20/2011):
       do i=its,ite
-         pf(i,kte+1) = ptop 
-         pf(i,kts)   = grid%psfc(i,j)
-      end do
-      do k=kts+1,kte
-         do i=its,ite
-            pf(i,k) = (grid%dnw(k-1)*grid%xb%p(i,j,k)+grid%dnw(k)*grid%xb%p(i,j,k-1))/(grid%dnw(k-1)+grid%dnw(k))
-         end do
-      end do
+         do k=kts, kte+1
+            pf(i,k) = (grid%mub(i,j)+grid%mu_2(i,j)) * grid%znw(k) + ptop
+            pp(i,k) = (grid%mub(i,j)+grid%mu_2(i,j)) * grid%znu(k) + ptop
+         enddo
+      enddo
 #endif
 
       do k=kts,kte
@@ -445,7 +443,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
          !  wee 11/22/2011
 
             grid%xb%h(i,j,k) = grid%xb%hf(i,j,k)+(grid%xb%hf(i,j,k+1)-grid%xb%hf(i,j,k)) &
-                 *LOG(pf(i,k)/grid%xb%p(i,j,k))/LOG(pf(i,k)/pf(i,k+1))
+                 *LOG(pf(i,k)/pp(i,k))/LOG(pf(i,k)/pf(i,k+1))
 #endif
 
             if ( num_pseudo == 0 ) then

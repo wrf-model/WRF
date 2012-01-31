@@ -148,9 +148,9 @@ WRFVAR_OBJS = \
 var : wrfvar
 var_esmf : wrfvar_esmf
 
-wrfvar : da_wrfvar.exe da_advance_time.exe da_update_bc.exe
+wrfvar : da_wrfvar.exe da_advance_time.exe da_update_bc.exe da_update_bc_ad.exe
 
-wrfvar_esmf : setup da_wrfvar_esmf.exe da_advance_time.exe da_update_bc.exe
+wrfvar_esmf : setup da_wrfvar_esmf.exe da_advance_time.exe da_update_bc.exe da_update_bc_ad.exe
 
 da_wrfvar.exe : $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
                 $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o \
@@ -181,6 +181,7 @@ da_utils : \
            da_tune_obs_hollingsworth2.exe \
            da_tune_obs_desroziers.exe \
            da_update_bc.exe \
+           da_update_bc_ad.exe \
            da_advance_time.exe \
            da_verif_obs.exe \
            da_verif_grid.exe \
@@ -218,6 +219,12 @@ da_update_bc.exe : da_update_bc.o $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfi
 	$(SFC) $(LDFLAGS) -o $@ da_update_bc.o \
            da_netcdf_interface.o \
            da_module_couple_uv.o $(LIB_EXTERNAL)
+	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
+
+da_update_bc_ad.exe : da_update_bc_ad.o $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
+	$(SFC) $(LDFLAGS) -o $@ da_update_bc_ad.o \
+           da_netcdf_interface.o da_module_couple_uv.o \
+           da_module_couple_uv_ad.o $(LIB_EXTERNAL)
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_bias_airmass.exe : da_bias_airmass.o  rad_bias.o pythag.o tqli.o tred2.o regress_one.o
@@ -281,7 +288,7 @@ init_modules.o :
 da_bias_verif.o da_bias_scan.o da_bias_sele.o da_bias_airmass.o da_rad_diags.o \
 da_tune_obs_hollingsworth1.o da_tune_obs_hollingsworth2.o da_tune_obs_desroziers.o \
 da_verif_obs_control.o da_verif_obs_init.o da_verif_grid_control.o da_verif_obs.o \
-da_verif_grid.o :
+da_verif_grid.o da_update_bc.o da_update_bc_ad.o:
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) -I$(NETCDF)/include $*.b  > $*.f

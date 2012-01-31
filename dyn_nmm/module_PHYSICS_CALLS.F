@@ -1910,10 +1910,11 @@
      &                 ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TCUCN              &
      &                 ,OMGALF,U,V,W,Z,FIS,W0AVG                        &
      &                 ,PREC,ACPREC,CUPREC,CUPPT,CPRATE                 &
-     &                 ,SM,HBM2,LPBL,CNVBOT,CNVTOP                      &
+     &                 ,SM,HBM2,PBLH,LPBL,CNVBOT,CNVTOP                 &
      &                 ,HTOP,HBOT,HTOPD,HBOTD,HTOPS,HBOTS               &
      &                 ,RTHBLTEN,RQVBLTEN,RTHRATEN                      &
 #if (NMM_CORE==1)    
+     &                 ,TWBS,QWBS                                       &
      &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand               &                  
 #endif
      &                 ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon S&P
@@ -1985,6 +1986,10 @@
 #if (NMM_CORE==1)
      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: store_rand 
 #endif
+!Biswas
+       REAL,DIMENSION(IMS:IME,JMS:JME) :: HFX,QFX,PBLH
+       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: TWBS,QWBS
+
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: F_ICE       &
      &                                                     ,F_RAIN
@@ -2091,6 +2096,17 @@
 !***  CONVECTIVE PRECIPITATION BETWEEN RADIATION CALLS.
 !-----------------------------------------------------------------------
 !
+! Biswas's doing
+       DO J=MYJS,MYJE
+       DO I=MYIS,MYIE
+!       DO J=JMS,JME
+!       DO I=IMS,IME
+         HFX(I,J)=0.
+         QFX(I,J)=0.
+       ENDDO
+       ENDDO
+!End
+
       IF(MOD(NTSD,NRADS)==0.OR.MOD(NTSD,NRADL)==0)THEN
          DO J=JMS,JME
          DO I=IMS,IME
@@ -2105,6 +2121,8 @@
 !-----------------------------------------------------------------------
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==BMJSCHEME)RETURN
+      IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
+     &   CONFIG_FLAGS%CU_PHYSICS==NSASSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==OSASSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
@@ -2157,6 +2175,11 @@
         NCA(I,J)=0.
         SFCZ(I,J)=FIS(I,J)*G_INV
 !
+!Biswas's doing
+         HFX(I,J)=-TWBS(I,J)
+         QFX(I,J)=-QWBS(I,J)/XLV
+!End
+
         CUTOP(I,J)=HTOP(I,J)
         CUBOT(I,J)=HBOT(I,J)
 !
@@ -2359,6 +2382,8 @@
      &                 ,DZ8W=DZ,P8W=P8W,FORCET=TTEN,FORCEQ=QTEN         &
      &                 ,CLDEFI=CLDEFI,LOWLYR=LOWLYR,XLAND=XLAND         &
      &                 ,CU_ACT_FLAG=CU_ACT_FLAG,WARM_RAIN=WARM_RAIN     &
+!Biswas
+     &                 ,HFX=HFX,QFX=QFX,PBLH=PBLH                       &
      &                 ,STEPCU=NSTEP_CNV,GSW=GSW                        &
      &                 ,PERIODIC_X=.FALSE.,PERIODIC_Y=.FALSE.           &
      &                 ,HTOP=CUTOP,HBOT=CUBOT,KPBL=KPBL,HT=SFCZ,Z=Z     &
@@ -2385,6 +2410,7 @@
      &                 ,pgcon=config_flags%sas_pgcon                    &
                   ! Selection argument
      &                 ,CU_PHYSICS=CONFIG_FLAGS%CU_PHYSICS              &
+     &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
                   ! Moisture tracer arguments
      &                 ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &                 ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &
@@ -2505,7 +2531,7 @@
 !
           cps_select: SELECT CASE(config_flags%cu_physics)
 !
-          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,OSASSCHEME)
+          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,OSASSCHEME,NSASSCHEME)
             IF (ETAMP_Regional) THEN
               MOIST_TRANS(I,K,J,P_QS)=MAX(0.,MOIST_TRANS(I,K,J,P_QS)+RQICUTEN(I,K,J)*DTCNVC+RQSCUTEN(I,K,J)*DTCNVC)
             ELSE

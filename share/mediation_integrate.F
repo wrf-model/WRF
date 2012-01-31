@@ -2824,11 +2824,6 @@ RECURSIVE SUBROUTINE med_namelist_out ( grid , config_flags )
 
    TYPE (grid_config_rec_type)            :: kid_config_flags
 
-!zhang new
-   IF ( wrf_dm_on_monitor() ) THEN
-     CALL start_timing
-   END IF
-
    prefix = "wrfnamelist_d<domain>_<date>"
    nout = 99
 

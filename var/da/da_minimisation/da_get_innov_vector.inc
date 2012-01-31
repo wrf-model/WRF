@@ -160,8 +160,8 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 #endif
        call wrf_message("*** WRF-Var multi-increment stage 1 completed successfully ***")
        call wrfu_finalize
-       call wrf_shutdown
-
+       !call wrf_shutdown
+       stop
    endif
 
    !-----------------------------------------------------------------------

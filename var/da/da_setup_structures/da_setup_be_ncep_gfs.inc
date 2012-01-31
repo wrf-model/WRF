@@ -14,11 +14,11 @@ subroutine da_setup_be_ncep_gfs( grid, be )
 
    IMPLICIT NONE
 
-   type (domain), intent(in)   :: grid
-   TYPE (be_type), INTENT(INOUT) :: be                  ! Back. errors structure.
+   type (domain), intent(in)     :: grid
+   TYPE (be_type), INTENT(INOUT) :: be                    ! Back. errors structure.
 
    INTEGER                     :: ij,ijk                ! Scalar.
-   INTEGER                     :: i, j, k, ic, jc       ! Loop counters.
+   INTEGER                     :: i, j, k, ic, jc, ii   ! Loop counters.
    INTEGER                     :: ier, be_unit          ! error index
 
 
@@ -54,6 +54,15 @@ subroutine da_setup_be_ncep_gfs( grid, be )
    INTEGER :: nta,ndeg,ku,kz
    real    :: samp,s2u,tin,as(5),slim
    character(len=256) :: mesg
+
+   integer                     :: be_rf_unit, be_print_unit, it
+   real                        :: xsum
+   real, dimension(1)          :: xxsum
+   real, dimension(ids: ide,  jds: jde)                   :: global_2d
+   real, dimension(ids: ide,  jds: jde,  kds: kde)        :: global_3d
+   real, dimension(ims: ime,  jms: jme,  kms: kme)        :: corz_3d, vz_3d
+   real, dimension(ims: ime,  jms: jme)                   :: corp_2d
+   character(len=6)            :: vname
 
    write (6,'(A)') ' ----------------------------------------------------------'
    write (6,'(A,I3)') ' [3.0] Set up background errors (be) for cv_option:', cv_options
@@ -107,10 +116,13 @@ subroutine da_setup_be_ncep_gfs( grid, be )
 
    cv_size = be % cv % size
 
+
    call da_get_unit(be_unit)
    open (unit=be_unit,file="be.dat",status="old",form="unformatted")
 
    rewind(be_unit)
+
+   be_rf_unit    = unit_end + 3
 
    read(be_unit, iostat= ier) nsig,nlath
 
@@ -478,9 +490,9 @@ subroutine da_setup_be_ncep_gfs( grid, be )
     ! Constant-3: be%swidth:
    be%swidth=10.
 
-   tin=be%swidth/float(nta)
+   tin=be%swidth/dble(nta)
    do i=1,nta
-      dsh(i)=float(i-1)*tin
+      dsh(i)=dble(i-1)*tin
    enddo
 
    call  RFDPARV(DSH,be%RATE,be%table,nta,ndeg )
@@ -489,6 +501,220 @@ subroutine da_setup_be_ncep_gfs( grid, be )
 
    deallocate (dsh )
    deallocate (turn )
+   be_print_unit = unit_end + 4
+   
+!  8.2.1 Save the CV3 BE at model grids before tuned:
+
+#ifdef DM_PARALLEL
+   write (*,'(/a,i3)') 'mpp code ==> Write CV3 BE to fort.',be_rf_unit
+
+   if (rootproc) then
+   write (be_rf_unit) ids, ide, jds, jde, kds, kde, ku, samp
+   write (*,'(a,7i5,f15.5)') "ids, ide, jds, jde, kds, kde, ku, samp:", &
+                        ids, ide, jds, jde, kds, kde, ku, samp
+   endif
+
+   ij = ( ide - ids + 1)*( jde - jds + 1)
+   ijk = ij * ( kde - kds + 1)
+!  Collect the variance and write out:
+   do ii = 1, 4
+! tile --> patch: 
+     corz_3d(its:ite,jts:jte,kts:kte) = be%corz(its:ite,jts:jte,kts:kte,ii)
+! patch -->global:
+     call da_patch_to_global(grid, corz_3d, global_3d)
+! broadcast:
+     call wrf_dm_bcast_real(global_3d, ijk)
+
+     if (ii == 1) vname = 'PSI   '
+     if (ii == 2) vname = 'CHI_u '
+     if (ii == 3) vname = 'TMP_u '
+     if (ii == 4) vname = 'PSD_RH'
+
+     xxsum(1) = sum (be%corz(:,:,:,ii)*be%corz(:,:,:,ii))
+     call da_proc_sum_real(xxsum)
+     if (rootproc) then
+       write (be_rf_unit) 'VARIANCE:', vname, ii, global_3d
+!       write (*,'(5x,i3,1x,a,2x,"sum^2=",e20.12)') ii, vname, xxsum(1)
+     endif
+   enddo
+! tile --> patch:
+   corp_2d(its:ite,jts:jte) = be%corp(its:ite,jts:jte)
+! patch --> global:
+   call da_patch_to_global(grid, corp_2d, global_2d)
+! broadcast:
+   call wrf_dm_bcast_real(global_2d, ij)
+   xxsum(1) = sum (be%corp*be%corp)
+   call da_proc_sum_real(xxsum)
+   if (rootproc) then
+     write (be_rf_unit) 'VARIANCE:', 'PSFC_u',  1,  global_2d
+!     write (*,'(9x,a,2x,"sum^2=",e20.12)') 'PSFC_u', xxsum(1)
+   endif
+!
+   do ii = 1, 4
+! tile --> patch: 
+     do i = its, ite
+     do j = jts, jte
+     do k = kts,kte
+        vz_3d(i,j,k) = be%vz(k,i,j,ii)
+     enddo
+     enddo
+     enddo
+! patch -->global:
+     call da_patch_to_global(grid, vz_3d, global_3d)
+! broadcast:
+     call wrf_dm_bcast_real(global_3d, ijk)
+
+     if (ii == 1) vname = 'PSI   '
+     if (ii == 2) vname = 'CHI_u '
+     if (ii == 3) vname = 'TMP_u '
+     if (ii == 4) vname = 'PSD_RH'
+
+     xxsum(1) = sum (be%vz(:,:,:,ii)*be%vz(:,:,:,ii))
+     call da_proc_sum_real(xxsum)
+     if (rootproc) then
+       write (be_rf_unit) 'VZ-SCALE:', vname, ii, global_3d
+!       write (*,'(5x,i3,1x,a,2x,"sum^2=",e20.12)') ii, vname, xxsum(1)
+     endif
+   enddo
+!
+!  Horizotal scales:
+    if (rootproc) then
+      write (be_rf_unit) hwll
+      xsum = sum (hwll*hwll)
+!      write (*,'(9x,a,2x,"sum^2=",e20.12)') 'HORIZONTAL PSI, CHI_u, T_u, RH_u SCALES:', xsum
+      write (be_rf_unit) hwllp
+      xsum = sum (hwllp*hwllp)
+!      write (*,'(9x,a,2x,"sum^2=",e20.12)') 'HORIZONTAL PS_u SCALES:', xsum
+    endif
+
+#else
+   write (*,'(/a,i3)') 'Serial code ==> Write CV3 BE to fort.',be_rf_unit
+
+   write (be_rf_unit) ids, ide, jds, jde, kds, kde, ku, samp
+   write (*,'(a,7i5,f15.5)') "ids, ide, jds, jde, kds, kde, ku, samp:", &
+                        ids, ide, jds, jde, kds, kde, ku, samp
+
+! Save the variances before the normalized:
+!   write (*,'(3x,a)')  'VARIANCE:'
+   do ii = 1, 4
+     if (ii == 1) vname = 'PSI   '
+     if (ii == 2) vname = 'CHI_u '
+     if (ii == 3) vname = 'TMP_u '
+     if (ii == 4) vname = 'PSD_RH'
+     global_3d = be%corz(:,:,:,ii)
+     write (be_rf_unit) 'VARIANCE:', vname, ii, global_3d
+     xsum = sum (be%corz(:,:,:,ii)*be%corz(:,:,:,ii))
+!     write (*,'(5x,i3,1x,a,2x,"sum^2=",e20.12)') ii, vname, xsum
+   enddo
+   global_2d = be%corp
+   write (be_rf_unit) 'VARIANCE:', 'PSFC_u',  1,  global_2d
+   xsum = sum (be%corp*be%corp)
+!   write (*,'(9x,a,2x,"sum^2=",e20.12)') 'PSFC_u', xsum
+!
+!   write (*,'(3x,a)')  'VERTICAL SCALES:'
+   do ii = 1, 4
+     if (ii == 1) vname = 'PSI   '
+     if (ii == 2) vname = 'CHI_u '
+     if (ii == 3) vname = 'TMP_u '
+     if (ii == 4) vname = 'PSD_RH'
+     do i = ids, ide
+     do j = jds, jde
+     do k = kds, kde
+        global_3d(i,j,k) = be%vz(k,i,j,ii)
+     enddo
+     enddo
+     enddo
+     write (be_rf_unit) 'VZ-SCALE:', vname, ii, global_3d
+     xsum = sum (be%vz(:,:,:,ii)*be%vz(:,:,:,ii))
+!     write (*,'(5x,i3,1x,a,2x,"sum^2=",e20.12)') ii, vname, xsum
+   enddo
+!
+!  Horizotal scales:
+!   write (*,'(3x,a)')  'HORIZONTAL SCALES:'
+   write (be_rf_unit) hwll
+   xsum = sum (hwll*hwll)
+!   write (*,'(9x,a,2x,"sum^2=",e20.12)') 'HORIZONTAL PSI, CHI_u, T_u, RH_u SCALES:', xsum
+
+   write (be_rf_unit) hwllp
+   xsum = sum (hwllp*hwllp)
+!   write (*,'(9x,a,2x,"sum^2=",e20.12)') 'HORIZONTAL PS_u SCALES:', xsum
+
+#endif
+
+!  8.2.2 Write out the CV3 BE information to "be_print_unit":
+
+   if (PRINT_DETAIL_BE) then
+
+   write (be_print_unit,'(a,7i5,f15.5)') "ids, ide, jds, jde, kds, kde, ku, samp:", &
+                                          ids, ide, jds, jde, kds, kde, ku, samp
+
+   write (be_print_unit,'(3x,a)')  'VARIANCE:'
+   do ii = 1, 4
+     if (ii == 1) vname = 'PSI   '
+     if (ii == 2) vname = 'CHI_u '
+     if (ii == 3) vname = 'TMP_u '
+     if (ii == 4) vname = 'PSD_RH'
+     xxsum(1) = sum (be%corz(its:ite,jts:jte,kts:kte,ii)*be%corz(its:ite,jts:jte,kts:kte,ii))
+     call da_proc_sum_real(xxsum)
+     if (rootproc) &
+     write (be_print_unit,'(5x,i3,1x,a,2x,"sum^2=",e20.12)') ii, vname, xxsum(1)
+   enddo
+
+!  Pscf Variance before the normalization.
+   xxsum(1) = sum (be%corp(its:ite,jts:jte)*be%corp(its:ite,jts:jte))
+   call da_proc_sum_real(xxsum)
+   if (rootproc) &
+   write (be_print_unit,'(9x,a,2x,"sum^2=",e20.12)') 'PSFC_u', xxsum(1)
+!
+!  Collect the vertical scales and write out:
+   write (be_print_unit,'(3x,a)')  'VERTICAL SCALES:'
+   do ii = 1, 4
+     if (ii == 1) vname = 'PSI   '
+     if (ii == 2) vname = 'CHI_u '
+     if (ii == 3) vname = 'TMP_u '
+     if (ii == 4) vname = 'PSD_RH'
+     xxsum(1) = sum (be%vz(:,:,:,ii)*be%vz(:,:,:,ii))
+     call da_proc_sum_real(xxsum)
+     if (rootproc) &
+     write (be_print_unit,'(5x,i3,1x,a,2x,"sum^2=",e20.12)') ii, vname, xxsum(1)
+   enddo
+
+!  Horizotal scales:
+   if (rootproc) &
+   write (be_print_unit,'(3x,a)')  'READ IN THE HORIZONTAL SCALES:'
+   if (rootproc) then
+   write (be_print_unit,'(3x,a)')  'HORIZONTAL SCALES:'
+   xxsum(1) = sum (hwll*hwll)
+   write (be_print_unit,'(9x,a,2x,"sum^2=",e20.12)') 'HORIZONTAL PSI, CHI_u, T_u, RH_u SCALES:', xxsum(1)
+   endif
+
+   if (rootproc) then
+   xxsum(1) = sum (hwllp*hwllp)
+   write (be_print_unit,'(9x,a,2x,"sum^2=",e20.12)') 'HORIZONTAL PS_u SCALES:', xxsum(1)
+   endif
+
+!  Collect the regression coefficients:
+   write (be_print_unit,'(3x,a)')  'REGRESSION COEFF. T, CHI, PSFC:'
+   do ii = kts, kte
+     xxsum(1) = sum (be%agvz(:,:,:,ii)*be%agvz(:,:,:,ii))
+     call da_proc_sum_real(xxsum)
+     if (rootproc) &
+     write (be_print_unit,'(5x,i3,1x,a,2x,"sum^2=",e20.12)') ii, 'TMP-PSI', xxsum(1)
+   enddo
+
+!  Rg. Coeff. has already stored in "be" data structure, not need to be save.
+   xxsum(1) = sum (be%bvz*be%bvz)
+   call da_proc_sum_real(xxsum)
+   if (rootproc) &
+   write (be_print_unit,'(9x,a,2x,"sum^2=",e20.12)') 'CHI-PSI', xxsum(1)
+
+!  Rg. Coeff. has already stored in "be" data structure, not need to be save.
+   xxsum(1) = sum (be%wgvz*be%wgvz)
+   call da_proc_sum_real(xxsum)
+   if (rootproc) &
+   write (be_print_unit,'(9x,a,2x,"sum^2=",e20.12)') 'PSF-PSI', xxsum(1)
+
+   endif
 
 ! 9, Incorporate the tuning factors for covariance
 
@@ -542,6 +768,7 @@ subroutine da_setup_be_ncep_gfs( grid, be )
 
     be % corp(its:ite,jts:jte)=be % corp(its:ite,jts:jte)*as(5) &
          *samp/hwllp(its:ite,jts:jte)/global_fac(its:ite,jts:jte)
+
     write(mesg,*) 'Re-scaled covariance for Psfc: sum(be%corp*be%corp)=', &
                   sum(be%corp*be%corp)
     call wrf_debug ( 1 , mesg )
@@ -553,6 +780,7 @@ subroutine da_setup_be_ncep_gfs( grid, be )
 
     ALLOCATE ( be % sljpy ( grid%xp%ipsy: grid%xp%ipey, grid%xp%jpsy: grid%xp%jpey) )
     ALLOCATE ( be % sljy ( grid%xp%ipsy: grid%xp%ipey, grid%xp%jpsy: grid%xp%jpey, grid%xp%kpsy: grid%xp%kpey,1:4) )
+
     ALLOCATE ( be % slipx ( grid%xp%ipsx: grid%xp%ipex, grid%xp%jpsx: grid%xp%jpex) )
     ALLOCATE ( be % slix ( grid%xp%ipsx: grid%xp%ipex, grid%xp%jpsx: grid%xp%jpex, grid%xp%kpsx: grid%xp%kpex,1:4) )
 

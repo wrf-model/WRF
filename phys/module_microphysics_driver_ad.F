@@ -29,9 +29,11 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
                       ,qndrop_curr,qni_curr,qh_curr,a_qh_curr, qnh_curr             &
                       ,qzr_curr,qzi_curr,qzs_curr,qzg_curr,qzh_curr      &
                       ,qns_curr,qnr_curr,qng_curr,qnn_curr,qnc_curr      &
+                      ,qvolg_curr                                        &
                       ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni      &
                       ,f_qns,f_qnr,f_qng,f_qnc,f_qnn,f_qh,f_qnh          &
                       ,            f_qzr,f_qzi,f_qzs,f_qzg,f_qzh         &
+                      ,f_qvolg                                           &
                       ,qrcuten, qscuten, qicuten, mu                     &
                       ,qt_curr,f_qt                                      &
                       ,mp_restart_state,tbpvs_state,tbpvs0_state         & ! for etampnew
@@ -50,6 +52,7 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
 ! YLIN
 ! Added the RI_CURR array to the call
                       ,ri_curr                                           &
+                      ,diagflag                                          &
                                                    )
 ! Framework
 #if(NMM_CORE==1)
@@ -62,7 +65,7 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
                     ,WSM6SCHEME, ETAMPNEW,THOMPSON, MORR_TWO_MOMENT     &
-                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME &
+                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN &
                     ,MILBRANDT2MOM, LSCONDSCHEME, MKESSLERSCHEME !,MILBRANDT3MOM
 #endif
 
@@ -87,6 +90,9 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
    USE module_mp_wdm6
    USE module_mp_milbrandt2mom
 !  USE module_mp_milbrandt3mom
+#if (EM_CORE==1)
+   USE module_mp_nssl_2mom
+#endif
 
    USE module_mp_HWRF
    USE module_mixactivate, only: prescribe_aerosol_mixactivate
@@ -160,6 +166,8 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
 ! Qzg        graupel          reflectivity (m6/kg)
 ! Qzh        hail             reflectivity (m6/kg)
 
+! Qvolg        graupel   particle volume (m3/kg)
+
 !
 !----------------------------------------------------------------------
 !-- th        potential temperature    (K)
@@ -217,6 +225,7 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
 !-- P_QZS         species index for snow    reflectivity
 !-- P_QZG         species index for graupel reflectivity
 !-- P_QZH         species index for hail    reflectivity
+!-- P_QVOLG       species index for graupel particle volume,
 !-- id            grid id number
 !-- ids           start index for i in domain
 !-- ide           end index for i in domain
@@ -241,6 +250,7 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
 !-- kts           start index for k in tile
 !-- kte           end index for k in tile
 !-- num_tiles     number of tiles
+!-- diagflag      Logical to tell us when to produce diagnostics for history or restart
 !
 !======================================================================
 
@@ -314,7 +324,8 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
                  ,a_qv_curr,a_qc_curr,a_qr_curr,a_qi_curr,a_qs_curr,a_qg_curr &
                  ,qt_curr,qndrop_curr,qni_curr,qh_curr,a_qh_curr,qnh_curr   &
                  ,qns_curr,qnr_curr,qng_curr,qnn_curr,qnc_curr    &
-                 ,qzr_curr,qzi_curr,qzs_curr,qzg_curr,qzh_curr
+                 ,qzr_curr,qzi_curr,qzs_curr,qzg_curr,qzh_curr    &
+                 ,qvolg_curr
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
@@ -363,7 +374,9 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
 
    LOGICAL, OPTIONAL :: f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni,f_qt    &
                        ,f_qns,f_qnr,f_qng,f_qnn,f_qnc,f_qh,f_qnh,f_qzr       &
-                       ,f_qzi,f_qzs,f_qzg,f_qzh
+                       ,f_qzi,f_qzs,f_qzg,f_qzh,f_qvolg
+
+   LOGICAL, OPTIONAL :: diagflag
 
 ! LOCAL  VAR
 

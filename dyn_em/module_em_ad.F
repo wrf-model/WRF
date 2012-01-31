@@ -158,7 +158,7 @@ CONTAINS
 !   max_horiz_cfl,a_max_horiz_cfl)
    msfvy,msftx,msfty,xlat,f,e,sina,cosa,fnm,fnp,rdn,rdnw,dt,rdx,rdy,khdif, &
    kvdif,xkmhd,a_xkmhd,xkhh,a_xkhh,diff_6th_opt,diff_6th_factor, &
-   dampcoef,zdamp,damp_opt,rad_nudge,cf1,cf2,cf3,cfn,cfn1,n_moist, &
+   adv_opt,dampcoef,zdamp,damp_opt,rad_nudge,cf1,cf2,cf3,cfn,cfn1,n_moist, &
    non_hydrostatic,top_lid,u_frame,v_frame,ids,ide,jds,jde,kds, &
    kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte,max_vert_cfl, &
    max_horiz_cfl)
@@ -197,6 +197,7 @@ CONTAINS
 ! Revised by Ning Pan, 2010-07-30
 !   REAL :: diff_6th_factor,a_diff_6th_factor
    REAL :: diff_6th_factor
+   INTEGER :: adv_opt
    INTEGER :: damp_opt,rad_nudge
 ! Revised by Ning Pan, 2010-07-30
 !   REAL :: zdamp,a_zdamp,dampcoef,a_dampcoef
@@ -1953,9 +1954,24 @@ CONTAINS
 !!   END DO
 !!   END DO
 
+   IF( (rk_step == 3) .and. ( adv_opt == WENO_MOM ) ) THEN
+   CALL a_advect_weno_w ( w, a_w, w, a_w, rw_tend, a_rw_tend, &
+                     ru, a_ru, rv, a_rv, ww, a_ww, &
+                     mut, time_step, config_flags, &
+                     msfux, msfuy, msfvx, msfvy,   &
+                     msftx, msfty,                 &
+                     fnm, fnp, rdx, rdy, rdn,      &
+                     ids, ide, jds, jde, kds, kde, &
+                     ims, ime, jms, jme, kms, kme, &
+                     its, ite, jts, jte, kts, kte )
+
+   ELSE
+
    CALL a_advect_w(w,a_w,w,a_w,rw_tend,a_rw_tend,ru,a_ru,rv,a_rv,ww,  &
    a_ww,mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fnm,  &
    fnp,rdx,rdy,rdn,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+
+   END IF
 
    END IF
 
@@ -2050,9 +2066,25 @@ CONTAINS
 !!   END DO
 !!   END DO
 
+   IF( (rk_step == 3) .and. ( adv_opt == WENO_MOM ) ) THEN
+
+   CALL a_advect_weno_v ( v, a_v, v, a_v, rv_tend, a_rv_tend, &
+                 ru, a_ru, rv, a_rv, ww, a_ww, &
+                 mut, a_mut, time_step, config_flags, &
+                 msfux, msfuy, msfvx, msfvy,   &
+                 msftx, msfty,                 &
+                 fnm, fnp, rdx, rdy, rdnw,     &
+                 ids, ide, jds, jde, kds, kde, &
+                 ims, ime, jms, jme, kms, kme, &
+                 its, ite, jts, jte, kts, kte )
+
+   ELSE
+
    CALL a_advect_v(v,a_v,v,a_v,rv_tend,a_rv_tend,ru,a_ru,rv,a_rv,ww,  &
    a_ww,mut,a_mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fnm,  &
    fnp,rdx,rdy,rdnw,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+
+   ENDIF
 
 !! Remarked by Ning Pan, 2010-07-30
 !!   DO IX3=jms,jme
@@ -2071,9 +2103,25 @@ CONTAINS
 !!   END DO
 !!   END DO
 
+
+   IF( (rk_step == 3) .and. ( adv_opt == WENO_MOM ) ) THEN
+
+   CALL a_advect_weno_u ( u, a_u, u, a_u, ru_tend, a_ru_tend, &
+               ru, a_ru, rv, a_rv, ww, a_ww, &
+               mut, a_mut, time_step, config_flags, &
+               msfux, msfuy, msfvx, msfvy,   &
+               msftx, msfty,                 &
+               fnm, fnp, rdx, rdy, rdnw,     &
+               ids, ide, jds, jde, kds, kde, &
+               ims, ime, jms, jme, kms, kme, &
+               its, ite, jts, jte, kts, kte )
+   ELSE
+
    CALL a_advect_u(u,a_u,u,a_u,ru_tend,a_ru_tend,ru,a_ru,rv,a_rv,ww,  &
    a_ww,mut,a_mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fnm,  &
    fnp,rdx,rdy,rdnw,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+
+   ENDIF
 
 ! Added by Ning Pan, 2010-07-30
    CALL a_zero_tend(a_mu_save,ids,ide,jds,jde,1,1,ims,ime,jms,jme,1,1,  &
@@ -2768,6 +2816,24 @@ END SUBROUTINE A_RK_ADDTEND_DRY
 ! Revised by Ning Pan, 2010-08-02
 !   a_dt,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
    ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+
+   ELSE IF( (rk_step == 3) .and. (adv_opt == WENO_SCALAR) ) THEN
+
+   CALL a_advect_scalar_weno ( scalar(ims,kms,jms,im),        &
+                               a_scalar(ims,kms,jms,im),      &
+                               scalar(ims,kms,jms,im),        &
+                               a_scalar(ims,kms,jms,im),      &
+                               advect_tend(ims,kms,jms),      &
+                               a_advect_tend(ims,kms,jms),    &
+                               ru, a_ru, rv, a_rv, ww, a_ww,  &
+                               mut, time_step,    &
+                               config_flags,                  &
+                               msfux, msfuy, msfvx, msfvy,    &
+                               msftx, msfty, fnm, fnp,        &
+                               rdx, rdy, rdnw,                &
+                               ids, ide, jds, jde, kds, kde,  &
+                               ims, ime, jms, jme, kms, kme,  &
+                               its, ite, jts, jte, kts, kte  )
 
    ELSE
 

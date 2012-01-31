@@ -89,7 +89,7 @@ CONTAINS
 ! kts,kte,max_vert_cfl,g_max_vert_cfl,max_horiz_cfl,g_max_horiz_cfl)
  z_base,msfux,msfuy,msfvx,msfvx_inv,msfvy,msftx,msfty,xlat,f,e,sina,cosa, &
  fnm,fnp,rdn,rdnw,dt,rdx,rdy,khdif,kvdif,xkmhd,g_xkmhd,xkhh,g_xkhh,diff_6th_opt, &
- diff_6th_factor,dampcoef,zdamp, &
+ diff_6th_factor,adv_opt,dampcoef,zdamp, &
  damp_opt,rad_nudge,cf1,cf2,cf3,cfn,cfn1,n_moist,non_hydrostatic,top_lid,u_frame, &
  v_frame,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte, &
  kts,kte,max_vert_cfl,max_horiz_cfl)
@@ -127,6 +127,7 @@ CONTAINS
 ! Revised by Ning Pan, 2010-07-29
 ! REAL :: diff_6th_factor,g_diff_6th_factor
  REAL :: diff_6th_factor
+ INTEGER :: adv_opt
  INTEGER :: damp_opt,rad_nudge
 ! Revised by Ning Pan, 2010-07-29
 ! REAL :: zdamp,g_zdamp,dampcoef,g_dampcoef
@@ -180,18 +181,67 @@ CONTAINS
 !This line is fail to be recognized
     CALL nl_get_time_step ( 1, time_step )
 
+ IF( (rk_step == 3) .and. ( adv_opt == WENO_MOM ) ) THEN
+
+ CALL g_advect_weno_u ( u, g_u, u, g_u, ru_tend, &
+                g_ru_tend, ru, g_ru, rv, g_rv, ww, g_ww, &
+                mut, g_mut, time_step, config_flags, &
+                msfux, msfuy, msfvx, msfvy,   &
+                msftx, msfty,                 &
+                fnm, fnp, rdx, rdy, rdnw,     &
+                ids, ide, jds, jde, kds, kde, &
+                ims, ime, jms, jme, kms, kme, &
+                its, ite, jts, jte, kts, kte )
+
+ ELSE
+
  CALL g_advect_u(u,g_u,u,g_u,ru_tend,g_ru_tend,ru,g_ru,rv,g_rv,ww, &
  g_ww,mut,g_mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fnm, &
  fnp,rdx,rdy,rdnw,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
+ ENDIF
+
+ IF( (rk_step == 3) .and. ( adv_opt == WENO_MOM ) ) THEN
+
+ CALL g_advect_weno_v ( v, g_v, v, g_v, rv_tend, g_rv_tend, &
+                ru, g_ru, rv, g_rv, ww, g_ww, &
+                mut, g_mut, time_step, config_flags, &
+                msfux, msfuy, msfvx, msfvy,   &
+                msftx, msfty,                 &
+                fnm, fnp, rdx, rdy, rdnw,     &
+                ids, ide, jds, jde, kds, kde, &
+                ims, ime, jms, jme, kms, kme, &
+                its, ite, jts, jte, kts, kte )
+
+ ELSE
+     
  CALL g_advect_v(v,g_v,v,g_v,rv_tend,g_rv_tend,ru,g_ru,rv,g_rv,ww, &
  g_ww,mut,g_mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty,fnm, &
  fnp,rdx,rdy,rdnw,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
- IF(non_hydrostatic) CALL g_advect_w(w,g_w,w,g_w,rw_tend,g_rw_tend,ru, &
+ ENDIF
+
+ IF(non_hydrostatic) THEN
+ IF( (rk_step == 3) .and. ( adv_opt == WENO_MOM ) ) THEN
+ CALL g_advect_weno_w ( w, g_w, w, g_w, rw_tend, g_rw_tend, &
+                 ru, g_ru, rv, g_rv, ww, g_ww, &
+                 mut, time_step, config_flags, &
+                 msfux, msfuy, msfvx, msfvy,   &
+                 msftx, msfty,                 &
+                 fnm, fnp, rdx, rdy, rdn,      &
+                 ids, ide, jds, jde, kds, kde, &
+                 ims, ime, jms, jme, kms, kme, &
+                 its, ite, jts, jte, kts, kte )
+
+ ELSE
+
+ CALL g_advect_w(w,g_w,w,g_w,rw_tend,g_rw_tend,ru, &
  g_ru,rv,g_rv,ww,g_ww,mut,time_step,config_flags,msfux,msfuy,msfvx, &
  msfvy,msftx,msfty,fnm,fnp,rdx,rdy,rdn,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms, &
  kme,its,ite,jts,jte,kts,kte)
+
+ ENDIF
+ ENDIF
 
  CALL g_advect_scalar(t,g_t,t,g_t,t_tend,g_t_tend,ru,g_ru,rv,g_rv, &
  ww,g_ww,mut,time_step,config_flags,msfux,msfuy,msfvx,msfvy,msftx,msfty, &
@@ -649,6 +699,25 @@ END SUBROUTINE G_RK_ADDTEND_DRY
 ! Revised by Ning Pan, 2010-08-02
 ! rdnw,dt,g_dt,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
  rdnw,dt,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
+
+ ELSE IF( (rk_step == 3) .and. (adv_opt == WENO_SCALAR) ) THEN
+
+   CALL g_advect_scalar_weno ( scalar(ims,kms,jms,im),     &
+                            g_scalar(ims,kms,jms,im),      &
+                            scalar(ims,kms,jms,im),        &
+                            g_scalar(ims,kms,jms,im),      &
+                            advect_tend(ims,kms,jms),      &
+                            g_advect_tend(ims,kms,jms),    &
+                            ru, g_ru, rv, g_rv, ww, g_ww,  &
+                            mut, time_step,    &
+                            config_flags,                  &
+                            msfux, msfuy, msfvx, msfvy,    &
+                            msftx, msfty, fnm, fnp,        &
+                            rdx, rdy, rdnw,                &
+                            ids, ide, jds, jde, kds, kde,  &
+                            ims, ime, jms, jme, kms, kme,  &
+                            its, ite, jts, jte, kts, kte  )
+
  ELSE
 
  CALL g_advect_scalar(scalar(ims,kms,jms,im),g_scalar(ims,kms,jms,im) &

@@ -2424,6 +2424,9 @@ integer myproc
 !  USE module_mp_milbrandt3mom
    USE module_mp_wdm5
    USE module_mp_wdm6
+#if (EM_CORE==1)
+   USE module_mp_nssl_2mom
+#endif
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
@@ -2508,6 +2511,12 @@ integer myproc
           CALL wdm5init(rhoair0,rhowater,rhosnow,cliq,cpv,n_ccn0,allowed_to_read )
      CASE (WDM6SCHEME)
           CALL wdm6init(rhoair0,rhowater,rhosnow,cliq,cpv,n_ccn0,allowed_to_read )
+#if (EM_CORE==1)
+     CASE (NSSL_2MOM)
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme)
+     CASE (NSSL_2MOMCCN)
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme)
+#endif
      CASE (ETAMPOLD)
          adv_moist_cond = .false.
          CALL etaoldinit (MPDT,DT,DX,DY,LOWLYR,restart,           &
@@ -2517,7 +2526,6 @@ integer myproc
                           ids, ide, jds, jde, kds, kde,           &
                           ims, ime, jms, jme, kms, kme,           &
                           its, ite, jts, jte, kts, kte            )
-
 
      CASE DEFAULT
 

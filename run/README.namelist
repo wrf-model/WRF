@@ -362,6 +362,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 13, SBU_YLIN scheme
                                      = 14, WDM 5-class scheme
                                      = 16, WDM 6-class scheme
+                                     = 17, NSSL 2-moment 4-ice scheme (steady background CCN)
+                                     = 18, NSSL 2-moment 4-ice scheme with predicted CCN (better for idealized)
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture

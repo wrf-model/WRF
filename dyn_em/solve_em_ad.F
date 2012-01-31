@@ -12,7 +12,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
                   domain, get_ijk_from_grid, get_ijk_from_subgrid                          &
                  ,domain_get_current_time, domain_get_start_time                           &
                  ,domain_get_sim_start_time, domain_clock_get
-   USE module_domain_type, ONLY : history_alarm
+   USE module_domain_type, ONLY : history_alarm, restart_alarm
    USE module_configure, ONLY : grid_config_rec_type
    USE module_driver_constants
    USE module_machine
@@ -142,7 +142,10 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
                                                                                    
    ! Whether advection should produce decoupled horizontal and vertical advective tendency outputs
    LOGICAL                        :: tenddec
-   
+
+   ! Flag for microphysics routines to produce diagnostic fields (e.g., radar reflectivity)
+   LOGICAL                        :: diagflag
+      
 #ifdef WRF_CHEM
    ! Index cross-referencing array for tendency accumulation
    INTEGER, DIMENSION( num_chem ) :: adv_ct_indices
@@ -189,10 +192,10 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
 ! variables for flux-averaging code 20091223
    CHARACTER*256                              :: message, message2
    REAL                                       :: old_dt
-   TYPE(WRFU_Time)                            :: temp_time, CurrTime
+   TYPE(WRFU_Time)                            :: temp_time, CurrTime, restart_time
    INTEGER, PARAMETER                         :: precision = 100
    INTEGER                                    :: num, den
-   TYPE(WRFU_TimeInterval)                    :: dtInterval
+   TYPE(WRFU_TimeInterval)                    :: dtInterval, intervaltime,restartinterval
 
 ! Define benchmarking timers if -DBENCH is compiled
 #include <bench_solve_em_def.h>
@@ -813,6 +816,7 @@ BENCH_START(rk_tend_tim)
                          ,grid%fnm, grid%fnp, grid%rdn, grid%rdnw                                              &
                          ,grid%dt, grid%rdx, grid%rdy, grid%khdif, grid%kvdif, grid%xkmh, grid%xkhh            &
                          ,grid%diff_6th_opt, grid%diff_6th_factor                                              &
+                         ,config_flags%momentum_adv_opt                                                        &
                          ,grid%dampcoef,grid%zdamp,config_flags%damp_opt,config_flags%rad_nudge                &
                          ,grid%cf1, grid%cf2, grid%cf3, grid%cfn, grid%cfn1, num_3d_m                          &
                          ,config_flags%non_hydrostatic, config_flags%top_lid                                   &
@@ -1867,7 +1871,7 @@ BENCH_END(small_step_finish_tim)
 !-----------------------------------------------------------------------
 ! first moisture
 
-     IF ((config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order)) THEN
+     IF ((config_flags%moist_adv_opt /= ORIGINAL .and. config_flags%moist_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order)) THEN
 
        !CALL push4backup (grid%mu_1, "mu_1")
        !CALL push4backup (moist_old(:,:,:,:),moist_tend(:,:,:,:), &
@@ -1897,7 +1901,7 @@ BENCH_END(small_step_finish_tim)
 
 !---------------------- positive definite bc call
 #ifdef DM_PARALLEL
-       IF (config_flags%moist_adv_opt /= ORIGINAL) THEN
+       IF (config_flags%moist_adv_opt /= ORIGINAL .and. config_flags%moist_adv_opt /= WENO_SCALAR) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #     include "HALO_EM_MOIST_OLD_E_5.inc"
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
@@ -1934,7 +1938,7 @@ BENCH_END(small_step_finish_tim)
 
 ! scalars
 
-     IF ((config_flags%scalar_adv_opt /= ORIGINAL) .and. (rk_step == rk_order)) THEN
+     IF ((config_flags%scalar_adv_opt /= ORIGINAL .and. config_flags%scalar_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order)) THEN
 
        !CALL push4backup (grid%mu_1, "mu_1")
        !CALL push4backup (scalar_old(:,:,:,:),scalar_tend(:,:,:,:), &
@@ -1961,7 +1965,7 @@ BENCH_END(small_step_finish_tim)
 
 !---------------------- positive definite bc call
 #ifdef DM_PARALLEL
-       IF (config_flags%scalar_adv_opt /= ORIGINAL) THEN
+       IF (config_flags%scalar_adv_opt /= ORIGINAL .and. config_flags%scalar_adv_opt /= WENO_SCALAR) THEN
 #ifndef RSL
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #     include "HALO_EM_SCALAR_OLD_E_5.inc"
@@ -2004,7 +2008,7 @@ BENCH_END(small_step_finish_tim)
 
 ! chem
 
-       IF ((config_flags%chem_adv_opt /= ORIGINAL) .and. (rk_step == rk_order)) THEN
+       IF ((config_flags%chem_adv_opt /= ORIGINAL .and. config_flags%chem_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order)) THEN
 
          !$OMP PARALLEL DO   &
          !$OMP PRIVATE ( ij )
@@ -2028,7 +2032,7 @@ BENCH_END(small_step_finish_tim)
 
 !---------------------- positive definite bc call
 #ifdef DM_PARALLEL
-         IF (config_flags%chem_adv_opt /= ORIGINAL) THEN
+         IF (config_flags%chem_adv_opt /= ORIGINAL .and. config_flags%chem_adv_opt /= WENO_SCALAR) THEN
            IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #     include "HALO_EM_CHEM_OLD_E_5.inc"
            ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
@@ -2066,7 +2070,7 @@ BENCH_END(small_step_finish_tim)
 
 ! tracer
 
-       IF ((config_flags%tracer_adv_opt /= ORIGINAL) .and. (rk_step == rk_order)) THEN
+       IF ((config_flags%tracer_adv_opt /= ORIGINAL .and. config_flags%tracer_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order)) THEN
 
          !$OMP PARALLEL DO   &
          !$OMP PRIVATE ( ij )
@@ -2092,7 +2096,7 @@ BENCH_END(small_step_finish_tim)
 
 !---------------------- positive definite bc call
 #ifdef DM_PARALLEL
-         IF (config_flags%tracer_adv_opt /= ORIGINAL) THEN
+         IF (config_flags%tracer_adv_opt /= ORIGINAL .and. config_flags%tracer_adv_opt /= WENO_SCALAR) THEN
            IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #     include "HALO_EM_TRACER_OLD_E_5.inc"
            ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
@@ -2131,7 +2135,7 @@ BENCH_END(small_step_finish_tim)
 
 ! tke
 
-       IF ((config_flags%tke_adv_opt /= ORIGINAL) .and. (rk_step == rk_order) &
+       IF ((config_flags%tke_adv_opt /= ORIGINAL .and. config_flags%tke_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order) &
            .and. (config_flags%km_opt .eq. 2)                ) THEN
 
            !CALL push4backup (grid%mu_1, "mu_1")
@@ -2158,7 +2162,7 @@ BENCH_END(small_step_finish_tim)
 
 !---------------------- positive definite bc call
 #ifdef DM_PARALLEL
-         IF (config_flags%tke_adv_opt /= ORIGINAL) THEN
+         IF (config_flags%tke_adv_opt /= ORIGINAL .and. config_flags%tke_adv_opt /= WENO_SCALAR) THEN
            IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #     include "HALO_EM_TKE_OLD_E_5.inc"
            ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
@@ -3318,13 +3322,13 @@ BENCH_END(bc_end_tim)
 
 
        IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-         IF ( (config_flags%tke_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
+         IF ( (config_flags%tke_adv_opt /= ORIGINAL .and. config_flags%tke_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
 #         include "HALO_EM_TKE_5.inc"
          ELSE
 #         include "HALO_EM_TKE_3.inc"
          ENDIF
        ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-         IF ( (config_flags%tke_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
+         IF ( (config_flags%tke_adv_opt /= ORIGINAL .and. config_flags%tke_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
 #         include "HALO_EM_TKE_7.inc"
          ELSE
 #         include "HALO_EM_TKE_5.inc"
@@ -3336,13 +3340,13 @@ BENCH_END(bc_end_tim)
 
        IF ( num_moist .GE. PARAM_FIRST_SCALAR ) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-           IF ( (config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
+           IF ( (config_flags%moist_adv_opt /= ORIGINAL .and. config_flags%moist_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
 #        include "HALO_EM_MOIST_E_5.inc"
            ELSE
 #        include "HALO_EM_MOIST_E_3.inc"
            END IF
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-           IF ( (config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
+           IF ( (config_flags%moist_adv_opt /= ORIGINAL .and. config_flags%moist_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
 #        include "HALO_EM_MOIST_E_7.inc"
            ELSE
 #        include "HALO_EM_MOIST_E_5.inc"
@@ -3354,13 +3358,13 @@ BENCH_END(bc_end_tim)
        ENDIF
        IF ( num_chem >= PARAM_FIRST_SCALAR ) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-           IF ( (config_flags%chem_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
+           IF ( (config_flags%chem_adv_opt /= ORIGINAL .and. config_flags%chem_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
 #        include "HALO_EM_CHEM_E_5.inc"
            ELSE
 #        include "HALO_EM_CHEM_E_3.inc"
            ENDIF
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-           IF ( (config_flags%chem_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
+           IF ( (config_flags%chem_adv_opt /= ORIGINAL .and. config_flags%chem_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
 #        include "HALO_EM_CHEM_E_7.inc"
            ELSE
 #        include "HALO_EM_CHEM_E_5.inc"
@@ -3372,13 +3376,13 @@ BENCH_END(bc_end_tim)
        ENDIF
        IF ( num_tracer >= PARAM_FIRST_SCALAR ) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-           IF ( (config_flags%tracer_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
+           IF ( (config_flags%tracer_adv_opt /= ORIGINAL .and. config_flags%tracer_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
 #        include "HALO_EM_TRACER_E_5.inc"
            ELSE
 #        include "HALO_EM_TRACER_E_3.inc"
            ENDIF
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-           IF ( (config_flags%tracer_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
+           IF ( (config_flags%tracer_adv_opt /= ORIGINAL .and. config_flags%tracer_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
 #        include "HALO_EM_TRACER_E_7.inc"
            ELSE
 #        include "HALO_EM_TRACER_E_5.inc"
@@ -3390,13 +3394,13 @@ BENCH_END(bc_end_tim)
        ENDIF
        IF ( num_scalar >= PARAM_FIRST_SCALAR ) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-           IF ( (config_flags%scalar_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
+           IF ( (config_flags%scalar_adv_opt /= ORIGINAL .and. config_flags%scalar_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
 #        include "HALO_EM_SCALAR_E_5.inc"
            ELSE
 #        include "HALO_EM_SCALAR_E_3.inc"
            ENDIF
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-           IF ( (config_flags%scalar_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
+           IF ( (config_flags%scalar_adv_opt /= ORIGINAL .and. config_flags%scalar_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
 #        include "HALO_EM_SCALAR_E_7.inc"
            ELSE
 #        include "HALO_EM_SCALAR_E_5.inc"
@@ -3588,6 +3592,23 @@ BENCH_END(moist_physics_prep_tim)
 
 BENCH_START(micro_driver_tim)
 
+!
+! WRFU_AlarmIsRinging always returned false, so using an alternate  method to find out if it is time 
+! to dump history/restart files so microphysics can be told to calculate things like radar reflectivity.
+!
+      diagflag = .false.
+      CALL WRFU_ALARMGET(grid%alarms( HISTORY_ALARM ),prevringtime=temp_time,RingInterval=intervaltime)
+      CALL WRFU_ALARMGET(grid%alarms( RESTART_ALARM ),prevringtime=restart_time,RingInterval=restartinterval)
+      CALL domain_clock_get ( grid, current_time=CurrTime )
+      old_dt=min(old_dt,grid%dt)
+      num = INT(old_dt * precision)
+      den = precision
+      CALL WRFU_TimeIntervalSet(dtInterval, Sn=num, Sd=den)
+      IF (CurrTime .ge. temp_time + intervaltime - dtInterval .or. &
+          CurrTime .ge. restart_time + restartinterval - dtInterval ) THEN
+        diagflag = .true.
+      ENDIF
+
      !CALL push4backup (moist,"moist")
      !CALL push4backup (pi_phy,"pi_phy")
      !CALL push4backup (dz8w,"dz8w")
@@ -3658,12 +3679,13 @@ BENCH_START(micro_driver_tim)
       &        , QNR_CURR=scalar(ims,kms,jms,P_QNR), F_QNR=F_QNR          &
       &        , QNS_CURR=scalar(ims,kms,jms,P_QNS), F_QNS=F_QNS          &
       &        , QNG_CURR=scalar(ims,kms,jms,P_QNG), F_QNG=F_QNG          &
-      &        , QNH_CURR=scalar(ims,kms,jms,P_QNH), F_QNH=F_QNH          & ! for milbrandt2mom
+      &        , QNH_CURR=scalar(ims,kms,jms,P_QNH), F_QNH=F_QNH          & ! for milbrandt2mom and nssl_2mom
 !       &        , QZR_CURR=scalar(ims,kms,jms,P_QZR), F_QZR=F_QZR          & ! for milbrandt3mom
 !       &        , QZI_CURR=scalar(ims,kms,jms,P_QZI), F_QZI=F_QZI          & ! "
 !       &        , QZS_CURR=scalar(ims,kms,jms,P_QZS), F_QZS=F_QZS          & ! "
 !       &        , QZG_CURR=scalar(ims,kms,jms,P_QZG), F_QZG=F_QZG          & ! "
 !       &        , QZH_CURR=scalar(ims,kms,jms,P_QZH), F_QZH=F_QZH          & ! "
+      &        , QVOLG_CURR=scalar(ims,kms,jms,P_QVOLG), F_QVOLG=F_QVOLG      & ! for nssl_2mom
       &        , qrcuten=grid%rqrcuten, qscuten=grid%rqscuten             &
       &        , qicuten=grid%rqicuten,mu=grid%mut                        &
       &        , HAIL=config_flags%gsfcgce_hail                           & ! for gsfcgce
@@ -3672,6 +3694,7 @@ BENCH_START(micro_driver_tim)
 ! YLIN
 ! RI_CURR INPUT
       &        , RI_CURR=grid%rimi                                          &
+      &        , diagflag=diagflag                                          &
                                                                           )
 BENCH_END(micro_driver_tim)
 
@@ -4680,6 +4703,24 @@ BENCH_START(adj_micro_driver_tim)
 !Variables need to be saved: th, p, qv_curr, rho, pi_phy, dz8w, rainnc, rainncv
 !!!! Need to replace the variables marked as "!zzma" if other scheme will be added in the furture. (comments from zzma 01/10/2011)
 
+! Consider diaflag when coding the adjoint of nssl_2mom_driver
+!
+! WRFU_AlarmIsRinging always returned false, so using an alternate  method to find out if it is time 
+! to dump history/restart files so microphysics can be told to calculate things like radar reflectivity.
+!
+!     diagflag = .false.
+!     CALL WRFU_ALARMGET(grid%alarms( HISTORY_ALARM ),prevringtime=temp_time,RingInterval=intervaltime)
+!     CALL WRFU_ALARMGET(grid%alarms( RESTART_ALARM ),prevringtime=restart_time,RingInterval=restartinterval)
+!     CALL domain_clock_get ( grid, current_time=CurrTime )
+!     old_dt=min(old_dt,grid%dt)
+!     num = INT(old_dt * precision)
+!     den = precision
+!     CALL WRFU_TimeIntervalSet(dtInterval, Sn=num, Sd=den)
+!     IF (CurrTime .ge. temp_time + intervaltime - dtInterval .or. &
+!         CurrTime .ge. restart_time + restartinterval - dtInterval ) THEN
+!       diagflag = .true.
+!     ENDIF
+
      CALL POPREAL8ARRAY ( th_phy, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
      CALL POPREAL8ARRAY ( moist, (ime-ims+1)*(kme-kms+1)*(jme-jms+1)*num_moist )
      !CALL pop2restore (p_phy,"p_phy")
@@ -4752,12 +4793,13 @@ BENCH_START(adj_micro_driver_tim)
       &        , QNR_CURR=scalar(ims,kms,jms,P_QNR), F_QNR=F_QNR          &
       &        , QNS_CURR=scalar(ims,kms,jms,P_QNS), F_QNS=F_QNS          &
       &        , QNG_CURR=scalar(ims,kms,jms,P_QNG), F_QNG=F_QNG          &
-      &        , QNH_CURR=scalar(ims,kms,jms,P_QNH), F_QNH=F_QNH          & ! for milbrandt2mom
+      &        , QNH_CURR=scalar(ims,kms,jms,P_QNH), F_QNH=F_QNH          & ! for milbrandt2mom and nssl_2mom
 !       &        , QZR_CURR=scalar(ims,kms,jms,P_QZR), F_QZR=F_QZR          & ! for milbrandt3mom
 !       &        , QZI_CURR=scalar(ims,kms,jms,P_QZI), F_QZI=F_QZI          & ! "
 !       &        , QZS_CURR=scalar(ims,kms,jms,P_QZS), F_QZS=F_QZS          & ! "
 !       &        , QZG_CURR=scalar(ims,kms,jms,P_QZG), F_QZG=F_QZG          & ! "
 !       &        , QZH_CURR=scalar(ims,kms,jms,P_QZH), F_QZH=F_QZH          & ! "
+      &        , QVOLG_CURR=scalar(ims,kms,jms,P_QVOLG), F_QVOLG=F_QVOLG    & ! for nssl_2mom
       &        , qrcuten=grid%rqrcuten, qscuten=grid%rqscuten             &
       &        , qicuten=grid%rqicuten,mu=grid%mut                        &
       &        , HAIL=config_flags%gsfcgce_hail                           & ! for gsfcgce
@@ -4766,6 +4808,7 @@ BENCH_START(adj_micro_driver_tim)
 ! YLIN
 ! RI_CURR INPUT
       &        , RI_CURR=grid%rimi                                          &
+      &        , diagflag=diagflag                                          &
                                                                           )
 BENCH_END(adj_micro_driver_tim)
 
@@ -4915,13 +4958,13 @@ BENCH_END(adj_advance_ppt_tim)
 ! moist, chem, scalar, tke      x
 
        IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-         IF ( (config_flags%tke_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
+         IF ( (config_flags%tke_adv_opt /= ORIGINAL .and. config_flags%tke_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
 #         include "HALO_EM_TKE_5_AD.inc"
          ELSE
 #         include "HALO_EM_TKE_3_AD.inc"
          ENDIF
        ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-         IF ( (config_flags%tke_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
+         IF ( (config_flags%tke_adv_opt /= ORIGINAL .and. config_flags%tke_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
 #         include "HALO_EM_TKE_7_AD.inc"
          ELSE
 #         include "HALO_EM_TKE_5_AD.inc"
@@ -4933,13 +4976,13 @@ BENCH_END(adj_advance_ppt_tim)
 
        IF ( num_moist .GE. PARAM_FIRST_SCALAR ) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-           IF ( (config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
+           IF ( (config_flags%moist_adv_opt /= ORIGINAL .and. config_flags%moist_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
 #        include "HALO_EM_MOIST_E_5_AD.inc"
            ELSE
 #        include "HALO_EM_MOIST_E_3_AD.inc"
            END IF
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-           IF ( (config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
+           IF ( (config_flags%moist_adv_opt /= ORIGINAL .and. config_flags%moist_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
 #        include "HALO_EM_MOIST_E_7_AD.inc"
            ELSE
 #        include "HALO_EM_MOIST_E_5_AD.inc"
@@ -4951,13 +4994,13 @@ BENCH_END(adj_advance_ppt_tim)
        ENDIF
        IF ( num_scalar >= PARAM_FIRST_SCALAR ) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-           IF ( (config_flags%scalar_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
+           IF ( (config_flags%scalar_adv_opt /= ORIGINAL .and. config_flags%scalar_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
 !#        include "HALO_EM_SCALAR_E_5.inc"
            ELSE
 !#        include "HALO_EM_SCALAR_E_3.inc"
            ENDIF
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-           IF ( (config_flags%scalar_adv_opt /= ORIGINAL) .and. (rk_step == rk_order-1) ) THEN
+           IF ( (config_flags%scalar_adv_opt /= ORIGINAL .and. config_flags%scalar_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
 !#        include "HALO_EM_SCALAR_E_7.inc"
            ELSE
 !#        include "HALO_EM_SCALAR_E_5.inc"
@@ -5543,7 +5586,7 @@ BENCH_END(adj_rk_scalar_tend_tim)
 #  include "HALO_EM_D_AD.inc"
 #endif
 
-       IF ((config_flags%tke_adv_opt /= ORIGINAL) .and. (rk_step == rk_order) &
+       IF ((config_flags%tke_adv_opt /= ORIGINAL .and. config_flags%tke_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order) &
            .and. (config_flags%km_opt .eq. 2)                ) THEN
 
          !$OMP PARALLEL DO   &
@@ -5560,7 +5603,7 @@ BENCH_END(adj_rk_scalar_tend_tim)
          !$OMP END PARALLEL DO
 
 #ifdef DM_PARALLEL
-         IF (config_flags%tke_adv_opt /= ORIGINAL) THEN
+         IF (config_flags%tke_adv_opt /= ORIGINAL .and. config_flags%tke_adv_opt /= WENO_SCALAR) THEN
            IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #     include "HALO_EM_TKE_OLD_E_5_AD.inc"
            ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
@@ -5598,7 +5641,7 @@ BENCH_END(adj_rk_scalar_tend_tim)
 
 ! scalars
 
-     IF ((config_flags%scalar_adv_opt /= ORIGINAL) .and. (rk_step == rk_order)) THEN
+     IF ((config_flags%scalar_adv_opt /= ORIGINAL .and. config_flags%scalar_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order)) THEN
 
 !---------------------- positive definite bc call
          !$OMP PARALLEL DO   &
@@ -5621,7 +5664,7 @@ BENCH_END(adj_rk_scalar_tend_tim)
          !$OMP END PARALLEL DO
 
 #ifdef DM_PARALLEL
-       IF (config_flags%scalar_adv_opt /= ORIGINAL) THEN
+       IF (config_flags%scalar_adv_opt /= ORIGINAL .and. config_flags%scalar_adv_opt /= WENO_SCALAR) THEN
 #ifndef RSL
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 !#     include "HALO_EM_SCALAR_OLD_E_5.inc"
@@ -5665,7 +5708,7 @@ BENCH_END(adj_rk_scalar_tend_tim)
 
 ! first moisture
 
-     IF ((config_flags%moist_adv_opt /= ORIGINAL) .and. (rk_step == rk_order)) THEN
+     IF ((config_flags%moist_adv_opt /= ORIGINAL .and. config_flags%moist_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order)) THEN
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -5686,7 +5729,7 @@ BENCH_END(adj_rk_scalar_tend_tim)
        !$OMP END PARALLEL DO
 
 #ifdef DM_PARALLEL
-       IF (config_flags%moist_adv_opt /= ORIGINAL) THEN
+       IF (config_flags%moist_adv_opt /= ORIGINAL .and. config_flags%moist_adv_opt /= WENO_SCALAR) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
 #     include "HALO_EM_MOIST_OLD_E_5_AD.inc"
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
@@ -6593,6 +6636,7 @@ BENCH_START(adj_rk_tend_tim)
                          grid%dt, grid%rdx, grid%rdy, grid%khdif, grid%kvdif, &
                          grid%xkmh,grid%a_xkmh, grid%xkhh,grid%a_xkhh,        &
                          grid%diff_6th_opt, grid%diff_6th_factor,             &
+                         config_flags%momentum_adv_opt,                       &
                          grid%dampcoef,grid%zdamp,config_flags%damp_opt,config_flags%rad_nudge,  &
                          grid%cf1, grid%cf2, grid%cf3, grid%cfn, grid%cfn1, num_3d_m, &
                          config_flags%non_hydrostatic, config_flags%top_lid,  &

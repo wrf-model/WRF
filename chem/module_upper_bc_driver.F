@@ -213,14 +213,12 @@ lev_loop : &
       !-----------------------------------------------------------
       ! upper_bc_rebin requires "top-down" ordering
       !-----------------------------------------------------------
-            chem_temp(1:km) = chem(i,kmax:kte,j,p_o3)
-            p8w_temp (1:km) = p8w (i,kmax:kte,j)
-            p8w_temp (km+1) = p8w (i,kmax-1,j)
+            p8w_temp (1:km+1) = p8w (i,kte:kmax-1:-1,j)
 
             call upper_bc_rebin( ub_lev_n-2, km, ub_p_e, p8w_temp, &
                                  table_ox, chem_temp               )
 
-            chem(i,kmax:kte,j,p_o3) = chem_temp(1:km)
+            chem(i,kmax:kte,j,p_o3) = chem_temp(km:1:-1)
 
             deallocate( p8w_temp )
             deallocate( chem_temp )

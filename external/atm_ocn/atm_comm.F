@@ -139,7 +139,7 @@
       call ATM_ANNOUNCE('ATM_CMP_START: Ocean_spec broadcast',2)
 
       call CMP_gnr_RECV(WM_id,1,MPI_INTEGER)
-      write(s,'(i2)') WM_id
+      write(s,'(i4)') WM_id
       call ATM_ANNOUNCE('back from CMP_INTEGER_RECV, WM id is '//s,2)
       call MPI_BCAST(WM_id,1,MPI_INTEGER, &
      &component_master_rank_local,MPI_COMM_Atmos,ierr)
@@ -220,11 +220,15 @@
      &kds_,kde_,kts_,kte_,kms_,kme_,&
      &HLON,HLAT,VLON,VLAT, &
      &SLM, &
-     &i_parent_start,j_parent_start)
+     &i_parent_start,j_parent_start,&
+     &guessdtc,dtc_)
 
       USE ATM_cc
 
       implicit none
+
+      real, intent(in) :: guessdtc
+      real, intent(out) :: dtc_
 
       integer NTSD,NPHS,gid_
       real dta_
@@ -274,7 +278,8 @@
       call GLOB_ABORT(KDT-n_ts(gid), &
      &'Abort: in ATM_TSTEP_INIT KDT, n_ts(gid) differ '//s,rc)
 
-      call ATM_RECVdtc
+      call ATM_RECVdtc(guessdtc)
+      dtc_=dtc
 
       zeroSF=((n_ts(gid)-1)/i_dtc2dta)*i_dtc2dta .eq. n_ts(gid)-1
       nrmSF=(n_ts(gid)/i_dtc2dta)*i_dtc2dta .eq. n_ts(gid)
@@ -349,12 +354,13 @@
 !C
 !C***********************************************************************
 !C
-      SUBROUTINE ATM_RECVdtc
+      SUBROUTINE ATM_RECVdtc(guessdtc)
 
       USE ATM_cc
 
       implicit none
 
+      real,intent(in) :: guessdtc
       real(kind=kind_R) buf(1),dtc2dta
       integer ierr,i
       logical first/.true./
@@ -377,18 +383,7 @@
         dtc=buf(1)
 
         if (Coupler_id.lt.0) then
-          if (gid.eq.1) then
-            dtc=dta
-!c          dtc=dta*2            ! just having in mind that with gid=1
-!c        else if (gid.eq.2) then! dta value is 5 times its value with
-!c          dtc=dta*10           ! gid=2 (at this moment, 270s and 54s
-          else                   !
-            write(s,'(i2)') dtc
-            call ATM_ANNOUNCE('ATM_RECVdtc, 1st call: gid='//trim(s),1)
-            call GLOB_ABORT(1, &
-     &      'AM: ATM_RECVdtc: ABORTED: gid NOT 1 at 1st call',1)
-!c          dtc=dta*50                       !<- *** check it! ***
-          end if                 ! respectively)
+          dtc=guessdtc
           write(s,'(1pe20.12)') dtc
           call ATM_ANNOUNCE('ATM_RECVdtc: C time step assigned '// &
      &    trim(s)//' : standalone mode',2)

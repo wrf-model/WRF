@@ -32,7 +32,8 @@ SUBROUTINE a_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 &  mut, p_top, ctopo, ctopo2, te_temf, km_temf, kh_temf, shf_temf, qf_temf, uw_temf, &
 &  vw_temf, hd_temf, lcl_temf, hct_temf, wupd_temf, mf_temf, thup_temf, &
 &  qtup_temf, qlup_temf, exch_temf, cf3d_temf, cfm_temf, flhc, flqc, qke&
-&  , tsq, qsq, cov, rmol, ch, qcg, grav_settling, ids, ide, jds, jde, kds&
+&  , tsq, qsq, cov, rmol, ch, qcg, grav_settling, RTHRATEN, HPBL2D, &
+&  EVAP2D, HEAT2D, ids, ide, jds, jde, kds&
 &  , kde, ims, ime, jms, jme, kms, kme, i_start, i_end, j_start, j_end, &
 &  kts, kte, num_tiles, hol, mol, regime, gwd_opt, dtaux3d, dtauy3d, &
 &  dusfcg, dvsfcg, var2d, oc12d, oa1, oa2, oa3, oa4, ol1, ol2, ol3, ol4, &
@@ -219,6 +220,11 @@ SUBROUTINE a_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
   INTEGER, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: lowlyr
 !
   LOGICAL, INTENT(IN) :: warm_rain
+
+  REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(IN   )   ::   RTHRATEN !Kwon for GFS PBL
+  REAL, DIMENSION( ims:ime , jms:jme ),                         &
+        OPTIONAL,   INTENT(OUT) ::  HPBL2D, EVAP2D, HEAT2D                 !Kwon for Shallow Convection
+
   REAL, DIMENSION(kms:kme), OPTIONAL, INTENT(IN) :: znu, znw
 !
   REAL, INTENT(IN) :: dt, dx

@@ -713,7 +713,7 @@ PROGRAM convert_emissions
        do j=jps,jpe
        do i=ips,ipe
          if(erup_dt(i,j).le.0.)CYCLE
-         ashz_above_vent=ash_height(i,j)_volc_vent(i,j) !zlevel(i,kps,j)
+         ashz_above_vent=ash_height(i,j)+volc_vent(i,j) !zlevel(i,kps,j)
 !        write(0,*)'found active volcano at i,j,kps,kpe = ',i,j,kps,kpe
 !        write(0,*)ash_height(i,j),ash_mass(i,j),erup_dt(i,j),ashz_above_vent
          do k=kpe-1,kps,-1

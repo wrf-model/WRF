@@ -48,7 +48,9 @@ CONTAINS
                      ,zmicuu, zmicud, zmicvu, zmicvd, zmdice, zmdliq  &
                      ,k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow &
                  ! Optional arguments for SAS scheme
-                     ,pgcon                                           &
+                     ,pgcon,sas_mass_flux                             &
+                     ,shalconv,shal_pgcon                             &
+                     ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon for SAS2010 shallow convection 
                  ! Optional arguments for NSAS scheme
                      ,mp_physics                                      &
                  ! Optional moisture and other tendencies
@@ -57,10 +59,7 @@ CONTAINS
                      ,rqvblten,rqvften                                &
                      ,rucuten,rvcuten                                 &
                      ,rthcuten,g_rthcuten,rthraten,rthblten,rthften   &
-#if (NMM_CORE==1)
-                 ! for hwrf-sas                      --- 3.2 CLEANUP TODO -- THESE SHOULD BE OPTIONAL, NOT #IF/#ENDIF
                      ,mommix,store_rand                               &
-#endif
 ! Optional variables for tiedtke scheme - add by ZCX&YQW 
                      ,znu                                             &
                  ! Optional moisture tracer flags 
@@ -280,7 +279,8 @@ CONTAINS
    INTEGER,      INTENT(IN   )    ::   STEPCU
    LOGICAL,      INTENT(IN   )    ::   warm_rain
 
-   REAL, INTENT(IN), OPTIONAL :: pgcon
+   REAL, INTENT(IN), OPTIONAL :: pgcon,shal_pgcon,sas_mass_flux
+   INTEGER, INTENT(IN), OPTIONAL :: shalconv
 
    INTEGER,DIMENSION( ims:ime, jms:jme ),                        &
            INTENT(IN ) ::                                LOWLYR
@@ -355,6 +355,14 @@ CONTAINS
 
    INTEGER,      INTENT(IN   ), OPTIONAL    ::   mp_physics
 
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(IN) ::  STORE_RAND
+!
+   REAL, OPTIONAL,  INTENT(INOUT) :: mommix
+
+
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    !Kwon for sas2010 shallow convection
+                    INTENT(INOUT) ::  HPBL2D, EVAP2D, HEAT2D
+!
    REAL, DIMENSION( ims:ime, jms:jme, kms:kme ),                 &
                    INTENT(INOUT) :: rucuten,rvcuten
 !

@@ -518,7 +518,9 @@
        CALL wrf_debug(15,'Volcanic Ash mode: only doing emissions, settling, and subgrid transport in chem_driver')
     CASE (DUST)
        CALL wrf_debug(15,'Dust only mode: only doing emissions, settling, and subgrid transport chem_driver')
-     CASE DEFAULT
+    CASE (CO2_TRACER,GHG_TRACER)
+      CALL wrf_debug(15,'Greenhouse gas mode: fluxes and transport of GHG')
+    CASE DEFAULT
        if(config_flags%tracer_opt > 0 )then
        CALL wrf_debug(15,'only doing tracer transport in chem_driver')
        else
@@ -868,7 +870,15 @@
               grid%flashrate_factor, grid%flashrate_method, grid%iccg_method,              &
               grid%cellcount_method,grid%ktop_adj,                                             &
          ! stuff for aircraft emissions
-              emis_aircraft,                                                               &   
+              emis_aircraft,                                                               &
+
+         ! stuff for ghg fluxes
+              vprm_par,grid%rad_vprm,grid%lambda_vprm,                                     &
+              grid%alpha_vprm,grid%resp_vprm,grid%xtime,                                   &
+              grid%TSLB,wet_in,grid%RAINC,grid%RAINNC,                                     &
+              grid%potevp,grid%SFCEVP,grid%LU_INDEX,                                       &
+              eghg_bio,biomt_par,emit_par,                                                 &
+
               ids,ide, jds,jde, kds,kde,                                                   &
               ims,ime, jms,jme, kms,kme,                                                   &
               its,ite,jts,jte,kts,kte)
@@ -901,7 +911,9 @@
            config_flags%chem_opt /= CHEM_VASH .and. &
            config_flags%chem_opt /= CHEM_VOLC .and. &
            config_flags%chem_opt /= DUST .and. &
-           config_flags%chem_opt /= CHEM_TRACE2 ) then
+           config_flags%chem_opt /= CHEM_TRACE2 .and. &
+           config_flags%chem_opt /= CO2_TRACER  .and. &
+           config_flags%chem_opt /= GHG_TRACER ) then
          call wrf_debug(15,'calling optical driver')
          call optical_driver (grid%id,curr_secs,grid%dt,config_flags,haveaer,         &
               chem,dz8w,rri,rh,                                                       &
@@ -935,7 +947,9 @@
            config_flags%chem_opt /= CHEM_VASH .and. &
            config_flags%chem_opt /= CHEM_VOLC .and. &
            config_flags%chem_opt /= DUST .and. &
-           config_flags%chem_opt /= CHEM_TRACE2 ) then
+           config_flags%chem_opt /= CHEM_TRACE2 .and. &
+           config_flags%chem_opt /= CO2_TRACER  .and. &
+           config_flags%chem_opt /= GHG_TRACER  ) then
          call wrf_debug(15,'calling photolysis driver')
          call photolysis_driver (grid%id,curr_secs,ktau,grid%dt,                      &
               config_flags,haveaer,                                                   &
@@ -1155,7 +1169,9 @@
           config_flags%chem_opt /= CHEM_VASH .and. &
           config_flags%chem_opt /= CHEM_VOLC .and. &
           config_flags%chem_opt /= DUST .and. &
-          config_flags%chem_opt /= CHEM_TRACE2 ) then
+          config_flags%chem_opt /= CHEM_TRACE2 .and. &
+          config_flags%chem_opt /= CO2_TRACER  .and. &
+          config_flags%chem_opt /= GHG_TRACER ) then
 
 !
 ! chemical mechanisms

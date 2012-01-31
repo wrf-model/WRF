@@ -38,10 +38,12 @@ subroutine da_transfer_xatowrf(grid)
 
    real, dimension(ims:ime,jms:jme) :: mu_cgrid
 
-   real    :: t_full  , p_full, rho_dry, q_full, ph_full , ph_xb_hd, &
-              qvf1, qvf2, qvf1_b, qvf2_b
+   real :: t_full, p_full, rho_dry, q_full, ph_full, ph_xb_hd, &
+           qvf1, qvf2, qvf1_b, qvf2_b
 
    real :: uu, vv, ps1, ps2, ts1, ts2, qv1, qv2, height
+   real :: zs1, zs2, pf2, theta, thetam, mu_full, pfu, pfd, phm, cvpm, p2m
+   real, dimension(kms:kme) :: ald, pfl, ph
 
    if (trace_use) call da_trace_entry("da_transfer_xatowrf")
 
@@ -51,7 +53,7 @@ subroutine da_transfer_xatowrf(grid)
       do i=its,ite
          do k=kts, kte+1
             ph_cgrid(i,j,k) = grid%ph_2(i,j,k)
-            end do
+         end do
       end do
    end do
 
@@ -97,6 +99,7 @@ subroutine da_transfer_xatowrf(grid)
    ! Tangent linear code for grid%xa%p (based on WRF "real.init.code") 
    ! developed by Y.-R. Guo 05/13/2004:
 
+#ifndef TKW_
    do j=jts,jte
       do i=its,ite
          k = kte
@@ -124,16 +127,19 @@ subroutine da_transfer_xatowrf(grid)
          end do
       end do
    end do
+#else
+   ! Pressure perturbation has been computed in da_transform_xtoxa.inc
 
+#endif
    else
     
-   do k=kts, kte
-     do j=jts,jte
-        do i=its,ite
-           grid%xa%p(i,j,k) = 0
+      do k=kts, kte
+        do j=jts,jte
+           do i=its,ite
+              grid%xa%p(i,j,k) = 0.
+           end do
         end do
-     end do
-   end do
+      end do
 
    endif 
 
@@ -147,8 +153,7 @@ subroutine da_transfer_xatowrf(grid)
      end do
    end do
 
-
-   ! Adjust grid%xa%q to makte grid%xb%q + grid%xa%q > 0.0
+   ! Adjust grid%xa%q to make grid%xb%q + grid%xa%q > 0.0
 
    if (check_rh == check_rh_tpw) then
       ! Shu-Hua~s TPW conservation:
@@ -211,6 +216,7 @@ subroutine da_transfer_xatowrf(grid)
           minval(grid%xa%psfc(its:ite,jts:jte))
    end if
 
+#ifndef TKW_
    do j=jts,jte
       do i=its,ite
 
@@ -243,6 +249,58 @@ subroutine da_transfer_xatowrf(grid)
          end do
       end do
    end do
+
+#else
+   ! Geopotential increment reflecting hypsometric_opt: wee 11/29/2011
+
+   cvpm =  - (1.0 - gas_constant/cp)
+
+   DO j=jts,jte
+   DO i=its,ite
+
+      ! dry air density
+      mu_full = grid%mub(i,j)+grid%mu_2(i,j)+mu_cgrid(i,j)
+
+      DO k = kts, kte
+         p_full = grid%xb%p(i,j,k) + grid%xa%p(i,j,k)
+         t_full = grid%xb%t(i,j,k) + grid%xa%t(i,j,k)
+         q_full = grid%moist(i,j,k,P_QV) + q_cgrid(i,j,k)
+         theta  = t_full*(base_pres/p_full)**kappa
+
+         ! Update potential temperature
+         grid%t_2(i,j,k) = theta - t0
+
+         ! Compute dry inverse density using the equation of state
+         thetam = theta*(1.0 + q_full/rd_over_rv)
+         ald(k) = (gas_constant/base_pres)*thetam*(p_full/base_pres)**cvpm
+      END DO
+
+      ! Compute geopotential (using dry inverse density and dry pressure)
+
+      ph(kts) = grid%ht(i,j) * gravity
+
+      IF (grid%hypsometric_opt == 1) THEN
+         DO k = kts, kte
+            ph(k+1) = ph(k) - ald(k)*mu_full*grid%dnw(k) 
+         END DO
+      ELSE
+         ! Dry mass is purely hydrostatic: Native approach in WRF
+         DO k = kts, kte
+            pfu = mu_full*grid%znw(k+1) + grid%p_top
+            pfd = mu_full*grid%znw(k)   + grid%p_top
+            phm = mu_full*grid%znu(k)   + grid%p_top
+            ph(k+1) = ph(k) + ald(k)*phm*LOG(pfd/pfu)
+         END DO
+      END IF
+
+      ! Update geopotential perturbation
+      DO k= kts, kte+1
+         grid%ph_2(i,j,k) = ph(k) - grid%phb(i,j,k)
+      END DO
+
+   END DO
+   END DO
+#endif
 
    ! To compute the geopotential height increment:
 
@@ -446,9 +504,24 @@ subroutine da_transfer_xatowrf(grid)
          ts2 = (t0+grid%t_2(i,j,kts+1))*(ps2/base_pres)**kappa
          qv1 = grid%moist(i,j,kts, p_qv)/(1.0+grid%moist(i,j,kts,p_qv))
          qv2 = grid%moist(i,j,kts+1, p_qv)/(1.0+grid%moist(i,j,kts+1,p_qv))
+#ifndef TKW_
          height = 0.5*(grid%phb(i,j,kts)+grid%ph_2(i,j,kts)+ &
                        grid%phb(i,j,kts+1)+grid%ph_2(i,j,kts+1))/gravity
          height = height - grid%ht(i,j)
+#else
+       ! height = 0.5*(grid%phb(i,j,kts)+grid%ph_2(i,j,kts)+ &
+       !               grid%phb(i,j,kts+1)+grid%ph_2(i,j,kts+1))/gravity
+       ! height = height - grid%ht(i,j)
+
+       ! Height is in proportion to log pressure: wee 11/22/2011
+         zs1 = (grid%phb(i,j,kts)+grid%ph_2(i,j,kts))/gravity
+         zs2 = (grid%phb(i,j,kts+1)+grid%ph_2(i,j,kts+1))/gravity
+
+       ! Pressure at the full level second from bottom
+         pf2 = (grid%dnw(kts)*ps2+grid%dnw(kts+1)*ps1)/(grid%dnw(kts)+grid%dnw(kts+1))
+
+         height = (zs2-zs1)*LOG(grid%psfc(i,j)/ps1)/LOG(grid%psfc(i,j)/pf2)
+#endif
          if (height <= 0.0) then
             message(1) = "Negative height found"
             write (unit=message(2),FMT='(2I6,A,F10.2,A,F10.2)') &
@@ -461,7 +534,16 @@ subroutine da_transfer_xatowrf(grid)
             height,  grid%xb%rough(i,j),grid%xb%xland(i,j), grid%xb%ds, &
             grid%u10(i,j), grid%v10(i,j), grid%t2(i,j), &
             grid%q2(i,j), grid%xb%regime(i,j))
-         grid%th2(i,j) = grid%t2(i,j)*(base_pres/ps1)**kappa
+#ifndef TKW_
+            grid%th2(i,j) = grid%t2(i,j)*(base_pres/ps1)**kappa
+#else
+            ! This is obviously incorrect: wee 11/22/2011
+            ! grid%th2(i,j) = grid%t2(i,j)*(base_pres/ps1)**kappa
+
+            ! 2-m pressure: Ground level and first half level are used
+            p2m = grid%psfc(i,j)*EXP(-2.0/height*LOG(grid%psfc(i,j)/ps1))
+            grid%th2(i,j) = grid%t2(i,j)*(base_pres/p2m)**kappa
+#endif
       end do
    end do
 

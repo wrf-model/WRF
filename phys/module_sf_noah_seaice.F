@@ -20,11 +20,12 @@ MODULE module_sf_noah_seaice
 !
 CONTAINS
 !
-  SUBROUTINE SFLX_SEAICE (IILOC, JJLOC, FFROZP,DT,ZLVL,NSOIL,              &    !C
+  SUBROUTINE SFLX_SEAICE (IILOC, JJLOC, SEAICE_ALBEDO_OPT,                 &    !C
+       &                  FFROZP,DT,ZLVL,NSOIL,                            &    !C
        &                  LWDN,SOLNET,SFCPRS,PRCP,SFCTMP,Q2,               &    !F
        &                  TH2,Q2SAT,DQSDT2,                                &    !I
        &                  ALB, SNOALB,TBOT, Z0BRD, Z0, EMISSI,             &    !S
-       &                  T1,STC,SNOWH,SNEQV,CH,                           &    !H
+       &                  T1,STC,SNOWH,SNEQV,ALBEDO, CH,                   &    !H
        &                  ETA,SHEAT,ETA_KINEMATIC,FDOWN,                   &    !O
        &                  ESNOW,DEW,ETP,SSOIL,FLX1,FLX2,FLX3,              &    !O
        &                  SNOMLT,SNCOVR,                                   &    !O
@@ -96,6 +97,7 @@ CONTAINS
 !  SNOWH       ACTUAL SNOW DEPTH (M)
 !  SNEQV       LIQUID WATER-EQUIVALENT SNOW DEPTH (M)
 !                NOTE: SNOW DENSITY = SNEQV/SNOWH
+!  ALBEDO      SURFACE ALBEDO
 !  CH          SURFACE EXCHANGE COEFFICIENT FOR HEAT AND MOISTURE
 !                (M S-1); NOTE: CH IS TECHNICALLY A CONDUCTANCE SINCE
 !                IT HAS BEEN MULTIPLIED BY WIND SPEED.
@@ -139,8 +141,8 @@ CONTAINS
       IMPLICIT NONE
 ! ----------------------------------------------------------------------
       integer, intent(in) :: iiloc, jjloc
+      INTEGER, INTENT(IN) :: SEAICE_ALBEDO_OPT
 
-! ----------------------------------------------------------------------
       LOGICAL            ::  FRZGRA, SNOWNG
 
       INTEGER,INTENT(IN) ::  NSOIL
@@ -149,6 +151,7 @@ CONTAINS
                             Q2,Q2SAT,SFCPRS,SFCTMP, SNOALB,                 &
                             SOLNET,TBOT,TH2,ZLVL,                            &
                             FFROZP
+      REAL, INTENT(OUT)  :: ALBEDO
       REAL, INTENT(INOUT):: CH,                         &
                             SNEQV,SNCOVR,SNOWH,T1,Z0BRD,                    &
                             EMISSI, ALB
@@ -169,6 +172,12 @@ CONTAINS
 
       REAL :: RHO
       INTEGER  :: KZ, K
+
+      REAL :: T1Celsius
+      REAL :: SFCTcelsius
+      REAL :: ALB_SNOW
+      REAL :: ALB_ICE
+      REAL :: Z0N
 
 ! ----------------------------------------------------------------------
 ! DECLARATIONS - PARAMETERS
@@ -215,10 +224,23 @@ CONTAINS
 ! FOR SEA-ICE CASE, ASSIGN DEFAULT WATER-EQUIV SNOW ON TOP
 ! ----------------------------------------------------------------------
 
-      IF ( SNEQV < 0.01 ) THEN
-         SNEQV = 0.01
-         SNOWH = 0.05
-      ENDIF
+      SELECT CASE ( SEAICE_ALBEDO_OPT )
+
+      CASE DEFAULT
+
+         IF ( SNEQV < 0.01 ) THEN
+            SNEQV = 0.01
+            SNOWH = 0.05
+         ENDIF
+
+      CASE ( 1 ) ! Arctic sea-ice albedo from Mills (2011)
+
+         IF ( SNEQV < 0.0001 ) THEN
+            SNEQV = 0.0001
+            SNOWH = 0.0005
+         ENDIF
+
+      END SELECT
 
 ! ----------------------------------------------------------------------
 ! IF INPUT SNOWPACK IS NONZERO, THEN COMPUTE SNOW DENSITY "SNDENS" AND
@@ -281,8 +303,55 @@ CONTAINS
 
       END IF
 
-      SNCOVR = 1.0
-      EMISSI = 0.98
+! ----------------------------------------------------------------------
+! ALBEDO OF SEA ICE
+! ----------------------------------------------------------------------
+      
+
+      SELECT CASE ( SEAICE_ALBEDO_OPT )
+
+      CASE DEFAULT
+
+         SNCOVR = 1.0
+         EMISSI = 0.98
+         ALBEDO = 0.80
+
+      CASE ( 1 ) ! Arctic sea-ice albedo from Mills (2011)
+
+         Z0N = 0.10 ! Approximate roughness length of snow-covered surface
+         SNCOVR = SNOWH / ( SNOWH + Z0N ) ! Snow-cover fraction
+
+         ! 
+         ! Make albedo of snow on sea-ice a function of skin temperature
+         ! 
+         T1celsius = T1 - 273.15
+         IF (T1 < 268.0) THEN
+            alb_snow = 0.8
+         ELSEIF ( ( T1 >= 268.0 ) .AND. ( T1 < 273.0 ) ) then
+            alb_snow = 0.65 - ( 0.03 * T1celsius )
+         ELSE
+            alb_snow = 0.65
+         ENDIF
+
+         ! 
+         ! Make albedo of snow-free sea-ice a function of air temperature
+         ! 
+         SFCTcelsius = SFCTMP - 273.15
+         IF ( SFCTMP <= 273.0 ) THEN
+            alb_ice = 0.65
+         ELSEIF ( ( SFCTMP > 273.0 ) .and. ( SFCTMP < 278.0 ) ) THEN
+            alb_ice = 0.65 - ( 0.04 *SFCTcelsius )
+         ELSE
+            alb_ice = 0.45
+         ENDIF
+
+         ! 
+         ! Final albedo over sea-ice point is a combination of the snow 
+         ! albedo and the snow-free ice albedo, weighted by the snow cover.
+         !
+         ALBEDO = ( SNCOVR * alb_snow ) + ( ( 1.0 - SNCOVR ) * alb_ice )
+
+      END SELECT
 
 ! ----------------------------------------------------------------------
 ! THERMAL CONDUCTIVITY FOR SEA-ICE CASE
@@ -359,7 +428,8 @@ CONTAINS
            Q2,T1,SFCTMP,T24,TH2,FDOWN,SSOIL,STC,           &
            SFCPRS,RCH,RR,SNCOVR,SNEQV,SNDENS,              &
            SNOWH,ZSOIL,TBOT,                               &
-           SNOMLT,DEW,FLX1,FLX2,FLX3,ESNOW,EMISSI,RIBB)
+           SNOMLT,DEW,FLX1,FLX2,FLX3,ESNOW,EMISSI,RIBB,    &
+           SEAICE_ALBEDO_OPT)
       ETA_KINEMATIC =  ESNOW
 
 !     Calculate effective mixing ratio at ground level (skin)
@@ -676,7 +746,7 @@ CONTAINS
        SFCPRS,RCH,RR,SNCOVR,ESD,SNDENS,              &
        SNOWH,ZSOIL,TBOT,                             &
        SNOMLT,DEW,FLX1,FLX2,FLX3,ESNOW,EMISSI,       &
-       RIBB)
+       RIBB, SEAICE_ALBEDO_OPT)
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SNOPAC
@@ -691,22 +761,23 @@ CONTAINS
     INTEGER               :: K
     LOGICAL, INTENT(IN)   :: SNOWNG
     REAL, INTENT(IN)      :: DF1,                                     &
-         DT,FDOWN,                                &
-         PRCP,Q2,                                 &
-         RCH,RR,SFCPRS, SFCTMP,                   &
-         T24,                                     &
-         TBOT,TH2,EMISSI
-    REAL, INTENT(INOUT)   :: ESD,FLX2,SNOWH,SNCOVR,             &
-         SNDENS, T1, RIBB, ETP
-    REAL, INTENT(OUT)     :: DEW,ESNOW,                   &
-         FLX1,FLX3, SSOIL,SNOMLT
+         &                   DT,FDOWN,                                &
+         &                   PRCP,Q2,                                 &
+         &                   RCH,RR,SFCPRS, SFCTMP,                   &
+         &                   T24,                                     &
+         &                   TBOT,TH2,EMISSI
+    REAL, INTENT(INOUT)   :: ESD,FLX2,SNOWH,SNCOVR,                   &
+         &                   SNDENS, T1, RIBB, ETP
+    REAL, INTENT(OUT)     :: DEW,ESNOW,                               &
+         &                   FLX1,FLX3, SSOIL,SNOMLT
     REAL, DIMENSION(1:NSOIL),INTENT(IN)     :: ZSOIL
     REAL, DIMENSION(1:NSOIL), INTENT(INOUT) :: STC
-    REAL                  :: DENOM,DSOIL,DTOT,ETA,   &
-         ESNOW1, ESNOW2, ETA1,ETP1,ETP2,    &
-         ETANRG, EX, SEH,   &
-         SNCOND,T12, T12A,     &
-         T12B, T14, YY, ZZ1
+    REAL                  :: DENOM,DSOIL,DTOT,ETA,                    &
+         &                   ESNOW1, ESNOW2, ETA1,ETP1,ETP2,          &
+         &                   ETANRG, EX, SEH,                         &
+         &                   SNCOND,T12, T12A,                        &
+         &                   T12B, T14, YY, ZZ1
+    INTEGER, INTENT(IN)   :: SEAICE_ALBEDO_OPT
     REAL, PARAMETER       :: ESDMIN = 1.E-6, LSUBC = 2.501000E+6,     &
          LSUBS = 2.83E+6, SNOEXP = 2.0
 
@@ -911,15 +982,31 @@ CONTAINS
 ! SNOW DEPTH AND DENSITY ADJUSTMENT BASED ON SNOW COMPACTION.  YY IS
 ! ASSUMED TO BE THE SOIL TEMPERTURE AT THE TOP OF THE SOIL COLUMN.
 ! ----------------------------------------------------------------------
-    IF (ESD .GE. 0.01) THEN
-       CALL SNOWPACK (ESD,DT,SNOWH,SNDENS,T1,YY)
-    ELSE
-       ESD = 0.01
-       SNOWH = 0.05
+    SELECT CASE ( SEAICE_ALBEDO_OPT )
+
+    CASE DEFAULT
+
+       IF (ESD .GE. 0.01) THEN
+          CALL SNOWPACK (ESD,DT,SNOWH,SNDENS,T1,YY)
+       ELSE
+          ESD = 0.01
+          SNOWH = 0.05
 !KWM???? SNDENS =
 !KWM???? SNCOND =
-       SNCOVR = 1.0
-    ENDIF
+          SNCOVR = 1.0
+       ENDIF
+
+    CASE ( 1 ) ! Arctic sea-ice albedo from Mills (2011)
+
+       IF ( ESD >= 0.0001 ) THEN
+          CALL SNOWPACK (ESD,DT,SNOWH,SNDENS,T1,YY)
+       ELSE
+          ESD    = 0.0001
+          SNOWH  = 0.0005
+          SNCOVR = 0.005
+       ENDIF
+
+    END SELECT
 ! ----------------------------------------------------------------------
   END SUBROUTINE SNOPAC
 ! ----------------------------------------------------------------------

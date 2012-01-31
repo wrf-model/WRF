@@ -343,7 +343,7 @@ MODULE module_sf_bep_bem
 
 !------------------------------------------------------------------------
 !    Calculation of the momentum, heat and turbulent kinetic fluxes
-!     produced by builgings
+!     produced by buildings
 !
 ! Reference:
 ! Martilli, A., Clappier, A., Rotach, M.W.:2002, 'AN URBAN SURFACE EXCHANGE

@@ -33,6 +33,9 @@ CONTAINS
                  ,flhc,flqc                                        &
               ! 
                  ,qke,tsq,qsq,cov,rmol,ch,qcg,grav_settling        &
+!startJOE
+                 ,el_mynn,dqke,qWT,qSHEAR,qBUOY,qDISS              &
+!endJOE
 #if (NMM_CORE==1)
                  ,DISHEAT                                          &
 #endif
@@ -404,7 +407,11 @@ CONTAINS
 
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ), &
         &OPTIONAL, INTENT(INOUT) :: &
-        & qke,tsq,qsq,cov!,k_m,k_h,k_q
+        & qke,tsq,qsq,cov & !,k_m,k_h,k_q &
+!startJOE
+        & ,el_mynn,dqke,qWT,qSHEAR,qBUOY,qDISS 
+!endJOE
+
    INTEGER, OPTIONAL :: id
 
    REAL,    DIMENSION( ims:ime , jms:jme ), &
@@ -1414,7 +1421,7 @@ CONTAINS
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                 & PRESENT(qke) .AND. PRESENT(tsq) .AND. &
                 & PRESENT(qsq) .AND. PRESENT(cov) .AND. &
-                & PRESENT(rmol) .AND. &
+                & PRESENT(rmol) .AND. PRESENT(el_mynn).AND. &
                 & PRESENT(qcg) .AND. PRESENT(ch) .AND. &
                 & PRESENT(grav_settling) ) THEN
 
@@ -1440,6 +1447,10 @@ CONTAINS
                    &Dqv=rqvblten,Dqc=rqcblten,&
                    &k_h=exch_h,k_m=exch_m,&
                    &pblh=pblh&
+!startJOE -added for extra output
+                   &,el_mynn=el_mynn,dqke=dqke                           &
+                   &,qWT=qWT,qSHEAR=qSHEAR,qBUOY=qBUOY,qDISS=qDISS       &
+!endJOE
                    ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
                    ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
                    ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &

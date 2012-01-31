@@ -102,27 +102,21 @@ REAL, PARAMETER ::XFRAC_UP_MAX= 0.33 ! maximum Updraft fraction
      &                                                     ,QV,QC,RHO   &
      &                                                     ,TH,U,V,TKE   
 !
-!
-!
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: RQCBLTEN,RQVBLTEN       &
      &                                        ,RTHBLTEN                                &
      &                                        ,RUBLTEN,RVBLTEN        
-
   
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) ::   MASSFLUX_EDKF, ENTR_EDKF, DETR_EDKF
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) ::   THL_UP, THV_UP, RT_UP, RV_UP
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) ::   RC_UP, U_UP, V_UP, FRAC_UP
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) ::   RC_MF
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),OPTIONAL,INTENT(OUT) ::              &
+     &                                         MASSFLUX_EDKF, ENTR_EDKF, DETR_EDKF &
+     &                                        ,THL_UP, THV_UP, RT_UP, RV_UP        &
+     &                                        ,RC_UP, U_UP, V_UP, FRAC_UP          &
+     &                                        ,RC_MF
+
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) ::   WTHV
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) ::   PLM_BL89
 
-   
 !
-!
-
-
 !Local declaration
-
 
 INTEGER   :: KRRL      ! number of liquid water var.
 INTEGER   :: KRRI      ! number of ice water var.
@@ -262,26 +256,32 @@ DO J=JTS,JTE
          RTHBLTEN(I,K,J)=PRTHS(I,J,K)                
          RUBLTEN(I,K,J)=PRUS(I,J,K)
          RVBLTEN(I,K,J)=PRVS(I,J,K)
-         MASSFLUX_EDKF(I,K,J)=PEMF(I,J,K)
-         ENTR_EDKF(I,K,J)=PENTR(I,J,K)
-         DETR_EDKF(I,K,J)=PDETR(I,J,K)
-         THL_UP(I,K,J)=PTHL_UP(I,J,K)
-         THV_UP(I,K,J)=PTHV_UP(I,J,K)
-         RT_UP(I,K,J)=PRT_UP(I,J,K)
-         RV_UP(I,K,J)=PRV_UP(I,J,K)
-         RC_UP(I,K,J)=PRC_UP(I,J,K)
-         U_UP(I,K,J)=PU_UP(I,J,K)
-         V_UP(I,K,J)=PV_UP(I,J,K)
-         FRAC_UP(I,K,J)=PFRAC_UP(I,J,K)
-         RC_MF(I,K,J)=PRC_MF(I,J,K)
          WTHV(I,K,J)=WTHV_MF(I,J,K)
          PLM_BL89(I,K,J)=PLM_MF(I,J,K)
       ENDDO
    ENDDO
 ENDDO
 
-
-
+      IF ( PRESENT(MASSFLUX_EDKF) ) THEN
+         DO J=JTS,JTE
+            DO K=KTS,KTE
+               DO I=ITS,ITE
+                  MASSFLUX_EDKF(I,K,J)=PEMF(I,J,K)
+                  ENTR_EDKF(I,K,J)=PENTR(I,J,K)
+                  DETR_EDKF(I,K,J)=PDETR(I,J,K)
+                  THL_UP(I,K,J)=PTHL_UP(I,J,K)
+                  THV_UP(I,K,J)=PTHV_UP(I,J,K)
+                  RT_UP(I,K,J)=PRT_UP(I,J,K)
+                  RV_UP(I,K,J)=PRV_UP(I,J,K)
+                  RC_UP(I,K,J)=PRC_UP(I,J,K)
+                  U_UP(I,K,J)=PU_UP(I,J,K)
+                  V_UP(I,K,J)=PV_UP(I,J,K)
+                  FRAC_UP(I,K,J)=PFRAC_UP(I,J,K)
+                  RC_MF(I,K,J)=PRC_MF(I,J,K)
+               ENDDO
+            ENDDO
+         ENDDO
+      ENDIF
 
 
 END SUBROUTINE MFSHCONVPBL
@@ -2552,10 +2552,10 @@ END SUBROUTINE COMPUTE_MF_CLOUD
      &                      IMS,IME,JMS,JME,KMS,KME,                    &
      &                      ITS,ITE,JTS,JTE,KTS,KTE
 
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) ::   MASSFLUX_EDKF, ENTR_EDKF, DETR_EDKF
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) ::   THL_UP, THV_UP, RT_UP, RV_UP
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) ::   RC_UP, U_UP, V_UP, FRAC_UP
-
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT),OPTIONAL ::             &
+     &                                        MASSFLUX_EDKF, ENTR_EDKF, DETR_EDKF &
+     &                                       ,THL_UP, THV_UP, RT_UP, RV_UP        &
+     &                                       ,RC_UP, U_UP, V_UP, FRAC_UP 
 
       INTEGER :: I,J,K,ITF,JTF,KTF
 
@@ -2564,7 +2564,8 @@ END SUBROUTINE COMPUTE_MF_CLOUD
       KTF=MIN0(KTE,KDE-1)
       ITF=MIN0(ITE,IDE-1)
 
-      IF(.NOT.RESTART)THEN
+!     IF(.NOT.RESTART)THEN
+      IF( PRESENT (MASSFLUX_EDKF) ) THEN
         DO J=JTS,JTF
         DO K=KTS,KTF
         DO I=ITS,ITF

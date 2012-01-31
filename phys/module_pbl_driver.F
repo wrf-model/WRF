@@ -73,7 +73,6 @@ CONTAINS
                ,wu_tur,wv_tur,wt_tur,wq_tur &
 #endif
                ,a_e_bep,b_e_bep,dlg_bep,dl_u_bep           &
-               ,wthv_mf, lm_bl89                           &
                ,mfshconv, massflux_EDKF, entr_EDKF, detr_EDKF    & 
                ,thl_up, thv_up, rt_up ,rv_up, rc_up, u_up, v_up    &
                ,frac_up,rc_mf                                      & 
@@ -537,15 +536,13 @@ CONTAINS
                                                           CTOPO2
 
 ! Variables and Diagnostic for QNSE and EDKF JP
-   LOGICAL, INTENT(IN), OPTIONAL ::  mfshconv ! WRF JP
+   LOGICAL, INTENT(IN) ::  mfshconv
 
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,  &
-               INTENT(INOUT)    ::    massflux_EDKF, entr_EDKF, detr_EDKF & 
+               INTENT(OUT) ::    massflux_EDKF, entr_EDKF, detr_EDKF & 
                                      ,thl_up, thv_up, rt_up       &
                                      ,rv_up, rc_up, u_up, v_up    &
                                      ,frac_up,rc_mf  
-   REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL   &
-                                ::    wthv_mf, lm_bl89
 
 !  LOCAL  VAR
 
@@ -557,6 +554,7 @@ CONTAINS
                                                           ZNTOLD, &
                                                              ZOL, &
                                                             PSFC
+
 ! make these allocatable depending on the setting of idiff
 ! Typically, we try to avoide allocating and deallocating local storage like this
 ! so as not to fragment the stack. But at this point, the idiff = 1 case is disabled
@@ -578,15 +576,6 @@ CONTAINS
 
    REAL, ALLOCATABLE, DIMENSION( :, :, : )::sf         ! surfaces
    REAL, ALLOCATABLE, DIMENSION( :, :, : )::vl         ! volumes
-
-
-   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rumften     ! U shallow convection tendency   
-   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rvmften     ! V shallow convection tendency  
-   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rqvmften    ! QV shallow convection tendency 
-   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rqcmften    ! QC shallow convection tendency
-   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rthmften    ! TH shallow convection tendency
-!  REAL, ALLOCATABLE, DIMENSION( :, :, : )::wthv_mf     ! Buoyancy production from shallow convection mf scheme
-!  REAL, ALLOCATABLE, DIMENSION( :, :, : )::lm_bl89     ! Buoyancy production from shallow convection mf scheme
 
    REAL    :: DTMIN,DTBL
 !
@@ -769,25 +758,6 @@ CONTAINS
      ALLOCATE (vl(ims:ime,kms:kme,jms:jme) )       ! volumes
    ENDIF
 
-! Allocation of local arrays for shallow convection mass flux scheme
-   IF ( bl_pbl_physics .EQ. QNSEPBLSCHEME ) THEN
-! need to fix later: ww
-     IF ( PRESENT (MFSHCONV) )THEN
-     IF ( MFSHCONV )THEN
-       ALLOCATE (rumften(ims:ime,kms:kme,jms:jme)) 
-       ALLOCATE (rvmften(ims:ime,kms:kme,jms:jme)) 
-       ALLOCATE (rqvmften(ims:ime,kms:kme,jms:jme)) 
-       ALLOCATE (rqcmften(ims:ime,kms:kme,jms:jme)) 
-       ALLOCATE (rthmften(ims:ime,kms:kme,jms:jme))
-       rumften(:,:,:)=0.
-       rvmften(:,:,:)=0.
-       rqcmften(:,:,:)=0.
-       rqvmften(:,:,:)=0.
-       rthmften(:,:,:)=0.
-     ENDIF
-     ENDIF
-   ENDIF
-
 ! SAVE OLD VALUES
 
    !$OMP PARALLEL DO   &
@@ -830,16 +800,15 @@ CONTAINS
       ENDDO
 
       IF (bl_pbl_physics .EQ. QNSEPBLSCHEME ) THEN
-         IF ( PRESENT ( wthv_mf ) .AND. PRESENT ( LM_BL89 ) ) THEN
+! use u_phytmp instead of wthv_mf, and v_phytmp instead of lm_bl89
            DO j=j_start(ij),j_end(ij)
            DO i=i_start(ij),i_end(ij)
            DO k=kms,kme
-              wthv_mf(i,k,j) = 0.
-              lm_bl89(i,k,j) = 0.
+              u_phytmp(i,k,j)=0.
+              v_phytmp(i,k,j)=0.
            ENDDO
            ENDDO
            ENDDO
-         ENDIF
       ENDIF
 
 #if (NMM_CORE != 1)
@@ -1257,7 +1226,6 @@ CONTAINS
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                                                         .TRUE.  ) THEN
-             IF ( PRESENT (MFSHCONV) )THEN
                IF ( MFSHCONV )THEN
                CALL wrf_debug(100,'in MFSHCONVPBL')
                CALL mfshconvpbl(DT=dt,STEPBL=stepbl,HT=ht,DZ=dz8w         &
@@ -1265,8 +1233,8 @@ CONTAINS
                     ,QV=qv_curr, QC=qc_curr                    &
                     ,U=u_phy,V=v_phy                                      &
                     ,HFX=hfx, QFX=qfx,TKE=tke_pbl                         &
-                    ,RUBLTEN=rumften,RVBLTEN=rvmften,RTHBLTEN=rthmften    &
-                    ,RQVBLTEN=rqvmften,RQCBLTEN=rqcmften                  &
+                    ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten    &
+                    ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                  &
                     ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE      &
                     ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME      &
                     ,ITS=ITS,ITE=ITE,JTS=JTS,JTE=JTE,KTS=KTS,KTE=KTE      &
@@ -1274,10 +1242,9 @@ CONTAINS
                     ,ENTR_EDKF=entr_EDKF, DETR_EDKF=detr_EDKF             & 
                     ,THL_UP=thl_up, THV_UP=thv_up, RT_UP=rt_up            &
                     ,RV_UP=rv_up,RC_UP=rc_up, U_UP=u_up, V_UP=v_up        &
-                    ,FRAC_UP=frac_up, RC_MF=rc_mf,WTHV=wthv_mf            &
-                    ,PLM_BL89=lm_bl89    ) 
+                    ,FRAC_UP=frac_up, RC_MF=rc_mf,WTHV=u_phytmp           &
+                    ,PLM_BL89=v_phytmp   ) 
                ENDIF   
-             ENDIF   
 
              CALL wrf_debug(100,'in QNSEPBL')
              CALL qnsepbl(                                           &
@@ -1292,23 +1259,23 @@ CONTAINS
               ,TKE=tke_pbl,EXCH_H=exch_h,EXCH_M=exch_m,USTAR=ust,ZNT=znt      &
               ,EL_MYJ=el_pbl,PBLH=pblh,KPBL=kpbl,CT=ct              &
               ,AKHS=akhs,AKMS=akms,ELFLX=lh                         &
-              ,HFX=hfx,WTHV_MF=wthv_mf,LM_BL89=lm_bl89              & 
+              ,HFX=hfx,WTHV_MF=u_phytmp,LM_BL89=v_phytmp            & 
               ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten    &
               ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten                  &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
                                                                     )
-             IF ( PRESENT (MFSHCONV) )THEN
-               IF (MFSHCONV)THEN
-! need to be fixed later: ww
-               rublten(:,:,:)=rublten(:,:,:)+rumften(:,:,:)
-               rvblten(:,:,:)=rvblten(:,:,:)+rvmften(:,:,:)
-               rthblten(:,:,:)=rthblten(:,:,:)+rthmften(:,:,:)
-               rqvblten(:,:,:)=rqvblten(:,:,:)+rqvmften(:,:,:)
-               rqcblten(:,:,:)=rqcblten(:,:,:)+rqcmften(:,:,:)
-               ENDIF   
-             ENDIF   
+! note the tendencies have been added inside qnse 
+!            IF ( PRESENT (MFSHCONV) )THEN
+!              IF (MFSHCONV)THEN
+!              rublten(:,:,:)=rublten(:,:,:)+rumften(:,:,:)
+!              rvblten(:,:,:)=rvblten(:,:,:)+rvmften(:,:,:)
+!              rthblten(:,:,:)=rthblten(:,:,:)+rthmften(:,:,:)
+!              rqvblten(:,:,:)=rqvblten(:,:,:)+rqvmften(:,:,:)
+!              rqcblten(:,:,:)=rqcblten(:,:,:)+rqcmften(:,:,:)
+!              ENDIF   
+!            ENDIF   
 
             ELSE
                WRITE ( message , FMT = '(A,4(L1,1X))' )             &
@@ -1625,18 +1592,6 @@ CONTAINS
      ENDIF       !idiff
 #endif
       
-     IF ( bl_pbl_physics .EQ. QNSEPBLSCHEME ) THEN
-       IF ( PRESENT ( MFSHCONV)) THEN
-       IF (MFSHCONV)THEN
-          DEALLOCATE(rumften)
-          DEALLOCATE (rvmften)
-          DEALLOCATE (rqvmften)
-          DEALLOCATE (rqcmften)
-          DEALLOCATE (rthmften)
-       ENDIF
-       ENDIF
-     END IF
-
    ENDDO
    !$OMP END PARALLEL DO
 

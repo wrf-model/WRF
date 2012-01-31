@@ -718,6 +718,24 @@ END SUBROUTINE G_RK_ADDTEND_DRY
                             ims, ime, jms, jme, kms, kme,  &
                             its, ite, jts, jte, kts, kte  )
 
+ ELSEIF( (rk_step == 3) .and. (adv_opt == WENOPD_SCALAR) ) THEN
+
+   CALL g_advect_scalar_wenopd   ( scalar(ims,kms,jms,im),             &
+                                 g_scalar(ims,kms,jms,im),           &
+                                 scalar_old(ims,kms,jms,im),         &
+                                 g_scalar_old(ims,kms,jms,im),       &
+                                 advect_tend(ims,kms,jms),           &
+                                 g_advect_tend(ims,kms,jms),         &
+                                 ru, g_ru, rv, g_rv, ww, g_ww,       &
+                                 mut, g_mut, mub, mu_old, g_mu_old,  &
+                                 time_step, config_flags,            &
+                                 msfux, msfuy, msfvx, msfvy,         &
+                                 msftx, msfty, fnm, fnp,             &
+                                 rdx, rdy, rdnw,dt,                  &
+                                 ids, ide, jds, jde, kds, kde,       &
+                                 ims, ime, jms, jme, kms, kme,       &
+                                 its, ite, jts, jte, kts, kte     )
+
  ELSE
 
  CALL g_advect_scalar(scalar(ims,kms,jms,im),g_scalar(ims,kms,jms,im) &

@@ -112,7 +112,6 @@ CONTAINS
                          ,te_temf          & ! WA 12/21/09
                          ,cf3d_temf        & ! WA 9/27/10
                          ,wm_temf          & ! WA 2/22/11
-                         ,mfshconv                             & ! Optional for qnse
                          ,massflux_EDKF, entr_EDKF, detr_EDKF  & ! Optional for qnse
                          ,thl_up, thv_up, rt_up                & ! Optional for qnse
                          ,rv_up, rc_up, u_up, v_up, frac_up    & ! Optional for qnse
@@ -246,7 +245,6 @@ CONTAINS
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
              RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,EXCH_H,TKE_PBL
 
-  LOGICAL, INTENT(IN), OPTIONAL ::  mfshconv ! WRF JP
   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT), OPTIONAL :: &
                                             massflux_EDKF, entr_EDKF, detr_EDKF & 
                                                    ,thl_up, thv_up, rt_up       &
@@ -423,6 +421,7 @@ CONTAINS
    REAL    :: oml_hml0
    LOGICAL :: usemonalb
    LOGICAL :: rdmaxalb
+   LOGICAL :: mfshconv
 
    INTEGER :: i, j, k, itf, jtf, n
 integer myproc
@@ -432,6 +431,7 @@ integer myproc
    sf_urban_physics=config_flags%sf_urban_physics
    usemonalb=config_flags%usemonalb
    rdmaxalb=config_flags%rdmaxalb
+   mfshconv=config_flags%mfshconv
 #if ( EM_CORE == 1 )
    obs_twindo_cg=model_config_rec%obs_twindo(1)
    obs_twindo=config_flags%obs_twindo
@@ -1517,7 +1517,7 @@ integer myproc
                                      ,rv_up, rc_up, u_up, v_up    &
                                      ,frac_up
 
-  LOGICAL, INTENT(IN), OPTIONAL ::  mfshconv ! WRF JP
+  LOGICAL, INTENT(IN)           ::  mfshconv ! WRF JP
 
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::     TSK
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::  TMN
@@ -2012,7 +2012,7 @@ integer myproc
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
            
-           IF ( PRESENT (mfshconv) ) THEN
+!          IF ( PRESENT (mfshconv) ) THEN
               if (mfshconv) &
               CALL mfshconvpblinit( massflux_EDKF, entr_EDKF, detr_EDKF & 
                                     ,thl_up, thv_up, rt_up              &
@@ -2022,7 +2022,7 @@ integer myproc
                                     ids, ide, jds, jde, kds, kde,       &
                                     ims, ime, jms, jme, kms, kme,       &
                                     its, ite, jts, jte, kts, kte   )  
-           ENDIF
+!          ENDIF
 
       CASE (QNSEPBL09SCHEME)
            if(isfc .ne. 4)CALL wrf_error_fatal &

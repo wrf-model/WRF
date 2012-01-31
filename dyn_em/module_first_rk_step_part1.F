@@ -30,7 +30,7 @@ CONTAINS
                              , imsy,imey,jmsy,jmey,kmsy,kmey    &
                              , ipsy,ipey,jpsy,jpey,kpsy,kpey    &
                              , k_start , k_end                  &
-                             , f_flux , wthv_mf, lm_bl89        &
+                             , f_flux                           &
                             )
     USE module_state_description
     USE module_model_constants
@@ -110,9 +110,6 @@ use module_scalar_tables
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: tke_tend
 
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: mu_tendf
-
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(OUT) :: wthv_mf
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(OUT) :: lm_bl89
 
     INTEGER, INTENT(IN)                           ::  k_start, k_end
     LOGICAL, INTENT(IN), OPTIONAL                 ::  f_flux
@@ -715,10 +712,10 @@ BENCH_START(pbl_driver_tim)
      &        ,VAR2D=grid%var2d,OC12D=grid%oc12d     &
      &        ,OA1=grid%oa1,OA2=grid%oa2,OA3=grid%oa3,OA4=grid%oa4        &
      &        ,OL1=grid%ol1,OL2=grid%ol2,OL3=grid%ol3,OL4=grid%ol4        &
-     &        ,wthv_mf=wthv_mf, lm_bl89=lm_bl89                           &
-     &        ,MFSHCONV=grid%mfshconv,MASSFLUX_EDKF=grid%massflux_EDKF    & 
+     &        ,MFSHCONV=config_flags%mfshconv                             &
+     &        ,MASSFLUX_EDKF=grid%massflux_EDKF                           & 
      &        ,ENTR_EDKF=grid%entr_EDKF, DETR_EDKF=grid%detr_EDKF         &
-     &        ,THL_UP=grid%thl_up         &
+     &        ,THL_UP=grid%thl_up                                         &
      &        ,THV_UP=grid%thv_up, RT_UP=grid%rt_up ,RV_UP=grid%rv_up     &
      &        ,RC_UP=grid%rc_up, U_UP=grid% u_up, V_UP=grid%v_up          &
      &        ,FRAC_UP=grid%frac_up, RC_MF=grid%RC_MF                     &

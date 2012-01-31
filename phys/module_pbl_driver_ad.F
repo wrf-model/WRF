@@ -42,7 +42,7 @@ SUBROUTINE a_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 &  f_qi, f_qs, f_qg, frc_urb2d, a_u_bep, a_v_bep, a_t_bep, a_q_bep, &
 &  b_u_bep, b_v_bep, b_t_bep, b_q_bep, sf_bep, vl_bep, sf_sfclay_physics&
 &  , sf_urban_physics, tke_pbl, el_pbl, wu_tur, wv_tur, wt_tur, wq_tur, &
-&  a_e_bep, b_e_bep, dlg_bep, dl_u_bep, wthv_mf, lm_bl89, mfshconv, massflux_EDKF, &
+&  a_e_bep, b_e_bep, dlg_bep, dl_u_bep, mfshconv, massflux_EDKF, &
 &  entr_EDKF, detr_EDKF, thl_up, thv_up, rt_up ,rv_up, rc_up, u_up, v_up, &
 &  frac_up, rc_mf, phb, xlat_u, xlong_u, xlat_v, & 
 &  xlong_v, id, z_at_w, cldfra, rthratenlw, tauresx2d, tauresy2d, tpert2d&
@@ -372,15 +372,13 @@ SUBROUTINE a_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
                INTENT(IN   )    ::                        CTOPO, &
                                                           CTOPO2
 ! Variables and Diagnostic for QNSE and EDKF JP
-   LOGICAL, INTENT(IN), OPTIONAL ::  mfshconv ! WRF JP
+   LOGICAL, INTENT(IN) ::  mfshconv ! WRF JP
 
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,  &
-               INTENT(INOUT)    ::    massflux_EDKF, entr_EDKF, detr_EDKF & 
+               INTENT(OUT)    ::    massflux_EDKF, entr_EDKF, detr_EDKF & 
                                      ,thl_up, thv_up, rt_up       &
                                      ,rv_up, rc_up, u_up, v_up    &
                                      ,frac_up,rc_mf  
-   REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL   &
-                                ::    wthv_mf, lm_bl89
 
 !  LOCAL  VAR
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: v_phytmp
@@ -414,14 +412,6 @@ SUBROUTINE a_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
   REAL, DIMENSION(:, :, :), ALLOCATABLE :: sf
 ! volumes
   REAL, DIMENSION(:, :, :), ALLOCATABLE :: vl
-
-   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rumften     ! U shallow convection tendency   
-   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rvmften     ! V shallow convection tendency  
-   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rqvmften    ! QV shallow convection tendency 
-   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rqcmften    ! QC shallow convection tendency
-   REAL, ALLOCATABLE, DIMENSION( :, :, : )::rthmften    ! TH shallow convection tendency
-!  REAL, ALLOCATABLE, DIMENSION( :, :, : )::wthv_mf     ! Buoyancy production from shallow convection mf scheme
-!  REAL, ALLOCATABLE, DIMENSION( :, :, : )::lm_bl89     ! Buoyancy production from shallow convection mf scheme
 
   REAL :: dtmin, dtbl
 !

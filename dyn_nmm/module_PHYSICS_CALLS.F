@@ -1352,6 +1352,7 @@
      &               ,KPBL=KPBL,CT=CT,LH=ELFLX,SNOW=SNOW,XICE=SICE    &
      &               ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics      &
      &               ,RA_LW_PHYSICS=config_flags%ra_lw_physics        &
+     &               ,MFSHCONV=config_flags%mfshconv                  &  ! work with QNSE PBL
      &               ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
      &               ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME &
      &               ,I_START=GRID%I_START,I_END=GRID%I_END           &

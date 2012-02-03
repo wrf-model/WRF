@@ -269,6 +269,7 @@ end subroutine gocart_dust_afwa_driver
 ! *  Output:
 ! *         TC        Total concentration of dust        (kg/kg/timestep/cell)
 ! *         BEMS      Source of each dust type           (kg/timestep/cell) 
+! *         USTART    Threshold friction vel. (bin 7)               (m/s)
 ! *
 ! ****************************************************************************
 
@@ -285,7 +286,8 @@ end subroutine gocart_dust_afwa_driver
   REAL, INTENT(IN)    :: g0,dt1
 
   REAL*8    :: den(smx), diam(smx)
-  REAL*8    :: dvol(nmx), distr_dust(nmx), dlndp(nmx)
+  REAL*8    :: dvol(nmx), dlndp(nmx)
+! REAL*8    :: distr_dust(nmx)
   REAL*8    :: dsurface(smx), ds_rel(smx)
   REAL*8    :: massfrac(3)
   REAL*8    :: u_ts0, u_ts, dsrc, srce, dmass, dvol_tot
@@ -320,10 +322,10 @@ end subroutine gocart_dust_afwa_driver
 ! these without the expressed written consent of someone who knows what
 ! they're doing. (See Kok, 2010 PNAS for details on this scheme).
 
-  REAL, PARAMETER :: mmd_dust=3.4D-6  ! median mass diameter (m)
-  REAL, PARAMETER :: gsd_dust=3.0     ! geometric standard deviation
-  REAL, PARAMETER :: lambda=12.0D-6   ! crack propogation length (m)
-  REAL, PARAMETER :: cv=12.62D-6      ! normalization constant
+! REAL, PARAMETER :: mmd_dust=3.4D-6  ! median mass diameter (m)
+! REAL, PARAMETER :: gsd_dust=3.0     ! geometric standard deviation
+! REAL, PARAMETER :: lambda=12.0D-6   ! crack propogation length (m)
+! REAL, PARAMETER :: cv=12.62D-6      ! normalization constant
 
 ! Calculate saltation surface area distribution from sand, silt, and clay
 ! mass fractions and saltation bin fraction. This will later become a 
@@ -422,27 +424,27 @@ end subroutine gocart_dust_afwa_driver
 ! GOCART bin configuration. We use them here to calculate dust bin width, dlndp.
 ! dvol is the volume distribution. You know...if you were wondering. GC
 
- dvol_tot=0.
- DO n=1,nmx  ! Loop over all dust bins
-   dlndp(n)=LOG(up_dust(n)/lo_dust(n))
-   dvol(n)=(2.0*reff_dust(n)/cv)*(1.+ERF(LOG(2.0*reff_dust(n)/mmd_dust)/(SQRT(2.)*LOG(gsd_dust))))*&
-         EXP(-(2.0*reff_dust(n)/lambda)**3.0)*dlndp(n)
-   dvol_tot=dvol_tot+dvol(n)
-
-  ! Convert mass flux to volume flux
-   emit_vol=emit/den_dust(n) ! (m s^-1)
- END DO
- DO n=1,nmx  ! Loop over all dust bins
-   distr_dust(n)=dvol(n)/dvol_tot
- END DO
-
+! dvol_tot=0.
+! DO n=1,nmx  ! Loop over all dust bins
+!   dlndp(n)=LOG(up_dust(n)/lo_dust(n))
+!   dvol(n)=(2.0*reff_dust(n)/cv)*(1.+ERF(LOG(2.0*reff_dust(n)/mmd_dust)/(SQRT(2.)*LOG(gsd_dust))))*&
+!         EXP(-(2.0*reff_dust(n)/lambda)**3.0)*dlndp(n)
+!   dvol_tot=dvol_tot+dvol(n)
+!
+!  ! Convert mass flux to volume flux
+!   emit_vol=emit/den_dust(n) ! (m s^-1)
+! END DO
+! DO n=1,nmx  ! Loop over all dust bins
+!   distr_dust(n)=dvol(n)/dvol_tot
+! END DO
+ 
 ! Now distribute total vertical emission into dust bins and update concentration.
 
  DO n=1,nmx  ! Loop over all dust bins
    DO i=1,imx
      DO j=1,jmx
       ! Calculate total mass emitted
-        dsrc = emit_vol*den_dust(n)*distr_dust(n)*dxy(j)*dt1  ! (kg)
+        dsrc = emit*den_dust(n)*distr_dust(n)*dxy(j)*dt1  ! (kg)
         IF (dsrc < 0.0) dsrc = 0.0
 
       ! Update dust mixing ratio at first model level.

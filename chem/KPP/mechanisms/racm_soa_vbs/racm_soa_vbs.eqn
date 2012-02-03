@@ -249,9 +249,10 @@
  {248:225} MBO+HO=OLIP    		: ARR2( 1.33D-11 , -500.0_dp, TEMP ) ;
  {249:226} MBO+NO3=0.11 OLNN+0.89 OLND 	: ARR2( 8.64D-13 , -450.0_dp, TEMP ) ;
  {250:227} MBO+O3=0.02 HCHO+0.99 ALD+0.16 KET+0.30 CO+0.011 H2O2+0.14 ORA2+0.07 CH4+0.22 HO2+0.63 HO+0.23 MO2+0.12 KETP+0.06 ETH+0.18 ETHP  : ARR2( 4.40D-15 , 845.0_dp, TEMP ) ;
- {251:228} CVASOA4+HO=1.075 CVASOA3                           : ARR2(1.0D-11, 0.0_dp, TEMP);
- {252:229} CVASOA3+HO=1.075 CVASOA2                           : ARR2(1.0D-11, 0.0_dp, TEMP);
- {253:230} CVASOA2+HO=1.075 CVASOA1                           : ARR2(1.0D-11, 0.0_dp, TEMP);
- {254:231} CVBSOA4+HO=1.075 CVBSOA3                           : ARR2(1.0D-11, 0.0_dp, TEMP);
- {255:232} CVBSOA3+HO=1.075 CVBSOA2                           : ARR2(1.0D-11, 0.0_dp, TEMP);
- {256:233} CVBSOA2+HO=1.075 CVBSOA1                           : ARR2(1.0D-11, 0.0_dp, TEMP);
+ {251:228} CVASOA4+HO=1.075 CVASOA3+HO                  : ARR2(1.0D-11, 0.0_dp, TEMP);
+ {252:229} CVASOA3+HO=1.075 CVASOA2+HO                  : ARR2(1.0D-11, 0.0_dp, TEMP);
+ {253:230} CVASOA2+HO=1.075 CVASOA1+HO                  : ARR2(1.0D-11, 0.0_dp, TEMP);
+ {254:231} CVBSOA4+HO=1.075 CVBSOA3+HO                  : ARR2(1.0D-11, 0.0_dp, TEMP);
+ {255:232} CVBSOA3+HO=1.075 CVBSOA2+HO                  : ARR2(1.0D-11, 0.0_dp, TEMP);
+ {256:233} CVBSOA2+HO=1.075 CVBSOA1+HO                  : ARR2(1.0D-11, 0.0_dp, TEMP);
+

@@ -1151,7 +1151,7 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_iso,"iso"
      print*,p_ho,"ho"
      print*,p_ho2,"ho2"
-  case (RACMSORG_AQ, RACMSORG_AQCHEM, RACM_KPP, RACMPM_KPP, RACMSORG_KPP,RACM_ESRLSORG_KPP)
+  case (RACMSORG_AQ, RACMSORG_AQCHEM, RACM_KPP, RACMPM_KPP, RACMSORG_KPP,RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP)
      print*,p_so2,"so2"
      print*,p_sulf,"sulf"
      print*,p_no2,"no2"
@@ -2131,6 +2131,45 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_oc_cw08,"oc_cw08"
      print*,p_bc_cw08,"bc_cw08"
      print*,p_num_cw08,"num_cw08"
+
+  case (RACM_SOA_VBS_KPP)
+     print*,p_so4aj,"so4aj"
+     print*,p_so4ai,"so4ai"
+     print*,p_nh4aj,"nh4aj"
+     print*,p_nh4ai,"nh4ai"
+     print*,p_no3aj,"no3aj"
+     print*,p_no3ai,"no3ai"
+
+     print*,p_asoa1j,"asoa1j"
+     print*,p_asoa1i,"asoa1i"
+     print*,p_asoa2j,"asoa2j"
+     print*,p_asoa2i,"asoa2i"
+     print*,p_asoa3j,"asoa3j"
+     print*,p_asoa3i,"asoa3i"
+     print*,p_asoa4j,"asoa4j"
+     print*,p_asoa4i,"asoa4i"
+
+     print*,p_bsoa1j,"bsoa1j"
+     print*,p_bsoa1i,"bsoa1i"
+     print*,p_bsoa2j,"bsoa2j"
+     print*,p_bsoa2i,"bsoa2i"
+     print*,p_bsoa3j,"bsoa3j"
+     print*,p_bsoa3i,"bsoa3i"
+     print*,p_bsoa4j,"bsoa4j"
+     print*,p_bsoa4i,"bsoa4i"
+
+     print*,p_orgpaj,"orgpaj"
+     print*,p_orgpai,"orgpai"
+     print*,p_ecj,"ecj"
+     print*,p_eci,"eci"
+     print*,p_p25j,"p25j"
+     print*,p_p25i,"p25i"
+     print*,p_antha,"antha"
+     print*,p_seas,"seas"
+     print*,p_soila,"soila"
+     print*,p_nu0,"nu0"
+     print*,p_ac0,"ac0"
+     print*,p_corn,"corn"
 end select
 end subroutine print_chem_species_index
 #endif

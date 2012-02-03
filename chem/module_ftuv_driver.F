@@ -931,6 +931,17 @@ include 'netcdf.inc'
 ! 30 glyald + hv -> products
 !-----------------------------------------------------------------------------
 
+!-----------------------------------------------------------------------------
+!     solar zenith angle calculation
+!-----------------------------------------------------------------------------
+      call calc_zenith( alat, along, julday, gmtp, azim, zen )
+      if( zen == 90.0_dp ) then
+        zen = 89.0_dp
+      elseif( zen >= 95.0_dp ) then
+        prate(:,:) = 0.0_dp
+        return
+      endif
+
 !---------------------------------------------------------------------
 !     allocate memory space
 !---------------------------------------------------------------------
@@ -962,17 +973,6 @@ include 'netcdf.inc'
       aso4_ph(:) = 0.0_dp
       asal_ph(:) = 0.0_dp
 
-!-----------------------------------------------------------------------------
-!     solar zenith angle calculation
-!-----------------------------------------------------------------------------
-      call calc_zenith( alat, along, julday, gmtp, azim, zen )
-      if( zen == 90.0_dp ) then
-        zen = 89.0_dp
-      elseif( zen >= 95.0_dp ) then
-        prate(:,:) = 0.0_dp
-        return
-      endif
- 
 !----------------------------------------------------
 !     assgin vertical profiles
 !     model levels first

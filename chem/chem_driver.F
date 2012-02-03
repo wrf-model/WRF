@@ -282,10 +282,6 @@
       chem_ct_indices(p_chem_ho)   = p_ho
       chem_ct_indices(p_chem_ho2)  = p_ho2
   endif
-  
-! full range of 4D domain for tendency diagnostics
-#define _tfr1_ its:ite,kts:kte,jts:jte,nv
-#define _tfr2_ its:ite,kts:kte,jts:jte,chem_ct_indices(nv)
 #endif
   
   do_chemstep = .false.
@@ -1016,7 +1012,7 @@
 ! save old concentrations for vertical mixing tendencies
 #if (EM_CORE == 1)
    DO nv=PARAM_FIRST_SCALAR,num_chem_ct
-     chem_old(_tfr1_) = chem(_tfr2_)
+     chem_old(its:ite,kts:kte,jts:jte,nv) = chem(its:ite,kts:kte,jts:jte,chem_ct_indices(nv))
    ENDDO
 #endif
 
@@ -1056,7 +1052,9 @@
 ! accumulate vertical mixing tendencies
 #if (EM_CORE == 1)
    DO nv=PARAM_FIRST_SCALAR,num_chem_ct
-      grid%vmix_ct(_tfr1_) = grid%vmix_ct(_tfr1_) + (chem(_tfr2_) - chem_old(_tfr1_))
+      grid%vmix_ct(its:ite,kts:kte,jts:jte,nv) = grid%vmix_ct(its:ite,kts:kte,jts:jte,nv) + &
+                                                        (chem(its:ite,kts:kte,jts:jte,chem_ct_indices(nv)) - &
+                                                     chem_old(its:ite,kts:kte,jts:jte,nv))
    ENDDO
 #endif
 
@@ -1095,7 +1093,7 @@
         ! save old concentrations for convective tendencies
 #if (EM_CORE == 1)
         DO nv=PARAM_FIRST_SCALAR,num_chem_ct
-           chem_old(_tfr1_) = chem(_tfr2_)
+           chem_old(its:ite,kts:kte,jts:jte,nv) = chem(its:ite,kts:kte,jts:jte,chem_ct_indices(nv))
         ENDDO
 #endif
         call grelldrvct(grid%DT,ktau,grid%DX,                                         &
@@ -1123,7 +1121,9 @@
         ! accumulate convective tendencies
 #if (EM_CORE == 1)
         DO nv=PARAM_FIRST_SCALAR,num_chem_ct
-           grid%conv_ct(_tfr1_) = grid%conv_ct(_tfr1_) + (chem(_tfr2_) - chem_old(_tfr1_))
+          grid%conv_ct(its:ite,kts:kte,jts:jte,nv) = grid%conv_ct(its:ite,kts:kte,jts:jte,nv) + &
+                                                            (chem(its:ite,kts:kte,jts:jte,chem_ct_indices(nv)) - &
+                                                         chem_old(its:ite,kts:kte,jts:jte,nv))
         ENDDO
 #endif
         endif
@@ -1180,7 +1180,7 @@
 ! save old concentrations for chemistry tendencies
 #if (EM_CORE == 1)
    DO nv=PARAM_FIRST_SCALAR,num_chem_ct
-      chem_old(_tfr1_) = chem(_tfr2_)
+      chem_old(its:ite,kts:kte,jts:jte,nv) = chem(its:ite,kts:kte,jts:jte,chem_ct_indices(nv))
    ENDDO
 #endif
 
@@ -1292,10 +1292,10 @@ CALL kpp_mechanism_driver (chem,                                                
 ! accumulate gas phase chemistry tendencies
 #if (EM_CORE == 1)
    DO nv=PARAM_FIRST_SCALAR,num_chem_ct
-      grid%chem_ct(_tfr1_) = grid%chem_ct(_tfr1_) + (chem(_tfr2_) - chem_old(_tfr1_))
+      grid%chem_ct(its:ite,kts:kte,jts:jte,nv) = grid%chem_ct(its:ite,kts:kte,jts:jte,nv) + &
+                                                        (chem(its:ite,kts:kte,jts:jte,chem_ct_indices(nv)) - &
+                                                     chem_old(its:ite,kts:kte,jts:jte,nv))
    ENDDO
-#undef _tfr1_
-#undef _tfr2_
 #endif
 
 !   allocate gas_aqfrac if either cldchem or wetscav is on

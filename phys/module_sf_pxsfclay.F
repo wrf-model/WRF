@@ -197,24 +197,22 @@ CONTAINS
       INTEGER ::  I,J
 
       DO J=jts,jte
-        DO i=its,ite
-          dz8w1d(I) = dz8w(i,1,j)
-        ENDDO
    
         DO i=its,ite
-           U1D(i) =U3D(i,1,j)
-           V1D(i) =V3D(i,1,j)
-           QV1D(i)=QV3D(i,1,j)
-           P1D(i) =P3D(i,1,j)
-           T1D(i) =T3D(i,1,j)
-           TH1D(i) =TH3D(i,1,j)
+          dz8w1d(i) =dz8w(i,1,j)
+          U1D(i)    =U3D(i,1,j)
+          V1D(i)    =V3D(i,1,j)
+          QV1D(i)   =QV3D(i,1,j)
+          P1D(i)    =P3D(i,1,j)
+          T1D(i)    =T3D(i,1,j)
+          TH1D(i)   =TH3D(i,1,j)
         ENDDO
         
         
         !  TST, WST, MOLENGTH, USTM need to be recaculated or passed in
         
-        CALL PXSFCLAY1D(J,U1D,V1D,T1D,TH1D,QV1D,P1D,dz8w1d,               &
-                CP,G,ROVCP,R,XLV,PSFC(ims,j),CHS(ims,j),CHS2(ims,j),     &
+        CALL PXSFCLAY1D(J,U1D,V1D,T1D,TH1D,QV1D,P1D,dz8w1d,          &
+                CP,G,ROVCP,R,XLV,PSFC(ims,j),CHS(ims,j),CHS2(ims,j), &
                 CQS2(ims,j),CPM(ims,j),PBLH(ims,j), RMOL(ims,j),   &
                 ZNT(ims,j),UST(ims,j),MAVAIL(ims,j),ZOL(ims,j),    &
                 MOL(ims,j),REGIME(ims,j),PSIM(ims,j),PSIH(ims,j),  &
@@ -344,10 +342,10 @@ CONTAINS
 
       DO i = its,ite
 ! PSFC cb
-        PSFC(I)=PSFCPA(I)/1000.
-        TVCON      = 1.0 + EP1 * QV1D(I)
-        THETAV1(I) = THETA1(I) * TVCON
-        RHOX(I)=PSFCPA(I)/(R*T1D(I)*TVCON)
+        PSFC(I)   = PSFCPA(I)/1000.
+        TVCON     = 1.0 + EP1 * QV1D(I)
+        THETAV1(I)= THETA1(I) * TVCON
+        RHOX(I)   = PSFCPA(I)/(R*T1D(I)*TVCON)
       ENDDO
 
 !
@@ -363,91 +361,83 @@ CONTAINS
         PL = P1D(I)/1000.                     
         QGH(I)=EP2*E1/(PL-E1)                                                 
         CPM(I)=CP*(1.+0.8*QV1D(I))                                   
-   enddo                                                                   
+      ENDDO                                                                   
 
 !.......... compute the thetav at ground
-        DO I = its, ite
-          TV0       = TG(I) * (1.0 + EP1 * QSFC(I)*MAVAIL(I))
-          CPOT      = (100./PSFC(I))**ROVCP 
-          TH0(I)    = TV0 * (100./PSFC(I))**ROVCP
-          THETAG(I) = CPOT * TG(I)
-        ENDDO
+      DO I = its, ite
+        TV0       = TG(I) * (1.0 + EP1 * QSFC(I)*MAVAIL(I))
+        CPOT      = (100./PSFC(I))**ROVCP 
+        TH0(I)    = TV0 * (100./PSFC(I))**ROVCP
+        THETAG(I) = CPOT * TG(I)
+      ENDDO
 !                                                                                
 !-----COMPUTE THE HEIGHT OF FULL- AND HALF-SIGMA LEVELS ABOVE GROUND             
 !     LEVEL, AND THE LAYER THICKNESSES.                                          
 !                                                                                
 !... DZ8W1D is DZ between full sigma levels and Z0 is the height of the first 
 !    half sigma level
-        DO I = its,ite
-          ZA(I) = 0.5 * DZ8W1D(I)                                
-          WS(I)   = SQRT(US(I) * US(I) + VS(I) * VS(I))
-        ENDDO                                                                   
+      DO I = its,ite
+        ZA(I) = 0.5 * DZ8W1D(I)                                
+        WS(I)   = SQRT(US(I) * US(I) + VS(I) * VS(I))
+      ENDDO                                                                   
 !
 !-----CALCULATE BULK RICHARDSON NO. OF SURFACE LAYER, ACCORDING TO
 !     AKB(1976), EQ(12).
 
         RICRITI = 1.0 / RICRIT
 
-        DO i = its,ite
-          GZ1OZ0(I) = ALOG(ZA(I) / ZNT(I))
-          DTHVDZ      = THETAV1(I) - TH0(I)
-          fluxc = max(hfx(i)/rhox(i)/cp                    &
+      DO i = its,ite
+        GZ1OZ0(I) = ALOG(ZA(I) / ZNT(I))
+        DTHVDZ      = THETAV1(I) - TH0(I)
+        fluxc = max(hfx(i)/rhox(i)/cp                    &
               + ep1*TH0(I)*qfx(i)/rhox(i),0.)
-          VCONV = vconvc*(g/tg(i)*pblh(i)*fluxc)**.33
-          VSGD = 0.32 * (max(dx/5000.-1.,0.))**.33
-          WSPD(I)=SQRT(WS(I)*WS(I)+VCONV*VCONV+vsgd*vsgd)
-          WSPD(I)   = AMAX1(WSPD(I),0.1)
-          GOVRTH(I)   = G / THETA1(I)
-          BR(I)     = GOVRTH(I) * ZA(I) * DTHVDZ / (WSPD(I) * WSPD(I))
-          RICUT(I)    = 1.0 / (RICRITI + GZ1OZ0(I))
-        ENDDO
+        VCONV = vconvc*(g/tg(i)*pblh(i)*fluxc)**.33
+        VSGD = 0.32 * (max(dx/5000.-1.,0.))**.33
+        WSPD(I)=SQRT(WS(I)*WS(I)+VCONV*VCONV+vsgd*vsgd)
+        WSPD(I)   = AMAX1(WSPD(I),0.1)
+        GOVRTH(I)   = G / THETA1(I)
+        BR(I)     = GOVRTH(I) * ZA(I) * DTHVDZ / (WSPD(I) * WSPD(I))
+        RICUT(I)    = 1.0 / (RICRITI + GZ1OZ0(I))
+      ENDDO
 
-        DO I = its,ite
-!------------------------------------------------------------------
-!-- NOTE THAT THE REGIMES USED IN HIRPBL HAVE BEEN CHANGED:
-          ZOLL = 0.0
-          IF (BR(I) .GE. RICUT(I)) THEN
-!
-!-----CLASS 1; VERY STABLE CONDITIONS:  Z/L > 1
-!
+      DO I = its,ite
+!       -- NOTE THAT THE REGIMES USED IN HIRPBL HAVE BEEN CHANGED:
+        ZOLL = 0.0
+        IF (BR(I) .GE. RICUT(I)) THEN
+!           -----CLASS 1; VERY STABLE CONDITIONS:  Z/L > 1
             REGIME(I) = 1.0
             ZOLL      = BR(I) * GZ1OZ0(I) / (1.0 - RICRITI * RICUT(I))
             PSIM(I)   = 1.0 - BETAM - ZOLL
             PSIH(I)   = 1.0 - BETAH - ZOLL
 
-          ELSE IF (BR(I) .GE. 0.0) THEN
-
-!-----CLASS 2; STABLE: for 1 > Z/L >0
-!
+        ELSE IF (BR(I) .GE. 0.0) THEN
+!           -----CLASS 2; STABLE: for 1 > Z/L >0
             REGIME(I) = 2.0
             ZOLL      = BR(I) * GZ1OZ0(I) / (1.0 - RICRITI * BR(I))
             PSIM(I)   = -BETAM * ZOLL
             PSIH(I)   = -BETAH * ZOLL
 
-          ELSE
-!
-!-----CLASS 3 or 4; UNSTABLE:
-!        CLASS 4 IS FOR ACM NON-LOCAL CONVECTION (H/L < -3)
-!
+        ELSE
+!        ----- CLASS 3 or 4; UNSTABLE:
+!        ----- CLASS 4 IS FOR ACM NON-LOCAL CONVECTION (H/L < -3)
             REGIME(I) = 3.0   ! Regime will be reset to 4 if ACM is used
             AM          = 0.031 + 0.276 * ALOG(GZ1OZ0(I))
             AH          = 0.04 + 0.355 * ALOG(GZ1OZ0(I))
             SQLNZZ0     = SQRT(GZ1OZ0(I))
             PSIM(I)   = AM * ALOG(1.0 - BM * SQLNZZ0 * BR(I))
             PSIH(I)   = AH * ALOG(1.0 - BH * SQLNZZ0 * BR(I))
-!
+
         ENDIF
       ENDDO
 !
-!-----COMPUTE THE FRICTIONAL VELOCITY AND SURFACE FLUXES:
-!
+!     -------- COMPUTE THE FRICTIONAL VELOCITY AND SURFACE FLUXES:
       DO I = its,ite
         DTG       = THETA1(I) - THETAG(I)
         PSIX      = GZ1OZ0(I) - PSIM(I)
         UST(I)=0.5*UST(I)+0.5*KARMAN*WSPD(I)/PSIX                                             
         USTM(I) = UST(I)
 
-!-----OVER WATER, ALTER ROUGHNESS LENGTH (Z0) ACCORDING TO WIND (UST).
+!      ------- OVER WATER, ALTER ROUGHNESS LENGTH (Z0) ACCORDING TO WIND (UST).
 !
         IF ((XLAND(I)-1.5) .GE. 0.0) THEN
           ZNT(I) = CZO * USTM(I) * USTM(I) / G + OZO
@@ -459,7 +449,7 @@ CONTAINS
 
         RA(I)  = PR0 * (GZ1OZ0(I) - PSIH(I)) / (KARMAN * UST(I))
         RBH    = 5.0 / UST(I)                ! 5/U*  ! WESELY AND HICKS (1977)
-!... RB FOR WATER VAPOR =  5*(0.599/0.709)^2/3 /UST = 4.47/UST    hi               
+!       ------- RB FOR WATER VAPOR =  5*(0.599/0.709)^2/3 /UST = 4.47/UST    hi               
         RBW    = 4.47/UST(I)                                       
         CHS(I) = 1./(RA(I) + RBH)
         CQS    = 1./(RA(I) + RBW)
@@ -469,7 +459,7 @@ CONTAINS
         MOLENGTH(I) = THETAV1(I) * UST(I) * UST(I) / (KARMAN *             &
                         G * TSTV)
 !
-!---Compute 2m surface exchange coefficients for heat and moisture
+!       ---Compute 2m surface exchange coefficients for heat and moisture
         XMOL = MOLENGTH(I)
         IF(MOLENGTH(I).GT.0.0) XMOL = AMAX1(MOLENGTH(I),2.0)       
         RMOL(I) = 1/XMOL                                           
@@ -505,10 +495,8 @@ CONTAINS
         CQS2(I) = 1.0/(RA2 + RBW) 
         U10(I)  = US(I)*(G10OZ0-PSIM10)/PSIX                                    
         V10(I)  = VS(I)*(G10OZ0-PSIM10)/PSIX                                            
-      !IF(I.EQ.60.AND.J.EQ.60) PRINT *,'  ZNT,USTM,U10,UZ1=',ZNT(I),USTM(I),U10(I),US(I)   
-!                                                                                
-!-----COMPUTE SURFACE HEAT AND MOIST FLUX:                                                
-!                                                                                                                                                       
+
+!       -----COMPUTE SURFACE HEAT AND MOIST FLUX:                                                
         FLHC(i)=CPM(I)*RHOX(I)*CHS(I)
         FLQC(i)=RHOX(I)*CQS*MAVAIL(I)
         QFX(I)=FLQC(I)*(QSFC(I)-QV1D(I))                                     
@@ -520,7 +508,9 @@ CONTAINS
           HFX(I)=-FLHC(I)*DTG                               
           HFX(I)=AMAX1(HFX(I),-250.)                                       
         ENDIF      
-     ENDDO                                           
+      ENDDO                                           
+
+
    END SUBROUTINE PXSFCLAY1D
 
 !====================================================================

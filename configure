@@ -596,7 +596,7 @@ cat > ${foo}.f <<EOF
           end program test_exit
 EOF
 
-    ar p $NETCDF/lib/libnetcdf.a nc.o > ${foo}.o
+    ar p $NETCDF/lib/libnetcdf.a `ar t $NETCDF/lib/libnetcdf.a | grep -E '*\.o' | head -n 1 | sed 's/://'` > ${foo}.o
     netcdf_arch="`file ${foo}.o | grep -o -E '[0-9]{2}-bit|i386'`"
     rm ${foo}.o
 

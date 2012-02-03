@@ -12887,8 +12887,9 @@ END SUBROUTINE nssl_2mom_driver
 !  Other data arrays
        real gtmp     (nx,nz)
        real dtmp     (nx,nz)
+       real tmp
 
-       real*8 dtmps, dtmpr, dtmph, dtmphl, g1, zx, ze, tmp, x
+       real*8 dtmps, dtmpr, dtmph, dtmphl, g1, zx, ze, x
 
        integer i,j,k,ix,jy,kz,ihcnt
 
@@ -13421,11 +13422,7 @@ END SUBROUTINE nssl_2mom_driver
              ENDIF
              
              tmp = Min(1.0,1.e3*(an(ix,jy,kz,ls))*db(ix,jy,kz))
-#if 0
-             gtmp(ix,kz) = Max( 1.0d0*gtmp(ix,kz), 750.0*(tmp)**1.98)
-#else
-             IF ( 750.0*(tmp)**1.98 .GT. gtmp(ix,kz) ) gtmp(ix,kz) = 750.0*(tmp)**1.98
-#endif
+             gtmp(ix,kz) = Max( 1.0*gtmp(ix,kz), 750.0*(tmp)**1.98)
              dtmps = gtmp(ix,kz)
              dtmp(ix,kz) = dtmp(ix,kz) + gtmp(ix,kz)
             ELSE

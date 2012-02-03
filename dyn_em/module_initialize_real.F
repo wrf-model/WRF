@@ -2455,6 +2455,7 @@ endif
 
       REAL    :: temp, temp_int
       REAL    :: pfu, pfd, phm
+      REAL    :: w1, w2, z0, z1, z2
 
       SELECT CASE ( model_data_order )
          CASE ( DATA_ORDER_ZXY )
@@ -2676,6 +2677,15 @@ endif
                END DO
 
             END IF
+
+! update psfc in fine grid
+
+            z0 = grid%ph0(i,1,j)/g
+            z1 = 0.5*(grid%ph0(i,1,j)+grid%ph0(i,2,j))/g
+            z2 = 0.5*(grid%ph0(i,2,j)+grid%ph0(i,3,j))/g
+            w1 = (z0 - z2)/(z1 - z2)
+            w2 = 1. - w1
+            grid%psfc(i,j) = w1*(grid%p(i,1,j)+grid%pb(i,1,j))+w2*(grid%p(i,2,j)+grid%pb(i,2,j))
 
          END DO
       END DO

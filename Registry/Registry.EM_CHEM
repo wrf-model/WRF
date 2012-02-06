@@ -252,9 +252,9 @@ state    real   mub_fine        ij     dyn_em      1         -      -           
 state    real   mub_save        ij     dyn_em      1         -      -           "mub_save" "nest temp, holds orig fine grid mub" "Pa"
 state    real   mu0             ij     dyn_em      1         -      i1          "mu0" "initial dry mass in column" "Pa"
 state    real   mudf            ij     dyn_em      1         -      -           "mudf" "" ""
-state    real   muu             ij     dyn_em      1          -     -           "muu"
+state    real   muu             ij     dyn_em      1          X     -           "muu"
 i1       real   muus            ij     dyn_em      1          -     
-state    real   muv             ij     dyn_em      1          -     -           "muv"
+state    real   muv             ij     dyn_em      1          Y     -           "muv"
 i1       real   muvs            ij     dyn_em      1          -     
 state    real   mut             ij     dyn_em      1          -     -           "mut"
 state    real   muts            ij     dyn_em      1          -     -           "muts"

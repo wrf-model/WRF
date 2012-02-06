@@ -27,6 +27,7 @@ state    real  e_iso          i+jf     emis_ant     1         Z      i5r    "E_I
 state    real  e_so2          i+jf     emis_ant     1         Z      i5r    "E_SO2"               "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_no           i+jf     emis_ant     1         Z      i5r    "E_NO"                "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_co           i+jf     emis_ant     1         Z      i5r    "E_CO"                "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_co2          i+jf     emis_ant     1         Z      i5r    "E_CO2"               "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_eth          i+jf     emis_ant     1         Z      i5r    "E_ETH"               "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_hc3          i+jf     emis_ant     1         Z      i5r    "E_HC3"               "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_hc5          i+jf     emis_ant     1         Z      i5r    "E_HC5"               "EMISSIONS"          "mol km^-2 hr^-1"
@@ -164,8 +165,8 @@ state    real  eseas4       i{dust}jf      emis_seas      1         Z      -    
 # volcanic ash emissions
 #
 state   real     -              ikjf     emis_vol     -         -      -       -                      "Volcanic Emissions"         ""
-state    real  e_vash1          ikjf     emis_vol     1         Z      i{13}r    "E_VASH1"               "Volcanic Emissions, bin1"   "ug/m2/s"
-state    real  e_vash2          ikjf     emis_vol     1         Z      i{13}r    "E_VASH2"               "Volcanic Emissions, bin2"   "ug/m2/s"
+state    real  e_vash1          ikjf     emis_vol     1         Z      i{13}hr    "E_VASH1"               "Volcanic Emissions, bin1"   "ug/m2/s"
+state    real  e_vash2          ikjf     emis_vol     1         Z      i{13}hr    "E_VASH2"               "Volcanic Emissions, bin2"   "ug/m2/s"
 state    real  e_vash3          ikjf     emis_vol     1         Z      i{13}r    "E_VASH3"               "Volcanic Emissions, bin3"   "ug/m2/s"
 state    real  e_vash4          ikjf     emis_vol     1         Z      i{13}r    "E_VASH4"               "Volcanic Emissions, bin4"   "ug/m2/s"
 state    real  e_vash5          ikjf     emis_vol     1         Z      i{13}r    "E_VASH5"               "Volcanic Emissions, bin5"   "ug/m2/s"
@@ -453,8 +454,8 @@ state    real  br_rto         ikj     misc        1         -      h        "BRN
 # following used for volcanic eruptions only
 #
 state    real  ash_fall     ij      misc        1         -      h        "ASH_FALL"               "VOLCANIC ASH FALL"                 "kg/m2"
-state    real  erup_beg     ij      misc        1         -      i5       "ERUP_BEG"               "START TIME OF ERUPTION"        "?"
-state    real  erup_end     ij      misc        1         -      i5       "ERUP_END"               "END TIME OF ERUPTION"        "?"
+state    real  erup_beg     ij      misc        1         -      i{13}    "ERUP_BEG"               "START TIME OF ERUPTION"        "?"
+state    real  erup_end     ij      misc        1         -      i{13}    "ERUP_END"               "END TIME OF ERUPTION"        "?"
 #
 # following used for output to look at all kinds of stuff
 state    real  dep_vel_o3     ij      misc        1         -      -        "DEP_VEL"               "deposition velocities for o3"        "?"
@@ -2393,7 +2394,7 @@ rconfig   integer     aer_drydep_opt      namelist,chem          max_domains    
 rconfig   integer     diagnostic_chem     namelist,chem          max_domains    1       rh    "diagnostic_chem"     ""      ""
 rconfig   integer     aer_aerodynres_opt  namelist,chem          max_domains    1       rh    "aer_aerodynres_opt"  ""      ""
 rconfig   integer     emiss_opt           namelist,chem          max_domains    4       rh    "emiss_opt"           ""      ""
-rconfig   integer     emiss_opt_vol       namelist,chem          max_domains    4       rh    "emiss_opt_vol"       ""      ""
+rconfig   integer     emiss_opt_vol       namelist,chem          max_domains    0       rh    "emiss_opt_vol"       ""      ""
 rconfig   integer     dust_opt            namelist,chem          1              0       rh    "dust_opt"            ""      ""
 rconfig   integer     dmsemis_opt         namelist,chem          1              0       rh    "dmsemis_opt"         ""      ""
 rconfig   integer     seas_opt            namelist,chem          1              0       rh    "seas_opt"            ""      ""
@@ -2430,6 +2431,9 @@ rconfig   integer        chemdiag        namelist,chem        max_domains       
 rconfig   real        dust_alpha          namelist,chem          1    1.      rh    "dust_alpha"    "dust tuning constant"    "m^-1"
 rconfig   real        dust_gamma          namelist,chem          1    1.      rh    "dust_gamma"    "erodibility exponential tuning const"    ""
 rconfig   real        dust_smtune         namelist,chem          1    1.      rh    "dust_smtune"   "soil moisture tuning constant"    ""
+
+# Volcanic ash height
+rconfig   real        emiss_ash_hgt       namelist,chem          1      0.      rh    "emiss_ash_hgt"       "Volcanic ash cloud top elevation (AGL)"      ""
 
 # additional namelist variables to control deposition of the organic condensable vapors
 rconfig   real        depo_fact           namelist,chem          max_domains    0       rh    "deposition factor for SOA vapors"      ""      ""

@@ -221,10 +221,11 @@ Namelist variables specifically for the WPS input for real:
                                                   default is option 1, the old MM5 method; option 2 uses a WMO 
                                                   recommended method (WMO-No. 49, corrigendum, August 2000) - 
                                                   there is a difference between the two methods though small
- interp_theta                        = .false.  ; If set to .false., it will vertically interpolate temperature 
+ interp_theta                        = .true.   ; If set to .false., it will vertically interpolate temperature 
                                                   instead of potential temperature, which may reduce bias when 
                                                   compared with input data
- hypsometric_opt                     = .false.  ; If set to .ture., it uses an alternative way (less biased 
+ hypsometric_opt                     = 1,       ; = 1: default method
+                                                  = 2: it uses an alternative way (less biased 
                                                   when compared agaist input data) to compute height in program 
                                                   real and pressure in model (ARW only). 
  p_top_requested                     = 5000     ; p_top (Pa) to use in the model

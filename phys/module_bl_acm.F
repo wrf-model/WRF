@@ -9,21 +9,23 @@ MODULE module_bl_acm
 
 CONTAINS
 
-!-------------------------------------------------------------------
-   SUBROUTINE ACMPBL(XTIME,    DTPBL,    ZNW, SIGMAH,                &
-                     U3D,      V3D,      PP3D,  DZ8W, TH3D, T3D,        &
-                     QV3D,     QC3D,     QI3D, RR3D,                    &	!!  Moisture
-                     UST,      HFX,  QFX,     TSK,                      &
-                     PSFC,     EP1,      G,                             &
-                     ROVCP,    RD,       CPD,                           &
-                     PBLH,      KPBL2D,   REGIME,                       &
-                     GZ1OZ0,   WSPD,     PSIM, MUT,                     &
-                     RUBLTEN,  RVBLTEN,  RTHBLTEN,                      &
-                     RQVBLTEN, RQCBLTEN, RQIBLTEN,                      &
-                     ids,ide, jds,jde, kds,kde,                         &
-                     ims,ime, jms,jme, kms,kme,                         &
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+   SUBROUTINE ACMPBL(XTIME,    DTPBL,    ZNW,   SIGMAH,               &
+                     U3D,      V3D,      PP3D,  DZ8W, TH3D, T3D,      &
+                     QV3D,     QC3D,     QI3D,  RR3D,                 &
+                     UST,      HFX,      QFX,   TSK,                  &
+                     PSFC,     EP1,      G,                           &
+                     ROVCP,    RD,       CPD,                         &
+                     PBLH,     KPBL2D,   REGIME,                      &
+                     GZ1OZ0,   WSPD,     PSIM, MUT,                   &
+                     RUBLTEN,  RVBLTEN,  RTHBLTEN,                    &
+                     RQVBLTEN, RQCBLTEN, RQIBLTEN,                    &
+                     ids,ide, jds,jde, kds,kde,                       &
+                     ims,ime, jms,jme, kms,kme,                       &
                      its,ite, jts,jte, kts,kte)
-!**********************************************************************
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 
 !   THIS MODULE COMPUTES VERTICAL MIXING IN AND ABOVE THE PBL ACCORDING TO 
 !   THE ASYMMETRICAL CONVECTIVE MODEL, VERSION 2  (ACM2), WHICH IS A COMBINED 
@@ -38,8 +40,9 @@ CONTAINS
 !                meteorology model.  JAMC, 46, 1396-1409
 !
 !  REVISION HISTORY:
-!     AX     3/2005 - developed WRF version based on the MM5 PX LSM
-!     RG and JP 7/2006 - Finished WRF adaptation
+!     AX        3/2005   - developed WRF version based on the MM5 PX LSM
+!     RG and JP 7/2006   - Finished WRF adaptation
+!     JP 12/2011 12/2011 - ACM2 modified so it's not dependent on first layer thickness. 
 !
 !**********************************************************************
 !   ARGUMENT LIST:
@@ -101,8 +104,8 @@ CONTAINS
 !-- RQVBLTEN        Qv tendency due to PBL parameterization (kg/kg/s)
 !-- RQCBLTEN        Qc tendency due to PBL parameterization (kg/kg/s)
 !-- RQIBLTEN        Qi tendency due to PBL parameterization (kg/kg/s)
-!
-!-------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
      IMPLICIT NONE
 
 !.......Arguments
@@ -114,29 +117,27 @@ CONTAINS
 ! DECLARATIONS - REAL
     REAL,                                INTENT(IN)  ::  DTPBL, EP1,   &
                                                         G, ROVCP, RD, CPD
+
     REAL,    DIMENSION( kms:kme ),       INTENT(IN)  :: ZNW, SIGMAH
+
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),                         &
              INTENT(IN) ::                              U3D, V3D,            &
                                                         PP3D, DZ8W, T3D,     &
                                                         QV3D, QC3D, QI3D,    &
                                                         RR3D, TH3D
-    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  UST
-    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN) ::                    &
-                                                        HFX, QFX, TSK,       &
-                                                        PSFC
-    INTEGER, DIMENSION( ims:ime, jms:jme ),                                  &
-             INTENT(OUT  )   ::                         KPBL2D
-    REAL,    DIMENSION( ims:ime, jms:jme ),                                  &
-             INTENT(INOUT) ::                           PBLH
-    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)   ::  REGIME
-    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)  ::                   &
-           					        psim,                &
-							gz1oz0,              &
-                                                        wspd ,   mut
+
+    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: PSIM, GZ1OZ0,     &
+                                                          HFX, QFX, TSK,    &
+                                                          PSFC, WSPD, MUT
+
+    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  PBLH, REGIME, UST
+
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),                         &
              INTENT(INOUT)   ::                         RUBLTEN, RVBLTEN,    &
                                                         RTHBLTEN, RQVBLTEN,  &
                                                         RQCBLTEN, RQIBLTEN
+
+    INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(OUT  ) ::  KPBL2D
 
 !... Local Variables
 
@@ -167,7 +168,7 @@ CONTAINS
 
    DSIGFI(kte) = DSIGFI(kte-1)
    
-    do j = jts,jte
+   DO j = jts,jte
       CALL ACM2D(j=J,xtime=XTIME, dtpbl=DTPBL, sigmaf=SIGMAF, sigmah=SIGMAH    &
               ,dsigfi=DSIGFI,dsighi=DSIGHI,dsigh=DSIGH             &
               ,us=u3d(ims,kms,j),vs=v3d(ims,kms,j)                 &
@@ -190,11 +191,15 @@ CONTAINS
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde   &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme   &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
-    enddo
+   ENDDO
 
    END SUBROUTINE ACMPBL
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 
-!--------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
    SUBROUTINE ACM2D(j,XTIME, DTPBL, sigmaf, sigmah          &
               ,dsigfi,dsighi,dsigh                          &
               ,us,vs,theta,tt,qvs,qcs,qis                   &
@@ -208,8 +213,9 @@ CONTAINS
               ,ims,ime, jms,jme, kms,kme   &
               ,its,ite, jts,jte, kts,kte   )
 
-!            USE module_wrf_error
-            IMPLICIT NONE
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+      IMPLICIT NONE
 
 !.......Arguments
 
@@ -264,50 +270,50 @@ CONTAINS
 !    REAL, PARAMETER :: KARMAN = 0.4
 
 !... Integer
-      INTEGER :: KL, jtf, ktf, itf, KMIX
+      INTEGER :: KL, jtf, ktf, itf, KMIX, KSRC
 !...
-        character*512 :: message
+        character*256 :: message
 !-----initialize vertical tendencies and
-!
-      do i = its,ite
-        do k = kts,kte
+
+      DO i = its,ite
+        DO k = kts,kte
           utnp(i,k) = 0.
           vtnp(i,k) = 0.
           ttnp(i,k) = 0.
-        enddo
-      enddo
-!
-      do k = kts,kte
-        do i = its,ite
+        ENDDO
+      ENDDO
+
+      DO k = kts,kte
+        DO i = its,ite
           qvtnp(i,k) = 0.
-        enddo
-      enddo
-!
-      do k = kts,kte
-        do i = its,ite
+        ENDDO
+      ENDDO
+
+      DO k = kts,kte
+        DO i = its,ite
           qctnp(i,k) = 0.
           qitnp(i,k) = 0.
-        enddo
-      enddo
-!
+        ENDDO
+      ENDDO
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!  Compute Micromet Scaling variables, not availiable in WRF for ACM
      DO I = its,ite
-           cpair(i)     = CPD * (1.0 + 0.84 * QVS(I,1))           ! J/(K KG)
-           TMPFX        = HFX(I)  / (cpair(i) * DENSX(I,1))
-           TMPVTCON     = 1.0 + EP1 * QVS(I,1)              ! COnversion factor for virtual temperature
-           WS1          = SQRT(US(I,1)**2 + VS(I,1)**2)     ! Level 1 wind speed
-           TST(I)     = -TMPFX / UST(I)
-           QST(I)     = -QFX(I) / (UST(I)*DENSX(I,1))
-           USTM(I)    = UST(I) * WS1 / wspd(i)
-           THV1         = TMPVTCON * THETA(I,1) 
-           TSTV(I)      = TST(I)*TMPVTCON + THV1*EP1*QST(I)
+           CPAIR(I)  = CPD * (1.0 + 0.84 * QVS(I,1))                    ! J/(K KG)
+           TMPFX     = HFX(I)  / (cpair(i) * DENSX(I,1))
+           TMPVTCON  = 1.0 + EP1 * QVS(I,1)                             ! COnversion factor for virtual temperature
+           WS1       = SQRT(US(I,1)**2 + VS(I,1)**2)                    ! Level 1 wind speed
+           TST(I)    = -TMPFX / UST(I)
+           QST(I)    = -QFX(I) / (UST(I)*DENSX(I,1))
+           USTM(I)   = UST(I) * WS1 / wspd(i)
+           THV1      = TMPVTCON * THETA(I,1) 
+           TSTV(I)   = TST(I)*TMPVTCON + THV1*EP1*QST(I)
            IF(ABS(TSTV(I)).LT.1.0E-6) THEN
              TSTV(I) = SIGN(1.0E-6,TSTV(I))
            ENDIF
-           MOL(I) = THV1 * UST(i)**2/(KARMAN*G*TSTV(I))
-           WST(I) = UST(I) * (PBL(I)/(KARMAN*ABS(MOL(I)))) ** 0.333333       
-           PSTAR(I)   =  MUT(I)/1000.                        ! P* in cb 
+           MOL(I)    = THV1 * UST(i)**2/(KARMAN*G*TSTV(I))
+           WST(I)    = UST(I) * (PBL(I)/(KARMAN*ABS(MOL(I)))) ** 0.333333       
+           PSTAR(I)  =  MUT(I)/1000.                                     ! P* in cb 
      ENDDO
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -336,13 +342,21 @@ CONTAINS
 
 !...  COMPUTE PBL WHERE RICHARDSON NUMBER = RIC (0.25) HOLTSLAG ET AL 1990  
      DO 100 I = its,ite
-       if(MOL(I).LT.0.0 .AND. XTIME.GT.1) then
+       DO K = 1,kte
+         KSRC = K
+         IF (SIGMAF(K).lT.0.9955) GO TO 69
+       ENDDO
+69     CONTINUE
+       TH1 = 0.0
+       DO K = 1,KSRC
+         TH1 = TH1 + THETAV(I,K)  
+       ENDDO  
+       TH1 = TH1/KSRC
+       IF(MOL(I).LT.0.0 .AND. XTIME.GT.1) then
          WSS   = (UST(I) ** 3 + 0.6 * WST(I) ** 3) ** 0.33333
          TCONV = -8.5 * UST(I) * TSTV(I) / WSS
-         TH1   = THETAV(I,1) + TCONV
-       else
-         TH1   = THETAV(I,1)
-       endif
+         TH1   = TH1 + TCONV
+       ENDIF
 
 99     KMIX = 1
        DO K = 1,kte
@@ -446,36 +460,31 @@ CONTAINS
          QITNP(I,K) = QITNP(I,K) + (QIX(I,K) - QIS(I,K)) * RDT
        ENDDO
      ENDDO
-!     IF(J.EQ.36)PRINT *,' PBL,THETA,THETAX,QVS,QVX=',PBL(20),THETA(20,1),THETAX(20,1),QVS(20,1),QVX(20,1)
-!     IF(J.EQ.36)PRINT *,' UST,ustm,TG,TST=',UST(20),ustm(20),Tg(20),TST(20)
-!     IF(J.EQ.36)PRINT *,' HFX,MOL,WST,WSPD=',HFX(20),MOL(20),WST(20),wspd(20)
-!     IF(J.EQ.36)then
-!       i=20
-!       do k=1,kte
-!         PRINT *,' qvten,uten,vten=',QVTNP(I,K),UTNP(I,K),VTNP(I,K)
-!         PRINT *,' k,thten,th,thx,edy=',k,TTNP(I,K),THETA(20,k),THETAX(20,k),EDDYZ(20,K)
-!       enddo
-!     ENDIF
-   END SUBROUTINE ACM2D
 
-!-------------------------------------------------------------------          
+   END SUBROUTINE ACM2D
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
    SUBROUTINE ACMINIT(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,           &
                       RQCBLTEN,RQIBLTEN,P_QI,P_FIRST_SCALAR,       &
                       restart, allowed_to_read ,                   &
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       its, ite, jts, jte, kts, kte                 )
-!**********************************************************************
+!-----------------------------------------------------------------------
 !
 !    This subroutine is for preparing ACM PBL variables. 
 !    Called from module_physics_init.F
 !
 !  REVISION HISTORY:
 !     AX     3/2005 - Originally developed
-!**********************************************************************
+!-----------------------------------------------------------------------
 !   ARGUMENT LIST:
 !
-!-------------------------------------------------------------------
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
      IMPLICIT NONE
 !
    LOGICAL , INTENT(IN)          :: restart , allowed_to_read
@@ -529,7 +538,10 @@ CONTAINS
 
 
    END SUBROUTINE acminit
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 
+!-----------------------------------------------------------------------
 !-------------------------------------------------------------------          
    SUBROUTINE EDDYX(DTPBL, ZF,  ZA,     MOL, PBL,  UST,               &
                     US,    VS,  TT,  THETAV, DENSX, PSTAR,            &
@@ -566,6 +578,7 @@ CONTAINS
 !-- CPAIR           specific heat of moist air (M^2 S^-2 K^-1)
 !-- EDDYZ           eddy diffusivity KZ
 !-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
@@ -593,8 +606,8 @@ CONTAINS
 
 !... Real
       REAL     :: ZOVL, PHIH, WT, ZSOL, ZFUNC, DZF, SS, GOTH, EDYZ
-      REAL     :: RI, QMEAN, TMEAN, XLV, ALPH, CHI, ZK, SQL, DENSF,kzo
-
+      REAL     :: RI, QMEAN, TMEAN, XLV, ALPH, CHI, ZK, SQL, DENSF, KZO
+      REAL     :: FH
 !... Parameters
       REAL, PARAMETER :: RV     = 461.5
       REAL, PARAMETER :: RC     = 0.25
@@ -604,7 +617,7 @@ CONTAINS
       REAL, PARAMETER :: KARMAN = 0.4
       REAL, PARAMETER :: EDYZ0  = 0.01  ! New Min Kz
 !      REAL, PARAMETER :: EDYZ0  = 0.1
-!-- IMVDIF      imvdif=1 for moist adiabat vertical diffusion
+!--   IMVDIF      imvdif=1 for moist adiabat vertical diffusion
       INTEGER, PARAMETER :: imvdif = 1
 !
       ILX = ite 
@@ -616,10 +629,8 @@ CONTAINS
           EDYZ = 0.0
           ZOVL = 0.0
           DZF  = ZA(I,K+1) - ZA(I,K)
-!          kzo = min(0.001 * dzf,EDYZ0)
-          kzo = 0.001 * dzf
-!          kzo = EDYZ0
-!-------------------------------------------------
+          KZO = EDYZ0
+!--------------------------------------------------------------------------
           IF (ZF(I,K) .LT. PBL(I)) THEN
             ZOVL = ZF(I,K) / MOL(I)
             IF (ZOVL .LT. 0.0) THEN
@@ -640,20 +651,15 @@ CONTAINS
             ENDIF
             ZFUNC      = ZF(I,K) * (1.0 - ZF(I,K) / PBL(I)) ** 2
             EDYZ = KARMAN * WT * ZFUNC
-!            EDYZ = AMAX1(EDYZ,EDYZ0)
-         ENDIF
- !            PRINT *,I,K,TT(I,K)
- !--------------------------------------------------------------------------
-!
-!          RC = 0.257 * DZF ** 0.175
-            SS   = ((US(I,K+1) - US(I,K)) ** 2 + (VS(I,K+1) - VS(I,K)) ** 2)   &
+          ENDIF
+!--------------------------------------------------------------------------
+          SS   = ((US(I,K+1) - US(I,K)) ** 2 + (VS(I,K+1) - VS(I,K)) ** 2)   &
                   / (DZF * DZF) + 1.0E-9
-            GOTH = 2.0 * G / (THETAV(I,K+1) + THETAV(I,K))
-            RI   = GOTH * (THETAV(I,K+1) - THETAV(I,K)) / (DZF * SS)
-!            PRINT *,I,K,TT(I,K), RI, IMVDIF
-!
-!-- Adjustment to vert diff in Moist air
-          if(imvdif.eq.1)then
+          GOTH = 2.0 * G / (THETAV(I,K+1) + THETAV(I,K))
+          RI   = GOTH * (THETAV(I,K+1) - THETAV(I,K)) / (DZF * SS)
+!--------------------------------------------------------------------------
+!         Adjustment to vert diff in Moist air
+          IF(imvdif.eq.1)then
             IF ((QCS(I,K)+QIS(I,K)) .GT. 0.01E-3 .OR. (QCS(I,K+1)+             &
                  QIS(I,K+1)) .GT. 0.01E-3) THEN
               QMEAN = 0.5 * (QVS(I,K) + QVS(I,K+1))
@@ -664,38 +670,48 @@ CONTAINS
               RI    = (1.0 + ALPH) * (RI -G * G / SS / TMEAN / CPAIR(I) *       &
                       ((CHI - ALPH) / (1.0 + CHI)))
             ENDIF
-          endif
+          ENDIF
+!--------------------------------------------------------------------------
             
-	    ZK  = 0.4 * ZF(I,K)
-            SQL = (ZK * RLAM / (RLAM + ZK)) ** 2
+	        ZK  = 0.4 * ZF(I,K)
+          SQL = (ZK * RLAM / (RLAM + ZK)) ** 2
             
-	    IF (RI .GE. RC) THEN
-              EDDYZ(I,K) = kzo !EDYZ0
-            ELSE IF (RI .GE. 0.0) THEN
-              EDDYZ(I,K) = kzo + SQRT(SS) * (1.- RI / RC) ** 2 * SQL
-            ELSE
-              EDDYZ(I,K) = kzo + SQRT(SS * (1.0 - 25.0 * RI)) * SQL
-            ENDIF
+          IF (RI .GE. 0.0) THEN
+	          IF (ZF(I,K).LT.PBL(I).AND.ZOVL.GT.0.0) THEN
+	            FH = MAX((1.-ZF(I,K)/PBL(I))**2,0.01) * PHIH **(-2)
+                   SQL = ZK ** 2
+	          ELSE
+	            FH = (MAX(1.-RI/RC,0.01))**2
+	          ENDIF
+            EDDYZ(I,K) = KZO + SQRT(SS) * FH * SQL
+          ELSE
+            EDDYZ(I,K) = KZO + SQRT(SS * (1.0 - 25.0 * RI)) * SQL
+          ENDIF
 	  
-          IF(ZOVL.LT.0.0.AND.EDYZ.GT.EDDYZ(I,K)) THEN
+          IF(EDYZ.GT.EDDYZ(I,K)) THEN
             EDDYZ(I,K) = EDYZ
           ENDIF
 
           EDDYZ(I,K) = MIN(1000.0,EDDYZ(I,K))
-          EDDYZ(I,K) = MAX(kzo,EDDYZ(I,K))
+          EDDYZ(I,K) = MAX(KZO,EDDYZ(I,K))
 
           DENSF     = 0.5 * (DENSX(I,K+1) + DENSX(I,K))
 
           EDDYZ(I,K) = EDDYZ(I,K) * (DENSF * G / PSTAR(I)) ** 2 *       &
                        DTPBL * DSIGFI(K)*1E-6
+
         ENDDO             ! for I loop
       ENDDO               ! for k loop
 !
       DO I = its,ILX
         EDDYZ(I,KL) = 0.0 ! EDDYZ(I,KLM) -- changed jp 3/08
       ENDDO
-   END SUBROUTINE EDDYX
 
+   END SUBROUTINE EDDYX
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
 !-------------------------------------------------------------------          
    SUBROUTINE ACM (DTPBL, PSTAR,  NOCONV, SIGMAF, DSIGH, DSIGHI, JX, &
                    KLPBL, PBL,   PBLSIG, MOL,  UST,                  &
@@ -745,6 +761,7 @@ CONTAINS
 !-- QCX             new cloud mixing ratio (Kg/Kg)
 !-- QIX             new ice mixing ratio (Kg/Kg)
 !-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 
       IMPLICIT NONE
 
@@ -770,7 +787,6 @@ CONTAINS
                                                            QVS, QCS, QIS, DENSX
       REAL , DIMENSION( its:ite, kts:kte ), INTENT(OUT) :: UX, VX, THETAX,      &
                                                            QVX, QCX, QIX
-
 !.......Local variables
 
 !... Parameters
@@ -791,7 +807,7 @@ CONTAINS
 !... Real
       REAL                               :: G1000I, MBMAX, HOVL, MEDDY, MBAR
       REAL                               :: EKZ, RZ, FM, WSPD, DTS, DTRAT, F1
-      REAL, DIMENSION( its:ite )         :: PSTARI, FSACM, RAH, DTLIM
+      REAL, DIMENSION( its:ite )         :: PSTARI, FSACM, DTLIM
       REAL, DIMENSION( kts:kte, its:ite) :: MBARKS, MDWN
       REAL, DIMENSION( 1:NSP, its:ite )  :: FS, BCBOTN
       REAL, DIMENSION( kts:kte )         :: XPLUS, XMINUS
@@ -818,8 +834,9 @@ CONTAINS
         KCBL(I)   = 1
         FSACM(I)  = 0.0
 
-     IF (NOCONV(I) .EQ. 1) THEN
+        IF (NOCONV(I) .EQ. 1) THEN
           KCBL(I) = KLPBL(I)
+
 !-------MBARKS IS UPWARD MIXING RATE; MDWN IS DOWNWARD MIXING RATE
 !--New couple ACM & EDDY-------------------------------------------------------------
           HOVL     = -PBL(I) / MOL(I)
@@ -829,7 +846,7 @@ CONTAINS
           DO K = kts,KCBL(I)-1
             EDDYZ(I,K) = EDDYZ(I,K) * (1.0 - FSACM(I))
           ENDDO
-!          if(i.eq.100.and.jx.eq.43) PRINT *,' Edy,meddy,mbar=', EDDYZ(I,1),MEDDY,MBAR
+
           MBMAX = AMAX1(MBMAX,MBAR)
           DO K = kts+1,KCBL(I)
             MBARKS(K,I) = MBAR
@@ -841,17 +858,12 @@ CONTAINS
         ENDIF
       ENDDO                              ! end of I loop
 
-!      if(NOCONV(20).EQ.1) print *,' KCBL,PBLSIG=',KCBL(20),PBLSIG(20),SIGMAF(KCBL(20)-1),DSIGHI(KCBL(20))
-!      do k = kts,klm
-!        if(NOCONV(20).EQ.1.and.MBAR.lt.1.0e-3)print *,' k,MBARKS,MDWN=',k,MBARKS(k,20),MDWN(k,20)
-!      enddo
-
-       DO K = kts,KLM
-         DO I = its,ILX
+      DO K = kts,KLM
+        DO I = its,ILX
           EKZ   = EDDYZ(I,K) / DTPBL * DSIGHI(K)
           DTLIM(I) = AMIN1(0.75 / EKZ,DTLIM(I))
-         ENDDO
-       ENDDO
+        ENDDO
+      ENDDO
        
       DO I = its,ILX 
         IF (NOCONV(I) .EQ. 1) THEN
@@ -861,16 +873,13 @@ CONTAINS
         ENDIF
       ENDDO
 
-      DO I = its,ILX
-      ENDDO
-!
       DO K = kts,KL
         DO I = its,ILX
           VCI(1,I,K) = THETA(I,K)
           VCI(2,I,K) = QVS(I,K)
           VCI(3,I,K) = US(I,K)
           VCI(4,I,K) = VS(I,K)
-          ! -- Also mix cloud water and ice if necessary
+          ! -- Also mix cloud water and ice IF necessary
           ! IF (IMOISTX.NE.1.AND.IMOISTX.NE.3) THEN  !!! Check other PBL models
           VCI(5,I,K) = QCS(I,K)
           VCI(6,I,K) = QIS(I,K)
@@ -880,7 +889,6 @@ CONTAINS
       NSPX=6
 
       DO I = its,ILX
-!       RAH(I)  = RA(I,J) + 3.976 / UST(I)
         FS(1,I) = -UST(I) * TST(I) * DENSX(I,1) * PSTARI(I)
         FS(2,I) = -UST(I) * QST(I) * DENSX(I,1) * PSTARI(I)
         FM      = -USTM(I) * USTM(I) * DENSX(I,1) * PSTARI(I)
@@ -893,14 +901,11 @@ CONTAINS
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       DO I = its,ILX      
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         NLP   = INT(DTPBL / DTLIM(I) + 1.0)
         DTS   = (DTPBL / NLP)
         DTRAT = DTS / DTPBL
         DO NL = 1,NLP           ! LOOP OVER SUB TIME LOOP              
-!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !-- COMPUTE ARRAY ELEMENTS THAT ARE INDEPENDANT OF SPECIES
 
@@ -935,83 +940,82 @@ CONTAINS
           IF (NOCONV(I) .EQ. 1) THEN
             BI(1) = 1.0 + CRANKP * MBARKS(1,I) * (PBLSIG(I) - SIGMAF(1)) *    &
                     DTS * DSIGHI(1) + EDDYZ(I,1) * DSIGHI(1) * CRANKP * DTRAT
-      ELSE
-        BI(1) = 1.0  + EDDYZ(I,1) * DSIGHI(1) * CRANKP * DTRAT
-      ENDIF
+          ELSE
+            BI(1) = 1.0  + EDDYZ(I,1) * DSIGHI(1) * CRANKP * DTRAT
+          ENDIF
 
 
-      DO K = 1,KL
-        DO L = 1,NSPX                    
-           DI(L,K) = 0.0
-        ENDDO
-     ENDDO
+          DO K = 1,KL
+            DO L = 1,NSPX                    
+              DI(L,K) = 0.0
+            ENDDO
+          ENDDO
 !
 !**   COMPUTE TENDENCY OF CBL CONCENTRATIONS - SEMI-IMPLICIT SOLUTION
-     DO K = 2,KCBL(I)
-       DO L = 1,NSPX                    
-          DELC = DTS * (MBARKS(K,I) * VCI(L,I,1) - MDWN(K,I) *          &
+          DO K = 2,KCBL(I)
+            DO L = 1,NSPX                    
+              DELC = DTS * (MBARKS(K,I) * VCI(L,I,1) - MDWN(K,I) *          &
                  VCI(L,I,K) + DSIGH(K+1) * DSIGHI(K) *                  &
                         MDWN(K+1,I) * VCI(L,I,K+1))
-          DI(L,K)   = VCI(L,I,K) + (1.0 - CRANKP) * DELC
-       ENDDO
-     ENDDO
+              DI(L,K)   = VCI(L,I,K) + (1.0 - CRANKP) * DELC
+            ENDDO
+          ENDDO
 
-     DO K = KCBL(I)+1, KL
-       DO L = 1,NSPX                    
-         DI(L,K) = VCI(L,I,K)
-       ENDDO
-     ENDDO
+          DO K = KCBL(I)+1, KL
+            DO L = 1,NSPX                    
+              DI(L,K) = VCI(L,I,K)
+            ENDDO
+          ENDDO
 
-     DO K = 2,KL
-       IF (K .EQ. KL) THEN
-         DO L = 1,NSPX                    
-           DI(L,K) = DI(L,K)  - (1.0 - CRANKP) * XMINUS(K) *                  &
-                     (VCI(L,I,K) - VCI(L,I,K-1))
-         ENDDO
-       ELSE
-         DO L = 1,NSPX                    
-           DI(L,K) = DI(L,K) + (1.0 - CRANKP) * XPLUS(K) *                   &
-                      (VCI(L,I,K+1) - VCI(L,I,K))  -                         &
-                      (1.0 - CRANKP) * XMINUS(K) *                           &
-                      (VCI(L,I,K) - VCI(L,I,K-1))
-         ENDDO
-       ENDIF
-     ENDDO
+          DO K = 2,KL
+            IF (K .EQ. KL) THEN
+              DO L = 1,NSPX                    
+                DI(L,K) = DI(L,K)  - (1.0 - CRANKP) * XMINUS(K) *                  &
+                          (VCI(L,I,K) - VCI(L,I,K-1))
+              ENDDO
+            ELSE
+              DO L = 1,NSPX                    
+                DI(L,K) = DI(L,K) + (1.0 - CRANKP) * XPLUS(K) *                   &
+                          (VCI(L,I,K+1) - VCI(L,I,K))  -                         &
+                          (1.0 - CRANKP) * XMINUS(K) *                           &
+                          (VCI(L,I,K) - VCI(L,I,K-1))
+              ENDDO
+            ENDIF
+          ENDDO
 
-     IF (NOCONV(I) .EQ. 1) THEN
-       DO L = 1,NSPX                    
-         F1    = -G1000I * (MBARKS(1,I) *                                &
-                 (PBLSIG(I) - SIGMAF(1)) * VCI(L,I,1) -                  &
-                  MDWN(2,I) * VCI(L,I,2) * DSIGH(2))
+          IF (NOCONV(I) .EQ. 1) THEN
+            DO L = 1,NSPX                    
+              F1    = -G1000I * (MBARKS(1,I) *                                &
+                      (PBLSIG(I) - SIGMAF(1)) * VCI(L,I,1) -                  &
+                      MDWN(2,I) * VCI(L,I,2) * DSIGH(2))
 
-         DI(L,1) = VCI(L,I,1) - G1000 * (FS(L,I) - (1.0 - CRANKP)        &
-                 * F1) * DSIGHI(1) * DTS
-       ENDDO
-      ELSE
-        DO L = 1,NSPX                    
-          DI(L,1) = VCI(L,I,1) - G1000 * FS(L,I) * DSIGHI(1) * DTS
-        ENDDO
-      ENDIF
-      DO L = 1,NSPX                    
-        DI(L,1) = DI(L,1) + (1.0 - CRANKP) * EDDYZ(I,1) * DSIGHI(1)      &
-                * DTRAT * (VCI(L,I,2) - VCI(L,I,1))
-      ENDDO
-      IF ( NOCONV(I) .EQ. 1 ) THEN
-        CALL MATRIX (AI, BI, CI, DI, EI, UI, KL, NSPX)
-      ELSE
-        CALL TRI (CI, BI, EI, DI, UI, KL, NSPX)
-      END IF
+              DI(L,1) = VCI(L,I,1) - G1000 * (FS(L,I) - (1.0 - CRANKP)        &
+                        * F1) * DSIGHI(1) * DTS
+            ENDDO
+          ELSE
+            DO L = 1,NSPX                    
+              DI(L,1) = VCI(L,I,1) - G1000 * FS(L,I) * DSIGHI(1) * DTS
+            ENDDO
+          ENDIF
+          DO L = 1,NSPX                    
+            DI(L,1) = DI(L,1) + (1.0 - CRANKP) * EDDYZ(I,1) * DSIGHI(1)      &
+                     * DTRAT * (VCI(L,I,2) - VCI(L,I,1))
+          ENDDO
+          IF ( NOCONV(I) .EQ. 1 ) THEN
+            CALL MATRIX (AI, BI, CI, DI, EI, UI, KL, NSPX)
+          ELSE
+            CALL TRI (CI, BI, EI, DI, UI, KL, NSPX)
+          END IF
 !
 !-- COMPUTE NEW THETAV AND Q
-         DO K = 1,KL
-           DO L = 1,NSPX                    
+          DO K = 1,KL
+            DO L = 1,NSPX                    
               VCI(L,I,K) = UI(L,K)
-           ENDDO
-         ENDDO
-!
+            ENDDO
+          ENDDO
+
         ENDDO                   ! END I LOOP
       ENDDO                     ! END SUB TIME LOOP
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !
@@ -1021,9 +1025,6 @@ CONTAINS
           QVX(I,K)    = VCI(2,I,K)
           UX(I,K)     = VCI(3,I,K)
           VX(I,K)     = VCI(4,I,K)
-!            IF( (I.EQ.61 .OR. I.EQ.15) .AND. JX.EQ.22) THEN
-!               PRINT *,'TEST -->',I,K,THETAX(I,K)
-!            ENDIF
         ENDDO
       ENDDO
 
@@ -1033,13 +1034,17 @@ CONTAINS
           QIX(I,K) = VCI(6,I,K)
         ENDDO
       ENDDO
-!      ENDIF
 
    END SUBROUTINE ACM
-!--------------------------------------------------------
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
    SUBROUTINE MATRIX(A,B,C,D,E,X,KL,NSP)
    
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
    IMPLICIT NONE
 !
 !-- Bordered band diagonal matrix solver for ACM2
@@ -1081,29 +1086,26 @@ CONTAINS
 
 !-- Define Upper and Lower matrices
       L(1,1) = 1.
-!      U(1,1) = B(1)
       UII(1) = B(1)
       RUII(1) = 1./UII(1)
       DO I = 2, KL
-	L(I,I) = 1.
-	L(I,1) = A(I)/B(1)
-!        U(I-1,I) =E(I-1)
+	      L(I,I) = 1.
+	      L(I,1) = A(I)/B(1)
         UIIP1(I-1)=E(I-1)
-	IF(I.GE.3) THEN
-	   DO J = 2,I-1
-	     IF(I.EQ.J+1) THEN
-	        AIJ = C(I)
-	     ELSE
-	        AIJ = 0.
-	     ENDIF
-	     L(I,J) = (AIJ-L(I,J-1)*E(J-1))/      &
+	      IF(I.GE.3) THEN
+	        DO J = 2,I-1
+	          IF(I.EQ.J+1) THEN
+	            AIJ = C(I)
+	          ELSE
+	            AIJ = 0.
+	          ENDIF
+	          L(I,J) = (AIJ-L(I,J-1)*E(J-1))/      &
                       (B(J)-L(J,J-1)*E(J-1))
-	   ENDDO
-	  ENDIF
+	        ENDDO
+	      ENDIF
       ENDDO
 	  
       DO I = 2,KL
-!        U(I,I) = B(I)-L(I,I-1)*E(I-1)
         UII(I) = B(I)-L(I,I-1)*E(I-1)
         RUII(I) = 1./UII(I)
       ENDDO
@@ -1112,35 +1114,37 @@ CONTAINS
       DO V= 1, NSP
         Y(V,1) = D(V,1)
         DO I=2,KL
-	  SUM = D(V,I)
-	  DO J=1,I-1
-	    SUM = SUM - L(I,J)*Y(V,J)
-	  ENDDO
-	  Y(V,I) = SUM
+	        SUM = D(V,I)
+	        DO J=1,I-1
+	          SUM = SUM - L(I,J)*Y(V,J)
+	        ENDDO
+	        Y(V,I) = SUM
         ENDDO
       ENDDO
 
 !-- Back sub for Ux=y
 
       DO V= 1, NSP
-!        X(V,KL) = Y(V,KL)/U(KL,KL)
         X(V,KL) = Y(V,KL)*RUII(KL)
       ENDDO
       DO I = KL-1,1,-1
         DO V= 1, NSP
-!	  X(V,I) = (Y(V,I)-U(I,I+1)*X(V,I+1))/U(I,I)
          X(V,I) = (Y(V,I)-UIIP1(I)*X(V,I+1))*RUII(I)
         ENDDO
       ENDDO
 
    END SUBROUTINE MATRIX
-!:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
       SUBROUTINE TRI ( L, D, U, B, X,KL,NSP)
+!-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
 
 !  FUNCTION:
 !    Solves tridiagonal system by Thomas algorithm. 
-! The associated tri-diagonal system is stored in 3 arrays
+!   The associated tri-diagonal system is stored in 3 arrays
 !   D : diagonal
 !   L : sub-diagonal
 !   U : super-diagonal
@@ -1183,22 +1187,24 @@ CONTAINS
       ENDDO
 
       DO K = 2, KL
-         GAM(K ) = BET * U( K-1 )
-         BET = 1.0 / ( D( K ) - L( K ) * GAM( K ) )
-	 DO V = 1, NSP
-            X( V, K ) = BET * ( B( V,K ) - L( K ) * X( V,K-1 ) )
-	 ENDDO
-      END DO
+        GAM(K ) = BET * U( K-1 )
+        BET = 1.0 / ( D( K ) - L( K ) * GAM( K ) )
+	      DO V = 1, NSP
+           X( V, K ) = BET * ( B( V,K ) - L( K ) * X( V,K-1 ) )
+	      ENDDO
+      ENDDO
 
 ! Back-substitution:
 
       DO K = KL - 1, 1, -1
-         DO V = 1, NSP
-            X( V,K ) = X( V,K ) - GAM( K+1 ) * X( V,K+1 )
-         END DO
+        DO V = 1, NSP
+          X( V,K ) = X( V,K ) - GAM( K+1 ) * X( V,K+1 )
+        ENDDO
       ENDDO
      
   END SUBROUTINE TRI
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 
 END MODULE module_bl_acm
                         

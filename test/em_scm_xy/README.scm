@@ -69,7 +69,7 @@ available, and is called make_scm_forcing.ncl.  See the documentation
 at the beginning of this.  The example that comes with the release is
 documented below.  I have a much more sophisticated script to create
 forcing from a series of met_em files.  Please contact me if you would
-like to work with me on that (hacker at ucar.edu).
+like to work with me on that (jphacker at nps.edu).
 
 -------------------------------------------------------------------------
 

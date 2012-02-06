@@ -5271,6 +5271,7 @@ SUBROUTINE soa_vbs(layer,blkta,blkprs,organt1rat,organt2rat,organt3rat,  &
       REAL alphhiN(nbin,nsaprc)  ! sm normalized (1 g/m3 density) yield for condensable vapors high NOx condition
       REAL alphai(nbin,nsaprc)   ! mass-based stoichometric yield for product i and csti is the effective saturation
       ! concentration in ug m^-3
+      REAL mwvoc(nsaprc)         ! molecular weight of the SOA precusors
 
       REAL PnGtotal,DUM,FMTOT,FMTOT2,DUM2    ! Real constants used in Newton iteration
       integer, save :: icall
@@ -5302,9 +5303,16 @@ SUBROUTINE soa_vbs(layer,blkta,blkprs,organt1rat,organt2rat,organt3rat,  &
       0.0750, 0.1500, 0.7500, 0.9000,   & ! SESQ
       0.0120, 0.1215, 0.2010, 0.5070/     ! TERP
 
-!      DATA dhvap /8*30.0E03/         ! enthalpy of vaporization
-!      DATA Cs0 /1,10,100,1000/       ! saturation concentrations at 300K in ug/m^3
-!------------------------------------------------------------------------------
+      DATA mwvoc /  &
+                    73.23,   &    ! ALK4
+                    106.97,  &    ! ALK5
+                    61.68,   &    ! OLE1
+                    79.05,   &    ! OLE2
+                    100.47,  &    ! ARO1
+                    113.93,  &    ! ARO2
+                    68.12,   &    ! ISOP
+                    204.0,   &    ! SESQ
+                    136.24   /    ! TERP
 
 !bs * initialisation
 !bs
@@ -5337,16 +5345,16 @@ SUBROUTINE soa_vbs(layer,blkta,blkprs,organt1rat,organt2rat,organt3rat,  &
 !bs *        Technol. 31(5), 1345-1358. and Forstner et al. (1997), Atmos.
 !bs *        Environ. 31(13), 1953-1964.
 !bs *
-!sam changed molecular weights as in Lane et al., AE, 2008
+! Molecular weights of OCVs as in Murphy and Pandis, 2009
       mwcv(pasoa1) = 150.
       mwcv(pasoa2) = 150.
       mwcv(pasoa3) = 150.
       mwcv(pasoa4) = 150.
       
-      mwcv(pbsoa1) = 190.
-      mwcv(pbsoa2) = 190.
-      mwcv(pbsoa3) = 190.
-      mwcv(pbsoa4) = 190.
+      mwcv(pbsoa1) = 180.
+      mwcv(pbsoa2) = 180.
+      mwcv(pbsoa3) = 180.
+      mwcv(pbsoa4) = 180.
 
 ! In Shell partitioned aerosols according to their precursors, but we do as Allen due to the saturation concentrations
 ! We have 2 sets for anthropogenic and biogenic and therefore we use the same denotation
@@ -5378,12 +5386,10 @@ loop_cells: DO lcell = 1, numcells  ! numcells=1
                 END DO
 
                 ! calculation of the yields using the branching ratio
-                ! 0.6667 is used, since the yields were multiplied by Murphy to account for the SOA density,
-                ! For this purpose I use dens_soa provided by the namelist.input
                 brrto= drog(lcell,pbrch) ! temporary variable for the branching ratio
                 DO bn=1,nbin  ! bins
                    DO cls=1,nsaprc ! classes
-                      alphai(bn,cls)= alphhiN(bn,cls)*brrto + alphlowN(bn,cls)*(1.-brrto) 
+                      alphai(bn,cls)= mwvoc(cls)*( alphhiN(bn,cls)*brrto + alphlowN(bn,cls)*(1.-brrto) )
                    ENDDO
                 ENDDO 
                 
@@ -5464,7 +5470,7 @@ loop_cells: DO lcell = 1, numcells  ! numcells=1
 !bs * calculate the threshold for partitioning if no initial mass is present to partition into.
 
     loop_cc:    DO  l = 1,ncv             ! we've total ncv=4*2 bins, no alpha is needed here
-                    prod(l) =  convfac*mwcv(l)*prod(l)  ! get in density units (ug/m3) from ppmv, (convfac=rho_air/mu_air)
+                    prod(l) =  convfac*prod(l)  ! get in density units (ug/m3) from ppmv, (convfac=rho_air/mu_air)
                     ctot(l) =  prod(l) + cgas(l) + caer(l)
                     aold(l) =  caer(l)
 

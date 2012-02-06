@@ -35,6 +35,26 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  &physics
  sst_update                          = 1,
 
+** Using Noah-MP option (Use sf_surface_physics option = 4, and add
+   &noah_mp namelist record)
+
+&physics
+   sf_surface_physics = 4
+
+&noah_mp
+ dveg                               = 2,
+ opt_crs                            = 1,
+ opt_btr                            = 1,
+ opt_run                            = 1,
+ opt_frz                            = 1,
+ opt_inf                            = 1,
+ opt_rad                            = 1,
+ opt_alb                            = 2,
+ opt_snf                            = 1,
+ opt_tbot                           = 2,
+ opt_stc                            = 1,
+ /
+
 
 ** Using stochastic backscatter scheme
 

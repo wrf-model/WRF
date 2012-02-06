@@ -211,7 +211,7 @@ CONTAINS
                                       sp3y , ep3y , sm3y , em3y , &
                                 bdx , bdy )
 
-      USE module_domain, ONLY : domain, head_grid, find_grid_by_id
+      USE module_domain, ONLY : domain, head_grid, find_grid_by_id, alloc_space_field
 
       IMPLICIT NONE
       INTEGER, INTENT(IN)   :: sd1 , ed1 , sd2 , ed2 , sd3 , ed3 , bdx , bdy
@@ -629,11 +629,12 @@ CONTAINS
          intermediate_grid%sm33y                           = c_sm3y
          intermediate_grid%em33y                           = c_em3y
 
-#if defined(SGIALTIX) && (! defined(MOVE_NESTS) )
+#if ( defined(SGIALTIX) && (! defined(MOVE_NESTS) ) ) || ( defined(FUJITSU_FX10) && (! defined(MOVE_NESTS) ) )
          ! allocate space for the intermediate domain
          CALL alloc_space_field ( intermediate_grid, intermediate_grid%id , 1, 2 , .TRUE., &   ! use same id as nest
                                c_sd1, c_ed1, c_sd2, c_ed2, c_sd3, c_ed3,       &
                                c_sm1,  c_em1,  c_sm2,  c_em2,  c_sm3,  c_em3,  &
+                               c_sp1,  c_ep1,  c_sp2,  c_ep2,  c_sp3,  c_ep3,  &
                                c_sm1x, c_em1x, c_sm2x, c_em2x, c_sm3x, c_em3x, &
                                c_sm1y, c_em1y, c_sm2y, c_em2y, c_sm3y, c_em3y, &
                                c_sm1x, c_em1x, c_sm2x, c_em2x, c_sm3x, c_em3x, &   ! x-xpose

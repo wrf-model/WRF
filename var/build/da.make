@@ -191,8 +191,8 @@ da_utils : \
            da_bias_verif.exe \
            da_rad_diags.exe
 
-da_verif_obs.exe : da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o da_verif_tools.o
-	$(SFC) $(LDFLAGS) -o $@ da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o da_verif_tools.o -L$(NETCDFPATH)/lib -lnetcdf
+da_verif_obs.exe : da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o da_verif_tools.o $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a
+	$(SFC) $(LDFLAGS) -o $@ da_verif_obs.o da_verif_obs_control.o da_verif_obs_init.o da_verif_tools.o $(LIB_EXTERNAL)
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 da_verif_grid.exe : da_verif_grid.o da_verif_grid_control.o da_netcdf_interface.o $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a

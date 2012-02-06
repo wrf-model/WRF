@@ -227,7 +227,7 @@ SUBROUTINE DUCU1D_D(i, j, u0, v0, t0, t0d, qv0, qv0d, p0, p0d, dzq, dzqd&
 !
   REAL, DIMENSION(kts:kte) :: cond, h, hs, qs, x
   REAL, DIMENSION(kts:kte) :: condd, hd, hsd, qsd, xd
-  REAL :: buoy, cape, cin, condpr, dh, dq, dt, dtm, ep, es, evap, hp, mp&
+  REAL :: buoy, cape, cin, dh, dq, dt, dtm, ep, es, evap, hp, mp&
 &  , qp, qsp, rrk, rrkp, tadp, tdp, zb, zg, zi, zt
   REAL :: dhd, dqd, dtd, esd, evapd, hpd, mpd, qpd, qspd, rrkd, rrkpd
   INTEGER :: ipos, isat, k, kb, ki, kt
@@ -303,7 +303,6 @@ loop_lift:DO k=ki+1,kte
         dt = tadp - t0(k)
         condd(k) = 0.0
         cond(k) = 0.
-        condpr = 0.
       ELSE
 !         saturated
         IF (isat .EQ. 0) THEN
@@ -423,7 +422,6 @@ loop_subsidence:DO k=kt-1,ki,-1
 loop_rainfall:DO k=kt,1,-1
               rrkd = rrkpd + condd(k)
               rrk = rrkp + cond(k)
-              condpr = condpr + cond(k)
               evapd = eps*((dzqd(k)*rrkp+dzq(k)*rrkpd)*(qs(k)-qv0(k))/&
 &                vfall+dzq(k)*rrkp*(qsd(k)-qv0d(k))/vfall)
               evap = dzq(k)*rrkp/vfall*eps*(qs(k)-qv0(k))

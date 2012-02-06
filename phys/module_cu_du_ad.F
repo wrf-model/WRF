@@ -256,7 +256,7 @@ SUBROUTINE DUCU1D_B(i, j, u0, v0, t0, t0b, qv0, qv0b, p0, p0b, dzq, dzqb&
 !
   REAL, DIMENSION(kts:kte) :: cond, h, hs, qs, x
   REAL, DIMENSION(kts:kte) :: condb, hb, hsb, qsb, xb
-  REAL :: buoy, cape, cin, condpr, dh, dq, dt, dtm, ep, es, evap, hp, mp&
+  REAL :: buoy, cape, cin, dh, dq, dt, dtm, ep, es, evap, hp, mp&
 &  , qp, qsp, rrk, rrkp, tadp, tdp, zb, zg, zi, zt
   REAL :: dhb, dqb, dtb, esb, evapb, hpb, mpb, qpb, qspb, rrkb, rrkpb
   INTEGER :: ipos, isat, k, kb, ki, kt

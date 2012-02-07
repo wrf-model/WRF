@@ -75,24 +75,18 @@ SUBROUTINE a_update_phy_ten(rph_tendf,rt_tendf,a_rt_tendf,ru_tendf,a_ru_tendf,  
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN  ) ::   &
                                                        RTHRATEN, &
                                                        RTHBLTEN, &
-                                                     a_RTHBLTEN, &
                                                        RTHCUTEN, &
-                                                     a_RTHCUTEN, &
                                                        RTHSHTEN, &
                                                         RUBLTEN, &
-                                                      a_RUBLTEN, &
                                                         RUCUTEN, &
                                                         RUSHTEN, &
                                                         RVBLTEN, &
-                                                      a_RVBLTEN, &
                                                         RVCUTEN, &
                                                         RVSHTEN, &
                                                        RQVBLTEN, &
-                                                     a_RQVBLTEN, &
                                                        RQCBLTEN, &
                                                        RQIBLTEN, &
                                                        RQVCUTEN, &
-                                                     a_RQVCUTEN, &
                                                        RQCCUTEN, &
                                                        RQRCUTEN, &
                                                        RQICUTEN, &
@@ -108,6 +102,14 @@ SUBROUTINE a_update_phy_ten(rph_tendf,rt_tendf,a_rt_tendf,ru_tendf,a_ru_tendf,  
                                                      RQVNDGDTEN, &
                                                       RUNDGDTEN, &
                                                       RVNDGDTEN
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme) ::   &
+                                                     a_RTHBLTEN, &
+                                                     a_RTHCUTEN, &
+                                                      a_RUBLTEN, &
+                                                      a_RVBLTEN, &
+                                                     a_RQVBLTEN, &
+                                                     a_RQVCUTEN
 
    REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN  ) :: RMUNDGDTEN
 
@@ -174,15 +176,17 @@ SUBROUTINE a_phy_bl_ten(config_flags,rk_step,n_moist,n_scalar,     &
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN  ) ::   & 
                                                        RTHBLTEN, &
-                                                     a_RTHBLTEN, &
                                                         RUBLTEN, &
-                                                      a_RUBLTEN, &
                                                         RVBLTEN, &
-                                                      a_RVBLTEN, &
                                                        RQVBLTEN, &
-                                                     a_RQVBLTEN, &
                                                        RQCBLTEN, &
                                                        RQIBLTEN
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme) ::   & 
+                                                     a_RTHBLTEN, &
+                                                      a_RUBLTEN, &
+                                                      a_RVBLTEN, &
+                                                     a_RQVBLTEN
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::   &
                                                        rt_tendf, &
@@ -267,13 +271,15 @@ SUBROUTINE a_phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,     &
                                                         RUCUTEN, &
                                                         RVCUTEN, &
                                                        RTHCUTEN, &
-                                                     a_RTHCUTEN, &
                                                        RQVCUTEN, &
-                                                     a_RQVCUTEN, &
                                                        RQCCUTEN, &
                                                        RQRCUTEN, &
                                                        RQICUTEN, &
                                                        RQSCUTEN
+
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme) ::   &
+                                                     a_RTHCUTEN, &
+                                                     a_RQVCUTEN
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::  &
                                                        rt_tendf, &

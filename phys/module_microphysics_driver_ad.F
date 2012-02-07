@@ -276,12 +276,18 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
 !
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                    &
          INTENT(IN   ) ::                                             &
-                                                           rho,a_rho, &
-                                                          dz8w,a_dz8w,&
-                                                            p8w,a_p8w,&
-                                                     pi_phy,a_pi_phy, &
-                                                               p,a_p
+                                                                 rho, &
+                                                                dz8w, &
+                                                                 p8w, &
+                                                              pi_phy, &
+                                                                   p
 
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                    &
+                                                               a_rho, &
+                                                              a_dz8w, &
+                                                               a_p8w, &
+                                                            a_pi_phy, &
+                                                                 a_p
 
    REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme ) ::     &
                                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY

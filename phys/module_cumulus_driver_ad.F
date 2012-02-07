@@ -288,22 +288,24 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(IN ) ::                                          &
                                                               z  &
-                                                      ,     a_z  &
                                                       ,    dz8w  &
-                                                      ,  a_dz8w  &
                                                       ,     p8w  &
                                                       ,       p  &
-                                                      ,     a_p  &
                                                       ,      pi  &
                                                       ,       u  &
                                                       ,       v  &
                                                       ,      th  &
-                                                      ,    a_th  &
                                                       ,       t  &
-                                                      ,     a_t  &
                                                       ,     rho  &
-                                                      ,   a_rho  &
                                                       ,       w  
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
+                                                      ,     a_z  &
+                                                      ,  a_dz8w  &
+                                                      ,     a_p  &
+                                                      ,    a_th  &
+                                                      ,     a_t  &
+                                                      ,   a_rho
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(IN ),OPTIONAL ::                         z_at_w  &

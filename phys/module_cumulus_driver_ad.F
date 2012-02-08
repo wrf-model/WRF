@@ -299,8 +299,8 @@ CONTAINS
                                                       ,     rho  &
                                                       ,       w  
 
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
-                                                      ,     a_z  &
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) ::               &
+                                                            a_z  &
                                                       ,  a_dz8w  &
                                                       ,     a_p  &
                                                       ,    a_th  &

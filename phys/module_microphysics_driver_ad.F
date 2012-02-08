@@ -282,7 +282,7 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
                                                               pi_phy, &
                                                                    p
 
-   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                    &
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) ::                  &
                                                                a_rho, &
                                                               a_dz8w, &
                                                                a_p8w, &

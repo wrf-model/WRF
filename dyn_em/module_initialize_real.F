@@ -4513,23 +4513,31 @@ print *,'p target= ',target_x
       REAL :: p1 , p2 , t1 , t2 , q1 , q2 , z1, z2
 
       LOGICAL :: upside_down
+      LOGICAL :: already_assigned_upside_down
 
       REAL , PARAMETER :: Rd = r_d
 
       !  Is the data upside down?
 
 
+      already_assigned_upside_down = .FALSE.
       find_valid : DO j = jts , MIN ( jde-1 , jte )
          DO i = its , MIN (ide-1 , ite )
             IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
             IF ( p_in(i,kts+1,j) .LT. p_in(i,kte,j) ) THEN
                upside_down = .TRUE.
+               already_assigned_upside_down = .TRUE.
             ELSE
                upside_down = .FALSE.
+               already_assigned_upside_down = .TRUE.
             END IF
             EXIT find_valid
          END DO
       END DO find_valid
+
+      IF ( .NOT. already_assigned_upside_down ) THEN
+         upside_down = .FALSE.
+      END IF
 
       !  Get a surface value, always the first level of a 3d field.
 

@@ -42,7 +42,7 @@ convert_nmm : convert_nmm.o
 real_nmm : real_nmm.o
 	( cd ../dyn_nmm ;  $(MAKE) module_initialize_real.o )
 	$(RANLIB) $(LIBWRFLIB)
-	$(FC) -o real_nmm.exe $(LDFLAGS) real_nmm.o ../dyn_nmm/module_initialize_real.o ../share/module_optional_input.o ../share/input_wrf.o ../share/module_io_domain.o $(LIBWRFLIB) $(LIB)
+	$(FC) -o real_nmm.exe $(LDFLAGS) real_nmm.o $(LIBWRFLIB) $(LIB)
 
 module_initialize : ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o
 	( cd ../dyn_$(SOLVER) ;  $(MAKE) module_initialize_$(IDEAL_CASE).o )

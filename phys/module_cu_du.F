@@ -238,7 +238,7 @@ CONTAINS
 !...DEFINE LOCAL VARIABLES...
 !
       REAL, DIMENSION( kts:kte ) :: cond,h,hs,qs,x
-      REAL    :: buoy,cape,cin,condpr,dh,dq,dt,dtm,ep,es, &
+      REAL    :: buoy,cape,cin,dh,dq,dt,dtm,ep,es, &
                  evap,hp,mp,qp,qsp,rrk,rrkp, &
                  tadp,tdp,zb,zg,zi,zt
       INTEGER :: ipos,isat,k,kb,ki,kt
@@ -286,7 +286,6 @@ CONTAINS
             ENDIF
             dt=tadp-t0(k)
             cond(k)=0.
-            condpr=0.
           ELSE
 !         saturated
             IF(isat.EQ.0)THEN
@@ -368,7 +367,6 @@ CONTAINS
         rrkp=0.
         loop_rainfall: DO k=kt,1,-1
           rrk=rrkp+cond(k)
-          condpr=condpr+cond(k)
           evap=dzq(k)*rrkp/Vfall*eps*(qs(k)-qv0(k))
 
 ! restrict evap to below cloud base

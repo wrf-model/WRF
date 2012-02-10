@@ -283,6 +283,33 @@
 #endif
     END IF
 
+#if (EM_CORE == 1)
+    IF ( switch .EQ. auxinput2_only ) THEN
+       ierr = 0
+       CALL wrf_get_dom_ti_integer ( fid , 'I_PARENT_START' ,    itmp , 1 , icnt , ierr3 )
+       ierr = max( ierr, ierr3 )
+       IF ( itmp .NE. config_flags%i_parent_start ) THEN
+          ierr = 1
+          WRITE(wrf_err_message,*)'i_parent_start from namelist.input file = ',config_flags%i_parent_start
+          CALL wrf_message(wrf_err_message)
+          WRITE(wrf_err_message,*)'i_parent_start from gridded input file  = ',itmp
+          CALL wrf_message(wrf_err_message)
+       END IF
+       CALL wrf_get_dom_ti_integer ( fid , 'J_PARENT_START' ,    itmp , 1 , icnt , ierr3 )
+       ierr = max( ierr, ierr3 )
+       IF ( itmp .NE. config_flags%j_parent_start ) THEN
+          ierr = 1
+          WRITE(wrf_err_message,*)'j_parent_start from namelist.input file = ',config_flags%j_parent_start
+          CALL wrf_message(wrf_err_message)
+          WRITE(wrf_err_message,*)'j_parent_start from gridded input file  = ',itmp
+          CALL wrf_message(wrf_err_message)
+       END IF
+       IF ( ierr .NE. 0 ) THEN
+          CALL wrf_error_fatal( 'Nest start locations do not match: namelist.input vs gridded input file' )
+       END IF
+    END IF
+#endif
+
     ! do the check later (see check_if_dryrun below)
 
     !  We do not want the CEN_LAT LON values from the boundary file.  For 1-way nests

@@ -69,8 +69,26 @@ SUBROUTINE shift_domain_nmm ( grid , disp_x, disp_y &
          END DO
          END DO
       END IF
-   END IF
-   IF ( disp_x < 0 ) THEN
+!
+   IF ( disp_y > 0 ) THEN
+      IF ( N_BDY ) THEN
+         DO J=min(jde-1,jpe-2),max(jde-1,jpe)
+         DO I=ips,min(ide-1,ipe)
+            grid%imask_nostag(i,j) = 0
+         END DO
+         END DO
+      ENDIF
+   ELSEIF ( disp_y < 0 ) THEN
+      IF ( S_BDY ) THEN
+         DO J=jps,jps+1
+         DO I=ips,min(ide-1,ipe)
+            grid%imask_nostag(i,j) = 0
+         END DO
+         END DO
+      ENDIF
+   ENDIF      !disp_y
+!      
+   ELSEIF ( disp_x < 0 ) THEN
       IF ( W_BDY ) THEN 
          DO J=jps,min(jde-1,jpe)
          DO I=ips+1,min(ide-1,ipe)
@@ -84,7 +102,27 @@ SUBROUTINE shift_domain_nmm ( grid , disp_x, disp_y &
          END DO
          END DO
       END IF
-   END IF
+!
+   IF ( disp_y > 0 ) THEN
+      IF ( N_BDY ) THEN
+         DO J=min(jde-1,jpe-2),max(jde-1,jpe)
+         DO I=ips,min(ide-1,ipe)
+            grid%imask_nostag(i,j) = 0
+         END DO
+         END DO
+      ENDIF
+   ELSEIF ( disp_y < 0 ) THEN
+      IF ( S_BDY ) THEN
+         DO J=jps,jps+1
+         DO I=ips,min(ide-1,ipe)
+            grid%imask_nostag(i,j) = 0
+         END DO
+         END DO
+      ENDIF
+   ENDIF      !disp_y
+!      
+   ELSE                            ! disp_x = 0
+!
    IF ( disp_y > 0 ) THEN
       IF ( N_BDY ) THEN 
          DO J=jps,min(jde-1,jpe-3)
@@ -115,6 +153,10 @@ SUBROUTINE shift_domain_nmm ( grid , disp_x, disp_y &
          END DO
       END IF
    END IF
+!
+   END IF
+!
+
 #else
     grid%imask_nostag(ips:min(ide-4,ipe),jps:min(jde-1,jpe)) = 1
 !   grid%imask_nostag(ips+1:min(ide-2,ipe),jps+1:min(jde-2,jpe)) = 1

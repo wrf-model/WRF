@@ -460,7 +460,7 @@
             KFLIP=KTE+1-K
             Q2K(KFLIP)=AMAX1(Q2K(KFLIP),EPSQ2)
             TKE_MYJ(I,K,J)=0.5*Q2K(KFLIP)
-            IF(K<KTE)EL_MYJ(I,K,J)=EL(KFLIP)   ! EL IS NOT DEFINED AT KTE (ground surface)
+            IF(KFLIP<KTE)EL_MYJ(I,K,J)=EL(KFLIP)   ! EL IS NOT DEFINED AT KTE (ground surface)
           ENDDO
 !
         ENDDO

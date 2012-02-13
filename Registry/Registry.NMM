@@ -587,6 +587,7 @@ state   real    dfi_qi         ijkft   dfi_moist       1         -     r      "Q
 state   real    dfi_qs         ijkft   dfi_moist       1         -     r      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    dfi_qg         ijkft   dfi_moist       1         -     r      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 state   real    dfi_qh         ijkft   dfi_moist       1         -     r      "QHAIL"             "Hail mixing ratio"              "kg kg-1"
+state   real    dfi_qnh        ijkft   dfi_moist       1         -     r      "QNHAIL"           "Hail Number concentration"        "# kg(-1)"   
 
 #                                               
 # Other Scalars
@@ -617,8 +618,6 @@ state   real    dfi_qnn        ijkftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNCC"      "CNN Number concentration"   "# kg(-1)"
 state   real    dfi_qnc        ijkftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNCLOUD"   "Cloud Number concentration" "# kg(-1)"
-state   real    dfi_qnh        ijkftb  dfi_scalar      1         -     \
-   rusdf=(bdy_interp:dt)    "DFI_QNHAIL"    "Hail Number concentration"  "# kg(-1)"   
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 

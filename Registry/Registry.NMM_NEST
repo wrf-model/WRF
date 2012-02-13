@@ -214,9 +214,9 @@ rconfig   logical analysis               namelist,time_control    max_domains   
 
 state  real   PSTD      k      dyn_nmm     1      Z      r
 state  integer KZMAX    -      dyn_nmm     -      -      r
-state  real   Z3D       ijkb   dyn_nmm     1      Z      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "Z3D" "HEIGHT ARRAY FIELD VALID FOR PARENT ONLY"
-state  real   T3D       ijkb   dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "T3D" "TEMPERATURE ARRAY ON STANDARD PRESSURE LEVELS"
-state  real   Q3D       ijkb   dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "Q3D" "SP HUMIDITY ARRAY ON STANDARD PRESSURE LEVELS"
+state  real   Z3D       ijk    dyn_nmm     1      Z      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "Z3D" "HEIGHT ARRAY FIELD VALID FOR PARENT ONLY"
+state  real   T3D       ijk    dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "T3D" "TEMPERATURE ARRAY ON STANDARD PRESSURE LEVELS"
+state  real   Q3D       ijk    dyn_nmm     1      -      rd=(nmm_copy:IIH,JJH)f=(nmm_copy:IIH,JJH) "Q3D" "SP HUMIDITY ARRAY ON STANDARD PRESSURE LEVELS"
 #end of HWRF: 
 
 state  real HRES_FIS    ij     dyn_nmm     1      -      r  "HRES_FIS" "HIGH RESOLUTION TERRAIN DATA FOR NESTED DOMAIN"
@@ -669,6 +669,7 @@ state   real    dfi_qi         ijkft   dfi_moist       1         -     r      "Q
 state   real    dfi_qs         ijkft   dfi_moist       1         -     r      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    dfi_qg         ijkft   dfi_moist       1         -     r      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 state   real    dfi_qh         ijkft   dfi_moist       1         -     r      "QHAIL"             "Hail mixing ratio"              "kg kg-1"
+state   real    dfi_qnh        ijkft   dfi_moist       1         -     r      "QNHAIL"           "Hail Number concentration"        "# kg(-1)"
 
 
 #                                               
@@ -700,8 +701,6 @@ state   real    dfi_qnn        ijkftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNCC"      "CNN Number concentration"   "# kg(-1)"
 state   real    dfi_qnc        ijkftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNCLOUD"   "Cloud Number concentration" "# kg(-1)"
-state   real    dfi_qnh        ijkftb  dfi_scalar      1         -     \
-   rusdf=(bdy_interp:dt)    "DFI_QNHAIL"    "Hail Number concentration"  "# kg(-1)"   
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 

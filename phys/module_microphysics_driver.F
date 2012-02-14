@@ -54,7 +54,7 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
                     ,WSM6SCHEME, ETAMPNEW, ETAMPOLD, etamp_HWRF,THOMPSON, MORR_TWO_MOMENT     &
-                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME &
+                    ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, MP_HWRF_ADVECT &
                     ,MILBRANDT2MOM !,MILBRANDT3MOM 
 #else
    USE module_state_description, ONLY :                                  &
@@ -89,7 +89,7 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_nssl_2mom
 #endif
 
-   USE module_mp_HWRF
+   USE module_mp_HWRF, only: ETAMP_NEW_HWRF,ETAMP_NEW_HWRF_advect
    USE module_mixactivate, only: prescribe_aerosol_mixactivate
 
 !----------------------------------------------------------------------
@@ -1106,6 +1106,32 @@ SUBROUTINE microphysics_driver(                                          &
                  ,F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY         &
                  ,F_RIMEF_PHY=F_RIMEF_PHY                           &
                  ,QC=qc_curr,QR=Qr_curr,QI=Qi_curr                  &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling etampnew' )
+             ENDIF
+        CASE (MP_HWRF_ADVECT)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling etampnew_HWRF_advect')
+
+             IF ( PRESENT( qv_curr ) .AND. PRESENT( qt_curr ) .AND. &
+                  PRESENT( qi_curr ) .AND. PRESENT( qni_curr ) .AND. &
+                  PRESENT( qc_curr ) .AND. PRESENT( qc_curr ) .AND. &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                  PRESENT( mp_restart_state )                  .AND. &
+                  PRESENT( tbpvs_state )                      .AND. &
+                  PRESENT( tbpvs0_state )                       ) THEN
+
+               CALL ETAMP_NEW_HWRF_advect(                                      &
+                  ITIMESTEP=itimestep,DT=dt,DX=dx,DY=dy, GID=id &
+                 ,RAINNC=rainnc,RAINNCV=rainncv                     &
+                 ,DZ8W=dz8w,RHO_PHY=rho,P_PHY=p,PI_PHY=pi_phy,TH_PHY=th &
+                 ,QV=qv_curr                                        &
+                 ,QT=qt_curr                                        &
+                 ,LOWLYR=LOWLYR,SR=SR                               &
+                 ,QC=qc_curr,QR=Qr_curr,QI=Qi_curr,QNI=Qni_curr     &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &

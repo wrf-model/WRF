@@ -7,6 +7,7 @@ MODULE module_mp_HWRF
 !       operational WRF NMM model code (search for "!HWRF")
 !   (2) Incorporated code changes from the GFDL model (search for "!GFDL")
 !-----------------------------------------------------------------------
+
       REAL,PRIVATE,SAVE ::  ABFR, CBFR, CIACW, CIACR, C_N0r0,           &
      &  CN0r0, CN0r_DMRmin, CN0r_DMRmax, CRACW, CRAUT, ESW0,            &
      &  RFmax, RQR_DR1, RQR_DR2, RQR_DR3, RQR_DRmin,                    &
@@ -51,7 +52,6 @@ MODULE module_mp_HWRF
      &  ,DMR1=.1E-3, DMR2=.2E-3, DMR3=.32E-3                            &
      &  ,XMR1=1.e6*DMR1, XMR2=1.e6*DMR2, XMR3=1.e6*DMR3
       INTEGER, PARAMETER :: MDR1=XMR1, MDR2=XMR2, MDR3=XMR3
-        REAL:: WC
 !
 ! ======================================================================
 !--- Important tunable parameters that are exported to other modules
@@ -91,6 +91,14 @@ MODULE module_mp_HWRF
 !HWRF     & ,NCW=100.E6                                                 &
      & ,FLARGE1=1.                                                      &
      & ,FLARGE2=.2
+
+      ! QNI_norime: ice number concentration when f_rimef=1.  This is in
+      ! units of (number of ice crystals)/(kg of pure ice)
+      ! The actual value does not matter.  It is just used to pass
+      ! QNI=QNI_norime/F_rimef back and forth between the dynamics and
+      ! physics.
+      REAL, PUBLIC, PARAMETER :: QNI_norime = 1.0e5 ! (number of ice crystals)/(kg of pure ice crystals)
+
 !      LOGICAL, PARAMETER :: PRINT_diag=.FALSE.  !GFDL
       LOGICAL, PARAMETER :: PRINT_err=.TRUE.    !GFDL** => eventually set this to .false.
 !--- Other public variables passed to other routines:
@@ -102,6 +110,282 @@ MODULE module_mp_HWRF
 
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
+!  SPECIES ADVECTION VERSION OF HWRF/Ferrier SCHEME
+!  Added by Sam Trahan, January 2012.
+!    When using this version of the scheme, F_ice, F_rimef and F_rain
+!    do not exist outside of subroutine ETAMP_NEW_HWRF_advect.  Instead,
+!    the dynamics uses QC, QR, QI and QNI.  Internally, within 
+!    ETAMP_NEW_HWRF_advect, the F_* variables are recalculated
+!    as local temporary arrays and the final result is translated back
+!    into QC, QR, QI and QNI.
+!
+!    Storage of F_rimef is handled like this:
+!
+!      F_rimef=QNI_norime/QNI
+!
+!      ... microphysics timestep happens ...
+!
+!      QNI=QNI_norime/F_rimef
+!
+!    treating the HWRF/Ferrier scheme as a dual-moment ice scheme.  The
+!    resulting value of QNI isn't quite right since, internally, this 
+!    scheme's ice number concentration isn't as simple as that.  However,
+!    this should be sufficient for the purposes of advection since the
+!    temperature and moisture are advected along with the microphysics.
+
+      SUBROUTINE ETAMP_NEW_HWRF_advect (itimestep,DT,DX,DY,GID,       &
+     &                      RAINNC,RAINNCV,dz8w,                      &
+     &                      rho_phy,p_phy,pi_phy,th_phy,qv,qt,        &
+     &                      LOWLYR,SR,                                &
+     &                      QC,QR,QI,QNI,                             &
+     &                      ids,ide, jds,jde, kds,kde,                &
+     &                      ims,ime, jms,jme, kms,kme,                &
+     &                      its,ite, jts,jte, kts,kte                 )
+!-----------------------------------------------------------------------
+      IMPLICIT NONE
+!-----------------------------------------------------------------------
+      INTEGER, PARAMETER :: ITLO=-60, ITHI=40
+
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                     &
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
+     &                     ,ITIMESTEP,GID  ! GID gopal's doing
+
+      REAL, INTENT(IN) 	    :: DT,DX,DY
+      REAL, INTENT(IN),     DIMENSION(ims:ime, kms:kme, jms:jme)::      &
+     &                      dz8w,p_phy,pi_phy,rho_phy
+      REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme)::      &
+     &                      th_phy,qv,qt,qc,qr,qi,qni
+      REAL, INTENT(INOUT),  DIMENSION(ims:ime,jms:jme)           ::     &
+     &                                                   RAINNC,RAINNCV
+      REAL, INTENT(OUT),    DIMENSION(ims:ime,jms:jme):: SR
+!
+!HWRF      REAL,DIMENSION(*),INTENT(INOUT) :: MP_RESTART_STATE
+!
+!HWRF      REAL,DIMENSION(nx),INTENT(INOUT) :: TBPVS_STATE,TBPVS0_STATE
+!
+      INTEGER, DIMENSION( ims:ime, jms:jme ),INTENT(INOUT) :: LOWLYR
+
+!-----------------------------------------------------------------------
+!     LOCAL VARS
+!-----------------------------------------------------------------------
+
+! In advected version of HWRF/Ferrier scheme, F_ICE, F_RIMEF and F_RAIN
+! are all local variables.  Dynamics receives QI, QNI, QR and QC instead.
+      REAL,                 DIMENSION(ims:ime, kms:kme, jms:jme ) ::    &
+     &                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
+
+!     NSTATS,QMAX,QTOT are diagnostic vars
+
+      INTEGER,DIMENSION(ITLO:ITHI,4) :: NSTATS
+      REAL,   DIMENSION(ITLO:ITHI,5) :: QMAX
+      REAL,   DIMENSION(ITLO:ITHI,22):: QTOT
+
+!     SOME VARS WILL BE USED FOR DATA ASSIMILATION (DON'T NEED THEM NOW). 
+!     THEY ARE TREATED AS LOCAL VARS, BUT WILL BECOME STATE VARS IN THE 
+!     FUTURE. SO, WE DECLARED THEM AS MEMORY SIZES FOR THE FUTURE USE
+
+!     TLATGS_PHY,TRAIN_PHY,APREC,PREC,ACPREC,SR are not directly related 
+!     the microphysics scheme. Instead, they will be used by Eta precip 
+!     assimilation.
+
+      REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ) ::                  &
+     &       TLATGS_PHY,TRAIN_PHY
+      REAL,  DIMENSION(ims:ime,jms:jme):: APREC,PREC,ACPREC
+      REAL,  DIMENSION(its:ite, kts:kte, jts:jte):: t_phy
+
+      INTEGER :: I,J,K,KFLIP
+      REAL:: WC
+!
+!-----------------------------------------------------------------------
+!**********************************************************************
+!-----------------------------------------------------------------------
+!
+!HWRF      MY_GROWTH(MY_T1:MY_T2)=MP_RESTART_STATE(MY_T1:MY_T2)
+!HWRF!
+!HWRF      C1XPVS0=MP_RESTART_STATE(MY_T2+1)
+!HWRF      C2XPVS0=MP_RESTART_STATE(MY_T2+2)
+!HWRF      C1XPVS =MP_RESTART_STATE(MY_T2+3)
+!HWRF      C2XPVS =MP_RESTART_STATE(MY_T2+4)
+!HWRF      CIACW  =MP_RESTART_STATE(MY_T2+5)
+!HWRF      CIACR  =MP_RESTART_STATE(MY_T2+6)
+!HWRF      CRACW  =MP_RESTART_STATE(MY_T2+7)
+!HWRF      CRAUT  =MP_RESTART_STATE(MY_T2+8)
+!HWRF!
+!HWRF      TBPVS(1:NX) =TBPVS_STATE(1:NX)
+!HWRF      TBPVS0(1:NX)=TBPVS0_STATE(1:NX)
+!
+      DO j = jts,jte
+      DO k = kts,kte
+      DO i = its,ite
+        t_phy(i,k,j) = th_phy(i,k,j)*pi_phy(i,k,j)
+        qv(i,k,j)=qv(i,k,j)/(1.+qv(i,k,j)) !Convert to specific humidity
+      ENDDO
+      ENDDO
+      ENDDO
+
+!     initial diagnostic variables and data assimilation vars
+!     (will need to delete this part in the future)
+
+      DO k = 1,4
+      DO i = ITLO,ITHI
+         NSTATS(i,k)=0. 
+      ENDDO
+      ENDDO
+
+      DO k = 1,5
+      DO i = ITLO,ITHI
+         QMAX(i,k)=0.
+      ENDDO
+      ENDDO
+
+      DO k = 1,22
+      DO i = ITLO,ITHI
+         QTOT(i,k)=0.
+      ENDDO
+      ENDDO
+
+! initial data assimilation vars (will need to delete this part in the future)
+
+      DO j = jts,jte
+      DO k = kts,kte
+      DO i = its,ite
+	 TLATGS_PHY (i,k,j)=0.
+	 TRAIN_PHY  (i,k,j)=0.
+      ENDDO
+      ENDDO
+      ENDDO
+
+      DO j = jts,jte
+      DO i = its,ite
+         ACPREC(i,j)=0.
+         APREC (i,j)=0.
+         PREC  (i,j)=0.
+         SR    (i,j)=0.
+      ENDDO
+      ENDDO
+
+! Update QT, calculate F_ice, F_rain arrays
+      DO j = jts,jte
+      DO k = kts,kte
+      DO i = its,ite
+         QT(I,K,J)=QC(I,K,J)+QR(I,K,J)+QI(I,K,J)
+         IF (QI(I,K,J) <= EPSQ) THEN
+            F_ICE_PHY(I,K,J)=0.
+            IF (T_PHY(I,K,J) < T_ICEK) F_ICE_PHY(I,K,J)=1.
+         ELSE
+            F_ICE_PHY(I,K,J)=MAX( 0., MIN(1., QI(I,K,J)/QT(I,K,J) ) )
+         ENDIF
+         IF (QR(I,K,J) <= EPSQ) THEN
+            F_RAIN_PHY(I,K,J)=0.
+         ELSE
+            F_RAIN_PHY(I,K,J)=QR(I,K,J)/(QR(I,K,J)+QC(I,K,J))
+         ENDIF
+      ENDDO
+      ENDDO
+      ENDDO
+
+! Calculate F_rimef
+
+      DO j = jts,jte
+      DO k = kts,kte
+      DO i = its,ite
+         if(QI(i,k,j)<=0.0 .or. QNI(i,k,j)<=0.0 .or. QNI(i,k,j)>QNI_norime) then
+            F_rimef_phy(i,k,j)=1.0
+         else
+            F_rimef_phy(i,k,j)=QNI_norime/QNI(i,k,j)
+         endif
+      ENDDO
+      ENDDO
+      ENDDO
+
+!-----------------------------------------------------------------------
+
+      CALL EGCP01DRV(GID,DT,LOWLYR,                                     &
+     &               APREC,PREC,ACPREC,SR,NSTATS,QMAX,QTOT,	        &
+     &               dz8w,rho_phy,qt,t_phy,qv,F_ICE_PHY,P_PHY,          &
+     &               F_RAIN_PHY,F_RIMEF_PHY,TLATGS_PHY,TRAIN_PHY,       &
+     &               ids,ide, jds,jde, kds,kde,		                &
+     &               ims,ime, jms,jme, kms,kme,		                &
+     &               its,ite, jts,jte, kts,kte		          )
+!-----------------------------------------------------------------------
+
+! Recalculate QR, QC, QI:
+     DO j = jts,jte
+        DO k = kts,kte
+	DO i = its,ite
+  	   th_phy(i,k,j) = t_phy(i,k,j)/pi_phy(i,k,j)
+           qv(i,k,j)=qv(i,k,j)/(1.-qv(i,k,j))  !Convert to mixing ratio
+           WC=qt(I,K,J)
+           QI(I,K,J)=0.
+           QR(I,K,J)=0.
+           QC(I,K,J)=0.
+           IF(F_ICE_PHY(I,K,J)>=1.)THEN
+             QI(I,K,J)=WC
+           ELSEIF(F_ICE_PHY(I,K,J)<=0.)THEN
+             QC(I,K,J)=WC
+           ELSE
+             QI(I,K,J)=F_ICE_PHY(I,K,J)*WC
+             QC(I,K,J)=WC-QI(I,K,J)
+           ENDIF
+!
+           IF(QC(I,K,J)>0..AND.F_RAIN_PHY(I,K,J)>0.)THEN
+             IF(F_RAIN_PHY(I,K,J).GE.1.)THEN
+               QR(I,K,J)=QC(I,K,J)
+               QC(I,K,J)=0.
+             ELSE
+               QR(I,K,J)=F_RAIN_PHY(I,K,J)*QC(I,K,J)
+               QC(I,K,J)=QC(I,K,J)-QR(I,K,J)
+             ENDIF
+          endif
+	ENDDO
+        ENDDO
+     ENDDO
+
+! Recalculate QNI:
+
+      DO j = jts,jte
+      DO k = kts,kte
+      DO i = its,ite
+         if(F_rimef_phy(i,k,j)<=1.0) then
+            QNI(i,k,j)=QNI_norime
+         else
+            QNI(i,k,j)=QNI_norime/F_rimef_phy(i,k,j)
+         endif
+      ENDDO
+      ENDDO
+      ENDDO
+
+! 
+! update rain (from m to mm)
+
+       DO j=jts,jte
+       DO i=its,ite
+          RAINNC(i,j)=APREC(i,j)*1000.+RAINNC(i,j)
+          RAINNCV(i,j)=APREC(i,j)*1000.
+       ENDDO
+       ENDDO
+!
+!HWRF     MP_RESTART_STATE(MY_T1:MY_T2)=MY_GROWTH(MY_T1:MY_T2)
+!HWRF     MP_RESTART_STATE(MY_T2+1)=C1XPVS0
+!HWRF     MP_RESTART_STATE(MY_T2+2)=C2XPVS0
+!HWRF     MP_RESTART_STATE(MY_T2+3)=C1XPVS
+!HWRF     MP_RESTART_STATE(MY_T2+4)=C2XPVS
+!HWRF     MP_RESTART_STATE(MY_T2+5)=CIACW
+!HWRF     MP_RESTART_STATE(MY_T2+6)=CIACR
+!HWRF     MP_RESTART_STATE(MY_T2+7)=CRACW
+!HWRF     MP_RESTART_STATE(MY_T2+8)=CRAUT
+!HWRF!
+!HWRF     TBPVS_STATE(1:NX) =TBPVS(1:NX)
+!HWRF     TBPVS0_STATE(1:NX)=TBPVS0(1:NX)
+
+!-----------------------------------------------------------------------
+
+     END SUBROUTINE ETAMP_NEW_HWRF_advect
+
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+
       SUBROUTINE ETAMP_NEW_HWRF (itimestep,DT,DX,DY,GID,RAINNC,RAINNCV,    & !GID
      &                      dz8w,rho_phy,p_phy,pi_phy,th_phy,qv,qt,   & !gopal's doing
      &                      LOWLYR,SR,                                &
@@ -110,15 +394,6 @@ MODULE module_mp_HWRF
      &                      ids,ide, jds,jde, kds,kde,                &
      &                      ims,ime, jms,jme, kms,kme,                &
      &                      its,ite, jts,jte, kts,kte                 )
-!HWRF      SUBROUTINE ETAMP_NEW (itimestep,DT,DX,DY,                         &
-!HWRF     &                      dz8w,rho_phy,p_phy,pi_phy,th_phy,qv,qc,     &
-!HWRF     &                      LOWLYR,SR,                                  &
-!HWRF     &                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           &
-!HWRF     &                      mp_restart_state,tbpvs_state,tbpvs0_state,  &
-!HWRF     &                      RAINNC,RAINNCV,                             &
-!HWRF     &                      ids,ide, jds,jde, kds,kde,		        &
-!HWRF     &                      ims,ime, jms,jme, kms,kme,		        &
-!HWRF     &                      its,ite, jts,jte, kts,kte )
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------------------
@@ -170,6 +445,7 @@ MODULE module_mp_HWRF
       REAL,  DIMENSION(its:ite, kts:kte, jts:jte):: t_phy
 
       INTEGER :: I,J,K,KFLIP
+      REAL :: WC
 !
 !-----------------------------------------------------------------------
 !**********************************************************************
@@ -2073,12 +2349,13 @@ nsteps = 0
 
 !-----------------------------------------------------------------------
       SUBROUTINE etanewinit_HWRF (GSMDT,DT,DELX,DELY,LOWLYR,restart,         &
-     &   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,                              &
 !HWRF     &   MP_RESTART_STATE,TBPVS_STATE,TBPVS0_STATE,                     &
      &   ALLOWED_TO_READ,                                               &
      &   IDS,IDE,JDS,JDE,KDS,KDE,                                       &
      &   IMS,IME,JMS,JME,KMS,KME,                                       &
-     &   ITS,ITE,JTS,JTE,KTS,KTE                                       )
+     &   ITS,ITE,JTS,JTE,KTS,KTE,                                       &
+     &   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY                               &
+                                       )
 !-----------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 !---  SUBPROGRAM DOCUMENTATION BLOCK
@@ -2164,7 +2441,7 @@ nsteps = 0
       real, INTENT(IN) ::  DELX,DELY
 !HWRF      real,DIMENSION(*), INTENT(INOUT) :: MP_RESTART_STATE
 !HWRF      real,DIMENSION(NX), INTENT(INOUT) :: TBPVS_STATE,TBPVS0_STATE
-      real,DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(OUT) ::          &
+      real,DIMENSION(ims:ime, kms:kme, jms:jme),OPTIONAL,INTENT(OUT) ::          &
      &  F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
       INTEGER, PARAMETER :: ITLO=-60, ITHI=40
 !     integer,DIMENSION(ITLO:ITHI,4),INTENT(INOUT) :: NSTATS
@@ -2197,7 +2474,8 @@ nsteps = 0
       ENDDO
 !    
       IF(.NOT.RESTART .AND. ALLOWED_TO_READ) THEN    !HWRF
-        CALL wrf_debug(1,'WARNING: F_ICE_PHY,F_RAIN_PHY AND F_RIMEF_PHY IS REINITIALIZED')   !HWRF
+       CALL wrf_debug(1,'WARNING: F_ICE_PHY,F_RAIN_PHY AND F_RIMEF_PHY IS REINITIALIZED')   !HWRF
+       if(present(F_ICE_PHY)) then
         DO J = jts,jte
         DO K = kts,kte
         DO I= its,ite
@@ -2207,6 +2485,7 @@ nsteps = 0
         ENDDO
         ENDDO
         ENDDO
+       endif
       ENDIF
 !    
 !-----------------------------------------------------------------------

@@ -40,8 +40,9 @@
      &                ,PD,T,Q,Q2,CWM,PINT                               &
      &                ,MOIST,N_MOIST,SCALAR,N_SCALAR                    &
 #ifdef WRF_CHEM
-     &                ,CHEM,NUMG,CONFIG_FLAGS                           &
+     &                ,CHEM,NUMG                                        &
 #endif
+     &                ,CONFIG_FLAGS                                     &
      &                ,SPEC_BDY_WIDTH,Z                                 &  
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
@@ -99,9 +100,12 @@
 !$$$  
 !***********************************************************************
 !-----------------------------------------------------------------------
+    USE MODULE_MP_HWRF, only: QNI_norime
+    USE MODULE_STATE_DESCRIPTION, only: mp_hwrf_advect
 #ifdef WRF_CHEM
     USE MODULE_INPUT_CHEM_DATA
 #endif
+    USE MODULE_CONFIGURE, only: grid_config_rec_type
 !-----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -181,8 +185,8 @@
 #ifdef WRF_CHEM
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,NUM_CHEM)                  &
      &                                            ,INTENT(INOUT) :: CHEM
-      TYPE(GRID_CONFIG_REC_TYPE),INTENT(IN) :: CONFIG_FLAGS
 #endif
+      TYPE(GRID_CONFIG_REC_TYPE),INTENT(IN) :: CONFIG_FLAGS
 !
 !-----------------------------------------------------------------------
 !
@@ -327,6 +331,15 @@
             ENDIF
           ENDDO
           DO I_M=2,N_SCALAR
+           if(I_M==P_QI .and. config_flags%mp_physics==mp_hwrf_advect) then
+!$omp parallel do                                                       &
+!$omp& private(i,k)
+            DO K=KTS,KTE
+            DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
+              SCALAR(I,JJ,K,I_M)=QNI_norime
+            ENDDO
+            ENDDO
+           else
 !$omp parallel do                                                       &
 !$omp& private(i,k)
             DO K=KTS,KTE
@@ -334,6 +347,7 @@
               SCALAR(I,JJ,K,I_M)=0.
             ENDDO
             ENDDO
+           endif
           ENDDO
 #ifdef WRF_CHEM
 !$omp parallel do                                                       &
@@ -468,6 +482,17 @@
           ENDDO
 !
           DO I_M=2,N_SCALAR
+           IF(I_M==P_QI .and. config_flags%mp_physics==mp_hwrf_advect) then
+!$omp parallel do                                                       &
+!$omp& private(j,k)
+            DO K=KTS,KTE
+            DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
+              IF(MOD(J,2)==1)THEN
+                SCALAR(II,J,K,I_M)=QNI_norime
+              ENDIF
+            ENDDO
+            ENDDO
+           else
 !$omp parallel do                                                       &
 !$omp& private(j,k)
             DO K=KTS,KTE
@@ -477,6 +502,7 @@
               ENDIF
             ENDDO
             ENDDO
+           endif
           ENDDO
 !
 #ifdef WRF_CHEM

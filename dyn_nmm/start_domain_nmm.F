@@ -2118,9 +2118,9 @@
 #ifdef HWRF
       IF (.NOT. RESTRT .and. ALLOWED_TO_READ) THEN   !zhang
         moist = 0.0
-        grid%f_ice = grid%f_ice_phy
-        grid%f_rimef = grid%f_rimef_phy
-        grid%f_rain = grid%f_rain_phy
+        if(in_use_for_config(grid%id,'F_ICE')) grid%f_ice = grid%f_ice_phy
+        if(in_use_for_config(grid%id,'F_RIMEF')) grid%f_rimef = grid%f_rimef_phy
+        if(in_use_for_config(grid%id,'F_RAIN')) grid%f_rain = grid%f_rain_phy
       ENDIF                  !zhang
 #endif
 
@@ -2142,7 +2142,7 @@
 ! array (if any hydrometeors found and non-zero from initialization     
 ! package).  Then, determine fractions ice and rain from species.       
      
-        IF (.not. (MAXVAL(grid%cwm).gt.0. .and. MAXVAL(grid%cwm).lt.1.) ) then    
+        havecwm: IF (.not. (MAXVAL(grid%cwm).gt.0. .and. MAXVAL(grid%cwm).lt.1.) ) then    
           do i_m = 2, num_moist
           if (i_m.ne.p_qv) &
      &       CALL wrf_message(' summing moist(:,:,:,i_m) into cwm array')
@@ -2157,7 +2157,8 @@
           enddo
           enddo
 
-          IF (.not. ( (maxval(grid%f_ice)+maxval(grid%f_rain)) .gt. EPSQ) ) THEN
+          fice_in_use: if(in_use_for_config(grid%id,'F_ICE')) THEN
+          have_fice_frain: IF (.not. ( (maxval(grid%f_ice)+maxval(grid%f_rain)) .gt. EPSQ) ) THEN
             ETAMP_Regional=.FALSE.    !-- Regional NAM or HRW (Ferrier) microphysics
             if (model_config_rec%mp_physics(grid%id).EQ.ETAMPOLD .OR.          &
      &          model_config_rec%mp_physics(grid%id).EQ.ETAMPNEW )             &
@@ -2203,10 +2204,12 @@
             enddo
             enddo
             enddo
-          ENDIF
-        ENDIF
+          ENDIF have_fice_frain
+          ENDIF fice_in_use
+       ENDIF havecwm
 ! End addition by Greg Thompson
 
+       fice_in_use2: if(in_use_for_config(grid%id,'F_ICE')) then
         IF (maxval(grid%f_ice) .gt. 0.) THEN
          do J=JMS,JME
          do K=KMS,KME
@@ -2236,6 +2239,7 @@
           enddo
           enddo
         ENDIF
+       endif fice_in_use2
       ENDIF
 !
       IF (.NOT. RESTRT) THEN

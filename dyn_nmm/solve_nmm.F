@@ -304,6 +304,7 @@
      &    CONFIG_FLAGS%MP_PHYSICS == ETAMPOLD .OR.                 &
      &    CONFIG_FLAGS%MP_PHYSICS == ETAMP_HWRF ) THEN
 !
+!        NOTE: do NOT include mp_hwrf_advect here.
          ETAMP_PHYSICS=.TRUE.
 !
       ENDIF
@@ -1004,6 +1005,14 @@
             DO J=MYJS,MYJE
               DO I=MYIS,MYIE
                 MOIST(I,J,K,P_QV)=grid%q(I,J,K)/(1.-grid%q(I,J,K))
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDIF
+        IF(.NOT.OPERATIONAL_PHYSICS .and. ETAMP_PHYSICS)THEN
+          DO K=KTS,KTE
+            DO J=MYJS,MYJE
+              DO I=MYIS,MYIE
                 WC = grid%cwm(I,J,K)
                 QI = 0.
                 QR = 0.
@@ -1357,6 +1366,9 @@
         had2_micro_check: IF (ETAMP_PHYSICS) THEN
 !-----------------------------------------------------------------------
 !
+          !NOTE: we don't get here in mp_hwrf_advect
+          ! This just handles the ETAMP_PHYSICS variants that do not
+          ! advect microphysics species.
           CALL HAD2(                                                   &
 #if defined(DM_PARALLEL)
      &              GRID%DOMDESC,                                      &
@@ -1380,7 +1392,7 @@
 !***  UPDATED HERE FROM grid%q EVERY ADVECTION TIMESTEP FOR NON-OPERATIONAL
 !***  CONFIGURATIONS WHERE IT MAY BE USED OUTSIDE OF THE PHYSICS.
 !
-          IF(.NOT.OPERATIONAL_PHYSICS)THEN
+          IF(.NOT.OPERATIONAL_PHYSICS .and. ETAMP_PHYSICS)THEN
             DO K=KTS,KTE
             DO J=MYJS,MYJE
             DO I=MYIS,MYIE
@@ -2088,7 +2100,7 @@
       btimx=timef()
 !
       CALL BOCOH(GRID%ID,grid%ntsd,GRID%DT,NEST,NUNIT_NBC,NBOCO,LAST_TIME,TSPH &
-     &          ,LB,grid%eta1,grid%eta2,grid%pdtop,grid%pt,grid%res                              &
+     &          ,LB,grid%eta1,grid%eta2,grid%pdtop,grid%pt,grid%res     &
      &          ,grid%PD_BXS,grid%PD_BXE,grid%PD_BYS,grid%PD_BYE,grid%T_BXS,grid%T_BXE,grid%T_BYS,grid%T_BYE    &
      &          ,grid%Q_BXS,grid%Q_BXE,grid%Q_BYS,grid%Q_BYE,grid%U_BXS,grid%U_BXE,grid%U_BYS,grid%U_BYE,grid%V_BXS  &
      &          ,grid%V_BXE,grid%V_BYS,grid%V_BYE,grid%Q2_BXS,grid%Q2_BXE,grid%Q2_BYS,grid%Q2_BYE,grid%CWM_BXS  &
@@ -2099,10 +2111,11 @@
      &          ,grid%CWM_BTXS,grid%CWM_BTXE,grid%CWM_BTYS,grid%CWM_BTYE,grid%pd,grid%t,grid%q,grid%q2,grid%cwm,grid%pint &
      &          ,MOIST,N_MOIST,SCALAR,NUM_SCALAR                        &
 #ifdef WRF_CHEM
-     &          ,CHEM,NUMGAS,CONFIG_FLAGS                               &
+     &          ,CHEM,NUMGAS                                            &
 #endif
-     &          ,GRID%SPEC_BDY_WIDTH,grid%z                                  &
-     &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                        &
+     &          ,CONFIG_FLAGS                                           &
+     &          ,GRID%SPEC_BDY_WIDTH,grid%z                             &
+     &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                    &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                                &
      &          ,IMS,IME,JMS,JME,KMS,KME                                &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)

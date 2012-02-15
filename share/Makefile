@@ -165,7 +165,8 @@ init_modules.o: ../frame/module_configure.o ../frame/module_driver_constants.o \
 		../frame/module_tiles.o ../frame/module_io.o \
 		../frame/module_io_quilt.o ../frame/module_dm.o \
 		../external/io_int/io_int.o \
-		 module_io_wrf.o module_bc.o module_model_constants.o 
+		 module_io_wrf.o module_bc.o module_model_constants.o  \
+		../frame/module_wrf_error.o
 
 interp_fcn.o: ../frame/module_timing.o ../frame/module_state_description.o ../frame/module_configure.o \
 		../frame/module_wrf_error.o

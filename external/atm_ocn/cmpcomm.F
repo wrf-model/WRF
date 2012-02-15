@@ -561,7 +561,7 @@
       call MPI_SEND(F,N,MPI_INTEGER,Coupler_rank,tag, &
      &MPI_COMM_WORLD,ierr)
       call GLOB_ABORT(ierr,'CMP_INTEGER_SEND: error in MPI_SEND',1)
-            print*,'CMP_INTEGER_SEND: to return'
+      call wrf_debug(1,'CMP_INTEGER_SEND: to return')
 
       return
       END
@@ -831,7 +831,11 @@
 !
 
       if (process_rank_local.eq.component_master_rank_local) then
+         if(nunit==0 .or. nunit==6) then
+            call wrf_debug(1,s)
+         else
         write(nunit,*) trim(s)
+         endif
       else if (FlexLev.eq.0) then
 
 !         With "flexibility level" FlexLev=0, only Component master 

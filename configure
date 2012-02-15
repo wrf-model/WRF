@@ -391,23 +391,15 @@ if [ -n "$WRF_VENUS" ] ; then
   fi
 fi
 if [ -n "$WRF_QUIETLY" ]; then
-cat<<EOQ
-Warning: You set the \$WRF_QUIETLY option, so I will configure WRF to send
-as little to STDERR as possible.  Routines will send messages to STDOUT 
-instead, except for fatal messages from wrf_error_fatal or glob_abort.
-This risks losing non-fatal messages if the model crashes since STDOUT is
-buffered, so you should compile without this option when debugging.
-However, turning this option on can result in a large performance boost 
-on some parallel filesystems when many MPI ranks are used.  (HWRF runtime
-decreases from 85 minutes to 75 on GPFS with this option.)
-
-Routines affected: wrf_message, wrf_debug, atm_announce, end_timing,
-  glob_abort.
-
-Note: Code that directly calls "write(0,...)" will still write to stderr.
-EOQ
-
-  compileflags="${compileflags}!-DWRF_QUIETLY=1"
+  echo WRF_QUIETLY is now a synonym for WRF_LOG_BUFFERING
+  echo setting WRF_LOG_BUFFERING to 1...
+  export WRF_LOG_BUFFERING=1
+fi
+if [ -n "$WRF_LOG_BUFFERING" ]; then
+  if [ $WRF_LOG_BUFFERING = 1 ]; then
+    echo building WRF with support for buffering of log messages
+    compileflags="${compileflags}!-DWRF_LOG_BUFFERING=1"
+  fi
 fi
 if [ -n "$WRF_NMM_CORE" ]; then
   if [ $WRF_NMM_CORE = 1 ]; then

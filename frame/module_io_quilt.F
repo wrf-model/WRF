@@ -2537,6 +2537,7 @@ okay_to_w = .false.
 #endif
 
     SUBROUTINE init_module_wrf_quilt
+      USE module_wrf_error, only: init_module_wrf_error
 !<DESCRIPTION>
 ! Both client (compute) and server tasks call this routine to initialize the 
 ! module.  Routine setup_quilt_servers() is called from this routine to 
@@ -2631,6 +2632,8 @@ okay_to_w = .false.
                                 mpi_comm_here,        &
                                 mpi_comm_local,       &
                                 mpi_comm_io_groups)
+
+      call init_module_wrf_error(on_io_server=.true.)
 
        ! provide the communicator for the integration tasks to RSL
        IF ( compute_node ) THEN

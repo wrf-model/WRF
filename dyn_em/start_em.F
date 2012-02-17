@@ -711,6 +711,10 @@
                       ims, ime, jms, jme, kms, kme,           &
                       grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), grid%j_end(ij), kts, kte, &
                       config_flags%num_urban_layers,                        & !multi-layer urban
+                      grid%raincv_a,grid%raincv_b,                                    &
+                      grid%gd_cloud, grid%gd_cloud2,                                  & ! Optional
+                      grid%gd_cloud_a, grid%gd_cloud2_a,                              & ! Optional
+                      grid%gd_cloud_b, grid%gd_cloud2_b,                              & ! Optional
                       ozmixm,grid%pin,                             &     ! Optional
                       grid%m_ps_1,grid%m_ps_2,grid%m_hybi,aerosolc_1,aerosolc_2,&  ! Optional
                       grid%rundgdten,grid%rvndgdten,grid%rthndgdten,         &     ! Optional
@@ -1190,9 +1194,6 @@
                          grid%aerwrf,config_flags,grid,            &
                          grid%alt,grid%t_1,grid%p,convfac,grid%ttday,grid%tcosz,         &
                          grid%julday,grid%gmt,&
-                         grid%gd_cloud, grid%gd_cloud2,grid%raincv_a,grid%raincv_b,     &
-                         grid%gd_cloud_a, grid%gd_cloud2_a,                              &
-                         grid%gd_cloud_b, grid%gd_cloud2_b,                              &
                          grid%tauaer1,grid%tauaer2,grid%tauaer3,grid%tauaer4,                   &
                          grid%gaer1,grid%gaer2,grid%gaer3,grid%gaer4,                           &
                          grid%waer1,grid%waer2,grid%waer3,grid%waer4,                           &

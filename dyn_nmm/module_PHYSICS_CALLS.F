@@ -39,9 +39,7 @@
      &                    ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2,PDTOP,PT   &
      &                    ,PD,RES,PINT,T,Q,MOIST,THS,ALBEDO,EPSR        &
      &                    ,F_ICE,F_RAIN                                 &
-#ifdef WRF_CHEM
      &                    ,GD_CLOUD,GD_CLOUD2                           &
-#endif
      &                    ,SM,HBM2,CLDFRA,N_MOIST,RESTRT                &
      &                    ,RLWTT,RSWTT,RLWIN,RSWIN,RSWINC,RSWOUT        &
      &                    ,RLWTOA,RSWTOA,CZMEAN                         &
@@ -139,11 +137,13 @@
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: CFRACH,CFRACL    &
      &                                                ,CFRACM,CZMEAN    &
      &                                                ,SIGT4
+
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME ),INTENT(IN) ::            &   !<--- Used only with physics (IKJ)
+     &                              GD_CLOUD,GD_CLOUD2                  
 !
 #ifdef WRF_CHEM
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME ),INTENT(IN) ::            &   !<--- Used only with physics (IKJ)
      &                              GAER1,GAER2,GAER3,GAER4,            &
-     &                              GD_CLOUD,GD_CLOUD2,                 &
      &                              PM2_5_DRY,PM2_5_WATER,PM2_5_DRY_EC, &
      &                              TAUAER1,TAUAER2,TAUAER3,TAUAER4,    &
      &                              WAER1,WAER2,WAER3,WAER4
@@ -350,6 +350,7 @@
      &                 ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
      &                 ,ITIMESTEP=NTSD,DT=DT                            &
      &                 ,CU_RAD_FEEDBACK=config_flags%cu_rad_feedback    &
+     &                 ,QC_ADJUST=GD_CLOUD,QI_ADJUST=GD_CLOUD2          &
 #ifdef WRF_CHEM
      &                 ,AER_RA_FEEDBACK=config_flags%aer_ra_feedback    &
      &                 ,PM2_5_DRY=pm2_5_dry,PM2_5_WATER=pm2_5_water     &
@@ -357,7 +358,6 @@
      &                 ,TAUAER300=tauaer1,TAUAER400=tauaer2,TAUAER600=tauaer3,TAUAER999=tauaer4 & ! jcb
      &                 ,GAER300=gaer1,GAER400=gaer2,GAER600=gaer3,GAER999=gaer4 & ! jcb
      &                 ,WAER300=waer1,WAER400=waer2,WAER600=waer3,WAER999=waer4 & ! jcb
-     &                 ,QC_ADJUST=GD_CLOUD,QI_ADJUST=GD_CLOUD2          &
 #endif
      &                 ,RTHRATENLW=THRATENLW,RTHRATENSW=THRATENSW       &
      &                 ,RTHRATEN=RTHRATEN                               &
@@ -1905,10 +1905,10 @@
      &                 ,APR_CAPME          ,APR_CAPMI                   &
      &                 ,MASS_FLUX         ,XF_ENS                       &
      &                 ,PR_ENS,GSW                                      &
+     &                 ,GD_CLOUD,GD_CLOUD2                              &
 #ifdef WRF_CHEM
-     &                 ,GD_CLOUD,GD_CLOUD2,RAINCV                       &
+     &                 ,RAINCV                                          &
 #endif
-!
      &                 ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TCUCN              &
      &                 ,OMGALF,U,V,W,Z,FIS,W0AVG                        &
      &                 ,PREC,ACPREC,CUPREC,CUPPT,CPRATE                 &
@@ -2025,9 +2025,9 @@
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_MOIST)                   &
      &                                           ,INTENT(INOUT) :: MOIST
 !
-#ifdef WRF_CHEM
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: GD_CLOUD &
      &                                                        ,GD_CLOUD2
+#ifdef WRF_CHEM
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: RAINCV
 #endif
 !
@@ -2394,10 +2394,7 @@
      &                 ,APR_CAPME=APR_CAPME,APR_CAPMI=APR_CAPMI         &
      &                 ,MASS_FLUX=MASS_FLUX,XF_ENS=XF_ENS               &
      &                 ,PR_ENS=PR_ENS                                   &
-#ifdef WRF_CHEM
      &                 ,GD_CLOUD=GD_CLOUD,GD_CLOUD2=GD_CLOUD2           &
-#endif
-
      &                 ,ENSDIM=ENSDIM,MAXIENS=1,MAXENS=3                &
      &                 ,MAXENS2=3,MAXENS3=16                            &
      &                 ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &

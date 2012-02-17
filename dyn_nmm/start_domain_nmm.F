@@ -1977,6 +1977,7 @@
      &             ,IMS, IME, JMS, JME, KMS, KME                        &
      &             ,ITS, ITE, JTS, JTE, KTS, KTE                        &
      &             ,NUM_URBAN_LAYERS                                    &
+     &             ,GRID%RAINCV_A,GRID%RAINCV_B                         &
      &                )
 
 #ifdef HWRF

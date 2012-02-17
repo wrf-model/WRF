@@ -383,7 +383,7 @@ CONTAINS
                          tauaerlw9,tauaerlw10,tauaerlw11,tauaerlw12, & ! czhao 
                          tauaerlw13,tauaerlw14,tauaerlw15,tauaerlw16
 
-   LOGICAL           :: cu_rad_feedback
+   LOGICAL, INTENT(IN) :: cu_rad_feedback
 
    INTEGER, INTENT(IN   ), OPTIONAL  ::   aer_ra_feedback
 
@@ -775,7 +775,6 @@ CONTAINS
           ENDDO
           ENDDO
        ENDIF
-
 
 ! Fill temporary water variable depending on micro package (tgs 25 Apr 2006)
      if(PRESENT(qc) .and. PRESENT(F_QC)) then

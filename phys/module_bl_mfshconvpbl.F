@@ -109,8 +109,10 @@ REAL, PARAMETER ::XFRAC_UP_MAX= 0.33 ! maximum Updraft fraction
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),OPTIONAL,INTENT(OUT) ::              &
      &                                         MASSFLUX_EDKF, ENTR_EDKF, DETR_EDKF &
      &                                        ,THL_UP, THV_UP, RT_UP, RV_UP        &
-     &                                        ,RC_UP, U_UP, V_UP, FRAC_UP          &
-     &                                        ,RC_MF
+     &                                        ,RC_UP, U_UP, V_UP, FRAC_UP
+
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),OPTIONAL,INTENT(INOUT) ::            &
+     &                                         RC_MF
 
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) ::   WTHV
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) ::   PLM_BL89

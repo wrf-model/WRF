@@ -1008,7 +1008,7 @@
             else
                if (grid%lap_hgt(i,j).ge.-20) then
                  alpha=(grid%lap_hgt(i,j)+20.)/10.
-                 grid%ctopo(i,j)=alpha*grid%ctopo(i,j)+(1+alpha)
+                 grid%ctopo(i,j)=alpha*grid%ctopo(i,j)+(1-alpha)
                else
                   if (grid%lap_hgt(i,j).ge.-30.) then
                   grid%ctopo(i,j)=(grid%lap_hgt(i,j)+30.)/10.

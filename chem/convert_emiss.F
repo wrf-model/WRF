@@ -20,7 +20,7 @@ PROGRAM convert_emissions
    USE module_domain
 !   USE module_domain, ONLY : domain, alloc_and_configure_domain, &
 !        domain_clock_set, domain_clock_get, head_grid, program_name, domain_clockprint
-   USE module_initialize_real, ONLY : wrfu_initialize, rebalance_driver, find_my_parent
+!  USE module_initialize_real, ONLY : wrfu_initialize, rebalance_driver, find_my_parent
    USE module_driver_constants
    USE module_configure, ONLY : grid_config_rec_type, model_config_rec, &
         initial_config, get_config_as_buffer, set_config_as_buffer

@@ -337,8 +337,8 @@ BENCH_START(rad_driver_tim)
      &        ,AEROSOLC_2=grid%aerosolc_2, M_HYBI0=grid%m_hybi                      &
      &        ,ABSTOT=grid%abstot, ABSNXT=grid%absnxt, EMSTOT=grid%emstot                &
      &        ,RADTACTTIME=grid%radtacttime                                         &  
-#ifdef WRF_CHEM
      &        ,CU_RAD_FEEDBACK=config_flags%cu_rad_feedback                &
+#ifdef WRF_CHEM
      &        ,AER_RA_FEEDBACK=config_flags%aer_ra_feedback                &
      &        ,QC_ADJUST=grid%GD_CLOUD_B , QI_ADJUST=grid%GD_CLOUD2_B         &
      &        ,PM2_5_DRY=grid%pm2_5_dry, PM2_5_WATER=grid%pm2_5_water               &

@@ -349,8 +349,8 @@
      &                 ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &                 ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
      &                 ,ITIMESTEP=NTSD,DT=DT                            &
-#ifdef WRF_CHEM
      &                 ,CU_RAD_FEEDBACK=config_flags%cu_rad_feedback    &
+#ifdef WRF_CHEM
      &                 ,AER_RA_FEEDBACK=config_flags%aer_ra_feedback    &
      &                 ,PM2_5_DRY=pm2_5_dry,PM2_5_WATER=pm2_5_water     &
      &                 ,PM2_5_DRY_EC=pm2_5_dry_ec                       &

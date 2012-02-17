@@ -20,7 +20,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
    character(len=120) :: filename
 
-   integer            :: n, ios, time_step_seconds
+   integer            :: n, ios, time_step_seconds, ierr
    character*256 :: timestr, timestr1
 
    if (trace_use) call da_trace_entry("da_get_innov_vector") 
@@ -156,7 +156,9 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
    if ( multi_inc == 1 ) then
 #ifdef DM_PARALLEL
-       call da_system("touch wrf_stop_now")
+       call mpi_barrier(MPI_COMM_WORLD,ierr)
+       if ( myproc == 0 )  call da_join_iv_for_multi_inc()
+       call mpi_barrier(MPI_COMM_WORLD,ierr)
 #endif
        call wrf_message("*** WRF-Var multi-increment stage 1 completed successfully ***")
        call wrfu_finalize

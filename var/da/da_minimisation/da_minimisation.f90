@@ -158,6 +158,10 @@ module da_minimisation
 
    implicit none
 
+#ifdef DM_PARALLEL
+    include 'mpif.h'
+#endif
+
    private :: da_dot, da_dot_cv
 
 contains

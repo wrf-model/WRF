@@ -36,8 +36,12 @@ subroutine da_nl_model (it)
    call nl_set_history_interval (head_grid%id, 0)
 
    ! Set up basic states output
-   call nl_get_time_step ( head_grid%id, time_step )
-   call nl_set_auxhist6_interval_s ( head_grid%id, time_step ) 
+   if ( multi_inc == 1 ) then
+     call nl_set_auxhist6_interval_s ( head_grid%id, var4d_bin )
+   else
+     call nl_get_time_step ( head_grid%id, time_step )
+     call nl_set_auxhist6_interval_s ( head_grid%id, time_step ) 
+   endif
    call nl_set_io_form_auxhist6 ( head_grid%id, 2 ) 
    call nl_set_frames_per_auxhist6 ( head_grid%id, 1 ) 
 

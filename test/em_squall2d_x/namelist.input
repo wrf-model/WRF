@@ -53,11 +53,7 @@
  bldt                                = 0,
  cu_physics                          = 0,
  cudt                                = 0,
- isfflx                              = 0,
- ifsnow                              = 0,
- icloud                              = 0,
  num_soil_layers                     = 5,
- mp_zero_out                         = 0,
  /
 
  &fdda

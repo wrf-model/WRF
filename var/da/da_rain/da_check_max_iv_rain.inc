@@ -16,7 +16,7 @@ subroutine da_check_max_iv_rain(iv,ob, it, num_qcstat_conv)
    logical :: failed 
    integer :: n
    
-   if (trace_use_dull) call da_trace_entry("da_check_max_iv_rain")       
+   if (trace_use) call da_trace_entry("da_check_max_iv_rain")       
 
 
    !---------------------------------------------------------------------------
@@ -38,6 +38,6 @@ subroutine da_check_max_iv_rain(iv,ob, it, num_qcstat_conv)
       end if
    end do
 
-   if (trace_use_dull) call da_trace_exit("da_check_max_iv_rain")       
+   if (trace_use) call da_trace_exit("da_check_max_iv_rain")       
 
 end subroutine da_check_max_iv_rain

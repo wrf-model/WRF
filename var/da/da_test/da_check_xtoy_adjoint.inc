@@ -38,6 +38,7 @@ subroutine da_check_xtoy_adjoint(cv_size, cv, xbx, be, grid, config_flags, iv, y
    real, dimension(ims:ime, jms:jme, kms:kme) :: x6a2_w
    real, dimension(ims:ime, jms:jme)          :: x6a2_psfc
    real, dimension(ims:ime, jms:jme, kms:kme) :: x6a2_qcw, x6a2_qci, x6a2_qrn, x6a2_qsn, x6a2_qgr
+   real, dimension(:,:,:), allocatable :: a_hr_rainc, a_hr_rainnc
    integer :: nobwin, i, j, k
    character(len=4) :: filnam
    character(len=256) :: timestr
@@ -168,6 +169,13 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
 
       call da_tl_model
 
+      if ( use_rainobs .and. num_fgat_time > 1 ) then
+         allocate (a_hr_rainc (ims:ime,jms:jme,1:num_fgat_time))
+         allocate (a_hr_rainnc(ims:ime,jms:jme,1:num_fgat_time))
+         a_hr_rainc =0.0
+         a_hr_rainnc=0.0
+      endif
+
       if (jcdfi_use) then
 
          subarea = SUM ( grid%xb%grid_box_area(its:ite,jts:jte) )
@@ -218,6 +226,13 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
 
          write(filnam,'(a2,i2.2)') 'tl',nobwin
          call da_transfer_wrftltoxa(grid, config_flags, filnam, timestr)
+
+         if ( use_rainobs .and. num_fgat_time > 1 ) then
+!!!         We can not calculate the hourly rainfall in adjoint check, just ensure the adjoint 
+!!!         algorithm is right mathmatically. so the amount of forcings doesn't matter
+            a_hr_rainc (:,:,nobwin)=grid%g_rainc(:,:)
+            a_hr_rainnc(:,:,nobwin)=grid%g_rainnc(:,:)
+         endif
 #endif
       end if
 
@@ -293,8 +308,10 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
       !----------------------------------------------------------------------
       call da_transform_xtoy (cv_size, cv, grid, iv, y)
 
-
-            
+#ifdef VAR4D
+      if (iv%info(rain)%nlocal > 0 .and. var4d) &
+         call da_transform_xtoy_rain (grid, iv, y, a_hr_rainc(:,:,nobwin), a_hr_rainnc(:,:,nobwin))
+#endif      
 
       !----------------------------------------------------------------------
       ! [3.0] Calculate LHS of adjoint test equation and
@@ -335,12 +352,18 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
       !----------------------------------------------------------------------
       call da_zero_x (grid%xa)
 
-      grid%g_rainc=0
-      grid%g_rainnc=0
+      if (use_rainobs .and. num_fgat_time > 1) then
+         a_hr_rainc(:,:,nobwin) = 0.0
+         a_hr_rainnc(:,:,nobwin) = 0.0
+      endif
+
+#ifdef VAR4D
+      if (iv%info(rain)%nlocal > 0) then
+         call da_transform_xtoy_rain_adj (grid, iv, y, a_hr_rainc(:,:,nobwin), a_hr_rainnc(:,:,nobwin))
+      endif
+#endif
 
       call da_transform_xtoy_adj (cv_size, cv, grid, iv, y, grid%xa)
-
-
 
 #ifdef A2C
     if( ite == ide ) &    
@@ -414,12 +437,21 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
          grid%g_p = 0.0
          grid%g_mu_2 = 0.0
          grid%g_moist = 0.0
-       !  grid%g_rainnc = 0.0
+         grid%g_rainnc = 0.0
          grid%g_rainncv = 0.0
-       !  grid%g_rainc = 0.0
+         grid%g_rainc = 0.0
          grid%g_raincv = 0.0
 
          write(unit=filnam,fmt='(a2,i2.2)') 'af',nobwin
+
+         if ( use_rainobs .and. num_fgat_time > 1 ) then
+!!!         We can not calculate the hourly rainfall in adjoint check, just ensure the adjoint 
+!!!         algorithm is right mathmatically. so the amount of forcings doesn't matter
+            grid%g_rainc(:,:) = grid%g_rainc(:,:) + a_hr_rainc (:,:,nobwin)
+            grid%g_rainnc(:,:) = grid%g_rainnc(:,:) + a_hr_rainnc(:,:,nobwin)
+            a_hr_rainc (:,:,nobwin) = 0.0
+            a_hr_rainnc(:,:,nobwin) = 0.0
+         endif
 
          call domain_clock_get( grid, current_timestr=timestr )
          call da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
@@ -483,6 +515,11 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
 
       call da_zero_x(grid%xa)
       call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
+
+      if ( use_rainobs .and. num_fgat_time > 1 ) then
+         deallocate (a_hr_rainc)
+         deallocate (a_hr_rainnc)
+      endif
 #endif
    end if
 

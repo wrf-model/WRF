@@ -18,7 +18,7 @@ subroutine da_residual_rain(iv, y, re, np_missing, np_bad_data, np_obs_used, np_
    type (bad_data_type)          :: n_obs_bad
    integer                       :: n
 
-   if (trace_use_dull) call da_trace_entry("da_residual_rain")
+   if (trace_use) call da_trace_entry("da_residual_rain")
 
    n_obs_bad % rain % num = number_type(0, 0, 0)
 
@@ -31,7 +31,7 @@ subroutine da_residual_rain(iv, y, re, np_missing, np_bad_data, np_obs_used, np_
    np_bad_data = np_bad_data + n_obs_bad % rain % num % bad  
    np_obs_used = np_obs_used + n_obs_bad % rain % num % use 
 
-   if (trace_use_dull) call da_trace_exit("da_residual_rain")
+   if (trace_use) call da_trace_exit("da_residual_rain")
 
 end subroutine da_residual_rain
 

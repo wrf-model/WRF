@@ -41,7 +41,7 @@ module da_minimisation
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, rain, &
       bogus, buoy, qscat,pseudo, radiance, monitor_on, max_ext_its, use_rttov_kmatrix,&
       use_crtm_kmatrix,precondition_cg, precondition_factor, use_varbc, varbc_factor, &
-      num_procs, myproc, use_gpspwobs, use_gpsztdobs, pseudo_var, num_pseudo, &
+      num_procs, myproc, use_gpspwobs, use_rainobs, use_gpsztdobs, pseudo_var, num_pseudo, &
       num_ob_indexes, num_ob_vars, npres_print, pptop, ppbot, qcstat_conv_unit, gas_constant, &
       orthonorm_gradient, its, ite, jts, jte, kts, kte, ids, ide, jds, jde, cp, &
       use_satcv, sensitivity_option, print_detail_outerloop, adj_sens, filename_len, &
@@ -108,7 +108,8 @@ module da_minimisation
 
    use da_rain, only :  da_calculate_grady_rain, da_ao_stats_rain, &
       da_oi_stats_rain, da_get_innov_vector_rain, da_residual_rain, &
-      da_jo_and_grady_rain
+      da_jo_and_grady_rain, da_get_hr_rain, da_transform_xtoy_rain, &
+      da_transform_xtoy_rain_adj
 
    use da_reporting, only : da_message, da_warning, da_error
    use da_satem, only : da_calculate_grady_satem, da_ao_stats_satem, &

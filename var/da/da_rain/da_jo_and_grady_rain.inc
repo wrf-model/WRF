@@ -13,7 +13,7 @@ subroutine da_jo_and_grady_rain(iv, re, jo, jo_grad_y)
 
    integer :: n 
 
-   if (trace_use_dull) call da_trace_entry("da_jo_and_grady_rain")
+   if (trace_use) call da_trace_entry("da_jo_and_grady_rain")
 
    jo % rain_r = 0.0
    
@@ -28,7 +28,7 @@ subroutine da_jo_and_grady_rain(iv, re, jo, jo_grad_y)
       
    jo % rain_r = 0.5 * jo % rain_r
 
-   if (trace_use_dull) call da_trace_exit("da_jo_and_grady_rain")
+   if (trace_use) call da_trace_exit("da_jo_and_grady_rain")
 
 end subroutine da_jo_and_grady_rain
 

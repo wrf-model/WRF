@@ -10,7 +10,7 @@ subroutine da_print_stats_rain(stats_unit, nrain, rain)
    integer,                intent(inout) :: nrain 
    type (stats_rain_type), intent(in)  :: rain
 
-   if (trace_use_dull) call da_trace_entry("da_print_stats_rain")
+   if (trace_use) call da_trace_entry("da_print_stats_rain")
 
    if (nrain > 0) then
 
@@ -28,7 +28,7 @@ subroutine da_print_stats_rain(stats_unit, nrain, rain)
          '    RMSE   : ', sqrt(rain%rms_err%rain/real(nrain))
    end if
 
-   if (trace_use_dull) call da_trace_exit("da_print_stats_rain")
+   if (trace_use) call da_trace_exit("da_print_stats_rain")
 
 end subroutine da_print_stats_rain
 

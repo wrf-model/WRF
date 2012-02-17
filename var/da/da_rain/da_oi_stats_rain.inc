@@ -13,7 +13,7 @@ subroutine da_oi_stats_rain (stats_unit, iv)
    integer                :: nrain
    integer                :: n
 
-   if (trace_use_dull) call da_trace_entry("da_oi_stats_rain")
+   if (trace_use) call da_trace_entry("da_oi_stats_rain")
 
    nrain = 0
 
@@ -48,7 +48,7 @@ subroutine da_oi_stats_rain (stats_unit, iv)
       end if
    end if
 
-   if (trace_use_dull) call da_trace_exit("da_oi_stats_rain")
+   if (trace_use) call da_trace_exit("da_oi_stats_rain")
 
 end subroutine da_oi_stats_rain
 

@@ -670,15 +670,7 @@
                     imask,                                &  ! interpolation mask
                     xstag, ystag,                         &  ! staggering of field
                     ipos, jpos,                           &  ! Position of lower left of nest in CD
-                    nri, nrj,                             &  ! nest ratios
-                    cbdy_xs, nbdy_xs,                     &  ! boundary arrays
-                    cbdy_xe, nbdy_xe,                     &  ! no needed, but registry builds interface
-                    cbdy_ys, nbdy_ys,                     &  ! for lateral bc forcing this way
-                    cbdy_ye, nbdy_ye,                     &
-                    cbdy_txs, nbdy_txs,                   &
-                    cbdy_txe, nbdy_txe,                   &
-                    cbdy_tys, nbdy_tys,                   &
-                    cbdy_tye, nbdy_tye                    &
+                    nri, nrj                              &  ! nest ratios
                     )   
      USE module_configure
      IMPLICIT NONE
@@ -698,10 +690,6 @@
      REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
      REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
      INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
-     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_xs, cbdy_txs, nbdy_xs, nbdy_txs
-     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_xe, cbdy_txe, nbdy_xe, nbdy_txe
-     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_ys, cbdy_tys, nbdy_ys, nbdy_tys
-     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_ye, cbdy_tye, nbdy_ye, nbdy_tye
 
      CALL  interp_fcn  (cfld,                             &  ! CD field
                         cids, cide, ckds, ckde, cjds, cjde,   &
@@ -1246,9 +1234,7 @@
                   !  This is a "land only" field.  If this is a water point, no operations required.
 
                   IF      ( ( NINT(nlu(ni  ,nj  )) .EQ. iswater ) ) THEN
-                     ! noop
-!                    nfld(ni,nk,nj) =  1.e20
-                     nfld(ni,nk,nj) =  -1
+                     nfld(ni,nk,nj) =  cfld(ci  ,ck,cj  )
 
                   !  If this is a nested land point, and the surrounding coarse values are all land points,
                   !  then this is a simple 4-pt interpolation.
@@ -1271,7 +1257,6 @@
                             ( NINT(clu(ci+1,cj  )) .EQ. iswater ) .AND. &
                             ( NINT(clu(ci  ,cj+1)) .EQ. iswater ) .AND. &
                             ( NINT(clu(ci+1,cj+1)) .EQ. iswater ) ) THEN
-!                    nfld(ni,nk,nj) = -1.e20
                      nfld(ni,nk,nj) = -1
 
                   !  If there are some water points and some land points, take an average. 
@@ -1309,7 +1294,7 @@
          DO nj = njts, njte
             DO nk = nkts, nkte
                DO ni = nits, nite
-                  IF ( ( nfld(ni,nk,nj) .GT. -1.e19 ) .AND. (  nfld(ni,nk,nj) .LT. 1.e19 ) ) THEN
+                  IF ( nfld(ni,nk,nj) .NE. -1 ) THEN
                      icount = icount + 1
                      sum = sum + nfld(ni,nk,nj)
                   END IF
@@ -1332,7 +1317,7 @@
            DO nj = njts, njte
               DO nk = nkts, nkte
                  DO ni = nits, nite
-                    IF ( nfld(ni,nk,nj) .LT. -1.e19 ) THEN
+                    IF ( nfld(ni,nk,nj) .EQ. -1 ) THEN
                        IF ( MOD ( nrj , 2 ) .EQ. 0 ) THEN
                           cj = ( nj + (nrj/2)-1 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
                        ELSE
@@ -1481,9 +1466,7 @@
                   !  This is a "water only" field.  If this is a land point, no operations required.
 
                   IF      ( ( NINT(nlu(ni  ,nj  )) .NE. nflag ) ) THEN
-                     ! noop
-!                    nfld(ni,nk,nj) =  1.e20
-                     nfld(ni,nk,nj) = 0
+                     nfld(ni,nk,nj) = cfld(ci  ,ck,cj  )
 
                   !  If this is a nested water point, and the surrounding coarse values are all water points,
                   !  then this is a simple 4-pt interpolation.
@@ -1506,7 +1489,6 @@
                             ( NINT(clu(ci+1,cj  )) .NE. nflag ) .AND. &
                             ( NINT(clu(ci  ,cj+1)) .NE. nflag ) .AND. &
                             ( NINT(clu(ci+1,cj+1)) .NE. nflag ) ) THEN
-!                    nfld(ni,nk,nj) = -1.e20
                      nfld(ni,nk,nj) = -1
 
                   !  If there are some land points and some water points, take an average. 
@@ -1543,7 +1525,7 @@
          DO nj = njts, njte
             DO nk = nkts, nkte
                DO ni = nits, nite
-                  IF ( ( nfld(ni,nk,nj) .GT. -1.e19 ) .AND. (  nfld(ni,nk,nj) .LT. 1.e19 ) ) THEN
+                  IF ( nfld(ni,nk,nj) .NE. -1 ) THEN
                      icount = icount + 1
                      sum = sum + nfld(ni,nk,nj)
                   END IF
@@ -1567,7 +1549,7 @@
            DO nj = njts, njte
               DO nk = nkts, nkte
                  DO ni = nits, nite
-                    IF ( nfld(ni,nk,nj) .LT. -1.e19 ) THEN
+                    IF ( nfld(ni,nk,nj) .EQ. -1 ) THEN
                        IF ( MOD ( nrj , 2 ) .EQ. 0 ) THEN
                           cj = ( nj + (nrj/2)-1 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
                        ELSE
@@ -1624,8 +1606,6 @@
                            xstag, ystag,                         &  ! staggering of field
                            ipos, jpos,                           &  ! Position of lower left of nest in CD
                            nri, nrj,                             &  ! nest ratios
-                           c1,n1,c2,n2,c3,n3,c4,n4,              &  ! boundary tendencies - we do not need them
-                           c5,n5,c6,n6,c7,n7,c8,n8,              &  ! 
                            clu, nlu,                             &  ! land use categories
                            ctslb,ntslb,                          &  ! soil temps
                            cnum_soil_layers,nnum_soil_layers,    &  ! number of soil layers for tslb
@@ -1660,11 +1640,6 @@
       REAL, DIMENSION ( cims:cime, 1:cnum_soil_layers, cjms:cjme ) :: ctslb
       REAL, DIMENSION ( nims:nime, 1:nnum_soil_layers, njms:njme ) :: ntslb
 
-      !  Arrays you get for free from WRF registry program for "boundary tendencies"
-
-      REAL, DIMENSION(*) :: c1, c2, c3, c4, c5, c6, c7, c8
-      REAL, DIMENSION(*) :: n1, n2, n3, n4, n5, n6, n7, n8
-   
       ! Local
    
       INTEGER ci, cj, ck, ni, nj, nk

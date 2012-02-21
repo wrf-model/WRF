@@ -4,9 +4,9 @@
 state    real   VERTSTRUCC         ikj dyn_em  1  -  rhd  "VERTSTRUCC    "  "vertical structure for stoch. forcing " ""
 state    real   VERTSTRUCS         ikj dyn_em  1  -  rhd  "VERTSTRUCS    "  "vertical structure for stoch. forcing " ""
 
-state real ru_tendf_stoch     ikjb dyn_em 1 X rhdf=(p2c) "ru_tendf_stoch" "stochastic forcing, U " "m/s"
-state real rv_tendf_stoch     ikjb dyn_em 1 Y rhdf=(p2c) "rv_tendf_stoch" "stochastic forcing, V " "m/s"
-state real rt_tendf_stoch     ikjb dyn_em 1 - rhdf=(p2c) "rt_tendf_stoch" "stochastic forcing, T " "K/s"
+state real ru_tendf_stoch     ikj dyn_em 1 X rhdf=(p2c) "ru_tendf_stoch" "stochastic forcing, U " "m/s"
+state real rv_tendf_stoch     ikj dyn_em 1 Y rhdf=(p2c) "rv_tendf_stoch" "stochastic forcing, V " "m/s"
+state real rt_tendf_stoch     ikj dyn_em 1 - rhdf=(p2c) "rt_tendf_stoch" "stochastic forcing, T " "K/s"
 
 # 2d arrays
 state    real  SPSTREAMFORCC  ij  misc    1  -   r    "SPSTREAMFORCC" "real  spect. coeff. of stoch. streamfunction perturb." ""

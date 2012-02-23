@@ -1077,6 +1077,7 @@ CONTAINS
 #endif
 #if defined(HWRF)
               ,ALPHA=gfs_alpha                                      &
+              ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D          &   !Kwon add FOR SHAL. CON.
 #endif
               ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &

@@ -174,6 +174,10 @@ CONTAINS
       REAL,    DIMENSION(ims:ime, jms:jme) ::                           &
                                         PSFC
 
+      REAL,    DIMENSION(its:ite, jts:jte) ::                           &
+                                        RAINCV1, PRATEC1
+      REAL,    DIMENSION(its:ite, jts:jte) ::                           &
+                                        RAINCV2, PRATEC2
 
       REAL     (kind=kind_phys) ::                                      &
                                         DELT,                           &
@@ -475,6 +479,17 @@ CONTAINS
       CALL SASCNVN(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,                  &
                   QL,Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,                    &
                   KTOP,KCNV,SLIMSK,DOT,NCLOUD,PGCON_USE,massf)
+!
+      do i=its,ite
+        RAINCV1(I,J)=RN(I)*1000./STEPCU
+        PRATEC1(I,J)=RN(I)*1000./(STEPCU * DT)
+      enddo
+!
+      do i=its,ite
+        RAINCV2(I,J)=0.
+        PRATEC2(I,J)=0.
+      enddo
+!
 
       if_shallow_conv: if(shalconv_use==1) then
 #if (NMM_CORE == 1)
@@ -483,6 +498,12 @@ CONTAINS
         call shalcnv(im,im,kx,jcap,delt,del,prsl,ps,phil,ql,        &
      &               q1,t1,u1,v1,rcs,rn,kbot,ktop,kcnv,slimsk,      &
      &               dot,ncloud,hpbl,heat,evap,shal_pgcon_use)
+!
+      DO I=ITS,ITE
+        RAINCV2(I,J)=RN(I)*1000./STEPCU
+        PRATEC2(I,J)=RN(I)*1000./(STEPCU * DT)
+      ENDDO
+!
 #else
 #if (EM_CORE == 1)
         ! NOTE: ARW should be able to call the new shalcnv here, but
@@ -495,9 +516,9 @@ CONTAINS
 #endif
      endif if_shallow_conv
 
-      DO I=ITS,ITE
-        RAINCV(I,J)=RN(I)*1000./STEPCU
-        PRATEC(I,J)=RN(I)*1000./(STEPCU * DT)
+        DO I=ITS,ITE
+        RAINCV(I,J)= RAINCV1(I,J) + RAINCV2(I,J)
+        PRATEC(I,J)= PRATEC1(I,J) + PRATEC2(I,J)
         HBOT(I,J)=KBOT(I)
         HTOP(I,J)=KTOP(I)
       ENDDO

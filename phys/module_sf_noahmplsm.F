@@ -582,7 +582,7 @@ contains
        &           PSN     , SAV     , SAG     , FSNO    , NEE     , GPP     , & ! OUT :
        &           NPP     , FVEG    , ALBEDO  , QMELT   , PONDING , PONDING1, & ! OUT :
        &           PONDING2, RSSUN   , RSSHA   , BGAP    , WGAP    , GAP     , & ! OUT :
-       &           ERRWAT  , CHV     , CHB)                                      ! OUT :
+       &           ERRWAT  , CHV     , CHB     , EMISSI)                         ! OUT :
 
 ! --------------------------------------------------------------------------------------------------
 ! Initial code: Guo-Yue Niu, Oct. 2007
@@ -704,6 +704,7 @@ contains
   REAL, INTENT(OUT) :: TGV
   REAL, INTENT(OUT) :: TGB
   REAL, INTENT(OUT) :: Q1
+  REAL, INTENT(OUT) :: EMISSI
 !jref:end
 
 ! local
@@ -863,7 +864,8 @@ contains
                  QC     ,PBLH   ,QSFC   ,PSFC   ,ISURBAN,IZ0TLND, & !in 
                  CHSTAR ,TSTAR  ,T2MV   ,T2MB  ,FSRV   , &
                  FSRG   ,RSSUN   ,RSSHA ,BGAP   ,WGAP, GAP,TGV,TGB,&
-                 Q1     ,Q2V    ,Q2B,Q2E,CHV,CHB)             !out 
+                 Q1     ,Q2V    ,Q2B    ,Q2E    ,CHV   ,CHB     , & !out
+                 EMISSI)                                            !out
 !jref:end                            
 
     SICE(:) = MAX(0.0, SMC(:) - SH2O(:))   
@@ -1218,7 +1220,7 @@ contains
                      QC     ,PBLH   ,QSFC   ,PSFC   ,ISURBAN,IZ0TLND, & !in 
                      CHSTAR ,TSTAR  ,T2MV   ,T2MB   ,FSRV   , &
                      FSRG   ,RSSUN  ,RSSHA  ,BGAP   ,WGAP,GAP,TGV,TGB,&
-                     Q1     ,Q2V    ,Q2B    ,Q2E    ,CHV  ,CHB )   !out 
+                     Q1     ,Q2V    ,Q2B    ,Q2E    ,CHV  ,CHB, EMISSI )   !out 
 !jref:end                            
 
 ! --------------------------------------------------------------------------------------------------
@@ -1382,6 +1384,7 @@ contains
   REAL                              , INTENT(INOUT) :: CH     !sensible heat exchange coefficient
   REAL                              , INTENT(INOUT) :: Q1
 !  REAL                                              :: Q2E
+  REAL,                               INTENT(OUT)   :: EMISSI
 
 ! local
   INTEGER                                           :: IZ     !do-loop index
@@ -1725,7 +1728,19 @@ contains
        STOP
     END IF
 
-    TRAD = (FIRE/SB)**0.25
+    ! Compute a net emissivity
+    EMISSI = FVEG * ( EMG*(1-EMV) + EMV + EMV*(1-EMV)*(1-EMG) ) + &
+         (1-FVEG) * EMG
+
+    ! When we're computing a TRAD, subtract from the emitted IR the
+    ! reflected portion of the incoming LWDN, so we're just
+    ! considering the IR originating in the canopy/ground system.
+    
+    TRAD = ( ( FIRE - (1-EMISSI)*LWDN ) / (EMISSI*SB) ) ** 0.25
+
+    ! Old TRAD calculation not taking into account Emissivity:
+    ! TRAD = (FIRE/SB)**0.25
+
     APAR = PARSUN*LAISUN + PARSHA*LAISHA
     PSN  = PSNSUN*LAISUN + PSNSHA*LAISHA
 

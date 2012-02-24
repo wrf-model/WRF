@@ -972,8 +972,7 @@ CONTAINS
                   PSN     , SAV     , SAG     , FSNO    , NEE     , GPP     , & ! OUT : 
                   NPP     , FVEG    , SALB    , QMELT   , PONDING , PONDING1, & ! OUT : 
                   PONDING2, RSSUN   , RSSHA   , BGAP    , WGAP    , GAP     , & ! OUT : 
-                  ERRWAT  , CHV     , CHB)                                      ! OUT :
-                  
+                  ERRWAT  , CHV     , CHB     , EMISSI)                         ! OUT :
 
 #if 0
             if ( I == 15 .and. J == 5 ) then
@@ -1094,7 +1093,7 @@ CONTAINS
              fastcpxy (i,j)               = fastcp
              xlaixy   (i,j)               = plai
              xsaixy   (i,j)               = psai
-
+             emiss    (i,j)               = emissi
              eahxy    (i,j)               = eah
              tahxy    (i,j)               = tah
              fwetxy   (i,j)               = fwet

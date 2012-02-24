@@ -537,28 +537,6 @@ contains
 !
 ! ==================================================================================================
 
-!KWM  SUBROUTINE NOAHMP_SFLX (ICE    ,IST    ,VEGTYP ,ISC    ,NSNOW  ,NSOIL  , & !in
-!KWM                   ZSOIL  ,DT     ,Q2     ,SFCTMP ,UU     ,VV     , & !in
-!KWM                   SOLDN  ,LWDN   ,PRCP   ,ZLVL   ,CO2AIR ,O2AIR  , & !in
-!KWM                   COSZ   ,TBOT   ,FOLN   ,SFCPRS ,IMONTH ,IDAY   , & !in
-!KWM                   SHDFAC ,LAT            ,ILOC   , JLOC  ,DZ8W   , & !in
-!KWM                   EAH    ,TAH    ,FWET   ,FICEOLD,QSNOW  ,SNEQVO , & !inout
-!KWM                   ISNOW  ,ZSNSO  ,CANLIQ ,CANICE ,SNOWH  ,SNEQV  , & !inout
-!KWM                   SNICE  ,SNLIQ  ,TV     ,TG     ,STC    ,SH2O   , & !inout
-!KWM                   SMC    ,ZWT    ,WA     ,WT     ,WSLAKE ,LFMASS , & !inout
-!KWM                   RTMASS ,STMASS ,WOOD   ,STBLCP ,FASTCP ,LAI    , & !inout
-!KWM                   SAI    ,ALBOLD ,CM     ,CH     ,                 & !inout
-!KWM                   FSA    ,FSR    ,FIRA   ,FSH    ,SSOIL  ,FCEV   , & !out
-!KWM                   FGEV   ,FCTR   ,TRAD   ,ECAN   ,ETRAN  ,EDIR   , & !out
-!KWM                   RUNSRF ,RUNSUB ,APAR   ,PSN    ,SAV    ,SAG    , & !out
-!KWM                   FSNO   ,NEE    ,GPP    ,NPP    ,TS     ,FVEG   , & !out
-!KWM                   ALBEDO ,ERRWAT, QMELT  ,PONDING        ,PONDING1,& !out
-!KWM                   PONDING2,DX    ,SHDMAX                          , & 
-!KWM                   ISURBAN,IZ0TLND,QC     ,PBLH    ,QSFC  ,PSFC   , & !in
-!KWM                   CHSTAR ,TSTAR  ,T2MV   ,T2MB   ,RSSUN  ,         &
-!KWM                   RSSHA  ,BGAP   ,WGAP   ,GAP    ,TGV    ,TGB    ,Q1,&
-!KWM                   Q2V    ,Q2B)       !out
-
   SUBROUTINE NOAHMP_SFLX (&
        &           ILOC    , JLOC    , LAT     , YEARLEN , JULIAN  , COSZ    , & ! IN : Time/Space-related
        &           DT      , DX      , DZ8W    , NSOIL   , ZSOIL   , NSNOW   , & ! IN : Model configuration 
@@ -3260,6 +3238,10 @@ contains
                        CZIL   ,ZLVL   ,ILOC   ,JLOC   ,         & !in
                        CM     ,CH     ,MOZ    ,WSTAR  ,         & !in
                        FV     )                                   !out
+          ! Undo the multiplication by windspeed that SFCDIF2 
+          ! applies to exchange coefficients CH and CM:
+          CH = CH / UR
+          CM = CM / UR
        ENDIF
 
        IF(OPT_SFC == 3) THEN
@@ -3269,6 +3251,11 @@ contains
                        THAIR  ,QAIR   ,QC     ,ZLVL   , &  !in
                        SFCPRS ,FV     ,CM     ,CH     ,CH2V   ,&  !inout
                        CQ2V   ,MOZ)                               !out
+          ! Undo the multiplication by windspeed that SFCDIF3 
+          ! applies to exchange coefficients CH and CM:
+          CH   = CH / UR
+          CM   = CM / UR
+          CH2V = CH2V / UR
        ENDIF
 
        IF(OPT_SFC == 4) THEN
@@ -3277,6 +3264,11 @@ contains
                        TAH    ,QAIR   ,ZLVL   ,IZ0TLND,QSFC   ,&
                        H      ,QFX    ,CM     ,CH     ,CH2V   ,& 
                        CQ2V   ,MOZ    ,FV     ,U10V   ,V10V)
+          ! Undo the multiplication by windspeed that SFCDIF4 
+          ! applies to exchange coefficients CH and CM:
+          CH   = CH / UR
+          CM   = CM / UR
+          CH2V = CH2V / UR
        ENDIF
 
        RAMC = MAX(1.,1./(CM*UR))
@@ -3686,6 +3678,10 @@ contains
                        CZIL   ,ZLVL   ,ILOC   ,JLOC   ,         & !in
                        CM     ,CH     ,MOZ    ,WSTAR  ,         & !in
                        FV     )                                   !out
+          ! Undo the multiplication by windspeed that SFCDIF2 
+          ! applies to exchange coefficients CH and CM:
+          CH = CH / UR
+          CM = CM / UR
           IF(SNOWH > 0.) THEN
              CM = MIN(0.01,CM)   ! CM & CH are too large, causing
              CH = MIN(0.01,CH)   ! computational instability
@@ -3701,6 +3697,11 @@ contains
                        THAIR  ,QAIR   ,QC     ,ZLVL   ,        &  !in            
                        SFCPRS ,FV     ,CM     ,CH     ,CH2B   ,&  !inout 
                        CQ2B   ,MOZ)                               !out   
+          ! Undo the multiplication by windspeed that SFCDIF3 
+          ! applies to exchange coefficients CH and CM:
+          CH   = CH / UR
+          CM   = CM / UR
+          CH2B = CH2V / UR
 
           IF(SNOWH > 0.) THEN    ! jref: does this still count??
              CM = MIN(0.01,CM)   ! CM & CH are too large, causing
@@ -3716,6 +3717,11 @@ contains
                        TGB    ,QAIR   ,ZLVL   ,IZ0TLND,QSFC   ,&
                        H      ,QFX    ,CM     ,CH     ,CH2B   ,& 
                        CQ2B   ,MOZ    ,FV     ,U10B   ,V10B)
+          ! Undo the multiplication by windspeed that SFCDIF4 
+          ! applies to exchange coefficients CH and CM:
+          CH   = CH / UR
+          CM   = CM / UR
+          CH2B = CH2B / UR
 
           IF(SNOWH > 0.) THEN    ! jref: does this still count??
              CM = MIN(0.01,CM)   ! CM & CH are too large, causing

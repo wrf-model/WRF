@@ -1391,6 +1391,8 @@ contains
   REAL                                              :: FSUN   !sunlit fraction of canopy [-]
   REAL                                              :: RB     !leaf boundary layer resistance (s/m)
   REAL                                              :: RSURF  !ground surface resistance (s/m)
+  REAL                                              :: L_RSURF!Dry-layer thickness for computing RSURF (Sakaguchi and Zeng, 2009)
+  REAL                                              :: D_RSURF!Reduced vapor diffusivity in soil for computing RSURF (SZ09)
   REAL                                              :: BEVAP  !soil water evaporation factor (0- 1)
   REAL                                              :: MOL    !Monin-Obukhov length (m)
   REAL                                              :: VAI    !sum of LAI  + stem area index [m2/m2]
@@ -1592,15 +1594,25 @@ contains
        BTRANI(1:NROOT) = BTRANI(1:NROOT)/BTRAN
      END IF
 
-! soil surface resistence for ground evap.
+! soil surface resistance for ground evap.
 
      BEVAP = MAX(0.0,SH2O(1)/SMCMAX)
      IF(IST == 2) THEN
        RSURF = 1.          ! avoid being divided by 0
        RHSUR = 1.0
      ELSE
-!niu       RSURF = FSNO * 1. + (1.-FSNO)* EXP(8.25-4.225*BEVAP) !Sellers (1992)
-       RSURF = FSNO * 1. + (1.-FSNO)* EXP(8.25-6.0*BEVAP) !adjusted to decrease RSURF for wet soil
+
+        ! RSURF based on Sakaguchi and Zeng, 2009
+        ! taking the "residual water content" to be the wilting point, 
+        ! and correcting the exponent on the D term (typo in SZ09 ?)
+        L_RSURF = (-ZSOIL(1)) * ( exp ( (1.0 - MIN(1.0,SH2O(1)/SMCMAX)) ** 5 ) - 1.0 ) / ( 2.71828 - 1.0 ) 
+        D_RSURF = 2.2E-5 * SMCMAX * SMCMAX * ( 1.0 - SMCWLT / SMCMAX ) ** (2.0+3.0/BEXP)
+        RSURF = L_RSURF / D_RSURF
+
+        ! Older RSURF computations:
+        !    RSURF = FSNO * 1. + (1.-FSNO)* EXP(8.25-4.225*BEVAP) !Sellers (1992)
+        !    RSURF = FSNO * 1. + (1.-FSNO)* EXP(8.25-6.0  *BEVAP) !adjusted to decrease RSURF for wet soil
+
        IF(SH2O(1) < 0.01 .and. SNOWH == 0.) RSURF = 1.E6
        PSI   = -PSISAT*(MAX(0.01,SH2O(1))/SMCMAX)**(-BEXP)   
        RHSUR = FSNO + (1.-FSNO) * EXP(PSI*GRAV/(RW*TG)) 

@@ -185,6 +185,12 @@ subroutine da_set_obs_missing (iv, n)
             iv%sonde_sfc(i)%q = field_type(missing_r, missing_data, xmiss, missing_r, missing_r)
          end if
       end do
+   case(rain)
+      do i = 1, iv%info(n)%nlocal
+         if ( iv%info(n)%thinned(1,i) ) then
+            iv%rain(i)%rain = field_type(missing_r, missing_data, xmiss, missing_r, missing_r)
+         end if
+      end do
    case default
       return
    end select

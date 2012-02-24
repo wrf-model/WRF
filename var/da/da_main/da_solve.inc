@@ -123,6 +123,10 @@
          ' Resetting ntmax = 0 for analysis_type = randomcv' 
    end if
 
+   if ( test_transforms .and. test_gradient ) then
+      write(unit=stdout,fmt='(a)') &
+         ' Only doing the gradient check  '
+   endif
    !---------------------------------------------------------------------------
    ! [2.0] Initialise wrfvar parameters:
    !---------------------------------------------------------------------------

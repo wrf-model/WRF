@@ -267,7 +267,7 @@ subroutine da_transfer_xatowrf(grid)
 
       ! Compute geopotential (using dry inverse density and dry pressure)
 
-      ph(kts) = grid%ht(i,j) * gravity
+      ph(kts) = grid%phb(i,j,kts)
       DO k = kts, kte
          p_full = grid%xb%p(i,j,k) + grid%xa%p(i,j,k)
          t_full = grid%xb%t(i,j,k) + grid%xa%t(i,j,k)

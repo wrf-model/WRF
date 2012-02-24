@@ -205,7 +205,7 @@
    !---------------------------------------------------------------------------
    ! [5.1] Set up background errors (be):
    !---------------------------------------------------------------------------
-   if (use_background_errors) then
+   if (use_background_errors .and. multi_inc /= 1) then
       call da_setup_background_errors (grid, be)
    else
       be % ne = ensdim_alpha
@@ -394,7 +394,7 @@
 
       num_qcstat_conv=0
       call da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid , config_flags)
-      
+      if ( multi_inc == 1 ) return      
 
       if (test_transforms .or. test_gradient) then
 

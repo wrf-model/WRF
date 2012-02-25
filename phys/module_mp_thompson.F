@@ -723,8 +723,10 @@
                               th, pii, p, dz, dt_in, itimestep, &
                               RAINNC, RAINNCV, &
                               SNOWNC, SNOWNCV, &
-                              GRAUPELNC, GRAUPELNCV, &
-                              SR, rainprod, evapprod, &
+                              GRAUPELNC, GRAUPELNCV, SR, &
+#ifdef WRF_CHEM
+                              rainprod, evapprod, &
+#endif
 !                             refl_10cm, grid_clock, grid_alarms, &
                               ids,ide, jds,jde, kds,kde, &             ! domain dims
                               ims,ime, jms,jme, kms,kme, &             ! memory dims
@@ -738,8 +740,10 @@
                             its,ite, jts,jte, kts,kte
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           qv, qc, qr, qi, qs, qg, ni, nr, th
-      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT),optional:: &
+#ifdef WRF_CHEM
+      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           rainprod, evapprod
+#endif
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN):: &
                           pii, p, dz
       REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT):: &
@@ -757,8 +761,11 @@
 !..Local variables
       REAL, DIMENSION(kts:kte):: &
                           qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
-                          nr1d, t1d, p1d, dz1d, dBZ, &
+                          nr1d, t1d, p1d, dz1d, dBZ
+#ifdef WRF_CHEM
+      REAL, DIMENSION(kts:kte):: &
                           rainprod1d, evapprod1d
+#endif
       REAL, DIMENSION(its:ite, jts:jte):: pcp_ra, pcp_sn, pcp_gr, pcp_ic
       REAL:: dt, pptrain, pptsnow, pptgraul, pptice
       REAL:: qc_max, qr_max, qs_max, qi_max, qg_max, ni_max, nr_max
@@ -857,7 +864,9 @@
          call mp_thompson(qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
                       nr1d, t1d, p1d, dz1d, &
                       pptrain, pptsnow, pptgraul, pptice, &
+#ifdef WRF_CHEM
                       rainprod1d, evapprod1d, &
+#endif
                       kts, kte, dt, i, j)
 
          pcp_ra(i,j) = pptrain
@@ -885,8 +894,10 @@
             qg(i,k,j) = qg1d(k)
             ni(i,k,j) = ni1d(k)
             nr(i,k,j) = nr1d(k)
-            if(present(rainprod)) rainprod(i,k,j) = rainprod1d(k)
-            if(present(evapprod)) evapprod(i,k,j) = evapprod1d(k)
+#ifdef WRF_CHEM
+            rainprod(i,k,j) = rainprod1d(k)
+            evapprod(i,k,j) = evapprod1d(k)
+#endif
             th(i,k,j) = t1d(k)/pii(i,k,j)
             if (qc1d(k) .gt. qc_max) then
              imax_qc = i
@@ -1013,7 +1024,9 @@
       subroutine mp_thompson (qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
                           nr1d, t1d, p1d, dzq, &
                           pptrain, pptsnow, pptgraul, pptice, &
+#ifdef WRF_CHEM
                           rainprod, evapprod, &
+#endif
                           kts, kte, dt, ii, jj)
 
       implicit none
@@ -1022,7 +1035,11 @@
       INTEGER, INTENT(IN):: kts, kte, ii, jj
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: &
                           qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
-                          nr1d, t1d, p1d, rainprod, evapprod
+                          nr1d, t1d, p1d
+#ifdef WRF_CHEM
+      REAL, DIMENSION(kts:kte), INTENT(INOUT):: &
+                          rainprod, evapprod
+#endif
       REAL, DIMENSION(kts:kte), INTENT(IN):: dzq
       REAL, INTENT(INOUT):: pptrain, pptsnow, pptgraul, pptice
       REAL, INTENT(IN):: dt
@@ -1053,6 +1070,8 @@
       DOUBLE PRECISION, DIMENSION(kts:kte):: prg_scw, prg_rfz, prg_gde, &
            prg_gcw, prg_rci, prg_rcs, &
            prg_rcg, prg_ihm
+
+      DOUBLE PRECISION, PARAMETER         :: zeroD0 = 0.
 
       REAL, DIMENSION(kts:kte):: temp, pres, qv
       REAL, DIMENSION(kts:kte):: rc, ri, rr, rs, rg, ni, nr
@@ -1188,9 +1207,13 @@
          prg_rcs(k) = 0.
          prg_rcg(k) = 0.
          prg_ihm(k) = 0.
+      enddo
+#ifdef WRF_CHEM
+      do k = kts, kte
          rainprod(k) = 0.
          evapprod(k) = 0.
       enddo
+#endif
 
 !+---+-----------------------------------------------------------------+
 !..Put column of data into local arrays.
@@ -2381,12 +2404,6 @@
          endif
       enddo
 
-      do k = kts, kte
-        rainprod(k) = prr_wau(k) + prr_rcw(k) + prs_scw(k) + prg_scw(k) + prs_iau(k) &
-                                 + prg_gcw(k) + prs_sci(k) + prr_rci(k)
-!       rainprod(k) = max( 0.,rainprod(k) )
-!       rainprod(k) = max( 0.,qrten(k)+qsten(k) )
-      enddo
 !+---+-----------------------------------------------------------------+
 !.. If still subsaturated, allow rain to evaporate, following
 !.. Srivastava & Coen (1992).
@@ -2445,8 +2462,17 @@
           temp(k) = t1d(k) + DT*tten(k)
           rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
          endif
-         evapprod(k) = prv_rev(k)
       enddo
+#ifdef WRF_CHEM
+      do k = kts, kte
+         evapprod(k) = prv_rev(k) - (min(zeroD0,prs_sde(k)) + &
+                                     min(zeroD0,prg_gde(k)))
+         rainprod(k) = prr_wau(k) + prr_rcw(k) + prs_scw(k) + &
+                                    prg_scw(k) + prs_iau(k) + &
+                                    prg_gcw(k) + prs_sci(k) + &
+                                    pri_rci(k)
+      enddo
+#endif
 
 !+---+-----------------------------------------------------------------+
 !..Find max terminal fallspeed (distribution mass-weighted mean

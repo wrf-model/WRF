@@ -41,8 +41,10 @@ SUBROUTINE microphysics_driver(                                          &
                       ,snownc,    snowncv                                &
                       ,hailnc,    hailncv                                &
                       ,graupelnc, graupelncv                             &
+#ifdef WRF_CHEM
                       ,rainprod, evapprod                                &
                       ,qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp                &
+#endif
                       ,refl_10cm                                         & ! HM, 9/22/09, add for refl
 ! YLIN
 ! Added the RI_CURR array to the call
@@ -323,12 +325,12 @@ SUBROUTINE microphysics_driver(                                          &
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(IN) :: qrcuten, qscuten, qicuten
+#ifdef WRF_CHEM
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
-         OPTIONAL,                                                &
          INTENT(INOUT) :: rainprod, evapprod
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
-         OPTIONAL,                                                &
          INTENT(INOUT) :: qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp
+#endif
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          OPTIONAL,                                                &
          INTENT(IN) :: mu
@@ -482,13 +484,12 @@ SUBROUTINE microphysics_driver(                                          &
                   PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
                   PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR) .AND.  &
                   PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) ) THEN
-               IF ( PRESENT( qc_b4mp ) .and. present( qi_b4mp ) .and. &
-                    present( qs_b4mp ) .and. present( qv_b4mp ) ) then
+#ifdef WRF_CHEM
                  qv_b4mp(its:ite,kts:kte,jts:jte) = qv_curr(its:ite,kts:kte,jts:jte)
                  qc_b4mp(its:ite,kts:kte,jts:jte) = qc_curr(its:ite,kts:kte,jts:jte)
                  qi_b4mp(its:ite,kts:kte,jts:jte) = qi_curr(its:ite,kts:kte,jts:jte)
                  qs_b4mp(its:ite,kts:kte,jts:jte) = qs_curr(its:ite,kts:kte,jts:jte)
-               ENDIF
+#endif
              CALL mp_gt_driver(                          &
                      QV=qv_curr,                         &
                      QC=qc_curr,                         &
@@ -511,12 +512,14 @@ SUBROUTINE microphysics_driver(                                          &
                      GRAUPELNC=GRAUPELNC,                &
                      GRAUPELNCV=GRAUPELNCV,              &
                      SR=SR,                              &
+#ifdef WRF_CHEM
                      RAINPROD=rainprod,                  &
-                     EVAPPROD=evapprod                   &
+                     EVAPPROD=evapprod,                  &
+#endif
 !                    refl_10cm, grid_clock, grid_alarms, &
-                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
-                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
-                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+                 IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
+                 IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
+                 ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
              ENDIF

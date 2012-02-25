@@ -12,6 +12,9 @@ PROGRAM tc_data
         initial_config, get_config_as_buffer, set_config_as_buffer
    USE module_timing
    USE module_state_description, ONLY : realonly
+#ifdef DM_PARALLEL
+   USE module_dm, ONLY: wrf_dm_initialize
+#endif
 #ifdef NO_LEAP_CALENDAR
    USE module_symbols_util, ONLY: wrfu_cal_noleap
 #else
@@ -110,7 +113,7 @@ PROGRAM tc_data
    CALL get_config_as_buffer( configbuf, configbuflen, nbytes )
    CALL wrf_dm_bcast_bytes( configbuf, nbytes )
    CALL set_config_as_buffer( configbuf, configbuflen )
-!   CALL wrf_dm_initialize
+   CALL wrf_dm_initialize
 #else
    CALL initial_config
 #endif

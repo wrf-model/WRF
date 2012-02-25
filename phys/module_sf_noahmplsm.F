@@ -3701,7 +3701,7 @@ contains
           ! applies to exchange coefficients CH and CM:
           CH   = CH / UR
           CM   = CM / UR
-          CH2B = CH2V / UR
+          CH2B = CH2B / UR
 
           IF(SNOWH > 0.) THEN    ! jref: does this still count??
              CM = MIN(0.01,CM)   ! CM & CH are too large, causing

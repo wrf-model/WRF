@@ -131,10 +131,10 @@ int GRID_to_latlon(GridNav *gridnav, float column, float row, float *lat,
 		gridnav->proj_transform.parm2 + eps;
 	    *lon = gridnav->proj_transform.parm5 * -1 * 
 		atan(X / Y) * RAD_TO_DEG + gridnav->proj.central_lon;
-	    *lat = 90 - 2 * RAD_TO_DEG *
-		atan(X / (2 * EARTH_RAD * 
-			  sin((*lon - gridnav->proj.central_lon ) / 
-			      RAD_TO_DEG) + eps) );
+            *lat = (gridnav->proj_transform.parm5 * 90) - 2 * RAD_TO_DEG *
+                atan(X / (2 * EARTH_RAD *
+                          sin((*lon - gridnav->proj.central_lon ) /
+                              RAD_TO_DEG) + eps) );
 	    while (*lon > 180) *lon -= 360;
 	    while (*lon <= -180) *lon += 360;
 	    break;

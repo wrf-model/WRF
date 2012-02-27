@@ -4524,7 +4524,7 @@ CONTAINS
      &                     dv1v,    dv2u,    dv2v,    dv3q,         &
      &                     dv3h,    dv3u,    dv3v,    clam,         &
      &                     dz,      dz1,     e1,                    &
-     &                     el2orc,  elocp,   aafac,                 &
+     &                     el2orc,  elocp,   aafac,   cthk,         &
      &                     es,      etah,    h1,      dthk,         &
      &                     evef,    evfact,  evfactl, fact1,        &
      &                     fact2,   factor,  fjcap,                 &
@@ -4561,7 +4561,7 @@ CONTAINS
      &          el2orc=hvap*hvap/(rv*cp))
       parameter(terr=0.,c0=.002,c1=5.e-4,delta=fv)
       parameter(fact1=(cvap-cliq)/rv,fact2=hvap/rv-fact1*t0c)
-      parameter(cincrmax=180.,cincrmin=120.,dthk=25.)
+      parameter(cthk=50.,cincrmax=180.,cincrmin=120.,dthk=25.)
       parameter(h1=0.33333333)
 !c  local variables and arrays
       real(kind=kind_phys) pfld(im,km),    to(im,km),     qo(im,km),    &
@@ -5034,18 +5034,28 @@ CONTAINS
 !c
 !c  turn off shallow convection if cloud top is less than pbl top
 !c
-!     do i=1,im
-!       if(cnvflg(i)) then
-!         kk = kpbl(i)+1
-!         if(ktcon(i).le.kk) cnvflg(i) = .false.
-!       endif
-!     enddo
+     do i=1,im
+       if(cnvflg(i)) then
+         kk = kpbl(i)+1
+         if(ktcon(i).le.kk) cnvflg(i) = .false.
+       endif
+     enddo
+! c
+! c  turn off shallow convection if cloud depth is less than
+! c    a threshold value (cthk)
+! c
+       do i = 1, im
+         if(cnvflg(i)) then
+           tem = pfld(i,kbcon(i))-pfld(i,ktcon(i))
+           if(tem.lt.cthk) cnvflg(i) = .false.
+         endif
+       enddo
 !!
-!     totflg = .true.
-!     do i = 1, im
-!       totflg = totflg .and. (.not. cnvflg(i))
-!     enddo
-!     if(totflg) return
+     totflg = .true.
+     do i = 1, im
+       totflg = totflg .and. (.not. cnvflg(i))
+     enddo
+     if(totflg) return
 !!
 !c
 !c  specify upper limit of mass flux at cloud base

@@ -347,8 +347,13 @@ endif
     ibuf(1) = config_flags%e_sn - config_flags%s_sn + 1
     CALL wrf_put_dom_ti_integer ( fid , 'SOUTH-NORTH_GRID_DIMENSION' , ibuf , 1 , ierr )
 
-    ibuf(1) = config_flags%e_vert - config_flags%s_vert + 1
-    CALL wrf_put_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' , ibuf , 1 , ierr )
+    IF ( program_name(1:5) .EQ. 'TC_EM' ) THEN
+       ibuf(1) = config_flags%num_metgrid_levels
+       CALL wrf_put_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' , ibuf , 1 , ierr )
+    ELSE
+       ibuf(1) = config_flags%e_vert - config_flags%s_vert + 1
+       CALL wrf_put_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' , ibuf , 1 , ierr )
+    END IF
 
 #if (EM_CORE == 1)
     IF (grid%map_proj == 6) THEN
@@ -364,7 +369,8 @@ endif
 
 #if (EM_CORE == 1)
 !added the following for tc bogusing
-    if((config_flags%insert_bogus_storm) .or. (config_flags%remove_storm)) then
+    if( ((config_flags%insert_bogus_storm) .or. (config_flags%remove_storm)) .and. &
+        ( program_name(1:5) .EQ. 'TC_EM' ) ) then
        print *,"we have confirmed that insert or remove is true"
        ibuf(1) = 1
        CALL wrf_put_dom_ti_integer ( fid , 'FLAG_METGRID' ,  ibuf , 1 , ierr )
@@ -406,6 +412,10 @@ endif
        end if
         if(grid%flag_st100200 .eq. 1)then
           CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST100200' ,  ibuf , 1 , ierr ) 
+       end if 
+
+        if(grid%flag_soil_layers .eq. 1)then
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SOIL_LAYERS' ,  ibuf , 1 , ierr ) 
        end if 
 
        ibuf(1) = grid%num_metgrid_levels

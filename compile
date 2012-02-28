@@ -355,8 +355,13 @@ else
 
   if ( ! $?WRF_SRC_ROOT_DIR ) setenv WRF_SRC_ROOT_DIR `pwd`
 
-# new dec 2009.  check to see if make supports parallel -j option
-  make -j 2 >& /dev/null
+  # WRF does NOT have correct dependencies in its makefiles.
+  # That causes failed compiles occasionally on CCS.  We 
+  # cannot afford to risk NCO being unable to compile HWRF,
+  # so we are disabling parallel make.
+  unset J
+  unsetenv J
+  /bin/false
   if ( $status == 0 ) then              # Parallel make ok
     if ( ! $?J ) then                   # J not defined
       echo setting parallel make -j 2   # Set default to 2

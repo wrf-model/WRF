@@ -837,13 +837,13 @@ state   real   tbu_o       ikj     misc    1       -       r       "tbu_o" "Radi
 # additional variables for CO2 and GHG options
 # The following variables are to run the VPRM model; The veg_fra_vprm is for VPRM only and it's different than VEGFRA in wrfinput
 state   real     -               i{ghgv}jf    vprm_par     -        -     -       -     "VPRM parameters"                  ""
-state   real   vegfra_vprm       i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
-state   real   EVI               i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
-state   real   EVImin            i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
-state   real   EVImax            i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
-state   real   LSWI              i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
-state   real   LSWImax           i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
-state   real   LSWImin           i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
+state   real   vegfra_vprm       i{ghgv}jf    vprm_par     1        -     i{15}r  ""    " " " "
+state   real   EVI               i{ghgv}jf    vprm_par     1        -     i{15}r  ""    " " " "
+state   real   EVImin            i{ghgv}jf    vprm_par     1        -     i{15}r  ""    " " " "
+state   real   EVImax            i{ghgv}jf    vprm_par     1        -     i{15}r  ""    " " " "
+state   real   LSWI              i{ghgv}jf    vprm_par     1        -     i{15}r  ""    " " " "
+state   real   LSWImax           i{ghgv}jf    vprm_par     1        -     i{15}r  ""    " " " "
+state   real   LSWImin           i{ghgv}jf    vprm_par     1        -     i{15}r  ""    " " " "
 
 # VPRM parameters to constrain GEE and RESP fluxes
 state   real   rad_vprm          {ghgv}       misc         1        -     ir  ""    " " " "
@@ -853,9 +853,9 @@ state   real   resp_vprm         {ghgv}       misc         1        -     ir  ""
 
 # Parameters and fields to run the Kaplan model
 state   real     -               ijf    wet_in   -        -     -   -     "Wetland input files"                  ""
-state   real   Cpool             ijf    wet_in   1        -     i{18}rh ""    "LPJ Carbon pool"              "kgC/m^2 "
-state   real   wetmap            ijf    wet_in   1        -     i{18}rh ""    "Kaplan potential wetland map" " "
-state   real   T_ann             ijf    wet_in   1        -     i{18}r  ""    "mean annual temperature"      "celsius"
+state   real   Cpool             ijf    wet_in   1        -     i{15}rh ""    "LPJ Carbon pool"              "kgC/m^2 "
+state   real   wetmap            ijf    wet_in   1        -     i{15}rh ""    "Kaplan potential wetland map" " "
+state   real   T_ann             ijf    wet_in   1        -     i{15}r  ""    "mean annual temperature"      "celsius"
 
 # Parameters to for calculating the termite emissions online
 # biomass termite per vegetation type [g/m^2]

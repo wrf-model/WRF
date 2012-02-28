@@ -52,7 +52,7 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
 	  */RRTM_DATA */SOILPARM.TBL */VEGPARM.TBL */MPTABLE.TBL */URBPARM.TBL */grib2map.tbl \
 	  */CAM_ABS_DATA */CAM_AEROPT_DATA */RRTMG_LW_DATA */RRTMG_SW_DATA \
 	  */ozone.formatted */ozone_lat.formatted */ozone_plev.formatted \
-	  */gribmap.txt */tr??t?? */co2_trans) >& /dev/null
+	  */gribmap.txt */tr??t?? */co2_trans */namelist.output ) >& /dev/null
   else if ( "$arg" == '-aa' ) then
     /bin/rm -f configure.wrf.backup
     /bin/rm -f Registry/Registry.backup

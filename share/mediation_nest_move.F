@@ -1218,7 +1218,7 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
                   nids, nide, njds, njde, nkds, nkde, &
                   nims, nime, njms, njme, nkms, nkme, &
                   nips, nipe, njps, njpe, nkps, nkpe
-   real :: dx,dy,kid_ic,kid_jc,my_ic,my_jc,pgr,pgrn,hr,two_dt
+   real :: dx,dy,kid_ic,kid_jc,my_ic,my_jc,pgr,pgrn,hr,two_dt,when,before,after
    real, parameter :: pmult=1.35
    integer :: inew,jnew
    logical :: abort
@@ -1270,8 +1270,12 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
    ! Switch off nest motion if we're at the analysis time or 6hr forecast
    if(grid%nomove_freq_hr>0) then
       hr=(grid%ntsd*grid%dt)/3600.0
-      two_dt=grid%dt*2/3600.0
-      if(mod(hr,grid%nomove_freq_hr)<two_dt) then
+      when=anint(hr/grid%nomove_freq_hr)*grid%nomove_freq_hr
+
+      before=when-3.0/60.0-grid%dt*2.0/3600.0
+      after=when+grid%dt*2.0/3600.0
+
+      if(hr>before.and.hr<after) then
          abort=.true.
          write(mess,'("d",I0,": cannot move: forecast hour too close to a ",F0.3,"-hourly time")') grid%id,grid%nomove_freq_hr
          call wrf_message(trim(mess))

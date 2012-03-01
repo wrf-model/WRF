@@ -814,7 +814,7 @@ integer myproc
 !---------------------------------------------------------------------
 ! Local
    CHARACTER*256 LUTYPE
-   CHARACTER*80 :: message
+   CHARACTER*512 :: message
    INTEGER  :: landuse_unit, LS, LC, LI, LUN, NSN
    INTEGER  :: i, j, itf, jtf, is, cats, seas, curs
    INTEGER , PARAMETER :: OPEN_OK = 0
@@ -918,10 +918,11 @@ integer myproc
           LUN=LUCATS
           NSN=LUSEAS
             IF(LUTYPE.NE.'SSIB') THEN !this is not really true for ssib lsm (fds)
-            PRINT *, 'LANDUSE TYPE = "' // TRIM (LUTYPE) // '" FOUND',        &
+            write(message,*) 'LANDUSE TYPE = "' // TRIM (LUTYPE) // '" FOUND',        &
                    LUCATS,' CATEGORIES',LUSEAS,' SEASONS',     &
                    ' WATER CATEGORY = ',ISWATER,               &
                    ' SNOW CATEGORY = ',ISICE
+            call wrf_message(message)
             ENDIF
         ENDIF
         DO ls=1,luseas
@@ -1866,6 +1867,8 @@ integer myproc
                      its,ite, jts,jte, kts,kte                     )
 
       CASE (PXLSMSCHEME)
+          if(config_flags%num_land_cat .ne. 24) CALL wrf_error_fatal &
+            ( 'module_physics_init: 24 cat USGS must be used with PX LSM option' )
           CALL LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,  &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,        &
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS, &

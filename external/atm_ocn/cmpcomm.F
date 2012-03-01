@@ -132,7 +132,9 @@
       call MPI_COMM_SIZE(COMM_local,component_nprocs,ierr)
       call MPI_COMM_SIZE(MPI_COMM_WORLD,nprocs_global,ierr)
       if (component_nprocs.eq.nprocs_global) then
-        if(process_rank_local.eq.0) print*,'CMP_INIT: standalone mode'
+        if(process_rank_local.eq.0) then
+           call wrf_message('CMP_INIT: standalone mode')
+           endif
         Coupler_id=-1
         RETURN
       end if
@@ -143,18 +145,18 @@
 !
       tag=Coupler_id+23456
 !           print*,'CMP_INIT: to call MPI_RECV'
-      call MPI_RECV(ibuffer,ibuffer_size,MPI_INTEGER,MPI_ANY_SOURCE,tag, &
+      call MPI_RECV(ibuffer,ibuffer_size,MPI_INTEGER,MPI_ANY_SOURCE,tag,&
      &MPI_COMM_WORLD,status,ierr)
       call GLOB_ABORT(ierr,'CMP_INIT: error in MPI_RECV',1)
       Coupler_rank=ibuffer(2)
       if (ibuffer(1).ne.Coupler_id) then
-        print*,'CMP_INIT: stopped, rcvd ibuffer(1) value is not C id: ', &
-     &  ibuffer(1)
+        call wrf_message('CMP_INIT: stopped, rcvd ibuffer(1) value '    &
+     &         //'is not C id: ',ibuffer(1))
         CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
       end if
       if (ibuffer(3).ne.ibuffer_size) then
-        print*,'CMP_INIT: stopped, rcvd ibuffer(3) value ',ibuffer(3), &
-     &  ' is not ibuffer_size=',ibuffer_size
+        call wrf_message('CMP_INIT: stopped, rcvd ibuffer(3) value ',   &
+     &   ibuffer(3),' is not ibuffer_size=',ibuffer_size)
         CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
       end if
 
@@ -187,7 +189,7 @@
       USE CMP_COMM
 
       implicit none
- 
+      character*255 message
       integer master_rank_local,ierr,ibuf(3),color,key,tag
 !
 
@@ -210,14 +212,15 @@
         ibuf(2)=process_rank_global
         ibuf(3)=FlexLev
         tag=my_id+54321
-            print*,'CMP_INTRO: to call MPI_SEND ',process_rank_local, &
-     &      process_rank_global
+            write(message,*) 'CMP_INTRO: to call MPI_SEND ',            &
+     &      process_rank_local, process_rank_global
+            call wrf_message(message)
         call MPI_SEND(ibuf,3,MPI_INTEGER,Coupler_rank,tag, &
      &  MPI_COMM_WORLD,ierr)
         if (ierr.ne.0) then
-          print*,'CMP_INTRO: error in MPI_SEND, process ', &
+          write(message,*) 'CMP_INTRO: error in MPI_SEND, process ',    &
      &    process_rank_global
-          CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
+          call wrf_error_fatal(message)
         end if
       end if
 !           print*,'CMP_INTRO: returning ',process_rank_local,
@@ -235,7 +238,7 @@
       USE CMP_COMM
 
       implicit none
- 
+      character*255 :: message
       integer ierr,ibuf(3),color,key,tag,i
 !
 
@@ -252,8 +255,8 @@
           ibuf(2)=component_master_rank_global
           call MPI_SEND(ibuf,2,MPI_INTEGER,i,tag,COMM_local,ierr)
           if (ierr.ne.0) then
-            print*,'CMP_INTRO_m: error in 1st MPI_SEND, i=',i
-            CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
+            write(message,*) 'CMP_INTRO_m: error in 1st MPI_SEND, i=',i
+            call wrf_error_fatal(message)
           end if
         end if
       end do
@@ -274,9 +277,9 @@
       call MPI_SEND(ibuf,3,MPI_INTEGER,Coupler_rank,tag, &
      &MPI_COMM_WORLD,ierr)
       if (ierr.ne.0) then
-        print*,'CMP_INTRO_m: error in MPI_SEND, process ', &
+        write(message,*) 'CMP_INTRO_m: error in MPI_SEND, process ',    &
      &  process_rank_global
-        CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
+        CALL wrf_error_fatal(message)
       end if
 !         print*,'CMP_INTRO_m: returning ',process_rank_local,
 !    >    process_rank_global
@@ -294,7 +297,7 @@
       USE CMP_COMM
 
       implicit none
- 
+      character*255 :: message
       integer ierr,ibuf(3),color,key,tag,i,status(MPI_STATUS_SIZE)
 !
 
@@ -305,8 +308,9 @@
       call MPI_RECV(ibuf,2,MPI_INTEGER,MPI_ANY_SOURCE,tag, &
      &COMM_local,status,ierr)
       if (ierr.ne.0) then
-        print*,'CMP_INTRO_s: error in MPI_RECV ',process_rank_local
-        CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
+        write(message,*) 'CMP_INTRO_s: error in MPI_RECV ',             &
+     &           process_rank_local
+        call wrf_error_fatal(message)
       end if
       component_master_rank_local=ibuf(1)
       component_master_rank_global=ibuf(2)
@@ -331,7 +335,7 @@
       USE CMP_COMM
 
       implicit none
- 
+      character*255 :: message
       integer N,ierr,tag
       real(kind=kind_REAL) F(N)
 !
@@ -340,14 +344,15 @@
 !           call CMP_DBG_CR(6,'CMP_SEND: entered')
 
       if (process_rank_local.ne.component_master_rank_local) then
-        if (FlexLev.eq.0) then
+        if (FlexLev.eq.0) then                                           
 !         With "flexibility level" FlexLev=0, only Component master 
-!         process is supposed to call this subroutine.
-          print '("*** CMP_SEND: process_rank_local=",i4,"  ***"/ &
-     &    "*** and component_master_rank_local=",i4," differ:  ***"/ &
-     &    "*** STOPPED ***")', &
+!         process is supposed to call this subroutine.           
+          write(message,                                                &
+     &    '("*** CMP_SEND: process_rank_local=",i4,"  ***"/'            &
+     &    //'"*** and component_master_rank_local=",i4," differ:  ***"/'&
+     &    //'"*** STOPPED ***")')                                       &
      &    process_rank_local,component_master_rank_local
-          CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
+          call wrf_error_fatal(message)
         else if (FlexLev.eq.1) then
 !         With "flexibility level" FlexLev=1, any Component process is 
 !         allowed to call this subroutine but only the Component
@@ -356,9 +361,10 @@
 !         receives data from the Component master process.
           return
         else if (FlexLev.ne.2 .and. FlexLev.ne.3) then
-          print '("*** CMP_SEND: illegal value of FlexLev",i9/ &
-     &    "*** STOPPED")',FlexLev
-          CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
+           write(message,                                               &
+     &     '("*** CMP_SEND: illegal value of FlexLev",i9/'              &
+     &    //'"*** STOPPED")') FlexLev
+           call wrf_error_fatal(message)
         end if
 !         With "flexibility level" FlexLev=2 or FlexLev=3, any 
 !         Component process is allowed to actually send data.
@@ -387,7 +393,7 @@
       USE CMP_COMM
 
       implicit none
- 
+      character*255 :: message
       integer N,ierr,tag
       real(kind=kind_alt_REAL) F(N)
 !
@@ -399,11 +405,12 @@
         if (FlexLev.eq.0) then
 !         With "flexibility level" FlexLev=0, only Component master 
 !         process is supposed to call this subroutine.
-          print '("*** CMP_SEND: process_rank_local=",i4,"  ***"/ &
-     &    "*** and component_master_rank_local=",i4," differ:  ***"/ &
-     &    "*** STOPPED ***")', &
+          write(message,                                                &
+     &      '("*** CMP_SEND: process_rank_local=",i4,"  ***"/'          &
+     &    //'"*** and component_master_rank_local=",i4," differ:  ***"/'&
+     &    //'"*** STOPPED ***")')                                       &
      &    process_rank_local,component_master_rank_local
-          CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
+          call wrf_error_fatal(message)
         else if (FlexLev.eq.1) then
 !         With "flexibility level" FlexLev=1, any Component process is 
 !         allowed to call this subroutine but only the Component
@@ -412,9 +419,10 @@
 !         receives data from the Component master process.
           return
         else if (FlexLev.ne.2 .and. FlexLev.ne.3) then
-          print '("*** CMP_SEND: illegal value of FlexLev",i9/ &
-     &    "*** STOPPED")',FlexLev
-          CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
+          write(message,                                                &
+     &    '("*** CMP_SEND: illegal value of FlexLev",i9/ '              &
+     &    //'"*** STOPPED")') FlexLev
+          call wrf_error_fatal(message)
         end if
 !         With "flexibility level" FlexLev=2 or FlexLev=3, any 
 !         Component process is allowed to actually send data.
@@ -428,7 +436,7 @@
 
       tag=my_id
 
-      call MPI_SEND(F,N,MPI_kind_alt_REAL,Coupler_rank,tag, &
+      call MPI_SEND(F,N,MPI_kind_alt_REAL,Coupler_rank,tag,             &
      &MPI_COMM_WORLD,ierr)
       call GLOB_ABORT(ierr,'CMP_SEND: error in MPI_SEND',1)
 
@@ -446,7 +454,7 @@
  
       integer N,MPI_DATATYPE
       integer F(1)
-
+      character*255 :: message
       integer ierr,tag
 !
 
@@ -458,11 +466,12 @@
         if (FlexLev.eq.0) then
 !         With "flexibility level" FlexLev=0, only Component master 
 !         process is supposed to call this subroutine.
-          print '("*** CMP_SEND: process_rank_local=",i4,"  ***"/ &
-     &    "*** and component_master_rank_local=",i4," differ:  ***"/ &
-     &    "*** STOPPED ***")', &
+          write(message,                                                &
+     &    '("*** CMP_SEND: process_rank_local=",i4,"  ***"/ '           &
+     &    //'"*** and component_master_rank_local=",i4," differ:  ***"/'&
+     &    //' "*** STOPPED ***")')                                      &
      &    process_rank_local,component_master_rank_local
-          CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
+          call wrf_error_fatal(message)
         else if (FlexLev.eq.1) then
 !         With "flexibility level" FlexLev=1, any Component process is 
 !         allowed to call this subroutine but only the Component
@@ -471,8 +480,9 @@
 !         receives data from the Component master process.
           return
         else if (FlexLev.ne.2 .and. FlexLev.ne.3) then
-          print '("*** CMP_SEND: illegal value of FlexLev",i9/ &
-     &    "*** STOPPED")',FlexLev
+          write(message,                                                &
+     &    '("*** CMP_SEND: illegal value of FlexLev",i9/ '              &
+     &    //'"*** STOPPED")') FlexLev
           CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
         end if
 !         With "flexibility level" FlexLev=2 or FlexLev=3, any 
@@ -502,7 +512,7 @@
       USE CMP_COMM
 
       implicit none
- 
+      character*255 :: message
       integer N,ierr,tag
       integer F(N)
 !
@@ -515,11 +525,12 @@
         if (FlexLev.eq.0) then
 !         With "flexibility level" FlexLev=0, only Component master 
 !         process is supposed to call this subroutine.
-          print '("*** CMP_SEND: process_rank_local=",i4,"  ***"/ &
-     &    "*** and component_master_rank_local=",i4," differ:  ***"/ &
-     &    "*** STOPPED ***")', &
+          write(message,                                                &
+          '("*** CMP_SEND: process_rank_local=",i4,"  ***"/ '           &
+     &    //'"*** and component_master_rank_local=",i4," differ:  ***"/'&
+     &    //'"*** STOPPED ***")')                                       &
      &    process_rank_local,component_master_rank_local
-          CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
+          call wrf_error_fatal(message)
         else if (FlexLev.eq.1) then
 !         With "flexibility level" FlexLev=1, any Component process is 
 !         allowed to call this subroutine but only the Component
@@ -528,8 +539,9 @@
 !         receives data from the Component master process.
           return
         else if (FlexLev.ne.2 .and. FlexLev.ne.3) then
-          print '("*** CMP_SEND: illegal value of FlexLev",i9/ &
-     &    "*** STOPPED")',FlexLev
+          write(message,                                                &
+     &    '("*** CMP_SEND: illegal value of FlexLev",i9/ '              &
+     &    //'"*** STOPPED")') FlexLev
           CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
         end if
 !         With "flexibility level" FlexLev=2 or FlexLev=3, any 
@@ -543,12 +555,13 @@
       end if
 
       tag=my_id
-            print*,'CMP_INTEGER_SEND: to call MPI_SEND; F=', &
+      write(message,*) 'CMP_INTEGER_SEND: to call MPI_SEND; F=',        &
      &      F,' N=',N,' Coupler_rank=',Coupler_rank,' tag=',tag
+      call wrf_message(message)
       call MPI_SEND(F,N,MPI_INTEGER,Coupler_rank,tag, &
      &MPI_COMM_WORLD,ierr)
       call GLOB_ABORT(ierr,'CMP_INTEGER_SEND: error in MPI_SEND',1)
-            print*,'CMP_INTEGER_SEND: to return'
+      call wrf_debug(1,'CMP_INTEGER_SEND: to return')
 
       return
       END
@@ -560,7 +573,7 @@
       USE CMP_COMM
 
       implicit none
- 
+      character*255 :: message
       integer N,ierr,tag,ibuf(3),status(MPI_STATUS_SIZE)
       real(kind=kind_REAL) F(N)
 !
@@ -575,11 +588,12 @@
 !         With "flexibility level" FlexLev=0, only Component master 
 !         process is supposed to call this subroutine.
 
-          print '("*** CMP_RECV: process_rank_local=",i4,"  ***"/ &
-     &    "*** and component_master_rank_local=",i4," differ:  ***"/ &
-     &    "*** STOPPED ***")', &
+          write(message,                                                &
+     &    '("*** CMP_RECV: process_rank_local=",i4,"  ***"/ '           &
+     &    //'"*** and component_master_rank_local=",i4," differ:  ***"/'&
+     &    //' "*** STOPPED ***")')                                      &
      &    process_rank_local,component_master_rank_local
-          CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
+          call wrf_error_fatal(message)
 
         else if (FlexLev.eq.1 .or. FlexLev.eq.2) then
 
@@ -642,7 +656,7 @@
       USE CMP_COMM
 
       implicit none
- 
+      character*255 :: message
       integer N,ierr,tag,ibuf(3),status(MPI_STATUS_SIZE)
       real(kind=kind_alt_REAL) F(N)
 !
@@ -657,9 +671,10 @@
 !         With "flexibility level" FlexLev=0, only Component master 
 !         process is supposed to call this subroutine.
 
-          print '("*** CMP_alt_RECV: process_rank_local=",i4,"  ***"/ &
-     &    "*** and component_master_rank_local=",i4," differ:  ***"/ &
-     &    "*** STOPPED ***")', &
+          write(message,                                                &
+     &    '("*** CMP_alt_RECV: process_rank_local=",i4,"  ***"/ '       &
+     &    //'"*** and component_master_rank_local=",i4," differ:  ***"/'&
+     &    //'"*** STOPPED ***")')                                       &
      &    process_rank_local,component_master_rank_local
           CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
 
@@ -699,10 +714,9 @@
 
         else
 
-          print '("*** CMP_alt_RECV: illegal value of FlexLev",i9/ &
-     &    "*** STOPPED")',FlexLev
-          CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
-
+          write(message,'("*** CMP_alt_RECV: illegal value of FlexLev",'&
+     &    //'i9/"*** STOPPED")') FlexLev
+          call wrf_error_fatal(message)
         end if
 
       end if
@@ -727,7 +741,7 @@
  
       integer N,MPI_DATATYPE
       integer F(1)
-
+      character*255 :: message
       integer ierr,tag,ibuf(3),status(MPI_STATUS_SIZE)
 !
 
@@ -741,12 +755,13 @@
 
 !         With "flexibility level" FlexLev=0, only Component master 
 !         process is supposed to call this subroutine.
-
-          print '("*** CMP_gnr_RECV: process_rank_local=",i4,"  ***"/ &
-     &    "*** and component_master_rank_local=",i4," differ:  ***"/ &
-     &    "*** STOPPED ***")', &
+           
+          write(message,                                                &
+     &    '("*** CMP_gnr_RECV: process_rank_local=",i4,"  ***"/ '       &
+     &    //'"*** and component_master_rank_local=",i4," differ:  ***"/'&
+     &    //'"*** STOPPED ***")')                                       &
      &    process_rank_local,component_master_rank_local
-          CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
+          call wrf_error_fatal(message)
 
         else if (FlexLev.eq.1 .or. FlexLev.eq.2) then
 
@@ -784,9 +799,9 @@
 
         else
 
-          print '("*** CMP_gnr_RECV: illegal value of FlexLev",i9/ &
-     &    "*** STOPPED")',FlexLev
-          CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
+          write(message,'("*** CMP_gnr_RECV: illegal value of FlexLev",'&
+     &    //'i9/ "*** STOPPED")') FlexLev
+          call wrf_message(message)
 
         end if
 
@@ -811,22 +826,27 @@
       implicit none
 
       character*(*) s
- 
+      character*255 message
       integer nunit,ierr
 !
 
       if (process_rank_local.eq.component_master_rank_local) then
+         if(nunit==0 .or. nunit==6) then
+            call wrf_debug(1,s)
+         else
         write(nunit,*) trim(s)
+         endif
       else if (FlexLev.eq.0) then
 
 !         With "flexibility level" FlexLev=0, only Component master 
 !         process is supposed to call this subroutine.
 
-          print '("*** CMP_ANNOUNCE: process_rank_local=",i4,"  ***"/ &
-     &    "*** and component_master_rank_local=",i4," differ:  ***"/ &
-     &    "*** STOPPED ***")', &
+         write(message,                                                 &
+     &    '("*** CMP_ANNOUNCE: process_rank_local=",i4,"  ***"/ '       &
+     &    //'"*** and component_master_rank_local=",i4," differ:  ***"/'&
+     &    //'"*** STOPPED ***")')                                       &
      &    process_rank_local,component_master_rank_local
-          CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
+         call wrf_error_fatal(message)
 
       end if
 
@@ -877,7 +897,8 @@
       
       open(6,file=trim(s),form='formatted',status='unknown')
 
-      print*,'CMP_STDOUT: unit 6 closed, reopened as '//trim(s)
+      call wrf_message('CMP_STDOUT: unit 6 closed, reopened as '        &
+     &                 //trim(s))
 
       return
       END

@@ -221,7 +221,8 @@ state integer hifreq_lun   -     dyn_nmm     0      -      -
 rconfig  real wbd0    derived   max_domains    0       - "wbd0"                  "western boundary of the domain"
 rconfig  real sbd0    derived   max_domains    0       - "sbd0"                  "southern boundary of the domain"
 #for HWRF: 
-rconfig   logical analysis               namelist,time_control    max_domains        .false.      irh   "days"     "analysis control for the nested domain"
+rconfig   logical analysis               namelist,time_control    max_domains        .false.      irh   "analysis flag"     "analysis control for the nested domain"
+rconfig   logical write_analysis         namelist,time_control    max_domains        .true.       irh   "analysis output flag"  "if analysis=F and write_analysis=T then analysis file is written"
 
 rconfig   logical  high_freq        namelist,time_control    1      .true.    irh   "high frequency output"   "flag for high frequency output"
 rconfig   integer  high_dom         namelist,time_control    1      -99       irh   "domain"   "domain for high frequency output (-99 means all domains without children)"
@@ -578,6 +579,14 @@ state integer iup_adh   ij   dyn_nmm     1    -    -
 state integer iup_adv   ij   dyn_nmm     1    -    -
 state integer imicrogram -   misc        -    -    r   "imicrogram"  "flag 0/1 0=mixratio, 1=mcrograms/m3"  ""
 
+#
+# Vortex Tracker #4 Variables
+#
+state  real   distsq    ij     dyn_nmm     1      -      irh       "DISTSQ"  "Approximate square of distance from nest center for vortex tracker #4" "m2"
+state  real   weightout ij     dyn_nmm     1      -      irh       "WEIGHTOUT"  "Vortex center finder weight array for vortex tracker #4" ""
+state integer mslp_noisy ij    dyn_nmm     1      -      irh       "MSLP_NOISY"  "0=okay, 1=noisy MSLP, 2=outside search radius, 3=boundary (vortex tracker #4)" ""
+
+
 #                                               
 # table entries are of the form                                         
 #<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>   
@@ -789,6 +798,18 @@ state    real   XLAT            ij     misc        1         -      -       ""  
 state    real   XLONG           ij     misc        1         -      -       ""                 ""
 state    real   XLAND           ij     misc        1         -      -       ""                 ""
 state    real   RAINCV          ij     misc        1         -      -       ""                 ""
+
+#################################################################
+# HWRF nest movement variables
+#################################################################
+
+# Duplicate of nomove_freq for overriding nest movement at certain times
+state    real nomove_freq_hr          -       dyn_nmm  -     -    rh    "nomove_freq" "nest will not move at analysis time or multiples of this hour (if positive)"
+state     integer move_countdown          -      dyn_nmm        1         -      rh       "MOVE_COUNTDOWN"                "Timesteps left with extra CODAMP"           ""
+state     real    damp_scale              -      dyn_nmm        1         -      rh       "DAMP_SCALE"                    "Scaling factor for MOVE_COUNTDOWN"          ""
+state     real    damp_grid               ij     dyn_nmm        1         -      rh       "DAMP_GRID"                     "Divergence damping factor (minus 1) after nest move" ""
+
+
 
 #################################################################
 # other misc variables (all cores)
@@ -1115,6 +1136,18 @@ rconfig   integer sas_shal_conv           namelist,physics     max_domains    0 
 rconfig   real    sas_mass_flux           namelist,physics      max_domains  9e9       -     "sas_mass_flux"   "mass flux limit (SAS scheme)" ""
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
 
+# Vortex Tracking (physics namelist)
+rconfig   integer vortex_tracker          namelist,physics      max_domains    1      -      "vortex_tracker" "Vortex Tracking Algorithm" ""
+# Only for algorithm 4:
+rconfig   real    vt4_radius              namelist,physics      max_domains  150000.  -      "vt4_radius"     "Vortex Search Radius for vortex tracker #4" "m"
+rconfig   real    vt4_weightexp           namelist,physics      max_domains  1.       -      "vt4_weightexp"  "Vortex Search Weight Exponent for vortex tracker #4" ""
+rconfig   real    vt4_pmax                namelist,physics      max_domains  -1.      -      "vt4_pmax"       "Vortex Search Max Pressure for vortex tracker #4 (<0 = actual max pressure in search radius)" "Pa"
+
+rconfig   real    vt4_noise_pmax          namelist,physics      max_domains  103000.  -      "vt4_noise_pmax" "Noise Removal: Maximum Realistic MSLP" "Pa"
+rconfig   real    vt4_noise_pmin          namelist,physics      max_domains  85000.   -      "vt4_noise_pmin" "Noise Removal: Minimum Realistic MSLP" "Pa"
+rconfig   real    vt4_noise_dpdr          namelist,physics      max_domains  0.6      -      "vt4_noise_dpdr" "Noise Removal: Maximum Realistic dMSLP/dr" "Pa/m"
+rconfig   integer vt4_noise_iter          namelist,physics      max_domains  2        -      "vt4_noise_iter" "Noise Removal: number of iterations" ""
+
 # nmm variables
 rconfig   integer idtad                   namelist,physics     max_domains    2       irh    "idtad"  "fundamental timesteps between calls to NMM passive advection scheme"
 rconfig   integer nsoil                   namelist,physics     max_domains    4       irh    "nsoil"  "number of soil layers"
@@ -1141,7 +1174,8 @@ rconfig   integer cam_abs_dim1            namelist,physics      1             1 
 rconfig   integer cam_abs_dim2            namelist,physics      1             1       -      "cam_abs_dim2" "dimension for abstot in CAM radiation"  ""
 rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .false.  -     "feedback cumulus to radiation"  ""
 rconfig   real h_diff                     namelist,physics      max_domains  0.1      irh    "nmm input 9"
-rconfig   integer movemin                 namelist,physics      max_domains  10       irh    "nmm input 12"
+rconfig   integer movemin                 namelist,physics      max_domains  10       irh    "movemin" "nest movement timestep (multiples of nphs)"
+rconfig   real    nomove_freq             namelist,physics      max_domains  -1.0     irh    "nomove_freq" "nest will not move at analysis time or multiples of this hour (if positive)"
 
 # Dynamics
 # dynamics option (see package definitions, below)
@@ -1186,6 +1220,19 @@ rconfig   real    slophc                  namelist,dynamics     max_domains   6.
 rconfig   real    wp                      namelist,dynamics     max_domains   0.    irh  "wp"  "Off-centering weight in the updating of nonhyrostatic eps"
 
 rconfig   integer terrain_smoothing       namelist,dynamics     1             1     irh  "parallel_smooth" "nest_terrain smoothing method 0=none, 1=old, 2=new"
+
+# Increase CODAMP after nest move
+# Near edges:
+# CODAMP=CODAMP*(1+move_cdfact_edge)*countdown/move_codamp_time
+# Away from edges:
+#       =CODAMP*(1+move_cdfact_mid)*countdown/move_codamp_time
+# "countdown" is move_codamp_time at nest move, decreases by dt every timestep,
+# CODAMP increase is turned off after countdown<=0.  
+# Here, countdown/move_codamp_time = move_countdown/damp_scale
+
+rconfig   real    move_cdfact_edge        namelist,physics      max_domains   3.0     h     "move_cdfact_edge" "1-(CODAMP multiplier near domain edge) after nest move" ""
+rconfig   real    move_cdfact_mid         namelist,physics      max_domains   0.5     h     "move_cdfact_edge" "1-(CODAMP multiplier far from domain edge) after nest move" ""
+rconfig   real    move_codamp_time        namelist,physics      max_domains   -1.0   h     "move_codamp_time" "Seconds after nest move during which extra div. damp. is active (<=0 means disable)" "s"
 
 # Bdy_control
 rconfig   integer spec_bdy_width          namelist,bdy_control		1             5       irh    "spec_bdy_width"                ""      ""
@@ -1280,6 +1327,8 @@ rconfig integer td_pwfy        namelist,physics 1 1      - - ""  "southwest corn
 #### 9. Edit the Registry file to set up '5' as the value of the
 **** namelist variable dyn_opt that means to select our exp dyncore.
 package   dyn_exp       dyn_opt==5                   -             -
+
+package   vt4           vortex_tracker==4            -             state:weightout,mslp_noisy,distsq
 
 #package   passivec1     chem_opt==0                  -
 package   passiveqv     mp_physics==0                -             moist:qv
@@ -1501,3 +1550,6 @@ halo      HALO_TRACERS dyn_nmm 48:szj,s1z,spz,tcs
 halo HALO_NMM_FORCE_DOWN_SST dyn_nmm 120:sst
 
 halo HALO_NMM_TERRAIN_SMOOTH   dyn_nmm      24:HRES_AVC
+
+halo HALO_NMM_VT4_MSLP  dyn_nmm 8:mslp
+halo HALO_NMM_VT4_NOISE dyn_nmm 8:mslp_noisy

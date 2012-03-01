@@ -2328,7 +2328,7 @@ CONTAINS
               endif
            ENDIF
 
-          CALL SFCDIAGS_RUCLSM(HFX,QFX,TSK,QSFC,CHS2,CQS2,T2,TH2,Q2,      &
+          CALL SFCDIAGS_RUCLSM(HFX,QFX,TSK,QSFC,CQS2,CQS2,T2,TH2,Q2,      &
                      T_PHY,QV_CURR,RHO,P8W,                              &
                      PSFC,CP,R_d,RCP,                                    &
                      ids,ide, jds,jde, kds,kde,                          &

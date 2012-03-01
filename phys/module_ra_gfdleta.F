@@ -9784,6 +9784,7 @@ CONTAINS
       LOGICAL :: OPENED
       LOGICAL,EXTERNAL :: wrf_dm_on_monitor
       CHARACTER*80 errmess
+      character*255 message
 !
 !----------------------------------------------------------------------
 !
@@ -9887,7 +9888,8 @@ CONTAINS
 !----------------------------------------------------------------------
       IF ( wrf_dm_on_monitor() ) THEN
         DO i = 14,99
-      write(0,*)' in CONRAD i=',i,' opened=',opened
+      write(message,*)' in CONRAD i=',i,' opened=',opened
+      call wrf_debug(1,message)
           INQUIRE ( i , OPENED = opened )
           IF ( .NOT. opened ) THEN
             nunit_co2 = i

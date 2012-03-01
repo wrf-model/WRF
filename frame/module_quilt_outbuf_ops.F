@@ -118,7 +118,7 @@ CONTAINS
 #endif
 
     ENDDO
-write(0,*)'initializing num_entries to 0 '
+!write(0,*)'initializing num_entries to 0 '
     num_entries = 0
   END SUBROUTINE init_outbuf
 

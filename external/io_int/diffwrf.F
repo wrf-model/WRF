@@ -449,6 +449,10 @@ SUBROUTINE wrf_abort
   STOP
 END SUBROUTINE wrf_abort
 
+logical function wrf_dm_on_monitor()
+  wrf_dm_on_monitor=.true.
+end function wrf_dm_on_monitor
+
 SUBROUTINE get_current_time_string( time_str )
   CHARACTER(LEN=*), INTENT(OUT) :: time_str
   time_str = ''

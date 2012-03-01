@@ -1240,8 +1240,6 @@ package   bmjscheme      cu_physics==2               -             -
 package   gdscheme       cu_physics==3               -             -
 package   sasscheme      cu_physics==84              -             state:hpbl2d,heat2d,evap2d
 package   osasscheme     cu_physics==4               -             state:randstate1,randstate2,randstate3,randstate4,random
-package   sasscheme      cu_physics==84              -             -
-package   osasscheme     cu_physics==4               -             -
 package   g3scheme       cu_physics==5               -             -
 package   camzmscheme    cu_physics==7               -             -
 package   tiedtkescheme  cu_physics==6               -             -

@@ -172,15 +172,6 @@ contains
           if (io_form == IO_NET) &
                call ext_ncd_get_var_info(handle, cname, ndim, memorder, stagger, domain_start, domain_end, wrftype, istatus)
 #endif
-          print *, "cname=", cname
-          print *, "istatus=", istatus
-          print *, "ndim=", ndim
-          print *, "memorder=", memorder
-          print *, "stagger=", stagger
-          print *, "domain_start=", domain_start
-          print *, "domain_end=", domain_end
-          print *, "wrftype=", wrftype
-
 
           if (allocated(real_domain)) deallocate(real_domain)
           allocate(real_domain(domain_start(1):domain_end(1), domain_start(2):domain_end(2), domain_start(3):domain_end(3)))
@@ -201,7 +192,6 @@ contains
                   domain_start, domain_end, istatus)
           end if
 #endif
-          print *, "istatus=", istatus
 
           write(message,'("domain nx=",I0," ny=",I0)') domain_end(1),domain_end(2)
           tr%nx = domain_end(1)

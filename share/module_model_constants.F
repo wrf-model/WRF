@@ -111,7 +111,7 @@
        REAL , PARAMETER ::  gma=-r_d*(1.-rcp)*0.5
        REAL , PARAMETER ::  p400=40000.0
        REAL , PARAMETER ::  phitp=15000.0
-       REAL , PARAMETER ::  pi2=2.*3.1415926
+       REAL , PARAMETER ::  pi2=2.*3.1415926, pi1=3.1415926
        REAL , PARAMETER ::  plbtm=105000.0
        REAL , PARAMETER ::  plomd=64200.0
        REAL , PARAMETER ::  pmdhi=35000.0

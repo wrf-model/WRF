@@ -15,7 +15,7 @@ module da_wrfvar_top
 #ifdef VAR4D
    use da_4dvar, only : da_nl_model, model_grid, u6_2, v6_2, w6_2, t6_2, ph6_2, p6, &
       mu6_2, psfc6, moist6, kj_swap, da_finalize_model, da_model_lbc_off
-   use da_wrfvar_io, only : da_med_initialdata_output_lbc
+   !use da_wrfvar_io, only : da_med_initialdata_output_lbc
 #endif
 
 #if defined(RTTOV) || defined(CRTM)

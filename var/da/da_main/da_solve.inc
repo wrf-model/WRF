@@ -546,7 +546,7 @@
         write(outerloop,'(i2.2)') it
         call da_med_initialdata_output (grid , config_flags, 'wrfvar_output_'//outerloop)
 #ifdef VAR4D
-        if (var4d) call da_med_initialdata_output_lbc (grid , config_flags, 'wrfvar_bdyout_'//outerloop)
+        !if (var4d) call da_med_initialdata_output_lbc (grid , config_flags, 'wrfvar_bdyout_'//outerloop)
 #endif
      end if
 

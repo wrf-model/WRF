@@ -60,7 +60,7 @@ module da_setup_structures
       interpolate_stats, be_eta, thin_rainobs
 
    use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info, da_store_obs_grid_info_bufr, &
-                      da_fill_obs_structures_rain, da_set_obs_missing
+                      da_fill_obs_structures_rain
    use da_obs_io, only : da_read_obs_bufr,da_read_obs_radar, &
       da_scan_obs_radar,da_scan_obs_ascii,da_read_obs_ascii, &
       da_read_obs_bufrgpsro, da_scan_obs_rain, da_read_obs_rain
@@ -83,14 +83,14 @@ module da_setup_structures
    use da_rf_cv3, only : RFDPAR1, RFDPAR2, RFDPARV
    use module_radiance, only : init_constants_derived
    use gsi_thinning, only : r999,r360,rlat_min,rlat_max,rlon_min,rlon_max, &
-                            dlat_grid,dlon_grid,thinning_grid_conv, &
-                            make3grids, destroygrids_conv, cleangrids_conv
-#ifdef BUFR
-   use da_control, only : thin_conv
+                            dlat_grid,dlon_grid,thinning_grid_conv,thinning_grid, &
+                            make3grids, makegrids, destroygrids, destroygrids_conv, cleangrids_conv
 #ifdef DM_PARALLEL
 !  use mpi, only : mpi_min, mpi_max
    use da_par_util, only : true_mpi_real
 #endif
+#ifdef BUFR
+   use da_control, only : thin_conv
 #endif
 
    implicit none

@@ -358,7 +358,7 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
       endif
 
 #ifdef VAR4D
-      if (iv%info(rain)%nlocal > 0) then
+      if (iv%info(rain)%nlocal > 0 .and. var4d) then
          call da_transform_xtoy_rain_adj (grid, iv, y, a_hr_rainc(:,:,nobwin), a_hr_rainnc(:,:,nobwin))
       endif
 #endif

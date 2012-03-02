@@ -52,9 +52,9 @@ subroutine da_proc_stats_combine(proc_ave, proc_err, proc_min, proc_max, &
    if (myproc == root) then
       proc_min = out(1)
       proc_id = inT(out(2))
+      buf(1) = real(proc_id)
    end if
 
-   buf(1) = real(proc_id)
    call wrf_dm_bcast_real (buf, 1)
    proc_id=int(buf(1))
 
@@ -82,9 +82,9 @@ subroutine da_proc_stats_combine(proc_ave, proc_err, proc_min, proc_max, &
    if (rootproc) then
       proc_max = out(1)
       proc_id = int(out(2))
+      buf(1) = real(proc_id)
    end if
 
-   buf(1) = real(proc_id)
    call wrf_dm_bcast_real (buf, 1)
    proc_id=int(buf(1))
 

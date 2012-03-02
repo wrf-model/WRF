@@ -1,4 +1,4 @@
-subroutine da_read_obs_rain (iv, filename, time)
+subroutine da_read_obs_rain (iv, filename, ifgat)
 
    !-----------------------------------------------------------------------
    ! Purpose: Read the rain observation file
@@ -8,7 +8,7 @@ subroutine da_read_obs_rain (iv, filename, time)
 
    type (iv_type),    intent(inout) :: iv
    character(len=*),  intent(in)    :: filename
-   integer,           intent(in)    :: time
+   integer,           intent(in)    :: ifgat
 
    character (len = 120)         :: char_total_rain
    character (len = 160)         :: info_string
@@ -29,19 +29,17 @@ subroutine da_read_obs_rain (iv, filename, time)
    integer                       :: iyear, imonth, iday, ihour, imin
 
    ! for thinning
-   real                          :: dlat_earth,dlon_earth,crit
+   real                          :: dlat_earth,dlon_earth,crit,dist
    integer                       :: itt,itx,iout
    logical                       :: iuse
    integer                       :: tp
-   real, allocatable             :: in(:), out(:)
-   logical                       :: found
 
    integer                       :: num_outside_all, num_outside_time, num_thinned, num_report
 
    if (trace_use) call da_trace_entry("da_read_obs_rain")
 
-   nlocal = iv%info(rain)%plocal(time-1)
-   ntotal = iv%info(rain)%ptotal(time-1)
+   nlocal = iv%info(rain)%plocal(ifgat-1)
+   ntotal = iv%info(rain)%ptotal(ifgat-1)
 
    num_report       = 0
    num_outside_all  = 0
@@ -211,16 +209,14 @@ subroutine da_read_obs_rain (iv, filename, time)
             if (outside) cycle reports
             if ( thin_rainobs ) then
                crit = 1.0
-               call map2grids_conv(rain,dlat_earth,dlon_earth,crit,nlocal,itx,1,itt,ilocal,iuse)
+               call map2tgrid(rain,ifgat,dlat_earth,dlon_earth,dist,crit,itx,1,itt,iuse)
                if ( .not. iuse ) then
                   num_thinned = num_thinned + 1
                   cycle reports
                end if
-            else
-               nlocal = nlocal + 1
-               ilocal = nlocal
             endif
-            !if (nlocal > iv%info(rain)%nlocal) cycle reports
+            nlocal = nlocal + 1
+            ilocal = nlocal
 
             iv % rain (ilocal) % stn_loc % lon = platform % stn % lon
             iv % rain (ilocal) % stn_loc % lat = platform % stn % lat
@@ -277,48 +273,6 @@ subroutine da_read_obs_rain (iv, filename, time)
 
    iv%info(rain)%ptotal(iv%time)=ntotal
    iv%info(rain)%plocal(iv%time)=nlocal
-
-   ! thinning check
-   if ( thin_rainobs ) then
-     if ( ntotal>0 ) then
-
-#ifdef DM_PARALLEL
-         ! Get minimum crit and associated processor index.
-         allocate ( in  (thinning_grid_conv(rain)%itxmax) )
-         allocate ( out (thinning_grid_conv(rain)%itxmax) )
-         do i = 1, thinning_grid_conv(rain)%itxmax
-            in(i) = thinning_grid_conv(rain)%score_crit(i)
-         end do
-
-         call mpi_reduce(in, out, thinning_grid_conv(rain)%itxmax, true_mpi_real, mpi_min, root, comm, ierr)
-         call wrf_dm_bcast_real (out, thinning_grid_conv(rain)%itxmax)
-
-         do i = 1, thinning_grid_conv(rain)%itxmax
-            if ( abs(out(i)-thinning_grid_conv(rain)%score_crit(i)) > 1.0E-10 ) then
-               thinning_grid_conv(rain)%ibest_obs(i) = 0
-            end if
-         end do
-            
-         deallocate( in  )
-         deallocate( out )
-#endif
-
-         do j = (1+tp), nlocal
-            found = .false.
-            do i = 1, thinning_grid_conv(rain)%itxmax
-               if ( thinning_grid_conv(rain)%ibest_obs(i) == j .and.         &
-                    thinning_grid_conv(rain)%score_crit(i) < 9.99e6 ) then
-                  found = .true.
-                  exit
-               end if
-            end do
-            if ( .not. found ) then
-               iv%info(rain)%thinned(:,j) = .true.
-            end if
-         end do
-
-      end if
-   end if  ! thin_rainobs
 
    write(unit=message(1),fmt='(A,4(1x,i7))') &
       'da_read_obs_rain: num_report, num_outside_all, num_outside_time, num_thinned: ', &

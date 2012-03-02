@@ -1,4 +1,4 @@
-subroutine da_scan_obs_rain (iv, filename)
+subroutine da_scan_obs_rain (iv, filename, ifgat)
 
    !---------------------------------------------------------------------------
    ! Purpose: Scan the rain observation file
@@ -8,6 +8,7 @@ subroutine da_scan_obs_rain (iv, filename)
 
    type (iv_type),    intent(inout) :: iv
    character(len=*),  intent(in)    :: filename
+   integer,           intent(in)    :: ifgat
    integer                       :: i, j, n, iost, nlevels, fm
    integer                       :: file_rain
    integer                       :: iunit
@@ -24,10 +25,11 @@ subroutine da_scan_obs_rain (iv, filename)
    integer                       :: iyear, imonth, iday, ihour, imin
 
    ! for thinning
-   real                         :: dlat_earth,dlon_earth,crit
-   integer                      :: itt,itx,iout
-   integer                      :: ilocal
-   logical                      :: iuse
+   real                          :: dlat_earth,dlon_earth,crit
+   integer                       :: itt,itx,iout
+   logical                       :: iuse
+   integer                       :: tp, nlocal
+   real, allocatable             :: in(:), out(:)
 
    integer                      :: num_outside_all, num_outside_time, num_thinned, num_report
 
@@ -37,6 +39,8 @@ subroutine da_scan_obs_rain (iv, filename)
    num_outside_all  = 0
    num_outside_time = 0
    num_thinned      = 0
+   tp               = iv%info(rain)%plocal(ifgat-1)
+   nlocal           = 0
 
    ! 1. open file
    ! ============
@@ -188,7 +192,7 @@ subroutine da_scan_obs_rain (iv, filename)
             if (outside) cycle reports
             if ( thin_rainobs ) then
                crit = 1.0
-               call map2grids_conv(rain,dlat_earth,dlon_earth,crit,iv%info(rain)%nlocal,itx,1,itt,iout,iuse)
+               call map2grids(rain,ifgat,dlat_earth,dlon_earth,crit,iv%info(rain)%nlocal,itx,1,itt,iout,iuse)
                if ( .not. iuse ) then
                   num_thinned = num_thinned + 1
                   cycle reports
@@ -211,6 +215,48 @@ subroutine da_scan_obs_rain (iv, filename)
 
       end do        !  loop over duplicate
    end do reports
+
+   ! thinning check
+   if ( thin_rainobs ) then
+     if ( iv%info(rain)%ntotal > 0 ) then
+
+#ifdef DM_PARALLEL
+         ! Get minimum crit and associated processor index.
+         allocate ( in  (thinning_grid(rain,ifgat)%itxmax) )
+         allocate ( out (thinning_grid(rain,ifgat)%itxmax) )
+         do i = 1, thinning_grid(rain,ifgat)%itxmax
+            in(i) = thinning_grid(rain,ifgat)%score_crit(i)
+         end do
+
+         call mpi_reduce(in, out, thinning_grid(rain,ifgat)%itxmax, true_mpi_real, mpi_min, root, comm, ierr)
+         call wrf_dm_bcast_real (out, thinning_grid(rain,ifgat)%itxmax)
+
+         do i = 1, thinning_grid(rain,ifgat)%itxmax
+            if ( abs(out(i)-thinning_grid(rain,ifgat)%score_crit(i)) > 1.0E-10 ) then
+               thinning_grid(rain,ifgat)%ibest_obs(i) = 0
+            end if
+         end do
+
+         thinning_grid(rain,ifgat)%score_crit(:) = out(:)
+               
+         deallocate( in  )
+         deallocate( out )
+#endif         
+            
+         do j = (1+tp), iv%info(rain)%nlocal
+            do i = 1, thinning_grid(rain,ifgat)%itxmax
+               if ( thinning_grid(rain,ifgat)%ibest_obs(i) == j .and.         &
+                    thinning_grid(rain,ifgat)%score_crit(i) < 9.99e6 ) then
+                  nlocal = nlocal + 1
+                  exit
+               end if
+            end do
+         end do
+
+      num_thinned = num_thinned + iv%info(rain)%nlocal - nlocal
+      iv%info(rain)%nlocal = tp + nlocal
+      end if 
+   end if  ! thin_rainobs
 
    write(unit=message(1),fmt='(A,4(1x,i7))') &
       'da_scan_obs_rain: num_report, num_outside_all, num_outside_time, num_thinned: ', &

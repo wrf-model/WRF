@@ -39,16 +39,17 @@ module da_obs_io
    use da_tracing, only : da_trace_entry, da_trace_exit
 
    use module_radiance, only : deg2rad, i_kind
-   use gsi_thinning, only : map2grids, map2grids_conv, cleangrids_conv, thinning_grid_conv
-#ifdef BUFR
-   use da_control, only : thin_conv
-   use da_grid_definitions, only : da_earth_2_model_wind
-   use da_obs, only : da_set_obs_missing
+   use gsi_thinning, only : map2grids, map2grids_conv, cleangrids_conv, thinning_grid, &
+                            map2tgrid, thinning_grid_conv
 #ifdef DM_PARALLEL
    use da_control, only : root
 !  use mpi, only : mpi_min
    use da_par_util, only : true_mpi_real
 #endif
+#ifdef BUFR
+   use da_control, only : thin_conv
+   use da_grid_definitions, only : da_earth_2_model_wind
+   use da_obs, only : da_set_obs_missing
 #endif
    use da_reporting, only : message, da_message
 

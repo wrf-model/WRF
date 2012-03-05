@@ -1,0 +1,91 @@
+      SUBROUTINE GETWIN(NODE,LUN,IWIN,JWIN)
+
+C$$$  SUBPROGRAM DOCUMENTATION BLOCK
+C
+C SUBPROGRAM:    GETWIN (docblock incomplete)
+C   PRGMMR: WOOLLEN          ORG: NP20       DATE: 1994-01-06
+C
+C ABSTRACT: THIS SUBROUTINE ....
+C
+C PROGRAM HISTORY LOG:
+C 1994-01-06  J. WOOLLEN -- ORIGINAL AUTHOR
+C 1998-07-08  J. WOOLLEN -- REPLACED CALL TO CRAY LIBRARY ROUTINE
+C                           "ABORT" WITH CALL TO NEW INTERNAL BUFRLIB
+C                           ROUTINE "BORT"
+C 1999-11-18  J. WOOLLEN -- THE NUMBER OF BUFR FILES WHICH CAN BE
+C                           OPENED AT ONE TIME INCREASED FROM 10 TO 32
+C                           (NECESSARY IN ORDER TO PROCESS MULTIPLE
+C                           BUFR FILES UNDER THE MPI)
+C 2002-05-14  J. WOOLLEN -- REMOVED OLD CRAY COMPILER DIRECTIVES
+C 2003-11-04  S. BENDER  -- ADDED REMARKS/BUFRLIB ROUTINE
+C                           INTERDEPENDENCIES
+C 2003-11-04  D. KEYSER  -- MAXJL (MAXIMUM NUMBER OF JUMP/LINK ENTRIES)
+C                           INCREASED FROM 15000 TO 16000 (WAS IN
+C                           VERIFICATION VERSION); UNIFIED/PORTABLE FOR
+C                           WRF; ADDED DOCUMENTATION (INCLUDING
+C                           HISTORY) (INCOMPLETE); OUTPUTS MORE
+C                           COMPLETE DIAGNOSTIC INFO WHEN ROUTINE
+C                           TERMINATES ABNORMALLY
+C
+C USAGE:    CALL GETWIN (NODE, LUN, IWIN, JWIN)
+C   INPUT ARGUMENT LIST:
+C     NODE     - INTEGER: ....
+C     LUN      - INTEGER: I/O STREAM INDEX INTO INTERNAL MEMORY ARRAYS
+C     IWIN     - INTEGER: ....
+C     JWIN     - INTEGER: ....
+C
+C   OUTPUT ARGUMENT LIST:
+C     IWIN     - INTEGER: ....
+C     JWIN     - INTEGER: ....
+C
+C REMARKS:
+C    THIS ROUTINE CALLS:        BORT     INVWIN   LSTRPC
+C    THIS ROUTINE IS CALLED BY: CONWIN   UFBEVN   UFBIN3   UFBRW
+C                               Normally not called by any application
+C                               programs.
+C
+C ATTRIBUTES:
+C   LANGUAGE: FORTRAN 77
+C   MACHINE:  PORTABLE TO ALL PLATFORMS
+C
+C$$$
+
+      INCLUDE 'bufrlib.prm'
+
+      COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
+
+      CHARACTER*128 BORT_STR
+      REAL*8        VAL
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+
+      IRPC = LSTRPC(NODE,LUN)
+
+      IF(IRPC.EQ.0) THEN
+         IWIN = INVWIN(NODE,LUN,JWIN,NVAL(LUN))
+         IF(IWIN.EQ.0 .and. jwin.gt.1) GOTO 100
+         IWIN = 1
+         JWIN = NVAL(LUN)
+         GOTO 100
+      ELSE
+         IWIN = INVWIN(IRPC,LUN,JWIN,NVAL(LUN))
+         IF(IWIN.EQ.0) THEN
+            GOTO 100
+         ELSEIF(VAL(IWIN,LUN).EQ.0.) THEN
+            IWIN = 0
+            GOTO 100
+         ENDIF
+      ENDIF
+
+      JWIN = INVWIN(IRPC,LUN,IWIN+1,NVAL(LUN))
+      IF(JWIN.EQ.0) GOTO 900
+
+C  EXITS
+C  -----
+
+100   RETURN
+900   WRITE(BORT_STR,'("BUFRLIB: GETWIN - SEARCHED BETWEEN",I5," AND"'//
+     . ',I5,", MISSING BRACKET")') IWIN+1,NVAL(LUN)
+      CALL BORT(BORT_STR)
+      END

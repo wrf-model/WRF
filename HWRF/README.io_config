@@ -1,0 +1,67 @@
+Run time control of IO stream variable sets
+
+For WRF releases prior to V3.2, state variables were associated with I/O
+streams at compile time via their entries in the Registry.  That will
+still work, and should still be considered the primary method for defining
+stream variable sets in WRF. This new capability allows users to add or
+exclude state variables from a history or input stream at run-time without
+recompiling.  Also, this can be done on a per-domain basis as well.
+
+Here's a quick sketch of how it is used:
+
+a) There are two new namelist variables in the time_control section
+of the namelist.input file.  The first is iofields_filename. This is a
+character variable, settable separately for each domain and defaulting
+to "NONE_SPECIFIED".  This is where a user can list the names of text
+files containing lists of variables to added/removed from history and
+input streams for that domain.  As with other namelist variables that
+have max_domains in their rconfig definitions, each domain does have
+to have an entry in the namelist.input file. You can set each entry to
+the name of separate definitions file for each domain, or some or all
+of them can be the name of the same file.
+
+The second namelist variable is a logical, ignore_iofields_warning,
+which tells the program what to do if it encounters an error in these
+user-specified files.  The default value, .TRUE., is to print a warning
+message but continue the run.  If set to .FALSE., the program will
+abort if there are errors in these user-specified files.
+
+b) The user-specified files, named as settings to the iofields_filename
+   in the namelist.input file.  The files contain lines associating
+   variables with streams.  Each line has the form:
+
+  op:streamtype:streamid:variables
+
+    op:          either + (plus) or - (minus) for adding or removing
+                 a variable
+    streamtype:  either i (input) or h (history) indicating which type
+                 of stream is being affected
+    streamid:    an integer between 0 and the number of streams (0 
+                 represents main input or history)
+    variables:   comma separated list of variables
+
+Example.  The line:
+
+    +:i:5:u,v,w
+
+will add the U, V, and W variables to auxinput5.  Note for this example,
+these are 2 time-level variables so that, as with Registry-defined
+stream-associations, the designations apply to variables representing
+the highest numbered time level (U_2). See the file test/em_real/sample.txt
+
+These lines cannot be longer than 256 characters, but you can associate
+long lists of variables using multiple lines with the same op, streamtype,
+and streamid. You can have comments in these files by putting # on the
+line, causing the entire line to be a comment (even characters before
+the #).
+
+An implementation note: the mechanism is not very efficient at this
+point. Each variable listed involves a search through all the state
+variables in the grid.  That is still relatively quick - even a very
+long list shouldn't take more than a couple seconds -- and the lists are
+processed only once when a grid is allocated.  Even so, super-long lists
+of these run-time stream associations are mildly discouraged. In other
+words, use this as a mechanism to tweak the Registry I/O definitions or to
+get domain by domain specific behavior, but don't use it as a substitute
+for defining I/O definitions with state variables in the Registry.
+

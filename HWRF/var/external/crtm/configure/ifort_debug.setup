@@ -1,0 +1,37 @@
+#-------------------------------------------------------------------------------#
+# DEBUG build settings for Linux ifort compiler
+#-------------------------------------------------------------------------------#
+
+# The compiler and linker name
+export FC="ifort"
+
+export FL="ifort"
+
+# Compiler and linker settings for DEBUG builds
+F_COMMON_FLAGS="-pg"
+
+export FC_FLAGS="\
+ -c \
+ -g \
+ -check bounds \
+ -convert big_endian \
+ -e03 \
+ -traceback \
+ -free \
+ -assume byterecl \
+ -fp-stack-check \
+ -mieee-fp \
+ ${F_COMMON_FLAGS}"
+
+export FL_FLAGS="\
+ ${F_COMMON_FLAGS}"
+
+
+echo "========================================="
+echo " CRTM compilation environment variables:"
+echo "   FC:       ${FC}"
+echo "   FC_FLAGS: ${FC_FLAGS}"
+echo "   FL:       ${FL}"
+echo "   FL_FLAGS: ${FL_FLAGS}"
+echo "========================================="
+echo

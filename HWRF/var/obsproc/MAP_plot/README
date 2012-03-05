@@ -1,0 +1,23 @@
+               Plotting the 3/4DVAR obs input data
+
+                  Yong-Run Guo (07/13/2000)
+
+1, Map.csh 
+
+   Input data files: a) namelist.file to provide the map background
+                                         information
+
+                     b) OBSDATA is the 'obs_gts.ascii' to 3DVAR
+
+   Output is a gmeta file
+
+2, Dir_map is a directory containing the source code
+
+3, include is a directory containing the include files
+
+4, configure.user for both f77 and f90 code
+
+5, Makefile
+
+6, mapco.tbl is atable for color map background
+

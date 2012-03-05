@@ -1,0 +1,70 @@
+SHELL=/bin/sh
+
+.SUFFIXES:  .F .i .o .f .f90 .F90
+
+#
+# Tunable parameters
+#
+# CF		Name of the fortran compiling system to use
+# LDFLAGS	Flags to the loader
+# LIBS		List of libraries
+#
+#
+#-----------------------------------------------------------------------------
+# Fortran options
+#-----------------------------------------------------------------------------
+LIBINCLUDE = $(DEVTOP)/include
+#-----------------------------------------------------------------------------
+#    IBM AIX (bluevista POWER5 processor)
+#-----------------------------------------------------------------------------
+FC		=	xlf_r
+FCFLAGS		=	-O2 -qarch=auto -qnosave -qmaxmem=-1 -Q
+SOURCE_FORM     =       -qfree 
+CFLAGS          =
+CPP		=	/usr/lib/cpp
+# Map Background is WHITE:
+CPPFLAGS	=	-I$(LIBINCLUDE) -C -P
+# Map Background is BLACK:
+#CPPFLAGS	=        -I$(LIBINCLUDE) -C -P -DBBKG
+LDFLAGS		=	 -bmaxdata:2000000000 -bmaxstack:256000000 -Q
+CCFLAGS		=	-DIBM -I.
+LIBDIR   = ${DEVTOP}/
+FDVARLIB = libfdvar.a 
+LIBS		= -L/usr/local/lib64/r4i4 -lncarg \
+                  -lncarg_gks -lncarg_c -lX11 -lm -L/usr/local/lib64/r4i4 -lpng_ncl -lz_ncl
+#-----------------------------------------------------------------------------
+# General commands
+#-----------------------------------------------------------------------------
+MAKE = make -i
+AR = ar ru
+RM = rm -f
+RM_CMD = $(RM) *.CKP *.ln *.BAK *.bak *.o *.i core errs ,* *~ *.a \
+.emacs_* tags TAGS make.log MakeOut *.f *.mod
+#-----------------------------------------------------------------------------
+# Lines from here on down should not need to be changed.  They are the
+# inference rules to compile the code
+#----------------------------------------------------------------------------
+.F.i:
+	$(RM) $@
+	$(CPP) $(CPPFLAGS) $*.F > $@
+.F.o:
+	$(RM) $@
+	$(CPP) $(CPPFLAGS) $*.F > $*.f
+	$(FC) -c -cpp $(FCFLAGS) $*.f
+	$(RM) $*.f
+.F90.o:
+	$(RM) $@
+	$(CPP) $(CPPFLAGS) $*.F90 > $*.f
+	$(FC) -c $(SOURCE_FORM) $(FCFLAGS) $*.f
+.f90.o:
+	$(RM) $@
+	cp $*.f90 $*.f
+	$(FC) -c $(SOURCE_FORM) $(FCFLAGS) $*.f
+.F.f:
+	$(RM) $@
+	$(CPP) $(CPPFLAGS) $*.F > $@
+
+.f.o:
+	$(RM) $@ 
+	$(FC) -c $(FCFLAGS) $*.f
+

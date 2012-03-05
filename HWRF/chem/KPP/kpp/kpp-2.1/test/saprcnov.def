@@ -1,0 +1,79 @@
+#include saprcnov.spc
+#include saprcnov.eqn
+
+{#LANGUAGE Fortran77
+#INTEGRATOR rodas3
+#DRIVER general}
+
+#LOOKATALL
+#MONITOR O3;
+
+#INITVALUES
+
+   CFACTOR = 2.4476E+13;
+
+   ALl_SPEC = 0.0E0;
+   NO = 1.0E-1;
+   NO2 = 5.0E-2;
+   HONO = 1.E-3;
+   SO2 = 5.E-2;
+   ISOPRENE = 4.33E-4;
+   TERP = 8.20E-4;
+   ETHENE = 1.89E-2;
+   MEOH = 5.89E-3;
+   HCOOH = 6.77E-4;
+   CCO_OH = 1.16E-3;
+   RCO_OH = 3.92E-4;
+   HCHO = 1.12E-2;
+   CCHO = 2.32E-3;
+   RCHO = 1.72E-3;
+   GLY = 1.21E-4;
+   MGLY = 8.37E-5;
+   METHACRO = 1.30E-3;
+   ISOPROD = 8.93E-5;
+   BALD = 7.51E-5;
+   ACET = 5.07E-3;
+   MEK = 3.26E-3;
+   PROD2 = 1.93E-3;
+   PHEN = 6.06E-4;
+   CRES = 5.60E-4;
+   ALK3 = 4.69E-2;
+   ALK4 = 4.17E-2;
+   ALK5 = 3.06E-2;
+   ARO1 = 1.18E-2;
+   ARO2 = 8.74E-3;
+   OLE1 = 1.04E-2;
+   OLE2 = 7.97E-3;
+   CH4 = 0.07E0;
+   H2O = 2.0E+04; 
+   O2  = 2.09E+5;
+   AIR = 1.0E6;  
+   
+#INLINE F77_INIT
+	TSTART = 0.0D0
+	TEND = TSTART + 2*24*3600.0D0 ! 2160.0D0*60.0D0
+	DT = 3600.D0
+        TEMP = 300.0D0
+#ENDINLINE   
+
+#INLINE F90_INIT
+	TSTART = 0.0D0
+	TEND = TSTART + 2*24*3600.0D0 ! 2160.0D0*60.0D0
+	DT = 3600.D0
+        TEMP = 300.0D0
+#ENDINLINE   
+ 
+#INLINE MATLAB_INIT
+   global TSTART TEND DT TEMP
+   TSTART = 0.0;
+   TEND = TSTART  + 2*24*3600.0D0; 
+   DT = 3600.0;
+   TEMP = 300.00;
+#ENDINLINE   
+ 
+#INLINE C_INIT
+   TSTART = 0.0;
+   TEND = TSTART  + 2*24*3600.0D0; /*+ 2160.0*60.0;*/
+   DT = 3600.0;
+   TEMP = 300.00;
+#ENDINLINE   

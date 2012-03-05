@@ -1,0 +1,103 @@
+# Set here the desired C compiler and its optimization options
+CC   = gcc
+COPT = -O -Wall  
+
+# To create Matlab gateway routines
+# Note: use $(CC) as the mex C compiler
+MEX  = mex
+
+HEADERS = caca_Global.h  caca_Parameters.h  caca_Sparse.h
+
+SPSRC = caca_JacobianSP.c \
+	caca_HessianSP.c  \
+	caca_StoichiomSP.c
+
+SPOBJ = caca_JacobianSP.o \
+	caca_HessianSP.o  \
+	caca_StoichiomSP.o
+
+
+SRC =   caca_Main.c      caca_Integrator.c   \
+	caca_Function.c  caca_Initialize.c   \
+	caca_Jacobian.c  caca_LinearAlgebra.c\
+	caca_Rates.c     caca_Hessian.c      \
+	caca_Stoichiom.c caca_Util.c         \
+	caca_Monitor.c
+
+OBJ =   caca_Main.o      caca_Integrator.o   \
+	caca_Function.o  caca_Initialize.o   \
+	caca_Jacobian.o  caca_LinearAlgebra.o\
+	caca_Rates.o     caca_Hessian.o      \
+	caca_Stoichiom.o caca_Util.o         \
+	caca_Monitor.o
+
+STOCHSRC = caca_Stochastic.c 
+STOCHOBJ = caca_Stochastic.o 
+
+all:    exe
+
+exe:	$(HEADERS) $(SPOBJ) $(OBJ)
+	$(CC) $(COPT) $(SPOBJ) $(OBJ) -lm -o caca.exe	
+
+stochastic:$(HEADERS) $(SPOBJ) $(OBJ) $(STOCHOBJ)
+	$(CC) $(COPT) $(SPOBJ) $(OBJ) $(STOCHOBJ) -lm \
+	-o caca_stochastic.exe	
+
+mex:    $(HEADERS) $(SPOBJ) $(OBJ)
+	$(MEX) CC#$(CC) -O caca_mex_Fun.c     -lm $(SPOBJ) $(OBJ)
+	$(MEX) CC#$(CC) -O caca_mex_Jac_SP.c  -lm $(SPOBJ) $(OBJ)
+	$(MEX) CC#$(CC) -O caca_mex_Hessian.c -lm $(SPOBJ) $(OBJ)
+
+
+clean:
+	rm -f $(SPOBJ) $(OBJ) caca.exe caca_*.mexglx caca*.dat
+
+distclean:
+	rm -f $(SPOBJ) $(OBJ) caca.exe caca*.dat \
+	caca_*.c caca_*.h caca_*.map caca_*.mexglx
+
+caca_Monitor.o: caca_Monitor.c $(HEADERS)
+	$(CC) $(COPT) -c $<
+
+caca_JacobianSP.o: caca_JacobianSP.c $(HEADERS)
+	$(CC) $(COPT) -c $<
+
+caca_HessianSP.o: caca_HessianSP.c  $(HEADERS)
+	$(CC) $(COPT) -c $<
+
+caca_StoichiomSP.o: caca_StoichiomSP.c $(HEADERS)
+	$(CC) $(COPT) -c $<
+
+caca_Main.o: caca_Main.c caca_Initialize.o $(HEADERS) $(SPOBJ)
+	$(CC) $(COPT) -c $<
+
+caca_Integrator.o: caca_Integrator.c  $(HEADERS) $(SPOBJ)
+	$(CC) $(COPT) -c $<
+
+caca_Initialize.o: caca_Initialize.c  $(HEADERS) $(SPOBJ)
+	$(CC) $(COPT) -c $<
+
+caca_Function.o: caca_Function.c  $(HEADERS) $(SPOBJ)
+	$(CC) $(COPT) -c $<
+
+caca_Stochastic.o: caca_Stochastic.c  $(HEADERS) $(SPOBJ)
+	$(CC) $(COPT) -c $<
+
+caca_Jacobian.o: caca_Jacobian.c  $(HEADERS) $(SPOBJ)
+	$(CC) $(COPT) -c $<
+
+caca_LinearAlgebra.o: caca_LinearAlgebra.c  $(HEADERS) $(SPOBJ)
+	$(CC) $(COPT) -c $<
+
+caca_Rates.o: caca_Rates.c  $(HEADERS) $(SPOBJ)
+	$(CC) $(COPT) -c $<
+
+caca_Hessian.o:  caca_Hessian.c $(HEADERS) $(SPOBJ)
+	$(CC) $(COPT) -c $<
+
+caca_Stoichiom.o: caca_Stoichiom.c  $(HEADERS) $(SPOBJ)
+	$(CC) $(COPT) -c $<
+
+caca_Util.o: caca_Util.c  $(HEADERS) $(SPOBJ)
+	$(CC) $(COPT) -c $<
+

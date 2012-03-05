@@ -1,0 +1,21 @@
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  WKC - WRF-Chem/KPP coupler
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  KPP - symbolic chemistry Kinetics PreProcessor, Version 2.1
+        (http://www.cs.vt.edu/~asandu/Software/KPP)
+  KPP is distributed under GPL, the general public licence
+        (http://www.gnu.org/copyleft/gpl.html)
+    (C) 1995-1997, V. Damian & A. Sandu, CGRER, Univ. Iowa
+    (C) 1997-2003, A. Sandu, Michigan Tech
+    (C) 2003-2005, A. Sandu, Virginia Polytechnic Institute and State University
+        with contributions from:
+        R. Sander, Max-Planck Institute for Chemistry, Mainz, Germany
+
+
+   The current version of KPP was modified for WRF-Chem.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

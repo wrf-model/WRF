@@ -1,0 +1,53 @@
+em_grav2d_x test case:
+
+The default version of this test case reproduces the
+100 m resolution 2D gravity current.  This test case
+was the focus of a workshop.  The results of this workshop
+are published in
+
+Straka et al, NUMERICAL-SOLUTIONS OF A NONLINEAR DENSITY-CURRENT - A
+BENCHMARK SOLUTION AND COMPARISONS, 
+INT J NUMER METH FL 17 (1): 1-22 JUL 15 1993
+ 
+This test is 2d (x,z) and uses a fixed physical viscosity, hence the
+solution converges.  It also uses a finite length domain with periodic
+conditions, so tests with non-zero horizontal translation are also
+appropriate.  The reference shows tests are several different
+resolutions and these are quite illuminating
+ 
+There are a number of interesting features in this very non-linear
+solution (eddy structure, mins and maxes of temperature and velocity,
+propagation of the gravity current, etc.)
+
+Solution results from the WRF-ARW core can be found on the web at
+http://www.mmm.ucar.edu/individual/skamarock/test_cases/test_cases.html
+
+A number of versions test cases can be run using namelist.input files
+and input_sounding files provided in the test directory.  
+
+Two input_sounding files are provided
+
+(1) input_sounding.um=0
+(2) input_sounding.um=20
+
+The first has no mean wind, the second has a constant horizontal
+environmental wind of 20 m/s.  The no-mean wind case produces a 
+symmetric gravity current, while the 20 m/s wind translates the
+current (see the web page for further details and examples).
+Copy the input_sounding.um=? into input_sounding to run the
+desired case.  The input_sounding file is an ascii file, so
+it can be edited to change the mean wind speed to other values
+if desired.
+
+Three namelist.input files are in this directory and they provide
+for three different resolutions (dx, dz = 100, 200 and 400 m).  
+Again, see the web page listed above for example solutions at
+the different resolutions.  As with the sounding file, copy the
+namelist.input.??? into namelist.input to run the desired case.
+
+The default case is 100 m resolution and um=0.
+
+
+
+
+ 

@@ -1,0 +1,121 @@
+#!/bin/ksh -f
+
+yy=`expr $1 / 10000`
+mm=`expr $1 - $yy * 10000`
+mm=`expr $mm / 100`
+dd=`expr $1 % 100`
+
+
+yy=`expr $yy + 0`
+mm=`expr $mm + 0`
+dd=`expr $dd + 0`
+
+if [ $yy -lt 10 ] ; then
+yy=0$yy
+fi
+
+if [ $mm -lt 10 ] ; then
+mm=0$mm
+fi
+
+if [ $dd -lt 10 ] ; then
+dd=0$dd
+fi
+
+# exit
+
+if [ $mm -eq 1 -or $mm -eq 01 ] 
+then
+mxd=31
+fi
+
+if [ $mm -eq 2 -o $mm -eq 02 ]
+then
+   leap=`expr $yy % 4`
+    if [ $leap -eq 0 ]
+    then
+    mxd=29
+    fi
+    if [ $leap -ne 0 ]
+    then
+    mxd=28
+    fi
+fi
+
+
+if [ $mm -eq 3 -o $mm -eq 03 ] ; then
+mxd=31
+fi
+
+if [ $mm -eq 4 -o $mm -eq 04 ] ; then
+mxd=30
+fi
+
+if [ $mm -eq 5 -o $mm -eq 05 ] ; then
+mxd=31
+fi
+
+if [ $mm -eq 6 -o $mm -eq 06 ] ; then
+mxd=30
+fi
+
+if [ $mm -eq 7 -o $mm -eq 07 ] ; then
+mxd=31
+fi
+
+if [ $mm -eq 8 -o $mm -eq 08 ] ; then
+mxd=31
+fi
+
+if [ $mm -eq 9 -o $mm -eq 09 ] ; then
+mxd=30
+fi
+
+if [ $mm -eq 10 ] ; then
+mxd=31
+fi
+
+if [ $mm -eq 11 ] ; then
+mxd=30
+fi
+
+if [ $mm -eq 12 ] ; then
+mxd=31
+fi
+# echo "max days in month: " $mxd
+dd=`expr $dd + 1`
+
+# echo "new dd: " $dd
+
+if [ $dd -gt $mxd ]
+then
+    mm=`expr $mm + 1`
+    if [ $mm -eq 13 ]
+        then
+        yy=`expr $yy + 1`
+        mm=1
+    fi
+    dd=1
+fi
+yy=`expr $yy + 0`
+mm=`expr $mm + 0`
+dd=`expr $dd + 0`
+
+if [ $yy -lt 10 ] ; then
+yy=0$yy
+fi
+
+if [ $mm -lt 10 ] ; then
+mm=0$mm
+fi
+
+if [ $dd -lt 10 ] ; then
+dd=0$dd
+fi
+
+# echo "now have yy mm dd: " $yy $mm $dd
+
+ymd=${yy}${mm}${dd}
+
+echo $ymd
+

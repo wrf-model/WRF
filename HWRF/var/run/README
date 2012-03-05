@@ -1,0 +1,30 @@
+NCEP BUFR tables used in reading AIRS radiance data.
+  gmao_airs_bufr.tbl:     
+     used for reading NCEP center/warmest/every-FOV AIRS BUFR files
+
+radiance_info/*.info
+  Used for (1) switching on/off certain channels (2) assigning obs errors
+  Currently, only the 4th and 6th columns in each file are actually used.
+  4th column info: 1: use
+                  -1: not use
+  6th colum info: observation errors in K
+
+VARBC.in
+  Template input file for radiance Variational Bias Correction.
+
+be.dat.cv3
+  Background error covariance file for cv_options=3.
+
+crtm_coeffs
+   only a subset of coefficient files are included in the crtm_coeffs directory.
+   The full set of coefficient files can be downloaded from
+   ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/REL-2.0.2/REL-2.0.2.Coeffs.JCSDA_CRTM.tar.gz
+   Some CRTM algorithms (Multiple transmittance algorithm, infrared sea surface 
+   emissivity model) are selectable by users via the coefficient files used to
+   initialize CRTM. Users should gather the coefficient files that are suitable 
+   for their applications. Please read the CRTM USers Guide
+   ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/REL-2.0.2/REL-2.0.2.CRTM_User_Guide.pdf
+   for more detailed information.
+
+fso.io_config and plus.io_config
+   input file for WRF FSO runtime config of I/O streams

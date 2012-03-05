@@ -1,0 +1,50 @@
+2010 12 21, JM
+
+Description of code in solve_em.F that allows computation of decoupled
+horizontal and vertical advective tendencies.  This is a feature that
+was added John Wong and the WRF_CHEM developers and involves threading
+additional arrays through the RK advection routines.  The developers
+also worked with the WRF Dynamics Working Group to add placeholders
+so that this capability could be used to compute decoupled horizontal
+and vertical advective tendencies for fields in other 4D tracer arrays
+(e.g. moist, scalar, etc.).  However, these are only placeholders for
+the other tracer arrays and users wishing to make this modification to
+solve_em should read this file carefully.  THIS IS AN ADVANCED TOPIC.
+
+The logical variable tenddec defined at the top of the solve_em routine
+is set within each loops over tracers for the 4D tracer arrays in WRF.
+The variable is passed into the RK advection routines and controls whether
+or not those routines do the necessary extra computations and store or
+accumulate the results into the 3D arrays h_tendency and z_tendency, also
+defined at the top of solve_em. Currently, and with the exception of the
+loops over chemical species, tenddec is always set to false.  The chemical
+loops and the statement to declare h_tendency and z_tendency as fully
+3D are guarded by #ifdef WRF_CHEM.  Otherwise, h_tendency and z_tendency
+are allocated only minimal storage to save memory.  As long as tenddec is
+false, the RK routines will not attempt to access or modify these arrays.
+
+To enable computational of decoupled horizontal and vertical advective
+tendencies for other 4D tracer arrays, first modify the declaration
+of h_tendency and z_tendency so they are fully dimensioned (as they are
+with WRF_CHEM).  Then, in the Registry, add definitions for the fields for
+which you wish to have these decoupled tendencies computed to the 4D array
+advh_t and advz_t .  Set up an index array similar to the adv_ct_indices
+array that is defined in solve_em when WRF_CHEM is defined and then
+set up assignments to that array similar to the assignments use to set
+adv_ct_indices in the routine setup_ct_indices(), which is defined in
+chem/chemics_init.F .  This will cause the rk_update_scalar routine to
+update the fields you have specified in the advh_t and advz_t arrays.
+Note that you must use your adv_*_indices array as the last index of
+the advh_t and advz_t arrays in the arguments to rk_update_scalar (see
+the call to rk_update_scalar for the chemistry species as an example).
+
+Additional note: currently advh_t and advz_t are the only 4D arrays
+defined in the Registry for this purpose. Therefore, you can only compute
+decoupled horizontal and vertical tendencies for only one non-chemistry
+4D tracer array.  If you need to do this for more than one, add another
+advh_* and advz_* array to the Registry and management them separately.
+
+Only after you have done this should you modify how tenddec is set in
+the scalar loop you are working with.  Use the assignement at the top
+of the chemistry tracer loop as an example.
+

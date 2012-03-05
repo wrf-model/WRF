@@ -1,0 +1,29 @@
+      SUBROUTINE P1P2 (PD,PX,NI,NJ)
+      DIMENSION PD(NI,NJ),PX(NI,NJ)
+C 
+C  THIS ROUTINE DETERMINES P(.) FROM P(X) BY A 4-POINT INTERPOLATION.
+C  ON THE X-GRID, A P(X) POINT OUTSIDE THE GRID DOMAIN IS ASSUMED TO
+C  SATISFY P(0,J)=P(1,J); P(NI,J)=P(NI-1,J); AND SIMILARLY FOR THE I`S.
+C 
+      NI1=NI-1
+      NJ1=NJ-1
+C 
+      DO 1 J=2,NJ1
+      DO 1 I=2,NI1
+    1 PD(I,J)=0.25*(PX(I,J)+PX(I-1,J)+PX(I,J-1)+PX(I-1,J-1))
+C 
+      DO 2 I=2,NI1
+      PD(I,1)=0.5*(PX(I,1)+PX(I-1,1))
+    2 PD(I,NJ)=0.5*(PX(I,NJ1)+PX(I-1,NJ1))
+C 
+      DO 3 J=2,NJ1
+      PD(1,J)=0.5*(PX(1,J)+PX(1,J-1))
+    3 PD(NI,J)=0.5*(PX(NI1,J)+PX(NI1,J-1))
+C 
+      PD(1,1)=PX(1,1)
+      PD(1,NJ)=PX(1,NJ1)
+      PD(NI,1)=PX(NI1,1)
+      PD(NI,NJ)=PX(NI1,NJ1)
+C 
+      RETURN
+      END

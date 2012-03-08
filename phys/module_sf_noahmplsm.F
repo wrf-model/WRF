@@ -537,28 +537,6 @@ contains
 !
 ! ==================================================================================================
 
-!KWM  SUBROUTINE NOAHMP_SFLX (ICE    ,IST    ,VEGTYP ,ISC    ,NSNOW  ,NSOIL  , & !in
-!KWM                   ZSOIL  ,DT     ,Q2     ,SFCTMP ,UU     ,VV     , & !in
-!KWM                   SOLDN  ,LWDN   ,PRCP   ,ZLVL   ,CO2AIR ,O2AIR  , & !in
-!KWM                   COSZ   ,TBOT   ,FOLN   ,SFCPRS ,IMONTH ,IDAY   , & !in
-!KWM                   SHDFAC ,LAT            ,ILOC   , JLOC  ,DZ8W   , & !in
-!KWM                   EAH    ,TAH    ,FWET   ,FICEOLD,QSNOW  ,SNEQVO , & !inout
-!KWM                   ISNOW  ,ZSNSO  ,CANLIQ ,CANICE ,SNOWH  ,SNEQV  , & !inout
-!KWM                   SNICE  ,SNLIQ  ,TV     ,TG     ,STC    ,SH2O   , & !inout
-!KWM                   SMC    ,ZWT    ,WA     ,WT     ,WSLAKE ,LFMASS , & !inout
-!KWM                   RTMASS ,STMASS ,WOOD   ,STBLCP ,FASTCP ,LAI    , & !inout
-!KWM                   SAI    ,ALBOLD ,CM     ,CH     ,                 & !inout
-!KWM                   FSA    ,FSR    ,FIRA   ,FSH    ,SSOIL  ,FCEV   , & !out
-!KWM                   FGEV   ,FCTR   ,TRAD   ,ECAN   ,ETRAN  ,EDIR   , & !out
-!KWM                   RUNSRF ,RUNSUB ,APAR   ,PSN    ,SAV    ,SAG    , & !out
-!KWM                   FSNO   ,NEE    ,GPP    ,NPP    ,TS     ,FVEG   , & !out
-!KWM                   ALBEDO ,ERRWAT, QMELT  ,PONDING        ,PONDING1,& !out
-!KWM                   PONDING2,DX    ,SHDMAX                          , & 
-!KWM                   ISURBAN,IZ0TLND,QC     ,PBLH    ,QSFC  ,PSFC   , & !in
-!KWM                   CHSTAR ,TSTAR  ,T2MV   ,T2MB   ,RSSUN  ,         &
-!KWM                   RSSHA  ,BGAP   ,WGAP   ,GAP    ,TGV    ,TGB    ,Q1,&
-!KWM                   Q2V    ,Q2B)       !out
-
   SUBROUTINE NOAHMP_SFLX (&
        &           ILOC    , JLOC    , LAT     , YEARLEN , JULIAN  , COSZ    , & ! IN : Time/Space-related
        &           DT      , DX      , DZ8W    , NSOIL   , ZSOIL   , NSNOW   , & ! IN : Model configuration 
@@ -582,7 +560,7 @@ contains
        &           PSN     , SAV     , SAG     , FSNO    , NEE     , GPP     , & ! OUT :
        &           NPP     , FVEG    , ALBEDO  , QMELT   , PONDING , PONDING1, & ! OUT :
        &           PONDING2, RSSUN   , RSSHA   , BGAP    , WGAP    , GAP     , & ! OUT :
-       &           ERRWAT  , CHV     , CHB)                                      ! OUT :
+       &           ERRWAT  , CHV     , CHB     , EMISSI)                         ! OUT :
 
 ! --------------------------------------------------------------------------------------------------
 ! Initial code: Guo-Yue Niu, Oct. 2007
@@ -704,6 +682,7 @@ contains
   REAL, INTENT(OUT) :: TGV
   REAL, INTENT(OUT) :: TGB
   REAL, INTENT(OUT) :: Q1
+  REAL, INTENT(OUT) :: EMISSI
 !jref:end
 
 ! local
@@ -863,7 +842,8 @@ contains
                  QC     ,PBLH   ,QSFC   ,PSFC   ,ISURBAN,IZ0TLND, & !in 
                  CHSTAR ,TSTAR  ,T2MV   ,T2MB  ,FSRV   , &
                  FSRG   ,RSSUN   ,RSSHA ,BGAP   ,WGAP, GAP,TGV,TGB,&
-                 Q1     ,Q2V    ,Q2B,Q2E,CHV,CHB)             !out 
+                 Q1     ,Q2V    ,Q2B    ,Q2E    ,CHV   ,CHB     , & !out
+                 EMISSI)                                            !out
 !jref:end                            
 
     SICE(:) = MAX(0.0, SMC(:) - SH2O(:))   
@@ -1218,7 +1198,7 @@ contains
                      QC     ,PBLH   ,QSFC   ,PSFC   ,ISURBAN,IZ0TLND, & !in 
                      CHSTAR ,TSTAR  ,T2MV   ,T2MB   ,FSRV   , &
                      FSRG   ,RSSUN  ,RSSHA  ,BGAP   ,WGAP,GAP,TGV,TGB,&
-                     Q1     ,Q2V    ,Q2B    ,Q2E    ,CHV  ,CHB )   !out 
+                     Q1     ,Q2V    ,Q2B    ,Q2E    ,CHV  ,CHB, EMISSI )   !out 
 !jref:end                            
 
 ! --------------------------------------------------------------------------------------------------
@@ -1382,6 +1362,7 @@ contains
   REAL                              , INTENT(INOUT) :: CH     !sensible heat exchange coefficient
   REAL                              , INTENT(INOUT) :: Q1
 !  REAL                                              :: Q2E
+  REAL,                               INTENT(OUT)   :: EMISSI
 
 ! local
   INTEGER                                           :: IZ     !do-loop index
@@ -1391,6 +1372,8 @@ contains
   REAL                                              :: FSUN   !sunlit fraction of canopy [-]
   REAL                                              :: RB     !leaf boundary layer resistance (s/m)
   REAL                                              :: RSURF  !ground surface resistance (s/m)
+  REAL                                              :: L_RSURF!Dry-layer thickness for computing RSURF (Sakaguchi and Zeng, 2009)
+  REAL                                              :: D_RSURF!Reduced vapor diffusivity in soil for computing RSURF (SZ09)
   REAL                                              :: BEVAP  !soil water evaporation factor (0- 1)
   REAL                                              :: MOL    !Monin-Obukhov length (m)
   REAL                                              :: VAI    !sum of LAI  + stem area index [m2/m2]
@@ -1592,15 +1575,25 @@ contains
        BTRANI(1:NROOT) = BTRANI(1:NROOT)/BTRAN
      END IF
 
-! soil surface resistence for ground evap.
+! soil surface resistance for ground evap.
 
      BEVAP = MAX(0.0,SH2O(1)/SMCMAX)
      IF(IST == 2) THEN
        RSURF = 1.          ! avoid being divided by 0
        RHSUR = 1.0
      ELSE
-!niu       RSURF = FSNO * 1. + (1.-FSNO)* EXP(8.25-4.225*BEVAP) !Sellers (1992)
-       RSURF = FSNO * 1. + (1.-FSNO)* EXP(8.25-6.0*BEVAP) !adjusted to decrease RSURF for wet soil
+
+        ! RSURF based on Sakaguchi and Zeng, 2009
+        ! taking the "residual water content" to be the wilting point, 
+        ! and correcting the exponent on the D term (typo in SZ09 ?)
+        L_RSURF = (-ZSOIL(1)) * ( exp ( (1.0 - MIN(1.0,SH2O(1)/SMCMAX)) ** 5 ) - 1.0 ) / ( 2.71828 - 1.0 ) 
+        D_RSURF = 2.2E-5 * SMCMAX * SMCMAX * ( 1.0 - SMCWLT / SMCMAX ) ** (2.0+3.0/BEXP)
+        RSURF = L_RSURF / D_RSURF
+
+        ! Older RSURF computations:
+        !    RSURF = FSNO * 1. + (1.-FSNO)* EXP(8.25-4.225*BEVAP) !Sellers (1992)
+        !    RSURF = FSNO * 1. + (1.-FSNO)* EXP(8.25-6.0  *BEVAP) !adjusted to decrease RSURF for wet soil
+
        IF(SH2O(1) < 0.01 .and. SNOWH == 0.) RSURF = 1.E6
        PSI   = -PSISAT*(MAX(0.01,SH2O(1))/SMCMAX)**(-BEXP)   
        RHSUR = FSNO + (1.-FSNO) * EXP(PSI*GRAV/(RW*TG)) 
@@ -1713,7 +1706,19 @@ contains
        STOP
     END IF
 
-    TRAD = (FIRE/SB)**0.25
+    ! Compute a net emissivity
+    EMISSI = FVEG * ( EMG*(1-EMV) + EMV + EMV*(1-EMV)*(1-EMG) ) + &
+         (1-FVEG) * EMG
+
+    ! When we're computing a TRAD, subtract from the emitted IR the
+    ! reflected portion of the incoming LWDN, so we're just
+    ! considering the IR originating in the canopy/ground system.
+    
+    TRAD = ( ( FIRE - (1-EMISSI)*LWDN ) / (EMISSI*SB) ) ** 0.25
+
+    ! Old TRAD calculation not taking into account Emissivity:
+    ! TRAD = (FIRE/SB)**0.25
+
     APAR = PARSUN*LAISUN + PARSHA*LAISHA
     PSN  = PSNSUN*LAISUN + PSNSHA*LAISHA
 
@@ -3233,6 +3238,10 @@ contains
                        CZIL   ,ZLVL   ,ILOC   ,JLOC   ,         & !in
                        CM     ,CH     ,MOZ    ,WSTAR  ,         & !in
                        FV     )                                   !out
+          ! Undo the multiplication by windspeed that SFCDIF2 
+          ! applies to exchange coefficients CH and CM:
+          CH = CH / UR
+          CM = CM / UR
        ENDIF
 
        IF(OPT_SFC == 3) THEN
@@ -3242,6 +3251,11 @@ contains
                        THAIR  ,QAIR   ,QC     ,ZLVL   , &  !in
                        SFCPRS ,FV     ,CM     ,CH     ,CH2V   ,&  !inout
                        CQ2V   ,MOZ)                               !out
+          ! Undo the multiplication by windspeed that SFCDIF3 
+          ! applies to exchange coefficients CH and CM:
+          CH   = CH / UR
+          CM   = CM / UR
+          CH2V = CH2V / UR
        ENDIF
 
        IF(OPT_SFC == 4) THEN
@@ -3250,6 +3264,11 @@ contains
                        TAH    ,QAIR   ,ZLVL   ,IZ0TLND,QSFC   ,&
                        H      ,QFX    ,CM     ,CH     ,CH2V   ,& 
                        CQ2V   ,MOZ    ,FV     ,U10V   ,V10V)
+          ! Undo the multiplication by windspeed that SFCDIF4 
+          ! applies to exchange coefficients CH and CM:
+          CH   = CH / UR
+          CM   = CM / UR
+          CH2V = CH2V / UR
        ENDIF
 
        RAMC = MAX(1.,1./(CM*UR))
@@ -3659,6 +3678,10 @@ contains
                        CZIL   ,ZLVL   ,ILOC   ,JLOC   ,         & !in
                        CM     ,CH     ,MOZ    ,WSTAR  ,         & !in
                        FV     )                                   !out
+          ! Undo the multiplication by windspeed that SFCDIF2 
+          ! applies to exchange coefficients CH and CM:
+          CH = CH / UR
+          CM = CM / UR
           IF(SNOWH > 0.) THEN
              CM = MIN(0.01,CM)   ! CM & CH are too large, causing
              CH = MIN(0.01,CH)   ! computational instability
@@ -3674,6 +3697,11 @@ contains
                        THAIR  ,QAIR   ,QC     ,ZLVL   ,        &  !in            
                        SFCPRS ,FV     ,CM     ,CH     ,CH2B   ,&  !inout 
                        CQ2B   ,MOZ)                               !out   
+          ! Undo the multiplication by windspeed that SFCDIF3 
+          ! applies to exchange coefficients CH and CM:
+          CH   = CH / UR
+          CM   = CM / UR
+          CH2B = CH2B / UR
 
           IF(SNOWH > 0.) THEN    ! jref: does this still count??
              CM = MIN(0.01,CM)   ! CM & CH are too large, causing
@@ -3689,6 +3717,11 @@ contains
                        TGB    ,QAIR   ,ZLVL   ,IZ0TLND,QSFC   ,&
                        H      ,QFX    ,CM     ,CH     ,CH2B   ,& 
                        CQ2B   ,MOZ    ,FV     ,U10B   ,V10B)
+          ! Undo the multiplication by windspeed that SFCDIF4 
+          ! applies to exchange coefficients CH and CM:
+          CH   = CH / UR
+          CM   = CM / UR
+          CH2B = CH2B / UR
 
           IF(SNOWH > 0.) THEN    ! jref: does this still count??
              CM = MIN(0.01,CM)   ! CM & CH are too large, causing

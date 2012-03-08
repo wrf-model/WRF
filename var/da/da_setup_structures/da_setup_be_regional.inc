@@ -161,8 +161,8 @@ subroutine da_setup_be_regional(xb, be)
          lat_stats_option = .FALSE.
 !        Must use the global Eigenvector/eigenvalue
          vert_evalue = 1
-         write(mesg,'(5x,a,L,2x,a,L,2x,a,I2)') &
-!        write(mesg,*) &
+!        write(mesg,'(5x,a,L,2x,a,L,2x,a,I2)') &
+         write(mesg,*) &
          "Using interpolated CV5 BE:  Interpolate_stats =", &
          Interpolate_stats, "lat_stats_option  =",    &
          lat_stats_option,  "vert_evalue       =", vert_evalue

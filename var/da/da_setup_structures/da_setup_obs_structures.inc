@@ -32,7 +32,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_geoamvobs .OR. use_polaramvobs .OR. use_airepobs .OR. use_tamdarobs .OR. &
       use_gpspwobs .OR. use_gpsztdobs .OR. use_gpsrefobs .OR. use_ssmiretrievalobs .OR. &
       use_ssmitbobs .OR. use_ssmt1obs .OR. use_ssmt2obs .OR. use_qscatobs .OR. &
-      use_airsretobs .OR. use_rainobs ) then
+      use_airsretobs) then
  
       use_obsgts = .true.
    else
@@ -197,6 +197,10 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       end if
    end if
 
+   if (use_rainobs .and. var4d) then
+      call da_message((/'Using ASCII format precipitation observation input'/))
+      call da_setup_obs_structures_rain (grid, ob, iv) 
+   end if
 
    if (use_rad) then
 #if defined(CRTM) || defined(RTTOV)

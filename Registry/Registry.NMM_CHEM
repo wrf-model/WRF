@@ -371,6 +371,15 @@ state  real   sigt4     ij    dyn_nmm   1    -     rhd=(interp_h_nmm:IIH,JJH,HBW
 state  real   tg        ij    dyn_nmm   1    -     i01rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "TGROUND"   "Deep ground soil temperature"                    "K"
 state  real   dfrlg     k     dyn_nmm   1    Z     i01r     "DFRLG"     "Std atmosphere height of model layer interfaces" "m"
 state integer lvl       ij    dyn_nmm   1    -     ir
+state  real  RAINCV_A       ij  dyn_nmm  1   -      r      "RAINCV_A"     "taveragd TIME-STEP CUMULUS PRECIPITATION"                         "mm"
+state  real  RAINCV_B       ij  dyn_nmm  1   -      r       "RAINCV_B"     "taveragd TIME-STEP CUMULUS PRECIPITATION"                         "mm"
+state  real  GD_CLOUD      ikj  dyn_nmm  1   -      r       "GD_CLOUD" "CLOUD WATER/ICE MIXING RAIO IN GD CLOUD"         "kg kg-1"
+state  real  GD_CLOUD2     ikj  dyn_nmm  1   -      r       "GD_CLOUD2" "TEST for GD CLOUD"         "kg kg-1"
+state  real  GD_CLOUD_A    ikj  dyn_nmm  1   -      r      "GD_CLOUD_A"   "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
+state  real  GD_CLOUD2_A   ikj  dyn_nmm  1   -      r      "GD_CLOUD2_A"  "taveragd cloud ice mix ratio in GD"         "kg kg-1"
+state  real  GD_CLOUD_B    ikj  dyn_nmm  1   -      r       "GD_CLOUD_B"   "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
+state  real  GD_CLOUD2_B   ikj  dyn_nmm  1   -      r       "GD_CLOUD2_B"  "taveragd cloud ice mix ratio in GD"         "kg kg-1"
+
 #
 # module_CLDWTR.F
 #
@@ -1022,6 +1031,7 @@ rconfig   logical     mfshconv            namelist,physics      max_domains    .
 rconfig   real    BLDT                    namelist,physics	max_domains    0       h    "BLDT"          ""      ""
 rconfig   integer     cu_physics          namelist,physics	max_domains    0       rh       "cu_physics"            ""      ""
 rconfig   integer shcu_physics            namelist,physics      max_domains    0       rh   "shcu_physics"  ""      ""
+rconfig   integer     cu_diag             namelist,physics      max_domains    0       rh       "cu_diag"            " additional t-averaged stuff for cuphys"      ""
 rconfig   real    CUDT                    namelist,physics	max_domains    0       h    "CUDT"          ""      ""
 rconfig   real    GSMDT                   namelist,physics	max_domains    0       h    "GSMDT"          ""      ""
 rconfig   integer     progn               namelist,physics      max_domains    0       rh       "progn"                 ""      ""
@@ -1279,6 +1289,7 @@ package   sasscheme      cu_physics==84              -             state:hpbl2d,
 package   osasscheme     cu_physics==4               -             state:randstate1,randstate2,randstate3,randstate4,random
 package   g3scheme       cu_physics==5               -             -
 package   tiedtkescheme  cu_physics==6               -             -
+package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,GD_CLOUD_A,GD_CLOUD_B,GD_CLOUD2_A,GD_CLOUD2_B,kbcon_deep,ktop_deep,k22_deep
 package   camzmscheme    cu_physics==7               -             -
 package   nsasscheme     cu_physics==14              -             -
 package   kfscheme       cu_physics==99              -             -

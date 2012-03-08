@@ -63,6 +63,10 @@ CONTAINS
                          ims, ime, jms, jme, kms, kme,           &
                          its, ite, jts, jte, kts, kte,           &
                          NUM_URBAN_LAYERS,                       &
+                         raincv_a,raincv_b,                      &
+                         gd_cloud,gd_cloud2,                     &    ! Optional
+                         gd_cloud_a,gd_cloud2_a,                 &    ! Optional
+                         gd_cloud_b,gd_cloud2_b,                 &    ! Optional
                          ozmixm,pin,                             &    ! Optional
                          m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,& ! Optional
                          RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,         &    ! Optional
@@ -268,6 +272,18 @@ CONTAINS
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT),OPTIONAL :: TDLY
    REAL,     DIMENSION( ims:ime , 1:lagday , jms:jme ) , INTENT(INOUT),OPTIONAL :: TLAG
 
+
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,         &
+          OPTIONAL,                                                  &
+          INTENT(INOUT   ) ::                                        &
+                               gd_cloud, gd_cloud2,                  &
+                               gd_cloud_a, gd_cloud2_a,              &
+                               gd_cloud_b, gd_cloud2_b
+
+   REAL,  DIMENSION( ims:ime ,  jms:jme )         ,         &
+          INTENT(INOUT   ) ::                                        &
+                               raincv_a,raincv_b
+
 !Noah-MP
 
 
@@ -423,7 +439,7 @@ CONTAINS
    LOGICAL :: rdmaxalb
    LOGICAL :: mfshconv
 
-   INTEGER :: i, j, k, itf, jtf, n
+   INTEGER :: i, j, k, itf, jtf, ktf, n
 integer myproc
 
 !-----------------------------------------------------------------
@@ -451,6 +467,7 @@ integer myproc
 
    itf=min0(ite,ide-1)
    jtf=min0(jte,jde-1)
+   ktf=min0(kte,kde-1)
 
    ZZLND=0.1
    ZZWTR=0.0001
@@ -555,6 +572,28 @@ integer myproc
 
    ENDDO
    ENDDO
+
+    if (config_flags%cu_diag == 1 )then
+    do j=jts,jtf
+       do k=kts,ktf
+          do i=its,itf
+             gd_cloud(i,k,j) = 0.
+             gd_cloud2(i,k,j) = 0.
+             gd_cloud_a(i,k,j) = 0.
+             gd_cloud2_a(i,k,j) = 0.
+             gd_cloud_b(i,k,j) = 0.
+             gd_cloud2_b(i,k,j) = 0.
+          end do
+       end do
+    end do
+    endif
+
+    do j=jts,jtf
+         do i=its,itf
+           raincv_a(i,j)=0.
+           raincv_b(i,j)=0.
+      end do
+    end do
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to landuse_init' )
 

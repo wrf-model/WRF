@@ -1477,9 +1477,6 @@ integer::oops1,oops2
                                   st_levels_input , sm_levels_input , sw_levels_input , &
                                   grid%zs , grid%dzs , grid%tslb , grid%smois , grid%sh2o , &
                                   flag_sst , flag_tavgsfc, flag_soilhgt,&
-                                  grid%st000010, grid%st010200, grid%sm000010, grid%sm010200, & !fds 
-                                  grid%st010040, grid%st040100, grid%st100200, & 
-                                  grid%sm010040, grid%sm040100, grid%sm100200, & 
                                   flag_soil_layers, flag_soil_levels, &
                                   ids , ide , jds , jde , kds , kde , &
                                   ims , ime , jms , jme , kms , kme , &

@@ -2,9 +2,6 @@
 
 onintr clnup
 
-/bin/mv Registry/Registry.EM Registry/Registry.EM-save
-/bin/cp Registry/Registry.EM_SST Registry/Registry.EM
-
 #clean -a
 set hst=`hostname | cut -c1-2`
 
@@ -57,5 +54,4 @@ if ( -x main/wrf_SST_ESMF.exe ) then
 endif
 
 clnup:
-/bin/mv Registry/Registry.EM-save Registry.EM
 

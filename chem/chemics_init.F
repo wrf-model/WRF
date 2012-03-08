@@ -3,9 +3,6 @@
    subroutine chem_init (id,chem,emis_ant,scalar,dt,bioemdt,photdt,chemdt,stepbioe, &
                stepphot,stepchem,stepfirepl,plumerisefire_frq,z_at_w,xlat,xlong,    &
                g,aerwrf,config_flags,grid,alt,t,p,CONVFAC,ttday,tcosz,julday,gmt,   &
-               gd_cloud, gd_cloud2,raincv_a,raincv_b,                               &
-               gd_cloud_a, gd_cloud2_a,                              &
-               gd_cloud_b, gd_cloud2_b,                              &
                tauaer1,tauaer2,tauaer3,tauaer4,                      &
                gaer1,gaer2,gaer3,gaer4,                              &
                waer1,waer2,waer3,waer4,                              &
@@ -84,13 +81,6 @@
                                gaer1,gaer2,gaer3,gaer4,              &
                                waer1,waer2,waer3,waer4
 
-   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,         &
-          OPTIONAL,                                                  &
-          INTENT(INOUT   ) ::                                        &
-                               gd_cloud, gd_cloud2,                  &
-                               gd_cloud_a, gd_cloud2_a,              &
-                               gd_cloud_b, gd_cloud2_b
-
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , 1:4 )   ,         &
           INTENT(INOUT   ) ::                                        &
                                l2aer,l3aer,l4aer,l5aer,l6aer,l7aer
@@ -112,9 +102,6 @@
    REAL,  DIMENSION( ims:ime ,  jms:jme )         ,         &
           INTENT(INOUT   ) ::                                        &
                                ttday,tcosz,xlat,xlong
-   REAL,  DIMENSION( ims:ime ,  jms:jme )         ,         &
-          INTENT(INOUT   ) ::                                        &
-                               raincv_a,raincv_b
    real, INTENT (IN) :: g
    integer, intent(out) :: stepbioe,stepphot,stepchem,stepfirepl
    TYPE (grid_config_rec_type) , INTENT (in) ::     config_flags
@@ -376,26 +363,6 @@ call wrf_message("**************************************************************
        end do
        end do
     end if
-    IF ( config_flags%cu_diag == 1 ) THEN
-    do j=jts,jte
-       do k=kts,kte
-          do i=its,ite
-             if (present(gd_cloud)    ) gd_cloud(i,k,j) = 0.
-             if (present(gd_cloud2)   ) gd_cloud2(i,k,j) = 0.
-             if (present(gd_cloud_a)  ) gd_cloud_a(i,k,j) = 0.
-             if (present(gd_cloud2_a) ) gd_cloud2_a(i,k,j) = 0.
-             if (present(gd_cloud_b)  ) gd_cloud_b(i,k,j) = 0.
-             if (present(gd_cloud2_b) ) gd_cloud2_b(i,k,j) = 0.
-          end do
-       end do
-    end do
-    ENDIF
-    do j=jts,jte
-         do i=its,ite
-           raincv_a(i,j)=0.
-           raincv_b(i,j)=0.
-      end do
-    end do
 
 !--------------------------------------------------------------------------------------------------------
  if  ( (config_flags%chem_opt == 16) .OR. (config_flags%chem_opt == 17) )   then

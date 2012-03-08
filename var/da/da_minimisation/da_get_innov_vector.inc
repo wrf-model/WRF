@@ -189,9 +189,13 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
        call mpi_barrier(MPI_COMM_WORLD,ierr)
 #endif
        call wrf_message("*** WRF-Var multi-increment stage 1 completed successfully ***")
-       call wrfu_finalize
+       !call wrfu_finalize
        !call wrf_shutdown
-       stop
+       !stop
+       close(qcstat_conv_unit)
+       call da_free_unit(qcstat_conv_unit)
+       if (trace_use) call da_trace_exit("da_get_innov_vector")
+       return
    endif
 
    !-----------------------------------------------------------------------

@@ -23,7 +23,7 @@ module da_obs_io
       sound, mtgirs,synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       tamdar, tamdar_sfc, metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, pseudo, &
       radar, radiance, airsr, sonde_sfc, trace_use_dull, num_fgat_time, time_slots, myproc, &
-      qmarker_retain, anal_type_verify, top_km_gpsro, bot_km_gpsro, &
+      qmarker_retain, anal_type_verify, top_km_gpsro, bot_km_gpsro, thin_rainobs, &
       sfc_assi_options, sfc_assi_options_1, sfc_assi_options_2,print_detail_rain,max_rain_input,rain
 
    use da_define_structures, only : iv_type, multi_level_type, multi_level_type_BUFR, &
@@ -38,11 +38,11 @@ module da_obs_io
    use da_tools_serial, only : da_free_unit, da_get_unit, da_advance_time
    use da_tracing, only : da_trace_entry, da_trace_exit
 
+   use module_radiance, only : deg2rad, i_kind
+   use gsi_thinning, only : map2grids, map2grids_conv, cleangrids_conv, thinning_grid_conv
 #ifdef BUFR
    use da_control, only : thin_conv
    use da_grid_definitions, only : da_earth_2_model_wind
-   use module_radiance, only : deg2rad, i_kind
-   use gsi_thinning, only : map2grids, map2grids_conv, cleangrids_conv, thinning_grid_conv
    use da_obs, only : da_set_obs_missing
 #ifdef DM_PARALLEL
    use da_control, only : root

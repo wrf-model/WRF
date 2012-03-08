@@ -689,10 +689,7 @@ CONTAINS
    REAL, DIMENSION( kts:kte, 4 ),  &
          INTENT(IN)                                   :: wzfac ! 1: u, 2: v, 3: t, 4: q
    REAL, DIMENSION( its:ite, jts:jte)                 :: wndcor_u, wndcor_v
-!BPR BEGIN
-!  REAL, DIMENSION( its-2:ite+1, jts-2:jte+1)         :: blw_old, blw_new
    REAL, DIMENSION( its-2:ite+2, jts-2:jte+2)         :: blw_old, blw_new
-!BPR END
    REAL, DIMENSION( its:ite, kts:kte, jts:jte)        :: qsat
 
    REAL                                               :: m, b=1.8, blw, rindx, x
@@ -929,12 +926,8 @@ CONTAINS
      rindx = rinblw*1000.0/dx
      m = -0.8*2.0/rindx
 
-!BPR BEGIN
-!    DO j=MAX(jts-2,jds),MIN(jtf+1,jde-1)
-!    DO i=MAX(its-2,ids),MIN(itf+1,ide-1)
-     DO j=MAX(jts-2,jds),MIN(jtf+2,jde-1)
-     DO i=MAX(its-2,ids),MIN(itf+2,ide-1)
-!BPR END
+     DO j=MAX(jts-2,jds),MIN(jte+2,jde-1)
+     DO i=MAX(its-2,ids),MIN(ite+2,ide-1)
        IF( odis_ndg_old(i,j) < 0.5*rinblw ) THEN
          blw_old(i,j) = 1.0
        ELSE
@@ -952,18 +945,10 @@ CONTAINS
      ENDDO
 
 ! Smoother applies one point outside the tile, but one point in from boundaries
-!BPR BEGIN
-!    CALL smther(blw_old, its-2,itf+1, jts-2,jtf+1, 1, &
-!                MAX(its-2,ids+1), MIN(ite+1,ide-2), MAX(jts-2,jds+1), MIN(jte+1,jde-2))
-!use the dimensioned size
-     CALL smther(blw_old, its-2,ite+1, jts-2,jte+1, 1, &
+     CALL smther(blw_old, its-2,ite+2, jts-2,jte+2, 1, &
                  MAX(its-1,ids+1), MIN(ite+1,ide-2), MAX(jts-1,jds+1), MIN(jte+1,jde-2))
-!    CALL smther(blw_new, its-2,itf+1, jts-2,jtf+1, 1, &
-!                MAX(its-2,ids+1), MIN(ite+1,ide-2), MAX(jts-2,jds+1), MIN(jte+1,jde-2))
-!use the dimensioned size
-     CALL smther(blw_new, its-2,ite+1, jts-2,jte+1, 1, &
+     CALL smther(blw_new, its-2,ite+2, jts-2,jte+2, 1, &
                  MAX(its-1,ids+1), MIN(ite+1,ide-2), MAX(jts-1,jds+1), MIN(jte+1,jde-2))
-!BPR END
 
      WHERE ( blw_old > 1.0)
         blw_old = 1.0
@@ -1267,36 +1252,33 @@ CONTAINS
     IMPLICIT NONE
 
     INTEGER :: idimst, idimnd, jdimst, jdimnd, npass, ist, ind, jst, jnd
-    INTEGER :: i, j, k, kp
-    REAL    :: asv, aplus, cell
+    INTEGER :: i, j, k, kk
+    REAL    :: avg
     REAL, DIMENSION(idimst:idimnd, jdimst:jdimnd) :: SLAB
+    REAL, DIMENSION(idimst:idimnd, jdimst:jdimnd) :: SLAB_ORIG
     REAL, DIMENSION(2)                            :: XNU
 
     IF(NPASS.EQ.0)RETURN
     XNU(1)=0.50
     XNU(2)=-0.52
     DO K=1,NPASS
-!      FIRST, SMOOTH IN THE J DIRECTION
-        DO J=JST,JND
-          ASV=SLAB(IST-1,J)
-          DO I=IST,IND
-            APLUS=SLAB(I+1,J)
-            CELL=SLAB(I,J)
-            SLAB(I,J)=SLAB(I,J)+XNU(K)*((ASV+APLUS)/2.0-SLAB(I,J))
-            ASV=CELL
-          ENDDO
-        ENDDO
+      KK = 2 - MOD(K,2)
 
-!      NOW, SMOOTH IN THE I DIRECTION
+      DO J=JDIMST,JDIMND
+        DO I=IDIMST,IDIMND
+           SLAB_ORIG(I,J) = SLAB(I,J)
+        END DO
+      END DO
+
+      DO J=JST,JND
         DO I=IST,IND
-          ASV=SLAB(I,JST-1)
-          DO J=JST,JND
-            APLUS=SLAB(I,J+1)
-            CELL=SLAB(I,J)
-            SLAB(I,J)=SLAB(I,J)+XNU(K)*((ASV+APLUS)/2.0-SLAB(I,J))
-            ASV=CELL
-          ENDDO
+          AVG = ( SLAB_ORIG(I+1,J  ) + &
+                  SLAB_ORIG(I-1,J  ) + &
+                  SLAB_ORIG(I  ,J+1) + &
+                  SLAB_ORIG(I  ,J-1) ) * 0.25
+          SLAB(I,J)=SLAB_ORIG(I,J)+XNU(KK)*(AVG - SLAB_ORIG(I,J))
         ENDDO
+      ENDDO
 
     ENDDO
 

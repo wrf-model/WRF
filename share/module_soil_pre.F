@@ -595,9 +595,6 @@ print *,'WATER CHANGE = ',change_water
                                 st_levels_input , sm_levels_input , sw_levels_input , &
                                 zs , dzs , tslb , smois , sh2o , &
                                 flag_sst , flag_tavgsfc, flag_soilhgt, &
-                                st000010, st010200, sm000010, sm010200, & !fds
-                                 st010040 , st040100 , st100200, &
-                                 sm010040 , sm040100 , sm100200, &
                                 flag_soil_layers, flag_soil_levels, &
                                 ids , ide , jds , jde , kds , kde , &
                                 ims , ime , jms , jme , kms , kme , &
@@ -616,11 +613,6 @@ print *,'WATER CHANGE = ',change_water
                               num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc
 
       INTEGER , INTENT(IN) :: flag_sst, flag_tavgsfc
-!--------fds (06/2010)----------------------------
-      REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: st000010, st010200, sm000010, sm010200, &
-                                 st010040 , st040100 , st100200, &
-                                 sm010040 , sm040100 , sm100200
-!-------------------------------------------------
       INTEGER , INTENT(IN) :: flag_soil_layers, flag_soil_levels, flag_soilhgt
 
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: landmask , sst
@@ -841,22 +833,18 @@ print *,'WATER CHANGE = ',change_water
                                  ids , ide , jds , jde , kds , kde , &
                                  ims , ime , jms , jme , kms , kme , &
                                  its , ite , jts , jte , kts , kte )
-!----------fds (06/2010)-------------------------------
       ELSE IF ( ( sf_surface_physics .EQ. 8 ) .AND. ( num_soil_layers .GT. 1 ) ) THEN
-         CALL init_soil_8_real ( tsk , tmn , smois , sh2o , tslb , &
-                         st_input , sm_input , sw_input , landmask , sst , &
-                         zs , dzs , &
-                         st_levels_input , sm_levels_input , sw_levels_input , &
-         num_soil_layers , num_st_levels_input , num_sm_levels_input , num_sw_levels_input , &
-                        num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc , &
+         CALL init_soil_depth_8 ( zs , dzs , num_soil_layers )
+         CALL init_soil_3_real ( tsk , tmn , smois , tslb , &
+                                 st_input , sm_input , landmask , sst , &
+                                 zs , dzs , &
+                                 st_levels_input , sm_levels_input , &
+                                 num_soil_layers , num_st_levels_input , num_sm_levels_input , &
+                                 num_st_levels_alloc , num_sm_levels_alloc , &
                                  flag_sst , flag_soil_layers , flag_soil_levels , &
-                                 st000010, st010200, sm000010, sm010200, &
-                                 st010040 , st040100 , st100200, &
-                                 sm010040 , sm040100 , sm100200, &
                                  ids , ide , jds , jde , kds , kde , &
                                  ims , ime , jms , jme , kms , kme , &
                                  its , ite , jts , jte , kts , kte )
-!-----------------------------------------------------
       END IF
 
    END SUBROUTINE process_soil_real
@@ -1197,6 +1185,22 @@ cycle
       zs(2) = dzs(1) + 0.5 * dzs(2)
 
    END SUBROUTINE init_soil_depth_7
+
+   SUBROUTINE init_soil_depth_8 ( zs , dzs , num_soil_layers )
+
+      IMPLICIT NONE
+
+      INTEGER, INTENT(IN) :: num_soil_layers
+
+      REAL, DIMENSION(1:num_soil_layers), INTENT(OUT)  ::  zs,dzs
+
+      INTEGER                   ::      l
+
+      zs(1) = 0.00
+      zs(2) = 0.05
+      zs(3) = 1.05
+
+   END SUBROUTINE init_soil_depth_8
 
    SUBROUTINE init_soil_1_real ( tsk , tmn , tslb , zs , dzs , &
                                  num_soil_layers , real_data_init_type , &

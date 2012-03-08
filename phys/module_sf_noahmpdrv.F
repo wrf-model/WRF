@@ -927,27 +927,6 @@ CONTAINS
                 write(*,'(10x, "PSFC       = ",  F20.10)') PSFC
              endif
 #endif
-!KWM             CALL NOAHMP_SFLX (ICE    ,IST    ,VEGTYP ,ISC    ,3      ,NSOIL  ,&  !in
-!KWM                  ZSOIL  ,DT     ,QV1D   ,SFCTMP ,UU     ,VV     ,&  !in
-!KWM                  SOLDN  ,LWDN   ,PRCP   ,ZLVL   ,CO2AIR ,O2AIR  ,&  !in
-!KWM                  COSZ   ,TBOT   ,FOLN   ,SFCPRS ,JMONTH ,JDAY   ,&  !in
-!KWM                  SHDFAC ,LAT            ,I      ,J      ,dz8w1d ,&  !in
-!KWM                  eah    ,tah    ,fwet   ,ficeold,qsnow  ,sneqvo ,&  !inout
-!KWM                  isnow  ,zsnso  ,canliq ,canice ,snowd  ,swe    ,&  !inout
-!KWM                  snice  ,snliq  ,tv     ,tg     ,STC    ,smh2o  ,&  !inout
-!KWM                  smc    ,zwt    ,wa     ,wt     ,wslake ,lfmass ,&  !inout
-!KWM                  rtmass ,stmass ,wood   ,stblcp ,fastcp ,plai   ,&  !inout
-!KWM                  psai   ,albold ,cm     ,ch     ,                &  !inout
-!KWM                  fsa    ,fsr    ,fira   ,fsh    ,ssoil  ,fcev   ,&  !out
-!KWM                  fgev   ,fctr   ,trad   ,ecan   ,etran  ,esoil  ,&  !out
-!KWM                  runsf  ,runsb  ,apar   ,psn    ,sav    ,sag    ,&  !out
-!KWM                  fsno   ,nee    ,gpp    ,npp    ,ts     ,fveg   ,&  !out
-!KWM                  salb   ,errwat ,qmelt  ,ponding,ponding1,       &  !out
-!KWM                  ponding2,dx    ,shdmax  ,                       &
-!KWM                  isurban,iz0tlnd,qc     ,pblh   ,qsfc1d  ,psfc  ,&  !in
-!KWM                  chstar ,tstar  ,t2mv   ,t2mb    , rssun,&
-!KWM                  rssha  ,bgap   ,wgap   ,gap    ,tgv     ,tgb   ,&
-!KWM                  Q1     ,q2mv   ,q2mb   ) !out
 
              CALL NOAHMP_SFLX (&
                   I       , J       , LAT     , YEARLEN , JULIAN  , COSZ    , & ! IN : Time/Space-related
@@ -972,8 +951,7 @@ CONTAINS
                   PSN     , SAV     , SAG     , FSNO    , NEE     , GPP     , & ! OUT : 
                   NPP     , FVEG    , SALB    , QMELT   , PONDING , PONDING1, & ! OUT : 
                   PONDING2, RSSUN   , RSSHA   , BGAP    , WGAP    , GAP     , & ! OUT : 
-                  ERRWAT  , CHV     , CHB)                                      ! OUT :
-                  
+                  ERRWAT  , CHV     , CHB     , EMISSI)                         ! OUT :
 
 #if 0
             if ( I == 15 .and. J == 5 ) then
@@ -1094,7 +1072,7 @@ CONTAINS
              fastcpxy (i,j)               = fastcp
              xlaixy   (i,j)               = plai
              xsaixy   (i,j)               = psai
-
+             emiss    (i,j)               = emissi
              eahxy    (i,j)               = eah
              tahxy    (i,j)               = tah
              fwetxy   (i,j)               = fwet

@@ -23,7 +23,20 @@ subroutine da_scan_obs_rain (iv, filename)
    real*8                        :: obs_time
    integer                       :: iyear, imonth, iday, ihour, imin
 
+   ! for thinning
+   real                         :: dlat_earth,dlon_earth,crit
+   integer                      :: itt,itx,iout
+   integer                      :: ilocal
+   logical                      :: iuse
+
+   integer                      :: num_outside_all, num_outside_time, num_thinned, num_report
+
    if (trace_use) call da_trace_entry("da_scan_obs_rain")
+
+   num_report       = 0
+   num_outside_all  = 0
+   num_outside_time = 0
+   num_thinned      = 0
 
    ! 1. open file
    ! ============
@@ -115,6 +128,8 @@ subroutine da_scan_obs_rain (iv, filename)
 
       read(unit=platform % info % platform (4:6), fmt='(I3)') fm
 
+      num_report = num_report+1
+
       ! 3.2 read rainfall data 
 
       platform%each (1) = rain_each_type(missing_r, missing, -1.0,&
@@ -133,7 +148,8 @@ subroutine da_scan_obs_rain (iv, filename)
       call da_get_julian_time (iyear,imonth,iday,ihour,imin,obs_time)
       if ( obs_time < time_slots(0) .or. &
            obs_time >= time_slots(num_fgat_time) ) then
-         cycle
+           num_outside_time = num_outside_time + 1
+         cycle reports
       endif
 
       call da_llxy (platform%info, platform%loc, outside, outside_all)
@@ -141,8 +157,16 @@ subroutine da_scan_obs_rain (iv, filename)
       nlevels = platform%info%levels
 
       if (outside_all) then
+         num_outside_all = num_outside_all + 1
          cycle reports
       end if
+
+      dlat_earth = platform%info%lat
+      dlon_earth = platform%info%lon
+      if (dlon_earth < 0.0) dlon_earth = dlon_earth + 360.0
+      if (dlon_earth >= 360.0) dlon_earth = dlon_earth - 360.0
+      dlat_earth = dlat_earth * deg2rad
+      dlon_earth = dlon_earth * deg2rad
 
       ! 3.4  Loop over duplicating obs for global
       n_dup = 1
@@ -162,8 +186,16 @@ subroutine da_scan_obs_rain (iv, filename)
             end if
             iv%info(rain)%ntotal = iv%info(rain)%ntotal + 1
             if (outside) cycle reports
-            iv%info(rain)%nlocal = iv%info(rain)%nlocal + 1
-
+            if ( thin_rainobs ) then
+               crit = 1.0
+               call map2grids_conv(rain,dlat_earth,dlon_earth,crit,iv%info(rain)%nlocal,itx,1,itt,iout,iuse)
+               if ( .not. iuse ) then
+                  num_thinned = num_thinned + 1
+                  cycle reports
+               end if
+            else
+               iv%info(rain)%nlocal = iv%info(rain)%nlocal + 1
+            endif
 
          case default;
             write(unit=message(1), fmt='(a)') 'unsaved obs found:'
@@ -172,13 +204,18 @@ subroutine da_scan_obs_rain (iv, filename)
             write(unit=message(3), fmt='(a, i3)') &
                  'platform%info%levels=', platform%info%levels
             call da_warning(__FILE__,__LINE__,message(1:3))
-            cycle
+            cycle reports
          end select
 
          iv%info(rain)%max_lev = 1 
 
       end do        !  loop over duplicate
    end do reports
+
+   write(unit=message(1),fmt='(A,4(1x,i7))') &
+      'da_scan_obs_rain: num_report, num_outside_all, num_outside_time, num_thinned: ', &
+      num_report, num_outside_all, num_outside_time, num_thinned
+   call da_message(message(1:1))
 
    close (iunit)
    call da_free_unit(iunit)

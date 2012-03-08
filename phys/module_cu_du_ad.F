@@ -5,7 +5,7 @@ MODULE a_module_cu_du
    REAL    , PARAMETER :: cincap = -10.
    REAL    , PARAMETER :: capemin = 10.
    REAL    , PARAMETER :: dpthmin = 1000.
-   REAL    , PARAMETER :: alpha = 0.001
+   REAL    , PARAMETER :: alpha = 0.0001
    REAL    , PARAMETER :: eps = 0.5
    REAL    , PARAMETER :: Vfall = 5.
 

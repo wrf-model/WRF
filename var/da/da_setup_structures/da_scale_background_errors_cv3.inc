@@ -14,6 +14,7 @@ subroutine da_scale_background_errors_cv3 ( grid, be, it )
    real, dimension(ids: ide,  jds: jde,  kds: kde)        :: global_3d
    character(len=6)            :: vname
    character(len=9)            :: chr
+   character(len=8)            :: i_char
 
    INTEGER :: nta, ndeg, ku, kz
    real    :: samp,s2u,tin,as(5),as0(5),slim
@@ -190,6 +191,13 @@ subroutine da_scale_background_errors_cv3 ( grid, be, it )
    kz =  kde - kds + 1
 !
 ! 4.1 Get the square-root of the variance tuning factor:
+
+   n = 1+(it-1)*3
+   if ( as1(n) <= 1.0E-7 .or. as2(n) <= 1.0E-7 .or. as3(n) <= 1.0E-7 .or. as4(n) <= 1.0E-7 .or. as5(n) <= 1.0E-7 ) then
+     Write (i_char, '(i8)') it
+     call da_error(__FILE__,__LINE__, &
+                    (/"Missing or invaliad AS1 ~ AS5 value for IT = "//i_char/))
+   endif
 
    as(1)=sqrt(as1(1+(it-1)*3))
    as(2)=sqrt(as2(1+(it-1)*3))

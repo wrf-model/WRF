@@ -20,9 +20,11 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
    !-------------------------------------------------------------------------
 
    call da_get_unit(ounit)
-
+#ifdef DM_PARALLEL
+   write(unit=filename, fmt='(a,i3.3,a,i4.4)') 'stub.', file_index, '.', myproc
+#else
    write(unit=filename, fmt='(a,i3.3)') 'gts_omb.', file_index
-
+#endif
    ! [1] surface obs:
 
    if (iv%info(synop)%plocal(iv%time) - iv%info(synop)%plocal(iv%time-1) > 0) then
@@ -255,19 +257,17 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                                        iv%info(tamdar_sfc)%plocal(iv%time-1)
       do n = iv%info(tamdar_sfc)%plocal(iv%time-1) + 1, &
              iv%info(tamdar_sfc)%plocal(iv%time)
-         write(ounit,'(2i8,a5,2E22.13)')&
-                 n, iv%info(tamdar_sfc)%levels(n), iv%info(tamdar_sfc)%id(n), &  ! Station
+         write(ounit,'(i8,a5,2E22.13)')&
+                 n, iv%info(tamdar_sfc)%id(n), &  ! Station
                  iv%info(tamdar_sfc)%lat(1,n), &       ! Latitude
                  iv%info(tamdar_sfc)%lon(1,n)          ! Longitude
-         do k = 1 , iv%info(tamdar_sfc)%levels(n)
-            write(ounit,'(E22.13,5(E22.13,i8,3E22.13))')&
-                  iv%tamdar_sfc(n)%h, &
-                  iv%tamdar_sfc(n)%u, &!  O-B u
-                  iv%tamdar_sfc(n)%v, &!  O-B v
-                  iv%tamdar_sfc(n)%t, &!  O-B t
-                  iv%tamdar_sfc(n)%p, &!  O-B p
-                  iv%tamdar_sfc(n)%q  !  O-B q
-         enddo
+         write(ounit,'(E22.13,5(E22.13,i8,3E22.13))')&
+                 iv%tamdar_sfc(n)%h, &
+                 iv%tamdar_sfc(n)%u, &!  O-B u
+                 iv%tamdar_sfc(n)%v, &!  O-B v
+                 iv%tamdar_sfc(n)%t, &!  O-B t
+                 iv%tamdar_sfc(n)%p, &!  O-B p
+                 iv%tamdar_sfc(n)%q  !  O-B q
       end do
       close (ounit)
    end if

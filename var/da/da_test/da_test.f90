@@ -84,6 +84,7 @@ module da_test
    use da_transfer_model, only : da_transfer_xatowrftl_lbc, da_transfer_xatowrftl_adj_lbc, da_get_2nd_firstguess
    use da_4dvar, only : model_grid, da_tl_model, da_ad_model, input_nl_xtraj, upsidedown_ad_forcing, &
        u6_2, v6_2, w6_2, t6_2, ph6_2, p6, mu6_2, psfc6, moist6
+   use da_rain, only : da_transform_xtoy_rain, da_transform_xtoy_rain_adj
 #endif
 
    implicit none

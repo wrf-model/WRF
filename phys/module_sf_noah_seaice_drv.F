@@ -89,7 +89,7 @@ contains
          &                                              NOAHRES, &
          &                                                 CHS2
 
-    REAL,    DIMENSION( ims:ime, kms:kme, jms:jme )            , &
+    REAL,    OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme )  , &
          &   INTENT (INOUT)   ::                        B_Q_BEP, &
          &                                              B_T_BEP
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme )            , &
@@ -375,8 +375,12 @@ contains
                &         - ( EMISSI * STBOLT * (T1**4) ) &
                &         - FLX1 - FLX2 - FLX3
           
-          B_T_BEP(I,1,J)=hfx(i,j)/dz8w(i,1,j)/rho(i,1,j)/CP
-          B_Q_BEP(I,1,J)=qfx(i,j)/dz8w(i,1,j)/rho(i,1,j)
+          if ( PRESENT (B_T_BEP) ) then
+            B_T_BEP(I,1,J)=hfx(i,j)/dz8w(i,1,j)/rho(i,1,j)/CP
+          endif
+          if ( PRESENT (B_Q_BEP) ) then
+            B_Q_BEP(I,1,J)=qfx(i,j)/dz8w(i,1,j)/rho(i,1,j)
+          endif
 
        enddo SEAICE_ILOOP
     enddo SEAICE_JLOOP

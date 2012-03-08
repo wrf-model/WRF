@@ -73,7 +73,7 @@ contains
 
     implicit none
 
-    type(nmm_terrain), pointer, intent(inout) :: tr
+    type(nmm_terrain), pointer :: tr
     integer, intent(in) :: io_form, input_type
     integer, parameter :: IO_BIN=1, IO_NET=2
     CHARACTER(LEN=6)                  :: nestpath

@@ -20,8 +20,10 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
    character(len=120) :: filename
 
-   integer            :: n, ios, time_step_seconds
+   integer            :: n, ios, time_step_seconds, ierr
    character*256 :: timestr, timestr1
+
+   real, dimension(:,:,:), allocatable :: hr_rainc, hr_rainnc
 
    if (trace_use) call da_trace_entry("da_get_innov_vector") 
 
@@ -46,6 +48,26 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
    filename = ' '
    
+   if ( use_rainobs .and. num_fgat_time > 1 .and. var4d) then
+      allocate (hr_rainc (ims:ime,jms:jme,1:num_fgat_time))
+      allocate (hr_rainnc(ims:ime,jms:jme,1:num_fgat_time))
+      hr_rainc =0.0
+      hr_rainnc=0.0
+
+      call domain_clock_get (grid, stop_timestr=timestr1)
+      call domain_clock_set( grid, current_timestr=timestr1 )
+      call domain_clock_set (grid, time_step_seconds=-1*var4d_bin)
+      call domain_clockprint(150, grid, 'get CurrTime from clock,')
+
+      do n= num_fgat_time , 1, -1
+         call domain_clock_get( grid, current_timestr=timestr )
+         call da_read_basicstates ( xbx, grid, config_flags, timestr ) 
+         call da_get_hr_rain (n, grid, hr_rainc, hr_rainnc) 
+         if (n > 1) call domain_clockadvance (grid)
+         call domain_clockprint(150, grid, 'get CurrTime from clock,')
+      enddo
+   endif
+
    if (num_fgat_time > 1) then
       call domain_clock_get (grid, stop_timestr=timestr1)
       call domain_clock_set( grid, current_timestr=timestr1 )
@@ -119,8 +141,9 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
          call da_get_innov_vector_profiler  (it,num_qcstat_conv, grid, ob, iv)
       if (iv%info(buoy)%nlocal      > 0) &
          call da_get_innov_vector_buoy      (it,num_qcstat_conv, grid, ob, iv)
-      if (iv%info(rain)%nlocal     > 0) &          
-         call da_get_innov_vector_rain     (it, num_qcstat_conv,grid, ob, iv)  
+      if (iv%info(rain)%nlocal     > 0) &
+         call da_get_innov_vector_rain      (it,num_qcstat_conv, grid, ob, iv, &
+                                             hr_rainc(:,:,n),hr_rainnc(:,:,n))
 
 #if defined(CRTM) || defined(RTTOV)
       if (use_rad                           ) call da_get_innov_vector_radiance (it, grid, ob, iv)
@@ -148,6 +171,11 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
    end do
 
+   if ( use_rainobs .and. num_fgat_time > 1 .and. var4d) then
+      deallocate (hr_rainc )
+      deallocate (hr_rainnc)
+   endif
+
    if (num_fgat_time > 1) then
       call nl_get_time_step ( grid%id, time_step_seconds)
       call domain_clock_set (grid, time_step_seconds=time_step_seconds)
@@ -156,7 +184,9 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
    if ( multi_inc == 1 ) then
 #ifdef DM_PARALLEL
-       call da_system("touch wrf_stop_now")
+       call mpi_barrier(MPI_COMM_WORLD,ierr)
+       if ( myproc == 0 )  call da_join_iv_for_multi_inc()
+       call mpi_barrier(MPI_COMM_WORLD,ierr)
 #endif
        call wrf_message("*** WRF-Var multi-increment stage 1 completed successfully ***")
        call wrfu_finalize

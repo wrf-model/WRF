@@ -110,8 +110,23 @@ subroutine da_setup_be_regional(xb, be)
 
    integer                     :: be_unit, ier, be_rf_unit, be_print_unit, it
 
-   if (trace_use) call da_trace_entry("da_setup_be_regional")
+!-----------for interpolating CV5--------------------------------------------------------------
+   REAL, ALLOCATABLE           :: reg_psi_ps0(:,:), reg_psi_chi0(:,:), reg_psi_t0(:,:,:), &
+                                  reg_psi_ps   (:), reg_psi_chi   (:), reg_psi_t   (:,:), &
+                                  reg_psi_ps_be(:), reg_psi_chi_be(:), reg_psi_t_be(:,:)
+   REAL, DIMENSION(:,:), ALLOCATABLE:: covm1_be, covm2_be, covm3_be, covm4_be,&
+                                       covm1   , covm2   , covm3   , covm4
+   REAL, DIMENSION(:),   ALLOCATABLE:: rfls1_be, rfls2_be, rfls3_be, rfls4_be
+   REAL, DIMENSION(:),   ALLOCATABLE:: eta_be
+! For write out the Interpolated CV5 BE (bin_type=5) file:
+   integer              :: bin_type_out, num_bins_out, num_bins2d_out
+   integer, allocatable :: bin_out(:,:,:), bin2d_out(:,:)
+   integer, parameter  :: be_out_unit   = 135
 
+   character (len=256) :: mesg
+!===========for interpolating CV5==============================================================
+
+   if (trace_use) call da_trace_entry("da_setup_be_regional")
    if( cv_options == 5 .or. cv_options == 6) then
    write (unit=message(1),fmt='(A,i3)') &
       'Set up background errors for regional application for cv_options = ',cv_options
@@ -140,14 +155,76 @@ subroutine da_setup_be_regional(xb, be)
       call wrf_shutdown
       stop "Stopped, Please check if proper BE file s provided"
    else
-      if ( nk /= kz ) then
-         write(message(1),'("{ni,nj,nk}={",3(1x,i0),"} in be.dat but {ix,jy,kz}={",3(1x,i0),"}!")') &
-            ni,nj,nk,ix,jy,kz
-         call da_error(__FILE__,__LINE__,  &
-            message(1:1))
-!           (/"Vertical levels in fg and be.dat do not match."/))
-      end if
+!-----------for interpolating CV5--------------------------------------------------------------
+     if (Interpolate_stats) then 
+!        Must use the domain averaged Reg. Coeff.:
+         lat_stats_option = .FALSE.
+!        Must use the global Eigenvector/eigenvalue
+         vert_evalue = 1
+         write(mesg,'(5x,a,L,2x,a,L,2x,a,I2)') &
+!        write(mesg,*) &
+         "Using interpolated CV5 BE:  Interpolate_stats =", &
+         Interpolate_stats, "lat_stats_option  =",    &
+         lat_stats_option,  "vert_evalue       =", vert_evalue
+         call wrf_debug (0, mesg )
+     else
+         if (ni /= ix .or. nj /= jy .or. nk /= kz) then
+            write(mesg,'(5X,a,3I4,a,5X,a,3I4)') &
+                "CV5 BE file: ni,nj,nk=",ni,nj,nk, &
+                " is not derived from the current model data.", &
+                " The domain size of the current model are ix, jy, kz=",&
+                ix,jy,kz
+           call wrf_debug (0, mesg )
+           write(mesg,'(5X,a)') "Interpolated CV5 BE will be used........"
+           call wrf_debug (0, mesg )
+!         Must use the domain averaged Reg. Coeff.:
+           lat_stats_option = .FALSE.
+!         Must use the global Eigenvector/eigenvalue
+           vert_evalue = 1
+!         Set the interpolate_Stats = .true.:
+           Interpolate_stats = .TRUE.
+         endif
+     endif
    endif
+
+   if (rootproc) then
+      if (Interpolate_stats) write(be_out_unit) ix, jy, kz
+   endif
+!   if (Interpolate_stats) write(be_out_unit) xb%sigmah
+   if (Interpolate_stats) write(6,'(a/("k=",i3,2x,f10.4))') &
+                       'xb%sigmah=',(k,xb%sigmah(k),k=1,kz)
+ 
+   allocate (eta_be(1:nk))
+   read(be_unit,iostat=ier) eta_be
+!  If not available from BE file, get it from namelist
+   if (ier /= 0) then
+      write(mesg,'("ier=",i3,2x,a)') ier,"NO Eta values existed in BE file."
+           call wrf_debug (0, mesg )
+      write(mesg,'(a)') "BE Eta values from the namelist file:"
+           call wrf_debug (0, mesg )
+      backspace (be_unit)
+      eta_be = be_eta(1:nk)
+   endif
+   if (Interpolate_stats) &
+       write(6,'(a/("k=",i3,2x,f10.4))') 'eta_be=',(k,eta_be(k),k=1,nk)
+
+!  If eta values not defined correctly, stop
+   if (Interpolate_stats) then
+      if (eta_be(1) == eta_be(nk)) then
+        write(message(1),'(/a/)') "??? Check the CV5 BE Eta definition in namelist ???"
+        call da_error(__FILE__,__LINE__,  &
+            message(1:1))
+!        stop 21212
+      endif
+   else
+      write(mesg,'(a)') "No interpolate_stats request, using the Input CV5 BE."
+           call wrf_debug (0, mesg )
+      write(mesg,'(a,L2,2X,a,L2,2X,a,I2)') &
+       " Interpolate_stats =", Interpolate_stats, "lat_stats_option  =", &
+       lat_stats_option,  "vert_evalue       =", vert_evalue
+           call wrf_debug (0, mesg )
+   endif
+!===========for interpolating CV5==============================================================
 
    allocate (bin(1:ni,1:nj,1:nk))
    allocate (bin2d(1:ni,1:nj))
@@ -168,6 +245,37 @@ subroutine da_setup_be_regional(xb, be)
    read (be_unit)bin(1:ni,1:nj,1:nk)
    read (be_unit)bin2d(1:ni,1:nj)
 #endif
+!
+!-----------for interpolating CV5--------------------------------------------------------------
+! Write out the interpolated CV5 BE:
+    if (Interpolate_stats) then
+ 
+! No matter which bin_type BE inputed, after Interpolated, the BE always
+! became bin_type = 1 BE, i.e. the global BE.
+     bin_type_out   = 5
+     num_bins_out   = kz
+     num_bins2d_out = 1
+     if (rootproc) then 
+     write(be_out_unit)bin_type_out
+     write(be_out_unit)lat_min, lat_max, binwidth_lat
+     write(be_out_unit)hgt_min, hgt_max, binwidth_hgt
+     write(be_out_unit)num_bins_out, num_bins2d_out
+     endif
+      allocate (bin_out(1:ix,1:jy,1:kz))
+      allocate (bin2d_out(1:ix,1:jy))
+        do k = 1, kz
+           bin_out (:,:,k) = k
+        enddo
+        bin2d_out = 1
+      if (rootproc) then
+      write(be_out_unit)bin_out
+      write(be_out_unit)bin2d_out
+      endif
+      deallocate (bin_out)
+      deallocate (bin2d_out)
+    endif
+!===========for interpolating CV5==============================================================
+!
    ! 1.1 Read in regression coefficients
    allocate  (regcoeff_psi_chi(1:num_bins))
    allocate  (regcoeff_psi_t(1:nk,1:nk,1:num_bins2d))
@@ -223,16 +331,23 @@ subroutine da_setup_be_regional(xb, be)
    end do
    end if
 
-   ! 1.2 Fill regression coeff. array
-   allocate (be%reg_psi_chi  (1:jy,1:nk))
-   allocate (be%reg_psi_t    (1:jy,1:nk,1:nk))
-   allocate (be%reg_psi_ps   (1:jy,1:nk))
-   allocate (be%reg_psi_rh   (1:jy,1:nk,1:nk))
-   allocate (be%reg_chi_u_t  (1:jy,1:nk,1:nk))
-   allocate (be%reg_chi_u_ps (1:jy,1:nk))
-   allocate (be%reg_chi_u_rh (1:jy,1:nk,1:nk))
-   allocate (be%reg_t_u_rh   (1:jy,1:nk,1:nk))
-   allocate (be%reg_ps_u_rh  (1:jy,1:nk))
+   ! 1.2 Fill regression coeff. array for model BE, vertical dimension is kz:
+
+   allocate (be%reg_psi_chi  (1:jy,1:kz))
+   allocate (be%reg_psi_t    (1:jy,1:kz,1:kz))
+   allocate (be%reg_psi_ps   (1:jy,1:kz))
+   allocate (be%reg_psi_rh   (1:jy,1:kz,1:kz))
+   allocate (be%reg_chi_u_t  (1:jy,1:kz,1:kz))
+   allocate (be%reg_chi_u_ps (1:jy,1:kz))
+   allocate (be%reg_chi_u_rh (1:jy,1:kz,1:kz))
+   allocate (be%reg_t_u_rh   (1:jy,1:kz,1:kz))
+   allocate (be%reg_ps_u_rh  (1:jy,1:kz))
+!
+!-----------for interpolating CV5--------------------------------------------------------------
+   allocate (reg_psi_chi0(1:nj,1:nk))
+   allocate (reg_psi_ps0 (1:nj,1:nk))
+   allocate (reg_psi_t0  (1:nj,1:nk,1:nk))
+!===========for interpolating CV5==============================================================
 
    be%reg_psi_chi    = 0.
    be%reg_psi_t      = 0.
@@ -244,30 +359,39 @@ subroutine da_setup_be_regional(xb, be)
    be%reg_t_u_rh     = 0.
 
    do k=1,nk
-      do j =1, jy
+      do j =1, nj
          b = bin(1,j,k)
+         reg_psi_chi0(j,k) = regcoeff_psi_chi(b)
+         if (.not.interpolate_stats) then
          be%reg_psi_chi(j,k) = psi_chi_factor * regcoeff_psi_chi(b)
+         endif
       end do
    end do
 
-   do j=1,jy
+   do j=1,nj
       b = bin2d(1,j)
       do k=1,nk
+         reg_psi_ps0(j,k) = regcoeff_psi_ps(k,b)
+         if (.not.interpolate_stats) then
          be%reg_psi_ps(j,k)   = psi_ps_factor   * regcoeff_psi_ps(k,b)
          be%reg_ps_u_rh(j,k)  = ps_u_rh_factor  * regcoeff_ps_u_rh(k,b)
          be%reg_chi_u_ps(j,k) = chi_u_ps_factor * regcoeff_chi_u_ps(k,b)
+         endif
       end do
    end do
 
-   do j=1,jy
+   do j=1,nj
       b = bin2d(1,j)
       do i=1,nk
          do k=1,nk
+            reg_psi_t0(j,i,k) = regcoeff_psi_t(i,k,b)
+            if (.not.interpolate_stats) then
             be%reg_psi_t(j,i,k)   = psi_t_factor   *  regcoeff_psi_t(i,k,b)
             be%reg_psi_rh(j,i,k)     = psi_rh_factor     *  regcoeff_psi_rh(i,k,b)
             be%reg_chi_u_t(j,i,k) = chi_u_t_factor *  regcoeff_chi_u_t(i,k,b)
             be%reg_chi_u_rh(j,i,k)   = chi_u_rh_factor   *  regcoeff_chi_u_rh(i,k,b)
             be%reg_t_u_rh(j,i,k)  = t_u_rh_factor  *  regcoeff_t_u_rh(i,k,b)
+            endif 
          end do
       end do
    end do
@@ -288,78 +412,96 @@ subroutine da_setup_be_regional(xb, be)
       write (unit=message(3), fmt='(3x, a)') &
          'Using the averaged regression coefficients for unbalanced part'
 
+!-----------for interpolating CV5--------------------------------------------------------------
+      allocate (reg_psi_ps_be (1:nk))
+      allocate (reg_psi_chi_be(1:nk))
+      allocate (reg_psi_t_be  (1:nk,1:nk))
+!===========for interpolating CV5==============================================================
       do k=1,nk
-         be%reg_psi_ps  (1:num_bins2d,k) = sum(be%reg_psi_ps  (1:num_bins2d,k))/dble(num_bins2d)
-         be%reg_ps_u_rh (1:num_bins2d,k) = sum(be%reg_ps_u_rh (1:num_bins2d,k))/dble(num_bins2d)
-         be%reg_chi_u_ps(1:num_bins2d,k) = sum(be%reg_chi_u_ps(1:num_bins2d,k))/dble(num_bins2d)
+         reg_psi_ps_be(k)  = sum(reg_psi_ps0  (1:num_bins2d,k))/float(num_bins2d)
+         reg_psi_chi_be(k) = sum(reg_psi_chi0(1:num_bins2d,k))/float(num_bins2d)
+         if (.not.interpolate_stats) then
+             be%reg_psi_ps  (1:num_bins2d,k) = sum(be%reg_psi_ps  (1:num_bins2d,k))/float(num_bins2d)
+             be%reg_ps_u_rh (1:num_bins2d,k) = sum(be%reg_ps_u_rh (1:num_bins2d,k))/float(num_bins2d)
+     	     be%reg_chi_u_ps(1:num_bins2d,k) = sum(be%reg_chi_u_ps(1:num_bins2d,k))/float(num_bins2d)
+         endif
       end do
+!             if (.not.interpolate_stats) write(6,*)'be%reg_psi_ps(1,10)=',be%reg_psi_ps(1,10)
 
       do m=1,nk
          do k=1,nk
-
-           be%reg_psi_t  (1:num_bins2d,k,m)= sum(be%reg_psi_t(1:num_bins2d,k,m))/dble(num_bins2d)
-           be%reg_psi_rh    (1:num_bins2d,k,m)= sum(be%reg_psi_rh  (1:num_bins2d,k,m))/dble(num_bins2d)
-           be%reg_chi_u_t(1:num_bins2d,k,m)= sum(be%reg_chi_u_t(1:num_bins2d,k,m))/dble(num_bins2d)
-           be%reg_chi_u_rh  (1:num_bins2d,k,m)= sum(be%reg_chi_u_rh  (1:num_bins2d,k,m))/dble(num_bins2d)
-           be%reg_t_u_rh (1:num_bins2d,k,m)= sum(be%reg_t_u_rh (1:num_bins2d,k,m))/dble(num_bins2d)
-
+         reg_psi_t_be(k,m)=sum(reg_psi_t0(1:num_bins2d,k,m))/float(num_bins2d)
+         if (.not.interpolate_stats) then
+           be%reg_psi_t  (1:num_bins2d,k,m)= sum(be%reg_psi_t(1:num_bins2d,k,m))/float(num_bins2d)
+           be%reg_psi_rh    (1:num_bins2d,k,m)= sum(be%reg_psi_rh  (1:num_bins2d,k,m))/float(num_bins2d)
+           be%reg_chi_u_t(1:num_bins2d,k,m)= sum(be%reg_chi_u_t(1:num_bins2d,k,m))/float(num_bins2d)
+           be%reg_chi_u_rh  (1:num_bins2d,k,m)= sum(be%reg_chi_u_rh  (1:num_bins2d,k,m))/float(num_bins2d)
+           be%reg_t_u_rh (1:num_bins2d,k,m)= sum(be%reg_t_u_rh (1:num_bins2d,k,m))/float(num_bins2d)
+         endif
          end do
       end do
-   else
-      write (unit=message(3), fmt='(3x, a)') &
+!           if (.not.interpolate_stats) write(6,*) 'be%reg_psi_t(1,10,10)=',be%reg_psi_t(1,10,10)
+  else
+      write (unit=message(4), fmt='(3x, a)') &
          'Using the latitude-dependent regression coefficients for unbalanced part'
-   end if
+  end if
 
+!-----------for interpolating CV5--------------------------------------------------------------
+     deallocate (reg_psi_chi0)
+     deallocate (reg_psi_ps0 )
+     deallocate (reg_psi_t0  )
+!===========for interpolating CV5==============================================================
+!
    call da_message(message(1:3))
 
    ! 2.0 Load the eigenvector and eigenvalue
 
-   allocate (be1_eval_loc (1:jy,1:kz))
-   allocate (be2_eval_loc (1:jy,1:kz))
-   allocate (be3_eval_loc (1:jy,1:kz))
-   allocate (be4_eval_loc (1:jy,1:kz))
-   allocate (be5_eval_loc (1:jy,1:1))
+   allocate (be1_eval_loc (1:nj,1:nk))
+   allocate (be2_eval_loc (1:nj,1:nk))
+   allocate (be3_eval_loc (1:nj,1:nk))
+   allocate (be4_eval_loc (1:nj,1:nk))
+   allocate (be5_eval_loc (1:nj,1:1))
 #ifdef CLOUD_CV
-   allocate (be6_eval_loc (1:jy,1:kz))
-   allocate (be7_eval_loc (1:jy,1:kz))
-   allocate (be8_eval_loc (1:jy,1:kz))
-   allocate (be9_eval_loc (1:jy,1:kz))
+   allocate (be6_eval_loc (1:nj,1:nk))
+   allocate (be7_eval_loc (1:nj,1:nk))
+   allocate (be8_eval_loc (1:nj,1:nk))
+   allocate (be9_eval_loc (1:nj,1:nk))
 #endif
 
    if (vert_corr == vert_corr_2) then
 
-      allocate (be1_eval_glo(1:kz))
-      allocate (be2_eval_glo(1:kz))
-      allocate (be3_eval_glo(1:kz))
-      allocate (be4_eval_glo(1:kz))
+      allocate (be1_eval_glo(1:nk))
+      allocate (be2_eval_glo(1:nk))
+      allocate (be3_eval_glo(1:nk))
+      allocate (be4_eval_glo(1:nk))
       allocate (be5_eval_glo(1:1))
 #ifdef CLOUD_CV
-      allocate (be6_eval_glo(1:kz))
-      allocate (be7_eval_glo(1:kz))
-      allocate (be8_eval_glo(1:kz))
-      allocate (be9_eval_glo(1:kz))
+      allocate (be6_eval_glo(1:nk))
+      allocate (be7_eval_glo(1:nk))
+      allocate (be8_eval_glo(1:nk))
+      allocate (be9_eval_glo(1:nk))
 #endif
-      allocate (be1_evec_loc(1:jy,1:kz,1:kz))
-      allocate (be2_evec_loc(1:jy,1:kz,1:kz))
-      allocate (be3_evec_loc(1:jy,1:kz,1:kz))
-      allocate (be4_evec_loc(1:jy,1:kz,1:kz))
-      allocate (be5_evec_loc(1:jy,1: 1,1: 1))
+      allocate (be1_evec_loc(1:nj,1:nk,1:nk))
+      allocate (be2_evec_loc(1:nj,1:nk,1:nk))
+      allocate (be3_evec_loc(1:nj,1:nk,1:nk))
+      allocate (be4_evec_loc(1:nj,1:nk,1:nk))
+      allocate (be5_evec_loc(1:nj,1: 1,1: 1))
 #ifdef CLOUD_CV
-      allocate (be6_evec_loc(1:jy,1:kz,1:kz))
-      allocate (be7_evec_loc(1:jy,1:kz,1:kz))
-      allocate (be8_evec_loc(1:jy,1:kz,1:kz))
-      allocate (be9_evec_loc(1:jy,1:kz,1:kz))
+      allocate (be6_evec_loc(1:nj,1:nk,1:nk))
+      allocate (be7_evec_loc(1:nj,1:nk,1:nk))
+      allocate (be8_evec_loc(1:nj,1:nk,1:nk))
+      allocate (be9_evec_loc(1:nj,1:nk,1:nk))
 #endif
-      allocate (be1_evec_glo(1:kz,1:kz))
-      allocate (be2_evec_glo(1:kz,1:kz))
-      allocate (be3_evec_glo(1:kz,1:kz))
-      allocate (be4_evec_glo(1:kz,1:kz))
+      allocate (be1_evec_glo(1:nk,1:nk))
+      allocate (be2_evec_glo(1:nk,1:nk))
+      allocate (be3_evec_glo(1:nk,1:nk))
+      allocate (be4_evec_glo(1:nk,1:nk))
       allocate (be5_evec_glo(1:1,1:1))
 #ifdef CLOUD_CV
-      allocate (be6_evec_glo(1:kz,1:kz))
-      allocate (be7_evec_glo(1:kz,1:kz))
-      allocate (be8_evec_glo(1:kz,1:kz))
-      allocate (be9_evec_glo(1:kz,1:kz))
+      allocate (be6_evec_glo(1:nk,1:nk))
+      allocate (be7_evec_glo(1:nk,1:nk))
+      allocate (be8_evec_glo(1:nk,1:nk))
+      allocate (be9_evec_glo(1:nk,1:nk))
 #endif
    end if
 
@@ -383,11 +525,13 @@ subroutine da_setup_be_regional(xb, be)
    end if
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
-   do j=1,jy
+   do j=1,nj
       b = bin2d(1,j)
       be1_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
       be1_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
    end do
+!   write(6,*)'be1_evec_loc(10,10,10)=',be1_evec_loc(10,10,10)
+!   write(6,*)'be1_eval_loc(10,10)=',be1_eval_loc(10,10)
 
    case ('chi_u')
    be % v2 % name = trim(adjustl(variable))
@@ -396,7 +540,7 @@ subroutine da_setup_be_regional(xb, be)
    read (be_unit)  be2_eval_glo
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
-   do j=1,jy
+   do j=1,nj
       b = bin2d(1,j)
       be2_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
       be2_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
@@ -409,7 +553,7 @@ subroutine da_setup_be_regional(xb, be)
    read (be_unit)  be3_eval_glo
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
-   do j=1,jy
+   do j=1,nj
       b = bin2d(1,j)
       be3_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
       be3_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
@@ -422,11 +566,13 @@ subroutine da_setup_be_regional(xb, be)
    read (be_unit)  be4_eval_glo
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
-   do j=1,jy
+   do j=1,nj
       b = bin2d(1,j)
       be4_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
       be4_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
    end do
+!   write(6,*)'be4_evec_loc(10,10,10)=',be4_evec_loc(10,10,10)
+!   write(6,*)'be4_eval_loc(10,10)=',be4_eval_loc(10,10)
 
 #ifdef CLOUD_CV
 
@@ -439,7 +585,7 @@ subroutine da_setup_be_regional(xb, be)
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
   if(cloud_cv_options.eq.2)then
-   do j=1,jy
+   do j=1,nj
       b = bin2d(1,j)
       be6_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
       be6_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
@@ -456,7 +602,7 @@ subroutine da_setup_be_regional(xb, be)
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
   if(cloud_cv_options.eq.2)then
-   do j=1,jy
+   do j=1,nj
       b = bin2d(1,j)
       be7_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
       be7_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
@@ -473,7 +619,7 @@ subroutine da_setup_be_regional(xb, be)
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
   if(cloud_cv_options.eq.2)then
-   do j=1,jy
+   do j=1,nj
       b = bin2d(1,j)
       be8_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
       be8_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
@@ -490,7 +636,7 @@ subroutine da_setup_be_regional(xb, be)
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
   if(cloud_cv_options.eq.2)then
-   do j=1,jy
+   do j=1,nj
       b = bin2d(1,j)
       be9_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
       be9_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
@@ -526,7 +672,7 @@ subroutine da_setup_be_regional(xb, be)
       call da_error(__FILE__,__LINE__,message(1:2))
    end if
    be % v5 % name = trim(adjustl(variable))
-   do j=1,jy
+   do j=1,nj
       b = bin2d(1,j)
       be5_evec_loc(j,1:1,1:1) = evec_loc(1:1,1:1,b)
       be5_eval_loc(j,1:1 ) = eval_loc(1:1,b)
@@ -553,188 +699,123 @@ subroutine da_setup_be_regional(xb, be)
 
    call da_message(message(1:2))
 !
-   ! 3.0 Check and get the truncated number of the vertical modes
-   ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  if (use_rf) then
 
-   if (vert_corr == vert_corr_2) then
+! 3.0 Load the scale lengths
+   ! ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-      ! 3.1 Perform checks on eigenvectors:
-
-      if (test_statistics) then
-         call da_check_eof_decomposition(be1_eval_glo(:), be1_evec_glo(:,:), be % v1 % name)
-         call da_check_eof_decomposition(be2_eval_glo(:), be2_evec_glo(:,:), be % v2 % name)
-         call da_check_eof_decomposition(be3_eval_glo(:), be3_evec_glo(:,:), be % v3 % name)
-         call da_check_eof_decomposition(be4_eval_glo(:), be4_evec_glo(:,:), be % v4 % name)
+   ! 3.1 allocate the array for scale lengths
+   allocate (rfls1_be(1:nk))
+   allocate (rfls2_be(1:nk))
+   allocate (rfls3_be(1:nk))
+   allocate (rfls4_be(1:nk))
 #ifdef CLOUD_CV
-       if(cloud_cv_options.eq.2)then
-         call da_check_eof_decomposition(be6_eval_glo(:), be6_evec_glo(:,:), be % v6 % name)
-         call da_check_eof_decomposition(be7_eval_glo(:), be7_evec_glo(:,:), be % v7 % name)
-         call da_check_eof_decomposition(be8_eval_glo(:), be8_evec_glo(:,:), be % v8 % name)
-         call da_check_eof_decomposition(be9_eval_glo(:), be9_evec_glo(:,:), be % v9 % name)
-       end if
+      allocate (rfls6_be(1:nk))
+      allocate (rf1s7_be(1:nk))
+      allocate (rfls8_be(1:nk))
+      allocate (rfls9_be(1:nk))
 #endif
-      end if
-
-      ! 3.2 Truncate in vertical:
-
-      call da_get_vertical_truncation(max_vert_var1, be1_eval_glo(:), be % v1)
-      call da_get_vertical_truncation(max_vert_var2, be2_eval_glo(:), be % v2)
-      call da_get_vertical_truncation(max_vert_var3, be3_eval_glo(:), be % v3)
-      call da_get_vertical_truncation(max_vert_var4, be4_eval_glo(:), be % v4)
+   allocate (be1_rf_lengthscale(1:kz))
+   allocate (be2_rf_lengthscale(1:kz))
+   allocate (be3_rf_lengthscale(1:kz))
+   allocate (be4_rf_lengthscale(1:kz))
+   allocate (be5_rf_lengthscale(1:1)) ! YRG, 01/09/2012
 #ifdef CLOUD_CV
-      if (cloud_cv_options.eq.2) then
-         call da_get_vertical_truncation(max_vert_var6, be6_eval_glo(:), be % v6)
-         call da_get_vertical_truncation(max_vert_var7, be7_eval_glo(:), be % v7)
-         call da_get_vertical_truncation(max_vert_var8, be8_eval_glo(:), be % v8)
-         call da_get_vertical_truncation(max_vert_var9, be9_eval_glo(:), be % v9)
-      else
-         be % v6 % mz = xb % mkz
-         be % v7 % mz = xb % mkz
-         be % v8 % mz = xb % mkz
-         be % v9 % mz = xb % mkz
-      endif
+      allocate (be6_rf_lengthscale(1:kz))
+      allocate (be7_rf_lengthscale(1:kz))
+      allocate (be8_rf_lengthscale(1:kz))
+      allocate (be9_rf_lengthscale(1:kz))
 #endif
-      if (max_vert_var5 == 0.0) then
-         be % v5 % mz = 0
-      else
-         be % v5 % mz = 1
-      end if
 
-      write (unit=stdout,fmt=*) ' '
-
-   else
-
-      ! 3.3 no truncated
-
-      be % v1 % mz = xb % mkz
-      be % v2 % mz = xb % mkz
-      be % v3 % mz = xb % mkz
-      be % v4 % mz = xb % mkz
-      be % v5 % mz = xb % mkz
-#ifdef CLOUD_CV
-      be % v6 % mz = xb % mkz
-      be % v7 % mz = xb % mkz
-      be % v8 % mz = xb % mkz
-      be % v9 % mz = xb % mkz
-#endif
-   end if
-   kzs=(/kz,kz,kz,kz,1/)
-   mzs=(/be%v1%mz,be%v2%mz,be%v3%mz,be%v4%mz,be%v5%mz/)
-
-   ! 4.0 Initialise control variable space components of header:
-   ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-   ! 4.1 Compute the size of the control variables
-
-   be % mix = ix
-   be % mjy = jy
-
-   ! 4.2 Transfer errors to error structure:
-
-   call da_allocate_background_errors(jy, kz, be1_eval_glo, be1_evec_glo, be1_eval_loc, &
-                                       be1_evec_loc, be % v1)
-   call da_allocate_background_errors(jy, kz, be2_eval_glo, be2_evec_glo, be2_eval_loc, &
-                                       be2_evec_loc, be % v2)
-   call da_allocate_background_errors(jy, kz, be3_eval_glo, be3_evec_glo, be3_eval_loc, &
-                                       be3_evec_loc, be % v3)
-   call da_allocate_background_errors(jy, kz, be4_eval_glo, be4_evec_glo, be4_eval_loc, &
-                                       be4_evec_loc, be % v4)
-
-   ! 4.2.1 transfer the ps_u variance to be % v5:
-
-   call da_allocate_background_errors(jy,  1, be5_eval_glo, be5_evec_glo, be5_eval_loc, &
-                                       be5_evec_loc, be % v5)
-#ifdef CLOUD_CV
-   call da_allocate_background_errors(jy, kz, be6_eval_glo, be6_evec_glo, be6_eval_loc, &
-                                       be6_evec_loc, be % v6)
-   call da_allocate_background_errors(jy, kz, be7_eval_glo, be7_evec_glo, be7_eval_loc, &
-                                       be7_evec_loc, be % v7)
-   call da_allocate_background_errors(jy, kz, be8_eval_glo, be8_evec_glo, be8_eval_loc, &
-                                       be8_evec_loc, be % v8)
-   call da_allocate_background_errors(jy, kz, be9_eval_glo, be9_evec_glo, be9_eval_loc, &
-                                       be9_evec_loc, be % v9)
-#endif
-   if (print_detail_be) then
-      write (unit=stdout,fmt='(3x,a,i10)') "b) Finished eigenvector processing!"
-   end if
-
-   if( use_rf )then		! use recursive filters:
-      ! 5.0 Load the scale lengths
-      ! ~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-      ! 5.1 allocate the array for scale lengths
-
-      allocate (be1_rf_lengthscale(1:nk))
-      allocate (be2_rf_lengthscale(1:nk))
-      allocate (be3_rf_lengthscale(1:nk))
-      allocate (be4_rf_lengthscale(1:nk))
-      allocate (be5_rf_lengthscale(1:nk))
-#ifdef CLOUD_CV
-      allocate (be6_rf_lengthscale(1:nk))
-      allocate (be7_rf_lengthscale(1:nk))
-      allocate (be8_rf_lengthscale(1:nk))
-      allocate (be9_rf_lengthscale(1:nk))
-#endif
+! ===================================================================
+! This is used for do_normalize = .T., I am not sure if it is working 
+! properly (???), more testing needed. (YRG, 01/12/2012)
+!
       b=0			! pointer to variable*mode
       allocate(nij(0:0,0:1,0:0))
-      ! 5.2 read in the scale lengths
+
+      kzs=(/kz,kz,kz,kz,1/)
+      be%v1%mz=1; be%v2%mz=1;be%v3%mz=1;be%v4%mz=1;be%v5%mz=1; 
+      mzs=(/be%v1%mz,be%v2%mz,be%v3%mz,be%v4%mz,be%v5%mz/)
+! ====================================================================
+
+   ! 3.2 read in the scale lengths
 #ifdef CLOUD_CV
       do i = 1 , 9		! variables loop:
 #else
       do i = 1 , 5              ! variables loop:
 #endif
-         read (be_unit,IOSTAT=k) variable
+    read (be_unit, IOSTAT=k) variable
          if (print_detail_be)&
           write(unit=stdout,fmt='(2a)')' Reading lengthscale for: ',trim(adjustl(variable))
          if( k/=0 ) &
             print'("Error ",I0," reading namv(",I0,")=",A,"/=",A,", do_normalize=",L2)', &
                k,i,namv(i),variable,do_normalize
-         select case( trim(adjustl(variable)) )
-            case ('psi')
-               read(be_unit) be1_rf_lengthscale
-            case ('chi_u')
-               read(be_unit) be2_rf_lengthscale
-            case ('t_u')
-               read(be_unit) be3_rf_lengthscale
-            case ('rh_u' , 'rh')
-               read(be_unit) be4_rf_lengthscale
+   select case( trim(adjustl(variable)) )
+   case ('psi')
+     read(be_unit) rfls1_be
+     if (.not.interpolate_stats) be1_rf_lengthscale = rfls1_be
+     if (.not.interpolate_stats) write(6,*)'be1_rf_lengthscale(10)=',be1_rf_lengthscale(10) 
+   case ('chi_u')
+     read(be_unit) rfls2_be
+     if (.not.interpolate_stats) be2_rf_lengthscale = rfls2_be
+     if (.not.interpolate_stats) write(6,*)'be2_rf_lengthscale(10)=',be2_rf_lengthscale(10)
+   case ('t_u')
+     read(be_unit) rfls3_be
+     if (.not.interpolate_stats) be3_rf_lengthscale = rfls3_be
+     if (.not.interpolate_stats) write(6,*)'be3_rf_lengthscale(10)=',be3_rf_lengthscale(10)
+   case ('rh_u' , 'rh')
+     read(be_unit) rfls4_be
+     if (.not.interpolate_stats) be4_rf_lengthscale = rfls4_be
+     if (.not.interpolate_stats) write(6,*)'be4_rf_lengthscale(10)=',be4_rf_lengthscale(10)
+
 #ifdef CLOUD_CV
             case ('qcloud')
              if(cloud_cv_options.eq.2)then
-               read(be_unit) be6_rf_lengthscale
+               read(be_unit) rfls6_be
              else
                read(be_unit) 
               be6_rf_lengthscale = 5.0
              end if
+             if (.not.interpolate_stats) be6_rf_lengthscale = rfls6_be
+            if (.not.interpolate_stats) write(6,*)'be6_rf_lengthscale(10)=',be6_rf_lengthscale(10)
             case ('qrain')
              if(cloud_cv_options.eq.2)then
-               read(be_unit) be7_rf_lengthscale
+               read(be_unit) rfls7_be
              else
                read(be_unit) 
               be7_rf_lengthscale = 5.0
              end if
+             if (.not.interpolate_stats) be7_rf_lengthscale = rfls7_be
+            if (.not.interpolate_stats) write(6,*)'be7_rf_lengthscale(10)=',be7_rf_lengthscale(10)
             case ('qice')
              if(cloud_cv_options.eq.2)then
-               read(be_unit) be8_rf_lengthscale
+               read(be_unit) rfls8_be
              else
                read(be_unit) 
               be8_rf_lengthscale = 5.0
              end if
+             if (.not.interpolate_stats) be8_rf_lengthscale = rfls8_be
+            if (.not.interpolate_stats) write(6,*)'be8_rf_lengthscale(10)=',be8_rf_lengthscale(10)
             case ('qsnow')
              if(cloud_cv_options.eq.2)then
-               read(be_unit) be9_rf_lengthscale
+               read(be_unit) rfls9_be
              else
                read(be_unit) 
               be9_rf_lengthscale = 5.0
              end if
+             if (.not.interpolate_stats) be9_rf_lengthscale = rfls9_be
+            if (.not.interpolate_stats) write(6,*)'be9_rf_lengthscale(10)=',be9_rf_lengthscale(10)
 #endif
             case ('ps_u')
-               read(be_unit) be5_rf_lengthscale(1:1)
+              read(be_unit) be5_rf_lengthscale(1:1)
+            if (.not.interpolate_stats) write(6,*)'be5_rf_lengthscale(1)=',be5_rf_lengthscale(1)       
             case default;
                message(1)='Read problem in lengthscales in be.dat'
                write(message(2),'("Trying to read lengthscales for variable ",I0,": ",A)')i,trim(adjustl(variable))
                call da_error(__FILE__,__LINE__,message(1:2))
          endselect
+
          if( do_normalize )then
             read(be_unit)do_normalize1
             if( do_normalize.neqv.do_normalize1 ) &
@@ -766,18 +847,362 @@ subroutine da_setup_be_regional(xb, be)
       end if
 #endif
 
-      ! 5.3 Convert the scale lengths in the real distance (meter)
+  endif
 
-      be1_rf_lengthscale(1:nk) = be1_rf_lengthscale(1:nk) * xb%ds
-      be2_rf_lengthscale(1:nk) = be2_rf_lengthscale(1:nk) * xb%ds
-      be3_rf_lengthscale(1:nk) = be3_rf_lengthscale(1:nk) * xb%ds
-      be4_rf_lengthscale(1:nk) = be4_rf_lengthscale(1:nk) * xb%ds
+!================== for interpolating CV5 =======================================
+   ! 3.3 Interpolate the CV5 BE to the model resolution
+   if (Interpolate_Stats) then
+ 
+   ! 3.3.1 Compute the Vertical covariance matrix arrays for input CV5 BE:
+ 
+   ! 3.3.1.1 Allocate the covariance arrays for input CV5 BE
+ 
+      allocate (covm1_be(1:nk,1:nk))
+      allocate (covm2_be(1:nk,1:nk))
+      allocate (covm3_be(1:nk,1:nk))
+      allocate (covm4_be(1:nk,1:nk))
+   ! 3.3.1.2 Compute the vertical covariance matrix from Input CV5 BE
+   !       eigenvector/eigenvalue:
+      call da_Eigen_to_covmatrix(nk, be1_evec_glo, be1_eval_glo, covm1_be)
+      call da_Eigen_to_covmatrix(nk, be2_evec_glo, be2_eval_glo, covm2_be)
+      call da_Eigen_to_covmatrix(nk, be3_evec_glo, be3_eval_glo, covm3_be)
+      call da_Eigen_to_covmatrix(nk, be4_evec_glo, be4_eval_glo, covm4_be)
+   ! Deallocate the input CV5 BE Global eigenvector/eigenvalue:
+      DEALLOCATE ( be1_eval_glo )
+      DEALLOCATE ( be2_eval_glo )
+      DEALLOCATE ( be3_eval_glo )
+      DEALLOCATE ( be4_eval_glo )
+ 
+      DEALLOCATE ( be1_evec_glo )
+      DEALLOCATE ( be2_evec_glo )
+      DEALLOCATE ( be3_evec_glo )
+      DEALLOCATE ( be4_evec_glo )
+
+   ! Allocate the model CV5 BE Global eigenvector/eigenvalue:
+      ALLOCATE ( be1_eval_glo(1:kz) )
+      ALLOCATE ( be2_eval_glo(1:kz) )
+      ALLOCATE ( be3_eval_glo(1:kz) )
+      ALLOCATE ( be4_eval_glo(1:kz) )
+ 
+      ALLOCATE ( be1_evec_glo(1:kz,1:kz) )
+      ALLOCATE ( be2_evec_glo(1:kz,1:kz) )
+      ALLOCATE ( be3_evec_glo(1:kz,1:kz) )
+      ALLOCATE ( be4_evec_glo(1:kz,1:kz) )
+ 
+   ! 3.3.2 Convert the Vertical resolution from input CV5 BE to Model:
+
+   ! 3.3.2.1 Allocate the Covariance matrix arrays for model
+ 
+      allocate (covm1(1:kz,1:kz))
+      allocate (covm2(1:kz,1:kz))
+      allocate (covm3(1:kz,1:kz))
+      allocate (covm4(1:kz,1:kz))
+ 
+   ! 3.3.2.2 Allocate the regression coeff. arrays for model BE
+ 
+      allocate (reg_psi_ps (1:kz))
+      allocate (reg_psi_chi(1:kz))
+      allocate (reg_psi_t  (1:kz,1:kz))
+   ! 3.3.2 Vertical resolution conversion from input BE(nk) to model(kz) BE:
+      call da_chg_be_Vres(kz, nk, xb%sigmah, eta_be,&
+                        reg_psi_chi_be,reg_psi_ps_be,reg_psi_t_be, &
+                        reg_psi_chi   ,reg_psi_ps   ,reg_psi_t   , &
+                        covm1_be, covm2_be, covm3_be, covm4_be, &
+                        covm1   , covm2   , covm3   , covm4   , &
+                        rfls1_be, rfls2_be, rfls3_be, rfls4_be, &
+                        be1_rf_lengthscale, be2_rf_lengthscale, &
+                        be3_rf_lengthscale, be4_rf_lengthscale)
+       
+   ! 3.3.3 Deallocate the arrays for input CV5 BE:
+      deallocate (reg_psi_ps_be )
+      deallocate (reg_psi_chi_be)
+      deallocate (reg_psi_t_be  )
+ 
+      deallocate ( rfls1_be )
+      deallocate ( rfls2_be )
+      deallocate ( rfls3_be )
+      deallocate ( rfls4_be )
+   ! 3.3.4 Assign the Regression coefficients for model BE:
+ 
+   ! 3.3.4.1 Ps and Chi regression coefficients
+      do k=1,kz
+        do j=1,jy
+          be%reg_psi_ps(j,k)  = reg_psi_ps(k)
+          be%reg_psi_chi (j,k)= reg_psi_chi(k)
+        enddo
+      enddo
+!          write(6,*)'be%reg_psi_ps(10,10)=',be%reg_psi_ps(10,10)
+!          write(6,*)'be%reg_psi_chi(10,10)=',be%reg_psi_chi(10,10)
+   ! 3.3.4.2 Temp. regression coefficients
+      do m=1,kz
+      do k=1,kz
+        do j=1,jy
+          be%reg_psi_t(j,k,m) = reg_psi_t(k,m)
+        enddo
+      enddo
+      enddo
+!          write(6,*)'be%reg_psi_t(10,10,10)=',be%reg_psi_t(10,10,10)
+   ! 3.3.4.3 RWite out the Interpolated BE: Regression coefficients
+        if (rootproc) then 
+        write(be_out_unit) reg_psi_chi
+        write(be_out_unit) reg_psi_ps
+        write(be_out_unit) reg_psi_t
+        endif
+   ! 3.3.4.4 Deallocate the domain-averaged Reg. Coeff. arrays:
+ 
+      deallocate (reg_psi_ps )
+      deallocate (reg_psi_chi)
+      deallocate (reg_psi_t  )
+   ! 3.3.5 Re-compute the Eigenvector/eigenvalue from the model covariance matrix
+      call da_gen_eigen(kz, covm1, be1_evec_glo, be1_eval_glo)
+      call da_gen_eigen(kz, covm2, be2_evec_glo, be2_eval_glo)
+      call da_gen_eigen(kz, covm3, be3_evec_glo, be3_eval_glo)
+      call da_gen_eigen(kz, covm4, be4_evec_glo, be4_eval_glo)
+!   write(6,*)'be1_evec_glo(10,10)=',be1_evec_glo(10,10)
+!   write(6,*)'be1_eval_glo(10)=',be1_eval_glo(10)
+!   write(6,*)'be2_evec_glo(10,10)=',be2_evec_glo(10,10)
+!   write(6,*)'be2_eval_glo(10)=',be2_eval_glo(10)
+!   write(6,*)'be3_evec_glo(10,10)=',be3_evec_glo(10,10)
+!   write(6,*)'be3_eval_glo(10)=',be3_eval_glo(10)
+!   write(6,*)'be4_evec_glo(10,10)=',be4_evec_glo(10,10)
+!   write(6,*)'be4_eval_glo(10)=',be4_eval_glo(10)
+!   write(6,*)'be5_evec_glo(1,1)=',be5_evec_glo(1,1)
+!   write(6,*)'be5_eval_glo(1)=',be5_eval_glo(1) 
+   ! 3.3.6 Write out the interpolated CV5 BE
+ 
+   ! 3.3.6.1 Eigenvector/eigenvalue:
+      variable = be % v1 % name
+      if (rootproc) then
+      write(be_out_unit) variable
+      write(be_out_unit) kz, num_bins2d_out
+      write(be_out_unit) be1_evec_glo
+      write(be_out_unit) be1_eval_glo
+   ! - Because num_bins2d = 1, be1_evec_loc = be1_evec_glo:
+      write(be_out_unit) be1_evec_glo
+      write(be_out_unit) be1_eval_glo
+      endif
+      variable = be % v2 % name
+      if (rootproc) then
+      write(be_out_unit) variable
+      write(be_out_unit) kz, num_bins2d_out
+      write(be_out_unit) be2_evec_glo
+      write(be_out_unit) be2_eval_glo
+   ! - Because num_bins2d = 1, be2_evec_loc = be2_evec_glo:
+      write(be_out_unit) be2_evec_glo
+      write(be_out_unit) be2_eval_glo
+      endif
+      variable = be % v3 % name
+      if (rootproc) then
+      write(be_out_unit) variable
+      write(be_out_unit) kz, num_bins2d_out
+      write(be_out_unit) be3_evec_glo
+      write(be_out_unit) be3_eval_glo
+   ! - Because num_bins2d = 1, be3_evec_loc = be3_evec_glo:
+      write(be_out_unit) be3_evec_glo
+      write(be_out_unit) be3_eval_glo
+      endif
+      variable = be % v4 % name
+      if (rootproc) then
+      write(be_out_unit) variable
+      write(be_out_unit) kz, num_bins2d_out
+      write(be_out_unit) be4_evec_glo
+      write(be_out_unit) be4_eval_glo
+   ! - Because num_bins2d = 1, be4_evec_loc = be4_evec_glo:
+      write(be_out_unit) be4_evec_glo
+      write(be_out_unit) be4_eval_glo
+      endif
+      variable = be % v5 % name
+      if (rootproc) then
+      write(be_out_unit) variable
+      write(be_out_unit) kz, num_bins2d_out
+      write(be_out_unit) be5_evec_glo
+      write(be_out_unit) be5_eval_glo
+   ! - Because num_bins2d = 1, be5_evec_loc = be5_evec_glo:
+      write(be_out_unit) be5_evec_glo
+      write(be_out_unit) be5_eval_glo
+      endif
+
+   ! 3.3.6.2 Scale-length
+      variable = be % v1 % name
+      if (rootproc) then
+      write(be_out_unit) variable
+      write(be_out_unit) be1_rf_lengthscale
+!      write(6,*)'be1_rf_lengthscale(10)=',be1_rf_lengthscale(10)
+      endif
+      variable = be % v2 % name
+      if (rootproc) then
+      write(be_out_unit) variable
+      write(be_out_unit) be2_rf_lengthscale
+!      write(6,*)'be2_rf_lengthscale(10)=',be2_rf_lengthscale(10)
+      endif
+      variable = be % v3 % name
+      if (rootproc) then
+      write(be_out_unit) variable
+      write(be_out_unit) be3_rf_lengthscale
+!      write(6,*)'be3_rf_lengthscale(10)=',be3_rf_lengthscale(10)
+      endif
+      variable = be % v4 % name
+      if (rootproc) then
+      write(be_out_unit) variable
+      write(be_out_unit) be4_rf_lengthscale
+!     write(6,*)'be4_rf_lengthscale(10)=',be4_rf_lengthscale(10)
+      endif
+      variable = be % v5 % name
+      if (rootproc) then
+      write(be_out_unit) variable
+      write(be_out_unit) be5_rf_lengthscale
+!      write(6,*)'be5_rf_lengthscale(1)=',be5_rf_lengthscale(1)
+      endif 
+   ! - Close the output unit:
+ 
+      close(be_out_unit)
+   ! 3.3.7 Deallocate the arrays for reading the input CV5 BE:
+ 
+      DEALLOCATE ( be1_eval_loc )
+      DEALLOCATE ( be2_eval_loc )
+      DEALLOCATE ( be3_eval_loc )
+      DEALLOCATE ( be4_eval_loc )
+      DEALLOCATE ( be5_eval_loc )
+      DEALLOCATE ( be1_evec_loc )
+      DEALLOCATE ( be2_evec_loc )
+      DEALLOCATE ( be3_evec_loc )
+      DEALLOCATE ( be4_evec_loc )
+      DEALLOCATE ( be5_evec_loc )
+ 
+   ! Allocate the arrays for Model local BE:
+      ALLOCATE ( be1_eval_loc (1:jy,1:kz) )
+      ALLOCATE ( be2_eval_loc (1:jy,1:kz) )
+      ALLOCATE ( be3_eval_loc (1:jy,1:kz) )
+      ALLOCATE ( be4_eval_loc (1:jy,1:kz) )
+      ALLOCATE ( be5_eval_loc (1:jy,1:1) )
+      ALLOCATE ( be1_evec_loc(1:jy,1:kz,1:kz) )
+      ALLOCATE ( be2_evec_loc(1:jy,1:kz,1:kz) )
+      ALLOCATE ( be3_evec_loc(1:jy,1:kz,1:kz) )
+      ALLOCATE ( be4_evec_loc(1:jy,1:kz,1:kz) )
+      ALLOCATE ( be5_evec_loc(1:jy,1:1,1:1) )
+ 
+   endif
+
+   ! 4.0 Check and get the truncated number of the vertical modes
+   ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   if (vert_corr == vert_corr_2) then
+
+      ! 4.1 Perform checks on eigenvectors:
+
+      if (test_statistics) then
+         call da_check_eof_decomposition(be1_eval_glo(:), be1_evec_glo(:,:), be % v1 % name)
+         call da_check_eof_decomposition(be2_eval_glo(:), be2_evec_glo(:,:), be % v2 % name)
+         call da_check_eof_decomposition(be3_eval_glo(:), be3_evec_glo(:,:), be % v3 % name)
+         call da_check_eof_decomposition(be4_eval_glo(:), be4_evec_glo(:,:), be % v4 % name)
+#ifdef CLOUD_CV
+       if(cloud_cv_options.eq.2)then
+         call da_check_eof_decomposition(be6_eval_glo(:), be6_evec_glo(:,:), be % v6 % name)
+         call da_check_eof_decomposition(be7_eval_glo(:), be7_evec_glo(:,:), be % v7 % name)
+         call da_check_eof_decomposition(be8_eval_glo(:), be8_evec_glo(:,:), be % v8 % name)
+         call da_check_eof_decomposition(be9_eval_glo(:), be9_evec_glo(:,:), be % v9 % name)
+       end if
+#endif
+      end if
+
+      ! 4.2 Truncate in vertical:
+
+      call da_get_vertical_truncation(max_vert_var1, be1_eval_glo(:), be % v1)
+      call da_get_vertical_truncation(max_vert_var2, be2_eval_glo(:), be % v2)
+      call da_get_vertical_truncation(max_vert_var3, be3_eval_glo(:), be % v3)
+      call da_get_vertical_truncation(max_vert_var4, be4_eval_glo(:), be % v4)
+#ifdef CLOUD_CV
+      if (cloud_cv_options.eq.2) then
+         call da_get_vertical_truncation(max_vert_var6, be6_eval_glo(:), be % v6)
+         call da_get_vertical_truncation(max_vert_var7, be7_eval_glo(:), be % v7)
+         call da_get_vertical_truncation(max_vert_var8, be8_eval_glo(:), be % v8)
+         call da_get_vertical_truncation(max_vert_var9, be9_eval_glo(:), be % v9)
+      else
+         be % v6 % mz = xb % mkz
+         be % v7 % mz = xb % mkz
+         be % v8 % mz = xb % mkz
+         be % v9 % mz = xb % mkz
+      endif
+#endif
+      if (max_vert_var5 == 0.0) then
+         be % v5 % mz = 0
+      else
+         be % v5 % mz = 1
+      end if
+
+      write (unit=stdout,fmt=*) ' '
+
+   else
+
+      ! 4.3 no truncated
+
+      be % v1 % mz = xb % mkz
+      be % v2 % mz = xb % mkz
+      be % v3 % mz = xb % mkz
+      be % v4 % mz = xb % mkz
+      be % v5 % mz = xb % mkz
+#ifdef CLOUD_CV
+      be % v6 % mz = xb % mkz
+      be % v7 % mz = xb % mkz
+      be % v8 % mz = xb % mkz
+      be % v9 % mz = xb % mkz
+#endif
+   end if
+
+   kzs=(/kz,kz,kz,kz,1/)
+   mzs=(/be%v1%mz,be%v2%mz,be%v3%mz,be%v4%mz,be%v5%mz/)
+
+   ! 5.0 Initialise control variable space components of header:
+   ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   ! 5.1 Compute the size of the control variables
+
+   be % mix = ix
+   be % mjy = jy
+
+   ! 5.2 Transfer errors to error structure:
+
+   call da_allocate_background_errors(jy, kz, be1_eval_glo, be1_evec_glo, be1_eval_loc, &
+                                       be1_evec_loc, be % v1)
+   call da_allocate_background_errors(jy, kz, be2_eval_glo, be2_evec_glo, be2_eval_loc, &
+                                       be2_evec_loc, be % v2)
+   call da_allocate_background_errors(jy, kz, be3_eval_glo, be3_evec_glo, be3_eval_loc, &
+                                       be3_evec_loc, be % v3)
+   call da_allocate_background_errors(jy, kz, be4_eval_glo, be4_evec_glo, be4_eval_loc, &
+                                       be4_evec_loc, be % v4)
+
+   ! 5.2.1 transfer the ps_u variance to be % v5:
+
+   call da_allocate_background_errors(jy,  1, be5_eval_glo, be5_evec_glo, be5_eval_loc, &
+                                       be5_evec_loc, be % v5)
+#ifdef CLOUD_CV
+   call da_allocate_background_errors(jy, kz, be6_eval_glo, be6_evec_glo, be6_eval_loc, &
+                                       be6_evec_loc, be % v6)
+   call da_allocate_background_errors(jy, kz, be7_eval_glo, be7_evec_glo, be7_eval_loc, &
+                                       be7_evec_loc, be % v7)
+   call da_allocate_background_errors(jy, kz, be8_eval_glo, be8_evec_glo, be8_eval_loc, &
+                                       be8_evec_loc, be % v8)
+   call da_allocate_background_errors(jy, kz, be9_eval_glo, be9_evec_glo, be9_eval_loc, &
+                                       be9_evec_loc, be % v9)
+#endif
+   if (print_detail_be) then
+      write (unit=stdout,fmt='(3x,a,i10)') "b) Finished eigenvector processing!"
+   end if
+
+   if( use_rf )then		! use recursive filters:
+
+   ! 5.3 Convert the scale lengths in the real distance (meter)
+
+      be1_rf_lengthscale(1:kz) = be1_rf_lengthscale(1:kz) * xb%ds
+      be2_rf_lengthscale(1:kz) = be2_rf_lengthscale(1:kz) * xb%ds
+      be3_rf_lengthscale(1:kz) = be3_rf_lengthscale(1:kz) * xb%ds
+      be4_rf_lengthscale(1:kz) = be4_rf_lengthscale(1:kz) * xb%ds
       be5_rf_lengthscale(1:1)  = be5_rf_lengthscale(1:1)  * xb%ds
 #ifdef CLOUD_CV
-      be6_rf_lengthscale(1:nk) = be6_rf_lengthscale(1:nk) * xb%ds
-      be7_rf_lengthscale(1:nk) = be7_rf_lengthscale(1:nk) * xb%ds
-      be8_rf_lengthscale(1:nk) = be8_rf_lengthscale(1:nk) * xb%ds
-      be9_rf_lengthscale(1:nk) = be9_rf_lengthscale(1:nk) * xb%ds
+      be6_rf_lengthscale(1:kz) = be6_rf_lengthscale(1:kz) * xb%ds
+      be7_rf_lengthscale(1:kz) = be7_rf_lengthscale(1:kz) * xb%ds
+      be8_rf_lengthscale(1:kz) = be8_rf_lengthscale(1:kz) * xb%ds
+      be9_rf_lengthscale(1:kz) = be9_rf_lengthscale(1:kz) * xb%ds
 #endif
    else				! use wavelets:
       read(be_unit)k		! trimmed string length
@@ -837,6 +1262,7 @@ subroutine da_setup_be_regional(xb, be)
          b = b+mzs(m)		! point to next variable.
       enddo			! variables loop
    endif			! if( use_rf )
+
    ! 6.0 Perform checks on eigenvectors with be data structure:
    if (test_statistics) then
       call da_check_eof_decomposition(be%v1%val_g(:), be%v1%evec_g(:,:),&
@@ -859,14 +1285,14 @@ subroutine da_setup_be_regional(xb, be)
 #endif
    end if
 
-   ! 6.2 Close the be unit
+   ! 6.1 Close the be unit
 
    close(be_unit)
    call da_free_unit(be_unit)
 
    if( use_rf )then
-      ! 6.3 Keep the original be % v1, be % v2,...., and lengthscale in the first loop
-      !     for the rescaling in the later loops:
+   ! 6.2 Keep the original be % v1, be % v2,...., and lengthscale in the first loop
+   !     for the rescaling in the later loops:
 
       it = 1
 
@@ -930,6 +1356,7 @@ subroutine da_setup_be_regional(xb, be)
                                          xb % ds, be9_rf_lengthscale, be % v9)
 #endif
    endif
+
    if (print_detail_be ) then
 
        write(be_print_unit,'("it=",i2,2x,"kz=",i3,2x,"jy=",i4,2x,"ix=",i4,2x,"ds=",e12.5)') &
@@ -1029,8 +1456,8 @@ subroutine da_setup_be_regional(xb, be)
 
    if (be % ne > 0) then
       be % alpha % name = 'alpha'
-      allocate (alpha_val(1:kz)) ! Not using jy dimension yet.
-      allocate (alpha_evec(1:kz,1:kz)) ! Not using jy dimension yet.
+      allocate (alpha_val(1:nk)) ! Not using jy dimension yet.
+      allocate (alpha_evec(1:nk,1:nk)) ! Not using jy dimension yet.
 
       if ( alpha_vertloc ) then ! Use vertical localization:
          call da_get_unit(be_unit)
@@ -1054,7 +1481,7 @@ subroutine da_setup_be_regional(xb, be)
 
 !     Alpha eigenvalues and eigenvectors:
       allocate (be % alpha % val(1:jy,1:mz)) ! Not using jy dimension but here for consistency.
-      allocate (be % alpha % evec(1:jy,1:kz,1:mz))
+      allocate (be % alpha % evec(1:nj,1:nk,1:mz))
       do m = 1, mz
          be % alpha % val(:,m) = sigma_alpha * alpha_val(m)
          do k = 1, nk

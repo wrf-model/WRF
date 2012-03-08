@@ -11,6 +11,7 @@ WRFVAR_OBJS = \
    da_vtox_transforms.o \
    da_obs.o \
    da_obs_io.o \
+   da_join_iv_for_multi_inc.o \
    da_metar.o \
    da_geoamv.o \
    da_polaramv.o \
@@ -252,6 +253,9 @@ wrf_num_bytes_between.o :
 
 hires_timer.o :
 	$(CC) -c $(CFLAGS) hires_timer.c
+
+da_join_iv_for_multi_inc.o:
+	$(SCC) -c $(CFLAGS) da_join_iv_for_multi_inc.c
 
 module_state_description.F : ../../Registry/$(REGISTRY)
 	(cd $(WRF_SRC_ROOT_DIR); tools/registry $(ARCHFLAGS) -DNEW_BDYS Registry/$(REGISTRY) ; cd $(WRF_SRC_ROOT_DIR)/var/build )

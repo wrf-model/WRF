@@ -26,6 +26,8 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
 
    character(len=4) :: filnam
    character(len=256) :: timestr, timestr1
+   real, dimension(:,:,:), allocatable :: hr_rainc, hr_rainnc
+   real, dimension(:,:,:), allocatable :: g_rainc, g_rainnc
 
    if (trace_use) call da_trace_entry("da_transform_vtoy")
 
@@ -61,6 +63,19 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
 
       call da_tl_model
 
+      if (num_fgat_time > 1 .and. use_rainobs) then
+         ! Buffer to save hourly rainfall
+         allocate (hr_rainc (ims:ime,jms:jme,1:num_fgat_time))
+         allocate (hr_rainnc(ims:ime,jms:jme,1:num_fgat_time))
+         hr_rainc =0.0
+         hr_rainnc=0.0
+         ! Buffer to save accumulated rainfall
+         allocate (g_rainc (ims:ime,jms:jme,1:num_fgat_time))
+         allocate (g_rainnc(ims:ime,jms:jme,1:num_fgat_time))
+         g_rainc =0.0
+         g_rainnc=0.0
+      endif
+
       if ( num_fgat_time > 1 ) then
          call domain_clock_get (grid, stop_timestr=timestr1)
          call domain_clock_set( grid, current_timestr=timestr1 )
@@ -83,18 +98,51 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
          write(filnam,'(a2,i2.2)') 'tl',nobwin
          call da_zero_x(grid%xa)
          call da_transfer_wrftltoxa(grid, config_flags, filnam, timestr)
+         if ( use_rainobs ) then
+            g_rainc (:,:,nobwin)=grid%g_rainc(:,:)
+            g_rainnc(:,:,nobwin)=grid%g_rainnc(:,:)  
+         endif
          call da_transform_xtoxa(grid)
          call da_transform_xtoy(cv_size, cv, grid, iv, y)
 
          if ( nobwin > 1 ) call domain_clockadvance (grid) ! We don't need the advance at the last step
-         call domain_clockprint(150, grid, 'DEBUG Adjoint Forcing:  get CurrTime from clock,')
+         call domain_clockprint(150, grid, 'DEBUG :  get CurrTime from clock,')
 
       end do
+      
+      ! Caculate hourly rainfall
+      if (num_fgat_time > 1 .and. use_rainobs) then
+         do nobwin=num_fgat_time, 1, -1
+            if (nobwin .lt. num_fgat_time) then
+               hr_rainc (:,:,nobwin+1)=hr_rainc (:,:,nobwin+1)-g_rainc(:,:,nobwin)
+               hr_rainnc(:,:,nobwin+1)=hr_rainnc(:,:,nobwin+1)-g_rainnc(:,:,nobwin)  
+            else
+               hr_rainc (:,:,nobwin)=g_rainc(:,:,nobwin)
+               hr_rainnc(:,:,nobwin)=g_rainnc(:,:,nobwin)  
+            endif
+         end do
+      endif
 
+      if (iv%info(rain)%nlocal > 0 .and. num_fgat_time > 1) then
+         do nobwin=num_fgat_time, 1, -1
+            iv%time = nobwin
+            iv%info(rain)%n1 = iv%info(rain)%plocal(iv%time-1) + 1
+            iv%info(rain)%n2 = iv%info(rain)%plocal(iv%time)
+            call da_transform_xtoy_rain( grid, iv, y, hr_rainc(:,:,nobwin), hr_rainnc(:,:,nobwin))
+         end do
+      endif
+      
       if ( num_fgat_time > 1 ) then
          call nl_get_time_step ( grid%id, time_step_seconds)
          call domain_clock_set (grid, time_step_seconds=time_step_seconds)
          call domain_clockprint(150, grid, 'get CurrTime from clock,')
+      endif
+
+      if (num_fgat_time > 1 .and. use_rainobs) then
+         deallocate (hr_rainc )
+         deallocate (hr_rainnc)
+         deallocate (g_rainc )
+         deallocate (g_rainnc)
       endif
 
 #endif

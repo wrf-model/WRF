@@ -2,7 +2,11 @@
 #  ifdef NOUNDERSCORE
 #    define DA_JOIN_IV_FOR_MULTI_INC da_join_iv_for_multi_inc
 #  else
-#    define DA_JOIN_IV_FOR_MULTI_INC da_join_iv_for_multi_inc_
+#    ifdef F2CSTYLE
+#       define DA_JOIN_IV_FOR_MULTI_INC da_join_iv_for_multi_inc__
+#    else
+#       define DA_JOIN_IV_FOR_MULTI_INC da_join_iv_for_multi_inc_
+#    endif
 #  endif
 #endif
 
@@ -46,7 +50,7 @@ int file_select(const struct dirent *entry)
   }
 }
  
-void da_join_iv_for_multi_inc_()   
+void DA_JOIN_IV_FOR_MULTI_INC()   
 { 
     int count,i,n,total  ;
     struct dirent **files;

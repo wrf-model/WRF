@@ -1102,7 +1102,7 @@ SUBROUTINE input_chem_profile (si_grid)
       ! Interpolate temp 1D chemical profile array to WRF field
       IF (z .LT. zprof(1)) THEN 
         stor(1:lo) = cprof(2:lo+1,1) 
-      ELSE IF (z .GT. zprof(kx)) THEN
+      ELSE IF (z .GE. zprof(kx)) THEN
         stor(1:lo) = cprof(2:lo+1,kx)
       ELSE
         ! We can trap between two levels and linearly interpolate

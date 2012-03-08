@@ -105,7 +105,7 @@
    real, INTENT (IN) :: g
    integer, intent(out) :: stepbioe,stepphot,stepchem,stepfirepl
    TYPE (grid_config_rec_type) , INTENT (in) ::     config_flags
-   TYPE(domain) , TARGET,        INTENT (in) ::     grid
+   TYPE(domain) ,             INTENT (inout) ::     grid
 !
 ! local stuff
 !

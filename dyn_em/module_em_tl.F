@@ -3,13 +3,20 @@
 
 MODULE g_module_em
 
+   
    USE module_model_constants
-   USE module_advect_em
-   USE module_big_step_utilities_em
-   USE module_state_description
-   USE module_damping_em
-   USE g_module_big_step_utilities_em
-   USE g_module_advect_em
+
+   USE g_module_advect_em, only: g_advect_u, g_advect_v, g_advect_w, g_advect_scalar, g_advect_scalar_pd, g_advect_scalar_mono, &
+        g_advect_weno_u, g_advect_weno_v, g_advect_weno_w, g_advect_scalar_weno,  g_advect_scalar_wenopd
+   
+   USE g_module_big_step_utilities_em, only: grid_config_rec_type, g_calculate_full, g_couple_momentum, g_calc_mu_uv, g_calc_ww_cp, g_calc_cq, g_calc_alt, g_calc_php, g_set_tend, g_rhs_ph, &
+        g_horizontal_pressure_gradient, g_pg_buoy_w, g_w_damp, g_perturbation_coriolis, g_coriolis, g_curvature, g_horizontal_diffusion, g_horizontal_diffusion_3dmp, g_vertical_diffusion_u, &
+        g_vertical_diffusion_v, g_vertical_diffusion, g_vertical_diffusion_3dmp, g_sixth_order_diffusion, g_rk_rayleigh_damp, g_theta_relaxation, g_vertical_diffusion_mp, g_zero_tend
+
+   USE module_state_description, only: param_first_scalar, p_qr, p_qv, p_qc, p_qg, p_qi, p_qs, tiedtkescheme, heldsuarez, positivedef, &
+       gdscheme, g3scheme, kfetascheme, monotonic, wenopd_scalar, weno_scalar, weno_mom
+
+   !USE module_damping_em, only: held_suarez_damp
 
 CONTAINS
 

@@ -493,23 +493,27 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
 
 !  Ensure that polar meridional velocity is zero
      IF (config_flags%polar) THEN
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
-       DO ij = 1 , grid%num_tiles
-         CALL zero_pole ( grid%v_1,                      &
-                          ids, ide, jds, jde, kds, kde,     &
-                          ims, ime, jms, jme, kms, kme,     &
-                          grid%i_start(ij), grid%i_end(ij), &
-                          grid%j_start(ij), grid%j_end(ij), &
-                          k_start, k_end                   )
-         CALL zero_pole ( grid%v_2,                      &
-                          ids, ide, jds, jde, kds, kde,     &
-                          ims, ime, jms, jme, kms, kme,     &
-                          grid%i_start(ij), grid%i_end(ij), &
-                          grid%j_start(ij), grid%j_end(ij), &
-                          k_start, k_end                   )
-       END DO
-       !$OMP END PARALLEL DO
+
+       WRITE(wrf_err_message,*)'solve_em_tl: please revisit polar = ',config_flags%polar
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
+
+!      !$OMP PARALLEL DO   &
+!      !$OMP PRIVATE ( ij )
+!      DO ij = 1 , grid%num_tiles
+!        CALL zero_pole ( grid%v_1,                      &
+!                         ids, ide, jds, jde, kds, kde,     &
+!                         ims, ime, jms, jme, kms, kme,     &
+!                         grid%i_start(ij), grid%i_end(ij), &
+!                         grid%j_start(ij), grid%j_end(ij), &
+!                         k_start, k_end                   )
+!        CALL zero_pole ( grid%v_2,                      &
+!                         ids, ide, jds, jde, kds, kde,     &
+!                         ims, ime, jms, jme, kms, kme,     &
+!                         grid%i_start(ij), grid%i_end(ij), &
+!                         grid%j_start(ij), grid%j_end(ij), &
+!                         k_start, k_end                   )
+!      END DO
+!      !$OMP END PARALLEL DO
      END IF
 !
 !  Time level t is in the *_2 variable in the first part
@@ -625,23 +629,25 @@ BENCH_START(g_set_phys_bc_tim)
 
        IF (config_flags%polar) THEN
 
+       WRITE(wrf_err_message,*)'solve_em_tl: please revisit polar = ',config_flags%polar
+       CALL wrf_error_fatal(TRIM(wrf_err_message))
 !-------------------------------------------------------
 ! lat-lon grid pole-point (v) specification (extrapolate v, rv to the pole)
 !-------------------------------------------------------
 
-         CALL pole_point_bc ( grid%v_1,                      &
-                              ids, ide, jds, jde, kds, kde,     &
-                              ims, ime, jms, jme, kms, kme,     &
-                              grid%i_start(ij), grid%i_end(ij), &
-                              grid%j_start(ij), grid%j_end(ij), &
-                              k_start, k_end                   )
+!        CALL pole_point_bc ( grid%v_1,                      &
+!                             ids, ide, jds, jde, kds, kde,     &
+!                             ims, ime, jms, jme, kms, kme,     &
+!                             grid%i_start(ij), grid%i_end(ij), &
+!                             grid%j_start(ij), grid%j_end(ij), &
+!                             k_start, k_end                   )
 
-         CALL pole_point_bc ( grid%v_2,                      &
-                              ids, ide, jds, jde, kds, kde,     &
-                              ims, ime, jms, jme, kms, kme,     &
-                              grid%i_start(ij), grid%i_end(ij), &
-                              grid%j_start(ij), grid%j_end(ij), &
-                              k_start, k_end                   )
+!        CALL pole_point_bc ( grid%v_2,                      &
+!                             ids, ide, jds, jde, kds, kde,     &
+!                             ims, ime, jms, jme, kms, kme,     &
+!                             grid%i_start(ij), grid%i_end(ij), &
+!                             grid%j_start(ij), grid%j_end(ij), &
+!                             k_start, k_end                   )
 
 !-------------------------------------------------------
 ! end lat-lon grid pole-point (v) specification

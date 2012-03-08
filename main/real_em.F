@@ -3,10 +3,13 @@
 PROGRAM real_data
 
    USE module_machine
+#ifdef DM_PARALLEL
+   USE module_dm, ONLY : wrf_dm_initialize
+#endif
    USE module_domain, ONLY : domain, alloc_and_configure_domain, &
-        domain_clock_set, head_grid, program_name, domain_clockprint
+        domain_clock_set, head_grid, program_name, domain_clockprint, &
+        set_current_grid_ptr
    USE module_initialize_real, ONLY : wrfu_initialize, find_my_parent, find_my_parent2
-   USE module_initialize_real
    USE module_io_domain
    USE module_driver_constants
    USE module_configure, ONLY : grid_config_rec_type, model_config_rec, &

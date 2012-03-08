@@ -12,11 +12,10 @@
 
 MODULE module_big_step_utilities_em
 
-   USE module_domain, ONLY : domain
    USE module_model_constants
-   USE module_state_description
+   USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, kfetascheme, g3scheme, &
+   p_qv, param_first_scalar, p_qr, p_qc
    USE module_configure, ONLY : grid_config_rec_type
-   USE module_wrf_error
 
 CONTAINS
 

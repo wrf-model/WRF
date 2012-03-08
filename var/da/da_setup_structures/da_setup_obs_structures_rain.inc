@@ -66,9 +66,9 @@ subroutine da_setup_obs_structures_rain(grid, ob, iv)
       dlat_grid = rlat_max - rlat_min
       dlon_grid = rlon_max - rlon_min
 
-      allocate(thinning_grid_conv(num_ob_indexes))
-      do n = 1, num_ob_indexes
-         call make3grids (n,thin_mesh_conv(n))
+      allocate(thinning_grid(num_ob_indexes,num_fgat_time))
+      do n=1, num_fgat_time
+         call makegrids (rain,thin_mesh_conv(rain), n)
       end do
    end if
 
@@ -80,14 +80,9 @@ subroutine da_setup_obs_structures_rain(grid, ob, iv)
       iv%time = n
       filename = ' '
 
-      if ( thin_rainobs ) then
-         do k = 1, num_ob_indexes
-            call cleangrids_conv(k)
-         end do
-      end if
       ! scan rainfall observation file
       write(filename(1:9), fmt='(a, i2.2, a)') 'ob', n,'.rain'
-      call da_scan_obs_rain(iv, filename)
+      call da_scan_obs_rain(iv, filename, iv%time)
 
       iv%info(rain)%plocal(n) = iv%info(rain)%nlocal
       iv%info(rain)%ptotal(n) = iv%info(rain)%ntotal
@@ -107,29 +102,16 @@ subroutine da_setup_obs_structures_rain(grid, ob, iv)
       iv%time = n
       filename = ' '
 
-      if ( thin_rainobs ) then
-         do k = 1, num_ob_indexes
-            call cleangrids_conv(k)
-         end do
-      end if
       ! read rainfall observation file
       write(filename(1:9), fmt='(a, i2.2, a)') 'ob', n,'.rain'
      call da_read_obs_rain(iv, filename, iv%time)
    end do
 
    if ( thin_rainobs ) then
-      if ( iv%info(rain)%ptotal(num_fgat_time)>0 ) then
-         if ( iv%info(rain)%plocal(num_fgat_time) > 0 ) then
-            if ( ANY(iv%info(rain)%thinned(:,:)) ) then
-               call da_set_obs_missing(iv,rain)  ! assign missing values to those thinned=true data
-            end if
-         end if 
-     end if
-
-     do n = 1, num_ob_indexes
-        call destroygrids_conv (n)
+     do n = 1, num_fgat_time
+        call destroygrids (rain,n)
      end do
-     deallocate(thinning_grid_conv)
+     deallocate(thinning_grid)
    end if
 
    !--------------------------------------------------------------------------

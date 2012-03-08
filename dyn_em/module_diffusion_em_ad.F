@@ -7,13 +7,11 @@
 
 MODULE a_module_diffusion_em
 
-   USE module_configure
-   USE a_module_bc
-   USE module_bc
-   USE module_state_description
-   USE a_module_big_step_utilities_em
+   USE a_module_bc, only: a_set_physical_bc3d
+   USE module_state_description, only: p_m23, p_m13, p_m22, p_m33, p_r23, p_r13, p_r12, p_m12, p_m11
+   USE module_big_step_utilities_em, only: grid_config_rec_type, param_first_scalar, p_qv, p_qi, p_qc
+
    USE module_model_constants
-   USE module_wrf_error
    USE module_diffusion_em ! Added by Ning Pan, 2010-08-10
 
 CONTAINS

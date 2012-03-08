@@ -4,12 +4,19 @@
 MODULE a_module_em
 
    USE module_model_constants
-   USE module_advect_em
-   USE module_big_step_utilities_em
-   USE module_state_description
-   USE module_damping_em
-   USE a_module_big_step_utilities_em
-   USE a_module_advect_em
+  
+   USE a_module_advect_em, only: a_advect_u, a_advect_v, a_advect_w, a_advect_scalar, a_advect_scalar_pd, a_advect_scalar_mono, &
+        a_advect_weno_u, a_advect_weno_v, a_advect_weno_w, a_advect_scalar_weno,  a_advect_scalar_wenopd
+   
+   USE module_big_step_utilities_em, only: calculate_full, calc_mu_uv
+   USE a_module_big_step_utilities_em, only: grid_config_rec_type, a_calculate_full, a_couple_momentum, a_calc_mu_uv, a_calc_ww_cp, a_calc_cq, a_calc_alt, a_calc_php, a_set_tend, a_rhs_ph, &
+        a_horizontal_pressure_gradient, a_pg_buoy_w, a_w_damp, a_perturbation_coriolis, a_coriolis, a_curvature, a_horizontal_diffusion, a_horizontal_diffusion_3dmp, a_vertical_diffusion_u, &
+        a_vertical_diffusion_v, a_vertical_diffusion, a_vertical_diffusion_3dmp, a_sixth_order_diffusion, a_rk_rayleigh_damp, a_theta_relaxation, a_vertical_diffusion_mp, a_zero_tend
+
+   USE module_state_description, only: param_first_scalar, p_qr, p_qv, p_qc, p_qg, p_qi, p_qs, tiedtkescheme, heldsuarez, positivedef, &
+        gdscheme, g3scheme, kfetascheme, monotonic, wenopd_scalar, weno_scalar, weno_mom
+
+   !USE module_damping_em, only: held_suarez_damp
 
 CONTAINS
 

@@ -1,8 +1,32 @@
 
 # Chemistry Variables  (all shared at this point)
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
-rconfig   character  auxinput12_inname   namelist,time_control            1  "wrf_chem_input"   -     "name of auxinput12 infile" ""      ""
-rconfig   integer     io_form_auxinput12   namelist,time_control         1              2
+rconfig   character  auxinput12_inname   namelist,time_control   1  "wrf_chem_input"   -     "name of auxinput12 infile" ""      ""
+rconfig   integer    io_form_auxinput12  namelist,time_control   1  2
+
+
+state    real    erod            ij.    misc        1         -      i012rhdu "EROD"                "fraction of erodible surface in each grid cell (0-1)"       "none"
+state    real    CLDFRA2         ikj    misc        1         -      h        "CLDFRA2"             "CLOUD FRACTION"
+state    real    RAINPROD        ikj    misc        1         -      h        "RAINPROD"            "TOTAL RAIN PRODUCTION RATE"       "s-1"
+state    real    EVAPPROD        ikj    misc        1         -      h        "EVAPPROD"            "RAIN EVAPORATION RATE"            "s-1"
+state    real    QV_B4MP         ikj    misc        1         -      -        "QV_B4MP"             "WATER VAPOR BEFORE MICROPHYSICS"  "kg kg-1"
+state    real    QC_B4MP         ikj    misc        1         -      -        "QC_B4MP"             "CLOUD WATER BEFORE MICROPHYSICS"  "kg kg-1"
+state    real    QI_B4MP         ikj    misc        1         -      -        "QI_B4MP"             "CLOUD ICE BEFORE MICROPHYSICS"    "kg kg-1"
+state    real    QS_B4MP         ikj    misc        1         -      -        "QS_B4MP"             "SNOW BEFORE MICROPHYSICS"         "kg kg-1"
+
+state    real    ccn1            ikj    misc        1         -      r        "ccn1"                "CCN concentration at S=0.02%"  "#/cm3"
+state    real    ccn2            ikj    misc        1         -      r        "ccn2"                "CCN concentration at S=0.05%"  "#/cm3"
+state    real    ccn3            ikj    misc        1         -      r        "ccn3"                "CCN concentration at S=0.1%"   "#/cm3"
+state    real    ccn4            ikj    misc        1         -      r        "ccn4"                "CCN concentration at S=0.2%"   "#/cm3"
+state    real    ccn5            ikj    misc        1         -      r        "ccn5"                "CCN concentration at S=0.5%"   "#/cm3"
+state    real    ccn6            ikj    misc        1         -      r        "ccn6"                "CCN concentration at S=1.0%"   "#/cm3"
+
+# cloud water fractional removal rate needed for wet scavenging
+state    real    qlsink          ikj    misc        1         -      rdu      "qlsink"              "CLOUD WATER SINK"               "/S"
+state    real    precr           ikj    misc        1         -      rdu      "precr"               "RAIN PRECIPITATION RATE"        "KG/M2/S"
+state    real    preci           ikj    misc        1         -      rdu      "preci"               "ICE PRECIPITATION RATE"         "KG/M2/S"
+state    real    precs           ikj    misc        1         -      rdu      "precs"               "SNOW PRECIPITATION RATE"        "KG/M2/S"
+state    real    precg           ikj    misc        1         -      rdu      "precg"               "GRAUPEL PRECIPITATION RATE"     "KG/M2/S"
 
 #
 # Timing variables for chemistry
@@ -439,7 +463,6 @@ state    real  mtsa           ijm     misc        1         Z      i06r     "mts
 state    real  mswdown        ijm     misc        1         Z      i06r     "mswdown"          "Monthly SWdown"  "W/m2"
 state    real  EFmegan        ij{nm}     misc        1         -      -        "EFmegan"          "MEGAN2 Emis Factor"       "ug m^-2 hr^-1"
 # Input for GOCART: Background chemistry, erodible surface emissions map
-#state    real  erod           ij.     misc        1         -      ihr     "EROD"          "fraction of erodible surface in each grid cell (0-1)"       "none"
 state    real  backg_oh       ikj     misc        1         -      i08r    "BACKG_OH"       "Background OH for Aerosol-GOcart option"       "volume mixing ratio"
 state    real  backg_h2o2     ikj     misc        1         -      i08r    "BACKG_H2O2"     "Background H2O2 for Aerosol-GOcart option"     "volume mixing ratio"
 state    real  backg_no3      ikj     misc        1         -      i08r    "BACKG_NO3"      "Background NO3 for Aerosol-GOcart option"      "volume mixing ratio"
@@ -814,13 +837,13 @@ state   real   tbu_o       ikj     misc    1       -       r       "tbu_o" "Radi
 # additional variables for CO2 and GHG options
 # The following variables are to run the VPRM model; The veg_fra_vprm is for VPRM only and it's different than VEGFRA in wrfinput
 state   real     -               i{ghgv}jf    vprm_par     -        -     -       -     "VPRM parameters"                  ""
-state   real   vegfra_vprm       i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
-state   real   EVI               i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
-state   real   EVImin            i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
-state   real   EVImax            i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
-state   real   LSWI              i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
-state   real   LSWImax           i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
-state   real   LSWImin           i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
+state   real   vegfra_vprm       i{ghgv}jf    vprm_par     1        -     i{15}r  ""    " " " "
+state   real   EVI               i{ghgv}jf    vprm_par     1        -     i{15}r  ""    " " " "
+state   real   EVImin            i{ghgv}jf    vprm_par     1        -     i{15}r  ""    " " " "
+state   real   EVImax            i{ghgv}jf    vprm_par     1        -     i{15}r  ""    " " " "
+state   real   LSWI              i{ghgv}jf    vprm_par     1        -     i{15}r  ""    " " " "
+state   real   LSWImax           i{ghgv}jf    vprm_par     1        -     i{15}r  ""    " " " "
+state   real   LSWImin           i{ghgv}jf    vprm_par     1        -     i{15}r  ""    " " " "
 
 # VPRM parameters to constrain GEE and RESP fluxes
 state   real   rad_vprm          {ghgv}       misc         1        -     ir  ""    " " " "
@@ -830,9 +853,9 @@ state   real   resp_vprm         {ghgv}       misc         1        -     ir  ""
 
 # Parameters and fields to run the Kaplan model
 state   real     -               ijf    wet_in   -        -     -   -     "Wetland input files"                  ""
-state   real   Cpool             ijf    wet_in   1        -     i{18}rh ""    "LPJ Carbon pool"              "kgC/m^2 "
-state   real   wetmap            ijf    wet_in   1        -     i{18}rh ""    "Kaplan potential wetland map" " "
-state   real   T_ann             ijf    wet_in   1        -     i{18}r  ""    "mean annual temperature"      "celsius"
+state   real   Cpool             ijf    wet_in   1        -     i{15}rh ""    "LPJ Carbon pool"              "kgC/m^2 "
+state   real   wetmap            ijf    wet_in   1        -     i{15}rh ""    "Kaplan potential wetland map" " "
+state   real   T_ann             ijf    wet_in   1        -     i{15}r  ""    "mean annual temperature"      "celsius"
 
 # Parameters to for calculating the termite emissions online
 # biomass termite per vegetation type [g/m^2]

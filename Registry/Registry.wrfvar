@@ -1238,12 +1238,6 @@ state    real  RTHRATENLW      ijk      misc        1         -      r        "R
 state    real  RTHRATENSW      ijk      misc        1         -      r        "RTHRATSW"              "UNCOUPLED THETA TENDENCY DUE TO SHORT WAVE RADIATION"   "K s-1"
 state    real  CLDFRA          ijk      misc        1         -      r        "CLDFRA"                "CLOUD FRACTION"                                       ""
 state    real  CLDFRA_OLD      ijk      misc        1         -      r        "CLDFRA_OLD"            "previous time level cldfra"                           ""
-state    real  RAINPROD        ikj      misc        1         -      -        "RAINPROD"              "TOTAL RAIN PRODUCTION RATE"                            "s-1"
-state    real  EVAPPROD        ikj      misc        1         -      -        "EVAPPROD"              "RAIN EVAPORATION RATE"                                 "s-1"
-state    real  QV_B4MP         ikj      misc        1         -      -        "QV_B4MP"               "WATER VAPOR BEFORE MICROPHYSICS"                       "kg kg-1"
-state    real  QC_B4MP         ikj      misc        1         -      -        "QC_B4MP"               "CLOUD WATER BEFORE MICROPHYSICS"                       "kg kg-1"
-state    real  QI_B4MP         ikj      misc        1         -      -        "QI_B4MP"               "CLOUD ICE BEFORE MICROPHYSICS"                         "kg kg-1"
-state    real  QS_B4MP         ikj      misc        1         -      -        "QS_B4MP"               "SNOW BEFORE MICROPHYSICS"                              "kg kg-1"
 
 state    real  SWDOWN           ij      misc        1         -      rhd      "SWDOWN"                "DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
 state    real  SWDOWNC          ij      misc        1         -      -        "SWDOWNC"               "DOWNWARD CLEAR-SKY SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      

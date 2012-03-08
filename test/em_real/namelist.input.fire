@@ -65,13 +65,9 @@
  bldt                                = 0,
  cu_physics                          = 1,
  cudt                                = 5,
- isfflx                              = 1,
- ifsnow                              = 0,
- icloud                              = 0,
  surface_input_source                = 1,
  num_soil_layers                     = 5,
  sf_urban_physics                    = 0,
- mp_zero_out                         = 0,
  /
 
 

@@ -1040,6 +1040,14 @@ CONTAINS
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij, i, j, k )
       DO ij = 1 , num_tiles
+        DO j=j_start(ij),j_end(ij)
+          DO i=i_start(ij),i_end(ij)
+            IF(XLAND(i,j) .GT. 1.5 .and. sst_update .NE. 1) THEN
+              TSK(i,j)   =SST(i,j)
+              TSLB(i,1,j)=SST(i,j)
+            ENDIF
+          ENDDO
+        ENDDO
         CALL sst_skin_update(xland,glw,gsw,hfx,qfx,tsk,ust,         &
                 emiss,dtw,sstsk,dt,stbolt,                          &
                 ids, ide, jds, jde, kds, kde,                       &

@@ -825,7 +825,7 @@ state   real   rc_up           ikj     misc        1         -      -        "RC
 state   real   u_up            ikj     misc        1         -      -        "U_UP"                  "U OF UPDRAFT FROM EDKF"           "m/s"
 state   real   v_up            ikj     misc        1         -      -        "V_UP"                  "U OF UPDRAFT FROM EDKF"           "m/s"
 state   real   frac_up         ikj     misc        1         -      -        "FRAC_UP"               "FRACTION OF UPDRAFT FROM EDKF"    ""
-state   real   rc_mf           ikj     misc        1         -      -        "RC_MF"                 "RC IN THE GRID COMPUTED BY EDKF"  "kg/kg"
+state   real   rc_mf           ikj     misc        1         -      r        "RC_MF"                 "RC IN THE GRID COMPUTED BY EDKF"  "kg/kg"
 
 # TEMF PBL variables
 state    real   te_temf        ikj     misc        1         -      rh        "te_temf"               "Total energy from TEMF PBL scheme"      "m2 s-2"
@@ -1722,7 +1722,7 @@ rconfig   integer     kfeta_trigger       namelist,physics	1              1     
 rconfig   real    CUDT                    namelist,physics	max_domains    0       h    "CUDT"          ""      ""
 rconfig   real    GSMDT                   namelist,physics	max_domains    0       h    "GSMDT"          ""      ""
 rconfig   integer ISFFLX                  namelist,physics 	1             1       irh    "ISFFLX"                        ""      ""
-rconfig   integer IFSNOW                  namelist,physics	1             0       irh    "IFSNOW"                        ""      ""
+rconfig   integer IFSNOW                  namelist,physics	1             1       irh    "IFSNOW"                        ""      ""
 rconfig   integer ICLOUD                  namelist,physics	1             1       irh    "ICLOUD"                        ""      ""
 rconfig   real    swrad_scat              namelist,physics	1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
 rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=dominant cateogry from metgrid"      ""

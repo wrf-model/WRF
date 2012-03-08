@@ -281,7 +281,7 @@ rconfig   integer     cu_physics          namelist,physics	max_domains    0     
 rconfig   real    CUDT                    namelist,physics	max_domains    0       h    "CUDT"          ""      ""
 rconfig   real    GSMDT                   namelist,physics	max_domains    0       h    "GSMDT"          ""      ""
 rconfig   integer ISFFLX                  namelist,physics 	1             1       irh    "ISFFLX"                        ""      ""
-rconfig   integer IFSNOW                  namelist,physics	1             0       irh    "IFSNOW"                        ""      ""
+rconfig   integer IFSNOW                  namelist,physics	1             1       irh    "IFSNOW"                        ""      ""
 rconfig   integer ICLOUD                  namelist,physics	1             1       irh    "ICLOUD"                        ""      ""
 rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=hybrid (not yet implemented)"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""

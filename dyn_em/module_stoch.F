@@ -3,7 +3,7 @@ module module_stoch
 !
 ! Purpose: Stochastic kinetic-energy backscatter scheme (SKEB)
 ! Author : Judith Berner, NCAR  (berner@ucar.edu)
-! Date   : Dec 2020
+! Date   : Dec 2010
 ! Version: 1.0
 !
 !***********************************************************************

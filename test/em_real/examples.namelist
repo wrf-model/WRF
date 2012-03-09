@@ -61,8 +61,8 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
 &physics
  stoch_force_opt                      = 1,      1,      1,
  stoch_vertstruc_opt                  = 0,      0,      0,
- tot_backscat_t                       = 2.0E-6, 2.0E-6, 2.0E-6
- tot_backscat_psi                     = 2.0,    2.0,    2.0
+ tot_backscat_t                       = 1.0E-6, 1.0E-6, 1.0E-6
+ tot_backscat_psi                     = 1.0E-5, 1.0E-5, 1.0E-5
  nens                                 = 1,
 
 

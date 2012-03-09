@@ -45,6 +45,7 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  dveg                               = 2,
  opt_crs                            = 1,
  opt_btr                            = 1,
+ opt_sfc                            = 1,
  opt_run                            = 1,
  opt_frz                            = 1,
  opt_inf                            = 1,

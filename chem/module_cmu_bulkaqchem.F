@@ -233,7 +233,9 @@
       if (iradical .gt.   0) meqn1 = 20
 
       icount=0
-!     iprint=20
+! Undefined.  Provide a value for now.
+      iprint=20
+      watvap = 0.d0
 
 !
 !     transfer of all gas-phase concentrations to gascon and then

@@ -6469,7 +6469,7 @@ SUBROUTINE soa_vbs_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,      
          INTENT(IN    ) ::    emis_ant
 
 ! biomass burning aerosol emissions arrays ((ug/m3)*m/s)
-   REAL, DIMENSION( ims:ime, kms:kemit, jms:jme,num_ebu ),              &
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme,num_ebu ),              &
          INTENT(IN    ) ::    ebu
 
 ! 1/(dry air density) and layer thickness (m)

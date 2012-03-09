@@ -1542,6 +1542,7 @@ rconfig   logical   use_background_errors   namelist,wrfvar1  1  .true.   -  "us
 rconfig   logical   write_increments        namelist,wrfvar1  1  .false.  -  "write_increments"        ""  ""
 rconfig   logical   var4d                   namelist,wrfvar1  1  .false.  -  "var4d"                   ""  ""
 rconfig   integer   var4d_bin               namelist,wrfvar1  1  3600     -  "var4d_bin"               ""  ""
+rconfig   integer   var4d_bin_rain          namelist,wrfvar1  1  3600     -  "var4d_bin_rain"          ""  ""
 rconfig   logical   var4d_lbc               namelist,wrfvar1  1  .false.  -  "var4d_lbc"               ""  ""
 rconfig   integer   multi_inc               namelist,wrfvar1  1  0        -  "multi_incremental flag"  ""  ""
 rconfig   logical   print_detail_radar      namelist,wrfvar1  1  .false.  -  "print_detail_radar"      ""  ""

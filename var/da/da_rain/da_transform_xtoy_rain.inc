@@ -27,7 +27,11 @@ subroutine da_transform_xtoy_rain(grid, iv, y, hr_rainc, hr_rainnc)
    call da_interp_lin_2d (hr_rainnc, iv%info(rain), 1, model_rainnc)
 
    do n=iv%info(rain)%n1,iv%info(rain)%n2
-      y%rain(n)%rain = model_rainc(n) + model_rainnc(n)
+      if (iv % rain(n) % rain % qc ==  missing_data) then
+         y%rain(n)%rain = 0.0
+      else
+         y%rain(n)%rain = model_rainc(n) + model_rainnc(n)
+      endif
    end do
 
    deallocate (model_rainc)

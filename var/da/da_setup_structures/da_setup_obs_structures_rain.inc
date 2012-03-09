@@ -76,7 +76,8 @@ subroutine da_setup_obs_structures_rain(grid, ob, iv)
    ! [1.0] Scan data
    !--------------------------------------------------------------------------
 
-   do n=1, num_fgat_time
+   do n=2, num_fgat_time
+      if ( .not. fgat_rain_flags(n) ) cycle
       iv%time = n
       filename = ' '
 
@@ -98,7 +99,8 @@ subroutine da_setup_obs_structures_rain(grid, ob, iv)
    ! [2.0] Read data
    !--------------------------------------------------------------------------
     
-   do n=1, num_fgat_time
+   do n=2, num_fgat_time
+      if ( .not. fgat_rain_flags(n) ) cycle
       iv%time = n
       filename = ' '
 

@@ -267,7 +267,7 @@ subroutine da_transfer_xatowrf(grid)
 
       ! Compute geopotential (using dry inverse density and dry pressure)
 
-      ph(kts) = grid%phb(i,j,kts)
+      ph(kts) = grid%ht(i,j) * gravity
       DO k = kts, kte
          p_full = grid%xb%p(i,j,k) + grid%xa%p(i,j,k)
          t_full = grid%xb%t(i,j,k) + grid%xa%t(i,j,k)
@@ -286,15 +286,16 @@ subroutine da_transfer_xatowrf(grid)
           pfu = mu_full*grid%znw(k+1) + grid%p_top
           pfd = mu_full*grid%znw(k)   + grid%p_top
           phm = mu_full*grid%znu(k)   + grid%p_top
-          ph(k+1) = ph(k) + ald(k)*phm*LOG(pfd/pfu)
+          ph(k+1) = ph(k) + ald(k)*phm*LOG(pfd/pfu) 
+          grid%ph_2(i,j,k+1) = ph(k+1) - grid%phb(i,j,k+1)
        END DO
 
       ! Update geopotential perturbation
 
-      grid%ph_2(i,j,:) = 0.0
-      DO k= kts, kte+1
-         grid%ph_2(i,j,k) = ph(k) - grid%phb(i,j,k)
-      END DO
+!      grid%ph_2(i,j,:) = 0.0
+!      DO k= kts, kte+1
+!         grid%ph_2(i,j,k) = ph(k) - grid%phb(i,j,k)
+!      END DO
 
    END DO
    END DO

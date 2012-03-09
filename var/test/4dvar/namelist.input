@@ -1,8 +1,8 @@
 &wrfvar1
 var4d=true,
-var4d_lbc=true,
+var4d_lbc=false,
 var4d_bin=3600,
-print_detail_outerloop=true,
+print_detail_outerloop=false,
 print_detail_grad=false,
 /
 &wrfvar2
@@ -42,7 +42,8 @@ cv_options=5,
 &wrfvar9
 /
 &wrfvar10
-test_transforms=true,
+test_transforms=false,
+test_gradient=false,
 /
 &wrfvar11
 cv_options_hum=1,

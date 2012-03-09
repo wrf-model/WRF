@@ -85,6 +85,18 @@
        num_fgat_time = num_fgat_time + 1
        write(unit=message(1),fmt='(a,i10)') 'num_fgat_time is: ', num_fgat_time
        call da_message(message(1:1))
+       if ( use_rainobs ) then
+          allocate (fgat_rain_flags(1:num_fgat_time))
+          fgat_rain_flags = .false.
+          if ( INT(var4d_bin_rain/var4d_bin)*var4d_bin .ne. INT(var4d_bin_rain) ) then
+             write(unit=message(1),fmt='(A,A,2I7)') &
+             'Please change var4d_bin_rain in namelist and rerun==>', 'var4d_bin_rain, var4d_bin:',var4d_bin_rain,var4d_bin
+             call da_error(__FILE__,__LINE__,message(1:1))
+          endif
+          do n = 1, num_fgat_time, INT(var4d_bin_rain/var4d_bin)
+             fgat_rain_flags(n) = .true.
+          end do
+       end if
     endif
 
    !---------------------------------------------------------------------------
@@ -123,10 +135,6 @@
          ' Resetting ntmax = 0 for analysis_type = randomcv' 
    end if
 
-   if ( test_transforms .and. test_gradient ) then
-      write(unit=stdout,fmt='(a)') &
-         ' Only doing the gradient check  '
-   endif
    !---------------------------------------------------------------------------
    ! [2.0] Initialise wrfvar parameters:
    !---------------------------------------------------------------------------
@@ -783,6 +791,7 @@
    end if
 #endif
 
+   if (var4d .and. use_rainobs) deallocate(fgat_rain_flags)
    call da_deallocate_observations (iv)
    call da_deallocate_y (re)
    call da_deallocate_y (y)

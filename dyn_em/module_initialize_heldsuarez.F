@@ -156,7 +156,6 @@ CONTAINS
       vlat       = grid%xlat(i,j) - 0.5*dphi
 
       grid%clat(i,j) = grid%xlat(i,j)
-      grid%clong(i,j) = grid%xlong(i,j)
 
       grid%msftx(i,j) = 1./COS(grid%xlat(i,j)*degrad)
       grid%msfty(i,j) = 1.

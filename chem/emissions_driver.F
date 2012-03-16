@@ -62,9 +62,9 @@ CONTAINS
          emis_aircraft,                                                    &
 
          ! stuff for GHG fluxes
-         vprm_par,rad_vprm,lambda_vprm,alpha_vprm,resp_vprm,               &
+         vprm_in,rad_vprm,lambda_vprm,alpha_vprm,resp_vprm,               &
          xtime,tslb,wet_in,rainc,rainnc,potevp,sfcevp,lu_index,            &
-         eghg_bio,biomt_par,emit_par,                                      &
+         biomt_par,emit_par,ebio_co2oce,eghg_bio,                          &
 
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
@@ -209,7 +209,7 @@ CONTAINS
                ebio_c10h16,ebio_tol,ebio_bigalk, ebio_ch3oh,ebio_acet, &
                ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,    &
                ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,    &
-               ebio_so2,ebio_dms
+               ebio_so2,ebio_dms, ebio_co2oce   
 
 
    ! stuff for MEGAN v2.04...most of these arrays are optional and package dependent 
@@ -289,13 +289,13 @@ CONTAINS
 !
 ! stuff for ghg tracer
 
-      REAL, DIMENSION(ims:ime, config_flags%vprm_class, jms:jme, num_vprm_par), INTENT(IN)   ::  vprm_par
-      REAL, DIMENSION(ims:ime, jms:jme, num_eghg_bio), INTENT(INOUT ) :: eghg_bio
-
-      REAL, DIMENSION(num_vprm_par) :: rad_vprm,lambda_vprm,alpha_vprm,resp_vprm
-      REAL, DIMENSION(ims:ime,jms:jme, num_wet_in), INTENT(IN)    :: wet_in
-      REAL, DIMENSION(num_biomt_par), INTENT(IN) :: biomt_par
-      REAL, DIMENSION(num_emit_par), INTENT(IN) :: emit_par
+      REAL, DIMENSION(ims:ime, 8, jms:jme, num_vprm_in), INTENT(IN)     ::  vprm_in
+      REAL, DIMENSION(ims:ime, 1,jms:jme, num_eghg_bio), INTENT(INOUT ) ::  eghg_bio
+! CO2
+      REAL, DIMENSION(8) :: rad_vprm,lambda_vprm,alpha_vprm,resp_vprm
+! CH4
+      REAL, DIMENSION(14), INTENT(IN) :: biomt_par, emit_par
+      REAL, DIMENSION(ims:ime,1,jms:jme,num_wet_in), INTENT(IN)  :: wet_in
       REAL, INTENT(IN) :: xtime
 ! end ghg tracer stuff
 !
@@ -923,9 +923,9 @@ CONTAINS
                          ims,ime, jms,jme,                   &
                          its,ite, jts,jte,                   &
 
-                         vprm_par,rad_vprm,lambda_vprm,      &
+                         vprm_in,rad_vprm,lambda_vprm,      &
                          alpha_vprm,resp_vprm,               &
-                         config_flags%vprm_class,T2,swdown,  &
+                         T2,swdown,  &
                          eghg_bio                            )
 
   ! Update the biospheric CH4 fluxes if the GHG option is called
@@ -958,13 +958,16 @@ CONTAINS
 
    end if
 
-   ! Add all the GHG fluxes to chem species
-   CALL add_ghg_fluxes(  ids,ide, jds,jde, kds,kde,          &
-                         ims,ime, jms,jme, kms,kme,          &
-                         its,ite, jts,jte, kts,kte,          &
+   ! Add all the GHG fluxes to chem species, this step is for both
+   ! anthropogenic and biospheric fluxes
+   IF (config_flags%emiss_inpt_opt==16) THEN
+      CALL add_ghg_fluxes(  ids,ide, jds,jde, kds,kde,          &
+                            ims,ime, jms,jme, kms,kme,          &
+                            its,ite, jts,jte, kts,kte,          &
 
-                         dtstep,dz8w,config_flags,rho_phy,  &
-                         chem,emis_ant,eghg_bio              )
+                            dtstep,dz8w,config_flags,rho_phy,   &
+                            chem,emis_ant,eghg_bio,ebio_co2oce  )
+   END IF
 !**************************************************************************************************
 
     CASE (SAPRC99_KPP) !FIX FOR SAPRC07A
@@ -1170,7 +1173,7 @@ CONTAINS
 ! O:C=0.06,H:C=1.8, N:C=0.02 for fossil : OM/OC=(16*0.06+12+14*0.02+12)/12=1.25
 !O:C=0.3 H:C=1.8, N:C=0.02 for biomass, OM/OC=1.57 for biomass
 
-        chem(i,k,j,p_pcg1_b_c)  =  chem(i,k,j,p_pcg1_b_c)                        &
+         chem(i,k,j,p_pcg1_b_c)  =  chem(i,k,j,p_pcg1_b_c)                        &
         +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*1.17
         chem(i,k,j,p_pcg2_b_c)  =  chem(i,k,j,p_pcg2_b_c)                        &
         +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*7.605

@@ -1,6 +1,4 @@
 MODULE module_ghg_fluxes
-!   USE module_domain
-!   USE module_model_constants
    USE module_configure
    USE module_state_description
 
@@ -19,15 +17,26 @@ MODULE module_ghg_fluxes
 ! 4) Pillai, D., C. Gerbig, et al. (2009). "High resolution modeling of CO2 over Europe: implications for representation
 ! errors of satellite retrievals." Atmospheric Chemistry and Physics 10(1): 83-94.
 !
-! CH4 references:
+! Information on the CH4 flux models are found in:
+! 1) Kaplan, J. O., (2002): Wetlands at the Last Glacial Maximum: Distribution and methane
+! emissions Geophys. Res. Lett., 29, No.6, 1079, doi:10.1029/2001GL013366.
+! Ridgwell, A. J., S. J. Marshall, and K. Gregson, (1999): Consumption of atmospheric
+! methane by soils: A process-based model Global Biochem. Cycles, 13(1), 59-70.
+! Sanderson, M. G., (1996): Biomass of termites and their emissions of methane and carbon
+! dioxode: A global database Global Biochem. Cycles, 10(4), 543-557.
 !
+! 2) References where the CH4 flux models in WRF are used:
+! Beck, V., T. Koch, R. Kretschmer, J. Marshall, R. Ahmadov, C. Gerbig, D. Pillai,
+! and M. Heimann, (2011): The WRF Greenhouse Gas Model (WRF-GHG). Technical
+! Report No. 25, Max Planck Institute for Biogeochemistry, Jena, Germany.
+! available online via: http://www.bgc-jena.mpg.de/bgc-systems/index.shtml
+! Beck, V. et al., (2012): WRF-Chem simulations in the Amazon region during wet and
+! dry season transitions: evaluation of methane models and wetland inundation maps, in preparation
 !
+! Reference for the WRF_chem module_ghg_fluxes
+! Beck and Ahmadov et al., (2012): module_ghg_fluxes: A new module in WRF-CHEM for the passive tracer
+! transport of greenhouse gases, (in prep.)
 !
-!
-
-
-
-
 CONTAINS
 
 SUBROUTINE add_ghg_fluxes (  ids,ide, jds,jde, kds,kde,             &     ! Domain dimensions
@@ -35,9 +44,9 @@ SUBROUTINE add_ghg_fluxes (  ids,ide, jds,jde, kds,kde,             &     ! Doma
                              its,ite, jts,jte, kts,kte,             &     ! Tile dimensions
                                                                     
                              dtstep, dz8w, config_flags, rho_phy,   &
-                             chem, emis_ant, eghg_bio               )
+                             chem, emis_ant,eghg_bio,ebio_co2oce    )
 
-! March-28, RAR: this subroutine adds all type of greenhouse gases to the chem species
+! March-28, this subroutine adds all type of greenhouse gases to the chem species
 
 !IMPLICIT NONE
 
@@ -49,28 +58,32 @@ INTEGER, INTENT(IN   ) ::   ids,ide, jds,jde, kds,kde,        &
 
 REAL, INTENT(IN   )    ::   dtstep
 
+REAL, DIMENSION( ims:ime,jms:jme ), INTENT(IN ) :: ebio_co2oce
 REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ), INTENT(INOUT ) ::      chem
 REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN ) ::   rho_phy, dz8w
 REAL, DIMENSION( ims:ime, kms:config_flags%kemit, jms:jme, num_emis_ant ), INTENT(IN ) :: emis_ant
-REAL, DIMENSION( ims:ime, jms:jme, num_eghg_bio ), INTENT(IN ) :: eghg_bio
+REAL, DIMENSION( ims:ime, 1,jms:jme, num_eghg_bio ), INTENT(IN ) :: eghg_bio
 
 INTEGER :: i,j,k
 REAL    :: conv_rho
 
 call wrf_debug(15,'add_ghg_fluxes')
 
-! Anthropogenic fluxes, 3D, time in co2_ant!
+! Anthropogenic fluxes, 3D
 DO j=jts,jte
    DO i=its,ite
       DO k=kts,min(config_flags%kemit,kte)
          conv_rho=8.0461e-6/rho_phy(i,k,j)*dtstep/dz8w(i,k,j)  ! 8.0461e-6=molar_mass(air)/3600, [g/mol/s]
 
-!        chem(i,k,j,p_co2_ant)= chem(i,k,j,p_co2_ant) + conv_rho* emis_ant(i,k,j,p_e_co2)
+         chem(i,k,j,p_co2_ant)= chem(i,k,j,p_co2_ant) + conv_rho* emis_ant(i,k,j,p_e_co2)
+         chem(i,k,j,p_co2_atst)= chem(i,k,j,p_co2_atst) + conv_rho* emis_ant(i,k,j,p_e_co2tst)
          chem(i,k,j,p_co_ant) = chem(i,k,j,p_co_ant)  + conv_rho* emis_ant(i,k,j,p_e_co)
+         chem(i,k,j,p_co_tst) = chem(i,k,j,p_co_tst)  + conv_rho* emis_ant(i,k,j,p_e_cotst)
 
-         ! The methane emissions are added
+         ! Methane emissions are added
          IF (p_ch4.gt.1) THEN
              chem(i,k,j,p_ch4_ant)= chem(i,k,j,p_ch4_ant) + conv_rho* emis_ant(i,k,j,p_e_ch4)
+             chem(i,k,j,p_ch4_tst)= chem(i,k,j,p_ch4_tst) + conv_rho* emis_ant(i,k,j,p_e_ch4tst)
          END IF
 
       ENDDO
@@ -82,15 +95,13 @@ DO j=jts,jte
    DO i=its,ite
       conv_rho=8.0461e-6/rho_phy(i,1,j)*dtstep/dz8w(i,1,j)  ! 8.0461e-6=molar_mass(air)/3600, [g/mol/s]
 
-      chem(i,1,j,p_co2_bio)= chem(i,1,j,p_co2_bio) + conv_rho* (eghg_bio(i,j,p_ebio_gee) + eghg_bio(i,j,p_ebio_res))     ! both uptake and release
-      chem(i,1,j,p_co2_oce)= chem(i,1,j,p_co2_oce) + conv_rho*  eghg_bio(i,j,p_ebio_oce)
-      chem(i,1,j,p_co2_btst)= chem(i,1,j,p_co2_btst) + conv_rho*  eghg_bio(i,j,p_ebio_co2tst)
+      chem(i,1,j,p_co2_bio)= chem(i,1,j,p_co2_bio) + conv_rho* (eghg_bio(i,1,j,p_ebio_gee) + eghg_bio(i,1,j,p_ebio_res))     ! both uptake and release
+      chem(i,1,j,p_co2_oce)= chem(i,1,j,p_co2_oce) + conv_rho*  ebio_co2oce(i,j)
 
-      ! The methane fluxes are added
+      ! Methane fluxes are added
       IF (p_ch4.gt.1) THEN
-          chem(i,1,j,p_ch4_bio)= chem(i,1,j,p_ch4_bio) + conv_rho* (eghg_bio(i,j,p_ebio_ch4wet) + eghg_bio(i,j,p_ebio_ch4soil) &
-          + eghg_bio(i,j,p_ebio_ch4term))
-          chem(i,1,j,p_ch4_tst)= chem(i,1,j,p_ch4_tst) + conv_rho*  eghg_bio(i,j,p_ebio_ch4tst)
+          chem(i,1,j,p_ch4_bio)= chem(i,1,j,p_ch4_bio) + conv_rho* (eghg_bio(i,1,j,p_ebio_ch4wet) + eghg_bio(i,1,j,p_ebio_ch4soil) &
+          + eghg_bio(i,1,j,p_ebio_ch4term))
       END IF
 
    ENDDO
@@ -102,10 +113,9 @@ SUBROUTINE VPRM                 (  ids,ide, jds,jde,                 &
                                    ims,ime, jms,jme,                 &
                                    its,ite, jts,jte,                 &
 
-                                   vprm_par,rad0, lambda,            &
-                                   alpha, RESP0, L,                  &
+                                   vprm_in,rad0, lambda,            &
+                                   alpha, RESP0,                    &
                                    T2,RAD, eghg_bio                  )
-
 !IMPLICIT NONE
 
 INTEGER,  INTENT(IN   )   ::  ids,ide, jds,jde, &
@@ -117,10 +127,10 @@ REAL, PARAMETER :: const= 3.6e+3 ! For unit conversion from mmol/m^2/s to mol/km
 
 REAL, DIMENSION (ims:ime, jms:jme), INTENT(IN)    ::  T2,  RAD
 
-REAL, DIMENSION( ims:ime, L, jms:jme, num_vprm_par), INTENT(IN)   ::  vprm_par
-REAL, DIMENSION( ims:ime, jms:jme, num_eghg_bio ), INTENT(INOUT ) ::  eghg_bio
+REAL, DIMENSION( ims:ime, 8, jms:jme, num_vprm_in), INTENT(IN)   ::  vprm_in
+REAL, DIMENSION( ims:ime, 1,jms:jme, num_eghg_bio ), INTENT(INOUT ) ::  eghg_bio
 
-REAL, DIMENSION(num_vprm_par) :: rad0, lambda, alpha, RESP0
+REAL, DIMENSION(num_vprm_in) :: rad0, lambda, alpha, RESP0
 REAL  ::  a1,a2,a3,Tair,Tscale,Wscale,Pscale,GEE_frac,RESP_frac,evithresh,RADscale
 ! VPRM vegetation classes:
 !1-Evergreen c
@@ -144,7 +154,7 @@ DO i=its,min(ite,ide-1)
    Tair= T2(i,j)-273.15
    veg_frac_loop: DO m=1,L-1
 
-        if (vprm_par(i,m,j,p_vegfra_vprm)<1e-8) CYCLE  ! Then fluxes are zero
+        if (vprm_in(i,m,j,p_vegfra_vprm)<1.e-8) CYCLE  ! Then fluxes are zero
 
         a1= Tair-Tmin(m)
         a2= Tair-Tmax(m)
@@ -163,35 +173,35 @@ DO i=its,min(ite,ide-1)
 
        ! modification due to different dependency on ground water
         if (m==4 .OR. m==7) then  ! grassland and shrubland are xeric systems
-            if (vprm_par(i,m,j,p_lswimax)<1e-7) then  ! in order to avoid NaN for Wscale
+            if (vprm_in(i,m,j,p_lswi_max)<1e-7) then  ! in order to avoid NaN for Wscale
                 Wscale= 0.
             else
-                Wscale= (vprm_par(i,m,j,p_lswi)-vprm_par(i,m,j,p_lswimin))/(vprm_par(i,m,j,p_lswimax)-vprm_par(i,m,j,p_lswimin))
+                Wscale= (vprm_in(i,m,j,p_lswi)-vprm_in(i,m,j,p_lswi_min))/(vprm_in(i,m,j,p_lswi_max)-vprm_in(i,m,j,p_lswi_min))
             end if
         else
-            Wscale= (1.+vprm_par(i,m,j,p_lswi))/(1.+vprm_par(i,m,j,p_lswimax))
+            Wscale= (1.+vprm_in(i,m,j,p_lswi))/(1.+vprm_in(i,m,j,p_lswi_max))
         end if
 
         ! effect of leaf phenology
         if (m==1) then  ! evegreen
             Pscale= 1.
         else if (m==5 .OR. m==7) then  ! savanna or grassland
-            Pscale= (1.+vprm_par(i,m,j,p_lswi))/2.
+            Pscale= (1.+vprm_in(i,m,j,p_lswi))/2.
         else                           ! Other vegetation types
-            evithresh= vprm_par(i,m,j,p_evimin) + 0.55*(vprm_par(i,m,j,p_evimax)-vprm_par(i,m,j,p_evimin))
-            if (vprm_par(i,m,j,p_evi)>=evithresh) then  ! Full canopy period
+            evithresh= vprm_in(i,m,j,p_evi_min) + 0.55*(vprm_in(i,m,j,p_evi_max)-vprm_in(i,m,j,p_evi_min))
+            if (vprm_in(i,m,j,p_evi)>=evithresh) then  ! Full canopy period
                Pscale= 1.
             else
-               Pscale=(1.+vprm_par(i,m,j,p_lswi))/2.  ! bad-burst to full canopy period
+               Pscale=(1.+vprm_in(i,m,j,p_lswi))/2.  ! bad-burst to full canopy period
             end if
         end if
 
         RADscale= 1./(1. + RAD(i,j)/rad0(m))
-        GEE_frac= lambda(m)*Tscale*Pscale*Wscale*RADscale* vprm_par(i,m,j,p_evi)* RAD(i,j)*vprm_par(i,m,j,p_vegfra_vprm)
-        eghg_bio(i,j,p_ebio_gee)= const*GEE_frac
+        GEE_frac= lambda(m)*Tscale*Pscale*Wscale*RADscale* vprm_in(i,m,j,p_evi)* RAD(i,j)*vprm_in(i,m,j,p_vegfra_vprm)
+        eghg_bio(i,1,j,p_ebio_gee)= const*GEE_frac
 
-        RESP_frac= (alpha(m)*Tair + RESP0(m))*vprm_par(i,m,j,p_vegfra_vprm)
-        eghg_bio(i,j,p_ebio_res)= const*RESP_frac
+        RESP_frac= (alpha(m)*Tair + RESP0(m))*vprm_in(i,m,j,p_vegfra_vprm)
+        eghg_bio(i,1,j,p_ebio_res)= const*RESP_frac
 
    ENDDO veg_frac_loop
 
@@ -226,11 +236,11 @@ INTEGER,  INTENT(IN   )   ::  ids,ide, jds,jde, &
 INTEGER :: i,j
 INTEGER, DIMENSION (ims:ime, jms:jme), INTENT(IN)  :: soil_type
 
-REAL, PARAMETER :: const= 3.6e+3 ! For unit conversion from mmol/m^2/s to mol/km2/hr
-REAL, DIMENSION (ims:ime,jms:jme, num_wet_in), INTENT(IN)    :: wet_in  
+REAL, PARAMETER :: const= 3.6e-3/(0.012+4.*0.001) ! For unit conversion from kgCH4/m^2/s to molCH4/km2/hr
+REAL, DIMENSION (ims:ime,1,jms:jme, num_wet_in), INTENT(IN)    :: wet_in
 REAL, DIMENSION (ims:ime, jms:jme), INTENT(IN)    :: T_skin  
 REAL, DIMENSION (ims:ime, num_soil_layers, jms:jme), INTENT(IN) :: Soil_M, T_soil
-REAL, DIMENSION (ims:ime, jms:jme, num_eghg_bio), INTENT(INOUT) ::  eghg_bio
+REAL, DIMENSION (ims:ime, 1,jms:jme, num_eghg_bio), INTENT(INOUT) ::  eghg_bio
 REAL, INTENT(IN) :: dt,M_s,E_f
 
 REAL, DIMENSION( ims:ime, jms:jme) :: sm_01, sm_02, sm_03, sm_04, g_T, f_SM, &
@@ -279,7 +289,7 @@ REAL  :: tau_10
 
 ! zero initialization of the fields to avoid crashing of the program
 
-    eghg_bio(i,j,p_ebio_ch4wet)=0.
+    eghg_bio(i,1,j,p_ebio_ch4wet)=0.
     HR(i,j)=0.
     k_r(i,j)=0.
     g_T(i,j)=0.
@@ -377,7 +387,7 @@ REAL  :: tau_10
 
 ! calculate the variable carbon fast pool depending on a month 
 
-    Carbon(i,j) = wet_in(i,j,p_Cpool)*(1.0 - EXP(-k_r(i,j)*1.0))
+    Carbon(i,j) = wet_in(i,1,j,p_Cpool)*(1.0 - EXP(-k_r(i,j)*1.0))
 
 ! linearize and get the decomposed carbon for one second 
 
@@ -389,26 +399,19 @@ REAL  :: tau_10
 
 ! calculate the wetland emissions per grid cell for the flooding part
 
-  T_flood(i,j) = HR(i,j)*M_s*wet_in(i,j,p_wetmap)
+  T_flood(i,j) = HR(i,j)*M_s*wet_in(i,1,j,p_wetmap)
 
 ! calculate wetland emissions for the peatland part (higher latitudes)
 
-  T_peat(i,j) = HR(i,j)*E_f*wet_in(i,j,p_wetmap)
+  T_peat(i,j) = HR(i,j)*E_f*wet_in(i,1,j,p_wetmap)
 
-! the factor for the relation between flood and peat land check that T_a in celsius
+! the factor for the relation between flood and peat land
 
-   P_l(i,j) = EXP((wet_in(i,j,p_T_ann) - 303.0)/8.0) ! RAR: I've eliminated T_a, since =0. !VB: for global use we need it
+   P_l(i,j) = EXP((wet_in(i,1,j,p_T_ann) - 303.0)/8.0)
+   eghg_bio(i,1,j,p_ebio_ch4wet) = P_l(i,j)*T_flood(i,j)+(1.0 - P_l(i,j))*T_peat(i,j)
 
-   eghg_bio(i,j,p_ebio_ch4wet) = P_l(i,j)*T_flood(i,j)+(1.0 - P_l(i,j))*T_peat(i,j)
-
-  !ENDIF
-
-! as the unit was kgC/m2/s nothing will be changed 
-! now it is the emissions per sec
-
-  eghg_bio(i,j,p_ebio_ch4wet) = eghg_bio(i,j,p_ebio_ch4wet)*const
-
-  !ENDIF
+  ! units
+  eghg_bio(i,1,j,p_ebio_ch4wet) = eghg_bio(i,1,j,p_ebio_ch4wet)*const
 
   END DO
 
@@ -416,9 +419,9 @@ REAL  :: tau_10
 
 END SUBROUTINE KAPLAN 
 !***************************************************************************************
-  SUBROUTINE TERMITE (                    ids,ide, jds,jde,                                        &
-                                          ims,ime, jms,jme,                                        &
-                                          its,ite, jts,jte,                                        &
+  SUBROUTINE TERMITE (                    ids,ide, jds,jde,                            &
+                                          ims,ime, jms,jme,                            &
+                                          its,ite, jts,jte,                            &
 
                                           dt,eghg_bio, vtype_ter,                      &
                                           biomt_par, emit_par                          )
@@ -428,15 +431,17 @@ END SUBROUTINE KAPLAN
 INTEGER,  INTENT(IN   )   ::  ids,ide, jds,jde, &
                               ims,ime, jms,jme, &
                               its,ite, jts,jte
-INTEGER :: i,j, vtype
+INTEGER :: i,j,vtype
 
 INTEGER, DIMENSION (ims:ime, jms:jme), INTENT(IN)    ::  vtype_ter
-REAL, DIMENSION (ims:ime, jms:jme, num_eghg_bio), INTENT(INOUT) ::  eghg_bio
+REAL, DIMENSION (ims:ime, 1,jms:jme, num_eghg_bio), INTENT(INOUT) ::  eghg_bio
 REAL, INTENT(IN) :: dt
 
-REAL, PARAMETER :: const= 3.6e+3 ! For unit conversion from mmol/m^2/s to mol/km2/hr
-REAL, DIMENSION(num_biomt_par), INTENT(IN) :: biomt_par
-REAL, DIMENSION(num_emit_par),  INTENT(IN) :: emit_par
+REAL, PARAMETER :: const= 3.6e-3/(0.012+4.*0.001) ! For unit conversion from kgCH4/m^2/s to molCH4/km2/hr
+REAL, DIMENSION(14), INTENT(IN) :: biomt_par
+REAL, DIMENSION(14), INTENT(IN) :: emit_par
+
+CHARACTER*256 :: mminlu_loc
 
 ! Loop for calculating the termite emission for every grid point, but first the WRF vegetation type has to be
 ! checked -> do this we a case, the unit of the termite CH4  emissions is kg/m^2 s as the usual flux 
@@ -444,63 +449,120 @@ REAL, DIMENSION(num_emit_par),  INTENT(IN) :: emit_par
  DO j=jts,min(jte,jde-1)
   DO i=its,min(ite,ide-1)
 
+   CALL nl_get_mminlu(1 , mminlu_loc)
+
+    IF(mminlu_loc .EQ. 'USGS')THEN
+
      vtype = INT(vtype_ter(i,j))
 
      SELECT CASE (vtype)
 
        CASE (1)
-          eghg_bio(i,j,p_ebio_ch4term) = 0.0 
+          eghg_bio(i,1,j,p_ebio_ch4term) = 0.0
        CASE (2)
-          eghg_bio(i,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(p_biom_10)*emit_par(p_emch4_10)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(10)*emit_par(10)
        CASE (3)
-          eghg_bio(i,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(p_biom_10)*emit_par(p_emch4_10)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(10)*emit_par(10)
        CASE (4)
-          eghg_bio(i,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(p_biom_11)*emit_par(p_emch4_11)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(11)*emit_par(11)
        CASE (5)
-          eghg_bio(i,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(p_biom_11)*emit_par(p_emch4_11)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(11)*emit_par(11)
        CASE (6)
-          eghg_bio(i,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(p_biom_11)*emit_par(p_emch4_11)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(11)*emit_par(11)
        CASE (7)
-          eghg_bio(i,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(p_biom_07)*emit_par(p_emch4_07)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(7)*emit_par(7)
        CASE (8)
-          eghg_bio(i,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(p_biom_12)*emit_par(p_emch4_12)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(12)*emit_par(12)
        CASE (9)
-          eghg_bio(i,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(p_biom_12)*emit_par(p_emch4_12)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(12)*emit_par(12)
        CASE (10)
-          eghg_bio(i,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(p_biom_05)*emit_par(p_emch4_05)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(5)*emit_par(5)
        CASE (11)
-          eghg_bio(i,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(p_biom_04)*emit_par(p_emch4_04)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(4)*emit_par(4)
        CASE (12)
-          eghg_bio(i,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(p_biom_04)*emit_par(p_emch4_04)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(4)*emit_par(4)
        CASE (13)
-          eghg_bio(i,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(p_biom_01)*emit_par(p_emch4_01)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(1)*emit_par(1)
        CASE (14)
-          eghg_bio(i,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(p_biom_02)*emit_par(p_emch4_02)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(2)*emit_par(2)
        CASE (15)
-          eghg_bio(i,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(p_biom_04)*emit_par(p_emch4_04)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(4)*emit_par(4)
        CASE (16)
-          eghg_bio(i,j,p_ebio_ch4term) = 0.0 
+          eghg_bio(i,1,j,p_ebio_ch4term) = 0.0
        CASE (17)
-          eghg_bio(i,j,p_ebio_ch4term) = 0.0  
+          eghg_bio(i,1,j,p_ebio_ch4term) = 0.0
        CASE (18)
-          eghg_bio(i,j,p_ebio_ch4term) = 0.0  
+          eghg_bio(i,1,j,p_ebio_ch4term) = 0.0
        CASE (19)
-          eghg_bio(i,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(p_biom_13)*emit_par(p_emch4_13)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(13)*emit_par(13)
        CASE (20)
-          eghg_bio(i,j,p_ebio_ch4term) = 0.0
+          eghg_bio(i,1,j,p_ebio_ch4term) = 0.0
        CASE (21)
-          eghg_bio(i,j,p_ebio_ch4term) = 0.0
+          eghg_bio(i,1,j,p_ebio_ch4term) = 0.0
        CASE (22)
-          eghg_bio(i,j,p_ebio_ch4term) = 0.0 
+          eghg_bio(i,1,j,p_ebio_ch4term) = 0.0
        CASE (23)
-          eghg_bio(i,j,p_ebio_ch4term) = 0.0 
+          eghg_bio(i,1,j,p_ebio_ch4term) = 0.0
        CASE (24)
-          eghg_bio(i,j,p_ebio_ch4term) = 0.0 
+          eghg_bio(i,1,j,p_ebio_ch4term) = 0.0
        CASE default
-          eghg_bio(i,j,p_ebio_ch4term) = 0.0
+          eghg_bio(i,1,j,p_ebio_ch4term) = 0.0
        END SELECT
 
-       eghg_bio(i,j,p_ebio_ch4term) = eghg_bio(i,j,p_ebio_ch4term)*const
+
+    ELSE IF(mminlu_loc .EQ. 'MODIFIED_IGBP_MODIS_NOAH')THEN
+
+     vtype = INT(vtype_ter(i,j))
+
+     SELECT CASE (vtype)
+
+       CASE (1)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(2)*emit_par(2)
+       CASE (2)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(1)*emit_par(1)
+       CASE (3)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(4)*emit_par(4)
+       CASE (4)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(4)*emit_par(4)
+       CASE (5)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(4)*emit_par(4)
+       CASE (6)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(12)*emit_par(12)
+       CASE (7)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(12)*emit_par(12)
+       CASE (8)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(6)*emit_par(6)
+       CASE (9)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(5)*emit_par(5)
+       CASE (10)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(7)*emit_par(7)
+       CASE (11)
+          eghg_bio(i,1,j,p_ebio_ch4term) = 0.0
+       CASE (12)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(10)*emit_par(10)
+       CASE (13)
+          eghg_bio(i,1,j,p_ebio_ch4term) = 0.0
+       CASE (14)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(11)*emit_par(11)
+       CASE (15)
+          eghg_bio(i,1,j,p_ebio_ch4term) = 0.0
+       CASE (16)
+          eghg_bio(i,1,j,p_ebio_ch4term) = (1.0/3.6)*1.0e-12*biomt_par(13)*emit_par(13)
+       CASE (17)
+          eghg_bio(i,1,j,p_ebio_ch4term) = 0.0
+       CASE (18)
+          eghg_bio(i,1,j,p_ebio_ch4term) = 0.0
+       CASE (19)
+          eghg_bio(i,1,j,p_ebio_ch4term) = 0.0
+       CASE (20)
+          eghg_bio(i,1,j,p_ebio_ch4term) = 0.0
+       CASE default
+          eghg_bio(i,1,j,p_ebio_ch4term) = 0.0
+       END SELECT
+
+    END IF
+
+    eghg_bio(i,1,j,p_ebio_ch4term) = eghg_bio(i,1,j,p_ebio_ch4term)*const
 
   END DO
  END DO
@@ -532,7 +594,7 @@ END SUBROUTINE TERMITE
   INTEGER, DIMENSION (ims:ime, jms:jme), INTENT(IN)    :: soil_typ
     
 
-  REAL, PARAMETER :: const= 3.6e+3 ! For unit conversion from mmol/m^2/s to mol/km2/hr
+  REAL, PARAMETER :: const= 3.6e-3/(0.012+4.*0.001) ! For unit conversion from kgCH4/m^2/s to molCH4/km2/hr
   REAL, DIMENSION (ims:ime, jms:jme), INTENT(IN)  ::  rain_1, T2,       &
                                                       rain_2, landuse,  &
                                                       potevap, sfevap
@@ -540,8 +602,8 @@ END SUBROUTINE TERMITE
   REAL, DIMENSION (ims:ime, num_soil_layers, jms:jme), INTENT(IN) :: Soil_M
   REAL, INTENT(IN) :: dt
 
-  REAL, DIMENSION (ims:ime, jms:jme, num_eghg_bio), INTENT(INOUT) ::  eghg_bio
-  REAL, DIMENSION (ims:ime, jms:jme, num_wet_in), INTENT(IN) ::  wet_in
+  REAL, DIMENSION (ims:ime, 1,jms:jme, num_eghg_bio), INTENT(INOUT) ::  eghg_bio
+  REAL, DIMENSION (ims:ime, 1,jms:jme, num_wet_in), INTENT(IN) ::  wet_in
 
   REAL, DIMENSION(ims:ime, jms:jme) :: sm_01, sm_02, sm_03, sm_04,    &
                                        i_cult, r_n, r_sm, vero, k_d, &
@@ -549,7 +611,9 @@ END SUBROUTINE TERMITE
                                        phi_soil, eps, b_f, sand_c,    &
                                        clay_c, vero1
 
-  REAL :: dch4_0, k_0, z_dsoil, conv_Fk, conv_ch4
+  REAL :: dch4_0, k_0, z_dsoil, conv_Fk, conv_ch4, methane_0
+
+  CHARACTER*256 :: mminlu_loc
 
 !Initialization of the constants
 
@@ -559,7 +623,7 @@ END SUBROUTINE TERMITE
    z_dsoil   =       6.0           ! soil depth in cm at which the oxidation activity is assumed
    conv_Fk   =       616.9         !mg/ppmv cm CH4  conversion factor fpr giving soil_flux right units of kgCH4/m^2s
    conv_ch4  =       (28.97/26.0)*1e6  !ppm to kgCH4/kgair
- !  methane_0 =       9.66*1e-7     ! 1750ppb CH4 global average concentration
+   methane_0 =       9.66*1e-7     ! 1750ppb CH4 global average concentration
 
  DO j=jts,min(jte,jde-1)
   DO i=its,min(ite,ide-1)
@@ -784,20 +848,41 @@ END SUBROUTINE TERMITE
 
 
 ! Calculation of the cultivation response
+ CALL nl_get_mminlu(1, mminlu_loc)
 
-  IF(landuse(i, j) <= 5.0) THEN
+    IF(mminlu_loc .EQ. 'USGS') THEN 
 
-       i_cult(i, j) = 1.0
+       IF(landuse(i, j) <= 5.0) THEN
 
-  ELSE IF(landuse(i, j) == 6.0) THEN
+            i_cult(i, j) = 1.0
 
-      i_cult(i, j) = 0.5
+       ELSE IF(landuse(i, j) == 6.0) THEN
 
-  ELSE
+            i_cult(i, j) = 0.5
 
-      i_cult(i, j) = 0.0
+       ELSE
 
-  END IF
+            i_cult(i, j) = 0.0
+
+       END IF
+
+   ELSE IF(mminlu_loc .EQ. 'MODIFIED_IGBP_MODIS_NOAH')THEN
+
+       IF(landuse(i, j) == 12.0 .OR. landuse(i,j) == 32.0 .OR. landuse(i,j) == 33.0 .OR. landuse(i,j) == 13.0) THEN
+
+             i_cult(i, j) = 1.0
+
+       ELSE IF(landuse(i, j) == 14.0 .OR. landuse(i,j) == 31.0) THEN
+
+             i_cult(i, j) = 0.5
+
+       ELSE
+
+             i_cult(i, j) = 0.0
+
+       END IF
+
+  END IF 
 
   r_n(i, j) = 1.0 - (0.75*i_cult(i, j))
 
@@ -840,26 +925,25 @@ END SUBROUTINE TERMITE
 
 ! this gives you the flux in mg CH4/m^2 day
 
-  IF(dch4(i,j) /= 0.0 .AND. wet_in(i,j,p_wetmap) < 0.10 .AND. soil_typ(i,j) /= 14 .AND. soil_typ(i,j) /=1) then
+  IF(dch4(i,j) /= 0.0 .AND. wet_in(i,1,j,p_wetmap) < 0.10 .AND. soil_typ(i,j) /= 14 .AND. soil_typ(i,j) /=1) then
 
-!  eghg_bio(i,j,p_ebio_ch4soil) = ((methane_0(i, j)*dch4(i, j))/z_dsoil)* &
-!                                 (1.0 - dch4(i, j)/(dch4(i, j)+k_d(i, j)*z_dsoil))*conv_Fk
+  eghg_bio(i,1,j,p_ebio_ch4soil) = ((methane_0*dch4(i, j))/z_dsoil)* &
+                                 (1.0 - dch4(i, j)/(dch4(i, j)+k_d(i, j)*z_dsoil))*conv_Fk
 
-! to have the flux in kg CH4/m^2 sec
-
-  eghg_bio(i,j,p_ebio_ch4soil) = -eghg_bio(i,j,p_ebio_ch4soil) * 1.0e-6/(24.0*3600.0)*const !negative soil flux
+! flux in mol/km2/hour
+  eghg_bio(i,1,j,p_ebio_ch4soil) = -eghg_bio(i,1,j,p_ebio_ch4soil) * 1.0e-6/(24.0*3600.0)*const !negative soil flux
 
 !  WRITE(6,*) 'CH4 soil uptake flux:', soil_flux(i, j)
 
   ELSE
 
-  eghg_bio(i,j,p_ebio_ch4soil) = 0.0
+  eghg_bio(i,1,j,p_ebio_ch4soil) = 0.0
 
   END IF
 
-  IF(eghg_bio(i,j,p_ebio_ch4soil) > 0.0) then
+  IF(eghg_bio(i,1,j,p_ebio_ch4soil) > 0.0) then
 
-   eghg_bio(i,j,p_ebio_ch4soil) = 0.0
+   eghg_bio(i,1,j,p_ebio_ch4soil) = 0.0
 
   END IF
 

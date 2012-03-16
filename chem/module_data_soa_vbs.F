@@ -1,5 +1,5 @@
 MODULE module_data_soa_vbs
-! RAR: This module is based on module_data_sorgam.F, it has been updated to use
+! This module is based on module_data_sorgam.F, it has been updated to use
 ! for the new SOA scheme - SOA_VBS
 
 !   USE module_data_radm2
@@ -54,7 +54,7 @@ MODULE module_data_soa_vbs
       PARAMETER (aemiss=4)
 !bs *  AEMISS      # of aerosol species with emissions link to gas phase
 !bs                currently ECI, ECJ, BCI, BCJ
- ! RAR: updated ldrog numbers for the new SOA mechanism
+ ! updated ldrog numbers for the new SOA mechanism
       INTEGER, PARAMETER :: ldroga=6    ! anthropogenic: ALK4,ALK5,OLE1,OLE2,ARO1,ARO2
       INTEGER, PARAMETER :: ldrogb=3    ! biogenic: ISOP,SESQ,TERP
       INTEGER, PARAMETER :: ldrogr=1    ! for branching ratio
@@ -148,7 +148,7 @@ MODULE module_data_soa_vbs
       INTEGER vclai
       PARAMETER (vclai=10)
 
-! RAR: I've changed the names and simplified
+! I've changed the names and simplified
 ! indices for accumulation and aitken modes of anthropogenic SOA
       INTEGER, PARAMETER ::  vasoa1j=11
       INTEGER, PARAMETER ::  vasoa1i=12
@@ -260,7 +260,6 @@ MODULE module_data_soa_vbs
       INTEGER vhcl
       PARAMETER (vhcl=47)
 
-! RAR:
 INTEGER, PARAMETER :: vcvasoa1=48
 INTEGER, PARAMETER :: vcvasoa2=49
 INTEGER, PARAMETER :: vcvasoa3=50
@@ -337,7 +336,7 @@ INTEGER, PARAMETER :: vcvbsoa4=55
       INTEGER vdmcor
       PARAMETER (vdmcor=7)
 
-! RAR: SOA precursors + OH, O3, NO3
+! SOA precursors + OH, O3, NO3
 ! anthropogenic
 INTEGER, PARAMETER :: palk4=1
 INTEGER, PARAMETER :: palk5=2
@@ -354,7 +353,7 @@ INTEGER, PARAMETER :: psesq=9
 ! for branching
 INTEGER, PARAMETER :: pbrch=10
 
- ! RAR: new indices
+ ! new indices
 INTEGER, PARAMETER :: pasoa1=1
 INTEGER, PARAMETER :: pasoa2=2
 INTEGER, PARAMETER :: pasoa3=3
@@ -1052,7 +1051,7 @@ INTEGER, PARAMETER :: pbsoa4=8
 	real, parameter :: dens_so4_aer  = 1.80   ! = rhoso4
 	real, parameter :: dens_no3_aer  = 1.80   ! = rhono3
 	real, parameter :: dens_nh4_aer  = 1.80   ! = rhonh4
-	real, parameter :: dens_oc_aer   = 1.5    ! = rhoorg ! RAR changed from 1.0
+	real, parameter :: dens_oc_aer   = 1.5    ! = rhoorg ! changed from 1.0
 	real, parameter :: dens_ec_aer   = 1.70
 	real, parameter :: dens_dust_aer = 2.60  ! = rhosoil
 	real, parameter :: dens_oin_aer  = 2.20  ! = rhoanth

@@ -73,9 +73,9 @@ dimspec    %       2     namelist=kdvel                    z     klevs_for_dvel
 dimspec    airc    2     namelist=kemit_aircraft           z     ac_emissions_zdim
 dimspec    .       3     namelist=erosion_dim              z     dust_erosion_dimension
 
-# The vprm and wetland dims are for greenhouse gas tracer simulation
-dimspec    ghgv    2     namelist=vprm_class               z     VPRM_vegetation_classes
-#dimspec    ghgw    2     namelist=wetland_type             z     wetland_type
+# Dimensions for the GHG options
+dimspec    ghgv    -     constant=8                        z     vprm_vgcls
+dimspec    ghgt    1     constant=14                       z     termite_vgcls
 
 dimspec    tc      -     namelist=track_chem_num           c     track_chem_num
 dimspec    tr      -     namelist=track_rad_num            c     track_rad_num

@@ -148,7 +148,7 @@ CONTAINS
                CALL wrf_debug ( 0 , message )
             END IF
 
-         CASE ( LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME )
+         CASE ( LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME , SSIBSCHEME)   !mchen add for ssib
             num_seaice_changes = 0
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
@@ -223,7 +223,7 @@ CONTAINS
 
          CASE ( SLABSCHEME )
 
-         CASE ( LSMSCHEME , NOAHMPSCHEME )
+         CASE ( LSMSCHEME , NOAHMPSCHEME , SSIBSCHEME )   !mchen add for ssib
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 

@@ -179,37 +179,50 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
    !$OMP PARALLEL DO &
    !$OMP PRIVATE ( ij, k, j, k1, i )
    do ij = 1 , grid%num_tiles
-   allocate (chi_u(its:ite,grid%j_start(ij):grid%j_end(ij),kts:kte) )
-   chi_u = 0
+
+   if ( cv_options == 6 ) then
+      allocate (chi_u(its:ite,grid%j_start(ij):grid%j_end(ij),kts:kte) )
+      chi_u = 0
+   end if
 
    ! Moisture
 !
-   do k = kts, kte
-      do j = grid%j_start(ij), grid%j_end(ij)
-         do i = its, ite
-            vp%v5(i,j,1) = vp%v5(i,j,1) + be%reg_ps_u_rh(j,k) * vp%v4(i,j,k)
-         end do
-      end do
-   end do
-
-   do k1 = kts, kte
+   if ( cv_options == 6 ) then
       do k = kts, kte
          do j = grid%j_start(ij), grid%j_end(ij)
             do i = its, ite
-              vp%v3(i,j,k1) = vp%v3(i,j,k1) + be%reg_t_u_rh(j,k,k1)*vp%v4(i,j,k)
-              vp%v1(i,j,k1) = vp%v1(i,j,k1) + be%reg_psi_rh(j,k,k1)*vp%v4(i,j,k)
-              chi_u(i,j,k1) = chi_u(i,j,k1) + be%reg_chi_u_rh(j,k,k1)*vp%v4(i,j,k)
+               vp%v5(i,j,1) = vp%v5(i,j,1) + be%reg_ps_u_rh(j,k) * vp%v4(i,j,k)
             end do
          end do
       end do
-   end do
+
+      do k1 = kts, kte
+         do k = kts, kte
+            do j = grid%j_start(ij), grid%j_end(ij)
+               do i = its, ite
+                  vp%v3(i,j,k1) = vp%v3(i,j,k1) + be%reg_t_u_rh(j,k,k1)*vp%v4(i,j,k)
+                  vp%v1(i,j,k1) = vp%v1(i,j,k1) + be%reg_psi_rh(j,k,k1)*vp%v4(i,j,k)
+                  chi_u(i,j,k1) = chi_u(i,j,k1) + be%reg_chi_u_rh(j,k,k1)*vp%v4(i,j,k)
+               end do
+            end do
+         end do
+      end do
+   end if
 
    ! Surface Pressure
+   if ( cv_options == 6 ) then
+      do k= kts,kte
+         do j= grid%j_start(ij),grid%j_end(ij)
+            do i =  its, ite
+               chi_u(i,j,k) = chi_u(i,j,k) + be%reg_chi_u_ps(j,k)*grid%xa%psfc(i,j)
+            end do
+         end do
+      end do
+   end if
    do k= kts,kte
       do j= grid%j_start(ij),grid%j_end(ij)
          do i =  its, ite
             vp%v1(i,j,k) = vp%v1(i,j,k) + be%reg_psi_ps(j,k)*grid%xa%psfc(i,j)
-            chi_u(i,j,k) = chi_u(i,j,k) + be%reg_chi_u_ps(j,k)*grid%xa%psfc(i,j)
          end do
       end do
    end do
@@ -220,12 +233,22 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
    end do
 
    ! Temperature
+   if ( cv_options == 6 ) then
+      do k1 = kts,kte
+         do k = kts,kte
+            do j = grid%j_start(ij),grid%j_end(ij)
+               do i =  its, ite
+                  chi_u(i,j,k1) = chi_u(i,j,k1) + be%reg_chi_u_t(j,k,k1)*grid%xa%t(i,j,k)
+               end do
+            end do
+         end do
+      end do
+   end if
    do k1 = kts,kte
       do k = kts,kte
          do j = grid%j_start(ij),grid%j_end(ij)
             do i =  its, ite
                vp%v1(i,j,k1) = vp%v1(i,j,k1) + be%reg_psi_t(j,k,k1)*grid%xa%t(i,j,k)
-               chi_u(i,j,k1) = chi_u(i,j,k1) + be%reg_chi_u_t(j,k,k1)*grid%xa%t(i,j,k)
             end do
          end do
       end do
@@ -243,11 +266,19 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
       do j = grid%j_start(ij),grid%j_end(ij)
          do i =  its, ite
             vp%v1(i,j,k) = vp%v1(i,j,k) + be%reg_psi_chi(j,k)*vp%v2(i,j,k)
-            vp%v2(i,j,k) = vp%v2(i,j,k) + chi_u(i,j,k)
          end do
        end do
    end do
-   deallocate (chi_u)
+   if ( cv_options == 6 ) then
+      do k = kts,kte
+         do j = grid%j_start(ij),grid%j_end(ij)
+            do i =  its, ite
+               vp%v2(i,j,k) = vp%v2(i,j,k) + chi_u(i,j,k)
+            end do
+          end do
+      end do
+      deallocate (chi_u)
+   end if
 
    enddo
    !$OMP END PARALLEL DO

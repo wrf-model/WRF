@@ -535,16 +535,13 @@ subroutine da_transfer_xatowrf(grid)
             height,  grid%xb%rough(i,j),grid%xb%xland(i,j), grid%xb%ds, &
             grid%u10(i,j), grid%v10(i,j), grid%t2(i,j), &
             grid%q2(i,j), grid%xb%regime(i,j))
-#ifndef TKW_
-            grid%th2(i,j) = grid%t2(i,j)*(base_pres/ps1)**kappa
-#else
-            ! This is obviously incorrect: wee 11/22/2011
-            ! grid%th2(i,j) = grid%t2(i,j)*(base_pres/ps1)**kappa
 
-            ! 2-m pressure: Ground level and first half level are used
-            p2m = grid%psfc(i,j)*EXP(-2.0/height*LOG(grid%psfc(i,j)/ps1))
-            grid%th2(i,j) = grid%t2(i,j)*(base_pres/p2m)**kappa
-#endif
+         ! This is obviously incorrect: wee 11/22/2011
+         ! grid%th2(i,j) = grid%t2(i,j)*(base_pres/ps1)**kappa
+
+         ! 2-m pressure: Ground level and first half level are used
+         p2m = grid%psfc(i,j)*EXP(-2.0/height*LOG(grid%psfc(i,j)/ps1))
+         grid%th2(i,j) = grid%t2(i,j)*(base_pres/p2m)**kappa
       end do
    end do
 

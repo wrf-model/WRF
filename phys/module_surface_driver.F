@@ -1895,7 +1895,7 @@ CONTAINS
               &            chs, chs2, cqs2,                                            &
               &            br, znt, lh, hfx, qfx, potevp, grdflx, qsfc, acsnow,        &
               &            acsnom, snopcx, sfcrunoff, noahres,                         &
-              &            b_t_bep, b_q_bep, rho,                                      &
+              &            sf_urban_physics, b_t_bep, b_q_bep, rho,                    &
               &            ids,ide, jds,jde, kds,kde,                                  &
               &            ims,ime, jms,jme, kms,kme,                                  &
               &            i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
@@ -2107,7 +2107,7 @@ CONTAINS
               &            chs, chs2, cqs2,                                            &
               &            br, znt, lh, hfx, qfx, potevp, grdflx, qsfc, acsnow,        &
               &            acsnom, snopcx, sfcrunoff, noahres,                         &
-              &            b_t_bep, b_q_bep, rho,                                      &
+              &            sf_urban_physics, b_t_bep, b_q_bep, rho,                    &
               &            ids,ide, jds,jde, kds,kde,                                  &
               &            ims,ime, jms,jme, kms,kme,                                  &
               &            i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )

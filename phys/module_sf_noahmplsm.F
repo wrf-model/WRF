@@ -8214,7 +8214,7 @@ contains
   REAL    :: LAPM      !leaf area per unit mass [m2/g]
 ! ------------------------------------------------------------------------------------------
 
-   IF(VEGTYP == 16 .OR. VEGTYP == 19 .OR. VEGTYP == 24) THEN
+   IF ( ( VEGTYP == ISWATER ) .OR. ( VEGTYP == ISBARREN ) .OR. ( VEGTYP == ISSNOW ) ) THEN
       XLAI   = 0.
       XSAI   = 0.
       GPP    = 0.

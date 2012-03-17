@@ -13,9 +13,11 @@ contains
        &                  IDS, IDE, JDS, JDE, KDS, KDE,                                 &
        &                  IMS, IME, JMS, JME, KMS, KME,                                 &
        &                  ITS, ITE, JTS, JTE, KTS, KTE  )
+#if (NMM_CORE != 1)
     USE module_state_description, ONLY : NOAHUCMSCHEME
     USE module_state_description, ONLY : BEPSCHEME
     USE module_state_description, ONLY : BEP_BEMSCHEME
+#endif
     implicit none
 
     INTEGER, INTENT(IN)       ::               SEAICE_ALBEDO_OPT
@@ -378,7 +380,7 @@ contains
                &         - SHEAT + SSOIL - ETA &
                &         - ( EMISSI * STBOLT * (T1**4) ) &
                &         - FLX1 - FLX2 - FLX3
-          
+#if (NMM_CORE != 1)
           IF ( ( SF_URBAN_PHYSICS == NOAHUCMSCHEME ) .OR. &
                (SF_URBAN_PHYSICS == BEPSCHEME )      .OR. &
                ( SF_URBAN_PHYSICS == BEP_BEMSCHEME ) ) THEN
@@ -389,6 +391,7 @@ contains
                 B_Q_BEP(I,1,J)=qfx(i,j)/dz8w(i,1,j)/rho(i,1,j)
              endif
           ENDIF
+#endif
 
        enddo SEAICE_ILOOP
     enddo SEAICE_JLOOP

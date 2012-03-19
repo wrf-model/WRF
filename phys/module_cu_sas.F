@@ -174,6 +174,10 @@ CONTAINS
       REAL,    DIMENSION(ims:ime, jms:jme) ::                           &
                                         PSFC
 
+      REAL,    DIMENSION(its:ite, jts:jte) ::                           &
+                                        RAINCV1, PRATEC1
+      REAL,    DIMENSION(its:ite, jts:jte) ::                           &
+                                        RAINCV2, PRATEC2
 
       REAL     (kind=kind_phys) ::                                      &
                                         DELT,                           &
@@ -475,6 +479,17 @@ CONTAINS
       CALL SASCNVN(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,                  &
                   QL,Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,                    &
                   KTOP,KCNV,SLIMSK,DOT,NCLOUD,PGCON_USE,massf)
+!
+      do i=its,ite
+        RAINCV1(I,J)=RN(I)*1000./STEPCU
+        PRATEC1(I,J)=RN(I)*1000./(STEPCU * DT)
+      enddo
+!
+      do i=its,ite
+        RAINCV2(I,J)=0.
+        PRATEC2(I,J)=0.
+      enddo
+!
 
       if_shallow_conv: if(shalconv_use==1) then
 #if (NMM_CORE == 1)
@@ -483,6 +498,12 @@ CONTAINS
         call shalcnv(im,im,kx,jcap,delt,del,prsl,ps,phil,ql,        &
      &               q1,t1,u1,v1,rcs,rn,kbot,ktop,kcnv,slimsk,      &
      &               dot,ncloud,hpbl,heat,evap,shal_pgcon_use)
+!
+      DO I=ITS,ITE
+        RAINCV2(I,J)=RN(I)*1000./STEPCU
+        PRATEC2(I,J)=RN(I)*1000./(STEPCU * DT)
+      ENDDO
+!
 #else
 #if (EM_CORE == 1)
         ! NOTE: ARW should be able to call the new shalcnv here, but
@@ -495,9 +516,9 @@ CONTAINS
 #endif
      endif if_shallow_conv
 
-      DO I=ITS,ITE
-        RAINCV(I,J)=RN(I)*1000./STEPCU
-        PRATEC(I,J)=RN(I)*1000./(STEPCU * DT)
+        DO I=ITS,ITE
+        RAINCV(I,J)= RAINCV1(I,J) + RAINCV2(I,J)
+        PRATEC(I,J)= PRATEC1(I,J) + PRATEC2(I,J)
         HBOT(I,J)=KBOT(I)
         HTOP(I,J)=KTOP(I)
       ENDDO
@@ -4503,7 +4524,7 @@ CONTAINS
      &                     dv1v,    dv2u,    dv2v,    dv3q,         &
      &                     dv3h,    dv3u,    dv3v,    clam,         &
      &                     dz,      dz1,     e1,                    &
-     &                     el2orc,  elocp,   aafac,                 &
+     &                     el2orc,  elocp,   aafac,   cthk,         &
      &                     es,      etah,    h1,      dthk,         &
      &                     evef,    evfact,  evfactl, fact1,        &
      &                     fact2,   factor,  fjcap,                 &
@@ -4540,7 +4561,7 @@ CONTAINS
      &          el2orc=hvap*hvap/(rv*cp))
       parameter(terr=0.,c0=.002,c1=5.e-4,delta=fv)
       parameter(fact1=(cvap-cliq)/rv,fact2=hvap/rv-fact1*t0c)
-      parameter(cincrmax=180.,cincrmin=120.,dthk=25.)
+      parameter(cthk=50.,cincrmax=180.,cincrmin=120.,dthk=25.)
       parameter(h1=0.33333333)
 !c  local variables and arrays
       real(kind=kind_phys) pfld(im,km),    to(im,km),     qo(im,km),    &
@@ -5013,18 +5034,28 @@ CONTAINS
 !c
 !c  turn off shallow convection if cloud top is less than pbl top
 !c
-!     do i=1,im
-!       if(cnvflg(i)) then
-!         kk = kpbl(i)+1
-!         if(ktcon(i).le.kk) cnvflg(i) = .false.
-!       endif
-!     enddo
+     do i=1,im
+       if(cnvflg(i)) then
+         kk = kpbl(i)+1
+         if(ktcon(i).le.kk) cnvflg(i) = .false.
+       endif
+     enddo
+! c
+! c  turn off shallow convection if cloud depth is less than
+! c    a threshold value (cthk)
+! c
+       do i = 1, im
+         if(cnvflg(i)) then
+           tem = pfld(i,kbcon(i))-pfld(i,ktcon(i))
+           if(tem.lt.cthk) cnvflg(i) = .false.
+         endif
+       enddo
 !!
-!     totflg = .true.
-!     do i = 1, im
-!       totflg = totflg .and. (.not. cnvflg(i))
-!     enddo
-!     if(totflg) return
+     totflg = .true.
+     do i = 1, im
+       totflg = totflg .and. (.not. cnvflg(i))
+     enddo
+     if(totflg) return
 !!
 !c
 !c  specify upper limit of mass flux at cloud base

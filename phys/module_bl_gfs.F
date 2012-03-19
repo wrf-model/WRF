@@ -18,6 +18,7 @@ CONTAINS
 #endif
 #if (HWRF==1)
                   ALPHA,                                           &
+                  HPBL2D, EVAP2D, HEAT2D,                          &    !Kwon add FOR SHAL. CON.
 #endif
                   ids,ide, jds,jde, kds,kde,                       &
                   ims,ime, jms,jme, kms,kme,                       &
@@ -96,6 +97,12 @@ CONTAINS
 #if (NMM_CORE==1)
       LOGICAL , INTENT(IN)::            DISHEAT                         !  gopal's doing
 #endif
+
+      REAL,  DIMENSION(ims:ime, jms:jme), INTENT(OUT) ::              &
+                                        HPBL2D,                         &    !ADDED BY KWON FOR SHALLOW CONV.
+                                        EVAP2D,                         &    !ADDED BY KWON FOR SHALLOW CONV.
+                                        HEAT2D                               !ADDED BY KWON FOR SHALLOW CONV.
+
 
       INTEGER, INTENT(IN) ::            ids,ide, jds,jde, kds,kde,      &
                                         ims,ime, jms,jme, kms,kme,      &
@@ -247,6 +254,10 @@ CONTAINS
         QSS(i)=QV3D(i,kts,j)               ! not used in moninp so set to qv3d for now
         HEAT(i)=HFX(i,j)/CPM*RRHOX
         EVAP(i)=QFX(i,j)*RRHOX
+! Kwon FOR NEW SHALLOW CONVECTION 
+        HEAT2D(i,j)=HFX(i,j)/CPM*RRHOX
+        EVAP2D(i,j)=QFX(i,j)*RRHOX
+!
         STRESS(i)=KARMAN*KARMAN*WSPD(i,j)*WSPD(i,j)/(FMTMP*FMTMP)
         SPD1(i)=WSPD(i,j)
         PRSI(i,kts)=PSFC(i,j)*.001
@@ -360,6 +371,9 @@ CONTAINS
         WSPD(i,j)=SQRT(U3D(I,KTS,J)*U3D(I,KTS,J)+                       &
                        V3D(I,KTS,J)*V3D(I,KTS,J))+1.E-9
         PBL(i,j)=HPBL(i)
+!Kwon For new shallow convection
+        HPBL2D(i,j)=HPBL(i)
+!
         KPBL2D(i,j)=kpbl(i)
       ENDDO
 

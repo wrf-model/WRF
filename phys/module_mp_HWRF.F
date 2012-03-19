@@ -83,11 +83,14 @@ MODULE module_mp_HWRF
 !GFDL     & ,T_ICE=-30.                                                 &
      & ,T_ICEK=T0C+T_ICE                                                &
      & ,T_ICE_init=-5.                                                  &
-     & ,NLImax=5.E3                                                     &
+!!changed to 20E3 2-09-2012     & ,NLImax=5.E3                                                     &
+     & ,NLImax=20.E3                                                     &
      & ,NLImin=1.E3                                                     &
      & ,N0r0=8.E6                                                       &
      & ,N0rmin=1.E4                                                     &
-     & ,NCW=60.E6                                                       &  !GFDL
+!!2-09-2012     & ,NCW=60.E6                                                       &  !GFDL
+!! based on Aligo's email,NCW is changed to 250E6
+     & ,NCW=250.E6                                                       &  !GFDL
 !HWRF     & ,NCW=100.E6                                                 &
      & ,FLARGE1=1.                                                      &
      & ,FLARGE2=.2
@@ -845,7 +848,9 @@ MODULE module_mp_HWRF
      &        TOT_ICE,TOT_ICEnew,TOT_RAIN,TOT_RAINnew,                  &
      &        VEL_INC,VENTR,VENTIL,VENTIS,VRAIN1,VRAIN2,VRIMEF,VSNOW,   &
      &        WC,WCnew,WSgrd,WS,WSnew,WV,WVnew,WVQW,                    &
-     &        XLF,XLF1,XLI,XLV,XLV1,XLV2,XLIMASS,XRF,XSIMASS          
+!!     &        XLF,XLF1,XLI,XLV,XLV1,XLV2,XLIMASS,XRF,XSIMASS          
+     &        XLF,XLF1,XLI,XLV,XLV1,XLV2,XLIMASS,XRF,XSIMASS,           &
+     &        VRabove     !-- new variables          
 !
 !#######################################################################
 !########################## Begin Execution ############################
@@ -854,6 +859,9 @@ MODULE module_mp_HWRF
 !
       ARAIN=0.                ! Accumulated rainfall into grid box from above (kg/m**2)
       ASNOW=0.                ! Accumulated snowfall into grid box from above (kg/m**2)
+!aligo
+      VRabove=0.              ! Fall speed of rain into grid box from above (m/s)
+!aligo
 !
 !-----------------------------------------------------------------------
 !------------ Loop from top (L=1) to surface (L=LSFC) ------------------
@@ -913,6 +921,9 @@ MODULE module_mp_HWRF
             CLEAR=.FALSE.
           ELSE
             ARAIN=0.
+ !aligo
+            VRabove=0.
+ !aligo
           ENDIF
 !
 !--- Check if any ice is falling into layer from above
@@ -1139,6 +1150,18 @@ MODULE module_mp_HWRF
                 ENDIF            ! End IF (RimeF1 .LE. 1.)
                 VEL_INC=GAMMAS*VrimeF
                 VSNOW=VEL_INC*VSNOWI(INDEXS)
+!! Based on Alig's email, added on 2012-02-09
+!aligo
+                IF (TC>0.) THEN
+!-- Idea provided by Greg Thompson to smoothly increase the fall speed
+!   of melting snow
+                   DUM=MAX(VSNOW,VRabove)
+                   VEL_INC=DUM/VSNOWI(INDEXS)
+                   VSNOW=DUM
+                ENDIF
+!aligo
+ 
+!!
                 EMAIRI=THICK+BLDTRH*VSNOW
                 XLIMASS=RRHO*RimeF1*MASSI(INDEXS)
                 FLIMASS=XLIMASS/(XLIMASS+XSIMASS)
@@ -1158,7 +1181,10 @@ MODULE module_mp_HWRF
         !--- Force NLICE to be between NLImin and NLImax
         !
                   DUM=MAX(NLImin, MIN(NLImax, NLICE) )
-                  XLI=RHO*(QTICE/DUM-XSIMASS)/RimeF1
+            !      XLI=RHO*(QTICE/DUM-XSIMASS)/RimeF1
+!!! Bug fix 
+!!! bug fix 2012-02-08, see Aligo's email
+                  XLI=RHO*QLICE/(DUM*RimeF1)   !- QLICE is for large ice 
                   IF (XLI .LE. MASSI(MDImin) ) THEN
                     INDEXS=MDImin
                   ELSE IF (XLI .LE. MASSI(450) ) THEN
@@ -1175,7 +1201,9 @@ MODULE module_mp_HWRF
            !    (MDImax).  Done to increase fall out of ice.
            !
                     IF (DUM .GE. NLImax)                                &
-     &                RimeF1=RHO*(QTICE/NLImax-XSIMASS)/MASSI(INDEXS)
+!!!     &                RimeF1=RHO*(QTICE/NLImax-XSIMASS)/MASSI(INDEXS)
+!!! bug fix 2012-02-08, see Aligo's email
+     &                   RimeF1=RHO*QLICE/(NLImax*MASSI(INDEXS))    !- QLICE is for large ice 
                   ENDIF             ! End IF (XLI .LE. MASSI(MDImin) ) 
 !            WRITE(6,"(4(a12,g11.4,1x))") 
 !     & '{$ TC=',TC,'P=',.01*PP,'NLICE=',NLICE,'DUM=',DUM,
@@ -1947,12 +1975,18 @@ MODULE module_mp_HWRF
           RimeF_col(L)=RimeF                      ! Updated rime factor
           ASNOW=ASNOWnew                          ! Updated accumulated snow
           ARAIN=ARAINnew                          ! Updated accumulated rain
+!! 2012-02-09 Based on Aligo's email
+ !aligo
+          VRabove=VRAIN2                          ! Updated rain fall speed
+!aligo
+
+!!
 !
 !#######################################################################
 !
 10      CONTINUE         ! ##### End "L" loop through model levels #####
 
-
+!!!!!!!!        write(6,*)'2012-02-09,ncw,nlimax,vrabove=',ncw,nlimax,vrabove
 !
 !#######################################################################
 !

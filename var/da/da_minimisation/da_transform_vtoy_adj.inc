@@ -83,7 +83,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
       endif
 
       if (num_fgat_time > 1 .and. use_rainobs) then
-         ! Buffer to save adjoint hourly rainfall
+         ! Buffer to save adjoint var4d_bin_rain rainfall
          allocate (a_hr_rainc (ims:ime,jms:jme,1:num_fgat_time))
          allocate (a_hr_rainnc(ims:ime,jms:jme,1:num_fgat_time))
          a_hr_rainc =0.0
@@ -107,9 +107,10 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
       ! Adjoint of calculate hourly rainfall
       if (num_fgat_time > 1 .and. use_rainobs) then
          do nobwin=1, num_fgat_time
+            if ( .not. fgat_rain_flags(nobwin) ) cycle
             if (nobwin .lt. num_fgat_time) then
-               a_rainc(:,:,nobwin) = a_rainc(:,:,nobwin) - a_hr_rainc (:,:,nobwin+1)
-               a_rainnc(:,:,nobwin) = a_rainnc(:,:,nobwin) - a_hr_rainnc(:,:,nobwin+1)
+               a_rainc(:,:,nobwin) = a_rainc(:,:,nobwin) - a_hr_rainc (:,:,nobwin+INT(var4d_bin_rain/var4d_bin))
+               a_rainnc(:,:,nobwin) = a_rainnc(:,:,nobwin) - a_hr_rainnc(:,:,nobwin+INT(var4d_bin_rain/var4d_bin))
             else
                a_rainc(:,:,nobwin) = a_rainc(:,:,nobwin) + a_hr_rainc (:,:,nobwin)
                a_rainnc(:,:,nobwin) = a_rainnc(:,:,nobwin) + a_hr_rainnc(:,:,nobwin)

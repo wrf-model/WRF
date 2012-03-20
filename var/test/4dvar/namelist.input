@@ -2,7 +2,8 @@
 var4d=true,
 var4d_lbc=true,
 var4d_bin=3600,
-print_detail_outerloop=true,
+var4d_bin_rain=21600,
+print_detail_outerloop=false,
 print_detail_grad=false,
 /
 &wrfvar2
@@ -26,6 +27,7 @@ use_satemobs=true,
 use_gpspwobs=true,
 use_gpsrefobs=true,
 use_qscatobs=true,
+use_rainobs=true,
 /
 &wrfvar5
 check_max_iv=true,
@@ -33,6 +35,7 @@ check_max_iv=true,
 &wrfvar6
 max_ext_its=1,
 ntmax=50,
+orthonorm_gradient=true,
 /
 &wrfvar7
 cv_options=5,
@@ -42,7 +45,8 @@ cv_options=5,
 &wrfvar9
 /
 &wrfvar10
-test_transforms=true,
+test_transforms=false,
+test_gradient=false,
 /
 &wrfvar11
 cv_options_hum=1,

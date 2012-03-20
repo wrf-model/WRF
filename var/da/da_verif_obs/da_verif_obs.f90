@@ -23,7 +23,7 @@ program da_verif_obs
       if_plot_buoy, if_plot_gpspw, if_plot_gpsref, if_plot_pilot, &
       if_plot_profiler, if_plot_polaramv, if_plot_qscat, if_plot_rmse, &
       if_plot_sound, if_plot_sonde_sfc, if_plot_synop, if_plot_surface, &
-      if_plot_upr, if_plot_ships, if_plot_metar, interval, stdp, start_date, &
+      if_plot_upr, if_plot_ships, if_plot_metar, if_plot_tamdar,interval, stdp, start_date, &
       if_plot_geoamv, stdh, num_miss, &
       wrf_file, istart, iend, jstart, jend
    use da_verif_obs_init, only : initialize_surface_type, initialize_upr_type, &
@@ -99,6 +99,8 @@ program da_verif_obs
    if_plot_gpsref    = .false.
    if_plot_airsret   = .false.
 
+   if_plot_tamdar    = .false.
+
    file_path_string = 'wrfvar/gts_omb_oma_01'
    wrf_file = 'foo.nc'
 
@@ -168,7 +170,7 @@ program da_verif_obs
    if_plot_upr = .false.
    if (if_plot_sound .or. if_plot_pilot .or. if_plot_profiler   .or.    &
        if_plot_geoamv .or. if_plot_polaramv  .or. if_plot_airep .or.    &
-       if_plot_airsret) if_plot_upr= .true.
+       if_plot_airsret .or. if_plot_tamdar ) if_plot_upr= .true.
 
    read(start_date(1:10), fmt='(i10)')sdate
    read(end_date(1:10), fmt='(i10)')edate
@@ -336,6 +338,11 @@ program da_verif_obs
          elseif (index( obs_type,'airsr') > 0)  then
                if (if_plot_airsret ) if_write = .true.
                goto 130
+
+         elseif (index( obs_type,'tamdar') > 0)  then
+            if (if_plot_tamdar ) if_write = .true.
+            goto 140
+
          else
          print*,' Got unknown OBS_TYPE ',obs_type(1:20),' on unit ',diag_unit_in
          stop    
@@ -681,6 +688,46 @@ program da_verif_obs
             end do      !  loop over obs    
          end if
          goto 1
+
+140      continue
+
+         if ( num_obs > 0 ) then
+            do n = 1, num_obs
+               read(diag_unit_in,'(i8)')levels
+               do k = 1, levels
+                  read(diag_unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
+                     kk,l, stn_id, &
+                     lat, lon, press, &
+                     u_obs, u_inv, u_qc, u_error, u_inc, &
+                     v_obs, v_inv, v_qc, v_error, v_inc, &
+                     t_obs, t_inv, t_qc, t_error, t_inc, &
+                     q_obs, q_inv, q_qc, q_error, q_inc
+                  if (if_write .and. press > 0 ) then
+                     call get_std_pr_level(press, npr, stdp, nstd)
+
+                   if( u_qc >=  0) then
+                     call update_stats(upr%uomb(npr),upr%uoma(npr),u_inv,u_inc)
+                     call update_stats(gupr%uomb(npr),gupr%uoma(npr),u_inv,u_inc)
+                   endif
+                   if( v_qc >=  0) then
+                    call update_stats(upr%vomb(npr),upr%voma(npr),v_inv,v_inc)
+                    call update_stats(gupr%vomb(npr),gupr%voma(npr),v_inv,v_inc)
+                   endif
+                   if( t_qc >=  0)  then
+                    call update_stats(upr%tomb(npr),upr%toma(npr),t_inv,t_inc)
+                    call update_stats(gupr%tomb(npr),gupr%toma(npr),t_inv,t_inc)
+                   endif
+                   if( q_qc >=  0)  then
+                    call update_stats(upr%qomb(npr),upr%qoma(npr),q_inv,q_inc)
+                    call update_stats(gupr%qomb(npr),gupr%qoma(npr),q_inv,q_inc)
+                   endif
+
+                  end if
+                end do
+             end do
+         end if
+         goto 1
+
 
          ! Now process the diagnostics
 2000     continue

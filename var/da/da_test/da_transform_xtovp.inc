@@ -145,37 +145,53 @@ subroutine da_transform_xtovp(grid, xb, xbx, xa, vp, be)
    do k1=kts,kte
     do k=kts,kte
       do j=jts,jte
-            vp%v3(its:ite,j,k) = vp%v3(its:ite,j,k) - &
-            be%reg_psi_t(j,k,k1)*vp%v1(its:ite,j,k1) + be%reg_chi_u_t(j,k,k1)*vp%v2(its:ite,j,k1)
+            vp%v3(its:ite,j,k) = vp%v3(its:ite,j,k) - be%reg_psi_t(j,k,k1)*vp%v1(its:ite,j,k1)
       end do
     end do
    end do
+   if ( cv_options == 6 ) then
+      do k1=kts,kte
+         do k=kts,kte
+            do j=jts,jte
+               vp%v3(its:ite,j,k) = vp%v3(its:ite,j,k) + be%reg_chi_u_t(j,k,k1)*vp%v2(its:ite,j,k1)
+            end do
+         end do
+      end do
+   end if
 
    ! [2.6] Choice of moisture control variable:
    call da_message((/' calculating psudo rh'/))
    vp % v4(its:ite,jts:jte,kts:kte) = xa % q  (its:ite,jts:jte,kts:kte) /   &
       xb % qs (its:ite,jts:jte,kts:kte)
 
-   do k1 = kts, kte
-      do k = kts, kte
-         do j = jts, jte
-            vp%v4(its:ite,j,k)   = vp%v4(its:ite,j,k)    - &
-            be%reg_psi_rh(j,k,k1)*vp%v1(its:ite,j,k1)    + &
-            be%reg_chi_u_rh(j,k,k1)*vp%v2(its:ite,j,k1)  + &
-            be%reg_t_u_rh(j,k,k1)*vp%v3(its:ite,j,k1) + &
-            be%reg_ps_u_rh(j,k1)*vp%v5(its:ite,j,1)
+   if ( cv_options == 6 ) then
+      do k1 = kts, kte
+         do k = kts, kte
+            do j = jts, jte
+               vp%v4(its:ite,j,k) = vp%v4(its:ite,j,k)    - &
+                                    be%reg_psi_rh(j,k,k1)*vp%v1(its:ite,j,k1)    + &
+                                    be%reg_chi_u_rh(j,k,k1)*vp%v2(its:ite,j,k1)  + &
+                                    be%reg_t_u_rh(j,k,k1)*vp%v3(its:ite,j,k1) + &
+                                    be%reg_ps_u_rh(j,k1)*vp%v5(its:ite,j,1)
+            end do
          end do
       end do
-   end do
+   end if
 
    ! [2.7] compute psfc_u:
    call da_message((/' calculating psfc_u '/))
    do j=jts,jte
       do i=its,ite
-         vp % v5(i,j,1) = xa%psfc(i,j) - &
-         be%reg_psi_ps(j,k)*vp%v1(i,j,k) + be%reg_chi_u_ps(j,k)*vp%v2(i,j,k)
+         vp % v5(i,j,1) = xa%psfc(i,j) - be%reg_psi_ps(j,k)*vp%v1(i,j,k)
       end do
    end do
+   if ( cv_options == 6 ) then
+      do j=jts,jte
+         do i=its,ite
+            vp % v5(i,j,1) = xa%psfc(i,j) + be%reg_chi_u_ps(j,k)*vp%v2(i,j,k)
+         end do
+      end do
+   end if
 
    if (trace_use) call da_trace_exit("da_transform_xtovp")
 

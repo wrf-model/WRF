@@ -671,6 +671,9 @@ Options for use with the Noah-MP Land Surface Model:
                                                 ;    3 = Off (LAI from table; FVEG = maximum veg. fraction)
  opt_crs                            = 1,        ; Noah-MP Stomatal Resistance option:
                                                 ;    1 = Ball-Berry; 2 = Jarvis
+ opt_sfc                            = 1         ; Noah-MP surface layer drag coefficient calculation
+                                                ;    1 = Monin-Obukov; 2 = original Noah (Chen97);
+                                                ;    3 = MYJ consistent; 4 = YSU consistent.
  opt_btr                            = 1,        ; Noah-MP Soil Moisture Factor for Stomatal Resistance
                                                 ;    1 = Noah; 2 = CLM; 3 = SSiB
  opt_run                            = 1,        ; Noah-MP Runoff and Groundwater option

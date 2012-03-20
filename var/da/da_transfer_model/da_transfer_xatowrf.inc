@@ -267,7 +267,7 @@ subroutine da_transfer_xatowrf(grid)
 
       ! Compute geopotential (using dry inverse density and dry pressure)
 
-      ph(kts) = grid%phb(i,j,kts)
+      ph(kts) = grid%ht(i,j) * gravity
       DO k = kts, kte
          p_full = grid%xb%p(i,j,k) + grid%xa%p(i,j,k)
          t_full = grid%xb%t(i,j,k) + grid%xa%t(i,j,k)
@@ -286,15 +286,16 @@ subroutine da_transfer_xatowrf(grid)
           pfu = mu_full*grid%znw(k+1) + grid%p_top
           pfd = mu_full*grid%znw(k)   + grid%p_top
           phm = mu_full*grid%znu(k)   + grid%p_top
-          ph(k+1) = ph(k) + ald(k)*phm*LOG(pfd/pfu)
+          ph(k+1) = ph(k) + ald(k)*phm*LOG(pfd/pfu) 
+          grid%ph_2(i,j,k+1) = ph(k+1) - grid%phb(i,j,k+1)
        END DO
 
       ! Update geopotential perturbation
 
-      grid%ph_2(i,j,:) = 0.0
-      DO k= kts, kte+1
-         grid%ph_2(i,j,k) = ph(k) - grid%phb(i,j,k)
-      END DO
+!      grid%ph_2(i,j,:) = 0.0
+!      DO k= kts, kte+1
+!         grid%ph_2(i,j,k) = ph(k) - grid%phb(i,j,k)
+!      END DO
 
    END DO
    END DO
@@ -534,16 +535,13 @@ subroutine da_transfer_xatowrf(grid)
             height,  grid%xb%rough(i,j),grid%xb%xland(i,j), grid%xb%ds, &
             grid%u10(i,j), grid%v10(i,j), grid%t2(i,j), &
             grid%q2(i,j), grid%xb%regime(i,j))
-#ifndef TKW_
-            grid%th2(i,j) = grid%t2(i,j)*(base_pres/ps1)**kappa
-#else
-            ! This is obviously incorrect: wee 11/22/2011
-            ! grid%th2(i,j) = grid%t2(i,j)*(base_pres/ps1)**kappa
 
-            ! 2-m pressure: Ground level and first half level are used
-            p2m = grid%psfc(i,j)*EXP(-2.0/height*LOG(grid%psfc(i,j)/ps1))
-            grid%th2(i,j) = grid%t2(i,j)*(base_pres/p2m)**kappa
-#endif
+         ! This is obviously incorrect: wee 11/22/2011
+         ! grid%th2(i,j) = grid%t2(i,j)*(base_pres/ps1)**kappa
+
+         ! 2-m pressure: Ground level and first half level are used
+         p2m = grid%psfc(i,j)*EXP(-2.0/height*LOG(grid%psfc(i,j)/ps1))
+         grid%th2(i,j) = grid%t2(i,j)*(base_pres/p2m)**kappa
       end do
    end do
 

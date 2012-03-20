@@ -39,7 +39,7 @@ subroutine da_check_xtoy_adjoint(cv_size, cv, xbx, be, grid, config_flags, iv, y
    real, dimension(ims:ime, jms:jme)          :: x6a2_psfc
    real, dimension(ims:ime, jms:jme, kms:kme) :: x6a2_qcw, x6a2_qci, x6a2_qrn, x6a2_qsn, x6a2_qgr
    real, dimension(:,:,:), allocatable :: a_hr_rainc, a_hr_rainnc
-   integer :: nobwin, i, j, k
+   integer :: nobwin, i, j, k, fgat_rain
    character(len=4) :: filnam
    character(len=256) :: timestr
    integer :: time_step_seconds
@@ -213,6 +213,7 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
       call domain_clockprint(150, grid, 'get CurrTime from clock,')
    endif
 
+   fgat_rain = num_fgat_time
    do nobwin= num_fgat_time, 1, -1
 
       iv%time = nobwin
@@ -227,11 +228,11 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
          write(filnam,'(a2,i2.2)') 'tl',nobwin
          call da_transfer_wrftltoxa(grid, config_flags, filnam, timestr)
 
-         if ( use_rainobs .and. num_fgat_time > 1 ) then
-!!!         We can not calculate the hourly rainfall in adjoint check, just ensure the adjoint 
-!!!         algorithm is right mathmatically. so the amount of forcings doesn't matter
-            a_hr_rainc (:,:,nobwin)=grid%g_rainc(:,:)
-            a_hr_rainnc(:,:,nobwin)=grid%g_rainnc(:,:)
+         if ( use_rainobs .and. num_fgat_time > 1 .and. fgat_rain_flags(nobwin) ) then
+!!!         We can not calculate the hourly rainfall in adjoint check, here, we just make sure the adjoint 
+!!!         algorithm is correct mathmatically. so the amount of forcings doesn't matter
+            a_hr_rainc (:,:,fgat_rain)=grid%g_rainc(:,:)
+            a_hr_rainnc(:,:,fgat_rain)=grid%g_rainnc(:,:)
          endif
 #endif
       end if
@@ -444,13 +445,14 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
 
          write(unit=filnam,fmt='(a2,i2.2)') 'af',nobwin
 
-         if ( use_rainobs .and. num_fgat_time > 1 ) then
+         if ( use_rainobs .and. num_fgat_time > 1 .and. fgat_rain_flags(nobwin) ) then
 !!!         We can not calculate the hourly rainfall in adjoint check, just ensure the adjoint 
 !!!         algorithm is right mathmatically. so the amount of forcings doesn't matter
-            grid%g_rainc(:,:) = grid%g_rainc(:,:) + a_hr_rainc (:,:,nobwin)
-            grid%g_rainnc(:,:) = grid%g_rainnc(:,:) + a_hr_rainnc(:,:,nobwin)
-            a_hr_rainc (:,:,nobwin) = 0.0
-            a_hr_rainnc(:,:,nobwin) = 0.0
+            grid%g_rainc(:,:) = grid%g_rainc(:,:) + a_hr_rainc (:,:,fgat_rain)
+            grid%g_rainnc(:,:) = grid%g_rainnc(:,:) + a_hr_rainnc(:,:,fgat_rain)
+            a_hr_rainc (:,:,fgat_rain) = 0.0
+            a_hr_rainnc(:,:,fgat_rain) = 0.0
+            fgat_rain = fgat_rain - 1
          endif
 
          call domain_clock_get( grid, current_timestr=timestr )

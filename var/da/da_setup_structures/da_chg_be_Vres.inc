@@ -54,7 +54,7 @@ SUBROUTINE da_chg_be_Vres(kz, nk, eta_h, eta_be,&
        enddo
    endif
 
-   print*, " NO_INTERP=", NO_INTERP
+!   print*, " NO_INTERP=", NO_INTERP
 
    if(NO_INTERP )then
 ! Regression coefficients:

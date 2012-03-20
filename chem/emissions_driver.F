@@ -1175,17 +1175,17 @@ CONTAINS
         chem(i,k,j,p_pcg2_b_c)  =  chem(i,k,j,p_pcg2_b_c)                        &
         +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*7.605
         chem(i,k,j,p_pcg1_f_c)  =  chem(i,k,j,p_pcg1_f_c)                        &
-        +(emis_ant(i,k,j,p_e_orgi_a)*2/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*1.17
+        +(emis_ant(i,k,j,p_e_orgi_a)/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*1.17
         chem(i,k,j,p_pcg2_f_c)  =  chem(i,k,j,p_pcg2_f_c)                        &
-        +(emis_ant(i,k,j,p_e_orgi_a)*2/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*7.605
+        +(emis_ant(i,k,j,p_e_orgi_a)/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*7.605
         chem(i,k,j,p_pcg1_b_o)  =  chem(i,k,j,p_pcg1_b_o)                        &
         +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*0.40
         chem(i,k,j,p_pcg2_b_o)  =  chem(i,k,j,p_pcg2_b_o)                        &
         +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*2.60
         chem(i,k,j,p_pcg1_f_o)  =  chem(i,k,j,p_pcg1_f_o)                        &
-        +(emis_ant(i,k,j,p_e_orgi_a)*2/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*0.08
+        +(emis_ant(i,k,j,p_e_orgi_a)/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*0.08
         chem(i,k,j,p_pcg2_f_o)  =  chem(i,k,j,p_pcg2_f_o)                        &
-        +(emis_ant(i,k,j,p_e_orgi_a)*2/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*0.52
+        +(emis_ant(i,k,j,p_e_orgi_a)/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*0.52
 
 
              end do

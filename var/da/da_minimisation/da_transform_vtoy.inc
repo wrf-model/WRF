@@ -64,7 +64,7 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
       call da_tl_model
 
       if (num_fgat_time > 1 .and. use_rainobs) then
-         ! Buffer to save hourly rainfall
+         ! Buffer to save var4d_bin_rain rainfall
          allocate (hr_rainc (ims:ime,jms:jme,1:num_fgat_time))
          allocate (hr_rainnc(ims:ime,jms:jme,1:num_fgat_time))
          hr_rainc =0.0
@@ -110,12 +110,15 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
 
       end do
       
-      ! Caculate hourly rainfall
+      ! Caculate var4d_bin_rain rainfall
       if (num_fgat_time > 1 .and. use_rainobs) then
          do nobwin=num_fgat_time, 1, -1
+            if ( .not. fgat_rain_flags(nobwin) ) cycle
             if (nobwin .lt. num_fgat_time) then
-               hr_rainc (:,:,nobwin+1)=hr_rainc (:,:,nobwin+1)-g_rainc(:,:,nobwin)
-               hr_rainnc(:,:,nobwin+1)=hr_rainnc(:,:,nobwin+1)-g_rainnc(:,:,nobwin)  
+               hr_rainc (:,:,nobwin+INT(var4d_bin_rain/var4d_bin))= &
+                         hr_rainc (:,:,nobwin+INT(var4d_bin_rain/var4d_bin))-g_rainc(:,:,nobwin)
+               hr_rainnc(:,:,nobwin+INT(var4d_bin_rain/var4d_bin))= &
+                         hr_rainnc(:,:,nobwin+INT(var4d_bin_rain/var4d_bin))-g_rainnc(:,:,nobwin)  
             else
                hr_rainc (:,:,nobwin)=g_rainc(:,:,nobwin)
                hr_rainnc(:,:,nobwin)=g_rainnc(:,:,nobwin)  

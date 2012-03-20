@@ -123,18 +123,21 @@ subroutine da_setup_be_regional(xb, be)
    integer, allocatable :: bin_out(:,:,:), bin2d_out(:,:)
    integer, parameter  :: be_out_unit   = 135
 
-   character (len=256) :: mesg
 !===========for interpolating CV5==============================================================
 
    if (trace_use) call da_trace_entry("da_setup_be_regional")
    if( cv_options == 5 .or. cv_options == 6) then
-   write (unit=message(1),fmt='(A,i3)') &
-      'Set up background errors for regional application for cv_options = ',cv_options
-   write (unit=message(2),fmt='(a)') ' '
-
+      write (unit=message(1),fmt='(A,i3)') &
+         'Set up background errors for regional application for cv_options = ',cv_options
+      write (unit=message(2),fmt='(a)') ' '
+      call da_message(message(1:2))
+      if ( cv_options == 6 .and. interpolate_stats ) then
+         write (unit=message(1),fmt='(a)') 'interpolate_stats is not implemented for cv_options=6'
+         call da_error(__FILE__,__LINE__,message(1:1))
+      end if
    else 
-      call wrf_shutdown
-      stop "Stopped, due to wrong choice of cv_option. Expects 5 or 6"
+      write (unit=message(1),fmt='(a)') 'cv_options should be 5 or 6'
+      call da_error(__FILE__,__LINE__,message(1:1))
    end if
 
    ix = xb % mix
@@ -150,87 +153,55 @@ subroutine da_setup_be_regional(xb, be)
    rewind (be_unit)
    read (be_unit, iostat=ier) ni, nj, nk
    if (ier /= 0) then
-      write(unit=*, fmt='(a, i2, a, i3)') &
-           'cv_options:', cv_options,' Reading error in unit=',be_unit
-      call wrf_shutdown
-      stop "Stopped, Please check if proper BE file s provided"
-   else
+      write (unit=message(1),fmt='(a,i3)') 'Error in reading be.dat, unit= ',be_unit
+      call da_error(__FILE__,__LINE__,message(1:1))
+   end if
+   read (be_unit) bin_type
+
 !-----------for interpolating CV5--------------------------------------------------------------
-     if (Interpolate_stats) then 
-!        Must use the domain averaged Reg. Coeff.:
-         lat_stats_option = .FALSE.
-!        Must use the global Eigenvector/eigenvalue
-         vert_evalue = 1
-!        write(mesg,'(5x,a,L,2x,a,L,2x,a,I2)') &
-         write(mesg,*) &
-         "Using interpolated CV5 BE:  Interpolate_stats =", &
-         Interpolate_stats, "lat_stats_option  =",    &
-         lat_stats_option,  "vert_evalue       =", vert_evalue
-         call wrf_debug (0, mesg )
-     else
-         if (ni /= ix .or. nj /= jy .or. nk /= kz) then
-            write(mesg,'(5X,a,3I4,a,5X,a,3I4)') &
-                "CV5 BE file: ni,nj,nk=",ni,nj,nk, &
-                " is not derived from the current model data.", &
-                " The domain size of the current model are ix, jy, kz=",&
-                ix,jy,kz
-           call wrf_debug (0, mesg )
-           write(mesg,'(5X,a)') "Interpolated CV5 BE will be used........"
-           call wrf_debug (0, mesg )
-!         Must use the domain averaged Reg. Coeff.:
-           lat_stats_option = .FALSE.
-!         Must use the global Eigenvector/eigenvalue
-           vert_evalue = 1
-!         Set the interpolate_Stats = .true.:
-           Interpolate_stats = .TRUE.
-         endif
-     endif
-   endif
-
-   if (rootproc) then
-      if (Interpolate_stats) write(be_out_unit) ix, jy, kz
-   endif
-!   if (Interpolate_stats) write(be_out_unit) xb%sigmah
-   if (Interpolate_stats) write(6,'(a/("k=",i3,2x,f10.4))') &
-                       'xb%sigmah=',(k,xb%sigmah(k),k=1,kz)
- 
-   allocate (eta_be(1:nk))
-   read(be_unit,iostat=ier) eta_be
-!  If not available from BE file, get it from namelist
-   if (ier /= 0) then
-      write(mesg,'("ier=",i3,2x,a)') ier,"NO Eta values existed in BE file."
-           call wrf_debug (0, mesg )
-      write(mesg,'(a)') "BE Eta values from the namelist file:"
-           call wrf_debug (0, mesg )
-      backspace (be_unit)
-      eta_be = be_eta(1:nk)
-   endif
-   if (Interpolate_stats) &
-       write(6,'(a/("k=",i3,2x,f10.4))') 'eta_be=',(k,eta_be(k),k=1,nk)
-
-!  If eta values not defined correctly, stop
-   if (Interpolate_stats) then
-      if (eta_be(1) == eta_be(nk)) then
-        write(message(1),'(/a/)') "??? Check the CV5 BE Eta definition in namelist ???"
-        call da_error(__FILE__,__LINE__,  &
-            message(1:1))
-!        stop 21212
+   if ( .not. interpolate_stats ) then 
+      if (ni /= ix .or. nj /= jy .or. nk /= kz) then
+         write(unit=message(1),fmt='(a)')  &
+            'Dimensions of the assimilation domain do not match those in the BE file.'
+         write(unit=message(2),fmt='(3x,a,3i4)') "in be.dat: ni, nj, nk = ",ni, nj, nk
+         write(unit=message(3),fmt='(3x,a,3i4)') "in fg:     ix, jy, kz = ",ix, jy, kz
+         write(message(4),'(a)') 'be.dat need to be generated using data consistent with the assimilation domain.'
+         call da_error(__FILE__,__LINE__,message(1:4))
+      end if
+   else  ! when interpolate_stats = true
+      ! Must use the domain averaged Reg. Coeff.:
+      lat_stats_option = .FALSE.
+      ! Must use the global Eigenvector/eigenvalue
+      vert_evalue = 1
+      write (unit=message(1),fmt='(a)') 'interpolate_stats is .true., BE for cv_options=5 will be interpolated.'
+      call da_message(message(1:1))
+      if (rootproc) write(be_out_unit) ix, jy, kz
+      write(6,'(a/("k=",i3,2x,f10.4))') 'xb%sigmah=',(k,xb%sigmah(k),k=1,kz)
+      allocate (eta_be(1:nk))
+      read(be_unit,iostat=ier) eta_be
+      !  If not available from BE file, get it from namelist
+      if (ier /= 0) then
+         write(message(1),'("ier=",i3,2x,a)') ier, " NO Eta values existed in BE file."
+         write(message(2),'(a)') "Will use BE Eta values from the namelist be_eta."
+         call da_message(message(1:2))
+         backspace (be_unit)
+         eta_be = be_eta(1:nk)
       endif
-   else
-      write(mesg,'(a)') "No interpolate_stats request, using the Input CV5 BE."
-           call wrf_debug (0, mesg )
-      write(mesg,'(a,L2,2X,a,L2,2X,a,I2)') &
-       " Interpolate_stats =", Interpolate_stats, "lat_stats_option  =", &
-       lat_stats_option,  "vert_evalue       =", vert_evalue
-           call wrf_debug (0, mesg )
-   endif
+      write(6,'(a/("k=",i3,2x,f10.4))') 'eta_be=',(k,eta_be(k),k=1,nk)
+      !  If eta values not defined correctly, stop
+      if (eta_be(1) == eta_be(nk)) then
+         write(message(1),'(a)') 'Wrong eta values found.'
+         write(message(2),'(a)') 'The eta levels used in generating be.dat should be specified in namelist &wrfvar10 be_eta.'
+         call da_error(__FILE__,__LINE__,message(1:2))
+      endif
+   end if
+
 !===========for interpolating CV5==============================================================
 
    allocate (bin(1:ni,1:nj,1:nk))
    allocate (bin2d(1:ni,1:nj))
 
 #ifdef CLOUD_CV
-   read (be_unit)bin_type
    read (be_unit)num_bins, num_bins2d
    read (be_unit)lat_min, lat_max, binwidth_lat
    read (be_unit)hgt_min, hgt_max, binwidth_hgt
@@ -238,13 +209,13 @@ subroutine da_setup_be_regional(xb, be)
    read (be_unit)bin(1:ni,1:nj,1:nk)
    read (be_unit)bin2d(1:ni,1:nj)
 #else
-   read (be_unit)bin_type
    read (be_unit)lat_min, lat_max, binwidth_lat
    read (be_unit)hgt_min, hgt_max, binwidth_hgt
    read (be_unit)num_bins, num_bins2d
    read (be_unit)bin(1:ni,1:nj,1:nk)
    read (be_unit)bin2d(1:ni,1:nj)
 #endif
+
 !
 !-----------for interpolating CV5--------------------------------------------------------------
 ! Write out the interpolated CV5 BE:
@@ -280,22 +251,14 @@ subroutine da_setup_be_regional(xb, be)
    allocate  (regcoeff_psi_chi(1:num_bins))
    allocate  (regcoeff_psi_t(1:nk,1:nk,1:num_bins2d))
    allocate  (regcoeff_psi_ps(1:nk,1:num_bins2d))
-   allocate  (regcoeff_psi_rh(1:nk,1:nk,1:num_bins2d))
-   allocate  (regcoeff_chi_u_t(1:nk,1:nk,1:num_bins2d))
-   allocate  (regcoeff_chi_u_ps(1:nk,1:num_bins2d))
-   allocate  (regcoeff_chi_u_rh(1:nk,1:nk,1:num_bins2d))
-   allocate  (regcoeff_t_u_rh(1:nk,1:nk,1:num_bins2d))
-   allocate  (regcoeff_ps_u_rh(1:nk,1:num_bins2d))
-
-   regcoeff_psi_chi    = 0.       
-   regcoeff_psi_t      = 0.
-   regcoeff_psi_ps     = 0.
-   regcoeff_psi_rh     = 0.
-   regcoeff_chi_u_t    = 0.
-   regcoeff_chi_u_ps   = 0.
-   regcoeff_chi_u_rh   = 0.
-   regcoeff_t_u_rh     = 0.
-   regcoeff_ps_u_rh    = 0.
+   if ( cv_options == 6 ) then
+      allocate  (regcoeff_psi_rh(1:nk,1:nk,1:num_bins2d))
+      allocate  (regcoeff_chi_u_t(1:nk,1:nk,1:num_bins2d))
+      allocate  (regcoeff_chi_u_ps(1:nk,1:num_bins2d))
+      allocate  (regcoeff_chi_u_rh(1:nk,1:nk,1:num_bins2d))
+      allocate  (regcoeff_t_u_rh(1:nk,1:nk,1:num_bins2d))
+      allocate  (regcoeff_ps_u_rh(1:nk,1:num_bins2d))
+   end if
 
    if ( cv_options == 5 ) then
    read (be_unit) regcoeff_psi_chi
@@ -336,123 +299,163 @@ subroutine da_setup_be_regional(xb, be)
    allocate (be%reg_psi_chi  (1:jy,1:kz))
    allocate (be%reg_psi_t    (1:jy,1:kz,1:kz))
    allocate (be%reg_psi_ps   (1:jy,1:kz))
-   allocate (be%reg_psi_rh   (1:jy,1:kz,1:kz))
-   allocate (be%reg_chi_u_t  (1:jy,1:kz,1:kz))
-   allocate (be%reg_chi_u_ps (1:jy,1:kz))
-   allocate (be%reg_chi_u_rh (1:jy,1:kz,1:kz))
-   allocate (be%reg_t_u_rh   (1:jy,1:kz,1:kz))
-   allocate (be%reg_ps_u_rh  (1:jy,1:kz))
+   if ( cv_options == 6 ) then
+      allocate (be%reg_psi_rh   (1:jy,1:kz,1:kz))
+      allocate (be%reg_chi_u_t  (1:jy,1:kz,1:kz))
+      allocate (be%reg_chi_u_ps (1:jy,1:kz))
+      allocate (be%reg_chi_u_rh (1:jy,1:kz,1:kz))
+      allocate (be%reg_t_u_rh   (1:jy,1:kz,1:kz))
+      allocate (be%reg_ps_u_rh  (1:jy,1:kz))
+   end if
 !
 !-----------for interpolating CV5--------------------------------------------------------------
-   allocate (reg_psi_chi0(1:nj,1:nk))
-   allocate (reg_psi_ps0 (1:nj,1:nk))
-   allocate (reg_psi_t0  (1:nj,1:nk,1:nk))
+   if ( interpolate_stats ) then
+      allocate (reg_psi_chi0(1:nj,1:nk))
+      allocate (reg_psi_ps0 (1:nj,1:nk))
+      allocate (reg_psi_t0  (1:nj,1:nk,1:nk))
+   end if
 !===========for interpolating CV5==============================================================
 
    be%reg_psi_chi    = 0.
    be%reg_psi_t      = 0.
    be%reg_psi_ps     = 0.
-   be%reg_psi_rh     = 0.
-   be%reg_chi_u_t    = 0.
-   be%reg_chi_u_ps   = 0.
-   be%reg_chi_u_rh   = 0.
-   be%reg_t_u_rh     = 0.
+   if ( cv_options == 6 ) then
+      be%reg_psi_rh     = 0.
+      be%reg_chi_u_t    = 0.
+      be%reg_chi_u_ps   = 0.
+      be%reg_chi_u_rh   = 0.
+      be%reg_t_u_rh     = 0.
+   end if
 
-   do k=1,nk
-      do j =1, nj
-         b = bin(1,j,k)
-         reg_psi_chi0(j,k) = regcoeff_psi_chi(b)
-         if (.not.interpolate_stats) then
-         be%reg_psi_chi(j,k) = psi_chi_factor * regcoeff_psi_chi(b)
-         endif
-      end do
-   end do
-
-   do j=1,nj
-      b = bin2d(1,j)
+   if ( interpolate_stats ) then
       do k=1,nk
-         reg_psi_ps0(j,k) = regcoeff_psi_ps(k,b)
-         if (.not.interpolate_stats) then
-         be%reg_psi_ps(j,k)   = psi_ps_factor   * regcoeff_psi_ps(k,b)
-         be%reg_ps_u_rh(j,k)  = ps_u_rh_factor  * regcoeff_ps_u_rh(k,b)
-         be%reg_chi_u_ps(j,k) = chi_u_ps_factor * regcoeff_chi_u_ps(k,b)
-         endif
-      end do
-   end do
-
-   do j=1,nj
-      b = bin2d(1,j)
-      do i=1,nk
-         do k=1,nk
-            reg_psi_t0(j,i,k) = regcoeff_psi_t(i,k,b)
-            if (.not.interpolate_stats) then
-            be%reg_psi_t(j,i,k)   = psi_t_factor   *  regcoeff_psi_t(i,k,b)
-            be%reg_psi_rh(j,i,k)     = psi_rh_factor     *  regcoeff_psi_rh(i,k,b)
-            be%reg_chi_u_t(j,i,k) = chi_u_t_factor *  regcoeff_chi_u_t(i,k,b)
-            be%reg_chi_u_rh(j,i,k)   = chi_u_rh_factor   *  regcoeff_chi_u_rh(i,k,b)
-            be%reg_t_u_rh(j,i,k)  = t_u_rh_factor  *  regcoeff_t_u_rh(i,k,b)
-            endif 
+         do j=1,nj
+            reg_psi_chi0(j,k) = regcoeff_psi_chi(bin(1,j,k))
+            b = bin2d(1,j)
+            reg_psi_ps0(j,k)  = regcoeff_psi_ps(k,b)
          end do
       end do
-   end do
+      do k=1,nk
+         do i=1,nk
+            do j=1,nj
+               b = bin2d(1,j)
+               reg_psi_t0(j,i,k) = regcoeff_psi_t(i,k,b)
+            end do
+         end do
+      end do
+   end if   ! if interpolate_stats
+
+   if ( .not. interpolate_stats ) then
+      do k=1,nk
+         do j=1,nj
+            be%reg_psi_chi(j,k) = psi_chi_factor * regcoeff_psi_chi(bin(1,j,k))
+            b = bin2d(1,j)
+            be%reg_psi_ps(j,k)  = psi_ps_factor  * regcoeff_psi_ps(k,b)
+         end do
+      end do
+      do k=1,nk
+         do i=1,nk
+            do j=1,nj
+               b = bin2d(1,j)
+               be%reg_psi_t(j,i,k) = psi_t_factor * regcoeff_psi_t(i,k,b)
+            end do
+         end do
+      end do
+
+      if ( cv_options == 6 ) then
+         do k=1,nk
+            do j=1,nj
+               b = bin2d(1,j)
+               be%reg_ps_u_rh(j,k)  = ps_u_rh_factor  * regcoeff_ps_u_rh(k,b)
+               be%reg_chi_u_ps(j,k) = chi_u_ps_factor * regcoeff_chi_u_ps(k,b)
+            end do
+         end do
+         do k=1,nk
+            do i=1,nk
+               do j=1,nj
+                  b = bin2d(1,j)
+                  be%reg_psi_rh(j,i,k)   = psi_rh_factor   * regcoeff_psi_rh(i,k,b)
+                  be%reg_chi_u_t(j,i,k)  = chi_u_t_factor  * regcoeff_chi_u_t(i,k,b)
+                  be%reg_chi_u_rh(j,i,k) = chi_u_rh_factor * regcoeff_chi_u_rh(i,k,b)
+                  be%reg_t_u_rh(j,i,k)   = t_u_rh_factor   * regcoeff_t_u_rh(i,k,b)
+               end do
+            end do
+         end do
+      end if   ! if cv_options 6
+   end if   ! if not interpolate_stats
 
    deallocate (regcoeff_psi_chi)
    deallocate (regcoeff_psi_t)
    deallocate (regcoeff_psi_ps)
-   deallocate (regcoeff_psi_rh)
-   deallocate (regcoeff_chi_u_t)
-   deallocate (regcoeff_chi_u_ps)
-   deallocate (regcoeff_chi_u_rh)
-   deallocate (regcoeff_t_u_rh)
-   deallocate (regcoeff_ps_u_rh)
+   if ( cv_options == 6 ) then
+      deallocate (regcoeff_psi_rh)
+      deallocate (regcoeff_chi_u_t)
+      deallocate (regcoeff_chi_u_ps)
+      deallocate (regcoeff_chi_u_rh)
+      deallocate (regcoeff_t_u_rh)
+      deallocate (regcoeff_ps_u_rh)
+   end if
 
    ! 1.3 Domain_averaged regression coefficients
 
   if (.not.lat_stats_option) then
-      write (unit=message(3), fmt='(3x, a)') &
+      write (unit=message(1), fmt='(a)') ' '
+      write (unit=message(2), fmt='(3x, a)') &
          'Using the averaged regression coefficients for unbalanced part'
 
 !-----------for interpolating CV5--------------------------------------------------------------
-      allocate (reg_psi_ps_be (1:nk))
-      allocate (reg_psi_chi_be(1:nk))
-      allocate (reg_psi_t_be  (1:nk,1:nk))
-!===========for interpolating CV5==============================================================
-      do k=1,nk
-         reg_psi_ps_be(k)  = sum(reg_psi_ps0  (1:num_bins2d,k))/float(num_bins2d)
-         reg_psi_chi_be(k) = sum(reg_psi_chi0(1:num_bins2d,k))/float(num_bins2d)
-         if (.not.interpolate_stats) then
-             be%reg_psi_ps  (1:num_bins2d,k) = sum(be%reg_psi_ps  (1:num_bins2d,k))/float(num_bins2d)
-             be%reg_ps_u_rh (1:num_bins2d,k) = sum(be%reg_ps_u_rh (1:num_bins2d,k))/float(num_bins2d)
-     	     be%reg_chi_u_ps(1:num_bins2d,k) = sum(be%reg_chi_u_ps(1:num_bins2d,k))/float(num_bins2d)
-         endif
-      end do
-!             if (.not.interpolate_stats) write(6,*)'be%reg_psi_ps(1,10)=',be%reg_psi_ps(1,10)
-
-      do m=1,nk
+      if ( interpolate_stats ) then
+         allocate (reg_psi_ps_be (1:nk))
+         allocate (reg_psi_chi_be(1:nk))
+         allocate (reg_psi_t_be  (1:nk,1:nk))
          do k=1,nk
-         reg_psi_t_be(k,m)=sum(reg_psi_t0(1:num_bins2d,k,m))/float(num_bins2d)
-         if (.not.interpolate_stats) then
-           be%reg_psi_t  (1:num_bins2d,k,m)= sum(be%reg_psi_t(1:num_bins2d,k,m))/float(num_bins2d)
-           be%reg_psi_rh    (1:num_bins2d,k,m)= sum(be%reg_psi_rh  (1:num_bins2d,k,m))/float(num_bins2d)
-           be%reg_chi_u_t(1:num_bins2d,k,m)= sum(be%reg_chi_u_t(1:num_bins2d,k,m))/float(num_bins2d)
-           be%reg_chi_u_rh  (1:num_bins2d,k,m)= sum(be%reg_chi_u_rh  (1:num_bins2d,k,m))/float(num_bins2d)
-           be%reg_t_u_rh (1:num_bins2d,k,m)= sum(be%reg_t_u_rh (1:num_bins2d,k,m))/float(num_bins2d)
-         endif
+            reg_psi_ps_be(k)  = sum(reg_psi_ps0 (:,k))/dble(nj)
+            reg_psi_chi_be(k) = sum(reg_psi_chi0(:,k))/dble(nj)
          end do
-      end do
-!           if (.not.interpolate_stats) write(6,*) 'be%reg_psi_t(1,10,10)=',be%reg_psi_t(1,10,10)
-  else
-      write (unit=message(4), fmt='(3x, a)') &
-         'Using the latitude-dependent regression coefficients for unbalanced part'
-  end if
-
-!-----------for interpolating CV5--------------------------------------------------------------
-     deallocate (reg_psi_chi0)
-     deallocate (reg_psi_ps0 )
-     deallocate (reg_psi_t0  )
+         do m=1,nk
+            do k=1,nk
+               reg_psi_t_be(k,m)=sum(reg_psi_t0(:,k,m))/dble(nj)
+            end do
+         end do
+         deallocate (reg_psi_chi0)
+         deallocate (reg_psi_ps0 )
+         deallocate (reg_psi_t0  )
+      end if   ! if interpolate_stats
 !===========for interpolating CV5==============================================================
-!
-   call da_message(message(1:3))
+
+      if ( (.not. interpolate_stats) .and. (bin_type /= 5) ) then
+         do k=1,kz
+             be%reg_psi_ps  (:,k) = sum(be%reg_psi_ps (:,k))/dble(jy)
+             be%reg_psi_chi (:,k) = sum(be%reg_psi_chi(:,k))/dble(jy)
+         end do
+         do m=1,kz
+            do k=1,kz
+                be%reg_psi_t (:,k,m) = sum(be%reg_psi_t(:,k,m))/dble(jy)
+             end do
+         end do
+         if ( cv_options == 6 ) then
+            do k=1,kz
+               be%reg_ps_u_rh (:,k) = sum(be%reg_ps_u_rh (:,k))/dble(jy)
+               be%reg_chi_u_ps(:,k) = sum(be%reg_chi_u_ps(:,k))/dble(jy)
+            end do
+            do m=1,kz
+               do k=1,kz
+                  be%reg_psi_rh  (:,k,m) = sum(be%reg_psi_rh  (:,k,m))/dble(jy)
+                  be%reg_chi_u_t (:,k,m) = sum(be%reg_chi_u_t (:,k,m))/dble(jy)
+                  be%reg_chi_u_rh(:,k,m) = sum(be%reg_chi_u_rh(:,k,m))/dble(jy)
+                  be%reg_t_u_rh  (:,k,m) = sum(be%reg_t_u_rh  (:,k,m))/dble(jy)
+               end do
+            end do
+         end if   ! if cv_options 6
+      end if   ! if not interpolate_stats
+
+   else
+      write (unit=message(1), fmt='(a)') ' '
+      write (unit=message(2), fmt='(3x, a)') &
+         'Using the geographically-dependent regression coefficients for unbalanced part'
+   end if
+
+   call da_message(message(1:2))
 
    ! 2.0 Load the eigenvector and eigenvalue
 
@@ -686,11 +689,11 @@ subroutine da_setup_be_regional(xb, be)
       if ( cloud_cv_options == 1 ) be % v4 % name = 'qt   '
    end if
 
-   write (unit=message(1),fmt='(3x,A,7A)') 'WRF-Var dry control variables are:', &
+   write (unit=message(1),fmt='(3x,A,7A)') 'WRF-Var dry control variables are: ', &
       trim(be % v1 % name), ', ', trim(be % v2 % name), ', ', &
       trim(be % v3 % name), ' and ', trim(be % v5 % name)
 #ifdef CLOUD_CV
-   write (unit=message(1),fmt='(3x,A,7A)') 'WRF-Var wet control variables are:', &
+   write (unit=message(1),fmt='(3x,A,7A)') 'WRF-Var wet control variables are: ', &
       trim(be % v6 % name), ', ', trim(be % v7 % name), ', ', &
       trim(be % v8 % name), ' and ', trim(be % v9 % name)
 #endif
@@ -755,19 +758,15 @@ subroutine da_setup_be_regional(xb, be)
    case ('psi')
      read(be_unit) rfls1_be
      if (.not.interpolate_stats) be1_rf_lengthscale = rfls1_be
-     if (.not.interpolate_stats) write(6,*)'be1_rf_lengthscale(10)=',be1_rf_lengthscale(10) 
    case ('chi_u')
      read(be_unit) rfls2_be
      if (.not.interpolate_stats) be2_rf_lengthscale = rfls2_be
-     if (.not.interpolate_stats) write(6,*)'be2_rf_lengthscale(10)=',be2_rf_lengthscale(10)
    case ('t_u')
      read(be_unit) rfls3_be
      if (.not.interpolate_stats) be3_rf_lengthscale = rfls3_be
-     if (.not.interpolate_stats) write(6,*)'be3_rf_lengthscale(10)=',be3_rf_lengthscale(10)
    case ('rh_u' , 'rh')
      read(be_unit) rfls4_be
      if (.not.interpolate_stats) be4_rf_lengthscale = rfls4_be
-     if (.not.interpolate_stats) write(6,*)'be4_rf_lengthscale(10)=',be4_rf_lengthscale(10)
 
 #ifdef CLOUD_CV
             case ('qcloud')
@@ -778,7 +777,6 @@ subroutine da_setup_be_regional(xb, be)
               be6_rf_lengthscale = 5.0
              end if
              if (.not.interpolate_stats) be6_rf_lengthscale = rfls6_be
-            if (.not.interpolate_stats) write(6,*)'be6_rf_lengthscale(10)=',be6_rf_lengthscale(10)
             case ('qrain')
              if(cloud_cv_options.eq.2)then
                read(be_unit) rfls7_be
@@ -787,7 +785,6 @@ subroutine da_setup_be_regional(xb, be)
               be7_rf_lengthscale = 5.0
              end if
              if (.not.interpolate_stats) be7_rf_lengthscale = rfls7_be
-            if (.not.interpolate_stats) write(6,*)'be7_rf_lengthscale(10)=',be7_rf_lengthscale(10)
             case ('qice')
              if(cloud_cv_options.eq.2)then
                read(be_unit) rfls8_be
@@ -796,7 +793,6 @@ subroutine da_setup_be_regional(xb, be)
               be8_rf_lengthscale = 5.0
              end if
              if (.not.interpolate_stats) be8_rf_lengthscale = rfls8_be
-            if (.not.interpolate_stats) write(6,*)'be8_rf_lengthscale(10)=',be8_rf_lengthscale(10)
             case ('qsnow')
              if(cloud_cv_options.eq.2)then
                read(be_unit) rfls9_be
@@ -805,11 +801,9 @@ subroutine da_setup_be_regional(xb, be)
               be9_rf_lengthscale = 5.0
              end if
              if (.not.interpolate_stats) be9_rf_lengthscale = rfls9_be
-            if (.not.interpolate_stats) write(6,*)'be9_rf_lengthscale(10)=',be9_rf_lengthscale(10)
 #endif
             case ('ps_u')
               read(be_unit) be5_rf_lengthscale(1:1)
-            if (.not.interpolate_stats) write(6,*)'be5_rf_lengthscale(1)=',be5_rf_lengthscale(1)       
             case default;
                message(1)='Read problem in lengthscales in be.dat'
                write(message(2),'("Trying to read lengthscales for variable ",I0,": ",A)')i,trim(adjustl(variable))

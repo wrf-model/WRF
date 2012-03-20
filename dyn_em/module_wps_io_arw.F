@@ -1147,17 +1147,6 @@ CONTAINS
          ENDDO
         ENDDO
 
-    varName='CLONG'
-    CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
-    CALL mpi_file_read_at(iunit,file_offset(index+1),     &
-                             dumdata,hor_size,mpi_real4,             &
-                             mpi_status_ignore, ierr)
-        DO J=JTS,min(JTE,JDE-1)
-         DO I=ITS,min(ITE,IDE-1)
-           grid%clong(I,J)=dumdata(I,J,1)
-         ENDDO
-        ENDDO
-
     varName='XLONG_U'
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &

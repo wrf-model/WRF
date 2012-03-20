@@ -158,7 +158,7 @@ CONTAINS
         enddo
         enddo
         enddo
-      CASE (RADM2SORG,RACMSORG_KPP, RADM2SORG_KPP, RACM_ESRLSORG_KPP, RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM)
+      CASE (RADM2SORG,RACMSORG_KPP, RADM2SORG_KPP, RACM_ESRLSORG_KPP, RACM_SOA_VBS_KPP, RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM)
           do j=jts,jte
           do i=its,ite
            do k=kts,kte
@@ -383,6 +383,19 @@ CONTAINS
                          +ebu(i,k,j,p_ebu_co)*conv_rho
         enddo
         enddo
+      CASE (GHG_TRACER)
+        if( biomass_burn_opt == BIOMASSB_GHG ) then
+          do j=jts,jte
+          do k=kts,kte
+          do i=its,ite
+             conv_rho=r_q*4.828e-4/rho_phy(i,k,j)*dtstep/60./dz8w(i,k,j)
+             chem(i,k,j,p_co_bbu)  = chem(i,k,j,p_co_bbu)   +ebu(i,k,j,p_ebu_co)*conv_rho
+             chem(i,k,j,p_co2_bbu)   = chem(i,k,j,p_co2_bbu)  +ebu(i,k,j,p_ebu_co2)*conv_rho
+             chem(i,k,j,p_ch4_bbu) =  chem(i,k,j,p_ch4_bbu) + ebu(i,k,j,p_ebu_ch4)*conv_rho
+          enddo
+          enddo
+          enddo
+        endif
     CASE DEFAULT
        call wrf_debug(15,'nothing done with burn emissions for chem array')
     END SELECT emiss_select

@@ -335,14 +335,18 @@ state  real   sigt4     ij    dyn_nmm   1    -     rh       "SIGT4"     "Stefan-
 state  real   tg        ij    dyn_nmm   1    -     i01rh    "TGROUND"   "Deep ground soil temperature"                    "K"
 state  real   dfrlg     k     dyn_nmm   1    Z     i01r     "DFRLG"     "Std atmosphere height of model layer interfaces" "m"
 state integer lvl       ij    dyn_nmm   1    -     ir
-state  real  RAINCV_A       ij  dyn_nmm  1   -      r      "RAINCV_A"     "taveragd TIME-STEP CUMULUS PRECIPITATION"                         "mm"
-state  real  RAINCV_B       ij  dyn_nmm  1   -      r       "RAINCV_B"     "taveragd TIME-STEP CUMULUS PRECIPITATION"                         "mm"
-state  real  GD_CLOUD      ikj  dyn_nmm  1   -      r       "GD_CLOUD" "CLOUD WATER/ICE MIXING RAIO IN GD CLOUD"         "kg kg-1"
-state  real  GD_CLOUD2     ikj  dyn_nmm  1   -      r       "GD_CLOUD2" "TEST for GD CLOUD"         "kg kg-1"
-state  real  GD_CLOUD_A    ikj  dyn_nmm  1   -      r      "GD_CLOUD_A"   "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
-state  real  GD_CLOUD2_A   ikj  dyn_nmm  1   -      r      "GD_CLOUD2_A"  "taveragd cloud ice mix ratio in GD"         "kg kg-1"
-state  real  GD_CLOUD_B    ikj  dyn_nmm  1   -      r       "GD_CLOUD_B"   "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
-state  real  GD_CLOUD2_B   ikj  dyn_nmm  1   -      r       "GD_CLOUD2_B"  "taveragd cloud ice mix ratio in GD"         "kg kg-1"
+state    integer  k22_deep     ij      misc        1         -       -       "K22_DEEP"             "K22 LEVEL FROM DEEPCONVECTION (G3 only)"             ""
+state    integer  kbcon_deep     ij      misc        1         -     -       "KBCON_DEEP"             "KBCON LEVEL FROM DEEP CONVECTION (G3 only)"             ""
+state    integer  ktop_deep     ij      misc        1         -      -       "KTOP_DEEP"             "KTOP LEVEL FROM DEEP CONVECTION (G3 only)"             ""
+state  real  RAINCV_A       ij  misc     1   -      r      "RAINCV_A"     "taveragd TIME-STEP CUMULUS PRECIPITATION"                         "mm"
+state  real  RAINCV_B       ij  misc     1   -      r       "RAINCV_B"     "taveragd TIME-STEP CUMULUS PRECIPITATION"                         "mm"
+state  real  GD_CLOUD      ikj  misc     1   -      r       "GD_CLOUD" "CLOUD WATER/ICE MIXING RAIO IN GD CLOUD"         "kg kg-1"
+state  real  GD_CLOUD2     ikj  misc     1   -      r       "GD_CLOUD2" "TEST for GD CLOUD"         "kg kg-1"
+state  real  GD_CLOUD_A    ikj  misc     1   -      r      "GD_CLOUD_A"   "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
+state  real  GD_CLOUD2_A   ikj  misc     1   -      r      "GD_CLOUD2_A"  "taveragd cloud ice mix ratio in GD"         "kg kg-1"
+state  real  GD_CLOUD_B    ikj  misc     1   -      r       "GD_CLOUD_B"   "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
+state  real  GD_CLOUD2_B   ikj  misc     1   -      r       "GD_CLOUD2_B"  "taveragd cloud ice mix ratio in GD"         "kg kg-1"
+state    real  GD_CLDFR         ikj      misc        1         -      r     "GD_CLDFR"              "GD CLOUD Fraction"         " ? "
 
 #
 # module_CLDWTR.F

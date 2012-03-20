@@ -868,12 +868,13 @@
          ! stuff for aircraft emissions
               emis_aircraft,                                                               &
 
-         ! stuff for ghg fluxes
-              vprm_par,grid%rad_vprm,grid%lambda_vprm,                                     &
+         ! stuff for the GHG fluxes
+              vprm_in,grid%rad_vprm,grid%lambda_vprm,                                      &
               grid%alpha_vprm,grid%resp_vprm,grid%xtime,                                   &
-              grid%TSLB,wet_in,grid%RAINC,grid%RAINNC,                                     &
+              grid%TSLB, wet_in,grid%RAINC,grid%RAINNC,                                    &
               grid%potevp,grid%SFCEVP,grid%LU_INDEX,                                       &
-              eghg_bio,biomt_par,emit_par,                                                 &
+              grid%biomt_par,grid%emit_par,grid%ebio_co2oce,                               &
+              eghg_bio,                                                                    &
 
               ids,ide, jds,jde, kds,kde,                                                   &
               ims,ime, jms,jme, kms,kme,                                                   &

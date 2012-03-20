@@ -333,7 +333,7 @@
             Q2K(K)=2.*TKE(I,KFLIP,J)
 
 !****  buoyancy flux of mass flux shallow convection scheme
-! ww: need to modify NMM to use shallow conv
+!
             IF ( PRESENT (WTHV_MF) .AND. PRESENT (LM_BL89) ) THEN
               WTHV_MFK(K)=WTHV_MF(I,KFLIP,J)
               LM_BL89K(K)=LM_BL89(I,KFLIP,J)

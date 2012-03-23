@@ -1060,7 +1060,7 @@ CONTAINS
 !crr ------------ STC initialization ------------------------------------
       IF (ITIME.EQ.1) THEN
           STLEV1=0.05    ! half of 10cm layer
-          STLEV2=1.10    ! half of second + first layer
+          STLEV2=1.05    ! half of second + first layer
     
           DEPTH = TD_DEPTH(ITYPE)
     
@@ -1513,7 +1513,7 @@ CONTAINS
 !crr ------------ STC initialization ------------------------------------
       IF (ITIME.EQ.1) THEN
           STLEV1=0.05    ! half of 10cm layer
-          STLEV2=1.10    ! half of second + first layer
+          STLEV2=1.05    ! half of second + first layer
 
           DEPTH = TD_DEPTH(ITYPE)
 

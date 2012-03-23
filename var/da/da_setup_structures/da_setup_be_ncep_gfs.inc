@@ -505,6 +505,7 @@ subroutine da_setup_be_ncep_gfs( grid, be )
    
 !  8.2.1 Save the CV3 BE at model grids before tuned:
 
+if ( max_ext_its > 1 ) then
 #ifdef DM_PARALLEL
    write (*,'(/a,i3)') 'mpp code ==> Write CV3 BE to fort.',be_rf_unit
 
@@ -715,6 +716,7 @@ subroutine da_setup_be_ncep_gfs( grid, be )
    write (be_print_unit,'(9x,a,2x,"sum^2=",e20.12)') 'PSF-PSI', xxsum(1)
 
    endif
+end if   ! max_ext_its > 1
 
 ! 9, Incorporate the tuning factors for covariance
 

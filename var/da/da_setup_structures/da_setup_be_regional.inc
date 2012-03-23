@@ -108,7 +108,7 @@ subroutine da_setup_be_regional(xb, be)
    real, allocatable   :: regcoeff_ps_u_rh(:,:)      ! ps_u/rh    regression coefficient
    real                :: qrain_th_low, qrain_th_high
 
-   integer                     :: be_unit, ier, be_rf_unit, be_print_unit, it
+   integer                     :: be_unit, ier, be_rf_unit, be_print_unit, it, idummy
 
 !-----------for interpolating CV5--------------------------------------------------------------
    REAL, ALLOCATABLE           :: reg_psi_ps0(:,:), reg_psi_chi0(:,:), reg_psi_t0(:,:,:), &
@@ -181,10 +181,12 @@ subroutine da_setup_be_regional(xb, be)
       read(be_unit,iostat=ier) eta_be
       !  If not available from BE file, get it from namelist
       if (ier /= 0) then
-         write(message(1),'("ier=",i3,2x,a)') ier, " NO Eta values existed in BE file."
+         write(message(1),'("ier=",i5,2x,a)') ier, " NO Eta values existed in BE file."
          write(message(2),'(a)') "Will use BE Eta values from the namelist be_eta."
          call da_message(message(1:2))
-         backspace (be_unit)
+         rewind(be_unit)
+         read(be_unit) idummy, idummy, idummy
+         read(be_unit) idummy
          eta_be = be_eta(1:nk)
       endif
       write(6,'(a/("k=",i3,2x,f10.4))') 'eta_be=',(k,eta_be(k),k=1,nk)

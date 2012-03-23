@@ -41,6 +41,9 @@
 !    DECREASE IN SNOW NUMBER IS ALREADY ACCOUNTED FOR BY NSMLTS 
 ! 7) fix for switch for running w/o graupel/hail (cloud ice and snow only)
 
+! hm bug fix 3/16/12
+
+! 1) very minor change to limits on autoconversion source of rain number when cloud water is depleted
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1548,7 +1551,9 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
         NPRC1(K) = PRC(K)/CONS29
         NPRC(K) = PRC(K)/(QC3D(k)/NC3D(K))
 
+! hm bug fix 3/20/12
                 NPRC(K) = MIN(NPRC(K),NC3D(K)/DT)
+                NPRC1(K) = MIN(NPRC1(K),NPRC(K))
 
          END IF
 
@@ -2233,7 +2238,9 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
         NPRC1(K) = PRC(K)/CONS29
         NPRC(K) = PRC(K)/(QC3D(K)/NC3D(K))
 
+! hm bug fix 3/20/12
                 NPRC(K) = MIN(NPRC(K),NC3D(K)/DT)
+                NPRC1(K) = MIN(NPRC1(K),NPRC(K))
 
          END IF
 

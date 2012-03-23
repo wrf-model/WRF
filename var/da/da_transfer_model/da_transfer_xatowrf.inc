@@ -214,8 +214,7 @@ subroutine da_transfer_xatowrf(grid)
           minval(grid%xa%psfc(its:ite,jts:jte))
    end if
 
-#ifndef TKW_
-!   IF (grid%hypsometric_opt == 1) THEN
+   IF (grid%hypsometric_opt == 1) THEN
 
    do j=jts,jte
       do i=its,ite
@@ -250,9 +249,7 @@ subroutine da_transfer_xatowrf(grid)
       end do
    end do
 
-#else
-
-! ELSE IF  (grid%hypsometric_opt == 2) THEN
+   ELSE IF  (grid%hypsometric_opt == 2) THEN
 
    ! Geopotential increment reflecting hypsometric_opt: wee 11/29/2011
 
@@ -299,8 +296,8 @@ subroutine da_transfer_xatowrf(grid)
 
    END DO
    END DO
-! ENDIF
-#endif
+
+   ENDIF ! hypsometric_opt
 
    ! To compute the geopotential height increment:
 
@@ -505,24 +502,20 @@ subroutine da_transfer_xatowrf(grid)
          ts2 = (t0+grid%t_2(i,j,kts+1))*(ps2/base_pres)**kappa
          qv1 = grid%moist(i,j,kts, p_qv)/(1.0+grid%moist(i,j,kts,p_qv))
          qv2 = grid%moist(i,j,kts+1, p_qv)/(1.0+grid%moist(i,j,kts+1,p_qv))
-#ifndef TKW_
-         height = 0.5*(grid%phb(i,j,kts)+grid%ph_2(i,j,kts)+ &
-                       grid%phb(i,j,kts+1)+grid%ph_2(i,j,kts+1))/gravity
-         height = height - grid%ht(i,j)
-#else
-       ! height = 0.5*(grid%phb(i,j,kts)+grid%ph_2(i,j,kts)+ &
-       !               grid%phb(i,j,kts+1)+grid%ph_2(i,j,kts+1))/gravity
-       ! height = height - grid%ht(i,j)
+         if (grid%hypsometric_opt == 1) then
+            height = 0.5*(grid%phb(i,j,kts)+grid%ph_2(i,j,kts)+ &
+                          grid%phb(i,j,kts+1)+grid%ph_2(i,j,kts+1))/gravity
+            height = height - grid%ht(i,j)
+         elseif (grid%hypsometric_opt == 2) then
+          ! Height is in proportion to log pressure: wee 11/22/2011
+            zs1 = (grid%phb(i,j,kts)+grid%ph_2(i,j,kts))/gravity
+            zs2 = (grid%phb(i,j,kts+1)+grid%ph_2(i,j,kts+1))/gravity
 
-       ! Height is in proportion to log pressure: wee 11/22/2011
-         zs1 = (grid%phb(i,j,kts)+grid%ph_2(i,j,kts))/gravity
-         zs2 = (grid%phb(i,j,kts+1)+grid%ph_2(i,j,kts+1))/gravity
-
-       ! Pressure at the full level second from bottom
-! The vertical coordinate should use the dry hydrostatic pressure (YRG, 12/24/2011): 
-         pf2 = grid%znw(kts+1)*(grid%mub(i,j)+grid%mu_2(i,j))+grid%p_top
-         height = (zs2-zs1)*LOG(grid%psfc(i,j)/ps1)/LOG(grid%psfc(i,j)/pf2)
-#endif
+          ! Pressure at the full level second from bottom
+          ! The vertical coordinate should use the dry hydrostatic pressure (YRG, 12/24/2011): 
+            pf2 = grid%znw(kts+1)*(grid%mub(i,j)+grid%mu_2(i,j))+grid%p_top
+            height = (zs2-zs1)*LOG(grid%psfc(i,j)/ps1)/LOG(grid%psfc(i,j)/pf2)
+         endif
          if (height <= 0.0) then
             message(1) = "Negative height found"
             write (unit=message(2),FMT='(2I6,A,F10.2,A,F10.2)') &

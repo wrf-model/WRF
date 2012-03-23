@@ -54,7 +54,7 @@
 # ;IPROJ = 'MERCAT',   ; MAP PROJECTION
 # TRUELAT1=60.,
 # TRUELAT2=30.,
-# &
+# /
 #
 # &DOMAINS
 # MAXNES =   1,
@@ -64,7 +64,7 @@
 # NUMC   =    1,    1,   2,     3,    4,
 # NESTI  =    1,   40,  28,    35,   45,
 # NESTJ  =    1,   60,  25,    65,   55,
-# &
+# /
 # --------------------------------------------------------------------------
 # 
 cat >! namelist.file << EOF
@@ -72,11 +72,11 @@ cat >! namelist.file << EOF
  &TIME_WINDOW
   TIME_WINDOW_MIN = '$TIME_WINDOW_MIN', ; beginning of time window
   TIME_WINDOW_MAX = '$TIME_WINDOW_MAX', ; end of time window
- &
+ /
 
  &SKEW_PLOTS
   skewt_plot = .FALSE.,
- &
+ /
 EOF
 
 if (! -e no_comment.sed ) ln -sf ${Map_plot}/no_comment.sed    no_comment.sed

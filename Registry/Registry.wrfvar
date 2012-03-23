@@ -1880,7 +1880,7 @@ rconfig   character time_window_min         namelist,wrfvar21  1  "2002-08-02_21
 
 rconfig   character time_window_max         namelist,wrfvar22  1  "2002-08-03_03:00:00.0000" -  "time_window_max"    ""  ""
 
-rconfig   logical jcdfi_use                 namelist,perturbation  1  .true.   -   "jcdfi_use"   "JcDFI on/off"      ""
+rconfig   logical jcdfi_use                 namelist,perturbation  1  .false.  -   "jcdfi_use"   "JcDFI on/off"      ""
 rconfig   integer jcdfi_diag                namelist,perturbation  1  1        -   "jcdfi_diag"  "JcDFI diag. on/off"      ""
 rconfig   real    jcdfi_penalty             namelist,perturbation  1  10.      -   "jcdfi_penalty"    "Penalty parameter for JcDF"      ""
 rconfig   logical enable_identity           namelist,perturbation  1  .false.  -   "enable identity AD/TL model"        ""      ""

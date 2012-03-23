@@ -289,6 +289,7 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    call da_calculate_gradj(it,iter,cv_size,cv_size_jb,cv_size_je,cv_size_jp, &
                            cv_size_jl,xbx, be, iv, xhat+cv, y, grad, grid, config_flags, re)
 
+   call da_deallocate_y (jo_grad_y)
 if (trace_use) call da_trace_exit("da_calculate_j")
 
 end subroutine da_calculate_j

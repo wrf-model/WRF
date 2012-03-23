@@ -44,23 +44,22 @@ LIBINCLUDE = $(DEVTOP)/include
 #LIBS = -L/usr/local/ncarg/lib -L/usr/local/lib  \
 #       -lncarg -lncarg_gks -lncarg_c -lX11 -lm
 #-----------------------------------------------------------------------------
-FC		=	 xlf
-FCFLAGS		=	 -w -qarch=auto -qspill=20000 -qmaxmem=32767 -qextname
-SOURCE_FORM     =        -qfree 
+FC		=	 gfortran -m64
+FCFLAGS		=	 
+SOURCE_FORM     =        -ffree-form -ffree-line-length-none
 CFLAGS          =
 CPP		=	 /usr/bin/cpp
 # Map Background is WHITE:
-CPPFLAGS	=	 -I$(LIBINCLUDE) -C -P -xassembler-with-cpp -DMac
+CPPFLAGS	=	 -I$(LIBINCLUDE) -C -P -DMac
 # Map Background is BLACK:
 #CPPFLAGS	=        -I$(LIBINCLUDE) -C -P -DBBKG
-LDFLAGS		=	 -Wl,-stack_size,10000000,-stack_addr,0xc0000000
+LDFLAGS		=        
 CCFLAGS		=	 -DMac -I.
 LIBDIR   = ${DEVTOP}/
 FDVARLIB = fdvarlib.a
 RANLIB   = ranlib
-LIBS		= -L/usr/local/ncarg/lib -lncarg -lcgm -lncarg_gks -lncarg_c \
-                  -L/usr/X11R6/lib -lX11 -lm -L/usr/local/lib             \
-                  -L/opt/ibmcmp/xlf/8.1/lib/ -lxlf90 -lg2c
+LIBS		= -L${NCARG_ROOT}/lib -lncarg -lcgm -lncarg_gks -lncarg_c \
+                  -L/usr/X11R6/lib -lX11 
 #-----------------------------------------------------------------------------
 # General commands
 #-----------------------------------------------------------------------------

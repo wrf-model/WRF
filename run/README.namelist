@@ -460,7 +460,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 5, MYNN surface layer
                                      = 7, Pleim-Xiu surface layer (ARW only)
                                      = 10, TEMF surface layer (ARW only)
-                                     = 11, Modified Monin-Obukhov scheme
+                                     = 11, Modified Monin-Obukhov scheme (Jimenez)
 
  sf_surface_physics (max_dom)        land-surface option (old bl_surface_physics option)
                                      = 0, no surface temp prediction
@@ -506,6 +506,7 @@ Namelist variables for controlling the adaptive time step option:
                                                 be computed from this.
  mfshconv (max_dom)                  = .false., ; whether to turn on new day-time EDMF QNSE.
                                      = .true.,  turn on the new EDMF QNSE
+ topo_wind (max_dom)                 = 0, turn off, =1, turn on topographic surface wind correction from Jimenez (YSU PBL only)
 
  cu_physics (max_dom)                cumulus option
                                      = 0, no cumulus
@@ -582,6 +583,7 @@ Namelist variables for controlling the adaptive time step option:
                                                   = 4: Noah landsurface model
                                                   = 6: RUC landsurface model
                                                   = 2: Pleim-Xu landsurface model
+                                                  = 3: SSiB landsurface model
  num_land_cat                        = 24,      ; number of land categories in input data.
                                                   24 - for USGS (default); 20 for MODIS
                                                   28 - for USGS if including lake category

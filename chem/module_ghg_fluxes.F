@@ -81,7 +81,7 @@ DO j=jts,jte
          chem(i,k,j,p_co_tst) = chem(i,k,j,p_co_tst)  + conv_rho* emis_ant(i,k,j,p_e_cotst)
 
          ! Methane emissions are added
-         IF (p_ch4.gt.1) THEN
+         IF (p_ch4_ant.gt.1) THEN
              chem(i,k,j,p_ch4_ant)= chem(i,k,j,p_ch4_ant) + conv_rho* emis_ant(i,k,j,p_e_ch4)
              chem(i,k,j,p_ch4_tst)= chem(i,k,j,p_ch4_tst) + conv_rho* emis_ant(i,k,j,p_e_ch4tst)
          END IF
@@ -99,7 +99,7 @@ DO j=jts,jte
       chem(i,1,j,p_co2_oce)= chem(i,1,j,p_co2_oce) + conv_rho*  ebio_co2oce(i,j)
 
       ! Methane fluxes are added
-      IF (p_ch4.gt.1) THEN
+      IF (p_ch4_bio.gt.1) THEN
           chem(i,1,j,p_ch4_bio)= chem(i,1,j,p_ch4_bio) + conv_rho* (eghg_bio(i,1,j,p_ebio_ch4wet) + eghg_bio(i,1,j,p_ebio_ch4soil) &
           + eghg_bio(i,1,j,p_ebio_ch4term))
       END IF
@@ -121,7 +121,7 @@ SUBROUTINE VPRM                 (  ids,ide, jds,jde,                 &
 INTEGER,  INTENT(IN   )   ::  ids,ide, jds,jde, &
                               ims,ime, jms,jme, &
                               its,ite, jts,jte
-INTEGER :: i,j,m,L
+INTEGER :: i,j,m
 
 REAL, PARAMETER :: const= 3.6e+3 ! For unit conversion from mmol/m^2/s to mol/km2/hr
 
@@ -152,7 +152,7 @@ DO j=jts,min(jte,jde-1)
 DO i=its,min(ite,ide-1)
 
    Tair= T2(i,j)-273.15
-   veg_frac_loop: DO m=1,L-1
+   veg_frac_loop: DO m=1,7
 
         if (vprm_in(i,m,j,p_vegfra_vprm)<1.e-8) CYCLE  ! Then fluxes are zero
 
@@ -207,10 +207,6 @@ DO i=its,min(ite,ide-1)
 
   ENDDO
   ENDDO
-
-!OPEN (unit=10, FILE=('/User/homes/rahmadov/WRF_CO2/IO_data/ASCII/NEE.dat'),FORM='FORMATTED',STATUS='UNKNOWN')
-!WRITE (10,'E16.7') ((GEE(i,j)+RESP(i,j),i=1,I0),j =1,J0)
-!WRITE (*,*) i,j, Tscale, Pscale, Wscale, RADscale, evi, RAD(i,j), GEE(i,j), RESP(i,j)
 
 END SUBROUTINE VPRM
 !****************************************************************************************

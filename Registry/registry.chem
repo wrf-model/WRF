@@ -2368,6 +2368,8 @@ rconfig   character   term_opt            namelist,chem        max_domains   "CH
 #                                 wet scavenging and cloud chemistry turned off (wetscav_onoff=0 and cldchem_onoff=0) since these only work with a subset of chemistry options
 #                                 vertical mixing turned on (vertmix_onoff=1) since this is done via the dry deposition routine and works with all chem options
 rconfig   integer     chem_conv_tr        namelist,chem          max_domains    1       rh    "chem_conv_opt"       ""      ""
+rconfig   integer     conv_tr_wetscav     namelist,chem          max_domains    1       rh    "conv_tr_wetscav_opt"       ""      ""
+rconfig   integer     conv_tr_aqchem      namelist,chem          max_domains    1       rh    "conv_tr_aqchem_opt"       ""      ""
 rconfig   integer     chem_opt            namelist,chem          max_domains    0       rh    "chem_opt"            ""      ""
 rconfig   integer     gaschem_onoff       namelist,chem          max_domains    1       rh    "gaschem_onoff"       ""      ""
 rconfig   integer     aerchem_onoff       namelist,chem          max_domains    1       rh    "aerchem_onoff"       ""      ""

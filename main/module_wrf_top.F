@@ -54,7 +54,7 @@ MODULE module_wrf_top
    INTEGER                 :: time_step_begin_restart
 
    INTEGER :: max_dom , domain_id , fid , oid , idum1 , idum2 , ierr
-   INTEGER :: debug_level
+   INTEGER :: debug_level, alarmid
    LOGICAL :: input_from_file
 
 #ifdef DM_PARALLEL
@@ -456,6 +456,21 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
    CALL nl_set_auxhist6_interval_s ( head_grid%id, time_step )
    CALL nl_set_io_form_auxhist6 ( head_grid%id, 2 )
    CALL nl_set_frames_per_auxhist6 ( head_grid%id, 1 )
+   IF ( ASSOCIATED( head_grid%domain_clock ) ) THEN
+     IF ( head_grid%domain_clock_created ) THEN
+       CALL WRFU_ClockDestroy( head_grid%domain_clock )
+       head_grid%domain_clock_created = .FALSE.
+     ENDIF
+   ENDIF
+   IF ( ASSOCIATED( head_grid%alarms ) .AND. &
+        ASSOCIATED( head_grid%alarms_created ) ) THEN
+     DO alarmid = 1, MAX_WRF_ALARMS
+       IF ( head_grid%alarms_created( alarmid ) ) THEN
+         CALL WRFU_AlarmDestroy( head_grid%alarms( alarmid ) )
+         head_grid%alarms_created( alarmid ) = .FALSE.
+       ENDIF
+     ENDDO
+   ENDIF
    CALL Setup_Timekeeping ( head_grid )
 
    ! Force to turn off history output in this case
@@ -478,6 +493,21 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
    CALL nl_set_io_form_auxhist6 ( head_grid%id, 0 )
    CALL nl_set_auxhist6_interval_s ( head_grid%id, 0 )
    if ( .not. head_grid%trajectory_io ) CALL nl_set_inputout_interval_s ( head_grid%id, 0 )
+   IF ( ASSOCIATED( head_grid%domain_clock ) ) THEN
+     IF ( head_grid%domain_clock_created ) THEN
+       CALL WRFU_ClockDestroy( head_grid%domain_clock )
+       head_grid%domain_clock_created = .FALSE.
+     ENDIF
+   ENDIF
+   IF ( ASSOCIATED( head_grid%alarms ) .AND. &
+        ASSOCIATED( head_grid%alarms_created ) ) THEN
+     DO alarmid = 1, MAX_WRF_ALARMS
+       IF ( head_grid%alarms_created( alarmid ) ) THEN
+         CALL WRFU_AlarmDestroy( head_grid%alarms( alarmid ) )
+         head_grid%alarms_created( alarmid ) = .FALSE.
+       ENDIF
+     ENDDO
+   ENDIF
    CALL Setup_Timekeeping ( head_grid )
 
    CALL       wrf_message ( "wrf: back from nonlinear integrate" )
@@ -514,6 +544,21 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
 
    ! Turn off auxinput6 reading
    CALL nl_set_auxinput6_interval_s (head_grid%id, 0 )
+   IF ( ASSOCIATED( head_grid%domain_clock ) ) THEN
+     IF ( head_grid%domain_clock_created ) THEN
+       CALL WRFU_ClockDestroy( head_grid%domain_clock )
+       head_grid%domain_clock_created = .FALSE.
+     ENDIF
+   ENDIF
+   IF ( ASSOCIATED( head_grid%alarms ) .AND. &
+        ASSOCIATED( head_grid%alarms_created ) ) THEN
+     DO alarmid = 1, MAX_WRF_ALARMS
+       IF ( head_grid%alarms_created( alarmid ) ) THEN
+         CALL WRFU_AlarmDestroy( head_grid%alarms( alarmid ) )
+         head_grid%alarms_created( alarmid ) = .FALSE.
+       ENDIF
+     ENDDO
+   ENDIF
    CALL Setup_Timekeeping ( head_grid )
 
    save_l = 0.0
@@ -616,6 +661,21 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
 
    ! Turn off auxinput6 reading
    CALL nl_set_auxinput6_interval_s (head_grid%id, 0 )
+   IF ( ASSOCIATED( head_grid%domain_clock ) ) THEN
+     IF ( head_grid%domain_clock_created ) THEN
+       CALL WRFU_ClockDestroy( head_grid%domain_clock )
+       head_grid%domain_clock_created = .FALSE.
+     ENDIF
+   ENDIF
+   IF ( ASSOCIATED( head_grid%alarms ) .AND. &
+        ASSOCIATED( head_grid%alarms_created ) ) THEN
+     DO alarmid = 1, MAX_WRF_ALARMS
+       IF ( head_grid%alarms_created( alarmid ) ) THEN
+         CALL WRFU_AlarmDestroy( head_grid%alarms( alarmid ) )
+         head_grid%alarms_created( alarmid ) = .FALSE.
+       ENDIF
+     ENDDO
+   ENDIF
    CALL Setup_Timekeeping ( head_grid )
 
    val_l = 0.0
@@ -653,6 +713,21 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
 
    ! Turn off auxinput6 reading
    CALL nl_set_auxinput6_interval_s (head_grid%id, 0 )
+   IF ( ASSOCIATED( head_grid%domain_clock ) ) THEN
+     IF ( head_grid%domain_clock_created ) THEN
+       CALL WRFU_ClockDestroy( head_grid%domain_clock )
+       head_grid%domain_clock_created = .FALSE.
+     ENDIF
+   ENDIF
+   IF ( ASSOCIATED( head_grid%alarms ) .AND. &
+        ASSOCIATED( head_grid%alarms_created ) ) THEN
+     DO alarmid = 1, MAX_WRF_ALARMS
+       IF ( head_grid%alarms_created( alarmid ) ) THEN
+         CALL WRFU_AlarmDestroy( head_grid%alarms( alarmid ) )
+         head_grid%alarms_created( alarmid ) = .FALSE.
+       ENDIF
+     ENDDO
+   ENDIF
    CALL Setup_Timekeeping ( head_grid )
 
    val_a = 0.0
@@ -715,6 +790,21 @@ ENDIF
 
    CALL       wrf_message ( "wrf: calling tangent linear integrate" )
    model_config_rec%dyn_opt = dyn_em_tl
+   IF ( ASSOCIATED( head_grid%domain_clock ) ) THEN
+     IF ( head_grid%domain_clock_created ) THEN
+       CALL WRFU_ClockDestroy( head_grid%domain_clock )
+       head_grid%domain_clock_created = .FALSE.
+     ENDIF
+   ENDIF
+   IF ( ASSOCIATED( head_grid%alarms ) .AND. &
+        ASSOCIATED( head_grid%alarms_created ) ) THEN
+     DO alarmid = 1, MAX_WRF_ALARMS
+       IF ( head_grid%alarms_created( alarmid ) ) THEN
+         CALL WRFU_AlarmDestroy( head_grid%alarms( alarmid ) )
+         head_grid%alarms_created( alarmid ) = .FALSE.
+       ENDIF
+     ENDDO
+   ENDIF
    CALL Setup_Timekeeping ( head_grid )
    CALL domain_clock_get( head_grid, start_timestr=timestr )
    CALL domain_clock_set( head_grid, current_timestr=timestr )
@@ -832,6 +922,21 @@ ENDIF
    model_config_rec%end_minute(head_grid%id)    = start_minute
    model_config_rec%end_second(head_grid%id)    = start_second
 
+   IF ( ASSOCIATED( head_grid%domain_clock ) ) THEN
+     IF ( head_grid%domain_clock_created ) THEN
+       CALL WRFU_ClockDestroy( head_grid%domain_clock )
+       head_grid%domain_clock_created = .FALSE.
+     ENDIF
+   ENDIF
+   IF ( ASSOCIATED( head_grid%alarms ) .AND. &
+        ASSOCIATED( head_grid%alarms_created ) ) THEN
+     DO alarmid = 1, MAX_WRF_ALARMS
+       IF ( head_grid%alarms_created( alarmid ) ) THEN
+         CALL WRFU_AlarmDestroy( head_grid%alarms( alarmid ) )
+         head_grid%alarms_created( alarmid ) = .FALSE.
+       ENDIF
+     ENDDO
+   ENDIF
    CALL Setup_Timekeeping ( head_grid )
    head_grid%start_subtime = domain_get_start_time ( head_grid )
    head_grid%stop_subtime = domain_get_stop_time ( head_grid )
@@ -899,6 +1004,21 @@ ENDIF
    model_config_rec%end_minute(head_grid%id)    = end_minute
    model_config_rec%end_second(head_grid%id)    = end_second
 
+   IF ( ASSOCIATED( head_grid%domain_clock ) ) THEN
+     IF ( head_grid%domain_clock_created ) THEN
+       CALL WRFU_ClockDestroy( head_grid%domain_clock )
+       head_grid%domain_clock_created = .FALSE.
+     ENDIF
+   ENDIF
+   IF ( ASSOCIATED( head_grid%alarms ) .AND. &
+        ASSOCIATED( head_grid%alarms_created ) ) THEN
+     DO alarmid = 1, MAX_WRF_ALARMS
+       IF ( head_grid%alarms_created( alarmid ) ) THEN
+         CALL WRFU_AlarmDestroy( head_grid%alarms( alarmid ) )
+         head_grid%alarms_created( alarmid ) = .FALSE.
+       ENDIF
+     ENDDO
+   ENDIF
    CALL Setup_Timekeeping ( head_grid )
    head_grid%start_subtime = domain_get_start_time ( head_grid )
    head_grid%stop_subtime = domain_get_stop_time ( head_grid )
@@ -952,6 +1072,21 @@ ENDIF
    CALL nl_set_auxhist6_interval_s ( head_grid%id, time_step )
    CALL nl_set_io_form_auxhist6 ( head_grid%id, 2 )
    CALL nl_set_frames_per_auxhist6 ( head_grid%id, 1 )
+   IF ( ASSOCIATED( head_grid%domain_clock ) ) THEN
+     IF ( head_grid%domain_clock_created ) THEN
+       CALL WRFU_ClockDestroy( head_grid%domain_clock )
+       head_grid%domain_clock_created = .FALSE.
+     ENDIF
+   ENDIF
+   IF ( ASSOCIATED( head_grid%alarms ) .AND. &
+        ASSOCIATED( head_grid%alarms_created ) ) THEN
+     DO alarmid = 1, MAX_WRF_ALARMS
+       IF ( head_grid%alarms_created( alarmid ) ) THEN
+         CALL WRFU_AlarmDestroy( head_grid%alarms( alarmid ) )
+         head_grid%alarms_created( alarmid ) = .FALSE.
+       ENDIF
+     ENDDO
+   ENDIF
    CALL Setup_Timekeeping ( head_grid )
 
    CALL wrf_run
@@ -959,6 +1094,21 @@ ENDIF
    ! Turn off basic states output
    CALL nl_set_io_form_auxhist6 ( head_grid%id, 0 )
    CALL nl_set_auxhist6_interval_s ( head_grid%id, 0 )
+   IF ( ASSOCIATED( head_grid%domain_clock ) ) THEN
+     IF ( head_grid%domain_clock_created ) THEN
+       CALL WRFU_ClockDestroy( head_grid%domain_clock )
+       head_grid%domain_clock_created = .FALSE.
+     ENDIF
+   ENDIF
+   IF ( ASSOCIATED( head_grid%alarms ) .AND. &
+        ASSOCIATED( head_grid%alarms_created ) ) THEN
+     DO alarmid = 1, MAX_WRF_ALARMS
+       IF ( head_grid%alarms_created( alarmid ) ) THEN
+         CALL WRFU_AlarmDestroy( head_grid%alarms( alarmid ) )
+         head_grid%alarms_created( alarmid ) = .FALSE.
+       ENDIF
+     ENDDO
+   ENDIF
    CALL Setup_Timekeeping ( head_grid )
 
    CALL       wrf_message ( "wrf: back from nonlinear integrate" )

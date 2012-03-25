@@ -150,7 +150,7 @@ CONTAINS
       !  Check that the month of ODATE makes sense.
       
       IF ((moold.GT.12).or.(moold.LT.1)) THEN
-         WRITE (iout,'(A,I)') ' GETH_IDTS:  Month of ODATE = ', moold
+         WRITE (iout,'(A,I2)') ' GETH_IDTS:  Month of ODATE = ', moold
          opass = .false.
       END IF
       
@@ -203,28 +203,28 @@ CONTAINS
       !  Check that the minute of NDATE makes sense.
       
       IF ((minew.GT.59).or.(minew.LT.0)) THEN
-            WRITE (iout,'(A,I)') ' GETH_IDTS:  Minute of NDATE = ', minew
+            WRITE (iout,'(A,I2)') ' GETH_IDTS:  Minute of NDATE = ', minew
          npass = .false.
       END IF
       
       !  Check that the minute of ODATE makes sense.
       
       IF ((miold.GT.59).or.(miold.LT.0)) THEN
-            WRITE (iout,'(A,I)') ' GETH_IDTS:  Minute of ODATE = ', miold
+            WRITE (iout,'(A,I2)') ' GETH_IDTS:  Minute of ODATE = ', miold
          opass = .false.
       END IF
       
       !  Check that the second of NDATE makes sense.
       
       IF ((scnew.GT.59).or.(scnew.LT.0)) THEN
-            WRITE (iout,'(A,I)') ' GETH_IDTS:  SECOND of NDATE = ', scnew
+            WRITE (iout,'(A,I2)') ' GETH_IDTS:  SECOND of NDATE = ', scnew
          npass = .false.
       END IF
       
       !  Check that the second of ODATE makes sense.
       
       IF ((scold.GT.59).or.(scold.LT.0)) THEN
-            WRITE (iout,'(A,I)') ' GETH_IDTS:  Second of ODATE = ', scold
+            WRITE (iout,'(A,I2)') ' GETH_IDTS:  Second of ODATE = ', scold
          opass = .false.
       END IF
       

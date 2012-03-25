@@ -669,6 +669,28 @@
 
 #endif
 
+#if (DA_CORE == 1)
+    ! Test here to check that config_flags%hypsometric_opt in namelist
+    ! is equal to what is in the global attributes of the wrfinput files
+
+    IF ( switch .EQ. input_only  ) THEN
+       CALL wrf_get_dom_ti_integer ( fid, 'HYPSOMETRIC_OPT', itmp, 1, icnt, ierr )
+       IF ( ierr .EQ. 0 ) THEN
+          WRITE(wrf_err_message,*)'input_wrf: global attribute HYPSOMETRIC_OPT returns ', itmp
+          CALL wrf_debug ( 300 , wrf_err_message )
+          IF ( config_flags%hypsometric_opt /= itmp ) THEN
+             call wrf_message("----------------- WARNING  -------------------")
+             WRITE(wrf_err_message,'("namelist    : hypsometric_opt = ",I10)') config_flags%hypsometric_opt
+             call wrf_message(wrf_err_message)
+             WRITE(wrf_err_message,'("input files : HYPSOMETRIC_OPT = ",I10, " (from wrfinput files).")') itmp
+             call wrf_message(wrf_err_message)
+             call wrf_error_fatal("Mismatch between namelist and global attribute HYPSOMETRIC_OPT")
+          END IF
+       END IF
+    END IF
+
+#endif
+
     ENDIF check_if_dryrun
 
 !

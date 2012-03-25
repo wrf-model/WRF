@@ -554,6 +554,7 @@ endif
       CALL wrf_put_dom_ti_integer   ( fid, 'ISFTCFLX',    config_flags%isftcflx    , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer   ( fid, 'ISHALLOW',    config_flags%ishallow    , 1 , ierr ) 
 
+#endif
       IF ( sf_surface_physics == 4 ) THEN
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_SFC',     config_flags%opt_sfc     , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'DVEG',        config_flags%dveg        , 1 , ierr )
@@ -569,7 +570,6 @@ endif
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_STC',     config_flags%opt_stc     , 1 , ierr )
       ENDIF
 
-#endif
 
       CALL wrf_put_dom_ti_integer   ( fid, 'DFI_OPT',          config_flags%dfi_opt      , 1 , ierr ) 
 

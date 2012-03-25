@@ -525,6 +525,11 @@ CONTAINS
          do n=p_so4aj,p_p25i
             pm2_5_dry(i,k,j) = pm2_5_dry(i,k,j)+chem(ii,k,jj,n)
          enddo
+         if( p_p25cwi .gt. p_p25i) then
+         do n=p_so4cwj,p_p25cwi
+            pm2_5_dry(i,k,j) = pm2_5_dry(i,k,j)+chem(ii,k,jj,n)
+         enddo
+         endif
          pm2_5_dry_ec(i,k,j) = pm2_5_dry_ec(i,k,j)+chem(ii,k,jj,p_ecj) &
                                + chem(ii,k,jj,p_eci)
          pm2_5_water(i,k,j) =  pm2_5_water(i,k,j)+h2oaj(i,k,j)       &
@@ -554,6 +559,12 @@ CONTAINS
                            + ( chem(ii,k,jj,p_antha)               &
                            + chem(ii,k,jj,p_soila)                 &
                            + chem(ii,k,jj,p_seas) ) / alt(ii,k,jj)
+               if( p_p25cwi .gt. p_p25i) then
+               pm10(i,k,j) = pm10(i,k,j)                       &
+                           + ( chem(ii,k,jj,p_anthcw)               &
+                           + chem(ii,k,jj,p_soilcw)                 &
+                           + chem(ii,k,jj,p_seascw) ) / alt(ii,k,jj)
+               endif
 !              endif
             enddo
          enddo

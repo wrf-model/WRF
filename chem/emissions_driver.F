@@ -209,7 +209,7 @@ CONTAINS
                ebio_c10h16,ebio_tol,ebio_bigalk, ebio_ch3oh,ebio_acet, &
                ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,    &
                ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,    &
-               ebio_so2,ebio_dms, ebio_co2oce   
+               ebio_so2,ebio_dms, ebio_co2oce 
 
 
    ! stuff for MEGAN v2.04...most of these arrays are optional and package dependent 
@@ -923,13 +923,13 @@ CONTAINS
                          ims,ime, jms,jme,                   &
                          its,ite, jts,jte,                   &
 
-                         vprm_in,rad_vprm,lambda_vprm,      &
+                         vprm_in,rad_vprm,lambda_vprm,       &
                          alpha_vprm,resp_vprm,               &
-                         T2,swdown,  &
+                         T2,swdown,                          &
                          eghg_bio                            )
 
   ! Update the biospheric CH4 fluxes if the GHG option is called
-   if (p_ch4 .GT. 1) then
+   if (p_ch4_bio .GT. 1) then
 
    CALL KAPLAN(          ids,ide, jds,jde,                                        &
                          ims,ime, jms,jme,                                        &

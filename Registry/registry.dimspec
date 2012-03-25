@@ -27,9 +27,8 @@ dimspec    nndgvar -     namelist=nobs_ndg_vars            c     nobs_ndg_vars
 dimspec    [       -     namelist=obs_prt_max              c     obs_prt_max
 dimspec    obsstid -     constant=40                       c     obs station id names
 dimspec    &       2     namelist=lagday                   z     lagday
-dimspec    snly    2     namelist=num_snow_layers          z     snow_layers
-
 endif
+
 
 ifdef NMM_CORE=1
 dimspec    ndfi    1     namelist=dfi_time_dim             c     dfi time dimension
@@ -42,6 +41,7 @@ dimspec    z       -     constant=(-3:3)                   c
 dimspec    n       -     constant=(0:6)                    c
 endif
 
+dimspec    snly    2     namelist=num_snow_layers          z     snow_layers
 dimspec    l       2     namelist=num_soil_layers          z     soil_layers
 dimspec    snsl    2     namelist=num_snso_layers          z     snso_layers
 dimspec    ulay    2     namelist=num_urban_layers         z     urban_layers

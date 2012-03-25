@@ -22,7 +22,7 @@ module_alloc_space_6.o : module_alloc_space_6.F module_alloc_space.h module_conf
 module_alloc_space_7.o : module_alloc_space_7.F module_alloc_space.h module_configure.o module_configure.o module_domain_type.o 
 module_alloc_space_8.o : module_alloc_space_8.F module_alloc_space.h module_configure.o module_configure.o module_domain_type.o 
 module_alloc_space_9.o : module_alloc_space_9.F module_alloc_space.h module_configure.o module_configure.o module_domain_type.o 
-module_bc.o : module_bc.F module_state_description.o module_wrf_error.o module_configure.o 
+module_bc.o : module_bc.F module_state_description.o module_wrf_error.o module_configure.o module_model_constants.o
 module_bc_time_utilities.o : module_bc_time_utilities.F module_utility.o 
 module_check_a_mundo.o : module_check_a_mundo.F module_configure.o module_wrf_error.o module_state_description.o 
 module_comm_dm.o : module_comm_dm.F module_driver_constants.o module_state_description.o module_configure.o module_domain.o module_comm_dm_4.o module_comm_dm_3.o module_comm_dm_2.o module_comm_dm_1.o module_comm_dm_0.o 

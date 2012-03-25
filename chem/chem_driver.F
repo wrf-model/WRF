@@ -1110,7 +1110,7 @@
              grid%ktop,grid%wd_no3_cu,grid%wd_so4_cu,                                 &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
              config_flags%ishallow,num_moist,numgas,num_chem,config_flags%chem_opt,0, &
-             config_flags%wetscav_onoff,                                              &
+             config_flags%conv_tr_wetscav,config_flags%conv_tr_aqchem,                &
              ids,ide, jds,jde, kds,kde,                                               &
              ims,ime, jms,jme, kms,kme,                                               &
              its,ite,jts,jte,kts,k_end)
@@ -1143,7 +1143,7 @@
              grid%ktop,grid%wd_no3_cu,grid%wd_so4_cu,                                 &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
              config_flags%ishallow,num_moist,0,num_tracer,0,config_flags%tracer_opt,  &
-             config_flags%wetscav_onoff,                                              &
+             config_flags%conv_tr_wetscav,config_flags%conv_tr_aqchem,                &
              ids,ide, jds,jde, kds,kde,                                               &
              ims,ime, jms,jme, kms,kme,                                               &
              its,ite,jts,jte,kts,k_end)

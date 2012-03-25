@@ -149,7 +149,7 @@ real_data_init_type=3,
 &perturbation
 trajectory_io=true,
 enable_identity=false,
-jcdfi_use=true,
+jcdfi_use=false,
 jcdfi_diag=1,
 jcdfi_penalty=1000.0,
 /

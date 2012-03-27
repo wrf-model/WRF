@@ -504,8 +504,7 @@ Namelist variables for controlling the adaptive time step option:
                                                 the value is set in Registry.NMM but is
                                                 overridden by namelist value; bldt will
                                                 be computed from this.
- mfshconv (max_dom)                  = .false., ; whether to turn on new day-time EDMF QNSE.
-                                     = .true.,  turn on the new EDMF QNSE
+ mfshconv (max_dom)                  = 1,; whether to turn on new day-time EDMF QNSE (0=no)
  topo_wind (max_dom)                 = 0, turn off, =1, turn on topographic surface wind correction from Jimenez (YSU PBL only)
 
  cu_physics (max_dom)                cumulus option
@@ -659,8 +658,8 @@ Options for stochastic kinetic-energy backscatter scheme:
                                       1,        : Stochastic kinetic-energy backscatter scheme (SKEB)
  stoch_vertstruc_opt (max_dom)      = 0,        : Constant vertical structure of random pattern generator
                                       1,        : Random phase vertical structure random pattern generator
- tot_backscat_psi                   = 115200,   ; Controls amplitude of rotational wind perturbations
- tot_backscat_t                     = 2.E-6     ; Controls amplitude of potential temperature perturbations
+ tot_backscat_psi                   = 1.0E-05   ; Controls amplitude of rotational wind perturbations
+ tot_backscat_t                     = 1.0E-06   ; Controls amplitude of potential temperature perturbations
  nens                               = 1         ; an integer that controls the random number stream which will then
                                                   change the run. When running an ensemble, this can be
                                                   ensemble member number, so that each ensemble member gets a

@@ -437,7 +437,7 @@ CONTAINS
    REAL    :: oml_hml0
    LOGICAL :: usemonalb
    LOGICAL :: rdmaxalb
-   LOGICAL :: mfshconv
+   INTEGER :: mfshconv
 
    INTEGER :: i, j, k, itf, jtf, ktf, n
 integer myproc
@@ -1555,7 +1555,7 @@ integer myproc
                                      ,rv_up, rc_up, u_up, v_up    &
                                      ,frac_up
 
-  LOGICAL, INTENT(IN)           ::  mfshconv ! WRF JP
+   INTEGER, INTENT(IN)           ::  mfshconv ! WRF JP
 
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::     TSK
    REAL,  DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::  TMN
@@ -2051,7 +2051,7 @@ integer myproc
                         its, ite, jts, jte, kts, kte          )
            
 !          IF ( PRESENT (mfshconv) ) THEN
-              if (mfshconv) &
+              if (mfshconv.EQ.1) &
               CALL mfshconvpblinit( massflux_EDKF, entr_EDKF, detr_EDKF & 
                                     ,thl_up, thv_up, rt_up              &
                                     ,rv_up, rc_up, u_up, v_up           &

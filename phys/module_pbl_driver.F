@@ -534,7 +534,7 @@ CONTAINS
                                                           CTOPO2
 
 ! Variables and Diagnostic for QNSE and EDKF JP
-   LOGICAL, INTENT(IN) ::  mfshconv
+   INTEGER, INTENT(IN) ::  mfshconv
 
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,  &
                INTENT(OUT) ::    massflux_EDKF, entr_EDKF, detr_EDKF & 
@@ -1224,7 +1224,7 @@ CONTAINS
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                                                         .TRUE.  ) THEN
-               IF ( MFSHCONV )THEN
+               IF ( MFSHCONV.EQ.1 )THEN
                CALL wrf_debug(100,'in MFSHCONVPBL')
                CALL mfshconvpbl(DT=dt,STEPBL=stepbl,HT=ht,DZ=dz8w         &
                     ,RHO=rho,PMID=p_phy,PINT=p8w,TH=th_phy,EXNER=pi_phy   &
@@ -1266,7 +1266,7 @@ CONTAINS
                                                                     )
 ! note the tendencies have been added inside qnse 
 !            IF ( PRESENT (MFSHCONV) )THEN
-!              IF (MFSHCONV)THEN
+!              IF (MFSHCONV.EQ.1)THEN
 !              rublten(:,:,:)=rublten(:,:,:)+rumften(:,:,:)
 !              rvblten(:,:,:)=rvblten(:,:,:)+rvmften(:,:,:)
 !              rthblten(:,:,:)=rthblten(:,:,:)+rthmften(:,:,:)

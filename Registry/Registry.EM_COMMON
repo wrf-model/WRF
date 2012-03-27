@@ -1636,7 +1636,7 @@ rconfig   real    naer                    namelist,physics      max_domains    1
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0       rh       "sf_sfclay_physics"             ""      ""
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0       rh       "sf_surface_physics"            ""      ""
 rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    0       rh       "bl_pbl_physics"                ""      ""
-rconfig   logical     mfshconv            namelist,physics      max_domains    .false.  rh       "mfshconv"         "To activate mass flux scheme with qnse true or false"      ""
+rconfig   integer     mfshconv            namelist,physics      max_domains    1       rh       "mfshconv"         "To activate mass flux scheme with qnse true or false"      ""
 rconfig   integer     sf_urban_physics    namelist,physics      max_domains    0       rh       "sf_urban_physics"     "activate urban model  0=no, 1=Noah_UCM 2=BEP_UCM"   ""
 rconfig   real    BLDT                    namelist,physics      max_domains    0       h    "BLDT"          ""      ""
 rconfig   integer cu_physics              namelist,physics      max_domains    0       rh   "cu_physics"    ""      ""

@@ -27,7 +27,7 @@
 !.. Remaining values should probably be left alone.
 !..
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
-!..Last modified: 06 Mar 2012
+!..Last modified: 20 Mar 2012
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
 !+---+-----------------------------------------------------------------+
@@ -35,6 +35,7 @@
       MODULE module_mp_thompson
 
       USE module_wrf_error
+!     USE module_mp_radar
 !     USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
 !     USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep
 
@@ -48,7 +49,7 @@
 !..Densities of rain, snow, graupel, and cloud ice.
       REAL, PARAMETER, PRIVATE:: rho_w = 1000.0
       REAL, PARAMETER, PRIVATE:: rho_s = 100.0
-      REAL, PARAMETER, PRIVATE:: rho_g = 400.0
+      REAL, PARAMETER, PRIVATE:: rho_g = 500.0
       REAL, PARAMETER, PRIVATE:: rho_i = 890.0
 
 !..Prescribed number of cloud droplets.  Set according to known data or
@@ -80,8 +81,8 @@
 !.. mixing ratio.  Also, when mu_g is non-zero, these become equiv
 !.. y-intercept for an exponential distrib and proper values are
 !.. computed based on same mixing ratio and total number concentration.
-      REAL, PARAMETER, PRIVATE:: gonv_min = 1.E4
-      REAL, PARAMETER, PRIVATE:: gonv_max = 3.E6
+      REAL, PARAMETER, PRIVATE:: gonv_min = 2.E4
+      REAL, PARAMETER, PRIVATE:: gonv_max = 2.E6
 
 !..Mass power law relations:  mass = am*D**bm
 !.. Snow from Field et al. (2005), others assume spherical form.
@@ -102,7 +103,7 @@
       REAL, PARAMETER, PRIVATE:: fv_r = 195.0
       REAL, PARAMETER, PRIVATE:: av_s = 40.0
       REAL, PARAMETER, PRIVATE:: bv_s = 0.55
-      REAL, PARAMETER, PRIVATE:: fv_s =  75.0
+      REAL, PARAMETER, PRIVATE:: fv_s = 100.0
       REAL, PARAMETER, PRIVATE:: av_g = 442.0
       REAL, PARAMETER, PRIVATE:: bv_g = 0.89
       REAL, PARAMETER, PRIVATE:: av_i = 1847.5
@@ -687,6 +688,15 @@
 !     call table_dropEvap
 
 !..Initialize various constants for computing radar reflectivity.
+!     xam_r = am_r
+!     xbm_r = bm_r
+!     xmu_r = mu_r
+!     xam_s = am_s
+!     xbm_s = bm_s
+!     xmu_s = mu_s
+!     xam_g = am_g
+!     xbm_g = bm_g
+!     xmu_g = mu_g
 !     call radar_init
 
       if (.not. iiwarm) then
@@ -1434,13 +1444,13 @@
 !+---+-----------------------------------------------------------------+
       N0_min = gonv_max
       do k = kte, kts, -1
-         if (temp(k).lt.T_0 .and. (rc(k)+rr(k)).gt.1.E-5) then
-            xslw1 = 5. + alog10(max(1.E-5, min(1.E-2, (rc(k)+rr(k)))))
+         if (temp(k).lt.270.65 .and. L_qr(k) .and. mvd_r(k).gt.100.E-6) then
+            xslw1 = 4.01 + alog10(mvd_r(k))
          else
-            xslw1 = 0.0001
+            xslw1 = 0.01
          endif
-         ygra1 = 4.302 + alog10(max(5.E-5, min(5.E-2, rg(k))))
-         zans1 = 3.565 + (90./(50.*xslw1*ygra1/(5./xslw1+1.+0.25*ygra1)+30.+15.*ygra1))
+         ygra1 = 4.31 + alog10(max(5.E-5, rg(k)))
+         zans1 = 3.0 + (100./(300.*xslw1*ygra1/(10./xslw1+1.+0.25*ygra1)+30.+5.*ygra1))
          N0_exp = 10.**(zans1)
          N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
          N0_min = MIN(N0_exp, N0_min)
@@ -1485,7 +1495,7 @@
           if (mvd_r(k) .gt. 1750.0E-6) then
              Ef_rr = 2.0 - EXP(2300.0*(mvd_r(k)-1750.0E-6))
           endif
-          pnr_rcr(k) = Ef_rr * 8.*nr(k)*rr(k)
+          pnr_rcr(k) = Ef_rr * 4.*nr(k)*rr(k)
          endif
 
          mvd_c(k) = D0c
@@ -1929,7 +1939,7 @@
            prr_sml(k) = prr_sml(k) + 4218.*olfus*tempc &
                                    * (prr_rcs(k)+prs_scw(k))
            prr_sml(k) = MIN(DBLE(rs(k)*odts), prr_sml(k))
-           pnr_sml(k) = smo0(k)/rs(k)*prr_sml(k) * 10.0**(-0.50*tempc)      ! RAIN2M
+           pnr_sml(k) = smo0(k)/rs(k)*prr_sml(k) * 10.0**(-0.75*tempc)      ! RAIN2M
            pnr_sml(k) = MIN(DBLE(smo0(k)*odts), pnr_sml(k))
            if (tempc.gt.3.5 .or. rs(k).lt.0.005E-3) pnr_sml(k)=0.0
 
@@ -1945,11 +1955,11 @@
            prr_gml(k) = tempc*N0_g(k)*tcond(k) &
                     *(t1_qg_me*ilamg(k)**cge(10) &
                     + t2_qg_me*rhof2(k)*vsc2(k)*ilamg(k)**cge(11))
-           prr_gml(k) = prr_gml(k) + 4218.*olfus*tempc &
-                                   * (prr_rcg(k)+prg_gcw(k))
+!-GT       prr_gml(k) = prr_gml(k) + 4218.*olfus*tempc &
+!-GT                               * (prr_rcg(k)+prg_gcw(k))
            prr_gml(k) = MIN(DBLE(rg(k)*odts), prr_gml(k))
            pnr_gml(k) = (N0_g(k) / (cgg(1)*am_g*N0_g(k)/rg(k))**oge1)   &   ! RAIN2M
-                      / rg(k) * prr_gml(k) * 10.0**(-0.35*tempc)
+                      / rg(k) * prr_gml(k) * 10.0**(-1.25*tempc)
            if (rg(k).lt.0.005E-3) pnr_gml(k)=0.0
 
            if (ssati(k).lt. 0.) then
@@ -2333,13 +2343,13 @@
 !+---+-----------------------------------------------------------------+
       N0_min = gonv_max
       do k = kte, kts, -1
-         if (temp(k).lt.T_0 .and. (rc(k)+rr(k)).gt.1.E-5) then
-            xslw1 = 5. + alog10(max(1.E-5, min(1.E-2, (rc(k)+rr(k)))))
+         if (temp(k).lt.270.65 .and. L_qr(k) .and. mvd_r(k).gt.100.E-6) then
+            xslw1 = 4.01 + alog10(mvd_r(k))
          else
-            xslw1 = 0.0001
+            xslw1 = 0.01
          endif
-         ygra1 = 4.302 + alog10(max(5.E-5, min(5.E-2, rg(k))))
-         zans1 = 3.565 + (90./(50.*xslw1*ygra1/(5./xslw1+1.+0.25*ygra1)+30.+15.*ygra1))
+         ygra1 = 4.31 + alog10(max(5.E-5, rg(k)))
+         zans1 = 3.0 + (100./(300.*xslw1*ygra1/(10./xslw1+1.+0.25*ygra1)+30.+5.*ygra1))
          N0_exp = 10.**(zans1)
          N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
          N0_min = MIN(N0_exp, N0_min)
@@ -3614,7 +3624,6 @@
 
       END FUNCTION RSIF
 !+---+-----------------------------------------------------------------+
-
 !+---+-----------------------------------------------------------------+
 END MODULE module_mp_thompson
 !+---+-----------------------------------------------------------------+

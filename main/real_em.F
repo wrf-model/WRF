@@ -650,6 +650,11 @@ SUBROUTINE compute_si_start_and_end (  &
       ELSE IF ( next_date_char .GT. end_date_char ) THEN
          PRINT '(A,I4,A)','Total analysis times to input = ',time_loop,'.'
          time_loop_max = time_loop
+         IF ( ( time_loop_max .EQ. 1 ) .AND. ( start_date_char .NE. end_date_char ) ) THEN
+            PRINT *,'You might have set the end time in the namelist.input for the model'         
+            PRINT *,'Regional domains require more than one time-period to process, for BC generation'
+            CALL wrf_error_fatal ( "Make the end time at least one 'interval_seconds' beyond the start time" )
+         END IF
          EXIT loop_count
       END IF
    END DO loop_count

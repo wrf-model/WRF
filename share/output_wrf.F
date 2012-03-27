@@ -490,7 +490,7 @@ endif
       IF ( switch .EQ. history_only ) THEN
       CALL wrf_put_dom_ti_integer ( fid, 'SF_URBAN_PHYSICS', sf_urban_physics , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'SHCU_PHYSICS',     config_flags%shcu_physics , 1 , ierr ) 
-!     CALL wrf_put_dom_ti_integer ( fid, 'MFSHCONV',         mfshconv , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer ( fid, 'MFSHCONV',         config_flags%mfshconv , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer ( fid, 'FEEDBACK', feedback , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'SMOOTH_OPTION', smooth_option , 1 , ierr )
       CALL wrf_put_dom_ti_real    ( fid, 'SWRAD_SCAT', swrad_scat , 1 , ierr )

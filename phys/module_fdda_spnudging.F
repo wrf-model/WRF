@@ -783,7 +783,7 @@ SUBROUTINE spectral_nudging_filter_3dx( f, nwave,            &
            sheet(ide,k-kts+1) = 0.
         END DO
 
-        CALL spectral_nudging_filter_fft_2d_ncar(nx,ny,nwave,sheet)
+        CALL spectralnudgingfilterfft2dncar(nx,ny,nwave,sheet)
 
         DO k=kts,kte
            DO i=ids,ide
@@ -837,7 +837,7 @@ SUBROUTINE spectral_nudging_filter_3dy( f, nwave,   &
            sheet(jde,k-kts+1) = 0.
         END DO
 
-        CALL spectral_nudging_filter_fft_2d_ncar(nx,ny,nwave,sheet)
+        CALL spectralnudgingfilterfft2dncar(nx,ny,nwave,sheet)
 
         DO k=kts,kte
            DO j=jds,jde
@@ -850,7 +850,7 @@ END SUBROUTINE spectral_nudging_filter_3dy
 
 !------------------------------------------------------------------------------
 
-SUBROUTINE spectral_nudging_filter_fft_2d_ncar(nx,ny,nwave,fin)
+SUBROUTINE spectralnudgingfilterfft2dncar(nx,ny,nwave,fin)
   IMPLICIT NONE
   INTEGER , INTENT(IN) :: nx, ny, nwave
   REAL , DIMENSION(nx,ny), INTENT(INOUT) :: fin
@@ -922,7 +922,7 @@ SUBROUTINE spectral_nudging_filter_fft_2d_ncar(nx,ny,nwave,fin)
     write(0,*) ' error in rfftmb ',ier
   END IF
 
-END SUBROUTINE spectral_nudging_filter_fft_2d_ncar
+END SUBROUTINE spectralnudgingfilterfft2dncar
 
 !-------------------------------------------------------------------
 

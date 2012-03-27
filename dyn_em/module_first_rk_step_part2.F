@@ -38,7 +38,8 @@ CONTAINS
     USE module_domain, ONLY : domain
     USE module_configure, ONLY : grid_config_rec_type, model_config_rec
 #ifdef DM_PARALLEL
-    USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval, wrf_err_message, local_communicator_x, local_communicator_y
+    USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, &
+                          wrf_dm_maxval, wrf_err_message, local_communicator_x, local_communicator_y
     USE module_comm_dm, ONLY : halo_em_tke_c_sub,halo_em_tke_d_sub,halo_em_tke_e_sub            &
             ,halo_em_phys_pbl_sub,halo_em_phys_shcu_sub &
             ,halo_em_fdda_sub,halo_em_phys_diffusion_sub,halo_em_tke_3_sub &

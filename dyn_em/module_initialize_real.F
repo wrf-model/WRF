@@ -165,7 +165,8 @@ integer::oops1,oops2
 
       !  Send out a quick message about the time steps based on the map scale factors.
 
-      IF ( ( internal_time_loop .EQ. 1 ) .AND. ( grid%id .EQ. 1 ) .AND. ( .NOT. config_flags%map_proj .EQ. PROJ_CASSINI ) ) THEN
+      IF ( ( internal_time_loop .EQ. 1 ) .AND. ( grid%id .EQ. 1 ) .AND. &
+           ( .NOT. config_flags%map_proj .EQ. PROJ_CASSINI ) ) THEN
          max_mf = grid%msft(its,jts)
          DO j=jts,MIN(jde-1,jte)
             DO i=its,MIN(ide-1,ite)
@@ -175,7 +176,8 @@ integer::oops1,oops2
 #if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
          max_mf = wrf_dm_max_real ( max_mf )
 #endif
-         WRITE ( a_message , FMT='(A,F5.2,A)' ) 'Max map factor in domain 1 = ',max_mf,'. Scale the dt in the model accordingly.'
+         WRITE ( a_message , FMT='(A,F5.2,A)' ) 'Max map factor in domain 1 = ',max_mf, &
+                                                '. Scale the dt in the model accordingly.'
          CALL wrf_message ( a_message ) 
       END IF
 
@@ -1559,7 +1561,8 @@ integer::oops1,oops2
                END DO
             END DO
          ELSE
-            WRITE ( a_message , * ) 'You have set surface_input_source = 3, but your geogrid data does not have valid dominant soil data.'
+            WRITE ( a_message , * ) 'You have set surface_input_source = 3,'// &
+                                    ' but your geogrid data does not have valid dominant soil data.'
             CALL wrf_error_fatal ( a_message ) 
          END IF
          IF ( grid%lu_index(i_valid,j_valid) .GT. 0.5 ) THEN
@@ -1571,7 +1574,8 @@ integer::oops1,oops2
                END DO
             END DO
          ELSE
-            WRITE ( a_message , * ) 'You have set surface_input_source = 3, but your geogrid data does not have valid dominant land use data.'
+            WRITE ( a_message , * ) 'You have set surface_input_source = 3,'//&
+                                    ' but your geogrid data does not have valid dominant land use data.'
             CALL wrf_error_fatal ( a_message ) 
          END IF
 

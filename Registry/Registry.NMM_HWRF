@@ -585,6 +585,7 @@ state integer imicrogram -   misc        -    -    r   "imicrogram"  "flag 0/1 0
 state  real   distsq    ij     dyn_nmm     1      -      irh       "DISTSQ"  "Approximate square of distance from nest center for vortex tracker #4" "m2"
 state  real   weightout ij     dyn_nmm     1      -      irh       "WEIGHTOUT"  "Vortex center finder weight array for vortex tracker #4" ""
 state integer mslp_noisy ij    dyn_nmm     1      -      irh       "MSLP_NOISY"  "0=okay, 1=noisy MSLP, 2=outside search radius, 3=boundary (vortex tracker #4)" ""
+state  real   prevpres  -      dyn_nmm     1      -      r         "PREVPRES"  "Min. MSLP after noise removal at previous nest movement check" "Pa"
 
 
 #                                               
@@ -1328,7 +1329,7 @@ rconfig integer td_pwfy        namelist,physics 1 1      - - ""  "southwest corn
 **** namelist variable dyn_opt that means to select our exp dyncore.
 package   dyn_exp       dyn_opt==5                   -             -
 
-package   vt4           vortex_tracker==4            -             state:weightout,mslp_noisy,distsq
+package   vt4           vortex_tracker==4            -             state:weightout,mslp_noisy,distsq,prevpres
 
 #package   passivec1     chem_opt==0                  -
 package   passiveqv     mp_physics==0                -             moist:qv

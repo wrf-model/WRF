@@ -1,3 +1,7 @@
+! #define EXPENSIVE_HWRF_DEBUG_STUFF 1
+#undef EXPENSIVE_HWRF_DEBUG_STUFF
+#define MOOD 3
+
 module module_stats_for_move
   implicit none
   private
@@ -26,6 +30,8 @@ contains
     integer :: i,j
     
 #ifdef HWRF
+    grid%prevpres=-1.0
+
     vortex_tracker=grid%vortex_tracker
     if(vortex_tracker<1 .or. vortex_tracker>4) then
        write(message,*)' domain ',grid%id,' has an invalid value ',vortex_tracker,' for vortex_tracker.  It must be 1, 2, 3 or 4.'
@@ -184,6 +190,7 @@ contains
                                 config_flags%vt4_noise_pmin, &
                                 config_flags%vt4_noise_dpdr, &
                                 grid%dx_nmm,grid%dy_nmm,     &
+                                grid%prevpres,               &
                                 IDS,IDE,JDS,JDE,KDS,KDE,     &
                                 IMS,IME,JMS,JME,KMS,KME,     &
                                 ITS,ITE,JTS,JTE,KTS,KTE)
@@ -192,6 +199,7 @@ contains
 #         include "HALO_NMM_VT4_NOISE.inc"
 # endif
              call vt4_noise_iter(grid%mslp_noisy,             &
+                                 grid%prevpres,               &
                                  IDS,IDE,JDS,JDE,KDS,KDE,     &
                                  IMS,IME,JMS,JME,KMS,KME,     &
                                  ITS,ITE,JTS,JTE,KTS,KTE)
@@ -204,6 +212,7 @@ contains
                      config_flags%vt4_radius,              &
                      config_flags%vt4_weightexp,           &
                      config_flags%vt4_pmax,                &
+                     grid%prevpres,                        &
                      IDS,IDE,JDS,JDE,KDS,KDE,              &
                      IMS,IME,JMS,JME,KMS,KME,              &
                      IPS,IPE,JPS,JPE,KPS,KPE,              &
@@ -211,12 +220,12 @@ contains
 #endif
     endif oldmove
   END SUBROUTINE STATS_FOR_MOVE
-
-  SUBROUTINE vt4_noise_iter(NOISY,                   &
+ 
+  SUBROUTINE vt4_noise_iter(NOISY,prevpres,          &
                             IDS,IDE,JDS,JDE,KDS,KDE, &
                             IMS,IME,JMS,JME,KMS,KME, &
                             ITS,ITE,JTS,JTE,KTS,KTE)
-    ! VT4_NOISE_DETECT
+    ! VT4_NOISE_ITER
     !
     ! PURPOSE: Takes in a "NOISY" array, finds all points where
     ! NOISY(I,J)/=01, and marks all surrounding points with a 1.
@@ -233,6 +242,7 @@ contains
                            IMS,IME,JMS,JME,KMS,KME, &
                            ITS,ITE,JTS,JTE,KTS,KTE
     integer :: i,j,iadd
+    real, intent(in) :: prevpres
     
     do j = max(jds+1,jts), min(jte,jde-2)
        iadd=mod(j,2)-1
@@ -246,8 +256,8 @@ contains
        enddo
     enddo
   END SUBROUTINE vt4_noise_iter
-  SUBROUTINE vt4_noise_detect(MSLP,NOISY,PMAX,PMIN,DPDR, &
-                              DX_NMM, DY_NMM,            &
+  SUBROUTINE vt4_noise_detect(MSLP,NOISY,PMAX,PMIN,DPDR_in, &
+                              DX_NMM, DY_NMM,prevpres,   &
                               IDS,IDE,JDS,JDE,KDS,KDE,   &
                               IMS,IME,JMS,JME,KMS,KME,   &
                               ITS,ITE,JTS,JTE,KTS,KTE)
@@ -266,12 +276,12 @@ contains
     !   Nov 08 2011 - written by Sam Trahan
     IMPLICIT NONE
     real,dimension(ims:ime,jms:jme), intent(in) :: mslp,dx_nmm
-    real, intent(in) :: dy_nmm,pmax,pmin,dpdr
+    real, intent(in) :: dy_nmm,pmax,pmin,dpdr_in,prevpres
     integer,dimension(ims:ime,jms:jme), intent(out) :: noisy
     integer, intent(in) :: IDS,IDE,JDS,JDE,KDS,KDE, &
                            IMS,IME,JMS,JME,KMS,KME, &
                            ITS,ITE,JTS,JTE,KTS,KTE
-    real :: dp2,dy2,dx2,pdiff,dp2max
+    real :: dp2,dy2,dx2,pdiff,dp2max,dpdr,scaled
     integer :: i,j
     integer :: iadd
 
@@ -283,8 +293,25 @@ contains
 #endif
     
     dy2=dy_nmm*dy_nmm*4
-    dp2max=dpdr*dpdr
 
+    ! Determine dpdr either automatically or from dpdr_in
+    if(dpdr_in<=1e-6) then
+       if(prevpres<=0) then
+          dpdr=0.6
+       elseif(prevpres<98000.0) then
+          dpdr=0.6
+       else
+          scaled=max(500.0,101300.0-prevpres)/14000.0
+          if(prevpres<100000.0) then
+             dpdr=0.6+(scaled-0.6)*(prevpres-98000.0)/2000.0
+          else
+             dpdr=scaled
+          end if
+       endif
+    else
+       dpdr=dpdr_in
+    end if
+    dp2max=dpdr*dpdr
 
     do j=jts,min(jte,jde-1)
        iadd=mod(j,2)-1
@@ -329,6 +356,7 @@ contains
                    cycle
                 endif
 
+
                 ! southeast-northwest direction:
                 pdiff=mslp(i+1+iadd,j-1)-mslp(i+iadd,j+1)
                 dp2=pdiff*pdiff/(dx2+dy2)
@@ -356,7 +384,7 @@ contains
 
   SUBROUTINE vt4_move(MSLP,WEIGHTOUT,DISTSQ,NOISY,DX_NMM,DY_NMM, &
                       xloc,yloc,cx,cy,mvnest,                    &
-                      searchrad,searchpow,searchpmax,            &
+                      searchrad,searchpow_in,searchpmax, prevpres,  &
                       IDS,IDE,JDS,JDE,KDS,KDE,                   &
                       IMS,IME,JMS,JME,KMS,KME,                   &
                       IPS,IPE,JPS,JPE,KPS,KPE,                   &
@@ -384,7 +412,7 @@ contains
 
 #ifdef DM_PARALLEL
     USE module_dm, only: wrf_dm_maxval_real, wrf_dm_sum_real, &
-         local_communicator_y, local_communicator_x
+         local_communicator_y, local_communicator_x, wrf_dm_minval_real
 #endif
     IMPLICIT NONE
     INCLUDE 'mpif.h'
@@ -392,17 +420,18 @@ contains
     integer, intent(out) :: xloc,yloc
     integer, intent(in) :: cx,cy
     real,dimension(ims:ime,jms:jme), intent(in) :: mslp,distsq,dx_nmm
-    real, intent(in) :: dy_nmm,searchrad,searchpow,searchpmax
+    real, intent(in) :: dy_nmm,searchrad,searchpow_in,searchpmax
     real,dimension(ims:ime,jms:jme), intent(out) :: weightout
+    real, intent(inout) :: prevpres
     integer,dimension(ims:ime,jms:jme), intent(inout) :: noisy
     integer, intent(in) :: IDS,IDE,JDS,JDE,KDS,KDE, &
                            IMS,IME,JMS,JME,KMS,KME, &
                            IPS,IPE,JPS,JPE,KPS,KPE, &
                            ITS,ITE,JTS,JTE,KTS,KTE
     logical, intent(out) :: mvnest
-    real :: pmax,sr2,weight,xsum,ysum,xwsum,ywsum
+    real :: pmax,sr2,weight,xsum,ysum,xwsum,ywsum,searchpow
     real :: centroid_x, centroid_y, xdiff, ydiff
-    real :: xweight,yweight,maxweight
+    real :: xweight,yweight,maxweight,pmin
     integer :: i,j,idum,jdum,ierr,ctx,cty
     integer :: xcount(jps:jpe),ycount(ips:ipe)
     integer :: myxcount(jps:jpe),myycount(ips:ipe)
@@ -476,7 +505,7 @@ contains
        write(message,'("ycount(",I0,") = ",I0)') i,ycount(i)
        call wrf_debug(5,message)
     enddo
-#endif EXPENSIVE_HWRF_DEBUG_STUFF
+#endif
 
     ! Find maximum pressure if requested
     findpmax: if(searchpmax<0.0) then
@@ -495,7 +524,84 @@ contains
     else
        pmax=searchpmax
     endif findpmax
+
+    ! Find minimum pressure
+    pmin=9e9
+    do j = max(jds+2,jts), min(jte,jde-3)
+       do i = max(ids+1,its), min(ite,ide-2)
+          if(noisy(i,j)==0 .and. mslp(i,j)<pmin) then
+             pmin=mslp(i,j)
+          endif
+       enddo
+    enddo
+
+    idum=-99 ; jdum=-99 ! to keep debug modes happy
+    call wrf_dm_minval_real(pmin,idum,jdum)
+    pmin=max(85000.0,pmin)
+
+    ! Update prevpres by adjusting slowly towards the current min pressure:
+
+    if(prevpres<=0) then
+       prevpres=pmin
+    elseif(pmin<prevpres) then
+       ! Adjust more slowly if the pressure is deepening
+       ! because it may be due to MSLP noise or point values:
+#if MOOD>1
+       prevpres=0.5*prevpres + 0.5*pmin
+#else
+       prevpres=0.75*prevpres + 0.25*pmin
+#endif
+    else
+       ! Adjust more quickly if it is a weakening since that
+       ! will be a larger-scale change.
+#if MOOD>1
+       prevpres=0.3*prevpres + 0.7*pmin
+#else
+       prevpres=0.5*prevpres + 0.5*pmin
+#endif
+    end if
+
     ! Find vortex location.
+
+#if MOOD==2
+    if(searchpow_in<0.0) then
+       if(prevpres<97000.) then
+          searchpow=1.0
+       elseif(prevpres<99000.0) then
+          searchpow=1.0+1.0*(prevpres-97000.0)/2000.0
+       else
+          searchpow=2.0
+       endif
+    else
+       searchpow=searchpow_in
+    endif
+#else
+#if MOOD==3
+    if(searchpow_in<0.0) then
+       if(prevpres<97000.) then
+          searchpow=0.5
+       elseif(prevpres<99000.0) then
+          searchpow=0.5+1.5*(prevpres-97000.0)/2000.0
+       else
+          searchpow=2.0
+       endif
+    else
+       searchpow=searchpow_in
+    endif
+#else
+    if(searchpow_in<0.0) then
+       if(prevpres<98000.) then
+          searchpow=0.5
+       elseif(prevpres<99000.0) then
+          searchpow=0.5+1.5*(prevpres-98000.0)/2000.0
+       else
+          searchpow=2.0
+       endif
+    else
+       searchpow=searchpow_in
+    endif
+#endif
+#endif
 
     xsum=0.0 ; ysum=0.0 ; xwsum=0.0 ; ywsum=0.0
     maxweight=-99.

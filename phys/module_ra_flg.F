@@ -8539,11 +8539,11 @@ MODULE module_ra_FLG
           if (NPDE.eq.1.and.piwc(k).gt.0.) then
 !C--- for temperature between 213K and 253K
 		    if (degrees(i,NK,j).lt.253.         &
-                    .and.degrees(i,NK,k).gt.213.) then
+                    .and.degrees(i,NK,j).gt.213.) then  !mchen
 		      TEMP_IWC = exp(-7.6                 &
-                   +4.*exp(-0.2443e-3*(253.-degrees(i,NK,k))**2.445))
+                   +4.*exp(-0.2443e-3*(253.-degrees(i,NK,j))**2.445)) !mchen
 
-		      TEMP_T = degrees(i,NK,k) - 273.
+		      TEMP_T = degrees(i,NK,j) - 273.  !mchen
 		      TEMP_DE = 326.3+12.42*TEMP_T+0.197*TEMP_T*TEMP_T   &
 !c		  TEMP_DE = 326.3+12.42*TEMP_T-0.197*TEMP_T*TEMP_T
                           +0.0012*TEMP_T**3
@@ -8571,7 +8571,7 @@ MODULE module_ra_FLG
 !	        if (j.lt.17.and.j.gt.7.or.j.gt.28.and.j.le.38) then
 	    if (abs(xlat(i,j)).ge.30.and.abs(xlat(i,j)).le.60.) then 
 !C--- for cold cirrus
-              if (degrees(i,NK,k).lt.233) then
+              if (degrees(i,NK,j).lt.233) then !mchen
 	            ncoef = 2
 	      else  ! for warm cirrus
 	            ncoef = 3
@@ -8775,7 +8775,7 @@ MODULE module_ra_FLG
             if (itps(iac).eq.1) then
               Select case (ivd)
               case default
-                stop 'ivd: No VERTICAL Aerosol Profile'
+              CALL wrf_error_fatal('ivd: No VERTICAL Aerosol Profile')  !mchen
               
               case(0)
               
@@ -8949,25 +8949,23 @@ MODULE module_ra_FLG
 
 !*** value test
 	if (abs(ulwtop(i,j)).gt.1000.) then
-          write (0,*) 'i=',i,' j=',j,' ulwtop=',ulwtop(i,j)
-          write(0,*) 'fd=', fds 
-          write(0,*) 'fus=', fus 
-          write(0,*) 'fdir=', fdir 
-          write(0,*) 'fuir=', fuir 
-          write (0,*) '---------------------------'
-          write (0,*) as, u0ij, solcon, tsij,ee
-          write (0,*) '---------------------------'
-          do ii=1,kmax
-            write (0,*) pij(ii), tij(ii), qij(ii), o3ij(ii)
-	  enddo
-          write (0,*) '---------------------------'
-          do ii=1,kmax-1
-            write (0,*) piwc(ii), pde(ii), plwc(ii), pre(ii),prwc(ii), pgwc(ii) &
-      , cldamnt(ii)
-          enddo
-          write (0,*) '---------------------------'
-          write(0,*) 'Flux out of range. Stop program'
-          stop
+       !   write (0,*) 'i=',i,' j=',j,' ulwtop=',ulwtop(i,j)
+       !   write(0,*) 'fd=', fds 
+       !   write(0,*) 'fus=', fus 
+       !   write(0,*) 'fdir=', fdir 
+       !   write(0,*) 'fuir=', fuir 
+       !   write (0,*) '---------------------------'
+       !   write (0,*) as, u0ij, solcon, tsij,ee
+       !   write (0,*) '---------------------------'
+       !   do ii=1,kmax
+       !     write (0,*) pij(ii), tij(ii), qij(ii), o3ij(ii)
+!	  enddo
+!          write (0,*) '---------------------------'
+!          do ii=1,kmax-1
+!            write (0,*) piwc(ii), pde(ii), plwc(ii), pre(ii),prwc(ii), pgwc(ii) &
+!      , cldamnt(ii)
+!          enddo
+        CALL wrf_error_fatal('Flux out of range. Stop program')  !mchen
 	endif 
 !C---test oevr
 
@@ -8992,26 +8990,7 @@ MODULE module_ra_FLG
 
 !*** Value test
         if (abs(dtir(Nk)).gt.100.) then 
-          write (0,*) 'i=',i,' j=',j,' nk=',nk
-          write (0,*) 'dtir=',dtir, ' dts=',dts
-          write(0,*) 'fds=', fds 
-          write(0,*) 'fus=', fus 
-          write(0,*) 'fdir=', fdir 
-          write(0,*) 'fuir=', fuir 
-          write (0,*) '---------------------------'
-          write (0,*) as, u0ij, solcon, tsij,ee
-          write (0,*) '---------------------------'
-          do ii=1,kmax
-            write (0,*) pij(ii), tij(ii), qij(ii), o3ij(ii)
-	  enddo
-          write (0,*) '---------------------------'
-          do ii=1,kmax-1
-            write (0,*) piwc(ii), pde(ii), plwc(ii), pre(ii),prwc(ii), pgwc(ii) &
-      , cldamnt(ii)
-          enddo
-          write (0,*) '---------------------------'
-          write(0,*) 'Heating rate out of range. Stop program'
-          stop
+         CALL wrf_error_fatal('Heating rate out of range. Stop program')  !mchen
         endif
 !C---test oevr
 
@@ -12203,10 +12182,8 @@ MODULE module_ra_FLG
         adj_pari = 0.
         adj_parw = 0.
         if (cldamnt(i).gt. 0.) then
-!           n_cld = (i-4)/3 
-!          n_cld = (i-(nv1-nclouds))/nsubcld+1 
           n_cld = (i-(nv1-nsubcld*ngroup))/nsubcld+1 
-          if (n_cld.gt.0) then
+          if (n_cld.gt.0.and.cld_group(n_cld).ne.0) then   !mchen
 ! -- determine adjust parameter 
             fcloud = cldamnt(i) / cld_group(n_cld)
             if (fcloud.le.0.1) then
@@ -13820,7 +13797,7 @@ MODULE module_ra_FLG
 !      if (z.ge.0.) z = 1.e-4
 !      if (z.lt.0.) z = -1.e-4
 !      endif
-      if(z.eq.0.) z = 1.e-4
+      if(abs(z).le.1.e-4) z = 1.e-4
 ! -- cgange over
       cadd0 = fw * ( ( gamma1 - fq ) * alfa + &
      &          beta * gamma2 ) / z
@@ -13946,9 +13923,7 @@ MODULE module_ra_FLG
       real    :: bet
 !      if ( b(1) .eq. 0. ) pause
       if ( b(1) .eq. 0. ) then 
-          write(0,*) 'b(1)=', b(1) 
-          write(0,*) 'subroutine tridag failed. Stop program'
-          stop
+           CALL wrf_error_fatal('subroutine tridag failed. Stop program')  !mchen
       endif
 ! If this happens then you should rewrite your equations as a set of
 ! order n-1, with u2 trivially eliminated.
@@ -13961,10 +13936,7 @@ MODULE module_ra_FLG
         bet = b(j) - a(j) * gam(j)
 !        if ( bet .eq. 0. ) pause
         if ( bet .eq. 0. ) then
-          write(0,*) 'j=',j, 'bet=', bet
-          write(0,*) 'b-a* gam=', b(j), a(j), gam(j)          
-          write(0,*) 'subroutine tridag failed. Stop program'
-          stop
+           CALL wrf_error_fatal('subroutine tridag failed. Stop program')  !mchen
       endif
 
 ! Algorithm fails; see Numerical Recipes.
@@ -14188,7 +14160,7 @@ MODULE module_ra_FLG
 !      if (xgy.ge.0.) xgy = 1.e-4
 !      if (xgy.lt.0.) xgy = -1.e-4
 !      endif
-        if(xgy.eq.0.) xgy = 1.e-4
+       if(abs(xgy).le.1.e-4) xgy = 1.e-4   !mchen
         x = 2.0 * ( 1.0 - w(i) ) * w(i) / xgy
 !          x = 2.0 * ( 1.0 - w(i) ) * w(i) / ( lamdan(i) *
 !     &         lamdan(i) - beta(i) * beta(i) )
@@ -14419,7 +14391,7 @@ MODULE module_ra_FLG
 	    endif
 	    idtl=3
 	  else
-	    stop ' Bad Aerosol type'
+           CALL wrf_error_fatal('Bad Aerosol type. Stop program')  !mchen
 	  endif
 
 
@@ -14427,7 +14399,7 @@ MODULE module_ra_FLG
       if(nwin==1)then
         ! nes=-3; nel=19                 ! 1 chan @ 500nm
         if(wlin(1)<=.325.or.wlin(1)>=.675) &
-     &                                  stop ' OUT OF ALLOWABLE ARANGE'
+     &      CALL wrf_error_fatal('OUT OF ALLOWABLE ARANGE. STOP program')  !mchen
         nes=-(wlin(1)-0.325)/0.05; 
         if(idtl==3) nes=nes-1  ! OPAC starts at 0.25um instead of 0.30
         nel=22+nes
@@ -14615,7 +14587,7 @@ MODULE module_ra_FLG
         endif
       end do
       h=xa(khi)-xa(klo)
-      if (h.eq.0.) stop 'bad xa input in splint'
+      if (h.eq.0.)  CALL wrf_error_fatal('bad xa input in splint. STOP program')  !mchen
       a=(xa(khi)-x)/h
       b=(x-xa(klo))/h
       y=a*ya(klo)+b*ya(khi)+((a**3-a)*y2a(klo)+(b**3-b)*y2a(khi))*(h** &
@@ -14650,7 +14622,7 @@ MODULE module_ra_FLG
           hp=xa(i+m)-x
           w=c(i+1)-d(i)
           den=ho-hp
-          if(den.eq.0.)stop 'failure in polint'
+          if(den.eq.0.)  CALL wrf_error_fatal('failure in polint. STOP program')  !mchen
           den=w/den
           d(i)=hp*den
           c(i)=ho*den
@@ -14834,9 +14806,8 @@ MODULE module_ra_FLG
 	  a_ssa1 = 0. ; a_ext1 = 0. ; a_asy1 = 0. ; a_tau1 = 0.
 	  a_ssa2 = 0. ; a_ext2 = 0. ; a_asy2 = 0. ; a_tau2 = 0.
 
-!      if ( nac < 0 .or. nac > mxac ) stop !?"nac:# Aerosol Constituents"
-      if (n_atau<0 .or.n_atau>mxat) stop !?"n_atau:# Aerosol Tau / Wavelengths"
-      if (ifg < 0 .or. ifg > 8) stop !?"ifg: Aerosol RH% Flag"
+      if (n_atau<0 .or.n_atau>mxat) CALL wrf_error_fatal('errro in Aerosol Tau / Wavelengths. STOP program')  !mchen 
+      if (ifg < 0 .or. ifg > 8) CALL wrf_error_fatal('Error in ifg: Aerosol RH% Flag. STOP program')  !mchen
       
       AEROSOL_CONSTITUENTS : do iac = 1,mxac
       if (itps(iac).eq.1) then
@@ -14845,7 +14816,7 @@ MODULE module_ra_FLG
         a_tau(1:n_atau) = a_taus(1:n_atau,iac)
         aprof(1:nv) = aprofs(1:nv,iac)
         itp = iac
-        if ( itp < 1 .or. itp > naer ) stop ' itp : Bad Aerosol Type'
+        if ( itp < 1 .or. itp > naer ) CALL wrf_error_fatal('Error in itp: bad Aerosol type. STOP program')  !mchen
 !      print*,'CONSTITUENTS',iac,itp
 
 ! FOR Aerosol Optical Properties types that are constant with RH       
@@ -14968,7 +14939,7 @@ MODULE module_ra_FLG
 
         select case (ivd) 
         case default
-          stop ' ivd : Aerosol Profile flag'
+          CALL wrf_error_fatal('ivd : Aerosol Profile flag. STOP program')  !mchen
         case (0)  !! DEFAULT VERTICAL DISTRIBUTION Spinhirne
 
           sumxxx=0.0
@@ -14992,7 +14963,7 @@ MODULE module_ra_FLG
           sump =   sum( aprof(mtop:nv) )
           tauxxx(mtop:nv)= aprof(mtop:nv) / sump 
 
-          if(sump.eq.0.)stop 'No VERTICAL Profile OF AEROSOL TAU '
+          if(sump.eq.0.) CALL wrf_error_fatal('No VERTICAL Profile OF AEROSOL TAU. STOP program')  !mchen
 
         end select
 
@@ -15018,7 +14989,7 @@ MODULE module_ra_FLG
 
         select case ( iaform )
         case default
-          stop ' iaform : Bad value of iaform '
+          CALL wrf_error_fatal('iaform : Bad value of iaform . STOP program')  !mchen
         case(1)        ! CERES
 !! No operations necessary
 

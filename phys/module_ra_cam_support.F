@@ -3627,6 +3627,7 @@ USE module_wrf_error
          DM_BCAST_MACRO(gcb)
          DM_BCAST_MACRO(kvolc)
          DM_BCAST_MACRO(wvolc)
+         DM_BCAST_MACRO(gvolc)
          DM_BCAST_MACRO(kdst)
          DM_BCAST_MACRO(wdst)
          DM_BCAST_MACRO(gdst)

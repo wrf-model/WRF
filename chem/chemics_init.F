@@ -204,7 +204,9 @@ call wrf_message("**************************************************************
        CALL wrf_debug(15,'calling biomass burning for GHGs')
    endif
 
-   if( config_flags%chem_opt == MOZCART_KPP .or. config_flags%chem_opt == MOZART_KPP ) then
+   if( config_flags%chem_opt == MOZCART_KPP .or. &
+       config_flags%chem_opt == MOZART_KPP .or. &
+       config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
        write(message_txt,*) 'chem_init: calling mozcart_lbc_init for domain ',id
        call wrf_message( trim(message_txt) )
        call mozcart_lbc_init( chem, num_chem, id, &
@@ -214,7 +216,8 @@ call wrf_message("**************************************************************
 
    if ( config_flags%wetscav_onoff == 1 ) then
      if( config_flags%chem_opt /= MOZART_KPP .and. &
-         config_flags%chem_opt /= MOZCART_KPP ) then
+         config_flags%chem_opt /= MOZCART_KPP .and. &
+         config_flags%chem_opt /= MOZART_MOSAIC_4BIN_VBS0_KPP ) then
        if(  ( config_flags%chem_opt >= 8 .AND. config_flags%chem_opt <= 13) .OR.  &
             ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36) .OR. &
             ( config_flags%chem_opt >= 41 .AND. config_flags%chem_opt <= 42) ) then

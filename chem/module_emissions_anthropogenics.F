@@ -114,7 +114,9 @@ CONTAINS
                          +emis_ant(i,k,j,p_e_no2)*conv_rho
         chem(i,k,j,p_nh3)  = chem(i,k,j,p_nh3)                         &
                          +emis_ant(i,k,j,p_e_nh3)*conv_rho
-        if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP ) then
+        if( config_flags%chem_opt == MOZART_KPP .or. &
+            config_flags%chem_opt == MOZCART_KPP .or. &
+            config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
            conv_rho_aer = alt(i,k,j)*dtstep/dz8w(i,k,j)
            chem(i,k,j,p_bigalk) = chem(i,k,j,p_bigalk) + emis_ant(i,k,j,p_e_bigalk)*conv_rho
            chem(i,k,j,p_bigene) = chem(i,k,j,p_bigene) + emis_ant(i,k,j,p_e_bigene)*conv_rho
@@ -137,6 +139,9 @@ CONTAINS
              chem(i,k,j,p_p25) = chem(i,k,j,p_p25) + conv_rho_aer*emis_ant(i,k,j,p_e_pm_25)
              chem(i,k,j,p_oc1) = chem(i,k,j,p_oc1) + conv_rho_aer*emis_ant(i,k,j,p_e_oc)
              chem(i,k,j,p_bc1) = chem(i,k,j,p_bc1) + conv_rho_aer*emis_ant(i,k,j,p_e_bc)
+           elseif( config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
+             chem(i,k,j,p_voca)  = chem(i,k,j,p_voca) + conv_rho*emis_ant(i,k,j,p_e_voca)
+             chem(i,k,j,p_vocbb) = chem(i,k,j,p_vocbb) + conv_rho*emis_ant(i,k,j,p_e_vocbb)
            endif
           else
         chem(i,k,j,p_csl)  =  chem(i,k,j,p_csl)                        &

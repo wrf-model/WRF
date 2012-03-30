@@ -243,7 +243,7 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
-   CASE (MOZART_KPP,MOZCART_KPP)
+   CASE (MOZART_KPP,MOZCART_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP)
        CALL wrf_debug(15,'wetscav_driver calling wetscav_mozcart')
        call wetscav_mozcart( id, ktau, dtstep, ktauc, config_flags,             &
                              dtstepc, t_phy, p8w, t8w, p_phy,                   &

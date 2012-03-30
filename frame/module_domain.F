@@ -68,6 +68,8 @@ MODULE module_domain
      MODULE PROCEDURE get_ijk_from_grid1, get_ijk_from_grid2
    END INTERFACE
 
+   INTEGER, PARAMETER :: max_hst_mods = 200
+
 CONTAINS
 
    SUBROUTINE adjust_domain_dims_for_move( grid , dx, dy )
@@ -1020,7 +1022,7 @@ CONTAINS
       INTEGER            :: lineno, fieldno, istrm, retval, itrace
       LOGICAL            :: keepgoing, noerr, gavewarning, ignorewarning, found
       LOGICAL, SAVE      :: you_warned_me = .FALSE.
-      LOGICAL, SAVE      :: you_warned_me2(100,max_domains) = .FALSE.
+      LOGICAL, SAVE      :: you_warned_me2(max_hst_mods,max_domains) = .FALSE.
 
       gavewarning = .FALSE.
 
@@ -1195,7 +1197,7 @@ CONTAINS
      CHARACTER*256, INTENT(IN )   :: dname, fname, lookee
      CHARACTER*256, INTENT(OUT)   :: mess
      LOGICAL,       INTENT(OUT)   :: found
-     LOGICAL,       INTENT(INOUT) :: you_warned_me2(100,max_domains)
+     LOGICAL,       INTENT(INOUT) :: you_warned_me2(max_hst_mods,max_domains)
    ! Local
      INTEGER                      :: retval
 
@@ -1221,10 +1223,10 @@ CONTAINS
          CALL reset_mask( p_stream, strmtyp_int + istrm - 1)
        ENDIF
      ENDIF
-     IF ( count_em > 100 ) THEN
-       WRITE(mess,*)'ERROR module_domain:  Array size for you_warned_me2 is fixed at 100'
+     IF ( count_em > max_hst_mods ) THEN
+       WRITE(mess,*)'ERROR module_domain:  Array size for you_warned_me2 is fixed at ',max_hst_mods
        CALL wrf_message(mess)
-       CALL wrf_error_fatal('Did you really type > 100 fields into ', TRIM(fname) ,' ?')
+       CALL wrf_error_fatal('Did you really type > max_hst_mods fields into ', TRIM(fname) ,' ?')
      ELSE
        IF ( .NOT. you_warned_me2(count_em,id) ) THEN
          CALL wrf_message(mess)     ! Write warning message once for each field

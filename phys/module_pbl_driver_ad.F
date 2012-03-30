@@ -372,7 +372,7 @@ SUBROUTINE a_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
                INTENT(IN   )    ::                        CTOPO, &
                                                           CTOPO2
 ! Variables and Diagnostic for QNSE and EDKF JP
-   LOGICAL, INTENT(IN) ::  mfshconv ! WRF JP
+   INTEGER, INTENT(IN) ::  mfshconv ! WRF JP
 
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,  &
                INTENT(OUT)    ::    massflux_EDKF, entr_EDKF, detr_EDKF & 

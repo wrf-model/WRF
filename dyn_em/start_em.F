@@ -1007,7 +1007,7 @@
        if (config_flags%topo_wind.eq.1) then
          DO j = jts,min(jte,jde-1)
          DO i = its, min(ite,ide-1)
-            grid%ctopo(i,j)=sqrt(grid%var_sso(i,j))
+            if(grid%xland(i,j).lt.1.5)grid%ctopo(i,j)=sqrt(grid%var_sso(i,j))
             if (grid%ctopo(i,j).le.2.718) then
             grid%ctopo(i,j)=1.
             else

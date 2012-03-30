@@ -1462,9 +1462,9 @@ SUBROUTINE bdy_chem_value_ghg ( chem, nch )
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 if( nch==p_co2_bck .OR. nch==p_co2_bio .OR. nch==p_co2_oce .OR. nch==p_co2_ant &
-    .OR. nch==p_co2_bbu .OR. nch==p_co2_atst ) then
+    .OR. nch==p_co2_bbu .OR. nch==p_co2_tst ) then
     chem = 380.
-else if( nch==p_co_bck .OR. nch==p_co_ant .OR. nch==p_co_bbu ) then
+else if( nch==p_co_bck .OR. nch==p_co_ant .OR. nch==p_co_bbu .OR. nch==p_co_tst) then
     chem = 0.1
 else if( nch==p_ch4_bck .OR. nch==p_ch4_bio .OR. nch==p_ch4_ant &
          .OR. nch==p_ch4_bbu .OR. nch==p_ch4_tst ) then

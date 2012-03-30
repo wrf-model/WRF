@@ -681,8 +681,10 @@ ghg_block: IF (config_flags%gas_ic_opt==GAS_IC_GHG) THEN
             chem(i,k,j,p_co2_bio)=380.  ! A user should subtract this from the output fields!
             chem(i,k,j,p_co2_oce)=380.   ! A user should subtract this from the output fields!
             chem(i,k,j,p_co2_ant)=380.   ! A user should subtract this from the output fields!
-            chem(i,k,j,p_co2_bbu)=380.   ! A user should subtract this from the output fields!
-            chem(i,k,j,p_co2_atst)=380.   ! A user should subtract this from the output fields!
+            chem(i,k,j,p_co2_tst)=380.   ! A user should subtract this from the output fields!
+
+            if (p_co2_bbu>1) chem(i,k,j,p_co2_bbu)=380.  ! A user should subtract this from the output fields!
+
          enddo
         enddo
        enddo
@@ -693,13 +695,14 @@ ghg_block: IF (config_flags%gas_ic_opt==GAS_IC_GHG) THEN
          do i=its,ite
             chem(i,k,j,p_co_bck)=0.1  ! background CO tracer
             chem(i,k,j,p_co_ant)=0.1  ! A user should subtract this from the output fields!
-            chem(i,k,j,p_co_bbu)=0.1   ! A user should subtract this from the output fields!
+            if (p_co_tst>1) chem(i,k,j,p_co_tst)=0.1     ! A user should subtract this from the output fields!
+            if (p_co_bbu>1) chem(i,k,j,p_co_bbu)=0.1     ! A user should subtract this from the output fields!
          enddo
         enddo
        enddo
 
 ! CH4 tracers:
-     IF (p_ch4_bck.gt.1 .AND. p_ch4_bio.gt.1 .AND. p_ch4_ant.gt.1 .AND. p_ch4_bbu.gt.1 .AND. p_ch4_tst.gt.1) THEN
+     IF (p_ch4_bck.gt.1) THEN
       do j=jts,jte
        do k=kts,kte
         do i=its,ite

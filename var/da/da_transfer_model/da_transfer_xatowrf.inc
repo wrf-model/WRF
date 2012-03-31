@@ -128,7 +128,7 @@ subroutine da_transfer_xatowrf(grid)
 
       end do
    end do
- 
+
    else
     
       do k=kts, kte
@@ -495,9 +495,8 @@ subroutine da_transfer_xatowrf(grid)
       do i=its,ite
          uu = 0.5*(grid%u_2(i,j,kts)+grid%u_2(i+1,j,kts) )
          vv = 0.5*(grid%v_2(i,j,kts)+grid%v_2(i,j+1,kts) )
-! The vertical coordinate should use the dry hydrostatic pressure (YRG, 12/24/2011):
-         ps1 = grid%znu(kts  )*(grid%mub(i,j)+grid%mu_2(i,j))+grid%p_top
-         ps2 = grid%znu(kts+1)*(grid%mub(i,j)+grid%mu_2(i,j))+grid%p_top
+         ps1 = grid%p(i,j,kts)   + grid%pb(i,j,kts)
+         ps2 = grid%p(i,j,kts+1) + grid%pb(i,j,kts+1)
          ts1 = (t0+grid%t_2(i,j,kts))*(ps1/base_pres)**kappa
          ts2 = (t0+grid%t_2(i,j,kts+1))*(ps2/base_pres)**kappa
          qv1 = grid%moist(i,j,kts, p_qv)/(1.0+grid%moist(i,j,kts,p_qv))
@@ -511,10 +510,11 @@ subroutine da_transfer_xatowrf(grid)
             zs1 = (grid%phb(i,j,kts)+grid%ph_2(i,j,kts))/gravity
             zs2 = (grid%phb(i,j,kts+1)+grid%ph_2(i,j,kts+1))/gravity
 
-          ! Pressure at the full level second from bottom
-          ! The vertical coordinate should use the dry hydrostatic pressure (YRG, 12/24/2011): 
-            pf2 = grid%znw(kts+1)*(grid%mub(i,j)+grid%mu_2(i,j))+grid%p_top
-            height = (zs2-zs1)*LOG(grid%psfc(i,j)/ps1)/LOG(grid%psfc(i,j)/pf2)
+            mu_full = grid%mub(i,j)+grid%mu_2(i,j)
+            pfu = mu_full*grid%znw(kts+1) + grid%p_top
+            pfd = mu_full*grid%znw(kts)   + grid%p_top
+            phm = mu_full*grid%znu(kts)   + grid%p_top
+            height = (zs2-zs1)*LOG(pfd/phm)/LOG(pfd/pfu)
          endif
          if (height <= 0.0) then
             message(1) = "Negative height found"

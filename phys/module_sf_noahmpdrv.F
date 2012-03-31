@@ -734,7 +734,7 @@ CONTAINS
 
              UU                   = U_PHY(I,1,J)
              VV                   = V_PHY(I,1,J)
-             CO2AIR               = 355.E-06 * SFCPRS       !partial pressure co2 (pa)
+             CO2AIR               = 395.E-06 * SFCPRS       !partial pressure co2 (pa)
              O2AIR                = 0.209    * SFCPRS       !partial pressure  o2 (pa)
              COSZ                 = COSZ_URB2D(I,J)
              LAT                  = XLAT_URB2D(I,J)

@@ -8,6 +8,19 @@
 !    distances in z[m]
 ! 5. cosmetic changes to adhere to WRF standard (remove common blocks, 
 !            intent etc)
+!-------------------------------------------------------------------
+!Modifications implemented by Joseph Olson NOAA/GSD/AMB - CU/CIRES
+!(approved by Mikio Nakanishi):
+! 1. Addition of BouLac mixing length in the free atmosphere.
+! 2. Changed the turbulent mixing length to be integrated from the
+!    surface to the top of the BL + a transition layer depth.
+! 3. Option to use Kitamura/Canuto modification which removes the
+!    critical Richardson number and negative TKE (default).
+! 4. Hybrid PBL height diagnostic, which blends a theta-v-based
+!    definition in neutral/convective BL and a TKE-based definition
+!    in stable conditions.
+! For changes 1 and 3, see "JOE's mods" below:
+!-------------------------------------------------------------------
 
 MODULE module_bl_mynn
 
@@ -36,9 +49,9 @@ MODULE module_bl_mynn
        &pr  =  0.74, &
        &g1  =  0.235, &
        &b1  = 24.0, &
-       &b2  = 15.0, &    !    CK3        CK2     CK1/NN2009
-       &c2  =  0.729, &  !   0.708, & ! 0.729, & !0.75, &
-       &c3  =  0.340, &  !   0.327, & ! 0.340, & !0.352, &
+       &b2  = 15.0, &    ! CKmod     NN2009
+       &c2  =  0.729, &  ! 0.729, & !0.75, &
+       &c3  =  0.340, &  ! 0.340, & !0.352, &
        &c4  =  0.0, &
        &c5  =  0.2, &
        &a1  = b1*( 1.0-3.0*g1 )/6.0, &
@@ -58,7 +71,7 @@ MODULE module_bl_mynn
 
 ! Constants for length scale
   REAL, PARAMETER :: qmin=0.0, zmax=1.0, cns=2.7, &
-       !JOE: &alp1=0.23, alp2=1.0, alp3=5.0, alp4=100.0, Sqfac=3.0
+       !NN2009: &alp1=0.23, alp2=1.0, alp3=5.0, alp4=100.0, Sqfac=3.0
        &alp1=0.23, alp2=0.53, alp3=5.0, alp4=100.0, Sqfac=2.0
 
 ! Constants for gravitational settling
@@ -72,12 +85,16 @@ MODULE module_bl_mynn
 !JOE's mods
   !Use Canuto/Kitamura mod (remove Ric and negative TKE) (1:yes, 0:no)
   !For more info, see Canuto et al. (2008 JAS) and Kitamura (Journal of the 
-  !Meteorological Society of Japan, Vol. 88, No. 5, pp. 857--864, 2010).
+  !Meteorological Society of Japan, Vol. 88, No. 5, pp. 857-864, 2010).
+  !Note that this change required further modification of other parameters
+  !above (c2, c3, alp2, and Sqfac). If you want to remove this option, set these
+  !parameters back to NN2009 values (see commented out lines next to the
+  !parameters above). This only removes the negative TKE problem
+  !but does not necessarily improve performance - neutral impact.
   REAL, PARAMETER :: CKmod=1.
 
   !Use BouLac mixing length in free atmosphere (1:yes, 0:no)
-  !This helps remove excessively large mixing layers in elevated
-  !unstable layers, which can lead to overmixing aloft.
+  !This helps remove excessively large mixing in unstable layers aloft.
   REAL, PARAMETER :: BLmod=1.
 !JOE-end
 
@@ -2377,7 +2394,7 @@ CONTAINS
     k = kthv+1
     IF((landsea-1.5).GE.0)THEN                                            
         ! WATER
-        delt_thv = 1.0
+        delt_thv = 0.75
     ELSE         
         ! LAND     
         delt_thv = 1.5  

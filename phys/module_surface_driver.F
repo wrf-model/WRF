@@ -2505,14 +2505,14 @@ CONTAINS
        DO j=j_start(ij),j_end(ij)
        DO i=i_start(ij),i_end(ij)
 !check land mask and land-use map !fds (02/2012)
- IF(itimestep .EQ. 1 ) THEN
-          IF(IVGTYP(i,j).NE.ISWATER)THEN
-            XLAND(I,J)=1.0
-          ELSE
-            XLAND(I,J)=2.0
-          ENDIF
-         IF (IVGTYP(I,J).LE.0 .AND. XLAND(I,J).NE.ISWATER ) IVGTYP(I,J) = 7.0
- ENDIF
+! IF(itimestep .EQ. 1 ) THEN
+!          IF(IVGTYP(i,j).NE.ISWATER)THEN
+!            XLAND(I,J)=1.0
+!          ELSE
+!            XLAND(I,J)=2.0
+!          ENDIF
+!         IF (IVGTYP(I,J).LE.0 .AND. XLAND(I,J).NE.ISWATER ) IVGTYP(I,J) = 7.0
+! ENDIF
 !
 
 !        IF(XLAND(I,J).LT.1.5 .AND. IVGTYP(I,J).NE.ISICE) THEN !land and seaice-free points

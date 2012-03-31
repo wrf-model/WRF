@@ -7,7 +7,7 @@ subroutine da_tl_model ()
 
    implicit none
 
-   integer :: time_step, fid, ierr, i, j
+   integer :: time_step, fid, ierr, i, j, alarmid
    character (len=80)     :: inpname 
 
    if (trace_use_dull) call da_trace_entry("da_tl_model")
@@ -136,6 +136,21 @@ subroutine da_tl_model ()
    call nl_set_auxinput6_interval_s (head_grid%id, 0 )
    call nl_set_auxhist8_interval_s ( head_grid%id, 0 )
 
+   IF ( ASSOCIATED( head_grid%domain_clock ) ) THEN
+     IF ( head_grid%domain_clock_created ) THEN
+       CALL WRFU_ClockDestroy( head_grid%domain_clock )
+       head_grid%domain_clock_created = .FALSE.
+     ENDIF
+   ENDIF
+   IF ( ASSOCIATED( head_grid%alarms ) .AND. &
+        ASSOCIATED( head_grid%alarms_created ) ) THEN
+     DO alarmid = 1, MAX_WRF_ALARMS
+       IF ( head_grid%alarms_created( alarmid ) ) THEN
+         CALL WRFU_AlarmDestroy( head_grid%alarms( alarmid ) )
+         head_grid%alarms_created( alarmid ) = .FALSE.
+       ENDIF
+     ENDDO
+   ENDIF
    call Setup_Timekeeping ( head_grid )
 
    if (trace_use_dull) call da_trace_exit("da_tl_model")

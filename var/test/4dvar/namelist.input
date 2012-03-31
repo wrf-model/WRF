@@ -106,6 +106,7 @@ dx=60000,
 dy=60000,
 smooth_option=0,
 nproc_x=0,
+hypsometric_opt=1,
 /
 &fdda
 /

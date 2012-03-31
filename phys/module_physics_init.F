@@ -532,8 +532,8 @@ integer myproc
    DO j=jts,jtf
    DO i=its,itf
       TYR(i,j)=TMN(i,j)
-      TYRA(i,j)=TMN(i,j)
-      TDLY(i,j)=TMN(i,j)
+      TYRA(i,j)=0.0
+      TDLY(i,j)=0.0
     DO n=1,lagday
       TLAG(i,n,j)=TMN(i,j)
     ENDDO

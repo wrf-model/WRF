@@ -4,20 +4,32 @@ MODULE module_aerosols_soa_vbs
 ! has been replaced by a new SOA scheme based on the Volatiliry Basis Set (VBS) approach, recent smog chamber yields
 ! and multi-generational VOC oxidation mechanism (aging) for SOA formation. The SOA_VBS code has been
 ! developed by Ravan Ahmadov (ravan.ahmadov@noaa.gov) and Stuart McKeen (Stuart.A.McKeen@noaa.gov) at NOAA/ESRL/CSD.
-! This module has been coupled to the modified version of RACM_ESRL gas chemistry mechanism. Major modifications to the gas
-! chemistry are inclusion of Sesquiterpenes and separation of MBO from OLI.
-! Unlike MOSAIC_VBS this option is for modal approach - MADE
+! This module has been coupled to the modified version of RACM_ESRL_KPP gas chemistry mechanism. Major modifications to the gas
+! gas chemistry are inclusion of Sesquiterpenes and separation of MBO from OLI.
+! Unlike MOSAIC_VBS this option is for modal approach - MADE aerosol scheme
 !
 ! Some references for the SOA_VBS scheme:
 ! 1) Ahmadov R., McKeen S.A., Robinson A.L., Bahreini R., Middlebrook A., deGouw J., Meagher J., Hsie E.-Y.,
-! Edgerton E., Shaw S., Trainer M. A volatility basis set model for summertime secondary organic aerosols
-! over the eastern U.S. in 2006. Submitted to JGR Atmospheres.
+! Edgerton E., Shaw S., Trainer M. (2012), A volatility basis set model for summertime secondary organic aerosols
+! over the eastern U.S. in 2006. J. Geophys. Res.,117, D06301, doi:10.1029/2011JD016831.
 ! 2) Murphy, B. N. and S. N. Pandis (2009). "Simulating the Formation of Semivolatile Primary and Secondary Organic Aerosol
 ! in a Regional Chemical Transport Model." Environmental Science & Technology 43(13): 4722-4728.
 ! 3) Donahue, N. M., A. L. Robinson, et al. (2006). "Coupled partitioning, dilution, and chemical aging of semivolatile
 ! organics." Environmental Science & Technology 40(8): 2635-2643.
 !
+! A reference for the MADE aerosol parameterization:
+! Ackermann, I. J., H. Hass, M. Memmesheimer, A. Ebel, F. S. Binkowski, and U. Shankar (1998),
+! Modal aerosol dynamics model for Europe: Development and first applications, Atmos. Environ., 32(17), 2981-2999.
+!
 !!WARNING! This aerosol option does not support cloud phase aerosol!
+!
+!!WARNING! The deposition of organic condensable vapours (cvasoa* and cvbsoa*) are highly uncertain due to lack of observations.
+! Currently this process is parameterized using modeled dry deposition velocities of HNO3 (multiplied by "depo_fact" for OCVs).
+! Paper by Ahmadov et al. (2012) desribes this approach. The default value for "depo_fact" in WRF-CHEM is 0.25.
+! A user can set a different value for "depo_fact" in namelist.input.
+!
+!!WARNING! Another uncertainty is wet removal of OCVs! This is neglected in the current version of the WRF-CHEM code.
+!
 !
 !
   USE module_state_description

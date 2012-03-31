@@ -250,7 +250,9 @@
 !----------------------------------------------------
 !     set o3,o2 column densities at model top
 !----------------------------------------------------
-      if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP ) then
+      if( config_flags%chem_opt == MOZART_KPP .or. &
+          config_flags%chem_opt == MOZCART_KPP .or. &
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
          p_jtop(its:ite,jts:jte) = Pa2hPa * p_phy(its:ite,kte,jts:jte)
          call p_interp( o2_exo_col, o3_exo_col, p_jtop, &
                         id, its, ite, jts, jte )
@@ -289,7 +291,9 @@
 !----------------------------------------------------
 !     set land use type
 !----------------------------------------------------
-        if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP ) then
+        if( config_flags%chem_opt == MOZART_KPP .or. &
+            config_flags%chem_opt == MOZCART_KPP .or. &
+            config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
            if( ivgtyp(i,j) /= 16 ) then
               lu = 1
            else
@@ -299,7 +303,9 @@
            lu = 1
         endif
 
-        if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP ) then
+        if( config_flags%chem_opt == MOZART_KPP .or. &
+            config_flags%chem_opt == MOZCART_KPP .or. &
+            config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
            o3top = o3_exo_col(i,j)
            o2top = o2_exo_col(i,j)
         endif
@@ -342,33 +348,43 @@ level_loop : &
 !
 !=======================================================
           
+          acb1(kp1) = 0._dp
+          acb2(kp1) = 0._dp
+          aoc1(kp1) = 0._dp
+          aoc2(kp1) = 0._dp
+          aant(kp1) = 0._dp
+          aso4(kp1) = 0._dp
+          asal(kp1) = 0._dp
           if( isorg == 1 ) then
              acb1(kp1) = chem(i,k,j,p_ecj)
-             acb2(kp1) = 0.0_dp
+!            acb2(kp1) = 0.0_dp
 !            aoc1(kp1) = chem(i,k,j,p_orgpaj) + chem(i,k,j,p_orgbaj) + chem(i,k,j,p_orgaj)
              aoc1(kp1) = chem(i,k,j,p_orgpaj)
-             aoc2(kp1) = 0.0_dp
+!            aoc2(kp1) = 0.0_dp
              aant(kp1) = chem(i,k,j,p_no3aj) + chem(i,k,j,p_nh4aj)
              aso4(kp1) = chem(i,k,j,p_so4aj)
              asal(kp1) = chem(i,k,j,p_seas)
-          elseif( config_flags%chem_opt == MOZCART_KPP ) then
+          elseif( config_flags%chem_opt == MOZART_KPP .or. &
+                  config_flags%chem_opt == MOZCART_KPP ) then
+             aso4(kp1) = chem(i,k,j,p_sulf)*air(kp1)*real(mw_so4_aer,kind=dp)*kg_per_amu*1.e-9_dp
+            if( config_flags%chem_opt == MOZCART_KPP ) then
              atm_mass_den = rho_phy(i,k,j)
              acb1(kp1) = chem(i,k,j,p_bc1)*atm_mass_den
              acb2(kp1) = chem(i,k,j,p_bc2)*atm_mass_den
              aoc1(kp1) = chem(i,k,j,p_oc1)*atm_mass_den
              aoc2(kp1) = chem(i,k,j,p_oc2)*atm_mass_den
-             aant(kp1) = 0._dp
-             aso4(kp1) = chem(i,k,j,p_so4)*air(kp1)*real(mw_so4_aer,kind=dp)*kg_per_amu*1.e-9_dp
+!            aant(kp1) = 0._dp
              asal(kp1) = (chem(i,k,j,p_seas_1) + chem(i,k,j,p_seas_2) &
                           + chem(i,k,j,p_seas_3) + chem(i,k,j,p_seas_4))*atm_mass_den
-          else
-             acb1(kp1) = 0._dp
-             acb2(kp1) = 0._dp
-             aoc1(kp1) = 0._dp
-             aoc2(kp1) = 0._dp
-             aant(kp1) = 0._dp
-             aso4(kp1) = 0._dp
-             asal(kp1) = 0._dp
+            endif
+!         else
+!            acb1(kp1) = 0._dp
+!            acb2(kp1) = 0._dp
+!            aoc1(kp1) = 0._dp
+!            aoc2(kp1) = 0._dp
+!            aant(kp1) = 0._dp
+!            aso4(kp1) = 0._dp
+!            asal(kp1) = 0._dp
           endif
         enddo level_loop
 
@@ -466,7 +482,9 @@ level_loop : &
         wc_x(1:nw-1) = wc(1:nw-1)
         zref_x(1:nref) = zref(1:nref)
 
-        if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP ) then
+        if( config_flags%chem_opt == MOZART_KPP .or. &
+            config_flags%chem_opt == MOZCART_KPP .or. &
+            config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
           do k = kts, kte
             ph_n2o(i,k,j)  = max( 0._dp,prate(k,pid_n2o)*m2s )
             ph_n2o5(i,k,j) = max( 0._dp,prate(k,pid_n2o5)*m2s )
@@ -494,7 +512,7 @@ level_loop : &
 !	... new initialization routine for ftuv
 !---------------------------------------------------------------------
 
-      use module_state_description, only : mozart_kpp, mozcart_kpp
+      use module_state_description, only : mozart_kpp, mozcart_kpp, mozart_mosaic_4bin_vbs0_kpp
       use module_ftuv_subs, only         : aer_init
       use module_configure, only         : grid_config_rec_type
 
@@ -533,7 +551,8 @@ include 'netcdf.inc'
 #define DM_BCAST_MACRO(A) CALL wrf_dm_bcast_bytes ( A , size ( A ) * DWORDSIZE )
 #else
       if( config_flags%chem_opt == MOZART_KPP .or. &
-          config_flags%chem_opt == MOZCART_KPP ) then
+          config_flags%chem_opt == MOZCART_KPP .or. &
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
          call wrf_message( 'ftuv_init: mozart,mozcart chem option requires netcdf' )
          call wrf_abort
       end if
@@ -549,7 +568,9 @@ include 'netcdf.inc'
       endif
 #ifdef NETCDF
 is_mozart : &
-      if( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP ) then
+      if( config_flags%chem_opt == MOZART_KPP .or. &
+          config_flags%chem_opt == MOZCART_KPP .or. &
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
 !---------------------------------------------------------------------
 !	... allocate column_density type
 !---------------------------------------------------------------------
@@ -735,7 +756,7 @@ include 'netcdf.inc'
 
       use module_wave_data, only : nw, wl, wave_data_inti
       use module_ftuv_subs, only : nwint, wlint, schu_inti, inter_inti
-      use module_state_description, only : mozart_kpp, mozcart_kpp
+      use module_state_description, only : mozart_kpp, mozcart_kpp, mozart_mosaic_4bin_vbs0_kpp
 
       implicit none
 
@@ -752,7 +773,9 @@ include 'netcdf.inc'
       integer  :: k, kdis, nabv, iw
       real(dp) :: ztop
 
-      if( chem_opt /= MOZART_KPP .and. chem_opt /= MOZCART_KPP ) then
+      if( chem_opt /= MOZART_KPP .and. &
+          chem_opt /= MOZCART_KPP .and. &
+          chem_opt /= MOZART_MOSAIC_4BIN_VBS0_KPP ) then
 !---------------------------------------------------------------------
 !     change unit from m to km
 !---------------------------------------------------------------------
@@ -816,7 +839,9 @@ include 'netcdf.inc'
 !     for IGBP type 17 (ocean water). Source: NASA LARC
 !     (http://www-surf.larc.nasa.gov/surf/pages/explan.html)
 !---------------------------------------------------------------------
-      if( chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP ) then
+      if( chem_opt == MOZART_KPP .or. &
+          chem_opt == MOZCART_KPP .or. &
+          chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
          albedo(1:17,2) = (/ 0.0747_dp, 0.0755_dp, 0.0767_dp, 0.0783_dp, 0.0802_dp,   &
                              0.0825_dp, 0.0852_dp, 0.0882_dp, 0.0914_dp, 0.0908_dp,   &
                              0.0763_dp, 0.0725_dp, 0.0689_dp, 0.0632_dp, 0.0570_dp,   &

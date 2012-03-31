@@ -374,7 +374,7 @@ CONTAINS
        write(*,'("Cannot find file MPTABLE.TBL")')
        write(*,'("STOP")')
        write(*,'("*******************************************************************")')
-       stop
+       call wrf_error_fatal("STOP in Noah-MP read_mp_veg_parameters")
     endif
 
     if ( trim(DATASET_IDENTIFIER) == "USGS" ) then
@@ -386,7 +386,7 @@ CONTAINS
     else
        write(*,'("Unrecognized DATASET_IDENTIFIER in subroutine READ_MP_VEG_PARAMETERS")')
        write(*,'("DATASET_IDENTIFIER = ''", A, "''")') trim(DATASET_IDENTIFIER)
-       stop
+       call wrf_error_fatal("STOP in Noah-MP read_mp_veg_parameters")
     endif
     close(15)
 
@@ -1703,7 +1703,7 @@ contains
        WRITE(6,*) 'input of SHDFAC with LAI'
        WRITE(6,*) ILOC, JLOC, 'SHDFAC=',FVEG,'VAI=',VAI,'TV=',TV,'TG=',TG
        WRITE(6,*) 'LWDN=',LWDN,'FIRA=',FIRA,'SNOWH=',SNOWH
-       STOP
+       call wrf_error_fatal("STOP in Noah-MP")
     END IF
 
     ! Compute a net emissivity
@@ -3188,7 +3188,7 @@ contains
 
 !jref - consistent surface specific humidity for sfcdif3 and sfcdif4
 
-        QSFC = 0.622*ESTG/(PSFC-0.378*ESTG)  
+        QSFC = 0.622*EAIR/(PSFC-0.378*EAIR)  
 
 ! canopy height
 
@@ -3757,9 +3757,6 @@ contains
             DESTG = DSATI
         END IF
 
-!jref - update specific humidity from vapor pressure
-        QSFC = 0.622*ESTG/(PSFC-0.378*ESTG) 
-
         CSH = RHOAIR*CPAIR/RAHB
         CEV = RHOAIR*CPAIR/GAMMA/(RSURF+RAWB)
 
@@ -3784,6 +3781,15 @@ contains
 
 ! for M-O length
         H = CSH * (TGB - SFCTMP)
+
+        T = TDC(TGB)
+        CALL ESAT(T, ESATW, ESATI, DSATW, DSATI)
+        IF (T .GT. 0.) THEN
+            ESTG  = ESATW
+        ELSE
+            ESTG  = ESATI
+        END IF
+        QSFC = 0.622*(ESTG*RHSUR)/(PSFC-0.378*(ESTG*RHSUR))
 
         QFX = (QSFC-QAIR)*CEV*GAMMA/CPAIR
 
@@ -3810,14 +3816,14 @@ contains
 !jref:start; errors in original equation corrected.
 ! 2m air temperature
      IF(OPT_SFC == 1 .OR. OPT_SFC ==2) THEN
-       EHB2  = FV*1./VKC*LOG((2.+Z0H)/Z0H)
+       EHB2  = FV*VKC/LOG((2.+Z0H)/Z0H)
        CQ2B  = EHB2
        IF (EHB2.lt.1.E-5 ) THEN
          T2MB  = TGB
          Q2B   = QSFC
        ELSE
          T2MB  = TGB - SHB/(RHOAIR*CPAIR*FV) * 1./VKC * LOG((2.+Z0H)/Z0H)
-         Q2B   = QSFC - QFX/(RHOAIR*FV)* 1./VKC * LOG((2.+Z0H)/Z0H)
+         Q2B   = QSFC - EVB/(LATHEA*RHOAIR)*(1./CQ2B + RSURF)
        ENDIF
        IF (IVGTYP == ISURBAN) Q2B = QSFC
      END IF
@@ -3997,7 +4003,7 @@ contains
   
     IF(ZLVL <= ZPD) THEN
        write(*,*) 'critical problem: ZLVL <= ZPD; model stops'
-       STOP
+       call wrf_error_fatal("STOP in Noah-MP")
     ENDIF
 
     TMPCM = LOG((ZLVL-ZPD) / Z0M)
@@ -8700,7 +8706,6 @@ contains
        write(message, '("VEGTYP = ", I6, ";    LUCATS = ", I6)') VEGTYP, LUCATS
        call wrf_message(trim(message))
        call wrf_error_fatal ('Error: too many input landuse types')
-       STOP 333
     END IF
 
 ! ----------------------------------------------------------------------
@@ -8768,7 +8773,7 @@ contains
        WRITE (*,*) 'Warning: too many root layers'
        write (*,*) 'NROOT = ', nroot
        write (*,*) 'NSOIL = ', nsoil
-       STOP 333
+       call wrf_error_fatal("STOP in Noah-MP")
     END IF
 
 ! ----------------------------------------------------------------------

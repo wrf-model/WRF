@@ -863,6 +863,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       end do
    end if
 
+   deallocate (xbx % latc_mean)
+
    if (trace_use) call da_trace_exit("da_transfer_wrftoxb")
 
 end subroutine da_transfer_wrftoxb

@@ -558,6 +558,9 @@
 #endif
      end if
 
+     call da_deallocate_y (re)
+     call da_deallocate_y (y)
+
    end do
 
    ! output wrfvar analysis
@@ -585,7 +588,7 @@
          call domain_clock_set( grid, current_timestr=timestr1 )
       endif
 #endif
-      call med_shutdown_io (head_grid, config_flags)
+      call med_shutdown_io (grid, config_flags)
    end if
 
    !---------------------------------------------------------------------------
@@ -793,8 +796,6 @@
 
    if (var4d .and. use_rainobs) deallocate(fgat_rain_flags)
    call da_deallocate_observations (iv)
-   call da_deallocate_y (re)
-   call da_deallocate_y (y)
    call da_deallocate_y (ob)
    if (use_background_errors) call da_deallocate_background_errors (be)
 
@@ -827,9 +828,6 @@
          deallocate (sin_xle)
       end if
    end if
-!  rizvi TBD in da_transfer_wrf_nmmtoxb.inc
-   if( fg_format /= fg_format_wrf_nmm_regional ) &
-   deallocate (xbx % latc_mean)
 
 #ifdef DM_PARALLEL
    call mpi_barrier (comm,ierr)

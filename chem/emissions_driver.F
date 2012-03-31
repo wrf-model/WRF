@@ -836,20 +836,20 @@ CONTAINS
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
-       IF(config_flags%emiss_inpt_opt == EMISS_INPT_MOZCEM ) then
-         do j=jts,jte  
-           do i=its,ite  
-              do k=kts,min(config_flags%kemit,kte-ksub)
-                conv = alt(i,k,j)*dtstep/dz8w(i,k,j)
-                chem(i,k,j,p_p10) = chem(i,k,j,p_p10) + emis_ant(i,k,j,p_e_pm_10)*conv
-                chem(i,k,j,p_p25) = chem(i,k,j,p_p25) + emis_ant(i,k,j,p_e_pm_25)*conv
-                chem(i,k,j,p_bc1) = chem(i,k,j,p_bc1) + emis_ant(i,k,j,p_e_bc)*conv
-                chem(i,k,j,p_oc1) = chem(i,k,j,p_oc1) + emis_ant(i,k,j,p_e_oc)*conv
-                chem(i,k,j,p_sulf) = chem(i,k,j,p_sulf) + emis_ant(i,k,j,p_e_sulf)*conv*mwdry/mw_so4_aer*1.e-3
-             end do
-           end do
-         end do
-       end if 
+!      IF(config_flags%emiss_inpt_opt == EMISS_INPT_MOZCEM ) then
+!        do j=jts,jte  
+!          do i=its,ite  
+!             do k=kts,min(config_flags%kemit,kte-ksub)
+!               conv = alt(i,k,j)*dtstep/dz8w(i,k,j)
+!               chem(i,k,j,p_p10) = chem(i,k,j,p_p10) + emis_ant(i,k,j,p_e_pm_10)*conv
+!               chem(i,k,j,p_p25) = chem(i,k,j,p_p25) + emis_ant(i,k,j,p_e_pm_25)*conv
+!               chem(i,k,j,p_bc1) = chem(i,k,j,p_bc1) + emis_ant(i,k,j,p_e_bc)*conv
+!               chem(i,k,j,p_oc1) = chem(i,k,j,p_oc1) + emis_ant(i,k,j,p_e_oc)*conv
+!               chem(i,k,j,p_sulf) = chem(i,k,j,p_sulf) + emis_ant(i,k,j,p_e_sulf)*conv*mwdry/mw_so4_aer*1.e-3
+!            end do
+!          end do
+!        end do
+!      end if 
 
        end if ! emiss_inpt_opt /= 3
 

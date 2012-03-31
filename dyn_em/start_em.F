@@ -31,6 +31,7 @@
    USE module_gocart_aerosols, ONLY: sum_pm_gocart
    USE module_mosaic_driver, ONLY: sum_pm_mosaic
    USE module_input_tracer, ONLY: initialize_tracer
+   USE module_aerosols_soa_vbs, only: sum_pm_soa_vbs
 #endif
 
 !!debug
@@ -1011,7 +1012,7 @@
        if (config_flags%topo_wind.eq.1) then
          DO j = jts,min(jte,jde-1)
          DO i = its, min(ite,ide-1)
-            grid%ctopo(i,j)=sqrt(grid%var_sso(i,j))
+            if(grid%xland(i,j).lt.1.5)grid%ctopo(i,j)=sqrt(grid%var_sso(i,j))
             if (grid%ctopo(i,j).le.2.718) then
             grid%ctopo(i,j)=1.
             else
@@ -1237,13 +1238,20 @@
                 ids,ide, jds,jde, kds,kde,                                  &
                 ims,ime, jms,jme, kms,kme,                                  &
                 its,ite, jts,jte, kts,kte-1                                 )
-        case (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP,RACM_SOA_VBS_KPP)
+        case (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP)
            call sum_pm_sorgam (                                             &
                 grid%alt, chem, grid%h2oaj, grid%h2oai,                                    &
                 grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,                 &
                 grid%dust_opt,ids,ide, jds,jde, kds,kde,                    &
                 ims,ime, jms,jme, kms,kme,                                  &
                 its,ite, jts,jte, kts,kte-1                                 )
+         case (RACM_SOA_VBS_KPP)
+             call sum_pm_soa_vbs (                                           &
+                 grid%alt, chem, grid%h2oaj, grid%h2oai,                                   &
+                 grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,                &
+                 config_flags%dust_opt,ids,ide, jds,jde, kds,kde,           &
+                 ims,ime, jms,jme, kms,kme,                                 &
+                 its,ite, jts,jte, kts,kte-1                                )
 
         case (CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN,CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ, &
               CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ,       &

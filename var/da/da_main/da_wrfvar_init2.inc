@@ -160,7 +160,10 @@ subroutine da_wrfvar_init2
       endif 
 #endif
       call da_med_initialdata_input (head_grid, config_flags, 'fg')
-      if ( var4d ) call med_latbound_in ( head_grid, config_flags )
+      if ( var4d ) then
+         call med_latbound_in ( head_grid, config_flags )
+         call close_dataset ( head_grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
+      end if
    end if
 
    ! FIX?

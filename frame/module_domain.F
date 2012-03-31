@@ -1653,15 +1653,17 @@ CONTAINS
       TYPE(domain), POINTER :: grid
       TYPE(fieldlist), POINTER :: p, q
       p => grid%head_statevars
-      DO WHILE ( ASSOCIATED( p%next ) )
+      DO WHILE ( ASSOCIATED( p ) )
          q => p ; p => p%next ; DEALLOCATE(q)
       ENDDO
       NULLIFY(grid%head_statevars) ; NULLIFY( grid%tail_statevars)
+#if (DA_CORE != 1)
       IF ( .NOT. grid%is_intermediate ) THEN
         ALLOCATE( grid%head_statevars )
         NULLIFY( grid%head_statevars%next)
         grid%tail_statevars => grid%head_statevars
       ENDIF
+#endif
    END SUBROUTINE dealloc_linked_lists
 
    RECURSIVE SUBROUTINE show_nest_subtree ( grid )

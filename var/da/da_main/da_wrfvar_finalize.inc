@@ -27,20 +27,7 @@ subroutine da_wrfvar_finalize
 
    grid => head_grid
 
-   deallocate (grid%parents)
-   deallocate (grid%nests)
-   deallocate (grid%domain_clock)
-   deallocate (grid%alarms)
-   deallocate (grid%alarms_created)
-
-   deallocate (grid%i_start)
-   deallocate (grid%i_end)
-   deallocate (grid%j_start)
-   deallocate (grid%j_end)
-
-#include "deallocs.inc"
-
-   deallocate (grid)
+   call dealloc_space_domain(grid%id)
 
 #ifdef VAR4D
    if ( var4d_lbc ) then

@@ -562,7 +562,7 @@ SUBROUTINE int_gen_ti_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
   RETURN
 END SUBROUTINE int_gen_ti_header_integer
 
-SUBROUTINE int_gen_ti_header_integer_varname( hdrbuf, hdrbufsize, itypesize, typesize, &
+SUBROUTINE int_gen_ti_header_integer_varna( hdrbuf, hdrbufsize, itypesize, typesize, &
                                       DataHandle, Element, VarName, Data, Count, code )
 !<DESCRIPTION>
 !<PRE>
@@ -618,7 +618,7 @@ SUBROUTINE int_gen_ti_header_integer_varname( hdrbuf, hdrbufsize, itypesize, typ
   hdrbufsize = i * itypesize + hdrbufsize ! return the number in bytes
   hdrbuf(1) = hdrbufsize
   RETURN
-END SUBROUTINE int_gen_ti_header_integer_varname
+END SUBROUTINE int_gen_ti_header_integer_varna
 
 SUBROUTINE int_gen_ti_header_real( hdrbuf, hdrbufsize, itypesize, typesize, &
                                    DataHandle, Element, Data, Count, code )
@@ -648,7 +648,7 @@ SUBROUTINE int_gen_ti_header_real( hdrbuf, hdrbufsize, itypesize, typesize, &
   RETURN
 END SUBROUTINE int_gen_ti_header_real
 
-SUBROUTINE int_get_ti_header_integer_varname( hdrbuf, hdrbufsize, itypesize, typesize, &
+SUBROUTINE int_get_ti_header_integer_varna( hdrbuf, hdrbufsize, itypesize, typesize, &
                               DataHandle, Element, VarName, Data, Count, code)
 !<DESCRIPTION>
 !<PRE>
@@ -673,11 +673,11 @@ SUBROUTINE int_get_ti_header_integer_varname( hdrbuf, hdrbufsize, itypesize, typ
   i = n/itypesize + 1
   CALL int_unpack_string ( Element, hdrbuf( i ), n ) ; i=i+n;
   CALL int_unpack_string ( VarName, hdrbuf( i ), n ) ; i = i + n
-!  write(0,*)'int_get_ti_header_integer_varname "', &
-!       TRIM(Element),'" "', TRIM(VarName),'" data(1)=',Data(1)
+! write(0,*)'int_get_ti_header_integer_varna "', &
+!      TRIM(Element),'" "', TRIM(VarName),'" data(1)=',Data(1)
   hdrbufsize = hdrbuf(1)
   RETURN
-END SUBROUTINE int_get_ti_header_integer_varname
+END SUBROUTINE int_get_ti_header_integer_varna
 
 SUBROUTINE int_get_ti_header_integer( hdrbuf, hdrbufsize, itypesize, typesize, &
                               DataHandle, Element, Data, Count, code )

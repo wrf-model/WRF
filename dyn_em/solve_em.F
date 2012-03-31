@@ -2052,8 +2052,6 @@ BENCH_START(update_scal_tim)
                                scalar_1=moist_old(ims,kms,jms,im),                     &
                                scalar_2=moist(ims,kms,jms,im),                         &
                                sc_tend=moist_tend(ims,kms,jms,im),                     &
-!                              advh_t=advh_t(ims,kms,jms,1),                           & 
-!                              advz_t=advz_t(ims,kms,jms,1),                           & 
                                advect_tend=advect_tend,                                &
                                h_tendency=h_tendency, z_tendency=z_tendency,           & 
                                msftx=grid%msftx,msfty=grid%msfty,                      &
@@ -2145,8 +2143,6 @@ BENCH_START(tke_adv_tim)
                                   scalar_1=grid%tke_1,                                    &
                                   scalar_2=grid%tke_2,                                    &
                                   sc_tend=tke_tend(ims,kms,jms),                          &
-!                                 advh_t=advh_t(ims,kms,jms,1),                           & 
-!                                 advz_t=advz_t(ims,kms,jms,1),                           & 
                                   advect_tend=advect_tend,                                &
                                   h_tendency=h_tendency, z_tendency=z_tendency,           & 
                                   msftx=grid%msftx,msfty=grid%msfty,                      &

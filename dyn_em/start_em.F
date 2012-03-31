@@ -129,32 +129,6 @@
       CALL wrf_error_fatal ( message )
    END IF
 
-!   --- SETUP AND INITIALIZE STOCHASTIC KINETIC ENERGY BACKSCATTER SCHEME ---
-
-   IF ( (grid%id==1).and.(grid%stoch_force_global_opt==1) .AND. ( .NOT. grid%did_stoch ) ) THEN
-
-     grid%did_stoch = .TRUE.
-     IF ( wrf_dm_on_monitor () ) THEN
-       CALL rand_seed ( config_flags, grid%SEED1, grid%SEED2, grid%NENS )
-     ENDIF
-#ifdef DM_PARALLEL
-     CALL wrf_dm_bcast_bytes ( grid%SEED1, IWORDSIZE )
-     CALL wrf_dm_bcast_bytes ( grid%SEED2, IWORDSIZE )
-#endif
-
-     call SETUP_STOCH(grid%VERTSTRUCC,grid%VERTSTRUCS,                   &
-                      grid%SPT_AMP,grid%SPSTREAM_AMP,                    &
-                      grid%stoch_vertstruc_opt,                          & 
-                      grid%SEED1,grid%SEED2,grid%time_step,              &
-                      grid%DX,grid%DY,                                   &
-                      grid%TOT_BACKSCAT_PSI,grid%TOT_BACKSCAT_T,         &
-                      ids, ide, jds, jde, kds, kde,                      &
-                      ims, ime, jms, jme, kms, kme,                      &
-                      its, ite, jts, jte, kts, kte                       )
-    
-    END IF
-!   --- END SETUP STOCHASTIC KINETIC ENERGY BACKSCATTER SCHEME ----------
-
    IF ( config_flags%polar ) THEN
 !write(0,*)__FILE__,__LINE__,' clat ',ips,ipe,jps,jpe
 !do j = jps,jpe
@@ -200,6 +174,38 @@
    IF ( config_flags%restart .or. grid%moved ) THEN
        first_trip_for_this_domain = .TRUE.
    ENDIF
+
+!   --- SETUP AND INITIALIZE STOCHASTIC KINETIC ENERGY BACKSCATTER SCHEME ---
+
+   IF ( first_trip_for_this_domain ) THEN
+     grid%did_stoch = .FALSE.
+   END IF
+
+   IF ( ( grid%id == 1 ) .AND. &
+        ( NINT(grid%stoch_force_global_opt) == 1 ) .AND. &
+        ( .NOT. grid%did_stoch ) ) THEN
+
+     grid%did_stoch = .TRUE.
+     IF ( wrf_dm_on_monitor () ) THEN
+       CALL rand_seed ( config_flags, grid%SEED1, grid%SEED2, grid%NENS )
+     ENDIF
+#ifdef DM_PARALLEL
+     CALL wrf_dm_bcast_bytes ( grid%SEED1, IWORDSIZE )
+     CALL wrf_dm_bcast_bytes ( grid%SEED2, IWORDSIZE )
+#endif
+
+     call SETUP_STOCH(grid%VERTSTRUCC,grid%VERTSTRUCS,                   &
+                      grid%SPT_AMP,grid%SPSTREAM_AMP,                    &
+                      grid%stoch_vertstruc_opt,                          & 
+                      grid%SEED1,grid%SEED2,grid%time_step,              &
+                      grid%DX,grid%DY,                                   &
+                      grid%TOT_BACKSCAT_PSI,grid%TOT_BACKSCAT_T,         &
+                      ids, ide, jds, jde, kds, kde,                      &
+                      ims, ime, jms, jme, kms, kme,                      &
+                      its, ite, jts, jte, kts, kte                       )
+    
+    END IF
+!   --- END SETUP STOCHASTIC KINETIC ENERGY BACKSCATTER SCHEME ----------
 
 ! wig: Add a combined exponential+linear weight on the mother boundaries
 !      following code changes by Ruby Leung. For the nested grid, there

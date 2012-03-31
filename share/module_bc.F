@@ -2620,7 +2620,17 @@ ENDIF
     REAL , INTENT(IN) :: time_diff ! seconds
  
     INTEGER :: i , ii , j , jj , k
- 
+
+#if 0
+    !  Here is the easy way to zero out the boundary tendencies for
+    !  time-dependent boundaries.
+
+    space_bdy_xs = 0.
+    space_bdy_xe = 0.
+    space_bdy_ys = 0.
+    space_bdy_ye = 0.
+    return
+#else
     !  There are four lateral boundary locations that are stored.
  
     !  X start boundary
@@ -2792,6 +2802,7 @@ ENDIF
        END DO
        END DO
     END IF
+#endif
     
  END SUBROUTINE stuff_bdytend_new
 

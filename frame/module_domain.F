@@ -2913,10 +2913,18 @@ END SUBROUTINE get_current_grid_name
            ds(1) = grid%sd31 ; de(1) = grid%ed31 ; ds(2) = grid%sd32 ; de(2) = grid%ed32 ; ds(3) = grid%sd33 ; de(3) = grid%ed33 ;
            ms(1) = grid%sm31 ; me(1) = grid%em31 ; ms(2) = grid%sm32 ; me(2) = grid%em32 ; ms(3) = grid%sm33 ; me(3) = grid%em33 ;
            ps(1) = grid%sp31 ; pe(1) = grid%ep31 ; ps(2) = grid%sp32 ; pe(2) = grid%ep32 ; ps(3) = grid%sp33 ; pe(3) = grid%ep33 ;
-           mxs(1) = grid%sm31x ; mxe(1) = grid%em31x ; mxs(2) = grid%sm32x ; mxe(2) = grid%em32x ; mxs(3) = grid%sm33x ; mxe(3) = grid%em33x ;
-           pxs(1) = grid%sp31x ; pxe(1) = grid%ep31x ; pxs(2) = grid%sp32x ; pxe(2) = grid%ep32x ; pxs(3) = grid%sp33x ; pxe(3) = grid%ep33x ;
-           mys(1) = grid%sm31y ; mye(1) = grid%em31y ; mys(2) = grid%sm32y ; mye(2) = grid%em32y ; mys(3) = grid%sm33y ; mye(3) = grid%em33y ;
-           pys(1) = grid%sp31y ; pye(1) = grid%ep31y ; pys(2) = grid%sp32y ; pye(2) = grid%ep32y ; pys(3) = grid%sp33y ; pye(3) = grid%ep33y ;
+           mxs(1) = grid%sm31x ; mxe(1) = grid%em31x 
+           mxs(2) = grid%sm32x ; mxe(2) = grid%em32x 
+           mxs(3) = grid%sm33x ; mxe(3) = grid%em33x 
+           pxs(1) = grid%sp31x ; pxe(1) = grid%ep31x 
+           pxs(2) = grid%sp32x ; pxe(2) = grid%ep32x 
+           pxs(3) = grid%sp33x ; pxe(3) = grid%ep33x
+           mys(1) = grid%sm31y ; mye(1) = grid%em31y 
+           mys(2) = grid%sm32y ; mye(2) = grid%em32y 
+           mys(3) = grid%sm33y ; mye(3) = grid%em33y 
+           pys(1) = grid%sp31y ; pye(1) = grid%ep31y 
+           pys(2) = grid%sp32y ; pye(2) = grid%ep32y 
+           pys(3) = grid%sp33y ; pye(3) = grid%ep33y 
      ELSE
         WRITE(mess,*)'internal error: get_ijk_from_grid_id: no such grid id:',id
         CALL wrf_error_fatal(TRIM(mess))

@@ -2200,10 +2200,6 @@ BENCH_START(g_update_scal_tim)
                                g_scalar_2=g_moist(ims,kms,jms,im),                     &
                                sc_tend=moist_tend(ims,kms,jms,im),                     &
                                g_sc_tend=g_moist_tend(ims,kms,jms,im),                 &
-!                              advh_t=advh_t(ims,kms,jms,1),                           & 
-!                              g_advh_t=g_advh_t(ims,kms,jms,1),                       & 
-!                              advz_t=advz_t(ims,kms,jms,1),                           & 
-!                              g_advz_t=g_advz_t(ims,kms,jms,1),                       & 
                                advect_tend=advect_tend,g_advect_tend=g_advect_tend,    &
                                h_tendency=h_tendency, g_h_tendency=g_h_tendency,       & 
                                z_tendency=z_tendency, g_z_tendency=g_z_tendency,       & 
@@ -2302,10 +2298,6 @@ BENCH_START(g_tke_adv_tim)
                                   scalar_2=grid%tke_2, g_scalar_2=grid%g_tke_2,           &
                                   sc_tend=tke_tend(ims,kms,jms),                          &
                                   g_sc_tend=g_tke_tend(ims,kms,jms),                      &
-!                                 advh_t=advh_t(ims,kms,jms,1),                           &
-!                                 g_advh_t=g_advh_t(ims,kms,jms,1),                       &
-!                                 advz_t=advz_t(ims,kms,jms,1),                           &
-!                                 g_advz_t=g_advz_t(ims,kms,jms,1),                       &
                                   advect_tend=advect_tend,g_advect_tend=g_advect_tend,    &
                                   h_tendency=h_tendency, g_h_tendency=g_h_tendency,       &
                                   z_tendency=z_tendency, g_z_tendency=g_z_tendency,       &
@@ -2446,8 +2438,6 @@ BENCH_START(g_chem_adv_tim)
                                   scalar_1=chem_old(ims,kms,jms,ic),                      &
                                   scalar_2=chem(ims,kms,jms,ic),                          &
                                   sc_tend=chem_tend(ims,kms,jms,ic),                      &
-                                  advh_t=advh_ct(ims,kms,jms,adv_ct_indices(ic)),         &
-                                  advz_t=advz_ct(ims,kms,jms,adv_ct_indices(ic)),         &
                                   advect_tend=advect_tend,                                &
                                   h_tendency=h_tendency, z_tendency=z_tendency,           & 
                                   msftx=grid%msftx,msfty=grid%msfty,                      &
@@ -2584,8 +2574,6 @@ BENCH_START(g_tracer_adv_tim)
                                   scalar_1=tracer_old(ims,kms,jms,ic),                    &
                                   scalar_2=tracer(ims,kms,jms,ic),                        &
                                   sc_tend=tracer_tend(ims,kms,jms,ic),                    &
-!                                 advh_t=advh_t(ims,kms,jms,1),                           & 
-!                                 advz_t=advz_t(ims,kms,jms,1),                           & 
                                   advect_tend=advect_tend,                                &
                                   h_tendency=h_tendency, z_tendency=z_tendency,           & 
                                   msftx=grid%msftx,msfty=grid%msfty,                      &
@@ -2736,10 +2724,6 @@ BENCH_END(g_tracer_adv_tim)
                                   g_scalar_2=g_scalar(ims,kms,jms,is),                    &
                                   sc_tend=scalar_tend(ims,kms,jms,is),                    &
                                   g_sc_tend=g_scalar_tend(ims,kms,jms,is),                &
-!                                 advh_t=advh_t(ims,kms,jms,1),                           & 
-!                                 g_advh_t=g_advh_t(ims,kms,jms,1),                       & 
-!                                 advz_t=advz_t(ims,kms,jms,1),                           & 
-!                                 g_advz_t=g_advz_t(ims,kms,jms,1),                       & 
                                   advect_tend=advect_tend,g_advect_tend=g_advect_tend,    &
                                   h_tendency=h_tendency, g_h_tendency=g_h_tendency,       & 
                                   z_tendency=z_tendency, g_z_tendency=g_z_tendency,       & 

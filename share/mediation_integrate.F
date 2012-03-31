@@ -1304,8 +1304,7 @@ SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
    END INTERFACE
 
 ! feedback nest to the parent
-    IF ( .NOT. WRFU_ClockIsStopTime(nest%domain_clock ,rc=rc) .AND. &
-         config_flags%feedback .NE. 0 ) THEN
+    IF ( config_flags%feedback .NE. 0 ) THEN
       CALL med_feedback_domain( parent, nest )
 #ifdef MOVE_NESTS
       CALL get_ijk_from_grid (  parent ,                         &

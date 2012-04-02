@@ -1367,14 +1367,27 @@ integer::oops1,oops2
 
       IF ( grid%islake < 0 ) THEN
          CALL wrf_debug ( 0 , 'Old data, no inland lake information')
+
+            DO j=jts,MIN(jde-1,jte)
+               DO i=its,MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  IF ( ( ( grid%landusef(i,grid%iswater,j) >= 0.5 ) .OR. ( grid%lu_index(i,j) == grid%iswater ) ) .AND. &
+                       ( ( grid%sst(i,j) .LT. 150 ) .OR. ( grid%sst(i,j) .GT. 400 ) ) ) THEN
+                     grid%sst(i,j) = grid%tsk(i,j)
+                     IF ( ( grid%sst(i,j) .LT. 150 ) .OR. ( grid%sst(i,j) .GT. 400 ) ) THEN
+                        grid%sst(i,j) = grid%t2(i,j)
+                     END IF
+                  END IF
+               END DO
+            END DO
       ELSE
          IF ( we_have_tavgsfc ) THEN
 
             CALL wrf_debug ( 0 , 'Using inland lakes with average surface temperature')
             DO j=jts,MIN(jde-1,jte)
                DO i=its,MIN(ide-1,ite)
-                  IF ( grid%landusef(i,grid%islake,j) >= 0.5 ) THEN
-                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  IF ( ( grid%landusef(i,grid%islake,j) >= 0.5 ) .OR. ( grid%lu_index(i,j) == grid%islake ) )  THEN
                      grid%sst(i,j) = grid%tavgsfc(i,j)
                      grid%tsk(i,j) = grid%tavgsfc(i,j)
                   END IF

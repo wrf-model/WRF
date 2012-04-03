@@ -89,6 +89,13 @@
     TYPE(WRFU_TimeInterval) :: interval, interval2
     integer s, iring
 
+    !  Local variables: are we are using the correct hypsometric option for ARW ideal cases.
+
+    CHARACTER (LEN=80) :: input_name
+    LOGICAL :: this_is_an_ideal_run
+    INTEGER :: loop, hypsometric_opt
+
+
 !<DESCRIPTION>
 !
 ! Core wrf input routine for all input data streams. Part of mediation layer.
@@ -126,6 +133,28 @@
     CALL wrf_debug( 300 , wrf_err_message )
 
     check_if_dryrun : IF ( .NOT. dryrun ) THEN
+
+#if (EM_CORE == 1)
+      IF ( switch .EQ. input_only ) THEN
+
+        !  Make sure for ARW ideal cases that the hypsometric option, the
+        !  way that we integrate the heigh field, is set to 1.  This is the
+        !  method that is used in all of the "ideal" programs to get the
+        !  base-state height (phb).
+
+        CALL wrf_get_dom_ti_char ( fid , 'TITLE' , input_name , ierr )
+        this_is_an_ideal_run = INDEX(TRIM(input_name) , 'IDEAL' ) .NE. 0
+        IF ( this_is_an_ideal_run ) THEN
+          grid%hypsometric_opt = 1
+          config_flags%hypsometric_opt = 1
+	  DO loop = 1 , grid%max_dom
+            CALL nl_set_hypsometric_opt ( loop , 1 ) 
+          END DO
+          WRITE(wrf_err_message,*)'Ideal cases do not support the hypsometric option.'
+          CALL wrf_debug( 0 , wrf_err_message )
+        END IF
+      END IF
+#endif
 
 ! simulation start time is a Singleton maintained by head_grid
     IF ( ( switch .EQ.     input_only  ) .OR. &
@@ -263,6 +292,26 @@
        IF ( ierr3 .NE. 0 ) CALL wrf_error_fatal( 'wrf_get_dom_ti_integer getting dimension information from dataset' )
 
 #if (EM_CORE == 1)
+
+       IF ( ( switch .EQ. input_only ) .AND. ( config_flags%io_form_input .EQ. 2 ) ) THEN
+
+        !  For backward compatibility.  If we do not find the hypsometric_opt defined
+        !  in the input data, this is pre version 3.4.  Most likely, the hypsometric_opt
+        !  was the default value, 1.  
+
+        hypsometric_opt = -1
+        CALL wrf_get_dom_ti_integer ( fid , 'HYPSOMETRIC_OPT' , hypsometric_opt , 1 , icnt , ierr )
+        IF ( ( hypsometric_opt .NE. 1 ) .AND. ( hypsometric_opt .NE. 2 ) ) THEN
+          grid%hypsometric_opt = 1
+          config_flags%hypsometric_opt = 1
+	  DO loop = 1 , grid%max_dom
+            CALL nl_set_hypsometric_opt ( loop , 1 ) 
+          END DO
+          WRITE(wrf_err_message,*)'Resetting the hypsometric_opt form default value of 2 to 1'
+          CALL wrf_debug( 0 , wrf_err_message )
+        END IF
+       END IF
+
        !  Test to make sure that the grid distances are the right size.
 
        CALL wrf_get_dom_ti_real ( fid , 'DX' ,  dx_compare , 1 , icnt , ierr )

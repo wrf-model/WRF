@@ -39,7 +39,6 @@
              ! coupling timestep using the
              call wrf_message('Guessing coupling timestep from d01 settings because there is no d02...')
              call model_to_grid_config_rec(1,model_config_rec,config_flags)
-             dt=config_flags%dt
           endif
           nphs=config_flags%nphs
           movemin=config_flags%movemin

@@ -1,6 +1,6 @@
 &wrfvar1
 var4d=true,
-var4d_lbc=true,
+var4d_lbc=false,
 var4d_bin=3600,
 var4d_bin_rain=21600,
 print_detail_outerloop=false,
@@ -27,7 +27,7 @@ use_satemobs=true,
 use_gpspwobs=true,
 use_gpsrefobs=true,
 use_qscatobs=true,
-use_rainobs=true,
+use_rainobs=false,
 /
 &wrfvar5
 check_max_iv=true,

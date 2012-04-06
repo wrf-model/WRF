@@ -307,7 +307,7 @@
 	  DO loop = 1 , grid%max_dom
             CALL nl_set_hypsometric_opt ( loop , 1 ) 
           END DO
-          WRITE(wrf_err_message,*)'Resetting the hypsometric_opt form default value of 2 to 1'
+          WRITE(wrf_err_message,*)'Resetting the hypsometric_opt from default value of 2 to 1'
           CALL wrf_debug( 0 , wrf_err_message )
         END IF
        END IF

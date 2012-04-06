@@ -2500,6 +2500,7 @@ contains
    ELSE IF (SNEQV.GT.800.) THEN
           TAUSS = 0.
    ELSE
+          TAUSS = 0.
           DELA0 = 1.E-6*DT
           ARG   = 5.E3*(1./TFRZ-1./TG)
           AGE1  = EXP(ARG)

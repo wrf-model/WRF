@@ -1373,7 +1373,12 @@ integer::oops1,oops2
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                   IF ( ( ( grid%landusef(i,grid%iswater,j) >= 0.5 ) .OR. ( grid%lu_index(i,j) == grid%iswater ) ) .AND. &
                        ( ( grid%sst(i,j) .LT. 150 ) .OR. ( grid%sst(i,j) .GT. 400 ) ) ) THEN
-                     grid%sst(i,j) = grid%tsk(i,j)
+                     IF ( we_have_tavgsfc ) THEN
+                        grid%sst(i,j) = grid%tavgsfc(i,j)
+                     END IF
+                     IF ( ( grid%sst(i,j) .LT. 150 ) .OR. ( grid%sst(i,j) .GT. 400 ) ) THEN
+                        grid%sst(i,j) = grid%tsk(i,j)
+                     END IF
                      IF ( ( grid%sst(i,j) .LT. 150 ) .OR. ( grid%sst(i,j) .GT. 400 ) ) THEN
                         grid%sst(i,j) = grid%t2(i,j)
                      END IF
@@ -1390,6 +1395,9 @@ integer::oops1,oops2
                   IF ( ( grid%landusef(i,grid%islake,j) >= 0.5 ) .OR. ( grid%lu_index(i,j) == grid%islake ) )  THEN
                      grid%sst(i,j) = grid%tavgsfc(i,j)
                      grid%tsk(i,j) = grid%tavgsfc(i,j)
+                  END IF
+                  IF ( ( grid%sst(i,j) .LT. 150 ) .OR. ( grid%sst(i,j) .GT. 400 ) ) THEN
+                     grid%sst(i,j) = grid%t2(i,j)
                   END IF
                END DO
             END DO

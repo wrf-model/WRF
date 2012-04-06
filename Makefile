@@ -42,9 +42,10 @@ configcheck:
 	@if [ "$(A2DCASE)" -a "$(DMPARALLEL)" ] ; then \
 	 echo "------------------------------------------------------------------------------" ; \
 	 echo "WRF CONFIGURATION ERROR                                                       " ; \
-	 echo "The $(A2DCASE) case cannot be used on distributed memory parallel systems." ; \
-	 echo "Only 3D WRF cases will run on these systems." ; \
-	 echo "Please chose a different case or rerun configure and chose a different option."  ; \
+	 echo "The $(A2DCASE) case requires a build for only single domain.                  " ; \
+	 echo "The $(A2DCASE) case cannot be used on distributed memory parallel systems.    " ; \
+	 echo "Only 3D WRF cases will run with the options that you selected.                " ; \
+	 echo "Please choose a different case, or rerun configure and choose a different set of options."  ; \
 	 echo "------------------------------------------------------------------------------" ; \
          exit 2 ; \
 	fi

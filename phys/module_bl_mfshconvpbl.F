@@ -155,7 +155,7 @@ REAL, DIMENSION(ITS:ITE,JTS:JTE,KTS:KTE,KRR) ::  PRM        ! water species
 REAL, DIMENSION(ITS:ITE,JTS:JTE,KTS:KTE)     ::  PRUS,PRVS,PRTHS 
 REAL, DIMENSION(ITS:ITE,JTS:JTE,KTS:KTE,KRR) ::  PRRS
 
-! FOr diagnostic output
+! For diagnostic output
 REAL, DIMENSION(ITS:ITE,JTS:JTE,KTS:KTE)     :: PEMF, PENTR, PDETR
 REAL, DIMENSION(ITS:ITE,JTS:JTE,KTS:KTE)     :: PTHL_UP, PRT_UP, PRV_UP, PRC_UP
 REAL, DIMENSION(ITS:ITE,JTS:JTE,KTS:KTE)     :: PU_UP, PV_UP, PTHV_UP, PFRAC_UP                   
@@ -1456,9 +1456,11 @@ IF (ITEST==0) CYCLE
 
 ! to find the LCL (check if JK is LCL or not)
 
+  WHERE(GTEST)
   WHERE ((PRC_UP(:,JK)>0.).AND.(.NOT.(GTESTLCL)))
       KKLCL(:) = JK           
       GTESTLCL(:)=.TRUE.
+  ENDWHERE
   ENDWHERE
 
 

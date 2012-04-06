@@ -614,6 +614,10 @@ PROGRAM convert_emissions
    DEALLOCATE( tmp2)
    DEALLOCATE( tmp3)
    DEALLOCATE( interpolate )
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Volcanic emissions
+
       if(config_flags%emiss_opt_vol == 1 .or. config_flags%emiss_opt_vol == 2) then
      write(message, FMT='(A,4I6)') ' I am reading global volcanic emissions, dims: =',ids, ide-1, jds, jde-1
      call wrf_message( TRIM( message ) )
@@ -649,26 +653,26 @@ PROGRAM convert_emissions
 !       write(0,*)' DNAME = ',dname
 !       write(0,*)' DNAME2 = ',dname2,beg_day,beg_hour,config_flags%julday
 #ifdef DM_PARALLEL
-!       IF (wrf_dm_on_monitor()) THEN
-!           read(92)size_dist
-!       ENDIF
-!       DM_BCAST_MACRO(size_dist)
+        IF (wrf_dm_on_monitor()) THEN
+            read(92)size_dist
+        ENDIF
+        DM_BCAST_MACRO(size_dist)
 !       write(0,*)size_dist
 #else
-!       read(92)size_dist
+        read(92)size_dist
 #endif
 !       write(0,*)'size_dist = ',size_dist,ids,ide,jds,jde
      if(config_flags%emiss_opt_vol == 2 ) then
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
 !          write(0,*)'now do so2 '
-!          read(92)so2_mass(ids:ide  ,jds:jde  )
+           read(92)so2_mass(ids:ide  ,jds:jde  )
        ENDIF
        DM_BCAST_MACRO(so2_mass)
 !          write(0,*)maxval(so2_mass)
 #else
 !          write(0,*)'now do so2-s '
-!      read(92)so2_mass(ids:ide  ,jds:jde  )
+       read(92)so2_mass(ids:ide  ,jds:jde  )
 #endif
      endif ! config_flags%emiss_opt_vol == 2 
 #ifdef DM_PARALLEL
@@ -690,14 +694,14 @@ PROGRAM convert_emissions
        read(92)ash_height(ids:ide  ,jds:jde  )
 #endif
 #ifdef DM_PARALLEL
-!      IF (wrf_dm_on_monitor()) THEN
+       IF (wrf_dm_on_monitor()) THEN
 !          write(0,*)'now do volc vent '
-!          read(92)volc_vent(ids:ide  ,jds:jde  )
-!      ENDIF
-!      DM_BCAST_MACRO(volc_vent)
+           read(92)volc_vent(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(volc_vent)
 !          write(0,*)maxval(volc_vent)
 #else
-!      read(92)volc_vent(ids:ide  ,jds:jde  )
+       read(92)volc_vent(ids:ide  ,jds:jde  )
 #endif
 
 #ifdef DM_PARALLEL
@@ -729,8 +733,9 @@ PROGRAM convert_emissions
           ash_mass(i,j)=eh*1.e9/area
 
 !        if(erup_dt(i,j).le.0.)CYCLE
-!        ashz_above_vent=ash_height(i,j)+volc_vent(i,j) !zlevel(i,kps,j)
-         ashz_above_vent=ash_height(i,j)+zlevel(i,kps,j) 
+         ashz_above_vent=ash_height(i,j)+volc_vent(i,j) !zlevel(i,kps,j)
+!        ashz_above_vent=ash_height(i,j)+zlevel(i,kps,j) 
+
 !        write(0,*)'found active volcano at i,j,kps,kpe = ',i,j,kps,kpe
 !        write(0,*)ash_height(i,j),ash_mass(i,j),erup_dt(i,j),ashz_above_vent
          do k=kpe-1,kps,-1
@@ -750,7 +755,6 @@ PROGRAM convert_emissions
          enddo
 !        write(0,*)'k_init = ',k_initial
          vert_mass_dist=0.
-!srf     k_initial=int((k_final+k_initial)*0.5)
             
            !- parabolic vertical distribution between k_initial and k_final
            kk4 = k_final-k_initial+2
@@ -782,34 +786,22 @@ PROGRAM convert_emissions
                do ko=1,k_final
 !                vert_mass_dist(ko) = vert_mass_dist(ko)+ x1 !- values between 0 and 1.
 !                write(0,*)'k,vert_mass_dist = ',ko,vert_mass_dist(ko),zlevel(i,ko,j)
-!                grid%emis_vol(i,ko,j,p_e_vash1)=size_dist(1)*vert_mass_dist(ko)*ash_mass(i,j)
-!                grid%emis_vol(i,ko,j,p_e_vash2)=size_dist(2)*vert_mass_dist(ko)*ash_mass(i,j)
-!                grid%emis_vol(i,ko,j,p_e_vash3)=size_dist(3)*vert_mass_dist(ko)*ash_mass(i,j)
-!                grid%emis_vol(i,ko,j,p_e_vash4)=size_dist(4)*vert_mass_dist(ko)*ash_mass(i,j)
-!                grid%emis_vol(i,ko,j,p_e_vash5)=size_dist(5)*vert_mass_dist(ko)*ash_mass(i,j)
-!                grid%emis_vol(i,ko,j,p_e_vash6)=size_dist(6)*vert_mass_dist(ko)*ash_mass(i,j)
-!                grid%emis_vol(i,ko,j,p_e_vash7)=size_dist(7)*vert_mass_dist(ko)*ash_mass(i,j)
-!                grid%emis_vol(i,ko,j,p_e_vash8)=size_dist(8)*vert_mass_dist(ko)*ash_mass(i,j)
-!                grid%emis_vol(i,ko,j,p_e_vash9)=size_dist(9)*vert_mass_dist(ko)*ash_mass(i,j)
-!                grid%emis_vol(i,ko,j,p_e_vash10)=size_dist(10)*vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_vol(i,ko,j,p_e_vash1)=.22         *vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_vol(i,ko,j,p_e_vash2)=.05         *vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_vol(i,ko,j,p_e_vash3)=.4          *vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_vol(i,ko,j,p_e_vash4)=.05         *vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_vol(i,ko,j,p_e_vash5)=.245        *vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_vol(i,ko,j,p_e_vash6)=.12         *vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_vol(i,ko,j,p_e_vash7)=.11         *vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_vol(i,ko,j,p_e_vash8)=.08         *vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_vol(i,ko,j,p_e_vash9)=.05         *vert_mass_dist(ko)*ash_mass(i,j)
-                 grid%emis_vol(i,ko,j,p_e_vash10)=.035       *vert_mass_dist(ko)*ash_mass(i,j)
-
+                 grid%emis_vol(i,ko,j,p_e_vash1)=size_dist(1)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash2)=size_dist(2)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash3)=size_dist(3)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash4)=size_dist(4)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash5)=size_dist(5)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash6)=size_dist(6)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash7)=size_dist(7)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash8)=size_dist(8)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash9)=size_dist(9)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash10)=size_dist(10)*vert_mass_dist(ko)*ash_mass(i,j)
                  if(config_flags%emiss_opt_vol == 2)grid%emis_vol(i,ko,j,p_e_vso2)=vert_mass_dist(ko)*so2_mass(i,j)
                enddo
-!              grid%erup_beg(i,j)=float(config_flags%julday)*1000.+float(beg_hour)
-               grid%erup_beg(i,j)=float(beg_day)*1000.+float(beg_hour)
+!              grid%erup_beg(i,j)=float(beg_day)*1000.+float(beg_hour)
+               grid%erup_beg(i,j)=float(grid%julday)*1000.+float(beg_hour)
                grid%erup_end(i,j)=grid%erup_beg(i,j)+erup_dt(i,j)
-!               write(0,*)'new mass=',sum(vert_mass_dist)*100.,x1
-               !pause
+                write(0,*)'new mass=',sum(vert_mass_dist)*100.,x1
 !          endif
        enddo
        enddo

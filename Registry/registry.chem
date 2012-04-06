@@ -440,9 +440,9 @@ state    real  ebio_co2oce    ij      misc        1         -      i06rh    "ebi
 
 # SESQ and MBO fluxes for the new SOA_VBS mechanism
 state    real  sebio_sesq     ij      misc        1         -      i06r     "sebio_sesq"       "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_sesq      ij      misc        1         -      h        "ebio_sesq"        "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_sesq      ij      misc        1         -      r        "ebio_sesq"        "Actual biog emiss"  "mol km^-2 hr^-1"
 state    real  sebio_mbo      ij      misc        1         -      i06r     "sebio_mbo"        "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_mbo       ij      misc        1         -      h        "ebio_mbo"         "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_mbo       ij      misc        1         -      r        "ebio_mbo"         "Actual biog emiss"  "mol km^-2 hr^-1"
 
 # Output of selected biogenic emissions from model MEGAN v2
 state    real  mebio_isop     ij      misc        1         -      -        "MEBIO_ISOP"       "MEGAN2 isoprene emiss" "mol km^-2 hr^-1"
@@ -471,12 +471,12 @@ state    real  clayfrac       ij      misc        1         -      i01r    "CLAY
 state    real  sandfrac       ij      misc        1         -      i01r    "SANDFRAC"       "Sand fraction in each grid cell (0-1)"      "none"
 
 # These 3D arrays are output from the SOA module for different purposes
-state    real  br_rto         ikj     misc        1         -      h        "BRNCH_RTO"      "branching ratio to determine NOx condition"  ""            "ug m^-3"
+state    real  br_rto         ikj     misc        1         -      r        "BRNCH_RTO"      "branching ratio to determine NOx condition"  ""            "ug m^-3"
 
 #
 # following used for volcanic eruptions only
 #
-state    real  ash_fall     ij      misc        1         -      h        "ASH_FALL"               "VOLCANIC ASH FALL"                 "kg/m2"
+state    real  ash_fall     ij      misc        1         -      r        "ASH_FALL"               "VOLCANIC ASH FALL"                 "kg/m2"
 state    real  erup_beg     ij      misc        1         -      i{13}    "ERUP_BEG"               "START TIME OF ERUPTION"        "?"
 state    real  erup_end     ij      misc        1         -      i{13}    "ERUP_END"               "END TIME OF ERUPTION"        "?"
 #
@@ -485,8 +485,8 @@ state    real  dep_vel_o3     ij      misc        1         -      -        "DEP
 state    real  cu_co_ten      ikj     misc        1         -      -        "CU_CO_TEN"             "CONV. TRANSPORT FOR CO"              "?"
 
 # for lightning
-state    integer  ktop           ij      misc        1         -     rh          "KTOP"            "Convective Cloud top index"        "#"
-state    integer  ktop_adj       ij      misc        1         -     h           "KTOP_ADJ"        "KTOP limited by WMO tropopause"    "#"
+state    integer  ktop           ij      misc        1         -     r           "KTOP"            "Convective Cloud top index"        "#"
+state    integer  ktop_adj       ij      misc        1         -     r           "KTOP_ADJ"        "KTOP limited by WMO tropopause"    "#"
 
 #
 # Tendency diagnostics for chemistry (chemdiag)
@@ -659,12 +659,12 @@ state    real  ant_v2          ikj     misc          1         -      r         
 state    real  ant_v3          ikj     misc          1         -      r         "ant_v3"                  "ant_v3"                                "ug m^-3"
 state    real  ant_v4          ikj     misc          1         -      r         "ant_v4"                  "ant_v4"                                "ug m^-3"
 state    integer  vbs_nbin      v         misc          1         -      r        "vbs_nbin"                  "vbs_nbin"                                ""
-state    real  smpa_v1          ikj     misc          1         -      rh        "smpa_v1"                  "smpa_v1"                                "ug m^-3"
-state    real  smpbb_v1          ikj     misc          1         -      rh        "smpbb_v1"                  "smpbb_v1"                                "ug m^-3"
-state    real  asmpsoa_a01      ikj     misc          1         -      rh        "asmpsoa_a01"             "asmpsoa_a01"                              "ug m^-3"
-state    real  asmpsoa_a02      ikj     misc          1         -      rh        "asmpsoa_a02"             "asmpsoa_a02"                              "ug m^-3"
-state    real  asmpsoa_a03      ikj     misc          1         -      rh        "asmpsoa_a03"             "asmpsoa_a03"                              "ug m^-3"
-state    real  asmpsoa_a04      ikj     misc          1         -      rh        "asmpsoa_a04"             "asmpsoa_a04"                              "ug m^-3"
+state    real  smpa_v1          ikj     misc          1         -      r         "smpa_v1"                  "smpa_v1"                                "ug m^-3"
+state    real  smpbb_v1          ikj     misc          1         -      r         "smpbb_v1"                  "smpbb_v1"                                "ug m^-3"
+state    real  asmpsoa_a01      ikj     misc          1         -      r         "asmpsoa_a01"             "asmpsoa_a01"                              "ug m^-3"
+state    real  asmpsoa_a02      ikj     misc          1         -      r         "asmpsoa_a02"             "asmpsoa_a02"                              "ug m^-3"
+state    real  asmpsoa_a03      ikj     misc          1         -      r         "asmpsoa_a03"             "asmpsoa_a03"                              "ug m^-3"
+state    real  asmpsoa_a04      ikj     misc          1         -      r         "asmpsoa_a04"             "asmpsoa_a04"                              "ug m^-3"
 
 
 # photolysis rates

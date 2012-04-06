@@ -27,10 +27,6 @@ V3.4 Release Notes :
 
 Version 3.4 is released on April 6, 2012.
 
-- The Radiative Transfer Model interface has been updated, now supports CRTM v2.0.2, and can now assimilate NOAA-19 AMSU-A and MHS data.
-
-- WRFDA Hybrid 3D-Var has been updated.
-
 - The WRFPLUS (WRF adjoint and tangent linear model) has been upgraded to V3.4 and it is consistent with the released WRF version 3.4. Added parallel WRF TL/AD based on WRF 3.4.
 
 - WRFDA 4D-Var now supports compilation to run in parallel.
@@ -38,6 +34,8 @@ Version 3.4 is released on April 6, 2012.
 - WRFDA 4D-Var now supports precipitation data (such as stage IV) assimilation.
 
 - The ability to generate forecast sensitivity to observations has been updated.
+
+- WRFDA Hybrid 3D-Var has been updated.
 
 ======================================
 

@@ -6,7 +6,7 @@ MODULE module_sf_mynn
 !
 !   BOTH LAND AND WATER:
 !1) Calculation of stability parameter (z/L) taken from Li et al. (2010 BLM)
-!2) Fixed isflux=0 option to turn off scalar fluxes, but keep momentum
+!2) Fixed isfflx=0 option to turn off scalar fluxes, but keep momentum
 !   fluxes for idealized studies (credit: Anna Fitch).
 !3) Kinematic viscosity now varies with temperature
 !4) Uses Monin-Obukhov flux-profile relationships more consistent with

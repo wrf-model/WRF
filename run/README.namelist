@@ -406,7 +406,7 @@ Namelist variables for controlling the adaptive time step option:
                                           also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 4, rrtmg scheme
                                      = 5, Goddard longwave scheme
-                                     = 7, UCLA scheme 
+                                     = 7, FLG (UCLA) scheme 
                                      = 31, Earth Held-Suarez forcing
                                      = 99, GFDL (Eta) longwave (semi-supported)
                                           also must use co2tf = 1 for ARW
@@ -419,7 +419,7 @@ Namelist variables for controlling the adaptive time step option:
                                           also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 4, rrtmg scheme
                                      = 5, Goddard shortwave scheme
-                                     = 7, UCLA scheme
+                                     = 7, FLG (UCLA) scheme
                                      = 99, GFDL (Eta) longwave (semi-supported)
                                           also must use co2tf = 1 for ARW
 
@@ -453,14 +453,14 @@ Namelist variables for controlling the adaptive time step option:
 
  sf_sfclay_physics (max_dom)         surface-layer option (old bl_sfclay_physics option)
                                      = 0, no surface-layer
-                                     = 1, Monin-Obukhov scheme
+                                     = 1, MM5 Monin-Obukhov scheme
                                      = 2, Monin-Obukhov (Janjic) scheme
                                      = 3, NCEP Global Forecast System scheme (NMM only)
                                      = 4, QNSE surface layer
                                      = 5, MYNN surface layer
                                      = 7, Pleim-Xiu surface layer (ARW only)
                                      = 10, TEMF surface layer (ARW only)
-                                     = 11, Modified Monin-Obukhov scheme (Jimenez)
+                                     = 11, Revised MM5 scheme (Jimenez)
 
  sf_surface_physics (max_dom)        land-surface option (old bl_surface_physics option)
                                      = 0, no surface temp prediction
@@ -469,7 +469,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, RUC land-surface model
                                      = 4, Noah-MP land-surface model (see additional &noah_mp namelist)
                                      = 7, Pleim-Xiu LSM (ARW)
-                                     = 8, Simplified Simple Biosphere Model (SSiB)
+                                     = 8, Simplified Simple Biosphere Model (SSiB) 
+                                          - can be used with Dudhia/RRTM, CAM or RRTMG radiation options
 
  sf_urban_physics(max_dom)           = 0, ; activate urban canopy model (in Noah LSM only)
                                      = 0: no
@@ -485,7 +486,6 @@ Namelist variables for controlling the adaptive time step option:
                                      = 2, Mellor-Yamada-Janjic TKE scheme
                                      = 3, NCEP Global Forecast System scheme (NMM only)
                                      = 4, Eddy-diffusivity Mass Flux, Quasi-Normal Scale Elimination PBL
-                                     = 94, Quasi-Normal Scale Elimination PBL
                                      = 5, MYNN 2.5 level TKE scheme, works with
                                           sf_sfclay_physics=1 or 2 as well as 5
                                      = 6, MYNN 3rd level TKE scheme, works only
@@ -494,6 +494,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 8, Bougeault and Lacarrere (BouLac) PBL
                                      = 9, UW boundary layer scheme from CAM5 (CESM 1_0_1)
                                      = 10, TEMF (Total Energy Mass Flux) scheme (ARW only)
+                                     = 94, Quasi-Normal Scale Elimination PBL
                                      = 99, MRF scheme
 
  bldt (max_dom)                      = 0,       ; minutes between boundary-layer physics calls
@@ -505,18 +506,20 @@ Namelist variables for controlling the adaptive time step option:
                                                 overridden by namelist value; bldt will
                                                 be computed from this.
  mfshconv (max_dom)                  = 1,; whether to turn on new day-time EDMF QNSE (0=no)
- topo_wind (max_dom)                 = 0, turn off, =1, turn on topographic surface wind correction from Jimenez (YSU PBL only)
+ topo_wind (max_dom)                 = 0, turn off, =1, turn on topographic surface wind correction from Jimenez 
+                                       (YSU PBL only, and require extra input from geogrid)
 
  cu_physics (max_dom)                cumulus option
                                      = 0, no cumulus
                                      = 1, Kain-Fritsch (new Eta) scheme
                                      = 2, Betts-Miller-Janjic scheme
                                      = 3, Grell-Devenyi ensemble scheme
-                                     = 4, Simplified Arakawa-Schubert scheme
+                                     = 4, Old GFS simplified Arakawa-Schubert scheme 
                                      = 5, Grell 3D ensemble scheme
                                      = 6, Modifed Tiedtke scheme (ARW only)
                                      = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
                                      = 14, New GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
+                                     = 84, New GFS simplified Arakawa-Schubert scheme (HWRF) 
                                      = 99, previous Kain-Fritsch scheme
 
  shcu_physics (max_dom)              independent shallow cumulus option (not tied to deep convection)
@@ -555,7 +558,7 @@ Namelist variables for controlling the adaptive time step option:
  pcpflg (max_dom)                    = FOR NMM: logical switch for precipitation assimilation
 
  isfflx                              = 1,	; heat and moisture fluxes from the surface
-                                                  (only works for sf_sfclay_physics = 1)
+                                                  (only works for sf_sfclay_physics = 1,5,7,11)
                                                   1 = with fluxes from the surface 
                                                   0 = no flux from the surface
                                                       with bl_pbl_physics=0 this uses tke_drag_coefficient
@@ -567,10 +570,11 @@ Namelist variables for controlling the adaptive time step option:
                                                   1 = with snow-cover effect
                                                   0 = without snow-cover effect
  icloud                              = 1,	; cloud effect to the optical depth in radiation
-                                                  (only works for ra_sw_physics = 1 and ra_lw_physics = 1)
+                                                  (only works for ra_sw_physics = 1,4 and ra_lw_physics = 1,4)
                                                   1 = with cloud effect
                                                   0 = without cloud effect
  swrad_scat                          = 1.       ; scattering tuning parameter (default 1. is 1.e-5 m2/kg)
+                                                  (works for ra_sw_physics = 1 option only)
  surface_input_source                = 1,	; where landuse and soil category data come from:
                                                   1 = WPS/geogrid but with dominant categories recomputed
                                                   2 = GRIB data from another model (only possible
@@ -676,7 +680,7 @@ Options for use with the Noah-MP Land Surface Model:
  opt_crs                            = 1,        ; Noah-MP Stomatal Resistance option:
                                                 ;    1 = Ball-Berry; 2 = Jarvis
  opt_sfc                            = 1         ; Noah-MP surface layer drag coefficient calculation
-                                                ;    1 = Monin-Obukov; 2 = original Noah (Chen97);
+                                                ;    1 = Monin-Obukhov; 2 = original Noah (Chen97);
                                                 ;    3 = MYJ consistent; 4 = YSU consistent.
  opt_btr                            = 1,        ; Noah-MP Soil Moisture Factor for Stomatal Resistance
                                                 ;    1 = Noah; 2 = CLM; 3 = SSiB

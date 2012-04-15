@@ -126,6 +126,8 @@ MODULES = \
 	module_physics_addtendc_tl.o \
 	module_physics_addtendc_ad.o \
 	module_physics_init.o \
+	module_physics_init_tl.o \
+	module_physics_init_ad.o \
 	module_gfs_machine.o \
 	module_gfs_funcphys.o \
 	module_gfs_physcons.o \
@@ -514,6 +516,23 @@ module_physics_init.o : \
 		../frame/module_dm.o \
 		../share/module_llxy.o \
 		../share/module_model_constants.o 
+
+module_physics_init_tl.o : \
+		module_bl_surface_drag_tl.o     \
+		module_cu_du_tl.o               \
+		module_physics_init.o           \
+		../frame/module_state_description.o \
+		../frame/module_configure.o \
+		../frame/module_wrf_error.o \
+		../share/module_model_constants.o
+
+module_physics_init_ad.o : \
+		module_bl_surface_drag_ad.o     \
+		module_cu_du_ad.o               \
+		../frame/module_state_description.o \
+		../frame/module_configure.o \
+		../frame/module_wrf_error.o \
+		../share/module_model_constants.o
 
 module_microphysics_driver.o: \
 		module_mixactivate.o \

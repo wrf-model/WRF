@@ -23,7 +23,7 @@
 #endif
    USE module_comm_dm
 
-   USE module_physics_init
+   USE a_module_physics_init
 
    USE module_model_constants
 
@@ -297,6 +297,7 @@
 ! process if, for example, it is a moving nest and if this part of the domain is not
 ! being initialized (not the leading edge).
    CALL domain_setgmtetc( grid, start_of_simulation )
+
 ! Set the w at the surface.  If this is the start of a forecast, or if this is a cycled run
 ! and the start of that forecast, we define the w field.  However, if this a restart, then 
 ! we leave w alone.  Initial value is V dot grad(topo) at surface, then smoothly decaying
@@ -454,7 +455,7 @@
 
    IF ( first_trip_for_this_domain ) THEN
 
-   CALL wrf_debug ( 100 , 'start_domain_em_ad: Before call to phy_init' )
+   CALL wrf_debug ( 100 , 'start_domain_em_ad: Before call to a_phy_init' )
 
 ! namelist MPDT does not exist yet, so set it here
 ! MPDT is the call frequency for microphysics in minutes (0 means every step)
@@ -475,26 +476,30 @@
 !
    DO ij = 1, grid%num_tiles
 
-#if 0
 !tgs do not need physics initialization for backward DFI integration
     IF ( ( grid%dfi_opt .EQ. DFI_NODFI ) .or. &
           ( ( grid%dfi_stage .NE. DFI_BCK ) .and. &
           ( grid%dfi_stage .NE. DFI_STARTBCK ) ) ) THEN    !tgs, mods by tah
 
-     CALL phy_init (  grid%id , config_flags, grid%DT, grid%RESTART, grid%znw, grid%znu,   &
+     CALL a_phy_init( grid%id , config_flags, grid%DT, grid%RESTART, grid%znw, grid%znu,   &
                       grid%p_top, grid%tsk, grid%RADT,grid%BLDT,grid%CUDT, MPDT, &
-                      grid%rucuten, grid%rvcuten, grid%rthcuten,             &
-                      grid%rqvcuten, grid%rqrcuten, grid%rqccuten,           &
+                      grid%rucuten, grid%rvcuten, grid%rthcuten, grid%a_rthcuten, &
+                      grid%rqvcuten, grid%a_rqvcuten, grid%rqrcuten, grid%rqccuten, &
+                      grid%a_rqccuten, &
                       grid%rqscuten, grid%rqicuten,                          &
                       grid%rushten, grid%rvshten, grid%rthshten,             &
                       grid%rqvshten, grid%rqrshten, grid%rqcshten,           &
                       grid%rqsshten, grid%rqishten, grid%rqgshten,           &
-                      grid%rublten,grid%rvblten,grid%rthblten,               &
-                      grid%rqvblten,grid%rqcblten,grid%rqiblten,             &
+                      grid%rublten,grid%a_rublten,grid%rvblten,grid%a_rvblten, &
+                      grid%rthblten, grid%a_rthblten,              &
+                      grid%rqvblten,grid%a_rqvblten,grid%rqcblten,grid%rqiblten, &
                       grid%rthraten,grid%rthratenlw,grid%rthratensw,         &
                       grid%stepbl,grid%stepra,grid%stepcu,                   &
-                      grid%w0avg, grid%rainnc, grid%rainc, grid%raincv, grid%rainncv,  &
-                      grid%snownc, grid%snowncv, grid%graupelnc, grid%graupelncv,  &
+                      grid%w0avg, grid%a_w0avg, grid%rainnc, grid%a_rainnc, &
+                      grid%rainc, grid%a_rainc, grid%raincv, grid%a_raincv, &
+                      grid%rainncv, grid%a_rainncv, &
+                      grid%snownc, grid%a_snownc, grid%snowncv, grid%a_snowncv, &
+                      grid%graupelnc, grid%a_graupelnc, grid%graupelncv, grid%a_graupelncv, &
                       grid%nca,grid%swrad_scat,                    &
                       grid%cldefi,grid%lowlyr,                          &
                       grid%mass_flux,                              &
@@ -576,10 +581,10 @@
                       ,grid%rv_up,grid%rc_up,grid%u_up,grid%v_up,grid%frac_up            &
                       )
        ENDIF   !tgs
-#endif
+
    ENDDO
 
-   CALL wrf_debug ( 100 , 'start_domain_em_ad: After call to phy_init' )
+   CALL wrf_debug ( 100 , 'start_domain_em_ad: After call to a_phy_init' )
 
    END IF
 

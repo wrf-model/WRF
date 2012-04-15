@@ -433,7 +433,7 @@ start_em_tl.o:  module_bc_em_tl.o \
 		../share/module_model_constants.o \
 		../share/module_bc_tl.o \
 		../share/module_date_time.o \
-		../phys/module_physics_init.o \
+		../phys/module_physics_init_tl.o \
 		$(CF)
 
 start_em_ad.o:  module_bc_em_ad.o \
@@ -447,7 +447,7 @@ start_em_ad.o:  module_bc_em_ad.o \
 		../share/module_model_constants.o \
 		../share/module_bc_ad.o \
 		../share/module_date_time.o \
-		../phys/module_physics_init.o \
+		../phys/module_physics_init_ad.o \
 		$(CF)
 
 solve_em.o:     module_small_step_em.o \

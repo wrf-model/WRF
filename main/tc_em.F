@@ -11,7 +11,10 @@ PROGRAM tc_data
    USE module_configure, ONLY : grid_config_rec_type, model_config_rec, &
         initial_config, get_config_as_buffer, set_config_as_buffer
    USE module_timing
-   USE module_state_description, ONLY : realonly
+   USE module_state_description, ONLY: tconly
+#ifdef DM_PARALLEL
+   USE module_dm, ONLY: wrf_dm_initialize
+#endif
 #ifdef NO_LEAP_CALENDAR
    USE module_symbols_util, ONLY: wrfu_cal_noleap
 #else
@@ -110,7 +113,7 @@ PROGRAM tc_data
    CALL get_config_as_buffer( configbuf, configbuflen, nbytes )
    CALL wrf_dm_bcast_bytes( configbuf, nbytes )
    CALL set_config_as_buffer( configbuf, configbuflen )
-!   CALL wrf_dm_initialize
+   CALL wrf_dm_initialize
 #else
    CALL initial_config
 #endif
@@ -125,7 +128,7 @@ PROGRAM tc_data
    !  program, fields that come from the WPS package.  We define the run-time
    !  flag that says to allocate space for these input-from-WPS-only arrays.
 
-   CALL nl_set_use_wps_input ( 1 , REALONLY )
+   CALL nl_set_use_wps_input ( 1 , TCONLY )
 
    !  Allocate the space for the mother of all domains.
 
@@ -439,6 +442,12 @@ SUBROUTINE tc_med_sidata_input ( grid , config_flags, latc_loc, lonc_loc, &
          IF ( ierr .EQ. 0 ) THEN
             grid%flag_st100200 = 1
          END IF
+
+         CALL wrf_get_dom_ti_integer ( idsi, 'FLAG_SOIL_LAYERS', itmp, 1, icnt, ierr ) 
+         IF ( ierr .EQ. 0 ) THEN
+            grid%flag_soil_layers = 1
+         END IF
+
 
 
 

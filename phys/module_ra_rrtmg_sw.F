@@ -10281,6 +10281,7 @@ CONTAINS
 ! following Kristjansson and Mitchell
       call reicalc(ncol, pcols, pver, tlay, reice)
 
+#if 0
       if (i==80.and.j==30) then
 #if defined( DM_PARALLEL ) && ! defined( STUBMPI) 
       if( PRESENT( progn ) ) write(0,*) 'aerosol indirect',progn
@@ -10288,6 +10289,7 @@ CONTAINS
       write(0,*)'sw ice eff radius',reice(ncol,10),reice(ncol,20),reice(ncol,25)
 #endif
       endif
+#endif
 
 ! Limit upper bound of reice for Fu ice parameterization and convert
 ! from effective radius to generalized effective size (*1.0315; Fu, 1996)

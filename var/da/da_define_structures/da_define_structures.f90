@@ -1030,7 +1030,9 @@ contains
 
 #include "da_allocate_background_errors.inc"
 #include "da_allocate_observations.inc"
+#include "da_allocate_observations_rain.inc"
 #include "da_allocate_y.inc"
+#include "da_allocate_y_rain.inc"
 #include "da_deallocate_background_errors.inc"
 #include "da_deallocate_observations.inc"
 #include "da_deallocate_y.inc"

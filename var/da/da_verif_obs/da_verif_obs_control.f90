@@ -111,6 +111,7 @@ MODULE da_verif_obs_control
   LOGICAL  :: if_plot_profiler
   LOGICAL  :: if_plot_polaramv 
   LOGICAL  :: if_plot_geoamv   
+  LOGICAL  :: if_plot_tamdar
 
   LOGICAL  :: if_plot_gpspw 
   LOGICAL  :: if_plot_gpsref
@@ -127,7 +128,7 @@ MODULE da_verif_obs_control
                      if_plot_ships, if_plot_buoy , if_plot_qscat, &
                      if_plot_sound, if_plot_airep, if_plot_pilot, if_plot_profiler, &
                      if_plot_geoamv, if_plot_polaramv, if_plot_gpspw, if_plot_gpsref, &
-                     if_plot_airsret
+                     if_plot_airsret, if_plot_tamdar
   NAMELIST /Record5/ file_path_string
   NAMELIST /Record6/ wrf_file, istart, iend, jstart, jend
 !

@@ -2,12 +2,10 @@
  
     MODULE module_diffusion_em
 
-    USE module_configure
-    USE module_bc
-    USE module_state_description
-    USE module_big_step_utilities_em
+    USE module_bc, only: set_physical_bc3d
+    USE module_state_description, only: p_m23, p_m13, p_m22, p_m33, p_r23, p_r13, p_r12, p_m12, p_m11
+    USE module_big_step_utilities_em, only: grid_config_rec_type, param_first_scalar, p_qv, p_qi, p_qc
     USE module_model_constants    
-    USE module_wrf_error
 
     CONTAINS
 

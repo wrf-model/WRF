@@ -2837,8 +2837,8 @@ CONTAINS
     type(nmm_terrain), pointer :: tr
 
     nullify(tr)
-    avc_nest=0
-    lnd_nest=0
+    avc_nest = 0.0
+    lnd_nest = 0.0
     
     tr=>terrain_for(level,input_type,io_form_input)
 

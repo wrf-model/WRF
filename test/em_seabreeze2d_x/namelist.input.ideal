@@ -54,10 +54,7 @@
  cu_physics                          = 0,
  cudt                                = 0,
  isfflx                              = 0,
- ifsnow                              = 0,
- icloud                              = 0,
  num_soil_layers                     = 5,
- mp_zero_out                         = 0,
  windturbines_spec = "ideal"
  td_turbgridid   =      1,
  td_hubheight    =   100.,

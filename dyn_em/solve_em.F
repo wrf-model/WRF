@@ -2052,8 +2052,6 @@ BENCH_START(update_scal_tim)
                                scalar_1=moist_old(ims,kms,jms,im),                     &
                                scalar_2=moist(ims,kms,jms,im),                         &
                                sc_tend=moist_tend(ims,kms,jms,im),                     &
-!                              advh_t=advh_t(ims,kms,jms,1),                           & 
-!                              advz_t=advz_t(ims,kms,jms,1),                           & 
                                advect_tend=advect_tend,                                &
                                h_tendency=h_tendency, z_tendency=z_tendency,           & 
                                msftx=grid%msftx,msfty=grid%msfty,                      &
@@ -2145,8 +2143,6 @@ BENCH_START(tke_adv_tim)
                                   scalar_1=grid%tke_1,                                    &
                                   scalar_2=grid%tke_2,                                    &
                                   sc_tend=tke_tend(ims,kms,jms),                          &
-!                                 advh_t=advh_t(ims,kms,jms,1),                           & 
-!                                 advz_t=advz_t(ims,kms,jms,1),                           & 
                                   advect_tend=advect_tend,                                &
                                   h_tendency=h_tendency, z_tendency=z_tendency,           & 
                                   msftx=grid%msftx,msfty=grid%msfty,                      &
@@ -3252,9 +3248,11 @@ BENCH_START(micro_driver_tim)
       &        , QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG               &
       &        , QH_CURR=moist(ims,kms,jms,P_QH), F_QH=F_QH               & ! for milbrandt2mom
       &        , QNDROP_CURR=scalar(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP &
+#ifdef WRF_CHEM
       &        , RAINPROD=grid%rainprod, EVAPPROD=grid%evapprod           &
       &        , QV_B4MP=grid%qv_b4mp,QC_B4MP=grid%qc_b4mp                &
       &        , QI_B4MP=grid%qi_b4mp, QS_B4MP=grid%qs_b4mp               &
+#endif
       &        , QT_CURR=scalar(ims,kms,jms,P_QT), F_QT=F_QT              &
       &        , QNN_CURR=scalar(ims,kms,jms,P_QNN), F_QNN=F_QNN          &
       &        , QNI_CURR=scalar(ims,kms,jms,P_QNI), F_QNI=F_QNI          &

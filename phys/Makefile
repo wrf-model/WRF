@@ -95,6 +95,7 @@ MODULES = \
         module_sf_bep_bem.o \
         module_sf_bem.o \
 	module_sf_pxlsm.o \
+	module_sf_pxlsm_data.o \
 	module_sf_ruclsm.o \
 	module_sf_sfcdiags.o \
 	module_sf_sfcdiags_ruclsm.o \
@@ -380,7 +381,7 @@ module_sf_bem.o: ../share/module_model_constants.o
 
 module_sf_ruclsm.o: ../frame/module_wrf_error.o module_data_gocart_dust.o 
 
-module_sf_pxlsm.o: ../share/module_model_constants.o
+module_sf_pxlsm.o: ../share/module_model_constants.o module_sf_pxlsm_data.o
 
 module_ra_rrtmg_sw.o: module_ra_rrtmg_lw.o
 

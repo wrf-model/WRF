@@ -184,7 +184,10 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
 # The jasper library is required to build Grib2 I/O.  User must set 
 # environment variables JASPERLIB and JASPERINC to paths to library and 
 # include files to enable this feature prior to running configure.  
- if ( $ENV{JASPERLIB} && $ENV{JASPERINC} )
+
+ $I_really_want_to_output_grib2_from_WRF = "FALSE" ;
+
+ if ( $ENV{JASPERLIB} && $ENV{JASPERINC} && $I_really_want_to_output_grib2_from_WRF eq "TRUE" )
    {
    printf "Configuring to use jasper library to build Grib2 I/O...\n" ;
    printf("  \$JASPERLIB = %s\n",$ENV{JASPERLIB});
@@ -194,7 +197,15 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
    }
  else
    {
-   printf "\$JASPERLIB or \$JASPERINC not found in environment, configuring to build without grib2 I/O...\n" ;
+   if ( $ENV{JASPERLIB} && $ENV{JASPERINC} )
+     {
+     printf "\n\nIf you REALLY want Grib2 output from WRF, modify the arch/Config_new.pl script.\n" ;
+     printf "Right now you are not getting the Jasper lib, from the environment, compiled into WRF.\n\n" ;
+     }
+   else
+     {
+     printf "\$JASPERLIB or \$JASPERINC not found in environment, configuring to build without grib2 I/O...\n" ;
+     }
    }
 
 # When compiling DA code, we need to always use 8-byte reals.
@@ -525,6 +536,10 @@ while ( <CONFIGURE_DEFAULTS> )
         if ( $paropt eq 'dmpar' || $paropt eq 'dm+sm' ) { 
           if ( $sw_os ne "CYGWIN_NT" ) {
             $sw_comms_lib = "\$(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a" ;
+            if ( $sw_wrf_core eq "4D_DA_CORE" )
+            {
+              $sw_comms_lib = "\$(WRFPLUS_DIR)/external/RSL_LITE/librsl_lite.a" ;
+            }
           } else {
             $sw_comms_lib = "../external/RSL_LITE/librsl_lite.a" ;
           }

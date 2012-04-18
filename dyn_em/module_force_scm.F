@@ -482,11 +482,11 @@ CONTAINS
     if ( scm_vert_adv ) then
        do k = kms+1,kme-1
           w = interp_0(w_subs,z_force,z_at_w(ids,k,jds),num_force_layers)
-          w_dthdz(k) = w*dthdz(k)
-          w_dqvdz(k) = w*dqvdz(k)
-          w_dqldz(k) = w*dqldz(k)
-          w_dudz(k)  = w*dudz(k)
-          w_dvdz(k)  = w*dvdz(k)
+          w_dthdz(k) = -w*dthdz(k)
+          w_dqvdz(k) = -w*dqvdz(k)
+          w_dqldz(k) = -w*dqldz(k)
+          w_dudz(k)  = -w*dudz(k)
+          w_dvdz(k)  = -w*dvdz(k)
        enddo
     endif
 

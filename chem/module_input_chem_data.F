@@ -382,6 +382,8 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
   case (MOZART_MOSAIC_4BIN_VBS0_KPP)
      call wrf_debug("setup_profile_maps: nothing done for mozart_mosaic_4bin_vbs0__kpp")
 
+ case (CO2_TRACER,GHG_TRACER)
+     call wrf_debug("setup_profile_maps: nothing done for the GHG options")
 
   case default
      call wrf_error_fatal("setup_profile_maps: could not decipher chem_opt value")
@@ -869,6 +871,8 @@ SUBROUTINE input_chem_profile (si_grid)
       si_grid%chem(ims:ime,kms:kme,jms:jme,p_oc1 ) = 1.e-2
       si_grid%chem(ims:ime,kms:kme,jms:jme,p_oc2 ) = 1.e-2
       si_grid%chem(ims:ime,kms:kme,jms:jme,p_p25 ) = 1.
+   ELSE IF ( si_grid%chem_opt==CO2_TRACER .OR. si_grid%chem_opt==GHG_TRACER ) THEN
+       ! Do nothing, since for GHGs initialization is done in chemics_init.F
    ELSE
       CALL make_chem_profile (ims, ime, jms, jme, kms, kme, num_chem, numgas, &
                               si_grid%chem_opt, si_zsig, si_grid%chem)
@@ -1102,7 +1106,7 @@ SUBROUTINE input_chem_profile (si_grid)
       ! Interpolate temp 1D chemical profile array to WRF field
       IF (z .LT. zprof(1)) THEN 
         stor(1:lo) = cprof(2:lo+1,1) 
-      ELSE IF (z .GT. zprof(kx)) THEN
+      ELSE IF (z .GE. zprof(kx)) THEN
         stor(1:lo) = cprof(2:lo+1,kx)
       ELSE
         ! We can trap between two levels and linearly interpolate
@@ -1446,6 +1450,30 @@ SUBROUTINE input_chem_profile (si_grid)
 
       RETURN
   END SUBROUTINE bdy_chem_value
+!**********************************************************************
+SUBROUTINE bdy_chem_value_ghg ( chem, nch )
+! This subroutine is called to set the boundary constan values for
+! greenhouse gases when gas_bc_opt=16
+
+    IMPLICIT NONE
+
+    REAL,    intent(OUT)  :: chem
+    INTEGER, intent(IN)   :: nch        ! index number of chemical species
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+if( nch==p_co2_bck .OR. nch==p_co2_bio .OR. nch==p_co2_oce .OR. nch==p_co2_ant &
+    .OR. nch==p_co2_bbu .OR. nch==p_co2_tst ) then
+    chem = 380.
+else if( nch==p_co_bck .OR. nch==p_co_ant .OR. nch==p_co_bbu .OR. nch==p_co_tst) then
+    chem = 0.1
+else if( nch==p_ch4_bck .OR. nch==p_ch4_bio .OR. nch==p_ch4_ant &
+         .OR. nch==p_ch4_bbu .OR. nch==p_ch4_tst ) then
+   chem = 1.77
+else
+   chem = 1.e-12
+end if
+
+END SUBROUTINE bdy_chem_value_ghg
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if (EM_CORE == 1 ) 
@@ -1576,6 +1604,9 @@ SUBROUTINE input_chem_profile (si_grid)
           i_bdy_method = 7
       else if (config_flags%chem_opt == CHEM_VASH) then
           i_bdy_method = 8
+      else if (config_flags%chem_opt==CO2_TRACER .OR. config_flags%chem_opt==GHG_TRACER) then
+          i_bdy_method = 16
+!         CALL wrf_message( "For GHGs strongly recommended to include LBCs from a global model!" )
       end if
       if (have_bcs_chem) i_bdy_method =6
       if (ic .lt. param_first_scalar) i_bdy_method = 0
@@ -1636,6 +1667,8 @@ SUBROUTINE input_chem_profile (si_grid)
                    chem(i,k,j) = 0.
                 else if (i_bdy_method .eq. 6) then
                    CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bys(i,k,1),chem_btys(i,k,1),dt,ic)
+                else if (i_bdy_method .eq. 16) then
+                   CALL bdy_chem_value_ghg ( chem(i,k,j), ic ) 
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -1681,6 +1714,8 @@ SUBROUTINE input_chem_profile (si_grid)
                    CALL bdy_chem_value_gocart ( chem(i,k,j), ic )
                 else if (i_bdy_method .eq. 8) then
                    chem(i,k,j) = 0.
+                else if (i_bdy_method .eq. 16) then
+                   CALL bdy_chem_value_ghg ( chem(i,k,j), ic )  ! For GHGs
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -1727,6 +1762,8 @@ SUBROUTINE input_chem_profile (si_grid)
                    CALL bdy_chem_value_gocart ( chem(i,k,j), ic )
                 else if (i_bdy_method .eq. 8) then
                    chem(i,k,j) = 0.
+                else if (i_bdy_method .eq. 16) then
+                   CALL bdy_chem_value_ghg ( chem(i,k,j), ic )  ! For GHGs
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -1773,6 +1810,8 @@ SUBROUTINE input_chem_profile (si_grid)
                    CALL bdy_chem_value_gocart ( chem(i,k,j), ic )
                 else if (i_bdy_method .eq. 8) then
                    chem(i,k,j) = 0.
+                else if (i_bdy_method .eq. 16) then
+                   CALL bdy_chem_value_ghg ( chem(i,k,j), ic ) ! For GHGs
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -2518,6 +2557,9 @@ SUBROUTINE input_chem_profile (si_grid)
 
      case (MOZART_MOSAIC_4BIN_VBS0_KPP)
         get_last_gas = p_meko2
+
+     case (CO2_TRACER,GHG_TRACER) ! No gas chemistry or deposition for GHGs
+        get_last_gas = 0
 
      case default
         call wrf_error_fatal("get_last_gas: could not decipher chem_opt value")

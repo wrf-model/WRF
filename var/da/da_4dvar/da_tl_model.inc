@@ -7,7 +7,7 @@ subroutine da_tl_model ()
 
    implicit none
 
-   integer :: time_step, fid, ierr, i, j
+   integer :: time_step, fid, ierr, i, j, alarmid
    character (len=80)     :: inpname 
 
    if (trace_use_dull) call da_trace_entry("da_tl_model")
@@ -19,7 +19,7 @@ subroutine da_tl_model ()
    ! Set up perturbation output at each slots
    model_config_rec%auxhist8_outname = "tl_d<domain>_<date>"
    call nl_set_auxhist8_interval_s ( head_grid%id, var4d_bin ) 
-   call nl_set_auxhist8_begin_s ( head_grid%id, var4d_bin )
+   call nl_set_auxhist8_begin_s ( head_grid%id, 0 )
    call nl_set_auxhist8_end_h ( head_grid%id, 999 )
    call nl_set_io_form_auxhist8 ( head_grid%id, 2 )
    call nl_set_frames_per_auxhist8 ( head_grid%id, 1 )
@@ -107,12 +107,13 @@ subroutine da_tl_model ()
    call nl_set_sf_sfclay_physics (head_grid%id, 0)
    if (original_bl_pbl_physics .gt. 0) &
       call nl_set_bl_pbl_physics (head_grid%id, 98)
-   call nl_set_cu_physics (head_grid%id, 0)
-   call nl_set_mp_zero_out (head_grid%id, 0)
+   if (original_cu_physics .gt. 0) &
+      call nl_set_cu_physics (head_grid%id, 98) 
+   !call nl_set_mp_zero_out (head_grid%id, 0)
    !call nl_set_sf_surface_physics (head_grid%id, 1)
    call nl_set_ifsnow (head_grid%id, 1)
    call nl_set_icloud (head_grid%id, 0)
-   call nl_set_isfflx (head_grid%id, 0)
+   !call nl_set_isfflx (head_grid%id, 0)
 
    ! WRF model time-stepping.  Calls integrate().
    call wrf_run_tl
@@ -124,17 +125,32 @@ subroutine da_tl_model ()
    call nl_set_sf_sfclay_physics (head_grid%id, original_sf_sfclay_physics)
    call nl_set_bl_pbl_physics (head_grid%id, original_bl_pbl_physics)
    call nl_set_cu_physics (head_grid%id, original_cu_physics)
-   call nl_set_mp_zero_out (head_grid%id, original_mp_zero_out)
+   !call nl_set_mp_zero_out (head_grid%id, original_mp_zero_out)
    !call nl_set_sf_surface_physics (head_grid%id, original_sf_surface_physics)
    call nl_set_ifsnow (head_grid%id, original_ifsnow)
    call nl_set_icloud (head_grid%id, original_icloud)
-   call nl_set_isfflx (head_grid%id, original_isfflx)
+   !call nl_set_isfflx (head_grid%id, original_isfflx)
 
    ! Turn off auxinput2 reading and auxhist8 output
 
    call nl_set_auxinput6_interval_s (head_grid%id, 0 )
    call nl_set_auxhist8_interval_s ( head_grid%id, 0 )
 
+   IF ( ASSOCIATED( head_grid%domain_clock ) ) THEN
+     IF ( head_grid%domain_clock_created ) THEN
+       CALL WRFU_ClockDestroy( head_grid%domain_clock )
+       head_grid%domain_clock_created = .FALSE.
+     ENDIF
+   ENDIF
+   IF ( ASSOCIATED( head_grid%alarms ) .AND. &
+        ASSOCIATED( head_grid%alarms_created ) ) THEN
+     DO alarmid = 1, MAX_WRF_ALARMS
+       IF ( head_grid%alarms_created( alarmid ) ) THEN
+         CALL WRFU_AlarmDestroy( head_grid%alarms( alarmid ) )
+         head_grid%alarms_created( alarmid ) = .FALSE.
+       ENDIF
+     ENDDO
+   ENDIF
    call Setup_Timekeeping ( head_grid )
 
    if (trace_use_dull) call da_trace_exit("da_tl_model")

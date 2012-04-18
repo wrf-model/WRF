@@ -8,14 +8,15 @@ module da_wrfvar_top
       model_to_grid_config_rec, get_config_as_buffer,set_config_as_buffer, &
       initial_config
    use module_domain, only : domain,alloc_and_configure_domain, head_grid, &
-      program_name, domain_clock_get, domain_clock_set, x_type
+      program_name, domain_clock_get, domain_clock_set, x_type, dealloc_space_domain
    use module_driver_constants, only : max_comms
    use module_symbols_util, only : wrfu_finalize, wrfu_initialize, &
       wrfu_cal_gregorian
+   use module_io_domain, only : close_dataset
 #ifdef VAR4D
    use da_4dvar, only : da_nl_model, model_grid, u6_2, v6_2, w6_2, t6_2, ph6_2, p6, &
       mu6_2, psfc6, moist6, kj_swap, da_finalize_model, da_model_lbc_off
-   use da_wrfvar_io, only : da_med_initialdata_output_lbc
+   !use da_wrfvar_io, only : da_med_initialdata_output_lbc
 #endif
 
 #if defined(RTTOV) || defined(CRTM)
@@ -64,7 +65,7 @@ module da_wrfvar_top
    use da_reporting, only : message, da_warning, da_error, da_message
    use da_setup_structures, only : da_setup_obs_structures, &
       da_setup_background_errors,da_setup_flow_predictors, &
-      da_setup_cv, da_scale_background_errors
+      da_setup_cv, da_scale_background_errors, da_scale_background_errors_cv3
    use da_test, only : da_check, da_check_gradient
    use da_tools_serial, only : da_get_unit, da_free_unit
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace, da_trace_report

@@ -119,13 +119,21 @@ CONTAINS
 
 #ifndef NO_NAMELIST_PRINT
       OPEN ( UNIT   = nml_write_unit    ,      &
+#if (DA_CORE == 1)
+             FILE   = "namelist.output.da" ,      &
+#else
              FILE   = "namelist.output" ,      &
+#endif
              FORM   = "FORMATTED"      ,      &
              STATUS = "REPLACE"        ,      &
              IOSTAT = io_status         )
 
       IF ( io_status .NE. 0 ) THEN
+#if (DA_CORE == 1)
+        CALL WRF_ERROR_FATAL ( 'ERROR OPENING namelist.output.da' )
+#else
         CALL WRF_ERROR_FATAL ( 'ERROR OPENING namelist.output' )
+#endif
       ENDIF
 #endif
 

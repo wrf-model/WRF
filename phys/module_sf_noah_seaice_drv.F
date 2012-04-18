@@ -9,10 +9,15 @@ contains
        &                  CHS, CHS2, CQS2,                                              &
        &                  RIB, ZNT, LH, HFX, QFX, POTEVP, GRDFLX, QSFC, ACSNOW,         &
        &                  ACSNOM, SNOPCX, SFCRUNOFF, NOAHRES,                           &
-       &                  B_T_BEP, B_Q_BEP, RHO,                                        &
+       &                  SF_URBAN_PHYSICS, B_T_BEP, B_Q_BEP, RHO,                      &
        &                  IDS, IDE, JDS, JDE, KDS, KDE,                                 &
        &                  IMS, IME, JMS, JME, KMS, KME,                                 &
        &                  ITS, ITE, JTS, JTE, KTS, KTE  )
+#if (NMM_CORE != 1)
+    USE module_state_description, ONLY : NOAHUCMSCHEME
+    USE module_state_description, ONLY : BEPSCHEME
+    USE module_state_description, ONLY : BEP_BEMSCHEME
+#endif
     implicit none
 
     INTEGER, INTENT(IN)       ::               SEAICE_ALBEDO_OPT
@@ -89,7 +94,8 @@ contains
          &                                              NOAHRES, &
          &                                                 CHS2
 
-    REAL,    DIMENSION( ims:ime, kms:kme, jms:jme )            , &
+    INTEGER, INTENT (IN)      ::               SF_URBAN_PHYSICS
+    REAL,    OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme )  , &
          &   INTENT (INOUT)   ::                        B_Q_BEP, &
          &                                              B_T_BEP
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme )            , &
@@ -374,9 +380,18 @@ contains
                &         - SHEAT + SSOIL - ETA &
                &         - ( EMISSI * STBOLT * (T1**4) ) &
                &         - FLX1 - FLX2 - FLX3
-          
-          B_T_BEP(I,1,J)=hfx(i,j)/dz8w(i,1,j)/rho(i,1,j)/CP
-          B_Q_BEP(I,1,J)=qfx(i,j)/dz8w(i,1,j)/rho(i,1,j)
+#if (NMM_CORE != 1)
+          IF ( ( SF_URBAN_PHYSICS == NOAHUCMSCHEME ) .OR. &
+               (SF_URBAN_PHYSICS == BEPSCHEME )      .OR. &
+               ( SF_URBAN_PHYSICS == BEP_BEMSCHEME ) ) THEN
+             if ( PRESENT (B_T_BEP) ) then
+                B_T_BEP(I,1,J)=hfx(i,j)/dz8w(i,1,j)/rho(i,1,j)/CP
+             endif
+             if ( PRESENT (B_Q_BEP) ) then
+                B_Q_BEP(I,1,J)=qfx(i,j)/dz8w(i,1,j)/rho(i,1,j)
+             endif
+          ENDIF
+#endif
 
        enddo SEAICE_ILOOP
     enddo SEAICE_JLOOP

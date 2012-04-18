@@ -38,7 +38,7 @@
     REAL    gmt, cen_lat, cen_lon, bdyfrq , truelat1 , truelat2 , moad_cen_lat , stand_lon
     INTEGER km_opt, diff_opt, damp_opt,  &
             mp_physics, ra_lw_physics, ra_sw_physics, sf_sfclay_physics, &
-            sf_surface_physics, bl_pbl_physics, cu_physics
+            sf_surface_physics, bl_pbl_physics, cu_physics, hypsometric_opt
     REAL    khdif, kvdif, swrad_scat, dampcoef
     INTEGER sf_urban_physics, w_damping, smooth_option, feedback, surface_input_source, sst_update
 #if (EM_CORE == 1)
@@ -114,15 +114,15 @@
                               ims, ime, jms, jme, kms, kme,    &
                               ips, ipe, jps, jpe, kps, kpe    )
 
-    call nl_get_diff_opt      ( 1, diff_opt                      )
-    call nl_get_km_opt        ( 1, km_opt                        )
-    call nl_get_damp_opt      ( 1, damp_opt                      )
-    call nl_get_dampcoef      ( grid%id,  dampcoef            )
-    call nl_get_khdif         ( grid%id,  khdif               )
-    call nl_get_kvdif         ( grid%id,  kvdif               )
-    call nl_get_mp_physics    ( grid%id,  mp_physics          )
-    call nl_get_ra_lw_physics ( grid%id,  ra_lw_physics       )
-    call nl_get_ra_sw_physics ( grid%id,  ra_sw_physics           )
+    call nl_get_diff_opt           ( 1, diff_opt                  )
+    call nl_get_km_opt             ( 1, km_opt                    )
+    call nl_get_damp_opt           ( 1, damp_opt                  )
+    call nl_get_dampcoef           ( grid%id,  dampcoef           )
+    call nl_get_khdif              ( grid%id,  khdif              )
+    call nl_get_kvdif              ( grid%id,  kvdif              )
+    call nl_get_mp_physics         ( grid%id,  mp_physics         )
+    call nl_get_ra_lw_physics      ( grid%id,  ra_lw_physics      )
+    call nl_get_ra_sw_physics      ( grid%id,  ra_sw_physics      )
     call nl_get_sf_sfclay_physics  ( grid%id,  sf_sfclay_physics  )
     call nl_get_sf_surface_physics ( grid%id,  sf_surface_physics )
     call nl_get_bl_pbl_physics     ( grid%id,  bl_pbl_physics     )
@@ -138,6 +138,7 @@
     call nl_get_w_damping            ( 1      ,  w_damping            )
 
 #if (EM_CORE == 1)
+    call nl_get_hypsometric_opt    ( 1, hypsometric_opt           )
     CALL nl_get_moist_adv_opt  ( grid%id , moist_adv_opt )
     CALL nl_get_scalar_adv_opt ( grid%id , scalar_adv_opt )
     CALL nl_get_tke_adv_opt    ( grid%id , tke_adv_opt )
@@ -346,8 +347,13 @@ endif
     ibuf(1) = config_flags%e_sn - config_flags%s_sn + 1
     CALL wrf_put_dom_ti_integer ( fid , 'SOUTH-NORTH_GRID_DIMENSION' , ibuf , 1 , ierr )
 
-    ibuf(1) = config_flags%e_vert - config_flags%s_vert + 1
-    CALL wrf_put_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' , ibuf , 1 , ierr )
+    IF ( program_name(1:5) .EQ. 'TC_EM' ) THEN
+       ibuf(1) = config_flags%num_metgrid_levels
+       CALL wrf_put_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' , ibuf , 1 , ierr )
+    ELSE
+       ibuf(1) = config_flags%e_vert - config_flags%s_vert + 1
+       CALL wrf_put_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' , ibuf , 1 , ierr )
+    END IF
 
 #if (EM_CORE == 1)
     IF (grid%map_proj == 6) THEN
@@ -363,7 +369,8 @@ endif
 
 #if (EM_CORE == 1)
 !added the following for tc bogusing
-    if((config_flags%insert_bogus_storm) .or. (config_flags%remove_storm)) then
+    if( ((config_flags%insert_bogus_storm) .or. (config_flags%remove_storm)) .and. &
+        ( program_name(1:5) .EQ. 'TC_EM' ) ) then
        print *,"we have confirmed that insert or remove is true"
        ibuf(1) = 1
        CALL wrf_put_dom_ti_integer ( fid , 'FLAG_METGRID' ,  ibuf , 1 , ierr )
@@ -405,6 +412,10 @@ endif
        end if
         if(grid%flag_st100200 .eq. 1)then
           CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST100200' ,  ibuf , 1 , ierr ) 
+       end if 
+
+        if(grid%flag_soil_layers .eq. 1)then
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SOIL_LAYERS' ,  ibuf , 1 , ierr ) 
        end if 
 
        ibuf(1) = grid%num_metgrid_levels
@@ -473,10 +484,13 @@ endif
       CALL wrf_put_dom_ti_integer ( fid, 'GRID_SFDDA', grid_sfdda , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'SGFDDA_INTERVAL_M', sgfdda_interval_m , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'SGFDDA_END_H', sgfdda_end_h , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'HYPSOMETRIC_OPT', hypsometric_opt , 1 , ierr )
 #endif
 
       IF ( switch .EQ. history_only ) THEN
       CALL wrf_put_dom_ti_integer ( fid, 'SF_URBAN_PHYSICS', sf_urban_physics , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'SHCU_PHYSICS',     config_flags%shcu_physics , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer ( fid, 'MFSHCONV',         config_flags%mfshconv , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer ( fid, 'FEEDBACK', feedback , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'SMOOTH_OPTION', smooth_option , 1 , ierr )
       CALL wrf_put_dom_ti_real    ( fid, 'SWRAD_SCAT', swrad_scat , 1 , ierr )
@@ -489,6 +503,9 @@ endif
       CALL wrf_put_dom_ti_integer ( fid, 'DIFF_6TH_OPT', diff_6th_opt , 1 , ierr )
       CALL wrf_put_dom_ti_real    ( fid, 'DIFF_6TH_FACTOR', diff_6th_factor , 1 , ierr )
 
+      IF ( config_flags%topo_wind == 1 ) THEN
+        CALL wrf_put_dom_ti_integer ( fid, 'TOPO_WIND', config_flags%topo_wind , 1 , ierr )
+      ENDIF
       IF ( grid_fdda == 1 ) THEN
         CALL wrf_put_dom_ti_real    ( fid, 'FGDT', fgdt , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'GUV', guv , 1 , ierr )
@@ -538,10 +555,23 @@ endif
       CALL wrf_put_dom_ti_integer   ( fid, 'ISHALLOW',    config_flags%ishallow    , 1 , ierr ) 
 
 #endif
+      IF ( sf_surface_physics == 4 ) THEN
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_SFC',     config_flags%opt_sfc     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'DVEG',        config_flags%dveg        , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_CRS',     config_flags%opt_crs     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_BTR',     config_flags%opt_btr     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_RUN',     config_flags%opt_run     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_FRZ',     config_flags%opt_frz     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_INF',     config_flags%opt_inf     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_RAD',     config_flags%opt_rad     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_ALB',     config_flags%opt_alb     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_SNF',     config_flags%opt_snf     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_TBOT',    config_flags%opt_tbot    , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_STC',     config_flags%opt_stc     , 1 , ierr )
+      ENDIF
+
 
       CALL wrf_put_dom_ti_integer   ( fid, 'DFI_OPT',          config_flags%dfi_opt      , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer   ( fid, 'SHCU_PHYSICS',     config_flags%shcu_physics , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer   ( fid, 'SF_URBAN_PHYSICS', config_flags%sf_urban_physics , 1 , ierr ) 
 
       ENDIF ! history_only
     ENDIF

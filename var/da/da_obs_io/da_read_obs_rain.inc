@@ -1,4 +1,4 @@
-subroutine da_read_obs_rain (iv, filename, time)
+subroutine da_read_obs_rain (iv, filename, ifgat)
 
    !-----------------------------------------------------------------------
    ! Purpose: Read the rain observation file
@@ -8,7 +8,7 @@ subroutine da_read_obs_rain (iv, filename, time)
 
    type (iv_type),    intent(inout) :: iv
    character(len=*),  intent(in)    :: filename
-   integer,           intent(in)    :: time
+   integer,           intent(in)    :: ifgat
 
    character (len = 120)         :: char_total_rain
    character (len = 160)         :: info_string
@@ -21,18 +21,32 @@ subroutine da_read_obs_rain (iv, filename, time)
 
    integer                       :: total_rain
    integer                       :: n_dup, ndup, iunit
-   integer                       :: nlocal(num_ob_indexes)
-   integer                       :: ntotal(num_ob_indexes)
+   integer                       :: nlocal
+   integer                       :: ilocal
+   integer                       :: ntotal
 
    real*8                        :: obs_time
    integer                       :: iyear, imonth, iday, ihour, imin
 
+   ! for thinning
+   real                          :: dlat_earth,dlon_earth,crit,dist
+   integer                       :: itt,itx,iout
+   logical                       :: iuse
+   integer                       :: tp
+
+   integer                       :: num_outside_all, num_outside_time, num_thinned, num_report
+
    if (trace_use) call da_trace_entry("da_read_obs_rain")
 
-   do i = 1, num_ob_indexes
-      nlocal(i) = iv%info(i)%plocal(time-1)
-      ntotal(i) = iv%info(i)%ptotal(time-1)
-   enddo
+   nlocal = iv%info(rain)%plocal(ifgat-1)
+   ntotal = iv%info(rain)%ptotal(ifgat-1)
+
+   num_report       = 0
+   num_outside_all  = 0
+   num_outside_time = 0
+   num_thinned      = 0
+   ilocal           = 0
+   tp               = nlocal
 
    ! 1. open file
    ! ============
@@ -146,6 +160,8 @@ subroutine da_read_obs_rain (iv, filename, time)
           platform % each (1) % rain % qc     = missing_data
       end if
 
+      num_report = num_report+1
+
       ! 3.3 Check if outside of the time range:
 
       read (platform%info%date_char,'(i4,4(1x,i2))') &
@@ -153,6 +169,7 @@ subroutine da_read_obs_rain (iv, filename, time)
       call da_get_julian_time (iyear,imonth,iday,ihour,imin,obs_time)
       if ( obs_time < time_slots(0) .or. &
            obs_time >= time_slots(num_fgat_time) ) then
+         num_outside_time = num_outside_time + 1
          if (print_detail_rain) then
             write(unit=stdout, fmt='(a)') '*** Outside of the time range:'
             write(unit=stdout, fmt=fmt_info) &
@@ -160,16 +177,24 @@ subroutine da_read_obs_rain (iv, filename, time)
                platform%info%date_char,   &
                platform%stn%name
          end if
-         cycle
+         cycle reports
       endif
 
       call da_llxy (platform%info, platform%loc, outside, outside_all)
 
       if (outside_all) then
+         num_outside_all = num_outside_all + 1
          cycle reports
       end if
 
       nlevels = platform%info%levels
+
+      dlat_earth = platform%info%lat
+      dlon_earth = platform%info%lon
+      if (dlon_earth < 0.0) dlon_earth = dlon_earth + 360.0
+      if (dlon_earth >= 360.0) dlon_earth = dlon_earth - 360.0
+      dlat_earth = dlat_earth * deg2rad
+      dlon_earth = dlon_earth * deg2rad
 
       ! 3.4 Loop over duplicating obs for global
 
@@ -180,42 +205,50 @@ subroutine da_read_obs_rain (iv, filename, time)
          select case (fm)
 
          case (129)
-            if (n==1) ntotal(rain) = ntotal(rain) + 1
+            if (ndup==1) ntotal = ntotal + 1
             if (outside) cycle reports
-            nlocal(rain) = nlocal(rain) + 1
-            if (nlocal(rain) > iv%info(rain)%nlocal) cycle reports
+            if ( thin_rainobs ) then
+               crit = 1.0
+               call map2tgrid(rain,ifgat,dlat_earth,dlon_earth,dist,crit,itx,1,itt,iuse)
+               if ( .not. iuse ) then
+                  num_thinned = num_thinned + 1
+                  cycle reports
+               end if
+            endif
+            nlocal = nlocal + 1
+            ilocal = nlocal
 
-            iv % rain (nlocal(rain)) % stn_loc % lon = platform % stn % lon
-            iv % rain (nlocal(rain)) % stn_loc % lat = platform % stn % lat
-            iv % rain (nlocal(rain)) % stn_loc % elv = platform % stn % elv
+            iv % rain (ilocal) % stn_loc % lon = platform % stn % lon
+            iv % rain (ilocal) % stn_loc % lat = platform % stn % lat
+            iv % rain (ilocal) % stn_loc % elv = platform % stn % elv
 
-            iv%info(rain)%levels(nlocal(rain))    = nlevels
-            iv%info(rain)%name(nlocal(rain))      = platform%info%name
-            iv%info(rain)%platform(nlocal(rain))  = platform%info%platform
-            iv%info(rain)%id(nlocal(rain))        = platform%info%id
-            iv%info(rain)%date_char(nlocal(rain)) = platform%info%date_char
-            iv%info(rain)%lat(:,nlocal(rain))     = platform%info%lat
-            iv%info(rain)%lon(:,nlocal(rain))     = platform%info%lon
-            iv%info(rain)%elv(nlocal(rain))       = platform%info%elv
-            iv%info(rain)%pstar(nlocal(rain))     = platform%info%pstar
+            iv%info(rain)%levels(ilocal)    = nlevels
+            iv%info(rain)%name(ilocal)      = platform%info%name
+            iv%info(rain)%platform(ilocal)  = platform%info%platform
+            iv%info(rain)%id(ilocal)        = platform%info%id
+            iv%info(rain)%date_char(ilocal) = platform%info%date_char
+            iv%info(rain)%lat(:,ilocal)     = platform%info%lat
+            iv%info(rain)%lon(:,ilocal)     = platform%info%lon
+            iv%info(rain)%elv(ilocal)       = platform%info%elv
+            iv%info(rain)%pstar(ilocal)     = platform%info%pstar
 
-            iv%info(rain)%slp(nlocal(rain))           = platform%loc%slp
-            iv%info(rain)%pw(nlocal(rain))            = platform%loc%pw
-            iv%info(rain)%x(:,nlocal(rain))           = platform%loc%x
-            iv%info(rain)%y(:,nlocal(rain))           = platform%loc%y 
-            iv%info(rain)%i(:,nlocal(rain))           = platform%loc%i 
-            iv%info(rain)%j(:,nlocal(rain))           = platform%loc%j 
-            iv%info(rain)%dx(:,nlocal(rain))          = platform%loc%dx
-            iv%info(rain)%dxm(:,nlocal(rain))         = platform%loc%dxm
-            iv%info(rain)%dy(:,nlocal(rain))          = platform%loc%dy
-            iv%info(rain)%dym(:,nlocal(rain))         = platform%loc%dym
-            iv%info(rain)%proc_domain(:,nlocal(rain)) = platform%loc%proc_domain
+            iv%info(rain)%slp(ilocal)           = platform%loc%slp
+            iv%info(rain)%pw(ilocal)            = platform%loc%pw
+            iv%info(rain)%x(:,ilocal)           = platform%loc%x
+            iv%info(rain)%y(:,ilocal)           = platform%loc%y 
+            iv%info(rain)%i(:,ilocal)           = platform%loc%i 
+            iv%info(rain)%j(:,ilocal)           = platform%loc%j 
+            iv%info(rain)%dx(:,ilocal)          = platform%loc%dx
+            iv%info(rain)%dxm(:,ilocal)         = platform%loc%dxm
+            iv%info(rain)%dy(:,ilocal)          = platform%loc%dy
+            iv%info(rain)%dym(:,ilocal)         = platform%loc%dym
+            iv%info(rain)%proc_domain(:,ilocal) = platform%loc%proc_domain
 
-            iv%info(rain)%obs_global_index(nlocal(rain)) = ntotal(rain)
+            iv%info(rain)%obs_global_index(ilocal) = ntotal
 
-            iv % rain (nlocal(rain)) % height    = platform % each(1) % height
-            iv % rain (nlocal(rain)) % height_qc = platform % each(1) % height_qc
-            iv % rain (nlocal(rain)) % rain      = platform % each(1) % rain
+            iv % rain (ilocal) % height    = platform % each(1) % height
+            iv % rain (ilocal) % height_qc = platform % each(1) % height_qc
+            iv % rain (ilocal) % rain      = platform % each(1) % rain
 
          case default;
             write(unit=message(1), fmt='(a)') 'Unsaved obs found:'
@@ -237,6 +270,14 @@ subroutine da_read_obs_rain (iv, filename, time)
          end if
       end do        !  loop over duplicate
    end do reports
+
+   iv%info(rain)%ptotal(iv%time)=ntotal
+   iv%info(rain)%plocal(iv%time)=nlocal
+
+   write(unit=message(1),fmt='(A,4(1x,i7))') &
+      'da_read_obs_rain: num_report, num_outside_all, num_outside_time, num_thinned: ', &
+      num_report, num_outside_all, num_outside_time, num_thinned
+   call da_message(message(1:1))
 
    close(iunit)
    call da_free_unit(iunit)

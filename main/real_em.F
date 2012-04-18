@@ -3,10 +3,13 @@
 PROGRAM real_data
 
    USE module_machine
+#ifdef DM_PARALLEL
+   USE module_dm, ONLY : wrf_dm_initialize
+#endif
    USE module_domain, ONLY : domain, alloc_and_configure_domain, &
-        domain_clock_set, head_grid, program_name, domain_clockprint
+        domain_clock_set, head_grid, program_name, domain_clockprint, &
+        set_current_grid_ptr
    USE module_initialize_real, ONLY : wrfu_initialize, find_my_parent, find_my_parent2
-   USE module_initialize_real
    USE module_io_domain
    USE module_driver_constants
    USE module_configure, ONLY : grid_config_rec_type, model_config_rec, &
@@ -511,7 +514,7 @@ real::t1,t2,t3,t4
               END IF
 
               IF(grid%bio_emiss_opt == 2 ) THEN
-                 message = 'READING BEIS3.11 EMISSIONS DATA'
+                 message = 'READING BEIS3.14 EMISSIONS DATA'
                  CALL  wrf_message ( message )
                  CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
               else IF(grid%bio_emiss_opt == 3 ) THEN !shc
@@ -534,7 +537,7 @@ real::t1,t2,t3,t4
               CALL input_chem_profile ( grid )
 
               IF(grid%bio_emiss_opt == 2 ) THEN
-                 message = 'READING BEIS3.11 EMISSIONS DATA'
+                 message = 'READING BEIS3.14 EMISSIONS DATA'
                  CALL  wrf_message ( message )
                  CALL med_read_wrf_chem_bioemiss ( grid , config_flags)
               else IF(grid%bio_emiss_opt == 3 ) THEN !shc
@@ -647,6 +650,11 @@ SUBROUTINE compute_si_start_and_end (  &
       ELSE IF ( next_date_char .GT. end_date_char ) THEN
          PRINT '(A,I4,A)','Total analysis times to input = ',time_loop,'.'
          time_loop_max = time_loop
+         IF ( ( time_loop_max .EQ. 1 ) .AND. ( start_date_char .NE. end_date_char ) ) THEN
+            PRINT *,'You might have set the end time in the namelist.input for the model'         
+            PRINT *,'Regional domains require more than one time-period to process, for BC generation'
+            CALL wrf_error_fatal ( "Make the end time at least one 'interval_seconds' beyond the start time" )
+         END IF
          EXIT loop_count
       END IF
    END DO loop_count

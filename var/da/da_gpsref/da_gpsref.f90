@@ -9,7 +9,10 @@ module da_gpsref
       max_error_p,max_error_q, check_max_iv_unit,check_max_iv, qcstat_conv_unit, &
       max_stheight_diff,missing_data,max_error_bq,max_error_slp, ob_vars, &
       max_error_bt, max_error_buv, gpsref,max_error_thickness, &
-      pseudo_var, num_pseudo, kms,kme,kts,kte, trace_use_dull, &
+! t_iwabuchi 20121216 use ms,ime,jms,jme for interpolation of log(N)
+!      pseudo_var, num_pseudo, kms,kme,kts,kte, trace_use_dull, &
+      pseudo_var, num_pseudo, ims,ime,jms,jme, kms,kme,kts,kte, trace_use_dull, &
+! t_iwabuchi END
       anal_type_verify,fails_error_max,pseudo_err,pseudo_x, pseudo_y, stdout, &
       use_gpsrefobs, gpsref_thinning, pseudo_z,pseudo_val,max_error_ref, pseudo, &
       jts, jte,its,ite, npres_print, pptop

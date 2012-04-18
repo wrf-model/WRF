@@ -34,7 +34,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    logical:: no_ppb
 
-   real, dimension(ims:ime,kms:kme) :: pf
+   real, dimension(ims:ime,kms:kme) :: pf, pp
 
 #ifdef A2C
    real   :: uu, vv
@@ -350,8 +350,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       cpovcv = cp / (cp - gas_constant)
 
       ! In case of var4d, pb etc. will be recalculated in start_em with realsize=8, 
-      ! However, the originals are computed with realsize=4.
-      if ( no_ppb ) then
+      ! Howvwer, the originals are computed with realsize=4.
+      if ( no_ppb .or. var4d ) then
          do k=kts,kte
             do i=its,ite
                ! The base specific volume (from real.init.code)
@@ -380,30 +380,30 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       else
          do k=kts,kte
             do i=its,ite
-#ifndef TKW_
-               ppb = grid%pb(i,j,k)
-               temp = MAX ( iso_temp, base_temp + base_lapse*log(ppb/base_pres) )
-               ttb  = temp * (base_pres/ppb)**kappa
-               ! ttb  = (base_temp + base_lapse*log(ppb/base_pres)) * &
-               !   (base_pres/ppb)**kappa
-               albn = (gas_constant/base_pres) * ttb * (ppb/base_pres)**cvpm
+              if (grid%hypsometric_opt == 1) then
+                ppb = grid%pb(i,j,k)
+                temp = MAX ( iso_temp, base_temp + base_lapse*log(ppb/base_pres) )
+                ttb  = temp * (base_pres/ppb)**kappa
+                ! ttb  = (base_temp + base_lapse*log(ppb/base_pres)) * &
+                !   (base_pres/ppb)**kappa
+                albn = (gas_constant/base_pres) * ttb * (ppb/base_pres)**cvpm
 
-               qvf1 = 1.0 + grid%moist(i,j,k,P_QV) / rd_over_rv
-               aln  = -1.0 / (grid%mub(i,j)+grid%mu_2(i,j)) * &
-                      (albn*grid%mu_2(i,j) + grid%rdnw(k) * &
-                      (grid%ph_2(i,j,k+1) - grid%ph_2(i,j,k)))
-               grid%xb%p(i,j,k) = grid%pb(i,j,k) + grid%p(i,j,k)
-               ! total density
-               grid%xb%rho(i,j,k)= 1.0 / (albn+aln)
-#else
-               grid%xb%p(i,j,k) = grid%pb(i,j,k) + grid%p(i,j,k)
-               theta = t0 + grid%t_2(i,j,k)
-               qvf1 = 1.0 + grid%moist(i,j,k,P_QV) / rd_over_rv
-               ! inverse density via the equation of state
-               alt = gas_constant*theta*qvf1/base_pres*(grid%xb%p(i,j,k)/base_pres)**cvpm         
-               ! total density
-               grid%xb%rho(i,j,k)= 1.0/alt
-#endif
+                qvf1 = 1.0 + grid%moist(i,j,k,P_QV) / rd_over_rv
+                aln  = -1.0 / (grid%mub(i,j)+grid%mu_2(i,j)) * &
+                       (albn*grid%mu_2(i,j) + grid%rdnw(k) * &
+                       (grid%ph_2(i,j,k+1) - grid%ph_2(i,j,k)))
+                grid%xb%p(i,j,k) = grid%pb(i,j,k) + grid%p(i,j,k)
+                ! total density
+                grid%xb%rho(i,j,k)= 1.0 / (albn+aln)
+              elseif (grid%hypsometric_opt == 2) then
+                grid%xb%p(i,j,k) = grid%pb(i,j,k) + grid%p(i,j,k)
+                theta = t0 + grid%t_2(i,j,k)
+                qvf1 = 1.0 + grid%moist(i,j,k,P_QV) / rd_over_rv
+                ! inverse density via the equation of state
+                alt = gas_constant*theta*qvf1/base_pres*(grid%xb%p(i,j,k)/base_pres)**cvpm         
+                ! total density
+                grid%xb%rho(i,j,k)= 1.0/alt
+              endif
             end do
          end do
       endif
@@ -415,38 +415,34 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
          end do
       end do
 
-#ifdef TKW_
-      ! Compute full-level pressure
-      do i=its,ite
-         pf(i,kte+1) = ptop 
-         pf(i,kts)   = grid%psfc(i,j)
-      end do
-      do k=kts+1,kte
-         do i=its,ite
-            pf(i,k) = (grid%dnw(k-1)*grid%xb%p(i,j,k)+grid%dnw(k)*grid%xb%p(i,j,k-1))/(grid%dnw(k-1)+grid%dnw(k))
-         end do
-      end do
-#endif
+      if (grid%hypsometric_opt == 2) then
+        ! Compute full-level pressure
+        ! The full and half level dry hydrostatic pressure is easily computed (YRG, 12/20/2011):
+        do i=its,ite
+           do k=kts, kte+1
+              pf(i,k) = (grid%mub(i,j)+grid%mu_2(i,j)) * grid%znw(k) + ptop
+              pp(i,k) = (grid%mub(i,j)+grid%mu_2(i,j)) * grid%znu(k) + ptop
+           enddo
+        enddo
+      endif
 
       do k=kts,kte
          do i=its,ite
             grid%xb%u(i,j,k) = 0.5*(grid%u_2(i,j,k)+grid%u_2(i+1,j,k))
             grid%xb%v(i,j,k) = 0.5*(grid%v_2(i,j,k)+grid%v_2(i,j+1,k))
             grid%xb%wh(i,j,k)= 0.5*(grid%xb%w(i,j,k)+grid%xb%w(i,j,k+1))
-#ifndef TKW_
-            grid%xb%h(i,j,k) = 0.5*(grid%xb%hf(i,j,k)+grid%xb%hf(i,j,k+1))
-#else
-         !  grid%xb%h(i,j,k) = 0.5*(grid%xb%hf(i,j,k)+grid%xb%hf(i,j,k+1))
+            if (grid%hypsometric_opt == 1) then
+               grid%xb%h(i,j,k) = 0.5*(grid%xb%hf(i,j,k)+grid%xb%hf(i,j,k+1))
+            elseif (grid%hypsometric_opt == 2) then
+            !  This is almost correct for pressure, but not for height. 
+            !  Arithmetic mean of full-level heights is always higher than the actual,
+            !  leading to a biased model for height-based observations (e.g., GPS RO)
+            !  and surface variables (2-meter TQ and 10-meter wind).
+            !  wee 11/22/2011
 
-         !  This is almost correct for pressure, but not for height. 
-         !  Arithmetic mean of full-level heights is always higher than the actual,
-         !  leading to a biased model for height-based observations (e.g., GPS RO)
-         !  and surface variables (2-meter TQ and 10-meter wind).
-         !  wee 11/22/2011
-
-            grid%xb%h(i,j,k) = grid%xb%hf(i,j,k)+(grid%xb%hf(i,j,k+1)-grid%xb%hf(i,j,k)) &
-                 *LOG(pf(i,k)/grid%xb%p(i,j,k))/LOG(pf(i,k)/pf(i,k+1))
-#endif
+               grid%xb%h(i,j,k) = grid%xb%hf(i,j,k)+(grid%xb%hf(i,j,k+1)-grid%xb%hf(i,j,k)) &
+                    *LOG(pf(i,k)/pp(i,k))/LOG(pf(i,k)/pf(i,k+1))
+            endif
 
             if ( num_pseudo == 0 ) then
                grid%moist(i,j,k,P_QV) = max(grid%moist(i,j,k,P_QV), qlimit)
@@ -866,6 +862,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
          end do
       end do
    end if
+
+   deallocate (xbx % latc_mean)
 
    if (trace_use) call da_trace_exit("da_transfer_wrftoxb")
 

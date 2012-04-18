@@ -157,6 +157,10 @@ subroutine da_transfer_xatowrftl_adj_lbc(grid, config_flags, filnam)
       END DO
    END DO
 
+#ifdef DM_PARALLEL
+   call da_halo_em_e_ad ( grid%a_mu_2 )
+#endif  
+
    model_grid%a_w_btxs = 0.0
    model_grid%a_w_btxe = 0.0
    model_grid%a_w_btys = 0.0

@@ -45,6 +45,7 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  dveg                               = 2,
  opt_crs                            = 1,
  opt_btr                            = 1,
+ opt_sfc                            = 1,
  opt_run                            = 1,
  opt_frz                            = 1,
  opt_inf                            = 1,
@@ -59,11 +60,11 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
 ** Using stochastic backscatter scheme
 
 &physics
- stoch_force_opt                      = 1,      1,      1,
- stoch_vertstruc_opt                  = 0,      0,      0,
- tot_backscat_t                       = 2.0E-6, 2.0E-6, 2.0E-6
- tot_backscat_psi                     = 2.0,    2.0,    2.0
- nens                                 = 1,
+ stoch_force_opt                     = 1,      1,      1,
+ stoch_vertstruc_opt                 = 0,      0,      0,
+ tot_backscat_t                      = 1.0E-6, 1.0E-6, 1.0E-6
+ tot_backscat_psi                    = 1.0E-5, 1.0E-5, 1.0E-5
+ nens                                = 1,
 
 
 ** Using DFI options (note this is a separate namelist record):
@@ -312,6 +313,19 @@ For a tropical channel configuration, set the following:
  &namelist_quilt
  nio_tasks_per_group = 2,
  nio_groups = 1,
+
+** for tc bogusing:
+
+ &tc
+ insert_bogus_storm                  = .true.,
+ remove_storm                        = .true.,
+ num_storm                           = 1,
+ latc_loc                            = 15.,
+ lonc_loc                            = -90.,
+ vmax_meters_per_second              = 30,
+ rmax                                = 50000,
+ vmax_ratio                          = 0.5,
+ /
 
 ** for regional climate surface diagnostics such as max/min/mean/std of T2/Q2/wind/rainfall
 between selected output times (e.g. daily) in auxhist3

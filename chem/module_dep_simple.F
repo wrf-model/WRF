@@ -451,7 +451,7 @@ tile_lon_loop : &
                ddvel(i,j,p_xoh)     = 0.
                ddvel(i,j,p_isopn)   = 0.
                ddvel(i,j,p_meko2)   = 0.
-               ddvel(i,j,p_sulf)    = 0.
+!              ddvel(i,j,p_sulf)    = 0.
                ddvel(i,j,p_dms)     = 0.
             if ( config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
                ddvel(i,j,p_voca)     = 0.
@@ -460,6 +460,9 @@ tile_lon_loop : &
                ddvel(i,j,p_smpbb)        = 0 
             end if
             end do
+            if ( config_flags%chem_opt == MOZCART_KPP ) then
+               ddvel(its:ite,j,p_sulf) = 0.
+            end if
          end do
       end if
 

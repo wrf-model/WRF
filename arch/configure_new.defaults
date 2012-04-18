@@ -1,3 +1,45 @@
+###########################################################
+#ARCH    Linux i486 i586 i686,  NEC SX sxf90 sxcc #serial smpar dmpar dm+sm
+#
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -Popenmp
+OMPCC           =       # -Popenmp
+SFC             =       sxf90
+SCC             =       sxcc
+CCOMP           =       sxcc
+DM_FC           =       sxmpif90
+DM_CC           =       sxmpic++
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       # -fdefault-real-8  # uncomment manually
+ARCH_LOCAL      =       -DNEC -DNONSTANDARD_SYSTEM_SUBR
+CFLAGS_LOCAL    =       -c -DLANDREAD_STUB 
+#-DNCARIBM_NOC99 -Xa -Kc99
+LDFLAGS_LOCAL   =	-Wl,-h nodefs
+CPLUSPLUSLIB    =       
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -w -Chopt -Wf'-M noflunf -M nozdiv' -Wf,-L fmtlist transform,-pvctl fullmsg loopcnt=1000000 -f4 -Wf,-P i
+FCREDUCEDOPT	=       $(FCOPTIM)
+FCNOOPT         =       -Cssafe
+FCDEBUG         =       # -g $(FCNOOPT)
+FORMAT_FIXED    =       -w -f3
+FORMAT_FREE     =       -w -f4
+FCSUFFIX        =       
+BYTESWAPIO      =       #-FIX_BYTE_SWAP_IF_NECESSARY_FOR_BIG_ENDIAN
+FCBASEOPTS_NO_G =       -w -Wf'-M noflunf -M nozdiv' $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =      -I/SX/usr/include/module/dwdadW64/
+TRADFLAG        =      -traditional
+CPP             =      /lib/cpp -C -P
+AR              =      sxar
+ARFLAGS         =      ru
+M4              =      m4 -B 14000
+RANLIB          =      ls
+#ranlib
+CC_TOOLS        =      cc 
 
 ###########################################################
 #ARCH    Linux i486 i586 i686, gfortran compiler with gcc #serial smpar dmpar dm+sm
@@ -103,7 +145,7 @@ CFLAGS_LOCAL    =       -w -O3
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       -fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed # -Minfo=all =Mneginfo=all
+FCOPTIM         =       -O3 #-fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed # -Minfo=all =Mneginfo=all
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0
 FCDEBUG         =       # -g $(FCNOOPT)
@@ -144,7 +186,7 @@ CFLAGS_LOCAL    =       -w -O3
 LDFLAGS_LOCAL   =       -L$(MPI_ROOT)/lib -lmpi
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       -fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed # -Minfo=all =Mneginfo=all
+FCOPTIM         =       -O3 #-fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed # -Minfo=all =Mneginfo=all
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0
 FCDEBUG         =       # -g $(FCNOOPT)
@@ -628,9 +670,9 @@ DMPARALLEL      =       # 1
 OMPCPP		=	# -D_OPENMP
 OMP		=	# -mp -Minfo=mp -Mrecursive
 OMPCC		=	# -mp
-SFC		=       pgf90 
-SCC		=       pgcc 
-CCOMP		=       pgcc 
+SFC		=       pgf90
+SCC		=       pgcc
+CCOMP		=       pgcc
 DM_FC		=	mpif90 -f90=$(SFC)
 DM_CC		=       mpicc -cc=$(SCC)
 FC              =       CONFIGURE_FC

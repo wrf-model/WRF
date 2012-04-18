@@ -3,7 +3,7 @@ module module_stoch
 !
 ! Purpose: Stochastic kinetic-energy backscatter scheme (SKEB)
 ! Author : Judith Berner, NCAR  (berner@ucar.edu)
-! Date   : Dec 2020
+! Date   : Dec 2010
 ! Version: 1.0
 !
 !***********************************************************************
@@ -81,7 +81,7 @@ contains
 
       IMPLICIT NONE
       INTEGER :: IER,IK,IL,iseed1,iseed2,I,J
-      INTEGER :: iseed(18),itime_step,stoch_vertstruc_opt
+      INTEGER :: itime_step,stoch_vertstruc_opt
       INTEGER :: KMAX,LMAX,LENSAV,ILEV
       INTEGER , INTENT(IN)     ::  ids, ide, jds, jde, kds, kde,   &
                                    ims, ime, jms, jme, kms, kme,   &
@@ -92,6 +92,11 @@ contains
       REAL, DIMENSION (ims:ime,jms:jme)         :: SPSTREAM_AMP,SPT_AMP
       REAL, DIMENSION (ids:ide,jds:jde)         :: ZCHI,ZCHIT
       LOGICAL :: is_print = .true.
+      INTEGER , ALLOCATABLE , DIMENSION(:) :: iseed
+      INTEGER :: how_many
+
+      LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
+
     
 !     --------- SETUP PARAMETERS ---------------------------------------
       KMAX=(jde-jds)+1 !NLAT
@@ -287,40 +292,48 @@ contains
       ENDDO
       ENDDO
 
+
+
 !     Array for vertical structure if desired
-      IF (stoch_vertstruc_opt==1) then
-      VERTSTRUCC=0.0
-      VERTSTRUCS=0.0
-      RHOKLMAX= sqrt(KMAX**2/DY**2 + LMAX**2/DX**2)
-      ZREF=32.0
-      DO ILEV=kds,kde
-        DO IK=jts,jte
-          DO IL=its,ite
-          if (IK.le.(KMAX/2)) then
-            RHOKL   = sqrt((IK+1)**2/DY**2 + (IL+1)**2/DX**2)
-            EPS     = ((RHOKLMAX - RHOKL)/ RHOKLMAX)  * (ILEV/ZREF) * RPI
-            VERTSTRUCC(IL,ILEV,IK) =  cos ( eps* (IK+1) )
-            VERTSTRUCS(IL,ILEV,IK) =  sin ( eps* (IK+1) )
-          endif
+      IF (stoch_vertstruc_opt>0) then
+        VERTSTRUCC=0.0
+        VERTSTRUCS=0.0
+        RHOKLMAX= sqrt(KMAX**2/DY**2 + LMAX**2/DX**2)
+        ZREF=32.0
+        DO ILEV=kts,kte
+          DO IK=jts,jte
+            DO IL=its,ite
+            if (IL.le.(LMAX/2)) then
+              RHOKL   = sqrt((IK+1)**2/DY**2 + (IL+1)**2/DX**2)
+              EPS     = ((RHOKLMAX - RHOKL)/ RHOKLMAX)  * (ILEV/ZREF) * RPI
+              VERTSTRUCC(IL,ILEV,IK) =  cos ( eps* (IL+1) )
+              VERTSTRUCS(IL,ILEV,IK) =  sin ( eps* (IL+1) )
+             else
+              RHOKL   = sqrt((IK+1)**2/DY**2 + (LMAX-IL+2)**2/DX**2)
+              EPS     = ((RHOKLMAX - RHOKL)/ RHOKLMAX)  * (ILEV/ZREF) * RPI
+              VERTSTRUCC (IL,ILEV,IK) =   cos ( eps* (LMAX-IL+2) )
+              VERTSTRUCS (IL,ILEV,IK) = - sin ( eps* (LMAX-IL+2) )
+            endif
+            ENDDO
           ENDDO
         ENDDO
-        DO IK=jts,jte
-          DO IL=its,ite
-          if  (IK .gt. KMAX/2) then
-            VERTSTRUCC (IL,ILEV,IK) =   cos ( eps* (IK+1) )
-            VERTSTRUCS (IL,ILEV,IK) = - sin ( eps* (IK+1) )
-          endif
-          ENDDO
-        ENDDO
-       ENDDO
-       endif
+      END IF
              
 !      Set seed for random number generator 
-       iseed=0
-       iseed(1) = iseed1
-       iseed(2) = iseed2
-       call random_seed
-       call random_seed(put=iseed(1:18))   ! set random seed.
+
+       CALL random_seed(size=how_many)
+       ALLOCATE(iseed(how_many))
+       IF ( wrf_dm_on_monitor() ) THEN
+          iseed=0
+          iseed(1) = iseed1
+          iseed(2) = iseed2
+          call random_seed(put=iseed(1:how_many))   ! set random seed on monitor.
+          call random_seed(get=iseed(1:how_many))
+       END IF
+#ifdef DM_PARALLEL
+       CALL wrf_dm_bcast_integer ( iseed , how_many )
+       CALL random_seed(put=iseed(1:how_many))   ! set random seed on each proc
+#endif
 
        END subroutine SETUP_STOCH
 

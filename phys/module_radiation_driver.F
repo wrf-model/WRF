@@ -383,7 +383,7 @@ CONTAINS
                          tauaerlw9,tauaerlw10,tauaerlw11,tauaerlw12, & ! czhao 
                          tauaerlw13,tauaerlw14,tauaerlw15,tauaerlw16
 
-   LOGICAL, OPTIONAL :: cu_rad_feedback
+   LOGICAL, INTENT(IN) :: cu_rad_feedback
 
    INTEGER, INTENT(IN   ), OPTIONAL  ::   aer_ra_feedback
 
@@ -755,7 +755,6 @@ CONTAINS
 
 ! temporarily modify hydrometeors (currently only done for GD scheme and WRF-Chem)
 !
-     IF ( PRESENT( cu_rad_feedback ) ) THEN
        IF ( PRESENT( qc ) .AND. PRESENT( qc_adjust ) .AND. cu_rad_feedback ) THEN
           DO j=jts,jte
           DO k=kts,kte
@@ -776,8 +775,6 @@ CONTAINS
           ENDDO
           ENDDO
        ENDIF
-     ENDIF
-
 
 ! Fill temporary water variable depending on micro package (tgs 25 Apr 2006)
      if(PRESENT(qc) .and. PRESENT(F_QC)) then
@@ -1528,7 +1525,6 @@ CONTAINS
 
      ENDIF
 
-     IF ( PRESENT( cu_rad_feedback ) ) THEN
        IF ( PRESENT( qc  ) .AND. PRESENT( qc_adjust ) .AND. cu_rad_feedback ) THEN
            DO j=jts,jte
            DO k=kts,kte
@@ -1547,7 +1543,6 @@ CONTAINS
            ENDDO
            ENDDO
         ENDIF
-      ENDIF
 
    ENDDO
    !$OMP END PARALLEL DO

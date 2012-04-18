@@ -1040,6 +1040,14 @@ CONTAINS
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij, i, j, k )
       DO ij = 1 , num_tiles
+        DO j=j_start(ij),j_end(ij)
+          DO i=i_start(ij),i_end(ij)
+            IF(XLAND(i,j) .GT. 1.5 .and. sst_update .NE. 1) THEN
+              TSK(i,j)   =SST(i,j)
+              TSLB(i,1,j)=SST(i,j)
+            ENDIF
+          ENDDO
+        ENDDO
         CALL sst_skin_update(xland,glw,gsw,hfx,qfx,tsk,ust,         &
                 emiss,dtw,sstsk,dt,stbolt,                          &
                 ids, ide, jds, jde, kds, kde,                       &
@@ -1887,7 +1895,7 @@ CONTAINS
               &            chs, chs2, cqs2,                                            &
               &            br, znt, lh, hfx, qfx, potevp, grdflx, qsfc, acsnow,        &
               &            acsnom, snopcx, sfcrunoff, noahres,                         &
-              &            b_t_bep, b_q_bep, rho,                                      &
+              &            sf_urban_physics, b_t_bep, b_q_bep, rho,                    &
               &            ids,ide, jds,jde, kds,kde,                                  &
               &            ims,ime, jms,jme, kms,kme,                                  &
               &            i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
@@ -2099,7 +2107,7 @@ CONTAINS
               &            chs, chs2, cqs2,                                            &
               &            br, znt, lh, hfx, qfx, potevp, grdflx, qsfc, acsnow,        &
               &            acsnom, snopcx, sfcrunoff, noahres,                         &
-              &            b_t_bep, b_q_bep, rho,                                      &
+              &            sf_urban_physics, b_t_bep, b_q_bep, rho,                    &
               &            ids,ide, jds,jde, kds,kde,                                  &
               &            ims,ime, jms,jme, kms,kme,                                  &
               &            i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
@@ -2496,12 +2504,19 @@ CONTAINS
        day=float(int(julian_in+0.01))+1.
        DO j=j_start(ij),j_end(ij)
        DO i=i_start(ij),i_end(ij)
+!check land mask and land-use map !fds (02/2012)
+! IF(itimestep .EQ. 1 ) THEN
+!          IF(IVGTYP(i,j).NE.ISWATER)THEN
+!            XLAND(I,J)=1.0
+!          ELSE
+!            XLAND(I,J)=2.0
+!          ENDIF
+!         IF (IVGTYP(I,J).LE.0 .AND. XLAND(I,J).NE.ISWATER ) IVGTYP(I,J) = 7.0
+! ENDIF
 !
-          if (ivgtyp(i,j).eq.16) then
-            xland(i,j)=2
-          endif
-!
-         IF(XLAND(I,J).LT.1.5 .AND. IVGTYP(I,J).NE.ISICE) THEN !land and seaice-free points
+
+!        IF(XLAND(I,J).LT.1.5 .AND. IVGTYP(I,J).NE.ISICE) THEN !land and seaice-free points
+         IF(XLAND(I,J).LT.1.5) THEN !land points, including land ice points
 
            CLOUDFRAC=0.
            IF(PRESENT(CLDFRA))THEN
@@ -2583,6 +2598,7 @@ CONTAINS
                      BR(i,j)=ssib_br(i,j)
                      ZNT(i,j) = ssib_z00(i,j)
                      SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
+                    t2(i,j) = tsk(i,j) !use SSiB's TGEFF as 2m temperature (Nov/2011)
                      IF (itimestep .ne. 1) THEN
                        ZDIFF=(0.5*dz8w(i,1,j))-SSiBXDD(I,J)
                        IF(ZDIFF.LE.ZNT(I,J)) ZDIFF=ZNT(I,J)+0.2

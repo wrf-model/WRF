@@ -2510,7 +2510,7 @@ level_loop : &
 
       subroutine pchem( chem_opt, nz, tlev, airlev )
 
-      use module_state_description, only : MOZART_KPP, MOZCART_KPP
+      use module_state_description, only : MOZART_KPP, MOZCART_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP
       use module_wave_data, only : r01, r04, r44, r08, r06, r10,  &
                                    r11, r14, r15, r17, r18,       &
                                    xs_mvk, xs_macr, xs_hyac, xs_glyald, nj
@@ -2659,7 +2659,8 @@ level_loop : &
 !     (30) glyald + hv -> products
 !-----------------------------------------------------------------------------
 is_mozart : &
-      if( chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP ) then
+      if( chem_opt == MOZART_KPP .or. chem_opt == MOZCART_KPP .or. &
+          chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
         call xs_mvk( nz, tlev, airlev )
         call xs_macr( nz, tlev, airlev )
         call xs_hyac( nz, tlev, airlev )

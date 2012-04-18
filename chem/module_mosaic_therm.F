@@ -5254,8 +5254,8 @@
         cpxaged= cpxaged+aer(ioc_a,jp,ibin)
          enddo
          if(cpxaged .eq. 0.0 )then
-         print*,"No OA mass available for partitioning - &
-                make sure that OA is included in IC/BC"
+         print*,"No OA mass available for partitioning - " , &
+                "make sure that OA is included in IC/BC"
          stop
          endif
 

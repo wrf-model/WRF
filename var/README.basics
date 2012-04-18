@@ -34,20 +34,24 @@ cp -p  $DAT_DIR/rc/2008020512/wrfbdy_d01 ./wrfbdy_d01 (IMPORTANT: make a copy of
                                                        overwritten by da_update_bc.exe)
 vi parame.in
 &control_param
- wrfvar_output_file = '../tutorial/wrfvar_output'
- wrf_bdy_file       = './wrfbdy_d01'
- wrf_input          = '$DAT_DIR/rc/2008020512/wrfinput_d01'
- domain_id          = 1
- cycling = .false. (set to .true. if WRFDA first guess comes from a previous WRF forecast.)
- debug   = .true.
- low_bdy_only = .false.             
- update_lsm = .false. 
+da_file            = './wrfvar_output'
+da_file_02         = './ana02' (use lateral boundary control in 4DVar, ignored in 3DVar)
+wrf_bdy_file       = './wrfbdy_d01'
+wrf_input          = './wrfinput_d01'
+domain_id          = 1
+debug              = .false.
+update_lateral_bdy = .true.
+update_low_bdy     = .true.
+update_lsm = .false.  (.true.: the LSM predicted variables: 
+                                  TSLB, SMOIS, SNOW, SH2O, RHOSN, CANWAT, SNOWH
+                                  will be updated based on wrf_input file)
+var4d_lbc = .false.   (.true.: use lateral boundary control in 4DVar)
 /
 ln -sf WRFDA/var/build/da_update_bc.exe ./da_update_bc.exe
 ./da_updatebc.exe
 
-
 Extra notes regarding to da_update_bc:
+ 
 As of V3.2, some changes are made to da_update_bc and new settings in parame.in are
 introduced as follows. (The above pre-V3.2 parame.in will still work with V3.2 da_update_bc)
 

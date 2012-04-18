@@ -1,4 +1,5 @@
-!WRf:model_layer:physics
+!WRF:model_layer:physics
+!
 !
 !
 !
@@ -23,9 +24,7 @@ contains
                   dt,kpbl2d,                                                   &
                   exch_h,                                                      &
                   u10,v10,                                                     &
-! paj
-                  ctopo,ctopo2,                                        &
-!
+                  ctopo,ctopo2,                                                &
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
                   its,ite, jts,jte, kts,kte,                                   &
@@ -118,35 +117,32 @@ contains
 !
    real,     dimension( ims:ime, kms:kme, jms:jme )                          , &
              intent(in   )   ::                                          qv3d, &
-                                         			         qc3d, &
- 				                                         qi3d, &
-                                   		                          p3d, &
-            		                                                 pi3d, &
-		                      	                                 th3d, &
-		                                		          t3d, &
-				                                         dz8w
+                                                                         qc3d, &
+                                                                         qi3d, &
+                                                                          p3d, &
+                                                                         pi3d, &
+                                                                         th3d, &
+                                                                          t3d, &
+                                                                         dz8w
    real,     dimension( ims:ime, kms:kme, jms:jme )                          , &
              intent(in   )   ::                                          p3di
 !
    real,     dimension( ims:ime, kms:kme, jms:jme )                          , &
              intent(inout)   ::                                       rublten, &
-                                              			      rvblten, &
-                                               			     rthblten, &
-                                                 	             rqvblten, &
+                                                                      rvblten, &
+                                                                     rthblten, &
+                                                                     rqvblten, &
                                                                      rqcblten
 !
    real,     dimension( ims:ime, kms:kme, jms:jme )                          , &
              intent(inout)   ::                                        exch_h
-!
-! ... paj: u10,v10 now inout
-!
    real,     dimension( ims:ime, jms:jme )                                   , &
-             intent(inout   )   ::                                           u10, &
+             intent(inout)   ::                                           u10, &
                                                                           v10
 !
    real,     dimension( ims:ime, jms:jme )                                   , &
              intent(in   )   ::                                         xland, &
-     			                                                  hfx, &
+                                                                          hfx, &
                                                                           qfx, &
                                                                            br, &
                                                                          psfc
@@ -168,12 +164,6 @@ contains
   integer,   dimension( ims:ime, jms:jme )                                   , &
              intent(out  )   ::                                        kpbl2d
   logical, intent(in)        ::                                       flag_qi
-!
-! paj
-!
-   real, optional,  dimension( ims:ime, jms:jme )                                   , &  !mchen
-             intent(in   )   ::                                         ctopo, &
-                                                                        ctopo2
 !optional
    real,     dimension( ims:ime, jms:jme )                                   , &
              optional                                                        , &
@@ -194,6 +184,10 @@ contains
 !
    real,     optional, intent(in   )   ::                               p_top
 !
+   real,     dimension( ims:ime, jms:jme )                                   , &
+             optional                                                        , &
+             intent(in   )   ::                                         ctopo, &
+                                                                       ctopo2
 !local
    integer ::  i,j,k
    real,     dimension( its:ite, kts:kte*ndiff )  ::                 rqvbl2dt, &
@@ -253,11 +247,9 @@ contains
               ,dt=dt,rcl=1.0,kpbl1d=kpbl2d(ims,j)                              &
               ,exch_hx=exch_h(ims,kms,j)                                       &
               ,u10=u10(ims,j),v10=v10(ims,j)                                   &
-!paj
-#ifndef NMM_CORE
-              ,ctopo=ctopo(ims,j),ctopo2=ctopo2(ims,j)                   &
+#if ( NMM_CORE != 1 )
+              ,ctopo=ctopo(ims,j),ctopo2=ctopo2(ims,j)                         &
 #endif
-!
               ,gz1oz0=gz1oz0(ims,j)                                            &
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
@@ -287,9 +279,7 @@ contains
                   dt,rcl,kpbl1d,                                               &
                   exch_hx,                                                     &
                   u10,v10,                                                     &
-!paj: topo_wind
-                  ctopo,ctopo2,                                             &
-!
+                  ctopo,ctopo2,                                                &
                   gz1oz0,                                                      &
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
@@ -328,10 +318,16 @@ contains
 !               ==> negligible differences
 !              implicit forcing for momentum with clean up, july 2009
 !               ==> prevents model blowup when sfc layer is too low
-!              increase of lamda, 30 < 0.1 x del z < 300, feb 2010
+!              increase of lamda, maximum (30, 0.1 x del z) feb 2010
 !               ==> prevents model blowup when delz is extremely large
 !              revised prandtl number at surface, peggy lemone, feb 2010
 !               ==> increase kh, decrease mixing due to counter-gradient term
+!              revised thermal, shin et al. mon. wea. rev. , songyou hong, aug 2011
+!               ==> reduce the thermal strength when z1 < 0.1 h  
+!              revised prandtl number for free convection, dudhia, mar 2012
+!               ==> pr0 = 1 + bke (=0.272) when newtral, kh is reduced
+!              minimum kzo = 0.01, lo = min (30m,delz), hong, mar 2012
+!               ==> weaker mixing when stable, and les resolution in vertical
 !
 !     references:
 !
@@ -410,11 +406,10 @@ contains
    real,     dimension( ims:ime, kms:kme )                                   , &
              intent(in   )   ::                                            ux, &
                                                                            vx
-! paj
-   real, optional, dimension( ims:ime )                                              , &
-             intent(in   )   ::                                         ctopo, &   !mchen
-                                                                         ctopo2
-!optional
+   real,     dimension( ims:ime )                                            , &
+             optional                                                        , &
+             intent(in   )   ::                                         ctopo, &
+                                                                       ctopo2
    real,     dimension( ims:ime )                                            , &
              optional                                                        , &
              intent(inout)   ::                                        regime
@@ -424,29 +419,30 @@ contains
    real,     dimension( its:ite )            ::                           hol
    real,     dimension( its:ite, kts:kte+1 ) ::                            zq
 !
-   real,     dimension( its:ite, kts:kte )   ::                        	       &
+   real,     dimension( its:ite, kts:kte )   ::                                &
                                                                      thx,thvx, &
                                                                           del, &
                                                                           dza, &
                                                                           dzq, &
+                                                                         xkzo, &
                                                                            za
 !
    real,    dimension( its:ite )             ::                                &
                                                                          rhox, &
                                                                        govrth, &
                                                                   zl1,thermal, &
-                                                                 wscale,hgamt, &
-                                                                   hgamq,brdn, &
-                                                                    brup,phim, &
-                                                                         phih, &
+                                                                       wscale, &
+                                                                  hgamt,hgamq, &
+                                                                    brdn,brup, &
+                                                                    phim,phih, &
                                                                   dusfc,dvsfc, &
                                                                   dtsfc,dqsfc, &
                                                                         prpbl, &
                                                                         wspd1
 !
    real,    dimension( its:ite, kts:kte )    ::                     xkzm,xkzh, &
-                                                     		        f1,f2, &
-                                                     		        r1,r2, &
+                                                                        f1,f2, &
+                                                                        r1,r2, &
                                                                         ad,au, &
                                                                            cu, &
                                                                            al, &
@@ -457,10 +453,8 @@ contains
    real,    dimension( ims:ime, kms:kme )                                    , &
             intent(inout)   ::                                        exch_hx
 !
-! paj. u10, v10 now inout
-!
-   real,    dimension( ims:ime )                                             , & 
-            intent(inout  )    ::                                            u10, &
+   real,    dimension( ims:ime )                                             , &
+            intent(inout)    ::                                           u10, &
                                                                           v10
    real,    dimension( its:ite )    ::                                         &
                                                                          brcr, &
@@ -479,14 +473,15 @@ contains
 !
 !
    real    ::  dt2,rdt,spdk2,fm,fh,hol1,gamfac,vpert,prnum,prnum0
-   real    ::  xkzo,ss,ri,qmean,tmean,alph,chi,zk,rl2,dk,sri
+   real    ::  ss,ri,qmean,tmean,alph,chi,zk,rl2,dk,sri
    real    ::  brint,dtodsd,dtodsu,rdz,dsdzt,dsdzq,dsdz2,rlamdz
    real    ::  utend,vtend,ttend,qtend
    real    ::  dtstep,govrthv
    real    ::  cont, conq, conw, conwrc 
 !
-   real, dimension( its:ite, kts:kte )     ::                         wscalek, &
-                                                                  xkzml,xkzhl, &
+   real, dimension( its:ite, kts:kte )     ::                         wscalek
+   real, dimension( its:ite )              ::                         delta
+   real, dimension( its:ite, kts:kte )     ::                     xkzml,xkzhl, &
                                                                zfacent,entfac
    real, dimension( its:ite )              ::                            ust3, &
                                                                  wstar3,wstar, &
@@ -495,10 +490,10 @@ contains
                                                                        bfxpbl, &
                                                                 hfxpbl,qfxpbl, &
                                                                 ufxpbl,vfxpbl, &
-                                                                  delta,dthvx
+                                                                        dthvx
    real    ::  prnumfac,bfx0,hfx0,qfx0,delb,dux,dvx,                           &
                dsdzu,dsdzv,wm3,dthx,dqx,wspd10,ross,tem1,dsig,tvcon,conpr,     &
-               prfac,phim8z
+               prfac,prfac2,phim8z
 !
 !----------------------------------------------------------------------
 !
@@ -609,6 +604,11 @@ contains
        zfac(i,k) = 0.0
      enddo
    enddo
+   do k = kts,klpbl-1
+     do i = its,ite
+       xkzo(i,k) = ckz*dza(i,k+1)
+     enddo
+   enddo
 !
    do i = its,ite
      dusfc(i) = 0.
@@ -705,7 +705,6 @@ contains
        hgamt(i) = min(gamfac*hfx(i)/cp,gamcrt)
        hgamq(i) = min(gamfac*qfx(i),gamcrq)
        vpert = (hgamt(i)+ep1*thx(i,1)*hgamq(i))/bfac*afac
-! thermal perturbation limited in surface layer (from H. Shin, May 2011)
        thermal(i) = thermal(i)+max(vpert,0.)*min(za(i,1)/(sfcfrac*hpbl(i)),1.0)
        hgamt(i) = max(hgamt(i),0.0)
        hgamq(i) = max(hgamq(i),0.0)
@@ -872,14 +871,15 @@ contains
      do i = its,ite
        if(k.lt.kpbl(i)) then
          zfac(i,k) = min(max((1.-(zq(i,k+1)-zl1(i))/(hpbl(i)-zl1(i))),zfmin),1.)
-         xkzo = ckz*dza(i,k+1)
          zfacent(i,k) = (1.-zfac(i,k))**3.
          wscalek(i,k) = (ust3(i)+phifac*karman*wstar3(i)*(1.-zfac(i,k)))**h1
          if(sfcflg(i)) then 
-           prfac = conpr/phim(i)/((1.+4.*karman*wstar3(i)/ust3(i)))**h1
+           prfac = conpr
+           prfac2 = 15.9*wstar3(i)/ust3(i)/(1.+4.*karman*wstar3(i)/ust3(i))
            prnumfac = -3.*(max(zq(i,k+1)-sfcfrac*hpbl(i),0.))**2./hpbl(i)**2.
          else
            prfac = 0.
+           prfac2 = 0.
            prnumfac = 0.
            phim8z = 1.+(phim(i)-1.)*zq(i,k+1)/sfcfrac/hpbl(i)
            wscalek(i,k) = ust(i)/phim8z
@@ -888,18 +888,18 @@ contains
          prnum0 = (phih(i)/phim(i)+prfac)
          prnum0 = min(prnum0,prmax)
          prnum0 = max(prnum0,prmin)
-         xkzm(i,k) = xkzo+wscalek(i,k)*karman*zq(i,k+1)*zfac(i,k)**pfac
+         xkzm(i,k) = wscalek(i,k)*karman*zq(i,k+1)*zfac(i,k)**pfac
          prnum =  1. + (prnum0-1.)*exp(prnumfac)
          xkzq(i,k) = xkzm(i,k)/prnum*zfac(i,k)**(pfac_q-pfac)
-         prnum0 = prnum0/(1.+prfac)
+         prnum0 = prnum0/(1.+prfac2*karman*sfcfrac)
          prnum =  1. + (prnum0-1.)*exp(prnumfac)
          xkzh(i,k) = xkzm(i,k)/prnum
          xkzm(i,k) = min(xkzm(i,k),xkzmax)
-         xkzm(i,k) = max(xkzm(i,k),xkzmin)
+         xkzm(i,k) = max(xkzm(i,k),xkzo(i,k))
          xkzh(i,k) = min(xkzh(i,k),xkzmax)
-         xkzh(i,k) = max(xkzh(i,k),xkzmin)
+         xkzh(i,k) = max(xkzh(i,k),xkzo(i,k))
          xkzq(i,k) = min(xkzq(i,k),xkzmax)
-         xkzq(i,k) = max(xkzq(i,k),xkzmin)
+         xkzq(i,k) = max(xkzq(i,k),xkzo(i,k))
        endif
      enddo
    enddo
@@ -908,7 +908,6 @@ contains
 !
    do k = kts,kte-1
      do i = its,ite
-       xkzo = ckz*dza(i,k+1)
        if(k.ge.kpbl(i)) then
          ss = ((ux(i,k+1)-ux(i,k))*(ux(i,k+1)-ux(i,k))                         &
               +(vx(i,k+1)-vx(i,k))*(vx(i,k+1)-vx(i,k)))                        &
@@ -928,25 +927,26 @@ contains
          endif
          zk = karman*zq(i,k+1)
          rlamdz = min(max(0.1*dza(i,k+1),rlam),300.)
+         rlamdz = min(dza(i,k+1),rlamdz)
          rl2 = (zk*rlamdz/(rlamdz+zk))**2
          dk = rl2*sqrt(ss)
          if(ri.lt.0.)then
 ! unstable regime
            sri = sqrt(-ri)
-           xkzm(i,k) = xkzo+dk*(1+8.*(-ri)/(1+1.746*sri))
-           xkzh(i,k) = xkzo+dk*(1+8.*(-ri)/(1+1.286*sri))
+           xkzm(i,k) = dk*(1+8.*(-ri)/(1+1.746*sri))
+           xkzh(i,k) = dk*(1+8.*(-ri)/(1+1.286*sri))
          else
 ! stable regime
-           xkzh(i,k) = xkzo+dk/(1+5.*ri)**2
+           xkzh(i,k) = dk/(1+5.*ri)**2
            prnum = 1.0+2.1*ri
            prnum = min(prnum,prmax)
-           xkzm(i,k) = (xkzh(i,k)-xkzo)*prnum+xkzo
+           xkzm(i,k) = xkzh(i,k)*prnum
          endif
 !
          xkzm(i,k) = min(xkzm(i,k),xkzmax)
-         xkzm(i,k) = max(xkzm(i,k),xkzmin)
+         xkzm(i,k) = max(xkzm(i,k),xkzo(i,k))
          xkzh(i,k) = min(xkzh(i,k),xkzmax)
-         xkzh(i,k) = max(xkzh(i,k),xkzmin)
+         xkzh(i,k) = max(xkzh(i,k),xkzo(i,k))
          xkzml(i,k) = xkzm(i,k)
          xkzhl(i,k) = xkzh(i,k)
        endif
@@ -984,7 +984,7 @@ contains
          xkzh(i,k) = -we(i)*dza(i,kpbl(i))*exp(-entfac(i,k))
          xkzh(i,k) = sqrt(xkzh(i,k)*xkzhl(i,k))
          xkzh(i,k) = min(xkzh(i,k),xkzmax)
-         xkzh(i,k) = max(xkzh(i,k),xkzmin)
+         xkzh(i,k) = max(xkzh(i,k),xkzo(i,k))
          f1(i,k+1) = thx(i,k+1)-300.
        else
          f1(i,k+1) = thx(i,k+1)-300.
@@ -1075,7 +1075,7 @@ contains
          xkzq(i,k) = -we(i)*dza(i,kpbl(i))*exp(-entfac(i,k))
          xkzq(i,k) = sqrt(xkzq(i,k)*xkzhl(i,k))
          xkzq(i,k) = min(xkzq(i,k),xkzmax)
-         xkzq(i,k) = max(xkzq(i,k),xkzmin)
+         xkzq(i,k) = max(xkzq(i,k),xkzo(i,k))
          f3(i,k+1,1) = qx(i,k+1)
        else
          f3(i,k+1,1) = qx(i,k+1)
@@ -1155,16 +1155,16 @@ contains
      enddo
    enddo
 !
-! paj: ctopo=1 if topo_wind=0 (default) 
-!
    do i = its,ite
-    if(present(ctopo)) then    !mchen  add this line to make sure NMM can still work with YSU PBL 
-     ad(i,1) = 1.+ctopo(i)*ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2                    &
-              *(wspd1(i)/wspd(i))**2
-    else !mchen
-     ad(i,1) = 1.+ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2                    &
-              *(wspd1(i)/wspd(i))**2
-    endif !mchen
+! paj: ctopo=1 if topo_wind=0 (default)
+! mchen  add this line to make sure NMM can still work with YSU PBL
+     if(present(ctopo)) then 
+       ad(i,1) = 1.+ctopo(i)*ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2         &
+        *(wspd1(i)/wspd(i))**2
+     else               
+       ad(i,1) = 1.+ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2                  &
+        *(wspd1(i)/wspd(i))**2
+     endif 
      f1(i,1) = ux(i,1)
      f2(i,1) = vx(i,1)
    enddo
@@ -1187,7 +1187,7 @@ contains
        xkzm(i,k) = prpbl(i)*xkzh(i,k)
        xkzm(i,k) = sqrt(xkzm(i,k)*xkzml(i,k))
        xkzm(i,k) = min(xkzm(i,k),xkzmax)
-       xkzm(i,k) = max(xkzm(i,k),xkzmin)
+       xkzm(i,k) = max(xkzm(i,k),xkzo(i,k))
        f1(i,k+1) = ux(i,k+1)
        f2(i,k+1) = vx(i,k+1)
      else
@@ -1233,12 +1233,11 @@ contains
 ! paj: ctopo2=1 if topo_wind=0 (default)
 !
    do i = its,ite
-     if(present(ctopo).and.present(ctopo2)) then   ! mchen for NMM 
+     if(present(ctopo).and.present(ctopo2)) then   ! mchen for NMM
      u10(i) = ctopo2(i)*u10(i)+(1-ctopo2(i))*ux(i,1)
      v10(i) = ctopo2(i)*v10(i)+(1-ctopo2(i))*vx(i,1)
      endif  !mchen
    enddo
-
 !
 !---- end of vertical diffusion
 !

@@ -85,6 +85,18 @@
        num_fgat_time = num_fgat_time + 1
        write(unit=message(1),fmt='(a,i10)') 'num_fgat_time is: ', num_fgat_time
        call da_message(message(1:1))
+       if ( use_rainobs ) then
+          allocate (fgat_rain_flags(1:num_fgat_time))
+          fgat_rain_flags = .false.
+          if ( INT(var4d_bin_rain/var4d_bin)*var4d_bin .ne. INT(var4d_bin_rain) ) then
+             write(unit=message(1),fmt='(A,A,2I7)') &
+             'Please change var4d_bin_rain in namelist and rerun==>', 'var4d_bin_rain, var4d_bin:',var4d_bin_rain,var4d_bin
+             call da_error(__FILE__,__LINE__,message(1:1))
+          endif
+          do n = 1, num_fgat_time, INT(var4d_bin_rain/var4d_bin)
+             fgat_rain_flags(n) = .true.
+          end do
+       end if
     endif
 
    !---------------------------------------------------------------------------
@@ -205,7 +217,7 @@
    !---------------------------------------------------------------------------
    ! [5.1] Set up background errors (be):
    !---------------------------------------------------------------------------
-   if (use_background_errors) then
+   if (use_background_errors .and. multi_inc /= 1) then
       call da_setup_background_errors (grid, be)
    else
       be % ne = ensdim_alpha
@@ -279,6 +291,9 @@
       if (it > 1 .and. cv_options == 5) then
          print '(/10X,"===> Re-set BE SCALINGS for outer-loop=",i2)', it
          call  da_scale_background_errors ( be, it )
+      else if (it > 1 .and. cv_options == 3) then
+         print '(/10X,"===> Re-set CV3 BE SCALINGS for outer-loop=",i2)', it
+         call  da_scale_background_errors_cv3 ( grid, be, it )
       endif
 
       call da_initialize_cv (cv_size, xhat)
@@ -391,7 +406,7 @@
 
       num_qcstat_conv=0
       call da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid , config_flags)
-      
+      if ( multi_inc == 1 ) return      
 
       if (test_transforms .or. test_gradient) then
 
@@ -539,9 +554,12 @@
         write(outerloop,'(i2.2)') it
         call da_med_initialdata_output (grid , config_flags, 'wrfvar_output_'//outerloop)
 #ifdef VAR4D
-        if (var4d) call da_med_initialdata_output_lbc (grid , config_flags, 'wrfvar_bdyout_'//outerloop)
+        !if (var4d) call da_med_initialdata_output_lbc (grid , config_flags, 'wrfvar_bdyout_'//outerloop)
 #endif
      end if
+
+     call da_deallocate_y (re)
+     call da_deallocate_y (y)
 
    end do
 
@@ -570,7 +588,7 @@
          call domain_clock_set( grid, current_timestr=timestr1 )
       endif
 #endif
-      call med_shutdown_io (head_grid, config_flags)
+      call med_shutdown_io (grid, config_flags)
    end if
 
    !---------------------------------------------------------------------------
@@ -776,9 +794,8 @@
    end if
 #endif
 
+   if (var4d .and. use_rainobs) deallocate(fgat_rain_flags)
    call da_deallocate_observations (iv)
-   call da_deallocate_y (re)
-   call da_deallocate_y (y)
    call da_deallocate_y (ob)
    if (use_background_errors) call da_deallocate_background_errors (be)
 
@@ -811,9 +828,6 @@
          deallocate (sin_xle)
       end if
    end if
-!  rizvi TBD in da_transfer_wrf_nmmtoxb.inc
-   if( fg_format /= fg_format_wrf_nmm_regional ) &
-   deallocate (xbx % latc_mean)
 
 #ifdef DM_PARALLEL
    call mpi_barrier (comm,ierr)

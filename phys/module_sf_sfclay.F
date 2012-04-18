@@ -784,10 +784,12 @@ CONTAINS
           IF ( PRESENT(ISFTCFLX) ) THEN
              IF ( ISFTCFLX.NE.0 ) THEN
 !               ZNT(I)=10.*exp(-9.*UST(I)**(-.3333))
-                ZNT(I)=10.*exp(-9.5*UST(I)**(-.3333))
-                ZNT(I)=ZNT(I) + 0.11*1.5E-5/AMAX1(UST(I),0.01)
+!               ZNT(I)=10.*exp(-9.5*UST(I)**(-.3333))
+!               ZNT(I)=ZNT(I) + 0.11*1.5E-5/AMAX1(UST(I),0.01)
+                ZNT(I)=0.011*UST(I)*UST(I)/G+OZO
                 ZNT(I)=MIN(ZNT(I),2.85e-3)
-                ZNT(I)=MAX(ZNT(I),1.27e-7)
+!               ZNT(I)=MAX(ZNT(I),1.27e-7)
+!               ZNT(I)=MAX(ZNT(I),3.50e-5)
              ENDIF
           ENDIF
           ZL = ZNT(I)

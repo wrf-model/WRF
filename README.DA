@@ -22,10 +22,27 @@ WRFDA, including infringement actions.
 This is the main directory for the WRFDA Version 3 source code release.
 ======================================
 
+V3.4 Release Notes :
+-------------------
+
+Version 3.4 is released on April 6, 2012.
+
+- The WRFPLUS (WRF adjoint and tangent linear model) has been upgraded to V3.4 and it is consistent with the released WRF version 3.4. Added parallel WRF TL/AD based on WRF 3.4.
+
+- WRFDA 4D-Var now supports compilation to run in parallel.
+
+- WRFDA 4D-Var now supports precipitation data (such as stage IV) assimilation.
+
+- The ability to generate forecast sensitivity to observations has been updated.
+
+- WRFDA Hybrid 3D-Var has been updated.
+
+======================================
+
 V3.3.1 Release Notes :
 -------------------
 
-Version 3.3.1 is released on September. 27, 2011.
+Version 3.3.1 is released on September 27, 2011.
 
 - WRF 4D-Var has been improved on lateral boundary condition control, analysis scheme for surface observation etc.
   

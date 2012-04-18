@@ -60,6 +60,10 @@
                                     grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
                                     grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
+#ifdef DM_PARALLEL
+#include "HALO_EM_E.inc"
+#endif
+
    CALL decouple ( grid%mu_2 , grid%mub , grid%u_2                 , 'u' , grid%msfuy , &
                                     grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                                     grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &

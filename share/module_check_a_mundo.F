@@ -41,7 +41,7 @@
 
       IMPLICIT NONE
 
-      INTEGER :: i
+      INTEGER :: i, oops
 
 !-----------------------------------------------------------------------
 ! Check that all values of sf_surface_physics are the same for all domains
@@ -91,50 +91,6 @@
 
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec%sf_surface_physics(i) == NOAHMPSCHEME ) THEN
-
-            IF ( model_config_rec%sf_sfclay_physics(i) == SFCLAYSCHEME ) THEN
-
-               ! SFCLAYSCHEME with NOAHMPSCHEME needs to run with Noah-MP opt_sfc option == 4
-               IF ( model_config_rec%opt_sfc(i) /= 4 ) THEN
-
-                  write(wrf_err_message, '(" --- sf_sfclay_physics == ", I2, " (SFCLAY scheme) with Noah-MP (sf_surface_physics == ", I2, ")")') SFCLAYSCHEME, NOAHMPSCHEME
-                  CALL wrf_message ( TRIM ( wrf_err_message ) ) 
-
-                  wrf_err_message = " --- requires Noah-MP namelist option OPT_SFC == 4."
-                  CALL wrf_message ( TRIM ( wrf_err_message ) ) 
-
-                  wrf_err_message = " --- Switching to Noah-MP option OPT_SFC == 4"
-                  CALL wrf_message ( TRIM ( wrf_err_message ) )
-
-                  model_config_rec%opt_sfc(i) = 4
-                  
-               END IF
-
-            ELSE IF ( model_config_rec%sf_sfclay_physics(i) == MYJSFCSCHEME ) THEN
-
-               ! MYJSFCSCHEME with NOAHMPSCHEME needs to run with Noah-MP opt_sfc option == 3
-               IF ( ( model_config_rec%opt_sfc(i) /= 3 ) ) THEN
-
-                  write(wrf_err_message, '(" --- sf_sfclay_physics == ", I2, " (SFCLAY scheme) with Noah-MP (sf_surface_physics == ", I2, ")")') MYJSFCSCHEME, NOAHMPSCHEME
-                  CALL wrf_message ( TRIM ( wrf_err_message ) ) 
-                  wrf_err_message = " --- requires Noah-MP option OPT_SFC == 3."
-                  CALL wrf_message ( TRIM ( wrf_err_message ) ) 
-
-                  write (wrf_err_message, '(" --- Switching to Noah-MP option OPT_SFC == 3")')
-                  CALL wrf_message ( TRIM ( wrf_err_message ) ) 
-
-                  model_config_rec%opt_sfc(i) = 3
-
-               END IF
-
-            ELSE
-
-               write(wrf_err_message, '(" --- ERROR:  Noah-MP LSM scheme (sf_surface_physics==", I2, ")")') NOAHMPSCHEME
-               CALL wrf_message ( TRIM ( wrf_err_message ) ) 
-               write(wrf_err_message, '("             works only with sf_sfclay_physics ", I2, " or ", I2, ".")') SFCLAYSCHEME, MYJSFCSCHEME
-               CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
-
-            END IF
 
             ! Noah-MP does not work with the urban schemes
 
@@ -298,6 +254,23 @@
       ENDDO      ! Loop over domains
 
 !-----------------------------------------------------------------------
+!  Only implement the mfshconv option if the QNSE PBL is activated.
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%bl_pbl_physics(i) .NE. QNSEPBLSCHEME ) .AND. &
+              ( model_config_rec%mfshconv(i) .NE. 0 ) ) THEN
+            model_config_rec%mfshconv(i) = 0
+            oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = 'bl_pbl_physics /= 4, implies mfshconv must be 0, resetting'
+         CALL wrf_message ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
 !  If analysis FDDA is turned off, reset the io_forms to zero so that
 !  there is no chance that WRF tries to input the data.
 !-----------------------------------------------------------------------
@@ -323,8 +296,10 @@
          END IF
       END IF
 
+!-----------------------------------------------------------------------
 !  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.
 !  Relocated here so that the remappings are after checking the namelist for inconsistencies.
+!-----------------------------------------------------------------------
 
 #     include "../dyn_em/namelist_remappings_em.h"
 

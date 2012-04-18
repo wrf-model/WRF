@@ -670,15 +670,7 @@
                     imask,                                &  ! interpolation mask
                     xstag, ystag,                         &  ! staggering of field
                     ipos, jpos,                           &  ! Position of lower left of nest in CD
-                    nri, nrj,                             &  ! nest ratios
-                    cbdy_xs, nbdy_xs,                     &  ! boundary arrays
-                    cbdy_xe, nbdy_xe,                     &  ! no needed, but registry builds interface
-                    cbdy_ys, nbdy_ys,                     &  ! for lateral bc forcing this way
-                    cbdy_ye, nbdy_ye,                     &
-                    cbdy_txs, nbdy_txs,                   &
-                    cbdy_txe, nbdy_txe,                   &
-                    cbdy_tys, nbdy_tys,                   &
-                    cbdy_tye, nbdy_tye                    &
+                    nri, nrj                              &  ! nest ratios
                     )   
      USE module_configure
      IMPLICIT NONE
@@ -698,10 +690,6 @@
      REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
      REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
      INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
-     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_xs, cbdy_txs, nbdy_xs, nbdy_txs
-     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_xe, cbdy_txe, nbdy_xe, nbdy_txe
-     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_ys, cbdy_tys, nbdy_ys, nbdy_tys
-     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_ye, cbdy_tye, nbdy_ye, nbdy_tye
 
      CALL  interp_fcn  (cfld,                             &  ! CD field
                         cids, cide, ckds, ckde, cjds, cjde,   &
@@ -1246,9 +1234,7 @@
                   !  This is a "land only" field.  If this is a water point, no operations required.
 
                   IF      ( ( NINT(nlu(ni  ,nj  )) .EQ. iswater ) ) THEN
-                     ! noop
-!                    nfld(ni,nk,nj) =  1.e20
-                     nfld(ni,nk,nj) =  -1
+                     nfld(ni,nk,nj) =  cfld(ci  ,ck,cj  )
 
                   !  If this is a nested land point, and the surrounding coarse values are all land points,
                   !  then this is a simple 4-pt interpolation.
@@ -1271,7 +1257,6 @@
                             ( NINT(clu(ci+1,cj  )) .EQ. iswater ) .AND. &
                             ( NINT(clu(ci  ,cj+1)) .EQ. iswater ) .AND. &
                             ( NINT(clu(ci+1,cj+1)) .EQ. iswater ) ) THEN
-!                    nfld(ni,nk,nj) = -1.e20
                      nfld(ni,nk,nj) = -1
 
                   !  If there are some water points and some land points, take an average. 
@@ -1309,7 +1294,7 @@
          DO nj = njts, njte
             DO nk = nkts, nkte
                DO ni = nits, nite
-                  IF ( ( nfld(ni,nk,nj) .GT. -1.e19 ) .AND. (  nfld(ni,nk,nj) .LT. 1.e19 ) ) THEN
+                  IF ( nfld(ni,nk,nj) .NE. -1 ) THEN
                      icount = icount + 1
                      sum = sum + nfld(ni,nk,nj)
                   END IF
@@ -1332,7 +1317,7 @@
            DO nj = njts, njte
               DO nk = nkts, nkte
                  DO ni = nits, nite
-                    IF ( nfld(ni,nk,nj) .LT. -1.e19 ) THEN
+                    IF ( nfld(ni,nk,nj) .EQ. -1 ) THEN
                        IF ( MOD ( nrj , 2 ) .EQ. 0 ) THEN
                           cj = ( nj + (nrj/2)-1 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
                        ELSE
@@ -1481,9 +1466,7 @@
                   !  This is a "water only" field.  If this is a land point, no operations required.
 
                   IF      ( ( NINT(nlu(ni  ,nj  )) .NE. nflag ) ) THEN
-                     ! noop
-!                    nfld(ni,nk,nj) =  1.e20
-                     nfld(ni,nk,nj) = 0
+                     nfld(ni,nk,nj) = cfld(ci  ,ck,cj  )
 
                   !  If this is a nested water point, and the surrounding coarse values are all water points,
                   !  then this is a simple 4-pt interpolation.
@@ -1506,7 +1489,6 @@
                             ( NINT(clu(ci+1,cj  )) .NE. nflag ) .AND. &
                             ( NINT(clu(ci  ,cj+1)) .NE. nflag ) .AND. &
                             ( NINT(clu(ci+1,cj+1)) .NE. nflag ) ) THEN
-!                    nfld(ni,nk,nj) = -1.e20
                      nfld(ni,nk,nj) = -1
 
                   !  If there are some land points and some water points, take an average. 
@@ -1543,7 +1525,7 @@
          DO nj = njts, njte
             DO nk = nkts, nkte
                DO ni = nits, nite
-                  IF ( ( nfld(ni,nk,nj) .GT. -1.e19 ) .AND. (  nfld(ni,nk,nj) .LT. 1.e19 ) ) THEN
+                  IF ( nfld(ni,nk,nj) .NE. -1 ) THEN
                      icount = icount + 1
                      sum = sum + nfld(ni,nk,nj)
                   END IF
@@ -1567,7 +1549,7 @@
            DO nj = njts, njte
               DO nk = nkts, nkte
                  DO ni = nits, nite
-                    IF ( nfld(ni,nk,nj) .LT. -1.e19 ) THEN
+                    IF ( nfld(ni,nk,nj) .EQ. -1 ) THEN
                        IF ( MOD ( nrj , 2 ) .EQ. 0 ) THEN
                           cj = ( nj + (nrj/2)-1 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
                        ELSE
@@ -1610,6 +1592,172 @@
       END IF
 
    END SUBROUTINE interp_mask_water_field
+
+   SUBROUTINE p2c_mask (   cfld,                                 &  ! CD field
+                           cids, cide, ckds, ckde, cjds, cjde,   &
+                           cims, cime, ckms, ckme, cjms, cjme,   &
+                           cits, cite, ckts, ckte, cjts, cjte,   &
+                           nfld,                                 &  ! ND field
+                           nids, nide, nkds, nkde, njds, njde,   &
+                           nims, nime, nkms, nkme, njms, njme,   &
+                           nits, nite, nkts, nkte, njts, njte,   &
+                           shw,                                  &  ! stencil half width
+                           imask,                                &  ! interpolation mask
+                           xstag, ystag,                         &  ! staggering of field
+                           ipos, jpos,                           &  ! Position of lower left of nest in CD
+                           nri, nrj,                             &  ! nest ratios
+                           clu, nlu,                             &  ! land use categories
+                           ctslb,ntslb,                          &  ! soil temps
+                           cnum_soil_layers,nnum_soil_layers,    &  ! number of soil layers for tslb
+                           ciswater, niswater                    )  ! iswater category
+
+      USE module_configure
+      USE module_wrf_error
+
+      IMPLICIT NONE
+   
+      INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                             cims, cime, ckms, ckme, cjms, cjme,   &
+                             cits, cite, ckts, ckte, cjts, cjte,   &
+                             nids, nide, nkds, nkde, njds, njde,   &
+                             nims, nime, nkms, nkme, njms, njme,   &
+                             nits, nite, nkts, nkte, njts, njte,   &
+                             shw,                                  &
+                             ipos, jpos,                           &
+                             nri, nrj,                             &
+                             cnum_soil_layers, nnum_soil_layers,   &
+                             ciswater, niswater 
+
+      LOGICAL, INTENT(IN) :: xstag, ystag
+   
+      REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
+      REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
+      INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
+   
+      REAL, DIMENSION ( cims:cime, cjms:cjme ) :: clu
+      REAL, DIMENSION ( nims:nime, njms:njme ) :: nlu
+
+      REAL, DIMENSION ( cims:cime, 1:cnum_soil_layers, cjms:cjme ) :: ctslb
+      REAL, DIMENSION ( nims:nime, 1:nnum_soil_layers, njms:njme ) :: ntslb
+
+      ! Local
+   
+      INTEGER ci, cj, ck, ni, nj, nk
+      INTEGER :: icount 
+      REAL :: sum , dx , dy
+
+      !  Right now, only mass point locations permitted.
+   
+      IF ( ( .NOT. xstag) .AND. ( .NOT. ystag ) ) THEN
+
+         !  Loop over each i,k,j in the nested domain.
+
+         DO nj = njts, MIN(njde-1,njte)
+            IF ( MOD ( nrj , 2 ) .EQ. 0 ) THEN
+               cj = ( nj + (nrj/2)-1 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
+            ELSE
+               cj = ( nj + (nrj-1)/2 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
+            END IF
+            DO nk = nkts, nkte
+               ck = nk
+               DO ni = nits, MIN(nide-1,nite)
+                  IF ( MOD ( nri , 2 ) .EQ. 0 ) THEN
+                     ci = ( ni + (nri/2)-1 ) / nri + ipos -1 ! first coarse position equal to or to the left of nest point
+                  ELSE
+                     ci = ( ni + (nri-1)/2 ) / nri + ipos -1 ! first coarse position equal to or to the left of nest point
+                  END IF
+
+                  !
+                  !                    (ci,cj+1)     (ci+1,cj+1)
+                  !               -        -------------
+                  !         1-dy  |        |           |
+                  !               |        |           |
+                  !               -        |  *        |
+                  !          dy   |        | (ni,nj)   |
+                  !               |        |           |
+                  !               -        -------------
+                  !                    (ci,cj)       (ci+1,cj)  
+                  !
+                  !                        |--|--------|
+                  !                         dx  1-dx         
+
+
+                  !  At ni=2, we are on the coarse grid point, so dx = 0
+
+                  IF ( MOD ( nri , 2 ) .EQ. 0 ) THEN
+                     dx = ( REAL ( MOD ( ni+(nri-1)/2 , nri ) ) + 0.5 ) / REAL ( nri ) 
+                  ELSE 
+                     dx =   REAL ( MOD ( ni+(nri-1)/2 , nri ) )         / REAL ( nri ) 
+                  END IF
+                  IF ( MOD ( nrj , 2 ) .EQ. 0 ) THEN
+                     dy = ( REAL ( MOD ( nj+(nrj-1)/2 , nrj ) ) + 0.5 ) / REAL ( nrj ) 
+                  ELSE 
+                     dy =   REAL ( MOD ( nj+(nrj-1)/2 , nrj ) )         / REAL ( nrj ) 
+                  END IF
+   
+                  !  This is a "water only" field.  If this is a land point, no operations required.
+
+                  IF      ( ( NINT(nlu(ni  ,nj  )) .NE. niswater ) ) THEN
+                     nfld(ni,nk,nj) = 273.18
+
+                  !  If this is a nested water point, and the surrounding coarse values are all water points,
+                  !  then this is a simple 4-pt interpolation.
+
+                  ELSE IF ( ( NINT(nlu(ni  ,nj  )) .EQ. niswater ) .AND. &
+                            ( NINT(clu(ci  ,cj  )) .EQ. niswater ) .AND. &
+                            ( NINT(clu(ci+1,cj  )) .EQ. niswater ) .AND. &
+                            ( NINT(clu(ci  ,cj+1)) .EQ. niswater ) .AND. &
+                            ( NINT(clu(ci+1,cj+1)) .EQ. niswater ) ) THEN
+                     nfld(ni,nk,nj) = ( 1. - dx ) * ( ( 1. - dy ) * cfld(ci  ,ck,cj  )   + &
+                                                             dy   * cfld(ci  ,ck,cj+1) ) + &
+                                             dx   * ( ( 1. - dy ) * cfld(ci+1,ck,cj  )   + &
+                                                             dy   * cfld(ci+1,ck,cj+1) )
+
+                  !  If this is a nested water point and there are NO coarse water values surrounding,
+                  !  we manufacture something from the deepest CG soil temp.
+
+                  ELSE IF ( ( NINT(nlu(ni  ,nj  )) .EQ. niswater ) .AND. &
+                            ( NINT(clu(ci  ,cj  )) .NE. niswater ) .AND. &
+                            ( NINT(clu(ci+1,cj  )) .NE. niswater ) .AND. &
+                            ( NINT(clu(ci  ,cj+1)) .NE. niswater ) .AND. &
+                            ( NINT(clu(ci+1,cj+1)) .NE. niswater ) ) THEN
+                     nfld(ni,nk,nj) = ( 1. - dx ) * ( ( 1. - dy ) * ctslb(ci  ,cnum_soil_layers,cj  )   + &
+                                                             dy   * ctslb(ci  ,cnum_soil_layers,cj+1) ) + &
+                                             dx   * ( ( 1. - dy ) * ctslb(ci+1,cnum_soil_layers,cj  )   + &
+                                                             dy   * ctslb(ci+1,cnum_soil_layers,cj+1) )
+
+                  !  If there are some land points and some water points, take an average of the water points.
+                  
+                  ELSE IF ( NINT(nlu(ni  ,nj  )) .EQ. niswater ) THEN
+                     icount = 0
+                     sum = 0
+                     IF ( NINT(clu(ci  ,cj  )) .EQ. niswater ) THEN
+                        icount = icount + 1
+                        sum = sum + cfld(ci  ,ck,cj  )
+                     END IF
+                     IF ( NINT(clu(ci+1,cj  )) .EQ. niswater ) THEN
+                        icount = icount + 1
+                        sum = sum + cfld(ci+1,ck,cj  )
+                     END IF
+                     IF ( NINT(clu(ci  ,cj+1)) .EQ. niswater ) THEN
+                        icount = icount + 1
+                        sum = sum + cfld(ci  ,ck,cj+1)
+                     END IF
+                     IF ( NINT(clu(ci+1,cj+1)) .EQ. niswater ) THEN
+                        icount = icount + 1
+                        sum = sum + cfld(ci+1,ck,cj+1)
+                     END IF
+                     nfld(ni,nk,nj) = sum / REAL ( icount ) 
+                  END IF
+               END DO
+            END DO
+         END DO
+
+      ELSE
+         CALL wrf_error_fatal ( "only unstaggered fields right now" )
+      END IF
+
+   END SUBROUTINE p2c_mask
 
    SUBROUTINE none
    END SUBROUTINE none

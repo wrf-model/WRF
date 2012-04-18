@@ -20,9 +20,11 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
    !-------------------------------------------------------------------------
 
    call da_get_unit(ounit)
-
+#ifdef DM_PARALLEL
+   write(unit=filename, fmt='(a,i3.3,a,i4.4)') 'stub.', file_index, '.', myproc
+#else
    write(unit=filename, fmt='(a,i3.3)') 'gts_omb.', file_index
-
+#endif
    ! [1] surface obs:
 
    if (iv%info(synop)%plocal(iv%time) - iv%info(synop)%plocal(iv%time-1) > 0) then
@@ -124,16 +126,16 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
             (/"Cannot open conventional observation omb file"//filename/))
       end if
 
-      write(ounit,'(a20,i8)')'sonde_sfc', iv%info(sound)%plocal(iv%time) - &
-                                       iv%info(sound)%plocal(iv%time-1)
-      do n = iv%info(sound)%plocal(iv%time-1) + 1, &
-             iv%info(sound)%plocal(iv%time)
+      write(ounit,'(a20,i8)')'sonde_sfc', iv%info(sonde_sfc)%plocal(iv%time) - &
+                                       iv%info(sonde_sfc)%plocal(iv%time-1)
+      do n = iv%info(sonde_sfc)%plocal(iv%time-1) + 1, &
+             iv%info(sonde_sfc)%plocal(iv%time)
          write(ounit,'(i8,a5,2E22.13)')&
                  n, iv%info(sonde_sfc)%id(n), &  ! Station
                  iv%info(sonde_sfc)%lat(1,n), &       ! Latitude
                  iv%info(sonde_sfc)%lon(1,n)          ! Longitude
          write(ounit,'(E22.13,5(E22.13,i8,3E22.13))')&
-                 iv%sonde_sfc(n) % h, &
+                 iv%sonde_sfc(n)%h, &
                  iv%sonde_sfc(n)%u, &! O-B u
                  iv%sonde_sfc(n)%v, &! O-B v
                  iv%sonde_sfc(n)%t, &! O-B t
@@ -175,7 +177,102 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [6] buoy obs:
+   ! [6] mtgirs obs:
+   
+   if (iv%info(mtgirs)%plocal(iv%time) - iv%info(mtgirs)%plocal(iv%time-1) > 0) then
+
+      open (unit=ounit,file=trim(filename)//'.mtgirs',form='formatted',status='replace', &
+         iostat=ios)
+      if (ios /= 0) then
+         call da_error(__FILE__,__LINE__, &
+            (/"Cannot open conventional observation omb file"//filename/))
+      end if
+
+      write(ounit,'(a20,i8)')'mtgirs', iv%info(mtgirs)%plocal(iv%time) - &
+                                       iv%info(mtgirs)%plocal(iv%time-1)
+      do n = iv%info(mtgirs)%plocal(iv%time-1) + 1, &
+             iv%info(mtgirs)%plocal(iv%time)
+         write(ounit,'(2i8,a5,2E22.13)')&
+                 n, iv%info(mtgirs)%levels(n), iv%info(mtgirs)%id(n), &  ! Station
+                 iv%info(mtgirs)%lat(1,n), &       ! Latitude
+                 iv%info(mtgirs)%lon(1,n)          ! Longitude
+         do k = 1 , iv%info(mtgirs)%levels(n)
+            write(ounit,'(2E22.13,4(E22.13,i8,3E22.13))')&
+                 iv % mtgirs(n) % h(k), &
+                 iv % mtgirs(n) % p(k), &             ! Obs Pressure
+                 iv%mtgirs(n)%u(k), &! O-B u
+                 iv%mtgirs(n)%v(k), &! O-B v
+                 iv%mtgirs(n)%t(k), &! O-B t
+                 iv%mtgirs(n)%q(k)   ! O-B q
+
+         enddo
+      end do
+      close (ounit)
+   end if
+
+   ! [7] tamdar
+
+   if (iv%info(tamdar)%plocal(iv%time) - iv%info(tamdar)%plocal(iv%time-1) > 0) then
+
+      open (unit=ounit,file=trim(filename)//'.tamdar',form='formatted',status='replace', &
+         iostat=ios)
+      if (ios /= 0) then
+         call da_error(__FILE__,__LINE__, &
+            (/"Cannot open conventional observation omb file"//filename/))
+      end if
+
+      write(ounit,'(a20,i8)')'tamdar', iv%info(tamdar)%plocal(iv%time) - &
+                                       iv%info(tamdar)%plocal(iv%time-1)
+      do n = iv%info(tamdar)%plocal(iv%time-1) + 1, &
+             iv%info(tamdar)%plocal(iv%time)
+         write(ounit,'(2i8,a5,2E22.13)')&
+                 n, iv%info(tamdar)%levels(n), iv%info(tamdar)%id(n), &  ! Station
+                 iv%info(tamdar)%lat(1,n), &       ! Latitude
+                 iv%info(tamdar)%lon(1,n)          ! Longitude
+         do k = 1 , iv%info(tamdar)%levels(n)
+            write(ounit,'(2E22.13,4(E22.13,i8,3E22.13))')&
+                     iv%tamdar(n)%h(k), &
+                     iv%tamdar(n)%p(k), &             ! Obs Pressure
+                     iv%tamdar(n)%u(k), &! O-B u
+                     iv%tamdar(n)%v(k), &! O-B v
+                     iv%tamdar(n)%t(k), &! O-B t
+                     iv%tamdar(n)%q(k)   ! O-B q
+         enddo
+      end do
+      close (ounit)
+   end if
+
+   ! [8] tamdar_sfc
+
+   if (iv%info(tamdar_sfc)%plocal(iv%time) - iv%info(tamdar_sfc)%plocal(iv%time-1) > 0) then
+
+      open (unit=ounit,file=trim(filename)//'.tamdar_sfc',form='formatted',status='replace', &
+         iostat=ios)
+      if (ios /= 0) then
+         call da_error(__FILE__,__LINE__, &
+            (/"Cannot open conventional observation omb file"//filename/))
+      end if
+
+      write(ounit,'(a20,i8)')'tamdar_sfc', iv%info(tamdar_sfc)%plocal(iv%time) - &
+                                       iv%info(tamdar_sfc)%plocal(iv%time-1)
+      do n = iv%info(tamdar_sfc)%plocal(iv%time-1) + 1, &
+             iv%info(tamdar_sfc)%plocal(iv%time)
+         write(ounit,'(i8,a5,2E22.13)')&
+                 n, iv%info(tamdar_sfc)%id(n), &  ! Station
+                 iv%info(tamdar_sfc)%lat(1,n), &       ! Latitude
+                 iv%info(tamdar_sfc)%lon(1,n)          ! Longitude
+         write(ounit,'(E22.13,5(E22.13,i8,3E22.13))')&
+                 iv%tamdar_sfc(n)%h, &
+                 iv%tamdar_sfc(n)%u, &!  O-B u
+                 iv%tamdar_sfc(n)%v, &!  O-B v
+                 iv%tamdar_sfc(n)%t, &!  O-B t
+                 iv%tamdar_sfc(n)%p, &!  O-B p
+                 iv%tamdar_sfc(n)%q  !  O-B q
+      end do
+      close (ounit)
+   end if
+
+   ! [9] buoy obs:
 
    if (iv%info(buoy)%plocal(iv%time) - iv%info(buoy)%plocal(iv%time-1) > 0) then
 
@@ -205,7 +302,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [7] Geo AMVs obs:
+   ! [10] Geo AMVs obs:
 
    if (iv%info(geoamv)%plocal(iv%time) - iv%info(geoamv)%plocal(iv%time-1) > 0) then
 
@@ -234,7 +331,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [8] gpspw obs:
+   ! [11] gpspw obs:
 
    if (iv%info(gpspw)%plocal(iv%time) - iv%info(gpspw)%plocal(iv%time-1) > 0) then
 
@@ -259,7 +356,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [9] SSM/I obs:
+   ! [12] SSM/I obs:
 
    if (iv%info(ssmi_rv)%plocal(iv%time) - iv%info(ssmi_rv)%plocal(iv%time-1) > 0) then
 
@@ -285,7 +382,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [10] airep obs:
+   ! [13] airep obs:
 
    if (iv%info(airep)%plocal(iv%time) - iv%info(airep)%plocal(iv%time-1) > 0) then
 
@@ -316,7 +413,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [11] Polar AMVs obs:
+   ! [14] Polar AMVs obs:
 
    if (iv%info(polaramv)%plocal(iv%time) - iv%info(polaramv)%plocal(iv%time-1) > 0) then
 
@@ -345,7 +442,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [12] pilot obs:
+   ! [15] pilot obs:
 
    if (iv%info(pilot)%plocal(iv%time) - iv%info(pilot)%plocal(iv%time-1) > 0) then
 
@@ -374,7 +471,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [13] ssmi_tb obs:
+   ! [16] ssmi_tb obs:
 
    if (iv%info(ssmi_tb)%plocal(iv%time) - iv%info(ssmi_tb)%plocal(iv%time-1) > 0) then
 
@@ -405,7 +502,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [14] satem obs:
+   ! [17] satem obs:
 
    if (iv%info(satem)%plocal(iv%time) - iv%info(satem)%plocal(iv%time-1) > 0) then
 
@@ -433,7 +530,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [15] ssmt1 obs:
+   ! [18] ssmt1 obs:
 
    if (iv%info(ssmt1)%plocal(iv%time) - iv%info(ssmt1)%plocal(iv%time-1) > 0) then
 
@@ -461,7 +558,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [16] ssmt2 obs:
+   ! [19] ssmt2 obs:
 
    if (iv%info(ssmt2)%plocal(iv%time) - iv%info(ssmt2)%plocal(iv%time-1) > 0) then
 
@@ -489,7 +586,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [17] scatterometer obs:
+   ! [20] scatterometer obs:
 
    if (iv%info(qscat)%plocal(iv%time) - iv%info(qscat)%plocal(iv%time-1) > 0) then
 
@@ -516,7 +613,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [18] profiler obs:
+   ! [21] profiler obs:
 
    if (iv%info(profiler)%plocal(iv%time) - iv%info(profiler)%plocal(iv%time-1) > 0) then
 
@@ -545,7 +642,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [19] TC bogus obs:
+   ! [22] TC bogus obs:
 
    if (iv%info(bogus)%plocal(iv%time) - iv%info(bogus)%plocal(iv%time-1) > 0) then
 
@@ -579,7 +676,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [20] AIRS retrievals:
+   ! [23] AIRS retrievals:
 
    if (iv%info(airsr)%plocal(iv%time) - iv%info(airsr)%plocal(iv%time-1) > 0) then
 
@@ -608,7 +705,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [21] gpsref obs:
+   ! [24] gpsref obs:
 
    if (iv%info(gpsref)%plocal(iv%time) - iv%info(gpsref)%plocal(iv%time-1) > 0) then
 
@@ -636,7 +733,7 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
       close (ounit)
    end if
 
-   ! [22] radar obs:
+   ! [25] radar obs:
 
    if (iv%info(radar)%plocal(iv%time) - iv%info(radar)%plocal(iv%time-1) > 0) then
 

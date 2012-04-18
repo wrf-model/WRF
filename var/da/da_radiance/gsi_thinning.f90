@@ -504,7 +504,7 @@ contains
     itt=thinning_grid(n,ifgat)%istart_val(ithin)+itx
     if(ithin == 0) itt=0
     iuse=.true.
-    if(dist1*crit1 > thinning_grid(n,ifgat)%score_crit(itx) .and. thinning_grid(n,ifgat)%icount(itx) == 0)iuse=.false.
+    if(dist1*crit1 > thinning_grid(n,ifgat)%score_crit(itx) .or. thinning_grid(n,ifgat)%icount(itx) == 0)iuse=.false.
 
     !write(6,'(a,3f10.3)') 'dlat_earth dlon_earth crit1 ',dlat_earth*rad2deg,dlon_earth*rad2deg,crit1
     !write(6,'(a,2i5,3f10.3,i10,e12.5,2x,L)') 'ix iy',ix,iy,dx,dy,dist1,itx,score_crit(itx),iuse

@@ -1502,7 +1502,7 @@
             radius_core(i,k,j,isize) =0.0
             swrefindx_core(i,k,j,isize,ns) = ref_index_bc
             swrefindx_shell(i,k,j,isize,ns) = ref_index_oin
-          elseif(vol_shell .lt. 1.0e-20) then
+          elseif(num_a .lt. 1.e-20 .or. vol_shell .lt. 1.0e-20) then
             swrefindx(i,k,j,isize,ns)    = (1.5,0.0)
             radius_wet(i,k,j,isize) =dlo_um*1.0e-4/2.0
             number_bin(i,k,j,isize) =num_a
@@ -1566,7 +1566,7 @@
             radius_core(i,k,j,isize) =0.0
             lwrefindx_core(i,k,j,isize,ns) = ref_index_bc
             lwrefindx_shell(i,k,j,isize,ns) = ref_index_oin
-          elseif(vol_shell .lt. 1.0e-20) then
+          elseif(num_a .lt. 1.e-20 .or. vol_shell .lt. 1.0e-20) then
             lwrefindx(i,k,j,isize,ns)    = (1.5,0.0)
             radius_wet(i,k,j,isize) =dlo_um*1.0e-4/2.0
             number_bin(i,k,j,isize) =num_a
@@ -2145,7 +2145,7 @@
             radius_core(i,k,j,isize) =0.0
             swrefindx_core(i,k,j,isize,ns) = ref_index_bc
             swrefindx_shell(i,k,j,isize,ns) = ref_index_oin
-          elseif(vol_shell .lt. 1.0e-20) then
+          elseif(num_a .lt. 1.e-20 .or. vol_shell .lt. 1.0e-20) then
             swrefindx(i,k,j,isize,ns)    = (1.5,0.0)
             radius_wet(i,k,j,isize) =dlo_um*1.0e-4/2.0
             number_bin(i,k,j,isize) =num_a
@@ -2208,7 +2208,7 @@
             radius_core(i,k,j,isize) =0.0
             lwrefindx_core(i,k,j,isize,ns) = ref_index_bc
             lwrefindx_shell(i,k,j,isize,ns) = ref_index_oin
-          elseif(vol_shell .lt. 1.0e-20) then
+          elseif(num_a .lt. 1.e-20 .or. vol_shell .lt. 1.0e-20) then
             lwrefindx(i,k,j,isize,ns)    = (1.5,0.0)
             radius_wet(i,k,j,isize) =dlo_um*1.0e-4/2.0
             number_bin(i,k,j,isize) =num_a

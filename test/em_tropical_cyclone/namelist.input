@@ -53,12 +53,7 @@
  bldt                                = 0,
  cu_physics                          = 0,
  cudt                                = 0,
- isfflx                              = 1,
- ifsnow                              = 0,
- icloud                              = 1,
  num_soil_layers                     = 5,
- mp_zero_out                         = 2,
- mp_zero_out_thresh                  = 1.0e-12,
  isftcflx                            = 1,
  /
 

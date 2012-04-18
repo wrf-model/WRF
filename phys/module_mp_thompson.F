@@ -27,7 +27,7 @@
 !.. Remaining values should probably be left alone.
 !..
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
-!..Last modified: 26 Aug 2011
+!..Last modified: 20 Mar 2012
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
 !+---+-----------------------------------------------------------------+
@@ -35,6 +35,7 @@
       MODULE module_mp_thompson
 
       USE module_wrf_error
+!     USE module_mp_radar
 !     USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
 !     USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep
 
@@ -48,7 +49,7 @@
 !..Densities of rain, snow, graupel, and cloud ice.
       REAL, PARAMETER, PRIVATE:: rho_w = 1000.0
       REAL, PARAMETER, PRIVATE:: rho_s = 100.0
-      REAL, PARAMETER, PRIVATE:: rho_g = 400.0
+      REAL, PARAMETER, PRIVATE:: rho_g = 500.0
       REAL, PARAMETER, PRIVATE:: rho_i = 890.0
 
 !..Prescribed number of cloud droplets.  Set according to known data or
@@ -80,8 +81,8 @@
 !.. mixing ratio.  Also, when mu_g is non-zero, these become equiv
 !.. y-intercept for an exponential distrib and proper values are
 !.. computed based on same mixing ratio and total number concentration.
-      REAL, PARAMETER, PRIVATE:: gonv_min = 1.E4
-      REAL, PARAMETER, PRIVATE:: gonv_max = 3.E6
+      REAL, PARAMETER, PRIVATE:: gonv_min = 2.E4
+      REAL, PARAMETER, PRIVATE:: gonv_max = 2.E6
 
 !..Mass power law relations:  mass = am*D**bm
 !.. Snow from Field et al. (2005), others assume spherical form.
@@ -102,7 +103,7 @@
       REAL, PARAMETER, PRIVATE:: fv_r = 195.0
       REAL, PARAMETER, PRIVATE:: av_s = 40.0
       REAL, PARAMETER, PRIVATE:: bv_s = 0.55
-      REAL, PARAMETER, PRIVATE:: fv_s = 125.0
+      REAL, PARAMETER, PRIVATE:: fv_s = 100.0
       REAL, PARAMETER, PRIVATE:: av_g = 442.0
       REAL, PARAMETER, PRIVATE:: bv_g = 0.89
       REAL, PARAMETER, PRIVATE:: av_i = 1847.5
@@ -126,7 +127,7 @@
 !.. problems with Paul Field's moments and should not be set larger
 !.. because of truncation problems in snow/ice growth.
       REAL, PARAMETER, PRIVATE:: R1 = 1.E-12
-      REAL, PARAMETER, PRIVATE:: R2 = 1.E-8
+      REAL, PARAMETER, PRIVATE:: R2 = 1.E-6
       REAL, PARAMETER, PRIVATE:: eps = 1.E-15
 
 !..Constants in Cooper curve relation for cloud ice number.
@@ -687,6 +688,15 @@
 !     call table_dropEvap
 
 !..Initialize various constants for computing radar reflectivity.
+!     xam_r = am_r
+!     xbm_r = bm_r
+!     xmu_r = mu_r
+!     xam_s = am_s
+!     xbm_s = bm_s
+!     xmu_s = mu_s
+!     xam_g = am_g
+!     xbm_g = bm_g
+!     xmu_g = mu_g
 !     call radar_init
 
       if (.not. iiwarm) then
@@ -723,8 +733,10 @@
                               th, pii, p, dz, dt_in, itimestep, &
                               RAINNC, RAINNCV, &
                               SNOWNC, SNOWNCV, &
-                              GRAUPELNC, GRAUPELNCV, &
-                              SR, rainprod, evapprod, &
+                              GRAUPELNC, GRAUPELNCV, SR, &
+#ifdef WRF_CHEM
+                              rainprod, evapprod, &
+#endif
 !                             refl_10cm, grid_clock, grid_alarms, &
                               ids,ide, jds,jde, kds,kde, &             ! domain dims
                               ims,ime, jms,jme, kms,kme, &             ! memory dims
@@ -738,8 +750,10 @@
                             its,ite, jts,jte, kts,kte
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           qv, qc, qr, qi, qs, qg, ni, nr, th
-      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT),optional:: &
+#ifdef WRF_CHEM
+      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           rainprod, evapprod
+#endif
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN):: &
                           pii, p, dz
       REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT):: &
@@ -757,8 +771,11 @@
 !..Local variables
       REAL, DIMENSION(kts:kte):: &
                           qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
-                          nr1d, t1d, p1d, dz1d, dBZ, &
+                          nr1d, t1d, p1d, dz1d, dBZ
+#ifdef WRF_CHEM
+      REAL, DIMENSION(kts:kte):: &
                           rainprod1d, evapprod1d
+#endif
       REAL, DIMENSION(its:ite, jts:jte):: pcp_ra, pcp_sn, pcp_gr, pcp_ic
       REAL:: dt, pptrain, pptsnow, pptgraul, pptice
       REAL:: qc_max, qr_max, qs_max, qi_max, qg_max, ni_max, nr_max
@@ -782,13 +799,13 @@
       j_end   = jte
 
 !..For idealized testing by developer.
-      if ( (ide-ids+1).gt.4 .and. (jde-jds+1).lt.4 .and.                &
-           ids.eq.its.and.ide.eq.ite.and.jds.eq.jts.and.jde.eq.jte) then
-         i_start = its + 2
-         i_end   = ite - 1
-         j_start = jts
-         j_end   = jte
-      endif
+!     if ( (ide-ids+1).gt.4 .and. (jde-jds+1).lt.4 .and.                &
+!          ids.eq.its.and.ide.eq.ite.and.jds.eq.jts.and.jde.eq.jte) then
+!        i_start = its + 2
+!        i_end   = ite
+!        j_start = jts
+!        j_end   = jte
+!     endif
 
       dt = dt_in
    
@@ -857,7 +874,9 @@
          call mp_thompson(qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
                       nr1d, t1d, p1d, dz1d, &
                       pptrain, pptsnow, pptgraul, pptice, &
+#ifdef WRF_CHEM
                       rainprod1d, evapprod1d, &
+#endif
                       kts, kte, dt, i, j)
 
          pcp_ra(i,j) = pptrain
@@ -885,8 +904,10 @@
             qg(i,k,j) = qg1d(k)
             ni(i,k,j) = ni1d(k)
             nr(i,k,j) = nr1d(k)
-            if(present(rainprod)) rainprod(i,k,j) = rainprod1d(k)
-            if(present(evapprod)) evapprod(i,k,j) = evapprod1d(k)
+#ifdef WRF_CHEM
+            rainprod(i,k,j) = rainprod1d(k)
+            evapprod(i,k,j) = evapprod1d(k)
+#endif
             th(i,k,j) = t1d(k)/pii(i,k,j)
             if (qc1d(k) .gt. qc_max) then
              imax_qc = i
@@ -1013,7 +1034,9 @@
       subroutine mp_thompson (qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
                           nr1d, t1d, p1d, dzq, &
                           pptrain, pptsnow, pptgraul, pptice, &
+#ifdef WRF_CHEM
                           rainprod, evapprod, &
+#endif
                           kts, kte, dt, ii, jj)
 
       implicit none
@@ -1022,7 +1045,11 @@
       INTEGER, INTENT(IN):: kts, kte, ii, jj
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: &
                           qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
-                          nr1d, t1d, p1d, rainprod, evapprod
+                          nr1d, t1d, p1d
+#ifdef WRF_CHEM
+      REAL, DIMENSION(kts:kte), INTENT(INOUT):: &
+                          rainprod, evapprod
+#endif
       REAL, DIMENSION(kts:kte), INTENT(IN):: dzq
       REAL, INTENT(INOUT):: pptrain, pptsnow, pptgraul, pptice
       REAL, INTENT(IN):: dt
@@ -1053,6 +1080,8 @@
       DOUBLE PRECISION, DIMENSION(kts:kte):: prg_scw, prg_rfz, prg_gde, &
            prg_gcw, prg_rci, prg_rcs, &
            prg_rcg, prg_ihm
+
+      DOUBLE PRECISION, PARAMETER:: zeroD0 = 0.0d0
 
       REAL, DIMENSION(kts:kte):: temp, pres, qv
       REAL, DIMENSION(kts:kte):: rc, ri, rr, rs, rg, ni, nr
@@ -1188,9 +1217,13 @@
          prg_rcs(k) = 0.
          prg_rcg(k) = 0.
          prg_ihm(k) = 0.
+      enddo
+#ifdef WRF_CHEM
+      do k = kts, kte
          rainprod(k) = 0.
          evapprod(k) = 0.
       enddo
+#endif
 
 !+---+-----------------------------------------------------------------+
 !..Put column of data into local arrays.
@@ -1219,7 +1252,7 @@
             xDi = (bm_i + mu_i + 1.) * ilami
             if (xDi.lt. 20.E-6) then
              lami = cie(2)/20.E-6
-             ni(k) = MIN(500.D3, cig(1)*oig2*ri(k)/am_i*lami**bm_i)
+             ni(k) = MIN(250.D3, cig(1)*oig2*ri(k)/am_i*lami**bm_i)
             elseif (xDi.gt. 300.E-6) then
              lami = cie(2)/300.E-6
              ni(k) = cig(1)*oig2*ri(k)/am_i*lami**bm_i
@@ -1237,26 +1270,16 @@
             rr(k) = qr1d(k)*rho(k)
             nr(k) = MAX(R2, nr1d(k)*rho(k))
             L_qr(k) = .true.
-            if (nr(k) .gt. R2) then
-             lamr = (am_r*crg(3)*org2*nr(k)/rr(k))**obmr
-             mvd_r(k) = (3.0 + mu_r + 0.672) / lamr
-             if (mvd_r(k) .gt. 2.5E-3) then
-                mvd_r(k) = 2.5E-3
-                lamr = (3.0 + mu_r + 0.672) / mvd_r(k)
-                nr(k) = crg(2)*org3*rr(k)*lamr**bm_r / am_r
-             elseif (mvd_r(k) .lt. D0r*0.75) then
-                mvd_r(k) = D0r*0.75
-                lamr = (3.0 + mu_r + 0.672) / mvd_r(k)
-                nr(k) = crg(2)*org3*rr(k)*lamr**bm_r / am_r
-             endif
-            else
-             if (qr1d(k) .gt. R2) then
-                mvd_r(k) = 1.0E-3
-             else
-                mvd_r(k) = 2.5E-3 / 3.0**(ALOG10(R2)-ALOG10(qr1d(k)))
-             endif
-             lamr = (3.0 + mu_r + 0.672) / mvd_r(k)
-             nr(k) = crg(2)*org3*rr(k)*lamr**bm_r / am_r
+            lamr = (am_r*crg(3)*org2*nr(k)/rr(k))**obmr
+            mvd_r(k) = (3.0 + mu_r + 0.672) / lamr
+            if (mvd_r(k) .gt. 2.5E-3) then
+               mvd_r(k) = 2.5E-3
+               lamr = (3.0 + mu_r + 0.672) / mvd_r(k)
+               nr(k) = crg(2)*org3*rr(k)*lamr**bm_r / am_r
+            elseif (mvd_r(k) .lt. D0r*0.75) then
+               mvd_r(k) = D0r*0.75
+               lamr = (3.0 + mu_r + 0.672) / mvd_r(k)
+               nr(k) = crg(2)*org3*rr(k)*lamr**bm_r / am_r
             endif
          else
             qr1d(k) = 0.0
@@ -1421,13 +1444,13 @@
 !+---+-----------------------------------------------------------------+
       N0_min = gonv_max
       do k = kte, kts, -1
-         if (temp(k).lt.T_0 .and. (rc(k)+rr(k)).gt.1.E-5) then
-            xslw1 = 5. + alog10(max(1.E-5, min(1.E-2, (rc(k)+rr(k)))))
+         if (temp(k).lt.270.65 .and. L_qr(k) .and. mvd_r(k).gt.100.E-6) then
+            xslw1 = 4.01 + alog10(mvd_r(k))
          else
-            xslw1 = 0.0001
+            xslw1 = 0.01
          endif
-         ygra1 = 4.302 + alog10(max(5.E-5, min(5.E-2, rg(k))))
-         zans1 = 3.565 + (90./(50.*xslw1*ygra1/(5./xslw1+1.+0.25*ygra1)+30.+15.*ygra1))
+         ygra1 = 4.31 + alog10(max(5.E-5, rg(k)))
+         zans1 = 3.0 + (100./(300.*xslw1*ygra1/(10./xslw1+1.+0.25*ygra1)+30.+5.*ygra1))
          N0_exp = 10.**(zans1)
          N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
          N0_min = MIN(N0_exp, N0_min)
@@ -1472,7 +1495,7 @@
           if (mvd_r(k) .gt. 1750.0E-6) then
              Ef_rr = 2.0 - EXP(2300.0*(mvd_r(k)-1750.0E-6))
           endif
-          pnr_rcr(k) = Ef_rr * 8.*nr(k)*rr(k)
+          pnr_rcr(k) = Ef_rr * 4.*nr(k)*rr(k)
          endif
 
          mvd_c(k) = D0c
@@ -1494,7 +1517,7 @@
           tau  = 3.72/(rc(k)*taud)
           prr_wau(k) = zeta/tau
           prr_wau(k) = MIN(DBLE(rc(k)*odts), prr_wau(k))
-          pnr_wau(k) = prr_wau(k) / (am_r*mu_c/3.*D0r*D0r*D0r/rho(k))       ! RAIN2M
+          pnr_wau(k) = prr_wau(k) / (am_r*mu_c*D0r*D0r*D0r)              ! RAIN2M
          endif
 
 !..Rain collecting cloud water.  In CE, assume Dc<<Dr and vtc=~0.
@@ -1916,7 +1939,7 @@
            prr_sml(k) = prr_sml(k) + 4218.*olfus*tempc &
                                    * (prr_rcs(k)+prs_scw(k))
            prr_sml(k) = MIN(DBLE(rs(k)*odts), prr_sml(k))
-           pnr_sml(k) = smo0(k)/rs(k)*prr_sml(k) * 10.0**(-0.50*tempc)      ! RAIN2M
+           pnr_sml(k) = smo0(k)/rs(k)*prr_sml(k) * 10.0**(-0.75*tempc)      ! RAIN2M
            pnr_sml(k) = MIN(DBLE(smo0(k)*odts), pnr_sml(k))
            if (tempc.gt.3.5 .or. rs(k).lt.0.005E-3) pnr_sml(k)=0.0
 
@@ -1932,11 +1955,11 @@
            prr_gml(k) = tempc*N0_g(k)*tcond(k) &
                     *(t1_qg_me*ilamg(k)**cge(10) &
                     + t2_qg_me*rhof2(k)*vsc2(k)*ilamg(k)**cge(11))
-           prr_gml(k) = prr_gml(k) + 4218.*olfus*tempc &
-                                   * (prr_rcg(k)+prg_gcw(k))
+!-GT       prr_gml(k) = prr_gml(k) + 4218.*olfus*tempc &
+!-GT                               * (prr_rcg(k)+prg_gcw(k))
            prr_gml(k) = MIN(DBLE(rg(k)*odts), prr_gml(k))
            pnr_gml(k) = (N0_g(k) / (cgg(1)*am_g*N0_g(k)/rg(k))**oge1)   &   ! RAIN2M
-                      / rg(k) * prr_gml(k) * 10.0**(-0.35*tempc)
+                      / rg(k) * prr_gml(k) * 10.0**(-1.25*tempc)
            if (rg(k).lt.0.005E-3) pnr_gml(k)=0.0
 
            if (ssati(k).lt. 0.) then
@@ -2094,7 +2117,7 @@
                       * orho
 
 !..Cloud ice mass/number balance; keep mass-wt mean size between
-!.. 20 and 300 microns.  Also no more than 500 xtals per liter.
+!.. 20 and 300 microns.  Also no more than 250 xtals per liter.
          xri=MAX(R1,(qi1d(k) + qiten(k)*dtsave)*rho(k))
          xni=MAX(R2,(ni1d(k) + niten(k)*dtsave)*rho(k))
          if (xri.gt. R1) then
@@ -2103,7 +2126,7 @@
            xDi = (bm_i + mu_i + 1.) * ilami
            if (xDi.lt. 20.E-6) then
             lami = cie(2)/20.E-6
-            xni = MIN(500.D3, cig(1)*oig2*xri/am_i*lami**bm_i)
+            xni = MIN(250.D3, cig(1)*oig2*xri/am_i*lami**bm_i)
             niten(k) = (xni-ni1d(k)*rho(k))*odts*orho
            elseif (xDi.gt. 300.E-6) then
             lami = cie(2)/300.E-6
@@ -2114,8 +2137,8 @@
           niten(k) = -ni1d(k)*odts
          endif
          xni=MAX(0.,(ni1d(k) + niten(k)*dtsave)*rho(k))
-         if (xni.gt.500.E3) &
-                niten(k) = (500.E3-ni1d(k)*rho(k))*odts*orho
+         if (xni.gt.250.E3) &
+                niten(k) = (250.E3-ni1d(k)*rho(k))*odts*orho
 
 !..Rain tendency
          qrten(k) = qrten(k) + (prr_wau(k) + prr_rcw(k) &
@@ -2320,13 +2343,13 @@
 !+---+-----------------------------------------------------------------+
       N0_min = gonv_max
       do k = kte, kts, -1
-         if (temp(k).lt.T_0 .and. (rc(k)+rr(k)).gt.1.E-5) then
-            xslw1 = 5. + alog10(max(1.E-5, min(1.E-2, (rc(k)+rr(k)))))
+         if (temp(k).lt.270.65 .and. L_qr(k) .and. mvd_r(k).gt.100.E-6) then
+            xslw1 = 4.01 + alog10(mvd_r(k))
          else
-            xslw1 = 0.0001
+            xslw1 = 0.01
          endif
-         ygra1 = 4.302 + alog10(max(5.E-5, min(5.E-2, rg(k))))
-         zans1 = 3.565 + (90./(50.*xslw1*ygra1/(5./xslw1+1.+0.25*ygra1)+30.+15.*ygra1))
+         ygra1 = 4.31 + alog10(max(5.E-5, rg(k)))
+         zans1 = 3.0 + (100./(300.*xslw1*ygra1/(10./xslw1+1.+0.25*ygra1)+30.+5.*ygra1))
          N0_exp = 10.**(zans1)
          N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
          N0_min = MIN(N0_exp, N0_min)
@@ -2381,12 +2404,6 @@
          endif
       enddo
 
-      do k = kts, kte
-        rainprod(k) = prr_wau(k) + prr_rcw(k) + prs_scw(k) + prg_scw(k) + prs_iau(k) &
-                                 + prg_gcw(k) + prs_sci(k) + prr_rci(k)
-!       rainprod(k) = max( 0.,rainprod(k) )
-!       rainprod(k) = max( 0.,qrten(k)+qsten(k) )
-      enddo
 !+---+-----------------------------------------------------------------+
 !.. If still subsaturated, allow rain to evaporate, following
 !.. Srivastava & Coen (1992).
@@ -2445,8 +2462,17 @@
           temp(k) = t1d(k) + DT*tten(k)
           rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
          endif
-         evapprod(k) = prv_rev(k)
       enddo
+#ifdef WRF_CHEM
+      do k = kts, kte
+         evapprod(k) = prv_rev(k) - (min(zeroD0,prs_sde(k)) + &
+                                     min(zeroD0,prg_gde(k)))
+         rainprod(k) = prr_wau(k) + prr_rcw(k) + prs_scw(k) + &
+                                    prg_scw(k) + prs_iau(k) + &
+                                    prg_gcw(k) + prs_sci(k) + &
+                                    pri_rci(k)
+      enddo
+#endif
 
 !+---+-----------------------------------------------------------------+
 !..Find max terminal fallspeed (distribution mass-weighted mean
@@ -2627,6 +2653,7 @@
                                            *odzq*DT*onstep(1))
          enddo
 
+         if (rr(kts).gt.R1*10.) &
          pptrain = pptrain + sed_r(kts)*DT*onstep(1)
       enddo
 
@@ -2658,6 +2685,7 @@
                                            *odzq*DT*onstep(2))
          enddo
 
+         if (ri(kts).gt.R1*10.) &
          pptice = pptice + sed_i(kts)*DT*onstep(2)
       enddo
 
@@ -2682,6 +2710,7 @@
                                            *odzq*DT*onstep(3))
          enddo
 
+         if (rs(kts).gt.R1*10.) &
          pptsnow = pptsnow + sed_s(kts)*DT*onstep(3)
       enddo
 
@@ -2706,6 +2735,7 @@
                                            *odzq*DT*onstep(4))
          enddo
 
+         if (rg(kts).gt.R1*10.) &
          pptgraul = pptgraul + sed_g(kts)*DT*onstep(4)
       enddo
 
@@ -2743,46 +2773,34 @@
          qc1d(k) = qc1d(k) + qcten(k)*DT
          if (qc1d(k) .le. R1) qc1d(k) = 0.0
          qi1d(k) = qi1d(k) + qiten(k)*DT
-         ni1d(k) = ni1d(k) + niten(k)*DT
+         ni1d(k) = MAX(R2/rho(k), ni1d(k) + niten(k)*DT)
          if (qi1d(k) .le. R1) then
            qi1d(k) = 0.0
            ni1d(k) = 0.0
          else
-           if (ni1d(k) .gt. R2) then
-            lami = (am_i*cig(2)*oig1*ni1d(k)/qi1d(k))**obmi
-            ilami = 1./lami
-            xDi = (bm_i + mu_i + 1.) * ilami
-            if (xDi.lt. 20.E-6) then
-             lami = cie(2)/20.E-6
-            elseif (xDi.gt. 300.E-6) then
-             lami = cie(2)/300.E-6
-            endif
-           else
-            lami = cie(2)/D0s
+           lami = (am_i*cig(2)*oig1*ni1d(k)/qi1d(k))**obmi
+           ilami = 1./lami
+           xDi = (bm_i + mu_i + 1.) * ilami
+           if (xDi.lt. 20.E-6) then
+            lami = cie(2)/20.E-6
+           elseif (xDi.gt. 300.E-6) then
+            lami = cie(2)/300.E-6
            endif
            ni1d(k) = MIN(cig(1)*oig2*qi1d(k)/am_i*lami**bm_i,           &
-                         500.D3/rho(k))
+                         250.D3/rho(k))
          endif
          qr1d(k) = qr1d(k) + qrten(k)*DT
-         nr1d(k) = nr1d(k) + nrten(k)*DT
+         nr1d(k) = MAX(R2/rho(k), nr1d(k) + nrten(k)*DT)
          if (qr1d(k) .le. R1) then
            qr1d(k) = 0.0
            nr1d(k) = 0.0
          else
-           if (nr1d(k) .gt. R2) then
-            lamr = (am_r*crg(3)*org2*nr1d(k)/qr1d(k))**obmr
-            mvd_r(k) = (3.0 + mu_r + 0.672) / lamr
-            if (mvd_r(k) .gt. 2.5E-3) then
-               mvd_r(k) = 2.5E-3
-            elseif (mvd_r(k) .lt. D0r*0.75) then
-               mvd_r(k) = D0r*0.75
-            endif
-           else
-            if (qr1d(k) .gt. R2) then
-               mvd_r(k) = 2.5E-3
-            else
-               mvd_r(k) = 2.5E-3 / 3.0**(ALOG10(R2)-ALOG10(qr1d(k)))
-            endif
+           lamr = (am_r*crg(3)*org2*nr1d(k)/qr1d(k))**obmr
+           mvd_r(k) = (3.0 + mu_r + 0.672) / lamr
+           if (mvd_r(k) .gt. 2.5E-3) then
+              mvd_r(k) = 2.5E-3
+           elseif (mvd_r(k) .lt. D0r*0.75) then
+              mvd_r(k) = D0r*0.75
            endif
            lamr = (3.0 + mu_r + 0.672) / mvd_r(k)
            nr1d(k) = crg(2)*org3*qr1d(k)*lamr**bm_r / am_r
@@ -3032,7 +3050,7 @@
                      dvs = 0.5d0*((vr(n2) - vs(n)) + DABS(vr(n2)-vs(n)))
                      dvr = 0.5d0*((vs(n) - vr(n2)) + DABS(vs(n)-vr(n2)))
 
-                     if (massr .gt. 2.5*masss) then
+                     if (massr .gt. 1.5*masss) then
                      t1 = t1+ PI*.25*Ef_rs*(Ds(n)+Dr(n2))*(Ds(n)+Dr(n2)) &
                          *dvs*masss * N_s(n)* N_r(n2)
                      z1 = z1+ PI*.25*Ef_rs*(Ds(n)+Dr(n2))*(Ds(n)+Dr(n2)) &
@@ -3048,7 +3066,7 @@
                          *dvs       * N_s(n)* N_r(n2)
                      endif
 
-                     if (massr .gt. 2.5*masss) then
+                     if (massr .gt. 1.5*masss) then
                      t2 = t2+ PI*.25*Ef_rs*(Ds(n)+Dr(n2))*(Ds(n)+Dr(n2)) &
                          *dvr*massr * N_s(n)* N_r(n2)
                      y2 = y2+ PI*.25*Ef_rs*(Ds(n)+Dr(n2))*(Ds(n)+Dr(n2)) &
@@ -3606,7 +3624,6 @@
 
       END FUNCTION RSIF
 !+---+-----------------------------------------------------------------+
-
 !+---+-----------------------------------------------------------------+
 END MODULE module_mp_thompson
 !+---+-----------------------------------------------------------------+

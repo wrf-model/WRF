@@ -26,7 +26,7 @@ CONTAINS
               wd_no3,wd_so4,                                        &
               k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow,   &
               ishallow,num_moist,numgas,num_chem,chemopt,scalaropt, &
-              wetscav_onoff,                                        &
+              conv_tr_wetscav,conv_tr_aqchem,                       &
               ids,ide, jds,jde, kds,kde,                            &
               ims,ime, jms,jme, kms,kme,                            &
               its,ite, jts,jte, kts,kte                             )
@@ -41,7 +41,7 @@ CONTAINS
                                   ims,ime, jms,jme, kms,kme,    &
                                   its,ite, jts,jte, kts,kte,    &
                                   ishallow,num_chem,num_moist,  &
-                                  wetscav_onoff
+                                  conv_tr_wetscav,conv_tr_aqchem
 
    INTEGER,      INTENT(IN   ) :: ITIMESTEP
 
@@ -190,7 +190,7 @@ CONTAINS
            tracer,j,AAEQ,T,Q,TER11,PRET,P,tracert,tracert3,    &
            hstary,DT,PSUR,US,VS,tcrit,wetdep_1d,               &
            xlv,r_v,cp,g,ipr,jpr,npr,num_chem,chemopt,scalaropt,&
-           wetscav_onoff,                                      &
+           conv_tr_wetscav,conv_tr_aqchem,                     &
            ishallow,numgas,ids,ide, jds,jde, kds,kde,          &
            ims,ime, jms,jme, kms,kme,                          &
            its,ite, jts,jte, kts,kte                           )
@@ -271,7 +271,7 @@ CONTAINS
    SUBROUTINE CUP_ct(ktop,k23,kbcon3,ktop3,xmb3,tracer,J,AAEQ,T,Q,Z1,  &
               PRE,P,tracert,tracert3,hstary,DTIME,PSUR,US,VS,TCRIT,    &
               wetdep,xl,rv,cp,g,ipr,jpr,npr,num_chem,chemopt,scalaropt,&
-              wetscav_onoff,                                           &
+              conv_tr_wetscav,conv_tr_aqchem,                          &
               ishallow,numgas,ids,ide, jds,jde, kds,kde,               &
               ims,ime, jms,jme, kms,kme,                               &
               its,ite, jts,jte, kts,kte                                )
@@ -281,7 +281,8 @@ CONTAINS
      integer                                                           &
         ,intent (in   )                   ::                           &
         num_chem,ids,ide, jds,jde, kds,kde,                            &
-        ims,ime, jms,jme, kms,kme,scalaropt,wetscav_onoff,ishallow,    &
+        ims,ime, jms,jme, kms,kme,scalaropt,conv_tr_wetscav,           &
+        conv_tr_aqchem,ishallow,                                       &
         its,ite, jts,jte, kts,kte,ipr,jpr,npr,chemopt,numgas
      integer, intent (in   )              ::                           &
         j
@@ -725,7 +726,7 @@ CONTAINS
 !
       call cup_dd_moisture(zd,hcd,hes_cup,qcd,qes_cup, &
            pwd,q_cup,z_cup,cdd,mentrd_rate,jmin,ierr,gamma_cup, &
-           pwev,bu,qrcd,q,he,t_cup,2,xl, &
+           pwev,bu,qrcd,q,he,t_cup,1,xl, &
            ids,ide, jds,jde, kds,kde, &
            ims,ime, jms,jme, kms,kme, &
            its,ite, jts,jte, kts,kte)
@@ -786,7 +787,7 @@ CONTAINS
 !      if(j.eq.jpr)print *,'calling up_tracer'
        call cup_up_tracer(ierr,tcrit,t,pre,z_cup,p,tracer,tre_cup,tr_up,tr_pw, &
                    tr_c,hstary,pw,clw_all,kbcon,ktop,cd,mentr_rate,zu,k22,&
-                   numgas,chemopt,scalaropt,wetscav_onoff, &
+                   numgas,chemopt,scalaropt,conv_tr_wetscav,conv_tr_aqchem, &
                    ids,ide, jds,jde, kds,kde, &
                    ims,ime, jms,jme, kms,kme, &
                    its,ite, jts,jte, kts,kte, &
@@ -802,7 +803,7 @@ CONTAINS
            its,ite, jts,jte, kts,kte)
        call cup_up_tracer(ierr5,tcrit,t,pre,z_cup,p,tracer,tre_cup,tr3_up,tr3_pw, &
                    tr3_c,hstary,pw3,clw_all3,kbcon3,ktop3,cd3,mentr_rate3,zu3,k23,&
-                   numgas,chemopt,scalaropt,wetscav_onoff, &
+                   numgas,chemopt,scalaropt,conv_tr_wetscav,conv_tr_aqchem, &
                    ids,ide, jds,jde, kds,kde, &
                    ims,ime, jms,jme, kms,kme, &
                    its,ite, jts,jte, kts,kte, &
@@ -1166,11 +1167,14 @@ END subroutine cup_env_clev_tr
 
    SUBROUTINE  cup_up_tracer(ierr,tcrit,t,pre,z_cup,p,tracer,tre_cup,tr_up, &
                 tr_pw,tr_c,hstary,cupclw,clw_all,kbcon,ktop,cd,mentr_rate,zu,k22,  &
-                          numgas,chemopt,scalaropt,wetscav_onoff,ids,ide, jds,jde, kds,kde, &
+                          numgas,chemopt,scalaropt,conv_tr_wetscav,conv_tr_aqchem, &
+                          ids,ide, jds,jde, kds,kde, &
                           ims,ime, jms,jme, kms,kme, &
                           its,ite, jts,jte, kts,kte,ipr,jpr,j,npr,num_chem,name)
 ! USE module_configure
-  USE module_state_description, only: RADM2SORG_AQCHEM,RACMSORG_AQCHEM,GOCART_SIMPLE
+  USE module_state_description, only: RADM2SORG,RADM2SORG_AQ,RACMSORG_AQ,RACMSORG_KPP,   &
+                                      RADM2SORG_KPP,RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP,  &
+                                      RADM2SORG_AQCHEM,RACMSORG_AQCHEM
   USE module_ctrans_aqchem
   USE module_input_chem_data, only: get_last_gas
         implicit none
@@ -1244,8 +1248,8 @@ END subroutine cup_env_clev_tr
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-                         numgas,ids,ide, jds,jde, kds,kde,scalaropt,   &
-                         wetscav_onoff,                                &
+                         ids,ide, jds,jde, kds,kde,scalaropt,   &
+                         numgas, conv_tr_wetscav,conv_tr_aqchem,        &
                          num_chem,ims,ime, jms,jme, kms,kme,chemopt,   &
                          its,ite, jts,jte, kts,kte,ipr,jpr,j,npr
      real,    dimension (its:ite,kts:kte)                              &
@@ -1292,9 +1296,6 @@ END subroutine cup_env_clev_tr
      ! Gas/aqueous phase partitioning for wet scavenging/deposition of gas
      ! phase and aerosol species:
      real aq_gas_ratio
-     
-     ! Array index of the last gas species:
-     integer last_gas
      
      ! I/O for AQCHEM:
      
@@ -1372,9 +1373,9 @@ END subroutine cup_env_clev_tr
       ! Aqueous chemistry
       !
       
-      if ((chemopt .EQ. RADM2SORG_AQCHEM) .OR. &
-          (chemopt .EQ. RACMSORG_AQCHEM) &
-          ) then
+      if ((chemopt .EQ. RADM2SORG .OR. chemopt .EQ. RADM2SORG_AQ .OR. chemopt .EQ. RACMSORG_AQ .OR. chemopt .EQ. RACMSORG_KPP .OR. chemopt .EQ. RADM2SORG_KPP .OR. & 
+           chemopt .EQ. RACM_ESRLSORG_KPP .OR. chemopt .EQ. RACM_SOA_VBS_KPP .OR. chemopt .EQ. RADM2SORG_AQCHEM .OR. chemopt .EQ. RACMSORG_AQCHEM)                 &
+           .and. (conv_tr_aqchem == 1)) then
         
         !
         ! For MADE/SORGAM derived schemes with aqueous chemistry
@@ -1479,15 +1480,11 @@ END subroutine cup_env_clev_tr
 
       endif
       
-      if (wetscav_onoff == 1) then
+! wet scavenging option (turn off by setting
+!
+      if (conv_tr_wetscav == 1) then
         
-        ! Determine the array index of the first non-gas species:
-        last_gas = get_last_gas(chemopt)
         
-        if ((chemopt .EQ. RADM2SORG_AQCHEM) .OR. &
-            (chemopt .EQ. RACMSORG_AQCHEM) &
-            ) then
-          
           do nv=2,num_chem
             
             aq_gas_ratio = 0.0
@@ -1498,39 +1495,16 @@ END subroutine cup_env_clev_tr
             if (nv.eq.p_sulf) aq_gas_ratio = 1.0
             if (nv.eq.p_nh3)  aq_gas_ratio = 1.0
             if (nv.eq.p_hno3) aq_gas_ratio = 1.0
-            
-            ! Assume that all non-gas species (aerosol mass and number)
-            ! partion completely into the liquid phase:
-            
-            if (nv.gt.last_gas) aq_gas_ratio = 1.0
-            
-            if (aq_gas_ratio > 0.0) then
-              tr_c(i,k,nv)  = aq_gas_ratio*tr_up(i,k,nv) ! Amount of species cloud + rain water
-              trch          = tr_up(i,k,nv)-tr_c(i,k,nv) ! Amount of species remaining in gas phase
-              trcc          = (tr_up(i,k,nv)-trch)/(1.+c0*dz*zu(i,k)) ! Amount of species cloud + rain water
-              tr_pw(i,k,nv) = c0*dz*trcc*zu(i,k) ! Amount of species in rain water
-              tr_up(i,k,nv) = trcc+trch ! Total amount of species in updraft = conc in liq water (trcc) + conc in gas phase (trch)
-            endif
-            
-          enddo
-        
-        endif
-        
-        if (chemopt.ge.GOCART_SIMPLE) then
-          
-          ! GOCART: assume a gas/liquid phase partitioning ratio of 0.6 for
-          ! total sulfate (p_sulf) and all aerosol species:
-          
-          do nv=2,num_chem
-            
-            aq_gas_ratio = 0.0
-            
             if (nv.gt.numgas) aq_gas_ratio = 0.5
             if (nv.eq.p_bc1 .or. nv.eq.p_oc1 .or. nv.eq.p_dms) aq_gas_ratio=0.
             if (nv.eq.p_sulf .or. nv.eq.p_seas_1 .or. nv.eq.p_seas_2) aq_gas_ratio=1.
             if (nv.eq.p_seas_3 .or. nv.eq.p_seas_4) aq_gas_ratio=1.
             if (nv.eq.p_bc2 .or. nv.eq.p_oc2) aq_gas_ratio=0.8
-
+            
+            ! Assume that all non-gas species (aerosol mass and number)
+            ! partion completely into the liquid phase:
+            
+            
             if (aq_gas_ratio > 0.0) then
               tr_c(i,k,nv)  = aq_gas_ratio*tr_up(i,k,nv) ! Amount of species cloud + rain water
               trch          = tr_up(i,k,nv)-tr_c(i,k,nv) ! Amount of species remaining in gas phase
@@ -1540,10 +1514,9 @@ END subroutine cup_env_clev_tr
             endif
             
           enddo
-          
-        endif
-      
-      endif
+        
+     endif ! parameterization wetscavenging option
+        
       
 100   CONTINUE
 

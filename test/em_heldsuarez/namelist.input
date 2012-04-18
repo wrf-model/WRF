@@ -61,11 +61,7 @@
  bldt                                = 0,     0,     0,
  cu_physics                          = 0,     0,     0,
  cudt                                = 5,     5,     5,
- isfflx                              = 1,
- ifsnow                              = 0,
- icloud                              = 1,
  num_soil_layers                     = 5,
- mp_zero_out                         = 0,
  /
 
  &fdda

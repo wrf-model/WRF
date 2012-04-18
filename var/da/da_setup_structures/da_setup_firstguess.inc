@@ -138,7 +138,8 @@ subroutine da_setup_firstguess(xbx, grid, config_flags)
 
    ! [2.1] Set up fast Fourier & Legendre transform constants:
 
-   call da_setup_runconstants(grid, xbx)
+   if (SIZE(xbx%fft_factors_x) /=num_fft_factors) &
+      call da_setup_runconstants(grid, xbx)
 
    if (trace_use) call da_trace_exit("da_setup_firstguess")
 

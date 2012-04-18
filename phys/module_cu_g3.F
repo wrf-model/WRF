@@ -3119,7 +3119,7 @@ CONTAINS
        pcrit,acrit,acritt
 
      integer :: nall2,ixxx,irandom
-     integer,  dimension (8) :: seed
+     integer,  dimension (12) :: seed
 
 
       DATA PCRIT/850.,800.,750.,700.,650.,600.,550.,500.,450.,400.,    &

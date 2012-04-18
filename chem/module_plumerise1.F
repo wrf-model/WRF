@@ -96,7 +96,8 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
 
       if( scale_fire_emiss ) then
         if( config_flags%chem_opt /= MOZCART_KPP .and. &
-            config_flags%chem_opt /= MOZART_KPP ) then
+            config_flags%chem_opt /= MOZART_KPP .and. &
+            config_flags%chem_opt /= MOZART_MOSAIC_4BIN_VBS0_KPP ) then
           call wrf_error_fatal("Fire emission scaling only supported for MOZART_KPP, MOZCART_KPP chem options")
         endif
       endif
@@ -171,6 +172,14 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
                ebu(i,kts,j,p_ebu_mvk)=ebu_in(i,1,j,p_ebu_in_mvk)
             enddo
          enddo
+         if( config_flags%biomass_burn_opt == BIOMASSB_MOZC ) then
+           do j=jts,jte
+             ebu(its:ite,kts,j,p_ebu_pm10) = ebu_in(its:ite,1,j,p_ebu_in_pm10)
+             ebu(its:ite,kts,j,p_ebu_pm25) = ebu_in(its:ite,1,j,p_ebu_in_pm25)
+             ebu(its:ite,kts,j,p_ebu_oc) = ebu_in(its:ite,1,j,p_ebu_in_oc)
+             ebu(its:ite,kts,j,p_ebu_bc) = ebu_in(its:ite,1,j,p_ebu_in_bc)
+           enddo
+         endif
        elseif ( config_flags%biomass_burn_opt == BIOMASSB_GHG ) then
          do j=jts,jte
             do i=its,ite
@@ -268,7 +277,9 @@ is_mozcart : &
               if( (config_flags%chem_opt == MOZCART_KPP .and. &
                    config_flags%biomass_burn_opt == BIOMASSB_MOZC) .or. &
                   (config_flags%chem_opt == MOZART_KPP .and. &
-                   config_flags%biomass_burn_opt == BIOMASSB_MOZ) ) then
+                   config_flags%biomass_burn_opt == BIOMASSB_MOZ) .or. &
+                  (config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP .and. &
+                   config_flags%biomass_burn_opt == BIOMASSB_MOZC) ) then
 !-------------------------------------------------------------------
 ! we input total emissions instead of smoldering emissions:
 ! ratio of smolderling to total
@@ -314,7 +325,8 @@ is_mozcart : &
                   ebu(i,k,j,p_ebu_macr) = ebu(i,k,j,p_ebu_macr)*ratio
                   ebu(i,k,j,p_ebu_mvk)  = ebu(i,k,j,p_ebu_mvk)*ratio
                 end do
-                if( config_flags%chem_opt == MOZCART_KPP ) then
+                if( config_flags%chem_opt == MOZCART_KPP .or. &
+                    config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
                   do k = kts,kte
                     ebu(i,k,j,p_ebu_pm10) = ebu(i,k,j,p_ebu_pm10)*ratio
                     ebu(i,k,j,p_ebu_pm25) = ebu(i,k,j,p_ebu_pm25)*ratio

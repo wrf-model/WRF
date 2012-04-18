@@ -28,6 +28,8 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
    integer       :: i, j, k
    real          :: subarea, whole_area
    real          :: f_flag
+   real, dimension(:,:,:), allocatable :: a_hr_rainc, a_hr_rainnc
+   real, dimension(:,:,:), allocatable :: a_rainc, a_rainnc
 
    character(len=4) :: filnam
 
@@ -80,6 +82,44 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
          call domain_clockprint(150, grid, 'get CurrTime from clock,')
       endif
 
+      if (num_fgat_time > 1 .and. use_rainobs) then
+         ! Buffer to save adjoint var4d_bin_rain rainfall
+         allocate (a_hr_rainc (ims:ime,jms:jme,1:num_fgat_time))
+         allocate (a_hr_rainnc(ims:ime,jms:jme,1:num_fgat_time))
+         a_hr_rainc =0.0
+         a_hr_rainnc=0.0
+         ! Buffer to save adjint accumulated rainfall
+         allocate (a_rainc (ims:ime,jms:jme,1:num_fgat_time))
+         allocate (a_rainnc(ims:ime,jms:jme,1:num_fgat_time))
+         a_rainc =0.0
+         a_rainnc=0.0
+      endif
+ 
+      if (iv%info(rain)%nlocal > 0 .and. num_fgat_time > 1) then
+         do nobwin=1, num_fgat_time
+            iv%time = nobwin
+            iv%info(rain)%n1 = iv%info(rain)%plocal(iv%time-1) + 1
+            iv%info(rain)%n2 = iv%info(rain)%plocal(iv%time)
+            call da_transform_xtoy_rain_adj( grid, iv, y, a_hr_rainc(:,:,nobwin), a_hr_rainnc(:,:,nobwin))
+         end do
+      endif
+
+      ! Adjoint of calculate hourly rainfall
+      if (num_fgat_time > 1 .and. use_rainobs) then
+         do nobwin=1, num_fgat_time
+            if ( .not. fgat_rain_flags(nobwin) ) cycle
+            if (nobwin .lt. num_fgat_time) then
+               a_rainc(:,:,nobwin) = a_rainc(:,:,nobwin) - a_hr_rainc (:,:,nobwin+INT(var4d_bin_rain/var4d_bin))
+               a_rainnc(:,:,nobwin) = a_rainnc(:,:,nobwin) - a_hr_rainnc(:,:,nobwin+INT(var4d_bin_rain/var4d_bin))
+            else
+               a_rainc(:,:,nobwin) = a_rainc(:,:,nobwin) + a_hr_rainc (:,:,nobwin)
+               a_rainnc(:,:,nobwin) = a_rainnc(:,:,nobwin) + a_hr_rainnc(:,:,nobwin)
+               a_hr_rainc (:,:,nobwin) = 0.0
+               a_hr_rainnc(:,:,nobwin) = 0.0
+            endif
+         end do
+      endif
+
       do nobwin=num_fgat_time, 1, -1
 
          call domain_clock_get( grid, current_timestr=timestr )
@@ -93,9 +133,18 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
             iv%instid(:)%info%n2 = iv%instid(:)%info%plocal(iv%time)
          end if
          call da_zero_x(grid%xa)
+         grid%g_rainnc = 0.0
+         grid%g_rainc = 0.0
          call da_transform_xtoy_adj(cv_size, cv, grid, iv, y, grid%xa)
          call da_transform_xtoxa_adj(grid)
          write(unit=filnam,fmt='(a2,i2.2)') 'af',nobwin
+
+         if ( use_rainobs ) then
+            grid%g_rainc(:,:) = grid%g_rainc(:,:) + a_rainc (:,:,nobwin)
+            grid%g_rainnc(:,:) = grid%g_rainnc(:,:) + a_rainnc(:,:,nobwin) 
+            a_rainc (:,:,nobwin) = 0.0
+            a_rainnc(:,:,nobwin) = 0.0
+         endif
 
          call da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
 
@@ -119,11 +168,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
 
       call da_zero_x(grid%x6a)
       if (var4d_lbc) then
-         call domain_clock_get (grid, stop_timestr=timestr)
-         call domain_clock_set( grid, current_timestr=timestr )
-         grid%u_2 = u6_2 ; grid%v_2 = v6_2; grid%t_2 = t6_2;
-         grid%w_2 = w6_2 ; grid%mu_2 = mu6_2 ; grid%ph_2 =ph6_2
-         grid%moist = moist6; grid%p = p6; grid%psfc = psfc6
+         call da_get_2nd_firstguess ( grid )
          call da_transfer_wrftoxb(xbx, grid, config_flags)
 
          call da_transfer_xatowrftl_adj_lbc(grid, config_flags, 'gr01')
@@ -142,7 +187,14 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
       call da_zero_x(grid%xa)
       call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
       call da_transform_vtox_adj(grid, be%cv%size_jb, xbx, be, ep, vp, vv, cv(1:be%cv%size_jb))
-  
+
+      if (num_fgat_time > 1 .and. use_rainobs) then
+         deallocate (a_hr_rainc )
+         deallocate (a_hr_rainnc)
+         deallocate (a_rainc )
+         deallocate (a_rainnc)
+      endif
+
 #endif
    else  ! not var4d
       iv%info(:)%n1 = 1

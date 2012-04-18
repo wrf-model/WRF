@@ -165,7 +165,8 @@ integer::oops1,oops2
 
       !  Send out a quick message about the time steps based on the map scale factors.
 
-      IF ( ( internal_time_loop .EQ. 1 ) .AND. ( grid%id .EQ. 1 ) .AND. ( .NOT. config_flags%map_proj .EQ. PROJ_CASSINI ) ) THEN
+      IF ( ( internal_time_loop .EQ. 1 ) .AND. ( grid%id .EQ. 1 ) .AND. &
+           ( .NOT. config_flags%map_proj .EQ. PROJ_CASSINI ) ) THEN
          max_mf = grid%msft(its,jts)
          DO j=jts,MIN(jde-1,jte)
             DO i=its,MIN(ide-1,ite)
@@ -175,7 +176,8 @@ integer::oops1,oops2
 #if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
          max_mf = wrf_dm_max_real ( max_mf )
 #endif
-         WRITE ( a_message , FMT='(A,F5.2,A)' ) 'Max map factor in domain 1 = ',max_mf,'. Scale the dt in the model accordingly.'
+         WRITE ( a_message , FMT='(A,F5.2,A)' ) 'Max map factor in domain 1 = ',max_mf, &
+                                                '. Scale the dt in the model accordingly.'
          CALL wrf_message ( a_message ) 
       END IF
 
@@ -1365,16 +1367,37 @@ integer::oops1,oops2
 
       IF ( grid%islake < 0 ) THEN
          CALL wrf_debug ( 0 , 'Old data, no inland lake information')
+
+            DO j=jts,MIN(jde-1,jte)
+               DO i=its,MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  IF ( ( ( grid%landusef(i,grid%iswater,j) >= 0.5 ) .OR. ( grid%lu_index(i,j) == grid%iswater ) ) .AND. &
+                       ( ( grid%sst(i,j) .LT. 150 ) .OR. ( grid%sst(i,j) .GT. 400 ) ) ) THEN
+                     IF ( we_have_tavgsfc ) THEN
+                        grid%sst(i,j) = grid%tavgsfc(i,j)
+                     END IF
+                     IF ( ( grid%sst(i,j) .LT. 150 ) .OR. ( grid%sst(i,j) .GT. 400 ) ) THEN
+                        grid%sst(i,j) = grid%tsk(i,j)
+                     END IF
+                     IF ( ( grid%sst(i,j) .LT. 150 ) .OR. ( grid%sst(i,j) .GT. 400 ) ) THEN
+                        grid%sst(i,j) = grid%t2(i,j)
+                     END IF
+                  END IF
+               END DO
+            END DO
       ELSE
          IF ( we_have_tavgsfc ) THEN
 
             CALL wrf_debug ( 0 , 'Using inland lakes with average surface temperature')
             DO j=jts,MIN(jde-1,jte)
                DO i=its,MIN(ide-1,ite)
-                  IF ( grid%landusef(i,grid%islake,j) >= 0.5 ) THEN
-                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  IF ( ( grid%landusef(i,grid%islake,j) >= 0.5 ) .OR. ( grid%lu_index(i,j) == grid%islake ) )  THEN
                      grid%sst(i,j) = grid%tavgsfc(i,j)
                      grid%tsk(i,j) = grid%tavgsfc(i,j)
+                  END IF
+                  IF ( ( grid%sst(i,j) .LT. 150 ) .OR. ( grid%sst(i,j) .GT. 400 ) ) THEN
+                     grid%sst(i,j) = grid%t2(i,j)
                   END IF
                END DO
             END DO
@@ -1477,9 +1500,6 @@ integer::oops1,oops2
                                   st_levels_input , sm_levels_input , sw_levels_input , &
                                   grid%zs , grid%dzs , grid%tslb , grid%smois , grid%sh2o , &
                                   flag_sst , flag_tavgsfc, flag_soilhgt,&
-                                  grid%st000010, grid%st010200, grid%sm000010, grid%sm010200, & !fds 
-                                  grid%st010040, grid%st040100, grid%st100200, & 
-                                  grid%sm010040, grid%sm040100, grid%sm100200, & 
                                   flag_soil_layers, flag_soil_levels, &
                                   ids , ide , jds , jde , kds , kde , &
                                   ims , ime , jms , jme , kms , kme , &
@@ -1562,7 +1582,8 @@ integer::oops1,oops2
                END DO
             END DO
          ELSE
-            WRITE ( a_message , * ) 'You have set surface_input_source = 3, but your geogrid data does not have valid dominant soil data.'
+            WRITE ( a_message , * ) 'You have set surface_input_source = 3,'// &
+                                    ' but your geogrid data does not have valid dominant soil data.'
             CALL wrf_error_fatal ( a_message ) 
          END IF
          IF ( grid%lu_index(i_valid,j_valid) .GT. 0.5 ) THEN
@@ -1574,7 +1595,8 @@ integer::oops1,oops2
                END DO
             END DO
          ELSE
-            WRITE ( a_message , * ) 'You have set surface_input_source = 3, but your geogrid data does not have valid dominant land use data.'
+            WRITE ( a_message , * ) 'You have set surface_input_source = 3,'//&
+                                    ' but your geogrid data does not have valid dominant land use data.'
             CALL wrf_error_fatal ( a_message ) 
          END IF
 
@@ -2455,6 +2477,7 @@ endif
 
       REAL    :: temp, temp_int
       REAL    :: pfu, pfd, phm
+      REAL    :: w1, w2, z0, z1, z2
 
       SELECT CASE ( model_data_order )
          CASE ( DATA_ORDER_ZXY )
@@ -2676,6 +2699,15 @@ endif
                END DO
 
             END IF
+
+! update psfc in fine grid
+
+            z0 = grid%ph0(i,1,j)/g
+            z1 = 0.5*(grid%ph0(i,1,j)+grid%ph0(i,2,j))/g
+            z2 = 0.5*(grid%ph0(i,2,j)+grid%ph0(i,3,j))/g
+            w1 = (z0 - z2)/(z1 - z2)
+            w2 = 1. - w1
+            grid%psfc(i,j) = w1*(grid%p(i,1,j)+grid%pb(i,1,j))+w2*(grid%p(i,2,j)+grid%pb(i,2,j))
 
          END DO
       END DO
@@ -4503,23 +4535,31 @@ print *,'p target= ',target_x
       REAL :: p1 , p2 , t1 , t2 , q1 , q2 , z1, z2
 
       LOGICAL :: upside_down
+      LOGICAL :: already_assigned_upside_down
 
       REAL , PARAMETER :: Rd = r_d
 
       !  Is the data upside down?
 
 
+      already_assigned_upside_down = .FALSE.
       find_valid : DO j = jts , MIN ( jde-1 , jte )
          DO i = its , MIN (ide-1 , ite )
             IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
             IF ( p_in(i,kts+1,j) .LT. p_in(i,kte,j) ) THEN
                upside_down = .TRUE.
+               already_assigned_upside_down = .TRUE.
             ELSE
                upside_down = .FALSE.
+               already_assigned_upside_down = .TRUE.
             END IF
             EXIT find_valid
          END DO
       END DO find_valid
+
+      IF ( .NOT. already_assigned_upside_down ) THEN
+         upside_down = .FALSE.
+      END IF
 
       !  Get a surface value, always the first level of a 3d field.
 

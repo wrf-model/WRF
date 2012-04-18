@@ -1,5 +1,38 @@
 MODULE module_sf_mynn
 
+!-------------------------------------------------------------------
+!Modifications implemented by Joseph Olson NOAA/GSD/AMB - CU/CIRES
+!for WRFv3.4:
+!
+!   BOTH LAND AND WATER:
+!1) Calculation of stability parameter (z/L) taken from Li et al. (2010 BLM)
+!2) Fixed isfflx=0 option to turn off scalar fluxes, but keep momentum
+!   fluxes for idealized studies (credit: Anna Fitch).
+!3) Kinematic viscosity now varies with temperature
+!4) Uses Monin-Obukhov flux-profile relationships more consistent with
+!   those used in the MYNN PBL code.
+!5) Allows negative QFX, similar to MYJ scheme
+!
+!   LAND only:
+!1) Scalar roughness length parameterization of Yang et al. (2002 QJRMS,
+!   2008 JAMC) and Chen et al. (2010 J. of Hydromet), with modifications.
+!2) Relaxed u* minimum from 0.1 to 0.01
+!
+!   WATER only:
+!1) Charnock relationship with varying Charnock parameter is taken from
+!   the COARE3.0 bulk algorithm (Fairall et al 2003). A formulation for
+!   the aerodynamic roughness length was also taken from Davis et al (2008)
+!   and Donelan et al. (2004), but this formulation seems to result in a 
+!   hign surface wind speed bias for low/moderate wind speeds, so the
+!   varying Charnock relationship is default.
+!2) Scalar roughness length is taken from the COARE3.0 bulk algorithm 
+!   (Fairall et al 2003). A formulation for the scalar roughness length 
+!   was also taken from Garrat (1992), but since this formula makes zt 
+!   proportional to zo, heat and moisture fluxes are dependent
+!   upon which formulation for aerodynamic roughness length is used. 
+!   Therefore, the COARE3.0 formulation (with slight modifications) is 
+!   used as default instead.
+!-------------------------------------------------------------------
   USE module_model_constants, only: &
        &p1000mb, cp, xlv, ep_2
 
@@ -472,8 +505,8 @@ CONTAINS
            !SATURATION VAPOR PRESSURE WRT WATER
            E1=SVP1*EXP(SVP2*(TSK(I)-SVPT0)/(TSK(I)-SVP3))
         ENDIF
-        QSFC(I)=EP2*E1/(PSFC(I)-ep_3*E1)   !mixing ratio
-  !YSU: QSFC(I)=EP2*E1/(PSFC(I)-E1)                                                 
+        QSFC(I)=EP2*E1/(PSFC(I)-ep_3*E1)   !specific humidity
+        !QSFC(I)=EP2*E1/(PSFC(I)-E1)       !mixing ratio                                  
         !FOR LAND POINTS, QSFC can come from previous time step (in LSM)
         !if(xland(i).gt.1.5 .or. QSFC(i).le.0.0) QSFC(I)=EP2*E1/(PSFC(I)-ep_3*E1)     
   
@@ -481,8 +514,8 @@ CONTAINS
         ! Q2SAT = QGH IN LSM
         E1=SVP1*EXP(SVP2*(T1D(I)-SVPT0)/(T1D(I)-SVP3))
         PL=P1D(I)/1000.
-        QGH(I)=EP2*E1/(PL-ep_3*E1)
-  !YSU: QGH(I)=EP2*E1/(PL-E1)
+        QGH(I)=EP2*E1/(PL-ep_3*E1)     !specific humidity
+        !QGH(I)=EP2*E1/(PL-E1)         !mixing ratio    
         CPM(I)=CP*(1.+0.84*QX(I)/(1.-qx(i)))
 
    60 CONTINUE                                                                   
@@ -557,83 +590,86 @@ CONTAINS
          ENDIF
 
 
-        GZ1OZ0(I)= LOG(ZA(I)/ZNT(I))
-        GZ1OZt(I)= LOG(ZA(I)/z_t(i))           
-        GZ2OZ0(I)= LOG(2./ZNT(I))                                        
-        GZ2OZt(I)= LOG(2./z_t(i))                                        
-        GZ10OZ0(I)=LOG(10./ZNT(I)) 
-        GZ10OZt(I)=LOG(10./z_t(i)) 
+         GZ1OZ0(I)= LOG(ZA(I)/ZNT(I))
+         GZ1OZt(I)= LOG(ZA(I)/z_t(i))           
+         GZ2OZ0(I)= LOG(2./ZNT(I))                                        
+         GZ2OZt(I)= LOG(2./z_t(i))                                        
+         GZ10OZ0(I)=LOG(10./ZNT(I)) 
+         GZ10OZt(I)=LOG(10./z_t(i)) 
 
-!account for partial condensation
+         !account for partial condensation
+         exner1=(p1d(i)/p1000mb)**ROVCP
+         sqc1=qc1d(i)/(1.+qc1d(i))         !convert to spec hum.
+         sqv1=qx(i)
+         thl1=THX(I)-xlvcp/exner1*sqc1
+         sqvg=qsfc(i)
+         sqcg=qcg(i)/(1.+qcg(i))  !convert to specific humidity
 
-        exner1=(p1d(i)/p1000mb)**ROVCP
-        sqc1=qc1d(i)/(1.+qc1d(i))         !convert to spec hum.
-        sqv1=qx(i)
-        thl1=THX(I)-xlvcp/exner1*sqc1
-        sqvg=qsfc(i)
-        sqcg=qcg(i)/(1.+qcg(i))  !convert to specific humidity
+         vv = thl1-THGB(I)
+         ww = mavail(i)*(sqv1-sqvg) + (sqc1-sqcg)
 
-        vv = thl1-THGB(I)
-        ww = mavail(i)*(sqv1-sqvg) + (sqc1-sqcg)
+         TSKV=THGB(I)*(1.+EP1*QSFC(I)*MAVAIL(I)) 
+         !TSKV=THGB(I)*(1.+EP1*QSFC(I))                     
 
-        TSKV=THGB(I)*(1.+EP1*QSFC(I)*MAVAIL(I)) 
-!JOE        TSKV=THGB(I)*(1.+EP1*QSFC(I))                     
+         !DTHVDZ=(THVX(I)-TSKV)                     
+         DTHVDZ= (vt1(i) + 1.0)*vv + (vq1(i) + tv0)*ww
 
-!        DTHVDZ=(THVX(I)-TSKV)                     
-        DTHVDZ= (vt1(i) + 1.0)*vv + (vq1(i) + tv0)*ww
+         !--------------------------------------------------------
+         !  Calculate the convective velocity scale (WSTAR) and 
+         !  subgrid-scale velocity (VSGD) following Beljaars (1995, QJRMS) 
+         !  and Mahrt and Sun (1995, MWR), respectively
+         !-------------------------------------------------------
+         !       VCONV = 0.25*sqrt(g/tskv*pblh(i)*dthvm)
+         !  Use Beljaars over land, old MM5 (Wyngaard) formula over water
+         if (xland(i).lt.1.5) then     !LAND (xland == 1)
 
-!  Convective velocity scale Vc and subgrid-scale velocity Vsg
-!  following Beljaars (1995, QJRMS) and Mahrt and Sun (1995, MWR)
-!                                ... HONG Aug. 2001
-!
-!       VCONV = 0.25*sqrt(g/tskv*pblh(i)*dthvm)
-!  Use Beljaars over land, old MM5 (Wyngaard) formula over water
-        if (xland(i).lt.1.5) then     !LAND (xland == 1)
+            fluxc = max(hfx(i)/rhox(i)/cp                    &
+                 + ep1*tskv*qfx(i)/rhox(i),0.)
+            !JOE:VCONV = vconvc*(g/TSK(i)*pblh(i)*fluxc)**.33
+            WSTAR(I) = vconvc*(g/TSK(i)*pblh(i)*fluxc)**.33
 
-           fluxc = max(hfx(i)/rhox(i)/cp                    &
+         else                          !WATER (xland == 2)
+
+            IF(-DTHVDZ.GE.0)THEN
+               DTHVM=-DTHVDZ
+            ELSE
+               DTHVM=0.
+            ENDIF
+            !JOE-the Wyngaard formula is 2-3 times larger than the Beljaars 
+            !formula, so switch to Beljaars for water, but use VCONVC = 1.25,
+            !as in the COARE3.0 bulk parameterizations.
+            !WSTAR(I) = 2.*SQRT(DTHVM)
+            fluxc = max(hfx(i)/rhox(i)/cp                    &
                 + ep1*tskv*qfx(i)/rhox(i),0.)
-           !JOE:VCONV = vconvc*(g/TSK(i)*pblh(i)*fluxc)**.33
-           WSTAR(I) = vconvc*(g/TSK(i)*MIN(pblh(i),2000.)*fluxc)**.33
+            WSTAR(I) = 1.25*(g/TSK(i)*pblh(i)*fluxc)**.33
 
-        else                          !WATER (xland == 2)
+         endif
 
-           IF(-DTHVDZ.GE.0)THEN
-              DTHVM=-DTHVDZ
-           ELSE
-              DTHVM=0.
-           ENDIF
-           !JOE-the Wyngaard formula is ~3 times larger than the Beljaars 
-           !formula, so switch to Beljaars for water, but use VCONVC = 1.25,
-           !as in the COARE3.0 bulk parameterizations.
-           !WSTAR(I) = 2.*SQRT(DTHVM)
-           fluxc = max(hfx(i)/rhox(i)/cp                    &
-                + ep1*tskv*qfx(i)/rhox(i),0.)
-           WSTAR(I) = 1.25*(g/TSK(i)*MIN(pblh(i),2000.)*fluxc)**.33
+         !--------------------------------------------------------
+         ! Mahrt and Sun low-res correction
+         ! (for 13 km ~ 0.37 m/s; for 3 km == 0 m/s)
+         !--------------------------------------------------------
+         VSGD = 0.32 * (max(dx/5000.-1.,0.))**.33
 
-        endif
+         WSPD(I)=SQRT(WSPD(I)*WSPD(I)+WSTAR(I)*WSTAR(I)+vsgd*vsgd)
+         WSPD(I)=AMAX1(WSPD(I),wmin)
 
-        !--------------------------------------------------------
-        ! Mahrt and Sun low-res correction
-        ! (for 13 km ~ 0.37 m/s; for 3 km == 0 m/s)
-        VSGD = 0.32 * (max(dx/5000.-1.,0.))**.33
-
-        WSPD(I)=SQRT(WSPD(I)*WSPD(I)+WSTAR(I)*WSTAR(I)+vsgd*vsgd)
-        WSPD(I)=AMAX1(WSPD(I),wmin)
-
-        !--------------------------------------------------------
-        !CALCULATE THE BULK RICHARDSON NUMBER
-        BR(I)=GOVRTH(I)*ZA(I)*DTHVDZ/(WSPD(I)*WSPD(I))
-        !SET LIMITS ACCORDING TO Li et al. (2010) Boundary-Layer Meteorol (p.158)
-        BR(I)=MAX(BR(I),-2.0)
-        BR(I)=MIN(BR(I),1.0)
-        BRi(I)=BR(I)  !new variable for output - BR is not a "state" variable.
+         !--------------------------------------------------------
+         ! CALCULATE THE BULK RICHARDSON NUMBER OF SURFACE LAYER, 
+         ! ACCORDING TO AKB(1976), EQ(12). 
+         !--------------------------------------------------------
+         BR(I)=GOVRTH(I)*ZA(I)*DTHVDZ/(WSPD(I)*WSPD(I))
+         !SET LIMITS ACCORDING TO Li et al. (2010) Boundary-Layer Meteorol (p.158)
+         BR(I)=MAX(BR(I),-2.0)
+         BR(I)=MIN(BR(I),1.0)
+         BRi(I)=BR(I)  !new variable for output - BR is not a "state" variable.
                
-!  IF PREVIOUSLY UNSTABLE, DO NOT LET INTO REGIMES 1 AND 2 (STABLE)
-        if (itimestep .GT. 1) THEN
+         !  IF PREVIOUSLY UNSTABLE, DO NOT LET INTO REGIMES 1 AND 2 (STABLE)
+         if (itimestep .GT. 1) THEN
             IF(MOL(I).LT.0.)BR(I)=AMIN1(BR(I),0.0)
-        ENDIF
+         ENDIF
 !jdf
-        RMOL(I)=-GOVRTH(I)*DTHVDZ*ZA(I)*KARMAN
+         RMOL(I)=-GOVRTH(I)*DTHVDZ*ZA(I)*KARMAN
 !jdf
 !JOE-begin
 !        IF(I .eq. 2)THEN
@@ -841,20 +877,10 @@ CONTAINS
      !------------------------------------------------------------
      !-----COMPUTE THE FRICTIONAL VELOCITY:                                           
      !     ZA(1982) EQS(2.60),(2.61).                                                 
+     !------------------------------------------------------------
       DTG=THX(I)-THGB(I)                                                   
       PSIX=GZ1OZ0(I)-PSIM(I)                                                   
       PSIX10=GZ10OZ0(I)-PSIM10(I)
-      ! LOWER LIMIT ADDED TO PREVENT LARGE FLHC IN SOIL MODEL
-      ! ACTIVATES IN UNSTABLE CONDITIONS WITH THIN LAYERS OR HIGH Z0
-      !PSIT=AMAX1(GZ1OZ0(I)-PSIH(I),2.)
-      PSIT=AMAX1(GZ1OZt(I)-PSIH(I),2.)
-      PSIQ=LOG(za(i)/z_q(I))-PSIH(I)   
-      PSIQ=AMAX1(PSIQ,2.)
-      PSIT2=GZ2OZt(I)-PSIH2(I)                                     
-      PSIT2=AMAX1(PSIT2,2.)
-      PSIQ2=LOG(2./z_q(I))-PSIH2(I)  
-      PSIQ2=AMAX1(PSIQ2,2.)
-                                 
       ! TO PREVENT OSCILLATIONS AVERAGE WITH OLD VALUE 
       UST(I)=0.5*UST(I)+0.5*KARMAN*WSPD(I)/PSIX 
       IF((XLAND(I)-1.5).LT.0.)THEN        !LAND
@@ -862,8 +888,28 @@ CONTAINS
           UST(I)=AMAX1(UST(I),0.01)  !Relaxing this limit
       ENDIF
 
-      !----------------------------------------------------
+     !------------------------------------------------------------
+     !-----COMPUTE THE RESISTANCE (PSIQ AND PSIT):                                           
+     !------------------------------------------------------------
+      ! LOWER LIMIT ADDED TO PREVENT LARGE FLHC IN SOIL MODEL
+      ! ACTIVATES IN UNSTABLE CONDITIONS WITH THIN LAYERS OR HIGH Z0
+      !PSIT=AMAX1(GZ1OZ0(I)-PSIH(I),2.)
+      PSIT=AMAX1(GZ1OZt(I)-PSIH(I),2.)
+      PSIT2=MAX(GZ2OZt(I)-PSIH2(I),2.)
+                                  
+      IF((XLAND(I)-1.5).GE.0)THEN                                            
+         PSIQ=MAX(LOG(za(i)/z_q(I))-PSIH(I),2.) 
+         PSIQ2=MAX(LOG(2./z_q(I))-PSIH2(I),2.)  
+      ELSE                                                                     
+         !CARLSON AND BOLAND (1978)(independent of zq):
+         ZL=0.01                                                                
+         PSIQ=MAX(LOG(KARMAN*UST(I)*ZA(I)/XKA + ZA(I)/ZL)-PSIH(I),2.0)   
+         PSIQ2=MAX(LOG(KARMAN*UST(I)*2./XKA + 2./ZL)-PSIH2(I),2.0)                                  
+      ENDIF                                                                    
+                                 
+      !------------------------------------------------------------
       !COMPUTE THE TEMPERATURE SCALE (or FRICTION TEMPERATURE, T*)
+      !------------------------------------------------------------
       MOL(I)=KARMAN*DTG/PSIT/PRT
       !t_star(I) = -HFX(I)/(UST(I)*CPM(I)*RHOX(I))
       !t_star(I) = MOL(I)
@@ -959,8 +1005,13 @@ CONTAINS
         ! AND MOISTURE (FLQC)
         !------------------------------------------
         IF (ISFFLX.GT.0) THEN
-           PSIQ=LOG(za(i)/z_q(I)) - PSIH(I)   
-           PSIQ=MAX(PSIQ,2.)
+           IF((XLAND(I)-1.5).GE.0)THEN                                            
+              PSIQ=MAX(LOG(za(i)/z_q(I))-PSIH(I),2.) 
+           ELSE                                                                     
+              !CARLSON AND BOLAND (1978)(independent of zq):
+              ZL=0.01                                                                
+              PSIQ=MAX(LOG(KARMAN*UST(I)*ZA(I)/XKA + ZA(I)/ZL)-PSIH(I),2.0)   
+           ENDIF                                                                    
 
            !FLQC(I)=RHOX(I)*MAVAIL(I)*UST(I)*KARMAN/(   &
            !        ALOG(KARMAN*UST(I)*ZA(I)/XKA+ZA(I)/ZL)-PSIH(I))
@@ -1206,11 +1257,6 @@ CONTAINS
     !flows, so a smooth flow relationship, taken from Garrat (1992, p. 102),
     !is used for flows with Ren < 2. 
     !
-    !Note that this formulation should not be used with the Davis et al. 
-    !(2008) formulation for Zo, because that formulation produces much 
-    !smaller u* (Ren), resulting in a large Zt and Zq. It works best with
-    !the Charnock or the Taylor and Yelland relationships.
-    !
     !This is for use over water only.
 
        IMPLICIT NONE
@@ -1219,9 +1265,9 @@ CONTAINS
 
        IF (Ren .le. 2.) then
 
-          !FOR SMOOTH SEAS, USE GARRAT
-          Zt = 0.2*visc/MAX(ustar,0.1)
-          Zq = 0.3*visc/MAX(ustar,0.1)
+          Zt = (5.5e-5)*(Ren**(-0.63))
+          !FOR SMOOTH SEAS, USE GARRAT FOR Zq
+          Zq = 0.2*visc/MAX(ustar,0.1)
 
        ELSE
           
@@ -1231,10 +1277,10 @@ CONTAINS
  
        ENDIF
 
-       Zt = MIN(Zt,3.0e-5) !set max to same as Garrat in Fairal et al. 
-       Zt = MAX(Zt,2.0e-9) !(2003; their Fig. 4)
+       Zt = MIN(Zt,5.5e-5)
+       Zt = MAX(Zt,2.0e-9)
 
-       Zq = MIN(Zt,3.0e-5)
+       Zq = MIN(Zt,5.5e-5)
        Zq = MAX(Zt,2.0e-9) 
                    
        return
@@ -1256,41 +1302,28 @@ CONTAINS
     !where ht = Renc*visc/ustar and the critical Reynolds number 
     !(Renc) = 70. Beta was originally = 10 (2002 paper) but was revised 
     !to 7.2 (in 2008 paper). Their form typically varies the
-    !ratio Z0/Zt by a few orders of magnitude (1-5000).
+    !ratio Z0/Zt by a few orders of magnitude (1-1E5).
     !
-    !This modified form also uses beta = 7.2, but we use ht that is
-    !proportional to Z_0 for vegetated surfaces.
+    !This modified form uses beta = 2.0, so zo/zt generally only varies by
+    !10-300 over grass and cropland to about  20-2000 over forests.
     !
     !This should only be used over land!
 
        IMPLICIT NONE
        REAL, INTENT(IN)  :: Z_0, Ren, ustar, tstar, visc, landsea
-       REAL              :: tstar2,ht
+       REAL              :: ht, tstar2
        REAL, INTENT(OUT) :: Zt,Zq
-       REAL, PARAMETER  :: Renc=70.
-       REAL, PARAMETER  :: beta=7.2
+       REAL, PARAMETER  :: Renc=70., beta=2.0, e=2.71828183
 
-       IF (Z_0 .lt. 0.075) THEN
-          !FOR BARE SOIL, USE THEIR SCALE HEIGHT
-          ht  = Renc*visc/MAX(ustar,0.01) 
-       ELSE IF (Z_0 .ge. 0.075 .AND. Z_0 .le. 0.35) THEN
-          !FOR VEGETATED SURFACES, MAKE PROPORTIONAL TO Z_0, SINCE
-          !VEGETATION IS VENTILIATED - MORE COUPLED.
-          !ht  = 2000.*visc/MAX(ustar,0.01)
-          !ht  = 20000.*MIN(Z_0,0.10)*visc/MAX(ustar,0.01)
-          ht  = MIN(Z_0,0.15)
-       ELSE
-          !FOR FORESTS, REDUCE COUPLING, SINCE LSM WILL FURTHER ADD 
-          !CANOPY EVAPO-TRANSPIRATION - ONLY DO GROUND FLUXES HERE.
-          ht  = Renc*visc/MAX(ustar,0.01)
-       ENDIF
-
-       ht  = MIN(ht,0.15)
-       tstar2 = MIN(tstar,0.02) !increase coupling at night.
+       ht     = Renc*visc/MAX(ustar,0.01)
+       tstar2 = MIN(tstar+0.2,0.0)
 
        Zt     = ht * EXP(-beta*(ustar**0.5)*(ABS(tstar2)**0.25))
        Zq     = Zt
                    
+       Zt = MIN(Zt, Z_0/(e**2.))  !Garrat (1980,1992)
+       Zq = MIN(Zq, Z_0/(e**2.)) 
+
        return
 
     END SUBROUTINE Yang_2008

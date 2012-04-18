@@ -27,8 +27,8 @@ dimspec    nndgvar -     namelist=nobs_ndg_vars            c     nobs_ndg_vars
 dimspec    [       -     namelist=obs_prt_max              c     obs_prt_max
 dimspec    obsstid -     constant=40                       c     obs station id names
 dimspec    &       2     namelist=lagday                   z     lagday
-
 endif
+
 
 ifdef NMM_CORE=1
 dimspec    ndfi    1     namelist=dfi_time_dim             c     dfi time dimension
@@ -41,8 +41,8 @@ dimspec    z       -     constant=(-3:3)                   c
 dimspec    n       -     constant=(0:6)                    c
 endif
 
-dimspec    l       2     namelist=num_soil_layers          z     soil_layers
 dimspec    snly    2     namelist=num_snow_layers          z     snow_layers
+dimspec    l       2     namelist=num_soil_layers          z     soil_layers
 dimspec    snsl    2     namelist=num_snso_layers          z     snso_layers
 dimspec    ulay    2     namelist=num_urban_layers         z     urban_layers
 dimspec    u       2     namelist=num_land_cat             z     land_cat
@@ -73,9 +73,9 @@ dimspec    %       2     namelist=kdvel                    z     klevs_for_dvel
 dimspec    airc    2     namelist=kemit_aircraft           z     ac_emissions_zdim
 dimspec    .       3     namelist=erosion_dim              z     dust_erosion_dimension
 
-# The vprm and wetland dims are for greenhouse gas tracer simulation
-dimspec    ghgv    2     namelist=vprm_class               z     VPRM_vegetation_classes
-#dimspec    ghgw    2     namelist=wetland_type             z     wetland_type
+# Dimensions for the GHG options
+dimspec    ghgv    -     constant=8                        z     vprm_vgcls
+dimspec    ghgt    1     constant=14                       z     termite_vgcls
 
 dimspec    tc      -     namelist=track_chem_num           c     track_chem_num
 dimspec    tr      -     namelist=track_rad_num            c     track_rad_num

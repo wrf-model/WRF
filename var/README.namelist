@@ -8,6 +8,7 @@ Description of WRFDA namelist variables
   write_increments        = .false. ; .true.: write out a binary analysis_increment file
   var4d                   = .false. ; .true.: 4D-VAR
   var4d_bin               = 3600    ; second, Observation sub-window bin legnth for 4D-Var
+  var4d_bin_rain          = 3600    ; second, precipitation observation sub-window length for 4D-Var 
   var4d_lbc               = .true.  ; on/off switch for lateral boundary control in 4D-Var
   multi_inc               = 0       ; >0: multi-incremental run
      ; print_detail_xxx: output extra (sometimes can be too many) diagnostics for debugging.
@@ -48,13 +49,15 @@ Description of WRFDA namelist variables
                                               ; thinning is mandatory for ob_format=1 as time-duplicate 
                                               ; data are "thinned" within thinning routine, however, 
                                               ; thin_conv can be set to .false. for debugging purpose.
-  thin_mesh_conv (max_instruments)  = 20.0    ; for ob_format=1 (NCEP PREPBUFR) only.
+  thin_mesh_conv (max_instruments)  = 20.0    ; for precipitation observation assimilation in 4D-Var and
+                                              ; ob_format=1 (NCEP PREPBUFR) only.
                                               ; km, each observation type can set its thinning mesh and 
                                               ; the index/order follows the definition in 
                                               ; WRFDA/var/da/da_control/da_control.f90
      ; use_xxxobs - .true.: assimilate xxx obs if available
      ;              .false.: not assimilate xxx obs even available
-  use_synopobs            = .true.
+  thin_rainobs            = .true.  ; perform thinning on preciptation data 
+  use_synopobs            = .true.   
   use_shipsobs            = .true.
   use_metarobs            = .true.
   use_soundobs            = .true.
@@ -72,6 +75,7 @@ Description of WRFDA namelist variables
   use_radarobs            = .false.
   use_radar_rv            = .false.
   use_radar_rf            = .false.
+  use_rainobs             = .false.
   use_airsretobs          = .true.
      ; use_hirs2obs, use_hirs3obs, use_hirs4obs, use_mhsobs
      ; use_msuobs, use_amsuaobs, use_amsubobs, use_airsobs,
@@ -111,6 +115,7 @@ Description of WRFDA namelist variables
   max_error_thickness     = 5.0      ; maximum check_max_iv error check factor for thickness
   max_error_rv            = 5.0      ; maximum check_max_iv error check factor for radar radial velocity
   max_error_rf            = 5.0      ; maximum check_max_iv error check factor for radar reflectivity
+  max_error_rain          = 5.0      ; maximum check_max_iv error check factor for precipitation 
 /
 &wrfvar6   ; for minimization options
   max_ext_its                = 1         ; number of outer loops
@@ -131,6 +136,7 @@ Description of WRFDA namelist variables
 &wrfvar7
   cv_options              = 5         ; 3: NCEP Background Error model
                                       ; 5: NCAR Background Error model (default)
+				      ; 6: Use of multivariate background error statistics
   ; as1 - as5 are for cv_options=3 only
   as1 (3)                 = -1.0      ; tuning factors for variance, horizontal and vertical scales for 
                                       ; control variable 1 = stream function. For cv_options=3 only.
@@ -147,6 +153,7 @@ Description of WRFDA namelist variables
   as5 (3)                 = -1.0      ; tuning factors for variance, horizontal and vertical scales for 
                                       ; control variable 5 - unbalanced surface pressure. For cv_options=3 only.
                                       ; the actual default valuse are 0.25, 1.0, 1.5.
+
   rf_passes               = 6         ; number of passes of recursive filter.
   ; var_scaling1-5 and len_scaling1-5 are for cv_options=5 only
   var_scaling1 (max_outer_iterations)  = 1.0   ; tuning factor of background error covariance for
@@ -166,7 +173,7 @@ Description of WRFDA namelist variables
   len_scaling5 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for unbalanced surface pressure. For cv_options=5 only.
   je_factor               = 1.0       ; ensemble covariance weighting factor
 /
-&wrfvar8   ; not used
+&wrfvar8 ; not used
 /
 &wrfvar9   ; for program tracing. trace_use=.true. gives additional performance diagnostics
            ; (calling tree, local routine timings, overall routine timings, memory usage)
@@ -199,6 +206,8 @@ Description of WRFDA namelist variables
                                       ;         program to continue are treated as fatal errors.
 /
 &wrfvar10   ; for code developers
+  test_transforms	  = .false.   ; .true.: perform adjoint tests
+  test_gradient	          = .false.   ;	.true.: perform gradient test
 /
 &wrfvar11
   cv_options_hum          = 1       ; do not change
@@ -336,6 +345,7 @@ Description of WRFDA namelist variables
                                        ; "VERIFY": verification mode. 
                                        ;           WRF-Var resets check_max_iv=.false. and ntmax=0
                                        ; "RANDOMCV": for creating ensemble perturbations
+  adj_sens	          = .false.    ; .true.: write out gradient of Jo for adjoint sensitivity
 /
 &wrfvar18   ; needs to set &wrfvar21 and &wrfvar22 as well if ob_format=1 and/or radiances are used.
   analysis_date           = "2002-08-03_00:00:00.0000"   ; specify the analysis time. It should be 
@@ -388,4 +398,5 @@ Description of WRFDA namelist variables
                                      ; .false. use full adjoint and tangent linear model in 4D-Var
   trajectory_io           = .true.   ; .true.: use memory I/O in 4D-Var for data exchange
                                      ; .false.: use disk I/O in 4D-Var for data exchange
+  var4d_detail_out	  = .false.  ; .true.: output extra diagnostics for debugging 4D-Var
 /

@@ -71,11 +71,7 @@
  bldt                                = 0,
  cu_physics                          = 0,
  cudt                                = 0,
- isfflx                              = 1,
- ifsnow                              = 0,
- icloud                              = 0,
  num_soil_layers                     = 4,
- mp_zero_out                         = 0,
  /
 
  &dynamics

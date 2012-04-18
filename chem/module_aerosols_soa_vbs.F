@@ -4,20 +4,32 @@ MODULE module_aerosols_soa_vbs
 ! has been replaced by a new SOA scheme based on the Volatiliry Basis Set (VBS) approach, recent smog chamber yields
 ! and multi-generational VOC oxidation mechanism (aging) for SOA formation. The SOA_VBS code has been
 ! developed by Ravan Ahmadov (ravan.ahmadov@noaa.gov) and Stuart McKeen (Stuart.A.McKeen@noaa.gov) at NOAA/ESRL/CSD.
-! This module has been coupled to the modified version of RACM_ESRL gas chemistry mechanism. Major modifications to the gas
-! chemistry are inclusion of Sesquiterpenes and separation of MBO from OLI.
-! Unlike MOSAIC_VBS this option is for modal approach - MADE
+! This module has been coupled to the modified version of RACM_ESRL_KPP gas chemistry mechanism. Major modifications to the gas
+! gas chemistry are inclusion of Sesquiterpenes and separation of MBO from OLI.
+! Unlike MOSAIC_VBS this option is for modal approach - MADE aerosol scheme
 !
 ! Some references for the SOA_VBS scheme:
 ! 1) Ahmadov R., McKeen S.A., Robinson A.L., Bahreini R., Middlebrook A., deGouw J., Meagher J., Hsie E.-Y.,
-! Edgerton E., Shaw S., Trainer M. A volatility basis set model for summertime secondary organic aerosols
-! over the eastern U.S. in 2006. Submitted to JGR Atmospheres.
+! Edgerton E., Shaw S., Trainer M. (2012), A volatility basis set model for summertime secondary organic aerosols
+! over the eastern U.S. in 2006. J. Geophys. Res.,117, D06301, doi:10.1029/2011JD016831.
 ! 2) Murphy, B. N. and S. N. Pandis (2009). "Simulating the Formation of Semivolatile Primary and Secondary Organic Aerosol
 ! in a Regional Chemical Transport Model." Environmental Science & Technology 43(13): 4722-4728.
 ! 3) Donahue, N. M., A. L. Robinson, et al. (2006). "Coupled partitioning, dilution, and chemical aging of semivolatile
 ! organics." Environmental Science & Technology 40(8): 2635-2643.
 !
+! A reference for the MADE aerosol parameterization:
+! Ackermann, I. J., H. Hass, M. Memmesheimer, A. Ebel, F. S. Binkowski, and U. Shankar (1998),
+! Modal aerosol dynamics model for Europe: Development and first applications, Atmos. Environ., 32(17), 2981-2999.
+!
 !!WARNING! This aerosol option does not support cloud phase aerosol!
+!
+!!WARNING! The deposition of organic condensable vapours (cvasoa* and cvbsoa*) are highly uncertain due to lack of observations.
+! Currently this process is parameterized using modeled dry deposition velocities of HNO3 (multiplied by "depo_fact" for OCVs).
+! Paper by Ahmadov et al. (2012) desribes this approach. The default value for "depo_fact" in WRF-CHEM is 0.25.
+! A user can set a different value for "depo_fact" in namelist.input.
+!
+!!WARNING! Another uncertainty is wet removal of OCVs! This is neglected in the current version of the WRF-CHEM code.
+!
 !
 !
   USE module_state_description
@@ -5271,6 +5283,7 @@ SUBROUTINE soa_vbs(layer,blkta,blkprs,organt1rat,organt2rat,organt3rat,  &
       REAL alphhiN(nbin,nsaprc)  ! sm normalized (1 g/m3 density) yield for condensable vapors high NOx condition
       REAL alphai(nbin,nsaprc)   ! mass-based stoichometric yield for product i and csti is the effective saturation
       ! concentration in ug m^-3
+      REAL mwvoc(nsaprc)         ! molecular weight of the SOA precusors
 
       REAL PnGtotal,DUM,FMTOT,FMTOT2,DUM2    ! Real constants used in Newton iteration
       integer, save :: icall
@@ -5302,9 +5315,16 @@ SUBROUTINE soa_vbs(layer,blkta,blkprs,organt1rat,organt2rat,organt3rat,  &
       0.0750, 0.1500, 0.7500, 0.9000,   & ! SESQ
       0.0120, 0.1215, 0.2010, 0.5070/     ! TERP
 
-!      DATA dhvap /8*30.0E03/         ! enthalpy of vaporization
-!      DATA Cs0 /1,10,100,1000/       ! saturation concentrations at 300K in ug/m^3
-!------------------------------------------------------------------------------
+      DATA mwvoc /  &
+                    73.23,   &    ! ALK4
+                    106.97,  &    ! ALK5
+                    61.68,   &    ! OLE1
+                    79.05,   &    ! OLE2
+                    100.47,  &    ! ARO1
+                    113.93,  &    ! ARO2
+                    68.12,   &    ! ISOP
+                    204.0,   &    ! SESQ
+                    136.24   /    ! TERP
 
 !bs * initialisation
 !bs
@@ -5337,16 +5357,16 @@ SUBROUTINE soa_vbs(layer,blkta,blkprs,organt1rat,organt2rat,organt3rat,  &
 !bs *        Technol. 31(5), 1345-1358. and Forstner et al. (1997), Atmos.
 !bs *        Environ. 31(13), 1953-1964.
 !bs *
-!sam changed molecular weights as in Lane et al., AE, 2008
+! Molecular weights of OCVs as in Murphy and Pandis, 2009
       mwcv(pasoa1) = 150.
       mwcv(pasoa2) = 150.
       mwcv(pasoa3) = 150.
       mwcv(pasoa4) = 150.
       
-      mwcv(pbsoa1) = 190.
-      mwcv(pbsoa2) = 190.
-      mwcv(pbsoa3) = 190.
-      mwcv(pbsoa4) = 190.
+      mwcv(pbsoa1) = 180.
+      mwcv(pbsoa2) = 180.
+      mwcv(pbsoa3) = 180.
+      mwcv(pbsoa4) = 180.
 
 ! In Shell partitioned aerosols according to their precursors, but we do as Allen due to the saturation concentrations
 ! We have 2 sets for anthropogenic and biogenic and therefore we use the same denotation
@@ -5378,12 +5398,10 @@ loop_cells: DO lcell = 1, numcells  ! numcells=1
                 END DO
 
                 ! calculation of the yields using the branching ratio
-                ! 0.6667 is used, since the yields were multiplied by Murphy to account for the SOA density,
-                ! For this purpose I use dens_soa provided by the namelist.input
                 brrto= drog(lcell,pbrch) ! temporary variable for the branching ratio
                 DO bn=1,nbin  ! bins
                    DO cls=1,nsaprc ! classes
-                      alphai(bn,cls)= alphhiN(bn,cls)*brrto + alphlowN(bn,cls)*(1.-brrto) 
+                      alphai(bn,cls)= mwvoc(cls)*( alphhiN(bn,cls)*brrto + alphlowN(bn,cls)*(1.-brrto) )
                    ENDDO
                 ENDDO 
                 
@@ -5464,7 +5482,7 @@ loop_cells: DO lcell = 1, numcells  ! numcells=1
 !bs * calculate the threshold for partitioning if no initial mass is present to partition into.
 
     loop_cc:    DO  l = 1,ncv             ! we've total ncv=4*2 bins, no alpha is needed here
-                    prod(l) =  convfac*mwcv(l)*prod(l)  ! get in density units (ug/m3) from ppmv, (convfac=rho_air/mu_air)
+                    prod(l) =  convfac*prod(l)  ! get in density units (ug/m3) from ppmv, (convfac=rho_air/mu_air)
                     ctot(l) =  prod(l) + cgas(l) + caer(l)
                     aold(l) =  caer(l)
 
@@ -6463,7 +6481,7 @@ SUBROUTINE soa_vbs_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,      
          INTENT(IN    ) ::    emis_ant
 
 ! biomass burning aerosol emissions arrays ((ug/m3)*m/s)
-   REAL, DIMENSION( ims:ime, kms:kemit, jms:jme,num_ebu ),              &
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme,num_ebu ),              &
          INTENT(IN    ) ::    ebu
 
 ! 1/(dry air density) and layer thickness (m)

@@ -282,10 +282,6 @@
       chem_ct_indices(p_chem_ho)   = p_ho
       chem_ct_indices(p_chem_ho2)  = p_ho2
   endif
-  
-! full range of 4D domain for tendency diagnostics
-#define _tfr1_ its:ite,kts:kte,jts:jte,nv
-#define _tfr2_ its:ite,kts:kte,jts:jte,chem_ct_indices(nv)
 #endif
   
   do_chemstep = .false.
@@ -713,7 +709,7 @@
 !------------------------------------------------------------------------
       if( config_flags%chem_opt == MOZART_KPP .or. &                               
           config_flags%chem_opt == MOZCART_KPP .or. &
-         config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP) then
+          config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP) then
         if( config_flags%phot_opt == FTUV ) then
           CALL ftuv_timestep_init( grid%id, grid%julday )
         endif
@@ -872,17 +868,20 @@
          ! stuff for aircraft emissions
               emis_aircraft,                                                               &
 
-         ! stuff for ghg fluxes
-              vprm_par,grid%rad_vprm,grid%lambda_vprm,                                     &
+         ! stuff for the GHG fluxes
+              vprm_in,grid%rad_vprm,grid%lambda_vprm,                                      &
               grid%alpha_vprm,grid%resp_vprm,grid%xtime,                                   &
-              grid%TSLB,wet_in,grid%RAINC,grid%RAINNC,                                     &
+              grid%TSLB, wet_in,grid%RAINC,grid%RAINNC,                                    &
               grid%potevp,grid%SFCEVP,grid%LU_INDEX,                                       &
-              eghg_bio,biomt_par,emit_par,                                                 &
+              grid%biomt_par,grid%emit_par,grid%ebio_co2oce,                               &
+              eghg_bio,                                                                    &
 
               ids,ide, jds,jde, kds,kde,                                                   &
               ims,ime, jms,jme, kms,kme,                                                   &
               its,ite,jts,jte,kts,kte)
-              if( config_flags%chem_opt == MOZCART_KPP ) then
+              if( config_flags%chem_opt == MOZART_KPP .or. &
+                  config_flags%chem_opt == MOZCART_KPP .or. &
+                  config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
                  call mozcart_lbc_set( chem, num_chem, grid%id, &
                                        ims, ime, jms, jme, kms, kme,    &                  
                                        its, ite, jts, jte, kts )                           
@@ -1016,7 +1015,7 @@
 ! save old concentrations for vertical mixing tendencies
 #if (EM_CORE == 1)
    DO nv=PARAM_FIRST_SCALAR,num_chem_ct
-     chem_old(_tfr1_) = chem(_tfr2_)
+     chem_old(its:ite,kts:kte,jts:jte,nv) = chem(its:ite,kts:kte,jts:jte,chem_ct_indices(nv))
    ENDDO
 #endif
 
@@ -1045,7 +1044,9 @@
                  ims,ime, jms,jme, kms,kme,                                           &
                  its,ite,jts,jte,kts,kte)
                  
-            if( config_flags%chem_opt == MOZCART_KPP ) then
+            if( config_flags%chem_opt == MOZART_KPP .or. &
+                config_flags%chem_opt == MOZCART_KPP .or. &
+                config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
                call mozcart_lbc_set( chem, num_chem, grid%id, &
                                      ims, ime, jms, jme, kms, kme,    & 
                                      its, ite, jts, jte, kts )
@@ -1056,7 +1057,9 @@
 ! accumulate vertical mixing tendencies
 #if (EM_CORE == 1)
    DO nv=PARAM_FIRST_SCALAR,num_chem_ct
-      grid%vmix_ct(_tfr1_) = grid%vmix_ct(_tfr1_) + (chem(_tfr2_) - chem_old(_tfr1_))
+      grid%vmix_ct(its:ite,kts:kte,jts:jte,nv) = grid%vmix_ct(its:ite,kts:kte,jts:jte,nv) + &
+                                                        (chem(its:ite,kts:kte,jts:jte,chem_ct_indices(nv)) - &
+                                                     chem_old(its:ite,kts:kte,jts:jte,nv))
    ENDDO
 #endif
 
@@ -1095,7 +1098,7 @@
         ! save old concentrations for convective tendencies
 #if (EM_CORE == 1)
         DO nv=PARAM_FIRST_SCALAR,num_chem_ct
-           chem_old(_tfr1_) = chem(_tfr2_)
+           chem_old(its:ite,kts:kte,jts:jte,nv) = chem(its:ite,kts:kte,jts:jte,chem_ct_indices(nv))
         ENDDO
 #endif
         call grelldrvct(grid%DT,ktau,grid%DX,                                         &
@@ -1111,11 +1114,13 @@
              grid%ktop,grid%wd_no3_cu,grid%wd_so4_cu,                                 &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
              config_flags%ishallow,num_moist,numgas,num_chem,config_flags%chem_opt,0, &
-             config_flags%wetscav_onoff,                                              &
+             config_flags%conv_tr_wetscav,config_flags%conv_tr_aqchem,                &
              ids,ide, jds,jde, kds,kde,                                               &
              ims,ime, jms,jme, kms,kme,                                               &
              its,ite,jts,jte,kts,k_end)
-             if( config_flags%chem_opt == MOZCART_KPP ) then
+             if( config_flags%chem_opt == MOZART_KPP .or. &
+                 config_flags%chem_opt == MOZCART_KPP .or. &
+                 config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
                      call mozcart_lbc_set( chem, num_chem, grid%id, &
                                  ims, ime, jms, jme, kms, kme,    &
                                  its, ite, jts, jte, kts )
@@ -1123,7 +1128,9 @@
         ! accumulate convective tendencies
 #if (EM_CORE == 1)
         DO nv=PARAM_FIRST_SCALAR,num_chem_ct
-           grid%conv_ct(_tfr1_) = grid%conv_ct(_tfr1_) + (chem(_tfr2_) - chem_old(_tfr1_))
+          grid%conv_ct(its:ite,kts:kte,jts:jte,nv) = grid%conv_ct(its:ite,kts:kte,jts:jte,nv) + &
+                                                            (chem(its:ite,kts:kte,jts:jte,chem_ct_indices(nv)) - &
+                                                         chem_old(its:ite,kts:kte,jts:jte,nv))
         ENDDO
 #endif
         endif
@@ -1142,7 +1149,7 @@
              grid%ktop,grid%wd_no3_cu,grid%wd_so4_cu,                                 &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
              config_flags%ishallow,num_moist,0,num_tracer,0,config_flags%tracer_opt,  &
-             config_flags%wetscav_onoff,                                              &
+             config_flags%conv_tr_wetscav,config_flags%conv_tr_aqchem,                &
              ids,ide, jds,jde, kds,kde,                                               &
              ims,ime, jms,jme, kms,kme,                                               &
              its,ite,jts,jte,kts,k_end)
@@ -1180,7 +1187,7 @@
 ! save old concentrations for chemistry tendencies
 #if (EM_CORE == 1)
    DO nv=PARAM_FIRST_SCALAR,num_chem_ct
-      chem_old(_tfr1_) = chem(_tfr2_)
+      chem_old(its:ite,kts:kte,jts:jte,nv) = chem(its:ite,kts:kte,jts:jte,chem_ct_indices(nv))
    ENDDO
 #endif
 
@@ -1241,7 +1248,9 @@ CALL kpp_mechanism_driver (chem,                                                
    ids,ide, jds,jde, kds,kde,                                                         &
    ims,ime, jms,jme, kms,kme,                                                         &
    its,ite,jts,jte,kts,kte)
-          if( config_flags%chem_opt == MOZCART_KPP ) then
+          if( config_flags%chem_opt == MOZART_KPP .or. &
+              config_flags%chem_opt == MOZCART_KPP .or. &
+              config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
              call mozcart_lbc_set( chem, num_chem, grid%id, &
                                    ims, ime, jms, jme, kms, kme,    &
                                     its, ite, jts, jte, kts )
@@ -1292,10 +1301,10 @@ CALL kpp_mechanism_driver (chem,                                                
 ! accumulate gas phase chemistry tendencies
 #if (EM_CORE == 1)
    DO nv=PARAM_FIRST_SCALAR,num_chem_ct
-      grid%chem_ct(_tfr1_) = grid%chem_ct(_tfr1_) + (chem(_tfr2_) - chem_old(_tfr1_))
+      grid%chem_ct(its:ite,kts:kte,jts:jte,nv) = grid%chem_ct(its:ite,kts:kte,jts:jte,nv) + &
+                                                        (chem(its:ite,kts:kte,jts:jte,chem_ct_indices(nv)) - &
+                                                     chem_old(its:ite,kts:kte,jts:jte,nv))
    ENDDO
-#undef _tfr1_
-#undef _tfr2_
 #endif
 
 !   allocate gas_aqfrac if either cldchem or wetscav is on

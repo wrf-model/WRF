@@ -180,6 +180,8 @@ CONTAINS
 
        IF( config_flags%chem_opt /= CHEM_TRACER  .and.                   &
            config_flags%chem_opt /= CHEM_TRACE2  .and.                   &
+           config_flags%chem_opt /= CO2_TRACER   .and.                   & 
+           config_flags%chem_opt /= GHG_TRACER   .and.                   &
            config_flags%chem_opt /= GOCART_SIMPLE  .and.                 &
            config_flags%chem_opt /= GOCARTRACM_KPP )THEN
           call wesely_driver(id,ktau,dtstep,                              &
@@ -245,7 +247,7 @@ CONTAINS
                   dvel(its:ite,1,j,p_dvel_tolooh) = m2cm*ddvel(its:ite,j,p_tolooh)
                   dvel(its:ite,1,j,p_dvel_xooh) = m2cm*ddvel(its:ite,j,p_xooh)
                   dvel(its:ite,1,j,p_dvel_so2) = m2cm*ddvel(its:ite,j,p_so2)
-                  dvel(its:ite,1,j,p_dvel_so4) = m2cm*ddvel(its:ite,j,p_so4)
+                  dvel(its:ite,1,j,p_dvel_so4) = m2cm*ddvel(its:ite,j,p_sulf)
                   dvel(its:ite,1,j,p_dvel_pan) = m2cm*ddvel(its:ite,j,p_pan)
                   dvel(its:ite,1,j,p_dvel_terpooh) = m2cm*ddvel(its:ite,j,p_terpooh)
                enddo

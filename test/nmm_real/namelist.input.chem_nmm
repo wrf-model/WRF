@@ -76,9 +76,6 @@
  trdlw                               = 6,
  tsrfc                               = 6,
  pcpflg                              = .false.,
- isfflx                              = 0,
- ifsnow                              = 0,
- icloud                              = 0,
  num_soil_layers                     = 4,
  mp_zero_out                         = 0
  cu_rad_feedback                     = .false.,

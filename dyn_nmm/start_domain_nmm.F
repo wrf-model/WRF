@@ -2042,7 +2042,7 @@
      &             ,GRID%LEVSIZ, NUM_OZMIXM, NUM_AEROSOLC, GRID%PAERLEV &
      &             ,TMN,grid%xland,grid%znt,grid%z0,grid%ustar,grid%mol,grid%pblh,grid%tke_pbl             &
      &             ,grid%exch_h,THC,SNOWC,grid%mavail,HFX,QFX,RAINBL              &
-     &             ,grid%stc,ZS,DZS,GRID%NUM_SOIL_LAYERS,WARM_RAIN           &
+     &             ,grid%stc,grid%sldpth,grid%DZSoil,GRID%NUM_SOIL_LAYERS,WARM_RAIN           &
      &             ,ADV_MOIST_COND                                      &
      &             ,grid%apr_gr,grid%apr_w,grid%apr_mc,grid%apr_st,grid%apr_as                   &
      &             ,grid%apr_capma,grid%apr_capme,grid%apr_capmi                       &
@@ -2059,6 +2059,20 @@
      &             ,IMS, IME, JMS, JME, KMS, KME                        &
      &             ,ITS, ITE, JTS, JTE, KTS, KTE                        &
      &             ,NUM_URBAN_LAYERS                                    &
+     &             ,GRID%RAINCV_A,GRID%RAINCV_B                         &
+     &               ,ISNOWXY=grid%ISNOWXY, ZSNSOXY=grid%ZSNSOXY, TSNOXY=grid%TSNOXY,    & ! Optional Noah-MP
+     &                SNICEXY=grid%SNICEXY, SNLIQXY=grid%SNLIQXY, TVXY=grid%TVXY,        & ! Optional Noah-MP
+     &                TGXY=grid%TGXY, CANICEXY=grid%CANICEXY,                            & ! Optional Noah-MP
+     &                CANLIQXY=grid%CANLIQXY, EAHXY=grid%EAHXY,                          & ! Optional Noah-MP
+     &                TAHXY=grid%TAHXY, CMXY=grid%CMXY,                                  & ! Optional Noah-MP
+     &                CHXY=grid%CHXY, FWETXY=grid%FWETXY, SNEQVOXY=grid%SNEQVOXY,        & ! Optional Noah-MP
+     &                ALBOLDXY=grid%ALBOLDXY, QSNOWXY=grid%QSNOWXY,                      & ! Optional Noah-MP
+     &                WSLAKEXY=grid%WSLAKEXY, ZWTXY=grid%ZWTXY, WAXY=grid%WAXY,          & ! Optional Noah-MP
+     &                WTXY=grid%WTXY, LFMASSXY=grid%LFMASSXY, RTMASSXY=grid%RTMASSXY,    & ! Optional Noah-MP
+     &                STMASSXY=grid%STMASSXY, WOODXY=grid%WOODXY,                        & ! Optional Noah-MP
+     &                STBLCPXY=grid%STBLCPXY, FASTCPXY=grid%FASTCPXY,                    & ! Optional Noah-MP
+     &                XSAIXY=grid%XSAIXY,                                                & ! Optional Noah-MP
+     &                T2MVXY=grid%T2MVXY, T2MBXY=grid%T2MBXY, CHSTARXY=grid%CHSTARXY     & ! Optional Noah-MP
      &                )
 
 #ifdef HWRF

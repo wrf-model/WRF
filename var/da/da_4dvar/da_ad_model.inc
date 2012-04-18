@@ -7,7 +7,7 @@ subroutine da_ad_model ()
 
    implicit none
 
-   integer :: time_step
+   integer :: time_step, alarmid
 
    if (trace_use_dull) call da_trace_entry("da_ad_model")
 
@@ -23,7 +23,7 @@ subroutine da_ad_model ()
    call nl_set_frames_per_auxinput6 ( head_grid%id, 1 )
 
    ! Set the file names and interval for reading adjoint forcing.
-   model_config_rec%auxinput7_inname = "auxinput3_d<domain>_<date>"
+   model_config_rec%auxinput7_inname = "af_d<domain>_<date>"
    call nl_set_auxinput7_interval_s ( head_grid%id, var4d_bin )
    call nl_set_io_form_auxinput7 ( head_grid%id, 2 )
    call nl_set_frames_per_auxinput7 ( head_grid%id, 1 )
@@ -118,6 +118,7 @@ subroutine da_ad_model ()
    head_grid%a_t_bxs = 0.0; head_grid%a_t_bxe = 0.0; head_grid%a_t_bys = 0.0; head_grid%a_t_bye = 0.0
    head_grid%a_mu_bxs = 0.0; head_grid%a_mu_bxe = 0.0; head_grid%a_mu_bys = 0.0; head_grid%a_mu_bye = 0.0
    head_grid%a_moist_bxs = 0.0; head_grid%a_moist_bxe = 0.0; head_grid%a_moist_bys = 0.0; head_grid%a_moist_bye = 0.0
+   head_grid%a_scalar_bxs = 0.0; head_grid%a_scalar_bxe = 0.0; head_grid%a_scalar_bys = 0.0; head_grid%a_scalar_bye = 0.0
 
    head_grid%a_u_btxs = 0.0; head_grid%a_u_btxe = 0.0; head_grid%a_u_btys = 0.0; head_grid%a_u_btye = 0.0
    head_grid%a_v_btxs = 0.0; head_grid%a_v_btxe = 0.0; head_grid%a_v_btys = 0.0; head_grid%a_v_btye = 0.0
@@ -126,6 +127,7 @@ subroutine da_ad_model ()
    head_grid%a_t_btxs = 0.0; head_grid%a_t_btxe = 0.0; head_grid%a_t_btys = 0.0; head_grid%a_t_btye = 0.0
    head_grid%a_mu_btxs = 0.0; head_grid%a_mu_btxe = 0.0; head_grid%a_mu_btys = 0.0; head_grid%a_mu_btye = 0.0
    head_grid%a_moist_btxs = 0.0; head_grid%a_moist_btxe = 0.0; head_grid%a_moist_btys = 0.0; head_grid%a_moist_btye = 0.0
+   head_grid%a_scalar_btxs = 0.0; head_grid%a_scalar_btxe = 0.0; head_grid%a_scalar_btys = 0.0; head_grid%a_scalar_btye = 0.0
 
    head_grid%g_u_1 = 0.0  
    head_grid%g_v_1 = 0.0
@@ -145,6 +147,7 @@ subroutine da_ad_model ()
 
    head_grid%g_moist = 0.0
 
+   head_grid%g_scalar = 0.0
    head_grid%g_rainnc  = 0.0
    head_grid%g_rainncv = 0.0
    head_grid%g_rainc  = 0.0
@@ -158,12 +161,13 @@ subroutine da_ad_model ()
    call nl_set_sf_sfclay_physics (head_grid%id, 0)
    if ( original_bl_pbl_physics .gt. 0 ) &
       call nl_set_bl_pbl_physics (head_grid%id, 98)
-   call nl_set_cu_physics (head_grid%id, 0)
-   call nl_set_mp_zero_out (head_grid%id, 0)
+   if ( original_cu_physics .gt. 0 ) &
+      call nl_set_cu_physics (head_grid%id, 98) 
+   !call nl_set_mp_zero_out (head_grid%id, 0)
    !call nl_set_sf_surface_physics (head_grid%id, 1)
    call nl_set_ifsnow (head_grid%id, 1)
    call nl_set_icloud (head_grid%id, 0)
-   call nl_set_isfflx (head_grid%id, 0)
+   !call nl_set_isfflx (head_grid%id, 0)
 
    if ( model_config_rec%var4d_detail_out ) gradient_out = .true.
 
@@ -177,17 +181,32 @@ subroutine da_ad_model ()
    call nl_set_sf_sfclay_physics (head_grid%id, original_sf_sfclay_physics)
    call nl_set_bl_pbl_physics (head_grid%id, original_bl_pbl_physics)
    call nl_set_cu_physics (head_grid%id, original_cu_physics)
-   call nl_set_mp_zero_out (head_grid%id, original_mp_zero_out)
+   !call nl_set_mp_zero_out (head_grid%id, original_mp_zero_out)
    !call nl_set_sf_surface_physics (head_grid%id, original_sf_surface_physics)
    call nl_set_ifsnow (head_grid%id, original_ifsnow)
    call nl_set_icloud (head_grid%id, original_icloud)
-   call nl_set_isfflx (head_grid%id, original_isfflx)
+   !call nl_set_isfflx (head_grid%id, original_isfflx)
 
    ! Turn off auxinput6,7 reading and auxhist7 output
 
    call nl_set_auxinput6_interval_s (head_grid%id, 0 )
    call nl_set_auxinput7_interval_s ( head_grid%id, 0 )
 
+   IF ( ASSOCIATED( head_grid%domain_clock ) ) THEN
+     IF ( head_grid%domain_clock_created ) THEN
+       CALL WRFU_ClockDestroy( head_grid%domain_clock )
+       head_grid%domain_clock_created = .FALSE.
+     ENDIF
+   ENDIF
+   IF ( ASSOCIATED( head_grid%alarms ) .AND. &
+        ASSOCIATED( head_grid%alarms_created ) ) THEN
+     DO alarmid = 1, MAX_WRF_ALARMS
+       IF ( head_grid%alarms_created( alarmid ) ) THEN
+         CALL WRFU_AlarmDestroy( head_grid%alarms( alarmid ) )
+         head_grid%alarms_created( alarmid ) = .FALSE.
+       ENDIF
+     ENDDO
+   ENDIF
    call Setup_Timekeeping ( head_grid )
 
    if (trace_use_dull) call da_trace_exit("da_ad_model")

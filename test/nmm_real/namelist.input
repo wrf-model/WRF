@@ -71,9 +71,6 @@
  trdlw                               = 6,        6,
  tsrfc                               = 6,        6,
  pcpflg                              = .false.,  .false.,
- isfflx                              = 0,
- ifsnow                              = 0,
- icloud                              = 0,
  num_soil_layers                     = 4,
  mp_zero_out                         = 0
  gwd_opt                             = 0

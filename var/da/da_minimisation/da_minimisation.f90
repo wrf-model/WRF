@@ -27,7 +27,7 @@ module da_minimisation
    use da_buoy , only : da_calculate_grady_buoy, da_ao_stats_buoy, &
       da_oi_stats_buoy,da_get_innov_vector_buoy, da_residual_buoy, &
       da_jo_and_grady_buoy
-   use da_control, only : trace_use, var4d_bin, &
+   use da_control, only : trace_use, var4d_bin, trajectory_io, &
       var4d, rootproc,jcdfi_use,jcdfi_diag,ierr,comm,num_fgat_time, &
       var4d_lbc, stdout, eps, stats_unit, test_dm_exact, global, multi_inc, &
       calculate_cg_cost_fn,anal_type_randomcv,cv_size_domain,je_factor, &
@@ -41,11 +41,11 @@ module da_minimisation
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, rain, &
       bogus, buoy, qscat,pseudo, radiance, monitor_on, max_ext_its, use_rttov_kmatrix,&
       use_crtm_kmatrix,precondition_cg, precondition_factor, use_varbc, varbc_factor, &
-      num_procs, myproc, use_gpspwobs, use_gpsztdobs, pseudo_var, num_pseudo, &
+      num_procs, myproc, use_gpspwobs, use_rainobs, use_gpsztdobs, pseudo_var, num_pseudo, &
       num_ob_indexes, num_ob_vars, npres_print, pptop, ppbot, qcstat_conv_unit, gas_constant, &
       orthonorm_gradient, its, ite, jts, jte, kts, kte, ids, ide, jds, jde, cp, &
       use_satcv, sensitivity_option, print_detail_outerloop, adj_sens, filename_len, &
-      ims, ime, jms, jme, kms, kme
+      ims, ime, jms, jme, kms, kme, fgat_rain_flags, var4d_bin_rain
    use da_define_structures, only : iv_type, y_type, j_type, be_type, &
       xbx_type, jo_type, da_allocate_y,da_zero_x,da_zero_y,da_deallocate_y, &
       da_zero_vp_type, qhat_type
@@ -108,7 +108,8 @@ module da_minimisation
 
    use da_rain, only :  da_calculate_grady_rain, da_ao_stats_rain, &
       da_oi_stats_rain, da_get_innov_vector_rain, da_residual_rain, &
-      da_jo_and_grady_rain
+      da_jo_and_grady_rain, da_get_hr_rain, da_transform_xtoy_rain, &
+      da_transform_xtoy_rain_adj
 
    use da_reporting, only : da_message, da_warning, da_error
    use da_satem, only : da_calculate_grady_satem, da_ao_stats_satem, &
@@ -138,7 +139,7 @@ module da_minimisation
    use da_tools_serial, only : da_get_unit,da_free_unit
    use da_tracing, only : da_trace_entry, da_trace_exit,da_trace
    use da_transfer_model, only : da_transfer_wrftltoxa,da_transfer_xatowrftl, &
-      da_transfer_xatowrftl_adj,da_setup_firstguess,da_transfer_wrftltoxa_adj
+      da_transfer_xatowrftl_adj,da_transfer_wrftltoxa_adj
 #if defined(RTTOV) || defined(CRTM)
    use da_varbc, only : da_varbc_tl,da_varbc_adj
 #endif
@@ -151,10 +152,16 @@ module da_minimisation
        kj_swap_reverse, upsidedown_ad_forcing, u6_2, v6_2, w6_2, t6_2, ph6_2, p6, &
       mu6_2, psfc6, moist6
    use da_transfer_model, only : da_transfer_xatowrftl_lbc, da_transfer_xatowrftl_adj_lbc, &
-      da_transfer_wrftl_lbc_t0, da_transfer_wrftl_lbc_t0_adj, da_get_2nd_firstguess
+      da_transfer_wrftl_lbc_t0, da_transfer_wrftl_lbc_t0_adj, da_get_2nd_firstguess, &
+      da_transfer_wrftoxb
+   USE module_io_wrf, only : auxinput6_only
 #endif
 
    implicit none
+
+#ifdef DM_PARALLEL
+    include 'mpif.h'
+#endif
 
    private :: da_dot, da_dot_cv
 

@@ -63,7 +63,7 @@
  cu_physics                          = 1,     1,     0,
  cudt                                = 5,     5,     5,
  isfflx                              = 1,
- ifsnow                              = 0,
+ ifsnow                              = 1,
  icloud                              = 1,
  surface_input_source                = 1,
  num_soil_layers                     = 4,

@@ -9,9 +9,9 @@ module da_setup_structures
 
    use da_define_structures, only : xbx_type,be_subtype, be_type, y_type, j_type, &
       iv_type,da_allocate_background_errors,da_allocate_observations, &
-      multi_level_type,each_level_type
+      multi_level_type,each_level_type, da_allocate_observations_rain
    use da_wrf_interfaces, only : wrf_debug
-   use da_control, only : trace_use,var4d,vert_evalue,stdout,rootproc, &
+   use da_control, only : trace_use,vert_evalue,stdout,rootproc, &
       analysis_date,coarse_ix,coarse_ds,map_projection,coarse_jy, c2,dsm,phic, &
       pole, cone_factor, start_x,base_pres,ptop,psi1,start_y, base_lapse,base_temp,truelat2_3dv, &
       truelat1_3dv,xlonc,t0,num_fft_factors,pi,print_detail_spectral, global, print_detail_obs, &
@@ -51,18 +51,22 @@ module da_setup_structures
       fg_format, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
       fg_format_wrf_arw_global, fg_format_kma_global, deg_to_rad, rad_to_deg, &
       sonde_sfc, missing_data, missing_r, qc_good, thin_mesh_conv, time_slots, &
-      cv_options, cloud_cv_options, cv_size, as1, as2, as3, as4, as5, &
+      cv_options, cloud_cv_options, cv_size, as1, as2, as3, as4, as5, print_detail_be, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, root, comm, ierr, &
       fmt_info, fmt_srfc, fmt_each, unit_end, max_ext_its, &  
       psi_chi_factor, psi_t_factor, psi_ps_factor, psi_rh_factor, &
-      chi_u_t_factor, chi_u_ps_factor,chi_u_rh_factor, t_u_rh_factor, ps_u_rh_factor
+      chi_u_t_factor, chi_u_ps_factor,chi_u_rh_factor, t_u_rh_factor, ps_u_rh_factor, &
+      interpolate_stats, be_eta, thin_rainobs, fgat_rain_flags
 
-   use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info, da_store_obs_grid_info_bufr
+   use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info, da_store_obs_grid_info_bufr, &
+                      da_fill_obs_structures_rain
    use da_obs_io, only : da_read_obs_bufr,da_read_obs_radar, &
       da_scan_obs_radar,da_scan_obs_ascii,da_read_obs_ascii, &
       da_read_obs_bufrgpsro, da_scan_obs_rain, da_read_obs_rain
+   use da_par_util1, only : da_proc_sum_real, da_proc_sum_int, da_proc_sum_ints
    use da_par_util, only : da_patch_to_global
+   use da_lapack, only : dsyev
 #if defined(RTTOV) || defined(CRTM)
    use da_radiance, only : da_setup_radiance_structures
 #endif
@@ -72,21 +76,21 @@ module da_setup_structures
    use da_ssmi, only : da_read_obs_ssmi,da_scan_obs_ssmi
    use da_tools_serial, only : da_get_unit, da_free_unit, da_array_print, da_find_fft_factors, &
       da_find_fft_trig_funcs
-   use da_tools, only: da_get_time_slots
+   use da_tools, only: da_get_time_slots, da_1d_eigendecomposition
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_vtox_transforms, only : da_check_eof_decomposition
    use da_rfz_cv3, only : da_rfz0
    use da_rf_cv3, only : RFDPAR1, RFDPAR2, RFDPARV
-#ifdef BUFR
-   use da_control, only : thin_conv
    use module_radiance, only : init_constants_derived
    use gsi_thinning, only : r999,r360,rlat_min,rlat_max,rlon_min,rlon_max, &
-                            dlat_grid,dlon_grid,thinning_grid_conv, &
-                            make3grids, destroygrids_conv
+                            dlat_grid,dlon_grid,thinning_grid_conv,thinning_grid, &
+                            make3grids, makegrids, destroygrids, destroygrids_conv, cleangrids_conv
 #ifdef DM_PARALLEL
 !  use mpi, only : mpi_min, mpi_max
    use da_par_util, only : true_mpi_real
 #endif
+#ifdef BUFR
+   use da_control, only : thin_conv
 #endif
 
    implicit none
@@ -101,6 +105,7 @@ contains
 #include "da_interpolate_regcoeff.inc"
 #include "da_rescale_background_errors.inc"
 #include "da_scale_background_errors.inc"
+#include "da_scale_background_errors_cv3.inc"
 #include "da_setup_background_errors.inc"
 #include "da_setup_be_global.inc"
 #include "da_setup_be_ncep_gfs.inc"
@@ -113,6 +118,7 @@ contains
 #include "da_setup_obs_structures_ascii.inc"
 #include "da_setup_obs_structures_bufr.inc"
 #include "da_setup_obs_structures_madis.inc"
+#include "da_setup_obs_structures_rain.inc"
 #include "da_setup_obs_interp_wts.inc"
 #include "da_setup_runconstants.inc"
 #include "da_cloud_model.inc"
@@ -124,5 +130,8 @@ contains
 #include "da_write_kma_increments.inc"
 #include "da_get_bins_info.inc"
 #include "da_truncate_spectra.inc"
+#include "da_chg_be_Vres.inc"
+#include "da_gen_eigen.inc"
+#include "da_eigen_to_covmatrix.inc"
 
 end module da_setup_structures

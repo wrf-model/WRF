@@ -29,7 +29,7 @@ module da_test
       typical_rf_rms,typical_rv_rms, typical_thickness_rms, typical_tb19v_rms,typical_tb37h_rms, &
       typical_tb85h_rms,typical_tb37v_rms,typical_tb85v_rms,typical_tb22v_rms, &
       typical_tb19h_rms,typical_speed_rms,typical_tpw_rms,typical_ref_rms, &
-      cv_options_hum,inv_typ_vp5_sumsq,inv_typ_vp1_sumsq, &
+      cv_options_hum,inv_typ_vp5_sumsq,inv_typ_vp1_sumsq, trajectory_io, &
       inv_typ_vp3_sumsq,inv_typ_vp2_sumsq,inv_typ_vpalpha_sumsq, &
       inv_typ_vp4_sumsq,typical_rho_rms,balance_geo,balance_cyc,balance_type, &
       balance_geocyc, var4d, num_fgat_time,cv_options_hum_specific_humidity, &
@@ -39,7 +39,7 @@ module da_test
       bogus, buoy, qscat, pseudo, radiance, use_radarobs, use_ssmiretrievalobs,use_rainobs, &
       use_gpsrefobs, use_ssmt1obs, use_ssmitbobs, use_ssmt2obs, use_gpspwobs,&
       use_gpsztdobs, Use_Radar_rf, use_rad, crtm_cloud, cloud_cv_options, &
-      ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
+      ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, fgat_rain_flags, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, cv_options, cv_size, &
       cloud_cv_options, cp, gas_constant, test_dm_exact, cv_size_domain
 
@@ -68,7 +68,7 @@ module da_test
    use da_tools_serial, only : da_get_unit,da_free_unit
    use da_tracing, only : da_trace_entry,da_trace_exit
    use da_transfer_model, only : da_transfer_wrftltoxa,da_transfer_xatowrftl, &
-      da_transfer_xatowrftl_adj,da_transfer_wrftltoxa_adj, da_setup_firstguess
+      da_transfer_xatowrftl_adj,da_transfer_wrftltoxa_adj,da_transfer_wrftoxb
    ! Don't use, as we pass a 3D array into a 1D one
    ! use da_wrf_interfaces, only : wrf_dm_bcast_real
    use da_wrf_interfaces, only : wrf_debug, wrf_shutdown
@@ -84,6 +84,7 @@ module da_test
    use da_transfer_model, only : da_transfer_xatowrftl_lbc, da_transfer_xatowrftl_adj_lbc, da_get_2nd_firstguess
    use da_4dvar, only : model_grid, da_tl_model, da_ad_model, input_nl_xtraj, upsidedown_ad_forcing, &
        u6_2, v6_2, w6_2, t6_2, ph6_2, p6, mu6_2, psfc6, moist6
+   use da_rain, only : da_transform_xtoy_rain, da_transform_xtoy_rain_adj
 #endif
 
    implicit none

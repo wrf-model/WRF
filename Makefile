@@ -29,9 +29,6 @@ DA_CONVERTOR_MODULES = $(DA_CONVERTOR_MOD_DIR) $(INCLUDE_MODULES)
 #EXP_MODULE_DIR = -I../dyn_exp
 #EXP_MODULES =  $(EXP_MODULE_DIR)
 
-# set this in the compile script now
-J = # -j6
-
 NMM_MODULE_DIR = -I../dyn_nmm
 NMM_MODULES =  $(NMM_MODULE_DIR)
 
@@ -45,9 +42,10 @@ configcheck:
 	@if [ "$(A2DCASE)" -a "$(DMPARALLEL)" ] ; then \
 	 echo "------------------------------------------------------------------------------" ; \
 	 echo "WRF CONFIGURATION ERROR                                                       " ; \
-	 echo "The $(A2DCASE) case cannot be used on distributed memory parallel systems." ; \
-	 echo "Only 3D WRF cases will run on these systems." ; \
-	 echo "Please chose a different case or rerun configure and chose a different option."  ; \
+	 echo "The $(A2DCASE) case requires a build for only single domain.                  " ; \
+	 echo "The $(A2DCASE) case cannot be used on distributed memory parallel systems.    " ; \
+	 echo "Only 3D WRF cases will run with the options that you selected.                " ; \
+	 echo "Please choose a different case, or rerun configure and choose a different set of options."  ; \
 	 echo "------------------------------------------------------------------------------" ; \
          exit 2 ; \
 	fi
@@ -330,6 +328,7 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f SOILPARM.TBL ; ln -s ../../run/SOILPARM.TBL . )
 	( cd test/em_real ; /bin/rm -f URBPARM.TBL ; ln -s ../../run/URBPARM.TBL . )
 	( cd test/em_real ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . )
+	( cd test/em_real ; /bin/rm -f MPTABLE.TBL ; ln -s ../../run/MPTABLE.TBL . )
 	( cd test/em_real ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . )
 	( cd test/em_real ; /bin/rm -f tr49t85 ; ln -s ../../run/tr49t85 . )
 	( cd test/em_real ; /bin/rm -f tr67t85 ; ln -s ../../run/tr67t85 . )
@@ -505,6 +504,7 @@ nmm_real : nmm_wrf
 	( cd test/nmm_real ; /bin/rm -f LANDUSE.TBL ; ln -s ../../run/LANDUSE.TBL . )
 	( cd test/nmm_real ; /bin/rm -f SOILPARM.TBL ; ln -s ../../run/SOILPARM.TBL . )
 	( cd test/nmm_real ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . )
+	( cd test/nmm_real ; /bin/rm -f MPTABLE.TBL ; ln -s ../../run/MPTABLE.TBL . )
 	( cd test/nmm_real ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . )
 	( cd test/nmm_real ; /bin/rm -f tr49t85 ; ln -s ../../run/tr49t85 . )
 	( cd test/nmm_real ; /bin/rm -f tr67t85 ; ln -s ../../run/tr67t85 . )

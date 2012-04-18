@@ -1060,7 +1060,7 @@ CONTAINS
 !crr ------------ STC initialization ------------------------------------
       IF (ITIME.EQ.1) THEN
           STLEV1=0.05    ! half of 10cm layer
-          STLEV2=1.10    ! half of second + first layer
+          STLEV2=1.05    ! half of second + first layer
     
           DEPTH = TD_DEPTH(ITYPE)
     
@@ -1513,7 +1513,7 @@ CONTAINS
 !crr ------------ STC initialization ------------------------------------
       IF (ITIME.EQ.1) THEN
           STLEV1=0.05    ! half of 10cm layer
-          STLEV2=1.10    ! half of second + first layer
+          STLEV2=1.05    ! half of second + first layer
 
           DEPTH = TD_DEPTH(ITYPE)
 
@@ -1532,6 +1532,7 @@ CONTAINS
 !
          CAPAC(1)=SNOB
          CAPAC(2)=SNOA
+         SNOWDEN = 3.75   ! mchen add for initialization
       IF (ITIME.EQ.1) THEN
          TA=TGS
          CAPAC(1)=0.
@@ -1668,7 +1669,8 @@ CONTAINS
       CH=1/(UM*RA)
 !
       FM=VKC/CU
-      FH=VKC/CT
+!      FH=VKC/CT   !fds corrected (02/2012)
+      FH=VKC/XCT
 !
 !
         ELATEN=EVAP/DTT
@@ -4219,7 +4221,7 @@ CONTAINS
              end if
              if(tssn(i).gt.273.16) then
               print*, ' Snow Temp. Wrong in thermal.f',i,tssn(i)  
-!              tssn(i)=273.16
+              tssn(i)=273.16
           STOP
              endif
 ! ------------------------------------------------------------------7272

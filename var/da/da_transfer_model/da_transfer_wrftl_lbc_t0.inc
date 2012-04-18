@@ -42,6 +42,10 @@ subroutine da_transfer_wrftl_lbc_t0 (grid)
 
    spec_bdy_width =  grid%spec_bdy_width
 
+#ifdef DM_PARALLEL
+#include "HALO_EM_E_TL.inc"
+#endif
+
    CALL g_couple ( model_config_flags, grid%mu_2 , grid%g_mu_2, grid%mub , qbdy3dtemp1 , grid%moist(:,:,:,P_G_QV), grid%g_moist(:,:,:,P_G_QV),  't' , grid%msfty , &
                    grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                    grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &

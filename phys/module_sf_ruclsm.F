@@ -3046,6 +3046,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 
 !  check if all snow can evaporate during DT
          BETA=1.
+         EPOT = -FQ*(QVATM-QSG)
          EPDT = EPOT * RAS *DELT
          IF(SNWEPR.LE.EPDT) THEN
             BETA=SNWEPR/max(1.e-8,EPDT)

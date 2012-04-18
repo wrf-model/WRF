@@ -13,13 +13,6 @@
 !---          computation, please note that snow is (1-Ri)*qs and graupel is Ri*qs. Otherwise, reflectivity will be underestimated.      
 !---       7) The Liu and Daum autoconverion is quite sensitive on Nt_c. For mixed-phase cloud and marine environment, Nt_c of 10 or 20 is suggested.
 !---          default value is 10E.6. Change accordingly for your use.
-!---       8)   Eq.7 and 8 are not in SI units and need to be converted in the code. the
-!              paper treats the units in Eq.7 and 8 as cgs,  and so need 1e-2^(2-ba) in
-!              the code, and that would give the plots in the paper. However, there is
-!              large uncertainty with this parameter, and one could argue that the units
-!              for these equations could be mm-g-s instead, which would mean 1e-3^(2-ba)
-!              in the code. This increases the snow fallspeed and gives an even
-!              better comparison of aa and ba with obs in paper.
 
 
       MODULE module_mp_sbu_ylin
@@ -539,8 +532,8 @@ CONTAINS
          am_s(k) =  10**(2*bm_s(k)-3.0)*am_s(k)
          aa_s(k) = aa_c1 + aa_c2*tc0 + aa_c3*Ri(k)
          ba_s(k) = ba_c1 + ba_c2*tc0 + ba_c3*Ri(k)
-!---  convert from mm.g.s to SI unit (this will give larger PI fall speed than in the paper)
-         aa_s(k) = (1e-3)**(2.0-ba_s(k))*aa_s(k)
+!---  convert to SI unit as in paper
+         aa_s(k) = (1e-2)**(2.0-ba_s(k))*aa_s(k)
 !---- get v from Mitchell 1996
          av_s(k) = best_a*viscmu(k)*(2*grav*am_s(k)/rho(k)/aa_s(k)/(viscmu(k)**2))**best_b
          bv_s(k) = best_b*(bm_s(k)-ba_s(k)+2)-1

@@ -619,4 +619,6 @@ module da_control
 
    logical :: global
 
+   logical, allocatable :: fgat_rain_flags(:)
+
 end module da_control

@@ -199,11 +199,11 @@ CONTAINS
      IF( xtime-xtime_old < 0.5*dt/60.0 ) THEN
 
        IF( xtime < end_fdda_hour*60.0 ) THEN
-         WRITE(message,'(a,i1,a,f10.3,a)') &
-          'D0',id,' Spectral nudging read in new data at time = ', xtime, ' min.'
+         WRITE(message,FMT='(a,i2.2,a,f15.3,a)') &
+          'D',id,' Spectral nudging read in new data at time = ', xtime, ' min.'
          CALL wrf_message( TRIM(message) )
-         WRITE(message,'(a,i1,a,2f8.2,a)') &
-          'D0',id,' Spectral nudging bracketing times = ', xtime_old, xtime_new, ' min.'
+         WRITE(message,FMT='(a,i2.2,a,2(f15.3,1x),a)') &
+          'D',id,' Spectral nudging bracketing times = ', xtime_old, xtime_new, ' min.'
          CALL wrf_message( TRIM(message) )
        ENDIF
 
@@ -433,7 +433,7 @@ CONTAINS
        tfac = 1.0
      ELSEIF( xtime >= actual_end_fdda_min-ABS(dtramp_min) .AND. xtime <= actual_end_fdda_min )THEN
        tfac = ( actual_end_fdda_min - xtime ) / ABS(dtramp_min)
-       IF( dtramp_min > 0.0 ) coef = (xtime-xtime_old+analysis_interval*60.0)/(analysis_interval*60.0)
+       IF( dtramp_min > 0.0 ) coef = (xtime-xtime_old+analysis_interval)/analysis_interval
      ELSE                                                     
        tfac = 0.0
      ENDIF
@@ -783,7 +783,7 @@ SUBROUTINE spectral_nudging_filter_3dx( f, nwave,            &
            sheet(ide,k-kts+1) = 0.
         END DO
 
-        CALL spectral_nudging_filter_fft_2d_ncar(nx,ny,nwave,sheet)
+        CALL spectralnudgingfilterfft2dncar(nx,ny,nwave,sheet)
 
         DO k=kts,kte
            DO i=ids,ide
@@ -837,7 +837,7 @@ SUBROUTINE spectral_nudging_filter_3dy( f, nwave,   &
            sheet(jde,k-kts+1) = 0.
         END DO
 
-        CALL spectral_nudging_filter_fft_2d_ncar(nx,ny,nwave,sheet)
+        CALL spectralnudgingfilterfft2dncar(nx,ny,nwave,sheet)
 
         DO k=kts,kte
            DO j=jds,jde
@@ -850,7 +850,7 @@ END SUBROUTINE spectral_nudging_filter_3dy
 
 !------------------------------------------------------------------------------
 
-SUBROUTINE spectral_nudging_filter_fft_2d_ncar(nx,ny,nwave,fin)
+SUBROUTINE spectralnudgingfilterfft2dncar(nx,ny,nwave,fin)
   IMPLICIT NONE
   INTEGER , INTENT(IN) :: nx, ny, nwave
   REAL , DIMENSION(nx,ny), INTENT(INOUT) :: fin
@@ -922,7 +922,7 @@ SUBROUTINE spectral_nudging_filter_fft_2d_ncar(nx,ny,nwave,fin)
     write(0,*) ' error in rfftmb ',ier
   END IF
 
-END SUBROUTINE spectral_nudging_filter_fft_2d_ncar
+END SUBROUTINE spectralnudgingfilterfft2dncar
 
 !-------------------------------------------------------------------
 

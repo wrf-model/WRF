@@ -62,13 +62,6 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
          iv%time = n
          filename = ' '
 
-         if (use_rainobs) then
-            ! scan rainfall observation file
-            write(filename(1:9), fmt='(a, i2.2, a)') 'ob', n,'.rain'
-            call da_scan_obs_rain(iv, filename)
-            !print*,'scan rainfall obs ',n,filename(1:9)
-         end if
- 
         write(filename(1:10), fmt='(a, i2.2, a)') 'ob', n,'.ascii'
 
          ! scan main body of gts observation file
@@ -122,12 +115,6 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
       do n=1, num_fgat_time
          iv%time = n
          filename = ' '  
-
-         if (use_rainobs) then
-            ! read rainfall observation file
-            write(filename(1:9), fmt='(a, i2.2, a)') 'ob', n,'.rain'
-           call da_read_obs_rain(iv, filename, iv%time)
-         end if
 
          write(filename(1:10), fmt='(a, i2.2, a)') 'ob', n,'.ascii'
 

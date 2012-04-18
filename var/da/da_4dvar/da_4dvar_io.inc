@@ -21,11 +21,11 @@ subroutine init_4dvar
    call nl_get_sf_sfclay_physics (head_grid%id, original_sf_sfclay_physics)
    call nl_get_bl_pbl_physics (head_grid%id, original_bl_pbl_physics)
    call nl_get_cu_physics (head_grid%id, original_cu_physics)
-   call nl_get_mp_zero_out (head_grid%id, original_mp_zero_out)
-   call nl_get_sf_surface_physics (head_grid%id, original_sf_surface_physics)
+   !call nl_get_mp_zero_out (head_grid%id, original_mp_zero_out)
+   !call nl_get_sf_surface_physics (head_grid%id, original_sf_surface_physics)
    call nl_get_ifsnow (head_grid%id, original_ifsnow)
    call nl_get_icloud (head_grid%id, original_icloud)
-   call nl_get_isfflx (head_grid%id, original_isfflx)
+   !call nl_get_isfflx (head_grid%id, original_isfflx)
 
    ! Initialize linked list for trajectory
    call xtraj_io_initialize
@@ -195,4 +195,3 @@ subroutine upsidedown_ad_forcing
    if (trace_use_dull) call da_trace_entry("upsidedown_ad_forcing")
 
 end subroutine upsidedown_ad_forcing
-

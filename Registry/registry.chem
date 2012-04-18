@@ -1,8 +1,32 @@
 
 # Chemistry Variables  (all shared at this point)
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
-rconfig   character  auxinput12_inname   namelist,time_control            1  "wrf_chem_input"   -     "name of auxinput12 infile" ""      ""
-rconfig   integer     io_form_auxinput12   namelist,time_control         1              2
+rconfig   character  auxinput12_inname   namelist,time_control   1  "wrf_chem_input"   -     "name of auxinput12 infile" ""      ""
+rconfig   integer    io_form_auxinput12  namelist,time_control   1  2
+
+
+state    real    erod            ij.    misc        1         -      i012rhdu "EROD"                "fraction of erodible surface in each grid cell (0-1)"       "none"
+state    real    CLDFRA2         ikj    misc        1         -      h        "CLDFRA2"             "CLOUD FRACTION"
+state    real    RAINPROD        ikj    misc        1         -      h        "RAINPROD"            "TOTAL RAIN PRODUCTION RATE"       "s-1"
+state    real    EVAPPROD        ikj    misc        1         -      h        "EVAPPROD"            "RAIN EVAPORATION RATE"            "s-1"
+state    real    QV_B4MP         ikj    misc        1         -      -        "QV_B4MP"             "WATER VAPOR BEFORE MICROPHYSICS"  "kg kg-1"
+state    real    QC_B4MP         ikj    misc        1         -      -        "QC_B4MP"             "CLOUD WATER BEFORE MICROPHYSICS"  "kg kg-1"
+state    real    QI_B4MP         ikj    misc        1         -      -        "QI_B4MP"             "CLOUD ICE BEFORE MICROPHYSICS"    "kg kg-1"
+state    real    QS_B4MP         ikj    misc        1         -      -        "QS_B4MP"             "SNOW BEFORE MICROPHYSICS"         "kg kg-1"
+
+state    real    ccn1            ikj    misc        1         -      r        "ccn1"                "CCN concentration at S=0.02%"  "#/cm3"
+state    real    ccn2            ikj    misc        1         -      r        "ccn2"                "CCN concentration at S=0.05%"  "#/cm3"
+state    real    ccn3            ikj    misc        1         -      r        "ccn3"                "CCN concentration at S=0.1%"   "#/cm3"
+state    real    ccn4            ikj    misc        1         -      r        "ccn4"                "CCN concentration at S=0.2%"   "#/cm3"
+state    real    ccn5            ikj    misc        1         -      r        "ccn5"                "CCN concentration at S=0.5%"   "#/cm3"
+state    real    ccn6            ikj    misc        1         -      r        "ccn6"                "CCN concentration at S=1.0%"   "#/cm3"
+
+# cloud water fractional removal rate needed for wet scavenging
+state    real    qlsink          ikj    misc        1         -      rdu      "qlsink"              "CLOUD WATER SINK"               "/S"
+state    real    precr           ikj    misc        1         -      rdu      "precr"               "RAIN PRECIPITATION RATE"        "KG/M2/S"
+state    real    preci           ikj    misc        1         -      rdu      "preci"               "ICE PRECIPITATION RATE"         "KG/M2/S"
+state    real    precs           ikj    misc        1         -      rdu      "precs"               "SNOW PRECIPITATION RATE"        "KG/M2/S"
+state    real    precg           ikj    misc        1         -      rdu      "precg"               "GRAUPEL PRECIPITATION RATE"     "KG/M2/S"
 
 #
 # Timing variables for chemistry
@@ -27,6 +51,7 @@ state    real  e_iso          i+jf     emis_ant     1         Z      i5r    "E_I
 state    real  e_so2          i+jf     emis_ant     1         Z      i5r    "E_SO2"               "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_no           i+jf     emis_ant     1         Z      i5r    "E_NO"                "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_co           i+jf     emis_ant     1         Z      i5r    "E_CO"                "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_co2          i+jf     emis_ant     1         Z      i5r    "E_CO2"               "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_eth          i+jf     emis_ant     1         Z      i5r    "E_ETH"               "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_hc3          i+jf     emis_ant     1         Z      i5r    "E_HC3"               "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_hc5          i+jf     emis_ant     1         Z      i5r    "E_HC5"               "EMISSIONS"          "mol km^-2 hr^-1"
@@ -125,28 +150,18 @@ state   real    e_hcooh         i+jf    emis_ant        1       Z       i5      
 state   real    e_cco_oh        i+jf    emis_ant        1       Z       i5      "E_CCO_OH"      "CCO_OH emissions"      "mol km^-2 hr^-1"
 state   real    e_rco_oh        i+jf    emis_ant        1       Z       i5      "E_RCO_OH"      "RCO_OH emissions"      "mol km^-2 hr^-1"
 
-#GHG anthropogenic emissions
-state   real    e_co2tst        i+jf    emis_ant        1       Z       i5r     "E_CO2TST"      "Anthropogenic CO2 test fluxes"     "mol km^-2 hr^-1"
-state   real    e_cotst         i+jf    emis_ant        1       Z       i5r     "E_COTST"       "Anthropogenic CO test fluxes"      "mol km^-2 hr^-1"
-state   real    e_ch4tst        i+jf    emis_ant        1       Z       i5r     "E_CH4TST"      "Anthropogenic CH4 test fluxes"     "mol km^-2 hr^-1"
-
-# SESQ and MBO fluxes for the new SOA_VBS mechanism
-state    real  sebio_sesq     ij      misc        1         -      i06r     "sebio_sesq"       "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_sesq      ij      misc        1         -      h        "ebio_sesq"        "Actual biog emiss"  "mol km^-2 hr^-1"
-state    real  sebio_mbo      ij      misc        1         -      i06r     "sebio_mbo"        "Reference biog emiss"  "mol km^-2 hr^-1"
-state    real  ebio_mbo       ij      misc        1         -      h        "ebio_mbo"         "Actual biog emiss"  "mol km^-2 hr^-1"
+# GHG anthropogenic emissions
+state   real    e_co2tst        i+jf    emis_ant        1       Z       i5h      "E_CO2TST"      "Anthropogenic CO2 test fluxes"     "mol km^-2 hr^-1"
+state   real    e_cotst         i+jf    emis_ant        1       Z       i5h      "E_COTST"       "Anthropogenic CO test fluxes"      "mol km^-2 hr^-1"
+state   real    e_ch4tst        i+jf    emis_ant        1       Z       i5h      "E_CH4TST"      "Anthropogenic CH4 test fluxes"     "mol km^-2 hr^-1"
 
 # GHG emission variables
-state   real     -              ijf     eghg_bio       -        -       -         -             "All biospheric GHG fluxes "         ""
-state   real    ebio_gee        ijf     eghg_bio       1        -       h       "EBIO_GEE"      "biospheric VPRM CO2 uptake"   "mol/km2/hr"
-state   real    ebio_res        ijf     eghg_bio       1        -       h       "EBIO_RES"      "biospheric VPRM CO2 release"  "mol/km2/hr"
-state   real    ebio_oce        ijf     eghg_bio       1        -       ih      "EBIO_OCE"      "ocean  CO2 fluxes"  "mol/km2/hr"
-state   real    ebio_co2tst     ijf     eghg_bio       1        -       h       "EBIO_CO2TST"   "biospheric CO2 test fluxes, e.g. CASA"     "mol/km2/hr"
-
-state   real    ebio_ch4tst     ijf     eghg_bio       1        Z       ih      "EBIO_CH4TST"   "Biogenic CH4 test fluxes e.g. wetland inventory"     "mol km^-2 hr^-1"
-state   real    ebio_ch4wet     ijf     eghg_bio       1        Z       h       "EBIO_CH4WET"   "Biogenic CH4 wetland emissions"                       "mol km^-2 hr^-1"
-state   real    ebio_ch4soil    ijf     eghg_bio       1        Z       h       "EBIO_CH4SOIL"  "CH4 soil uptake fluxes"                              "mol km^-2 hr^-1"
-state   real    ebio_ch4term    ijf     eghg_bio       1        Z       h       "EBIO_CH4TERM"  "CH4 termite emissions"                               "mol km^-2 hr^-1"
+state   real     -              ivjf     eghg_bio       -        -       -         -             "All biospheric GHG fluxes "                 ""
+state   real    ebio_gee        ivjf     eghg_bio       1        Z       h       "EBIO_GEE"      "biospheric VPRM CO2 uptake"                 "mol km^-2 hr^-1"
+state   real    ebio_res        ivjf     eghg_bio       1        Z       h       "EBIO_RES"      "biospheric VPRM CO2 release"                "mol km^-2 hr^-1"
+state   real    ebio_ch4wet     ivjf     eghg_bio       1        Z       h       "EBIO_CH4WET"   "Biogenic CH4 wetland emissions"             "mol km^-2 hr^-1"
+state   real    ebio_ch4soil    ivjf     eghg_bio       1        Z       h       "EBIO_CH4SOIL"  "CH4 soil uptake fluxes"                     "mol km^-2 hr^-1"
+state   real    ebio_ch4term    ivjf     eghg_bio       1        Z       h       "EBIO_CH4TERM"  "CH4 termite emissions"                      "mol km^-2 hr^-1"
 
 # dust and seas emission arrays
 state   real     -          i{dust}jf      emis_dust      -        -        -         -                    "Dust Emissions"         ""
@@ -164,8 +179,8 @@ state    real  eseas4       i{dust}jf      emis_seas      1         Z      -    
 # volcanic ash emissions
 #
 state   real     -              ikjf     emis_vol     -         -      -       -                      "Volcanic Emissions"         ""
-state    real  e_vash1          ikjf     emis_vol     1         Z      i{13}r    "E_VASH1"               "Volcanic Emissions, bin1"   "ug/m2/s"
-state    real  e_vash2          ikjf     emis_vol     1         Z      i{13}r    "E_VASH2"               "Volcanic Emissions, bin2"   "ug/m2/s"
+state    real  e_vash1          ikjf     emis_vol     1         Z      i{13}hr    "E_VASH1"               "Volcanic Emissions, bin1"   "ug/m2/s"
+state    real  e_vash2          ikjf     emis_vol     1         Z      i{13}hr    "E_VASH2"               "Volcanic Emissions, bin2"   "ug/m2/s"
 state    real  e_vash3          ikjf     emis_vol     1         Z      i{13}r    "E_VASH3"               "Volcanic Emissions, bin3"   "ug/m2/s"
 state    real  e_vash4          ikjf     emis_vol     1         Z      i{13}r    "E_VASH4"               "Volcanic Emissions, bin4"   "ug/m2/s"
 state    real  e_vash5          ikjf     emis_vol     1         Z      i{13}r    "E_VASH5"               "Volcanic Emissions, bin5"   "ug/m2/s"
@@ -419,6 +434,16 @@ state    real  ebio_c3h6      ij      misc        1         -      -        "ebi
 state    real  ebio_c3h8      ij      misc        1         -      -        "ebio_c3h8"        "Actual biog emiss"  "mol km^-2 hr^-1"
 state    real  ebio_so2       ij      misc        1         -      -        "ebio_so2"         "Actual biog emiss"  "mol km^-2 hr^-1"
 state    real  ebio_dms       ij      misc        1         -      -        "ebio_dms"         "Actual biog emiss"  "mol km^-2 hr^-1"
+
+# Ocean CO2 fluxes for the GHG options
+state    real  ebio_co2oce    ij      misc        1         -      i06rh    "ebio_co2oce"      "Ocean  CO2 fluxes"  "mol km^-2 hr^-1"
+
+# SESQ and MBO fluxes for the new SOA_VBS mechanism
+state    real  sebio_sesq     ij      misc        1         -      i06r     "sebio_sesq"       "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_sesq      ij      misc        1         -      r        "ebio_sesq"        "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  sebio_mbo      ij      misc        1         -      i06r     "sebio_mbo"        "Reference biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_mbo       ij      misc        1         -      r        "ebio_mbo"         "Actual biog emiss"  "mol km^-2 hr^-1"
+
 # Output of selected biogenic emissions from model MEGAN v2
 state    real  mebio_isop     ij      misc        1         -      -        "MEBIO_ISOP"       "MEGAN2 isoprene emiss" "mol km^-2 hr^-1"
 state    real  mebio_apin     ij      misc        1         -      -        "MEBIO_APIN"       "MEGAN2 a-pinene emiss" "mol km^-2 hr^-1"
@@ -438,7 +463,6 @@ state    real  mtsa           ijm     misc        1         Z      i06r     "mts
 state    real  mswdown        ijm     misc        1         Z      i06r     "mswdown"          "Monthly SWdown"  "W/m2"
 state    real  EFmegan        ij{nm}     misc        1         -      -        "EFmegan"          "MEGAN2 Emis Factor"       "ug m^-2 hr^-1"
 # Input for GOCART: Background chemistry, erodible surface emissions map
-#state    real  erod           ij.     misc        1         -      ihr     "EROD"          "fraction of erodible surface in each grid cell (0-1)"       "none"
 state    real  backg_oh       ikj     misc        1         -      i08r    "BACKG_OH"       "Background OH for Aerosol-GOcart option"       "volume mixing ratio"
 state    real  backg_h2o2     ikj     misc        1         -      i08r    "BACKG_H2O2"     "Background H2O2 for Aerosol-GOcart option"     "volume mixing ratio"
 state    real  backg_no3      ikj     misc        1         -      i08r    "BACKG_NO3"      "Background NO3 for Aerosol-GOcart option"      "volume mixing ratio"
@@ -447,22 +471,22 @@ state    real  clayfrac       ij      misc        1         -      i01r    "CLAY
 state    real  sandfrac       ij      misc        1         -      i01r    "SANDFRAC"       "Sand fraction in each grid cell (0-1)"      "none"
 
 # These 3D arrays are output from the SOA module for different purposes
-state    real  br_rto         ikj     misc        1         -      h        "BRNCH_RTO"      "branching ratio to determine NOx condition"  ""            "ug m^-3"
+state    real  br_rto         ikj     misc        1         -      r        "BRNCH_RTO"      "branching ratio to determine NOx condition"  ""            "ug m^-3"
 
 #
 # following used for volcanic eruptions only
 #
-state    real  ash_fall     ij      misc        1         -      h        "ASH_FALL"               "VOLCANIC ASH FALL"                 "kg/m2"
-state    real  erup_beg     ij      misc        1         -      i5       "ERUP_BEG"               "START TIME OF ERUPTION"        "?"
-state    real  erup_end     ij      misc        1         -      i5       "ERUP_END"               "END TIME OF ERUPTION"        "?"
+state    real  ash_fall     ij      misc        1         -      r        "ASH_FALL"               "VOLCANIC ASH FALL"                 "kg/m2"
+state    real  erup_beg     ij      misc        1         -      i{13}    "ERUP_BEG"               "START TIME OF ERUPTION"        "?"
+state    real  erup_end     ij      misc        1         -      i{13}    "ERUP_END"               "END TIME OF ERUPTION"        "?"
 #
 # following used for output to look at all kinds of stuff
 state    real  dep_vel_o3     ij      misc        1         -      -        "DEP_VEL"               "deposition velocities for o3"        "?"
 state    real  cu_co_ten      ikj     misc        1         -      -        "CU_CO_TEN"             "CONV. TRANSPORT FOR CO"              "?"
 
 # for lightning
-state    integer  ktop           ij      misc        1         -     rh          "KTOP"            "Convective Cloud top index"        "#"
-state    integer  ktop_adj       ij      misc        1         -     h           "KTOP_ADJ"        "KTOP limited by WMO tropopause"    "#"
+state    integer  ktop           ij      misc        1         -     r           "KTOP"            "Convective Cloud top index"        "#"
+state    integer  ktop_adj       ij      misc        1         -     r           "KTOP_ADJ"        "KTOP limited by WMO tropopause"    "#"
 
 #
 # Tendency diagnostics for chemistry (chemdiag)
@@ -635,12 +659,12 @@ state    real  ant_v2          ikj     misc          1         -      r         
 state    real  ant_v3          ikj     misc          1         -      r         "ant_v3"                  "ant_v3"                                "ug m^-3"
 state    real  ant_v4          ikj     misc          1         -      r         "ant_v4"                  "ant_v4"                                "ug m^-3"
 state    integer  vbs_nbin      v         misc          1         -      r        "vbs_nbin"                  "vbs_nbin"                                ""
-state    real  smpa_v1          ikj     misc          1         -      rh        "smpa_v1"                  "smpa_v1"                                "ug m^-3"
-state    real  smpbb_v1          ikj     misc          1         -      rh        "smpbb_v1"                  "smpbb_v1"                                "ug m^-3"
-state    real  asmpsoa_a01      ikj     misc          1         -      rh        "asmpsoa_a01"             "asmpsoa_a01"                              "ug m^-3"
-state    real  asmpsoa_a02      ikj     misc          1         -      rh        "asmpsoa_a02"             "asmpsoa_a02"                              "ug m^-3"
-state    real  asmpsoa_a03      ikj     misc          1         -      rh        "asmpsoa_a03"             "asmpsoa_a03"                              "ug m^-3"
-state    real  asmpsoa_a04      ikj     misc          1         -      rh        "asmpsoa_a04"             "asmpsoa_a04"                              "ug m^-3"
+state    real  smpa_v1          ikj     misc          1         -      r         "smpa_v1"                  "smpa_v1"                                "ug m^-3"
+state    real  smpbb_v1          ikj     misc          1         -      r         "smpbb_v1"                  "smpbb_v1"                                "ug m^-3"
+state    real  asmpsoa_a01      ikj     misc          1         -      r         "asmpsoa_a01"             "asmpsoa_a01"                              "ug m^-3"
+state    real  asmpsoa_a02      ikj     misc          1         -      r         "asmpsoa_a02"             "asmpsoa_a02"                              "ug m^-3"
+state    real  asmpsoa_a03      ikj     misc          1         -      r         "asmpsoa_a03"             "asmpsoa_a03"                              "ug m^-3"
+state    real  asmpsoa_a04      ikj     misc          1         -      r         "asmpsoa_a04"             "asmpsoa_a04"                              "ug m^-3"
 
 
 # photolysis rates
@@ -810,63 +834,33 @@ state   real   bzno2_o     ikj     misc    1       -       r       "bzno2_o"    
 state   real   bz_o        ikj     misc    1       -       r       "bz_o"  "Radicals"      "ppm"
 state   real   tbu_o       ikj     misc    1       -       r       "tbu_o" "Radicals"      "ppm"
 
-# additional variables for CO2 and GHG options
-# The following variables are to run the VPRM model; The veg_fra_vprm is for VPRM only and it's different than VEGFRA in wrfinput
-state   real     -               i{ghgv}jf    vprm_par     -        -     -       -     "VPRM parameters"                  ""
-state   real   vegfra_vprm       i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
-state   real   EVI               i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
-state   real   EVImin            i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
-state   real   EVImax            i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
-state   real   LSWI              i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
-state   real   LSWImax           i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
-state   real   LSWImin           i{ghgv}jf    vprm_par     1        -     i{18}r  ""    " " " "
+
+# Additional variables for CO2 and GHG options
+# The following variables are to run the VPRM model; The vegfra_vprm is for VPRM only and it's different than VEGFRA in wrfinput
+state   real     -               i{ghgv}jf    vprm_in     -        -     -          -              "VPRM input fields"                  ""
+state   real   vegfra_vprm       i{ghgv}jf    vprm_in     1        -     i{15}rh  "VEGFRA_VPRM"    " " " "
+state   real   evi               i{ghgv}jf    vprm_in     1        -     i{15}rh  "EVI"            " " " "
+state   real   evi_min           i{ghgv}jf    vprm_in     1        -     i{15}rh  "EVI_MIN"         " " " "
+state   real   evi_max           i{ghgv}jf    vprm_in     1        -     i{15}rh  "EVI_MAX"         " " " "
+state   real   lswi              i{ghgv}jf    vprm_in     1        -     i{15}rh  "LSWI"           " " " "
+state   real   lswi_max          i{ghgv}jf    vprm_in     1        -     i{15}rh  "LSWI_MAX"        " " " "
+state   real   lswi_min          i{ghgv}jf    vprm_in     1        -     i{15}rh  "LSWI_MIN"        " " " "
 
 # VPRM parameters to constrain GEE and RESP fluxes
-state   real   rad_vprm          {ghgv}       misc         1        -     ir  ""    " " " "
-state   real   lambda_vprm       {ghgv}       misc         1        -     ir  ""    " " " "
-state   real   alpha_vprm        {ghgv}       misc         1        -     ir  ""    " " " "
-state   real   resp_vprm         {ghgv}       misc         1        -     ir  ""    " " " "
+state   real   rad_vprm          {ghgv}       misc        1        -     h  "RAD_VPRM"      " " " "
+state   real   lambda_vprm       {ghgv}       misc        1        -     h  "LAMBDA_VPRM"   " " " "
+state   real   alpha_vprm        {ghgv}       misc        1        -     h  "ALPHA_VPRM"    " " " "
+state   real   resp_vprm         {ghgv}       misc        1        -     h  "RESP_VPRM"     " " " "
 
 # Parameters and fields to run the Kaplan model
-state   real     -               ijf    wet_in   -        -     -   -     "Wetland input files"                  ""
-state   real   Cpool             ijf    wet_in   1        -     i{18}rh ""    "LPJ Carbon pool"              "kgC/m^2 "
-state   real   wetmap            ijf    wet_in   1        -     i{18}rh ""    "Kaplan potential wetland map" " "
-state   real   T_ann             ijf    wet_in   1        -     i{18}r  ""    "mean annual temperature"      "celsius"
+state   real     -               ivjf          wet_in      -        -     -          -          "Wetland input fields"           ""
+state   real   cpool             ivjf          wet_in      1        -     i{15}rh    "CPOOL"    "LPJ Carbon pool"                "gC/m^2"
+state   real   wetmap            ivjf          wet_in      1        -     i{15}rh    "WETMAP"   "Kaplan potential wetland map"   ""
+state   real   t_ann             ivjf          wet_in      1        -     i{15}rh    "T_ANN"    "mean annual temperature"        "K"
 
 # Parameters to for calculating the termite emissions online
-# biomass termite per vegetation type [g/m^2]
-state   real     -               vf     biomt_par  -      -     -   -     "Termite biomass"                  ""
-state   real   biom_01           vf     biomt_par  1      -     ir  ""    "Termite biomass tropical forest"
-state   real   biom_02           vf     biomt_par  1      -     ir  ""    "Termite biomass rain-green forest"
-state   real   biom_03           vf     biomt_par  1      -     ir  ""    "Termite biomass tropical montane forest"
-state   real   biom_04           vf     biomt_par  1      -     ir  ""    "Termite biomass temperate forest"
-state   real   biom_05           vf     biomt_par  1      -     ir  ""    "Termite biomass savannah/grasland -arid"
-state   real   biom_06           vf     biomt_par  1      -     ir  ""    "Termite biomass savannah/grassland non arid"
-state   real   biom_07           vf     biomt_par  1      -     ir  ""    "Termite biomass temperate grassland/prairie"
-state   real   biom_08           vf     biomt_par  1      -     ir  ""    "Termite biomass succulent woods arid"
-state   real   biom_09           vf     biomt_par  1      -     ir  ""    "Termite biomass succulent woods non arid"
-state   real   biom_10           vf     biomt_par  1      -     ir  ""    "Termite biomass farmland/settlement"
-state   real   biom_11           vf     biomt_par  1      -     ir  ""    "Termite biomass patchy woods+crops/grass"
-state   real   biom_12           vf     biomt_par  1      -     ir  ""    "Termite biomass tree/scrub"
-state   real   biom_13           vf     biomt_par  1      -     ir  ""    "Termite biomass dry scrub/semidesert"
-state   real   biom_14           vf     biomt_par  1      -     ir  ""    "Termite biomass Eucalyptus acacia"
-
-# variables to capture the CH4 emissions from termite for the different vegetation types [micro g CH4/g term h]
-state   real     -              vf      emit_par  -        -     -   -     "Termite emissions"                  ""
-state   real   emch4_01         vf      emit_par  1        -     ir  ""    "CH4 termite emissions tropical forest"
-state   real   emch4_02         vf      emit_par  1        -     ir  ""    "CH4 termite emissions rain-green forest"
-state   real   emch4_03         vf      emit_par  1        -     ir  ""    "CH4 termite emissions tropical montane forest"
-state   real   emch4_04         vf      emit_par  1        -     ir  ""    "CH4 termite emissions temperate forest"
-state   real   emch4_05         vf      emit_par  1        -     ir  ""    "CH4 termite emissions savannah/grassland arid"
-state   real   emch4_06         vf      emit_par  1        -     ir  ""    "CH4 termite emissions savannah/grassland non-arid"
-state   real   emch4_07         vf      emit_par  1        -     ir  ""    "CH4 termite emissions temperate grassland/prairie"
-state   real   emch4_08         vf      emit_par  1        -     ir  ""    "CH4 termite emissions succulent woods arid"
-state   real   emch4_09         vf      emit_par  1        -     ir  ""    "CH4 termite emissions succulent woods non arid"
-state   real   emch4_10         vf      emit_par  1        -     ir  ""    "CH4 termite emissions farmland/settlement"
-state   real   emch4_11         vf      emit_par  1        -     ir  ""    "CH4 termite emissions patchy woods+crops/grass"
-state   real   emch4_12         vf      emit_par  1        -     ir  ""    "CH4 termite emissions tree/scrub"
-state   real   emch4_13         vf      emit_par  1        -     ir  ""    "CH4 termite emissions dry scrub/semidesert"
-state   real   emch4_14         vf      emit_par  1        -     ir  ""    "CH4 termite emissions Eucalyptus acaia"
+state   real   biomt_par         {ghgt}       misc        1        -     h    "BIOMT_PAR"    "biomass termite per vegetation type"  "g/m^2"
+state   real   emit_par          {ghgt}       misc        1        -     h    "EMIT_PAR"     " " " "
 
 # Chem Scalars
 state   real    -              ikjftb   chem        1         -     -    -                                       
@@ -1168,27 +1162,26 @@ state   real    tr18_7     ikjftb  tracer        1         -     i8rhusdf=(bdy_i
 state   real    tr18_8     ikjftb  tracer        1         -     i8rhusdf=(bdy_interp:dt)    "tr18_8"         "tr18_8"          -
 state   real    tr18_9     ikjftb  tracer        1         -     i8rhusdf=(bdy_interp:dt)    "tr18_9"         "tr18_9"          -
 
-# GHG chem arrays, Chem Scalars for CO2 
-state   real    -          ikjftb   chem         1         -     -    -
-state   real    co2_bio    ikjftb   chem         1         -     i01rh02usdf=(bdy_interp:dt)  "CO2_BIO"       "mixing ratio of VPRM CO2" "ppmv"
-state   real    co2_ant    ikjftb   chem         1         -     i01rh02usdf=(bdy_interp:dt)  "CO2_ANT"       "mixing ratio of anthropogenic CO2"          "ppmv"
-state   real    co2_oce    ikjftb   chem         1         -     i01rh02usdf=(bdy_interp:dt)  "CO2_OCE"       "mixing ratio of ocean CO2"                  "ppmv"
-state   real    co2_bck    ikjftb   chem         1         -     i01rh02usdf=(bdy_interp:dt)  "CO2_BCK"       "mixing ratio of background CO2"             "ppmv"
-state   real    co2_bbu    ikjftb   chem         1         -     i01rh02usdf=(bdy_interp:dt)  "CO2_BBU"       "mixing ratio of biomass burning CO2"        "ppmv"
-state   real    co2_atst   ikjftb   chem         1         -     i01rh02usdf=(bdy_interp:dt)  "CO2_ATST"      "mixing ratio of CO2, anthropogenic test fluxes"        "ppmv"
-state   real    co2_btst   ikjftb   chem         1         -     i01rh02usdf=(bdy_interp:dt)  "CO2_BTST"      "mixing ratio of CO2, biospheric test fluxes"        "ppmv"
+# GHG chem arrays, Chem Scalars for CO2 used in the GHG options
+state   real    co2_bio    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CO2_BIO"       "mixing ratio of VPRM CO2" "ppmv"
+state   real    co2_ant    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CO2_ANT"       "mixing ratio of anthropogenic CO2"          "ppmv"
+state   real    co2_oce    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CO2_OCE"       "mixing ratio of ocean CO2"                  "ppmv"
+state   real    co2_bck    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CO2_BCK"       "mixing ratio of background CO2"             "ppmv"
+state   real    co2_bbu    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CO2_BBU"       "mixing ratio of biomass burning CO2"        "ppmv"
+state   real    co2_tst    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CO2_TST"      "mixing ratio of CO2, anthropogenic test fluxes"        "ppmv"
 
-# Chem Scalars for CO used in GHG options       
-state   real    co_bck     ikjftb   chem         1         -     i01rh02usdf=(bdy_interp:dt)  "CO_BCK"        "mixing ratio of background CO"         "ppmv"
-state   real    co_ant     ikjftb   chem         1         -     i01rh02usdf=(bdy_interp:dt)  "CO_ANT"        "mixing ratio of anthropogenic CO"      "ppmv"
-state   real    co_bbu     ikjftb   chem         1         -     i01rh02usdf=(bdy_interp:dt)  "CO_BBU"        "mixing ratio of biomass burning CO"    "ppmv"
+# Chem Scalars for CO used in the GHG options
+state   real    co_bck     ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CO_BCK"        "mixing ratio of background CO"         "ppmv"
+state   real    co_ant     ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CO_ANT"        "mixing ratio of anthropogenic CO"      "ppmv"
+state   real    co_bbu     ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CO_BBU"        "mixing ratio of biomass burning CO"    "ppmv"
+state   real    co_tst     ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CO_TST"        "mixing ratio of CO, test fluxes"    "ppmv"
 
-# Chem Scalars for methane
-state   real    ch4_bio    ikjftb   chem         1         -     i01rh02usdf=(bdy_interp:dt)  "CH4_BIO"       "mixing ratio of natural biogenic CH4" "ppmv"
-state   real    ch4_ant    ikjftb   chem         1         -     i01rh02usdf=(bdy_interp:dt)  "CH4_ANT"       "mixing ratio of anthropogenic CH4"    "ppmv"
-state   real    ch4_bbu    ikjftb   chem         1         -     i01rh02usdf=(bdy_interp:dt)  "CH4_BBU"       "mixing ratio of biomass burning CH4"  "ppmv"
-state   real    ch4_bck    ikjftb   chem         1         -     i01rh02usdf=(bdy_interp:dt)  "CH4_BCK"       "mixing ratio of background CH4"       "ppmv"
-state   real    ch4_tst    ikjftb   chem         1         -     i01rh02usdf=(bdy_interp:dt)  "CH4_TST"       "mixing ratio of CH4, 2D test fluxes"  "ppmv"
+# Chem Scalars for methane used in the GHG option
+state   real    ch4_bio    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CH4_BIO"       "mixing ratio of natural biogenic CH4" "ppmv"
+state   real    ch4_ant    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CH4_ANT"       "mixing ratio of anthropogenic CH4"    "ppmv"
+state   real    ch4_bbu    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CH4_BBU"       "mixing ratio of biomass burning CH4"  "ppmv"
+state   real    ch4_bck    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CH4_BCK"       "mixing ratio of background CH4"       "ppmv"
+state   real    ch4_tst    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CH4_TST"       "mixing ratio of CH4, test fluxes"  "ppmv"
 
 #SAPRCNOV additional variables, automatically created using diff_mechanisSpc_wrfRegistry.m script (pablo-saide@uiowa.edu)
 state   real    h2so4           ikjftb  chem    1       -       i0{12}rhusdf=(bdy_interp:dt) "h2so4" "H2SO4 concentration"   "ppmv"
@@ -2360,26 +2353,23 @@ rconfig   integer     flashrate_method    namelist,chem        max_domains      
 rconfig   integer     iccg_method         namelist,chem        max_domains        1       rh      "iccg_method"        ""    ""
 rconfig   integer     cellcount_method    namelist,chem        max_domains        1       rh      "cellcount_method"   ""    ""            
 
-# GHG chemistry namelist options
-#VPRM parameters table
-#rconfig   character   vprm_par_file       namelist,chem        1  "VPRM_param_CERES2005_local.txt"     -     "the file contains VPRM parameters"  ""      ""
-rconfig   integer     vprm_class          namelist,chem        1   8         -     "number of the VPRM vegetation classes"  ""      ""
+# GHG chemistry namelist options:
+rconfig   character   vprm_opt            namelist,chem        max_domains   "VPRM_param_US"  -       "the file contains VPRM parameters"  ""      ""
 
 # wetland option for namelist
-rconfig   integer     wetland_type        namelist,physics     1   5         -     "different options to run the Kaplan wetland model or use external data sets"  ""     ""
-
-# wetland option for namelist
-rconfig   real        wpeat               namelist,chem        1   0.05         -     "tuning factor for peatland emissions"  ""     ""
-rconfig   real        wflood              namelist,chem        1   0.19         -     "tuning factor for floodplain emissions"  ""     ""
+rconfig   real        wpeat               namelist,chem        1            0.05         -     "tuning factor for peatland emissions"  ""     ""
+rconfig   real        wflood              namelist,chem        1            0.19         -     "tuning factor for floodplain emissions"  ""     ""
 
 # termite options for namelist
-#rconfig   character   file_term           namelist,chem        1   "CH4_termite_NW.txt"      -       "file contains termite emission parameters for ch4 and co2"  ""     ""
+rconfig   character   term_opt            namelist,chem        max_domains   "CH4_termite_NW"  -   "the option to choose the termite emission parameters for ch4 and co2"  ""     ""
 
 # Default chemistry settings are: passive/prescribed aerosols (chem_opt=0)
 #                                 gas and aerosol calculations turned on (gaschem_onoff=1 and aerchem_onoff=1), these can be turned off for debugging, etc.
 #                                 wet scavenging and cloud chemistry turned off (wetscav_onoff=0 and cldchem_onoff=0) since these only work with a subset of chemistry options
 #                                 vertical mixing turned on (vertmix_onoff=1) since this is done via the dry deposition routine and works with all chem options
 rconfig   integer     chem_conv_tr        namelist,chem          max_domains    1       rh    "chem_conv_opt"       ""      ""
+rconfig   integer     conv_tr_wetscav     namelist,chem          max_domains    1       rh    "conv_tr_wetscav_opt"       ""      ""
+rconfig   integer     conv_tr_aqchem      namelist,chem          max_domains    1       rh    "conv_tr_aqchem_opt"       ""      ""
 rconfig   integer     chem_opt            namelist,chem          max_domains    0       rh    "chem_opt"            ""      ""
 rconfig   integer     gaschem_onoff       namelist,chem          max_domains    1       rh    "gaschem_onoff"       ""      ""
 rconfig   integer     aerchem_onoff       namelist,chem          max_domains    1       rh    "aerchem_onoff"       ""      ""
@@ -2393,7 +2383,7 @@ rconfig   integer     aer_drydep_opt      namelist,chem          max_domains    
 rconfig   integer     diagnostic_chem     namelist,chem          max_domains    1       rh    "diagnostic_chem"     ""      ""
 rconfig   integer     aer_aerodynres_opt  namelist,chem          max_domains    1       rh    "aer_aerodynres_opt"  ""      ""
 rconfig   integer     emiss_opt           namelist,chem          max_domains    4       rh    "emiss_opt"           ""      ""
-rconfig   integer     emiss_opt_vol       namelist,chem          max_domains    4       rh    "emiss_opt_vol"       ""      ""
+rconfig   integer     emiss_opt_vol       namelist,chem          max_domains    0       rh    "emiss_opt_vol"       ""      ""
 rconfig   integer     dust_opt            namelist,chem          1              0       rh    "dust_opt"            ""      ""
 rconfig   integer     dmsemis_opt         namelist,chem          1              0       rh    "dmsemis_opt"         ""      ""
 rconfig   integer     seas_opt            namelist,chem          1              0       rh    "seas_opt"            ""      ""
@@ -2431,8 +2421,11 @@ rconfig   real        dust_alpha          namelist,chem          1    1.      rh
 rconfig   real        dust_gamma          namelist,chem          1    1.      rh    "dust_gamma"    "erodibility exponential tuning const"    ""
 rconfig   real        dust_smtune         namelist,chem          1    1.      rh    "dust_smtune"   "soil moisture tuning constant"    ""
 
+# Volcanic ash height
+rconfig   real        emiss_ash_hgt       namelist,chem          1      0.      rh    "emiss_ash_hgt"       "Volcanic ash cloud top elevation (AGL)"      ""
+
 # additional namelist variables to control deposition of the organic condensable vapors
-rconfig   real        depo_fact           namelist,chem          max_domains    0       rh    "deposition factor for SOA vapors"      ""      ""
+rconfig   real        depo_fact           namelist,chem          max_domains    0.25       rh    "deposition factor for SOA vapors"      ""      ""
 
 # track input
 rconfig   integer    track_chem_num       namelist,chem       1               0       -    "number of track chem requested"    ""    ""
@@ -2463,8 +2456,8 @@ package   chem_trace2   chem_opt==14                 -             chem:tracer_1
 package   chem_trace_ens   chem_opt==15              -             chem:tracer_1,tracer_2,tracer_3,tracer_4,tracer_5,tracer_6,tracer_7,tracer_8,tracer_9,tracer_10,tracer_11,tracer_12,tracer_13,tracer_14,tracer_15,tracer_16,tracer_17,tracer_18,tracer_19,tracer_20,tracer_ens
 
 # GHG chem packages, passive tracers
-package   co2_tracer        chem_opt==16             -             chem:co2_ant,co2_bio,co2_oce,co2_bck,co_ant,co_bck
-package   ghg_tracer        chem_opt==17             -             chem:co2_ant,co2_bio,co2_oce,co2_bbu,co2_bck,co2_atst,co2_btst,co_ant,co_bck,co_bbu,ch4_ant,ch4_bio,ch4_bbu,ch4_bck
+package   co2_tracer        chem_opt==16             -             chem:co2_ant,co2_bio,co2_oce,co2_bck,co2_tst,co_ant,co_bck
+package   ghg_tracer        chem_opt==17             -             chem:co2_ant,co2_bio,co2_oce,co2_bck,co2_tst,co2_bbu,co_ant,co_bck,co_bbu,co_tst,ch4_ant,ch4_bio,ch4_bck,ch4_bbu,ch4_tst
 
 package   cbmzsorg chem_opt==30                      -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn
 package   cbmz_mosaic_dms_4bin chem_opt==31          -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,dms,msa,dmso,dmso2,ch3so2h,ch3sch2oo,ch3so2,ch3so3,ch3so2oo,ch3so2ch2oo,mtf,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,ca_a01,ca_a02,ca_a03,ca_a04,co3_a01,co3_a02,co3_a03,co3_a04,msa_a01,msa_a02,msa_a03,msa_a04
@@ -2544,12 +2537,12 @@ package   eradmsorg       emiss_opt==3                   -             emis_ant:
 package   ecbmz_mosaic    emiss_opt==4                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_no2,e_ch3oh,e_c2h5oh,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_so4c,e_no3c,e_orgc,e_ecc
 package   ecptec          emiss_opt==5                   -             emis_ant:e_iso,e_so2,e_no,e_no2,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_pm_25,e_pm_10,e_oc,e_sulf,e_bc
 package   gocart_ecptec   emiss_opt==6                   -             emis_ant:e_so2,e_sulf,e_bc,e_oc,e_pm_25,e_pm_10
-package   mozem           emiss_opt==7                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16
+package   mozem           emiss_opt==7                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16,e_sulf
 package   mozcem          emiss_opt==8                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16,e_pm_10,e_pm_25,e_bc,e_oc,e_sulf
 package   mozmem           emiss_opt==10                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_co_a,e_orgj_a,e_co_bb,e_orgj_bb,e_voca,e_vocbb
 package   esaprcnov       emiss_opt==13                  -             emis_ant:e_so2,e_c2h6,e_c3h8,e_c2h2,e_alk3,e_alk4,e_alk5,e_ethene,e_c3h6,e_ole1,e_ole2,e_aro1,e_aro2,e_hcho,e_ccho,e_rcho,e_acet,e_mek,e_isoprene,e_terp,e_sesq,e_co,e_no,e_no2,e_phen,e_cres,e_meoh,e_gly,e_mgly,e_bacl,e_isoprod,e_methacro,e_mvk,e_prod2,e_ch4,e_bald,e_hcooh,e_cco_oh,e_rco_oh,e_nh3,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_orgi_a,e_orgj_a,e_orgi_bb,e_orgj_bb
-# Anthropogenic CO2, CO and CH4 emissions
-package   eco2            emiss_opt==16                  -             emis_ant:e_co2,e_co
+# Anthropogenic CO2, CO and CH4 emissions:
+package   eco2            emiss_opt==16                  -             emis_ant:e_co2,e_co2tst,e_co
 package   eghg            emiss_opt==17                  -             emis_ant:e_co2,e_co2tst,e_co,e_cotst,e_ch4,e_ch4tst
 #
 package   vash    emiss_opt_vol==1                   -             emis_vol:e_vash1,e_vash2,e_vash3,e_vash4,e_vash5,e_vash6,e_vash7,e_vash8,e_vash9,e_vash10
@@ -2575,8 +2568,8 @@ package   beis314       bio_emiss_opt==2             -             -
 package   megan2        bio_emiss_opt==3             -             state:mebio_isop,mebio_apin,mebio_bcar,mebio_acet,mebio_mbo,mebio_no,msebio_isop,mlai,pftp_bt,pftp_nt,pftp_sb,pftp_hb,mtsa,mswdown,EFmegan
 
 # Biospheric CO2 and CH4 emissions
-package   ebioco2         bio_emiss_opt==16              -             eghg_bio:ebio_gee,ebio_res,ebio_oce,ebio_co2tst
-package   ebioghg         bio_emiss_opt==17              -             eghg_bio:ebio_gee,ebio_res,ebio_oce,ebio_co2tst,ebio_ch4wet,ebio_ch4tst,ebio_ch4soil,ebio_ch4term
+package   ebioco2       bio_emiss_opt==16            -             vprm_in:vegfra_vprm,evi,evi_min,evi_max,lswi,lswi_max,lswi_min;eghg_bio:ebio_gee,ebio_res,ebio_co2oce
+package   ebioghg       bio_emiss_opt==17            -             vprm_in:vegfra_vprm,evi,evi_min,evi_max,lswi,lswi_max,lswi_min;wet_in:cpool,wetmap,t_ann;eghg_bio:ebio_gee,ebio_res,ebio_co2oce,ebio_ch4wet,ebio_ch4soil,ebio_ch4term
 
 # the following arrays only needed for burn options
 package   biomassb      biomass_burn_opt==1             -          state:mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr;ebu:ebu_no,ebu_no2,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,ebu_api,ebu_lim,ebu_tol,ebu_csl,ebu_hcho,ebu_ald,ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_so2,ebu_nh3,ebu_oc,ebu_bc,ebu_sulf,ebu_dms;ebu_in:ebu_in_no,ebu_in_co,ebu_in_co2,ebu_in_eth,ebu_in_hc3,ebu_in_hc5,ebu_in_hc8,ebu_in_ete,ebu_in_olt,ebu_in_oli,ebu_in_pm25,ebu_in_pm10,ebu_in_dien,ebu_in_iso,ebu_in_api,ebu_in_lim,ebu_in_tol,ebu_in_csl,ebu_in_hcho,ebu_in_ald,ebu_in_xyl,ebu_in_ket,ebu_in_macr,ebu_in_ora1,ebu_in_ora2,ebu_in_so2,ebu_in_nh3,ebu_in_oc,ebu_in_bc,ebu_in_sulf,ebu_in_dms,ebu_in_ash
@@ -2605,6 +2598,7 @@ package   shell_exact      aer_op_opt==5                -             -
 # emiss_inpt_pnnl_rs        = radm2-sorgam emissions in "PNNL" format (same as default except isoprene added)
 package   emiss_inpt_default          emiss_inpt_opt==1            -             -
 package   emiss_inpt_cptec            emiss_inpt_opt==3            -             -
+package   emiss_inpt_ghg              emiss_inpt_opt==16           -             -
 package   emiss_inpt_pnnl_cm          emiss_inpt_opt==101          -             -
 package   emiss_inpt_pnnl_rs          emiss_inpt_opt==102          -             -
 package   emiss_inpt_cb4              emiss_inpt_opt==103          -             -
@@ -2615,9 +2609,11 @@ package   emiss_inpt_mozmem           emiss_inpt_opt==112          -            
 #                                   and first-cut implementation for cbmz-mosaic species
 # gas/aer_bc/ic_pnnl        = bc/ic for PNNL simulations
 package   gas_bc_default              gas_bc_opt==1                -             -
+package   gas_bc_ghg                  gas_bc_opt==16               -             -
 package   gas_bc_pnnl                 gas_bc_opt==101              -             -
 package   gas_bc_cbm4                 gas_bc_opt==102              -             -
 package   gas_ic_default              gas_ic_opt==1                -             -
+package   gas_ic_ghg                  gas_ic_opt==16                -             -
 package   gas_ic_pnnl                 gas_ic_opt==101              -             -
 package   gas_ic_cbm4                 gas_ic_opt==102              -             -
 package   aer_bc_default              aer_bc_opt==1                -             -

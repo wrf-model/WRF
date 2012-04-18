@@ -176,7 +176,94 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        close (unit_in)
    end if
 
-   ! [6] buoy obs:
+   ! [6] mtgirs obs:
+
+   if (iv%info(mtgirs)%plocal(iv%time)-iv%info(mtgirs)%plocal(iv%time-1) > 0) then
+
+       open(unit=unit_in,file=trim(filename)//'.mtgirs',form='formatted',status='old',iostat=ios)
+       if (ios /= 0) Then
+          call da_error(__FILE__,__LINE__, &
+             (/"Cannot open file"//filename/))
+       end if
+
+       read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
+       if ( trim(adjustl(ob_type_string)) .ne. 'mtgirs' ) &
+           call da_error(__FILE__,__LINE__, &
+                           (/"Cannot find mtgirs marker. "/))
+       gn = 0
+       do n = iv%info(mtgirs)%plocal(iv%time-1) + 1, &
+              iv%info(mtgirs)%plocal(iv%time)
+          call da_search_obs (ob_type_string, unit_in, num_obs, n, iv, found_flag)
+          if (found_flag .eqv. .false.) &
+              call da_error(__FILE__,__LINE__, &
+                           (/"Cannot find mtgirs obs. "/))
+          gn = gn + 1
+       end do
+       if (gn /= iv%info(mtgirs)%plocal(iv%time)-iv%info(mtgirs)%plocal(iv%time-1)) &
+           call da_error(__FILE__,__LINE__, &
+                        (/"Unequal obs. found "/))
+       close (unit_in)
+   end if
+
+   ! [7] tamdar obs:
+
+   if (iv%info(tamdar)%plocal(iv%time)-iv%info(tamdar)%plocal(iv%time-1) > 0) then
+
+       open(unit=unit_in,file=trim(filename)//'.tamdar',form='formatted',status='old',iostat=ios)
+       if (ios /= 0) Then
+          call da_error(__FILE__,__LINE__, &
+             (/"Cannot open file"//filename/))
+       end if
+
+       read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
+       if ( trim(adjustl(ob_type_string)) .ne. 'tamdar' ) &
+           call da_error(__FILE__,__LINE__, &
+                           (/"Cannot find tamdar marker. "/))
+       gn = 0
+       do n = iv%info(tamdar)%plocal(iv%time-1) + 1, &
+              iv%info(tamdar)%plocal(iv%time)
+          call da_search_obs (ob_type_string, unit_in, num_obs, n, iv, found_flag)
+          if (found_flag .eqv. .false.) &
+              call da_error(__FILE__,__LINE__, &
+                           (/"Cannot find tamdar obs. "/))
+          gn = gn + 1
+       end do
+       if (gn /= iv%info(tamdar)%plocal(iv%time)-iv%info(tamdar)%plocal(iv%time-1)) &
+           call da_error(__FILE__,__LINE__, &
+                        (/"Unequal obs. found "/))
+       close (unit_in)
+   end if
+
+   ! [8] tamdar_sfc obs:
+
+   if (iv%info(tamdar_sfc)%plocal(iv%time)-iv%info(tamdar_sfc)%plocal(iv%time-1) > 0) then
+
+       open(unit=unit_in,file=trim(filename)//'.tamdar_sfc',form='formatted',status='old',iostat=ios)
+       if (ios /= 0) Then
+          call da_error(__FILE__,__LINE__, &
+             (/"Cannot open file"//filename/))
+       end if
+
+       read(unit_in,'(a20,i8)', end = 999, err = 1000) ob_type_string,num_obs
+       if ( trim(adjustl(ob_type_string)) .ne. 'tamdar_sfc' ) &
+           call da_error(__FILE__,__LINE__, &
+                           (/"Cannot find tamdar_sfc marker. "/))
+       gn = 0
+       do n = iv%info(tamdar_sfc)%plocal(iv%time-1) + 1, &
+              iv%info(tamdar_sfc)%plocal(iv%time)
+          call da_search_obs (ob_type_string, unit_in, num_obs, n, iv, found_flag)
+          if (found_flag .eqv. .false.) &
+              call da_error(__FILE__,__LINE__, &
+                           (/"Cannot find tamdar_sfc obs. "/))
+          gn = gn + 1
+       end do
+       if (gn /= iv%info(tamdar_sfc)%plocal(iv%time)-iv%info(tamdar_sfc)%plocal(iv%time-1)) &
+           call da_error(__FILE__,__LINE__, &
+                        (/"Unequal obs. found "/))
+       close (unit_in)
+   end if
+
+   ! [9] buoy obs:
 
    if (iv%info(buoy)%plocal(iv%time)-iv%info(buoy)%plocal(iv%time-1) > 0) then
 
@@ -205,7 +292,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        close (unit_in)
    end if
 
-   ! [7] Geo AMV obs:
+   ! [10] Geo AMV obs:
 
    if (iv%info(geoamv)%plocal(iv%time)-iv%info(geoamv)%plocal(iv%time-1) > 0) then
 
@@ -234,7 +321,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        close (unit_in)
    end if
 
-   ! [8] gpspw obs:
+   ! [11] gpspw obs:
 
    if (iv%info(gpspw)%plocal(iv%time)-iv%info(gpspw)%plocal(iv%time-1) > 0) then
 
@@ -263,7 +350,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        close (unit_in)
    end if
 
-   ! [9] SSM/I obs:
+   ! [12] SSM/I obs:
 
    if (iv%info(ssmi_rv)%plocal(iv%time)-iv%info(ssmi_rv)%plocal(iv%time-1) > 0) then
 
@@ -292,7 +379,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        close (unit_in)
    end if
 
-   ! [10] airep obs:
+   ! [13] airep obs:
 
    if (iv%info(airep)%plocal(iv%time)-iv%info(airep)%plocal(iv%time-1) > 0) then
 
@@ -321,7 +408,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        close (unit_in)
    end if
 
-   ! [11] polaramv obs:
+   ! [14] polaramv obs:
 
    if (iv%info(polaramv)%plocal(iv%time)-iv%info(polaramv)%plocal(iv%time-1) > 0) then
 
@@ -350,7 +437,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        close (unit_in)
    end if
 
-   ! [12] pilot obs:
+   ! [15] pilot obs:
 
    if (iv%info(pilot)%plocal(iv%time)-iv%info(pilot)%plocal(iv%time-1) > 0) then
 
@@ -380,7 +467,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        close (unit_in)
    end if
 
-   ! [13] ssmi_tb obs:
+   ! [16] ssmi_tb obs:
 
    if (iv%info(ssmi_tb)%plocal(iv%time)-iv%info(ssmi_tb)%plocal(iv%time-1) > 0) then
 
@@ -409,7 +496,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        close (unit_in)
    end if
 
-   ! [14] satem obs:
+   ! [17] satem obs:
 
    if (iv%info(satem)%plocal(iv%time)-iv%info(satem)%plocal(iv%time-1) > 0) then
 
@@ -438,7 +525,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        close (unit_in)
    end if
 
-   ! [15] ssmt1 obs:
+   ! [18] ssmt1 obs:
 
    if (iv%info(ssmt1)%plocal(iv%time)-iv%info(ssmt1)%plocal(iv%time-1) > 0) then
 
@@ -467,7 +554,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        close (unit_in)
    end if
 
-   ! [16] ssmt2 obs:
+   ! [19] ssmt2 obs:
 
    if (iv%info(ssmt2)%plocal(iv%time)-iv%info(ssmt2)%plocal(iv%time-1) > 0) then
 
@@ -496,7 +583,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        close (unit_in)
    end if
 
-   ! [17] scatterometer obs:
+   ! [20] scatterometer obs:
 
    if (iv%info(qscat)%plocal(iv%time)-iv%info(qscat)%plocal(iv%time-1) > 0) then
 
@@ -525,7 +612,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        close (unit_in)
    end if
 
-   ! [18] profiler obs:
+   ! [21] profiler obs:
 
    if (iv%info(profiler)%plocal(iv%time)-iv%info(profiler)%plocal(iv%time-1) > 0) then
 
@@ -554,7 +641,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        close (unit_in)
    end if
 
-   ! [19] TC bogus obs:
+   ! [22] TC bogus obs:
 
    if (iv%info(bogus)%plocal(iv%time)-iv%info(bogus)%plocal(iv%time-1) > 0) then
 
@@ -583,7 +670,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        close (unit_in)
    end if
 
-   ! [20] AIRS retrievals:
+   ! [23] AIRS retrievals:
 
    if (iv%info(airsr)%plocal(iv%time)-iv%info(airsr)%plocal(iv%time-1) > 0) then
 
@@ -612,7 +699,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
        close (unit_in)
    end if
 
-   ! [21] gpsref obs:
+   ! [24] gpsref obs:
 
    if (iv%info(gpsref)%plocal(iv%time)-iv%info(gpsref)%plocal(iv%time-1) > 0) then
 
@@ -642,7 +729,7 @@ subroutine da_read_iv_for_multi_inc(file_index, iv)
    end if
 
 
-   ! [22] radar obs:
+   ! [25] radar obs:
 
    if (iv%info(radar)%plocal(iv%time)-iv%info(radar)%plocal(iv%time-1) > 0) then
 

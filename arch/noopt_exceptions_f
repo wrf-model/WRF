@@ -71,7 +71,6 @@ nl_get_0_routines.o : nl_get_0_routines.F
 nl_get_1_routines.o : nl_get_1_routines.F
 nl_set_0_routines.o : nl_set_0_routines.F
 nl_set_1_routines.o : nl_set_1_routines.F
-module_IGWAVE_ADJUST.o : module_IGWAVE_ADJUST.F
 
 mediation_integrate.o \
 track_driver.o \
@@ -98,7 +97,6 @@ solve_interface.o \
 start_domain.o \
 start_em.o \
 wrf_fddaobs_in.o \
-module_IGWAVE_ADJUST.o \
 wrf_tsin.o :
 	$(RM) $@
 	$(SED_FTN) $*.F > $*.b 

@@ -157,8 +157,9 @@ contains
 #else
                                 ,grid%PDYN                                &
 #endif
+            ,grid%sm							  &
 #ifdef HWRF
-            ,grid%sm,GRID%RESTART,grid%NTIME0                             &
+            ,GRID%RESTART,grid%NTIME0                                     &
             ,GRID%MOVED,grid%MVNEST,grid%ntsd,GRID%NPHS,GRID%MOVEMIN      &
 #else
             ,GRID%MOVED,grid%MVNEST,grid%ntsd,GRID%NPHS                   &
@@ -794,11 +795,11 @@ contains
     !
     !     LOCAL
 
+    character*256                                         :: message
 #ifdef HWRF
     !zhang's doing
     INTEGER,INTENT(INOUT)                                 :: NTIME0
     LOGICAL,INTENT(IN)                                    :: RESTART
-    character*256                                         :: message
     REAL :: far,weight,sr2,pmax,xfar,yfar,xshift,yshift
     integer :: cx,cy
 #else

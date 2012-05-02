@@ -629,6 +629,7 @@
 #endif
 !
 ! BEGIN SAM TRAHAN ADDITION
+#ifdef HWRF
 ! EXTRA DIVERGENCE DAMPING AFTER NEST MOVE AND AT START OF SIMULATION
     extra_damping: if(config_flags%move_codamp_time>0) then
        if( ( .not. RESTRT)  .and.  allowed_to_read ) then
@@ -683,6 +684,7 @@
          grid%damp_grid=0
       ENDIF make_damp_grid
    endif extra_damping
+#endif
 ! END SAM TRAHAN ADDITION FOR EXTRA DAMPING
 !
 #ifdef HWRF

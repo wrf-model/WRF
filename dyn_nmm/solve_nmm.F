@@ -1142,7 +1142,10 @@
       btimx=timef()
 !
       CALL VTOA(                                                        &
-     &          grid,grid%ntsd,GRID%DT,grid%pt,grid%eta2                                    &
+#ifdef DM_PARALLEL
+     &          GRID,                                                   &
+#endif
+     &          grid%ntsd,GRID%DT,grid%pt,grid%eta2                                    &
      &         ,grid%hbm2,grid%ef4t                                               &
      &         ,grid%t,grid%dwdt,grid%rtop,grid%omgalf                                      &
      &         ,grid%pint,grid%div,grid%psdt,grid%res                                       &

@@ -627,66 +627,6 @@
       endif
 ! end of high-freq output
 #endif
-!
-! BEGIN SAM TRAHAN ADDITION
-#ifdef HWRF
-! EXTRA DIVERGENCE DAMPING AFTER NEST MOVE AND AT START OF SIMULATION
-    extra_damping: if(config_flags%move_codamp_time>0) then
-       if( ( .not. RESTRT)  .and.  allowed_to_read ) then
-          ! Initialize extra divergence damping at domain start
-          grid%move_countdown=ceiling(config_flags%move_codamp_time/grid%dt)
-          grid%damp_scale=1/real(grid%move_countdown)
-       endif
-       make_damp_grid: IF(config_flags%move_codamp_time>0.) THEN
-         ! DAMP_GRID -- used to determine spatiality of extra CODAMP after
-         ! a nest move.  
-
-         ! CODAMP=CODAMP*(1+DAMP_GRID)*countdown/move_codamp_time
-
-         ! Within close2edge km of edge, move_cdfact_edge is used.
-         ! close2edge = distance moved by sound in 3 physics timesteps
-         !              OR ten Y gridpoints, whichever is greater
-         ! Beyond 3*close2edge km from edges, move_cdfact_mid is used.
-         ! Between, we smoothly transition from one to the other.
-
-         close2edge=max(grid%dy_nmm*10.,331.*grid%dt*grid%nphs*3.)
-
-         fedge=config_flags%move_cdfact_edge
-         fmid=config_flags%move_cdfact_mid
-         fdiff=fedge-fmid
-
-         ! Initialize nest move divergence damping field DAMP_GRID
-         damp_grid_j: do j=max(jds,jts),min(jde-1,jte)
-            if(mod(j,2)==0) then
-               xshift=0.5
-            else
-               xshift=0.0
-            endif
-            damp_grid_i: do i=max(ids,its),min(ide-1,ite)
-               ! Distance from a rectangle, when within the rectangle,
-               ! is the distance to its closest side.
-               yfar=grid%dy_nmm*real(min(j-1,jde-1-j))
-               xfar=grid%dx_nmm(i,j)*2.*min(real(i-1)+xshift,real(ide-1-i)+0.5-xshift)
-               dfar=min(xfar,yfar)
-
-               if(dfar<close2edge) then
-                  grid%DAMP_GRID(i,j)=fedge
-               elseif(dfar>3.*close2edge) then
-                  grid%DAMP_GRID(i,j)=fmid
-               else
-                  ! Scale smoothly between the two regions.
-                  grid%DAMP_GRID(i,j)=fmid + fdiff*(0.5+0.5* & 
-                      cos(pi1*(dfar-close2edge)/(2.*close2edge)))
-               endif
-            enddo damp_grid_i
-         enddo damp_grid_j
-      ELSE
-         grid%damp_grid=0
-      ENDIF make_damp_grid
-   endif extra_damping
-#endif
-! END SAM TRAHAN ADDITION FOR EXTRA DAMPING
-!
 #ifdef HWRF
 ! Begin Sam Trahan's doing for vortex_tracker=4 option
          call VORTTRAK_INIT(grid,config_flags,       &

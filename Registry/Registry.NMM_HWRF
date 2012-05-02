@@ -819,8 +819,6 @@ state    real   RAINCV          ij     misc        1         -      -       ""  
 # Duplicate of nomove_freq for overriding nest movement at certain times
 state    real nomove_freq_hr          -       dyn_nmm  -     -    rh    "nomove_freq" "nest will not move at analysis time or multiples of this hour (if positive)"
 state     integer move_countdown          -      dyn_nmm        1         -      rh       "MOVE_COUNTDOWN"                "Timesteps left with extra CODAMP"           ""
-state     real    damp_scale              -      dyn_nmm        1         -      rh       "DAMP_SCALE"                    "Scaling factor for MOVE_COUNTDOWN"          ""
-state     real    damp_grid               ij     dyn_nmm        1         -      rh       "DAMP_GRID"                     "Divergence damping factor (minus 1) after nest move" ""
 
 
 
@@ -1313,19 +1311,6 @@ rconfig   real    slophc                  namelist,dynamics     max_domains   6.
 rconfig   real    wp                      namelist,dynamics     max_domains   0.    irh  "wp"  "Off-centering weight in the updating of nonhyrostatic eps"
 
 rconfig   integer terrain_smoothing       namelist,dynamics     1             1     irh  "parallel_smooth" "nest_terrain smoothing method 0=none, 1=old, 2=new"
-
-# Increase CODAMP after nest move
-# Near edges:
-# CODAMP=CODAMP*(1+move_cdfact_edge)*countdown/move_codamp_time
-# Away from edges:
-#       =CODAMP*(1+move_cdfact_mid)*countdown/move_codamp_time
-# "countdown" is move_codamp_time at nest move, decreases by dt every timestep,
-# CODAMP increase is turned off after countdown<=0.  
-# Here, countdown/move_codamp_time = move_countdown/damp_scale
-
-rconfig   real    move_cdfact_edge        namelist,physics      max_domains   3.0     h     "move_cdfact_edge" "1-(CODAMP multiplier near domain edge) after nest move" ""
-rconfig   real    move_cdfact_mid         namelist,physics      max_domains   0.5     h     "move_cdfact_edge" "1-(CODAMP multiplier far from domain edge) after nest move" ""
-rconfig   real    move_codamp_time        namelist,physics      max_domains   -1.0   h     "move_codamp_time" "Seconds after nest move during which extra div. damp. is active (<=0 means disable)" "s"
 
 # Bdy_control
 rconfig   integer spec_bdy_width          namelist,bdy_control		1             5       irh    "spec_bdy_width"                ""      ""

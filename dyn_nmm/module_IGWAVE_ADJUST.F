@@ -1071,9 +1071,6 @@
 !***********************************************************************
       SUBROUTINE DDAMP(NTSD,DT,DETA1,DETA2,PDSL,PDTOP,DIV,HBM2          &
      &                ,T,U,V,DDMPU,DDMPV                                &
-#ifdef HWRF
-     &                ,MOVE_COUNTDOWN,DAMP_GRID,DAMP_SCALE              &
-#endif
      &                ,IHE,IHW,IVE,IVW                                  &              
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
@@ -1128,12 +1125,6 @@
       INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
 !
       INTEGER,INTENT(IN) :: NTSD
-!
-#ifdef HWRF
-      INTEGER, INTENT(INOUT) :: MOVE_COUNTDOWN
-      REAL, INTENT(IN) :: DAMP_SCALE
-      REAL, DIMENSION(IMS:IME,JMS:JME), INTENT(IN) :: DAMP_GRID
-#endif
 !
       REAL,INTENT(IN) :: DT,PDTOP
 !
@@ -1198,11 +1189,6 @@
 !$omp& private(i,j,rdpdx,rdpdy,fcxm)
       DO J=MYJS2,MYJE2
       DO I=MYIS1_P1,MYIE1_P1
-#ifdef HWRF
-        IF(MOVE_COUNTDOWN>0) THEN
-           FCXM=1.0+MOVE_COUNTDOWN*DAMP_SCALE*DAMP_GRID(I,J)
-        ENDIF
-#endif
         RDPDX=DDMPU(I,J)*FCXM                                           &
      &       /(PDE(I+IVW(J),J)  +PDE(I+IVE(J),J))    
         RDPDY=DDMPV(I,J)*FCXM                                           &
@@ -1233,11 +1219,6 @@
 !
         DO J=MYJS2,MYJE2
         DO I=MYIS1_P1,MYIE1_P1
-#ifdef HWRF
-        IF(MOVE_COUNTDOWN>0) THEN
-           FCIM=1.0+MOVE_COUNTDOWN*DAMP_SCALE*DAMP_GRID(I,J)
-        ENDIF
-#endif
           RDPDX=DDMPU(I,J)*FCIM                                        &
      &         /(DPDE(I+IVW(J),J)  +DPDE(I+IVE(J),J))
           RDPDY=DDMPV(I,J)*FCIM                                        &
@@ -1255,10 +1236,6 @@
 !
 !-----------------------------------------------------------------------
 !
-
-#ifdef HWRF
-      if(MOVE_COUNTDOWN>0)  MOVE_COUNTDOWN=MOVE_COUNTDOWN-1
-#endif
 
       END SUBROUTINE DDAMP
 !

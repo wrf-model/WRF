@@ -381,14 +381,6 @@ SUBROUTINE med_nest_move ( parent, nest )
     nest%KZMAX=KME
     parent%KZMAX=KME  ! just for safety
 
-#ifdef HWRF
-!   Initialize extra divergence damping
-    if(config_flags%move_codamp_time>0) then
-       nest%move_countdown=ceiling(config_flags%move_codamp_time/nest%dt)
-       nest%damp_scale=1/real(nest%move_countdown)
-    endif
-#endif
-
 !    write(0,*) " nest%imask_nostag "
 !    write(0,"(3X,1X,1000(I3))") (I, I = IPS, MIN(IPE,IDE-1) )
     DO J = MIN(JPE,JDE-1), JPS, -1

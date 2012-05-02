@@ -1142,10 +1142,7 @@
       btimx=timef()
 !
       CALL VTOA(                                                        &
-#ifdef DM_PARALLEL
-     &          GRID,                                                   &
-#endif
-     &          grid%ntsd,GRID%DT,grid%pt,grid%eta2                                    &
+     &          grid,grid%ntsd,GRID%DT,grid%pt,grid%eta2                                    &
      &         ,grid%hbm2,grid%ef4t                                               &
      &         ,grid%t,grid%dwdt,grid%rtop,grid%omgalf                                      &
      &         ,grid%pint,grid%div,grid%psdt,grid%res                                       &
@@ -2196,9 +2193,6 @@
       CALL DDAMP(grid%ntsd,GRID%DT,grid%deta1,grid%deta2,grid%pdsl      &
      &          ,grid%pdtop,grid%div,grid%hbm2                          &
      &          ,grid%t,grid%u,grid%v,grid%ddmpu,grid%ddmpv             &
-#ifdef HWRF
-     &          ,grid%MOVE_COUNTDOWN,grid%DAMP_GRID,grid%DAMP_SCALE     &
-#endif
      &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                    &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                                &
      &          ,IMS,IME,JMS,JME,KMS,KME                                &

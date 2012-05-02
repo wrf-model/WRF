@@ -1229,7 +1229,6 @@ CONTAINS
        WRITE(mess,*)'ERROR module_domain:  Array size for you_warned_me2 is fixed at ',max_hst_mods
        CALL wrf_message(mess)
        CALL wrf_error_fatal('Did you really type > max_hst_mods fields into ', TRIM(fname) ,' ?')
-#endif
      ELSE
        IF ( .NOT. you_warned_me2(count_em,id) ) THEN
          CALL wrf_message(mess)     ! Write warning message once for each field

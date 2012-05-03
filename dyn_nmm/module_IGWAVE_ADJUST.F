@@ -88,10 +88,6 @@
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------------------
-!#ifdef DM_PARALLEL
-!      INCLUDE "mpif.h"
-!#endif
-!-----------------------------------------------------------------------
       LOGICAL,INTENT(IN) :: FIRST,HYDRO
       INTEGER,INTENT(IN) :: SIGMA
 !
@@ -638,9 +634,6 @@
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------------------
-#if defined(DM_PARALLEL) && !defined(STUBMPI)
-      INCLUDE "mpif.h"
-#endif
 #ifdef DM_PARALLEL
       TYPE (DOMAIN) :: GRID
       INTEGER,INTENT(IN) :: MYPE,MPI_COMM_COMP
@@ -951,7 +944,6 @@
       IMPLICIT NONE
 !-----------------------------------------------------------------------
 #ifdef DM_PARALLEL
-!     INCLUDE "mpif.h"
       TYPE (DOMAIN) :: GRID
 #endif
 !-----------------------------------------------------------------------

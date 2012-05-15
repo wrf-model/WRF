@@ -38,8 +38,8 @@ CONTAINS
 !endJOE
 #if (NMM_CORE==1)
                  ,DISHEAT,RTHRATEN                                 &
-#endif
                  ,HPBL2D, EVAP2D, HEAT2D                           &   !Kwon FOR SHAL. CON.
+#endif
 #if (HWRF==1)
                  ,gfs_alpha                                        &
 #endif
@@ -87,7 +87,7 @@ CONTAINS
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME,&
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
-                   TEMFPBLSCHEME,QNSEPBL09SCHEME,GFS2011SCHEME, &
+                   TEMFPBLSCHEME,QNSEPBL09SCHEME, &
                    p_qi,param_first_scalar 
    USE module_wind_generic, ONLY : windspec
 #else
@@ -306,9 +306,9 @@ CONTAINS
 #if (NMM_CORE==1)
    LOGICAL,      INTENT(IN   )    ::   DISHEAT ! (for HWRF)
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN   )   ::   RTHRATEN !Kwon for GFS PBL
-#endif
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
                     INTENT(OUT) ::  HPBL2D, EVAP2D, HEAT2D                 !Kwon for Shallow Convection
+#endif
 
 #if defined(HWRF)
    REAL,       INTENT(IN)         ::   gfs_alpha

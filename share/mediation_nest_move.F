@@ -235,12 +235,14 @@ SUBROUTINE med_nest_move ( parent, nest )
 #if (NMM_CORE == 1 && NMM_NEST == 1)
      IF(MOD(dy,2) .NE. 0)THEN
        dy=dy+sign(1,dy)
-       WRITE(0,*)'WARNING: DY REDEFINED FOR THE NMM CORE AND RE-SET TO MASS POINT dy=',dy
+       WRITE(mess,*)'WARNING: DY REDEFINED FOR THE NMM CORE AND RE-SET TO MASS POINT dy=',dy
+       call wrf_debug(1,mess)
      ENDIF
 
      IF ( dx .gt. 1 .or. dx .lt. -1 .or. dy .gt. 2 .or. dy .lt. -2 ) THEN
-       WRITE(0,*)'PROBLEM WITH SHIFTDX AND SHIFTDY','dx=',dx,'dy=',dy
-       CALL wrf_error_fatal( 'med_nest_move' )
+3038 format("med_nest_move: TRIED TO SHIFT TOO FAR: dx must be in [-1,1] and dy in [-2,2] but dx=",I0," and dy=",I0)
+       WRITE(mess,3038) dx,dy
+       CALL wrf_error_fatal( mess )
      ENDIF
 #endif
 
@@ -575,7 +577,8 @@ character*256 message, message2
 ! of new center.
 
 #  ifdef MOVING_DIAGS
-write(0,*)'Check to see if COMPUTE_VORTEX_CENTER_ALARM is ringing? '
+write(message,*)'Check to see if COMPUTE_VORTEX_CENTER_ALARM is ringing? '
+call wrf_debug(1,message)
 #  endif
    CALL nl_get_parent_grid_ratio ( grid%id , pgr )
    CALL nl_get_dx ( grid%id , dx )
@@ -583,7 +586,8 @@ write(0,*)'Check to see if COMPUTE_VORTEX_CENTER_ALARM is ringing? '
    IF ( WRFU_AlarmIsRinging( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc ) ) THEN
 
 #  ifdef MOVING_DIAGS
-     write(0,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
+     write(message,*)'COMPUTE_VORTEX_CENTER_ALARM is ringing  '
+     call wrf_debug(1,message)
 #  endif
      CALL WRFU_AlarmRingerOff( grid%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
      CALL domain_clock_get( grid, current_timestr=timestr )
@@ -692,9 +696,12 @@ write(0,*)'Check to see if COMPUTE_VORTEX_CENTER_ALARM is ringing? '
        ENDIF
 
 #  ifdef MOVING_DIAGS
-write(0,*)'search set around last position '
-write(0,*)'   is, ids-1,  ie,  ide-1 ', is, ids-1, ie, ide-1
-write(0,*)'   js, jds-1,  je,  jde-1 ', js, jds-1, je, jde-1
+write(message,*)'search set around last position '
+call wrf_debug(1,message)
+write(message,*)'   is, ids-1,  ie,  ide-1 ', is, ids-1, ie, ide-1
+call wrf_debug(1,message)
+write(message,*)'   js, jds-1,  je,  jde-1 ', js, jds-1, je, jde-1
+call wrf_debug(1,message)
 #  endif
 
        imploc = -1
@@ -808,7 +815,8 @@ write(0,*)'   js, jds-1,  je,  jde-1 ', js, jds-1, je, jde-1
       ENDIF
 
 #  ifdef MOVING_DIAGS
-write(0,*)'computed grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
+write(message,*)'computed grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
+call wrf_debug(1,message)
 i = grid%vc_i ; j = grid%vc_j ; height( i,j ) = height(i,j) * 1.2   !mark the center
 CALL domain_clock_get( grid, current_timestr=message2 )
 WRITE ( message , FMT = '(A," on domain ",I3)' ) TRIM(message2), grid%id
@@ -845,14 +853,16 @@ WRITE ( message , FMT = '(A," on domain ",I3)' ) TRIM(message2), grid%id
      CALL wrf_dm_bcast_integer( jmploc , 1 )
 
 #  ifdef MOVING_DIAGS
-write(0,*)'after bcast : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
+write(message,*)'after bcast : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
+call wrf_debug(1,message)
 #  endif
 
 
    ENDIF   ! COMPUTE_VORTEX_CENTER_ALARM ringing
 
 #  ifdef MOVING_DIAGS
-write(0,*)'After ENDIF : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
+write(message,*)'After ENDIF : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
+call wrf_debug(1,message)
 #  endif
 
    dc_i = (ide-ids+1)/2.    ! domain center
@@ -904,7 +914,8 @@ write(0,*)'After ENDIF : grid%vc_i, grid%vc_j ',grid%vc_i, grid%vc_j
 
 #  ifdef MOVING_DIAGS
    IF ( wrf_dm_on_monitor() ) THEN
-write(0,*)' changing grid%vc_i,  move_cd_x * pgr ', grid%vc_i, move_cd_x * pgr, move_cd_x, pgr
+write(mess,*)' changing grid%vc_i,  move_cd_x * pgr ', grid%vc_i, move_cd_x * pgr, move_cd_x, pgr
+call wrf_debug(1,mess)
    ENDIF
 #  endif
 
@@ -1180,7 +1191,6 @@ LOGICAL FUNCTION should_not_move ( id )
 END FUNCTION
 
 #ifdef HWRF
-#if (NMM_CORE == 1 && NMM_NEST == 1)
 LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
    USE module_domain
    USE module_configure
@@ -1200,22 +1210,25 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
                   nids, nide, njds, njde, nkds, nkde, &
                   nims, nime, njms, njme, nkms, nkme, &
                   nips, nipe, njps, njpe, nkps, nkpe
-   real :: dx,dy,kid_ic,kid_jc,my_ic,my_jc,pgr,pgrn
+   real :: dx,dy,kid_ic,kid_jc,my_ic,my_jc,pgr,pgrn,hr,two_dt,when,before,after
    real, parameter :: pmult=1.35
    integer :: inew,jnew
    logical :: abort
 
 ! PURPOSE: DECIDE THE DIRECTION OF MOVE
-!    Two modes:
+!    Three modes:
 !        vortex_tracker=3 -- use results of STATS_FOR_MOVE to follow
 !          the vortex center.  If the vortex is more than 3 X
 !          gridpoints or 6 Y gridpoints from the center, then
-!          move to follow it.
+!          move to follow it.  This is the HWRF-X algorithm.
 !        vortex_tracker=2 -- follow this domain's nest.  Only works
 !          if this domain has a nest, otherwise this domain is
 !          stationary.  If the nest domain is more than 3 X
 !          gridpoints or 6 Y gridpoints from the center, then move
 !          to follow it. (Added by Sam Trahan, April 1, 2011)
+!        vortex_tracker=4 -- more advanced tracker that is less likely
+!          to jump to other low pressure systems, and less confused
+!          by MSLP noise.  (Added by Sam Trahan, September, 2011.)
 ! RETURN VALUE: TRUE if domain should move, FALSE otherwise.
 ! OUTPUTS:
 !        move_cd_x = number of parent gridpoints to move in X
@@ -1244,6 +1257,21 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
       write(mess,'("d",I0,": not moving because it has more than one nest")') grid%id
       call WRF_MESSAGE(trim(mess))
       abort=.true.
+   endif
+
+   ! Switch off nest motion if we're at the analysis time or 6hr forecast
+   if(grid%nomove_freq_hr>0) then
+      hr=(grid%ntsd*grid%dt)/3600.0
+      when=anint(hr/grid%nomove_freq_hr)*grid%nomove_freq_hr
+
+      before=when-3.0/60.0-grid%dt*2.0/3600.0
+      after=when+grid%dt*2.0/3600.0
+
+      if(hr>before.and.hr<after) then
+         abort=.true.
+         write(mess,'("d",I0,": cannot move: forecast hour too close to a ",F0.3,"-hourly time")') grid%id,grid%nomove_freq_hr
+         call wrf_message(trim(mess))
+      endif
    endif
 
    !  SWITCH OFF NEST MOTION IF TOO CLOSE TO ANY OF THE BOUNDARIES
@@ -1357,6 +1385,29 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
             endif
          endif
       endif nest_following
+      revised_nest_motion: if(grid%vortex_tracker==4) then
+         if((grid%XLOC_1-grid%XLOC_2) .GE. 3) then
+            move_cd_x=-1
+         elseif((grid%XLOC_2-grid%XLOC_1) .GE. 3) then
+            move_cd_x=1
+         else
+            move_cd_x=0
+         endif
+         if((grid%YLOC_2-grid%YLOC_1) .GE. 6) then
+            move_cd_y=2
+         elseif((grid%YLOC_1-grid%YLOC_2) .GE. 6) then
+            move_cd_y=-2
+         else
+            move_cd_y=0
+         endif
+         if(wrf_dm_on_monitor()) then
+            if(move_cd_x/=0 .or. move_cd_y/=0) then
+               write(mess,'("d",I0," moving x",SP,I0," y",I0,SS," to follow vortex")') &
+                    grid%id,move_cd_x,move_cd_y
+               call wrf_debug(1,trim(mess))
+            endif
+         endif
+      endif revised_nest_motion
       vortex_following: IF(grid%vortex_tracker==3 .or. grid%vortex_tracker==1)THEN
          IF((grid%XLOC_1-grid%XLOC_2) .GE. 3)THEN 
             move_cd_x  = -1
@@ -1475,6 +1526,7 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
       INTEGER                          :: IDS,IDE,JDS,JDE,KDS,KDE
       INTEGER                          :: IMS,IME,JMS,JME,KMS,KME
       INTEGER                          :: ITS,ITE,JTS,JTE,KTS,KTE
+   character*255 :: message
 ! interface
    INTERFACE
      LOGICAL FUNCTION direction_of_move2 ( parent , nest , dx , dy )
@@ -1527,7 +1579,8 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
      CALL wrf_error_fatal ( 'domains in moving nest simulations can have only 1 nest' )
    ENDIF
    kid = 1
-   write(0,*) 'grid%num_nests=',grid%num_nests
+   write(message,*) 'grid%num_nests=',grid%num_nests
+   call wrf_debug(5,message)
 
    direction_of_move = direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
 
@@ -1610,16 +1663,19 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
          ! domain since we're moving
          IF(MOD(move_cd_y,2) .NE. 0)THEN
            move_cd_y=move_cd_y+sign(1,move_cd_y)
-            WRITE(0,*)'WARNING: move_cd_y REDEFINED FOR THE NMM CORE AND RE-SET TO MASS POINT move_cd_y=',move_cd_y
+            WRITE(message,*)'WARNING: move_cd_y REDEFINED FOR THE NMM CORE AND RE-SET TO MASS POINT move_cd_y=',move_cd_y
+            call wrf_debug(1,message)
          ENDIF
 
          CALL wrf_dm_move_nest ( grid , grid%nests(kid)%ptr%intermediate_grid , -move_cd_x*pgr, -move_cd_y*pgr )
          CALL adjust_domain_dims_for_move( grid%nests(kid)%ptr%intermediate_grid , -move_cd_x*pgr, -move_cd_y*pgr )
          grid%nests(kid)%ptr%i_parent_start = grid%nests(kid)%ptr%i_parent_start - move_cd_x*pgr
-         write(0,*)'grid%nests(kid)%ptr%i_parent_start =',grid%nests(kid)%ptr%i_parent_start,grid%nests(kid)%ptr%id
+         write(message,*)'grid%nests(kid)%ptr%i_parent_start =',grid%nests(kid)%ptr%i_parent_start,grid%nests(kid)%ptr%id
+         call wrf_debug(1,message)
          CALL nl_set_i_parent_start( grid%nests(kid)%ptr%id, grid%nests(kid)%ptr%i_parent_start )
          grid%nests(kid)%ptr%j_parent_start = grid%nests(kid)%ptr%j_parent_start - move_cd_y*pgr
-         write(0,*)'grid%nests(kid)%ptr%j_parent_start =',grid%nests(kid)%ptr%j_parent_start,grid%nests(kid)%ptr%id
+         write(message,*)'grid%nests(kid)%ptr%j_parent_start =',grid%nests(kid)%ptr%j_parent_start,grid%nests(kid)%ptr%id
+         call wrf_debug(1,message)
          CALL nl_set_j_parent_start( grid%nests(kid)%ptr%id, grid%nests(kid)%ptr%j_parent_start )
          IDS = grid%nests(kid)%ptr%sd31
          IDE = grid%nests(kid)%ptr%ed31
@@ -1666,190 +1722,4 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
 
    RETURN
 END FUNCTION direction_of_move
-#endif
-#else
-#if (NMM_CORE == 1 && NMM_NEST == 1)
-LOGICAL FUNCTION nest_roam ( parent , grid , move_cd_x, move_cd_y )
-   USE module_domain
-   USE module_configure
-   USE module_dm
-   IMPLICIT NONE
-! arguments
-   TYPE(domain) , POINTER    :: parent, grid
-   INTEGER, INTENT(OUT)      :: move_cd_x , move_cd_y
-! local
-   INTEGER     :: coral_dist_x, coral_dist_y
-   INTEGER     :: ntsd
-
-   LOGICAL, SAVE     :: first = .true.
-   INTEGER, SAVE :: x_inc, y_inc
-
-   IF (first) THEN
-      x_inc = 0
-      y_inc = 1
-      first = .FALSE.
-   END IF
-
-   CALL domain_clock_get(parent,advancecount=ntsd)
-   IF ( MOD(ntsd,4) /= 0 ) THEN
-      move_cd_x = 0
-      move_cd_y = 0
-      nest_roam = .FALSE.
-      RETURN
-   END IF
-
-! Simplifying assumption: domains in moving nest simulations have only
-! one parent and only one child.
-   IF   ( grid%num_nests .GT. 1 ) THEN
-     CALL wrf_error_fatal ( 'domains in moving nest simulations can have only 1 nest' )
-   ENDIF
-
-   coral_dist_x = grid%ed31/grid%parent_grid_ratio
-   coral_dist_y = grid%ed32/grid%parent_grid_ratio
-
-   IF ( x_inc==1 .AND. (grid%i_parent_start+coral_dist_x) .ge. parent%ed31 - 5)THEN
-     WRITE(0,*)' nest_roam TURN TO NORTH'
-     x_inc = 0
-     y_inc = 1
-   ELSE IF( y_inc==1 .AND. (grid%j_parent_start+coral_dist_y) .ge. parent%ed32 - 5)THEN
-     WRITE(0,*)' nest_roam TURN TO WEST'
-     x_inc = -1
-     y_inc = 0
-   ELSE IF ( x_inc==-1 .AND. grid%i_parent_start .le. 5)THEN
-     WRITE(0,*)' nest_roam TURN TO SOUTH'
-     x_inc = 0
-     y_inc = -1
-   ELSE IF ( y_inc==-1 .AND. grid%j_parent_start .le. 5)THEN
-     WRITE(0,*)' nest_roam TURN TO EAST'
-     x_inc = 1
-     y_inc = 0
-   ENDIF
-
-   move_cd_x = x_inc
-   move_cd_y = y_inc
-   nest_roam = .TRUE.
-
-  RETURN
-
-END FUNCTION nest_roam
-
-
-
-
-LOGICAL FUNCTION direction_of_move_old ( parent , grid , move_cd_x, move_cd_y )
-  !ADDED BY YOUNG KWON FOR VORTEX FOLLOWING NEST MOVE
-   USE module_domain, ONLY : domain
-!   USE module_configure
-!   USE module_dm
-!!!   USE WRF_ESMF_MOD   !!COMMENTED OUT BY KWON TO FOLLOW DUSAN'S CODING
-   IMPLICIT NONE
-! arguments
-   TYPE(domain) , POINTER    :: parent, grid
-   LOGICAL, EXTERNAL         :: wrf_dm_on_monitor
-   INTEGER, INTENT(OUT)      :: move_cd_x , move_cd_y
-! local
-   INTEGER     :: coral_dist, kid
-   INTEGER     :: dw, de, ds, dn, pgr, idum, jdum
-   INTEGER     :: cids, cide, cjds, cjde, ckds, ckde, &
-                  cims, cime, cjms, cjme, ckms, ckme, &
-                  cips, cipe, cjps, cjpe, ckps, ckpe, &
-                  nids, nide, njds, njde, nkds, nkde, &
-                  nims, nime, njms, njme, nkms, nkme, &
-                  nips, nipe, njps, njpe, nkps, nkpe
-
-! executable
-!
-! Simplifying assumption: domains in moving nest simulations have only
-! one parent and only one child.
-   IF   ( grid%num_nests .GT. 1 ) THEN
-     CALL wrf_error_fatal ( 'domains in moving nest simulations can have only 1 nest' )
-   ENDIF
-   kid = 1
-
-!   write(0,*) 'grid%ed31  grid%ed32  grid%ed33   ', grid%ed31, grid%ed32,grid%ed33
-
-!  SWITCH OFF NEST MOTION IF TOO CLOSE TO ANY OF THE BOUNDARIES
-
-   coral_dist=grid%ed31/grid%parent_grid_ratio
-   IF(grid%i_parent_start .le. 5 .or. (grid%i_parent_start+coral_dist) .ge. parent%ed31 - 5)THEN  
-     grid%mvnest=.false.
-     WRITE(0,*)'MOVING SHUT OFF BECAUSE NEST IS CLOSE TO EAST/WEST BOUNDARY'
-   ENDIF
-!
-!   coral_dist=grid%ed33/grid%parent_grid_ratio
-   coral_dist=grid%ed32/grid%parent_grid_ratio       !by Kwon for IJK instead of IKJ
-!   IF(grid%j_parent_start .le. 5 .OR. (grid%j_parent_start+coral_dist) .ge. parent%ed33 - 5)THEN
-   IF(grid%j_parent_start .le. 5 .OR. (grid%j_parent_start+coral_dist) .ge. parent%ed32 - 5)THEN    !by Kwon for IJK instead of IKJ
-     grid%mvnest=.false.
-     WRITE(0,*)'MOVING SHUT OFF BECAUSE NEST IS CLOSE TO NORTH/SOUTH BOUNDARY'
-   ENDIF
-
-!
-!  DETERMINE AUTOMATICALLY THE DIRECTION OF GRID MOTION
-!
-   IF(grid%num_nests.EQ.0 .AND. grid%num_moves.EQ.-99 .AND. grid%mvnest)THEN 
-      IF((grid%XLOC_1-grid%XLOC_2) .GE. 3)THEN 
-         move_cd_x  = -1
-         IF((grid%YLOC_2-grid%YLOC_1) .GE. 3)THEN
-            WRITE(0,*)'HURRICANE IS MOVING IN THE NORTH EAST DIRECTION'
-            WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1, &
-                      'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
-            move_cd_y  = +1
-         ELSE
-            WRITE(0,*)'HURRICANE IS MOVING IN THE EASTERLY FLOW'
-            WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1, &
-                      'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
-            move_cd_y  =  0
-         ENDIF
-         direction_of_move_old= .TRUE. 
-         grid%moved = .TRUE.
-      ELSE IF((grid%XLOC_2-grid%XLOC_1) .GE. 3)THEN        
-         move_cd_x  = +1 
-         IF((grid%YLOC_2-grid%YLOC_1) .GE. 3)THEN
-            WRITE(0,*)'HURRICANE IS MOVING IN THE NORTH WEST DIRECTION'
-            WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1,  &
-                      'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
-            move_cd_y  = -1
-         ELSE
-           WRITE(0,*)'HURRICANE IN THE WESTERLY CURRENT'
-           WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1,   &
-                     'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
-           move_cd_y  =  0
-         ENDIF
-         direction_of_move_old= .TRUE.
-         grid%moved = .TRUE.
-      ELSE IF ((grid%YLOC_2-grid%YLOC_1) .GE. 3)THEN 
-        WRITE(0,*)'HURRICANE IS MOVING NORTHWARD'
-        WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1,      &
-                  'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
-        move_cd_x  = 0 
-        move_cd_y  = 2 
-        direction_of_move_old= .TRUE.
-        grid%moved = .TRUE.
-      ELSE IF ((grid%YLOC_1-grid%YLOC_2) .GE. 6)THEN    ! wait for the move
-        WRITE(0,*)'STRANGE: HURRICANE IS MOVING SOUTHWARD, MAY BE DUE TO INITIAL MANUVARE'
-        WRITE(0,*)'INEW=',grid%XLOC_2,'IOLD=',grid%XLOC_1,      &
-                  'JNEW=',grid%YLOC_2,'JOLD=',grid%YLOC_1
-        move_cd_x  =  0
-        move_cd_y  = -2 
-        direction_of_move_old= .TRUE.
-        grid%moved = .TRUE.
-      ELSE
-        move_cd_x  =  0 
-        move_cd_y  =  0 
-        direction_of_move_old= .FALSE.
-        grid%moved = .FALSE.        
-      ENDIF
-   ELSE
-    move_cd_x  =  0
-    move_cd_y  =  0
-    direction_of_move_old= .FALSE.
-    grid%moved = .FALSE.      
-   ENDIF
-
-  RETURN
-
-END FUNCTION direction_of_move_old
-
-#endif
 #endif

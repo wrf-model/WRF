@@ -19,6 +19,7 @@ SUBROUTINE init_modules( phase )
 #ifdef INTIO
  USE module_ext_internal        , ONLY : init_module_ext_internal
 #endif
+ USE module_wrf_error           , ONLY : init_module_wrf_error
 
 ! <DESCRIPTION>
 ! This routine USES the modules in WRF and then calls the init routines
@@ -49,7 +50,6 @@ SUBROUTINE init_modules( phase )
 
  INTEGER, INTENT(IN) :: phase    ! phase==1 means return after MPI_INIT()
                                  ! phase==2 means resume after MPI_INIT()
-
 IF ( phase == 1 ) THEN
  CALL init_module_bc
  CALL init_module_configure
@@ -64,9 +64,14 @@ IF ( phase == 1 ) THEN
 #ifdef DM_PARALLEL
  CALL split_communicator
  CALL init_module_wrf_quilt    !! this *must* be called before init_module_dm
+
+ ! We must never reach this line or phase 2 in an I/O server.
+
  CALL init_module_dm
 #endif
 ELSE
+ CALL init_module_wrf_error ! must be called after init_module_dm
+
  CALL init_module_nesting
  CALL init_module_timing
  CALL init_module_tiles

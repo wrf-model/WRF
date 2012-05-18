@@ -847,7 +847,7 @@ CONTAINS
                ,RAINCV=RAINCV,PRATEC=tmppratec,QFX=qfx,ZNU=znu  &
                ,U3D=u,V3D=v,W=w,T3D=t,PI3D=pi,RHO3D=rho         &
                ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
-               ,QVFTEN=RQVFTEN,QVPBLTEN=RQVBLTEN                &
+               ,QVPBLTEN=RQVBLTEN                               &
                ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND            &
                ,CU_ACT_FLAG=CU_ACT_FLAG                         &
                ,CUDT=cudt_pass                                  &
@@ -858,6 +858,11 @@ CONTAINS
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
               ! optionals
+#if (NMM_CORE == 1 )
+               ,QVFTEN=FORCEQ                                   &
+#else
+               ,QVFTEN=RQVFTEN                                  &
+#endif
                ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
                ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
                ,RUCUTEN = RUCUTEN,RVCUTEN = RVCUTEN             &

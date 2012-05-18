@@ -853,7 +853,7 @@ integer myproc
 !---------------------------------------------------------------------
 ! Local
    CHARACTER*256 LUTYPE
-   CHARACTER*80 :: message
+   CHARACTER*512 :: message
    INTEGER  :: landuse_unit, LS, LC, LI, LUN, NSN
    INTEGER  :: i, j, itf, jtf, is, cats, seas, curs
    INTEGER , PARAMETER :: OPEN_OK = 0
@@ -957,10 +957,11 @@ integer myproc
           LUN=LUCATS
           NSN=LUSEAS
             IF(LUTYPE.NE.'SSIB') THEN !this is not really true for ssib lsm (fds)
-            PRINT *, 'LANDUSE TYPE = "' // TRIM (LUTYPE) // '" FOUND',        &
+            write(message,*) 'LANDUSE TYPE = "' // TRIM (LUTYPE) // '" FOUND',        &
                    LUCATS,' CATEGORIES',LUSEAS,' SEASONS',     &
                    ' WATER CATEGORY = ',ISWATER,               &
                    ' SNOW CATEGORY = ',ISICE
+            call wrf_message(message)
             ENDIF
         ENDIF
         DO ls=1,luseas

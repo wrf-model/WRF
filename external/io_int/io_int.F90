@@ -1217,6 +1217,7 @@ END SUBROUTINE ext_int_get_var_ti_integer
 !--- put_var_ti_integer
 SUBROUTINE ext_int_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Count,  Status )
   USE module_ext_internal
+  USE module_internal_header_util, only: int_gen_ti_header_integer_varna
   IMPLICIT NONE
 #include "intio_tags.h"
   INTEGER ,       INTENT(IN)  :: DataHandle

@@ -39,6 +39,7 @@
              ! coupling timestep using the
              call wrf_message('Guessing coupling timestep from d01 settings because there is no d02...')
              call model_to_grid_config_rec(1,model_config_rec,config_flags)
+             dt=config_flags%dt
           endif
           nphs=config_flags%nphs
           movemin=config_flags%movemin
@@ -61,6 +62,7 @@
      &           )
 !----------------------------------------------------------------------
 !
+      USE MODULE_STATS_FOR_MOVE, only: vorttrak_init
       USE MODULE_TIMING
 #ifdef HWRF
       USE MODULE_HIFREQ, only : hifreq_open
@@ -240,6 +242,11 @@
 
       INTEGER :: interval_seconds, restart_interval
 
+#ifdef HWRF
+      REAL :: xshift,xfar,yfar,dfar,close2edge
+      REAL :: fedge,fmid,fdiff
+#endif
+
 ! z0base new
  
       REAL,DIMENSION(0:30) :: VZ0TBL_24
@@ -296,6 +303,11 @@
 !zhang's doing ends
 #endif
 
+#ifdef HWRF
+! Sam's doing for hour 0 & 6 nest movement safeguards
+        grid%nomove_freq_hr=config_flags%nomove_freq
+#endif
+
 #if 1
       IF(IME>NMM_MAX_DIM )THEN
         WRITE(wrf_err_message,*)                                       &
@@ -342,6 +354,12 @@
          CALL WRF_ERROR_FATAL(wrf_err_message)
       END IF
 
+#if (HWRF==1)
+      if(grid%vortex_tracker<1 .or. grid%vortex_tracker>3) then
+         write(wrf_err_message,*)' domain ',grid%id,' has an invalid value ',grid%vortex_tracker,' for grid%vortex_tracker.  It must be 1, 2 or 3.'
+      endif
+#endif
+      
 #if (HWRF==1)
       if(grid%vortex_tracker<1 .or. grid%vortex_tracker>3) then
          write(wrf_err_message,*)' domain ',grid%id,' has an invalid value ',grid%vortex_tracker,' for grid%vortex_tracker.  It must be 1, 2 or 3.'
@@ -609,7 +627,14 @@
       endif
 ! end of high-freq output
 #endif
-!
+#ifdef HWRF
+! Begin Sam Trahan's doing for vortex_tracker=4 option
+         call VORTTRAK_INIT(grid,config_flags,       &
+                            IDS,IDE,JDS,JDE,KDS,KDE, &
+                            IMS,IME,JMS,JME,KMS,KME, &
+                            ITS,ITE,JTS,JTE,KTS,KTE)
+! End Sam Trahan's doing for vortex_tracker=4 option
+#endif
 #ifdef HWRF
 !zhang's doing
   IF((.NOT.RESTRT .AND. .NOT.ANAL) .OR. .NOT.allowed_to_read)THEN

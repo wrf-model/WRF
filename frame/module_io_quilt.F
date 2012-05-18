@@ -2537,6 +2537,7 @@ okay_to_w = .false.
 #endif
 
     SUBROUTINE init_module_wrf_quilt
+      USE module_wrf_error, only: init_module_wrf_error
 !<DESCRIPTION>
 ! Both client (compute) and server tasks call this routine to initialize the 
 ! module.  Routine setup_quilt_servers() is called from this routine to 
@@ -2631,6 +2632,8 @@ okay_to_w = .false.
                                 mpi_comm_here,        &
                                 mpi_comm_local,       &
                                 mpi_comm_io_groups)
+
+      call init_module_wrf_error(on_io_server=.true.)
 
        ! provide the communicator for the integration tasks to RSL
        IF ( compute_node ) THEN
@@ -5016,8 +5019,10 @@ subroutine wrf_quilt_server_ready()
   implicit none
   INCLUDE 'mpif.h'
   integer :: ierr
+  character*255 :: message
 
-  write(0,*) 'Entering wrf_quilt_server_ready.'
+  write(message,*) 'Entering wrf_quilt_server_ready.'
+  call wrf_debug(1,message)
 
   call mpi_barrier(mpi_comm_local,ierr)
   if(ierr/=0) then
@@ -5025,7 +5030,8 @@ subroutine wrf_quilt_server_ready()
   endif
 
   if(in_avail) then
-     write(0,'("mpi_ssend ioserver=",I0," in wrf_quilt_server_ready")') availrank
+     write(message,'("mpi_ssend ioserver=",I0," in wrf_quilt_server_ready")') availrank
+     call wrf_debug(1,message)
      call mpi_ssend(availrank,1,MPI_INTEGER,0,0,mpi_comm_avail,ierr)
      if(ierr/=0) then
         call wrf_error_fatal('mpi_ssend failed in wrf_quilt_server_ready')
@@ -5037,7 +5043,8 @@ subroutine wrf_quilt_server_ready()
      call wrf_error_fatal('mpi_barrier failed in wrf_quilt_server_ready')
   endif
 
-  write(0,*) 'Leaving wrf_quilt_server_ready.'
+  write(message,*) 'Leaving wrf_quilt_server_ready.'
+  call wrf_debug(1,message)
 #endif
 
 end subroutine wrf_quilt_server_ready

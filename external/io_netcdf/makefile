@@ -47,12 +47,12 @@ diffwrf:                diffwrf.F90
 	   $(CPP1) -I$(NETCDFPATH)/include -I../ioapi_share diffwrf.F90 > diffwrf.f ; \
         fi
 	$(FC) -c $(FFLAGS) diffwrf.f
-	@if [ \( -f ../../frame/wrf_debug.o \) -a \( -f ../../frame/module_wrf_error.o \) -a \( -f $(ESMF_MOD_DEPENDENCE) \) ] ; then \
+	@if [ \( -f ../../frame/wrf_debug.o \) -a \( -f ../../frame/module_wrf_error.o \) -a \( -f $(ESMF_MOD_DEPENDENCE) \) -a \( -f ../../frame/clog.o \) ] ; then \
 	  echo "diffwrf io_netcdf is being built now. " ; \
           if [ -f $(NETCDFPATH)/lib/libnetcdff.a ] ; then \
-            $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o $(ESMF_IO_LIB_EXT) $(LIBS) -lnetcdff ;\
+            $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o ../../frame/clog.o $(ESMF_IO_LIB_EXT) $(LIBS) -lnetcdff ;\
           else \
-            $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o $(ESMF_IO_LIB_EXT) $(LIBS) ;\
+            $(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) ../../frame/wrf_debug.o ../../frame/module_wrf_error.o ../../frame/clog.o $(ESMF_IO_LIB_EXT) $(LIBS) ;\
           fi ; \
         else \
 	   echo "***************************************************************************** " ; \

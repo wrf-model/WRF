@@ -88,10 +88,6 @@
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------------------
-!#ifdef DM_PARALLEL
-!      INCLUDE "mpif.h"
-!#endif
-!-----------------------------------------------------------------------
       LOGICAL,INTENT(IN) :: FIRST,HYDRO
       INTEGER,INTENT(IN) :: SIGMA
 !
@@ -627,7 +623,7 @@
 !$$$  
 !***********************************************************************
 #ifdef DM_PARALLEL
-      USE module_domain
+      USE module_domain, ONLY: DOMAIN
       USE MODULE_DM,                    ONLY : LOCAL_COMMUNICATOR       &
                                               ,MYTASK,NTASKS,NTASKS_X   &
                                               ,NTASKS_Y                 &
@@ -638,9 +634,6 @@
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------------------
-#if defined(DM_PARALLEL) && !defined(STUBMPI)
-      INCLUDE "mpif.h"
-#endif
 #ifdef DM_PARALLEL
       TYPE (DOMAIN) :: GRID
       INTEGER,INTENT(IN) :: MYPE,MPI_COMM_COMP
@@ -941,7 +934,7 @@
 !$$$  
 !***********************************************************************
 #ifdef DM_PARALLEL
-      USE MODULE_DOMAIN
+      USE MODULE_DOMAIN, only: DOMAIN
       USE MODULE_DM,                    ONLY : LOCAL_COMMUNICATOR       &
                                               ,MYTASK,NTASKS,NTASKS_X   &
                                               ,NTASKS_Y
@@ -951,7 +944,6 @@
       IMPLICIT NONE
 !-----------------------------------------------------------------------
 #ifdef DM_PARALLEL
-!     INCLUDE "mpif.h"
       TYPE (DOMAIN) :: GRID
 #endif
 !-----------------------------------------------------------------------
@@ -1166,6 +1158,8 @@
 !
       FCXM=1.
 !
+!$omp parallel do
+!$omp& private(i,j)
       DO J=MYJS_P2,MYJE_P2
       DO I=MYIS_P2,MYIE_P2
         PDE (I,J)=PDSL(I,J)+PDTOP
@@ -1174,7 +1168,8 @@
       ENDDO
 !
       DO K=KTS,KTE
-!$omp parallel do
+!$omp parallel do                                                       &
+!$omp& private(i,j)
         DO J=MYJS_P2,MYJE_P2
         DO I=MYIS_P2,MYIE_P2
           DIVE(I,J)=DIV(I,J,K)*HBM2(I,J)+DIVE(I,J)
@@ -1183,7 +1178,7 @@
       ENDDO
 !
 !$omp parallel do                                                       &
-!$omp& private(i,j,rdpdx,rdpdy)
+!$omp& private(i,j,rdpdx,rdpdy,fcxm)
       DO J=MYJS2,MYJE2
       DO I=MYIS1_P1,MYIE1_P1
         RDPDX=DDMPU(I,J)*FCXM                                           &
@@ -1201,9 +1196,9 @@
       FCIM=1.
 !
 !$omp parallel do                                                       &
-!$omp& private(dpde,i,j,k,rdpdx,rdpdy)
+!$omp& private(dpde,i,j,k,rdpdx,rdpdy,fcim)
 !
-      DO K=KTS,KTE
+      fcim_loop: DO K=KTS,KTE
 !
 !-----------------------------------------------------------------------
 !
@@ -1229,10 +1224,11 @@
 !
 !-----------------------------------------------------------------------
 !
-      ENDDO 
+      ENDDO fcim_loop
 !
 !-----------------------------------------------------------------------
 !
+
       END SUBROUTINE DDAMP
 !
 !-----------------------------------------------------------------------

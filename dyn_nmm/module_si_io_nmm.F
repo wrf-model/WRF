@@ -1627,7 +1627,8 @@ print *,'------------------> skipping ', var_info%name(1:8)
         call mpi_file_read_at(iunit,file_offset(index)+5*4,     &
                               igarb,1,mpi_integer4,             &
                               mpi_status_ignore, ierr)
-        write(0,*) 'ierr, igarb for FLAG_SNOWH: ', ierr,igarb
+        write(message,*) 'ierr, igarb for FLAG_SNOWH: ', ierr,igarb
+        call wrf_debug(1,message)
         flag_snowh=igarb
 
 
@@ -2388,7 +2389,8 @@ print *,'------------------> skipping ', var_info%name(1:8)
            grid%hzmax(I,J)=dumdata(I,J,1)
          ENDDO
         ENDDO
-	write(0,*) 'maxval grid%hzmax: ', maxval(grid%hzmax)
+	write(message,*) 'maxval grid%hzmax: ', maxval(grid%hzmax)
+        call wrf_debug(1,message)
 
       call mpi_file_close(mpi_comm_world, ierr)
 

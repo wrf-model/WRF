@@ -431,6 +431,13 @@ endif
     end if
 #endif
 
+#if (EM_CORE == 1)
+    IF ( config_flags%p_lev_diags .NE. 0 ) THEN
+       IF (switch .EQ. auxhist23_only) THEN
+          CALL wrf_put_dom_ti_real( fid, 'P_LEV_MISSING' , config_flags%p_lev_missing, 1, ierr )
+       END IF
+    END IF
+#endif
 
 ! added this metadatum for H. Chuan, NCEP, 030417, JM
 #if (NMM_CORE == 1)

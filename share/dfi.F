@@ -176,6 +176,13 @@
       ENDIF
 #endif
 
+      ! If a request to do pressure level diags, then shut it off
+      ! until we get to the real forecast part of this integration.
+
+#if (EM_CORE == 1)
+      CALL nl_set_p_lev_diags( grid%id, grid%p_lev_diags_dfi)
+#endif
+
 #if (NMM_CORE == 1)
 
 !
@@ -346,7 +353,7 @@
 !#endif
 
 #if (EM_CORE == 1)
-      ! reset km_opt to norlmal
+      ! reset km_opt to normal
       CALL nl_set_km_opt( grid%id, grid%km_opt)
       CALL nl_set_moist_adv_opt( grid%id, grid%moist_adv_opt)
 #endif
@@ -432,6 +439,11 @@
       CALL nl_set_io_form_auxinput5 (grid%id, grid%io_form_auxinput5)
       CALL nl_set_io_form_auxinput7 (grid%id, grid%io_form_auxinput7)
       CALL nl_set_io_form_auxinput8 (grid%id, grid%io_form_auxinput8)
+#endif
+    
+#if (EM_CORE == 1)
+      ! reset pressure level diags to normal
+      CALL nl_set_p_lev_diags ( grid%id, grid%p_lev_diags)
 #endif
 
 
@@ -2606,6 +2618,13 @@ call wrf_message(mess)
       IF ( grid%moist_adv_opt == 2 ) THEN
          CALL nl_set_moist_adv_opt( grid%id, 0)
       ENDIF
+#endif
+
+      ! If a request to do pressure level diags, then shut it off
+      ! until we get to the real forecast part of this integration.
+
+#if (EM_CORE == 1)
+      CALL nl_set_p_lev_diags( grid%id, grid%p_lev_diags_dfi)
 #endif
 
       !tgs need to call start_domain here to reset bc initialization for 

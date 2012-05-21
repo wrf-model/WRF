@@ -23,7 +23,8 @@ MODULE module_wps_io_arw
 ! Integer types
   integer, parameter, public  :: i_byte  = selected_int_kind(1)      ! byte  integer
   integer, parameter, public  :: i_short = selected_int_kind(4)      ! short integer
-  integer, parameter, public  :: i_long  = selected_int_kind(8)      ! long  integer
+! integer, parameter, public  :: i_long  = selected_int_kind(8)      ! long  integer
+  integer, parameter, public  :: i_long  = kind(1)                   ! long  integer
   integer, parameter, private :: llong_t = selected_int_kind(16)     ! llong integer
   integer, parameter, public  :: i_llong = max( llong_t, i_long )
 

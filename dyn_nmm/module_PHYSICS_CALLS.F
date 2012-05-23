@@ -2459,7 +2459,11 @@
      &                 ,RUCUTEN=DUCUDT, RVCUTEN=DVCUDT, MOMMIX=MOMMIX   &
                        ,store_rand=store_rand                           &
 #endif
+     &                 ,HPBL2D=HPBL2D,EVAP2D=EVAP2D,HEAT2D=HEAT2D       &     !Kwon S&P
      &                 ,pgcon=config_flags%sas_pgcon                    &
+     &                 ,sas_mass_flux=config_flags%sas_mass_flux        &
+     &                 ,shalconv=config_flags%sas_shal_conv             &
+     &                 ,shal_pgcon=config_flags%sas_shal_pgcon          &
                   ! Selection argument
      &                 ,CU_PHYSICS=CONFIG_FLAGS%CU_PHYSICS              &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &

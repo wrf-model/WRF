@@ -550,9 +550,9 @@ CONTAINS
    END IF
 
    IF ( run_param ) THEN
-print *,'calling CU scheme'
+!print *,'calling CU scheme'
    ELSE
-print *,'NOT calling CU scheme'
+!print *,'NOT calling CU scheme'
       RETURN
    END IF
 

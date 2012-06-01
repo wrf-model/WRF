@@ -16,8 +16,6 @@ CONTAINS
                  shalconv,shal_pgcon,                               &
                  HPBL2D,EVAP2D,HEAT2D,                              & !Kwon for shallow convection
                  P_QI,P_FIRST_SCALAR,                               & 
-                 CUDT, CURR_SECS, ADAPT_STEP_FLAG,                  &
-                 CUDTACTTIME,                                       & 
                  ids,ide, jds,jde, kds,kde,                         &
                  ims,ime, jms,jme, kms,kme,                         &
                  its,ite, jts,jte, kts,kte                          )
@@ -163,12 +161,6 @@ CONTAINS
                                         V3D,                            &
                                         W
 
-! Adaptive time-step variables
-      REAL,  INTENT(IN   ) :: CUDT
-      REAL,  INTENT(IN   ) :: CURR_SECS
-      LOGICAL,INTENT(IN   ) , OPTIONAL :: ADAPT_STEP_FLAG
-      REAL,  INTENT (INOUT) :: CUDTACTTIME       
-
 !--------------------------- LOCAL VARS ------------------------------
 
       REAL,    DIMENSION(ims:ime, jms:jme) ::                           &
@@ -229,75 +221,10 @@ CONTAINS
                                         KX,                             &
                                         NCLOUD 
 
-      LOGICAL :: run_param , doing_adapt_dt , decided
-
       DATA IGPVS/0/
 
 !-----------------------------------------------------------------------
 !
-!***  CHECK TO SEE IF THIS IS A CONVECTION TIMESTEP
-!
-
-!  Initialization for adaptive time step.
-
-   doing_adapt_dt = .FALSE.
-   IF ( PRESENT(adapt_step_flag) ) THEN
-      IF ( adapt_step_flag ) THEN
-         doing_adapt_dt = .TRUE.
-         IF ( cudtacttime .EQ. 0. ) THEN
-            cudtacttime = curr_secs + cudt*60.
-         END IF
-      END IF
-   END IF
-
-!  Do we run through this scheme or not?
-
-!    Test 1:  If this is the initial model time, then yes.
-!                ITIMESTEP=1
-!    Test 2:  If the user asked for the cumulus to be run every time step, then yes.
-!                CUDT=0 or STEPCU=1
-!    Test 3:  If not adaptive dt, and this is on the requested cumulus frequency, then yes.
-!                MOD(ITIMESTEP,STEPCU)=0
-!    Test 4:  If using adaptive dt and the current time is past the last requested activate cumulus time, then yes.
-!                CURR_SECS >= CUDTACTTIME
-
-!  If we do run through the scheme, we set the flag run_param to TRUE and we set the decided flag
-!  to TRUE.  The decided flag says that one of these tests was able to say "yes", run the scheme.
-!  We only proceed to other tests if the previous tests all have left decided as FALSE.
-
-!  If we set run_param to TRUE and this is adaptive time stepping, we set the time to the next
-!  cumulus run.
-
-   decided = .FALSE.
-   run_param = .FALSE.
-   IF ( ( .NOT. decided ) .AND. &
-        ( itimestep .EQ. 1 ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-   END IF
-
-   IF ( ( .NOT. decided ) .AND. &
-        ( ( cudt .EQ. 0. ) .OR. ( stepcu .EQ. 1 ) ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-   END IF
-
-   IF ( ( .NOT. decided ) .AND. &
-        ( .NOT. doing_adapt_dt ) .AND. &
-        ( MOD(itimestep,stepcu) .EQ. 0 ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-   END IF
-
-   IF ( ( .NOT. decided ) .AND. &
-        ( doing_adapt_dt ) .AND. &
-        ( curr_secs .GE. cudtacttime ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-      cudtacttime = curr_secs + cudt*60
-   END IF
-
-!-----------------------------------------------------------------------
 
       if(present(shalconv)) then
          shalconv_use=shalconv
@@ -371,8 +298,6 @@ CONTAINS
          ! Read the warning above though.  It may be advisable for
          ! these to be different.  
       endif
-
-   if_run_param: IF(run_param) THEN
 
       DO J=JTS,JTE
          DO I=ITS,ITE
@@ -566,8 +491,6 @@ CONTAINS
       ENDIF
 
    ENDDO big_outer_j_loop    ! Outer most J loop
-
-   ENDIF if_run_param
 
    END SUBROUTINE CU_SAS
 

@@ -1988,6 +1988,7 @@ rconfig integer td_pwfy        namelist,physics 1 1      - - ""  "southwest corn
 #         name          namelist choice           state vars
 
 #package   passivec1     chem_opt==0                  -             
+ifdef DA_CORE=0
 package   passiveqv     mp_physics==0                -             moist:qv
 package   kesslerscheme mp_physics==1                -             moist:qv,qc,qr
 package   linscheme     mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg
@@ -2006,6 +2007,7 @@ package   wdm6scheme    mp_physics==16               -             moist:qv,qc,q
 package   nssl_2mom     mp_physics==17                -            state:refl_10cm;moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qvolg
 package   nssl_2momccn  mp_physics==18                -            state:refl_10cm;moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qnc,qnr,qni,qns,qng,qnh,qvolg
 package   etampold      mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
+endif
 
 package   nodfimoist        mp_physics_dfi==-1       -             -
 package   passiveqv_dfi     mp_physics_dfi==0        -             dfi_moist:dfi_qv

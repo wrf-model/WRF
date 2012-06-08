@@ -24,6 +24,7 @@
    USE module_comm_dm
 
    USE g_module_physics_init
+   USE module_diagnostics, ONLY : pld
 
    USE module_model_constants
 
@@ -308,6 +309,18 @@
        grid%alt(i,k,j) = grid%al(i,k,j) + grid%alb(i,k,j)
     ENDDO
     ENDDO
+    ENDDO
+
+    DO j=jts,min(jte,jde-1)
+       DO i=its,min(ite,ide-1)
+          p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
+          grid%p_hyd_w(i,1,j) = grid%p(i,1,j) + grid%znw(1)*(p_surf - grid%p_top) + grid%p_top
+          grid%g_p_hyd_w(i,1,j) = grid%g_p(i,1,j)
+          DO k=kts+1,kte
+             grid%p_hyd_w(i,k,j) = ( 2.*(grid%p(i,k-1,j)+grid%pb(i,k-1,j)) - grid%p_hyd_w(i,k-1,j) )
+             grid%g_p_hyd_w(i,k,j) = 2.*grid%g_p(i,k-1,j) - grid%g_p_hyd_w(i,k-1,j)
+          ENDDO
+       ENDDO
     ENDDO
 
    ENDIF
@@ -707,6 +720,13 @@
 
    ENDIF
 
+        ! initialize advective tendency diagnostics for non-chem
+        if ( grid%itimestep .eq. 0 .and. config_flags%tenddiag .eq. USETENDDIAG ) then
+          advh_t(:,:,:,:) = 0.
+          g_advh_t(:,:,:,:) = 0.
+          advz_t(:,:,:,:) = 0.
+          g_advz_t(:,:,:,:) = 0.
+        endif
 
 #ifndef WRF_CHEM
       DEALLOCATE(CLDFRA_OLD)
@@ -718,6 +738,51 @@
 #   include "HALO_EM_INIT_4_TL.inc"
 #   include "HALO_EM_INIT_5_TL.inc"
 #endif
+
+   IF (config_flags%p_lev_diags == PRESS_DIAGS ) THEN
+    CALL wrf_debug ( 200 , ' PLD: pressure level diags' )
+    CALL pld (                                  &
+                 !  Input data for computing
+                  U=grid%u_2                    &
+                 ,V=grid%v_2                    &
+                 ,W=grid%w_2                    &
+                 ,t=grid%t_2                    &
+                 ,qv=moist(:,:,:,P_QV)          &
+                 ,zp=grid%ph_2                  &
+                 ,zb=grid%phb                   &
+                 ,pp=grid%p                     &
+                 ,pb=grid%pb                    &
+                 ,p=grid%p_hyd                  &
+                 ,pw=grid%p_hyd_w               &
+                 !  Map factors, coriolis for diags
+                 ,msfux=grid%msfux              &
+                 ,msfuy=grid%msfuy              &
+                 ,msfvx=grid%msfvx              &
+                 ,msfvy=grid%msfvy              &
+                 ,msftx=grid%msftx              &
+                 ,msfty=grid%msfty              &
+                 ,f=grid%f                      &
+                 ,e=grid%e                      &
+                 !  Namelist info
+                 ,use_tot_or_hyd_p=config_flags%use_tot_or_hyd_p &
+                 ,missing=config_flags%p_lev_missing &
+                 !  The diagnostics, mostly output variables
+                 ,num_press_levels=config_flags%num_press_levels &
+                 ,max_press_levels=max_plevs    &
+                 ,press_levels=model_config_rec%press_levels &
+                 ,p_pl  = grid%p_pl             &  
+                 ,u_pl  = grid%u_pl             &  
+                 ,v_pl  = grid%v_pl             &  
+                 ,t_pl  = grid%t_pl             &  
+                 ,rh_pl = grid%rh_pl            & 
+                 ,ght_pl= grid%ght_pl           &
+                 ,s_pl  = grid%s_pl             &  
+                 ,td_pl = grid%td_pl            &
+                 !  Dimension arguments
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte    )
+   ENDIF
 
      CALL wrf_debug ( 100 , 'start_domain_em_tl: Returning' )
 

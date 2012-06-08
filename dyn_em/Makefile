@@ -420,6 +420,7 @@ start_em.o:     module_bc_em.o \
 		../share/module_bc.o \
 		../share/module_date_time.o \
 		../phys/module_physics_init.o \
+		../phys/module_diagnostics.o \
 		$(CF)
 
 start_em_tl.o:  module_bc_em_tl.o \

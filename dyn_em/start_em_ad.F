@@ -24,6 +24,7 @@
    USE module_comm_dm
 
    USE a_module_physics_init
+   USE module_diagnostics, ONLY : pld
 
    USE module_model_constants
 
@@ -195,6 +196,12 @@
 #   include "HALO_EM_INIT_2_AD.inc"
 #   include "HALO_EM_INIT_1_AD.inc"
 #endif
+
+        ! initialize advective tendency diagnostics for non-chem
+        if ( grid%itimestep .eq. 0 .and. config_flags%tenddiag .eq. USETENDDIAG ) then
+          a_advh_t(:,:,:,:) = 0.
+          a_advz_t(:,:,:,:) = 0.
+        endif
 
    IF (num_scalar > 0) THEN
 
@@ -592,6 +599,18 @@
 !-------------
 
    IF(.not.config_flags%restart)THEN
+
+    DO j=jts,min(jte,jde-1)
+       DO i=its,min(ite,ide-1)
+          DO k=kte, kts+1, -1
+             grid%a_p(i,k-1,j) = grid%a_p(i,k-1,j) + 2.*grid%a_p_hyd_w(i,k,j)
+             grid%a_p_hyd_w(i,k-1,j) = grid%a_p_hyd_w(i,k-1,j) - grid%a_p_hyd_w(i,k,j)
+             grid%a_p_hyd_w(i,k,j) = 0.0
+          ENDDO
+          grid%a_p(i,1,j) = grid%a_p(i,1,j) + grid%a_p_hyd_w(i,1,j)
+          grid%a_p_hyd_w(i,1,j) = 0.0
+       ENDDO
+    ENDDO
 
 !  reconstitute base-state fields
 

@@ -56,11 +56,8 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    INTEGER                                    :: rc
    TYPE(WRFU_Time) :: currTime, startTime
 #ifdef HWRF
-!zhang's doing
-!   TYPE(WRFU_Time) :: CurrTime  !zhang new
    INTEGER :: hr, min, sec, ms,julyr,julday
    REAL :: GMT
-!end of zhang's doing
 #endif
 
    CHARACTER*256          :: message
@@ -101,17 +98,28 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 #endif
 
 ! #if (EM_CORE == 1)
+
    CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
+ 
    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) .AND. &
        (grid%dfi_write_dfi_history .OR. grid%dfi_stage == DFI_FST .OR. grid%dfi_opt == DFI_NODFI) ) THEN
-! #else
-!   IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
-! #endif
-     IF  ( (config_flags%restart) .AND. ( currTime .EQ. startTime ) ) THEN
+     IF       ( ( config_flags%restart )                    .AND. &
+#if (EM_CORE == 1)
+                ( config_flags%write_hist_at_0h_rst )       .AND. &
+#endif
+                ( currTime .EQ. startTime )                       ) THEN
        !  output history at beginning of restart if alarm is ringing
        CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
+      
+     ELSE IF  ( ( config_flags%restart )                    .AND. &
+#if (EM_CORE == 1)
+                ( .NOT. config_flags%write_hist_at_0h_rst ) .AND. &
+#endif
+                ( currTime .EQ. startTime )                       ) THEN
+       !  we do not do anything
      ELSE
        CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
+       
      END IF
      CALL WRFU_AlarmRingerOff( grid%alarms( HISTORY_ALARM ), rc=rc )
 #if (EM_CORE == 1)
@@ -155,6 +163,9 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
             ENDIF
          ENDIF
        ENDIF
+       IF ( grid%dfi_stage == DFI_FST .OR. grid%dfi_opt == DFI_NODFI ) THEN
+          CALL med_hist_out ( grid , ialarm, config_flags )
+       END IF
        CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
      ENDIF
    ENDDO
@@ -1374,7 +1385,9 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
 !   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST1_ALARM ), rc=rc ) ) THEN
 !     CALL med_hist_out ( grid , AUXHIST1_ALARM , config_flags )
 !   ENDIF
+   IF ( grid%dfi_stage == DFI_FST .OR. grid%dfi_opt == DFI_NODFI ) THEN
 #include "med_last_solve_io.inc"
+   END IF
 
 ! - RESTART OUTPUT
    IF( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) THEN

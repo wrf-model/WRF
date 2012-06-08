@@ -336,5 +336,21 @@ between selected output times (e.g. daily) in auxhist3
  io_form_auxhist3        = 2
  auxhist3_interval       = 1440
  frames_per_auxhist3     = 1
-
  /
+
+** for pressure-level (and some surface) diagnostics, output is on stream 23
+
+ &time_control
+ io_form_auxhist23                   =  2,
+ auxhist23_interval                  = 30,   30,    30,
+ frames_per_auxhist23                =  1,    1,     1, 
+ auxhist23_outname                   = "PLEVS_d<domain>_<date>"
+ /
+
+ &diags
+ p_lev_diags                         = 1
+ num_press_levels                    = 4
+ press_levels                        = 85000, 70000, 50000, 25000
+ use_tot_or_hyd_p                    = 2
+ /
+

@@ -1017,3 +1017,18 @@ The following are for observation nudging:
                                                   Section 1 in the grib2 record
  compression                         = 40,      ; The compression method to encode the output grib2 message.
                                                   Only 40 for jpeg2000 or 41 for PNG are supported
+
+
+ &diags:
+ p_lev_diags                         = 1,       ; Vertically interpolate diagnostics to p-levels
+                                                  0=NO, 1=YES
+ num_press_levels                    = 0,       ; Number of pressure levels to interpolate to, for example,
+                                                  could be 2
+ press_levels                        = 0,       ; Which pressure levels (Pa) to interpolate to, for example
+                                                  could be 85000, 70000
+ use_tot_or_hyd_p                    = 2        ; Which half level pressure to use: 1=total (p+pb); 2=hydrostatic
+                                                  (p_hyd).  The p_hyd option is the default and less noisy.  Total
+                                                  pressure is consistent with what is done in various post-proc
+                                                  packages.
+ /
+

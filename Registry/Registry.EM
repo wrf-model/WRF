@@ -18,6 +18,7 @@ halo      HALO_EM_PHYS_A_BL_SURF  dyn_em 4:xland
 #ifdef WRFPLUS=1
 include registry.wrfplus
 #endif
+include registry.diags
 
 # added to output 5 for ESMF
 state   real   landmask            ij    misc          1     -     i0125rh05d=(interp_fcnm)u=(copy_fcnm)   "LANDMASK"      "LAND MASK (1 FOR LAND, 0 FOR WATER)"  ""

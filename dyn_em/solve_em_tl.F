@@ -4184,6 +4184,63 @@ BENCH_END(g_bc_2d_tim)
         &                                                          )
    ENDIF
 
+   IF ( config_flags%p_lev_diags .NE. SKIP_PRESS_DIAGS ) THEN
+     !  Process the diags if this is the correct time step OR
+     !  if this is an adaptive timestep forecast.
+     IF ( ( ( MOD(NINT(curr_secs+grid%dt),NINT(config_flags%p_lev_interval)) .EQ. 0 ) ) .OR. &
+            ( config_flags%use_adaptive_time_step ) ) THEN
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij )
+       DO ij = 1 , grid%num_tiles
+         CALL wrf_debug ( 200 , ' PLD: pressure level diags' )
+         CALL pld (                                  &
+                      !  Input data for computing
+                       U=grid%u_2                    &
+                      ,V=grid%v_2                    &
+                      ,W=grid%w_2                    &
+                      ,t=grid%t_2                    &
+                      ,qv=moist(:,:,:,P_QV)          &
+                      ,zp=grid%ph_2                  &
+                      ,zb=grid%phb                   &
+                      ,pp=grid%p                     &
+                      ,pb=grid%pb                    &
+                      ,p=grid%p_hyd                  &
+                      ,pw=grid%p_hyd_w               &
+                      !  Map factors, coriolis for diags
+                      ,msfux=grid%msfux              &
+                      ,msfuy=grid%msfuy              &
+                      ,msfvx=grid%msfvx              &
+                      ,msfvy=grid%msfvy              &
+                      ,msftx=grid%msftx              &
+                      ,msfty=grid%msfty              &
+                      ,f=grid%f                      &
+                      ,e=grid%e                      &
+                      !  Namelist info
+                      ,use_tot_or_hyd_p=config_flags%use_tot_or_hyd_p &
+                      ,missing=config_flags%p_lev_missing &
+                      !  The diagnostics, mostly output variables
+                      ,num_press_levels=config_flags%num_press_levels &
+                      ,max_press_levels=max_plevs    &
+                      ,press_levels=model_config_rec%press_levels &
+                      ,p_pl  = grid%p_pl             &
+                      ,u_pl  = grid%u_pl             &
+                      ,v_pl  = grid%v_pl             &
+                      ,t_pl  = grid%t_pl             &
+                      ,rh_pl = grid%rh_pl            &
+                      ,ght_pl= grid%ght_pl           &
+                      ,s_pl  = grid%s_pl             &
+                      ,td_pl = grid%td_pl            &
+                      !  Dimension arguments
+                      ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
+                      ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
+                      ,ITS=grid%i_start(ij),ITE=grid%i_end(ij)              &
+                      ,JTS=grid%j_start(ij),JTE=grid%j_end(ij)              &
+                      ,KTS=kps,KTE=kpe                                      )
+       END DO
+       !$OMP END PARALLEL DO
+     ENDIF
+   ENDIF
+
 #ifdef DM_PARALLEL
 !-----------------------------------------------------------------------
 ! see above

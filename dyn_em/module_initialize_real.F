@@ -134,7 +134,7 @@ integer::oops1,oops2
       LOGICAL , PARAMETER :: want_full_levels = .TRUE.
       LOGICAL , PARAMETER :: want_half_levels = .FALSE.
 
-      CHARACTER (LEN=80) :: a_message
+      CHARACTER (LEN=256) :: a_message
       REAL :: max_mf
     
       !  Excluded middle.
@@ -2549,7 +2549,7 @@ endif
          CALL const_module_initialize ( p00 , t00 , a , tiso ) 
       ELSE
       ! get these constants from model data
-         CALL wrf_message('ndown: using constants from file')
+         CALL wrf_debug(99,'ndown: using base-state profile constants from input file')
          t00  = grid%t00
          p00  = grid%p00
          a    = grid%tlp
@@ -2561,6 +2561,8 @@ endif
             CALL wrf_error_fatal(TRIM(wrf_err_message))
          ENDIF
       ENDIF
+ 
+      hold_ups = .true.
 
       !  Base state potential temperature and inverse density (alpha = 1/rho) from
       !  the half eta levels and the base-profile surface pressure.  Compute 1/rho
@@ -2655,6 +2657,7 @@ endif
             grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_2(i,k,j)+t0)*qvf* &
                                  (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
             grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
+            grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
 
             !  Now, integrate down the column to compute the pressure perturbation, and diagnose the two
             !  inverse density fields (total and perturbation).
@@ -2668,6 +2671,7 @@ endif
                grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_2(i,k,j)+t0)*qvf* &
                            (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
                grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
+               grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
             END DO
 
             !  This is the hydrostatic equation used in the model after the small timesteps.  In
@@ -2688,14 +2692,18 @@ endif
 
                grid%ph_2(i,1,j) = grid%phb(i,1,j)
                DO k = 2,kte
-                  pfu = grid%mu0(i,j)*grid%znw(k)   + grid%p_top
-                  pfd = grid%mu0(i,j)*grid%znw(k-1) + grid%p_top
-                  phm = grid%mu0(i,j)*grid%znu(k-1) + grid%p_top
+                  pfu = ( grid%mub(i,j)+grid%mu_2(i,j))*grid%znw(k)   + grid%p_top
+                  pfd = ( grid%mub(i,j)+grid%mu_2(i,j))*grid%znw(k-1) + grid%p_top
+                  phm = ( grid%mub(i,j)+grid%mu_2(i,j))*grid%znu(k-1) + grid%p_top
                   grid%ph_2(i,k,j) = grid%ph_2(i,k-1,j) + grid%alt(i,k-1,j)*phm*LOG(pfd/pfu)
                END DO
 
                DO k = 1,kte
                   grid%ph_2(i,k,j) = grid%ph_2(i,k,j) - grid%phb(i,k,j)
+               END DO
+
+               DO k = 1,kte
+                  grid%ph0(i,k,j) = grid%ph_2(i,k,j) + grid%phb(i,k,j)
                END DO
 
             END IF

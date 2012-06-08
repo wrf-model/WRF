@@ -1,3 +1,4 @@
+# Registry file, WRFVAR
 include registry.dimspec
 include Registry.EM_COMMON.tmp
 include registry.io_boilerplate

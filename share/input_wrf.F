@@ -177,6 +177,28 @@
               write(alarmname,'("WRF_ALARM_SECS_TIL_NEXT_RING_",i2.2)')i
               CALL wrf_get_dom_ti_integer( fid, TRIM(alarmname), seconds, 1, icnt, ierr )
               IF ( ierr .EQ. 0 &
+                   .AND. seconds .GE. 0 &
+		   .AND. i .EQ. history_only ) THEN 
+  
+                ! Get and set interval so that we are sure to have both the
+                ! interval and first ring time set correctly
+                
+                CALL WRFU_TimeIntervalSet(interval,S=config_flags%history_interval*60)
+                ringTime = curtime + interval
+                CALL WRFU_AlarmSet( grid%alarms(i), RingInterval=interval, RingTime=ringTime )
+		
+		ELSEIF ( ierr .EQ. 0 &
+                   .AND. seconds .GE. 0 &
+		   .AND. i .EQ. restart_only ) THEN 
+  
+                ! Get and set interval so that we are sure to have both the
+                ! interval and first ring time set correctly
+                
+                CALL WRFU_TimeIntervalSet(interval,S=config_flags%restart_interval*60)
+                ringTime = curtime + interval
+                CALL WRFU_AlarmSet( grid%alarms(i), RingInterval=interval, RingTime=ringTime )
+		
+		 ELSEIF ( ierr .EQ. 0 &
                    .AND. seconds .GE. 0 ) THEN  ! disallow negative intervals; can happen with wrfbdy datasets
                                                 ! which keep time differently
   

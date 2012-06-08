@@ -33,7 +33,7 @@ SUBROUTINE G_DUCU(ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms&
 &  g_raincv, nca, pratec, g_pratec, u, v, th, g_th, t, g_t, w, dz8w, g_dz8w, z&
 &  , g_z, pcps, g_pcps, pi, w0avg, cp, rd, rv, g, xlv, ep2, svp1, svp2, &
 &  svp3, svpt0, stepcu, cu_act_flag, warm_rain, cutop, g_cutop, cubot, &
-&  g_cubot, qv, g_qv, cudtacttime, rthcuten, g_rthcuten, rqvcuten, g_rqvcuten)
+&  g_cubot, qv, g_qv, rthcuten, g_rthcuten, rqvcuten, g_rqvcuten)
   IMPLICIT NONE
 !
 !-------------------------------------------------------------
@@ -59,7 +59,6 @@ SUBROUTINE G_DUCU(ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms&
   REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) :: cubot, cutop
   REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) :: g_cubot, g_cutop
   LOGICAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: cu_act_flag
-  REAL,  INTENT (INOUT) :: CUDTACTTIME
 !
 ! Optional arguments
 !

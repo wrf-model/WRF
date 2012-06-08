@@ -2335,7 +2335,39 @@ endif
 
          END DO
       END DO
-     
+
+      !  Now we have full pressure on eta levels, get final computation of Qv.
+      !  The use of u_1 (rh) and v_1 (temperature) is temporary.
+
+      grid%v_1 = grid%t_2+t0
+
+      CALL theta_to_t ( grid%v_1 , grid%p_hyd  , p00 , &
+                        ids , ide , jds , jde , kds , kde , &
+                        ims , ime , jms , jme , kms , kme , &
+                        its , ite , jts , jte , kts , kte )
+
+      IF      ( config_flags%rh2qv_method .eq. 1 ) THEN
+         CALL rh_to_mxrat1(grid%u_1, grid%v_1, grid%p_hyd , moist(:,:,:,P_QV) ,       &
+                           config_flags%rh2qv_wrt_liquid ,                        &
+                           config_flags%qv_max_p_safe ,                           &
+                           config_flags%qv_max_flag , config_flags%qv_max_value , &
+                           config_flags%qv_min_p_safe ,                           &
+                           config_flags%qv_min_flag , config_flags%qv_min_value , &
+                           ids , ide , jds , jde , kds , kde ,                    &
+                           ims , ime , jms , jme , kms , kme ,                    &
+                           its , ite , jts , jte , kts , kte-1 )
+      ELSE IF ( config_flags%rh2qv_method .eq. 2 ) THEN
+         CALL rh_to_mxrat2(grid%u_1, grid%v_1, grid%p_hyd , moist(:,:,:,P_QV) ,       &
+                           config_flags%rh2qv_wrt_liquid ,                        &
+                           config_flags%qv_max_p_safe ,                           &
+                           config_flags%qv_max_flag , config_flags%qv_max_value , &
+                           config_flags%qv_min_p_safe ,                           &
+                           config_flags%qv_min_flag , config_flags%qv_min_value , &
+                           ids , ide , jds , jde , kds , kde ,                    &
+                           ims , ime , jms , jme , kms , kme ,                    &
+                           its , ite , jts , jte , kts , kte-1 )
+      END IF
+
       !  If this is data from the SI, then we probably do not have the original
       !  surface data laying around.  Note that these are all the lowest levels
       !  of the respective 3d arrays.  For surface pressure, we assume that the
@@ -4945,7 +4977,7 @@ print *,'p sfc = ',psfc(i,j)
       !  at which the liquid and ice phase change occurs.
 
       DO j = jts , MIN ( jde-1 , jte )
-         DO k = kts , kte-1
+         DO k = kts , kte
             DO i = its , MIN (ide-1 , ite )
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                rh(i,k,j) = MIN ( MAX ( rh(i,k,j) ,  0. ) , 100. )
@@ -4955,7 +4987,7 @@ print *,'p sfc = ',psfc(i,j)
 
       IF ( wrt_liquid ) THEN
          DO j = jts , MIN ( jde-1 , jte )
-            DO k = kts , kte-1
+            DO k = kts , kte
                DO i = its , MIN (ide-1 , ite )
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
 
@@ -4963,14 +4995,14 @@ print *,'p sfc = ',psfc(i,j)
                   if (t(i,k,j) .ne. 0.) then
                      es=.01*rh(i,k,j)*svp1*10.*EXP(svp2*(t(i,k,j)-svpt0)/(t(i,k,j)-svp3))
                      IF (es .ge. p(i,k,j)/100.)THEN
-                       q(i,k,j)=0.0
-                       WRITE(mess,*) 'Warning: vapor pressure exceeds total pressure, setting Qv to 0'
-                       CALL wrf_debug(0,mess)
+                       q(i,k,j)=1.E-6
+                       WRITE(mess,*) 'Warning: vapor pressure exceeds total pressure, setting Qv to 1.E-6'
+                       CALL wrf_debug(1,mess)
                      ELSE
-                       q(i,k,j)=eps*es/(p(i,k,j)/100.-es)
+                       q(i,k,j)=MAX(eps*es/(p(i,k,j)/100.-es),1.E-6)
                      ENDIF
                   else
-                     q(i,k,j)=0.0
+                     q(i,k,j)=1.E-6
                      WRITE(mess,*) 't(i,j,k) was 0 at ', i,j,k,', setting Qv to 0'
                      CALL wrf_debug(0,mess)
                   endif
@@ -4980,7 +5012,7 @@ print *,'p sfc = ',psfc(i,j)
 
       ELSE
          DO j = jts , MIN ( jde-1 , jte )
-            DO k = kts , kte-1
+            DO k = kts , kte
                DO i = its , MIN (ide-1 , ite )
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
 
@@ -5043,7 +5075,7 @@ print *,'p sfc = ',psfc(i,j)
       !  domain that is above the selected pressure level.
      
       DO j = jts , MIN ( jde-1 , jte )
-         DO k = kts , kte-1
+         DO k = kts , kte
             DO i = its , MIN (ide-1 , ite )
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                IF ( p(i,k,j) .LT. qv_max_p_safe ) THEN

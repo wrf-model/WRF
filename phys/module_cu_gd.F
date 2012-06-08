@@ -11,7 +11,7 @@ CONTAINS
               ,rho,RAINCV,PRATEC                                &
               ,U,V,t,W,q,p,pi                                   &
               ,dz8w,p8w,XLV,CP,G,r_v                            &
-              ,STEPCU,htop,hbot                                 &
+              ,htop,hbot                                        &
               ,CU_ACT_FLAG,warm_rain                            &
               ,APR_GR,APR_W,APR_MC,APR_ST,APR_AS                &
               ,APR_CAPMA,APR_CAPME,APR_CAPMI                    &
@@ -40,7 +40,7 @@ CONTAINS
    integer, intent (in   )              ::                      &
                        ensdim,maxiens,maxens,maxens2,maxens3
   
-   INTEGER,      INTENT(IN   ) :: STEPCU, ITIMESTEP
+   INTEGER,      INTENT(IN   ) :: ITIMESTEP
    LOGICAL,      INTENT(IN   ) :: warm_rain
 
    REAL,         INTENT(IN   ) :: XLV, R_v

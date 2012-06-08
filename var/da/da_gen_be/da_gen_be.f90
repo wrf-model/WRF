@@ -71,3 +71,10 @@ end module da_gen_be
 subroutine wrf_abort
    stop
 end subroutine wrf_abort
+
+   LOGICAL FUNCTION wrf_dm_on_monitor()
+      IMPLICIT NONE
+      wrf_dm_on_monitor = .TRUE.
+      RETURN
+   END FUNCTION wrf_dm_on_monitor
+

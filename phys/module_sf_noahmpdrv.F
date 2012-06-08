@@ -728,7 +728,7 @@ CONTAINS
              ENDIF
 
              IST    = 1 
-             IF(VEGTYP == 16) IST = 2 ! lake points
+             IF ( VEGTYP == ISWATER ) IST = 2 ! lake points
 
              CALL REDPRM (VEGTYP,SOILTYP,SLOPETYP,SLDPTH,ZSOIL,NSOIL,ISURBAN)
 

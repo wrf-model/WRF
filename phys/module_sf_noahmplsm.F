@@ -1694,6 +1694,10 @@ contains
         CH    = CHB
         Q1    = QSFC
         Q2E   = Q2B
+        RSSUN = 0.0
+        RSSHA = 0.0
+        TGV   = TGB
+        CHV   = CHB
     END IF
 
     FIRE = LWDN + FIRA

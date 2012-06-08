@@ -438,6 +438,7 @@ CONTAINS
 
    INTEGER :: i,j,k,its,ite,jts,jte,ij,trigger_kf
    logical :: l_flux
+   LOGICAL :: decided , run_param , doing_adapt_dt
 
 !-----------------------------------------------------------------
 
@@ -481,6 +482,70 @@ CONTAINS
 
    IF (cu_physics .eq. 0) return
 
+!  Initialization for adaptive time step.
+
+   IF ( adapt_step_flag_pass ) THEN
+      doing_adapt_dt = .TRUE.
+      IF ( cudtacttime_pass .EQ. 0. ) THEN
+         cudtacttime_pass = curr_secs_pass + cudt*60.
+      END IF
+   ELSE
+      doing_adapt_dt = .FALSE.
+   END IF
+
+!  Do we run through this scheme or not?
+
+!    Test 1:  If this is the initial model time, then yes.
+!                ITIMESTEP=1
+!    Test 2:  If the user asked for the cumulus to be run every time step, then yes.
+!                CUDT=0 or STEPCU=1
+!    Test 3:  If not adaptive dt, and this is on the requested cumulus frequency, then yes.
+!                MOD(ITIMESTEP,STEPCU)=0
+!    Test 4:  If using adaptive dt and the current time is past the last requested activate cumulus time, then yes.
+!                CURR_SECS >= CUDTACTTIME
+
+!  If we do run through the scheme, we set the flag run_param to TRUE and we set the decided flag
+!  to TRUE.  The decided flag says that one of these tests was able to say "yes", run the scheme.
+!  We only proceed to other tests if the previous tests all have left decided as FALSE.
+
+!  If we set run_param to TRUE and this is adaptive time stepping, we set the time to the next
+!  cumulus run.
+
+   decided = .FALSE.
+   run_param = .FALSE.
+   IF ( ( .NOT. decided ) .AND. &
+        ( itimestep .EQ. 1 ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( ( cudt .EQ. 0. ) .OR. ( stepcu .EQ. 1 ) ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( .NOT. doing_adapt_dt ) .AND. &
+        ( MOD(itimestep,stepcu) .EQ. 0 ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( doing_adapt_dt ) .AND. &
+        ( curr_secs_pass .GE. cudtacttime_pass ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+      cudtacttime_pass = curr_secs_pass + cudt*60
+   END IF
+
+   IF ( run_param ) THEN
+!print *,'calling CU scheme'
+   ELSE
+!print *,'NOT calling CU scheme'
+      RETURN
+   END IF
 
 ! DON'T JUDGE TIME STEP HERE, SINCE KF NEEDS ACCUMULATED W FIELD.
 ! DO IT INSIDE THE INDIVIDUAL CUMULUS SCHEME
@@ -520,7 +585,6 @@ CONTAINS
                ,WARM_RAIN=warm_rain                             &    !
                ,CUTOP=htop, g_CUTOP=g_htop, CUBOT=hbot, g_CUBOT=g_hbot  &    ! from other scheme
                ,QV=qv_curr, g_QV=g_qv_curr                      &    !
-               ,CUDTACTTIME=cudtacttime_pass                    & 
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &    !
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &    !
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &    !

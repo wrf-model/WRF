@@ -106,7 +106,12 @@ contains
       LENSAV= 4*(KMAX+LMAX)+INT(LOG(REAL(KMAX))) + INT(LOG(REAL(LMAX))) + 8
 
 !     --------- ALLOCATE FIELDS FOR FFTPACK----------------------------
+      IF ( ALLOCATED(WSAVE1)      ) DEALLOCATE(WSAVE1)
+      IF ( ALLOCATED(WSAVE2)      ) DEALLOCATE(WSAVE2)
       ALLOCATE(WSAVE1(LENSAV),WSAVE2(LENSAV))
+
+      IF ( ALLOCATED(WAVENUMBER_K)) DEALLOCATE(WAVENUMBER_K)
+      IF ( ALLOCATED(WAVENUMBER_L)) DEALLOCATE(WAVENUMBER_L)
       ALLOCATE (wavenumber_k(jds:jde),wavenumber_l(ids:ide))
 
 !     -------- INITIALIZE FFTPACK ROUTINES -----------------------------
@@ -334,7 +339,7 @@ contains
        CALL wrf_dm_bcast_integer ( iseed , how_many )
        CALL random_seed(put=iseed(1:how_many))   ! set random seed on each proc
 #endif
-
+ 
        END subroutine SETUP_STOCH
 
 !     ------------------------------------------------------------------

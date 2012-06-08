@@ -1518,10 +1518,6 @@ END SUBROUTINE EARTH_LATLON
                 IMS,IME,JMS,JME,KMS,KME,                 &
                 ITS,ITE,JTS,JTE,KTS,KTE      )
     END SELECT
-#if defined(EXPENSIVE_HWRF_DEBUG_STUFF)
-       write(0,105)"NEW H WEIGHTS:",I,J,IIH(i,j),JJH(i,j),HBWGT1(I,J),HBWGT2(I,J),HBWGT3(I,J),HBWGT4(I,J), &
-                                HBWGT1(I,J)+HBWGT2(I,J)+HBWGT3(I,J)+HBWGT4(I,J)
-#endif
   105  format(a,4i4,5f7.3)
  END DO
  END DO
@@ -1903,9 +1899,6 @@ END SUBROUTINE EARTH_LATLON
                 IMS,IME,JMS,JME,KMS,KME,                 &
                 ITS,ITE,JTS,JTE,KTS,KTE      )
     END SELECT
-!      WRITE(0,105)'NEW V WEIGHTS:',I,J,VBWGT1(I,J),VBWGT2(I,J),VBWGT3(I,J),VBWGT4(I,J), &
-!                    VBWGT1(I,J)+VBWGT2(I,J)+VBWGT3(I,J)+VBWGT4(I,J),IIV(i,j),JJV(i,j)
-! 105  format(a,2i4,5f7.3,2i4)
  END DO
  END DO
 
@@ -2851,8 +2844,8 @@ CONTAINS
 
     ! select subdomain from big fine grid
     i_add = mod(j_start+1,2) 
-    DO j=1,jde
-       DO i=1,ide
+    DO j=jds,jde
+       DO i=ids,ide
           avc_nest(i,j) = tr%avc(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
           lnd_nest(i,j) = tr%lnd(i_start+i-1 + mod(j+1,2)*i_add, j_start+j-1)
        END DO

@@ -390,6 +390,17 @@ if [ -n "$WRF_VENUS" ] ; then
     compileflags="${compileflags}!-DPLANET!-DVENUS"
   fi
 fi
+if [ -n "$WRF_QUIETLY" ]; then
+  echo WRF_QUIETLY is now a synonym for WRF_LOG_BUFFERING
+  echo setting WRF_LOG_BUFFERING to 1...
+  export WRF_LOG_BUFFERING=1
+fi
+if [ -n "$WRF_LOG_BUFFERING" ]; then
+  if [ $WRF_LOG_BUFFERING = 1 ]; then
+    echo building WRF with support for buffering of log messages
+    compileflags="${compileflags}!-DWRF_LOG_BUFFERING=1"
+  fi
+fi
 if [ -n "$WRF_NMM_CORE" ]; then
   if [ $WRF_NMM_CORE = 1 ]; then
     if [ -n "$HWRF" ]; then

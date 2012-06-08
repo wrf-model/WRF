@@ -242,7 +242,7 @@
       integer KDT,buf(2) /0,0/
       character*24 s
       character*80 s1
-
+      character*255 message
       SAVE
 !C
 
@@ -346,8 +346,11 @@
 
       END IF !** innermost grid not active in coupling **
 
-      if (VerbLev.ge.2) print*,'AM: ATM_TSTEP_INIT: returning ',gid, &
+      if (VerbLev.ge.2) then
+         write(message,*) 'AM: ATM_TSTEP_INIT: returning ',gid,         &
      &n_ts(gid),ids,idf,jds,jdf,its,ite,jts,jte,ims,ime,jms,jme,NGP,NSF
+         call wrf_message(message)
+      endif
 
       RETURN
       end

@@ -15,6 +15,7 @@ MODULES =                 		\
         module_IGWAVE_ADJUST.o         	\
         module_NONHY_DYNAM.o         	\
         module_PHYSICS_CALLS.o       	\
+	module_STATS_FOR_MOVE.o		\
         module_GWD.o                    \
         module_MPPINIT.o        	\
         module_TIMERS.o                 \
@@ -57,16 +58,21 @@ clean:
 
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
 
-solve_nmm.o:   module_BC_NMM.o \
+solve_nmm.o:   module_BC_NMM.o module_STATS_FOR_MOVE.o \
                module_IGWAVE_ADJUST.o module_ADVECTION.o  \
                module_NONHY_DYNAM.o module_DIFFUSION_NMM.o    \
                module_BNDRY_COND.o module_PHYSICS_CALLS.o \
                module_CTLBLK.o module_HIFREQ.o \
-               ../share/module_random.o 
+               ../share/module_random.o ../frame/hires_timer.o
 
 NMM_NEST_UTILS1.o: module_TERRAIN.o module_SMOOTH_TERRAIN.o \
 	../frame/module_dm.o ../frame/module_domain.o \
 	../frame/module_configure.o ../frame/module_timing.o
+
+module_STATS_FOR_MOVE.o: ../frame/module_dm.o ../frame/module_domain.o \
+	../frame/module_configure.o
+
+start_domain_nmm.o: module_HIFREQ.o ../share/module_random.o
 
 module_ADVECTION.o: ../share/module_MPP.o module_INDX.o
 

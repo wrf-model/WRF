@@ -412,7 +412,7 @@ CONTAINS
     REAL, DIMENSION(kms:kme) :: sfull, shalf
     REAL :: obs_twindo_cg, obs_twindo
     CHARACTER(len=256) :: mminlu_loc
-    CHARACTER(len=80) :: message
+    CHARACTER(len=512) :: message
     INTEGER :: iswater
     INTEGER :: isice
     INTEGER :: isurban

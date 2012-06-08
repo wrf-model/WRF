@@ -38,13 +38,12 @@ CONTAINS
                  ,el_mynn,dqke,qWT,qSHEAR,qBUOY,qDISS              &
 !endJOE
 #if (NMM_CORE==1)
-                 ,DISHEAT                                          &
+                 ,DISHEAT,RTHRATEN                                 &
+                 ,HPBL2D, EVAP2D, HEAT2D                           &   !Kwon FOR SHAL. CON.
 #endif
-                 ,RTHRATEN                                 &
 #if (HWRF==1)
                  ,gfs_alpha                                        &
 #endif
-                 ,HPBL2D, EVAP2D, HEAT2D                           &   !Kwon FOR SHAL. CON.
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,i_start,i_end, j_start,j_end, kts,kte, num_tiles &
@@ -309,11 +308,10 @@ CONTAINS
    LOGICAL,      INTENT(IN   )    ::   warm_rain
 #if (NMM_CORE==1)
    LOGICAL,      INTENT(IN   )    ::   DISHEAT ! (for HWRF)
-#endif
-
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(IN   )   ::   RTHRATEN !Kwon for GFS PBL
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
          OPTIONAL,   INTENT(OUT) ::  HPBL2D, EVAP2D, HEAT2D                 !Kwon for Shallow Convection
+#endif
 
    REAL,       DIMENSION( kms:kme ),                              &
                OPTIONAL, INTENT(IN   )    ::               znu,   &

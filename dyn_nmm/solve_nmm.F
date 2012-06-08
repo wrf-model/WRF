@@ -40,6 +40,7 @@
       USE MODULE_EXT_INTERNAL
       USE MODULE_PRECIP_ADJUST
       USE MODULE_NEST_UTIL     ! USEs module_MPP (contains MYPE,NPES,MPI_COMM_COMP)
+      USE MODULE_STATS_FOR_MOVE,        ONLY: STATS_FOR_MOVE
 #ifdef WRF_CHEM
       USE MODULE_INPUT_CHEM_DATA,       ONLY: GET_LAST_GAS
 #endif
@@ -341,7 +342,10 @@
   NUMGAS          = GET_LAST_GAS(CONFIG_FLAGS%CHEM_OPT)
 #endif
 !
-      IF(CONFIG_FLAGS%CU_PHYSICS==GDSCHEME)THEN
+        IF(CONFIG_FLAGS%CU_PHYSICS==GDSCHEME.OR.                        &
+     &  CONFIG_FLAGS%CU_PHYSICS==TIEDTKESCHEME.OR.                      &
+     &  CONFIG_FLAGS%CU_PHYSICS==KFETASCHEME)THEN
+
         DO J=JMS,JME
         DO K=KMS,KME
         DO I=IMS,IME
@@ -559,7 +563,8 @@
 
             imid=(its+ite)/2   ;   jmid=(jts+jte)/2
 
-            write(0,'(A,": random(",I0,",",I0,") = ",E15.10)') 'before call',imid,jmid,grid%random(imid,jmid)
+            write(message,'(A,": random(",I0,",",I0,") = ",E15.10)') 'before call',imid,jmid,grid%random(imid,jmid)
+            call wrf_debug(3,message)
 
             call rand_grid_r4(grid%randstate1,grid%randstate2, &
                               grid%randstate3,grid%randstate4, &
@@ -568,7 +573,8 @@
                               IMS,IME,JMS,JME,one,one, &
                               ITS,ITE,JTS,JTE,one,one)
 
-            write(0,'(A,": random(",I0,",",I0,") = ",E15.10)') 'after call',imid,jmid,grid%random(imid,jmid)
+            write(message,'(A,": random(",I0,",",I0,") = ",E15.10)') 'after call',imid,jmid,grid%random(imid,jmid)
+            call wrf_debug(3,message)
 
             call end_timing('Updating random numbers')
          ENDIF    ! for IF(IDT.EQ.0 .OR. NTSD .EQ. 0)
@@ -1818,7 +1824,9 @@
 !
 !***  GET TENDENCIES FOR GD SCHEME.
 !    
-        IF(CONFIG_FLAGS%CU_PHYSICS==GDSCHEME)THEN
+        IF(CONFIG_FLAGS%CU_PHYSICS==GDSCHEME.OR.                        &
+     &  CONFIG_FLAGS%CU_PHYSICS==TIEDTKESCHEME.OR.                      &
+     &  CONFIG_FLAGS%CU_PHYSICS==KFETASCHEME)THEN
           DT_INV=1./GRID%DT
           DO J=JMS,JME
           DO K=KMS,KME
@@ -2190,11 +2198,12 @@
 !
       btimx=timef()
 !
-      CALL DDAMP(grid%ntsd,GRID%DT,grid%deta1,grid%deta2,grid%pdsl,grid%pdtop,grid%div,grid%hbm2          &
-     &          ,grid%t,grid%u,grid%v,grid%ddmpu,grid%ddmpv                                     &
-     &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                       &
-     &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
-     &          ,IMS,IME,JMS,JME,KMS,KME                               &
+      CALL DDAMP(grid%ntsd,GRID%DT,grid%deta1,grid%deta2,grid%pdsl      &
+     &          ,grid%pdtop,grid%div,grid%hbm2                          &
+     &          ,grid%t,grid%u,grid%v,grid%ddmpu,grid%ddmpv             &
+     &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                    &
+     &          ,IDS,IDF,JDS,JDF,KDS,KDE                                &
+     &          ,IMS,IME,JMS,JME,KMS,KME                                &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
       ddamp_tim=ddamp_tim+timef()-btimx
@@ -2383,20 +2392,15 @@
 #endif
 !-----------------
 
-   CALL STATS_FOR_MOVE (grid%XLOC_2,grid%YLOC_2,grid%PDYN,grid%MSLP,grid%SQWS                   &
-                      ,grid%pint,grid%t,grid%q,grid%u,grid%v                                   &
-                      ,grid%fis,grid%pd,grid%sm,grid%pdtop,grid%pt                             &
-                      ,grid%deta1,grid%deta2                                    &
-#ifdef HWRF
-                      ,GRID%RESTART,grid%NTIME0                            & ! zhang's doing
-                      ,GRID%MOVED,grid%MVNEST,grid%ntsd,GRID%NPHS,GRID%MOVEMIN  & ! MOVEMIN*DT*NPHS=540s
-#else
-                      ,GRID%MOVED,grid%MVNEST,grid%ntsd,GRID%NPHS     &
-#endif
-                      ,GRID%VORTEX_TRACKER                            &
-                      ,IDS,IDF,JDS,JDF,KDS,KDE                        & ! MOVEMIN is defined in
-                      ,IMS,IME,JMS,JME,KMS,KME                        & ! Registry
-                      ,ITS,ITE,JTS,JTE,KTS,KTE              )           ! FOR NEST:DT=18,NPHS=3
+      call start_timing()
+      call stats_for_move(grid,config_flags &
+                         ,IDS,IDE,JDS,JDE,KDS,KDE &
+                         ,IMS,IME,JMS,JME,KMS,KME &
+                         ,IPS,IPE,JPS,JPE,KPS,KPE &
+                         ,ITS,ITE,JTS,JTE,KTS,KTE)
+3303  format('stats_for_move on domain ',I0)
+      write(message,3303) grid%id
+      call end_timing(message)
    CALL wrf_debug ( 100 , 'nmm stats_for_move: after advection' )
    ENDIF
 #endif
@@ -2407,7 +2411,7 @@
 !    This is gopal's doing
 
      IF(grid%id .EQ. 1 .AND. MOD(grid%NTSD,n_print_time)==0)THEN
-      WRITE(0,*)'COMPUTING MSLP OVER THE PARENT DOMAIN'
+      call wrf_debug(1,'COMPUTING MSLP OVER THE PARENT DOMAIN')
 
       CALL MSLP_DIAG (grid%MSLP,grid%PINT,grid%T,grid%Q                &
                      ,grid%FIS,grid%PD,grid%DETA1,grid%DETA2,grid%PDTOP     &

@@ -427,6 +427,10 @@ endif
 
 end program readv3
 
+logical function wrf_dm_on_monitor()
+  wrf_dm_on_monitor=.true.
+end function wrf_dm_on_monitor
+
 logical function iveceq( a, b, n )
   implicit none
   integer n

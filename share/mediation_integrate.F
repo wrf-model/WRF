@@ -1452,17 +1452,24 @@ SUBROUTINE med_analysis_in ( grid , config_flags )
                          config_flags , "DATASET=RESTART", ierr )
 
    IF ( ierr .NE. 0 ) THEN
-      ! Could not open the analysis file, so notify user.
+      ! Could not open the analysis file, so notify user and abort.
 
-      write(message,'(A,I0,A,A,A)') 'WARNING: Domain ',grid%id,' analysis file ',trim(rstname),' is missing.'
-      call wrf_message(message)
+      write(message,'(A,I0,A,A,A)') 'ERROR: Domain ',grid%id,' analysis file ',trim(rstname),' is missing.'
+      call wrf_error_fatal(message)
+
+      ! It is unsafe to continue with a cold start when the analysis
+      ! file is missing because the model expects that it is being
+      ! restart if an analysis=T.  Hence, some variables will not be
+      ! correctly initialized.
+
+      ! Thus, we never reach this line:
       write(message,'(A,I0,A)') '-------> Domain ',grid%id,' running as a cold start (interp from parent).'
       call wrf_message(message)
 
-      IF ( wrf_dm_on_monitor() ) THEN
-         WRITE (message, '("Failing to read restart for domain ",I8)') grid%id
+      if(wrf_dm_on_monitor()) then
+         WRITE ( message , FMT = '("Failing to read restart for domain ",I8)' ) grid%id
          CALL end_timing ( TRIM(message) )
-      END IF
+      endif
 
       return
    ELSE
@@ -1507,6 +1514,12 @@ SUBROUTINE med_analysis_out ( grid , config_flags )
 !zhang   TYPE(ESMF_Time)                        :: CurrTime
    TYPE(WRFU_Time)                        :: CurrTime
    CHARACTER*80                           :: timestr
+
+   if(.not. config_flags%write_analysis) then
+      write(message,'("Writing of an analysis file is disabled for domain ",I0," because write_analysis=F")') grid%id
+      call wrf_debug(1,message)
+      return
+   endif
 
    IF ( wrf_dm_on_monitor() ) THEN
      CALL start_timing

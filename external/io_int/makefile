@@ -38,7 +38,7 @@ module_internal_header_util.o :
 
 diffwrf:                diffwrf.F ../../frame/pack_utils.o ../../frame/module_machine.o ../../frame/module_wrf_error.o \
 				../../frame/wrf_debug.o libwrfio_int.a $(ESMF_MOD_DEPENDENCE)
-			if [ -f ../../frame/pack_utils.o ] ; then \
+			if [ -f ../../frame/pack_utils.o -a -f ../../frame/clog.o ] ; then \
 			mv diffwrf.F diffwrf.F90    ; \
                         x=`echo "$(FC)" | awk '{print $$1}'` ; export x ; \
                         if [ $$x = "gfortran" ] ; then \
@@ -53,10 +53,11 @@ diffwrf:                diffwrf.F ../../frame/pack_utils.o ../../frame/module_ma
                         ../../frame/pack_utils.o ../../frame/module_internal_header_util.o \
                         ../../frame/module_driver_constants.o \
 			../../frame/module_machine.o ../../frame/wrf_debug.o ../../frame/module_wrf_error.o \
+			../../frame/clog.o \
 			$(ESMF_IO_LIB_EXT) ; fi
 
 ../../frame/pack_utils.o ../../frame/internal_header_util.o ../../frame/module_machine.o ../../frame/module_wrf_error.o \
-../../frame/wrf_debug.o $(ESMF_MOD_DEPENDENCE) :
+../../frame/wrf_debug.o ../../frame/clog.o $(ESMF_MOD_DEPENDENCE) :
 			@echo "Diffwrf io_int will be built later on in this compile. No need to rerun compile. "
 
 superclean:

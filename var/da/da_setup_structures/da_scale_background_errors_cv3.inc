@@ -26,6 +26,7 @@ subroutine da_scale_background_errors_cv3 ( grid, be, it )
 
 #ifdef DM_PARALLEL
    ij = ( ide- ids+1)*( jde- jds+1)
+   ijk = ij * ( kde - kds + 1)
 !  Collect xb component of fac into global buffer.
    call da_patch_to_global( grid, grid%xb%map_factor, global_fac )
    call wrf_dm_bcast_real( global_fac, ij )
@@ -44,14 +45,23 @@ subroutine da_scale_background_errors_cv3 ( grid, be, it )
 ! Rewind the unit:
     be_rf_unit    = unit_end + 3
     be_print_unit = unit_end + 5
-    rewind (be_rf_unit)
+    if (rootproc) rewind (be_rf_unit)
 
     if (rootproc .and. print_detail_be) &
     write(be_print_unit,'(//10x,a,i2,a)') '====== SCALE CV3 BE for IT =', it, ' ======' 
 !
 ! 2.2 Read the dimensions
 !
-    read(be_rf_unit) iis, iie, jjs, jje, kks, kke, ku, samp
+    if (rootproc) &
+       read(be_rf_unit) iis, iie, jjs, jje, kks, kke, ku, samp
+    call wrf_dm_bcast_integer( iis , 1 )
+    call wrf_dm_bcast_integer( iie , 1 )
+    call wrf_dm_bcast_integer( jjs , 1 )
+    call wrf_dm_bcast_integer( jje , 1 )
+    call wrf_dm_bcast_integer( kks , 1 )
+    call wrf_dm_bcast_integer( kke , 1 )
+    call wrf_dm_bcast_integer( ku , 1 )
+    call wrf_dm_bcast_real( samp , 1 )
     if (rootproc .and. print_detail_be) &
     write (be_print_unit,'(/a,7i5,f15.5)') &
               "Read in: ids, ide, jds, jde, kds, kde, ku, samp:", &
@@ -65,7 +75,12 @@ subroutine da_scale_background_errors_cv3 ( grid, be, it )
    if (rootproc .and. print_detail_be) &
    write (be_print_unit,'(3x,a)')  'VARIANCE:'
    do ii = 1, 4
-     read (be_rf_unit) chr, vname, i, global_3d
+     if (rootproc) &
+        read (be_rf_unit) chr, vname, i, global_3d
+     call wrf_dm_bcast_string( chr, 9 )
+     call wrf_dm_bcast_string( vname, 6 )
+     call wrf_dm_bcast_integer( i, 1 )
+     call wrf_dm_bcast_real( global_3d, ijk )
      be%corz(its:ite,jts:jte,kts:kte,i) = global_3d(its:ite,jts:jte,kts:kte)
      xsum(1) = sum (be%corz(its:ite,jts:jte,kts:kte,i)*be%corz(its:ite,jts:jte,kts:kte,i))
      call da_proc_sum_real(xsum)
@@ -75,7 +90,12 @@ subroutine da_scale_background_errors_cv3 ( grid, be, it )
    enddo
 
 !  Pscf Variance before the normalization.
-   read (be_rf_unit) chr, vname, ii, global_2d
+   if (rootproc) &
+      read (be_rf_unit) chr, vname, ii, global_2d
+   call wrf_dm_bcast_string( chr, 9 )
+   call wrf_dm_bcast_string( vname, 6 )
+   call wrf_dm_bcast_integer( ii, 1 )
+   call wrf_dm_bcast_real( global_2d, ij )
    be%corp(its:ite,jts:jte) = global_2d(its:ite,jts:jte)
    xsum(1) = sum (be%corp(its:ite,jts:jte)*be%corp(its:ite,jts:jte))
    call da_proc_sum_real(xsum)
@@ -90,7 +110,12 @@ subroutine da_scale_background_errors_cv3 ( grid, be, it )
    if (rootproc .and. print_detail_be) &
    write (be_print_unit,'(3x,a)')  'VERTICAL SCALE:'
    do ii = 1, 4
-     read (be_rf_unit) chr, vname, n, global_3d
+     if (rootproc) &
+         read (be_rf_unit) chr, vname, n, global_3d
+     call wrf_dm_bcast_string( chr, 9 )
+     call wrf_dm_bcast_string( vname, 6 )
+     call wrf_dm_bcast_integer( n, 1 )
+     call wrf_dm_bcast_real( global_3d, ijk )
      do i = its, ite
      do j = jts, jte
      do k = kts, kte
@@ -109,14 +134,18 @@ subroutine da_scale_background_errors_cv3 ( grid, be, it )
 
    if (rootproc .and. print_detail_be) &
    write (be_print_unit,'(3x,a)')  'READ IN THE HORIZONTAL SCALES:'
-   read (be_rf_unit) hwll
+   if (rootproc) &
+      read (be_rf_unit) hwll
+   call wrf_dm_bcast_real( hwll, 4*ijk )
    if (rootproc .and. print_detail_be) then
    write (be_print_unit,'(3x,a)')  'HORIZONTAL SCALES:'
    xsum(1) = sum (hwll*hwll)
    write (be_print_unit,'(9x,a,2x,"sum^2=",e20.12)') 'HORIZONTAL PSI, CHI_u, T_u, RH_u SCALES:', xsum(1)
    endif
 
-   read (be_rf_unit) hwllp
+   if (rootproc) &
+      read (be_rf_unit) hwllp
+   call wrf_dm_bcast_real( hwllp, ij )
    if (rootproc .and. print_detail_be) then
    xsum(1) = sum (hwllp*hwllp)
    write (be_print_unit,'(9x,a,2x,"sum^2=",e20.12)') 'HORIZONTAL PS_u SCALES:', xsum(1)

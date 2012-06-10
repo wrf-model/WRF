@@ -140,15 +140,12 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
      IF ( .FALSE.) THEN
        rc = 1  ! dummy statement
      ELSE IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
-       IF ( .NOT. grid%trajectory_io ) THEN
 #if (WRFPLUS == 1)
+       IF ( .NOT. grid%trajectory_io ) THEN
          ! For wrfplus, only allow tl and nl output histoty files.
          IF ( config_flags%dyn_opt .EQ. dyn_em_tl .OR. config_flags%dyn_opt .EQ. dyn_em ) THEN
             CALL med_hist_out ( grid , ialarm, config_flags )
          ENDIF
-#else
-         CALL med_hist_out ( grid , ialarm, config_flags )
-#endif
        ELSE
          IF ( ialarm .EQ. auxhist8_only ) THEN ! TL perturbation only
             CALL domain_clock_get ( grid, current_timestr=message )
@@ -163,9 +160,11 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
             ENDIF
          ENDIF
        ENDIF
+#else
        IF ( grid%dfi_stage == DFI_FST .OR. grid%dfi_opt == DFI_NODFI ) THEN
           CALL med_hist_out ( grid , ialarm, config_flags )
        END IF
+#endif
        CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
      ENDIF
    ENDDO

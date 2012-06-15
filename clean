@@ -27,10 +27,6 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
     ( cd var ; make superclean )
     ( cd var/obsproc ; make clean )
   endif
-  if ( -f configure.wrf ) then
-    /bin/cp configure.wrf configure.wrf.backup
-    /bin/rm -f configure.wrf
-  endif
   if ( -f Registry/Registry ) then
     /bin/cp Registry/Registry Registry/Registry.backup
     /bin/rm -f Registry/Registry
@@ -43,6 +39,10 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
   ( cd external/atm_ocn ; make clean )
   ( cd tools ; /bin/rm -f registry gen_comms.c fseeko_test fseeko64_test )
   ( cd inc; /bin/rm -f dm_comm_cpp_flags wrf_io_flags.h wrf_status_codes.h )
+  if ( -f configure.wrf ) then
+    /bin/cp configure.wrf configure.wrf.backup
+    /bin/rm -f configure.wrf
+  endif
   if ( "$arg" != '-aa' ) then
     ( cd run ; /bin/rm -f gm* out* fort* ideal* *.exe ; \
 	  /bin/cp -f namelist.input namelist.input.backup ; \

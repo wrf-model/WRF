@@ -9894,9 +9894,10 @@ CONTAINS
 
     INTEGER :: i,j,K, na
     LOGICAL :: predicate
+    REAL    :: tem1,tem2,tem3
 
 !------------------------------------------------------------------
-#ifdef WRF_CHEM
+#ifdef HWRF
       IF ( aer_ra_feedback == 1) then
       IF ( .NOT. &
       ( PRESENT(tauaer300) .AND. &
@@ -9916,6 +9917,8 @@ CONTAINS
       ENDIF
       ENDIF
 #endif
+      write(0,*)'Chanh_sw: start looping the sw scheme its,ite ',its,ite
+      write(0,*)'Chanh_sw: jts,jte = ',jts,jte
 
 !-----CALCULATE SHORT WAVE RADIATION
 !                                                              
@@ -9924,7 +9927,6 @@ CONTAINS
 
 ! latitude loop
   j_loop: do j = jts,jte
-
 ! longitude loop
      i_loop: do i = its,ite
 !
@@ -9941,9 +9943,19 @@ CONTAINS
          tloctm = gmt + xt24/60. + xlong(i,j)/15.
          hrang = 15. * (tloctm-12.) * degrad
          xxlat = xlat(i,j) * degrad
-!         clat(i) = xxlat
-         coszrs = sin(xxlat) * sin(declin) + cos(xxlat) * cos(declin) * cos(hrang)
-         coszr(i,j) = coszrs
+!c         coszrs = sin(xxlat)*sin(declin) + cos(xxlat)*cos(declin)*cos(hrang)
+         tem1=sin(xxlat)*sin(declin)
+         tem2=cos(xxlat)*cos(declin)*cos(hrang)
+         tem3=tem1+tem2
+         coszr(i,j) = tem1+tem2
+         write(0,*)'Chanh_sw: xt24,tloctm,hrang,xxlat,coszrs,coszr(i,j)',xt24,tloctm,hrang,xxlat,coszrs,coszr(i,j) 
+         write(0,*)'Chanh_sw: degrad,declin,xlat(i,j)',degrad,declin,xlat(i,j)
+         write(0,*)'Chanh_sw: sin(xxlat) = ',sin(xxlat),xxlat
+         write(0,*)'Chanh_sw: sin(declin) =',sin(declin),declin
+         write(0,*)'Chanh_sw: cos(xxlat) =', cos(xxlat),xxlat
+         write(0,*)'Chanh_sw: cos(declin) =',cos(declin),declin
+         write(0,*)'Chanh_sw: cos(hrang) =',cos(hrang),hrang
+         write(0,*)'Chanh_sw: tem1,tem2,tem3,icloud',tem1,tem2,tem3,icloud
 
 ! Set flag to prevent shortwave calculation when sun below horizon
          if (coszrs.le.0.0) dorrsw = .false.
@@ -9979,7 +9991,7 @@ CONTAINS
 
 ! moist variables
 
-         IF (ICLOUD .ne. 0) THEN
+         IF (icloud .ne. 0) THEN
             IF ( PRESENT( CLDFRA3D ) ) THEN
               DO K=kts,kte
                  CLDFRA1D(k)=CLDFRA3D(I,K,J)
@@ -10011,6 +10023,8 @@ CONTAINS
               ENDDO
              ENDIF
             ENDIF
+
+
 
 ! This logic is tortured because cannot test F_QI unless
 ! it is present, and order of evaluation of expressions
@@ -10179,6 +10193,8 @@ CONTAINS
          aldif(ncol) = albedo(i,j)
     ENDIF
 
+
+
 ! ---------- End of Addiation ------!
 ! ----------  End of fds_Zhenxin 2011-06-20   --------------!
 
@@ -10238,6 +10254,7 @@ CONTAINS
                cliqwp(ncol,k) = gliqwp / max(0.01,cldfrac(ncol,k))               ! In-cloud liquid water path.
             end do
 
+
 !link the aerosol feedback to cloud  -czhao
   if( PRESENT( progn ) ) then
     if (progn == 1) then
@@ -10280,6 +10297,7 @@ CONTAINS
 
 ! following Kristjansson and Mitchell
       call reicalc(ncol, pcols, pver, tlay, reice)
+
 
       if (i==80.and.j==30) then
 #if defined( DM_PARALLEL ) && ! defined( STUBMPI) 
@@ -10364,7 +10382,7 @@ CONTAINS
       end do
       end do
 
-#ifdef WRF_CHEM
+#ifdef HWRF
    IF ( AER_RA_FEEDBACK == 1) then
       do nb = 1, nbndsw
          wavemid(nb)=0.5*(wavemin(nb)+wavemax(nb))  ! um

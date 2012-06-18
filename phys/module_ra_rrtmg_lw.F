@@ -12047,6 +12047,7 @@ CONTAINS
 !     write(0,*) 'lw prescribe aerosol',maxval(qndrop3d)
 !jdfcz     endif
     else  ! progn   
+!      print*,'Chanh_lw: progn = ',progn,' aer_ra_feedback = ',aer_ra_feedback
       call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
     endif
   else   !present(progn) 

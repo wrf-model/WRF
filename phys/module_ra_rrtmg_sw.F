@@ -9917,8 +9917,6 @@ CONTAINS
       ENDIF
       ENDIF
 #endif
-      write(0,*)'Chanh_sw: start looping the sw scheme its,ite ',its,ite
-      write(0,*)'Chanh_sw: jts,jte = ',jts,jte
 
 !-----CALCULATE SHORT WAVE RADIATION
 !                                                              
@@ -9948,13 +9946,6 @@ CONTAINS
          tem2=cos(xxlat)*cos(declin)*cos(hrang)
          tem3=tem1+tem2
          coszr(i,j) = tem1+tem2
-         write(0,*)'Chanh_sw: xt24,tloctm,hrang,xxlat,coszrs,coszr(i,j)',xt24,tloctm,hrang,xxlat,coszrs,coszr(i,j) 
-         write(0,*)'Chanh_sw: degrad,declin,xlat(i,j)',degrad,declin,xlat(i,j)
-         write(0,*)'Chanh_sw: sin(xxlat) = ',sin(xxlat),xxlat
-         write(0,*)'Chanh_sw: sin(declin) =',sin(declin),declin
-         write(0,*)'Chanh_sw: cos(xxlat) =', cos(xxlat),xxlat
-         write(0,*)'Chanh_sw: cos(declin) =',cos(declin),declin
-         write(0,*)'Chanh_sw: cos(hrang) =',cos(hrang),hrang
          write(0,*)'Chanh_sw: tem1,tem2,tem3,icloud',tem1,tem2,tem3,icloud
 
 ! Set flag to prevent shortwave calculation when sun below horizon

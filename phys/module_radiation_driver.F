@@ -314,7 +314,6 @@ CONTAINS
 !
 !==================================================================
 !
-   REAL DEGRAD1
    INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
                                                          kts,kte, &
@@ -572,7 +571,7 @@ CONTAINS
 #ifdef HWRF
    CHARACTER(len=265) :: wrf_err_message
 #endif
-   DEGRAD1=180.0/3.14 
+
    CALL wrf_debug (1, 'Top of Radiation Driver')
 !  WRITE ( wrf_err_message , * ) 'itimestep = ',itimestep,', dt = ',dt,', lw and sw options = ',lw_physics,sw_physics
 !  CALL wrf_debug (1, wrf_err_message )
@@ -1059,7 +1058,7 @@ CONTAINS
                   QI3D=QI,QS3D=QS,QG3D=QG,                          &
                   F_QV=F_QV,F_QC=F_QC,F_QR=F_QR,                    &
                   F_QI=F_QI,F_QS=F_QS,F_QG=F_QG,                    &
-#ifdef HWRF 
+#ifdef WRF_CHEM
                   TAUAERLW1=tauaerlw1,TAUAERLW2=tauaerlw2,          & ! jcb
                   TAUAERLW3=tauaerlw3,TAUAERLW4=tauaerlw4,          & ! jcb
                   TAUAERLW5=tauaerlw5,TAUAERLW6=tauaerlw6,          & ! jcb
@@ -1068,9 +1067,9 @@ CONTAINS
                   TAUAERLW11=tauaerlw11,TAUAERLW12=tauaerlw12,          & ! jcb
                   TAUAERLW13=tauaerlw13,TAUAERLW14=tauaerlw14,          & ! jcb
                   TAUAERLW15=tauaerlw15,TAUAERLW16=tauaerlw16,          & ! jcb
-                  aer_ra_feedback=0,                                &
-!jdfcz            progn=progn,prescribe=prescribe,                  &
-                  progn=0,                                          &
+                  aer_ra_feedback=aer_ra_feedback,                  &
+!jdfcz            progn=progn,prescribe=prescribe,                   &
+                  progn=progn,                                       &
 #endif
                   QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
                   IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
@@ -1288,10 +1287,10 @@ CONTAINS
                     ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte &
 !                    ,cosz_urb2d=cosz_urb2d ,omg_urb2d=omg_urb2d        & !urban
                     ,qv3d=qv                                           &
-                    ,qc3d=qc                                           & 
-                    ,qr3d=qr                                           & 
-                    ,qi3d=qi                                           & 
-                    ,qs3d=qs                                           & 
+                    ,qc3d=qc                                           &
+                    ,qr3d=qr                                           &
+                    ,qi3d=qi                                           &
+                    ,qs3d=qs                                           &
                     ,qg3d=qg                                           &
                     ,f_qv=f_qv,f_qc=f_qc,f_qr=f_qr                     &
                     ,f_qi=f_qi,f_qs=f_qs,f_qg=f_qg                     &
@@ -1304,7 +1303,7 @@ CONTAINS
                   PRESENT(M_PS_1) .AND. PRESENT(M_PS_2) .AND.  &
                   PRESENT(M_HYBI0) .AND. PRESENT(AEROSOLC_1)    &
                   .AND. PRESENT(AEROSOLC_2) .AND. PRESENT(ALSWVISDIR)) THEN
-             CALL CAMRAD(RTHRATENLW=RTHRATEN,RTHRATENSW=RTHRATENSW,    & 
+             CALL CAMRAD(RTHRATENLW=RTHRATEN,RTHRATENSW=RTHRATENSW,    &
                      dolw=.false.,dosw=.true.,                         &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
                      SWDNT=SWDNT,SWDNTC=SWDNTC,                        &
@@ -1318,10 +1317,10 @@ CONTAINS
                      TAUCLDC=TAUCLDC,TAUCLDI=TAUCLDI,COSZR=COSZR,      &
                      GSW=GSW,GLW=GLW,XLAT=XLAT,XLONG=XLONG,            &
                      ALBEDO=ALBEDO,t_phy=t,TSK=TSK,EMISS=EMISS         &
-                    ,QV3D=qv                                           & 
-                    ,QC3D=qc                                           & 
-                    ,QR3D=qr                                           & 
-                    ,QI3D=qi                                           & 
+                    ,QV3D=qv                                           &
+                    ,QC3D=qc                                           &
+                    ,QR3D=qr                                           &
+                    ,QI3D=qi                                           &
                     ,QS3D=qs                                           &
                     ,QG3D=qg                                           &
                     ,ALSWVISDIR=alswvisdir ,ALSWVISDIF=alswvisdif      &  !fds ssib alb comp (06/2010)
@@ -1361,42 +1360,42 @@ CONTAINS
              ENDDO
 
         CASE (RRTMG_SWSCHEME)
-             CALL wrf_debug(1, 'Chanh_sw: CALL rrtmg_sw')
+             CALL wrf_debug(100, 'CALL rrtmg_sw')
              CALL RRTMG_SWRAD(                                         &
-                     RTHRATENSW=RTHRATENSW,                            & 
-                     SWUPT=SWUPT,SWUPTC=SWUPTC,                        & 
+                     RTHRATENSW=RTHRATENSW,                            &
+                     SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
                      SWDNT=SWDNT,SWDNTC=SWDNTC,                        &
                      SWUPB=SWUPB,SWUPBC=SWUPBC,                        &
-                     SWDNB=SWDNB,SWDNBC=SWDNBC,                        & 
+                     SWDNB=SWDNB,SWDNBC=SWDNBC,                        &
                      SWCF=SWCF,GSW=GSW,                                &
                      XTIME=XTIME,GMT=GMT,XLAT=XLAT,XLONG=XLONG,        &
-                     RADT=RADT,DEGRAD=0.017444,DECLIN=DECLIN,          &
+                     RADT=RADT,DEGRAD=DEGRAD,DECLIN=DECLIN,            &
                      COSZR=COSZR,JULDAY=JULDAY,SOLCON=SOLCON,          &
-                     ALBEDO=ALBEDO,t3d=t,t8w=t8w,TSK=TSK,              & 
+                     ALBEDO=ALBEDO,t3d=t,t8w=t8w,TSK=TSK,              &
                      p3d=p,p8w=p8w,pi3d=pi,rho3d=rho,                  &
                      dz8w=dz8w,CLDFRA3D=CLDFRA,R=R_D,G=G,              &
                      ICLOUD=icloud,WARM_RAIN=warm_rain,                &
-                     F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &  
+                     F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &
                      XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
-                     QV3D=qv,QC3D=qc,QR3D=qr,                          & 
+                     QV3D=qv,QC3D=qc,QR3D=qr,                          &
                      QI3D=qi,QS3D=qs,QG3D=qg,                          &
-                     ALSWVISDIR=alswvisdir ,ALSWVISDIF=alswvisdif,     & !Zhenxin ssib alb comp (06/2010)
-                     ALSWNIRDIR=alswnirdir ,ALSWNIRDIF=alswnirdif,     & !Zhenxin ssib alb comp (06/2010)
-                     SWVISDIR=swvisdir ,SWVISDIF=swvisdif,             & !Zhenxin ssib swr comp (06/2010)
-                     SWNIRDIR=swnirdir ,SWNIRDIF=swnirdif,             & !Zhenxin ssib swr comp (06/2010)
-                     SF_SURFACE_PHYSICS=sf_surface_physics,            & !Zhenxin ssib sw_phy   (06/2010)
+                     ALSWVISDIR=alswvisdir ,ALSWVISDIF=alswvisdif,     &  !Zhenxin ssib alb comp (06/2010)
+                     ALSWNIRDIR=alswnirdir ,ALSWNIRDIF=alswnirdif,     &  !Zhenxin ssib alb comp (06/2010)
+                     SWVISDIR=swvisdir ,SWVISDIF=swvisdif,             &  !Zhenxin ssib swr comp (06/2010)
+                     SWNIRDIR=swnirdir ,SWNIRDIF=swnirdif,             &  !Zhenxin ssib swr comp (06/2010)
+                     SF_SURFACE_PHYSICS=sf_surface_physics,            &  !Zhenxin ssib sw_phy   (06/2010)
                      F_QV=f_qv,F_QC=f_qc,F_QR=f_qr,                    &
                      F_QI=f_qi,F_QS=f_qs,F_QG=f_qg,                    &
-#ifdef HWRF
-                     TAUAER300=tauaer300,TAUAER400=tauaer400,          & !jcb
-                     TAUAER600=tauaer600,TAUAER999=tauaer999,          & !jcb
-                     GAER300=gaer300,GAER400=gaer400,                  & !jcb
-                     GAER600=gaer600,GAER999=gaer999,                  & !jcb
-                     WAER300=waer300,WAER400=waer400,                  & !jcb
-                     WAER600=waer600,WAER999=waer999,                  & !jcb
-                     aer_ra_feedback=0,                                &
+#ifdef WRF_CHEM
+                     TAUAER300=tauaer300,TAUAER400=tauaer400,          & ! jcb
+                     TAUAER600=tauaer600,TAUAER999=tauaer999,          & ! jcb
+                     GAER300=gaer300,GAER400=gaer400,                  & ! jcb
+                     GAER600=gaer600,GAER999=gaer999,                  & ! jcb
+                     WAER300=waer300,WAER400=waer400,                  & ! jcb
+                     WAER600=waer600,WAER999=waer999,                  & ! jcb
+                     aer_ra_feedback=aer_ra_feedback,                  &
 !jdfcz               progn=progn,prescribe=prescribe,                  &
-                     progn=0,                                          &
+                     progn=progn,                                      &
 #endif
                      QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
                      IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&

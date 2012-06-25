@@ -416,7 +416,8 @@ CONTAINS
        ! get p_of_radm2cbmz(:), p_of_radm2(:), and radm2_per_megan(:)
        CALL get_megan2radm2_table
 
-    CASE (RACMSORG_AQ, RACMSORG_AQCHEM, RACM_ESRLSORG_KPP, RACM_KPP, GOCARTRACM_KPP, RACMSORG_KPP, RACM_MIM_KPP, RACMPM_KPP)
+    CASE (RACMSORG_AQ, RACMSORG_AQCHEM, RACM_ESRLSORG_KPP, RACM_KPP, GOCARTRACM_KPP, RACMSORG_KPP, RACM_MIM_KPP, &
+          RACMPM_KPP, RACM_SOA_VBS_KPP)
              
        ! get p_of_megan2racm(:), p_of_racm(:), and racm_per_megan(:)
        CALL get_megan2racm_table
@@ -897,7 +898,8 @@ is_mozcart_species : &
                 
              END DO
 
-           CASE (RACMSORG_AQ, RACMSORG_AQCHEM, RACM_ESRLSORG_KPP, RACM_KPP, GOCARTRACM_KPP, RACMSORG_KPP, RACM_MIM_KPP, RACMPM_KPP)
+           CASE (RACMSORG_AQ, RACMSORG_AQCHEM, RACM_ESRLSORG_KPP, RACM_KPP, GOCARTRACM_KPP, RACMSORG_KPP, RACM_MIM_KPP, &
+                 RACMPM_KPP, RACM_SOA_VBS_KPP)
 
              DO icount = 1, n_megan2racm
 

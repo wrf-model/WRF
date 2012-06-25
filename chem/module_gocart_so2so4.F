@@ -2,12 +2,12 @@ MODULE module_gocart_so2so4
 
 CONTAINS
 
-  subroutine so2so4(chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,gd,          &
+  subroutine so2so4(ils,chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,gd,          &
           gd_cldfr,NUM_CHEM,NUM_MOIST,                                              &
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
-   INTEGER,      INTENT(IN   ) :: num_chem,num_moist,                      &
+   INTEGER,      INTENT(IN   ) :: ils,num_chem,num_moist,                      &
                           p_so2,p_sulf,p_h2o2,p_QC,                        &
                                   ids,ide, jds,jde, kds,kde,               &
                                   ims,ime, jms,jme, kms,kme,               &
@@ -31,9 +31,9 @@ CONTAINS
 !         if(p_qc.gt.1)then
 !            if(moist(i,k,j,p_qc).gt.0 )cldf=1.
 !         endif
-          if(present(gd_cldfr) ) then
+          if(ils.eq.0 .and. present(gd_cldfr) ) then
             cldf=gd_cldfr(i,k,j)
-          elseif(p_qc.gt.1)then
+          elseif(p_qc.gt.1 )then
                if(moist(i,k,j,p_qc).gt.0 )cldf=1.
           endif
           tc2=chem(i,k,j,p_so2)

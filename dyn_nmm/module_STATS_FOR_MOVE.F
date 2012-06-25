@@ -362,6 +362,7 @@ contains
 #endif
   END SUBROUTINE vt4_noise_detect
 
+#ifdef HWRF
   SUBROUTINE vt4_move(MSLP,WEIGHTOUT,DISTSQ,NOISY,DX_NMM,DY_NMM, &
                       xloc,yloc,cx,cy,mvnest,                    &
                       searchrad,searchpow,searchpmax,            &
@@ -390,7 +391,6 @@ contains
     ! HISTORY:
     !   Nov 08 2011 - written by Sam Trahan
 
-#ifdef HWRF
 #ifdef DM_PARALLEL
     USE module_dm, only: wrf_dm_maxval_real, wrf_dm_sum_real, &
          local_communicator_y, local_communicator_x
@@ -654,8 +654,8 @@ contains
        yloc=cy
        call wrf_debug(1,'Nest has not moved far enough yet.')
     endif
-#endif
   END SUBROUTINE vt4_move
+#endif
 
   SUBROUTINE STATS_MAKE_MSLP(PDYN,MSLP,SQWS          &
                           ,PINT,T,Q,U,V              &

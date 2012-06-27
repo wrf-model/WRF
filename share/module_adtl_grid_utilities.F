@@ -4,12 +4,12 @@
 MODULE module_adtl_grid_utilities
 USE module_domain, ONLY : domain, get_ijk_from_grid
 USE module_configure, ONLY : grid_config_rec_type
-USE module_state_description, ONLY : PARAM_FIRST_SCALAR, num_moist, num_scalar
+USE module_state_description, ONLY : PARAM_FIRST_SCALAR, num_moist, num_scalar, num_tracer
 USE module_tiles, ONLY : set_tiles
 
 REAL, ALLOCATABLE :: s_u_2(:,:,:), s_v_2(:,:,:), s_w_2(:,:,:)
 REAL, ALLOCATABLE :: s_ph_2(:,:,:), s_t_2(:,:,:), s_mu_2(:,:)
-REAL, ALLOCATABLE :: s_moist(:,:,:,:), s_scalar(:,:,:,:)
+REAL, ALLOCATABLE :: s_moist(:,:,:,:), s_scalar(:,:,:,:), s_tracer(:,:,:,:)
 REAL, ALLOCATABLE :: s_tke_2(:,:,:)
 
 REAL, ALLOCATABLE :: s_p(:,:,:), s_al(:,:,:), s_h_diabatic(:,:,:)
@@ -31,10 +31,12 @@ REAL, ALLOCATABLE :: s_moist_bxs(:,:,:,:), s_moist_bxe(:,:,:,:), s_moist_bys(:,:
 REAL, ALLOCATABLE :: s_moist_btxs(:,:,:,:), s_moist_btxe(:,:,:,:), s_moist_btys(:,:,:,:), s_moist_btye(:,:,:,:)
 REAL, ALLOCATABLE :: s_scalar_bxs(:,:,:,:), s_scalar_bxe(:,:,:,:), s_scalar_bys(:,:,:,:), s_scalar_bye(:,:,:,:)
 REAL, ALLOCATABLE :: s_scalar_btxs(:,:,:,:), s_scalar_btxe(:,:,:,:), s_scalar_btys(:,:,:,:), s_scalar_btye(:,:,:,:)
+REAL, ALLOCATABLE :: s_tracer_bxs(:,:,:,:), s_tracer_bxe(:,:,:,:), s_tracer_bys(:,:,:,:), s_tracer_bye(:,:,:,:)
+REAL, ALLOCATABLE :: s_tracer_btxs(:,:,:,:), s_tracer_btxe(:,:,:,:), s_tracer_btys(:,:,:,:), s_tracer_btye(:,:,:,:)
 
 REAL, ALLOCATABLE :: b_u_2(:,:,:), b_v_2(:,:,:), b_w_2(:,:,:)
 REAL, ALLOCATABLE :: b_ph_2(:,:,:), b_t_2(:,:,:), b_mu_2(:,:)
-REAL, ALLOCATABLE :: b_moist(:,:,:,:), b_scalar(:,:,:,:)
+REAL, ALLOCATABLE :: b_moist(:,:,:,:), b_scalar(:,:,:,:), b_tracer(:,:,:,:)
 REAL, ALLOCATABLE :: b_tke_2(:,:,:)
 
 REAL, ALLOCATABLE :: b_p(:,:,:), b_al(:,:,:), b_h_diabatic(:,:,:)
@@ -56,6 +58,8 @@ REAL, ALLOCATABLE :: b_moist_bxs(:,:,:,:), b_moist_bxe(:,:,:,:), b_moist_bys(:,:
 REAL, ALLOCATABLE :: b_moist_btxs(:,:,:,:), b_moist_btxe(:,:,:,:), b_moist_btys(:,:,:,:), b_moist_btye(:,:,:,:)
 REAL, ALLOCATABLE :: b_scalar_bxs(:,:,:,:), b_scalar_bxe(:,:,:,:), b_scalar_bys(:,:,:,:), b_scalar_bye(:,:,:,:)
 REAL, ALLOCATABLE :: b_scalar_btxs(:,:,:,:), b_scalar_btxe(:,:,:,:), b_scalar_btys(:,:,:,:), b_scalar_btye(:,:,:,:)
+REAL, ALLOCATABLE :: b_tracer_bxs(:,:,:,:), b_tracer_bxe(:,:,:,:), b_tracer_bys(:,:,:,:), b_tracer_bye(:,:,:,:)
+REAL, ALLOCATABLE :: b_tracer_btxs(:,:,:,:), b_tracer_btxe(:,:,:,:), b_tracer_btys(:,:,:,:), b_tracer_btye(:,:,:,:)
 
 REAL, ALLOCATABLE :: b_rainnc(:,:), b_rainncv(:,:)
 REAL, ALLOCATABLE :: b_rainc(:,:), b_raincv(:,:)
@@ -220,6 +224,11 @@ CONTAINS
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate s_moist(sm31:em31, sm32:em32, sm33:em33, num_moist). ')
+   ENDIF
+   ALLOCATE ( s_tracer(sm31:em31, sm32:em32, sm33:em33, num_tracer), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_tracer(sm31:em31, sm32:em32, sm33:em33, num_tracer). ')
    ENDIF
    !  U Boundary
    ALLOCATE(s_u_bxs(sm33:em33,sm32:em32,spec_bdy_width),STAT=ierr) 
@@ -515,6 +524,48 @@ CONTAINS
      'share/module_adtl_grid_utilities.f: Failed to allocate s_moist_btye(sm31:em31,sm32:em32,spec_bdy_width,num_moist). ')
    ENDIF
 
+   !  Tracer Boundary
+   ALLOCATE(s_tracer_bxs(sm33:em33,sm32:em32,spec_bdy_width,num_tracer),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_tracer_bxs(sm33:em33,sm32:em32,spec_bdy_width,num_tracer). ')
+   ENDIF
+   ALLOCATE(s_tracer_bxe(sm33:em33,sm32:em32,spec_bdy_width,num_tracer),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_tracer_bxe(sm33:em33,sm32:em32,spec_bdy_width,num_tracer). ')
+   ENDIF
+   ALLOCATE(s_tracer_bys(sm31:em31,sm32:em32,spec_bdy_width,num_tracer),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_tracer_bys(sm31:em31,sm32:em32,spec_bdy_width,num_tracer). ')
+   ENDIF
+   ALLOCATE(s_tracer_bye(sm31:em31,sm32:em32,spec_bdy_width,num_tracer),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_tracer_bye(sm31:em31,sm32:em32,spec_bdy_width,num_tracer). ')
+   ENDIF
+   ALLOCATE(s_tracer_btxs(sm33:em33,sm32:em32,spec_bdy_width,num_tracer),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_tracer_btxs(sm33:em33,sm32:em32,spec_bdy_width,num_tracer). ')
+   ENDIF
+   ALLOCATE(s_tracer_btxe(sm33:em33,sm32:em32,spec_bdy_width,num_tracer),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_tracer_btxe(sm33:em33,sm32:em32,spec_bdy_width,num_tracer). ')
+   ENDIF
+   ALLOCATE(s_tracer_btys(sm31:em31,sm32:em32,spec_bdy_width,num_tracer),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_tracer_btys(sm31:em31,sm32:em32,spec_bdy_width,num_tracer). ')
+   ENDIF
+   ALLOCATE(s_tracer_btye(sm31:em31,sm32:em32,spec_bdy_width,num_tracer),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_tracer_btye(sm31:em31,sm32:em32,spec_bdy_width,num_tracer). ')
+   ENDIF
+
    ALLOCATE ( b_scalar(sm31:em31, sm32:em32, sm33:em33, num_scalar), STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
@@ -634,6 +685,11 @@ CONTAINS
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate b_moist(sm31:em31, sm32:em32, sm33:em33, num_moist). ')
+   ENDIF
+   ALLOCATE ( b_tracer(sm31:em31, sm32:em32, sm33:em33, num_tracer), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_tracer(sm31:em31, sm32:em32, sm33:em33, num_tracer). ')
    ENDIF
 
    !  U Boundary
@@ -929,6 +985,49 @@ CONTAINS
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate b_moist_btye(sm31:em31,sm32:em32,spec_bdy_width,num_moist). ')
    ENDIF
+
+   !  Tracer Boundary
+   ALLOCATE(b_tracer_bxs(sm33:em33,sm32:em32,spec_bdy_width,num_tracer),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_tracer_bxs(sm33:em33,sm32:em32,spec_bdy_width,num_tracer). ')
+   ENDIF
+   ALLOCATE(b_tracer_bxe(sm33:em33,sm32:em32,spec_bdy_width,num_tracer),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_tracer_bxe(sm33:em33,sm32:em32,spec_bdy_width,num_tracer). ')
+   ENDIF
+   ALLOCATE(b_tracer_bys(sm31:em31,sm32:em32,spec_bdy_width,num_tracer),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_tracer_bys(sm31:em31,sm32:em32,spec_bdy_width,num_tracer). ')
+   ENDIF
+   ALLOCATE(b_tracer_bye(sm31:em31,sm32:em32,spec_bdy_width,num_tracer),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_tracer_bye(sm31:em31,sm32:em32,spec_bdy_width,num_tracer). ')
+   ENDIF
+   ALLOCATE(b_tracer_btxs(sm33:em33,sm32:em32,spec_bdy_width,num_tracer),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_tracer_btxs(sm33:em33,sm32:em32,spec_bdy_width,num_tracer). ')
+   ENDIF
+   ALLOCATE(b_tracer_btxe(sm33:em33,sm32:em32,spec_bdy_width,num_tracer),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_tracer_btxe(sm33:em33,sm32:em32,spec_bdy_width,num_tracer). ')
+   ENDIF
+   ALLOCATE(b_tracer_btys(sm31:em31,sm32:em32,spec_bdy_width,num_tracer),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_tracer_btys(sm31:em31,sm32:em32,spec_bdy_width,num_tracer). ')
+   ENDIF
+   ALLOCATE(b_tracer_btye(sm31:em31,sm32:em32,spec_bdy_width,num_tracer),STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_tracer_btye(sm31:em31,sm32:em32,spec_bdy_width,num_tracer). ')
+   ENDIF
+
    ALLOCATE(b_rainnc(sm31:em31,sm33:em33),STAT=ierr) 
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
@@ -1013,6 +1112,17 @@ CONTAINS
    ENDDO
    ENDDO
 
+   s_tracer = 0.0
+   DO mm = PARAM_FIRST_SCALAR, num_tracer
+   DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+      s_tracer(i,k,j,mm) = grid%tracer(i,k,j,mm)
+   ENDDO
+   ENDDO
+   ENDDO
+   ENDDO
+
    s_scalar = 0.0
    DO mm = PARAM_FIRST_SCALAR, num_scalar
    DO j = jts,MIN(jte,jde-1)
@@ -1048,6 +1158,8 @@ CONTAINS
    s_moist_btxs = grid%moist_btxs; s_moist_btxe = grid%moist_btxe; s_moist_btys = grid%moist_btys; s_moist_btye = grid%moist_btye
    s_scalar_bxs = grid%scalar_bxs; s_scalar_bxe = grid%scalar_bxe; s_scalar_bys = grid%scalar_bys; s_scalar_bye = grid%scalar_bye
    s_scalar_btxs = grid%scalar_btxs; s_scalar_btxe = grid%scalar_btxe; s_scalar_btys = grid%scalar_btys; s_scalar_btye = grid%scalar_btye
+   s_tracer_bxs = grid%tracer_bxs; s_tracer_bxe = grid%tracer_bxe; s_tracer_bys = grid%tracer_bys; s_tracer_bye = grid%tracer_bye
+   s_tracer_btxs = grid%tracer_btxs; s_tracer_btxe = grid%tracer_btxe; s_tracer_btys = grid%tracer_btys; s_tracer_btye = grid%tracer_btye
    
    RETURN
   END SUBROUTINE copy_grid_to_s
@@ -1062,6 +1174,7 @@ CONTAINS
    b_t_2 = grid%t_2
    b_mu_2 = grid%mu_2
    b_moist = grid%moist
+   b_tracer = grid%tracer
 
    b_h_diabatic = grid%h_diabatic
 
@@ -1089,6 +1202,7 @@ CONTAINS
    grid%t_2 = s_t_2
    grid%mu_2 = s_mu_2
    grid%moist = s_moist
+   grid%tracer = s_tracer
    grid%scalar = s_scalar
    grid%tke_2 = s_tke_2
 
@@ -1115,13 +1229,15 @@ CONTAINS
    grid%moist_btxs = s_moist_btxs; grid%moist_btxe = s_moist_btxe; grid%moist_btys = s_moist_btys; grid%moist_btye = s_moist_btye
    grid%scalar_bxs = s_scalar_bxs; grid%scalar_bxe = s_scalar_bxe; grid%scalar_bys = s_scalar_bys; grid%scalar_bye = s_scalar_bye
    grid%scalar_btxs = s_scalar_btxs; grid%scalar_btxe = s_scalar_btxe; grid%scalar_btys = s_scalar_btys; grid%scalar_btye = s_scalar_btye
+   grid%tracer_bxs = s_tracer_bxs; grid%tracer_bxe = s_tracer_bxe; grid%tracer_bys = s_tracer_bys; grid%tracer_bye = s_tracer_bye
+   grid%tracer_btxs = s_tracer_btxs; grid%tracer_btxe = s_tracer_btxe; grid%tracer_btys = s_tracer_btys; grid%tracer_btye = s_tracer_btye
 
   END SUBROUTINE restore_grid
 
   SUBROUTINE copy_s_to_g_adjtest ( grid, factor )
    TYPE (domain), INTENT(INOUT) :: grid
    REAL, INTENT(IN) :: factor
-   REAL :: factor_u, factor_v, factor_w, factor_ph, factor_t, factor_mu, factor_moist
+   REAL :: factor_u, factor_v, factor_w, factor_ph, factor_t, factor_mu, factor_moist, factor_tracer
    
    factor_u =factor
    factor_v =factor
@@ -1130,6 +1246,7 @@ CONTAINS
    factor_t =factor
    factor_mu =factor
    factor_moist =factor
+   factor_tracer =factor
 
 ! I&O variables
    grid%g_u_2 = factor_u*s_u_2
@@ -1139,6 +1256,7 @@ CONTAINS
    grid%g_t_2 = factor_t*s_t_2
    grid%g_mu_2 = factor_mu*s_mu_2
    grid%g_moist = factor_moist*s_moist
+   grid%g_tracer = factor_tracer*s_tracer
 
    grid%g_scalar = factor*s_scalar
    grid%g_tke_2 = factor*s_tke_2
@@ -1164,6 +1282,8 @@ CONTAINS
    grid%g_mu_btxs = factor_mu*s_mu_btxs; grid%g_mu_btxe = factor_mu*s_mu_btxe; grid%g_mu_btys = factor_mu*s_mu_btys; grid%g_mu_btye = factor_mu*s_mu_btye
    grid%g_moist_bxs = factor_moist*s_moist_bxs; grid%g_moist_bxe = factor_moist*s_moist_bxe; grid%g_moist_bys = factor_moist*s_moist_bys; grid%g_moist_bye = factor_moist*s_moist_bye
    grid%g_moist_btxs = factor_moist*s_moist_btxs; grid%g_moist_btxe = factor_moist*s_moist_btxe; grid%g_moist_btys = factor_moist*s_moist_btys; grid%g_moist_btye = factor_moist*s_moist_btye
+   grid%g_tracer_bxs = factor_tracer*s_tracer_bxs; grid%g_tracer_bxe = factor_tracer*s_tracer_bxe; grid%g_tracer_bys = factor_tracer*s_tracer_bys; grid%g_tracer_bye = factor_tracer*s_tracer_bye
+   grid%g_tracer_btxs = factor_tracer*s_tracer_btxs; grid%g_tracer_btxe = factor_tracer*s_tracer_btxe; grid%g_tracer_btys = factor_tracer*s_tracer_btys; grid%g_tracer_btye = factor_tracer*s_tracer_btye
 
    grid%g_scalar_bxs = factor*s_scalar_bxs; grid%g_scalar_bxe = factor*s_scalar_bxe; grid%g_scalar_bys = factor*s_scalar_bys; grid%g_scalar_bye = factor*s_scalar_bye
    grid%g_scalar_btxs = factor*s_scalar_btxs; grid%g_scalar_btxe = factor*s_scalar_btxe; grid%g_scalar_btys = factor*s_scalar_btys; grid%g_scalar_btye = factor*s_scalar_btye
@@ -1240,6 +1360,7 @@ CONTAINS
    b_mu_2 = grid%g_mu_2
    b_tke_2 = grid%g_tke_2
    b_moist = grid%g_moist
+   b_tracer = grid%g_tracer
    b_scalar = grid%g_scalar
    b_tke_2 = grid%g_tke_2
 
@@ -1258,6 +1379,7 @@ CONTAINS
    b_t_bxs = grid%g_t_bxs; b_t_bxe = grid%g_t_bxe; b_t_bys = grid%g_t_bys; b_t_bye = grid%g_t_bye
    b_mu_bxs = grid%g_mu_bxs; b_mu_bxe = grid%g_mu_bxe; b_mu_bys = grid%g_mu_bys; b_mu_bye = grid%g_mu_bye
    b_moist_bxs = grid%g_moist_bxs; b_moist_bxe = grid%g_moist_bxe; b_moist_bys = grid%g_moist_bys; b_moist_bye = grid%g_moist_bye
+   b_tracer_bxs = grid%g_tracer_bxs; b_tracer_bxe = grid%g_tracer_bxe; b_tracer_bys = grid%g_tracer_bys; b_tracer_bye = grid%g_tracer_bye
    b_u_btxs = grid%g_u_btxs; b_u_btxe = grid%g_u_btxe; b_u_btys = grid%g_u_btys; b_u_btye = grid%g_u_btye
    b_v_btxs = grid%g_v_btxs; b_v_btxe = grid%g_v_btxe; b_v_btys = grid%g_v_btys; b_v_btye = grid%g_v_btye
    b_w_btxs = grid%g_w_btxs; b_w_btxe = grid%g_w_btxe; b_w_btys = grid%g_w_btys; b_w_btye = grid%g_w_btye
@@ -1265,6 +1387,7 @@ CONTAINS
    b_t_btxs = grid%g_t_btxs; b_t_btxe = grid%g_t_btxe; b_t_btys = grid%g_t_btys; b_t_btye = grid%g_t_btye
    b_mu_btxs = grid%g_mu_btxs; b_mu_btxe = grid%g_mu_btxe; b_mu_btys = grid%g_mu_btys; b_mu_btye = grid%g_mu_btye
    b_moist_btxs = grid%g_moist_btxs; b_moist_btxe = grid%g_moist_btxe; b_moist_btys = grid%g_moist_btys; b_moist_btye = grid%g_moist_btye
+   b_tracer_btxs = grid%g_tracer_btxs; b_tracer_btxe = grid%g_tracer_btxe; b_tracer_btys = grid%g_tracer_btys; b_tracer_btye = grid%g_tracer_btye
 
    b_scalar_bxs = grid%g_scalar_bxs; b_scalar_bxe = grid%g_scalar_bxe; b_scalar_bys = grid%g_scalar_bys; b_scalar_bye = grid%g_scalar_bye
    b_scalar_btxs = grid%g_scalar_btxs; b_scalar_btxe = grid%g_scalar_btxe; b_scalar_btys = grid%g_scalar_btys; b_scalar_btye = grid%g_scalar_btye
@@ -1349,6 +1472,18 @@ IF (grid%check_moist) THEN
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
      save  = save + grid%g_moist(i,k,j,mm) * grid%g_moist(i,k,j,mm)
+   ENDDO
+   ENDDO
+   ENDDO
+   ENDDO
+END IF
+
+IF (grid%check_tracer) THEN
+   DO mm = PARAM_FIRST_SCALAR, num_tracer
+   DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+     save  = save + grid%g_tracer(i,k,j,mm) * grid%g_tracer(i,k,j,mm)
    ENDDO
    ENDDO
    ENDDO
@@ -1463,6 +1598,18 @@ IF (grid%check_moist) THEN
    ENDDO
    ENDDO
 END IF
+
+IF (grid%check_tracer) THEN
+   DO mm = PARAM_FIRST_SCALAR, num_tracer
+   DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+     save  = save + grid%g_tracer(i,k,j,mm) * grid%g_tracer(i,k,j,mm)
+   ENDDO
+   ENDDO
+   ENDDO
+   ENDDO
+END IF
   
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
@@ -1500,7 +1647,7 @@ END IF
   SUBROUTINE add_grid ( grid, factor )
    TYPE (domain), INTENT(INOUT) :: grid
    REAL, INTENT(IN) :: factor
-   REAL :: factor_u, factor_v, factor_w, factor_ph, factor_t, factor_mu, factor_moist
+   REAL :: factor_u, factor_v, factor_w, factor_ph, factor_t, factor_mu, factor_moist, factor_tracer
    
    factor_u = factor
    factor_v = factor
@@ -1509,6 +1656,7 @@ END IF
    factor_t = factor
    factor_mu = factor
    factor_moist = factor
+   factor_tracer = factor
 
    grid%u_2 = factor_u*s_u_2
    grid%v_2 = factor_v*s_v_2
@@ -1517,6 +1665,7 @@ END IF
    grid%t_2 = factor_t*s_t_2
    grid%mu_2 = factor_mu*s_mu_2
    grid%moist = factor_moist*s_moist
+   grid%tracer = factor_tracer*s_tracer
    grid%scalar = factor*s_scalar
    grid%tke_2 = factor*s_tke_2
 
@@ -1541,6 +1690,8 @@ END IF
    grid%mu_btxs = factor_mu*s_mu_btxs; grid%mu_btxe = factor_mu*s_mu_btxe; grid%mu_btys = factor_mu*s_mu_btys; grid%mu_btye = factor_mu*s_mu_btye
    grid%moist_bxs = factor_moist*s_moist_bxs; grid%moist_bxe = factor_moist*s_moist_bxe; grid%moist_bys = factor_moist*s_moist_bys; grid%moist_bye = factor_moist*s_moist_bye
    grid%moist_btxs = factor_moist*s_moist_btxs; grid%moist_btxe = factor_moist*s_moist_btxe; grid%moist_btys = factor_moist*s_moist_btys; grid%moist_btye = factor_moist*s_moist_btye
+   grid%tracer_bxs = factor_tracer*s_tracer_bxs; grid%tracer_bxe = factor_tracer*s_tracer_bxe; grid%tracer_bys = factor_tracer*s_tracer_bys; grid%tracer_bye = factor_tracer*s_tracer_bye
+   grid%tracer_btxs = factor_tracer*s_tracer_btxs; grid%tracer_btxe = factor_tracer*s_tracer_btxe; grid%tracer_btys = factor_tracer*s_tracer_btys; grid%tracer_btye = factor_tracer*s_tracer_btye
    grid%scalar_bxs = factor*s_scalar_bxs; grid%scalar_bxe = factor*s_scalar_bxe; grid%scalar_bys = factor*s_scalar_bys; grid%scalar_bye = factor*s_scalar_bye
    grid%scalar_btxs = factor*s_scalar_btxs; grid%scalar_btxe = factor*s_scalar_btxe; grid%scalar_btys = factor*s_scalar_btys; grid%scalar_btye = factor*s_scalar_btye
 
@@ -1623,6 +1774,18 @@ IF (grid%check_moist) THEN
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
      save  = save + (grid%moist(i,k,j,mm)-b_moist(i,k,j,mm)) * (grid%moist(i,k,j,mm)-b_moist(i,k,j,mm))
+   ENDDO
+   ENDDO
+   ENDDO
+   ENDDO
+END IF
+
+IF (grid%check_tracer) THEN
+   DO mm = PARAM_FIRST_SCALAR, num_tracer
+   DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+     save  = save + (grid%tracer(i,k,j,mm)-b_tracer(i,k,j,mm)) * (grid%tracer(i,k,j,mm)-b_tracer(i,k,j,mm))
    ENDDO
    ENDDO
    ENDDO
@@ -1741,6 +1904,18 @@ END IF
       ENDDO
    END IF
    
+   IF (grid%check_tracer) THEN
+      DO mm = PARAM_FIRST_SCALAR, num_tracer
+      DO j = jts,MIN(jte,jde-1)
+      DO k = kts,kte-1
+      DO i = its,MIN(ite,ide-1)
+         grid%a_tracer(i,k,j,mm) = grid%g_tracer(i,k,j,mm)
+      ENDDO
+      ENDDO
+      ENDDO
+      ENDDO
+   END IF
+   
    DO mm = PARAM_FIRST_SCALAR, num_scalar
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
@@ -1802,6 +1977,7 @@ END IF
    grid%a_mu_2 = 0.0
 
    grid%a_moist = 0.0
+   grid%a_tracer = 0.0
    
    grid%a_scalar = 0.0
 
@@ -1876,6 +2052,7 @@ END IF
    grid%a_t_bxs = 0.0; grid%a_t_bxe = 0.0; grid%a_t_bys = 0.0; grid%a_t_bye = 0.0
    grid%a_mu_bxs = 0.0; grid%a_mu_bxe = 0.0; grid%a_mu_bys = 0.0; grid%a_mu_bye = 0.0
    grid%a_moist_bxs = 0.0; grid%a_moist_bxe = 0.0; grid%a_moist_bys = 0.0; grid%a_moist_bye = 0.0
+   grid%a_tracer_bxs = 0.0; grid%a_tracer_bxe = 0.0; grid%a_tracer_bys = 0.0; grid%a_tracer_bye = 0.0
    grid%a_scalar_bxs = 0.0; grid%a_scalar_bxe = 0.0; grid%a_scalar_bys = 0.0; grid%a_scalar_bye = 0.0
 
    grid%a_u_btxs = 0.0; grid%a_u_btxe = 0.0; grid%a_u_btys = 0.0; grid%a_u_btye = 0.0
@@ -1885,6 +2062,7 @@ END IF
    grid%a_t_btxs = 0.0; grid%a_t_btxe = 0.0; grid%a_t_btys = 0.0; grid%a_t_btye = 0.0
    grid%a_mu_btxs = 0.0; grid%a_mu_btxe = 0.0; grid%a_mu_btys = 0.0; grid%a_mu_btye = 0.0
    grid%a_moist_btxs = 0.0; grid%a_moist_btxe = 0.0; grid%a_moist_btys = 0.0; grid%a_moist_btye = 0.0
+   grid%a_tracer_btxs = 0.0; grid%a_tracer_btxe = 0.0; grid%a_tracer_btys = 0.0; grid%a_tracer_btye = 0.0
    grid%a_scalar_btxs = 0.0; grid%a_scalar_btxe = 0.0; grid%a_scalar_btys = 0.0; grid%a_scalar_btye = 0.0
 
    RETURN
@@ -2001,6 +2179,16 @@ END IF
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
      save  = save + grid%a_moist(i,k,j,mm) * b_moist(i,k,j,mm)
+   ENDDO
+   ENDDO
+   ENDDO
+   ENDDO
+  
+   DO mm = PARAM_FIRST_SCALAR, num_tracer
+   DO j = jts,MIN(jte,jde-1)
+   DO k = kts,kte-1
+   DO i = its,MIN(ite,ide-1)
+     save  = save + grid%a_tracer(i,k,j,mm) * b_tracer(i,k,j,mm)
    ENDDO
    ENDDO
    ENDDO
@@ -2170,6 +2358,34 @@ END IF
    ENDDO
    !$OMP END MASTER
 
+   DO mm=PARAM_FIRST_SCALAR, num_tracer
+   DO j=1,spec_bdy_width
+   DO k=kts,kte-1
+   DO i=jts,MIN(jte,jde-1)
+      save=save + grid%a_tracer_bxs(i,k,j,mm)*b_tracer_bxs(i,k,j,mm)
+      save=save + grid%a_tracer_bxe(i,k,j,mm)*b_tracer_bxe(i,k,j,mm)
+      save=save + grid%a_tracer_btxs(i,k,j,mm)*b_tracer_btxs(i,k,j,mm)
+      save=save + grid%a_tracer_btxe(i,k,j,mm)*b_tracer_btxe(i,k,j,mm)
+   ENDDO
+   ENDDO
+   ENDDO
+   ENDDO
+
+   !$OMP MASTER
+   DO mm=PARAM_FIRST_SCALAR, num_tracer
+   DO j=1,spec_bdy_width
+   DO k=kts,kte-1
+   DO i=its,MIN(ite,ide-1)
+      save=save + grid%a_tracer_bys(i,k,j,mm)*b_tracer_bys(i,k,j,mm)
+      save=save + grid%a_tracer_bye(i,k,j,mm)*b_tracer_bye(i,k,j,mm)
+      save=save + grid%a_tracer_btys(i,k,j,mm)*b_tracer_btys(i,k,j,mm)
+      save=save + grid%a_tracer_btye(i,k,j,mm)*b_tracer_btye(i,k,j,mm)
+   ENDDO
+   ENDDO
+   ENDDO
+   ENDDO
+   !$OMP END MASTER
+
 !  DO mm=1,num_scalar
 !  DO j=1,spec_bdy_width
 !  DO k=kds,kde
@@ -2321,6 +2537,11 @@ END IF
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate s_moist. ')
+   ENDIF
+   DEALLOCATE ( s_tracer, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_tracer. ')
    ENDIF
 
    !  U Boundary
@@ -2617,6 +2838,48 @@ END IF
      'share/module_adtl_grid_utilities.f: Failed to deallocate s_moist_btye. ')
    ENDIF
 
+   !  Tracer Boundary
+   DEALLOCATE(s_tracer_bxs,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_tracer_bxs. ')
+   ENDIF
+   DEALLOCATE(s_tracer_bxe,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_tracer_bxe. ')
+   ENDIF
+   DEALLOCATE(s_tracer_bys,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_tracer_bys. ')
+   ENDIF
+   DEALLOCATE(s_tracer_bye,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_tracer_bye. ')
+   ENDIF
+   DEALLOCATE(s_tracer_btxs,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_tracer_btxs. ')
+   ENDIF
+   DEALLOCATE(s_tracer_btxe,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_tracer_btxe. ')
+   ENDIF
+   DEALLOCATE(s_tracer_btys,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_tracer_btys. ')
+   ENDIF
+   DEALLOCATE(s_tracer_btye,STAT=ierr) 
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_tracer_btye. ')
+   ENDIF
+
    DEALLOCATE ( b_scalar, STAT=ierr )
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
@@ -2736,6 +2999,11 @@ END IF
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate b_moist. ')
+   ENDIF
+   DEALLOCATE ( b_tracer, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_tracer. ')
    ENDIF
    DEALLOCATE ( b_rainnc, STAT=ierr )
    IF (ierr.NE.0) THEN

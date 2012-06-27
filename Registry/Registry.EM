@@ -47,8 +47,15 @@ state   real    tr17_5     ikjftb  tracer        1         -     irhusdf=(bdy_in
 state   real    tr17_6     ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "tr17_6"         "tr17_6"          -
 state   real    tr17_7     ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "tr17_7"         "tr17_7"          -
 state   real    tr17_8     ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "tr17_8"         "tr17_8"
+state   real    plume      ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "PLUME"          "Fukushima Tracer"          -
+
+state   real    -          ikjftb  g_tracer      1         -     -    -                                       
+state   real    g_plume    ikjftb  g_tracer      1         -     irhusdf=(bdy_interp:dt)    "G_PLUME"        "Fukushima Tracer"          -
+state   real    -          ikjftb  a_tracer      1         -     -    -                                       
+state   real    a_plume    ikjftb  a_tracer      1         -     irhusdf=(bdy_interp:dt)    "A_PLUME"        "Fukushima Tracer"          -
 
 package   tracer_test1  tracer_opt==2       -             tracer:tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8
+package   tracer_test3  tracer_opt==3       -             tracer:plume;g_tracer:g_plume;a_tracer:a_plume
 
 
  

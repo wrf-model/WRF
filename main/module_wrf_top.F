@@ -514,16 +514,16 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
 
    IF ( config_flags%check_TL ) THEN
 
-   wrf_err_message = '=============== Tangent Linear check ==================='
+   wrf_err_message = '=============== Tangent Linear Check ==================='
    CALL wrf_message(TRIM(wrf_err_message))
    
-   wrf_err_message = 'check==== U === V === W == PH === T == MU == MOIST ====='
+   wrf_err_message = 'check==== U === V === W == PH === T == MU == MOIST == TRACER ==='
    CALL wrf_message(TRIM(wrf_err_message))
 
-   WRITE(wrf_err_message,'(A,7(1x,L5))') 'check',head_grid%check_u, head_grid%check_v,  &
+   WRITE(wrf_err_message,'(A,8(1x,L5))') 'check',head_grid%check_u, head_grid%check_v,  &
                                head_grid%check_w, head_grid%check_ph, &
                                head_grid%check_t, head_grid%check_mu, &
-                               head_grid%check_moist
+                               head_grid%check_moist, head_grid%check_tracer
    CALL wrf_message(TRIM(wrf_err_message))
 
    ! Save the f(x)

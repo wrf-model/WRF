@@ -1237,18 +1237,52 @@ CONTAINS
   SUBROUTINE copy_s_to_g_adjtest ( grid, factor )
    TYPE (domain), INTENT(INOUT) :: grid
    REAL, INTENT(IN) :: factor
-   REAL :: factor_u, factor_v, factor_w, factor_ph, factor_t, factor_mu, factor_moist, factor_tracer
+   REAL :: factor_u, factor_v, factor_w, factor_ph, factor_t, factor_mu, & 
+           factor_moist, factor_tracer
    
-   factor_u =factor
-   factor_v =factor
-   factor_w =factor
-   factor_ph =factor
-   factor_t =factor
-   factor_mu =factor
-   factor_moist =factor
-   factor_tracer =factor
+   if (grid%check_u) then
+      factor_u =factor
+   else
+      factor_u = 0.0
+   endif
+   if (grid%check_v) then
+      factor_v =factor
+   else
+      factor_v = 0.0
+   endif
+   if (grid%check_w) then
+      factor_w =factor
+   else
+      factor_w = 0.0
+   endif
+   if (grid%check_ph) then
+      factor_ph =factor
+   else
+      factor_ph = 0.0
+   endif
+   if (grid%check_t) then
+      factor_t =factor
+   else
+      factor_t = 0.0
+   endif
+   if (grid%check_mu) then
+      factor_mu =factor
+   else
+      factor_mu = 0.0
+   endif
+   if (grid%check_moist) then
+      factor_moist =factor
+   else
+      factor_moist = 0.0
+   endif
+   if (grid%check_tracer) then
+      factor_tracer =factor
+   else
+      factor_tracer = 0.0
+   endif
 
 ! I&O variables
+   
    grid%g_u_2 = factor_u*s_u_2
    grid%g_v_2 = factor_v*s_v_2
    grid%g_w_2 = factor_w*s_w_2
@@ -1258,15 +1292,15 @@ CONTAINS
    grid%g_moist = factor_moist*s_moist
    grid%g_tracer = factor_tracer*s_tracer
 
-   grid%g_scalar = factor*s_scalar
-   grid%g_tke_2 = factor*s_tke_2
-   grid%g_p = factor*s_p
-   grid%g_al = factor*s_al
+   grid%g_scalar = 0.0*s_scalar
+   grid%g_tke_2 = 0.0*s_tke_2
+   grid%g_p = 0.0*s_p
+   grid%g_al = 0.0*s_al
 
 ! I variables
-   grid%g_ustm = factor*s_ustm
-   grid%g_hfx = factor*s_hfx
-   grid%g_qfx = factor*s_qfx
+   grid%g_ustm = 0.0*s_ustm
+   grid%g_hfx = 0.0*s_hfx
+   grid%g_qfx = 0.0*s_qfx
 
    grid%g_u_bxs = factor_u*s_u_bxs; grid%g_u_bxe = factor_u*s_u_bxe; grid%g_u_bys = factor_u*s_u_bys; grid%g_u_bye = factor_u*s_u_bye
    grid%g_u_btxs = factor_u*s_u_btxs; grid%g_u_btxe = factor_u*s_u_btxe; grid%g_u_btys = factor_u*s_u_btys; grid%g_u_btye = factor_u*s_u_btye
@@ -1285,8 +1319,8 @@ CONTAINS
    grid%g_tracer_bxs = factor_tracer*s_tracer_bxs; grid%g_tracer_bxe = factor_tracer*s_tracer_bxe; grid%g_tracer_bys = factor_tracer*s_tracer_bys; grid%g_tracer_bye = factor_tracer*s_tracer_bye
    grid%g_tracer_btxs = factor_tracer*s_tracer_btxs; grid%g_tracer_btxe = factor_tracer*s_tracer_btxe; grid%g_tracer_btys = factor_tracer*s_tracer_btys; grid%g_tracer_btye = factor_tracer*s_tracer_btye
 
-   grid%g_scalar_bxs = factor*s_scalar_bxs; grid%g_scalar_bxe = factor*s_scalar_bxe; grid%g_scalar_bys = factor*s_scalar_bys; grid%g_scalar_bye = factor*s_scalar_bye
-   grid%g_scalar_btxs = factor*s_scalar_btxs; grid%g_scalar_btxe = factor*s_scalar_btxe; grid%g_scalar_btys = factor*s_scalar_btys; grid%g_scalar_btye = factor*s_scalar_btye
+   grid%g_scalar_bxs = 0.0*s_scalar_bxs; grid%g_scalar_bxe = 0.0*s_scalar_bxe; grid%g_scalar_bys = 0.0*s_scalar_bys; grid%g_scalar_bye = 0.0*s_scalar_bye
+   grid%g_scalar_btxs = 0.0*s_scalar_btxs; grid%g_scalar_btxe = 0.0*s_scalar_btxe; grid%g_scalar_btys = 0.0*s_scalar_btys; grid%g_scalar_btye = 0.0*s_scalar_btye
 
 ! O variables
    grid%g_u_1 = 0.0
@@ -1401,7 +1435,6 @@ CONTAINS
    INTEGER, INTENT(IN) :: its, ite, jts, jte
    INTEGER :: i, k, j, mm
 
-IF (grid%check_u) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
    DO i = its,ite
@@ -1410,9 +1443,7 @@ IF (grid%check_u) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
-IF (grid%check_v) THEN
    DO j = jts,jte
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
@@ -1421,9 +1452,7 @@ IF (grid%check_v) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
-IF (grid%check_w) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte
    DO i = its,MIN(ite,ide-1)
@@ -1432,9 +1461,7 @@ IF (grid%check_w) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
-IF (grid%check_ph) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte
    DO i = its,MIN(ite,ide-1)
@@ -1443,9 +1470,7 @@ IF (grid%check_ph) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
-IF (grid%check_t) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
@@ -1454,19 +1479,15 @@ IF (grid%check_t) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
 
-IF (grid%check_mu) THEN
    DO j = jts,MIN(jte,jde-1)
    DO i = its,MIN(ite,ide-1)
      save  = save &
                   + grid%g_mu_2(i,j) * grid%g_mu_2(i,j)
    ENDDO
    ENDDO
-END IF
 
-IF (grid%check_moist) THEN
    DO mm = PARAM_FIRST_SCALAR, num_moist
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
@@ -1476,9 +1497,7 @@ IF (grid%check_moist) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
-IF (grid%check_tracer) THEN
    DO mm = PARAM_FIRST_SCALAR, num_tracer
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
@@ -1488,7 +1507,6 @@ IF (grid%check_tracer) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
@@ -1529,7 +1547,6 @@ END IF
    INTEGER, INTENT(IN) :: its, ite, jts, jte
    INTEGER :: i, k, j, mm
 
-IF (grid%check_u) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
    DO i = its,ite
@@ -1537,9 +1554,7 @@ IF (grid%check_u) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
-IF (grid%check_v) THEN
    DO j = jts,jte
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
@@ -1547,9 +1562,7 @@ IF (grid%check_v) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
-IF (grid%check_w) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte
    DO i = its,MIN(ite,ide-1)
@@ -1557,9 +1570,7 @@ IF (grid%check_w) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
-IF (grid%check_ph) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte
    DO i = its,MIN(ite,ide-1)
@@ -1567,9 +1578,7 @@ IF (grid%check_ph) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
-IF (grid%check_t) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
@@ -1577,17 +1586,13 @@ IF (grid%check_t) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
-IF (grid%check_mu) THEN
    DO j = jts,MIN(jte,jde-1)
    DO i = its,MIN(ite,ide-1)
      save  = save + grid%g_mu_2(i,j) * grid%g_mu_2(i,j)
    ENDDO
    ENDDO
-END IF
 
-IF (grid%check_moist) THEN
    DO mm = PARAM_FIRST_SCALAR, num_moist
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
@@ -1597,9 +1602,7 @@ IF (grid%check_moist) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
-IF (grid%check_tracer) THEN
    DO mm = PARAM_FIRST_SCALAR, num_tracer
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
@@ -1609,7 +1612,6 @@ IF (grid%check_tracer) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
   
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
@@ -1649,14 +1651,46 @@ END IF
    REAL, INTENT(IN) :: factor
    REAL :: factor_u, factor_v, factor_w, factor_ph, factor_t, factor_mu, factor_moist, factor_tracer
    
-   factor_u = factor
-   factor_v = factor
-   factor_w = factor
-   factor_ph = factor
-   factor_t = factor
-   factor_mu = factor
-   factor_moist = factor
-   factor_tracer = factor
+   if (grid%check_u) then
+      factor_u =factor
+   else
+      factor_u = 1.0
+   endif
+   if (grid%check_v) then
+      factor_v =factor
+   else
+      factor_v = 1.0
+   endif
+   if (grid%check_w) then
+      factor_w =factor
+   else
+      factor_w = 1.0
+   endif
+   if (grid%check_ph) then
+      factor_ph =factor
+   else
+      factor_ph = 1.0
+   endif
+   if (grid%check_t) then
+      factor_t =factor
+   else
+      factor_t = 1.0
+   endif
+   if (grid%check_mu) then
+      factor_mu =factor
+   else
+      factor_mu = 1.0
+   endif
+   if (grid%check_moist) then
+      factor_moist =factor
+   else
+      factor_moist = 1.0
+   endif
+   if (grid%check_tracer) then
+      factor_tracer =factor
+   else
+      factor_tracer = 1.0
+   endif
 
    grid%u_2 = factor_u*s_u_2
    grid%v_2 = factor_v*s_v_2
@@ -1666,15 +1700,15 @@ END IF
    grid%mu_2 = factor_mu*s_mu_2
    grid%moist = factor_moist*s_moist
    grid%tracer = factor_tracer*s_tracer
-   grid%scalar = factor*s_scalar
-   grid%tke_2 = factor*s_tke_2
+   grid%scalar = s_scalar
+   grid%tke_2 = s_tke_2
 
-   grid%p = factor*s_p
-   grid%al = factor*s_al
-   grid%h_diabatic = factor*s_h_diabatic
-   grid%ustm = factor*s_ustm
-   grid%hfx = factor*s_hfx
-   grid%qfx = factor*s_qfx
+   grid%p = s_p
+   grid%al = s_al
+   grid%h_diabatic = s_h_diabatic
+   grid%ustm = s_ustm
+   grid%hfx = s_hfx
+   grid%qfx = s_qfx
    
    grid%u_bxs = factor_u*s_u_bxs; grid%u_bxe = factor_u*s_u_bxe; grid%u_bys = factor_u*s_u_bys; grid%u_bye = factor_u*s_u_bye
    grid%u_btxs = factor_u*s_u_btxs; grid%u_btxe = factor_u*s_u_btxe; grid%u_btys = factor_u*s_u_btys; grid%u_btye = factor_u*s_u_btye
@@ -1692,8 +1726,8 @@ END IF
    grid%moist_btxs = factor_moist*s_moist_btxs; grid%moist_btxe = factor_moist*s_moist_btxe; grid%moist_btys = factor_moist*s_moist_btys; grid%moist_btye = factor_moist*s_moist_btye
    grid%tracer_bxs = factor_tracer*s_tracer_bxs; grid%tracer_bxe = factor_tracer*s_tracer_bxe; grid%tracer_bys = factor_tracer*s_tracer_bys; grid%tracer_bye = factor_tracer*s_tracer_bye
    grid%tracer_btxs = factor_tracer*s_tracer_btxs; grid%tracer_btxe = factor_tracer*s_tracer_btxe; grid%tracer_btys = factor_tracer*s_tracer_btys; grid%tracer_btye = factor_tracer*s_tracer_btye
-   grid%scalar_bxs = factor*s_scalar_bxs; grid%scalar_bxe = factor*s_scalar_bxe; grid%scalar_bys = factor*s_scalar_bys; grid%scalar_bye = factor*s_scalar_bye
-   grid%scalar_btxs = factor*s_scalar_btxs; grid%scalar_btxe = factor*s_scalar_btxe; grid%scalar_btys = factor*s_scalar_btys; grid%scalar_btye = factor*s_scalar_btye
+   grid%scalar_bxs = s_scalar_bxs; grid%scalar_bxe = s_scalar_bxe; grid%scalar_bys = s_scalar_bys; grid%scalar_bye = s_scalar_bye
+   grid%scalar_btxs = s_scalar_btxs; grid%scalar_btxe = s_scalar_btxe; grid%scalar_btys = s_scalar_btys; grid%scalar_btye = s_scalar_btye
 
    RETURN
   END SUBROUTINE add_grid
@@ -1704,7 +1738,6 @@ END IF
    REAL, INTENT(INOUT) :: save
    INTEGER :: i, k, j, mm
 
-IF (grid%check_u) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
    DO i = its,ite
@@ -1713,8 +1746,7 @@ IF (grid%check_u) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
-IF (grid%check_v) THEN
+
    DO j = jts,jte
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
@@ -1723,9 +1755,7 @@ IF (grid%check_v) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
-IF (grid%check_w) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte
    DO i = its,MIN(ite,ide-1)
@@ -1734,9 +1764,7 @@ IF (grid%check_w) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
-IF (grid%check_ph) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte
    DO i = its,MIN(ite,ide-1)
@@ -1745,9 +1773,7 @@ IF (grid%check_ph) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
-IF (grid%check_t) THEN
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
    DO i = its,MIN(ite,ide-1)
@@ -1756,19 +1782,15 @@ IF (grid%check_t) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
 
-IF (grid%check_mu) THEN
    DO j = jts,MIN(jte,jde-1)
    DO i = its,MIN(ite,ide-1)
      save  = save &
                   + (grid%mu_2(i,j)-b_mu_2(i,j)) * (grid%mu_2(i,j)-b_mu_2(i,j))
    ENDDO
    ENDDO
-END IF
 
-IF (grid%check_moist) THEN
    DO mm = PARAM_FIRST_SCALAR, num_moist
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
@@ -1778,9 +1800,7 @@ IF (grid%check_moist) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
-IF (grid%check_tracer) THEN
    DO mm = PARAM_FIRST_SCALAR, num_tracer
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
@@ -1790,7 +1810,6 @@ IF (grid%check_tracer) THEN
    ENDDO
    ENDDO
    ENDDO
-END IF
 
    DO j = jts,MIN(jte,jde-1)
    DO k = kts,kte-1
@@ -1834,7 +1853,6 @@ END IF
 
    CALL zero_out_ad ( grid )
 
-   IF (grid%check_u) THEN
       DO j = jts,MIN(jte,jde-1)
       DO k = kts,kte-1
       DO i = its,ite
@@ -1842,9 +1860,7 @@ END IF
       ENDDO
       ENDDO
       ENDDO
-   END IF
 
-   IF (grid%check_v) THEN
       DO j = jts,jte
       DO k = kts,kte-1
       DO i = its,MIN(ite,ide-1)
@@ -1852,9 +1868,7 @@ END IF
       ENDDO
       ENDDO
       ENDDO
-   END IF
 
-   IF (grid%check_w) THEN
       DO j = jts,MIN(jte,jde-1)
       DO k = kts,kte
       DO i = its,MIN(ite,ide-1)
@@ -1862,9 +1876,7 @@ END IF
       ENDDO
       ENDDO
       ENDDO
-   END IF
 
-   IF (grid%check_t) THEN
       DO j = jts,MIN(jte,jde-1)
       DO k = kts,kte-1
       DO i = its,MIN(ite,ide-1)
@@ -1872,9 +1884,7 @@ END IF
       ENDDO
       ENDDO
       ENDDO
-   END IF
 
-   IF (grid%check_ph) THEN
       DO j = jts,MIN(jte,jde-1)
       DO k = kts,kte
       DO i = its,MIN(ite,ide-1)
@@ -1882,17 +1892,13 @@ END IF
       ENDDO
       ENDDO
       ENDDO
-   END IF
 
-   IF (grid%check_mu) THEN
       DO j = jts,MIN(jte,jde-1)
       DO i = its,MIN(ite,ide-1)
          grid%a_mu_2(i,j) = grid%g_mu_2(i,j)
       ENDDO
       ENDDO
-   END IF
 
-   IF (grid%check_moist) THEN
       DO mm = PARAM_FIRST_SCALAR, num_moist
       DO j = jts,MIN(jte,jde-1)
       DO k = kts,kte-1
@@ -1902,9 +1908,7 @@ END IF
       ENDDO
       ENDDO
       ENDDO
-   END IF
    
-   IF (grid%check_tracer) THEN
       DO mm = PARAM_FIRST_SCALAR, num_tracer
       DO j = jts,MIN(jte,jde-1)
       DO k = kts,kte-1
@@ -1914,7 +1918,6 @@ END IF
       ENDDO
       ENDDO
       ENDDO
-   END IF
    
    DO mm = PARAM_FIRST_SCALAR, num_scalar
    DO j = jts,MIN(jte,jde-1)

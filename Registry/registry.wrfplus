@@ -472,6 +472,8 @@ state   real    a_qnn            ikjftb  a_scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "A_QNCCN"         "CCN Number concentration" "# kg(-1)"
 state   real    a_qnc            ikjftb  a_scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "A_QNCLOUD"       "cloud water Number concentration" "# kg(-1)"
+state   real    a_qvolg          ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QVGRAUPEL"     "Graupel Particle Volume" "m(3) kg(-1)"
 
 state   real    -              ikjftb  g_scalar      1         -     -   -
 state   real    g_qndrop         ikjftb  g_scalar      1         -     \
@@ -492,6 +494,8 @@ state   real    g_qnn            ikjftb  g_scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "G_QNCCN"         "CCN Number concentration" "# kg(-1)"
 state   real    g_qnc            ikjftb  g_scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "G_QNCLOUD"       "cloud water Number concentration" "# kg(-1)"
+state   real    g_qvolg          ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QVGRAUPEL"     "Graupel Particle Volume" "m(3) kg(-1)"
 
 # Placeholder for decoupled advective tendency diagnostics for non-chem
 state   real  -               ikjf      g_advh_t      1         -     -         -

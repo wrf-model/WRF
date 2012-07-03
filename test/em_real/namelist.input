@@ -143,4 +143,5 @@
  check_t = .true.
  check_mu = .true.
  check_moist = .true.
+ check_tracer = .true.
  /

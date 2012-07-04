@@ -4,7 +4,7 @@
 MODULE mediation_pertmod_io
 
 USE module_domain, ONLY : domain, head_grid, get_ijk_from_grid
-USE module_state_description, ONLY : PARAM_FIRST_SCALAR, num_moist, num_scalar
+USE module_state_description, ONLY : PARAM_FIRST_SCALAR, num_moist, num_tracer, num_scalar
 #ifdef DM_PARALLEL
 USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y
 USE module_comm_dm, ONLY : halo_em_e_ad_sub
@@ -50,6 +50,10 @@ SUBROUTINE adtl_initialize
    bytes_ad_forcing = bytes_ad_forcing + 5*n2d
    ! Moist variables
    DO i = PARAM_FIRST_SCALAR, num_moist
+      bytes_ad_forcing = bytes_ad_forcing + n3d
+   ENDDO
+   ! Tracer variables
+   DO i = PARAM_FIRST_SCALAR, num_tracer
       bytes_ad_forcing = bytes_ad_forcing + n3d
    ENDDO
 
@@ -310,6 +314,11 @@ SUBROUTINE xtraj_io_initialize
       bytes_xtraj = bytes_xtraj + n3d
    ENDDO
 
+   ! Tracer variables
+   DO i = PARAM_FIRST_SCALAR, num_tracer
+      bytes_xtraj = bytes_xtraj + n3d
+   ENDDO
+
    ! Scalar variables
    !DO i = PARAM_FIRST_SCALAR, num_scalar
    !   bytes_xtraj = bytes_xtraj + n3d
@@ -499,6 +508,10 @@ SUBROUTINE packup_ad_forcing (data)
       ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%g_moist(:,:,:,i), (/n3d/))
    ENDDO
  
+   DO i = PARAM_FIRST_SCALAR, num_tracer
+      ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%g_tracer(:,:,:,i), (/n3d/))
+   ENDDO
+ 
    IF ( ne .NE. bytes_ad_forcing ) &
       CALL wrf_error_fatal ( 'packup_ad_forcing:  ne is not equal to bytes_ad_forcing' )
 
@@ -529,6 +542,10 @@ SUBROUTINE restore_ad_forcing (data)
 
    DO i = PARAM_FIRST_SCALAR, num_moist
       ns =    ne+1 ; ne = ne+n3d ; head_grid%g_moist(:,:,:,i) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
+   ENDDO
+
+   DO i = PARAM_FIRST_SCALAR, num_tracer
+      ns =    ne+1 ; ne = ne+n3d ; head_grid%g_tracer(:,:,:,i) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
    ENDDO
 
    IF ( ne .NE. bytes_ad_forcing ) &
@@ -650,6 +667,10 @@ SUBROUTINE packup_xtraj (data)
 
    DO n = PARAM_FIRST_SCALAR, num_moist
       ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%moist(:,:,:,n), (/n3d/))
+   ENDDO
+
+   DO n = PARAM_FIRST_SCALAR, num_tracer
+      ns =    ne+1 ; ne = ne+n3d ; data(ns:ne) = RESHAPE( head_grid%tracer(:,:,:,n), (/n3d/))
    ENDDO
 
    !DO n = PARAM_FIRST_SCALAR, num_scalar
@@ -865,6 +886,10 @@ SUBROUTINE restore_xtraj (data)
       ns =    ne+1 ; ne = ne+n3d ; head_grid%moist(:,:,:,n) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
    ENDDO
 
+   DO n = PARAM_FIRST_SCALAR, num_tracer
+      ns =    ne+1 ; ne = ne+n3d ; head_grid%tracer(:,:,:,n) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
+   ENDDO
+
    !DO n = PARAM_FIRST_SCALAR, num_scalar
    !   ns =    ne+1 ; ne = ne+n3d ; head_grid%scalar(:,:,:,n) = RESHAPE( data(ns:ne), (/ime-ims+1,kme-kms+1,jme-jms+1/))
    !ENDDO
@@ -1000,6 +1025,7 @@ SUBROUTINE add_forcing_to_ad ( grid )
    grid%a_t_2  = grid%a_t_2  + grid%g_t_2
    grid%a_mu_2 = grid%a_mu_2 + grid%g_mu_2
    grid%a_moist = grid%a_moist + grid%g_moist
+   grid%a_tracer = grid%a_tracer + grid%g_tracer
    grid%a_rainnc = grid%a_rainnc + grid%g_rainnc
    grid%a_rainncv = grid%a_rainncv + grid%g_rainncv
    grid%a_rainc = grid%a_rainc + grid%g_rainc
@@ -1015,6 +1041,7 @@ SUBROUTINE add_forcing_to_ad ( grid )
    grid%g_t_2  = 0.0
    grid%g_mu_2 = 0.0
    grid%g_moist = 0.0
+   grid%g_tracer = 0.0
    grid%g_rainnc = 0.0
    grid%g_rainncv = 0.0
    grid%g_rainc = 0.0

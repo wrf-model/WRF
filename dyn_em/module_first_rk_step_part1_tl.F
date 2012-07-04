@@ -10,7 +10,7 @@ CONTAINS
   SUBROUTINE g_first_rk_step_part1 (   grid , config_flags              &
                              , moist , g_moist, moist_tend, g_moist_tend             &
                              , chem  , chem_tend                &
-                             , tracer, tracer_tend              &
+                             , tracer, g_tracer, tracer_tend, g_tracer_tend  &
                              , scalar , g_scalar, scalar_tend, g_scalar_tend         &
                              , fdda3d, fdda2d                   &
                              , ru_tendf, g_ru_tendf, rv_tendf, g_rv_tendf               &
@@ -83,7 +83,9 @@ use module_scalar_tables
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_chem),INTENT(INOUT)   :: chem
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_chem),INTENT(INOUT)   :: chem_tend
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: g_tracer
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer_tend
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: g_tracer_tend
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: g_scalar
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar_tend
@@ -194,6 +196,7 @@ BENCH_START(g_init_zero_tend_tim)
                                    mu_tendf,  g_mu_tendf,  &
                                    moist_tend, g_moist_tend,  &
                                    scalar_tend, g_scalar_tend, &
+                                   tracer_tend, g_tracer_tend, &
                                    num_tracer,                   &
                                    num_moist,num_chem,num_scalar, &
                                    rk_step,                          &

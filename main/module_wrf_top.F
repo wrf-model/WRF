@@ -628,13 +628,13 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
    wrf_err_message = '==================== Adjoint check ====================='
    CALL wrf_message(TRIM(wrf_err_message))
 
-   wrf_err_message = 'check==== U === V === W == PH === T == MU == MOIST ====='
+   wrf_err_message = 'check==== U === V === W == PH === T == MU == MOIST == TRACER ==='
    CALL wrf_message(TRIM(wrf_err_message))
 
-   WRITE(wrf_err_message,'(A,7(1x,L5))') 'check',head_grid%check_u, head_grid%check_v,  &
+   WRITE(wrf_err_message,'(A,8(1x,L5))') 'check',head_grid%check_u, head_grid%check_v,  &
                                head_grid%check_w, head_grid%check_ph, &
                                head_grid%check_t, head_grid%check_mu, &
-                               head_grid%check_moist
+                               head_grid%check_moist, head_grid%check_tracer
 
    CALL wrf_message(TRIM(wrf_err_message))
 
@@ -1229,12 +1229,10 @@ ENDIF
       head_grid%raincv = 0.0
    ENDIF
 
-   IF ( .NOT. config_flags%trajectory_io ) THEN
-      CALL nl_get_io_form_auxhist7( head_grid%id, io_auxh7 )
-      CALL nl_get_io_form_auxhist8( head_grid%id, io_auxh8 )
-      CALL nl_set_io_form_auxhist7( head_grid%id, 0 )
-      CALL nl_set_io_form_auxhist8( head_grid%id, 0 )
-   ENDIF
+   CALL nl_get_io_form_auxhist7( head_grid%id, io_auxh7 )
+   CALL nl_get_io_form_auxhist8( head_grid%id, io_auxh8 )
+   CALL nl_set_io_form_auxhist7( head_grid%id, 0 )
+   CALL nl_set_io_form_auxhist8( head_grid%id, 0 )
 
    head_grid%itimestep = 0
    CALL start_domain ( head_grid , .TRUE. )
@@ -1242,10 +1240,8 @@ ENDIF
    CALL integrate ( head_grid )
 
 #if (WRFPLUS == 1)
-   IF ( .NOT. config_flags%trajectory_io ) THEN
-      CALL nl_set_io_form_auxhist7( head_grid%id, io_auxh7 )
-      CALL nl_set_io_form_auxhist8( head_grid%id, io_auxh8 )
-   ENDIF
+   CALL nl_set_io_form_auxhist7( head_grid%id, io_auxh7 )
+   CALL nl_set_io_form_auxhist8( head_grid%id, io_auxh8 )
 
    ! Close boundary file, as it will be read again from start
    CALL construct_filename2a ( bdyname , config_flags%bdy_inname , head_grid%id , 2 , 'dummydate' )

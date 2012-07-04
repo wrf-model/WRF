@@ -4,20 +4,20 @@
 #
 # basic states output from non-linear integration
 #
-+:h:6:u,v,w,ph,t,mu,p,al,h_diabatic,snowh,tsk,psfc,snowc,tslb,smois,dtbc,rainnc,rainncv,rainc,raincv,qvapor,qrain,qcloud,qice,qsnow,qgraup,qhail
++:h:6:u,v,w,ph,t,mu,p,al,h_diabatic,snowh,tsk,psfc,snowc,tslb,smois,dtbc,rainnc,rainncv,rainc,raincv,qvapor,qrain,qcloud,qice,qsnow,qgraup,qhail,plume
 #
 # basic states input for adjoint and tangent linear integration
 #
-+:i:6:u,v,w,ph,t,mu,p,al,h_diabatic,snowh,tsk,psfc,snowc,tslb,smois,dtbc,rainnc,rainncv,rainc,raincv,qvapor,qrain,qcloud,qice,qsnow,qgraup,qhail
++:i:6:u,v,w,ph,t,mu,p,al,h_diabatic,snowh,tsk,psfc,snowc,tslb,smois,dtbc,rainnc,rainncv,rainc,raincv,qvapor,qrain,qcloud,qice,qsnow,qgraup,qhail,plume
 #
 # adjoint forcing input for adjoint integration
 #
-+:i:7:g_u,g_v,g_t,g_mu,g_ph,g_w,g_qvapor,g_qrain,g_qcloud,g_qice,g_qsnow,g_qgraup,g_qhail,g_rainnc,g_rainncv,g_rainc,g_raincv
++:i:7:g_u,g_v,g_t,g_mu,g_ph,g_w,g_qvapor,g_qrain,g_qcloud,g_qice,g_qsnow,g_qgraup,g_qhail,g_rainnc,g_rainncv,g_rainc,g_raincv,g_plume
 #
 # perturbation output for tangent linear integration
 #
-+:h:8:g_u,g_v,g_t,g_mu,g_ph,g_w,g_qvapor,g_qrain,g_qcloud,g_qice,g_qsnow,g_qgraup,g_qhail,g_rainnc,g_rainncv,g_rainc,g_raincv
++:h:8:g_u,g_v,g_t,g_mu,g_ph,g_w,g_qvapor,g_qrain,g_qcloud,g_qice,g_qsnow,g_qgraup,g_qhail,g_rainnc,g_rainncv,g_rainc,g_raincv,g_plume
 #
 # gradient output from adjoint integration at the beginning of the window
 #
-+:h:7:a_u,a_v,a_t,a_mu,a_ph,a_w,a_qvapor,a_qrain,a_qcloud,a_qice,a_qsnow,a_qgraup,a_qhail,a_rainnc,a_rainncv,a_rainc,a_raincv
++:h:7:a_u,a_v,a_t,a_mu,a_ph,a_w,a_qvapor,a_qrain,a_qcloud,a_qice,a_qsnow,a_qgraup,a_qhail,a_rainnc,a_rainncv,a_rainc,a_raincv,a_plume

@@ -33,9 +33,9 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
                  ,halo_em_scalar_old_e_5_sub,halo_em_scalar_old_e_7_sub,halo_em_tke_3_tl_sub  &
                  ,halo_em_tke_5_tl_sub,halo_em_tke_7_tl_sub,halo_em_tke_advect_3_tl_sub             &
                  ,halo_em_tke_advect_5_tl_sub,halo_em_tke_old_e_5_tl_sub                         &
-                 ,halo_em_tke_old_e_7_tl_sub,halo_em_tracer_e_3_sub,halo_em_tracer_e_5_sub    &
-                 ,halo_em_tracer_e_7_sub,halo_em_tracer_old_e_5_sub                        &
-                 ,halo_em_tracer_old_e_7_sub,period_bdy_em_a_sub                           &
+                 ,halo_em_tke_old_e_7_tl_sub,halo_em_tracer_e_3_tl_sub,halo_em_tracer_e_5_tl_sub    &
+                 ,halo_em_tracer_e_7_tl_sub,halo_em_tracer_old_e_5_tl_sub                        &
+                 ,halo_em_tracer_old_e_7_tl_sub,period_bdy_em_a_sub                           &
                  ,period_bdy_em_b3_sub,period_bdy_em_b_sub,period_bdy_em_chem2_sub         &
                  ,period_bdy_em_chem_old_sub,period_bdy_em_chem_sub,period_bdy_em_d3_sub   &
                  ,period_bdy_em_d_sub,period_bdy_em_e_sub,period_bdy_em_moist2_sub         &
@@ -286,61 +286,6 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
    IF (config_flags%enable_identity) RETURN
 
    IF (config_flags%polar) dclat = 90./REAL(jde-jds) !(0.5 * 180/ny)
-
-#ifdef WRF_CHEM
-
-   kte=min(k_end,kde-1)
-# ifdef DM_PARALLEL
-   if ( num_chem >= PARAM_FIRST_SCALAR ) then
-!-----------------------------------------------------------------------
-! see matching halo calls below for stencils
-!--------------------------------------------------------------
-     CALL wrf_debug ( 200 , ' call HALO_RK_CHEM' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#      include "HALO_EM_CHEM_E_3.inc"
-       IF( config_flags%progn > 0 ) THEN
-#         include "HALO_EM_SCALAR_E_3.inc"
-       ENDIF
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#      include "HALO_EM_CHEM_E_5.inc"
-       IF( config_flags%progn > 0 ) THEN
-#         include "HALO_EM_SCALAR_E_5.inc"
-      ENDIF
-     ELSE
-       WRITE(wrf_err_message,*)'solve_em_tl: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-     ENDIF
-   ENDIF
-   if ( num_tracer >= PARAM_FIRST_SCALAR ) then
-!-----------------------------------------------------------------------
-! see matching halo calls below for stencils
-!--------------------------------------------------------------
-     CALL wrf_debug ( 200 , ' call HALO_RK_tracer' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#      include "HALO_EM_TRACER_E_3.inc"
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#      include "HALO_EM_TRACER_E_5.inc"
-     ELSE
-       WRITE(wrf_err_message,*)'solve_em_tl: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-     ENDIF
-   ENDIF
-# endif
-!--------------------------------------------------------------
-   adv_ct_indices(   :  ) = 1
-   IF ( config_flags%chemdiag == USECHEMDIAG ) THEN
-   ! modify tendency list here
-   ! note that the referencing direction here is opposite of that in chem_driver
-       adv_ct_indices(p_co  ) = p_advh_co
-       adv_ct_indices(p_o3  ) = p_advh_o3
-       adv_ct_indices(p_no  ) = p_advh_no
-       adv_ct_indices(p_no2 ) = p_advh_no2
-       adv_ct_indices(p_hno3) = p_advh_hno3
-       adv_ct_indices(p_iso ) = p_advh_iso
-       adv_ct_indices(p_ho  ) = p_advh_ho
-       adv_ct_indices(p_ho2 ) = p_advh_ho2
-   END IF
-#endif
 
    rk_order = config_flags%rk_ord
 
@@ -679,7 +624,7 @@ BENCH_END(g_set_phys_bc_tim)
   CALL g_first_rk_step_part1 (   grid , config_flags                   &
                              , moist , g_moist, moist_tend, g_moist_tend   &
                              , chem  , chem_tend     &
-                             , tracer, tracer_tend   &
+                             , tracer, g_tracer, tracer_tend, g_tracer_tend  &
                              , scalar , g_scalar, scalar_tend, g_scalar_tend &
                              , fdda3d, fdda2d           &
                              , ru_tendf,g_ru_tendf,rv_tendf,g_rv_tendf    &
@@ -715,12 +660,10 @@ BENCH_END(g_set_phys_bc_tim)
 
         CALL g_first_rk_step_part2 (   grid , config_flags   &
                , moist ,g_moist , moist_tend ,g_moist_tend   &
-!!!!! USE THE STATEMENTS REMARKED WHEN chem and tracer ARE NEEDED. Ning Pan, 2010-08-20
+!!!!! USE THE STATEMENTS REMARKED WHEN chem is NEEDED. Ning Pan, 2010-08-20
 !               , chem  ,g_chem  , chem_tend  ,g_chem_tend    &
-!               , tracer,g_tracer, tracer_tend,g_tracer_tend  &
-!!!!! REMOVE THE FOLLOWING 2 STATEMENTS WHEN chem and tracer ARE NEEDED. Ning Pan, 2010-08-20
                , chem  ,  chem  , chem_tend  ,  chem_tend    &
-               , tracer,  tracer, tracer_tend,  tracer_tend  &
+               , tracer,  g_tracer, tracer_tend, g_tracer_tend  &
                , scalar,g_scalar, scalar_tend,g_scalar_tend  &
 !!!!! USE THE STATEMENT REMARKED WHEN fdda3d and fdda2d ARE NEEDED. Ning Pan, 2010-08-20
 !               , fdda3d,g_fdda3d, fdda2d,g_fdda2d            &
@@ -1941,18 +1884,17 @@ BENCH_END(g_small_step_finish_tim)
            CALL wrf_debug ( 200 , ' call g_rk_update_scalar_pd tracer' )
            DO im = PARAM_FIRST_SCALAR, num_tracer
 
-!!!!! REPLACE WITH g_rk_update_scalar_pd WHEN tracer IS NEEDED. Ning Pan
-             CALL rk_update_scalar_pd( im, im,                                  &
-                                       tracer_old(ims,kms,jms,im),                &
-                                       tracer_tend(ims,kms,jms,im),               &
-                                       grid%mu_1, grid%mu_1, grid%mub, &
-                                       rk_step, dt_rk, grid%spec_zone,          &
-                                       config_flags,                            &
-                                       ids, ide, jds, jde, kds, kde,            &
-                                       ims, ime, jms, jme, kms, kme,            &
-                                       grid%i_start(ij), grid%i_end(ij),        &
-                                       grid%j_start(ij), grid%j_end(ij),        &
-                                       k_start    , k_end                      )
+             CALL g_rk_update_scalar_pd( im, im,                                  &
+                              tracer_old(ims,kms,jms,im),g_tracer_old(ims,kms,jms,im), &
+                              tracer_tend(ims,kms,jms,im),g_tracer_tend(ims,kms,jms,im), &
+                              grid%mu_1, grid%g_mu_1, grid%mu_1, grid%g_mu_1, grid%mub, &
+                              rk_step, dt_rk, grid%spec_zone,          &
+                              config_flags,                            &
+                              ids, ide, jds, jde, kds, kde,            &
+                              ims, ime, jms, jme, kms, kme,            &
+                              grid%i_start(ij), grid%i_end(ij),        &
+                              grid%j_start(ij), grid%j_end(ij),        &
+                              k_start    , k_end                      )
 
            ENDDO
          END DO
@@ -1962,9 +1904,9 @@ BENCH_END(g_small_step_finish_tim)
 #ifdef DM_PARALLEL
          IF (config_flags%tracer_adv_opt /= ORIGINAL .and. config_flags%tracer_adv_opt /= WENO_SCALAR) THEN
            IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
-#     include "HALO_EM_TRACER_OLD_E_5.inc"
+#     include "HALO_EM_TRACER_OLD_E_5_TL.inc"
            ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
-#     include "HALO_EM_TRACER_OLD_E_7.inc"
+#     include "HALO_EM_TRACER_OLD_E_7_TL.inc"
            ELSE
              WRITE(wrf_err_message,*)'solve_em_tl: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
              CALL wrf_error_fatal(TRIM(wrf_err_message))
@@ -1982,8 +1924,8 @@ BENCH_END(g_small_step_finish_tim)
            IF (num_tracer >= PARAM_FIRST_SCALAR) THEN
              DO im = PARAM_FIRST_SCALAR , num_tracer
 
-!!!!! REPLACE WITH g_set_physical_bc3d WHEN tracer IS NEEDED. Ning Pan
-               CALL set_physical_bc3d(  tracer_old(ims,kms,jms,im), 'p', config_flags,   &
+               CALL g_set_physical_bc3d(  tracer_old(ims,kms,jms,im), &
+                                        g_tracer_old(ims,kms,jms,im), 'p', config_flags,   &
                                         ids, ide, jds, jde, kds, kde,                    &
                                         ims, ime, jms, jme, kms, kme,                    &
                                         ips, ipe, jps, jpe, kps, kpe,                    &
@@ -2491,29 +2433,31 @@ BENCH_START(g_tracer_adv_tim)
 
              CALL wrf_debug ( 15 , ' call g_rk_scalar_tend in tracer_tile_loop_1' )
 
-!!!!! REPLACE WITH g_rk_scalar_tend WHEN tracer IS NEEDED. Ning Pan
              tenddec = .false.
-             CALL rk_scalar_tend ( ic, ic, config_flags, tenddec,                &
-                              rk_step, dt_rk,                                    &
-                              grid%ru_m, grid%rv_m, grid%ww_m,                   &
-                              grid%muts, grid%mub, grid%mu_1,                    &
-                              grid%alt,                                          &
-                              tracer_old(ims,kms,jms,ic),                          &
-                              tracer(ims,kms,jms,ic),                              &
-                              tracer_tend(ims,kms,jms,ic),                         &
-                              advect_tend,h_tendency,z_tendency,grid%rqvften,    &
-                              grid%qv_base, .false., grid%fnm, grid%fnp,         &
-                              grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv, &
-                              grid%msfvy, grid%msftx,grid%msfty,                 &
-                              grid%rdx, grid%rdy, grid%rdn, grid%rdnw,           &
-                              grid%khdif, grid%kvdif, grid%xkhh,                 &
-                              grid%diff_6th_opt, grid%diff_6th_factor,           &
-                              config_flags%tracer_adv_opt,                         &
-                              ids, ide, jds, jde, kds, kde,                      &
-                              ims, ime, jms, jme, kms, kme,                      &
-                              grid%i_start(ij), grid%i_end(ij),                  &
-                              grid%j_start(ij), grid%j_end(ij),                  &
-                              k_start    , k_end                                )
+             CALL g_rk_scalar_tend ( ic, ic, config_flags, tenddec,                   &
+                             rk_step, dt_rk,         &
+                             grid%ru_m, grid%g_ru_m, &
+                             grid%rv_m, grid%g_rv_m, &
+                             grid%ww_m, grid%g_ww_m, &
+                             grid%muts, grid%g_muts, grid%mub, grid%mu_1, grid%g_mu_1, &
+                             grid%alt, grid%g_alt,                                     &
+                             tracer_old(ims,kms,jms,ic), g_tracer_old(ims,kms,jms,ic),   &
+                             tracer(ims,kms,jms,ic), g_tracer(ims,kms,jms,ic),           &
+                             tracer_tend(ims,kms,jms,ic), g_tracer_tend(ims,kms,jms,ic), &
+                             advect_tend, g_advect_tend, h_tendency,g_h_tendency,        &
+                             z_tendency, g_z_tendency, grid%rqvften, grid%g_rqvften, &
+                             grid%qv_base, .false., grid%fnm, grid%fnp,       &
+                             grid%msfux,grid%msfuy, grid%msfvx, grid%msfvx_inv, &
+                             grid%msfvy, grid%msftx,grid%msfty,               &
+                             grid%rdx, grid%rdy, grid%rdn, grid%rdnw,         &
+                             grid%khdif, grid%kvdif, grid%xkhh,grid%g_xkhh,   &
+                             grid%diff_6th_opt, grid%diff_6th_factor,         &
+                             config_flags%tracer_adv_opt,                     &
+                             ids, ide, jds, jde, kds, kde,     &
+                             ims, ime, jms, jme, kms, kme,     &
+                             grid%i_start(ij), grid%i_end(ij), &
+                             grid%j_start(ij), grid%j_end(ij), &
+                             k_start    , k_end               )
 
 !
 ! Currently, chemistry species with specified boundaries (i.e. the mother
@@ -2568,16 +2512,20 @@ BENCH_START(g_tracer_adv_tim)
 
            CALL wrf_debug ( 200 , ' call g_rk_update_scalar tracer ' )
 
-!!!!! REPLACE WITH g_rk_update_scalar WHEN tracer IS NEEDED. Ning Pan
            tenddec = .false.
-           CALL rk_update_scalar( scs=ic, sce=ic,                                         &
+           CALL g_rk_update_scalar( scs=ic, sce=ic,                                       &
                                   scalar_1=tracer_old(ims,kms,jms,ic),                    &
+                                  g_scalar_1=g_tracer_old(ims,kms,jms,ic),                &
                                   scalar_2=tracer(ims,kms,jms,ic),                        &
+                                  g_scalar_2=g_tracer(ims,kms,jms,ic),                    &
                                   sc_tend=tracer_tend(ims,kms,jms,ic),                    &
-                                  advect_tend=advect_tend,                                &
-                                  h_tendency=h_tendency, z_tendency=z_tendency,           & 
+                                  g_sc_tend=g_tracer_tend(ims,kms,jms,ic),                &
+                                  advect_tend=advect_tend,g_advect_tend=g_advect_tend,    &
+                                  h_tendency=h_tendency, g_h_tendency=g_h_tendency,       & 
+                                  z_tendency=z_tendency, g_z_tendency=g_z_tendency,       & 
                                   msftx=grid%msftx,msfty=grid%msfty,                      &
-                                  mu_old=grid%mu_1, mu_new=grid%mu_2, mu_base=grid%mub,   &
+                                  mu_old=grid%mu_1, g_mu_old=grid%g_mu_1,                 &
+                                  mu_new=grid%mu_2, g_mu_new=grid%g_mu_2, mu_base=grid%mub,   &
                                   rk_step=rk_step, dt=dt_rk, spec_zone=grid%spec_zone,    &
                                   config_flags=config_flags, tenddec=tenddec,             & 
                                   ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde,   &
@@ -2609,7 +2557,7 @@ BENCH_START(g_tracer_adv_tim)
                                      k_start, k_end                      )
 
 #else
-             CALL flow_dep_bdy  ( tracer(ims,kms,jms,ic),     &
+             CALL g_flow_dep_bdy  ( tracer(ims,kms,jms,ic),g_tracer(ims,kms,jms,ic),     &
                                   grid%ru_m, grid%rv_m, config_flags,   &
                                   grid%spec_zone,                  &
                                   ids,ide, jds,jde, kds,kde,  & ! domain dims
@@ -2892,7 +2840,6 @@ BENCH_END(g_calc_p_rho_tim)
          IF ( num_tracer >= PARAM_FIRST_SCALAR ) THEN
            CALL wrf_debug ( 200 , ' call filter tracer ' )
            DO im = PARAM_FIRST_SCALAR, num_tracer
-
              CALL couple_scalars_for_filter ( FIELD=tracer(ims,kms,jms,im)               &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
                     ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
@@ -3101,8 +3048,7 @@ BENCH_END(g_diag_w_tim)
 
            tracer_species_bdy_loop_1 : DO ic = PARAM_FIRST_SCALAR , num_tracer
 
-!!!!! REPLACE WITH g_set_physical_bc3d WHEN tracer IS NEEDED. Ning Pan
-             CALL set_physical_bc3d( tracer(ims,kms,jms,ic), 'p', config_flags,   &
+             CALL g_set_physical_bc3d( tracer(ims,kms,jms,ic),g_tracer(ims,kms,jms,ic), 'p', config_flags,   &
                                      ids, ide, jds, jde, kds, kde,            &
                                      ims, ime, jms, jme, kms, kme,            &
                                      ips, ipe, jps, jpe, kps, kpe,            &
@@ -3214,15 +3160,15 @@ BENCH_END(g_bc_end_tim)
        IF ( num_tracer >= PARAM_FIRST_SCALAR ) THEN
          IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
            IF ( (config_flags%tracer_adv_opt /= ORIGINAL .and. config_flags%tracer_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
-#        include "HALO_EM_TRACER_E_5.inc"
+#        include "HALO_EM_TRACER_E_5_TL.inc"
            ELSE
-#        include "HALO_EM_TRACER_E_3.inc"
+#        include "HALO_EM_TRACER_E_3_TL.inc"
            ENDIF
          ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
            IF ( (config_flags%tracer_adv_opt /= ORIGINAL .and. config_flags%tracer_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order-1) ) THEN
-#        include "HALO_EM_TRACER_E_7.inc"
+#        include "HALO_EM_TRACER_E_7_TL.inc"
            ELSE
-#        include "HALO_EM_TRACER_E_5.inc"
+#        include "HALO_EM_TRACER_E_5_TL.inc"
            ENDIF
          ELSE
            WRITE(wrf_err_message,*)'solve_em_tl: invalid h_sca_adv_order = ',config_flags%h_sca_adv_order
@@ -3566,9 +3512,8 @@ BENCH_START(g_moist_phys_end_tim)
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
-!!!!! REPLACE WITH g_microphysics_zero_outb WHEN CODING TL OF PHYSICS. Ning Pan
-       CALL microphysics_zero_outb (                                    &
-                      tracer , num_tracer , config_flags ,              &
+       CALL g_microphysics_zero_outb (                                    &
+                      tracer , g_tracer, num_tracer , config_flags ,              &
                       ids, ide, jds, jde, kds, kde,                     &
                       ims, ime, jms, jme, kms, kme,                     &
                       its, ite, jts, jte,                               &
@@ -3606,9 +3551,8 @@ BENCH_START(g_moist_phys_end_tim)
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
-!!!!! REPLACE WITH g_microphysics_zero_outa WHEN CODING TL OF PHYSICS. Ning Pan
-       CALL microphysics_zero_outa (                                    &
-                      tracer , num_tracer , config_flags ,              &
+       CALL g_microphysics_zero_outa (                                    &
+                      tracer , g_tracer, num_tracer , config_flags ,              &
                       ids, ide, jds, jde, kds, kde,                     &
                       ims, ime, jms, jme, kms, kme,                     &
                       its, ite, jts, jte,                               &
@@ -4008,8 +3952,7 @@ BENCH_START(g_bc_2d_tim)
 
      tracer_species_bdy_loop_2 : DO ic = PARAM_FIRST_SCALAR , num_tracer
 
-!!!!! REPLACE WITH g_set_physical_bc3d WHEN tracer IS NEEDED. Ning Pan
-       CALL set_physical_bc3d( tracer(ims,kms,jms,ic) , 'p', config_flags,  &
+       CALL g_set_physical_bc3d( tracer(ims,kms,jms,ic) , g_tracer(ims,kms,jms,ic), 'p', config_flags,  &
                                ids, ide, jds, jde, kds, kde,            &
                                ims, ime, jms, jme, kms, kme,            &
                                ips, ipe, jps, jpe, kps, kpe,            &
@@ -4291,9 +4234,9 @@ BENCH_END(g_bc_2d_tim)
 !--------------------------------------------------------------
      CALL wrf_debug ( 200 , ' call HALO_RK_TRACER' )
      IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#      include "HALO_EM_TRACER_E_3.inc"
+#      include "HALO_EM_TRACER_E_3_TL.inc"
      ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#      include "HALO_EM_TRACER_E_5.inc"
+#      include "HALO_EM_TRACER_E_5_TL.inc"
      ELSE
        WRITE(wrf_err_message,*)'solve_em_tl: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
        CALL wrf_error_fatal(TRIM(wrf_err_message))

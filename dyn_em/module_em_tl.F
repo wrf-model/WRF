@@ -1189,10 +1189,10 @@ SUBROUTINE g_init_zero_tendency(ru_tendf,  g_ru_tendf, &
                                 mu_tendf,  g_mu_tendf,  &
                                 moist_tendf, g_moist_tendf,  &
 !  NPan - 05/26/10 {
-!  Uncomment the corresponding args when chem or tracer is needed.   
+!  Uncomment the corresponding args when chem is needed.   
 !                                chem_tendf,  g_chem_tendf,   &
                                 scalar_tendf,g_scalar_tendf, &
-!                                tracer_tendf,g_tracer_tendf, &
+                                 tracer_tendf,g_tracer_tendf, &
 !  NPan }
                                 n_tracer,                   &
                                 n_moist,n_chem,n_scalar,rk_step,         &
@@ -1233,15 +1233,15 @@ SUBROUTINE g_init_zero_tendency(ru_tendf,  g_ru_tendf, &
                                                           moist_tendf
 
 !  NPan - 05/26/10 {
-!  Uncomment the corresponding definations when chem or tracer is needed.   
+!  Uncomment the corresponding definations when chem is needed.   
 !   REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_chem ),INTENT(INOUT)::&
 !                                                          g_chem_tendf
 !   REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_chem ),INTENT(INOUT)::&
 !                                                          chem_tendf
-!   REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_tracer ),INTENT(INOUT)::&
-!                                                          g_tracer_tendf
-!   REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_tracer ),INTENT(INOUT)::&
-!                                                          tracer_tendf
+    REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_tracer ),INTENT(INOUT)::&
+                                                           g_tracer_tendf
+    REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_tracer ),INTENT(INOUT)::&
+                                                           tracer_tendf
 
    REAL , DIMENSION(ims:ime, kms:kme, jms:jme, n_scalar ),INTENT(INOUT)::&
                                                           g_scalar_tendf
@@ -1305,7 +1305,7 @@ SUBROUTINE g_init_zero_tendency(ru_tendf,  g_ru_tendf, &
    ENDDO
 
 !  NPan - 05/26/10 {
-!  Uncomment the corresponding statements when chem or tracer is needed.   
+!  Uncomment the corresponding statements when chem is needed.   
 !!   DO ic=PARAM_FIRST_SCALAR,n_chem
 !   DO ic=1,n_chem                       !! make sure first one is zero too
 !      CALL g_zero_tend ( chem_tendf(ims,kms,jms,ic), g_chem_tendf(ims,kms,jms,ic), &
@@ -1314,13 +1314,13 @@ SUBROUTINE g_init_zero_tendency(ru_tendf,  g_ru_tendf, &
 !                         its, ite, jts, jte, kts, kte  )
 !   ENDDO
 
-!!   DO ic=PARAM_FIRST_SCALAR,n_tracer
-!   DO ic=1,n_tracer                     !! make sure first one is zero too
-!      CALL g_zero_tend ( tracer_tendf(ims,kms,jms,ic), g_tracer_tendf(ims,kms,jms,ic), &
-!                         ids, ide, jds, jde, kds, kde, &
-!                         ims, ime, jms, jme, kms, kme, &
-!                         its, ite, jts, jte, kts, kte  )
-!   ENDDO
+!   DO ic=PARAM_FIRST_SCALAR,n_tracer
+   DO ic=1,n_tracer                     !! make sure first one is zero too
+      CALL g_zero_tend ( tracer_tendf(ims,kms,jms,ic), g_tracer_tendf(ims,kms,jms,ic), &
+                         ids, ide, jds, jde, kds, kde, &
+                         ims, ime, jms, jme, kms, kme, &
+                         its, ite, jts, jte, kts, kte  )
+   ENDDO
 
 !   DO ic=PARAM_FIRST_SCALAR,n_scalar
    DO ic=1,n_scalar                       ! make sure first one is zero too

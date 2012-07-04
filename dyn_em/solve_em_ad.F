@@ -4380,52 +4380,6 @@ BENCH_END(bc_2d_tim)
 !    ENDIF
 !  ENDIF
 
-#ifdef DM_PARALLEL
-!-----------------------------------------------------------------------
-! see above
-!--------------------------------------------------------------
-   CALL wrf_debug ( 200 , ' call HALO_RK_E' )
-   IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#    include "HALO_EM_E_3.inc"
-   ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#    include "HALO_EM_E_5.inc"
-   ELSE
-     WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-     CALL wrf_error_fatal(TRIM(wrf_err_message))
-   ENDIF
-#endif
-
-#ifdef DM_PARALLEL
-   IF ( num_moist >= PARAM_FIRST_SCALAR  ) THEN
-!-----------------------------------------------------------------------
-! see above
-!--------------------------------------------------------------
-     CALL wrf_debug ( 200 , ' call HALO_RK_MOIST' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN#      include "HALO_EM_MOIST_E_3.inc"
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#      include "HALO_EM_MOIST_E_5.inc"
-     ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_ord
-er
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-     ENDIF
-   ENDIF
-   IF ( num_tracer >= PARAM_FIRST_SCALAR ) THEN
-!-----------------------------------------------------------------------
-! see above
-!--------------------------------------------------------------
-     CALL wrf_debug ( 200 , ' call HALO_RK_TRACER' )
-     IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
-#      include "HALO_EM_TRACER_E_3.inc"
-     ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
-#      include "HALO_EM_TRACER_E_5.inc"
-     ELSE
-       WRITE(wrf_err_message,*)'solve_em: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
-       CALL wrf_error_fatal(TRIM(wrf_err_message))
-     ENDIF
-   ENDIF
-#endif
-
    CALL wrf_debug ( 200 , ' call end of solve_em' )
 
 !  not used in adjoint

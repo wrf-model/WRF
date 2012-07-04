@@ -2026,6 +2026,7 @@ BENCH_END(small_step_finish_tim)
            CALL wrf_debug ( 200 , ' call rk_update_scalar_pd' )
            DO im = PARAM_FIRST_SCALAR, num_tracer
 
+             CALL PUSHREAL8ARRAY ( tracer_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1)*num_tracer )
              CALL rk_update_scalar_pd( im, im,                                  &
                                        tracer_old(ims,kms,jms,im),              &
                                        tracer_tend(ims,kms,jms,im),             &
@@ -2683,6 +2684,13 @@ BENCH_START(tracer_adv_tim)
            CALL wrf_debug ( 200 , ' call rk_update_scalar' )
 
            tenddec = .false.
+           IF ( rk_step == 1 ) THEN
+             CALL PUSHREAL8ARRAY ( tracer_tend(:,:,:,ic), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+             CALL PUSHREAL8ARRAY ( advect_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           ELSE
+             CALL PUSHREAL8ARRAY ( tracer_tend(:,:,:,ic), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+             CALL PUSHREAL8ARRAY ( advect_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           END IF
            CALL rk_update_scalar( scs=ic, sce=ic,                                         &
                                   scalar_1=tracer_old(ims,kms,jms,ic),                    &
                                   scalar_2=tracer(ims,kms,jms,ic),                        &
@@ -5452,6 +5460,13 @@ BENCH_START(a_tracer_adv_tim)
 
            tenddec = .false.
 
+           IF ( rk_step == 1 ) THEN
+             CALL POPREAL8ARRAY ( advect_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+             CALL POPREAL8ARRAY ( tracer_tend(:,:,:,ic), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           ELSE
+             CALL POPREAL8ARRAY ( advect_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+             CALL POPREAL8ARRAY ( tracer_tend(:,:,:,ic), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
+           END IF 
            CALL a_rk_update_scalar( scs=ic, sce=ic,                                       &
                                   scalar_1=tracer_old(ims,kms,jms,ic),                    &
                                   a_scalar_1=a_tracer_old(ims,kms,jms,ic),                &
@@ -5915,6 +5930,7 @@ BENCH_END(adj_rk_scalar_tend_tim)
            CALL wrf_debug ( 200 , ' call a_rk_update_scalar_pd tracer' )
            DO im = PARAM_FIRST_SCALAR, num_tracer
 
+             CALL POPREAL8ARRAY ( tracer_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1)*num_tracer )
              CALL a_rk_update_scalar_pd( im, im,                                  &
                               tracer_old(ims,kms,jms,im),a_tracer_old(ims,kms,jms,im), &
                               tracer_tend(ims,kms,jms,im),a_tracer_tend(ims,kms,jms,im), &

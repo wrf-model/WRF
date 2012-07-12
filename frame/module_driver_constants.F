@@ -49,6 +49,10 @@ MODULE module_driver_constants
 
    INTEGER , PARAMETER :: max_eta         =   501
 
+   !  The maximum number of pressure levels to interpolate to, for diagnostics
+
+   INTEGER , PARAMETER :: max_plevs       =   100
+
    !  The maximum number of trackchem
 
    INTEGER , PARAMETER :: max_trackchem   =   100

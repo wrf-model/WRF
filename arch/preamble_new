@@ -31,7 +31,7 @@ MAX_DOMAINS	=	21
 
 #### DM buffer length for the configuration flags.
 
-CONFIG_BUF_LEN	=	32768
+CONFIG_BUF_LEN	=	65536
 
 #### Size of bitmasks (in 4byte integers) of stream masks for WRF I/O
 

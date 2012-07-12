@@ -365,6 +365,8 @@ subroutine da_transfer_xatowrftl_lbc(grid, config_flags, filnam)
                                       grid%sm31, grid%em31, grid%sm32, grid%em32, grid%sm33, grid%em33, &
                                       grid%sp31, grid%ep31, grid%sp32, grid%ep32, grid%sp33, grid%ep33 )
 
+!  IF ( var4d_lbc ) THEN
+
 !  allocate ( g_w(grid%xp%ims:grid%xp%ime,grid%xp%jms:grid%xp%jme, grid%xp%kms:grid%xp%kme) )
 
 !  g_w = 0.0

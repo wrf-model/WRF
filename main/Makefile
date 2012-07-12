@@ -31,9 +31,6 @@ $(SOLVER)_real : module_initialize real_$(SOLVER).o ndown_$(SOLVER).o nup_$(SOLV
 	$(LD) -o nup.exe $(LDFLAGS) nup_$(SOLVER).o  ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o $(LIBWRFLIB) $(LIB)
 	$(LD) -o tc.exe $(LDFLAGS) tc_$(SOLVER).o  ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o $(LIBWRFLIB) $(LIB)
 
-testrand.exe : testrand.o ../share/module_random.o ../share/bobrand.o
-	$(LD) -o testrand.exe $(LDFLAGS) testrand.o ../share/module_random.o ../share/bobrand.o
-
 convert_em : convert_em.o
 	$(RANLIB) $(LIBWRFLIB)
 	$(LD) -o convert_em.exe $(LDFLAGS) convert_em.o $(LIBWRFLIB) $(LIB)
@@ -62,8 +59,6 @@ module_initialize : ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o
 
 clean:
 	@ echo 'use the clean script'
-
-testrand.o: ../share/module_random.o ../share/bobrand.o
 
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
 

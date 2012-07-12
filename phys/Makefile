@@ -590,7 +590,8 @@ module_surface_driver.o: \
 		../frame/module_configure.o \
 		../share/module_model_constants.o  
 
-module_diagnostics.o: ../frame/module_dm.o
+module_diagnostics.o: ../frame/module_dm.o \
+		../share/module_model_constants.o
 
 
 module_mixactivate.o: \

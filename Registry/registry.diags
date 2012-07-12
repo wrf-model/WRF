@@ -1,0 +1,35 @@
+#	Registry file specifically for some additional diagnostic output
+#	from WRF.  
+
+#  The new dimspec.  We need to have the number of pressure levels to interpolate to.
+
+dimspec    np      2     namelist=num_press_levels         z     num_press_levels
+
+#  Namelist parameters
+
+rconfig   integer     p_lev_diags         namelist,diags   1            0   -    "flag to process vertical interp diagnostics: 0=nope, 1=yep" "flag"
+rconfig   integer     p_lev_diags_dfi     namelist,diags   1            0   -    "when doing p_level diags and dfi, turn off diags during 'non forecast'"
+rconfig   integer     num_press_levels    namelist,diags   1            0   -    "number of pressure levels to interpolate diagnostics to"    "index"
+rconfig   real            press_levels    namelist,diags   max_plevs    0   -    "array of pressure levels to interpolate diagnostics to"     "Pa"
+rconfig   integer     use_tot_or_hyd_p    namelist,diags   1            2   -    "1=use total pressure, 2=use hydrostatic pressure"           "flag"
+rconfig   real        p_lev_missing       namelist,diags   1         -999   -    "missing values below ground, no extrapolation"              "constant"
+
+#  Derived, this is interval in seconds that is from auxhist23 interval, computed in check_a_mundo
+
+rconfig   real        p_lev_interval      derived          max_domains  0   -    "interval to compute/output p level diags"                   "s"
+
+#  Arrays that will be filled with interpolated values
+
+state    real   p_pl    {np}    misc    1  Z   h{23}  "P_PL"    "Pressure level data, Pressure"              "Pa"
+state    real   u_pl   i{np}j   misc    1  Z   h{23}  "U_PL"    "Pressure level data, U wind"                "m s-1"
+state    real   v_pl   i{np}j   misc    1  Z   h{23}  "V_PL"    "Pressure level data, V wind"                "m s-1"
+state    real   t_pl   i{np}j   misc    1  Z   h{23}  "T_PL"    "Pressure level data, Temperature"           "K"
+state    real   rh_pl  i{np}j   misc    1  Z   h{23}  "RH_PL"   "Pressure level data, Relative humidity"     "%"
+state    real   ght_pl i{np}j   misc    1  Z   h{23}  "GHT_PL"  "Pressure level data, Geopotential Height"   "m"
+state    real   s_pl   i{np}j   misc    1  Z   h{23}  "S_PL"    "Pressure level data, Speed"                 "m s-1"
+state    real   td_pl  i{np}j   misc    1  Z   h{23}  "TD_PL"   "Pressure level data, Dew point temperature" "K"
+
+#  Package declarations
+
+package   skip_press_diags      p_lev_diags==0     -        -
+package        press_diags      p_lev_diags==1     -        state:p_pl,u_pl,v_pl,t_pl,rh_pl,ght_pl,s_pl,td_pl

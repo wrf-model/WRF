@@ -264,6 +264,8 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
                        grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
          call kj_swap (grid%g_ph_2, model_grid%g_ph_2, &
                        grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
+         call kj_swap (grid%g_p, model_grid%g_p, &
+                       grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
          model_grid%g_mu_2 = grid%g_mu_2
          model_grid%g_rainnc = grid%g_rainnc
          model_grid%g_rainncv = grid%g_rainncv

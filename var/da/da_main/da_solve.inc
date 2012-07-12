@@ -39,7 +39,10 @@
    integer   :: jl_start, jl_end
    character(len=256) :: timestr1
    type(x_type) :: shuffle
-   
+   integer   :: cvt_unit, iost
+   character(len=8) :: cvtfile
+   logical :: ex
+ 
    if (trace_use) call da_trace_entry("da_solve")
 
 #ifdef DM_PARALLEL
@@ -269,10 +272,38 @@
          allocate (eignvec(ntmax, ntmax))
 	 allocate (eignval(ntmax))
 !	 allocate (full_eignvec(cv_size))
-      end if	 
-      
-      call da_initialize_cv (cv_size, cvt)
-      
+      end if
+
+      if ( outer_loop_restart ) then
+         !call da_get_unit(cvt_unit)
+         cvt_unit=600
+         if ( max_ext_its > 1 ) then
+           max_ext_its=1
+           write(unit=message(1),fmt='(a)') "Re-set max_ext_its = 1 for outer_loop_restart"
+           call da_message(message(1:1))
+         end if
+         write(unit=cvtfile,fmt='(a,i4.4)') 'cvt_',myproc
+         inquire(file=trim(cvtfile), exist=ex)
+         if ( ex ) then
+           open(unit=cvt_unit,file=trim(cvtfile),iostat=iost,form='UNFORMATTED',status='OLD')
+           if (iost /= 0) then
+             write(unit=message(1),fmt='(A,I5,A)') &
+                "Error ",iost," opening cvt file "//trim(cvtfile)
+             call da_error(__FILE__,__LINE__,message(1:1))
+           end if
+           write(unit=message(1),fmt='(a)') 'Reading cvt from : '//trim(cvtfile) 
+           call da_message(message(1:1))
+           read(cvt_unit) cvt
+           close(cvt_unit)
+         else
+           write(unit=message(1),fmt='(a)') "cvt file '"//trim(cvtfile)//"' does not exists, initiallizing cvt."
+           call da_message(message(1:1))
+           call da_initialize_cv (cv_size, cvt)
+         end if
+      else
+         call da_initialize_cv (cv_size, cvt)
+      end if
+
       call da_zero_vp_type (grid%vv)
       call da_zero_vp_type (grid%vp)
       if ( var4d ) then
@@ -472,7 +503,19 @@
  
       ! Update outer-loop control variable
       cvt = cvt + xhat
-
+      if ( outer_loop_restart ) then
+        open(unit=cvt_unit,status='unknown',file=trim(cvtfile),iostat=iost,form='UNFORMATTED')
+        if (iost /= 0) then
+           write(unit=message(1),fmt='(A,I5,A)') &
+             "Error ",iost," opening cvt file "//trim(cvtfile)
+          call da_error(__FILE__,__LINE__,message(1:1))
+        end if
+        write(unit=message(1),fmt='(a)') 'Writing cvt to : '//trim(cvtfile) 
+        call da_message(message(1:1))
+        write(cvt_unit) cvt
+        close(cvt_unit)
+        !call da_free_unit(cvt_unit)
+      end if
       !------------------------------------------------------------------------
 
       ! reset cv to random noise

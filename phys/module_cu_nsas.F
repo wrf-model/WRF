@@ -7,8 +7,7 @@ CONTAINS
 !
 !-------------------------------------------------------------------------------
    subroutine cu_nsas(dt,p3di,p3d,pi3d,qc3d,qi3d,rho3d,itimestep,stepcu,       &
-                     hbot,htop,cu_act_flag,cudt,curr_secs,adapt_step_flag,     &
-                     cudtacttime,                                              & 
+                     hbot,htop,cu_act_flag,                                    &
                      rthcuten,rqvcuten,rqccuten,rqicuten,                      &
                      rucuten,rvcuten,                                          &
                      qv3d,t3d,raincv,pratec,xland,dz8w,w,u3d,v3d,              &
@@ -104,11 +103,7 @@ CONTAINS
                                                                           v3d
   logical,  dimension( ims:ime, jms:jme )                                    , &
             intent(inout) ::                                      cu_act_flag
-  real, intent(   in) ::                                                 cudt
-  real, intent(   in) ::                                            curr_secs
-  logical, intent(    in) , optional ::                       adapt_step_flag
 
-  real, intent (inout) ::                                         cudtacttime
 !
   real,     dimension( ims:ime, jms:jme )                                    , &
              intent(in   )   ::                                          hpbl, &
@@ -141,7 +136,6 @@ CONTAINS
                                                                          ktop, &
                                                                           kuo
   real    :: pgcon_use
-  logical :: run_param , doing_adapt_dt , decided
   integer ::  i,j,k,kp
 !
 !-------------------------------------------------------------------------------
@@ -156,69 +150,6 @@ CONTAINS
 !
 !-------------------------------------------------------------------------------
 !
-!*** check to see if this is a convection timestep
-!
-
-!  Initialization for adaptive time step.
-
-   doing_adapt_dt = .FALSE.
-   IF ( PRESENT(adapt_step_flag) ) THEN
-      IF ( adapt_step_flag ) THEN
-         doing_adapt_dt = .TRUE.
-         IF ( cudtacttime .EQ. 0. ) THEN
-            cudtacttime = curr_secs + cudt*60.
-         END IF
-      END IF
-   END IF
-
-!  Do we run through this scheme or not?
-
-!    Test 1:  If this is the initial model time, then yes.
-!                ITIMESTEP=1
-!    Test 2:  If the user asked for the cumulus to be run every time step, then yes.
-!                CUDT=0 or STEPCU=1
-!    Test 3:  If not adaptive dt, and this is on the requested cumulus frequency, then yes.
-!                MOD(ITIMESTEP,STEPCU)=0
-!    Test 4:  If using adaptive dt and the current time is past the last requested activate cumulus time, then yes.
-!                CURR_SECS >= CUDTACTTIME
-
-!  If we do run through the scheme, we set the flag run_param to TRUE and we set the decided flag
-!  to TRUE.  The decided flag says that one of these tests was able to say "yes", run the scheme.
-!  We only proceed to other tests if the previous tests all have left decided as FALSE.
-
-!  If we set run_param to TRUE and this is adaptive time stepping, we set the time to the next
-!  cumulus run.
-
-   decided = .FALSE.
-   run_param = .FALSE.
-   IF ( ( .NOT. decided ) .AND. &
-        ( itimestep .EQ. 1 ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-   END IF
-
-   IF ( ( .NOT. decided ) .AND. &
-        ( ( cudt .EQ. 0. ) .OR. ( stepcu .EQ. 1 ) ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-   END IF
-
-   IF ( ( .NOT. decided ) .AND. &
-        ( .NOT. doing_adapt_dt ) .AND. &
-        ( MOD(itimestep,stepcu) .EQ. 0 ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-   END IF
-
-   IF ( ( .NOT. decided ) .AND. &
-        ( doing_adapt_dt ) .AND. &
-        ( curr_secs .GE. cudtacttime ) ) THEN
-      run_param   = .TRUE.
-      decided     = .TRUE.
-      cudtacttime = curr_secs + cudt*60
-   END IF
-
-!-------------------------------------------------------------------------------
 
       if(present(pgcon)) then
          pgcon_use  = pgcon
@@ -229,7 +160,6 @@ CONTAINS
          ! HWRF uses 0.2, for model tuning purposes
       endif
 
-   if(run_param) then
       do j=jts,jte
         do i=its,ite
           cu_act_flag(i,j)=.TRUE.
@@ -369,7 +299,6 @@ CONTAINS
       endif
 !
    enddo ! outer most J_loop
-  endif
 !
    end subroutine cu_nsas
 !

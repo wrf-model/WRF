@@ -350,8 +350,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       cpovcv = cp / (cp - gas_constant)
 
       ! In case of var4d, pb etc. will be recalculated in start_em with realsize=8, 
-      ! Howvwer, the originals are computed with realsize=4.
-      if ( no_ppb .or. var4d ) then
+      ! However, the originals are computed with realsize=4.
+      if ( no_ppb ) then
          do k=kts,kte
             do i=its,ite
                ! The base specific volume (from real.init.code)

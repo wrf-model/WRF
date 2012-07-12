@@ -529,7 +529,7 @@ FUNCTION real_time_r8( timeinterval ) RESULT ( out_time )
 
 ! !RETURN VALUE:
       REAL(KIND=8) :: out_time
-      INTEGER(KIND=8) :: dt_whole
+      INTEGER(selected_int_kind(14)) :: dt_whole
       INTEGER :: dt_num, dt_den
 
 ! !ARGUMENTS:

@@ -792,6 +792,7 @@ CONTAINS
                ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,            &
                ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,ebio_so2,   &
                ebio_dms,                                                       &
+               ebio_sesq, ebio_mbo,                                            &
                e_bio,                                                  &
                ids,ide, jds,jde, kds,kde,                              &
                ims,ime, jms,jme, kms,kme,                              &

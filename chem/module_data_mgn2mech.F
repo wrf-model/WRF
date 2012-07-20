@@ -46,6 +46,11 @@ MODULE module_data_mgn2mech
   REAL,    DIMENSION (n_megan2racm) :: racm_per_megan
   DATA p_of_racm / n_megan2racm*non_react /
 
+  INTEGER, PARAMETER :: n_megan2racmSOA = 178
+  INTEGER, DIMENSION (n_megan2racmSOA) :: p_of_megan2racmSOA, p_of_racmSOA
+  REAL,    DIMENSION (n_megan2racmSOA) :: racmSOA_per_megan
+  DATA p_of_racmSOA / n_megan2racmSOA*non_react /
+
   INTEGER, PARAMETER :: n_megan2mozcart = 142
   INTEGER, DIMENSION (n_megan2mozcart) :: p_of_megan2mozcart, p_of_mozcart
   REAL,    DIMENSION (n_megan2mozcart) :: mozcart_per_megan
@@ -755,7 +760,206 @@ CONTAINS
 
   END SUBROUTINE get_megan2racm_table
 
+
+
+
+  SUBROUTINE  get_megan2racmSOA_table
+
+    ! For MEGAN v2.04 species conversion to RACM_SOA_VBD_KPP species 
+    ! Based on Tan's MAP_CV2RACM.EXT
+
+    !
+    ! Index of                                   Index of                            Molar ratio
+    ! MEGAN species                              RACM Species                             
+    !
+
+    p_of_megan2racmSOA(  1) = is_isoprene         ; p_of_racmSOA(  1) = p_iso     ;  racmSOA_per_megan(  1)    =  1.000
+    p_of_megan2racmSOA(  2) = is_myrcene          ; p_of_racmSOA(  2) = p_lim     ;  racmSOA_per_megan(  2)    =  1.000
+    p_of_megan2racmSOA(  3) = is_sabinene         ; p_of_racmSOA(  3) = p_api     ;  racmSOA_per_megan(  3)    =  1.000
+    p_of_megan2racmSOA(  4) = is_limonene         ; p_of_racmSOA(  4) = p_lim     ;  racmSOA_per_megan(  4)    =  1.000
+    p_of_megan2racmSOA(  5) = is_carene_3         ; p_of_racmSOA(  5) = p_api     ;  racmSOA_per_megan(  5)    =  1.000
+    p_of_megan2racmSOA(  6) = is_ocimene_t_b      ; p_of_racmSOA(  6) = p_lim     ;  racmSOA_per_megan(  6)    =  1.000
+    p_of_megan2racmSOA(  7) = is_pinene_b         ; p_of_racmSOA(  7) = p_api     ;  racmSOA_per_megan(  7)    =  1.000
+    p_of_megan2racmSOA(  8) = is_pinene_a         ; p_of_racmSOA(  8) = p_api     ;  racmSOA_per_megan(  8)    =  1.000
+    p_of_megan2racmSOA(  9) = is_2met_styrene     ; p_of_racmSOA(  9) = p_lim     ;  racmSOA_per_megan(  9)    =  1.000
+    p_of_megan2racmSOA( 10) = is_cymene_p         ; p_of_racmSOA( 10) = p_lim     ;  racmSOA_per_megan( 10)    =  1.000
+    p_of_megan2racmSOA( 11) = is_cymene_o         ; p_of_racmSOA( 11) = p_lim     ;  racmSOA_per_megan( 11)    =  1.000
+    p_of_megan2racmSOA( 12) = is_phellandrene_a   ; p_of_racmSOA( 12) = p_lim     ;  racmSOA_per_megan( 12)    =  1.000
+    p_of_megan2racmSOA( 13) = is_thujene_a        ; p_of_racmSOA( 13) = p_api     ;  racmSOA_per_megan( 13)    =  1.000
+    p_of_megan2racmSOA( 14) = is_terpinene_a      ; p_of_racmSOA( 14) = p_lim     ;  racmSOA_per_megan( 14)    =  1.000
+    p_of_megan2racmSOA( 15) = is_terpinene_g      ; p_of_racmSOA( 15) = p_lim     ;  racmSOA_per_megan( 15)    =  1.000
+    p_of_megan2racmSOA( 16) = is_terpinolene      ; p_of_racmSOA( 16) = p_lim     ;  racmSOA_per_megan( 16)    =  1.000
+    p_of_megan2racmSOA( 17) = is_phellandrene_b   ; p_of_racmSOA( 17) = p_lim     ;  racmSOA_per_megan( 17)    =  1.000
+    p_of_megan2racmSOA( 18) = is_camphene         ; p_of_racmSOA( 18) = p_api     ;  racmSOA_per_megan( 18)    =  1.000
+    p_of_megan2racmSOA( 19) = is_bornene          ; p_of_racmSOA( 19) = p_api     ;  racmSOA_per_megan( 19)    =  1.000
+    p_of_megan2racmSOA( 20) = is_fenchene_a       ; p_of_racmSOA( 20) = p_api     ;  racmSOA_per_megan( 20)    =  1.000
+    p_of_megan2racmSOA( 21) = is_ocimene_al       ; p_of_racmSOA( 21) = p_lim     ;  racmSOA_per_megan( 21)    =  1.000
+    p_of_megan2racmSOA( 22) = is_ocimene_c_b      ; p_of_racmSOA( 22) = p_lim     ;  racmSOA_per_megan( 22)    =  1.000
+    p_of_megan2racmSOA( 23) = is_tricyclene       ; p_of_racmSOA( 23) = non_react ;  racmSOA_per_megan( 23)    =  1.000
+    p_of_megan2racmSOA( 24) = is_estragole        ; p_of_racmSOA( 24) = p_lim     ;  racmSOA_per_megan( 24)    =  1.000
+    p_of_megan2racmSOA( 25) = is_camphor          ; p_of_racmSOA( 25) = p_hc8     ;  racmSOA_per_megan( 25)    =  0.380
+    p_of_megan2racmSOA( 26) = is_fenchone         ; p_of_racmSOA( 26) = non_react ;  racmSOA_per_megan( 26)    =  1.000
+    p_of_megan2racmSOA( 27) = is_piperitone       ; p_of_racmSOA( 27) = p_api     ;  racmSOA_per_megan( 27)    =  1.000
+    p_of_megan2racmSOA( 28) = is_thujone_a        ; p_of_racmSOA( 28) = non_react ;  racmSOA_per_megan( 28)    =  1.000
+    p_of_megan2racmSOA( 29) = is_thujone_b        ; p_of_racmSOA( 29) = non_react ;  racmSOA_per_megan( 29)    =  1.000
+    p_of_megan2racmSOA( 30) = is_cineole_1_8      ; p_of_racmSOA( 30) = p_hc8     ;  racmSOA_per_megan( 30)    =  0.738
+    p_of_megan2racmSOA( 31) = is_borneol          ; p_of_racmSOA( 31) = non_react ;  racmSOA_per_megan( 31)    =  1.000
+    p_of_megan2racmSOA( 32) = is_linalool         ; p_of_racmSOA( 32) = p_lim     ;  racmSOA_per_megan( 32)    =  1.000
+    p_of_megan2racmSOA( 33) = is_terpineol_4      ; p_of_racmSOA( 33) = p_api     ;  racmSOA_per_megan( 33)    =  1.000
+    p_of_megan2racmSOA( 34) = is_terpineol_a      ; p_of_racmSOA( 34) = p_api     ;  racmSOA_per_megan( 34)    =  1.000
+    p_of_megan2racmSOA( 35) = is_linalool_oxd_c   ; p_of_racmSOA( 35) = p_lim     ;  racmSOA_per_megan( 35)    =  1.000
+    p_of_megan2racmSOA( 36) = is_linalool_oxd_t   ; p_of_racmSOA( 36) = p_lim     ;  racmSOA_per_megan( 36)    =  1.000
+    p_of_megan2racmSOA( 37) = is_ionone_b         ; p_of_racmSOA( 37) = p_lim     ;  racmSOA_per_megan( 37)    =  1.000
+    p_of_megan2racmSOA( 38) = is_bornyl_act       ; p_of_racmSOA( 38) = non_react ;  racmSOA_per_megan( 38)    =  1.000
+    p_of_megan2racmSOA( 39) = is_farnescene_a     ; p_of_racmSOA( 39) = p_lim     ;  racmSOA_per_megan( 39)    =  1.000
+    p_of_megan2racmSOA( 40) = is_caryophyllene_b  ; p_of_racmSOA( 40) = p_lim     ;  racmSOA_per_megan( 40)    =  1.000
+    p_of_megan2racmSOA( 41) = is_acoradiene       ; p_of_racmSOA( 41) = p_lim     ;  racmSOA_per_megan( 41)    =  1.000
+    p_of_megan2racmSOA( 42) = is_aromadendrene    ; p_of_racmSOA( 42) = p_api     ;  racmSOA_per_megan( 42)    =  1.000
+    p_of_megan2racmSOA( 43) = is_bergamotene_a    ; p_of_racmSOA( 43) = p_lim     ;  racmSOA_per_megan( 43)    =  1.000
+    p_of_megan2racmSOA( 44) = is_bergamotene_b    ; p_of_racmSOA( 44) = p_lim     ;  racmSOA_per_megan( 44)    =  1.000
+    p_of_megan2racmSOA( 45) = is_bisabolene_a     ; p_of_racmSOA( 45) = p_lim     ;  racmSOA_per_megan( 45)    =  1.000
+    p_of_megan2racmSOA( 46) = is_bisabolene_b     ; p_of_racmSOA( 46) = p_lim     ;  racmSOA_per_megan( 46)    =  1.000
+    p_of_megan2racmSOA( 47) = is_bourbonene_b     ; p_of_racmSOA( 47) = p_api     ;  racmSOA_per_megan( 47)    =  1.000
+    p_of_megan2racmSOA( 48) = is_cadinene_d       ; p_of_racmSOA( 48) = p_lim     ;  racmSOA_per_megan( 48)    =  1.000
+    p_of_megan2racmSOA( 49) = is_cadinene_g       ; p_of_racmSOA( 49) = p_lim     ;  racmSOA_per_megan( 49)    =  1.000
+    p_of_megan2racmSOA( 50) = is_cedrene_a        ; p_of_racmSOA( 50) = p_api     ;  racmSOA_per_megan( 50)    =  1.000
+    p_of_megan2racmSOA( 51) = is_copaene_a        ; p_of_racmSOA( 51) = p_api     ;  racmSOA_per_megan( 51)    =  1.000
+    p_of_megan2racmSOA( 52) = is_cubebene_a       ; p_of_racmSOA( 52) = p_api     ;  racmSOA_per_megan( 52)    =  1.000
+    p_of_megan2racmSOA( 53) = is_cubebene_b       ; p_of_racmSOA( 53) = p_api     ;  racmSOA_per_megan( 53)    =  1.000
+    p_of_megan2racmSOA( 54) = is_elemene_b        ; p_of_racmSOA( 54) = p_lim     ;  racmSOA_per_megan( 54)    =  1.000
+    p_of_megan2racmSOA( 55) = is_farnescene_b     ; p_of_racmSOA( 55) = p_lim     ;  racmSOA_per_megan( 55)    =  1.000
+    p_of_megan2racmSOA( 56) = is_germacrene_b     ; p_of_racmSOA( 56) = p_lim     ;  racmSOA_per_megan( 56)    =  1.000
+    p_of_megan2racmSOA( 57) = is_germacrene_d     ; p_of_racmSOA( 57) = p_lim     ;  racmSOA_per_megan( 57)    =  1.000
+    p_of_megan2racmSOA( 58) = is_gurjunene_b      ; p_of_racmSOA( 58) = p_api     ;  racmSOA_per_megan( 58)    =  1.000
+    p_of_megan2racmSOA( 59) = is_humulene_a       ; p_of_racmSOA( 59) = p_lim     ;  racmSOA_per_megan( 59)    =  1.000
+    p_of_megan2racmSOA( 60) = is_humulene_g       ; p_of_racmSOA( 60) = p_lim     ;  racmSOA_per_megan( 60)    =  1.000
+    p_of_megan2racmSOA( 61) = is_isolongifolene   ; p_of_racmSOA( 61) = p_api     ;  racmSOA_per_megan( 61)    =  1.000
+    p_of_megan2racmSOA( 62) = is_longifolene      ; p_of_racmSOA( 62) = p_api     ;  racmSOA_per_megan( 62)    =  1.000
+    p_of_megan2racmSOA( 63) = is_longipinene      ; p_of_racmSOA( 63) = p_api     ;  racmSOA_per_megan( 63)    =  1.000
+    p_of_megan2racmSOA( 64) = is_muurolene_a      ; p_of_racmSOA( 64) = p_lim     ;  racmSOA_per_megan( 64)    =  1.000
+    p_of_megan2racmSOA( 65) = is_muurolene_g      ; p_of_racmSOA( 65) = p_lim     ;  racmSOA_per_megan( 65)    =  1.000
+    p_of_megan2racmSOA( 66) = is_selinene_b       ; p_of_racmSOA( 66) = p_lim     ;  racmSOA_per_megan( 66)    =  1.000
+    p_of_megan2racmSOA( 67) = is_selinene_d       ; p_of_racmSOA( 67) = p_lim     ;  racmSOA_per_megan( 67)    =  1.000
+    p_of_megan2racmSOA( 68) = is_nerolidol_c      ; p_of_racmSOA( 68) = p_lim     ;  racmSOA_per_megan( 68)    =  1.000
+    p_of_megan2racmSOA( 69) = is_nerolidol_t      ; p_of_racmSOA( 69) = p_lim     ;  racmSOA_per_megan( 69)    =  1.000
+    p_of_megan2racmSOA( 70) = is_cedrol           ; p_of_racmSOA( 70) = non_react ;  racmSOA_per_megan( 70)    =  1.000
+    p_of_megan2racmSOA( 71) = is_mbo_2m3e2ol      ; p_of_racmSOA( 71) = p_mbo     ;  racmSOA_per_megan( 71)    =  1.000
+    p_of_megan2racmSOA( 72) = is_methanol         ; p_of_racmSOA( 72) = p_hc3     ;  racmSOA_per_megan( 72)    =  0.490
+    p_of_megan2racmSOA( 73) = is_acetone          ; p_of_racmSOA( 73) = p_ket     ;  racmSOA_per_megan( 73)    =  0.330
+    p_of_megan2racmSOA( 74) = is_methane          ; p_of_racmSOA( 74) = p_ch4     ;  racmSOA_per_megan( 74)    =  1.000
+    p_of_megan2racmSOA( 75) = is_ammonia          ; p_of_racmSOA( 75) = p_nh3     ;  racmSOA_per_megan( 75)    =  1.000
+    p_of_megan2racmSOA( 76) = is_nitrous_oxd      ; p_of_racmSOA( 76) = p_no2     ;  racmSOA_per_megan( 76)    =  1.000
+    p_of_megan2racmSOA( 77) = is_nitric_oxd       ; p_of_racmSOA( 77) = p_no      ;  racmSOA_per_megan( 77)    =  1.000
+    p_of_megan2racmSOA( 78) = is_acetaldehyde     ; p_of_racmSOA( 78) = p_ald     ;  racmSOA_per_megan( 78)    =  1.000
+    p_of_megan2racmSOA( 79) = is_ethanol          ; p_of_racmSOA( 79) = p_hc3     ;  racmSOA_per_megan( 79)    =  1.370
+    p_of_megan2racmSOA( 80) = is_formic_acid      ; p_of_racmSOA( 80) = p_ora1    ;  racmSOA_per_megan( 80)    =  1.000
+    p_of_megan2racmSOA( 81) = is_formaldehyde     ; p_of_racmSOA( 81) = p_hcho    ;  racmSOA_per_megan( 81)    =  1.000
+    p_of_megan2racmSOA( 82) = is_acetic_acid      ; p_of_racmSOA( 82) = p_ora2    ;  racmSOA_per_megan( 82)    =  1.000
+    p_of_megan2racmSOA( 83) = is_mbo_3m2e1ol      ; p_of_racmSOA( 83) = p_mbo     ;  racmSOA_per_megan( 83)    =  1.000
+    p_of_megan2racmSOA( 84) = is_mbo_3m3e1ol      ; p_of_racmSOA( 84) = p_mbo     ;  racmSOA_per_megan( 84)    =  1.000
+    p_of_megan2racmSOA( 85) = is_benzaldehyde     ; p_of_racmSOA( 85) = non_react ;  racmSOA_per_megan( 85)    =  1.000
+    p_of_megan2racmSOA( 86) = is_butanone_2       ; p_of_racmSOA( 86) = p_ket     ;  racmSOA_per_megan( 86)    =  1.610
+    p_of_megan2racmSOA( 87) = is_decanal          ; p_of_racmSOA( 87) = p_ald     ;  racmSOA_per_megan( 87)    =  1.000
+    p_of_megan2racmSOA( 88) = is_dodecene_1       ; p_of_racmSOA( 88) = p_olt     ;  racmSOA_per_megan( 88)    =  1.000
+    p_of_megan2racmSOA( 89) = is_geranyl_acetone  ; p_of_racmSOA( 89) = p_lim     ;  racmSOA_per_megan( 89)    =  1.000
+    p_of_megan2racmSOA( 90) = is_heptanal         ; p_of_racmSOA( 90) = p_ald     ;  racmSOA_per_megan( 90)    =  1.000
+    p_of_megan2racmSOA( 91) = is_heptane          ; p_of_racmSOA( 91) = p_hc5     ;  racmSOA_per_megan( 91)    =  1.236
+    p_of_megan2racmSOA( 92) = is_hexane           ; p_of_racmSOA( 92) = p_hc5     ;  racmSOA_per_megan( 92)    =  1.058
+    p_of_megan2racmSOA( 93) = is_met_benzoate     ; p_of_racmSOA( 93) = p_hc8     ;  racmSOA_per_megan( 93)    =  1.000
+    p_of_megan2racmSOA( 94) = is_met_heptenone    ; p_of_racmSOA( 94) = p_oli     ;  racmSOA_per_megan( 94)    =  1.000
+    p_of_megan2racmSOA( 95) = is_neryl_acetone    ; p_of_racmSOA( 95) = p_oli     ;  racmSOA_per_megan( 95)    =  1.000
+    p_of_megan2racmSOA( 96) = is_nonanal          ; p_of_racmSOA( 96) = p_ald     ;  racmSOA_per_megan( 96)    =  1.000
+    p_of_megan2racmSOA( 97) = is_nonenal          ; p_of_racmSOA( 97) = p_hc8     ;  racmSOA_per_megan( 97)    =  1.000
+    p_of_megan2racmSOA( 98) = is_nonenal          ; p_of_racmSOA( 98) = p_ald     ;  racmSOA_per_megan( 98)    =  1.000
+    p_of_megan2racmSOA( 99) = is_octanal          ; p_of_racmSOA( 99) = p_ald     ;  racmSOA_per_megan( 99)    =  1.000
+    p_of_megan2racmSOA(100) = is_octanol          ; p_of_racmSOA(100) = p_hc8     ;  racmSOA_per_megan(100)    =  1.092
+    p_of_megan2racmSOA(101) = is_octenol_1e3ol    ; p_of_racmSOA(101) = p_olt     ;  racmSOA_per_megan(101)    =  1.000
+    p_of_megan2racmSOA(102) = is_oxopentanal      ; p_of_racmSOA(102) = p_ald     ;  racmSOA_per_megan(102)    =  1.000
+    p_of_megan2racmSOA(103) = is_pentane          ; p_of_racmSOA(103) = p_hc5     ;  racmSOA_per_megan(103)    =  0.854
+    p_of_megan2racmSOA(104) = is_phenyl_cco       ; p_of_racmSOA(104) = non_react ;  racmSOA_per_megan(104)    =  1.000
+    p_of_megan2racmSOA(105) = is_pyruvic_acid     ; p_of_racmSOA(105) = p_ora2    ;  racmSOA_per_megan(105)    =  1.000
+    p_of_megan2racmSOA(106) = is_terpinyl_act_a   ; p_of_racmSOA(106) = p_api     ;  racmSOA_per_megan(106)    =  1.000
+    p_of_megan2racmSOA(107) = is_tetradecene_1    ; p_of_racmSOA(107) = p_olt     ;  racmSOA_per_megan(107)    =  1.000
+    p_of_megan2racmSOA(108) = is_toluene          ; p_of_racmSOA(108) = p_tol     ;  racmSOA_per_megan(108)    =  1.000
+    p_of_megan2racmSOA(109) = is_carbon_monoxide  ; p_of_racmSOA(109) = p_co      ;  racmSOA_per_megan(109)    =  1.000
+    p_of_megan2racmSOA(110) = is_butene           ; p_of_racmSOA(110) = p_olt     ;  racmSOA_per_megan(110)    =  1.000
+    p_of_megan2racmSOA(111) = is_ethane           ; p_of_racmSOA(111) = p_eth     ;  racmSOA_per_megan(111)    =  1.000
+    p_of_megan2racmSOA(112) = is_ethene           ; p_of_racmSOA(112) = p_ete     ;  racmSOA_per_megan(112)    =  1.000
+    p_of_megan2racmSOA(113) = is_hydrogen_cyanide ; p_of_racmSOA(113) = non_react ;  racmSOA_per_megan(113)    =  1.000
+    p_of_megan2racmSOA(114) = is_propane          ; p_of_racmSOA(114) = p_hc3     ;  racmSOA_per_megan(114)    =  0.570
+    p_of_megan2racmSOA(115) = is_propene          ; p_of_racmSOA(115) = p_olt     ;  racmSOA_per_megan(115)    =  1.000
+    p_of_megan2racmSOA(116) = is_carbon_2s        ; p_of_racmSOA(116) = non_react ;  racmSOA_per_megan(116)    =  1.000
+    p_of_megan2racmSOA(117) = is_carbonyl_s       ; p_of_racmSOA(117) = non_react ;  racmSOA_per_megan(117)    =  1.000
+    p_of_megan2racmSOA(118) = is_diallyl_2s       ; p_of_racmSOA(118) = p_oli     ;  racmSOA_per_megan(118)    =  1.000
+    p_of_megan2racmSOA(119) = is_diallyl_2s       ; p_of_racmSOA(119) = p_so2     ;  racmSOA_per_megan(119)    =  2.000
+    p_of_megan2racmSOA(120) = is_2met_2s          ; p_of_racmSOA(120) = p_eth     ;  racmSOA_per_megan(120)    =  1.000
+    p_of_megan2racmSOA(121) = is_2met_2s          ; p_of_racmSOA(121) = p_so2     ;  racmSOA_per_megan(121)    =  2.000
+    p_of_megan2racmSOA(122) = is_2met_s           ; p_of_racmSOA(122) = p_eth     ;  racmSOA_per_megan(122)    =  1.000
+    p_of_megan2racmSOA(123) = is_2met_s           ; p_of_racmSOA(123) = p_so2     ;  racmSOA_per_megan(123)    =  1.000
+    p_of_megan2racmSOA(124) = is_met_chloride     ; p_of_racmSOA(124) = non_react ;  racmSOA_per_megan(124)    =  1.000
+    p_of_megan2racmSOA(125) = is_met_bromide      ; p_of_racmSOA(125) = non_react ;  racmSOA_per_megan(125)    =  1.000
+    p_of_megan2racmSOA(126) = is_met_iodide       ; p_of_racmSOA(126) = non_react ;  racmSOA_per_megan(126)    =  1.000
+    p_of_megan2racmSOA(127) = is_hydrogen_s       ; p_of_racmSOA(127) = p_so2     ;  racmSOA_per_megan(127)    =  1.000
+    p_of_megan2racmSOA(128) = is_met_mercaptan    ; p_of_racmSOA(128) = p_ch4     ;  racmSOA_per_megan(128)    =  1.000
+    p_of_megan2racmSOA(129) = is_met_mercaptan    ; p_of_racmSOA(129) = p_so2     ;  racmSOA_per_megan(129)    =  1.000
+    p_of_megan2racmSOA(130) = is_met_propenyl_2s  ; p_of_racmSOA(130) = p_oli     ;  racmSOA_per_megan(130)    =  1.000
+    p_of_megan2racmSOA(131) = is_met_propenyl_2s  ; p_of_racmSOA(131) = p_so2     ;  racmSOA_per_megan(131)    =  2.000
+    p_of_megan2racmSOA(132) = is_pppp_2s          ; p_of_racmSOA(132) = p_oli     ;  racmSOA_per_megan(132)    =  1.000
+    p_of_megan2racmSOA(133) = is_pppp_2s          ; p_of_racmSOA(133) = p_so2     ;  racmSOA_per_megan(133)    =  2.000
+    p_of_megan2racmSOA(134) = is_2met_nonatriene  ; p_of_racmSOA(134) = p_lim     ;  racmSOA_per_megan(134)    =  1.000
+    p_of_megan2racmSOA(135) = is_met_salicylate   ; p_of_racmSOA(135) = p_hc8     ;  racmSOA_per_megan(135)    =  1.000
+    p_of_megan2racmSOA(136) = is_indole           ; p_of_racmSOA(136) = p_hc8     ;  racmSOA_per_megan(136)    =  1.201
+    p_of_megan2racmSOA(137) = is_indole           ; p_of_racmSOA(137) = p_hno3    ;  racmSOA_per_megan(137)    =  1.000
+    p_of_megan2racmSOA(138) = is_jasmone          ; p_of_racmSOA(138) = p_lim     ;  racmSOA_per_megan(138)    =  1.000
+    p_of_megan2racmSOA(139) = is_met_jasmonate    ; p_of_racmSOA(139) = p_lim     ;  racmSOA_per_megan(139)    =  1.000
+    p_of_megan2racmSOA(140) = is_3met_3dctt       ; p_of_racmSOA(140) = p_oli     ;  racmSOA_per_megan(140)    =  0.500
+    p_of_megan2racmSOA(141) = is_3met_3dctt       ; p_of_racmSOA(141) = p_olt     ;  racmSOA_per_megan(141)    =  0.500
+    p_of_megan2racmSOA(142) = is_hexanal          ; p_of_racmSOA(142) = p_ald     ;  racmSOA_per_megan(142)    =  1.000
+    p_of_megan2racmSOA(143) = is_hexanol_1        ; p_of_racmSOA(143) = p_hc5     ;  racmSOA_per_megan(143)    =  1.710
+    p_of_megan2racmSOA(144) = is_hexenal_c3       ; p_of_racmSOA(144) = p_oli     ;  racmSOA_per_megan(144)    =  1.000
+    p_of_megan2racmSOA(145) = is_hexenal_t2       ; p_of_racmSOA(145) = p_oli     ;  racmSOA_per_megan(145)    =  1.000
+    p_of_megan2racmSOA(146) = is_hexenol_c3       ; p_of_racmSOA(146) = p_olt     ;  racmSOA_per_megan(146)    =  1.000
+    p_of_megan2racmSOA(147) = is_hexenyl_act_c3   ; p_of_racmSOA(147) = p_oli     ;  racmSOA_per_megan(147)    =  1.000
+    p_of_megan2racmSOA(148) = is_farnescene_a     ; p_of_racmSOA(148) = p_sesq    ;  racmSOA_per_megan(148)    =  1.000
+    p_of_megan2racmSOA(149) = is_caryophyllene_b  ; p_of_racmSOA(149) = p_sesq    ;  racmSOA_per_megan(149)    =  1.000
+    p_of_megan2racmSOA(150) = is_aromadendrene    ; p_of_racmSOA(150) = p_sesq    ;  racmSOA_per_megan(150)    =  1.000
+    p_of_megan2racmSOA(151) = is_bergamotene_a    ; p_of_racmSOA(151) = p_sesq    ;  racmSOA_per_megan(151)    =  1.000
+    p_of_megan2racmSOA(152) = is_bergamotene_b    ; p_of_racmSOA(152) = p_sesq    ;  racmSOA_per_megan(152)    =  1.000
+    p_of_megan2racmSOA(153) = is_bisabolene_a     ; p_of_racmSOA(153) = p_sesq    ;  racmSOA_per_megan(153)    =  1.000
+    p_of_megan2racmSOA(154) = is_bisabolene_b     ; p_of_racmSOA(154) = p_sesq    ;  racmSOA_per_megan(154)    =  1.000
+    p_of_megan2racmSOA(155) = is_bourbonene_b     ; p_of_racmSOA(155) = p_sesq    ;  racmSOA_per_megan(155)    =  1.000
+    p_of_megan2racmSOA(156) = is_cadinene_d       ; p_of_racmSOA(156) = p_sesq    ;  racmSOA_per_megan(156)    =  1.000
+    p_of_megan2racmSOA(157) = is_cadinene_g       ; p_of_racmSOA(157) = p_sesq      ; racmSOA_per_megan(157) = 1.000
+    p_of_megan2racmSOA(158) = is_cedrene_a        ; p_of_racmSOA(158) = p_sesq      ; racmSOA_per_megan(158) = 1.000
+    p_of_megan2racmSOA(159) = is_copaene_a        ; p_of_racmSOA(159) = p_sesq      ; racmSOA_per_megan(159) = 1.000
+    p_of_megan2racmSOA(160) = is_cubebene_a       ; p_of_racmSOA(160) = p_sesq      ; racmSOA_per_megan(160) = 1.000
+    p_of_megan2racmSOA(161) = is_cubebene_b       ; p_of_racmSOA(161) = p_sesq      ; racmSOA_per_megan(161) = 1.000
+    p_of_megan2racmSOA(162) = is_elemene_b        ; p_of_racmSOA(162) = p_sesq      ; racmSOA_per_megan(162) = 1.000
+    p_of_megan2racmSOA(163) = is_farnescene_b     ; p_of_racmSOA(163) = p_sesq      ; racmSOA_per_megan(163) = 1.000
+    p_of_megan2racmSOA(164) = is_germacrene_b     ; p_of_racmSOA(164) = p_sesq      ; racmSOA_per_megan(164) = 1.000
+    p_of_megan2racmSOA(165) = is_germacrene_d     ; p_of_racmSOA(165) = p_sesq      ; racmSOA_per_megan(165) = 1.000
+    p_of_megan2racmSOA(166) = is_gurjunene_b      ; p_of_racmSOA(166) = p_sesq      ; racmSOA_per_megan(166) = 1.000
+    p_of_megan2racmSOA(167) = is_humulene_a       ; p_of_racmSOA(167) = p_sesq      ; racmSOA_per_megan(167) = 1.000
+    p_of_megan2racmSOA(168) = is_humulene_g       ; p_of_racmSOA(168) = p_sesq      ; racmSOA_per_megan(168) = 1.000
+    p_of_megan2racmSOA(169) = is_isolongifolene   ; p_of_racmSOA(169) = p_sesq      ; racmSOA_per_megan(169) = 1.000
+    p_of_megan2racmSOA(170) = is_longifolene      ; p_of_racmSOA(170) = p_sesq      ; racmSOA_per_megan(170) = 1.000
+    p_of_megan2racmSOA(171) = is_longipinene      ; p_of_racmSOA(171) = p_sesq      ; racmSOA_per_megan(171) = 1.000
+    p_of_megan2racmSOA(172) = is_muurolene_a      ; p_of_racmSOA(172) = p_sesq      ; racmSOA_per_megan(172) = 1.000
+    p_of_megan2racmSOA(173) = is_muurolene_g      ; p_of_racmSOA(173) = p_sesq      ; racmSOA_per_megan(173) = 1.000
+    p_of_megan2racmSOA(174) = is_selinene_b       ; p_of_racmSOA(174) = p_sesq      ; racmSOA_per_megan(174) = 1.000
+    p_of_megan2racmSOA(175) = is_selinene_d       ; p_of_racmSOA(175) = p_sesq      ; racmSOA_per_megan(175) = 1.000
+    p_of_megan2racmSOA(176) = is_nerolidol_c      ; p_of_racmSOA(176) = p_sesq      ; racmSOA_per_megan(176) = 1.000
+    p_of_megan2racmSOA(177) = is_nerolidol_t      ; p_of_racmSOA(177) = p_sesq      ; racmSOA_per_megan(177) = 1.000
+    p_of_megan2racmSOA(178) = is_cedrol           ; p_of_racmSOA(178) = p_sesq      ; racmSOA_per_megan(178) = 1.000
+
+
+  END SUBROUTINE get_megan2racmSOA_table
+
+
+
   SUBROUTINE get_megan2saprcnov_table
+
+
     ! Based on Tan''s MAP_CV2SAPRC99.EXT
 
     ! Index of                                      Index of                           Molar ratio

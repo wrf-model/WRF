@@ -371,6 +371,8 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
      call wrf_debug("setup_profile_maps: nothing done for volcanic ash")
   case (CHEM_VOLC)
      call wrf_debug("setup_profile_maps: nothing done for volcanic ash")
+  case (CHEM_VOLC_4BIN)
+     call wrf_debug("setup_profile_maps: nothing done for volcanic ash")
   case (DUST)
      call wrf_debug("setup_profile_maps: nothing done for volcanic ash")
   case (MOZART_KPP)
@@ -857,6 +859,8 @@ SUBROUTINE input_chem_profile (si_grid)
    ELSE IF ( si_grid%chem_opt == CHEM_VASH ) THEN
       si_grid%chem(ims:ime,kms:kme,jms:jme,1:numgas ) = 0.
    ELSE IF ( si_grid%chem_opt == CHEM_VOLC ) THEN
+      si_grid%chem(ims:ime,kms:kme,jms:jme,1:numgas ) = 0.
+   ELSE IF ( si_grid%chem_opt == CHEM_VOLC_4BIN ) THEN
       si_grid%chem(ims:ime,kms:kme,jms:jme,1:numgas ) = 0.
    ELSE IF ( si_grid%chem_opt == DUST ) THEN
       si_grid%chem(ims:ime,kms:kme,jms:jme,1:numgas ) = 0.
@@ -1603,6 +1607,10 @@ END SUBROUTINE bdy_chem_value_ghg
       else if (config_flags%chem_opt == DUST) then
           i_bdy_method = 7
       else if (config_flags%chem_opt == CHEM_VASH) then
+          i_bdy_method = 8
+      else if (config_flags%chem_opt == CHEM_VOLC) then
+          i_bdy_method = 8
+      else if (config_flags%chem_opt == CHEM_VOLC_4BIN) then
           i_bdy_method = 8
       else if (config_flags%chem_opt==CO2_TRACER .OR. config_flags%chem_opt==GHG_TRACER) then
           i_bdy_method = 16
@@ -2547,6 +2555,8 @@ END SUBROUTINE bdy_chem_value_ghg
         get_last_gas = 0
      case (CHEM_VOLC)
         get_last_gas = p_sulf
+     case (CHEM_VOLC_4BIN)
+        get_last_gas = 0
      case (DUST)
         get_last_gas = 0
      case (MOZART_KPP)

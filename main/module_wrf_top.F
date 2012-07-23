@@ -856,6 +856,140 @@ ENDIF
 
    END SUBROUTINE wrf_run_tl
 
+   SUBROUTINE wrf_run_tl_standalone( )
+!<DESCRIPTION>
+!     WRF tangent linear code standalone run
+!</DESCRIPTION>
+
+!</DESCRIPTION>
+
+   INTEGER :: rc, time_step, id, ierr
+   CHARACTER*256 :: timestr
+
+   ! Return immediately if not dyn_em_tl
+   IF ( config_flags%dyn_opt .NE. dyn_em_tl ) RETURN
+
+   ! Force to turn off history output in this case
+   CALL WRFU_AlarmRingerOff( head_grid%alarms( HISTORY_ALARM ), rc=rc )
+
+   IF ( head_grid%trajectory_io ) THEN
+
+   ! Force to read the lateral boundary condition here.
+   !CALL med_before_solve_io ( head_grid, config_flags )
+
+   ! Close boundary file, as it will be read again from start later
+   !CALL close_dataset ( head_grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
+
+   CALL init_domain_size ( head_grid, config_flags )
+
+   ! Release linked list for trajectory
+   call xtraj_io_initialize
+
+   CALL       wrf_message ( "wrf: calling nonlinear integrate" )
+
+   ! Set up basic states output
+   CALL nl_get_time_step ( head_grid%id, time_step )
+   CALL nl_set_auxhist6_interval_s ( head_grid%id, time_step )
+   CALL nl_set_io_form_auxhist6 ( head_grid%id, 2 )
+   CALL nl_set_frames_per_auxhist6 ( head_grid%id, 1 )
+   IF ( ASSOCIATED( head_grid%domain_clock ) ) THEN
+     IF ( head_grid%domain_clock_created ) THEN
+       CALL WRFU_ClockDestroy( head_grid%domain_clock )
+       head_grid%domain_clock_created = .FALSE.
+     ENDIF
+   ENDIF
+   IF ( ASSOCIATED( head_grid%alarms ) .AND. &
+        ASSOCIATED( head_grid%alarms_created ) ) THEN
+     DO alarmid = 1, MAX_WRF_ALARMS
+       IF ( head_grid%alarms_created( alarmid ) ) THEN
+         CALL WRFU_AlarmDestroy( head_grid%alarms( alarmid ) )
+         head_grid%alarms_created( alarmid ) = .FALSE.
+       ENDIF
+     ENDDO
+   ENDIF
+   CALL Setup_Timekeeping ( head_grid )
+
+   CALL wrf_run
+
+   ! Turn off basic states output
+   CALL nl_set_io_form_auxhist6 ( head_grid%id, 0 )
+   CALL nl_set_auxhist6_interval_s ( head_grid%id, 0 )
+   IF ( ASSOCIATED( head_grid%domain_clock ) ) THEN
+     IF ( head_grid%domain_clock_created ) THEN
+       CALL WRFU_ClockDestroy( head_grid%domain_clock )
+       head_grid%domain_clock_created = .FALSE.
+     ENDIF
+   ENDIF
+   IF ( ASSOCIATED( head_grid%alarms ) .AND. &
+        ASSOCIATED( head_grid%alarms_created ) ) THEN
+     DO alarmid = 1, MAX_WRF_ALARMS
+       IF ( head_grid%alarms_created( alarmid ) ) THEN
+         CALL WRFU_AlarmDestroy( head_grid%alarms( alarmid ) )
+         head_grid%alarms_created( alarmid ) = .FALSE.
+       ENDIF
+     ENDDO
+   ENDIF
+   CALL Setup_Timekeeping ( head_grid )
+
+   CALL       wrf_message ( "wrf: back from nonlinear integrate" )
+
+   ENDIF 
+
+   ! Set the file names and interval for reading basic states.
+   model_config_rec%auxinput6_inname = "auxhist6_d<domain>_<date>"
+   CALL nl_get_time_step ( head_grid%id, time_step )
+   CALL nl_set_auxinput6_interval_s (head_grid%id, time_step )
+   CALL nl_set_io_form_auxinput6 ( head_grid%id, 2 )
+   CALL nl_set_frames_per_auxinput6 ( head_grid%id, 1 )
+
+   IF ( config_flags%mp_physics .GT. 0 ) CALL nl_set_mp_physics (head_grid%id, 98)
+   IF ( config_flags%bl_pbl_physics .GT. 0 ) CALL nl_set_bl_pbl_physics (head_grid%id, 98)
+   IF ( config_flags%cu_physics .GT. 0 ) CALL nl_set_cu_physics (head_grid%id, 0)
+   CALL nl_set_ra_lw_physics (head_grid%id, 0)
+   CALL nl_set_ra_sw_physics (head_grid%id, 0)
+   CALL nl_set_sf_sfclay_physics (head_grid%id, 0)
+
+   head_grid%g_u_1 = 0.0
+   head_grid%g_v_1 = 0.0
+   head_grid%g_w_1 = 0.0
+   head_grid%g_t_1 = 0.0
+   head_grid%g_ph_1 = 0.0
+   head_grid%g_mu_1 = 0.0
+   
+   head_grid%g_u_2 = 0.0
+   head_grid%g_v_2 = 0.0
+   head_grid%g_w_2 = 0.0
+   head_grid%g_t_2 = 0.0
+   head_grid%g_ph_2 = 0.0
+   head_grid%g_mu_2 = 0.0
+
+   head_grid%g_p = 0.0 
+   
+   head_grid%g_moist = 0.0
+   head_grid%g_tracer = 0.0
+   head_grid%g_scalar = 0.0 
+   head_grid%g_rainnc  = 0.0 
+   head_grid%g_rainncv = 0.0
+   head_grid%g_rainc  = 0.0 
+   head_grid%g_raincv = 0.0
+
+   CALL domain_clock_get( head_grid, start_timestr=timestr )
+   CALL domain_clock_set( head_grid, current_timestr=timestr )
+   config_flags%auxinput9_inname = "init_pert_d01"
+   config_flags%io_form_auxinput9 = 2
+   CALL nl_set_io_form_auxinput9 ( head_grid%id, 2 )
+   config_flags%frames_per_auxinput9 = 1
+   CALL med_auxinput_in ( head_grid, auxinput9_alarm, config_flags )
+   CALL  wrf_debug ( 0 , 'Read in initial perturbation' )
+   config_flags%io_form_auxinput9 = 0
+
+   CALL wrf_run_tl
+
+   ! Release linked list for trajectory
+   call xtraj_io_initialize
+
+   END SUBROUTINE wrf_run_tl_standalone
+
    SUBROUTINE wrf_run_ad( )
 !<DESCRIPTION>
 !     WRF adjoint run routine.
@@ -1148,7 +1282,7 @@ ENDIF
    head_grid%g_p = 0.0 
    
    head_grid%g_moist = 0.0
-   
+   head_grid%g_tracer = 0.0
    head_grid%g_scalar = 0.0 
    head_grid%g_rainnc  = 0.0 
    head_grid%g_rainncv = 0.0

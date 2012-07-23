@@ -500,8 +500,10 @@ gen_med_last_solve_io ( FILE *fp )
     if ( i == 6 || i == 8 ) fprintf(fp,"   ELSE\n") ;
     if ( i == 6 || i == 8 ) fprintf(fp,"     CALL domain_clock_get ( grid, current_timestr=message )\n") ;
     if ( i == 6 ) fprintf(fp,"      CALL save_xtraj  ( message )\n") ;
-    if ( i == 8 ) fprintf(fp,"      IF ( config_flags%%dyn_opt .EQ. dyn_em_tl ) THEN\n") ;
+    if ( i == 8 ) fprintf(fp,"      IF ( config_flags%%dyn_opt .EQ. dyn_em_tl .and. .not. config_flags%%tl_standalone ) THEN\n") ;
     if ( i == 8 ) fprintf(fp,"        CALL save_tl_pert  ( message )\n") ;
+    if ( i == 8 ) fprintf(fp,"      ELSEIF ( config_flags%%dyn_opt .EQ. dyn_em_tl .and. config_flags%%tl_standalone ) THEN\n") ;
+    if ( i == 8 ) fprintf(fp,"        CALL med_hist_out ( grid , AUXHIST%d_ALARM , config_flags )\n",i) ;
     if ( i == 8 ) fprintf(fp,"      ENDIF\n") ;
     if ( i == 6 || i == 8 ) fprintf(fp,"   ENDIF\n") ;
     fprintf(fp," ENDIF\n") ;

@@ -149,8 +149,10 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
        ELSE
          IF ( ialarm .EQ. auxhist8_only ) THEN ! TL perturbation only
             CALL domain_clock_get ( grid, current_timestr=message )
-            IF ( config_flags%dyn_opt .EQ. dyn_em_tl ) THEN
+            IF ( config_flags%dyn_opt .EQ. dyn_em_tl .and. .not. config_flags%tl_standalone ) THEN
                CALL save_tl_pert  ( message )
+            ELSEIF ( config_flags%dyn_opt .EQ. dyn_em_tl .and. config_flags%tl_standalone ) THEN
+               CALL med_hist_out ( grid , ialarm, config_flags )
             ENDIF
          ENDIF
          IF ( ialarm .EQ. auxhist6_only ) THEN ! trajectory only

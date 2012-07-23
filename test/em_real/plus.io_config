@@ -14,6 +14,10 @@
 #
 +:i:7:g_u,g_v,g_t,g_mu,g_ph,g_w,g_qvapor,g_qrain,g_qcloud,g_qice,g_qsnow,g_qgraup,g_qhail,g_rainnc,g_rainncv,g_rainc,g_raincv,g_plume
 #
+# perturbation input for tangent linear integration
+#
++:i:9:g_u,g_v,g_t,g_mu,g_ph,g_w,g_qvapor,g_qrain,g_qcloud,g_qice,g_qsnow,g_qgraup,g_qhail,g_rainnc,g_rainncv,g_rainc,g_raincv,g_plume
+#
 # perturbation output for tangent linear integration
 #
 +:h:8:g_u,g_v,g_t,g_mu,g_ph,g_w,g_qvapor,g_qrain,g_qcloud,g_qice,g_qsnow,g_qgraup,g_qhail,g_rainnc,g_rainncv,g_rainc,g_raincv,g_plume

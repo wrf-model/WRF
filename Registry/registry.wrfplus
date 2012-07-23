@@ -20,6 +20,7 @@ rconfig   logical check_moist           namelist,perturbation          1      .t
 rconfig   logical check_tracer          namelist,perturbation          1      .true. -    "AD/TL check TRACER"        ""      ""
 rconfig   logical check_TL              namelist,perturbation          1      .true. -    "TL check"                  ""      ""
 rconfig   logical check_AD              namelist,perturbation          1      .true. -    "AD check"                  ""      ""
+rconfig   logical tl_standalone         namelist,perturbation          1      .false. -   "Run TLM standalone"                  ""      ""
 rconfig   logical jcdfi_use             namelist,perturbation          1     .false. -    "jcdfi_use"   "JcDFI on/off"      ""
 rconfig   integer jcdfi_diag            namelist,perturbation          1           1 -    "jcdfi_diag"  "JcDFI diag. on/off"      ""
 rconfig   real    jcdfi_penalty         namelist,perturbation          1          1. -    "jcdfi_penalty"    "Penalty parameter for JcDF"      ""

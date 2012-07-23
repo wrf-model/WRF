@@ -5,7 +5,8 @@ PROGRAM wrf
 
    USE module_wrf_top, only : wrf_init, wrf_dfi, wrf_run, wrf_finalize
 #if ( WRFPLUS == 1 )
-   USE module_wrf_top, only : config_flags, wrf_adtl_check, wrf_run_tl, wrf_run_ad_standalone
+   USE module_wrf_top, only : config_flags, wrf_adtl_check, &
+                              wrf_run_tl_standalone, wrf_run_ad_standalone
    USE module_state_description, only : dyn_em, dyn_em_tl, dyn_em_ad
 #endif
 
@@ -45,7 +46,7 @@ PROGRAM wrf
 #if ( WRFPLUS == 1 )
   ! WRF model time-stepping.  Calls integrate().  
   IF  ( config_flags%dyn_opt .EQ. dyn_em_tl ) &
-  CALL wrf_run_tl
+  CALL wrf_run_tl_standalone
 
   ! WRF model time-stepping.  Calls integrate().  
   IF  ( config_flags%dyn_opt .EQ. dyn_em_ad ) &

@@ -105,12 +105,16 @@ contains
     !                 added the vortex_tracker=4 option
     USE MODULE_CONFIGURE, ONLY : grid_config_rec_type
     USE MODULE_DOMAIN, ONLY : domain,get_ijk_from_grid
+
+
+    USE MODULE_DM
+
 #ifdef DM_PARALLEL
 # ifdef HWRF
     USE MODULE_COMM_DM, ONLY : HALO_NMM_VT4_NOISE_sub, HALO_NMM_VT4_MSLP_sub
 # endif
 #endif
-    USE MODULE_DM, ONLY: ntasks_x, ntasks_y, mytask, ntasks, local_communicator
+!    USE MODULE_DM, ONLY: ntasks_x, ntasks_y, mytask, ntasks, local_communicator    !KWON
     IMPLICIT NONE
     type(domain), intent(inout) :: grid
     type(grid_config_rec_type), intent(in) :: config_flags
@@ -120,6 +124,24 @@ contains
     integer, intent(in) :: IPS,IPE,JPS,JPE,KPS,KPE
     integer, intent(in) :: ITS,ITE,JTS,JTE,KTS,KTE
     integer :: vortex_tracker
+
+!LOCAL
+
+    REAL                                                  :: SMSUM,SMOUT
+    INTEGER                                               :: I1,J1
+
+       !
+       !     DETERMINE IF THE ENTIRE NESTED DOMAIN IS OVER LAND (SM=0)  
+       !
+
+       SMSUM = 0.0
+       DO J1 = JTS, MIN(JTE,JDE)
+          DO I1 = ITS, MIN(ITE,IDE)
+             SMSUM = SMSUM + GRID%SM(I1,J1)
+          ENDDO
+       ENDDO
+
+       SMOUT=WRF_DM_SUM_REAL(SMSUM)/(IDE*JDE)
 
     !     KEEP NEST MOTION IN SINK WITH PHYSICS TIME STEPS
 
@@ -201,7 +223,7 @@ contains
        call vt4_move(grid%mslp,grid%weightout,grid%distsq, &
                      grid%mslp_noisy, grid%dx_nmm,         &
                      grid%dy_nmm,grid%xloc_2,grid%yloc_2,  &
-                     grid%xloc_1,grid%yloc_1,grid%mvnest,  &
+                     grid%xloc_1,grid%yloc_1,grid%mvnest,SMOUT,  &
                      config_flags%vt4_radius,              &
                      config_flags%vt4_weightexp,           &
                      config_flags%vt4_pmax,                &
@@ -356,7 +378,7 @@ contains
   END SUBROUTINE vt4_noise_detect
 
   SUBROUTINE vt4_move(MSLP,WEIGHTOUT,DISTSQ,NOISY,DX_NMM,DY_NMM, &
-                      xloc,yloc,cx,cy,mvnest,                    &
+                      xloc,yloc,cx,cy,mvnest,SMOUT,              &
                       searchrad,searchpow,searchpmax,            &
                       IDS,IDE,JDS,JDE,KDS,KDE,                   &
                       IMS,IME,JMS,JME,KMS,KME,                   &
@@ -401,7 +423,7 @@ contains
                            IPS,IPE,JPS,JPE,KPS,KPE, &
                            ITS,ITE,JTS,JTE,KTS,KTE
     logical, intent(out) :: mvnest
-    real :: pmax,sr2,weight,xsum,ysum,xwsum,ywsum
+    real :: pmax,sr2,weight,xsum,ysum,xwsum,ywsum,SMOUT
     real :: centroid_x, centroid_y, xdiff, ydiff
     real :: xweight,yweight,maxweight
     integer :: i,j,idum,jdum,ierr,ctx,cty
@@ -410,7 +432,15 @@ contains
 
     ! NOTE: cx and cy MUST match the domain center used in
     ! direction_of_move2 in mediation_nest_move.F
-    
+
+       IF(SMOUT .LE. 0.1)THEN
+          WRITE(message,*)'SUSPEND MOTION: VORTEX OVER LAND (<90%) FOR WP ',SMOUT
+          PRINT *,'SUSPEND MOTION: VORTEX OVER LAND (<90%) FOR WP ',SMOUT
+          call wrf_debug(1,message)
+          MVNEST=.FALSE.
+          RETURN
+       ENDIF
+
     if(searchrad<dy_nmm*4) then
        call wrf_error_fatal('increase searchrad: searchrad<dy_nmm*4')
     endif

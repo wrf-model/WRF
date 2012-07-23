@@ -433,7 +433,7 @@ contains
     ! NOTE: cx and cy MUST match the domain center used in
     ! direction_of_move2 in mediation_nest_move.F
 
-       IF(SMOUT .LE. 0.1)THEN
+       IF(SMOUT .LE. 0.1)THEN                              !KWON
           WRITE(message,*)'SUSPEND MOTION: VORTEX OVER LAND (<90%) FOR WP ',SMOUT
           PRINT *,'SUSPEND MOTION: VORTEX OVER LAND (<90%) FOR WP ',SMOUT
           call wrf_debug(1,message)

@@ -70,9 +70,9 @@ MODULE module_bl_mynn
        &e5c =  6.0*a1*a1
 
 ! Constants for length scale
-  REAL, PARAMETER :: qmin=0.0, zmax=1.0, cns=2.7, &
+  REAL, PARAMETER :: qmin=0.0, zmax=1.0, cns=2.1, &
        !NN2009: &alp1=0.23, alp2=1.0, alp3=5.0, alp4=100.0, Sqfac=3.0
-       &alp1=0.23, alp2=0.53, alp3=5.0, alp4=100.0, Sqfac=2.0
+                &alp1=0.23, alp2=0.60, alp3=3.0, alp4=20.0, Sqfac=2.0
 
 ! Constants for gravitational settling
 !  REAL, PARAMETER :: gno=1.e6/(1.e8)**(2./3.), gpw=5./3., qcgmin=1.e-8
@@ -310,8 +310,8 @@ CONTAINS
             &            qke, &
             &            dtv, &
             &            el, &
-!JOE-added for BouLac/PBHL Test
-    &            zi,theta,&
+!JOE-added for BouLac/PBHL
+            &            zi,theta,&
 !JOE-end
             &            qkw)
 !
@@ -612,7 +612,7 @@ CONTAINS
 !     [defined relative to the PBLH (zi) + transition layer (h1)].
       IF ( BLmod .GT. 0. ) THEN
          wt=.5*TANH((zwk - (zi2+h1))/h2) + .5
-         elt0=elt*(1.-wt) + elBLmin(k)*wt
+         elt0=elt*(1.-wt) + elBLavg(k)*wt
       ELSE
          elt0=elt
       ENDIF
@@ -856,10 +856,12 @@ CONTAINS
     &            zi,theta,&
 !JOE-end
     &            El,&
-    &            Dfm, Dfh, Dfq, Tcd, Qcd, Pdk, Pdt, Pdq, Pdc, &
-!JOE-TKE_BUDGET
-    &		 qWT1D,qSHEAR1D,qBUOY1D,qDISS1D)
+    &            Dfm, Dfh, Dfq, Tcd, Qcd, Pdk, Pdt, Pdq, Pdc &
+!JOE-TKE BUDGET
+    &		 ,qWT1D,qSHEAR1D,qBUOY1D,qDISS1D, &
+    &            bl_mynn_tkebudget &
 !JOE-end
+    &)
 
 !-------------------------------------------------------------------
 !
@@ -873,12 +875,14 @@ CONTAINS
 
     REAL, DIMENSION(kts:kte), INTENT(out) :: dfm,dfh,dfq,&
          &pdk,pdt,pdq,pdc,tcd,qcd,el
-!JOE-TKE-BUDGET
-    REAL, DIMENSION(kts:kte), INTENT(out) :: qWT1D,&
-         &qSHEAR1D,qBUOY1D,qDISS1D
+
+!JOE-TKE BUDGET
+    REAL, DIMENSION(kts:kte), INTENT(inout) :: &
+         qWT1D,qSHEAR1D,qBUOY1D,qDISS1D
     REAL :: q3sq_old,dlsq1,qWTP_old,qWTP_new
     REAL :: dudz,dvdz,dTdz,&
             upwp,vpwp,Tpwp
+    INTEGER, INTENT(in) :: bl_mynn_tkebudget
 !JOE-end
 
     REAL, DIMENSION(kts:kte) :: qkw,dtl,dqw,dtv,gm,gh,sm,sh
@@ -1127,7 +1131,8 @@ CONTAINS
        dfq(k) =     dfm(k)
 !  Modified: Dec/22/2005, up to here
 
-!TKE BUDGET-start
+   IF ( bl_mynn_tkebudget == 1) THEN
+       !TKE BUDGET
        dudz = ( u(k)-u(k-1) )/dzk
        dvdz = ( v(k)-v(k-1) )/dzk
        dTdz = ( thl(k)-thl(k-1) )/dzk
@@ -1163,7 +1168,7 @@ CONTAINS
 
        !!!Dissipation Term
        qDISS1D(k) = (q3sq**(3./2.))/(b1*MAX(el(k),1.))
-!TKE BUDGET-end
+    ENDIF
 
     END DO
 !
@@ -1184,12 +1189,14 @@ CONTAINS
        qcd(k) = ( qcd(k+1)-qcd(k) )/( dzk )
     END DO
 !
-!JOE-TKE-BUDGET
-    qWT1D(kts)=0.
-    qSHEAR1D(kts)=qSHEAR1D(kts+1)
-    qBUOY1D(kts)=qBUOY1D(kts+1)
-    qDISS1D(kts)=qDISS1D(kts+1)
-!JOE-end
+
+   IF ( bl_mynn_tkebudget == 1) THEN
+      !JOE-TKE BUDGET
+      qWT1D(kts)=0.
+      qSHEAR1D(kts)=qSHEAR1D(kts+1)
+      qBUOY1D(kts)=qBUOY1D(kts+1)
+      qDISS1D(kts)=qDISS1D(kts+1)
+   ENDIF
 
     RETURN
 
@@ -1246,10 +1253,11 @@ CONTAINS
        &            ust, flt, flq, pmz, phh, &
        &            el, dfq, &
        &            pdk, pdt, pdq, pdc,&
-       &            qke, tsq, qsq, cov,&
-!JOE-TKE-BUDGET
-       &            dqke1D)
+       &            qke, tsq, qsq, cov &
+!JOE-TKE BUDGET
+       &            ,dqke1D,bl_mynn_tkebudget &
 !JOE-end
+       &)
 
 !-------------------------------------------------------------------
     INTEGER, INTENT(IN)   :: kts,kte    
@@ -1259,8 +1267,10 @@ CONTAINS
     REAL, DIMENSION(kts:kte), INTENT(INOUT) :: pdk, pdt, pdq, pdc
     REAL, INTENT(IN) ::  flt, flq, ust, pmz, phh
     REAL, DIMENSION(kts:kte), INTENT(INOUT) :: qke,tsq, qsq, cov
-!JOE-TKE-BUDGET
-    REAL, DIMENSION(kts:kte), INTENT(OUT) :: dqke1D
+
+!JOE-TKE BUDGET
+    REAL, DIMENSION(kts:kte), INTENT(INOUT) :: dqke1D
+    INTEGER, INTENT(in) :: bl_mynn_tkebudget
 !JOE-end
 
     INTEGER :: k,nz
@@ -1338,14 +1348,16 @@ CONTAINS
 
     CALL tridiag(nz,a,b,c,d)
 
-    DO k=kts,kte
-!JOE-TKE_BUDGET
-       dqke1D(k)=qke(k)
-!JOE-end
+    DO k=kts,kte   
+       IF ( bl_mynn_tkebudget == 1) THEN
+          !JOE-TKE BUDGET
+          dqke1D(k)=qke(k)
+       ENDIF
        qke(k)=d(k-kts+1)
-!JOE-TKE_BUDGET
-       dqke1D(k)=(qke(k)-dqke1D(k))*0.5
-!JOE-end
+       IF ( bl_mynn_tkebudget == 1) THEN
+          !JOE-convert qke budget to tke
+          dqke1D(k)=(qke(k)-dqke1D(k))*0.5
+       ENDIF
     ENDDO
       
 
@@ -2020,7 +2032,7 @@ CONTAINS
     DO i=n-1,1,-1
        d(i)=d(i)+q(i)*d(i+1)
     ENDDO
-    
+
   END SUBROUTINE tridiag
 
 ! ==================================================================
@@ -2042,8 +2054,9 @@ CONTAINS
 !JOE-added for extra ouput
        &,el_mynn&
 !JOE-end
-!JOE-TKE-BUDGET
-       &,dqke,qWT,qSHEAR,qBUOY,qDISS&
+!JOE-TKE BUDGET
+       &,dqke,qWT,qSHEAR,qBUOY,qDISS                &
+       &,bl_mynn_tkebudget                          &
 !JOE-end
        &,IDS,IDE,JDS,JDE,KDS,KDE                    &
        &,IMS,IME,JMS,JME,KMS,KME                    &
@@ -2053,6 +2066,7 @@ CONTAINS
 
     INTEGER, INTENT(in) :: initflag
     INTEGER, INTENT(in) :: grav_settling
+    INTEGER, INTENT(in) :: bl_mynn_tkebudget
     
     INTEGER,INTENT(IN) :: &
          & IDS,IDE,JDS,JDE,KDS,KDE &
@@ -2088,9 +2102,10 @@ CONTAINS
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(inout) :: &
          &el_mynn
 !JOE-end
-!JOE-TKE-BUDGET
-    REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(inout) :: &
-         &qWT,qSHEAR,qBUOY,qDISS,dqke
+!JOE-TKE BUDGET
+    REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME),        &
+         INTENT(inout) ::                            &
+         qWT,qSHEAR,qBUOY,qDISS,dqke
 !JOE-end
 
 !local vars
@@ -2138,13 +2153,14 @@ CONTAINS
                 el_mynn(i,k,j)=0.
 !JOE-end
 
-!JOE-TKE-BUDGET
-                qWT(i,k,j)=0.
-                qSHEAR(i,k,j)=0.
-                qBUOY(i,k,j)=0.
-                qDISS(i,k,j)=0.
-                dqke(i,k,j)=0.
-!JOE-end
+                IF ( bl_mynn_tkebudget == 1) THEN
+                   !JOE-TKE-BUDGET
+                   qWT(i,k,j)=0.
+                   qSHEAR(i,k,j)=0.
+                   qBUOY(i,k,j)=0.
+                   qDISS(i,k,j)=0.
+                   dqke(i,k,j)=0.
+                ENDIF
              ENDDO
              
              zw(ktf+1)=zw(ktf)+dz(i,ktf,j)
@@ -2192,7 +2208,7 @@ CONTAINS
           
 !JOE-PBLH begin
           CALL GET_PBLH(KTS,KTE,PBLH(i,j),thetav(kts:kte),&
-               &    Qke(i,kts:kte,j),zw(kts:kte+1),dz(i,kts:kte,j),xland(i,j))
+              Qke(i,kts:kte,j),zw(kts:kte+1),dz(i,kts:kte,j),xland(i,j))
 !JOE-PBLH end
           
           sqcg=qcg(i,j)/(1.+qcg(i,j))
@@ -2239,12 +2255,14 @@ CONTAINS
                &el_mynn(i,kts:kte,j), &
                &Dfm(kts:kte),Dfh(kts:kte),Dfq(kts:kte), &
                &Tcd(kts:kte),Qcd(kts:kte),Pdk(kts:kte), &
-               &Pdt(kts:kte),Pdq(kts:kte),Pdc(kts:kte),&
-!JOE-TKE-BUDGET
-               &qWT(i,kts:kte,j),qSHEAR(i,kts:kte,j),&
-               &qBUOY(i,kts:kte,j),qDISS(i,kts:kte,j))
+               &Pdt(kts:kte),Pdq(kts:kte),Pdc(kts:kte) &
+!JOE-TKE BUDGET
+               &,qWT(i,kts:kte,j),qSHEAR(i,kts:kte,j),&
+               &qBUOY(i,kts:kte,j),qDISS(i,kts:kte,j),&
+               &bl_mynn_tkebudget                     &
 !JOE-end
-          
+               &)
+
           CALL mym_predict (kts,kte,&
                &levflag,  &
                &delt,&
@@ -2252,11 +2270,13 @@ CONTAINS
                &ust(i,j), flt, flq, pmz, phh, &
                &el_mynn(i,kts:kte,j), dfq(kts:kte), pdk(kts:kte), &
                &pdt(kts:kte), pdq(kts:kte), pdc(kts:kte),&
-               &Qke(i,kts:kte,j), Tsq(i,kts:kte,j), &
-               &Qsq(i,kts:kte,j), Cov(i,kts:kte,j), &
-!JOE-TKE-BUDGET
-               &dqke(i,kts:kte,j))
+               &Qke(i,kts:kte,j), Tsq(i,kts:kte,j),   &
+               &Qsq(i,kts:kte,j), Cov(i,kts:kte,j)    &
+
+!JOE-TKE BUDGET
+               &,dqke(i,kts:kte,j),bl_mynn_tkebudget &
 !JOE-end
+               &)
 
           CALL mynn_tendencies(kts,kte,&
                &levflag,grav_settling,&
@@ -2277,12 +2297,17 @@ CONTAINS
                &dfm(kts:kte),dfh(kts:kte),dfq(kts:kte),dz(i,kts:kte,j),&
                &K_m(i,kts:kte,j),K_h(i,kts:kte,j),K_q(i,kts:kte,j))
 
-          DO k=KTS,KTF
-             qWT(i,k,j)=    qWT(i,k,j)*delt
-             qSHEAR(i,k,j)= qSHEAR(i,k,j)*delt
-             qBUOY(i,k,j)=  qBUOY(i,k,j)*delt
-             qDISS(i,k,j)=  qDISS(i,k,j)*delt
-          ENDDO
+!JOE-TKE BUDGET
+          IF ( bl_mynn_tkebudget == 1) THEN
+             DO k=KTS,KTF
+                qWT(i,k,j)=    qWT(i,k,j)*delt
+                qSHEAR(i,k,j)= qSHEAR(i,k,j)*delt
+                qBUOY(i,k,j)=  qBUOY(i,k,j)*delt
+                qDISS(i,k,j)=  qDISS(i,k,j)*delt
+             ENDDO
+          ENDIF
+!JOE-end
+
        ENDDO
     ENDDO
     
@@ -2362,8 +2387,8 @@ CONTAINS
     !LOCAL VARS
     REAL ::  PBLH_TKE,qtke,qtkem1,wt,maxqke,TKEeps,minthv
     REAL :: delt_thv   !delta theta-v; dependent on land/sea point
-    REAL, PARAMETER :: sbl_lim  = 200. !Theta-v PBL lower limit of trust (m).
-    REAL, PARAMETER :: sbl_damp = 400. !Damping range for averaging with TKE-based PBLH (m).
+    REAL, PARAMETER :: sbl_lim  = 200. !typical scale of stable BL (m).
+    REAL, PARAMETER :: sbl_damp = 400. !transition length for blending (m).
     INTEGER :: I,J,K,kthv,ktke
 
     !FIND MAX TKE AND MIN THETAV IN THE LOWEST 500 M
@@ -2416,7 +2441,6 @@ CONTAINS
     !THETAV-BASED DEFINITION (WHEN THE THETA-V BASED PBLH IS BELOW ~0.5 KM).
     !THE TANH WEIGHTING FUNCTION WILL MAKE THE TKE-BASED DEFINITION NEGLIGIBLE 
     !WHEN THE THETA-V-BASED DEFINITION IS ABOVE ~1 KM.
-    !FIND TKE-BASED PBLH (BEST FOR NOCTURNAL/STABLE CONDITIONS).
 
     PBLH_TKE=0.
     k = ktke+1
@@ -2436,7 +2460,6 @@ CONTAINS
     ENDDO
 
     !BLEND THE TWO PBLH TYPES HERE: 
-
     wt=.5*TANH((zi - sbl_lim)/sbl_damp) + .5
     zi=PBLH_TKE*(1.-wt) + zi*wt
 

@@ -2044,6 +2044,12 @@
 !Biswas
        REAL,DIMENSION(IMS:IME,JMS:JME) :: HFX,QFX,PBLH
        REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: TWBS,QWBS
+       REAL,DIMENSION(KMS:KME) :: ZNU
+       REAL, DIMENSION(IMS:IME, KMS:KME, JMS:JME) ::                    &
+                                        RUCUTEN,                        &
+                                        RVCUTEN,RQVFTEN
+
+
 
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: F_ICE       &
@@ -2100,7 +2106,8 @@
       INTEGER,DIMENSION(IMS:IME,JMS:JME) :: KPBL,LBOT,LOWLYR,LTOP
 !
       REAL :: CAPA,CF_HI,DPL,DQDT,DTCNVC,DTDT,FICE,FRAIN,G_INV          &
-     &       ,PCPCOL,PLYR,QI,QL_K,QR,QW,RDTCNVC,TL_K,WC,WMID
+     &       ,PCPCOL,PLYR,QI,QL_K,QR,QW,RDTCNVC,TL_K,WC,WMID,PLYRB
+
 !
       REAL,DIMENSION(KMS:KME-1) :: QL,TL
 !
@@ -2255,6 +2262,8 @@
           DPL=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J)
           QL(K)=MAX(Q(I,J,K),EPSQ)
           PLYR=AETA1(K)*PDTOP+AETA2(K)*PDSL(I,J)+PT
+          PLYRB=AETA1(K)*PDTOP+AETA2(K)*(1.E5-PDTOP)+PT
+          ZNU(K)=(PLYRB-PT)/1.E5
           TL(K)=T(I,J,K)
 !
           RR(I,K,J)=PLYR/(R_D*TL(K)*(P608*QL(K)+1.))
@@ -2439,6 +2448,7 @@
      &                 ,CU_ACT_FLAG=CU_ACT_FLAG,WARM_RAIN=WARM_RAIN     &
 !Biswas
      &                 ,HFX=HFX,QFX=QFX,PBLH=PBLH                       &
+     &                 ,ZNU=ZNU                                         &
      &                 ,STEPCU=NSTEP_CNV,GSW=GSW                        &
      &                 ,PERIODIC_X=.FALSE.,PERIODIC_Y=.FALSE.           &
      &                 ,HTOP=CUTOP,HBOT=CUBOT,KPBL=KPBL,HT=SFCZ,Z=Z     &

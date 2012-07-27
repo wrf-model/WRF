@@ -508,6 +508,7 @@ Namelist variables for controlling the adaptive time step option:
  mfshconv (max_dom)                  = 1,; whether to turn on new day-time EDMF QNSE (0=no)
  topo_wind (max_dom)                 = 0, turn off, =1, turn on topographic surface wind correction from Jimenez 
                                        (YSU PBL only, and require extra input from geogrid)
+ bl_mynn_tkebudget                   = 0 default off, = 1 adds MYNN tke budget terms to output
 
  cu_physics (max_dom)                cumulus option
                                      = 0, no cumulus
@@ -629,13 +630,24 @@ Namelist variables for controlling the adaptive time step option:
                                                   sf_surface_physics = 1 only
  oml_hml0                            = 50       ; oml model can be initialized with a constant depth everywhere (m)
  oml_gamma                           = 0.14     ; oml deep water lapse rate (K m-1)
- isftcflx                            = 0        ; alternative Ck, Cd formulation for tropical storm application (0=default, 1=new, 2=Garratt)
+ isftcflx                            = 0        ; alternative Ck, Cd formulation for tropical storm application 
+                                                ; sf_sfclay=1 and 11
+                                                ; 0=default
+                                                ; 1=Donelan Cd + const z0q 
+                                                ; 2=Donelan Cd + Garratt 
+                                                ; sf_sfclay=5
+                                                ;   (default) =0: z0, zt, and zq from COARE3.0 (Fairall et al 2003)
+                                                ;             =1: z0 from Davis et al (2008), zt & zq from COARE3.0
+                                                ;             =2: z0 from Davis et al (2008), zt & zq from Garratt (1992)
+                                                ;             =3: z0 from Taylor and Yelland (2004), zt and zq from COARE3.0
+                                                ;             =4: z0 from Zilitinkevich (2001), zt & zq from COARE3.0
  fractional_seaice                   = 0        ; treat sea-ice as fractional field (1) or ice/no-ice flag (0)
  seaice_albedo_opt                   = 0        ; option to set albedo over sea ice
                                                 ; 0 = seaice albedo is a constant 0.80
                                                 ; 1 = seaice albedo is f(Tair,Tskin,Snow) follwing Mills (2011) for Arctic Ocean
  tice2tsk_if2cold                    = .false.  ; set Tice to Tsk to avoid unrealistically low sea ice temperatures
- iz0tlnd                             = 0        ; thermal roughness length for sfclay and myjsfc (0 - old, 1 - veg dependent Czil)
+ iz0tlnd                             = 0        ; thermal roughness length for sfclay and myjsfc (0 = old, 1 = veg dependent Chen-Zhang Czil)
+                                                ;     for mynn sfc (0=Zilitinkevitch,1=Chen-Zhang,2=mod Yang,3=const zt)
  mp_tend_lim                         = 10.,     ; limit on temp tendency from mp latent heating from radar data assimilation
  prec_acc_dt (max_dom)               = 0.,      ; number of minutes in precipitation bucket (ARW only) - will add three
                                                   new 2d output fields: prec_acc_c, prec_acc_nc and snow_acc_nc

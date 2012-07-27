@@ -387,6 +387,7 @@ BENCH_START(surf_driver_tim)
      &        ,BR=br              ,CANWAT=grid%canwat      ,CHKLOWQ=chklowq    &
      &        ,CT=grid%ct              ,DT=grid%dt         ,DX=grid%dx         &
      &        ,DZ8W=dz8w          ,DZS=grid%dzs            ,FLHC=grid%flhc          &
+     &        ,FM=grid%fm         ,FHH=grid%fh                                      &
      &        ,FLQC=grid%flqc          ,GLW=grid%glw            ,GRDFLX=grid%grdflx      &
      &        ,GSW=grid%gsw    ,SWDOWN=grid%swdown        ,GZ1OZ0=gz1oz0      ,HFX=grid%hfx              &
      &        ,HT=grid%ht              ,IFSNOW=config_flags%ifsnow      ,ISFFLX=config_flags%isfflx      &
@@ -628,6 +629,7 @@ BENCH_START(pbl_driver_tim)
      &        ,BR=br              ,CHKLOWQ=chklowq    ,CT=grid%ct                   &
      &        ,DT=grid%dt              ,DX=grid%dx              ,DZ8W=dz8w          &
      &        ,EXCH_H=grid%exch_h     ,EXCH_M=grid%exch_m                           &
+     &        ,FM=grid%fm         ,FHH=grid%fh                                      &
      &        ,F=grid%f  ,GRDFLX=grid%grdflx      &
      &        ,GZ1OZ0=gz1oz0      ,HFX=grid%hfx            ,HT=grid%ht              &
      &        ,ID=grid%id         ,ITIMESTEP=grid%itimestep     ,KPBL=grid%kpbl          &
@@ -694,9 +696,11 @@ BENCH_START(pbl_driver_tim)
      &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
      &        ,HOL=HOL, MOL=grid%mol, REGIME=grid%REGIME                  &
 !mynn mp@
-     &        ,QKE=scalar(ims,kms,jms,P_qke), tsq=grid%tsq, qsq=grid%qsq, cov=grid%cov     &
-     &        ,EL_MYNN=grid%el_mynn,DQKE=grid%dqke,QWT=grid%qWT           &
-     &        ,QSHEAR=grid%qSHEAR,QBUOY=grid%qBUOY,QDISS=grid%qDISS &
+     &        ,QKE=scalar(ims,kms,jms,P_qke), tsq=grid%tsq, qsq=grid%qsq  &
+     &        ,cov=grid%cov, EL_MYNN=grid%el_mynn                         &
+     &        ,DQKE=grid%dqke,QWT=grid%qWT                                &
+     &        ,QSHEAR=grid%qSHEAR,QBUOY=grid%qBUOY,QDISS=grid%qDISS       &
+     &        ,bl_mynn_tkebudget=config_flags%bl_mynn_tkebudget           &
      &        ,rmol=grid%rmol, ch=grid%ch                                 &
      &        ,qcg=grid%qcg, grav_settling=grid%grav_settling             &
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &

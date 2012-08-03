@@ -9662,17 +9662,19 @@ CONTAINS
 !
 !!! -------------------  Zhenxin (2011-06/20) ------------------
    REAL, DIMENSION( ims:ime, jms:jme )                         , &
+         OPTIONAL                                               , &
          INTENT(IN)     ::                            ALSWVISDIR, &     ! ssib albedo of sw and lw
                                                       ALSWVISDIF, &
                                                       ALSWNIRDIR, &
                                                       ALSWNIRDIF
 
    REAL, DIMENSION( ims:ime, jms:jme )                         , &
+         OPTIONAL                                               , &
          INTENT(OUT)    ::                              SWVISDIR, &
                                                         SWVISDIF, &
                                                         SWNIRDIR, &
                                                         SWNIRDIF        ! ssib sw dir and diff rad
-   INTEGER, INTENT(IN) :: sf_surface_physics                            ! ssib para
+   INTEGER, OPTIONAL, INTENT(IN) :: sf_surface_physics                            ! ssib para
 
 !  ----------------------- end Zhenxin --------------------------
 !

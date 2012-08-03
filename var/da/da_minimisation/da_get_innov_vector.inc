@@ -32,7 +32,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
    call da_get_unit(qcstat_conv_unit)
 
 #ifdef DM_PARALLEL
-    write(unit=filename, fmt='(a,i2.2,a,i3.3)') 'rej_obs_conv_',it,'.', myproc
+    write(unit=filename, fmt='(a,i2.2,a,i4.4)') 'rej_obs_conv_',it,'.', myproc
 #else
     write(unit=filename, fmt='(a,i2.2,a)') 'rej_obs_conv_',it,'.000'
 #endif

@@ -24,7 +24,7 @@ subroutine da_final_write_modified_filtered_obs
 
    do files = 0, num_procs-1
 
-      write(unit=filename, fmt='(a,i3.3)') 'filtered_obs.',files      
+      write(unit=filename, fmt='(a,i4.4)') 'filtered_obs.',files      
       open(unit=iunit, file= trim(filename),form='formatted', &
        status='old', iostat=iost)
       if(iost /= 0) &

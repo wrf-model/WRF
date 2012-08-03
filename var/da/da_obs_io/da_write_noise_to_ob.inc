@@ -21,7 +21,7 @@ subroutine da_write_noise_to_ob (iv)
    call da_get_unit (iunit)
    allocate (filename(0:num_procs-1))
    do k = 0,num_procs-1
-      write(unit=filename(k), fmt='(a,i3.3)')'rand_obs_error.',k
+      write(unit=filename(k), fmt='(a,i4.4)')'rand_obs_error.',k
    end do
    if (rootproc) then
       call da_get_unit (rand_unit)

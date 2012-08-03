@@ -24,9 +24,9 @@ subroutine da_write_obs(it,ob, iv, re)
    call da_get_unit(ounit)
 
 #ifdef DM_PARALLEL
-    write(unit=filename, fmt='(a,i2.2,a,i3.3)') 'gts_omb_oma_',it,'.', myproc
+    write(unit=filename, fmt='(a,i2.2,a,i4.4)') 'gts_omb_oma_',it,'.', myproc
 #else
-    write(unit=filename, fmt='(a,i2.2,a)') 'gts_omb_oma_',it,'.000'
+    write(unit=filename, fmt='(a,i2.2,a)') 'gts_omb_oma_',it,'.0000'
 #endif
 
    open (unit=ounit,file=trim(filename),form='formatted',status='replace', &

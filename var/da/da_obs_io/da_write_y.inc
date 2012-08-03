@@ -29,9 +29,9 @@ subroutine da_write_y (iv, y)
    dum = -999999.9
 
 #ifdef DM_PARALLEL
-    write (unit=filename, fmt='(a,i3.3)') trim(file_prefix), myproc
+    write (unit=filename, fmt='(a,i4.4)') trim(file_prefix), myproc
 #else
-    write (unit=filename, fmt='(a)') trim(file_prefix)//'000'
+    write (unit=filename, fmt='(a)') trim(file_prefix)//'0000'
 #endif
 
    call da_get_unit(ounit)

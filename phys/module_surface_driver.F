@@ -2508,19 +2508,18 @@ CONTAINS
        day=float(int(julian_in+0.01))+1.
        DO j=j_start(ij),j_end(ij)
        DO i=i_start(ij),i_end(ij)
+
 !check land mask and land-use map !fds (02/2012)
-! IF(itimestep .EQ. 1 ) THEN
+!       IF(itimestep .EQ. 1 ) THEN
 !          IF(IVGTYP(i,j).NE.ISWATER)THEN
 !            XLAND(I,J)=1.0
 !          ELSE
 !            XLAND(I,J)=2.0
 !          ENDIF
-!         IF (IVGTYP(I,J).LE.0 .AND. XLAND(I,J).NE.ISWATER ) IVGTYP(I,J) = 7.0
-! ENDIF
-!
+!          IF (IVGTYP(I,J).LE.0 .AND. XLAND(I,J).NE.ISWATER ) IVGTYP(I,J) = 7.0
+!       ENDIF
 
-!        IF(XLAND(I,J).LT.1.5 .AND. IVGTYP(I,J).NE.ISICE) THEN !land and seaice-free points
-         IF(XLAND(I,J).LT.1.5) THEN !land points, including land ice points
+       IF(XLAND(I,J).LT.1.5) THEN ! seaice and land points
 
            CLOUDFRAC=0.
            IF(PRESENT(CLDFRA))THEN
@@ -2528,6 +2527,30 @@ CONTAINS
              CLOUDFRAC=AMAX1(CLOUDFRAC,AMIN1(CLDFRA(I,K,J),1.0))
            ENDDO
            ENDIF
+
+         IF (XICE(I,J) .GE. XICE_THRESHOLD) THEN !sea ice points only
+
+           CALL ssib_seaice                                                        &
+                    ( i, j, DTBL, itimestep, xlat_urb2d(i,j), coszen(i,j),         &
+                      rainncv(i,j), raincv(i,j), glw(i,j), dz8w(i,1,j),            &
+                      smois(i,1,j), smois(i,2,j), smois(i,3,j),                    &
+                      tslb(i,1,j), tslb(i,2,j), tslb(i,3,j),                       &
+                      snow(i,j), sfcrunoff(i,j), xicem(i,j),                        &
+                      u_phytmp(i,1,j),v_phytmp(i,1,j),qv_curr(i,1,j),t_phy(i,1,j), &
+                      p_phy(i,1,j), psfc(i,j),                                     &
+                      swdown(i,j), canwat(i,j),                                    &
+                 alswvisdir(i,j),alswvisdif(i,j),alswnirdir(i,j),alswnirdif(i,j),  &
+                      swvisdir(i,j), swvisdif(i,j), swnirdir(i,j), swnirdif(i,j),  &
+                      hfx(i,j), lh(i,j), grdflx(i,j), qfx(i,j), tsk(i,j),          &
+                      ust(i,j), ssib_br(i,j), ssib_fm(i,j), ssib_fh(i,j), ssib_cm(i,j), &
+                      ssib_lhf(i,j), ssib_shf(i,j), ssib_ghf(i,j),                 &
+                      ssib_sdn(i,j), ssib_sup(i,j), ssib_ldn(i,j), ssib_lup(i,j),  &
+                      ssib_wat(i,j),                                               &
+                                     ssib_z00(i,j), ssib_veg(i,j),                 &
+                      day, cloudfrac, q2(i,j), t2(i,j), albedo(i,j),               &
+                      ra_sw_physics,xice_threshold                                 &
+                                                                                   )
+         ELSE  !land points only (including land ice)
 
            CALL ssib( i, j, DTBL, itimestep, xlat_urb2d(i,j), coszen(i,j),        &
                      rainncv(i,j), raincv(i,j), glw(i,j), dz8w(i,1,j),            &
@@ -2558,60 +2581,30 @@ CONTAINS
                      day, cloudfrac, q2(i,j), t2(i,j), albedo(i,j),               &
                      ra_sw_physics, mminlu                                        &
                                                                                   )
-                     BR(i,j)=ssib_br(i,j)
-                     ZNT(i,j) = ssib_z00(i,j)
-                     SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
-                     snowh(i,j) = snowdepth(i,j)
-                     IF (itimestep .ne. 1) THEN
-                       ZDIFF=(0.5*dz8w(i,1,j))-SSiBXDD(I,J)
-                       IF(ZDIFF.LE.ZNT(I,J)) ZDIFF=ZNT(I,J)+0.2
-                       GZ1OZ0(I,J)=ALOG(ZDIFF/ZNT(I,J))
-                     ENDIF
-!                    Overwrite WSPD to remove convective velocity (wspd=wspd1 in YSU)
-                     WSPD(I,J)=sqrt( u_phytmp(i,1,j)*u_phytmp(i,1,j) +      &
-                                     v_phytmp(i,1,j)*v_phytmp(i,1,j) ) + 1.e-9
-
-         ELSE IF (XICE(I,J) .GE. XICE_THRESHOLD) THEN !sea ice points
-
-           CLOUDFRAC=0.
-           DO K=KMS,KME
-             CLOUDFRAC=AMAX1(CLOUDFRAC,AMIN1(CLDFRA(I,K,J),1.0))
-           ENDDO
-
-!          CALL wrf_message ( 'Calling ssib_seaice' ) !fds
-           CALL ssib_seaice                                                        &
-                    ( i, j, DTBL, itimestep, xlat_urb2d(i,j), coszen(i,j),         &
-                      rainncv(i,j), raincv(i,j), glw(i,j), dz8w(i,1,j),            &
-                      smois(i,1,j), smois(i,2,j), smois(i,3,j),                    &
-                      tslb(i,1,j), tslb(i,2,j), tslb(i,3,j),                       &
-                      snow(i,j), sfcrunoff(i,j), xicem(i,j),                        &
-                      u_phytmp(i,1,j),v_phytmp(i,1,j),qv_curr(i,1,j),t_phy(i,1,j), &
-                      p_phy(i,1,j), psfc(i,j),                                     &
-                      swdown(i,j), canwat(i,j),                                    &
-                 alswvisdir(i,j),alswvisdif(i,j),alswnirdir(i,j),alswnirdif(i,j),  &
-                      swvisdir(i,j), swvisdif(i,j), swnirdir(i,j), swnirdif(i,j),  &
-                      hfx(i,j), lh(i,j), grdflx(i,j), qfx(i,j), tsk(i,j),          &
-                      ust(i,j), ssib_br(i,j), ssib_fm(i,j), ssib_fh(i,j), ssib_cm(i,j), &
-                      ssib_lhf(i,j), ssib_shf(i,j), ssib_ghf(i,j),                 &
-                      ssib_sdn(i,j), ssib_sup(i,j), ssib_ldn(i,j), ssib_lup(i,j),  &
-                      ssib_wat(i,j),                                               &
-                                     ssib_z00(i,j), ssib_veg(i,j),                 &
-                      day, cloudfrac, q2(i,j), t2(i,j), albedo(i,j),               &
-                      ra_sw_physics,xice_threshold                                 &
-                                                                                   )
-                     BR(i,j)=ssib_br(i,j)
-                     ZNT(i,j) = ssib_z00(i,j)
-                     SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
-                    t2(i,j) = tsk(i,j) !use SSiB's TGEFF as 2m temperature (Nov/2011)
-                     IF (itimestep .ne. 1) THEN
-                       ZDIFF=(0.5*dz8w(i,1,j))-SSiBXDD(I,J)
-                       IF(ZDIFF.LE.ZNT(I,J)) ZDIFF=ZNT(I,J)+0.2
-                       GZ1OZ0(I,J)=ALOG(ZDIFF/ZNT(I,J))
-                     ENDIF
-!                    Overwrite WSPD to remove convective velocity (wspd=wspd1 in YSU)
-                     WSPD(I,J)=sqrt( u_phytmp(i,1,j)*u_phytmp(i,1,j) +      &
-                                     v_phytmp(i,1,j)*v_phytmp(i,1,j) ) + 1.e-9
          ENDIF
+!
+         BR(i,j)=ssib_br(i,j)
+         ZNT(i,j) = ssib_z00(i,j)
+         SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
+         t2(i,j) = tsk(i,j)  !keep this
+         IF (itimestep .ne. 1) THEN
+           ZDIFF=(0.5*dz8w(i,1,j))-SSiBXDD(I,J)
+           IF(ZDIFF.LE.ZNT(I,J)) ZDIFF=ZNT(I,J)+0.2
+           GZ1OZ0(I,J)=ALOG(ZDIFF/ZNT(I,J))
+         ENDIF
+         IF (XICE(I,J) .GE. XICE_THRESHOLD) THEN
+           snowh(i,j) = 0.0
+         ELSE
+           snowh(i,j) = snowdepth(i,j)
+         ENDIF
+!mchen         U10(i,j) = 0.0
+!mchen         V10(i,j) = 0.0
+!        Overwrite WSPD to remove convective velocity (wspd=wspd1 in YSU)
+         WSPD(I,J)=sqrt( u_phytmp(i,1,j)*u_phytmp(i,1,j) +      &
+                         v_phytmp(i,1,j)*v_phytmp(i,1,j) ) + 1.e-9
+!
+       ENDIF
+!
        ENDDO
        ENDDO
 !

@@ -49,7 +49,7 @@ CONTAINS
      &          ,fsnoxy                                                                &
      &          ,t2mvxy   ,t2mbxy   ,chstarxy ,rssunxy  ,rsshaxy  ,bgapxy   ,wgapxy    &    
      &          ,gapxy    ,tgvxy    ,tgbxy    ,q2mvxy   ,q2mbxy   ,chvxy    ,chbxy     &
-#if ( EM_CORE==1)
+#if (EM_CORE==1)
      &          ,ch,tsq,qsq,cov                                       & ! MYNN
 #endif
             !  Optional urban
@@ -1579,10 +1579,11 @@ CONTAINS
                XICE,SST,TSK_SEA,                                   &
                CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA, &
                HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,    &
-               TICE2TSK_IF2COLD,XICE_THRESHOLD,                                     &
+               TICE2TSK_IF2COLD,XICE_THRESHOLD,                    &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
-               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, &   
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
          ELSE
           CALL SFCLAY_mynn(u_phytmp,v_phytmp,t_phy,qv_curr,        &
                p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
@@ -1596,8 +1597,7 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte,&
-               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 &
-               &)
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
          ENDIF
        ELSE
           CALL wrf_error_fatal('Lacking arguments for SFCLAY_mynn in surface driver')
@@ -3110,8 +3110,9 @@ HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
 TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte)
-!                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd           )
+                     its,ite, jts,jte, kts,kte,                    &
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
+
      USE module_sf_mynn, ONLY: sfclay_mynn
      implicit none
 
@@ -3186,9 +3187,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                                                              &QC3D,&
                                               &th3d,pi3d,tsq,qsq,cov
 
-!     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
-!               INTENT(OUT)     ::              ck,cka,cd,cda,ustm
-!     INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
+               INTENT(OUT)     ::              ck,cka,cd,cda,ustm
+     INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
 
 !--------------------------------------------------------------------
 !    New for wrapper
@@ -3247,7 +3248,12 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                                                 T2_SEA,           &
                                                 TH2_SEA,          &
                                                 U10_SEA,          &
-                                                V10_SEA
+                                                V10_SEA,          &
+                                                CD_SEA,           &
+                                                CDA_SEA,          &
+                                                CK_SEA,           &
+                                                CKA_SEA,          &
+                                                USTM_SEA
 
      REAL,     DIMENSION( ims:ime, jms:jme ) ::                   &
                                                 BR_SEA,           &
@@ -3352,7 +3358,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                &tsq,qsq,cov,qcg,                                   &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
-               its,ite, jts,jte, kts,kte    )
+               its,ite, jts,jte, kts,kte,                          &
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
+
      ! Set up for open-water call
      DO j = JTS , JTE
         DO i = ITS , ITE
@@ -3436,7 +3444,8 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                &tsq,qsq,cov,qcg,                                   &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
-               its,ite, jts,jte, kts,kte    )
+               its,ite, jts,jte, kts,kte,                          &
+               ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd )
 
      DO j = JTS , JTE
         DO i = ITS, ITE
@@ -3465,15 +3474,26 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
               ch(i,j)     = ( ch(i,j)     * XICE(i,j) ) + ( (1.0-XICE(i,j)) * ch_sea(i,j)    )
               ! INTENT(OUT)
               ! --------------------------------------------------------------------
+              IF ( PRESENT ( CD ) ) THEN
+                 CD(i,j)  = ( CD(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * CD_sea(i,j)    )
+              ENDIF
+              IF ( PRESENT ( CDA ) ) THEN
+                 CDA(i,j) = ( CDA(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * CDA_sea(i,j)   )
+              ENDIF
+              IF ( PRESENT ( CK ) ) THEN
+                 CK(i,j)  = ( CK(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * CK_sea(i,j)    )
+              ENDIF
+              IF ( PRESENT ( CKA ) ) THEN
+                 CKA(i,j) = ( CKA(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * CKA_sea(i,j)   )
+              ENDIF
               q2(i,j)     = ( q2(i,j)     * XICE(i,j) ) + ( (1.0-XICE(i,j)) * q2_sea(i,j)     )
               ! QSFC -- wait
               t2(i,j)     = ( t2(i,j)     * XICE(i,j) ) + ( (1.0-XICE(i,j)) * t2_sea(i,j)     )
               th2(i,j)    = ( th2(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * th2_sea(i,j)    )
               u10(i,j)    = ( u10(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * u10_sea(i,j)    )
-!              IF ( PRESENT ( USTM ) ) THEN
-!                 USTM(i,j)    = ( USTM(i,j)    * XICE(i,j) ) + (
-!                 (1.0-XICE(i,j)) * USTM_sea(i,j)    )
-!              ENDIF
+              IF ( PRESENT ( USTM ) ) THEN
+                 USTM(i,j) = ( USTM(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * USTM_sea(i,j)   )
+              ENDIF
               v10(i,j)    = ( v10(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * v10_sea(i,j)    )
            ENDIF
         END DO

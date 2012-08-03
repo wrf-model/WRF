@@ -685,10 +685,10 @@ Options for use with the Noah-MP Land Surface Model:
 
 &noah_mp
  dveg                               = 2,        ; Noah-MP Dynamic Vegetation option:
-                                                ;    0 = Off (LAI from table; FVEG = shdfac)
-                                                ;    1 = On
-                                                ;    2 = Off (LAI from table; FVEG calculated)
-                                                ;    3 = Off (LAI from table; FVEG = maximum veg. fraction)
+                                                ;    1 = Off (LAI from table; FVEG = shdfac)
+                                                ;    2 = On
+                                                ;    3 = Off (LAI from table; FVEG calculated)
+                                                ;    4 = Off (LAI from table; FVEG = maximum veg. fraction)
  opt_crs                            = 1,        ; Noah-MP Stomatal Resistance option:
                                                 ;    1 = Ball-Berry; 2 = Jarvis
  opt_sfc                            = 1         ; Noah-MP surface layer drag coefficient calculation

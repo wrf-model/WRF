@@ -49,6 +49,7 @@ MODULES = \
 	module_cu_nsas.o \
 	module_cu_sas.o \
 	module_cu_osas.o \
+	module_mp_radar.o \
 	module_mp_kessler.o \
 	module_mp_lin.o  \
 	module_mp_sbu_ylin.o  \
@@ -325,10 +326,11 @@ module_ra_cam.o: module_ra_cam_support.o \
 		 module_cam_support.o \
                 ../frame/module_wrf_error.o
 
+module_mp_lin.o : ../frame/module_wrf_error.o \
+		module_mp_radar.F
+
 module_ra_flg.o: ../frame/module_wrf_error.o \
 		../frame/module_dm.o
-
-module_mp_lin.o : ../frame/module_wrf_error.o
 
 module_mp_sbu_ylin.o : ../frame/module_wrf_error.o \
                    ../share/module_model_constants.o
@@ -336,14 +338,16 @@ module_mp_sbu_ylin.o : ../frame/module_wrf_error.o \
 module_mp_milbrandt2mom.o : ../frame/module_wrf_error.o \
 		../share/module_model_constants.o
 
+module_mp_thompson.o : ../frame/module_wrf_error.o \
+		module_mp_radar.F
+
 module_mp_nssl_2mom.o : ../frame/module_wrf_error.o \
 		../share/module_model_constants.o
 
-module_mp_thompson.o : ../frame/module_wrf_error.o 
-
 module_ra_goddard.o : ../frame/module_wrf_error.o
 
-module_mp_gsfcgce.o : ../frame/module_wrf_error.o
+module_mp_gsfcgce.o : ../frame/module_wrf_error.o \
+		module_mp_radar.F
 
 module_sf_myjsfc.o: ../share/module_model_constants.o 
 
@@ -661,7 +665,20 @@ module_wind_fitch.o :\
 		module_wind_generic.o
 
 module_mp_wsm5.o :\
-		module_mp_wsm5_accel.F
+		module_mp_wsm5_accel.F \
+		module_mp_radar.F
+
+module_mp_wdm5.o :\
+		module_mp_radar.F
+
+module_mp_wsm6.o :\
+		module_mp_radar.F
+
+module_mp_wdm6.o :\
+		module_mp_radar.F
+
+module_mp_morr_two_moment.o :\
+		module_mp_radar.F
 
 module_mp_wsm3.o :\
 		module_mp_wsm3_accel.F

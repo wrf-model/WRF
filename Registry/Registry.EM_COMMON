@@ -999,7 +999,7 @@ state    real  HAILNC           ij      misc        1         -      rhdu     "H
 state    real  SNOWNCV          ij      misc        1         -      r        "SNOWNCV"               "TIME-STEP NONCONVECTIVE SNOW AND ICE"                    "mm"
 state    real  GRAUPELNCV       ij      misc        1         -      r        "GRAUPELNCV"            "TIME-STEP NONCONVECTIVE GRAUPEL"                         "mm"
 state    real  HAILNCV          ij      misc        1         -      r        "HAILNCV"               "TIME-STEP NONCONVECTIVE HAIL"                            "mm"
-state    real    refl_10cm      ikj     dyn_em      1         -     hdu     "refl_10cm" "Radar reflectivity (lamda = 10 cm)"  "dBZ"
+state    real    refl_10cm      ikj     dyn_em      1         -     hdu       "refl_10cm"             "Radar reflectivity (lamda = 10 cm)"  "dBZ"
 state    real  NCA              ij      misc        1         -      r        "NCA"                   "COUNTER OF THE CLOUD RELAXATION TIME IN KF CUMULUS SCHEME"    ""      
 state    integer  LOWLYR        ij      misc        1         -     -         "LOWLYR"                "INDEX OF LOWEST MODEL LAYER ABOVE THE GROUND IN BMJ SCHEME"   ""      
 state    real  MASS_FLUX        ij      misc        1         -      r        "MASS_FLUX"             "DOWNDRAFT MASS FLUX FOR IN GRELL CUMULUS SCHEME"  "mb hour-1"
@@ -1619,6 +1619,7 @@ rconfig   integer     mp_physics          namelist,physics	max_domains    0     
 rconfig   integer     gsfcgce_hail        namelist,physics      1              0       rh       "gsfcgce select hail/graupel"  ""      ""
 rconfig   integer     gsfcgce_2ice        namelist,physics      1              0       rh       "gsfcgce select 2ice/3ice"  ""      ""
 rconfig   integer     progn               namelist,physics      max_domains    0       rh       "progn"                 ""      ""
+rconfig   integer     do_radar_ref        namelist,physics      1              0       rh       "compute radar reflectivity for a number of schemes"                 ""      ""
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    0       rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    0       rh       "ra_sw_physics"         ""      ""
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
@@ -2003,14 +2004,14 @@ package   etampnew      mp_physics==5                -             moist:qv,qc,q
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
 package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr
-package   milbrandt2mom mp_physics==9                -             state:refl_10cm;moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
+package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
 #package   milbrandt3mom mp_physics==12               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qzr,qzi,qzs,qzg,qzh
 package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs;state:rimi
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr
-package   nssl_2mom     mp_physics==17                -            state:refl_10cm;moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qvolg
-package   nssl_2momccn  mp_physics==18                -            state:refl_10cm;moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qnc,qnr,qni,qns,qng,qnh,qvolg
+package   nssl_2mom     mp_physics==17                -            moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qvolg
+package   nssl_2momccn  mp_physics==18                -            moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qnc,qnr,qni,qns,qng,qnh,qvolg
 package   etampold      mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 endif
 

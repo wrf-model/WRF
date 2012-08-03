@@ -2530,6 +2530,61 @@ CONTAINS
 !PRINT *,'DEBUG:  end set_current_grid_ptr()'
       END SUBROUTINE set_current_grid_ptr
 
+
+
+!******************************************************************************
+! From Uli Blahak (01 Dec 2006)
+! UB: Function to determine if the next time step is an alarm-timestep for a certain grid:
+!******************************************************************************
+
+      LOGICAL FUNCTION Is_alarm_tstep( grid_clock, alarm )
+
+        IMPLICIT NONE
+
+        TYPE (WRFU_Clock), INTENT(in)  :: grid_clock
+        TYPE (WRFU_Alarm), INTENT(in)  :: alarm
+
+        LOGICAL :: pred1, pred2, pred3
+
+        Is_alarm_tstep = .FALSE.
+
+        IF ( ASSOCIATED( alarm%alarmint ) ) THEN
+          IF ( alarm%alarmint%Enabled ) THEN
+            IF ( alarm%alarmint%RingIntervalSet ) THEN
+              pred1 = .FALSE. ; pred2 = .FALSE. ; pred3 = .FALSE.
+              IF ( alarm%alarmint%StopTimeSet ) THEN
+                 PRED1 = ( grid_clock%clockint%CurrTime + grid_clock%clockint%TimeStep > &
+                      alarm%alarmint%StopTime )
+              ENDIF
+              IF ( alarm%alarmint%RingTimeSet ) THEN
+                 PRED2 = ( ( alarm%alarmint%RingTime - &
+                      grid_clock%clockint%TimeStep <= &
+                      grid_clock%clockint%CurrTime )     &
+                      .AND. ( grid_clock%clockint%CurrTime < alarm%alarmint%RingTime ) )
+              ENDIF
+              IF ( alarm%alarmint%RingIntervalSet ) THEN
+                 PRED3 = ( alarm%alarmint%PrevRingTime + &
+                      alarm%alarmint%RingInterval <= &
+                      grid_clock%clockint%CurrTime + grid_clock%clockint%TimeStep )
+              ENDIF
+              IF ( ( .NOT. ( pred1 ) ) .AND. &
+                   ( ( pred2 ) .OR. ( pred3 ) ) ) THEN
+                 Is_alarm_tstep = .TRUE.
+              ENDIF
+            ELSE IF ( alarm%alarmint%RingTimeSet ) THEN
+              IF ( alarm%alarmint%RingTime -&
+                   grid_clock%clockint%TimeStep <= &
+                   grid_clock%clockint%CurrTime ) THEN
+                 Is_alarm_tstep = .TRUE.
+              ENDIF
+            ENDIF
+          ENDIF
+        ENDIF
+
+      END FUNCTION Is_alarm_tstep
+
+
+
 !******************************************************************************
 ! BEGIN TEST SECTION
 !   Code in the test section is used to test domain methods.  

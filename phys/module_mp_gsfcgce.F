@@ -4,6 +4,9 @@
 MODULE module_mp_gsfcgce
 
    USE     module_wrf_error
+   USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
+   USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep
+   USE module_mp_radar
 
 !JJS 1/3/2008     vvvvv
 
@@ -64,6 +67,19 @@ MODULE module_mp_gsfcgce
            .4483, .4460, .4433, .4413, .4382,      &
            .4361/
 
+!+---+-----------------------------------------------------------------+
+!..The following 6 variables moved here to facilitate reflectivity
+!.. calculation similar to other MP schemes, because when they get
+!.. declared later in the code (now commented out), it makes things
+!.. more difficult to integreate with the radar code.
+      REAL    , PARAMETER ::     xnor = 8.0e6
+      REAL    , PARAMETER ::     xnos = 1.6e7
+      REAL    , PARAMETER ::     xnoh = 2.0e5
+      REAL    , PARAMETER ::     xnog = 4.0e6
+      REAL    , PARAMETER ::     rhohail = 917.
+      REAL    , PARAMETER ::     rhograul = 400.
+!+---+-----------------------------------------------------------------+
+
 !JJS 1/3/2008     ^^^^^
 
 CONTAINS
@@ -90,6 +106,7 @@ CONTAINS
                        rainnc, rainncv,                            &
                        snownc, snowncv, sr,                        &
                        graupelnc, graupelncv,                      &
+                       refl_10cm, diagflag, do_radar_ref,          &
 !                       f_qg, qg, pgold,                            &
                        f_qg, qg,                                   &
                        ihail, ice2                                 &
@@ -140,6 +157,13 @@ CONTAINS
                                                        graupelnc, &
                                                        graupelncv 
 
+!+---+-----------------------------------------------------------------+
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::           &  ! GT
+                                                       refl_10cm
+  LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
+  INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
+!+---+-----------------------------------------------------------------+
+
   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::       ht
 
   REAL, INTENT(IN   ) ::                                   dt_in, &
@@ -170,6 +194,33 @@ CONTAINS
 !                         th1, qv1, ql1, qr1, qi1, qs1, qg1
  
   LOGICAL :: flag_qg
+
+!+---+-----------------------------------------------------------------+
+
+      INTEGER:: NCALL=0
+
+      IF (NCALL .EQ. 0) THEN
+!..Set these variables needed for computing radar reflectivity.  These
+!.. get used within radar_init to create other variables used in the
+!.. radar module.
+         xam_r = 3.14159*rhowater/6.
+         xbm_r = 3.
+         xmu_r = 0.
+         xam_s = 3.14159*rhosnow/6.
+         xbm_s = 3.
+         xmu_s = 0.
+         if (ihail .eq. 1) then
+            xam_g = 3.14159*rhohail/6.
+         else
+            xam_g = 3.14159*rhograul/6.
+         endif
+         xbm_g = 3.
+         xmu_g = 0.
+
+         call radar_init
+         NCALL = 1
+      ENDIF
+!+---+-----------------------------------------------------------------+
 
 !
 !c  ihail = 0    for graupel, for tropical region
@@ -290,10 +341,13 @@ CONTAINS
 !                   qvold, qlold, qrold,                         &
 !                   qiold, qsold, qgold,                         &
                    rho, pii, p, itimestep,                      & 
+                   refl_10cm, diagflag, do_radar_ref,           & ! GT added for reflectivity calcs
+!                  refl_10cm, grid_clock, grid_alarms,          & ! GT added for reflectivity calcs
                    ids,ide, jds,jde, kds,kde,                   & ! domain dims
                    ims,ime, jms,jme, kms,kme,                   & ! memory dims
                    its,ite, jts,jte, kts,kte                    & ! tile   dims
                                                                 ) 
+
 
    END SUBROUTINE gsfcgce
 
@@ -324,7 +378,7 @@ CONTAINS
                                           snownc, snowncv, sr,        &
                                           graupelnc, graupelncv
   REAL,    DIMENSION( ims:ime , kms:kme , jms:jme ),                  &
-           INTENT(IN   )               :: rho, z, dz8w, p     
+           INTENT(IN   )               :: rho, z, dz8w, p
 
   REAL,    INTENT(IN   )               :: dt, grav, rhowater, rhosnow
 
@@ -352,21 +406,21 @@ CONTAINS
                                    gamdp4, gam4pt5, gam4bbar
 
 !  Lin
-   REAL    , PARAMETER ::     xnor = 8.0e6
+!-GT  REAL    , PARAMETER ::     xnor = 8.0e6
 !   REAL    , PARAMETER ::     xnos = 3.0e6
-   REAL    , PARAMETER ::     xnos = 1.6e7   ! Tao's value
+!-GT   REAL    , PARAMETER ::     xnos = 1.6e7   ! Tao's value
    REAL    , PARAMETER ::                              &
 !             constb = 0.8, constd = 0.25, o6 = 1./6.,           &
              constb = 0.8, constd = 0.11, o6 = 1./6.,           &
              cdrag = 0.6
 !  Lin
 !  REAL    , PARAMETER ::     xnoh = 4.0e4
-  REAL    , PARAMETER ::     xnoh = 2.0e5    ! Tao's value
-  REAL    , PARAMETER ::     rhohail = 917.
+!-GT  REAL    , PARAMETER ::     xnoh = 2.0e5    ! Tao's value
+!-GT  REAL    , PARAMETER ::     rhohail = 917.
 
 ! Hobbs
-  REAL    , PARAMETER ::     xnog = 4.0e6
-  REAL    , PARAMETER ::     rhograul = 400.
+!-GT  REAL    , PARAMETER ::     xnog = 4.0e6
+!-GT  REAL    , PARAMETER ::     rhograul = 400.
   REAL    , PARAMETER ::     abar = 19.3, bbar = 0.37,      &
                                       p0 = 1.0e5
 
@@ -1189,6 +1243,8 @@ CONTAINS
                        ptwrf, qvwrf, qlwrf, qrwrf, &
                        qiwrf, qswrf, qgwrf, &
                        rho_mks, pi_mks, p0_mks,itimestep, &
+                       refl_10cm, diagflag, do_radar_ref,           & ! GT added for reflectivity calcs
+!                      refl_10cm, grid_clock, grid_alarms,          & ! GT added for reflectivity calcs
                        ids,ide, jds,jde, kds,kde, &
                        ims,ime, jms,jme, kms,kme, &
                        its,ite, jts,jte, kts,kte  &
@@ -1447,6 +1503,16 @@ CONTAINS
 
 !JJS 1/3/2008  ^^^^^
 
+!+---+-----------------------------------------------------------------+
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: refl_10cm  ! GT
+! TYPE (WRFU_Clock):: grid_clock
+! TYPE (WRFU_Alarm), POINTER:: grid_alarms(:)
+
+
+      REAL, DIMENSION(kts:kte):: qv1d, t1d, p1d, qr1d, qs1d, qg1d, dBZ
+      LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
+      INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
+!+---+-----------------------------------------------------------------+
 !
 !jm 20090220      save
 
@@ -2802,6 +2868,48 @@ CONTAINS
 
 !     ****************************************************************
 
+!+---+-----------------------------------------------------------------+
+         IF ( PRESENT (diagflag) ) THEN
+         if (diagflag .and. do_radar_ref == 1) then
+            do j=jts,jte
+            do i=its,ite
+               DO K=kts,kte
+                  t1d(k)=ptwrf(i,k,j)*pi_mks(i,k,j)
+                  p1d(k)=p0_mks(i,k,j)
+                  qv1d(k)=qvwrf(i,k,j)
+                  qr1d(k)=qrwrf(i,k,j)
+               ENDDO
+               if (ice2.eq.0) then
+                  DO K=kts,kte
+                     qs1d(k)=qswrf(i,k,j)
+                     qg1d(k)=qgwrf(i,k,j)
+                  ENDDO
+               elseif (ice2.eq.1) then
+                  DO K=kts,kte
+                     qs1d(k)=qswrf(i,k,j)
+                  ENDDO
+               elseif (ice2.eq.2) then
+                  DO K=kts,kte
+                     qs1d(k)=0.
+                     qg1d(k)=qgwrf(i,k,j)
+                  ENDDO
+               elseif (ice2.eq.3) then
+                  DO K=kts,kte
+                     qs1d(k)=0.
+                     qg1d(k)=0.
+                  ENDDO
+               endif
+               call refl10cm_gsfc (qv1d, qr1d, qs1d, qg1d,             &
+                       t1d, p1d, dBZ, kts, kte, i, j, ihail)
+               do k = kts, kte
+                  refl_10cm(i,k,j) = MAX(-35., dBZ(k))
+               enddo
+            enddo
+            enddo
+         endif
+         ENDIF
+!+---+-----------------------------------------------------------------+
+
       return
  END SUBROUTINE saticel_s
 
@@ -2834,5 +2942,184 @@ CONTAINS
 !JJS
       return
  END FUNCTION gammagce
+
+!+---+-----------------------------------------------------------------+
+
+      subroutine refl10cm_gsfc (qv1d, qr1d, qs1d, qg1d,                 &
+                       t1d, p1d, dBZ, kts, kte, ii, jj, ihail)
+
+      IMPLICIT NONE
+
+!..Sub arguments
+      INTEGER, INTENT(IN):: kts, kte, ii, jj, ihail
+      REAL, DIMENSION(kts:kte), INTENT(IN)::                            &
+                      qv1d, qr1d, qs1d, qg1d, t1d, p1d
+      REAL, DIMENSION(kts:kte), INTENT(INOUT):: dBZ
+
+!..Local variables
+      REAL, DIMENSION(kts:kte):: temp, pres, qv, rho
+      REAL, DIMENSION(kts:kte):: rr, rs, rg
+
+      DOUBLE PRECISION, DIMENSION(kts:kte):: ilamr, ilams, ilamg
+      DOUBLE PRECISION, DIMENSION(kts:kte):: N0_r, N0_s, N0_g
+      DOUBLE PRECISION:: lamr, lams, lamg
+      LOGICAL, DIMENSION(kts:kte):: L_qr, L_qs, L_qg
+
+      REAL, DIMENSION(kts:kte):: ze_rain, ze_snow, ze_graupel
+      DOUBLE PRECISION:: fmelt_s, fmelt_g
+
+      INTEGER:: i, k, k_0, kbot, n
+      LOGICAL:: melti
+
+      DOUBLE PRECISION:: cback, x, eta, f_d
+      REAL, PARAMETER:: R=287.
+      REAL, PARAMETER:: PIx=3.1415926536
+
+!+---+
+
+      do k = kts, kte
+         dBZ(k) = -35.0
+      enddo
+
+!+---+-----------------------------------------------------------------+
+!..Put column of data into local arrays.
+!+---+-----------------------------------------------------------------+
+      do k = kts, kte
+         temp(k) = t1d(k)
+         qv(k) = MAX(1.E-10, qv1d(k))
+         pres(k) = p1d(k)
+         rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
+
+         if (qr1d(k) .gt. 1.E-9) then
+            rr(k) = qr1d(k)*rho(k)
+            N0_r(k) = xnor
+            lamr = (xam_r*xcrg(3)*N0_r(k)/rr(k))**(1./xcre(1))
+            ilamr(k) = 1./lamr
+            L_qr(k) = .true.
+         else
+            rr(k) = 1.E-12
+            L_qr(k) = .false.
+         endif
+
+         if (qs1d(k) .gt. 1.E-9) then
+            rs(k) = qs1d(k)*rho(k)
+            N0_s(k) = xnos
+            lams = (xam_s*xcsg(3)*N0_s(k)/rs(k))**(1./xcse(1))
+            ilams(k) = 1./lams
+            L_qs(k) = .true.
+         else
+            rs(k) = 1.E-12
+            L_qs(k) = .false.
+         endif
+
+         if (qg1d(k) .gt. 1.E-9) then
+            rg(k) = qg1d(k)*rho(k)
+            if (ihail.eq.1) then
+               N0_g(k) = xnoh
+            else
+               N0_g(k) = xnog
+            endif
+            lamg = (xam_g*xcgg(3)*N0_g(k)/rg(k))**(1./xcge(1))
+            ilamg(k) = 1./lamg
+            L_qg(k) = .true.
+         else
+            rg(k) = 1.E-12
+            L_qg(k) = .false.
+         endif
+      enddo
+
+!+---+-----------------------------------------------------------------+
+!..Locate K-level of start of melting (k_0 is level above).
+!+---+-----------------------------------------------------------------+
+      melti = .false.
+      k_0 = kts
+      do k = kte-1, kts, -1
+         if ( (temp(k).gt.273.15) .and. L_qr(k)                         &
+                                  .and. (L_qs(k+1).or.L_qg(k+1)) ) then
+            k_0 = MAX(k+1, k_0)
+            melti=.true.
+            goto 195
+         endif
+      enddo
+ 195  continue
+
+!+---+-----------------------------------------------------------------+
+!..Assume Rayleigh approximation at 10 cm wavelength. Rain (all temps)
+!.. and non-water-coated snow and graupel when below freezing are
+!.. simple. Integrations of m(D)*m(D)*N(D)*dD.
+!+---+-----------------------------------------------------------------+
+
+      do k = kts, kte
+         ze_rain(k) = 1.e-22
+         ze_snow(k) = 1.e-22
+         ze_graupel(k) = 1.e-22
+         if (L_qr(k)) ze_rain(k) = N0_r(k)*xcrg(4)*ilamr(k)**xcre(4)
+         if (L_qs(k)) ze_snow(k) = (0.176/0.93) * (6.0/PIx)*(6.0/PIx)     &
+                                 * (xam_s/900.0)*(xam_s/900.0)          &
+                                 * N0_s(k)*xcsg(4)*ilams(k)**xcse(4)
+         if (L_qg(k)) ze_graupel(k) = (0.176/0.93) * (6.0/PIx)*(6.0/PIx)  &
+                                    * (xam_g/900.0)*(xam_g/900.0)       &
+                                    * N0_g(k)*xcgg(4)*ilamg(k)**xcge(4)
+      enddo
+
+
+!+---+-----------------------------------------------------------------+
+!..Special case of melting ice (snow/graupel) particles.  Assume the
+!.. ice is surrounded by the liquid water.  Fraction of meltwater is
+!.. extremely simple based on amount found above the melting level.
+!.. Uses code from Uli Blahak (rayleigh_soak_wetgraupel and supporting
+!.. routines).
+!+---+-----------------------------------------------------------------+
+
+      if (melti .and. k_0.ge.kts+1) then
+       do k = k_0-1, kts, -1
+
+!..Reflectivity contributed by melting snow
+          if (L_qs(k) .and. L_qs(k_0) ) then
+           fmelt_s = MAX(0.005d0, MIN(1.0d0-rs(k)/rs(k_0), 0.99d0))
+           eta = 0.d0
+           lams = 1./ilams(k)
+           do n = 1, nrbins
+              x = xam_s * xxDs(n)**xbm_s
+              call rayleigh_soak_wetgraupel (x,DBLE(xocms),DBLE(xobms), &
+                    fmelt_s, melt_outside_s, m_w_0, m_i_0, lamda_radar, &
+                    CBACK, mixingrulestring_s, matrixstring_s,          &
+                    inclusionstring_s, hoststring_s,                    &
+                    hostmatrixstring_s, hostinclusionstring_s)
+              f_d = N0_s(k)*xxDs(n)**xmu_s * DEXP(-lams*xxDs(n))
+              eta = eta + f_d * CBACK * simpson(n) * xdts(n)
+           enddo
+           ze_snow(k) = SNGL(lamda4 / (pi5 * K_w) * eta)
+          endif
+
+!..Reflectivity contributed by melting graupel
+
+          if (L_qg(k) .and. L_qg(k_0) ) then
+           fmelt_g = MAX(0.005d0, MIN(1.0d0-rg(k)/rg(k_0), 0.99d0))
+           eta = 0.d0
+           lamg = 1./ilamg(k)
+           do n = 1, nrbins
+              x = xam_g * xxDg(n)**xbm_g
+              call rayleigh_soak_wetgraupel (x,DBLE(xocmg),DBLE(xobmg), &
+                    fmelt_g, melt_outside_g, m_w_0, m_i_0, lamda_radar, &
+                    CBACK, mixingrulestring_g, matrixstring_g,          &
+                    inclusionstring_g, hoststring_g,                    &
+                    hostmatrixstring_g, hostinclusionstring_g)
+              f_d = N0_g(k)*xxDg(n)**xmu_g * DEXP(-lamg*xxDg(n))
+              eta = eta + f_d * CBACK * simpson(n) * xdtg(n)
+           enddo
+           ze_graupel(k) = SNGL(lamda4 / (pi5 * K_w) * eta)
+          endif
+
+       enddo
+      endif
+
+      do k = kte, kts, -1
+         dBZ(k) = 10.*log10((ze_rain(k)+ze_snow(k)+ze_graupel(k))*1.d18)
+      enddo
+
+      end subroutine refl10cm_gsfc
+
+!+---+-----------------------------------------------------------------+
 
 END MODULE  module_mp_gsfcgce

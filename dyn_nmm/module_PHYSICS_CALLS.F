@@ -1619,7 +1619,7 @@
      &               ,HANGL=HANGL,HANIS=HANIS,HSLOP=HSLOP,HZMAX=HZMAX   &
      &               ,CROT=CROT,SROT=SROT                               &
      &               ,DUDT=DUDT_GWD,DVDT=DVDT_GWD                       &
-     &               ,UGWDsfc=UGWDsfc,VGWDsfc=VGWDsfc                   &
+     &               ,UGWDsfc=UGWDsfc,VGWDsfc=VGWDsfc,XLAND=XLAND       &    !ADDED BY KWON FOR OCEAN
      &               ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE   &
      &               ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME   &
      &               ,ITS=IGS,ITE=IGE,JTS=JGS,JTE=JGE,KTS=KTS,KTE=KTE )
@@ -1639,26 +1639,38 @@
 
 !mp     temporary bandaid limiting GWD/MB wind tendencies
 
-        IF (DUDT_GWD(I,K,J) .gt. 1.6) then
+!KWON
+!
+!      IF(NTSD.LE.2.OR.NTSD.GE.910) THEN
+!       PRINT *,'==INSIDE GWD DUDT_GWD, DVDT_GWD   ',NTSD,I,J,K,DUDT_GWD(I,K,J),DVDT_GWD(I,K,J),HSTDV(I,J)
+!       PRINT *,'==INSIDE GWD DUDT_PHY, DVDT_PHY   ',NTSD,I,J,K,DUDT_PHY(I,K,J),DVDT_PHY(I,K,J)
+!      ENDIF
+!KWON
+
+        IF (DUDT_GWD(I,K,J) .gt. 0.16) then
         write(message,*) 'BIG DUDT_GWD:: ', I,K,J, DUDT_GWD(I,K,J)
+!        print *,'BIG DUDT_GWD:: ', NTSD, I,K,J, DUDT_GWD(I,K,J)
         CALL wrf_message(message)
         DUDT_GWD(I,K,J)=1.6
         ENDIF
 
-        IF (DUDT_GWD(I,K,J) .lt. -1.6) then
+        IF (DUDT_GWD(I,K,J) .lt. -0.16) then
         write(message,*) 'BIG DUDT_GWD:: ', I,K,J, DUDT_GWD(I,K,J)
+!        print *,'BIG DUDT_GWD:: ', NTSD, I,K,J, DUDT_GWD(I,K,J)
         CALL wrf_message(message)
         DUDT_GWD(I,K,J)=-1.6
         ENDIF
 
-        IF (DVDT_GWD(I,K,J) .gt. 1.6) then
+        IF (DVDT_GWD(I,K,J) .gt. 0.16) then
         write(message,*) 'BIG DVDT_GWD:: ', I,K,J, DVDT_GWD(I,K,J)
+!        print *,'BIG DUDT_GWD:: ', NTSD, I,K,J, DVDT_GWD(I,K,J)
         CALL wrf_message(message)
         DVDT_GWD(I,K,J)=1.6
         ENDIF
 
-        IF (DVDT_GWD(I,K,J) .lt. -1.6) then
+        IF (DVDT_GWD(I,K,J) .lt. -0.16) then
         write(message,*) 'BIG DVDT_GWD:: ', I,K,J, DVDT_GWD(I,K,J)
+!        print *,'BIG DUDT_GWD:: ', NTSD, I,K,J, DVDT_GWD(I,K,J)
         CALL wrf_message(message)
         DVDT_GWD(I,K,J)=-1.6
         ENDIF

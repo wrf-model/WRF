@@ -314,6 +314,11 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
          grid%xb%isltyp(i,j) = grid%isltyp(i,j)
          grid%xb%vegfra(i,j) = grid%vegfra(i,j)
          grid%xb%snowh(i,j) = grid%snowh(i,j)*1000.0 ! meter to mm    
+         if ( grid%xb%ivgtyp(i,j) == grid%iswater .and. &
+              grid%xb%snow(i,j) > 0.0 )then
+            grid%xb%snow(i,j) = 0.0
+            grid%xb%snowh(i,j) = 0.0
+         end if
       end do
 
       ! WHY?

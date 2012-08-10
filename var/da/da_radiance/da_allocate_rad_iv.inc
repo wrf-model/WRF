@@ -125,6 +125,13 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
                allocate(iv%instid(i)%graupel_r_jacobian(nchan,kte,iv%instid(i)%num_rad))
                allocate(iv%instid(i)%hail_r_jacobian(nchan,kte,iv%instid(i)%num_rad))
             end if
+            if ( calc_weightfunc ) then
+               allocate(iv%instid(i)%lod(nchan,iv%instid(i)%nlevels,iv%instid(i)%num_rad))
+               allocate(iv%instid(i)%lod_jacobian(nchan,iv%instid(i)%nlevels,iv%instid(i)%num_rad))
+               allocate(iv%instid(i)%trans(nchan,iv%instid(i)%nlevels,iv%instid(i)%num_rad))
+               allocate(iv%instid(i)%trans_jacobian(nchan,iv%instid(i)%nlevels,iv%instid(i)%num_rad))
+               allocate(iv%instid(i)%der_trans(nchan,iv%instid(i)%nlevels,iv%instid(i)%num_rad))
+            end if
          end if
       end if
 

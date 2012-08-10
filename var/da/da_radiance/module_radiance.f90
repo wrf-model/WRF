@@ -41,7 +41,8 @@ module module_radiance
       crtm_atmosphere_type, crtm_surface_type, crtm_geometry_type, &
       crtm_surface_zero, crtm_atmosphere_zero, crtm_destroy, &
       climatology_model_name, &
-      crtm_options_type, crtm_options_create, crtm_options_destroy
+      crtm_options_type, crtm_options_create, crtm_options_destroy, &
+      crtm_rtsolution_create, crtm_rtsolution_destroy, crtm_rtsolution_associated
    USE CRTM_Atmosphere_Define, only: crtm_atmosphere_associated, &
       MASS_MIXING_RATIO_UNITS, VOLUME_MIXING_RATIO_UNITS
    USE CRTM_Surface_Define, only: crtm_surface_associated
@@ -68,7 +69,7 @@ module module_radiance
      & (/ 'noaa    ', 'dmsp    ', 'meteosat', 'goes    ', 'gms     ', &
         & 'fy2     ', 'trmm    ', 'ers     ', 'eos     ', 'metop   ', &
         & 'envisat ', 'msg     ', 'fy1     ', 'adeos   ', 'mtsat   ', &
-        & 'coriolis', 'jpss    ', 'gifts   ', 'xxxxxxxx', 'meghatr ', &
+        & 'coriolis', 'jpss    ', 'gifts   ', 'tiros   ', 'meghatr ', &
         & 'kalpana ', 'insat_3d', 'fy3     ', 'coms    ', 'meteor-m', &
         & 'gosat   ', 'calipso '/)
 
@@ -90,7 +91,7 @@ module module_radiance
        (/ 'n       ', 'f       ', 'meteosat', 'g       ', 'gms     ', &
           'fy2     ', 'trmm    ', 'ers     ', 'eos     ', 'metop   ', &
           'envisat ', 'msg     ', 'fy1     ', 'adeos   ', 'mtsat   ', &
-          'coriolis', 'c       ', 'gifts   ', 'xxxxxxxx', 'xxxxxxxx'/)
+          'coriolis', 'c       ', 'gifts   ', 'tiros   ', 'xxxxxxxx'/)
 
 ! List of instruments  !!!! HIRS is number 0
   Character (len=8), Dimension(0:34) :: crtm_sensor_name  =                &

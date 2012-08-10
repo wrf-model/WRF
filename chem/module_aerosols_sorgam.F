@@ -8123,7 +8123,7 @@ SUBROUTINE sorgam_addemiss(                                             &
 !
 ! biomass burning aerosol emissions arrays ((ug/m3)*m/s)
 !
-   REAL, DIMENSION( ims:ime, kms:kemit, jms:jme,num_ebu ),             &
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme,num_ebu ),             &
          INTENT(IN    ) ::                                             &
          ebu
 

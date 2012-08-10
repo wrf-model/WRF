@@ -194,6 +194,7 @@ state    real  e_vso2           ikjf     emis_vol     1         Z      i{13}r   
 # biomassburning emission arrays (used by fire plume rise)
 state   real     -          ikjf    ebu      -        -        -         -                    "Biomass burnung Emissions"         ""
 state    real  ebu_no       ikjf     ebu           1         Z        -      "ebu_no"        "biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_no2      ikjf     ebu           1         Z        -      "ebu_no2"       "biomass burning emiss"  "mol km^-2 hr^-1"
 state    real  ebu_co       ikjf     ebu           1         Z        -      "ebu_co"        "biomass burning emiss"  "mol km^-2 hr^-1"
 state    real  ebu_co2      ikjf     ebu           1         Z        -      "ebu_co2"       "biomass burning emiss"  "mol km^-2 hr^-1"
 state    real  ebu_eth      ikjf     ebu           1         Z        -      "ebu_eth"       "biomass burning emiss"  "mol km^-2 hr^-1"
@@ -238,7 +239,6 @@ state    real  ebu_ch3coch3 ikjf     ebu           1         Z        h      "eb
 state    real  ebu_ch3oh    ikjf     ebu           1         Z        h      "ebu_ch3oh"     "biomass burning emiss"  "mol km^-2 hr^-1"
 state    real  ebu_mek      ikjf     ebu           1         Z        h      "ebu_mek"       "biomass burning emiss"  "mol km^-2 hr^-1"
 state    real  ebu_toluene  ikjf     ebu           1         Z        h      "ebu_toluene"   "biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_no2      ikjf     ebu           1         Z        h      "ebu_no2"       "biomass burning emiss"  "mol km^-2 hr^-1"
 state    real  ebu_open     ikjf     ebu           1         Z        h      "ebu_open"      "biomass burning emiss"  "mol km^-2 hr^-1"
 state    real  ebu_c10h16   ikjf     ebu           1         Z        h      "ebu_c10h16"    "biomass burning emiss"  "mol km^-2 hr^-1"
 state    real  ebu_mgly     ikjf     ebu           1         Z        h      "ebu_mgly"      "biomass burning emiss"  "mol km^-2 hr^-1"
@@ -256,6 +256,7 @@ state    real  ebu_ch4      ikjf     ebu           1         Z        h      "eb
 # additional arrays needed for biomass burning emissions input
 state    real     -               i]jf      ebu_in      -         -        -         -                    "Biomass burnung input "         ""
 state    real  ebu_in_no          i]jf      ebu_in      1         -        i07        "ebu_in_no"             "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_no2         i]jf      ebu_in      1         -        i07        "ebu_in_no2"            "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  ebu_in_co          i]jf      ebu_in      1         -        i07        "ebu_in_co"             "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  ebu_in_co2         i]jf      ebu_in      1         -        i07        "ebu_in_co2"            "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  ebu_in_eth         i]jf      ebu_in      1         -        i07        "ebu_in_eth"            "EMISSIONS"          "mol km^-2 hr^-1"
@@ -301,7 +302,6 @@ state    real  ebu_in_ch3coch3    i]jf      ebu_in      1         -        i07  
 state    real  ebu_in_ch3oh       i]jf      ebu_in      1         -        i07        "ebu_in_ch3oh"      "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  ebu_in_mek         i]jf      ebu_in      1         -        i07        "ebu_in_mek"        "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  ebu_in_toluene     i]jf      ebu_in      1         -        i07        "ebu_in_toluene"    "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  ebu_in_no2         i]jf      ebu_in      1         -        i07        "ebu_in_no2"        "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  ebu_in_open        i]jf      ebu_in      1         -        i07        "ebu_in_open"       "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  ebu_in_c10h16      i]jf      ebu_in      1         -        i07        "ebu_in_c10h16"     "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  ebu_in_mgly        i]jf      ebu_in      1         -        i07        "ebu_in_mgly"       "EMISSIONS"          "mol km^-2 hr^-1"
@@ -2573,7 +2573,7 @@ package   ebioco2       bio_emiss_opt==16            -             vprm_in:vegfr
 package   ebioghg       bio_emiss_opt==17            -             vprm_in:vegfra_vprm,evi,evi_min,evi_max,lswi,lswi_max,lswi_min;wet_in:cpool,wetmap,t_ann;eghg_bio:ebio_gee,ebio_res,ebio_co2oce,ebio_ch4wet,ebio_ch4soil,ebio_ch4term
 
 # the following arrays only needed for burn options
-package   biomassb      biomass_burn_opt==1             -          state:mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr;ebu:ebu_no,ebu_no2,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,ebu_api,ebu_lim,ebu_tol,ebu_csl,ebu_hcho,ebu_ald,ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_so2,ebu_nh3,ebu_oc,ebu_bc,ebu_sulf,ebu_dms;ebu_in:ebu_in_no,ebu_in_co,ebu_in_co2,ebu_in_eth,ebu_in_hc3,ebu_in_hc5,ebu_in_hc8,ebu_in_ete,ebu_in_olt,ebu_in_oli,ebu_in_pm25,ebu_in_pm10,ebu_in_dien,ebu_in_iso,ebu_in_api,ebu_in_lim,ebu_in_tol,ebu_in_csl,ebu_in_hcho,ebu_in_ald,ebu_in_xyl,ebu_in_ket,ebu_in_macr,ebu_in_ora1,ebu_in_ora2,ebu_in_so2,ebu_in_nh3,ebu_in_oc,ebu_in_bc,ebu_in_sulf,ebu_in_dms,ebu_in_ash
+package   biomassb      biomass_burn_opt==1             -          state:mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr;ebu:ebu_no,ebu_no2,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,ebu_api,ebu_lim,ebu_tol,ebu_csl,ebu_hcho,ebu_ald,ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_so2,ebu_nh3,ebu_oc,ebu_bc,ebu_sulf,ebu_dms;ebu_in:ebu_in_no,ebu_in_no2,ebu_in_co,ebu_in_co2,ebu_in_eth,ebu_in_hc3,ebu_in_hc5,ebu_in_hc8,ebu_in_ete,ebu_in_olt,ebu_in_oli,ebu_in_pm25,ebu_in_pm10,ebu_in_dien,ebu_in_iso,ebu_in_api,ebu_in_lim,ebu_in_tol,ebu_in_csl,ebu_in_hcho,ebu_in_ald,ebu_in_xyl,ebu_in_ket,ebu_in_macr,ebu_in_ora1,ebu_in_ora2,ebu_in_so2,ebu_in_nh3,ebu_in_oc,ebu_in_bc,ebu_in_sulf,ebu_in_dms,ebu_in_ash
 package   biomassb_mozc      biomass_burn_opt==2             -          state:mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr;ebu:ebu_co,ebu_no,ebu_no2,ebu_bigalk,ebu_bigene,ebu_c2h4,ebu_c2h5oh,ebu_c2h6,ebu_c3h6,ebu_c3h8,ebu_ch2o,ebu_ch3cho,ebu_ch3coch3,ebu_ch3oh,ebu_mek,ebu_so2,ebu_toluene,ebu_nh3,ebu_oc,ebu_bc,ebu_pm25,ebu_pm10,ebu_open,ebu_c10h16,ebu_mgly,ebu_ch3cooh,ebu_cres,ebu_glyald,ebu_gly,ebu_acetol,ebu_isop,ebu_macr,ebu_mvk;ebu_in:ebu_in_co,ebu_in_no,ebu_in_bigalk,ebu_in_bigene,ebu_in_c2h4,ebu_in_c2h5oh,ebu_in_c2h6,ebu_in_c3h6,ebu_in_c3h8,ebu_in_ch2o,ebu_in_ch3cho,ebu_in_ch3coch3,ebu_in_ch3oh,ebu_in_mek,ebu_in_so2,ebu_in_toluene,ebu_in_nh3,ebu_in_no2,ebu_in_open,ebu_in_c10h16,ebu_in_mgly,ebu_in_ch3cooh,ebu_in_cres,ebu_in_glyald,ebu_in_gly,ebu_in_acetol,ebu_in_isop,ebu_in_macr,ebu_in_mvk,ebu_in_pm25,ebu_in_pm10,ebu_in_oc,ebu_in_bc
 package   biomassb_moz       biomass_burn_opt==3             -          state:mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr;ebu:ebu_co,ebu_no,ebu_no2,ebu_bigalk,ebu_bigene,ebu_c2h4,ebu_c2h5oh,ebu_c2h6,ebu_c3h6,ebu_c3h8,ebu_ch2o,ebu_ch3cho,ebu_ch3coch3,ebu_ch3oh,ebu_mek,ebu_so2,ebu_toluene,ebu_nh3,ebu_open,ebu_c10h16,ebu_mgly,ebu_ch3cooh,ebu_cres,ebu_glyald,ebu_gly,ebu_acetol,ebu_isop,ebu_macr,ebu_mvk;ebu_in:ebu_in_co,ebu_in_no,ebu_in_bigalk,ebu_in_bigene,ebu_in_c2h4,ebu_in_c2h5oh,ebu_in_c2h6,ebu_in_c3h6,ebu_in_c3h8,ebu_in_ch2o,ebu_in_ch3cho,ebu_in_ch3coch3,ebu_in_ch3oh,ebu_in_mek,ebu_in_so2,ebu_in_toluene,ebu_in_nh3,ebu_in_no2,ebu_in_open,ebu_in_c10h16,ebu_in_mgly,ebu_in_ch3cooh,ebu_in_cres,ebu_in_glyald,ebu_in_gly,ebu_in_acetol,ebu_in_isop,ebu_in_macr,ebu_in_mvk
 

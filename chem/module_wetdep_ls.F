@@ -68,7 +68,7 @@ subroutine wetdep_ls(dt,var,rain,moist,rho,num_moist, &
 !       (just like in convec. parameterization
               frc(i,j)=rain_clw(i,j)/var_sum_clw(i,j)
 !    write(0,*)'frc ', frc(i,j),var_sum_clw(i,j),var_sum(i,j)
-              frc(i,j)=max(1.e-6,min(frc(i,j),.5))
+              frc(i,j)=max(1.e-6,min(frc(i,j),.005))
            endif
         endif
       enddo

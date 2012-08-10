@@ -110,6 +110,7 @@
    select case (config_flags%chem_opt)
    case ( RADM2SORG,           RADM2SORG_KPP,      RADM2SORG_AQ, RADM2SORG_AQCHEM, &
           GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ,  RACMSORG_AQCHEM, &
+          RACM_SOA_VBS_KPP,                                      &
           GOCARTRACM_KPP,      GOCARTRADM2_KPP,    GOCARTRADM2,  &
           RACM_ESRLSORG_KPP,   MOZCART_KPP,                      &
           CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_KPP,   &
@@ -135,6 +136,7 @@
    case ( RADM2SORG, RACM_ESRLSORG_KPP, RADM2SORG_KPP, RADM2SORG_AQ, RADM2SORG_AQCHEM, &
           GOCARTRACM_KPP,      GOCARTRADM2_KPP,    GOCARTRADM2,      &
           GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ,      RACMSORG_AQCHEM, &
+          RACM_SOA_VBS_KPP,                                          &
           CBMZSORG,            CBMZSORG_AQ,        MOZCART_KPP       )
      nbin_o = 8
    case (CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_KPP,  &

@@ -324,15 +324,15 @@ state    real   p_hyd           ikj     dyn_em      1         -      irh       "
 state    real   p_hyd_w         ikj     dyn_em      1         Z       r        "p_hyd_w"     "hydrostatic pressure at full levels"         "Pa"
 
 # 2m and 10m output diagnostics
-state    real   Q2               ij     misc        1         -     irh0{23}d      "Q2"                   "QV at 2 M"         "kg kg-1"
-state    real   T2               ij     misc        1         -     i01rh0{23}d    "T2"                   "TEMP at 2 M"       "K"
-state    real   TH2              ij     misc        1         -     irhd      "TH2"                  "POT TEMP at 2 M"   "K"
-state    real   PSFC             ij     misc        1         -     i01rhd    "PSFC"                 "SFC PRESSURE"      "Pa"
+state    real   Q2               ij     misc        1         -     irh0{23}du     "Q2"                   "QV at 2 M"         "kg kg-1"
+state    real   T2               ij     misc        1         -     i01rh0{23}du   "T2"                   "TEMP at 2 M"       "K"
+state    real   TH2              ij     misc        1         -     irhdu     "TH2"                  "POT TEMP at 2 M"   "K"
+state    real   PSFC             ij     misc        1         -     i01rhdu   "PSFC"                 "SFC PRESSURE"      "Pa"
 
 # these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
 # with wave model, only if compiled with -DMCELIO, JM 2003/05/29
-state    real   U10              ij     misc        1         -     irh01d      "U10"                "U at 10 M"         "m s-1"
-state    real   V10              ij     misc        1         -     irh01d      "V10"                "V at 10 M"         "m s-1"
+state    real   U10              ij     misc        1         -     irh01du     "U10"                "U at 10 M"         "m s-1"
+state    real   V10              ij     misc        1         -     irh01du     "V10"                "V at 10 M"         "m s-1"
 
 # these next 4 are for observational nudging
 state    real   uratx           ij      misc        1         -      r          "URATX"            "Ratio of U over U10 on mass points "         "dimensionless"

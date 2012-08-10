@@ -244,7 +244,9 @@ contains
               ,dt=dt,rcl=1.0,kpbl1d=kpbl2d(ims,j)                              &
               ,exch_hx=exch_h(ims,kms,j)                                       &
               ,u10=u10(ims,j),v10=v10(ims,j)                                   &
+#if ( ! NMM_CORE == 1 )
               ,ctopo=ctopo(ims,j),ctopo2=ctopo2(ims,j)                         &
+#endif
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )

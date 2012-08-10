@@ -390,12 +390,14 @@
      &                 ,ACFRCV=ACFRCV,NCFRCV=NCFRCV                     &
      &                 ,F_ICE_PHY=F_ICE,F_RAIN_PHY=F_RAIN               &
      &                 ,LWCF=LWCF,SWCF=SWCF                             &
+     &                 ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS &
      &                 ,QV=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV      &
      &                 ,QC=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC      &
      &                 ,QR=MOIST_TRANS(IMS,KMS,JMS,P_QR),F_QR=F_QR      &
      &                 ,QI=MOIST_TRANS(IMS,KMS,JMS,P_QI),F_QI=F_QI      &
      &                 ,QS=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS      &
      &                 ,QG=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG     )
+
 
 !
 !-----------------------------------------------------------------------

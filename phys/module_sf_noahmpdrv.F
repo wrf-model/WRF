@@ -39,7 +39,7 @@ CONTAINS
        stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xlaixy   ,xsaixy   ,           &
        tradxy   ,tsxy     ,neexy    ,gppxy    ,nppxy    ,fvegxy   ,qinxy    , &
        runsfxy  ,runsbxy  ,ecanxy   ,edirxy   ,etranxy  ,fsaxy    ,firaxy   , &
-       aparxy   ,psnxy    ,savxy    ,sagxy    ,                               &
+       aparxy   ,psnxy    ,savxy    ,sagxy    ,taussxy  ,                     &
        fsnoxy   ,YR       ,JULIAN   ,                                         &
        potevp,                                       & !O
 
@@ -278,6 +278,7 @@ CONTAINS
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: fwetxy      !wetted or snowed fraction of the canopy (-)
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: sneqvoxy    !snow mass at last time step(mm h2o)
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: alboldxy    !snow albedo at last time step (-)
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: taussxy     !non-dimensional snow age
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: qsnowxy     !snowfall on the ground [mm/s]
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: wslakexy    !lake water storage [mm]
 
@@ -393,6 +394,7 @@ CONTAINS
     REAL                                :: fastcp       !short-lived carbon, shallow soil [g/m2]
     REAL                                :: plai         !leaf area index
     REAL                                :: psai         !stem area index
+    REAL                                :: tauss        !non-dimensional snow age
 
 !jref:start
     REAL                                :: chstar2
@@ -754,6 +756,7 @@ CONTAINS
              tah                  = tahxy   (i,j)
              cm                   = cmxy    (i,j)
              ch                   = chxy    (i,j)
+             tauss                = taussxy (i,j)
 !jref:start             
              chstar               = chs     (i,j)
              chstar2              = chs2    (i,j)
@@ -943,7 +946,7 @@ CONTAINS
                   ISNOW   , ZSNSO   , SNOWD   , SWE     , SNICE   , SNLIQ   , & ! IN/OUT : 
                   ZWT     , WA      , WT      , WSLAKE  , LFMASS  , RTMASS  , & ! IN/OUT : 
                   STMASS  , WOOD    , STBLCP  , FASTCP  , PLAI    , PSAI    , & ! IN/OUT : 
-                  CM      , CH      , CHSTAR  ,                               & ! IN/OUT : 
+                  CM      , CH      , CHSTAR  , TAUSS   ,                     & ! IN/OUT : 
                   FSA     , FSR     , FIRA    , FSH     , SSOIL   , FCEV    , & ! OUT : 
                   FGEV    , FCTR    , ECAN    , ETRAN   , ESOIL   , TRAD    , & ! OUT : 
                   TS      , TGB     , TGV     , T2MV    , T2MB    , TSTAR   , & ! OUT : 
@@ -1078,6 +1081,7 @@ CONTAINS
              fwetxy   (i,j)               = fwet
              sneqvoxy (i,j)               = sneqvo
              alboldxy (i,j)               = albold
+             taussxy  (i,j)               = tauss
              qsnowxy  (i,j)               = qsnow
              wslakexy (i,j)               = wslake
              cmxy     (i,j)               = cm

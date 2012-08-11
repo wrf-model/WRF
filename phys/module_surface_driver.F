@@ -45,7 +45,7 @@ CONTAINS
      &          ,stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy                        &
      &          ,tradxy   ,tsxy     ,neexy    ,gppxy    ,nppxy    ,fvegxy   ,qinxy     &
      &          ,runsfxy  ,runsbxy  ,ecanxy   ,edirxy   ,etranxy  ,fsaxy    ,firaxy    &
-     &          ,aparxy   ,psnxy    ,savxy    ,sagxy                                   &
+     &          ,aparxy   ,psnxy    ,savxy    ,sagxy    ,taussxy                       &
      &          ,fsnoxy                                                                &
      &          ,t2mvxy   ,t2mbxy   ,chstarxy ,rssunxy  ,rsshaxy  ,bgapxy   ,wgapxy    &    
      &          ,gapxy    ,tgvxy    ,tgbxy    ,q2mvxy   ,q2mbxy   ,chvxy    ,chbxy     &
@@ -631,7 +631,7 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) :: tvxy, tgxy, canicexy, canliqxy, eahxy, tahxy, cmxy, chxy,               &
         fwetxy, sneqvoxy, alboldxy, qsnowxy, wslakexy, zwtxy, waxy, wtxy, lfmassxy, rtmassxy, stmassxy, woodxy, stblcpxy, fastcpxy,       &
         xsaixy, tradxy, tsxy, neexy, gppxy, nppxy, fvegxy, qinxy, runsfxy, runsbxy, ecanxy, edirxy, etranxy, fsaxy, firaxy,               &
-        aparxy, psnxy, savxy, sagxy, fsnoxy, q2mvxy, q2mbxy
+        aparxy, psnxy, savxy, sagxy, fsnoxy, q2mvxy, q2mbxy, taussxy
    REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) ::  t2mvxy   ,t2mbxy   ,chstarxy, rssunxy, rsshaxy, bgapxy,wgapxy,gapxy , &
         tgvxy ,tgbxy, chvxy, chbxy
 
@@ -2092,7 +2092,7 @@ CONTAINS
                 stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,lai      ,xsaixy   ,           &
                 tradxy   ,tsxy     ,neexy    ,gppxy    ,nppxy    ,fvegxy   ,qinxy    , &
                 runsfxy  ,runsbxy  ,ecanxy   ,edirxy   ,etranxy  ,fsaxy    ,firaxy   , &
-                aparxy   ,psnxy    ,savxy    ,sagxy    ,                               &
+                aparxy   ,psnxy    ,savxy    ,sagxy    ,taussxy  ,                     &
                 fsnoxy   ,YR       ,JULIAN_IN,                                         &
                 potevp,                                         & !o
 !jref:start

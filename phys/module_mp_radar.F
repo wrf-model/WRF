@@ -457,12 +457,12 @@ CONTAINS
         cumulerror = cumulerror + error
 
         if (hostmatrix .eq. 'water') then
-         get_m_mix_nested = get_m_mix (2.0d0*m_a, mtmp, m_w,            &
+         get_m_mix_nested = get_m_mix (2*m_a, mtmp, m_w,                &
                          0.0d0, (1.0d0-volwater), volwater, mixingrule, &
                          hostmatrix, hostinclusion, error)
          cumulerror = cumulerror + error
         elseif (hostmatrix .eq. 'airice') then
-         get_m_mix_nested = get_m_mix (2.0d0*m_a, mtmp, m_w,            &
+         get_m_mix_nested = get_m_mix (2*m_a, mtmp, m_w,                &
                          0.0d0, (1.0d0-volwater), volwater, mixingrule, &
                          'ice', hostinclusion, error)
          cumulerror = cumulerror + error          

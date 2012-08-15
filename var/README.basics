@@ -19,7 +19,7 @@ ln -sf WRFDA/var/build/da_wrfvar.exe ./da_wrfvar.exe (link executable)
 vi namelist.input (a very basic namelist.input for running the tutorial test case is provided in
                    WRFDA/var/test/tutorial/namelist.input.. 
                    Only time and domain settings need to be specified for a certain case if 
-                   using default settings provided in WRFDA/Registry/Registry.wrfvar. However,
+                   using default settings provided in WRFDA/Registry/registry.var. However,
                    it is VERY IMPORTANT to make sure the settings in &physics and &dynamics record 
                    are consistent with those in your WRF settings.)
   *** Please see WRFDA/var/README.namelist for namelist descriptions. ***

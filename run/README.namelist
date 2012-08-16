@@ -639,8 +639,6 @@ Namelist variables for controlling the adaptive time step option:
                                                 ;   (default) =0: z0, zt, and zq from COARE3.0 (Fairall et al 2003)
                                                 ;             =1: z0 from Davis et al (2008), zt & zq from COARE3.0
                                                 ;             =2: z0 from Davis et al (2008), zt & zq from Garratt (1992)
-                                                ;             =3: z0 from Taylor and Yelland (2004), zt and zq from COARE3.0
-                                                ;             =4: z0 from Zilitinkevich (2001), zt & zq from COARE3.0
  fractional_seaice                   = 0        ; treat sea-ice as fractional field (1) or ice/no-ice flag (0)
  seaice_albedo_opt                   = 0        ; option to set albedo over sea ice
                                                 ; 0 = seaice albedo is a constant 0.80

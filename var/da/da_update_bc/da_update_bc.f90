@@ -4,22 +4,6 @@ program da_update_bc
    ! Purpose: update BC file from wrfvar output.
    ! current version reads only wrf-netcdf file format
    !
-   ! Jliu, 08/10/2011:
-   !   Introducing 4dvar namelist variables: var4d, multi_inc, da_bdy_file
-   !
-   !      var4d     = .false.          updating bdy with da_file, wrf_bdy_file,
-   !                                   wrf_input, default.
-   !                                   true, updating bdy with 4dvar output bdy
-   !      multi_inc = .false.          no mulit_inc, default.
-   !                                   ture for 4dvar with multi_inc
-   !
-   !      da_bdy_file = wrfvar_bdyout  default 4dvar output bdy file
-   !      
-   !   Only updating bdy with wrfvar_bdyout when 
-   !         1) var4d     = .true.
-   !         2) multi_inc = .false.
-   !   Otherwise, updating bdy with da_file, wrf_bdy_file, wrf_input
-   !
    ! Y.-R. Guo, 03/18/2008:
    !   1) Fixed the bug for low_bdy_only;
    !   2) Introducing another namelist variable: update_lsm
@@ -47,7 +31,7 @@ program da_update_bc
    character(len=512) :: da_file,      &
                          da_file_02,   &
                          wrf_bdy_file, &
-                         wrf_input, da_bdy_file
+                         wrf_input
  
    character(len=20) :: var_pref, var_name, vbt_name
 
@@ -58,7 +42,7 @@ program da_update_bc
 
    integer           :: ids, ide, jds, jde, kds, kde
    integer           :: num3d, num2d, ndims
-   integer           :: time_level, time_id
+   integer           :: time_level
    integer           :: i,j,k,l,m,n
 
    integer, dimension(4) :: dims
@@ -82,7 +66,7 @@ program da_update_bc
    integer :: iostatus(4)
 
    logical :: debug, update_lateral_bdy, update_low_bdy, update_lsm, keep_tsk_wrf
-   logical :: keep_snow_wrf, var4d, multi_inc
+   logical :: keep_snow_wrf, var4d_lbc
 
    real :: bdyfrq
 
@@ -99,10 +83,8 @@ program da_update_bc
                             wrf_input, domain_id, var4d_lbc, &
                             debug, update_lateral_bdy, update_low_bdy, update_lsm, &
                             keep_tsk_wrf, keep_snow_wrf, iswater, &
-                            wrfvar_output_file, cycling, low_bdy_only, &
-                            var4d, multi_inc, da_bdy_file
+                            wrfvar_output_file, cycling, low_bdy_only
 
-   da_bdy_file        = 'wrfvar_bdyout'
    da_file            = 'wrfvar_output'
    da_file_02         = 'ana02'
    wrf_bdy_file       = 'wrfbdy_d01'
@@ -117,11 +99,6 @@ program da_update_bc
    keep_tsk_wrf       = .true.
    keep_snow_wrf      = .true.
    iswater            = 16      ! USGS water index: 16, MODIS water index: 17
-
-   var4d              = .false.
-   multi_inc          = .false.
-
-   time_id            = 1
 
    wrfvar_output_file = 'OBSOLETE'
    cycling            = .false.
@@ -170,26 +147,15 @@ program da_update_bc
          end if
       end if
 
-      if ( var4d ) then
-        time_id = 2
-        if ( multi_inc ) then
-          var4d     = .false.
-          time_id = 1
-        end if
-      end if
-        
       WRITE(unit=stdout, fmt='(2a)') &
-           'da_bdy_file   = ', trim(da_bdy_file), &
            'da_file       = ', trim(da_file), &
            'da_file_02    = ', trim(da_file_02), &
            'wrf_bdy_file  = ', trim(wrf_bdy_file), &
            'wrf_input     = ', trim(wrf_input)
 
-      WRITE(unit=stdout, fmt='(a, L10)')             &
+      WRITE(unit=stdout, fmt='(2(a, L10))')             &
            'update_lateral_bdy = ', update_lateral_bdy, &
-           'update_low_bdy     = ', update_low_bdy, &
-           'var4d              = ', var4d, &
-           'multi_inc          = ', multi_inc
+           'update_low_bdy     = ', update_low_bdy
 
       if ( update_lsm ) keep_snow_wrf = .false.
 
@@ -305,7 +271,8 @@ program da_update_bc
 
       select case(trim(varsf(n)))
       case ('MU') ;
-         if ( .not. update_lateral_bdy .or. var4d ) cycle
+         if ( .not. update_lateral_bdy ) cycle
+
          allocate(mu(dims(1), dims(2)))
 
          call da_get_var_2d_real_cdf( da_file, &
@@ -321,25 +288,29 @@ program da_update_bc
                trim(varsf(n)), mu2, dims(1), dims(2), 1, debug)
          end if
       case ('MUB') ;
-         if ( .not. update_lateral_bdy .or. var4d ) cycle
+         if ( .not. update_lateral_bdy ) cycle
+
          allocate(mub(dims(1), dims(2)))
 
          call da_get_var_2d_real_cdf( da_file, trim(varsf(n)), mub, &
                                    dims(1), dims(2), 1, debug)
       case ('MAPFAC_U') ;
-         if ( .not. update_lateral_bdy .or. var4d ) cycle
+         if ( .not. update_lateral_bdy ) cycle
+
          allocate(msfu(dims(1), dims(2)))
 
          call da_get_var_2d_real_cdf( da_file, trim(varsf(n)), msfu, &
                                    dims(1), dims(2), 1, debug)
       case ('MAPFAC_V') ;
-         if ( .not. update_lateral_bdy .or. var4d ) cycle
+         if ( .not. update_lateral_bdy ) cycle
+
          allocate(msfv(dims(1), dims(2)))
 
          call da_get_var_2d_real_cdf( da_file, trim(varsf(n)), msfv, &
                                    dims(1), dims(2), 1, debug)
       case ('MAPFAC_M') ;
-         if ( .not. update_lateral_bdy .or. var4d ) cycle
+         if ( .not. update_lateral_bdy ) cycle
+
          allocate(msfm(dims(1), dims(2)))
 
          call da_get_var_2d_real_cdf( da_file, trim(varsf(n)), msfm, &
@@ -500,12 +471,12 @@ program da_update_bc
    
  if ( update_lateral_bdy ) then
 
-   if ( .not. var4d .and. ( east_end < 1 .or. north_end < 1)) then
+   if (east_end < 1 .or. north_end < 1) then
       write(unit=stdout, fmt='(a)') 'Wrong data for Boundary.'
       stop
    end if
 
-   if(debug) write(unit=stdout,fmt='(/a/)') 'Processing the lateral boundary condition:'
+   write(unit=stdout,fmt='(/a/)') 'Processing the lateral boundary condition:'
 
    ! boundary variables
    bdyname(1)='_BXS'
@@ -518,7 +489,7 @@ program da_update_bc
    tenname(2)='_BTXE'
    tenname(3)='_BTYS'
    tenname(4)='_BTYE'
-   !debug = .true.
+
    do m=1,4
       var_name='MU' // trim(bdyname(m))
       vbt_name='MU' // trim(tenname(m))
@@ -528,7 +499,7 @@ program da_update_bc
       allocate(frst2d(dims(1), dims(2)))
       allocate(scnd2d(dims(1), dims(2)))
       allocate(tend2d(dims(1), dims(2)))
-      if ( .not. var4d ) then
+
       ! Get variable at second time level
       if ( .not. var4d_lbc ) then
          if (time_level > 1) then
@@ -559,18 +530,21 @@ program da_update_bc
       end if
 
       ! calculate variable at first time level
-      if ( time_level < 2 ) &
-         scnd2d = frst2d + tend2d * bdyfrq
       select case(m)
       case (1) ;             ! West boundary
          do l=1,dims(2)
             do j=1,dims(1)
+               if (time_level < 2 .and. .not. var4d_lbc) &
+                  scnd2d(j,l)=frst2d(j,l)+tend2d(j,l)*bdyfrq
+               if (var4d_lbc) scnd2d(j,l)=mu2(l,j)
                frst2d(j,l)=mu(l,j)
             end do
          end do
       case (2) ;             ! East boundary
          do l=1,dims(2)
             do j=1,dims(1)
+               if (time_level < 2 .and. .not. var4d_lbc) &
+                  scnd2d(j,l)=frst2d(j,l)+tend2d(j,l)*bdyfrq
                if (var4d_lbc) scnd2d(j,l)=mu2(east_end-l,j)
                frst2d(j,l)=mu(east_end-l,j)
             end do
@@ -578,6 +552,8 @@ program da_update_bc
       case (3) ;             ! South boundary
          do l=1,dims(2)
             do i=1,dims(1)
+               if (time_level < 2 .and. .not. var4d_lbc) &
+                  scnd2d(i,l)=frst2d(i,l)+tend2d(i,l)*bdyfrq
                if (var4d_lbc) scnd2d(i,l)=mu2(i,l)
                frst2d(i,l)=mu(i,l)
             end do
@@ -585,6 +561,8 @@ program da_update_bc
       case (4) ;             ! North boundary
          do l=1,dims(2)
             do i=1,dims(1)
+               if (time_level < 2 .and. .not. var4d_lbc) &
+                  scnd2d(i,l)=frst2d(i,l)+tend2d(i,l)*bdyfrq
                if (var4d_lbc) scnd2d(i,l)=mu2(i,north_end-l)
                frst2d(i,l)=mu(i,north_end-l)
             end do
@@ -592,35 +570,6 @@ program da_update_bc
       case default ;
          write(unit=stdout,fmt=*) 'It is impossible here. mu, m=', m
       end select
-      else
-          call da_get_var_2d_real_cdf( da_bdy_file, trim(var_name), frst2d, &
-                                   dims(1), dims(2), 1, debug)
-          call da_get_var_2d_real_cdf( da_bdy_file, trim(vbt_name), tend2d, &
-                                   dims(1), dims(2), 1, debug)
-          call da_put_var_2d_real_cdf( wrf_bdy_file, trim(var_name), frst2d, &
-                                   dims(1), dims(2), 1, debug)
-          call da_put_var_2d_real_cdf( wrf_bdy_file, trim(vbt_name), tend2d, &
-                                   dims(1), dims(2), 1, debug)
-
-        if (time_level > 2 ) then
-          call da_get_var_2d_real_cdf( wrf_bdy_file, trim(var_name), scnd2d, &
-                                   dims(1), dims(2), 3, debug)
-        else
-          if ( time_level > 1 ) then
-            call da_get_var_2d_real_cdf( wrf_bdy_file, trim(var_name), scnd2d, &
-                                 dims(1), dims(2), 2, debug)
-          else
-            cycle
-          end if
-        end if
-
-        frst2d = frst2d + tend2d * bdyfrq
-        if ( time_level < 3 ) then
-          call da_put_var_2d_real_cdf( wrf_bdy_file, trim(vbt_name), tend2d, &
-                                   dims(1), dims(2), 2, debug)
-          scnd2d = scnd2d + tend2d * bdyfrq
-        end if
-      end if
 
       ! calculate new tendancy 
       do l=1,dims(2)
@@ -645,10 +594,10 @@ program da_update_bc
 
       ! output new variable at first time level
       call da_put_var_2d_real_cdf( wrf_bdy_file, trim(var_name), frst2d, &
-                                dims(1), dims(2), time_id, debug)
+                                dims(1), dims(2), 1, debug)
       ! output new tendancy 
       call da_put_var_2d_real_cdf( wrf_bdy_file, trim(vbt_name), tend2d, &
-                                dims(1), dims(2), time_id, debug)
+                                dims(1), dims(2), 1, debug)
 
       deallocate(frst2d)
       deallocate(scnd2d)
@@ -657,7 +606,7 @@ program da_update_bc
 
    !---------------------------------------------------------------------
    ! For 3D variables
-   if ( .not. var4d ) then
+
    ! Get U
    call da_get_dims_cdf( da_file, 'U', dims, ndims, debug)
 
@@ -723,14 +672,13 @@ program da_update_bc
            'After  couple Sample u=', u(dims(1)/2,dims(2)/2,dims(3)/2), &
            'After  couple Sample v=', v(dims(1)/2,dims(2)/2,dims(3)/2)
    end if
-   end if
+
    !---------------------------------------------------------------------
    !For 3D variables
 
    do n=1,num3d
-      if (debug) write(unit=stdout, fmt='(a, i3, 2a)') 'Processing: var3d(', n, ')=', trim(var3d(n))
-      var_pref=trim(var3d(n))
-      if ( .not. var4d ) then
+      write(unit=stdout, fmt='(a, i3, 2a)') 'Processing: var3d(', n, ')=', trim(var3d(n))
+
       call da_get_dims_cdf( da_file, trim(var3d(n)), dims, ndims, debug)
 
       allocate(full3d(dims(1), dims(2), dims(3)))
@@ -742,17 +690,17 @@ program da_update_bc
       select case(trim(var3d(n)))
       case ('U') ;           ! U
          ! var_pref='R' // trim(var3d(n))
-         !var_pref=trim(var3d(n))
+         var_pref=trim(var3d(n))
          full3d(:,:,:)=u(:,:,:)
          if ( var4d_lbc ) full3d2(:,:,:)=u2(:,:,:)
       case ('V') ;           ! V 
          ! var_pref='R' // trim(var3d(n))
-         !var_pref=trim(var3d(n))
+         var_pref=trim(var3d(n))
          full3d(:,:,:)=v(:,:,:)
          if ( var4d_lbc ) full3d2(:,:,:)=v2(:,:,:)
       case ('W') ;
          ! var_pref = 'R' // trim(var3d(n))
-         !var_pref = trim(var3d(n))
+         var_pref = trim(var3d(n))
 
          call da_get_var_3d_real_cdf( da_file, trim(var3d(n)), &
             full3d, dims(1), dims(2), dims(3), 1, debug)
@@ -781,7 +729,7 @@ program da_update_bc
                  '=', full3d(dims(1)/2,dims(2)/2,dims(3)/2)
          end if
       case ('T', 'PH') ;
-         !var_pref=trim(var3d(n))
+         var_pref=trim(var3d(n))
  
          call da_get_var_3d_real_cdf( da_file, trim(var3d(n)), &
             full3d, dims(1), dims(2), dims(3), 1, debug)
@@ -812,7 +760,7 @@ program da_update_bc
       case ('QVAPOR', 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW', 'QGRAUP') ;
          ! var_pref='R' // var3d(n)(1:2)
          ! var_pref=var3d(n)(1:2)
-         !var_pref=var3d(n)
+         var_pref=var3d(n)
  
          call da_get_var_3d_real_cdf( da_file, trim(var3d(n)), &
             full3d, dims(1), dims(2), dims(3), 1, debug)
@@ -843,12 +791,12 @@ program da_update_bc
       case default ;
          write(unit=stdout,fmt=*) 'It is impossible here. var3d(', n, ')=', trim(var3d(n))
       end select
-      end if
+
       do m=1,4
          var_name=trim(var_pref) // trim(bdyname(m))
          vbt_name=trim(var_pref) // trim(tenname(m))
 
-         if (debug) write(unit=stdout, fmt='(a, i3, 2a)') &
+         write(unit=stdout, fmt='(a, i3, 2a)') &
             'Processing: bdyname(', m, ')=', trim(var_name)
 
          call da_get_dims_cdf( wrf_bdy_file, trim(var_name), dims, ndims, debug)
@@ -856,7 +804,7 @@ program da_update_bc
          allocate(frst3d(dims(1), dims(2), dims(3)))
          allocate(scnd3d(dims(1), dims(2), dims(3)))
          allocate(tend3d(dims(1), dims(2), dims(3)))
-         if ( .not. var4d ) then
+
          ! Get variable at second time level
          if ( .not. var4d_lbc ) then
             if (time_level > 1) then
@@ -1330,13 +1278,14 @@ program da_update_bc
                      j, (tend3d(j,dims(2)/2,i), i=1,dims(3))
             end do
          end if
-
-         if (time_level < 2) scnd3d = frst3d+tend3d*bdyfrq 
+   
          select case(trim(bdyname(m)))
          case ('_BXS') ;             ! West boundary
             do l=1,dims(3)
             do k=1,dims(2)
             do j=1,dims(1)
+               if (time_level < 3) &
+               scnd3d(j,k,l)=frst3d(j,k,l)+tend3d(j,k,l)*bdyfrq
                frst3d(j,k,l)=full3d(l,j,k)
             end do
             end do
@@ -1345,6 +1294,8 @@ program da_update_bc
             do l=1,dims(3)
             do k=1,dims(2)
             do j=1,dims(1)
+               if (time_level < 3) &
+               scnd3d(j,k,l)=frst3d(j,k,l)+tend3d(j,k,l)*bdyfrq
                frst3d(j,k,l)=full3d(east_end-l,j,k)
             end do
             end do
@@ -1353,6 +1304,8 @@ program da_update_bc
             do l=1,dims(3)
             do k=1,dims(2)
             do i=1,dims(1)
+               if (time_level < 3) &
+               scnd3d(i,k,l)=frst3d(i,k,l)+tend3d(i,k,l)*bdyfrq
                frst3d(i,k,l)=full3d(i,l,k)
             end do
             end do
@@ -1361,6 +1314,8 @@ program da_update_bc
             do l=1,dims(3)
             do k=1,dims(2)
             do i=1,dims(1)
+               if (time_level < 3) &
+               scnd3d(i,k,l)=frst3d(i,k,l)+tend3d(i,k,l)*bdyfrq
                frst3d(i,k,l)=full3d(i,north_end-l,k)
             end do
             end do
@@ -1370,38 +1325,8 @@ program da_update_bc
             write(unit=stdout,fmt=*) 'bdyname(', m, ')=', trim(bdyname(m))
             stop
          end select
-         else
-           call da_get_var_3d_real_cdf( da_bdy_file, trim(var_name), frst3d, &
-                                   dims(1), dims(2), dims(3), 1, debug)
-           call da_get_var_3d_real_cdf( da_bdy_file, trim(vbt_name), tend3d, &
-                                  dims(1), dims(2), dims(3), 1, debug)
 
-           call da_put_var_3d_real_cdf( wrf_bdy_file, trim(var_name), frst3d, &
-                                  dims(1), dims(2), dims(3), 1, debug)
-           call da_put_var_3d_real_cdf( wrf_bdy_file, trim(vbt_name), tend3d, &
-                                  dims(1), dims(2), dims(3), 1, debug)
-
-           if (time_level > 2 ) then
-             call da_get_var_3d_real_cdf( wrf_bdy_file, trim(var_name), scnd3d, &
-                                  dims(1), dims(2), dims(3), 3, debug)
-           else
-             if ( time_level > 1 ) then
-               call da_get_var_3d_real_cdf( wrf_bdy_file, trim(var_name), scnd3d, &
-                              dims(1), dims(2), dims(3), 2, debug)
-             else
-               cycle
-             end if
-           end if
-
-           frst3d = frst3d + tend3d * bdyfrq
-           if ( time_level < 3 ) then 
-             call da_get_var_3d_real_cdf( wrf_bdy_file, trim(vbt_name), tend3d, &
-                                      dims(1), dims(2), dims(3), 2, debug)
-             scnd3d = scnd3d + tend3d * bdyfrq 
-           end if
-        end if
-
-        if (debug)  write(unit=stdout, fmt='(a, i3, 2a)') &
+         write(unit=stdout, fmt='(a, i3, 2a)') &
             'cal. tend: bdyname(', m, ')=', trim(vbt_name)
 
          ! calculate new tendancy 
@@ -1429,18 +1354,18 @@ program da_update_bc
 
          ! output new variable at first time level
          call da_put_var_3d_real_cdf( wrf_bdy_file, trim(var_name), frst3d, &
-                                dims(1), dims(2), dims(3), time_id, debug)
+                                dims(1), dims(2), dims(3), 2, debug)
          call da_put_var_3d_real_cdf( wrf_bdy_file, trim(vbt_name), tend3d, &
-                                   dims(1), dims(2), dims(3), time_id, debug)
+                                   dims(1), dims(2), dims(3), 2, debug)
 
          deallocate(frst3d)
          deallocate(scnd3d)
          deallocate(tend3d)
       end do
       
-      if ( .not. var4d ) deallocate(full3d)
+      deallocate(full3d)
    end do
-   if ( .not. var4d ) then
+
    deallocate(mu)
    deallocate(u)
    deallocate(v)
@@ -1453,12 +1378,8 @@ program da_update_bc
    deallocate(times)
    deallocate(thisbdytime)
    deallocate(nextbdytime)
-   end if
- end if ! end if update_lateral_bdy
 
- deallocate(times)
- deallocate(thisbdytime)
- deallocate(nextbdytime)
+ end if ! end if update_lateral_bdy
 
  write(unit=stdout,fmt=*) &
     '=================================================================='

@@ -182,6 +182,8 @@ CONTAINS
            config_flags%chem_opt /= CHEM_TRACE2  .and.                   &
            config_flags%chem_opt /= CO2_TRACER   .and.                   & 
            config_flags%chem_opt /= GHG_TRACER   .and.                   &
+           config_flags%chem_opt /= CHEM_VASH    .and.                   &
+           config_flags%chem_opt /= DUST         .and.                   &
            config_flags%chem_opt /= GOCART_SIMPLE  .and.                 &
            config_flags%chem_opt /= GOCARTRACM_KPP )THEN
           call wesely_driver(id,ktau,dtstep,                              &

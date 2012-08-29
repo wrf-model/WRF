@@ -54,20 +54,20 @@ CONTAINS
           tc(2)=chem(i,k,j,p_oc1)/mw_c*mwdry*1.d-9
           tc(3)=chem(i,k,j,p_bc2)/mw_c*mwdry*1.d-9
           tc(4)=chem(i,k,j,p_oc2)/mw_c*mwdry*1.d-9
-          tt1=tc(1) +tc(3)
+          tt1=tc(3)
 
          CALL chem_1(imx,jmx,lmx, nmx, ndt1, airmas, tc, &
               chmlos, bchmlos, pc2)
          CALL chem_2(imx,jmx,lmx, nmx, ndt1, airmas, tc, pc2)
-          tt2=tc(3)+tc(1)
-          tt1=tt2-tt1
-          if(abs(tt1).gt.1.e-16)then
-           write(0,*)'no conservation in aerosol driver',tt1,i,k,j
-          endif
+!
+! how much bc is aged, oc production (since no SOA) is made
+! dependent on that
+!
+          tt2=tc(3)-tt1
           chem(i,k,j,p_bc1)=tc(1)/mwdry*mw_c*1.e9
           chem(i,k,j,p_oc1)=tc(2)/mwdry*mw_c*1.e9
           chem(i,k,j,p_bc2)=tc(3)/mwdry*mw_c*1.e9
-          chem(i,k,j,p_oc2)=tc(4)/mwdry*mw_c*1.e9
+          chem(i,k,j,p_oc2)=(tc(4)+8.*tt2)/mwdry*mw_c*1.e9
 
        enddo
        enddo

@@ -117,6 +117,7 @@ subroutine da_setup_be_regional(xb, be)
    REAL, DIMENSION(:,:), ALLOCATABLE:: covm1_be, covm2_be, covm3_be, covm4_be,&
                                        covm1   , covm2   , covm3   , covm4
    REAL, DIMENSION(:),   ALLOCATABLE:: rfls1_be, rfls2_be, rfls3_be, rfls4_be
+   REAL, DIMENSION(:),   ALLOCATABLE:: rfls6_be, rfls7_be, rfls8_be, rfls9_be
    REAL, DIMENSION(:),   ALLOCATABLE:: eta_be
 ! For write out the Interpolated CV5 BE (bin_type=5) file:
    integer              :: bin_type_out, num_bins_out, num_bins2d_out
@@ -716,7 +717,7 @@ subroutine da_setup_be_regional(xb, be)
    allocate (rfls4_be(1:nk))
 #ifdef CLOUD_CV
       allocate (rfls6_be(1:nk))
-      allocate (rf1s7_be(1:nk))
+      allocate (rfls7_be(1:nk))
       allocate (rfls8_be(1:nk))
       allocate (rfls9_be(1:nk))
 #endif
@@ -918,6 +919,12 @@ subroutine da_setup_be_regional(xb, be)
       deallocate ( rfls2_be )
       deallocate ( rfls3_be )
       deallocate ( rfls4_be )
+#ifdef CLOUD_CV
+      deallocate (rfls6_be(1:nk))
+      deallocate (rfls7_be(1:nk))
+      deallocate (rfls8_be(1:nk))
+      deallocate (rfls9_be(1:nk))
+#endif
    ! 3.3.4 Assign the Regression coefficients for model BE:
  
    ! 3.3.4.1 Ps and Chi regression coefficients

@@ -42,8 +42,10 @@ subroutine da_swap_xtraj ( grid )
    grid%mu_2 = model_grid%mu_2
    grid%psfc = model_grid%psfc
    grid%tsk = model_grid%tsk
-!  grid%u10 = model_grid%u10
-!  grid%v10 = model_grid%v10
+   grid%u10 = model_grid%u10
+   grid%v10 = model_grid%v10
+   grid%t2 = model_grid%t2
+   grid%q2 = model_grid%q2
 !  grid%tmn = model_grid%tmn
 
    grid%snowc = model_grid%snowc

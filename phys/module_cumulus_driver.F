@@ -448,6 +448,8 @@ CONTAINS
 
    INTEGER :: i,j,k,its,ite,jts,jte,ij,trigger_kf
    logical :: l_flux
+   LOGICAL :: decided , run_param , doing_adapt_dt
+
 
 !-----------------------------------------------------------------
 
@@ -488,6 +490,71 @@ CONTAINS
    endif
 
    IF (cu_physics .eq. 0) return
+
+!  Initialization for adaptive time step.
+
+   IF ( adapt_step_flag_pass ) THEN
+      doing_adapt_dt = .TRUE.
+      IF ( cudtacttime_pass .EQ. 0. ) THEN
+         cudtacttime_pass = curr_secs_pass + cudt_pass*60.
+      END IF
+   ELSE
+      doing_adapt_dt = .FALSE.
+   END IF
+
+!  Do we run through this scheme or not?
+
+!    Test 1:  If this is the initial model time, then yes.
+!                ITIMESTEP=1
+!    Test 2:  If the user asked for the cumulus to be run every time step, then yes.
+!                CUDT=0 or STEPCU=1
+!    Test 3:  If not adaptive dt, and this is on the requested cumulus frequency, then yes.
+!                MOD(ITIMESTEP,STEPCU)=0
+!    Test 4:  If using adaptive dt and the current time is past the last requested activate cumulus time, then yes.
+!                CURR_SECS >= CUDTACTTIME
+
+!  If we do run through the scheme, we set the flag run_param to TRUE and we set the decided flag
+!  to TRUE.  The decided flag says that one of these tests was able to say "yes", run the scheme.
+!  We only proceed to other tests if the previous tests all have left decided as FALSE.
+
+!  If we set run_param to TRUE and this is adaptive time stepping, we set the time to the next
+!  cumulus run.
+
+   decided = .FALSE.
+   run_param = .FALSE.
+   IF ( ( .NOT. decided ) .AND. &
+        ( itimestep .EQ. 1 ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( ( cudt_pass .EQ. 0. ) .OR. ( stepcu .EQ. 1 ) ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( .NOT. doing_adapt_dt ) .AND. &
+        ( MOD(itimestep,stepcu) .EQ. 0 ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( doing_adapt_dt ) .AND. &
+        ( curr_secs_pass .GE. cudtacttime_pass ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+      cudtacttime_pass = curr_secs_pass + cudt_pass*60
+   END IF
+
+   IF ( run_param ) THEN
+!print *,'calling CU scheme'
+   ELSE
+!print *,'NOT calling CU scheme'
+      RETURN
+   END IF
 
 #if  ( EM_CORE == 1 )
       if(cu_physics .eq. 5 ) then
@@ -541,9 +608,7 @@ CONTAINS
           CALL KFCPS(                                           &
               ! order independent arguments
                 DT=dt ,KTAU=itimestep ,DX=dx , CUDT=cudt_pass   &
-               ,CURR_SECS=curr_secs_pass                        &
                ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
-               ,CUDTACTTIME=cudtacttime_pass                    & 
                ,RHO=rho                                         &
                ,U=u ,V=v ,TH=th ,T=t ,W=w                       &
                ,PCPS=p ,PI=pi                                   &
@@ -574,10 +639,6 @@ CONTAINS
                 TH=th,T=T ,RAINCV=raincv, PRATEC=tmppratec      &
                ,RHO=rho                                         &
                ,DT=dt ,ITIMESTEP=itimestep ,STEPCU=stepcu       &
-               ,CUDT=cudt_pass                                  &
-               ,CURR_SECS=curr_secs_pass                        &
-               ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
-               ,CUDTACTTIME=cudtacttime_pass                    & 
                ,CUTOP=htop, CUBOT=hbot, KPBL=kpbl               &
                ,DZ8W=dz8w ,PINT=p8w, PMID=p, PI=pi              &
                ,CP=cp ,R=r_d ,ELWV=xlv ,ELIV=xls ,G=g           &
@@ -597,9 +658,7 @@ CONTAINS
           CALL KF_ETA_CPS(                                      &
                 U=u ,V=v ,TH=th ,T=t ,W=w ,RHO=rho              &
                ,CUDT=cudt_pass                                  &
-               ,CURR_SECS=curr_secs_pass                        &
                ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
-               ,CUDTACTTIME=cudtacttime_pass                    & 
                ,RAINCV=raincv, PRATEC=tmppratec, NCA=nca        &
                ,DZ8W=dz8w                                       &
                ,PCPS=p, PI=pi ,W0AVG=W0AVG                      &
@@ -641,7 +700,7 @@ CONTAINS
                ,GDC=gd_cloud,GDC2=gd_cloud2 &
                ,ENSDIM=ensdim,MAXIENS=maxiens,MAXENS=maxens     &
                ,MAXENS2=maxens2,MAXENS3=maxens3                 &
-               ,STEPCU=STEPCU,htop=htop,hbot=hbot               &
+               ,htop=htop,hbot=hbot                             &
                ,CU_ACT_FLAG=CU_ACT_FLAG,warm_rain=warm_rain     &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
@@ -688,10 +747,6 @@ CONTAINS
                ,shalconv=shalconv,shal_pgcon=shal_pgcon         &
                ,hpbl2d=hpbl2d,evap2d=evap2d,heat2d=heat2d       &
                ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
-               ,CUDT=cudt_pass                                  &
-               ,CURR_SECS=curr_secs_pass                        &
-               ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
-               ,CUDTACTTIME=cudtacttime_pass                    & 
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
@@ -718,10 +773,6 @@ CONTAINS
                ,store_rand=store_rand  &
                ,MOMMIX=MOMMIX  &
                ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
-               ,CUDT=cudt_pass                                  &
-               ,CURR_SECS=curr_secs_pass                        &
-               ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
-               ,CUDTACTTIME=cudtacttime_pass                    & 
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
@@ -761,7 +812,7 @@ CONTAINS
                ,imomentum=imomentum,ishallow_g3=ishallow        &
                ,ENSDIM=ensdim,MAXIENS=maxiens,MAXENS=maxens     &
                ,MAXENS2=maxens2,MAXENS3=maxens3,ichoice=clos_choice &
-               ,STEPCU=STEPCU,htop=htop,hbot=hbot               &
+               ,htop=htop,hbot=hbot                             &
                ,CU_ACT_FLAG=CU_ACT_FLAG,warm_rain=warm_rain     &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
@@ -808,10 +859,7 @@ CONTAINS
                ,P=p, P8W=p8w, PI_PHY=pi, PSFC=psfc                  &
                ,U_PHY=u, V_PHY=v, HFX=hfx, QFX=qfx, CLDFRA=cldfra   &
                ,TPERT_CAMUWPBL=tpert2d                              &
-               ,DX=dx, DT=dt, STEPCU=stepcu, CUDT=cudt              &
-               ,CURR_SECS=curr_secs                                 &
-               ,ADAPT_STEP_FLAG=adapt_step_flag                     &
-               ,CUDTACTTIME=cudtacttime_pass                        & 
+               ,DX=dx, DT=dt                                        &
                ,CAPE_OUT=cape                                       &
                ,MU_OUT=zmmu, MD_OUT=zmmd                            &
                ,ZMDT=zmdt, ZMDQ=zmdq, DLF_OUT=dlf, RLIQ_OUT=rliq    &
@@ -847,17 +895,18 @@ CONTAINS
                ,RAINCV=RAINCV,PRATEC=tmppratec,QFX=qfx,ZNU=znu  &
                ,U3D=u,V3D=v,W=w,T3D=t,PI3D=pi,RHO3D=rho         &
                ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
-               ,QVFTEN=RQVFTEN,QVPBLTEN=RQVBLTEN                &
+               ,QVPBLTEN=RQVBLTEN                               &
                ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND            &
                ,CU_ACT_FLAG=CU_ACT_FLAG                         &
-               ,CUDT=cudt_pass                                  &
-               ,CURR_SECS=curr_secs_pass                        &
-               ,ADAPT_STEP_FLAG=adapt_step_flag_pass            &
-               ,CUDTACTTIME=cudtacttime_pass                    & 
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
               ! optionals
+#if (NMM_CORE == 1 )
+               ,QVFTEN=FORCEQ                                   &
+#else
+               ,QVFTEN=RQVFTEN                                  &
+#endif
                ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
                ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
                ,RUCUTEN = RUCUTEN,RVCUTEN = RVCUTEN             &
@@ -877,10 +926,7 @@ CONTAINS
                 QC3D=QC_CURR,QI3D=QI_CURR,RHO3D=rho,            &
                 ITIMESTEP=itimestep,STEPCU=STEPCU,              &
                 HBOT=HBOT,HTOP=HTOP,                            &
-                CU_ACT_FLAG=CU_ACT_FLAG,CUDT=cudt_pass,         &
-                CURR_SECS=curr_secs_pass,                       &
-                ADAPT_STEP_FLAG=adapt_step_flag_pass,           &
-                CUDTACTTIME=cudtacttime_pass,                   & 
+                CU_ACT_FLAG=CU_ACT_FLAG,                        &
                 RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN,            &
                 RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN,            &
                 RUCUTEN=RUCUTEN,RVCUTEN=RVCUTEN,                &

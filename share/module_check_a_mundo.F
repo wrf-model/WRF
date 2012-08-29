@@ -297,6 +297,60 @@
       END IF
 
 !-----------------------------------------------------------------------
+! If we have asked for the pressure-level diagnostics, make sure we can output them
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec%p_lev_diags .EQ. 1 ) THEN
+         DO i = 1, model_config_rec % max_dom
+            IF ( ( MAX ( model_config_rec%auxhist23_interval  (i) , &
+                         model_config_rec%auxhist23_interval_d(i) , &
+                         model_config_rec%auxhist23_interval_h(i) , &
+                         model_config_rec%auxhist23_interval_m(i) , &
+                         model_config_rec%auxhist23_interval_s(i) ) == 0 ) .OR. &
+                 (  model_config_rec%io_form_auxhist23 == 0 ) ) THEN
+               wrf_err_message = '--- ERROR: p_lev_diags requires auxhist23 file information'
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = '--- ERROR: provide: auxhist23_interval (max_dom) and io_form_auxhist23'
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = '--- Add supporting IO for stream 23 for pressure-level diags'
+               CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+            END IF
+         END DO
+         DO i = 1, model_config_rec % max_dom
+            model_config_rec%p_lev_interval(i) = model_config_rec%auxhist23_interval  (i)*   60 + &
+                                                 model_config_rec%auxhist23_interval_d(i)*86400 + &
+                                                 model_config_rec%auxhist23_interval_h(i)* 3600 + &
+                                                 model_config_rec%auxhist23_interval_m(i)*   60 + &
+                                                 model_config_rec%auxhist23_interval_s(i)
+         END DO
+      END IF
+
+!-----------------------------------------------------------------------
+! For adaptive time stepping, certain physics schemes are not allowed
+! to have intermittent frequencies.  So, for those schemes below, we just
+! turn the frequencies so that the schemes are called for each time step.
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec%use_adaptive_time_step ) THEN
+         IF ( ( model_config_rec%cu_physics(1) .EQ. BMJSCHEME     ) .OR. &
+              ( model_config_rec%cu_physics(1) .EQ. SASSCHEME     ) .OR. &
+              ( model_config_rec%cu_physics(1) .EQ. OSASSCHEME    ) .OR. &
+              ( model_config_rec%cu_physics(1) .EQ. NSASSCHEME    ) .OR. &
+              ( model_config_rec%cu_physics(1) .EQ. TIEDTKESCHEME ) ) THEN
+            wrf_err_message = '--- WARNING: If use_adaptive_time_step, must use cudt=0 for the following CU schemes:'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '---          BMJ, all SAS, Tiedtke' 
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '---          CUDT=0 has been done for you.'
+            CALL wrf_message ( wrf_err_message )
+            DO i = 1, model_config_rec % max_dom
+               model_config_rec%cudt(i) = 0
+            END DO
+         END IF
+      END IF
+
+
+!-----------------------------------------------------------------------
 !  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.
 !  Relocated here so that the remappings are after checking the namelist for inconsistencies.
 !-----------------------------------------------------------------------

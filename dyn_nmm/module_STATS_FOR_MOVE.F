@@ -108,9 +108,9 @@ contains
 #ifdef DM_PARALLEL
 # ifdef HWRF
     USE MODULE_COMM_DM, ONLY : HALO_NMM_VT4_NOISE_sub, HALO_NMM_VT4_MSLP_sub
+    USE MODULE_DM, ONLY: ntasks_x, ntasks_y, mytask, ntasks, local_communicator
 # endif
 #endif
-    USE MODULE_DM, ONLY: ntasks_x, ntasks_y, mytask, ntasks, local_communicator
     IMPLICIT NONE
     type(domain), intent(inout) :: grid
     type(grid_config_rec_type), intent(in) :: config_flags
@@ -120,6 +120,8 @@ contains
     integer, intent(in) :: IPS,IPE,JPS,JPE,KPS,KPE
     integer, intent(in) :: ITS,ITE,JTS,JTE,KTS,KTE
     integer :: vortex_tracker
+
+#if (NMM_NEST == 1)
 
     !     KEEP NEST MOTION IN SINK WITH PHYSICS TIME STEPS
 
@@ -211,6 +213,7 @@ contains
                      ITS,ITE,JTS,JTE,KTS,KTE)
 #endif
     endif oldmove
+#endif
   END SUBROUTINE STATS_FOR_MOVE
 
   SUBROUTINE vt4_noise_iter(NOISY,                   &
@@ -235,6 +238,7 @@ contains
                            ITS,ITE,JTS,JTE,KTS,KTE
     integer :: i,j,iadd
     
+#ifdef HWRF
     do j = max(jds+1,jts), min(jte,jde-2)
        iadd=mod(j,2)-1
        do i = max(ids+1,its), min(ite,ide-2)
@@ -246,6 +250,7 @@ contains
           endif
        enddo
     enddo
+#endif
   END SUBROUTINE vt4_noise_iter
   SUBROUTINE vt4_noise_detect(MSLP,NOISY,PMAX,PMIN,DPDR, &
                               DX_NMM, DY_NMM,            &
@@ -283,6 +288,7 @@ contains
     nprint=10
 #endif
     
+#ifdef HWRF
     dy2=dy_nmm*dy_nmm*4
     dp2max=dpdr*dpdr
 
@@ -353,8 +359,10 @@ contains
           endif noisetype
        enddo
     enddo
+#endif
   END SUBROUTINE vt4_noise_detect
 
+#ifdef HWRF
   SUBROUTINE vt4_move(MSLP,WEIGHTOUT,DISTSQ,NOISY,DX_NMM,DY_NMM, &
                       xloc,yloc,cx,cy,mvnest,                    &
                       searchrad,searchpow,searchpmax,            &
@@ -386,9 +394,11 @@ contains
 #ifdef DM_PARALLEL
     USE module_dm, only: wrf_dm_maxval_real, wrf_dm_sum_real, &
          local_communicator_y, local_communicator_x
-#endif
     IMPLICIT NONE
     INCLUDE 'mpif.h'
+#else
+    IMPLICIT NONE
+#endif
     character*512 :: message
     integer, intent(out) :: xloc,yloc
     integer, intent(in) :: cx,cy
@@ -407,6 +417,7 @@ contains
     integer :: i,j,idum,jdum,ierr,ctx,cty
     integer :: xcount(jps:jpe),ycount(ips:ipe)
     integer :: myxcount(jps:jpe),myycount(ips:ipe)
+
 
     ! NOTE: cx and cy MUST match the domain center used in
     ! direction_of_move2 in mediation_nest_move.F
@@ -646,6 +657,7 @@ contains
        call wrf_debug(1,'Nest has not moved far enough yet.')
     endif
   END SUBROUTINE vt4_move
+#endif
 
   SUBROUTINE STATS_MAKE_MSLP(PDYN,MSLP,SQWS          &
                           ,PINT,T,Q,U,V              &

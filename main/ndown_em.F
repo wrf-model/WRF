@@ -503,12 +503,11 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
          jpe = nested_grid%ep33
 
 
-         print *, ids , ide , jds , jde , kds , kde
-         print *, ims , ime , jms , jme , kms , kme
-         print *, ips , ipe , jps , jpe , kps , kpe
+!        print *, ids , ide , jds , jde , kds , kde
+!        print *, ims , ime , jms , jme , kms , kme
+!        print *, ips , ipe , jps , jpe , kps , kpe
 
          spec_bdy_width = model_config_rec%spec_bdy_width
-         print *,'spec_bdy_width=',spec_bdy_width
 
          !  This is the space needed to save the current 3d data for use in computing
          !  the lateral boundary tendencies.
@@ -684,7 +683,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
 
          !  Set the time info.
 
-         print *,'current_date = ',current_date
+!        print *,'current_date = ',current_date
          CALL domain_clock_set( nested_grid, &
                                 current_timestr=current_date(1:19) )
 #ifdef WRF_CHEM
@@ -757,10 +756,10 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
          CALL wrf_put_dom_ti_real    ( fido , 'GMT' , gmt , 1 , ierr ) 
          CALL wrf_put_dom_ti_integer ( fido , 'JULYR' , julyr , 1 , ierr ) 
          CALL wrf_put_dom_ti_integer ( fido , 'JULDAY' , julday , 1 , ierr ) 
-print *,'current_date =',current_date
-print *,'julyr=',julyr
-print *,'julday=',julday
-print *,'gmt=',gmt
+!print *,'current_date =',current_date
+!print *,'julyr=',julyr
+!print *,'julday=',julday
+!print *,'gmt=',gmt
          
          !  Close the input (wrfout_d01_000000, for example) file.  That's right, the 
          !  input is an output file.  Who'd've thunk.
@@ -1595,10 +1594,10 @@ END SUBROUTINE init_domain_constants_em_ptr
                                    nims, nime, njms, njme, nkms, nkme, &
                                    nips, nipe, njps, njpe, nkps, nkpe )
 
-      print * , 'MOUSTA_VER  ',parent_grid%e_vert , kde_c , kde_n
-         print *, nids , nide , njds , njde , nkds , nkde
-         print *, nims , nime , njms , njme , nkms , nkme
-         print *, nips , nipe , njps , njpe , nkps , nkpe
+!     print * , 'MOUSTA_VER  ',parent_grid%e_vert , kde_c , kde_n
+!        print *, nids , nide , njds , njde , nkds , nkde
+!        print *, nims , nime , njms , njme , nkms , nkme
+!        print *, nips , nipe , njps , njpe , nkps , nkpe
 
 
 
@@ -1616,7 +1615,7 @@ END SUBROUTINE init_domain_constants_em_ptr
          p_top_m = parent_grid%p_top
          p_surf_m = 1.e5
          mu_m = p_surf_m - p_top_m
-         print * , 'p_top_m', p_top_m
+!        print * , 'p_top_m', p_top_m
 !    parent
          do  k = 1,kde_c
          pre_c = mu_m * znw_c(k) + p_top_m

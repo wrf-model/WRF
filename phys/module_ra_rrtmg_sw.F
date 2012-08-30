@@ -9084,7 +9084,7 @@
                do ib = 1, nbndsw
                   ztaua(i,ib) = 0._rb
                   zasya(i,ib) = 0._rb
-                  zomga(i,ib) = 1._rb
+                  zomga(i,ib) = 0._rb
                   do ia = 1, naerec
                      ztaua(i,ib) = ztaua(i,ib) + rsrtaua(ib,ia) * ecaer(iplon,i,ia)
                      zomga(i,ib) = zomga(i,ib) + rsrtaua(ib,ia) * ecaer(iplon,i,ia) * &
@@ -9662,12 +9662,14 @@ CONTAINS
 !
 !!! -------------------  Zhenxin (2011-06/20) ------------------
    REAL, DIMENSION( ims:ime, jms:jme )                         , &
+         OPTIONAL                                               , &
          INTENT(IN)     ::                            ALSWVISDIR, &     ! ssib albedo of sw and lw
                                                       ALSWVISDIF, &
                                                       ALSWNIRDIR, &
                                                       ALSWNIRDIF
 
    REAL, DIMENSION( ims:ime, jms:jme )                         , &
+         OPTIONAL                                               , &
          INTENT(OUT)    ::                              SWVISDIR, &
                                                         SWVISDIF, &
                                                         SWNIRDIR, &

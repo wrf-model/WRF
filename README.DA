@@ -22,6 +22,20 @@ WRFDA, including infringement actions.
 This is the main directory for the WRFDA Version 3 source code release.
 ======================================
 
+V3.4.1 Release Notes :
+-------------------
+
+Version 3.4.1 is released on August 16, 2012.
+
+- For more information on WRFDA, visit the WRFDA Users home page
+  http://www.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+- WRFDA registry files have been reconstructed.
+  Default namelist settings are now in registry.var file.
+
+- WRFPLUS registry bug fixes related to mp_physics=9,10,13,14,16,17,18
+
+======================================
 V3.4 Release Notes :
 -------------------
 
@@ -177,6 +191,9 @@ WRFDA update history:
 - V3.1.1:   Jul 31, 2009
 - V3.2:     Mar 31, 2010
 - V3.2.1:   Aug 18, 2010
+- V3.3:     Apr  6, 2011
+- V3.3.1:   Sep 27, 2011
+- V3.4:     Apr  6, 2012
 
 ======================================
 

@@ -160,6 +160,14 @@ subroutine da_radiance_init(iv,ob)
    end do
    call da_free_unit(iunit)
 
+   if ( use_blacklist_rad ) then
+      call da_blacklist_rad(trim(rttov_platform_name(rtminit_platform(n))), &
+                            rtminit_satid(n), &
+                            trim(rttov_inst_name(rtminit_sensor(n))), &
+                            nchanl(n), &
+                            satinfo(n)%iuse )
+   end if
+
   end do loop_sensor
 
 !---------------------------------------------------------------------

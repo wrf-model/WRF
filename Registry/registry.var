@@ -844,6 +844,8 @@ rconfig   integer   varbc_nobsmin           namelist,wrfvar14  1  10       - "va
 rconfig   logical   use_airs_mmr            namelist,wrfvar14  1  .false.  - "use_airs_mmr"            ""  ""
 rconfig   logical   airs_warmest_fov        namelist,wrfvar14  1  .false.  - "airs_warmest_fov"        ""  ""
 rconfig   logical   use_satcv               namelist,wrfvar14  2  .false.  - "use_satcv"               ""  ""
+rconfig   logical   use_blacklist_rad       namelist,wrfvar14  1  .false.  - "use_blacklist_rad"       ""  ""
+rconfig   logical   calc_weightfunc         namelist,wrfvar14  1  .false.  - "calc_weightfunc"         ""  ""
 rconfig   integer   num_pseudo              namelist,wrfvar15  1  0        - "num_pseudo"              ""  ""   
 rconfig   real      pseudo_x                namelist,wrfvar15  1  1.0      - "pseudo_x"                ""  ""   
 rconfig   real      pseudo_y                namelist,wrfvar15  1  1.0      - "pseudo_y"                ""  ""   

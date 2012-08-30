@@ -31,7 +31,7 @@ subroutine da_final_write_y(iv)
    if (rootproc) then
       allocate (filename(0:num_procs-1))
       do k = 0,num_procs-1
-         write(unit=filename(k),fmt ='(a,a,i3.3)')trim(file_prefix),'.',k
+         write(unit=filename(k),fmt ='(a,a,i4.4)')trim(file_prefix),'.',k
       end do
       call da_get_unit(ounit)
       open(unit=ounit,file=trim(file_prefix),form='formatted', &

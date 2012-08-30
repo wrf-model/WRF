@@ -961,6 +961,63 @@ RANLIB 		=       ranlib
 CC_TOOLS        =       cc
 
 ###########################################################
+#ARCH    AIX xlf compiler with xlc NETCDF4 #serial smpar dmpar dm+sm
+
+#	New NETCDF4 pieces
+
+NETCDFPATH	=	/glade/user/huangwei/lib/netcdf/4.1.3_seq
+HDFPATH		=	/glade/user/huangwei/lib/hdf5/1.8.7_seq
+ZLIBPATH	=	/contrib/ncl_with_nc4/libs/zlib/1.2.5
+NETCDF4_IO_OPTS	=	-DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT
+
+#	Modify existing WRF Makefile macros
+
+LIB_LOCAL	=	-L$(NETCDFPATH)/lib -lnetcdf -lnetcdff -lgpfs \
+			-L$(HDFPATH)/lib -lhdf5 -lhdf5_hl \
+			-L$(ZLIBPATH)/lib -lz
+
+DMPARALLEL      =       # 1
+OMPCPP		=	# -D_OPENMP
+OMP		=	# -qsmp=noauto
+OMPCC		=	# -qsmp=noauto
+SFC		=       xlf90_r
+SCC		=       cc_r
+SC99		=	c99_r
+CCOMP		=       cc_r
+DM_FC		=	mpxlf90_r
+DM_CC		=       mpcc_r
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD		=	$(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DNATIVE_MASSV $(NETCDF4_IO_OPTS)
+CFLAGS_LOCAL    =       -DNOUNDERSCORE
+LDFLAGS_LOCAL   =       -lmass -lmassv
+CPLUSPLUSLIB    =       -lC
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+# -qhot commented out in 3.0.1.1 release because of reported problems with 
+# model results under certain configurations. Use at your own risk.
+FCOPTIM		=       -O3 # -qhot
+FCREDUCEDOPT	=       -O2
+FCNOOPT		=       -qnoopt
+FCDEBUG         =       # -g $(FCNOOPT) -qfullpath
+FORMAT_FIXED    =       -qfixed
+FORMAT_FREE     =       -qfree=f90
+FCSUFFIX        =       -qsuffix=f=f90
+BYTESWAPIO      =       
+FCBASEOPTS_NO_G =       -w -qspill=81920 -qmaxmem=-1 $(FORMAT_FREE) $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =     
+TRADFLAG	=	$(NETCDF4_IO_OPTS)
+CPP             =       /lib/cpp -C -P
+AR              =       ar
+ARFLAGS         =       ru
+M4 		=       m4 -B 14000
+RANLIB 		=       ranlib
+CC_TOOLS        =       cc
+
+###########################################################
 #ARCH    Cray XT CLE/Linux x86_64, PGI compiler with gcc # serial dmpar smpar dm+sm
 #
 # Recommended CLE/Linux memory allocation settings at run time:

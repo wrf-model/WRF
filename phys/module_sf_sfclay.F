@@ -14,6 +14,7 @@ CONTAINS
    SUBROUTINE SFCLAY(U3D,V3D,T3D,QV3D,P3D,dz8w,                    &
                      CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,      &
                      ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH, &
+                     FM,FH,                                        &
                      XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QGH,QSFC,RMOL, &
                      U10,V10,TH2,T2,Q2,                            &
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
@@ -50,6 +51,8 @@ CONTAINS
 !-- REGIME      flag indicating PBL regime (stable, unstable, etc.)
 !-- PSIM        similarity stability function for momentum
 !-- PSIH        similarity stability function for heat
+!-- FM          integrated stability function for momentum
+!-- FH          integrated stability function for heat
 !-- XLAND       land mask (1 for land, 2 for water)
 !-- HFX         upward heat flux at the surface (W/m^2)
 !-- QFX         upward moisture flux at the surface (kg/m^2/s)
@@ -146,7 +149,7 @@ CONTAINS
 !
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(INOUT)   ::                 GZ1OZ0,WSPD,BR, &
-                                                        PSIM,PSIH
+                                                  PSIM,PSIH,FM,FH
 
       REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                 INTENT(IN   )   ::                            U3D, &
@@ -214,6 +217,7 @@ CONTAINS
                 CQS2(ims,j),CPM(ims,j),PBLH(ims,j), RMOL(ims,j),   &
                 ZNT(ims,j),UST(ims,j),MAVAIL(ims,j),ZOL(ims,j),    &
                 MOL(ims,j),REGIME(ims,j),PSIM(ims,j),PSIH(ims,j),  &
+                FM(ims,j),FH(ims,j),                               &
                 XLAND(ims,j),HFX(ims,j),QFX(ims,j),TSK(ims,j),     &
                 U10(ims,j),V10(ims,j),TH2(ims,j),T2(ims,j),        &
                 Q2(ims,j),FLHC(ims,j),FLQC(ims,j),QGH(ims,j),      &
@@ -239,7 +243,7 @@ CONTAINS
 !-------------------------------------------------------------------
    SUBROUTINE SFCLAY1D(J,UX,VX,T1D,QV1D,P1D,dz8w1d,                &
                      CP,G,ROVCP,R,XLV,PSFCPA,CHS,CHS2,CQS2,CPM,PBLH,RMOL, &
-                     ZNT,UST,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH,      &
+                     ZNT,UST,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH,FM,FH,&
                      XLAND,HFX,QFX,TSK,                            &
                      U10,V10,TH2,T2,Q2,FLHC,FLQC,QGH,              &
                      QSFC,LH,GZ1OZ0,WSPD,BR,ISFFLX,DX,             &
@@ -286,7 +290,7 @@ CONTAINS
 !
       REAL,     DIMENSION( ims:ime )                             , &
                 INTENT(INOUT)   ::                 GZ1OZ0,WSPD,BR, &
-                                                        PSIM,PSIH
+                                                  PSIM,PSIH,FM,FH
 
       REAL,     DIMENSION( ims:ime )                             , &
                 INTENT(INOUT)   ::                            ZNT, &
@@ -358,6 +362,7 @@ CONTAINS
       REAL    ::  ZL,TSKV,DTHVDZ,DTHVM,VCONV,RZOL,RZOL2,RZOL10,ZOL2,ZOL10
       REAL    ::  DTG,PSIX,DTTHX,PSIX10,PSIT,PSIT2,PSIQ,PSIQ2,PSIQ10
       REAL    ::  FLUXC,VSGD,Z0Q,VISC,RESTAR,CZIL,RESTAR2
+      REAL    ::  ZW, ZN1, ZN2
 !-------------------------------------------------------------------
       KL=kte
 
@@ -759,6 +764,8 @@ CONTAINS
         DENOMQ(I)=PSIQ
         DENOMQ2(I)=PSIQ2
         DENOMT2(I)=PSIT2
+        FM(I)=PSIX
+        FH(I)=PSIT
   330 CONTINUE                                                                   
 !                                                                                
   335 CONTINUE                                                                   
@@ -786,10 +793,16 @@ CONTAINS
 !               ZNT(I)=10.*exp(-9.*UST(I)**(-.3333))
 !               ZNT(I)=10.*exp(-9.5*UST(I)**(-.3333))
 !               ZNT(I)=ZNT(I) + 0.11*1.5E-5/AMAX1(UST(I),0.01)
-                ZNT(I)=0.011*UST(I)*UST(I)/G+OZO
-                ZNT(I)=MIN(ZNT(I),2.85e-3)
-!               ZNT(I)=MAX(ZNT(I),1.27e-7)
+!               ZNT(I)=0.011*UST(I)*UST(I)/G+OZO
 !               ZNT(I)=MAX(ZNT(I),3.50e-5)
+! AHW 2012:
+                ZW  = MIN((UST(I)/1.06)**(0.3),1.0)
+                ZN1 = 0.011*UST(I)*UST(I)/G + OZO
+                ZN2 = 10.*exp(-9.5*UST(I)**(-.3333)) + &
+                       0.11*1.5E-5/AMAX1(UST(I),0.01)
+                ZNT(I)=(1.0-ZW) * ZN1 + ZW * ZN2
+                ZNT(I)=MIN(ZNT(I),2.85e-3)
+                ZNT(I)=MAX(ZNT(I),1.27e-7)
              ENDIF
           ENDIF
           ZL = ZNT(I)

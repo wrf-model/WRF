@@ -36,7 +36,7 @@
  p_lev_diags                         = 1
  num_press_levels                    = 4
  press_levels                        = 85000, 70000, 50000, 25000
- p_lev_which_p                       = 1
+ use_tot_or_hyd_p                    = 1
  /
 
  &domains

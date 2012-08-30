@@ -26,7 +26,7 @@ subroutine da_lanczos_io (io_config, cv_size, ntmax, neign, eignvec, eignval, qh
 
    if (trace_use) call da_trace_entry("da_lanczos_io")
    
-   write(cproc,fmt='(i3.3)') myproc
+   write(cproc,fmt='(i4.4)') myproc
    filename = '../lanczos_eigenpairs.'//trim(adjustl(cproc))
 
    call da_get_unit (ep_unit)

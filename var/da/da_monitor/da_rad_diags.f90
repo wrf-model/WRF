@@ -66,8 +66,8 @@ program da_rad_diags
    real*4,  dimension(:,:), allocatable   :: prf_snow_reff, prf_grau_reff, prf_hail_reff
    real*4,  dimension(:,:), allocatable   :: rtm_prf_p, rtm_prf_t, rtm_prf_q
    real*4,  dimension(:,:), allocatable   :: mdl_prf_p, mdl_prf_t, mdl_prf_q, mdl_prf_qcw, mdl_prf_qrn
-   real*4,  dimension(:,:,:), allocatable :: prf_t_jac, prf_q_jac, prf_water_jac, prf_ice_jac
-   real*4,  dimension(:,:,:), allocatable :: prf_rain_jac, prf_snow_jac, prf_grau_jac, prf_hail_jac
+   real*4,  dimension(:,:,:), allocatable :: prf_t_jac, prf_q_jac, prf_der_trans, prf_trans_jac, prf_trans, prf_lod_jac, prf_lod
+   real*4,  dimension(:,:,:), allocatable :: prf_water_jac, prf_ice_jac, prf_rain_jac, prf_snow_jac, prf_grau_jac, prf_hail_jac
    real*4,  dimension(:,:,:), allocatable :: prf_water_reff_jac, prf_ice_reff_jac, prf_rain_reff_jac
    real*4,  dimension(:,:,:), allocatable :: prf_snow_reff_jac, prf_grau_reff_jac, prf_hail_reff_jac
    character(len=200), dimension(:), allocatable      :: inpname
@@ -271,6 +271,11 @@ ntime_loop: do itime = 1, ntime
                if ( jac_found ) then
                   allocate ( prf_t_jac(1:maxlvl,1:nchan,1:total_npixel) )
                   allocate ( prf_q_jac(1:maxlvl,1:nchan,1:total_npixel) )
+                  allocate ( prf_der_trans(1:maxlvl,1:nchan,1:total_npixel) )
+                  allocate ( prf_trans_jac(1:maxlvl,1:nchan,1:total_npixel) )
+                  allocate ( prf_trans(1:maxlvl,1:nchan,1:total_npixel) )
+                  allocate ( prf_lod_jac(1:maxlvl,1:nchan,1:total_npixel) )
+                  allocate ( prf_lod(1:maxlvl,1:nchan,1:total_npixel) )
                   allocate ( prf_water_jac(1:maxlvl,1:nchan,1:total_npixel) )
                   allocate ( prf_ice_jac(1:maxlvl,1:nchan,1:total_npixel) )
                   allocate ( prf_rain_jac(1:maxlvl,1:nchan,1:total_npixel) )
@@ -411,11 +416,14 @@ ntime_loop: do itime = 1, ntime
                   ios = 0
                   do while ( ios == 0 )
                      ! ilev = ilev + 1
-                     read(unit=iunit(iproc),fmt='(i5,i3,10x,14f8.3)',iostat=ios)             &
-                        ich, ilev, prf_t_jac(ilev,ich,ipixel), prf_q_jac(ilev,ich,ipixel),   &
-                        prf_water_jac(ilev,ich,ipixel), prf_ice_jac(ilev,ich,ipixel),        &
-                        prf_rain_jac(ilev,ich,ipixel), prf_snow_jac(ilev,ich,ipixel),        &
-                        prf_grau_jac(ilev,ich,ipixel), prf_hail_jac(ilev,ich,ipixel),        &
+                     read(unit=iunit(iproc),fmt='(i5,i3,10x,19f14.7)',iostat=ios)               &
+                        ich, ilev, prf_t_jac(ilev,ich,ipixel), prf_q_jac(ilev,ich,ipixel),     & 
+                        prf_der_trans(ilev,ich,ipixel),                                        & 
+                        prf_trans_jac(ilev,ich,ipixel), prf_trans(ilev,ich,ipixel),       & 
+                        prf_lod_jac(ilev,ich,ipixel), prf_lod(ilev,ich,ipixel),           & 
+                        prf_water_jac(ilev,ich,ipixel), prf_ice_jac(ilev,ich,ipixel),          &
+                        prf_rain_jac(ilev,ich,ipixel), prf_snow_jac(ilev,ich,ipixel),          &
+                        prf_grau_jac(ilev,ich,ipixel), prf_hail_jac(ilev,ich,ipixel),          &
                         prf_water_reff_jac(ilev,ich,ipixel), prf_ice_reff_jac(ilev,ich,ipixel), &
                         prf_rain_reff_jac(ilev,ich,ipixel), prf_snow_reff_jac(ilev,ich,ipixel), &
                         prf_grau_reff_jac(ilev,ich,ipixel), prf_hail_reff_jac(ilev,ich,ipixel)
@@ -536,6 +544,11 @@ ntime_loop: do itime = 1, ntime
          ishape(3) = dimid
          ios = NF_DEF_VAR(ncid, 'prf_t_jac',     NF_FLOAT, 3, ishape, varid)
          ios = NF_DEF_VAR(ncid, 'prf_q_jac',     NF_FLOAT, 3, ishape, varid)
+         ios = NF_DEF_VAR(ncid, 'prf_der_trans',     NF_FLOAT, 3, ishape, varid)
+         ios = NF_DEF_VAR(ncid, 'prf_trans_jac', NF_FLOAT, 3, ishape, varid)
+         ios = NF_DEF_VAR(ncid, 'prf_trans', NF_FLOAT, 3, ishape, varid)
+         ios = NF_DEF_VAR(ncid, 'prf_lod_jac', NF_FLOAT, 3, ishape, varid)
+         ios = NF_DEF_VAR(ncid, 'prf_lod', NF_FLOAT, 3, ishape, varid)
          ios = NF_DEF_VAR(ncid, 'prf_water_jac', NF_FLOAT, 3, ishape, varid)
          ios = NF_DEF_VAR(ncid, 'prf_ice_jac',   NF_FLOAT, 3, ishape, varid)
          ios = NF_DEF_VAR(ncid, 'prf_rain_jac',  NF_FLOAT, 3, ishape, varid)
@@ -691,6 +704,16 @@ ntime_loop: do itime = 1, ntime
          ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:3), icount(1:3), prf_t_jac(1:nlev,:,:))
          ios = NF_INQ_VARID (ncid, 'prf_q_jac', varid)
          ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:3), icount(1:3), prf_q_jac(1:nlev,:,:))
+         ios = NF_INQ_VARID (ncid, 'prf_der_trans', varid)
+         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:3), icount(1:3), prf_der_trans(1:nlev,:,:))
+         ios = NF_INQ_VARID (ncid, 'prf_trans_jac', varid)
+         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:3), icount(1:3), prf_trans_jac(1:nlev,:,:))
+         ios = NF_INQ_VARID (ncid, 'prf_trans', varid)
+         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:3), icount(1:3), prf_trans(1:nlev,:,:))
+         ios = NF_INQ_VARID (ncid, 'prf_lod_jac', varid)
+         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:3), icount(1:3), prf_lod_jac(1:nlev,:,:))
+         ios = NF_INQ_VARID (ncid, 'prf_lod', varid)
+         ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:3), icount(1:3), prf_lod(1:nlev,:,:))
          ios = NF_INQ_VARID (ncid, 'prf_water_jac', varid)
          ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:3), icount(1:3), prf_water_jac(1:nlev,:,:))
          ios = NF_INQ_VARID (ncid, 'prf_ice_jac', varid)
@@ -831,6 +854,11 @@ ntime_loop: do itime = 1, ntime
          if ( jac_found ) then
             deallocate ( prf_t_jac )
             deallocate ( prf_q_jac )
+            deallocate ( prf_der_trans )
+            deallocate ( prf_trans_jac )
+            deallocate ( prf_trans )
+            deallocate ( prf_lod_jac )
+            deallocate ( prf_lod )
             deallocate ( prf_water_jac )
             deallocate ( prf_ice_jac )
             deallocate ( prf_rain_jac )

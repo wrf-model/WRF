@@ -106,6 +106,7 @@ subroutine plumerise_driver (id,ktau,dtstep,                           &
          do j=jts,jte
             do i=its,ite
                ebu(i,kts,j,p_ebu_no)=ebu_in(i,1,j,p_ebu_in_no)
+               ebu(i,kts,j,p_ebu_no2)=ebu_in(i,1,j,p_ebu_in_no2)
                ebu(i,kts,j,p_ebu_co)=ebu_in(i,1,j,p_ebu_in_co)
                ebu(i,kts,j,p_ebu_co2)=ebu_in(i,1,j,p_ebu_in_co2)
                ebu(i,kts,j,p_ebu_eth)=ebu_in(i,1,j,p_ebu_in_eth)

@@ -552,7 +552,7 @@ contains
        &           ISNOW   , ZSNSO   , SNOWH   , SNEQV   , SNICE   , SNLIQ   , & ! IN/OUT : 
        &           ZWT     , WA      , WT      , WSLAKE  , LFMASS  , RTMASS  , & ! IN/OUT : 
        &           STMASS  , WOOD    , STBLCP  , FASTCP  , LAI     , SAI     , & ! IN/OUT : 
-       &           CM      , CH      , CHSTAR  ,                               & ! IN/OUT : 
+       &           CM      , CH      , CHSTAR  , TAUSS   ,                     & ! IN/OUT : 
        &           FSA     , FSR     , FIRA    , FSH     , SSOIL   , FCEV    , & ! OUT : 
        &           FGEV    , FCTR    , ECAN    , ETRAN   , EDIR    , TRAD    , & ! OUT :
        &           TS      , TGB     , TGV     , T2MV    , T2MB    , TSTAR   , & ! OUT :
@@ -620,6 +620,7 @@ contains
   REAL                           , INTENT(INOUT) :: ALBOLD !snow albedo at last time step (CLASS type)
   REAL                           , INTENT(INOUT) :: CM     !momentum drag coefficient
   REAL                           , INTENT(INOUT) :: CH     !sensible heat exchange coefficient
+  REAL                           , INTENT(INOUT) :: TAUSS  !non-dimensional snow age
 
 ! prognostic variables
   INTEGER                        , INTENT(INOUT) :: ISNOW  !actual no. of snow layers [-]
@@ -798,7 +799,7 @@ contains
 
 ! vegetation phenology
 
-     CALL PHENOLOGY (VEGTYP , SNOWH  , TV     , LAT   , YEARLEN , JULIAN , & !in
+     CALL PHENOLOGY (VEGTYP , ISURBAN, SNOWH  , TV     , LAT   , YEARLEN , JULIAN , & !in
                      LAI    , SAI    , TROOT  , HTOP  , ELAI    , ESAI   ,IGS)
 
 !input GVF should be consistent with LAI
@@ -815,6 +816,7 @@ contains
         WRITE(*,*) "-------- FATAL CALLED IN SFLX -----------"
         CALL wrf_error_fatal("Namelist parameter DVEG unknown") 
      ENDIF
+     IF(VEGTYP == ISURBAN .OR. VEGTYP == ISBARREN) FVEG = 0.0
 
 !     CALL PHENOLOGY (VEGTYP,IMONTH ,IDAY   ,SNOWH  ,TV     ,LAT   , & !in
 !                     LAI   ,SAI    ,TROOT  ,                & !in
@@ -838,6 +840,7 @@ contains
                  TV     ,TG     ,STC    ,SNOWH  ,EAH    ,TAH    , & !inout
                  SNEQVO ,SNEQV  ,SH2O   ,SMC    ,SNICE  ,SNLIQ  , & !inout
                  ALBOLD ,CM     ,CH     ,DX     ,DZ8W   ,Q2     , & !inout
+                 TAUSS  ,                                         & !inout
 !jref:start
                  QC     ,PBLH   ,QSFC   ,PSFC   ,ISURBAN,IZ0TLND, & !in 
                  CHSTAR ,TSTAR  ,T2MV   ,T2MB  ,FSRV   , &
@@ -874,7 +877,7 @@ contains
     CALL CARBON (NSNOW  ,NSOIL  ,VEGTYP ,NROOT  ,DT     ,ZSOIL  , & !in
                  DZSNSO ,STC    ,SMC    ,TV     ,TG     ,PSN    , & !in
                  FOLN   ,SMCMAX ,BTRAN  ,APAR   ,FVEG   ,IGS    , & !in
-                 TROOT  ,IST    ,LAT    ,iloc   ,jloc   ,         & !in
+                 TROOT  ,IST    ,LAT    ,iloc   ,jloc   ,ISURBAN, & !in
                  LFMASS ,RTMASS ,STMASS ,WOOD   ,STBLCP ,FASTCP , & !inout
                  GPP    ,NPP    ,NEE    ,AUTORS ,HETERS ,TOTSC  , & !out
                  TOTLB  ,LAI    ,SAI    )                   !out
@@ -966,7 +969,7 @@ contains
   END SUBROUTINE ATM
 ! ==================================================================================================
 ! --------------------------------------------------------------------------------------------------
-  SUBROUTINE PHENOLOGY (VEGTYP , SNOWH  , TV     , LAT   , YEARLEN , JULIAN , & !in
+  SUBROUTINE PHENOLOGY (VEGTYP , ISURBAN, SNOWH  , TV     , LAT   , YEARLEN , JULIAN , & !in
                         LAI    , SAI    , TROOT  , HTOP  , ELAI    , ESAI   , IGS)
 
 ! --------------------------------------------------------------------------------------------------
@@ -978,6 +981,7 @@ contains
 ! --------------------------------------------------------------------------------------------------
 ! inputs
   INTEGER                , INTENT(IN   ) :: VEGTYP !vegetation type 
+  INTEGER                , INTENT(IN   ) :: ISURBAN!urban category
   REAL                   , INTENT(IN   ) :: SNOWH  !snow height [m]
   REAL                   , INTENT(IN   ) :: TV     !vegetation temperature (k)
   REAL                   , INTENT(IN   ) :: LAT    !latitude (radians)
@@ -1029,7 +1033,7 @@ contains
      SAI = WT1*SAIM(VEGTYP,IT1) + WT2*SAIM(VEGTYP,IT2)
   ENDIF
 
-  IF ( ( VEGTYP == ISWATER ) .OR. ( VEGTYP == ISBARREN ) .OR. ( VEGTYP == ISSNOW ) ) THEN
+  IF ( ( VEGTYP == ISWATER ) .OR. ( VEGTYP == ISBARREN ) .OR. ( VEGTYP == ISSNOW ) .or. ( VEGTYP == ISURBAN) ) THEN
      LAI  = 0.
      SAI  = 0.
   ENDIF
@@ -1114,10 +1118,10 @@ contains
   CHARACTER(len=256)                          :: message
 ! --------------------------------------------------------------------------------------------------
 !jref:start
-!   ERRSW   = SWDOWN - (FSA + FSR)
-   ERRSW   = SWDOWN - (SAV+SAG + FSRV+FSRG)
- !  WRITE(*,*) "ERRSW =",ERRSW
-   IF (ERRSW > 0.01) THEN            ! w/m2
+   ERRSW   = SWDOWN - (FSA + FSR)
+!   ERRSW   = SWDOWN - (SAV+SAG + FSRV+FSRG)
+!   WRITE(*,*) "ERRSW =",ERRSW
+   IF (ABS(ERRSW) > 0.01) THEN            ! w/m2
    WRITE(*,*) "VEGETATION!"
    WRITE(*,*) "SWDOWN*FVEG =",SWDOWN*FVEG
    WRITE(*,*) "FVEG*(SAV+SAG) =",FVEG*SAV + SAG
@@ -1138,10 +1142,10 @@ contains
       call wrf_error_fatal("Stop in Noah-MP")
    END IF
 
-!jref:start - FSA changed to FVEG(SAV+SAG)+(1-FVEG)*SAG
-   ERRENG = FVEG*SAV+SAG-(FIRA+FSH+FCEV+FGEV+FCTR+SSOIL)
+   ERRENG = SAV+SAG-(FIRA+FSH+FCEV+FGEV+FCTR+SSOIL)
+!   ERRENG = FVEG*SAV+SAG-(FIRA+FSH+FCEV+FGEV+FCTR+SSOIL)
 !   WRITE(*,*) "ERRENG =",ERRENG
-   IF(ERRENG > 0.01) THEN
+   IF(ABS(ERRENG) > 0.01) THEN
       write(message,*) 'ERRENG =',ERRENG
       call wrf_message(trim(message))
       WRITE(message,'(i6,1x,i6,1x,7F10.4)')ILOC,JLOC,FSA,FIRA,FSH,FCEV,FGEV,FCTR,SSOIL
@@ -1194,6 +1198,7 @@ contains
                      TV     ,TG     ,STC    ,SNOWH  ,EAH    ,TAH    , & !inout
                      SNEQVO ,SNEQV  ,SH2O   ,SMC    ,SNICE  ,SNLIQ  , & !inout
                      ALBOLD ,CM     ,CH     ,DX     ,DZ8W   ,Q2     , &   !inout
+                     TAUSS  ,                                         & !inout
 !jref:start
                      QC     ,PBLH   ,QSFC   ,PSFC   ,ISURBAN,IZ0TLND, & !in 
                      CHSTAR ,TSTAR  ,T2MV   ,T2MB   ,FSRV   , &
@@ -1358,6 +1363,7 @@ contains
   REAL                              , INTENT(INOUT) :: EAH    !canopy air vapor pressure (pa)
   REAL                              , INTENT(INOUT) :: TAH    !canopy air temperature (k)
   REAL                              , INTENT(INOUT) :: ALBOLD !snow albedo at last time step(CLASS type)
+  REAL                              , INTENT(INOUT) :: TAUSS  !non-dimensional snow age
   REAL                              , INTENT(INOUT) :: CM     !momentum drag coefficient
   REAL                              , INTENT(INOUT) :: CH     !sensible heat exchange coefficient
   REAL                              , INTENT(INOUT) :: Q1
@@ -1534,7 +1540,7 @@ contains
                    TG      ,TV      ,FSNO    ,QSNOW   ,FWET    , & !in
                    ELAI    ,ESAI    ,SMC     ,SOLAD   ,SOLAI   , & !in
                    FVEG    ,ILOC    ,JLOC    ,                   & !in
-                   ALBOLD  ,                                     & !inout
+                   ALBOLD  ,TAUSS   ,                            & !inout
                    FSUN    ,LAISUN  ,LAISHA  ,PARSUN  ,PARSHA  , & !out
                    SAV     ,SAG     ,FSR     ,FSA     ,FSRV    , & 
                    FSRG    ,BGAP    ,WGAP    ,GAP)            !out
@@ -1665,12 +1671,12 @@ contains
     IF (VEG) THEN 
         TAUX  = FVEG * TAUXV     + (1.0 - FVEG) * TAUXB
         TAUY  = FVEG * TAUYV     + (1.0 - FVEG) * TAUYB
-        FIRA  = FVEG * IRG       + (1.0 - FVEG) * IRB       + FVEG * IRC
-        FSH   = FVEG * SHG       + (1.0 - FVEG) * SHB       + FVEG * SHC
+        FIRA  = FVEG * IRG       + (1.0 - FVEG) * IRB       + IRC
+        FSH   = FVEG * SHG       + (1.0 - FVEG) * SHB       + SHC
         FGEV  = FVEG * EVG       + (1.0 - FVEG) * EVB
         SSOIL = FVEG * GHV       + (1.0 - FVEG) * GHB
-        FCEV  = FVEG * EVC
-        FCTR  = FVEG * TR
+        FCEV  = EVC
+        FCTR  = TR
         TG    = FVEG * TGV       + (1.0 - FVEG) * TGB
         T2M   = FVEG * T2MV      + (1.0 - FVEG) * T2MB
         TS    = FVEG * TV        + (1.0 - FVEG) * TGB
@@ -2045,7 +2051,7 @@ contains
                         TG      ,TV      ,FSNO    ,QSNOW   ,FWET    , & !in
                         ELAI    ,ESAI    ,SMC     ,SOLAD   ,SOLAI   , & !in
                         FVEG    ,ILOC    ,JLOC    ,                   & !in
-                        ALBOLD  ,                                     & !inout
+                        ALBOLD  ,TAUSS   ,                            & !inout
                         FSUN    ,LAISUN  ,LAISHA  ,PARSUN  ,PARSHA  , & !out
                         SAV     ,SAG     ,FSR     ,FSA     ,FSRV    , &
                         FSRG    ,BGAP    ,WGAP,GAP)            !out
@@ -2080,6 +2086,7 @@ contains
 
 ! inout
   REAL,                  INTENT(INOUT) :: ALBOLD !snow albedo at last time step (CLASS type)
+  REAL,                  INTENT(INOUT) :: TAUSS  !non-dimensional snow age.
 
 ! output
   REAL, INTENT(OUT)                    :: FSUN   !sunlit fraction of canopy (-)
@@ -2133,7 +2140,7 @@ contains
                 TG     ,TV     ,SNOWH  ,FSNO   ,FWET   , & !in
                 SMC    ,SNEQVO ,SNEQV  ,QSNOW  ,FVEG   , & !in
                 ILOC   ,JLOC   ,                         & !in
-                ALBOLD ,                                 & !inout
+                ALBOLD ,TAUSS                          , & !inout
                 ALBGRD ,ALBGRI ,ALBD   ,ALBI   ,FABD   , & !out
                 FABI   ,FTDD   ,FTID   ,FTII   ,FSUN   , & !)   !out
                 FREVI  ,FREVD   ,FREGD ,FREGI  ,BGAP   , & !inout
@@ -2168,7 +2175,7 @@ contains
                      TG     ,TV     ,SNOWH  ,FSNO   ,FWET   , & !in
                      SMC    ,SNEQVO ,SNEQV  ,QSNOW  ,FVEG   , & !in
                      ILOC   ,JLOC   ,                         & !in
-                     ALBOLD ,                                 & !inout
+                     ALBOLD ,TAUSS                          , & !inout
                      ALBGRD ,ALBGRI ,ALBD   ,ALBI   ,FABD   , & !out
                      FABI   ,FTDD   ,FTID   ,FTII   ,FSUN   , & !out
                      FREVI  ,FREVD  ,FREGD  ,FREGI  ,BGAP   , & !out
@@ -2209,6 +2216,7 @@ contains
 
 ! inout
   REAL,                  INTENT(INOUT)  :: ALBOLD !snow albedo at last time step (CLASS type)
+  REAL,                  INTENT(INOUT)  :: TAUSS  !non-dimensional snow age
 
 ! output
   REAL, DIMENSION(1:    2), INTENT(OUT) :: ALBGRD !ground albedo (direct)
@@ -2291,7 +2299,7 @@ contains
 
 ! snow age
 
-   CALL SNOW_AGE (DT,TG,SNEQVO,SNEQV,FAGE)
+   CALL SNOW_AGE (DT,TG,SNEQVO,SNEQV,TAUSS,FAGE)
 
 ! snow albedos: only if COSZ > 0 and FSNO > 0
 
@@ -2470,7 +2478,7 @@ contains
   END SUBROUTINE SURRAD
 ! ==================================================================================================
 ! --------------------------------------------------------------------------------------------------
-  SUBROUTINE SNOW_AGE (DT,TG,SNEQVO,SNEQV,FAGE)
+  SUBROUTINE SNOW_AGE (DT,TG,SNEQVO,SNEQV,TAUSS,FAGE)
 ! --------------------------------------------------------------------------------------------------
   IMPLICIT NONE
 ! ------------------------ code history ------------------------------------------------------------
@@ -2485,8 +2493,9 @@ contains
 !output
    REAL, INTENT(OUT) :: FAGE     !snow age
 
+!input/output
+   REAL, INTENT(INOUT) :: TAUSS      !non-dimensional snow age
 !local
-   REAL            :: TAUSS      !non-dimensional snow age
    REAL            :: TAGE       !total aging effects
    REAL            :: AGE1       !effects of grain growth due to vapor diffusion
    REAL            :: AGE2       !effects of grain growth at freezing of melt water
@@ -2504,7 +2513,6 @@ contains
    ELSE IF (SNEQV.GT.800.) THEN
           TAUSS = 0.
    ELSE
-          TAUSS = 0.
           DELA0 = 1.E-6*DT
           ARG   = 5.E3*(1./TFRZ-1./TG)
           AGE1  = EXP(ARG)
@@ -2758,6 +2766,7 @@ contains
    REAL                              :: B,C,D,D1,D2,F,H,H1,H2,H3,H4,H5,H6,H7,H8,H9,H10
    REAL                              :: PHI1,PHI2,SIGMA
    REAL                              :: FTDS,FTIS,FRES
+   REAL                              :: DENFVEG
 !jref:start
    REAL                              :: FREVEG,FREBAR,FTDVEG,FTIVEG,FTDBAR,FTIBAR
    REAL                              :: THETAZ
@@ -2786,17 +2795,19 @@ contains
          KOPEN   = 1.0
      ELSE
          IF(OPT_RAD == 1) THEN
+	   DENFVEG = -LOG(MAX(1.0-FVEG,0.01))/(PAI*RC(VEGTYP)**2)
            HD      = HVT(VEGTYP) - HVB(VEGTYP)
            BB      = 0.5 * HD           
            THETAP  = ATAN(BB/RC(VEGTYP) * TAN(ACOS(MAX(0.01,COSZ))) )
-           BGAP    = EXP(-DEN(VEGTYP) * PAI * RC(VEGTYP)**2/COS(THETAP) )
-           FA      = VAI/(1.33 * PAI * RC(VEGTYP)**3.0 *(BB/RC(VEGTYP))*DEN(VEGTYP))
+           ! BGAP    = EXP(-DEN(VEGTYP) * PAI * RC(VEGTYP)**2/COS(THETAP) )
+           BGAP    = EXP(-DENFVEG * PAI * RC(VEGTYP)**2/COS(THETAP) )
+           FA      = VAI/(1.33 * PAI * RC(VEGTYP)**3.0 *(BB/RC(VEGTYP))*DENFVEG)
            NEWVAI  = HD*FA
            WGAP    = (1.0-BGAP) * EXP(-0.5*NEWVAI/COSZ)
 
 !jref - BGAP scaled to be less or equal to (1.-FVEG)           
-           BGAP    = (1.0-FVEG)*BGAP
-           WGAP    = FVEG*WGAP
+!           BGAP    = (1.0-FVEG)*BGAP
+!           WGAP    = FVEG*WGAP
 
            GAP     = MIN(1.0-FVEG, BGAP+WGAP)
            KOPEN   = 0.05
@@ -2862,7 +2873,7 @@ contains
      TMP1 = B*B - C*C
      H = SQRT(TMP1) / AVMU
      SIGMA = TMP0*TMP0 - TMP1
-     if(SIGMA == 0.) SIGMA = 1.e-6
+     if ( ABS (SIGMA) < 1.e-6 ) SIGMA = SIGN(1.e-6,SIGMA)
      P1 = B + AVMU*H
      P2 = B - AVMU*H
      P3 = B + TMP0
@@ -3359,23 +3370,24 @@ contains
         TAH = ATA + BTA*TV               ! canopy air T.
         EAH = AEA + BEA*ESTV             ! canopy air e
 
-        IRC = AIR + CIR*TV**4
-        SHC = RHOAIR*CPAIR*CVH * (  TV-TAH)
-        EVC = RHOAIR*CPAIR*CEW * (ESTV-EAH) / GAMMA
-        TR  = RHOAIR*CPAIR*CTW * (ESTV-EAH) / GAMMA
+        IRC = FVEG*(AIR + CIR*TV**4)
+        SHC = FVEG*RHOAIR*CPAIR*CVH * (  TV-TAH)
+        EVC = FVEG*RHOAIR*CPAIR*CEW * (ESTV-EAH) / GAMMA
+        TR  = FVEG*RHOAIR*CPAIR*CTW * (ESTV-EAH) / GAMMA
         EVC = MIN(CANLIQ*LATHEA/DT,EVC)
 
         B   = SAV-IRC-SHC-EVC-TR                          !additional w/m2
-        A   = 4.*CIR*TV**3 + CSH + (CEV+CTR)*DESTV !volumetric heat capacity
+        A   = FVEG*(4.*CIR*TV**3 + CSH + (CEV+CTR)*DESTV) !volumetric heat capacity
         DTV = B/A
 
-        IRC = IRC + 4.*CIR*TV**3*DTV
-        SHC = SHC + CSH*DTV
-        EVC = EVC + CEV*DESTV*DTV
-        TR  = TR  + CTR*DESTV*DTV                               
+        IRC = IRC + FVEG*4.*CIR*TV**3*DTV
+        SHC = SHC + FVEG*CSH*DTV
+        EVC = EVC + FVEG*CEV*DESTV*DTV
+        TR  = TR  + FVEG*CTR*DESTV*DTV                               
 
 ! update vegetation surface temperature
         TV  = TV + DTV
+!        TAH = ATA + BTA*TV               ! canopy air T; update here for consistency
 
 ! for computing M-O length in the next iteration
         H  = RHOAIR*CPAIR*(TAH - SFCTMP) /RAHC        
@@ -3434,6 +3446,8 @@ contains
         TG  = TG  + DTG
 
      END DO loop2
+     
+!     TAH = (CAH*SFCTMP + CVH*TV + CGH*TG)/(CAH + CVH + CGH)
 
 ! if snow on ground and TG > TFRZ: reset TG = TFRZ. reevaluate ground fluxes.
 
@@ -3454,20 +3468,24 @@ contains
 
 ! consistent vegetation air temperature and vapor pressure since TG is not consistent with the TAH/EAH
 ! calculation.
-     TAH = SFCTMP + (SHG+SHC)/(RHOAIR*CPAIR*CAH) 
-     EAH = EAIR + (EVC+TR+EVG)/(RHOAIR*CAW*CPAIR/GAMMA )
-     QFX = (QSFC-QAIR)*RHOAIR*CAW !*CPAIR/GAMMA
+!     TAH = SFCTMP + (SHG+SHC)/(RHOAIR*CPAIR*CAH) 
+!     TAH = SFCTMP + (SHG*FVEG+SHC)/(RHOAIR*CPAIR*CAH) ! ground flux need fveg
+!     EAH = EAIR + (EVC+FVEG*(TR+EVG))/(RHOAIR*CAW*CPAIR/GAMMA )
+!     QFX = (QSFC-QAIR)*RHOAIR*CAW !*CPAIR/GAMMA
 
 ! 2m temperature over vegetation ( corrected for low CQ2V values )
    IF (OPT_SFC == 1 .OR. OPT_SFC == 2) THEN
-      CAH2 = FV*1./VKC*LOG((2.+Z0H)/Z0H)
+!      CAH2 = FV*1./VKC*LOG((2.+Z0H)/Z0H)
+      CAH2 = FV*VKC/LOG((2.+Z0H)/Z0H)
       CQ2V = CAH2
       IF (CAH2 .LT. 1.E-5 ) THEN
          T2MV = TAH
-         Q2V  = (EAH*0.622/(SFCPRS - 0.378*EAH))
+!         Q2V  = (EAH*0.622/(SFCPRS - 0.378*EAH))
+         Q2V  = QSFC
       ELSE
-         T2MV = TAH - (SHG+SHC)/(RHOAIR*CPAIR*FV) * 1./VKC * LOG((2.+Z0H)/Z0H)
-         Q2V = (EAH*0.622/(SFCPRS - 0.378*EAH))- QFX/(RHOAIR*FV)* 1./VKC * LOG((2.+Z0H)/Z0H)
+         T2MV = TAH - (SHG+SHC/FVEG)/(RHOAIR*CPAIR) * 1./CAH2
+!         Q2V = (EAH*0.622/(SFCPRS - 0.378*EAH))- QFX/(RHOAIR*FV)* 1./VKC * LOG((2.+Z0H)/Z0H)
+         Q2V = QSFC - ((EVC+TR)/FVEG+EVG)/(LATHEA*RHOAIR) * 1./CQ2V
       ENDIF
    ENDIF
 
@@ -3827,7 +3845,7 @@ contains
          T2MB  = TGB
          Q2B   = QSFC
        ELSE
-         T2MB  = TGB - SHB/(RHOAIR*CPAIR*FV) * 1./VKC * LOG((2.+Z0H)/Z0H)
+         T2MB  = TGB - SHB/(RHOAIR*CPAIR) * 1./EHB2
          Q2B   = QSFC - EVB/(LATHEA*RHOAIR)*(1./CQ2B + RSURF)
        ENDIF
        IF (IVGTYP == ISURBAN) Q2B = QSFC
@@ -8160,7 +8178,7 @@ contains
   SUBROUTINE CARBON (NSNOW  ,NSOIL  ,VEGTYP ,NROOT  ,DT     ,ZSOIL  , & !in
                      DZSNSO ,STC    ,SMC    ,TV     ,TG     ,PSN    , & !in
                      FOLN   ,SMCMAX ,BTRAN  ,APAR   ,FVEG   ,IGS    , & !in
-                     TROOT  ,IST    ,LAT    ,ILOC   ,JLOC   ,         & !in
+                     TROOT  ,IST    ,LAT    ,ILOC   ,JLOC   ,ISURBAN, & !in
                      LFMASS ,RTMASS ,STMASS ,WOOD   ,STBLCP ,FASTCP , & !inout
                      GPP    ,NPP    ,NEE    ,AUTORS ,HETERS ,TOTSC  , & !out
                      TOTLB  ,XLAI   ,XSAI   )                   !out
@@ -8174,6 +8192,7 @@ contains
   INTEGER                        , INTENT(IN) :: ILOC   !grid index
   INTEGER                        , INTENT(IN) :: JLOC   !grid index
   INTEGER                        , INTENT(IN) :: VEGTYP !vegetation type 
+  INTEGER                        , INTENT(IN) :: ISURBAN!Urban category
   INTEGER                        , INTENT(IN) :: NSNOW  !number of snow layers
   INTEGER                        , INTENT(IN) :: NSOIL  !number of soil layers
   INTEGER                        , INTENT(IN) :: NROOT  !no. of root layers
@@ -8225,7 +8244,7 @@ contains
   REAL    :: LAPM      !leaf area per unit mass [m2/g]
 ! ------------------------------------------------------------------------------------------
 
-   IF ( ( VEGTYP == ISWATER ) .OR. ( VEGTYP == ISBARREN ) .OR. ( VEGTYP == ISSNOW ) ) THEN
+   IF ( ( VEGTYP == ISWATER ) .OR. ( VEGTYP == ISBARREN ) .OR. ( VEGTYP == ISSNOW ) .or. (VEGTYP == ISURBAN) ) THEN
       XLAI   = 0.
       XSAI   = 0.
       GPP    = 0.

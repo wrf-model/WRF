@@ -3,15 +3,20 @@
 ! Experimental lnox parameterization scheme for regional models
 ! using convective parameterization. Tuned for 36km CONUS run.
 !
+! History:
+! 3.4.1 - switched out PR94 resolution dependency for area ratio adjustment,
+!         see Wong et al 2012
+! 3.4.0 - submitted for release
+!
 ! Created by John Wong on 8/23/2010.
 ! Contact: john.wong@colorado.edu
+!
 !**********************************************************************
 
 MODULE module_ltng_cpm
 
   IMPLICIT NONE
 
-  REAL,                     PARAMETER, PRIVATE :: LATPARAM     = 1.25  ! midlat, sec(lat)
   REAL,                     PARAMETER, PRIVATE :: adjustment   = 2     ! adjustment to ztop to radar top (km) 
  
 ! Ott et al, 2010 Vertical distribution
@@ -157,9 +162,13 @@ CONTAINS
 
   ! Calibration factor - Price and Rind, 1994
   ! 3.912E-6 = 0.048203/(111km*111km)
-  calibration_factor = 0.97241*exp(3.912E-6*LATPARAM*dA)
-  flashrate(ips:ipe,jps:jpe) = flashrate(ips:ipe,jps:jpe)*(production_factor/calibration_factor)
-  
+  ! calibration_factor = 0.97241*exp(3.912E-6*LATPARAM*dA)
+  ! flashrate(ips:ipe,jps:jpe) = flashrate(ips:ipe,jps:jpe)*(production_factor/calibration_factor)
+
+  ! PR94 is not applicable due to the use of sub-grid parameterized cloud-top
+  calibration_factor = dA/(36.*36.)
+  flashrate(ips:ipe,jps:jpe) = flashrate(ips:ipe,jps:jpe)*production_factor*calibration_factor
+ 
   ! Accumulate grid flash rate diagnostic
   fr_diag(ips:ipe,jps:jpe) = fr_diag(ips:ipe,jps:jpe) + flashrate(ips:ipe,jps:jpe)*dt
 

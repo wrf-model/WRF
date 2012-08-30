@@ -26,7 +26,7 @@ subroutine da_write_oa_radar_ascii ( ob, iv, re )
 
     if (trace_use) call da_trace_entry("da_write_oa_radar_ascii")
 #ifdef DM_PARALLEL
-      write(unit=filename, fmt='(a,i3.3)') 'radar_omb_oma.', myproc
+      write(unit=filename, fmt='(a,i4.4)') 'radar_omb_oma.', myproc
 #else
       write(unit=filename, fmt='(a)') 'radar_omb_oma.000'
 #endif
@@ -83,7 +83,7 @@ subroutine da_write_oa_radar_ascii ( ob, iv, re )
   call da_get_unit(omb_radar_unit)
   allocate (filename1(0:num_procs-1)) 
       do k = 0,num_procs-1
-        write(unit=filename1(k),fmt ='(a,i3.3)')'radar_omb_oma.',k 
+        write(unit=filename1(k),fmt ='(a,i4.4)')'radar_omb_oma.',k 
       end do
    call da_get_unit(omb_radar_iter_unit)
    write(unit=file,fmt ='(a,i2.2)')'radar_omb_oma_',1

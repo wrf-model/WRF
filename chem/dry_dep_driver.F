@@ -178,13 +178,14 @@ CONTAINS
 !
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES WITH WESELY METHOD')
 
-       IF( config_flags%chem_opt /= CHEM_TRACER  .and.                   &
-           config_flags%chem_opt /= CHEM_TRACE2  .and.                   &
-           config_flags%chem_opt /= CO2_TRACER   .and.                   & 
-           config_flags%chem_opt /= GHG_TRACER   .and.                   &
-           config_flags%chem_opt /= CHEM_VASH    .and.                   &
-           config_flags%chem_opt /= DUST         .and.                   &
-           config_flags%chem_opt /= GOCART_SIMPLE  .and.                 &
+       IF( config_flags%chem_opt /= CHEM_TRACER    .and.                  &
+           config_flags%chem_opt /= CHEM_TRACE2    .and.                  &
+           config_flags%chem_opt /= CO2_TRACER     .and.                  & 
+           config_flags%chem_opt /= GHG_TRACER     .and.                  &
+           config_flags%chem_opt /= CHEM_VASH      .and.                  &
+           config_flags%chem_opt /= CHEM_VOLC_4BIN .and.                  &
+           config_flags%chem_opt /= DUST           .and.                  &
+           config_flags%chem_opt /= GOCART_SIMPLE  .and.                  &
            config_flags%chem_opt /= GOCARTRACM_KPP )THEN
           call wesely_driver(id,ktau,dtstep,                              &
                config_flags,current_month,                                &
@@ -596,7 +597,7 @@ CONTAINS
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
-   CASE (CHEM_VASH, CHEM_VOLC)
+   CASE (CHEM_VASH, CHEM_VOLC, CHEM_VOLC_4BIN)
        CALL wrf_debug(15,'call vash settling routine')
          call vash_settling_driver(dtstep,config_flags,t_phy,moist,        &
          chem,rho_phy,dz8w,p8w,p_phy,                                      &

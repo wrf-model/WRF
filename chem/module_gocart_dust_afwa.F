@@ -444,7 +444,7 @@ end subroutine gocart_dust_afwa_driver
    DO i=1,imx
      DO j=1,jmx
       ! Calculate total mass emitted
-        dsrc = emit*den_dust(n)*distr_dust(n)*dxy(j)*dt1  ! (kg)
+        dsrc = emit*distr_dust(n)*dxy(j)*dt1  ! (kg)
         IF (dsrc < 0.0) dsrc = 0.0
 
       ! Update dust mixing ratio at first model level.

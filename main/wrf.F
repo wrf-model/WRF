@@ -45,7 +45,7 @@ PROGRAM wrf
 
 #if ( WRFPLUS == 1 )
   ! WRF model time-stepping.  Calls integrate().  
-  IF  ( config_flags%dyn_opt .EQ. dyn_em_tl ) &
+  IF  ( config_flags%dyn_opt .EQ. dyn_em_tl .and. config_flags%tl_standalone ) &
   CALL wrf_run_tl_standalone
 
   ! WRF model time-stepping.  Calls integrate().  

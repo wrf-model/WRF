@@ -22,7 +22,7 @@ MODULE module_wrf_top
                                           restore_grid, inner_dot_g, add_grid, inner_dot, init_domain_size, &
                                           copy_s_to_g_adjtest, copy_g_to_b_adjtest, inner_dot_g_adjtest, &
                                           copy_g_to_a_adjtest, inner_dot_a_b_adjtest, zero_out_ad 
-   USE mediation_pertmod_io, ONLY : xtraj_pointer, xtraj_head, xtraj_tail, xtraj_io_initialize
+   USE mediation_pertmod_io, ONLY : xtraj_pointer, xtraj_head, xtraj_tail, xtraj_io_initialize, adtl_initialize
    USE module_nesting
    USE module_io_domain, ONLY: close_dataset, wrf_inquire_opened
 #if (EM_CORE==1)
@@ -885,6 +885,9 @@ ENDIF
    ! Release linked list for trajectory
    call xtraj_io_initialize
 
+   ! Initialize linked list for adjoint forcing and tl. pertbation
+   call adtl_initialize
+
    CALL       wrf_message ( "wrf: calling nonlinear integrate" )
 
    ! Set up basic states output
@@ -986,6 +989,9 @@ ENDIF
    CALL wrf_run_tl
 
    ! Release linked list for trajectory
+   call xtraj_io_initialize
+
+   ! Release linked list 
    call xtraj_io_initialize
 
    END SUBROUTINE wrf_run_tl_standalone

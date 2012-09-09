@@ -29,7 +29,8 @@ MODULES =       module_driver_constants.o  \
                 module_comm_nesting_dm.o   \
                 module_dm.o                \
                 module_quilt_outbuf_ops.o  \
-                module_io_quilt.o
+                module_io_quilt.o          \
+		module_bdywrite.o
 ALOBJS =\
                 module_alloc_space_0.o       \
                 module_alloc_space_1.o       \
@@ -214,6 +215,8 @@ module_comm_dm_4.o: module_domain.o module_configure.o
 module_comm_nesting_dm.o: \
 		module_domain.o \
 		module_configure.o
+
+module_bdywrite.o: module_domain_type.o module_domain.o module_dm.o
 
 module_dm_stubs.F: module_domain.o
 

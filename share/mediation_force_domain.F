@@ -92,6 +92,18 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 # include <dummy_new_decl.inc>
       END SUBROUTINE interp_domain_nmm_part1
 
+      SUBROUTINE before_interp_halos_nmm(grid,config_flags &
+!
+#include "dummy_new_args.inc"
+!
+                 )
+         USE module_domain
+         USE MODULE_CONFIGURE
+         TYPE(domain), POINTER :: grid
+         TYPE (grid_config_rec_type)            :: config_flags
+#  include <dummy_new_decl.inc>
+       END SUBROUTINE before_interp_halos_nmm
+
       SUBROUTINE force_domain_nmm_part2 ( grid, nested_grid, config_flags    &
 !
 # include "dummy_new_args.inc"
@@ -255,10 +267,16 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 
     ! on restart do not force the nest the first time since it has already been forced
     ! prior to the writing of the restart file
-    IF ( .NOT. ( config_flags%restart .AND. nested_grid%first_force ) ) THEN
+!    IF ( .NOT. ( config_flags%restart .AND. nested_grid%first_force ) ) THEN
        ! couple nested domain
        grid => nested_grid
        CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+       ! Apply halos on weights and indices:
+    call before_interp_halos_nmm(grid,config_flags &
+!
+#   include "actual_new_args.inc"
+!
+                                )
        ! perform first part: transfer data from parent to intermediate domain
        ! at the same resolution but on the same decomposition as the nest
        ! note that this will involve communication on multiple DM procs
@@ -269,7 +287,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 #         include "actual_new_args.inc"
 !
                                      )
-    ENDIF ! not restart and first force
+!    ENDIF ! not restart and first force
 
     grid => nested_grid%intermediate_grid
     IF ( .NOT. ( config_flags%restart .AND. nested_grid%first_force ) ) THEN

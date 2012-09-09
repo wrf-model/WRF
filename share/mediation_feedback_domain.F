@@ -102,6 +102,32 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 #        include <dummy_new_decl.inc>
 
       END SUBROUTINE feedback_domain_nmm_part2
+      SUBROUTINE interp_domain_nmm_part1 ( grid, intermediate_grid, ngrid, config_flags    &
+!
+# include "dummy_new_args.inc"
+!
+                 )
+         USE module_domain
+         USE module_configure
+         TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+         TYPE(domain), POINTER :: intermediate_grid
+         TYPE(domain), POINTER :: ngrid
+         TYPE (grid_config_rec_type)            :: config_flags
+# include <dummy_new_decl.inc>
+      END SUBROUTINE interp_domain_nmm_part1
+      SUBROUTINE force_intermediate_nmm ( grid, ngrid, config_flags    &
+!
+# include "dummy_new_args.inc"
+!
+                 )
+         USE module_domain
+         USE module_configure
+         TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+         TYPE(domain), POINTER :: ngrid
+         TYPE (grid_config_rec_type)            :: config_flags
+# include <dummy_new_decl.inc>
+       END SUBROUTINE force_intermediate_nmm
+
 #endif
 ! ----------------------------------------------------------
 !    Interface definitions for COAMPS (placeholder)
@@ -174,7 +200,6 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 ! ------------------------------------------------------
 
    CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
-
    grid => nested_grid%intermediate_grid
 !dusan orig     CALL alloc_space_field ( grid, grid%id , 1 , 2 , .TRUE. ,     &
 #if defined(MOVE_NESTS) || (!defined(SGIALTIX))
@@ -194,15 +219,35 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
        )
 # endif
 
+   ! NOTE: the intermediate grid is a grid with the spatial extent and
+   ! processor decomposition of the nest, at the resolution of the
+   ! parent.  It is stored as nested_grid%intermediate_grid.
+
+   ! STEP 1: Copy from parent grid to intermediate grid:
+   grid => parent_grid
+!#  include "deref_kludge.h"
+   CALL interp_domain_nmm_part1 ( grid , nested_grid%intermediate_grid, nested_grid, config_flags    &
+!
+#         include "actual_new_args.inc"
+  !
+        )
+    grid => nested_grid%intermediate_grid
+! #    include "deref_kludge.h"
+       CALL force_intermediate_nmm ( grid, nested_grid, config_flags    &
+!
+#         include "actual_new_args.inc"
+!
+                                    )
+   ! STEP 2: Interpolate from nest grid to intermediate grid
    grid => nested_grid%intermediate_grid
-#    include "deref_kludge.h"
+!#    include "deref_kludge.h"
    CALL feedback_domain_nmm_part1 ( grid, nested_grid, config_flags    &
 !
 #      include "actual_new_args.inc"
 !
                                    )
    grid => parent_grid
-#    include "deref_kludge.h"
+!#    include "deref_kludge.h"
 
 !
    CALL feedback_domain_nmm_part2 ( grid , nested_grid%intermediate_grid, nested_grid , config_flags    &

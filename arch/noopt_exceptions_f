@@ -103,17 +103,32 @@ wrf_tsin.o :
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
 	$(RM) $*.b
 	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
-          echo COMPILING $*.F for 4DVAR ; \
-          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp ; \
-          mv $*.f90.tmp $*.f90 ; \
-        fi
+	  echo COMPILING $*.F for 4DVAR ; \
+	  $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp ; \
+	  mv $*.f90.tmp $*.f90 ; \
+	fi
 	if $(FGREP) '!$$OMP' $*.f90 ; then \
-          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
+	  if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
 	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $(OMP) $*.f90 ; \
-        else \
-          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITHOUT OMP ; fi ; \
+	else \
+	  if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITHOUT OMP ; fi ; \
 	  $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90 ; \
-        fi
+	fi
+
+# mediation_feedback_domain.o: mediation_feedback_domain.F
+# module_dm.o: module_dm.F
+# module_interp_nmm.o: module_interp_nmm.F
+# interp_fcn.o: interp_fcn.F
+
+# mediation_feedback_domain.o \
+# module_interp_nmm.o \
+# interp_fcn.o \
+# module_dm.o:
+#	$(RM) $@
+#	$(SED_FTN) $*.F > $*.b 
+#	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
+#	$(RM) $*.b
+#	$(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) -check all -debug all -traceback $*.f90
 
 #solve_em.o :
 #	$(RM) $@
@@ -130,13 +145,13 @@ module_sf_ruclsm.o :
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b  > $*.f90
 	$(RM) $*.b
 	if $(FGREP) '!$$OMP' $*.f90 ; then \
-          echo COMPILING $*.F WITH OMP ; \
-          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
+	  echo COMPILING $*.F WITH OMP ; \
+	  if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
 	  $(FC) -c $(PROMOTION) $(FCREDUCEDOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $(OMP) $*.f90 ; \
-        else \
-          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITHOUT OMP ; fi ; \
+	else \
+	  if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITHOUT OMP ; fi ; \
 	  $(FC) -c $(PROMOTION) $(FCREDUCEDOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90 ; \
-        fi
+	fi
 
 # compile without OMP
 input_wrf.o \
@@ -177,9 +192,9 @@ module_configure.o :
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.F  > $*.bb
 	$(SED_FTN) $*.bb | $(CPP) > $*.f90
 	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
-          echo COMPILING $*.F for 4DVAR ; \
-          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp ; \
-          mv $*.f90.tmp $*.f90 ; \
-        fi
+	  echo COMPILING $*.F for 4DVAR ; \
+	  $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp ; \
+	  mv $*.f90.tmp $*.f90 ; \
+	fi
 	$(RM) $*.b $*.bb
 	$(FC) -c $(PROMOTION) $(FCSUFFIX) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90

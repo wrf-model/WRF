@@ -18,7 +18,9 @@ MODULES =                       \
 	module_soil_pre.o		\
 	module_check_a_mundo.o		\
         module_random.o \
-	module_llxy.o
+	module_llxy.o \
+	module_interp_nmm.o \
+	module_interp_store.o
 
 OBJS    = 		\
 	dfi.o				\
@@ -169,7 +171,9 @@ init_modules.o: ../frame/module_configure.o ../frame/module_driver_constants.o \
 		../frame/module_wrf_error.o
 
 interp_fcn.o: ../frame/module_timing.o ../frame/module_state_description.o ../frame/module_configure.o \
-		../frame/module_wrf_error.o
+		../frame/module_wrf_error.o module_interp_nmm.o module_interp_store.o
+
+module_interp_nmm.o: module_model_constants.o module_interp_store.o
 
 mediation_feedback_domain.o: ../frame/module_domain.o ../frame/module_configure.o
 

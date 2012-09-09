@@ -478,26 +478,11 @@
       call blockf(loadimbal_tim)
 #endif
       btimx=timef()
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_ZZ.inc"
-#endif
+!#ifdef DM_PARALLEL
+!#    include "HALO_NMM_ZZ.inc"
+!#endif
 
       IF(GRID%ID/=1)THEN
-!
-        CALL NESTBC_PATCH (grid%PD_BXS,grid%PD_BXE,grid%PD_BYS,grid%PD_BYE,grid%T_BXS,grid%T_BXE,grid%T_BYS,grid%T_BYE,grid%Q_BXS,grid%Q_BXE         &
-                          ,grid%Q_BYS,grid%Q_BYE,grid%U_BXS,grid%U_BXE,grid%U_BYS,grid%U_BYE,grid%V_BXS,grid%V_BXE,grid%V_BYS,grid%V_BYE             &
-                          ,grid%Q2_BXS,grid%Q2_BXE,grid%Q2_BYS,grid%Q2_BYE,grid%CWM_BXS,grid%CWM_BXE,grid%CWM_BYS,grid%CWM_BYE             &
-                          ,grid%PD_BTXS,grid%PD_BTXE,grid%PD_BTYS,grid%PD_BTYE,grid%T_BTXS,grid%T_BTXE,grid%T_BTYS,grid%T_BTYE             &
-                          ,grid%Q_BTXS,grid%Q_BTXE,grid%Q_BTYS,grid%Q_BTYE,grid%U_BTXS,grid%U_BTXE,grid%U_BTYS,grid%U_BTYE                 &
-                          ,grid%V_BTXS,grid%V_BTXE,grid%V_BTYS,grid%V_BTYE,grid%Q2_BTXS,grid%Q2_BTXE,grid%Q2_BTYS,grid%Q2_BTYE             &
-                          ,grid%CWM_BTXS,grid%CWM_BTXE,grid%CWM_BTYS,grid%CWM_BTYE,grid%pdnest_b,grid%tnest_b,grid%qnest_b,grid%unest_b    &
-                          ,grid%vnest_b,grid%q2nest_b,grid%cwmnest_b,grid%pdnest_bt,grid%tnest_bt,grid%qnest_bt                  &
-                          ,grid%unest_bt,grid%vnest_bt,grid%q2nest_bt,grid%cwmnest_bt                                  &
-                          ,GRID%SPEC_BDY_WIDTH                                                     &
-                          ,IDS,IDF,JDS,JDF,KDS,KDE                                                 &
-                          ,IMS,IME,JMS,JME,KMS,KME                                                 &
-                          ,ITS,ITE,JTS,JTE,KTS,KTE                                                 )
-
 !
 #ifdef MOVE_NESTS
 

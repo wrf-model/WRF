@@ -41,8 +41,14 @@ subroutine store_interp_info(grid, parent_grid)
   grid_id=grid%id
   parent_grid_id=parent_grid%id
 
-  parent_fis=>parent_grid%fis
-  nest_fis=>grid%hres_fis
+parent_fis=>parent_grid%fis
+nest_fis=>grid%fis
+  ! if(parent_grid_id==1) then
+  !    parent_fis=>parent_grid%fis
+  ! else
+  !    parent_fis=>parent_grid%hres_fis
+  ! endif
+  ! nest_fis=>grid%hres_fis
 
   hnear_i=>grid%hnear_i
   hnear_j=>grid%hnear_j

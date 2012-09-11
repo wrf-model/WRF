@@ -4,6 +4,7 @@
 SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
    USE module_domain
    USE module_configure
+   USE module_intermediate_nmm
    IMPLICIT NONE
    TYPE(domain), POINTER :: parent_grid , nested_grid
    TYPE(domain), POINTER :: grid
@@ -222,22 +223,16 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
    ! NOTE: the intermediate grid is a grid with the spatial extent and
    ! processor decomposition of the nest, at the resolution of the
    ! parent.  It is stored as nested_grid%intermediate_grid.
-
+ 
    ! STEP 1: Copy from parent grid to intermediate grid:
    grid => parent_grid
 !#  include "deref_kludge.h"
-   CALL interp_domain_nmm_part1 ( grid , nested_grid%intermediate_grid, nested_grid, config_flags    &
-!
-#         include "actual_new_args.inc"
-  !
-        )
-    grid => nested_grid%intermediate_grid
-! #    include "deref_kludge.h"
-       CALL force_intermediate_nmm ( grid, nested_grid, config_flags    &
-!
-#         include "actual_new_args.inc"
-!
-                                    )
+   call parent_to_inter_part1(parent_grid, nested_grid%intermediate_grid, &
+                              nested_grid, config_flags)
+
+   grid => nested_grid%intermediate_grid
+   call parent_to_inter_part2(nested_grid%intermediate_grid, config_flags)
+
    ! STEP 2: Interpolate from nest grid to intermediate grid
    grid => nested_grid%intermediate_grid
 !#    include "deref_kludge.h"

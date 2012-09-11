@@ -30,7 +30,8 @@ MODULES =       module_driver_constants.o  \
                 module_dm.o                \
                 module_quilt_outbuf_ops.o  \
                 module_io_quilt.o          \
-		module_bdywrite.o
+		module_bdywrite.o          \
+		module_intermediate_nmm.o
 ALOBJS =\
                 module_alloc_space_0.o       \
                 module_alloc_space_1.o       \

@@ -175,7 +175,8 @@ interp_fcn.o: ../frame/module_timing.o ../frame/module_state_description.o ../fr
 
 module_interp_nmm.o: module_model_constants.o module_interp_store.o
 
-mediation_feedback_domain.o: ../frame/module_domain.o ../frame/module_configure.o
+mediation_feedback_domain.o: ../frame/module_domain.o ../frame/module_configure.o \
+	../frame/module_intermediate_nmm.o
 
 mediation_force_domain.o: ../frame/module_domain.o ../frame/module_configure.o
 

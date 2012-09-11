@@ -1434,6 +1434,7 @@ contains
     if(used/=used1) then
        call wrf_error_fatal('Number of input and output points does not match.')
     endif
+
   end subroutine c2b_fulldom
 
   subroutine c2n_fulldom  (II,JJ,W1,W2,W3,W4,&
@@ -1474,6 +1475,7 @@ contains
     integer, dimension(nkde-1,nite-nits+1) :: iinfo
     real, dimension(nkde,nite-nits+1) :: inPINT,icPINT
 
+    real :: pdcheck
     integer :: i,j,k,a, nx,nz,used
     logical :: badbad
 
@@ -1528,7 +1530,6 @@ contains
 
        ! Step 3: Copy back from reordered arrays to final nest arrays:
        used=0
-       badbad=.false.
        iloop2: do i=max(nids,nits),min(nide-1,nite)
           if(imask(i,j)/=0) cycle iloop2
           used=used+1
@@ -1549,15 +1550,13 @@ contains
           k=nkte+1
           a=1-mod(JJ(i,j),2)
           nPD(i,j,1)=inPD(1,used)
-           if(nPD(i,j,1)> 1.3e5 .or. nPD(i,j,1)<2e4) then
- 3131         format('Invalid output nest PD in C2N interpolation: PD(',I0,',',I0,') = ',F0.7)
-              write(0,3131) i,j,nPD(i,j,1)
+          pdcheck=npd(i,j,1)+ptop+pdtop
+          if(pdcheck<50000.0 .or. pdcheck>105000.0) then
+ 3131         format('Invalid output nest PD in C2N interpolation: PD(',I0,',',I0,') = ',F0.7,' which is ',F0.7,' Pa')
+              write(0,3131) i,j,nPD(i,j,1),pdcheck
               call wrf_error_fatal('Invalid output nest PD')
-           endif
+          endif
        enddo iloop2
-
-       if(badbad) &
-            call wrf_error_fatal('Aborting due to invalid output values in c2n_fulldom')
     enddo bigj
 
   end subroutine c2n_fulldom
@@ -1681,7 +1680,12 @@ contains
              !   For pressures between pint(1) and 1030 mbar, interpolate
              iz=1
              weight=abs((zB-zmslp(ix))/(zA-zmslp(ix)))
-             pdB(ix) = weight*pintA(1,ix) + (1.0-weight)*P_REF - pdtop - ptop
+             pdB(ix) = exp(weight*log(pdA(ix)+pdtop+ptop) + &
+                        (1.0-weight)*log(P_REF)) &
+                        - pdtop - ptop
+!             write(0,*) 'WARNING: extrapolating below ground at ix=',ix
+!1302         format('Extrap at ix=',I0,' zA=',F0.3,' zB=',F0.3,' zmslp=',F0.3,' weight=',F0.3,' pdB+pdtop+ptop=',F0.3,' pintA=',F0.3,' pdA(ix)+pdtop+ptop=',F0.3,' P_REF=',F0.3)
+!             write(0,1302) ix,zA,zB,zmslp(ix),weight,pdB(ix)+pdtop+ptop,pintA(1,ix),pdA(ix)+pdtop+ptop,P_REF
              cycle xloop
           endif
 
@@ -1700,8 +1704,14 @@ contains
              if(znext>zB) then
                 ! Interpolate between these two levels
                 weight=(zB-z)/dz
-                pdB(ix) = weight*pintA(iz+1,ix) + (1.0-weight)*pintA(iz,ix) &
+                pdB(ix) = exp(weight*log(pintA(iz+1,ix)) + &
+                              (1.0-weight)*log(pintA(iz,ix))) &
                       - pdtop - ptop
+!                if(iz>1) then
+!                   write(0,*) 'WARNING: interpolate above ground at ix=',ix
+!1303               format('Interp at ix=',I0,' with iz=',I0,' zA=',F0.3,' zB=',F0.3,' zmslp=',F0.3,' weight=',F0.3,' pdB+pdtop+ptop=',F0.3,' pintA=',F0.3,' pdA(ix)+pdtop+ptop=',F0.3,' P_REF=',F0.3)
+!                   write(0,1303) ix,iz,zA,zB,zmslp(ix),weight,pdB(ix)+pdtop+ptop,pintA(1,ix),pdA(ix)+pdtop+ptop,P_REF
+!                endif
                 cycle xloop
              else
                 z=znext

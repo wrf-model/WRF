@@ -1623,3 +1623,4 @@ halo HALO_NMM_VT4_MSLP  dyn_nmm 8:mslp
 halo HALO_NMM_VT4_NOISE dyn_nmm 8:mslp_noisy
 
 halo HALO_NMM_INTERP_INFO dyn_nmm 8:pd,iinfo,winfo,pint
+halo HALO_NMM_INT_UP dyn_nmm 8:pd,fis,hres_fis,sm

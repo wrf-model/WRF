@@ -548,6 +548,15 @@ CONTAINS
                 chem(i,k,j,p_vash_9)=chem(i,k,j,p_vash_9)+emis_vol(i,k,j,p_e_vash9)*conv
                 chem(i,k,j,p_vash_10)=chem(i,k,j,p_vash_10)+emis_vol(i,k,j,p_e_vash10)*conv
                enddo
+      CASE (CHEM_VOLC_4BIN)
+               CALL wrf_debug(15,'Adding volcanic emissions to case chem_volc_4bin')
+               do k=kts,kte
+                conv=float(ivolcano)*alt(i,k,j)*dtstep/dz8w(i,k,j)
+                chem(i,k,j,p_vash_7)=chem(i,k,j,p_vash_7)+emis_vol(i,k,j,p_e_vash7)*conv
+                chem(i,k,j,p_vash_8)=chem(i,k,j,p_vash_8)+emis_vol(i,k,j,p_e_vash8)*conv
+                chem(i,k,j,p_vash_9)=chem(i,k,j,p_vash_9)+emis_vol(i,k,j,p_e_vash9)*conv
+                chem(i,k,j,p_vash_10)=chem(i,k,j,p_vash_10)+emis_vol(i,k,j,p_e_vash10)*conv
+               enddo
       CASE (CHEM_VASH)
                CALL wrf_debug(15,'Adding volcanic emissions to case chem_volc')
                do k=kts,kte
@@ -792,6 +801,7 @@ CONTAINS
                ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,            &
                ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,ebio_so2,   &
                ebio_dms,                                                       &
+               ebio_sesq, ebio_mbo,                                            &
                e_bio,                                                  &
                ids,ide, jds,jde, kds,kde,                              &
                ims,ime, jms,jme, kms,kme,                              &

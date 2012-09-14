@@ -1,10 +1,20 @@
 MODULE module_sf_noahdrv
 
 !-------------------------------
-  USE module_sf_noahlsm
-  USE module_sf_urban
-  USE module_sf_bep
-  USE module_sf_bep_bem
+  USE module_sf_noahlsm,  only: SFLX, XLF, XLV, CP, R_D, RHOWATER, NATURAL, SHDTBL, LUTYPE, SLTYPE, STBOLT, &
+      &                         KARMAN, LUCATS, NROTBL, RSTBL, RGLTBL, HSTBL, SNUPTBL, MAXALB, LAIMINTBL,   &
+      &                         LAIMAXTBL, Z0MINTBL, Z0MAXTBL, ALBEDOMINTBL, ALBEDOMAXTBL, EMISSMINTBL,     &
+      &                         EMISSMAXTBL, TOPT_DATA, CMCMAX_DATA, CFACTR_DATA, RSMAX_DATA, BARE, NLUS,   &
+      &                         SLCATS, BB, DRYSMC, F11, MAXSMC, REFSMC, SATPSI, SATDK, SATDW, WLTSMC, QTZ, &
+      &                         NSLTYPE, SLPCATS, SLOPE_DATA, SBETA_DATA, FXEXP_DATA, CSOIL_DATA,           &
+      &                         SALP_DATA, REFDK_DATA, REFKDT_DATA, FRZK_DATA, ZBOT_DATA, CZIL_DATA,        &
+      &                         SMLOW_DATA, SMHIGH_DATA, LVCOEF_DATA, NSLOPE, &
+      &                         FRH2O
+
+  USE module_sf_urban,    only: urban
+  USE module_sf_noahlsm_glacial_only, only: sflx_glacial
+  USE module_sf_bep,      only: bep
+  USE module_sf_bep_bem,  only: bep_bem
 #ifdef WRF_CHEM
   USE module_data_gocart_dust
 #endif
@@ -829,7 +839,7 @@ CONTAINS
              xlai = lai(i,j)
           endif
 
-    IF ( XICE(I,J) >= XICE_THRESHOLD ) THEN
+    IF ( ICE == 1 ) THEN
 
        ! Sea-ice case
 
@@ -840,11 +850,11 @@ CONTAINS
 
        CYCLE ILOOP
 
-    ELSE
+    ELSEIF (ICE == 0) THEN
 
-       ! Land and glacial land.
+       ! Non-glacial land
 
-       CALL SFLX (I,J,ICE,FFROZP, ISURBAN, DT,ZLVL,NSOIL,SLDPTH,  &    !C
+       CALL SFLX (I,J,FFROZP, ISURBAN, DT,ZLVL,NSOIL,SLDPTH,      &    !C
                  LOCAL,                                           &    !L
                  LUTYPE, SLTYPE,                                  &    !CL
                  LWDN,SOLDN,SOLNET,SFCPRS,PRCP,SFCTMP,Q2K,DUMMY,         &    !F
@@ -865,6 +875,37 @@ CONTAINS
                  SNOTIME1,                                        &
                  RIBB,                                            &
                  SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT)
+
+    ELSEIF (ICE == -1) THEN
+
+       !
+       ! Set values that the LSM is expected to update,
+       ! but don't get updated for glacial points.
+       !
+
+       XLAI = 0.01 ! KWM Should this be Zero over land ice?  Does this value matter?
+       RUNOFF2 = 0.0
+       RUNOFF3 = 0.0
+       DO NS = 1, NSOIL
+          SWC(NS) = 1.0
+          SMC(NS) = 1.0
+          SMAV(NS) = 1.0
+       ENDDO
+       CALL SFLX_GLACIAL(I,J,ISICE,FFROZP,DT,ZLVL,NSOIL,SLDPTH,   &    !C
+            &    LWDN,SOLNET,SFCPRS,PRCP,SFCTMP,Q2K,              &    !F
+            &    TH2,Q2SAT,DQSDT2,                                &    !I
+            &    ALBBRD, SNOALB1,TBOT, Z0BRD, Z0K, EMISSI, EMBRD, &    !S
+            &    T1,STC(1:NSOIL),SNOWHK,SNEQV,ALBEDOK,CHK,        &    !H
+            &    ETA,SHEAT,ETA_KINEMATIC,FDOWN,                   &    !O
+            &    ESNOW,DEW,                                       &    !O
+            &    ETP,SSOIL,                                       &    !O
+            &    FLX1,FLX2,FLX3,                                  &    !O
+            &    SNOMLT,SNCOVR,                                   &    !O
+            &    RUNOFF1,                                         &    !O
+            &    Q1,                                              &    !D
+            &    SNOTIME1,                                        &
+            &    RIBB)
+
     ENDIF
 
        lai(i,j) = xlai
@@ -1414,6 +1455,7 @@ CONTAINS
    REAL, PARAMETER           :: BLIM = 5.5, HLICE = 3.335E5,    &
                                 GRAV = 9.81, T0 = 273.15
    INTEGER                   :: errflag
+   CHARACTER(LEN=80)         :: err_message
 
    character*256 :: MMINSL
         MMINSL='STAS'

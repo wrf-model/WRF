@@ -25,7 +25,7 @@ subroutine da_final_write_obs(it,iv)
       call da_get_unit(iunit)
       allocate (filename(0:num_procs-1))
       do k = 0,num_procs-1
-         write(unit=filename(k),fmt ='(a,i2.2,a,i3.3)')'gts_omb_oma_',it,'.',k
+         write(unit=filename(k),fmt ='(a,i2.2,a,i4.4)')'gts_omb_oma_',it,'.',k
       end do 
       call da_get_unit(omb_unit)
        write(unit=file,fmt ='(a,i2.2)')'gts_omb_oma_',it

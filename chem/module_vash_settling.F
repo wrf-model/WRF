@@ -63,6 +63,7 @@ SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
        do i=its,ite
           kk=0
 	  bstl_ash(:)=0.
+	  ash(:,:,:,:)=0.
           do k=kts,kte
           kk=kk+1
           p_mid(1,1,kk)=.01*p_phy(i,kte-k+kts,j)
@@ -87,22 +88,36 @@ SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
 !         write(0,*)'1',chem(i,1,j,p_dust_4)
           do k=kts,kte
           kk=kk+1
+          ash(1,1,kk,7)=chem(i,k,j,p_vash_7)*conver
+          ash(1,1,kk,8)=chem(i,k,j,p_vash_8)*conver
+          ash(1,1,kk,9)=chem(i,k,j,p_vash_9)*conver
+          ash(1,1,kk,10)=chem(i,k,j,p_vash_10)*conver
+          enddo
+          if(config_flags%chem_opt == 400  .or. config_flags%chem_opt == 402 ) then
+          do k=kts,kte
+          kk=kk+1
           ash(1,1,kk,1)=chem(i,k,j,p_vash_1)*conver
           ash(1,1,kk,2)=chem(i,k,j,p_vash_2)*conver
           ash(1,1,kk,3)=chem(i,k,j,p_vash_3)*conver
           ash(1,1,kk,4)=chem(i,k,j,p_vash_4)*conver
           ash(1,1,kk,5)=chem(i,k,j,p_vash_5)*conver
           ash(1,1,kk,6)=chem(i,k,j,p_vash_6)*conver
-          ash(1,1,kk,7)=chem(i,k,j,p_vash_7)*conver
-          ash(1,1,kk,8)=chem(i,k,j,p_vash_8)*conver
-          ash(1,1,kk,9)=chem(i,k,j,p_vash_9)*conver
-          ash(1,1,kk,10)=chem(i,k,j,p_vash_10)*conver
           enddo
+          endif
+
           call vsettling(1, 1, lmx, 10, g,&
                     ash, tmp, p_mid, delz, airmas, &
                     den_ash, reff_ash, dt, bstl_ash, rh, idust, iseas,iash)
           kk=0
           ash_fall(i,j)=ash_fall(i,j)+sum(bstl_ash(1:10))
+          do k=kts,kte
+          kk=kk+1
+            chem(i,k,j,p_vash_7)=ash(1,1,kk,7)*converi
+            chem(i,k,j,p_vash_8)=ash(1,1,kk,8)*converi
+            chem(i,k,j,p_vash_9)=ash(1,1,kk,9)*converi
+            chem(i,k,j,p_vash_10)=ash(1,1,kk,10)*converi
+          enddo
+          if(config_flags%chem_opt == 400  .or. config_flags%chem_opt == 402 ) then
           do k=kts,kte
           kk=kk+1
             chem(i,k,j,p_vash_1)=ash(1,1,kk,1)*converi
@@ -111,16 +126,10 @@ SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
             chem(i,k,j,p_vash_4)=ash(1,1,kk,4)*converi
             chem(i,k,j,p_vash_5)=ash(1,1,kk,5)*converi
             chem(i,k,j,p_vash_6)=ash(1,1,kk,6)*converi
-            chem(i,k,j,p_vash_7)=ash(1,1,kk,7)*converi
-            chem(i,k,j,p_vash_8)=ash(1,1,kk,8)*converi
-            chem(i,k,j,p_vash_9)=ash(1,1,kk,9)*converi
-            chem(i,k,j,p_vash_10)=ash(1,1,kk,10)*converi
           enddo
+          endif
 
 !ash settling end
-
-
-
 
        enddo
        enddo

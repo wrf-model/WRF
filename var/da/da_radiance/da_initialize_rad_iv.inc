@@ -129,6 +129,13 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
             iv%instid(i)%graupel_r_jacobian(:,:,n)=0.0
             iv%instid(i)%hail_r_jacobian(:,:,n)=0.0
          end if
+         if ( calc_weightfunc ) then
+            iv%instid(i)%lod(:,:,n) = 0.0
+            iv%instid(i)%lod_jacobian(:,:,n) = 0.0
+            iv%instid(i)%trans(:,:,n) = 0.0
+            iv%instid(i)%trans_jacobian(:,:,n) = 0.0
+            iv%instid(i)%der_trans(:,:,n) = 0.0
+         end if
       end if
    end if
 

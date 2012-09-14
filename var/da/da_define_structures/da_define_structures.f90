@@ -497,6 +497,9 @@ module da_define_structures
       real,    pointer     :: mr(:,:)
       real,    pointer     :: tm(:,:)
       real,    pointer     :: qm(:,:)
+      real,    pointer     :: lod(:,:,:)       ! layer_optical_depth
+      real,    pointer     :: trans(:,:,:)     ! layer transmittance
+      real,    pointer     :: der_trans(:,:,:) ! d(transmittance)/dp
       real,    pointer     :: qrn(:,:)
       real,    pointer     :: qcw(:,:)
       real,    pointer     :: qci(:,:)
@@ -540,6 +543,8 @@ module da_define_structures
       real,    pointer     :: gamma_jacobian(:,:)
       real,    pointer     :: t_jacobian(:,:,:)
       real,    pointer     :: q_jacobian(:,:,:)
+      real,    pointer     :: lod_jacobian(:,:,:)
+      real,    pointer     :: trans_jacobian(:,:,:)
       real,    pointer     :: water_jacobian(:,:,:) ! water content jacobian
       real,    pointer     :: ice_jacobian(:,:,:)
       real,    pointer     :: rain_jacobian(:,:,:)

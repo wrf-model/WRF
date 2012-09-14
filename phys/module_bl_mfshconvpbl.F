@@ -196,7 +196,7 @@ DO J=JTS,JTE
             PZZ(I,J,K+1)=PZZ(I,J,K)+DZ(I,K,J)
             PZZM(I,J,K)=0.5*(PZZ(I,J,K+1)+PZZ(I,J,K)) ! z at mass point
         ELSE
-            PZZM(I,J,K)=PZZ(I,J,K)+0.5*DZ(I,J,K-1) ! z at mass point
+            PZZM(I,J,K)=PZZ(I,J,K)+0.5*DZ(I,K-1,J) ! z at mass point
         ENDIF
         IF (K==KTS) THEN
            PDZZ(I,J,K)=2*(PZZM(I,J,K))      

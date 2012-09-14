@@ -10,7 +10,7 @@ CONTAINS
      &          ,grdflx,gsw,swdown,gz1oz0,hfx,ht,ifsnow,isfflx        &
      &          ,fractional_seaice,seaice_albedo_opt,tice2tsk_if2cold &
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
-     &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,psih          &
+     &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih    &
 #if (NMM_CORE==1)
      &          ,psim,p_phy,q10,q2,qfx,taux,tauy,qsfc,qshltr,qz0      &
 #else
@@ -45,11 +45,11 @@ CONTAINS
      &          ,stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy                        &
      &          ,tradxy   ,tsxy     ,neexy    ,gppxy    ,nppxy    ,fvegxy   ,qinxy     &
      &          ,runsfxy  ,runsbxy  ,ecanxy   ,edirxy   ,etranxy  ,fsaxy    ,firaxy    &
-     &          ,aparxy   ,psnxy    ,savxy    ,sagxy                                   &
+     &          ,aparxy   ,psnxy    ,savxy    ,sagxy    ,taussxy                       &
      &          ,fsnoxy                                                                &
      &          ,t2mvxy   ,t2mbxy   ,chstarxy ,rssunxy  ,rsshaxy  ,bgapxy   ,wgapxy    &    
      &          ,gapxy    ,tgvxy    ,tgbxy    ,q2mvxy   ,q2mbxy   ,chvxy    ,chbxy     &
-#if ( EM_CORE==1)
+#if (EM_CORE==1)
      &          ,ch,tsq,qsq,cov                                       & ! MYNN
 #endif
             !  Optional urban
@@ -573,6 +573,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   CHKLOWQ
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   GZ1OZ0
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   PSHLTR
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   FHH
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   FM
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   PSIH
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   PSIM
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   Q10
@@ -629,7 +631,7 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) :: tvxy, tgxy, canicexy, canliqxy, eahxy, tahxy, cmxy, chxy,               &
         fwetxy, sneqvoxy, alboldxy, qsnowxy, wslakexy, zwtxy, waxy, wtxy, lfmassxy, rtmassxy, stmassxy, woodxy, stblcpxy, fastcpxy,       &
         xsaixy, tradxy, tsxy, neexy, gppxy, nppxy, fvegxy, qinxy, runsfxy, runsbxy, ecanxy, edirxy, etranxy, fsaxy, firaxy,               &
-        aparxy, psnxy, savxy, sagxy, fsnoxy, q2mvxy, q2mbxy
+        aparxy, psnxy, savxy, sagxy, fsnoxy, q2mvxy, q2mbxy, taussxy
    REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) ::  t2mvxy   ,t2mbxy   ,chstarxy, rssunxy, rsshaxy, bgapxy,wgapxy,gapxy , &
         tgvxy ,tgbxy, chvxy, chbxy
 
@@ -1274,7 +1276,7 @@ CONTAINS
          IF ( FRACTIONAL_SEAICE == 1 ) THEN
             CALL SFCLAY_SEAICE_WRAPPER(u_phytmp,v_phytmp,t_phy,qv_curr,&
                  p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
-                 znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
+                 znt,ust,pblh,mavail,zol,mol,regime,psim,psih,fm,fhh, &
                  xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
                  u10,v10,th2,t2,q2,                                  &
                  gz1oz0,wspd,br,isfflx,dx,                           &
@@ -1292,7 +1294,7 @@ CONTAINS
          ELSE
          CALL SFCLAY(u_phytmp,v_phytmp,t_phy,qv_curr,              &
                p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
-               znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
+               znt,ust,pblh,mavail,zol,mol,regime,psim,psih,fm,fhh, &
                xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
                u10,v10,th2,t2,q2,                                  &
                gz1oz0,wspd,br,isfflx,dx,                           &
@@ -1347,7 +1349,7 @@ CONTAINS
 !         ELSE
          CALL SFCLAYREV(u_phytmp,v_phytmp,t_phy,qv_curr,&
                p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
-               znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
+               znt,ust,pblh,mavail,zol,mol,regime,psim,psih,fm,fhh, &
                xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
                u10,v10,th2,t2,q2,                                  &
                gz1oz0,wspd,br,isfflx,dx,                           &
@@ -1577,23 +1579,25 @@ CONTAINS
                XICE,SST,TSK_SEA,                                   &
                CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA, &
                HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,    &
-               TICE2TSK_IF2COLD,XICE_THRESHOLD,                                     &
+               TICE2TSK_IF2COLD,XICE_THRESHOLD,                    &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
-               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, &   
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
          ELSE
-          CALL SFCLAY_mynn(u_phytmp,v_phytmp,t_phy,qv_curr,&
+          CALL SFCLAY_mynn(u_phytmp,v_phytmp,t_phy,qv_curr,        &
                p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
-               znt,ust,pblh,mavail,zol,mol,regime,psim,psih, &
+               znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
                xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
                u10,v10,th2,t2,q2,                                  &
                gz1oz0,wspd,br,isfflx,dx,                           &
                svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
-               &itimestep,ch,th_phy,pi_phy,qc_curr,&
-               &tsq,qsq,cov,qcg,&
+               &itimestep,ch,th_phy,pi_phy,qc_curr,                &
+               &tsq,qsq,cov,qcg,                                   &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
-               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+               i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte,&
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
          ENDIF
        ELSE
           CALL wrf_error_fatal('Lacking arguments for SFCLAY_mynn in surface driver')
@@ -2088,7 +2092,7 @@ CONTAINS
                 stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,lai      ,xsaixy   ,           &
                 tradxy   ,tsxy     ,neexy    ,gppxy    ,nppxy    ,fvegxy   ,qinxy    , &
                 runsfxy  ,runsbxy  ,ecanxy   ,edirxy   ,etranxy  ,fsaxy    ,firaxy   , &
-                aparxy   ,psnxy    ,savxy    ,sagxy    ,                               &
+                aparxy   ,psnxy    ,savxy    ,sagxy    ,taussxy  ,                     &
                 fsnoxy   ,YR       ,JULIAN_IN,                                         &
                 potevp,                                         & !o
 !jref:start
@@ -2504,19 +2508,18 @@ CONTAINS
        day=float(int(julian_in+0.01))+1.
        DO j=j_start(ij),j_end(ij)
        DO i=i_start(ij),i_end(ij)
+
 !check land mask and land-use map !fds (02/2012)
-! IF(itimestep .EQ. 1 ) THEN
+!       IF(itimestep .EQ. 1 ) THEN
 !          IF(IVGTYP(i,j).NE.ISWATER)THEN
 !            XLAND(I,J)=1.0
 !          ELSE
 !            XLAND(I,J)=2.0
 !          ENDIF
-!         IF (IVGTYP(I,J).LE.0 .AND. XLAND(I,J).NE.ISWATER ) IVGTYP(I,J) = 7.0
-! ENDIF
-!
+!          IF (IVGTYP(I,J).LE.0 .AND. XLAND(I,J).NE.ISWATER ) IVGTYP(I,J) = 7.0
+!       ENDIF
 
-!        IF(XLAND(I,J).LT.1.5 .AND. IVGTYP(I,J).NE.ISICE) THEN !land and seaice-free points
-         IF(XLAND(I,J).LT.1.5) THEN !land points, including land ice points
+       IF(XLAND(I,J).LT.1.5) THEN ! seaice and land points
 
            CLOUDFRAC=0.
            IF(PRESENT(CLDFRA))THEN
@@ -2524,6 +2527,30 @@ CONTAINS
              CLOUDFRAC=AMAX1(CLOUDFRAC,AMIN1(CLDFRA(I,K,J),1.0))
            ENDDO
            ENDIF
+
+         IF (XICE(I,J) .GE. XICE_THRESHOLD) THEN !sea ice points only
+
+           CALL ssib_seaice                                                        &
+                    ( i, j, DTBL, itimestep, xlat_urb2d(i,j), coszen(i,j),         &
+                      rainncv(i,j), raincv(i,j), glw(i,j), dz8w(i,1,j),            &
+                      smois(i,1,j), smois(i,2,j), smois(i,3,j),                    &
+                      tslb(i,1,j), tslb(i,2,j), tslb(i,3,j),                       &
+                      snow(i,j), sfcrunoff(i,j), xicem(i,j),                        &
+                      u_phytmp(i,1,j),v_phytmp(i,1,j),qv_curr(i,1,j),t_phy(i,1,j), &
+                      p_phy(i,1,j), psfc(i,j),                                     &
+                      swdown(i,j), canwat(i,j),                                    &
+                 alswvisdir(i,j),alswvisdif(i,j),alswnirdir(i,j),alswnirdif(i,j),  &
+                      swvisdir(i,j), swvisdif(i,j), swnirdir(i,j), swnirdif(i,j),  &
+                      hfx(i,j), lh(i,j), grdflx(i,j), qfx(i,j), tsk(i,j),          &
+                      ust(i,j), ssib_br(i,j), ssib_fm(i,j), ssib_fh(i,j), ssib_cm(i,j), &
+                      ssib_lhf(i,j), ssib_shf(i,j), ssib_ghf(i,j),                 &
+                      ssib_sdn(i,j), ssib_sup(i,j), ssib_ldn(i,j), ssib_lup(i,j),  &
+                      ssib_wat(i,j),                                               &
+                                     ssib_z00(i,j), ssib_veg(i,j),                 &
+                      day, cloudfrac, q2(i,j), t2(i,j), albedo(i,j),               &
+                      ra_sw_physics,xice_threshold                                 &
+                                                                                   )
+         ELSE  !land points only (including land ice)
 
            CALL ssib( i, j, DTBL, itimestep, xlat_urb2d(i,j), coszen(i,j),        &
                      rainncv(i,j), raincv(i,j), glw(i,j), dz8w(i,1,j),            &
@@ -2554,60 +2581,30 @@ CONTAINS
                      day, cloudfrac, q2(i,j), t2(i,j), albedo(i,j),               &
                      ra_sw_physics, mminlu                                        &
                                                                                   )
-                     BR(i,j)=ssib_br(i,j)
-                     ZNT(i,j) = ssib_z00(i,j)
-                     SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
-                     snowh(i,j) = snowdepth(i,j)
-                     IF (itimestep .ne. 1) THEN
-                       ZDIFF=(0.5*dz8w(i,1,j))-SSiBXDD(I,J)
-                       IF(ZDIFF.LE.ZNT(I,J)) ZDIFF=ZNT(I,J)+0.2
-                       GZ1OZ0(I,J)=ALOG(ZDIFF/ZNT(I,J))
-                     ENDIF
-!                    Overwrite WSPD to remove convective velocity (wspd=wspd1 in YSU)
-                     WSPD(I,J)=sqrt( u_phytmp(i,1,j)*u_phytmp(i,1,j) +      &
-                                     v_phytmp(i,1,j)*v_phytmp(i,1,j) ) + 1.e-9
-
-         ELSE IF (XICE(I,J) .GE. XICE_THRESHOLD) THEN !sea ice points
-
-           CLOUDFRAC=0.
-           DO K=KMS,KME
-             CLOUDFRAC=AMAX1(CLOUDFRAC,AMIN1(CLDFRA(I,K,J),1.0))
-           ENDDO
-
-!          CALL wrf_message ( 'Calling ssib_seaice' ) !fds
-           CALL ssib_seaice                                                        &
-                    ( i, j, DTBL, itimestep, xlat_urb2d(i,j), coszen(i,j),         &
-                      rainncv(i,j), raincv(i,j), glw(i,j), dz8w(i,1,j),            &
-                      smois(i,1,j), smois(i,2,j), smois(i,3,j),                    &
-                      tslb(i,1,j), tslb(i,2,j), tslb(i,3,j),                       &
-                      snow(i,j), sfcrunoff(i,j), xicem(i,j),                        &
-                      u_phytmp(i,1,j),v_phytmp(i,1,j),qv_curr(i,1,j),t_phy(i,1,j), &
-                      p_phy(i,1,j), psfc(i,j),                                     &
-                      swdown(i,j), canwat(i,j),                                    &
-                 alswvisdir(i,j),alswvisdif(i,j),alswnirdir(i,j),alswnirdif(i,j),  &
-                      swvisdir(i,j), swvisdif(i,j), swnirdir(i,j), swnirdif(i,j),  &
-                      hfx(i,j), lh(i,j), grdflx(i,j), qfx(i,j), tsk(i,j),          &
-                      ust(i,j), ssib_br(i,j), ssib_fm(i,j), ssib_fh(i,j), ssib_cm(i,j), &
-                      ssib_lhf(i,j), ssib_shf(i,j), ssib_ghf(i,j),                 &
-                      ssib_sdn(i,j), ssib_sup(i,j), ssib_ldn(i,j), ssib_lup(i,j),  &
-                      ssib_wat(i,j),                                               &
-                                     ssib_z00(i,j), ssib_veg(i,j),                 &
-                      day, cloudfrac, q2(i,j), t2(i,j), albedo(i,j),               &
-                      ra_sw_physics,xice_threshold                                 &
-                                                                                   )
-                     BR(i,j)=ssib_br(i,j)
-                     ZNT(i,j) = ssib_z00(i,j)
-                     SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
-                    t2(i,j) = tsk(i,j) !use SSiB's TGEFF as 2m temperature (Nov/2011)
-                     IF (itimestep .ne. 1) THEN
-                       ZDIFF=(0.5*dz8w(i,1,j))-SSiBXDD(I,J)
-                       IF(ZDIFF.LE.ZNT(I,J)) ZDIFF=ZNT(I,J)+0.2
-                       GZ1OZ0(I,J)=ALOG(ZDIFF/ZNT(I,J))
-                     ENDIF
-!                    Overwrite WSPD to remove convective velocity (wspd=wspd1 in YSU)
-                     WSPD(I,J)=sqrt( u_phytmp(i,1,j)*u_phytmp(i,1,j) +      &
-                                     v_phytmp(i,1,j)*v_phytmp(i,1,j) ) + 1.e-9
          ENDIF
+!
+         BR(i,j)=ssib_br(i,j)
+         ZNT(i,j) = ssib_z00(i,j)
+         SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
+         t2(i,j) = tsk(i,j)  !keep this
+         IF (itimestep .ne. 1) THEN
+           ZDIFF=(0.5*dz8w(i,1,j))-SSiBXDD(I,J)
+           IF(ZDIFF.LE.ZNT(I,J)) ZDIFF=ZNT(I,J)+0.2
+           GZ1OZ0(I,J)=ALOG(ZDIFF/ZNT(I,J))
+         ENDIF
+         IF (XICE(I,J) .GE. XICE_THRESHOLD) THEN
+           snowh(i,j) = 0.0
+         ELSE
+           snowh(i,j) = snowdepth(i,j)
+         ENDIF
+!mchen         U10(i,j) = 0.0
+!mchen         V10(i,j) = 0.0
+!        Overwrite WSPD to remove convective velocity (wspd=wspd1 in YSU)
+         WSPD(I,J)=sqrt( u_phytmp(i,1,j)*u_phytmp(i,1,j) +      &
+                         v_phytmp(i,1,j)*v_phytmp(i,1,j) ) + 1.e-9
+!
+       ENDIF
+!
        ENDDO
        ENDDO
 !
@@ -3113,8 +3110,9 @@ HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
 TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte)
-!                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd           )
+                     its,ite, jts,jte, kts,kte,                    &
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
+
      USE module_sf_mynn, ONLY: sfclay_mynn
      implicit none
 
@@ -3189,9 +3187,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                                                              &QC3D,&
                                               &th3d,pi3d,tsq,qsq,cov
 
-!     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
-!               INTENT(OUT)     ::              ck,cka,cd,cda,ustm
-!     INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
+               INTENT(OUT)     ::              ck,cka,cd,cda,ustm
+     INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
 
 !--------------------------------------------------------------------
 !    New for wrapper
@@ -3250,7 +3248,12 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                                                 T2_SEA,           &
                                                 TH2_SEA,          &
                                                 U10_SEA,          &
-                                                V10_SEA
+                                                V10_SEA,          &
+                                                CD_SEA,           &
+                                                CDA_SEA,          &
+                                                CK_SEA,           &
+                                                CKA_SEA,          &
+                                                USTM_SEA
 
      REAL,     DIMENSION( ims:ime, jms:jme ) ::                   &
                                                 BR_SEA,           &
@@ -3355,7 +3358,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                &tsq,qsq,cov,qcg,                                   &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
-               its,ite, jts,jte, kts,kte    )
+               its,ite, jts,jte, kts,kte,                          &
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
+
      ! Set up for open-water call
      DO j = JTS , JTE
         DO i = ITS , ITE
@@ -3439,7 +3444,8 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                &tsq,qsq,cov,qcg,                                   &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
-               its,ite, jts,jte, kts,kte    )
+               its,ite, jts,jte, kts,kte,                          &
+               ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd )
 
      DO j = JTS , JTE
         DO i = ITS, ITE
@@ -3468,15 +3474,26 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
               ch(i,j)     = ( ch(i,j)     * XICE(i,j) ) + ( (1.0-XICE(i,j)) * ch_sea(i,j)    )
               ! INTENT(OUT)
               ! --------------------------------------------------------------------
+              IF ( PRESENT ( CD ) ) THEN
+                 CD(i,j)  = ( CD(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * CD_sea(i,j)    )
+              ENDIF
+              IF ( PRESENT ( CDA ) ) THEN
+                 CDA(i,j) = ( CDA(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * CDA_sea(i,j)   )
+              ENDIF
+              IF ( PRESENT ( CK ) ) THEN
+                 CK(i,j)  = ( CK(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * CK_sea(i,j)    )
+              ENDIF
+              IF ( PRESENT ( CKA ) ) THEN
+                 CKA(i,j) = ( CKA(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * CKA_sea(i,j)   )
+              ENDIF
               q2(i,j)     = ( q2(i,j)     * XICE(i,j) ) + ( (1.0-XICE(i,j)) * q2_sea(i,j)     )
               ! QSFC -- wait
               t2(i,j)     = ( t2(i,j)     * XICE(i,j) ) + ( (1.0-XICE(i,j)) * t2_sea(i,j)     )
               th2(i,j)    = ( th2(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * th2_sea(i,j)    )
               u10(i,j)    = ( u10(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * u10_sea(i,j)    )
-!              IF ( PRESENT ( USTM ) ) THEN
-!                 USTM(i,j)    = ( USTM(i,j)    * XICE(i,j) ) + (
-!                 (1.0-XICE(i,j)) * USTM_sea(i,j)    )
-!              ENDIF
+              IF ( PRESENT ( USTM ) ) THEN
+                 USTM(i,j) = ( USTM(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * USTM_sea(i,j)   )
+              ENDIF
               v10(i,j)    = ( v10(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * v10_sea(i,j)    )
            ENDIF
         END DO
@@ -3747,6 +3764,7 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
    SUBROUTINE sfclay_seaice_wrapper(U3D,V3D,T3D,QV3D,P3D,dz8w,     &
                      CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,      &
                      ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH, &
+                     FM,FH,                                        &
                      XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QGH,QSFC,RMOL, &
                      U10,V10,TH2,T2,Q2,                            &
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
@@ -3804,7 +3822,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
 
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(INOUT)   ::                 GZ1OZ0,WSPD,BR, &
-                                                        PSIM,PSIH
+                                                 PSIM,PSIH,FM,FH
 
      REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                INTENT(IN   )   ::                            U3D, &
@@ -3881,6 +3899,8 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                                                 MOL_HOLD,         &
                                                 PSIH_HOLD,        &
                                                 PSIM_HOLD,        &
+                                                FH_HOLD,          &
+                                                FM_HOLD,          &
                                                 QFX_HOLD,         &
                                                 QGH_HOLD,         &
                                                 REGIME_HOLD,      &
@@ -3910,6 +3930,8 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                                                 MOL_SEA,          &
                                                 PSIH_SEA,         &
                                                 PSIM_SEA,         &
+                                                FH_SEA,           &
+                                                FM_SEA,           &
                                                 REGIME_SEA,       &
                                                 RMOL_SEA,         &
                                                 UST_SEA,          &
@@ -3957,6 +3979,8 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      MOL_HOLD  = MOL
      PSIH_HOLD = PSIH
      PSIM_HOLD = PSIM
+     FH_HOLD   = FH
+     FM_HOLD   = FM
      QFX_HOLD  = QFX
      QGH_HOLD  = QGH
      REGIME_HOLD = REGIME
@@ -3990,6 +4014,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      call sfclay(U3D,V3D,T3D,QV3D,P3D,dz8w,                    & ! I
                  CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,      & ! I,I,I,I,I,I,IO,IO,IO,IO,
                  ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH, &
+                 FM,FH,                                        &
                  XLAND,HFX,QFX,LH,TSK_LOCAL,FLHC,FLQC,QGH,QSFC,RMOL, &
                  U10,V10,TH2,T2,Q2,                            &
                  GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
@@ -4058,6 +4083,8 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      MOL_SEA  = MOL_HOLD
      PSIH_SEA = PSIH_HOLD
      PSIM_SEA = PSIM_HOLD
+     FH_SEA   = FH_HOLD
+     FM_SEA   = FM_HOLD
      QFX_SEA  = QFX_HOLD
      QGH_SEA  = QGH_HOLD
      REGIME_SEA = REGIME_HOLD
@@ -4073,6 +4100,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                  ZNT_SEA,UST_SEA,                              & ! I/O
                  PBLH,MAVAIL_SEA,                              & ! I
                  ZOL_SEA,MOL_SEA,REGIME_SEA,PSIM_SEA,PSIH_SEA, & ! I/O
+                 FM_SEA,FH_SEA,                                &
                  XLAND_SEA,                              & ! I
                  HFX_SEA,QFX_SEA,LH_SEA,                       & ! I/O
                  TSK_SEA,                                      & ! I
@@ -4105,6 +4133,8 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
               mol(i,j)    = ( mol(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * mol_sea(i,j)    )
               psih(i,j)   = ( psih(i,j)   * XICE(i,j) ) + ( (1.0-XICE(i,j)) * psih_sea(i,j)   )
               psim(i,j)   = ( psim(i,j)   * XICE(i,j) ) + ( (1.0-XICE(i,j)) * psim_sea(i,j)   )
+              fh(i,j)    = ( fh(i,j)   * XICE(i,j) ) + ( (1.0-XICE(i,j)) * fh_sea(i,j)   )
+              fm(i,j)    = ( fm(i,j)   * XICE(i,j) ) + ( (1.0-XICE(i,j)) * fm_sea(i,j)   )
               ! QFX  -- wait
               ! QGH  -- wait
               if ( XICE(i,j).GE. 0.5 ) regime(i,j) = regime_hold(i,j)

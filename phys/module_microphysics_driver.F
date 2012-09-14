@@ -49,7 +49,7 @@ SUBROUTINE microphysics_driver(                                          &
 ! YLIN
 ! Added the RI_CURR array to the call
                       ,ri_curr                                           &
-                      ,diagflag                                          &
+                      ,diagflag,   do_radar_ref                          &
                                                    )
 ! Framework
 #if(NMM_CORE==1)
@@ -93,6 +93,10 @@ SUBROUTINE microphysics_driver(                                          &
 
    USE module_mp_HWRF
    USE module_mixactivate, only: prescribe_aerosol_mixactivate
+
+! For checking model timestep is history time (for radar reflectivity)
+   USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
+   USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep
 
 !----------------------------------------------------------------------
    ! This driver calls subroutines for the microphys.
@@ -371,7 +375,8 @@ SUBROUTINE microphysics_driver(                                          &
                        ,f_qns,f_qnr,f_qng,f_qnn,f_qnc,f_qh,f_qnh,f_qzr       &
                        ,f_qzi,f_qzs,f_qzg,f_qzh,f_qvolg
 
-   LOGICAL, OPTIONAL :: diagflag
+   LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
+   INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
 
 ! LOCAL  VAR
 
@@ -516,7 +521,9 @@ SUBROUTINE microphysics_driver(                                          &
                      RAINPROD=rainprod,                  &
                      EVAPPROD=evapprod,                  &
 #endif
-!                    refl_10cm, grid_clock, grid_alarms, &
+                     REFL_10CM=refl_10cm,                &
+                     diagflag=diagflag,                  &
+                     do_radar_ref=do_radar_ref,          &
                  IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
                  IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
                  ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
@@ -560,6 +567,9 @@ SUBROUTINE microphysics_driver(                                          &
                     ,RAINNC=RAINNC                       &  !*
                     ,RAINNCV=RAINNCV                     &  !*
                     ,SR=SR                               &  !* !hm
+                    ,REFL_10CM=refl_10cm                 &  ! added for radar reflectivity
+                    ,diagflag=diagflag                   &  ! added for radar reflectivity
+                    ,do_radar_ref=do_radar_ref           &  ! added for radar reflectivity
                     ,qrcuten=qrcuten                     &  ! hm
                     ,qscuten=qscuten                     &  ! hm
                     ,qicuten=qicuten                     &  ! hm
@@ -828,6 +838,9 @@ SUBROUTINE microphysics_driver(                                          &
                  ,RAINNC=rainnc, RAINNCV=rainncv                    &
                  ,SNOWNC=snownc, SNOWNCV=snowncv ,SR=sr             &
                  ,GRAUPELNC=graupelnc ,GRAUPELNCV=graupelncv        &
+                 ,REFL_10CM=refl_10cm                               &  ! added for radar reflectivity
+                 ,diagflag=diagflag                                 &  ! added for radar reflectivity
+                 ,do_radar_ref=do_radar_ref                         &  ! added for radar reflectivity
                  ,F_QG=f_qg                                         &
                  ,QG=qg_curr                                        &
                  ,IHAIL=hail, ICE2=ice2                             &
@@ -868,6 +881,9 @@ SUBROUTINE microphysics_driver(                                          &
                  ,RAINNC=rainnc, RAINNCV=rainncv                    &
                  ,SNOWNC=snownc, SNOWNCV=snowncv                    &
                  ,GRAUPELNC=graupelnc, GRAUPELNCV=graupelncv, SR=sr &
+                 ,REFL_10CM=refl_10cm                               &  ! added for radar reflectivity
+                 ,diagflag=diagflag                                 &  ! added for radar reflectivity
+                 ,do_radar_ref=do_radar_ref                         &  ! added for radar reflectivity
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -974,6 +990,11 @@ SUBROUTINE microphysics_driver(                                          &
                  ,RAIN=rainnc ,RAINNCV=rainncv                      &
                  ,SNOW=snownc ,SNOWNCV=snowncv                      &
                  ,SR=sr                                             &
+#ifndef _ACCEL
+                 ,REFL_10CM=refl_10cm                               &  ! added for radar reflectivity
+                 ,diagflag=diagflag                                 &  ! added for radar reflectivity
+                 ,do_radar_ref=do_radar_ref                         &  ! added for radar reflectivity
+#endif
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -1006,6 +1027,9 @@ SUBROUTINE microphysics_driver(                                          &
                  ,RAIN=rainnc ,RAINNCV=rainncv                      &
                  ,SNOW=snownc ,SNOWNCV=snowncv                      &
                  ,SR=sr                                             &
+                 ,REFL_10CM=refl_10cm                               &  ! added for radar reflectivity
+                 ,diagflag=diagflag                                 &  ! added for radar reflectivity
+                 ,do_radar_ref=do_radar_ref                         &  ! added for radar reflectivity
                  ,GRAUPEL=graupelnc ,GRAUPELNCV=graupelncv          &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
@@ -1042,6 +1066,9 @@ SUBROUTINE microphysics_driver(                                          &
                  ,RAIN=rainnc ,RAINNCV=rainncv                      &
                  ,SNOW=snownc ,SNOWNCV=snowncv                      &
                  ,SR=sr                                             &
+                 ,REFL_10CM=refl_10cm                               &  ! added for radar reflectivity
+                 ,diagflag=diagflag                                 &  ! added for radar reflectivity
+                 ,do_radar_ref=do_radar_ref                         &  ! added for radar reflectivity
                  ,ITIMESTEP=itimestep                               & 
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
@@ -1080,6 +1107,9 @@ SUBROUTINE microphysics_driver(                                          &
                  ,RAIN=rainnc ,RAINNCV=rainncv                      &
                  ,SNOW=snownc ,SNOWNCV=snowncv                      &
                  ,SR=sr                                             &
+                 ,REFL_10CM=refl_10cm                               &  ! added for radar reflectivity
+                 ,diagflag=diagflag                                 &  ! added for radar reflectivity
+                 ,do_radar_ref=do_radar_ref                         &  ! added for radar reflectivity
                  ,GRAUPEL=graupelnc ,GRAUPELNCV=graupelncv          &
                  ,ITIMESTEP=itimestep                               & 
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &

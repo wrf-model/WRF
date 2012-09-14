@@ -41,9 +41,9 @@ subroutine da_add_noise_to_ob( iv, ob )
 !  [2.0] Create noise and output:
 !----------------------------------------------------------------------
 #ifdef DM_PARALLEL
-      write(unit=filename, fmt='(a,i3.3)') 'rand_obs_error.', myproc
+      write(unit=filename, fmt='(a,i4.4)') 'rand_obs_error.', myproc
 #else
-      write(unit=filename, fmt='(a)') 'rand_obs_error.000'
+      write(unit=filename, fmt='(a)') 'rand_obs_error.0000'
 #endif
 
    open(unit=ounit,file=trim(filename),form='formatted',iostat=ios)

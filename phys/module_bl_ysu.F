@@ -6,7 +6,6 @@
 !
 !
 !
-!
 module module_bl_ysu
 contains
 !
@@ -20,7 +19,7 @@ contains
                   dz8w,psfc,                                                   &
                   znu,znw,mut,p_top,                                           &
                   znt,ust,hpbl,psim,psih,                                      &
-                  xland,hfx,qfx,gz1oz0,wspd,br,                                &
+                  xland,hfx,qfx,wspd,br,                                       &
                   dt,kpbl2d,                                                   &
                   exch_h,                                                      &
                   u10,v10,                                                     &
@@ -74,7 +73,6 @@ contains
 !-- xland	land mask (1 for land, 2 for water)
 !-- hfx		upward heat flux at the surface (w/m^2)
 !-- qfx		upward moisture flux at the surface (kg/m^2/s)
-!-- gz1oz0      log(z/z0) where z0 is roughness length
 !-- wspd        wind speed at lowest model level (m/s)
 !-- u10         u-wind speed at 10 m (m/s)
 !-- v10         v-wind speed at 10 m (m/s)
@@ -149,8 +147,7 @@ contains
    real,     dimension( ims:ime, jms:jme )                                   , &
              intent(in   )   ::                                                &
                                                                          psim, &
-                                                                         psih, &
-                                                                       gz1oz0
+                                                                         psih
    real,     dimension( ims:ime, jms:jme )                                   , &
              intent(inout)   ::                                           znt, &
                                                                           ust, &
@@ -247,10 +244,9 @@ contains
               ,dt=dt,rcl=1.0,kpbl1d=kpbl2d(ims,j)                              &
               ,exch_hx=exch_h(ims,kms,j)                                       &
               ,u10=u10(ims,j),v10=v10(ims,j)                                   &
-#if ( NMM_CORE != 1 )
+#if ( ! NMM_CORE == 1 )
               ,ctopo=ctopo(ims,j),ctopo2=ctopo2(ims,j)                         &
 #endif
-              ,gz1oz0=gz1oz0(ims,j)                                            &
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
@@ -280,7 +276,6 @@ contains
                   exch_hx,                                                     &
                   u10,v10,                                                     &
                   ctopo,ctopo2,                                                &
-                  gz1oz0,                                                      &
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
                   its,ite, jts,jte, kts,kte,                                   &
@@ -318,7 +313,7 @@ contains
 !               ==> negligible differences
 !              implicit forcing for momentum with clean up, july 2009
 !               ==> prevents model blowup when sfc layer is too low
-!              increase of lamda, maximum (30, 0.1 x del z) feb 2010
+!              incresea of lamda, maximum (30, 0.1 x del z) feb 2010
 !               ==> prevents model blowup when delz is extremely large
 !              revised prandtl number at surface, peggy lemone, feb 2010
 !               ==> increase kh, decrease mixing due to counter-gradient term
@@ -328,6 +323,10 @@ contains
 !               ==> pr0 = 1 + bke (=0.272) when newtral, kh is reduced
 !              minimum kzo = 0.01, lo = min (30m,delz), hong, mar 2012
 !               ==> weaker mixing when stable, and les resolution in vertical
+!              gz1oz0 is removed, and phim phih are ln(z1/z0)-phim,h, hong, mar 2012
+!               ==> consider thermal z0 when differs from mechanical z0
+!              a bug fix in wscale computation in stable bl, sukanta basu, jun 2012
+!               ==> wscale becomes small with height, and less mixing in stable bl
 !
 !     references:
 !
@@ -398,7 +397,6 @@ contains
 !
    real,     dimension( ims:ime ), intent(in   )   ::                    psim, &
                                                                          psih
-   real,     dimension( ims:ime ), intent(in   )   ::                  gz1oz0
 !
    real,     dimension( ims:ime ), intent(in   )   ::                  psfcpa
    integer,  dimension( ims:ime ), intent(out  )   ::                  kpbl1d
@@ -490,7 +488,8 @@ contains
                                                                        bfxpbl, &
                                                                 hfxpbl,qfxpbl, &
                                                                 ufxpbl,vfxpbl, &
-                                                                        dthvx
+                                                                        dthvx, &
+                                                                         zol1
    real    ::  prnumfac,bfx0,hfx0,qfx0,delb,dux,dvx,                           &
                dsdzu,dsdzv,wm3,dthx,dqx,wspd10,ross,tem1,dsig,tvcon,conpr,     &
                prfac,prfac2,phim8z
@@ -666,16 +665,15 @@ contains
    enddo
 !
    do i = its,ite
-     fm = gz1oz0(i)-psim(i)
-     fh = gz1oz0(i)-psih(i)
-     hol(i) = max(br(i)*fm*fm/fh,rimin)
+     fm = psim(i)
+     fh = psih(i)
+     zol1(i) = max(br(i)*fm*fm/fh,rimin)
      if(sfcflg(i))then
-       hol(i) = min(hol(i),-zfmin)
+       zol1(i) = min(zol1(i),-zfmin)
      else
-       hol(i) = max(hol(i),zfmin)
+       zol1(i) = max(zol1(i),zfmin)
      endif
-     hol1 = hol(i)*hpbl(i)/zl1(i)*sfcfrac
-     hol(i) = -hol(i)*hpbl(i)/zl1(i)
+     hol1 = zol1(i)*hpbl(i)/zl1(i)*sfcfrac
      if(sfcflg(i))then
        phim(i) = (1.-aphi16*hol1)**(-1./4.)
        phih(i) = (1.-aphi16*hol1)**(-1./2.)
@@ -881,13 +879,12 @@ contains
            prfac = 0.
            prfac2 = 0.
            prnumfac = 0.
-           phim8z = 1.+(phim(i)-1.)*zq(i,k+1)/sfcfrac/hpbl(i)
+           phim8z = 1.+aphi5*zol1(i)*zq(i,k+1)/zl1(i)
            wscalek(i,k) = ust(i)/phim8z
-           wscalek(i,k) = max(wscalek(i,k),ust(i)/aphi5)
+           wscalek(i,k) = max(wscalek(i,k),0.001)
          endif
          prnum0 = (phih(i)/phim(i)+prfac)
-         prnum0 = min(prnum0,prmax)
-         prnum0 = max(prnum0,prmin)
+         prnum0 = max(min(prnum0,prmax),prmin)
          xkzm(i,k) = wscalek(i,k)*karman*zq(i,k+1)*zfac(i,k)**pfac
          prnum =  1. + (prnum0-1.)*exp(prnumfac)
          xkzq(i,k) = xkzm(i,k)/prnum*zfac(i,k)**(pfac_q-pfac)
@@ -1020,7 +1017,7 @@ contains
      enddo
    enddo
 !
-!     compute tridiagonal matrix elements for moisture, clouds, and tracers
+!     compute tridiagonal matrix elements for moisture, clouds, and gases
 !
    do k = kts,kte
      do i = its,ite
@@ -1117,7 +1114,7 @@ contains
      enddo
    enddo
 !
-!     solve tridiagonal problem for moisture, clouds, and tracers
+!     solve tridiagonal problem for moisture, clouds, and gases
 !
    call tridin_ysu(al,ad,cu,r3,au,f3,its,ite,kts,kte,ndiff)
 !

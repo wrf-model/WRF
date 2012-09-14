@@ -22,6 +22,8 @@ subroutine da_crtm_sensor_descriptor(nsensor,sensor_descriptor)
         if (satellite_id == 1) crtm_sat='metop-b'
         if (satellite_id == 2) crtm_sat='metop-a'
         if (satellite_id == 3) crtm_sat='metop-c'
+     else if (trim(crtm_platform_name(platform_id)) == 'tiros') then
+        if (satellite_id == 0) crtm_sat='tirosn'
      else
         write(crtm_sat, '(a,i2.2)')  &
              trim( crtm_platform_name(platform_id) ),satellite_id

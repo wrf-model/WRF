@@ -510,6 +510,8 @@
        CALL wrf_debug(15,'tracer mode: only doing emissions and dry dep in chem_driver')
     CASE (CHEM_VOLC)
        CALL wrf_debug(15,'Full Volcanic Ash mode: doing emissions (SO2 + ASH), settling, and subgrid transport in chem_driver')
+    CASE (CHEM_VOLC_4BIN)
+       CALL wrf_debug(15,'4bin Volcanic Ash mode: doing emissions (ASH), settling, and subgrid transport in chem_driver')
     CASE (CHEM_VASH)
        CALL wrf_debug(15,'Volcanic Ash mode: only doing emissions, settling, and subgrid transport in chem_driver')
     CASE (DUST)
@@ -909,6 +911,7 @@
            config_flags%chem_opt /= CHEM_TRACER .and. &
            config_flags%chem_opt /= CHEM_VASH .and. &
            config_flags%chem_opt /= CHEM_VOLC .and. &
+           config_flags%chem_opt /= CHEM_VOLC_4BIN .and. &
            config_flags%chem_opt /= DUST .and. &
            config_flags%chem_opt /= CHEM_TRACE2 .and. &
            config_flags%chem_opt /= CO2_TRACER  .and. &
@@ -945,6 +948,7 @@
            config_flags%chem_opt /= CHEM_TRACER .and. &
            config_flags%chem_opt /= CHEM_VASH .and. &
            config_flags%chem_opt /= CHEM_VOLC .and. &
+           config_flags%chem_opt /= CHEM_VOLC_4BIN .and. &
            config_flags%chem_opt /= DUST .and. &
            config_flags%chem_opt /= CHEM_TRACE2 .and. &
            config_flags%chem_opt /= CO2_TRACER  .and. &
@@ -1175,6 +1179,7 @@
           config_flags%chem_opt /= CHEM_TRACER .and. &
           config_flags%chem_opt /= CHEM_VASH .and. &
           config_flags%chem_opt /= CHEM_VOLC .and. &
+          config_flags%chem_opt /= CHEM_VOLC_4BIN .and. &
           config_flags%chem_opt /= DUST .and. &
           config_flags%chem_opt /= CHEM_TRACE2 .and. &
           config_flags%chem_opt /= CO2_TRACER  .and. &

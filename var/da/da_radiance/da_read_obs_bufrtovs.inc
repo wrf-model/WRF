@@ -275,7 +275,10 @@ bufrfile:  do ibufr=1,numbufr
          !------------------------------------------------------
          !  3.1     Extract satellite id and scan position. 
    
-         if ( nint(bfr1bhdr(bufr_satellite_id)) >= 206 .and. nint(bfr1bhdr(bufr_satellite_id)) <= 209 ) then
+         if ( nint(bfr1bhdr(bufr_satellite_id)) >= 200 .and. nint(bfr1bhdr(bufr_satellite_id)) <= 204 ) then
+            platform_id = 1
+            satellite_id = nint(bfr1bhdr(bufr_satellite_id))-192
+         else if ( nint(bfr1bhdr(bufr_satellite_id)) >= 205 .and. nint(bfr1bhdr(bufr_satellite_id)) <= 209 ) then
             platform_id = 1
             satellite_id = nint(bfr1bhdr(bufr_satellite_id))-191
          else if ( nint(bfr1bhdr(bufr_satellite_id)) == 223 ) then ! noaa-19
@@ -284,6 +287,12 @@ bufrfile:  do ibufr=1,numbufr
          else if ( nint(bfr1bhdr(bufr_satellite_id)) >= 3 .and. nint(bfr1bhdr(bufr_satellite_id)) <= 5 ) then
             platform_id = 10
             satellite_id = nint(bfr1bhdr(bufr_satellite_id))-2
+         else if ( nint(bfr1bhdr(bufr_satellite_id)) == 708 ) then ! tiros-n
+            platform_id = 19
+            satellite_id = 0
+         else if ( nint(bfr1bhdr(bufr_satellite_id)) >= 701 .and. nint(bfr1bhdr(bufr_satellite_id)) <= 707 ) then
+            platform_id = 1
+            satellite_id = nint(bfr1bhdr(bufr_satellite_id))-700
          end if
          ifov = nint(bfr1bhdr(bufr_ifov))    
 

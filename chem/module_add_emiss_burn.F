@@ -125,6 +125,8 @@ CONTAINS
                          +ebu(i,k,j,p_ebu_iso)*conv_rho
         chem(i,k,j,p_no)   = chem(i,k,j,p_no)                          &
                          +ebu(i,k,j,p_ebu_no)*conv_rho
+        chem(i,k,j,p_no2)  = chem(i,k,j,p_no2)                         &
+                         +ebu(i,k,j,p_ebu_no2)*conv_rho
         chem(i,k,j,p_ald)  = chem(i,k,j,p_ald)                         &
                          +ebu(i,k,j,p_ebu_ald)*conv_rho
         chem(i,k,j,p_hcho) = chem(i,k,j,p_hcho)                        &
@@ -175,6 +177,8 @@ CONTAINS
                          +ebu(i,k,j,p_ebu_iso)*conv_rho
         chem(i,k,j,p_no)   = chem(i,k,j,p_no)                          &
                          +ebu(i,k,j,p_ebu_no)*conv_rho
+        chem(i,k,j,p_no2)  = chem(i,k,j,p_no2)                         &
+                         +ebu(i,k,j,p_ebu_no2)*conv_rho
         chem(i,k,j,p_ald)  = chem(i,k,j,p_ald)                         &
                          +ebu(i,k,j,p_ebu_ald)*conv_rho
         chem(i,k,j,p_hcho) = chem(i,k,j,p_hcho)                        &
@@ -243,6 +247,8 @@ CONTAINS
                          +ebu(i,k,j,p_ebu_iso)*conv_rho
         chem(i,k,j,p_no)   = chem(i,k,j,p_no)                          &
                          +ebu(i,k,j,p_ebu_no)*conv_rho
+        chem(i,k,j,p_no2)  = chem(i,k,j,p_no2)                         &
+                         +ebu(i,k,j,p_ebu_no2)*conv_rho
         chem(i,k,j,p_ald)  = chem(i,k,j,p_ald)                         &
                          +ebu(i,k,j,p_ebu_ald)*conv_rho
         chem(i,k,j,p_hcho) = chem(i,k,j,p_hcho)                        &
@@ -291,6 +297,8 @@ CONTAINS
                          +ebu(i,k,j,p_ebu_iso)*conv_rho
         chem(i,k,j,p_no)   = chem(i,k,j,p_no)                          &
                          +ebu(i,k,j,p_ebu_no)*conv_rho
+        chem(i,k,j,p_no2)  = chem(i,k,j,p_no2)                         &
+                         +ebu(i,k,j,p_ebu_no2)*conv_rho
         chem(i,k,j,p_ald)  = chem(i,k,j,p_ald)                         &
                          +ebu(i,k,j,p_ebu_ald)*conv_rho
         chem(i,k,j,p_hcho) = chem(i,k,j,p_hcho)                        &

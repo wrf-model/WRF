@@ -59,6 +59,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    real    :: clw(kms:kme), dpf(kms:kme)
    real    :: clwp
 
+   real    :: total_od
+
    ! CRTM local varaibles and types
    integer :: Allocate_Status
    integer :: n_layers, n_absorbers, n_clouds, n_aerosols
@@ -186,6 +188,13 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
       if ( Allocate_Status /= 0 ) then
          call da_error(__FILE__,__LINE__, (/"Error in allocating RTSolution"/))
       end if
+
+      call CRTM_RTSolution_Create( RTSolution , &                  !Output
+                                   Atmosphere(1)%n_layers )        !Input
+      if ( .NOT.(ANY(crtm_rtsolution_associated(RTSolution))) ) then
+         call da_error(__FILE__,__LINE__, &
+            (/"Error in allocating CRTM RTSolution Stucture"/))
+      end if
             
       if (use_crtm_kmatrix) then
          allocate (RTSolution_K(ChannelInfo(inst)%n_Channels,1), &
@@ -194,6 +203,12 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                    STAT = Allocate_Status )
          if ( Allocate_Status /= 0 ) then
             call da_error(__FILE__,__LINE__, (/"Error in allocating RTSolution_K"/))
+         end if
+         call CRTM_RTSolution_Create( RTSolution_K , &                !Output
+                                      Atmosphere(1)%n_layers )        !Input
+         if ( .NOT.(ANY(crtm_rtsolution_associated(RTSolution_K))) ) then
+            call da_error(__FILE__,__LINE__, &
+               (/"Error in allocating CRTM RTSolution_K Stucture"/))
          end if
       end if
       
@@ -691,6 +706,24 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
             end do
          end if
 
+         if ( calc_weightfunc .and. use_crtm_kmatrix ) then
+            do l = 1, nchanl
+               total_od = 0.0
+               do k = 1, Atmosphere(1)%n_layers
+                  iv%instid(inst)%lod(l,k,n) = RTSolution(l,1)%layer_optical_depth(k)
+                  iv%instid(inst)%lod_jacobian(l,k,n) = RTSolution_K(l,1)%layer_optical_depth(k)
+                  total_od = total_od + RTSolution(l,1)%layer_optical_depth(k)
+                  iv%instid(inst)%trans(l,k,n) = exp(-total_od)
+                  iv%instid(inst)%trans_jacobian(l,k,n) = -iv%instid(inst)%lod_jacobian(l,k,n)*exp(iv%instid(inst)%lod(l,k,n))
+               end do
+               iv%instid(inst)%der_trans(l,1,n) = 0.0
+               do k= 2, Atmosphere(1)%n_layers
+                  iv%instid(inst)%der_trans(l,k,n) =  abs( (iv%instid(inst)%trans(l,k-1,n)-iv%instid(inst)%trans(l,k,n))/ &
+                                                           (log(iv%instid(inst)%pm(k-1,n))-log(iv%instid(inst)%pm(k,n))) )
+               end do
+            end do
+         end if
+
          !----------------------------------------------
          ! [4.0] store surface information to innovation structure
          !----------------------------------------------
@@ -728,12 +761,14 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
       deallocate (model_vegfra)
       deallocate (model_smois)
 
+      call CRTM_RTSolution_Destroy(RTSolution)
       deallocate( RTSolution, STAT = Allocate_Status )
       if (Allocate_Status /= 0) &
          call da_error(__FILE__,__LINE__, &
             (/"Error in deallocating RTSolution"/))
 
       if (use_crtm_kmatrix) then
+         call CRTM_RTSolution_Destroy(RTSolution_K)
          deallocate( RTSolution_K, STAT = Allocate_Status )
          if (Allocate_Status /= 0) &
             call da_error(__FILE__,__LINE__, &

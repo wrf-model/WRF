@@ -24,7 +24,8 @@ module da_crtm
       rttov_inst_name,rttov_platform_name, climatology_model_name, &
       crtm_options_type, crtm_options_create, crtm_options_destroy, &
       crtm_atmosphere_associated, crtm_surface_associated, &
-      crtm_options_associated
+      crtm_options_associated, &
+      crtm_rtsolution_create, crtm_rtsolution_destroy, crtm_rtsolution_associated
 
    use da_control, only : trace_use, crtm_cloud, gravity,stdout, biascorr, &
       biasprep, qc_rad,missing_r,rtminit_sensor,rtminit_nsensor, filename_len, &
@@ -33,7 +34,7 @@ module da_crtm
       rtminit_satid, global,kms,kme,ims,ime,jms,jme,kts,kte,use_airs_mmr, &
       use_crtm_kmatrix, use_varbc, freeze_varbc, use_pseudo_rad, &
       use_antcorr, time_slots, use_satcv, use_simulated_rad, simulated_rad_io, &
-      simulated_rad_ngrid, interp_option, use_mspps_emis, use_mspps_ts
+      simulated_rad_ngrid, interp_option, use_mspps_emis, use_mspps_ts, calc_weightfunc
    use da_interpolation, only : da_interp_lin_2d_partial,da_interp_lin_2d_adj_partial, &
       da_interp_2d_partial
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_reals

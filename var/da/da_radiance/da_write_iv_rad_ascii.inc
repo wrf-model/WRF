@@ -19,6 +19,8 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
    character(len=7)   :: surftype
    integer            :: ndomain
 
+   real, allocatable :: dtransmt(:,:), transmt_jac(:,:), transmt(:,:), lod(:,:), lod_jac(:,:)
+
    if (trace_use) call da_trace_entry("da_write_iv_rad_ascii")
 
    do i = 1, iv%num_inst
@@ -33,6 +35,14 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
          end if
       end do
       if (ndomain < 1) cycle
+
+      if (rtm_option==rtm_option_crtm .and. write_jacobian ) then
+         allocate ( dtransmt(iv%instid(i)%nchan,iv%instid(i)%nlevels) )
+         allocate ( transmt_jac(iv%instid(i)%nchan,iv%instid(i)%nlevels) )
+         allocate ( transmt(iv%instid(i)%nchan,iv%instid(i)%nlevels) )
+         allocate ( lod(iv%instid(i)%nchan,iv%instid(i)%nlevels) )
+         allocate ( lod_jac(iv%instid(i)%nchan,iv%instid(i)%nlevels) )
+      end if
 
       write(unit=filename, fmt='(i2.2,a,i4.4)') it,'_inv_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
 
@@ -192,16 +202,36 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
 
             if ( rtm_option == rtm_option_crtm .and. write_jacobian) then
 #ifdef CRTM
+
+               if ( calc_weightfunc ) then
+                  dtransmt(:,:)    = iv%instid(i)%der_trans(:,:,n)
+                  transmt(:,:)     = iv%instid(i)%trans(:,:,n)
+                  transmt_jac(:,:) = iv%instid(i)%trans_jacobian(:,:,n)
+                  lod(:,:)         = iv%instid(i)%lod(:,:,n)
+                  lod_jac(:,:)     = iv%instid(i)%lod_jacobian(:,:,n)
+               else
+                  dtransmt(:,:)    = 0.0
+                  transmt(:,:)     = 0.0
+                  transmt_jac(:,:) = 0.0
+                  lod(:,:)         = 0.0
+                  lod_jac(:,:)     = 0.0
+               end if
+
                write(unit=innov_rad_unit,fmt=*) &
-                  'channel level halfp(mb) t(k) q(g/kg) water(mm) ice(mm) rain(mm) snow(mm) graupel(mm) hail(mm)'
+                  'channel level halfp(mb) t(k) q(g/kg) der_trans trans_jac trans lod_jac lod water(mm) ice(mm) rain(mm) snow(mm) graupel(mm) hail(mm)'
                if (crtm_cloud) then
                   do l=1,iv%instid(i)%nchan
                      do k=1,iv%instid(i)%nlevels-1
-                        write(unit=innov_rad_unit,fmt='(i5,i3,f10.2,8f8.3,6f8.3)') &
+                        write(unit=innov_rad_unit,fmt='(i5,i3,f10.2,13f14.7,6f14.7)') &
                            l, k,  &
                            iv%instid(i)%pm(k,n), &
                            iv%instid(i)%t_jacobian(l,k,n), &
                            iv%instid(i)%q_jacobian(l,k,n), &
+                           dtransmt(l,k),&
+                           transmt_jac(l,k),&
+                           transmt(l,k),&
+                           lod_jac(l,k),&
+                           lod(l,k),&
                            iv%instid(i)%water_jacobian(l,k,n), &
                            iv%instid(i)%ice_jacobian(l,k,n), & 
                            iv%instid(i)%rain_jacobian(l,k,n), &
@@ -219,11 +249,16 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
                else  ! no cloud
                   do l=1,iv%instid(i)%nchan
                      do k=1,iv%instid(i)%nlevels-1
-                        write(unit=innov_rad_unit,fmt='(i5,i3,f10.2,8f8.3,6f8.3)') &
+                        write(unit=innov_rad_unit,fmt='(i5,i3,f10.2,13f14.7,6f14.7)') &
                            l, k,  &
                            iv%instid(i)%pm(k,n), &
                            iv%instid(i)%t_jacobian(l,k,n), &
                            iv%instid(i)%q_jacobian(l,k,n), &
+                           dtransmt(l,k),&
+                           transmt_jac(l,k),&
+                           transmt(l,k),&
+                           lod_jac(l,k),&
+                           lod(l,k),&
                            0., &
                            0., &
                            0., &
@@ -244,6 +279,13 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
 
          end if ! end if proc_domain
       end do ! end do pixels
+      if (rtm_option==rtm_option_crtm .and. write_jacobian ) then
+         deallocate ( dtransmt )
+         deallocate ( transmt_jac )
+         deallocate ( transmt )
+         deallocate ( lod )
+         deallocate ( lod_jac )
+      end if
       close(unit=innov_rad_unit)
       call da_free_unit(innov_rad_unit)
    end do ! end do instruments

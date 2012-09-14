@@ -1311,7 +1311,7 @@ updraft:    DO NK=K,KL-1
 !
 !...entrainment is allowed at every level except for LTOP, so disallow
 !...entrainment at LTOP and adjust entrainment rates between LET and LTOP
-!...so the the dilution factor due to entyrianment is not changed but 
+!...so the the dilution factor due to entrainment is not changed but 
 !...the actual entrainment rate will change due due forced total 
 !...detrainment in this layer...
 !

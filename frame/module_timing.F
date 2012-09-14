@@ -34,7 +34,7 @@ CONTAINS
 
       IMPLICIT NONE
 
-      if(silence) return
+      if(silence/=0) return
       cn = cn + 1
       IF ( cn .gt. cnmax ) THEN
         CALL wrf_error_fatal( 'module_timing: clock nesting error (too many nests)' )
@@ -59,7 +59,7 @@ CONTAINS
       CHARACTER *(*) :: string
       character*512 :: buf
 
-      if(silence) return
+      if(silence/=0) return
 
       IF ( cn .lt. 1 ) THEN
         CALL wrf_error_fatal( 'module_timing: clock nesting error, cn<1' ) 
@@ -85,11 +85,11 @@ CONTAINS
       elapsed_seconds_total = elapsed_seconds_total + elapsed_seconds
 
 3031 format("Timing for ",A,": ",F10.5," elapsed seconds")
-      if(buffered) then
+      if(buffered/=0) then
          write(buf,3031) TRIM(string),elapsed_seconds
          call wrf_message(buf)
       else
-         if(stderrlog) &
+         if(stderrlog/=0) &
               write(0,3031) TRIM(string),elapsed_seconds
          write(6,3031) TRIM(string),elapsed_seconds
       endif

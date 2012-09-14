@@ -5,16 +5,16 @@ MODULE module_wrf_error
   INTEGER           :: wrf_debug_level = 0
   CHARACTER*256     :: wrf_err_message
 
-  ! LOGICAL silence -- if TRUE, this MPI rank does not send messages
-  !   via wrf_message, end_timing, wrf_debug, atm_announce, cmp_announce,
-  !   non-fatal glob_abort, or the like.  If FALSE, this MPI rank DOES
-  !   send messages.  Regardless of this setting, fatal errors 
-  !   (wrf_error_fatal or fatal glob_aborts) and anything sent to write
-  !   or print will be sent.
+  ! LOGICAL silence -- if TRUE (non-zero), this MPI rank does not send
+  !   messages via wrf_message, end_timing, wrf_debug, atm_announce,
+  !   cmp_announce, non-fatal glob_abort, or the like.  If FALSE, this
+  !   MPI rank DOES send messages.  Regardless of this setting, fatal
+  !   errors (wrf_error_fatal or fatal glob_aborts) and anything sent to
+  !   write or print will be sent.
 #if defined(DM_PARALLEL)
-  LOGICAL :: silence=.false.
+  integer, save :: silence=0
 #else
-  LOGICAL, PARAMETER :: silence=.false.  ! Per-rank silence requires MPI
+  integer, paremeter :: silence=0 ! Per-rank silence requires MPI
 #endif
 
   ! LOGICAL buffered -- if TRUE, messages are buffered via clog_write.
@@ -28,9 +28,9 @@ MODULE module_wrf_error
   !   This must be enabled at compile time by setting $WRF_LOG_BUFFERING
 
 #if defined(WRF_LOG_BUFFERING)
-  LOGICAL :: buffered=.false.
+  integer :: buffered=.false.
 #else
-  LOGICAL, PARAMETER :: buffered=.false. ! buffering disabled at compile time
+  integer, PARAMETER :: buffered=.false. ! buffering disabled at compile time
 #endif
 
   ! LOGICAL stderrlog -- if TRUE, messages are sent to stderr via
@@ -41,9 +41,9 @@ MODULE module_wrf_error
   !    MPI configurations other than HWRF turn ON stderr.
 
 #if defined( DM_PARALLEL ) && ! defined( STUBMPI ) && !defined(HWRF)
-  LOGICAL :: stderrlog=.true. ! T = send to write(0,...) if buffered=F
+  integer :: stderrlog=.true. ! T = send to write(0,...) if buffered=F
 #else
-  LOGICAL :: stderrlog=.false.! T = send to write(0,...) if buffered=F
+  integer :: stderrlog=.false.! T = send to write(0,...) if buffered=F
 #endif
 
   INTEGER, PARAMETER :: wrf_log_flush=0, wrf_log_set_buffer_size=1, &
@@ -123,9 +123,9 @@ CONTAINS
     ! Forbid small buffers.  See the comment above for min_allowed_buffer_size:
     if(buffer_size>=min_allowed_buffer_size) then
        call wrf_log_action(wrf_log_set_buffer_size,buffer_size,' ')
-       buffered=.true.
+       buffered=1
     else
-       buffered=.false.
+       buffered=0
     endif
 #else
     if(buffer_size>=min_allowed_buffer_size) then
@@ -135,24 +135,30 @@ CONTAINS
 #endif
 
     stderrlog=stderr_logging
-    if(buffered .and. stderrlog) then
+    if(buffered/=0 .and. stderrlog/=0) then
        write(0,*) 'Disabling stderr logging since buffering is enabled.'
        write(6,*) 'Disabling stderr logging since buffering is enabled.'
 #      ifdef _WIN32
           FLUSH(0)
 #      endif
-       stderrlog=.false.
+       stderrlog=0
     endif
 
 #if defined(DM_PARALLEL)
+    silence=0
     if(present(on_io_server)) then
        if(on_io_server) then
-          silence=io_servers_silent
+          if(io_servers_silent) &
+               silence=1
           return
        endif
     endif
     if(compute_slaves_silent) then
-       silence=.not.wrf_dm_on_monitor()
+       if(wrf_dm_on_monitor()) then
+          silence=0
+       else
+          silence=1
+       endif
     endif
 #endif
   END SUBROUTINE init_module_wrf_error
@@ -197,13 +203,13 @@ SUBROUTINE wrf_message( str )
   IMPLICIT NONE
 
   CHARACTER*(*) str
-  if(silence) return
-  if(buffered) then
+  if(silence/=0) return
+  if(buffered/=0) then
 #if defined(WRF_LOG_BUFFERING)
      call wrf_log_action(wrf_log_write,len_trim(str),str)
 #endif
   else
-     if(stderrlog) then
+     if(stderrlog/=0) then
         write(0,*) trim(str)
 # ifdef _WIN32
   FLUSH(0)
@@ -266,7 +272,7 @@ SUBROUTINE wrf_error_fatal3( file_str, line, str )
   CALL wrf_message( str )
   CALL wrf_message( '-------------------------------------------' )
 
-  force_stderr: if(.not.stderrlog) then
+  force_stderr: if(stderrlog==0) then
   CALL wrf_message2( '-------------- FATAL CALLED ---------------' )
   ! only print file and line if line is positive
   IF ( line > 0 ) THEN
@@ -279,7 +285,7 @@ SUBROUTINE wrf_error_fatal3( file_str, line, str )
   ! Flush all streams.
   flush(6)
 #if defined(WRF_LOG_BUFFERING)
-  if(buffered) call wrf_log_action(wrf_log_flush,1,' ')
+  if(buffered/=0) call wrf_log_action(wrf_log_flush,1,' ')
 # endif
   flush(0)
 

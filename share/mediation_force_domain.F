@@ -4,6 +4,7 @@
 SUBROUTINE med_force_domain ( parent_grid , nested_grid )
    USE module_domain
    USE module_configure
+   USE module_intermediate_nmm
    IMPLICIT NONE
    TYPE(domain), POINTER :: parent_grid , nested_grid
    TYPE(domain), POINTER :: grid
@@ -78,7 +79,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 !  Added for the NMM core. This is gopal's doing.
 !=======================================================================
 
-      SUBROUTINE interp_domain_nmm_part1 ( grid, intermediate_grid, ngrid, config_flags    &
+      SUBROUTINE force_domain_nmm_part1 ( grid, intermediate_grid, ngrid, config_flags    &
 !
 # include "dummy_new_args.inc"
 !
@@ -90,7 +91,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
          TYPE(domain), POINTER :: ngrid
          TYPE (grid_config_rec_type)            :: config_flags
 # include <dummy_new_decl.inc>
-      END SUBROUTINE interp_domain_nmm_part1
+      END SUBROUTINE force_domain_nmm_part1
 
       SUBROUTINE before_interp_halos_nmm(grid,config_flags &
 !
@@ -261,9 +262,9 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 #endif
 
     ! couple parent domain
-    grid => parent_grid
+ !   grid => parent_grid
     ! swich config_flags to point to parent rconfig info
-    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+ !   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
     ! on restart do not force the nest the first time since it has already been forced
     ! prior to the writing of the restart file
@@ -277,29 +278,35 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 #   include "actual_new_args.inc"
 !
                                 )
-       ! perform first part: transfer data from parent to intermediate domain
-       ! at the same resolution but on the same decomposition as the nest
-       ! note that this will involve communication on multiple DM procs
-       grid => parent_grid
-       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-       CALL interp_domain_nmm_part1 ( grid , nested_grid%intermediate_grid, nested_grid, config_flags    &
+
+   ! Copy interpolation information from parent grid to intermediate grid:
+ !  grid => parent_grid
+ !  call parent_to_inter_part1(parent_grid, nested_grid%intermediate_grid, &
+ !                             nested_grid, config_flags)
+
+ !  grid => nested_grid%intermediate_grid
+ !  call parent_to_inter_part2(nested_grid%intermediate_grid, config_flags)
+
+   ! Transfer remaining information from parent to intermediate grid:
+   grid => parent_grid
+   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+   CALL force_domain_nmm_part1 ( grid , nested_grid%intermediate_grid,  &
+                                 nested_grid, config_flags    &
 !
 #         include "actual_new_args.inc"
 !
                                      )
-!    ENDIF ! not restart and first force
-
     grid => nested_grid%intermediate_grid
     IF ( .NOT. ( config_flags%restart .AND. nested_grid%first_force ) ) THEN
-       ! perform 2nd part: run interpolation on the intermediate domain
-       ! and compute the values for the nest boundaries
-       ! note that this is all local (no communication)
+       ! Finish transfering information from parent to intermediate
+       ! grid, then run interpolation on the intermediate domain and
+       ! compute the values for the nest boundaries.
        CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
        CALL force_domain_nmm_part2 ( grid, nested_grid, config_flags    &
 !
 #         include "actual_new_args.inc"
 !
-                                    )
+)
     ENDIF ! not restart and first_force
 
     IF ( nested_grid%first_force ) THEN

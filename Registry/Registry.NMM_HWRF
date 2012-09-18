@@ -1607,8 +1607,8 @@ halo      HALO_NMM_TURBL_B  dyn_nmm 8:dudt,dvdt
 # following halos added for nesting purpose  (gopal's doing):
 
 halo HALO_NMM_TRACK dyn_nmm 120:sm,pdyn,mslp,sqws
-halo HALO_NMM_INTERP_DOWN1 dyn_nmm 120:sm,fis,t,u,v,q,q2,pd,albase,nmm_tsk,mxsnal,tg,islope,cmc,soiltb,vegfrc,sh2o,smc,stc,toposoil,xice,ivgtyp,isltyp,vegfra,sst,weasd,snowh,hlat,hlon,z0,landmask,cwm,ustar,ths,qsh,cldefi,pshltr,dwdt,acprec,thz0,qz0,uz0,vz0,htop,hbot,cuppt,rlwtt,rswtt,t_adj,f_ice,f_rain,f_rimef,pint,hres_fis
-halo HALO_NMM_FORCE_DOWN1 dyn_nmm 120:t,u,v,q,q2,cwm,pint,pd,hres_fis,fis  #,qv,qc,qr,qi,qs,qg
+halo HALO_NMM_INTERP_DOWN1 dyn_nmm 24:sm,fis,t,u,v,q,q2,pd,albase,nmm_tsk,mxsnal,tg,islope,cmc,soiltb,vegfrc,sh2o,smc,stc,toposoil,xice,ivgtyp,isltyp,vegfra,sst,weasd,snowh,hlat,hlon,z0,landmask,cwm,ustar,ths,qsh,cldefi,pshltr,dwdt,acprec,thz0,qz0,uz0,vz0,htop,hbot,cuppt,rlwtt,rswtt,t_adj,f_ice,f_rain,f_rimef,pint,hres_fis
+halo HALO_NMM_FORCE_DOWN1 dyn_nmm 24:t,u,v,q,q2,cwm,pint,pd,hres_fis,fis  #,qv,qc,qr,qi,qs,qg
 halo HALO_NMM_WEIGHTS dyn_nmm 48:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4,HNEAR_I,HNEAR_J
 
 halo      HALO_NMM_SAS_A  dyn_nmm 24:uz0h,vz0h,hbm2

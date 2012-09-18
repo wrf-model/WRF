@@ -3809,7 +3809,88 @@ END
 
 !------------------------------------------------------------------
 
-   SUBROUTINE force_domain_nmm_part1 ( grid, intermediate_grid, config_flags    &
+   SUBROUTINE force_domain_nmm_part1 ( grid, intermediate_grid, ngrid, config_flags    &
+!
+#include "dummy_new_args.inc"
+!
+                 )
+      USE module_state_description
+      USE module_domain, ONLY : domain, get_ijk_from_grid
+      USE module_configure, ONLY : grid_config_rec_type
+      USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
+                            ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width
+      USE module_timing
+      IMPLICIT NONE
+!
+      TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
+      TYPE(domain), POINTER :: intermediate_grid
+      TYPE(domain), POINTER :: ngrid
+#include <dummy_new_decl.inc>
+      INTEGER nlev, msize
+      INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
+      INTEGER iparstrt,jparstrt,sw
+      TYPE (grid_config_rec_type)            :: config_flags
+      REAL xv(500)
+      INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe
+      INTEGER       ::          iids, iide, ijds, ijde, ikds, ikde,    &
+                                iims, iime, ijms, ijme, ikms, ikme,    &
+                                iips, iipe, ijps, ijpe, ikps, ikpe
+      INTEGER       ::          nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe
+
+      INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
+
+      INTEGER icoord, jcoord, idim_cd, jdim_cd, pgr
+      INTEGER local_comm, myproc, nproc
+      INTEGER thisdomain_max_halo_width
+
+      CALL wrf_get_dm_communicator ( local_comm )
+      CALL wrf_get_myproc( myproc )
+      CALL wrf_get_nproc( nproc )
+
+!#define COPY_IN
+!#include <scalar_derefs.inc>
+
+      CALL get_ijk_from_grid (  grid ,                   &
+                                cids, cide, cjds, cjde, ckds, ckde,    &
+                                cims, cime, cjms, cjme, ckms, ckme,    &
+                                cips, cipe, cjps, cjpe, ckps, ckpe    )
+      CALL get_ijk_from_grid (  intermediate_grid ,              &
+                                iids, iide, ijds, ijde, ikds, ikde,    &
+                                iims, iime, ijms, ijme, ikms, ikme,    &
+                                iips, iipe, ijps, ijpe, ikps, ikpe    )
+      CALL get_ijk_from_grid (  ngrid ,              &
+                                nids, nide, njds, njde, nkds, nkde,    &
+                                nims, nime, njms, njme, nkms, nkme,    &
+                                nips, nipe, njps, njpe, nkps, nkpe    )
+
+      CALL nl_get_parent_grid_ratio ( ngrid%id, pgr )
+      CALL nl_get_i_parent_start ( intermediate_grid%id, iparstrt )
+      CALL nl_get_j_parent_start ( intermediate_grid%id, jparstrt )
+      CALL nl_get_shw            ( intermediate_grid%id, sw )
+      icoord =    iparstrt - sw
+      jcoord =    jparstrt - sw
+      idim_cd = iide - iids + 1
+      jdim_cd = ijde - ijds + 1
+
+      nlev  = ckde - ckds + 1
+
+      CALL get_dm_max_halo_width ( ngrid%id , thisdomain_max_halo_width )
+#include "nest_forcedown_pack.inc"
+
+      CALL rsl_lite_bcast_msgs( myproc, nproc, local_comm )
+
+!#define COPY_OUT
+!#include <scalar_derefs.inc>
+      RETURN
+      END SUBROUTINE force_domain_nmm_part1
+
+!------------------------------------------------------------------
+
+   SUBROUTINE old_force_domain_nmm_part1 ( grid, intermediate_grid, config_flags    &
 !
 #include "dummy_new_args.inc"
 !
@@ -3859,7 +3940,7 @@ END
 !#define COPY_OUT
 !#include <scalar_derefs.inc>
       RETURN
-   END SUBROUTINE force_domain_nmm_part1
+      END SUBROUTINE old_force_domain_nmm_part1
 
 !==============================================================================================
 
@@ -3925,7 +4006,7 @@ integer myproc
       cgrid=>grid
       nlev  = ckde - ckds + 1
 
-#include "nest_interpdown_unpack.inc"
+#include "nest_forcedown_unpack.inc"
 
       CALL get_ijk_from_grid (  grid ,              &
                                 ids, ide, jds, jde, kds, kde,    &

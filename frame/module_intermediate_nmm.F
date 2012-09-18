@@ -1,3 +1,21 @@
+! MODULE module_intermediate_nmm
+
+! This module contains routines that feed parent grid variables to the
+! intermediate grid when doing up-interpolation.  This is needed by
+! the new NMM interpolation routines, which require certain variables
+! on the target domain in order to do log(P)-space vertical
+! interpolation.
+!
+! This module is also used during forcing (parent->nest boundary) to
+! copy variables to the intermediate domain that may not otherwise be
+! copied by the forcing routines.
+!
+! Author: Samuel Trahan
+!
+! History:
+!   Aug 2012 - written by Sam Trahan for up-interpolation
+!   Sep 2012 - updated to also work with forcing (parent->nest bdy)
+
 module module_intermediate_nmm
 contains
   SUBROUTINE parent_to_inter_part1 ( grid, intermediate_grid, ngrid, config_flags )

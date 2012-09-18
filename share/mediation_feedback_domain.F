@@ -103,31 +103,6 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
 #        include <dummy_new_decl.inc>
 
       END SUBROUTINE feedback_domain_nmm_part2
-      SUBROUTINE interp_domain_nmm_part1 ( grid, intermediate_grid, ngrid, config_flags    &
-!
-# include "dummy_new_args.inc"
-!
-                 )
-         USE module_domain
-         USE module_configure
-         TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
-         TYPE(domain), POINTER :: intermediate_grid
-         TYPE(domain), POINTER :: ngrid
-         TYPE (grid_config_rec_type)            :: config_flags
-# include <dummy_new_decl.inc>
-      END SUBROUTINE interp_domain_nmm_part1
-      SUBROUTINE force_intermediate_nmm ( grid, ngrid, config_flags    &
-!
-# include "dummy_new_args.inc"
-!
-                 )
-         USE module_domain
-         USE module_configure
-         TYPE(domain), POINTER :: grid          ! name of the grid being dereferenced (must be "grid")
-         TYPE(domain), POINTER :: ngrid
-         TYPE (grid_config_rec_type)            :: config_flags
-# include <dummy_new_decl.inc>
-       END SUBROUTINE force_intermediate_nmm
 
 #endif
 ! ----------------------------------------------------------

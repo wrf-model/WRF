@@ -43,7 +43,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_amsubobs .OR. use_airsobs .OR. use_eos_amsuaobs .OR. &
       use_hsbobs .OR. use_kma1dvar .OR. use_filtered_rad .or. &
       use_ssmisobs .or. use_hirs4obs .or. use_mhsobs .or. use_pseudo_rad .or. &
-      use_simulated_rad ) then
+      use_simulated_rad .or. use_iasiobs) then
       use_rad = .true.
    else
       use_rad = .false.
@@ -94,6 +94,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_rad              = .false.
       use_airsretobs       = .false.
       use_rainobs          = .false.
+      use_iasiobs	       = .false.	  
    end if
     
    if (use_pseudo_rad .or. num_pseudo > 0) then
@@ -134,6 +135,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_rad              = .false.
       use_airsretobs       = .false.
       use_rainobs          = .false.
+      use_iasiobs	       = .false.	  
       ob_format = ob_format_ascii
    end if
 

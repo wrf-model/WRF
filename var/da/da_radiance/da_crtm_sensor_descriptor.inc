@@ -31,6 +31,8 @@ subroutine da_crtm_sensor_descriptor(nsensor,sensor_descriptor)
 
      if ( trim(crtm_sensor_name(sensor_id)) == 'airs' ) then
         crtm_sensor='airs281'
+     elseif ( trim(crtm_sensor_name(sensor_id)) == 'iasi' ) then
+        crtm_sensor='iasi616'		
      elseif ( trim(crtm_sensor_name(sensor_id)) == 'hirs' ) then
         if (satellite_id <= 14) crtm_sensor='hirs2'
         if (satellite_id >= 15 .and. satellite_id <= 17) crtm_sensor='hirs3'

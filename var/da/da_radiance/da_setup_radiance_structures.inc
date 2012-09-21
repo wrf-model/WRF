@@ -158,7 +158,11 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
          filename = 'ssmis'
          call da_read_obs_bufrssmis ('ssmis    ',iv, filename)
       end if
-
+      if (use_iasiobs) then
+         write(unit=stdout,fmt='(a)') 'Reading iasi data from iasi.bufr'
+         filename = 'iasi'
+         call da_read_obs_bufriasi ('iasi     ',iv, filename)
+      end if
    end if
 
    if ( use_filtered_rad ) then

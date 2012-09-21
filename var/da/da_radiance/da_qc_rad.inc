@@ -13,7 +13,7 @@ subroutine da_qc_rad (it, ob, iv)
    type (iv_type), intent(inout)   :: iv         ! O-B structure.
 
    integer :: i, nchan,p,j
-   logical   :: amsua, amsub, hirs, msu,airs, hsb, ssmis, mhs
+   logical   :: amsua, amsub, hirs, msu,airs, hsb, ssmis, mhs, iasi
 
    integer, allocatable :: index(:)
    integer :: num_tovs_avg
@@ -56,6 +56,7 @@ subroutine da_qc_rad (it, ob, iv)
       hsb   = trim(rttov_inst_name(rtminit_sensor(i))) == 'hsb'
       ssmis = trim(rttov_inst_name(rtminit_sensor(i))) == 'ssmis'
       mhs   = trim(rttov_inst_name(rtminit_sensor(i))) == 'mhs'
+      iasi  = trim(rttov_inst_name(rtminit_sensor(i))) == 'iasi'	  
 
       if (hirs) then
          ! 1.0 QC for HIRS
@@ -76,6 +77,8 @@ subroutine da_qc_rad (it, ob, iv)
          call da_qc_ssmis(it, i,nchan,ob,iv)
       else if (mhs) then
          call da_qc_mhs(it,i,nchan,ob,iv)
+      else if (iasi) then
+         call da_qc_iasi(it,i,nchan,ob,iv)		 
       else
          write(unit=message(1),fmt='(A,A)') &
             "Unrecognized instrument",trim(rttov_inst_name(rtminit_sensor(i)))

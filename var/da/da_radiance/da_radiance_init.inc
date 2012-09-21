@@ -111,6 +111,9 @@ subroutine da_radiance_init(iv,ob)
    else if ( trim( crtm_sensor_name(rtminit_sensor(n))) == 'ssmis' ) then
       nchanl(n)  = 24
       nscan(n)   = 60
+   else if ( trim( crtm_sensor_name(rtminit_sensor(n))) == 'iasi' ) then
+     nchanl(n)  = 616
+      nscan(n)   = 60	  
    else
       call da_error(__FILE__,__LINE__, &
         (/"Unrecorgnized instrument"/))

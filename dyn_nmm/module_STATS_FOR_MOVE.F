@@ -477,7 +477,7 @@ contains
        write(message,'("ycount(",I0,") = ",I0)') i,ycount(i)
        call wrf_debug(5,message)
     enddo
-#endif EXPENSIVE_HWRF_DEBUG_STUFF
+#endif
 
     ! Find maximum pressure if requested
     findpmax: if(searchpmax<0.0) then

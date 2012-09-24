@@ -139,6 +139,7 @@ fprintf(fp,"  %s, INTENT(INOUT) :: %s %s\n", q->type->name , varref , dimspec ) 
       }
       t1 = strtok_rentr( NULL , ";" , &pos1 ) ;
     }
+    return 0; /* SamT: bug fix: return a value */
 }
 
 int print_call_or_def( FILE * fp , node_t *p, char * callorsub, 
@@ -178,6 +179,7 @@ int print_decl( FILE * fp , node_t *p, char * communicator,
   fprintf(fp,"  INTEGER :: rsl_sendw_m, rsl_sendbeg_m, rsl_recvw_m, rsl_recvbeg_m\n") ;
   fprintf(fp,"  LOGICAL, EXTERNAL :: rsl_comm_iter\n") ;
   fprintf(fp,"  INTEGER :: idim1, idim2, idim3, idim4, idim5, idim6, idim7\n") ;
+  return 0; /* SamT: bug fix: return a value */
   }
 
 int print_body( FILE * fp, char * commname )
@@ -188,6 +190,7 @@ int print_body( FILE * fp, char * commname )
   fprintf(fp,"#endif\n") ;
   fprintf(fp,"  \n") ;
   fprintf(fp,"  END SUBROUTINE %s_sub\n",commname) ;
+  return 0; /* SamT: bug fix: return a value */
   }
 
 int
@@ -1654,7 +1657,7 @@ int said_it2 = 0 ;
   {
     if ( dirname == NULL ) return(1) ;
     if ( sw_unidir_shift_halo ) {
-       sprintf(fname,"shift_halo",*direction) ;
+       sprintf(fname,"shift_halo") ; /* SamT: bug fix: remove extra arg */
     } else {
        sprintf(fname,"shift_halo_%s_halo",*direction) ;
     }
@@ -1931,6 +1934,7 @@ fprintf(fp, "  ENDDO\n" ) ;
     } /* if sw_move */
     close_the_file(fp) ;
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int
@@ -1954,10 +1958,12 @@ gen_datacalls ( char * dirname )
 /*****************/
 /*****************/
 
+int
 gen_nest_packing ( char * dirname )
 {
   gen_nest_pack( dirname ) ;
   gen_nest_unpack( dirname ) ;
+  return 0; /* SamT: bug fix: return a value */
 }
 
 #define PACKIT 1
@@ -2410,6 +2416,7 @@ fprintf(fp, "   write(0,*) AAA_AAA,BBB_BBB, '%s ', grid%%%s ( IDEBUG,JDEBUG)\n",
     }
 
     close_the_file(fp) ;
+    return 0; /* SamT: bug fix: return a value */
 }
 
 /*****************/

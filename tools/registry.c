@@ -18,7 +18,8 @@
 #include "data.h"
 #include "sym.h"
 
-void
+/* SamT: bug fix: main returns int */
+int
 main( int argc, char *argv[], char *env[] )
 {
   char fname_in[NAMELEN], dir[NAMELEN], fname_tmp[NAMELEN], command[NAMELEN] ;
@@ -214,7 +215,6 @@ cleanup:
 #else
    sprintf(command,"/bin/rm -f %s\n",fname_tmp );
 #endif
-   system( command ) ;
-
+   return system( command ) ;
 }
 

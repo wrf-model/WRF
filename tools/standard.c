@@ -165,6 +165,7 @@ drop_comment( char * linei )
        *p = '\n' ; *(p+1) = '\0' ; return(0) ; 
     }
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int 
@@ -175,5 +176,6 @@ change_to_lower( char * s , int n )
   {
     if ( s[i] >= 'A' && s[i] <= 'Z' ) s[i] = s[i] - 'A' + 'a' ;
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 

@@ -142,6 +142,7 @@ int
 set_dim_strs ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELEN], char pdim[3][2][NAMELEN] , char * prepend , int sw_disregard_stag )
 {
   set_dim_strs_x ( node , ddim, mdim, pdim, prepend , sw_disregard_stag, 1, 0 ) ; /* 1 = reorder according to strg order */
+  return 0; /* SamT: bug fix: return a value */
 }
 
 /* version that doesn't permute according to index order -- always i, k, then j
@@ -150,10 +151,12 @@ int
 set_dim_strs2 ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELEN], char pdim[3][2][NAMELEN] , char * prepend , int sw_disregard_stag )
 {
   set_dim_strs_x ( node , ddim, mdim, pdim, prepend , sw_disregard_stag, 0, 0 ) ; /* 0 = reorder according to strg order */
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int
 set_dim_strs3 ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELEN], char pdim[3][2][NAMELEN] , char * prepend , int sw_disregard_stag )
 {
   set_dim_strs_x ( node , ddim, mdim, pdim, prepend , sw_disregard_stag, 1, 1 ) ; /* 1 = reorder according to strg order */
+  return 0; /* SamT: bug fix: return a value */
 }

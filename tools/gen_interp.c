@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #ifdef _WIN32
 #define rindex(X,Y) strrchr(X,Y)
@@ -10,6 +11,27 @@
 #include "protos.h"
 #include "registry.h"
 #include "data.h"
+
+int as_long(char *str,long *l) {
+  char *endptr=NULL;
+
+  errno=0;
+  *l=strtol(str,&endptr,10);
+  if(!endptr || *endptr) return 0;
+  return 1;
+}
+
+int as_finite_double(char *str,double *d) {
+  char *endptr=NULL;
+
+  errno=0;
+  *d=strtod(str,&endptr);
+  if(!endptr || *endptr) return 0;
+  if(*d==*d && *d*2!=*d)
+    return 1;
+  else
+    return 0; /* NaN or infinite */
+}
 
 int contains_str( char *s1, char *s2 )
 {
@@ -122,7 +144,8 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * fourdname, int down_path , 
   char *grid ;
   char *colon, r[10],tx[80],temp[80],moredims[80] ; 
   int d ; 
-
+  double real_store;
+  long long_store;
 
   for ( p1 = node ;  p1 != NULL ; p1 = p1->next )
   {
@@ -315,7 +338,21 @@ fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio
 
              for ( p1 = strtok(tmpstr,",") ; p1 != NULL ; p1 = strtok(NULL,",") )
              {
-               if (( nd = get_entry ( p1 , Domain.fields )) != NULL )
+               if(as_long(p1,&long_store)) {
+                 /* Integer aux in registry (6, 0x5A, 0774, etc.).
+                    Print in fortran-readable form. */
+                 fprintf(fp,",%ld &\n",long_store);
+                 fprintf(stderr,"Requested %s = long %ld for %s\n",p1,long_store,vname);
+               } else if(as_finite_double(p1,&real_store)) {
+                 /* Real aux in registry (3.7, -3.105e+04, etc.).  Print in
+                    fortran-readable form. */
+                 fprintf(fp,",%5.9e &\n",real_store);
+                 fprintf(stderr,"Requested %s = double %5.9e for %s\n",p1,real_store,vname);
+               } else if( (p1[0]=='l' || p1[0]=='L') && p1[1]=='%' && p1[2]!='\0') {
+                 /* Local variable requested (l%varname). */
+                 fprintf(fp,",%s &\n",p1+2);
+                 fprintf(stderr,"Requested %s = local %s for %s\n",p1,p1+2,vname);
+               } else if (( nd = get_entry ( p1 , Domain.fields )) != NULL )
                {
                  if ( nd->boundary_array ) {
                    if ( sw_new_bdys ) {
@@ -350,7 +387,7 @@ fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio
                }
                else
                {
-	         fprintf(stderr,"REGISTRY WARNING: Don't know about %s in definition of %s\n",p1,vname) ;
+	         fprintf(stderr,"REGISTRY WARNING: %s: %s is not a variable or number; ignoring it\n",vname,p1) ;
 	       }
              }
            }

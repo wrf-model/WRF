@@ -352,43 +352,76 @@ fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio
                  /* Local variable requested (l%varname). */
                  fprintf(fp,",%s &\n",p1+2);
                  fprintf(stderr,"Requested %s = local %s for %s\n",p1,p1+2,vname);
-               } else if (( nd = get_entry ( p1 , Domain.fields )) != NULL )
-               {
-                 if ( nd->boundary_array ) {
-                   if ( sw_new_bdys ) {
-                     int bdy ;
-                     for ( bdy = 1 ; bdy <= 4 ; bdy++ ) {
-                       if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
-#if 0
-                         fprintf(fp,",%s%s,ngrid%%%s%s  &\n", nd->name, bdy_indicator(bdy), nd->name, bdy_indicator(bdy) ) ;
-#else
-                         fprintf(fp,",dummy_%s,ngrid%%%s%s  &\n", 
-                                     bdy_indicator(bdy),
-                                     nd->name, bdy_indicator(bdy) ) ;
-#endif
-                       } else {
-                         char c ;
-                         c = 'i' ; if ( bdy <= 2 ) c = 'j' ;
-                         fprintf(fp,",%s%s(c%cms,1,1,itrace),ngrid%%%s%s(n%cms,1,1,itrace)  &\n", 
-                                           nd->name, bdy_indicator(bdy), c, 
-                                           nd->name, bdy_indicator(bdy), c  ) ;
+               } else if( p1[0]=='@' && p1[1]!='\0' ) {
+                 /* Local variable requested (@varname). */
+                 fprintf(fp,",%s &\n",p1+1);
+                 fprintf(stderr,"Requested %s = local %s for %s\n",p1,p1+1,vname);
+               } else if( p1[0]=='*' && p1[1]=='\0' ) {
+                 /* Entire grid requested (*) */
+                 fprintf(fp,",grid ,ngrid &\n",nd->name);
+               } else if( !strcasecmp(p1,"n%*") ) {
+                 /* Nest grid requested (n%*) */
+                 fprintf(fp,",ngrid &\n");
+               } else if( !strcasecmp(p1,"c%*") ) {
+                 /* Coarse grid requested (c%*) */
+                 fprintf(fp,",grid &\n");
+               } else { /* is n%varname, c%varname, varname or an error */
+                 int want_nest=1;
+                 int want_coarse=1;
+                 char *subvar=p1;
+                 if( (p1[0]=='n' || p1[0]=='N') && p1[1]=='%' && p1[2]!='\0' ) {
+                   /* n%var, so we don't want the coarse domain var */
+                   want_coarse=0;
+                   subvar+=2;
+                 } else if( (p1[0]=='c' || p1[0]=='C') && p1[1]=='%' && p1[2]!='\0' ) {
+                   /* c%var, so we don't want the nest domain var */
+                   want_nest=0;
+                   subvar+=2;
+                 } else {
+                   /* either "varname" (so we give coarse and nest) or an error */
+                 }
+
+                 if (( nd = get_entry ( subvar , Domain.fields )) != NULL ) {
+                   /* Variable name is valid */
+                   if ( nd->boundary_array ) {
+                     /* We're requesting boundary data, which may need
+                        to be handled differently, depending on the
+                        configuration. */
+                     if ( sw_new_bdys ) {
+                       int bdy ;
+                       for ( bdy = 1 ; bdy <= 4 ; bdy++ ) {
+                         if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
+                           if(want_coarse) fprintf(fp,",dummy_%s ",bdy_indicator(bdy));
+                           if(want_nest)   fprintf(fp,",ngrid%%%s%s ",nd->name, bdy_indicator(bdy));
+                         } else {
+                           char c ;
+                           c = 'i' ; if ( bdy <= 2 ) c = 'j' ;
+                           if(want_coarse) fprintf(fp,",%s%s(c%cms,1,1,itrace) ", nd->name, bdy_indicator(bdy), c);
+                           if(want_nest)   fprintf(fp,",ngrid%%%s%s(n%cms,1,1,itrace) ", nd->name, bdy_indicator(bdy), c);
+                         }
+                         fprintf(fp,"&\n");
                        }
+                     } else {
+                       if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
+                         if(want_coarse)   fprintf(fp,",%s ", nd->name) ;
+                         if(want_nest)     fprintf(fp,",ngrid%%%s ", nd->name ) ;
+                       } else {
+                         if(want_coarse)   fprintf(fp,",%s(1,1,1,1,itrace) ", nd->name ) ;
+                         if(want_nest)     fprintf(fp,",ngrid%%%s(1,1,1,1,itrace) ", nd->name ) ;
+                       }
+                       fprintf(fp,"&\n");
                      }
                    } else {
-                     if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
-                       fprintf(fp,",%s,ngrid%%%s  &\n", nd->name, nd->name ) ;
-                     } else {
-                       fprintf(fp,",%s(1,1,1,1,itrace),ngrid%%%s(1,1,1,1,itrace)  &\n", nd->name, nd->name ) ;
-                     }
+                     /* This is not a boundary array, so pass the
+                        variable. */
+                     if(want_coarse)       fprintf(fp,",grid%%%s",  nd->name ) ;
+                     if(want_nest)         fprintf(fp,",ngrid%%%s",  nd->name ) ;
+                     fprintf(fp,"&\n");
                    }
                  } else {
-                   fprintf(fp,",grid%%%s,ngrid%%%s  &\n",  nd->name,  nd->name ) ;
+                   fprintf(stderr,"REGISTRY WARNING: %s: %s is not a variable or number; ignoring it\n",vname,p1) ;
                  }
                }
-               else
-               {
-	         fprintf(stderr,"REGISTRY WARNING: %s: %s is not a variable or number; ignoring it\n",vname,p1) ;
-	       }
              }
            }
         }

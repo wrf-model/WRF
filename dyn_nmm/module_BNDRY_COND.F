@@ -195,7 +195,7 @@
 !
       REAL :: BCHR,CONVFAC,CWK,DT,PLYR,RRI
 !
-      LOGICAL :: E_BDY,W_BDY,N_BDY,S_BDY
+      LOGICAL :: E_BDY,W_BDY,N_BDY,S_BDY, activate
 !
       CHARACTER(LEN=255) :: message
 !-----------------------------------------------------------------------
@@ -245,14 +245,15 @@
 !
 !***  USE IBDY=1 FOR SOUTH; 2 FOR NORTH
 !
-      DO IBDY=1,2 
+      ns_do: DO IBDY=1,2 
 !
 !***  MAKE SURE THE PROCESSOR HAS THIS BOUNDARY.
 !
-        IF(S_BDY.AND.IBDY==1) THEN 
+        activate=.false.
+        ns_if: IF(S_BDY.AND.IBDY==1) THEN 
             JB=1         ! Which cell in from boundary
             JJ=1         ! Which cell in the domain
-
+            activate=.true.
           DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
             PD_BYS(I,1,JB)=PD_BYS(I,1,JB)+PD_BTYS(I,1,JB)*DT
             PD(I,JJ)=PD_BYS(I,1,JB)
@@ -279,7 +280,7 @@
           ELSEIF(N_BDY.AND.IBDY==2) THEN
             JB=1         ! Which cell in from boundary
             JJ=JJM       ! Which cell in the domain
-
+            activate=.true.
 !
           DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
             PD_BYE(I,1,JB)=PD_BYE(I,1,JB)+PD_BTYE(I,1,JB)*DT
@@ -303,10 +304,9 @@
      &                    +ETA2(K)*PD(I,JJ)*RES(I,JJ)+PT
             ENDDO
           ENDDO
+        ENDIF ns_if
 
-!         ENDIF   ! for N/S boundaries
-
-!
+        ns_activate: IF(activate) THEN
           DO I_M=1,N_MOIST
             IF(I_M==P_QV)THEN
 !$omp parallel do                                                       &
@@ -360,8 +360,8 @@
           ENDDO
           ENDDO
 #endif
-        ENDIF
-      ENDDO
+        ENDIF ns_activate
+      ENDDO ns_do
 !
 !-----------------------------------------------------------------------
 !***  WEST AND EAST BOUNDARIES
@@ -369,14 +369,15 @@
 !
 !***  USE IBDY=1 FOR WEST; 2 FOR EAST. 
 !
-      DO IBDY=1,2 
+      ew_do: DO IBDY=1,2 
 !
 !***  MAKE SURE THE PROCESSOR HAS THIS BOUNDARY.
 !
-        IF(W_BDY.AND.IBDY==1) THEN  
+        activate=.false.
+        ew_if: IF(W_BDY.AND.IBDY==1) THEN  
             IB=1         ! Which cell in from boundary 
             II=1         ! Which cell in the domain
-!
+            activate=.true.
           DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
             IF(MOD(J,2)==1)THEN
               PD_BXS(J,1,IB)=PD_BXS(J,1,IB)+PD_BTXS(J,1,IB)*DT
@@ -409,7 +410,7 @@
           ELSEIF(E_BDY.AND.IBDY==2) THEN
             IB=1         ! Which cell in from boundary
             II=IIM       ! Which cell in the domain
-
+            activate=.true.
           DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
             IF(MOD(J,2)==1)THEN
               PD_BXE(J,1,IB)=PD_BXE(J,1,IB)+PD_BTXE(J,1,IB)*DT
@@ -438,9 +439,10 @@
 !
             ENDDO
           ENDDO
-!
-!          ENDIF  ! for W/E boundaries
-!
+
+       ENDIF ew_if
+
+       ew_activate: IF(activate) THEN
           DO I_M=1,N_MOIST
             IF(I_M==P_QV)THEN
 !$omp parallel do                                                       &
@@ -503,8 +505,8 @@
           ENDDO
 
 #endif
-        ENDIF
-      ENDDO
+        ENDIF ew_activate
+      ENDDO ew_do
 !
 !-----------------------------------------------------------------------
 !***  SPACE INTERPOLATION OF PD THEN REMAINING MASS VARIABLES

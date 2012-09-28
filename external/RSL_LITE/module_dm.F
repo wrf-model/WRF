@@ -4063,8 +4063,118 @@ grid=>cgrid
 !#define COPY_OUT
 !#include <scalar_derefs.inc>
 
+      write(0,*) 'Check moist/scalar in force_domain_nmm_part2, domain ',grid%id
+      call CHECK_MOIST('MOIST',ngrid%moist,PARAM_FIRST_SCALAR, num_moist, &
+           ngrid%moist_bxs,ngrid%moist_bxe, &
+           ngrid%moist_bys,ngrid%moist_bye, &
+           nids,nide, njds,njde, nkds,nkde, &
+           nims,nime, njms,njme, nkms,nkme, &
+           nips,nipe, njps,njpe, nkps,nkpe)
+
+      call CHECK_MOIST('SCALAR',ngrid%scalar,PARAM_FIRST_SCALAR, num_scalar, &
+           ngrid%scalar_bxs,ngrid%scalar_bxe, &
+           ngrid%scalar_bys,ngrid%scalar_bye, &
+           nids,nide, njds,njde, nkds,nkde, &
+           nims,nime, njms,njme, nkms,nkme, &
+           nips,nipe, njps,njpe, nkps,nkpe)
+      write(0,*) 'Done checking moist/scalar in force_domain_nmm_part2, domain ',grid%id
+      
       RETURN
    END SUBROUTINE force_domain_nmm_part2
+
+   SUBROUTINE CHECK_MOIST( &
+        name,moist,first_moist,num_moist, &
+        moist_bxs,moist_bxe,moist_bys,moist_bye, &
+        nids,nide, njds,njde, nkds,nkde, &
+        nims,nime, njms,njme, nkms,nkme, &
+        nips,nipe, njps,njpe, nkps,nkpe)
+     use module_dm, only: wrf_dm_sum_real, wrf_dm_sum_integer
+     implicit none
+     character*(*), intent(in) :: name
+     integer, parameter :: bdyw=1
+     real, intent(in) :: moist(nims:nime,njms:njme,nkms:nkme,num_moist)
+     real, intent(in) :: moist_bxs(njms:njme,nkms:nkme,bdyw,num_moist)
+     real, intent(in) :: moist_bxe(njms:njme,nkms:nkme,bdyw,num_moist)
+     real, intent(in) :: moist_bys(nims:nime,nkms:nkme,bdyw,num_moist)
+     real, intent(in) :: moist_bye(nims:nime,nkms:nkme,bdyw,num_moist)
+     integer, intent(in) :: first_moist,num_moist, &
+          nids,nide, njds,njde, nkds,nkde, &
+          nims,nime, njms,njme, nkms,nkme, &
+          nips,nipe, njps,njpe, nkps,nkpe
+
+     ! ---- 
+     
+     integer :: j1,j2,i,j,k,count,itrace
+     real :: total
+
+     ! ----
+
+301  format('first_',A,'=',I0,' num_',A,'=',I0)
+     write(0,301) name,first_moist,name,num_moist
+
+302  format('Average absolute ',A,'_',A,'(:,:,1,',I0,') avg=',F12.9)
+
+     j1=max(njps-1,njds)
+     if(mod(j1,2)/=1)   j1=j1+1
+
+     j2=min(njpe+1,njde-1)
+     if(mod(j2,2)/=1)   j2=j2-1
+
+     outer: do itrace=first_moist,num_moist
+        count=0
+        total=0
+        if(njps==1) then
+           do k=1,nkde-1
+              do i=nips,min(nipe,nide-1)
+                 total=total+abs(moist_bys(i,k,1,itrace))
+                 count=count+1
+              end do
+           enddo
+        endif
+        write(0,302) name,'bys',itrace, &
+             wrf_dm_sum_real(total)/wrf_dm_sum_integer(count)
+
+        count=0
+        total=0
+        if(njpe>=njde-1) then
+           do k=1,nkde-1
+              do i=nips,min(nipe,nide-1)
+                 total=total+abs(moist_bye(i,k,1,itrace))
+                 count=count+1
+              end do
+           enddo
+        endif
+        write(0,302) name,'bye',itrace, &
+             wrf_dm_sum_real(total)/wrf_dm_sum_integer(count)
+
+        count=0
+        total=0
+        if(nips==1) then
+           do k=1,nkde-1
+              do j=j1,j2
+                 total=total+abs(moist_bxs(j,k,1,itrace))
+                 count=count+1
+              enddo
+           enddo
+        endif
+        write(0,302) name,'bxs',itrace, &
+             wrf_dm_sum_real(total)/wrf_dm_sum_integer(count)
+
+        count=0
+        total=0
+        if(nipe>=nide-1) then
+           do k=1,nkde-1
+              do j=j1,j2
+                 total=total+abs(moist_bxe(j,k,1,itrace))
+                 count=count+1
+              enddo
+           enddo
+        endif
+        write(0,302) name,'bxe',itrace, &
+             wrf_dm_sum_real(total)/wrf_dm_sum_integer(count)
+     enddo outer
+
+   END SUBROUTINE CHECK_MOIST
 
 !================================================================================
 !

@@ -21,7 +21,7 @@
       CONTAINS
 !
 !***********************************************************************
-      SUBROUTINE BOCOH(GRIDID,NTSD,DT0,NEST,NBC,NBOCO,LAST_TIME,TSPH    & 
+      SUBROUTINE MASS_BOUNDARY(GRIDID,NTSD,DT0,NEST,NBC,NBOCO,LAST_TIME,TSPH    & 
      &                ,LB,ETA1,ETA2,PDTOP,PT,RES                        &
      &                ,PD_BXS, PD_BXE, PD_BYS, PD_BYE                   &
      &                ,T_BXS, T_BXE, T_BYS, T_BYE                       &
@@ -110,7 +110,6 @@
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE
       INTEGER,INTENT(IN) :: SPEC_BDY_WIDTH
-      INTEGER,INTENT(IN) :: N_MOIST, N_SCALAR
 #ifdef WRF_CHEM
       INTEGER,INTENT(IN) :: NUMG
 #endif
@@ -136,13 +135,11 @@
      &                                            ,V_BYS, V_BYE        &
      &                                            ,Q_BYS, Q_BYE        &
      &                                            ,Q2_BYS, Q2_BYE      &
-     &                                            ,CWM_BYS, CWM_BYE    &
      &                                            ,T_BTYS, T_BTYE      &
      &                                            ,U_BTYS, U_BTYE      &
      &                                            ,V_BTYS, V_BTYE      &
      &                                            ,Q_BTYS, Q_BTYE      &
-     &                                            ,Q2_BTYS, Q2_BTYE    &
-     &                                            ,CWM_BTYS, CWM_BTYE  
+     &                                            ,Q2_BTYS, Q2_BTYE    
 
       REAL,DIMENSION(JMS:JME,1,SPEC_BDY_WIDTH)                         &
      &                           ,INTENT(INOUT) :: PD_BXS, PD_BXE      &
@@ -154,26 +151,19 @@
      &                                            ,V_BXS, V_BXE        &
      &                                            ,Q_BXS, Q_BXE        &
      &                                            ,Q2_BXS, Q2_BXE      &
-     &                                            ,CWM_BXS, CWM_BXE    &
      &                                            ,T_BTXS, T_BTXE      &
      &                                            ,U_BTXS, U_BTXE      &
      &                                            ,V_BTXS, V_BTXE      &
      &                                            ,Q_BTXS, Q_BTXE      &
-     &                                            ,Q2_BTXS, Q2_BTXE    &
-     &                                            ,CWM_BTXS, CWM_BTXE  
+     &                                            ,Q2_BTXS, Q2_BTXE    
                                                
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: RES
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: PD
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: CWM      &
-     &                                                        ,PINT,Q   &
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) ::          &
+     &                                                         PINT,Q   &
      &                                                        ,Q2,T,Z
-!
-      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,NUM_MOIST)                 &
-     &                                           ,INTENT(INOUT) :: MOIST
-      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,NUM_SCALAR)                &
-     &                                          ,INTENT(INOUT) :: SCALAR
 !
 #ifdef WRF_CHEM
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,NUM_CHEM)                  &
@@ -296,6 +286,10 @@
      &                    +ETA2(K)*PD(I,JJ)*RES(I,JJ)+PT
             ENDDO
           ENDDO
+
+!         ENDIF   ! for N/S boundaries
+
+!
 #ifdef WRF_CHEM
 !$omp parallel do                                                       &
 !$omp& private(i,k,nv)
@@ -395,6 +389,9 @@
 !
             ENDDO
           ENDDO
+!
+!          ENDIF  ! for W/E boundaries
+!
 !
 #ifdef WRF_CHEM
 !$omp parallel do                                                       &
@@ -553,7 +550,7 @@
 !
 !$omp parallel do                                                       &
 !$omp& private(i,j,jj,k)
-      bigk: DO K=KTS,KTE
+      DO 200 K=KTS,KTE
 !
 !-----------------------------------------------------------------------
 !
@@ -585,6 +582,7 @@
           PINT(I,JJM-1,K)=ETA1(K)*PDTOP                                 &
      &                   +ETA2(K)*PD(I,JJM-1)*RES(I,JJM-1)+PT
         ENDDO
+!
       ENDIF
 !
 !***  ONE ROW EAST OF WESTERN BOUNDARY
@@ -606,6 +604,7 @@
      &                 *0.25
             PINT(1,JJ,K)=ETA1(K)*PDTOP                                  &
      &                  +ETA2(K)*PD(1,JJ)*RES(1,JJ)+PT
+!
           ENDIF
 !
         ENDDO
@@ -638,10 +637,490 @@
       ENDIF
 !-----------------------------------------------------------------------
 !
-      END DO bigk
+  200 CONTINUE
 !
 !-----------------------------------------------------------------------
-      END SUBROUTINE BOCOH
+      END SUBROUTINE MASS_BOUNDARY
+      SUBROUTINE MP_BULK_BOUNDARY(GRIDID,NTSD,DT0    & 
+     &                ,LB,ETA1,ETA2,PDTOP,PT                            &
+     &                ,CWM_BXS, CWM_BXE, CWM_BYS, CWM_BYE               &
+     &                ,CWM_BTXS, CWM_BTXE, CWM_BTYS, CWM_BTYE           &
+     &                ,Q,CWM                                            &
+     &                ,MOIST,N_MOIST,SCALAR,N_SCALAR                    &
+     &                ,SPEC_BDY_WIDTH                                   &  
+     &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
+     &                ,IMS,IME,JMS,JME,KMS,KME                          &
+     &                ,ITS,ITE,JTS,JTE,KTS,KTE)
+!***********************************************************************
+!$$$  SUBPROGRAM DOCUMENTATION BLOCK
+!                .      .    .     
+! SUBPROGRAM:    BOCOH       UPDATE MASS POINTS ON BOUNDARY
+!   PRGRMMR: JANJIC          ORG: W/NP22     DATE: 94-03-08
+!     
+! ABSTRACT:
+!     TEMPERATURE, SPECIFIC HUMIDITY, AND SURFACE PRESSURE
+!     ARE UPDATED ON THE DOMAIN BOUNDARY BY APPLYING THE
+!     PRE-COMPUTED TENDENCIES AT EACH TIME STEP.
+!     
+! PROGRAM HISTORY LOG:
+!   87-??-??  MESINGER   - ORIGINATOR
+!   95-03-25  BLACK      - CONVERSION FROM 1-D TO 2-D in HORIZONTAL
+!   96-12-13  BLACK      - FINAL MODIFICATION FOR NESTED RUNS
+!   98-10-30  BLACK      - MODIFIED FOR DISTRIBUTED MEMORY
+!   00-01-06  BLACK      - MODIFIED FOR JANJIC NONHYDROSTATIC CODE
+!   00-09-14  BLACK      - MODIFIED FOR DIRECT ACCESS READ
+!   01-03-12  BLACK      - CONVERTED TO WRF STRUCTURE
+!   02-08-29  MICHALAKES - CHANGED II=I-MY_IS_GLB+1 TO II=I
+!                          ADDED CONDITIONAL COMPILATION AROUND MPI
+!                          CONVERT INDEXING FROM LOCAL TO GLOBAL
+!   02-09-06  WOLFE      - MORE CONVERSION TO GLOBAL INDEXING 
+!   04-11-18  BLACK      - THREADED
+!   05-12-19  BLACK      - CONVERTED FROM IKJ TO IJK
+!   06-06-02  GOPAL      - MODIFICATIONS FOR NESTING
+!   07-11-14  PYLE       - UPDATED FOR NEW WRF BOUNDARY FILE STRUCTURE
+!     
+! USAGE: CALL BOCOH FROM SUBROUTINE SOLVE_NMM
+!   INPUT ARGUMENT LIST:
+!
+!     NOTE THAT IDE AND JDE INSIDE ROUTINE SHOULD BE PASSED IN
+!     AS WHAT WRF CONSIDERS THE UNSTAGGERED GRID DIMENSIONS; THAT
+!     IS, 1 LESS THAN THE IDE AND JDE SET BY WRF FRAMEWORK, JM
+!  
+!   OUTPUT ARGUMENT LIST: 
+!     
+!   OUTPUT FILES:
+!     NONE
+!     
+!   SUBPROGRAMS CALLED:
+!  
+!     UNIQUE: NONE
+!  
+!     LIBRARY: NONE
+!  
+! ATTRIBUTES:
+!   LANGUAGE: FORTRAN 90
+!   MACHINE : IBM 
+!$$$  
+!***********************************************************************
+!-----------------------------------------------------------------------
+#ifdef WRF_CHEM
+    USE MODULE_INPUT_CHEM_DATA
+#endif
+!-----------------------------------------------------------------------
+!
+      IMPLICIT NONE
+!
+!-----------------------------------------------------------------------
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                     &
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE
+      INTEGER,INTENT(IN) :: SPEC_BDY_WIDTH
+      INTEGER,INTENT(IN) :: N_MOIST, N_SCALAR
+#ifdef WRF_CHEM
+      INTEGER,INTENT(IN) :: NUMG
+#endif
+!
+      INTEGER,INTENT(IN) :: GRIDID
+      INTEGER,INTENT(IN) :: LB,NTSD
+!
+      REAL,INTENT(IN) :: DT0,PDTOP,PT
+!
+      REAL,DIMENSION(KMS:KME),INTENT(IN) :: ETA1,ETA2
+!
+      REAL,DIMENSION(IMS:IME,KMS:KME,SPEC_BDY_WIDTH)                   &
+     &                           ,INTENT(INOUT) :: CWM_BYS, CWM_BYE    &
+     &                                            ,CWM_BTYS, CWM_BTYE  
+
+      REAL,DIMENSION(JMS:JME,KMS:KME,SPEC_BDY_WIDTH)                   &
+     &                           ,INTENT(INOUT) :: CWM_BXS, CWM_BXE    &
+     &                                            ,CWM_BTXS, CWM_BTXE  
+                                               
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: CWM,Q
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,NUM_MOIST)                 &
+     &                                           ,INTENT(INOUT) :: MOIST
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,NUM_SCALAR)                &
+     &                                          ,INTENT(INOUT) :: SCALAR
+!
+!-----------------------------------------------------------------------
+!
+!***  LOCAL VARIABLES
+!
+      INTEGER :: I,IB,IBDY,II,IIM,IM,IRTN,ISIZ1,ISIZ2                &
+     &          ,J,JB,JJ,JJM,JM,K,KK,N,NN,NREC,NUMGAS,NV,REC
+      INTEGER :: MY_IS_GLB,MY_JS_GLB,MY_IE_GLB,MY_JE_GLB  
+      INTEGER :: I_M,ILPAD1,IRPAD1,JBPAD1,JTPAD1
+      INTEGER :: I1,I2,J1,J2,J1B,J2B
+!
+      REAL :: BCHR,CONVFAC,CWK,DT,PLYR,RRI
+!
+      LOGICAL :: E_BDY,W_BDY,N_BDY,S_BDY,ACTIVATE
+!
+      CHARACTER(LEN=255) :: message
+!-----------------------------------------------------------------------
+!***********************************************************************
+!-----------------------------------------------------------------------
+!
+#ifdef WRF_CHEM
+!***  DETERMINE THE INDEX OF THE LAST GAS SPECIES
+      NUMGAS=P_HO2                     
+      NUMGAS=NUMG
+!     NUMGAS = GET_LAST_GAS(CONFIG_FLAGS%CHEM_OPT)       
+!
+#endif
+      IM=IDE-IDS+1
+      JM=JDE-JDS+1
+      IIM=IM
+      JJM=JM
+!
+      ISIZ1=2*LB
+      ISIZ2=2*LB*(KME-KMS)
+!
+      W_BDY=(ITS==IDS)
+      E_BDY=(ITE==IDE)
+      S_BDY=(JTS==JDS)
+      N_BDY=(JTE==JDE)
+!
+      ILPAD1=1
+      IF(W_BDY)ILPAD1=0
+      IRPAD1=1
+      IF(E_BDY)IRPAD1=0
+      JBPAD1=1
+      IF(S_BDY)JBPAD1=0
+      JTPAD1=1
+      IF(N_BDY)JTPAD1=0
+!
+      MY_IS_GLB=ITS
+      MY_IE_GLB=ITE
+      MY_JS_GLB=JTS
+      MY_JE_GLB=JTE
+!
+      DT=DT0
+
+      ! I loop ends for N/S bdy copying:
+      I1=MAX(ITS-1,IDS)
+      I2=MIN(ITE+1,IDE)
+
+      ! J loop ends for E/W bdy copying:
+      J1=MAX(JTS-1,JDS+3-1)
+      IF(MOD(J1,2)/=1) J1=J1+1
+      J2=MIN(JTE+1,JDE-2)
+      IF(MOD(J2,2)/=1) J2=J2-1
+
+      ! J loop ends for E/W bdy 4-point averaging:
+      J1B=MAX(4,MY_JS_GLB-JBPAD1)
+      IF(MOD(J1B,2)/=0) J1B=J1B+1
+      J2B=MIN(JM-3,MY_JE_GLB+JTPAD1)
+      IF(MOD(J2B,2)/=0) J2B=J2B-1
+!
+!-----------------------------------------------------------------------
+!***  SOUTH AND NORTH BOUNDARIES
+!-----------------------------------------------------------------------
+!
+!***  USE IBDY=1 FOR SOUTH; 2 FOR NORTH
+!
+      ns_do: DO IBDY=1,2 
+!
+!***  MAKE SURE THE PROCESSOR HAS THIS BOUNDARY.
+!
+        activate=.false.
+        if_ns: IF(S_BDY.AND.IBDY==1) THEN 
+            JB=1         ! Which cell in from boundary
+            JJ=1         ! Which cell in the domain
+            activate=.true.
+!$omp parallel do                                                       &
+!$omp& private(i,k)
+          DO K=KTS,KTE
+            DO I=I1,I2
+              CWM_BYS(I,K,JB)=CWM_BYS(I,K,JB)+CWM_BTYS(I,K,JB)*DT
+              CWM(I,JJ,K)=CWM_BYS(I,K,JB)
+            ENDDO
+           ENDDO
+
+          ELSEIF(N_BDY.AND.IBDY==2) THEN
+            JB=1         ! Which cell in from boundary
+            JJ=JJM       ! Which cell in the domain
+            activate=.true.
+!$omp parallel do                                                       &
+!$omp& private(i,k)
+          DO K=KTS,KTE
+            DO I=I1,I2
+              CWM_BYE(I,K,JB)=CWM_BYE(I,K,JB)+CWM_BTYE(I,K,JB)*DT
+              CWM(I,JJ,K)=CWM_BYE(I,K,JB)
+            ENDDO
+          ENDDO
+
+       ENDIF if_ns   ! for N/S boundaries
+
+       ns_moist: IF(activate) then
+          DO I_M=1,N_MOIST
+            IF(I_M==P_QV)THEN
+!$omp parallel do                                                       &
+!$omp& private(i,k)
+              DO K=KTS,KTE
+              DO I=I1,I2
+                MOIST(I,JJ,K,I_M)=Q(I,JJ,K)/(1.-Q(I,JJ,K))
+              ENDDO
+              ENDDO
+            ELSE
+!$omp parallel do                                                       &
+!$omp& private(i,k)
+              DO K=KTS,KTE
+              DO I=I1,I2
+                MOIST(I,JJ,K,I_M)=0.
+              ENDDO
+              ENDDO
+            ENDIF
+          ENDDO
+          DO I_M=2,N_SCALAR
+!$omp parallel do                                                       &
+!$omp& private(i,k)
+            DO K=KTS,KTE
+            DO I=I1,I2
+              SCALAR(I,JJ,K,I_M)=0.
+            ENDDO
+            ENDDO
+          ENDDO
+       ENDIF ns_moist
+      ENDDO ns_do
+!
+!-----------------------------------------------------------------------
+!***  WEST AND EAST BOUNDARIES
+!-----------------------------------------------------------------------
+!
+!***  USE IBDY=1 FOR WEST; 2 FOR EAST. 
+!
+      ew_do: DO IBDY=1,2 
+!
+!***  MAKE SURE THE PROCESSOR HAS THIS BOUNDARY.
+!
+         activate=.false.
+         if_ew: IF(W_BDY.AND.IBDY==1) THEN  
+            IB=1         ! Which cell in from boundary 
+            II=1         ! Which cell in the domain
+            activate=.true.
+!$omp parallel do                                                       &
+!$omp& private(j,k)
+          DO K=KTS,KTE
+            DO J=J1,J2,2
+!
+              IF(MOD(J,2)==1)THEN
+                CWM_BXS(J,K,IB)=CWM_BXS(J,K,IB)+CWM_BTXS(J,K,IB)*DT
+                CWM(II,J,K)=CWM_BXS(J,K,IB)
+              ENDIF
+!
+            ENDDO
+          ENDDO
+
+          ELSEIF(E_BDY.AND.IBDY==2) THEN
+            IB=1         ! Which cell in from boundary
+            II=IIM       ! Which cell in the domain
+            activate=.true.
+!$omp parallel do                                                       &
+!$omp& private(j,k)
+          DO K=KTS,KTE
+            DO J=J1,J2,2
+!
+              IF(MOD(J,2)==1)THEN
+                CWM_BXE(J,K,IB)=CWM_BXE(J,K,IB)+CWM_BTXE(J,K,IB)*DT
+                CWM(II,J,K)=CWM_BXE(J,K,IB)
+              ENDIF
+!
+            ENDDO
+          ENDDO
+!
+       ENDIF if_ew  ! for W/E boundaries
+       ew_moist: if(activate) then
+          DO I_M=1,N_MOIST
+            IF(I_M==P_QV)THEN
+!$omp parallel do                                                       &
+!$omp& private(j,k)
+              DO K=KTS,KTE
+              DO J=J1,J2,2
+                IF(MOD(J,2)==1)THEN
+                  MOIST(II,J,K,I_M)=Q(II,J,K)/(1.-Q(II,J,K))
+                ENDIF
+              ENDDO
+              ENDDO
+!
+            ELSE
+!$omp parallel do                                                       &
+!$omp& private(j,k)
+              DO K=KTS,KTE
+              DO J=J1,J2,2
+                IF(MOD(J,2)==1)THEN
+                  MOIST(II,J,K,I_M)=0.
+                ENDIF
+              ENDDO
+              ENDDO
+!
+            ENDIF
+          ENDDO
+!
+          DO I_M=2,N_SCALAR
+!$omp parallel do                                                       &
+!$omp& private(j,k)
+            DO K=KTS,KTE
+            DO J=J1,J2,2
+              IF(MOD(J,2)==1)THEN
+                SCALAR(II,J,K,I_M)=0.
+              ENDIF
+            ENDDO
+            ENDDO
+         ENDDO
+      ENDIF ew_moist
+   ENDDO ew_do
+!
+!-----------------------------------------------------------------------
+!***  SPACE INTERPOLATION OF PD THEN REMAINING MASS VARIABLES
+!***  AT INNER BOUNDARY
+!-----------------------------------------------------------------------
+!
+!-----------------------------------------------------------------------
+!
+!$omp parallel do                                                       &
+!$omp& private(i,j,jj,k)
+      DO 200 K=KTS,KTE
+!
+!-----------------------------------------------------------------------
+!
+!***  ONE ROW NORTH OF SOUTHERN BOUNDARY
+!
+      IF(S_BDY)THEN
+        DO I=MYIS,MYIE1
+          CWM(I,2,K)=(CWM(I,1,K)+CWM(I+1,1,K)+CWM(I,3,K)+CWM(I+1,3,K))  &
+     &               *0.25
+        ENDDO
+!
+        DO I_M=1,N_MOIST
+          IF(I_M==P_QV)THEN
+            DO I=MYIS,MYIE1
+              MOIST(I,2,K,I_M)=Q(I,2,K)/(1.-Q(I,2,K))
+            ENDDO
+          ELSE
+            DO I=MYIS,MYIE1
+              MOIST(I,2,K,I_M)=(MOIST(I,1,K,I_M)                        &
+     &                         +MOIST(I+1,1,K,I_M)                      &
+     &                         +MOIST(I,3,K,I_M)                        &
+     &                         +MOIST(I+1,3,K,I_M))*0.25
+            ENDDO
+          ENDIF
+        ENDDO
+!
+        DO I_M=2,N_SCALAR
+          DO I=MYIS,MYIE1
+            SCALAR(I,2,K,I_M)=(SCALAR(I,1,K,I_M)                        &
+     &                        +SCALAR(I+1,1,K,I_M)                      &
+     &                        +SCALAR(I,3,K,I_M)                        &
+     &                        +SCALAR(I+1,3,K,I_M))*0.25
+          ENDDO
+        ENDDO
+!
+      ENDIF
+!
+!***  ONE ROW SOUTH OF NORTHERN BOUNDARY
+!
+      IF(N_BDY)THEN
+        DO I=MYIS,MYIE1
+          CWM(I,JJM-1,K)=(CWM(I,JJM-2,K)+CWM(I+1,JJM-2,K)               &
+     &                   +CWM(I,JJM,K)+CWM(I+1,JJM,K))                  &
+     &                   *0.25
+        ENDDO
+!
+        DO I_M=1,N_MOIST
+          IF(I_M==P_QV)THEN
+            DO I=MYIS,MYIE1
+              MOIST(I,JJM-1,K,I_M)=Q(I,JJM-1,K)/(1.-Q(I,JJM-1,K))
+            ENDDO
+          ELSE
+            DO I=MYIS,MYIE1
+              MOIST(I,JJM-1,K,I_M)=(MOIST(I,JJM-2,K,I_M)                &
+     &                             +MOIST(I+1,JJM-2,K,I_M)              &
+     &                             +MOIST(I,JJM,K,I_M)                  &
+     &                             +MOIST(I+1,JJM,K,I_M))*0.25
+            ENDDO
+
+          ENDIF
+        ENDDO
+!
+        DO I_M=2,N_SCALAR
+          DO I=MYIS,MYIE1
+            SCALAR(I,JJM-1,K,I_M)=(SCALAR(I,JJM-2,K,I_M)                &
+     &                            +SCALAR(I+1,JJM-2,K,I_M)              &
+     &                            +SCALAR(I,JJM,K,I_M)                  &
+     &                            +SCALAR(I+1,JJM,K,I_M))*0.25
+          ENDDO
+        ENDDO
+!
+      ENDIF
+!
+!***  ONE ROW EAST OF WESTERN BOUNDARY
+!
+      IF(W_BDY)THEN
+        DO J=J1B,J2B,2
+            JJ=J
+            CWM(1,JJ,K)=(CWM(1,JJ-1,K)+CWM(2,JJ-1,K)                    &
+     &                  +CWM(1,JJ+1,K)+CWM(2,JJ+1,K))                   &
+     &                  *0.25
+!
+            DO I_M=1,N_MOIST
+              IF(I_M==P_QV)THEN
+                MOIST(1,JJ,K,I_M)=Q(1,JJ,K)/(1.-Q(1,JJ,K))     
+              ELSE  
+                MOIST(1,JJ,K,I_M)=(MOIST(1,JJ-1,K,I_M)                  &
+     &                            +MOIST(2,JJ-1,K,I_M)                  &
+     &                            +MOIST(1,JJ+1,K,I_M)                  &
+     &                            +MOIST(2,JJ+1,K,I_M))*0.25
+              ENDIF
+            ENDDO    
+!
+            DO I_M=2,N_SCALAR
+              SCALAR(1,JJ,K,I_M)=(SCALAR(1,JJ-1,K,I_M)                  &
+     &                           +SCALAR(2,JJ-1,K,I_M)                  &
+     &                           +SCALAR(1,JJ+1,K,I_M)                  &
+     &                           +SCALAR(2,JJ+1,K,I_M))*0.25
+            ENDDO
+!
+        ENDDO
+!
+      ENDIF
+!
+!***  ONE ROW WEST OF EASTERN BOUNDARY
+!
+      IF(E_BDY)THEN
+        DO J=J1B,J2B,2
+            JJ=J
+            CWM(IIM-1,JJ,K)=(CWM(IIM-1,JJ-1,K)+CWM(IIM,JJ-1,K)          &
+     &                      +CWM(IIM-1,JJ+1,K)+CWM(IIM,JJ+1,K))         &
+     &                      *0.25
+!
+            DO I_M=1,N_MOIST
+              IF(I_M==P_QV)THEN
+                MOIST(IIM-1,JJ,K,I_M)=Q(IIM-1,JJ,K)/(1.-Q(IIM-1,JJ,K))
+              ELSE
+                MOIST(IIM-1,JJ,K,I_M)=(MOIST(IIM-1,JJ-1,K,I_M)                   &
+     &                                +MOIST(IIM,JJ-1,K,I_M)                     &
+     &                                +MOIST(IIM-1,JJ+1,K,I_M)                   &
+     &                                +MOIST(IIM,JJ+1,K,I_M))*0.25
+                ENDIF
+              ENDDO
+!
+              DO I_M=2,N_SCALAR
+                SCALAR(IIM-1,JJ,K,I_M)=(SCALAR(IIM-1,JJ-1,K,I_M)                    &
+     &                                 +SCALAR(IIM,JJ-1,K,I_M)                      &
+     &                                 +SCALAR(IIM-1,JJ+1,K,I_M)                    &
+     &                                 +SCALAR(IIM,JJ+1,K,I_M))*0.25
+              ENDDO
+!
+        ENDDO
+      ENDIF
+!-----------------------------------------------------------------------
+!
+  200 CONTINUE
+!
+!-----------------------------------------------------------------------
+      END SUBROUTINE MP_BULK_BOUNDARY
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -880,7 +1359,7 @@
 !
 !$omp parallel do                                                       &
 !$omp& private(i,j,jj,k)
-      bigk1: DO K=KTS,KTE
+      DO 200 K=KTS,KTE
 !
 !-----------------------------------------------------------------------
 !
@@ -932,7 +1411,7 @@
       ENDDO
 !-----------------------------------------------------------------------
 !
-      ENDDO bigk1
+  200 CONTINUE
 
   201 CONTINUE
 !
@@ -946,7 +1425,7 @@
 !
 !$omp parallel do                                                       &
 !$omp& private(i,j,jj,k)
-      bigk2: DO K=KTS,KTE
+      DO 300 K=KTS,KTE
 !
 !-----------------------------------------------------------------------
 !
@@ -1049,750 +1528,11 @@
       ENDIF
 !-----------------------------------------------------------------------
 !
-      ENDDO bigk2
+  300 CONTINUE
 !
 !-----------------------------------------------------------------------
 !
       END SUBROUTINE BOCOV
-!
-!-----------------------------------------------------------------------
-!
-      SUBROUTINE MP_BULK_BDY(gridid, spec_bdy_width,dt,      &
-             CWM,CWM_bxs, CWM_bxe, CWM_bys, CWM_bxe,         &
-             CWM_btxs,CWM_btxe,CWM_btys,CWM_btxe,            &
-             Q,                                              &
-             MOIST,N_MOIST,SCALAR,N_SCALAR,                  &
-             ids,ide,jds,jde,kds,kde,                        &
-             ims,ime,jms,jme,kms,kme,                        &
-             its,ite,jts,jte,kts,kte)
-
-          implicit none
-
-          integer, intent(in) :: N_MOIST,N_SCALAR,           &
-               ids,ide,jds,jde,kds,kde,                      &
-               ims,ime,jms,jme,kms,kme,                      &
-               its,ite,jts,jte,kts,kte
-          integer, intent(in) :: spec_bdy_width,gridid
-          real,intent(in) :: dt
-
-          real, intent(inout),dimension(ims:ime,jms:jme,kms:kme) :: &
-               CWM,Q
-
-!          real,dimension(ims:ime,kms:kme,spec_bdy_width,n_scalar), &
-!               intent(inout) :: MOIST_bys,MOIST_bye,MOIST_btys,MOIST_btye
-
-!          real,dimension(jms:jme,kms:kme,spec_bdy_width,n_scalar), &
-!               intent(inout) :: MOIST_bxs,MOIST_bxe,MOIST_btxs,MOIST_btxe
-
-!          real,dimension(ims:ime,kms:kme,spec_bdy_width,n_scalar), &
-!               intent(inout) :: SCALAR_bys,SCALAR_bye,SCALAR_btys,SCALAR_btye
-
-!          real,dimension(jms:jme,kms:kme,spec_bdy_width,n_scalar), &
-!               intent(inout) :: SCALAR_bxs,SCALAR_bxe,SCALAR_btxs,SCALAR_btxe
-
-          real,dimension(ims:ime,kms:kme,spec_bdy_width),intent(inout) :: &
-               CWM_bys,CWM_bye,CWM_btys,CWM_btye
-
-          real,dimension(jms:jme,kms:kme,spec_bdy_width),intent(inout) :: &
-               CWM_bxs,CWM_bxe,CWM_btxs,CWM_btxe
-
-          real,intent(inout) :: MOIST(ims:ime,jms:jme,kms:kme,N_MOIST)
-          real,intent(inout) :: SCALAR(ims:ime,jms:jme,kms:kme,N_SCALAR)
-
-          ! ------------------------------------------------------------
-          ! LOCAL VARIABLES
-          ! ------------------------------------------------------------
-
-          integer :: IM,JM,IIM,JJM
-          logical :: W_BDY,E_BDY,S_BDY,N_BDY
-          integer :: MY_IS_GLB,MY_IE_GLB,MY_JS_GLB,MY_JE_BLB
-          integer :: DT=DT0
-
-          ! ------------------------------------------------------------
-
-          IM=IDE-IDS+1
-          JM=JDE-JDS+1
-          IIM=IM
-          JJM=JM
-          j1=MAX(JTS-1,JDS+3-1)
-          if(mod(j,2)/=1) j1=j1+1
-          j2=MIN(JTE+1,JDE-2)
-          if(mod(j,2)/=1) j2=j2-1
-          i1=MAX(ITS-1,IDS)
-          i2=MIN(ITE+1,IDE)
-
-          !
-          !-----------------------------------------------------------------------
-          !***  SOUTH AND NORTH BOUNDARIES
-          !-----------------------------------------------------------------------
-          !
-          !***  USE IBDY=1 FOR SOUTH; 2 FOR NORTH
-          !
-          n_s_bdy: DO IBDY=1,2 
-             !
-             !***  MAKE SURE THE PROCESSOR HAS THIS BOUNDARY.
-             !
-             if_n_s_bdy: IF(S_BDY.AND.IBDY==1) THEN 
-                JB=1         ! Which cell in from boundary
-                JJ=1         ! Which cell in the domain
-                !$omp parallel do                                                       &
-                !$omp& private(i,k)
-                DO K=KTS,KTE
-                   DO I=i1,i2
-                      CWM_BYS(I,K,JB)=CWM_BYS(I,K,JB)+CWM_BTYS(I,K,JB)*DT
-                      CWM(I,JJ,K)=CWM_BYS(I,K,JB)
-                   ENDDO
-                ENDDO
-
-             ELSEIF(N_BDY.AND.IBDY==2) THEN
-                JB=1         ! Which cell in from boundary
-                JJ=JJM       ! Which cell in the domain
-                !$omp parallel do                                                       &
-                !$omp& private(i,k)
-                DO K=KTS,KTE
-                   DO I=i1,i2
-                      CWM_BYE(I,K,JB)=CWM_BYE(I,K,JB)+CWM_BTYE(I,K,JB)*DT
-                      CWM(I,JJ,K)=CWM_BYE(I,K,JB)
-                   ENDDO
-                ENDDO
-
-                !         ENDIF   ! for N/S boundaries
-
-                !
-                DO I_M=1,N_MOIST
-                   IF(I_M==P_QV)THEN
-                      !$omp parallel do                                                       &
-                      !$omp& private(i,k)
-                      DO K=KTS,KTE
-                         DO I=i1,i2
-                            MOIST(I,JJ,K,I_M)=Q(I,JJ,K)/(1.-Q(I,JJ,K))
-                         ENDDO
-                      ENDDO
-                   ELSE
-                      !$omp parallel do                                                       &
-                      !$omp& private(i,k)
-                      DO K=KTS,KTE
-                         DO I=i1,i2
-                            MOIST(I,JJ,K,I_M)=0.
-                         ENDDO
-                      ENDDO
-                   ENDIF
-                ENDDO
-                DO I_M=2,N_SCALAR
-                   !$omp parallel do                                                       &
-                   !$omp& private(i,k)
-                   DO K=KTS,KTE
-                      DO I=i1,i2
-                         SCALAR(I,JJ,K,I_M)=0.
-                      ENDDO
-                   ENDDO
-                ENDDO
-             ENDIF if_n_s_bdy
-          ENDDO n_s_bdy
-!
-!-----------------------------------------------------------------------
-!***  WEST AND EAST BOUNDARIES
-!-----------------------------------------------------------------------
-!
-!***  USE IBDY=1 FOR WEST; 2 FOR EAST. 
-!
-      east_west_bt: DO IBDY=1,2 
-!
-!***  MAKE SURE THE PROCESSOR HAS THIS BOUNDARY.
-!
-         if_e_w_bt: IF(W_BDY.AND.IBDY==1) THEN  
-            IB=1         ! Which cell in from boundary 
-            II=1         ! Which cell in the domain
-!
-!
-!$omp parallel do                                                       &
-!$omp& private(j,k)
-          DO K=KTS,KTE
-            DO J=j1,j2
-                CWM_BXS(J,K,IB)=CWM_BXS(J,K,IB)+CWM_BTXS(J,K,IB)*DT
-                CWM(II,J,K)=CWM_BXS(J,K,IB)
-            ENDDO
-          ENDDO
-
-          ELSEIF(E_BDY.AND.IBDY==2) THEN
-            IB=1         ! Which cell in from boundary
-            II=IIM       ! Which cell in the domain
-!
-!$omp parallel do                                                       &
-!$omp& private(j,k)
-          DO K=KTS,KTE
-            DO J=j1,j2
-               CWM_BXE(J,K,IB)=CWM_BXE(J,K,IB)+CWM_BTXE(J,K,IB)*DT
-               CWM(II,J,K)=CWM_BXE(J,K,IB)
-            ENDDO
-          ENDDO
-!
-!          ENDIF  ! for W/E boundaries
-!
-          DO I_M=1,N_MOIST
-            IF(I_M==P_QV)THEN
-!$omp parallel do                                                       &
-!$omp& private(j,k)
-              DO K=KTS,KTE
-              DO J=j1,j2
-                 MOIST(II,J,K,I_M)=Q(II,J,K)/(1.-Q(II,J,K))
-              ENDDO
-              ENDDO
-!
-            ELSE
-!$omp parallel do                                                       &
-!$omp& private(j,k)
-              DO K=KTS,KTE
-              DO J=j1,j2
-                  MOIST(II,J,K,I_M)=0.
-              ENDDO
-              ENDDO
-!
-            ENDIF
-          ENDDO
-!
-          DO I_M=2,N_SCALAR
-!$omp parallel do                                                       &
-!$omp& private(j,k)
-            DO K=KTS,KTE
-            DO J=j1,j2
-                SCALAR(II,J,K,I_M)=0.
-            ENDDO
-            ENDDO
-          ENDDO
-       ENDIF if_e_w_bt
-     ENDDO east_west_bt
-
-
-!-----------------------------------------------------------------------
-!***  SPACE INTERPOLATION OF MICROPHYSICS VARIABLES
-!***  AT INNER BOUNDARY
-!-----------------------------------------------------------------------
-
-
-!
-!-----------------------------------------------------------------------
-!
-!***  ONE ROW NORTH OF SOUTHERN BOUNDARY
-!
-     s_bdy_avg: IF(S_BDY)THEN
-        DO I=MYIS,MYIE1
-          CWM(I,2,K)=(CWM(I,1,K)+CWM(I+1,1,K)+CWM(I,3,K)+CWM(I+1,3,K))  &
-     &               *0.25
-        ENDDO
-!
-        DO I_M=1,N_MOIST
-          IF(I_M==P_QV)THEN
-            DO I=MYIS,MYIE1
-              MOIST(I,2,K,I_M)=Q(I,2,K)/(1.-Q(I,2,K))
-            ENDDO
-          ELSE
-            DO I=MYIS,MYIE1
-              MOIST(I,2,K,I_M)=(MOIST(I,1,K,I_M)                        &
-     &                         +MOIST(I+1,1,K,I_M)                      &
-     &                         +MOIST(I,3,K,I_M)                        &
-     &                         +MOIST(I+1,3,K,I_M))*0.25
-            ENDDO
-          ENDIF
-        ENDDO
-!
-        DO I_M=2,N_SCALAR
-          DO I=MYIS,MYIE1
-            SCALAR(I,2,K,I_M)=(SCALAR(I,1,K,I_M)                        &
-     &                        +SCALAR(I+1,1,K,I_M)                      &
-     &                        +SCALAR(I,3,K,I_M)                        &
-     &                        +SCALAR(I+1,3,K,I_M))*0.25
-          ENDDO
-        ENDDO
-!
-      ENDIF
-!
-!***  ONE ROW SOUTH OF NORTHERN BOUNDARY
-!
-      IF(N_BDY)THEN
-        DO I=MYIS,MYIE1
-          CWM(I,JJM-1,K)=(CWM(I,JJM-2,K)+CWM(I+1,JJM-2,K)               &
-     &                   +CWM(I,JJM,K)+CWM(I+1,JJM,K))                  &
-     &                   *0.25
-        ENDDO
-!
-        DO I_M=1,N_MOIST
-          IF(I_M==P_QV)THEN
-            DO I=MYIS,MYIE1
-              MOIST(I,JJM-1,K,I_M)=Q(I,JJM-1,K)/(1.-Q(I,JJM-1,K))
-            ENDDO
-          ELSE
-            DO I=MYIS,MYIE1
-              MOIST(I,JJM-1,K,I_M)=(MOIST(I,JJM-2,K,I_M)                &
-     &                             +MOIST(I+1,JJM-2,K,I_M)              &
-     &                             +MOIST(I,JJM,K,I_M)                  &
-     &                             +MOIST(I+1,JJM,K,I_M))*0.25
-            ENDDO
-
-          ENDIF
-        ENDDO
-!
-        DO I_M=2,N_SCALAR
-          DO I=MYIS,MYIE1
-            SCALAR(I,JJM-1,K,I_M)=(SCALAR(I,JJM-2,K,I_M)                &
-     &                            +SCALAR(I+1,JJM-2,K,I_M)              &
-     &                            +SCALAR(I,JJM,K,I_M)                  &
-     &                            +SCALAR(I+1,JJM,K,I_M))*0.25
-          ENDDO
-        ENDDO
-!
-      ENDIF
-!
-!***  ONE ROW EAST OF WESTERN BOUNDARY
-!
-      IF(W_BDY)THEN
-        DO J=4,JM-3,2
-!
-          IF(W_BDY.AND.J>=MY_JS_GLB-JBPAD1                              &
-     &            .AND.J<=MY_JE_GLB+JTPAD1)THEN
-            JJ=J
-            CWM(1,JJ,K)=(CWM(1,JJ-1,K)+CWM(2,JJ-1,K)                    &
-     &                  +CWM(1,JJ+1,K)+CWM(2,JJ+1,K))                   &
-     &                  *0.25
-            DO I_M=1,N_MOIST
-              IF(I_M==P_QV)THEN
-                MOIST(1,JJ,K,I_M)=Q(1,JJ,K)/(1.-Q(1,JJ,K))     
-              ELSE  
-                MOIST(1,JJ,K,I_M)=(MOIST(1,JJ-1,K,I_M)                  &
-     &                            +MOIST(2,JJ-1,K,I_M)                  &
-     &                            +MOIST(1,JJ+1,K,I_M)                  &
-     &                            +MOIST(2,JJ+1,K,I_M))*0.25
-              ENDIF
-            ENDDO    
-!
-            DO I_M=2,N_SCALAR
-              SCALAR(1,JJ,K,I_M)=(SCALAR(1,JJ-1,K,I_M)                  &
-     &                           +SCALAR(2,JJ-1,K,I_M)                  &
-     &                           +SCALAR(1,JJ+1,K,I_M)                  &
-     &                           +SCALAR(2,JJ+1,K,I_M))*0.25
-            ENDDO
-!
-          ENDIF
-!
-        ENDDO
-!
-      ENDIF
-!
-!***  ONE ROW WEST OF EASTERN BOUNDARY
-!
-      IF(E_BDY)THEN
-        DO J=4,JM-3,2
-!
-          IF(E_BDY.AND.J>=MY_JS_GLB-JBPAD1                              &
-     &            .AND.J<=MY_JE_GLB+JTPAD1)THEN
-            JJ=J
-            CWM(IIM-1,JJ,K)=(CWM(IIM-1,JJ-1,K)+CWM(IIM,JJ-1,K)          &
-     &                      +CWM(IIM-1,JJ+1,K)+CWM(IIM,JJ+1,K))         &
-     &                      *0.25
-            DO I_M=1,N_MOIST
-              IF(I_M==P_QV)THEN
-                MOIST(IIM-1,JJ,K,I_M)=Q(IIM-1,JJ,K)/(1.-Q(IIM-1,JJ,K))
-              ELSE
-                MOIST(IIM-1,JJ,K,I_M)=(MOIST(IIM-1,JJ-1,K,I_M)                   &
-     &                                +MOIST(IIM,JJ-1,K,I_M)                     &
-     &                                +MOIST(IIM-1,JJ+1,K,I_M)                   &
-     &                                +MOIST(IIM,JJ+1,K,I_M))*0.25
-                ENDIF
-              ENDDO
-!
-              DO I_M=2,N_SCALAR
-                SCALAR(IIM-1,JJ,K,I_M)=(SCALAR(IIM-1,JJ-1,K,I_M)                    &
-     &                                 +SCALAR(IIM,JJ-1,K,I_M)                      &
-     &                                 +SCALAR(IIM-1,JJ+1,K,I_M)                    &
-     &                                 +SCALAR(IIM,JJ+1,K,I_M))*0.25
-              ENDDO
-!
-          ENDIF
-!
-        ENDDO
-      ENDIF
-    END SUBROUTINE MP_BULK_BDY
-!
-!-----------------------------------------------------------------------
-!
-    ! ------------------------------------------------------------
-    ! Non-bulk boundary/tendancy function (mass points)
-    ! ------------------------------------------------------------
-
-    SUBROUTINE MP_SPECIES_BDY(gridid, spec_bdy_width, dt,    &
-             CWM,Q,                                          &
-             MOIST,N_MOIST,                                  &
-             MOIST_bxs,MOIST_bxe,MOIST_bys,MOIST_bye,        &
-             MOIST_btxs,MOIST_btxe,MOIST_btys,MOIST_btye,    &
-             SCALAR,N_SCALAR,                                &
-             SCALAR_bxs,SCALAR_bxe,SCALAR_bys,SCALAR_bye,    &
-             SCALAR_btxs,SCALAR_btxe,SCALAR_btys,SCALAR_btye,&
-             ids,ide,jds,jde,kds,kde,                        &
-             ims,ime,jms,jme,kms,kme,                        &
-             its,ite,jts,jte,kts,kte)
-
-          implicit none
-
-          integer, intent(in) :: N_MOIST,N_SCALAR,           &
-               ids,ide,jds,jde,kds,kde,                      &
-               ims,ime,jms,jme,kms,kme,                      &
-               its,ite,jts,jte,kts,kte
-          integer, intent(in) :: spec_bdy_width,gridid
-          real, intent(in) :: dt
-
-          real, intent(inout),dimension(ims:ime,jms:jme,kms:kme) :: &
-               CWM,Q
-
-          real,dimension(ims:ime,kms:kme,spec_bdy_width,n_scalar), &
-               intent(inout) :: MOIST_bys,MOIST_bye,MOIST_btys,MOIST_btye
-
-          real,dimension(jms:jme,kms:kme,spec_bdy_width,n_scalar), &
-               intent(inout) :: MOIST_bxs,MOIST_bxe,MOIST_btxs,MOIST_btxe
-
-          real,dimension(ims:ime,kms:kme,spec_bdy_width,n_scalar), &
-               intent(inout) :: SCALAR_bys,SCALAR_bye,SCALAR_btys,SCALAR_btye
-
-          real,dimension(jms:jme,kms:kme,spec_bdy_width,n_scalar), &
-               intent(inout) :: SCALAR_bxs,SCALAR_bxe,SCALAR_btxs,SCALAR_btxe
-
-          real,intent(inout) :: MOIST(ims:ime,jms:jme,kms:kme,N_MOIST)
-          real,intent(inout) :: SCALAR(ims:ime,jms:jme,kms:kme,N_SCALAR)
-
-          ! ------------------------------------------------------------
-          ! LOCAL VARIABLES
-          ! ------------------------------------------------------------
-
-          INTEGER :: I,IB,IBDY,II,IIM,IM,IRTN,ISIZ1,ISIZ2                &
-         &          ,J,JB,JJ,JJM,JM,K,KK,N,NN,NREC,NUMGAS,NV,REC
-          INTEGER :: MY_IS_GLB,MY_JS_GLB,MY_IE_GLB,MY_JE_GLB  
-          INTEGER :: I_M,ILPAD1,IRPAD1,JBPAD1,JTPAD1
-          REAL :: BCHR,CONVFAC,CWK,DT,PLYR,RRI
-          LOGICAL :: E_BDY,W_BDY,N_BDY,S_BDY
-          integer :: IM,JM,IIM,JJM
-          logical :: W_BDY,E_BDY,S_BDY,N_BDY
-          integer :: MY_IS_GLB,MY_IE_GLB,MY_JS_GLB,MY_JE_BLB
-
-          ! ------------------------------------------------------------
-
-          IM=IDE-IDS+1
-          JM=JDE-JDS+1
-          IIM=IM
-          JJM=JM
-
-          j1=MAX(JTS-1,JDS+3-1)
-          if(mod(j,2)/=1) j1=j1+1
-          j2=MIN(JTE+1,JDE-2)
-          if(mod(j,2)/=1) j2=j2-1
-          i1=MAX(ITS-1,IDS)
-          i2=MIN(ITE+1,IDE)
-
-          !
-          !-----------------------------------------------------------------------
-          !***  SOUTH AND NORTH BOUNDARIES
-          !-----------------------------------------------------------------------
-          !
-          !***  USE IBDY=1 FOR SOUTH; 2 FOR NORTH
-          !
-          n_s_bdy: DO IBDY=1,2 
-             !
-             !***  MAKE SURE THE PROCESSOR HAS THIS BOUNDARY.
-             !
-             if_n_s_bdy: IF(S_BDY.AND.IBDY==1) THEN 
-                JB=1         ! Which cell in from boundary
-                JJ=1         ! Which cell in the domain
-                !$omp parallel do                        &
-                !$omp& private(i,k)
-                DO K=KTS,KTE
-                   DO I=i1,i2
-                      cwm(i,jj,k)=0.
-                   END DO
-                END DO
-                !$omp parallel do                        &
-                !$omp& private(i,k,im)
-                sbdy_type: DO IM=1,N_MOIST
-                   if(IM==P_QV) cycle sbdy_type
-                   DO K=KTS,KTE
-                      DO I=i1,i2
-                         MOIST_BYS(I,K,JB,IM)=MOIST_BYS(I,K,JB,IM)+MOIST_BTYS(I,K,JB,IM)*DT
-                         MOIST(I,JJ,K,IM)=MOIST_BYS(I,K,JB,IM)
-                         CWM(I,JJ,K)=CWM(I,JJ,K) + MOIST(I,JJ,K)
-                      ENDDO
-                   ENDDO
-                ENDDO sbdy_type
-                !$omp parallel do                        &
-                !$omp& private(i,k,im)
-                sbdy_Stype: DO IM=2,N_SCALAR
-                   DO K=KTS,KTE
-                      DO I=i1,i2
-                         SCALAR_BYS(I,K,JB,IM)=SCALAR_BYS(I,K,JB,IM)+SCALAR_BTYS(I,K,JB,IM)*DT
-                         SCALAR(I,JJ,K,IM)=SCALAR_BYS(I,K,JB,IM)
-                      ENDDO
-                   ENDDO
-                ENDDO sbdy_Stype
-
-             ELSEIF(N_BDY.AND.IBDY==2) THEN
-                JB=1         ! Which cell in from boundary
-                JJ=JJM       ! Which cell in the domain
-
-                !$omp parallel do                        &
-                !$omp& private(i,k)
-                DO K=KTS,KTE
-                   DO I=i1,i2
-                      CWM(i,jj,k)=0.
-                   END DO
-                END DO
-                !$omp parallel do                        &
-                !$omp& private(i,k)
-                nbdy_type: DO IM=1,N_MOIST
-                   if(IM==P_QV) cycle nbdy_type
-                   DO K=KTS,KTE
-                      DO I=i1,i2
-                         MOIST_BYE(I,K,JB,IM)=MOIST_BYE(I,K,JB,IM)+MOIST_BTYE(I,K,JB,IM)*DT
-                         MOIST(I,JJ,K,IM)=MOIST_BYE(I,K,JB,IM)
-                         CWM(I,JJ,K)=CWM(I,JJ,K) + MOIST(I,JJ,K)
-                      ENDDO
-                   ENDDO
-                ENDDO nbdy_type
-                !$omp parallel do                        &
-                !$omp& private(i,k)
-                nbdy_Stype: DO IM=1,N_SCALAR
-                   DO K=KTS,KTE
-                      DO I=i1,i2
-                         SCALAR_BYE(I,K,JB,IM)=SCALAR_BYE(I,K,JB,IM)+SCALAR_BTYE(I,K,JB,IM)*DT
-                         SCALAR(I,JJ,K,IM)=SCALAR_BYE(I,K,JB,IM)
-                      ENDDO
-                   ENDDO
-                ENDDO nbdy_Stype
-             ENDIF if_n_s_bdy
-          ENDDO n_s_bdy
-!
-!-----------------------------------------------------------------------
-!***  WEST AND EAST BOUNDARIES
-!-----------------------------------------------------------------------
-!
-!***  USE IBDY=1 FOR WEST; 2 FOR EAST. 
-!
-      east_west_bt: DO IBDY=1,2 
-!
-!***  MAKE SURE THE PROCESSOR HAS THIS BOUNDARY.
-!
-         if_e_w_bt: IF(W_BDY.AND.IBDY==1) THEN  
-            IB=1         ! Which cell in from boundary 
-            II=1         ! Which cell in the domain
-!$omp parallel do                                                       &
-!$omp& private(j,k)
-            DO K=KTS,KTE
-               DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
-                  cwm(ii,j,k)=0.
-               ENDDO
-            ENDDO
-!$omp parallel do                                                       &
-!$omp& private(j,k,im)
-            w_bdy_type: DO IM=1,N_MOIST
-               if(IM==P_QV) cycle w_bdy_type
-               DO K=KTS,KTE
-                  DO J=j1,j2,2
-                     MOIST_BXS(J,K,IB,IM)=MOIST_BXS(J,K,IB,IM)+MOIST_BTXS(J,K,IB,IM)*DT
-                     MOIST(II,J,K,IM)=MOIST_BXS(J,K,IB,IM)
-                     CWM(II,J,K)=CWM(II,J,K)+MOIST(II,J,K,IM)
-                  ENDDO
-               ENDDO
-            ENDDO w_bdy_type
-!$omp parallel do                                                       &
-!$omp& private(j,k,im)
-            w_bdy_Stype: DO IM=2,N_SCALAR
-               DO K=KTS,KTE
-                  DO J=j1,j2,2
-                     SCALAR_BXS(J,K,IB,IM)=SCALAR_BXS(J,K,IB,IM)+SCALAR_BTXS(J,K,IB,IM)*DT
-                     SCALAR(II,J,K,IM)=SCALAR_BXS(J,K,IB,IM)
-                  ENDDO
-               ENDDO
-            ENDDO w_bdy_type
-          ELSEIF(E_BDY.AND.IBDY==2) THEN
-            IB=1         ! Which cell in from boundary
-            II=IIM       ! Which cell in the domain
-!$omp parallel do                                                       &
-!$omp& private(j,k)
-          DO K=KTS,KTE
-            DO J=j1,j2
-               CWM(II,J,K)=0.
-            ENDDO
-         ENDDO
-!$omp parallel do                                                       &
-!$omp& private(j,k,im)
-         e_bdy_type: DO IM=1,N_MOIST
-            if(IM==P_QV) cycle e_bdy_type
-            DO K=KTS,KTE
-               DO J=j1,j2
-                  MOIST_BXE(J,K,IB)=MOIST_BXE(J,K,IB)+MOIST_BTXE(J,K,IB)*DT
-                  MOIST(II,J,K)=MOIST_BXE(J,K,IB)
-                  CWM(II,J,K)=CWM(II,J,K)+MOIST(II,J,K,IM)
-               ENDDO
-            ENDDO
-         ENDDO e_bdy_type
-!$omp parallel do                                                       &
-!$omp& private(j,k,im)
-         e_bdy_Stype: DO IM=2,N_SCALAR
-            DO K=KTS,KTE
-               DO J=j1,j2
-                  SCALAR_BXE(J,K,IB)=SCALAR_BXE(J,K,IB)+SCALAR_BTXE(J,K,IB)*DT
-                  SCALAR(II,J,K)=SCALAR_BXE(J,K,IB)
-               ENDDO
-            ENDDO
-         ENDDO e_bdy_Stype
-      ENDIF if_e_w_bt
-   ENDDO east_west_bt
-
-
-!-----------------------------------------------------------------------
-!***  SPACE INTERPOLATION OF MICROPHYSICS VARIABLES
-!***  AT INNER BOUNDARY
-!-----------------------------------------------------------------------
-
-
-!
-!-----------------------------------------------------------------------
-!
-!***  ONE ROW NORTH OF SOUTHERN BOUNDARY
-!
-     s_bdy_avg: IF(S_BDY)THEN
-        DO I=MYIS,MYIE1
-          CWM(I,2,K)=(CWM(I,1,K)+CWM(I+1,1,K)+CWM(I,3,K)+CWM(I+1,3,K))  &
-     &               *0.25
-        ENDDO
-!
-        DO I_M=1,N_MOIST
-          IF(I_M==P_QV)THEN
-            DO I=MYIS,MYIE1
-              MOIST(I,2,K,I_M)=Q(I,2,K)/(1.-Q(I,2,K))
-            ENDDO
-          ELSE
-            DO I=MYIS,MYIE1
-              MOIST(I,2,K,I_M)=(MOIST(I,1,K,I_M)                        &
-     &                         +MOIST(I+1,1,K,I_M)                      &
-     &                         +MOIST(I,3,K,I_M)                        &
-     &                         +MOIST(I+1,3,K,I_M))*0.25
-            ENDDO
-          ENDIF
-        ENDDO
-!
-        DO I_M=2,N_SCALAR
-          DO I=MYIS,MYIE1
-            SCALAR(I,2,K,I_M)=(SCALAR(I,1,K,I_M)                        &
-     &                        +SCALAR(I+1,1,K,I_M)                      &
-     &                        +SCALAR(I,3,K,I_M)                        &
-     &                        +SCALAR(I+1,3,K,I_M))*0.25
-          ENDDO
-        ENDDO
-!
-     ENDIF s_bdy_avg
-!
-!***  ONE ROW SOUTH OF NORTHERN BOUNDARY
-!
-     n_bdy_avg: IF(N_BDY)THEN
-        DO I=MYIS,MYIE1
-          CWM(I,JJM-1,K)=(CWM(I,JJM-2,K)+CWM(I+1,JJM-2,K)               &
-     &                   +CWM(I,JJM,K)+CWM(I+1,JJM,K))                  &
-     &                   *0.25
-        ENDDO
-!
-        DO I_M=1,N_MOIST
-          IF(I_M==P_QV)THEN
-            DO I=MYIS,MYIE1
-              MOIST(I,JJM-1,K,I_M)=Q(I,JJM-1,K)/(1.-Q(I,JJM-1,K))
-            ENDDO
-          ELSE
-            DO I=MYIS,MYIE1
-              MOIST(I,JJM-1,K,I_M)=(MOIST(I,JJM-2,K,I_M)                &
-     &                             +MOIST(I+1,JJM-2,K,I_M)              &
-     &                             +MOIST(I,JJM,K,I_M)                  &
-     &                             +MOIST(I+1,JJM,K,I_M))*0.25
-            ENDDO
-
-          ENDIF
-        ENDDO
-!
-        DO I_M=2,N_SCALAR
-          DO I=MYIS,MYIE1
-            SCALAR(I,JJM-1,K,I_M)=(SCALAR(I,JJM-2,K,I_M)                &
-     &                            +SCALAR(I+1,JJM-2,K,I_M)              &
-     &                            +SCALAR(I,JJM,K,I_M)                  &
-     &                            +SCALAR(I+1,JJM,K,I_M))*0.25
-          ENDDO
-        ENDDO
-!
-     ENDIF n_bdy_avg
-!
-!***  ONE ROW EAST OF WESTERN BOUNDARY
-!
-     w_bdy_avg:IF(W_BDY)THEN
-        DO J=4,JM-3,2
-!
-          IF(W_BDY.AND.J>=MY_JS_GLB-JBPAD1                              &
-     &            .AND.J<=MY_JE_GLB+JTPAD1)THEN
-            JJ=J
-            CWM(1,JJ,K)=(CWM(1,JJ-1,K)+CWM(2,JJ-1,K)                    &
-     &                  +CWM(1,JJ+1,K)+CWM(2,JJ+1,K))                   &
-     &                  *0.25
-            DO I_M=1,N_MOIST
-              IF(I_M==P_QV)THEN
-                MOIST(1,JJ,K,I_M)=Q(1,JJ,K)/(1.-Q(1,JJ,K))     
-              ELSE  
-                MOIST(1,JJ,K,I_M)=(MOIST(1,JJ-1,K,I_M)                  &
-     &                            +MOIST(2,JJ-1,K,I_M)                  &
-     &                            +MOIST(1,JJ+1,K,I_M)                  &
-     &                            +MOIST(2,JJ+1,K,I_M))*0.25
-              ENDIF
-            ENDDO    
-!
-            DO I_M=2,N_SCALAR
-              SCALAR(1,JJ,K,I_M)=(SCALAR(1,JJ-1,K,I_M)                  &
-     &                           +SCALAR(2,JJ-1,K,I_M)                  &
-     &                           +SCALAR(1,JJ+1,K,I_M)                  &
-     &                           +SCALAR(2,JJ+1,K,I_M))*0.25
-            ENDDO
-!
-          ENDIF
-!
-        ENDDO
-!
-     ENDIF w_bdy_avg
-!
-!***  ONE ROW WEST OF EASTERN BOUNDARY
-!
-     e_bdy_avg:IF(E_BDY)THEN
-        DO J=4,JM-3,2
-!
-          IF(E_BDY.AND.J>=MY_JS_GLB-JBPAD1                              &
-     &            .AND.J<=MY_JE_GLB+JTPAD1)THEN
-            JJ=J
-            CWM(IIM-1,JJ,K)=(CWM(IIM-1,JJ-1,K)+CWM(IIM,JJ-1,K)          &
-     &                      +CWM(IIM-1,JJ+1,K)+CWM(IIM,JJ+1,K))         &
-     &                      *0.25
-            DO I_M=1,N_MOIST
-              IF(I_M==P_QV)THEN
-                MOIST(IIM-1,JJ,K,I_M)=Q(IIM-1,JJ,K)/(1.-Q(IIM-1,JJ,K))
-              ELSE
-                MOIST(IIM-1,JJ,K,I_M)=(MOIST(IIM-1,JJ-1,K,I_M)                   &
-     &                                +MOIST(IIM,JJ-1,K,I_M)                     &
-     &                                +MOIST(IIM-1,JJ+1,K,I_M)                   &
-     &                                +MOIST(IIM,JJ+1,K,I_M))*0.25
-                ENDIF
-              ENDDO
-!
-              DO I_M=2,N_SCALAR
-                SCALAR(IIM-1,JJ,K,I_M)=(SCALAR(IIM-1,JJ-1,K,I_M)                    &
-     &                                 +SCALAR(IIM,JJ-1,K,I_M)                      &
-     &                                 +SCALAR(IIM-1,JJ+1,K,I_M)                    &
-     &                                 +SCALAR(IIM,JJ+1,K,I_M))*0.25
-              ENDDO
-!
-          ENDIF
-!
-        ENDDO
-     ENDIF e_bdy_avg
-       
-      END SUBROUTINE MP_SPECIES_BDY
 !
 !-----------------------------------------------------------------------
 !

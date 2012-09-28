@@ -217,7 +217,7 @@ module_comm_nesting_dm.o: \
 		module_domain.o \
 		module_configure.o
 
-module_bdywrite.o: module_domain_type.o module_domain.o module_dm.o
+module_bdywrite.o: module_domain_type.o module_domain.o module_dm.o module_state_description.o
 
 module_dm_stubs.F: module_domain.o
 

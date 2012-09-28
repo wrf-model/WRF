@@ -488,7 +488,7 @@ state  real   baro      ij    dyn_nmm   1    -     -        "BARO"      "externa
 state  real   dwdt      ijk   dyn_nmm   1    -     rd=(DownCopy) "DWDT"      "dwdt and 1+(dwdt)/g"              "m s-2"
 state  real   pdwdt     ijk   dyn_nmm   1    -     r
 state  real   pint      ijk   dyn_nmm   1    Z     irhd=(DownCopy)u=(NoInterp)f=(NoInterp)       "PINT"      "Model layer interface pressure"   "Pa"
-state  real   w         ijk   dyn_nmm   1    Z     rd=(DownCopy)       "W_nonhydro"         "Vertical velocity"                "m s-1"
+state  real   w         ijk   dyn_nmm   1    Z     rd=(DownCopy)       "W"         "Vertical velocity"                "m s-1"
 state  real   w_tot     ijk   dyn_nmm   1    Z     hd=(DownCopy)       "W"         "Vertical velocity"                "m s-1"
 state  real   z         ijk   dyn_nmm   1    Z     -        "Z"         "Distance from ground"             "m"
 #
@@ -680,37 +680,37 @@ state    real   ts_clw          ?!       misc      -         -      -        "TS
 # moist_tend even if there are not any moist scalars (so the essentially                                                
 # dry code will will still link properly)                                               
 #                                               
-state   real    -              ijkftb   moist       1         -     -    -                                       
-state   real    qv             ijkftb   moist       1         -     rhf=(BdyMass)      "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
-state   real    qc             ijkftb   moist       1         -     rhf=(BdyMass)      "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
-state   real    qr             ijkftb   moist       1         -     rhf=(BdyMass)      "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
-state   real    qi             ijkftb   moist       1         -     rhf=(BdyMass)      "QICE"             "Ice mixing ratio"              "kg kg-1"
-state   real    qs             ijkftb   moist       1         -     rhf=(BdyMass)      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
-state   real    qg             ijkftb   moist       1         -     rhf=(BdyMass)      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
-state   real    qh             ijkftb   moist       1         -     rhf=(BdyMass)      "QHAIL"            "Hail mixing ratio"             "kg kg-1"
+state   real    -              ijkfbt   moist       1         -     -    -                                       
+state   real    qv             ijkfbt   moist       1         -     rh      "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    qc             ijkfbt   moist       1         -     rh      "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    qr             ijkfbt   moist       1         -     rh      "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    qi             ijkfbt   moist       1         -     rh      "QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    qs             ijkfbt   moist       1         -     rh      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    qg             ijkfbt   moist       1         -     rh      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+state   real    qh             ijkfbt   moist       1         -     rh      "QHAIL"            "Hail mixing ratio"             "kg kg-1"
 
 
-state   real    -              ijkft   dfi_moist       1         -     -    -
-state   real    dfi_qv         ijkft   dfi_moist       1         -     r      "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
-state   real    dfi_qc         ijkft   dfi_moist       1         -     r      "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
-state   real    dfi_qr         ijkft   dfi_moist       1         -     r      "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
-state   real    dfi_qi         ijkft   dfi_moist       1         -     r      "QICE"             "Ice mixing ratio"              "kg kg-1"
-state   real    dfi_qs         ijkft   dfi_moist       1         -     r      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
-state   real    dfi_qg         ijkft   dfi_moist       1         -     r      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
-state   real    dfi_qh         ijkft   dfi_moist       1         -     r      "QHAIL"             "Hail mixing ratio"              "kg kg-1"
-state   real    dfi_qnh        ijkft   dfi_moist       1         -     r      "QNHAIL"           "Hail Number concentration"        "# kg(-1)"
+state   real    -              ijkfbt   dfi_moist       1         -     -    -
+state   real    dfi_qv         ijkfbt   dfi_moist       1         -     r      "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    dfi_qc         ijkfbt   dfi_moist       1         -     r      "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    dfi_qr         ijkfbt   dfi_moist       1         -     r      "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    dfi_qi         ijkfbt   dfi_moist       1         -     r      "QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    dfi_qs         ijkfbt   dfi_moist       1         -     r      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    dfi_qg         ijkfbt   dfi_moist       1         -     r      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+state   real    dfi_qh         ijkfbt   dfi_moist       1         -     r      "QHAIL"             "Hail mixing ratio"              "kg kg-1"
+state   real    dfi_qnh        ijkfbt   dfi_moist       1         -     r      "QNHAIL"           "Hail Number concentration"        "# kg(-1)"
 
 
 #                                               
 # Other Scalars
 state   real    -              ijkftb  scalar      1         -     -    -
-state   real    qni            ijkftb  scalar      1         -     i01rusdf=(BdyMass)       "QNI"              "Ice Number concentration" "# kg(-1)"
-state   real    qns            ijkftb  scalar      1         -     i01rusdf=(BdyMass)       "QNS"              "Snow Number concentration" "# kg(-1)"
-state   real    qnr            ijkftb  scalar      1         -     i01rusdf=(BdyMass)       "QNR"              "Rain Number concentration" "# kg(-1)"
-state   real    qng            ijkftb  scalar      1         -     i01rusdf=(BdyMass)       "QNG"              "Graupel Number concentration" "# kg(-1)"
-state   real    qnh            ijkftb  scalar      1         -     i01rusdf=(BdyMass)       "QNHAIL"            "Hail Number concentration" "# kg(-1)"
-state   real    qnn            ijkftb  scalar      1         -     i01rusdf=(BdyMass)       "QNCCN"            "CCN Number concentration" "# kg(-1)"
-state   real    qnc            ijkftb  scalar      1         -     i01rusdf=(BdyMass)       "QNCLOUD"          "cloud water Number concentration" "# kg(-1)"
+state   real    qni            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNI"              "Ice Number concentration" "# kg(-1)"
+state   real    qns            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNS"              "Snow Number concentration" "# kg(-1)"
+state   real    qnr            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNR"              "Rain Number concentration" "# kg(-1)"
+state   real    qng            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNG"              "Graupel Number concentration" "# kg(-1)"
+state   real    qnh            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNHAIL"            "Hail Number concentration" "# kg(-1)"
+state   real    qnn            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNCCN"            "CCN Number concentration" "# kg(-1)"
+state   real    qnc            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNCLOUD"          "cloud water Number concentration" "# kg(-1)"
 
 
 state   real    -              ijkftb  dfi_scalar      1         -     -   -

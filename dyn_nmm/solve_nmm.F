@@ -35,7 +35,7 @@
                                              ,VAD2_SCAL,HAD2_SCAL
       USE MODULE_NONHY_DYNAM,           ONLY: EPS,VADZ,HADZ
       USE MODULE_DIFFUSION_NMM,         ONLY: HDIFF
-      USE MODULE_BNDRY_COND,            ONLY: BOCOH,BOCOV
+      USE MODULE_BNDRY_COND,            ONLY: BOCOV, MASS_BOUNDARY, MP_BULK_BOUNDARY
       USE MODULE_PHYSICS_CALLS
       USE MODULE_EXT_INTERNAL
       USE MODULE_PRECIP_ADJUST
@@ -2074,55 +2074,38 @@
 !
       btimx=timef()
 !
-      ! BOCOH has been updated.  It no longer handles microphysics;
-      ! that is handled by a different routine.
-      CALL BOCOH(GRID%ID,grid%ntsd,GRID%DT,NEST,NUNIT_NBC,NBOCO,LAST_TIME,TSPH,&
-           LB,grid%eta1,grid%eta2,grid%pdtop,grid%pt,grid%res,                 &
-           grid%PD_BXS,grid%PD_BXE,grid%PD_BYS,grid%PD_BYE,                    &
-           grid%T_BXS,grid%T_BXE,grid%T_BYS,grid%T_BYE,                        &
-           grid%Q_BXS,grid%Q_BXE,grid%Q_BYS,grid%Q_BYE,                        &
-           grid%U_BXS,grid%U_BXE,grid%U_BYS,grid%U_BYE,                        &
-           grid%V_BXS,grid%V_BXE,grid%V_BYS,grid%V_BYE,                        &
-           grid%Q2_BXS,grid%Q2_BXE,grid%Q2_BYS,grid%Q2_BYE,                    &
-           grid%PD_BTXS,grid%PD_BTXE,grid%PD_BTYS,grid%PD_BTYE,                &
-           grid%T_BTXS,grid%T_BTXE,grid%T_BTYS,grid%T_BTYE,                    &
-           grid%Q_BTXS,grid%Q_BTXE,grid%Q_BTYS,grid%Q_BTYE,                    &
-           grid%U_BTXS,grid%U_BTXE,grid%U_BTYS,grid%U_BTYE,                    &
-           grid%V_BTXS,grid%V_BTXE,grid%V_BTYS,grid%V_BTYE,                    &
-           grid%Q2_BTXS,grid%Q2_BTXE,grid%Q2_BTYS,grid%Q2_BTYE,                &
-           grid%pd,grid%t,grid%q,grid%q2,grid%pint,                            &
+      CALL MASS_BOUNDARY(GRID%ID,grid%ntsd,GRID%DT,NEST,NUNIT_NBC,NBOCO,LAST_TIME,TSPH &
+     &          ,LB,grid%eta1,grid%eta2,grid%pdtop,grid%pt,grid%res                              &
+     &          ,grid%PD_BXS,grid%PD_BXE,grid%PD_BYS,grid%PD_BYE,grid%T_BXS,grid%T_BXE,grid%T_BYS,grid%T_BYE    &
+     &          ,grid%Q_BXS,grid%Q_BXE,grid%Q_BYS,grid%Q_BYE,grid%U_BXS,grid%U_BXE,grid%U_BYS,grid%U_BYE,grid%V_BXS  &
+     &          ,grid%V_BXE,grid%V_BYS,grid%V_BYE,grid%Q2_BXS,grid%Q2_BXE,grid%Q2_BYS,grid%Q2_BYE  &
+     &          ,grid%PD_BTXS,grid%PD_BTXE,grid%PD_BTYS        &
+     &          ,grid%PD_BTYE,grid%T_BTXS,grid%T_BTXE,grid%T_BTYS,grid%T_BTYE,grid%Q_BTXS,grid%Q_BTXE      &
+     &          ,grid%Q_BTYS,grid%Q_BTYE,grid%U_BTXS,grid%U_BTXE,grid%U_BTYS,grid%U_BTYE,grid%V_BTXS       &
+     &          ,grid%V_BTXE,grid%V_BTYS,grid%V_BTYE,grid%Q2_BTXS,grid%Q2_BTXE,grid%Q2_BTYS,grid%Q2_BTYE   &
+     &          ,grid%pd,grid%t,grid%q,grid%q2,grid%pint &
 #ifdef WRF_CHEM
-           CHEM,NUMGAS,CONFIG_FLAGS,                                           &
+     &          ,CHEM,NUMGAS,CONFIG_FLAGS                               &
 #endif
-           GRID%SPEC_BDY_WIDTH,grid%z,grid%ihe,grid%ihw,grid%ive,grid%ivw,     &
-           IDS,IDF,JDS,JDF,KDS,KDE,                                            &
-           IMS,IME,JMS,JME,KMS,KME,                                            &
-           ITS,ITE,JTS,JTE,KTS,KTE)
-
+     &          ,GRID%SPEC_BDY_WIDTH,grid%z                                  &
+     &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                        &
+     &          ,IDS,IDF,JDS,JDF,KDS,KDE                                &
+     &          ,IMS,IME,JMS,JME,KMS,KME                                &
+     &          ,ITS,ITE,JTS,JTE,KTS,KTE)
       if(ETAMP_PHYSICS) then
-         ! Bulk MP boundary: clears MOIST and SCALAR, updates MOIST QV
-         ! with Q values, handles CWM boundary, tendancy:
-         call MP_BULK_BDY(GRID%ID, GRID%spec_bdy_width,                        &
-              grid%CWM,grid%CWM_bxs, GRID%CWM_bxe, GRID%CWM_bys, GRID%CWM_bxe, &
-                       grid%CWM_btxs,GRID%CWM_btxe,GRID%CWM_btys,GRID%CWM_btxe,&
-              grid%Q,                                                          &
-              grid%MOIST,grid%N_MOIST,grid%SCALAR,grid%N_SCALAR,               &
-              IDS,IDF,JDS,JDF,KDS,KDE,                                         &
-              IMS,IME,JMS,JME,KMS,KME,                                         &
-              ITS,ITE,JTS,JTE,KTS,KTE)
+         write(0,*) 'MP_BULK_BOUNDARY'
+      CALL MP_BULK_BOUNDARY(GRID%ID,grid%ntsd,GRID%DT &
+     &          ,LB,grid%eta1,grid%eta2,grid%pdtop,grid%pt              &
+     &          ,grid%CWM_BXS,grid%CWM_BXE,grid%CWM_BYS,grid%CWM_BYE    &
+     &          ,grid%CWM_BTXS,grid%CWM_BTXE,grid%CWM_BTYS,grid%CWM_BTYE&
+     &          ,grid%q,grid%cwm                                        &
+     &          ,MOIST,N_MOIST,SCALAR,NUM_SCALAR                        &
+     &          ,GRID%SPEC_BDY_WIDTH                                    &
+     &          ,IDS,IDF,JDS,JDF,KDS,KDE                                &
+     &          ,IMS,IME,JMS,JME,KMS,KME                                &
+     &          ,ITS,ITE,JTS,JTE,KTS,KTE)
       else
-         ! Non-bulk MP boundary: handles MOIST, SCALAR boundary
-         ! information.  Updates CWM on boundaries to match MOIST,
-         ! SCALAR:
-         call MP_SPECIES_BDY(GRID%ID, GRID%spec_bdy_width                      &
-              grid%CWM,grid%Q,                                                 &
-              MOIST,N_MOIST,MOIST_bxs, MOIST_bxe, MOIST_bys, MOIST_bye,        &
-                            MOIST_btxs,MOIST_btxe,MOIST_btys,MOIST_btye,       &
-              SCALAR,N_SCALAR,SCALAR_bxs, SCALAR_bxe, SCALAR_bys, SCALAR_bye,  &
-                              SCALAR_btxs,SCALAR_btxe,SCALAR_btys,SCALAR_bye,  &
-              IDS,IDF,JDS,JDF,KDS,KDE,                                         &
-              IMS,IME,JMS,JME,KMS,KME,                                         &
-              ITS,ITE,JTS,JTE,KTS,KTE)
+         call wrf_error_fatal("OOPES!! SHOULD BE ETAMP_PHYSICS!!")
       endif
 !
       bocoh_tim=bocoh_tim+timef()-btimx

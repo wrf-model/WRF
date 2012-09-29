@@ -6,6 +6,10 @@ contains
   subroutine bdywrite(grid,filename)
     use module_domain_type, only: domain
     use module_domain, only: get_ijk_from_grid
+    use module_state_description, only: &
+         p_qv, p_qc, p_qs, p_qi, p_qr, &
+         f_qv, f_qc, f_qs, f_qi, f_qr, &
+         PARAM_FIRST_SCALAR,num_moist,num_scalar
     implicit none
 
     type(domain), intent(in) :: grid
@@ -55,6 +59,15 @@ contains
           to(i1)=from(i1,1,1)          ; \
        end do
 
+#define write_vars3d_part(L,G,type,I) \
+    call paste(bdy_write_,type)(fid,filename,                           \
+          paste(L,_bxs),paste(L,_bxe),paste(L,_bys),paste(L,_bye),      \
+          ids,ide,jds,jde,kds,kde,                                      \
+          ims,ime,jms,jme,kms,kme,                                      \
+          ips,ipe,jps,jpe,kps,kpe,                                      \
+          grid%paste(G,_bxs)(:,:,1,I), grid%paste(G,_bxe)(:,:,1,I),     \
+          grid%paste(G,_bys)(:,:,1,I), grid%paste(G,_bye)(:,:,1,I))
+
 #define write_vars2d(X,type) \
     call paste(bdy_write_,type)(fid,filename,                           \
           paste(X,_bxs),paste(X,_bxe),paste(X,_bys),paste(X,_bye),      \
@@ -83,6 +96,11 @@ contains
     declare_bdy(pd)
     declare_bdy(winfo)
     declare_bdy(iinfo)
+    declare_bdy(qv)
+    declare_bdy(qc)
+    declare_bdy(qr)
+    declare_bdy(qi)
+    declare_bdy(qs)
 !    declare_bdy(utemp)
 !    declare_bdy(vtemp)
 !    declare_bdy(ttemp)
@@ -104,6 +122,20 @@ contains
                           ,IMS,IME,JMS,JME,KMS,KME                    &
                           ,IPS,IPE,JPS,JPE,KPS,KPE )
 
+    write(0,*) "Sam's special boundary output (TM) for domain ",grid%id
+    ! call CHECK_MOIST('MOIST',grid%moist,PARAM_FIRST_SCALAR, num_moist, &
+    !        grid%moist_bxs,grid%moist_bxe, &
+    !        grid%moist_bys,grid%moist_bye, &
+    !        ids,ide, jds,jde, kds,kde, &
+    !        ims,ime, jms,jme, kms,kme, &
+    !        ips,ipe, jps,jpe, kps,kpe)
+    ! call CHECK_MOIST('SCALAR',grid%scalar,PARAM_FIRST_SCALAR, num_scalar, &
+    !        grid%scalar_bxs,grid%scalar_bxe, &
+    !        grid%scalar_bys,grid%scalar_bye, &
+    !        ids,ide, jds,jde, kds,kde, &
+    !        ims,ime, jms,jme, kms,kme, &
+    !        ips,ipe, jps,jpe, kps,kpe)
+
     assert(nf_create(trim(filename),NF_64BIT_OFFSET,fid))
     assert(nf_def_dim(fid,'i',ide-ids+1,dimi))
     assert(nf_def_dim(fid,'j',jde-jds+1,dimj))
@@ -120,6 +152,11 @@ contains
     define_vars1d(pd,'pd')
     define_vars2d(winfo,'winfo')
     define_vars2d(iinfo,'iinfo')
+    if(f_qv) define_vars2d(qv,'qv')
+    if(f_qc) define_vars2d(qc,'qc')
+    if(f_qr) define_vars2d(qr,'qr')
+    if(f_qi) define_vars2d(qi,'qi')
+    if(f_qs) define_vars2d(qs,'qs')
 !    define_vars2d(utemp,'utemp')
 !    define_vars2d(vtemp,'vtemp')
 !    define_vars2d(ttemp,'ttemp')
@@ -137,6 +174,17 @@ contains
     write_vars1d(pd,real)
     write_vars2d(winfo,real)
     write_vars2d(iinfo,int)
+    if(f_qv) write_vars3d_part(qv,moist,real,p_qv)
+    if(f_qc) write_vars3d_part(qc,moist,real,p_qc)
+    if(f_qr) write_vars3d_part(qr,moist,real,p_qr)
+    if(f_qi) write_vars3d_part(qi,moist,real,p_qi)
+    if(f_qs) write_vars3d_part(qs,moist,real,p_qs)
+
+    if(f_qv) write(0,*) f_qv,p_qv
+    if(f_qc) write(0,*) f_qc,p_qc
+    if(f_qr) write(0,*) f_qr,p_qr
+    if(f_qi) write(0,*) f_qi,p_qi
+    if(f_qs) write(0,*) f_qs,p_qs
 !    write_vars2d(utemp,real)
 !    write_vars2d(vtemp,real)
 !    write_vars2d(ttemp,real)
@@ -145,6 +193,7 @@ contains
 !    write_vars2d(cwmtemp,real)
 
     assert(nf_close(fid))
+    write(0,*) "Finished Sam's special boundary output (TM) for domain ",grid%id
 
   end subroutine bdywrite
 

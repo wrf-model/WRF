@@ -358,31 +358,31 @@ state  real   hpbl2d    ij    dyn_nmm   1    -     irh        "HPBL2D"     "HEIG
 state  real   heat2d    ij    dyn_nmm   1    -     irh        "HEAT2D"     "" ""
 state  real   evap2d    ij    dyn_nmm   1    -     irh        "EVAP2D"     "" ""
 state  real   z0base    ij    dyn_nmm   1    -     ir       "Z0BASE"   "Base roughness height"                "m"
-state  real   ths       ij    dyn_nmm   1    -     irhd=(DownMass)  "THS"      "Surface potential temperature"        "K"
+state  real   ths       ij    dyn_nmm   1    -     irhd=(DownCopy)  "THS"      "Surface potential temperature"        "K"
 state  real   mavail    ij    dyn_nmm   1    -     i
-state  real   qsh       ij    dyn_nmm   1    -     irhd=(DownMass) "QS"       "Surface specific humidity"            "kg kg-1"
+state  real   qsh       ij    dyn_nmm   1    -     irhd=(DownCopy) "QS"       "Surface specific humidity"            "kg kg-1"
 state  real   twbs      ij    dyn_nmm   1    -     irh      "TWBS"     "Instantaneous sensible heat flux"     "W m-2"
 state  real   qwbs      ij    dyn_nmm   1    -     irh      "QWBS"     "Instantaneous latent heat flux"       "W m-2"
 state  real   taux      ij    dyn_nmm   1    -     irh      "TAUX"     "Instantaneous stress along X direction in KG/M/S^2" 
 state  real   tauy      ij    dyn_nmm   1    -     irh      "TAUY"     "Instantaneous stress along Y direction in KG/M/S^2" 
 state  real   prec      ij    dyn_nmm   1    -     rh       "PREC"     "Precipitation in physics timestep"    "m"
 state  real   aprec     ij    dyn_nmm   1    -     rh
-state  real   acprec    ij    dyn_nmm   1    -     rh01d=(DownMass) "ACPREC"   "Accumulatedtotal precipitation"      "m"
+state  real   acprec    ij    dyn_nmm   1    -     rh01d=(DownCopy) "ACPREC"   "Accumulatedtotal precipitation"      "m"
 state  real   cuprec    ij    dyn_nmm   1    -     rh       "CUPREC"   "Accumulated convective precipitation" "m"
 state  real   lspa      ij    dyn_nmm   1    -     h        "LSPA"     "Land Surface Precipitation Accumulation"   "kg m-2"
 state  real   ddata     ij    dyn_nmm   1    -     -        "DDATA"    "Observed precip to each physics timestep"  "kg m-2"
 state  real   accliq    ij    dyn_nmm   1    -     r
 state  real   sno       ij    dyn_nmm   1    -     irh      "SNO"      "Liquid water eqiv of snow on ground"  "kg m-2"
 state  real   si        ij    dyn_nmm   1    -     irh      "SI"       "Depth of snow on ground"              "mm"
-state  real   cldefi    ij    dyn_nmm   1    -     rhd=(DownMass) "CLDEFI"   "Convective cloud efficiency"          ""
+state  real   cldefi    ij    dyn_nmm   1    -     rhd=(DownCopy) "CLDEFI"   "Convective cloud efficiency"          ""
 state  real   deep      ij    dyn_nmm   1    -     r        "DEEP"     "Deep convection =>.TRUE."             ""
 state  real   rf        ij    dyn_nmm   1    -     r
-state  real   th10      ij    dyn_nmm   1    -     rhd=(DownMass)       "TH10"     "10-m potential temperature from MYJ"  "K"
-state  real   q10       ij    dyn_nmm   1    -     rhd=(DownMass)       "Q10"      "10-m specific humidity from MYJ"      "kg kg-1"
-state  real   pshltr    ij    dyn_nmm   1    -     rhd=(DownMass)       "PSHLTR"   "2-m pressure from MYJ"                "Pa"
-state  real   tshltr    ij    dyn_nmm   1    -     rhd=(DownMass)       "TSHLTR"   "2-m potential temperature from MYJ"    "K"
-state  real   qshltr    ij    dyn_nmm   1    -     rhd=(DownMass)       "QSHLTR"   "2-m specific humidity from MYJ"       "kg kg-1"
-state  real   q2        ijkb   dyn_nmm   1    -     irhu=(UpMass)d=(DownMass)f=(BdyMass)   "Q2"       "2 * Turbulence kinetic energy"        "m2 s-2"
+state  real   th10      ij    dyn_nmm   1    -     rhd=(DownCopy)       "TH10"     "10-m potential temperature from MYJ"  "K"
+state  real   q10       ij    dyn_nmm   1    -     rhd=(DownCopy)       "Q10"      "10-m specific humidity from MYJ"      "kg kg-1"
+state  real   pshltr    ij    dyn_nmm   1    -     rhd=(DownCopy)       "PSHLTR"   "2-m pressure from MYJ"                "Pa"
+state  real   tshltr    ij    dyn_nmm   1    -     rhd=(DownCopy)       "TSHLTR"   "2-m potential temperature from MYJ"    "K"
+state  real   qshltr    ij    dyn_nmm   1    -     rhd=(DownCopy)       "QSHLTR"   "2-m specific humidity from MYJ"       "kg kg-1"
+state  real   q2        ijkb   dyn_nmm   1    -     irhu=(UpMass:@ECopy,1.0)d=(DownMass:@ECopy,1.0)f=(BdyMass:@ECopy,1.0)   "Q2"       "2 * Turbulence kinetic energy"        "m2 s-2"
 state  real   t_adj     ijk   dyn_nmm   1    -     rd=(DownNear)  "T_ADJ"    "T change due to precip in phys step"  "K"
 state  real   t_old     ijk   dyn_nmm   1    -     r        "T_OLD"    "T before last call to precip"         "K"
 state  real   zero_3d   ijk   dyn_nmm   1    -     r
@@ -392,7 +392,7 @@ state  real   AKMS_OUT  ij    dyn_nmm   1    -     rh       "AKMS_OUT"  "Output 
 #
 # module_PHYS
 #
-state  real   albase    ij    dyn_nmm   1    -     i01rhd=(DownMass) "ALBASE"    "Base albedo"            ""
+state  real   albase    ij    dyn_nmm   1    -     i01rhd=(DownCopy) "ALBASE"    "Base albedo"            ""
 state  real   albedo    ij    dyn_nmm   1    -     irh      "ALBEDO"    "Dynamic albedo"         ""
 state  real   cnvbot    ij    dyn_nmm   1    -     irh      "CNVBOT"    "Lowest convec cloud bottom lyr between outputs"  ""
 state  real   cnvtop    ij    dyn_nmm   1    -     irh      "CNVTOP"    "Highest convec cloud top lyr between outputs"    ""
@@ -409,7 +409,7 @@ state  real   hdacv     ij    dyn_nmm   1    -     ir       "HDACV"     "Composi
 state  real   mxsnal    ij    dyn_nmm   1    -     i01rhd=(DownNear) "MXSNAL"    "Maximum deep snow albedo"                        ""
 state  real   radin     ij    dyn_nmm   1    -     r
 state  real   radot     ij    dyn_nmm   1    -     rh       "RADOT"     "Radiative emission from surface"                 "W m-2"
-state  real   sigt4     ij    dyn_nmm   1    -     rhd=(DownMass)       "SIGT4"     "Stefan-Boltzmann * T**4"                         "W m-2"
+state  real   sigt4     ij    dyn_nmm   1    -     rhd=(DownCopy)       "SIGT4"     "Stefan-Boltzmann * T**4"                         "W m-2"
 state  real   tg        ij    dyn_nmm   1    -     i01rhd=(DownNear) "TGROUND"   "Deep ground soil temperature"                    "K"
 state  real   dfrlg     k     dyn_nmm   1    Z     i01r     "DFRLG"     "Std atmosphere height of model layer interfaces" "m"
 state integer lvl       ij    dyn_nmm   1    -     ir
@@ -429,16 +429,16 @@ state    real  GD_CLDFR         ikj      misc        1         -      r     "GD_
 #
 # module_CLDWTR.F
 #
-state  real   cwm       ijkb   dyn_nmm   1    -     rhu=(UpMass)d=(DownMass)f=(BdyMass)  "CWM"       "Total condensate"                     "kg kg-1"
+state  real   cwm       ijkb   dyn_nmm   1    -     rhu=(UpMass:@ECopy,1.0)d=(DownMass:@ECopy,1.0)f=(BdyMass:@ECopy,1.0)  "CWM"       "Total condensate"                     "kg kg-1"
 state  real   rrw       ijkb  dyn_nmm   1    -     rh       "RRW"       "Tracer"                               "kg kg-1"
 state  real   f_ice     ikj   dyn_nmm   1    -     rhd=(DownNearIKJ)  "F_ICE"     "Frozen fraction of CWM"               ""
 state  real   f_rain    ikj   dyn_nmm   1    -     rhd=(DownNearIKJ)  "F_RAIN"    "Rain fraction of liquid part of CWM"  ""
 state  real   f_rimef   ikj   dyn_nmm   1    -     rhd=(DownNearIKJ)  "F_RIMEF"   "Rime factor"                          ""
 state  real   cldfra    ijk   dyn_nmm   1    -     rh       "CLDFRA"    "Cloud fraction"                       ""
 state  real   sr        ij    dyn_nmm   1    -     irh      "SR"        "Timestep mass ratio of snow:precip"   ""
-state  real   cfrach    ij    dyn_nmm   1    -     rhd=(DownMass)       "CFRACH"    "High cloud fraction"                  ""
-state  real   cfracl    ij    dyn_nmm   1    -     rhd=(DownMass)       "CFRACL"    "Low cloud fraction"                   ""
-state  real   cfracm    ij    dyn_nmm   1    -     rhd=(DownMass)       "CFRACM"    "Middle cloud fraction"                ""
+state  real   cfrach    ij    dyn_nmm   1    -     rhd=(DownCopy)       "CFRACH"    "High cloud fraction"                  ""
+state  real   cfracl    ij    dyn_nmm   1    -     rhd=(DownCopy)       "CFRACL"    "Low cloud fraction"                   ""
+state  real   cfracm    ij    dyn_nmm   1    -     rhd=(DownCopy)       "CFRACM"    "Middle cloud fraction"                ""
 state logical micro_start        -     dyn_nmm   -    -     -
 #
 # module_SOIL.F
@@ -485,11 +485,11 @@ state logical hydro     -     dyn_nmm   -    -     -        "HYDRO"     ".FALSE.
 state  real   dwdtmn    ij    dyn_nmm   1    -     -        "DWDTMN"    "Minimum value for DWDT"           "m s-2"
 state  real   dwdtmx    ij    dyn_nmm   1    -     -        "DWDTMX"    "Maximum value for DWDT"           "m s-2"
 state  real   baro      ij    dyn_nmm   1    -     -        "BARO"      "external mode vvel"           "m s-1"
-state  real   dwdt      ijk   dyn_nmm   1    -     rd=(DownVel) "DWDT"      "dwdt and 1+(dwdt)/g"              "m s-2"
+state  real   dwdt      ijk   dyn_nmm   1    -     rd=(DownCopy) "DWDT"      "dwdt and 1+(dwdt)/g"              "m s-2"
 state  real   pdwdt     ijk   dyn_nmm   1    -     r
-state  real   pint      ijk   dyn_nmm   1    Z     irhd=(DownMass)u=(NoInterp)f=(NoInterp)       "PINT"      "Model layer interface pressure"   "Pa"
-state  real   w         ijk   dyn_nmm   1    Z     rd=(DownMass)       "W"         "Vertical velocity"                "m s-1"
-state  real   w_tot     ijk   dyn_nmm   1    Z     h       "W"         "Vertical velocity"                "m s-1"
+state  real   pint      ijk   dyn_nmm   1    Z     irhd=(DownCopy)u=(NoInterp)f=(NoInterp)       "PINT"      "Model layer interface pressure"   "Pa"
+state  real   w         ijk   dyn_nmm   1    Z     rd=(DownCopy)       "W"         "Vertical velocity"                "m s-1"
+state  real   w_tot     ijk   dyn_nmm   1    Z     hd=(DownCopy)       "W"         "Vertical velocity"                "m s-1"
 state  real   z         ijk   dyn_nmm   1    Z     -        "Z"         "Distance from ground"             "m"
 #
 # module_ACCUM.F
@@ -498,13 +498,13 @@ state  real   acfrcv    ij    dyn_nmm     1    -    rh    "ACFRCV"    "Accum con
 state  real   acfrst    ij    dyn_nmm     1    -    rh    "ACFRST"    "Accum stratiform cloud fraction"   ""
 state  real   ssroff    ij    dyn_nmm     1    -    rh    "SSROFF"    "Surface runoff"                    "mm"
 state  real   bgroff    ij    dyn_nmm     1    -    rh    "BGROFF"    "Subsurface runoff"                 "mm"
-state  real   rlwin     ij    dyn_nmm     1    -    rhd=(DownMass)    "RLWIN"     "Downward longwave at surface"      "W m-2"
+state  real   rlwin     ij    dyn_nmm     1    -    rhd=(DownCopy)    "RLWIN"     "Downward longwave at surface"      "W m-2"
 state  real   rlwout    ij    dyn_nmm     1    -    -
 state  real   rlwtoa    ij    dyn_nmm     1    -    rh    "RLWTOA"    "Outgoing LW flux at top of atmos"  "W m-2"
 state  real   alwin     ij    dyn_nmm     1    -    rh    "ALWIN"     "Accum LW down at surface"          "W m-2"
 state  real   alwout    ij    dyn_nmm     1    -    rh    "ALWOUT"    "Accum RADOT (see above)"           "W m-2"
 state  real   alwtoa    ij    dyn_nmm     1    -    rh    "ALWTOA"    "Accum RLWTOA"                      "W m-2"
-state  real   rswin     ij    dyn_nmm     1    -    rhd=(DownMass)    "RSWIN"     "Downward shortwave at surface"     "W m-2"
+state  real   rswin     ij    dyn_nmm     1    -    rhd=(DownCopy)    "RSWIN"     "Downward shortwave at surface"     "W m-2"
 state  real   rswinc    ij    dyn_nmm     1    -    rh    "RSWINC"    "Clear-sky equivalent of RSWIN"     "W m-2"
 state  real   rswout    ij    dyn_nmm     1    -    rh    "RSWOUT"    "Upward shortwave at surface"       "W m-2"
 #for HWRF: add to restart
@@ -680,25 +680,25 @@ state    real   ts_clw          ?!       misc      -         -      -        "TS
 # moist_tend even if there are not any moist scalars (so the essentially                                                
 # dry code will will still link properly)                                               
 #                                               
-state   real    -              ijkft   moist       1         -     -    -                                       
-state   real    qv             ijkft   moist       1         -     rh      "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
-state   real    qc             ijkft   moist       1         -     rh      "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
-state   real    qr             ijkft   moist       1         -     rh      "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
-state   real    qi             ijkft   moist       1         -     rh      "QICE"             "Ice mixing ratio"              "kg kg-1"
-state   real    qs             ijkft   moist       1         -     rh      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
-state   real    qg             ijkft   moist       1         -     rh      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
-state   real    qh             ijkft   moist       1         -     rh      "QHAIL"            "Hail mixing ratio"             "kg kg-1"
+state   real    -              ijkfbt   moist       1         -     -    -                                       
+state   real    qv             ijkfbt   moist       1         -     rh      "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    qc             ijkfbt   moist       1         -     rh      "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    qr             ijkfbt   moist       1         -     rh      "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    qi             ijkfbt   moist       1         -     rh      "QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    qs             ijkfbt   moist       1         -     rh      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    qg             ijkfbt   moist       1         -     rh      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+state   real    qh             ijkfbt   moist       1         -     rh      "QHAIL"            "Hail mixing ratio"             "kg kg-1"
 
 
-state   real    -              ijkft   dfi_moist       1         -     -    -
-state   real    dfi_qv         ijkft   dfi_moist       1         -     r      "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
-state   real    dfi_qc         ijkft   dfi_moist       1         -     r      "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
-state   real    dfi_qr         ijkft   dfi_moist       1         -     r      "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
-state   real    dfi_qi         ijkft   dfi_moist       1         -     r      "QICE"             "Ice mixing ratio"              "kg kg-1"
-state   real    dfi_qs         ijkft   dfi_moist       1         -     r      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
-state   real    dfi_qg         ijkft   dfi_moist       1         -     r      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
-state   real    dfi_qh         ijkft   dfi_moist       1         -     r      "QHAIL"             "Hail mixing ratio"              "kg kg-1"
-state   real    dfi_qnh        ijkft   dfi_moist       1         -     r      "QNHAIL"           "Hail Number concentration"        "# kg(-1)"
+state   real    -              ijkfbt   dfi_moist       1         -     -    -
+state   real    dfi_qv         ijkfbt   dfi_moist       1         -     r      "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    dfi_qc         ijkfbt   dfi_moist       1         -     r      "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    dfi_qr         ijkfbt   dfi_moist       1         -     r      "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    dfi_qi         ijkfbt   dfi_moist       1         -     r      "QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    dfi_qs         ijkfbt   dfi_moist       1         -     r      "QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    dfi_qg         ijkfbt   dfi_moist       1         -     r      "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+state   real    dfi_qh         ijkfbt   dfi_moist       1         -     r      "QHAIL"             "Hail mixing ratio"              "kg kg-1"
+state   real    dfi_qnh        ijkfbt   dfi_moist       1         -     r      "QNHAIL"           "Hail Number concentration"        "# kg(-1)"
 
 
 #                                               
@@ -819,8 +819,8 @@ state    real   PSFC             ij     misc        1         -     i1rh       "
 state    real   dtbc            -       misc     -         -      ir       "dtbc"                 "TIME SINCE BOUNDARY READ"         ""
 state    real   TH2              ij     misc        1         -     irh       "TH2"                  "POT TEMP at 2 M" ""
 state    real   T2               ij     misc        1         -     ir        "T2"                  "TEMP at 2 M" ""
-state    real   U10              ij     misc        1         -     irh01d=(DownMass)       "U10"                  "U at 10 M"         " "
-state    real   V10              ij     misc        1         -     irh01d=(DownMass)       "V10"                  "V at 10 M"         " "
+state    real   U10              ij     misc        1         -     irh01d=(DownCopy)       "U10"                  "U at 10 M"         " "
+state    real   V10              ij     misc        1         -     irh01d=(DownCopy)       "V10"                  "V at 10 M"         " "
 state    real   XICE             ij     misc        1         -     i01rd=(DownNear)      "XICE"                 "SEA ICE"         ""
 state    real   LAI              ij     misc        1         -     i0124rh   "LAI"                  "Leaf area index"          "area/area"
 state    real   SMSTAV           ij     misc        1         -     irh       "SMSTAV"               "MOISTURE VARIBILITY" ""
@@ -851,8 +851,8 @@ state    real   tke_pbl         ijk     misc        1         -     r         "T
 state    real   el_pbl          ikj     misc        1         -     -         "EL_PBL"                "MIXING LENGTH FROM PBL SCHEME"     "m"
 state    real   EXCH_H         ikj     misc        1         -     r         "EXCH_H"               "EXCHANGE COEFFICIENTS FOR HEAT"               "m2 s-1"
 state    real   EXCH_M         ikj     misc        1         -     r         "EXCH_M"               "EXCHANGE COEFFICIENTS FOR MOMENTUM"           "m2 s-1"
-state   real   THZ0             ij     misc        1         -     irhd=(DownMass)       "THZ0"                  "POT. TEMPERATURE AT TOP OF VISC. SUBLYR"                 "K"
-state   real   QZ0              ij     misc        1         -     irhd=(DownMass)       "QZ0"                   "SPECIFIC HUMIDITY AT TOP OF VISC. SUBLYR"                     "kg kg-1"
+state   real   THZ0             ij     misc        1         -     irhd=(DownCopy)       "THZ0"                  "POT. TEMPERATURE AT TOP OF VISC. SUBLYR"                 "K"
+state   real   QZ0              ij     misc        1         -     irhd=(DownCopy)       "QZ0"                   "SPECIFIC HUMIDITY AT TOP OF VISC. SUBLYR"                     "kg kg-1"
 state   real   UZ0              ij     misc        1         -     irhd=(DownVel)       "UZ0"                   "U WIND COMPONENT AT TOP OF VISC. SUBLYR"                      "m s-1"
 state   real   VZ0              ij     misc        1         -     irhd=(DownVel)       "VZ0"                   "V WIND COMPONENT AT TOP OF VISC. SUBLYR"                      "m s-1"
 state    real  FLHC             ij      misc        1         -      r        "FLHC"                  "SURFACE EXCHANGE COEFFICIENT FOR HEAT"       ""
@@ -902,8 +902,8 @@ state    real  pr_ens           ije     misc        1         Z      r        "P
 
 state    real  RTHFTEN          ikj     misc        1         -      r        "RTHFTEN"               "TOTAL ADVECTIVE POTENTIAL TEMPERATURE TENDENCY"  "K s-1"
 state    real  RQVFTEN          ikj     misc        1         -      r        "RQVFTEN"               "TOTAL ADVECTIVE MOISTURE TENDENCY"     "kg kg-1 s-1"
-state    real   SNOWH            ij     misc        1         -     i01rhd=(DownMass)      "SNOWH"                 "PHYSICAL SNOW DEPTH"  "m"
-state    real   RHOSN            ij     misc        1         -     i01rd=(DownMass)    "RHOSN"            " SNOW DENSITY"      "kg m-3"
+state    real   SNOWH            ij     misc        1         -     i01rhd=(DownCopy)      "SNOWH"                 "PHYSICAL SNOW DEPTH"  "m"
+state    real   RHOSN            ij     misc        1         -     i01rd=(DownCopy)    "RHOSN"            " SNOW DENSITY"      "kg m-3"
 state    real   SMFR3D           ilj    misc        1         Z      rh       "SMFR3D"               "SOIL ICE" ""
 state    real   KEEPFR3DFLAG     ilj    misc        1         Z      r         "KEEPFR3DFLAG"          "FLAG - 1. FROZEN SOIL YES, 0 - NO"             ""
 state    real   rc_mf           ikj     misc        1         -      r        "RC_MF"                "RC IN THE GRID COMPUTED BY EDKF"  "kg/kg"

@@ -35,7 +35,7 @@
                                              ,VAD2_SCAL,HAD2_SCAL
       USE MODULE_NONHY_DYNAM,           ONLY: EPS,VADZ,HADZ
       USE MODULE_DIFFUSION_NMM,         ONLY: HDIFF
-      USE MODULE_BNDRY_COND,            ONLY: BOCOH,BOCOV
+      USE MODULE_BNDRY_COND,            ONLY: BOCOV, MASS_BOUNDARY, MP_BULK_BOUNDARY
       USE MODULE_PHYSICS_CALLS
       USE MODULE_EXT_INTERNAL
       USE MODULE_PRECIP_ADJUST
@@ -2074,17 +2074,16 @@
 !
       btimx=timef()
 !
-      CALL BOCOH(GRID%ID,grid%ntsd,GRID%DT,NEST,NUNIT_NBC,NBOCO,LAST_TIME,TSPH &
+      CALL MASS_BOUNDARY(GRID%ID,grid%ntsd,GRID%DT,NEST,NUNIT_NBC,NBOCO,LAST_TIME,TSPH &
      &          ,LB,grid%eta1,grid%eta2,grid%pdtop,grid%pt,grid%res                              &
      &          ,grid%PD_BXS,grid%PD_BXE,grid%PD_BYS,grid%PD_BYE,grid%T_BXS,grid%T_BXE,grid%T_BYS,grid%T_BYE    &
      &          ,grid%Q_BXS,grid%Q_BXE,grid%Q_BYS,grid%Q_BYE,grid%U_BXS,grid%U_BXE,grid%U_BYS,grid%U_BYE,grid%V_BXS  &
-     &          ,grid%V_BXE,grid%V_BYS,grid%V_BYE,grid%Q2_BXS,grid%Q2_BXE,grid%Q2_BYS,grid%Q2_BYE,grid%CWM_BXS  &
-     &          ,grid%CWM_BXE,grid%CWM_BYS,grid%CWM_BYE,grid%PD_BTXS,grid%PD_BTXE,grid%PD_BTYS        &
+     &          ,grid%V_BXE,grid%V_BYS,grid%V_BYE,grid%Q2_BXS,grid%Q2_BXE,grid%Q2_BYS,grid%Q2_BYE  &
+     &          ,grid%PD_BTXS,grid%PD_BTXE,grid%PD_BTYS        &
      &          ,grid%PD_BTYE,grid%T_BTXS,grid%T_BTXE,grid%T_BTYS,grid%T_BTYE,grid%Q_BTXS,grid%Q_BTXE      &
      &          ,grid%Q_BTYS,grid%Q_BTYE,grid%U_BTXS,grid%U_BTXE,grid%U_BTYS,grid%U_BTYE,grid%V_BTXS       &
      &          ,grid%V_BTXE,grid%V_BTYS,grid%V_BTYE,grid%Q2_BTXS,grid%Q2_BTXE,grid%Q2_BTYS,grid%Q2_BTYE   &
-     &          ,grid%CWM_BTXS,grid%CWM_BTXE,grid%CWM_BTYS,grid%CWM_BTYE,grid%pd,grid%t,grid%q,grid%q2,grid%cwm,grid%pint &
-     &          ,MOIST,N_MOIST,SCALAR,NUM_SCALAR                        &
+     &          ,grid%pd,grid%t,grid%q,grid%q2,grid%pint &
 #ifdef WRF_CHEM
      &          ,CHEM,NUMGAS,CONFIG_FLAGS                               &
 #endif
@@ -2093,8 +2092,21 @@
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                                &
      &          ,IMS,IME,JMS,JME,KMS,KME                                &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
-
- 
+      if(ETAMP_PHYSICS) then
+         write(0,*) 'MP_BULK_BOUNDARY'
+      CALL MP_BULK_BOUNDARY(GRID%ID,grid%ntsd,GRID%DT &
+     &          ,LB,grid%eta1,grid%eta2,grid%pdtop,grid%pt              &
+     &          ,grid%CWM_BXS,grid%CWM_BXE,grid%CWM_BYS,grid%CWM_BYE    &
+     &          ,grid%CWM_BTXS,grid%CWM_BTXE,grid%CWM_BTYS,grid%CWM_BTYE&
+     &          ,grid%q,grid%cwm                                        &
+     &          ,MOIST,N_MOIST,SCALAR,NUM_SCALAR                        &
+     &          ,GRID%SPEC_BDY_WIDTH                                    &
+     &          ,IDS,IDF,JDS,JDF,KDS,KDE                                &
+     &          ,IMS,IME,JMS,JME,KMS,KME                                &
+     &          ,ITS,ITE,JTS,JTE,KTS,KTE)
+      else
+         call wrf_error_fatal("OOPES!! SHOULD BE ETAMP_PHYSICS!!")
+      endif
 !
       bocoh_tim=bocoh_tim+timef()-btimx
 !     if(mod(grid%ntsd,n_print_time)==0)then

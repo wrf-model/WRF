@@ -3753,6 +3753,7 @@ END
       INTEGER myproc
       INTEGER ierr
 
+      integer, parameter :: EConst=0, ECopy=1, EExtrap=2 ! MUST match module_interp_nmm
 !#ifdef DEREF_KLUDGE
 !!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
 !   INTEGER     :: sm31 , em31 , sm32 , em32 , sm33 , em33
@@ -3982,6 +3983,8 @@ END
       REAL  dummy_xs, dummy_xe, dummy_ys, dummy_ye
 
 integer myproc
+
+      integer, parameter :: EConst=0, ECopy=1, EExtrap=2 ! MUST match module_interp_nmm
 
 !#ifdef DEREF_KLUDGE
 !!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
@@ -4241,6 +4244,8 @@ integer myproc
       INTEGER idim1,idim2,idim3,idim4,idim5,idim6,idim7
 
       INTEGER local_comm, myproc, nproc, idum1, idum2
+
+      integer, parameter :: EConst=0, ECopy=1, EExtrap=2 ! MUST match module_interp_nmm
 
 !#ifdef DEREF_KLUDGE
 !!  see http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm

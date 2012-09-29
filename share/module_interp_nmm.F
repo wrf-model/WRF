@@ -1,30 +1,36 @@
-! FCOPY, ICOPY: temporary definitions to reduce code redundancy.
-! Copies from C array to N array.  See c2n_fulldom for details:
+! FCOPY, ICOPY, etc.: C pre-processor macros for C->N and N->C
+! horizontal interpolation.  These exist solely to reduce code
+! complexity.
 
+! Copy from C array to N array:
 #define FCOPY(N,C,i,j,k) \
   N(k,i-nits+1)=W1(i,j)*C(II(i,j)  ,JJ(i,j)  ,k)  \
   +W2(i,j)*C(II(i,j)+1,JJ(i,j)  ,k)  \
   +W3(i,j)*C(II(i,j)+a,JJ(i,j)-1,k)  \
   +W4(i,j)*C(II(i,j)+a,JJ(i,j)+1,k)
 
+! Copy from C array to (k,used) indexed N array:
 #define uFCOPY(N,C,i,j,k) \
   N(k,used)=W1(i,j)*C(II(i,j)  ,JJ(i,j)  ,k)  \
   +W2(i,j)*C(II(i,j)+1,JJ(i,j)  ,k)  \
   +W3(i,j)*C(II(i,j)+a,JJ(i,j)-1,k)  \
   +W4(i,j)*C(II(i,j)+a,JJ(i,j)+1,k)
 
+! ICOPY: Grab from C array, but do not assign:
 #define ICOPY(C,i,j,k) \
    (W1(i,j)*C(II(i,j)  ,JJ(i,j)  ,k)  \
   + W2(i,j)*C(II(i,j)+1,JJ(i,j)  ,k)  \
   + W3(i,j)*C(II(i,j)+a,JJ(i,j)-1,k)  \
   + W4(i,j)*C(II(i,j)+a,JJ(i,j)+1,k))
 
+! IKJCOPY: grab from IKJ C array, do not assign:
 #define IKJCOPY(C,i,k,j) \
    (W1(i,j)*C(II(i,j)  ,k,JJ(i,j)  )  \
   + W2(i,j)*C(II(i,j)+1,k,JJ(i,j)  )  \
   + W3(i,j)*C(II(i,j)+a,k,JJ(i,j)-1)  \
   + W4(i,j)*C(II(i,j)+a,k,JJ(i,j)+1))
 
+! ICOPY2D: grab from IJ C array, do not assign:
 #define ICOPY2D(C,i,j) \
    (W1(i,j)*C(II(i,j)  ,JJ(i,j)  )  \
   + W2(i,j)*C(II(i,j)+1,JJ(i,j)  )  \
@@ -104,6 +110,8 @@ module module_interp_nmm
   REAL, PARAMETER :: COEF3=287.05*GI*LAPSR, COEF2=-1./COEF3
   REAL, PARAMETER :: TRG=2.0*R_D*GI,LAPSI=1.0/LAPSR
   REAL, PARAMETER :: P_REF=103000.
+
+  integer, parameter :: EConst=0, ECopy=1, EExtrap=2 ! MUST match module_dm
 
 contains
   ! ********************************************************************
@@ -834,6 +842,7 @@ contains
        ibxs,ibxe,ibys,ibye,                  &
        wbxs,wbxe,wbys,wbye,                  &
        fbxs,fbxe,fbys,fbye,                  &
+       emethod,evalue,                       &
        cims, cime, cjms, cjme, ckms, ckme,   &
        nids, nide, njds, njde, nkds, nkde,   &
        nims, nime, njms, njme, nkms, nkme,   &
@@ -847,6 +856,8 @@ contains
          nims, nime, njms, njme, nkms, nkme,   &
          nits, nite, njts, njte, nkts, nkte
 
+    integer, intent(in) :: emethod ! extrapolation method
+    real, intent(in) :: evalue
     real, intent(in), dimension(nims:nime,njms:njme) :: &
          W1,W2,W3,W4
     integer, intent(in), dimension(nims:nime,njms:njme) :: II,JJ
@@ -881,13 +892,21 @@ contains
           kloop1: do k=nkds,min(nkde,nkte)
              weight=wbxs(j,k,1)
              ck=ibxs(j,k,1)
-
-             if(ck==0) then
-                fbxs(j,k,1)=ICOPY(cfield,i,j,1)
-             else
+             
+             if(ck>1) then
                 fbxs(j,k,1) = &
                      ICOPY(cfield,i,j,ck)   * weight + &
                      ICOPY(cfield,i,j,ck-1) * (1.0-weight)
+             else
+                ! Extrapolate
+                if(emethod==EConst) then
+                   fbxs(j,k,1)=evalue
+                else if(emethod==ECopy) then
+                   fbxs(j,k,1)=ICOPY(cfield,i,j,1)
+                else ! assume 2: linear extrap
+                   fbxs(j,k,1)=evalue * weight + &
+                               ICOPY(cfield,i,j,1) * (1.0-weight)
+                endif
              endif
           enddo kloop1
        enddo
@@ -900,12 +919,20 @@ contains
              weight=wbxe(j,k,1)
              ck=ibxe(j,k,1)
 
-             if(ck==0) then
-                fbxe(j,k,1)=ICOPY(cfield,i,j,1)
-             else
+             if(ck>1) then
                 fbxe(j,k,1) = &
                      ICOPY(cfield,i,j,ck)   * weight + &
                      ICOPY(cfield,i,j,ck-1) * (1.0-weight)
+             else
+                ! Extrapolate
+                if(emethod==EConst) then
+                   fbxe(j,k,1)=evalue
+                else if(emethod==ECopy) then
+                   fbxe(j,k,1)=ICOPY(cfield,i,j,1)
+                else ! assume 2: linear extrap
+                   fbxe(j,k,1)=evalue * weight + &
+                        ICOPY(cfield,i,j,1) * (1.0-weight)
+                endif
              endif
           enddo kloop2
        enddo
@@ -918,12 +945,20 @@ contains
              weight=wbys(i,k,1)
              ck=ibys(i,k,1)
 
-             if(ck==0) then
-                fbys(i,k,1)=ICOPY(cfield,i,j,1)
-             else
+             if(ck>1) then
                 fbys(i,k,1) = &
                      ICOPY(cfield,i,j,ck)   * weight + &
                      ICOPY(cfield,i,j,ck-1) * (1.0-weight)
+             else
+                ! Extrapolate
+                if(emethod==EConst) then
+                   fbys(i,k,1)=evalue
+                else if(emethod==ECopy) then
+                   fbys(i,k,1)=ICOPY(cfield,i,j,1)
+                else ! assume 2: linear extrap
+                   fbys(i,k,1)=evalue*weight + &
+                        ICOPY(cfield,i,j,1)*(1.0-weight)
+                endif
              endif
           enddo kloop3
        enddo
@@ -936,12 +971,19 @@ contains
              weight=wbye(i,k,1)
              ck=ibye(i,k,1)
 
-             if(ck==0) then
-                fbye(i,k,1)=ICOPY(cfield,i,j,1)
-             else
+             if(ck>1) then
                 fbye(i,k,1) = &
                      ICOPY(cfield,i,j,ck)   * weight + &
                      ICOPY(cfield,i,j,ck-1) * (1.0-weight)
+             else
+                if(emethod==EConst) then
+                   fbye(i,k,1)=evalue
+                else if(emethod==ECopy) then
+                   fbye(i,k,1)=ICOPY(cfield,i,j,1)
+                else ! assume 2: linear extrap
+                   fbye(i,k,1)=evalue*weight + &
+                        ICOPY(cfield,i,j,1)*(1.0-weight)
+                endif
              endif
           enddo kloop4
        enddo
@@ -951,6 +993,7 @@ contains
 
   subroutine n2c_mass (&
        cfield,nfield,iinfo,winfo,ipos,jpos,  &
+       emethod, evalue,                      &
        cids, cide, cjds, cjde, ckds, ckde,   &
        cims, cime, cjms, cjme, ckms, ckme,   &
        cits, cite, cjts, cjte, ckts, ckte,   &
@@ -965,7 +1008,8 @@ contains
          nids, nide, njds, njde, nkds, nkde,   &
          nims, nime, njms, njme, nkms, nkme,   &
          nits, nite, njts, njte, nkts, nkte,   &
-         ipos,jpos
+         ipos,jpos, emethod
+    real, intent(in) :: evalue
     real, intent(in), dimension(cims:cime,cjms:cjme,ckms:ckme) :: winfo
     integer, intent(in), dimension(cims:cime,cjms:cjme,ckms:ckme) :: iinfo
     real, intent(out) :: cfield(cims:cime,cjms:cjme,ckms:ckme)
@@ -992,12 +1036,20 @@ contains
              weight=winfo(i,j,k)
              nk=iinfo(i,j,k)
 
-             if(nk<2) then
-                cfield(i,j,k)=NGRAB(nfield,ni,nj,1)
-             else
+             if(nk>1) then
                 cfield(i,j,k) = &
                      NGRAB(nfield,ni,nj,nk)   * weight + &
                      NGRAB(nfield,ni,nj,nk-1) * (1.0-weight)
+             else
+                ! Extrapolate
+                if(emethod==EConst) then
+                   cfield(i,j,k)=evalue
+                elseif(emethod==ECopy) then
+                   cfield(i,j,k)=NGRAB(nfield,ni,nj,1)
+                else ! Assume 2: linear extrap
+                   cfield(i,j,k)=evalue*weight + &
+                        NGRAB(nfield,ni,nj,1)*(1.0-weight)
+                endif
              endif
           end do kinterploop
        enddo iloop
@@ -1006,6 +1058,7 @@ contains
 
   subroutine c2n_mass (II,JJ,W1,W2,W3,W4,    &
        cfield,nfield,iinfo,winfo,imask,      &
+       emethod, evalue,                      &
        cims, cime, cjms, cjme, ckms, ckme,   &
        nids, nide, njds, njde, nkds, nkde,   &
        nims, nime, njms, njme, nkms, nkme,   &
@@ -1018,7 +1071,8 @@ contains
     integer, intent(in):: cims, cime, cjms, cjme, ckms, ckme,   &
          nids, nide, njds, njde, nkds, nkde,   &
          nims, nime, njms, njme, nkms, nkme,   &
-         nits, nite, njts, njte, nkts, nkte
+         nits, nite, njts, njte, nkts, nkte, emethod
+    real, intent(in) :: evalue
     real, intent(in), dimension(nims:nime,njms:njme,nkms:nkme) :: winfo
     integer, intent(in), dimension(nims:nime,njms:njme,nkms:nkme) :: iinfo
     integer, intent(in), dimension(nims:nime,njms:njme) :: imask
@@ -1040,12 +1094,20 @@ contains
              weight=winfo(i,j,k)
              ck=iinfo(i,j,k)
 
-             if(ck==0) then
-                nfield(i,j,k)=ICOPY(cfield,i,j,1)
-             else
+             if(ck>1) then
                 nfield(i,j,k) = &
                      ICOPY(cfield,i,j,ck)   * weight + &
                      ICOPY(cfield,i,j,ck-1) * (1.0-weight)
+             else                
+                ! Extrapolate
+                if(emethod==EConst) then
+                   nfield(i,j,k)=evalue
+                elseif(emethod==ECopy) then
+                   nfield(i,j,k)=ICOPY(cfield,i,j,1)
+                else ! Assume 2: linear extrap
+                   nfield(i,j,k)=evalue*weight + &
+                        ICOPY(cfield,i,j,1)*(1.0-weight)
+                endif
              endif
           enddo kinterploop
        enddo interploop
@@ -1053,8 +1115,9 @@ contains
 
   end subroutine c2n_mass
 
-  subroutine c2n_massikj (II,JJ,W1,W2,W3,W4,    &
+  subroutine c2n_massikj (II,JJ,W1,W2,W3,W4, &
        cfield,nfield,iinfo,winfo,imask,      &
+       emethod, evalue,                      &
        cims, cime, cjms, cjme, ckms, ckme,   &
        nids, nide, njds, njde, nkds, nkde,   &
        nims, nime, njms, njme, nkms, nkme,   &
@@ -1067,12 +1130,13 @@ contains
     integer, intent(in):: cims, cime, cjms, cjme, ckms, ckme,   &
          nids, nide, njds, njde, nkds, nkde,   &
          nims, nime, njms, njme, nkms, nkme,   &
-         nits, nite, njts, njte, nkts, nkte
+         nits, nite, njts, njte, nkts, nkte, emethod
     real, intent(in), dimension(nims:nime,njms:njme,nkms:nkme) :: winfo
     integer, intent(in), dimension(nims:nime,njms:njme,nkms:nkme) :: iinfo
     integer, intent(in), dimension(nims:nime,njms:njme) :: imask
     real, intent(in) :: cfield(cims:cime,ckms:ckme,cjms:cjme)
     real, intent(out) :: nfield(nims:nime,nkms:nkme,njms:njme)
+    real, intent(In) :: evalue
 
     integer :: j,i,a,nx,nz,ck,k
     real :: weight
@@ -1089,12 +1153,20 @@ contains
              weight=winfo(i,j,k)
              ck=iinfo(i,j,k)
 
-             if(ck==0) then
-                nfield(i,k,j)=IKJCOPY(cfield,i,1,j)
-             else
+             if(ck>1) then
                 nfield(i,k,j) = &
                      IKJCOPY(cfield,i,ck,j)   * weight + &
                      IKJCOPY(cfield,i,ck-1,j) * (1.0-weight)
+             else
+                ! Extrapolate
+                if(emethod==EConst) then
+                   nfield(i,k,j)=evalue
+                elseif(emethod==ECopy) then
+                   nfield(i,k,j)=IKJCOPY(cfield,i,1,j)
+                else ! Assume 2: linear extrapolation
+                   nfield(i,k,j)=evalue * weight + &
+                               IKJCOPY(cfield,i,1,j) * (1.0-weight)
+                endif
              endif
           enddo kinterploop
        enddo interploop
@@ -1566,14 +1638,21 @@ contains
   ! subroutine, the implementation of the *_fulldom subroutines.  It
   ! takes arrays of atmospheric columns, with no knowledge of the
   ! horizontal layout of those columns.  This routine will recalculate
-  ! PD and PINT if requested, then generate interpolation information
-  ! and interpolate T and Q, within each atmospheric column.
+  ! PD if requested, then generate interpolation information and
+  ! interpolate T and Q, within each atmospheric column.  
+  !
+  ! Other variables are handled by the various other c2n, n2c and c2b
+  ! routines in this module.  PD, T and Q are handled specially since
+  ! they are critical to the stability of the hydrostatic solver, and
+  ! hence have more expensive extrapolation and mass rebalancing
+  ! methods.
   !
   ! Since this routine has no knowledge of the horizontal layout of
   ! the atmospheric columns it is given, the columns do not have to
   ! lie on an I- or J-row.  The boundary interpolation routines take
   ! advantage of that and provide all boundary information to this
-  ! routine in a single call.
+  ! routine in a single call.  Of course, the caller must handle all
+  ! horizontal interpolation.
   ! ********************************************************************
 
   subroutine interp_T_PD_Q(method, pd_interp, nx, nz, &
@@ -1605,8 +1684,16 @@ contains
     character*255 :: message
     integer :: ix,iz,izA,izB,xpr
     real :: zA,zB,znext,apelp,rtopp,dz,weight,A,B,pstd1,z,pstd2,pstd12
-    real :: tsfc(nx), slp(nx), zmslp(nx), z0mid(nx), zbelow(nx), tbelow(nx)
-    real :: pb,pb1,pb2,pa,pa1,pa2,pnext,pa3, wnum,wdenom
+    real :: tsfc(nx), slp(nx), zmslp(nx), z0mid(nx), zbelow(nx), &
+            tbelow(nx), RHbelow(nx)
+    real :: pb,pb1,pb2,pa,pa1,pa2,pnext,pa3, wnum,wdenom, QC, P0
+
+    ! Constants from UPP params.f for RH calculation (all mks):
+    real, parameter :: PQ0=379.90516
+    real, parameter :: A2=17.2693882
+    real, parameter :: A3=273.16
+    real, parameter :: A4=35.86
+    real, parameter :: RHmin=1.0E-6     ! minimal RH bound
 
     if(method/=nmm_method_linear) then
        call wrf_error_fatal('only linear interpolation is supported')
@@ -1642,6 +1729,12 @@ contains
        ZMSLP(ix)= TSFC(ix)*LAPSI*(1.0 - B)   ! Height at 1030. mb level
 
        TBELOW(ix) = TA(1,ix) + LAPSR*(Z0MID(ix)-ZMSLP(ix))
+       
+       ! Calculate lowest level RH.  This calculation is from UPP
+       ! CALRH.f:
+       P0=pdA(ix)+ptop+pdtop ! Use hydrostatic lowest model level P
+       QC=PQ0/P0*EXP(A2*(TA(1,ix)-A3)/(TA(1,ix)-A4))
+       RHbelow(ix)=max(RHmin,min(1.0,QA(1,ix)/QC))
     enddo
 
 
@@ -1831,10 +1924,10 @@ contains
           enddo zinterp
        enddo interploop
 
-       ! Follow what base_state_parent did: interpolate between the
-       ! second to last level and P_REF.  Use the last level's value
-       ! of Q as P_REF's value, and use a lapse rate atmosphere
-       ! between the second to last level and P_REF.
+       ! Follow what base_state_parent did for temperature:
+       ! interpolate between the second to last level and P_REF using
+       ! a lapse rate atmosphere.  For Q, we use constant RH below
+       ! ground, as suggested by Greg Thompson.
        extraploop: do while(izB>=1)
           ! Decide extrapolation weight:
           weight=(pB-pA)/(pstd12-pA)
@@ -1847,6 +1940,13 @@ contains
 
           ! Extrapolate T using a lapse rate atmosphere
           tB(izB,ix)=weight*tbelow(ix) + (1.0-weight)*tA(1,ix)
+
+          ! Extrapolate Q using constant RH below ground, as suggested
+          ! by Greg Thompson.  This is the inversion of the RH
+          ! calculation used earlier in this function:
+          !P0=eta1(izB)*pdtop + eta2(izB)*pdB(ix) + ptop
+          !QC=PQ0/P0*EXP(A2*(TB(izB,ix)-A3)/(TB(izB,ix)-A4))
+          !QB(izB,ix)=QC*RHbelow(ix)
 
           ! Save extrapolation information
           iinfo(izB,ix)=0

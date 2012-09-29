@@ -5048,7 +5048,8 @@
         imask,                                &  ! interpolation mask
         xstag, ystag,                         &  ! staggering of field
         ipos, jpos,                           &  ! Position of lower left of nest in CD
-        nri, nrj)                                ! nest ratios                         
+        nri, nrj,                             &  ! nest ratios
+        emethod, evalue)                         ! extrapolation method
      use module_interp_nmm, only: c2n_mass, c2n_copy2d
      use module_interp_store
      implicit none
@@ -5059,7 +5060,8 @@
           nids, nide, nkds, nkde, njds, njde,   &
           nims, nime, nkms, nkme, njms, njme,   &
           nits, nite, nkts, nkte, njts, njte,   &
-          shw,ipos,jpos,nri,nrj
+          shw,ipos,jpos,nri,nrj, emethod
+     real, intent(in) :: evalue
 
      INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
      REAL,DIMENSION(cims:cime,cjms:cjme,ckms:ckme),   INTENT(IN)           :: CFLD
@@ -5074,7 +5076,8 @@
              nits, nite, njts, njte, .true.)
      else
         call c2n_mass(IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,   &
-             cfld,nfld,iinfo,winfo,imask,           &
+             cfld,nfld,iinfo,winfo,imask,          &
+             emethod,evalue,                       &
              cims, cime, cjms, cjme, ckms, ckme,   &
              nids, nide, njds, njde, nkds, nkde,   &
              nims, nime, njms, njme, nkms, nkme,   &
@@ -5094,7 +5097,8 @@
         imask,                                &  ! interpolation mask
         xstag, ystag,                         &  ! staggering of field
         ipos, jpos,                           &  ! Position of lower left of nest in CD
-        nri, nrj)                                ! nest ratios                         
+        nri, nrj,                             &  ! nest ratios
+        emethod, evalue)                         ! extrapolation method
      use module_interp_nmm, only: c2n_massikj
      use module_interp_store
      implicit none
@@ -5105,7 +5109,8 @@
           nids, nide, nkds, nkde, njds, njde,   &
           nims, nime, nkms, nkme, njms, njme,   &
           nits, nite, nkts, nkte, njts, njte,   &
-          shw,ipos,jpos,nri,nrj
+          shw,ipos,jpos,nri,nrj,emethod
+     real, intent(in) :: evalue
 
      INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
      REAL,DIMENSION(cims:cime,cjms:cjme,ckms:ckme),   INTENT(IN)           :: CFLD
@@ -5114,7 +5119,8 @@
      if(nkts==nkte) &
           call wrf_error_fatal('IKJ 2D interpolation of an IJ array is not implemented (and makes no sense anyway).  Use DownCopy instead.')
      call c2n_massikj(IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,   &
-          cfld,nfld,iinfo,winfo,imask,           &
+          cfld,nfld,iinfo,winfo,imask,          &
+          emethod, evalue,                      &
           cims, cime, cjms, cjme, ckms, ckme,   &
           nids, nide, njds, njde, nkds, nkde,   &
           nims, nime, njms, njme, nkms, nkme,   &
@@ -5133,7 +5139,8 @@
         imask,                                &  ! interpolation mask
         xstag, ystag,                         &  ! staggering of field
         ipos, jpos,                           &  ! Position of lower left of nest in CD
-        nri, nrj)                                ! nest ratios                         
+        nri, nrj,                             &  ! nest ratios                         
+        emethod, evalue)                         ! extrapolation method
      use module_interp_store
      use module_interp_nmm, only: n2c_mass, n2c_copy2d
      implicit none
@@ -5144,7 +5151,8 @@
           nids, nide, nkds, nkde, njds, njde,   &
           nims, nime, nkms, nkme, njms, njme,   &
           nits, nite, nkts, nkte, njts, njte,   &
-          shw,ipos,jpos,nri,nrj
+          shw,ipos,jpos,nri,nrj, emethod
+     real, intent(in) :: evalue
 
      INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
      REAL,DIMENSION(cims:cime,cjms:cjme,ckms:ckme),   INTENT(OUT)           :: CFLD
@@ -5161,7 +5169,8 @@
              nits, nite, njts, njte, .true.)
      else
         call n2c_mass(&
-             cfld,nfld,iinfo,winfo,ipos,jpos,       &
+             cfld,nfld,iinfo,winfo,ipos,jpos,      &
+             emethod, evalue,                      &
              cids, cide, cjds, cjde, ckds, ckde,   &
              cims, cime, cjms, cjme, ckms, ckme,   &
              cits, cite, cjts, cjte, ckts, ckte,   &
@@ -5382,7 +5391,8 @@
         c_btxs,n_btxs,                        &
         c_btxe,n_btxe,                        &
         c_btys,n_btys,                        &
-        c_btye,n_btye)                        
+        c_btye,n_btye,                        &
+        emethod,evalue)                          ! Extrapolation information
 
      !     use module_state_description
      USE module_configure
@@ -5401,7 +5411,8 @@
           nits, nite, nkts, nkte, njts, njte,   &
           shw,                                  &
           ipos, jpos,                           &
-          nri, nrj
+          nri, nrj, emethod
+     real, intent(in) :: evalue
 
      LOGICAL, INTENT(IN) :: xstag, ystag
 
@@ -5435,6 +5446,7 @@
              iinfo_bxs,iinfo_bxe,iinfo_bys,iinfo_bye,          &
              winfo_bxs,winfo_bxe,winfo_bys,winfo_bye,          &
              n_bxs, n_bxe, n_bys, n_bye,           &
+             emethod, evalue,                      &
              cims, cime, cjms, cjme, ckms, ckme,   &
              nids, nide, njds, njde, nkds, nkde,   &
              nims, nime, njms, njme, nkms, nkme,   &

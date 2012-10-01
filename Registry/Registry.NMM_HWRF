@@ -382,7 +382,7 @@ state  real   q10       ij    dyn_nmm   1    -     rhd=(DownCopy)       "Q10"   
 state  real   pshltr    ij    dyn_nmm   1    -     rhd=(DownCopy)       "PSHLTR"   "2-m pressure from MYJ"                "Pa"
 state  real   tshltr    ij    dyn_nmm   1    -     rhd=(DownCopy)       "TSHLTR"   "2-m potential temperature from MYJ"    "K"
 state  real   qshltr    ij    dyn_nmm   1    -     rhd=(DownCopy)       "QSHLTR"   "2-m specific humidity from MYJ"       "kg kg-1"
-state  real   q2        ijkb   dyn_nmm   1    -     irhu=(UpMass:@ECopy,1.0)d=(DownMass:@ECopy,1.0)f=(BdyMass:@ECopy,1.0)   "Q2"       "2 * Turbulence kinetic energy"        "m2 s-2"
+state  real   q2        ijkb   dyn_nmm   1    -     irhu=(UpMass:@EConst,0.0)d=(DownMass:@EConst,0.0)f=(BdyMass:@EConst,0.0)   "Q2"       "2 * Turbulence kinetic energy"        "m2 s-2"
 state  real   t_adj     ijk   dyn_nmm   1    -     rd=(DownNear)  "T_ADJ"    "T change due to precip in phys step"  "K"
 state  real   t_old     ijk   dyn_nmm   1    -     r        "T_OLD"    "T before last call to precip"         "K"
 state  real   zero_3d   ijk   dyn_nmm   1    -     r
@@ -429,11 +429,11 @@ state    real  GD_CLDFR         ikj      misc        1         -      r     "GD_
 #
 # module_CLDWTR.F
 #
-state  real   cwm       ijkb   dyn_nmm   1    -     rhu=(UpMass:@ECopy,1.0)d=(DownMass:@ECopy,1.0)f=(BdyMass:@ECopy,1.0)  "CWM"       "Total condensate"                     "kg kg-1"
+state  real   cwm       ijkb   dyn_nmm   1    -     rhu=(UpMass:@EExtrap,0.0)d=(DownMass:@EExtrap,0.0)f=(BdyMass:@EExtrap,0.0)  "CWM"       "Total condensate"                     "kg kg-1"
 state  real   rrw       ijkb  dyn_nmm   1    -     rh       "RRW"       "Tracer"                               "kg kg-1"
-state  real   f_ice     ikj   dyn_nmm   1    -     rhd=(DownNearIKJ)  "F_ICE"     "Frozen fraction of CWM"               ""
-state  real   f_rain    ikj   dyn_nmm   1    -     rhd=(DownNearIKJ)  "F_RAIN"    "Rain fraction of liquid part of CWM"  ""
-state  real   f_rimef   ikj   dyn_nmm   1    -     rhd=(DownNearIKJ)  "F_RIMEF"   "Rime factor"                          ""
+state  real   f_ice     ikj   dyn_nmm   1    -     rhd=(DownMassIKJ:@EExtrap,0.0)u=(UpMassIKJ:@EExtrap,0.0)  "F_ICE"     "Frozen fraction of CWM"               ""
+state  real   f_rain    ikj   dyn_nmm   1    -     rhd=(DownMassIKJ:@EExtrap,0.0)u=(UpMassIKJ:@EExtrap,0.0)  "F_RAIN"    "Rain fraction of liquid part of CWM"  ""
+state  real   f_rimef   ikj   dyn_nmm   1    -     rhd=(DownMassIKJ:@EExtrap,1.0)u=(UpMassIKJ:@EExtrap,1.0)  "F_RIMEF"   "Rime factor"                          ""
 state  real   cldfra    ijk   dyn_nmm   1    -     rh       "CLDFRA"    "Cloud fraction"                       ""
 state  real   sr        ij    dyn_nmm   1    -     irh      "SR"        "Timestep mass ratio of snow:precip"   ""
 state  real   cfrach    ij    dyn_nmm   1    -     rhd=(DownCopy)       "CFRACH"    "High cloud fraction"                  ""

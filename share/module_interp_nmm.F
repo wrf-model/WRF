@@ -2011,7 +2011,7 @@ contains
           !qB(izB,ix)=qA(1,ix)
 
           ! Extrapolate Q by linearly interpolating between 0 and surface value:
-          qB(izB,ix)=(1.0-weight)*qA(1,ix)
+          !qB(izB,ix)=(1.0-weight)*qA(1,ix)
 
           ! Extrapolate T using a lapse rate atmosphere
           tB(izB,ix)=weight*tbelow(ix) + (1.0-weight)*tA(1,ix)

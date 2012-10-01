@@ -2019,9 +2019,9 @@ contains
           ! Extrapolate Q using constant RH below ground, as suggested
           ! by Greg Thompson.  This is the inversion of the RH
           ! calculation used earlier in this function:
-          !P0=eta1(izB)*pdtop + eta2(izB)*pdB(ix) + ptop
-          !QC=PQ0/P0*EXP(A2*(TB(izB,ix)-A3)/(TB(izB,ix)-A4))
-          !QB(izB,ix)=QC*RHbelow(ix)
+          P0=eta1(izB)*pdtop + eta2(izB)*pdB(ix) + ptop
+          QC=PQ0/P0*EXP(A2*(TB(izB,ix)-A3)/(TB(izB,ix)-A4))
+          QB(izB,ix)=QC*RHbelow(ix)
 
           ! Save extrapolation information
           iinfo(izB,ix)=0

@@ -55,6 +55,15 @@
     +                          N(ni,nj-2,nk)                               \
   ) / 9
 
+! Average to C points from N points without assignment on an IKJ grid:
+#define NGRABIKJ(N,ni,nk,nj) \
+                  (            N(ni,nk,nj+2)                               \
+    +             N(ni-a  ,nk,nj+1)         + N(ni+1-a,nk,nj+1)            \
+    + N(ni-1,nk,nj  )        + N(ni,nk,nj  )           + N(ni+1,nk,nj  )   \
+    +             N(ni-a  ,nk,nj-1)         + N(ni+1-a,nk,nj-1)            \
+    +                          N(ni,nk,nj-2)                               \
+  ) / 9
+
 ! Average to C points from N points without assignment, no vertical levels:
 #define NGRAB2D(N,ni,nj) \
                   (            N(ni,nj+2)                            \
@@ -85,13 +94,14 @@ module module_interp_nmm
   public :: c2b_fulldom, c2n_fulldom, n2c_fulldom
 
   public :: c2b_mass, c2n_mass, n2c_mass
+  public :: c2n_massikj, n2c_massikj
   public :: c2b_copy3d, c2n_copy3d, n2c_copy3d
 
   public :: c2b_copy2d, c2n_copy2d, n2c_copy2d
   public :: c2b_near2d, c2n_near2d, n2c_near2d
   public :: c2b_inear2d, c2n_inear2d, n2c_inear2d
 
-  public :: c2n_near3dikj, c2n_sst, c2n_massikj, c2n_near3d
+  public :: c2n_near3dikj, c2n_sst, c2n_near3d
 
 ! unimplemented:  public :: nmm_method_quadratic, nmm_method_spline_log, nmm_method_copy, nmm_method_spline
 
@@ -1055,6 +1065,71 @@ contains
        enddo iloop
     enddo bigj
   end subroutine n2c_mass
+
+  subroutine n2c_massikj (&
+       cfield,nfield,iinfo,winfo,ipos,jpos,  &
+       emethod, evalue,                      &
+       cids, cide, cjds, cjde, ckds, ckde,   &
+       cims, cime, cjms, cjme, ckms, ckme,   &
+       cits, cite, cjts, cjte, ckts, ckte,   &
+       nids, nide, njds, njde, nkds, nkde,   &
+       nims, nime, njms, njme, nkms, nkme,   &
+       nits, nite, njts, njte, nkts, nkte)
+    implicit none
+    integer, intent(in) :: &
+         cids, cide, cjds, cjde, ckds, ckde,   &
+         cims, cime, cjms, cjme, ckms, ckme,   &
+         cits, cite, cjts, cjte, ckts, ckte,   &
+         nids, nide, njds, njde, nkds, nkde,   &
+         nims, nime, njms, njme, nkms, nkme,   &
+         nits, nite, njts, njte, nkts, nkte,   &
+         ipos,jpos, emethod
+    real, intent(in) :: evalue
+    real, intent(in), dimension(cims:cime,cjms:cjme,ckms:ckme) :: winfo
+    integer, intent(in), dimension(cims:cime,cjms:cjme,ckms:ckme) :: iinfo
+    real, intent(out) :: cfield(cims:cime,ckms:ckme,cjms:cjme)
+    real, intent(in) :: nfield(nims:nime,nkms:nkme,njms:njme)
+
+    integer, parameter :: nri=3, nrj=3 ! parent:nest ratio, must be 3 in NMM
+    integer :: nz,jstart,jend,istart,iend,ni,nj,a,i,j,k,nk
+    real :: weight
+
+    nz=nkde-nkds+1
+
+    jstart=MAX(jpos+1,cjts)
+    jend=MIN(jpos+(njde-njds)/nrj-1,cjte)
+
+    bigj: do j=jstart,jend
+          a=mod(j,2)
+       istart=MAX(ipos+a,cits)
+       iend=MIN(ipos+(nide-nids)/nri-1,cite)
+       nj = (j-jpos)*nrj + 1
+
+       kinterploop: do k=nkds,nkde
+          iloop: do i=istart,iend
+             ni = (i-ipos)*nri + 2 - a
+             weight=winfo(i,j,k)
+             nk=iinfo(i,j,k)
+
+             if(nk>1) then
+                cfield(i,k,j) = &
+                     NGRABIKJ(nfield,ni,nk,nj)   * weight + &
+                     NGRABIKJ(nfield,ni,nk-1,nj) * (1.0-weight)
+             else
+                ! Extrapolate
+                if(emethod==EConst) then
+                   cfield(i,k,j)=evalue
+                elseif(emethod==ECopy) then
+                   cfield(i,k,j)=NGRABIKJ(nfield,ni,1,nj)
+                else ! Assume 2: linear extrap
+                   cfield(i,k,j)=evalue*weight + &
+                        NGRABIKJ(nfield,ni,1,nj)*(1.0-weight)
+                endif
+             endif
+          enddo iloop
+       end do kinterploop
+    enddo bigj
+  end subroutine n2c_massikj
 
   subroutine c2n_mass (II,JJ,W1,W2,W3,W4,    &
        cfield,nfield,iinfo,winfo,imask,      &

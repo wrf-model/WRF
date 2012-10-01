@@ -27,7 +27,7 @@ int as_finite_double(char *str,double *d) {
   errno=0;
   *d=strtod(str,&endptr);
   if(!endptr || *endptr) return 0;
-  if(*d==*d && *d*2!=*d)
+  if(*d==*d && *d+1!=*d)
     return 1;
   else
     return 0; /* NaN or infinite */
@@ -358,7 +358,7 @@ fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio
                  fprintf(stderr,"Requested %s = local %s for %s\n",p1,p1+1,vname);
                } else if( p1[0]=='*' && p1[1]=='\0' ) {
                  /* Entire grid requested (*) */
-                 fprintf(fp,",grid ,ngrid &\n",nd->name);
+                 fprintf(fp,",grid ,ngrid &\n");
                } else if( !strcasecmp(p1,"n%*") ) {
                  /* Nest grid requested (n%*) */
                  fprintf(fp,",ngrid &\n");

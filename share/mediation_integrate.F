@@ -62,7 +62,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 !   IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc )) THEN
 ! #endif
 
-      call med_boundary_out(grid,config_flags)
+!      call med_boundary_out(grid,config_flags)
 
      IF  ( (config_flags%restart) .AND. ( currTime .EQ. startTime ) ) THEN
        !  output history at beginning of restart if alarm is ringing

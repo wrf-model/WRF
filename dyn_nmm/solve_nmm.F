@@ -2093,7 +2093,7 @@
      &          ,IMS,IME,JMS,JME,KMS,KME                                &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
       if(ETAMP_PHYSICS) then
-         write(0,*) 'MP_BULK_BOUNDARY'
+!         write(0,*) 'MP_BULK_BOUNDARY'
       CALL MP_BULK_BOUNDARY(GRID%ID,grid%ntsd,GRID%DT &
      &          ,LB,grid%eta1,grid%eta2,grid%pdtop,grid%pt              &
      &          ,grid%CWM_BXS,grid%CWM_BXE,grid%CWM_BYS,grid%CWM_BYE    &

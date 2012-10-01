@@ -1807,9 +1807,9 @@ contains
        
        ! Calculate lowest level RH.  This calculation is from UPP
        ! CALRH.f:
-       P0=pdA(ix)+ptop+pdtop ! Use hydrostatic lowest model level P
-       QC=PQ0/P0*EXP(A2*(TA(1,ix)-A3)/(TA(1,ix)-A4))
-       RHbelow(ix)=max(RHmin,min(1.0,QA(1,ix)/QC))
+       !P0=pdA(ix)+ptop+pdtop ! Use hydrostatic lowest model level P
+       !QC=PQ0/P0*EXP(A2*(TA(1,ix)-A3)/(TA(1,ix)-A4))
+       !RHbelow(ix)=max(RHmin,min(1.0,QA(1,ix)/QC))
     enddo
 
 
@@ -2019,9 +2019,9 @@ contains
           ! Extrapolate Q using constant RH below ground, as suggested
           ! by Greg Thompson.  This is the inversion of the RH
           ! calculation used earlier in this function:
-          P0=eta1(izB)*pdtop + eta2(izB)*pdB(ix) + ptop
-          QC=PQ0/P0*EXP(A2*(TB(izB,ix)-A3)/(TB(izB,ix)-A4))
-          QB(izB,ix)=QC*RHbelow(ix)
+          !P0=eta1(izB)*pdtop + eta2(izB)*pdB(ix) + ptop
+          !QC=PQ0/P0*EXP(A2*(TB(izB,ix)-A3)/(TB(izB,ix)-A4))
+          !QB(izB,ix)=QC*RHbelow(ix)
 
           ! Save extrapolation information
           iinfo(izB,ix)=0

@@ -1147,7 +1147,9 @@ CONTAINS
             (sf_sfclay_physics .EQ. SFCLAYSCHEME ) .OR. &
             (sf_sfclay_physics .EQ. PXSFCSCHEME  ) .OR. &
             (sf_sfclay_physics .EQ. MYJSFCSCHEME ) .OR. &
+#if (EM_CORE==1)
             (sf_sfclay_physics .EQ. MYNNSFCSCHEME ) .OR. &
+#endif
             (sf_sfclay_physics .EQ. GFSSFCSCHEME ) )    &
            )
 

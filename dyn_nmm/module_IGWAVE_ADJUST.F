@@ -11,7 +11,7 @@
       MODULE MODULE_IGWAVE_ADJUST
 !
 !-----------------------------------------------------------------------
-      USE MODULE_MODEL_CONSTANTS
+      USE MODULE_MODEL_CONSTANTS, only: R_d, p608
 !     USE MODULE_EXCHANGE
       USE MODULE_MPP,ONLY: MYPE
       USE MODULE_WRF_ERROR     
@@ -629,7 +629,7 @@
                                               ,NTASKS_Y                 &
                                               ,wrf_dm_sum_real          &
                                               ,wrf_dm_sum_integer          
-      USE MODULE_COMM_DM
+      USE MODULE_COMM_DM, only: HALO_NMM_E_sub
 #endif
 !-----------------------------------------------------------------------
       IMPLICIT NONE
@@ -888,9 +888,6 @@
 !***********************************************************************
 !-----------------------------------------------------------------------
       SUBROUTINE VTOA(                                                  &
-#ifdef DM_PARALLEL
-     &                GRID,                                             &
-#endif
      &                NTSD,DT,PT,ETA2                                   &
      &               ,HBM2,EF4T                                         &
      &               ,T,DWDT,RTOP,OMGALF                                &
@@ -933,21 +930,8 @@
 !   MACHINE : IBM SP
 !$$$  
 !***********************************************************************
-#ifdef DM_PARALLEL
-      USE MODULE_DOMAIN, only: DOMAIN
-      USE MODULE_DM,                    ONLY : LOCAL_COMMUNICATOR       &
-                                              ,MYTASK,NTASKS,NTASKS_X   &
-                                              ,NTASKS_Y
-      USE MODULE_COMM_DM
-#endif
 !-----------------------------------------------------------------------
       IMPLICIT NONE
-!-----------------------------------------------------------------------
-#ifdef DM_PARALLEL
-      TYPE (DOMAIN) :: GRID
-#endif
-!-----------------------------------------------------------------------
-!
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
                            ,IMS,IME,JMS,JME,KMS,KME                     &
                            ,ITS,ITE,JTS,JTE,KTS,KTE

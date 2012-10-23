@@ -794,15 +794,16 @@ CONTAINS
         ENDDO
         ENDDO
      endif
-     if(PRESENT(qr) .and. PRESENT(F_QR)) then
-        DO j=jts,jte
-        DO k=kts,kte
-        DO i=its,ite
-           qc_temp(I,K,J) = qc_temp(I,K,J) + qr(I,K,J)
-        ENDDO
-        ENDDO
-        ENDDO
-     endif
+! Remove this - to match NAM operational (affects GFDL and HWRF schemes)
+!     if(PRESENT(qr) .and. PRESENT(F_QR)) then
+!        DO j=jts,jte
+!        DO k=kts,kte
+!        DO i=its,ite
+!           qc_temp(I,K,J) = qc_temp(I,K,J) + qr(I,K,J)
+!        ENDDO
+!        ENDDO
+!        ENDDO
+!     endif
 
 !---------------
 ! Calculate constant for short wave radiation

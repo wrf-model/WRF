@@ -506,8 +506,10 @@ Namelist variables for controlling the adaptive time step option:
                                                 overridden by namelist value; bldt will
                                                 be computed from this.
  mfshconv (max_dom)                  = 1,; whether to turn on new day-time EDMF QNSE (0=no)
- topo_wind (max_dom)                 = 0, turn off, =1, turn on topographic surface wind correction from Jimenez 
+ topo_wind (max_dom)                 = 0, turn off, 
+                                     =1, turn on topographic surface wind correction from Jimenez 
                                        (YSU PBL only, and require extra input from geogrid)
+                                     =2, turn on topographic surface wind correction from Mass (YSU PBL only)
  bl_mynn_tkebudget                   = 0 default off, = 1 adds MYNN tke budget terms to output
 
  cu_physics (max_dom)                cumulus option

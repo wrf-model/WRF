@@ -103,8 +103,8 @@
    REAL :: w_max, w_min
    LOGICAL :: w_needs_to_be_set
 !  
-! paj: define variable local
-   REAL    :: alpha
+! Define variables local (topo_wind local vars)
+   REAL    :: alpha, vfac
 
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
@@ -1042,6 +1042,20 @@
                   endif
                endif
             endif
+         ENDDO
+         ENDDO
+!       if topo_wind==2 (D.Ovens, C.Mass)
+       else if (config_flags%topo_wind.eq.2) then
+         DO j = jts,min(jte,jde-1)
+         DO i = its, min(ite,ide-1)
+           if (grid%xland(i,j).lt.1.5) then
+              vfac = amin1(1.575,(grid%var2d(i,j)*0.4/200.+1.175))
+              vfac = vfac * vfac
+           else                      ! over water, leave it alone
+              vfac = 1.
+           endif
+         print *, j,i,grid%ctopo(i,j),vfac
+           grid%ctopo(i,j)=grid%ctopo(i,j)*vfac
          ENDDO
          ENDDO
        endif

@@ -107,7 +107,8 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 ! - Get chemistry data
      ELSE IF( ialarm .EQ. AUXINPUT5_ALARM .AND. config_flags%chem_opt > 0 ) THEN
        IF( config_flags%emiss_inpt_opt /= 0 ) THEN
-         IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
+         IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) .OR.  &
+         ((config_flags%restart) .AND. ( currTime .EQ. startTime ))) THEN
            call wrf_debug(15,' CALL med_read_wrf_chem_emiss ')
            CALL med_read_wrf_chem_emiss ( grid , config_flags )
            CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )

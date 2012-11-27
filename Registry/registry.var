@@ -637,6 +637,7 @@ rconfig   logical   use_iasiobs             namelist,wrfvar4  1  .false.  - "use
 rconfig   logical   use_kma1dvar            namelist,wrfvar4  1  .false.  - "use_kma1dvar"             ""  ""
 rconfig   logical   use_filtered_rad        namelist,wrfvar4  1  .false.  - "use_filtered_rad"         ""  ""
 rconfig   logical   use_obs_errfac          namelist,wrfvar4  1  .false.  - "use_obs_errfac"           ""  ""
+rconfig   logical   use_atmsobs             namelist,wrfvar4  1  .false.  - "use_atmsobs"              ""  ""
 rconfig   logical   check_max_iv            namelist,wrfvar5  1  .true.   - "check_max_iv"             ""  ""
 rconfig   real      max_error_t             namelist,wrfvar5  1   5.0     - "max_error_t"              ""  ""
 rconfig   real      max_error_uv            namelist,wrfvar5  1   5.0     - "max_error_uv"             ""  ""

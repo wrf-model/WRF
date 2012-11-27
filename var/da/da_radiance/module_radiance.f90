@@ -86,7 +86,7 @@ module module_radiance
         & 'mwts    ', 'mwhs    ', 'iras    ', 'mwri    ', 'abi     ',  &
         & 'mi      ', 'msumr   ', 'tansofts', 'iir     ', 'mwr     '/)
 
-! n=noaa; f=dmsp; g=goes; c=npoess; eos-1/2=aqua/terra;
+! n=noaa; f=dmsp; g=goes; c=npoess/npp; eos-1/2=aqua/terra;
    character(len=8), parameter :: crtm_platform_name(1:20) = &
        (/ 'n       ', 'f       ', 'meteosat', 'g       ', 'gms     ', &
           'fy2     ', 'trmm    ', 'ers     ', 'eos     ', 'metop   ', &
@@ -101,7 +101,7 @@ module module_radiance
        &    'mhs     ', 'iasi    ', 'amsre   ', 'imager  ', 'atms    ',  &
        &    'mviri   ', 'seviri  ', 'imgr    ', 'sndr    ', 'imager  ',  &
        &    'vissr   ', 'mvisr   ', 'cris    ', 'cmis    ', 'viirs   ',  &
-       &    'windsat ', 'gifts   ', 'amsre   ', 'xxxxxxxx', 'xxxxxxxx'   /)
+       &    'windsat ', 'gifts   ', 'amsre   ', 'xxxxxxxx', 'xxxxxxxx'/)
 
 #ifdef RTTOV
    type (rttov_coefs), allocatable   :: coefs(:)     ! coefficients structure

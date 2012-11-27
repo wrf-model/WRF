@@ -371,7 +371,7 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
                     exit scaleloop
                  end if
               end do scaleloop
-              call crtm_planck_temperature(sensorindex,i,radi,temperature(i))			  
+              call crtm_planck_temperature(inst,i,radi,temperature(i))			  
               if(temperature(i) < tbmin .or. temperature(i) > tbmax ) then
                  temperature(i) = min(tbmax,max(zero,temperature(i)))
 

@@ -39,6 +39,7 @@ module da_setup_structures
       vert_corr,max_vert_var5,power_truncation,alpha_truncation, &
       print_detail_regression,gas_constant, use_airsretobs, &
       filename_len, use_ssmisobs, gravity, t_triple, use_hirs4obs, use_mhsobs, &
+      use_atmsobs,    &
       vert_corr_2, alphacv_method_xa, vert_evalue_global, &
       vert_evalue_local, obs_names, num_ob_indexes, &
       sound, mtgirs,tamdar, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &

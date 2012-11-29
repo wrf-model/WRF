@@ -197,7 +197,7 @@ contains
                                                                         dtsfc, &
                                                                         dqsfc
 !
-   qv2d(:,:) = 0.0
+   qv2d(its:ite,:) = 0.0
    do j = jts,jte
       if(present(mut))then
 ! For ARW we will replace p and p8w with dry hydrostatic pressure
@@ -561,10 +561,10 @@ contains
 !
 !-----initialize vertical tendencies and
 !
-   utnp(:,:) = 0.
-   vtnp(:,:) = 0.
-   ttnp(:,:) = 0.
-   qtnp(:,:) = 0.
+   utnp(its:ite,:) = 0.
+   vtnp(its:ite,:) = 0.
+   ttnp(its:ite,:) = 0.
+   qtnp(its:ite,:) = 0.
 !
    do i = its,ite
      wspd1(i) = sqrt(ux(i,1)*ux(i,1)+vx(i,1)*vx(i,1))+1.e-9

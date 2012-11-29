@@ -168,6 +168,340 @@
 
    END SUBROUTINE interp_fcn
 
+!=========================================================================
+
+   SUBROUTINE interp_fcn_bl ( cfld,                                 &  ! CD field
+                              cids, cide, ckds, ckde, cjds, cjde,   &
+                              cims, cime, ckms, ckme, cjms, cjme,   &
+                              cits, cite, ckts, ckte, cjts, cjte,   &
+                              nfld,                                 &  ! ND field
+                              nids, nide, nkds, nkde, njds, njde,   &
+                              nims, nime, nkms, nkme, njms, njme,   &
+                              nits, nite, nkts, nkte, njts, njte,   &
+                              shw,                                  &  ! stencil half width for interp
+                              imask,                                &  ! interpolation mask
+                              xstag, ystag,                         &  ! staggering of field
+                              ipos, jpos,                           &  ! Position of lower left of nest in CD
+                              nri, nrj,                             &  ! Nest ratio, i- and j-directions
+                              cht, nht,                             &  ! topography for CG and FG
+                              ct_max_p,nt_max_p,                    &  ! temperature (K) at max press, want CG value
+                              cght_max_p,nght_max_p,                &  ! height (m) at max press, want CG value
+                              cmax_p,nmax_p,                        &  ! max pressure (Pa) in column, want CG value
+                              ct_min_p,nt_min_p,                    &  ! temperature (K) at min press, want CG value
+                              cght_min_p,nght_min_p,                &  ! height (m) at min press, want CG value
+                              cmin_p,nmin_p,                        &  ! min pressure (Pa) in column, want CG value
+                              zn, p_top                             )  ! eta levels
+     USE module_timing
+     USE module_configure
+     USE module_model_constants , ONLY : g , r_d, cp, p1000mb, t0
+
+     IMPLICIT NONE
+
+
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj
+     LOGICAL, INTENT(IN) :: xstag, ystag
+
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
+     INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
+     REAL, DIMENSION ( cims:cime, cjms:cjme ) :: cht, ct_max_p, cght_max_p, cmax_p, ct_min_p, cght_min_p, cmin_p
+     REAL, DIMENSION ( nims:nime, njms:njme ) :: nht, nt_max_p, nght_max_p, nmax_p, nt_min_p, nght_min_p, nmin_p
+     REAL, DIMENSION ( ckms:ckme ) :: zn
+     REAL :: p_top
+     REAL, EXTERNAL :: v_interp_col
+
+     ! Local
+
+     INTEGER ci, cj, ni, nj, nk, istag, jstag, i, j, k
+     REAL :: wx, wy, nprs, cfld_ll, cfld_lr, cfld_ul, cfld_ur
+     REAL , DIMENSION(ckms:ckme) :: cprs
+     REAL    :: p00 , t00 , a , tiso , p_surf
+
+     !  Yes, memory sized to allow "outside the tile" indexing for horiz interpolation.  This
+     !  is really an intermediate domain that has quite a bit of usable real estate surrounding
+     !  the tile dimensions.
+
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cpb
+  
+     !  A bit larger than tile sized to allow horizontal interpolation on the CG.
+
+     REAL, DIMENSION ( cits-2:cite+2, cjts-2:cjte+2 ) :: cfld_max_p, cfld_min_p
+
+     !  The usual tile size for the FG local array.
+
+     REAL, DIMENSION ( nits:nite, nkts:nkte, njts:njte ) :: npb
+
+     !  Get base state constants
+
+     CALL nl_get_base_pres  ( 1 , p00 )
+     CALL nl_get_base_temp  ( 1 , t00 )
+     CALL nl_get_base_lapse ( 1 , a   )
+     CALL nl_get_iso_temp   ( 1 , tiso )
+
+     !  This stag stuff is to keep us away from the outer most row
+     !  and column for the unstaggered directions.  We are going to 
+     !  consider "U" an xstag variable and "V" a ystag variable.  The
+     !  vertical staggering is handled in the actual arguments.  The
+     !  ckte and nkte are the ending vertical dimensions for computations
+     !  for this particular variable.
+
+     IF ( xstag ) THEN
+        istag = 0 
+     ELSE
+        istag = 1
+     END IF
+
+     IF ( ystag ) THEN
+        jstag = 0 
+     ELSE
+        jstag = 1
+     END IF
+
+     !  Compute the reference pressure for the CG, function only of constants and elevation.
+     !  We extend the i,j range to allow us to do horizontal interpolation.  We only need
+     !  one extra grid cell surrounding the nest, and the intermediate domain has plenty of
+     !  room with the halos set up for higher-order interpolations.  For intermediate domains,
+     !  it turns out that the "domain" size actually fits within the "tile" size.  Yeppers,
+     !  that is backwards from what usually happens.  That intermediate domain size is a couple
+     !  grid points larger than necessary, and the tile is a couple of grid cells larger still.
+     !  For our low-order interpolation, we can use the tile size for the CG, and we will have
+     !  plenty of data on our boundaries.
+
+     DO j = cjts-2 , cjte+2
+        DO i = cits-2 , cite+2
+           p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*cht(i,j)/a/r_d ) **0.5 )
+           DO k = ckts , ckte
+              cpb(i,k,j) = zn(k)*(p_surf - p_top) + p_top  
+           END DO
+           IF ( ckte .EQ. ckme ) THEN
+              cfld_max_p(i,j) = cght_max_p(i,j) * g
+              cfld_min_p(i,j) = cght_min_p(i,j) * g
+           ELSE
+              cfld_max_p(i,j) = ct_max_p(i,j) * (p1000mb/cmax_p(i,j))**(r_d/cp) - t0
+              cfld_min_p(i,j) = ct_min_p(i,j) * (p1000mb/cmin_p(i,j))**(r_d/cp) - t0
+           END IF
+        END DO
+     END DO
+
+     !  Compute the reference pressure for the FG. This is actually the size of the entire
+     !  domain, not some chopped down piece of intermediate domain, as in the parent
+     !  grid.  We do the traditional MAX(dom end -1,tile end), since we know a priori that the
+     !  pressure is a mass point field (because the topo elevation is a mass point field).
+
+     DO j = njts , MIN(njde-1,njte)
+        DO i = nits , MIN(nide-1,nite)
+           p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*nht(i,j)/a/r_d ) **0.5 )
+           DO k = nkts , nkte
+              npb(i,k,j) = zn(k)*(p_surf - p_top) + p_top  
+           END DO
+        END DO
+     END DO
+
+     !  Loop over each j-index on this tile for the nested domain.
+
+     j_loop : DO nj = njts, MIN(njde-jstag,njte)
+
+        !  This is the lower-left j-index of the CG.
+
+        !  Example is 3:1 ratio, mass-point staggering.  We have listed six CG values
+        !  as an example: A, B, C, D, E, F.  For a 3:1 ratio, each of these CG cells has
+        !  nine associated FG points.
+        !  |=========|=========|=========|
+        !  | -  -  - | -  -  - | -  -  - |
+        !  |         |         |         |
+        !  | -  D  - | -  E  - | -  F  - |
+        !  |         |         |         |
+        !  | 1  2  3 | 4  5  6 | 7  8  9 |
+        !  |=========|=========|=========|
+        !  | -  -  - | -  -  - | -  -  - |
+        !  |         |         |         |
+        !  | -  A  - | -  B  - | -  C  - |
+        !  |         |         |         |
+        !  | -  -  - | -  -  - | -  -  - |
+        !  |=========|=========|=========|
+        !  To interpolate to FG point 4, we will use CG points: A, B, D, E.  It is adequate to
+        !  find the lower left point.  The lower left (LL) point for "4" is "A".  Below
+        !  are a few more points.
+        !  2 => A
+        !  3 => A
+        !  4 => A
+        !  5 => B
+        !  6 => B
+        !  7 => B
+        !  We want an equation that returns the CG LL:
+        !  CG LL =   ipos                          (the starting point of the nest in the CG) 
+        !          + (ni-1)/nri                    (gives us the CG cell, based on the nri-groups of FG cells
+        !          - istag                         (a correction term, this is either zero for u in the x-dir, 
+        !                                           since we are doing an "i" example, or 1 for anything else)
+        !          + (MOD(ni-1,nri)+1 + nri/2)/nri (gives us specifically related CG point for each of the nri
+        !                                           FG points, for example, we want points "1", "4", and "7" all
+        !                                           to point to the CG at the left for the LL point)
+        !  For grid points 4, 5, 6, we want the CG LL (sans the first two terms) to be -1, 0, 0 (which
+        !  means that the CG point for "4" is to the left, and the CG LL point for "5" and "6"
+        !  is in the current CG index.  
+
+        cj = jpos + (nj-1)/nrj - jstag + (MOD(nj-1,nrj)+1 + nrj/2)/nrj
+
+
+        !  What is the weighting for this CG point to the FG point, j-weight only.
+
+        IF ( ystag ) THEN
+           wy = 1. - ( REAL(MOD(nj+(nrj-1)/2,nrj)) / REAL(nrj) +  1. / REAL (2 * nrj) )
+        ELSE
+           wy = 1. - ( REAL(MOD(nj+(nrj-1)/2,nrj)) / REAL(nrj)                        )
+        END IF
+
+        !  Vertical dim of the nest domain.
+
+        k_loop : DO nk = nkts, nkte
+
+          !  Loop over each i-index on this tile for the nested domain.
+
+           i_loop : DO ni = nits, MIN(nide-istag,nite)
+ 
+              !  The coarse grid location that is to the lower left of the FG point.
+
+              ci = ipos + (ni-1)/nri - istag + (MOD(ni-1,nri)+1 + nri/2)/nri
+
+              !  Weights in the x-direction.
+
+              IF ( xstag ) THEN
+                 wx = 1. - ( REAL(MOD(ni+(nri-1)/2,nri)) / REAL(nri) +  1. / REAL (2 * nri) )
+              ELSE
+                 wx = 1. - ( REAL(MOD(ni+(nri-1)/2,nri)) / REAL(nri)                        )
+              END IF
+
+              !  The pressure of the FG point.
+
+              IF      ( ( .NOT. xstag ) .AND. ( .NOT. ystag ) ) THEN
+                 nprs =   npb(  ni  , nk , nj  ) 
+              ELSE IF ( xstag ) THEN
+                 nprs = ( npb(  ni-1, nk , nj  ) + npb(  ni  , nk , nj  ) ) * 0.5
+              ELSE IF ( ystag ) THEN
+                 nprs = ( npb(  ni  , nk , nj-1) + npb(  ni  , nk , nj  ) ) * 0.5
+              END IF
+
+              !  The four surrounding CG values.
+
+              IF      ( ( .NOT. xstag ) .AND. ( .NOT. ystag ) ) THEN
+                 cprs(:) =   cpb(ci  ,:,cj  )
+                 cfld_ll = v_interp_col ( cfld(ci  ,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj  , cfld_max_p(ci  ,cj  ) , cmax_p(ci  ,cj  ) , cfld_min_p(ci  ,cj  ) , cmin_p(ci  ,cj  ) )
+                 cprs(:) =   cpb(ci+1,:,cj  )
+                 cfld_lr = v_interp_col ( cfld(ci+1,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj  , cfld_max_p(ci+1,cj  ) , cmax_p(ci+1,cj  ) , cfld_min_p(ci+1,cj  ) , cmin_p(ci+1,cj  ) )
+                 cprs(:) =   cpb(ci  ,:,cj+1)
+                 cfld_ul = v_interp_col ( cfld(ci  ,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj+1, cfld_max_p(ci  ,cj+1) , cmax_p(ci  ,cj+1) , cfld_min_p(ci  ,cj+1) , cmin_p(ci  ,cj+1) )
+                 cprs(:) =   cpb(ci+1,:,cj+1)
+                 cfld_ur = v_interp_col ( cfld(ci+1,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj+1, cfld_max_p(ci+1,cj+1) , cmax_p(ci+1,cj+1) , cfld_min_p(ci+1,cj+1) , cmin_p(ci+1,cj+1) )
+
+              ELSE IF ( xstag ) THEN
+                 cprs(:) = ( cpb(ci  ,:,cj  ) + cpb(ci-1,:,cj  ) )*0.5 
+                 cfld_ll = v_interp_col ( cfld(ci  ,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj  , cfld_max_p(ci  ,cj  ) , cmax_p(ci  ,cj  ) , cfld_min_p(ci  ,cj  ) , cmin_p(ci  ,cj  ) )
+                 cprs(:) = ( cpb(ci+1,:,cj  ) + cpb(ci  ,:,cj  ) )*0.5
+                 cfld_lr = v_interp_col ( cfld(ci+1,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj  , cfld_max_p(ci+1,cj  ) , cmax_p(ci+1,cj  ) , cfld_min_p(ci+1,cj  ) , cmin_p(ci+1,cj  ) )
+                 cprs(:) = ( cpb(ci  ,:,cj+1) + cpb(ci-1,:,cj+1) )*0.5
+                 cfld_ul = v_interp_col ( cfld(ci  ,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj+1, cfld_max_p(ci  ,cj+1) , cmax_p(ci  ,cj+1) , cfld_min_p(ci  ,cj+1) , cmin_p(ci  ,cj+1) )
+                 cprs(:) = ( cpb(ci+1,:,cj+1) + cpb(ci  ,:,cj+1) )*0.5
+                 cfld_ur = v_interp_col ( cfld(ci+1,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj+1, cfld_max_p(ci+1,cj+1) , cmax_p(ci+1,cj+1) , cfld_min_p(ci+1,cj+1) , cmin_p(ci+1,cj+1) )
+              ELSE IF ( ystag ) THEN
+                 cprs(:) = ( cpb(ci  ,:,cj  ) + cpb(ci  ,:,cj-1) )*0.5
+                 cfld_ll = v_interp_col ( cfld(ci  ,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj  , cfld_max_p(ci  ,cj  ) , cmax_p(ci  ,cj  ) , cfld_min_p(ci  ,cj  ) , cmin_p(ci  ,cj  ) )
+                 cprs(:) = ( cpb(ci+1,:,cj  ) + cpb(ci+1,:,cj-1) )*0.5
+                 cfld_lr = v_interp_col ( cfld(ci+1,:,cj  ) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj  , cfld_max_p(ci+1,cj  ) , cmax_p(ci+1,cj  ) , cfld_min_p(ci+1,cj  ) , cmin_p(ci+1,cj  ) )
+                 cprs(:) = ( cpb(ci  ,:,cj+1) + cpb(ci  ,:,cj  ) )*0.5
+                 cfld_ul = v_interp_col ( cfld(ci  ,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci  , cj+1, cfld_max_p(ci  ,cj+1) , cmax_p(ci  ,cj+1) , cfld_min_p(ci  ,cj+1) , cmin_p(ci  ,cj+1) )
+                 cprs(:) = ( cpb(ci+1,:,cj+1) + cpb(ci+1,:,cj  ) )*0.5
+                 cfld_ur = v_interp_col ( cfld(ci+1,:,cj+1) , cprs(:) , ckms , ckme , ckte, nprs, ni, nj, nk, ci+1, cj+1, cfld_max_p(ci+1,cj+1) , cmax_p(ci+1,cj+1) , cfld_min_p(ci+1,cj+1) , cmin_p(ci+1,cj+1) )
+              END IF
+
+              !  Bilinear interpolation in horizontal with vertically corrected CG field values.
+
+              nfld( ni , nk , nj ) =     wy  * ( cfld_ll * wx + cfld_lr * (1.-wx) ) + &
+                                     (1.-wy) * ( cfld_ul * wx + cfld_ur * (1.-wx) )
+
+           END DO i_loop
+        END DO    k_loop
+     END DO       j_loop
+
+     !  If this is ph_2, make the values at k=1 all zero
+
+     IF ( ckme .EQ. ckte ) THEN
+        DO nj = njts,njte
+           DO ni = nits, nite
+              nfld(ni,nkts,nj) = 0.0
+           END DO
+        END DO
+     END IF
+
+   END SUBROUTINE interp_fcn_bl
+
+!==================================
+
+   FUNCTION v_interp_col ( cfld_orig , cprs_orig , ckms , ckme , ckte , nprs, ni, nj, nk, ci, cj, cfld_max_p , cmax_p , cfld_min_p , cmin_p ) RESULT ( cfld_interp )
+
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN) ::  ni, nj, nk, ci, cj
+      INTEGER , INTENT(IN) :: ckms , ckme , ckte
+      REAL , DIMENSION(ckms:ckme) , INTENT(IN) :: cfld_orig , cprs_orig
+      REAL , INTENT(IN) :: cfld_max_p , cmax_p , cfld_min_p , cmin_p
+      REAL , INTENT(IN) :: nprs
+      REAL :: cfld_interp
+
+      !  Local
+
+      INTEGER :: ck
+      LOGICAL :: found
+      CHARACTER(LEN=256) :: joe_mess
+      REAL , DIMENSION(ckms:ckme+1+1) :: cfld , cprs
+
+      !  Fill input arrays
+
+      cfld(1) = cfld_max_p
+      cprs(1) = cmax_p
+
+      cfld(ckte+2) = cfld_min_p
+      cprs(ckte+2) = cmin_p
+
+      DO ck = ckms , ckte
+         cfld(ck+1) = cfld_orig(ck)
+         cprs(ck+1) = cprs_orig(ck)
+      END DO
+
+      found = .FALSE.
+
+      IF      ( cprs(ckms) .LT. nprs ) THEN
+         cfld_interp = cfld(ckms)
+         RETURN
+      ELSE IF ( cprs(ckte+2) .GE. nprs ) THEN
+         cfld_interp = cfld(ckte+2)
+         RETURN
+      END IF
+
+      DO ck = ckms , ckte+1
+         IF ( ( cprs(ck  ) .GE. nprs ) .AND. &
+              ( cprs(ck+1) .LT. nprs ) ) THEN
+            cfld_interp = ( cfld(ck  ) * ( nprs     - cprs(ck+1) ) + &
+                            cfld(ck+1) * ( cprs(ck) - nprs       ) ) / &
+                                         ( cprs(ck) - cprs(ck+1) )
+            RETURN
+         END IF
+      END DO
+
+print *,'Hey we should not be here'
+print *,'nest pres to find = ',nprs
+print *,'column of cg pres = ',cprs
+      CALL wrf_error_fatal ( 'ERROR -- vertical interpolation for nest interp cannot find trapping pressures' )
+   
+   END FUNCTION v_interp_col
+
 !==================================
 ! this is the default function used in feedback.
 

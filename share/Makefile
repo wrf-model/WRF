@@ -169,7 +169,7 @@ init_modules.o: ../frame/module_configure.o ../frame/module_driver_constants.o \
 		../frame/module_wrf_error.o
 
 interp_fcn.o: ../frame/module_timing.o ../frame/module_state_description.o ../frame/module_configure.o \
-		../frame/module_wrf_error.o
+		../frame/module_wrf_error.o module_model_constants.o
 
 mediation_feedback_domain.o: ../frame/module_domain.o ../frame/module_configure.o
 

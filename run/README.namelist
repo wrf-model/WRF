@@ -676,6 +676,9 @@ Options for stochastic kinetic-energy backscatter scheme:
                                       1,        : Random phase vertical structure random pattern generator
  tot_backscat_psi                   = 1.0E-05   ; Controls amplitude of rotational wind perturbations
  tot_backscat_t                     = 1.0E-06   ; Controls amplitude of potential temperature perturbations
+ perturb_bdy                        = 0         ; No boundary perturbations
+                                      1         ; Use SKEBS pattern for boundary perturbations
+                                      2         ; User other user provided pattern for boundary perturbations
  nens                               = 1         ; an integer that controls the random number stream which will then
                                                   change the run. When running an ensemble, this can be
                                                   ensemble member number, so that each ensemble member gets a
@@ -966,6 +969,10 @@ The following are for observation nudging:
  m_opt (max_dom)                     = 0       ; no added output
                                      = 1       ; adds output of Mij stress terms when NBA is not used
  tracer_opt(max_dom)                 = 0       ; 
+
+ perturb_bdy                         = 0       ; No boundary perturbations
+                                       1       ; Use SKEBS pattern for boundary perturbations
+                                       2       ; User other user provided pattern for boundary perturbations
 
  &bdy_control
  spec_bdy_width                      = 5,       ; total number of rows for specified boundary value nudging

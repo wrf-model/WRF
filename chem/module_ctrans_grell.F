@@ -152,6 +152,11 @@ CONTAINS
          k23(i)=k22_shallow(i,j)
          kbcon3(i)=kbcon_shallow(i,j)
      ENDDO
+     else
+         xmb3(i)=0
+         ktop3(i)=0
+         k23(i)=0
+         kbcon3(i)=0
      endif
      DO K=kts,ktf
      DO I=ITS,ITF

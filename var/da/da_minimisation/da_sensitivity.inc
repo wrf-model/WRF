@@ -1,4 +1,4 @@
-subroutine da_sensitivity(grid, config_flags, cv_size, xbx, be, iv, xhat, qhat, cv, y, &
+subroutine da_sensitivity(grid, config_flags, it, cv_size, xbx, be, iv, xhat, qhat, cv, y, &
                           eignvec, eignval, neign)
 
    !-------------------------------------------------------------------------
@@ -7,6 +7,7 @@ subroutine da_sensitivity(grid, config_flags, cv_size, xbx, be, iv, xhat, qhat, 
    ! Called either from da_minimise_lz or da_solve
    !
    ! History: 03/05/2009  Creation (Tom Auligne)
+   !          09/06/2012  Modified to allow variable ntmax in each outerloop (Mike Kavulich)
    !
    !-------------------------------------------------------------------------
 
@@ -14,17 +15,18 @@ subroutine da_sensitivity(grid, config_flags, cv_size, xbx, be, iv, xhat, qhat, 
 
    type(domain),   intent(inout)     :: grid
    type(grid_config_rec_type), intent(inout) :: config_flags
-   integer,        intent(in)        :: cv_size                ! Total cv size
-   type (xbx_type),intent(inout)     :: xbx                    ! Header & non-gridded vars.
-   type (be_type), intent(in)        :: be                     ! background error structure.
-   type (iv_type), intent(inout)     :: iv                     ! ob. increment vector.
-   real,           intent(in)        :: xhat(1:cv_size)        ! control variable (local).
-   real,           intent(in)        :: qhat(1:cv_size, 0:ntmax)  
-   real,           intent(in)        :: cv(1:cv_size)          ! control variable (local).
-   type (y_type),  intent(inout)     :: y                      ! y = H(x_inc) structure.
-   real*8,         intent(in)        :: eignvec(ntmax, ntmax)
-   real*8,         intent(in)        :: eignval(ntmax)
-   integer,        intent(in)        :: neign                  ! Number of eigenpairs
+   integer, intent(in)               :: it                            ! external iteration.
+   integer,        intent(in)        :: cv_size                       ! Total cv size
+   type (xbx_type),intent(inout)     :: xbx                           ! Header & non-gridded vars.
+   type (be_type), intent(in)        :: be                            ! background error structure.
+   type (iv_type), intent(inout)     :: iv                            ! ob. increment vector.
+   real,           intent(in)        :: xhat(1:cv_size)               ! control variable (local).
+   real,           intent(in)        :: qhat(1:cv_size, 0:ntmax(it))  
+   real,           intent(in)        :: cv(1:cv_size)                 ! control variable (local).
+   type (y_type),  intent(inout)     :: y                             ! y = H(x_inc) structure.
+   real*8,         intent(in)        :: eignvec(ntmax(it), ntmax(it))
+   real*8,         intent(in)        :: eignval(ntmax(it))
+   integer,        intent(in)        :: neign                         ! Number of eigenpairs
    
    type (y_type)                     :: ktr         
 #ifdef CLOUD_CV
@@ -32,10 +34,10 @@ subroutine da_sensitivity(grid, config_flags, cv_size, xbx, be, iv, xhat, qhat, 
 #else
    integer                           :: i, j, mz(7)
 #endif
-   integer                           :: jp_start, jp_end       ! Start/end indices of Jp.
-   real                              :: shat(1:cv_size)        ! control variable (local).
-   real                              :: amat(1:cv_size)        ! cv copy.
-   real                              :: ritz(ntmax, ntmax)
+   integer                           :: jp_start, jp_end              ! Start/end indices of Jp.
+   real                              :: shat(1:cv_size)               ! control variable (local).
+   real                              :: amat(1:cv_size)               ! cv copy.
+   real                              :: ritz(ntmax(it), ntmax(it))
 #ifdef CLOUD_CV
     mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz,  be%v6%mz, be%v7%mz, be%v8%mz,be%v9%mz, be%alpha%mz, be % ne /)
 #else

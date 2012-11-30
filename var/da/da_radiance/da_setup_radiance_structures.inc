@@ -135,6 +135,12 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
          call da_read_obs_bufrtovs('mhs  ', iv, filename)
       end if
 
+      if (use_atmsobs) then
+         write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from atms.bufr'
+         filename = 'atms'
+         call da_read_obs_bufrtovs('atms ', iv, filename)
+      end if
+
       if (use_airsobs) then
          write(unit=stdout,fmt='(a)') 'Reading airs 1b data from airs.bufr'
          filename = 'airs'
@@ -158,7 +164,11 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
          filename = 'ssmis'
          call da_read_obs_bufrssmis ('ssmis    ',iv, filename)
       end if
-
+      if (use_iasiobs) then
+         write(unit=stdout,fmt='(a)') 'Reading iasi data from iasi.bufr'
+         filename = 'iasi'
+         call da_read_obs_bufriasi ('iasi     ',iv, filename)
+      end if
    end if
 
    if ( use_filtered_rad ) then

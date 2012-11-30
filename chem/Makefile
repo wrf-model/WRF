@@ -275,7 +275,7 @@ module_mosaic_cloudchem.o: module_data_cmu_bulkaqchem.o module_cmu_bulkaqchem.o 
 
 module_sorgam_cloudchem.o: module_data_cmu_bulkaqchem.o module_cmu_bulkaqchem.o module_data_sorgam.o module_aerosols_sorgam.o
 
-module_fastj_data.o:
+module_fastj_data.o: module_data_mosaic_other.o
 
 module_fastj_mie.o: module_peg_util.o
 

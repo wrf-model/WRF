@@ -2,6 +2,8 @@
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
+   ! 
+   ! Edited 09/06/2012: Allow for variable ntmax for each outer loop (Mike Kavulich)
    !-----------------------------------------------------------------------
 
    implicit none
@@ -265,14 +267,12 @@
    ! [7.0] Setup control variable (cv):
    !---------------------------------------------------------------------------
 
+!  Dynamically allocate the variables which don't rely on ntmax
       allocate (cvt(1:cv_size))
       allocate (xhat(1:cv_size))
-      if (use_lanczos) then
-         allocate (qhat(1:cv_size, 0:ntmax))
-         allocate (eignvec(ntmax, ntmax))
-	 allocate (eignval(ntmax))
-!	 allocate (full_eignvec(cv_size))
-      end if
+!      if (use_lanczos) then
+!        allocate (full_eignvec(cv_size))
+!      end if
 
       if ( outer_loop_restart ) then
          !call da_get_unit(cvt_unit)
@@ -317,6 +317,13 @@
 
    j_grad_norm_target = 1.0
    do it = 1, max_ext_its
+
+!  Dynamically allocate the variables which depend on ntmax
+      if (use_lanczos) then
+         allocate (qhat(1:cv_size, 0:ntmax(it)))
+         allocate (eignvec(ntmax(it), ntmax(it)))
+         allocate (eignval(ntmax(it)))
+      end if
 
 ! Re-scale the variances and the scale-length for outer-loop > 1:
       if (it > 1 .and. cv_options == 5) then
@@ -477,7 +484,7 @@
 
       if (use_lanczos) then
          if (read_lanczos) then
-            call da_lanczos_io('r',cv_size,ntmax,neign,eignvec,eignval,qhat)
+            call da_lanczos_io('r',cv_size,ntmax(it),neign,eignvec,eignval,qhat)
 
             call da_kmat_mul(grid,config_flags,it,cv_size,xbx, &
                              be,iv,xhat,qhat,cvt,re,y,j,eignvec,eignval,neign)
@@ -490,9 +497,9 @@
 
          end if
 
-         if (write_lanczos) call da_lanczos_io('w',cv_size,ntmax,neign,eignvec,eignval,qhat)
+         if (write_lanczos) call da_lanczos_io('w',cv_size,ntmax(it),neign,eignvec,eignval,qhat)
 
-         if (adj_sens) call da_sensitivity(grid,config_flags,cv_size,xbx, &
+         if (adj_sens) call da_sensitivity(grid,config_flags,it,cv_size,xbx, &
                                            be,iv,xhat,qhat,cvt,y,eignvec,eignval,neign)
 
 	 
@@ -604,6 +611,15 @@
      call da_deallocate_y (re)
      call da_deallocate_y (y)
 
+
+   ! Deallocate arrays which depend on ntmax
+     if (use_lanczos) then
+        deallocate (qhat)
+        deallocate (eignvec)
+        deallocate (eignval)
+     end if
+
+
    end do
 
    ! output wrfvar analysis
@@ -640,12 +656,9 @@
 
    deallocate (cvt)
    deallocate (xhat)
-   if (use_lanczos) then
-      deallocate (qhat)
-      deallocate (eignvec)
-      deallocate (eignval)
+!   if (use_lanczos) then
 !      deallocate (full_eignvec)
-   end if
+!   end if
 
 #if defined(RTTOV) || defined(CRTM)
    if (use_rad) then

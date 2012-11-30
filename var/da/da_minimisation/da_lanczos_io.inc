@@ -1,4 +1,4 @@
-subroutine da_lanczos_io (io_config, cv_size, ntmax, neign, eignvec, eignval, qhat)
+subroutine da_lanczos_io (io_config, cv_size, ntmaxit, neign, eignvec, eignval, qhat)
 
    !-------------------------------------------------------------------------
    ! Purpose:        Read / Write Lanczos eigenpairs
@@ -13,11 +13,11 @@ subroutine da_lanczos_io (io_config, cv_size, ntmax, neign, eignvec, eignval, qh
    
    character,        intent(in)    :: io_config              ! 'r' = Read; 'w' = Write
    integer,          intent(inout) :: cv_size
-   integer,          intent(in)    :: ntmax
+   integer,          intent(in)    :: ntmaxit
    integer,          intent(inout) :: neign
-   real*8,           intent(inout) :: eignvec(ntmax, ntmax)
-   real*8,           intent(inout) :: eignval(ntmax)
-   real,             intent(inout) :: qhat(1:cv_size, 0:ntmax)
+   real*8,           intent(inout) :: eignvec(ntmaxit, ntmaxit)
+   real*8,           intent(inout) :: eignval(ntmaxit)
+   real,             intent(inout) :: qhat(1:cv_size, 0:ntmaxit)
 
    character(len=filename_len)     :: filename               ! I/O filename
    character*10                    :: cproc

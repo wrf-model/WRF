@@ -160,6 +160,48 @@
     IF ( ( switch .EQ.     input_only  ) .OR. &
          ( switch .EQ.          restart_only ) ) THEN
 
+      ! INPUT ONLY (KK)
+      IF ( switch .EQ. restart_only ) THEN
+        ! recover the restart alarms from input if avialable
+ 
+        CALL wrf_get_dom_ti_integer( fid , 'MAX_WRF_ALARMS', max_wrf_alarms_compare, 1, icnt, ierr )
+        IF ( max_wrf_alarms_compare .NE. MAX_WRF_ALARMS ) THEN
+          WRITE(wrf_err_message,*)'MAX_WRF_ALARMS different in restart file (',max_wrf_alarms_compare,&
+                                  ') from in code (',MAX_WRF_ALARMS,').  Disregarding info in restart file.'
+        ELSE
+          curtime = domain_get_current_time( grid )
+          DO i = auxinput1_only, MAX_WRF_ALARMS
+            IF ( grid%alarms_created(i) .AND. .NOT. i .EQ. boundary_only ) THEN
+              write(alarmname,'("WRF_ALARM_ISRINGING_",i2.2)')i
+              CALL wrf_get_dom_ti_integer( fid, TRIM(alarmname), iring, 1, icnt, ierr )
+  
+              write(alarmname,'("WRF_ALARM_SECS_TIL_NEXT_RING_",i2.2)')i
+              CALL wrf_get_dom_ti_integer( fid, TRIM(alarmname), seconds, 1, icnt, ierr )
+              IF ( ierr .EQ. 0 &
+                   .AND. seconds .GE. 0 ) THEN  ! disallow negative intervals; can happen with wrfbdy datasets
+                                                ! which keep time differently
+  
+                ! Get and set interval so that we are sure to have both the
+                ! interval and first ring time set correctly
+                CALL WRFU_AlarmGet( grid%alarms(i), ringinterval=interval2 )
+                CALL WRFU_TimeIntervalSet(interval,S=seconds)
+                ringTime = curtime + interval
+                CALL WRFU_AlarmSet( grid%alarms(i), RingInterval=interval2, RingTime=ringTime )
+
+              ENDIF
+
+              IF ( iring .EQ. 1 ) THEN
+                CALL WRFU_AlarmRingerOn( grid%alarms( i ) )
+              ELSE
+                CALL WRFU_AlarmRingerOff( grid%alarms( i ) )
+              ENDIF
+            ENDIF
+          ENDDO
+        ENDIF
+
+      ENDIF
+     
+     !OUTPUT ONLY (KK)
       IF ( switch .EQ. restart_only .AND. .NOT. config_flags%override_restart_timers ) THEN
         ! recover the restart alarms from input if avialable
  
@@ -169,7 +211,7 @@
                                   ') from in code (',MAX_WRF_ALARMS,').  Disregarding info in restart file.'
         ELSE
           curtime = domain_get_current_time( grid )
-          DO i = 1, MAX_WRF_ALARMS
+          DO i = 1, auxinput1_only-1
             IF ( grid%alarms_created(i) .AND. .NOT. i .EQ. boundary_only ) THEN
               write(alarmname,'("WRF_ALARM_ISRINGING_",i2.2)')i
               CALL wrf_get_dom_ti_integer( fid, TRIM(alarmname), iring, 1, icnt, ierr )
@@ -177,28 +219,6 @@
               write(alarmname,'("WRF_ALARM_SECS_TIL_NEXT_RING_",i2.2)')i
               CALL wrf_get_dom_ti_integer( fid, TRIM(alarmname), seconds, 1, icnt, ierr )
               IF ( ierr .EQ. 0 &
-                   .AND. seconds .GE. 0 &
-		   .AND. i .EQ. history_only ) THEN 
-  
-                ! Get and set interval so that we are sure to have both the
-                ! interval and first ring time set correctly
-                
-                CALL WRFU_TimeIntervalSet(interval,S=config_flags%history_interval*60)
-                ringTime = curtime + interval
-                CALL WRFU_AlarmSet( grid%alarms(i), RingInterval=interval, RingTime=ringTime )
-		
-		ELSEIF ( ierr .EQ. 0 &
-                   .AND. seconds .GE. 0 &
-		   .AND. i .EQ. restart_only ) THEN 
-  
-                ! Get and set interval so that we are sure to have both the
-                ! interval and first ring time set correctly
-                
-                CALL WRFU_TimeIntervalSet(interval,S=config_flags%restart_interval*60)
-                ringTime = curtime + interval
-                CALL WRFU_AlarmSet( grid%alarms(i), RingInterval=interval, RingTime=ringTime )
-		
-		 ELSEIF ( ierr .EQ. 0 &
                    .AND. seconds .GE. 0 ) THEN  ! disallow negative intervals; can happen with wrfbdy datasets
                                                 ! which keep time differently
   

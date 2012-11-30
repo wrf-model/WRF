@@ -338,10 +338,10 @@ CONTAINS
          cblk(1,VNO3AI   ) = chem(i,k,j,p_no3ai)
          cblk(1,VNAAJ   )  = chem(i,k,j,p_naaj)
          cblk(1,VNAAI   )  = chem(i,k,j,p_naai)
-!        cblk(1,VCLAJ   )  = chem(i,k,j,p_claj)
-!        cblk(1,VCLAI   )  = chem(i,k,j,p_clai)
-         cblk(1,VCLAJ   )  = 0.
-         cblk(1,VCLAI   )  = 0.
+         cblk(1,VCLAJ   )  = chem(i,k,j,p_claj)
+         cblk(1,VCLAI   )  = chem(i,k,j,p_clai)
+!        cblk(1,VCLAJ   )  = 0.
+!        cblk(1,VCLAI   )  = 0.
 !
 ! Set emissions to zero when above level kemit.
 !
@@ -407,8 +407,10 @@ CONTAINS
       chem(i,k,j,p_no3ai) = cblk(1,VNO3AI   )
       chem(i,k,j,p_naaj) = cblk(1,VNAAJ   )
       chem(i,k,j,p_naai) = cblk(1,VNAAI   )
-!     chem(i,k,j,p_claj) = cblk(1,VCLAJ   )
-!     chem(i,k,j,p_clai) = cblk(1,VCLAI   )
+
+      chem(i,k,j,p_claj) = cblk(1,VCLAJ   )
+      chem(i,k,j,p_clai) = cblk(1,VCLAI   )
+
       chem(i,k,j,p_orgaro1j) = cblk(1,VORGARO1J)
       chem(i,k,j,p_orgaro1i) = cblk(1,VORGARO1I)
       chem(i,k,j,p_orgaro2j) = cblk(1,VORGARO2J)
@@ -1203,8 +1205,15 @@ END SUBROUTINE sorgam_depdriver
         RETURN
 
       ELSE IF (i<0.0) THEN
-!       xmsg = 'Ionic strength below zero...negative concentrations'
-        CALL wrf_error_fatal ( xmsg )
+        xmsg = 'WARNING: Ionic strength below zero (= negative ion concentrations) - setting ion concentrations to zero.'
+        call wrf_message(xmsg)
+        DO ian = 1, nan
+          DO icat = 1, ncat
+            gama(icat,ian) = 0.0
+          END DO
+        END DO
+        RETURN
+		
       END IF
 
 !...compute some essential expressions
@@ -5173,8 +5182,25 @@ END SUBROUTINE sorgam_depdriver
 
           dd = sqrt(disc)
           xxq = -0.5*(bb+sign(1.0,bb)*dd)
+!PMA
+          aa=max(aa,1.e-20)
+          xxq=max(xxq,1.e-20)
+
           rr1 = xxq/aa
           rr2 = cc/xxq
+
+          IF (rr1 <= 0.0 .AND. rr2 <= 0.0) THEN
+            xno3 = 0.0
+            ah2o = 1000.0*wh2o
+            ynh4 = twoso4
+            gno3 = tno3*mwhno3
+            gnh3 = (tnh4-ynh4)*mwnh3
+            aso4 = tso4*mwso4
+            ano3 = 0.0
+            anh4 = ynh4*mwnh4
+!            WRITE(*,*) 'TWO NON-POSITIVE ROOTS!!! '
+            RETURN
+          END IF
 
 !...choose minimum positve root
 
@@ -5206,12 +5232,12 @@ END SUBROUTINE sorgam_depdriver
 
 !...MAS, MAN and MNH4 are the aqueous concentrations of sulfate, nitrate
 !...  and ammonium in molal units (moles/(kg water) ).
-
+!PMA adds avoid cat and an to be < 0
           stion = 3.0*mas + man
           cat(1) = 0.0
-          cat(2) = mnh4
-          an(1) = mas
-          an(2) = man
+          cat(2) = max(mnh4,0.0)
+          an(1) = max(mas,0.0)
+          an(2) = max(man,0.0)
           an(3) = 0.0
           CALL actcof(cat,an,gams,molnu,phibar)
           gamaan = gams(2,2)
@@ -5351,13 +5377,13 @@ END SUBROUTINE sorgam_depdriver
 
 !...Convert 10**(-6) kg water/(cubic meter of air) to micrograms of wate
 !...  per cubic meter of air (1000 g = 1 kg)
-
+!PMA adds checker to avoid cat and an < 0.0
           wh2o = 1.0E-3*ah2o
-          cat(1) = hplus
-          cat(2) = mnh4
-          an(1) = mso4
-          an(2) = mna
-          an(3) = mhso4
+          cat(1) = max(hplus,0.0)
+          cat(2) = max(mnh4,0.0)
+          an(1) = max(mso4,0.0)
+          an(2) = max(mna,0.0)
+          an(3) = max(mhso4,0.0)
 !          print*,'actcof',cat(1),cat(2),an(1),an(2),an(3),gams,molnu,phibar
           CALL actcof(cat,an,gams,molnu,phibar)
 
@@ -6215,7 +6241,8 @@ END SUBROUTINE sorgam_depdriver
           drog(lcell,pcsl1) + drog(lcell,pcsl2)
         prod(psoaalk1) = drog(lcell,phc8)
         prod(psoaole1) = drog(lcell,poli1) + drog(lcell,poli2) + &
-          drog(lcell,poli3) + drog(lcell,polt1) + drog(lcell,poli2) + &
+!jdf bug  drog(lcell,poli3) + drog(lcell,polt1) + drog(lcell,poli2) + &
+          drog(lcell,poli3) + drog(lcell,polt1) + drog(lcell,polt2) + &
           drog(lcell,polt3)
         prod(psoaapi1) = drog(lcell,papi1) + drog(lcell,papi2) + &
           drog(lcell,papi3)

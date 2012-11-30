@@ -141,6 +141,10 @@ integer::oops1,oops2
 
       LOGICAL :: any_valid_points
       INTEGER :: i_valid , j_valid
+      
+      !  Vert interpolation in WRF
+
+      INTEGER :: k_max_p , k_min_p
 
 !-- Carsel and Parrish [1988]
         REAL , DIMENSION(100) :: lqmi
@@ -429,6 +433,39 @@ integer::oops1,oops2
       !  vertical locations already.
 
       IF ( flag_metgrid .EQ. 1 ) THEN  !   <----- START OF VERTICAL INTERPOLATION PART ---->
+
+
+         num_metgrid_levels = grid%num_metgrid_levels
+
+         !  At the location of maximum pressure in the column, get the temperature and height.  These
+         !  will be written out and could be used for vertical interpolation - to avoid extrapolation.
+         !  Hey, we can also do minimum values, too.
+
+         DO j=jts,jte
+            DO i=its,ite
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+               grid%max_p(i,j) = grid%p_gc(i,1,j) 
+               k_max_p = 1
+               IF      ( grid%p_gc(i,2,j) .GT. grid%max_p(i,j) ) THEN
+                  grid%max_p(i,j) = grid%p_gc(i,2,j)
+                  k_max_p = 2
+               ELSE IF ( grid%p_gc(i,num_metgrid_levels,j) .GT. grid%max_p(i,j) ) THEN
+                  grid%max_p(i,j) = grid%p_gc(i,num_metgrid_levels,j)
+                  k_max_p = num_metgrid_levels
+               END IF
+               grid%t_max_p(i,j) = grid%t_gc(i,k_max_p,j)
+               grid%ght_max_p(i,j) = grid%ght_gc(i,k_max_p,j)
+
+               grid%min_p(i,j) = grid%p_gc(i,num_metgrid_levels,j) 
+               k_min_p = num_metgrid_levels
+               IF      ( grid%p_gc(i,2,j) .LT. grid%min_p(i,j) ) THEN
+                  grid%min_p(i,j) = grid%p_gc(i,2,j)
+                  k_min_p = 2
+               END IF
+               grid%t_min_p(i,j) = grid%t_gc(i,k_min_p,j)
+               grid%ght_min_p(i,j) = grid%ght_gc(i,k_min_p,j)
+            END DO
+         END DO
 
          !  If this is data from the PINTERP program, it is emulating METGRID output.
          !  One of the caveats of this data is the way that the vertical structure is

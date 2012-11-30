@@ -30,11 +30,12 @@ module da_crtm
    use da_control, only : trace_use, crtm_cloud, gravity,stdout, biascorr, &
       biasprep, qc_rad,missing_r,rtminit_sensor,rtminit_nsensor, filename_len, &
       use_error_factor_rad,read_biascoef, analysis_date,time_window_max, &
-      time_window_min,num_fgat_time,rtminit_platform, &
-      rtminit_satid, global,kms,kme,ims,ime,jms,jme,kts,kte,use_airs_mmr, &
+      time_window_min,num_fgat_time,rtminit_platform, print_detail_rad, &
+      rtminit_satid, global,kms,kme,ims,ime,jms,jme,kts,kte,use_clddet_mmr, &
       use_crtm_kmatrix, use_varbc, freeze_varbc, use_pseudo_rad, &
       use_antcorr, time_slots, use_satcv, use_simulated_rad, simulated_rad_io, &
-      simulated_rad_ngrid, interp_option, use_mspps_emis, use_mspps_ts, calc_weightfunc
+      simulated_rad_ngrid, interp_option, use_mspps_emis, use_mspps_ts, calc_weightfunc, &
+	  use_clddet_ecmwf,its,ite,jts,jte	  
    use da_interpolation, only : da_interp_lin_2d_partial,da_interp_lin_2d_adj_partial, &
       da_interp_2d_partial
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_reals

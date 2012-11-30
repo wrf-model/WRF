@@ -109,8 +109,8 @@ CONTAINS
     OPEN(unit=27, file="namelist.input", form="formatted", status="old")
     READ(27,nml=logging,iostat=iostat)
     if(iostat /= 0) then
-       write(0,*) 'Error reading namelist &logging from namelist.input.  Using default logging config.'
-       write(6,*) 'Error reading namelist &logging from namelist.input.  Using default logging config.'
+       write(0,*) 'Namelist logging not found in namelist.input. Using registry defaults for variables in logging.'
+       write(6,*) 'Namelist logging not found in namelist.input. Using registry defaults for variables in logging.'
 #      ifdef _WIN32
           FLUSH(0)
 #      endif

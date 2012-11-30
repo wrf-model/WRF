@@ -14,7 +14,6 @@ while [ $# -ge 1 ]; do
       -d) opt_level="-d" ;;
       -s) opt_level="-s" ;;
       -f) opt_level="-f" ;;
-      -oldf) opt_level="oldf" ;;
       -h) print_usage="yes" ;;
       -help) print_usage="yes" ;;
       -os) shift ; WRF_OS=$1 ;;
@@ -624,7 +623,7 @@ EOF
     echo Testing for NetCDF, C and Fortran compiler
     echo
 
-    ar p $NETCDF/lib/libnetcdf.a `ar t $NETCDF/lib/libnetcdf.a | grep -E '*\.o' | head -n 1 | sed 's/://'` > ${foo}.o
+    ar p $NETCDF/lib/libnetcdf.a `ar t $NETCDF/lib/libnetcdf.a | grep -E '\.o' | head -n 1 | sed 's/://'` > ${foo}.o
     netcdf_arch="`file ${foo}.o | grep -o -E '[0-9]{2}-bit|i386'`"
     rm ${foo}.o
 

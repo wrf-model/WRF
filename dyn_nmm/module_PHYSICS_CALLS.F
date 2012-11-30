@@ -1418,6 +1418,7 @@
      &               ,I_START=GRID%I_START,I_END=GRID%I_END           &
      &               ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &               ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
+     &               ,CTOPO=grid%ctopo,CTOPO2=grid%ctopo2             &
 #if (NMM_CORE==1)
      &               ,DISHEAT=DISHEAT,  RTHRATEN=RTHRATEN             &
 #endif

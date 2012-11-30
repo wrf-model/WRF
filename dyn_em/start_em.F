@@ -25,7 +25,7 @@
 
    USE module_physics_init
    USE module_fr_sfire_driver_wrf, ONLY : sfire_driver_em_init
-   USE module_stoch, ONLY : SETUP_STOCH,rand_seed, update_stoch
+   USE module_stoch, ONLY : SETUP_STOCH, update_stoch
 #ifdef WRF_CHEM
    USE module_aerosols_sorgam, ONLY: sum_pm_sorgam
    USE module_gocart_aerosols, ONLY: sum_pm_gocart
@@ -103,8 +103,8 @@
    REAL :: w_max, w_min
    LOGICAL :: w_needs_to_be_set
 !  
-! paj: define variable local
-   REAL    :: alpha
+! Define variables local (topo_wind local vars)
+   REAL    :: alpha, vfac
 
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
@@ -188,19 +188,11 @@
         ( .NOT. grid%did_stoch ) ) THEN
 
      grid%did_stoch = .TRUE.
-     IF ( wrf_dm_on_monitor () ) THEN
-       CALL rand_seed ( config_flags, grid%SEED1, grid%SEED2, grid%NENS )
-     ENDIF
-#ifdef DM_PARALLEL
-     CALL wrf_dm_bcast_bytes ( grid%SEED1, IWORDSIZE )
-     CALL wrf_dm_bcast_bytes ( grid%SEED2, IWORDSIZE )
-#endif
 
      call SETUP_STOCH(grid%VERTSTRUCC,grid%VERTSTRUCS,                   &
                       grid%SPT_AMP,grid%SPSTREAM_AMP,                    &
                       grid%stoch_vertstruc_opt,                          & 
-                      grid%SEED1,grid%SEED2,grid%time_step,              &
-                      grid%DX,grid%DY,                                   &
+                      grid%time_step,grid%DX,grid%DY,grid%NENS,          &
                       grid%TOT_BACKSCAT_PSI,grid%TOT_BACKSCAT_T,         &
                       ids, ide, jds, jde, kds, kde,                      &
                       ims, ime, jms, jme, kms, kme,                      &
@@ -1042,6 +1034,20 @@
                   endif
                endif
             endif
+         ENDDO
+         ENDDO
+!       if topo_wind==2 (D.Ovens, C.Mass)
+       else if (config_flags%topo_wind.eq.2) then
+         DO j = jts,min(jte,jde-1)
+         DO i = its, min(ite,ide-1)
+           if (grid%xland(i,j).lt.1.5) then
+              vfac = amin1(1.575,(grid%var2d(i,j)*0.4/200.+1.175))
+              vfac = vfac * vfac
+           else                      ! over water, leave it alone
+              vfac = 1.
+           endif
+         print *, j,i,grid%ctopo(i,j),vfac
+           grid%ctopo(i,j)=grid%ctopo(i,j)*vfac
          ENDDO
          ENDDO
        endif

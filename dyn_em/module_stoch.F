@@ -51,7 +51,7 @@ module module_stoch
 !     ----------Fields for spectral transform -----------
 
       INTEGER :: LENSAV
-      INTEGER,ALLOCATABLE:: wavenumber_k(:), wavenumber_l(:)
+      INTEGER,ALLOCATABLE:: wavenumber_k(:), wavenumber_l(:),ISEED(:)
       REAL, ALLOCATABLE :: WSAVE1(:),WSAVE2(:)
 
 !     --------- Others -------------------------------------------------
@@ -73,14 +73,16 @@ contains
                        VERTSTRUCC,VERTSTRUCS,                        & 
                        SPT_AMP,SPSTREAM_AMP,                         & 
                        stoch_vertstruc_opt,                          &
-                       ISEED1,ISEED2,itime_step,DX,DY,               &
+                       itime_step,DX,DY,NENS,                        &
                        TOT_BACKSCAT_PSI,TOT_BACKSCAT_T,              &
                        ids, ide, jds, jde, kds, kde,                 &
                        ims, ime, jms, jme, kms, kme,                 &
                        its, ite, jts, jte, kts, kte                  )
 
+      USE module_configure
       IMPLICIT NONE
-      INTEGER :: IER,IK,IL,iseed1,iseed2,I,J
+      TYPE (grid_config_rec_type)                       :: config_flags
+      INTEGER :: IER,IK,IL,I,J
       INTEGER :: itime_step,stoch_vertstruc_opt
       INTEGER :: KMAX,LMAX,LENSAV,ILEV
       INTEGER , INTENT(IN)     ::  ids, ide, jds, jde, kds, kde,   &
@@ -91,9 +93,8 @@ contains
       REAL, DIMENSION (ims:ime,kms:kme,jms:jme) :: VERTSTRUCC,VERTSTRUCS
       REAL, DIMENSION (ims:ime,jms:jme)         :: SPSTREAM_AMP,SPT_AMP
       REAL, DIMENSION (ids:ide,jds:jde)         :: ZCHI,ZCHIT
+      INTEGER :: how_many, nens
       LOGICAL :: is_print = .true.
-      INTEGER , ALLOCATABLE , DIMENSION(:) :: iseed
-      INTEGER :: how_many
 
       LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
 
@@ -324,22 +325,21 @@ contains
         ENDDO
       END IF
              
-!      Set seed for random number generator 
+!     Allocate field for seed and set seed for random number generator 
 
        CALL random_seed(size=how_many)
-       ALLOCATE(iseed(how_many))
+       IF ( ALLOCATED(ISEED)      ) DEALLOCATE(ISEED)
+       ALLOCATE (ISEED(how_many))
+       iseed=0
        IF ( wrf_dm_on_monitor() ) THEN
-          iseed=0
-          iseed(1) = iseed1
-          iseed(2) = iseed2
-          call random_seed(put=iseed(1:how_many))   ! set random seed on monitor.
-          call random_seed(get=iseed(1:how_many))
+          iseed(1) = 7654321 
+          iseed(2) = 2*(nens*811)+1
+          call random_seed(put=iseed)   ! set random seed on monitor.
        END IF
 #ifdef DM_PARALLEL
-       CALL wrf_dm_bcast_integer ( iseed , how_many )
-       CALL random_seed(put=iseed(1:how_many))   ! set random seed on each proc
+       CALL wrf_dm_bcast_integer ( iseed , how_many )  
 #endif
- 
+
        END subroutine SETUP_STOCH
 
 !     ------------------------------------------------------------------
@@ -349,6 +349,7 @@ contains
       subroutine UPDATE_STOCH(                                         & 
                        SPSTREAMFORCS,SPSTREAMFORCC,SPTFORCS,SPTFORCC,  &
                        SPT_AMP,SPSTREAM_AMP,                           &
+                       itime,ij,                                       & 
                        ids, ide, jds, jde, kds, kde,                   &
                        ims, ime, jms, jme, kms, kme,                   &
                        its, ite, jts, jte, kts, kte                    )
@@ -361,32 +362,50 @@ contains
                                                 ims, ime, jms, jme, kms, kme,   &
                                                 its, ite, jts, jte, kts, kte
     
-      REAL :: Z
-      INTEGER ::IL, IK,LMAX,KMAX
+      REAL :: Z, thresh 
+      INTEGER ::IL, IK,LMAX,KMAX,i,itime,ij,llmax,kkmax,how_many
       LOGICAL :: LGAUSS
 
       KMAX=(jde-jds)+1 !NLAT
       LMAX=(ide-ids)+1 !NATX
 
+
 !     Pick the distribution of the noise
 !     Random noise uses global indexes to ensure necessary symmetries and anti-symmetries
 !     of random forcing when run on multiple processors
+
+      CALL random_seed(size=how_many)
+      call random_seed(put=iseed)
+
       LGAUSS=.false.
+      thresh=3.0  ! Set threshold to ensure stability
       IF (LGAUSS) then
-        DO IK=jds,jde
+        DO IK=jds,int(jde/2.0)+2
           DO IL=ids,ide
-            call gauss_noise(z)
+            do 
+              call gauss_noise(z)
+              if (abs(z).le.thresh) exit
+            enddo
             ZRANDNOSS1(IL,IK)=z
-            call gauss_noise(z)
+            do 
+              call gauss_noise(z)
+              if (abs(z).le.thresh) exit
+            enddo
             ZRANDNOSC1(IL,IK)=z
-            call gauss_noise(z)
+            do 
+              call gauss_noise(z)
+              if (abs(z).le.thresh) exit
+            enddo
             ZRANDNOSS2(IL,IK)=z
-            call gauss_noise(z)
+            do 
+              call gauss_noise(z)
+              if (abs(z).le.thresh) exit
+            enddo
             ZRANDNOSC2(IL,IK)=z
           ENDDO
         ENDDO
       ELSE
-        DO IK=jds,jde
+        DO IK=jds,int(jde/2.0)+2
           DO IL=ids,ide
             CALL RANDOM_NUMBER(z)
             ZRANDNOSS1(IL,IK)=z-0.5
@@ -399,6 +418,7 @@ contains
           ENDDO
         ENDDO
       ENDIF
+      call random_seed(get=iseed)
 
 !     Note: There are symmetries and anti-symmetries to ensure real-valued back transforms
       DO IK=jts,jte
@@ -411,6 +431,7 @@ contains
         ENDDO
       endif
       ENDDO
+
 
       DO IK=jts,jte
       if (IK.ge.(KMAX/2+1))then
@@ -872,67 +893,4 @@ contains
 
      end subroutine gauss_noise
 !     ------------------------------------------------------------------
-     SUBROUTINE rand_seed (config_flags, seed1, seed2,nens )
-      USE module_configure
-      IMPLICIT NONE
-!
-!  Structure that contains run-time configuration (namelist) data for domain
-      TYPE (grid_config_rec_type)                       :: config_flags
-!
-! Arguments
-     INTEGER, INTENT(OUT) :: seed1, seed2
-     INTEGER, INTENT(IN ) :: nens
-
-! Local
-      integer            :: date_time(8)
-      integer*8          :: yyyy,mmdd,newtime
-      integer*8          :: ihr,isc,idiv
-      integer*8          :: iphys
-      character (len=10) :: real_clock(3), time
-!
-      LOGICAL :: is_print = .false.
-!
-! Read CPU time
-        call date_and_time(real_clock(1), real_clock(2),&
-                           real_clock(3), date_time)
-        read(real_clock(1),'(i4)') yyyy
-        read(real_clock(1),'(4x,i4)') mmdd
-        read(real_clock(2),'(i6,1x,i3)') ihr,isc        ! ihr = hhmmss , isc - milliseconds of the minute
-        newtime = yyyy*mmdd+ihr+isc
-        if (is_print) then
-        print*,'real_clock: ',real_clock
-        print*,'real_clock(1): ',real_clock(1)
-        print*,'real_clock(2): ',real_clock(2)
-        print*,'real_clock(3): ',real_clock(3)
-        print*,'date_time: ',date_time
-        print*,'newtime: ',newtime
-!
-!  get a seed number (w/ physics options for each ensemble member)
-!
-        print *,'physics_options:',&
-                config_flags%sf_surface_physics,&
-                config_flags%ra_lw_physics, &
-                config_flags%ra_sw_physics, &
-                config_flags%mp_physics, &
-                config_flags%sf_sfclay_physics,&
-                config_flags%bl_pbl_physics,&
-                config_flags%cu_physics
-        endif !isprint
-
-        iphys = config_flags%sf_surface_physics * 1000000  + &
-                config_flags%ra_lw_physics      * 100000   + &
-                config_flags%ra_sw_physics      * 10000    + &
-                config_flags%mp_physics         * 1000     + &
-                config_flags%sf_sfclay_physics  * 100      + &
-                config_flags%bl_pbl_physics     * 10       + &
-                config_flags%cu_physics
- 
- 
-        idiv=2;
-        seed1 = newtime+iphys+nens*1000000
-        seed2 = mod(newtime+iphys+nens*1000000,idiv)
-        if(is_print) print *,'Rand_seed (iphys/newtime/idiv):',iphys,newtime,idiv,nens
-
-        end SUBROUTINE rand_seed
-
-        end module module_stoch
+      end module module_stoch

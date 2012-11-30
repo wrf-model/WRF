@@ -39,6 +39,7 @@ module da_setup_structures
       vert_corr,max_vert_var5,power_truncation,alpha_truncation, &
       print_detail_regression,gas_constant, use_airsretobs, &
       filename_len, use_ssmisobs, gravity, t_triple, use_hirs4obs, use_mhsobs, &
+      use_atmsobs,    &
       vert_corr_2, alphacv_method_xa, vert_evalue_global, &
       vert_evalue_local, obs_names, num_ob_indexes, &
       sound, mtgirs,tamdar, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
@@ -57,7 +58,7 @@ module da_setup_structures
       fmt_info, fmt_srfc, fmt_each, unit_end, max_ext_its, &  
       psi_chi_factor, psi_t_factor, psi_ps_factor, psi_rh_factor, &
       chi_u_t_factor, chi_u_ps_factor,chi_u_rh_factor, t_u_rh_factor, ps_u_rh_factor, &
-      interpolate_stats, be_eta, thin_rainobs, fgat_rain_flags
+      interpolate_stats, be_eta, thin_rainobs, fgat_rain_flags, use_iasiobs
 
    use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info, da_store_obs_grid_info_bufr, &
                       da_fill_obs_structures_rain

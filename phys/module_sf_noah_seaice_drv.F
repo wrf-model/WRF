@@ -2,9 +2,10 @@ module module_sf_noah_seaice_drv
   use module_sf_noah_seaice
   implicit none
 contains
-  subroutine seaice_noah( SEAICE_ALBEDO_OPT,                                            &
+  subroutine seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_THICKNESS_OPT,                      &
        &                  T3D, QV3D, P8W3D, DZ8W, NUM_SOIL_LAYERS, DT, FRPCPN, SR,      &
        &                  GLW, SWDOWN, RAINBL, SNOALB2D, QGH, XICE, XICE_THRESHOLD,     &
+       &                  ICEDEPTH,                                                     &
        &                  TSLB, EMISS, ALBEDO, ALBBCK, Z02D, TSK, SNOW, SNOWC, SNOWH2D, &
        &                  CHS, CHS2, CQS2,                                              &
        &                  RIB, ZNT, LH, HFX, QFX, POTEVP, GRDFLX, QSFC, ACSNOW,         &
@@ -21,6 +22,7 @@ contains
     implicit none
 
     INTEGER, INTENT(IN)       ::               SEAICE_ALBEDO_OPT
+    INTEGER, INTENT(IN)       ::               SEAICE_THICKNESS_OPT
 
     INTEGER, INTENT(IN)       ::                            IDS, &
          &                                                  IDE, &
@@ -94,6 +96,9 @@ contains
          &                                              NOAHRES, &
          &                                                 CHS2
 
+    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
+         &   INTENT (INOUT)   ::                        ICEDEPTH
+
     INTEGER, INTENT (IN)      ::               SF_URBAN_PHYSICS
     REAL,    OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme )  , &
          &   INTENT (INOUT)   ::                        B_Q_BEP, &
@@ -117,6 +122,7 @@ contains
     REAL    :: DQSDT2
     REAL    :: SNOALB
     REAL    :: TBOT
+    REAL    :: SITHICK
 
     REAL    :: ALBEDOK
     REAL    :: ALBBRD
@@ -164,6 +170,8 @@ contains
     REAL, PARAMETER  :: ELIW   = XLF
     REAL, PARAMETER  :: ROWLIW = ROW * ELIW
 
+    CHARACTER(len=80) :: message
+
     FDTLIW = DT / ROWLIW
     FDTW   = DT / ( XLV * RHOWATER )
 
@@ -173,7 +181,30 @@ contains
        SEAICE_ILOOP : do I = ITS, ITE
 
           ! Skip the points that are not sea-ice points.
-          if ( XICE(I,J) < XICE_THRESHOLD ) CYCLE SEAICE_ILOOP
+          IF ( XICE(I,J) < XICE_THRESHOLD ) THEN
+              ICEDEPTH(I,J) = 0.0
+              CYCLE SEAICE_ILOOP
+          ENDIF
+
+          SELECT CASE ( SEAICE_THICKNESS_OPT )
+          CASE DEFAULT
+              WRITE(message,'("Namelist value for SEAICE_THICKNESS_OPT not recognized: ",I6)') SEAICE_THICKNESS_OPT
+              CALL wrf_error_fatal(message)
+          CASE (0)
+              ! Use uniform 3 m sea-ice thickness.
+              SITHICK = 3.0
+          CASE (1)
+              ! Use the sea-ice as read in from the input files.
+              ! Limit the to between 0.10 and 10.0 m.
+              IF ( ICEDEPTH(I,J) < -1.E6 ) THEN
+                  call wrf_message("Field ICEDEPTH not found in input files.")
+                  call wrf_message(".... Namelist SEAICE_THICKNESS_OPT=1 requires ICEDEPTH field.")
+                  call wrf_message(".... Try namelist option SEAICE_THICKNESS_OPT=0.")
+                  call wrf_error_fatal("SEAICE_THICKNESS_OPT")
+              ENDIF
+              SITHICK = MIN ( MAX ( 0.10 , ICEDEPTH(I,J) ) , 10.0 )
+          END SELECT
+          ICEDEPTH(I,J) = SITHICK
 
           SFCTMP = T3D(I,1,J)
           T1     = TSK(I,J)
@@ -317,6 +348,7 @@ contains
 
           call sflx_seaice(I, J, SEAICE_ALBEDO_OPT,                         &    !C
                &           FFROZP, DT, ZLVL, NSOIL,                         &    !C
+               &           SITHICK,                                         &
                &           LWDN, SOLNET, SFCPRS, PRCP, SFCTMP, Q2,          &    !F
                &           TH2, Q2SAT, DQSDT2,                              &    !I
                &           ALBBRD, SNOALB, TBOT, Z0BRD, Z0, EMISSI,         &    !S

@@ -22,6 +22,7 @@ CONTAINS
 !
   SUBROUTINE SFLX_SEAICE (IILOC, JJLOC, SEAICE_ALBEDO_OPT,                 &    !C
        &                  FFROZP,DT,ZLVL,NSOIL,                            &    !C
+       &                  SITHICK,                                         &
        &                  LWDN,SOLNET,SFCPRS,PRCP,SFCTMP,Q2,               &    !F
        &                  TH2,Q2SAT,DQSDT2,                                &    !I
        &                  ALB, SNOALB,TBOT, Z0BRD, Z0, EMISSI,             &    !S
@@ -155,6 +156,7 @@ CONTAINS
       REAL, INTENT(INOUT):: CH,                         &
                             SNEQV,SNCOVR,SNOWH,T1,Z0BRD,                    &
                             EMISSI, ALB
+      REAL, INTENT(IN)   :: SITHICK
       REAL, INTENT(INOUT):: RIBB
       REAL, DIMENSION(1:NSOIL), INTENT(INOUT) ::  STC
       REAL,DIMENSION(1:NSOIL)::   ZSOIL
@@ -196,11 +198,11 @@ CONTAINS
       SNOMLT = 0.0
 
 ! ----------------------------------------------------------------------
-! SEA-ICE LAYERS ARE EQUAL THICKNESS AND SUM TO 3 METERS
+! SEA-ICE LAYERS ARE EQUAL THICKNESS AND SUM TO <SITHICK> METERS
 ! ----------------------------------------------------------------------
 
       DO KZ = 1,NSOIL
-         ZSOIL (KZ) = -3.* FLOAT (KZ)/ FLOAT (NSOIL)
+         ZSOIL (KZ) = -SITHICK * FLOAT (KZ) / FLOAT (NSOIL)
       END DO
 
 ! ----------------------------------------------------------------------

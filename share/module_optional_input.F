@@ -621,7 +621,7 @@ USE module_io_domain
                  ims, ime, jms, jme, kms, kme, &
                  its, ite, jts, jte, kts, kte
 
-      INTEGER :: itmp , icnt , ierr
+      INTEGER :: itmp , icnt , ierr, i, j
 
       flag_name = '                                                                                '
 
@@ -639,6 +639,18 @@ USE module_io_domain
       IF ( ierr .EQ. 0 ) THEN
          flag_icefrac  = itmp
       END IF
+
+      !
+      !  If ice depth is not found, set it to a large negative
+      !  that we can check on later.
+      !
+      IF ( flag_icedepth == 0 ) THEN
+          DO j = jts , MIN(jde-1,jte)
+              DO i = its , MIN(ide-1,ite)
+                  grid%icedepth(i,j) = -1.E8
+              ENDDO
+          ENDDO
+      ENDIF
     
    END SUBROUTINE optional_ice
 

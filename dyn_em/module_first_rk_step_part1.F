@@ -393,6 +393,7 @@ BENCH_START(surf_driver_tim)
      &        ,HT=grid%ht              ,IFSNOW=config_flags%ifsnow      ,ISFFLX=config_flags%isfflx      &
      &        ,FRACTIONAL_SEAICE=config_flags%fractional_seaice           &
      &        ,SEAICE_ALBEDO_OPT=config_flags%seaice_albedo_opt           &
+     &        ,SEAICE_THICKNESS_OPT=config_flags%seaice_thickness_opt     &
      &        ,TICE2TSK_IF2COLD=config_flags%tice2tsk_if2cold             &
      &        ,ISLTYP=grid%isltyp      ,ITIMESTEP=grid%itimestep, JULIAN_IN=grid%julian                  &
      &        ,IVGTYP=grid%ivgtyp      ,LH=grid%lh              ,LOWLYR=grid%lowlyr      &
@@ -431,7 +432,7 @@ BENCH_START(surf_driver_tim)
      &        ,V_PHY=v_phy             ,WARM_RAIN=grid%warm_rain                    &
      &        ,WSPD=wspd               ,XICE=grid%xice     ,XLAND=grid%xland        &
      &        ,Z0=grid%z0              ,Z=grid%z        ,ZNT=grid%znt            &
-     &        ,ZS=grid%zs              ,XICEM=grid%xicem   ,ISICE=grid%landuse_isice&
+     &        ,ZS=grid%zs              ,ICEDEPTH=grid%icedepth, XICEM=grid%xicem   ,ISICE=grid%landuse_isice &
      &        ,USTM=grid%ustm          ,CK=grid%ck         ,CKA=grid%cka            &
      &                                 ,CD=grid%cd         ,CDA=grid%cda            &
      &        ,ISFTCFLX=config_flags%isftcflx, IZ0TLND=config_flags%iz0tlnd         &

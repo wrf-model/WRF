@@ -207,6 +207,10 @@ CONTAINS
 
       Z0BRD = 0.001 
       ALB = 0.55
+!      ALB = 0.82  ! Arctic pre-melt spring and post-melt autumn
+!      ALB = 0.80  ! Antarctica
+!      ALB = 0.50  ! Arctic mid-summer (ice and melt ponds)
+!      ALB = 0.65  ! Arctic bare ice with no snow and no melt ponds
 
 ! ----------------------------------------------------------------------
 !  INITIALIZE PRECIPITATION LOGICALS.
@@ -314,6 +318,10 @@ CONTAINS
          SNCOVR = 1.0
          EMISSI = 0.98
          ALBEDO = 0.80
+!        ALBEDO = 0.82  ! Arctic pre-melt spring and post-melt autumn
+!        ALBEDO = 0.80  ! Antarctica
+!        ALBEDO = 0.50  ! Arctic mid-summer (ice and melt ponds)
+!        ALBEDO = 0.65  ! Arctic bare ice with no snow and no melt ponds
 
       CASE ( 1 ) ! Arctic sea-ice albedo from Mills (2011)
 
@@ -380,10 +388,6 @@ CONTAINS
 ! MID-LAYER SOIL TEMPERATURE
 ! ----------------------------------------------------------------------
       DF1 = DF1A * SNCOVR + DF1 * ( 1.0 - SNCOVR )
-      
-      IF ( DTOT .GT. 2.*DSOIL ) then
-         DTOT = 2.*DSOIL
-      ENDIF
       
       SSOIL = DF1 * ( T1 - STC(1) ) / DTOT
 
@@ -895,10 +899,6 @@ CONTAINS
 ! ----------------------------------------------------------------------
     ELSE
        T1 = TFREEZ * SNCOVR ** SNOEXP + T12 * (1.0- SNCOVR ** SNOEXP)
-
-       IF ( DTOT .GT. 2.0*DSOIL ) THEN
-          DTOT = 2.0*DSOIL
-       ENDIF
        SSOIL = DF1 * (T1- STC (1)) / DTOT
 
 ! ----------------------------------------------------------------------

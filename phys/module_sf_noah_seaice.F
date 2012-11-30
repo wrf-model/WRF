@@ -173,11 +173,10 @@ CONTAINS
       REAL :: RHO
       INTEGER  :: KZ, K
 
-      REAL :: T1Celsius
-      REAL :: SFCTcelsius
       REAL :: ALB_SNOW
       REAL :: ALB_ICE
       REAL :: Z0N
+      REAL :: SNCOVRR
 
 ! ----------------------------------------------------------------------
 ! DECLARATIONS - PARAMETERS
@@ -318,38 +317,39 @@ CONTAINS
 
       CASE ( 1 ) ! Arctic sea-ice albedo from Mills (2011)
 
-         Z0N = 0.10 ! Approximate roughness length of snow-covered surface
-         SNCOVR = SNOWH / ( SNOWH + Z0N ) ! Snow-cover fraction
-
-         ! 
-         ! Make albedo of snow on sea-ice a function of skin temperature
-         ! 
-         T1celsius = T1 - 273.15
-         IF (T1 < 268.0) THEN
+         !
+         ! Make albedo of snow on sea-ice a function of skin temperature:
+         !
+         IF (T1 < 268.15) THEN
             alb_snow = 0.8
-         ELSEIF ( ( T1 >= 268.0 ) .AND. ( T1 < 273.0 ) ) then
-            alb_snow = 0.65 - ( 0.03 * T1celsius )
+         ELSEIF ( ( T1 >= 268.15 ) .AND. ( T1 < 273.15 ) ) then
+            alb_snow = 0.65 - ( 0.03 * (T1 - 273.15) )
          ELSE
             alb_snow = 0.65
          ENDIF
 
-         ! 
+         !
          ! Make albedo of snow-free sea-ice a function of air temperature
-         ! 
-         SFCTcelsius = SFCTMP - 273.15
-         IF ( SFCTMP <= 273.0 ) THEN
+         !
+         IF ( SFCTMP <= 273.15 ) THEN
             alb_ice = 0.65
-         ELSEIF ( ( SFCTMP > 273.0 ) .and. ( SFCTMP < 278.0 ) ) THEN
-            alb_ice = 0.65 - ( 0.04 *SFCTcelsius )
+         ELSEIF ( ( SFCTMP > 273.15 ) .and. ( SFCTMP < 278.15 ) ) THEN
+            alb_ice = 0.65 - ( 0.04 * (SFCTMP - 273.15) )
          ELSE
             alb_ice = 0.45
          ENDIF
 
-         ! 
+         !
+         ! Define a snow-cover fraction for use only with Mills sea-ice albedo
+         !
+         Z0N = 0.10 ! Approximate roughness length of snow-covered surface
+         SNCOVRR = SNOWH / ( SNOWH + Z0N )
+
+         !
          ! Final albedo over sea-ice point is a combination of the snow 
          ! albedo and the snow-free ice albedo, weighted by the snow cover.
          !
-         ALBEDO = ( SNCOVR * alb_snow ) + ( ( 1.0 - SNCOVR ) * alb_ice )
+         ALBEDO = (SNCOVRR * alb_snow ) + ( ( 1.0 - SNCOVRR) * alb_ice )
 
       END SELECT
 

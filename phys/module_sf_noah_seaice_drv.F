@@ -243,8 +243,9 @@ contains
              ENDIF
           ENDIF
 
-          ! Sea-ice point has deep-level temperature of -2 C
-          TBOT = 271.16
+          ! Sea-ice point has deep-level temperature of about -1.8 C
+          TBOT = 271.36
+          ! TBOT=273.15  ! appropriate value for lake ice.
 
           ! INTENT(IN) for SFLX_SEAICE, values unchanged by SFLX_SEAICE
           !       I           --

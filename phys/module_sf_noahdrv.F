@@ -729,13 +729,9 @@ CONTAINS
             IF(T1 .GT. 273. .AND. SNOWC(I,J) .GT. 0.)DQSDT2=DQSDT2*(1.-SNOWC(I,J))
           ENDIF
 
-          IF(ICE.EQ.1)THEN
-             ! Sea-ice point has deep-level temperature of -2 C
-             TBOT=271.16
-          ELSE
-             ! Land-ice or land points have the usual deep-soil temperature.
-             TBOT=TMN(I,J)
-          ENDIF
+          ! Land-ice or land points use the usual deep-soil temperature.
+          TBOT=TMN(I,J)
+
           IF(VEGTYP.EQ.25) SHDFAC=0.0000
           IF(VEGTYP.EQ.26) SHDFAC=0.0000
           IF(VEGTYP.EQ.27) SHDFAC=0.0000

@@ -550,18 +550,28 @@ framework :
 
 shared :
 	@ echo '--------------------------------------'
-	( cd share ; $(MAKE) $(J) )
+	if [ "`echo $(J) | sed -e 's/-j//g' -e 's/ \+//g'`" -gt "6" ] ; then \
+	  ( cd share ; $(MAKE) -j 6 ) ;  \
+	else \
+	  ( cd share ; $(MAKE) $(J) ) ;  \
+	fi
 
 chemics :
 	@ echo '--------------------------------------'
 	if [ $(WRF_KPP) -eq 1 ] ; then ( cd chem ; $(MAKE) ) ; fi
-	if [ $(WRF_KPP) -eq 0 ] ; then ( cd chem ; $(MAKE) $(J) ) ; fi
+	if [ $(WRF_KPP) -eq 0 ] ; then \
+	  if  [ "`echo $(J) | sed -e 's/-j//g' -e 's/ \+//g'`" -gt "16" ] ; then \
+	    ( cd share ; $(MAKE) -j 16 ) ;  \
+	  else \
+	    ( cd chem ; $(MAKE) $(J) ) ; \
+	  fi \
+	fi
 #	( cd chem ; $(MAKE) )
 #	( cd chem ; $(MAKE) $(J) )
 
 physics :
 	@ echo '--------------------------------------'
-	( cd phys ; $(MAKE)  $(J) )
+	( cd phys ; $(MAKE) )
 
 em_core :
 	@ echo '--------------------------------------'
@@ -595,7 +605,11 @@ exp_core :
 # uncomment the two lines after nmm_core for NMM
 nmm_core :
 	@ echo '--------------------------------------'
-	( cd dyn_nmm ; $(MAKE) )
+	if [ "`echo $(J) | sed -e 's/-j//g' -e 's/ \+//g'`" -gt "16" ] ; then \
+	  ( cd dyn_nmm ; $(MAKE) -j 16 ) ;  \
+	else \
+	  ( cd dyn_nmm ; $(MAKE) $(J) ) ;  \
+	fi
 
 toolsdir :
 	@ echo '--------------------------------------'

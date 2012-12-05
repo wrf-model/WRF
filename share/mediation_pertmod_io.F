@@ -115,7 +115,7 @@ SUBROUTINE save_tl_pert ( time )
    ENDIF
 
    WRITE(mess, FMT='(A,A)') 'Push tl. perturbation time_stamp:', TRIM(tl_pert_head%time)
-   CALL wrf_debug ( -500 , mess )
+   CALL wrf_debug ( 1 , mess )
 
 END SUBROUTINE save_tl_pert
 
@@ -153,7 +153,7 @@ SUBROUTINE save_ad_forcing ( time )
    ENDIF
 
    WRITE(mess, FMT='(A,A)') 'Push ad. forcing time_stamp:', TRIM(ad_forcing_head%time)
-   CALL wrf_debug ( -500 , mess )
+   CALL wrf_debug ( 1 , mess )
 
 END SUBROUTINE save_ad_forcing
 
@@ -214,7 +214,7 @@ SUBROUTINE read_tl_pert ( time )
 
    WRITE(mess, FMT='(A,A)') &
          'read tl. perturbation time stamp:', TRIM(tl_pert_current%time)
-   CALL wrf_debug ( -500 , mess )
+   CALL wrf_debug ( 1 , mess )
 
    call restore_ad_forcing (tl_pert_current%data)
 
@@ -246,7 +246,7 @@ SUBROUTINE read_ad_forcing ( time )
 
    WRITE(mess, FMT='(A,A)') &
          'read ad. forcing time stamp:', TRIM(ad_forcing_current%time)
-   CALL wrf_debug ( -500 , mess )
+   CALL wrf_debug ( 1 , mess )
 
    call restore_ad_forcing (ad_forcing_current%data)
 
@@ -399,7 +399,7 @@ SUBROUTINE save_xtraj ( time )
    ENDIF
 
    WRITE(mess, FMT='(A,A)') 'Push xtraj time_stamp:', TRIM(xtraj_head%time)
-   CALL wrf_debug ( -500 , mess )
+   CALL wrf_debug ( 1 , mess )
 
 END SUBROUTINE save_xtraj
 
@@ -419,7 +419,7 @@ SUBROUTINE read_xtraj ( time )
 
    WRITE(mess, FMT='(A,A)') &
          'read xtraj time stamp:', TRIM(xtraj_pointer%time)
-   CALL wrf_debug ( -500 , mess )
+   CALL wrf_debug ( 1 , mess )
 
    CALL restore_xtraj (xtraj_pointer%data)
 
@@ -443,7 +443,7 @@ SUBROUTINE read_xtraj_reverse ( time )
 
    WRITE(mess, FMT='(A,A)') &
          'read xtraj time stamp:', TRIM(xtraj_pointer%time)
-   CALL wrf_debug ( -500 , mess )
+   CALL wrf_debug ( 1 , mess )
 
    CALL restore_xtraj (xtraj_pointer%data)
 
@@ -470,7 +470,7 @@ SUBROUTINE read_nl_xtraj ( time )
 
       WRITE(mess, FMT='(A,A)') &
          'read nonlinear xtraj time stamp:', TRIM(xtraj_pointer%time)
-      CALL wrf_debug ( -500 , mess )
+      CALL wrf_debug ( 1 , mess )
 
       CALL restore_xtraj (xtraj_pointer%data)
 

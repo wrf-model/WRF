@@ -223,13 +223,13 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
              CALL domain_clock_get( grid, current_time=currTime, start_time=startTime, &
                                     current_timestr=timestr )
              WRITE(message, FMT='(A,A)') 'read xtraj from file at time stamp:', TRIM(timestr)
-             CALL wrf_debug ( 0 , message )
+             CALL wrf_debug ( 1 , message )
           ENDIF
           IF ( config_flags%dyn_opt .EQ. dyn_em_ad .AND. ialarm .EQ. auxinput7_only ) THEN
              CALL domain_clock_get( grid, current_time=currTime, start_time=startTime, &
                                     current_timestr=timestr )
              WRITE(message, FMT='(A,A)') 'read ad. forcing from file at time stamp:', TRIM(timestr)
-             CALL wrf_debug ( 0 , message )
+             CALL wrf_debug ( 1 , message )
           ENDIF
           IF ( ( config_flags%dyn_opt .EQ. dyn_em_ad .OR. config_flags%dyn_opt .EQ. dyn_em_tl ) &
                .AND. ialarm .EQ. auxinput6_only ) THEN
@@ -299,7 +299,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
        IF ( .NOT. grid%trajectory_io ) THEN
           WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed from aux input ' , &
              ialarm - first_auxinput + 1, ' for domain ',grid%id
-          CALL wrf_debug ( 0 , message )
+          CALL wrf_debug ( 1 , message )
        ENDIF
        ! Reverse the current time 
        IF ( config_flags%dyn_opt .EQ. dyn_em_ad .AND. ialarm .EQ. auxinput6_only  ) THEN
@@ -379,10 +379,10 @@ SUBROUTINE med_last_ad_solve_io ( grid , config_flags )
         CALL domain_clock_get( grid, current_time=currTime, start_time=startTime, &
                                current_timestr=timestr )
         WRITE(message, FMT='(A,A)') 'read ad. forcing from file at time stamp:', TRIM(timestr)
-        CALL wrf_debug ( 0 , message )
+        CALL wrf_debug ( 1 , message )
         WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed from aux input ' , &
              AUXINPUT7_ALARM - first_auxinput + 1, ' for domain ',grid%id
-        CALL wrf_debug ( 0 , message )
+        CALL wrf_debug ( 1 , message )
      ENDIF
      CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT7_ALARM ), rc=rc )
    ENDIF

@@ -1973,8 +1973,8 @@ END SUBROUTINE A_CALC_P_RHO_PHI
 !   with respect to varying inputs: y z
 SUBROUTINE A_VPOW(z, zb, y, yb, x, n)
   IMPLICIT NONE
-  REAL*8 :: x(*), y(*), z(*)
-  REAL*8 :: yb(*), zb(*)
+  REAL :: x(*), y(*), z(*)
+  REAL :: yb(*), zb(*)
   INTEGER :: j
   INTEGER :: n
   DO j=n,1,-1
@@ -13161,10 +13161,7 @@ SUBROUTINE A_THETA_RELAXATION(t_tendf, t_tendfb, t, tb, t_init, mut, &
   INTEGER :: ad_to
   INTEGER :: min2
   INTEGER :: min1
-  INTRINSIC MAX
   REAL :: tempb
-  INTRINSIC MIN
-  REAL :: g
 ! End declarations.
 !-----------------------------------------------------------------------
 ! set tau_r to 12 h, following RE87

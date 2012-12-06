@@ -524,7 +524,7 @@ SUBROUTINE restore_ad_forcing (data)
    !
    IMPLICIT NONE
 
-   REAL, DIMENSION(:), INTENT(OUT) :: data
+   REAL, DIMENSION(:), INTENT(INOUT) :: data
 
    INTEGER :: ns, ne, i
 

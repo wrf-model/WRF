@@ -1100,8 +1100,8 @@ END SUBROUTINE G_CALC_P_RHO_PHI
 !   with respect to varying inputs: y z
 SUBROUTINE G_VPOW(z, zd, y, yd, x, n)
   IMPLICIT NONE
-  REAL*8 :: x(*), y(*), z(*)
-  REAL*8 :: yd(*), zd(*)
+  REAL :: x(*), y(*), z(*)
+  REAL :: yd(*), zd(*)
   INTEGER :: j
   INTEGER :: n
   DO j=1,n
@@ -6723,9 +6723,6 @@ SUBROUTINE G_THETA_RELAXATION(t_tendf, t_tendfd, t, td, t_init, mut, &
   REAL, DIMENSION(kms:kme) :: z00d, t00d
   INTEGER :: min2
   INTEGER :: min1
-  INTRINSIC MAX
-  INTRINSIC MIN
-  REAL :: g
 ! End declarations.
 !-----------------------------------------------------------------------
 ! set tau_r to 12 h, following RE87

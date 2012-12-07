@@ -561,7 +561,7 @@ chemics :
 	if [ $(WRF_KPP) -eq 1 ] ; then ( cd chem ; $(MAKE) ) ; fi
 	if [ $(WRF_KPP) -eq 0 ] ; then \
 	  if  [ "`echo $(J) | sed -e 's/-j//g' -e 's/ \+//g'`" -gt "16" ] ; then \
-	    ( cd share ; $(MAKE) -j 16 ) ;  \
+	    ( cd chem ; $(MAKE) -j 16 ) ;  \
 	  else \
 	    ( cd chem ; $(MAKE) $(J) ) ; \
 	  fi \

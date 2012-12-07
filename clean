@@ -68,3 +68,10 @@ if ( -d chem ) then
   endif
 endif
 #cms--
+
+#wrf_hydro++
+  if( -d hydro) then
+    (cd hydro; make -f Makefile.comm clean)
+  endif
+#wrf_hydro--
+

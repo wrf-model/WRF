@@ -115,6 +115,7 @@ use module_scalar_tables
     LOGICAL, INTENT(IN), OPTIONAL                 ::  f_flux
 
 ! Local
+    real :: HYDRO_dt
     REAL, DIMENSION( ims:ime, jms:jme ) :: exch_temf  ! 1/7/09 WA
 
     REAL, DIMENSION( ims:ime, jms:jme ) :: ht_loc, mixht
@@ -379,7 +380,15 @@ BENCH_START(surf_driver_tim)
 
       CALL wrf_debug ( 200 , ' call surface_driver' )
 
+      if( grid%num_nests .lt. 1 )then
+          HYDRO_dt = 0
+      else
+          HYDRO_dt = -1
+      endif
+
       CALL surface_driver(                                                &
+     &        HYDRO_dt=HYDRO_dt,  sfcheadrt=grid%sfcheadrt,               &
+     &        INFXSRT=grid%INFXSRT,  soldrain=grid%soldrain,              &
      &         ACGRDFLX=grid%acgrdflx  ,ACHFX=grid%achfx        ,ACLHF=grid%aclhf        &
      &        ,ACSNOM=grid%acsnom      ,ACSNOW=grid%acsnow      ,AKHS=grid%akhs          &
      &        ,AKMS=grid%akms          ,ALBBCK=grid%albbck      ,ALBEDO=grid%albedo      &
@@ -615,6 +624,13 @@ BENCH_START(surf_driver_tim)
 !mynn mp
      &         ,ch=grid%ch,tsq=grid%tsq,qsq=grid%qsq,cov=grid%cov &
      &                                                              )
+
+#ifdef WRF_HYDRO
+        if(HYDRO_dt .gt. 1 ) call wrf_drv_HYDRO(HYDRO_dt, grid,  &
+     &     grid%i_start(1),min(grid%i_end(1), ide-1),      &
+     &     grid%j_start(1),min(grid%j_end(1), jde-1) )
+#endif
+
 BENCH_END(surf_driver_tim)
 
 !*********

@@ -1674,9 +1674,10 @@
      &            ,grid%dew                                            & ! RUC LSM
      &            ,grid%rc_mf                                          & ! QNSE
      &            ,GRID,CONFIG_FLAGS                                   &
-     &            ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                     &
-     &            ,GRID%DISHEAT                                             &
+     &            ,grid%ihe,grid%ihw,grid%ive,grid%ivw                 &
+     &            ,GRID%DISHEAT                                        &
      &            ,GRID%HPBL2D, GRID%EVAP2D, GRID%HEAT2D               &  !S&P Kwon
+     &            ,GRID%SFCHEADRT,GRID%INFXSRT,GRID%SOLDRAIN           &  !Hydrology, no-op right now
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)

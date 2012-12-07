@@ -63,6 +63,7 @@ wrf : framework_only
 	if [ $(WRF_EM_CORE) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core ; fi
 	if [ $(WRF_NMM_CORE) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" nmm_core ; fi
 	if [ $(WRF_EXP_CORE) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" exp_core ; fi
+	if [ $(WRF_HYDRO) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" wrf_hydro ; fi
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf )
 	( cd run ; /bin/rm -f wrf.exe ; ln -s ../main/wrf.exe . )
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
@@ -555,6 +556,10 @@ shared :
 	else \
 	  ( cd share ; $(MAKE) $(J) ) ;  \
 	fi
+
+wrf_hydro :
+	@ echo '----------wrf_hydro-----------------------'
+	if [ $(WRF_HYDRO) -eq 1 ]   ; then (cd hydro/WRF_cpl; make -f Makefile.cpl) ; fi
 
 chemics :
 	@ echo '--------------------------------------'

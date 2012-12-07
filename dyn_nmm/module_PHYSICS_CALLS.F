@@ -671,6 +671,7 @@
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,DISHEAT                                          &
      &                ,HPBL2D, EVAP2D, HEAT2D                           &  !Kwon S&P
+     &                ,SFCHEADRT,INFXSRT,SOLDRAIN                       &  !Hydrology, no-op right now
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -839,6 +840,9 @@
 !  For precip assimilation:
       LOGICAL,INTENT(IN) :: PCPFLG
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DDATA
+
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT)  :: SFCHEADRT         ! Hydrology, no-op right now
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: INFXSRT,SOLDRAIN  ! Hydrology, no-op right now
 !
 !-----------------------------------------------------------------------
 !***
@@ -1226,8 +1230,11 @@
 !-----------------------------------------------------------------------
 !
       CALL SET_TILES(GRID,IDS,IDE-1,JDS+1,JDE-1,ITS,ITE,JTS,JTE)
+
 !
       CALL SURFACE_DRIVER(                                              &
+     &           HYDRO_dt=-1.0,  SFCHEADRT=SFCHEADRT,                   &
+     &           INFXSRT=INFXSRT,  SOLDRAIN=SOLDRAIN,                   &
      &           ACSNOM=ACSNOM,ACSNOW=ACSNOW,AKHS=AKHS,AKMS=AKMS        &
      &          ,ALBEDO=ALBEDO,BR=BR,CANWAT=CMC,CHKLOWQ=CHKLOWQ         &
      &          ,DT=DT,DX=DX,DZ8W=DZ,DZS=DZSOIL,GLW=RLW_DN_SFC          &

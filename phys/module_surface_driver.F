@@ -4,6 +4,7 @@ MODULE module_surface_driver
 CONTAINS
 
    SUBROUTINE surface_driver(                                         &
+     &           HYDRO_dt,sfcheadrt,INFXSRT,soldrain,                 &
      &           acgrdflx,achfx,aclhf                                 &
      &          ,acsnom,acsnow,akhs,akms,albedo,br,canwat             &
      &          ,chklowq,dt,dx,dz8w,dzs,glw                           &
@@ -425,6 +426,11 @@ CONTAINS
    INTEGER, INTENT(IN ),OPTIONAL ::   YR
    REAL , INTENT(IN )::   U_FRAME
    REAL , INTENT(IN )::   V_FRAME
+
+  !added by Wei Yu for WRF_HYDRO 
+   real ::  HYDRO_dt
+   REAL, DIMENSION( ims:ime , jms:jme ):: sfcheadrt,INFXSRT, soldrain
+
 #if (NMM_CORE==1)
    real , intent(IN )::   SFENTH
 #endif
@@ -1840,6 +1846,11 @@ CONTAINS
             ENDIF
          ENDIF
 
+!added for WRF_HYDRO
+#ifdef WRF_HYDRO
+         if(HYDRO_dt .ge. 0) HYDRO_dt = dtbl
+#endif
+
          CALL wrf_debug(100,'in NOAH DRV')
          CALL lsm(dz8w,qv_curr,p8w,t_phy,tsk,                 &
                 hfx,qfx,lh,grdflx,qgh,gsw,swdown,glw,smstav,smstot,    &
@@ -1897,7 +1908,7 @@ CONTAINS
                 a_e_bep,b_u_bep,b_v_bep,                        & !O multi-layer urban
                 b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
-                )
+                ,sfcheadrt,INFXSRT, soldrain)
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_THICKNESS_OPT,                    &
               &            t_phy, qv_curr, p8w, dz8w, num_soil_layers, dt, frpcpn, sr, &

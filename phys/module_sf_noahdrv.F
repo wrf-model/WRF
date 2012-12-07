@@ -80,7 +80,7 @@ CONTAINS
                   a_u_bep,a_v_bep,a_t_bep,a_q_bep,              & !O multi-layer urban
                   a_e_bep,b_u_bep,b_v_bep,                      & !O multi-layer urban
                   b_t_bep,b_q_bep,b_e_bep,dlg_bep,              & !O multi-layer urban
-                  dl_u_bep,sf_bep,vl_bep                         )   !O multi-layer urban         
+                  dl_u_bep,sf_bep,vl_bep,sfcheadrt,INFXSRT, soldrain      )   !O multi-layer urban         
 
 !----------------------------------------------------------------
     IMPLICIT NONE
@@ -225,6 +225,14 @@ CONTAINS
    INTEGER,  INTENT(IN   )   ::  sf_urban_physics               !urban
    INTEGER,  INTENT(IN   )   ::  isurban
    INTEGER,  INTENT(IN   )   ::  isice
+
+!added by Wei Yu  for routing
+    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
+             INTENT(INOUT)  :: sfcheadrt,INFXSRT,soldrain 
+    real :: etpnd1
+!end added
+
+
 
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(IN   )    ::                            TMN, &
@@ -870,8 +878,14 @@ CONTAINS
                  RDLAI2D,USEMONALB,                               &
                  SNOTIME1,                                        &
                  RIBB,                                            &
-                 SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT)
+                 SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,               &
+                 sfcheadrt(i,j),                                   &    !I
+                 INFXSRT(i,j),ETPND1                          &    !O
+                 )
 
+#ifdef WRF_HYDRO
+                 soldrain(i,j) = RUNOFF2*DT*1000.0
+#endif
     ELSEIF (ICE == -1) THEN
 
        !
@@ -953,6 +967,15 @@ CONTAINS
         POTEVP(I,J)=POTEVP(I,J)+ETP*FDTW
           QFX(I,J)=ETA_KINEMATIC
           QFX_RURAL(I,J)=ETA_KINEMATIC
+
+#ifdef WRF_HYDRO
+!added by Wei Yu
+!         QFX(I,J) = QFX(I,J) + ETPND1
+!         ETA = ETA + ETPND1/2.501E6*dt
+!end added by Wei Yu
+#endif
+
+
           LH(I,J)=ETA
           LH_RURAL(I,J)=ETA
           GRDFLX(I,J)=SSOIL
@@ -1199,6 +1222,8 @@ CONTAINS
           DO NS=1,NSOIL
           SMCREL(I,NS,J)=SMAV(NS)
           ENDDO
+
+
 !         Convert the water unit into mm
           SFCRUNOFF(I,J)=SFCRUNOFF(I,J)+RUNOFF1*DT*1000.0
           UDRUNOFF(I,J)=UDRUNOFF(I,J)+RUNOFF2*DT*1000.0

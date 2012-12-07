@@ -25,6 +25,7 @@ be : \
 	gen_be_ep2.exe \
 	gen_be_stage1.exe \
 	gen_be_vertloc.exe \
+	gen_be_addmean.exe \
 	gen_be_stage1_gsi.exe \
 	gen_be_stage1_1dvar.exe	\
 	gen_be_stage2.exe \
@@ -212,5 +213,9 @@ gen_be_hist.exe : gen_be_hist.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 
 gen_be_vertloc.exe : gen_be_vertloc.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(SFC) -o gen_be_vertloc.exe $(LDFLAGS) $(GEN_BE_OBJS)  gen_be_vertloc.o $(GEN_BE_LIB)
+	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
+
+gen_be_addmean.exe : gen_be_addmean.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
+	$(SFC) -o gen_be_addmean.exe $(LDFLAGS) $(GEN_BE_OBJS)  gen_be_addmean.o $(GEN_BE_LIB)
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 

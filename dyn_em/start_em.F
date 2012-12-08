@@ -721,6 +721,7 @@
                       ims, ime, jms, jme, kms, kme,           &
                       grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), grid%j_end(ij), kts, kte, &
                       config_flags%num_urban_layers,                        & !multi-layer urban
+                      config_flags%num_urban_hi,                            & !multi-layer urban
                       grid%raincv_a,grid%raincv_b,                                    &
                       grid%gd_cloud, grid%gd_cloud2,                                  & ! Optional
                       grid%gd_cloud_a, grid%gd_cloud2_a,                              & ! Optional
@@ -753,6 +754,8 @@
                       grid%LF_AC_URB3D,grid%CM_AC_URB3D,grid%SFVENT_URB3D,grid%LFVENT_URB3D,   & !multi-layer urban
                       grid%SFWIN1_URB3D,grid%SFWIN2_URB3D, & !multi-layer urban
                       grid%SFW1_URB3D,grid%SFW2_URB3D,grid%SFR_URB3D,grid%SFG_URB3D,     & !multi-layer urban
+                      grid%LP_URB2D,grid%HI_URB2D,grid%LB_URB2D,grid%HGT_URB2D,        & !multi-layer urban
+                      grid%MH_URB2D,grid%STDH_URB2D,grid%LF_URB2D,                     & !SLUCM
                       grid%A_U_BEP,grid%A_V_BEP,grid%A_T_BEP,grid%A_Q_BEP,             & !multi-layer urban
                       grid%A_E_BEP,grid%B_U_BEP,grid%B_V_BEP,grid%B_T_BEP,             & !multi-layer urban
                       grid%B_Q_BEP,grid%B_E_BEP,grid%DLG_BEP,                          & !multi-layer urban

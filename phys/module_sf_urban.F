@@ -73,6 +73,8 @@ MODULE module_sf_urban
 !   INTEGER                         :: num_wall_layers
 !   INTEGER                         :: num_road_layers
 
+   CHARACTER (LEN=256) , PRIVATE   :: mesg
+
    CONTAINS
 
 !===============================================================================
@@ -274,8 +276,8 @@ MODULE module_sf_urban
                     SW,ALB,LW,G,RN,PSIM,PSIH,                         & ! O
                     GZ1OZ0,                                           & ! O
                     CMR_URB,CHR_URB,CMC_URB,CHC_URB,                  & ! I/O
-                    U10,V10,TH2,Q2,UST                                & ! O
-                    )
+                    U10,V10,TH2,Q2,UST,mh_urb,stdh_urb,lf_urb,        & ! O 
+                    lp_urb,hgt_urb,frc_urb,lb_urb,zo_check)
 
    IMPLICIT NONE
 
@@ -344,6 +346,17 @@ MODULE module_sf_urban
    REAL, INTENT(INOUT) :: CHR_URB
    REAL, INTENT(INOUT) :: CMC_URB
    REAL, INTENT(INOUT) :: CHC_URB
+!-------------------------------------------------------------------------------
+! I: NUDAPT Input Parameters
+!-------------------------------------------------------------------------------
+   REAL, INTENT(INOUT) :: mh_urb   ! mean building height [m]
+   REAL, INTENT(INOUT) :: stdh_urb ! standard deviation of building height [m]
+   REAL, INTENT(INOUT) :: hgt_urb  ! area weighted mean building height [m] 
+   REAL, INTENT(INOUT) :: lp_urb   ! plan area fraction [-]
+   REAL, INTENT(INOUT) :: frc_urb  ! urban fraction [-]
+   REAL, INTENT(INOUT) :: lb_urb   ! building surface to plan area ratio [-]
+   REAL, INTENT(INOUT), DIMENSION(4) :: lf_urb   ! frantal area index [-]
+   REAL, INTENT(INOUT) :: zo_check  ! check for printing ZOC
 
 !-------------------------------------------------------------------------------
 ! O: output variables from Urban to LSM 
@@ -474,7 +487,11 @@ MODULE module_sf_urban
 
    REAL :: TRP, TBP, TGP, TCP, QCP, TST, QST
 
-   INTEGER :: iteration, K 
+   REAL :: WDR,HGT2,BW,SW,DHGT
+   REAL, parameter :: VonK = 0.4
+   REAL :: lambda_f,Cd,alpha_macd,beta_macd,lambda_fr
+
+   INTEGER :: iteration, K, NUDAPT 
    INTEGER :: tloc
 
 !-------------------------------------------------------------------------------
@@ -498,6 +515,152 @@ MODULE module_sf_urban
 !end BEP
                    BOUNDR,BOUNDB,BOUNDG,CH_SCHEME,TS_SCHEME,      &
                    AKANDA_URBAN)
+
+! Glotfelty, 2012/07/05, NUDAPT Modification
+
+ if(mh_urb.gt.0.0)THEN 
+  !write(mesg,*) 'Mean Height NUDAPT',mh_urb
+  !call wrf_message(mesg)
+  !write(mesg,*) 'Mean Height Table',ZR
+  !call wrf_message(mesg)
+  if(zo_check.eq.1)THEN
+   write(mesg,*) 'Mean Height NUDAPT',mh_urb
+   call wrf_message(mesg)
+   write(mesg,*) 'Mean Height Table',ZR
+   call wrf_message(mesg)
+   write(mesg,*) 'Roughness Length Table',Z0C
+   call wrf_message(mesg)
+   write(mesg,*) 'Roof Roughness Length Table',Z0R
+   call wrf_message(mesg)
+   write(mesg,*) 'Sky View Factor Table',SVF
+   call wrf_message(mesg)
+   write(mesg,*) 'Normalized Height Table',HGT
+   call wrf_message(mesg)
+   write(mesg,*) 'Plan Area Fraction', lp_urb
+   call wrf_message(mesg)
+   write(mesg,*) 'Plan Area Fraction table', R
+   call wrf_message(mesg)
+  end if
+  !write(mesg,*) 'Area Weighted Mean Height',hgt_urb
+  !call wrf_message(mesg)
+  !write(mesg,*) 'Plan Area Fraction', lp_urb
+  !call wrf_message(mesg)
+  !write(mesg,*) 'STD Height', stdh_urb
+  !call wrf_message(mesg)
+  !write(mesg,*) 'Frontal Area Index',lf_urb
+  !call wrf_message(mesg)
+  !write(mesg,*) 'Urban Fraction',frc_urb
+  !call wrf_message(mesg)
+  !write(mesg,*) 'Building Surf Ratio',lb_urb
+  !call wrf_message(mesg)
+ 
+ !Calculate Building Width and Street Width Based on BEP formulation
+ if(lb_urb.gt.lp_urb)THEN
+  BW=2.*hgt_urb*lp_urb/(lb_urb-lp_urb)
+  SW=2.*hgt_urb*lp_urb*((frc_urb/lp_urb)-1.)/(lb_urb-lp_urb)
+  !write(mesg,*) 'Building Width',BW
+  !call wrf_message(mesg)
+  !write(mesg,*) 'Street Width',SW
+  !call wrf_message(mesg)
+ elseif (SW.lt.0.0.or.BW.lt.0.0)then
+  BW=BUILDING_WIDTH(1)
+  SW=STREET_WIDTH(1)
+ else
+    BW=BUILDING_WIDTH(1)
+  SW=STREET_WIDTH(1)
+ end if
+ 
+ !Assign NUDAPT Parameters
+   ZR = mh_urb
+    R = lp_urb
+    RW = 1.0-R
+   HGT = mh_urb/(BW+SW)
+   SIGMA_ZED = stdh_urb
+
+ !Calculate Wind Direction and Assign Appropriae lf_urb
+   !WDR = (180.0/PI)*ATAN2(U10,V10)
+   
+   IF(WDR.ge.0.0.and.WDR.lt.22.5)THEN
+     lambda_f = lf_urb(1)
+   ELSEIF(WDR.ge.-22.5.and.WDR.lt.0.0)THEN
+     lambda_f = lf_urb(1)
+   ELSEIF(WDR.gt.157.5.and.WDR.le.180.0)THEN
+     lambda_f = lf_urb(1)
+   ELSEIF(WDR.lt.-157.5)THEN
+     lambda_f = lf_urb(1)
+   ELSEIF(WDR.gt.22.5.and.WDR.le.67.5)THEN
+     lambda_f = lf_urb(2)
+   ELSEIF(WDR.ge.-67.5.and.WDR.lt.-22.5)THEN
+     lambda_f = lf_urb(2)
+   ELSEIF(WDR.gt.67.5.and.WDR.le.112.5)THEN
+     lambda_f = lf_urb(3)
+   ELSEIF(WDR.ge.-112.5.and.WDR.lt.-67.5)THEN
+     lambda_f = lf_urb(3)
+   ELSEIF(WDR.gt.112.5.and.WDR.le.157.5)THEN
+     lambda_f = lf_urb(4)
+   ELSEIF(WDR.ge.-157.5.and.WDR.lt.-112.5)THEN
+     lambda_f = lf_urb(4)
+   ELSE
+     lambda_f = lf_urb(1)
+   ENDIF
+
+  !Calculate the following urban canyon geometry parameters following Macdonald's (1998) formulations
+      Cd         = 1.2
+      alpha_macd = 4.43
+      beta_macd  = 1.0
+
+
+      ZDC = ZR * ( 1.0 + ( alpha_macd ** ( -R ) )  * ( R - 1.0 ) )
+
+      Z0C = ZR * ( 1.0 - ZDC/ZR ) * &
+           exp (-(0.5 * beta_macd * Cd / (VonK**2) * ( 1.0-ZDC/ZR) * lambda_f )**(-0.5))
+     
+      if(zo_check.eq.1)THEN
+        write(mesg,*) 'Roughness Length NUDAPT',Z0C
+        call wrf_message(mesg)
+      end if
+
+      lambda_fr  = stdh_urb/(SW + BW)
+
+       Z0R = ZR * ( 1.0 - ZDC/ZR) &
+             * exp ( -(0.5 * beta_macd * Cd / (VonK**2) &
+              * ( 1.0-ZDC/ZR) * lambda_fr )**(-0.5))
+
+    
+
+       Z0HC = 0.1 * Z0C
+
+  ! Calculate Sky View Factor
+
+     DHGT=HGT/100.
+     HGT2=0.
+     VFWS=0.
+     HGT2=HGT-DHGT/2.
+      do NUDAPT=1,99
+         HGT2=HGT2-DHGT
+         VFWS=VFWS+0.25*(1.-HGT2/SQRT(HGT2**2.+RW**2.))
+      end do
+
+     VFWS=VFWS/99.
+     VFWS=VFWS*2.
+
+     VFGS=1.-2.*VFWS*HGT/RW
+     SVF=VFGS
+
+    if(zo_check.eq.1)THEN
+      write(mesg,*) 'Roof Roughness Length NUDAPT',Z0R
+      call wrf_message(mesg)
+      write(mesg,*) 'Sky View Factor NUDAPT',SVF
+      call wrf_message(mesg)
+      write(mesg,*) 'normalized Height NUDAPT', HGT
+      call wrf_message(mesg)
+    end if
+
+
+ endif
+
+ !End NUDAPT Modification
+
 
 ! Miao, 2007/01/17, cal. ah
    if(ahoption==1) AH=AH*ahdiuprf(tloc)
@@ -1900,6 +2063,7 @@ MODULE module_sf_urban
                              SH_URB2D,LH_URB2D,G_URB2D,RN_URB2D,           & ! inout
                              TS_URB2D,                                     & ! inout
                              num_urban_layers,                             & ! in
+                             num_urban_hi,                                 & ! in
                              TRB_URB4D,TW1_URB4D,TW2_URB4D,TGB_URB4D,      & ! inout
                              TLEV_URB3D,QLEV_URB3D,                        & ! inout
                              TW1LEV_URB3D,TW2LEV_URB3D,                    & ! inout
@@ -1908,6 +2072,9 @@ MODULE module_sf_urban
                              SFVENT_URB3D,LFVENT_URB3D,                    & ! inout
                              SFWIN1_URB3D,SFWIN2_URB3D,                    & ! inout
                              SFW1_URB3D,SFW2_URB3D,SFR_URB3D,SFG_URB3D,    & ! inout
+                             LP_URB2D,HI_URB2D,LB_URB2D,                   & !inout
+                             HGT_URB2D,MH_URB2D,STDH_URB2D,                & !inout
+                             LF_URB2D,                                     & !inout
                              A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,              & ! inout multi-layer urban
                              A_E_BEP,B_U_BEP,B_V_BEP,                      & ! inout multi-layer urban
                              B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,              & ! inout multi-layer urban
@@ -1918,6 +2085,7 @@ MODULE module_sf_urban
    INTEGER, INTENT(IN) :: ISURBAN, sf_urban_physics
    INTEGER, INTENT(IN) :: ims,ime,jms,jme,kms,kme,num_soil_layers
    INTEGER, INTENT(IN) :: num_urban_layers                            !multi-layer urban
+   INTEGER, INTENT(IN) :: num_urban_hi                                !multi-layer urban
 !   INTEGER, INTENT(IN) :: num_roof_layers, num_wall_layers, num_road_layers
 
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN)                    :: TSURFACE0_URB
@@ -1971,6 +2139,13 @@ MODULE module_sf_urban
    REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFW2_URB3D
    REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFR_URB3D
    REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFG_URB3D
+   REAL, DIMENSION( ims:ime,1:num_urban_hi, jms:jme), INTENT(INOUT) :: HI_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LP_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LB_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: HGT_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: MH_URB2D
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: STDH_URB2D
+   REAL, DIMENSION( ims:ime, 4,jms:jme ), INTENT(INOUT) :: LF_URB2D
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_U_BEP
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_V_BEP
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_T_BEP
@@ -1989,8 +2164,12 @@ MODULE module_sf_urban
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: FRC_URB2D
    INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: UTYPE_URB2D
    INTEGER                                            :: UTYPE_URB
+!FS
+   INTEGER :: SWITCH_URB
 
-   INTEGER :: I,J,K
+   INTEGER :: I,J,K,CHECK
+
+   CHECK = 0
 
    DO I=ims,ime
     DO J=jms,jme
@@ -2006,28 +2185,153 @@ MODULE module_sf_urban
       RN_URB2D(I,J)=0.
       
 !m
-      FRC_URB2D(I,J)=0.
+!FS   FRC_URB2D(I,J)=0.
       UTYPE_URB2D(I,J)=0
+      SWITCH_URB=0
 
             IF( IVGTYP(I,J) == ISURBAN)  THEN
                UTYPE_URB2D(I,J) = 2  ! for default. high-intensity
                UTYPE_URB = UTYPE_URB2D(I,J)  ! for default. high-intensity
-               FRC_URB2D(I,J) = FRC_URB_TBL(UTYPE_URB)
-            ENDIF
+               IF (HGT_URB2D(I,J)>0.) THEN
+                  CONTINUE
+               ELSE
+                  WRITE(mesg,*) 'USING DEFAULT URBAN MORPHOLOGY'
+                  call wrf_message(mesg)
+                  LP_URB2D(I,J)=0.
+                  LB_URB2D(I,J)=0.
+                  HGT_URB2D(I,J)=0.
+                  MH_URB2D(I,J)=0.
+                  STDH_URB2D(I,J)=0.
+                  DO K=1,4
+                    LF_URB2D(I,K,J)=0.
+                  ENDDO
+                  DO K=1,num_urban_hi
+                     HI_URB2D(I,K,J)=0.
+                  ENDDO
+               ENDIF
+                IF (FRC_URB2D(I,J)>0.and.FRC_URB2D(I,J)<=1.) THEN
+                  CONTINUE
+                ELSE
+                  WRITE(mesg,*) 'WARNING, FRC_URB2D = 0 BUT IVGTYP IS URBAN'
+                  call wrf_message(mesg)
+                  WRITE(mesg,*) 'WARNING, THE URBAN FRACTION WILL BE READ FROM URBPARM.TBL'
+                  call wrf_message(mesg)
+                  FRC_URB2D(I,J) = FRC_URB_TBL(UTYPE_URB)
+                ENDIF           
+               SWITCH_URB=1
+            ENDIF 
+
             IF( IVGTYP(I,J) == 31) THEN
                UTYPE_URB2D(I,J) = 3  ! low-intensity residential
                UTYPE_URB = UTYPE_URB2D(I,J)  ! low-intensity residential
-               FRC_URB2D(I,J) = FRC_URB_TBL(UTYPE_URB) 
+               IF (HGT_URB2D(I,J)>0.) THEN
+                  CONTINUE
+               ELSE
+                  WRITE(mesg,*) 'USING DEFAULT URBAN MORPHOLOGY'
+                  call wrf_message(mesg)
+                  LP_URB2D(I,J)=0.
+                  LB_URB2D(I,J)=0.
+                  HGT_URB2D(I,J)=0.
+                  MH_URB2D(I,J)=0.
+                  STDH_URB2D(I,J)=0.
+                  DO K=1,4
+                    LF_URB2D(I,K,J)=0.
+                  ENDDO
+                  DO K=1,num_urban_hi
+                     HI_URB2D(I,K,J)=0.
+                  ENDDO
+               ENDIF
+                IF (FRC_URB2D(I,J)>0.and.FRC_URB2D(I,J)<=1.) THEN
+                  CONTINUE
+                ELSE
+                  WRITE(mesg,*) 'WARNING, FRC_URB2D = 0 BUT IVGTYP IS URBAN'
+                  call wrf_message(mesg)
+                  WRITE(mesg,*) 'WARNING, THE URBAN FRACTION WILL BE READ FROM URBPARM.TBL'
+                  call wrf_message(mesg)
+                  FRC_URB2D(I,J) = FRC_URB_TBL(UTYPE_URB)
+                ENDIF         
+              SWITCH_URB=1
             ENDIF
-            IF( IVGTYP(I,J) == 32) THEN
+
+           IF( IVGTYP(I,J) == 32) THEN
                UTYPE_URB2D(I,J) = 2  ! high-intensity
                UTYPE_URB = UTYPE_URB2D(I,J)  ! high-intensity
-               FRC_URB2D(I,J) = FRC_URB_TBL(UTYPE_URB) 
+              IF (HGT_URB2D(I,J)>0.) THEN
+                  CONTINUE
+               ELSE
+                  WRITE(mesg,*) 'USING DEFAULT URBAN MORPHOLOGY'
+                  call wrf_message(mesg)
+                  LP_URB2D(I,J)=0.
+                  LB_URB2D(I,J)=0.
+                  HGT_URB2D(I,J)=0.
+                  MH_URB2D(I,J)=0.
+                  STDH_URB2D(I,J)=0.
+                  DO K=1,4
+                    LF_URB2D(I,K,J)=0.
+                  ENDDO
+                  DO K=1,num_urban_hi
+                     HI_URB2D(I,K,J)=0.
+                  ENDDO
+               ENDIF
+                IF (FRC_URB2D(I,J)>0.and.FRC_URB2D(I,J)<=1.) THEN
+                  CONTINUE
+                ELSE
+                  WRITE(mesg,*) 'WARNING, FRC_URB2D = 0 BUT IVGTYP IS URBAN'
+                  call wrf_message(mesg)
+                  WRITE(mesg,*) 'WARNING, THE URBAN FRACTION WILL BE READ FROM URBPARM.TBL'
+                  call wrf_message(mesg)
+                  FRC_URB2D(I,J) = FRC_URB_TBL(UTYPE_URB)
+                ENDIF
+              SWITCH_URB=1
             ENDIF
+
             IF( IVGTYP(I,J) == 33) THEN
                UTYPE_URB2D(I,J) = 1  !  Commercial/Industrial/Transportation
                UTYPE_URB = UTYPE_URB2D(I,J)  !  Commercial/Industrial/Transportation
-               FRC_URB2D(I,J) = FRC_URB_TBL(UTYPE_URB) 
+              IF (HGT_URB2D(I,J)>0.) THEN
+                  CONTINUE
+               ELSE
+                  WRITE(mesg,*) 'USING DEFAULT URBAN MORPHOLOGY'
+                  call wrf_message(mesg)
+                  LP_URB2D(I,J)=0.
+                  LB_URB2D(I,J)=0.
+                  HGT_URB2D(I,J)=0.
+                  MH_URB2D(I,J)=0.
+                  STDH_URB2D(I,J)=0.
+                  DO K=1,4
+                    LF_URB2D(I,K,J)=0.
+                  ENDDO
+                  DO K=1,num_urban_hi
+                     HI_URB2D(I,K,J)=0.
+                  ENDDO
+               ENDIF
+                IF (FRC_URB2D(I,J)>0.and.FRC_URB2D(I,J)<=1.) THEN
+                  CONTINUE
+                ELSE
+                  WRITE(mesg,*) 'WARNING, FRC_URB2D = 0 BUT IVGTYP IS URBAN'
+                  call wrf_message(mesg)
+                  WRITE(mesg,*) 'WARNING, THE URBAN FRACTION WILL BE READ FROM URBPARM.TBL'
+                  call wrf_message(mesg)
+                  FRC_URB2D(I,J) = FRC_URB_TBL(UTYPE_URB)
+                ENDIF
+               SWITCH_URB=1
+            ENDIF
+
+            IF (SWITCH_URB==1) THEN
+                CONTINUE
+            ELSE
+                FRC_URB2D(I,J)=0.
+                LP_URB2D(I,J)=0.
+                LB_URB2D(I,J)=0.
+                HGT_URB2D(I,J)=0.
+                  MH_URB2D(I,J)=0.
+                  STDH_URB2D(I,J)=0.
+                  DO K=1,4
+                    LF_URB2D(I,K,J)=0.
+                  ENDDO
+                DO K=1,num_urban_hi
+                   HI_URB2D(I,K,J)=0.
+                ENDDO
             ENDIF
 
 
@@ -2154,6 +2458,63 @@ MODULE module_sf_urban
       END DO
       ENDIF       !sf_urban_physics=2
      ENDIF        !restart
+
+
+      IF (CHECK.EQ.0)THEN
+      IF(IVGTYP(I,J).EQ.1)THEN
+        write(mesg,*) 'TSURFACE0_URB',TSURFACE0_URB(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'TDEEP0_URB', TDEEP0_URB(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'IVGTYP',IVGTYP(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'TR_URB2D',TR_URB2D(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'TB_URB2D',TB_URB2D(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'TG_URB2D',TG_URB2D(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'TC_URB2D',TC_URB2D(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'QC_URB2D',QC_URB2D(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'XXXR_URB2D',XXXR_URB2D(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'SH_URB2D',SH_URB2D(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'LH_URB2D',LH_URB2D(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'G_URB2D',G_URB2D(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'RN_URB2D',RN_URB2D(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'TS_URB2D',TS_URB2D(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'LF_AC_URB3D', LF_AC_URB3D(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'SF_AC_URB3D', SF_AC_URB3D(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'CM_AC_URB3D', CM_AC_URB3D(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'SFVENT_URB3D', SFVENT_URB3D(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'LFVENT_URB3D', LFVENT_URB3D(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'FRC_URB2D', FRC_URB2D(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'UTYPE_URB2D', UTYPE_URB2D(I,J)
+        call wrf_message(mesg)
+        write(mesg,*) 'I',I,'J',J
+        call wrf_message(mesg)
+        write(mesg,*) 'num_urban_hi', num_urban_hi
+        call wrf_message(mesg)
+        CHECK = 1
+       END IF
+       END IF
+
+
+
+
     END DO
    END DO
    RETURN

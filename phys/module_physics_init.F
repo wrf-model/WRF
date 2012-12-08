@@ -63,6 +63,7 @@ CONTAINS
                          ims, ime, jms, jme, kms, kme,           &
                          its, ite, jts, jte, kts, kte,           &
                          NUM_URBAN_LAYERS,                       &
+                         NUM_URBAN_HI,                           &
                          raincv_a,raincv_b,                      &
                          gd_cloud,gd_cloud2,                     &    ! Optional
                          gd_cloud_a,gd_cloud2_a,                 &    ! Optional
@@ -100,6 +101,9 @@ CONTAINS
                          SFWIN1_URB3D,SFWIN2_URB3D,              & !Optional multi-layer urban
                          SFW1_URB3D,SFW2_URB3D,                  & !Optional multi-layer urban
                          SFR_URB3D,SFG_URB3D,                    & !Optional multi-layer urban
+                         LP_URB2D,HI_URB2D,LB_URB2D,             & !Optional multi-layer urban
+                         HGT_URB2D,MH_URB2D,STDH_URB2D,          & !Optional multi-layer urban
+                         LF_URB2D,                               & !Optional multi-layer urban
                          A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,        & !Optional multi-layer urban
                          A_E_BEP,B_U_BEP,B_V_BEP,                & !Optional multi-layer urban
                          B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,        & !Optional multi-layer urban
@@ -377,6 +381,7 @@ CONTAINS
    INTEGER, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: UTYPE_URB2D !urban
 
    INTEGER , INTENT(IN)        :: num_urban_layers
+   INTEGER , INTENT(IN)        :: num_urban_hi
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TRB_URB4D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TW1_URB4D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TW2_URB4D ! multi-layer UCM
@@ -398,6 +403,13 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFR_URB3D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFW1_URB3D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFW2_URB3D ! multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime,1:num_urban_hi, jms:jme), INTENT(INOUT) :: HI_URB2D  !multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LP_URB2D  !multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LB_URB2D  !multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: HGT_URB2D !multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: MH_URB2D  !SLUCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: STDH_URB2D !SLUCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, 4, jms:jme ), INTENT(INOUT) :: LF_URB2D  !SLUCM 
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_U_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_V_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_T_BEP
@@ -695,6 +707,7 @@ integer myproc
                 TS_URB2D, FRC_URB2D, UTYPE_URB2D,               & 
                 SF_URBAN_PHYSICS,                               & !Optional urban
                 NUM_URBAN_LAYERS,                               & !Optional multi-layer urban
+                NUM_URBAN_HI,                                   & !Optional multi-layer urban
                 TRB_URB4D,TW1_URB4D,TW2_URB4D,                  & !Optional multi-layer urban
                 TGB_URB4D,TLEV_URB3D,QLEV_URB3D,                & !Optional multi-layer urban
                 TW1LEV_URB3D,TW2LEV_URB3D,                      & !Optional multi-layer urban
@@ -704,6 +717,9 @@ integer myproc
                 SFWIN1_URB3D,SFWIN2_URB3D,                      & !Optional multi-layer urban
                 SFW1_URB3D,SFW2_URB3D,                          & !Optional multi-layer urban
                 SFR_URB3D,SFG_URB3D,                            & !Optional multi-layer urban
+                LP_URB2D,HI_URB2D,LB_URB2D,                     & !Optional multi-layer urban
+                HGT_URB2D,MH_URB2D,STDH_URB2D,                  & !Optional multi-layer urban
+                LF_URB2D,                                       & !Optional multi-layer urban
                 A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,                & !Optional multi-layer urban
                 A_E_BEP,B_U_BEP,B_V_BEP,                        & !Optional multi-layer urban
                 B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                & !Optional multi-layer urban
@@ -1445,6 +1461,7 @@ integer myproc
                 TS_URB2D, FRC_URB2D, UTYPE_URB2D,               &
                 SF_URBAN_PHYSICS,                               & !Optional urban
                 NUM_URBAN_LAYERS,                               & !Optional multi-layer urban
+                NUM_URBAN_HI,                                   & !Optional multi-layer urban
                 TRB_URB4D,TW1_URB4D,TW2_URB4D,                  & !Optional multi-layer urban
                 TGB_URB4D,TLEV_URB3D,QLEV_URB3D,                & !Optional multi-layer urban
                 TW1LEV_URB3D,TW2LEV_URB3D,                      & !Optional multi-layer urban
@@ -1454,6 +1471,9 @@ integer myproc
                 SFWIN1_URB3D,SFWIN2_URB3D,                      & !Optional multi-layer urban
                 SFW1_URB3D,SFW2_URB3D,                          & !Optional multi-layer urban
                 SFR_URB3D,SFG_URB3D,                            & !Optional multi-layer urban
+                LP_URB2D,HI_URB2D,LB_URB2D,                     & !Optional multi-layer urban
+                HGT_URB2D,MH_URB2D,STDH_URB2D,                  & !Optional multi-layer urban
+                LF_URB2D,                                       & !Optional multi-layer urban
                 A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,                & !Optional multi-layer urban
                 A_E_BEP,B_U_BEP,B_V_BEP,                        & !Optional multi-layer urban
                 B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                & !Optional multi-layer urban
@@ -1652,6 +1672,7 @@ integer myproc
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), INTENT(INOUT) :: TGL_URB3D !Optional urban
 
     INTEGER , INTENT(IN)        ::     num_urban_layers
+    INTEGER , INTENT(IN)        ::     num_urban_hi
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TRB_URB4D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TW1_URB4D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TW2_URB4D !Optional UCM
@@ -1673,6 +1694,13 @@ integer myproc
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFW2_URB3D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFR_URB3D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFG_URB3D !Optional UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime,1:num_urban_hi, jms:jme ), INTENT(INOUT) :: HI_URB2D  !multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LP_URB2D  !multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LB_URB2D  !multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: HGT_URB2D !multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: MH_URB2D !SLUCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: STDH_URB2D !SLUCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, 4, jms:jme ), INTENT(INOUT) :: LF_URB2D !SLUCM
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_U_BEP 
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_V_BEP 
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_T_BEP 
@@ -1873,6 +1901,7 @@ integer myproc
                               TRL_URB3D,TBL_URB3D,TGL_URB3D,                   & !urban
                               SH_URB2D,LH_URB2D,G_URB2D,RN_URB2D, TS_URB2D,    & !urban
                               num_urban_layers,                                & !urban
+                              num_urban_hi,                                    & !urban
                               TRB_URB4D,TW1_URB4D,TW2_URB4D,TGB_URB4D,         & !urban
                               TLEV_URB3D,QLEV_URB3D,                           & !urban
                               TW1LEV_URB3D,TW2LEV_URB3D,                       & !urban
@@ -1881,6 +1910,9 @@ integer myproc
                               SFVENT_URB3D,LFVENT_URB3D,                       & !urban
                               SFWIN1_URB3D,SFWIN2_URB3D,                       & !urban
                               SFW1_URB3D,SFW2_URB3D,SFR_URB3D,SFG_URB3D,       & !urban
+                              LP_URB2D,HI_URB2D,LB_URB2D,                      & !urban
+                              HGT_URB2D,MH_URB2D,STDH_URB2D,                   & !urban
+                              LF_URB2D,                                        & !urban
                               A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,                 & !multi-layer urban
                               A_E_BEP,B_U_BEP,B_V_BEP,                         & !multi-layer urban
                               B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                 & !multi-layer urban

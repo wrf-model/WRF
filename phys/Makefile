@@ -67,6 +67,7 @@ MODULES = \
 	module_mp_wdm5.o \
 	module_mp_wdm6.o \
 	module_ra_sw.o  \
+	module_ra_clWRF_support.o  \
 	module_ra_gsfcsw.o \
 	module_ra_goddard.o \
 	module_ra_rrtm.o  \

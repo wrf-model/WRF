@@ -805,6 +805,7 @@ CONTAINS
 !        ENDDO
 !     endif
 
+
 !---------------
 ! Calculate constant for short wave radiation
 
@@ -876,6 +877,9 @@ CONTAINS
                  ,F_QV=F_QV,F_QC=F_QC,F_QR=F_QR                     &
                  ,F_QI=F_QI,F_QS=F_QS,F_QG=F_QG                     &
                  ,ICLOUD=icloud,WARM_RAIN=warm_rain                 &
+!ccc Added for time-varying trace gases.
+                 ,YR=YR,JULIAN=JULIAN                               &
+!ccc
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -1070,6 +1074,9 @@ CONTAINS
                   progn=progn,                                       &
 #endif
                   QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
+!ccc Added for time-varying trace gases.
+                  YR=YR,JULIAN=JULIAN,                              &
+!ccc
                   IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&

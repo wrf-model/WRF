@@ -1738,8 +1738,14 @@ CONTAINS
                        ,qv3d,qc3d,qr3d                            &
                        ,qi3d,qs3d,qg3d,cldfra3d                   &
                        ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg             &
-                                                                  )
+!ccc Added for time-varying trace gases.
+                       ,yr, julian                                )
+!ccc
 !------------------------------------------------------------------
+!ccc
+   USE MODULE_RA_CLWRF_SUPPORT, ONLY :  read_CAMgases
+!ccc
+   
    IMPLICIT NONE
 !------------------------------------------------------------------
    LOGICAL, INTENT(IN )      ::        warm_rain
@@ -1771,6 +1777,12 @@ CONTAINS
                                                              OLR
 !
    REAL, INTENT(IN  )   ::                                   R,G
+
+!ccc Added for time-varying trace gases.
+   INTEGER, INTENT(IN ) ::                                    yr
+   REAL, INTENT(IN )    ::                                julian
+!ccc
+
 !
 ! Optional
 !
@@ -1809,7 +1821,30 @@ CONTAINS
     INTEGER:: i,j,K,NK
     LOGICAL :: predicate
 
+! Add variables for variable trace gas concentrations (ccc)
+    REAL(8)  :: co2vmr, n2ovmr, ch4vmr
+    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+    CHARACTER(LEN=256) :: message
+
 !------------------------------------------------------------------
+
+!----- Calculate the trace gas concentrations from file.
+!ccc
+#ifdef CLWRFGHG
+   CALL read_CAMgases(yr,julian,"RRTM",co2vmr,n2ovmr,ch4vmr)
+#else
+   co2vmr = 330.e-6
+   n2ovmr = 0.
+   ch4vmr = 0.
+#endif
+ 
+  IF ( wrf_dm_on_monitor() ) THEN
+     WRITE(message,*)'CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
+     call wrf_debug( 0, message)
+     WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr
+     call wrf_debug( 0, message)
+   ENDIF
+
 
 !-----CALCULATE LONG WAVE RADIATION
 !                                                              
@@ -1935,6 +1970,9 @@ CONTAINS
          CALL RRTM(tten1d,glw0,olr0,tsfc,cldfra1d,t1d,tw1d,qv1d,qc1d,   &
                    qr1d,qi1d,qs1d,qg1d,p1d,pW1d,dz1d,              &
                    emiss0,r,g,                                     &
+!ccc Added for time-varying trace gases.
+                   co2vmr, n2ovmr, ch4vmr,                             &
+!ccc
                    kts,kte                                         )
  
          GLW(I,J)=GLW0
@@ -1992,6 +2030,9 @@ CONTAINS
    SUBROUTINE RRTM(TTEN,GLW,OLR,TSFC,CLDFRA,T,Tw,QV,QC,              &
                    QR,QI,QS,QG,P,Pw,DZ,                              &
                    EMISS,R,G,                                        &
+!ccc Added for time-varying trace gases.
+                   CO2VMR, N2OVMR, CH4VMR,                                    &
+!ccc
                    kts,kte                                           )
 !---------------------------------------------------------------------
 ! *** This program is the driver for RRTM, the AER LW radiation model.           
@@ -2029,6 +2070,12 @@ CONTAINS
       REAL, DIMENSION( kts:kte ), INTENT(INOUT)::              TTEN
 !   
       REAL, INTENT(IN  )   ::                           R, G, EMISS
+
+!ccc Added for time-varying trace gases.
+! Trace gases variables
+      REAL(8), INTENT(IN )    ::                                co2vmr, n2ovmr, ch4vmr
+!ccc
+
 !
       REAL, INTENT(INOUT)  ::                          TSFC,GLW,OLR
 
@@ -2145,6 +2192,9 @@ CONTAINS
                      P,Pw,DZ,EMISS,R,G,                            &
                      PAVEL,TAVEL,PZ,TZ,CLDFRAC,TAUCLOUD,COLDRY,    &
                      WKL,WX,TBOUND,SEMISS,                         &
+!ccc Added for time-varying trace gases.
+                     CO2VMR, N2OVMR, CH4VMR,                               &
+!ccc
                      kts,kte                                       )
 
 !  Calculate information needed by the radiative transfer routine                
@@ -3588,6 +3638,9 @@ CONTAINS
                      P,Pw,DELZ,EMISS,R,G,                          &
                      PAVEL,TAVEL,PZ,TZ,CLDFRAC,TAUCLOUD,COLDRY,    &
                      WKL,WX,TBOUND,SEMISS,                         &
+!ccc Added for time-varying trace gases.
+                     co2vmr, n2ovmr, ch4vmr,                            &
+!ccc
                      kts,kte                                       )
 !---------------------------------------------------------------------------
 !  RRTM Longwave Radiative Transfer Model                                        
@@ -3692,6 +3745,11 @@ CONTAINS
 
       REAL, INTENT(IN   ) ::   R,G,EMISS,TSFC
 
+!ccc Added for time-varying trace gases mixing ratios.
+! Trace gase variables
+      REAL(8), INTENT(IN   ) ::                      co2vmr, n2ovmr, ch4vmr
+!ccc
+
       REAL    :: GRAVIT
  
 !
@@ -3782,9 +3840,12 @@ CONTAINS
 !     Put in CO2 volume mixing ratio here (330 ppmv)                                
 !     Added H2O volume mixing ratio from standard atmosphere 
 !        above 150 mb (Steven Cavallo, 01/2010).
-
-      real :: co2vmr, h2ovmr
-      data co2vmr / 330.e-6 /                                                    
+!ccc
+!ccc Modified CO2 VMR declaration for time-varying case.
+!      real :: co2vmr, h2ovmr
+!      data co2vmr / 330.e-6 /                                                    
+!      data h2ovmr / 5.00e-6 /
+      real ::  h2ovmr
       data h2ovmr / 5.00e-6 /
                                                                                  
       REAL :: ABCW,ABICE,ABRN,ABSN
@@ -3819,7 +3880,13 @@ CONTAINS
           N2O(K)=0.                                                              
           CH4(K)=0.                                                              
                                                                                  
-      ENDDO                                                                      
+      ENDDO
+
+!ccc Unit conversion
+   N2O(:) = n2ovmr / amdn
+   CH4(:) = ch4vmr / amdc
+!ccc                                                                      
+
                                                                                  
 !  Initialize all molecular amounts to zero here, then pass MM5 amounts          
 !  into RRTM arrays WKL and WX below.                                            

@@ -11352,12 +11352,18 @@ CONTAINS
 !jdfcz                 progn,prescribe,                           & !czhao
                        progn,                                     & !czhao
                        qndrop3d,f_qndrop,                         & !czhao
+!ccc added for time varying gases.
+                       yr,julian,                                 & 
+!ccc 
                        ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
                        lwupflx, lwupflxc, lwdnflx, lwdnflxc       &
                                                                   )
-!------------------------------------------------------------------
+!------------------------------------------------------------------                                                                  )
+!ccc To use clWRF time varying trace gases
+   USE MODULE_RA_CLWRF_SUPPORT, ONLY : read_CAMgases
+
    IMPLICIT NONE
 !------------------------------------------------------------------
    LOGICAL, INTENT(IN )      ::        warm_rain
@@ -11395,6 +11401,12 @@ CONTAINS
          INTENT(IN   )  ::                                 XLAND, &
                                                             XICE, &
                                                             SNOW
+
+!ccc Added for time-varying trace gases.
+   INTEGER, INTENT(IN    ) ::                                 yr
+   REAL, INTENT(IN    ) ::                                julian
+!ccc
+
 !
 ! Optional
 !
@@ -11524,6 +11536,14 @@ CONTAINS
     real ::                                                   ro, &
                                                               dz
 
+!ccc To add time-varying trace gases (CO2, N2O and CH4). Read the conc. from file
+! then interpolate to date of run.
+#ifdef CLWRFGHG
+! CLWRF-UC June.09 
+      REAL(8)                                      :: co2, n2o, ch4, cfc11, cfc12 
+      LOGICAL, EXTERNAL                            :: wrf_dm_on_monitor
+      CHARACTER(LEN=256)                           :: message
+#else
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv)
     real :: co2
@@ -11540,6 +11560,7 @@ CONTAINS
 ! cfc-12 (538 ppt)
     real :: cfc12
     data cfc12 / 0.538e-9 / 
+#endif
 ! cfc-22 (169 ppt)
     real :: cfc22
     data cfc22 / 0.169e-9 / 
@@ -11660,6 +11681,23 @@ CONTAINS
 !                                                              
 ! All fields are ordered vertically from bottom to top
 ! Pressures are in mb
+!
+!ccc Read time-varying trace gases concentrations and interpolate them to run date.
+! 
+#ifdef CLWRFGHG
+
+   CALL read_CAMgases(yr,julian,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
+
+   IF ( wrf_dm_on_monitor() ) THEN
+     WRITE(message,*)'CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
+     call wrf_debug( 0, message)
+     WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2,' n2ovmr:',n2o,' ch4vmr:',ch4,' cfc11vmr:',cfc11,' cfc12vmr:',cfc12
+     call wrf_debug( 0, message)
+   ENDIF
+
+#endif
+!ccc
+
 
 ! latitude loop
   j_loop: do j = jts,jte

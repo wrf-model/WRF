@@ -627,12 +627,12 @@ BENCH_START(update_phy_ten_tim)
            i_end   = min( grid%i_end(ij),ide-1 )
            j_start = grid%j_start(ij)
            j_end   = min( grid%j_end(ij),jde-1 )
-           if (config_flags%dfi_radar == 1 .and. grid%dfi_stage == DFI_FWD ) &
+           if (grid%dfi_stage == DFI_FWD ) &
                  CALL wrf_debug ( 200 , ' Zero out cu_physics' )
            DO j = j_start, j_end
            DO k = k_start, min( k_end,kde-1 ) - 1
            DO i = i_start, i_end
-             if (config_flags%dfi_radar == 1 .and. grid%dfi_stage ==DFI_FWD  &
+             if (grid%dfi_stage ==DFI_FWD  &
              .and. grid%dfi_tten_rad(i,k,j) >= 1.0e-7 .and.  &
                    grid%dfi_tten_rad(i,k,j) <= 10.) then
 ! zero out cu-param temp tendency

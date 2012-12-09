@@ -788,10 +788,8 @@ BENCH_END(fire_driver_tim)
 
 #if ( WRF_DFI_RADAR == 1 )
       do_capsupress=0
-!      if (config_flags%dfi_radar == 1) then
          if(grid%dfi_stage == DFI_FWD ) do_capsupress=1
          if(grid%itimestep <= 31 .and. grid%dfi_stage == DFI_FST ) do_capsupress=1
-!      endif
 #endif
 
 BENCH_START(cu_driver_tim)

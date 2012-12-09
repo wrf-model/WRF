@@ -400,7 +400,9 @@ SUBROUTINE solve_em ( grid , config_flags  &
                           grid%mu_btxs,grid%mu_btxe,grid%mu_btys,grid%mu_btye, &
                           moist_btxs,moist_btxe,                               &
                           moist_btys,moist_btye,                               &
-                          grid%spec_bdy_width,num_3d_m,                &
+                          scalar_btxs,scalar_btxe,                              &
+                          scalar_btys,scalar_btye,                              &
+                          grid%spec_bdy_width,num_3d_m,num_3d_s,                &
                           ids,ide, jds,jde, kds,kde,                   &
                           ims,ime, jms,jme, kms,kme,                   &
                           ips,ipe, jps,jpe, kps,kpe,                   &

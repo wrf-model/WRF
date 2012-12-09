@@ -102,7 +102,7 @@ CONTAINS
       INTEGER :: im, num_3d_m, num_3d_s
       REAL    :: p_surf, p_level
       REAL    :: cof1, cof2
-      REAL    :: qvf , qvf1 , qvf2 , pd_surf
+      REAL    :: qvf , qvf1 , qvf2 , qtot, pd_surf
       REAL    :: p00 , t00 , a , tiso
       REAL    :: hold_znw , ptemp
       REAL    :: vap_pres_mb , sat_vap_pres_mb
@@ -1348,6 +1348,21 @@ integer::oops1,oops2
                END IF
             END DO
          END IF
+    
+         IF ( flag_qnr .EQ. 1 ) THEN
+            DO im = PARAM_FIRST_SCALAR, num_3d_s
+               IF ( im .EQ. P_QNR ) THEN
+                  CALL vert_interp ( grid%qnr_gc , grid%pd_gc , scalar(:,:,:,P_QNR) , grid%pb , &
+                                     num_metgrid_levels , 'Q' , &
+                                     interp_type , lagrange_order , extrap_type , &
+                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     ids , ide , jds , jde , kds , kde , &
+                                     ims , ime , jms , jme , kms , kme , &
+                                     its , ite , jts , jte , kts , kte )
+               END IF
+            END DO
+         END IF
 
          !  If this is UM data, put the dry rho-based pressure back into the dry pressure array.
          !  Since the dry pressure is no longer needed, no biggy.
@@ -2322,9 +2337,12 @@ endif
 
                k = kte-1
 
-               qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k,j,P_QV))
-               qvf2 = 1./(1.+qvf1)
-               qvf1 = qvf1*qvf2
+               qtot=0.
+               DO im = PARAM_FIRST_SCALAR, num_3d_m
+                 qtot = qtot + moist(i,k,j,im)
+               ENDDO
+               qvf2 = 1./(1.+qtot)
+               qvf1 = qtot*qvf2
 
                grid%p(i,k,j) = - 0.5*(grid%mu_2(i,j)+qvf1*grid%mub(i,j))/grid%rdnw(k)/qvf2
                qvf = 1. + rvovrd*moist(i,k,j,P_QV)
@@ -2337,9 +2355,12 @@ endif
                !  inverse density fields (total and perturbation).
 
                DO k=kte-2,1,-1
-                  qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k+1,j,P_QV))
-                  qvf2 = 1./(1.+qvf1)
-                  qvf1 = qvf1*qvf2
+                  qtot=0.
+                  DO im = PARAM_FIRST_SCALAR, num_3d_m
+                    qtot = qtot + 0.5*(moist(i,k,j,im)+moist(i,k+1,j,im))
+                  ENDDO
+                  qvf2 = 1./(1.+qtot)
+                  qvf1 = qtot*qvf2
                   grid%p(i,k,j) = grid%p(i,k+1,j) - (grid%mu_2(i,j) + qvf1*grid%mub(i,j))/qvf2/grid%rdn(k+1)
                   qvf = 1. + rvovrd*moist(i,k,j,P_QV)
                   grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_2(i,k,j)+t0)*qvf* &

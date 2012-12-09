@@ -581,6 +581,9 @@
 ! process if, for example, it is a moving nest and if this part of the domain is not
 ! being initialized (not the leading edge).
    CALL domain_setgmtetc( grid, start_of_simulation )
+!tgs
+   IF(config_flags%cycling) start_of_simulation = .true.
+  print *,'cycling, start_of_simulation -->',config_flags%cycling, start_of_simulation
 
 !-----------------------------------------------------------------------------
 ! Adaptive time step: Added by T. Hutchinson, WSI  11/6/07
@@ -655,17 +658,6 @@
    DO ij = 1, grid%num_tiles
 
 !tgs do not need physics initialization for backward DFI integration
-     IF ( grid%dfi_opt .NE. DFI_NODFI .and. grid%dfi_stage .EQ. DFI_FST) THEN     !tgs
-        grid%stepra=nint(grid%RADT*60./grid%DT)
-        grid%stepra=max(grid%stepra,1)
-        grid%stepbl=nint(grid%BLDT*60./grid%DT)
-        grid%stepbl=max(grid%stepbl,1)
-        grid%stepcu=nint(grid%CUDT*60./grid%DT)
-        grid%stepcu=max(grid%stepcu,1)
-        grid%stepfg=nint(grid%FGDT*60./grid%DT)
-        grid%stepfg=max(grid%stepfg,1)
-     ENDIF
-     
     IF ( ( grid%dfi_opt .EQ. DFI_NODFI ) .or. &
           ( ( grid%dfi_stage .NE. DFI_BCK ) .and. &
           ( grid%dfi_stage .NE. DFI_STARTBCK ) ) ) THEN    !tgs, mods by tah

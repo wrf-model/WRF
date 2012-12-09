@@ -108,6 +108,7 @@ state    real   qi_gc          igj      dyn_em      1        Z     i1  "QI"    "
 state    real   qg_gc          igj      dyn_em      1        Z     i1  "QG"    "graupel mixing ratio"   "kg kg-1"
 state    real   qh_gc          igj      dyn_em      1        Z     i1  "QH"    "hail mixing ratio"   "kg kg-1"
 state    real   qni_gc         igj      dyn_em      1        Z     i1  "QNI"   "ice no concentration"   "m-3"
+state    real   qnr_gc         igj      dyn_em      1        Z     i1  "QNR"   "rain no concentration"   "m-3"
 state    real   t_max_p        ij       dyn_em      1        -     i0d  "T_MAX_P"   "temperature at max pressure"         "K"
 state    real   ght_max_p      ij       dyn_em      1        -     i0d  "GHT_MAX_P" "geopotential height at max pressure" "m"
 state    real   max_p          ij       dyn_em      1        -     i0d  "MAX_P"     "max pressure "                       "Pa"
@@ -1519,7 +1520,7 @@ rconfig   integer output_diagnostics      namelist,time_control         1       
 
 # DFI namelist
 rconfig   integer dfi_opt                namelist,dfi_control   1       0     rh   "dfi_opt"                  ""      ""
-rconfig   integer dfi_radar              namelist,dfi_control   1       0     rh   "dfi_radar"                "DFI radar switch"      ""
+rconfig   integer dfi_savehydmeteors     namelist,dfi_control   1       0     rh   "dfi_radar"                "DFI radar switch"      ""
 rconfig   integer dfi_nfilter            namelist,dfi_control   1       7     rh   "dfi_nfilter"              "Digital filter type"      ""
 rconfig   logical dfi_write_filtered_input  namelist,dfi_control  1  .true.   rh   "dfi_write_filtered_input" "Write a wrfinput_filtered_d0n file?"      ""
 rconfig   logical dfi_write_dfi_history  namelist,dfi_control   1   .false.   rh   "dfi_write_dfi_history"    "Write history files during filtering?"      ""
@@ -1553,6 +1554,7 @@ rconfig   integer starting_time_step      namelist,domains      max_domains   -1
 rconfig   logical step_to_output_time     namelist,domains      1         .true.      h    "step_to_output_time"
 rconfig   integer adaptation_domain       namelist,domains      1              1      h    "adaptation_domain"
 rconfig   logical use_adaptive_time_step  namelist,domains      1         .false.     h    "use_adaptive_time_step"
+rconfig   logical use_adaptive_time_step_dfi  namelist,domains  1         .false.     ih    "use_adaptive_time_step_dfi"
 
 rconfig   integer max_dom                 namelist,domains	1             1       irh  "max_dom"               ""      ""
 rconfig   integer s_we                    namelist,domains	max_domains    1       irh    "s_we"          ""      ""

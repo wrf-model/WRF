@@ -1278,6 +1278,7 @@
      &          ,SF_URBAN_PHYSICS=SF_URBAN_PHYSICS                      &
 !     &          ,GMT=GMT,XLAT=XLAT,XLONG=XLONG,JULDAY=JULDAY            &
      &          ,NUM_URBAN_LAYERS=NUM_URBAN_LAYERS                      &
+     &          ,NUM_URBAN_HI=config_flags%num_urban_hi                 & !multi-layer urban
      &          ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE        &
      &          ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME        &
      &          ,I_START=GRID%I_START,I_END=GRID%I_END                  &

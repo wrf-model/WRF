@@ -40,6 +40,7 @@ MODULES = \
 	module_cu_camzm_driver.o \
 	module_cu_camzm.o \
 	module_bl_temf.o \
+	module_bl_gbmpbl.o \
 	module_cu_g3.o \
 	module_cu_kf.o  \
 	module_cu_bmj.o \

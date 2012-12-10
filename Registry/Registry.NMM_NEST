@@ -1451,6 +1451,7 @@ package   boulacscheme   bl_pbl_physics==8           -             -
 package   camuwpblscheme bl_pbl_physics==9           -             -
 package   mrfscheme      bl_pbl_physics==99          -             -
 package   temfpblscheme  bl_pbl_physics==10          -             -
+package   gbmpblscheme  bl_pbl_physics==12          -             -
 
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -

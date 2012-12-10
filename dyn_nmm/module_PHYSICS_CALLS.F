@@ -736,7 +736,7 @@
 !
       REAL,DIMENSION(KMS:KME-1),INTENT(IN) :: AETA1,AETA2,DETA1,DETA2
 !
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: RTHRATEN     !Kwon S&P
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: RTHRATEN     !Kwon S&P
 !
       REAL,DIMENSION(KMS:KME),INTENT(IN) :: DFRLG,ETA1,ETA2
 !
@@ -1435,8 +1435,9 @@
      &               ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
      &               ,CTOPO=grid%ctopo,CTOPO2=grid%ctopo2             &
 #if (NMM_CORE==1)
-     &               ,DISHEAT=DISHEAT,  RTHRATEN=RTHRATEN             &
+     &               ,DISHEAT=DISHEAT                                 &
 #endif
+     &               ,RTHRATEN=RTHRATEN                               &
 #if (HWRF==1)
      &               ,GFS_ALPHA=GRID%GFS_ALPHA                        &
 #endif

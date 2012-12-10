@@ -1511,6 +1511,7 @@ integer myproc
    USE module_bl_qnsepbl
    USE module_bl_qnsepbl09
    USE module_bl_mfshconvpbl
+   USE module_bl_gbmpbl
 #if ( EM_CORE == 1 )
    USE module_bl_mynn
    USE module_bl_temf
@@ -2192,6 +2193,19 @@ integer myproc
          ENDIF
 
 #endif
+
+      CASE (GBMPBLSCHEME) 
+           if(isfc .ne. 1)CALL wrf_error_fatal &
+            ( 'module_physics_init: use sfclay scheme for this pbl option' )
+         CALL gbmpblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,   &
+                        RQCBLTEN,RQIBLTEN,P_QI,               &
+                        PARAM_FIRST_SCALAR,TKE_PBL,           &
+                        EXCH_H,                               &
+                        restart,allowed_to_read ,             &
+                        ids, ide, jds, jde, kds, kde,         &
+                        ims, ime, jms, jme, kms, kme,         &
+                        its, ite, jts, jte, kts, kte          )
+
 
       CASE DEFAULT
 

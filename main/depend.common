@@ -126,6 +126,8 @@ module_bl_myjpbl.o: ../share/module_model_constants.o
 
 module_bl_myjurb.o: ../share/module_model_constants.o
 
+module_bl_gbmpbl.o: ../share/module_model_constants.o
+
 module_bl_boulac.o: ../share/module_model_constants.o
 
 module_bl_qnsepbl.o: ../share/module_model_constants.o

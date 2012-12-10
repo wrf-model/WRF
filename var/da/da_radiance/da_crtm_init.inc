@@ -81,16 +81,18 @@ subroutine da_crtm_init(iv,ob, nsensor)
 
      iv%instid(1:nsensor)%nlevels = kme-kms+1
 
-!    do n = 1, nsensor
-!       write (6,*) 'in da_crtm_init: ChannelInfo content'
-!       write (6,*) 'Sensor_Index ',ChannelInfo(n)%Sensor_Index
-!       write (6,*) 'n_channels ',ChannelInfo(n)%n_channels
-!       write (6,*) 'Channel_Index ',ChannelInfo(n)%Channel_Index(:)
-!       write (6,*) 'Sensor_Channel ',ChannelInfo(n)%Sensor_Channel(:)
-!       write (6,*) 'Sensor_ID ',ChannelInfo(n)%Sensor_ID
-!       write (6,*) 'WMO_Satellite_ID ',ChannelInfo(n)%WMO_Satellite_ID
-!       write (6,*) 'WMO_Sensor_ID ',ChannelInfo(n)%WMO_Sensor_ID
-!    end do
+    if (print_detail_rad) then
+       do n = 1, nsensor
+          write (6,*) 'in da_crtm_init: ChannelInfo content'
+          write (6,*) 'Sensor_Index ',ChannelInfo(n)%Sensor_Index
+          write (6,*) 'n_channels ',ChannelInfo(n)%n_channels
+          write (6,*) 'Channel_Index ',ChannelInfo(n)%Channel_Index(:)
+          write (6,*) 'Sensor_Channel ',ChannelInfo(n)%Sensor_Channel(:)
+          write (6,*) 'Sensor_ID ',ChannelInfo(n)%Sensor_ID
+          write (6,*) 'WMO_Satellite_ID ',ChannelInfo(n)%WMO_Satellite_ID
+          write (6,*) 'WMO_Sensor_ID ',ChannelInfo(n)%WMO_Sensor_ID
+       end do
+    end if
 
   call da_trace_exit("da_crtm_init")
 

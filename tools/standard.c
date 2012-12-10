@@ -161,6 +161,10 @@ drop_comment( char * linei )
             (*(q+1) == 'a' || *(q+1) == 'A') &&
             (*(q+2) == 'c' || *(q+2) == 'C') &&
             (*(q+3) == 'c' || *(q+3) == 'C') )  return(0) ;
+       /* nor a fujitsu compiler directive */
+         if ((*(q+1) == 'o' || *(q+1) == 'O') &&
+            (*(q+2) == 'c' || *(q+2) == 'C') &&
+            (*(q+3) == 'l' || *(q+3) == 'L') )  return(0) ;
        }
        *p = '\n' ; *(p+1) = '\0' ; return(0) ; 
     }

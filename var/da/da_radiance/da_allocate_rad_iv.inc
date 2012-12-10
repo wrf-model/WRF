@@ -132,9 +132,17 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
                allocate(iv%instid(i)%trans_jacobian(nchan,iv%instid(i)%nlevels,iv%instid(i)%num_rad))
                allocate(iv%instid(i)%der_trans(nchan,iv%instid(i)%nlevels,iv%instid(i)%num_rad))
             end if
+#ifdef CRTM_MODIF			
+            if (use_clddet_ecmwf) then	 
+               allocate (iv%instid(i)%kmin_t (iv%instid(i)%num_rad))	  
+               allocate (iv%instid(i)%kmax_p (iv%instid(i)%num_rad))	  
+               allocate (iv%instid(i)%sensitivity_ratio (nchan,iv%instid(i)%nlevels,iv%instid(i)%num_rad))	  
+               allocate (iv%instid(i)%p_chan_level (nchan,iv%instid(i)%num_rad))		   
+            end if
+#endif			
          end if
       end if
-
+	
       call da_trace_exit("da_allocate_rad_iv")
 
 end subroutine da_allocate_rad_iv

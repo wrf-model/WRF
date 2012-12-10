@@ -9,6 +9,8 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    !            2. do gross QC check
    !            3. assign sequential data structure to innovation structure
    !               and deallocate sequential data structure
+   !   File History:
+   !      Peiming Dong Added NPP atms, 2012/4/17
    !---------------------------------------------------------------------------
 
    implicit none
@@ -23,16 +25,18 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    integer(i_kind), allocatable :: nread(:)
 
    integer(i_kind),parameter:: n1bhdr=15
+   integer(i_kind),parameter:: n2bhdr=2
    integer(i_kind),parameter:: maxinfo=12
    integer(i_kind),parameter:: maxchanl=100
 
-   logical hirs2,hirs3,hirs4,msu,amsua,amsub,mhs
+   logical hirs2,hirs3,hirs4,msu,amsua,amsub,mhs,atms
    logical outside, outside_all, iuse
    integer :: inst
 
    character(10) date
    character(8) subset,subfgn
    character(80) hdr1b
+   character(80) hdr2b
    integer(i_kind) ihh,i,j,k,ifov,idd,ireadmg,ireadsb
    integer(i_kind) iret,idate,im,iy,nchan
    integer :: num_bufr(7), numbufr, ibufr
@@ -50,6 +54,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
 
    real(r_double),dimension(maxinfo+maxchanl):: data1b8
    real(r_double),dimension(n1bhdr):: bfr1bhdr
+   real(r_double),dimension(n2bhdr):: bfr2bhdr
 
    ! Instrument triplet, follow the convension of RTTOV 
    integer   :: platform_id, satellite_id, sensor_id
@@ -72,6 +77,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    type(model_loc_type)           ::  loc
 
    data hdr1b /'SAID FOVN YEAR MNTH DAYS HOUR MINU SECO CLAT CLON SAZA SOZA HOLS LSQL SOLAZI'/
+   data hdr2b /'CLATH CLONH'/
    !  data hdr1b /'FOVN YEAR MNTH DAYS HOUR MINU SECO CLAT CLON SAZA SOZA HOLS LSQL SLNM BEARAZ'/
 
    data tbmin,tbmax,tbbad / 50.0_r_kind, 550.0_r_kind, -9.99e11_r_kind /
@@ -87,7 +93,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
 
    ! Initialize variables
 
-   nchan = 20
+   nchan = 22
    allocate(nread(1:rtminit_nsensor))
    allocate(ptotal(0:num_fgat_time))
    nread(1:rtminit_nsensor) = 0
@@ -105,6 +111,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    amsua=     obstype == 'amsua'
    amsub=     obstype == 'amsub'
    mhs=       obstype == 'mhs  '
+   atms=      obstype == 'atms '
 
    if (hirs2) then
       sensor_id    =  0
@@ -150,6 +157,13 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
       start  = -48.95_r_kind
       nchan=nchan_amsub
       subfgn='NC021024'
+   else if (atms) then
+      sensor_id    =  19
+      step   = 1.11_r_kind
+      start  = -52.725_r_kind
+      nchan=22
+      subfgn='NC021203'
+      hdr1b='SAID FOVN YEAR MNTH DAYS HOUR MINU SECO CLAT CLON SAZA SOZA HMSL LSQL SOLAZI'
    end if
 
    allocate (tb_inv(nchan))
@@ -244,12 +258,13 @@ bufrfile:  do ibufr=1,numbufr
       write (unit=stdout,fmt='(A,I6)') "   Skipping tovs obs before", tovs_start
    end if
 
+
    obs: do while (ireadmg(lnbufr,subset,idate)==0 .and. subset==subfgn)
       do while (ireadsb(lnbufr)==0)
 
          ! 1.0     Read header record and data record
-
          call ufbint(lnbufr,bfr1bhdr,n1bhdr,1,iret,hdr1b)
+         call ufbint(lnbufr,bfr2bhdr,n2bhdr,1,iret,hdr2b)
          call ufbrep(lnbufr,data1b8,1,nchan,iret,'TMBR')
          ! call ufbrep(lnbufr,data1b8,1,1,iret,'BEARAZ')
 
@@ -264,9 +279,14 @@ bufrfile:  do ibufr=1,numbufr
          ! rlon = bfr1bhdr(bufr_lat)
          ! if (rlon < 0.0) rlon = rlon+360.0
 
-         info%lat  =  bfr1bhdr(bufr_lat)
+         if(abs(bfr2bhdr(1)) <= 90. .and. abs(bfr2bhdr(2)) <= 360.)then
+            info%lat = bfr2bhdr(1)
+            info%lon = bfr2bhdr(2)
+         elseif(abs(bfr1bhdr(9)) <= 90. .and. abs(bfr1bhdr(10)) <= 360.)then
+            info%lat = bfr1bhdr(9)
+            info%lon = bfr1bhdr(10)
+         endif
 
-         info%lon  =  bfr1bhdr(bufr_lon)
          call da_llxy (info, loc, outside, outside_all)
 
          if (outside_all) cycle
@@ -290,11 +310,15 @@ bufrfile:  do ibufr=1,numbufr
          else if ( nint(bfr1bhdr(bufr_satellite_id)) == 708 ) then ! tiros-n
             platform_id = 19
             satellite_id = 0
+         else if ( nint(bfr1bhdr(bufr_satellite_id)) == 224 ) then ! npp
+            platform_id = 17
+            satellite_id = 0
          else if ( nint(bfr1bhdr(bufr_satellite_id)) >= 701 .and. nint(bfr1bhdr(bufr_satellite_id)) <= 707 ) then
             platform_id = 1
             satellite_id = nint(bfr1bhdr(bufr_satellite_id))-700
          end if
          ifov = nint(bfr1bhdr(bufr_ifov))    
+
 
          !  QC2:  limb pixel rejected (not implemented)
 

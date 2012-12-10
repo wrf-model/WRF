@@ -1,4 +1,4 @@
-subroutine da_amat_mul(be, grid, cv_size, ntmax, neign, eignval, eignvec, qhat, shat, xhat)
+subroutine da_amat_mul(be, grid, cv_size, ntmaxit, neign, eignval, eignvec, qhat, shat, xhat)
 
    !-------------------------------------------------------------------------
    ! Purpose:  Multiply a control vector by the Analysis Error Cov Matrix A 
@@ -14,11 +14,11 @@ subroutine da_amat_mul(be, grid, cv_size, ntmax, neign, eignval, eignvec, qhat, 
    type (be_type), intent(in) :: be                     ! Background error structure.
    type (domain),  intent(in) :: grid
    integer,        intent(in) :: cv_size
-   integer,        intent(in) :: ntmax
+   integer,        intent(in) :: ntmaxit
    integer,        intent(in) :: neign
-   real*8,         intent(in) :: eignvec(ntmax, ntmax)  
-   real*8,         intent(in) :: eignval(ntmax)
-   real,           intent(in) :: qhat(cv_size, 0:ntmax) ! Ritz vectors
+   real*8,         intent(in) :: eignvec(ntmaxit, ntmaxit)  
+   real*8,         intent(in) :: eignval(ntmaxit)
+   real,           intent(in) :: qhat(cv_size, 0:ntmaxit) ! Ritz vectors
    real,           intent(in) :: shat(cv_size)          ! Input vector to multiply by A
    real,           intent(out):: xhat(cv_size)          ! Output vector: xhat = A.shat
 

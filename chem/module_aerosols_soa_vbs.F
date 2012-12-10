@@ -221,25 +221,28 @@ INTEGER :: i,j,k,l,debug_level
    enddo
 
    ! Use RH from phys/??? 
-   do 100 j=jts,jte
-                do 100 i=its,ite
-                debug_level=0
+      do 100 j=jts,jte
+         do 100 i=its,ite
+            debug_level=0
+!             do k=kts,kte
+!                t(k) = t_phy(i,k,j)
+!                p(k) = .001*p_phy(i,k,j)
+!                rh0(k) = MIN( 95.,100. * moist(i,k,j,p_qv) /        &
+!                         (3.80*exp(17.27*(t_phy(i,k,j)-273.)/      &
+!                         (t_phy(i,k,j)-36.))/(.01*p_phy(i,k,j)))   )
+!                rh0(k)=max(.1,0.01*rh0(k))
+!             enddo
 
-!                       t(k) = t_phy(i,k,j)
-!                       p(k) = .001*p_phy(i,k,j)
-!                       rh(k) = MIN( 95.,100. * moist(i,k,j,p_qv) /        &
-!                                (3.80*exp(17.27*(t_phy(i,k,j)-273.)/      &
-!                                (t_phy(i,k,j)-36.))/(.01*p_phy(i,k,j)))   )
-!                       rh(k)=max(.1,0.01*rh(k))
-!        !               rh(k) = .10
-!                    enddo
+             do k=kts,kte
 
-k_loop:      do k=kts,kte
-
-! added here
+             ! added here
                   t(k) = t_phy(i,k,j)
                   p(k) = .001*p_phy(i,k,j)
                   rh0(k) = rh(i,k,j)
+
+!               IF ( rh0(k)<0.1 .OR. rh0(k)>0.95 ) THEN
+!                  CALL wrf_error_fatal ( 'rh0 is out of the permissible range' )
+!               ENDIF
 
                cblk=0.
 
@@ -473,7 +476,7 @@ k_loop:      do k=kts,kte
       chem(i,k,j,p_hno3)=max(epsilc,cblk(1,vhno3)/CONVFAC/MWHNO3)
       chem(i,k,j,p_nh3)=max(epsilc,cblk(1,vnh3)/CONVFAC/MWNH3)
 
-      enddo k_loop         ! k-loop
+      enddo          ! k-loop
 100  continue ! i,j-loop ends
 
 ! convert aerosol variables back to mixing ratio from ug/m3
@@ -1148,8 +1151,7 @@ END SUBROUTINE soa_vbs_depdriver
   DATA beta0(1,3)/2.0651E-1/, beta1(1,3)/5.556E-1/, cgama(1,3)/0.0       /  ! H+HSO4
   DATA beta0(2,1)/4.6465E-2/, beta1(2,1)/ -0.54196/,cgama(2,1)/ -1.2683E-3/ ! (NH4)2
   DATA beta0(2,2)/ -7.26224E-3/, beta1(2,2)/ -1.168858/,cgama(2,2)/3.51217E-5/ ! NH4NO3
-  DATA beta0(2,3)/4.494E-2/, beta1(2,3)/2.3594E-1/, cgama(2,3)/ -2.962E-3 &
-        /
+  DATA beta0(2,3)/4.494E-2/, beta1(2,3)/2.3594E-1/, cgama(2,3)/ -2.962E-3 /
 ! NH4HSO
       DATA v1(1,1), v2(1,1)/2.0, 1.0/  ! 2H+SO4-
       DATA v1(2,1), v2(2,1)/2.0, 1.0/  ! (NH4)2SO4
@@ -1185,8 +1187,18 @@ END SUBROUTINE soa_vbs_depdriver
         RETURN
 
       ELSE IF (i<0.0) THEN
-!       xmsg = 'Ionic strength below zero...negative concentrations'
-        CALL wrf_error_fatal ( xmsg )
+!        xmsg = 'Ionic strength below zero...negative concentrations'
+!        CALL wrf_error_fatal ( xmsg )
+
+        xmsg = 'WARNING: Ionic strength below zero (= negative ion concentrations) - setting ion concentrations to zero.'
+        call wrf_message(xmsg)
+        DO ian = 1, nan
+          DO icat = 1, ncat
+            gama(icat,ian) = 0.0
+          END DO
+        END DO
+        RETURN
+
       END IF
 
 !...compute some essential expressions
@@ -2747,10 +2759,10 @@ END SUBROUTINE coagrate
         cblk(lcell,vnh3)  = gas(1)*1.e6*17.
         cblk(lcell,vhno3) = gas(2)*1.e6*63.
         cblk(lcell,vhcl) = gas(3)*1.e6*36.
-        if(igrid.eq.28.and.jgrid.eq.24.and.kgrid.eq.1)then
-         print *,vhcl,vnh3,vhno3
-         print *,cblk(lcell,vnh3),cblk(lcell,vhno3),cblk(lcell,vhcl)
-        endif
+!        if(igrid.eq.28.and.jgrid.eq.24.and.kgrid.eq.1)then
+!         print *,vhcl,vnh3,vhno3
+!         print *,cblk(lcell,vnh3),cblk(lcell,vhno3),cblk(lcell,vhcl)
+!        endif
 
 ! *** get modal fraction
         fraci = cblk(lcell,vso4ai)/(cblk(lcell,vso4aj)+cblk(lcell,vso4ai))
@@ -2769,10 +2781,10 @@ END SUBROUTINE coagrate
         cblk(lcell,vno3aj) = fracj*(wt_save(4) - gas(2))
         cblk(lcell,vclaj)  = fracj*(wt_save(5) - gas(3))
         cblk(lcell,vnaaj)  = fracj*wi(1)
-        if(igrid.eq.28.and.jgrid.eq.24.and.kgrid.eq.1)then
-         print *,vh2oaj,vnh4aj,vno3aj,vclaj,vnaaj
-         print *,cblk(lcell,vnh4aj),cblk(lcell,vno3aj),cblk(lcell,vclaj),aerliq(8)
-        endif
+!        if(igrid.eq.28.and.jgrid.eq.24.and.kgrid.eq.1)then
+!         print *,vh2oaj,vnh4aj,vno3aj,vclaj,vnaaj
+!         print *,cblk(lcell,vnh4aj),cblk(lcell,vno3aj),cblk(lcell,vclaj),aerliq(8)
+!        endif
 
       END DO
 !  end loop on cells
@@ -4404,17 +4416,17 @@ SUBROUTINE rpmares_old(so4,hno3,no3,nh3,nh4,rh,temp,aso4,ano3,ah2o,anh4, &
 !...Check for complex roots of the quadratic
 !...  set nitrate to zero and RETURN if complex roots are found
 
-            IF (disc<0.0) THEN
-              xno3 = 0.0
-              ah2o = 1000.0*wh2o
-              ynh4 = twoso4
-              gno3 = tno3*mwhno3
-              gnh3 = (tnh4-ynh4)*mwnh3
-              aso4 = tso4*mwso4
-              ano3 = 0.0
-              anh4 = ynh4*mwnh4
-              RETURN
-            END IF
+          IF (disc<0.0) THEN
+            xno3 = 0.0
+            ah2o = 1000.0*wh2o
+            ynh4 = twoso4
+            gno3 = tno3*mwhno3
+            gnh3 = (tnh4-ynh4)*mwnh3
+            aso4 = tso4*mwso4
+            ano3 = 0.0
+            anh4 = ynh4*mwnh4
+            RETURN
+          END IF
 
 !...to get here, BB .lt. 0.0, CC .gt. 0.0 always
 
@@ -4483,6 +4495,20 @@ SUBROUTINE rpmares_old(so4,hno3,no3,nh3,nh4,rh,temp,aso4,ano3,ah2o,anh4, &
           xxq = -0.5*(bb+sign(1.0,bb)*dd)
           rr1 = xxq/aa
           rr2 = cc/xxq
+
+!...Check for two non-positive roots, if so set nitrate to zero and RETURN
+          IF (rr1 <= 0.0 .AND. rr2 <= 0.0) THEN
+            xno3 = 0.0
+            ah2o = 1000.0*wh2o
+            ynh4 = twoso4
+            gno3 = tno3*mwhno3
+            gnh3 = (tnh4-ynh4)*mwnh3
+            aso4 = tso4*mwso4
+            ano3 = 0.0
+            anh4 = ynh4*mwnh4
+!            WRITE(*,*) 'TWO NON-POSITIVE ROOTS!!! '
+            RETURN
+          END IF
 
 !...choose minimum positve root
 

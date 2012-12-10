@@ -500,6 +500,10 @@ module da_define_structures
       real,    pointer     :: lod(:,:,:)       ! layer_optical_depth
       real,    pointer     :: trans(:,:,:)     ! layer transmittance
       real,    pointer     :: der_trans(:,:,:) ! d(transmittance)/dp
+      real,    pointer     :: kmin_t(:)	
+      real,    pointer     :: kmax_p(:)	  
+      real,    pointer     :: sensitivity_ratio(:,:,:)	  
+      real,    pointer     :: p_chan_level(:,:)	  
       real,    pointer     :: qrn(:,:)
       real,    pointer     :: qcw(:,:)
       real,    pointer     :: qci(:,:)

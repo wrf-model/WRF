@@ -1624,10 +1624,14 @@ MODULE module_llxy
       rlat = ilat * rad_per_deg
       rlon = ilon * rad_per_deg
 
-      IF (PRESENT(direction) .AND. (direction < 0)) THEN
-         ! The equations are exactly the same except for one small difference
-         ! with respect to longitude ...
-         dlam = PI - lam_0
+      IF ( PRESENT(direction) ) THEN
+         IF (direction < 0) THEN
+            ! The equations are exactly the same except for one small difference
+            ! with respect to longitude ...
+            dlam = PI - lam_0
+         ELSE
+            dlam = lam_np
+         END IF
       ELSE
          dlam = lam_np
       END IF

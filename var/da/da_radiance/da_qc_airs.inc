@@ -22,7 +22,7 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
    integer   :: ngood(nchan),nrej(nchan),nrej_omb_abs(nchan), &
                 nrej_omb_std(nchan),nrej_limb,     &
                 nrej_landsurface,nrej_windowchshort,nrej_windowchlong,    &
-                nrej_clw,nrej_sst,nrej_topo, num_proc_domain
+                nrej_clw,nrej_sst,nrej_topo, num_proc_domain,sensor_id,nrej_eccloud
 
    real      :: SST_model, SST_airs, SST_pred, diffSST, diffSST2
    real      :: inv_grosscheck
@@ -34,7 +34,8 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
    integer              :: numrad_local(nchan), numrad_global(nchan)
    real                 :: tstore
    real                 :: bias_local(nchan), bias_global(nchan)
-
+   integer              :: kmin, kmax
+   integer, allocatable  :: k_cloud_flag(:) ! cloud flags   
    if (trace_use_dull) call da_trace_entry("da_qc_airs")
 
    ngood(:)        = 0
@@ -47,7 +48,8 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
    nrej_sst= 0
    nrej_clw        = 0
    nrej_topo       = 0
-
+   nrej_eccloud       = 0   
+   sensor_id = 11
 !   nrej_mixsurface = 0
 
    nrej_limb       = 0
@@ -263,12 +265,52 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
 	    end if   
 	    
          end do ! chan
-	 		    
+#ifdef CRTM_MODIF			 
+        !  k. ecmwf cloud_detection
+         !-----------------------------------------------------------
+        if (use_clddet_ecmwf) then	
+           iv%instid(i)%cloud_flag(:,n) = qc_good	    
+           allocate ( k_cloud_flag(1:nchan) )	  
+           call da_error(__FILE__,__LINE__, &
+             (/"Cloud_Detect_Setup is not implemented here, please contact the author of this subroutine."/))
+!           CALL Cloud_Detect_Setup(sensor_id)
+	       write(unit=stdout,fmt='(A)') 'finish cloud detection setup for airs'   
+           kmin = iv%instid(i)%kmin_t(n)
+           kmax = iv%instid(i)%kmax_p(n)
+           call da_error(__FILE__,__LINE__, &
+             (/"Cloud_Detect is not implemented here, please contact the author of this subroutine."/))		   
+!           CALL Cloud_Detect( &
+!           sensor_id,     &  ! in
+!           nchan,     &  ! in
+!           iv%instid(i)%ichan,     &  ! in
+!           iv%instid(i)%tb_xb(:,n),   &  ! in
+!           iv%instid(i)%tb_inv(:,n),     &  ! in		
+!           iv%instid(i)%p_chan_level(:,n), &  ! in
+!           k_cloud_flag, &  ! out
+!           kmin,     &  ! in
+!           kmax)        ! in 
+						
+           do k = 1, nchan		 
+		 ! remove channels above the modle top
+		 	  if(iv%instid(i)%p_chan_level(k,n)==0) then
+				     iv%instid(i)%tb_qc(k,n)  = qc_bad
+                 if (iv%instid(i)%info%proc_domain(1,n)) &
+                 nrej_eccloud = nrej_eccloud + 1				 
+			  end if
+              if (k_cloud_flag(k) .eq. 1) then
+               iv%instid(i)%tb_qc(k,n)  = qc_bad
+                 if (iv%instid(i)%info%proc_domain(1,n)) &
+                 nrej_eccloud = nrej_eccloud + 1				
+               end if			   
+           end do	 !chan
+	     deallocate ( k_cloud_flag )	 
+        end if		!ecmwf
+#endif			
       end do ! end loop pixel      
       			  
     ! Do inter-processor communication to gather statistics.
 #ifdef CRTM_MODIF
-      if (use_airs_mmr .and. (.not.use_satcv(2))) then
+      if (use_clddet_mmr .and. (.not.use_satcv(2))) then
          do k = 1, nchan
             bias_global(k)   = wrf_dm_sum_real(bias_local(k))
             numrad_global(k) = wrf_dm_sum_integer(numrad_local(k))
@@ -281,7 +323,7 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
 
            ! 1. Cloud detection scheme (NESDIS or MMR)
            !---------------------------------------------
-         if (use_airs_mmr .and. (.not.use_satcv(2))) then
+         if (use_clddet_mmr .and. (.not.use_satcv(2))) then
             iv%instid(i)%cloud_flag(:,n) = qc_good
 	    
 	    if (rtm_option == rtm_option_rttov) then
@@ -346,6 +388,7 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
    call da_proc_sum_int  (nrej_windowchshort)
    call da_proc_sum_int  (nrej_sst)
    call da_proc_sum_int  (nrej_clw  )
+   call da_proc_sum_int  (nrej_eccloud )   
    call da_proc_sum_int  (nrej_topo )
    call da_proc_sum_int  (nrej_limb)
    call da_proc_sum_ints (nrej_omb_abs(:))
@@ -375,6 +418,7 @@ subroutine da_qc_airs (it, i, nchan, ob, iv)
       write(fgat_rad_unit,'(a20,i7)') ' nrej_sst = ', nrej_sst
       !      write(fgat_rad_unit,'(a20,i7)') ' nrej_mixsurface  = ', nrej_mixsurface
       write(fgat_rad_unit,'(a20,i7)') ' nrej_clw         = ', nrej_clw
+      write(fgat_rad_unit,'(a20,i7)') ' nrej_eccloud        = ', nrej_eccloud		  
       write(fgat_rad_unit,'(a20,i7)') ' nrej_topo        = ', nrej_topo
       write(fgat_rad_unit,'(a20,i7)') ' nrej_limb        = ', nrej_limb
       write(fgat_rad_unit,'(a20)')    ' nrej_omb_abs(:)  = '

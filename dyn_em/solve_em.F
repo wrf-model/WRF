@@ -854,6 +854,43 @@ BENCH_START(relax_bdy_dry_tim)
      
        ENDIF
 
+!---------------------------------------------------------------------------------------------
+! KRS 9/12/2012: Inserted new IF block calls to spec_bdy_dry_perturb. If peturb_bdy=1, SKEBS 
+! pattern passed in for perturbing the specified boundry conditions.  If peturb_bdy=2, user
+! must provide pattern.  mu_2, mub, msf* also passed in for coupling needed for tendecies.
+!---------------------------------------------------------------------------------------------
+       IF( config_flags%specified .and. config_flags%perturb_bdy==1 ) THEN 
+         CALL spec_bdy_dry_perturb ( config_flags,                                 &
+                             grid%ru_tend, grid%rv_tend, t_tend,                   &
+                             grid%mu_2, grid%mub,                                  &
+                             grid%msfu, grid%msfv, grid%msft,	                   &
+                             grid%ru_tendf_stoch, grid%rv_tendf_stoch, grid%rt_tendf_stoch, &
+                             config_flags%spec_bdy_width, grid%spec_zone,                   &
+                             ids,ide, jds,jde, kds,kde,  & ! domain dims
+                             ims,ime, jms,jme, kms,kme,  & ! memory dims
+                             ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                             grid%i_start(ij), grid%i_end(ij),                &
+                             grid%j_start(ij), grid%j_end(ij),                &
+                             k_start, k_end                                  )
+     
+       ENDIF
+
+       IF( config_flags%specified .and. config_flags%perturb_bdy==2 ) THEN
+         CALL spec_bdy_dry_perturb ( config_flags,                                 &
+                             grid%ru_tend, grid%rv_tend, t_tend,                   &
+                             grid%mu_2, grid%mub,                                  &
+                             grid%msfu, grid%msfv, grid%msft,                      &
+                             grid%field_u_tend_perturb, grid%field_v_tend_perturb, grid%field_t_tend_perturb, &
+                             config_flags%spec_bdy_width, grid%spec_zone,                   &
+                             ids,ide, jds,jde, kds,kde,  & ! domain dims
+                             ims,ime, jms,jme, kms,kme,  & ! memory dims
+                             ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                             grid%i_start(ij), grid%i_end(ij),                &
+                             grid%j_start(ij), grid%j_end(ij),                &
+                             k_start, k_end                                  )
+  
+       ENDIF
+
      END DO
      !$OMP END PARALLEL DO
 BENCH_END(relax_bdy_dry_tim)

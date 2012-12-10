@@ -149,8 +149,8 @@ CONTAINS
 
       xcre(1) = 1. + xbm_r
       xcre(2) = 1. + xmu_r
-      xcre(3) = 4. + xmu_r
-      xcre(4) = 7. + xmu_r
+      xcre(3) = 1. + xbm_r + xmu_r
+      xcre(4) = 1. + 2.*xbm_r + xmu_r
       do n = 1, 4
          xcrg(n) = WGAMMA(xcre(n))
       enddo
@@ -158,8 +158,8 @@ CONTAINS
 
       xcse(1) = 1. + xbm_s
       xcse(2) = 1. + xmu_s
-      xcse(3) = 4. + xmu_s
-      xcse(4) = 7. + xmu_s
+      xcse(3) = 1. + xbm_s + xmu_s
+      xcse(4) = 1. + 2.*xbm_s + xmu_s
       do n = 1, 4
          xcsg(n) = WGAMMA(xcse(n))
       enddo
@@ -167,8 +167,8 @@ CONTAINS
 
       xcge(1) = 1. + xbm_g
       xcge(2) = 1. + xmu_g
-      xcge(3) = 4. + xmu_g
-      xcge(4) = 7. + xmu_g
+      xcge(3) = 1. + xbm_g + xmu_g
+      xcge(4) = 1. + 2.*xbm_g + xmu_g
       do n = 1, 4
          xcgg(n) = WGAMMA(xcge(n))
       enddo

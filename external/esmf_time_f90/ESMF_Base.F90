@@ -538,10 +538,14 @@ end function
 !     !   be: Applications, Components, Fields/Bundles, Grids.
 !      
 !     ! Construct a default namespace if one is not given
-      if((.not. present(namespace)) .or. (namespace .eq. "")) then
-          ournamespace = "global"
+      if( present(namespace) ) then
+          if( namespace .eq. "" ) then
+              ournamespace = "global"
+          else
+              ournamespace = namespace
+          endif
       else
-          ournamespace = namespace
+              ournamespace = "global"
       endif
 !     ! Construct a default name if one is not given
       if((.not. present(name)) .or. (name .eq. "")) then

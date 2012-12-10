@@ -156,6 +156,13 @@
    !  occurrence of the Northern Spring Equinox
    REAL , PARAMETER :: EQUINOX_FRACTION= 0.0
 
+! 2012103
+#if (EM_CORE == 1)
+! for calls to set_tiles
+   INTEGER, PARAMETER :: ZONE_SOLVE_EM = 1
+   INTEGER, PARAMETER :: ZONE_SFS = 2
+#endif
+
  CONTAINS
    SUBROUTINE init_module_model_constants
    END SUBROUTINE init_module_model_constants

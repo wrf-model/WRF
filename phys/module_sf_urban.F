@@ -487,9 +487,9 @@ MODULE module_sf_urban
 
    REAL :: TRP, TBP, TGP, TCP, QCP, TST, QST
 
-   REAL :: WDR,HGT2,BW,SW,DHGT
+   REAL :: WDR,HGT2,BW,DHGT
    REAL, parameter :: VonK = 0.4
-   REAL :: lambda_f,Cd,alpha_macd,beta_macd,lambda_fr
+   REAL :: lambda_f,alpha_macd,beta_macd,lambda_fr
 
    INTEGER :: iteration, K, NUDAPT 
    INTEGER :: tloc

@@ -86,7 +86,9 @@ CONTAINS
      INTEGER lats_to_mic
      CALL nl_get_nproc_x ( 1, ntasks_x )
      CALL nl_get_nproc_y ( 1, ntasks_y )
+#ifndef (NMM_CORE)
      CALL nl_get_lats_to_mic ( 1, lats_to_mic )
+#endif
 ! check if user has specified in the namelist
      IF ( ntasks_x .GT. 0 .OR. ntasks_y .GT. 0 ) THEN
        ! if only ntasks_x is specified then make it 1-d decomp in i
@@ -101,6 +103,7 @@ CONTAINS
          WRITE( wrf_err_message , * )'WRF_DM_INITIALIZE (RSL_LITE): nproc_x * nproc_y in namelist ne ',ntasks
          CALL wrf_error_fatal ( wrf_err_message )
        ENDIF
+#ifndef (NMM_CORE)
      ELSE IF ( lats_to_mic .GT. 0 ) THEN
        ntasks_x = ntasks / 2
        ntasks_y = 2
@@ -110,6 +113,7 @@ CONTAINS
            ') in namelist ne ',ntasks
          CALL wrf_error_fatal ( wrf_err_message )
        ENDIF
+#endif
      ELSE
        ! When neither is specified, work out mesh with MPASPECT
        ! Pass nproc_ln and nproc_nt so that number of procs in
@@ -273,7 +277,10 @@ CONTAINS
       INTEGER thisdomain_max_halo_width
       INTEGER lats_to_mic
 
+     lats_to_mic=0
+#ifndef (NMM_CORE)
      CALL nl_get_lats_to_mic( 1, lats_to_mic )
+#endif
       IF ( lats_to_mic .GT. 0 ) THEN
         minx = -99  ! code to task_for_point to do split decomposition over MIC and host
         miny = lats_to_mic  ! number of latitudes that should be assigned to MIC

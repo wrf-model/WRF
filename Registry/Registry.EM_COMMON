@@ -1577,6 +1577,7 @@ rconfig   logical use_adaptive_time_step  namelist,domains      1         .false
 rconfig   logical use_adaptive_time_step_dfi  namelist,domains  1         .false.     ih    "use_adaptive_time_step_dfi"
 
 rconfig   integer max_dom                 namelist,domains	1             1       irh  "max_dom"               ""      ""
+rconfig   integer lats_to_mic             namelist,domains	1             0        irh  "lats_to_mic"               ""      ""
 rconfig   integer s_we                    namelist,domains	max_domains    1       irh    "s_we"          ""      ""
 rconfig   integer e_we                    namelist,domains	max_domains    32      irh    "e_we"          ""      ""
 rconfig   integer s_sn                    namelist,domains	max_domains    1       irh    "s_sn"          ""      ""

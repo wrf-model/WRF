@@ -2420,7 +2420,7 @@ CONTAINS
           CALL wrf_debug(100,'in P-X LSM')
           CALL PXLSM(u_phy, v_phy, dz8w, qv_curr, t_phy, th_phy, rho,&
                      psfc, gsw, glw, rainbl, emiss,                  &
-                     ITIMESTEP, num_soil_layers, DT, anal_interval,  &
+                     ITIMESTEP, curr_secs, num_soil_layers, DT, anal_interval,  &
                      xland, xice, albbck, albedo, snoalb, smois, tslb, &
                      mavail,T2, Q2,                                  &
                      zs, dzs, psih,                                  &

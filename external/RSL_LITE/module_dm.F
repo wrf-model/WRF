@@ -86,7 +86,7 @@ CONTAINS
      INTEGER lats_to_mic
      CALL nl_get_nproc_x ( 1, ntasks_x )
      CALL nl_get_nproc_y ( 1, ntasks_y )
-#ifndef (NMM_CORE)
+#ifndef NMM_CORE
      CALL nl_get_lats_to_mic ( 1, lats_to_mic )
 #endif
 ! check if user has specified in the namelist
@@ -103,7 +103,7 @@ CONTAINS
          WRITE( wrf_err_message , * )'WRF_DM_INITIALIZE (RSL_LITE): nproc_x * nproc_y in namelist ne ',ntasks
          CALL wrf_error_fatal ( wrf_err_message )
        ENDIF
-#ifndef (NMM_CORE)
+#ifndef NMM_CORE
      ELSE IF ( lats_to_mic .GT. 0 ) THEN
        ntasks_x = ntasks / 2
        ntasks_y = 2
@@ -278,7 +278,7 @@ CONTAINS
       INTEGER lats_to_mic
 
      lats_to_mic=0
-#ifndef (NMM_CORE)
+#ifndef NMM_CORE
      CALL nl_get_lats_to_mic( 1, lats_to_mic )
 #endif
       IF ( lats_to_mic .GT. 0 ) THEN

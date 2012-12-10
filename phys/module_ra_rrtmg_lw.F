@@ -11343,6 +11343,7 @@ CONTAINS
                        xland, xice, snow,                         &
                        qv3d, qc3d, qr3d,                          &
                        qi3d, qs3d, qg3d,                          &
+                       o3input, o33d,                             &
                        f_qv, f_qc, f_qr, f_qi, f_qs, f_qg,        &
                        tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4,   & ! czhao 
                        tauaerlw5,tauaerlw6,tauaerlw7,tauaerlw8,   & ! czhao 
@@ -11441,6 +11442,11 @@ CONTAINS
    INTEGER,    INTENT(IN  ), OPTIONAL   ::       aer_ra_feedback
 !jdfcz   INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn,prescribe
    INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn
+!  Ozone
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
+         OPTIONAL                                               , &
+         INTENT(IN   ) :: O33D
+   INTEGER, OPTIONAL, INTENT(IN ) :: o3input
 
       real, parameter :: thresh=1.e-9
       real slope
@@ -11475,6 +11481,7 @@ CONTAINS
                                                             QI1D, &
                                                             QS1D, &
                                                             QG1D, &
+                                                            O31D, &
                                                           qndrop1d 
 
 ! Added local arrays for RRTMG
@@ -11722,6 +11729,7 @@ CONTAINS
          DO K=kts,kte
             QV1D(K)=QV3D(I,K,J)
             QV1D(K)=max(0.,QV1D(K))
+            O31D(K)=O33D(I,K,J)
          ENDDO
 
          DO K=kts,kte
@@ -11983,6 +11991,15 @@ CONTAINS
 ! Steven Cavallo: Changed to nlayers from kte+1
          do k = kts, nlayers
             o3vmr(ncol,k) = o3mmr(k) * amdo
+            if(o3input .eq. 2)then
+               if(k.le.kte)then
+                 o3vmr(ncol,k) = o31d(k)
+               else
+! apply shifted climatology profile above model top
+                 o3vmr(ncol,k) = o31d(kte) - o3mmr(kte)*amdo + o3mmr(k)*amdo 
+                 if(o3vmr(ncol,k) .le. 0.)o3vmr(ncol,k) = o3mmr(k)*amdo
+               endif
+            endif
          enddo
 
 ! Set surface emissivity in each RRTMG longwave band

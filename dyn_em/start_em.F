@@ -694,6 +694,7 @@
                       grid%lu_state,                                      &
                       grid%xlat,grid%xlong,grid%albedo,grid%albbck,grid%GMT,grid%JULYR,grid%JULDAY,     &
                       grid%levsiz, num_ozmixm, num_aerosolc, grid%paerlev,  &
+                      grid%alevsiz, grid%no_src_types,                      &
                       grid%tmn,grid%xland,grid%znt,grid%z0,grid%ust,grid%mol,grid%pblh,grid%tke_pbl,    &
                       grid%exch_h,grid%thc,grid%snowc,grid%mavail,grid%hfx,grid%qfx,grid%rainbl, &
                       grid%tslb,grid%zs,grid%dzs,config_flags%num_soil_layers,grid%warm_rain,  &
@@ -719,6 +720,7 @@
                       grid%gd_cloud_a, grid%gd_cloud2_a,                              & ! Optional
                       grid%gd_cloud_b, grid%gd_cloud2_b,                              & ! Optional
                       ozmixm,grid%pin,                             &     ! Optional
+                      grid%aerodm,grid%pina,                       &     ! Optional
                       grid%m_ps_1,grid%m_ps_2,grid%m_hybi,aerosolc_1,aerosolc_2,&  ! Optional
                       grid%rundgdten,grid%rvndgdten,grid%rthndgdten,         &     ! Optional
                       grid%rphndgdten,grid%rqvndgdten,grid%rmundgdten,       &     ! Optional

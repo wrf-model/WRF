@@ -273,7 +273,7 @@ em_real : wrf
 	  ( cd test/em_esmf_exp ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ; \
                ln -sf ../../run/ETAMPNEW_DATA . ;                      \
-               ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;                      \
+               ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;        \
                ln -sf ../../run/RRTM_DATA . ;                          \
                ln -sf ../../run/RRTMG_LW_DATA . ;                      \
                ln -sf ../../run/RRTMG_SW_DATA . ;                      \
@@ -282,6 +282,10 @@ em_real : wrf
                ln -sf ../../run/ozone.formatted . ;                    \
                ln -sf ../../run/ozone_lat.formatted . ;                \
                ln -sf ../../run/ozone_plev.formatted . ;               \
+               ln -sf ../../run/aerosol.formatted . ;                  \
+               ln -sf ../../run/aerosol_lat.formatted . ;              \
+               ln -sf ../../run/aerosol_lon.formatted . ;              \
+               ln -sf ../../run/aerosol_plev.formatted . ;             \
                if [ $(RWORDSIZE) -eq 8 ] ; then                        \
                   ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
                   ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
@@ -308,15 +312,19 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ;    \
              ln -sf ../../run/ETAMPNEW_DATA . ;                     \
-             ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;                     \
+             ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;       \
              ln -sf ../../run/RRTM_DATA . ;                         \
-             ln -sf ../../run/RRTMG_LW_DATA . ;                      \
-             ln -sf ../../run/RRTMG_SW_DATA . ;                      \
-             ln -sf ../../run/CAM_ABS_DATA . ;                         \
-             ln -sf ../../run/CAM_AEROPT_DATA . ;                         \
-             ln -sf ../../run/ozone.formatted . ;                         \
-             ln -sf ../../run/ozone_lat.formatted . ;                         \
-             ln -sf ../../run/ozone_plev.formatted . ;                         \
+             ln -sf ../../run/RRTMG_LW_DATA . ;                     \
+             ln -sf ../../run/RRTMG_SW_DATA . ;                     \
+             ln -sf ../../run/CAM_ABS_DATA . ;                      \
+             ln -sf ../../run/CAM_AEROPT_DATA . ;                   \
+             ln -sf ../../run/ozone.formatted . ;                   \
+             ln -sf ../../run/ozone_lat.formatted . ;               \
+             ln -sf ../../run/ozone_plev.formatted . ;              \
+             ln -sf ../../run/aerosol.formatted . ;                 \
+             ln -sf ../../run/aerosol_lat.formatted . ;             \
+             ln -sf ../../run/aerosol_lon.formatted . ;             \
+             ln -sf ../../run/aerosol_plev.formatted . ;            \
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
                 ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \

@@ -466,6 +466,16 @@ Namelist variables for controlling the adaptive time step option:
  cam_abs_dim1                        = 4 for CAM absorption save array
  cam_abs_dim2                        = value of e_vert for CAM 2nd absorption save array
 
+ o3input                             = ozone input option for radiation (currently rrtmg only)
+                                     = 0, using profile inside the code
+                                     = 2, using CAM ozone data (ozone.formatted)
+ aer_opt                             = aerosol input option for radiation (currently rrtmg only)
+                                     = 0, none
+                                     = 1, using Tegen (1997) data, 
+ alevsiz                             = 12 for Tegen aerosol input levels
+ no_src_types                        = 6 for Tegen aerosols: organic and black carbon, sea salt, sulfalte, dust,
+                                       and stratospheric aerosol (volcanic ashes - currently 0)
+
  sf_sfclay_physics (max_dom)         surface-layer option (old bl_sfclay_physics option)
                                      = 0, no surface-layer
                                      = 1, MM5 Monin-Obukhov scheme

@@ -44,6 +44,7 @@ CONTAINS
                          lu_state,                               &
                          XLAT,XLONG,ALBEDO,ALBBCK,GMT,JULYR,JULDAY,&
                          levsiz, n_ozmixm, n_aerosolc, paerlev,  &
+                         alevsiz, no_src_types,                  &
                          TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_PBL,  &
                          EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
                          TSLB,ZS,DZS,num_soil_layers,warm_rain,  &
@@ -69,6 +70,7 @@ CONTAINS
                          gd_cloud_a,gd_cloud2_a,                 &    ! Optional
                          gd_cloud_b,gd_cloud2_b,                 &    ! Optional
                          ozmixm,pin,                             &    ! Optional
+                         aerodm,pina,                            &    ! Optional
                          m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,& ! Optional
                          RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,         &    ! Optional
                          RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,       &    ! Optional
@@ -165,11 +167,15 @@ CONTAINS
 
    INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
    INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc
+   INTEGER,      INTENT(IN   )    ::   alevsiz, no_src_types
 
    REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ), OPTIONAL, &
           INTENT(INOUT) ::                                  OZMIXM
+   REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, n_ozmixm-1, no_src_types ), OPTIONAL, &
+          INTENT(INOUT) ::                                  aerodm
 
    REAL,  DIMENSION(levsiz), OPTIONAL, INTENT(INOUT)  ::        PIN
+   REAL,  DIMENSION(alevsiz), OPTIONAL, INTENT(INOUT)  ::       PINA
 
    REAL,  DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT)  :: m_ps_1,m_ps_2
    REAL,  DIMENSION(paerlev), OPTIONAL,INTENT(INOUT)  ::          m_hybi
@@ -655,9 +661,11 @@ integer myproc
 
    CALL ra_init(id=id,STEPRA=STEPRA,RADT=RADT,DT=DT,RTHRATEN=RTHRATEN,RTHRATENLW=RTHRATENLW,             &
                 RTHRATENSW=RTHRATENSW,CLDFRA=CLDFRA,EMISS=EMISS,cen_lat=cen_lat,JULYR=JULYR,JULDAY=JULDAY,GMT=GMT,    &
-                levsiz=levsiz,XLAT=XLAT,n_ozmixm=n_ozmixm,                           &
+                levsiz=levsiz,XLAT=XLAT,XLONG=XLONG,n_ozmixm=n_ozmixm,     &
+                alevsiz=alevsiz,no_src_types=no_src_types,                 &
                 cldfra_old=cldfra_old,                                     & ! Optional
                 ozmixm=ozmixm,pin=pin,                                     & ! Optional
+                aerodm=aerodm,pina=pina,                                   & ! Optional
                 m_ps_1=m_ps_1,m_ps_2=m_ps_2,m_hybi=m_hybi,aerosolc_1=aerosolc_1,aerosolc_2=aerosolc_2,     & ! Optional
                 paerlev=paerlev,n_aerosolc=n_aerosolc,                             &
                 sfull=sfull,shalf=shalf,pptop=pptop,swrad_scat=swrad_scat,p_top=p_top,       &
@@ -1131,9 +1139,11 @@ integer myproc
 !=====================================================================
    SUBROUTINE ra_init(id,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,       &
                       RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
-                      levsiz,XLAT,n_ozmixm,                           &
+                      levsiz,XLAT,XLONG,n_ozmixm,                     &
+                      alevsiz,no_src_types,                           &
                       cldfra_old,                                     & ! Optional
                       ozmixm,pin,                                     & ! Optional
+                      aerodm,pina,                                    & ! Optional
                       m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,     & ! Optional
                       paerlev,n_aerosolc,                             &
                       sfull,shalf,pptop,swrad_scat,p_top,            &
@@ -1147,6 +1157,7 @@ integer myproc
    USE module_ra_rrtmg_lw  , ONLY : rrtmg_lwinit
    USE module_ra_rrtmg_sw  , ONLY : rrtmg_swinit
    USE module_ra_cam       , ONLY : camradinit
+   USE module_ra_cam_support , ONLY : oznini
    USE module_ra_sw        , ONLY : swinit
    USE module_ra_gsfcsw    , ONLY : gsfc_swinit
    USE module_ra_gfdleta   , ONLY : gfdletainit
@@ -1174,11 +1185,14 @@ integer myproc
 
    INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
    INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc
+   INTEGER,      INTENT(IN   )    ::   alevsiz, no_src_types
 
-   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::  XLAT
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::  XLAT, XLONG
 
    REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ), OPTIONAL,      &
           INTENT(INOUT) ::                                  OZMIXM
+   REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, n_ozmixm-1, no_src_types ), OPTIONAL,      &
+          INTENT(INOUT) ::                                  aerodm
 
    REAL,  DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT)  :: m_ps_1,m_ps_2
    REAL,  DIMENSION(paerlev), OPTIONAL, INTENT(INOUT)  ::         m_hybi
@@ -1186,6 +1200,7 @@ integer myproc
           INTENT(INOUT) ::                      aerosolc_1, aerosolc_2
 
    REAL,  DIMENSION(levsiz), OPTIONAL, INTENT(INOUT)  ::          PIN
+   REAL,  DIMENSION(alevsiz), OPTIONAL, INTENT(INOUT)  ::         PINA
 
    INTEGER , INTENT(INOUT)        :: STEPRA
    INTEGER :: isn
@@ -1246,6 +1261,28 @@ integer myproc
         ENDDO
      end if
    ENDIF
+
+!-- ww: attempt to use CAM ozone and some aerosol profiles in all rad schemes
+!   note that CAM option will still do the same. 
+!   n_ozmixm: no of months; levsiz: = 59, vertical dim
+!   Read in CAM ozone data, and interpolate data to model grid
+
+!  IF ( PRESENT ( ozmixm ) ) THEN
+   IF ( config_flags%o3input .EQ. 2 ) THEN
+      CALL oznini(ozmixm,pin,levsiz,n_ozmixm,XLAT,                &
+                     ids, ide, jds, jde, kds, kde,                  &
+                     ims, ime, jms, jme, kms, kme,                  &
+                     its, ite, jts, jte, kts, kte)
+   ENDIF
+!  ENDIF
+!  IF ( PRESENT ( aerodm ) ) THEN
+   IF ( config_flags%aer_opt .EQ. 1 ) THEN
+      CALL aerosol_in(aerodm,pina,alevsiz,n_ozmixm-1,no_src_types,XLAT,XLONG,   &
+                     ids, ide, jds, jde, kds, kde,                  &
+                     ims, ime, jms, jme, kms, kme,                  &
+                     its, ite, jts, jte, kts, kte)
+   ENDIF
+!  ENDIF
 
 !-- find out which microphysics option is used first
 
@@ -2980,5 +3017,252 @@ integer myproc
    ENDIF
 
    END SUBROUTINE z2sigma
+
+subroutine aerosol_in(aerodm,pina,alevsiz,no_months,no_src_types,XLAT,XLONG,   &
+                     ids, ide, jds, jde, kds, kde,                  &
+                     ims, ime, jms, jme, kms, kme,                  &
+                     its, ite, jts, jte, kts, kte)
+!
+! Adaped from oznini in CAM 
+! It should be replaced by monthly climatology that varies latitudinally and vertically
+!
+   IMPLICIT NONE
+
+   INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
+                                       ims,ime, jms,jme, kms,kme, &
+                                       its,ite, jts,jte, kts,kte   
+
+   INTEGER,      INTENT(IN   )    ::   alevsiz, no_months, no_src_types
+
+   REAL,  DIMENSION( ims:ime, jms:jme ), INTENT(IN   )  ::     XLAT, XLONG
+
+   REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, no_months, no_src_types ),      &
+          INTENT(OUT   ) ::                                  aerodm
+
+   REAL,  DIMENSION(alevsiz), INTENT(OUT )  ::                   pina
+
+! Local
+!  data from Torn, computed from EC 6 types of aerosol data:
+!    organic carbon, sea salt, dust, black carbon, sulfalte 
+!    and stratospheric aerosol (volcanic ashes)
+
+   INTEGER, PARAMETER :: latsiz = 46
+   INTEGER, PARAMETER :: lonsiz = 72
+   INTEGER :: i, j, k, itf, jtf, ktf, m, pin_unit, lat_unit, lon_unit, od_unit, ks, il, jl
+   INTEGER :: ilon1, ilon2, jlat1, jlat2
+   REAL    :: interp_pt, interp_pt_lat, interp_pt_lon, wlat1, wlat2, wlon1, wlon2
+   CHARACTER*256 :: message
+
+   REAL,  DIMENSION( lonsiz, alevsiz, latsiz, no_months, no_src_types )    ::   &
+                                                            aerodin
+
+   REAL,  DIMENSION(latsiz)                ::             lat_od, aertmp1
+   REAL,  DIMENSION(lonsiz)                ::             lon_od, aertmp2
+
+   jtf=min0(jte,jde-1)
+   ktf=min0(kte,kde-1)
+   itf=min0(ite,ide-1)
+
+!-- read in aerosol optical depth pressure data
+
+     WRITE(message,*)'no_months = ',no_months
+     CALL wrf_debug(1,message)
+
+! pressure in mb
+      pin_unit = 27
+        OPEN(pin_unit, FILE='aerosol_plev.formatted',FORM='FORMATTED',STATUS='OLD')
+        do k = 1,alevsiz
+        READ (pin_unit,*) pina(k)
+        end do
+      close(27)
+
+!     do k=1,alevsiz
+!       pina(k) = pina(k)*100.
+!     end do
+
+!-- read in aerosol optical depth lat data
+
+      lat_unit = 28
+        OPEN(lat_unit, FILE='aerosol_lat.formatted',FORM='FORMATTED',STATUS='OLD')
+        do j = 1,latsiz
+        READ (lat_unit,*) lat_od(j)
+        end do
+      close(28)
+
+!-- read in aerosol optical depth lat data
+
+      lon_unit = 29
+        OPEN(lon_unit, FILE='aerosol_lon.formatted',FORM='FORMATTED',STATUS='OLD')
+        do j = 1,lonsiz
+        READ (lon_unit,*) lon_od(j)
+        end do
+      close(29)
+
+!-- read in ozone data
+
+      od_unit = 30
+      OPEN(od_unit, FILE='aerosol.formatted',FORM='FORMATTED',STATUS='OLD')
+
+      do ks=1,no_src_types
+      do m=1,no_months
+      do j=1,latsiz  ! latsiz=46
+      do k=1,alevsiz ! alevsiz=12
+      do i=1,lonsiz  ! lonsiz=72
+         READ (od_unit,*) aerodin(i,k,j,m,ks)
+      enddo
+      enddo
+      enddo
+      enddo
+      enddo
+      close(30)
+
+!-- latitudinally interpolate ozone data (and extend longitudinally)
+!-- using function lin_interpol2(x, f, y) result(g)
+! Purpose:
+!   interpolates f(x) to point y
+!   assuming f(x) = f(x0) + a * (x - x0)
+!   where a = ( f(x1) - f(x0) ) / (x1 - x0)
+!   x0 <= x <= x1
+!   assumes x is monotonically increasing
+!    real, intent(in), dimension(:) :: x  ! grid points
+!    real, intent(in), dimension(:) :: f  ! grid function values
+!    real, intent(in) :: y                ! interpolation point
+!    real :: g                            ! interpolated function value
+!---------------------------------------------------------------------------
+
+      do j=jts,jtf
+      do i=its,itf
+        interp_pt_lat=XLAT(i,j)
+        interp_pt_lon=XLONG(i,j)
+        call interp_vec(lat_od,interp_pt_lat,.true.,jlat1,jlat2,wlat1,wlat2)
+        call interp_vec(lon_od,interp_pt_lon,.true.,ilon1,ilon2,wlon1,wlon2)
+
+        do ks = 1,no_src_types
+        do m  = 1,no_months
+        do k  = 1,alevsiz
+          aerodm(i,k,j,m,ks) = wlon1 * (wlat1 * aerodin(ilon1,k,jlat1,m,ks)  + &
+                                        wlat2 * aerodin(ilon1,k,jlat2,m,ks)) + &
+                               wlon2 * (wlat1 * aerodin(ilon2,k,jlat1,m,ks)  + &
+                                        wlat2 * aerodin(ilon2,k,jlat2,m,ks))
+        end do
+        end do
+        end do
+
+      end do
+      end do
+
+!     do j=jts,jtf
+!     do i=its,itf
+!        onefld(i,j) = aerodm(i,12,j,1,1)
+!     enddo
+!     enddo
+
+END SUBROUTINE aerosol_in
+
+  function lin_interp(x, f, y) result(g)
+
+    ! Purpose:
+    !   interpolates f(x) to point y
+    !   assuming f(x) = f(x0) + a * (x - x0)
+    !   where a = ( f(x1) - f(x0) ) / (x1 - x0)
+    !   x0 <= x <= x1
+    !   assumes x is monotonically increasing
+
+    ! Author: D. Fillmore ::  J. Done changed from r8 to r4
+
+    implicit none
+
+    real, intent(in), dimension(:) :: x  ! grid points
+    real, intent(in), dimension(:) :: f  ! grid function values
+    real, intent(in) :: y                ! interpolation point
+    real :: g                            ! interpolated function value
+
+    integer :: k  ! interpolation point index
+    integer :: n  ! length of x
+    real    :: a
+
+    n = size(x)
+
+    ! find k such that x(k) < y =< x(k+1)
+    ! set k = 1 if y <= x(1)  and  k = n-1 if y > x(n)
+
+    if (y <= x(1)) then
+      k = 1
+    else if (y >= x(n)) then
+      k = n - 1
+    else
+      k = 1
+      do while (y > x(k+1) .and. k < n)
+        k = k + 1
+      end do
+    end if
+
+    ! interpolate
+    a = (  f(k+1) - f(k) ) / ( x(k+1) - x(k) )
+    g = f(k) + a * (y - x(k))
+
+  end function lin_interp
+
+  subroutine interp_vec(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
+
+  implicit none
+
+  real, intent(in), dimension(:) :: locvec
+  real, intent(in)               :: locwant
+  logical, intent(in)            :: periodic
+  integer, intent(out)           :: loc1, loc2
+  real, intent(out)              :: wght1, wght2
+
+  integer :: vsize, n
+  real    :: locv1, locv2
+
+  vsize = size(locvec)
+
+  loc1 = -1
+  loc2 = -1
+
+  do n = 1, vsize-1
+    if ( locvec(n) <= locwant .and. locvec(n+1) > locwant ) then
+      loc1  = n
+      loc2  = n+1
+      locv1 = locvec(n)
+      locv2 = locvec(n+1)
+      exit
+    end if
+  end do
+
+  if ( loc1 < 0 .and. loc2 < 0 ) then
+    if ( periodic ) then
+      if ( locwant < locvec(1) ) then
+        loc1  = vsize
+        loc2  = 1
+        locv1 = locvec(vsize)-360.0
+        locv2 = locvec(1)
+      else
+        loc1  = vsize
+        loc2  = 1
+        locv1 = locvec(vsize)
+        locv2 = locvec(1)+360.0
+      end if
+    else
+      if ( locwant < locvec(1) ) then
+        loc1  = 1
+        loc2  = 1
+        locv1 = locvec(1)
+        locv2 = locvec(1)
+      else
+        loc1  = vsize
+        loc2  = vsize
+        locv1 = locvec(vsize)
+        locv2 = locvec(vsize)
+      end if
+    end if
+  end if
+
+  wght2 = (locwant-locv1) / (locv2-locv1)
+  wght1 = 1.0 - wght2
+
+  return
+  end subroutine interp_vec
 
 END MODULE module_physics_init

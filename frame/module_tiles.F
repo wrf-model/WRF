@@ -6,7 +6,7 @@ MODULE module_tiles
   USE module_configure
 
   INTERFACE set_tiles
-    MODULE PROCEDURE set_tiles1 , set_tiles2, set_tiles3
+    MODULE PROCEDURE set_tiles1 , set_tiles2, set_tiles3, set_tiles_once
   END INTERFACE
 
 CONTAINS
@@ -149,6 +149,50 @@ CONTAINS
   END SUBROUTINE set_tiles1
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! this version callset set_tiles2 but only if the zone hasn't been cached already
+! Up to MAX_TILING_ZONES allowed
+! 
+  SUBROUTINE set_tiles_once ( zone, grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
+     USE module_domain, ONLY : domain, MAX_TILING_ZONES
+     IMPLICIT NONE
+     TYPE(domain)                   , INTENT(INOUT)  :: grid
+     INTEGER                        , INTENT(IN)     :: zone
+     INTEGER                        , INTENT(IN)     :: ids , ide , jds , jde
+     INTEGER                        , INTENT(IN)     :: ips , ipe , jps , jpe
+       ! Local
+     INTEGER num_tiles, num_tiles_x, num_tiles_y
+     IF ( zone .LT. 1 .OR. zone .GT. MAX_TILING_ZONES ) THEN
+       CALL wrf_error_fatal('set_tiles_once: zone out of range, increase MAX_TILE_ZONES in module_domain_type')
+     ENDIF
+     IF ( .NOT. grid%tiling_latch(zone) ) THEN
+       grid%tiling_latch(zone) = .TRUE.
+       CALL set_tiles2 ( grid, ids, ide, jds, jde, ips, ipe, jps, jpe )
+       num_tiles   = grid%num_tiles
+       num_tiles_x = grid%num_tiles_x
+       num_tiles_y = grid%num_tiles_y
+       ALLOCATE(grid%tile_zones(zone)%i_start(num_tiles))
+       ALLOCATE(grid%tile_zones(zone)%i_end(num_tiles))
+       ALLOCATE(grid%tile_zones(zone)%j_start(num_tiles))
+       ALLOCATE(grid%tile_zones(zone)%j_end(num_tiles))
+       grid%tile_zones(zone)%i_start = grid%i_start 
+       grid%tile_zones(zone)%i_end   = grid%i_end 
+       grid%tile_zones(zone)%j_start = grid%j_start 
+       grid%tile_zones(zone)%j_end   = grid%j_end 
+       grid%tile_zones(zone)%num_tiles = num_tiles
+       grid%tile_zones(zone)%num_tiles_x = num_tiles_x
+       grid%tile_zones(zone)%num_tiles_y = num_tiles_y
+     ELSE
+       grid%i_start = grid%tile_zones(zone)%i_start
+       grid%i_end   = grid%tile_zones(zone)%i_end
+       grid%j_start = grid%tile_zones(zone)%j_start
+       grid%j_end   = grid%tile_zones(zone)%j_end
+       grid%num_tiles = grid%tile_zones(zone)%num_tiles
+       grid%num_tiles_x = grid%tile_zones(zone)%num_tiles_x
+       grid%num_tiles_y = grid%tile_zones(zone)%num_tiles_y
+     ENDIF
+  END SUBROUTINE set_tiles_once
+ 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! this version is used to limit the domain or compute onto halos
   SUBROUTINE set_tiles2 ( grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
      USE module_domain, ONLY : domain
@@ -179,6 +223,8 @@ CONTAINS
      INTEGER , EXTERNAL        :: omp_get_max_threads
 #endif
      CHARACTER*80              :: mess
+     CHARACTER*80              :: envval
+     INTEGER                   :: tnum_tiles
      LOGICAL                   :: verbose ! whether to output tile info messages
 
      data_ordering : SELECT CASE ( model_data_order )
@@ -227,6 +273,15 @@ CONTAINS
 #else
          num_tiles = 1
 #endif
+         call GETENV ("WRF_NUM_TILES",envval)
+         IF ( envval .NE. "" ) THEN
+           read (envval,*) tnum_tiles
+           IF ( tnum_tiles .GT. 0 ) THEN
+             num_tiles=tnum_tiles
+             WRITE(mess,'("WRF NUMBER OF TILES FROM ENV WRF_NUM_TILES = ",I3)')num_tiles
+             CALL WRF_MESSAGE ( mess )
+           ENDIF
+         ENDIF
        ENDIF
 ! override num_tiles setting (however gotten) if tile sizes are specified
        CALL nl_get_tile_sz_x( 1, tile_sz_x )

@@ -139,6 +139,7 @@ fprintf(fp,"  %s, INTENT(INOUT) :: %s %s\n", q->type->name , varref , dimspec ) 
       }
       t1 = strtok_rentr( NULL , ";" , &pos1 ) ;
     }
+    return 0; /* SamT: bug fix: return a value */
 }
 
 int print_call_or_def( FILE * fp , node_t *p, char * callorsub, 
@@ -178,6 +179,7 @@ int print_decl( FILE * fp , node_t *p, char * communicator,
   fprintf(fp,"  INTEGER :: rsl_sendw_m, rsl_sendbeg_m, rsl_recvw_m, rsl_recvbeg_m\n") ;
   fprintf(fp,"  LOGICAL, EXTERNAL :: rsl_comm_iter\n") ;
   fprintf(fp,"  INTEGER :: idim1, idim2, idim3, idim4, idim5, idim6, idim7\n") ;
+  return 0; /* SamT: bug fix: return a value */
   }
 
 int print_body( FILE * fp, char * commname )
@@ -188,6 +190,7 @@ int print_body( FILE * fp, char * commname )
   fprintf(fp,"#endif\n") ;
   fprintf(fp,"  \n") ;
   fprintf(fp,"  END SUBROUTINE %s_sub\n",commname) ;
+  return 0; /* SamT: bug fix: return a value */
   }
 
 int
@@ -1654,7 +1657,7 @@ int said_it2 = 0 ;
   {
     if ( dirname == NULL ) return(1) ;
     if ( sw_unidir_shift_halo ) {
-       sprintf(fname,"shift_halo",*direction) ;
+       sprintf(fname,"shift_halo") ; /* SamT: bug fix: remove extra arg */
     } else {
        sprintf(fname,"shift_halo_%s_halo",*direction) ;
     }
@@ -1931,6 +1934,7 @@ fprintf(fp, "  ENDDO\n" ) ;
     } /* if sw_move */
     close_the_file(fp) ;
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int
@@ -1954,10 +1958,12 @@ gen_datacalls ( char * dirname )
 /*****************/
 /*****************/
 
+int
 gen_nest_packing ( char * dirname )
 {
   gen_nest_pack( dirname ) ;
   gen_nest_unpack( dirname ) ;
+  return 0; /* SamT: bug fix: return a value */
 }
 
 #define PACKIT 1
@@ -1982,6 +1988,8 @@ gen_nest_pack ( char * dirname )
   char vname[NAMELEN] ; char tag[NAMELEN], fourd_names[NAMELEN_LONG] ;
   int d2, d3, sw ;
   char *info_name ;
+  int d2_mp, d3_mp;
+  char fourd_names_mp[NAMELEN_LONG];
 
   for ( fnp = fnlst , ipath = 0 ; *fnp ; fnp++ , ipath++ )
   {
@@ -1995,11 +2003,16 @@ gen_nest_pack ( char * dirname )
       if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
       print_warning(fp,fname) ;
 
-      d2 = 0 ;
-      d3 = 0 ;
+      d2 = d2_mp = 0 ;
+      d3 = d3_mp = 0 ;
       node = Domain.fields ;
 
-      count_fields ( node , &d2 , &d3 , fourd_names, down_path[ipath] ) ;
+#if (NMM_CORE==1)
+      count_fields ( node, &d2,    &d3,    fourd_names,    down_path[ipath], 0, 1);
+      count_fields ( node, &d2_mp, &d3_mp, fourd_names_mp, down_path[ipath], 1, 0);
+#else
+      count_fields ( node , &d2 , &d3 , fourd_names, down_path[ipath] ,0,0) ;
+#endif
 
       if ( d2 + d3 > 0 ) {
         if ( down_path[ipath] == INTERP_UP )
@@ -2014,6 +2027,12 @@ gen_nest_pack ( char * dirname )
         }
 
         fprintf(fp,"msize = (%d + %s )* nlev + %d\n", d3, fourd_names, d2 ) ;
+#if (NMM_CORE==1)
+        fprintf(fp,"IF(interp_mp .eqv. .true.) then\n"
+                "    msize=msize + (%d + %s )*nlev+%d\n"
+                "ENDIF\n",
+                d3_mp,fourd_names_mp,d2_mp);
+#endif
 
         fprintf(fp,"CALL %s( local_communicator, msize*RWORDSIZE                               &\n",info_name ) ;
         fprintf(fp,"                        ,cips,cipe,cjps,cjpe                               &\n") ;
@@ -2082,9 +2101,9 @@ gen_nest_unpack ( char * dirname )
       if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
       print_warning(fp,fname) ;
 
-      count_fields ( node , &d2 , &d3 , fourd_names, down_path[ipath] ) ;
+      count_fields ( node , &d2 , &d3 , fourd_names, down_path[ipath], 0, 0 ) ;
 
-      if ( d2 + d3 > 0 && strlen(fourd_names) > 0 ) {
+      if ( d2 + d3 > 0 || strlen(fourd_names) > 0 ) {
         if ( down_path[ipath] == INTERP_UP )
         {
           info_name = "rsl_lite_from_child_info" ;
@@ -2096,6 +2115,12 @@ gen_nest_unpack ( char * dirname )
 
         fprintf(fp,"CALL %s(pig,pjg,retval)\n", info_name ) ;
         fprintf(fp,"DO while ( retval .eq. 1 )\n") ;
+#if (NMM_CORE == 1)
+        if(down_path[ipath]==INTERP_UP) {
+          fprintf(fp,"feedback_flag=cd_feedback_mask( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, .FALSE., .FALSE. )\n");
+          fprintf(fp,"feedback_flag_v=cd_feedback_mask_v( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, .FALSE., .FALSE. )\n");
+        }
+#endif
         gen_nest_packunpack ( fp , Domain.fields, UNPACKIT, down_path[ipath] ) ;
         fprintf(fp,"CALL %s(pig,pjg,retval)\n", info_name ) ;
         fprintf(fp,"ENDDO\n") ;
@@ -2119,10 +2144,15 @@ gen_nest_packunpack ( FILE *fp , node_t * node , int dir, int down_path )
   char vname[NAMELEN], dexes[NAMELEN] ; char tag[NAMELEN] ; 
   char tx[80], moredims[80], temp[80], r[10], *colon ;
   char c, d ;
+  int need_endif;
 
+  need_endif=0;
   for ( p1 = node ;  p1 != NULL ; p1 = p1->next )
   {
-
+      if(need_endif) {
+        fprintf(fp,"endif\n");
+        need_endif=0;
+      }
     if ( p1->node_kind & FOURD )
     {
       if ( p1->members->next )
@@ -2138,6 +2168,10 @@ gen_nest_packunpack ( FILE *fp , node_t * node , int dir, int down_path )
 
     if ( nest_mask & down_path )
     {
+          if(p->mp_var) {
+            fprintf(fp,"if(interp_mp .eqv. .true.) then\n");
+            need_endif=1;
+          }
         if ( p->node_kind & FOURD ) {
           if ( p->members->next->ntl > 1 ) sprintf(tag,"_2") ;
           else                             sprintf(tag,"") ;
@@ -2215,15 +2249,24 @@ fprintf(fp,"IF ( SIZE(%s%s%s) .GT. 1 ) THEN ! okay for intermediate_grid too. se
           if ( down_path == INTERP_UP )
 	  {
             char *sjl = "" ;
-            if ( !strcmp( p->interpu_fcn_name ,"nmm_vfeedback") ) sjl = "_v" ; /* KLUDGE FOR NCEP NESTING 20071217 */
+                  if (p->nmm_v_grid)
+                    sjl = "_v" ;
             if ( zdex >= 0 ) {
 fprintf(fp,"CALL rsl_lite_from_child_msg(((%s)-(%s)+1)*RWORDSIZE,xv) ;\n",ddim[zdex][1], ddim[zdex][0] ) ;
             } else {
 fprintf(fp,"CALL rsl_lite_from_child_msg(RWORDSIZE,xv)\n" ) ;
             }
+#if (NMM_CORE == 1)
+                  if(p->stag_x || p->stag_y) {
+#endif
 fprintf(fp,"IF ( cd_feedback_mask%s( pig, ips_save, ipe_save , pjg, jps_save, jpe_save, %s, %s ) ) THEN\n",
                  sjl ,
                  p->stag_x?".TRUE.":".FALSE." ,p->stag_y?".TRUE.":".FALSE." ) ;
+#if ( NMM_CORE == 1)
+                  } else {
+                    fprintf(fp,"IF(feedback_flag%s) THEN\n",sjl);
+                  }
+#endif
             if ( zdex >= 0 ) {
 fprintf(fp,"DO k = %s,%s\nNEST_INFLUENCE(%s%s,xv(k))\nENDDO\n", ddim[zdex][0], ddim[zdex][1], grid, vname ) ;
             } else {
@@ -2275,6 +2318,10 @@ fprintf(fp,"ENDIF\n") ; /* in_use_for_config */
 	}
     }
   }
+  if(need_endif) {
+    fprintf(fp,"endif\n");
+    need_endif=0;
+  }
 
   return(0) ;
 }
@@ -2284,7 +2331,8 @@ fprintf(fp,"ENDIF\n") ; /* in_use_for_config */
 /* STOPPED HERE -- need to include the extra dimensions in the count */
 
 int
-count_fields ( node_t * node , int * d2 , int * d3 ,  char * fourd_names, int down_path )
+count_fields ( node_t * node , int * d2 , int * d3 ,  char * fourd_names, int down_path,
+               int send_mp, int no_mp )
 {
   node_t * p ;
   int zdex ;
@@ -2295,10 +2343,12 @@ count_fields ( node_t * node , int * d2 , int * d3 ,  char * fourd_names, int do
 /* count up the total number of levels from all fields */
   for ( p = node ;  p != NULL ; p = p->next )
   {
+      if(send_mp && !p->mp_var) continue;
+      if(no_mp && p->mp_var) continue;
     if ( p->node_kind == FOURD ) 
     {
 #if 0
-      count_fields( p->members , d2 , d3 , down_path ) ;  /* RECURSE */
+          count_fields( p->members , d2 , d3 , down_path, send_mp, no_mp ) ;  /* RECURSE */
 #else
       if ( strlen(fourd_names) > 0 ) strcat(fourd_names," & \n + ") ;
       sprintf(temp,"((num_%s - PARAM_FIRST_SCALAR + 1)",p->name) ;
@@ -2410,6 +2460,7 @@ fprintf(fp, "   write(0,*) AAA_AAA,BBB_BBB, '%s ', grid%%%s ( IDEBUG,JDEBUG)\n",
     }
 
     close_the_file(fp) ;
+    return 0; /* SamT: bug fix: return a value */
 }
 
 /*****************/

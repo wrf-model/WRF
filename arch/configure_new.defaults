@@ -580,6 +580,52 @@ RANLIB          =      ranlib
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
+#ARCH    Linux x86_64 i486 i586 i686, ifort compiler with icc, IBM POE #serial smpar dmpar dm+sm
+
+# This is identical to the Intel Fortran with Intel MPI but configured
+# to use IBM POE as the MPI implementation.  NCEP needs this
+# configuration to run on the new WCOSS Tide and Gyre operational
+# forecasting machines.
+
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -openmp -fpp -auto
+OMPCC           =       # -openmp -fpp -auto
+SFC             =       ifort
+SCC             =       icc
+CCOMP           =       icc
+DM_FC           =       mpfort
+DM_CC           =       mpcc
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -i4
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC
+CFLAGS_LOCAL    =       -w -O3 -ip
+LDFLAGS_LOCAL   =       -ip
+CPLUSPLUSLIB    =       
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -O3
+FCREDUCEDOPT	=       $(FCOPTIM)
+FCNOOPT		=       -O0 -fno-inline -fno-ip
+FCDEBUG         =       # -g $(FCNOOPT) -traceback
+FORMAT_FIXED    =       -FI
+FORMAT_FREE     =       -FR
+FCSUFFIX        =
+BYTESWAPIO      =       -convert big_endian
+FCBASEOPTS_NO_G =       -w -ftz -align all -fno-alias -fp-model precise $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =     
+TRADFLAG        =      -traditional
+CPP             =      /lib/cpp -C -P
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4
+RANLIB          =      ranlib
+CC_TOOLS        =      $(SCC) 
+
+###########################################################
 #ARCH    ia64 Linux ifort compiler with icc 9.x,10.x #serial smpar dmpar dm+sm
 #
 #        By default, some files are compiled without optimizations to

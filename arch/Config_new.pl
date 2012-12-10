@@ -319,6 +319,7 @@ while ( <CONFIGURE_DEFAULTS> )
       open CONFIGURE_DEFAULTS, "cat ./arch/postamble_new ./arch/noopt_exceptions |"  or die "horribly" ;
     }
   }
+  $_ =~ s:CONFIGURE_NMM_CORE:$sw_nmm_core:g ;
   if ( $latchon == 1 )
   {
     $_ =~ s/CONFIGURE_PERL_PATH/$sw_perl_path/g ;
@@ -358,7 +359,9 @@ while ( <CONFIGURE_DEFAULTS> )
     if ( $sw_netcdf_path ) 
       { $_ =~ s/CONFIGURE_WRFIO_NF/wrfio_nf/g ;
 	$_ =~ s:CONFIGURE_NETCDF_FLAG:-DNETCDF: ;
-        if ( $sw_os eq "Interix" ) {
+        if ( $ENV{NETCDF_LDFLAGS} ) {
+          $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a $ENV{NETCDF_LDFLAGS} : ;
+        } elsif ( $sw_os eq "Interix" ) {
 	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a -L$sw_netcdf_path/lib $sw_usenetcdff -lnetcdf : ;
         } else {
 	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf -lwrfio_nf -L$sw_netcdf_path/lib $sw_usenetcdff -lnetcdf : ;
@@ -504,6 +507,8 @@ while ( <CONFIGURE_DEFAULTS> )
         until ( $validresponse ) {
           if ( $paropt eq 'serial' || $paropt eq 'smpar' ) {
             printf "Compile for nesting? (0=no nesting, 1=basic, 2=preset moves, 3=vortex following) [default 0]: " ;
+          } elsif ( $ENV{WRF_NMM_CORE} eq "1" ) {
+            printf "Compile for nesting? (1=basic, 2=preset moves) [default 1]: " ;
           } else {
             printf "Compile for nesting? (1=basic, 2=preset moves, 3=vortex following) [default 1]: " ;
           }

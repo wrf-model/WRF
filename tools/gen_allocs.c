@@ -70,6 +70,7 @@ get_count_for_alloc( node_t *node , int *numguys, int * stats )
        }
     }
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int

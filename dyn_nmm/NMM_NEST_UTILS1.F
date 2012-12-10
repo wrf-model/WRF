@@ -360,6 +360,16 @@ SUBROUTINE med_construct_egrid_weights ( parent , nest )
                 ITS,ITE,JTS,JTE,KTS,KTE                          ) !
   endif
 
+! Generate nearest neighbor information for parent->nest nearest
+! neighbor interpolation:
+  call INIT_HNEAR(nest%iih, nest%jjh, nest%hbwgt1, nest%hbwgt2, &
+                  nest%hbwgt3, nest%hbwgt4,                     &
+                  nest%hnear_i, nest%hnear_j,                   &
+                  IDS,IDE,JDS,JDE,KDS,KDE,                      &
+                  IMS,IME,JMS,JME,KMS,KME,                      &
+                  ITS,ITE,JTS,JTE,KTS,KTE)
+
+
 !*** CHECK WEIGHTS AT MASS AND VELOCITY POINTS
 
      CALL WEIGTS_CHECK(nest%HBWGT1,nest%HBWGT2,          & ! output weights on the nested grid
@@ -492,6 +502,57 @@ SUBROUTINE EARTH_LATLON ( HLAT,HLON,VLAT,VLON,     & !Earth lat,lon at H and V p
       ENDDO
 
 END SUBROUTINE EARTH_LATLON
+
+!-----------------------------------------------------------------------------  
+
+subroutine init_hnear(iih,jjh,hbwgt1,hbwgt2,hbwgt3,hbwgt4, &
+                      hnear_i,hnear_j,                     &
+                      IDS,IDE,JDS,JDE,KDS,KDE,             &
+                      IMS,IME,JMS,JME,KMS,KME,             &
+                      ITS,ITE,JTS,JTE,KTS,KTE)
+  implicit none
+  integer, intent(in) :: ids,ide,jds,jde,kds,kde, &
+                         ims,ime,jms,jme,kms,kme, &
+                         its,ite,jts,jte,kts,kte, &
+                         iih(ims:ime,jms:jme), jjh(ims:ime,jms:jme)
+  integer, dimension(ims:ime,jms:jme), intent(out) :: hnear_i,hnear_j
+  real, dimension(ims:ime,jms:jme), intent(in) :: hbwgt1, hbwgt2, hbwgt3, hbwgt4
+
+  integer :: i,j,iweight,a
+  real :: rweight
+
+  do j=jts,min(jte,jde-1)
+     do i=its,min(ite,ide-1)
+        a=1-mod(JJH(i,j),2)
+
+        iweight=1
+        rweight=hbwgt1(i,j)
+
+        if(hbwgt2(i,j)>rweight) then
+           iweight=2 ; rweight=hbwgt2(i,j)
+        endif
+
+        if(hbwgt3(i,j)>rweight) then
+           iweight=3 ; rweight=hbwgt3(i,j)
+        endif
+
+        if(hbwgt4(i,j)>rweight) then
+           iweight=4
+        endif
+
+        select case(iweight)
+        case(1)
+           hnear_i(i,j)=IIH(I,J)   ; hnear_j(i,j)=JJH(I,J)
+        case(2)
+           hnear_i(i,j)=IIH(I,J)+1 ; hnear_j(i,j)=JJH(I,J)
+        case(3)
+           hnear_i(i,j)=IIH(I,J)+a ; hnear_j(i,j)=JJH(I,J)-1
+        case default ! case(4)
+           hnear_i(i,j)=IIH(I,J)+a ; hnear_j(i,j)=JJH(I,J)+1
+        end select
+     enddo
+  enddo
+end subroutine init_hnear
 
 !-----------------------------------------------------------------------------  
 
@@ -3712,10 +3773,10 @@ LOGICAL FUNCTION cd_feedback_mask_orig( pig, ips_save, ipe_save , pjg, jps_save,
    IF ( xstag  ) ioff = 1
    IF ( ystag  ) joff = 1
 
-   cd_feedback_mask_orig = ( pig .ge. ips_save+1        .and.      &
-                            pjg .ge. jps_save+1        .and.      &
-                            pig .le. ipe_save-1  +ioff .and.      &
-                            pjg .le. jpe_save-1  +joff           )
+   cd_feedback_mask_orig = ( pig .ge. ips_save+2 .and. &
+                            pjg .ge. jps_save+3 .and. &
+                            pig .le. ipe_save-2-mod(pjg-jps_save,2) .and. &
+                            pjg .le. jpe_save-3 )
 
 END FUNCTION cd_feedback_mask_orig
 
@@ -3746,10 +3807,10 @@ LOGICAL FUNCTION cd_feedback_mask_v( pig, ips_save, ipe_save , pjg, jps_save, jp
    IF ( xstag  ) ioff = 1
    IF ( ystag  ) joff = 1
    
-   cd_feedback_mask_v = ( pig .ge. ips_save+1 .and. &
-                            pjg .ge. jps_save+2 .and. &
-                            pig .le. ipe_save-1-mod(pjg-jps_save+1,2) .and. &
-                            pjg .le. jpe_save-2 )
+   cd_feedback_mask_v = ( pig .ge. ips_save+2 .and. &
+                            pjg .ge. jps_save+3 .and. &
+                            pig .le. ipe_save-2-mod(pjg-jps_save+1,2) .and. &
+                            pjg .le. jpe_save-3 )
 
 END FUNCTION cd_feedback_mask_v
 

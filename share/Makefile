@@ -12,6 +12,8 @@ MODULES1=                               \
         module_check_a_mundo.o          \
         module_random.o                 \
         module_llxy.o                   \
+        module_interp_nmm.o             \
+        module_interp_store.o           \
         module_MPP.o 
 
 MODULES2=                               \

@@ -158,7 +158,7 @@ MODULE module_domain_type
       TYPE(domain) , POINTER                              :: same_level
 
       LOGICAL      , DIMENSION ( 4 )                      :: bdy_mask         ! which boundaries are on processor
-
+      LOGICAL                                             :: interp_mp        ! .true. = MOIST, SCALAR u,d,f,s will be called
       LOGICAL                                             :: first_force
 
       ! domain dimensions

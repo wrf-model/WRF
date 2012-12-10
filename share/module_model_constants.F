@@ -66,7 +66,8 @@
 !
    REAL    , PARAMETER :: n_ccn0       = 1.0E8
 !
-   REAL    , PARAMETER :: DEGRAD       = 3.1415926/180.
+   REAL    , PARAMETER :: piconst      = 4.*ATAN(1.)
+   REAL    , PARAMETER :: DEGRAD       = piconst/180.
    REAL    , PARAMETER :: DPD          = 360./365.
 
    REAL    , PARAMETER ::  SVP1=0.6112

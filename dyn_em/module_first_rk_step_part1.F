@@ -720,13 +720,18 @@ BENCH_START(pbl_driver_tim)
      &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
      &        ,HOL=HOL, MOL=grid%mol, REGIME=grid%REGIME                  &
 !mynn mp@
-     &        ,QKE=scalar(ims,kms,jms,P_qke), tsq=grid%tsq, qsq=grid%qsq  &
-     &        ,cov=grid%cov, EL_MYNN=grid%el_mynn                         &
+     &        ,QKE=grid%qke                                               &                                                                                                                                     
+!ACF-QKE advection
+     &        ,QKE_ADV=scalar(ims,kms,jms,P_qke_adv)                      &                                                                                                                                     
+     &        ,bl_mynn_tkeadvect=config_flags%bl_mynn_tkeadvect           &                                                                                                                                     
+!ACF-end                                                                                                                                                                                                        
+     &        ,tsq=grid%tsq, qsq=grid%qsq, cov=grid%cov                   &
+     &        ,EL_MYNN=grid%el_mynn                                       &
      &        ,DQKE=grid%dqke,QWT=grid%qWT                                &
      &        ,QSHEAR=grid%qSHEAR,QBUOY=grid%qBUOY,QDISS=grid%qDISS       &
      &        ,bl_mynn_tkebudget=config_flags%bl_mynn_tkebudget           &
      &        ,rmol=grid%rmol, ch=grid%ch                                 &
-     &        ,qcg=grid%qcg, grav_settling=grid%grav_settling             &
+     &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling     &
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
 !GWD for ARW
      &        ,GWD_OPT=config_flags%gwd_opt &

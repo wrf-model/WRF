@@ -6424,6 +6424,7 @@ CONTAINS
                                                                                  
 ! *** Clear layer                                                                
          IENT = NGPT * (LEV-1)                                                   
+!DEC$ IVDEP
          DO 2100 IPR = 1, NGPT                                                   
             INDEX = IENT + IPR                                                   
             IND = ITR(IPR,LEV)                                                   

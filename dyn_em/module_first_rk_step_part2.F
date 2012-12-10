@@ -800,7 +800,7 @@ BENCH_START(hor_diff_tim)
 BENCH_END(hor_diff_tim)
        ENDIF
 
-       IF ( grid%obs_nudge_opt .EQ. 1 ) THEN
+       IF ( grid%obs_nudge_opt .EQ. 1 .AND. grid%xtime <= grid%fdda_end ) THEN
 # ifdef DM_PARALLEL
 #       include "HALO_OBS_NUDGE.inc"
 #endif

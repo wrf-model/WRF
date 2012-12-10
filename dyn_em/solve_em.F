@@ -242,7 +242,8 @@ SUBROUTINE solve_em ( grid , config_flags  &
 
 !  Compute these starting and stopping locations for each tile and number of tiles.
 !  See: http://www.mmm.ucar.edu/wrf/WG2/topics/settiles
-   CALL set_tiles ( grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
+   CALL set_tiles ( ZONE_SOLVE_EM, grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
+!   CALL set_tiles (  grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
 
 !  Max values of CFL for adaptive time step scheme
 
@@ -400,7 +401,9 @@ SUBROUTINE solve_em ( grid , config_flags  &
                           grid%mu_btxs,grid%mu_btxe,grid%mu_btys,grid%mu_btye, &
                           moist_btxs,moist_btxe,                               &
                           moist_btys,moist_btye,                               &
-                          grid%spec_bdy_width,num_3d_m,                &
+                          scalar_btxs,scalar_btxe,                              &
+                          scalar_btys,scalar_btye,                              &
+                          grid%spec_bdy_width,num_3d_m,num_3d_s,                &
                           ids,ide, jds,jde, kds,kde,                   &
                           ims,ime, jms,jme, kms,kme,                   &
                           ips,ipe, jps,jpe, kps,kpe,                   &
@@ -662,6 +665,7 @@ BENCH_END(set_phys_bc_tim)
                              , tracer, tracer_tend              &
                              , scalar , scalar_tend             &
                              , fdda3d, fdda2d                   &
+                             , aerod                            &
                              , ru_tendf, rv_tendf               &
                              , rw_tendf, t_tendf                &
                              , ph_tendf, mu_tendf               &
@@ -2015,7 +2019,7 @@ BENCH_END(small_step_finish_tim)
            IF (grid%adv_moist_cond .or. im==p_qv ) THEN
 
              !$OMP PARALLEL DO   &
-             !$OMP PRIVATE ( ij )
+             !$OMP PRIVATE ( ij, tenddec )
              moist_tile_loop_1: DO ij = 1 , grid%num_tiles
 
                CALL wrf_debug ( 200 , ' call rk_scalar_tend' )
@@ -2086,7 +2090,7 @@ BENCH_END(rlx_bdy_scalar_tim)
              !$OMP END PARALLEL DO
 
              !$OMP PARALLEL DO   &
-             !$OMP PRIVATE ( ij )
+             !$OMP PRIVATE ( ij, tenddec )
              moist_tile_loop_2: DO ij = 1 , grid%num_tiles
 
                CALL wrf_debug ( 200 , ' call rk_update_scalar' )
@@ -2148,7 +2152,7 @@ BENCH_START(tke_adv_tim)
          ENDIF
 #endif
          !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !$OMP PRIVATE ( ij, tenddec )
          tke_tile_loop_1: DO ij = 1 , grid%num_tiles
 
            CALL wrf_debug ( 200 , ' call rk_scalar_tend for tke' )
@@ -2179,7 +2183,7 @@ BENCH_START(tke_adv_tim)
          !$OMP END PARALLEL DO
 
          !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !$OMP PRIVATE ( ij, tenddec )
          tke_tile_loop_2: DO ij = 1 , grid%num_tiles
 
            CALL wrf_debug ( 200 , ' call rk_update_scalar' )
@@ -2234,7 +2238,7 @@ BENCH_START(chem_adv_tim)
          chem_variable_loop: DO ic = PARAM_FIRST_SCALAR, num_3d_c
 
            !$OMP PARALLEL DO   &
-           !$OMP PRIVATE ( ij )
+           !$OMP PRIVATE ( ij, tenddec )
            chem_tile_loop_1: DO ij = 1 , grid%num_tiles
 
              CALL wrf_debug ( 200 , ' call rk_scalar_tend in chem_tile_loop_1' )
@@ -2303,7 +2307,7 @@ BENCH_START(chem_adv_tim)
          !$OMP END PARALLEL DO
 
          !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !$OMP PRIVATE ( ij, tenddec )
 
          chem_tile_loop_2: DO ij = 1 , grid%num_tiles
 
@@ -2361,7 +2365,7 @@ BENCH_START(tracer_adv_tim)
          tracer_variable_loop: DO ic = PARAM_FIRST_SCALAR, num_tracer
 
            !$OMP PARALLEL DO   &
-           !$OMP PRIVATE ( ij )
+           !$OMP PRIVATE ( ij, tenddec )
            tracer_tile_loop_1: DO ij = 1 , grid%num_tiles
 
              CALL wrf_debug ( 15 , ' call rk_scalar_tend in tracer_tile_loop_1' )
@@ -2429,7 +2433,7 @@ BENCH_START(tracer_adv_tim)
          !$OMP END PARALLEL DO
 
          !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !$OMP PRIVATE ( ij, tenddec )
 
          tracer_tile_loop_2: DO ij = 1 , grid%num_tiles
 
@@ -2496,7 +2500,7 @@ BENCH_END(tracer_adv_tim)
 
        scalar_variable_loop: do is = PARAM_FIRST_SCALAR, num_3d_s
          !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !$OMP PRIVATE ( ij, tenddec )
          scalar_tile_loop_1: DO ij = 1 , grid%num_tiles
 
            CALL wrf_debug ( 200 , ' call rk_scalar_tend' )
@@ -2561,7 +2565,7 @@ BENCH_END(tracer_adv_tim)
          !$OMP END PARALLEL DO
 
          !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !$OMP PRIVATE ( ij, tenddec )
          scalar_tile_loop_2: DO ij = 1 , grid%num_tiles
 
            CALL wrf_debug ( 200 , ' call rk_update_scalar' )
@@ -3270,9 +3274,7 @@ BENCH_START(micro_driver_tim)
       &        ,ID=grid%id                                                &
       &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde         &
       &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme         &
-#ifdef RUN_ON_GPU
       &        ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe         &
-#endif
       &        ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)         &
       &        ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)         &
       &        ,KTS=k_start, KTE=min(k_end,kde-1)                         &

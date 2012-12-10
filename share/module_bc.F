@@ -843,6 +843,11 @@ CONTAINS
                          ( its == ids ) .and. open_bc_copy  )  THEN
 
             DO j = jts-bdyzone, MIN(jte,jde+jstag)+bdyzone
+#if defined(INTEL_ALIGN64)
+!DEC$ ASSUME_ALIGNED dat:64
+!DEC$ UNROLL(4)
+!DEC$ IVDEP
+#endif
             DO k = kts, k_end
               dat(ids-1,k,j) = dat(ids,k,j) !  here, dat(0) = dat(1), etc
               dat(ids-2,k,j) = dat(ids,k,j)
@@ -863,6 +868,11 @@ CONTAINS
           IF (variable /= 'u' .and. variable /= 'x' ) THEN
 
             DO j = jts-bdyzone, MIN(jte,jde+jstag)+bdyzone
+#if defined(INTEL_ALIGN64)
+!DEC$ ASSUME_ALIGNED dat:64
+!DEC$ UNROLL(4)
+!DEC$ IVDEP
+#endif
             DO k = kts, k_end
               dat(ide  ,k,j) = dat(ide-1,k,j)
               dat(ide+1,k,j) = dat(ide-1,k,j)

@@ -218,6 +218,7 @@ gen_be_stage3.o : gen_be_stage3.f90 da_tools_serial.o da_gen_be.o da_control.o
 gen_be_stage4_global.o : gen_be_stage4_global.f90 da_tools_serial.o da_be_spectral.o da_control.o 
 gen_be_stage4_regional.o : gen_be_stage4_regional.f90 da_wavelet.o da_tools_serial.o da_reporting.o da_control.o 
 gen_be_vertloc.o : gen_be_vertloc.f90 da_gen_be.o 
+gen_be_addmean.o : gen_be_addmean.f90
 gen_mbe_stage2.o : gen_mbe_stage2.f90 da_gen_be.o da_tools_serial.o da_control.o 
 gen_spectra.o : gen_spectra.f90 da_tracing.o da_spectral.o da_control.o 
 gsi_constants.o : gsi_constants.f90 init_constants_derived.inc gsi_kinds.o 

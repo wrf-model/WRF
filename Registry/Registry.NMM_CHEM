@@ -752,9 +752,13 @@ state    real   T2               ij     misc        1         -     ir        "T
 state    real   U10              ij     misc        1         -     irhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "U10"                  "U at 10 M"         " "
 state    real   V10              ij     misc        1         -     irhd=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "V10"                  "V at 10 M"         " "
 state    real   XICE             ij     misc        1         -     i01rd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)      "XICE"                 "SEA ICE"         ""
+state    real   ICEDEPTH         ij     misc        1         -     i0124rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4) "ICEDEPTH"     "SEA ICE THICKNESS"  "m"
 state    real   LAI              ij     misc        1         -     i0124rh   "LAI"                  "Leaf area index"          "area/area"
 state    real   SMSTAV           ij     misc        1         -     irh       "SMSTAV"               "MOISTURE VARIBILITY" ""
 state    real   SMSTOT           ij     misc        1         -     irh     "SMSTOT"               "TOTAL SOIL MOISTURE" ""
+state    real   SOLDRAIN         ij     misc        1         -      r                                          "SOLDRAIN"         "soil column drainage"  "mm"
+state    real   SFCHEADRT        ij     misc        1         -      r                                          "SFCHEADRT"        "surface water depth"  "mm"
+state    real   INFXSRT          ij     misc        1         -      r                                          "INFXSRT"          "time step infiltration excess"  "mm"
 state    real   SFCRUNOFF        ij     misc        1         -     rh       "SFROFF"               "SURFACE RUNOFF" ""
 state    real   UDRUNOFF         ij     misc        1         -     rh       "UDROFF"               "UNDERGROUND RUNOFF" ""
 state  integer  IVGTYP           ij     misc        1         -     irhd=(interp_int_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "IVGTYP"               "VEGETATION TYPE" ""
@@ -1129,6 +1133,7 @@ rconfig   real    swrad_scat              namelist,physics      1             1 
 rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=hybrid (not yet implemented)"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""
 rconfig   integer num_urban_layers        namelist,physics      1            400       irh    "num_urban_layers"               ""      ""
+rconfig   integer num_urban_hi            namelist,physics      1            15       irh     "num_urban_hi"            ""      ""
 rconfig   integer mosaic_lu               namelist,physics      1             0       irh     "mosaic_lu"             ""      ""
 rconfig   integer mosaic_soil             namelist,physics      1             0       irh     "mosaic_soil"           ""      ""
 rconfig   integer maxiens                 namelist,physics	1             1       irh    "maxiens"                    ""      ""
@@ -1144,6 +1149,7 @@ rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8     
 rconfig   real    seaice_threshold        namelist,physics      1            271       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
 rconfig   integer fractional_seaice       namelist,physics      1            0        -     "fractional_seiace" "Fractional sea-ice option"
 rconfig   integer seaice_albedo_opt       namelist,physics      1            0        -     "seaice_albedo_opt" "Method for setting albedo over sea ice"
+rconfig   integer seaice_thickness_opt    namelist,physics      1            0        -     "seaice_thickness_opt" "Method for setting sea ice thickness"
 rconfig   logical tice2tsk_if2cold        namelist,physics      1              .false. -     "tice2tsk_if2cold" "Avoid low ice temps when ice frac and Tsk are inconsistent"
 rconfig   integer sst_update              namelist,physics      1            0        i01rh    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
 rconfig   integer sf_urban_physics        namelist,physics      max_domains  0         h    "sf_urban_physics"     "activate urban model  0=no, 1=Noah_UCM, 2=BEP_UCM"   ""
@@ -1182,6 +1188,10 @@ rconfig   integer levsiz                  namelist,physics      1             1 
 rconfig   integer paerlev                 namelist,physics      1             1       -      "paerlev" "Number of aerosol data levels for CAM radiation (29)"  ""
 rconfig   integer cam_abs_dim1            namelist,physics      1             1       -      "cam_abs_dim1" "dimension for absnxt in CAM radiation"  ""
 rconfig   integer cam_abs_dim2            namelist,physics      1             1       -      "cam_abs_dim2" "dimension for abstot in CAM radiation"  ""
+rconfig   integer no_src_types            namelist,physics      1             1       -      "no_src_types" "Number of aerosoal types from EC (6)"  ""
+rconfig   integer alevsiz                 namelist,physics      1             1       -      "alevsiz" "Number of aerosoal optical depth data levels from EC (12)"  ""
+rconfig   integer o3input                 namelist,physics      1             0       -      "o3input"      "ozone input option for radiation"      ""
+rconfig   integer aer_opt                 namelist,physics      1             0       -      "aer_opt"      "aerosol input option for radiation"      ""
 rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .false.  -     "feedback cumulus to radiation"  ""
 rconfig   real h_diff                     namelist,physics      max_domains  0.1      irh    "nmm input 9"
 rconfig   integer movemin                 namelist,physics      max_domains  10       irh    "nmm input 12"
@@ -1351,6 +1361,7 @@ package   pxsfcscheme    sf_sfclay_physics==7        -             -
 package   temfsfcscheme  sf_sfclay_physics==10       -             -
 package   sfclayrevscheme sf_sfclay_physics==11        -             -
 package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
+package   gbmpblscheme  sf_sfclay_physics==12       -             -
 
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -

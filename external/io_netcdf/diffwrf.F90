@@ -103,12 +103,17 @@ end module read_util_module
   character (len=80), dimension(3)  ::  dimnames
   character (len=80) :: SysDepInfo
 
-  integer :: l, n
+  logical :: first, searchcoords
+  integer :: l, n, ntimes
   integer :: ikdiffs, ifdiffs
+  integer :: icenter, prev_icenter, jcenter, prev_jcenter,ntries
+  real :: searchlat, searchlong
 
   real, allocatable, dimension(:,:,:,:) :: data,data2
+  real, allocatable, dimension(:,:)     :: xlat,xlong
 
   integer :: ierr, ierr2, ier, ier2, Status, Status_next_time, Status_next_time2, Status_next_var, Status_next_var_2
+  integer :: nargs
 
   logical :: newtime = .TRUE.
   logical :: justplot, efound
@@ -121,12 +126,31 @@ end module read_util_module
   call ext_ncd_ioinit(SysDepInfo,Status)
   call set_wrf_debug_level ( 1 )
 
+  nargs = iargc()
 
   Justplot = .false.
+  searchcoords = .false.
 ! get arguments
-  if ( iargc() .ge. 2 ) then
+  if ( nargs .ge. 2 ) then
     call getarg(1,flnm)
     call getarg(2,flnm2)
+    IF ( flnm2(1:4) .EQ. '-lat' ) THEN
+print*,'reading ',TRIM(flnm2(5:))
+      read(flnm2(5:),*)searchlat
+      call getarg(3,flnm2)
+      IF ( flnm2(1:5) .EQ. '-long' ) THEN
+print*,'reading ',TRIM(flnm2(6:))
+        read(flnm2(6:),*)searchlong
+      ELSE
+        write(*,*)'missing -long argument (no spaces after -lat or -long, either)'
+        STOP
+      ENDIF
+      nargs = 0
+      Justplot = .true.
+      searchcoords = .true.
+      call ext_ncd_open_for_read( trim(flnm), 0, 0, "", dh1, Status)
+      goto 924
+    ENDIF
     ierr = 0
     call ext_ncd_open_for_read( trim(flnm), 0, 0, "", dh1, Status)
     if ( Status /= 0 ) then 
@@ -144,7 +168,7 @@ end module read_util_module
     name = flnm2
     Justplot = .true.
 924    continue
-  if ( iargc() .eq. 3 ) then
+  if ( nargs .eq. 3 ) then
     call getarg(3,arg3)
     read(arg3,*)levlim
     print*,'LEVLIM = ',LEVLIM
@@ -158,11 +182,14 @@ print*,'Just plot ',Justplot
 
 if ( Justplot ) then
   print*, 'flnm = ', trim(flnm)
+  first = .TRUE.
 
   call ext_ncd_get_next_time(dh1, DateStr, Status_next_time)
 
+  ntimes = 0
   DO WHILE ( Status_next_time .eq. 0 )
     write(*,*)'Next Time ',TRIM(Datestr)
+    ntimes = ntimes + 1
     call ext_ncd_get_next_var (dh1, VarName, Status_next_var)
     DO WHILE ( Status_next_var .eq. 0 )
 !    write(*,*)'Next Var |',TRIM(VarName),'|'
@@ -174,11 +201,13 @@ if ( Justplot ) then
         call ext_ncd_get_next_var (dh1, VarName, Status_next_var) 
         cycle 
       endif 
-      write(*,'(A9,1x,I1,3(1x,I5),1x,A,1x,A)')&
-               VarName, ndim, end_index(1), end_index(2), end_index(3), &
-               trim(ordering), trim(DateStr)
+      IF ( .NOT. searchcoords ) THEN
+        write(*,'(A9,1x,I1,3(1x,I5),1x,A,1x,A)')&
+                 VarName, ndim, end_index(1), end_index(2), end_index(3), &
+                 trim(ordering), trim(DateStr)
+      ENDIF
 
-      if ( VarName .eq. name ) then
+      if ( VarName .eq. name .OR. TRIM(VarName) .EQ. 'XLAT' .OR. TRIM(VarName) .EQ. 'XLONG' ) then
         write(*,*)'Writing fort.88 file for ', trim(name)
 
         allocate(data(end_index(1), end_index(2), end_index(3), 1))
@@ -193,7 +222,7 @@ if ( Justplot ) then
           ord = '0'
         endif
 
-        call ext_ncd_read_field(dh1,DateStr,TRIM(name),data,WRF_REAL,0,0,0,ord, &
+        call ext_ncd_read_field(dh1,DateStr,TRIM(VarName),data,WRF_REAL,0,0,0,ord, &
                             staggering, dimnames ,                      &
                             start_index,end_index,                      & !dom
                             start_index,end_index,                      & !mem
@@ -208,7 +237,20 @@ if ( Justplot ) then
              write(*,*)'  end_index(3) ',end_index(3)
         endif
 
+write(*,*)'name: ',TRIM(VarName)
+        IF ( TRIM(VarName) .EQ. 'XLAT' .AND. .NOT. ALLOCATED(xlat)) THEN
+write(*,*)'allocating xlat'
+           ALLOCATE(xlat(end_index(1), end_index(2)))
+           xlat = data(:,:,1,1)
+        ENDIF
+        IF ( TRIM(VarName) .EQ. 'XLONG' .AND. .NOT. ALLOCATED(xlong)) THEN
+write(*,*)'allocating xlong'
+           ALLOCATE(xlong(end_index(1), end_index(2)))
+           xlong = data(:,:,1,1)
+        ENDIF
 
+
+        if ( VarName .eq. name ) then
 #if 0
 ! uncomment this to have the code give i-slices 
         do i = 1, end_index(1)
@@ -234,10 +276,43 @@ if ( Justplot ) then
           endif
         enddo
 #endif
+        endif
 
         deallocate(data)
       endif
       call ext_ncd_get_next_var (dh1, VarName, Status_next_var)
+      IF ( ntimes .EQ. 1 .AND. ALLOCATED(xlong) .AND. ALLOCATED(xlat) .AND. first ) THEN
+        first = .FALSE.
+        icenter = 1 
+        jcenter = 1
+        ntries = 0
+        prev_icenter = 0 
+        prev_jcenter = 0  
+        DO WHILE ( ntries .LT. 10 .AND. (icenter .NE. prev_icenter .OR. jcenter .NE. prev_jcenter ))
+          prev_icenter = icenter
+          prev_jcenter = jcenter
+          DO j = start_index(2), end_index(2)-1
+            IF ( xlat(icenter,j) .LE. searchlat .AND. searchlat .LT. xlat(icenter,j+1) ) THEN
+              jcenter = j
+!write(*,*)'xlat ',ntries,icenter,jcenter,xlat(icenter,j),searchlat
+              exit
+            ENDIF
+          ENDDO
+          DO i = start_index(1), end_index(1)-1
+            IF ( xlong(i,jcenter) .LE. searchlong .AND. searchlong .LT. xlong(i+1,jcenter)) THEN
+              icenter = i
+!write(*,*)'xlon ',ntries,icenter,jcenter,xlong(i,jcenter),searchlong
+              exit
+            ENDIF
+          ENDDO
+          ntries = ntries + 1
+        ENDDO
+        write(*,*)'Lon ',searchlong,' Lat ',searchlat,' : ',icenter,jcenter
+        write(*,*)'Coordinates at that point ',xlong(icenter,jcenter),xlat(icenter,jcenter)
+        write(*,*)'Coordinates at next point ',xlong(icenter+1,jcenter+1),xlat(icenter+1,jcenter+1)
+        write(*,*)'Ntries : ',ntries
+        if ( ntries .GE. 10 ) write(*,*)'max tries exceeded. Probably did not find'
+      ENDIF
     enddo
     call ext_ncd_get_next_time(dh1, DateStr, Status_next_time)
   enddo

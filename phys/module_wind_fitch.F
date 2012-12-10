@@ -2,29 +2,44 @@
 
 MODULE module_wind_fitch
 
-! Calculates drag at model levels intersected by turbine blades
-! using wind speed dependent thrust coeff obtained from manufacturer.
-! Adds source of TKE from KE not extracted by turbine for power.
+! Represents kinetic energy extracted by wind turbines and turbulence
+! (TKE) they produce at model levels within the rotor area. The thrust and
+! power coefficient curves included to calculate momentum sink and source of TKE are 
+! generic and an approximation to a real turbine. These coefficients should be
+! obtained from the turbine manufacturer for the turbines of interest and incorporated
+! into the code in subroutine dragcof (we could not include real curves since they
+! are proprietary).
+!
+! References:
+! Fitch, A. C. et al. 2012: Local and Mesoscale Impacts of Wind Farms as Parameterized in a
+! Mesoscale NWP Model. Monthly Weather Review, doi:10.1175/MWR-D-11-00352.1
+! Fitch, A. C. et al. 2012: Mesoscale Influences of Wind Farms Throughout a Diurnal Cycle.
+! Monthly Weather Review, submitted.
+!
 ! Output:
 !   du, dv: horizontal velocity tendencies
 !   qke: TKE
-! Input:
-! dz = dz between full levels (m)
-! phb = geopotential height
-! theight = hub height in m
-! tdiameter = turbine diameter in m
-! stdthrcoef = standing thrust coeff.
-! tpower = turbine power in MW
-! cospeed = cut-out speed in m/s
-! cispeed = cut-in speed in m/s
-! ewfx = x-extent of rectangular wind farm in grid cells
-! ewfy = y-extent of rectangular wind farm in grid cells
-! pwfx = x-coord of grid cell in SW corner of farm
-! pwfy = y-coord of grid cell in SW corner of farm
-! turbpercell = no. of turbines per grid cell
+! Input: 
+!   u, v: horizontal velocities
+!   dz = dz between full levels (m)
+!   !not yet:  z_at_w = height above sea level at layer interfaces (m)
+!   !not yet:  ht = terrain height
+!   phb = geopotential height
+!   %hubheight = hub height (m)
+!   %diameter = turbine diameter (m)
+!   %stdthrcoef = standing thrust coeff. (thrust coeff of turbine when not operating)
+!   %power = turbine power (MW)
+!   %cutinspeed = cut-in speed (m/s)
+!   %cutoutspeed = cut-out speed (m/s)
+!   ewfx = x-extent of rectangular wind farm in grid cells
+!   ewfy = y-extent of rectangular wind farm in grid cells
+!   pwfx = x-coord of grid cell in SW corner of farm
+!   pwfy = y-coord of grid cell in SW corner of farm
+!   turbpercell = no. of turbines per grid cell
 
   USE module_wind_generic
   USE module_driver_constants, ONLY : max_domains
+  USE module_model_constants, ONLY :  piconst
   USE module_model_constants, ONLY :  g
 
   IMPLICIT NONE
@@ -40,7 +55,9 @@ CONTAINS
        & id                                      &
        &,phb,u,v,xlat_u,xlong_u                  &
        &,xlat_v,xlong_v                          &
-       &,dx,dz,dt,qke,du,dv                      &
+       &,dx,dz,dt,qke                            &
+       &,qke_adv,bl_mynn_tkeadvect               &
+       &,du,dv                                   &
        &,ids,ide,jds,jde,kds,kde                 &
        &,ims,ime,jms,jme,kms,kme                 &
        &,its,ite,jts,jte,kts,kte                 &
@@ -50,11 +67,12 @@ CONTAINS
   INTEGER, INTENT(IN) :: its,ite,jts,jte,kts,kte
   INTEGER, INTENT(IN) :: ims,ime,jms,jme,kms,kme
   INTEGER, INTENT(IN) :: ids,ide,jds,jde,kds,kde
+  LOGICAL, INTENT(IN) :: bl_mynn_tkeadvect
   REAL, INTENT(IN) :: dx,dt
   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: dz,u,v,phb
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN)         :: xlat_u, xlong_u
   REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN)         :: xlat_v, xlong_v
-  REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: du,dv,qke
+  REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: du,dv,qke,qke_adv
 ! Local
   TYPE(windturbine_specs), POINTER :: p
   INTEGER  turbgridid
@@ -73,6 +91,13 @@ CONTAINS
   jtf=MIN0(jte,jde-1)
   ktf=MIN0(kte,kde-1)
 
+!QKE should already == QKE_ADV coming out of PBL scheme
+!ACF copy qke_adv into qke if using advection
+!    IF (BL_MYNN_TKEADVECT) THEN
+!       qke=qke_adv
+!    ENDIF
+!ACF-end
+
   CALL nl_get_td_turbpercell(1,turbpercell)
   CALL nl_get_td_turbgridid(1,turbgridid)
   IF ( .NOT. inited(id) ) THEN
@@ -82,7 +107,7 @@ CONTAINS
       allzero=1
       DO j=jts,jtf
         DO i=its,itf
-          IF (xlat_u(i,j).NE.0. .OR. xlong_u(i,j).NE.0)allzero=0
+          IF (xlat_u(i,j).NE.0. .OR. xlong_u(i,j).NE.0.)allzero=0
         ENDDO
       ENDDO
       CALL wrf_dm_bcast_integer(allzero,1)
@@ -157,6 +182,7 @@ CONTAINS
     ENDIF
     inited(id) = .TRUE.
   ENDIF
+
   IF ( windspec .EQ.  WIND_TURBINES_FROMLIST ) THEN
     wfdensity = 1.0/(dx*dx)   !  per turbine, so numerator is 1
   ELSE
@@ -178,7 +204,7 @@ CONTAINS
         IF (( its .LE. i .AND. i .LE. itf ) .AND. &
             ( jts .LE. j .AND. j .LE. jtf )  ) THEN
 
-          blade_l_point=p%hubheight-p%diameter/2. ! height of lower blade tip above ground (m) (theight=hub height)
+          blade_l_point=p%hubheight-p%diameter/2. ! height of lower blade tip above ground (m)
           blade_u_point=p%hubheight+p%diameter/2. ! height of upper blade tip above ground (m)
 
           kfound = .false.
@@ -209,8 +235,8 @@ CONTAINS
               IF(z1 .LT. 0.) z1=0.0 ! k level lower than lower blade tip
               IF(z2 .GT. p%diameter) z2=p%diameter ! k+1 level higher than turbine upper blade tip
 
-              ! magnitude of horizontal velocity
-              speed=sqrt(u(i,k,j)*u(i,k,j)+v(i,k,j)*v(i,k,j))
+              ! horizontal wind speed
+              speed=sqrt(u(i,k,j)**2.+v(i,k,j)**2.)
 
               ! calculate TKE, power and thrust coeffs
               CALL dragcof(tkecof,powcof,thrcof,               &
@@ -219,8 +245,8 @@ CONTAINS
 
               CALL turbine_area(z1,z2,p%diameter,wfdensity,tarea)
 
-              ! output TKE tendency
-              qke(i,k,j) = qke(i,k,j)+speed*speed*speed*tarea*tkecof*dt/dz(i,k,j)
+              ! output TKE
+              qke(i,k,j) = qke(i,k,j)+speed**3.*tarea*tkecof*dt/dz(i,k,j)
               ! output u tendency
               du(i,k,j) = du(i,k,j)-.5*u(i,k,j)*thrcof*speed*tarea/dz(i,k,j)
               ! output v tendency
@@ -232,6 +258,13 @@ CONTAINS
       ENDIF
     ENDDO
   ENDIF
+
+!ACF copy qke into qke_adv if using advection
+   IF (BL_MYNN_TKEADVECT) THEN
+      qke_adv=qke
+   ENDIF
+!ACF-end
+
   END SUBROUTINE turbine_drag
 
 ! calculates area of turbine between two vertical levels
@@ -255,10 +288,10 @@ CONTAINS
   zc1=abs(z1)
   zc2=abs(z2)
   !turbine area between z1 and z2
-  IF(z1 .GT. 0. .AND. z2 .GT. 0) THEN
+  IF(z1 .GT. 0. .AND. z2 .GT. 0.) THEN
      tarea=zc1*sqrt(r*r-zc1*zc1)+r*r*asin(zc1/r)- &
      (zc2*sqrt(r*r-zc2*zc2)+r*r*asin(zc2/r))
-  ELSE IF(z1 .LT. 0. .AND. z2 .LT. 0) THEN
+  ELSE IF(z1 .LT. 0. .AND. z2 .LT. 0.) THEN
      tarea=zc2*sqrt(r*r-zc2*zc2)+r*r*asin(zc2/r)- &
      (zc1*sqrt(r*r-zc1*zc1)+r*r*asin(zc1/r))
   ELSE
@@ -291,12 +324,11 @@ CONTAINS
 !  incorporate their own curves for the particular turbine of interest 
 !  to them.
 
-  REAL, PARAMETER :: pi=22./7.
   REAL, INTENT(IN):: speed, cispeed, cospeed, tpower,tdiameter,stdthrcoef
   REAL, INTENT(OUT):: tkecof,powcof,thrcof
   REAL :: power,area,mspeed,hspeed
 
-  area=pi/4.*tdiameter*tdiameter          ! area swept by turbine blades
+  area=piconst/4.*tdiameter**2.          ! area swept by turbine blades
 
   ! GENERIC POWER CURVE - USE AT YOUR OWN RISK
   mspeed=0.5*(cospeed+cispeed)  !average of cispeed & cospeed
@@ -308,7 +340,7 @@ CONTAINS
      power=0.
      powcof=0.
   ELSE 
-     powcof = power * 2.e+6 / (speed*speed*speed*area)
+     powcof = power * 2.e+6 / (speed**3.*area)
      IF (speed .LT. cispeed*2.) THEN ! dampen artificial max near cispeed
         powcof = powcof * exp(-((speed-cispeed*2.)**2./(cispeed*2.)))
      end if

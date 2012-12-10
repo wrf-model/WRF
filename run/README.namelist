@@ -373,6 +373,21 @@ Namelist variables for controlling the adaptive time step option:
                                      = 16, WDM 6-class scheme
                                      = 17, NSSL 2-moment 4-ice scheme (steady background CCN)
                                      = 18, NSSL 2-moment 4-ice scheme with predicted CCN (better for idealized than real cases)
+                                     = 19, NSSL 1-moment (7 class: qv,qc,qr,qi,qs,qg,qh; predicts graupel density)
+                                     = 20, NSSL 1-moment, (6-class), very similar to Gilmore et al. 2004
+                                           Can set intercepts and particle densities in physics namelist, e.g., nssl_cnor
+                                       For NSSL 1-moment schemes, intercept and particle densities can be set for snow, 
+                                       graupel, hail, and rain. For the 1- and 2-moment schemes, the shape parameters 
+                                       for graupel and hail can be set.
+                                       nssl_alphah  = 0.    ! shape parameter for graupel
+                                       nssl_alphahl = 2.    ! shape parameter for hail
+                                       nssl_cnoh    = 4.e5  ! graupel intercept
+                                       nssl_cnohl   = 4.e4  ! hail intercept
+                                       nssl_cnor    = 8.e5  ! rain intercept
+                                       nssl_cnos    = 3.e6  ! snow intercept
+                                       nssl_rho_qh  = 500.  ! graupel density
+                                       nssl_rho_qhl = 900.  ! hail density
+                                       nssl_rho_qs  = 100.  ! snow density
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
@@ -450,6 +465,16 @@ Namelist variables for controlling the adaptive time step option:
  paerlev                             = 29 for CAM radiation input aerosol levels
  cam_abs_dim1                        = 4 for CAM absorption save array
  cam_abs_dim2                        = value of e_vert for CAM 2nd absorption save array
+
+ o3input                             = ozone input option for radiation (currently rrtmg only)
+                                     = 0, using profile inside the code
+                                     = 2, using CAM ozone data (ozone.formatted)
+ aer_opt                             = aerosol input option for radiation (currently rrtmg only)
+                                     = 0, none
+                                     = 1, using Tegen (1997) data, 
+ alevsiz                             = 12 for Tegen aerosol input levels
+ no_src_types                        = 6 for Tegen aerosols: organic and black carbon, sea salt, sulfalte, dust,
+                                       and stratospheric aerosol (volcanic ashes - currently 0)
 
  sf_sfclay_physics (max_dom)         surface-layer option (old bl_sfclay_physics option)
                                      = 0, no surface-layer

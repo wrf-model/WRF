@@ -156,6 +156,11 @@ drop_comment( char * linei )
             (*(q)   == 'd' || *(q)   == 'D') &&
             (*(q+1) == 'e' || *(q+1) == 'E') &&
             (*(q+2) == 'c' || *(q+2) == 'C') )  return(0) ;
+       /* nor an intel compiler directive, just so. quite. */
+         if ((*(q+3) == '$') &&
+            (*(q)   == 'd' || *(q)   == 'D') &&
+            (*(q+1) == 'i' || *(q+1) == 'I') &&
+            (*(q+2) == 'r' || *(q+2) == 'R') )  return(0) ;
        /* nor a pgi accelerator directive */
          if ((*q == '$') &&
             (*(q+1) == 'a' || *(q+1) == 'A') &&

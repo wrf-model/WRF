@@ -44,6 +44,7 @@ CONTAINS
                          lu_state,                               &
                          XLAT,XLONG,ALBEDO,ALBBCK,GMT,JULYR,JULDAY,&
                          levsiz, n_ozmixm, n_aerosolc, paerlev,  &
+                         alevsiz, no_src_types,                  &
                          TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_PBL,  &
                          EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
                          TSLB,ZS,DZS,num_soil_layers,warm_rain,  &
@@ -63,11 +64,13 @@ CONTAINS
                          ims, ime, jms, jme, kms, kme,           &
                          its, ite, jts, jte, kts, kte,           &
                          NUM_URBAN_LAYERS,                       &
+                         NUM_URBAN_HI,                           &
                          raincv_a,raincv_b,                      &
                          gd_cloud,gd_cloud2,                     &    ! Optional
                          gd_cloud_a,gd_cloud2_a,                 &    ! Optional
                          gd_cloud_b,gd_cloud2_b,                 &    ! Optional
                          ozmixm,pin,                             &    ! Optional
+                         aerodm,pina,                            &    ! Optional
                          m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,& ! Optional
                          RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,         &    ! Optional
                          RPHNDGDTEN,RQVNDGDTEN,RMUNDGDTEN,       &    ! Optional
@@ -100,6 +103,9 @@ CONTAINS
                          SFWIN1_URB3D,SFWIN2_URB3D,              & !Optional multi-layer urban
                          SFW1_URB3D,SFW2_URB3D,                  & !Optional multi-layer urban
                          SFR_URB3D,SFG_URB3D,                    & !Optional multi-layer urban
+                         LP_URB2D,HI_URB2D,LB_URB2D,             & !Optional multi-layer urban
+                         HGT_URB2D,MH_URB2D,STDH_URB2D,          & !Optional multi-layer urban
+                         LF_URB2D,                               & !Optional multi-layer urban
                          A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,        & !Optional multi-layer urban
                          A_E_BEP,B_U_BEP,B_V_BEP,                & !Optional multi-layer urban
                          B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,        & !Optional multi-layer urban
@@ -111,7 +117,13 @@ CONTAINS
 #endif
                          t00, p00, tlp,                          & !for obs-nudging
                          TYR,TYRA,TDLY,TLAG,NYEAR,NDAY,tmn_update,   &
-                         ACHFX,ACLHF,ACGRDFLX                    &
+                         ACHFX,ACLHF,ACGRDFLX,                   &
+                         nssl_cccn,                              &
+                         nssl_alphah,nssl_alphahl,               &
+                         nssl_cnoh, nssl_cnohl,                  &
+                         nssl_cnor, nssl_cnos,                   &
+                         nssl_rho_qh, nssl_rho_qhl,              &
+                         nssl_rho_qs                             &
    ! OPTIONAL 
                          ,te_temf          & ! WA 12/21/09
                          ,cf3d_temf        & ! WA 9/27/10
@@ -155,11 +167,15 @@ CONTAINS
 
    INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
    INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc
+   INTEGER,      INTENT(IN   )    ::   alevsiz, no_src_types
 
    REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ), OPTIONAL, &
           INTENT(INOUT) ::                                  OZMIXM
+   REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, n_ozmixm-1, no_src_types ), OPTIONAL, &
+          INTENT(INOUT) ::                                  aerodm
 
    REAL,  DIMENSION(levsiz), OPTIONAL, INTENT(INOUT)  ::        PIN
+   REAL,  DIMENSION(alevsiz), OPTIONAL, INTENT(INOUT)  ::       PINA
 
    REAL,  DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT)  :: m_ps_1,m_ps_2
    REAL,  DIMENSION(paerlev), OPTIONAL,INTENT(INOUT)  ::          m_hybi
@@ -371,6 +387,7 @@ CONTAINS
    INTEGER, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: UTYPE_URB2D !urban
 
    INTEGER , INTENT(IN)        :: num_urban_layers
+   INTEGER , INTENT(IN)        :: num_urban_hi
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TRB_URB4D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TW1_URB4D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TW2_URB4D ! multi-layer UCM
@@ -392,6 +409,13 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFR_URB3D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFW1_URB3D ! multi-layer UCM
    REAL, OPTIONAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFW2_URB3D ! multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime,1:num_urban_hi, jms:jme), INTENT(INOUT) :: HI_URB2D  !multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LP_URB2D  !multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LB_URB2D  !multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: HGT_URB2D !multi-layer UCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: MH_URB2D  !SLUCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: STDH_URB2D !SLUCM
+   REAL, OPTIONAL, DIMENSION( ims:ime, 4, jms:jme ), INTENT(INOUT) :: LF_URB2D  !SLUCM 
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_U_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_V_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_T_BEP
@@ -413,6 +437,11 @@ CONTAINS
    TYPE(fdob_type), OPTIONAL, INTENT(INOUT) :: fdob
 #endif
    REAL, OPTIONAL, INTENT(IN) :: p00, t00, tlp   ! for obs-nudging base-state calcn
+   REAL, OPTIONAL, INTENT(IN) :: nssl_cccn, nssl_alphah, nssl_alphahl, &
+                         nssl_cnoh, nssl_cnohl,                  &
+                         nssl_cnor, nssl_cnos,                   &
+                         nssl_rho_qh, nssl_rho_qhl,              &
+                         nssl_rho_qs
 
 ! WA 12/21/09
    REAL,OPTIONAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , &
@@ -632,9 +661,11 @@ integer myproc
 
    CALL ra_init(id=id,STEPRA=STEPRA,RADT=RADT,DT=DT,RTHRATEN=RTHRATEN,RTHRATENLW=RTHRATENLW,             &
                 RTHRATENSW=RTHRATENSW,CLDFRA=CLDFRA,EMISS=EMISS,cen_lat=cen_lat,JULYR=JULYR,JULDAY=JULDAY,GMT=GMT,    &
-                levsiz=levsiz,XLAT=XLAT,n_ozmixm=n_ozmixm,                           &
+                levsiz=levsiz,XLAT=XLAT,XLONG=XLONG,n_ozmixm=n_ozmixm,     &
+                alevsiz=alevsiz,no_src_types=no_src_types,                 &
                 cldfra_old=cldfra_old,                                     & ! Optional
                 ozmixm=ozmixm,pin=pin,                                     & ! Optional
+                aerodm=aerodm,pina=pina,                                   & ! Optional
                 m_ps_1=m_ps_1,m_ps_2=m_ps_2,m_hybi=m_hybi,aerosolc_1=aerosolc_1,aerosolc_2=aerosolc_2,     & ! Optional
                 paerlev=paerlev,n_aerosolc=n_aerosolc,                             &
                 sfull=sfull,shalf=shalf,pptop=pptop,swrad_scat=swrad_scat,p_top=p_top,       &
@@ -684,6 +715,7 @@ integer myproc
                 TS_URB2D, FRC_URB2D, UTYPE_URB2D,               & 
                 SF_URBAN_PHYSICS,                               & !Optional urban
                 NUM_URBAN_LAYERS,                               & !Optional multi-layer urban
+                NUM_URBAN_HI,                                   & !Optional multi-layer urban
                 TRB_URB4D,TW1_URB4D,TW2_URB4D,                  & !Optional multi-layer urban
                 TGB_URB4D,TLEV_URB3D,QLEV_URB3D,                & !Optional multi-layer urban
                 TW1LEV_URB3D,TW2LEV_URB3D,                      & !Optional multi-layer urban
@@ -693,6 +725,9 @@ integer myproc
                 SFWIN1_URB3D,SFWIN2_URB3D,                      & !Optional multi-layer urban
                 SFW1_URB3D,SFW2_URB3D,                          & !Optional multi-layer urban
                 SFR_URB3D,SFG_URB3D,                            & !Optional multi-layer urban
+                LP_URB2D,HI_URB2D,LB_URB2D,                     & !Optional multi-layer urban
+                HGT_URB2D,MH_URB2D,STDH_URB2D,                  & !Optional multi-layer urban
+                LF_URB2D,                                       & !Optional multi-layer urban
                 A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,                & !Optional multi-layer urban
                 A_E_BEP,B_U_BEP,B_V_BEP,                        & !Optional multi-layer urban
                 B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                & !Optional multi-layer urban
@@ -739,6 +774,11 @@ integer myproc
                 F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,               &
                 mp_restart_state,tbpvs_state,tbpvs0_state,      &
                 allowed_to_read, start_of_simulation,           &
+                nssl_cccn, nssl_alphah, nssl_alphahl,           &
+                         nssl_cnoh, nssl_cnohl,                  &
+                         nssl_cnor, nssl_cnos,                   &
+                         nssl_rho_qh, nssl_rho_qhl,              &
+                         nssl_rho_qs,                            &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -1099,9 +1139,11 @@ integer myproc
 !=====================================================================
    SUBROUTINE ra_init(id,STEPRA,RADT,DT,RTHRATEN,RTHRATENLW,       &
                       RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
-                      levsiz,XLAT,n_ozmixm,                           &
+                      levsiz,XLAT,XLONG,n_ozmixm,                     &
+                      alevsiz,no_src_types,                           &
                       cldfra_old,                                     & ! Optional
                       ozmixm,pin,                                     & ! Optional
+                      aerodm,pina,                                    & ! Optional
                       m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,     & ! Optional
                       paerlev,n_aerosolc,                             &
                       sfull,shalf,pptop,swrad_scat,p_top,            &
@@ -1115,6 +1157,7 @@ integer myproc
    USE module_ra_rrtmg_lw  , ONLY : rrtmg_lwinit
    USE module_ra_rrtmg_sw  , ONLY : rrtmg_swinit
    USE module_ra_cam       , ONLY : camradinit
+   USE module_ra_cam_support , ONLY : oznini
    USE module_ra_sw        , ONLY : swinit
    USE module_ra_gsfcsw    , ONLY : gsfc_swinit
    USE module_ra_gfdleta   , ONLY : gfdletainit
@@ -1142,11 +1185,14 @@ integer myproc
 
    INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
    INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc
+   INTEGER,      INTENT(IN   )    ::   alevsiz, no_src_types
 
-   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::  XLAT
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::  XLAT, XLONG
 
    REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ), OPTIONAL,      &
           INTENT(INOUT) ::                                  OZMIXM
+   REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, n_ozmixm-1, no_src_types ), OPTIONAL,      &
+          INTENT(INOUT) ::                                  aerodm
 
    REAL,  DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT)  :: m_ps_1,m_ps_2
    REAL,  DIMENSION(paerlev), OPTIONAL, INTENT(INOUT)  ::         m_hybi
@@ -1154,6 +1200,7 @@ integer myproc
           INTENT(INOUT) ::                      aerosolc_1, aerosolc_2
 
    REAL,  DIMENSION(levsiz), OPTIONAL, INTENT(INOUT)  ::          PIN
+   REAL,  DIMENSION(alevsiz), OPTIONAL, INTENT(INOUT)  ::         PINA
 
    INTEGER , INTENT(INOUT)        :: STEPRA
    INTEGER :: isn
@@ -1214,6 +1261,28 @@ integer myproc
         ENDDO
      end if
    ENDIF
+
+!-- ww: attempt to use CAM ozone and some aerosol profiles in all rad schemes
+!   note that CAM option will still do the same. 
+!   n_ozmixm: no of months; levsiz: = 59, vertical dim
+!   Read in CAM ozone data, and interpolate data to model grid
+
+!  IF ( PRESENT ( ozmixm ) ) THEN
+   IF ( config_flags%o3input .EQ. 2 ) THEN
+      CALL oznini(ozmixm,pin,levsiz,n_ozmixm,XLAT,                &
+                     ids, ide, jds, jde, kds, kde,                  &
+                     ims, ime, jms, jme, kms, kme,                  &
+                     its, ite, jts, jte, kts, kte)
+   ENDIF
+!  ENDIF
+!  IF ( PRESENT ( aerodm ) ) THEN
+   IF ( config_flags%aer_opt .EQ. 1 ) THEN
+      CALL aerosol_in(aerodm,pina,alevsiz,n_ozmixm-1,no_src_types,XLAT,XLONG,   &
+                     ids, ide, jds, jde, kds, kde,                  &
+                     ims, ime, jms, jme, kms, kme,                  &
+                     its, ite, jts, jte, kts, kte)
+   ENDIF
+!  ENDIF
 
 !-- find out which microphysics option is used first
 
@@ -1429,6 +1498,7 @@ integer myproc
                 TS_URB2D, FRC_URB2D, UTYPE_URB2D,               &
                 SF_URBAN_PHYSICS,                               & !Optional urban
                 NUM_URBAN_LAYERS,                               & !Optional multi-layer urban
+                NUM_URBAN_HI,                                   & !Optional multi-layer urban
                 TRB_URB4D,TW1_URB4D,TW2_URB4D,                  & !Optional multi-layer urban
                 TGB_URB4D,TLEV_URB3D,QLEV_URB3D,                & !Optional multi-layer urban
                 TW1LEV_URB3D,TW2LEV_URB3D,                      & !Optional multi-layer urban
@@ -1438,6 +1508,9 @@ integer myproc
                 SFWIN1_URB3D,SFWIN2_URB3D,                      & !Optional multi-layer urban
                 SFW1_URB3D,SFW2_URB3D,                          & !Optional multi-layer urban
                 SFR_URB3D,SFG_URB3D,                            & !Optional multi-layer urban
+                LP_URB2D,HI_URB2D,LB_URB2D,                     & !Optional multi-layer urban
+                HGT_URB2D,MH_URB2D,STDH_URB2D,                  & !Optional multi-layer urban
+                LF_URB2D,                                       & !Optional multi-layer urban
                 A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,                & !Optional multi-layer urban
                 A_E_BEP,B_U_BEP,B_V_BEP,                        & !Optional multi-layer urban
                 B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                & !Optional multi-layer urban
@@ -1475,6 +1548,7 @@ integer myproc
    USE module_bl_qnsepbl
    USE module_bl_qnsepbl09
    USE module_bl_mfshconvpbl
+   USE module_bl_gbmpbl
 #if ( EM_CORE == 1 )
    USE module_bl_mynn
    USE module_bl_temf
@@ -1636,6 +1710,7 @@ integer myproc
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme ), INTENT(INOUT) :: TGL_URB3D !Optional urban
 
     INTEGER , INTENT(IN)        ::     num_urban_layers
+    INTEGER , INTENT(IN)        ::     num_urban_hi
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TRB_URB4D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TW1_URB4D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TW2_URB4D !Optional UCM
@@ -1657,6 +1732,13 @@ integer myproc
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFW2_URB3D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFR_URB3D !Optional UCM
     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFG_URB3D !Optional UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime,1:num_urban_hi, jms:jme ), INTENT(INOUT) :: HI_URB2D  !multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LP_URB2D  !multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LB_URB2D  !multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: HGT_URB2D !multi-layer UCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: MH_URB2D !SLUCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: STDH_URB2D !SLUCM
+    REAL, OPTIONAL, DIMENSION( ims:ime, 4, jms:jme ), INTENT(INOUT) :: LF_URB2D !SLUCM
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_U_BEP 
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_V_BEP 
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: A_T_BEP 
@@ -1857,6 +1939,7 @@ integer myproc
                               TRL_URB3D,TBL_URB3D,TGL_URB3D,                   & !urban
                               SH_URB2D,LH_URB2D,G_URB2D,RN_URB2D, TS_URB2D,    & !urban
                               num_urban_layers,                                & !urban
+                              num_urban_hi,                                    & !urban
                               TRB_URB4D,TW1_URB4D,TW2_URB4D,TGB_URB4D,         & !urban
                               TLEV_URB3D,QLEV_URB3D,                           & !urban
                               TW1LEV_URB3D,TW2LEV_URB3D,                       & !urban
@@ -1865,6 +1948,9 @@ integer myproc
                               SFVENT_URB3D,LFVENT_URB3D,                       & !urban
                               SFWIN1_URB3D,SFWIN2_URB3D,                       & !urban
                               SFW1_URB3D,SFW2_URB3D,SFR_URB3D,SFG_URB3D,       & !urban
+                              LP_URB2D,HI_URB2D,LB_URB2D,                      & !urban
+                              HGT_URB2D,MH_URB2D,STDH_URB2D,                   & !urban
+                              LF_URB2D,                                        & !urban
                               A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,                 & !multi-layer urban
                               A_E_BEP,B_U_BEP,B_V_BEP,                         & !multi-layer urban
                               B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                 & !multi-layer urban
@@ -2079,7 +2165,7 @@ integer myproc
       CASE (BOULACSCHEME)
            if(isfc .ne. 1 .and. isfc .ne. 2)CALL wrf_error_fatal &
             ( 'module_physics_init: use sfclay or myjsfc scheme for this pbl option' )
-           CALL boulacinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
+           CALL boulacinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN, &
                          TKE_PBL,EXCH_H,restart,               &
                          allowed_to_read ,                     &
                          ids, ide, jds, jde, kds, kde,         &
@@ -2144,6 +2230,19 @@ integer myproc
          ENDIF
 
 #endif
+
+      CASE (GBMPBLSCHEME) 
+           if(isfc .ne. 1)CALL wrf_error_fatal &
+            ( 'module_physics_init: use sfclay scheme for this pbl option' )
+         CALL gbmpblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,   &
+                        RQCBLTEN,RQIBLTEN,P_QI,               &
+                        PARAM_FIRST_SCALAR,TKE_PBL,           &
+                        EXCH_H,                               &
+                        restart,allowed_to_read ,             &
+                        ids, ide, jds, jde, kds, kde,         &
+                        ims, ime, jms, jme, kms, kme,         &
+                        its, ite, jts, jte, kts, kte          )
+
 
       CASE DEFAULT
 
@@ -2444,6 +2543,11 @@ integer myproc
                       F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           & ! for eta mp
                       mp_restart_state,tbpvs_state,tbpvs0_state,   & ! eta mp
                       allowed_to_read, start_of_simulation,       &
+                      nssl_cccn, nssl_alphah, nssl_alphahl,       &
+                         nssl_cnoh, nssl_cnohl,                  &
+                         nssl_cnor, nssl_cnos,                   &
+                         nssl_rho_qh, nssl_rho_qhl,              &
+                         nssl_rho_qs,                            &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
@@ -2473,6 +2577,12 @@ integer myproc
    LOGICAL , INTENT(IN)        :: restart
    LOGICAL , INTENT(OUT)       :: warm_rain,adv_moist_cond
    REAL    , INTENT(IN)        :: MPDT, DT, DX, DY
+   REAL, INTENT(IN), OPTIONAL  :: nssl_cccn, nssl_alphah, nssl_alphahl, &
+                                  nssl_cnoh, nssl_cnohl,                  &
+                                  nssl_cnor, nssl_cnos,                   &
+                                  nssl_rho_qh, nssl_rho_qhl,              &
+                                  nssl_rho_qs
+
    LOGICAL , INTENT(IN)        :: start_of_simulation
 
    INTEGER , INTENT(IN)        :: ids, ide, jds, jde, kds, kde,   &
@@ -2488,6 +2598,7 @@ integer myproc
 
 ! Local
    INTEGER :: i, j, itf, jtf
+   REAL, DIMENSION(20) :: nssl_params
 
    warm_rain = .false.
    adv_moist_cond = .true.
@@ -2502,6 +2613,19 @@ integer myproc
         GRAUPELNC(i,j) = 0.
      ENDDO
      ENDDO
+   ENDIF
+   
+   IF ( present( nssl_cccn ) ) THEN
+     nssl_params(1)  = nssl_cccn
+     nssl_params(2)  = nssl_alphah
+     nssl_params(3)  = nssl_alphahl
+     nssl_params(4)  = nssl_cnoh
+     nssl_params(5)  = nssl_cnohl
+     nssl_params(6)  = nssl_cnor
+     nssl_params(7)  = nssl_cnos
+     nssl_params(8)  = nssl_rho_qh
+     nssl_params(9)  = nssl_rho_qhl
+     nssl_params(10) = nssl_rho_qs
    ENDIF
 
    mp_select: SELECT CASE(config_flags%mp_physics)
@@ -2548,10 +2672,16 @@ integer myproc
      CASE (WDM6SCHEME)
           CALL wdm6init(rhoair0,rhowater,rhosnow,cliq,cpv,n_ccn0,allowed_to_read )
 #if (EM_CORE==1)
+     CASE (NSSL_1MOMLFO)
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=0,mixphase=0,ihvol=-1) ! no separate hail
+     CASE (NSSL_1MOM)
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=0,mixphase=0,ihvol=0)
      CASE (NSSL_2MOM)
-         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme)
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=5,mixphase=0,ihvol=0)
      CASE (NSSL_2MOMCCN)
-         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme)
+         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=5,mixphase=0,ihvol=0)
+!     CASE (NSSL_3MOM)
+!         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=8,mixphase=0,ihvol=1)
 #endif
      CASE (ETAMPOLD)
          adv_moist_cond = .false.
@@ -2887,5 +3017,252 @@ integer myproc
    ENDIF
 
    END SUBROUTINE z2sigma
+
+subroutine aerosol_in(aerodm,pina,alevsiz,no_months,no_src_types,XLAT,XLONG,   &
+                     ids, ide, jds, jde, kds, kde,                  &
+                     ims, ime, jms, jme, kms, kme,                  &
+                     its, ite, jts, jte, kts, kte)
+!
+! Adaped from oznini in CAM 
+! It should be replaced by monthly climatology that varies latitudinally and vertically
+!
+   IMPLICIT NONE
+
+   INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
+                                       ims,ime, jms,jme, kms,kme, &
+                                       its,ite, jts,jte, kts,kte   
+
+   INTEGER,      INTENT(IN   )    ::   alevsiz, no_months, no_src_types
+
+   REAL,  DIMENSION( ims:ime, jms:jme ), INTENT(IN   )  ::     XLAT, XLONG
+
+   REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, no_months, no_src_types ),      &
+          INTENT(OUT   ) ::                                  aerodm
+
+   REAL,  DIMENSION(alevsiz), INTENT(OUT )  ::                   pina
+
+! Local
+!  data from Torn, computed from EC 6 types of aerosol data:
+!    organic carbon, sea salt, dust, black carbon, sulfalte 
+!    and stratospheric aerosol (volcanic ashes)
+
+   INTEGER, PARAMETER :: latsiz = 46
+   INTEGER, PARAMETER :: lonsiz = 72
+   INTEGER :: i, j, k, itf, jtf, ktf, m, pin_unit, lat_unit, lon_unit, od_unit, ks, il, jl
+   INTEGER :: ilon1, ilon2, jlat1, jlat2
+   REAL    :: interp_pt, interp_pt_lat, interp_pt_lon, wlat1, wlat2, wlon1, wlon2
+   CHARACTER*256 :: message
+
+   REAL,  DIMENSION( lonsiz, alevsiz, latsiz, no_months, no_src_types )    ::   &
+                                                            aerodin
+
+   REAL,  DIMENSION(latsiz)                ::             lat_od, aertmp1
+   REAL,  DIMENSION(lonsiz)                ::             lon_od, aertmp2
+
+   jtf=min0(jte,jde-1)
+   ktf=min0(kte,kde-1)
+   itf=min0(ite,ide-1)
+
+!-- read in aerosol optical depth pressure data
+
+     WRITE(message,*)'no_months = ',no_months
+     CALL wrf_debug(1,message)
+
+! pressure in mb
+      pin_unit = 27
+        OPEN(pin_unit, FILE='aerosol_plev.formatted',FORM='FORMATTED',STATUS='OLD')
+        do k = 1,alevsiz
+        READ (pin_unit,*) pina(k)
+        end do
+      close(27)
+
+!     do k=1,alevsiz
+!       pina(k) = pina(k)*100.
+!     end do
+
+!-- read in aerosol optical depth lat data
+
+      lat_unit = 28
+        OPEN(lat_unit, FILE='aerosol_lat.formatted',FORM='FORMATTED',STATUS='OLD')
+        do j = 1,latsiz
+        READ (lat_unit,*) lat_od(j)
+        end do
+      close(28)
+
+!-- read in aerosol optical depth lat data
+
+      lon_unit = 29
+        OPEN(lon_unit, FILE='aerosol_lon.formatted',FORM='FORMATTED',STATUS='OLD')
+        do j = 1,lonsiz
+        READ (lon_unit,*) lon_od(j)
+        end do
+      close(29)
+
+!-- read in ozone data
+
+      od_unit = 30
+      OPEN(od_unit, FILE='aerosol.formatted',FORM='FORMATTED',STATUS='OLD')
+
+      do ks=1,no_src_types
+      do m=1,no_months
+      do j=1,latsiz  ! latsiz=46
+      do k=1,alevsiz ! alevsiz=12
+      do i=1,lonsiz  ! lonsiz=72
+         READ (od_unit,*) aerodin(i,k,j,m,ks)
+      enddo
+      enddo
+      enddo
+      enddo
+      enddo
+      close(30)
+
+!-- latitudinally interpolate ozone data (and extend longitudinally)
+!-- using function lin_interpol2(x, f, y) result(g)
+! Purpose:
+!   interpolates f(x) to point y
+!   assuming f(x) = f(x0) + a * (x - x0)
+!   where a = ( f(x1) - f(x0) ) / (x1 - x0)
+!   x0 <= x <= x1
+!   assumes x is monotonically increasing
+!    real, intent(in), dimension(:) :: x  ! grid points
+!    real, intent(in), dimension(:) :: f  ! grid function values
+!    real, intent(in) :: y                ! interpolation point
+!    real :: g                            ! interpolated function value
+!---------------------------------------------------------------------------
+
+      do j=jts,jtf
+      do i=its,itf
+        interp_pt_lat=XLAT(i,j)
+        interp_pt_lon=XLONG(i,j)
+        call interp_vec(lat_od,interp_pt_lat,.true.,jlat1,jlat2,wlat1,wlat2)
+        call interp_vec(lon_od,interp_pt_lon,.true.,ilon1,ilon2,wlon1,wlon2)
+
+        do ks = 1,no_src_types
+        do m  = 1,no_months
+        do k  = 1,alevsiz
+          aerodm(i,k,j,m,ks) = wlon1 * (wlat1 * aerodin(ilon1,k,jlat1,m,ks)  + &
+                                        wlat2 * aerodin(ilon1,k,jlat2,m,ks)) + &
+                               wlon2 * (wlat1 * aerodin(ilon2,k,jlat1,m,ks)  + &
+                                        wlat2 * aerodin(ilon2,k,jlat2,m,ks))
+        end do
+        end do
+        end do
+
+      end do
+      end do
+
+!     do j=jts,jtf
+!     do i=its,itf
+!        onefld(i,j) = aerodm(i,12,j,1,1)
+!     enddo
+!     enddo
+
+END SUBROUTINE aerosol_in
+
+  function lin_interp(x, f, y) result(g)
+
+    ! Purpose:
+    !   interpolates f(x) to point y
+    !   assuming f(x) = f(x0) + a * (x - x0)
+    !   where a = ( f(x1) - f(x0) ) / (x1 - x0)
+    !   x0 <= x <= x1
+    !   assumes x is monotonically increasing
+
+    ! Author: D. Fillmore ::  J. Done changed from r8 to r4
+
+    implicit none
+
+    real, intent(in), dimension(:) :: x  ! grid points
+    real, intent(in), dimension(:) :: f  ! grid function values
+    real, intent(in) :: y                ! interpolation point
+    real :: g                            ! interpolated function value
+
+    integer :: k  ! interpolation point index
+    integer :: n  ! length of x
+    real    :: a
+
+    n = size(x)
+
+    ! find k such that x(k) < y =< x(k+1)
+    ! set k = 1 if y <= x(1)  and  k = n-1 if y > x(n)
+
+    if (y <= x(1)) then
+      k = 1
+    else if (y >= x(n)) then
+      k = n - 1
+    else
+      k = 1
+      do while (y > x(k+1) .and. k < n)
+        k = k + 1
+      end do
+    end if
+
+    ! interpolate
+    a = (  f(k+1) - f(k) ) / ( x(k+1) - x(k) )
+    g = f(k) + a * (y - x(k))
+
+  end function lin_interp
+
+  subroutine interp_vec(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
+
+  implicit none
+
+  real, intent(in), dimension(:) :: locvec
+  real, intent(in)               :: locwant
+  logical, intent(in)            :: periodic
+  integer, intent(out)           :: loc1, loc2
+  real, intent(out)              :: wght1, wght2
+
+  integer :: vsize, n
+  real    :: locv1, locv2
+
+  vsize = size(locvec)
+
+  loc1 = -1
+  loc2 = -1
+
+  do n = 1, vsize-1
+    if ( locvec(n) <= locwant .and. locvec(n+1) > locwant ) then
+      loc1  = n
+      loc2  = n+1
+      locv1 = locvec(n)
+      locv2 = locvec(n+1)
+      exit
+    end if
+  end do
+
+  if ( loc1 < 0 .and. loc2 < 0 ) then
+    if ( periodic ) then
+      if ( locwant < locvec(1) ) then
+        loc1  = vsize
+        loc2  = 1
+        locv1 = locvec(vsize)-360.0
+        locv2 = locvec(1)
+      else
+        loc1  = vsize
+        loc2  = 1
+        locv1 = locvec(vsize)
+        locv2 = locvec(1)+360.0
+      end if
+    else
+      if ( locwant < locvec(1) ) then
+        loc1  = 1
+        loc2  = 1
+        locv1 = locvec(1)
+        locv2 = locvec(1)
+      else
+        loc1  = vsize
+        loc2  = vsize
+        locv1 = locvec(vsize)
+        locv2 = locvec(vsize)
+      end if
+    end if
+  end if
+
+  wght2 = (locwant-locv1) / (locv2-locv1)
+  wght1 = 1.0 - wght2
+
+  return
+  end subroutine interp_vec
 
 END MODULE module_physics_init

@@ -14,8 +14,9 @@ MODULE module_big_step_utilities_em
 
    USE module_model_constants
    USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, kfetascheme, g3scheme, &
-   p_qv, param_first_scalar, p_qr, p_qc
+   p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
    USE module_configure, ONLY : grid_config_rec_type
+   USE module_wrf_error
 
 CONTAINS
 
@@ -803,7 +804,8 @@ SUBROUTINE calc_cq ( moist, cqu, cqv, cqw, n_moist, &
 
    ! Local stuff
 
-   REAL :: qtot
+   ! Changes from Larry Meadows, Intel Corp.  Improve vectorization of this routine
+   REAL :: qtot(its:ite)
    
    INTEGER :: i, j, k, itf, jtf, ktf, ispe
 
@@ -813,67 +815,62 @@ SUBROUTINE calc_cq ( moist, cqu, cqv, cqw, n_moist, &
 !
 !</DESCRIPTION>
 
-      itf=ite
-      jtf=MIN(jte,jde-1)
       ktf=MIN(kte,kde-1)
 
       IF(  n_moist >= PARAM_FIRST_SCALAR ) THEN
 
+        itf=ite
+        jtf=MIN(jte,jde-1)
         DO j=jts,jtf
-        DO k=kts,ktf
-        DO i=its,itf
-          qtot = 0.
-!DEC$ loop count(3)
-          DO ispe=PARAM_FIRST_SCALAR,n_moist
-            qtot = qtot + moist(i,k,j,ispe) + moist(i-1,k,j,ispe)
-          ENDDO
-!           qtot = 0.5*( moist(i  ,k,j,1)+moist(i  ,k,j,2)+moist(i  ,k,j,3)+  &
-!     &                  moist(i-1,k,j,1)+moist(i-1,k,j,2)+moist(i-1,k,j,3) )
-!           cqu(i,k,j) = 1./(1.+qtot)
-           cqu(i,k,j) = 1./(1.+0.5*qtot)
-        ENDDO
+          DO k=kts,ktf
+            qtot = 0.
+            DO ispe=PARAM_FIRST_SCALAR,n_moist
+              DO i=its,itf
+                qtot(i) = qtot(i) + moist(i,k,j,ispe) + moist(i-1,k,j,ispe)
+              ENDDO
+            ENDDO
+            DO i=its,itf
+              cqu(i,k,j) = 1./(1.+0.5*qtot(i))
+            ENDDO
         ENDDO
         ENDDO
 
         itf=MIN(ite,ide-1)
         jtf=jte
-
         DO j=jts,jtf
-        DO k=kts,ktf
-        DO i=its,itf
-          qtot = 0.
-!DEC$ loop count(3)
-          DO ispe=PARAM_FIRST_SCALAR,n_moist
-            qtot = qtot + moist(i,k,j,ispe) + moist(i,k,j-1,ispe)
+          DO k=kts,ktf
+            qtot = 0.
+            DO ispe=PARAM_FIRST_SCALAR,n_moist
+              DO i=its,itf
+                qtot(i) = qtot(i) + moist(i,k,j,ispe) + moist(i,k,j-1,ispe)
+              ENDDO
+            ENDDO
+            DO i = its,itf
+               cqv(i,k,j) = 1./(1.+0.5*qtot(i))
+            ENDDO
           ENDDO
-!           qtot = 0.5*( moist(i,k,j  ,1)+moist(i,k,j  ,2)+moist(i,k,j  ,3)+  &
-!     &                  moist(i,k,j-1,1)+moist(i,k,j-1,2)+moist(i,k,j-1,3) )
-!           cqv(i,k,j) = 1./(1.+qtot)
-           cqv(i,k,j) = 1./(1.+0.5*qtot)
-        ENDDO
-        ENDDO
         ENDDO
 
         itf=MIN(ite,ide-1)
         jtf=MIN(jte,jde-1)
         DO j=jts,jtf
-        DO k=kts+1,ktf
-        DO i=its,itf
-          qtot = 0.
-!DEC$ loop count(3)
-          DO ispe=PARAM_FIRST_SCALAR,n_moist
-            qtot = qtot + moist(i,k,j,ispe) + moist(i,k-1,j,ispe)
-          ENDDO
-!           qtot = 0.5*( moist(i,k  ,j,1)+moist(i,k  ,j,2)+moist(i,k-1,j,3)+  &
-!     &                  moist(i,k-1,j,1)+moist(i,k-1,j,2)+moist(i,k  ,j,3) )
-!           cqw(i,k,j) = qtot
-           cqw(i,k,j) = 0.5*qtot
-        ENDDO
+          DO k=kts+1,ktf
+            qtot = 0.
+            DO ispe=PARAM_FIRST_SCALAR,n_moist
+              DO i=its,itf
+                qtot(i) = qtot(i) + moist(i,k,j,ispe) + moist(i,k-1,j,ispe)
+              ENDDO
+            ENDDO
+            DO i = its,itf
+              cqw(i,k,j) = 0.5*qtot(i)
+            ENDDO
         ENDDO
         ENDDO
 
       ELSE
 
+        itf=ite
+        jtf=MIN(jte,jde-1)
         DO j=jts,jtf
         DO k=kts,ktf
         DO i=its,itf
@@ -884,7 +881,6 @@ SUBROUTINE calc_cq ( moist, cqu, cqv, cqw, n_moist, &
 
         itf=MIN(ite,ide-1)
         jtf=jte
-
         DO j=jts,jtf
         DO k=kts,ktf
         DO i=its,itf
@@ -5393,7 +5389,6 @@ END SUBROUTINE phy_prep
      DO k = k_start, k_end
      DO i = i_start, i_end
           mpten = th_phy(i,k,j)-h_diabatic(i,k,j)
-#if ( WRF_DFI_RADAR == 1 )
        if(mpten.gt.mptenmax) then
           mptenmax=mpten
           imax=i
@@ -5407,6 +5402,7 @@ END SUBROUTINE phy_prep
           mpten=min(config_flags%mp_tend_lim*dt, mpten)
           mpten=max(-config_flags%mp_tend_lim*dt, mpten)
 
+#if ( WRF_DFI_RADAR == 1 )
        if(k < k_end ) then
          if(dfi_tten_max < dfi_tten_rad(i,k,j) ) dfi_tten_max = dfi_tten_rad(i,k,j)
          if(old_max < (th_phy(i,k,j)-h_diabatic(i,k,j)) ) old_max=th_phy(i,k,j)-h_diabatic(i,k,j)

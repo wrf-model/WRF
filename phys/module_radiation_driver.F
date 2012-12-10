@@ -17,6 +17,8 @@ CONTAINS
               ,ITIMESTEP,JULDAY, JULIAN &
               ,JULYR  ,LW_PHYSICS       &
               ,NCFRCV ,NCFRST ,NPHS     &
+              ,O3INPUT, O3RAD           &
+              ,AER_OPT, aerod           &
               ,P8W    ,P ,PI            &
               ,RADT   ,RA_CALL_OFFSET   &
               ,RHO    ,RLWTOA           &
@@ -32,6 +34,7 @@ CONTAINS
               ,DECLINX ,SOLCONX ,COSZEN ,HRANG    &
               , CEN_LAT                                      &
               ,Z                                             &
+              ,ALEVSIZ, no_src_types               &
               ,LEVSIZ, N_OZMIXM                    &
               ,N_AEROSOLC                                    &
               ,PAERLEV                                       &
@@ -80,6 +83,7 @@ CONTAINS
               ,LWCF                           &
               ,SWCF                           &
               ,OLR                            &
+              ,aerodm, PINA, aodtot           &
               ,OZMIXM, PIN                    &
               ,M_PS_1, M_PS_2, AEROSOLC_1     &
               ,AEROSOLC_2, M_HYBI0            &
@@ -149,8 +153,6 @@ CONTAINS
 
    USE module_ra_goddard    , ONLY : goddardrad
    USE module_ra_flg        , ONLY : RAD_FLG
-
-
 
    !  This driver calls subroutines for the radiation parameterizations.
    !
@@ -320,11 +322,13 @@ CONTAINS
                                        num_tiles
 
    INTEGER, INTENT(IN)            :: lw_physics, sw_physics
+   INTEGER, OPTIONAL, INTENT(IN)  :: o3input, aer_opt
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
                 i_start,i_end,j_start,j_end
 
    INTEGER,      INTENT(IN   )    ::   STEPRA,ICLOUD,ra_call_offset
+   INTEGER,      INTENT(IN   )    ::   alevsiz, no_src_types
    INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
    INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc, cam_abs_dim1, cam_abs_dim2
    REAL,      INTENT(IN   )       ::   cam_abs_freq_s
@@ -341,10 +345,17 @@ CONTAINS
                                                             SNOW 
    REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ),  OPTIONAL,    &
           INTENT(IN   ) ::                                  OZMIXM
+   REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, no_src_types, n_ozmixm-1 ),  OPTIONAL,    &
+          INTENT(IN   ) ::                                  AERODM
+   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme, no_src_types ),  OPTIONAL,    &
+          INTENT(INOUT) ::                                  AEROD
+   REAL,  DIMENSION( ims:ime, jms:jme ), OPTIONAL,                &
+          INTENT(INOUT) ::                                  AODTOT
 
    REAL,  DIMENSION( ims:ime, levsiz, jms:jme, n_ozmixm ) :: OZFLG
 
    REAL,  DIMENSION(levsiz), OPTIONAL, INTENT(IN )  ::     PIN
+   REAL,  DIMENSION(alevsiz), OPTIONAL, INTENT(IN )  ::     PINA
 
    REAL,  DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(IN )  ::      m_ps_1,m_ps_2
    REAL,  DIMENSION( ims:ime, paerlev, jms:jme, n_aerosolc ), OPTIONAL, &
@@ -540,11 +551,17 @@ CONTAINS
      INTEGER, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN) :: shadowmask
 
    REAL , OPTIONAL, INTENT(INOUT) ::    radtacttime ! Storing the time in s when radiation is called next
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(INOUT)  ::                       o3rad
+
 ! LOCAL  VAR
 
    REAL, DIMENSION( ims:ime, jms:jme ) ::             GLAT,GLON
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) ::    CEMISS
    REAL, DIMENSION( ims:ime, jms:jme ) ::             coszr
+   REAL, DIMENSION( ims:ime, levsiz, jms:jme )  ::    ozmixt
+   REAL, DIMENSION( ims:ime, alevsiz, jms:jme, 1:no_src_types )  ::    aerodt
 
    REAL    ::    DECLIN,SOLCON,XXLAT,TLOCTM,XT24, CEN_LAT
    INTEGER ::    i,j,k,its,ite,jts,jte,ij
@@ -552,6 +569,7 @@ CONTAINS
    LOGICAL ::    gfdl_lw,gfdl_sw
    LOGICAL ::    doabsems
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+   INTEGER ::    s
 
    REAL    ::    OBECL,SINOB,SXLONG,ARG,DECDEG,                  &
                  DJUL,RJUL,ECCFAC
@@ -805,6 +823,7 @@ CONTAINS
 !        ENDDO
 !     endif
 
+
 !---------------
 ! Calculate constant for short wave radiation
 
@@ -857,8 +876,42 @@ CONTAINS
 
      END SELECT lwrad_cldfra_select    
 
-     lwrad_select: SELECT CASE(lw_physics)
+! ww: Interpolating climatological ozone and aerosol to model time and levels
+!     Adapted from camrad code
+     IF ( o3input .EQ. 2 ) THEN
+!       ! Find the current month (adapted from Cavallo)
+!       CALL cam_time_interp( ozmixm, pin, levsiz, date_str, &
+!                             ids , ide , jds , jde , kds , kde , &
+!                             ims , ime , jms , jme , kms , kme , &
+!                             its , ite , jts , jte , kts , kte )
+! this is the CAM version
+! interpolate to model time-step
+        call ozn_time_int(julday,julian,ozmixm,ozmixt,levsiz,n_ozmixm,    &
+                              ids , ide , jds , jde , kds , kde ,     &
+                              ims , ime , jms , jme , kms , kme ,     &
+                              its , ite , jts , jte , kts , kte )
 
+! interpolate to model model levels
+        call ozn_p_int(p ,pin, levsiz, ozmixt, o3rad, &
+                              ids , ide , jds , jde , kds , kde ,     &
+                              ims , ime , jms , jme , kms , kme ,     &
+                              its , ite , jts , jte , kts , kte )
+     ENDIF
+
+     IF ( aer_opt .EQ. 1 ) THEN
+        call aer_time_int(julday,julian,aerodm,aerodt,alevsiz,n_ozmixm-1,no_src_types,    &
+                              ids , ide , jds , jde , kds , kde ,     &
+                              ims , ime , jms , jme , kms , kme ,     &
+                              its , ite , jts , jte , kts , kte )
+
+        call aer_p_int(p ,pina, alevsiz, aerodt, aerod, no_src_types, p8w, AODTOT, &
+                              ids , ide , jds , jde , kds , kde ,     &
+                              ims , ime , jms , jme , kms , kme ,     &
+                              its , ite , jts , jte , kts , kte )
+
+     ENDIF
+
+     lwrad_select: SELECT CASE(lw_physics)
 
         CASE (RRTMSCHEME)
              CALL wrf_debug (100, 'CALL rrtm')
@@ -876,6 +929,9 @@ CONTAINS
                  ,F_QV=F_QV,F_QC=F_QC,F_QR=F_QR                     &
                  ,F_QI=F_QI,F_QS=F_QS,F_QG=F_QG                     &
                  ,ICLOUD=icloud,WARM_RAIN=warm_rain                 &
+!ccc Added for time-varying trace gases.
+                 ,YR=YR,JULIAN=JULIAN                               &
+!ccc
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -1054,6 +1110,7 @@ CONTAINS
                   XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                   QV3D=QV,QC3D=QC,QR3D=QR,                          &
                   QI3D=QI,QS3D=QS,QG3D=QG,                          &
+                  O3INPUT=O3INPUT,O33D=O3RAD,                       &
                   F_QV=F_QV,F_QC=F_QC,F_QR=F_QR,                    &
                   F_QI=F_QI,F_QS=F_QS,F_QG=F_QG,                    &
 #ifdef WRF_CHEM
@@ -1070,6 +1127,9 @@ CONTAINS
                   progn=progn,                                       &
 #endif
                   QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
+!ccc Added for time-varying trace gases.
+                  YR=YR,JULIAN=JULIAN,                              &
+!ccc
                   IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
@@ -1377,6 +1437,8 @@ CONTAINS
                      XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                      QV3D=qv,QC3D=qc,QR3D=qr,                          &
                      QI3D=qi,QS3D=qs,QG3D=qg,                          &
+                     O3INPUT=O3INPUT,O33D=O3RAD,                       &
+                     AER_OPT=AER_OPT,aerod=aerod,no_src=no_src_types,  &
                      ALSWVISDIR=alswvisdir ,ALSWVISDIF=alswvisdif,     &  !Zhenxin ssib alb comp (06/2010)
                      ALSWNIRDIR=alswnirdir ,ALSWNIRDIF=alswnirdif,     &  !Zhenxin ssib alb comp (06/2010)
                      SWVISDIR=swvisdir ,SWVISDIF=swvisdif,             &  !Zhenxin ssib swr comp (06/2010)
@@ -2261,9 +2323,6 @@ CONTAINS
 
    END SUBROUTINE toposhad_init
 
-
-
-
    SUBROUTINE toposhad(xlat,xlong,sina,cosa,xtime,gmt,radfrq,declin, &
                        dx,dy,ht_shad,ht_loc,iter,                    &
                        shadowmask,shadlen,                    &
@@ -2511,5 +2570,515 @@ CONTAINS
  endif ! iteration
 
    END SUBROUTINE toposhad
+
+SUBROUTINE ozn_time_int(julday,julian,ozmixm,ozmixt,levsiz,num_months,  &
+                              ids , ide , jds , jde , kds , kde ,     &
+                              ims , ime , jms , jme , kms , kme ,     &
+                              its , ite , jts , jte , kts , kte )
+
+! adapted from oznint from CAM module
+!  input: ozmixm - read from physics_init
+! output: ozmixt - time interpolated
+
+!  USE module_ra_cam_support, ONLY : getfactors
+
+   IMPLICIT NONE
+
+   INTEGER,    INTENT(IN) ::           ids,ide, jds,jde, kds,kde, &
+                                       ims,ime, jms,jme, kms,kme, &
+                                       its,ite, jts,jte, kts,kte
+
+   INTEGER,      INTENT(IN   )    ::   levsiz, num_months
+
+   REAL,  DIMENSION( ims:ime, levsiz, jms:jme, num_months ),      &
+          INTENT(IN   ) ::                                  ozmixm
+
+   INTEGER, INTENT(IN )      ::        JULDAY
+   REAL,    INTENT(IN )      ::        JULIAN
+
+   REAL,  DIMENSION( ims:ime, levsiz, jms:jme ),      &
+          INTENT(OUT  ) ::                                  ozmixt
+
+   !Local
+   REAL      :: intJULIAN
+   integer   :: np1,np,nm,m,k,i,j
+   integer   :: IJUL
+   integer, dimension(12) ::  date_oz
+   data date_oz/16, 45, 75, 105, 136, 166, 197, 228, 258, 289, 319, 350/
+   real, parameter :: daysperyear = 365.  ! number of days in a year
+   real      :: cdayozp, cdayozm
+   real      :: fact1, fact2, deltat
+   logical   :: finddate
+   logical   :: ozncyc
+   CHARACTER(LEN=256) :: msgstr
+
+   ozncyc = .true.
+   ! JULIAN starts from 0.0 at 0Z on 1 Jan.
+   intJULIAN = JULIAN + 1.0       ! offset by one day
+! jan 1st 00z is julian=1.0 here
+   IJUL=INT(intJULIAN)
+!  Note that following will drift.
+!    Need to use actual month/day info to compute julian.
+   intJULIAN=intJULIAN-FLOAT(IJUL)
+   IJUL=MOD(IJUL,365)
+   IF(IJUL.EQ.0)IJUL=365
+   intJULIAN=intJULIAN+IJUL
+   np1=1
+   finddate=.false.
+
+!  do m=1,num_months
+   do m=1,12
+      if(date_oz(m).gt.intjulian.and..not.finddate) then
+        np1=m
+        finddate=.true.
+      endif
+   enddo
+   cdayozp=date_oz(np1)
+
+   if(np1.gt.1) then
+      cdayozm=date_oz(np1-1)
+      np=np1
+      nm=np-1
+   else
+      cdayozm=date_oz(12)
+      np=np1
+      nm=12
+   endif
+
+!  call getfactors(ozncyc,np1, cdayozm, cdayozp,intjulian, &
+!                   fact1, fact2)
+!
+! Determine time interpolation factors.  Account for December-January
+! interpolation if dataset is being cycled yearly.
+!
+   if (ozncyc .and. np1 == 1) then                      ! Dec-Jan interpolation
+      deltat = cdayozp + daysperyear - cdayozm
+      if (intjulian > cdayozp) then                     ! We are in December
+         fact1 = (cdayozp + daysperyear - intjulian)/deltat
+         fact2 = (intjulian - cdayozm)/deltat
+      else                                              ! We are in January
+         fact1 = (cdayozp - intjulian)/deltat
+         fact2 = (intjulian + daysperyear - cdayozm)/deltat
+      end if
+   else
+      deltat = cdayozp - cdayozm
+      fact1 = (cdayozp - intjulian)/deltat
+      fact2 = (intjulian - cdayozm)/deltat
+   end if
+!
+! Time interpolation.
+!
+      do j=jts,jte
+      do k=1,levsiz
+      do i=its,ite
+            ozmixt(i,k,j) = ozmixm(i,k,j,nm)*fact1 + ozmixm(i,k,j,np)*fact2
+      end do
+      end do
+      end do
+
+END SUBROUTINE ozn_time_int
+
+SUBROUTINE ozn_p_int(p ,pin, levsiz, ozmixt, o3vmr, &
+                              ids , ide , jds , jde , kds , kde ,     &
+                              ims , ime , jms , jme , kms , kme ,     &
+                              its , ite , jts , jte , kts , kte )
+
+!-----------------------------------------------------------------------
+!
+! Purpose: Interpolate ozone from current time-interpolated values to model levels
+!
+! Method: Use pressure values to determine interpolation levels
+!
+! Author: Bruce Briegleb
+! WW: Adapted for general use
+!
+!--------------------------------------------------------------------------
+   implicit none
+!--------------------------------------------------------------------------
+!
+! Arguments
+!
+   INTEGER,    INTENT(IN) ::           ids,ide, jds,jde, kds,kde, &
+                                       ims,ime, jms,jme, kms,kme, &
+                                       its,ite, jts,jte, kts,kte
+
+   integer, intent(in) :: levsiz              ! number of ozone layers
+
+   real, intent(in) :: p(ims:ime,kms:kme,jms:jme)   ! level pressures (mks, bottom-up)
+   real, intent(in) :: pin(levsiz)        ! ozone data level pressures (mks, top-down)
+   real, intent(in) :: ozmixt(ims:ime,levsiz,jms:jme) ! ozone mixing ratio
+
+   real, intent(out) :: o3vmr(ims:ime,kms:kme,jms:jme) ! ozone volume mixing ratio
+!
+! local storage
+!
+   real    pmid(its:ite,kts:kte)
+   integer i,j                 ! longitude index
+   integer k, kk, kkstart, kout! level indices
+   integer kupper(its:ite)     ! Level indices for interpolation
+   integer kount               ! Counter
+   integer ncol, pver
+
+   real    dpu                 ! upper level pressure difference
+   real    dpl                 ! lower level pressure difference
+
+   ncol = ite - its + 1
+   pver = kte - kts + 1
+
+   do j=jts,jte
+!
+! Initialize index array
+!
+!  do i=1, ncol
+   do i=its, ite
+      kupper(i) = 1
+   end do
+!
+! Reverse the pressure array, and pin is in Pa, the same as model pmid
+!
+      do k = kts,kte
+         kk = kte - k + kts
+      do i = its,ite
+         pmid(i,kk) = p(i,k,j)
+      enddo
+      enddo
+
+   do k=1,pver
+
+      kout = pver - k + 1
+!     kout = k
+!
+! Top level we need to start looking is the top level for the previous k
+! for all longitude points
+!
+      kkstart = levsiz
+!     do i=1,ncol
+      do i=its,ite
+         kkstart = min0(kkstart,kupper(i))
+      end do
+      kount = 0
+!
+! Store level indices for interpolation
+!
+      do kk=kkstart,levsiz-1
+!        do i=1,ncol
+         do i=its,ite
+            if (pin(kk).lt.pmid(i,k) .and. pmid(i,k).le.pin(kk+1)) then
+               kupper(i) = kk
+               kount = kount + 1
+            end if
+         end do
+!
+! If all indices for this level have been found, do the interpolation and
+! go to the next level
+!
+         if (kount.eq.ncol) then
+!           do i=1,ncol
+            do i=its,ite
+               dpu = pmid(i,k) - pin(kupper(i))
+               dpl = pin(kupper(i)+1) - pmid(i,k)
+               o3vmr(i,kout,j) = (ozmixt(i,kupper(i),j)*dpl + &
+                             ozmixt(i,kupper(i)+1,j)*dpu)/(dpl + dpu)
+            end do
+            goto 35
+         end if
+      end do
+!
+! If we've fallen through the kk=1,levsiz-1 loop, we cannot interpolate and
+! must extrapolate from the bottom or top ozone data level for at least some
+! of the longitude points.
+!
+!     do i=1,ncol
+      do i=its,ite
+         if (pmid(i,k) .lt. pin(1)) then
+            o3vmr(i,kout,j) = ozmixt(i,1,j)*pmid(i,k)/pin(1)
+         else if (pmid(i,k) .gt. pin(levsiz)) then
+            o3vmr(i,kout,j) = ozmixt(i,levsiz,j)
+         else
+            dpu = pmid(i,k) - pin(kupper(i))
+            dpl = pin(kupper(i)+1) - pmid(i,k)
+            o3vmr(i,kout,j) = (ozmixt(i,kupper(i),j)*dpl + &
+                          ozmixt(i,kupper(i)+1,j)*dpu)/(dpl + dpu)
+         end if
+      end do
+
+      if (kount.gt.ncol) then
+!        call endrun ('OZN_P_INT: Bad ozone data: non-monotonicity suspected')
+         call wrf_error_fatal ('OZN_P_INT: Bad ozone data: non-monotonicity suspected')
+      end if
+35    continue
+
+   end do
+   end do
+
+   return
+END SUBROUTINE ozn_p_int
+
+SUBROUTINE aer_time_int(julday,julian,aerodm,aerodt,levsiz,num_months,no_src,  &
+                              ids , ide , jds , jde , kds , kde ,     &
+                              ims , ime , jms , jme , kms , kme ,     &
+                              its , ite , jts , jte , kts , kte )
+
+! adapted from oznint from CAM module
+!  input: aerodm - read from physics_init
+! output: aerodt - time interpolated
+
+!  USE module_ra_cam_support, ONLY : getfactors
+
+   IMPLICIT NONE
+
+   INTEGER,    INTENT(IN) ::           ids,ide, jds,jde, kds,kde, &
+                                       ims,ime, jms,jme, kms,kme, &
+                                       its,ite, jts,jte, kts,kte
+
+   INTEGER,      INTENT(IN   )    ::   levsiz, num_months, no_src
+
+   REAL,  DIMENSION( ims:ime, levsiz, jms:jme, num_months, no_src ),      &
+          INTENT(IN   ) ::                                  aerodm
+
+   INTEGER, INTENT(IN )      ::        JULDAY
+   REAL,    INTENT(IN )      ::        JULIAN
+
+   REAL,  DIMENSION( ims:ime, levsiz, jms:jme, no_src ),      &
+          INTENT(OUT  ) ::                                  aerodt
+
+   !Local
+   REAL      :: intJULIAN
+   integer   :: np1,np,nm,m,k,i,j,s
+   integer   :: IJUL
+   integer, dimension(12) ::  date_oz
+   data date_oz/16, 45, 75, 105, 136, 166, 197, 228, 258, 289, 319, 350/
+   real, parameter :: daysperyear = 365.  ! number of days in a year
+   real      :: cdayozp, cdayozm
+   real      :: fact1, fact2, deltat
+   logical   :: finddate
+   logical   :: ozncyc
+   CHARACTER(LEN=256) :: msgstr
+
+   ozncyc = .true.
+   ! JULIAN starts from 0.0 at 0Z on 1 Jan.
+   intJULIAN = JULIAN + 1.0       ! offset by one day
+! jan 1st 00z is julian=1.0 here
+   IJUL=INT(intJULIAN)
+!  Note that following will drift.
+!    Need to use actual month/day info to compute julian.
+   intJULIAN=intJULIAN-FLOAT(IJUL)
+   IJUL=MOD(IJUL,365)
+   IF(IJUL.EQ.0)IJUL=365
+   intJULIAN=intJULIAN+IJUL
+   np1=1
+   finddate=.false.
+
+!  do m=1,num_months
+   do m=1,12
+      if(date_oz(m).gt.intjulian.and..not.finddate) then
+        np1=m
+        finddate=.true.
+      endif
+   enddo
+   cdayozp=date_oz(np1)
+
+   if(np1.gt.1) then
+      cdayozm=date_oz(np1-1)
+      np=np1
+      nm=np-1
+   else
+      cdayozm=date_oz(12)
+      np=np1
+      nm=12
+   endif
+
+!  call getfactors(ozncyc,np1, cdayozm, cdayozp,intjulian, &
+!                   fact1, fact2)
+!
+! Determine time interpolation factors.  Account for December-January
+! interpolation if dataset is being cycled yearly.
+!
+   if (ozncyc .and. np1 == 1) then                      ! Dec-Jan interpolation
+      deltat = cdayozp + daysperyear - cdayozm
+      if (intjulian > cdayozp) then                     ! We are in December
+         fact1 = (cdayozp + daysperyear - intjulian)/deltat
+         fact2 = (intjulian - cdayozm)/deltat
+      else                                              ! We are in January
+         fact1 = (cdayozp - intjulian)/deltat
+         fact2 = (intjulian + daysperyear - cdayozm)/deltat
+      end if
+   else
+      deltat = cdayozp - cdayozm
+      fact1 = (cdayozp - intjulian)/deltat
+      fact2 = (intjulian - cdayozm)/deltat
+   end if
+!
+! Time interpolation.
+!
+      do s=1, no_src
+      do j=jts,jte
+      do k=1,levsiz
+      do i=its,ite
+            aerodt(i,k,j,s) = aerodm(i,k,j,nm,s)*fact1 + aerodm(i,k,j,np,s)*fact2
+      end do
+      end do
+      end do
+      end do
+
+END SUBROUTINE aer_time_int
+
+SUBROUTINE aer_p_int(p ,pin, levsiz, aerodt, aerod, no_src, pf, totaod,   &
+                     ids , ide , jds , jde , kds , kde ,     &
+                     ims , ime , jms , jme , kms , kme ,     &
+                     its , ite , jts , jte , kts , kte )
+
+!-----------------------------------------------------------------------
+!
+! Purpose: Interpolate aerosol from current time-interpolated values to model levels
+!
+! Method: Use pressure values to determine interpolation levels
+!
+! Author: Bruce Briegleb
+! WW: Adapted for general use
+!
+!   p:  model level pressure at half levels (Pa, bottom-up)
+!   pf: model level pressure at full levles (Pa, bottom-up)
+!
+!--------------------------------------------------------------------------
+   implicit none
+!--------------------------------------------------------------------------
+!
+! Arguments
+!
+   INTEGER,    INTENT(IN) ::           ids,ide, jds,jde, kds,kde, &
+                                       ims,ime, jms,jme, kms,kme, &
+                                       its,ite, jts,jte, kts,kte
+
+   integer, intent(in) :: levsiz              ! number of aerosol layers
+   integer, intent(in) :: no_src              ! types of aerosol 
+
+   real, intent(in) :: p(ims:ime,kms:kme,jms:jme)
+   real, intent(in) :: pf(ims:ime,kms:kme,jms:jme)
+   real, intent(in) :: pin(levsiz)        ! aerosol data level pressures (mks, top-down)
+   real, intent(in) :: aerodt(ims:ime,levsiz,jms:jme,1:no_src) ! aerosol optical depth
+
+   real, intent(out) :: aerod(ims:ime,kms:kme,jms:jme,1:no_src) ! aerosol optical depth
+   real, intent(out) :: totaod(ims:ime,jms:jme)                 ! total aerosol optical depth
+!
+! local storage
+!
+   real    pmid(its:ite,kts:kte)
+   integer i,j                 ! longitude index
+   integer k, kk, kkstart, kout! level indices
+   integer kupper(its:ite)     ! Level indices for interpolation
+   integer kount               ! Counter
+   integer ncol, pver, s
+
+   real    dpu                 ! upper level pressure difference
+   real    dpl                 ! lower level pressure difference
+   real    dpm                 ! pressure difference in a model layer surrounding half p
+
+   ncol = ite - its + 1
+   pver = kte - kts + 1
+
+   do s=1,no_src
+   do j=jts,jte
+!
+! Initialize index array
+!
+   do i=its, ite
+      kupper(i) = 1
+   end do
+!
+! The pressure from incoming data is in hPa and top-down, 
+!     while model pressure is in Pa and bottom-up
+!
+      do k = kts,kte
+         kk = kte - k + kts
+      do i = its,ite
+         pmid(i,kk) = p(i,k,j)*0.01
+      enddo
+      enddo
+
+   do k=1,pver
+
+      kout = pver - k + 1
+!
+! Top level we need to start looking is the top level for the previous k
+! for all longitude points
+!
+      kkstart = levsiz
+      do i=its,ite
+         kkstart = min0(kkstart,kupper(i))
+      end do
+      kount = 0
+!
+! Store level indices for interpolation
+!
+      do kk=kkstart,levsiz-1
+         do i=its,ite
+            if (pin(kk).lt.pmid(i,k) .and. pmid(i,k).le.pin(kk+1)) then
+               kupper(i) = kk
+               kount = kount + 1
+            end if
+         end do
+!
+! If all indices for this level have been found, do the interpolation and
+! go to the next level
+!
+         if (kount.eq.ncol) then
+            do i=its,ite
+               dpu = pmid(i,k) - pin(kupper(i))
+               dpl = pin(kupper(i)+1) - pmid(i,k)
+               dpm = pf(i,kout,j) - pf(i,kout+1,j)
+               aerod(i,kout,j,s) = (aerodt(i,kupper(i),j,s)*dpl + &
+                             aerodt(i,kupper(i)+1,j,s)*dpu)/(dpl + dpu)
+               aerod(i,kout,j,s) = aerod(i,kout,j,s)*dpm
+            end do
+            goto 35
+         end if
+      end do
+!
+! If we've fallen through the kk=1,levsiz-1 loop, we cannot interpolate and
+! must extrapolate from the bottom or top aerosol data level for at least some
+! of the longitude points.
+!
+      do i=its,ite
+         if (pmid(i,k) .lt. pin(1)) then
+            dpm = pf(i,kout,j) - pf(i,kout+1,j)
+            aerod(i,kout,j,s) = aerodt(i,1,j,s)*pmid(i,k)/pin(1)
+            aerod(i,kout,j,s) = aerod(i,kout,j,s)*dpm
+         else if (pmid(i,k) .gt. pin(levsiz)) then
+            dpm = pf(i,kout,j) - pf(i,kout+1,j)
+            aerod(i,kout,j,s) = aerodt(i,levsiz,j,s)
+            aerod(i,kout,j,s) = aerod(i,kout,j,s)*dpm
+         else
+            dpu = pmid(i,k) - pin(kupper(i))
+            dpl = pin(kupper(i)+1) - pmid(i,k)
+            dpm = pf(i,kout,j) - pf(i,kout+1,j)
+            aerod(i,kout,j,s) = (aerodt(i,kupper(i),j,s)*dpl + &
+                          aerodt(i,kupper(i)+1,j,s)*dpu)/(dpl + dpu)
+            aerod(i,kout,j,s) = aerod(i,kout,j,s)*dpm
+         end if
+      end do
+
+      if (kount.gt.ncol) then
+         call wrf_error_fatal ('AER_P_INT: Bad aerosol data: non-monotonicity suspected')
+      end if
+35    continue
+
+   end do
+   end do
+   end do
+
+!  totaod = 0.
+   do s=1,no_src
+   do j=jts,jte
+   do k=1,pver
+   do i=its,ite
+      totaod(i,j) = totaod(i,j) + aerod(i,k,j,s)
+   end do
+   end do
+   end do
+   end do
+
+   return
+END SUBROUTINE aer_p_int
 
 END MODULE module_radiation_driver

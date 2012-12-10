@@ -142,8 +142,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
         DO j = js, je
+#ifdef _OPENMP
+        p = (j-js)*(ie-is+1)*(ke-ks+1)+1
+#endif
           DO k = ks, ke
             DO i = is, ie
               outbuf(p) = inbuf(i,k,j)
@@ -151,7 +158,10 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_pack_int_ikj
      
@@ -163,8 +173,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
         DO j = js, je
+#ifdef _OPENMP
+        p = (j-js)*(ie-is+1)*(ke-ks+1)+1
+#endif
           DO k = ks, ke
             DO i = is, ie
               outbuf(p) = inbuf(i,k,j)
@@ -172,7 +189,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_pack_lint_ikj
      
@@ -184,8 +203,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
         DO j = js, je
+#ifdef _OPENMP
+        p = (j-js)*(ie-is+1)*(ke-ks+1)+1
+#endif
           DO k = ks, ke
             DO i = is, ie
               outbuf(i,k,j) = inbuf(p)
@@ -193,7 +219,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_unpack_int_ikj
      
@@ -205,8 +233,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
         DO j = js, je
+#ifdef _OPENMP
+        p = (j-js)*(ie-is+1)*(ke-ks+1)+1
+#endif
           DO k = ks, ke
             DO i = is, ie
               outbuf(i,k,j) = inbuf(p)
@@ -214,7 +249,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_unpack_lint_ikj
 
@@ -227,8 +264,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
             DO i = is, ie
+#ifdef _OPENMP
+        p = (i-is)*(je-js+1)*(ke-ks+1)+1
+#endif
           DO k = ks, ke
         DO j = js, je
               outbuf(p) = inbuf(j,k,i)
@@ -236,7 +280,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_pack_int_jki
      
@@ -248,8 +294,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
             DO i = is, ie
+#ifdef _OPENMP
+        p = (i-is)*(je-js+1)*(ke-ks+1)+1
+#endif
           DO k = ks, ke
         DO j = js, je
               outbuf(p) = inbuf(j,k,i)
@@ -257,7 +310,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_pack_lint_jki
      
@@ -269,8 +324,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
             DO i = is, ie
+#ifdef _OPENMP
+        p = (i-is)*(je-js+1)*(ke-ks+1)+1
+#endif
           DO k = ks, ke
         DO j = js, je
               outbuf(j,k,i) = inbuf(p)
@@ -278,7 +340,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_unpack_int_jki
      
@@ -290,8 +354,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
             DO i = is, ie
+#ifdef _OPENMP
+        p = (i-is)*(je-js+1)*(ke-ks+1)+1
+#endif
           DO k = ks, ke
         DO j = js, je
               outbuf(j,k,i) = inbuf(p)
@@ -299,7 +370,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_unpack_lint_jki
 
@@ -312,8 +385,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
         DO k = ks, ke
+#ifdef _OPENMP
+        p = (k-ks)*(je-js+1)*(ie-is+1)+1
+#endif
           DO j = js, je
             DO i = is, ie
               outbuf(p) = inbuf(i,j,k)
@@ -321,7 +401,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_pack_int_ijk
      
@@ -333,8 +415,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
         DO k = ks, ke
+#ifdef _OPENMP
+        p = (k-ks)*(je-js+1)*(ie-is+1)+1
+#endif
           DO j = js, je
             DO i = is, ie
               outbuf(p) = inbuf(i,j,k)
@@ -342,7 +431,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_pack_lint_ijk
      
@@ -354,8 +445,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
         DO k = ks, ke
+#ifdef _OPENMP
+        p = (k-ks)*(je-js+1)*(ie-is+1)+1
+#endif
           DO j = js, je
             DO i = is, ie
               outbuf(i,j,k) = inbuf(p)
@@ -363,7 +461,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_unpack_int_ijk
      
@@ -375,8 +475,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
         DO k = ks, ke
+#ifdef _OPENMP
+        p = (k-ks)*(je-js+1)*(ie-is+1)+1
+#endif
           DO j = js, je
             DO i = is, ie
               outbuf(i,j,k) = inbuf(p)
@@ -384,7 +491,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_unpack_lint_ijk
      
@@ -397,8 +506,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
         DO k = ks, ke
+#ifdef _OPENMP
+        p = (k-ks)*(je-js+1)*(ie-is+1)+1
+#endif
           DO i = is, ie
             DO j = js, je
               outbuf(p) = inbuf(j,i,k)
@@ -406,7 +522,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_pack_int_jik
      
@@ -418,8 +536,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
         DO k = ks, ke
+#ifdef _OPENMP
+        p = (k-ks)*(je-js+1)*(ie-is+1)+1
+#endif
           DO i = is, ie
             DO j = js, je
               outbuf(p) = inbuf(j,i,k)
@@ -427,7 +552,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_pack_lint_jik
      
@@ -439,8 +566,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
         DO k = ks, ke
+#ifdef _OPENMP
+        p = (k-ks)*(je-js+1)*(ie-is+1)+1
+#endif
           DO i = is, ie
             DO j = js, je
               outbuf(j,i,k) = inbuf(p)
@@ -448,7 +582,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_unpack_int_jik
      
@@ -460,8 +596,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
         DO k = ks, ke
+#ifdef _OPENMP
+        p = (k-ks)*(je-js+1)*(ie-is+1)+1
+#endif
           DO i = is, ie
             DO j = js, je
               outbuf(j,i,k) = inbuf(p)
@@ -469,7 +612,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_unpack_lint_jik
 
@@ -482,8 +627,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
         DO j = js, je
+#ifdef _OPENMP
+        p = (j-js)*(ke-ks+1)*(ie-is+1)+1
+#endif
           DO i = is, ie
             DO k = ks, ke
               outbuf(p) = inbuf(k,i,j)
@@ -491,7 +643,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_pack_int_kij
      
@@ -503,8 +657,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
         DO j = js, je
+#ifdef _OPENMP
+        p = (j-js)*(ke-ks+1)*(ie-is+1)+1
+#endif
           DO i = is, ie
             DO k = ks, ke
               outbuf(p) = inbuf(k,i,j)
@@ -512,7 +673,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_pack_lint_kij
      
@@ -524,8 +687,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
         DO j = js, je
+#ifdef _OPENMP
+        p = (j-js)*(ke-ks+1)*(ie-is+1)+1
+#endif
           DO i = is, ie
             DO k = ks, ke
               outbuf(k,i,j) = inbuf(p)
@@ -533,7 +703,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_unpack_int_kij
      
@@ -545,8 +717,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
         DO j = js, je
+#ifdef _OPENMP
+        p = (j-js)*(ke-ks+1)*(ie-is+1)+1
+#endif
           DO i = is, ie
             DO k = ks, ke
               outbuf(k,i,j) = inbuf(p)
@@ -554,7 +733,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_unpack_lint_kij
 
@@ -567,8 +748,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
           DO i = is, ie
+#ifdef _OPENMP
+        p = (i-is)*(ke-ks+1)*(je-js+1)+1
+#endif
         DO j = js, je
             DO k = ks, ke
               outbuf(p) = inbuf(k,j,i)
@@ -576,7 +764,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_pack_int_kji
      
@@ -588,8 +778,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
           DO i = is, ie
+#ifdef _OPENMP
+        p = (i-is)*(ke-ks+1)*(je-js+1)+1
+#endif
         DO j = js, je
             DO k = ks, ke
               outbuf(p) = inbuf(k,j,i)
@@ -597,7 +794,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_pack_lint_kji
      
@@ -609,8 +808,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
           DO i = is, ie
+#ifdef _OPENMP
+        p = (i-is)*(ke-ks+1)*(je-js+1)+1
+#endif
         DO j = js, je
             DO k = ks, ke
               outbuf(k,j,i) = inbuf(p)
@@ -618,7 +824,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_unpack_int_kji
      
@@ -630,8 +838,15 @@
         INTEGER js, je, ks, ke, is, ie, curs
         ! Local
         INTEGER i,j,k,p
+!$OMP PARALLEL PRIVATE (i,j,k,p) 
+#ifndef _OPENMP
         p = 1
+#endif
+!$OMP DO SCHEDULE(RUNTIME) 
           DO i = is, ie
+#ifdef _OPENMP
+        p = (i-is)*(ke-ks+1)*(je-js+1)+1
+#endif
         DO j = js, je
             DO k = ks, ke
               outbuf(k,j,i) = inbuf(p)
@@ -639,7 +854,9 @@
             ENDDO
           ENDDO
         ENDDO
-        curs = p - 1
+!$OMP END DO
+!$OMP END PARALLEL
+        curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_unpack_lint_kji
 

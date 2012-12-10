@@ -7,6 +7,8 @@ MODULE module_domain_type
 
    IMPLICIT NONE
 
+   INTEGER, PARAMETER :: MAX_TILING_ZONES = 20
+
 ! needed to provide static definition of IO_MASK_SIZE
 #include "../inc/streams.h"
 
@@ -25,6 +27,16 @@ MODULE module_domain_type
    TYPE domain_ptr
       TYPE(domain), POINTER :: ptr
    END TYPE domain_ptr
+
+   TYPE tile_zone
+      INTEGER, POINTER :: i_start(:)
+      INTEGER, POINTER :: i_end(:)
+      INTEGER, POINTER :: j_start(:)
+      INTEGER, POINTER :: j_end(:)
+      INTEGER num_tiles
+      INTEGER num_tiles_x
+      INTEGER num_tiles_y
+   END TYPE tile_zone
 
    TYPE fieldlist
       CHARACTER*80    :: VarName
@@ -234,5 +246,10 @@ MODULE module_domain_type
 
       LOGICAL :: track_have_calculated
       LOGICAL :: track_have_input
+
+! 20121003 jm  : for caching tiling
+      TYPE( tile_zone ) :: tile_zones(MAX_TILING_ZONES)
+      LOGICAL :: tiling_latch(MAX_TILING_ZONES)
+
    END TYPE domain
 END MODULE module_domain_type

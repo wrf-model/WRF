@@ -1,0 +1,72 @@
+&NOAHLSM_OFFLINE
+
+! HRLDAS_CONSTANTS_FILE = "/data/user/hrldas-v3.2/wrfinput_d01"
+! INDIR = "/data/user/hrldas-v3.2/HRLDAS_COLLECT_DATA/run"
+
+ HRLDAS_CONSTANTS_FILE = "wrfinput_d02"
+ INDIR = "/raid/weiyu/scratch/FRONT_RANGE/2010_SPINUP/LDASIN_DOM2"
+
+ ! OUTDIR = "./hrldas_output/"
+
+!START_YEAR  = 2010
+!START_MONTH = 10
+!START_DAY   = 01
+ START_YEAR  = 2010
+ START_MONTH = 10
+ START_DAY   = 01
+ START_HOUR  = 00
+ START_MIN   = 00
+
+! RESTART_FILENAME_REQUESTED = "./firstpass/RESTART.2001010600_DOMAIN1"
+! RESTART_FILENAME_REQUESTED = "./RESTART.<LATEST>_DOMAIN1"
+
+! KDAY = 720
+! KDAY = 1440
+  KHOUR = 6
+
+ FORCING_TIMESTEP = 3600
+ NOAH_TIMESTEP    = 3600
+ OUTPUT_TIMESTEP  = 3600
+
+! RESTART_FREQUENCY_HOURS = 0 ! 480
+ RESTART_FREQUENCY_HOURS = 1 ! 480
+ ! Split output after split_output_count output times.
+! SPLIT_OUTPUT_COUNT = 240
+ SPLIT_OUTPUT_COUNT = 1
+
+! SUBWINDOW_XSTART = 32
+! SUBWINDOW_XEND = 32
+! SUBWINDOW_YSTART = 60
+! SUBWINDOW_YEND = 60
+
+ NSOIL=4
+ ZSOIL(1) = -0.05
+ ZSOIL(2) = -0.25
+ ZSOIL(3) = -0.70
+ ZSOIL(4) = -1.50
+
+ ZLVL = 2.0
+ ZLVL_WIND = 2.0
+
+ IZ0TLND = 0
+ SFCDIF_OPTION = 0
+ UPDATE_SNOW_FROM_FORCING = .TRUE.
+
+!Specification of forcing data:  1=HRLDAS-hr format, 2=HRLDAS-min format, 3=WRF, 4=Idealized, 5=Ideal w/ Spec.Precip., 6=HRLDAS-hrly format w/ Spec. Precip
+ FORC_TYP = 1
+
+!Switch for snow data assimilation: 0=no, 1=yes
+SNOW_ASSIM = 0
+
+! for extract greenfrac
+WRFSI_STATIC_FLNM = "RT/geo_em.d03.nc"
+
+!HRLDAS_ini_typ 1: initial and parameters from frocing else from wrfinput.
+HRLDAS_ini_typ = 1
+
+/
+
+&URBAN_OFFLINE
+ SF_URBAN_PHYSICS = 0
+ ZLVL_URBAN = 15.0
+/

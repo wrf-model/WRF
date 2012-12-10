@@ -15,6 +15,7 @@ MODULE module_dm
 #endif
 
    INTEGER :: ips_save, ipe_save, jps_save, jpe_save, itrace
+   INTEGER :: lats_to_mic, minx, miny
 
    INTEGER ntasks, ntasks_y, ntasks_x, mytask, mytask_x, mytask_y
    INTEGER local_communicator, local_communicator_periodic, local_iocommunicator
@@ -82,8 +83,12 @@ CONTAINS
      IMPLICIT NONE
      INTEGER, INTENT(IN)  :: ntasks
      INTEGER, INTENT(OUT) :: ntasks_x, ntasks_y
+     INTEGER lats_to_mic
      CALL nl_get_nproc_x ( 1, ntasks_x )
      CALL nl_get_nproc_y ( 1, ntasks_y )
+#ifndef NMM_CORE
+     CALL nl_get_lats_to_mic ( 1, lats_to_mic )
+#endif
 ! check if user has specified in the namelist
      IF ( ntasks_x .GT. 0 .OR. ntasks_y .GT. 0 ) THEN
        ! if only ntasks_x is specified then make it 1-d decomp in i
@@ -98,6 +103,17 @@ CONTAINS
          WRITE( wrf_err_message , * )'WRF_DM_INITIALIZE (RSL_LITE): nproc_x * nproc_y in namelist ne ',ntasks
          CALL wrf_error_fatal ( wrf_err_message )
        ENDIF
+#ifndef NMM_CORE
+     ELSE IF ( lats_to_mic .GT. 0 ) THEN
+       ntasks_x = ntasks / 2
+       ntasks_y = 2
+       IF ( ntasks_x * ntasks_y .NE. ntasks ) THEN
+         WRITE( wrf_err_message , * )&
+           'WRF_DM_INITIALIZE (lats_to_mic > 0) nproc_x (',ntasks_x,')* nproc_y (',ntasks_y,&
+           ') in namelist ne ',ntasks
+         CALL wrf_error_fatal ( wrf_err_message )
+       ENDIF
+#endif
      ELSE
        ! When neither is specified, work out mesh with MPASPECT
        ! Pass nproc_ln and nproc_nt so that number of procs in
@@ -259,6 +275,21 @@ CONTAINS
 
       INTEGER parent_max_halo_width
       INTEGER thisdomain_max_halo_width
+      INTEGER lats_to_mic
+
+     lats_to_mic=0
+#ifndef NMM_CORE
+     CALL nl_get_lats_to_mic( 1, lats_to_mic )
+#endif
+      IF ( lats_to_mic .GT. 0 ) THEN
+        minx = -99  ! code to task_for_point to do split decomposition over MIC and host
+        miny = lats_to_mic  ! number of latitudes that should be assigned to MIC
+      ELSE
+        minx = 1   ! normal
+        miny = 1   ! normal
+      ENDIF
+
+
 
       SELECT CASE ( model_data_order )
          ! need to finish other cases
@@ -440,7 +471,8 @@ CONTAINS
          DO i = c_ids, c_ide
             ni = ( i - i_parent_start ) * parent_grid_ratio + 1 + 1 ;
             CALL task_for_point ( ni, nj, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                                  1, 1,  ierr )
+                                  minx, miny,  ierr )
+            IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (a)')
             IF ( Px .EQ. mytask_x ) THEN
                c_ipe = i
                IF ( c_ips .EQ. -1 ) c_ips = i
@@ -460,7 +492,8 @@ CONTAINS
          DO j = c_jds, c_jde
             nj = ( j - j_parent_start ) * parent_grid_ratio + 1 + 1 ;
             CALL task_for_point ( ni, nj, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                                  1, 1, ierr )
+                                  minx, miny, ierr )
+            IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (b)')
 
 
             IF ( Py .EQ. mytask_y ) THEN
@@ -702,7 +735,8 @@ CONTAINS
     ierr = 0
     DO i = ids, ide
        CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                             1, 1, ierr )
+                             minx, miny, ierr )
+       IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (c)')
        IF ( Px .EQ. mytask_x ) THEN
           ipe = i
           IF ( ips .EQ. -1 ) ips = i
@@ -721,7 +755,8 @@ CONTAINS
     ierr = 0
     DO j = jds, jde
        CALL task_for_point ( i, j, ids, ide, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                             1, 1, ierr )
+                             minx, miny, ierr )
+       IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (d)')
        IF ( Py .EQ. mytask_y ) THEN
           jpe = j
           IF ( jps .EQ. -1 ) jps = j
@@ -792,7 +827,8 @@ CONTAINS
     ierr = 0
     DO k = kds, kde
        CALL task_for_point ( k, j, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                             1, 1, ierr )
+                             minx, miny, ierr )
+       IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (e)')
        IF ( Px .EQ. mytask_x ) THEN
           kpex = k
           IF ( kpsx .EQ. -1 ) kpsx = k
@@ -814,7 +850,8 @@ CONTAINS
     ierr = 0
     DO j = jds, jde
        CALL task_for_point ( k, j, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py, &
-                             1, 1, ierr )
+                             minx, miny, ierr )
+       IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (f)')
        IF ( Py .EQ. mytask_y ) THEN
           jpex = j
           IF ( jpsx .EQ. -1 ) jpsx = j
@@ -850,7 +887,8 @@ CONTAINS
     ierr = 0
     DO i = ids, ide
        CALL task_for_point ( i, k, ids, ide, kds, kde, ntasks_y, ntasks_x, Py, Px, &
-                             1, 1, ierr ) ! x and y for proc mesh reversed
+                             miny, minx, ierr )
+       IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (g)')
        IF ( Py .EQ. mytask_y ) THEN
           ipey = i
           IF ( ipsy .EQ. -1 ) ipsy = i
@@ -874,7 +912,7 @@ CONTAINS
     ierr = 0
     DO i = ids, ide-1
        CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py, &
-                             1, 1 , ierr )
+                             minx, miny, ierr )
        IF ( Px .EQ. mytask_x ) THEN
           ipe = i
           IF ( Px .EQ. ntasks_x-1 ) ipe = ipe + 1
@@ -889,7 +927,7 @@ CONTAINS
     ierr = 0
     DO j = jds, jde-1
        CALL task_for_point ( i, j, ids, ide-1, jds, jde-1, ntasks_x, ntasks_y, Px, Py, &
-                             1 , 1 , ierr )
+                             minx, miny, ierr )
        IF ( Py .EQ. mytask_y ) THEN
           jpe = j
           IF ( Py .EQ. ntasks_y-1 ) jpe = jpe + 1
@@ -947,6 +985,11 @@ CONTAINS
     ELSE
       ims = max( ips - max(shw,maxhalowidth), ids - bdx ) - 1
       ime = min( ipe + max(shw,maxhalowidth), ide + bdx ) + 1
+#ifdef INTEL_ALIGN64
+! align on 64 byte boundaries if -align array64byte
+      ims = ips-CHUNK
+      ime = ime + (CHUNK-mod(ime-ims+1,CHUNK))
+#endif
     ENDIF
     imsx = ids
     imex = ide
@@ -2060,13 +2103,14 @@ END
                                     shw ,  xy , ds, de_in, ps, pe, nds,nde, & 
                                     sendbeg_m, sendw_m, sendbeg_p, sendw_p,   &
                                     recvbeg_m, recvw_m, recvbeg_p, recvw_p    )
-      USE module_dm, ONLY : ntasks_x, ntasks_y, mytask_x, mytask_y
+      USE module_dm, ONLY : ntasks_x, ntasks_y, mytask_x, mytask_y, minx, miny
       IMPLICIT NONE
       INTEGER, INTENT(IN)  :: id,shw,xy,ds,de_in,ps,pe,nds,nde
       LOGICAL, INTENT(IN)  :: is_intermediate  ! treated differently, coarse but with same decomp as nest
       INTEGER, INTENT(OUT) :: sendbeg_m, sendw_m, sendbeg_p, sendw_p
       INTEGER, INTENT(OUT) :: recvbeg_m, recvw_m, recvbeg_p, recvw_p
-      INTEGER k, kn, ni, nj, de, Px, Py, nt, me, lb, ub, ierr 
+      INTEGER k, kn, ni, nj, de, Px, Py, ntx,nty, me, lb, ub, ierr 
+      INTEGER dum
       LOGICAL went
       INTEGER iter, plus_send_start, plus_recv_start, &
                     minus_send_start, minus_recv_start 
@@ -2081,17 +2125,18 @@ END
 #else
       de = de_in
 #endif
-
+      ntx = ntasks_x 
+      nty = ntasks_y 
       IF ( xy .EQ. 1 ) THEN  ! X/I axis
-        nt = ntasks_x 
         me = mytask_x
+        dum = 2 * nty  ! dummy dimension length for tfp to decompose without getting div 0
         IF ( is_intermediate ) THEN
            CALL nl_get_i_parent_start(id,parent_start)
            CALL nl_get_parent_grid_ratio(id,parent_grid_ratio)
         ENDIF
       ELSE
-        nt = ntasks_y
         me = mytask_y
+        dum = 2 * ntx  ! dummy dimension length for tfp to decompose without getting div 0
         IF ( is_intermediate ) THEN
            CALL nl_get_j_parent_start(id,parent_start)
            CALL nl_get_parent_grid_ratio(id,parent_grid_ratio)
@@ -2109,14 +2154,30 @@ END
         sendbeg_m = lb-ps+1
         DO k = lb,ps+shw-1
           went = .TRUE.
+          IF ( xy .eq. 1 ) THEN
           IF ( is_intermediate ) THEN
             kn =  ( k - parent_start ) * parent_grid_ratio + 1 + 1 ;
-            CALL task_for_point (kn,1,nds,nde,1,1,nt,1,Px,Py,1,1,ierr) ! assume same alg. for x and y and just use x
+              CALL task_for_point (kn,1,nds,nde,1,dum,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
+              IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (h)')
           ELSE
-            CALL task_for_point (k,1,ds,de,1,1,nt,1,Px,Py,1,1,ierr) ! assume same alg. for x and y and just use x
+              CALL task_for_point (k,1,ds,de,1,dum,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
+              IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (i)')
           ENDIF
           IF ( Px .NE. me+(iter-1) ) THEN
             exit
+          ENDIF
+          ELSE
+            IF ( is_intermediate ) THEN
+              kn =  ( k - parent_start ) * parent_grid_ratio + 1 + 1 ;
+              CALL task_for_point (1,kn,1,dum,nds,nde,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
+              IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (h)')
+            ELSE
+              CALL task_for_point (1,k,1,dum,ds,de,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
+              IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (i)')
+            ENDIF
+            IF ( Py .NE. me+(iter-1) ) THEN
+              exit
+            ENDIF
           ENDIF
           minus_send_start = minus_send_start+1
           sendw_m = sendw_m + 1
@@ -2130,14 +2191,30 @@ END
         recvbeg_m = ps - ub
         DO k = minus_recv_start,ps-shw,-1
           went = .TRUE.
+          IF ( xy .eq. 1 ) THEN
           IF ( is_intermediate ) THEN
             kn =  ( k - parent_start ) * parent_grid_ratio + 1 + 1 ;
-            CALL task_for_point (kn,1,nds,nde,1,1,nt,1,Px,Py,1,1,ierr) ! assume same alg. for x and y and just use x
+              CALL task_for_point (kn,1,nds,nde,1,dum,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
+              IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (j)')
           ELSE
-            CALL task_for_point (k,1,ds,de,1,1,nt,1,Px,Py,1,1,ierr) ! assume same alg. for x and y and just use x
+              CALL task_for_point (k,1,ds,de,1,dum,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
+              IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (k)')
           ENDIF
           IF ( Px .NE. me-iter ) THEN
             exit
+          ENDIF
+          ELSE
+            IF ( is_intermediate ) THEN
+              kn =  ( k - parent_start ) * parent_grid_ratio + 1 + 1 ;
+              CALL task_for_point (1,kn,1,dum,nds,nde,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
+              IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (j)')
+            ELSE
+              CALL task_for_point (1,k,1,dum,ds,de,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
+              IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (k)')
+            ENDIF
+            IF ( Py .NE. me-iter ) THEN
+              exit
+            ENDIF
           ENDIF
           minus_recv_start = minus_recv_start-1
           recvw_m = recvw_m + 1
@@ -2147,19 +2224,35 @@ END
       ! send to plus
       sendw_p = 0 
       sendbeg_p = 1
-      IF ( me .LT. nt-1 ) THEN
+      IF ( ( xy .eq. 1 .and. me .LT. ntx-1 ) .OR. ( xy .eq. 0 .and. me .LT. nty-1 ) ) THEN
         ub = plus_send_start
         sendbeg_p = pe - ub + 1 
         DO k = ub,pe-shw+1,-1
           went = .TRUE.
+          IF ( xy .eq. 1 ) THEN
           IF ( is_intermediate ) THEN
             kn =  ( k - parent_start ) * parent_grid_ratio + 1 + 1 ;
-            CALL task_for_point (kn,1,nds,nde,1,1,nt,1,Px,Py,1,1,ierr) ! assume same alg. for x and y and just use x
+              CALL task_for_point (kn,1,nds,nde,1,dum,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
+              IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (l)')
           ELSE
-            CALL task_for_point (k,1,ds,de,1,1,nt,1,Px,Py,1,1,ierr) ! assume same alg. for x and y and just use x
+              CALL task_for_point (k,1,ds,de,1,dum,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
+              IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (m)')
           ENDIF
           IF ( Px .NE. me-(iter-1) ) THEN
             exit
+          ENDIF
+          ELSE
+            IF ( is_intermediate ) THEN
+              kn =  ( k - parent_start ) * parent_grid_ratio + 1 + 1 ;
+              CALL task_for_point (1,kn,1,dum,nds,nde,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
+              IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (l)')
+            ELSE
+              CALL task_for_point (1,k,1,dum,ds,de,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
+              IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (m)')
+            ENDIF
+            IF ( Py .NE. me-(iter-1) ) THEN
+              exit
+            ENDIF
           ENDIF
           plus_send_start = plus_send_start - 1
           sendw_p = sendw_p + 1
@@ -2168,19 +2261,37 @@ END
       ! recv from plus
       recvw_p = 0 
       recvbeg_p = 1
-      IF ( me .LT. nt-1 ) THEN
+      IF ( ( xy .eq. 1 .and. me .LT. ntx-1 ) .OR. ( xy .eq. 0 .and. me .LT. nty-1 ) ) THEN
         lb = plus_recv_start
         recvbeg_p = lb - pe
         DO k = lb,pe+shw
           went = .TRUE.
+          IF ( xy .eq. 1 ) THEN
           IF ( is_intermediate ) THEN
             kn =  ( k - parent_start ) * parent_grid_ratio + 1 + 1 ;
-            CALL task_for_point (kn,1,nds,nde,1,1,nt,1,Px,Py,1,1,ierr) ! assume same alg. for x and y and just use x
+              CALL task_for_point (kn,1,nds,nde,1,dum,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
+              IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (n)')
           ELSE
-            CALL task_for_point (k,1,ds,de,1,1,nt,1,Px,Py,1,1,ierr) ! assume same alg. for x and y and just use x
+
+              CALL task_for_point (k,1,ds,de,1,dum,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
+
+              IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (o)')
           ENDIF
           IF ( Px .NE. me+iter ) THEN
             exit
+          ENDIF
+          ELSE
+            IF ( is_intermediate ) THEN
+              kn =  ( k - parent_start ) * parent_grid_ratio + 1 + 1 ;
+              CALL task_for_point (1,kn,1,dum,nds,nde,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
+              IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (n)')
+            ELSE
+              CALL task_for_point (1,k,1,dum,ds,de,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
+              IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (o)')
+            ENDIF
+            IF ( Py .NE. me+iter ) THEN
+              exit
+            ENDIF
           ENDIF
           plus_recv_start = plus_recv_start + 1
           recvw_p = recvw_p + 1
@@ -2204,7 +2315,7 @@ END
       ! write(0,*)sendbeg_m, sendw_m, sendbeg_p, sendw_p, recvbeg_m, recvw_m, recvbeg_p, recvw_p
 #endif
       !if ( went ) then
-      !  write(0,*)'shw  ', shw , ' xy ',xy
+      !  write(0,*)'shw  ', shw , ' xy ',xy,' plus_send_start ',plus_send_start,' minus_send_start ', minus_send_start
       !  write(0,*)' ds, de, ps, pe, nds,nde ',ds, de, ps, pe, nds,nde
       !  write(0,*)'sendbeg_m, sendw_m, sendbeg_p, sendw_p, recvbeg_m, recvw_m, recvbeg_p, recvw_p '
       !  write(0,*)sendbeg_m, sendw_m, sendbeg_p, sendw_p, recvbeg_m, recvw_m, recvbeg_p, recvw_p

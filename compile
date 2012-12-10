@@ -89,6 +89,17 @@ else
 
 # these settings get passed down through the environment in the
 # calls to Make
+  if ( ! $?WRF_HYDRO )       then
+       setenv WRF_HYDRO  0
+       setenv LIB_WRF_HYDRO ""
+  else
+       if($WRF_HYDRO == 1) then
+          setenv LIB_WRF_HYDRO "-L../hydro/lib -lHYDRO"
+       else
+          setenv LIB_WRF_HYDRO ""
+       endif
+  endif
+
   if ( ! $?WRF_DA_CORE )     setenv WRF_DA_CORE 0
   if ( ! $?WRF_EM_CORE )     setenv WRF_EM_CORE 0
   if ( ! $?WRF_NMM_CORE )    setenv WRF_NMM_CORE 0

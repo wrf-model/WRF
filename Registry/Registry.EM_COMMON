@@ -764,6 +764,10 @@ i1      real   WSPD           ij     misc        1         -     -         "WSPD
 i1      real   GZ1OZ0         ij     misc        1         -     -         "GZ1OZ0"              "LOG OF Z1 over Z0"                     ""
 i1      real   BR             ij     misc        1         -     -         "BR"                  "Bulk Richardson"                       ""
 
+# ysupbl variables for grims shallow convection
+state   real   WSCALE_YSU     ikj     misc        1         -     -        "WSCALE_YSU"          "mixed-layer velocity scale from ysupbl" "m/s"
+state   real   DELTA_YSU      ij      misc        1         -     -        "DELTA_YSU"           "entrainment layer depth from ysupbl"    "m"
+
 # MYJ PBL variables; GBM PBL: EXCH_H, EXCH_M
 state    real   EXCH_H          ikj     misc        1         -     r         "EXCH_H"               "SCALAR EXCHANGE COEFFICIENTS "
 state    real   EXCH_M          ikj     misc        1         -     r         "EXCH_M"               "EXCHANGE COEFFICIENTS "
@@ -2210,6 +2214,7 @@ package   kfscheme       cu_physics==99              -             -
 
 package   g3shcuscheme   shcu_physics==1             -             -
 package   camuwshcuscheme shcu_physics==2            -             state:cmfmc,cmfmc2,qtflx_cu,slflx_cu,uflx_cu,vflx_cu,qtten_cu,slten_cu,uten_cu,vten_cu,qvten_cu,qlten_cu,qiten_cu,cbmf_cu,ufrcinvbase_cu,ufrclcl_cu,winvbase_cu,wlcl_cu,plcl_cu,pinv_cu,plfc_cu,pbup_cu,ppen_cu,qtsrc_cu,thlsrc_cu,thvlsrc_cu,emkfbup_cu,cin_cu,cinlcl_cu,cbmflimit_cu,tkeavg_cu,zinv_cu,rcwp_cu,rlwp_cu,riwp_cu,tophgt_cu,wu_cu,ufrc_cu,qtu_cu,thlu_cu,thvu_cu,uu_cu,vu_cu,qtu_emf_cu,thlu_emf_cu,uu_emf_cu,vu_emf_cu,umf_cu,uemf_cu,qcu_cu,qlu_cu,qiu_cu,cufrc_cu,fer_cu,fdr_cu,dwten_cu,diten_cu,qrten_cu,qsten_cu,flxrain_cu,flxsnow_cu,ntraprd_cu,ntsnprd_cu,excessu_cu,excessu0_cu,xc_cu,aquad_cu,bquad_cu,cquad_cu,bogbot_cu,bogtop_cu,exit_uwcu_cu,exit_conden_cu,exit_klclmkx_cu,exit_klfcmkx_cu,exit_ufrc_cu,exit_wtw_cu,exit_drycore_cu,exit_wu_cu,exit_cufliter_cu,exit_kinv1_cu,exit_rei_cu,limit_shcu_cu,limit_negcon_cu,limit_ufrc_cu,limit_ppen_cu,limit_emf_cu,limit_cinlcl_cu,limit_cin_cu,limit_cbmf_cu,limit_rei_cu,ind_delcin_cu,evapcsh,cmfsl,cmflq,cldfrash,cush,icwmrsh,snowsh,rprdsh,rliq2
+package   grimsshcuscheme shcu_physics==3            -             -
 
 package   psufddagd      grid_fdda==1                -             fdda3d:u_ndg_old,v_ndg_old,t_ndg_old,q_ndg_old,ph_ndg_old,u_ndg_new,v_ndg_new,t_ndg_new,q_ndg_new,ph_ndg_new;fdda2d:mu_ndg_old,mu_ndg_new;state:rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,rmundgdten
 package   psusfddagd     grid_sfdda==1               -             state:u10_ndg_old,v10_ndg_old,t2_ndg_old,th2_ndg_old,q2_ndg_old,rh_ndg_old,psl_ndg_old,ps_ndg_old,u10_ndg_new,v10_ndg_new,t2_ndg_new,th2_ndg_new,q2_ndg_new,rh_ndg_new,psl_ndg_new,ps_ndg_new,tob_ndg_old,odis_ndg_old,tob_ndg_new,odis_ndg_new

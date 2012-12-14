@@ -2459,6 +2459,7 @@ integer myproc
                       its, ite, jts, jte, kts, kte                 )
 !------------------------------------------------------------------
    USE uwshcu,        ONLY: init_uwshcu
+   USE module_shcu_grims, ONLY: grimsinit
    USE physconst,     ONLY: cpair, gravit, latice, latvap, mwdry, mwh2o, &
                             rair, zvir
    USE shr_kind_mod,  ONLY: r8 => shr_kind_r8
@@ -2530,6 +2531,13 @@ integer myproc
            ims, ime, jms, jme, kms, kme,                             &
            its, ite, jts, jte, kts, kte                              )
 
+   CASE (GRIMSSHCUSCHEME)
+      CALL grimsinit(rthshten,rqvshten,                              &
+           restart,                                                  &
+           ids, ide, jds, jde, kds, kde,                             &
+           ims, ime, jms, jme, kms, kme,                             &
+           its, ite, jts, jte, kts, kte                              )
+ 
    CASE DEFAULT
 
    END SELECT shcu_select

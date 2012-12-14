@@ -772,6 +772,8 @@ BENCH_START(pbl_driver_tim)
      &        ,TPERT2D=grid%tpert2d,QPERT2D=grid%qpert2d                  &
      &        ,WPERT2D=grid%wpert2d                                       &
      &        ,XLAT_V=grid%xlat_v,XLONG_V=grid%xlong_v                    &
+! for grims shallow convection with ysupbl
+     &        ,WSCALEK=grid%wscale_ysu,DELTA=grid%delta_ysu               &
      &        )
                                                          
 
@@ -959,7 +961,7 @@ BENCH_START(shcu_driver_tim)
      &             ,QC_CURR=moist(ims,kms,jms,P_QC)                       &
      &             ,QR_CURR=moist(ims,kms,jms,P_QR)                       &
      &             ,QI_CURR=moist(ims,kms,jms,P_QI)                       &
-     &             ,QS_CURR=moist(ims,kms,jms,P_QI)                       &
+     &             ,QS_CURR=moist(ims,kms,jms,P_QS)                       &
      &             ,QG_CURR=moist(ims,kms,jms,P_QG)                       &
      &             ,DLF=grid%dlf, RLIQ=grid%rliq, RLIQ2=grid%rliq2        &
      &             ,CMFMC=grid%cmfmc, CMFMC2=grid%cmfmc2                  &
@@ -977,6 +979,10 @@ BENCH_START(shcu_driver_tim)
      &             ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                         &
      &             ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                         &
      &             ,HT=grid%ht                                            &
+! for grims shallow convection with ysupbl
+     &             ,WSCALEK=grid%wscale_ysu,DELTA=grid%delta_ysu          &
+     &             ,KPBL=grid%kpbl,ZNU=grid%znu                           &
+     &             ,RAINCV=grid%raincv                                    &
      &                                                                    )
 BENCH_END(shcu_driver_tim)
 

@@ -42,14 +42,18 @@ CONTAINS
                      ,f_qv,f_qc,f_qr                                  &
                      ,f_qi,f_qs,f_qg                                  &
                      ,ht                                              &
+                 ! for grims shallow convection with ysupbl
+                     ,wscalek,delta,kpbl,znu,raincv                   &
                                                                       )
 !----------------------------------------------------------------------
    USE module_model_constants
-   USE module_state_description, ONLY: CAMUWSHCUSCHEME, G3SHCUSCHEME
+   USE module_state_description, ONLY: CAMUWSHCUSCHEME, G3SHCUSCHEME, &
+                                       GRIMSSHCUSCHEME
 
 ! *** add new modules of schemes here
 
    USE module_cu_camuwshcu_driver, ONLY : camuwshcu_driver
+   USE module_shcu_grims
    USE module_dm
    USE module_domain, ONLY: domain
 
@@ -58,6 +62,7 @@ CONTAINS
    !
    !  1. G3 shallow cumulus
    !  2. UW shallow cumulus from CAM
+   !  3. GRIMs shallow cumulus from GRIMs (available only with ysupbl)
    !
 !----------------------------------------------------------------------
    IMPLICIT NONE
@@ -282,6 +287,19 @@ CONTAINS
                   cldfrash, cmfsl, cmflq, icwmrsh,               &
                   dlf, evapcsh,                                  &
                   cmfmc, cmfmc2, rprdsh
+
+! for grims shallow convection with ysupbl
+!
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                , &
+         OPTIONAL, INTENT(IN   )                 ::      wscalek
+   REAL, DIMENSION( ims:ime, jms:jme )                         , &
+         OPTIONAL, INTENT(IN   )                 ::        delta
+   REAL, DIMENSION( ims:ime, jms:jme )                         , &
+         OPTIONAL, INTENT(IN   )                 ::       raincv
+   REAL, DIMENSION( kms:kme )                                  , &
+         OPTIONAL, INTENT(IN   )       ::                    znu
+   INTEGER, DIMENSION( ims:ime , jms:jme )                     , &
+         OPTIONAL, INTENT(IN)                    ::         kpbl
 !
 ! Flags relating to the optional tendency arrays declared above
 ! Models that carry the optional tendencies will provdide the
@@ -378,8 +396,25 @@ CONTAINS
            ,RUSHTEN=rushten, RVSHTEN=rvshten, RTHSHTEN=rthshten          &
            ,RQVSHTEN=rqvshten, RQCSHTEN=rqcshten, RQRSHTEN=rqrshten      &
            ,RQISHTEN=rqishten, RQSSHTEN=rqsshten, RQGSHTEN=rqgshten      &
-           ,HT=ht                                                        &                                                 
+           ,HT=ht                                                        &
                                                                          )
+
+   CASE (GRIMSSHCUSCHEME)
+      CALL wrf_debug(100,'in grims_scps')
+      IF ( PRESENT( wscalek ) ) THEN
+      CALL grims(                                                        &
+            QV3D=qv_curr,T3D=t                                           &
+           ,P3DI=p8w,P3D=p,PI3D=pi,Z3DI=Z_AT_W                           &
+           ,WSCALEK=wscalek,HPBL=pblh,DELTA=delta                        &
+           ,RTHSHTEN=rthshten,RQVSHTEN=rqvshten                          &
+           ,DT=dt,CP=cp,G=g,XLV=xlv,RD=r_d,RV=r_v                        &
+           ,RCP=rcp,P1000MB=p1000mb                                      &
+           ,KPBL2D=kpbl,ZNU=znu,RAINCV=raincv                            &
+           ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde              &
+           ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme              &
+           ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte              &
+                                                                         )
+      ENDIF
 
    CASE DEFAULT 
       WRITE( message , * ) 'The shallow cumulus option does not exist: shcu_physics = ', shcu_physics

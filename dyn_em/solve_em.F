@@ -3901,6 +3901,21 @@ BENCH_END(bc_2d_tim)
       &             ,PREC_ACC_NC=grid%prec_acc_nc                          &
       &             ,PREC_ACC_DT=config_flags%prec_acc_dt                  &
       &             ,CURR_SECS=curr_secs                                   &
+      &             ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics          &
+      &             ,DIAGFLAG=diag_flag                                    &
+      &             ,HISTORY_INTERVAL=grid%history_interval                &
+      &             ,ITIMESTEP=grid%itimestep                              &
+      &             ,U10=grid%u10,V10=grid%v10,W=grid%w_2                  &
+      &             ,WSPD10MAX=grid%wspd10max                              &
+      &             ,UP_HELI_MAX=grid%up_heli_max                          &
+      &             ,W_UP_MAX=grid%w_up_max,W_DN_MAX=grid%w_dn_max         &
+      &             ,ZNW=grid%znw,W_COLMEAN=w_colmean                      &
+      &             ,NUMCOLPTS=numcolpts,W_MEAN=grid%w_mean                &
+      &             ,GRPL_MAX=grid%grpl_max,GRPL_COLINT=grpl_colint        &
+      &             ,REFD_MAX=grid%refd_max                                &
+      &             ,refl_10cm=grid%refl_10cm                              &
+      &             ,QG_CURR=moist(ims,kms,jms,P_QG)                       &
+      &             ,RHO=rho,PH=grid%ph_2,PHB=grid%phb,G=g                 &
                   ! Dimension arguments
       &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
       &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &

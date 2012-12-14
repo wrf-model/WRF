@@ -101,6 +101,8 @@ For SST updating (used only with sst_update=1):
  auxinput4_interval                  = 360      ; minutes generally matches time given by interval_seconds
  io_form_auxinput4                   = 2        ; IO format, required in V3.2
 
+ nwp_diagnostics                     = 1        ; adds 7 history-interval max diagnostic fields
+
 For additional regional climate surface fields
 
  output_diagnostics                  = 1        ; adds 36 surface diagnostic arrays (max/min/mean/std)

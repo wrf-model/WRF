@@ -1452,6 +1452,19 @@ state   real  dmudt            ij       misc        1         -     -         "d
 state   real  pk1m             ij       misc        1         -     -         "pk1m"            "surface pressure at previous step"                 "Pa"
 state   real  mu_2m            ij       misc        1         -     -         "mu_2m"           "mu_2 at previous step"                             "Pa"
 
+# these are NSSL WRF diagnostics
+state    real    WSPD10MAX        ij     misc        1         -      rh         "WSPD10MAX"      "WIND SPD MAX 10 M"       "m s-1"
+state    real    W_UP_MAX         ij     misc        1         -      rh         "W_UP_MAX"       "MAX Z-WIND UPDRAFT"      "m s-1"
+state    real    W_DN_MAX         ij     misc        1         -      rh         "W_DN_MAX"       "MAX Z-WIND DOWNDRAFT"    "m s-1"
+state    real    REFD_MAX         ij     misc        1         -      rh         "REFD_MAX"       "MAX DERIVED RADAR REFL"  "dbZ"
+state    real    UP_HELI_MAX      ij     misc        1         -      rh         "UP_HELI_MAX"    "MAX UPDRAFT HELICITY"    "m2 s-2"
+state    real    W_MEAN           ij     misc        1         -      rh         "W_MEAN"         "HOURLY MEAN Z-WIND"      "m s-1"
+state    real    GRPL_MAX         ij     misc        1         -      rh         "GRPL_MAX"       "MAX COL INT GRAUPEL"     "kg m-2"
+state    real    UH               ij     misc        1         -      r          "UH"             "UPDRAFT HELICITY"        "m2 s-2"
+i1       real    W_COLMEAN        ij     misc        1         -     -           "W_COLMEAN"      "COLUMN MEAN Z-WIND"      "m s-1"
+i1       real    NUMCOLPTS        ij     misc        1         -     -           "NUMCOLPTS"      "NUMBER OF COLUMN PTS"    "dimensionless"
+i1       real    GRPL_COLINT      ij     misc        1         -     -           "GRPL_COLINT"    "COL INT GRAUPEL"         "kg m-2"
+
 state   real    max_cfl         -       misc        1         -     -       "max_cfl"           "maximum CFL value in grid at a time" "-"
 
 state   real  prec_acc_c       ij       misc        1         -     rh       "prec_acc_c"       "ACCUMULATED CUMULUS PRECIPITATION OVER prec_acc_dt PERIODS OF TIME"       "mm"
@@ -1545,6 +1558,7 @@ rconfig   integer diag_print              namelist,time_control         1       
 rconfig   logical nocolons                namelist,time_control         1             .false. -    "nocolons"
 rconfig   logical cycling                 namelist,time_control         1             .false. -    "true for cycling (using wrfout file as input data)"
 rconfig   integer output_diagnostics      namelist,time_control         1              0
+rconfig   integer nwp_diagnostics         namelist,time_control         1              0
 
 # DFI namelist
 rconfig   integer dfi_opt                namelist,dfi_control   1       0     rh   "dfi_opt"                  ""      ""
@@ -2225,6 +2239,7 @@ package   weno_scalar    moist_adv_opt==3            -             -
 package   wenopd_scalar  moist_adv_opt==4            -             -
 
 package   maxmin_output  output_diagnostics==1            -    state:t2min,t2max,tt2min,tt2max,t2mean,t2std,q2min,q2max,tq2min,tq2max,q2mean,q2std,skintempmin,skintempmax,tskintempmin,tskintempmax,skintempmean,skintempstd,u10max,v10max,spduv10max,tspduv10max,u10mean,v10mean,spduv10mean,u10std,v10std,spduv10std,raincvmax,rainncvmax,traincvmax,trainncvmax,raincvmean,rainncvmean,raincvstd,rainncvstd
+package   nwp_output     nwp_diagnostics==1            -       state:wspd10max,w_up_max,w_dn_max,refd_max,up_heli_max,w_mean,grpl_max
 
 package   dfi_setup      dfi_stage==0                -             -
 package   dfi_bck        dfi_stage==1                -             -
@@ -2295,6 +2310,7 @@ halo      HALO_EM_TKE_7 dyn_em   80:tke_1,tke_2
 halo      HALO_EM_TKE_F dyn_em   48:tke_1,tke_2
 halo      HALO_EM_TKE_OLD_E_5 dyn_em   48:tke_1
 halo      HALO_EM_TKE_OLD_E_7 dyn_em   80:tke_1
+halo      HALO_EM_HELICITY dyn_em 8:u_2,v_2,w_2,ph_2,phb,z,zx,zy,rdz,rdzw,uh,up_heli_max
 halo      HALO_EM_B dyn_em 4:ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt,pb
 halo      HALO_EM_B2 dyn_em 4:ru_tend,rv_tend
 halo      HALO_EM_C dyn_em    4:u_2,v_2

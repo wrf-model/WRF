@@ -652,7 +652,7 @@
      &                ,IVGTYP,ISLTYP,VEGFRC,SHDMIN,SHDMAX,GRNFLX        &
      &                ,SNOTIME                                          &
      &                ,SFCEXC,ACSNOW,ACSNOM,SNOPCX,SICE,TG,SOILTB       &
-     &                ,ALBSI,ICEDEPTH                                   &
+     &                ,ALBSI,ICEDEPTH,SNOWSI                            &
      &                ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR,EMBCK          &
      &                ,U10,V10,TH10,Q10,TSHLTR,QSHLTR,PSHLTR            &
      &                ,T2,QSG,QVG,QCG,SOILT1,TSNAV,SMFR3D,KEEPFR3DFLAG  &
@@ -758,8 +758,9 @@
      &                ,CROT,SROT                                        & ! GWD
      &                                             ,VBM2,VEGFRC
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SST
-      REAL,DIMENSION(IMS:IME,JMS:JME)               :: ICEDEPTH
       REAL,DIMENSION(IMS:IME,JMS:JME)               :: ALBSI
+      REAL,DIMENSION(IMS:IME,JMS:JME)               :: ICEDEPTH
+      REAL,DIMENSION(IMS:IME,JMS:JME)               :: SNOWSI
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SM,EPSR,SR       & !Bandaid
                                                       ,TG,SICE          &
@@ -899,6 +900,8 @@
       REAL    :: SEAICE_ALBEDO_DEFAULT
       INTEGER :: SEAICE_THICKNESS_OPT
       REAL    :: SEAICE_THICKNESS_DEFAULT
+      INTEGER :: SEAICE_SNOWDEPTH_OPT
+      REAL    :: SEAICE_SNOWDEPTH_MAX
 !
       INTEGER :: IGS,IGE,JGS,JGE, PQ_I   !BSF
       LOGICAL :: FQ_I, ETAMP_PHYSICS,ETAMP_Regional            !BSF
@@ -938,6 +941,8 @@
       SEAICE_ALBEDO_DEFAULT = CONFIG_FLAGS%SEAICE_ALBEDO_DEFAULT
       SEAICE_THICKNESS_OPT = CONFIG_FLAGS%SEAICE_THICKNESS_OPT
       SEAICE_THICKNESS_DEFAULT = CONFIG_FLAGS%SEAICE_THICKNESS_DEFAULT
+      SEAICE_SNOWDEPTH_OPT = CONFIG_FLAGS%SEAICE_SNOWDEPTH_OPT
+      SEAICE_SNOWDEPTH_MAX = CONFIG_FLAGS%SEAICE_SNOWDEPTH_MAX
 !
       DTPHS=NPHS*DT
       RDTPHS=1./DTPHS
@@ -1253,6 +1258,8 @@
      &          ,SEAICE_ALBEDO_DEFAULT=SEAICE_ALBEDO_DEFAULT            &
      &          ,SEAICE_THICKNESS_OPT=SEAICE_THICKNESS_OPT              &
      &          ,SEAICE_THICKNESS_DEFAULT=SEAICE_THICKNESS_DEFAULT      &
+     &          ,SEAICE_SNOWDEPTH_OPT=SEAICE_SNOWDEPTH_OPT              &
+     &          ,SEAICE_SNOWDEPTH_MAX=SEAICE_SNOWDEPTH_MAX              &
      &          ,TICE2TSK_IF2COLD=CONFIG_FLAGS%TICE2TSK_IF2COLD         &
      &          ,ISLTYP=ISLTYP                                          &
      &          ,ITIMESTEP=NTSD,IVGTYP=IVGTYP,LOWLYR=LOWLYR             &
@@ -1272,7 +1279,7 @@
      &          ,U_FRAME=U_FRAME,U_PHY=U_PHY,V10=V10,VEGFRA=VGFRCK      &
      &          ,VZ0=VZ0H,V_FRAME=V_FRAME,V_PHY=V_PHY                   &
      &          ,WARM_RAIN=WARM_RAIN,WSPD=WSPD,XICE=SICE,XICEM=SICE     &
-     &          ,ALBSI=albsi,ICEDEPTH=icedepth                          &
+     &          ,ALBSI=albsi,ICEDEPTH=icedepth,SNOWSI=snowsi            &
      &          ,ISICE=GRID%LANDUSE_ISICE,ISWATER=GRID%ISWATER          &
      &          ,XLAND=XLAND,Z=Z,ZNT=Z0,ZS=SLDPTH,CT=CT,TKE_PBL=TKE,SFENTH=SFENTH     &
      &          ,ALBBCK=ALBASE,LH=ELFLX,SH2O=SH2O,SHDMAX=SHDMAX         &

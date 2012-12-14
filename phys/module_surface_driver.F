@@ -12,6 +12,7 @@ CONTAINS
      &          ,fractional_seaice,seaice_albedo_opt                  &
      &          ,seaice_albedo_default,seaice_thickness_opt,          &
      &          seaice_thickness_default                              &
+     &          ,seaice_snowdepth_opt,seaice_snowdepth_max            &
      &          ,tice2tsk_if2cold                                     &
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih   &
@@ -27,7 +28,7 @@ CONTAINS
      &          ,tyr,tyra,tdly,tlag,lagday,nyear,nday,tmn_update,yr   &
      &          ,t_phy,u10,udrunoff,ust,uz0,u_frame,u_phy,v10,vegfra  &
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt,zs &
-     &          ,albsi, icedepth                                      &
+     &          ,albsi, icedepth,snowsi                               &
 #if (NMM_CORE==1)
      &          ,xicem,isice,iswater,ct,tke_pbl,sfenth                &
 #else
@@ -399,6 +400,8 @@ CONTAINS
    REAL,    INTENT(IN)::   SEAICE_ALBEDO_DEFAULT
    INTEGER, INTENT(IN)::   SEAICE_THICKNESS_OPT
    REAL,    INTENT(IN)::   SEAICE_THICKNESS_DEFAULT
+   INTEGER, INTENT(IN)::   SEAICE_SNOWDEPTH_OPT
+   REAL,    INTENT(IN)::   SEAICE_SNOWDEPTH_MAX
 
    INTEGER, INTENT(IN)::   NLCAT, mosaic_lu, mosaic_soil
    INTEGER, INTENT(IN)::   NSCAT
@@ -462,6 +465,7 @@ CONTAINS
 !---------------------------------------------
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   ALBSI
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   ICEDEPTH
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   SNOWSI
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XLAND
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XICEM
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   MAVAIL
@@ -1966,10 +1970,11 @@ CONTAINS
                 ,sfcheadrt,INFXSRT, soldrain)
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
-              &            SEAICE_THICKNESS_DEFAULT,                                   &
+              &            SEAICE_THICKNESS_DEFAULT, SEAICE_SNOWDEPTH_OPT,             &
+              &            SEAICE_SNOWDEPTH_MAX,                                       &
               &            t_phy, qv_curr, p8w, dz8w, num_soil_layers, dt, frpcpn, sr, &
               &            glw, swdown, rainbl, snoalb, qgh, xice, xice_threshold,     &
-              &            albsi, icedepth,                                            &
+              &            albsi, icedepth, snowsi,                                    &
               &            tslb, emiss, albedo, z0, tsk, snow, snowc, snowh,           &
               &            chs, chs2, cqs2,                                            &
               &            br, znt, lh, hfx, qfx, potevp, grdflx, qsfc, acsnow,        &
@@ -1979,7 +1984,6 @@ CONTAINS
               &            ims,ime, jms,jme, kms,kme,                                  &
               &            i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
 
-         
          IF ( FRACTIONAL_SEAICE == 1 ) THEN
             ! LSM Returns full land/ice values, no fractional values.
             ! We return to a fractional component here.  SFLX currently hard-wires
@@ -2180,10 +2184,11 @@ CONTAINS
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
-              &            SEAICE_THICKNESS_DEFAULT,                                   &
+              &            SEAICE_THICKNESS_DEFAULT, SEAICE_SNOWDEPTH_OPT,             &
+              &            SEAICE_SNOWDEPTH_MAX,                                       &
               &            t_phy, qv_curr, p8w, dz8w, num_soil_layers, dt, frpcpn, sr, &
               &            glw, swdown, rainbl, snoalb, qgh, xice, xice_threshold,     &
-              &            albsi, icedepth,                                            &
+              &            albsi, icedepth, snowsi,                                    &
               &            tslb, emiss, albedo, z0, tsk, snow, snowc, snowh,           &
               &            chs, chs2, cqs2,                                            &
               &            br, znt, lh, hfx, qfx, potevp, grdflx, qsfc, acsnow,        &

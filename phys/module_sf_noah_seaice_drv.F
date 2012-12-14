@@ -3,10 +3,11 @@ module module_sf_noah_seaice_drv
   implicit none
 contains
   subroutine seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
-       &                  SEAICE_THICKNESS_DEFAULT,                                     &
+       &                  SEAICE_THICKNESS_DEFAULT, SEAICE_SNOWDEPTH_OPT,               &
+       &                  SEAICE_SNOWDEPTH_MAX,                                         &
        &                  T3D, QV3D, P8W3D, DZ8W, NUM_SOIL_LAYERS, DT, FRPCPN, SR,      &
        &                  GLW, SWDOWN, RAINBL, SNOALB2D, QGH, XICE, XICE_THRESHOLD,     &
-       &                  ALBSI, ICEDEPTH,                                              &
+       &                  ALBSI, ICEDEPTH, SNOWSI,                                      &
        &                  TSLB, EMISS, ALBEDO, Z02D, TSK, SNOW, SNOWC, SNOWH2D, &
        &                  CHS, CHS2, CQS2,                                              &
        &                  RIB, ZNT, LH, HFX, QFX, POTEVP, GRDFLX, QSFC, ACSNOW,         &
@@ -26,6 +27,8 @@ contains
     REAL   , INTENT(IN)       ::               SEAICE_ALBEDO_DEFAULT
     INTEGER, INTENT(IN)       ::               SEAICE_THICKNESS_OPT
     REAL,    INTENT(IN)       ::               SEAICE_THICKNESS_DEFAULT
+    INTEGER, INTENT(IN)       ::               SEAICE_SNOWDEPTH_OPT
+    REAL,    INTENT(IN)       ::               SEAICE_SNOWDEPTH_MAX
 
     INTEGER, INTENT(IN)       ::                            IDS, &
          &                                                  IDE, &
@@ -99,6 +102,9 @@ contains
          &                                              NOAHRES, &
          &                                                 CHS2
 
+    REAL,    DIMENSION( ims:ime, jms:jme )                      ,&
+         &   INTENT(INOUT)    ::                         SNOWSI
+
     REAL,    DIMENSION( ims:ime, jms:jme )                     , &
          &   INTENT (INOUT)   ::                        ICEDEPTH
 
@@ -165,6 +171,8 @@ contains
     REAL    :: FDTW
     REAL    :: FDTLIW
     REAL    :: ALBEDOSI
+    REAL    :: SNOWONSI
+    REAL    :: SEAICE_SNOWDEPTH_MIN = 0.001
     REAL, PARAMETER  :: CAPA   = R_D / CP
     REAL, PARAMETER  :: A2     = 17.67
     REAL, PARAMETER  :: A3     = 273.15
@@ -187,6 +195,7 @@ contains
           ! Skip the points that are not sea-ice points.
           IF ( XICE(I,J) < XICE_THRESHOLD ) THEN
               ICEDEPTH(I,J) = 0.0
+              SNOWSI(I,J) = 0.0
               CYCLE SEAICE_ILOOP
           ENDIF
 
@@ -228,6 +237,13 @@ contains
           EMISSI = EMISS(I,J)               ! But EMISSI might change in SFLX_SEAICE
           LWDN   = GLW(I,J) * EMISSI        ! But EMISSI might change in SFLX_SEAICE
 
+          ! convert snow water equivalent from mm to meter
+          SNEQV = SNOW(I,J) * 0.001
+
+          ! snow depth in meters
+          SNOWH = SNOWH2D(I,J)
+          SNCOVR = SNOWC(I,J)
+
           ! Use mid-day albedo to determine net downward solar (no solar zenith angle correction)
           SOLNET = SWDOWN(I,J) * (1.-ALBEDO(I,J))   ! But ALBEDO might change after SFLX_SEAICE
 
@@ -249,6 +265,28 @@ contains
           ! Q2SAT is specific humidity
           Q2SAT  = QGH(I,J) / ( 1.0 + QGH(I,J) )
           DQSDT2 = Q2SAT * A23M4 / ( SFCTMP - A4 ) ** 2
+
+          SELECT CASE ( SEAICE_SNOWDEPTH_OPT )
+          CASE DEFAULT
+              
+              WRITE(message,'("Namelist value for SEAICE_SNOWDEPTH_OPT not recognized: ",I6)') SEAICE_SNOWDEPTH_OPT
+              CALL wrf_error_fatal(message)
+
+          CASE ( 0 )
+
+              ! A maximum snow depth is enforced in SFLX_SEAICE
+
+          CASE ( 1 ) 
+
+              ! Snow depth on sea ice comes from a 2D array, SNOWSI, execpt minimum
+              ! and maximum values are enforced.  No matter what anybody else says
+              ! about snow accumulation and melt, we want the snow depth to be 
+              ! specified as SNOWSI.
+              SNOWONSI = MAX ( SEAICE_SNOWDEPTH_MIN , MIN ( SNOWSI(I,J) , SEAICE_SNOWDEPTH_MAX ) )
+              SNEQV = SNOWONSI * 0.3
+              SNOWH2D(I,J) = SNOWONSI
+
+          END SELECT
 
           IF ( SNOW(I,J) .GT. 0.0 ) THEN
              ! If snow on surface, use ice saturation properties
@@ -318,12 +356,6 @@ contains
              STC(NS) = TSLB(I,NS,J)
           ENDDO
 
-          ! convert snow water equivalent from mm to meter
-          SNEQV = SNOW(I,J) * 0.001
-          ! snow depth in meters
-          SNOWH = SNOWH2D(I,J)
-          SNCOVR = SNOWC(I,J)
-
           CH = CHS(I,J)
           RIBB = RIB(I,J)
 
@@ -360,13 +392,14 @@ contains
           Q1               = -1.E36
 
           call sflx_seaice(I, J, SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT,  &    !C
+               &           SEAICE_SNOWDEPTH_OPT, SEAICE_SNOWDEPTH_MAX,      &    !C
                &           FFROZP, DT, ZLVL, NSOIL,                         &    !C
                &           SITHICK,                                         &
                &           LWDN, SOLNET, SFCPRS, PRCP, SFCTMP, Q2,          &    !F
                &           TH2, Q2SAT, DQSDT2,                              &    !I
                &           SNOALB, TBOT, Z0BRD, Z0, EMISSI,                 &    !S
                &           T1, STC, SNOWH, SNEQV, ALBEDOK, CH,              &    !H
-               &           ALBEDOSI,                                        &
+               &           ALBEDOSI, SNOWONSI,                              &
                &           ETA, SHEAT, ETA_KINEMATIC, FDOWN,                &    !O
                &           ESNOW, DEW, ETP, SSOIL, FLX1, FLX2, FLX3,        &    !O
                &           SNOMLT, SNCOVR,                                  &    !O
@@ -404,6 +437,10 @@ contains
 
           ! Convert QSFC term back to Mixing Ratio.
           QSFC(I,J)   = Q1 / ( 1.0 - Q1 )
+
+          IF ( SEAICE_SNOWDEPTH_OPT == 1 ) THEN
+              SNOWSI(I,J) = SNOWONSI
+          ENDIF
 
           ! Accumulated snow precipitation.
           IF ( FFROZP .GT. 0.5 ) THEN

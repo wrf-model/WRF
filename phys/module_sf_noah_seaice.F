@@ -21,13 +21,14 @@ MODULE module_sf_noah_seaice
 CONTAINS
 !
   SUBROUTINE SFLX_SEAICE (IILOC, JJLOC, SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, &    !C
+       &                  SEAICE_SNOWDEPTH_OPT, SEAICE_SNOWDEPTH_MAX,      &    !C
        &                  FFROZP,DT,ZLVL,NSOIL,                            &    !C
        &                  SITHICK,                                         &
        &                  LWDN,SOLNET,SFCPRS,PRCP,SFCTMP,Q2,               &    !F
        &                  TH2,Q2SAT,DQSDT2,                                &    !I
        &                  SNOALB,TBOT, Z0BRD, Z0, EMISSI,                  &    !S
        &                  T1,STC,SNOWH,SNEQV,ALBEDO, CH,                   &    !H
-       &                  ALBEDOSI,                                        &
+       &                  ALBEDOSI, SNOWONSI,                              &
        &                  ETA,SHEAT,ETA_KINEMATIC,FDOWN,                   &    !O
        &                  ESNOW,DEW,ETP,SSOIL,FLX1,FLX2,FLX3,              &    !O
        &                  SNOMLT,SNCOVR,                                   &    !O
@@ -141,6 +142,8 @@ CONTAINS
       integer, intent(in) :: iiloc, jjloc
       INTEGER, INTENT(IN) :: SEAICE_ALBEDO_OPT
       REAL,    INTENT(IN) :: SEAICE_ALBEDO_DEFAULT
+      INTEGER, INTENT(IN) :: SEAICE_SNOWDEPTH_OPT
+      REAL,    INTENT(IN) :: SEAICE_SNOWDEPTH_MAX
 
       LOGICAL            ::  FRZGRA, SNOWNG
 
@@ -154,6 +157,7 @@ CONTAINS
       REAL, INTENT(INOUT):: CH,                         &
                             SNEQV,SNCOVR,SNOWH,T1,Z0BRD,                    &
                             EMISSI
+      REAL, INTENT(IN)   :: SNOWONSI
       REAL, INTENT(IN)   :: SITHICK
       REAL, INTENT(INOUT):: RIBB
       REAL, DIMENSION(1:NSOIL), INTENT(INOUT) ::  STC
@@ -243,6 +247,29 @@ CONTAINS
          ENDIF
 
       END SELECT
+
+
+      IF ( SEAICE_SNOWDEPTH_OPT == 0 ) THEN
+
+          !
+          ! Enforce an upper limit on snow depth, maintaining original snow density.
+          !
+          IF ( SNOWH > SEAICE_SNOWDEPTH_MAX ) THEN
+              SNDENS = SNEQV / SNOWH
+              SNOWH = SEAICE_SNOWDEPTH_MAX
+              SNEQV = SNOWH * SNDENS 
+          ENDIF
+
+      ELSEIF ( SEAICE_SNOWDEPTH_OPT == 1 ) THEN
+
+          !
+          ! Regardless of the assignments above, we want to enforce
+          ! a specified snow depth and density on sea ice.
+          !
+          SNDENS = 0.3
+          SNOWH = SNOWONSI
+          SNEQV = SNOWH * SNDENS
+      ENDIF
 
 ! ----------------------------------------------------------------------
 ! IF INPUT SNOWPACK IS NONZERO, THEN COMPUTE SNOW DENSITY "SNDENS" AND
@@ -440,6 +467,28 @@ CONTAINS
            SNOMLT,DEW,FLX1,FLX2,FLX3,ESNOW,EMISSI,RIBB,    &
            SEAICE_ALBEDO_OPT)
       ETA_KINEMATIC =  ESNOW
+
+      IF ( SEAICE_SNOWDEPTH_OPT == 0 ) THEN
+
+          !
+          ! Set an upper limit on snow depth, maintaining snow density.
+          !
+          IF ( SNOWH > SEAICE_SNOWDEPTH_MAX ) THEN
+              SNDENS = SNEQV / SNOWH
+              SNOWH = SEAICE_SNOWDEPTH_MAX
+              SNEQV = SNOWH * SNDENS 
+          ENDIF
+
+      ELSEIF ( SEAICE_SNOWDEPTH_OPT == 1 ) THEN
+
+          !
+          ! Regardless of the results of snopac, we want to enforce
+          ! a specified snow depth and density on sea ice.
+          !
+          SNDENS = 0.3
+          SNOWH = SNOWONSI
+          SNEQV = SNOWH * SNDENS
+      ENDIF
 
 !     Calculate effective mixing ratio at ground level (skin)
       Q1=Q2+ETA_KINEMATIC*CP/RCH

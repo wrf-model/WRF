@@ -3,6 +3,7 @@ module module_sf_noah_seaice_drv
   implicit none
 contains
   subroutine seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_THICKNESS_OPT,                      &
+       &                  SEAICE_THICKNESS_DEFAULT,                                     &
        &                  T3D, QV3D, P8W3D, DZ8W, NUM_SOIL_LAYERS, DT, FRPCPN, SR,      &
        &                  GLW, SWDOWN, RAINBL, SNOALB2D, QGH, XICE, XICE_THRESHOLD,     &
        &                  ICEDEPTH,                                                     &
@@ -23,6 +24,7 @@ contains
 
     INTEGER, INTENT(IN)       ::               SEAICE_ALBEDO_OPT
     INTEGER, INTENT(IN)       ::               SEAICE_THICKNESS_OPT
+    REAL,    INTENT(IN)       ::               SEAICE_THICKNESS_DEFAULT
 
     INTEGER, INTENT(IN)       ::                            IDS, &
          &                                                  IDE, &
@@ -191,8 +193,8 @@ contains
               WRITE(message,'("Namelist value for SEAICE_THICKNESS_OPT not recognized: ",I6)') SEAICE_THICKNESS_OPT
               CALL wrf_error_fatal(message)
           CASE (0)
-              ! Use uniform 3 m sea-ice thickness.
-              SITHICK = 3.0
+              ! Use uniform sea-ice thickness.
+              SITHICK = SEAICE_THICKNESS_DEFAULT
           CASE (1)
               ! Use the sea-ice as read in from the input files.
               ! Limit the to between 0.10 and 10.0 m.

@@ -409,6 +409,7 @@ BENCH_START(surf_driver_tim)
      &        ,FRACTIONAL_SEAICE=config_flags%fractional_seaice           &
      &        ,SEAICE_ALBEDO_OPT=config_flags%seaice_albedo_opt           &
      &        ,SEAICE_THICKNESS_OPT=config_flags%seaice_thickness_opt     &
+     &        ,SEAICE_THICKNESS_DEFAULT=config_flags%seaice_thickness_default     &
      &        ,TICE2TSK_IF2COLD=config_flags%tice2tsk_if2cold             &
      &        ,ISLTYP=grid%isltyp      ,ITIMESTEP=grid%itimestep, JULIAN_IN=grid%julian                  &
      &        ,IVGTYP=grid%ivgtyp      ,LH=grid%lh              ,LOWLYR=grid%lowlyr      &

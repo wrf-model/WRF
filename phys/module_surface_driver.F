@@ -10,7 +10,8 @@ CONTAINS
      &          ,chklowq,dt,dx,dz8w,dzs,glw                           &
      &          ,grdflx,gsw,swdown,gz1oz0,hfx,ht,ifsnow,isfflx        &
      &          ,fractional_seaice,seaice_albedo_opt                  &
-     &          ,seaice_thickness_opt,tice2tsk_if2cold                &
+     &          ,seaice_thickness_opt,seaice_thickness_default        &
+     &          ,tice2tsk_if2cold                                     &
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih   &
 #if (NMM_CORE==1)
@@ -395,6 +396,7 @@ CONTAINS
    INTEGER, INTENT(IN)::   FRACTIONAL_SEAICE
    INTEGER, INTENT(IN)::   SEAICE_ALBEDO_OPT
    INTEGER, INTENT(IN)::   SEAICE_THICKNESS_OPT
+   REAL,    INTENT(IN)::   SEAICE_THICKNESS_DEFAULT
 
    INTEGER, INTENT(IN)::   NLCAT, mosaic_lu, mosaic_soil
    INTEGER, INTENT(IN)::   NSCAT
@@ -1937,6 +1939,7 @@ CONTAINS
                 ,sfcheadrt,INFXSRT, soldrain)
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_THICKNESS_OPT,                    &
+              &            SEAICE_THICKNESS_DEFAULT,                                   &
               &            t_phy, qv_curr, p8w, dz8w, num_soil_layers, dt, frpcpn, sr, &
               &            glw, swdown, rainbl, snoalb, qgh, xice, xice_threshold,     &
               &            icedepth,                                                   &
@@ -2150,6 +2153,7 @@ CONTAINS
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_THICKNESS_OPT,                    &
+              &            SEAICE_THICKNESS_DEFAULT,                                   &
               &            t_phy, qv_curr, p8w, dz8w, num_soil_layers, dt, frpcpn, sr, &
               &            glw, swdown, rainbl, snoalb, qgh, xice, xice_threshold,     &
               &            icedepth,                                                   &

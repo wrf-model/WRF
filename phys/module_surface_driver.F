@@ -10,7 +10,8 @@ CONTAINS
      &          ,chklowq,dt,dx,dz8w,dzs,glw                           &
      &          ,grdflx,gsw,swdown,gz1oz0,hfx,ht,ifsnow,isfflx        &
      &          ,fractional_seaice,seaice_albedo_opt                  &
-     &          ,seaice_thickness_opt,seaice_thickness_default        &
+     &          ,seaice_albedo_default,seaice_thickness_opt,          &
+     &          seaice_thickness_default                              &
      &          ,tice2tsk_if2cold                                     &
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih   &
@@ -26,7 +27,7 @@ CONTAINS
      &          ,tyr,tyra,tdly,tlag,lagday,nyear,nday,tmn_update,yr   &
      &          ,t_phy,u10,udrunoff,ust,uz0,u_frame,u_phy,v10,vegfra  &
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt,zs &
-     &          ,icedepth                                             &
+     &          ,albsi, icedepth                                      &
 #if (NMM_CORE==1)
      &          ,xicem,isice,iswater,ct,tke_pbl,sfenth                &
 #else
@@ -395,6 +396,7 @@ CONTAINS
 
    INTEGER, INTENT(IN)::   FRACTIONAL_SEAICE
    INTEGER, INTENT(IN)::   SEAICE_ALBEDO_OPT
+   REAL,    INTENT(IN)::   SEAICE_ALBEDO_DEFAULT
    INTEGER, INTENT(IN)::   SEAICE_THICKNESS_OPT
    REAL,    INTENT(IN)::   SEAICE_THICKNESS_DEFAULT
 
@@ -458,6 +460,7 @@ CONTAINS
 !------fds (06/2010)--------------------------
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XICE
 !---------------------------------------------
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   ALBSI
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   ICEDEPTH
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XLAND
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XICEM
@@ -1007,25 +1010,49 @@ CONTAINS
                ! Fractional values of ALBEDO and EMISSIVITY are valid according to the 
                ! earlier fractional seaice value, XICEM.  Recompute them for the new 
                ! seaice value XICE.
-               ALBEDO(I,J) = 0.08 + XICE(I,J)/XICEM(I,J) * ( ALBEDO(I,J) - 0.08 )
-               EMISS (I,J) = 0.98 + XICE(I,J)/XICEM(I,J) * ( EMISS (I,J) - 0.98 )
+                IF ( SEAICE_ALBEDO_OPT ==2 ) THEN
+                    IF ( ALBSI(I,J) < -1.E6 ) THEN
+                        call wrf_error_fatal("Field ALBSI not found in input.  Field ALBSI is required if SEAICE_ALBEDO_OPT=2")
+                    ENDIF
+                    ALBEDO(I,J) = 0.08 + XICE(I,J)/XICEM(I,J) * ( ALBSI(I,J) - 0.08 )
+                ELSE
+                    ALBEDO(I,J) = 0.08 + XICE(I,J)/XICEM(I,J) * ( ALBEDO(I,J) - 0.08 )
+                ENDIF
+                EMISS (I,J) = 0.98 + XICE(I,J)/XICEM(I,J) * ( EMISS (I,J) - 0.98 )
             ENDIF
          ENDIF
 
         IF ( XLAND(i,j) .GT. 1.5 .AND. XICE(I,J) .GE. XICE_THRESHOLD .AND. XICEM(I,J) .LT. XICE_THRESHOLD ) THEN
-! water point turns to sea-ice point
+          ! water point turns to sea-ice point
           XICEM(I,J) = XICE(I,J)
           XLAND(I,J) = 1.
           IVGTYP(I,J) = ISICE
           ISLTYP(I,J) = 16
           VEGFRA(I,J) = 0.
           TMN(I,J) = 271.4
+
           ! Over new ice, initial guesses of ALBEDO and EMISS are
           ! based on default water and ice values for albedo and
           ! emissivity.  The land-surface schemes can update these
           ! values
-          ALBEDO(I,J) = 0.80 * XICE(I,J) + 0.08 * ( 1.0-XICE(I,J) )
-          ALBBCK(I,J) = 0.80
+
+          SELECT CASE ( SEAICE_ALBEDO_OPT )
+          CASE ( 0, 1 )
+
+              ALBEDO(I,J) = SEAICE_ALBEDO_DEFAULT * XICE(I,J) + 0.08 * ( 1.0-XICE(I,J) )
+              ALBBCK(I,J) = SEAICE_ALBEDO_DEFAULT
+
+          CASE ( 2 ) 
+              
+              IF ( ALBSI(I,J) < -1.E6 ) THEN
+                  call wrf_error_fatal("Field ALBSI not found in input.  Field ALBSI is required if SEAICE_ALBEDO_OPT=2")
+              ENDIF
+
+              ALBEDO(I,J) = ALBSI(I,J) * XICE(I,J) + 0.08 * ( 1.0-XICE(I,J) )
+              ALBBCK(I,J) = ALBSI(I,J)
+
+          END SELECT
+
           EMISS(I,J)  = 0.98 * XICE(I,J) + 0.98 * ( 1.0-XICE(I,J) )
           EMBCK(I,J)  = 0.98
           DO nk = 1, num_soil_layers
@@ -1880,7 +1907,7 @@ CONTAINS
          CALL lsm(dz8w,qv_curr,p8w,t_phy,tsk,                 &
                 hfx,qfx,lh,grdflx,qgh,gsw,swdown,glw,smstav,smstot,    &
                 sfcrunoff,udrunoff,ivgtyp,isltyp,isurban,isice,vegfra,        &
-                albedo,albbck,znt,z0, tmn,xland,xice, emiss, embck,    &
+                albedo,albbck,znt,z0, tmn,xland,xice,emiss, embck,    &
                 snowc,qsfc,rainbl,                              &
                 mminlu,                                         &
                 num_soil_layers,dtbl,dzs,itimestep,             &
@@ -1938,12 +1965,12 @@ CONTAINS
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
                 ,sfcheadrt,INFXSRT, soldrain)
 
-         call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_THICKNESS_OPT,                    &
+         call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
               &            SEAICE_THICKNESS_DEFAULT,                                   &
               &            t_phy, qv_curr, p8w, dz8w, num_soil_layers, dt, frpcpn, sr, &
               &            glw, swdown, rainbl, snoalb, qgh, xice, xice_threshold,     &
-              &            icedepth,                                                   &
-              &            tslb, emiss, albedo, albbck, z0, tsk, snow, snowc, snowh,   &
+              &            albsi, icedepth,                                            &
+              &            tslb, emiss, albedo, z0, tsk, snow, snowc, snowh,           &
               &            chs, chs2, cqs2,                                            &
               &            br, znt, lh, hfx, qfx, potevp, grdflx, qsfc, acsnow,        &
               &            acsnom, snopcx, sfcrunoff, noahres,                         &
@@ -2152,12 +2179,12 @@ CONTAINS
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
 
-         call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_THICKNESS_OPT,                    &
+         call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
               &            SEAICE_THICKNESS_DEFAULT,                                   &
               &            t_phy, qv_curr, p8w, dz8w, num_soil_layers, dt, frpcpn, sr, &
               &            glw, swdown, rainbl, snoalb, qgh, xice, xice_threshold,     &
-              &            icedepth,                                                   &
-              &            tslb, emiss, albedo, albbck, z0, tsk, snow, snowc, snowh,   &
+              &            albsi, icedepth,                                            &
+              &            tslb, emiss, albedo, z0, tsk, snow, snowc, snowh,           &
               &            chs, chs2, cqs2,                                            &
               &            br, znt, lh, hfx, qfx, potevp, grdflx, qsfc, acsnow,        &
               &            acsnom, snopcx, sfcrunoff, noahres,                         &

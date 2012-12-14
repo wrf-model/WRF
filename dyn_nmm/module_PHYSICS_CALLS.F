@@ -652,7 +652,7 @@
      &                ,IVGTYP,ISLTYP,VEGFRC,SHDMIN,SHDMAX,GRNFLX        &
      &                ,SNOTIME                                          &
      &                ,SFCEXC,ACSNOW,ACSNOM,SNOPCX,SICE,TG,SOILTB       &
-     &                ,ICEDEPTH                                         &
+     &                ,ALBSI,ICEDEPTH                                   &
      &                ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR,EMBCK          &
      &                ,U10,V10,TH10,Q10,TSHLTR,QSHLTR,PSHLTR            &
      &                ,T2,QSG,QVG,QCG,SOILT1,TSNAV,SMFR3D,KEEPFR3DFLAG  &
@@ -759,6 +759,7 @@
      &                                             ,VBM2,VEGFRC
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SST
       REAL,DIMENSION(IMS:IME,JMS:JME)               :: ICEDEPTH
+      REAL,DIMENSION(IMS:IME,JMS:JME)               :: ALBSI
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SM,EPSR,SR       & !Bandaid
                                                       ,TG,SICE          &
@@ -895,6 +896,7 @@
       INTEGER :: NUM_ROOF_LAYERS,NUM_WALL_LAYERS,NUM_ROAD_LAYERS   ! urban
       INTEGER :: FRACTIONAL_SEAICE
       INTEGER :: SEAICE_ALBEDO_OPT
+      REAL    :: SEAICE_ALBEDO_DEFAULT
       INTEGER :: SEAICE_THICKNESS_OPT
       REAL    :: SEAICE_THICKNESS_DEFAULT
 !
@@ -932,7 +934,8 @@
       IF ( SEAICE_ALBEDO_OPT /= 0 ) THEN
          CALL WRF_ERROR_FATAL("NMM must use SEAICE_ALBEDO_OPT = 0")
       ENDIF
-      
+
+      SEAICE_ALBEDO_DEFAULT = CONFIG_FLAGS%SEAICE_ALBEDO_DEFAULT
       SEAICE_THICKNESS_OPT = CONFIG_FLAGS%SEAICE_THICKNESS_OPT
       SEAICE_THICKNESS_DEFAULT = CONFIG_FLAGS%SEAICE_THICKNESS_DEFAULT
 !
@@ -1247,6 +1250,7 @@
      &          ,HT=SFCZ,IFSNOW=IDUMMY,ISFFLX=ISFFLX                    &
      &          ,FRACTIONAL_SEAICE=FRACTIONAL_SEAICE                    &
      &          ,SEAICE_ALBEDO_OPT=SEAICE_ALBEDO_OPT                    &
+     &          ,SEAICE_ALBEDO_DEFAULT=SEAICE_ALBEDO_DEFAULT            &
      &          ,SEAICE_THICKNESS_OPT=SEAICE_THICKNESS_OPT              &
      &          ,SEAICE_THICKNESS_DEFAULT=SEAICE_THICKNESS_DEFAULT      &
      &          ,TICE2TSK_IF2COLD=CONFIG_FLAGS%TICE2TSK_IF2COLD         &
@@ -1268,7 +1272,7 @@
      &          ,U_FRAME=U_FRAME,U_PHY=U_PHY,V10=V10,VEGFRA=VGFRCK      &
      &          ,VZ0=VZ0H,V_FRAME=V_FRAME,V_PHY=V_PHY                   &
      &          ,WARM_RAIN=WARM_RAIN,WSPD=WSPD,XICE=SICE,XICEM=SICE     &
-     &          ,ICEDEPTH=icedepth                                      &
+     &          ,ALBSI=albsi,ICEDEPTH=icedepth                          &
      &          ,ISICE=GRID%LANDUSE_ISICE,ISWATER=GRID%ISWATER          &
      &          ,XLAND=XLAND,Z=Z,ZNT=Z0,ZS=SLDPTH,CT=CT,TKE_PBL=TKE,SFENTH=SFENTH     &
      &          ,ALBBCK=ALBASE,LH=ELFLX,SH2O=SH2O,SHDMAX=SHDMAX         &

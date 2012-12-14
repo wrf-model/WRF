@@ -686,6 +686,7 @@ Namelist variables for controlling the adaptive time step option:
  prec_acc_dt (max_dom)               = 0.,      ; number of minutes in precipitation bucket (ARW only) - will add three
                                                   new 2d output fields: prec_acc_c, prec_acc_nc and snow_acc_nc
  topo_wind (max_dom)                 = 0,       ; 1 = improve effect of topography for surface winds.
+ ua_phys                             = .false.  ; Option to activate UA Noah changes
 
 Options for wind turbine drag parameterization:
 

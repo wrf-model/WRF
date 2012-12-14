@@ -55,6 +55,8 @@ CONTAINS
      &          ,fsnoxy                                                                &
      &          ,t2mvxy   ,t2mbxy   ,chstarxy ,rssunxy  ,rsshaxy  ,bgapxy   ,wgapxy    &    
      &          ,gapxy    ,tgvxy    ,tgbxy    ,q2mvxy   ,q2mbxy   ,chvxy    ,chbxy     &
+           ! Noah UA changes
+     &          ,ua_phys,flx4,fvb,fbur,fgsn                                  &
 #if (EM_CORE==1)
      &          ,ch,tsq,qsq,cov                                       & ! MYNN
 #endif
@@ -656,6 +658,10 @@ CONTAINS
         aparxy, psnxy, savxy, sagxy, fsnoxy, q2mvxy, q2mbxy, taussxy
    REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) ::  t2mvxy   ,t2mbxy   ,chstarxy, rssunxy, rsshaxy, bgapxy,wgapxy,gapxy , &
         tgvxy ,tgbxy, chvxy, chbxy
+
+! Noah UA changes
+   LOGICAL, INTENT(IN) :: ua_phys
+   REAL, DIMENSION(ims:ime , jms:jme), INTENT(OUT) ::  flx4,fvb,fbur,fgsn
 
 ! Variables for multi-layer UCM
    REAL, OPTIONAL, INTENT(IN  )   ::                                   GMT 
@@ -1835,7 +1841,7 @@ CONTAINS
 
         CALL wrf_debug(100,'in SFCDIAGS')
           CALL SFCDIAGS(hfx,qfx,tsk,qsfc,chs2,cqs2,t2,th2,q2,      &
-                     psfc,cp,r_d,rcp,                              &
+                     psfc,cp,r_d,rcp,CHS,t_phy,qv_curr,ua_phys,    &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
@@ -1930,6 +1936,7 @@ CONTAINS
                 rdlai2d,usemonalb,                              &
                 br,                                             & !?
                   NOAHRES,                                      &
+                ua_phys,flx4,fvb,fbur,fgsn,                     &
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
@@ -2042,7 +2049,7 @@ CONTAINS
            ENDDO
 
           CALL SFCDIAGS(HFX,QFX,TSK,QSFC,CHS2,CQS2,T2,TH2,Q2,      &
-                     PSFC,CP,R_d,RCP,                              &
+                     PSFC,CP,R_d,RCP,CHS,t_phy,qv_curr,ua_phys,    &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )

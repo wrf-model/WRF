@@ -1331,6 +1331,9 @@
      &        ,RDLAI2D=config_flags%rdlai2d                                   &
      &        ,usemonalb=config_flags%usemonalb                           &
      &        ,NOAHRES=grid%noahres                                       &
+! for Noah UA changes
+     &        ,ua_phys=config_flags%ua_phys,flx4=grid%flx4,fvb=grid%fvb       &
+     &        ,fbur=grid%fbur,fgsn=grid%fgsn                                  &
 ! for NOAH-MP LSM
      &        ,YR=yr                                       &
      &        ,idveg=config_flags%dveg, iopt_crs=config_flags%opt_crs  &

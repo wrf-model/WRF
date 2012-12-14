@@ -18,7 +18,8 @@ MODULE module_sf_noahlsm
                                     EMISSMINTBL, EMISSMAXTBL,                     &
                                     LAIMINTBL, LAIMAXTBL,                         &
                                     Z0MINTBL, Z0MAXTBL,                           &
-                                    ALBEDOMINTBL, ALBEDOMAXTBL
+                                    ALBEDOMINTBL, ALBEDOMAXTBL,                   &
+                                    ZTOPVTBL,ZBOTVTBL
         REAL ::   TOPT_DATA,CMCMAX_DATA,CFACTR_DATA,RSMAX_DATA
 
 ! SOIL PARAMETERS
@@ -63,6 +64,7 @@ CONTAINS
                        EC,EDIR,ET,ETT,ESNOW,DRIP,DEW,                   &    !O
                        BETA,ETP,SSOIL,                                  &    !O
                        FLX1,FLX2,FLX3,                                  &    !O
+		       FLX4,FVB,FBUR,FGSN,UA_PHYS,                      &    !UA 
                        SNOMLT,SNCOVR,                                   &    !O
                        RUNOFF1,RUNOFF2,RUNOFF3,                         &    !O
                        RC,PC,RSMIN,XLAI,RCS,RCT,RCQ,RCSOIL,             &    !O
@@ -315,6 +317,18 @@ CONTAINS
                             RUNOFF3,RC,RSMIN,RCQ,RCS,RCSOIL,RCT,SSOIL,      &
                             SMCDRY,SMCMAX,SMCREF,SMCWLT,SNOMLT, SOILM,      &
                             SOILW,FDOWN,Q1
+      LOGICAL, INTENT(IN) :: UA_PHYS   ! UA: flag for UA option
+      REAL,INTENT(OUT)    :: FLX4      ! UA: energy added to sensible heat
+      REAL,INTENT(OUT)    :: FVB       ! UA: frac. veg. w/snow beneath
+      REAL,INTENT(OUT)    :: FBUR      ! UA: fraction of canopy buried
+      REAL,INTENT(OUT)    :: FGSN      ! UA: ground snow cover fraction
+      REAL                :: ZTOPV     ! UA: height of canopy top
+      REAL                :: ZBOTV     ! UA: height of canopy bottom
+      REAL                :: GAMA      ! UA: = EXP(-1.* XLAI)
+      REAL                :: FNET      ! UA:
+      REAL                :: ETPN      ! UA:
+      REAL                :: RU        ! UA:
+
       REAL :: BEXP,CFACTR,CMCMAX,CSOIL,CZIL,DF1,DF1H,DF1A,DKSAT,DWSAT,      &
               DSOIL,DTOT,ETT,FRCSNO,FRCSOI,EPSCA,F1,FXEXP,FRZX,HS,          &
               KDT,LVH2O,PRCP1,PSISAT,QUARTZ,R,RCH,REFKDT,RR,RGL,            &
@@ -348,6 +362,13 @@ CONTAINS
       RUNOFF3 = 0.0
       SNOMLT = 0.0
 
+      IF ( .NOT. UA_PHYS ) THEN
+          FLX4 = 0.0
+          FVB  = 0.0
+          FBUR = 0.0
+          FGSN = 0.0
+      ENDIF
+
 ! ----------------------------------------------------------------------
 ! CALCULATE DEPTH (NEGATIVE) BELOW GROUND FROM TOP SKIN SFC TO BOTTOM OF
 !   EACH SOIL LAYER.  NOTE:  SIGN OF ZSOIL IS NEGATIVE (DENOTING BELOW
@@ -369,7 +390,7 @@ CONTAINS
                          RTDIS,SLDPTH,ZSOIL,NROOT,NSOIL,CZIL,              &
                          LAIMIN, LAIMAX, EMISSMIN, EMISSMAX, ALBEDOMIN,    &
                          ALBEDOMAX, Z0MIN, Z0MAX, CSOIL, PTU, LLANDUSE,    &
-                         LSOIL,LOCAL,LVCOEF)
+                         LSOIL,LOCAL,LVCOEF,ZTOPV,ZBOTV)
 
 !urban
          IF(VEGTYP==ISURBAN)THEN
@@ -506,14 +527,28 @@ CONTAINS
             SNCOVR = 0.0
             ALBEDO = ALB
             EMISSI = EMBRD
+	    IF(UA_PHYS) FGSN = 0.0
+	    IF(UA_PHYS) FVB = 0.0
+	    IF(UA_PHYS) FBUR = 0.0
          ELSE
 ! ----------------------------------------------------------------------
 ! DETERMINE SNOW FRACTIONAL COVERAGE.
 ! DETERMINE SURFACE ALBEDO MODIFICATION DUE TO SNOWDEPTH STATE.
 ! ----------------------------------------------------------------------
-            CALL SNFRAC (SNEQV,SNUP,SALP,SNOWH,SNCOVR)
+            CALL SNFRAC (SNEQV,SNUP,SALP,SNOWH,SNCOVR, &
+                         XLAI,SHDFAC,FVB,GAMA,FBUR,    &
+                         FGSN,ZTOPV,ZBOTV,UA_PHYS)
 
-            SNCOVR = MIN(SNCOVR,0.98)
+            IF ( UA_PHYS ) then
+              IF(SFCTMP <= T1) THEN
+                RU = 0.
+              ELSE
+                RU = 100.*SHDFAC*FGSN*MIN((SFCTMP-T1)/5., 1.)*(1.-EXP(-XLAI))
+              ENDIF
+              CH = CH/(1.+RU*CH)
+            ENDIF
+
+            SNCOVR = MIN(SNCOVR,0.98) 
 
             CALL ALCALC (ALB,SNOALB,EMBRD,SHDFAC,SHDMIN,SNCOVR,T1, &
                  ALBEDO,EMISSI,DT,SNOWNG,SNOTIME1,LVCOEF)
@@ -596,9 +631,11 @@ CONTAINS
 ! THE PREVIOUS TIMESTEP.
 ! ----------------------------------------------------------------------
          IF (SNCOVR  > 0. ) THEN
-            CALL SNOWZ0 (SNCOVR,Z0,Z0BRD,SNOWH)
+            CALL SNOWZ0 (SNCOVR,Z0,Z0BRD,SNOWH,FBUR,FGSN,SHDMAX,UA_PHYS)
          ELSE
             Z0=Z0BRD
+            IF(UA_PHYS) CALL SNOWZ0 (SNCOVR,Z0,Z0BRD,SNOWH,FBUR,FGSN, &
+	                             SHDMAX,UA_PHYS)
          END IF
 ! ----------------------------------------------------------------------
 ! NEXT CALL ROUTINE SFCDIF TO CALCULATE THE SFC EXCHANGE COEF (CH) FOR
@@ -660,7 +697,8 @@ CONTAINS
 
          CALL PENMAN (SFCTMP,SFCPRS,CH,T2V,TH2,PRCP,FDOWN,T24,SSOIL,     &
                        Q2,Q2SAT,ETP,RCH,EPSCA,RR,SNOWNG,FRZGRA,          &
-                         DQSDT2,FLX2,EMISSI,SNEQV,T1,SNCOVR)
+                       DQSDT2,FLX2,EMISSI,SNEQV,T1,SNCOVR,           &
+		       ALBEDO,SOLDN,FVB,GAMA,STC(1),ETPN,FLX4,UA_PHYS)
 !
 ! ----------------------------------------------------------------------
 ! CALL CANRES TO CALCULATE THE CANOPY RESISTANCE AND CONVERT IT INTO PC
@@ -711,7 +749,9 @@ CONTAINS
                          BETA,DRIP,DEW,FLX1,FLX2,FLX3,ESNOW,ETNS,EMISSI, &
                          RIBB,SOLDN,                                     &
                          ISURBAN,                                        &
-                         VEGTYP, SFHEAD1RT,INFXS1RT,ETPND1)
+                         VEGTYP,                                         &
+                         ETPN,FLX4,UA_PHYS,                              &
+                         SFHEAD1RT,INFXS1RT,ETPND1)
             ETA_KINEMATIC =  ESNOW + ETNS
          END IF
 
@@ -725,6 +765,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 
          SHEAT = - (CH * CP * SFCPRS)/ (R * T2V) * ( TH2- T1 )
+         IF(UA_PHYS) SHEAT = SHEAT + FLX4   
 
 ! ----------------------------------------------------------------------
 ! CONVERT EVAP TERMS FROM KINEMATIC (KG M-2 S-1) TO ENERGY UNITS (W M-2)
@@ -740,6 +781,7 @@ CONTAINS
 
       ESNOW = ESNOW * LSUBS
       ETP = ETP*((1.-SNCOVR)*LVH2O + SNCOVR*LSUBS)
+      IF(UA_PHYS) ETPN = ETPN*((1.-SNCOVR)*LVH2O + SNCOVR*LSUBS)
       IF (ETP .GT. 0.) THEN
          ETA = EDIR + EC + ETT + ESNOW
       ELSE
@@ -1985,7 +2027,8 @@ CONTAINS
 
       SUBROUTINE PENMAN (SFCTMP,SFCPRS,CH,T2V,TH2,PRCP,FDOWN,T24,SSOIL, &
      &                   Q2,Q2SAT,ETP,RCH,EPSCA,RR,SNOWNG,FRZGRA,       &
-     &                   DQSDT2,FLX2,EMISSI_IN,SNEQV,T1,SNCOVR)
+     &                   DQSDT2,FLX2,EMISSI_IN,SNEQV,T1,SNCOVR,          &
+		         ALBEDO,SOLDN,FVB,GAMA,STC1,ETPN,FLX4,UA_PHYS)
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE PENMAN
@@ -2000,12 +2043,17 @@ CONTAINS
                                  Q2, Q2SAT,SSOIL, SFCPRS, SFCTMP,       &
                                  T2V, TH2,EMISSI_IN,SNEQV
       REAL, INTENT(IN)        :: T1 , SNCOVR
+      REAL, INTENT(IN)        :: ALBEDO,SOLDN,FVB,GAMA,STC1
+      LOGICAL, INTENT(IN)     :: UA_PHYS
 !
       REAL, INTENT(OUT)       :: EPSCA,ETP,FLX2,RCH,RR,T24
+      REAL, INTENT(OUT)       :: FLX4,ETPN
       REAL                    :: A, DELTA, FNET,RAD,RHO,EMISSI,ELCP1,LVS
+      REAL                    :: TOTABS,UCABS,SIGNCK,FNETN,RADN,EPSCAN
 
       REAL, PARAMETER      :: ELCP = 2.4888E+3, LSUBC = 2.501000E+6,CP = 1004.6
       REAL, PARAMETER      :: LSUBS = 2.83E+6
+      REAL, PARAMETER      :: ALGDSN = 0.5, ALVGSN = 0.13
 
 ! ----------------------------------------------------------------------
 ! EXECUTABLE CODE BEGINS HERE:
@@ -2042,9 +2090,39 @@ CONTAINS
 ! ----------------------------------------------------------------------
 !      FNET = FDOWN - SIGMA * T24- SSOIL
       FNET = FDOWN -  EMISSI*SIGMA * T24- SSOIL
+
+      FLX4 = 0.0
+      IF(UA_PHYS) THEN
+        IF(SNEQV > 0. .AND. FNET > 0. .AND. SOLDN > 0. ) THEN
+         TOTABS = (1.-ALBEDO)*SOLDN*FVB           ! solar radiation absorbed 
+                                                  ! by vegetated fraction
+         UCABS = MIN(TOTABS,((1.0-ALGDSN)*(1.0-ALVGSN)*SOLDN*GAMA)*FVB)
+!         print*,'penman',UCABS,TOTABS,SOLDN,GAMA,FVB
+!         UCABS = MIN(TOTABS,(0.44*SOLDN*GAMA)*FVB)  
+                                                  ! UCABS -> solar radiation
+						  ! absorbed under canopy
+         FLX4 = MIN(TOTABS - UCABS, MIN(250., 0.5*(1.-ALBEDO)*SOLDN))
+        ENDIF
+
+        SIGNCK = (STC1-273.15)*(SFCTMP-273.15)
+
+        IF(FLX4 > 0. .AND. (SIGNCK <= 0. .OR. STC1 < 273.15)) THEN
+          IF(FNET >= FLX4) THEN
+           FNETN = FNET - FLX4
+          ELSE
+           FLX4 = FNET
+           FNETN = 0.
+          ENDIF
+        ELSE
+          FLX4 = 0.0
+          FNETN = 0.
+        ENDIF
+      ENDIF
+
       IF (FRZGRA) THEN
          FLX2 = - LSUBF * PRCP
          FNET = FNET - FLX2
+         IF(UA_PHYS) FNETN = FNETN - FLX2
 ! ----------------------------------------------------------------------
 ! FINISH PENMAN EQUATION CALCULATIONS.
 ! ----------------------------------------------------------------------
@@ -2056,6 +2134,11 @@ CONTAINS
 !      ETP = EPSCA * RCH / LSUBC
       ETP = EPSCA * RCH / LVS
 
+      IF(UA_PHYS) THEN
+        RADN = FNETN / RCH + TH2- SFCTMP
+        EPSCAN = (A * RR + RADN * DELTA) / (DELTA + RR)
+        ETPN = EPSCAN * RCH / LVS
+      END IF
 ! ----------------------------------------------------------------------
   END SUBROUTINE PENMAN
 ! ----------------------------------------------------------------------
@@ -2068,7 +2151,7 @@ CONTAINS
                          RTDIS,SLDPTH,ZSOIL, NROOT,NSOIL,CZIL,             &
                          LAIMIN, LAIMAX, EMISSMIN, EMISSMAX, ALBEDOMIN,    &
                          ALBEDOMAX, Z0MIN, Z0MAX, CSOIL, PTU, LLANDUSE,    &
-                         LSOIL, LOCAL,LVCOEF)
+                         LSOIL, LOCAL,LVCOEF,ZTOPV,ZBOTV)
 
       IMPLICIT NONE
 ! ----------------------------------------------------------------------
@@ -2158,7 +2241,7 @@ CONTAINS
                                 EMISSMIN,  EMISSMAX,                        &
                                 LAIMIN,    LAIMAX,                          &
                                 Z0MIN,     Z0MAX,                           &
-                                ALBEDOMIN, ALBEDOMAX
+                                ALBEDOMIN, ALBEDOMAX, ZTOPV, ZBOTV
 ! Soil parameters
       INTEGER, INTENT(IN)    :: SOILTYP
       REAL, INTENT(OUT)      :: BEXP,DKSAT,DWSAT,F1,QUARTZ,SMCDRY,          &
@@ -2245,6 +2328,8 @@ CONTAINS
       Z0MAX     = Z0MAXTBL     (VEGTYP)
       ALBEDOMIN = ALBEDOMINTBL (VEGTYP)
       ALBEDOMAX = ALBEDOMAXTBL (VEGTYP)
+      ZTOPV     = ZTOPVTBL     (VEGTYP)
+      ZBOTV     = ZBOTVTBL     (VEGTYP)
 
                IF (VEGTYP .eq. BARE) SHDFAC = 0.0
                IF (NROOT .gt. NSOIL) THEN
@@ -2545,7 +2630,9 @@ CONTAINS
 ! ----------------------------------------------------------------------
 
 
-      SUBROUTINE SNFRAC (SNEQV,SNUP,SALP,SNOWH,SNCOVR)
+      SUBROUTINE SNFRAC (SNEQV,SNUP,SALP,SNOWH,SNCOVR, &
+                         XLAI,SHDFAC,FVB,GAMA,FBUR,    &
+                         FGSN,ZTOPV,ZBOTV,UA_PHYS)
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SNFRAC
@@ -2561,6 +2648,17 @@ CONTAINS
       REAL, INTENT(IN)     :: SNEQV,SNUP,SALP,SNOWH
       REAL, INTENT(OUT)    :: SNCOVR
       REAL                 :: RSNOW, Z0N
+      LOGICAL, INTENT(IN)  :: UA_PHYS  ! UA: flag for UA option
+      REAL, INTENT(IN)     :: ZTOPV    ! UA: height of canopy top
+      REAL, INTENT(IN)     :: ZBOTV    ! UA: height of canopy bottom
+      REAL, INTENT(IN)     :: SHDFAC   ! UA: vegetation fraction
+      REAL, INTENT(INOUT)  :: XLAI     ! UA: LAI modified by snow
+      REAL, INTENT(OUT)    :: FVB      ! UA: frac. veg. w/snow beneath
+      REAL, INTENT(OUT)    :: GAMA     ! UA: = EXP(-1.* XLAI)
+      REAL, INTENT(OUT)    :: FBUR     ! UA: fraction of canopy buried
+      REAL, INTENT(OUT)    :: FGSN     ! UA: ground snow cover fraction
+
+      REAL ::  SNUPGRD = 0.02          ! UA: SWE limit for ground cover
 
 ! ----------------------------------------------------------------------
 ! SNUP IS VEG-CLASS DEPENDENT SNOWDEPTH THRESHHOLD (SET IN ROUTINE
@@ -2580,6 +2678,58 @@ CONTAINS
 
 !     FORMULATION OF MARSHALL ET AL. 1994
 !        SNCOVR=SNEQV/(SNEQV + 2*Z0N)
+
+      IF(UA_PHYS) THEN
+
+!---------------------------------------------------------------------
+! FGSN: FRACTION OF SOIL COVERED WITH SNOW
+!---------------------------------------------------------------------
+        IF (SNEQV < SNUPGRD) THEN
+         FGSN = SNEQV / SNUPGRD
+        ELSE
+         FGSN = 1.0
+        END IF
+!------------------------------------------------------------------
+! FBUR: VERTICAL FRACTION OF VEGETATION COVERED BY SNOW
+! GRASS, CROP, AND SHRUB: MULTIPLY 0.4 BY ZTOPV AND ZBOTV BECAUSE 
+! THEY WILL BE PRESSED DOWN BY THE SNOW.
+! FOREST: DON'T NEED TO CHANGE ZTOPV AND ZBOTV.
+
+        IF(ZBOTV > 0. .AND. SNOWH > ZBOTV) THEN
+          IF(ZBOTV <= 0.5) THEN
+            FBUR = (SNOWH - 0.4*ZBOTV) / (0.4*(ZTOPV-ZBOTV)) ! short veg.
+          ELSE
+            FBUR = (SNOWH - ZBOTV) / (ZTOPV-ZBOTV)           !  tall veg.
+          ENDIF
+        ELSE
+          FBUR = 0.
+        ENDIF
+
+        FBUR = MIN(MAX(FBUR,0.0),1.0)
+
+! XLAI IS ADJUSTED FOR VERTICAL BURYING BY SNOW
+        XLAI = XLAI * (1.0 - FBUR)
+! ----------------------------------------------------------------------
+! SNOW-COVERED SOIL: (1-SHDFAC)*FGSN
+! VEGETATION WITH SNOW ABOVE DUE TO BURIAL FVEG_SN_AB = SHDFAC*FBUR
+! SNOW ON THE GROUND THAT CAN BE "SEEN" BY SATELLITE
+! (IF XLAI GOES TO ZERO): GAMA*FVB
+! Where GAMA = exp(-XLAI)
+! ----------------------------------------------------------------------
+
+! VEGETATION WITH SNOW BELOW
+        FVB = SHDFAC * FGSN * (1.0 - FBUR)
+
+! GAMA IS USED TO DIVIDE FVB INTO TWO PARTS:
+! GAMA=1 FOR XLAI=0 AND GAMA=0 FOR XLAI=6
+        GAMA = EXP(-1.* XLAI)
+      ELSE
+        ! Define intent(out) terms for .NOT. UA_PHYS case
+        FVB  = 0.0
+        GAMA = 0.0
+        FBUR = 0.0
+        FGSN = 0.0
+      END IF    ! UA_PHYS
 
 ! ----------------------------------------------------------------------
   END SUBROUTINE SNFRAC
@@ -2685,8 +2835,9 @@ CONTAINS
                           BETA,DRIP,DEW,FLX1,FLX2,FLX3,ESNOW,ETNS,EMISSI,&
                           RIBB,SOLDN,                                   &
                           ISURBAN,                                      &
-
-                          VEGTYP, SFHEAD1RT,INFXS1RT,ETPND1)
+                          VEGTYP,                                       &
+                          ETPN,FLX4,UA_PHYS,                            &
+                          SFHEAD1RT,INFXS1RT,ETPND1)
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SNOPAC
@@ -2738,6 +2889,10 @@ CONTAINS
       REAL, PARAMETER       :: ESDMIN = 1.E-6, LSUBC = 2.501000E+6,     &
                                LSUBS = 2.83E+6, TFREEZ = 273.15,        &
                                SNOEXP = 2.0
+      LOGICAL, INTENT(IN)   :: UA_PHYS  ! UA: flag for UA option
+      REAL, INTENT(INOUT)   :: FLX4     ! UA: energy removed by canopy
+      REAL, INTENT(IN)      :: ETPN     ! UA: adjusted pot. evap. [mm/s]
+      REAL                  :: ETP1N    ! UA: adjusted pot. evap. [m/s]
 
 ! ----------------------------------------------------------------------
 ! EXECUTABLE CODE BEGINS HERE:
@@ -2792,11 +2947,13 @@ CONTAINS
          ENDIF
          IF(ETP == 0.) BETA = 0.0
          ETP1 = ETP * 0.001
+         IF(UA_PHYS) ETP1N = ETPN * 0.001
          DEW = -ETP1
          ESNOW2 = ETP1*DT
          ETANRG = ETP*((1.-SNCOVR)*LSUBC + SNCOVR*LSUBS)
       ELSE
          ETP1 = ETP * 0.001
+         IF(UA_PHYS) ETP1N = ETPN * 0.001
          !  LAND CASE
          IF (SNCOVR <  1.) THEN
             CALL EVAPO (ETNS1,SMC,NSOIL,CMC,ETP1,DT,ZSOIL,           &
@@ -2833,6 +2990,7 @@ CONTAINS
 
          ENDIF
          ESNOW = ETP*SNCOVR
+         IF(UA_PHYS) ESNOW = ETPN*SNCOVR   ! USE ADJUSTED ETP
          ESNOW1 = ESNOW*0.001
          ESNOW2 = ESNOW1*DT
          ETANRG = ESNOW*LSUBS + ETNS*LSUBC
@@ -2892,6 +3050,7 @@ CONTAINS
          EX = 0.0
 
          SNOMLT = 0.0
+         IF(UA_PHYS) FLX4 = 0.0
 ! ----------------------------------------------------------------------
 ! IF THE 'EFFECTIVE SNOW-GRND SFC TEMP' IS ABOVE FREEZING, SNOW MELT
 ! WILL OCCUR.  CALL THE SNOW MELT RATE,EX AND AMT, SNOMLT.  REVISE THE
@@ -2922,6 +3081,7 @@ CONTAINS
             EX = 0.0
             SNOMLT = 0.0
             FLX3 = 0.0
+            IF(UA_PHYS) FLX4 = 0.0
 ! ----------------------------------------------------------------------
 ! SUBLIMATION LESS THAN DEPTH OF SNOWPACK
 ! SNOWPACK (ESD) REDUCED BY ESNOW2 (DEPTH OF SUBLIMATED SNOW)
@@ -2937,6 +3097,18 @@ CONTAINS
 !                    SSOIL - SEH - ETANRG
             FLX3 = FDOWN - FLX1- FLX2- EMISSI*SIGMA * T14- SSOIL - SEH - ETANRG
             IF (FLX3 <= 0.0) FLX3 = 0.0
+
+            IF(UA_PHYS .AND. FLX4 > 0. .AND. FLX3 > 0.) THEN
+              IF(FLX3 >= FLX4) THEN
+                FLX3 = FLX3 - FLX4
+              ELSE
+                FLX4 = FLX3
+                FLX3 = 0.
+              ENDIF
+            ELSE
+              FLX4 = 0.0
+            ENDIF
+
 ! ----------------------------------------------------------------------
 ! SNOWMELT REDUCTION DEPENDING ON SNOW COVER
 ! ----------------------------------------------------------------------
@@ -3019,7 +3191,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
       ! LAND
       IF (ESD >  0.) THEN
-         CALL SNOWPACK (ESD,DT,SNOWH,SNDENS,T1,YY)
+         CALL SNOWPACK (ESD,DT,SNOWH,SNDENS,T1,YY,SNOMLT,UA_PHYS)
       ELSE
          ESD = 0.
          SNOWH = 0.
@@ -3033,7 +3205,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 
 
-      SUBROUTINE SNOWPACK (ESD,DTSEC,SNOWH,SNDENS,TSNOW,TSOIL)
+      SUBROUTINE SNOWPACK (ESD,DTSEC,SNOWH,SNDENS,TSNOW,TSOIL,SNOMLT,UA_PHYS)
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SNOWPACK
@@ -3061,11 +3233,15 @@ CONTAINS
                                 TAVGC,TSNOWC,TSOILC,ESDC,ESDCX
       REAL, PARAMETER        :: C1 = 0.01, C2 = 21.0, G = 9.81,         &
                                 KN = 4000.0
+      LOGICAL, INTENT(IN)    :: UA_PHYS  ! UA: flag for UA option
+      REAL, INTENT(IN)       :: SNOMLT   ! UA: snow melt [m]
+      REAL                   :: SNOMLTC  ! UA: snow melt [cm]
 ! ----------------------------------------------------------------------
 ! CONVERSION INTO SIMULATION UNITS
 ! ----------------------------------------------------------------------
       SNOWHC = SNOWH *100.
       ESDC = ESD *100.
+      IF(UA_PHYS) SNOMLTC = SNOMLT *100.
       DTHR = DTSEC /3600.
       TSNOWC = TSNOW -273.15
       TSOILC = TSOIL -273.15
@@ -3147,6 +3323,9 @@ CONTAINS
       SNDENS = DSX
       IF (TSNOWC >=  0.) THEN
          DW = 0.13* DTHR /24.
+         IF ( UA_PHYS .AND. TSOILC >= 0.) THEN
+             DW = MIN (DW, 0.13*SNOMLTC/(ESDCX+0.13*SNOMLTC))
+         ENDIF
          SNDENS = SNDENS * (1. - DW) + DW
          IF (SNDENS >=  0.40) SNDENS = 0.40
 ! ----------------------------------------------------------------------
@@ -3161,7 +3340,7 @@ CONTAINS
   END SUBROUTINE SNOWPACK
 ! ----------------------------------------------------------------------
 
-      SUBROUTINE SNOWZ0 (SNCOVR,Z0, Z0BRD, SNOWH)
+      SUBROUTINE SNOWZ0 (SNCOVR,Z0, Z0BRD, SNOWH,FBUR,FGSN,SHDMAX,UA_PHYS)
 
 ! ----------------------------------------------------------------------
 ! SUBROUTINE SNOWZ0
@@ -3178,17 +3357,33 @@ CONTAINS
       REAL, INTENT(IN)        :: SNOWH
       REAL                    :: BURIAL
       REAL                    :: Z0EFF
+      LOGICAL, INTENT(IN)     :: UA_PHYS   ! UA: flag for UA option
+      REAL, INTENT(IN)        :: FBUR      ! UA: fraction of canopy buried
+      REAL, INTENT(IN)        :: FGSN      ! UA: ground snow cover fraction
+      REAL, INTENT(IN)        :: SHDMAX    ! UA: maximum vegetation fraction
+      REAL, PARAMETER         :: Z0G=0.01  ! UA: soil roughness
+      REAL                    :: FV,A1,A2
 
-!m      Z0 = (1.- SNCOVR)* Z0BRD + SNCOVR * Z0S
-      BURIAL = 7.0*Z0BRD - SNOWH
-      IF(BURIAL.LE.0.0007) THEN
-        Z0EFF = Z0S
+      IF(UA_PHYS) THEN
+
+          FV = SHDMAX * (1.-FBUR)
+          A1 = (1.-FV)**2*((1.-FGSN**2)*LOG(Z0G) + (FGSN**2)*LOG(Z0S))
+          A2 = (1.-(1.-FV)**2)*LOG(Z0BRD)
+          Z0 = EXP(A1+A2)
+
       ELSE
-        Z0EFF = BURIAL/7.0
-      ENDIF
-      
-      Z0 = (1.- SNCOVR)* Z0BRD + SNCOVR * Z0EFF
 
+!m        Z0 = (1.- SNCOVR)* Z0BRD + SNCOVR * Z0S
+          BURIAL = 7.0*Z0BRD - SNOWH
+          IF(BURIAL.LE.0.0007) THEN
+              Z0EFF = Z0S
+          ELSE      
+              Z0EFF = BURIAL/7.0
+          ENDIF
+      
+          Z0 = (1.- SNCOVR)* Z0BRD + SNCOVR * Z0EFF
+
+      ENDIF
 ! ----------------------------------------------------------------------
   END SUBROUTINE SNOWZ0
 ! ----------------------------------------------------------------------

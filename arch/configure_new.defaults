@@ -124,7 +124,7 @@ RANLIB          =      ranlib
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
-#ARCH    Linux x86_64, PGI compiler with gcc # serial smpar dmpar dm+sm
+#ARCH    Linux x86_64 i486 i586 i686, PGI compiler with gcc # serial smpar dmpar dm+sm
 #
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP

@@ -2107,7 +2107,7 @@ END
       LOGICAL, INTENT(IN)  :: is_intermediate  ! treated differently, coarse but with same decomp as nest
       INTEGER, INTENT(OUT) :: sendbeg_m, sendw_m, sendbeg_p, sendw_p
       INTEGER, INTENT(OUT) :: recvbeg_m, recvw_m, recvbeg_p, recvw_p
-      INTEGER k, kn, ni, nj, de, Px, Py, ntx,nty, me, lb, ub, ierr 
+      INTEGER k, kn, ni, nj, de, Px, Py, nt, ntx, nty, me, lb, ub, ierr 
       INTEGER dum
       LOGICAL went
       INTEGER iter, plus_send_start, plus_recv_start, &
@@ -2126,6 +2126,7 @@ END
       ntx = ntasks_x 
       nty = ntasks_y 
       IF ( xy .EQ. 1 ) THEN  ! X/I axis
+        nt = ntasks_x
         me = mytask_x
         dum = 2 * nty  ! dummy dimension length for tfp to decompose without getting div 0
         IF ( is_intermediate ) THEN
@@ -2133,6 +2134,7 @@ END
            CALL nl_get_parent_grid_ratio(id,parent_grid_ratio)
         ENDIF
       ELSE
+        nt = ntasks_y
         me = mytask_y
         dum = 2 * ntx  ! dummy dimension length for tfp to decompose without getting div 0
         IF ( is_intermediate ) THEN

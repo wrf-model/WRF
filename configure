@@ -368,10 +368,12 @@ fi
 
 # compile options that come from the environment, such as chemistry
 # the "!" is removed by Config_new.pl
-if [ $WRF_HYDRO = 1 ] ; then
-    echo building WRF-HYDRO 
-    compileflags="${compileflags}!-DWRF_HYDRO"
-    echo $compileflags
+if [ -n "$WRF_HYDRO" ] ; then
+  if [ $WRF_HYDRO = 1 ] ; then
+      echo building WRF-HYDRO 
+      compileflags="${compileflags}!-DWRF_HYDRO"
+      echo $compileflags
+  fi
 fi
 
 # compile options that come from the environment, such as chemistry
@@ -386,14 +388,14 @@ fi
 
 if [ -n "$WRF_TITAN" ] ; then
   if [ $WRF_TITAN = 1 ] ; then
-    echo building WRF for Mars
+    echo building WRF for Titan
     compileflags="${compileflags}!-DPLANET!-DTITAN"
   fi
 fi
 
 if [ -n "$WRF_VENUS" ] ; then
   if [ $WRF_VENUS = 1 ] ; then
-    echo building WRF for Mars
+    echo building WRF for Venus
     compileflags="${compileflags}!-DPLANET!-DVENUS"
   fi
 fi

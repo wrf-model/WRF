@@ -2525,11 +2525,26 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    END IF
 
    IF ( config_flags%w_damping == 1 ) THEN
+#ifdef OPTIMIZE_CFL_TEST
+! 20121025, L. Meadows vector optimization does not include special case for Cassini
+     IF(config_flags%map_proj == PROJ_CASSINI ) then
+       CALL wrf_error_fatal('module_big_step_utilities_em.F: -DOPTIMIZE_CFL_TEST option does not support PROJ_CASSINI')
+     END IF
+#endif
+
      DO j = jts,jtf
 
      DO k = 2, kde-1
      DO i = its,itf
 #if 1
+#  ifdef OPTIMIZE_CFL_TEST
+! L. Meadows, Intel, MIC optimization, 20121025
+        msfuxt = msfux(i,j)
+        vert_cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
+        IF ( vert_cfl > max_vert_cfl ) THEN
+           max_vert_cfl = vert_cfl
+        ENDIF
+#  else
         IF(config_flags%map_proj == PROJ_CASSINI ) then
            msfuxt = MIN(msfux(i,j), msfxffl)
         ELSE
@@ -2541,6 +2556,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
            max_vert_cfl = vert_cfl ; maxi = i ; maxj = j ; maxk = k 
            maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
         ENDIF
+#  endif
         
         horiz_cfl = max( abs(u(i,k,j) * rdx * msfuxt * dt),                          &
              abs(v(i,k,j) * rdy * msfvy(i,j) * dt) )
@@ -2559,9 +2575,12 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
         cf_d = abs(mut(i,j))
         if(cf_n .gt. cf_d*w_beta )then
 #endif
-
+#ifndef OPTIMIZE_CFL_TEST
+! This internal write is costly on newer Xeon processors because it breaks 
+! vectorization.  (J. Michalakes for L. Meadows at Intel, 12/13/2012)
            WRITE(temp,*)i,j,k,' vert_cfl,w,d(eta)=',vert_cfl,w(i,k,j),-1./rdnw(k)
            CALL wrf_debug ( 100 , TRIM(temp) )
+#endif
            if ( vert_cfl > 2. ) some = some + 1
            rw_tend(i,k,j) = rw_tend(i,k,j)-sign(1.,w(i,k,j))*w_alpha*(vert_cfl-w_beta)*mut(i,j)
         endif
@@ -2576,6 +2595,14 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
      DO i = its,itf
 
 #if 1
+#  ifdef OPTIMIZE_CFL_TEST
+        msfuxt = msfux(i,j)
+        vert_cfl = abs(ww(i,k,j)/mut(i,j)*rdnw(k)*dt)
+        IF ( vert_cfl > max_vert_cfl ) THEN
+           max_vert_cfl = vert_cfl
+        ENDIF
+#  else
+! L. Meadows MIC optimization, 20121025
         IF(config_flags%map_proj == PROJ_CASSINI ) then
            msfuxt = MIN(msfux(i,j), msfxffl)
         ELSE
@@ -2587,6 +2614,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
            max_vert_cfl = vert_cfl ; maxi = i ; maxj = j ; maxk = k 
            maxdub = w(i,k,j) ; maxdeta = -1./rdnw(k)
         ENDIF
+#  endif
         
         horiz_cfl = max( abs(u(i,k,j) * rdx * msfuxt * dt),                          &
              abs(v(i,k,j) * rdy * msfvy(i,j) * dt) )
@@ -2606,8 +2634,10 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
         cf_d = abs(mut(i,j))
         if(cf_n .gt. cf_d*w_beta )then
 #endif
+#ifndef OPTIMIZE_CFL_TEST
            WRITE(temp,*)i,j,k,' vert_cfl,w,d(eta)=',vert_cfl,w(i,k,j),-1./rdnw(k)
            CALL wrf_debug ( 100 , TRIM(temp) )
+#endif
            if ( vert_cfl > 2. ) some = some + 1
         endif
      END DO
@@ -2620,9 +2650,11 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
      WRITE(temp,*)some,                                            &
             ' points exceeded cfl=2 in domain '//TRIM(grid_str)//' at time '//TRIM(time_str)//' hours'
      CALL wrf_debug ( 0 , TRIM(temp) )
+#ifndef OPTIMIZE_CFL_TEST
      WRITE(temp,*)'MAX AT i,j,k: ',maxi,maxj,maxk,' vert_cfl,w,d(eta)=',max_vert_cfl, &
                              maxdub,maxdeta
      CALL wrf_debug ( 0 , TRIM(temp) )
+#endif
    ENDIF
 
 END SUBROUTINE w_damp

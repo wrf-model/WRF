@@ -608,6 +608,10 @@ fseek_test :
 	@ cd tools ; /bin/rm -f fseeko_test ; $(SCC) -DTEST_FSEEKO -o fseeko_test fseek_test.c ; cd ..
 	@ cd tools ; /bin/rm -f fseeko64_test ; $(SCC) -DTEST_FSEEKO64 -o fseeko64_test fseek_test.c ; cd ..
 
+# rule used by configure to test if this will compile with netcdf4
+nc4_test:
+	@cd tools ; /bin/rm -f nc4_test.exe nc4_test.nc ; $(SCC) -I$(NETCDF)/include -L$(NETCDF)/lib -lnetcdf $(CURL) -o nc4_test.exe nc4_test.c ; cd ..
+
 ### 3.b.  sub-rule to build the expimental core
 
 # uncomment the two lines after exp_core for EXP

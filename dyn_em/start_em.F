@@ -666,7 +666,7 @@
                       grid%p_top, grid%tsk, grid%RADT,grid%BLDT,grid%CUDT, MPDT, &
                       grid%rucuten, grid%rvcuten, grid%rthcuten,             &
                       grid%rqvcuten, grid%rqrcuten, grid%rqccuten,           &
-                      grid%rqscuten, grid%rqicuten,                          &
+                      grid%rqscuten, grid%rqicuten,  &
                       grid%rushten, grid%rvshten, grid%rthshten,             &
                       grid%rqvshten, grid%rqrshten, grid%rqcshten,           &
                       grid%rqsshten, grid%rqishten, grid%rqgshten,           &
@@ -765,6 +765,7 @@
                       config_flags%nssl_cnor, config_flags%nssl_cnos,         &
                       config_flags%nssl_rho_qh, config_flags%nssl_rho_qhl,    &
                       config_flags%nssl_rho_qs                                &
+                      ,grid%RQCNCUTEN, grid%RQINCUTEN,grid%rliq             &      !mchen add for cammpmg
                       ,grid%te_temf,grid%cf3d_temf,grid%wm_temf        & ! WA
                       ,grid%massflux_EDKF, grid%entr_EDKF, grid%detr_EDKF                & 
                       ,grid%thl_up,grid%thv_up,grid%rt_up                                &

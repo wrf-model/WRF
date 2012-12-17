@@ -1,7 +1,6 @@
-!------------------------------------------------------------------------
-! Based on error_function.F90 from CAM
-! Ported to WRF by William.Gustafson@pnl.gov, Dec. 2009
-!------------------------------------------------------------------------
+#define WRF_PORT
+#define MODAL_AERO
+! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
 
 module error_function
 

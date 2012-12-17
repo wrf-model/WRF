@@ -54,7 +54,8 @@ CONTAINS
               , SLWDN, SLWUP                        & ! goddard schemes
               , TSWDN, TSWUP                        & ! goddard schemes
               , SSWDN, SSWUP                        & ! goddard schemes
-              , CLDFRA                                        &
+              , CLDFRA,CLDFRA_MP_ALL                              &
+              , mp_physics                                        &
               , PB                                                &
               , F_ICE_PHY,F_RAIN_PHY       &
               , QV, F_QV                     &
@@ -130,6 +131,9 @@ CONTAINS
 #endif
                                        ,goddardlwscheme                 & 
                                        ,goddardswscheme                 &  
+# if (EM_CORE == 1)
+                                       ,CAMMGMPSCHEME                   &
+# endif
                                        ,FLGLWSCHEME, FLGSWSCHEME
 
    USE module_model_constants
@@ -266,6 +270,7 @@ CONTAINS
 !-- XLONG         longitude, west is negative (degree)
 !-- ALBEDO                albedo (between 0 and 1)
 !-- CLDFRA        cloud fraction (between 0 and 1)
+!-- CLDFRA_MP_ALL cloud fraction from CAMMGMP microphysics scheme
 !-- EMISS         surface emissivity (between 0 and 1)
 !-- rho_phy       density (kg/m^3)
 !-- rr            dry air density (kg/m^3)
@@ -322,6 +327,7 @@ CONTAINS
                                        num_tiles
 
    INTEGER, INTENT(IN)            :: lw_physics, sw_physics
+   INTEGER, INTENT(IN), OPTIONAL       ::  mp_physics
    INTEGER, OPTIONAL, INTENT(IN)  :: o3input, aer_opt
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
@@ -499,7 +505,7 @@ CONTAINS
 
 ! Optional, only for Goddard LW and SW
    REAL, DIMENSION(IMS:IME, JMS:JME, 1:8)       :: ERBE_out  !extra output for SDSU
-   REAL, DIMENSION(IMS:IME, JMS:JME), OPTIONAL, INTENT(OUT) ::   &
+   REAL, DIMENSION(IMS:IME, JMS:JME), OPTIONAL, INTENT(INOUT) ::   & !BSINGH(PNNL)- Lahey compiler forced this specification to be intent-inout
                                                TLWDN, TLWUP,     &
                                                SLWDN, SLWUP,     &
                                                TSWDN, TSWUP,     &
@@ -525,7 +531,8 @@ CONTAINS
          OPTIONAL,                                                   &
          INTENT(IN   ) ::                                            &
                                                           F_ICE_PHY, &
-                                                         F_RAIN_PHY
+                                                         F_RAIN_PHY, &
+                                                         CLDFRA_MP_ALL
 
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          OPTIONAL,                                                &
@@ -577,7 +584,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_save,qc_save
 
    REAL    ::    next_rad_time
-   LOGICAL ::    run_param , doing_adapt_dt , decided
+   LOGICAL ::    run_param , doing_adapt_dt , decided, is_CAMMGMP_used
    LOGICAL ::    flg_lw, flg_sw
 !------------------------------------------------------------------
 ! solar related variables are added to declaration
@@ -680,6 +687,14 @@ CONTAINS
 
    gfdl_lw = .false.
    gfdl_sw = .false.
+
+   !BSINGH: Find out if CAMMGMPSCHEME is beingh used in this simulation:
+   is_CAMMGMP_used = .false.
+# if (EM_CORE == 1)
+   if(mp_physics == CAMMGMPSCHEME) then
+      is_CAMMGMP_used = .true.
+   endif
+# endif
 
 
 ! moved up and out of OMP loop because it only needs to be computed once
@@ -1106,6 +1121,8 @@ CONTAINS
                   P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t,    &
                   T8W=t8w,RHO3D=rho,R=R_d,G=G,                      &
                   ICLOUD=icloud,WARM_RAIN=warm_rain,CLDFRA3D=CLDFRA,&
+                  CLDFRA_MP_ALL=CLDFRA_MP_ALL,ITIMESTEP=itimestep,  &
+                  IS_CAMMGMP_USED=is_CAMMGMP_used,                  &                
                   F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &
                   XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                   QV3D=QV,QC3D=QC,QR3D=QR,                          &
@@ -1431,7 +1448,9 @@ CONTAINS
                      COSZR=COSZR,JULDAY=JULDAY,SOLCON=SOLCON,          &
                      ALBEDO=ALBEDO,t3d=t,t8w=t8w,TSK=TSK,              &
                      p3d=p,p8w=p8w,pi3d=pi,rho3d=rho,                  &
-                     dz8w=dz8w,CLDFRA3D=CLDFRA,R=R_D,G=G,              &
+                     dz8w=dz8w,CLDFRA3D=CLDFRA,                        &
+                     CLDFRA_MP_ALL=CLDFRA_MP_ALL,ITIMESTEP=itimestep,  &
+                     is_CAMMGMP_used=is_CAMMGMP_used,R=R_D,G=G,        &
                      ICLOUD=icloud,WARM_RAIN=warm_rain,                &
                      F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &
                      XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &

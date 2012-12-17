@@ -1,5 +1,6 @@
 #define WRF_PORT
-
+#define MODAL_AERO
+! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
 module constituents
 
 !----------------------------------------------------------------------------------------------
@@ -23,9 +24,8 @@ module constituents
   use abortutils,   only: endrun
   use cam_logfile,  only: iulog
 #else
-  use module_cam_support,   only: masterproc,endrun,iulog,pcnst
+  use module_cam_support,   only: masterproc,endrun,iulog,pcnst =>pcnst_runtime
 #endif
-
   implicit none
   private
   save
@@ -44,16 +44,20 @@ module constituents
 ! Public data
 #ifndef WRF_PORT 
   integer, parameter, public :: pcnst  = PCNST      ! number of advected constituents (including water vapor)
-#endif
 
   character(len=16), public :: cnst_name(pcnst)     ! constituent names
   character(len=128),public :: cnst_longname(pcnst) ! long name of constituents
+#else
+  character(len=16),allocatable, public :: cnst_name(:)     ! constituent names
+  character(len=128),allocatable,public :: cnst_longname(:) ! long name of constituents
+#endif
 
 ! Namelist variables
   logical, public :: readtrace = .true.             ! true => obtain initial tracer data from IC file
 
 !
 ! Constants for each tracer
+#ifndef WRF_PORT  
   real(r8),    public :: cnst_cp  (pcnst)          ! specific heat at constant pressure (J/kg/K)
   real(r8),    public :: cnst_cv  (pcnst)          ! specific heat at constant volume (J/kg/K)
   real(r8),    public :: cnst_mw  (pcnst)          ! molecular weight (kg/kmole)
@@ -62,9 +66,20 @@ module constituents
   real(r8),    public :: qmin     (pcnst)          ! minimum permitted constituent concentration (kg/kg)
   real(r8),    public :: qmincg   (pcnst)          ! for backward compatibility only
   logical,     public :: cnst_fixed_ubc(pcnst) = .false.  ! upper bndy condition = fixed ?
+#else
+real(r8),      allocatable, public :: cnst_cp  (:)          ! specific heat at constant pressure (J/kg/K)
+  real(r8),    allocatable, public :: cnst_cv  (:)          ! specific heat at constant volume (J/kg/K)
+  real(r8),    allocatable, public :: cnst_mw  (:)          ! molecular weight (kg/kmole)
+  character*3, allocatable, public :: cnst_type(:)          ! wet or dry mixing ratio
+  real(r8),    allocatable, public :: cnst_rgas(:)          ! gas constant ()
+  real(r8),    allocatable, public :: qmin     (:)          ! minimum permitted constituent concentration (kg/kg)
+  real(r8),    allocatable, public :: qmincg   (:)          ! for backward compatibility only
+  logical,     allocatable, public :: cnst_fixed_ubc(:)     ! upper bndy condition = fixed ?
+#endif
 
 !++bee - temporary... These names should be declared in the module that makes the addfld and outfld calls.
 ! Lists of tracer names and diagnostics
+#ifndef WRF_PORT  
    character(len=16), public :: apcnst    (pcnst)   ! constituents after physics  (FV core only)
    character(len=16), public :: bpcnst    (pcnst)   ! constituents before physics (FV core only)
    character(len=16), public :: hadvnam   (pcnst)   ! names of horizontal advection tendencies
@@ -76,14 +91,34 @@ module constituents
    character(len=16), public :: dmetendnam(pcnst)   ! names of dme adjusted tracers (FV)
    character(len=16), public :: sflxnam   (pcnst)   ! names of surface fluxes of species
    character(len=16), public :: tottnam   (pcnst)   ! names for horz + vert + fixer tendencies
+#else
+   character(len=16), allocatable, public :: apcnst    (:)   ! constituents after physics  (FV core only)
+   character(len=16), allocatable, public :: bpcnst    (:)   ! constituents before physics (FV core only)
+   character(len=16), allocatable, public :: hadvnam   (:)   ! names of horizontal advection tendencies
+   character(len=16), allocatable, public :: vadvnam   (:)   ! names of vertical advection tendencies
+   character(len=16), allocatable, public :: dcconnam  (:)   ! names of convection tendencies
+   character(len=16), allocatable, public :: fixcnam   (:)   ! names of species slt fixer tendencies
+   character(len=16), allocatable, public :: tendnam   (:)   ! names of total tendencies of species
+   character(len=16), allocatable, public :: ptendnam  (:)   ! names of total physics tendencies of species
+   character(len=16), allocatable, public :: dmetendnam(:)   ! names of dme adjusted tracers (FV)
+   character(len=16), allocatable, public :: sflxnam   (:)   ! names of surface fluxes of species
+   character(len=16), allocatable, public :: tottnam   (:)   ! names for horz + vert + fixer tendencies
+#endif
 
 ! Private data
 
   integer :: padv = 0                      ! index pointer to last advected tracer
+#ifndef WRF_PORT
   logical :: read_init_vals(pcnst)         ! true => read initial values from initial file
   logical :: cam_outfld_(pcnst)            ! true  => default CAM output of constituents in kg/kg
                                            ! false => chemistry is responsible for making outfld
                                            !          calls for constituents
+#else
+  logical, allocatable :: read_init_vals(:)         ! true => read initial values from initial file
+  logical, allocatable :: cam_outfld_(:)            ! true  => default CAM output of constituents in kg/kg
+                                           ! false => chemistry is responsible for making outfld
+                                           !          calls for constituents
+#endif
 
 !==============================================================================================
 CONTAINS
@@ -118,12 +153,19 @@ CONTAINS
        fixed_ubc ! true => const has a fixed upper bndy condition
 
 !-----------------------------------------------------------------------
-
+#ifdef WRF_PORT
+    !Allocate local arrays    
+    if(.NOT. allocated(read_init_vals)) allocate(read_init_vals(pcnst))
+    if(.NOT. allocated(cam_outfld_)) allocate(cam_outfld_(pcnst))
+#endif
 ! set tracer index and check validity, advected tracer
     padv = padv+1
     ind  = padv
     if (padv > pcnst) then
        write(iulog,*) 'CNST_ADD: advected tracer index greater than pcnst = ', pcnst
+#ifdef WRF_PORT
+       call wrf_message(iulog)
+#endif
        call endrun
     end if
 
@@ -197,6 +239,9 @@ CONTAINS
 ! 
 ! Author:  B.A. Boville
 ! 
+#ifdef WRF_PORT
+    use module_cam_support, only: lower_case, pcnst_runtime
+#endif
 !-----------------------------Arguments---------------------------------
 !
     character(len=*),  intent(in)  :: name  ! constituent name
@@ -206,16 +251,41 @@ CONTAINS
 !---------------------------Local workspace-----------------------------
     integer :: m                                   ! tracer index
     logical :: abort_on_error
+#ifdef WRF_PORT
+    character(len=32) :: name_in, name_in_lc, name_cnst_lc
+    integer           :: idone
+#endif
 !-----------------------------------------------------------------------
 
 ! Find tracer name in list
+#ifndef WRF_PORT
     do m = 1, pcnst
        if (name == cnst_name(m)) then
           ind  = m
           return
        end if
     end do
-
+#else
+    name_in = name
+    call lower_case( name_in, name_in_lc )
+    idone = 0
+    do while (idone < 2)
+       do m = 1, pcnst_runtime
+          call lower_case( cnst_name(m), name_cnst_lc )
+          if (name_in_lc == name_cnst_lc) then
+             ind = m
+             return
+          end if
+       end do
+       idone = idone + 1
+       ! if name='h2so4' and was not found, try name='sulf'
+       if (name_in_lc == 'h2so4') then
+          name_in_lc = 'sulf'
+       else
+          idone = 2
+       end if
+    end do ! while (idone < 2)
+#endif
 ! Unrecognized name
     abort_on_error = .true.
     if ( present(abort) ) abort_on_error = abort
@@ -260,6 +330,9 @@ CONTAINS
     else
        ! Unrecognized name
        write(iulog,*) 'CNST_GET_TYPE_BYIND, ind:', ind
+#ifdef WRF_PORT
+       call wrf_message(iulog)
+#endif
        call endrun
     endif
 
@@ -297,6 +370,9 @@ CONTAINS
 
 ! Unrecognized name
     write(iulog,*) 'CNST_GET_TYPE_BYNAME, name:', name,  ' not found in list:', cnst_name(:)
+#ifdef WRF_PORT
+       call wrf_message(iulog)
+#endif
     call endrun
 
   end function cnst_get_type_byname
@@ -337,13 +413,22 @@ CONTAINS
 !
     if (padv /= pcnst) then
        write(iulog,*)'CNST_CHK_DIM: number of advected tracer ',padv, ' not equal to pcnst = ',pcnst
+#ifdef WRF_PORT
+       call wrf_message(iulog)
+#endif
        call endrun ()
     endif
 
     if (masterproc) then
        write(iulog,*) 'Advected constituent list:'
+#ifdef WRF_PORT
+       call wrf_message(iulog)
+#endif
        do i = 1, pcnst
           write(iulog,'(i4,2x,a8,2x,a128,2x,a3)') i, cnst_name(i), cnst_longname(i), cnst_type(i)
+#ifdef WRF_PORT
+       call wrf_message(iulog)
+#endif
        end do
     end if
 

@@ -1,11 +1,12 @@
 #define WRF_PORT
-
-module physconst
+#define MODAL_AERO
 !------------------------------------------------------------------------
 ! Based on physconst.F90 from CAM
 ! Ported to WRF by William.Gustafson@pnl.gov, Nov. 2009
 ! Updated to version from CESM 1.0.1 Nov. 2010
+! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
 !------------------------------------------------------------------------
+module physconst
 
    ! Physical constants.  Use CCSM shared values whenever available.
 
@@ -24,7 +25,6 @@ module physconst
    public  :: physconst_readnl
    save
    ! Constants based off share code or defined in physconst
-
    real(r8), public, parameter :: avogad      = shr_const_avogad     ! Avogadro's number (molecules/kmole)
    real(r8), public, parameter :: boltz       = shr_const_boltz      ! Boltzman's constant (J/K/molecule)
    real(r8), public, parameter :: cday        = shr_const_cday       ! sec in calendar day ~ sec
@@ -39,7 +39,6 @@ module physconst
    real(r8), public, parameter :: rhoh2o      = shr_const_rhofw      ! Density of liquid water (STP)
    real(r8), public, parameter :: spval       = shr_const_spval      !special value 
    real(r8), public, parameter :: stebol      = shr_const_stebol     ! Stefan-Boltzmann's constant (W/m^2/K^4)
-   real(r8), public, parameter :: tmelt       = shr_const_tkfrz      ! Freezing point of water (K)
 
    real(r8), public, parameter :: c0          = 2.99792458e8_r8      ! Speed of light in a vacuum (m/s)
    real(r8), public, parameter :: planck      = 6.6260755e-34_r8     ! Planck's constant (J.s)
@@ -65,6 +64,7 @@ module physconst
    real(r8), public           :: cpwv         = shr_const_cpwv  ! specific heat of water vapor (J/K/kg)
    real(r8), public           :: mwdry        = shr_const_mwdair! molecular weight dry air
    real(r8), public           :: rearth       = shr_const_rearth! radius of earth (m)
+   real(r8), public           :: tmelt        = shr_const_tkfrz ! Freezing point of water (K)
 
 !---------------  Variables below here are derived from those above -----------------------
 
@@ -81,7 +81,6 @@ module physconst
    real(r8), public           :: ez           ! Coriolis expansion coeff -> omega/sqrt(0.375)   
    real(r8), public           :: Cpd_on_Cpv   = shr_const_cpdair/shr_const_cpwv
                          
-
 !================================================================================================
 contains
 !================================================================================================
@@ -95,16 +94,16 @@ contains
       use spmd_utils,      only: masterproc
       use abortutils,      only: endrun
       use cam_logfile,     only: iulog
-#endif      
+#endif   
       character(len=*), intent(in) :: nlfile  ! filepath for file containing namelist input
 #ifndef WRF_PORT
       ! Local variables
       integer :: unitn, ierr
       character(len=*), parameter :: subname = 'physconst_readnl'
-      logical       newg, newsday, newmwh2o, newcpwv, newmwdry, newrearth
+      logical       newg, newsday, newmwh2o, newcpwv, newmwdry, newrearth, newtmelt
 
       ! Physical constants needing to be reset (ie. for aqua planet experiments)
-      namelist /physconst_nl/  cpwv, gravit, mwdry, mwh2o, rearth, sday
+      namelist /physconst_nl/  cpwv, gravit, mwdry, mwh2o, rearth, sday, tmelt
 
       !-----------------------------------------------------------------------------
 
@@ -130,6 +129,7 @@ contains
       call mpibcast(mwh2o,     1,                   mpir8,   0, mpicom)
       call mpibcast(rearth,    1,                   mpir8,   0, mpicom)
       call mpibcast(sday,      1,                   mpir8,   0, mpicom)
+      call mpibcast(tmelt,     1,                   mpir8,   0, mpicom)
 #endif
 
 
@@ -140,22 +140,39 @@ contains
       newcpwv  =  cpwv   .ne. shr_const_cpwv
       newmwdry =  mwdry  .ne. shr_const_mwdair
       newrearth=  rearth .ne. shr_const_rearth
+      newtmelt =  tmelt  .ne. shr_const_tkfrz
       
       
       
-      if (newg .or. newsday .or. newmwh2o .or. newcpwv .or. newmwdry .or. newrearth) then
+      if (newg .or. newsday .or. newmwh2o .or. newcpwv .or. newmwdry .or. newrearth .or. newtmelt) then
          if (masterproc) then
             write(iulog,*)'****************************************************************************'
+#ifdef WRF_PORT
+            call wrf_message(iulog)
+#endif 
             write(iulog,*)'***    New Physical Constant Values set via namelist                     ***'
+#ifdef WRF_PORT
+            call wrf_message(iulog)
+#endif 
             write(iulog,*)'***                                                                      ***'
+#ifdef WRF_PORT
+            call wrf_message(iulog)
+#endif 
             write(iulog,*)'***    Physical Constant    Old Value                  New Value         ***'
+#ifdef WRF_PORT
+            call wrf_message(iulog)
+#endif 
             if (newg)       write(iulog,*)'***       GRAVITY   ',shr_const_g,gravit,'***'
             if (newsday)    write(iulog,*)'***       SDAY      ',shr_const_sday,sday,'***'
             if (newmwh2o)   write(iulog,*)'***       MWH20     ',shr_const_mwwv,mwh2o,'***'
             if (newcpwv)    write(iulog,*)'***       CPWV      ',shr_const_cpwv,cpwv,'***'
             if (newmwdry)   write(iulog,*)'***       MWDRY     ',shr_const_mwdair,mwdry,'***'
             if (newrearth)  write(iulog,*)'***       REARTH    ',shr_const_rearth,rearth,'***'
+            if (newtmelt)   write(iulog,*)'***       TMELT     ',shr_const_tkfrz,tmelt,'***'
             write(iulog,*)'****************************************************************************'
+#ifdef WRF_PORT
+            call wrf_message(iulog)
+#endif 
          end if
          rga         = 1._r8/gravit 
          ra          = 1._r8/rearth
@@ -177,7 +194,6 @@ contains
       else	
          ez          = omega / sqrt(0.375_r8)
       end if
-#endif      
+#endif     
     end subroutine physconst_readnl
-
   end module physconst

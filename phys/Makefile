@@ -21,6 +21,16 @@ MODULES = \
 	module_cam_upper_bc.o \
 	module_cam_bl_diffusion_solver.o \
 	module_cam_bl_eddy_diff.o \
+	module_cam_mp_microp_aero.o \
+	module_cam_mp_cldwat2m_micro.o \
+	module_cam_mp_ndrop.o \
+	module_cam_mp_modal_aero_initialize_data_phys.o \
+	module_cam_mp_radconstants.o \
+	module_cam_mp_conv_water.o \
+	module_cam_mp_qneg3.o \
+	module_data_cam_mam_aero.o \
+	module_data_cam_mam_asect.o \
+	module_cam_infnan.o \
 	module_bl_ysu.o \
 	module_bl_mrf.o \
 	module_bl_gfs.o \
@@ -68,6 +78,7 @@ MODULES = \
 	module_mp_nssl_2mom.o \
 	module_mp_wdm5.o \
 	module_mp_wdm6.o \
+	module_mp_cammgmp_driver.o \
 	module_ra_sw.o  \
 	module_ra_clWRF_support.o  \
 	module_ra_gsfcsw.o \

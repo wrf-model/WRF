@@ -310,7 +310,7 @@ CONTAINS
 	        + fr_aem_sorgam_j(n)*(emis_ant(i,k,j,p_e_orgj)+0.75*ebu(i,k,j,p_ebu_oc))  
 
          chem_select_1 : SELECT CASE( config_flags%chem_opt )
-         CASE(SAPRC99_MOSAIC_4BIN_VBS2_KPP) ! Set the oc to zero for VBS
+         CASE(CBMZ_MOSAIC_4BIN_VBS2_KPP, SAPRC99_MOSAIC_4BIN_VBS2_KPP) ! Set the oc to zero for VBS
              aem_oc = 0.0
          END SELECT  chem_select_1 
 
@@ -973,14 +973,26 @@ END MODULE module_mosaic_addemiss
 !       sz(2)=0.00875357
 !       sz(3)=0.1512446
 !       sz(4)=0.84
-        sz(1)=0.0
-        sz(2)=0.0
-        sz(3)=0.0005
-        sz(4)=0.0095
-        sz(5)=0.01
-        sz(6)=0.06
-        sz(7)=0.20
-        sz(8)=0.72
+        itype=1
+	if (nsize_aer(itype) .eq. 8) then
+          sz(1)=0.0
+          sz(2)=0.0
+          sz(3)=0.0005
+          sz(4)=0.0095
+          sz(5)=0.01
+          sz(6)=0.06
+          sz(7)=0.20
+          sz(8)=0.72
+	else if (nsize_aer(itype) .eq. 4) then
+          sz(1)=0.0
+          sz(2)=0.01
+          sz(3)=0.07
+          sz(4)=0.92
+          sz(5)=0.0
+          sz(6)=0.0
+          sz(7)=0.0
+          sz(8)=0.0
+        endif
 
 !   for now just do itype=1
         itype = 1

@@ -4633,6 +4633,9 @@ END SUBROUTINE pole_point_bc
                          RTHFTEN,  RQVFTEN,                           &
                          RUNDGDTEN, RVNDGDTEN, RTHNDGDTEN,            &
                          RPHNDGDTEN,RQVNDGDTEN, RMUNDGDTEN,           &
+!jdf
+                         landmask, xland,                             &
+!jdf
                          ids, ide, jds, jde, kds, kde,                &
                          ims, ime, jms, jme, kms, kme,                &
                          its, ite, jts, jte, kts, kte                )
@@ -4732,6 +4735,11 @@ END SUBROUTINE pole_point_bc
 
    REAL,  DIMENSION( ims:ime, jms:jme )                            , &
           INTENT(INOUT)   ::                               RMUNDGDTEN
+!jdf
+   REAL,  DIMENSION( ims:ime, jms:jme )                            , &
+          INTENT(INOUT)   ::                               landmask, &
+                                                              xland
+!jdf
 
    INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, j_startv
    INTEGER :: i, j, k
@@ -4759,6 +4767,13 @@ END SUBROUTINE pole_point_bc
 
     k_start = kts
     k_end = min( kte, kde-1 )
+!jdf
+    do j = j_start,j_end
+    do i = i_start, i_end
+      if(landmask(i,j).lt.0.5) xland(i,j)=2.0
+    enddo
+    enddo
+!jdf
 
 !  compute thermodynamics and velocities at pressure points (or half levels)
 

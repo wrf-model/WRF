@@ -1031,6 +1031,8 @@ state    real  RQCSHTEN        ikj      misc        1         -      r        "R
 state    real  RQSSHTEN        ikj      misc        1         -      r        "RQSSHTEN"              "COUPLED Q_S TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
 state    real  RQISHTEN        ikj      misc        1         -      r        "RQISHTEN"              "COUPLED Q_I TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
 state    real  RQGSHTEN        ikj      misc        1         -      r        "RQGSHTEN"              "COUPLED Q_G TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  RQCNSHTEN       ikj      misc        1         -      r       "RQCNSHTEN"              "COUPLED Q_CN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  RQINSHTEN       ikj      misc        1         -      r       "RQINSHTEN"              "COUPLED Q_IN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
 
 state    real  RUCUTEN         ikj      misc        1         -      r        "RUCUTEN"               "COUPLED X WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
 state    real  RVCUTEN         ikj      misc        1         -      r        "RVCUTEN"               "COUPLED Y WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
@@ -1040,6 +1042,8 @@ state    real  RQRCUTEN        ikj      misc        1         -      r        "R
 state    real  RQCCUTEN        ikj      misc        1         -      r        "RQCCUTEN"              "COUPLED Q_C TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
 state    real  RQSCUTEN        ikj      misc        1         -      r        "RQSCUTEN"              "COUPLED Q_S TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
 state    real  RQICUTEN        ikj      misc        1         -      r        "RQICUTEN"              "COUPLED Q_I TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  RQCNCUTEN       ikj      misc        1         -      r       "RQCNCUTEN"             "COUPLED Q_CN TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  RQINCUTEN       ikj      misc        1         -      r       "RQINCUTEN"             "COUPLED Q_IN TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
 state    real  W0AVG           ikj      misc        1         -      r        "W0AVG"                 "AVERAGE VERTICAL VELOCITY FOR KF CUMULUS SCHEME"         "m s-1"
 
 state    real  RAINC            ij      misc        1         -      rhdu     "RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
@@ -1231,6 +1235,7 @@ state    real  RTHBLTEN        ikj      misc        1         -      r        "R
 state    real  RQVBLTEN        ikj      misc        1         -      r        "RQVBLTEN"              "COUPLED Q_V TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
 state    real  RQCBLTEN        ikj      misc        1         -      r        "RQCBLTEN"              "COUPLED Q_C TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
 state    real  RQIBLTEN        ikj      misc        1         -      r        "RQIBLTEN"              "COUPLED Q_I TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"      
+state    real  RQNIBLTEN       ikj      misc        1         -      r        "RQNIBLTEN"             "COUPLED Q_NI TENDENCY DUE TO PBL PARAMETERIZATION"    "Pa #  kg-1 s-1"
 
 # For Noah UA changes
 state    real   flx4            ij         -        1         -      h        "FLX4"         "sensible heat from canopy"              "W m{-2}"
@@ -1713,6 +1718,9 @@ rconfig   real     nssl_rho_qs            namelist,physics      max_domains  100
 rconfig   integer     gsfcgce_hail        namelist,physics      1              0       rh       "gsfcgce select hail/graupel"  ""      ""
 rconfig   integer     gsfcgce_2ice        namelist,physics      1              0       rh       "gsfcgce select 2ice/3ice"  ""      ""
 rconfig   integer     progn               namelist,physics      max_domains    0       rh       "progn"                 ""      ""
+rconfig   real        accum_mode          namelist,physics      1             1000.0e6 rh       "accum_mode"                 ""      ""
+rconfig   real        aitken_mode         namelist,physics      1             300.0e6  rh       "aitken_mode"                 ""      ""
+rconfig   real        coarse_mode         namelist,physics      1             0.2e6    rh       "coarse_mode"                 ""      ""
 rconfig   integer     do_radar_ref        namelist,physics      1              0       rh       "compute radar reflectivity for a number of schemes"                 ""      ""
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    0       rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    0       rh       "ra_sw_physics"         ""      ""
@@ -2112,6 +2120,7 @@ package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,q
 package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr
 package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
+package   cammgmpscheme mp_physics==11               -             moist:qv,qc,qi,qr,qs;scalar:qnc,qni,qnr,qns
 #package   milbrandt3mom mp_physics==12               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qzr,qzi,qzs,qzg,qzh
 package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs;state:rimi
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr

@@ -1,7 +1,8 @@
 #define WRF_PORT
+#define MODAL_AERO
+! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
+  module molec_diff
 
-module molec_diff
-  
   !------------------------------------------------------------------------------------------------- !
   ! Module to compute molecular diffusivity for various constituents                                 !
   !                                                                                                  !    
@@ -18,20 +19,18 @@ module molec_diff
   ! Modularized     :  J. McCaa, September 2004                                                      !
   ! Lastly Arranged :  S. Park,  January.  2010                                                      !
   !------------------------------------------------------------------------------------------------- !
-    
 #ifndef WRF_PORT 
-    use perf_mod
-    use cam_logfile,  only : iulog
+  use perf_mod
+  use cam_logfile,  only : iulog
 #else
   use module_cam_support,   only: iulog, t_stopf, t_startf
 #endif
-
   implicit none
   private       
   save
 
-  public init_molec_diff
-#ifndef WRF_PORT   
+  public init_molec_diff 
+#ifndef WRF_PORT    
   public init_timestep_molec_diff
 #endif
   public compute_molec_diff 
@@ -87,6 +86,9 @@ module molec_diff
     
     if( kind .ne. r8 ) then
         write(iulog,*) 'KIND of reals passed to init_molec_diff -- exiting.'
+#ifdef WRF_PORT
+        call wrf_message(iulog)
+#endif 
         stop 'init_molec_diff'
     endif
     

@@ -1,5 +1,6 @@
 #define WRF_PORT
-
+#define MODAL_AERO
+! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
 !------------------------------------------------------------------------
 ! Based on gffgch.F90 from CAM
 ! Ported to WRF by William.Gustafson@pnl.gov, Nov. 2009
@@ -151,7 +152,6 @@ subroutine gffgch(t       ,es      ,itype   )
            ' 40.0 DEGREES C',/, ' TR = ',f7.2)
 !
 end subroutine gffgch
-
 #ifdef WRF_PORT
 end module module_cam_gffgch
 #endif

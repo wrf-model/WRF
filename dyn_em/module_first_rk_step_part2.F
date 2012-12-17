@@ -683,10 +683,13 @@ BENCH_START(update_phy_ten_tim)
                            grid%rublten,grid%rucuten,grid%rushten,          &
                            grid%rvblten,grid%rvcuten,grid%rvshten,          &
                            grid%rqvblten,grid%rqcblten,grid%rqiblten,       &
+                           grid%rqniblten,                                  & !CAMUWPBL scheme
                            grid%rqvcuten,grid%rqccuten,grid%rqrcuten,       &
                            grid%rqicuten,grid%rqscuten,                     &
+                           grid%rqcncuten,grid%rqincuten,                   & !BSINGH - Added two CU tends
                            grid%rqvshten,grid%rqcshten,grid%rqrshten,       &
                            grid%rqishten,grid%rqsshten,grid%rqgshten,       &
+                           grid%rqcnshten,grid%rqinshten,                   &!BSINGH - Added two SHCU tends
                            grid%RUNDGDTEN,                                  &
                            grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RPHNDGDTEN,  &
                            grid%RQVNDGDTEN,grid%RMUNDGDTEN,                 &

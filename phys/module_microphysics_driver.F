@@ -14,7 +14,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,chem_opt, progn                                   &
                       ,cldfra, cldfra_old, exch_h, nsource               &
                       ,qlsink, precr, preci, precs, precg                &
-                      ,xland,itimestep                                   &
+                      ,xland,snowh,itimestep                             &
                       ,f_ice_phy,f_rain_phy,f_rimef_phy                  &
                       ,lowlyr,sr, id                                     &
                       ,ids,ide, jds,jde, kds,kde                         &
@@ -22,6 +22,21 @@ SUBROUTINE microphysics_driver(                                          &
                       ,ips,ipe, jps,jpe, kps,kpe                         &
                       ,i_start,i_end,j_start,j_end,kts,kte               &
                       ,num_tiles, naer                                   &
+!======================
+                      !Variables required for CAMMGMP Scheme
+                      ,dlf,dlf2,t_phy,p_hyd,p8w_hyd,tke_pbl8w,z_at_w,qfx &
+                      ,rliq,turbtype3d,smaw3d,wsedl3d,cldfra_old_mp      &
+                      ,cldfra_mp,cldfra_mp_all,cldfrai,cldfral,cldfra_conv&
+                      ,alt       &
+                      ,exch_h8w,accum_mode,aitken_mode,coarse_mode       &
+                      ,icwmrsh3d,icwmrdp3d,shfrc3d,cmfmc3d,cmfmc2_3d     &
+                      ,config_flags,fnm,fnp,rh_old_mp,lcd_old_mp         &
+#ifdef WRF_CHEM
+                      ,chem                                              &! For CAMMGMP scheme Prognostic aerosols
+                      ,qme3d,prain3d,nevapr3d,rate1ord_cw2pr_st3d        &
+                      ,dgnum4D,dgnumwet4D                                &
+#endif
+!======================                                   
                       ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr   &
                       ,qndrop_curr,qni_curr,qh_curr,qnh_curr             &
                       ,qzr_curr,qzi_curr,qzs_curr,qzg_curr,qzh_curr      &
@@ -64,12 +79,17 @@ SUBROUTINE microphysics_driver(                                          &
                     ,WSM6SCHEME, ETAMPNEW, ETAMPOLD, THOMPSON, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN  &
                     ,NSSL_1MOM,NSSL_1MOMLFO & ! ,NSSL_3MOM       &
-                    ,MILBRANDT2MOM !,MILBRANDT3MOM
+                    ,MILBRANDT2MOM , CAMMGMPSCHEME  !,MILBRANDT3MOM
 #endif
 
 ! Model Layer
    USE module_model_constants
    USE module_wrf_error
+   USE module_configure, only: grid_config_rec_type
+#ifdef WRF_CHEM   
+   USE module_state_description, only: num_chem                 ! For CAMMGMP scheme Prognostic aerosols
+   USE modal_aero_data, only:  ntot_amode_cam_mam => ntot_amode ! For CAMMGMP scheme Prognostic aerosols
+#endif
 
 ! *** add new modules of schemes here
 
@@ -87,6 +107,9 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_wdm5
    USE module_mp_wdm6
    USE module_mp_milbrandt2mom
+# if (EM_CORE == 1)
+   USE module_mp_cammgmp_driver, ONLY: CAMMGMP ! CAM5's microphysics driver
+# endif
 !  USE module_mp_milbrandt3mom
 #if (EM_CORE==1)
    USE module_mp_nssl_2mom
@@ -204,6 +227,7 @@ SUBROUTINE microphysics_driver(                                          &
 !-- t8w           temperature at layer interfaces
 !-- cldfra, cldfra_old, current, previous cloud fraction
 !-- exch_h        vertical diffusivity (m2/s)
+!-- exch_h8w      vertical diffusivity at interfaces(m2/s)
 !-- qlsink        Fractional cloud water sink (/s)
 !-- precr         rain precipitation rate at all levels (kg/m2/s)
 !-- preci         ice precipitation rate at all levels (kg/m2/s)
@@ -255,7 +279,7 @@ SUBROUTINE microphysics_driver(                                          &
 !-- diagflag      Logical to tell us when to produce diagnostics for history or restart
 !
 !======================================================================
-
+   TYPE(grid_config_rec_type),  INTENT(IN   ) , OPTIONAL   :: config_flags
    INTEGER,    INTENT(IN   )    :: mp_physics
    LOGICAL,    INTENT(IN   )    :: specified
    INTEGER, OPTIONAL, INTENT(IN   )    :: chem_opt, progn
@@ -283,7 +307,74 @@ SUBROUTINE microphysics_driver(                                          &
                                                                  p8w, &
                                                               pi_phy, &
                                                                    p
+!=================
+!Data for CAMMGMP scheme
+   REAL,INTENT(IN), OPTIONAL ::accum_mode,aitken_mode,coarse_mode  
+!1D variables required for CAMMGMP scheme
+   REAL , DIMENSION( kms:kme ) ,                                      &
+        INTENT(IN   ) , OPTIONAL ::                                        fnm,  & !Factors for interpolation at "w" grid (interfaces)
+                                                                fnp     
+!2D variables required for CAMMGMP scheme
+   REAL, DIMENSION( ims:ime, jms:jme ),                               &
+        INTENT(IN), OPTIONAL ::                                                 &
+                                                                 qfx, &    !Moisture flux at surface (kg m-2 s-1)
+                                                                 rliq      !Vertically-integrated reserved cloud condensate(m/s)
+ 
+ !3D variables required for CAMMGMP scheme
+ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
+      INTENT(IN), OPTIONAL ::                                                   &
+                                                                 dlf, &    !Detraining cloud water tendendcy
+                                                                dlf2, &    !dq/dt due to export of cloud water into environment by shallow convection(kg/kg/s)
+                                                               t_phy, &    !Temprature at the mid points (K)
+                                                               p_hyd, &    !Hydrostatic pressure(Pa)
+                                                             p8w_hyd, &    !Hydrostatic Pressure at level interface (Pa)
+                                                              z_at_w, &    !Height above sea level at layer interfaces (m) 
+                                                           tke_pbl8w, &    !Turbulence kinetic energy
+                                                          turbtype3d, &    !Turbulent interface types [ no unit ]
+                                                              smaw3d, &    !Normalized Galperin instability function for momentum  ( 0<= <=4.964 and 1 at neutral ) [no units]
+                                                                 alt, &    !inverse density(m3/kg)
+                                                           icwmrsh3d, &    !Shallow cumulus in-cloud water mixing ratio (kg/m2)
+                                                           icwmrdp3d, &    !Deep Convection in-cloud water mixing ratio (kg/m2)
+                                                             shfrc3d, &    !Shallow cloud fraction
+                                                             cmfmc3d, &    !Deep + Shallow Convective mass flux [ kg /s/m^2 ]
+                                                           cmfmc2_3d       !Shallow convective mass flux [ kg/s/m^2 ]
+#ifdef WRF_CHEM
+!4D variables required for CAMMGMP scheme
+ REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme,ntot_amode_cam_mam ),     &
+        INTENT(IN) ::                                                 &
+                                                             dgnum4D, &
+                                                          dgnumwet4D 
+#endif
+!In-outs
+ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
+      INTENT(INOUT) , OPTIONAL ::                                                &
+                                                       cldfra_old_mp, &    !Old Cloud fraction for CAMMGMP microphysics only
+                                                           rh_old_mp, &    !Old RH
+                                                          lcd_old_mp       !Old liquid cloud fraction
+!In-outs -optional
+#ifdef WRF_CHEM
+ REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem),     &
+      INTENT(INOUT) ::                                                &
+                                                                 chem      !Chem array for CAMMGMP scheme Prognostic aerosols      
+#endif
+!outs
+REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
+      INTENT(INOUT) , OPTIONAL::                                                 &
+                                                            wsedl3d, &        !Sedimentation velocity of stratiform liquid cloud droplet (m/s) 
+                                                          cldfra_mp, &    !Old Cloud fraction for CAMMGMP microphysics only
+                                                      cldfra_mp_all, &    !Old Cloud fraction for CAMMGMP microphysics only
+                                                            cldfrai, &    !Old Cloud fraction for CAMMGMP microphysics only
+                                                            cldfral, &       !Old Cloud fraction for CAMMGMP microphysics only
+                                                        cldfra_conv 
 
+#ifdef WRF_CHEM
+REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
+      INTENT(INOUT), OPTIONAL ::                                                 &
+                                                              qme3d, &     !Net condensation rate (kg/kg/s)
+                                                            prain3d, &     !Rate of conversion of condensate to precipitation (kg/kg/s)
+                                                           nevapr3d, &     !Evaporation rate of rain + snow (kg/kg/s)
+                                                rate1ord_cw2pr_st3d        !1st order rate for direct conversion of strat. cloud water to precip (1/s)
+#endif
 
    REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme ) ::     &
                                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
@@ -302,6 +393,7 @@ SUBROUTINE microphysics_driver(                                          &
 !
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN)   :: XLAND
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN), OPTIONAL   :: SNOWH
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(OUT)   :: SR
 
@@ -320,7 +412,7 @@ SUBROUTINE microphysics_driver(                                          &
          OPTIONAL,                                                &
          INTENT(INOUT ) ::                                        &
                   w, z, t8w                                       &
-                 ,cldfra, cldfra_old, exch_h                      &
+                 ,cldfra, cldfra_old, exch_h,exch_h8w             &
                  ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr &
                  ,qt_curr,qndrop_curr,qni_curr,qh_curr,qnh_curr   &
                  ,qns_curr,qnr_curr,qng_curr,qnn_curr,qnc_curr    &
@@ -383,6 +475,7 @@ SUBROUTINE microphysics_driver(                                          &
 
    INTEGER :: i,j,k,its,ite,jts,jte,ij,sz,n
    LOGICAL :: channel
+   REAL    :: z0, z1, z2, w1, w2
 
 !---------------------------------------------------------------------
 !  check for microphysics type.  We need a clean way to
@@ -482,6 +575,45 @@ SUBROUTINE microphysics_driver(                                          &
              call wrf_error_fatal("SETTINGS ERROR: Prognostic cloud droplet number can only be used with the mp_physics=LINSCHEME or MORRISON.")
        END IF
        END IF
+
+       !BSINGH - Make sure that EXCH_H8W and EXCH_H match for cases where
+       ! CAMMGMPSCHEME is not selected
+#if(EM_CORE==1)
+       if(mp_physics .NE. CAMMGMPSCHEME) then
+          !Interpolate EXCH_H to populate EXCH8W
+          !Following formulation is adapted from module_chem_utilities.F
+          do j = j_start(ij),j_end(ij)
+             do k = 2, kte
+                do i = i_start(ij), i_end(ij)
+                   exch_h8w(i,k,j) = fnm(k)*exch_h(i,k,j)+fnp(k)*exch_h(i,k-1,j)
+                enddo
+             enddo
+          enddo
+          !Extrapolate exch_h8w to surface and top.
+          !We'll use an extrapolation in z for now
+          
+          do j = j_start(ij),j_end(ij)
+             do i = i_start(ij), i_end(ij)
+                !Bottom
+                z0 = z_at_w(i,1,j)
+                z1 = z(i,1,j)
+                z2 = z(i,2,j)
+                w1 = (z0 - z2)/(z1 - z2)
+                w2 = 1. - w1
+                exch_h8w(i,1,j) = w1*exch_h(i,1,j)+w2*exch_h(i,2,j)
+                !Top
+                z0 = z_at_w(i,kte,j)
+                z1 = z(i,kte,j)
+                z2 = z(i,kte-1,j)
+                w1 = (z0 - z2)/(z1 - z2)
+                w2 = 1. - w1
+                
+                exch_h8w(i,kde,j) = w1*exch_h(i,kde-1,j)+w2*exch_h(i,kde-2,j)
+                
+             enddo
+          enddo
+       endif
+# endif       
 
      micro_select: SELECT CASE(mp_physics)
 
@@ -1312,6 +1444,59 @@ SUBROUTINE microphysics_driver(                                          &
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling etampnew' )
              ENDIF
+#if(EM_CORE==1)
+          CASE (CAMMGMPSCHEME)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling CAMMGMPSCHEME')
+             IF ( PRESENT( z          ) .AND. PRESENT( ht          ) .AND. &
+                  PRESENT( exch_h8w   ) .AND. PRESENT( qs_curr     ) .AND. &
+                  PRESENT( qv_curr    ) .AND. PRESENT( qc_curr     ) .AND. &
+                  PRESENT( qi_curr    ) .AND. PRESENT( f_qc        ) .AND. &
+                  PRESENT( qr_curr    ) .AND. PRESENT( qndrop_curr ) .AND. &                  
+                  PRESENT( f_qi       ) .AND. PRESENT( qnc_curr    ) .AND. &
+                  PRESENT( RAINNCV    ) .AND. PRESENT( SNOWNCV     ) .AND. &
+                  PRESENT( qns_curr   ) .AND. PRESENT( qnr_curr    ) .AND. &
+#ifdef WRF_CHEM
+                  PRESENT( chem       ) .AND. PRESENT(dgnum4D      )  .AND. &
+                  PRESENT( dgnumwet4D ) .AND.                           &
+#endif
+                  PRESENT( qni_curr   ) .AND. PRESENT( RAINNC      ) ) THEN
+                  
+                CALL CAMMGMP(ITIMESTEP=itimestep,DT=dt,P8W=p8w_hyd,P_HYD=p_hyd    &
+                     ,T_PHY=t_phy,PI_PHY=pi_phy,Z_AT_W=z_at_w,QFX=qfx             &
+                     ,TKE_PBL8W=tke_pbl8w,TURBTYPE3D=turbtype3d,SMAW3D=smaw3d     &
+                     ,DLF3D=dlf,DLF2_3D=dlf2,RLIQ2D=rliq,Z_SEA_LEVEL=z            &
+                     ,KVH3D=exch_h8w,HT=ht,ALT=alt,ACCUM_MODE=accum_mode          &
+                     ,AITKEN_MODE=aitken_mode,COARSE_MODE=coarse_mode             &
+                     ,ICWMRSH3D=icwmrsh3d,ICWMRDP3D=icwmrdp3d,SHFRC3D=shfrc3d     &
+                     ,CMFMC3D=cmfmc3d,CMFMC2_3D=cmfmc2_3d                         &
+                     ,CONFIG_FLAGS=config_flags,F_ICE_PHY=f_ice_phy               &
+                     ,F_RAIN_PHY=f_rain_phy                                       &
+#ifdef WRF_CHEM
+                     ,DGNUM4D=dgnum4D,DGNUMWET4D=dgnumwet4D                       &
+#endif
+                     ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde           &
+                     ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme           &
+                     ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte           &
+!Output variables from CAMMGMP
+                     ,TH=th,CLDFRA_OLD_MP=cldfra_old_mp,CLDFRA_MP=cldfra_mp       &
+                     ,CLDFRA_MP_ALL=cldfra_mp_all,CLDFRAI=cldfrai,CLDFRAL=cldfral &
+                     ,CLDFRA_CONV=cldfra_conv,WSEDL3D=wsedl3d           &
+                     ,RAINNC=rainnc,RAINNCV=rainncv,SNOWNC=snownc,SNOWNCV=snowncv &
+                     ,SR=sr,QV_CURR=qv_curr,QC_CURR=qc_curr,QI_CURR=qi_curr       &
+                     ,QS_CURR=qs_curr,QR_CURR=qr_curr,NC3D=qnc_curr               &
+                     ,NI3D=qni_curr,NS3D=qns_curr,NR3D=qnr_curr,QNDROP=qndrop_curr&
+                     ,RH_OLD_MP=rh_old_mp,LCD_OLD_MP=lcd_old_mp                   &
+#ifdef WRF_CHEM
+                     ,CHEM=chem                                                   &
+                     ,QME3D=qme3d,PRAIN3D=prain3d,NEVAPR3D=nevapr3d               &
+                     ,RATE1ORD_CW2PR_ST3D=rate1ord_cw2pr_st3d                     &
+#endif
+                     ,XLAND=XLAND,SNOWH=SNOWH                                     &
+                     )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling CAMMGMP SCHEME' )
+             ENDIF
+#endif
 
         CASE (ETAMPOLD)   !-- What was run in the operational NAM (WRF NMM)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling etampold')

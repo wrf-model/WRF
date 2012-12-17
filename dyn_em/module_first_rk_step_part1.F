@@ -208,6 +208,9 @@ BENCH_END(init_zero_tend_tim)
                         grid%rthften,  grid%rqvften,                     &
                         grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN, &
                         grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,&
+!jdf
+                        grid%landmask,grid%xland,                 &
+!jdf
                         ids, ide, jds, jde, kds, kde,                    &
                         ims, ime, jms, jme, kms, kme,                    &
                         grid%i_start(ij), grid%i_end(ij),                &
@@ -309,7 +312,8 @@ BENCH_START(rad_driver_tim)
      &        , SSWDN=grid%sswdn, SSWUP=grid%sswup                        & ! goddard schemes
 !JJS 20101020 ^^^^^
 
-     &        , CLDFRA=grid%cldfra                                        &
+     &        , CLDFRA=grid%cldfra, CLDFRA_MP_ALL=grid%cldfra_mp_all      &
+     &        , mp_physics = config_flags%mp_physics                      &
      &        , PB=grid%pb                                                &
      &        , F_ICE_PHY=grid%f_ice_phy,F_RAIN_PHY=grid%f_rain_phy       &
      &        , QV=moist(ims,kms,jms,P_QV), F_QV=F_QV                     &
@@ -766,12 +770,20 @@ BENCH_START(pbl_driver_tim)
      &        ,phb=grid%phb                                               &
      &        ,XLAT_U=grid%xlat_u,XLONG_U=grid%xlong_u                    &
 !Variables required for camuwpbl scheme
-     &        ,Z_AT_W=grid%z_at_w,CLDFRA=grid%cldfra                      &
+     &        ,Z_AT_W=grid%z_at_w,CLDFRA_OLD_MP=grid%cldfra_old_mp        &
+     &        ,CLDFRA=grid%cldfra,mp_physics=config_flags%mp_physics      &
      &        ,RTHRATENLW=grid%rthratenlw,TAURESX2D=grid%tauresx2d        &
      &        ,TAURESY2D=grid%tauresy2d                                   &
      &        ,TPERT2D=grid%tpert2d,QPERT2D=grid%qpert2d                  &
-     &        ,WPERT2D=grid%wpert2d                                       &
-     &        ,XLAT_V=grid%xlat_v,XLONG_V=grid%xlong_v                    &
+     &        ,WPERT2D=grid%wpert2d,WSEDL3D=grid%wsedl3d                  &
+     &        ,TURBTYPE3D=grid%turbtype3d,SMAW3D=grid%smaw3d              &
+     &        ,TKE_PBL8W=grid%tke_pbl8w,EXCH_H8W=grid%exch_h8w            &
+     &        ,EXCH_M8W=grid%exch_m8w                                     &
+     &        ,QNC_CURR=scalar(ims,kms,jms,P_QNC), F_QNC=f_qnc            &
+     &        ,QNI_CURR=scalar(ims,kms,jms,P_QNI), F_QNI=f_qni            &
+     &        ,RQNIBLTEN=grid%rqniblten                                   &
+     &        ,XLAT_V=grid%xlat_v,XLONG_V=grid%xlong_v,FNM=grid%fnm       &
+     &        ,FNP=grid%fnp                                               &
 ! for grims shallow convection with ysupbl
      &        ,WSCALEK=grid%wscale_ysu,DELTA=grid%delta_ysu               &
      &        )
@@ -846,13 +858,17 @@ BENCH_START(cu_driver_tim)
      &             ,MAXENS2=config_flags%maxens2 ,MAXENS3=config_flags%maxens3       &
      &             ,CU_ACT_FLAG=cu_act_flag   ,WARM_RAIN=grid%warm_rain   &
      &             ,HFX=grid%hfx, QFX=grid%qfx                            &
-     &             ,CLDFRA=grid%cldfra, TPERT2D=grid%tpert2d              &
+     &             ,CLDFRA=grid%cldfra,CLDFRA_MP_ALL=grid%cldfra_mp_all  &
+     &             ,TPERT2D=grid%tpert2d                                 &
      &             ,GSW=grid%gsw,cugd_avedx=config_flags%cugd_avedx       &
      &             ,k22_shallow=grid%k22_shallow,kbcon_shallow=grid%kbcon_shallow &
      &             ,ktop_shallow=grid%ktop_shallow,xmb_shallow=grid%xmb_shallow   &
      &             ,PERIODIC_X=(config_flags%polar .OR. config_flags%periodic_x)  &
      &             ,PERIODIC_Y=config_flags%periodic_y                    &
+     &             ,TKE_PBL8W=grid%tke_pbl8w                              & !BSINGH - TKE at the interfaces for Zhang-McFarlane Scheme 
                  ! Zhang-McFarlane outputs
+     &             ,EVAPCDP3D=grid%evapcdp3d, ICWMRDP3D=grid%icwmrdp3d    & !Balwinder.Singh@pnnl.gov: For CAM's wetscavenging
+     &             ,RPRDDP3D=grid%rprddp3d                                & 
      &             ,CAPE=grid%cape ,ZMMU=grid%zmmu ,ZMMD=grid%zmmd        &
      &             ,ZMDT=grid%zmdt ,ZMDQ=grid%zmdq                        &
      &             ,DLF=grid%dlf, RLIQ=grid%rliq                          &
@@ -886,7 +902,8 @@ BENCH_START(cu_driver_tim)
                  ! Moisture tendency arguments
      &             ,RQVCUTEN=grid%rqvcuten , RQCCUTEN=grid%rqccuten       &
      &             ,RQSCUTEN=grid%rqscuten , RQICUTEN=grid%rqicuten       &
-     &             ,RQRCUTEN=grid%rqrcuten                                &
+     &             ,RQRCUTEN=grid%rqrcuten , RQCNCUTEN=grid%rqcncuten     &
+     &             ,RQINCUTEN=grid%rqincuten                              &
      &             ,RQVBLTEN=grid%rqvblten , RQVFTEN=grid%rqvften         &
                  ! Other tendency arguments
      &             ,RTHRATEN=grid%rthraten , RTHBLTEN=grid%rthblten       &
@@ -955,6 +972,9 @@ BENCH_START(shcu_driver_tim)
      &             ,MAVAIL=grid%mavail, PBLH=grid%pblh, P8W=grid%p_hyd_w  &
      &             ,TKE_PBL=grid%tke_pbl                                  &
      &             ,CLDFRA=grid%cldfra, CLDFRA_OLD=grid%cldfra_old        &
+     &             ,CLDFRA_OLD_MP=grid%cldfra_old_mp                      &
+     &             ,CLDFRA_CONV=grid%cldfra_conv                          &
+     &             ,mp_physics=config_flags%mp_physics                    &
      &             ,CLDFRASH=grid%cldfrash, HTOP=grid%htop, HBOT=grid%hbot&
      &             ,SHCU_PHYSICS=grid%shcu_physics                        &
      &             ,QV_CURR=moist(ims,kms,jms,P_QV)                       &
@@ -964,6 +984,7 @@ BENCH_START(shcu_driver_tim)
      &             ,QS_CURR=moist(ims,kms,jms,P_QS)                       &
      &             ,QG_CURR=moist(ims,kms,jms,P_QG)                       &
      &             ,DLF=grid%dlf, RLIQ=grid%rliq, RLIQ2=grid%rliq2        &
+     &             ,DLF2=grid%dlf2                                        & ! Required for CAMMGMP microphysics scheme
      &             ,CMFMC=grid%cmfmc, CMFMC2=grid%cmfmc2                  &
      &             ,CUSH=grid%cush, SNOWSH=grid%snowsh                    &
      &             ,ICWMRSH=grid%icwmrsh, RPRDSH=grid%rprdsh              &
@@ -972,6 +993,7 @@ BENCH_START(shcu_driver_tim)
      &             ,RQVSHTEN=grid%rqvshten, RQCSHTEN=grid%rqcshten        &
      &             ,RQRSHTEN=grid%rqrshten, RQISHTEN=grid%rqishten        &
      &             ,RQSSHTEN=grid%rqsshten, RQGSHTEN=grid%rqgshten        &
+     &             ,RQCNSHTEN=grid%rqcnshten, RQINSHTEN=grid%rqinshten    &  
      &             ,RQVBLTEN=grid%rqvblten, RQVFTEN=grid%rqvften          &
      &             ,RUSHTEN=grid%rushten, RVSHTEN=grid%rvshten            &
      &             ,RTHSHTEN=grid%rthshten, RTHRATEN=grid%rthraten        &
@@ -979,7 +1001,8 @@ BENCH_START(shcu_driver_tim)
      &             ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                         &
      &             ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                         &
      &             ,HT=grid%ht                                            &
-! for grims shallow convection with ysupbl
+     &             ,SHFRC3D=grid%shfrc3d                                  & !Balwinder.Singh@pnnl.gov: For CAM's wetscavenging
+     &             ,TKE_PBL8W=grid%tke_pbl8w                              & !BSINGH - TKE at the interfaces for UWSHCU Scheme 
      &             ,WSCALEK=grid%wscale_ysu,DELTA=grid%delta_ysu          &
      &             ,KPBL=grid%kpbl,ZNU=grid%znu                           &
      &             ,RAINCV=grid%raincv                                    &

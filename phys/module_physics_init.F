@@ -14,6 +14,9 @@ MODULE module_physics_init
    USE module_model_constants
    USE module_configure, ONLY : grid_config_rec_type
 !  USE module_ssib_veg , ONLY : init_module_ssib_veg !fds (SSiB constants)
+   !Local data for CAM's MG MP scheme
+   integer  :: ixcldliq, ixcldice, ixnumliq, ixnumice
+   LOGICAL  :: CAM_INITIALIZED = .FALSE.
 
 CONTAINS
 
@@ -123,8 +126,12 @@ CONTAINS
                          nssl_cnoh, nssl_cnohl,                  &
                          nssl_cnor, nssl_cnos,                   &
                          nssl_rho_qh, nssl_rho_qhl,              &
-                         nssl_rho_qs                             &
+                         nssl_rho_qs,                             &
    ! OPTIONAL 
+!mchen # if (EM_CORE == 1 )
+                         RQCNCUTEN, RQINCUTEN,                   &
+                         rliq                    &
+!mchen # endif
                          ,te_temf          & ! WA 12/21/09
                          ,cf3d_temf        & ! WA 9/27/10
                          ,wm_temf          & ! WA 2/22/11
@@ -202,6 +209,7 @@ CONTAINS
                                                          XICEM, &
                                                         VEGFRA, &
                                                         ACSNOM
+   REAL,    DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT) ::   rliq    
 
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             OPTIONAL, INTENT(INOUT)    ::                ACHFX, &
@@ -214,10 +222,10 @@ CONTAINS
 
 ! rad
 
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &!BSINGH(PNNL)- should be declared inout
              RTHRATEN, RTHRATENLW, RTHRATENSW, CLDFRA
 
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) :: &
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) :: &!BSINGH(PNNL)- should be declared inout
              CLDFRA_OLD
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::         &
@@ -232,11 +240,12 @@ CONTAINS
 
 ! cps
 
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) :: &
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: & !BSINGH(PNNL)- should be declared inout
              RUCUTEN, RVCUTEN, RTHCUTEN, RQVCUTEN, RQRCUTEN, RQCCUTEN, &
              RQSCUTEN, RQICUTEN,                                       &
              RUSHTEN, RVSHTEN, RTHSHTEN, RQVSHTEN, RQRSHTEN, RQCSHTEN, &
              RQSSHTEN, RQISHTEN, RQGSHTEN
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: RQCNCUTEN, RQINCUTEN 
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) :: W0AVG
 
@@ -244,7 +253,7 @@ CONTAINS
                       APR_GR,APR_W,APR_MC,APR_ST,APR_AS,          &
                       APR_CAPMA,APR_CAPME,APR_CAPMI
 
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    & !BSINGH(PNNL)- should be declared inout
              RTHFTEN, RQVFTEN
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) ::           &
@@ -262,7 +271,7 @@ CONTAINS
 
    REAL,     DIMENSION(1:num_soil_layers),      INTENT(INOUT) :: ZS,DZS
 
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
+  REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    & !BSINGH(PNNL)- should be declared inout
              RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,EXCH_H,TKE_PBL
 
   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT), OPTIONAL :: &
@@ -348,9 +357,9 @@ CONTAINS
 !fdda
    REAL,     OPTIONAL, INTENT(IN) :: FGDT
    INTEGER , OPTIONAL, INTENT(OUT) :: STEPFG
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &!BSINGH(PNNL)- should be declared inout
              RUNDGDTEN, RVNDGDTEN, RTHNDGDTEN, RPHNDGDTEN, RQVNDGDTEN
-   REAL,     DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(OUT) ::    &
+   REAL,     DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
              RMUNDGDTEN
 
 !URBAN
@@ -529,7 +538,11 @@ integer myproc
 
   IF(.not.restart)THEN
 !-- initialize common variables
-
+     !BSINGH - When all the CAM parameterizations are not executed in WRF,
+     !rliq can have undefined behaviour
+     IF(PRESENT(rliq)) THEN
+     rliq(:,:) = 0.0 
+     ENDIF
    IF ( .NOT. moved ) THEN
    DO j=jts,jtf
    DO i=its,itf
@@ -651,6 +664,20 @@ integer myproc
                 allowed_to_read,                                  &
                 kds,kde,kms,kme,kts,kte)
 
+! CAM parameterizations specific initializations [Currently incorporates initializations for CAMZM, CAMUWPBL, CAMUWSHCU and CAMMGMP parameterizations]
+   if(       config_flags%bl_pbl_physics == CAMUWPBLSCHEME     .OR. config_flags%cu_physics == CAMZMSCHEME      &
+        .OR. config_flags%shcu_physics   == CAMUWSHCUSCHEME                                                     & 
+# if (EM_CORE == 1)
+        .OR. config_flags%mp_physics == CAMMGMPSCHEME                                                           &
+# endif
+#ifdef WRF_CHEM
+        !For WRF_CHEM simulations, first five constituents are added in CAM_INIT and rest are added in the MODULE_CAM_MAM_INIT in chem/
+        .OR. config_flags%chem_opt       == CBMZ_CAM_MAM3_NOAQ .OR. config_flags%chem_opt   == CBMZ_CAM_MAM3_AQ &
+        .OR. config_flags%chem_opt       == CBMZ_CAM_MAM7_NOAQ .OR. config_flags%chem_opt   == CBMZ_CAM_MAM7_AQ &
+#endif
+      ) THEN
+      CALL CAM_INIT(ixcldliq, ixcldice, ixnumliq, ixnumice, config_flags)
+   ENDIF
 !-- initialize physics
 !-- ra: radiation
 !-- bl: pbl
@@ -753,7 +780,10 @@ integer myproc
                 allowed_to_read, start_of_simulation,           &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
-                its, ite, jts, jte, kts, kte                    )
+                its, ite, jts, jte, kts, kte,                   &
+!mchen #if ( EM_CORE == 1 )
+                RQCNCUTEN,RQINCUTEN                            ) 
+!mchen #endif
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to shcu_init' )
 
@@ -774,6 +804,8 @@ integer myproc
                 F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,               &
                 mp_restart_state,tbpvs_state,tbpvs0_state,      &
                 allowed_to_read, start_of_simulation,           &
+!CAMMGMP specific variables
+                ixcldliq, ixcldice, ixnumliq, ixnumice,         &
                 nssl_cccn, nssl_alphah, nssl_alphahl,           &
                          nssl_cnoh, nssl_cnohl,                  &
                          nssl_cnor, nssl_cnos,                   &
@@ -1206,13 +1238,13 @@ integer myproc
    INTEGER :: isn
 
    REAL , DIMENSION( kms:kme ) , INTENT(IN) :: sfull, shalf
-   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::           &
+   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::           &!BSINGH(PNNL)- should be declared inout
                                                            RTHRATEN, &
                                                          RTHRATENLW, &
                                                          RTHRATENSW, &
                                                              CLDFRA
 
-   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(OUT) :: &
+   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) :: &!BSINGH(PNNL)- should be declared inout
                                                          CLDFRA_OLD
 
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: EMISS
@@ -1615,7 +1647,7 @@ integer myproc
 
    REAL,     DIMENSION(1:num_soil_layers), INTENT(INOUT)  ::  ZS,DZS
 
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::       &!BSINGH(PNNL)- should be declared inout
                                                            RUBLTEN, &
                                                            RVBLTEN, &
                                                           EXCH_H,   &
@@ -2175,9 +2207,9 @@ integer myproc
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
             ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            CALL camuwpblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
-                restart,TKE_PBL,config_flags%grid_id,           &
-                ids, ide, jds, jde, kds, kde,         &
-                ims, ime, jms, jme, kms, kme,         &
+                restart,TKE_PBL,                                &
+                ids, ide, jds, jde, kds, kde,                   &
+                ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte          )
 #endif
 
@@ -2264,7 +2296,10 @@ integer myproc
                       allowed_to_read, start_of_simulation,        &
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
-                      its, ite, jts, jte, kts, kte                 )
+                      its, ite, jts, jte, kts, kte,                &
+!mchen #if ( EM_CORE == 1 )
+                      RQCNCUTEN,RQINCUTEN                          )                        
+!mchen #endif
 !------------------------------------------------------------------
    USE module_cu_kf
    USE module_cu_kfeta
@@ -2297,11 +2332,11 @@ integer myproc
             RQVCUTEN, RQCCUTEN, RQRCUTEN, RQICUTEN, RQSCUTEN
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
                         cugd_tten,cugd_ttens,cugd_qvten,            &
-                        cugd_qvtens,cugd_qcten
+                        cugd_qvtens,cugd_qcten, RQCNCUTEN, RQINCUTEN
 
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) :: W0AVG
 
-   REAL,    DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
+   REAL,    DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &!BSINGH(PNNL)- should be declared inout
             RTHFTEN, RQVFTEN
 
    REAL ,   DIMENSION( ims:ime , jms:jme ), INTENT(OUT):: RAINC, RAINCV
@@ -2424,13 +2459,17 @@ integer myproc
                       its, ite, jts, jte, kts, kte                )
 
      CASE (CAMZMSCHEME)
+          IF (PRESENT(RQCNCUTEN)) THEN
           CALL zm_conv_init(rucuten, rvcuten, rthcuten, rqvcuten,       &
-                      rqccuten, rqicuten,                               &
-                      p_qc, p_qi, param_first_scalar,                   &
+                      rqccuten, rqicuten, rqcncuten, rqincuten,         &
+                      p_qc, p_qi, p_qnc, p_qni, param_first_scalar,     &
                       restart,                                          &
                       ids, ide, jds, jde, kds, kde,                     &
                       ims, ime, jms, jme, kms, kme,                     &
                       its, ite, jts, jte, kts, kte                      )
+          ELSE
+          CALL wrf_error_fatal ( 'arguments not present for calling camzmscheme' )
+          ENDIF
 
 ! Tiedtke Scheme - ZCX&YQW
       CASE (TIEDTKESCHEME)
@@ -2526,7 +2565,6 @@ integer myproc
            rqcshten, rqrshten, rqishten, rqsshten, rqgshten,         &
            p_qc, p_qr, p_qi, p_qs, p_qg,                             &
            config_flags%bl_pbl_physics, param_first_scalar, restart, &
-           config_flags%grid_id,                                     &
            ids, ide, jds, jde, kds, kde,                             &
            ims, ime, jms, jme, kms, kme,                             &
            its, ite, jts, jte, kts, kte                              )
@@ -2551,6 +2589,8 @@ integer myproc
                       F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,           & ! for eta mp
                       mp_restart_state,tbpvs_state,tbpvs0_state,   & ! eta mp
                       allowed_to_read, start_of_simulation,       &
+!CAMMGMP specific variables
+                      ixcldliq, ixcldice, ixnumliq, ixnumice,     &       
                       nssl_cccn, nssl_alphah, nssl_alphahl,       &
                          nssl_cnoh, nssl_cnohl,                  &
                          nssl_cnor, nssl_cnos,                   &
@@ -2576,6 +2616,7 @@ integer myproc
    USE module_mp_wdm6
 #if (EM_CORE==1)
    USE module_mp_nssl_2mom
+   USE module_mp_cammgmp_driver, ONLY:CAMMGMP_INIT !CAM5's microphysics
 #endif
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -2592,6 +2633,7 @@ integer myproc
                                   nssl_rho_qs
 
    LOGICAL , INTENT(IN)        :: start_of_simulation
+   INTEGER , INTENT(IN)        :: ixcldliq, ixcldice, ixnumliq, ixnumice ! CAMMGMP specific variables
 
    INTEGER , INTENT(IN)        :: ids, ide, jds, jde, kds, kde,   &
                                   ims, ime, jms, jme, kms, kme,   &
@@ -2690,6 +2732,12 @@ integer myproc
          CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=5,mixphase=0,ihvol=0)
 !     CASE (NSSL_3MOM)
 !         CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=8,mixphase=0,ihvol=1)
+     CASE (CAMMGMPSCHEME) ! CAM5's microphysics
+          CALL CAMMGMP_INIT(ixcldliq, ixcldice, ixnumliq, ixnumice &
+             ,config_flags%chem_opt                          &
+             ,ids, ide, jds, jde, kds, kde                   & 
+             ,ims, ime, jms, jme, kms, kme                   &
+             ,its, ite, jts, jte, kts, kte                   )
 #endif
      CASE (ETAMPOLD)
          adv_moist_cond = .false.
@@ -2700,6 +2748,7 @@ integer myproc
                           ids, ide, jds, jde, kds, kde,           &
                           ims, ime, jms, jme, kms, kme,           &
                           its, ite, jts, jte, kts, kte            )
+
 
      CASE DEFAULT
 
@@ -2734,13 +2783,13 @@ integer myproc
    REAL ,    INTENT(IN)        ::     DT, FGDT
    INTEGER , INTENT(IN)        ::     id
    INTEGER , INTENT(INOUT)     ::     STEPFG
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::       &!BSINGH(PNNL)- should be declared inout
                                                            RUNDGDTEN, &
                                                            RVNDGDTEN, &
                                                           RTHNDGDTEN, &
                                                           RPHNDGDTEN, &
                                                           RQVNDGDTEN
-   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) :: RMUNDGDTEN
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: RMUNDGDTEN !BSINGH(PNNL)- should be declared inout
 
    LOGICAL,  INTENT(IN)           :: allowed_to_read
 !--------------------------------------------------------------------
@@ -3025,6 +3074,194 @@ integer myproc
    ENDIF
 
    END SUBROUTINE z2sigma
+
+!--------------------------------------------------------------------
+   SUBROUTINE CAM_INIT (ixcldliq, ixcldice, ixnumliq, ixnumice,config_flags)
+!  Purpose: To initialize a set of variables and arrays required by 
+!           the CAM Parameterizations ported to WRF
+!
+!  Called by: Phy_init
+!
+!  Author:Balwinder.Singh@pnl.gov
+!--------------------------------------------------------------------
+     USE shr_kind_mod,               ONLY : r8 => shr_kind_r8
+     USE module_cam_esinti,          ONLY : esinti
+     USE physconst,                  ONLY : mwh2o, cpwv, epsilo, latvap, latice &
+          , rh2o, cpair, tmelt,mwdry
+     USE constituents,               ONLY : cnst_add
+     USE module_cam_support,         ONLY : pcnst =>pcnst_runtime, pcnst_mp
+     USE modal_aero_initialize_data_phys, ONLY : modal_aero_initialize_phys
+     
+     implicit none
+
+     TYPE (grid_config_rec_type)              :: config_flags
+
+     integer, intent(out) :: ixcldliq, ixcldice, ixnumliq, ixnumice
+
+     !Local variables
+     !Following variable declarations are from CAM's stratiform.F90 module
+     integer, parameter  :: ncnstmax = 4                    ! Number of constituents     
+     integer             :: mm
+     character(len=8), dimension(ncnstmax), parameter :: cnst_names = & 
+          (/'CLDLIQ', 'CLDICE','NUMLIQ','NUMICE'/)         ! Constituent names
+     !Variables with dummy values
+     integer  :: dumind 
+     real(r8) :: one
+
+     !set dynamic (runtime)pcnst
+     pcnst = 5                                               !For [water vap, cld liq, cld ice, liq num and ice num]
+#if ( EM_CORE == 1 )
+     IF(config_flags%mp_physics == CAMMGMPSCHEME) pcnst = 12 !Additional storage for prescribed aerosols
+# endif
+
+     !pcnst for microphysics (pcnst_mp is different from pcnst ONLY if CAM MAM package amd CAMMGMP schemes are decoupled)
+     pcnst_mp = pcnst
+
+#ifdef WRF_CHEM
+     !If CAM MAM package is selected
+     IF(config_flags%chem_opt == CBMZ_CAM_MAM3_NOAQ .OR. config_flags%chem_opt==CBMZ_CAM_MAM3_AQ) then
+        pcnst = 74 !For 3 modes of aerosols
+     else if(config_flags%chem_opt == CBMZ_CAM_MAM7_NOAQ .OR. config_flags%chem_opt == CBMZ_CAM_MAM7_AQ) then
+        pcnst = 90 !For 7 modes of aerosols
+     endif
+     !If CAM MAM package is NOT selected then pcnst presumes its default value set above
+     !*NOTE* : the value of pcnst is 'hardwired' here as it was a quick solution. The dynamic value
+     !of pcnst is computed in module_cam_mam_init.F. In module_cam_mam_init.F, the value of PCNST set here
+     !is tested for its accuracy. If the value computed in module_cam_mam_init.F differs from value mentioned
+     !above, then the above values for pcnst should be adjusted accordingly
+
+     !CAMMGMP Scheme is supposed to run with MODAL treatment of AEROSOLS only
+! mchen #if ( EM_CORE == 1 )
+! mchen  IF(config_flags%mp_physics == CAMMGMPSCHEME)) then
+! mchen  call wrf_error_fatal('CAMMGMP (mp_physics=17) ONLY works with CAM MAM package (chem_opt =501,502,503 or 504)')
+! mchen  ENDIF
+! mchen # endif
+     IF(config_flags%chem_opt .NE. CBMZ_CAM_MAM3_NOAQ .AND. config_flags%chem_opt .NE. CBMZ_CAM_MAM3_AQ &
+          .AND. config_flags%chem_opt .NE. CBMZ_CAM_MAM7_NOAQ .AND. config_flags%chem_opt .NE. CBMZ_CAM_MAM7_AQ &
+          .AND. config_flags%chem_opt .NE. 0) THEN                                                                    
+        call wrf_error_fatal('CAMMGMP (mp_physics=17) ONLY works with CAM MAM package (chem_opt =501,502,503 or 504)')
+     ENDIF
+
+
+     !For assisting decoupled microphysics (MP) CAM MAM simulations (simulations, where MAM package is coupled with 
+     !radiation but uncoupled with MP- i.e. MP runs with 'prescribed' aerosols) 'pcnst_mp' is defined.'pcnst_mp' will
+     !only be used in the CAMMGMP driver and its supporting modules (ndrop and microp_aero)
+     pcnst_mp = pcnst
+     if(.NOT.config_flags%CAM_MP_MAM_cpled)pcnst_mp = 12
+#endif
+
+     ! Initialize the saturation vapor pressure look-up table...      
+     call esinti(epsilo, latvap, latice, rh2o, cpair, tmelt)
+     
+     IF(.NOT.CAM_INITIALIZED) THEN
+        
+        !Allocate module level CAM arrays
+        call ALLOCATE_CAM_ARRAYS()     
+        
+        !-------------------------------------------------------------------------------------!
+        !Calls to add constituents (these calls are imported from in initindx.F90 in CAM)     !
+        !                                                                                     !
+        ! Register water vapor.                                                               !
+        ! ** This must be the first call to cnst_add so that water vapor is constituent 1.**  !
+        !-------------------------------------------------------------------------------------!
+        
+        call cnst_add('Q', mwh2o, cpwv, 1.E-12_r8, mm, &
+             longname='Specific humidity', readiv=.true. )
+        
+        
+        !Following add constituent calls are imported from the stratiform.F90 in CAM
+        
+        call cnst_add(cnst_names(1), mwdry, cpair, 0._r8, ixcldliq, &
+             longname='Grid box averaged cloud liquid amount')
+        call cnst_add(cnst_names(2), mwdry, cpair, 0._r8, ixcldice, &
+             longname='Grid box averaged cloud ice amount'   )
+        call cnst_add(cnst_names(3), mwdry, cpair, 0._r8, ixnumliq, &
+             longname='Grid box averaged cloud liquid number')
+        call cnst_add(cnst_names(4), mwdry, cpair, 0._r8, ixnumice, &
+             longname='Grid box averaged cloud ice number'   )
+
+        !For prescribed aerosols
+#if ( EM_CORE == 1 )
+        IF(config_flags%mp_physics .EQ. CAMMGMPSCHEME &
+#ifdef WRF_CHEM
+             .AND.  config_flags%chem_opt .EQ. 0    &
+#endif
+             )THEN
+           one = 1.0_r8
+           call cnst_add('ACCUM_MASS', one, cpair, 0._r8, dumind, &
+                longname='Grid box averaged accumulation mode mass')
+           call cnst_add('ACCUM_NUM' , one, cpair, 0._r8, dumind, &
+                longname='Grid box averaged accumulation mode number')
+           call cnst_add('AITKEN_MASS', one, cpair, 0._r8, dumind, &
+                longname='Grid box averaged aitken mode mass')
+           call cnst_add('AITKEN_NUM' , one, cpair, 0._r8, dumind, &
+                longname='Grid box averaged aitken mode number')
+           call cnst_add('COARSE_MASS_1', one, cpair, 0._r8, dumind, &
+                longname='Grid box averaged coarse mode1 mass')
+           call cnst_add('COARSE_MASS_2', one, cpair, 0._r8, dumind, &
+                longname='Grid box averaged coarse mode2 mass')
+           call cnst_add('COARSE_NUM' , one, cpair, 0._r8, dumind, &
+                longname='Grid box averaged coarse mode number')
+           
+        ENDIF
+#endif
+        
+        CAM_INITIALIZED = .TRUE.
+     ENDIF
+     
+#if ( EM_CORE == 1 )
+     IF(config_flags%mp_physics == CAMMGMPSCHEME)THEN
+#ifndef WRF_CHEM
+        !Aerosols must be initialized after adding the constituents otherwise the code may crash in WRF-Chem simulations     
+        CALL modal_aero_initialize_phys
+#else
+        if(config_flags%chem_opt==0) then
+           CALL modal_aero_initialize_phys
+        endif
+#endif
+     ENDIF
+#endif
+   END SUBROUTINE CAM_INIT
+
+
+!--------------------------------------------------------------------
+ SUBROUTINE ALLOCATE_CAM_ARRAYS ()
+!  Purpose: To allocate module level CAM arrays for CAM modules which
+!           doesn't have an 'initialization' subroutine
+!
+!  Called by: CAM_INIT
+!
+!  Author:Balwinder.Singh@pnl.gov
+!--------------------------------------------------------------------
+   USE constituents,         ONLY : cnst_name,cnst_longname,cnst_cp,&
+        cnst_cv,cnst_mw,cnst_type,cnst_rgas,qmin,qmincg,            &
+        cnst_fixed_ubc,apcnst,bpcnst,hadvnam,vadvnam,dcconnam,      &
+        fixcnam,tendnam,ptendnam,dmetendnam,sflxnam,tottnam  
+
+   USE module_cam_support,   ONLY : pcnst =>pcnst_runtime, pcnst_mp
+
+   USE modal_aero_data,      ONLY : cnst_name_cw,species_class,     &
+        qneg3_worst_thresh_amode,cnst_name_cw_mp
+
+   implicit none
+
+   !Allocate module_cam_constituents.F arrays
+   Allocate(cnst_name(pcnst),cnst_longname(pcnst),cnst_cp(pcnst),   &
+        cnst_cv(pcnst),cnst_mw(pcnst),cnst_type(pcnst),             &
+        cnst_rgas(pcnst),qmin(pcnst),qmincg(pcnst),                 &
+        cnst_fixed_ubc(pcnst),apcnst(pcnst),bpcnst(pcnst),          &
+        hadvnam(pcnst),vadvnam(pcnst),dcconnam(pcnst),              &
+        fixcnam(pcnst),tendnam(pcnst),ptendnam(pcnst),              &
+        dmetendnam(pcnst),sflxnam(pcnst),tottnam(pcnst)             )
+
+   !Initialize module_cam_constituents.F variables
+   cnst_fixed_ubc(:) = .false.
+
+   !Allocate module_cam_mp_modal_aero_data_phys.F arrays
+   Allocate(cnst_name_cw(pcnst),cnst_name_cw_mp(pcnst_mp),          &
+        species_class(pcnst),qneg3_worst_thresh_amode(pcnst)        )
+   
+ END SUBROUTINE ALLOCATE_CAM_ARRAYS
 
 subroutine aerosol_in(aerodm,pina,alevsiz,no_months,no_src_types,XLAT,XLONG,   &
                      ids, ide, jds, jde, kds, kde,                  &

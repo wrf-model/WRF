@@ -42,6 +42,13 @@ CONTAINS
   USE module_aer_drydep
   USE module_aerosols_soa_vbs, only: soa_vbs_depdriver
 
+  USE module_cam_mam_drydep, only:  cam_mam_drydep_driver
+  
+  use module_cam_support, only: pcnst => pcnst_runtime
+  USE module_data_cam_mam_asect, only: lptr_chem_to_q, lptr_chem_to_qqcw !Balwinder.Singh@pnnl.gov: Added to avoid mixing of CHEM array constituents multiple times
+  USE modal_aero_data,         only: numptr_amode, lmassptr_amode, ntot_amode, nspec_amode !Added by Balwinder.Singh@pnnl.gov to avoid mixing of CHEM array constituents multiple times
+  USE module_cam_mam_drydep, only:  cam_mam_drydep_driver
+  
   IMPLICIT NONE
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
@@ -130,6 +137,7 @@ CONTAINS
       INTEGER :: iland, iprt, iseason, jce, jcs,  &
                  n, nr, ipr, jpr, nvr,   &
                  idrydep_onoff, aer_mech_id
+      INTEGER :: l2,m,lnum,lmass
 
       LOGICAL :: highnh3, rainflag, vegflag, wetflag
 ! ..
@@ -148,6 +156,8 @@ CONTAINS
 !
    REAL, DIMENSION( its:ite, jts:jte ) ::   aer_res, aer_res_def, aer_res_zcen
 
+   INTEGER, DIMENSION( pcnst )    ::   lptr_q_to_chem !Balwinder.Singh@pnnl.gov: pointer from Q array to CHEM array
+   LOGICAL, DIMENSION( num_chem ) ::   vertMixAero    !Balwinder.Singh@pnnl.gov: Flag (true or false) which decides whether to  vertical mix a constituent or not
 
    real, parameter :: m2cm = 100.
 
@@ -155,6 +165,34 @@ CONTAINS
 ! ..
 ! .. Intrinsic Functions ..
       INTRINSIC max, min
+
+      !Balwinder.Singh@pnnl.gov: Following code sets vertMixAero(:) flag to true or false based on whether
+      !a particular CHEM array constituent should be mixed (vertically) by dry_dep_driver or not
+      !The constituents which are  mixed in CAMMGMP microphysics are NOT mixed in dry_dep_driver. 
+      if(config_flags%mp_physics==CAMMGMPSCHEME) then ! If CAMMGMP microphysics is selected
+         vertMixAero(:)    = .FALSE. 
+         lptr_q_to_chem(:) = -999888777 ! pointer which maps Q array (CAM's STATE%Q array) to CHEM array
+         
+         do nv = 2, num_chem
+            l2 = lptr_chem_to_q(nv)
+            if (l2 >= 0) then 
+               vertMixAero(nv) = .TRUE. !Set default true
+               lptr_q_to_chem(l2) = nv
+            end if
+         enddo
+         
+         !Set constitutents, which are mixed in CAMMGMP, False
+         do m = 1, ntot_amode
+            lnum = numptr_amode(m)
+            if( lnum > 0 ) then
+               vertMixAero(lptr_q_to_chem(lnum)) = .FALSE.
+            endif
+            do l = 1, nspec_amode(m)
+               lmass = lmassptr_amode(l,m)
+               vertMixAero(lptr_q_to_chem(lmass)) = .FALSE.
+            enddo
+         enddo
+      endif
 
 !
 ! compute dry deposition velocities = ddvel
@@ -336,9 +374,11 @@ CONTAINS
           CASE (RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP)
              aer_mech_id = 2
           CASE ( CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, &
-                 CBMZ_MOSAIC_8BIN_AQ,SAPRC99_MOSAIC_4BIN_VBS2_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP,  &
+                 CBMZ_MOSAIC_8BIN_AQ,CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP,  &
                  CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
              aer_mech_id = 3
+          CASE ( CBMZ_CAM_MAM3_NOAQ, CBMZ_CAM_MAM3_AQ, CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ )
+             aer_mech_id = 4
           CASE DEFAULT
              aer_mech_id = 0
        END SELECT aer_mech_id_select
@@ -382,7 +422,7 @@ CONTAINS
                its,ite, jts,jte, kts,kte                                )
      CASE ( CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
           CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
-          SAPRC99_MOSAIC_4BIN_VBS2_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP  )
+          CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP  )
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR MOSAIC AEROSOLS')
        call mosaic_drydep_driver(                                       &
                id, curr_secs, ktau, dtstep, config_flags,               &
@@ -401,6 +441,17 @@ CONTAINS
                h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,               &
                aer_res,ddvel(:,:,numgas+1:num_chem),                    &
                num_chem-numgas,                                         &
+               ids,ide, jds,jde, kds,kde,                               &
+               ims,ime, jms,jme, kms,kme,                               &
+               its,ite, jts,jte, kts,kte                                )
+    CASE (CBMZ_CAM_MAM3_NOAQ, CBMZ_CAM_MAM3_AQ, CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ)
+       CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR CAM_MAM AEROSOLS')
+       call cam_mam_drydep_driver(                                      &
+               id, curr_secs, ktau, dtstep, config_flags,               &
+               gmt, julday,                                             &
+               t_phy, rho_phy, p_phy,                                   &
+               ust, aer_res,                                            &
+               moist, chem, ddvel,                                      &
                ids,ide, jds,jde, kds,kde,                               &
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
@@ -423,7 +474,7 @@ CONTAINS
                       its,ite, jts,jte, kts,kte                                )
    end if
        if (config_flags%aer_drydep_opt > 0) then
-          if ((aer_mech_id > 0) .and. (aer_mech_id <= 3)) then
+          if ((aer_mech_id > 0) .and. (aer_mech_id <= 4)) then
              ! limit aerosol ddvels to <= 0.5 m/s
              ! drydep routines occasionally produce unrealistically-large particle
              !    diameter leading to unrealistically-large sedimentation velocity
@@ -502,13 +553,14 @@ CONTAINS
 !
       dep_vel_o3(i,j)=ddvel(i,j,p_o3)
       do nv=2,num_chem-0
+         if(config_flags%mp_physics==CAMMGMPSCHEME .and. .not.vertMixAero(nv))cycle !Balwinder.Singh@pnnl.gov: Do mix constituents which are already mixed by CAMMGMP microphysics
          do k=kts,kte
             pblst(k)=max(epsilc,chem(i,k,j,nv))
             dryrho_1d(k) = 1./alt(i,k,j)
          enddo
 
          mix_select: SELECT CASE(config_flags%chem_opt)
-         CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
+         CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZSORG_AQ, &
               CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
             if(.not.is_aerosol(nv))then ! mix gases not aerosol
                call vertmx(dtstep,pblst,ekmfull,dryrho_1d, &
@@ -562,7 +614,7 @@ CONTAINS
 
    mixactivate_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM)
+   CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM, CBMZSORG_AQ)
       CALL wrf_debug(15,'call mixactivate for sorgam aerosol')
       call sorgam_mixactivate (                        &
 		id, ktau, dtstep, config_flags, idrydep_onoff,   &

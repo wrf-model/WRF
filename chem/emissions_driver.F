@@ -92,6 +92,7 @@ CONTAINS
   USE module_lightning_driver
   USE module_aerosols_soa_vbs, only: soa_vbs_addemiss
   USE module_ghg_fluxes 
+  USE module_cam_mam_addemiss, only: cam_mam_addemiss
   
   IMPLICIT NONE
 
@@ -499,11 +500,11 @@ CONTAINS
                   enddo
                do k=kts,kte
                 conv=float(ivolcano)*alt(i,k,j)*dtstep/dz8w(i,k,j)
-                chem(i,k,j,p_p25)=chem(i,k,j,p_p25)+.5*emis_vol(i,k,j,p_e_vash4)*conv
+                chem(i,k,j,p_p25)=chem(i,k,j,p_p25)+.5*emis_vol(i,k,j,p_e_vash10)*conv
                 chem(i,k,j,p_p10)=chem(i,k,j,p_p10)     &
-                                 +.5*emis_vol(i,k,j,p_e_vash4)*conv &
-                                 +emis_vol(i,k,j,p_e_vash3)*conv    &
-                                 +.5*emis_vol(i,k,j,p_e_vash2)*conv
+                                 +.5*emis_vol(i,k,j,p_e_vash10)*conv &
+                                 +emis_vol(i,k,j,p_e_vash9)*conv    &
+                                 +.5*emis_vol(i,k,j,p_e_vash8)*conv
                enddo
       CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACMSORG_KPP,RACMSORG_AQ,RACM_ESRLSORG_KPP)
 !       write(0,*)'do later'
@@ -514,19 +515,19 @@ CONTAINS
 ! aerosols for MADE/SORGAM
                     conv=alt(i,k,j)*dtstep/dz8w(i,k,j)
                     chem(i,k,j,p_p25i) = chem(i,k,j,p_p25i)                &
-                     +.25*emis_vol(i,k,j,p_e_vash4)*conv
+                     +.25*emis_vol(i,k,j,p_e_vash10)*conv
                     chem(i,k,j,p_nu0) = chem(i,k,j,p_nu0)                  &
-                     +.25*anthfac*factnumn*emis_vol(i,k,j,p_e_vash4)*conv
+                     +.25*anthfac*factnumn*emis_vol(i,k,j,p_e_vash10)*conv
                     chem(i,k,j,p_ac0) = chem(i,k,j,p_ac0)                  &
-                     +.75*anthfac*factnuma*emis_vol(i,k,j,p_e_vash4)*conv
+                     +.75*anthfac*factnuma*emis_vol(i,k,j,p_e_vash10)*conv
                     chem(i,k,j,p_p25j) = chem(i,k,j,p_p25j)                &
-                     +.75*emis_vol(i,k,j,p_e_vash4)*conv
+                     +.75*emis_vol(i,k,j,p_e_vash10)*conv
                     chem(i,k,j,p_antha) = chem(i,k,j,p_antha)              &
-                     +emis_vol(i,k,j,p_e_vash3)*conv !                      &
-!                     +.5*emis_vol(i,k,j,p_e_vash2)*conv
+                     +emis_vol(i,k,j,p_e_vash9)*conv !                      &
+!                     +.5*emis_vol(i,k,j,p_e_vash8)*conv
                     chem(i,k,j,p_corn) = chem(i,k,j,p_corn)                &
-                     +anthfac*factnumc*emis_vol(i,k,j,p_e_vash3)*conv !     & 
-!                     +anthfac*factnumc*.5*emis_vol(i,k,j,p_e_vash2)*conv
+                     +anthfac*factnumc*emis_vol(i,k,j,p_e_vash9)*conv !     & 
+!                     +anthfac*factnumc*.5*emis_vol(i,k,j,p_e_vash8)*conv
                   enddo
       CASE (CHEM_VOLC)
               CALL wrf_debug(15,'Adding volcanic emissions to case chem_volc')
@@ -885,7 +886,8 @@ CONTAINS
           CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, & 
           CBMZSORG, CBMZSORG_AQ, CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, &
           CBMZ_MOSAIC_KPP, &
-          CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
+          CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
+          CBMZ_CAM_MAM3_NOAQ, CBMZ_CAM_MAM3_AQ, CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ)
        IF(config_flags%kemit .GT. kte-ksub) THEN
           message = ' EMISSIONS_DRIVER: KEMIT > KME '
           CALL WRF_ERROR_FATAL (message)
@@ -1087,6 +1089,62 @@ CONTAINS
       endif
 
                   
+    CASE (CBMZ_MOSAIC_4BIN_VBS2_KPP) !FIX FOR SAPRC07A
+     if(config_flags%emiss_opt == 3 ) then
+       IF(config_flags%kemit .GT. kte-ksub) THEN
+          message = ' EMISSIONS_DRIVER: KEMIT > KME '
+          CALL WRF_ERROR_FATAL (message)
+       ENDIF
+       call wrf_debug(15,'emissions_driver calling cbmz_addemiss_anthro')
+       call cbmz_addemiss_anthro( id, dtstep, dz8w, config_flags,        &
+            rho_phy, chem,                                               &
+            emis_ant,alt,ids,ide, jds,jde, kds,kde,                      &
+            ims,ime, jms,jme, kms,kme,                                   &
+            its,ite, jts,jte, kts,kte                                    )
+       call wrf_debug(15,'emissions_driver calling cbmz_addemiss_bio')
+       ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
+       ! module
+       if ( config_flags%bio_emiss_opt .ne. megan2 ) then 
+         call cbmz_addemiss_bio( id, dtstep, dz8w, config_flags,         &
+              rho_phy, chem, e_bio, ne_area, emis_ant(ims,kms,jms,p_e_iso),&
+              ids,ide, jds,jde, kds,kde,                                 &
+              ims,ime, jms,jme, kms,kme,                                 &
+              its,ite, jts,jte, kts,kte                                  )
+       endif
+       do j=jts,jte
+          do i=its,ite
+             do k=kts,min(config_flags%kemit,kte-ksub)
+                conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+                conv3 = (dtstep/dz8w(i,k,j))*alt(i,k,j)*28/250*1e-3! Molecular weight of C(15)H(27)N(0.3)O(4.5)
+                conv4= (dtstep/dz8w(i,k,j))*alt(i,k,j)*28/226*1e-3  ! Molecular weight of C(15)H(27)N(0.3)O(0.9)
+                oconv3= (dtstep/dz8w(i,k,j))*alt(i,k,j)*28/283*1e-3*4.5 !For biomass there are 4.5 moles of ) /mole of C15H27N0.3
+                oconv4=(dtstep/dz8w(i,k,j))*alt(i,k,j)*28/226*1e-3*0.9  !For fossil there are 0.9 moles of O per mole of C15H27N0.3
+
+!Use OM/OC of 1.25 for fossil and OM:OC of 1.57 for biomass
+! O:C=0.06,H:C=1.8, N:C=0.02 for fossil : OM/OC=(16*0.06+12+14*0.02+12)/12=1.25
+!O:C=0.3 H:C=1.8, N:C=0.02 for biomass, OM/OC=1.57 for biomass
+
+        chem(i,k,j,p_pcg1_b_c)  =  chem(i,k,j,p_pcg1_b_c)                        &
+        +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*1.17
+        chem(i,k,j,p_pcg2_b_c)  =  chem(i,k,j,p_pcg2_b_c)                        &
+        +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*7.605
+        chem(i,k,j,p_pcg1_f_c)  =  chem(i,k,j,p_pcg1_f_c)                        &
+        +(emis_ant(i,k,j,p_e_orgi_a)/1.25+emis_ant(i,k,j,p_e_orgj_a)/1.25)*conv3*1.17
+        chem(i,k,j,p_pcg2_f_c)  =  chem(i,k,j,p_pcg2_f_c)                        &
+        +(emis_ant(i,k,j,p_e_orgi_a)/1.25+emis_ant(i,k,j,p_e_orgj_a)/1.25)*conv3*7.605
+        chem(i,k,j,p_pcg1_b_o)  =  chem(i,k,j,p_pcg1_b_o)                        &
+        +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*0.40
+        chem(i,k,j,p_pcg2_b_o)  =  chem(i,k,j,p_pcg2_b_o)                        &
+        +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*2.60
+        chem(i,k,j,p_pcg1_f_o)  =  chem(i,k,j,p_pcg1_f_o)                        &
+        +(emis_ant(i,k,j,p_e_orgi_a)/1.25+emis_ant(i,k,j,p_e_orgj_a)/1.25)*conv3*0.08
+        chem(i,k,j,p_pcg2_f_o)  =  chem(i,k,j,p_pcg2_f_o)                        &
+        +(emis_ant(i,k,j,p_e_orgi_a)/1.25+emis_ant(i,k,j,p_e_orgj_a)/1.25)*conv3*0.52
+
+             end do
+          end do
+       end do
+     endif
 
     CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP) !FIX FOR SAPRC07A
      if(config_flags%emiss_opt == 13 ) then
@@ -1188,17 +1246,17 @@ CONTAINS
         chem(i,k,j,p_pcg2_b_c)  =  chem(i,k,j,p_pcg2_b_c)                        &
         +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*7.605
         chem(i,k,j,p_pcg1_f_c)  =  chem(i,k,j,p_pcg1_f_c)                        &
-        +(emis_ant(i,k,j,p_e_orgi_a)/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*1.17
+        +(emis_ant(i,k,j,p_e_orgi_a)/1.25+emis_ant(i,k,j,p_e_orgj_a)/1.25)*conv3*1.17
         chem(i,k,j,p_pcg2_f_c)  =  chem(i,k,j,p_pcg2_f_c)                        &
-        +(emis_ant(i,k,j,p_e_orgi_a)/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*7.605
+        +(emis_ant(i,k,j,p_e_orgi_a)/1.25+emis_ant(i,k,j,p_e_orgj_a)/1.25)*conv3*7.605
         chem(i,k,j,p_pcg1_b_o)  =  chem(i,k,j,p_pcg1_b_o)                        &
         +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*0.40
         chem(i,k,j,p_pcg2_b_o)  =  chem(i,k,j,p_pcg2_b_o)                        &
         +(emis_ant(i,k,j,p_e_orgi_bb)/1.57+emis_ant(i,k,j,p_e_orgj_bb)/1.57)*conv3*2.60
         chem(i,k,j,p_pcg1_f_o)  =  chem(i,k,j,p_pcg1_f_o)                        &
-        +(emis_ant(i,k,j,p_e_orgi_a)/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*0.08
+        +(emis_ant(i,k,j,p_e_orgi_a)/1.25+emis_ant(i,k,j,p_e_orgj_a)/1.25)*conv3*0.08
         chem(i,k,j,p_pcg2_f_o)  =  chem(i,k,j,p_pcg2_f_o)                        &
-        +(emis_ant(i,k,j,p_e_orgi_a)/1.25+emis_ant(i,k,j,p_e_orgj_a)*2/1.25)*conv3*0.52
+        +(emis_ant(i,k,j,p_e_orgi_a)/1.25+emis_ant(i,k,j,p_e_orgj_a)/1.25)*conv3*0.52
 
 
              end do
@@ -1390,7 +1448,7 @@ CONTAINS
           CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
           CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, & 
           CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,SAPRC99_MOSAIC_4BIN_VBS2_KPP,&
-          MOZART_MOSAIC_4BIN_VBS0_KPP   )
+          CBMZ_MOSAIC_4BIN_VBS2_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP   )
        call wrf_debug(15,'emissions_driver calling mosaic_addemiss')
        call mosaic_addemiss( id, dtstep, u10, v10, alt, dz8w, xland,     &
             config_flags, chem, slai, ust, smois, ivgtyp, isltyp,        &
@@ -1403,6 +1461,18 @@ CONTAINS
             ids,ide, jds,jde, kds,kde,                                   &
             ims,ime, jms,jme, kms,kme,                                   &
             its,ite, jts,jte, kts,kte                                    )
+
+    CASE ( CBMZ_CAM_MAM3_NOAQ, CBMZ_CAM_MAM3_AQ, CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ )
+       call wrf_debug(15,'emissions_driver calling cam_mam_addemiss')
+       call cam_mam_addemiss(                                            &
+            id, dtstep, u10, v10, alt, dz8w, xland,                      &
+            config_flags, chem, slai, ust, smois, ivgtyp, isltyp,        &
+            emis_ant,ebio_iso,ebio_olt,ebio_oli,rho_phy,                 &
+            dust_emiss_active, seasalt_emiss_active,                     &
+            ids,ide, jds,jde, kds,kde,                                   &
+            ims,ime, jms,jme, kms,kme,                                   &
+            its,ite, jts,jte, kts,kte                                    )
+       call wrf_debug(15,'emissions_driver backfrm cam_mam_addemiss')
 
     CASE DEFAULT
        call wrf_debug(15,'emissions_driver NOT CALLING aer add_... routines')

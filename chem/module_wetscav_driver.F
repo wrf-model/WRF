@@ -27,6 +27,13 @@ CONTAINS
                cvaro2,cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,           &
                wd_no3,wd_so4,                                              &
                qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp,                         &
+!======================================================================================
+!Variables required for CAM_MAM_WETSCAV
+               p_hyd,scalar,dgnum4d,dgnumwet4d,dlf3d,dlf2_3d,qme3d,prain3d,&
+               nevapr3d,rate1ord_cw2pr_st3d,shfrc3d,cmfmc,cmfmc2,evapcsh,  &
+               icwmrsh,rprdsh,evapcdp3d,icwmrdp3d,rprddp3d,fracis3d,       &
+               f_ice_phy,f_rain_phy,cldfrai,cldfral,cldfra_mp_all,         &
+!======================================================================================
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
@@ -42,15 +49,20 @@ CONTAINS
 !
 !  1. MADE-SORGAM
 !  2. MOSAIC
+!  3. CAM5's Wet scavenging
 !
 !----------------------------------------------------------------------
 
    USE module_configure
    USE module_state_description
    USE module_model_constants
+   USE modal_aero_data,        only:  ntot_amode               ! For cam_mam_wetscav variables
    USE module_mozcart_wetscav, only:  wetscav_mozcart
    USE module_mosaic_wetscav, only:  wetscav_cbmz_mosaic
+   USE modal_aero_data,        only:  ntot_amode               ! For cam_mam_wetscav variables
+   USE module_mosaic_wetscav,  only:  wetscav_cbmz_mosaic
    USE module_aerosols_sorgam, only:  wetscav_sorgam_driver
+   USE module_cam_mam_wetscav, only:  wetscav_cam_mam_driver
 
    IMPLICIT NONE
 
@@ -104,6 +116,24 @@ CONTAINS
 !-- Cp            specific heat at constant pressure (1004 J/k/kg)
 !-- rvovrd	  R_v divided by R_d (dimensionless)
 !-- G		  acceleration due to gravity (m/s^2)
+!-- p_hyd         Hydrostatic pressure(Pa)
+!-- z_sea_level   Height above sea level at mid-level (m) 
+!-- dlf3d         Detrainment of convective condensate (kg/kg/s)
+!-- dlf2_3d       dq/dt due to export of cloud water into environment by shallow convection(kg/kg/s)
+!-- qme3d         Net condensation rate (kg/kg/s)
+!-- prain3d       Rate of conversion of condensate to precipitation (kg/kg/s)
+!-- nevapr3d      Evaporation rate of rain + snow (kg/kg/s)
+!-- rate1ord_cw2pr_st3d   1st order rate for direct conversion of strat. cloud water to precip (1/s)
+!-- shfrc3d       Shallow cloud fraction
+!-- cmfmc         Deep + Shallow Convective mass flux [ kg /s/m^2 ]
+!-- cmfmc2        Shallow convective mass flux [ kg/s/m^2 ]
+!-- evapcsh       Evaporation of shallow convection precipitation (kg/kg/s)
+!-- icwmrsh       shallow cumulus in-cloud water mixing ratio (kg/m2)
+!-- rprdsh        dq/dt due to deep and shallow convective rainout(kg/kg/s)
+!-- evapcdp3d     Evaporation of deep convective precipitation (kg/kg/s)
+!-- icwmrdp3d     Deep Convection in-cloud water mixing ratio (kg/m2)
+!-- rprddp3d      dq/dt due to deep convective rainout (kg/kg/s)
+!-- fracis3d      fraction of transported species that are insoluble
 !-- ids           start index for i in domain
 !-- ide           end index for i in domain
 !-- jds           start index for j in domain
@@ -140,7 +170,13 @@ CONTAINS
 ! moisture variables
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),         &
-         INTENT(IN ) ::                                   moist
+         INTENT(INOUT ) ::                                   moist
+
+! scalar variables
+!
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_scalar ),         &
+         INTENT(INOUT) ::                                   scalar
+
 !
 ! all advected chemical species
 !
@@ -163,7 +199,7 @@ CONTAINS
 !
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: wd_no3,wd_so4
 !
-! input from meteorology
+! input from meteorology(3D)
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
           INTENT(IN   ) ::                                          &
                                                       alt,          &
@@ -173,7 +209,15 @@ CONTAINS
                                                       p8w,          &
                                                       dz8w,         &
 	                            qlsink,precr,preci,precs,precg, &
-                                                    rho_phy,cldfra
+                                                    rho_phy,cldfra, &
+!variables needed for cam_mam_wetscav
+                                     cldfrai,cldfral,cldfra_mp_all, &
+                                               p_hyd,dlf3d,dlf2_3d, & 
+                                            qme3d,prain3d,nevapr3d, & 
+                                       rate1ord_cw2pr_st3d,shfrc3d, &
+                                    cmfmc,cmfmc2,evapcsh,icwmrsh,   &
+                                        rprdsh,evapcdp3d,icwmrdp3d, &
+                                     rprddp3d,f_ice_phy,f_rain_phy 
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
          INTENT(INOUT ) ::                             cldfra2,     &
                                                        rainprod,    &
@@ -186,6 +230,15 @@ CONTAINS
    REAL,  DIMENSION( ims:ime , jms:jme )         ,                  &
          INTENT(INOUT ) ::                             hno3_col_mdel
 !
+!input (4D)
+REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
+          INTENT(IN   ) ::                       dgnum4d,dgnumwet4d   !variables needed for cam_mam_wetscav   
+
+!
+! output variables (3D)
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
+          INTENT(OUT  ) ::                                          &
+                                                        fracis3d
 
 ! LOCAL  VAR
    integer :: ii,jj,kk
@@ -210,7 +263,7 @@ CONTAINS
 !
    cps_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE ( RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM )
+   CASE ( RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM , CBMZSORG_AQ )
        CALL wrf_debug(15,'wetscav_driver calling sorgam_wetscav_driver' )
        call wetscav_sorgam_driver (id,ktau,dtstep,ktauc,config_flags,      &
                dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,        &
@@ -257,6 +310,23 @@ CONTAINS
                              ims,ime, jms,jme, kms,kme,                         &
                              its,ite, jts,jte, kts,kte                          )
 
+CASE (CBMZ_CAM_MAM3_NOAQ,CBMZ_CAM_MAM3_AQ,CBMZ_CAM_MAM7_NOAQ,CBMZ_CAM_MAM7_AQ)       
+       CALL wrf_debug(15,'wetscav_driver calling wetscav_cam_mam_driver')
+       call wetscav_cam_mam_driver (ktau,p_hyd,p8w,t_phy,dgnum4d,          &
+            dgnumwet4d,dlf3d,dlf2_3d,dtstep,qme3d,prain3d,nevapr3d,        &
+            rate1ord_cw2pr_st3d,shfrc3d,cmfmc,cmfmc2,evapcsh,icwmrsh,      &
+            rprdsh,evapcdp3d,icwmrdp3d,rprddp3d,moist(ims,kms,jms,P_QS),   &
+            f_ice_phy,f_rain_phy,config_flags,cldfra_mp_all,cldfrai,       &
+            cldfral,cldfra,                                                &                             
+            ids,ide, jds,jde, kds,kde,                                     &
+            ims,ime, jms,jme, kms,kme,                                     &
+            its,ite, jts,jte, kts,kte,                                     &
+            !intent-inout
+            moist(ims,kms,jms,P_QV),moist(ims,kms,jms,P_QC),               &
+            moist(ims,kms,jms,P_QI),scalar(ims,kms,jms,P_QNI),             &
+            scalar(ims,kms,jms,P_QNC),chem,                                &
+            !intent-out            
+            fracis3D                                                       )
    CASE DEFAULT
 
    END SELECT cps_select

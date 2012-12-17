@@ -2366,6 +2366,7 @@
       real(kind=rb) :: zrk, zrk2, zrkg, zrm1, zrp, zrp1, zrpp
       real(kind=rb) :: zsr3, zt1, zt2, zt3, zt4, zt5, zto1
       real(kind=rb) :: zw, zwcrit, zwo
+      real(kind=rb) :: denom
 
       real(kind=rb), parameter :: eps = 1.e-08_rb
 
@@ -2409,8 +2410,9 @@
             zgamma4= 1._rb - zgamma3
     
 ! Recompute original s.s.a. to test for conservative solution
-
-            zwo= zw / (1._rb - (1._rb - zw) * (zg / (1._rb - zg))**2)
+            !Balwinder.Singh@pnnl.gov: Code added to avoid 'divide by zero' error in zwo computation
+            denom = max((1._rb - (1._rb - zw) * (zg / (1._rb - zg))**2),1.0E-30_rb)
+            zwo= zw / denom
 
             if (zwo >= zwcrit) then
 ! Conservative scattering
@@ -8933,6 +8935,7 @@
 
 ! Initializations
 
+      iout = 0 !BSINGH(PNNL) initializing iout to zero(Might be wrong!) as this variable is never initialized but used in spcvmc_sw
       zepsec = 1.e-06_rb
       zepzen = 1.e-10_rb
       oneminus = 1.0_rb - zepsec
@@ -9600,7 +9603,8 @@ CONTAINS
                        coszr, julday, solcon,                     &
                        albedo, t3d, t8w, tsk,                     &
                        p3d, p8w, pi3d, rho3d,                     &
-                       dz8w, cldfra3d, r, g,                      &
+                       dz8w, cldfra3d,CLDFRA_MP_ALL,itimestep,    &
+                       is_CAMMGMP_used, r, g,                     &
                        icloud, warm_rain,                         &
                        f_ice_phy, f_rain_phy,                     &
                        xland, xice, snow,                         &
@@ -9629,13 +9633,13 @@ CONTAINS
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
-   LOGICAL, INTENT(IN )      ::        warm_rain
+   LOGICAL, INTENT(IN )      ::        warm_rain, is_CAMMGMP_used
 !
    INTEGER, INTENT(IN )      ::        ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
                                        its,ite, jts,jte, kts,kte
 
-   INTEGER, INTENT(IN )      ::        ICLOUD
+   INTEGER, INTENT(IN )      ::        ICLOUD, itimestep
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          INTENT(IN   ) ::                                   dz8w, &
@@ -9693,6 +9697,7 @@ CONTAINS
          OPTIONAL                                               , &
          INTENT(IN   ) ::                                         &
                                                         CLDFRA3D, &
+                                                   CLDFRA_MP_ALL, &
                                                             QV3D, &
                                                             QC3D, &
                                                             QR3D, &
@@ -10002,11 +10007,24 @@ CONTAINS
 ! moist variables
 
          IF (ICLOUD .ne. 0) THEN
-            IF ( PRESENT( CLDFRA3D ) ) THEN
-              DO K=kts,kte
-                 CLDFRA1D(k)=CLDFRA3D(I,K,J)
-              ENDDO
-            ENDIF
+            if(.not.is_CAMMGMP_used) then
+               IF ( PRESENT( CLDFRA3D ) ) THEN
+                  DO K=kts,kte
+                     CLDFRA1D(k)=CLDFRA3D(I,K,J)
+                  ENDDO
+               ENDIF
+            else
+               !BSINGH: cloud fraction from CAMMGMP is being used (Mods by Po-Lun)
+               if (itimestep .eq. 1) then
+                  DO K=kts,kte
+                     CLDFRA1D(k) = CLDFRA3D(I,K,J)
+                  ENDDO
+               else
+                  DO K=kts,kte
+                     CLDFRA1D(k)=CLDFRA_MP_ALL(I,K,J) !PMA
+                  ENDDO
+               end if
+            endif
 
             IF (PRESENT(F_QC) .AND. PRESENT(QC3D)) THEN
               IF ( F_QC) THEN

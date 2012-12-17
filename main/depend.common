@@ -167,6 +167,13 @@ module_cam_molec_diff.o: module_cam_support.o \
 		module_cam_constituents.o \
 		module_cam_upper_bc.o 
 
+module_data_cam_mam_aero.o : module_cam_shr_kind_mod.o \
+		module_cam_support.o \
+		module_cam_mp_radconstants.o
+
+module_data_cam_mam_asect.o : module_cam_shr_kind_mod.o \
+		module_data_cam_mam_aero.o
+
 module_cam_bl_diffusion_solver.o: module_cam_support.o 
 
 module_cam_bl_eddy_diff.o:module_cam_bl_diffusion_solver.o \
@@ -278,6 +285,7 @@ module_ra_gfdleta.o:  ../frame/module_dm.o \
 module_ra_HWRF.o:   ../frame/module_dm.o module_mp_HWRF.o
 
 module_ra_rrtm.o: ../frame/module_wrf_error.o \
+		module_ra_clWRF_support.o \
 		../frame/module_dm.o
 
 module_ra_cam_support.o: module_cam_support.o \
@@ -285,6 +293,7 @@ module_ra_cam_support.o: module_cam_support.o \
 
 module_ra_cam.o: module_ra_cam_support.o \
 		 module_cam_support.o \
+		 module_ra_clWRF_support.o \
                 ../frame/module_wrf_error.o
 
 module_mp_lin.o : ../frame/module_wrf_error.o \
@@ -304,6 +313,53 @@ module_mp_thompson.o : ../frame/module_wrf_error.o \
 
 module_mp_nssl_2mom.o : ../frame/module_wrf_error.o \
 		../share/module_model_constants.o
+
+module_mp_cammgmp_driver.o : module_cam_mp_microp_aero.o \
+		module_cam_constituents.o \
+		module_cam_shr_kind_mod.o \
+		module_cam_cldwat.o \
+		module_cam_mp_cldwat2m_micro.o \
+		module_cam_physconst.o \
+		module_cam_support.o \
+		module_data_cam_mam_aero.o \
+		module_data_cam_mam_asect.o \
+		module_cam_wv_saturation.o \
+		module_cam_mp_ndrop.o \
+		module_cam_mp_conv_water.o \
+		../frame/module_state_description.o 
+
+module_cam_mp_microp_aero.o : module_cam_shr_kind_mod.o \
+		module_cam_support.o \
+		module_cam_physconst.o \
+		module_cam_error_function.o \
+		module_cam_wv_saturation.o \
+		module_cam_mp_ndrop.o \
+		module_data_cam_mam_aero.o 
+module_cam_mp_cldwat2m_micro.o : module_cam_shr_kind_mod.o \
+		module_cam_support.o \
+		module_cam_physconst.o \
+		module_cam_error_function.o \
+		module_cam_wv_saturation.o 
+
+module_cam_mp_ndrop.o : module_cam_shr_kind_mod.o \
+		module_data_cam_mam_aero.o \
+		module_cam_support.o \
+		module_cam_physconst.o \
+		module_cam_constituents.o \
+		module_cam_error_function.o \
+		module_cam_wv_saturation.o 
+
+module_cam_mp_modal_aero_initialize_data_phys.o : module_data_cam_mam_aero.o
+module_cam_mp_conv_water.o: module_cam_shr_kind_mod.o \
+		module_cam_support.o \
+		module_cam_physconst.o 
+
+module_cam_mp_qneg3.o: module_cam_shr_kind_mod.o \
+		module_cam_support.o 
+
+module_cam_mp_radconstants.o : module_cam_shr_kind_mod.o \
+		module_cam_support.o 
+module_cam_infnan.o: module_cam_shr_kind_mod.o
 
 module_ra_goddard.o : ../frame/module_wrf_error.o
 
@@ -352,7 +408,8 @@ module_sf_pxlsm.o: ../share/module_model_constants.o module_sf_pxlsm_data.o
 
 module_ra_rrtmg_sw.o: module_ra_rrtmg_lw.o
 
-module_ra_rrtmg_lw.o: ../share/module_model_constants.o
+module_ra_rrtmg_lw.o: ../share/module_model_constants.o \
+		 module_ra_clWRF_support.o 
 
 module_physics_addtendc.o: \
 		module_cu_kf.o			\
@@ -434,6 +491,11 @@ module_physics_init.o : \
 		module_mp_wdm6.o		\
 		module_cam_physconst.o		\
 		module_cam_shr_kind_mod.o	\
+		module_mp_cammgmp_driver.o      \
+		module_cam_esinti.o             \
+		module_cam_constituents.o       \
+		module_cam_mp_modal_aero_initialize_data_phys.o \
+		module_cam_support.o \
 		module_wind_fitch.o		\
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
@@ -454,6 +516,7 @@ module_microphysics_driver.o: \
                 module_mp_milbrandt2mom.o     \
                 module_mp_nssl_2mom.o         \
 		module_mp_wdm5.o module_mp_wdm6.o \
+		module_mp_cammgmp_driver.o \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
 		../frame/module_wrf_error.o \
@@ -520,6 +583,7 @@ module_radiation_driver.o: \
 		module_ra_gfdleta.o \
 		module_ra_HWRF.o \
 		module_ra_hs.o \
+		module_ra_goddard.o \
                 module_ra_flg.o \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \

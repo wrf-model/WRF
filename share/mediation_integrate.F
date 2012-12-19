@@ -61,6 +61,12 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
                 ( config_flags%write_hist_at_0h_rst )       .AND. &
 #endif
                 ( currTime .EQ. startTime )                       ) THEN
+#if ( NMM_CORE == 1 )
+! NMM-only: outputs boundary arrays of certain variables:
+!      call med_boundary_out(grid,config_flags)
+#endif
+
+
        !  output history at beginning of restart if alarm is ringing
        CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
       
@@ -745,6 +751,11 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
    endif
 !end of zhang's doing
 
+   ! Do we run the MOIST and SCALAR interp/smooth functions? (u=(), d=(), f=() and s=())
+
+   ! Only run it if a non-bulk scheme is in use, since bulk schemes do
+   ! not use MOIST and SCALAR as prognostic variables (they are
+   ! recalculated on the fly every timestep):
 !zhang's doing for analysis option
   IF(.not. nest%analysis .and. .not. config_flags%restart)THEN    ! initialize for cold-start
 #endif
@@ -792,14 +803,14 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
     KPS = parent%sp33
     KPE = parent%ep33
 
-    CALL BASE_STATE_PARENT ( parent%Z3d,parent%Q3d,parent%T3d,parent%PSTD,  &
-                             parent%PINT,parent%T,parent%Q,parent%CWM,      &
-                             parent%FIS,parent%QSH,parent%PD,parent%pdtop,parent%pt,   &
-                             parent%ETA1,parent%ETA2,                               &
-                             parent%DETA1,parent%DETA2,                             &
-                             IDS,IDE,JDS,JDE,KDS,KDE,                                       &
-                             IMS,IME,JMS,JME,KMS,KME,                                       &
-                             IPS,IPE,JPS,JPE,KPS,KPE                                        )
+    ! CALL BASE_STATE_PARENT ( parent%Z3d,parent%Q3d,parent%T3d,parent%PSTD,  &
+    !                          parent%PINT,parent%T,parent%Q,parent%CWM,      &
+    !                          parent%FIS,parent%QSH,parent%PD,parent%pdtop,parent%pt,   &
+    !                          parent%ETA1,parent%ETA2,                               &
+    !                          parent%DETA1,parent%DETA2,                             &
+    !                          IDS,IDE,JDS,JDE,KDS,KDE,                                       &
+    !                          IMS,IME,JMS,JME,KMS,KME,                                       &
+    !                          IPS,IPE,JPS,JPE,KPS,KPE                                        )
 
 !  
 !   Set new terrain. Since some terrain adjustment is done within the interpolation calls
@@ -1063,14 +1074,14 @@ SUBROUTINE med_nest_force ( parent , nest )
     KTE = parent%ep33
 
 
-    CALL BASE_STATE_PARENT ( parent%Z3d,parent%Q3d,parent%T3d,parent%PSTD, &
-                             parent%PINT,parent%T,parent%Q,parent%CWM,     &
-                             parent%FIS,parent%QSH,parent%PD,parent%pdtop,parent%pt,  &
-                             parent%ETA1,parent%ETA2,                              &
-                             parent%DETA1,parent%DETA2,                            &
-                             IDS,IDE,JDS,JDE,KDS,KDE,                                      &
-                             IMS,IME,JMS,JME,KMS,KME,                                      &
-                             ITS,ITE,JTS,JTE,KTS,KTE                                       )
+    ! CALL BASE_STATE_PARENT ( parent%Z3d,parent%Q3d,parent%T3d,parent%PSTD, &
+    !                          parent%PINT,parent%T,parent%Q,parent%CWM,     &
+    !                          parent%FIS,parent%QSH,parent%PD,parent%pdtop,parent%pt,  &
+    !                          parent%ETA1,parent%ETA2,                              &
+    !                          parent%DETA1,parent%DETA2,                            &
+    !                          IDS,IDE,JDS,JDE,KDS,KDE,                                      &
+    !                          IMS,IME,JMS,JME,KMS,KME,                                      &
+    !                          ITS,ITE,JTS,JTE,KTS,KTE                                       )
 
 #endif
 
@@ -1428,6 +1439,56 @@ RECURSIVE SUBROUTINE med_restart_out ( grid , config_flags )
    RETURN
 END SUBROUTINE med_restart_out
 
+#if ( NMM_CORE == 1 && NMM_NEST == 1)
+#ifdef EXTRA_HWRF_DEBUG_STUFF
+SUBROUTINE med_boundary_out ( grid , config_flags )
+  ! Driver layer
+   USE module_domain	, ONLY : domain , domain_clock_get
+   USE module_io_domain
+   USE module_timing
+   USE module_configure	, ONLY : grid_config_rec_type
+  ! Model layer
+!   USE module_bc_time_utilities
+   USE module_utility
+   use module_bdywrite
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+
+  ! Local
+   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+   CHARACTER*80                           :: rstname , outname
+   INTEGER                                :: fid , rid, kid
+   CHARACTER (LEN=256)                    :: message
+   INTEGER                                :: ierr
+   INTEGER                                :: myproc
+   CHARACTER*80                           :: timestr
+   TYPE (grid_config_rec_type)            :: kid_config_flags
+
+   IF ( wrf_dm_on_monitor() ) THEN
+     CALL start_timing
+   END IF
+
+! take this out - no effect - LPC
+!   rid=grid%id !zhang's doing
+
+   ! write out this domains boundary file first
+
+   CALL domain_clock_get( grid, current_timestr=timestr )
+   CALL construct_filename2a ( rstname , 'sambdyout_d<domain>_<date>' , grid%id , 2 , timestr )
+
+   call bdywrite(grid,rstname)
+
+   IF ( wrf_dm_on_monitor() ) THEN
+     CALL end_timing('Sam''s Special Boundary Output (TM)')
+   END IF
+   RETURN
+END SUBROUTINE med_boundary_out
+#endif
+#endif
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #ifdef HWRF

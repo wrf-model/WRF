@@ -692,11 +692,8 @@ CONTAINS
                 IF(T1 .GT. 273. .AND. SNOWC(I,J) .GT. 0.)DQSDT2=DQSDT2*(1.-SNOWC(I,J))
              ENDIF
 
-             IF(ICE.EQ.0)THEN
-                TBOT=TMN(I,J)
-             ELSE
-                TBOT=271.16
-             ENDIF
+             TBOT=TMN(I,J)
+
              IF(VEGTYP.EQ.25) SHDFAC=0.0000
              IF(VEGTYP.EQ.26) SHDFAC=0.0000
              IF(VEGTYP.EQ.27) SHDFAC=0.0000

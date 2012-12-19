@@ -122,11 +122,14 @@ CONTAINS
         INTENT(INOUT) ::                                    snow, &
                                                          snowncv
 ! LOCAL VAR
+#ifdef XEON_OPTIMIZED_WSM5
+#  include "mic-wsm5-3-5-locvar.h"
+#else
   REAL, DIMENSION( its:ite , kts:kte ) ::   t
   REAL, DIMENSION( its:ite , kts:kte, 2 ) ::   qci, qrs
   CHARACTER*256 :: emess
-  INTEGER :: mkx_test
   INTEGER ::               i,j,k
+#endif
 
 !+---+-----------------------------------------------------------------+
       REAL, DIMENSION(kts:kte):: qv1d, t1d, p1d, qr1d, qs1d, dBZ
@@ -136,7 +139,7 @@ CONTAINS
 
 !+---+-----------------------------------------------------------------+
 
-#ifndef RUN_ON_GPU
+#ifndef XEON_OPTIMIZED_WSM5
       DO j=jts,jte
          DO k=kts,kte
          DO i=its,ite
@@ -199,29 +202,39 @@ CONTAINS
 
       ENDDO
 #else
-      CALL get_wsm5_gpu_levels ( mkx_test )
-      IF ( mkx_test .LT. kte ) THEN
-        WRITE(emess,*)'Number of levels compiled for GPU WSM5 too small. ',      &
-                      mkx_test,' < ',kte
-        CALL wrf_error_fatal(emess)
-      ENDIF
-      CALL wsm5_host (                                                           &
-                    th(its:ite,kts:kte,jts:jte), pii(its:ite,kts:kte,jts:jte)    &
-                   ,q(its:ite,kts:kte,jts:jte), qc(its:ite,kts:kte,jts:jte)      &
-                   ,qi(its:ite,kts:kte,jts:jte), qr(its:ite,kts:kte,jts:jte)     &
-                   ,qs(its:ite,kts:kte,jts:jte), den(its:ite,kts:kte,jts:jte)    &
-                   ,p(its:ite,kts:kte,jts:jte), delz(its:ite,kts:kte,jts:jte)    &
-                   ,delt                                                         &
-                   ,rain(its:ite,jts:jte),rainncv(its:ite,jts:jte)               &
-                   ,snow(its:ite,jts:jte),snowncv(its:ite,jts:jte)               &
-                   ,sr(its:ite,jts:jte)                                          &
-                   ,its, ite,  jts, jte,  kts, kte                               &
-                   ,its, ite,  jts, jte,  kts, kte                               &
-                   ,its, ite,  jts, jte,  kts, kte                               &
-          )
+  ! Code to call the XEON-optimized WSM5 is included here
+  ! this also contains OpenMP directives, so they are 
+  ! removed from the driver in the case where WSM5SCHEME
+  ! is selected.
+#  include "mic-wsm5-3-5-callsite.h"
+   IF ( PRESENT (diagflag) ) THEN
+     IF (diagflag .and. do_radar_ref == 1) then
+      !$OMP PARALLEL DO   &
+      !$OMP PRIVATE ( i,j,k,t1d,p1d,qv1d,qr1d,qs1d,dBZ )
+      DO j=jts,jte
+        DO I=its,ite
+          DO K=kts,kte
+            t1d(k)=th(i,k,j)*pii(i,k,j)
+            p1d(k)=p(i,k,j)
+            qv1d(k)=q(i,k,j)
+            qr1d(k)=qr(i,k,j)
+            qs1d(k)=qs(i,k,j)
+          ENDDO
+          call refl10cm_wsm5 (qv1d, qr1d, qs1d,                    &
+                              t1d, p1d, dBZ, kts, kte, i, j)
+          DO k = kts, kte
+                   refl_10cm(i,k,j) = MAX(-35., dBZ(k))
+          ENDDO
+        ENDDO
+      ENDDO
+      !$OMP END PARALLEL DO
+     ENDIF
+   ENDIF
 #endif
 
   END SUBROUTINE wsm5
+
+#ifndef XEON_OPTIMIZED_WSM5
 !===================================================================
 !
   SUBROUTINE wsm52D(t, q                                          & 
@@ -1168,27 +1181,6 @@ CONTAINS
       enddo                  ! big loops
   END SUBROUTINE wsm52d
 ! ...................................................................
-      REAL FUNCTION rgmma(x)
-!-------------------------------------------------------------------
-  IMPLICIT NONE
-!-------------------------------------------------------------------
-!     rgmma function:  use infinite product form
-      REAL :: euler
-      PARAMETER (euler=0.577215664901532)
-      REAL :: x, y
-      INTEGER :: i
-      if(x.eq.1.)then
-        rgmma=0.
-          else
-        rgmma=x*exp(euler*x)
-        do i=1,10000
-          y=float(i)
-          rgmma=rgmma*(1.000+x/y)*exp(-x/y)
-        enddo
-        rgmma=1./rgmma
-      endif
-      END FUNCTION rgmma
-!
 !--------------------------------------------------------------------------
       REAL FUNCTION fpvs(t,ice,rd,rv,cvap,cliq,cice,hvap,hsub,psat,t0c)
 !--------------------------------------------------------------------------
@@ -1213,80 +1205,6 @@ CONTAINS
       endif
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       END FUNCTION fpvs
-!-------------------------------------------------------------------
-  SUBROUTINE wsm5init(den0,denr,dens,cl,cpv,allowed_to_read)
-!-------------------------------------------------------------------
-  IMPLICIT NONE
-!-------------------------------------------------------------------
-!.... constants which may not be tunable
-   REAL, INTENT(IN) :: den0,denr,dens,cl,cpv
-   LOGICAL, INTENT(IN) :: allowed_to_read
-!
-   pi = 4.*atan(1.)
-   xlv1 = cl-cpv
-!
-   qc0  = 4./3.*pi*denr*r0**3*xncr/den0  ! 0.419e-3 -- .61e-3
-   qck1 = .104*9.8*peaut/(xncr*denr)**(1./3.)/xmyu*den0**(4./3.) ! 7.03
-!
-   bvtr1 = 1.+bvtr
-   bvtr2 = 2.5+.5*bvtr
-   bvtr3 = 3.+bvtr
-   bvtr4 = 4.+bvtr
-   g1pbr = rgmma(bvtr1)
-   g3pbr = rgmma(bvtr3)
-   g4pbr = rgmma(bvtr4)            ! 17.837825
-   g5pbro2 = rgmma(bvtr2)          ! 1.8273
-   pvtr = avtr*g4pbr/6.
-   eacrr = 1.0
-   pacrr = pi*n0r*avtr*g3pbr*.25*eacrr
-   precr1 = 2.*pi*n0r*.78
-   precr2 = 2.*pi*n0r*.31*avtr**.5*g5pbro2
-   xmmax = (dimax/dicon)**2
-   roqimax = 2.08e22*dimax**8
-!
-   bvts1 = 1.+bvts
-   bvts2 = 2.5+.5*bvts
-   bvts3 = 3.+bvts
-   bvts4 = 4.+bvts
-   g1pbs = rgmma(bvts1)    !.8875
-   g3pbs = rgmma(bvts3)
-   g4pbs = rgmma(bvts4)    ! 12.0786
-   g5pbso2 = rgmma(bvts2)
-   pvts = avts*g4pbs/6.
-   pacrs = pi*n0s*avts*g3pbs*.25
-   precs1 = 4.*n0s*.65
-   precs2 = 4.*n0s*.44*avts**.5*g5pbso2
-   pidn0r =  pi*denr*n0r
-   pidn0s =  pi*dens*n0s
-   pacrc = pi*n0s*avts*g3pbs*.25*eacrc
-!
-   rslopermax = 1./lamdarmax
-   rslopesmax = 1./lamdasmax
-   rsloperbmax = rslopermax ** bvtr
-   rslopesbmax = rslopesmax ** bvts
-   rsloper2max = rslopermax * rslopermax
-   rslopes2max = rslopesmax * rslopesmax
-   rsloper3max = rsloper2max * rslopermax
-   rslopes3max = rslopes2max * rslopesmax
-!
-!+---+-----------------------------------------------------------------+
-!..Set these variables needed for computing radar reflectivity.  These
-!.. get used within radar_init to create other variables used in the
-!.. radar module.
-   xam_r = PI*denr/6.
-   xbm_r = 3.
-   xmu_r = 0.
-   xam_s = PI*dens/6.
-   xbm_s = 3.
-   xmu_s = 0.
-   xam_g = PI*dens/6.      !  These 3 variables for graupel are set but unused.
-   xbm_g = 3.
-   xmu_g = 0.
-
-   call radar_init
-!+---+-----------------------------------------------------------------+
-
-  END SUBROUTINE wsm5init
 !------------------------------------------------------------------------------
       subroutine slope_wsm5(qrs,den,denfac,t,rslope,rslopeb,rslope2,rslope3,   &
                             vt,its,ite,kts,kte)
@@ -1686,6 +1604,13 @@ CONTAINS
 !
   END SUBROUTINE nislfv_rain_plm
 
+# else
+#  include "mic-wsm5-3-5-code.h"
+# endif
+! end of #ifndef XEON_OPTIMIZED_WSM5
+
+! remainder of routines are common to original and MIC version
+
 !+---+-----------------------------------------------------------------+
       subroutine refl10cm_wsm5 (qv1d, qr1d, qs1d,                       &
                        t1d, p1d, dBZ, kts, kte, ii, jj)
@@ -1823,6 +1748,101 @@ CONTAINS
 
       end subroutine refl10cm_wsm5
 !+---+-----------------------------------------------------------------+
+!-------------------------------------------------------------------
+  SUBROUTINE wsm5init(den0,denr,dens,cl,cpv,allowed_to_read)
+!-------------------------------------------------------------------
+  IMPLICIT NONE
+!-------------------------------------------------------------------
+!.... constants which may not be tunable
+   REAL, INTENT(IN) :: den0,denr,dens,cl,cpv
+   LOGICAL, INTENT(IN) :: allowed_to_read
+!
+   pi = 4.*atan(1.)
+   xlv1 = cl-cpv
+!
+   qc0  = 4./3.*pi*denr*r0**3*xncr/den0  ! 0.419e-3 -- .61e-3
+   qck1 = .104*9.8*peaut/(xncr*denr)**(1./3.)/xmyu*den0**(4./3.) ! 7.03
+!
+   bvtr1 = 1.+bvtr
+   bvtr2 = 2.5+.5*bvtr
+   bvtr3 = 3.+bvtr
+   bvtr4 = 4.+bvtr
+   g1pbr = rgmma(bvtr1)
+   g3pbr = rgmma(bvtr3)
+   g4pbr = rgmma(bvtr4)            ! 17.837825
+   g5pbro2 = rgmma(bvtr2)          ! 1.8273
+   pvtr = avtr*g4pbr/6.
+   eacrr = 1.0
+   pacrr = pi*n0r*avtr*g3pbr*.25*eacrr
+   precr1 = 2.*pi*n0r*.78
+   precr2 = 2.*pi*n0r*.31*avtr**.5*g5pbro2
+   xmmax = (dimax/dicon)**2
+   roqimax = 2.08e22*dimax**8
+!
+   bvts1 = 1.+bvts
+   bvts2 = 2.5+.5*bvts
+   bvts3 = 3.+bvts
+   bvts4 = 4.+bvts
+   g1pbs = rgmma(bvts1)    !.8875
+   g3pbs = rgmma(bvts3)
+   g4pbs = rgmma(bvts4)    ! 12.0786
+   g5pbso2 = rgmma(bvts2)
+   pvts = avts*g4pbs/6.
+   pacrs = pi*n0s*avts*g3pbs*.25
+   precs1 = 4.*n0s*.65
+   precs2 = 4.*n0s*.44*avts**.5*g5pbso2
+   pidn0r =  pi*denr*n0r
+   pidn0s =  pi*dens*n0s
+   pacrc = pi*n0s*avts*g3pbs*.25*eacrc
+!
+   rslopermax = 1./lamdarmax
+   rslopesmax = 1./lamdasmax
+   rsloperbmax = rslopermax ** bvtr
+   rslopesbmax = rslopesmax ** bvts
+   rsloper2max = rslopermax * rslopermax
+   rslopes2max = rslopesmax * rslopesmax
+   rsloper3max = rsloper2max * rslopermax
+   rslopes3max = rslopes2max * rslopesmax
+!
+!+---+-----------------------------------------------------------------+
+!..Set these variables needed for computing radar reflectivity.  These
+!.. get used within radar_init to create other variables used in the
+!.. radar module.
+   xam_r = PI*denr/6.
+   xbm_r = 3.
+   xmu_r = 0.
+   xam_s = PI*dens/6.
+   xbm_s = 3.
+   xmu_s = 0.
+   xam_g = PI*dens/6.      !  These 3 variables for graupel are set but unused.
+   xbm_g = 3.
+   xmu_g = 0.
+
+   call radar_init
+!+---+-----------------------------------------------------------------+
+
+  END SUBROUTINE wsm5init
+! ...................................................................
+      REAL FUNCTION rgmma(x)
+!-------------------------------------------------------------------
+  IMPLICIT NONE
+!-------------------------------------------------------------------
+!     rgmma function:  use infinite product form
+      REAL :: euler
+      PARAMETER (euler=0.577215664901532)
+      REAL :: x, y
+      INTEGER :: i
+      if(x.eq.1.)then
+        rgmma=0.
+          else
+        rgmma=x*exp(euler*x)
+        do i=1,10000
+          y=float(i)
+          rgmma=rgmma*(1.000+x/y)*exp(-x/y)
+        enddo
+        rgmma=1./rgmma
+      endif
+      END FUNCTION rgmma
 
 END MODULE module_mp_wsm5
 #endif

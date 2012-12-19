@@ -4,7 +4,7 @@ MODULE module_optional_input
               flag_snow     , flag_snowh    , flag_tsk      , flag_pinterp
 
    INTEGER :: flag_qv       , flag_qc       , flag_qr       , flag_qi       , flag_qs       , &
-              flag_qg       , flag_qh       , flag_qni      , flag_sh
+              flag_qg       , flag_qh       , flag_qni      , flag_qnr      , flag_sh
 
    INTEGER :: flag_soil_levels, flag_soil_layers
 
@@ -289,6 +289,7 @@ USE module_io_domain
       flag_qg       = 0
       flag_qh       = 0
       flag_qni      = 0
+      flag_qnr      = 0
       flag_sh       = 0
 
       flag_name(1:8) = 'QV      '
@@ -330,6 +331,11 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_qni       = itmp
+      END IF
+      flag_name(1:8) = 'QNR      '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnr       = itmp
       END IF
       flag_name(1:8) = 'SH      '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
@@ -621,7 +627,7 @@ USE module_io_domain
                  ims, ime, jms, jme, kms, kme, &
                  its, ite, jts, jte, kts, kte
 
-      INTEGER :: itmp , icnt , ierr
+      INTEGER :: itmp , icnt , ierr, i, j
 
       flag_name = '                                                                                '
 
@@ -639,6 +645,18 @@ USE module_io_domain
       IF ( ierr .EQ. 0 ) THEN
          flag_icefrac  = itmp
       END IF
+
+      !
+      !  If ice depth is not found, set it to a large negative
+      !  that we can check on later.
+      !
+      IF ( flag_icedepth == 0 ) THEN
+          DO j = jts , MIN(jde-1,jte)
+              DO i = its , MIN(ide-1,ite)
+                  grid%icedepth(i,j) = -1.E8
+              ENDDO
+          ENDDO
+      ENDIF
     
    END SUBROUTINE optional_ice
 

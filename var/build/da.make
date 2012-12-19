@@ -307,7 +307,7 @@ rad_bias.o pythag.o tqli.o tred2.o regress_one.o da_update_bc.o :
 	$(SFC) -c $(FCFLAGS) $(PROMOTION) -I$(NETCDF)/include $*.f
 
 da_netcdf_interface.o da_module_couple_uv.o gen_be_etkf.o netcdf_interface.o \
-da_gen_be.o gen_be_ensmean.o:
+da_gen_be.o gen_be_ensmean.o gen_be_addmean.o:
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) -I$(NETCDF)/include $*.b  > $*.f

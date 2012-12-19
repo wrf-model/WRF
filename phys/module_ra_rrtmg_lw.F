@@ -11343,6 +11343,7 @@ CONTAINS
                        xland, xice, snow,                         &
                        qv3d, qc3d, qr3d,                          &
                        qi3d, qs3d, qg3d,                          &
+                       o3input, o33d,                             &
                        f_qv, f_qc, f_qr, f_qi, f_qs, f_qg,        &
                        tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4,   & ! czhao 
                        tauaerlw5,tauaerlw6,tauaerlw7,tauaerlw8,   & ! czhao 
@@ -11352,12 +11353,18 @@ CONTAINS
 !jdfcz                 progn,prescribe,                           & !czhao
                        progn,                                     & !czhao
                        qndrop3d,f_qndrop,                         & !czhao
+!ccc added for time varying gases.
+                       yr,julian,                                 & 
+!ccc 
                        ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
                        lwupflx, lwupflxc, lwdnflx, lwdnflxc       &
                                                                   )
-!------------------------------------------------------------------
+!------------------------------------------------------------------                                                                  )
+!ccc To use clWRF time varying trace gases
+   USE MODULE_RA_CLWRF_SUPPORT, ONLY : read_CAMgases
+
    IMPLICIT NONE
 !------------------------------------------------------------------
    LOGICAL, INTENT(IN )      ::        warm_rain
@@ -11395,6 +11402,12 @@ CONTAINS
          INTENT(IN   )  ::                                 XLAND, &
                                                             XICE, &
                                                             SNOW
+
+!ccc Added for time-varying trace gases.
+   INTEGER, INTENT(IN    ) ::                                 yr
+   REAL, INTENT(IN    ) ::                                julian
+!ccc
+
 !
 ! Optional
 !
@@ -11429,6 +11442,11 @@ CONTAINS
    INTEGER,    INTENT(IN  ), OPTIONAL   ::       aer_ra_feedback
 !jdfcz   INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn,prescribe
    INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn
+!  Ozone
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
+         OPTIONAL                                               , &
+         INTENT(IN   ) :: O33D
+   INTEGER, OPTIONAL, INTENT(IN ) :: o3input
 
       real, parameter :: thresh=1.e-9
       real slope
@@ -11463,6 +11481,7 @@ CONTAINS
                                                             QI1D, &
                                                             QS1D, &
                                                             QG1D, &
+                                                            O31D, &
                                                           qndrop1d 
 
 ! Added local arrays for RRTMG
@@ -11524,6 +11543,14 @@ CONTAINS
     real ::                                                   ro, &
                                                               dz
 
+!ccc To add time-varying trace gases (CO2, N2O and CH4). Read the conc. from file
+! then interpolate to date of run.
+#ifdef CLWRFGHG
+! CLWRF-UC June.09 
+      REAL(8)                                      :: co2, n2o, ch4, cfc11, cfc12 
+      LOGICAL, EXTERNAL                            :: wrf_dm_on_monitor
+      CHARACTER(LEN=256)                           :: message
+#else
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv)
     real :: co2
@@ -11540,6 +11567,7 @@ CONTAINS
 ! cfc-12 (538 ppt)
     real :: cfc12
     data cfc12 / 0.538e-9 / 
+#endif
 ! cfc-22 (169 ppt)
     real :: cfc22
     data cfc22 / 0.169e-9 / 
@@ -11660,6 +11688,23 @@ CONTAINS
 !                                                              
 ! All fields are ordered vertically from bottom to top
 ! Pressures are in mb
+!
+!ccc Read time-varying trace gases concentrations and interpolate them to run date.
+! 
+#ifdef CLWRFGHG
+
+   CALL read_CAMgases(yr,julian,"RRTMG",co2,n2o,ch4,cfc11,cfc12)
+
+   IF ( wrf_dm_on_monitor() ) THEN
+     WRITE(message,*)'CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
+     call wrf_debug( 0, message)
+     WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2,' n2ovmr:',n2o,' ch4vmr:',ch4,' cfc11vmr:',cfc11,' cfc12vmr:',cfc12
+     call wrf_debug( 0, message)
+   ENDIF
+
+#endif
+!ccc
+
 
 ! latitude loop
   j_loop: do j = jts,jte
@@ -11684,6 +11729,7 @@ CONTAINS
          DO K=kts,kte
             QV1D(K)=QV3D(I,K,J)
             QV1D(K)=max(0.,QV1D(K))
+            O31D(K)=O33D(I,K,J)
          ENDDO
 
          DO K=kts,kte
@@ -11945,6 +11991,15 @@ CONTAINS
 ! Steven Cavallo: Changed to nlayers from kte+1
          do k = kts, nlayers
             o3vmr(ncol,k) = o3mmr(k) * amdo
+            if(o3input .eq. 2)then
+               if(k.le.kte)then
+                 o3vmr(ncol,k) = o31d(k)
+               else
+! apply shifted climatology profile above model top
+                 o3vmr(ncol,k) = o31d(kte) - o3mmr(kte)*amdo + o3mmr(k)*amdo 
+                 if(o3vmr(ncol,k) .le. 0.)o3vmr(ncol,k) = o3mmr(k)*amdo
+               endif
+            endif
          enddo
 
 ! Set surface emissivity in each RRTMG longwave band

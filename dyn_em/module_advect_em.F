@@ -5871,6 +5871,7 @@ ELSE IF (horz_order == 2 ) THEN
       DO j = j_start, j_end
 
          DO k=kts+2,ktf
+!DEC$ vector always
          DO i = i_start, i_end
            vel=0.5*(rom(i,k,j)+rom(i,k-1,j))
            vflux(i,k) = vel*flux3(              &
@@ -6012,6 +6013,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 !  storage for high and low order fluxes
 
    REAL,  DIMENSION( its-1:ite+2, kts:kte, jts-1:jte+2  ) :: fqx, fqy, fqz
+
    REAL,  DIMENSION( its-1:ite+2, kts:kte, jts-1:jte+2  ) :: fqxl, fqyl, fqzl
 
    INTEGER :: horz_order, vert_order
@@ -7451,6 +7453,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
          ENDDO
 
          DO k=kts+2,ktf-1
+!DEC$ vector always
          DO i = i_start, i_end
 
            dz = 2./(rdzw(k)+rdzw(k-1))
@@ -7569,6 +7572,10 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
    DO j=j_start, j_end
    DO k=kts, ktf
+#ifdef INTEL_ALIGN64
+!DEC$ ASSUME_ALIGNED fqx:64, fqy:64, fqz:64, fqxl:64, fqyl:64, fqzl:64
+#endif
+!DEC$ vector always
    DO i=i_start, i_end
 
      ph_low = (mub(i,j)+mu_old(i,j))*field_old(i,k,j)        &
@@ -7614,6 +7621,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
   DO j = j_start, j_end
   DO k = kts, ktf
+!DEC$ vector always
   DO i = i_start, i_end
 
      tendency (i,k,j) = tendency(i,k,j)                           &
@@ -7644,6 +7652,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
   DO j = j_start, j_end
   DO k = kts, ktf
+!DEC$ vector always  
   DO i = i_start, i_end
 
      ! Un-"canceled" map scale factor, ADT Eq. 48
@@ -7678,6 +7687,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
   DO j = j_start, j_end
   DO k = kts, ktf
+!DEC$ vector always
   DO i = i_start, i_end
 
      ! Un-"canceled" map scale factor, ADT Eq. 48
@@ -7804,7 +7814,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
 
     real               :: qim2, qim1, qi, qip1, qip2
     double precision               :: beta0, beta1, beta2, f0, f1, f2, wi0, wi1, wi2, sumwk
-    double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps1=1.0d-18
+    double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps1=1.0d-28
     integer, parameter :: pw = 2
 
 
@@ -9638,7 +9648,7 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
     
     real               :: qim2, qim1, qi, qip1, qip2
     double precision               :: beta0, beta1, beta2, f0, f1, f2, wi0, wi1, wi2, sumwk
-    double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps=1.0d-18
+    double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps=1.0d-28
     integer, parameter :: pw = 2
 
 

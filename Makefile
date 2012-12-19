@@ -63,6 +63,7 @@ wrf : framework_only
 	if [ $(WRF_EM_CORE) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core ; fi
 	if [ $(WRF_NMM_CORE) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" nmm_core ; fi
 	if [ $(WRF_EXP_CORE) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" exp_core ; fi
+	if [ $(WRF_HYDRO) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" wrf_hydro ; fi
 	( cd main ; $(MAKE) MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf )
 	( cd run ; /bin/rm -f wrf.exe ; ln -s ../main/wrf.exe . )
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
@@ -272,7 +273,7 @@ em_real : wrf
 	  ( cd test/em_esmf_exp ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ) ; \
 	  ( cd test/em_esmf_exp ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ; \
                ln -sf ../../run/ETAMPNEW_DATA . ;                      \
-               ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;                      \
+               ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;        \
                ln -sf ../../run/RRTM_DATA . ;                          \
                ln -sf ../../run/RRTMG_LW_DATA . ;                      \
                ln -sf ../../run/RRTMG_SW_DATA . ;                      \
@@ -281,6 +282,10 @@ em_real : wrf
                ln -sf ../../run/ozone.formatted . ;                    \
                ln -sf ../../run/ozone_lat.formatted . ;                \
                ln -sf ../../run/ozone_plev.formatted . ;               \
+               ln -sf ../../run/aerosol.formatted . ;                  \
+               ln -sf ../../run/aerosol_lat.formatted . ;              \
+               ln -sf ../../run/aerosol_lon.formatted . ;              \
+               ln -sf ../../run/aerosol_plev.formatted . ;             \
                if [ $(RWORDSIZE) -eq 8 ] ; then                        \
                   ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
                   ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
@@ -307,15 +312,19 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ;    \
              ln -sf ../../run/ETAMPNEW_DATA . ;                     \
-             ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;                     \
+             ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;       \
              ln -sf ../../run/RRTM_DATA . ;                         \
-             ln -sf ../../run/RRTMG_LW_DATA . ;                      \
-             ln -sf ../../run/RRTMG_SW_DATA . ;                      \
-             ln -sf ../../run/CAM_ABS_DATA . ;                         \
-             ln -sf ../../run/CAM_AEROPT_DATA . ;                         \
-             ln -sf ../../run/ozone.formatted . ;                         \
-             ln -sf ../../run/ozone_lat.formatted . ;                         \
-             ln -sf ../../run/ozone_plev.formatted . ;                         \
+             ln -sf ../../run/RRTMG_LW_DATA . ;                     \
+             ln -sf ../../run/RRTMG_SW_DATA . ;                     \
+             ln -sf ../../run/CAM_ABS_DATA . ;                      \
+             ln -sf ../../run/CAM_AEROPT_DATA . ;                   \
+             ln -sf ../../run/ozone.formatted . ;                   \
+             ln -sf ../../run/ozone_lat.formatted . ;               \
+             ln -sf ../../run/ozone_plev.formatted . ;              \
+             ln -sf ../../run/aerosol.formatted . ;                 \
+             ln -sf ../../run/aerosol_lat.formatted . ;             \
+             ln -sf ../../run/aerosol_lon.formatted . ;             \
+             ln -sf ../../run/aerosol_plev.formatted . ;            \
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
                 ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
@@ -534,7 +543,7 @@ framework :
 	       LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf; \
           cd ../io_int ; \
-          $(MAKE) SFC="$(SFC) $(FCBASEOPTS)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          $(MAKE) SFC="$(SFC) $(FCBASEOPTS)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" DM_FC="$(DM_FC) $(FCBASEOPTS)"\
                TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf ; \
           cd ../../frame )
@@ -550,18 +559,32 @@ framework :
 
 shared :
 	@ echo '--------------------------------------'
-	( cd share ; $(MAKE) $(J) )
+	if [ "`echo $(J) | sed -e 's/-j//g' -e 's/ \+//g'`" -gt "6" ] ; then \
+	  ( cd share ; $(MAKE) -j 6 ) ;  \
+	else \
+	  ( cd share ; $(MAKE) $(J) ) ;  \
+	fi
+
+wrf_hydro :
+	@ echo '----------wrf_hydro-----------------------'
+	if [ $(WRF_HYDRO) -eq 1 ]   ; then (cd hydro/WRF_cpl; make -f Makefile.cpl) ; fi
 
 chemics :
 	@ echo '--------------------------------------'
 	if [ $(WRF_KPP) -eq 1 ] ; then ( cd chem ; $(MAKE) ) ; fi
-	if [ $(WRF_KPP) -eq 0 ] ; then ( cd chem ; $(MAKE) $(J) ) ; fi
+	if [ $(WRF_KPP) -eq 0 ] ; then \
+	  if  [ "`echo $(J) | sed -e 's/-j//g' -e 's/ \+//g'`" -gt "16" ] ; then \
+	    ( cd chem ; $(MAKE) -j 16 ) ;  \
+	  else \
+	    ( cd chem ; $(MAKE) $(J) ) ; \
+	  fi \
+	fi
 #	( cd chem ; $(MAKE) )
 #	( cd chem ; $(MAKE) $(J) )
 
 physics :
 	@ echo '--------------------------------------'
-	( cd phys ; $(MAKE)  $(J) )
+	( cd phys ; $(MAKE) )
 
 em_core :
 	@ echo '--------------------------------------'
@@ -595,7 +618,11 @@ exp_core :
 # uncomment the two lines after nmm_core for NMM
 nmm_core :
 	@ echo '--------------------------------------'
-	( cd dyn_nmm ; $(MAKE) )
+	if [ "`echo $(J) | sed -e 's/-j//g' -e 's/ \+//g'`" -gt "16" ] ; then \
+	  ( cd dyn_nmm ; $(MAKE) -j 16 ) ;  \
+	else \
+	  ( cd dyn_nmm ; $(MAKE) $(J) ) ;  \
+	fi
 
 toolsdir :
 	@ echo '--------------------------------------'

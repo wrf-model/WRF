@@ -70,7 +70,7 @@
     iprt_in4dob = grid%obs_ipf_in4dob
 
     IF( (ktau.GT.krest.AND.MOD(ktau,infreq).EQ.0)                            &
-                                         .OR.(ktau.EQ.krest) ) then
+                                         .OR.(ktau.EQ.krest) .AND. grid%xtime <= grid%fdda_end ) then
 ! Calculate forecast time.
       dtmin = grid%dt/60.
       xtime = grid%xtime

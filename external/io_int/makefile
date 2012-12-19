@@ -1,64 +1,89 @@
 #makefile to build io_int that does binary i/o
 
-OBJSL   = io_int.o 
-OBJS    = $(OBJSL)
-FFLAGS  = $(FCFLAGS)
-LIBS    = 
+OBJS    = io_int.o io_int_idx.o module_io_int_idx.o module_io_int_read.o
+LIB     = libwrfio_int.a
+WRF_MOD = ../../frame/pack_utils.o \
+	  ../../frame/module_internal_header_util.o \
+	  ../../frame/module_driver_constants.o \
+	  ../../frame/module_machine.o \
+	  ../../frame/module_wrf_error.o \
+	  ../../frame/wrf_debug.o
+
 CPP1    = $(CPP) $(TRADFLAG)
 M4      = m4 -Uinclude -Uindex -Ulen
-AR      = ar
 
-.SUFFIXES:      .F90 .F .f .o .code
+.SUFFIXES: .F90 .F .f .f90 .c .h .o .code
 
-all : libwrfio_int.a diffwrf
+all : $(LIB) diffwrf test_io_idx
 
-libwrfio_int.a:		$(OBJS)
-			/bin/rm -f libwrfio_int.a
-			$(AR) cr libwrfio_int.a $(OBJSL)
-			$(RANLIB) libwrfio_int.a
+$(LIB): $(OBJS)
+	$(RM) $@
+	$(AR) $(ARFLAGS) $@ $^
+	$(RANLIB) $@
 
-io_int.o:               io_int.F90 module_internal_header_util.o
-			$(CPP1)  -I../../inc -I../ioapi_share io_int.F90 | $(M4) - > io_int.f
-			@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
-                          echo COMPILING io_int.F90 for 4DVAR ; \
-                          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl io_int.f > io_int.f.tmp ; \
-                          mv io_int.f.tmp io_int.f ; \
-                        fi
-			$(FC) $(FFLAGS) -I../../inc -I. -I../ioapi_share -o $@ -c io_int.f
-			/bin/rm -f intio_tags.h
+io_int.f: io_int.F90 module_internal_header_util.o
+	$(CPP1)  -I../../inc -I../ioapi_share $*.F90 | $(M4) - > $@
+	@if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+           echo COMPILING $*.F90 for 4DVAR ; \
+           $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $@ > io_int.tmp; \
+           mv io_int.tmp $@ ; \
+	fi
 
-# this is just so we can get the .mod file, it will be recompiled in frame again as part of WRF frmwk
-module_internal_header_util.o :
-			cp ../../frame/module_internal_header_util.F module_internal_header_util.b
-			cp ../../inc/intio_tags.h intio_tags.h
-			/bin/rm -f module_internal_header_util.f
-			$(CPP1)  -I../ioapi_share module_internal_header_util.b > module_internal_header_util.f
-			$(FC) $(FFLAGS) -I. -o $@ -c module_internal_header_util.f
-			/bin/rm -f module_internal_header_util.b
+io_int.o: io_int.f ../../inc/intio_tags.h
+	$(FC) $(FCFLAGS) -I../../inc -I../ioapi_share -o $@ -c $*.f
 
-diffwrf:                diffwrf.F ../../frame/pack_utils.o ../../frame/module_machine.o ../../frame/module_wrf_error.o \
-				../../frame/wrf_debug.o libwrfio_int.a $(ESMF_MOD_DEPENDENCE)
-			if [ -f ../../frame/pack_utils.o -a -f ../../frame/clog.o ] ; then \
-			mv diffwrf.F diffwrf.F90    ; \
-                        x=`echo "$(FC)" | awk '{print $$1}'` ; export x ; \
-                        if [ $$x = "gfortran" ] ; then \
-                          echo removing external declaration of iargc for gfortran ; \
-			  $(CPP1)  -I../ioapi_share diffwrf.F90 | sed '/integer *, *external.*iargc/d' > diffwrf.f  ; \
-                        else \
-			  $(CPP1)  -I../ioapi_share diffwrf.F90 > diffwrf.f  ; \
-                        fi ; \
-			$(FC) -c $(FFLAGS) -I../ioapi_share diffwrf.f    ; \
-			mv diffwrf.F90 diffwrf.F ; \
-			$(FC) $(FFLAGS) $(LDFLAGS) -o diffwrf diffwrf.o $(OBJSL) \
-                        ../../frame/pack_utils.o ../../frame/module_internal_header_util.o \
-                        ../../frame/module_driver_constants.o \
-			../../frame/module_machine.o ../../frame/wrf_debug.o ../../frame/module_wrf_error.o \
-			../../frame/clog.o \
-			$(ESMF_IO_LIB_EXT) ; fi
+io_int_idx_tags.h: ../../inc/intio_tags.h
+	awk '{print "#define", toupper($$4), $$6}' < ../../inc/intio_tags.h > $@
 
-../../frame/pack_utils.o ../../frame/internal_header_util.o ../../frame/module_machine.o ../../frame/module_wrf_error.o \
-../../frame/wrf_debug.o ../../frame/clog.o $(ESMF_MOD_DEPENDENCE) :
-			@echo "Diffwrf io_int will be built later on in this compile. No need to rerun compile. "
+io_int_idx.o: io_int_idx.c io_int_idx.h io_int_idx_tags.h
+	$(CC) -o $@ -c $*.c
+
+module_io_int_idx.o: module_io_int_idx.f90
+	$(FC) $(FCFLAGS) -o $@ -c $*.f90
+
+module_io_int_read.o: module_io_int_read.f module_io_int_idx.o
+	$(FC) $(FCFLAGS) -I../../frame -o $@ -c $*.f
+
+module_io_int_read.f: module_io_int_read.F90
+	$(CPP1) $(ARCHFLAGS) $*.F90 > $@
+
+# this is just so we can get the .mod file, it will be recompiled in
+# frame again as part of WRF frmwk
+module_internal_header_util.f: ../../frame/module_internal_header_util.F
+	-$(RM) $@
+	cp ../../frame/module_internal_header_util.F mod_int_hdr_util.b
+	$(CPP1) -I../../inc -I../ioapi_share mod_int_hdr_util.b > $@
+	$(RM) mod_int_hdr_util.b
+
+module_internal_header_util.o: module_internal_header_util.f
+	$(FC) $(FCFLAGS) -o $@ -c $*.f
+
+diffwrf.f: diffwrf.F90
+	if [ `echo "$(FC)" | awk '{print $$1}'` = "gfortran" ] ; then \
+		echo removing external declaration of iargc for gfortran ; \
+		$(CPP1)  -I../ioapi_share $*.F90 | \
+		sed '/integer *, *external.*iargc/d' > $@  ; \
+	else \
+		$(CPP1)  -I../ioapi_share $*.F90 > $@  ; \
+	fi ; \
+	$(FC) -c $(FCFLAGS) -I../ioapi_share $@ ; \
+
+
+diffwrf: diffwrf.f $(WRF_MOD) $(ESMF_MOD_DEPENDENCE) $(LIB)
+	if [ -f ../../frame/pack_utils.o -a -f ../../frame/clog.o ] ; then \
+	  $(FC) $(FCFLAGS) $(LDFLAGS) -I../ioapi_share -o diffwrf $@.f \
+		$(WRF_MOD) $(ESMF_IO_LIB_EXT) $(LIB) ; \
+	fi
+
+$(WRF_MOD) $(ESMF_MOD_DEPENDENCE):
+	@echo "Diffwrf io_int will be built later on in this compile. No need to rerun compile. "
+
+test_io_idx: test_io_idx.f90 $(LIB)
+	$(FC) $(FCFLAGS) $(LDFLAGS) -o $@ $@.f90 -L. -lwrfio_int
+
+test_io_mpi: test_io_mpi.f90 $(LIB)
+	$(FC) $(FCFLAGS) $(LDFLAGS) -o $@ $@.f90 -L. -lwrfio_int
 
 superclean:
-			/bin/rm -f *.f *.o *.obj *.i *.mod libwrfio_int.a diffwrf 
+	-$(RM) *.f *.o *.obj *.i *.mod $(LIB) diffwrf io_int_idx_tags.h \
+		test_io_idx test_io_mpi io_int_idx_tags.h

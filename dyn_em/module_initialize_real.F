@@ -102,7 +102,7 @@ CONTAINS
       INTEGER :: im, num_3d_m, num_3d_s
       REAL    :: p_surf, p_level
       REAL    :: cof1, cof2
-      REAL    :: qvf , qvf1 , qvf2 , pd_surf
+      REAL    :: qvf , qvf1 , qvf2 , qtot, pd_surf
       REAL    :: p00 , t00 , a , tiso
       REAL    :: hold_znw , ptemp
       REAL    :: vap_pres_mb , sat_vap_pres_mb
@@ -1348,6 +1348,21 @@ integer::oops1,oops2
                END IF
             END DO
          END IF
+    
+         IF ( flag_qnr .EQ. 1 ) THEN
+            DO im = PARAM_FIRST_SCALAR, num_3d_s
+               IF ( im .EQ. P_QNR ) THEN
+                  CALL vert_interp ( grid%qnr_gc , grid%pd_gc , scalar(:,:,:,P_QNR) , grid%pb , &
+                                     num_metgrid_levels , 'Q' , &
+                                     interp_type , lagrange_order , extrap_type , &
+                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     ids , ide , jds , jde , kds , kde , &
+                                     ims , ime , jms , jme , kms , kme , &
+                                     its , ite , jts , jte , kts , kte )
+               END IF
+            END DO
+         END IF
 
          !  If this is UM data, put the dry rho-based pressure back into the dry pressure array.
          !  Since the dry pressure is no longer needed, no biggy.
@@ -1555,6 +1570,87 @@ integer::oops1,oops2
 
       IF ( any_valid_points ) THEN
       IF ( config_flags%surface_input_source .EQ. 1 ) THEN
+
+      !  Spliti NUDAPT  Urban Parameters
+
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+               grid%LP_URB2D(i,j)  = grid%URB_PARAM(i,91,j)
+               grid%LB_URB2D(i,j)  = grid%URB_PARAM(i,95,j)
+               grid%HGT_URB2D(i,j)  = grid%URB_PARAM(i,94,j)
+            END DO
+         END DO
+
+
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+               DO k = 1, 15
+                  grid%HI_URB2D(i,k,j)  = grid%URB_PARAM(i,k+117,j)
+               END DO
+            END DO
+         END DO
+
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+               grid%MH_URB2D(i,j)  = grid%URB_PARAM(i,92,j)
+               grid%STDH_URB2D(i,j)  = grid%URB_PARAM(i,93,j)
+               grid%H2W_URB2D(i,j)  = grid%URB_PARAM(i,101,j)
+               grid%Z0S_URB2D(i,j)  = grid%URB_PARAM(i,103,j)
+               grid%ZDS_URB2D(i,j)  = grid%URB_PARAM(i,104,j)
+               grid%ZDM_URB2D(i,j)  = grid%URB_PARAM(i,117,j)
+               IF(grid%URB_PARAM(i,100,j).eq.0)THEN
+                  grid%CAR_URB2D(i,j) = 1.0
+               ELSE
+                  grid%CAR_URB2D(i,j) = grid%URB_PARAM(i,100,j)
+               END IF
+               IF(grid%URB_PARAM(i,102,j).eq.0)THEN
+                  grid%SVF_URB2D(i,j) = 1.0
+               ELSE
+                  grid%SVF_URB2D(i,j) = grid%URB_PARAM(i,102,j)
+               END IF
+            END DO
+         END DO
+
+         DO j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+               DO k = 1, 15
+                  grid%FAD0_URB2D(i,k,j)  = grid%URB_PARAM(i,k,j)
+                  grid%FAD135_URB2D(i,k,j)  = grid%URB_PARAM(i,k+15,j)
+                  grid%FAD45_URB2D(i,k,j)  = grid%URB_PARAM(i,k+30,j)
+                  grid%FAD90_URB2D(i,k,j)  = grid%URB_PARAM(i,k+45,j)
+                  grid%PAD_URB2D(i,k,j)  = grid%URB_PARAM(i,k+60,j)
+                  grid%RAD_URB2D(i,k,j)  = grid%URB_PARAM(i,k+75,j)
+               END DO
+            END DO
+         END DO
+
+         DO  j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+               DO k = 1, 4
+                  grid%LF_URB2D(i,k,j)  = grid%URB_PARAM(i,k+95,j)
+                  grid%Z0M_URB2D(i,k,j)  = grid%URB_PARAM(i,k+112,j)
+               END DO
+            END DO
+         END DO
+
+         DO  j = jts , MIN(jde-1,jte)
+            DO i = its , MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+               grid%Z0R_URB2D(i,1,j)  = grid%URB_PARAM(i,105,j)
+               grid%Z0R_URB2D(i,2,j)  = grid%URB_PARAM(i,107,j)
+               grid%Z0R_URB2D(i,3,j)  = grid%URB_PARAM(i,109,j)
+               grid%Z0R_URB2D(i,4,j)  = grid%URB_PARAM(i,111,j)
+               grid%ZDR_URB2D(i,1,j)  = grid%URB_PARAM(i,106,j)
+               grid%ZDR_URB2D(i,2,j)  = grid%URB_PARAM(i,108,j)
+               grid%ZDR_URB2D(i,3,j)  = grid%URB_PARAM(i,110,j)
+               grid%ZDR_URB2D(i,4,j)  = grid%URB_PARAM(i,112,j)
+            END DO
+         END DO
 
       !  Generate the vegetation and soil category information from the fractional input
       !  data, or use the existing dominant category fields if they exist.
@@ -2241,9 +2337,12 @@ endif
 
                k = kte-1
 
-               qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k,j,P_QV))
-               qvf2 = 1./(1.+qvf1)
-               qvf1 = qvf1*qvf2
+               qtot=0.
+               DO im = PARAM_FIRST_SCALAR, num_3d_m
+                 qtot = qtot + moist(i,k,j,im)
+               ENDDO
+               qvf2 = 1./(1.+qtot)
+               qvf1 = qtot*qvf2
 
                grid%p(i,k,j) = - 0.5*(grid%mu_2(i,j)+qvf1*grid%mub(i,j))/grid%rdnw(k)/qvf2
                qvf = 1. + rvovrd*moist(i,k,j,P_QV)
@@ -2256,9 +2355,12 @@ endif
                !  inverse density fields (total and perturbation).
 
                DO k=kte-2,1,-1
-                  qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k+1,j,P_QV))
-                  qvf2 = 1./(1.+qvf1)
-                  qvf1 = qvf1*qvf2
+                  qtot=0.
+                  DO im = PARAM_FIRST_SCALAR, num_3d_m
+                    qtot = qtot + 0.5*(moist(i,k,j,im)+moist(i,k+1,j,im))
+                  ENDDO
+                  qvf2 = 1./(1.+qtot)
+                  qvf1 = qtot*qvf2
                   grid%p(i,k,j) = grid%p(i,k+1,j) - (grid%mu_2(i,j) + qvf1*grid%mub(i,j))/qvf2/grid%rdn(k+1)
                   qvf = 1. + rvovrd*moist(i,k,j,P_QV)
                   grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_2(i,k,j)+t0)*qvf* &

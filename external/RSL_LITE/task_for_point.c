@@ -14,6 +14,10 @@
    JM
 */
 
+/* experimental for running some tasks on host and some on MIC 
+   if minx = -99 then miny is the number of grid points I want in the Y dimension.
+   Otherwise both are set to 1 and it works normally 20121018 JM */
+
 static char tfpmess[1024] ;
 
 TASK_FOR_POINT ( i_p , j_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p , Px_p, Py_p , minx_p, miny_p, ierr_p )
@@ -31,8 +35,18 @@ TASK_FOR_POINT ( i_p , j_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p , Px_p,
   minx = *minx_p ;
   miny = *miny_p ;
 #else
+  if ( *minx_p == -99 ) {
+    minx = 1 ;
+    miny = *miny_p ;
+    npx = ( *npx_p * *npy_p ) / 2 ;     /* x dim gets half the tasks , only decompose Y by 2 */
+    if ( npx * 2 != *npx_p * *npy_p ) {
+      *ierr_p = 1 ;
+      sprintf(tfpmess,"%d by %d decomp will not work for MIC/HOST splitting. Need even number of tasks\n") ;
+    }
+  } else {
   minx = 1 ;
   miny = 1 ;
+  }
 #endif
   ids = *ids_p - 1 ; ide = *ide_p - 1 ;
   jds = *jds_p - 1 ; jde = *jde_p - 1 ;
@@ -41,6 +55,7 @@ TASK_FOR_POINT ( i_p , j_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p , Px_p,
 
   *ierr_p = 0 ;
 
+  if ( *minx_p != -99 ) {
   /* begin: jm for Peter Johnsen -- noticed problem with polar filters in gwrf
      if the number of processors exceeds number of vertical levels */
   if ( npx > idim ) { npx = idim ; }
@@ -68,6 +83,7 @@ TASK_FOR_POINT ( i_p , j_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p , Px_p,
     }
   }
   /* end: wig */
+  }
 
   i = i >= ids ? i : ids ; i = i <= ide ? i : ide ;
   rem = idim % npx ;
@@ -85,6 +101,7 @@ TASK_FOR_POINT ( i_p , j_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p , Px_p,
   }
 
   j = j >= jds ? j : jds ; j = j <= jde ? j : jde ;
+  if ( *minx_p != -99 ) {
   rem = jdim % npy ;
   a = ( rem / 2 ) * ( (jdim / npy) + 1 ) ;
   b = a + ( npy - rem ) * ( jdim / npy ) ;
@@ -97,6 +114,10 @@ TASK_FOR_POINT ( i_p , j_p , ids_p, ide_p , jds_p, jde_p , npx_p , npy_p , Px_p,
   else {
     Py = ( a / ( (jdim / npy) + 1 ) ) + (b-a-jds) / ( ( b - a ) / ( npy - rem ) ) +
                                         (j-b-jds) / ( ( jdim / npy ) + 1 )  ;
+  }
+  } else {
+    Py = 1 ;
+    if ( j <= jde-miny ) Py = 0 ;
   }
 
   *Px_p = Px ;
@@ -111,6 +132,7 @@ TASK_FOR_POINT_MESSAGE()
 #if 0
 main()
 {
+  int minx, miny, ierr ;
   int ips[100], ipe[100] ;
   int jps[100], jpe[100] ;
   int shw, i , j , ids, ide, jds, jde, npx, npy ;  /* inputs */
@@ -118,6 +140,8 @@ main()
   printf("i, j, ids, ide, jds, jde, npx, npy\n") ;
   scanf("%d %d %d %d %d %d %d %d",&i, &j, &ids,&ide,&jds,&jde,&npx,&npy ) ;
   shw =0 ;
+  minx = -99 ;
+  miny = 180 ;
   for ( i = 0 ; i < 100 ; i++ ) { ips[i] = 9999999 ; ipe[i] = -99999999 ; }
   for ( i = 0 ; i < 100 ; i++ ) { jps[i] = 9999999 ; jpe[i] = -99999999 ; }
 #if 1
@@ -128,8 +152,9 @@ main()
 #endif
   TASK_FOR_POINT ( &i , &j ,
                    &ids, &ide, &jds, &jde , &npx , &npy ,
-                   &Px, &Py ) ;
-  printf("(%3d %3d)   ",Px,Py) ;
+                   &Px, &Py, &minx, &miny, &ierr ) ;
+//  printf("(%3d %3d)   ",Px,Py) ;
+  printf("%d %3d\n  ",i, Px) ;
 #if 1
   }
   printf("\n") ;

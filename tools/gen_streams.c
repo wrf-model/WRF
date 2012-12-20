@@ -177,6 +177,7 @@ gen_io_domain_defs ( FILE * fp )
       fprintf(fp,"END SUBROUTINE %s_%s%s%s\n",dir,aux,streamtype,streamno) ;
     }
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int
@@ -209,7 +210,7 @@ gen_set_timekeeping_defs ( FILE *fp )
     fprintf(fp,"            %s%s%s_end_m,      &\n",aux,streamtype,streamno) ;
     fprintf(fp,"            %s%s%s_end_s        \n",aux,streamtype,streamno) ;
   }
-
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int
@@ -297,6 +298,7 @@ gen_set_timekeeping_alarms ( FILE * fp )
     fprintf(fp,"                           __LINE__  )\n") ;
     fprintf(fp,"   ENDIF\n") ;
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int
@@ -324,6 +326,7 @@ gen_io_form_for_dataset ( FILE *fp )
   fprintf(fp,"    ELSE  ! default if nothing is set in SysDepInfo; use history\n") ;
   fprintf(fp,"      CALL nl_get_io_form_history( 1, io_form )\n") ;
   fprintf(fp,"    ENDIF\n") ;
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int
@@ -351,6 +354,7 @@ gen_io_form_for_stream ( FILE *fp )
   fprintf(fp,"    ELSE  ! if no match then do the old service representative schtick\n") ;
   fprintf(fp,"      CALL wrf_error_fatal('internal error: please contact wrfhelp@ucar.edu: io_form_for_stream.inc -- invalid stream number')\n") ;
   fprintf(fp,"    ENDIF\n") ;
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int
@@ -370,6 +374,7 @@ gen_switches_and_alarms ( FILE *fp )
     fprintf(fp,"INTEGER, PARAMETER :: auxinput%d_only     = %d\n",i,MAX_HISTORY+i+1) ;
     fprintf(fp,"INTEGER, PARAMETER :: AUXINPUT%d_ALARM    = %d\n",i,MAX_HISTORY+i+1) ;
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int
@@ -401,6 +406,7 @@ gen_check_auxstream_alarms ( FILE *fp )
     fprintf(fp,"   ENDIF\n") ;
     fprintf(fp,"#endif\n") ;
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int
@@ -423,6 +429,7 @@ gen_fine_stream_input ( FILE *fp )
   fprintf(fp,"  WRITE( message , '(\"med_initialdata_input: bad fine_input_stream = \",I4)') config_flags%%fine_input_stream\n") ;
   fprintf(fp,"  CALL WRF_ERROR_FATAL ( message )\n") ;
   fprintf(fp,"END IF\n") ;
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int
@@ -438,6 +445,7 @@ gen_med_auxinput_in ( FILE *fp )
     fprintf(fp,"                    input_auxinput%d, ierr )\n",i) ;
     fprintf(fp,"   CALL input_auxinput%d ( grid%%auxinput%d_oid, grid , config_flags , ierr )\n",i,i) ;
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int
@@ -453,6 +461,7 @@ gen_med_hist_out_opens ( FILE *fp )
     fprintf(fp,"                     output_auxhist%d, fname, n2, ierr )\n",i) ;
     fprintf(fp,"   CALL output_auxhist%d ( grid%%auxhist%d_oid, grid , config_flags , ierr )\n",i,i) ;
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int
@@ -469,6 +478,7 @@ gen_med_hist_out_closes ( FILE *fp )
     fprintf(fp,"       grid%%nframes(stream) = 0\n") ;
     fprintf(fp,"     ENDIF\n") ; 
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int
@@ -485,6 +495,7 @@ gen_med_auxinput_in_closes ( FILE *fp )
     fprintf(fp,"       grid%%nframes(stream) = 0\n") ;
     fprintf(fp,"     ENDIF\n") ;
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int
@@ -498,6 +509,7 @@ gen_med_last_solve_io ( FILE *fp )
     fprintf(fp,"   CALL med_hist_out ( grid , AUXHIST%d_ALARM , config_flags )\n",i) ;
     fprintf(fp," ENDIF\n") ;
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 
 int
@@ -509,6 +521,7 @@ gen_shutdown_closes ( FILE *fp )
   {
     fprintf(fp,"IF( grid%%auxhist%d_oid > 0 ) CALL close_dataset ( grid%%auxhist%d_oid, config_flags, 'DATASET=AUXHIST%d' )\n",i,i,i)  ;
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 
 /* generate the calls that main/wrf_ESMFMod.F uses in wrf_state_populate() */
@@ -538,6 +551,7 @@ gen_med_open_esmf_calls ( FILE *fp )
      fprintf(fp,"  IF ( ierr /= 0 ) RETURN\n") ;
      fprintf(fp,"ENDIF\n") ;
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 
 /* generate the calls that main/wrf_ESMFMod.F uses in wrf_state_populate() */
@@ -569,6 +583,7 @@ gen_med_find_esmf_coupling ( FILE *fp )
      fprintf(fp,"  ENDIF\n") ;
      fprintf(fp,"ENDIF\n") ;
   }
+  return 0; /* SamT: bug fix: return a value */
 }
 
 
@@ -629,6 +644,7 @@ gen_io_boilerplate ()
   }
 
   close_the_file( fp ) ;
+  return 0; /* SamT: bug fix: return a value */
 }
 
 

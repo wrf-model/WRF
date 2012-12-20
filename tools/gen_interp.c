@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #ifdef _WIN32
 #define rindex(X,Y) strrchr(X,Y)
@@ -10,6 +11,27 @@
 #include "protos.h"
 #include "registry.h"
 #include "data.h"
+
+int as_long(char *str,long *l) {
+  char *endptr=NULL;
+
+  errno=0;
+  *l=strtol(str,&endptr,10);
+  if(!endptr || *endptr) return 0;
+  return 1;
+}
+
+int as_finite_double(char *str,double *d) {
+  char *endptr=NULL;
+
+  errno=0;
+  *d=strtod(str,&endptr);
+  if(!endptr || *endptr) return 0;
+  if(*d==*d && *d+1!=*d)
+    return 1;
+  else
+    return 0; /* NaN or infinite */
+}
 
 int contains_str( char *s1, char *s2 )
 {
@@ -122,7 +144,8 @@ gen_nest_interp1 ( FILE * fp , node_t * node, char * fourdname, int down_path , 
   char *grid ;
   char *colon, r[10],tx[80],temp[80],moredims[80] ; 
   int d ; 
-
+  double real_store;
+  long long_store;
 
   for ( p1 = node ;  p1 != NULL ; p1 = p1->next )
   {
@@ -240,16 +263,18 @@ if ( ! contains_tok ( halo_define , vname  , ":," ) ) {
               strcat(moredims,",") ; strcat(moredims,temp) ;
               fprintf(fp,"  DO %s = %s\n",temp,tx) ;
             }
-            fprintf(fp,"IF ( SIZE( %s%s, %d ) * SIZE( %s%s, %d ) .GT. 1 ) THEN \n", p->name,tag,xdex+1,p->name,tag,ydex+1 ) ;
+            fprintf(fp,"IF ( SIZE( %s%s, %d ) * SIZE( %s%s, %d ) .GT. 1", p->name,tag,xdex+1,p->name,tag,ydex+1 ) ;
         } else {
           if ( !strcmp( fcn_name, "interp_mask_land_field" ) ||
               !strcmp( fcn_name, "interp_mask_water_field" ) ) {
-            fprintf(fp,"IF ( .TRUE. ) THEN \n") ;
+            fprintf(fp,"IF ( .TRUE.") ;
           } else {
-            fprintf(fp,"IF ( SIZE( %s%s, %d ) * SIZE( %s%s, %d ) .GT. 1 ) THEN \n", grid,vname2,xdex+1,grid,vname2,ydex+1 ) ;
+            fprintf(fp,"IF ( SIZE( %s%s, %d ) * SIZE( %s%s, %d ) .GT. 1", grid,vname2,xdex+1,grid,vname2,ydex+1 ) ;
           }
 	}
-
+        if(p->mp_var)
+          fprintf(fp," .and. (interp_mp .eqv. .true.)");
+        fprintf(fp," ) THEN \n");
 fprintf(fp,"CALL %s (  &         \n", fcn_name ) ;
 
 if ( !strcmp( fcn_name, "interp_mask_land_field" ) || !strcmp( fcn_name, "interp_mask_water_field" ) ) {
@@ -315,43 +340,86 @@ fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio
 
              for ( p1 = strtok(tmpstr,",") ; p1 != NULL ; p1 = strtok(NULL,",") )
              {
-               if (( nd = get_entry ( p1 , Domain.fields )) != NULL )
-               {
-                 if ( nd->boundary_array ) {
-                   if ( sw_new_bdys ) {
-                     int bdy ;
-                     for ( bdy = 1 ; bdy <= 4 ; bdy++ ) {
-                       if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
-#if 0
-                         fprintf(fp,",%s%s,ngrid%%%s%s  &\n", nd->name, bdy_indicator(bdy), nd->name, bdy_indicator(bdy) ) ;
-#else
-                         fprintf(fp,",dummy_%s,ngrid%%%s%s  &\n", 
-                                     bdy_indicator(bdy),
-                                     nd->name, bdy_indicator(bdy) ) ;
-#endif
-                       } else {
-                         char c ;
-                         c = 'i' ; if ( bdy <= 2 ) c = 'j' ;
-                         fprintf(fp,",%s%s(c%cms,1,1,itrace),ngrid%%%s%s(n%cms,1,1,itrace)  &\n", 
-                                           nd->name, bdy_indicator(bdy), c, 
-                                           nd->name, bdy_indicator(bdy), c  ) ;
+               if(as_long(p1,&long_store)) {
+                 /* Integer aux in registry (6, 0x5A, 0774, etc.).
+                    Print in fortran-readable form. */
+                 fprintf(fp,",%ld &\n",long_store);
+               } else if(as_finite_double(p1,&real_store)) {
+                 /* Real aux in registry (3.7, -3.105e+04, etc.).  Print in
+                    fortran-readable form. */
+                 fprintf(fp,",%5.9e &\n",real_store);
+               } else if( (p1[0]=='l' || p1[0]=='L') && p1[1]=='%' && p1[2]!='\0') {
+                 /* Local variable requested (l%varname). */
+                 fprintf(fp,",%s &\n",p1+2);
+               } else if( p1[0]=='@' && p1[1]!='\0' ) {
+                 /* Local variable requested (@varname). */
+                 fprintf(fp,",%s &\n",p1+1);
+               } else if( p1[0]=='*' && p1[1]=='\0' ) {
+                 /* Entire grid requested (*) */
+                 fprintf(fp,",grid ,ngrid &\n");
+               } else if( !strcasecmp(p1,"n%*") ) {
+                 /* Nest grid requested (n%*) */
+                 fprintf(fp,",ngrid &\n");
+               } else if( !strcasecmp(p1,"c%*") ) {
+                 /* Coarse grid requested (c%*) */
+                 fprintf(fp,",grid &\n");
+               } else { /* is n%varname, c%varname, varname or an error */
+                 int want_nest=1;
+                 int want_coarse=1;
+                 char *subvar=p1;
+                 if( (p1[0]=='n' || p1[0]=='N') && p1[1]=='%' && p1[2]!='\0' ) {
+                   /* n%var, so we don't want the coarse domain var */
+                   want_coarse=0;
+                   subvar+=2;
+                 } else if( (p1[0]=='c' || p1[0]=='C') && p1[1]=='%' && p1[2]!='\0' ) {
+                   /* c%var, so we don't want the nest domain var */
+                   want_nest=0;
+                   subvar+=2;
+                 } else {
+                   /* either "varname" (so we give coarse and nest) or an error */
+                 }
+
+                 if (( nd = get_entry ( subvar , Domain.fields )) != NULL ) {
+                   /* Variable name is valid */
+                   if ( nd->boundary_array ) {
+                     /* We're requesting boundary data, which may need
+                        to be handled differently, depending on the
+                        configuration. */
+                     if ( sw_new_bdys ) {
+                       int bdy ;
+                       for ( bdy = 1 ; bdy <= 4 ; bdy++ ) {
+                         if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
+                           if(want_coarse) fprintf(fp,",dummy_%s ",bdy_indicator(bdy));
+                           if(want_nest)   fprintf(fp,",ngrid%%%s%s ",nd->name, bdy_indicator(bdy));
+                         } else {
+                           char c ;
+                           c = 'i' ; if ( bdy <= 2 ) c = 'j' ;
+                           if(want_coarse) fprintf(fp,",%s%s(c%cms,1,1,itrace) ", nd->name, bdy_indicator(bdy), c);
+                           if(want_nest)   fprintf(fp,",ngrid%%%s%s(n%cms,1,1,itrace) ", nd->name, bdy_indicator(bdy), c);
+                         }
+                         fprintf(fp,"&\n");
                        }
+                     } else {
+                       if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
+                         if(want_coarse)   fprintf(fp,",%s ", nd->name) ;
+                         if(want_nest)     fprintf(fp,",ngrid%%%s ", nd->name ) ;
+                       } else {
+                         if(want_coarse)   fprintf(fp,",%s(1,1,1,1,itrace) ", nd->name ) ;
+                         if(want_nest)     fprintf(fp,",ngrid%%%s(1,1,1,1,itrace) ", nd->name ) ;
+                       }
+                       fprintf(fp,"&\n");
                      }
                    } else {
-                     if ( strcmp( nd->use , "_4d_bdy_array_" ) ) {
-                       fprintf(fp,",%s,ngrid%%%s  &\n", nd->name, nd->name ) ;
-                     } else {
-                       fprintf(fp,",%s(1,1,1,1,itrace),ngrid%%%s(1,1,1,1,itrace)  &\n", nd->name, nd->name ) ;
-                     }
+                     /* This is not a boundary array, so pass the
+                        variable. */
+                     if(want_coarse)       fprintf(fp,",grid%%%s",  nd->name ) ;
+                     if(want_nest)         fprintf(fp,",ngrid%%%s",  nd->name ) ;
+                     fprintf(fp,"&\n");
                    }
                  } else {
-                   fprintf(fp,",grid%%%s,ngrid%%%s  &\n",  nd->name,  nd->name ) ;
+                   fprintf(stderr,"REGISTRY WARNING: %s: %s is not a variable or number; ignoring it\n",vname,p1) ;
                  }
                }
-               else
-               {
-	         fprintf(stderr,"REGISTRY WARNING: Don't know about %s in definition of %s\n",p1,vname) ;
-	       }
              }
            }
         }

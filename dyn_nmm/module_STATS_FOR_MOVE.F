@@ -121,10 +121,8 @@ contains
     integer, intent(in) :: ITS,ITE,JTS,JTE,KTS,KTE
     integer :: vortex_tracker
 
-#if (NMM_NEST == 1)
-
     !     KEEP NEST MOTION IN SINK WITH PHYSICS TIME STEPS
-
+#if ( NMM_NEST == 1 )
 #ifdef HWRF
     MOVEFREQ=grid%movemin*grid%nphs
     vortex_tracker=grid%vortex_tracker
@@ -391,7 +389,7 @@ contains
     ! HISTORY:
     !   Nov 08 2011 - written by Sam Trahan
 
-#ifdef DM_PARALLEL
+#ifdef DM_PARALLEL && !defined(STUBMPI)
     USE module_dm, only: wrf_dm_maxval_real, wrf_dm_sum_real, &
          local_communicator_y, local_communicator_x
     IMPLICIT NONE
@@ -488,7 +486,7 @@ contains
        write(message,'("ycount(",I0,") = ",I0)') i,ycount(i)
        call wrf_debug(5,message)
     enddo
-#endif EXPENSIVE_HWRF_DEBUG_STUFF
+#endif
 
     ! Find maximum pressure if requested
     findpmax: if(searchpmax<0.0) then

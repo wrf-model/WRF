@@ -171,7 +171,7 @@ range_of_dimension ( char * r , char * tx , int i , node_t * p , char * nlstruct
    get_elem( r , nlstructname , s , i , p , 0 ) ;
    get_elem( r , nlstructname , e , i , p , 1 ) ;
    sprintf(tx,"%s:%s", s , e ) ;
-
+   return 0; /* SamT: bug fix: return a value */
 }
 
 char *
@@ -181,7 +181,8 @@ index_with_firstelem( char * pre , char * dref , int bdy ,  /* as defined in dat
   int i ;
   char tx[NAMELEN] ;
   char tmp2[NAMELEN] ;
-  int  bdex, xdex, ydex, zdex ;
+  /* SamT: bug fix: zdex is used but never set */
+  int  bdex, xdex, ydex, zdex=-999 ;
   node_t *xdim, *ydim, *zdim ;
   char r[NAMELEN] ;
 
@@ -318,6 +319,7 @@ get_elem ( char * structname , char * nlstructname , char * tx , int i , node_t 
    {
      fprintf(stderr,"WARNING: %s %d: something wrong with internal representation for dim %d\n",__FILE__,__LINE__,i) ;
    }
+   return 0; /* SamT: bug fix: return a value */
 }
 
 char *
@@ -420,6 +422,7 @@ close_the_file( FILE * fp )
 {
 fprintf(fp,"!ENDOFREGISTRYGENERATEDINCLUDE\n") ;
 fclose(fp) ;
+return 0; /* SamT: bug fix: return a value */
 }
 
 int
@@ -643,7 +646,7 @@ dimension_size_expression ( char * r , char * tx , int i , node_t * p , char * n
    get_elem( r , nlstructname , s , i , p , 0 ) ;
    get_elem( r , nlstructname , e , i , p , 1 ) ;
    sprintf(tx,"((%s)-(%s)+1)", e , s ) ;
-
+   return 0; /* SamT: bug fix: return a value */
 }
 
 void

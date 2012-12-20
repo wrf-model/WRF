@@ -26,7 +26,7 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZ
                       -DMAX_HISTORY=$(MAX_HISTORY) \
 		      -DNMM_NEST=$(WRF_NMM_NEST)
 CFLAGS          =    $(CFLAGS_LOCAL) CONFIGURE_DMPARALLEL CONFIGURE_STUBMPI \
-                      -DMAX_HISTORY=$(MAX_HISTORY)
+                      -DMAX_HISTORY=$(MAX_HISTORY) CONFIGURE_NMM_CORE
 FCFLAGS         =    $(FCOPTIM) $(FCBASEOPTS)
 ESMF_LIB_FLAGS  =    ESMFLIBFLAG
 # ESMF 5 -- these are defined in esmf.mk, included above
@@ -44,6 +44,7 @@ INCLUDE_MODULES =    $(MODULE_SRCH_FLAG) \
                       -I$(NETCDFPATH)/include \
                       CONFIGURE_RTTOV_INC
 REGISTRY        =    Registry
+CC_TOOLS_CFLAGS = CONFIGURE_NMM_CORE
 
 #NOWIN LIB_BUNDLED     = \
 #NOWIN                      $(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5/libfftpack.a \

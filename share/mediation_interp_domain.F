@@ -161,11 +161,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
   CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
   grid => nested_grid%intermediate_grid
 #if defined(MOVE_NESTS) || (!defined(SGIALTIX))
-#   if defined(HWRF)
   CALL ensure_space_field &
-#   else
-  CALL alloc_space_field &
-#   endif
                          ( grid, grid%id , 1 , 2 , .TRUE. ,   &
                            grid%sd31, grid%ed31, grid%sd32, grid%ed32, grid%sd33, grid%ed33, &
                            grid%sm31,  grid%em31,  grid%sm32,  grid%em32,  grid%sm33,  grid%em33, &
@@ -176,6 +172,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
                            grid%sm31y, grid%em31y, grid%sm32y, grid%em32y, grid%sm33y, grid%em33y  &   ! y-xpose
       )
 #endif
+  nested_grid%intermediate_grid%interp_mp=parent_grid%interp_mp .or. nested_grid%interp_mp
 
   grid => parent_grid
 
@@ -197,12 +194,6 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 
   grid => nested_grid%intermediate_grid
   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-#if defined(MOVE_NESTS) || (!defined(SGIALTIX))
-#   if !defined(HWRF)
-  CALL dealloc_space_field ( grid )
-#   endif
-#endif
-
 ! ------------------------------------------------------------
 !    End of gopal's doing
 ! ------------------------------------------------------------

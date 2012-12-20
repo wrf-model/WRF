@@ -1439,11 +1439,11 @@
 #if (NMM_CORE==1)
      &               ,DISHEAT=DISHEAT                                 &
 #endif
+                ! Optional args
      &               ,RTHRATEN=RTHRATEN                               &
 #if (HWRF==1)
      &               ,GFS_ALPHA=GRID%GFS_ALPHA                        &
 #endif
-                ! Optional args
      &               ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D     &    !Kwon S&P
      &               ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &               ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &
@@ -2519,6 +2519,14 @@
 !***  DEEP (PRECIPITATING) CONVECTION.
 !
       CF_HI=CONFIG_FLAGS%HISTORY_INTERVAL
+
+      if(CF_HI<1e-5) then
+         CF_HI = config_flags%history_interval_s/60.   &
+               + config_flags%history_interval_m       &
+               + config_flags%history_interval_h*3600. &
+               + config_flags%history_interval_d*3600.*24.
+      endif
+
       N_TIMSTPS_OUTPUT=NINT(60.*CF_HI/DT)
       MNTO=MOD(NTSD,N_TIMSTPS_OUTPUT)
 !

@@ -23,7 +23,7 @@ SUBROUTINE wrf_debug( level , str )
   CHARACTER (LEN=256) :: time_str 
   CHARACTER (LEN=256) :: grid_str 
   CHARACTER (LEN=512) :: out_str 
-  if(silence) return
+  if(silence/=0) return
   CALL get_wrf_debug_level( debug_level ) 
   IF ( level .LE. debug_level ) THEN 
 #ifdef _OPENMP 

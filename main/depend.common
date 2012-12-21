@@ -260,6 +260,8 @@ module_cu_kfeta.o: ../frame/module_wrf_error.o
 
 module_cu_gd.o:
 
+module_cu_gf.o:
+
 module_cu_nsas.o:
 
 module_gfs_physcons.o: module_gfs_machine.o

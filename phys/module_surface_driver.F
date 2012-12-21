@@ -42,19 +42,21 @@ CONTAINS
      &          ,landusef,soilctop,soilcbot,ra,rs,nlcat,nscat,vegf_px & ! PX-LSM
      &          ,snowncv, anal_interval, lai, pxlsm_smois_init        & ! PX-LSM
      &          ,pxlsm_soil_nudge                                     & ! PX-LSM
-     &          ,idveg, iopt_crs, iopt_btr, iopt_run, iopt_sfc, iopt_frz, iopt_inf     &
-     &          ,iopt_rad ,iopt_alb ,iopt_snf ,iopt_tbot, iopt_stc                     & 
-     &          ,isnowxy  ,tvxy     ,tgxy     ,canicexy                                &
-     &          ,canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy                          &
-     &          ,fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,wslakexy ,zwtxy    ,waxy      &
-     &          ,wtxy     ,tsnoxy   ,zsnsoxy  ,snicexy  ,snliqxy  ,lfmassxy ,rtmassxy  &
-     &          ,stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy                        &
-     &          ,tradxy   ,tsxy     ,neexy    ,gppxy    ,nppxy    ,fvegxy   ,qinxy     &
-     &          ,runsfxy  ,runsbxy  ,ecanxy   ,edirxy   ,etranxy  ,fsaxy    ,firaxy    &
-     &          ,aparxy   ,psnxy    ,savxy    ,sagxy    ,taussxy                       &
-     &          ,fsnoxy                                                                &
-     &          ,t2mvxy   ,t2mbxy   ,chstarxy ,rssunxy  ,rsshaxy  ,bgapxy   ,wgapxy    &    
-     &          ,gapxy    ,tgvxy    ,tgbxy    ,q2mvxy   ,q2mbxy   ,chvxy    ,chbxy     &
+     &          ,idveg    ,iopt_crs  ,iopt_btr  ,iopt_run  ,iopt_sfc  ,iopt_frz     &
+     &          ,iopt_inf ,iopt_rad  ,iopt_alb  ,iopt_snf  ,iopt_tbot ,iopt_stc     &
+     &          ,isnowxy  ,tvxy      ,tgxy      ,canicexy  ,canliqxy  ,eahxy        &
+     &          ,tahxy    ,cmxy      ,chxy      ,fwetxy    ,sneqvoxy  ,alboldxy     &
+     &          ,qsnowxy  ,wslakexy  ,zwtxy     ,waxy      ,wtxy      ,tsnoxy       &
+     &          ,zsnsoxy  ,snicexy   ,snliqxy   ,lfmassxy  ,rtmassxy  ,stmassxy     &
+     &          ,woodxy   ,stblcpxy  ,fastcpxy  ,xsaixy    ,taussxy                 &
+     &          ,t2mvxy   ,t2mbxy    ,q2mvxy    ,q2mbxy                             &
+     &          ,tradxy   ,neexy     ,gppxy     ,nppxy     ,fvegxy    ,runsfxy      &
+     &          ,runsbxy  ,ecanxy    ,edirxy    ,etranxy   ,fsaxy     ,firaxy       &
+     &          ,aparxy   ,psnxy     ,savxy     ,sagxy     ,rssunxy   ,rsshaxy      &
+     &          ,bgapxy   ,wgapxy    ,tgvxy     ,tgbxy     ,chvxy     ,chbxy        &    
+     &          ,shgxy    ,shcxy     ,shbxy     ,evgxy     ,evbxy     ,ghvxy        &
+     &          ,ghbxy    ,irgxy     ,ircxy     ,irbxy     ,trxy      ,evcxy        &
+     &          ,chleafxy ,chucxy    ,chv2xy    ,chb2xy    ,chstarxy                &                      
            ! Noah UA changes
      &          ,ua_phys,flx4,fvb,fbur,fgsn                                  &
 #if (EM_CORE==1)
@@ -654,10 +656,10 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION(ims:ime ,-2:0,               jms:jme), INTENT(INOUT) :: tsnoxy, snicexy, snliqxy
    REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) :: tvxy, tgxy, canicexy, canliqxy, eahxy, tahxy, cmxy, chxy,               &
         fwetxy, sneqvoxy, alboldxy, qsnowxy, wslakexy, zwtxy, waxy, wtxy, lfmassxy, rtmassxy, stmassxy, woodxy, stblcpxy, fastcpxy,       &
-        xsaixy, tradxy, tsxy, neexy, gppxy, nppxy, fvegxy, qinxy, runsfxy, runsbxy, ecanxy, edirxy, etranxy, fsaxy, firaxy,               &
-        aparxy, psnxy, savxy, sagxy, fsnoxy, q2mvxy, q2mbxy, taussxy
-   REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) ::  t2mvxy   ,t2mbxy   ,chstarxy, rssunxy, rsshaxy, bgapxy,wgapxy,gapxy , &
-        tgvxy ,tgbxy, chvxy, chbxy
+        xsaixy, taussxy, t2mvxy   ,t2mbxy, q2mvxy, q2mbxy   ,tradxy, neexy, gppxy, nppxy, fvegxy, runsfxy, runsbxy, ecanxy, edirxy, etranxy, fsaxy, firaxy,               &
+        aparxy, psnxy, savxy, sagxy
+   REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) ::  rssunxy, rsshaxy, bgapxy,wgapxy, &
+        tgvxy ,tgbxy, chvxy, chbxy,SHGXY,SHCXY,SHBXY,EVGXY,EVBXY,GHVXY,GHBXY,IRGXY,IRCXY,IRBXY,TRXY,EVCXY,CHLEAFXY,CHUCXY,CHV2XY,CHB2XY,chstarxy                         
 
 ! Noah UA changes
    LOGICAL, INTENT(IN) :: ua_phys
@@ -2154,38 +2156,32 @@ CONTAINS
          ENDIF
 
          CALL wrf_debug(100,'in NOAHMP DRV')
-         CALL noahmplsm(dz8w,qv_curr,p8w,t_phy,tsk,                 &
-                hfx,qfx,lh,grdflx,qgh,gsw,swdown,glw,smstav,smstot,    &
-                sfcrunoff,udrunoff,ivgtyp,isltyp,vegfra,        &
-                albedo,albbck,znt,z0, tmn,xland,xice, xice_threshold, isice,emiss, embck,    &
-                snowc,qsfc,rainbl,                              &
-                num_soil_layers,dtbl,dzs,itimestep,             &
-                smois,tslb,snow,canwat,                         &
-                chs, chs2, cqs2, cpm,rcp,SR,chklowq,qz0,        &
-                myj,br,frpcpn,                                  &
-                sh2o,snowh,                                     & !h
-                u_phy,v_phy,                                    & !I
-                coszen, xlat_urb2d,                             & !I
-                snoalb,                                         & !I
-                snotime,                                        & !io
-                acsnom,acsnow,                                  & !o
-                idveg    ,iopt_crs ,iopt_btr ,iopt_run ,iopt_sfc ,iopt_frz ,iopt_inf , &
-                iopt_rad ,iopt_alb ,iopt_snf ,iopt_tbot,iopt_stc ,                     &
-                isnowxy  ,tvxy     ,tgxy     ,canicexy ,                               &
-                canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy     ,                     &
-                fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,wslakexy ,zwtxy    ,waxy     , &
-                wtxy     ,tsnoxy   ,zsnsoxy  ,snicexy  ,snliqxy  ,lfmassxy ,rtmassxy , &
-                stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,lai      ,xsaixy   ,           &
-                tradxy   ,tsxy     ,neexy    ,gppxy    ,nppxy    ,fvegxy   ,qinxy    , &
-                runsfxy  ,runsbxy  ,ecanxy   ,edirxy   ,etranxy  ,fsaxy    ,firaxy   , &
-                aparxy   ,psnxy    ,savxy    ,sagxy    ,taussxy  ,                     &
-                fsnoxy   ,YR       ,JULIAN_IN,                                         &
-                potevp,                                         & !o
-!jref:start
-                qc_curr     ,pblh   ,isurban  ,iz0tlnd  ,dx      ,     & !I 
-                chstarxy , t2mvxy   ,t2mbxy   ,rssunxy  ,rsshaxy , bgapxy, &
-                wgapxy , gapxy ,tgvxy ,tgbxy ,q2mvxy ,q2mbxy, shdmax ,chvxy,chbxy , & !O 
-!jref:end
+         CALL noahmplsm(ITIMESTEP,       YR, JULIAN_IN,   COSZEN, XLAT_URB2D, &
+	           DZ8W,     DTBL,      DZS,     NUM_SOIL_LAYERS,         DX, &
+		 IVGTYP,   ISLTYP,   VEGFRA,   SHDMAX,       TMN,             &
+		  XLAND,     XICE,     XICE_THRESHOLD,     ISICE,    ISURBAN, &
+                  IDVEG, IOPT_CRS, IOPT_BTR, IOPT_RUN,  IOPT_SFC,   IOPT_FRZ, &
+	       IOPT_INF, IOPT_RAD, IOPT_ALB, IOPT_SNF, IOPT_TBOT,   IOPT_STC, &
+	        IZ0TLND,                                                      &
+		  T_PHY,  QV_CURR,    U_PHY,    V_PHY,    SWDOWN,        GLW, &
+		    P8W,   RAINBL,                                            &
+		    TSK,      HFX,      QFX,       LH,    GRDFLX,     SMSTAV, &
+		 SMSTOT,SFCRUNOFF, UDRUNOFF,   ALBEDO,     SNOWC,      SMOIS, &
+		   SH2O,     TSLB,     SNOW,    SNOWH,    CANWAT,     ACSNOM, &
+		 ACSNOW,    EMISS,     QSFC,                                  &
+		ISNOWXY,     TVXY,     TGXY, CANICEXY,  CANLIQXY,      EAHXY, &
+		  TAHXY,     CMXY,     CHXY,   FWETXY,  SNEQVOXY,   ALBOLDXY, &
+		QSNOWXY, WSLAKEXY,    ZWTXY,     WAXY,      WTXY,     TSNOXY, &
+		ZSNSOXY,  SNICEXY,  SNLIQXY, LFMASSXY,  RTMASSXY,   STMASSXY, &
+		 WOODXY, STBLCPXY, FASTCPXY,      LAI,    XSAIXY,    TAUSSXY, &
+	         T2MVXY,   T2MBXY,   Q2MVXY,   Q2MBXY,                        &
+                 TRADXY,    NEEXY,    GPPXY,    NPPXY,    FVEGXY,    RUNSFXY, &
+	        RUNSBXY,   ECANXY,   EDIRXY,  ETRANXY,     FSAXY,     FIRAXY, &
+                 APARXY,    PSNXY,    SAVXY,    SAGXY,   RSSUNXY,    RSSHAXY, &
+                 BGAPXY,   WGAPXY,    TGVXY,    TGBXY,     CHVXY,      CHBXY, &
+		  SHGXY,    SHCXY,    SHBXY,    EVGXY,     EVBXY,      GHVXY, &
+		  GHBXY,    IRGXY,    IRCXY,    IRBXY,      TRXY,      EVCXY, &
+	       CHLEAFXY,   CHUCXY,   CHV2XY,   CHB2XY,                        &                          
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
@@ -2270,7 +2266,7 @@ CONTAINS
 !jref: sfc diagnostics
            DO j=j_start(ij),j_end(ij)
            DO i=i_start(ij),i_end(ij)
-              IF (IVGTYP(I,J) == ISWATER .OR. IVGTYP(I,J) == ISICE) THEN
+              IF (IVGTYP(I,J) == ISWATER .OR. XICE(I,J) .GE. XICE_THRESHOLD) THEN
                  IF(CQS2(I,J).lt.1.E-5) then
                    Q2(I,J)=QSFC(I,J)
                  ELSE
@@ -2282,13 +2278,13 @@ CONTAINS
                    T2(I,J) = TSK(I,J) - HFX(I,J)/(PSFC(I,J)/(R_d * TSK(I,J))*CP*CHS2(I,J))
                  ENDIF
                    TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**ROVCP
-              ELSEIF (IVGTYP(I,J) == ISURBAN ) THEN
-                   Q2(I,J)  = q2mbxy(i,j)
-                   T2(I,J)  = t2mbxy(i,j)
+              ELSEIF (IVGTYP(I,J) == ISURBAN .OR. IVGTYP(I,J) == ISICE ) THEN
+                   Q2(I,J)  = Q2MBXY(I,J)
+                   T2(I,J)  = T2MBXY(I,J)
                    TH2(I,J) = T2(i,j)*(1.E5/PSFC(i,j))**RCP
               ELSE
-                 T2(I,J)  = fvegxy(i,j)*t2mvxy(i,j) + (1.-fvegxy(i,j))*t2mbxy(i,j)
-                 Q2(I,J)  = fvegxy(i,j)*q2mvxy(i,j) + (1.-fvegxy(i,j))*q2mbxy(i,j)
+                 T2(I,J)  = FVEGXY(I,J)*T2MVXY(I,J) + (1.-FVEGXY(I,J))*T2MBXY(I,J)
+                 Q2(I,J)  = FVEGXY(I,J)*Q2MVXY(I,J) + (1.-FVEGXY(I,J))*Q2MBXY(I,J)
                  TH2(I,J) = T2(i,j)*(1.E5/PSFC(i,j))**RCP
               ENDIF
            ENDDO

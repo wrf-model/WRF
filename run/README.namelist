@@ -746,7 +746,7 @@ Options for use with the Noah-MP Land Surface Model:
  opt_inf                            = 1,        ; Noah-MP Soil Permeability option
                                                 ;    1 = Linear effects, more permeable;
                                                 ;    2 = Non-linear effects, less permeable
- opt_rad                            = 1,        ; Noah-MP Radiative Transfer option
+ opt_rad                            = 3,        ; Noah-MP Radiative Transfer option
                                                 ;    1 = Modified two-stream;
                                                 ;    2 = Two-stream applied to grid-cell
                                                 ;    3 = Two-stream applied to vegetated fraction

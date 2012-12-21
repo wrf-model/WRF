@@ -1815,6 +1815,7 @@ rconfig   integer no_mp_heating           namelist,physics      1              0
 rconfig   integer fractional_seaice       namelist,physics      1              0       -     "fractional_seaice" "Fractional sea-ice option"
 rconfig   integer seaice_snowdepth_opt    namelist,physics      1              0       -     "seaice_snowdepth_opt" "Method for treating snow depth on sea ice"
 rconfig   real    seaice_snowdepth_max    namelist,physics      1          1.E10       -     "seaice_snowdepth_max" "Maximum allowed accumulation (m) of snow on sea ice"
+rconfig   real    seaice_snowdepth_min    namelist,physics      1          0.001       -     "seaice_snowdepth_min" "Minimum snow depth (m) on sea ice"
 rconfig   integer seaice_albedo_opt       namelist,physics      1              0       -     "seaice_albedo_opt" "Method for setting albedo over sea ice"
 rconfig   real    seaice_albedo_default   namelist,physics      1             0.80     -     "seaice_albedo_default" "Default value for sea-ice over albedo with seaice_albeo_opt=0"
 rconfig   integer seaice_thickness_opt    namelist,physics      1              0       -     "seaice_thickness_opt" "Method for setting sea-ice thickness"

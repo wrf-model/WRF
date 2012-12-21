@@ -13,7 +13,7 @@ CONTAINS
      &          ,seaice_albedo_default,seaice_thickness_opt,          &
      &          seaice_thickness_default                              &
      &          ,seaice_snowdepth_opt,seaice_snowdepth_max            &
-     &          ,tice2tsk_if2cold                                     &
+     &          ,seaice_snowdepth_min,tice2tsk_if2cold                &
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih   &
 #if (NMM_CORE==1)
@@ -406,6 +406,7 @@ CONTAINS
    REAL,    INTENT(IN)::   SEAICE_THICKNESS_DEFAULT
    INTEGER, INTENT(IN)::   SEAICE_SNOWDEPTH_OPT
    REAL,    INTENT(IN)::   SEAICE_SNOWDEPTH_MAX
+   REAL,    INTENT(IN)::   SEAICE_SNOWDEPTH_MIN
 
    INTEGER, INTENT(IN)::   NLCAT, mosaic_lu, mosaic_soil
    INTEGER, INTENT(IN)::   NSCAT
@@ -1980,7 +1981,7 @@ CONTAINS
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
               &            SEAICE_THICKNESS_DEFAULT, SEAICE_SNOWDEPTH_OPT,             &
-              &            SEAICE_SNOWDEPTH_MAX,                                       &
+              &            SEAICE_SNOWDEPTH_MAX, SEAICE_SNOWDEPTH_MIN,                 &
               &            t_phy, qv_curr, p8w, dz8w, num_soil_layers, dt, frpcpn, sr, &
               &            glw, swdown, rainbl, snoalb, qgh, xice, xice_threshold,     &
               &            albsi, icedepth, snowsi,                                    &
@@ -2188,7 +2189,7 @@ CONTAINS
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
               &            SEAICE_THICKNESS_DEFAULT, SEAICE_SNOWDEPTH_OPT,             &
-              &            SEAICE_SNOWDEPTH_MAX,                                       &
+              &            SEAICE_SNOWDEPTH_MAX, SEAICE_SNOWDEPTH_MIN,                 &
               &            t_phy, qv_curr, p8w, dz8w, num_soil_layers, dt, frpcpn, sr, &
               &            glw, swdown, rainbl, snoalb, qgh, xice, xice_threshold,     &
               &            albsi, icedepth, snowsi,                                    &

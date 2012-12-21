@@ -417,6 +417,7 @@ BENCH_START(surf_driver_tim)
      &        ,SEAICE_THICKNESS_DEFAULT=config_flags%seaice_thickness_default     &
      &        ,SEAICE_SNOWDEPTH_OPT=config_flags%seaice_snowdepth_opt     &
      &        ,SEAICE_SNOWDEPTH_MAX=config_flags%seaice_snowdepth_max     &
+     &        ,SEAICE_SNOWDEPTH_MIN=config_flags%seaice_snowdepth_min     &
      &        ,TICE2TSK_IF2COLD=config_flags%tice2tsk_if2cold             &
      &        ,ISLTYP=grid%isltyp      ,ITIMESTEP=grid%itimestep, JULIAN_IN=grid%julian                  &
      &        ,IVGTYP=grid%ivgtyp      ,LH=grid%lh              ,LOWLYR=grid%lowlyr      &

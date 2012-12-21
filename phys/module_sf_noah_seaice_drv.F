@@ -4,7 +4,7 @@ module module_sf_noah_seaice_drv
 contains
   subroutine seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
        &                  SEAICE_THICKNESS_DEFAULT, SEAICE_SNOWDEPTH_OPT,               &
-       &                  SEAICE_SNOWDEPTH_MAX,                                         &
+       &                  SEAICE_SNOWDEPTH_MAX, SEAICE_SNOWDEPTH_MIN,                   &
        &                  T3D, QV3D, P8W3D, DZ8W, NUM_SOIL_LAYERS, DT, FRPCPN, SR,      &
        &                  GLW, SWDOWN, RAINBL, SNOALB2D, QGH, XICE, XICE_THRESHOLD,     &
        &                  ALBSI, ICEDEPTH, SNOWSI,                                      &
@@ -29,6 +29,7 @@ contains
     REAL,    INTENT(IN)       ::               SEAICE_THICKNESS_DEFAULT
     INTEGER, INTENT(IN)       ::               SEAICE_SNOWDEPTH_OPT
     REAL,    INTENT(IN)       ::               SEAICE_SNOWDEPTH_MAX
+    REAL,    INTENT(IN)       ::               SEAICE_SNOWDEPTH_MIN
 
     INTEGER, INTENT(IN)       ::                            IDS, &
          &                                                  IDE, &
@@ -172,7 +173,6 @@ contains
     REAL    :: FDTLIW
     REAL    :: ALBEDOSI
     REAL    :: SNOWONSI
-    REAL    :: SEAICE_SNOWDEPTH_MIN = 0.001
     REAL, PARAMETER  :: CAPA   = R_D / CP
     REAL, PARAMETER  :: A2     = 17.67
     REAL, PARAMETER  :: A3     = 273.15
@@ -274,14 +274,14 @@ contains
 
           CASE ( 0 )
 
-              ! A maximum snow depth is enforced in SFLX_SEAICE
+              ! Minimum and maximum bounds on snow depth are enforced in SFLX_SEAICE
 
           CASE ( 1 ) 
 
-              ! Snow depth on sea ice comes from a 2D array, SNOWSI, execpt minimum
-              ! and maximum values are enforced.  No matter what anybody else says
-              ! about snow accumulation and melt, we want the snow depth to be 
-              ! specified as SNOWSI.
+              ! Snow depth on sea ice comes from a 2D array, SNOWSI, bounded by user-specified
+              ! minimum and maximum values.  No matter what anybody else says about snow 
+              ! accumulation and melt, we want the snow depth on sea ice to be specified
+              ! as SNOWSI (bounded by SEAICE_SNOWDEPTH_MIN and SEAICE_SNOWDEPTH_MAX).
               SNOWONSI = MAX ( SEAICE_SNOWDEPTH_MIN , MIN ( SNOWSI(I,J) , SEAICE_SNOWDEPTH_MAX ) )
               SNEQV = SNOWONSI * 0.3
               SNOWH2D(I,J) = SNOWONSI
@@ -393,6 +393,7 @@ contains
 
           call sflx_seaice(I, J, SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT,  &    !C
                &           SEAICE_SNOWDEPTH_OPT, SEAICE_SNOWDEPTH_MAX,      &    !C
+               &           SEAICE_SNOWDEPTH_MIN,                            &    !C
                &           FFROZP, DT, ZLVL, NSOIL,                         &    !C
                &           SITHICK,                                         &
                &           LWDN, SOLNET, SFCPRS, PRCP, SFCTMP, Q2,          &    !F

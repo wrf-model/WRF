@@ -22,6 +22,7 @@ CONTAINS
 !
   SUBROUTINE SFLX_SEAICE (IILOC, JJLOC, SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, &    !C
        &                  SEAICE_SNOWDEPTH_OPT, SEAICE_SNOWDEPTH_MAX,      &    !C
+       &                  SEAICE_SNOWDEPTH_MIN,                            &    !C
        &                  FFROZP,DT,ZLVL,NSOIL,                            &    !C
        &                  SITHICK,                                         &
        &                  LWDN,SOLNET,SFCPRS,PRCP,SFCTMP,Q2,               &    !F
@@ -144,6 +145,7 @@ CONTAINS
       REAL,    INTENT(IN) :: SEAICE_ALBEDO_DEFAULT
       INTEGER, INTENT(IN) :: SEAICE_SNOWDEPTH_OPT
       REAL,    INTENT(IN) :: SEAICE_SNOWDEPTH_MAX
+      REAL,    INTENT(IN) :: SEAICE_SNOWDEPTH_MIN
 
       LOGICAL            ::  FRZGRA, SNOWNG
 
@@ -252,13 +254,12 @@ CONTAINS
       IF ( SEAICE_SNOWDEPTH_OPT == 0 ) THEN
 
           !
-          ! Enforce an upper limit on snow depth, maintaining original snow density.
+          ! Enforce bounds on snow depth, maintaining original snow density.
           !
-          IF ( SNOWH > SEAICE_SNOWDEPTH_MAX ) THEN
-              SNDENS = SNEQV / SNOWH
-              SNOWH = SEAICE_SNOWDEPTH_MAX
-              SNEQV = SNOWH * SNDENS 
-          ENDIF
+
+          SNDENS = SNEQV / SNOWH
+          SNOWH = MAX ( SEAICE_SNOWDEPTH_MIN , MIN ( SNOWH , SEAICE_SNOWDEPTH_MAX ) )
+          SNEQV = SNOWH * SNDENS 
 
       ELSEIF ( SEAICE_SNOWDEPTH_OPT == 1 ) THEN
 
@@ -266,6 +267,7 @@ CONTAINS
           ! Regardless of the assignments above, we want to enforce
           ! a specified snow depth and density on sea ice.
           !
+
           SNDENS = 0.3
           SNOWH = SNOWONSI
           SNEQV = SNOWH * SNDENS
@@ -471,13 +473,11 @@ CONTAINS
       IF ( SEAICE_SNOWDEPTH_OPT == 0 ) THEN
 
           !
-          ! Set an upper limit on snow depth, maintaining snow density.
+          ! Set bounds on snow depth, maintaining snow density.
           !
-          IF ( SNOWH > SEAICE_SNOWDEPTH_MAX ) THEN
-              SNDENS = SNEQV / SNOWH
-              SNOWH = SEAICE_SNOWDEPTH_MAX
-              SNEQV = SNOWH * SNDENS 
-          ENDIF
+          SNDENS = SNEQV / SNOWH
+          SNOWH = MAX ( SEAICE_SNOWDEPTH_MIN , MIN ( SNOWH , SEAICE_SNOWDEPTH_MAX ) )
+          SNEQV = SNOWH * SNDENS 
 
       ELSEIF ( SEAICE_SNOWDEPTH_OPT == 1 ) THEN
 

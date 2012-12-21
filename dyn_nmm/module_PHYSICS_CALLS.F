@@ -1372,7 +1372,7 @@
      &        ,chleafxy=grid%chleafxy ,  chucxy=grid%chucxy                          &                       
      &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &                       
      &        ,coszen=grid%czen,xlat_urb2d=grid%xlat                                 &
-
+     &        ,maxpatch=1,inest=1,history_interval=config_flags%history_interval  & !clm
 
      &                                                          )
 !

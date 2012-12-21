@@ -490,6 +490,8 @@
            model_config_rec % num_soil_layers = 6
       IF ( model_config_rec % sf_surface_physics(1) .EQ. PXLSMSCHEME ) &
            model_config_rec % num_soil_layers = 2
+      IF ( model_config_rec % sf_surface_physics(1) .EQ. CLMSCHEME ) &
+           model_config_rec % num_soil_layers = 10
       IF ( model_config_rec % sf_surface_physics(1) .EQ. 88          ) &
            model_config_rec % num_soil_layers = 4
 

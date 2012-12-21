@@ -1534,6 +1534,10 @@ integer::oops1,oops2
             IF ( num_st_levels_input .LT. 2 ) THEN
                CALL wrf_error_fatal ( 'Not enough soil temperature data for P-X LSM scheme.')
             END IF
+         CASE (CLMSCHEME)
+            IF ( num_st_levels_input .LT. 2 ) THEN
+               CALL wrf_error_fatal ( 'Not enough soil temperature data for CLM LSM scheme.')
+            END IF
 !---------- fds (06/2010) ---------------------------------
          CASE (SSIBSCHEME)
             IF ( num_st_levels_input .LT. 2 ) THEN
@@ -1545,7 +1549,7 @@ integer::oops1,oops2
 
       interpolate_soil_tmw : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
-         CASE ( SLABSCHEME , LSMSCHEME, NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME, SSIBSCHEME )
+         CASE ( SLABSCHEME,LSMSCHEME,NOAHMPSCHEME,RUCLSMSCHEME,PXLSMSCHEME,CLMSCHEME,SSIBSCHEME )
             CALL process_soil_real ( grid%tsk , grid%tmn , grid%tavgsfc,  &
                                   grid%landmask , grid%sst , grid%ht, grid%toposoil, &
                                   st_input , sm_input , sw_input , &
@@ -1778,7 +1782,7 @@ integer::oops1,oops2
 
       fix_tsk_tmn : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
-         CASE ( SLABSCHEME , LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME, SSIBSCHEME )
+         CASE ( SLABSCHEME , LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME,CLMSCHEME, SSIBSCHEME )
             DO j = jts, MIN(jde-1,jte)
                DO i = its, MIN(ide-1,ite)
                   IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
@@ -1937,6 +1941,45 @@ integer::oops1,oops2
                      END DO
                   END DO
                END IF
+            CASE ( CLMSCHEME )
+               iicount = 0
+               IF      ( flag_soil_layers == 1 ) THEN
+                  DO j = jts, MIN(jde-1,jte)
+                     DO i = its, MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                        IF ( (grid%landmask(i,j).gt.0.5) .and. ( grid%tslb(i,1,j) .gt. 170 ) .and. &
+                             ( grid%tslb(i,1,j) .lt. 400 ) .and. ( grid%smois(i,1,j) .lt. 0.005 ) ) then
+                           print *,'CLM -> CLM: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
+                           iicount = iicount + 1
+                           grid%smois(i,:,j) = 0.005
+                        END IF
+                     END DO
+                  END DO
+                  IF ( iicount .GT. 0 ) THEN
+                     print *,'CLM -> CLM: total number of small soil moisture locations = ',iicount
+                  END IF
+               ELSE IF ( flag_soil_levels == 1 ) THEN
+                  DO j = jts, MIN(jde-1,jte)
+                     DO i = its, MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                        grid%smois(i,:,j) = MAX ( grid%smois(i,:,j) + lqmi(grid%isltyp(i,j)) , 0.005 )
+                     END DO
+                  END DO
+                  DO j = jts, MIN(jde-1,jte)
+                     DO i = its, MIN(ide-1,ite)
+                        IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                        IF ( (grid%landmask(i,j).gt.0.5) .and. ( grid%tslb(i,1,j) .gt. 170 ) .and. &
+                             ( grid%tslb(i,1,j) .lt. 400 ) .and. ( grid%smois(i,1,j) .lt. 0.005 ) ) then
+                           print *,'CLM -> CLM: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
+                           iicount = iicount + 1
+                           grid%smois(i,:,j) = 0.005
+                        END IF
+                     END DO
+                  END DO
+                  IF ( iicount .GT. 0 ) THEN
+                     print *,'CLM -> CLM: total number of small soil moisture locations = ',iicount
+                  END IF
+               END IF
 
          END SELECT account_for_zero_soil_moisture
       END IF
@@ -1965,6 +2008,7 @@ integer::oops1,oops2
                           ( model_config_rec%sf_surface_physics(grid%id) .NE. NOAHMPSCHEME ) .AND. &
                           ( model_config_rec%sf_surface_physics(grid%id) .NE. RUCLSMSCHEME ).AND. &
                           ( model_config_rec%sf_surface_physics(grid%id) .NE. SSIBSCHEME ).AND. & !fds 
+                          ( model_config_rec%sf_surface_physics(grid%id) .NE. CLMSCHEME ).AND. & 
                           ( model_config_rec%sf_surface_physics(grid%id) .NE. PXLSMSCHEME ) ) THEN
                         print *,'error in the grid%tslb'
                         print *,'i,j=',i,j
@@ -1986,7 +2030,7 @@ integer::oops1,oops2
                                  grid%tslb(i,ns,j) = ( grid%tsk(i,j)*(3.0 - grid%zs(ns)) + &
                                                        grid%tmn(i,j)*(0.0 - grid%zs(ns)) ) /(3.0 - 0.0)
                               END DO
-                           CASE ( LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME, SSIBSCHEME )
+                           CASE ( LSMSCHEME , NOAHMPSCHEME , RUCLSMSCHEME, PXLSMSCHEME,CLMSCHEME,SSIBSCHEME )
 !                             CALL wrf_error_fatal ( 'Assigned constant soil moisture to 0.3, stopping')
                               DO ns = 1 , model_config_rec%num_soil_layers
                                  grid%tslb(i,ns,j) = ( grid%tsk(i,j)*(3.0 - grid%zs(ns)) + &

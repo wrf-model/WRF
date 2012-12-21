@@ -9,6 +9,7 @@ include registry.avgflx
 include registry.stoch
 include registry.les
 include registry.cam
+include registry.clm
 include registry.ssib
 include registry.diags
 include registry.bdy_perturb

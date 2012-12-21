@@ -114,6 +114,37 @@ CONTAINS
                          B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,        & !Optional multi-layer urban
                          DL_U_BEP,SF_BEP,VL_BEP,                 & !Optional multi-layer urban
                          TML,T0ML,HML,H0ML,HUML,HVML,TMOML,      & !Optional oml
+!CLM variables
+                         numc,nump,snl,                                      &
+                         snowdp,wtc,wtp,h2osno,t_grnd,t_veg,                 &
+                         h2ocan,h2ocan_col,t2m_max,t2m_min,t_ref2m,          &
+                         h2osoi_liq_s1,                                      &
+                         h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+                         h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+                         h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+                         h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+                         h2osoi_ice_s1,h2osoi_ice_s2,                        &
+                         h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+                         h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+                         h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+                         h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+                         t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+                         t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+                         t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+                         t_soisno8,t_soisno9,t_soisno10,                     &
+                         dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+                         snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+                         t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+                         t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+                         h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+                         h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+                         h2osoi_vol7,h2osoi_vol8,                            &
+                         h2osoi_vol9,h2osoi_vol10,                           &
+                         ht,maxpatch,                                        &
+                         ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+                         Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
+                         SWUPsubgrid,lhsoi,lhveg,lhtran,                     &
+! end of CLM variables
                          itimestep,                              & !Optional obs fdda
 #if ( EM_CORE == 1 )
                          fdob,                                   & !Optional obs fdda
@@ -440,6 +471,40 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme,jms:jme), INTENT(INOUT) :: SF_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DL_U_BEP
 
+!CLM
+   INTEGER, INTENT(IN) ::       maxpatch
+   REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)    ::  HT
+  integer, OPTIONAL,   dimension(ims:ime,jms:jme ),intent(inout) :: numc,nump
+  integer, OPTIONAL,   dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) :: snl
+  real, OPTIONAL,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) ::  &
+                snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
+                h2ocan,h2ocan_col,t2m_max,t2m_min,     &
+                t_ref2m,h2osoi_liq_s1,              &
+                h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+                h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+                h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+                h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+                h2osoi_ice_s1,h2osoi_ice_s2,                        &
+                h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+                h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+                h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+                h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+                t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+                t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+                t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+                t_soisno8,t_soisno9,t_soisno10,                     &
+                dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+                snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+                t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+                t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+                h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+                h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+                h2osoi_vol7,h2osoi_vol8,                            &
+                h2osoi_vol9,h2osoi_vol10,                           &
+                ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+                Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
+                SWUPsubgrid,lhsoi,lhtran,lhveg
+
 !obs fdda
    INTEGER, OPTIONAL, INTENT(IN) :: itimestep
 #if ( EM_CORE == 1 )
@@ -764,7 +829,39 @@ integer myproc
                 its, ite, jts, jte, kts, kte,                   &
                 ACHFX,ACLHF,ACGRDFLX,                           &
                 oml_hml0, omlcall,                              & !Optional oml
-                TML,T0ML,HML,H0ML,HUML,HVML,TMOML               ) !Optional oml
+                TML,T0ML,HML,H0ML,HUML,HVML,TMOML               & !Optional oml
+! CLM vraiables 
+               ,numc,nump,snl,                                      &
+                snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
+                h2ocan,h2ocan_col,t2m_max,t2m_min,t_ref2m,          &
+                h2osoi_liq_s1,              &
+                h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+                h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+                h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+                h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+                h2osoi_ice_s1,h2osoi_ice_s2,                        &
+                h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+                h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+                h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+                h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+                t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+                t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+                t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+                t_soisno8,t_soisno9,t_soisno10,                     &
+                dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+                snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+                t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+                t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+                h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+                h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+                h2osoi_vol7,h2osoi_vol8,                            &
+                h2osoi_vol9,h2osoi_vol10,                           &
+                ht,maxpatch,                                        &
+                ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+                Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
+                SWUPsubgrid,lhsoi,lhveg,lhtran                      &
+! end of CLM vraiables 
+               ) 
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to cu_init' )
 
@@ -1552,7 +1649,39 @@ integer myproc
                 its, ite, jts, jte, kts, kte,                   &
                 ACHFX,ACLHF,ACGRDFLX,                           &
                 oml_hml0, omlcall,                              & !Optional oml
-                TML,T0ML,HML,H0ML,HUML,HVML,TMOML               ) !Optional oml
+                TML,T0ML,HML,H0ML,HUML,HVML,TMOML               &
+! CLM vraiables 
+               ,numc,nump,snl,                                      &
+                snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
+                h2ocan,h2ocan_col,t2m_max,t2m_min,t_ref2m,          &
+                h2osoi_liq_s1,              &
+                h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+                h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+                h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+                h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+                h2osoi_ice_s1,h2osoi_ice_s2,                        &
+                h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+                h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+                h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+                h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+                t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+                t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+                t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+                t_soisno8,t_soisno9,t_soisno10,                     &
+                dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+                snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+                t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+                t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+                h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+                h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+                h2osoi_vol7,h2osoi_vol8,                            &
+                h2osoi_vol9,h2osoi_vol10,                           &
+                ht,maxpatch,                                        &
+                ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+                Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
+                SWUPsubgrid,lhsoi,lhveg,lhtran                      &
+! end of CLM vraiables 
+                                                                ) !Optional oml
 !--------------------------------------------------------------------
    USE module_sf_sfclay
    USE module_sf_sfclayrev
@@ -1567,6 +1696,7 @@ integer myproc
    USE module_sf_qnsesfc
    USE module_sf_noahdrv
    USE module_sf_noahmpdrv
+   USE module_sf_clm, only : clminit
    USE module_sf_urban
    USE module_sf_bep                                  !BEP
    USE module_sf_bep_bem
@@ -1796,6 +1926,39 @@ integer myproc
    LOGICAL,  INTENT(IN) :: start_of_simulation
    INTEGER :: i,j
 
+! CLM varaibles
+   INTEGER , INTENT(IN)        ::     maxpatch
+   REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)    ::  HT
+  integer, OPTIONAL,   dimension(ims:ime,jms:jme ),intent(inout) :: numc,nump
+  integer, OPTIONAL,   dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) :: snl
+  real, OPTIONAL,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) ::  &
+                snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
+                h2ocan,h2ocan_col,t2m_max,t2m_min,t_ref2m,          &
+                h2osoi_liq_s1,              &
+                h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+                h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+                h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+                h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+                h2osoi_ice_s1,h2osoi_ice_s2,                        &
+                h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+                h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+                h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+                h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+                t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+                t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+                t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+                t_soisno8,t_soisno9,t_soisno10,                     &
+                dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+                snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+                t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+                t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+                h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+                h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+                h2osoi_vol7,h2osoi_vol8,                            &
+                h2osoi_vol9,h2osoi_vol10,                           &
+                ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+                Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
+                SWUPsubgrid,lhsoi,lhtran,lhveg
 
 #if ( EM_CORE == 1 )
 !local mynn 
@@ -1952,6 +2115,7 @@ integer myproc
                      ims,ime, jms,jme, kms,kme,                &
                      its,ite, jts,jte, kts,kte                 )
 
+
 !URBAN
           IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
 
@@ -2051,6 +2215,56 @@ integer myproc
            ( 'module_physics_init: SSiB only works with rrtm, cam scheme or rrtmg scheme (sw_phys=1,3,4)' )
 ! End of Adding radiation scheme 4 (RRTMg) for SSiB, By Zhenxin 2011-06-20 **************
 !--------------------------------------------------------------
+! CLM Init Coupling
+      CASE (CLMSCHEME)
+        IF(PRESENT(numc))THEN
+        ! added by Jiming Jin 10/14/2012
+        if(config_flags%num_land_cat .ne. 24) CALL wrf_error_fatal &
+            ( 'module_physics_init: 24 cat USGS must be used with CLM option')
+
+            CALL CLMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,    &
+                     SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,            &
+                     ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS,  &
+                     FNDSOILW, FNDSNOWH,                           &
+                     num_soil_layers, restart,                     &
+                     allowed_to_read ,                             &
+                     ids,ide, jds,jde, kds,kde,                    &
+                     ims,ime, jms,jme, kms,kme,                    &
+                     its,ite, jts,jte, kts,kte                     &
+                    ,maxpatch                                            &
+                    ,numc,nump,snl,                                      &
+                     snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
+                     h2ocan,h2ocan_col,t2m_max,t2m_min,t_ref2m,          &
+                     h2osoi_liq_s1,              &
+                     h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+                     h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+                     h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+                     h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+                     h2osoi_ice_s1,h2osoi_ice_s2,                        &
+                     h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+                     h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+                     h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+                     h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+                     t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+                     t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+                     t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+                     t_soisno8,t_soisno9,t_soisno10,                     &
+                     dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+                     snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+                     t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+                     t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+                     h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+                     h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+                     h2osoi_vol7,h2osoi_vol8,                            &
+                     h2osoi_vol9,h2osoi_vol10,                           &
+                     ht,XLAND,XICE                                       &
+                    ,ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+                     Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
+                     SWUPsubgrid,lhsoi,lhveg,lhtran                      &
+                    )
+        ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling CLM' )
+        ENDIF
 
       CASE DEFAULT
 

@@ -2,6 +2,7 @@
 #<Table>  <Dim> <Order> <How defined>                <Coord-axis>  <Dimname in Datasets>
 
 dimspec    i       1     standard_domain                   x          west_east
+dimspec    4       2     namelist=maxpatch                 z          subgrid
 
 # Specific dimensional order for EM and NMM
 

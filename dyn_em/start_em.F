@@ -755,6 +755,59 @@
                       grid%B_Q_BEP,grid%B_E_BEP,grid%DLG_BEP,                          & !multi-layer urban
                       grid%DL_U_BEP,grid%SF_BEP,grid%VL_BEP,                           & !multi-layer urban
                       grid%TML,grid%T0ML,grid%HML,grid%H0ML,grid%HUML,grid%HVML,grid%TMOML,     & !Optional oml
+              grid%numc,grid%nump,grid%snl,grid%snowdp,&   ! start of CLM variables
+              grid%wtc,grid%wtp,&
+              grid%h2osno,grid%t_grnd,grid%t_veg,grid%h2ocan, &
+              grid%h2ocan_col,grid%t2m_max,grid%t2m_min,&
+              grid%t_ref2m,&
+              grid%h2osoi_liq_s1,&
+              grid%h2osoi_liq_s2,grid%h2osoi_liq_s3,&
+              grid%h2osoi_liq_s4, &
+              grid%h2osoi_liq_s5, &
+              grid%h2osoi_liq1,grid%h2osoi_liq2,&
+              grid%h2osoi_liq3,grid%h2osoi_liq4,&
+              grid%h2osoi_liq5,grid%h2osoi_liq6, &
+              grid%h2osoi_liq7,grid%h2osoi_liq8,&
+              grid%h2osoi_liq9,   &
+              grid%h2osoi_liq10, &
+              grid%h2osoi_ice_s1,grid%h2osoi_ice_s2,&
+              grid%h2osoi_ice_s3, &
+              grid%h2osoi_ice_s4, &
+              grid%h2osoi_ice_s5, &
+              grid%h2osoi_ice1,&
+              grid%h2osoi_ice2,&
+              grid%h2osoi_ice3,grid%h2osoi_ice4,&
+              grid%h2osoi_ice5, &
+              grid%h2osoi_ice6, &
+              grid%h2osoi_ice7,grid%h2osoi_ice8,&
+              grid%h2osoi_ice9,grid%h2osoi_ice10,&
+              grid%t_soisno_s1,grid%t_soisno_s2, &
+              grid%t_soisno_s3,grid%t_soisno_s4, &
+              grid%t_soisno_s5,grid%t_soisno1,&
+              grid%t_soisno2,grid%t_soisno3,&
+              grid%t_soisno4,grid%t_soisno5, &
+              grid%t_soisno6,grid%t_soisno7,&
+              grid%t_soisno8,grid%t_soisno9,&
+              grid%t_soisno10,grid%dzsnow1,grid%dzsnow2,grid%dzsnow3,grid%dzsnow4,&
+              grid%dzsnow5,grid%snowrds1,grid%snowrds2,grid%snowrds3,grid%snowrds4,grid%snowrds5, &
+              grid%t_lake1,grid%t_lake2,&
+              grid%t_lake3,grid%t_lake4, &
+              grid%t_lake5,grid%t_lake6, &
+              grid%t_lake7,grid%t_lake8, &
+              grid%t_lake9,grid%t_lake10,&
+              grid%h2osoi_vol1,grid%h2osoi_vol2, &
+              grid%h2osoi_vol3,grid%h2osoi_vol4, &
+              grid%h2osoi_vol5,&
+              grid%h2osoi_vol6,&
+              grid%h2osoi_vol7,grid%h2osoi_vol8,&
+              grid%h2osoi_vol9,grid%h2osoi_vol10,&
+              grid%ht,config_flags%maxpatch,    &
+              grid%ALBEDOsubgrid,grid%LHsubgrid,&
+              grid%HFXsubgrid,grid%LWUPsubgrid,&
+              grid%Q2subgrid,grid%SABVsubgrid,  &
+              grid%SABGsubgrid,grid%NRAsubgrid,&
+              grid%SWUPsubgrid,grid%lhsoi, &
+              grid%lhveg, grid%lhtran, & !end of CLM variables
                       grid%itimestep, grid%fdob,            &
                       t00, p00, a,                      & ! for obs_nudge base state
                       grid%TYR, grid%TYRA, grid%TDLY, grid%TLAG, grid%NYEAR, grid%NDAY,grid%tmn_update, &

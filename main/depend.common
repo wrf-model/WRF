@@ -382,6 +382,13 @@ module_sf_noahdrv.o: module_sf_noahlsm.o \
 
 module_sf_noahlsm.o: ../share/module_model_constants.o
 
+module_sf_clm.o: module_cam_shr_kind_mod.o \
+		 module_cam_shr_const_mod.o \
+		 module_sf_urban.o \
+		 ../share/module_date_time.o \
+		 ../frame/module_wrf_error.o  \
+		../frame/module_configure.o
+
 module_sf_ssib.o: ../share/module_model_constants.o  
 
 module_sf_noah_seaice_drv.o:	module_sf_noah_seaice.o
@@ -440,6 +447,7 @@ module_physics_init.o : \
 		module_sf_pxsfclay.o		\
 		module_sf_noahlsm.o		\
 		module_sf_noahdrv.o		\
+		module_sf_clm.o			\
                 module_sf_ssib.o                \
 		module_sf_noahmplsm.o		\
 		module_sf_noahmpdrv.o		\
@@ -605,6 +613,7 @@ module_surface_driver.o: \
 		module_sf_gfs.o  		\
 		module_sf_noah_seaice_drv.o	\
 		module_sf_noahdrv.o		\
+		module_sf_clm.o			\
                 module_sf_ssib.o                \
 		module_sf_noahmpdrv.o		\
 		module_sf_ruclsm.o		\

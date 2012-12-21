@@ -62,6 +62,69 @@ CONTAINS
 #if (EM_CORE==1)
      &          ,ch,tsq,qsq,cov                                       & ! MYNN
 #endif
+! CLM varaibles
+     &          ,numc,nump,sabv,sabg,lwup,snl,history_interval &
+     &          ,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
+     &           h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm ,         &
+     &           t_ref2m,h2osoi_liq_s1,                 &
+     &           h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+     &           h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+     &           h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+     &           h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+     &           h2osoi_ice_s1,h2osoi_ice_s2,                        &
+     &           h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+     &           h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+     &           h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+     &           h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+     &           t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+     &           t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+     &           t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+     &           t_soisno8,t_soisno9,t_soisno10,                     &
+     &           dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+     &           snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+     &           t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+     &           t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+     &           h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+     &           h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+     &           h2osoi_vol7,h2osoi_vol8,                            &
+     &           h2osoi_vol9,h2osoi_vol10,                           &
+     &           maxpatch,inest,                                     &
+     &           ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+     &           Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
+     &           SWUPsubgrid,LHsoi,LHveg,LHtran                      &
+#ifdef CN
+!ADD_NEW_VAR for crop and cn
+     &           ,dyntlai,dyntsai,dyntop,dynbot                              &
+     &           ,htmx,croplive,gdd1020,gdd820,gdd020,grainc,grainc_storage  &
+     &           ,grainc_xfer,grainn,grainn_storage,grainn_xfer,days_active  &
+     &           ,onset_flag,onset_counter,onset_gddflag,onset_fdd,onset_gdd &
+     &           ,onset_swi,offset_flag,offset_counter,offset_fdd,offset_swi &
+     &           ,dayl,annavg_t2m,tempavg_t2m,tempsum_potential_gpp          &
+     &           ,annsum_potential_gpp,tempmax_retransn,annmax_retransn      &
+     &           ,prev_leafc_to_litter,prev_frootc_to_litter,tempsum_npp     &
+     &           ,annsum_npp,leafc,leafc_storage,leafc_xfer,frootc           &
+     &           ,frootc_storage,frootc_xfer,livestemc,livestemc_storage     &
+     &           ,livestemc_xfer,deadstemc,deadstemc_storage,deadstemc_xfer  &
+     &           ,livecrootc,livecrootc_storage,livecrootc_xfer,deadcrootc   &
+     &           ,deadcrootc_storage,deadcrootc_xfer,cpool,pft_ctrunc        &
+     &           ,leafn,leafn_storage,leafn_xfer,frootn,frootn_storage       &
+     &           ,frootn_xfer,livestemn,livestemn_storage,livestemn_xfer     &
+     &           ,deadstemn,deadstemn_storage,deadstemn_xfer,livecrootn      &
+     &           ,livecrootn_storage,livecrootn_xfer,deadcrootn              &
+     &           ,deadcrootn_storage,deadcrootn_xfer,npool,pft_ntrunc        &
+     &           ,gresp_storage,gresp_xfer,xsmrpool,annsum_counter           &
+     &           ,cannsum_npp,cannavg_t2m,wf,me,mean_fire_prob,cwdc,litr1c   &
+     &           ,litr2c,litr3c,soil1c,soil2c,soil3c,soil4c,seedc,col_ctrunc &
+     &           ,prod10c,prod100c,cwdn,litr1n,litr2n,litr3n,soil1n,soil2n   &
+     &           ,soil3n,soil4n,seedn,col_ntrunc,prod10n,prod100n,sminn      &
+     &           ,totlitc,dwt_seedc_to_leaf,dwt_seedc_to_deadstem,dwt_conv_cflux &
+     &           ,dwt_prod10c_gain,dwt_prod100c_gain,prod100c_loss,dwt_frootc_to_litr1c &
+     &           ,dwt_frootc_to_litr2c,dwt_frootc_to_litr3c,dwt_livecrootc_to_cwdc &
+     &           ,dwt_deadcrootc_to_cwdc,dwt_seedn_to_leaf,dwt_seedn_to_deadstem &
+     &           ,dwt_conv_nflux,dwt_prod10n_gain,dwt_prod100n_gain,prod100n_loss &
+     &           ,dwt_frootn_to_litr1n,dwt_frootn_to_litr2n, dwt_frootn_to_litr3n &
+     &           ,dwt_livecrootn_to_cwdn,dwt_deadcrootn_to_cwdn,retransn &
+#endif
             !  Optional urban
      &          ,slope_rad,topo_shading,shadowmask                    & !I solar
      &          ,swnorm,slope,slp_azi                                 & !I solar
@@ -169,6 +232,7 @@ CONTAINS
                                        ,LSMSCHEME                 &
                                        ,RUCLSMSCHEME              &
                                        ,PXLSMSCHEME               &
+                                       ,CLMSCHEME                 &
                                        ,SSIBSCHEME                & !ssib
                                        ,MYNNSFCSCHEME             
 #else
@@ -182,6 +246,7 @@ CONTAINS
                                        ,SLABSCHEME                &
                                        ,LSMSCHEME                 &
                                        ,RUCLSMSCHEME              &
+                                       ,CLMSCHEME                 &
                                        ,PXLSMSCHEME               &
                                        ,TEMFSFCSCHEME             &
                                        ,GFDLSFCSCHEME             &
@@ -200,6 +265,7 @@ CONTAINS
    USE module_sf_noahdrv, only : lsm
    USE module_sf_noahmpdrv, only : noahmplsm
    USE module_sf_noah_seaice_drv
+   USE module_sf_clm
    USE module_sf_ssib  ! ssib
    USE module_sf_ruclsm
    USE module_sf_pxsfclay
@@ -410,6 +476,8 @@ CONTAINS
 
    INTEGER, INTENT(IN)::   NLCAT, mosaic_lu, mosaic_soil
    INTEGER, INTENT(IN)::   NSCAT
+
+   INTEGER, INTENT(IN)::   history_interval
 
    INTEGER, INTENT(IN) :: sf_sfclay_physics, sf_surface_physics,      &
                           sf_urban_physics,ra_lw_physics,sst_update,  &
@@ -814,6 +882,79 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(OUT), OPTIONAL  ::   NOAHRES
 
+   INTEGER, INTENT(IN) :: MAXPATCH, inest
+
+  integer, optional,  dimension(ims:ime,jms:jme ),intent(inout) :: numc,nump
+  real,    optional,  dimension(ims:ime,jms:jme ),intent(inout) :: sabv,sabg,lwup
+  integer, optional,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) :: snl
+  real,    optional,  dimension(ims:ime,jms:jme ),intent(inout) ::t2m_max,t2m_min,t2clm
+  real,    optional,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) ::  &
+                snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
+                h2ocan,h2ocan_col,   &
+                t_ref2m,h2osoi_liq_s1,              &
+                h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+                h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+                h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+                h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+                h2osoi_ice_s1,h2osoi_ice_s2,                        &
+                h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+                h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+                h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+                h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+                t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+                t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+                t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+                t_soisno8,t_soisno9,t_soisno10,                     &
+                dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+                snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+                t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+                t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+                h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+                h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+                h2osoi_vol7,h2osoi_vol8,                            &
+                h2osoi_vol9,h2osoi_vol10,                           &
+                ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+                Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,SWUPsubgrid ,&
+                LHsoi,LHveg,LHtran
+#ifdef CN
+!ylu 05/31/2011
+
+!CROP&CN restart and potential output
+  integer, optional,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) :: croplive
+  real,optional,dimension(ims:ime,1:maxpatch,jms:jme),intent(inout) :: &
+                 dyntlai,dyntsai,dyntop,dynbot,   &
+                 htmx,gdd1020,gdd820,gdd020,grainc,grainc_storage  &
+                ,grainc_xfer,grainn,grainn_storage,grainn_xfer,days_active  &
+                ,onset_flag,onset_counter,onset_gddflag,onset_fdd,onset_gdd &
+                ,onset_swi,offset_flag,offset_counter,offset_fdd,offset_swi &
+                ,dayl,annavg_t2m,tempavg_t2m,tempsum_potential_gpp          &
+                ,annsum_potential_gpp,tempmax_retransn,annmax_retransn      &
+                ,prev_leafc_to_litter,prev_frootc_to_litter,tempsum_npp     &
+                ,annsum_npp,leafc,leafc_storage,leafc_xfer,frootc           &
+                ,frootc_storage,frootc_xfer,livestemc,livestemc_storage     &
+                ,livestemc_xfer,deadstemc,deadstemc_storage,deadstemc_xfer  &
+                ,livecrootc,livecrootc_storage,livecrootc_xfer,deadcrootc   &
+                ,deadcrootc_storage,deadcrootc_xfer,cpool,pft_ctrunc        &
+                ,leafn,leafn_storage,leafn_xfer,frootn,frootn_storage       &
+                ,frootn_xfer,livestemn,livestemn_storage,livestemn_xfer     &
+                ,deadstemn,deadstemn_storage,deadstemn_xfer,livecrootn      &
+                ,livecrootn_storage,livecrootn_xfer,deadcrootn              &
+                ,deadcrootn_storage,deadcrootn_xfer,npool,pft_ntrunc        &
+                ,gresp_storage,gresp_xfer,xsmrpool,annsum_counter           &
+                ,cannsum_npp,cannavg_t2m,wf,me,mean_fire_prob,cwdc,litr1c   &
+                ,litr2c,litr3c,soil1c,soil2c,soil3c,soil4c,seedc,col_ctrunc &
+                ,prod10c,prod100c,cwdn,litr1n,litr2n,litr3n,soil1n,soil2n   &
+                ,soil3n,soil4n,seedn,col_ntrunc,prod10n,prod100n,sminn      &
+                ,totlitc,dwt_seedc_to_leaf,dwt_seedc_to_deadstem,dwt_conv_cflux &
+                ,dwt_prod10c_gain,dwt_prod100c_gain,prod100c_loss,dwt_frootc_to_litr1c &
+                ,dwt_frootc_to_litr2c,dwt_frootc_to_litr3c,dwt_livecrootc_to_cwdc &
+                ,dwt_deadcrootc_to_cwdc,dwt_seedn_to_leaf,dwt_seedn_to_deadstem &
+                ,dwt_conv_nflux,dwt_prod10n_gain,dwt_prod100n_gain,prod100n_loss &
+                ,dwt_frootn_to_litr1n,dwt_frootn_to_litr2n, dwt_frootn_to_litr3n &
+                , dwt_livecrootn_to_cwdn,dwt_deadcrootn_to_cwdn,retransn
+#endif
+
+
 ! Variables for TEMF surface layer
    REAL,OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) :: te_temf
    REAL,OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: hd_temf, exch_temf, wm_temf
@@ -933,6 +1074,7 @@ CONTAINS
 !
    REAL   :: xice_threshold
 !
+  real,    dimension(ims:ime,1:maxpatch,jms:jme ) ::  q_ref2m   ! clm
 
 
 !------------------------------------------------------------------
@@ -2292,7 +2434,7 @@ CONTAINS
            ENDDO
            
 !          CALL SFCDIAGS(HFX,QFX,TSK,QSFC,CHS2,CQS2,T2,TH2,Q2,      &
-!                     PSFC,CP,R_d,RCP,                              &
+!                     PSFC,CP,R_d,RCP,CHS,t_phy,qv_curr,ua_phys,    &
 !                     ids,ide, jds,jde, kds,kde,                    &
 !                     ims,ime, jms,jme, kms,kme,                    &
 !             i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
@@ -2538,6 +2680,281 @@ CONTAINS
        ELSE
          CALL wrf_error_fatal('Lacking arguments for P-X LSM in surface driver')
        ENDIF
+!---------------------------------------------------------------------
+! CLM coupling currently version 4 added by Yaqiong Lu and Jiming Jin
+
+     CASE (CLMSCHEME)
+     CALL wrf_debug(100,'in CLM')
+
+     IF (MYJ) call wrf_error_fatal('CLM is not currently compatible with MYJ.  Please pick different PBL Schemes')
+
+     IF (present(qv_curr) .and.  present(rainbl) .and.    &
+                                                      .true. ) then
+
+       ! print *, "itimestep = ", itimestep
+      !  print *," in module_surface_driver.F :  dz8w(i,1,j) = ",dz8w(:,1,:)
+         IF( PRESENT(sr) ) THEN
+           frpcpn=.true.
+         ENDIF
+         IF ( FRACTIONAL_SEAICE == 1) THEN
+            ! The fields passed to LSM need to represent the full ice values, not
+            ! the fractional values.  Convert ALBEDO and EMISS from the blended value 
+            ! to a value representing only the sea-ice portion.   Albedo over open 
+            ! water is taken to be 0.08. Emissivity over open water is taken to be 0.98
+            DO j = j_start(ij) , j_end(ij)
+               DO i = i_start(ij) , i_end(ij)
+                  IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE.  1 ) ) THEN
+                     ALBEDO(I,J) = (ALBEDO(I,J)-(1.-XICE(I,J))*0.08)/XICE(I,J)
+                     EMISS(I,J) = (EMISS(I,J)-(1.-XICE(I,J))*0.98)/XICE(I,J)
+                  ENDIF
+               ENDDO
+            ENDDO
+            IF ( isisfc ) THEN
+              ! Use surface layer routine values from the ice portion of grid
+              ! point
+            ELSE
+               !    
+               ! We don't have surface layer routine values at this time, so
+               ! just use what we have.  Use ice component of TSK
+               !    
+               DO j = j_start(ij) , j_end(ij)
+                  DO i = i_start(ij) , i_end(ij)
+                     IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1 ) ) THEN
+                        IF ( SST(i,j) .LT. 271.4 ) THEN
+                           SST(i,j) = 271.4
+                        ENDIF
+                        TSK_SEA(i,j) = SST(i,j)
+                        ! Convert TSK from our ice/water average value to value
+                        ! good for solid-ice surface.
+                        TSK(i,j) = ( TSK(i,j) - (1.-XICE(i,j)) *SST(i,j) ) / XICE(i,j)
+                        IF (XICE(i,j).lt.0.2 .and. TSK(i,j).lt.253.15) THEN
+                           TSK(i,j) = 253.15
+                        ENDIF
+                        IF (XICE(i,j).lt.0.1 .and. TSK(i,j).lt.263.15) THEN
+                           TSK(i,j) = 263.15
+                        ENDIF
+                     ELSE
+                        TSK_SEA(i,j) = TSK(i,j)
+                     ENDIF
+                  ENDDO
+               ENDDO
+            ENDIF
+         ENDIF
+
+
+       CALL wrf_debug(100,'in clmdrv')
+
+       CALL clmdrv(dz8w,qv_curr,p8w, t_phy,tsk,                   &
+                hfx,qfx,lh,grdflx,qgh,gsw,swdown,               &
+                ra_sw_physics,history_interval,glw,smstav,smstot, &
+                sfcrunoff,udrunoff,ivgtyp,isltyp,vegfra,        &
+                albedo,znt,z0, tmn,xland,xice, emiss,           &
+                snowc,qsfc,rainbl,maxpatch,                     &
+                num_soil_layers,dtbl,dzs,itimestep,             &
+                smois,tslb,snow,canwat,                         &
+                chs,chs2,sh2o,snowh,                            &
+                u_phy,v_phy,                                    &
+                shdmin,shdmax,                                  &
+                acsnom,acsnow,                                  &
+                dx,xlat,xlong,ht,                               &
+                ids,ide, jds,jde, kds,kde,                      &
+                ims,ime, jms,jme, kms,kme,                      &
+                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, &
+                inest,sf_urban_physics                          &
+!Optional urban
+               ,cmr_sfcdif,chr_sfcdif,cmc_sfcdif,chc_sfcdif    &
+               ,tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d,  & !H urban
+                uc_urb2d,                                       & !H urban
+                xxxr_urb2d,xxxb_urb2d,xxxg_urb2d,xxxc_urb2d,    & !H urban
+                trl_urb3d,tbl_urb3d,tgl_urb3d,                  & !H urban
+                sh_urb2d,lh_urb2d,g_urb2d,rn_urb2d,ts_urb2d,    & !H urban
+                psim_urb2d,psih_urb2d,u10_urb2d,v10_urb2d,      & !O urban
+                GZ1OZ0_urb2d, AKMS_URB2D,                       & !O urban
+                th2_urb2d,q2_urb2d,ust_urb2d,                   & !O urban
+                declin,coszen,hrang,                            & !I urban   !  by hongping Gu
+                xlat_urb2d,                                     & !I urban
+                num_roof_layers, num_wall_layers,               & !I urban
+                num_road_layers, DZR, DZB, DZG,                 & !I urban
+                FRC_URB2D, UTYPE_URB2D                          & !I urban
+! CLM subgrids
+               ,numc,nump,sabv,sabg,lwup,snl, &
+                snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
+                h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm ,    &
+                t_ref2m,h2osoi_liq_s1,                 &
+                h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,          &
+                h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,              &
+                h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,    &
+                h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,   &
+                h2osoi_ice_s1,h2osoi_ice_s2,                        &
+                h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,          &
+                h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,    &
+                h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,                &
+                h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,               &
+                t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,    &
+                t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,          &
+                t_soisno4,t_soisno5,t_soisno6,t_soisno7,            &
+                t_soisno8,t_soisno9,t_soisno10,                     &
+                dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,            &
+                snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,       &
+                t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,            &
+                t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,           &
+                h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,                &
+                h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
+                h2osoi_vol7,h2osoi_vol8,                            &
+                h2osoi_vol9,h2osoi_vol10,                           &
+                q_ref2m,                                   &
+                ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
+                Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,SWUPsubgrid,&
+                LHsoi,LHveg,LHtran, &
+                alswvisdir, alswvisdif, alswnirdir, alswnirdif,      & ! clm
+                swvisdir, swvisdif, swnirdir, swnirdif               & ! clm
+#ifdef CN
+!CROP&CN RESTART AND OUTPUTS
+                ,dyntlai,dyntsai,dyntop,dynbot &
+                ,htmx,croplive,gdd1020,gdd820,gdd020,grainc,grainc_storage  &
+                ,grainc_xfer,grainn,grainn_storage,grainn_xfer,days_active  &
+                ,onset_flag,onset_counter,onset_gddflag,onset_fdd,onset_gdd &
+                ,onset_swi,offset_flag,offset_counter,offset_fdd,offset_swi &
+                ,dayl,annavg_t2m,tempavg_t2m,tempsum_potential_gpp          &
+                ,annsum_potential_gpp,tempmax_retransn,annmax_retransn      &
+                ,prev_leafc_to_litter,prev_frootc_to_litter,tempsum_npp     &
+                ,annsum_npp,leafc,leafc_storage,leafc_xfer,frootc           &
+                ,frootc_storage,frootc_xfer,livestemc,livestemc_storage     &
+                ,livestemc_xfer,deadstemc,deadstemc_storage,deadstemc_xfer  &
+                ,livecrootc,livecrootc_storage,livecrootc_xfer,deadcrootc   &
+                ,deadcrootc_storage,deadcrootc_xfer,cpool,pft_ctrunc        &
+                ,leafn,leafn_storage,leafn_xfer,frootn,frootn_storage       &
+                ,frootn_xfer,livestemn,livestemn_storage,livestemn_xfer     &
+                ,deadstemn,deadstemn_storage,deadstemn_xfer,livecrootn      &
+                ,livecrootn_storage,livecrootn_xfer,deadcrootn              &
+                ,deadcrootn_storage,deadcrootn_xfer,npool,pft_ntrunc        &
+                ,gresp_storage,gresp_xfer,xsmrpool,annsum_counter           &
+                ,cannsum_npp,cannavg_t2m,wf,me,mean_fire_prob,cwdc,litr1c   &
+                ,litr2c,litr3c,soil1c,soil2c,soil3c,soil4c,seedc,col_ctrunc &
+                ,prod10c,prod100c,cwdn,litr1n,litr2n,litr3n,soil1n,soil2n   &
+                ,soil3n,soil4n,seedn,col_ntrunc,prod10n,prod100n,sminn      &
+                ,totlitc,dwt_seedc_to_leaf,dwt_seedc_to_deadstem,dwt_conv_cflux &
+                ,dwt_prod10c_gain,dwt_prod100c_gain,prod100c_loss,dwt_frootc_to_litr1c &
+                ,dwt_frootc_to_litr2c,dwt_frootc_to_litr3c,dwt_livecrootc_to_cwdc &
+                ,dwt_deadcrootc_to_cwdc,dwt_seedn_to_leaf,dwt_seedn_to_deadstem &
+                ,dwt_conv_nflux,dwt_prod10n_gain,dwt_prod100n_gain,prod100n_loss &
+                ,dwt_frootn_to_litr1n,dwt_frootn_to_litr2n, dwt_frootn_to_litr3n &
+                ,dwt_livecrootn_to_cwdn,dwt_deadcrootn_to_cwdn,retransn &
+#endif
+                 )
+
+         IF ( FRACTIONAL_SEAICE == 1 ) THEN
+            ! LSM Returns full land/ice values, no fractional values.
+            ! We return to a fractional component here.  SFLX currently
+            ! hard-wires
+            ! emissivity over sea ice to 0.98, the same value as over open
+            ! water, so
+            ! the fractional consideration doesn't have any effect for
+            ! emissivity.
+            DO j=j_start(ij),j_end(ij)
+               DO i=i_start(ij),i_end(ij)
+                  IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE.  1.0 ) ) THEN
+                     albedo(i,j) = ( albedo(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
+                     emiss(i,j) = ( emiss(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.98  )
+                  ENDIF
+               ENDDO
+            ENDDO
+
+            IF ( isisfc ) THEN
+               DO j=j_start(ij),j_end(ij)
+                  DO i=i_start(ij),i_end(ij)
+                     IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                        !  Weighted average of fields between ice-cover values
+                        !  and open-water values.
+                        flhc(i,j) = ( flhc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * flhc_sea(i,j) )
+                        flqc(i,j) = ( flqc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * flqc_sea(i,j) )
+                        cpm(i,j)  = ( cpm(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * cpm_sea(i,j)  )
+                        cqs2(i,j) = ( cqs2(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * cqs2_sea(i,j) )
+                        chs2(i,j) = ( chs2(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * chs2_sea(i,j) )
+                        chs(i,j)  = ( chs(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * chs_sea(i,j)  )
+                        qsfc(i,j) = ( qsfc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qsfc_sea(i,j) )
+                        qgh(i,j)  = ( qgh(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qgh_sea(i,j)  )
+                        qz0(i,j)  = ( qz0(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qz0_sea(i,j)  )
+                        hfx(i,j)  = ( hfx(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * hfx_sea(i,j)  )
+                        qfx(i,j)  = ( qfx(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qfx_sea(i,j)  )
+                        lh(i,j)   = ( lh(i,j)   * XICE(i,j) ) + ( (1.0-XICE(i,j)) * lh_sea(i,j)   )
+                        tsk(i,j)  = ( tsk(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * tsk_sea(i,j)  )
+                     ENDIF
+                  ENDDO
+               ENDDO
+            ELSE
+               DO j = j_start(ij) , j_end(ij)
+                  DO i = i_start(ij) , i_end(ij)
+                     IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+                        ! Compute TSK as the open-water and ice-cover average
+                        tsk(i,j) = ( tsk(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * tsk_sea(i,j) )
+                     ENDIF
+                  ENDDO
+               ENDDO
+            ENDIF
+         ENDIF
+          CALL SFCDIAGS(HFX,QFX,TSK,QSFC,CHS2,CQS2,T2,TH2,Q2,      &
+                     PSFC,CP,R_d,RCP,CHS,t_phy,qv_curr,ua_phys,    &
+                     ids,ide, jds,jde, kds,kde,                    &
+                     ims,ime, jms,jme, kms,kme,                    &
+             i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+
+           DO j=j_start(ij),j_end(ij)
+           DO i=i_start(ij),i_end(ij)
+              CHKLOWQ(I,J)= 1.0
+              SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
+
+! update land variables from CLM
+              IF(XLAND(I,J).LT.1.5) then
+!              IF((XLAND(I,J).LT.1.5 .AND. IVGTYP(I,J) .NE. ISWATER) .OR. &
+!                 (IVGTYP(I,J) == ISWATER .AND. HT(I,J) >= LAKEMINALT .AND.
+!                 DOCLMLAKE == 1)) then
+                  Q2(I,J) = sum(q_ref2m(i,1:nump(i,j),j)*wtp(i,1:nump(i,j),j))
+                  T2(I,J) = sum(t_ref2m(i,1:nump(i,j),j)*wtp(i,1:nump(i,j),j))
+                  TH2(I,J)= T2(I,J)*(1.E5/PSFC(I,J))**RCP
+                 ! IF (UCMCALL == 1 ) THEN
+!update urban impact 
+!Add more here?
+                 ! END IF
+              END IF
+           ENDDO
+           ENDDO
+!urban
+     IF(sf_urban_physics == 1) THEN
+       DO j=j_start(ij),j_end(ij)                             !urban
+         DO i=i_start(ij),i_end(ij)                           !urban
+          IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &  !urban
+              IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33 ) THEN !urban
+!             TH2(I,J)  = TH2_URB2D(I,J)                       !urban
+!             T2(I,J)   = TH2_URB2D(I,J)/(1.E5/PSFC(I,J))**RCP !urban
+!m             T2(I,J)   = TH2_URB2D(I,J)                       !urban
+!             T2(I,J)   = FRC_URB2D(i,j)*TH2_URB2D(I,J) +
+!             (1-FRC_URB2D(i,j))*T2(I,J) !urban
+!             TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**RCP
+!             !urban
+!m             Q2(I,J)   = Q2_URB2D(I,J)
+!!urban
+!             Q2(I,J)   = FRC_URB2D(i,j)*Q2_URB2D(I,J) +(1-FRC_URB2D(i,j))*
+!             Q2(I,J)  !urban
+             U10(I,J)  = U10_URB2D(I,J)                       !urban
+             V10(I,J)  = V10_URB2D(I,J)                       !urban
+             PSIM(I,J) = PSIM_URB2D(I,J)                      !urban
+             PSIH(I,J) = PSIH_URB2D(I,J)                      !urban
+             GZ1OZ0(I,J) = GZ1OZ0_URB2D(I,J)                  !urban
+!m             AKHS(I,J) = AKHS_URB2D(I,J)                    !urban
+             AKHS(I,J) = CHS(I,J)                             !urban
+             AKMS(I,J) = AKMS_URB2D(I,J)                      !urban
+           END IF                                             !urban
+         ENDDO                                                !urban
+       ENDDO                                                  !urban
+     ENDIF
+
+       ELSE
+         CALL wrf_error_fatal('Lacking arguments for CLM in surface driver')
+       ENDIF
+
+! end of CLM scehme
+! -------------------------------------------------------------------
 
      CASE (SSIBSCHEME)
      IF(PRESENT(alswvisdir))THEN

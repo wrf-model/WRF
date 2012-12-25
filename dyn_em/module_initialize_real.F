@@ -1238,7 +1238,7 @@ integer::oops1,oops2
             CALL t_to_theta ( grid%t_2 , grid%p , p00 , &
                               ids , ide , jds , jde , kds , kde , &
                               ims , ime , jms , jme , kms , kme , &
-                              its , ite , jts , jte , kts , kte )
+                              its , ite , jts , jte , kts , kte-1 )
          END IF
 
          num_3d_m = num_moist

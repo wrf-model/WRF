@@ -7,7 +7,8 @@ RM      =       /bin/rm -f
 CHEM_FILES =	../chem/module_aerosols_sorgam.o \
 		../chem/module_gocart_aerosols.o \
 		../chem/module_mosaic_driver.o \
-		../chem/module_input_tracer.o
+		../chem/module_input_tracer.o \
+		../chem/module_aerosols_soa_vbs.o
 
 deflt :
 		@ echo Please compile the code using ./compile

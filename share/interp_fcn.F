@@ -5489,8 +5489,8 @@ print *,'column of cg pres = ',cprs
      real, intent(in) :: evalue
 
      INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
-     REAL,DIMENSION(cims:cime,cjms:cjme,ckms:ckme),   INTENT(OUT)           :: CFLD
-     REAL,DIMENSION(nims:nime,njms:njme,nkms:nkme),   INTENT(IN)          :: nfld
+     REAL,DIMENSION(cims:cime,ckms:ckme,cjms:cjme),   INTENT(OUT)           :: CFLD
+     REAL,DIMENSION(nims:nime,nkms:nkme,njms:njme),   INTENT(IN)          :: nfld
 
      if(nkts==nkte) then
         call n2c_copy2d(&

@@ -4558,6 +4558,8 @@ grid=>cgrid
       USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
                             ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width
       USE module_comm_dm, ONLY : HALO_NMM_WEIGHTS_sub
+      USE module_comm_nesting_dm, ONLY : HALO_INTERP_UP_sub
+
       IMPLICIT NONE
 !
       TYPE(domain), TARGET :: grid          ! name of the grid being dereferenced (must be "grid")
@@ -4592,6 +4594,7 @@ grid=>cgrid
                                 ips, ipe, jps, jpe, kps, kpe    )
 
 #ifdef DM_PARALLEL
+#include "HALO_INTERP_UP.inc"
 #include "HALO_NMM_WEIGHTS.inc"
 #endif
 

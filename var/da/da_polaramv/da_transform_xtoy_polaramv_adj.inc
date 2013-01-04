@@ -1,4 +1,4 @@
-subroutine da_transform_xtoy_polaramv_adj (iv, jo_grad_y, jo_grad_x)
+subroutine da_transform_xtoy_polaramv_adj (grid, iv, jo_grad_y, jo_grad_x)
 
    !-------------------------------------------------------------------------
    ! Purpose: X to Y Transpose operator for Polar AMVs 
@@ -7,23 +7,39 @@ subroutine da_transform_xtoy_polaramv_adj (iv, jo_grad_y, jo_grad_x)
    !-------------------------------------------------------------------------
 
    implicit none
-
+   type(domain),  intent(in)    :: grid
    type (iv_type), intent(in)    :: iv          ! obs. inc vector (o-b).
    type (y_type) , intent(in)    :: jo_grad_y   ! grad_y(jo)
    type (x_type) , intent(inout) :: jo_grad_x   ! grad_x(jo)
 
-   integer           :: n     ! Loop counter.
+   integer           :: n, k     ! Loop counter.
    real, allocatable :: u(:,:)
    real, allocatable :: v(:,:)
+   real, allocatable :: ub(:,:)
+   real, allocatable :: vb(:,:)
 
    if (trace_use_dull) call da_trace_entry("da_transform_xtoy_polaramv_adj")
 
    allocate (u(iv%info(polaramv)%max_lev,iv%info(polaramv)%n1:iv%info(polaramv)%n2))
    allocate (v(iv%info(polaramv)%max_lev,iv%info(polaramv)%n1:iv%info(polaramv)%n2))
+   allocate (ub(iv%info(polaramv)%max_lev,iv%info(polaramv)%n1:iv%info(polaramv)%n2))
+   allocate (vb(iv%info(polaramv)%max_lev,iv%info(polaramv)%n1:iv%info(polaramv)%n2))
+
+   call da_interp_lin_3d (grid%xb%u, iv%info(polaramv), ub)
+   call da_interp_lin_3d (grid%xb%v, iv%info(polaramv), vb)
 
    do n=iv%info(polaramv)%n1,iv%info(polaramv)%n2
-      u(1:size(jo_grad_y%polaramv(n)%u),n) = jo_grad_y%polaramv(n)%u(:)
-      v(1:size(jo_grad_y%polaramv(n)%v),n) = jo_grad_y%polaramv(n)%v(:)
+       do k = 1, iv%info(polaramv)%levels(n)
+
+         if(.not. var_wind) then
+             u(k,n) = jo_grad_y%polaramv(n)%u(k)
+             v(k,n) = jo_grad_y%polaramv(n)%v(k)
+           else
+             call da_uv_wind_adj(jo_grad_y%polaramv(n)%u(k), &
+                                    jo_grad_y%polaramv(n)%v(k), u(k,n), v(k,n), ub(k,n), vb(k,n))
+          end if
+
+      end do
    end do
 
 #ifdef A2C
@@ -36,7 +52,8 @@ subroutine da_transform_xtoy_polaramv_adj (iv, jo_grad_y, jo_grad_x)
 
    deallocate (u)
    deallocate (v)
-
+   deallocate (ub)
+   deallocate (vb)
    if (trace_use_dull) call da_trace_exit("da_transform_xtoy_polaramv_adj")
 
 end subroutine da_transform_xtoy_polaramv_adj

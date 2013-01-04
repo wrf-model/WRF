@@ -17,7 +17,10 @@ subroutine da_transform_xtoy_sound (grid, iv, y)
    real, allocatable :: t(:,:)
    real, allocatable :: q(:,:)
 
-   integer :: n
+   real, allocatable :: ub(:,:)
+   real, allocatable :: vb(:,:)
+
+   integer :: n,k
 
    if (trace_use_dull) call da_trace_entry("da_transform_xtoy_sound")
 
@@ -25,6 +28,9 @@ subroutine da_transform_xtoy_sound (grid, iv, y)
    allocate (v(iv%info(sound)%max_lev,iv%info(sound)%n1:iv%info(sound)%n2))
    allocate (t(iv%info(sound)%max_lev,iv%info(sound)%n1:iv%info(sound)%n2))
    allocate (q(iv%info(sound)%max_lev,iv%info(sound)%n1:iv%info(sound)%n2))
+
+   allocate (ub(iv%info(sound)%max_lev,iv%info(sound)%n1:iv%info(sound)%n2))
+   allocate (vb(iv%info(sound)%max_lev,iv%info(sound)%n1:iv%info(sound)%n2))
   
 #ifdef A2C
    call da_interp_lin_3d (grid%xa%u, iv%info(sound), u,'u')
@@ -36,17 +42,33 @@ subroutine da_transform_xtoy_sound (grid, iv, y)
    call da_interp_lin_3d (grid%xa%t, iv%info(sound), t)
    call da_interp_lin_3d (grid%xa%q, iv%info(sound), q)
 
+   call da_interp_lin_3d (grid%xb%u, iv%info(sound), ub)
+   call da_interp_lin_3d (grid%xb%v, iv%info(sound), vb)
+
+
    do n=iv%info(sound)%n1,iv%info(sound)%n2
-      y%sound(n)%u(:) = u(1:size(y%sound(n)%u),n)
-      y%sound(n)%v(:) = v(1:size(y%sound(n)%v),n)
       y%sound(n)%t(:) = t(1:size(y%sound(n)%t),n)
       y%sound(n)%q(:) = q(1:size(y%sound(n)%q),n)
+
+      do k = 1, iv%info(sound)%levels(n)
+
+         if(.not. var_wind) then
+            y%sound(n)%u(k) = u(k,n)
+            y%sound(n)%v(k) = v(k,n)
+         else
+            call da_uv_wind_tgl(y%sound(n)%u(k),y%sound(n)%v(k),u(k,n),v(k,n),ub(k,n),vb(k,n))
+         end if
+
+      end do
+
    end do
 
    deallocate (u)
    deallocate (v)
    deallocate (t)
    deallocate (q)
+   deallocate (ub)
+   deallocate (vb)
 
    if (trace_use_dull) call da_trace_exit("da_transform_xtoy_sound")
 

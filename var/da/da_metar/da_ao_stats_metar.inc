@@ -1,4 +1,4 @@
-subroutine da_ao_stats_metar (stats_unit, iv, re)
+subroutine da_ao_stats_metar (stats_unit, iv, re, ob)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -9,10 +9,12 @@ subroutine da_ao_stats_metar (stats_unit, iv, re)
    integer,        intent(in)    :: stats_unit    ! Output unit for stats.
    type (iv_type), intent(inout) :: iv            ! iv
    type (y_type),  intent(in)    :: re            ! A - O
+   type(y_type),   intent (in) :: ob       ! Observation structure.
 
    type (stats_metar_type) :: stats
    integer                 :: nu, nv, nt, np, nq
    integer                 :: n
+   real                    :: u_inv, v_inv, sp_inv, dir_inv
 
    if (trace_use_dull) call da_trace_entry("da_ao_stats_metar")
 
@@ -38,12 +40,20 @@ subroutine da_ao_stats_metar (stats_unit, iv, re)
 
    do n=1, iv%info(metar)%nlocal
        if (iv%info(metar)%proc_domain(1,n)) then
+         u_inv = re%metar(n)%u
+         v_inv = re%metar(n)%v
+         if(var_wind) then
+            sp_inv = re%metar(n)%u
+            dir_inv = re%metar(n)%v
+            call da_cal_sd (ob%metar(n)%u, ob%metar(n)%v, &
+                            u_inv, v_inv, sp_inv, dir_inv)
+         end if
          call da_stats_calculate (n, 0, iv%metar(n)%u%qc, & 
-            re%metar(n)%u, nu, &
+            u_inv, nu, &
             stats%minimum%u, stats%maximum%u, &
             stats%average%u, stats%rms_err%u)
          call da_stats_calculate (n, 0, iv%metar(n)%v%qc, & 
-            re%metar(n)%v, nv, &
+            v_inv, nv, &
             stats%minimum%v, stats%maximum%v, &
             stats%average%v, stats%rms_err%v)
          call da_stats_calculate (n, 0, iv%metar(n)%t%qc, & 

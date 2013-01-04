@@ -20,6 +20,9 @@ subroutine da_transform_xtoy_sonde_sfc (grid, iv, y)
    real, allocatable :: model_q(:,:)
    real, allocatable :: model_psfc(:)
 
+   real, allocatable :: ub(:,:)
+   real, allocatable :: vb(:,:)
+
    if (trace_use_dull) call da_trace_entry("da_transform_xtoy_sonde_sfc")
 
    if (sfc_assi_options == sfc_assi_options_1) then
@@ -28,6 +31,10 @@ subroutine da_transform_xtoy_sonde_sfc (grid, iv, y)
       allocate (model_t(1,iv%info(sound)%n1:iv%info(sound)%n2))
       allocate (model_q(1,iv%info(sound)%n1:iv%info(sound)%n2))
       allocate (model_psfc(iv%info(sound)%n1:iv%info(sound)%n2))
+
+      allocate (ub(1,iv%info(sound)%n1:iv%info(sound)%n2))
+      allocate (vb(1,iv%info(sound)%n1:iv%info(sound)%n2))
+
       ! [1.2] Interpolate horizontally:
 #ifdef A2C
       call da_interp_lin_3d (grid%xa%u, iv%info(sonde_sfc), model_u,'u')
@@ -41,18 +48,33 @@ subroutine da_transform_xtoy_sonde_sfc (grid, iv, y)
 
       call da_interp_lin_2d (grid%xa%psfc, iv%info(sonde_sfc), 1, model_psfc)
 
+      call da_interp_lin_3d (grid%xb%u, iv%info(sonde_sfc), ub)
+      call da_interp_lin_3d (grid%xb%v, iv%info(sonde_sfc), vb)
+
       do n=iv%info(sound)%n1,iv%info(sound)%n2
-         y%sonde_sfc(n)%u = model_u(1,n)
-         y%sonde_sfc(n)%v = model_v(1,n)
+
          y%sonde_sfc(n)%t = model_t(1,n)
          y%sonde_sfc(n)%q = model_q(1,n)
          y%sonde_sfc(n)%p = model_psfc(n)
+
+         if(var_wind)then
+                call da_uv_wind_tgl(y%sonde_sfc(n)%u,y%sonde_sfc(n)%v,model_u(1,n),model_v(1,n),ub(1,n),vb(1,n))
+         else
+            y%sonde_sfc(n)%u = model_u(1,n)
+            y%sonde_sfc(n)%v = model_v(1,n)
+         end if
+
       end do
+
+
       deallocate (model_u)
       deallocate (model_v)
       deallocate (model_t)
       deallocate (model_q)
       deallocate (model_psfc)
+      deallocate (ub)
+      deallocate (vb)
+
    else if (sfc_assi_options == sfc_assi_options_2) then
       call da_transform_xtopsfc(grid, iv, sonde_sfc, iv%sonde_sfc(:), y%sonde_sfc(:))
    end if

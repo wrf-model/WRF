@@ -14,9 +14,7 @@ subroutine da_check_max_iv_buoy(iv,ob, it, num_qcstat_conv)
    integer,       intent(inout) :: num_qcstat_conv(:,:,:,:)
    type(y_type),  intent(in)    :: ob      ! Observation structure.
 
-
-
-   logical :: failed 
+   logical :: failed,failed1,failed2
    integer :: n
    
    if (trace_use_dull) call da_trace_entry("da_check_max_iv_buoy")       
@@ -26,32 +24,119 @@ subroutine da_check_max_iv_buoy(iv,ob, it, num_qcstat_conv)
    ! [1.0] Perform maximum innovation vector check:
    !---------------------------------------------------------------------------
 
-   do n=iv%info(buoy)%n1,iv%info(buoy)%n2
-      failed=.false.
-      if( iv%buoy(n)%u%qc >= obs_qc_pointer ) then 
-      call da_max_error_qc (it, iv%info(buoy), n, iv%buoy(n)%u, max_error_uv, failed)
-      if( iv%info(buoy)%proc_domain(1,n) ) then
-      num_qcstat_conv(1,buoy,1,1)= num_qcstat_conv(1,buoy,1,1) + 1
-      if(failed) then
-      num_qcstat_conv(2,buoy,1,1)= num_qcstat_conv(2,buoy,1,1) + 1
-      write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
-           'buoy',ob_vars(1),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
-      end if
-      end if
-      end if
+      do n=iv%info(buoy)%n1,iv%info(buoy)%n2
+         if(standard)then
+            if(var_wind)then
+               failed=.false.
+               if( iv%buoy(n)%u%qc >= obs_qc_pointer ) then
+                   call da_max_error_qc (it,iv%info(buoy), n, iv%buoy(n)%u, max_error_sp,failed)
+                   if( iv%info(buoy)%proc_domain(1,n) ) then
+                       num_qcstat_conv(1,buoy,1,1) = num_qcstat_conv(1,buoy,1,1) + 1
+                       if(failed) then
+                          num_qcstat_conv(2,buoy,1,1) = num_qcstat_conv(2,buoy,1,1) + 1
+                          write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
+                          'buoy',ob_vars(1),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
+                       end if
+                   end if
+                end if
 
-      failed=.false.
-      if( iv%buoy(n)%v%qc >= obs_qc_pointer ) then
-      call da_max_error_qc (it, iv%info(buoy), n, iv%buoy(n)%v, max_error_uv, failed)             
-      if( iv%info(buoy)%proc_domain(1,n) ) then
-      num_qcstat_conv(1,buoy,2,1)= num_qcstat_conv(1,buoy,2,1) + 1
-      if(failed) then
-      num_qcstat_conv(2,buoy,2,1)= num_qcstat_conv(2,buoy,2,1) + 1
-      write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
-           'buoy',ob_vars(2),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
-      end if
-      end if
-      end if
+                failed=.false.
+                if( iv%buoy(n)%v%qc >= obs_qc_pointer ) then
+                    call da_max_error_qc (it,iv%info(buoy), n, iv%buoy(n)%v, max_error_dir,failed)
+                    if( iv%info(buoy)%proc_domain(1,n) ) then
+                        num_qcstat_conv(1,buoy,2,1) = num_qcstat_conv(1,buoy,2,1) + 1
+                        if(failed)then
+                           num_qcstat_conv(2,buoy,2,1) = num_qcstat_conv(2,buoy,2,1) + 1
+                           write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
+                           'buoy',ob_vars(2),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
+                        end if
+                    end if
+                end if
+
+             else
+
+                failed=.false.
+                if( iv%buoy(n)%u%qc >= obs_qc_pointer ) then
+                    call da_max_error_qc (it,iv%info(buoy), n, iv%buoy(n)%u, max_error_uv,failed)
+                    if( iv%info(buoy)%proc_domain(1,n) ) then
+                        num_qcstat_conv(1,buoy,1,1) = num_qcstat_conv(1,buoy,1,1) + 1
+                        if(failed) then
+                           num_qcstat_conv(2,buoy,1,1) = num_qcstat_conv(2,buoy,1,1) + 1
+                           write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
+                           'buoy',ob_vars(1),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
+                        end if
+                    end if
+                 end if
+
+                 failed=.false.
+                 if( iv%buoy(n)%v%qc >= obs_qc_pointer ) then
+                     call da_max_error_qc (it,iv%info(buoy), n, iv%buoy(n)%v, max_error_uv,failed)
+                     if( iv%info(buoy)%proc_domain(1,n) ) then
+                         num_qcstat_conv(1,buoy,2,1) = num_qcstat_conv(1,buoy,2,1) + 1
+                         if(failed)then
+                            num_qcstat_conv(2,buoy,2,1) = num_qcstat_conv(2,buoy,2,1) + 1
+                            write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
+                            'buoy',ob_vars(2),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
+                         end if
+                     end if
+                 end if
+              end if
+              if(var_wind)then
+                 if(iv%buoy(n)%u%qc == fails_error_max .or.  abs(iv%buoy(n)%u%inv) >= max_omb_sp) then
+                    iv%buoy(n)%u%qc = fails_error_max
+                    iv%buoy(n)%u%inv = 0.0
+                 endif
+                 if(iv%buoy(n)%v%qc == fails_error_max .or.  abs(iv%buoy(n)%v%inv) >= max_omb_dir) then
+                    iv%buoy(n)%v%qc = fails_error_max
+                    iv%buoy(n)%v%inv = 0.0
+                 endif
+              endif
+
+           else
+              failed1=.false.
+              failed2=.false.
+
+              if( iv%buoy(n)%v%qc >= obs_qc_pointer .or. iv%buoy(n)%u%qc >= obs_qc_pointer )  then
+                  if(.not. var_wind)then
+                     call da_max_error_qc (it,iv%info(buoy), n, iv%buoy(n)%u, max_error_uv,failed1)
+                     call da_max_error_qc (it,iv%info(buoy), n, iv%buoy(n)%v, max_error_uv,failed2)
+                  else
+                     call da_max_error_qc (it,iv%info(buoy), n, iv%buoy(n)%u, max_error_sp,failed1)
+                     call da_max_error_qc (it,iv%info(buoy), n, iv%buoy(n)%v, max_error_dir,failed2)
+                  endif
+              endif
+                        
+              if( iv%info(buoy)%proc_domain(1,n) ) then
+                  num_qcstat_conv(1,buoy,1,1) = num_qcstat_conv(1,buoy,1,1) + 1
+                  num_qcstat_conv(1,buoy,2,1) = num_qcstat_conv(1,buoy,2,1) + 1
+
+                  if(failed1 .or. failed2) then
+                     num_qcstat_conv(2,buoy,1,1) = num_qcstat_conv(2,buoy,1,1) + 1
+                     write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
+                           'buoy',ob_vars(1),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
+                     num_qcstat_conv(2,buoy,2,1) = num_qcstat_conv(2,buoy,2,1) + 1
+                     write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
+                           'buoy',ob_vars(2),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
+                  endif
+               endif
+
+               if(.not. var_wind)then
+                  if(iv%buoy(n)%u%qc == fails_error_max .or. iv%buoy(n)%v%qc == fails_error_max ) then
+                     iv%buoy(n)%u%qc = fails_error_max
+                     iv%buoy(n)%v%qc = fails_error_max
+                     iv%buoy(n)%u%inv = 0.0
+                     iv%buoy(n)%v%inv = 0.0
+                  endif
+               else
+                  if(iv%buoy(n)%u%qc == fails_error_max .or. iv%buoy(n)%v%qc == fails_error_max .or. &
+                     abs(iv%buoy(n)%v%inv) >= max_omb_dir .or. abs(iv%buoy(n)%u%inv) >= max_omb_sp )then
+                     iv%buoy(n)%u%qc = fails_error_max
+                     iv%buoy(n)%v%qc = fails_error_max
+                     iv%buoy(n)%u%inv = 0.0
+                     iv%buoy(n)%v%inv = 0.0
+                  endif
+               endif
+            endif
 
       failed=.false.
       if( iv%buoy(n)%t%qc >= obs_qc_pointer )  then 

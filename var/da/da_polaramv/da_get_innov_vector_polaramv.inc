@@ -25,7 +25,7 @@ subroutine da_get_innov_vector_polaramv( it, num_qcstat_conv, grid, ob, iv)
    real, allocatable :: model_v(:,:)  ! Model value v at ob location.
 
    real    :: v_p(kms:kme)      ! Model value p at ob hor. location.
-
+   real    :: speed, direction
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_polaramv")
 
    allocate (model_u(iv%info(polaramv)%max_lev,iv%info(polaramv)%n1:iv%info(polaramv)%n2))
@@ -106,15 +106,30 @@ subroutine da_get_innov_vector_polaramv( it, num_qcstat_conv, grid, ob, iv)
          iv % polaramv(n) % u(k) % inv = 0.0
          iv % polaramv(n) % v(k) % inv = 0.0
 
-         if (ob % polaramv(n) % u(k) > missing_r .AND. &
-             iv % polaramv(n) % u(k) % qc >= obs_qc_pointer) then
-            iv % polaramv(n) % u(k) % inv = ob % polaramv(n) % u(k) - model_u(k,n)
-         end if
+          if (.not. var_wind) then
+             if (ob%polaramv(n)%u(k) > missing_r .AND. iv%polaramv(n)%u(k)%qc >= obs_qc_pointer) then
+                 iv%polaramv(n)%u(k)%inv = ob%polaramv(n)%u(k) - model_u(k,n)
+             end if
 
-         if (ob % polaramv(n) % v(k) > missing_r .AND. &
-             iv % polaramv(n) % v(k) % qc >= obs_qc_pointer) then
-            iv % polaramv(n) % v(k) % inv = ob % polaramv(n) % v(k) - model_v(k,n)
-         end if
+             if (ob%polaramv(n)%v(k) > missing_r .AND. iv%polaramv(n)%v(k)%qc >= obs_qc_pointer) then
+                 iv%polaramv(n)%v(k)%inv = ob%polaramv(n)%v(k) - model_v(k,n)
+             end if
+           else
+              call da_ffdduv2 (speed,direction,model_u(k,n), model_v(k,n), iv%info(polaramv)%lon(k,n), convert_uv2fd)
+
+              if (ob%polaramv(n)%u(k) > missing_r .AND. iv%polaramv(n)%u(k)%qc >= obs_qc_pointer) then
+                  iv%polaramv(n)%u(k)%inv = ob%polaramv(n)%u(k) - speed
+              end if
+
+              if (ob%polaramv(n)%v(k) > missing_r .AND. iv%polaramv(n)%v(k)%qc >= obs_qc_pointer) then
+                  iv%polaramv(n)%v(k)%inv = ob%polaramv(n)%v(k) - direction
+                  if (iv%polaramv(n)%v(k)%inv > 180.0 ) iv%polaramv(n)%v(k)%inv = iv%polaramv(n)%v(k)%inv - 360.0
+                  if (iv%polaramv(n)%v(k)%inv < -180.0 ) iv%polaramv(n)%v(k)%inv = iv%polaramv(n)%v(k)%inv + 360.0
+              end if
+
+          end if
+
+
       end do
    end do
    

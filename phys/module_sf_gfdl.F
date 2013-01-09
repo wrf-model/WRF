@@ -9,7 +9,7 @@ CONTAINS
 !-------------------------------------------------------------------
    SUBROUTINE SF_GFDL(U3D,V3D,T3D,QV3D,P3D,                     &
                      CP,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2, CPM,    &
-                     DT, SMOIS,num_soil_layers,ISLTYP,ZNT,UST,PSIM,PSIH,  &
+                     DT, SMOIS,num_soil_layers,ISLTYP,ZNT,MZNT,UST,PSIM,PSIH,  &     !MZNT ADDED BY KWON
                      XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,    & ! gopal's doing for Ocean coupling
                      QGH,QSFC,U10,V10,                          &
                      GZ1OZ0,WSPD,BR,ISFFLX,                     &
@@ -35,7 +35,8 @@ CONTAINS
 !-- R           gas constant for dry air (J/kg/K)
 !-- XLV         latent heat of vaporization for water (J/kg)
 !-- PSFC	surface pressure (Pa)
-!-- ZNT		roughness length (m)
+!-- ZNT		thermal roughness length (m)
+!-- MZNT        momentum roughness length (m)
 !-- MAVAIL        surface moisture availability (between 0 and 1)
 !-- UST		u* in similarity theory (m/s)
 !-- PSIM        similarity stability function for momentum
@@ -130,6 +131,7 @@ CONTAINS
                                         QSFC,                           &
                                         UST,                            &
                                         ZNT,                            &
+                                        MZNT,                           &   !KWON momentum zo
                                         WSPD,                           &
                                         TAUX,                           & ! gopal's doing for Ocean coupling
                                         TAUY
@@ -202,6 +204,7 @@ CONTAINS
                                         pkmax,                          &
                                         tstrc,                          &
                                         zoc,                            &
+                                        mzoc,                           &  !ADDED BY KWON FOR momentum Zo
                                         wetc,                           &
                                         slwdc,                          &
                                         rib,                            &
@@ -317,7 +320,7 @@ CONTAINS
 !                    pkmax(i),pspc(i),wetc(i),tjloc(i),zoc(i),tstrc(i)
 !     enddo
 
-     CALL MFLUX2(  fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,tstrc,   &
+     CALL MFLUX2(  fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,mzoc,tstrc,   &    !mzoc for momentum Zo KWON
                    pspc,pkmax,wetc,slwdc,tjloc,                &
                    upc,vpc,tpc,rpc,dt,J,wind10,xxfh2,ntsflg,SFENTH,   &
                    ids,ide, jds,jde, kds,kde,                  &
@@ -375,6 +378,7 @@ CONTAINS
 
 
         znt(i,j)= 0.01*abs(zoc(i))
+        mznt(i,j)= 0.01*abs(mzoc(i))
         wspd(i,j) = SQRT(upc(kts,i)*upc(kts,i) + vpc(kts,i)*vpc(kts,i))
         wspd(i,j) = amax1(wspd(i,j)    ,100.)/100.
         u10m(i) = u1(i)*(wind10(i)/wspd(i,j))/100.
@@ -509,7 +513,7 @@ CONTAINS
    END SUBROUTINE SF_GFDL
 
 !-------------------------------------------------------------------
-       SUBROUTINE MFLUX2( fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,tstrc,       &
+       SUBROUTINE MFLUX2( fxh,fxe,fxmx,fxmy,cdm,rib,xxfh,zoc,mzoc,tstrc,       &    !mzoc KWON
                           pspc,pkmax,wetc,slwdc,tjloc,                    &
                           upc,vpc,tpc,rpc,dt,jfix,wind10,xxfh2,ntsflg,sfenth,    &
                           ids,ide, jds,jde, kds,kde,                      &
@@ -567,7 +571,7 @@ CONTAINS
       real, intent (out), dimension (ims :ime ) :: xxfh2
       real, intent (out), dimension (ims :ime ) :: wind10
 
-      real, intent ( inout), dimension (ims :ime ) :: zoc
+      real, intent ( inout), dimension (ims :ime ) :: zoc,mzoc    !KWON
       real, intent ( inout), dimension (ims :ime ) :: tstrc
 
       real, intent ( in)                        :: dt
@@ -860,6 +864,8 @@ CONTAINS
 !------------------------------------------------------------------------
 !     where necessary modify zo values over ocean.
 !------------------------------------------------------------------------
+!
+      mzoc(i) = zoc(i)                !FOR SAVE MOMENTUM Zo
 
       enddo
 

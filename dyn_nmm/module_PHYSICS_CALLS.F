@@ -644,7 +644,7 @@
 !- RLWIN/RSWIN - downward longwave/shortwave at the surface (also TOTLWDN/TOTSWDN in RADIATION)
      &                ,PD,RES,PINT,T,Q,CWM,F_ICE,F_RAIN,SR              &
      &                ,Q2,U,V,THS,TSFC,SST,PREC,SNO                     &
-     &                ,FIS,Z0,Z0BASE,USTAR,MIXHT,PBLH,LPBL,EL_MYJ       &
+     &                ,FIS,Z0,MZ0,Z0BASE,USTAR,MIXHT,PBLH,LPBL,EL_MYJ   &   !MZ0: MOMENTUM Z0 (KWON)
      &                ,MOIST,RMOL,MOL                                   &
      &                ,EXCH_H,EXCH_M,F,AKHS,AKMS,AKHS_OUT,AKMS_OUT      &
      &                ,THZ0,QZ0,UZ0,VZ0,QS,MAVAIL                       &
@@ -672,7 +672,7 @@
      &                ,GRID,CONFIG_FLAGS                                &
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,DISHEAT                                          &
-     &                ,HPBL2D, EVAP2D, HEAT2D                           &  !Kwon S&P
+     &                ,HPBL2D, EVAP2D, HEAT2D,RC2D                      &  !Kwon S&P
      &                ,SFCHEADRT,INFXSRT,SOLDRAIN                       &  !Hydrology, no-op right now
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
@@ -727,7 +727,7 @@
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: ISLTYP,IVGTYP
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) ::  HPBL2D, EVAP2D, HEAT2D   !Kwon S&P
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) ::  HPBL2D, EVAP2D, HEAT2D , RC2D   !Kwon S&P
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: LPBL
 !
@@ -788,7 +788,7 @@
      &                                                ,USTAR,UZ0,UZ0H   &
      &                                                ,VZ0,VZ0H         &
      &                                                ,DEW              & !RUC LSM
-     &                                                ,Z0,Z0BASE
+     &                                                ,Z0,MZ0,Z0BASE      !MZ0 (KWON)
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: AKHS_OUT,AKMS_OUT  &
      &                                              ,ALWIN,ALWOUT       &
@@ -910,6 +910,7 @@
 
     INTEGER  :: isurban
     CHARACTER(len=256) :: MMINLU
+    REAL :: VAR_RIC                                !KWON for variable Ric (=1)
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -1267,7 +1268,7 @@
      &          ,WARM_RAIN=WARM_RAIN,WSPD=WSPD,XICE=SICE,XICEM=SICE     &
      &          ,ICEDEPTH=icedepth                                      &
      &          ,ISICE=GRID%LANDUSE_ISICE,ISWATER=GRID%ISWATER          &
-     &          ,XLAND=XLAND,Z=Z,ZNT=Z0,ZS=SLDPTH,CT=CT,TKE_PBL=TKE,SFENTH=SFENTH     &
+     &          ,XLAND=XLAND,Z=Z,ZNT=Z0,MZNT=MZ0,ZS=SLDPTH,CT=CT,TKE_PBL=TKE,SFENTH=SFENTH     &   !KWON
      &          ,ALBBCK=ALBASE,LH=ELFLX,SH2O=SH2O,SHDMAX=SHDMAX         &
      &          ,SHDMIN=SHDMIN,Z0=Z0BASE,FLQC=FLQC,FLHC=FLHC            &
      &          ,FM=FM,FHH=FH                                           &
@@ -1403,6 +1404,8 @@
          FQ_I=F_QI
          PQ_I=P_QI
       ENDIF
+      CALL nl_get_var_ric(1, var_ric)
+      write(0,*) 'var_ric from namelist Kwon  ',var_ric
 !
       CALL PBL_DRIVER(                                                &
      &                ITIMESTEP=NTSD,DT=DT                            &
@@ -1412,7 +1415,7 @@
      &               ,RQCBLTEN=RQCBLTEN,RQIBLTEN=RQIBLTEN             & !BSF
 !BSF &               ,RQRBLTEN=RQRBLTEN,RQSBLTEN=RQSBLTEN             & !BSF
 !BSF &               ,RQGBLTEN=RQGBLTEN                               & !BSF
-     &               ,TSK=TSFC,XLAND=XLAND,ZNT=Z0,HT=SFCZ             &
+     &               ,TSK=TSFC,XLAND=XLAND,ZNT=Z0,MZNT=MZ0,HT=SFCZ             &   !KWON
      &               ,UST=USTAR,MIXHT=MIXHT,PBLH=PBLH                 &
      &               ,HFX=TWBS,QFX=QWBS,GRDFLX=GRNFLX                 &
      &               ,U_PHY=U_PHY,V_PHY=V_PHY,TH_PHY=TH_PHY,RHO=RR    &
@@ -1445,6 +1448,8 @@
      &               ,GFS_ALPHA=GRID%GFS_ALPHA                        &
 #endif
      &               ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D     &    !Kwon S&P
+     &               ,RC2D=RC2D                                       &    !KWON
+     &               ,VAR_RIC=VAR_RIC                                 &    !Kwon Ric
      &               ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &               ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &
      &               ,QI_CURR=MOIST_TRANS(IMS,KMS,JMS,PQ_I),F_QI=FQ_I &

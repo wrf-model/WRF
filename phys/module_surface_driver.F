@@ -24,7 +24,7 @@ CONTAINS
      &          ,th10,th2,thz0,th_phy,tmn,tshltr,tsk,tslb             &
      &          ,tyr,tyra,tdly,tlag,lagday,nyear,nday,tmn_update,yr   &
      &          ,t_phy,u10,udrunoff,ust,uz0,u_frame,u_phy,v10,vegfra  &
-     &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt,zs &
+     &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt,mznt,zs &   !mznt(kwon)
      &          ,icedepth                                             &
 #if (NMM_CORE==1)
      &          ,xicem,isice,iswater,ct,tke_pbl,sfenth                &
@@ -286,7 +286,8 @@ CONTAINS
 !-- TLAG          mean surface temperature of previous 140 days (K)
 !-- TDLY          accumulated daily mean surface temperature of the current day (K)
 !-- XLAND         land mask (1 for land, 2 for water)
-!-- ZNT           time-varying roughness length (m)
+!-- ZNT           thermal time-varying roughness length (m)
+!-- MZNT          momentum time-varying roughness length (m)
 !-- Z0            background roughness length (m)
 !-- MAVAIL        surface moisture availability (between 0 and 1)
 !-- UST           u* in similarity theory (m/s)
@@ -495,6 +496,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   VZ0
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   WSPD
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ZNT
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   MZNT
 !-----fds (06/2010)---------------------------------------------
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(OUT)::   SSIB_LHF ! SSiB output
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(OUT)::   SSIB_SHF ! SSiB output
@@ -1711,7 +1713,7 @@ CONTAINS
 
       CALL SF_GFDL(u_phytmp,v_phytmp,t_phy,qv_curr,p_phy, &
                    CP,RCP,R_d,XLV,PSFC,CHS,CHS2,CQS2,CPM,                 &
-                   DTBL, SMOIS,num_soil_layers,ISLTYP,ZNT,UST,PSIM,PSIH,                          &  !DT & MAVAIL
+                   DTBL, SMOIS,num_soil_layers,ISLTYP,ZNT,MZNT,UST,PSIM,PSIH,                          &  !DT & MAVAIL MZNT(KWON)
                    XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,  & ! gopal's doing for Ocean coupling
                    QGH,QSFC,U10,V10,                              &
                    GZ1OZ0,WSPD,BR,ISFFLX,                         &

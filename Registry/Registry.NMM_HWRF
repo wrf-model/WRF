@@ -354,7 +354,9 @@ state real  pblh        ij    dyn_nmm   1    -     rh       "PBLH"     "PBL Heig
 state integer lpbl      ij    dyn_nmm   1    -     ir       "LPBL"     "Model layer of PBL top"               ""
 state  real   mixht     ij    dyn_nmm   1    -     rh        "MIXHT"                 "MXL HEIGHT"              "m"
 state  real   ustar     ij    dyn_nmm   1    -     irhd=(DownNear) "USTAR"    "Friction velocity"                    "m s-1"
-state  real   z0        ij    dyn_nmm   1    -     i01rhd=(DownNear) "Z0"       "Roughness height"                     "m"
+state  real   z0        ij    dyn_nmm   1    -     i01rhd=(DownNear) "Z0"   "Thermal Roughness length"                    "m"
+state  real   mz0       ij    dyn_nmm   1    -      rh        "MZ0"       "momentum Roughness length"                     "m"
+state  real     rc2d    ij    dyn_nmm   1    -     irh        "RC2D"     "critical Richardson number" "m"
 state  real   hpbl2d    ij    dyn_nmm   1    -     irh        "HPBL2D"     "HEIGHT OF PBL from new GFS pbl" "m"
 state  real   heat2d    ij    dyn_nmm   1    -     irh        "HEAT2D"     "" ""
 state  real   evap2d    ij    dyn_nmm   1    -     irh        "EVAP2D"     "" ""
@@ -1225,6 +1227,7 @@ rconfig   real    sas_pgcon               namelist,physics      max_domains  0.5
 rconfig   real    sas_shal_pgcon          namelist,physics      max_domains  -1        irh   "sas_shal_pgcon"   "convectively forced pressure gradient factor, -1 means use sas_pgcon (SAS shallow conv)" ""
 rconfig   integer sas_shal_conv           namelist,physics     max_domains    1        -     "sas_shal_conv"   "1=enable shallow convection in SAS (must use bl_pbl_physics=83)"
 rconfig   real    sas_mass_flux           namelist,physics      max_domains  9e9       -     "sas_mass_flux"   "mass flux limit (SAS scheme)" ""
+rconfig   real    var_ric                 namelist,physics      1             1.       -     "1: use variable Ric 0: constant Ric"
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
 
 # Vortex Tracking (physics namelist)
@@ -1492,7 +1495,7 @@ package   pxlsmscheme    sf_surface_physics==7       -             -
 package   ssibscheme     sf_surface_physics==8       -             -
 package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             -
-package   gfsscheme      bl_pbl_physics==3           -             state:hpbl2d,heat2d,evap2d
+package   gfsscheme      bl_pbl_physics==3           -             state:hpbl2d,heat2d,evap2d,rc2d
 package   gfs2011scheme  bl_pbl_physics==83          -             state:hpbl2d,heat2d,evap2d
 package   qnsepblscheme  bl_pbl_physics==4           -             -
 package   qnsepbl09scheme  bl_pbl_physics==94        -             -

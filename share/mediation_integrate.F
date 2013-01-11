@@ -1,4 +1,4 @@
-!
+#define EXTRA_HWRF_DEBUG_STUFF 1
 !WRF:MEDIATION_LAYER:IO
 !
 #if (DA_CORE != 1)
@@ -63,7 +63,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
                 ( currTime .EQ. startTime )                       ) THEN
 #if ( NMM_CORE == 1 )
 ! NMM-only: outputs boundary arrays of certain variables:
-!      call med_boundary_out(grid,config_flags)
+      call med_boundary_out(grid,config_flags)
 #endif
 
 

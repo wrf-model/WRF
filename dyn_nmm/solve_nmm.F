@@ -224,6 +224,12 @@
 !***
 !-----------------------------------------------------------------------
 !
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
       CALL DOMAIN_CLOCK_GET(GRID,ADVANCEcOUNT=NTSD_current)
 !
       IF(NTSD_current==0)THEN
@@ -485,6 +491,12 @@
 !#ifdef DM_PARALLEL
 !#    include "HALO_NMM_ZZ.inc"
 !#endif
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 
       IF(GRID%ID/=1)THEN
 !
@@ -661,6 +673,12 @@
 #ifdef NMM_FIND_LOAD_IMBALANCE
       call blockf(loadimbal_tim)
 #endif
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_A.inc"
 #endif
@@ -723,6 +741,12 @@
 !
 #ifdef WRF_CHEM   
 #ifdef DM_PARALLEL
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #    include "HALO_NMM_A_2.inc"
 #endif
 #endif
@@ -775,6 +799,12 @@
 #endif
       btimx=timef()
 !-----------------
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_D.inc"
 #endif
@@ -811,6 +841,12 @@
 #endif
       btimx=timef()
 !-----------------
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_F.inc"
 #    include "HALO_NMM_F1.inc"
@@ -862,6 +898,12 @@
 #endif
           btimx=timef()
 #ifdef DM_PARALLEL
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #    include "HALO_NMM_I.inc"
 #endif
           exch_tim=exch_tim+timef()-btimx
@@ -893,6 +935,12 @@
           ENDDO
 !
 #ifdef DM_PARALLEL
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #    include "HALO_TRACERS.inc"
 #endif
           CALL ADV2                &
@@ -918,6 +966,12 @@
           ,grid%fne,grid%fse,grid%few,grid%fns,S1Z,TCS)
 !
 #ifdef DM_PARALLEL
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #    include "HALO_TRACERS.inc"
 #endif
           CALL MONO &
@@ -1051,6 +1105,12 @@
 #endif
         btimx=timef()
 #ifdef DM_PARALLEL
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #    include "HALO_NMM_I_2.inc"
 #endif
         exch_tim=exch_tim+timef()-btimx
@@ -1172,6 +1232,12 @@
       btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #    include "HALO_NMM_G.inc"
 #endif
 !-----------------
@@ -1204,6 +1270,12 @@
       btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #    include "HALO_NMM_H.inc"
 #endif
 !-----------------
@@ -1321,11 +1393,23 @@
         btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #    include "HALO_NMM_I.inc"
 #endif
 !
 #ifdef DM_PARALLEL
         IF (.NOT.ETAMP_PHYSICS) THEN
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #    include "HALO_NMM_I_3.inc"
         ENDIF
 #endif
@@ -1713,6 +1797,12 @@
         btimx=timef()
 !-----------------
 #ifdef DM_PARALLEL
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 # include "HALO_NMM_TURBL_A.inc"
 #endif
 !-----------------
@@ -1745,6 +1835,12 @@
 #endif
         btimx=timef()
 !-----------------
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_J.inc"
 #endif
@@ -1793,6 +1889,12 @@
 #endif
         btimx=timef()
 !-----------------
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_C.inc"
 #endif
@@ -1897,6 +1999,12 @@
 #endif
         btimx=timef()
 !-----------------
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #ifdef DM_PARALLEL
 # include "HALO_NMM_SAS_A.inc"
 #endif
@@ -2009,6 +2117,12 @@
 #endif
       btimx=timef()
 !-----------------
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_K.inc"
 #endif
@@ -2057,6 +2171,12 @@
 #endif
       btimx=timef()
 !-----------------
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_L.inc"
 #endif
@@ -2094,6 +2214,7 @@
 #endif
      &          ,GRID%SPEC_BDY_WIDTH,grid%z                                  &
      &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                        &
+     &          ,grid%id==1 &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                                &
      &          ,IMS,IME,JMS,JME,KMS,KME                                &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -2108,6 +2229,7 @@
      &          ,grid%q,grid%cwm                                        &
      &          ,MOIST,N_MOIST,SCALAR,NUM_SCALAR                        &
      &          ,GRID%SPEC_BDY_WIDTH                                    &
+     &          ,grid%id==1                                             &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                                &
      &          ,IMS,IME,JMS,JME,KMS,KME                                &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -2121,6 +2243,7 @@
               SCALAR,NUM_SCALAR,                              &
               SCALAR_bxs,SCALAR_bxe,SCALAR_bys,SCALAR_bye,    &
               SCALAR_btxs,SCALAR_btxe,SCALAR_btys,SCALAR_btye,&
+              grid%id==1,                                     &
               ids,ide,jds,jde,kds,kde,                        &
               ims,ime,jms,jme,kms,kme,                        &
               its,ite,jts,jte,kts,kte)
@@ -2150,6 +2273,12 @@
 #endif
       btimx=timef()
 !-----------------
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_A.inc"
 #endif
@@ -2197,6 +2326,12 @@
 #endif
       btimx=timef()
 !-----------------
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_B.inc"
 #endif
@@ -2229,6 +2364,12 @@
 #endif
         btimx=timef()
 !-----------------
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_A.inc"
 #endif
@@ -2256,6 +2397,12 @@
 #endif
       btimx=timef()
 !-----------------
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #ifdef DM_PARALLEL
 #    include "HALO_NMM_C.inc"
 #endif
@@ -2270,14 +2417,21 @@
 !
       CALL BOCOV(GRID%ID,grid%ntsd,GRID%DT,LB,grid%U_BXS,grid%U_BXE,grid%U_BYS,grid%U_BYE,grid%V_BXS &
      &          ,grid%V_BXE,grid%V_BYS,grid%V_BYE,grid%U_BTXS,grid%U_BTXE,grid%U_BTYS,grid%U_BTYE,grid%V_BTXS  &
-     &          ,grid%V_BTXE,grid%V_BTYS,grid%V_BTYE,grid%u,grid%v                              &
+     &          ,grid%V_BTXE,grid%V_BTYS,grid%V_BTYE,grid%u,grid%v     &
      &          ,GRID%SPEC_BDY_WIDTH                                   &
-     &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                       &
+     &          ,grid%ihe,grid%ihw,grid%ive,grid%ivw                   &
+     &          ,grid%id==1                                            &
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE )
  
 !
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
       bocov_tim=bocov_tim+timef()-btimx
 !
 !----------------------------------------------------------------------
@@ -2292,6 +2446,12 @@
       ENDDO
       ENDDO
 !
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 !----------------------------------------------------------------------
 !
       IF(LAST_TIME.AND.ALLOCATED(PPTDAT))THEN
@@ -2395,6 +2555,12 @@
 !***  CRITERIA SET FOR GRID MOTION. This is gopal's doing
 !-----------------------------------------------------------------------------
 !
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 #ifdef MOVE_NESTS
    IF(grid%id .NE. 1 .AND. MOD(grid%ntsd,1)==0 .AND. grid%num_moves.EQ.-99)THEN
 !-----------------
@@ -2409,6 +2575,12 @@
                          ,IMS,IME,JMS,JME,KMS,KME &
                          ,IPS,IPE,JPS,JPE,KPS,KPE &
                          ,ITS,ITE,JTS,JTE,KTS,KTE)
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 3303  format('stats_for_move on domain ',I0)
       write(message,3303) grid%id
       call end_timing(message)
@@ -2429,6 +2601,12 @@
                      ,IDS,IDF,JDS,JDF,KDS,KDE      &
                      ,IMS,IME,JMS,JME,KMS,KME      &
                      ,ITS,ITE,JTS,JTE,KTS,KTE      )
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
 
 
      ENDIF
@@ -2445,6 +2623,12 @@
 !
 !
 ! Coupling insertion:->
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
       call ATM_SENDFLUXES
 !<-:Coupling insertion
 !
@@ -2463,6 +2647,12 @@
 !
 #ifdef HWRF
      IF(grid%hifreq_lun /= 0) THEN
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
         CALL HIFREQ_WRITE(grid%hifreq_lun,GRID%NTSD,GRID%DT,GRID%HLAT,GRID%HLON    &
                       ,GRID%U10,GRID%V10,grid%pint,grid%t,grid%q                   &
                       ,grid%fis,grid%pd,grid%pdtop,grid%deta1,grid%deta2           &
@@ -2483,6 +2673,12 @@
 !**********************************************************************
 !**********************************************************************
 !----------------------------------------------------------------------
+      call everything_halo(grid &
+! 
+#     include "actual_new_args.inc"
+!
+)
+
       END SUBROUTINE SOLVE_NMM
 !----------------------------------------------------------------------
 !**********************************************************************
@@ -3352,6 +3548,91 @@
 #endif
 !----------------------------------------------------------------------
       END SUBROUTINE FIELD_STATS
+!----------------------------------------------------------------------
+
+      SUBROUTINE EVERYTHING_HALO (grid,config_flags &
+!
+#include "dummy_new_args.inc"
+!
+)
+        ! Runs halos on pretty much every variable in existance.
+        ! Only does anything when DM_PARALLEL is in use.
+        USE MODULE_DOMAIN,                ONLY : DOMAIN, GET_IJK_FROM_GRID
+        USE MODULE_CONFIGURE,             ONLY : GRID_CONFIG_REC_TYPE
+        USE MODULE_STATE_DESCRIPTION
+
+#ifdef DM_PARALLEL
+        USE MODULE_DM,                    ONLY : LOCAL_COMMUNICATOR       &
+                                                ,MYTASK,NTASKS,NTASKS_X   &
+                                                ,NTASKS_Y
+        USE MODULE_COMM_DM
+        USE MODULE_COMM_NESTING_DM
+#endif
+        implicit none
+
+        type(domain), intent(inout) :: grid
+      TYPE(GRID_CONFIG_REC_TYPE),INTENT(IN) :: CONFIG_FLAGS
+
+#include <dummy_new_decl.inc>
+
+
+#ifdef DM_PARALLEL
+
+        INTEGER :: IDS,IDE,JDS,JDE,KDS,KDE                                &
+     &            ,IMS,IME,JMS,JME,KMS,KME                                & 
+     &            ,IPS,IPE,JPS,JPE,KPS,KPE
+
+        CALL GET_IJK_FROM_GRID(GRID                                       &
+     &                        ,IDS,IDE,JDS,JDE,KDS,KDE                    &
+     &                        ,IMS,IME,JMS,JME,KMS,KME                    &
+     &                        ,IPS,IPE,JPS,JPE,KPS,KPE )
+#  include <HALO_NMM_INIT_1.inc>
+#  include <HALO_NMM_INIT_2.inc>
+#  include <HALO_NMM_INIT_3.inc>
+#  include <HALO_NMM_INIT_4.inc>
+#  include <HALO_NMM_INIT_5.inc>
+#  include <HALO_NMM_INIT_6.inc>
+#  include <HALO_NMM_INIT_7.inc>
+#  include <HALO_NMM_INIT_8.inc>
+#  include <HALO_NMM_INIT_9.inc>
+#  include <HALO_NMM_INIT_10.inc>
+#  include <HALO_NMM_INIT_11.inc>
+#  include <HALO_NMM_INIT_12.inc>
+#  include <HALO_NMM_INIT_13.inc>
+#  include <HALO_NMM_INIT_14.inc>
+#  include <HALO_NMM_INIT_15.inc>
+#  include <HALO_NMM_INIT_16.inc>
+#  include <HALO_NMM_INIT_17.inc>
+#  include <HALO_NMM_INIT_18.inc>
+#  include <HALO_NMM_INIT_19.inc>
+#  include <HALO_NMM_INIT_20.inc>
+#  include <HALO_NMM_INIT_21.inc>
+#  include <HALO_NMM_INIT_22.inc>
+#  include <HALO_NMM_INIT_23.inc>
+#  include <HALO_NMM_INIT_24.inc>
+#  include <HALO_NMM_INIT_25.inc>
+#  include <HALO_NMM_INIT_26.inc>
+#  include <HALO_NMM_INIT_27.inc>
+#  include <HALO_NMM_INIT_28.inc>
+#  include <HALO_NMM_INIT_29.inc>
+#  include <HALO_NMM_INIT_30.inc>
+#  include <HALO_NMM_INIT_31.inc>
+#  include <HALO_NMM_INIT_32.inc>
+#  include <HALO_NMM_INIT_33.inc>
+#  include <HALO_NMM_INIT_34.inc>
+#  include <HALO_NMM_INIT_35.inc>
+#  include <HALO_NMM_INIT_36.inc>
+#  include <HALO_NMM_INIT_37.inc>
+#  include <HALO_NMM_INIT_38.inc>
+#  include <HALO_NMM_INIT_39.inc>
+
+#include <HALO_NMM_INTERP_DOWN1.inc>
+#include <HALO_NMM_INTERP_INFO.inc>
+#include <HALO_NMM_WEIGHTS.inc>
+#endif
+        
+      END SUBROUTINE EVERYTHING_HALO
+
 !----------------------------------------------------------------------
       FUNCTION TIMEF()
       implicit none

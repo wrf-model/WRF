@@ -7,6 +7,7 @@ RM      =       rm -f
 
 
 MODULES =       module_driver_constants.o  \
+		module_bdywrite.o	   \
                 module_domain_type.o       \
                 module_streams.o           \
                 module_domain.o            \

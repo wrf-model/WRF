@@ -1614,49 +1614,49 @@ halo HALO_NMM_INIT_39	dyn_nmm 120:TOLD,UOLD,VOLD
 
 #for HWRF: zhang increase halo width to fix feedback bug for HALO_NMM_A (24 => 48)
 #for HWRF: zhang HALO_NMM_C (24 => 48), HALO_NMM_G (24 => 48), HALO_NMM_K (8 => 24)
-halo      HALO_NMM_A  dyn_nmm 48:pd,t,u,v,q,cwm,dwdt,div;48:pint
-halo      HALO_NMM_A_3  dyn_nmm 24:moist,scalar
-halo      HALO_NMM_B  dyn_nmm 24:div                   
-halo      HALO_NMM_C  dyn_nmm 48:u,v                    
-halo      HALO_NMM_D  dyn_nmm 48:pd          
-halo      HALO_NMM_E  dyn_nmm 24:petdt
-halo      HALO_NMM_F  dyn_nmm 24:t,u,v
-halo      HALO_NMM_F1 dyn_nmm 80:pdslo          
-halo      HALO_NMM_G  dyn_nmm 48:u,v;24:z  
-halo      HALO_NMM_H  dyn_nmm 24:w                  
-halo      HALO_NMM_I  dyn_nmm 48:q,q2,cwm,rrw
-halo      HALO_NMM_I_3  dyn_nmm 48:moist,scalar
-halo      HALO_NMM_J  dyn_nmm 8:pd,uz0,vz0,t,q,cwm                    
-halo      HALO_NMM_J_3  dyn_nmm 8:moist,scalar
-halo      HALO_NMM_K  dyn_nmm 24:q2;24:t,u,v,q,w,z
-halo      HALO_NMM_L  dyn_nmm 8:pd,t,q,cwm,q2                    
-halo      HALO_NMM_L_3  dyn_nmm 8:moist,scalar
-halo      HALO_NMM_MG dyn_nmm 8:ht_gc
-halo      HALO_NMM_MG2 dyn_nmm 8:pd,psfc_out
-halo      HALO_NMM_MG3 dyn_nmm 8:p_gc
+halo      HALO_NMM_A  dyn_nmm 120:pd,t,u,v,q,cwm,dwdt,div;120:pint
+halo      HALO_NMM_A_3  dyn_nmm 120:moist,scalar
+halo      HALO_NMM_B  dyn_nmm 120:div                   
+halo      HALO_NMM_C  dyn_nmm 120:u,v                    
+halo      HALO_NMM_D  dyn_nmm 120:pd          
+halo      HALO_NMM_E  dyn_nmm 120:petdt
+halo      HALO_NMM_F  dyn_nmm 120:t,u,v
+halo      HALO_NMM_F1 dyn_nmm 120:pdslo          
+halo      HALO_NMM_G  dyn_nmm 120:u,v;120:z  
+halo      HALO_NMM_H  dyn_nmm 120:w                  
+halo      HALO_NMM_I  dyn_nmm 120:q,q2,cwm,rrw
+halo      HALO_NMM_I_3  dyn_nmm 120:moist,scalar
+halo      HALO_NMM_J  dyn_nmm 120:pd,uz0,vz0,t,q,cwm                    
+halo      HALO_NMM_J_3  dyn_nmm 120:moist,scalar
+halo      HALO_NMM_K  dyn_nmm 120:q2;120:t,u,v,q,w,z
+halo      HALO_NMM_L  dyn_nmm 120:pd,t,q,cwm,q2                    
+halo      HALO_NMM_L_3  dyn_nmm 120:moist,scalar
+halo      HALO_NMM_MG dyn_nmm 120:ht_gc
+halo      HALO_NMM_MG2 dyn_nmm 120:pd,psfc_out
+halo      HALO_NMM_MG3 dyn_nmm 120:p_gc
 
-halo      HALO_NMM_TURBL_A  dyn_nmm 8:uz0h,vz0h,hbm2
-halo      HALO_NMM_TURBL_B  dyn_nmm 8:dudt,dvdt
+halo      HALO_NMM_TURBL_A  dyn_nmm 120:uz0h,vz0h,hbm2
+halo      HALO_NMM_TURBL_B  dyn_nmm 120:dudt,dvdt
 
 # following halos added for nesting purpose  (gopal's doing):
 
 halo HALO_NMM_TRACK dyn_nmm 120:sm,pdyn,mslp,sqws
-halo HALO_NMM_INTERP_DOWN1 dyn_nmm 24:sm,fis,t,u,v,q,q2,pd,albase,nmm_tsk,mxsnal,tg,islope,cmc,soiltb,vegfrc,sh2o,smc,stc,toposoil,xice,ivgtyp,isltyp,vegfra,sst,weasd,snowh,hlat,hlon,z0,landmask,cwm,ustar,ths,qsh,cldefi,pshltr,dwdt,acprec,thz0,qz0,uz0,vz0,htop,hbot,cuppt,rlwtt,rswtt,t_adj,f_ice,f_rain,f_rimef,pint,hres_fis
-halo HALO_NMM_INTERP_DOWN1M dyn_nmm 24:MOIST,SCALAR
-halo HALO_NMM_FORCE_DOWN1 dyn_nmm 24:t,u,v,q,q2,cwm,pint,pd,hres_fis,fis
-halo HALO_NMM_FORCE_DOWN1M dyn_nmm 24:MOIST,SCALAR
-halo HALO_NMM_WEIGHTS dyn_nmm 48:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4,HNEAR_I,HNEAR_J
+halo HALO_NMM_INTERP_DOWN1 dyn_nmm 120:sm,fis,t,u,v,q,q2,pd,albase,nmm_tsk,mxsnal,tg,islope,cmc,soiltb,vegfrc,sh2o,smc,stc,toposoil,xice,ivgtyp,isltyp,vegfra,sst,weasd,snowh,hlat,hlon,z0,landmask,cwm,ustar,ths,qsh,cldefi,pshltr,dwdt,acprec,thz0,qz0,uz0,vz0,htop,hbot,cuppt,rlwtt,rswtt,t_adj,f_ice,f_rain,f_rimef,pint,hres_fis
+halo HALO_NMM_INTERP_DOWN1M dyn_nmm 120:MOIST,SCALAR
+halo HALO_NMM_FORCE_DOWN1 dyn_nmm 120:t,u,v,q,q2,cwm,pint,pd,hres_fis,fis
+halo HALO_NMM_FORCE_DOWN1M dyn_nmm 120:MOIST,SCALAR
+halo HALO_NMM_WEIGHTS dyn_nmm 120:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4,HNEAR_I,HNEAR_J
 
-halo      HALO_NMM_SAS_A  dyn_nmm 24:uz0h,vz0h,hbm2
-halo      HALO_NMM_SAS_B  dyn_nmm 24:ducudt,dvcudt
-halo      HALO_TRACERS dyn_nmm 48:szj,s1z,spz,tcs
+halo      HALO_NMM_SAS_A  dyn_nmm 120:uz0h,vz0h,hbm2
+halo      HALO_NMM_SAS_B  dyn_nmm 120:ducudt,dvcudt
+halo      HALO_TRACERS dyn_nmm 120:szj,s1z,spz,tcs
 
 halo HALO_NMM_FORCE_DOWN_SST dyn_nmm 120:sst
 
-halo HALO_NMM_TERRAIN_SMOOTH   dyn_nmm      24:HRES_AVC
+halo HALO_NMM_TERRAIN_SMOOTH   dyn_nmm      120:HRES_AVC
 
-halo HALO_NMM_VT4_MSLP  dyn_nmm 8:mslp
-halo HALO_NMM_VT4_NOISE dyn_nmm 8:mslp_noisy
+halo HALO_NMM_VT4_MSLP  dyn_nmm 120:mslp
+halo HALO_NMM_VT4_NOISE dyn_nmm 120:mslp_noisy
 
-halo HALO_NMM_INTERP_INFO dyn_nmm 8:pd,iinfo,winfo,pint
-halo HALO_NMM_INT_UP dyn_nmm 8:pd,fis,hres_fis,sm
+halo HALO_NMM_INTERP_INFO dyn_nmm 120:pd,iinfo,winfo,pint
+halo HALO_NMM_INT_UP dyn_nmm 120:pd,fis,hres_fis,sm

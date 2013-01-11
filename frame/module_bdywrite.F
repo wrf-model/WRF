@@ -1,3 +1,4 @@
+#define EXTRA_HWRF_DEBUG_STUFF 1
 module module_bdywrite
   implicit none
 #if (NMM_CORE==1 && NMM_NEST==1)

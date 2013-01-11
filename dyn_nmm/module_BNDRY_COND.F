@@ -41,6 +41,7 @@
 #endif
      &                ,SPEC_BDY_WIDTH,Z                                 &  
      &                ,IHE,IHW,IVE,IVW                                  &
+     &                ,tend                                             &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -104,7 +105,7 @@
       IMPLICIT NONE
 !
 !-----------------------------------------------------------------------
-      LOGICAL,INTENT(IN) :: NEST
+      LOGICAL,INTENT(IN) :: NEST, TEND
 !
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
@@ -189,6 +190,11 @@
 !***********************************************************************
 !-----------------------------------------------------------------------
 !
+
+      if(gridid/=1 .and. .not.tend) then
+         call wrf_error_fatal('ERROR: tendancies are disabled on the outer domain.')
+      endif
+
 #ifdef WRF_CHEM
 !***  DETERMINE THE INDEX OF THE LAST GAS SPECIES
       NUMGAS=P_HO2                     
@@ -249,9 +255,11 @@
 !$omp& private(i,k)
           DO K=KTS,KTE
             DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
+             IF(tend) then
               T_BYS(I,K,JB)=T_BYS(I,K,JB)+T_BTYS(I,K,JB)*DT
               Q_BYS(I,K,JB)=Q_BYS(I,K,JB)+Q_BTYS(I,K,JB)*DT
               Q2_BYS(I,K,JB)=Q2_BYS(I,K,JB)+Q2_BTYS(I,K,JB)*DT
+             ENDIF
 !
               T(I,JJ,K)=T_BYS(I,K,JB)
               Q(I,JJ,K)=Q_BYS(I,K,JB)
@@ -267,7 +275,7 @@
 
 !
           DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
-            PD_BYE(I,1,JB)=PD_BYE(I,1,JB)+PD_BTYE(I,1,JB)*DT
+            if(tend) PD_BYE(I,1,JB)=PD_BYE(I,1,JB)+PD_BTYE(I,1,JB)*DT
             PD(I,JJ)=PD_BYE(I,1,JB)
           ENDDO
 !
@@ -275,9 +283,11 @@
 !$omp& private(i,k)
           DO K=KTS,KTE
             DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
+             if(TEND) then
               T_BYE(I,K,JB)=T_BYE(I,K,JB)+T_BTYE(I,K,JB)*DT
               Q_BYE(I,K,JB)=Q_BYE(I,K,JB)+Q_BTYE(I,K,JB)*DT
               Q2_BYE(I,K,JB)=Q2_BYE(I,K,JB)+Q2_BTYE(I,K,JB)*DT
+             endif
 !
               T(I,JJ,K)=T_BYE(I,K,JB)
               Q(I,JJ,K)=Q_BYE(I,K,JB)
@@ -334,7 +344,7 @@
 !
           DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
             IF(MOD(J,2)==1)THEN
-              PD_BXS(J,1,IB)=PD_BXS(J,1,IB)+PD_BTXS(J,1,IB)*DT
+              if(tend) PD_BXS(J,1,IB)=PD_BXS(J,1,IB)+PD_BTXS(J,1,IB)*DT
               PD(II,J)=PD_BXS(J,1,IB)
             ENDIF
           ENDDO
@@ -345,9 +355,11 @@
             DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
 !
               IF(MOD(J,2)==1)THEN
+               IF(tend) then
                 T_BXS(J,K,IB)=T_BXS(J,K,IB)+T_BTXS(J,K,IB)*DT
                 Q_BXS(J,K,IB)=Q_BXS(J,K,IB)+Q_BTXS(J,K,IB)*DT
                 Q2_BXS(J,K,IB)=Q2_BXS(J,K,IB)+Q2_BTXS(J,K,IB)*DT
+               ENDIF
 !
                 T(II,J,K)=T_BXS(J,K,IB)
                 Q(II,J,K)=Q_BXS(J,K,IB)
@@ -365,7 +377,7 @@
 
           DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
             IF(MOD(J,2)==1)THEN
-              PD_BXE(J,1,IB)=PD_BXE(J,1,IB)+PD_BTXE(J,1,IB)*DT
+              if(tend) PD_BXE(J,1,IB)=PD_BXE(J,1,IB)+PD_BTXE(J,1,IB)*DT
               PD(II,J)=PD_BXE(J,1,IB)
             ENDIF
           ENDDO
@@ -376,9 +388,11 @@
             DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
 !
               IF(MOD(J,2)==1)THEN
+               IF(TEND) THEN
                 T_BXE(J,K,IB)=T_BXE(J,K,IB)+T_BTXE(J,K,IB)*DT
                 Q_BXE(J,K,IB)=Q_BXE(J,K,IB)+Q_BTXE(J,K,IB)*DT
                 Q2_BXE(J,K,IB)=Q2_BXE(J,K,IB)+Q2_BTXE(J,K,IB)*DT
+               ENDIF
 !
                 T(II,J,K)=T_BXE(J,K,IB)
                 Q(II,J,K)=Q_BXE(J,K,IB)
@@ -648,6 +662,7 @@
      &                ,Q,CWM                                            &
      &                ,MOIST,N_MOIST,SCALAR,N_SCALAR                    &
      &                ,SPEC_BDY_WIDTH                                   &  
+     &                ,TEND                                             &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -711,6 +726,7 @@
       IMPLICIT NONE
 !
 !-----------------------------------------------------------------------
+      LOGICAL, INTENT(IN) :: tend
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE
@@ -762,6 +778,10 @@
 !***********************************************************************
 !-----------------------------------------------------------------------
 !
+
+      if(gridid/=1 .and. .not.tend) then
+         call wrf_error_fatal('ERROR: tendancies are disabled on the outer domain.')
+      endif
 #ifdef WRF_CHEM
 !***  DETERMINE THE INDEX OF THE LAST GAS SPECIES
       NUMGAS=P_HO2                     
@@ -833,7 +853,7 @@
 !$omp& private(i,k)
           DO K=KTS,KTE
             DO I=I1,I2
-              CWM_BYS(I,K,JB)=CWM_BYS(I,K,JB)+CWM_BTYS(I,K,JB)*DT
+              if(tend) CWM_BYS(I,K,JB)=CWM_BYS(I,K,JB)+CWM_BTYS(I,K,JB)*DT
               CWM(I,JJ,K)=CWM_BYS(I,K,JB)
             ENDDO
            ENDDO
@@ -846,7 +866,7 @@
 !$omp& private(i,k)
           DO K=KTS,KTE
             DO I=I1,I2
-              CWM_BYE(I,K,JB)=CWM_BYE(I,K,JB)+CWM_BTYE(I,K,JB)*DT
+              if(tend) CWM_BYE(I,K,JB)=CWM_BYE(I,K,JB)+CWM_BTYE(I,K,JB)*DT
               CWM(I,JJ,K)=CWM_BYE(I,K,JB)
             ENDDO
           ENDDO
@@ -873,7 +893,7 @@
               ENDDO
             ENDIF
           ENDDO
-          DO I_M=2,N_SCALAR
+          DO I_M=1,N_SCALAR
 !$omp parallel do                                                       &
 !$omp& private(i,k)
             DO K=KTS,KTE
@@ -906,7 +926,7 @@
             DO J=J1,J2,2
 !
               IF(MOD(J,2)==1)THEN
-                CWM_BXS(J,K,IB)=CWM_BXS(J,K,IB)+CWM_BTXS(J,K,IB)*DT
+                if(tend) CWM_BXS(J,K,IB)=CWM_BXS(J,K,IB)+CWM_BTXS(J,K,IB)*DT
                 CWM(II,J,K)=CWM_BXS(J,K,IB)
               ENDIF
 !
@@ -923,7 +943,7 @@
             DO J=J1,J2,2
 !
               IF(MOD(J,2)==1)THEN
-                CWM_BXE(J,K,IB)=CWM_BXE(J,K,IB)+CWM_BTXE(J,K,IB)*DT
+                if(tend) CWM_BXE(J,K,IB)=CWM_BXE(J,K,IB)+CWM_BTXE(J,K,IB)*DT
                 CWM(II,J,K)=CWM_BXE(J,K,IB)
               ENDIF
 !
@@ -958,7 +978,7 @@
             ENDIF
           ENDDO
 !
-          DO I_M=2,N_SCALAR
+          DO I_M=1,N_SCALAR
 !$omp parallel do                                                       &
 !$omp& private(j,k)
             DO K=KTS,KTE
@@ -1008,7 +1028,7 @@
           ENDIF
         ENDDO
 !
-        DO I_M=2,N_SCALAR
+        DO I_M=1,N_SCALAR
           DO I=MYIS,MYIE1
             SCALAR(I,2,K,I_M)=(SCALAR(I,1,K,I_M)                        &
      &                        +SCALAR(I+1,1,K,I_M)                      &
@@ -1044,7 +1064,7 @@
           ENDIF
         ENDDO
 !
-        DO I_M=2,N_SCALAR
+        DO I_M=1,N_SCALAR
           DO I=MYIS,MYIE1
             SCALAR(I,JJM-1,K,I_M)=(SCALAR(I,JJM-2,K,I_M)                &
      &                            +SCALAR(I+1,JJM-2,K,I_M)              &
@@ -1075,7 +1095,7 @@
               ENDIF
             ENDDO    
 !
-            DO I_M=2,N_SCALAR
+            DO I_M=1,N_SCALAR
               SCALAR(1,JJ,K,I_M)=(SCALAR(1,JJ-1,K,I_M)                  &
      &                           +SCALAR(2,JJ-1,K,I_M)                  &
      &                           +SCALAR(1,JJ+1,K,I_M)                  &
@@ -1106,7 +1126,7 @@
                 ENDIF
               ENDDO
 !
-              DO I_M=2,N_SCALAR
+              DO I_M=1,N_SCALAR
                 SCALAR(IIM-1,JJ,K,I_M)=(SCALAR(IIM-1,JJ-1,K,I_M)                    &
      &                                 +SCALAR(IIM,JJ-1,K,I_M)                      &
      &                                 +SCALAR(IIM-1,JJ+1,K,I_M)                    &
@@ -1132,6 +1152,7 @@
      &                ,U,V                                              &
      &                ,SPEC_BDY_WIDTH                                   &  
      &                ,IHE,IHW,IVE,IVW                                  &
+     &                ,tend                                             &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -1186,6 +1207,7 @@
       IMPLICIT NONE
 !
 !-----------------------------------------------------------------------
+      LOGICAL, INTENT(IN) :: TEND
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE
@@ -1226,6 +1248,10 @@
 !***  TIME INTERPOLATION OF U AND V AT THE OUTER BOUNDARY
 !-----------------------------------------------------------------------
 !
+
+      if(gridid/=1 .and. .not.tend) then
+         call wrf_error_fatal('ERROR: tendancies are disabled on the outer domain.')
+      endif
       IM=IDE-IDS+1
       JM=JDE-JDS+1
       IIM=IM
@@ -1268,8 +1294,10 @@
 !$omp& private(i,k)
           DO K=KTS,KTE
             DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
-              U_BYS(I,K,JB)=U_BYS(I,K,JB)+U_BTYS(I,K,JB)*DT
-              V_BYS(I,K,JB)=V_BYS(I,K,JB)+V_BTYS(I,K,JB)*DT
+              if(tend) then
+                U_BYS(I,K,JB)=U_BYS(I,K,JB)+U_BTYS(I,K,JB)*DT
+                V_BYS(I,K,JB)=V_BYS(I,K,JB)+V_BTYS(I,K,JB)*DT
+              endif
               U(I,JJ,K)=U_BYS(I,K,JB)
               V(I,JJ,K)=V_BYS(I,K,JB)
             ENDDO
@@ -1284,8 +1312,10 @@
 !$omp& private(i,k)
           DO K=KTS,KTE
             DO I=MAX(ITS-1,IDS),MIN(ITE+1,IDE)
-              U_BYE(I,K,JB)=U_BYE(I,K,JB)+U_BTYE(I,K,JB)*DT
-              V_BYE(I,K,JB)=V_BYE(I,K,JB)+V_BTYE(I,K,JB)*DT
+              IF(TEND) THEN
+                U_BYE(I,K,JB)=U_BYE(I,K,JB)+U_BTYE(I,K,JB)*DT
+                V_BYE(I,K,JB)=V_BYE(I,K,JB)+V_BTYE(I,K,JB)*DT
+              ENDIF
               U(I,JJ,K)=U_BYE(I,K,JB)
               V(I,JJ,K)=V_BYE(I,K,JB)
             ENDDO
@@ -1314,8 +1344,10 @@
           DO K=KTS,KTE
             DO J=MAX(JTS-1,JDS+2-1),MIN(JTE+1,JDE-1)
               IF(MOD(J,2)==0)THEN
-                U_BXS(J,K,IB)=U_BXS(J,K,IB)+U_BTXS(J,K,IB)*DT
-                V_BXS(J,K,IB)=V_BXS(J,K,IB)+V_BTXS(J,K,IB)*DT
+                IF(TEND) THEN
+                  U_BXS(J,K,IB)=U_BXS(J,K,IB)+U_BTXS(J,K,IB)*DT
+                  V_BXS(J,K,IB)=V_BXS(J,K,IB)+V_BTXS(J,K,IB)*DT
+                ENDIF
                 U(II,J,K)=U_BXS(J,K,IB)
                 V(II,J,K)=V_BXS(J,K,IB)
               ENDIF
@@ -1331,8 +1363,10 @@
           DO K=KTS,KTE
             DO J=MAX(JTS-1,JDS+2-1),MIN(JTE+1,JDE-1)
               IF(MOD(J,2)==0)THEN
-                U_BXE(J,K,IB)=U_BXE(J,K,IB)+U_BTXE(J,K,IB)*DT
-                V_BXE(J,K,IB)=V_BXE(J,K,IB)+V_BTXE(J,K,IB)*DT
+                IF(TEND) THEN
+                  U_BXE(J,K,IB)=U_BXE(J,K,IB)+U_BTXE(J,K,IB)*DT
+                  V_BXE(J,K,IB)=V_BXE(J,K,IB)+V_BTXE(J,K,IB)*DT
+                ENDIF
                 U(II,J,K)=U_BXE(J,K,IB)
                 V(II,J,K)=V_BXE(J,K,IB)
               ENDIF
@@ -1548,12 +1582,14 @@
              SCALAR,N_SCALAR,                                &
              SCALAR_bxs,SCALAR_bxe,SCALAR_bys,SCALAR_bye,    &
              SCALAR_btxs,SCALAR_btxe,SCALAR_btys,SCALAR_btye,&
+             tend,                                           &
              ids,ide,jds,jde,kds,kde,                        &
              ims,ime,jms,jme,kms,kme,                        &
              its,ite,jts,jte,kts,kte)
 
           implicit none
 
+          logical, intent(in) :: tend
           integer, intent(in) :: N_MOIST,N_SCALAR,           &
                ids,ide,jds,jde,kds,kde,                      &
                ims,ime,jms,jme,kms,kme,                      &
@@ -1593,6 +1629,10 @@
 
           ! ------------------------------------------------------------
 
+
+      if(gridid/=1 .and. .not.tend) then
+         call wrf_error_fatal('ERROR: tendancies are disabled on the outer domain.')
+      endif
           IM=IDE-IDS+1
           JM=JDE-JDS+1
           IIM=IM
@@ -1661,7 +1701,7 @@
                    if(IM==P_QV) cycle sbdy_type
                    DO K=KTS,KTE
                       DO I=i1,i2
-                         MOIST_BYS(I,K,JB,IM)=MOIST_BYS(I,K,JB,IM)+MOIST_BTYS(I,K,JB,IM)*DT
+                         if(tend) MOIST_BYS(I,K,JB,IM)=MOIST_BYS(I,K,JB,IM)+MOIST_BTYS(I,K,JB,IM)*DT
                          MOIST(I,JJ,K,IM)=MOIST_BYS(I,K,JB,IM)
                          CWM(I,JJ,K)=CWM(I,JJ,K) + MOIST(I,JJ,K,IM)
                       ENDDO
@@ -1669,10 +1709,10 @@
                 ENDDO sbdy_type
                 !$omp parallel do                        &
                 !$omp& private(i,k,im)
-                sbdy_Stype: DO IM=2,N_SCALAR
+                sbdy_Stype: DO IM=1,N_SCALAR
                    DO K=KTS,KTE
                       DO I=i1,i2
-                         SCALAR_BYS(I,K,JB,IM)=SCALAR_BYS(I,K,JB,IM)+SCALAR_BTYS(I,K,JB,IM)*DT
+                         if(tend) SCALAR_BYS(I,K,JB,IM)=SCALAR_BYS(I,K,JB,IM)+SCALAR_BTYS(I,K,JB,IM)*DT
                          SCALAR(I,JJ,K,IM)=SCALAR_BYS(I,K,JB,IM)
                       ENDDO
                    ENDDO
@@ -1695,7 +1735,7 @@
                    if(IM==P_QV) cycle nbdy_type
                    DO K=KTS,KTE
                       DO I=i1,i2
-                         MOIST_BYE(I,K,JB,IM)=MOIST_BYE(I,K,JB,IM)+MOIST_BTYE(I,K,JB,IM)*DT
+                         if(tend) MOIST_BYE(I,K,JB,IM)=MOIST_BYE(I,K,JB,IM)+MOIST_BTYE(I,K,JB,IM)*DT
                          MOIST(I,JJ,K,IM)=MOIST_BYE(I,K,JB,IM)
                          CWM(I,JJ,K)=CWM(I,JJ,K) + MOIST(I,JJ,K,IM)
                       ENDDO
@@ -1706,7 +1746,7 @@
                 nbdy_Stype: DO IM=1,N_SCALAR
                    DO K=KTS,KTE
                       DO I=i1,i2
-                         SCALAR_BYE(I,K,JB,IM)=SCALAR_BYE(I,K,JB,IM)+SCALAR_BTYE(I,K,JB,IM)*DT
+                         if(tend) SCALAR_BYE(I,K,JB,IM)=SCALAR_BYE(I,K,JB,IM)+SCALAR_BTYE(I,K,JB,IM)*DT
                          SCALAR(I,JJ,K,IM)=SCALAR_BYE(I,K,JB,IM)
                       ENDDO
                    ENDDO
@@ -1740,7 +1780,7 @@
                if(IM==P_QV) cycle w_bdy_type
                DO K=KTS,KTE
                   DO J=j1,j2,2
-                     MOIST_BXS(J,K,IB,IM)=MOIST_BXS(J,K,IB,IM)+MOIST_BTXS(J,K,IB,IM)*DT
+                     if(tend) MOIST_BXS(J,K,IB,IM)=MOIST_BXS(J,K,IB,IM)+MOIST_BTXS(J,K,IB,IM)*DT
                      MOIST(II,J,K,IM)=MOIST_BXS(J,K,IB,IM)
                      CWM(II,J,K)=CWM(II,J,K)+MOIST(II,J,K,IM)
                   ENDDO
@@ -1748,10 +1788,10 @@
             ENDDO w_bdy_type
 !$omp parallel do                                                       &
 !$omp& private(j,k,im)
-            w_bdy_Stype: DO IM=2,N_SCALAR
+            w_bdy_Stype: DO IM=1,N_SCALAR
                DO K=KTS,KTE
                   DO J=j1,j2,2
-                     SCALAR_BXS(J,K,IB,IM)=SCALAR_BXS(J,K,IB,IM)+SCALAR_BTXS(J,K,IB,IM)*DT
+                     if(tend) SCALAR_BXS(J,K,IB,IM)=SCALAR_BXS(J,K,IB,IM)+SCALAR_BTXS(J,K,IB,IM)*DT
                      SCALAR(II,J,K,IM)=SCALAR_BXS(J,K,IB,IM)
                   ENDDO
                ENDDO
@@ -1772,7 +1812,7 @@
             if(IM==P_QV) cycle e_bdy_type
             DO K=KTS,KTE
                DO J=j1,j2
-                  MOIST_BXE(J,K,IB,IM)=MOIST_BXE(J,K,IB,IM)+MOIST_BTXE(J,K,IB,IM)*DT
+                  if(tend) MOIST_BXE(J,K,IB,IM)=MOIST_BXE(J,K,IB,IM)+MOIST_BTXE(J,K,IB,IM)*DT
                   MOIST(II,J,K,IM)=MOIST_BXE(J,K,IB,IM)
                   CWM(II,J,K)=CWM(II,J,K)+MOIST(II,J,K,IM)
                ENDDO
@@ -1780,10 +1820,10 @@
          ENDDO e_bdy_type
 !$omp parallel do                                                       &
 !$omp& private(j,k,im)
-         e_bdy_Stype: DO IM=2,N_SCALAR
+         e_bdy_Stype: DO IM=1,N_SCALAR
             DO K=KTS,KTE
                DO J=j1,j2
-                  SCALAR_BXE(J,K,IB,IM)=SCALAR_BXE(J,K,IB,IM)+SCALAR_BTXE(J,K,IB,IM)*DT
+                  if(tend) SCALAR_BXE(J,K,IB,IM)=SCALAR_BXE(J,K,IB,IM)+SCALAR_BTXE(J,K,IB,IM)*DT
                   SCALAR(II,J,K,IM)=SCALAR_BXE(J,K,IB,IM)
                ENDDO
             ENDDO
@@ -1830,7 +1870,7 @@
           ENDIF
         ENDDO
 !
-        DO I_M=2,N_SCALAR
+        DO I_M=1,N_SCALAR
          DO K=KTS,KTE
           DO I=MYIS,MYIE1
             SCALAR(I,2,K,I_M)=(SCALAR(I,1,K,I_M)                        &
@@ -1873,7 +1913,7 @@
           ENDIF
         ENDDO
 !
-        DO I_M=2,N_SCALAR
+        DO I_M=1,N_SCALAR
          DO K=KTS,KTE
           DO I=MYIS,MYIE1
             SCALAR(I,JJM-1,K,I_M)=(SCALAR(I,JJM-2,K,I_M)                &
@@ -1914,7 +1954,7 @@
              ENDDO
           ENDIF
        ENDDO
-       DO I_M=2,N_SCALAR
+       DO I_M=1,N_SCALAR
           DO K=KTS,KTE
              DO J=J1B,J2B
               SCALAR(1,J,K,I_M)=(SCALAR(1,J-1,K,I_M)                  &
@@ -1954,7 +1994,7 @@
              ENDDO
           ENDIF
         ENDDO
-        DO I_M=2,N_SCALAR
+        DO I_M=1,N_SCALAR
           DO K=KTS,KTE
              DO J=J1B,J2B
                 SCALAR(IIM-1,J,K,I_M)=(SCALAR(IIM-1,J-1,K,I_M)     &

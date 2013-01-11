@@ -17,6 +17,8 @@ module_dm.o: module_machine.o module_state_description.o module_wrf_error.o \
 
 module_timing.o: hires_timer.o clog.o
 
+module_bdywrite.o: module_domain_type.o module_state_description.o module_dm.o
+
 module_comm_dm.o: module_comm_dm_0.o module_comm_dm_1.o module_comm_dm_2.o module_comm_dm_3.o module_comm_dm_4.o
 
 module_comm_dm_0.o: module_domain.o module_configure.o
@@ -812,7 +814,7 @@ mediation_feedback_domain.o: ../frame/module_domain.o ../frame/module_configure.
 mediation_force_domain.o: ../frame/module_domain.o ../frame/module_configure.o
 
 mediation_integrate.o: ../frame/module_domain.o ../frame/module_configure.o \
-			../frame/module_timing.o \
+			../frame/module_timing.o ../frame/module_bdywrite.o \
 			$(ESMF_MOD_DEPENDENCE) \
 			module_date_time.o module_bc_time_utilities.o \
 			module_compute_geop.o                         \

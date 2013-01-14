@@ -1,4 +1,4 @@
-#define EXTRA_HWRF_DEBUG_STUFF 1
+ 83   ;40003;0c#define EXTRA_HWRF_DEBUG_STUFF 1
 !WRF:MEDIATION_LAYER:IO
 !
 #if (DA_CORE != 1)
@@ -61,10 +61,6 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
                 ( config_flags%write_hist_at_0h_rst )       .AND. &
 #endif
                 ( currTime .EQ. startTime )                       ) THEN
-#if ( NMM_CORE == 1 )
-! NMM-only: outputs boundary arrays of certain variables:
-      call med_boundary_out(grid,config_flags)
-#endif
 
 
        !  output history at beginning of restart if alarm is ringing
@@ -1571,6 +1567,11 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
    CHARACTER*80                           :: fname, n2
    CHARACTER (LEN=256)                    :: message
    INTEGER                                :: ierr
+
+#if ( NMM_CORE == 1 )
+! NMM-only: outputs boundary arrays of certain variables:
+      call med_boundary_out(grid,config_flags)
+#endif
 
    IF ( wrf_dm_on_monitor() ) THEN
      CALL start_timing

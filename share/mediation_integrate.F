@@ -1570,7 +1570,9 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
 
 #if ( NMM_CORE == 1 )
 ! NMM-only: outputs boundary arrays of certain variables:
+   if(stream==grid%alarms(HISTORY_ALARM)) then
       call med_boundary_out(grid,config_flags)
+   end if
 #endif
 
    IF ( wrf_dm_on_monitor() ) THEN

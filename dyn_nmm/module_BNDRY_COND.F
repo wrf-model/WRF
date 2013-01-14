@@ -191,7 +191,7 @@
 !-----------------------------------------------------------------------
 !
 
-      if(gridid/=1 .and. .not.tend) then
+      if(gridid==1 .and. .not.tend) then
          call wrf_error_fatal('ERROR: tendancies are disabled on the outer domain.')
       endif
 
@@ -779,7 +779,7 @@
 !-----------------------------------------------------------------------
 !
 
-      if(gridid/=1 .and. .not.tend) then
+      if(gridid==1 .and. .not.tend) then
          call wrf_error_fatal('ERROR: tendancies are disabled on the outer domain.')
       endif
 #ifdef WRF_CHEM
@@ -1249,7 +1249,7 @@
 !-----------------------------------------------------------------------
 !
 
-      if(gridid/=1 .and. .not.tend) then
+      if(gridid==1 .and. .not.tend) then
          call wrf_error_fatal('ERROR: tendancies are disabled on the outer domain.')
       endif
       IM=IDE-IDS+1
@@ -1387,7 +1387,7 @@
 !***  ON GRAVITY PULSE FOR NESTED DOMAIN.
 !-----------------------------------------------------------------------
 !
-      IF(GRIDID/=1)GO TO 201
+      IF(GRIDID==1)GO TO 201
 !
 !-----------------------------------------------------------------------
 !
@@ -1630,7 +1630,7 @@
           ! ------------------------------------------------------------
 
 
-      if(gridid/=1 .and. .not.tend) then
+      if(gridid==1 .and. .not.tend) then
          call wrf_error_fatal('ERROR: tendancies are disabled on the outer domain.')
       endif
           IM=IDE-IDS+1

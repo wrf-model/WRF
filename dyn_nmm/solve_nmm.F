@@ -2121,7 +2121,7 @@
               SCALAR,NUM_SCALAR,                              &
               SCALAR_bxs,SCALAR_bxe,SCALAR_bys,SCALAR_bye,    &
               SCALAR_btxs,SCALAR_btxe,SCALAR_btys,SCALAR_btye,&
-              ids,ide,jds,jde,kds,kde,                        &
+              ids,idf,jds,jdf,kds,kde,                        &
               ims,ime,jms,jme,kms,kme,                        &
               its,ite,jts,jte,kts,kte)
       endif

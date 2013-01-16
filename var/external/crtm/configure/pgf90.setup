@@ -15,6 +15,7 @@ export FC_FLAGS="\
  -g \
  -fast \
  -byteswapio \
+ -Mnomod \
  ${F_COMMON_FLAGS}"
 
 export FL_FLAGS="\

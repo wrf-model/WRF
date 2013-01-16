@@ -1,4 +1,4 @@
-subroutine da_transform_xtoy_airep_adj(iv, jo_grad_y, jo_grad_x)
+subroutine da_transform_xtoy_airep_adj(grid, iv, jo_grad_y, jo_grad_x)
 
    !--------------------------------------------------------------------------
    ! Purpose: TBD
@@ -7,16 +7,19 @@ subroutine da_transform_xtoy_airep_adj(iv, jo_grad_y, jo_grad_x)
    !--------------------------------------------------------------------------
 
    implicit none
-
+   type(domain),  intent(in)     :: grid
    type (iv_type), intent(in)    :: iv          ! obs. inc vector (o-b).
    type (y_type) , intent(in)    :: jo_grad_y   ! grad_y(jo)
    type (x_type) , intent(inout) :: jo_grad_x   ! grad_x(jo)
 
-   integer :: n
+   integer :: n,k
 
    real, allocatable :: u(:,:)
    real, allocatable :: v(:,:)
    real, allocatable :: t(:,:)
+
+   real, allocatable :: ub(:,:)
+   real, allocatable :: vb(:,:)
 
    if (trace_use_dull) call da_trace_entry("da_transform_xtoy_airep_adj")
 
@@ -24,9 +27,22 @@ subroutine da_transform_xtoy_airep_adj(iv, jo_grad_y, jo_grad_x)
    allocate (v(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
    allocate (t(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
 
+   allocate (ub(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
+   allocate (vb(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
+
+   call da_interp_lin_3d (grid%xb%u, iv%info(airep), ub)
+   call da_interp_lin_3d (grid%xb%v, iv%info(airep), vb)
+
    do n=iv%info(airep)%n1,iv%info(airep)%n2
-      u(1:size(jo_grad_y%airep(n)%u),n) = jo_grad_y%airep(n)%u(:)
-      v(1:size(jo_grad_y%airep(n)%v),n) = jo_grad_y%airep(n)%v(:)
+      do k = 1, iv%info(airep)%levels(n)
+         if(.not. var_wind) then
+             u(k,n) = jo_grad_y%airep(n)%u(k)
+             v(k,n) = jo_grad_y%airep(n)%v(k)
+         else
+             call da_uv_wind_adj(jo_grad_y%airep(n)%u(k), &
+                                 jo_grad_y%airep(n)%v(k), u(k,n), v(k,n), ub(k,n), vb(k,n))
+         end if
+      end do
       t(1:size(jo_grad_y%airep(n)%t),n) = jo_grad_y%airep(n)%t(:)
    end do
 
@@ -42,6 +58,8 @@ subroutine da_transform_xtoy_airep_adj(iv, jo_grad_y, jo_grad_x)
    deallocate (u)
    deallocate (v)
    deallocate (t)
+   deallocate (ub)
+   deallocate (vb)
 
    if (trace_use_dull) call da_trace_exit("da_transform_xtoy_airep_adj")
 

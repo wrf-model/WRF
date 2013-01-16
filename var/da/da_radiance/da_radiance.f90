@@ -42,7 +42,7 @@ module da_radiance
       tovs_min_transfer,use_error_factor_rad,num_fgat_time,stdout,trace_use, &
       qc_good, qc_bad,myproc,biascorr,thinning,thinning_mesh, &
       rad_monitoring, monitor_on, kts, kte, kms,kme,&
-      use_atmsobs, &
+      use_mwtsobs, use_mwhsobs, use_atmsobs, &
       use_hirs4obs, use_mhsobs,bufr_year, bufr_month,bufr_day,bufr_hour, &
       bufr_minute, bufr_second,bufr_solzen, bufr_station_height, &
       bufr_landsea_mask,bufr_solazi,tovs_end, max_tovs_input, bufr_satzen, nchan_mhs, &
@@ -107,6 +107,7 @@ contains
 #include "da_read_simulated_rad.inc"
 #include "da_write_filtered_rad.inc"
 #include "da_read_obs_bufrtovs.inc"
+#include "da_read_obs_fy3.inc"
 #include "da_read_obs_bufrairs.inc"
 #include "da_read_obs_bufrssmis.inc"
 #include "da_read_obs_bufriasi.inc"

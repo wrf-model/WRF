@@ -16,11 +16,15 @@ subroutine da_transform_xtoy_qscat(grid, iv, y)
 
    real, allocatable :: u(:,:)
    real, allocatable :: v(:,:)
+   real, allocatable :: ub(:,:)
+   real, allocatable :: vb(:,:)
 
    if (trace_use_dull) call da_trace_entry("da_transform_xtoy_qscat")
 
    allocate (u(1,iv%info(qscat)%n1:iv%info(qscat)%n2))
    allocate (v(1,iv%info(qscat)%n1:iv%info(qscat)%n2))
+   allocate (ub(1,iv%info(qscat)%n1:iv%info(qscat)%n2))
+   allocate (vb(1,iv%info(qscat)%n1:iv%info(qscat)%n2))
 
 #ifdef A2C
    call da_interp_lin_3d (grid%xa%u, iv%info(qscat), u,'u')
@@ -29,14 +33,23 @@ subroutine da_transform_xtoy_qscat(grid, iv, y)
    call da_interp_lin_3d (grid%xa%u, iv%info(qscat), u)
    call da_interp_lin_3d (grid%xa%v, iv%info(qscat), v)
 #endif
+   call da_interp_lin_3d (grid%xb%u, iv%info(qscat), ub)
+   call da_interp_lin_3d (grid%xb%v, iv%info(qscat), vb)
 
    do n=iv%info(qscat)%n1,iv%info(qscat)%n2
-      y%qscat(n)%u = u(1,n)
-      y%qscat(n)%v = v(1,n)
+      if (var_wind) then
+          call da_uv_wind_tgl(y%qscat(n)%u,y%qscat(n)%v,u(1,n),v(1,n),ub(1,n),vb(1,n))
+      else
+          y%qscat(n)%u = u(1,n)
+          y%qscat(n)%v = v(1,n)
+      end if
+
    end do
 
    deallocate (u)
    deallocate (v)
+   deallocate (ub)
+   deallocate (vb)
 
    if (trace_use_dull) call da_trace_exit("da_transform_xtoy_qscat")
 

@@ -227,6 +227,8 @@ contains
 #include "da_qc_ssmis.inc"
 #include "da_qc_iasi.inc"
 #include "da_qc_mhs.inc"
+#include "da_qc_mwts.inc"
+#include "da_qc_mwhs.inc"
 #include "da_qc_atms.inc"
 #include "da_write_iv_rad_ascii.inc"
 #include "da_write_oa_rad_ascii.inc"

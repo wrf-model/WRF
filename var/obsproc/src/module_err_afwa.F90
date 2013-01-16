@@ -9,6 +9,7 @@ MODULE module_err_afwa
 ! RH.txt:   relative humidity
 ! TEMP.txt: temperature and dew point
 ! WIND.txt: wind speed
+! DIR.txt:  wind direction
 !------------------------------------------------------------------------------
 !  HISTORY: 
 !
@@ -27,6 +28,7 @@ MODULE module_err_afwa
    TYPE field_type
         REAL :: height
         REAL :: wind
+        REAL :: dir
         REAL :: temp
         REAL :: rh
         REAL :: pres
@@ -188,6 +190,8 @@ SUBROUTINE obs_err_afwa (filein,iunit,nobs_max, obs, number_of_obs)
                                                               err_h (1:JPERR))
          err (i) % airep % height = intplin (err (i) % level, err_k (1:JPERR),&
                                                               err_h (1:JPERR))
+         err (i) % tamdar % height= intplin (err (i) % level, err_k (1:JPERR),&
+                                                              err_h (1:JPERR))
          err (i) % ssmt1 % height = intplin (err (i) % level, err_k (1:JPERR),&
                                                               err_h (1:JPERR))
          err (i) % ssmt2 % height = intplin (err (i) % level, err_k (1:JPERR),&
@@ -221,6 +225,8 @@ SUBROUTINE obs_err_afwa (filein,iunit,nobs_max, obs, number_of_obs)
          err (i) % satob % pres = intplin (err (i) % level, err_k (1:JPERR),&
                                                             err_p (1:JPERR))
          err (i) % airep % pres = intplin (err (i) % level, err_k (1:JPERR),&
+                                                            err_p (1:JPERR))
+         err (i) % tamdar % pres= intplin (err (i) % level, err_k (1:JPERR),&
                                                             err_p (1:JPERR))
          err (i) % ssmt1 % pres = intplin (err (i) % level, err_k (1:JPERR),&
                                                             err_p (1:JPERR))
@@ -257,6 +263,8 @@ SUBROUTINE obs_err_afwa (filein,iunit,nobs_max, obs, number_of_obs)
                                                             err_t (1:JPERR))
          err (i) % airep % temp = intplog (err (i) % level, err_k (1:JPERR), &
                                                             err_t (1:JPERR))
+         err (i) % tamdar % temp= intplog (err (i) % level, err_k (1:JPERR), &
+                                                            err_t (1:JPERR))
          err (i) % ssmt1 % temp = intplog (err (i) % level, err_k (1:JPERR), &
                                                             err_t (1:JPERR))
          err (i) % ssmt2 % temp = intplog (err (i) % level, err_k (1:JPERR), &
@@ -291,6 +299,8 @@ SUBROUTINE obs_err_afwa (filein,iunit,nobs_max, obs, number_of_obs)
                                                           err_rh (1:JPERR))
          err (i) % airep % rh = intplog (err (i) % level, err_k  (1:JPERR), &
                                                           err_rh (1:JPERR))
+         err (i) % tamdar % rh= intplog (err (i) % level, err_k  (1:JPERR), &
+                                                          err_rh (1:JPERR))
          err (i) % ssmt1 % rh = intplog (err (i) % level, err_k  (1:JPERR), &
                                                           err_rh (1:JPERR))
          err (i) % ssmt2 % rh = intplog (err (i) % level, err_k  (1:JPERR), &
@@ -311,7 +321,7 @@ SUBROUTINE obs_err_afwa (filein,iunit,nobs_max, obs, number_of_obs)
 
       DO i = 1, 26
 
-         !  Wind error
+         !  Wind (u/v) error
 
          err_wind (i) % synop % wind = intplin (err_wind (i) % level, &
                                                 err_k (1:JPERR),err_u (1:JPERR)) 
@@ -333,6 +343,8 @@ SUBROUTINE obs_err_afwa (filein,iunit,nobs_max, obs, number_of_obs)
                                                 err_k (1:JPERR),err_u (1:JPERR)) 
          err_wind (i) % airep % wind = intplin (err_wind (i) % level, &
                                                 err_k (1:JPERR),err_u (1:JPERR)) 
+         err_wind (i) % tamdar % wind = intplin (err_wind (i) % level, &
+                                                err_k (1:JPERR),err_u (1:JPERR))
          err_wind (i) % ssmt1 % wind = intplin (err_wind (i) % level, &
                                                 err_k (1:JPERR),err_u (1:JPERR))
          err_wind (i) % ssmt2 % wind = intplin (err_wind (i) % level, &
@@ -343,6 +355,42 @@ SUBROUTINE obs_err_afwa (filein,iunit,nobs_max, obs, number_of_obs)
                                                 err_k (1:JPERR),err_u (1:JPERR))
          err_wind (i) % other % wind = intplin (err_wind (i) % level, &
                                                 err_k (1:JPERR),err_u (1:JPERR)) 
+
+         !  Wind (dir) error
+
+         err_wind (i) % synop % dir  = intplin (err_wind (i) % level, &
+                                                err_k (1:JPERR),err_u (1:JPERR)) 
+         err_wind (i) % metar % dir  = intplin (err_wind (i) % level, &
+                                                err_k (1:JPERR),err_u (1:JPERR)) 
+         err_wind (i) % ships % dir  = intplin (err_wind (i) % level, &
+                                                err_k (1:JPERR),err_u (1:JPERR)) 
+         err_wind (i) % buoys % dir  = intplin (err_wind (i) % level, &
+                                                err_k (1:JPERR),err_u (1:JPERR)) 
+         err_wind (i) % sound % dir  = intplin (err_wind (i) % level, &
+                                                err_k (1:JPERR),err_u (1:JPERR)) 
+         err_wind (i) % pilot % dir  = intplin (err_wind (i) % level, &
+                                                err_k (1:JPERR),err_u (1:JPERR)) 
+         err_wind (i) % profl % dir  = intplin (err_wind (i) % level, &
+                                                err_k (1:JPERR),err_u (1:JPERR)) 
+         err_wind (i) % satem % dir  = intplin (err_wind (i) % level, &
+                                                err_k (1:JPERR),err_u (1:JPERR)) 
+         err_wind (i) % satob % dir  = intplin (err_wind (i) % level, &
+                                                err_k (1:JPERR),err_u (1:JPERR)) 
+         err_wind (i) % airep % dir  = intplin (err_wind (i) % level, &
+                                                err_k (1:JPERR),err_u (1:JPERR))
+         err_wind (i) % tamdar % dir  = intplin (err_wind (i) % level, &
+                                                err_k (1:JPERR),err_u (1:JPERR))
+         err_wind (i) % ssmt1 % dir  = intplin (err_wind (i) % level, &
+                                                err_k (1:JPERR),err_u (1:JPERR))
+         err_wind (i) % ssmt2 % dir  = intplin (err_wind (i) % level, &
+                                                err_k (1:JPERR),err_u (1:JPERR))
+         err_wind (i) % ssmi  % dir  = intplin (err_wind (i) % level, &
+                                                err_k (1:JPERR),err_u (1:JPERR))
+         err_wind (i) % tovs  % dir  = intplin (err_wind (i) % level, &
+                                                err_k (1:JPERR),err_u (1:JPERR))
+         err_wind (i) % other % dir  = intplin (err_wind (i) % level, &
+                                                err_k (1:JPERR),err_u (1:JPERR)) 
+
       ENDDO
 
 ! 1.5 HEIGHT OBSERVATIONAL ERROR
@@ -350,7 +398,7 @@ SUBROUTINE obs_err_afwa (filein,iunit,nobs_max, obs, number_of_obs)
 
       keyword = 'HEIGHT SENSOR ERRORS'
       endword = 'WIND SENSOR ERRORS'
-      fmt_err = '(7(1X,F5.1))'
+      fmt_err = '(5(1X,F5.1))'
 
       CALL read_obserr_height (iunit, filein, keyword, endword, fmt_err, err)
 
@@ -358,11 +406,19 @@ SUBROUTINE obs_err_afwa (filein,iunit,nobs_max, obs, number_of_obs)
 !     ------------------------
 
       keyword = 'WIND SENSOR ERRORS'
-      endword = 'TEMP SENSOR ERRORS'
+      endword = 'DIR SENSOR ERRORS'
       fmt_err = '(7(1X,F5.1))'
       CALL read_obserr_wind (iunit, filein, keyword, endword, fmt_err, err_wind)
 
-! 1.7 TEMPERATURE OBSERVATIONAL ERROR
+! 1.7 DIR  OBSERVATIONAL ERROR
+!     ------------------------
+
+      keyword = 'DIR SENSOR ERRORS'
+      endword = 'TEMP SENSOR ERRORS'
+      fmt_err = '(7(1X,F5.1))'
+      CALL read_obserr_dir (iunit, filein, keyword, endword, fmt_err, err_wind)
+
+! 1.8 TEMPERATURE OBSERVATIONAL ERROR
 !     -------------------------------
 
       keyword = 'TEMP SENSOR ERRORS'
@@ -371,16 +427,16 @@ SUBROUTINE obs_err_afwa (filein,iunit,nobs_max, obs, number_of_obs)
 
       CALL read_obserr_temp (iunit, filein, keyword, endword, fmt_err, err)
 
-! 1.8 RH OBSERVATIONAL ERROR
+! 1.9 RH OBSERVATIONAL ERROR
 !     -------------------
 
       keyword = 'RH SENSOR ERRORS ( % )'
       endword = 'PRESSURE SENSOR ERRORS'
-      fmt_err = '(1X,5(1X,F5.2))'
+      fmt_err = '(5(1X,F5.2))'
 
       CALL read_obserr_rh (iunit, filein, keyword, endword, fmt_err, err)
 
-! 1.9 PRESSURE OBSERVATIONAL ERROR
+! 1.10 PRESSURE OBSERVATIONAL ERROR
 !     ----------------------------
 
       keyword = 'PRESSURE SENSOR ERRORS'
@@ -530,8 +586,8 @@ upper_level: DO WHILE (ASSOCIATED (current))
 
           !  Wind
 
-          current % meas % direction % error = 5. ! 5 degree
-
+          current % meas % direction % error = intplin (pres, err_wind % level,&
+                                                    err_wind % synop % dir)
           current % meas % speed % error = intplin (pres, err_wind % level,&
                                                     err_wind % synop % wind)
           current % meas % u % error = intplin (pres, err_wind % level,  &
@@ -568,7 +624,8 @@ upper_level: DO WHILE (ASSOCIATED (current))
       CASE  ('SHIP')
 
           !  Wind
-          current % meas % direction % error = 5. ! 5 degree
+          current % meas % direction % error = intplin (pres, err_wind % level,&
+                                                        err_wind % ships % dir)
           current % meas % speed     % error = intplin (pres, err_wind % level,&
                                                         err_wind % ships % wind)
           current % meas % u % error = intplin (pres, err_wind % level,  &
@@ -608,7 +665,8 @@ upper_level: DO WHILE (ASSOCIATED (current))
 
           !  Wind
 
-          current % meas % direction % error = 5. ! 5 degree
+          current % meas % direction % error = intplin (pres, err_wind % level,&
+                                                        err_wind % buoys % dir)
           current % meas % speed     % error = intplin (pres, err_wind % level,&
                                                         err_wind % buoys % wind)
           current % meas % u % error = intplin (pres, err_wind % level,  &
@@ -649,7 +707,8 @@ upper_level: DO WHILE (ASSOCIATED (current))
 
           !  Wind
 
-          current % meas % direction % error = 5. ! 5 degree
+          current % meas % direction % error = intplin (pres, err_wind % level,&
+                                                        err_wind % metar % dir)
           current % meas % speed     % error = intplin (pres, err_wind % level,&
                                                         err_wind % metar % wind)
           current % meas % u % error = intplin (pres, err_wind % level,  &
@@ -690,7 +749,8 @@ upper_level: DO WHILE (ASSOCIATED (current))
 
           !  Wind
 
-          current % meas % direction % error = 5. ! 5 degree
+          current % meas % direction % error = intplin (pres, err_wind % level,&
+                                                       err_wind % pilot % dir)
           current % meas % speed     % error = intplin (pres, err_wind % level,&
                                                         err_wind % pilot % wind)
           current % meas % u % error = intplin (pres, err_wind % level,  &
@@ -729,7 +789,8 @@ upper_level: DO WHILE (ASSOCIATED (current))
 
           !  Wind
 
-          current % meas % direction % error = 5. ! 5 degree
+          current % meas % direction % error = intplin (pres, err_wind % level,&
+                                                        err_wind % profl % dir)
           current % meas % speed     % error = intplin (pres, err_wind % level,&
                                                         err_wind % profl % wind)
           current % meas % u % error = intplin (pres, err_wind % level,  &
@@ -768,7 +829,8 @@ upper_level: DO WHILE (ASSOCIATED (current))
 
           !  Wind
 
-          current % meas % direction % error = 5. ! 5 degree
+          current % meas % direction % error = intplin (pres, err_wind % level,&
+                                                        err_wind % sound % dir)
           current % meas % speed     % error = intplin (pres, err_wind % level,&
                                                         err_wind % sound % wind)
           current % meas % u % error = intplin (pres, err_wind % level, &
@@ -808,7 +870,8 @@ upper_level: DO WHILE (ASSOCIATED (current))
 
           !  Wind
 
-          current % meas % direction % error = 5. ! 5 degree
+          current % meas % direction % error = intplin (pres, err_wind % level,&
+                                                        err_wind % sound % dir)
 
           IF (bogus_type /= 'BOGUS') then
 
@@ -872,7 +935,8 @@ upper_level: DO WHILE (ASSOCIATED (current))
 
           !  Wind
 
-          current % meas % direction % error = 5. ! 5 degree
+          current % meas % direction % error = intplin (pres, err_wind % level,&
+                                                        err_wind % satem % dir)
           current % meas % speed     % error = intplin (pres, err_wind % level,&
                                                         err_wind % satem % wind)
           current % meas % u % error = intplin (pres, err_wind % level, &
@@ -920,7 +984,8 @@ upper_level: DO WHILE (ASSOCIATED (current))
 
           !  Wind
 
-          current % meas % direction % error = 5. ! 5 degree
+          current % meas % direction % error = intplin (pres, err_wind % level,&
+                                                        err_wind % satob % dir)
           current % meas % speed     % error = intplin (pres, err_wind % level,&
                                                         err_wind % satob % wind)
           current % meas % u % error = intplin (pres, err_wind % level, &
@@ -957,11 +1022,12 @@ upper_level: DO WHILE (ASSOCIATED (current))
 ! 4.9 Airep
 !     -----
 
-      CASE  ('AIREP','AMDAR','TAMDAR')
+      CASE  ('AIREP','AMDAR')
 
           !  Wind
 
-          current % meas % direction % error = 5. ! 5 degree
+          current % meas % direction % error = intplin (pres, err_wind % level,&
+                                                        err_wind % airep % dir) 
           current % meas % speed     % error = intplin (pres, err_wind % level,&
                                                         err_wind % airep % wind)
           current % meas % u % error = intplin (pres, err_wind % level, &
@@ -994,14 +1060,55 @@ upper_level: DO WHILE (ASSOCIATED (current))
                                                  err % airep % rh)
 
 
-! 4.9 SSMT1
+! 4.10 Tamdar
+!     -----
+
+      CASE  ('TAMDAR')
+
+          !  Wind
+
+          current % meas % direction % error = intplin (pres, err_wind % level,&
+                                                        err_wind % tamdar % dir)
+          current % meas % speed     % error = intplin (pres, err_wind % level,&
+                                                        err_wind % tamdar % wind)
+          current % meas % u % error = intplin (pres, err_wind % level, &
+                                                err_wind % tamdar % wind)
+          current % meas % v % error = intplin (pres, err_wind % level, &
+                                                err_wind % tamdar % wind)
+          !  Pressure
+
+          current % meas % pressure % error = intplin (pres, err % level, &
+                                                       err % tamdar % pres)
+
+          !  Height
+
+          current % meas % height % error = intplog (pres, err % level, &
+                                                     err % tamdar % height)
+
+          !  Temperature
+
+          current % meas % temperature % error = intplog (pres, err % level, &
+                                                          err % tamdar % temp)
+          !  Dew point as temperature
+
+          current % meas % dew_point % error = &
+          current % meas % temperature % error
+
+          !  Relative humidity
+
+          current % meas % rh % error = intplog (pres, err % level, &
+                                                 err % tamdar % rh)
+
+
+! 4.11 SSMT1
 !     -----
 
       CASE  ('SSMT1')
 
           !  Wind
 
-          current % meas % direction % error = 5. ! 5 degree
+          current % meas % direction % error = intplin (pres, err_wind % level,&
+                                                        err_wind % ssmt1 % dir)
           current % meas % speed     % error = intplin (pres, err_wind % level,&
                                                         err_wind % ssmt1 % wind)
           current % meas % u % error = intplin (pres, err_wind % level, &
@@ -1035,14 +1142,15 @@ upper_level: DO WHILE (ASSOCIATED (current))
 
 
 
-! 4.10 SSMT2
+! 4.12 SSMT2
 !      -----
 
       CASE  ('SSMT2')
 
           !  Wind
 
-          current % meas % direction % error = 5. ! 5 degree
+          current % meas % direction % error = intplin (pres, err_wind % level,&
+                                                        err_wind % ssmt2 % dir)
           current % meas % speed     % error = intplin (pres, err_wind % level,&
                                                         err_wind % ssmt2 % wind)
           current % meas % u % error = intplin (pres, err_wind % level, &
@@ -1076,14 +1184,15 @@ upper_level: DO WHILE (ASSOCIATED (current))
 
 
 
-! 4.11 SSMI
+! 4.13 SSMI
 !      -----
 
       CASE  ('SSMI')
 
           !  Wind
 
-          current % meas % direction % error = 5. ! 5 degree
+          current % meas % direction % error = intplin (pres, err_wind % level,&
+                                                        err_wind % ssmi % dir)
 
           ! SSMI wind speed can come with its own error
 
@@ -1121,14 +1230,15 @@ upper_level: DO WHILE (ASSOCIATED (current))
 
 
 
-! 4.12 TOVS
+! 4.14 TOVS
 !      -----
 
       CASE  ('TOVS')
 
           !  Wind
 
-          current % meas % direction % error = 5. ! 5 degree
+          current % meas % direction % error = intplin (pres, err_wind % level,&
+                                                        err_wind % tovs % dir)
           current % meas % speed     % error = intplin (pres, err_wind % level,&
                                                         err_wind % tovs % wind)
           current % meas % u % error = intplin (pres, err_wind  % level, &
@@ -1161,7 +1271,7 @@ upper_level: DO WHILE (ASSOCIATED (current))
                                                  err % tovs % rh)
 
 
-! 4.13 QSCAT
+! 4.15 QSCAT
 !      -----
 
       CASE  ('QSCAT')
@@ -1200,16 +1310,16 @@ upper_level: DO WHILE (ASSOCIATED (current))
           current % meas % rh % error = intplog (pres, err  % level, &
                                                  err % tovs % rh)
 
-! 4.14 GPSRF, GPSEP (like SSMT/1)
+! 4.16 GPSRF, GPSEP (like SSMT/1)
 !      -----
 
      CASE  ('GPSRF', 'GPSEP')
 
          !  Wind
 
-          current % meas % direction % error = 5. ! 5 degree
+          current % meas % direction % error = 35. ! 35 degrees
           current % meas % speed     % error = intplin (pres,err_wind % level,&
-                                                        err_wind % ssmt1 % wind)
+                                                        err_wind % satob % wind)
           current % meas % u % error = intplin (pres, err_wind % level, &
                                                 err_wind % ssmt1 % wind)
           current % meas % v % error = intplin (pres, err_wind % level, &
@@ -1299,7 +1409,7 @@ upper_level: DO WHILE (ASSOCIATED (current))
 
       !  wind
 
-      current % meas % direction % error = 5. ! 5 degree
+      current % meas % direction % error = 35. ! 35 degrees
       current % meas % speed     % error = intplin (pres, err_k (1:JPERR), &
                                                           err_u (1:JPERR))
       current % meas % u % error = intplin (pres, err_k (1:JPERR), &
@@ -1505,7 +1615,7 @@ SUBROUTINE READ_OBSERR_HEIGHT (iunit, filein, keyword, endword, fmt_err, err)
 
          !  Winds are given over 4 lines, any other data are given over 3 lines
 
-         IF (TRIM (obstype (line1)) .EQ. 'WIND SENSOR ERRORS') THEN
+         IF ((TRIM (obstype (line1)) .EQ. 'WIND SENSOR ERRORS') .OR. (TRIM (obstype (line1)) .EQ. 'DIR SENSOR ERRORS')) THEN
 
              wind = .TRUE.
 
@@ -1574,6 +1684,15 @@ SUBROUTINE READ_OBSERR_HEIGHT (iunit, filein, keyword, endword, fmt_err, err)
                 READ (line1, fmt_err) (err (i) % airep % height, i =  1,  5)
                 READ (line2, fmt_err) (err (i) % airep % height, i =  6, 10)
                 READ (line3, fmt_err) (err (i) % airep % height, i = 11, 15)
+
+         CASE ('TAMDARS')  ! TAMDARS
+
+                WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
+                       TRIM (sensor (line1)),','
+
+                READ (line1, fmt_err) (err (i) % tamdar % height, i =  1,  5)
+                READ (line2, fmt_err) (err (i) % tamdar % height, i =  6, 10)
+                READ (line3, fmt_err) (err (i) % tamdar % height, i = 11, 15)
 
          CASE ('AIRSRET')  ! AIRS retrievals
 
@@ -1716,12 +1835,12 @@ SUBROUTINE READ_OBSERR_HEIGHT (iunit, filein, keyword, endword, fmt_err, err)
 
       WRITE (UNIT = iunit, FMT = '(1X,16A)') ' level',&
     ' synop ','  ship ','  buoy ',' metar ',' pilot ',' profl ',&
-    ' sound ',' satem ',' satob ',' airep ',&
+    ' sound ',' satem ',' satob ',' airep ',' tamdar ',&
     ' ssmt1 ',' ssmt2 ','  tovs ','  ssmi ',' airsret',&
     ' other '
 
       DO i = 15, 1, -1
-         WRITE (UNIT = iunit, FMT = '(F6.0,15(2X,F5.1))') &
+         WRITE (UNIT = iunit, FMT = '(F6.0,17(2X,F5.1))') &
                 err (i) % level / 100., &
                 err (i) % synop % height, &
                 err (i) % ships % height, &
@@ -1733,6 +1852,7 @@ SUBROUTINE READ_OBSERR_HEIGHT (iunit, filein, keyword, endword, fmt_err, err)
                 err (i) % satem % height, &
                 err (i) % satob % height, &
                 err (i) % airep % height, &
+                err (i) % tamdar % height, &
                 err (i) % ssmt1 % height, &
                 err (i) % ssmt2 % height, &
                 err (i) % tovs  % height, &
@@ -1810,7 +1930,7 @@ SUBROUTINE READ_OBSERR_WIND (iunit, filein, keyword, endword, fmt_err, err)
 
          !  Winds are given over 4 lines, any other data are given over 3 lines
 
-         IF (TRIM (obstype (line1)) .EQ. 'WIND SENSOR ERRORS') THEN
+         IF ((TRIM (obstype (line1)) .EQ. 'WIND SENSOR ERRORS') .OR. (TRIM (obstype (line1)) .EQ. 'DIR SENSOR ERRORS')) THEN
 
              wind = .TRUE.
 
@@ -1852,7 +1972,7 @@ SUBROUTINE READ_OBSERR_WIND (iunit, filein, keyword, endword, fmt_err, err)
 
          SELECT CASE (TRIM (sensor (line1)))
 
-         CASE ('RAOBS')              ! Sound, synop, metar and ships
+         CASE ('RAOBS')              ! Sound, metar and ships
 
          WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
                 TRIM (sensor (line1)),','
@@ -1881,6 +2001,12 @@ SUBROUTINE READ_OBSERR_WIND (iunit, filein, keyword, endword, fmt_err, err)
                 READ (line4, fmt_err) (err (i) % metar % wind, i =  5,  1,-1), &
                                        xxxx,yyyy
 
+         CASE ('SYNOPS')              ! Synop
+                READ (line1, fmt_err) (err (i) % synop % wind, i = 26, 20,-1)
+                READ (line2, fmt_err) (err (i) % synop % wind, i = 19, 13,-1)
+                READ (line3, fmt_err) (err (i) % synop % wind, i = 12,  6,-1)
+                READ (line4, fmt_err) (err (i) % synop % wind, i =  5,  1,-1), &
+                                       xxxx,yyyy
 
          CASE ('PIBALS')  ! Pilot
 
@@ -1969,6 +2095,16 @@ SUBROUTINE READ_OBSERR_WIND (iunit, filein, keyword, endword, fmt_err, err)
                 READ (line4, fmt_err) (err (i) % airep % wind, i =  5,  1,-1), &
                                        xxxx,yyyy
 
+         CASE ('TAMDARS')  ! TAMDAR
+
+                WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
+                       TRIM (sensor (line1)),','
+
+                READ (line1, fmt_err) (err (i) % tamdar % wind, i = 26, 20,-1)
+                READ (line2, fmt_err) (err (i) % tamdar % wind, i = 19, 13,-1)
+                READ (line3, fmt_err) (err (i) % tamdar % wind, i = 12,  6,-1)
+                READ (line4, fmt_err) (err (i) % tamdar % wind, i =  5,  1,-1), &
+                                       xxxx,yyyy
 
          CASE DEFAULT  ! Other
 
@@ -2023,12 +2159,11 @@ SUBROUTINE READ_OBSERR_WIND (iunit, filein, keyword, endword, fmt_err, err)
 
       WRITE (UNIT = iunit, FMT = '(1X,16A)') ' level',&
     ' synop ','  ship ','  buoy ',' metar ',' pilot ',' profl ',&
-    ' sound ',' satem ',' satob ',' airep ',&
-    ' ssmt1 ',' ssmt2 ','  ssmi ','  tovs ',&
-    ' other '
+    ' sound ',' satem ',' satob ',' airep ',' tamdar ',&
+    ' ssmt1 ',' ssmt2 ','  ssmi ','  tovs ',' other '
 
       DO i = 26, 1, -1
-         WRITE (UNIT = iunit, FMT = '(F6.0,15(2X,F5.1))') &
+         WRITE (UNIT = iunit, FMT = '(F6.0,16(2X,F5.1))') &
                 err (i) % level / 100., &
                 err (i) % synop % wind, &
                 err (i) % ships % wind, &
@@ -2040,6 +2175,7 @@ SUBROUTINE READ_OBSERR_WIND (iunit, filein, keyword, endword, fmt_err, err)
                 err (i) % satem % wind, &
                 err (i) % satob % wind, &
                 err (i) % airep % wind, &
+                err (i) % tamdar % wind, &
                 err (i) % ssmt1 % wind, &
                 err (i) % ssmt2 % wind, &
                 err (i) % ssmi  % wind, &
@@ -2052,6 +2188,329 @@ SUBROUTINE READ_OBSERR_WIND (iunit, filein, keyword, endword, fmt_err, err)
       CLOSE (UNIT = iunit)
 
 END SUBROUTINE READ_OBSERR_WIND
+
+
+
+SUBROUTINE READ_OBSERR_DIR (iunit, filein, keyword, endword, fmt_err, err)
+!------------------------------------------------------------------------------!
+!
+! Read wind obsevational error defined on the following 26 pressure levels
+! (in hPa):
+!
+!   10,   20,   30,   40,   50,  100,  150, 
+!  200,  250,  300,  350,  400,  450,  500, 
+!  550,  600,  650,  700,  750,  800,  850, 
+!  900,  950, 1000, 1050, 1100, xxxx, yyyy
+!
+! The last two values are place holders.
+!
+!------------------------------------------------------------------------------!
+   IMPLICIT NONE
+!------------------------------------------------------------------------------!
+
+   INTEGER             :: iunit   != 99
+   CHARACTER (LEN=80)  :: filein  != 'obserr.txt'
+   CHARACTER (LEN=80)  :: keyword != 'DIR SENSOR ERRORS'
+   CHARACTER (LEN=80)  :: endword != 'TEMP SENSOR ERRORS'
+   CHARACTER (LEN=80)  :: fmt_err != '(7(1X,F5.1))'
+   TYPE (obs_type), DIMENSION (26) :: err
+
+   INTEGER             :: io_error, i
+   CHARACTER (LEN=80)  :: line1, line2, line3, line4
+   LOGICAL             :: found, wind
+   CHARACTER (LEN=80)  :: fileout
+   REAL                :: xxxx, yyyy
+
+!------------------------------------------------------------------------------!
+
+! 1.  OPEN INPUT FILE
+! ===================
+
+      OPEN (UNIT = iunit , FILE = filein , FORM = 'FORMATTED'  , &
+            ACTION = 'READ' , STATUS = 'OLD', IOSTAT = io_error)
+
+      IF (io_error .NE. 0) THEN
+          WRITE (UNIT = 0, FMT = '(/,A,A,/)') &
+         'Unable to open input observational error file ',TRIM (filein)
+          STOP
+      ENDIF
+
+
+! 2.  READ DATA
+! =============
+
+!     Read file until keyword is found
+      found   = .FALSE.
+      wind    = .FALSE.
+      io_error= 0
+
+      DO WHILE (io_error .EQ. 0.)
+
+         !  Read 4 line record
+     
+         READ (UNIT = iunit, IOSTAT = io_error, FMT = '(A)') line1
+         !  Exit when error or at end of file
+
+         IF (io_error .NE. 0) EXIT
+
+         !  Winds are given over 4 lines, any other data are given over 3 lines
+
+       IF (TRIM (obstype (line1)) .EQ. 'WIND SENSOR ERRORS' .or. TRIM (obstype (line1)) .EQ. 'DIR SENSOR ERRORS') THEN 
+
+             wind = .TRUE.
+
+         !  Winds ends at temperature, 
+
+         ELSE IF (TRIM (obstype (line1)) .EQ. 'TEMP SENSOR ERRORS') THEN
+
+             wind = .false.
+
+         ENDIF
+
+         READ (UNIT = iunit, IOSTAT = io_error, FMT = '(A)') line2
+         READ (UNIT = iunit, IOSTAT = io_error, FMT = '(A)') line3
+         IF (wind) &
+         READ (UNIT = iunit, IOSTAT = io_error, FMT = '(A)') line4
+
+         !  If wind obstype is found, read error data
+
+         IF (TRIM (obstype (line1)) .EQ. TRIM (keyword)) THEN
+
+             found = .TRUE.
+
+             WRITE (UNIT = 0, FMT = '(/,A,A)', ADVANCE = 'no') &
+                    TRIM (obstype (line1)),': '
+
+         ELSE IF (((TRIM (obstype (line1)) .EQ. TRIM (endword)) .OR. &
+                   (line1 (1:2) .EQ. '*.'))) THEN
+
+             EXIT
+
+         ENDIF
+        
+         !  If wind obstype is not found, keep on reading
+
+         IF (.NOT. found) CYCLE
+
+         !  Keyword has been found, Error at mandatory pressure levels follow
+         !  Break down data upon obs type
+
+         SELECT CASE (TRIM (sensor (line1)))
+
+         CASE ('RAOBS')              ! Sound, metar and ships
+
+         WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
+                TRIM (sensor (line1)),','
+
+                READ (line1, fmt_err) (err (i) % sound % dir , i = 26, 20,-1)
+                READ (line2, fmt_err) (err (i) % sound % dir , i = 19, 13,-1)
+                READ (line3, fmt_err) (err (i) % sound % dir , i = 12,  6,-1)
+                READ (line4, fmt_err) (err (i) % sound % dir , i =  5,  1,-1), &
+                                       xxxx,yyyy
+                                       
+                READ (line1, fmt_err) (err (i) % ships % dir , i = 26, 20,-1)
+                READ (line2, fmt_err) (err (i) % ships % dir , i = 19, 13,-1)
+                READ (line3, fmt_err) (err (i) % ships % dir , i = 12,  6,-1)
+                READ (line4, fmt_err) (err (i) % ships % dir , i =  5,  1,-1), &
+                                       xxxx,yyyy
+
+                READ (line1, fmt_err) (err (i) % metar % dir , i = 26, 20,-1)
+                READ (line2, fmt_err) (err (i) % metar % dir , i = 19, 13,-1)
+                READ (line3, fmt_err) (err (i) % metar % dir , i = 12,  6,-1)
+                READ (line4, fmt_err) (err (i) % metar % dir , i =  5,  1,-1), &
+                                       xxxx,yyyy
+
+         CASE ('SYNOPS') 
+                READ (line1, fmt_err) (err (i) % synop % dir , i = 26, 20,-1)
+                READ (line2, fmt_err) (err (i) % synop % dir , i = 19, 13,-1)
+                READ (line3, fmt_err) (err (i) % synop % dir , i = 12,  6,-1)
+                READ (line4, fmt_err) (err (i) % synop % dir , i =  5,  1,-1), &
+                                       xxxx,yyyy
+
+         CASE ('PIBALS')  ! Pilot
+
+                WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
+                       TRIM (sensor (line1)),','
+
+                READ (line1, fmt_err) (err (i) % pilot % dir , i = 26, 20,-1)
+                READ (line2, fmt_err) (err (i) % pilot % dir , i = 19, 13,-1)
+                READ (line3, fmt_err) (err (i) % pilot % dir , i = 12,  6,-1)
+                READ (line4, fmt_err) (err (i) % pilot % dir , i =  5,  1,-1), &
+                                       xxxx,yyyy
+
+
+         CASE ('PROFL')  ! Profilers
+
+                WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
+                       TRIM (sensor (line1)),','
+
+                READ (line1, fmt_err) (err (i) % profl % dir , i = 26, 20,-1)
+                READ (line2, fmt_err) (err (i) % profl % dir , i = 19, 13,-1)
+                READ (line3, fmt_err) (err (i) % profl % dir , i = 12,  6,-1)
+                READ (line4, fmt_err) (err (i) % profl % dir , i =  5,  1,-1), &
+                                       xxxx,yyyy
+
+
+         CASE ('BUOY')  ! BUOY      
+
+                WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
+                       TRIM (sensor (line1)),','
+
+                READ (line1, fmt_err) (err (i) % buoys % dir , i = 26, 20,-1)
+                READ (line2, fmt_err) (err (i) % buoys % dir , i = 19, 13,-1)
+                READ (line3, fmt_err) (err (i) % buoys % dir , i = 12,  6,-1)
+                READ (line4, fmt_err) (err (i) % buoys % dir , i =  5,  1,-1), &
+                                       xxxx,yyyy
+
+         CASE ('US LOW LEVEL WINDS')  ! Satobs and Satem ssmt1, ssmt2, ssmi, tovs
+
+                WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
+                       TRIM (sensor (line1)),','
+
+                READ (line1, fmt_err) (err (i) % satob % dir , i = 26, 20,-1)
+                READ (line2, fmt_err) (err (i) % satob % dir , i = 19, 13,-1)
+                READ (line3, fmt_err) (err (i) % satob % dir , i = 12,  6,-1)
+                READ (line4, fmt_err) (err (i) % satob % dir , i =  5,  1,-1), &
+                                       xxxx,yyyy
+
+                READ (line1, fmt_err) (err (i) % satem % dir , i = 26, 20,-1)
+                READ (line2, fmt_err) (err (i) % satem % dir , i = 19, 13,-1)
+                READ (line3, fmt_err) (err (i) % satem % dir , i = 12,  6,-1)
+                READ (line4, fmt_err) (err (i) % satem % dir , i =  5,  1,-1), &
+                                       xxxx,yyyy
+
+                READ (line1, fmt_err) (err (i) % ssmt1 % dir , i = 26, 20,-1)
+                READ (line2, fmt_err) (err (i) % ssmt1 % dir , i = 19, 13,-1)
+                READ (line3, fmt_err) (err (i) % ssmt1 % dir , i = 12,  6,-1)
+                READ (line4, fmt_err) (err (i) % ssmt1 % dir , i =  5,  1,-1), &
+                                       xxxx,yyyy
+
+                READ (line1, fmt_err) (err (i) % ssmt2 % dir , i = 26, 20,-1)
+                READ (line2, fmt_err) (err (i) % ssmt2 % dir , i = 19, 13,-1)
+                READ (line3, fmt_err) (err (i) % ssmt2 % dir , i = 12,  6,-1)
+                READ (line4, fmt_err) (err (i) % ssmt2 % dir , i =  5,  1,-1), &
+                                       xxxx,yyyy
+
+                READ (line1, fmt_err) (err (i) % ssmi  % dir , i = 26, 20,-1)
+                READ (line2, fmt_err) (err (i) % ssmi  % dir , i = 19, 13,-1)
+                READ (line3, fmt_err) (err (i) % ssmi  % dir , i = 12,  6,-1)
+                READ (line4, fmt_err) (err (i) % ssmi  % dir , i =  5,  1,-1), &
+                                       xxxx,yyyy
+
+                READ (line1, fmt_err) (err (i) % tovs  % dir , i = 26, 20,-1)
+                READ (line2, fmt_err) (err (i) % tovs  % dir , i = 19, 13,-1)
+                READ (line3, fmt_err) (err (i) % tovs  % dir , i = 12,  6,-1)
+                READ (line4, fmt_err) (err (i) % tovs  % dir , i =  5,  1,-1), &
+                                       xxxx,yyyy
+
+         CASE ('AIREPS')  ! Airep
+
+                WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
+                       TRIM (sensor (line1)),','
+
+                READ (line1, fmt_err) (err (i) % airep % dir , i = 26, 20,-1)
+                READ (line2, fmt_err) (err (i) % airep % dir , i = 19, 13,-1)
+                READ (line3, fmt_err) (err (i) % airep % dir , i = 12,  6,-1)
+                READ (line4, fmt_err) (err (i) % airep % dir , i =  5,  1,-1), &
+                                       xxxx,yyyy
+
+         CASE ('TAMDARS')  ! Airep
+
+                WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
+                       TRIM (sensor (line1)),','
+
+                READ (line1, fmt_err) (err (i) % tamdar % dir , i = 26, 20,-1)
+                READ (line2, fmt_err) (err (i) % tamdar % dir , i = 19, 13,-1)
+                READ (line3, fmt_err) (err (i) % tamdar % dir , i = 12,  6,-1)
+                READ (line4, fmt_err) (err (i) % tamdar % dir , i =  5,  1,-1), &
+                                       xxxx,yyyy
+
+         CASE DEFAULT  ! Other
+
+!               WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
+!                      TRIM (sensor (line1)),','
+
+                READ (line1, fmt_err) (err (i) % other % dir , i = 26, 20,-1)
+                READ (line2, fmt_err) (err (i) % other % dir , i = 19, 13,-1)
+                READ (line3, fmt_err) (err (i) % other % dir , i = 12,  6,-1)
+                READ (line4, fmt_err) (err (i) % other % dir , i =  5,  1,-1), &
+                                       xxxx,yyyy
+
+
+         END SELECT
+
+      ENDDO
+
+      WRITE (UNIT = 0, FMT = '(A)') ' '
+
+      IF (.NOT. found) THEN
+
+          WRITE (UNIT = 0, FMT = '(/,A,A)') &
+        ' Observational errors for ',TRIM (keyword)
+          WRITE (UNIT = 0, FMT = '(A,A,/)') &
+        ' were not found in file ',  TRIM (filein)
+
+      ENDIF
+
+
+! 3.  CLOSE INPUT FILE
+! ====================
+
+      CLOSE (UNIT = iunit)
+
+
+! 4.  WRITE VALUES
+! ================
+
+      fileout = keyword (1:3)//'.txt'
+
+      OPEN (UNIT = iunit , FILE = fileout , FORM = 'FORMATTED'  , &
+            ACTION = 'WRITE' , STATUS = 'REPLACE', IOSTAT = io_error)
+
+      IF (io_error .NE. 0) THEN
+          WRITE (UNIT = 0, FMT = '(/,A,A,/)') &
+         'Unable to open output observational error file ',TRIM (fileout)
+          STOP
+      ENDIF
+
+
+      WRITE (UNIT = iunit, FMT = '(20X,A)') TRIM (keyword)
+
+      WRITE (UNIT = iunit, FMT = '(1X,16A)') ' level',&
+    ' synop ','  ship ','  buoy ',' metar ',' pilot ',' profl ',&
+    ' sound ',' satem ',' satob ',' airep ',' tamdar ',&
+    ' ssmt1 ',' ssmt2 ','  ssmi ','  tovs ',' other '
+
+      DO i = 26, 1, -1
+         WRITE (UNIT = iunit, FMT = '(F6.0,16(2X,F5.1))') &
+                err (i) % level / 100., &
+                err (i) % synop % dir , &
+                err (i) % ships % dir , &
+                err (i) % buoys % dir , &
+                err (i) % metar % dir , &
+                err (i) % pilot % dir , &
+                err (i) % profl % dir , &
+                err (i) % sound % dir , &
+                err (i) % satem % dir , &
+                err (i) % satob % dir , &
+                err (i) % airep % dir , &
+                err (i) % tamdar % dir , &
+                err (i) % ssmt1 % dir , &
+                err (i) % ssmt2 % dir , &
+                err (i) % ssmi  % dir , &
+                err (i) % tovs  % dir , &
+                err (i) % other % dir 
+
+
+      ENDDO
+
+      CLOSE (UNIT = iunit)
+
+END SUBROUTINE READ_OBSERR_DIR
+
+
+
+
 
 SUBROUTINE READ_OBSERR_TEMP (iunit, filein, keyword, endword, fmt_err, err)
 !------------------------------------------------------------------------------!
@@ -2114,7 +2573,7 @@ SUBROUTINE READ_OBSERR_TEMP (iunit, filein, keyword, endword, fmt_err, err)
 
          !  Winds are given over 4 lines, any other data are given over 3 lines
 
-         IF (TRIM (obstype (line1)) .EQ. 'WIND SENSOR ERRORS') THEN
+         IF ((TRIM (obstype (line1)) .EQ. 'WIND SENSOR ERRORS') .OR. (TRIM (obstype (line1)) .EQ. 'DIR SENSOR ERRORS')) THEN
 
              wind = .TRUE.
 
@@ -2231,6 +2690,17 @@ SUBROUTINE READ_OBSERR_TEMP (iunit, filein, keyword, endword, fmt_err, err)
                 READ (line1, fmt_err) (err (i) % airep % temp, i =  1,  5)
                 READ (line2, fmt_err) (err (i) % airep % temp, i =  6, 10)
                 READ (line3, fmt_err) (err (i) % airep % temp, i = 11, 15)
+
+
+         CASE ('TAMDARS')  ! Tamdar
+
+                WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
+                       TRIM (sensor (line1)),','
+
+                READ (line1, fmt_err) (err (i) % tamdar % temp, i =  1,  5)
+                READ (line2, fmt_err) (err (i) % tamdar % temp, i =  6, 10)
+                READ (line3, fmt_err) (err (i) % tamdar % temp, i = 11, 15)
+
          CASE ('AIRSRET')  ! AIRS retrievals
 
                 WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
@@ -2310,13 +2780,13 @@ SUBROUTINE READ_OBSERR_TEMP (iunit, filein, keyword, endword, fmt_err, err)
 
       WRITE (UNIT = iunit, FMT = '(1X,16A)') ' level',&
     ' synop ','  ship ','  buoy ',' metar ',' pilot ',' profl ',&
-    ' sound ',' satem ',' satob ',' airep ',&
+    ' sound ',' satem ',' satob ',' airep ',' tamdar ',&
     ' ssmt1 ',' ssmt2 ','  tovs ','  ssmi ',' airsret', &
     ' other '
 
 
       DO i = 15, 1, -1
-         WRITE (UNIT = iunit, FMT = '(F6.0,15(2X,F5.1))') &
+         WRITE (UNIT = iunit, FMT = '(F6.0,17(2X,F5.1))') &
                 err (i) % level / 100., &
                 err (i) % synop % temp, &
                 err (i) % ships % temp, &
@@ -2328,6 +2798,7 @@ SUBROUTINE READ_OBSERR_TEMP (iunit, filein, keyword, endword, fmt_err, err)
                 err (i) % satem % temp, &
                 err (i) % satob % temp, &
                 err (i) % airep % temp, &
+                err (i) % tamdar % temp, &
                 err (i) % ssmt1 % temp, &
                 err (i) % ssmt2 % temp, &
                 err (i) % tovs  % temp, &
@@ -2398,7 +2869,7 @@ SUBROUTINE READ_OBSERR_RH (iunit, filein, keyword, endword, fmt_err, err)
 
          !  Winds are given over 4 lines, any other data are given over 3 lines
 
-         IF (TRIM (obstype (line1)) .EQ. 'WIND SENSOR ERRORS') THEN
+         IF ((TRIM (obstype (line1)) .EQ. 'WIND SENSOR ERRORS') .OR. (TRIM (obstype (line1)) .EQ. 'DIR SENSOR ERRORS')) THEN
 
              wind = .TRUE.
 
@@ -2510,6 +2981,16 @@ SUBROUTINE READ_OBSERR_RH (iunit, filein, keyword, endword, fmt_err, err)
                 READ (line1, fmt_err) (err (i) % airep % rh, i =  1,  5)
                 READ (line2, fmt_err) (err (i) % airep % rh, i =  6, 10)
                 READ (line3, fmt_err) (err (i) % airep % rh, i = 11, 15)
+
+         CASE ('TAMDARS')  ! Tamdar
+
+                WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
+                       TRIM (sensor (line1)),','
+
+                READ (line1, fmt_err) (err (i) % tamdar % rh, i =  1,  5)
+                READ (line2, fmt_err) (err (i) % tamdar % rh, i =  6, 10)
+                READ (line3, fmt_err) (err (i) % tamdar % rh, i = 11, 15)
+
          CASE ('AIRSRET')  ! AIRS retrievals 
 
                 WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
@@ -2587,12 +3068,12 @@ SUBROUTINE READ_OBSERR_RH (iunit, filein, keyword, endword, fmt_err, err)
 
       WRITE (UNIT = iunit, FMT = '(1X,16A)') ' level',&
     ' synop ','  ship ','  buoy ',' metar ',' pilot ',' profl ',&
-    ' sound ',' satem ',' satob ',' airep ',&
+    ' sound ',' satem ',' satob ',' airep ',' tamdar ',&
     ' ssmt1 ',' ssmt2 ','  tovs ','  ssmi ',' airsret',&
     ' other '
 
       DO i = 15, 1, -1
-         WRITE (UNIT = iunit, FMT = '(F6.0,15(2X,F5.1))') &
+         WRITE (UNIT = iunit, FMT = '(F6.0,17(2X,F5.1))') &
                 err (i) % level / 100., &
                 err (i) % synop % rh, &
                 err (i) % ships % rh, &
@@ -2604,6 +3085,7 @@ SUBROUTINE READ_OBSERR_RH (iunit, filein, keyword, endword, fmt_err, err)
                 err (i) % satem % rh, &
                 err (i) % satob % rh, &
                 err (i) % airep % rh, &
+                err (i) % tamdar % rh, &
                 err (i) % ssmt1 % rh, &
                 err (i) % ssmt2 % rh, &
                 err (i) % tovs  % rh, &
@@ -2633,7 +3115,7 @@ SUBROUTINE READ_OBSERR_PRES (iunit, filein, keyword, endword, fmt_err, err)
    INTEGER             :: iunit   != 99
    CHARACTER (LEN=80)  :: filein  != 'obserr.txt'
    CHARACTER (LEN=80)  :: keyword != 'PRESSURE SENSOR ERRORS'
-   CHARACTER (LEN=80)  :: endword != '*.'
+   CHARACTER (LEN=80)  :: endword != 'dire SENSOR ERRORS'
    CHARACTER (LEN=80)  :: fmt_err != '(5(1X,F5.1))'
    TYPE (obs_type), DIMENSION (15) :: err
 
@@ -2678,7 +3160,7 @@ SUBROUTINE READ_OBSERR_PRES (iunit, filein, keyword, endword, fmt_err, err)
 
          !  Winds are given over 4 lines, any other data are given over 3 lines
 
-         IF (TRIM (obstype (line1)) .EQ. 'WIND SENSOR ERRORS') THEN
+         IF ((TRIM (obstype (line1)) .EQ. 'WIND SENSOR ERRORS') .OR. (TRIM (obstype (line1)) .EQ. 'DIR SENSOR ERRORS')) THEN
 
              wind = .TRUE.
 
@@ -2787,6 +3269,15 @@ SUBROUTINE READ_OBSERR_PRES (iunit, filein, keyword, endword, fmt_err, err)
                 READ (line2, fmt_err) (err (i) % airep % pres, i =  6, 10)
                 READ (line3, fmt_err) (err (i) % airep % pres, i = 11, 15)
 
+         CASE ('TAMDARS')  ! Tamdar
+
+                WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
+                       TRIM (sensor (line1)),','
+
+                READ (line1, fmt_err) (err (i) % tamdar % pres, i =  1,  5)
+                READ (line2, fmt_err) (err (i) % tamdar % pres, i =  6, 10)
+                READ (line3, fmt_err) (err (i) % tamdar % pres, i = 11, 15)
+
          CASE ('AIRSRET')  ! AIRS retrievals
 
                 WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
@@ -2865,12 +3356,12 @@ SUBROUTINE READ_OBSERR_PRES (iunit, filein, keyword, endword, fmt_err, err)
 
       WRITE (UNIT = iunit, FMT = '(1X,16A)') ' level',&
     ' synop ','  ship ','  buoy ',' metar ',' pilot ',' profl ',&
-    ' sound ',' satem ',' satob ',' airep ',&
+    ' sound ',' satem ',' satob ',' airep ',' tamdar ',&
     ' ssmt1 ',' ssmt2 ','  tovs ','  ssmi ', 'airsret', &
     ' other '
 
       DO i = 15, 1, -1
-         WRITE (UNIT = iunit, FMT = '(F6.0,15(2X,F5.1))') &
+         WRITE (UNIT = iunit, FMT = '(F6.0,17(2X,F5.1))') &
                 err (i) % level / 100., &
                 err (i) % synop % pres / 100., &
                 err (i) % ships % pres / 100., &
@@ -2882,6 +3373,7 @@ SUBROUTINE READ_OBSERR_PRES (iunit, filein, keyword, endword, fmt_err, err)
                 err (i) % satem % pres / 100., &
                 err (i) % satob % pres / 100., &
                 err (i) % airep % pres / 100., &
+                err (i) % tamdar % pres / 100., &
                 err (i) % ssmt1 % pres / 100., &
                 err (i) % ssmt2 % pres / 100., &
                 err (i) % tovs  % pres / 100., &

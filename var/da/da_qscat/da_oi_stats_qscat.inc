@@ -1,4 +1,4 @@
-subroutine da_oi_stats_qscat (stats_unit, iv)
+subroutine da_oi_stats_qscat (stats_unit, iv, ob)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -8,10 +8,12 @@ subroutine da_oi_stats_qscat (stats_unit, iv)
 
    integer,        intent (in) :: stats_unit    ! Output unit for stats.
    type (iv_type), intent (in) :: iv            ! OI
+   type(y_type),   intent (in) :: ob       ! Observation structure.
 
    type (stats_qscat_type) :: stats
    integer                 :: nu, nv
    integer                 :: n
+   real                    :: u_inv, v_inv, sp_inv, dir_inv
 
    if (trace_use_dull) call da_trace_entry("da_oi_stats_qscat")
 
@@ -27,9 +29,17 @@ subroutine da_oi_stats_qscat (stats_unit, iv)
 
    do n=1, iv%info(qscat)%nlocal
       if (iv%info(qscat)%proc_domain(1,n)) then
-         call da_stats_calculate(n, 0, iv%qscat(n)%u%qc, iv%qscat(n)%u%inv, nu, &
+         u_inv = iv%qscat(n)%u%inv
+         v_inv = iv%qscat(n)%v%inv
+         if(var_wind) then
+            sp_inv = iv%qscat(n)%u%inv
+            dir_inv = iv%qscat(n)%v%inv
+            call da_cal_sd (ob%qscat(n)%u, ob%qscat(n)%v, &
+                            u_inv, v_inv, sp_inv, dir_inv)
+         end if
+         call da_stats_calculate(n, 0, iv%qscat(n)%u%qc, u_inv, nu, &
             stats%minimum%u, stats%maximum%u, stats%average%u, stats%rms_err%u)
-         call da_stats_calculate(n, 0, iv%qscat(n)%v%qc, iv%qscat(n)%v%inv, nv, &
+         call da_stats_calculate(n, 0, iv%qscat(n)%v%qc, v_inv, nv, &
             stats%minimum%v, stats%maximum%v, stats%average%v, stats%rms_err%v)
       end if    ! end if (iv%info(qscat)%proc_domain(1,n))
    end do

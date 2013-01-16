@@ -4132,7 +4132,10 @@ END
 
       LOGICAL interp_mp
       interp_mp=grid%interp_mp .or. ngrid%interp_mp
-
+      if(.not.interp_mp) then
+         call wrf_error_fatal('Interp mp false')
+      endif
+      
       CALL wrf_get_dm_communicator ( local_comm )
       CALL wrf_get_myproc( myproc )
       CALL wrf_get_nproc( nproc )
@@ -4221,6 +4224,9 @@ END
       LOGICAL interp_mp
 #include "deref_kludge.h"
       interp_mp=grid%interp_mp .or. ngrid%interp_mp
+      if(.not.interp_mp) then
+         call wrf_error_fatal('Interp mp false')
+      endif
 
 !#define COPY_IN
 !#include <scalar_derefs.inc>
@@ -4309,6 +4315,9 @@ END
       INTEGER thisdomain_max_halo_width
       LOGICAL interp_mp
       interp_mp=grid%interp_mp .or. ngrid%interp_mp
+      if(.not.interp_mp) then
+         call wrf_error_fatal('Interp mp false')
+      endif
 
       CALL wrf_get_dm_communicator ( local_comm )
       CALL wrf_get_myproc( myproc )
@@ -4458,6 +4467,9 @@ integer myproc
 !#endif
 #include "deref_kludge.h"
       interp_mp=grid%interp_mp .or. ngrid%interp_mp
+      if(.not.interp_mp) then
+         call wrf_error_fatal('Interp mp false')
+      endif
 
 !#define COPY_IN
 !#include <scalar_derefs.inc>
@@ -4657,6 +4669,9 @@ integer myproc
 #include "deref_kludge.h"
 
       interp_mp=grid%interp_mp .or. ngrid%interp_mp
+      if(.not.interp_mp) then
+         call wrf_error_fatal('Interp mp false')
+      endif
 
 !#define COPY_IN
 !#include <scalar_derefs.inc>
@@ -4750,6 +4765,9 @@ endif
 !#include <scalar_derefs.inc>
 
       interp_mp=grid%interp_mp .or. ngrid%interp_mp
+      if(.not.interp_mp) then
+         call wrf_error_fatal('Interp mp false')
+      endif
       CALL wrf_get_dm_communicator ( local_comm )
       CALL wrf_get_myproc( myproc )
       CALL wrf_get_nproc( nproc )
@@ -4898,6 +4916,9 @@ endif
 !
 
       interp_mp=grid%interp_mp .or. ngrid%interp_mp
+      if(.not.interp_mp) then
+         call wrf_error_fatal('Interp mp false')
+      endif
       nest_influence = 0.5
 #define NEST_INFLUENCE(A,B) A = nest_influence*(B) + (1.0-nest_influence)*(A)
 

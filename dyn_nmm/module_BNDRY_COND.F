@@ -100,6 +100,8 @@
 #ifdef WRF_CHEM
     USE MODULE_INPUT_CHEM_DATA
 #endif
+          use module_dm, only: wrf_dm_maxval_integer
+
 !-----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -185,6 +187,7 @@
 !
       LOGICAL :: E_BDY,W_BDY,N_BDY,S_BDY
 !
+          INTEGER :: checkE, checkW, checkN, checkS, ijunk,jjunk
       CHARACTER(LEN=255) :: message
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -231,6 +234,32 @@
 !
       DT=DT0
 
+      checkE=0
+      checkW=0
+      checkN=0
+      checkS=0
+
+      ijunk=0
+      jjunk=0
+
+      if(e_bdy) checkE=1
+      if(s_bdy) checkS=1
+      if(n_bdy) checkN=1
+      if(w_bdy) checkW=1
+
+      call wrf_dm_maxval_integer(checkE,ijunk,jjunk)
+      call wrf_dm_maxval_integer(checkW,ijunk,jjunk)
+      call wrf_dm_maxval_integer(checkS,ijunk,jjunk)
+      call wrf_dm_maxval_integer(checkN,ijunk,jjunk)
+
+      if(checkE/=1) call wrf_message('no east boundary')
+      if(checkS/=1) call wrf_message('no south boundary')
+      if(checkW/=1) call wrf_message('no west boundary')
+      if(checkN/=1) call wrf_message('no north boundary')
+
+      if(checkE/=1 .or. checkS/=1 .or. checkW/=1 .or. checkN/=1) then
+         call wrf_error_fatal('Missing boundary.')
+      end if
 !
 !-----------------------------------------------------------------------
 !***  SOUTH AND NORTH BOUNDARIES
@@ -1587,6 +1616,8 @@
              ims,ime,jms,jme,kms,kme,                        &
              its,ite,jts,jte,kts,kte)
 
+          use module_dm, only: wrf_dm_maxval_integer
+
           implicit none
 
           logical, intent(in) :: tend
@@ -1625,6 +1656,7 @@
           INTEGER :: I_M,ILPAD1,IRPAD1,JBPAD1,JTPAD1
           REAL :: BCHR,CONVFAC,CWK,PLYR,RRI
           LOGICAL :: E_BDY,W_BDY,N_BDY,S_BDY
+          INTEGER :: checkE, checkW, checkN, checkS, ijunk,jjunk
           INTEGER :: i1,i2,j1,j2,j1b,j2b
 
           ! ------------------------------------------------------------
@@ -1656,6 +1688,34 @@
       MY_IE_GLB=ITE
       MY_JS_GLB=JTS
       MY_JE_GLB=JTE
+
+      checkE=0
+      checkW=0
+      checkN=0
+      checkS=0
+
+      ijunk=0
+      jjunk=0
+
+      if(e_bdy) checkE=1
+      if(s_bdy) checkS=1
+      if(n_bdy) checkN=1
+      if(w_bdy) checkW=1
+
+      call wrf_dm_maxval_integer(checkE,ijunk,jjunk)
+      call wrf_dm_maxval_integer(checkW,ijunk,jjunk)
+      call wrf_dm_maxval_integer(checkS,ijunk,jjunk)
+      call wrf_dm_maxval_integer(checkN,ijunk,jjunk)
+
+      if(checkE/=1) call wrf_message('no east boundary')
+      if(checkS/=1) call wrf_message('no south boundary')
+      if(checkW/=1) call wrf_message('no west boundary')
+      if(checkN/=1) call wrf_message('no north boundary')
+
+      if(checkE/=1 .or. checkS/=1 .or. checkW/=1 .or. checkN/=1) then
+         call wrf_error_fatal('Missing boundary.')
+      end if
+
 
           ! I loop ends for N/S bdy copying:
           i1=MAX(ITS-1,IDS)

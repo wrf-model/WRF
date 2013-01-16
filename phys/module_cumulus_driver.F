@@ -81,7 +81,7 @@ CONTAINS
    USE module_model_constants
    USE module_state_description, ONLY:     KFSCHEME,BMJSCHEME         &
                                           ,KFETASCHEME,GDSCHEME       &
-                                          ,G3SCHEME,GFSCHEME          &
+                                          ,G3SCHEME                   &
                                           ,P_QC,P_QI,Param_FIRST_SCALAR &
                                           ,CAMZMSCHEME, SASSCHEME     &
                                           ,OSASSCHEME                 &
@@ -104,7 +104,6 @@ CONTAINS
    USE module_domain    , ONLY: domain
    USE module_cu_kfeta  , ONLY : kf_eta_cps
    USE module_cu_gd     , ONLY : grelldrv
-   USE module_cu_gf     , ONLY : gfdrv
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
    USE module_cu_sas
    USE module_cu_osas   
@@ -597,7 +596,7 @@ CONTAINS
       !$OMP END PARALLEL DO
       endif
 
-      IF ( cu_physics == G3SCHEME .OR.  cu_physics == GFSCHEME .OR. cu_physics == KFETASCHEME ) THEN
+      IF ( cu_physics == G3SCHEME .OR. cu_physics == KFETASCHEME ) THEN
 #ifdef DM_PARALLEL
 #include "HALO_CUP_G3_IN.inc"
 #endif
@@ -852,67 +851,6 @@ CONTAINS
                ,RQICUTEN=RQICUTEN ,RQVFTEN=forceq               &
 #else
                ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              &
-               ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
-               ,rqvblten=rqvblten,rthblten=rthblten             &
-#endif
-               ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
-               ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
-               ,F_QI=f_qi,F_QS=f_qs                             &
-#if ( WRF_DFI_RADAR == 1 )
-                 ! Optional CAP suppress option
-              ,do_capsuppress=do_capsuppress                    &
-              ,cap_suppress_loc=cap_suppress_loc                &
-#endif                                 
-                                                                )
-     CASE (GFSCHEME)
-          CALL wrf_debug(100,'in grelldrv')
-#if ( WRF_DFI_RADAR == 1 )
-          if (do_capsuppress == 1) then
-            WRITE( wrf_err_message , * ) 'G3 do CAP suppress',its,jts,min( jte,jde-1 ),min( ite,ide-1 ),kte
-            CALL wrf_debug(200, wrf_err_message)
-            DO j = jts, min( jte,jde-1 )
-            DO i = its, min( ite,ide-1 )
-               cap_suppress_loc(i,j) = grid%dfi_tten_rad(i,kte,j)
-            ENDDO
-            ENDDO
-         endif
-#endif
-          CALL GFDRV(                                           &
-                DT=dt, ITIMESTEP=itimestep, DX=dx               &
-               ,U=u,V=v,T=t,W=w ,RHO=rho                        &
-               ,P=p,PI=pi,Q=qv_curr,RAINCV=raincv               &
-               ,DZ8W=dz8w ,P8W=p8w,XLV=xlv,CP=cp,G=g,R_V=r_v    &
-               ,APR_GR=apr_gr,APR_W=apr_w,APR_MC=apr_mc         &
-               ,APR_ST=apr_st,APR_AS=apr_as,PRATEC=tmppratec    &
-               ,APR_CAPMA=apr_capma,APR_CAPME=apr_capme         &
-               ,APR_CAPMI=apr_capmi,MASS_FLUX=mass_flux         &
-               ,HT=ht               &
-               ,xland=xland,gsw=gsw,edt_out=edt_out             &
-               ,GDC=gd_cloud,GDC2=gd_cloud2,kpbl=kpbl           &
-               ,k22_shallow=k22_shallow                         &
-               ,kbcon_shallow=kbcon_shallow                     &
-               ,ktop_shallow=ktop_shallow                       &
-               ,xmb_shallow=xmb_shallow                         &
-               ,cugd_tten=cugd_tten,cugd_qvten=cugd_qvten       &
-               ,cugd_ttens=cugd_ttens,cugd_qvtens=cugd_qvtens   &
-               ,cugd_qcten=cugd_qcten,cugd_avedx=cugd_avedx     &
-               ,imomentum=imomentum,ishallow_g3=ishallow        &
-               ,ichoice=clos_choice                             &
-               ,htop=htop,hbot=hbot                             &
-               ,CU_ACT_FLAG=CU_ACT_FLAG,warm_rain=warm_rain     &
-               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
-               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
-               ,IPS=ips,IPE=ipe,JPS=jps,JPE=jpe,KPS=kps,KPE=kpe &
-               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
-               ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
-              ! optionals
-#if (NMM_CORE == 1 )
-               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               &
-               ,RTHRATEN=RTHRATEN                               &
-               ,RQICUTEN=RQICUTEN ,RQVFTEN=forceq               &
-#else
-               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              &
-               ,RTHRATEN=RTHRATEN                               &
                ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
                ,rqvblten=rqvblten,rthblten=rthblten             &
 #endif

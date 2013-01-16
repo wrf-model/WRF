@@ -20,9 +20,6 @@ subroutine da_transform_xtoy_buoy (grid, iv, y)
    real, allocatable :: model_q(:,:)
    real, allocatable :: model_psfc(:)
 
-   real, allocatable :: ub(:,:)
-   real, allocatable :: vb(:,:)
-
    if (trace_use_dull) call da_trace_entry("da_transform_xtoy_buoy")
 
    if (sfc_assi_options == sfc_assi_options_1) then
@@ -31,10 +28,6 @@ subroutine da_transform_xtoy_buoy (grid, iv, y)
       allocate (model_t(1,iv%info(buoy)%n1:iv%info(buoy)%n2))
       allocate (model_q(1,iv%info(buoy)%n1:iv%info(buoy)%n2))
       allocate (model_psfc(iv%info(buoy)%n1:iv%info(buoy)%n2))
-
-      allocate (ub(1,iv%info(buoy)%n1:iv%info(buoy)%n2))
-      allocate (vb(1,iv%info(buoy)%n1:iv%info(buoy)%n2))
-
       ! [1.2] Interpolate horizontally:
 #ifdef A2C
       call da_interp_lin_3d (grid%xa%u, iv%info(buoy), model_u,'u')
@@ -48,16 +41,9 @@ subroutine da_transform_xtoy_buoy (grid, iv, y)
 
       call da_interp_lin_2d (grid%xa%psfc, iv%info(buoy), 1, model_psfc)
 
-      call da_interp_lin_3d (grid%xb%u, iv%info(buoy), ub)
-      call da_interp_lin_3d (grid%xb%v, iv%info(buoy), vb)
-
       do n=iv%info(buoy)%n1,iv%info(buoy)%n2
-         if(var_wind)then
-            call da_uv_wind_tgl(y%buoy(n)%u,y%buoy(n)%v,model_u(1,n),model_v(1,n),ub(1,n),vb(1,n))
-         else
-            y%buoy(n)%u = model_u(1,n)
-            y%buoy(n)%v = model_v(1,n)
-         end if
+         y%buoy(n)%u = model_u(1,n)
+         y%buoy(n)%v = model_v(1,n)
          y%buoy(n)%t = model_t(1,n)
          y%buoy(n)%q = model_q(1,n)
          y%buoy(n)%p = model_psfc(n)
@@ -67,9 +53,6 @@ subroutine da_transform_xtoy_buoy (grid, iv, y)
       deallocate (model_t)
       deallocate (model_q)
       deallocate (model_psfc)
-      deallocate (ub)
-      deallocate (vb)
-
    else if (sfc_assi_options == sfc_assi_options_2) then
       ! [2.0] Surface assmiilation approach 2
       call da_transform_xtopsfc(grid,iv,buoy,iv%buoy(:),y%buoy(:))

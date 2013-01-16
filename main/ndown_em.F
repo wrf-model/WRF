@@ -69,7 +69,7 @@ PROGRAM ndown_em
               nims, nime, njms, njme, nkms, nkme,    &
               nips, nipe, njps, njpe, nkps, nkpe
    INTEGER :: spec_bdy_width
-   INTEGER :: i , j , k , nvchem, nvmoist, nvscalar
+   INTEGER :: i , j , k , nvchem, nvmoist
    INTEGER :: time_loop_max , time_loop
    INTEGER :: total_time_sec , file_counter
    INTEGER :: julyr , julday , iswater , map_proj
@@ -82,11 +82,9 @@ PROGRAM ndown_em
    REAL , DIMENSION(:,:,:) , ALLOCATABLE :: mbdy2dtemp1
    REAL , DIMENSION(:,:,:) , ALLOCATABLE :: ubdy3dtemp2 , vbdy3dtemp2 , tbdy3dtemp2 , pbdy3dtemp2 , qbdy3dtemp2
    REAL , DIMENSION(:,:,:) , ALLOCATABLE :: mbdy2dtemp2
-   REAL , DIMENSION(:,:,:) , ALLOCATABLE :: cbdy3dtemp1 , cbdy3dtemp2
-   REAL , DIMENSION(:,:,:) , ALLOCATABLE :: sbdy3dtemp1 , sbdy3dtemp2
+   REAL , DIMENSION(:,:,:) , ALLOCATABLE :: cbdy3dtemp1 , cbdy3dtemp2 
    REAL , DIMENSION(:,:,:,:) , ALLOCATABLE :: cbdy3dtemp0
    REAL , DIMENSION(:,:,:,:) , ALLOCATABLE :: qbdy3dtemp1_coupled, qbdy3dtemp2_coupled
-   REAL , DIMENSION(:,:,:,:) , ALLOCATABLE :: sbdy3dtemp0
 
    CHARACTER(LEN=19) :: start_date_char , current_date_char , end_date_char
    CHARACTER(LEN=19) :: stopTimeStr
@@ -534,10 +532,6 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
          ALLOCATE ( cbdy3dtemp0(ims:ime,kms:kme,jms:jme,1:num_chem) )
          ALLOCATE ( cbdy3dtemp1(ims:ime,kms:kme,jms:jme) )
          ALLOCATE ( cbdy3dtemp2(ims:ime,kms:kme,jms:jme) )
-         ALLOCATE ( sbdy3dtemp0(ims:ime,kms:kme,jms:jme,1:num_scalar) )
-         ALLOCATE ( sbdy3dtemp1(ims:ime,kms:kme,jms:jme) )
-         ALLOCATE ( sbdy3dtemp2(ims:ime,kms:kme,jms:jme) )
-
 
       END IF
 
@@ -844,20 +838,6 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
          END DO
-
-         DO nvscalar=PARAM_FIRST_SCALAR, num_scalar
-           sbdy3dtemp1 = nested_grid%scalar(:,:,:,nvscalar)
-           CALL stuff_bdy     ( sbdy3dtemp1 , nested_grid%scalar_bxs(jms:jme,kms:kme,1:spec_bdy_width,nvscalar), &
-                                              nested_grid%scalar_bxe(jms:jme,kms:kme,1:spec_bdy_width,nvscalar), &
-                                              nested_grid%scalar_bys(ims:ime,kms:kme,1:spec_bdy_width,nvscalar), &
-                                              nested_grid%scalar_bye(ims:ime,kms:kme,1:spec_bdy_width,nvscalar), &
-                                                                     'T' ,                 spec_bdy_width      , &
-                                                                             ids , ide , jds , jde , kds , kde , &
-                                                                             ims , ime , jms , jme , kms , kme , &
-                                                                             ips , ipe , jps , jpe , kps , kpe )
-           sbdy3dtemp0(:,:,:,nvscalar) = sbdy3dtemp1
-         END DO
-
          CALL stuff_bdy     ( mbdy2dtemp1 , nested_grid%mu_bxs, nested_grid%mu_bxe,                      &
                                             nested_grid%mu_bys, nested_grid%mu_bye,                      &
                                                                      'M' ,               spec_bdy_width      , &
@@ -965,23 +945,6 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
          END DO
-
-         DO nvchem=PARAM_FIRST_SCALAR, num_scalar
-           sbdy3dtemp1=sbdy3dtemp0(:,:,:,nvscalar)
-           sbdy3dtemp2=nested_grid%scalar(:,:,:,nvscalar)
-           CALL stuff_bdytend ( sbdy3dtemp2 , sbdy3dtemp1 , new_bdy_frq ,  &
-                                            nested_grid%scalar_btxs(jms:jme,kms:kme,1:spec_bdy_width,nvscalar), &
-                                            nested_grid%scalar_btxe(jms:jme,kms:kme,1:spec_bdy_width,nvscalar), &
-                                            nested_grid%scalar_btys(ims:ime,kms:kme,1:spec_bdy_width,nvscalar), &
-                                            nested_grid%scalar_btye(ims:ime,kms:kme,1:spec_bdy_width,nvscalar), &
-                                                                 'T' , &
-                                                                                spec_bdy_width,       &
-                                                                  ids , ide , jds , jde , kds , kde , &
-                                                                  ims , ime , jms , jme , kms , kme , &
-                                                                  ips , ipe , jps , jpe , kps , kpe )
-           sbdy3dtemp0(:,:,:,nvscalar)=sbdy3dtemp2
-         END DO
-
          CALL stuff_bdytend ( mbdy2dtemp2 , mbdy2dtemp1 , new_bdy_frq ,                               &
                                             nested_grid%mu_btxs, nested_grid%mu_btxe   ,        &
                                             nested_grid%mu_btys, nested_grid%mu_btye   ,        &
@@ -1122,21 +1085,6 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
                                                                            ims , ime , jms , jme , kms , kme , &
                                                                            ips , ipe , jps , jpe , kps , kpe )
          END DO
-
-         DO nvscalar=PARAM_FIRST_SCALAR, num_scalar
-           sbdy3dtemp1=sbdy3dtemp0(:,:,:,nvscalar)
-           CALL stuff_bdy     ( sbdy3dtemp1 , &
-                              nested_grid%scalar_bxs(jms:jme,kms:kme,1:spec_bdy_width,nvscalar), &
-                              nested_grid%scalar_bxe(jms:jme,kms:kme,1:spec_bdy_width,nvscalar), &
-                              nested_grid%scalar_bys(ims:ime,kms:kme,1:spec_bdy_width,nvscalar), &
-                              nested_grid%scalar_bye(ims:ime,kms:kme,1:spec_bdy_width,nvscalar), &
-                                                      'T' ,                  spec_bdy_width,   &
-                                                                           ids , ide , jds , jde , kds , kde , &
-                                                                           ims , ime , jms , jme , kms , kme , &
-                                                                           ips , ipe , jps , jpe , kps , kpe )
-         END DO 
-
-
 #ifdef WRF_CHEM
          do nvchem=1,num_chem
          cbdy3dtemp1(ips:ipe,kps:kpe,jps:jpe)=cbdy3dtemp0(ips:ipe,kps:kpe,jps:jpe,nvchem) 
@@ -1262,23 +1210,6 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
                                                                   ims , ime , jms , jme , kms , kme , &
                                                                   ips , ipe , jps , jpe , kps , kpe )
          END DO
-
-         DO nvchem=PARAM_FIRST_SCALAR, num_scalar
-           sbdy3dtemp1=sbdy3dtemp0(:,:,:,nvscalar)
-           sbdy3dtemp2=nested_grid%scalar(:,:,:,nvscalar)
-           CALL stuff_bdytend ( sbdy3dtemp2 , sbdy3dtemp1 , new_bdy_frq ,  &
-                              nested_grid%scalar_btxs(jms:jme,kms:kme,1:spec_bdy_width,nvscalar), &
-                              nested_grid%scalar_btxe(jms:jme,kms:kme,1:spec_bdy_width,nvscalar), &
-                              nested_grid%scalar_btys(ims:ime,kms:kme,1:spec_bdy_width,nvscalar), &
-                              nested_grid%scalar_btye(ims:ime,kms:kme,1:spec_bdy_width,nvscalar), &
-                                                                  'T' , &
-                                                                                spec_bdy_width ,  &
-                                                                  ids , ide , jds , jde , kds , kde , &
-                                                                  ims , ime , jms , jme , kms , kme , &
-                                                                  ips , ipe , jps , jpe , kps , kpe )
-           sbdy3dtemp0(:,:,:,nvscalar)=cbdy3dtemp2
-         END DO  
-
          CALL stuff_bdytend ( mbdy2dtemp2 , mbdy2dtemp1 , new_bdy_frq , &
                               nested_grid%mu_btxs  , nested_grid%mu_btxe , &
                               nested_grid%mu_btys  , nested_grid%mu_btye , &

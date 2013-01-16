@@ -1,4 +1,4 @@
-subroutine da_oi_stats_mtgirs (stats_unit, iv, ob)
+subroutine da_oi_stats_mtgirs (stats_unit, iv)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -8,12 +8,10 @@ subroutine da_oi_stats_mtgirs (stats_unit, iv, ob)
 
    integer,        intent (in)      :: stats_unit    ! Output unit for stats.
    type (iv_type), intent (in)      :: iv            ! OI
-   type(y_type),   intent (in) :: ob       ! Observation structure.
 
-   type (stats_mtgirs_type)         :: stats
+   type (stats_mtgirs_type)          :: stats
    integer                          :: nu, nv, nt, nq
    integer                          :: n, k
-   real                             :: u_inv, v_inv, sp_inv, dir_inv
 
    if (trace_use_dull) call da_trace_entry("da_oi_stats_mtgirs")
 
@@ -37,19 +35,11 @@ subroutine da_oi_stats_mtgirs (stats_unit, iv, ob)
       do k=1, iv%info(mtgirs)%levels(n)
 !         if (iv%info(mtgirs)%proc_domain(k,n)) then
          if (iv%info(mtgirs)%proc_domain(1,n)) then
-            u_inv = iv%mtgirs(n)%u(k)%inv
-            v_inv = iv%mtgirs(n)%v(k)%inv
-            if(var_wind) then
-               sp_inv = iv%mtgirs(n)%u(k)%inv
-               dir_inv = iv%mtgirs(n)%v(k)%inv
-               call da_cal_sd (ob%mtgirs(n)%u(k), ob%mtgirs(n)%v(k), &
-                               u_inv, v_inv, sp_inv, dir_inv)
-            end if
             call da_stats_calculate(iv%info(mtgirs)%obs_global_index(n), &
-               k, iv%mtgirs(n)%u(k)%qc, u_inv, nu, &
+               k, iv%mtgirs(n)%u(k)%qc, iv%mtgirs(n)%u(k)%inv, nu, &
                stats%minimum%u, stats%maximum%u, stats%average%u, stats%rms_err%u)
             call da_stats_calculate(iv%info(mtgirs)%obs_global_index(n), &
-               k, iv%mtgirs(n)%v(k)%qc, v_inv, nv, &
+               k, iv%mtgirs(n)%v(k)%qc, iv%mtgirs(n)%v(k)%inv, nv, &
                stats%minimum%v, stats%maximum%v, stats%average%v, stats%rms_err%v)
             call da_stats_calculate(iv%info(mtgirs)%obs_global_index(n), &
                k, iv%mtgirs(n)%t(k)%qc, iv%mtgirs(n)%t(k)%inv, nt, &

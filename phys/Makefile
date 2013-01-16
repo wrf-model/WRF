@@ -58,7 +58,6 @@ MODULES = \
 	module_cu_kfeta.o \
 	module_cu_tiedtke.o\
 	module_cu_gd.o \
-	module_cu_gf.o \
 	module_cu_nsas.o \
 	module_cu_sas.o \
 	module_cu_osas.o \

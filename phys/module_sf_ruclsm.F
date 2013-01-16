@@ -4626,14 +4626,8 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
          VAL=(1.-EXP(-KDT*DELT1))
          DDT = FD*VAL
          PX= - TOTLIQ * DELT
-         IF(PX.LE.0.0) THEN
-             PX = 0.0
-             INFMAX1 = 0.0
-         ELSEIF (ABS(DDT)<1e-6) THEN
-             INFMAX1 = 0.0
-         ELSE
-             INFMAX1 = (PX*(DDT/(PX+DDT)))/DELT
-         ENDIF
+         IF(PX.LT.0.0) PX = 0.0
+         INFMAX1 = (PX*(DDT/(PX+DDT)))/DELT
 !         print *,'INFMAX1=,ksat',infmax1,ksat,f1,f2,kdt,val,ddt,px
 ! -----------     FROZEN GROUND VERSION    --------------------------
 !    REDUCTION OF INFILTRATION BASED ON FROZEN GROUND PARAMETERS

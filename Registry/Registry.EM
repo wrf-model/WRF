@@ -4,7 +4,6 @@
 include registry.dimspec
 include Registry.EM_COMMON
 include registry.io_boilerplate
-
 include registry.fire
 include registry.avgflx
 include registry.stoch

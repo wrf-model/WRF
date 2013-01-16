@@ -1,4 +1,4 @@
-subroutine da_transform_xtoy_profiler_adj(grid, iv, jo_grad_y, jo_grad_x)
+subroutine da_transform_xtoy_profiler_adj(iv, jo_grad_y, jo_grad_x)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -7,39 +7,24 @@ subroutine da_transform_xtoy_profiler_adj(grid, iv, jo_grad_y, jo_grad_x)
    !-----------------------------------------------------------------------
 
    implicit none
-   type(domain),  intent(in)    :: grid
+
    type (iv_type), intent(in)    :: iv          ! obs. inc vector (o-b).
    type (y_type) , intent(in)    :: jo_grad_y   ! grad_y(jo)
    type (x_type) , intent(inout) :: jo_grad_x   ! grad_x(jo)
 
-   integer :: n, k  ! Loop counter.
+   integer :: n  ! Loop counter.
 
    real, allocatable :: model_u(:,:)
    real, allocatable :: model_v(:,:)
-   real, allocatable :: ub(:,:)
-   real, allocatable :: vb(:,:)
+
    if (trace_use_dull) call da_trace_entry("da_transform_xtoy_profiler_adj")
 
    allocate (model_u(iv%info(profiler)%max_lev,iv%info(profiler)%n1:iv%info(profiler)%n2))
    allocate (model_v(iv%info(profiler)%max_lev,iv%info(profiler)%n1:iv%info(profiler)%n2))
-   allocate (ub(iv%info(profiler)%max_lev,iv%info(profiler)%n1:iv%info(profiler)%n2))
-   allocate (vb(iv%info(profiler)%max_lev,iv%info(profiler)%n1:iv%info(profiler)%n2))
-
-   call da_interp_lin_3d (grid%xb%u, iv%info(profiler), ub)
-   call da_interp_lin_3d (grid%xb%v, iv%info(profiler), vb)
 
    do n=iv%info(profiler)%n1,iv%info(profiler)%n2
-       do k = 1, iv%info(profiler)%levels(n)
-
-         if(.not. var_wind) then
-             model_u(k,n) = jo_grad_y%profiler(n)%u(k)
-             model_v(k,n) = jo_grad_y%profiler(n)%v(k)
-           else
-             call da_uv_wind_adj(jo_grad_y%profiler(n)%u(k), &
-                                    jo_grad_y%profiler(n)%v(k), model_u(k,n), model_v(k,n), ub(k,n), vb(k,n))
-          end if
-
-      end do
+      model_u(1:iv%info(profiler)%levels(n),n) = jo_grad_y%profiler(n)%u(:)
+      model_v(1:iv%info(profiler)%levels(n),n) = jo_grad_y%profiler(n)%v(:)
    end do
 
 #ifdef A2C
@@ -52,8 +37,7 @@ subroutine da_transform_xtoy_profiler_adj(grid, iv, jo_grad_y, jo_grad_x)
 
    deallocate(model_u)
    deallocate(model_v)
-   deallocate (ub)
-   deallocate (vb)
+
    if (trace_use_dull) call da_trace_exit("da_transform_xtoy_profiler_adj")
 
 end subroutine da_transform_xtoy_profiler_adj

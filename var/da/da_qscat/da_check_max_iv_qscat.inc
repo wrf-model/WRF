@@ -13,7 +13,7 @@ subroutine da_check_max_iv_qscat(iv, it, num_qcstat_conv)
    integer,       intent(in)    :: it
    integer,       intent(inout) :: num_qcstat_conv(:,:,:,:)
 
-   logical :: failed,failed1,failed2
+   logical :: failed
    integer :: n
    
    if (trace_use_dull) call da_trace_entry("da_check_max_iv_qscat")
@@ -23,120 +23,32 @@ subroutine da_check_max_iv_qscat(iv, it, num_qcstat_conv)
    !---------------------------------------------------------------------------
 
    do n=iv%info(qscat)%n1,iv%info(qscat)%n2
-      if(standard)then
-         if(var_wind)then
-            failed=.false.
-            if( iv%qscat(n)%u%qc >= obs_qc_pointer ) then
-                call da_max_error_qc (it,iv%info(qscat), n, iv%qscat(n)%u, max_error_sp,failed)
-                if( iv%info(qscat)%proc_domain(1,n) ) then
-                    num_qcstat_conv(1,qscat,1,1) = num_qcstat_conv(1,qscat,1,1) + 1
-                    if(failed) then
-                       num_qcstat_conv(2,qscat,1,1) = num_qcstat_conv(2,qscat,1,1) + 1
-                       write(qcstat_conv_unit,'(2x,a10,2x,a4,2f12.2,a12)')&
-                       'qscat',ob_vars(1),iv%info(qscat)%lat(1,n),iv%info(qscat)%lon(1,n),'1013.25'
-                    end if
-                end if
-            end if
-
-            failed=.false.
-            if( iv%qscat(n)%v%qc >= obs_qc_pointer ) then
-                call da_max_error_qc (it,iv%info(qscat), n, iv%qscat(n)%v, max_error_dir,failed)
-                if( iv%info(qscat)%proc_domain(1,n) ) then
-                    num_qcstat_conv(1,qscat,2,1) = num_qcstat_conv(1,qscat,2,1) + 1
-                    if(failed)then
-                       num_qcstat_conv(2,qscat,2,1) = num_qcstat_conv(2,qscat,2,1) + 1
-                       write(qcstat_conv_unit,'(2x,a10,2x,a4,2f12.2,a12)')&
-                             'qscat',ob_vars(2),iv%info(qscat)%lat(1,n),iv%info(qscat)%lon(1,n),'1013.25'
-                    end if
-                end if
-            end if
-
-         else
-            failed=.false.
-            if( iv%qscat(n)%u%qc >= obs_qc_pointer ) then
-                call da_max_error_qc (it,iv%info(qscat), n, iv%qscat(n)%u, max_error_uv,failed)
-                if( iv%info(qscat)%proc_domain(1,n) ) then
-                    num_qcstat_conv(1,qscat,1,1) = num_qcstat_conv(1,qscat,1,1) + 1
-                    if(failed) then
-                       num_qcstat_conv(2,qscat,1,1) = num_qcstat_conv(2,qscat,1,1) + 1
-                       write(qcstat_conv_unit,'(2x,a10,2x,a4,2f12.2,a12)')&
-                             'qscat',ob_vars(1),iv%info(qscat)%lat(1,n),iv%info(qscat)%lon(1,n),'1013.25'
-                    end if
-                end if
-            end if
-            failed=.false.
-            if( iv%qscat(n)%v%qc >= obs_qc_pointer ) then
-                call da_max_error_qc (it,iv%info(qscat), n, iv%qscat(n)%v, max_error_uv,failed)
-                if( iv%info(qscat)%proc_domain(1,n) ) then
-                    num_qcstat_conv(1,qscat,2,1) = num_qcstat_conv(1,qscat,2,1) + 1
-                    if(failed)then
-                       num_qcstat_conv(2,qscat,2,1) = num_qcstat_conv(2,qscat,2,1) + 1
-                       write(qcstat_conv_unit,'(2x,a10,2x,a4,2f12.2,a12)')&
-                             'qscat',ob_vars(2),iv%info(qscat)%lat(1,n),iv%info(qscat)%lon(1,n),'1013.25'
-                    end if
-                end if
-             end if
-          end if
-
-          if(var_wind)then
-             if(iv%qscat(n)%u%qc == fails_error_max .or. abs(iv%qscat(n)%u%inv) >= max_omb_sp) then
-                iv%qscat(n)%u%qc = fails_error_max
-                iv%qscat(n)%u%inv = 0.0
-             endif
-             if(iv%qscat(n)%v%qc == fails_error_max .or. abs(iv%qscat(n)%v%inv) >= max_omb_dir) then
-                iv%qscat(n)%v%qc = fails_error_max
-                iv%qscat(n)%v%inv = 0.0
-             endif
-          endif
-
-       else
-
-          failed1=.false.
-          failed2=.false.
-
-          if( iv%qscat(n)%v%qc >= obs_qc_pointer .or. iv%qscat(n)%u%qc >= obs_qc_pointer )  then
-              if(.not. var_wind)then
-                 call da_max_error_qc (it,iv%info(qscat), n, iv%qscat(n)%u, max_error_uv,failed1)
-                 call da_max_error_qc (it,iv%info(qscat), n, iv%qscat(n)%v, max_error_uv,failed2)
-              else
-                 call da_max_error_qc (it,iv%info(qscat), n, iv%qscat(n)%u, max_error_sp,failed1)
-                 call da_max_error_qc (it,iv%info(qscat), n, iv%qscat(n)%v, max_error_dir,failed2)
-              endif
-
-              if( iv%info(qscat)%proc_domain(1,n) ) then
-                  num_qcstat_conv(1,qscat,1,1) = num_qcstat_conv(1,qscat,1,1) + 1
-                  num_qcstat_conv(1,qscat,2,1) = num_qcstat_conv(1,qscat,2,1) + 1
- 
-                  if(failed1 .or. failed2) then
-                     num_qcstat_conv(2,qscat,1,1) = num_qcstat_conv(2,qscat,1,1) + 1
-                     write(qcstat_conv_unit,'(2x,a10,2x,a4,2f12.2,a12)')&
-                           'qscat',ob_vars(1),iv%info(qscat)%lat(1,n),iv%info(qscat)%lon(1,n),'1013.25'
-                     num_qcstat_conv(2,qscat,2,1) = num_qcstat_conv(2,qscat,2,1) + 1
-                     write(qcstat_conv_unit,'(2x,a10,2x,a4,2f12.2,a12)')&
-                           'qscat',ob_vars(2),iv%info(qscat)%lat(1,n),iv%info(qscat)%lon(1,n),'1013.25'
-                  end if
-              end if
-          end if
-
-	  if(.not. var_wind)then
-             if(iv%qscat(n)%u%qc == fails_error_max .or. iv%qscat(n)%v%qc == fails_error_max ) then
-                iv%qscat(n)%u%qc = fails_error_max
-                iv%qscat(n)%v%qc = fails_error_max
-                iv%qscat(n)%u%inv = 0.0
-                iv%qscat(n)%v%inv = 0.0
-              endif
-          else
-             if(iv%qscat(n)%u%qc == fails_error_max .or. iv%qscat(n)%v%qc == fails_error_max .or. &
-                abs(iv%qscat(n)%v%inv) >= max_omb_dir*1.2 .or. abs(iv%qscat(n)%u%inv) >= max_omb_sp )then
-                iv%qscat(n)%u%qc = fails_error_max
-                iv%qscat(n)%v%qc = fails_error_max
-                iv%qscat(n)%u%inv = 0.0
-                iv%qscat(n)%v%inv = 0.0
-             endif
-         endif
-      endif
-
-    end do
+      failed=.false.
+      if( iv%qscat(n)%u%qc >= obs_qc_pointer )  then
+      call da_max_error_qc(it, iv%info(qscat), n, iv%qscat(n)%u, max_error_uv, failed)
+      if( iv%info(qscat)%proc_domain(1,n) ) then
+                num_qcstat_conv(1,qscat,1,1) = num_qcstat_conv(1,qscat,1,1) + 1
+      if(failed)then
+      num_qcstat_conv(2,qscat,1,1) = num_qcstat_conv(2,qscat,1,1) + 1
+        write(qcstat_conv_unit,'(2x,a10,2x,a4,2f12.2,a12)')&
+        'qscat',ob_vars(1),iv%info(qscat)%lat(1,n),iv%info(qscat)%lon(1,n),'1013.25'               
+      end if
+      end if
+      end if
+             
+      failed=.false.
+      if( iv%qscat(n)%v%qc >= obs_qc_pointer )  then
+      call da_max_error_qc(it, iv%info(qscat), n, iv%qscat(n)%v, max_error_uv, failed)
+      if( iv%info(qscat)%proc_domain(1,n) ) then
+                num_qcstat_conv(1,qscat,2,1) = num_qcstat_conv(1,qscat,2,1) + 1
+      if(failed)then
+       num_qcstat_conv(2,qscat,2,1) = num_qcstat_conv(2,qscat,2,1) + 1
+        write(qcstat_conv_unit,'(2x,a10,2x,a4,2f12.2,a12)')&
+        'qscat',ob_vars(2),iv%info(qscat)%lat(1,n),iv%info(qscat)%lon(1,n),'1013.25'               
+      end if
+      end if
+      end if
+   end do
 
    if (trace_use_dull) call da_trace_exit("da_check_max_iv_qscat")
 

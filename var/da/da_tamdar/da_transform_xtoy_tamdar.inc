@@ -15,10 +15,7 @@ subroutine da_transform_xtoy_tamdar (grid, iv, y)
    real, allocatable :: t(:,:)
    real, allocatable :: q(:,:)
 
-   real, allocatable :: ub(:,:)
-   real, allocatable :: vb(:,:)
-
-   integer :: n, k
+   integer :: n
 
    if (trace_use_dull) call da_trace_entry("da_transform_xtoy_tamdar")
 
@@ -26,9 +23,6 @@ subroutine da_transform_xtoy_tamdar (grid, iv, y)
    allocate (v(iv%info(tamdar)%max_lev,iv%info(tamdar)%n1:iv%info(tamdar)%n2))
    allocate (t(iv%info(tamdar)%max_lev,iv%info(tamdar)%n1:iv%info(tamdar)%n2))
    allocate (q(iv%info(tamdar)%max_lev,iv%info(tamdar)%n1:iv%info(tamdar)%n2))
-
-   allocate (ub(iv%info(tamdar)%max_lev,iv%info(tamdar)%n1:iv%info(tamdar)%n2))
-   allocate (vb(iv%info(tamdar)%max_lev,iv%info(tamdar)%n1:iv%info(tamdar)%n2))
 
 #ifdef A2C  
    call da_interp_lin_3d (grid%xa%u, iv%info(tamdar), u, 'u')
@@ -40,32 +34,17 @@ subroutine da_transform_xtoy_tamdar (grid, iv, y)
    call da_interp_lin_3d (grid%xa%t, iv%info(tamdar), t)
    call da_interp_lin_3d (grid%xa%q, iv%info(tamdar), q)
 
-   call da_interp_lin_3d (grid%xb%u, iv%info(tamdar), ub)
-   call da_interp_lin_3d (grid%xb%v, iv%info(tamdar), vb)
-
    do n=iv%info(tamdar)%n1,iv%info(tamdar)%n2
-
+      y%tamdar(n)%u(:) = u(1:size(y%tamdar(n)%u),n)
+      y%tamdar(n)%v(:) = v(1:size(y%tamdar(n)%v),n)
       y%tamdar(n)%t(:) = t(1:size(y%tamdar(n)%t),n)
       y%tamdar(n)%q(:) = q(1:size(y%tamdar(n)%q),n)
-
-      do k = 1, iv%info(tamdar)%levels(n)
-
-         if(.not. var_wind) then
-            y%tamdar(n)%u(k) = u(k,n)
-            y%tamdar(n)%v(k) = v(k,n)
-         else
-            call da_uv_wind_tgl(y%tamdar(n)%u(k),y%tamdar(n)%v(k),u(k,n),v(k,n),ub(k,n),vb(k,n))
-         end if
-
-      end do
    end do
 
    deallocate (u)
    deallocate (v)
    deallocate (t)
    deallocate (q)
-   deallocate (ub)
-   deallocate (vb)
 
    if (trace_use_dull) call da_trace_exit("da_transform_xtoy_tamdar")
 

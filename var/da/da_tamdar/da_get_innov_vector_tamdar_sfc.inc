@@ -23,8 +23,6 @@ subroutine da_get_innov_vector_tamdar_sfc( it, num_qcstat_conv, grid, ob, iv)
    real, allocatable :: model_q(:,:)  ! Model value q at oblocation.
    real, allocatable :: model_hsm(:,:)
 
-   real  :: speed, direction
-
    real    :: v_h(kms:kme)      ! Model value h at ob hor. location.
    real    :: v_p(kms:kme)      ! Model value p at ob hor. location.
 
@@ -101,9 +99,7 @@ subroutine da_get_innov_vector_tamdar_sfc( it, num_qcstat_conv, grid, ob, iv)
             end if
          end if
       end do
-
       call da_convert_zk (iv%info(tamdar_sfc))
-
       if (.not.anal_type_verify ) then
          do n=iv%info(tamdar_sfc)%n1,iv%info(tamdar_sfc)%n2
             if (iv%info(tamdar_sfc)%zk(1,n) < 0.0) then
@@ -148,6 +144,7 @@ subroutine da_get_innov_vector_tamdar_sfc( it, num_qcstat_conv, grid, ob, iv)
          iv%tamdar_sfc(n)%q%inv = ob%tamdar_sfc(n)%q
          iv%tamdar_sfc(n)%u%inv = ob%tamdar_sfc(n)%u
          iv%tamdar_sfc(n)%v%inv = ob%tamdar_sfc(n)%v
+
          if (iv%tamdar_sfc(n)%p%qc >= 0) then
             ! model surface p, t, q, h at observed site:
 
@@ -179,36 +176,17 @@ subroutine da_get_innov_vector_tamdar_sfc( it, num_qcstat_conv, grid, ob, iv)
       ! [3.0] Fast interpolation:
       !-----------------------------------------------------------------------
 
-       if(.not. var_wind)then
-          if (ob % tamdar_sfc(n) % u > missing_r .AND. iv % tamdar_sfc(n) % u % qc >= obs_qc_pointer) then
-              iv % tamdar_sfc(n) % u % inv = iv%tamdar_sfc(n)%u%inv - model_u(1,n)
-          else
-              iv % tamdar_sfc(n) % u % inv = 0.0
-          end if
+      if (ob % tamdar_sfc(n) % u > missing_r .AND. iv % tamdar_sfc(n) % u % qc >= obs_qc_pointer) then
+         iv % tamdar_sfc(n) % u % inv = iv%tamdar_sfc(n)%u%inv - model_u(1,n)
+      else
+         iv % tamdar_sfc(n) % u % inv = 0.0
+      end if
 
-          if (ob % tamdar_sfc(n) % v > missing_r .AND. iv % tamdar_sfc(n) % v % qc >= obs_qc_pointer) then
-              iv % tamdar_sfc(n) % v % inv = iv%tamdar_sfc(n)%v%inv - model_v(1,n)
-          else
-              iv % tamdar_sfc(n) % v % inv = 0.0
-          end if
-       else
-         call da_ffdduv2 (speed,direction,model_u(1,n), model_v(1,n), iv%info(tamdar_sfc)%lon(1,n), convert_uv2fd)
-
-         if (ob%tamdar_sfc(n)%u > missing_r .AND. iv%tamdar_sfc(n)%u%qc >= obs_qc_pointer) then
-             iv%tamdar_sfc(n)%u%inv = iv%tamdar_sfc(n)%u%inv - speed
-         else
-             iv % tamdar_sfc(n) % u % inv = 0.0
-         end if
-
-         if (ob%tamdar_sfc(n)%v > missing_r .AND. iv%tamdar_sfc(n)%v%qc >= obs_qc_pointer) then
-             iv%tamdar_sfc(n)%v%inv = iv%tamdar_sfc(n)%v%inv - direction
-             if (iv%tamdar_sfc(n)%v%inv > 180.0 ) iv%tamdar_sfc(n)%v%inv = iv%tamdar_sfc(n)%v%inv - 360.0
-             if (iv%tamdar_sfc(n)%v%inv < -180.0 ) iv%tamdar_sfc(n)%v%inv = iv%tamdar_sfc(n)%v%inv + 360.0
-         else
-             iv % tamdar_sfc(n) % v % inv = 0.0
-         end if
-       end if
-
+      if (ob % tamdar_sfc(n) % v > missing_r .AND. iv % tamdar_sfc(n) % v % qc >= obs_qc_pointer) then
+         iv % tamdar_sfc(n) % v % inv = iv%tamdar_sfc(n)%v%inv - model_v(1,n)
+      else
+         iv % tamdar_sfc(n) % v % inv = 0.0
+      end if
 
       if (ob % tamdar_sfc(n) % p > 0.0 .AND. iv % tamdar_sfc(n) % p % qc >= obs_qc_pointer) then
          iv % tamdar_sfc(n) % p % inv = iv%tamdar_sfc(n)%p%inv - model_p(1,n)

@@ -2640,7 +2640,7 @@ integer myproc
                       its, ite, jts, jte, kts, kte                )
 
 #if ( EM_CORE == 1 )
-     CASE (G3SCHEME,GFSCHEME)
+     CASE (G3SCHEME)
           CALL g3init(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,        &
                       MASS_FLUX,cp,restart,                       &
                       P_QC,P_QI,PARAM_FIRST_SCALAR,               &

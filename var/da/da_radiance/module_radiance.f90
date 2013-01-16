@@ -87,24 +87,21 @@ module module_radiance
         & 'mi      ', 'msumr   ', 'tansofts', 'iir     ', 'mwr     '/)
 
 ! n=noaa; f=dmsp; g=goes; c=npoess/npp; eos-1/2=aqua/terra;
-   character(len=8), parameter :: crtm_platform_name(1:23) = &
+   character(len=8), parameter :: crtm_platform_name(1:20) = &
        (/ 'n       ', 'f       ', 'meteosat', 'g       ', 'gms     ', &
           'fy2     ', 'trmm    ', 'ers     ', 'eos     ', 'metop   ', &
           'envisat ', 'msg     ', 'fy1     ', 'adeos   ', 'mtsat   ', &
-          'coriolis', 'c       ', 'gifts   ', 'tiros   ', 'xxxxxxxx', &
-          'xxxxxxxx', 'xxxxxxxx', 'fy3     '/)
+          'coriolis', 'c       ', 'gifts   ', 'tiros   ', 'xxxxxxxx'/)
 
 ! List of instruments  !!!! HIRS is number 0
-  Character (len=8), Dimension(0:41) :: crtm_sensor_name  =                &
+  Character (len=8), Dimension(0:34) :: crtm_sensor_name  =                &
        & (/ 'hirs    ', 'msu     ', 'ssu     ', 'amsua   ', 'amsub   ',  &
        &    'avhrr   ', 'ssmi    ', 'vtpr1   ', 'vtpr2   ', 'tmi     ',  &
        &    'ssmis   ', 'airs    ', 'hsb     ', 'modis   ', 'atsr    ',  &
        &    'mhs     ', 'iasi    ', 'amsre   ', 'imager  ', 'atms    ',  &
        &    'mviri   ', 'seviri  ', 'imgr    ', 'sndr    ', 'imager  ',  &
        &    'vissr   ', 'mvisr   ', 'cris    ', 'cmis    ', 'viirs   ',  &
-       &    'windsat ', 'gifts   ', 'amsre   ', 'xxxxxxxx', 'xxxxxxxx',  &
-       &    'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
-       &    'mwts    ', 'mwhs    '/)
+       &    'windsat ', 'gifts   ', 'amsre   ', 'xxxxxxxx', 'xxxxxxxx'/)
 
 #ifdef RTTOV
    type (rttov_coefs), allocatable   :: coefs(:)     ! coefficients structure

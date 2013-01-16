@@ -13,7 +13,7 @@ subroutine da_get_innov_vector_metar(it,num_qcstat_conv, grid, ob, iv)
    type(y_type),     intent(inout) :: ob      ! Observation structure.
    type(iv_type),    intent(inout) :: iv      ! O-B structure.
    integer,          intent(inout) :: num_qcstat_conv(:,:,:,:)
-   real  :: speed, direction
+
    integer :: n        ! Loop counter.
    integer :: i, j, k  ! Index dimension.
    real    :: dx, dxm  ! Interpolation weights.
@@ -181,35 +181,19 @@ subroutine da_get_innov_vector_metar(it,num_qcstat_conv, grid, ob, iv)
       !-----------------------------------------------------------------------
       ! [3.0] Fast interpolation:
       !-----------------------------------------------------------------------
-      if (.not. var_wind) then
-         if (ob % metar(n) % u > missing_r .AND. iv % metar(n) % u % qc >= obs_qc_pointer) then
-             iv % metar(n) % u % inv = iv%metar(n)%u%inv - model_u(1,n)
-         else
-             iv % metar(n) % u % inv = 0.0
-         end if
 
-         if (ob % metar(n) % v > missing_r .AND. iv % metar(n) % v % qc >= obs_qc_pointer) then
-             iv % metar(n) % v % inv = iv%metar(n)%v%inv - model_v(1,n)
-         else
-             iv % metar(n) % v % inv = 0.0
-         end if
-
+      if (ob % metar(n) % u > missing_r .AND. &
+         iv % metar(n) % u % qc >= obs_qc_pointer) then
+         iv % metar(n) % u % inv = iv%metar(n)%u%inv - model_u(1,n)
       else
-         call da_ffdduv2 (speed,direction,model_u(1,n), model_v(1,n), iv%info(metar)%lon(1,n), convert_uv2fd)
+         iv % metar(n) % u % inv = 0.0
+      end if
 
-         if (ob%metar(n)%u > missing_r .AND. iv%metar(n)%u%qc >= obs_qc_pointer) then
-             iv%metar(n)%u%inv = iv%metar(n)%u%inv - speed
-         else
-             iv % metar(n) % u % inv = 0.0
-         end if
-
-         if (ob%metar(n)%v > missing_r .AND. iv%metar(n)%v%qc >= obs_qc_pointer) then
-             iv%metar(n)%v%inv = iv%metar(n)%v%inv - direction
-             if (iv%metar(n)%v%inv > 180.0 ) iv%metar(n)%v%inv = iv%metar(n)%v%inv - 360.0
-             if (iv%metar(n)%v%inv < -180.0 ) iv%metar(n)%v%inv = iv%metar(n)%v%inv + 360.0
-         else
-             iv % metar(n) % v % inv = 0.0
-         end if
+      if (ob % metar(n) % v > missing_r .AND. &
+         iv % metar(n) % v % qc >= obs_qc_pointer) then
+         iv % metar(n) % v % inv = iv%metar(n)%v%inv - model_v(1,n)
+      else
+         iv % metar(n) % v % inv = 0.0
       end if
 
       if (ob % metar(n) % p > 0.0 .AND. &

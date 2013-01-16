@@ -17,7 +17,6 @@ subroutine da_get_innov_vector_geoamv( it,num_qcstat_conv,  grid, ob, iv)
    integer :: n              ! Loop counter.
    integer :: k              ! Index dimension.
    integer :: num_levs       ! Number of obs levels.
-   real    :: speed, direction
 
    integer :: i  (kms:kme)
    integer :: j  (kms:kme)
@@ -114,29 +113,13 @@ subroutine da_get_innov_vector_geoamv( it,num_qcstat_conv,  grid, ob, iv)
       do k = 1, iv%info(geoamv)%levels(n)
          iv%geoamv(n)%u(k)%inv = 0.0
          iv%geoamv(n)%v(k)%inv = 0.0
-
-         if (.not. var_wind) then
-             if (ob%geoamv(n)%u(k) > missing_r .AND. iv%geoamv(n)%u(k)%qc >= obs_qc_pointer) then
-                 iv%geoamv(n)%u(k)%inv = ob%geoamv(n)%u(k) - model_u(k,n)
-             end if
-
-             if (ob%geoamv(n)%v(k) > missing_r .AND. iv%geoamv(n)%v(k)%qc >= obs_qc_pointer) then
-                 iv%geoamv(n)%v(k)%inv = ob%geoamv(n)%v(k) - model_v(k,n)
-             end if
-         else
-             call da_ffdduv2 (speed,direction,model_u(k,n), model_v(k,n), iv%info(geoamv)%lon(k,n), convert_uv2fd)
-
-             if (ob%geoamv(n)%u(k) > missing_r .AND. iv%geoamv(n)%u(k)%qc >= obs_qc_pointer) then
-                 iv%geoamv(n)%u(k)%inv = ob%geoamv(n)%u(k) - speed
-             end if
-
-             if (ob%geoamv(n)%v(k) > missing_r .AND. iv%geoamv(n)%v(k)%qc >= obs_qc_pointer) then
-                 iv%geoamv(n)%v(k)%inv = ob%geoamv(n)%v(k) - direction
-                 if (iv%geoamv(n)%v(k)%inv > 180.0 ) iv%geoamv(n)%v(k)%inv = iv%geoamv(n)%v(k)%inv - 360.0
-                 if (iv%geoamv(n)%v(k)%inv < -180.0 ) iv%geoamv(n)%v(k)%inv = iv%geoamv(n)%v(k)%inv + 360.0
-             end if
+         if (ob%geoamv(n)%u(k) > missing_r .AND. iv%geoamv(n)%u(k)%qc >= obs_qc_pointer) then
+            iv%geoamv(n)%u(k)%inv = ob%geoamv(n)%u(k) - model_u(k,n)
          end if
 
+         if (ob%geoamv(n)%v(k) > missing_r .AND. iv%geoamv(n)%v(k)%qc >= obs_qc_pointer) then
+            iv%geoamv(n)%v(k)%inv = ob%geoamv(n)%v(k) - model_v(k,n)
+         end if
       end do
    end do
 

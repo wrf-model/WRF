@@ -30,7 +30,7 @@ subroutine da_get_innov_vector_ships( it,num_qcstat_conv, grid, ob, iv)
 
    real    :: hd, psfcm
    real    :: ho, to, qo
-   real  :: speed, direction
+   
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_ships")
 
    allocate (model_u(1,iv%info(ships)%n1:iv%info(ships)%n2))
@@ -180,35 +180,16 @@ subroutine da_get_innov_vector_ships( it,num_qcstat_conv, grid, ob, iv)
       ! [3.0] Fast interpolation:
       !-----------------------------------------------------------------------
 
-      if(.not. var_wind)then
-         if (ob % ships(n) % u > missing_r .AND. iv % ships(n) % u % qc >= obs_qc_pointer) then
-             iv % ships(n) % u % inv = iv%ships(n)%u%inv - model_u(1,n)
-         else
-             iv % ships(n) % u % inv = 0.0
-         end if
-
-         if (ob % ships(n) % v > missing_r .AND. iv % ships(n) % v % qc >= obs_qc_pointer) then
-             iv % ships(n) % v % inv = iv%ships(n)%v%inv - model_v(1,n)
-         else
-             iv % ships(n) % v % inv = 0.0
-         end if
-
+      if (ob % ships(n) % u > missing_r .AND. iv % ships(n) % u % qc >= obs_qc_pointer) then
+         iv % ships(n) % u % inv = iv%ships(n)%u%inv - model_u(1,n)
       else
-         call da_ffdduv2 (speed,direction,model_u(1,n), model_v(1,n), iv%info(ships)%lon(1,n), convert_uv2fd)
+         iv % ships(n) % u % inv = 0.0
+      end if
 
-         if (ob%ships(n)%u > missing_r .AND. iv%ships(n)%u%qc >= obs_qc_pointer) then
-             iv%ships(n)%u%inv = iv%ships(n)%u%inv - speed
-         else
-             iv % ships(n) % u % inv = 0.0
-         end if
-
-         if (ob%ships(n)%v > missing_r .AND. iv%ships(n)%v%qc >= obs_qc_pointer) then
-             iv%ships(n)%v%inv = iv%ships(n)%v%inv - direction
-             if (iv%ships(n)%v%inv > 180.0 ) iv%ships(n)%v%inv = iv%ships(n)%v%inv - 360.0
-             if (iv%ships(n)%v%inv < -180.0 ) iv%ships(n)%v%inv = iv%ships(n)%v%inv + 360.0
-         else
-             iv % ships(n) % v % inv = 0.0
-         end if
+      if (ob % ships(n) % v > missing_r .AND. iv % ships(n) % v % qc >= obs_qc_pointer) then
+         iv % ships(n) % v % inv = iv%ships(n)%v%inv - model_v(1,n)
+      else
+         iv % ships(n) % v % inv = 0.0
       end if
 
       if (ob % ships(n) % p > 0.0 .AND. iv % ships(n) % p % qc >= obs_qc_pointer) then

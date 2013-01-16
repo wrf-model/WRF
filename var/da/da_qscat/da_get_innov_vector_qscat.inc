@@ -18,7 +18,6 @@ subroutine da_get_innov_vector_qscat (it,num_qcstat_conv, grid, ob, iv)
    integer :: i, j, k  ! Index dimension.
    real    :: dx, dxm  ! Interpolation weights.
    real    :: dy, dym  ! Interpolation weights.
-   real    :: speed, direction
 
    real, allocatable :: model_u(:,:)  ! Model value u at ob location.
    real, allocatable :: model_v(:,:)  ! Model value v at ob location.
@@ -88,31 +87,16 @@ subroutine da_get_innov_vector_qscat (it,num_qcstat_conv, grid, ob, iv)
       !------------------------------------------------------------------------
       ! [3.0] Fast interpolation:
       !------------------------------------------------------------------------
-          if (.not. var_wind) then
-               if (ob % qscat(n) % u > missing_r .AND. &
-                   iv % qscat(n) % u % qc >= obs_qc_pointer) then
-                   iv % qscat(n) % u % inv = ob % qscat(n) % u - model_u(1,n)
-               end if
 
-               if (ob % qscat(n) % v > missing_r .AND. &
-                   iv % qscat(n) % v % qc >= obs_qc_pointer) then
-                   iv % qscat(n) % v % inv = ob % qscat(n) % v - model_v(1,n)
-               end if
-          else
-              call da_ffdduv2 (speed,direction,model_u(1,n), model_v(1,n), iv%info(qscat)%lon(1,n), convert_uv2fd)
+      if (ob % qscat(n) % u > missing_r .AND. &
+          iv % qscat(n) % u % qc >= obs_qc_pointer) then
+         iv % qscat(n) % u % inv = ob % qscat(n) % u - model_u(1,n)
+      end if
 
-              if (ob%qscat(n)%u > missing_r .AND. iv%qscat(n)%u%qc >= obs_qc_pointer) then
-                  iv%qscat(n)%u%inv = ob%qscat(n)%u - speed
-              end if
-
-              if (ob%qscat(n)%v > missing_r .AND. iv%qscat(n)%v%qc >= obs_qc_pointer) then
-                  iv%qscat(n)%v%inv = ob%qscat(n)%v - direction
-                  if (iv%qscat(n)%v%inv > 180.0 ) iv%qscat(n)%v%inv = iv%qscat(n)%v%inv - 360.0
-                  if (iv%qscat(n)%v%inv < -180.0 ) iv%qscat(n)%v%inv = iv%qscat(n)%v%inv + 360.0
-              end if
-
-          end if
-
+      if (ob % qscat(n) % v > missing_r .AND. &
+          iv % qscat(n) % v % qc >= obs_qc_pointer) then
+         iv % qscat(n) % v % inv = ob % qscat(n) % v - model_v(1,n)
+      end if
    end do
 
    !------------------------------------------------------------------------

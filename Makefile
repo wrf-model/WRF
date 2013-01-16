@@ -7,8 +7,7 @@ RM      =       /bin/rm -f
 CHEM_FILES =	../chem/module_aerosols_sorgam.o \
 		../chem/module_gocart_aerosols.o \
 		../chem/module_mosaic_driver.o \
-		../chem/module_input_tracer.o \
-		../chem/module_aerosols_soa_vbs.o
+		../chem/module_input_tracer.o
 
 deflt :
 		@ echo Please compile the code using ./compile
@@ -611,7 +610,7 @@ fseek_test :
 
 # rule used by configure to test if this will compile with netcdf4
 nc4_test:
-	@cd tools ; /bin/rm -f nc4_test.{exe,nc,o} ; $(SCC) -o nc4_test.exe nc4_test.c -I$(NETCDF)/include -L$(NETCDF)/lib -lnetcdf $(NETCDF4_DEP_LIB) ; cd ..
+	@cd tools ; /bin/rm -f nc4_test.exe nc4_test.nc ; $(SCC) -I$(NETCDF)/include -L$(NETCDF)/lib -lnetcdf $(CURL) -o nc4_test.exe nc4_test.c ; cd ..
 
 ### 3.b.  sub-rule to build the expimental core
 

@@ -1,4 +1,4 @@
-subroutine da_transform_xtoy_sound_adj(grid, iv, jo_grad_y, jo_grad_x)
+subroutine da_transform_xtoy_sound_adj(iv, jo_grad_y, jo_grad_x)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -7,20 +7,17 @@ subroutine da_transform_xtoy_sound_adj(grid, iv, jo_grad_y, jo_grad_x)
    !-----------------------------------------------------------------------
 
    implicit none
-   type (domain),  intent(in)    :: grid
+
    type (iv_type), intent(in)    :: iv          ! obs. inc vector (o-b).
    type (y_type) , intent(in)    :: jo_grad_y   ! grad_y(jo)
    type (x_type) , intent(inout) :: jo_grad_x   ! grad_x(jo)
 
-   integer :: n, k
+   integer :: n
 
    real, allocatable :: u(:,:)
    real, allocatable :: v(:,:)
    real, allocatable :: t(:,:)
    real, allocatable :: q(:,:)
-
-   real, allocatable :: ub(:,:)
-   real, allocatable :: vb(:,:)
 
    if (trace_use_dull) call da_trace_entry("da_transform_xtoy_sound_adj")
 
@@ -29,28 +26,11 @@ subroutine da_transform_xtoy_sound_adj(grid, iv, jo_grad_y, jo_grad_x)
    allocate (t(iv%info(sound)%max_lev,iv%info(sound)%n1:iv%info(sound)%n2))
    allocate (q(iv%info(sound)%max_lev,iv%info(sound)%n1:iv%info(sound)%n2))
 
-   allocate (ub(iv%info(sound)%max_lev,iv%info(sound)%n1:iv%info(sound)%n2))
-   allocate (vb(iv%info(sound)%max_lev,iv%info(sound)%n1:iv%info(sound)%n2))
-
-   call da_interp_lin_3d (grid%xb%u, iv%info(sound), ub)
-   call da_interp_lin_3d (grid%xb%v, iv%info(sound), vb)
-
    do n=iv%info(sound)%n1,iv%info(sound)%n2
+      u(1:size(jo_grad_y%sound(n)%u),n) = jo_grad_y%sound(n)%u(:)
+      v(1:size(jo_grad_y%sound(n)%v),n) = jo_grad_y%sound(n)%v(:)
       t(1:size(jo_grad_y%sound(n)%t),n) = jo_grad_y%sound(n)%t(:)
       q(1:size(jo_grad_y%sound(n)%q),n) = jo_grad_y%sound(n)%q(:)
-
-       do k = 1, iv%info(sound)%levels(n)
-
-         if(.not. var_wind) then
-             u(k,n) = jo_grad_y%sound(n)%u(k)
-             v(k,n) = jo_grad_y%sound(n)%v(k)
-           else
-             call da_uv_wind_adj(jo_grad_y%sound(n)%u(k), &
-                                    jo_grad_y%sound(n)%v(k), u(k,n), v(k,n), ub(k,n), vb(k,n))
-          end if
-
-      end do
-
    end do
 
 #ifdef A2C
@@ -67,8 +47,6 @@ subroutine da_transform_xtoy_sound_adj(grid, iv, jo_grad_y, jo_grad_x)
    deallocate (v)
    deallocate (t)
    deallocate (q)
-   deallocate (ub)
-   deallocate (vb)
 
    if (trace_use_dull) call da_trace_exit("da_transform_xtoy_sound_adj")
 

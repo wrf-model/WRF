@@ -18,11 +18,7 @@ module da_grid_definitions
 #include "da_ref_height.inc"
 #include "da_ref_pres.inc"
 #include "da_ffdduv.inc"
-#include "da_ffdduv2.inc"
 #include "da_earth_2_model_wind.inc"
 #include "da_set_map_para.inc"
-#include "da_uv_wind_adj.inc"
-#include "da_uv_wind_tgl.inc"
-#include "da_cal_sd.inc"
 
 end module da_grid_definitions

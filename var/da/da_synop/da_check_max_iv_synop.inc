@@ -15,7 +15,7 @@ subroutine da_check_max_iv_synop(iv,ob, it, num_qcstat_conv)
    type(y_type),  intent(in)    :: ob      ! Observation structure.
 
 
-   logical :: failed,failed1,failed2
+   logical :: failed
    integer :: n
 
    if (trace_use_dull) call da_trace_entry("da_check_max_iv_synop")
@@ -25,117 +25,32 @@ subroutine da_check_max_iv_synop(iv,ob, it, num_qcstat_conv)
    !---------------------------------------------------------------------------
 
    do n=iv%info(synop)%n1,iv%info(synop)%n2
-         if(standard)then
-            if(var_wind)then
-               failed=.false.
-               if( iv%synop(n)%u%qc >= obs_qc_pointer ) then
-                   call da_max_error_qc (it,iv%info(synop), n, iv%synop(n)%u, max_error_sp,failed)
-                   if( iv%info(synop)%proc_domain(1,n) ) then
-                       num_qcstat_conv(1,synop,1,1) = num_qcstat_conv(1,synop,1,1) + 1
-                       if(failed) then
-                          num_qcstat_conv(2,synop,1,1) = num_qcstat_conv(2,synop,1,1) + 1
-                          write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
-                          'synop',ob_vars(1),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
-                       end if
-                   end if
-               end if
 
-               failed=.false.
-               if( iv%synop(n)%v%qc >= obs_qc_pointer ) then
-                   call da_max_error_qc (it,iv%info(synop), n, iv%synop(n)%v, max_error_dir,failed)
-                   if( iv%info(synop)%proc_domain(1,n) ) then
-                       num_qcstat_conv(1,synop,2,1) = num_qcstat_conv(1,synop,2,1) + 1
-                       if(failed)then
-                          num_qcstat_conv(2,synop,2,1) = num_qcstat_conv(2,synop,2,1) + 1
-                          write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
-                          'synop',ob_vars(2),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
-                       end if
-                   end if
-               end if
-            else
-               failed=.false.
-               if( iv%synop(n)%u%qc >= obs_qc_pointer ) then
-                   call da_max_error_qc (it,iv%info(synop), n, iv%synop(n)%u, max_error_uv,failed)
-                   if( iv%info(synop)%proc_domain(1,n) ) then
-                       num_qcstat_conv(1,synop,1,1) = num_qcstat_conv(1,synop,1,1) + 1
-                       if(failed) then
-                          num_qcstat_conv(2,synop,1,1) = num_qcstat_conv(2,synop,1,1) + 1
-                          write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
-                          'synop',ob_vars(1),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
-                       end if
-                   end if
-               end if
+      failed=.false.
+      if( iv%synop(n)%u%qc >= obs_qc_pointer ) then 
+      call da_max_error_qc (it, iv%info(synop), n, iv%synop(n)%u, max_error_uv, failed)
+      if( iv%info(synop)%proc_domain(1,n) ) then
+      num_qcstat_conv(1,synop,1,1)= num_qcstat_conv(1,synop,1,1) + 1
+      if(failed) then
+      num_qcstat_conv(2,synop,1,1)= num_qcstat_conv(2,synop,1,1) + 1
+      write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
+           'synop',ob_vars(1),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
+      end if
+      end if
+      end if
 
-               failed=.false.
-               if( iv%synop(n)%v%qc >= obs_qc_pointer ) then
-                   call da_max_error_qc (it,iv%info(synop), n, iv%synop(n)%v, max_error_uv,failed)
-                   if( iv%info(synop)%proc_domain(1,n) ) then
-                       num_qcstat_conv(1,synop,2,1) = num_qcstat_conv(1,synop,2,1) + 1
-                       if(failed)then
-                          num_qcstat_conv(2,synop,2,1) = num_qcstat_conv(2,synop,2,1) + 1
-                          write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
-                          'synop',ob_vars(2),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
-                       end if
-                   end if
-               end if
-            end if
-
-            if(var_wind)then
-               if(iv%synop(n)%u%qc == fails_error_max .or.  abs(iv%synop(n)%u%inv) >= max_omb_sp) then
-                  iv%synop(n)%u%qc = fails_error_max
-                  iv%synop(n)%u%inv = 0.0
-               endif
-               if(iv%synop(n)%v%qc == fails_error_max .or.  abs(iv%synop(n)%v%inv) >= max_omb_dir) then
-                  iv%synop(n)%v%qc = fails_error_max
-                  iv%synop(n)%v%inv = 0.0
-               endif
-            endif
-         else
-            failed1=.false.
-            failed2=.false.
-
-            if( iv%synop(n)%v%qc >= obs_qc_pointer .or. iv%synop(n)%u%qc >= obs_qc_pointer )  then
-                if(.not. var_wind)then
-                   call da_max_error_qc (it,iv%info(synop), n, iv%synop(n)%u, max_error_uv,failed1)
-                   call da_max_error_qc (it,iv%info(synop), n, iv%synop(n)%v, max_error_uv,failed2)
-                else
-                   call da_max_error_qc (it,iv%info(synop), n, iv%synop(n)%u, max_error_sp,failed1)
-                   call da_max_error_qc (it,iv%info(synop), n, iv%synop(n)%v, max_error_dir,failed2)
-                endif
-            endif
-
-            if( iv%info(synop)%proc_domain(1,n) ) then
-                num_qcstat_conv(1,synop,1,1) = num_qcstat_conv(1,synop,1,1) + 1
-                num_qcstat_conv(1,synop,2,1) = num_qcstat_conv(1,synop,2,1) + 1
-
-                if(failed1 .or. failed2) then
-                   num_qcstat_conv(2,synop,1,1) = num_qcstat_conv(2,synop,1,1) + 1
-                   write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
-                         'synop',ob_vars(1),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
-                   num_qcstat_conv(2,synop,2,1) = num_qcstat_conv(2,synop,2,1) + 1
-                   write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
-                         'synop',ob_vars(2),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
-                endif
-             endif
-
-             if(.not. var_wind)then
-                if(iv%synop(n)%u%qc == fails_error_max .or. iv%synop(n)%v%qc == fails_error_max ) then
-                   iv%synop(n)%u%qc = fails_error_max
-                   iv%synop(n)%v%qc = fails_error_max
-                   iv%synop(n)%u%inv = 0.0
-                   iv%synop(n)%v%inv = 0.0
-                endif
-             else
-                if(iv%synop(n)%u%qc == fails_error_max .or. iv%synop(n)%v%qc == fails_error_max .or. &
-                   abs(iv%synop(n)%v%inv) >= max_omb_dir .or. abs(iv%synop(n)%u%inv) >= max_omb_sp )then
-                   iv%synop(n)%u%qc = fails_error_max
-                   iv%synop(n)%v%qc = fails_error_max
-                   iv%synop(n)%u%inv = 0.0
-                   iv%synop(n)%v%inv = 0.0
-                endif
-             endif
-          endif
-
+      failed=.false.
+      if( iv%synop(n)%v%qc >= obs_qc_pointer )  then
+      call da_max_error_qc (it, iv%info(synop), n, iv%synop(n)%v, max_error_uv, failed)             
+      if( iv%info(synop)%proc_domain(1,n) ) then
+      num_qcstat_conv(1,synop,2,1)= num_qcstat_conv(1,synop,2,1) + 1
+      if(failed) then
+      num_qcstat_conv(2,synop,2,1)= num_qcstat_conv(2,synop,2,1) + 1
+      write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
+           'synop',ob_vars(2),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
+      end if
+      end if
+      end if
 
       failed=.false.
       if( iv%synop(n)%t%qc >= obs_qc_pointer )  then

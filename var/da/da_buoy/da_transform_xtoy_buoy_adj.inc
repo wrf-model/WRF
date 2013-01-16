@@ -20,8 +20,6 @@ subroutine da_transform_xtoy_buoy_adj(grid, iv, jo_grad_y, jo_grad_x)
    real, allocatable :: model_t(:,:)
    real, allocatable :: model_q(:,:)
    real, allocatable :: model_psfc(:)
-   real, allocatable :: ub(:,:)
-   real, allocatable :: vb(:,:)
 
    if (trace_use_dull) call da_trace_entry("da_transform_xtoy_buoy_adj")
 
@@ -31,23 +29,10 @@ subroutine da_transform_xtoy_buoy_adj(grid, iv, jo_grad_y, jo_grad_x)
       allocate (model_t(1,iv%info(buoy)%n1:iv%info(buoy)%n2))
       allocate (model_q(1,iv%info(buoy)%n1:iv%info(buoy)%n2))
       allocate (model_psfc(iv%info(buoy)%n1:iv%info(buoy)%n2))
-
-      allocate (ub(1,iv%info(buoy)%n1:iv%info(buoy)%n2))
-      allocate (vb(1,iv%info(buoy)%n1:iv%info(buoy)%n2))
-
-      call da_interp_lin_3d (grid%xb%u, iv%info(buoy), ub)
-      call da_interp_lin_3d (grid%xb%v, iv%info(buoy), vb)
-
       ! [1.2] Interpolate horizontally:
       do n=iv%info(buoy)%n1,iv%info(buoy)%n2
-         if(var_wind)then
-            call da_uv_wind_adj(jo_grad_y%buoy(n)%u, &
-                                jo_grad_y%buoy(n)%v, model_u(1,n), model_v(1,n), ub(1,n), vb(1,n))
-         else
-            model_u(1,n)  = jo_grad_y%buoy(n)%u
-            model_v(1,n)  = jo_grad_y%buoy(n)%v
-         end if
-
+         model_u(1,n)  = jo_grad_y%buoy(n)%u
+         model_v(1,n)  = jo_grad_y%buoy(n)%v
          model_t(1,n)  = jo_grad_y%buoy(n)%t
          model_q(1,n)  = jo_grad_y%buoy(n)%q
          model_psfc(n) = jo_grad_y%buoy(n)%p
@@ -68,9 +53,6 @@ subroutine da_transform_xtoy_buoy_adj(grid, iv, jo_grad_y, jo_grad_x)
       deallocate (model_t)
       deallocate (model_q)
       deallocate (model_psfc)
-      deallocate (ub)
-      deallocate (vb)
-
    else if (sfc_assi_options == sfc_assi_options_2) then
       call da_transform_xtopsfc_adj(grid,iv, buoy, iv%buoy(:), jo_grad_y%buoy(:), jo_grad_x)
    end if

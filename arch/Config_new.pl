@@ -38,9 +38,8 @@ $sw_stubmpi = "" ;
 $sw_usenetcdff = "" ;    # for 3.6.2 and greater, the fortran bindings might be in a separate lib file
 $sw_time = "" ;          # name of a timer to time fortran compiles, e.g. timex or time
 $sw_ifort_r8 = 0 ;
-$sw_hdf5 = "-lhdf5 -lhdf5_hl";
-$sw_zlib = "-lz";
-$sw_dep_lib_path = "";
+$sw_hdf5_path = "";
+$sw_zlib_path = "";
 $sw_gpfs_path = "";
 $sw_gpfs_lib  = "-lgpfs";
 $sw_curl_path = "";
@@ -55,10 +54,13 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   {
     $sw_netcdf_path = substr( $ARGV[0], 8 ) ;
   }
-  if ( substr( $ARGV[0], 1, 13 ) eq "dep_lib_path=" )
+  if ( substr( $ARGV[0], 1, 5 ) eq "hdf5=" )
   {
-    $sw_dep_lib_path = substr( $ARGV[0], 14 ) ;
-    $sw_dep_lib_path =~ s/\r|\n/ /g ;
+    $sw_hdf5_path = substr( $ARGV[0], 6 ) ;
+  }
+  if ( substr( $ARGV[0], 1, 5 ) eq "zlib=" )
+  {
+    $sw_zlib_path = substr( $ARGV[0], 6 ) ;
   }
   if ( substr( $ARGV[0], 1, 5 ) eq "gpfs=" )
   {
@@ -494,10 +496,12 @@ while ( <CONFIGURE_DEFAULTS> )
                { $_  =~ s/\r|\n//g; 
                  $_ .= " \$\(NETCDF4_IO_OPTS\)\n" ; 
                }
-             if (/^LIB.*=/) 
-               { $_  =~ s/\r|\n//g ;
-                 $_ .=" \$\(NETCDF4_DEP_LIB\)\n" ;
-               }
+             if ( $sw_zlib_path ne ""  && $sw_hdf5_path ne "" )
+               { if (/^LIB.*=/) 
+                   { $_  =~ s/\r|\n//g ;
+                     $_ .=" \$\(NETCDF4_DEP_LIB\)\n" ;
+                   }
+               } 
            }
        }
 
@@ -674,32 +678,20 @@ while ( <ARCH_PREAMBLE> )
   $_ =~ s:CONFIGURE_COAMPS_CORE:$sw_coamps_core:g ;
   $_ =~ s:CONFIGURE_EXP_CORE:$sw_exp_core:g ;
 
-  $_ =~ s/CONFIGURE_DEP_LIB_PATH/$sw_dep_lib_path/g ;
+  $_ =~ s/CONFIGURE_NETCDF_PATH/$sw_netcdf_path/g ;
+  $_ =~ s/CONFIGURE_HDF5_PATH/$sw_hdf5_path/g ;
+  $_ =~ s/CONFIGURE_ZLIB_PATH/$sw_zlib_path/g ;
 
   if ( $sw_gpfs_path ne "" )
     { if (/^GPFS.*=/)
         { $_  =~ s/\r|\n//g;
-          if ( $sw_gpfs_path ne "DEFAULT" )
-            { $_ .= " -L" . $sw_gpfs_path ; }
-          $_ .= " " . $sw_gpfs_lib . "\n" ;
+          $_ .= " -L" . $sw_gpfs_path . " " . $sw_gpfs_lib . "\n" ;
         }
     }
   if ( $sw_curl_path ne "" )
     { if (/^CURL.*=/)
         { $_  =~ s/\r|\n//g;
-          if ( $sw_curl_path ne "DEFAULT" ) 
-            { $_ .= " -L" . $sw_curl_path ; }
-          $_ .= " " . $sw_curl_lib . "\n" ;
-        }
-    }
-  if ( $sw_dep_lib_path ne "" )
-    { if (/^HDF5.*=/)
-        { $_  =~ s/\r|\n//g;
-          $_ .= " " . $sw_hdf5 . "\n" ;
-        }
-      if (/^ZLIB.*=/)
-        { $_  =~ s/\r|\n//g;
-          $_ .= " " . $sw_zlib . "\n" ;
+          $_ .= " -L" . $sw_curl_path . " " . $sw_curl_lib . "\n" ;
         }
     }
 

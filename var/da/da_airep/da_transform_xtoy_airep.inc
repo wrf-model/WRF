@@ -12,14 +12,11 @@ subroutine da_transform_xtoy_airep (grid, iv, y)
    type(iv_type), intent(in)    :: iv       ! Innovation vector (O-B).
    type(y_type),  intent(inout) :: y        ! y = h (grid%grid%xa) (linear)
 
-   integer :: n,k        ! Loop counter.
+   integer :: n        ! Loop counter.
 
    real, allocatable :: u(:,:)
    real, allocatable :: v(:,:)
    real, allocatable :: t(:,:)
-
-   real, allocatable :: ub(:,:)
-   real, allocatable :: vb(:,:)
 
    if (trace_use_dull) call da_trace_entry("da_transform_xtoy_airep")
 
@@ -27,9 +24,6 @@ subroutine da_transform_xtoy_airep (grid, iv, y)
    allocate (v(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
    allocate (t(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
   
-   allocate (ub(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
-   allocate (vb(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
-
 #ifdef A2C
    call da_interp_lin_3d (grid%xa%u, iv%info(airep), u,'u')
    call da_interp_lin_3d (grid%xa%v, iv%info(airep), v,'v')
@@ -39,26 +33,15 @@ subroutine da_transform_xtoy_airep (grid, iv, y)
 #endif
    call da_interp_lin_3d (grid%xa%t, iv%info(airep), t)
 
-   call da_interp_lin_3d (grid%xb%u, iv%info(airep), ub)
-   call da_interp_lin_3d (grid%xb%v, iv%info(airep), vb)
-
    do n=iv%info(airep)%n1,iv%info(airep)%n2
-      do k = 1, iv%info(airep)%levels(n)
-         if(.not. var_wind) then
-             y%airep(n)%u(k) = u(k,n)
-             y%airep(n)%v(k) = v(k,n)
-         else
-             call da_uv_wind_tgl(y%airep(n)%u(k),y%airep(n)%v(k),u(k,n),v(k,n),ub(k,n),vb(k,n))
-         endif
-         y%airep(n)%t(:) = t(1:size(y%airep(n)%t),n)
-      end do
+      y%airep(n)%u(:) = u(1:size(y%airep(n)%u),n)
+      y%airep(n)%v(:) = v(1:size(y%airep(n)%v),n)
+      y%airep(n)%t(:) = t(1:size(y%airep(n)%t),n)
    end do
-  
+
    deallocate (u)
    deallocate (v)
    deallocate (t)
-   deallocate (ub)
-   deallocate (vb)
 
    if (trace_use_dull) call da_trace_exit("da_transform_xtoy_airep")
 

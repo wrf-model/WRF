@@ -1,4 +1,4 @@
-subroutine da_ao_stats_profiler (stats_unit, iv, re, ob)
+subroutine da_ao_stats_profiler (stats_unit, iv, re)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -9,12 +9,10 @@ subroutine da_ao_stats_profiler (stats_unit, iv, re, ob)
    integer,        intent(in)    :: stats_unit    ! Output unit for stats.
    type (iv_type), intent(inout) :: iv            ! iv
    type (y_type),  intent(in)    :: re            ! A - O
-   type(y_type),   intent (in) :: ob       ! Observation structure.
 
    type (stats_profiler_type)       :: stats
    integer                          :: nu, nv
    integer                          :: n, k
-   real                             :: u_inv, v_inv, sp_inv, dir_inv
    
    if (trace_use_dull) call da_trace_entry("da_ao_stats_profiler")
 
@@ -32,20 +30,12 @@ subroutine da_ao_stats_profiler (stats_unit, iv, re, ob)
    do n=1, iv%info(profiler)%nlocal
       if (iv%info(profiler)%proc_domain(1,n)) then
          do k=1, iv%info(profiler)%levels(n)
-            u_inv = re%profiler(n)%u(k)
-            v_inv = re%profiler(n)%v(k)
-            if(var_wind) then
-               sp_inv = re%profiler(n)%u(k)
-               dir_inv = re%profiler(n)%v(k)
-               call da_cal_sd (ob%profiler(n)%u(k), ob%profiler(n)%v(k), &
-                               u_inv, v_inv, sp_inv, dir_inv)
-            end if
             call da_stats_calculate (n, k, iv%profiler(n)%u(k)%qc, & 
-               u_inv, nu, & 
+               re%profiler(n)%u(k), nu, & 
                stats%minimum%u, stats%maximum%u, &
                stats%average%u, stats%rms_err%u)
             call da_stats_calculate (n, k, iv%profiler(n)%v(k)%qc, & 
-               v_inv, nv, & 
+               re%profiler(n)%v(k), nv, & 
                stats%minimum%v, stats%maximum%v, &
                stats%average%v, stats%rms_err%v)
          end do

@@ -2271,7 +2271,7 @@ integer myproc
    END SELECT sfc_select
 
    IF(PRESENT(OMLCALL))THEN
-     IF (omlcall .EQ. 1) THEN
+     IF ( ( omlcall .EQ. 1 ) .OR. ( omlcall .EQ. 2 ) ) THEN
         CALL omlinit(oml_hml0, tsk,                           &
                      tml,t0ml,hml,h0ml,huml,hvml,tmoml,       &
                      allowed_to_read, start_of_simulation,    &

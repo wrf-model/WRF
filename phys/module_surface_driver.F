@@ -62,7 +62,11 @@ CONTAINS
 #if (EM_CORE==1)
      &          ,ch,tsq,qsq,cov                                       & ! MYNN
 #endif
-! CLM varaibles
+            !  cyl ocean variable
+                ,OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH,OM_ML,OM_LON          &
+     &          ,OM_LAT,okms,okme,rdx,rdy,msfu,msfv,msft              &
+     &          ,XTIME,OM_TINI,OM_SINI,id,omdt                        &
+! CLM variables
      &          ,numc,nump,sabv,sabg,lwup,snl,history_interval &
      &          ,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
      &           h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm ,         &
@@ -1073,6 +1077,15 @@ CONTAINS
      REAL, DIMENSION( ims:ime, jms:jme ) :: TSK_LOCAL
 !
    REAL   :: xice_threshold
+
+! cyl ocean variable 
+   integer :: okms, okme
+   real, optional , dimension(ims:ime, okms:okme, jms:jme), INTENT(INOUT):: OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH
+   real, optional , dimension(ims:ime, okms:okme, jms:jme), INTENT(IN):: OM_TINI,OM_SINI
+   real, optional , dimension(ims:ime, jms:jme),INTENT(INOUT):: OM_ML, OM_LAT, OM_LON
+   REAL, OPTIONAL , INTENT(IN   ) :: rdx, rdy,xtime,omdt
+   REAL , OPTIONAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: msfu, msfv, msft
+   INTEGER , OPTIONAL , INTENT(IN)        :: id
 !
   real,    dimension(ims:ime,1:maxpatch,jms:jme ) ::  q_ref2m   ! clm
 
@@ -3167,7 +3180,7 @@ CONTAINS
  430 CONTINUE
 
 #if ( EM_CORE==1)
-   IF (omlcall .EQ. 1) THEN
+   IF (omlcall .EQ. 1 .or. omlcall .EQ. 2) THEN
 ! simple ocean mixed layer model based Pollard, Rhines and Thompson (1973)
      CALL wrf_debug( 100, 'Call OCEANML' )
      !$OMP PARALLEL DO   &
@@ -3179,7 +3192,13 @@ CONTAINS
                      dtbl,STBOLT,                                 &
                      ids,ide, jds,jde, kds,kde,                   &
                      ims,ime, jms,jme, kms,kme,                   &
-                     i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte)
+                     i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, & 
+                     omlcall,okms, okme, &                           !cyl
+                     om_tmp,om_s,om_u, om_v,  om_depth, om_ml, &   !cyl
+                     om_lat, om_lon, &                                        !cyl
+                     QFX,  &                 !cyl 
+                     rdx, rdy, msfu, msfv, msft,xtime,om_tini,om_sini,id,omdt, &
+                     itimestep ) !cyl
      ENDDO
      !$OMP END PARALLEL DO
    ENDIF

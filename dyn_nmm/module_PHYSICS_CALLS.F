@@ -1337,6 +1337,8 @@
 ! for Noah UA changes
      &        ,ua_phys=config_flags%ua_phys,flx4=grid%flx4,fvb=grid%fvb       &
      &        ,fbur=grid%fbur,fgsn=grid%fgsn                                  &
+! vertical dimensions for ocean model, not used for NMM
+     &        ,okms = 1, okme=2                                          &
 ! for NOAH-MP LSM
      &        ,YR=yr                                       &
      &        ,idveg=config_flags%dveg,         iopt_crs=config_flags%opt_crs &

@@ -68,6 +68,12 @@ state    real    znu            k       dyn_em      1         -     irh      "zn
 state    real    znw            k       dyn_em      1         Z     i0rh     "znw"  "eta values on full (w) levels"  ""
 state    real   ZS              l        misc      -         Z     irh       "ZS"                    "DEPTHS OF CENTERS OF SOIL LAYERS"         "m"
 state    real   DZS             l        misc      -         Z     irh       "DZS"                   "THICKNESSES OF SOIL LAYERS"               "m"
+# cyl : variables for trajectory calculation
+state    real  traj_i         {ntraj}       dyn_em      1         Z     irh     "traj_i" "grid number of trajectory " ""                                     
+state    real  traj_j         {ntraj}       dyn_em      1         Z     irh     "traj_j" "grid number of trajectory " ""                                     
+state    real  traj_k         {ntraj}       dyn_em      1         Z     irh     "traj_k" "vertical eta level of trajectory " ""                              
+state    real  traj_long      {ntraj}       dyn_em      1         Z     irh      "traj_long" "longitude of trajectory " ""                                   
+state    real  traj_lat       {ntraj}       dyn_em      1         Z     irh      "traj_lat" "latitude of trajectory " ""                                     
 
 #
 # Variables from WPS
@@ -965,6 +971,18 @@ state   real    F_RAIN_PHY     ikj     misc         1         -      rhdu     "F
 state   real    F_RIMEF_PHY    ikj     misc         1         -      rhdu     "F_RIMEF_PHY"          "MASS RATIO OF RIMED ICE "         ""
 state   real    qndropsource   ikj     misc         1         -      r        "qndropsource"         "Droplet number source"   "#/kg/s"
 
+# cyl 3DPWP variables
+state   real    OM_TMP        i{nocnl}jb     misc         1        Z     i012rhdu=(copy_fcnm)f=(c2f_interp:grid_id)    "OM_TMP" "temperature"   "k"
+state   real    OM_S          i{nocnl}jb     misc         1        Z     i012rhdu=(copy_fcnm)f=(c2f_interp:grid_id)  "OM_S" "salinity"       "degree"
+state   real    OM_DEPTH      i{nocnl}j      misc         1        Z     i012rhd   "OM_DEPTH"   "depth"     "m"
+state   real    OM_U          i{nocnl}jb     misc         1        Z     i012rhdu=(copy_fcnm)f=(c2f_interp:grid_id)   "OM_U"   "u current"     "m/s"
+state   real    OM_V          i{nocnl}jb     misc         1        Z     i012rhdu=(copy_fcnm)f=(c2f_interp:grid_id)   "OM_V"   "v current"     "m/s"
+state   real    OM_LAT        ij       misc         1        -     i012rd   "OM_LAT"  "om lat"       "degree"
+state   real    OM_LON        ij       misc         1        -     i012rd   "OM_LON"  "om lon"       "degree"
+state   real    OM_ML         ijb      misc         1        -     i012rhdu=(copy_fcnm)f=(c2f_interp:grid_id)   "OM_ML"  "om ml"       "m"
+state   real    OM_TINI       i{nocnl}j      misc         1        Z     i012rd   "OM_TINI"   "temperature init"     "k"
+state   real    OM_SINI       i{nocnl}j      misc         1        Z     i012rd   "OM_SINI"       "salinity init"     "degree"
+
 # Other Misc State Variables                                            
 state   real    h_diabatic     ikj     misc         1         -      rdu      "h_diabatic"            "MICROPHYSICS LATENT HEATING"         "K s-1"      
 state   real    msft           ij      misc         1         -     i012rhdu=(copy_fcnm)    "MAPFAC_M"         "Map scale factor on mass grid" ""
@@ -1707,6 +1725,8 @@ rconfig   logical   reorder_mesh    namelist,domains    1              .false. r
 rconfig   logical   perturb_input   namelist,domains    1              .false. h     "" "" ""
 rconfig   real      eta_levels      namelist,domains    max_eta        -1.
 rconfig   real      max_dz          namelist,domains    1               1000.
+rconfig   integer   ocean_levels    namelist,domains    1               101    irh   "ocean level"        ""      ""
+rconfig   integer   num_traj        namelist,domains    1               50     irh   "num_traj" "#of trajectory" ""
 
 # variable for time series of vertical profile of U, V, Theta, GHT,a nd QVAPOR
 rconfig   integer   max_ts_level    namelist,domains    1              15       -       "max_ts_level"   "Highest model level for time series output"
@@ -1813,7 +1833,10 @@ rconfig   integer o3input                 namelist,physics      1             0 
 rconfig   integer aer_opt                 namelist,physics      1             0       -      "aer_opt"      "aerosol input option for radiation"      ""
 rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .false.  -     "feedback cumulus to radiation"  ""
 rconfig   integer pxlsm_smois_init        namelist,physics      max_domains   1       irh    "PXLSM_SMOIS_INIT"    "Soil moisture initialization option 0-From analysis 1-From MAVAIL"   ""
-rconfig   integer omlcall                 namelist,physics      1            0         h     "omlcall"     "activate simple ocean mixed layer model  0=no, 1=yes"   ""
+rconfig   integer omlcall                 namelist,physics      1            0         h     "omlcall"     "activate simple ocean mixed layer model  0=no, 1=PWP 2=wrfo1docean"   ""
+rconfig   integer trajcall                namelist,physics     1            0         h     "trajcall"     "activate trajectory calculation  0=no, 1=on"   ""
+rconfig   integer tracercall              namelist,physics     1            0         h     "tracercall"     "activate tracer calculation  0=no, 1=on"   ""
+rconfig   real    OMDT                    namelist,physics      1            0       h    "OMDT"          "Timestep of ocean model"      "s"
 rconfig   real    oml_hml0                namelist,physics      1            50        h     "oml_hml0"    "oml initial mixed layer depth value"   "m"
 rconfig   real    oml_gamma               namelist,physics      1            0.14      h     "oml_gamma"   "oml deep water lapse rate"   "K m-1"
 rconfig   integer isftcflx                namelist,physics      1            0         h     "isftcflx"    "switch to control sfc fluxes"   ""
@@ -2258,7 +2281,8 @@ package   spnudging      grid_fdda==2               -              fdda3d:u_ndg_
 
 package   slopeopt       slope_rad==1               -              -
 package   gwdopt         gwd_opt==1                 -              state:oc12d,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,dtaux3d,dtauy3d,dusfcg,dvsfcg
-package   omlopt         omlcall==1                 -              state:tml,t0ml,hml,h0ml,huml,hvml,tmoml
+package   omldpwp        omlcall==1                 -              state:tml,t0ml,hml,h0ml,huml,hvml,tmoml
+package   oml1d          omlcall==2                 -              state:tml,t0ml,hml,h0ml,huml,hvml,tmoml
 package   scmopt         scm_force==1               -              state:z_force,z_force_tend,u_g,u_g_tend,v_g,v_g_tend,w_subs,w_subs_tend,th_upstream_x,th_upstream_x_tend,th_upstream_y,th_upstream_y_tend,qv_upstream_x,qv_upstream_x_tend,qv_upstream_y,qv_upstream_y_tend,u_upstream_x,u_upstream_x_tend,u_upstream_y,u_upstream_y_tend,v_upstream_x,v_upstream_x_tend,v_upstream_y,v_upstream_y_tend,tau_x,tau_x_tend,tau_y,tau_y_tend,th_largescale,th_largescale_tend,qv_largescale,qv_largescale_tend,ql_largescale,ql_largescale_tend,u_largescale,u_largescale_tend,v_largescale,v_largescale_tend,tau_largescale,tau_largescale_tend,ql_upstream_x,ql_upstream_x_tend,ql_upstream_y,ql_upstream_y_tend,t_soil_forcing_val,t_soil_forcing_tend,q_soil_forcing_val,q_soil_forcing_tend,tau_soil,soil_depth_force,th_t_tend,qv_t_tend
 
 package   prec_acc       prec_acc_opt==1            -              state:prec_acc_c,prec_acc_nc,snow_acc_nc
@@ -2401,6 +2425,9 @@ halo      HALO_EM_COUPLE_B   dyn_em 48:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2
                                        moist,chem,tracer,scalar
 period    PERIOD_EM_COUPLE_B dyn_em 3:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,\
                                        moist,chem,tracer,scalar
+                                       moist,chem,tracer,scalar
+#cyl for trajectory 
+halo      HALO_EM_F dyn_em  24:muu,muv,mut
 
 ## For moving nests
 #halo      em_shift_halo_y  dyn_em 48:imask_nostag,imask_xstag,imask_ystag,imask_xystag,u_2,v_2,t_2
@@ -2408,6 +2435,9 @@ period    PERIOD_EM_COUPLE_B dyn_em 3:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,
 
 # For observational nudging
 halo      HALO_OBS_NUDGE dyn_em 24:ph_2,p,uratx,vratx,tratx,kpbl
+
+# cyl: For 3DPWP
+halo      HALO_PWP dyn_em 8: OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH,OM_TINI,OM_SINI
 
 # Periodic Boundary Communications
 

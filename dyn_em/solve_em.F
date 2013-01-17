@@ -42,7 +42,8 @@ SUBROUTINE solve_em ( grid , config_flags  &
                  ,period_bdy_em_scalar2_sub,period_bdy_em_scalar_old_sub                   &
                  ,period_bdy_em_scalar_sub,period_bdy_em_tke_old_sub                       &
                  ,period_bdy_em_tracer2_sub,period_bdy_em_tracer_old_sub                   &
-                 ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub
+                 ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub         &
+                 ,halo_em_f_sub,halo_em_init_4_sub
 #endif
    USE module_utility
 ! Mediation layer modules
@@ -3088,6 +3089,34 @@ BENCH_END(bc_end_tim)
 !**********************************************************
 
    END DO Runge_Kutta_loop
+
+   IF      ( config_flags%trajcall .gt. 0 ) THEN
+#ifdef DM_PARALLEL
+#    include "HALO_EM_F.inc"
+#    include "HALO_EM_D.inc"
+#    include "HALO_EM_INIT_4.inc"
+#endif
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+       DO ij = 1 , grid%num_tiles
+
+           call trajectory (grid,config_flags,  &
+                            grid%dt,grid%itimestep,grid%ru_m, grid%rv_m, grid%ww_m,&
+                            grid%mut,grid%muu,grid%muv,                            &
+                            grid%rdx, grid%rdy, grid%rdn, grid%rdnw,grid%rdzw,     &
+                            grid%traj_i,grid%traj_j,grid%traj_k,                   &
+                            grid%traj_long,grid%traj_lat,                          &
+                            grid%xlong,grid%xlat,            &
+                            grid%msftx,grid%msfux,grid%msfvy,                      &
+                            ids, ide, jds, jde, kds, kde,    &
+                            ims, ime, jms, jme, kms, kme,    &
+                            grid%i_start(ij), grid%i_end(ij), &
+                            grid%j_start(ij), grid%j_end(ij), &
+                            k_start  , k_end )
+        ENDDO
+     !$OMP END PARALLEL DO
+   ENDIF
+!-----------------------------------------------------------
 
    IF (config_flags%do_avgflx_em .EQ. 1) THEN
 ! Reinitialize time-averaged fluxes if history output was written after the previous time step:

@@ -290,7 +290,11 @@ MODULE module_bl_boulac
 ! compute the values of wstar
         wts=max(0.,hfx(ix,iy)/rho1D(1)/cp)
         wstar=(g*wts*pblh(ix,iy)/th01D(1))**(1./3.)
-        tstar_w=wts/wstar
+        if (wts .ne. 0.0) then
+          tstar_w=wts/wstar
+        else
+          tstar_w=0.0
+        endif
         t2_1D=0.
         w2_1D=0.
         gamma1D=0.

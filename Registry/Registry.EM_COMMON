@@ -2425,7 +2425,7 @@ halo      HALO_EM_COUPLE_B   dyn_em 48:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2
                                        moist,chem,tracer,scalar
 period    PERIOD_EM_COUPLE_B dyn_em 3:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,\
                                        moist,chem,tracer,scalar
-                                       moist,chem,tracer,scalar
+
 #cyl for trajectory 
 halo      HALO_EM_F dyn_em  24:muu,muv,mut
 

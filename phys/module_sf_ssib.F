@@ -1321,6 +1321,7 @@ CONTAINS
    DZO3,WO3,TSSN3,TSSNO3,BWO3,BTO3,CTO3,FIO3,FLO3,BIO3,BLO3,HO3, &
    DZO4,WO4,TSSN4,TSSNO4,BWO4,BTO4,CTO4,FIO4,FLO4,BIO4,BLO4,HO4, &
    DZO, WO, TSSN, TSSNO, BWO, BTO, CTO, FIO, FLO, BIO, BLO, HO )
+!
       WWW1=WWW(1)*POROS
       WWW2=WWW(2)*POROS
       WWW3=WWW(3)*POROS
@@ -1528,10 +1529,15 @@ CONTAINS
         WWW(1)   = 1.
         WWW(2)   = 1.
         WWW(3)   = 1.
-!
+!------------------------------------------------
+!cfds Convert WEASD (kg/m2) to meter
+      SNOA = SNOA/1000.
+      SNOB = SNOB/1000.
+!------------------------------------------------
          CAPAC(1)=SNOB
          CAPAC(2)=SNOA
          SNOWDEN = 3.75   ! mchen add for initialization
+         ISNOW = 1
       IF (ITIME.EQ.1) THEN
          TA=TGS
          CAPAC(1)=0.
@@ -4218,9 +4224,9 @@ CONTAINS
                h(i) = ho(i) + (b1+b2*tssn(i))*dtt
              end if
              if(tssn(i).gt.273.16) then
-              print*, ' Snow Temp. Wrong in thermal.f',i,tssn(i)  
-              tssn(i)=273.16
-          STOP
+               WRITE( message,* ) 'Warning: Snow Temp above freezing',i,tssn(i)
+               tssn(i)=273.16
+               CALL wrf_message ( message )
              endif
 ! ------------------------------------------------------------------7272
         ELSE IF   (ICASE.EQ.2)  THEN
@@ -5548,7 +5554,7 @@ CONTAINS
       CHF = CCX / DTT * DTC
 !cs  sun change the original statement:   on 12/14/98
 !cs  SHF = CG / DTT * DTG + TIMCON*CG*2. * ( TGS - TD)
-!cs into following part where CG / DTT * DTG is rplaced by Dh_DTT_DTG
+!cs into following part where CG / DTT * DTG is replaced by Dh_DTT_DTG
       IF (ISNOW.eq.0) THEN
         SHF=  Dh_DTT_DTG - dhp(n+1)+ qkn*(TGSOLD-tonm1) &
         +qkn*DTG

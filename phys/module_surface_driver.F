@@ -983,6 +983,7 @@ CONTAINS
                                                             CQS2
 ! SSIB local variables
    REAL ZDIFF
+   REAL, DIMENSION( ims:ime , jms:jme ) :: XICE_save
 !
    REAL    :: DTMIN,DTBL
 !
@@ -1173,6 +1174,8 @@ CONTAINS
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
 
+         XICE_save(I,J) = XICEM(I,J) 
+
          IF ( FRACTIONAL_SEAICE == 1 ) then
             IF ( ( XICE(I,J) .NE. XICEM(I,J) ) .AND. ( XICEM(I,J) .GT. XICE_THRESHOLD ) ) THEN
                ! Fractional values of ALBEDO and EMISSIVITY are valid according to the 
@@ -1257,6 +1260,7 @@ CONTAINS
           ENDDO
         ENDIF
 
+        XICE_save(I,J) = XICEM(I,J)
         XICEM(i,j) = XICE(i,j)
 
       ENDDO
@@ -3008,7 +3012,7 @@ CONTAINS
                       rainncv(i,j), raincv(i,j), glw(i,j), dz8w(i,1,j),            &
                       smois(i,1,j), smois(i,2,j), smois(i,3,j),                    &
                       tslb(i,1,j), tslb(i,2,j), tslb(i,3,j),                       &
-                      snow(i,j), sfcrunoff(i,j), xicem(i,j),                        &
+                      snow(i,j), sfcrunoff(i,j), xice_save(i,j),                   &
                       u_phytmp(i,1,j),v_phytmp(i,1,j),qv_curr(i,1,j),t_phy(i,1,j), &
                       p_phy(i,1,j), psfc(i,j),                                     &
                       swdown(i,j), canwat(i,j),                                    &

@@ -378,6 +378,7 @@
      &                 ,DZ8W=DZ,T=T_PHY,T8W=T8W,GMT=GMT                 &
      &                 ,JULDAY=JULDAY,JULYR=JULYR,NPHS=NPHS             &
      &                 ,JULIAN=JULIAN,XTIME=XTIME                       &
+     &                 ,YR=JULYR                                        &
      &                 ,LW_PHYSICS=CONFIG_FLAGS%RA_LW_PHYSICS           &
      &                 ,SW_PHYSICS=CONFIG_FLAGS%RA_SW_PHYSICS           &
      &                 ,RADT=RADT,RA_CALL_OFFSET=GRID%RA_CALL_OFFSET    &
@@ -1235,6 +1236,7 @@
          IF( rc/= WRFU_SUCCESS)THEN
          CALL wrf_error_fatal('WRFU_TimeGet failed')
          ENDIF
+
 
 !
 !-----------------------------------------------------------------------

@@ -2857,13 +2857,6 @@ CONTAINS
                  )
 
          IF ( FRACTIONAL_SEAICE == 1 ) THEN
-            ! LSM Returns full land/ice values, no fractional values.
-            ! We return to a fractional component here.  SFLX currently
-            ! hard-wires
-            ! emissivity over sea ice to 0.98, the same value as over open
-            ! water, so
-            ! the fractional consideration doesn't have any effect for
-            ! emissivity.
             DO j=j_start(ij),j_end(ij)
                DO i=i_start(ij),i_end(ij)
                   IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE.  1.0 ) ) THEN
@@ -2919,48 +2912,12 @@ CONTAINS
 
 ! update land variables from CLM
               IF(XLAND(I,J).LT.1.5) then
-!              IF((XLAND(I,J).LT.1.5 .AND. IVGTYP(I,J) .NE. ISWATER) .OR. &
-!                 (IVGTYP(I,J) == ISWATER .AND. HT(I,J) >= LAKEMINALT .AND.
-!                 DOCLMLAKE == 1)) then
                   Q2(I,J) = sum(q_ref2m(i,1:nump(i,j),j)*wtp(i,1:nump(i,j),j))
                   T2(I,J) = sum(t_ref2m(i,1:nump(i,j),j)*wtp(i,1:nump(i,j),j))
                   TH2(I,J)= T2(I,J)*(1.E5/PSFC(I,J))**RCP
-                 ! IF (UCMCALL == 1 ) THEN
-!update urban impact 
-!Add more here?
-                 ! END IF
               END IF
            ENDDO
            ENDDO
-!urban
-     IF(sf_urban_physics == 1) THEN
-       DO j=j_start(ij),j_end(ij)                             !urban
-         DO i=i_start(ij),i_end(ij)                           !urban
-          IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &  !urban
-              IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33 ) THEN !urban
-!             TH2(I,J)  = TH2_URB2D(I,J)                       !urban
-!             T2(I,J)   = TH2_URB2D(I,J)/(1.E5/PSFC(I,J))**RCP !urban
-!m             T2(I,J)   = TH2_URB2D(I,J)                       !urban
-!             T2(I,J)   = FRC_URB2D(i,j)*TH2_URB2D(I,J) +
-!             (1-FRC_URB2D(i,j))*T2(I,J) !urban
-!             TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**RCP
-!             !urban
-!m             Q2(I,J)   = Q2_URB2D(I,J)
-!!urban
-!             Q2(I,J)   = FRC_URB2D(i,j)*Q2_URB2D(I,J) +(1-FRC_URB2D(i,j))*
-!             Q2(I,J)  !urban
-             U10(I,J)  = U10_URB2D(I,J)                       !urban
-             V10(I,J)  = V10_URB2D(I,J)                       !urban
-             PSIM(I,J) = PSIM_URB2D(I,J)                      !urban
-             PSIH(I,J) = PSIH_URB2D(I,J)                      !urban
-             GZ1OZ0(I,J) = GZ1OZ0_URB2D(I,J)                  !urban
-!m             AKHS(I,J) = AKHS_URB2D(I,J)                    !urban
-             AKHS(I,J) = CHS(I,J)                             !urban
-             AKMS(I,J) = AKMS_URB2D(I,J)                      !urban
-           END IF                                             !urban
-         ENDDO                                                !urban
-       ENDDO                                                  !urban
-     ENDIF
 
        ELSE
          CALL wrf_error_fatal('Lacking arguments for CLM in surface driver')

@@ -2217,6 +2217,9 @@ integer myproc
 !--------------------------------------------------------------
 ! CLM Init Coupling
       CASE (CLMSCHEME)
+        IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
+                CALL wrf_error_fatal ( 'CLM DOES NOT WORK WITH URBAN SCHEME' ) 
+        ENDIF
         IF(PRESENT(numc))THEN
         ! added by Jiming Jin 10/14/2012
         if(config_flags%num_land_cat .ne. 24) CALL wrf_error_fatal &

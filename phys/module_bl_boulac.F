@@ -234,7 +234,6 @@ MODULE module_bl_boulac
 ! igamma=3 Holstag and Moeng
     
       igamma=1    
-      write(*,*)'igamma=',igamma
 ! loop over the columns. 
 ! put variables in 1D temporary arrays
 !     

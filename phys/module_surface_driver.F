@@ -2533,7 +2533,7 @@ CONTAINS
                 sfcrunoff,udrunoff,sfcexc,                      &
                 sfcevp,grdflx,acsnow,acsnom,                    &
                 smfr3d,keepfr3dflag,                            &
-                myj,                                            &
+                myj,shdmin,shdmax,                              &
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )

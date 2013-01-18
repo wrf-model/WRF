@@ -2406,7 +2406,7 @@ CONTAINS
 !
       do k = kts, km1
         do i=its,ite
-          xlamue(i,k) = clam / zi(i,k)
+          xlamue(i,k) = clam / zi(i,k+1)
         enddo
       enddo
       do i=its,ite

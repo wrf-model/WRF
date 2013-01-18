@@ -139,8 +139,8 @@ atm_ocn :
 
 $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
 	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make CC="$(CC) $(CFLAGS)" \
-          FC="$(FC) $(FCFLAGS) $(PROMOTION) $(BYTESWAPIO)" \
-          CPP="$(CPP) -I. $(ARCHFLAGS) $(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ;\
+          FC="$(FC) $(FCFLAGS) $(OMP) $(PROMOTION) $(BYTESWAPIO)" \
+          CPP="$(CPP) -I. $(ARCHFLAGS) $(OMPCPP) $(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ;\
           $(RANLIB) $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a )
 
 ######################

@@ -86,8 +86,6 @@ C
       CHARACTER*80 CVAL(kelem)
       CHARACTER*80 YENC
 C
-      EXTERNAL GETARG
-C                                                                       
 C     ------------------------------------------------------------------
 C*          1. INITIALIZE CONSTANTS AND VARIABLES.
 C              -----------------------------------
@@ -108,11 +106,11 @@ C
 C
 C     GET INPUT AND OUTPUT FILE NAME.
 C
-      NARG=IARGC()
+      NARG=COMMAND_ARGUMENT_COUNT()
 C
 C
       DO 104 J=1,NARG
-      CALL GETARG(J,CARG(J))
+      CALL GET_COMMAND_ARGUMENT(number=J, value=CARG(J))
  104  CONTINUE
 
       II=0

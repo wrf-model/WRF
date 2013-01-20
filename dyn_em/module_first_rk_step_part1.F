@@ -42,7 +42,7 @@ CONTAINS
     USE module_cumulus_driver, ONLY : cumulus_driver
     USE module_shallowcu_driver, ONLY : shallowcu_driver
     USE module_pbl_driver, ONLY : pbl_driver
-    USE module_fr_sfire_driver_wrf, ONLY : sfire_driver_em_step
+    USE module_fr_fire_driver_wrf, ONLY : fire_driver_em_step
     USE module_fddagd_driver, ONLY : fddagd_driver
     USE module_em, ONLY : init_zero_tendency
     USE module_force_scm
@@ -843,12 +843,12 @@ BENCH_START(fire_driver_tim)
         if(config_flags%ifire.eq.2)then 
             ! initialization moved to start_em:start_domain_em
 !            if(grid%initestep.eq.1) &
-!            call sfire_driver_em_init (  grid , config_flags    &
+!            call fire_driver_em_init (  grid , config_flags    &
 !            ,ids,ide, kds,kde, jds,jde                              &
 !            ,ims,ime, kms,kme, jms,jme                              &
 !            ,ips,ipe, kps,kpe, jps,jpe  )
             ! one timestep of the fire model
-            call sfire_driver_em_step (  grid , config_flags    &
+            call fire_driver_em_step (  grid , config_flags    &
             ,ids,ide, kds,kde, jds,jde                              &
             ,ims,ime, kms,kme, jms,jme                              &
             ,ips,ipe, kps,kpe, jps,jpe                              &

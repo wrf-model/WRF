@@ -1,8 +1,8 @@
 !
-module module_fr_sfire_phys
+module module_fr_fire_phys
 
 use module_model_constants, only: cp,xlv
-use module_fr_sfire_util
+use module_fr_fire_util
 
 PRIVATE
 
@@ -453,9 +453,9 @@ do j=jfts,jfte
         endif
    
         if(k.lt.1.or.k.gt.nfuelcats)then
-!$OMP CRITICAL(SFIRE_PHYS_CRIT)
+!$OMP CRITICAL(FIRE_PHYS_CRIT)
             write(msg,'(3(a,i5))')'nfuel_cat(', i ,',',j,')=',k
-!$OMP END CRITICAL(SFIRE_PHYS_CRIT)
+!$OMP END CRITICAL(FIRE_PHYS_CRIT)
             call message(msg)
             call crash('set_fire_params: fuel category out of bounds')
         endif
@@ -510,9 +510,9 @@ do j=jfts,jfte
 enddo
 
 if(nerr.gt.1)then
-!$OMP CRITICAL(SFIRE_PHYS_CRIT)
+!$OMP CRITICAL(FIRE_PHYS_CRIT)
     write(msg,'(a,i6,a)')'set_fire_params: WARNING: fuel category 0 replaced in',nerr,' cells'
-!$OMP END CRITICAL(SFIRE_PHYS_CRIT)
+!$OMP END CRITICAL(FIRE_PHYS_CRIT)
     call message(msg)
 endif
 
@@ -585,16 +585,16 @@ integer:: i,j,iu1
 real:: t1
 character(len=128)msg
 
-!$OMP CRITICAL(SFIRE_PHYS_CRIT)
+!$OMP CRITICAL(FIRE_PHYS_CRIT)
     write(msg,'(a,i3)')'set_nfuel_cat: ifuelread=',ifuelread 
-!$OMP END CRITICAL(SFIRE_PHYS_CRIT)
+!$OMP END CRITICAL(FIRE_PHYS_CRIT)
     call message(msg)
 
 if (ifuelread .eq. -1 .or. ifuelread .eq. 2) then
-!$OMP CRITICAL(SFIRE_PHYS_CRIT)
+!$OMP CRITICAL(FIRE_PHYS_CRIT)
     call message('set_nfuel_cat: assuming nfuel_cat initialized already') 
     call message(msg)
-!$OMP END CRITICAL(SFIRE_PHYS_CRIT)
+!$OMP END CRITICAL(FIRE_PHYS_CRIT)
 else if (ifuelread .eq. 0) then
 !
     do j=jfts,jfte
@@ -602,9 +602,9 @@ else if (ifuelread .eq. 0) then
             nfuel_cat(i,j)=real(nfuel_cat0)
         enddo
     enddo
-!$OMP CRITICAL(SFIRE_PHYS_CRIT)
+!$OMP CRITICAL(FIRE_PHYS_CRIT)
     write(msg,'(a,i3)')'set_nfuel_cat: fuel initialized with category',nfuel_cat0
-!$OMP END CRITICAL(SFIRE_PHYS_CRIT)
+!$OMP END CRITICAL(FIRE_PHYS_CRIT)
     call message(msg)
          
 else if (ifuelread .eq. 1) then
@@ -658,7 +658,7 @@ implicit none
 !   index l -> j 
 !   not using nfuel_cat here - cell info was put into arrays passed as arguments
 !       in include file to avoid transcription errors when used elsewhere
-!   betaop is absorbed in phiwc, see module_fr_sfire_model/fire_startup
+!   betaop is absorbed in phiwc, see module_fr_fire_model/fire_startup
 !   return the base, wind, and slope contributions to the rate of spread separately
 !       because they may be needed to take advantage of known wind and slope vectors.
 !       They should add up to get the total rate of spread.
@@ -694,7 +694,7 @@ real::cor_wind,cor_slope,nvx,nvy,scale
 scale=1.
 nvx=propx/scale
 nvy=propy/scale
-if (fire_advection.ne.0) then ! from flags in module_fr_sfire_util
+if (fire_advection.ne.0) then ! from flags in module_fr_fire_util
     ! wind speed is total speed 
     speed =  sqrt(fp%vx(i,j)*fp%vx(i,j)+ fp%vy(i,j)*fp%vy(i,j))+tiny(speed)
     ! slope is total slope
@@ -779,4 +779,4 @@ end function nrm2
 
 end subroutine fire_ros 
 
-end module module_fr_sfire_phys
+end module module_fr_fire_phys

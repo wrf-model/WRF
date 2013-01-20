@@ -1,6 +1,6 @@
 !
 ! This module is the entry point from WRF ARW to the wildland 
-! fire module. The call to sfire_driver advances the fire module by 
+! fire module. The call to fire_driver advances the fire module by 
 ! one timestep. The fire module inputs the wind and outputs 
 ! temperature and humidity tendencies. The fire module also inputs a 
 ! number of constant arrays (fuel data, topography). Additional 
@@ -13,13 +13,13 @@
 ! and the University of Colorado at Denver. 
 !
 
-module module_fr_sfire_driver
+module module_fr_fire_driver
 ! use this module for standalone call, you only need to provide some mock-up wrf modules  
 
-use module_fr_sfire_model
-use module_fr_sfire_phys, only : fire_params , init_fuel_cats
-use module_fr_sfire_util
-use module_fr_sfire_core, only: ignition_line_type
+use module_fr_fire_model
+use module_fr_fire_phys, only : fire_params , init_fuel_cats
+use module_fr_fire_util
+use module_fr_fire_core, only: ignition_line_type
 
 USE module_domain, only: domain
 USE module_configure, only: grid_config_rec_type
@@ -31,14 +31,14 @@ implicit none
 
 
 private
-public sfire_driver_em,use_atm_vars
+public fire_driver_em,use_atm_vars
 
 logical:: use_atm_vars=.true.   !  interpolate wind from atm mesh and average output fluxes back
 
 contains
 
 #define DEBUG_OUT
-subroutine sfire_driver_em ( grid , config_flags                    & 
+subroutine fire_driver_em ( grid , config_flags                    & 
             ,fire_ifun_start,fire_ifun_end,tsteps                   &
             ,ids,ide, kds,kde, jds,jde                              &
             ,ims,ime, kms,kme, jms,jme                              &
@@ -104,7 +104,7 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
     call fire_ignition_convert (config_flags,fire_max_ignitions,fire_ignition_longlat, &
         ignition_line,fire_num_ignitions,unit_fxlong,unit_fxlat)
 
-    ! copy configuration flags to sfire internal structures
+    ! copy configuration flags to fire internal structures
     call set_flags(config_flags)
 
     ! refinement r
@@ -115,10 +115,10 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
 
     
 
-!$OMP CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP CRITICAL(FIRE_DRIVER_CRIT)
     write(msg,'(a,i1,a,i1,a,i4)') &
-       'sfire_driver_em: ifun from ',fire_ifun_start,' to ',fire_ifun_end,' test steps',tsteps
-!$OMP END CRITICAL(SFIRE_DRIVER_CRIT)
+       'fire_driver_em: ifun from ',fire_ifun_start,' to ',fire_ifun_end,' test steps',tsteps
+!$OMP END CRITICAL(FIRE_DRIVER_CRIT)
     call message(msg)
 
     do istep=0,tsteps ! istep >0 is for testing only, exit after the first call
@@ -170,7 +170,7 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
         endif
 #endif
         ! need domain by 1 smaller, in last row.col winds are not set properly
-        call sfire_driver_phys ( &
+        call fire_driver_phys ( &
             fire_ifun,need_lfn_update,                  &
             ids,ide-1, kds,kde, jds,jde-1,                          &
             ims,ime, kms,kme, jms,jme,                          &
@@ -221,16 +221,16 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
 
       enddo
     enddo
-    if(tsteps>0)call crash('sfire_driver_em: test run of uncoupled fire model completed')
+    if(tsteps>0)call crash('fire_driver_em: test run of uncoupled fire model completed')
 
-end subroutine sfire_driver_em
+end subroutine fire_driver_em
 
 !
 !*******************
 !
 
-! module_fr_sfire_driver%%sfire_driver
-subroutine sfire_driver_phys (ifun,need_lfn_update,    &
+! module_fr_fire_driver%%fire_driver
+subroutine fire_driver_phys (ifun,need_lfn_update,    &
     ids,ide, kds,kde, jds,jde,                    & ! atm grid dimensions
     ims,ime, kms,kme, jms,jme,                    &
     ips,ipe, kps,kpe, jps,jpe,                    &
@@ -372,7 +372,7 @@ dyf=dy/jr
 
 
 
-!$OMP CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP CRITICAL(FIRE_DRIVER_CRIT)
 write(msg,'(a,2f15.6)')'atmosphere mesh step:',dx,dy
 call message(msg)
 write(msg,'(a,2f15.6)')'fire mesh step:      ',dxf,dyf
@@ -389,7 +389,7 @@ write(msg,7001)'fire memory     ','ifms',ifms,ifme,jfms,jfme
 call message(msg)                    
 write(msg,7001)'fire patch      ','ifps',ifps,ifpe,jfps,jfpe
 call message(msg)                    
-!$OMP END CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP END CRITICAL(FIRE_DRIVER_CRIT)
 
 ! check mesh dimensions
 call check_fmesh(ids,ide,ifds,ifde,ir,'id')           ! check if atm and fire grids line up
@@ -451,14 +451,14 @@ do ij=1,num_tiles
     ite1=ifval(ite.eq.ide,ite+1,ite)
     jte1=ifval(jte.eq.jde,jte+1,jte)
 
-!$OMP CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP CRITICAL(FIRE_DRIVER_CRIT)
     write(msg,'(a,i3,1x,a,i7,1x,a,i3)')'tile=',ij,' id=',id,' ifun=',ifun
     call message(msg)
     write(msg,7001)'atm tile   ','its',its,ite,jts,jte
     call message(msg)                   
     write(msg,7001)'fire tile  ','ifts',ifts,ifte,jfts,jfte
     call message(msg)                    
-!$OMP END CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP END CRITICAL(FIRE_DRIVER_CRIT)
 
     ! check the tiles
     call check_mesh_2dim(its,ite,jts,jte,ips,ipe,jps,jpe)                 ! check if atm tile fits in atm patch
@@ -466,12 +466,12 @@ do ij=1,num_tiles
     call check_mesh_2dim(ifts-2,ifte+2,jfts-2,jfte+2,ifms,ifme,jfms,jfme)! check if fire node tile fits in memory
 
 
-!$OMP CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP CRITICAL(FIRE_DRIVER_CRIT)
     write(msg,'(a,i6,a,2(f15.6,a))')'time step',itimestep,' at',time_start,' duration',dt,'s'
     call message(msg)
     7001 format(a,' dimensions ',a4,':',i6,' to ',i6,' by ',i6,' to ',i6)
     write(msg,'(a,2i9)')'refinement ratio:',ir,jr
-!$OMP END CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP END CRITICAL(FIRE_DRIVER_CRIT)
 
     if(ifun.eq.1)then   ! set terrain
 
@@ -497,9 +497,9 @@ do ij=1,num_tiles
 !                zs,                                       & ! atm grid arrays in
 !                fp%zsf)                                      ! fire grid arrays out
 !        else
-!!$OMP CRITICAL(SFIRE_DRIVER_CRIT)
+!!$OMP CRITICAL(FIRE_DRIVER_CRIT)
 !           write(msg,'(a,i3,a)')'fire_topo_from_atm=',fire_topo_from_atm,' assuming ZSF set, interpolation skipped'
-!!$OMP END CRITICAL(SFIRE_DRIVER_CRIT)
+!!$OMP END CRITICAL(FIRE_DRIVER_CRIT)
 !        endif
 
         if(ignition_longlat .eq.0)then
@@ -588,7 +588,7 @@ do ij=1,num_tiles
 
 !   the following executes in any case
 
-    call sfire_model (id,ifun,restart,need_lfn_update,  &
+    call fire_model (id,ifun,restart,need_lfn_update,  &
         num_ignitions,                          & ! switches
         ifuelread,nfuel_cat0,                   & ! initialize fuel categories
         ifds,ifde,jfds,jfde,                    & ! fire domain dims
@@ -639,9 +639,9 @@ do ij=1,num_tiles
             its,ite,jts,jte,      &
             grnqfx)
 
-!$OMP CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP CRITICAL(FIRE_DRIVER_CRIT)
           write(msg,'(a,f6.3)')'fire-atmosphere feedback scaling ',fire_atm_feedback
-!$OMP end CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP end CRITICAL(FIRE_DRIVER_CRIT)
 	  call message(msg)
           s = 1./(ir*jr)
           do j=jts,jte
@@ -677,21 +677,21 @@ endif
 if (ifun.eq.3)then
     ignitions_done=ignitions_done_tile(1) ! all should be the same
     do i=1,ignitions_done
-!$OMP CRITICAL(SFIRE_DRIVER_CRIT)
-        write(msg,'(2(a,i4,1x))')'sfire_driver_phys: checking ignition ',i,' of ',ignitions_done
-!$OMP END CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP CRITICAL(FIRE_DRIVER_CRIT)
+        write(msg,'(2(a,i4,1x))')'fire_driver_phys: checking ignition ',i,' of ',ignitions_done
+!$OMP END CRITICAL(FIRE_DRIVER_CRIT)
         call message(msg)
         ignited_patch(i)=0
         do ij=1,num_tiles
             ignited_patch(i)=ignited_patch(i)+ignited_tile(i,ij)
         enddo
 #ifdef DM_PARALLEL
-        call message('sfire_driver_phys: checking ignitions, collect counts')
+        call message('fire_driver_phys: checking ignitions, collect counts')
         call wrf_dm_maxval(ignited_patch(i),idex,jdex)
-        call message('sfire_driver_phys: collected')
+        call message('fire_driver_phys: collected')
 #endif
         if(ignited_patch(i).eq.0)then
-            call crash('sfire_driver_phys: Ignition failed, no nodes ignited. Bad coordinates?')
+            call crash('fire_driver_phys: Ignition failed, no nodes ignited. Bad coordinates?')
         endif
     enddo
 
@@ -738,7 +738,7 @@ if(ifun.eq.6)then
 #endif
 endif
 
-end subroutine sfire_driver_phys
+end subroutine fire_driver_phys
 !
 !*******************
 !
@@ -1022,10 +1022,10 @@ hgtv=r_nan
 
 
 if(kds.ne.1)then
-!$OMP CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP CRITICAL(FIRE_DRIVER_CRIT)
   write(msg,*)'WARNING: bottom index kds=',kds,' should be 1?'
   call message(msg)
-!$OMP END CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP END CRITICAL(FIRE_DRIVER_CRIT)
 endif
 
 !                            ^ j
@@ -1062,10 +1062,10 @@ endif
     call print_3d_stats(its,ite,kds,kde,jts,jte1,ims,ime,kms,kme,jms,jme,v,'wind V in')
 
     if(fire_print_msg.gt.0)then
-!$OMP CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP CRITICAL(FIRE_DRIVER_CRIT)
        write(msg,'(a,f7.2,a)')'interpolate_atm2fire: log-interpolation of wind to',fire_wind_height,' m'
        call message(msg)
-!$OMP END CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP END CRITICAL(FIRE_DRIVER_CRIT)
     endif
 
     ! indexing
@@ -1077,12 +1077,12 @@ endif
     jtet=ifval(jde.eq.jte,jte,jte+1)
 
 if(fire_print_msg.ge.1)then
-!$OMP CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP CRITICAL(FIRE_DRIVER_CRIT)
   write(msg,7001)'atm input  ','tile',its,ite,jts,jte
   call message(msg)
   write(msg,7001)'altw       ','tile',itst,itet,jtst,jtet
   call message(msg)
-!$OMP END CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP END CRITICAL(FIRE_DRIVER_CRIT)
 endif
 7001 format(a,' dimensions ',a4,':',i6,' to ',i6,' by ',i6,' to ',i6)
 
@@ -1103,10 +1103,10 @@ endif
     jteu=ifval(jde.eq.jte,jte,jte+1)
 
 if(fire_print_msg.ge.1)then
-!$OMP CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP CRITICAL(FIRE_DRIVER_CRIT)
   write(msg,7001)'u interp at','tile',itsu,iteu,jtsu,jteu
   call message(msg)
-!$OMP END CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP END CRITICAL(FIRE_DRIVER_CRIT)
 endif
 
     do j = jtsu,jteu          
@@ -1129,10 +1129,10 @@ endif
     itev=ifval(ide.eq.ite,ite,ite+1)
 
 if(fire_print_msg.ge.1)then
-!$OMP CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP CRITICAL(FIRE_DRIVER_CRIT)
   write(msg,7001)'v interp at','tile',itsv,itev,jtsv,jtev
   call message(msg)
-!$OMP END CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP END CRITICAL(FIRE_DRIVER_CRIT)
 endif
     do j = jtsv,jtev          
       do k=kds,kdmax+1
@@ -1259,7 +1259,7 @@ endif
         call write_array_m(itsov,iteov,jtsov,jteov,TDIMS,va,'va',id)
 #endif
 
-!$OMP CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP CRITICAL(FIRE_DRIVER_CRIT)
     ! don't have all values valid, don't check
      write(msg,12)'atm mesh wind U at',fire_wind_height,' m'
      call print_2d_stats(itsou,iteou,jtsou,jteou,TDIMS,ua,msg)
@@ -1270,7 +1270,7 @@ endif
     call print_2d_stats(its,ite,jts,jte1,ims,ime,jms,jme,vah,'VAH')
     !call write_array_m(its,ite1,jts,jte,ims,ime,jms,jme,uah,'uah',id)
     !call write_array_m(its,ite,jts,jte1,ims,ime,jms,jme,vah,'vah',id)
-!$OMP END CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP END CRITICAL(FIRE_DRIVER_CRIT)
 
 !      ---------------
 !     | F | F | F | F |   Example of atmospheric and fire grid with
@@ -1355,10 +1355,10 @@ character(len=*),intent(in)::s
 character(len=128)msg
 !*** executable
 if ((ide-ids+1)*ir.ne.(ifde-ifds+1))then
-!$OMP CRITICAL(SFIRE_DRIVER_CRIT)
+!$OMP CRITICAL(FIRE_DRIVER_CRIT)
     write(msg,1)s,ids,ide,ifds,ifde,ir
-1   format('module_fr_sfire_driver: incompatible bounds ',a,' atm ',i5,':',i5,' fire ',i5,':',i5,' ratio ',i3)    
-!$OMP END CRITICAL(SFIRE_DRIVER_CRIT)
+1   format('module_fr_fire_driver: incompatible bounds ',a,' atm ',i5,':',i5,' fire ',i5,':',i5,' ratio ',i3)    
+!$OMP END CRITICAL(FIRE_DRIVER_CRIT)
     call crash(msg)
 endif
 end subroutine check_fmesh
@@ -1369,8 +1369,8 @@ end subroutine check_fmesh
 subroutine set_flags(config_flags)
 implicit none
 TYPE (grid_config_rec_type) , INTENT(IN)          :: config_flags
-! copy flags from wrf to module_fr_sfire_util
-! for instructions how to add a flag see the top of module_fr_sfire_util.F
+! copy flags from wrf to module_fr_fire_util
+! for instructions how to add a flag see the top of module_fr_fire_util.F
 
 
 fire_print_msg          = config_flags%fire_print_msg
@@ -1398,4 +1398,4 @@ fire_advection          = config_flags%fire_advection
 
 end subroutine set_flags
 
-end module module_fr_sfire_driver
+end module module_fr_fire_driver

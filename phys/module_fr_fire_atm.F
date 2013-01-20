@@ -1,10 +1,10 @@
 !WRF:MEDIATION_LAYER:FIRE_MODEL
 ! Routines dealing with the atmosphere
 
-module module_fr_sfire_atm
+module module_fr_fire_atm
 
 use module_model_constants, only: cp,xlv
-use module_fr_sfire_util
+use module_fr_fire_util
 
 contains
 
@@ -18,7 +18,7 @@ SUBROUTINE fire_tendency( &
     rthfrten,rqvfrten)             ! theta and Qv tendencies 
 
 ! This routine is atmospheric physics 
-! it does NOT go into module_fr_sfire_phys because it is not related to fire physical processes
+! it does NOT go into module_fr_fire_phys because it is not related to fire physical processes
 
 ! --- this routine takes fire generated heat and moisture fluxes and
 !     calculates their influence on the theta and water vapor 
@@ -172,4 +172,4 @@ END SUBROUTINE fire_tendency
 !***
 !
 
-end module module_fr_sfire_atm
+end module module_fr_fire_atm

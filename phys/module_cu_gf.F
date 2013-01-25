@@ -11,7 +11,7 @@ CONTAINS
               ,rho,RAINCV,PRATEC                                &
               ,U,V,t,W,q,p,pi                                   &
               ,dz8w,p8w,XLV,CP,G,r_v                            &
-              ,htop,hbot                                        &
+              ,htop,hbot,ktop_deep                              &
               ,CU_ACT_FLAG,warm_rain                            &
               ,APR_GR,APR_W,APR_MC,APR_ST,APR_AS                &
               ,APR_CAPMA,APR_CAPME,APR_CAPMI                    &
@@ -113,6 +113,10 @@ CONTAINS
 !
 ! Optionals
 !
+   INTEGER, DIMENSION( ims:ime,         jms:jme ),              &
+         OPTIONAL,                                              &
+         INTENT(  OUT) ::                           ktop_deep
+
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),              &
          OPTIONAL,                                              &
          INTENT(INOUT) ::                           RTHFTEN,    &
@@ -282,6 +286,7 @@ CONTAINS
         k22s(i)=0
         kbcons(i)=0
         ktops(i)=0
+        ktop_deep(i,j) = 0
         HBOT(I,J)  =REAL(KTE)
         HTOP(I,J)  =REAL(KTS)
         iact_old_gr(i,j)=0
@@ -519,6 +524,7 @@ CONTAINS
                  k22_shallow(i,j)=k22s(i)
                  kbcon_shallow(i,j)=kbcons(i)
                  ktop_shallow(i,j)=ktops(i)
+                 ktop_deep(i,j) = ktop(i)
                ENDDO
             endif
             DO I=ibegc,iendc

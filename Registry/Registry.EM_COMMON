@@ -2324,6 +2324,32 @@ package   tconly         use_wps_input==2            -             state:u_gc,v_
 package   notenddiag    tenddiag==0                  -             -
 package   usetenddiag   tenddiag==1                  -             advh_t:advh_qv;advz_t:advz_qv
                                                 
+# lightning
+
+state    real    ic_flashcount     ij     misc    1   -   rh    "ic_flashcount"      "Accumulated IC flash count"     "#"
+state    real    ic_flashrate      ij     misc    1   -   r     "ic_flashrate"       "IC flash rate"                  "#/s"
+state    real    cg_flashcount     ij     misc    1   -   rh    "cg_flashcount"      "Accumulated CG flash count"     "#"
+state    real    cg_flashrate      ij     misc    1   -   r     "cg_flashrate"       "CG flash rate"                  "#/s"
+
+
+rconfig  integer    lightning_option         namelist,physics   max_domains    0      h    "lightning_option"          "Lightning flash parameterization"       ""
+rconfig  real       lightning_dt             namelist,physics   max_domains    0.     -    "lightning_dt"              ""                                       "s"
+rconfig  real       lightning_start_seconds  namelist,physics   max_domains    0.     -    "lightning_start_seconds"   ""                                       "s"
+rconfig  real       flashrate_factor         namelist,physics   max_domains    1.0    h    "flashrate_factor"          "Tuning factor"                          ""
+
+rconfig  integer    iccg_method              namelist,physics   max_domains    0       -   "iccg_method"               "IC:CG partitioning method"                         ""
+rconfig  real       iccg_prescribed_num      namelist,physics   max_domains    0.0     -   "iccg_prescribed_num"       "Numerator of user-specified prescribed IC:CG"      ""
+rconfig  real       iccg_prescribed_den      namelist,physics   max_domains    1.0     -   "iccg_prescribed_dem"       "Denominator of user-specified prescribed IC:CG"    ""
+rconfig  integer    cellcount_method         namelist,physics   max_domains    0       -   "cellcount_method"          "0=auto, 1=tile, 2=domain"                   ""
+rconfig  real       cldtop_adjustment        namelist,physics   max_domains    0.      -   "cldtop_adjustment"         "Adjustment to cloud top for ltng param"     "km"
+
+state    real  iccg_in_num    ij      misc        1         -      i{16}r     "iccg_in_num"      "IC:CG input numerator"      ""
+state    real  iccg_in_den    ij      misc        1         -      i{16}r     "iccg_in_den"      "IC:CG input denominator"    ""
+
+package	ltng_none           lightning_option==0            -       -
+package	ltng_crm_PR92w      lightning_option==1            -       -
+package ltng_crm_PR92z      lightning_option==2            -       -
+package	ltng_cpm_PR92z      lightning_option==11           -       -
 # only need to specify these once; not for every io_form* variable
 package   io_intio    io_form_restart==1                     -             -
 package   io_netcdf   io_form_restart==2                     -             -

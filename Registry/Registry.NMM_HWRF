@@ -1580,6 +1580,12 @@ package   io_zzz      io_form_restart==9                     -             -
 package   io_grib2    io_form_restart==10                    -             -
 package   io_pnetcdf  io_form_restart==11                     -             -
 
+#lightning
+package ltng_none           lightning_option==0            -       -
+package ltng_crm_PR92w      lightning_option==1            -       -
+package ltng_crm_PR92z      lightning_option==2            -       -
+package ltng_cpm_PR92z      lightning_option==11           -       -
+
 ## communications                                               
 
 ### 8. Edit the Registry file and create a halo-exchange for x_1.

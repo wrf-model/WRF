@@ -351,10 +351,6 @@ state    real  firesize_agef      ij      misc      1         -        i07h     
 state    real  firesize_agsv      ij      misc      1         -        i07h       "firesize_agsv"         "mean firesize for savanna"  "?"
 state    real  firesize_aggr      ij      misc      1         -        i07h       "firesize_aggr"         "mean firesize for grassland"  "?"
 
-# Lightning
-state    real  ic_flshrate    ij      misc        1         -      rh      "IC_FR"                 "Cuml. IC Flash rate"                 "number"
-state    real  cg_flshrate    ij      misc        1         -      rh      "CG_FR"                 "Cuml. CG Flash rate"                 "number"
-
 # track state filed
 state    real  radfld        i{tz}j{tr}   misc     1        -      -       "radfld"             "radfld"                     ""
 state    real  adjcoe        i{tz}j{tt}   misc     1        -      -       "adjcoe"             "adjcoe"                     ""
@@ -510,11 +506,6 @@ state    real  erup_end     ij      misc        1         -      i{13}    "ERUP_
 state    real  dep_vel_o3     ij      misc        1         -      -        "DEP_VEL"               "deposition velocities for o3"        "?"
 state    real  cu_co_ten      ikj     misc        1         -      -        "CU_CO_TEN"             "CONV. TRANSPORT FOR CO"              "?"
 
-# for lightning
-state    integer  ktop           ij      misc        1         -     r           "KTOP"            "Convective Cloud top index"        "#"
-state    integer  ktop_adj       ij      misc        1         -     r           "KTOP_ADJ"        "KTOP limited by WMO tropopause"    "#"
-
-#
 # Tendency diagnostics for chemistry (chemdiag)
 #
 # Currently index references to chem array is done within the code and requires
@@ -2769,13 +2760,25 @@ package   tracer_test1  tracer_opt==2       -             tracer:tr17_1,tr17_2,t
 package   tracer_test2  tracer_opt==3       -             tracer:tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8
 package   tracer_test3  tracer_opt==4       -             tracer:tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8,tr18_1,tr18_2
 
-# Lightning
-package   crmpickering  lightning_opt==1   -   state:ic_flshrate,cg_flshrate
-package   cpmPRO        lightning_opt==101 -   state:ic_flshrate 
-
 # the following arrays only needed for aircraft emissions options
 package   aircraft1      aircraft_emiss_opt==1             -       emis_aircraft:eac_no,eac_co,eac_so2,eac_ch4
 
 package   nochemdiag     chemdiag==0         -                -
 package   usechemdiag    chemdiag==1         -                conv_ct:conv_co,conv_o3,conv_no,conv_no2,conv_hno3,conv_iso,conv_ho,conv_ho2;chem_ct:chem_co,chem_o3,chem_no,chem_no2,chem_hno3,chem_iso,chem_ho,chem_ho2;vmix_ct:vmix_co,vmix_o3,vmix_no,vmix_no2,vmix_hno3,vmix_iso,vmix_ho,vmix_ho2;advh_ct:advh_co,advh_o3,advh_no,advh_no2,advh_hno3,advh_iso,advh_ho,advh_ho2;advz_ct:advz_co,advz_o3,advz_no,advz_no2,advz_hno3,advz_iso,advz_ho,advz_ho2
 
+
+# Lightning NOx tracers
+state   real    lnox_total   ikjf    tracer        1         -     i8rhusdf=(bdy_interp:dt)    "lnox_total"      "Total LNOx tracer"          "ppmv"
+state   real    lnox_ic      ikjf    tracer        1         -     i8rhusdf=(bdy_interp:dt)    "lnox_ic"         "IC LNOx tracer"             "ppmv"
+state   real    lnox_cg      ikjf    tracer        1         -     i8rhusdf=(bdy_interp:dt)    "lnox_cg"         "CG LNOx tracer"             "ppmv"
+
+rconfig   real      N_IC            namelist,chem     max_domains        500.     rh     "N_IC"               "IC emission factor"                "moles/flash"
+rconfig   real      N_CG            namelist,chem     max_domains        500.     rh     "N_CG"               "CG emission factor"                "moles/flash"
+rconfig   integer   lnox_opt        namelist,chem     max_domains        0        rh     "lnox_opt"           "Method for vertical distribution"   ""
+rconfig   logical   lnox_passive    namelist,chem     max_domains        .false.  rh     "lnox_passive"       "true = tracer only (no emission)"   ""
+rconfig  real       ltng_temp_upper          namelist,physics   max_domains    -45.    -   "ltng_temp_upper"           "Upper isotherm for lightning modes"         "C"
+rconfig  real       ltng_temp_lower          namelist,physics   max_domains    -15.    -   "ltng_temp_lower"           "Lower isotherm for lightning modes"         "C"
+
+package  lnox_opt_none      lnox_opt==0    -   -
+package  lnox_opt_ott       lnox_opt==1    -   tracer:lnox_total
+package  lnox_opt_decaria   lnox_opt==2    -   tracer:lnox_ic,lnox_cg

@@ -153,10 +153,12 @@ CONTAINS
          kbcon3(i)=kbcon_shallow(i,j)
      ENDDO
      else
-         xmb3(i)=0
+     DO I=ITS,ITF
+         xmb3(i)=0.
          ktop3(i)=0
          k23(i)=0
          kbcon3(i)=0
+     ENDDO
      endif
      DO K=kts,ktf
      DO I=ITS,ITF
@@ -497,7 +499,7 @@ CONTAINS
         IERR(i)=0
         IERR5(i)=0
         if(ktop3(i).lt.2)ierr5(i)=20
-        if(xmb3(i).eq.0)ierr5(i)=21
+        if(xmb3(i).eq.0.)ierr5(i)=21
  7    CONTINUE
       do i=its,itf
           cap_max(i)=cap_maxs

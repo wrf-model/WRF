@@ -403,6 +403,7 @@
        DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec%cu_diag(i) .EQ. G3TAVE ) THEN
           IF ( ( model_config_rec%cu_physics(i) .NE. GDSCHEME ) .AND. &
+               ( model_config_rec%cu_physics(i) .NE. GFSCHEME ) .AND. &
                ( model_config_rec%cu_physics(i) .NE. G3SCHEME ) ) THEN
                 wrf_err_message = '--- ERROR: Using cu_diag=1 requires use of one of the following CU schemes:'
                 CALL wrf_message ( wrf_err_message )
@@ -422,6 +423,7 @@
 
       DO i = 1, model_config_rec % max_dom
          IF ( ( model_config_rec%cu_physics(i) .EQ. GDSCHEME ) .OR. &
+              ( model_config_rec%cu_physics(i) .EQ. GFSCHEME ) .OR. &
               ( model_config_rec%cu_physics(i) .EQ. G3SCHEME ) ) THEN
             model_config_rec%cu_diag(i) = 1
          ELSE

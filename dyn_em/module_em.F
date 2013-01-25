@@ -13,7 +13,7 @@ MODULE module_em
 	vertical_diffusion_v, vertical_diffusion, vertical_diffusion_3dmp, sixth_order_diffusion, rk_rayleigh_damp, theta_relaxation, vertical_diffusion_mp, zero_tend
 	
    USE module_state_description, only: param_first_scalar, p_qr, p_qv, p_qc, p_qg, p_qi, p_qs, tiedtkescheme, heldsuarez, positivedef, &
-   	gdscheme, g3scheme, kfetascheme, monotonic, wenopd_scalar, weno_scalar, weno_mom
+   	gdscheme, g3scheme, gfscheme, kfetascheme, monotonic, wenopd_scalar, weno_scalar, weno_mom
 	
    USE module_damping_em, only: held_suarez_damp
 

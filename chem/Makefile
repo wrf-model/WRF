@@ -36,8 +36,6 @@ MODULES =                                 \
         module_gocart_so2so4.o            \
         module_input_tracer_data.o        \
         module_interpolate.o              \
-        module_ltng_crm.o                 \
-        module_ltng_cpm.o                 \
         module_mosaic_csuesat.o           \
         module_mozcart_wetscav.o          \
         module_peg_util.o                 \
@@ -84,7 +82,9 @@ MODULES =                                 \
         module_ctrans_grell.o             \
         module_gocart_chem.o              \
         module_input_tracer.o             \
-        module_lightning_driver.o         \
+	module_lightning_nox_driver.o     \
+	module_lightning_nox_ott.o        \
+	module_lightning_nox_decaria.o    \
         module_mixactivate_wrappers.o     \
         module_mosaic_driver.o            \
         module_optical_averaging.o        \
@@ -120,7 +120,6 @@ MODULES =                                 \
         module_mosaic_cloudchem.o         \
         module_sorgam_cloudchem.o         \
         module_phot_fastj.o
-
 
 OBJS    =                           \
         chemics_init.o              \

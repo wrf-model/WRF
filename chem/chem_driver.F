@@ -50,7 +50,6 @@
 !
   USE module_dry_dep_driver
   USE module_emissions_driver
-  USE module_ltng_cpm, only: adjust_ktop
   USE module_input_tracer, only: set_tracer
   USE module_wetscav_driver, only: wetscav_driver
   USE module_wetdep_ls, only:wetdep_ls
@@ -417,13 +416,7 @@
 !
   seasin(:,:,:)=0.
   dustin(:,:,:)=0.
-  if (config_flags%lightning_opt > 0 ) then
-! initialize lightning flash rates
-     IF ( ktau==1 ) then
-      grid%ic_flshrate(:,:) = 0.
-      grid%cg_flshrate(:,:) = 0.
-     ENDIF
-  ENDIF
+
   if(config_flags%cu_diag == 0 ) grid%raincv_b(:,:) = grid%raincv(:,:)
 
 #if ( NMM_CORE == 1 )
@@ -905,13 +898,6 @@
     if(config_flags%emiss_inpt_opt > 0 .or. config_flags%dust_opt > 0)then
       call wrf_debug(15,'calling emissions driver')
 
-      ! limit ktop by WMO tropopause for cpm ltng param
-      call adjust_ktop ( grid%ktop, grid%ktop_adj, t_phy, z_at_w, zmid,               &
-               ids,ide, jds,jde, kds,kde,                                             &
-               ims,ime, jms,jme, kms,kme,                                             &
-               its,ite, jts,jte, kts,kte                                              &
-                     )
-
       call emissions_driver(grid%id,ktau,grid%dt,grid%DX,                                  &
               adapt_step_flag, curr_secs,                                                  &
               grid%plumerisefire_frq,grid%stepfirepl,                                      &
@@ -964,16 +950,10 @@
               grid%mebio_isop,grid%mebio_apin,grid%mebio_bpin, grid%mebio_bcar,            &
               grid%mebio_acet,grid%mebio_mbo,grid%mebio_no,                                &
               current_month,                                                               &
-         ! stuff for lightning NOx
-              grid%ht, grid%dy,                                                            &
-              grid%lightning_time_step, grid%lightning_start_seconds, grid%passive_ltng,   &
-              grid%temp_upper, grid%temp_lower, grid%N_IC, grid%N_CG,                      &
-              grid%lflash_data, grid%ic_flshrate, grid%cg_flshrate,                        &
-              grid%flashrate_factor, grid%flashrate_method, grid%iccg_method,              &
-              grid%cellcount_method,grid%ktop_adj,                                             &
+         ! stuff for LNOx emissions
+             grid%ht, grid%refl_10cm, grid%ic_flashrate, grid%cg_flashrate,                 &
          ! stuff for aircraft emissions
               emis_aircraft,                                                               &
-
          ! stuff for the GHG fluxes
               vprm_in,grid%rad_vprm,grid%lambda_vprm,                                      &
               grid%alpha_vprm,grid%resp_vprm,grid%xtime,                                   &
@@ -1219,7 +1199,7 @@
 #endif
              p_phy,XLV,CP,G,r_v,                                                      &
              z_at_w,grid%cu_co_ten,                                                   &
-             grid%ktop,grid%wd_no3_cu,grid%wd_so4_cu,                                 &
+             grid%wd_no3_cu,grid%wd_so4_cu,                                 &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
              config_flags%ishallow,num_moist,numgas,num_chem,config_flags%chem_opt,0, &
              config_flags%conv_tr_wetscav,config_flags%conv_tr_aqchem,                &
@@ -1254,7 +1234,7 @@
 #endif
              p_phy,XLV,CP,G,r_v,                                                      &
              z_at_w, grid%cu_co_ten,                                                  &
-             grid%ktop,grid%wd_no3_cu,grid%wd_so4_cu,                                 &
+             grid%wd_no3_cu,grid%wd_so4_cu,                                 &
              grid%k22_shallow,grid%kbcon_shallow,grid%ktop_shallow,grid%xmb_shallow,  &
              config_flags%ishallow,num_moist,0,num_tracer,0,config_flags%tracer_opt,  &
              config_flags%conv_tr_wetscav,config_flags%conv_tr_aqchem,                &

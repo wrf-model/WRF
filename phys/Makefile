@@ -144,6 +144,10 @@ MODULES = \
 	module_radiation_driver.o \
 	module_surface_driver.o \
 	module_diagnostics.o \
+	module_lightning_driver.o \
+	module_ltng_cpmpr92z.o \
+	module_ltng_crmpr92.o \
+	module_ltng_iccg.o \
 	module_fdda_psufddagd.o \
 	module_fdda_spnudging.o \
 	module_fddagd_driver.o  \

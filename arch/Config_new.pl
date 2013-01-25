@@ -529,18 +529,7 @@ while ( <CONFIGURE_DEFAULTS> )
       {
 
         if($ENV{WRF_HYDRO} eq 1) {
-          if($x =~ "PGI") {
-              if($paropt eq 'serial') { $tt = `cd hydro; configure 1`;}
-              else {$tt = `cd hydro; configure 2`;}
-          }
-          if($x =~ "AIX") {
-              if($paropt eq 'serial') { $tt = `cd hydro; configure 3`;}
-              else {$tt = `cd hydro; configure 4`;}
-          }
-          if($x =~ "gfortran") {
-              if($paropt eq 'serial') { $tt = `cd hydro; configure 5`;}
-              else {$tt = `cd hydro; configure 6`;}
-          }
+           $tt = `cd hydro; wrf_hydro_config "$x" "$paropt"`;
         }
 
         $latchon = 1 ;

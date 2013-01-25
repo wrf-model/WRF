@@ -1,15 +1,13 @@
 #!/usr/bin/perl
 
-  print "Please select from following supported options. \n\n";
-
-  print "   1. Linux PGI compiler sequential \n";
-  print "   2. Linux PGI compiler mpp \n";
-  print "   3. IBM AIX compiler sequential, xlf90_r\n";
-  print "   4. IBM AIX compiler mpp \n";
-  print "   5. Linux gfort compiler sequential \n";
-  print "   0. exit only \n";
-
-  printf "\nEnter selection [%d-%d] : ",1,5 ;
+  if(! defined($ENV{NETCDF_INC})){
+    print"Error: environment variable NETCDF_INC not defined. \n";
+    exit(0);
+  }
+  if(! defined($ENV{NETCDF_LIB})){
+    print"Error: environment variable NETCDF_LIB not defined. \n";
+    exit(0);
+  }
   if(-e macros) {system (rm -f macros);}
   if(-e Makefile) {system "rm -f Makefile" ;}
 
@@ -19,7 +17,19 @@
 
   if($#ARGV == 0) {
      $response = shift(@ARGV) ;
+     print("Configure hydro: $response \n");
   }else {
+     print "Please select from following supported options. \n\n";
+
+     print "   1. Linux PGI compiler sequential \n";
+     print "   2. Linux PGI compiler mpp \n";
+     print "   3. IBM AIX compiler sequential, xlf90_r\n";
+     print "   4. IBM AIX compiler mpp \n";
+     print "   5. Linux gfort compiler sequential \n";
+     print "   0. exit only \n";
+
+     printf "\nEnter selection [%d-%d] : ",1,5 ;
+
      $response = <STDIN> ;
      chop($response);
   }

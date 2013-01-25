@@ -2006,7 +2006,7 @@
      &                 ,APR_CAPME          ,APR_CAPMI                   &
      &                 ,MASS_FLUX         ,XF_ENS                       &
      &                 ,PR_ENS,GSW                                      &
-     &                 ,GD_CLOUD,GD_CLOUD2                              &
+     &                 ,GD_CLOUD,GD_CLOUD2,KTOP_DEEP                    &
 #ifdef WRF_CHEM
      &                 ,RAINCV                                          &
 #endif
@@ -2134,6 +2134,7 @@
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: GD_CLOUD &
      &                                                        ,GD_CLOUD2
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: KTOP_DEEP
 #ifdef WRF_CHEM
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: RAINCV
 #endif
@@ -2508,6 +2509,7 @@
      &                 ,MASS_FLUX=MASS_FLUX,XF_ENS=XF_ENS               &
      &                 ,PR_ENS=PR_ENS                                   &
      &                 ,GD_CLOUD=GD_CLOUD,GD_CLOUD2=GD_CLOUD2           &
+     &                 ,KTOP_DEEP=KTOP_DEEP                             &
      &                 ,ENSDIM=ENSDIM,MAXIENS=1,MAXENS=3                &
      &                 ,MAXENS2=3,MAXENS3=16                            &
      &                 ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &

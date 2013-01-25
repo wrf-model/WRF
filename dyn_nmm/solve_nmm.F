@@ -1849,7 +1849,7 @@
      &             ,grid%apr_capme,grid%apr_capmi                                &
      &             ,grid%mass_flux,grid%xf_ens                                   &
      &             ,grid%pr_ens,grid%gsw                                         &
-     &             ,grid%GD_CLOUD,grid%GD_CLOUD2                                 &
+     &             ,grid%GD_CLOUD,grid%GD_CLOUD2,grid%ktop_deep                  &
 #ifdef WRF_CHEM
      &             ,RAINCV                          &
 #endif

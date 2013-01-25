@@ -4851,6 +4851,11 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
       endif
     enddo
   enddo
+! jbao-put storm in center
+        id1=ide/2
+        jd1=jde/2
+! end jbao-put storm in center
+
 
   IF(abs(ID0-ID1) .GE. 5 .OR. abs(JD0-JD1) .GE. 5)THEN
 !   call wrf_error_fatal("LAT LON INFO IN STROM MESSAGE FILE IN INCORRECT")

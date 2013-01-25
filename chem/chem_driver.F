@@ -1332,14 +1332,17 @@
 
 #ifdef WRF_KPP
 
-         do k=kts,kte
+         if( config_flags%chem_opt == CBMZ_MOSAIC_4BIN_VBS2_KPP .or. &
+             config_flags%chem_opt == SAPRC99_MOSAIC_4BIN_VBS2_KPP ) then
+          do k=kts,kte
            do i=its,ite
-             do j=jts,jte
-               chem(i,k,j,p_psd1)=0.0
-               chem(i,k,j,p_psd2)=0.0
+            do j=jts,jte
+              chem(i,k,j,p_psd1)=0.0
+              chem(i,k,j,p_psd2)=0.0
+            enddo
+           enddo
           enddo
-         enddo
-          enddo
+         endif
 
    CALL wrf_debug(15,'calling kpp_mechanism_driver')
 

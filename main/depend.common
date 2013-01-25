@@ -188,6 +188,7 @@ module_bl_camuwpbl_driver.o: module_cam_shr_kind_mod.o \
 		module_cam_bl_eddy_diff.o \
 		module_cam_wv_saturation.o \
 		module_cam_molec_diff.o \
+		module_data_cam_mam_aero.o \
 		../share/module_model_constants.o \
 		module_cam_esinti.o 
 
@@ -221,6 +222,7 @@ module_cu_camzm_driver.o: ../share/module_model_constants.o \
                 module_cu_camzm.o
 
 module_cu_camzm.o: module_cam_shr_kind_mod.o \
+                module_cam_constituents.o \
                 module_cam_support.o \
                 module_cam_physconst.o \
                 module_cam_wv_saturation.o \
@@ -413,7 +415,7 @@ module_sf_noahmplsm.o:	../share/module_model_constants.o \
 
 module_sf_bep.o: ../share/module_model_constants.o module_sf_urban.o
 
-module_sf_bep_bem.o: ../share/module_model_constants.o module_sf_bem.o 
+module_sf_bep_bem.o: ../share/module_model_constants.o module_sf_bem.o module_sf_urban.o
 
 module_sf_bem.o: ../share/module_model_constants.o
 
@@ -725,6 +727,17 @@ module_mp_morr_two_moment.o :\
 
 module_mp_wsm3.o :\
 		module_mp_wsm3_accel.F
+
+module_mp_radar.o :
+
+module_lightning_driver.o : \
+        module_ltng_crmpr92.o module_ltng_cpmpr92z.o module_ltng_iccg.o
+
+module_ltng_cpmpr92z.o :
+
+module_ltng_crmpr92.o :
+
+module_ltng_iccg.o :
 
 # End of DEPENDENCIES for phys
 

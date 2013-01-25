@@ -24,6 +24,7 @@
    USE module_comm_dm
 
    USE module_physics_init
+   USE module_lightning_driver, ONLY : lightning_init
    USE module_fr_fire_driver_wrf, ONLY : fire_driver_em_init
    USE module_stoch, ONLY : SETUP_STOCH, update_stoch
 #ifdef WRF_CHEM
@@ -852,6 +853,36 @@
    grid%LU_MASK = 0.
    WHERE ( grid%lu_index .EQ. 16 ) grid%LU_MASK = 1.
 #endif
+
+   call wrf_debug(100,'start_em: calling lightning_init')
+   CALL lightning_init ( itimestep=grid%itimestep, restart=grid%restart, dt=grid%dt, dx=grid%dx   &
+                    ! Namelist control options
+                        ,cu_physics=config_flags%cu_physics,mp_physics=config_flags%mp_physics    &
+                        ,do_radar_ref=config_flags%do_radar_ref                                   &
+                        ,lightning_option=config_flags%lightning_option                           &
+                        ,lightning_dt=config_flags%lightning_dt                                   &
+                        ,lightning_start_seconds=config_flags%lightning_start_seconds             &
+                        ,iccg_prescribed_num=config_flags%iccg_prescribed_num                     &
+                        ,iccg_prescribed_den=config_flags%iccg_prescribed_den                     &
+                        ,cellcount_method=config_flags%cellcount_method                           &
+                    ! Order dependent args for domain, mem, and tile dims
+                        ,ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde             &
+                        ,ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme             &
+                        ,its=grid%i_start(ij), ite=grid%i_end(ij)                         &
+                        ,jts=grid%j_start(ij), jte=grid%j_end(ij), kts=kts, kte=kte       &
+                    ! IC and CG flash rates and accumulated flash count
+                        ,ic_flashcount=grid%ic_flashcount, ic_flashrate=grid%ic_flashrate        &
+                        ,cg_flashcount=grid%cg_flashcount, cg_flashrate=grid%cg_flashrate        &
+#ifdef WRF_CHEM
+                        ,lnox_opt=config_flags%lnox_opt           &
+                        ,lnox_passive=config_flags%lnox_passive   &
+                        ,lnox_total=tracer(:,:,:,p_lnox_total)    &
+                        ,lnox_ic=tracer(:,:,:,p_lnox_ic)          &
+                        ,lnox_cg=tracer(:,:,:,p_lnox_cg)          &
+#endif
+                    )
+
+    call wrf_debug(100,'start_em: after calling lightning_init')
 
    END IF
 

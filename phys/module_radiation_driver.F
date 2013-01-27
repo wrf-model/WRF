@@ -37,7 +37,7 @@ CONTAINS
               ,ALEVSIZ, no_src_types               &
               ,LEVSIZ, N_OZMIXM                    &
               ,N_AEROSOLC                                    &
-              ,PAERLEV                                       &
+              ,PAERLEV   ,ID                                 &
               ,CAM_ABS_DIM1, CAM_ABS_DIM2 &
               ,CAM_ABS_FREQ_S                         &
               ,XTIME                                           &
@@ -329,6 +329,7 @@ CONTAINS
    INTEGER, INTENT(IN)            :: lw_physics, sw_physics
    INTEGER, INTENT(IN), OPTIONAL       ::  mp_physics
    INTEGER, OPTIONAL, INTENT(IN)  :: o3input, aer_opt
+   INTEGER, INTENT(IN)            :: id
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
                 i_start,i_end,j_start,j_end
@@ -893,7 +894,8 @@ CONTAINS
 
 ! ww: Interpolating climatological ozone and aerosol to model time and levels
 !     Adapted from camrad code
-     IF ( o3input .EQ. 2 ) THEN
+     IF ( PRESENT( O3RAD ) ) THEN
+     IF ( o3input .EQ. 2 .AND. id .EQ. 1 ) THEN
 !       ! Find the current month (adapted from Cavallo)
 !       CALL cam_time_interp( ozmixm, pin, levsiz, date_str, &
 !                             ids , ide , jds , jde , kds , kde , &
@@ -912,8 +914,10 @@ CONTAINS
                               ims , ime , jms , jme , kms , kme ,     &
                               its , ite , jts , jte , kts , kte )
      ENDIF
+     ENDIF
 
-     IF ( aer_opt .EQ. 1 ) THEN
+     IF ( PRESENT( AEROD ) ) THEN
+     IF ( aer_opt .EQ. 1 .AND. id .EQ. 1 ) THEN
         call aer_time_int(julday,julian,aerodm,aerodt,alevsiz,n_ozmixm-1,no_src_types,    &
                               ids , ide , jds , jde , kds , kde ,     &
                               ims , ime , jms , jme , kms , kme ,     &
@@ -923,7 +927,7 @@ CONTAINS
                               ids , ide , jds , jde , kds , kde ,     &
                               ims , ime , jms , jme , kms , kme ,     &
                               its , ite , jts , jte , kts , kte )
-
+     ENDIF
      ENDIF
 
      lwrad_select: SELECT CASE(lw_physics)

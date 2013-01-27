@@ -114,6 +114,7 @@ CONTAINS
                          B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,        & !Optional multi-layer urban
                          DL_U_BEP,SF_BEP,VL_BEP,                 & !Optional multi-layer urban
                          TML,T0ML,HML,H0ML,HUML,HVML,TMOML,      & !Optional oml
+                         TSK_SAVE,                               & !Optional for fractional seaice
 !CLM variables
                          numc,nump,snl,                                      &
                          snowdp,wtc,wtp,h2osno,t_grnd,t_veg,                 &
@@ -384,7 +385,9 @@ CONTAINS
 ! ocean mixed layer
    REAL,     DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
              TML,T0ML,HML,H0ML,HUML,HVML,TMOML
-
+! fractional seaice
+   REAL,     DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
+             TSK_SAVE
 !fdda
    REAL,     OPTIONAL, INTENT(IN) :: FGDT
    INTEGER , OPTIONAL, INTENT(OUT) :: STEPFG
@@ -830,6 +833,7 @@ integer myproc
                 ACHFX,ACLHF,ACGRDFLX,                           &
                 oml_hml0, omlcall,                              & !Optional oml
                 TML,T0ML,HML,H0ML,HUML,HVML,TMOML               & !Optional oml
+               ,TSK_SAVE                                        & !Optional oml
 ! CLM vraiables 
                ,numc,nump,snl,                                      &
                 snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
@@ -1395,23 +1399,21 @@ integer myproc
 !   note that CAM option will still do the same. 
 !   n_ozmixm: no of months; levsiz: = 59, vertical dim
 !   Read in CAM ozone data, and interpolate data to model grid
+!   Interpolation is done on domain 1 only
 
-!  IF ( PRESENT ( ozmixm ) ) THEN
-   IF ( config_flags%o3input .EQ. 2 ) THEN
+   IF ( config_flags%o3input .EQ. 2 .AND. id .EQ. 1 ) THEN
       CALL oznini(ozmixm,pin,levsiz,n_ozmixm,XLAT,                &
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &
                      its, ite, jts, jte, kts, kte)
    ENDIF
-!  ENDIF
-!  IF ( PRESENT ( aerodm ) ) THEN
-   IF ( config_flags%aer_opt .EQ. 1 ) THEN
+
+   IF ( config_flags%aer_opt .EQ. 1 .AND. id .EQ. 1 ) THEN
       CALL aerosol_in(aerodm,pina,alevsiz,n_ozmixm-1,no_src_types,XLAT,XLONG,   &
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &
                      its, ite, jts, jte, kts, kte)
    ENDIF
-!  ENDIF
 
 !-- find out which microphysics option is used first
 
@@ -1650,6 +1652,7 @@ integer myproc
                 ACHFX,ACLHF,ACGRDFLX,                           &
                 oml_hml0, omlcall,                              & !Optional oml
                 TML,T0ML,HML,H0ML,HUML,HVML,TMOML               &
+               ,TSK_SAVE                                        & !Optional fractional seaice
 ! CLM vraiables 
                ,numc,nump,snl,                                      &
                 snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
@@ -1923,6 +1926,8 @@ integer myproc
                                         TML,T0ML,HML,H0ML,HUML,HVML,TMOML
    INTEGER,  OPTIONAL,  INTENT(IN) :: omlcall
    REAL,  OPTIONAL,  INTENT(IN) :: oml_hml0
+   REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
+                                        TSK_SAVE
    LOGICAL,  INTENT(IN) :: start_of_simulation
    INTEGER :: i,j
 
@@ -1979,6 +1984,16 @@ integer myproc
         ACLHF(i,j)=0.
         ACGRDFLX(i,j)=0.
         SFCEVP(i,j)=0.
+     ENDDO
+     ENDDO
+   ENDIF
+   ENDIF
+
+   IF(PRESENT(TSK_SAVE))THEN
+   IF(config_flags%fractional_seaice.EQ.1)THEN
+     DO j=jts,jte
+     DO i=its,ite
+        TSK_SAVE(i,j)=TSK(i,j)
      ENDDO
      ENDDO
    ENDIF

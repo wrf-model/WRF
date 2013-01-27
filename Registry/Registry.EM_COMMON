@@ -599,32 +599,32 @@ state    real   ts_th_profile  ?!k       misc      -         -      -        "TS
 state    real   ts_qv_profile  ?!k       misc      -         -      -        "TS_QV_PROFILE"  "Water vapor mixing ratio, vertical profile"
 
 # urban model variables
-state    real   DZR             l        em      -            Z     r        "DZR"            "THICKNESSES OF ROOF LAYERS"                      "m"
-state    real   DZB             l        em      -            Z     r        "DZB"            "THICKNESSES OF WALL LAYERS"                      "m"
-state    real   DZG             l        em      -            Z     r        "DZG"            "THICKNESSES OF ROAD LAYERS"                      "m"
-state    real   URB_PARAM        i{urb}j misc       1         -      i1d=(interp_fcni)u=(copy_fcni)          "URB_PARAM" "NUDAPT_NBSD Urban Parameters" "parameter"
-state    real   LP_URB2D       ij       misc      1        -     i0h "BUILD_AREA_FRACTION" "BUILDING PLAN AREA DENSITY"   "dimensionless"
-state    real   HI_URB2D       i{uhi}j misc      1         Z     i0h "HEIGHT_HISTOGRAMS" "DISTRIBUTION OF BUILDING HEIGHTS" "dimensionless"
-state    real   LB_URB2D       ij       misc      1        -     i0h "BUILD_SURF_RATIO" "BUILDING SURFACE AREA TO PLAN AREA RATIO" "dimensionless"
-state    real   HGT_URB2D      ij       misc      1        -     i0h "BUILD_HEIGHT" "AVERAGE BUILDING HEIGHT WEIGHTED BY BUILDING PLAN AREA" "m"
-state    real   FAD0_URB2D     i{uhi}j  misc      1        Z     i0h "FAD0_URB2D" "Frontal Area Density from the 0 Degree Wind Direction" "m-1"
-state    real   FAD135_URB2D   i{uhi}j  misc      1        Z     i0h "FAD135_URB2D" "Frontal Area Density from the 135 Degree Direction" "m-1"
-state    real   FAD45_URB2D   i{uhi}j  misc      1        Z     i0h "FAD45_URB2D" "Frontal Area Density from the 45 Degree Wind Direction" "m-1"
-state    real   PAD_URB2D   i{uhi}j  misc      1        Z     i0h "PAD_URB2D" "Building Plan Area Density" "m-1"
-state    real   FAD90_URB2D   i{uhi}j  misc      1        Z     i0h "FAD90_URB2D" "Frontal Area Density from the 90 Degree Wind Direction" "m-1"
-state    real   RAD_URB2D   i{uhi}j  misc      1        -     i0h "RAD_URB2D" "Roof Area Density" "m-1"
-state    real   MH_URB2D    ij       misc      1        -     i0h "MH_URB2D"  "Mean Building Height" "m"
-state    real   STDH_URB2D  ij       misc      1        -     i0h "STDH_URB2D" "Standard Deviation of Building Height" "m2"
-state    real   LF_URB2D    i{udr}j       misc      1        Z     i0h "LF_URB2D"   "Frontal Area Index" "dimensionless"
-state    real   CAR_URB2D   ij       misc      1        -     i0h "CAR_URB2D"  "Complete Aspect Ratio" "dimensionless"
-state    real   H2W_URB2D   ij       misc      1        -     i0h "H2W_URB2D"  "Height-to-Width Ratio" "dimensionless"
-state    real   SVF_URB2D   ij       misc      1        -     i0h "SVF_URB2D"  "Sky View Factor"   "dimensionless"
-state    real   Z0S_URB2D   ij       misc      1        -     i0h "Z0S_URB2D"   "Roughness Length S" "m"
-state    real   Z0R_URB2D   i{udr}j       misc      1        Z     i0h "Z0R_URB2D"   "Roughness Length R" "m"
-state    real   Z0M_URB2D   i{udr}j       misc      1        Z     i0h "Z0M_URB2D"   "Roughness Length M" "m"
-state    real   ZDS_URB2D   ij       misc      1        -     i0h "ZDS_URB2D"   "Displacement Height S" "m"
-state    real   ZDM_URB2D   ij       misc      1        -     i0h "ZDM_URB2D"   "Displacement Height M" "m"
-state    real   ZDR_URB2D   i{udr}j       misc      1        Z     i0h "ZDR_URB2D"   "Displacement Height R" "m"
+state    real   DZR             l        em      -         Z     r        "DZR"            "THICKNESSES OF ROOF LAYERS"                      "m"
+state    real   DZB             l        em      -         Z     r        "DZB"            "THICKNESSES OF WALL LAYERS"                      "m"
+state    real   DZG             l        em      -         Z     r        "DZG"            "THICKNESSES OF ROAD LAYERS"                      "m"
+state    real   URB_PARAM        i{urb}j misc     1        -     i1d=(interp_fcni)u=(copy_fcni)          "URB_PARAM" "NUDAPT_NBSD Urban Parameters" "parameter"
+state    real   LP_URB2D       ij       misc      1        -     i0  "BUILD_AREA_FRACTION" "BUILDING PLAN AREA DENSITY"   "dimensionless"
+state    real   HI_URB2D       i{uhi}j misc       1        Z     i0  "HEIGHT_HISTOGRAMS" "DISTRIBUTION OF BUILDING HEIGHTS" "dimensionless"
+state    real   LB_URB2D       ij       misc      1        -     i0  "BUILD_SURF_RATIO" "BUILDING SURFACE AREA TO PLAN AREA RATIO" "dimensionless"
+state    real   HGT_URB2D      ij       misc      1        -     i0  "BUILD_HEIGHT" "AVERAGE BUILDING HEIGHT WEIGHTED BY BUILDING PLAN AREA" "m"
+state    real   FAD0_URB2D     i{uhi}j  misc      1        Z     i0  "FAD0_URB2D" "Frontal Area Density from the 0 Degree Wind Direction" "m-1"
+state    real   FAD135_URB2D   i{uhi}j  misc      1        Z     i0  "FAD135_URB2D" "Frontal Area Density from the 135 Degree Direction" "m-1"
+state    real   FAD45_URB2D    i{uhi}j  misc      1        Z     i0  "FAD45_URB2D" "Frontal Area Density from the 45 Degree Wind Direction" "m-1"
+state    real   PAD_URB2D      i{uhi}j  misc      1        Z     i0  "PAD_URB2D" "Building Plan Area Density" "m-1"
+state    real   FAD90_URB2D    i{uhi}j  misc      1        Z     i0  "FAD90_URB2D" "Frontal Area Density from the 90 Degree Wind Direction" "m-1"
+state    real   RAD_URB2D      i{uhi}j  misc      1        -     i0  "RAD_URB2D" "Roof Area Density" "m-1"
+state    real   MH_URB2D       ij       misc      1        -     i0  "MH_URB2D"  "Mean Building Height" "m"
+state    real   STDH_URB2D     ij       misc      1        -     i0  "STDH_URB2D" "Standard Deviation of Building Height" "m2"
+state    real   LF_URB2D       i{udr}j  misc      1        Z     i0  "LF_URB2D"   "Frontal Area Index" "dimensionless"
+state    real   CAR_URB2D      ij       misc      1        -     i0  "CAR_URB2D"  "Complete Aspect Ratio" "dimensionless"
+state    real   H2W_URB2D      ij       misc      1        -     i0  "H2W_URB2D"  "Height-to-Width Ratio" "dimensionless"
+state    real   SVF_URB2D      ij       misc      1        -     i0  "SVF_URB2D"  "Sky View Factor"   "dimensionless"
+state    real   Z0S_URB2D      ij       misc      1        -     i0  "Z0S_URB2D"   "Roughness Length S" "m"
+state    real   Z0R_URB2D      i{udr}j  misc      1        Z     i0  "Z0R_URB2D"   "Roughness Length R" "m"
+state    real   Z0M_URB2D      i{udr}j  misc      1        Z     i0  "Z0M_URB2D"   "Roughness Length M" "m"
+state    real   ZDS_URB2D      ij       misc      1        -     i0  "ZDS_URB2D"   "Displacement Height S" "m"
+state    real   ZDM_URB2D      ij       misc      1        -     i0  "ZDM_URB2D"   "Displacement Height M" "m"
+state    real   ZDR_URB2D      i{udr}j  misc      1        Z     i0  "ZDR_URB2D"   "Displacement Height R" "m"
 
 
 # lsm State Variables
@@ -693,12 +693,12 @@ state    real  dfi_SMFR3D      ilj   misc        1         Z     r    "SMFR3D_df
 state    real  dfi_KEEPFR3DFLAG ilj  misc        1         Z     r    "KEEPFR3DFLAG_dfi"     "FLAG - 1. FROZEN SOIL YES, 0 - NO"             ""
 
 # urban state variables
-state    real   TR_URB2D         ij     misc        1         -     rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "TR_URB"              "URBAN ROOF SKIN TEMPERATURE"        "K"
-state    real   TB_URB2D         ij     misc        1         -     rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "TB_URB"              "URBAN WALL SKIN TEMPERATURE"        "K" 
-state    real   TG_URB2D         ij     misc        1         -     rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "TG_URB"              "URBAN ROAD SKIN TEMPERATURE"        "K" 
-state    real   TC_URB2D         ij     misc        1         -     rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "TC_URB"              "URBAN CANOPY TEMPERATURE"           "K"
-state    real   QC_URB2D         ij     misc        1         -     rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "QC_URB"              "URBAN CANOPY HUMIDITY"          "kg kg{-1}"
-state    real   UC_URB2D         ij     misc        1         -     rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "UC_URB"              "URBAN CANOPY WIND"          "m s{-1}"
+state    real   TR_URB2D         ij     misc        1         -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "TR_URB"              "URBAN ROOF SKIN TEMPERATURE"        "K"
+state    real   TB_URB2D         ij     misc        1         -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "TB_URB"              "URBAN WALL SKIN TEMPERATURE"        "K" 
+state    real   TG_URB2D         ij     misc        1         -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "TG_URB"              "URBAN ROAD SKIN TEMPERATURE"        "K" 
+state    real   TC_URB2D         ij     misc        1         -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "TC_URB"              "URBAN CANOPY TEMPERATURE"           "K"
+state    real   QC_URB2D         ij     misc        1         -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "QC_URB"              "URBAN CANOPY HUMIDITY"          "kg kg{-1}"
+state    real   UC_URB2D         ij     misc        1         -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)     "UC_URB"              "URBAN CANOPY WIND"          "m s{-1}"
 state    real   XXXR_URB2D       ij     misc        1         -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)      "XXXR_URB" "M-O LENGTH ABOVE URBAN ROOF"   "dimensionless"
 state    real   XXXB_URB2D       ij    misc        1         -      rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)      "XXXB_URB" "M-O LENGTH ABOVE URBAN WALL"   "dimensionless"
 state    real   XXXG_URB2D       ij    misc        1         -      rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)       "XXXG_URB" "M-O LENGTH ABOVE URBAN ROAD"   "dimensionless"
@@ -706,13 +706,13 @@ state    real   XXXC_URB2D       ij    misc        1         -      rd=(interp_m
 state    real   TRL_URB3D        ilj    misc        1         Z     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)      "TRL_URB" "ROOF LAYER TEMPERATURE"          "K"
 state    real   TBL_URB3D        ilj    misc        1         Z     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)      "TBL_URB" "WALL LAYER TEMPERATURE"          "K"
 state    real   TGL_URB3D        ilj    misc        1         Z     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)      "TGL_URB" "ROAD LAYER TEMPERATURE"          "K"
-state    real   SH_URB2D        ij    misc        1         -     rh       "SH_URB"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
-state    real   LH_URB2D        ij    misc        1         -     rh       "LH_URB"  "LATENT HEAT FLUX FROM URBAN SFC"    "W m{-2}"
-state    real   G_URB2D         ij    misc        1         -     rh        "G_URB"  "GROUND HEAT FLUX INTO URBAN"        "W m{-2}"
-state    real   RN_URB2D        ij    misc        1         -     rh       "RN_URB"  "NET RADIATION ON URBAN SFC"         "W m{-2}"
-state    real   TS_URB2D        ij    misc        1         -     rh       "TS_URB"  "SKIN TEMPERATURE"          "K"
-state    real   FRC_URB2D       ij    misc        1         -     i10rhd=(interp_fcnm)u=(copy_fcnm)       "FRC_URB2D"  "URBAN FRACTION"         "dimensionless"
-state    integer   UTYPE_URB2D  ij    misc        1         -     rhd=(interp_fcnm)u=(copy_fcnm)       "UTYPE_URB"  "URBAN TYPE"         "dimensionless"
+state    real   SH_URB2D        ij    misc        1         -     r       "SH_URB"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
+state    real   LH_URB2D        ij    misc        1         -     r       "LH_URB"  "LATENT HEAT FLUX FROM URBAN SFC"    "W m{-2}"
+state    real   G_URB2D         ij    misc        1         -     r        "G_URB"  "GROUND HEAT FLUX INTO URBAN"        "W m{-2}"
+state    real   RN_URB2D        ij    misc        1         -     r       "RN_URB"  "NET RADIATION ON URBAN SFC"         "W m{-2}"
+state    real   TS_URB2D        ij    misc        1         -     r       "TS_URB"  "SKIN TEMPERATURE"          "K"
+state    real   FRC_URB2D       ij    misc        1         -     i10rd=(interp_fcnm)u=(copy_fcnm)       "FRC_URB2D"  "URBAN FRACTION"         "dimensionless"
+state    integer   UTYPE_URB2D  ij    misc        1         -     rd=(interp_fcnm)u=(copy_fcnm)       "UTYPE_URB"  "URBAN TYPE"         "dimensionless"
 state    real   TRB_URB4D       i{ulay}j    misc       1         Z     r      "TRB_URB4D" "ROOF LAYER TEMPERATURE"          "K"
 state    real   TW1_URB4D       i{ulay}j    misc       1         Z     r      "TW1_URB4D" "WALL LAYER TEMPERATURE"          "K"
 state    real   TW2_URB4D       i{ulay}j    misc       1         Z     r      "TW2_URB4D" "WALL LAYER TEMPERATURE"          "K"
@@ -723,17 +723,17 @@ state    real   TW1LEV_URB3D    i{ulay}j    misc       1         Z     r      "T
 state    real   TW2LEV_URB3D    i{ulay}j    misc       1         Z     r      "TW2LEV_URB3D" "WINDOW TEMPERATURE"           "K"
 state    real   TGLEV_URB3D     i{ulay}j    misc       1         Z     r      "TGLEV_URB3D" "GROUND TEMPERATURE BELOW A BUILDING"     "K"
 state    real   TFLEV_URB3D     i{ulay}j    misc       1         Z     r      "TFLEV_URB3D" "FLOOR TEMPERATURE"                       "K"
-state    real   SF_AC_URB3D     ij          misc       1         -     rh      "SF_AC_URB3D"  "SENSIBLE HEAT FLUX FROM THE AIR COND." "W m{-2}"
-state    real   LF_AC_URB3D     ij          misc       1         -     rh      "LF_AC_URB3D"  "LATENT HEAT FLUX FROM THE AIR COND." "W m{-2}"
-state    real   CM_AC_URB3D     ij          misc       1         -     rh      "CM_AC_URB3D"  "CONSUMPTION OF THE AIR COND." "W m{-2}"
-state    real   SFVENT_URB3D    ij          misc       1         -     rh      "SFVENT_URB3D" "SENSIBLE HEAT FLUX FROM URBAN VENTILATION" "W m{-2}"
-state    real   LFVENT_URB3D    ij          misc       1         -     rh      "LFVENT_URB3D" "LATENT HEAT FLUX FROM URBAN VENTILATION" "W m{-2}"
-state    real   SFWIN1_URB3D    i{ulay}j    misc       1         Z     rh      "SFWIN1_URB3D" "SENSIBLE HEAT FLUX FROM URBAN SFC WINDOW"  "W m{-2}"
-state    real   SFWIN2_URB3D    i{ulay}j    misc       1         Z     rh      "SFWIN2_URB3D" "SENSIBLE HEAT FLUX FROM URBAN SFC WINDOW"  "W m{-2}"
-state    real   SFW1_URB3D      i{ulay}j    misc       1         Z     rh      "SFW1_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
-state    real   SFW2_URB3D      i{ulay}j    misc       1         Z     rh      "SFW2_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
-state    real   SFR_URB3D       i{ulay}j    misc       1         Z     rh      "SFR_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
-state    real   SFG_URB3D       i{ulay}j    misc       1         Z     rh      "SFG_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
+state    real   SF_AC_URB3D     ij          misc       1         -     r      "SF_AC_URB3D"  "SENSIBLE HEAT FLUX FROM THE AIR COND." "W m{-2}"
+state    real   LF_AC_URB3D     ij          misc       1         -     r      "LF_AC_URB3D"  "LATENT HEAT FLUX FROM THE AIR COND." "W m{-2}"
+state    real   CM_AC_URB3D     ij          misc       1         -     r      "CM_AC_URB3D"  "CONSUMPTION OF THE AIR COND." "W m{-2}"
+state    real   SFVENT_URB3D    ij          misc       1         -     r      "SFVENT_URB3D" "SENSIBLE HEAT FLUX FROM URBAN VENTILATION" "W m{-2}"
+state    real   LFVENT_URB3D    ij          misc       1         -     r      "LFVENT_URB3D" "LATENT HEAT FLUX FROM URBAN VENTILATION" "W m{-2}"
+state    real   SFWIN1_URB3D    i{ulay}j    misc       1         Z     r      "SFWIN1_URB3D" "SENSIBLE HEAT FLUX FROM URBAN SFC WINDOW"  "W m{-2}"
+state    real   SFWIN2_URB3D    i{ulay}j    misc       1         Z     r      "SFWIN2_URB3D" "SENSIBLE HEAT FLUX FROM URBAN SFC WINDOW"  "W m{-2}"
+state    real   SFW1_URB3D      i{ulay}j    misc       1         Z     r      "SFW1_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
+state    real   SFW2_URB3D      i{ulay}j    misc       1         Z     r      "SFW2_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
+state    real   SFR_URB3D       i{ulay}j    misc       1         Z     r      "SFR_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
+state    real   SFG_URB3D       i{ulay}j    misc       1         Z     r      "SFG_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
 state    real   CMR_SFCDIF      ij          misc       1         -     r      "CMR_SFCDIF" "" ""
 state    real   CHR_SFCDIF      ij          misc       1         -     r      "CHR_SFCDIF" "" ""
 state    real   CMC_SFCDIF      ij          misc       1         -     r      "CMC_SFCDIF" "" ""
@@ -918,7 +918,7 @@ state    real   acfrcv           ij     misc        1         -      -
 state integer   ncfrcv           ij     misc        1         -      -
 
 # new rad variables
-state    real   o3rad           ikjb    misc        1         -      irhdf=(p2c)      "o3rad"    "RADIATION 3D OZONE" "ppmv"
+state    real   o3rad           ikj     misc        1         -      irhdf=(p2c)      "o3rad"    "RADIATION 3D OZONE" "ppmv"
 
 # incoming optical depth derived from aerosol data
 state  real   aerodm    i{lsa}jm{ty}    misc        1    -   -     -
@@ -2049,7 +2049,7 @@ rconfig   logical mix_full_fields         namelist,dynamics     max_domains  .fa
 rconfig   real    base_pres               namelist,dynamics	1          100000.     h    "base_pres"  "Base state pressure - do not change (10^5 Pa), real only"      "Pa"
 rconfig   real    base_temp               namelist,dynamics	1             290.     h    "base_temp"  "Base state sea level temperature, real only"      "K"
 rconfig   real    base_lapse              namelist,dynamics	1              50.     h    "base_lapse" "Base state temperature difference between base pres and 1/e of atm depth - do not change, real only"      "K"
-rconfig   real    iso_temp                namelist,dynamics     1               0.     h    "iso_temp"   "Isothermal temperature in stratosphere, real only"      "K"
+rconfig   real    iso_temp                namelist,dynamics     1             200.     h    "iso_temp"   "Isothermal temperature in stratosphere, real only"      "K"
 rconfig   logical use_baseparam_fr_nml    namelist,dynamics     1            .false.  irh   "use_baseparam_fr_nml"    ""   ""
 rconfig   real    fft_filter_lat          namelist,dynamics     1              91.     h    "fft_filter_lat"   ""   "grid latitude to start polar filter"
 rconfig   logical rotated_pole            namelist,dynamics     1            .false.  irh   "rotated_pole"    ""   ""
@@ -2208,7 +2208,7 @@ package   progndrop     progn==1                     -             scalar:qndrop
 
 package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;aerosolc:sul,sslt,dust1,dust2,dust3,dust4,ocpho,bcpho,ocphi,bcphi,bg,volc;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,i_acswupt,i_acswuptc,i_acswdnt,i_acswdntc,i_acswupb,i_acswupbc,i_acswdnb,i_acswdnbc,i_aclwupt,i_aclwuptc,i_aclwdnt,i_aclwdntc,i_aclwupb,i_aclwupbc,i_aclwdnb,i_aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc
-package   rrtmg_lwscheme  ra_lw_physics==4           -             aerod:ocarbon,seasalt,dust,bcarbon,sulfate,upperaer;ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,i_aclwupt,i_aclwuptc,i_aclwdnt,i_aclwdntc,i_aclwupb,i_aclwupbc,i_aclwdnb,i_aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc
+package   rrtmg_lwscheme  ra_lw_physics==4           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,i_aclwupt,i_aclwuptc,i_aclwdnt,i_aclwdntc,i_aclwupb,i_aclwupbc,i_aclwdnb,i_aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
 package   goddardlwscheme  ra_lw_physics==5          -             state:tlwdn,tlwup,slwdn,slwup
 package   flglwscheme   ra_lw_physics==7             -             -
 package   gfdllwscheme  ra_lw_physics==99            -             -
@@ -2217,7 +2217,7 @@ package   heldsuarez    ra_lw_physics==31            -             -
 package   swradscheme   ra_sw_physics==1             -             -
 package   gsfcswscheme  ra_sw_physics==2             -             -
 package   camswscheme   ra_sw_physics==3             -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;aerosolc:sul,sslt,dust1,dust2,dust3,dust4,ocpho,bcpho,ocphi,bcphi,bg,volc;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,i_acswupt,i_acswuptc,i_acswdnt,i_acswdntc,i_acswupb,i_acswupbc,i_acswdnb,i_acswdnbc,i_aclwupt,i_aclwuptc,i_aclwdnt,i_aclwdntc,i_aclwupb,i_aclwupbc,i_aclwdnb,i_aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc
-package   rrtmg_swscheme  ra_sw_physics==4           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,i_acswupt,i_acswuptc,i_acswdnt,i_acswdntc,i_acswupb,i_acswupbc,i_acswdnb,i_acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc
+package   rrtmg_swscheme  ra_sw_physics==4           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,i_acswupt,i_acswuptc,i_acswdnt,i_acswdntc,i_acswupb,i_acswupbc,i_acswdnb,i_acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad;aerod:ocarbon,seasalt,dust,bcarbon,sulfate,upperaer
 package   goddardswscheme  ra_sw_physics==5          -             state:tswdn,tswup,sswdn,sswup
 package   flgswscheme   ra_sw_physics==7             -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -
@@ -2288,9 +2288,6 @@ package   scmopt         scm_force==1               -              state:z_force
 
 package   prec_acc       prec_acc_opt==1            -              state:prec_acc_c,prec_acc_nc,snow_acc_nc
 package   bucketropt     bucketr_opt==1             -              state:i_rainc,i_rainnc
-
-package   o3inputopt     o3input==2                 -              state:o3rad
-package   aerinputopt    aer_opt==1                 -              state:aodtot
 
 package   restofwrf      use_wps_input==0            -             -
 

@@ -292,7 +292,7 @@ BENCH_START(rad_driver_tim)
      &        ,ALEVSIZ=grid%alevsiz, no_src_types=grid%no_src_types       &
      &        ,LEVSIZ=grid%levsiz, N_OZMIXM=num_ozmixm                    &
      &        ,N_AEROSOLC=num_aerosolc                                    &
-     &        ,PAERLEV=grid%paerlev                                       &
+     &        ,PAERLEV=grid%paerlev   ,ID=grid%id                         &
      &        ,CAM_ABS_DIM1=grid%cam_abs_dim1, CAM_ABS_DIM2=grid%cam_abs_dim2 &
      &        ,CAM_ABS_FREQ_S=grid%cam_abs_freq_s                         &
      &        ,XTIME=grid%xtime                                                &
@@ -680,6 +680,7 @@ BENCH_START(surf_driver_tim)
      &        ,RDLAI2D=config_flags%rdlai2d                               &
      &        ,usemonalb=config_flags%usemonalb                           &
      &        ,NOAHRES=grid%noahres                                       &
+     &        ,TSK_SAVE=grid%tsk_save                                     &
 !mynn mp
      &         ,ch=grid%ch,tsq=grid%tsq,qsq=grid%qsq,cov=grid%cov &
      &        ,OM_TMP=grid%om_tmp, OM_S=grid%om_s, OM_U=grid%om_u, OM_V=grid%om_v   & !cyl:3DPWP

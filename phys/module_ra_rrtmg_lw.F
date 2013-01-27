@@ -11731,7 +11731,9 @@ CONTAINS
          DO K=kts,kte
             QV1D(K)=QV3D(I,K,J)
             QV1D(K)=max(0.,QV1D(K))
+            IF ( PRESENT( O33D ) ) THEN
             O31D(K)=O33D(I,K,J)
+            ENDIF
          ENDDO
 
          DO K=kts,kte
@@ -12008,6 +12010,7 @@ CONTAINS
 ! Steven Cavallo: Changed to nlayers from kte+1
          do k = kts, nlayers
             o3vmr(ncol,k) = o3mmr(k) * amdo
+            IF ( PRESENT( O33D ) ) THEN
             if(o3input .eq. 2)then
                if(k.le.kte)then
                  o3vmr(ncol,k) = o31d(k)
@@ -12017,6 +12020,7 @@ CONTAINS
                  if(o3vmr(ncol,k) .le. 0.)o3vmr(ncol,k) = o3mmr(k)*amdo
                endif
             endif
+            ENDIF
          enddo
 
 ! Set surface emissivity in each RRTMG longwave band

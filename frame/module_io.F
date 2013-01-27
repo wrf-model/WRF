@@ -90,7 +90,9 @@ SUBROUTINE wrf_ioinit( Status )
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_ioinit' )
   CALL init_io_handles    ! defined below
 #ifdef NETCDF
+  if ( model_config_rec%use_netcdf_classic ) SysDepInfo="use_netcdf_classic"
   CALL ext_ncd_ioinit(   SysDepInfo, ierr(1) )
+  SysDepInfo = " "
 #endif
 #ifdef INTIO
   CALL ext_int_ioinit(   SysDepInfo, ierr(2) )

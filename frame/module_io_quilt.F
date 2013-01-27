@@ -515,6 +515,7 @@ MODULE module_wrf_quilt
 !</DESCRIPTION>
       USE module_state_description
       USE module_quilt_outbuf_ops
+      USE module_configure, only : use_netcdf_classic
       IMPLICIT NONE
       INCLUDE 'mpif.h'
 #include "intio_tags.h"
@@ -558,7 +559,9 @@ character*120 sysline
 ! Call ext_pkg_ioinit() routines to initialize I/O packages.  
       SysDepInfo = " "
 #ifdef NETCDF
-      CALL ext_ncd_ioinit( SysDepInfo, ierr)
+      if ( model_config_rec%use_netcdf_classic ) SysDepInfo="use_netcdf_classic"
+      CALL ext_ncd_ioinit( SysDepInfo, ierr )
+      SysDepInfo = " "
 #endif
 #ifdef INTIO
       CALL ext_int_ioinit( SysDepInfo, ierr )

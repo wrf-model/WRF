@@ -9989,8 +9989,17 @@ CONTAINS
          DO K=kts,kte
             QV1D(K)=QV3D(I,K,J)
             QV1D(K)=max(0.,QV1D(K))
-            O31D(K)=O33D(I,K,J)
          ENDDO
+
+         IF (PRESENT(O33D)) THEN
+            DO K=kts,kte
+               O31D(K)=O33D(I,K,J)
+            ENDDO
+         ELSE
+            DO K=kts,kte
+               O31D(K)=0.0
+            ENDDO
+         ENDIF
 
          DO K=kts,kte
             TTEN1D(K)=0.
@@ -10173,6 +10182,7 @@ CONTAINS
 ! Get ozone profile including amount in extra layer above model top
          call inirad (o3mmr,plev,kts,kte)
 
+        if(present(o33d)) then
          do k = kts, kte+1
             o3vmr(ncol,k) = o3mmr(k) * amdo
             if(o3input .eq. 2)then
@@ -10185,6 +10195,11 @@ CONTAINS
                endif
             endif
          enddo
+        else
+         do k = kts, kte+1
+            o3vmr(ncol,k) = o3mmr(k) * amdo
+         enddo
+        endif
 
 ! Set surface albedo for direct and diffuse radiation in UV/visible and
 ! near-IR spectral regions

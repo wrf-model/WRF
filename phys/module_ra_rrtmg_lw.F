@@ -11729,8 +11729,17 @@ CONTAINS
          DO K=kts,kte
             QV1D(K)=QV3D(I,K,J)
             QV1D(K)=max(0.,QV1D(K))
-            O31D(K)=O33D(I,K,J)
          ENDDO
+
+         IF (PRESENT(O33D)) THEN
+            DO K=kts,kte
+               O31D(K)=O33D(I,K,J)
+            ENDDO
+         ELSE
+            DO K=kts,kte
+               O31D(K)=0.0
+            ENDDO
+         ENDIF
 
          DO K=kts,kte
             TTEN1D(K)=0.
@@ -11989,6 +11998,7 @@ CONTAINS
          call inirad (o3mmr,plev,kts,nlay-1)
 
 ! Steven Cavallo: Changed to nlayers from kte+1
+        if(present(o33d)) then
          do k = kts, nlayers
             o3vmr(ncol,k) = o3mmr(k) * amdo
             if(o3input .eq. 2)then
@@ -12001,6 +12011,11 @@ CONTAINS
                endif
             endif
          enddo
+        else
+         do k = kts, nlayers
+            o3vmr(ncol,k) = o3mmr(k) * amdo
+         enddo
+        endif
 
 ! Set surface emissivity in each RRTMG longwave band
          do nb = 1, nbndlw

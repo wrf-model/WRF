@@ -542,12 +542,12 @@ program da_verif_grid
      deallocate( avg_prof )
      deallocate( num_counter )
      deallocate( score_avg_prof )
+     deallocate( landmask )
 
      print*, ' successful completion of loop_2d '
    print*,' Finished Experiment : ', trim(verif_dirs(iexp))
    enddo loop_verif_exp
 
-   deallocate(landmask)
 !-----------------------------------------------------
 
    contains  

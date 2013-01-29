@@ -88,7 +88,7 @@ module wrf_data
 ! to .FALSE. when the first field is read or written.  
     logical                               :: first_operation
     logical                               :: R4OnOutput
-    logical                               :: use_netcdf_classic = .false.
+    logical                               :: use_netcdf_classic
   end type wrf_data_handle
   type(wrf_data_handle),target            :: WrfDataHandles(WrfDataHandleMax)
 end module wrf_data
@@ -1649,8 +1649,11 @@ subroutine ext_ncd_ioinit(SysDepInfo, Status)
   WrfDataHandles(1:WrfDataHandleMax)%TimesName    = 'Times'
   WrfDataHandles(1:WrfDataHandleMax)%DimUnlimName = 'Time'
   WrfDataHandles(1:WrfDataHandleMax)%FileStatus   = WRF_FILE_NOT_OPENED
-  if(trim(SysDepInfo) == "use_netcdf_classic" ) & 
+  if(trim(SysDepInfo) == "use_netcdf_classic" ) then
      WrfDataHandles(1:WrfDataHandleMax)%use_netcdf_classic = .true.
+  else
+     WrfDataHandles(1:WrfDataHandleMax)%use_netcdf_classic = .false.
+  endif
   Status = WRF_NO_ERR
   return
 end subroutine ext_ncd_ioinit

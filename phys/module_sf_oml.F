@@ -20,7 +20,9 @@ CONTAINS
                       itimestep)
 
 !----------------------------------------------------------------
+#if ( EM_CORE==1)
    USE module_state_description, ONLY : OMLCOLUMN , OMLMIAMI
+#endif
 
    IMPLICIT NONE
 !----------------------------------------------------------------
@@ -97,6 +99,7 @@ CONTAINS
   INTEGER , INTENT(IN)        :: id,itimestep
   integer :: stepom
 
+#if ( EM_CORE==1)
 ! calculate the steps of om
 
   stepom=nint(omdt*60/deltsm)
@@ -151,6 +154,7 @@ elseif ( omlcall .eq. OMLMIAMI ) then
           endif 
        endif
 endif 
+#endif
 
    END SUBROUTINE OCEANML
 

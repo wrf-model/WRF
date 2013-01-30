@@ -363,43 +363,46 @@
       END IF
    END IF
 
+   IF ( config_flags%use_baseparam_fr_nml ) then
+      CALL nl_get_base_pres  ( 1 , p00 )
+      CALL nl_get_base_temp  ( 1 , t00 )
+      CALL nl_get_base_lapse ( 1 , a   )
+      CALL nl_get_iso_temp   ( 1 , tiso )
+      IF ( ( t00 .LT. 100. .or. p00 .LT. 10000.) .AND. ( .NOT. grid%this_is_an_ideal_run ) ) THEN
+         WRITE(wrf_err_message,*) 'start_em: BAD BASE STATE for T00 or P00 in namelist.input file'
+         CALL wrf_error_fatal(TRIM(wrf_err_message))
+      END IF
+
+   ELSE
+   ! get these constants from model data
+
+      t00  = grid%t00
+      p00  = grid%p00
+      a    = grid%tlp
+      tiso = grid%tiso
+      IF ( ( t00 .LT. 100. .or. p00 .LT. 10000.) .AND. ( .NOT. grid%this_is_an_ideal_run ) ) THEN
+         WRITE(wrf_err_message,*)&
+         'start_em: did not find base state parameters in wrfinput. Add use_baseparam_fr_nml = .t. in &dynamics and rerun'
+         CALL wrf_error_fatal(TRIM(wrf_err_message))
+      ENDIF
+
+   ENDIF
+
+!  check if tiso in the input file agrees with namelist value
+
+   CALL nl_get_iso_temp   ( 1 , tiso_tmp )
+   IF ( ( tiso_tmp .NE. tiso ) .AND. ( .NOT. grid%this_is_an_ideal_run ) ) THEN
+      WRITE(wrf_err_message,*)&
+      'start_em: namelist iso_temp is not equal to iso_temp in wrfinput. Reset nml value and rerun'
+      CALL wrf_error_fatal(TRIM(wrf_err_message))
+   ENDIF
+
    IF ( .NOT. config_flags%restart .AND. &
         (( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ))) THEN
 
       IF ( config_flags%map_proj .EQ. 0 ) THEN
          CALL wrf_error_fatal ( 'start_domain: Idealized case cannot have a separate nested input file' )
       END IF
-
-      IF ( config_flags%use_baseparam_fr_nml ) then
-      CALL nl_get_base_pres  ( 1 , p00 )
-      CALL nl_get_base_temp  ( 1 , t00 )
-      CALL nl_get_base_lapse ( 1 , a   )
-      CALL nl_get_iso_temp   ( 1 , tiso )
-
-      ELSE
-      ! get these constants from model data
-
-      t00  = grid%t00
-      p00  = grid%p00
-      a    = grid%tlp
-      tiso = grid%tiso
-
-      IF (t00 .LT. 100. .or. p00 .LT. 10000.) THEN
-      WRITE(wrf_err_message,*)&
-      'start_em: did not find base state parameters in wrfinput. Add use_baseparam_fr_nml = .t. in &dynamics and rerun'
-      CALL wrf_error_fatal(TRIM(wrf_err_message))
-      ENDIF
-
-!     check if tiso in the input file agrees with namelist value
-
-      CALL nl_get_iso_temp   ( 1 , tiso_tmp )
-      IF ( tiso_tmp .NE. tiso ) THEN
-      WRITE(wrf_err_message,*)&
-      'start_em: namelist iso_temp is not equal to iso_temp in wrfinput. Reset nml value and rerun'
-      CALL wrf_error_fatal(TRIM(wrf_err_message))
-      ENDIF
-
-      ENDIF
 
       !  Base state potential temperature and inverse density (alpha = 1/rho) from
       !  the half eta levels and the base-profile surface pressure.  Compute 1/rho

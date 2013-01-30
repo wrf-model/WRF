@@ -322,6 +322,9 @@ state    real    cfn            -       misc      -         -     irh       "cfn
 state    real    cfn1           -       misc      -         -     irh       "cfn1"   "extrapolation constant"  ""
 state    integer step_number    -       misc      -         -     ir        "step_number"  ""
 
+# Idealized run
+state    logical this_is_an_ideal_run   - misc    -         -      r     "this_is_an_ideal_run"     "T/F flag: this is an ARW ideal simulation"
+
 # For the adaptive timestep restart
 state    logical stepping_to_time       - misc    -         -      r     "stepping_to_time"         ""
 state    integer last_step_updated      - misc    -         -      r     "last_step_updated"        ""
@@ -2049,7 +2052,7 @@ rconfig   logical mix_full_fields         namelist,dynamics     max_domains  .fa
 rconfig   real    base_pres               namelist,dynamics	1          100000.     h    "base_pres"  "Base state pressure - do not change (10^5 Pa), real only"      "Pa"
 rconfig   real    base_temp               namelist,dynamics	1             290.     h    "base_temp"  "Base state sea level temperature, real only"      "K"
 rconfig   real    base_lapse              namelist,dynamics	1              50.     h    "base_lapse" "Base state temperature difference between base pres and 1/e of atm depth - do not change, real only"      "K"
-rconfig   real    iso_temp                namelist,dynamics     1               0.     h    "iso_temp"   "Isothermal temperature in stratosphere, real only"      "K"
+rconfig   real    iso_temp                namelist,dynamics     1             200.     h    "iso_temp"   "Isothermal temperature in stratosphere, real only"      "K"
 rconfig   logical use_baseparam_fr_nml    namelist,dynamics     1            .false.  irh   "use_baseparam_fr_nml"    ""   ""
 rconfig   real    fft_filter_lat          namelist,dynamics     1              91.     h    "fft_filter_lat"   ""   "grid latitude to start polar filter"
 rconfig   logical rotated_pole            namelist,dynamics     1            .false.  irh   "rotated_pole"    ""   ""

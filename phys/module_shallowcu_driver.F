@@ -19,15 +19,16 @@ CONTAINS
                      ,rainsh,pratesh,nca,rainshv                      &
                      ,z,z_at_w,dz8w,mavail,pblh,p8w                   &
                      ,tke_pbl                                         &
-                     ,cldfra,cldfra_old,cldfrash                      &
-                     ,htop,hbot     &
+                     ,cldfra,cldfra_old,cldfra_old_mp,cldfra_conv     &
+                     ,mp_physics,cldfrash                             &
+                     ,htop,hbot                                       &
                  ! Package selection variables
                      ,shcu_physics                                    &
                  ! Optional moisture tracers 
                      ,qv_curr, qc_curr, qr_curr                       &
                      ,qi_curr, qs_curr, qg_curr                       & 
                  ! Optional output arguments for CAMZM scheme
-                     ,dlf, rliq, rliq2  &
+                     ,dlf, rliq, rliq2,dlf2  &
                      ,cmfmc, cmfmc2       &
                  ! Optional output arguments for CAMUW scheme
                      ,cush, snowsh, icwmrsh, rprdsh, cbmf, cmfsl      &
@@ -35,21 +36,29 @@ CONTAINS
                  ! Optional moisture and other tendencies
                      ,rqvshten,rqcshten,rqrshten                      &
                      ,rqishten,rqsshten,rqgshten                      &
+                     ,rqcnshten,rqinshten                             &
                      ,rqvblten,rqvften                                &
                      ,rushten,rvshten                                 &
                      ,rthshten,rthraten,rthblten,rthften              &
                  ! Optional moisture tracer flags 
                      ,f_qv,f_qc,f_qr                                  &
                      ,f_qi,f_qs,f_qg                                  &
-                     ,ht                                              &
+                     ,ht,shfrc3d,tke_pbl8w                            &
+                 ! for grims shallow convection with ysupbl
+                     ,wscalek,delta,kpbl,znu,raincv                   &
                                                                       )
 !----------------------------------------------------------------------
    USE module_model_constants
-   USE module_state_description, ONLY: CAMUWSHCUSCHEME, G3SHCUSCHEME
-
+   USE module_state_description, ONLY: CAMUWSHCUSCHEME    &
+# if (EM_CORE == 1)
+                                       , CAMMGMPSCHEME    & 
+# endif
+                                       , G3SHCUSCHEME     & 
+                                       , GRIMSSHCUSCHEME 
 ! *** add new modules of schemes here
 
    USE module_cu_camuwshcu_driver, ONLY : camuwshcu_driver
+   USE module_shcu_grims
    USE module_dm
    USE module_domain, ONLY: domain
 
@@ -58,6 +67,7 @@ CONTAINS
    !
    !  1. G3 shallow cumulus
    !  2. UW shallow cumulus from CAM
+   !  3. GRIMs shallow cumulus from GRIMs (available only with ysupbl)
    !
 !----------------------------------------------------------------------
    IMPLICIT NONE
@@ -135,6 +145,7 @@ CONTAINS
 !-- th_phy        potential temperature (K)
 !-- t_phy         temperature (K)
 !-- tke_pbl       turbulent kinetic energy from PBL scheme (m2/s2)
+!-- tke_pbl8w     turbulent kinetic energy from PBL scheme at interfaces (m2/s2)
 !-- w             vertical velocity (m/s)
 !-- moist         moisture array (4D - last index is species) (kg/kg)
 !-- z             height above sea level at middle of layers (m)
@@ -155,6 +166,8 @@ CONTAINS
 !-- cldfra        cloud fraction
 !-- cldfra_old    cloud fraction from previous time step
 !-- cldfrash      cloud fraction from shallow Cu
+!-- cldfra_old_mp cloud fraction from previous time step if CAMMGMP microphysics is used
+!-- cldfra_conv   convective cloud fraction
 !-- rho           density (kg/m^3)
 !-- XLV0          latent heat of vaporization constant 
 !                 used in temperature dependent formula (J/kg)
@@ -171,6 +184,8 @@ CONTAINS
 !-- G             acceleration due to gravity (m/s^2)
 !-- EP_1          constant for virtual temperature 
 !                 (R_v/R_d - 1) (dimensionless)
+!--shfrc3d        Shallow cloud fraction
+!-- cmfmc         Deep + Shallow Convective m
 !-- ids           start index for i in domain
 !-- ide           end index for i in domain
 !-- jds           start index for j in domain
@@ -203,7 +218,7 @@ CONTAINS
                                       ids,ide, jds,jde, kds,kde, &
                                       ims,ime, jms,jme, kms,kme, &
                                                         kts,kte, &
-                                      itimestep, num_tiles
+                                      itimestep, num_tiles, mp_physics
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
      &           i_start,i_end,j_start,j_end
@@ -221,6 +236,8 @@ CONTAINS
          INTENT(IN ) ::                                          &
                                                          cldfra  &
                                                     ,cldfra_old  &
+                                                  ,cldfra_old_mp &
+                                                    ,cldfra_conv &
                                                       ,       z  &
                                                       ,  z_at_w  &
                                                       ,    dz8w  &
@@ -232,6 +249,7 @@ CONTAINS
                                                       ,      th  &
                                                       ,       t  &
                                                       , tke_pbl  &
+                                                    , tke_pbl8w  &
                                                       ,     rho
 
 
@@ -269,6 +287,7 @@ CONTAINS
                       ! optional moisture and other tendencies
                      ,rqvshten,rqcshten,rqrshten                 &
                      ,rqishten,rqsshten,rqgshten                 &
+                     ,rqcnshten,rqinshten                        &
                      ,rqvblten,rqvften                           &
                      ,rthraten,rthblten                          &
                      ,rthften,rushten,rvshten,rthshten
@@ -282,6 +301,24 @@ CONTAINS
                   cldfrash, cmfsl, cmflq, icwmrsh,               &
                   dlf, evapcsh,                                  &
                   cmfmc, cmfmc2, rprdsh
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
+        INTENT(OUT) ::                                 &
+                  dlf2                                             ! Required by CAMMGMP Microphysics
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
+        INTENT(OUT) ::                                 &
+                 shfrc3d                                           ! Required by wet scavenging code in WRF_CHEM
+! for grims shallow convection with ysupbl
+!
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                , &
+         OPTIONAL, INTENT(IN   )                 ::      wscalek
+   REAL, DIMENSION( ims:ime, jms:jme )                         , &
+         OPTIONAL, INTENT(IN   )                 ::        delta
+   REAL, DIMENSION( ims:ime, jms:jme )                         , &
+         OPTIONAL, INTENT(IN   )                 ::       raincv
+   REAL, DIMENSION( kms:kme )                                  , &
+         OPTIONAL, INTENT(IN   )       ::                    znu
+   INTEGER, DIMENSION( ims:ime , jms:jme )                     , &
+         OPTIONAL, INTENT(IN)                    ::         kpbl
 !
 ! Flags relating to the optional tendency arrays declared above
 ! Models that carry the optional tendencies will provdide the
@@ -302,6 +339,7 @@ CONTAINS
 
    INTEGER :: i,j,k,its,ite,jts,jte,ij
    CHARACTER(len=200) :: message
+   LOGICAL :: is_CAMMGMP_used
 
 !-----------------------------------------------------------------
 
@@ -330,9 +368,18 @@ CONTAINS
    else
       tmppratesh(:,:) = 0.
    end if
-
+   
 
    IF (shcu_physics .eq. 0) return
+   
+   
+   !BSINGH: Find out if CAMMGMPSCHEME is beingh used in this simulation:
+   is_CAMMGMP_used = .false.
+# if (EM_CORE == 1)
+   if(mp_physics == CAMMGMPSCHEME) then
+      is_CAMMGMP_used = .true.
+   endif
+# endif
 
 ! DON'T JUDGE TIME STEP HERE, SINCE KF NEEDS ACCUMULATED W FIELD.
 ! DO IT INSIDE THE INDIVIDUAL CUMULUS SCHEME
@@ -367,19 +414,41 @@ CONTAINS
            ,Z=z, Z_AT_W=z_at_w, DZ8W=dz8w                                &
            ,T_PHY=t, U_PHY=u, V_PHY=v                                    &
            ,MOIST=moist, QV=qv_curr, QC=qc_curr, QI=qi_curr              &
-           ,PBLH_IN=pblh, TKE_PBL=tke_pbl                                &
-           ,CLDFRA=cldfra, CLDFRA_OLD=cldfra_old, CLDFRASH=cldfrash      &
-           ,CUSH_INOUT=cush, RAINSH=rainsh, PRATESH=tmppratesh           &
+           ,PBLH_IN=pblh, TKE_PBL8W=tke_pbl8w                            &
+           ,CLDFRA=cldfra, CLDFRA_OLD=cldfra_old                         &
+           ,CLDFRA_OLD_MP=cldfra_old_mp                                  &
+           ,CLDFRA_CONV=cldfra_conv,IS_CAMMGMP_USED=is_CAMMGMP_used      &
+           ,CLDFRASH=cldfrash                                            &
+           ,CUSH_INOUT=cush, PRATESH=tmppratesh                          &
            ,SNOWSH=snowsh                                                &
            ,ICWMRSH=icwmrsh, CMFMC=cmfmc, CMFMC2_INOUT=cmfmc2            &
            ,RPRDSH_INOUT=rprdsh, CBMF_INOUT=cbmf                         &
-           ,CMFSL=cmfsl, CMFLQ=cmflq, DLF=dlf, EVAPCSH_INOUT=evapcsh     &
+           ,CMFSL=cmfsl, CMFLQ=cmflq, DLF=dlf,DLF2=dlf2                  & !DLF2 is required by CAMMGMP microphysics
+           ,EVAPCSH_INOUT=evapcsh                                        &
            ,RLIQ=rliq, RLIQ2_INOUT=rliq2, CUBOT=hbot, CUTOP=htop         &
            ,RUSHTEN=rushten, RVSHTEN=rvshten, RTHSHTEN=rthshten          &
            ,RQVSHTEN=rqvshten, RQCSHTEN=rqcshten, RQRSHTEN=rqrshten      &
            ,RQISHTEN=rqishten, RQSSHTEN=rqsshten, RQGSHTEN=rqgshten      &
-           ,HT=ht                                                        &                                                 
+           ,RQCNSHTEN=rqcnshten,RQINSHTEN=rqinshten                      & 
+           ,HT=ht,SHFRC3D=shfrc3d,ITIMESTEP=itimestep                    &
                                                                          )
+
+   CASE (GRIMSSHCUSCHEME)
+      CALL wrf_debug(100,'in grims_scps')
+      IF ( PRESENT( wscalek ) ) THEN
+      CALL grims(                                                        &
+            QV3D=qv_curr,T3D=t                                           &
+           ,P3DI=p8w,P3D=p,PI3D=pi,Z3DI=Z_AT_W                           &
+           ,WSCALEK=wscalek,HPBL=pblh,DELTA=delta                        &
+           ,RTHSHTEN=rthshten,RQVSHTEN=rqvshten                          &
+           ,DT=dt,CP=cp,G=g,XLV=xlv,RD=r_d,RV=r_v                        &
+           ,RCP=rcp,P1000MB=p1000mb                                      &
+           ,KPBL2D=kpbl,ZNU=znu,RAINCV=raincv                            &
+           ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde              &
+           ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme              &
+           ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte              &
+                                                                         )
+      ENDIF
 
    CASE DEFAULT 
       WRITE( message , * ) 'The shallow cumulus option does not exist: shcu_physics = ', shcu_physics

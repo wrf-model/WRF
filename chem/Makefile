@@ -9,7 +9,6 @@ LN      =       ln -sf
 MAKE    =       make -i -r
 RM      =       rm -f
 
-
 MODULES =                                 \
         module_aer_opt_out.o              \
         module_add_emiss_burn.o           \
@@ -37,8 +36,6 @@ MODULES =                                 \
         module_gocart_so2so4.o            \
         module_input_tracer_data.o        \
         module_interpolate.o              \
-        module_ltng_crm.o                 \
-        module_ltng_cpm.o                 \
         module_mosaic_csuesat.o           \
         module_mozcart_wetscav.o          \
         module_peg_util.o                 \
@@ -85,7 +82,9 @@ MODULES =                                 \
         module_ctrans_grell.o             \
         module_gocart_chem.o              \
         module_input_tracer.o             \
-        module_lightning_driver.o         \
+	module_lightning_nox_driver.o     \
+	module_lightning_nox_ott.o        \
+	module_lightning_nox_decaria.o    \
         module_mixactivate_wrappers.o     \
         module_mosaic_driver.o            \
         module_optical_averaging.o        \
@@ -99,6 +98,25 @@ MODULES =                                 \
         module_cbm4_addemiss.o            \
         module_emissions_anthropogenics.o \
         module_aer_drydep.o               \
+        module_cam_mam_calcsize.o         \
+        module_cam_mam_dust_sediment.o    \
+        module_cam_mam_drydep.o           \
+        module_cam_mam_init.o             \
+        module_cam_mam_initaerodata.o     \
+        module_cam_mam_initmixrats.o      \
+        module_cam_mam_rename.o           \
+        module_cam_mam_wateruptake.o      \
+        module_cam_mam_gasaerexch.o       \
+        module_cam_mam_coag.o             \
+        module_cam_mam_newnuc.o           \
+        module_cam_mam_aerchem_driver.o   \
+        module_cam_mam_addemiss.o         \
+        module_cam_mam_wetscav.o          \
+        module_cam_mam_mz_aerosols_intr.o \
+        module_cam_mam_wetdep.o           \
+        module_cam_mam_cloudchem.o        \
+        module_cam_mam_setsox.o           \
+        module_cam_mam_mo_chem_utls.o     \
         module_mosaic_cloudchem.o         \
         module_sorgam_cloudchem.o         \
         module_phot_fastj.o

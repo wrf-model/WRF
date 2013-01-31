@@ -1,4 +1,4 @@
-subroutine da_ao_stats_geoamv (stats_unit, iv, re)
+subroutine da_ao_stats_geoamv (stats_unit, iv, re, ob)
 
    !-------------------------------------------------------------------------
    ! Purpose: Calculates (Obs - Analysis) statistics for Geo.  AMV's
@@ -10,10 +10,12 @@ subroutine da_ao_stats_geoamv (stats_unit, iv, re)
    integer,        intent(in)    :: stats_unit    ! Output unit for stats.
    type (iv_type), intent(inout) :: iv            ! iv
    type (y_type),  intent(in)    :: re            ! A - O
+   type(y_type),   intent (in) :: ob       ! Observation structure.
 
    type (stats_geoamv_type) :: stats
    integer                  :: nu, nv
    integer                  :: n, k
+   real                     :: u_inv, v_inv, sp_inv, dir_inv
 
    if (trace_use_dull) call da_trace_entry("da_ao_stats_geoamv")
 
@@ -31,12 +33,20 @@ subroutine da_ao_stats_geoamv (stats_unit, iv, re)
    do n=1, iv%info(geoamv)%nlocal
       if (iv%info(geoamv)%proc_domain(1,n)) then
          do k=1, iv%info(geoamv)%levels(n)
+            u_inv = re%geoamv(n)%u(k)
+            v_inv = re%geoamv(n)%v(k)
+            if(var_wind) then
+               sp_inv = re%geoamv(n)%u(k)
+               dir_inv = re%geoamv(n)%v(k)
+               call da_cal_sd (ob%geoamv(n)%u(k), ob%geoamv(n)%v(k), &
+                               u_inv, v_inv, sp_inv, dir_inv)
+            end if
             call da_stats_calculate (n, 0, iv%geoamv(n)%u(k)%qc, & 
-               re%geoamv(n)%u(k), nu, & 
+               u_inv, nu, & 
                stats%minimum%u, stats%maximum%u, &
                stats%average%u, stats%rms_err%u)
             call da_stats_calculate (n, 0, iv%geoamv(n)%v(k)%qc, & 
-               re%geoamv(n)%v(k), nv, & 
+               v_inv, nv, & 
                stats%minimum%v, stats%maximum%v, &
                stats%average%v, stats%rms_err%v)
          end do

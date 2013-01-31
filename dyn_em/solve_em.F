@@ -42,7 +42,8 @@ SUBROUTINE solve_em ( grid , config_flags  &
                  ,period_bdy_em_scalar2_sub,period_bdy_em_scalar_old_sub                   &
                  ,period_bdy_em_scalar_sub,period_bdy_em_tke_old_sub                       &
                  ,period_bdy_em_tracer2_sub,period_bdy_em_tracer_old_sub                   &
-                 ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub
+                 ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub         &
+                 ,halo_em_f_sub,halo_em_init_4_sub
 #endif
    USE module_utility
 ! Mediation layer modules
@@ -59,6 +60,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    USE module_polarfft
    USE module_microphysics_driver
    USE module_microphysics_zero_out
+   USE module_lightning_driver, ONLY : lightning_driver
    USE module_fddaobs_driver
    USE module_diagnostics
 #ifdef WRF_CHEM
@@ -3089,6 +3091,34 @@ BENCH_END(bc_end_tim)
 
    END DO Runge_Kutta_loop
 
+   IF      ( config_flags%trajcall .gt. 0 ) THEN
+#ifdef DM_PARALLEL
+#    include "HALO_EM_F.inc"
+#    include "HALO_EM_D.inc"
+#    include "HALO_EM_INIT_4.inc"
+#endif
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+       DO ij = 1 , grid%num_tiles
+
+           call trajectory (grid,config_flags,  &
+                            grid%dt,grid%itimestep,grid%ru_m, grid%rv_m, grid%ww_m,&
+                            grid%mut,grid%muu,grid%muv,                            &
+                            grid%rdx, grid%rdy, grid%rdn, grid%rdnw,grid%rdzw,     &
+                            grid%traj_i,grid%traj_j,grid%traj_k,                   &
+                            grid%traj_long,grid%traj_lat,                          &
+                            grid%xlong,grid%xlat,            &
+                            grid%msftx,grid%msfux,grid%msfvy,                      &
+                            ids, ide, jds, jde, kds, kde,    &
+                            ims, ime, jms, jme, kms, kme,    &
+                            grid%i_start(ij), grid%i_end(ij), &
+                            grid%j_start(ij), grid%j_end(ij), &
+                            k_start  , k_end )
+        ENDDO
+     !$OMP END PARALLEL DO
+   ENDIF
+!-----------------------------------------------------------
+
    IF (config_flags%do_avgflx_em .EQ. 1) THEN
 ! Reinitialize time-averaged fluxes if history output was written after the previous time step:
       CALL WRFU_ALARMGET(grid%alarms( HISTORY_ALARM ),prevringtime=temp_time)
@@ -3265,8 +3295,16 @@ BENCH_START(micro_driver_tim)
       &        ,QLSINK=grid%qlsink,CLDFRA_OLD=grid%cldfra_old             &
       &        ,PRECR=grid%precr, PRECI=grid%preci, PRECS=grid%precs, PRECG=grid%precg &
       &        ,CHEM_OPT=config_flags%chem_opt, PROGN=config_flags%progn  &
+!======================
+      ! Variables required for CAMMGMP Scheme when run with WRF_CHEM
+      &        ,CHEM=chem                                                 &
+      &        ,QME3D=grid%qme3d,PRAIN3D=grid%prain3d                     &
+      &        ,NEVAPR3D=grid%nevapr3d                                    &
+      &        ,RATE1ORD_CW2PR_ST3D=grid%rate1ord_cw2pr_st3d              &
+      &        ,DGNUM4D=grid%dgnum4d,DGNUMWET4D=grid%dgnumwet4d           &
+!======================
 #endif
-      &        ,XLAND=grid%xland                                          &
+      &        ,XLAND=grid%xland,SNOWH=grid%SNOW                           &  !PMA
       &        ,SPECIFIED=specified_bdy, CHANNEL_SWITCH=channel_bdy       &
       &        ,F_RAIN_PHY=grid%f_rain_phy                                &
       &        ,F_RIMEF_PHY=grid%f_rimef_phy                              &
@@ -3280,6 +3318,26 @@ BENCH_START(micro_driver_tim)
       &        ,KTS=k_start, KTE=min(k_end,kde-1)                         &
       &        ,NUM_TILES=grid%num_tiles                                  &
       &        ,NAER=grid%naer                                            &
+!======================
+      ! Variables required for CAMMGMP Scheme
+      &        ,DLF=grid%dlf,DLF2=grid%dlf2,T_PHY=grid%t_phy,P_HYD=grid%p_hyd  &
+      &        ,P8W_HYD=grid%p_hyd_w,TKE_PBL8w=grid%tke_pbl8w             &
+      &        ,Z_AT_W=grid%z_at_w,QFX=grid%qfx,RLIQ=grid%rliq            &
+      &        ,TURBTYPE3D=grid%turbtype3d,SMAW3D=grid%smaw3d             &
+      &        ,WSEDL3D=grid%wsedl3d,CLDFRA_OLD_MP=grid%cldfra_old_mp     &
+      &        ,CLDFRA_MP=grid%cldfra_mp,CLDFRA_MP_ALL=grid%cldfra_mp_ALL &
+      &        ,CLDFRAI=grid%cldfrai             &
+      &        ,CLDFRAL=grid%cldfral,CLDFRA_CONV=grid%CLDFRA_CONV         &
+      &        ,ALT=grid%alt,EXCH_H8W=grid%exch_h8w                       &
+      &        ,ACCUM_MODE=config_flags%accum_mode                        &
+      &        ,AITKEN_MODE=config_flags%aitken_mode                      &
+      &        ,COARSE_MODE=config_flags%coarse_mode                      &
+      &        ,ICWMRSH3D=grid%icwmrsh,ICWMRDP3D=grid%icwmrdp3d           &
+      &        ,SHFRC3D=grid%shfrc3d,CMFMC3D=grid%cmfmc                   &
+      &        ,CMFMC2_3D=grid%cmfmc2,CONFIG_FLAGS=config_flags           &
+      &        ,FNM=grid%fnm,FNP=grid%fnp,RH_OLD_MP=grid%rh_old_mp        &
+      &        ,LCD_OLD_MP=grid%lcd_old_mp                                &
+!======================
                  ! Optional
       &        , RAINNC=grid%rainnc, RAINNCV=grid%rainncv                 &
       &        , SNOWNC=grid%snownc, SNOWNCV=grid%snowncv                 &
@@ -3485,6 +3543,43 @@ BENCH_START(moist_phys_end_tim)
 !-----------------------------------------------------------
 !  end filter for moist variables post-microphysics and end of timestep
 !-----------------------------------------------------------
+
+!-----------------------------------------------------------
+!  Lightning flash rate diagnostic production
+!-----------------------------------------------------------
+  IF ( config_flags%lightning_option /= 0 ) THEN
+    CALL lightning_driver ( &
+          ! Frequently used prognostics
+            grid%itimestep, grid%dt, grid%dx, grid%dy,         &
+            grid%xlat, grid%xlong, grid%xland, grid%ht,        &
+            grid%t_phy, p_phy, rho, u_phy, v_phy, grid%w_2,    &
+            grid%z, moist,                                     &
+          ! Scheme specific prognostics
+            grid%ktop_deep, grid%refl_10cm,                    &
+            domain_get_current_time( grid ),                   &
+          ! Flashrate namelist inputs
+            config_flags%lightning_option,                     &
+            config_flags%lightning_dt,                         &
+            config_flags%lightning_start_seconds,              &
+            config_flags%flashrate_factor,                     &
+          ! IC:CG namelist settings
+            config_flags%iccg_method,                          &
+            config_flags%iccg_prescribed_num,                  &
+            config_flags%iccg_prescribed_den,                  &
+          ! IC:CG inputs
+            grid%iccg_in_num, grid%iccg_in_den,                &
+          ! Scheme specific namelist inputs
+            config_flags%cellcount_method,                     &
+            config_flags%cldtop_adjustment,                    &
+          ! Order dependent args for domain, mem, and tile dims
+            ids, ide, jds, jde, kds, kde,         &
+            ims, ime, jms, jme, kms, kme,         &
+            ips, ipe, jps, jpe, kps, kpe,         &
+          ! Mandatory outputs for all quantitative schemes
+            grid%ic_flashcount, grid%ic_flashrate,          &
+            grid%cg_flashcount, grid%cg_flashrate           &
+      )
+   ENDIF
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij, its, ite, jts, jte, im, ii, jj, kk )
@@ -3901,6 +3996,21 @@ BENCH_END(bc_2d_tim)
       &             ,PREC_ACC_NC=grid%prec_acc_nc                          &
       &             ,PREC_ACC_DT=config_flags%prec_acc_dt                  &
       &             ,CURR_SECS=curr_secs                                   &
+      &             ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics          &
+      &             ,DIAGFLAG=diag_flag                                    &
+      &             ,HISTORY_INTERVAL=grid%history_interval                &
+      &             ,ITIMESTEP=grid%itimestep                              &
+      &             ,U10=grid%u10,V10=grid%v10,W=grid%w_2                  &
+      &             ,WSPD10MAX=grid%wspd10max                              &
+      &             ,UP_HELI_MAX=grid%up_heli_max                          &
+      &             ,W_UP_MAX=grid%w_up_max,W_DN_MAX=grid%w_dn_max         &
+      &             ,ZNW=grid%znw,W_COLMEAN=w_colmean                      &
+      &             ,NUMCOLPTS=numcolpts,W_MEAN=grid%w_mean                &
+      &             ,GRPL_MAX=grid%grpl_max,GRPL_COLINT=grpl_colint        &
+      &             ,REFD_MAX=grid%refd_max                                &
+      &             ,refl_10cm=grid%refl_10cm                              &
+      &             ,QG_CURR=moist(ims,kms,jms,P_QG)                       &
+      &             ,RHO=rho,PH=grid%ph_2,PHB=grid%phb,G=g                 &
                   ! Dimension arguments
       &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
       &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &

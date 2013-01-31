@@ -2870,6 +2870,10 @@ SUBROUTINE NEST_TERRAIN ( nest, config_flags )
      write(message,'("Nest d",I0," nest_terrain")') nest%id
      call END_TIMING(trim(message))
 
+#ifdef IDEAL_NMM_TC
+           return ! move return after end_timing to prevent cnmax KWON
+#endif
+
 CONTAINS
 #ifdef DM_PARALLEL
   SUBROUTINE SLAVE(IDS,IDE,JDS,JDE)

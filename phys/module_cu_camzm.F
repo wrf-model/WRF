@@ -1,8 +1,7 @@
 #define WRF_PORT
-
+#define MODAL_AERO
+! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
 module module_cu_camzm
-
-!Based on zm_conv.F90 from CAM
 
 !---------------------------------------------------------------------------------
 ! Purpose:
@@ -14,28 +13,23 @@ module module_cu_camzm
 !                based on an entraining plume a la Raymond and Blythe (1992)
 !
 ! Author: Byron Boville, from code in tphysbc
-! Ported from CAM to WRF by William.Gustafson@pnl.gov, Nov. 2009
-!   updated to CESM1_0_1, Nov. 2010
 !
 !---------------------------------------------------------------------------------
-
   use shr_kind_mod,    only: r8 => shr_kind_r8
+#ifndef WRF_PORT
+  use spmd_utils,      only: masterproc
+  use ppgrid,          only: pcols, pver, pverp
+#else
+  use module_cam_support, only: masterproc, pcols, pver, pverp 
+#endif
   use cldwat,          only: cldwat_fice
   use physconst,       only: cpair, epsilo, gravit, latice, latvap, tmelt, rair, &
                              cpwv, cpliq, rh2o
 #ifndef WRF_PORT
-  use spmd_utils,      only: masterproc
-  use ppgrid,          only: pcols, pver, pverp
-
   use abortutils,      only: endrun
   use cam_logfile,     only: iulog
-
 #else
-  use module_cam_support, only: masterproc, &
-                                pcols, pver, pverp, &
-                                endrun, &
-                                iulog
-  use module_wrf_error
+  use module_cam_support,only: endrun, iulog
 #endif
 
   implicit none
@@ -59,6 +53,7 @@ module module_cu_camzm
    real(r8) :: zmconv_c0_lnd = unset_r8    
    real(r8) :: zmconv_c0_ocn = unset_r8    
    real(r8) :: zmconv_ke     = unset_r8    
+
    real(r8) rl         ! wg latent heat of vaporization.
    real(r8) cpres      ! specific heat at constant pressure in j/kg-degk.
    real(r8), parameter :: capelmt = 70._r8  ! threshold value for cape for deep convection.
@@ -86,7 +81,9 @@ module module_cu_camzm
    real(r8) :: cp          ! = cpres = cpair
    
    integer  limcnv       ! top interface level limit for convection
+
    real(r8),parameter ::  tiedke_add = 0.5_r8   
+
 contains
 
 subroutine zmconv_readnl(nlfile)
@@ -97,7 +94,6 @@ subroutine zmconv_readnl(nlfile)
 #endif
 
    character(len=*), intent(in) :: nlfile  ! filepath for file containing namelist input
-
 #ifndef WRF_PORT
    ! Local variables
    integer :: unitn, ierr
@@ -132,22 +128,19 @@ subroutine zmconv_readnl(nlfile)
    call mpibcast(c0_ocn,            1, mpir8,  0, mpicom)
    call mpibcast(ke,                1, mpir8,  0, mpicom)
 #endif
-
 #else
 ! WRF_PORT currently uses hard-wired values for the namelist input. The
 ! values could easily be setup to come from the Registry in the future.
 ! The hard-wired values are the defaults for the fv core. They should be
 ! verified by somebody knowledgable on the matter.
-   c0_lnd = 0.0035d0
-   c0_ocn = 0.0035d0
-   ke     = 1.0e-6
+   c0_lnd = 0.0059D0 
+   c0_ocn = 0.0450D0 
+   ke     = 1.0E-6 
 #endif
-
 end subroutine zmconv_readnl
 
 
 subroutine zm_convi(limcnv_in, no_deep_pbl_in)
-
 #ifndef WRF_PORT
    use dycore,       only: dycore_is, get_resolution
 #endif
@@ -172,12 +165,11 @@ subroutine zm_convi(limcnv_in, no_deep_pbl_in)
    if ( present(no_deep_pbl_in) )  then
       no_deep_pbl = no_deep_pbl_in
    else
-      no_deep_pbl = .false.
+      no_deep_pbl = .true.
    endif
 
    ! tau=4800. were used in canadian climate center. however, in echam3 t42, 
    ! convection is too weak, thus adjusted to 2400.
-
 #ifndef WRF_PORT
    hgrid = get_resolution()
 #endif
@@ -186,28 +178,26 @@ subroutine zm_convi(limcnv_in, no_deep_pbl_in)
    if ( masterproc ) then
       write(iulog,*) 'tuning parameters zm_convi: tau',tau
 #ifdef WRF_PORT
-      call wrf_debug(100,iulog)
+      call wrf_message(iulog)
 #endif
       write(iulog,*) 'tuning parameters zm_convi: c0_lnd',c0_lnd, ', c0_ocn', c0_ocn 
 #ifdef WRF_PORT
-      call wrf_debug(100,iulog)
+      call wrf_message(iulog)
 #endif
       write(iulog,*) 'tuning parameters zm_convi: ke',ke
 #ifdef WRF_PORT
-      call wrf_debug(100,iulog)
+      call wrf_message(iulog)
 #endif
       write(iulog,*) 'tuning parameters zm_convi: no_deep_pbl',no_deep_pbl
 #ifdef WRF_PORT
-      call wrf_debug(100,iulog)
+      call wrf_message(iulog)
+#endif
    endif
-#endif
 
-   if (masterproc) then 
-      write(iulog,*)'**** ZM: DILUTE Buoyancy Calculation ****'
+   if (masterproc) write(iulog,*)'**** ZM: DILUTE Buoyancy Calculation ****'
 #ifdef WRF_PORT
-      call wrf_debug(100,iulog)
+      call wrf_message(iulog)
 #endif
-   end if
 
 end subroutine zm_convi
 
@@ -241,9 +231,10 @@ subroutine zm_convr(lchnk   ,ncol    , &
 ! 
 !-----------------------------------------------------------------------
 #ifdef WRF_PORT
-  use module_cam_support, only: pcnst
+  use module_cam_support, only: pcnst =>pcnst_runtime
 #else
    use constituents, only: pcnst
+   use phys_control, only: cam_physpkg_is
 #endif
 
 !
@@ -398,6 +389,9 @@ subroutine zm_convr(lchnk   ,ncol    , &
 !
    real(r8) pblt(pcols)           ! i row of pbl top indices.
 
+
+
+
 !
 !-----------------------------------------------------------------------
 !
@@ -478,6 +472,7 @@ subroutine zm_convr(lchnk   ,ncol    , &
    integer msg                      !  ic number of missing moisture levels at the top of model.
    real(r8) qdifr
    real(r8) sdifr
+
 !
 !--------------------------Data statements------------------------------
 !
@@ -524,6 +519,7 @@ subroutine zm_convr(lchnk   ,ncol    , &
 
       jctop(i) = pver
       jcbot(i) = 1
+
    end do
 !
 ! calculate local pressure (mbs) and height (m) for both interface
@@ -571,16 +567,33 @@ subroutine zm_convr(lchnk   ,ncol    , &
       tlg(i) = 400._r8
       dsubcld(i) = 0._r8
    end do
+#ifndef WRF_PORT
+   if( cam_physpkg_is('cam3')) then
 
-   !  Evaluate Tparcel, qsat(Tparcel), buoyancy and CAPE, 
-   !     lcl, lel, parcel launch level at index maxi()=hmax
+      !  For cam3 physics package, call non-dilute
 
-   call buoyan_dilute(lchnk   ,ncol    , &
-               q       ,t       ,p       ,z       ,pf       , &
-               tp      ,qstp    ,tl      ,rl      ,cape     , &
-               pblt    ,lcl     ,lel     ,lon     ,maxi     , &
-               rgas    ,grav    ,cpres   ,msg     , &
-               tpert   )
+      call buoyan(lchnk   ,ncol    , &
+                  q       ,t       ,p       ,z       ,pf       , &
+                  tp      ,qstp    ,tl      ,rl      ,cape     , &
+                  pblt    ,lcl     ,lel     ,lon     ,maxi     , &
+                  rgas    ,grav    ,cpres   ,msg     , &
+                  tpert   )
+   else
+#else
+
+      !  Evaluate Tparcel, qsat(Tparcel), buoyancy and CAPE, 
+      !     lcl, lel, parcel launch level at index maxi()=hmax
+
+      call buoyan_dilute(lchnk   ,ncol    , &
+                  q       ,t       ,p       ,z       ,pf       , &
+                  tp      ,qstp    ,tl      ,rl      ,cape     , &
+                  pblt    ,lcl     ,lel     ,lon     ,maxi     , &
+                  rgas    ,grav    ,cpres   ,msg     , &
+                  tpert   )
+#endif
+#ifndef WRF_PORT
+   end if
+#endif
 
 !
 ! determine whether grid points will undergo some deep convection
@@ -793,7 +806,7 @@ subroutine zm_convr(lchnk   ,ncol    , &
 ! Compute precip by integrating change in water vapor minus detrained cloud water
    do k = pver,msg + 1,-1
       do i = 1,ncol
-         prec(i) = prec(i) - dpp(i,k)* (q(i,k)-qh(i,k,1)) - dpp(i,k)*dlf(i,k)*2*delt
+         prec(i) = prec(i) - dpp(i,k)* (q(i,k)-qh(i,k,1)) - dpp(i,k)*dlf(i,k)*2._r8*delt
       end do
    end do
 
@@ -1021,12 +1034,10 @@ subroutine convtran(lchnk   , &
 ! 
 !-----------------------------------------------------------------------
    use shr_kind_mod, only: r8 => shr_kind_r8
-   use constituents, only: cnst_get_type_byind
+   use constituents,    only: cnst_get_type_byind
 #ifndef WRF_PORT
    use ppgrid
    use abortutils, only: endrun
-!~~~#else
-!   use module_cam_support, only: cnst_get_type_byind
 #endif
 
    implicit none
@@ -1098,7 +1109,6 @@ subroutine convtran(lchnk   , &
 !-----------------------------------------------------------------------
 !
    small = 1.e-36_r8
-
 ! mbsth is the threshold below which we treat the mass fluxes as zero (in mb/s)
    mbsth = 1.e-15_r8
 
@@ -1328,6 +1338,7 @@ subroutine momtran(lchnk, ncol, &
    use ppgrid
    use abortutils, only: endrun
 #endif
+
    implicit none
 !-----------------------------------------------------------------------
 !
@@ -1717,7 +1728,6 @@ subroutine momtran(lchnk, ncol, &
    return
 end subroutine momtran
 
-#ifndef WRF_PORT
 !=========================================================================================
 
 subroutine buoyan(lchnk   ,ncol    , &
@@ -2035,8 +2045,6 @@ subroutine buoyan(lchnk   ,ncol    , &
    return
 end subroutine buoyan
 
-#endif
-
 subroutine cldprp(lchnk   , &
                   q       ,t       ,u       ,v       ,p       , &
                   z       ,s       ,mu      ,eu      ,du      , &
@@ -2084,6 +2092,7 @@ subroutine cldprp(lchnk   , &
    real(r8), intent(in) :: zf(pcols,pverp)       ! height of interfaces
    real(r8), intent(in) :: u(pcols,pver)         ! zonal velocity of env
    real(r8), intent(in) :: v(pcols,pver)         ! merid. velocity of env
+
    real(r8), intent(in) :: landfrac(pcols) ! RBN Landfrac
 
    integer, intent(in) :: jb(pcols)              ! updraft base level
@@ -2148,6 +2157,7 @@ subroutine cldprp(lchnk   , &
    real(r8) qds(pcols,pver)
 ! RBN For c0mask
    real(r8) c0mask(pcols)
+
    real(r8) hmin(pcols)
    real(r8) expdif(pcols)
    real(r8) expnum(pcols)
@@ -2290,6 +2300,7 @@ subroutine cldprp(lchnk   , &
 !
 ! find the level of minimum hsat, where detrainment starts
 !
+
    do k = msg + 1,pver
       do i = 1,il2g
          if (hsat(i,k) <= hmin(i) .and. k >= jt(i) .and. k <= jb(i)) then

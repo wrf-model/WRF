@@ -84,6 +84,19 @@ ESMF_TARGET         = ESMFTARGET
 # ESMFINCLUDEGOESHERE
 
 
+#### NETCDF4 pieces
+
+NETCDF4_IO_OPTS = -DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT
+GPFS            =
+CURL            =
+HDF5            =
+ZLIB            =
+DEP_LIB_PATH    = CONFIGURE_DEP_LIB_PATH
+NETCDF4_DEP_LIB = $(DEP_LIB_PATH) $(HDF5) $(ZLIB) $(GPFS) $(CURL)
+
+# NETCDF4INCLUDEGOESHERE
+
+
 ##############################################################################
 
 LIBWRFLIB = libwrflib.a

@@ -1,4 +1,6 @@
 #define WRF_PORT
+#define MODAL_AERO
+! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
 
 !------------------------------------------------------------------------
 ! Based on esinti.F90 from CAM
@@ -71,7 +73,8 @@ subroutine esinti(epslon  ,latvap  ,latice  ,rh2o    ,cpair   ,tmelt   )
 !
    return
 end subroutine esinti
-
 #ifdef WRF_PORT
 end module module_cam_esinti
 #endif
+
+

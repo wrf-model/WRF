@@ -8,6 +8,9 @@
 #ifndef O_WRONLY
 # define O_WRONLY _O_WRONLY
 #endif
+#ifndef O_TRUNC
+# define O_TRUNC _O_TRUNC
+#endif
 
 #ifdef _WIN32
 #include <Winsock2.h>
@@ -38,7 +41,7 @@ RSL_LITE_ERROR_DUP1 ( int *me )
 
 /* redirect standard out*/
     sprintf(filename,"rsl.out.%04d",*me) ;
-    if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
+    if ((newfd = open( filename, O_CREAT | O_WRONLY | O_TRUNC, 0666 )) < 0 )
     {
         perror("error_dup: cannot open rsl.out.nnnn") ;
         fprintf(stderr,"...sending output to standard output and continuing.\n") ;
@@ -57,7 +60,7 @@ RSL_LITE_ERROR_DUP1 ( int *me )
     if ( *me != 0 ) {   /* stderr from task 0 should come to screen on windows because it is buffered if redirected */
 #endif
     sprintf(filename,"rsl.error.%04d",*me) ;
-    if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
+    if ((newfd = open( filename, O_CREAT | O_WRONLY | O_TRUNC, 0666 )) < 0 )
     {
         perror("error_dup: cannot open rsl.error.log") ;
         fprintf(stderr,"...sending error to standard error and continuing.\n") ;
@@ -118,7 +121,7 @@ RSL_LITE_ERROR_DUP1 ( int *me )
                                                                                                                                               
    sprintf(filename, "%s/%04d/rsl.out.%04d","TASKOUTPUT",*me,*me) ;
         
-   if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
+   if ((newfd = open( filename, O_CREAT | O_WRONLY | O_TRUNC, 0666 )) < 0 )
    {
         perror("error_dup: cannot open ./TASKOUTPUT/nnnn/rsl.out.nnnn") ;
         fprintf(stderr,"...sending output to standard output and continuing.\n")
@@ -134,7 +137,7 @@ RSL_LITE_ERROR_DUP1 ( int *me )
    }
         
    sprintf(filename, "%s/%04d/rsl.error.%04d","TASKOUTPUT",*me,*me) ;
-   if ((newfd = open( filename, O_CREAT | O_WRONLY, 0666 )) < 0 )
+   if ((newfd = open( filename, O_CREAT | O_WRONLY | O_TRUNC, 0666 )) < 0 )
    {
        perror("error_dup: cannot open ./TASKOUTPUT/nnnn/rsl.error.nnnn") ;
        fprintf(stderr,"...sending error to standard error and continuing.\n") ;

@@ -27,7 +27,7 @@ MODULE module_initialize_ideal
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
-   USE module_fr_sfire_util, ONLY: continue_at_boundary,crash,read_array_2d_real, &
+   USE module_fr_fire_util, ONLY: continue_at_boundary,crash,read_array_2d_real, &
      read_array_2d_integer,interpolate_2d,set_ideal_coord 
 
 CONTAINS

@@ -6004,6 +6004,464 @@ END SUBROUTINE phy_bc
 
     END SUBROUTINE compute_diff_metrics
 
+    SUBROUTINE cal_helicity ( config_flags, u, v, w, uh, up_heli_max,&
+                                   ph, phb,                          &
+                                   msfux, msfuy,                     &
+                                   msfvx, msfvy,                     &
+                                   ht,                               &
+                                   rdx, rdy, dn, dnw, rdz, rdzw,     &
+                                   fnm, fnp, cf1, cf2, cf3, zx, zy,  &
+                                   ids, ide, jds, jde, kds, kde,     &
+                                   ims, ime, jms, jme, kms, kme,     &
+                                   its, ite, jts, jte, kts, kte      )
+
+! History:     Apr 2007  Coded by Scott Dembek, USRA, basically using
+!                        code segments stolen from the deformation
+!                        and divergence subroutine.
+!              ...        ...
+
+! Purpose:     This routine calculates updraft helicity.
+!              w ( dv/dx - du/dy )
+
+! References:
+
+!-----------------------------------------------------------------------
+! Begin declarations.
+
+    IMPLICIT NONE
+
+    TYPE( grid_config_rec_type ), INTENT( IN )  &
+    :: config_flags
+
+    INTEGER, INTENT( IN )  &
+    :: ids, ide, jds, jde, kds, kde, &
+       ims, ime, jms, jme, kms, kme, &
+       its, ite, jts, jte, kts, kte
+
+    REAL, INTENT( IN )  &
+    :: rdx, rdy, cf1, cf2, cf3
+
+    REAL, DIMENSION( kms:kme ), INTENT( IN )  &
+    :: fnm, fnp, dn, dnw
+
+    REAL, DIMENSION( ims:ime , jms:jme ),  INTENT( IN )  &
+    :: msfux, msfuy, msfvx, msfvy, ht
+
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )  &
+    ::  u, v, w, ph, phb, zx, zy, rdz, rdzw
+
+    REAL, DIMENSION( ims:ime, jms:jme ), INTENT( INOUT )  &
+    :: uh, up_heli_max
+
+! Local variables.
+
+    INTEGER  &
+    :: i, j, k, ktf, ktes1, ktes2, i_start, i_end, j_start, j_end
+
+    REAL  &
+    :: tmp, tmpzx, tmpzy, tmpzeta_z, cft1, cft2
+
+    REAL  &
+    :: zl, zu, uh_smth
+
+    REAL, DIMENSION( its:ite, jts:jte )  &
+    :: mm, zzavg, zeta_zd12
+
+    REAL, DIMENSION( its-2:ite+2, kts:kte, jts-2:jte+2 )  &
+    :: tmp1, hat, hatavg
+
+    REAL, DIMENSION( its:ite, kts:kte, jts:jte )  &
+    :: wavg, rvort
+
+    LOGICAL, DIMENSION( its:ite, jts:jte )  &
+    :: use_column
+
+! End declarations.
+!-----------------------------------------------------------------------
+
+!=======================================================================
+! In the following section, calculate the vertical component of the
+! relative vorticity as the first two terms of the updraft helicity
+! w ( dv/dx - du/dy ).
+
+    ktes1   = kte-1
+    ktes2   = kte-2
+
+    cft2    = - 0.5 * dnw(ktes1) / dn(ktes1)
+    cft1    = 1.0 - cft2
+
+    ktf     = MIN( kte, kde-1 )
+
+!=======================================================================
+
+    i_start = its
+    i_end   = ite
+    j_start = jts
+    j_end   = jte
+
+    IF ( config_flags%open_xs .OR. config_flags%specified .OR. &
+         config_flags%nested) i_start = MAX( ids+1, its )
+    IF ( config_flags%open_xe .OR. config_flags%specified .OR. &
+         config_flags%nested) i_end   = MIN( ide-1, ite )
+    IF ( config_flags%open_ys .OR. config_flags%specified .OR. &
+         config_flags%nested) j_start = MAX( jds+1, jts )
+    IF ( config_flags%open_ye .OR. config_flags%specified .OR. &
+         config_flags%nested) j_end   = MIN( jde-1, jte )
+    IF ( config_flags%periodic_x ) i_start = its
+    IF ( config_flags%periodic_x ) i_end = ite
+
+
+!-----------------------------------------------------------------------
+! Calculate dv/dx.
+
+! First, calculate an average mapscale factor.
+
+! Comments 10-MAR-05
+! du/dy => need u map scale factor in x (which is defined at u points)
+! averaged over j and j-1
+! dv/dx => need v map scale factor in y (which is defined at v points)
+! averaged over i and i-1
+
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+      mm(i,j) = 0.25 * ( msfux(i,j-1) + msfux(i,j) ) * ( msfvy(i-1,j) + msfvy(i,j) )
+    END DO
+    END DO
+
+! Apply a coordinate transformation to meridional velocity, v.
+
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start-1, i_end
+       hat(i,k,j) = v(i,k,j) / msfvy(i,j)
+    END DO
+    END DO
+    END DO
+
+! Account for the slope in x of eta surfaces.
+
+    DO j = j_start, j_end
+    DO k = kts+1, ktf
+    DO i = i_start, i_end
+      hatavg(i,k,j) = 0.5 * (  &
+                      fnm(k) * ( hat(i-1,k  ,j) + hat(i,k  ,j) ) +  &
+                      fnp(k) * ( hat(i-1,k-1,j) + hat(i,k-1,j) ) )
+    END DO
+    END DO
+    END DO
+
+! Extrapolate to top and bottom of domain (to w levels).
+
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+       hatavg(i,1,j)   =  0.5 * (  &
+                          cf1 * hat(i-1,1,j) +  &
+                          cf2 * hat(i-1,2,j) +  &
+                          cf3 * hat(i-1,3,j) +  &
+                          cf1 * hat(i  ,1,j) +  &
+                          cf2 * hat(i  ,2,j) +  &
+                          cf3 * hat(i  ,3,j) )
+       hatavg(i,kte,j) =  0.5 * (  &
+                          cft1 * ( hat(i,ktes1,j) + hat(i-1,ktes1,j) ) +  &
+                          cft2 * ( hat(i,ktes2,j) + hat(i-1,ktes2,j) ) )
+    END DO
+    END DO
+
+    ! Fixes to set_physical_bc2/3d have made any check for polar B.C.'s
+    ! unnecessary in this place.  zx, rdzw, and hatavg are all defined
+    ! in places they need to be and the values at the poles are replications
+    ! of the values one grid point in, so the averaging over j and j-1 works
+    ! to act as just using the value at j or j-1 (with out extra code).
+    !
+    ! tmpzx = averaged value of dpsi/dx (=zx) on vorticity grid
+    ! tmp1  = partial dpsi/dx * partial dv^/dpsi
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+      tmpzx       = 0.25 * (  &
+                    zx(i,k  ,j-1) + zx(i,k  ,j) +  &
+                    zx(i,k+1,j-1) + zx(i,k+1,j) )
+      tmp1(i,k,j) = ( hatavg(i,k+1,j) - hatavg(i,k,j) ) *  &
+                    0.25 * tmpzx * ( rdzw(i,k,j) + rdzw(i,k,j-1) + &
+                                     rdzw(i-1,k,j-1) + rdzw(i-1,k,j) )
+    END DO
+    END DO
+    END DO
+
+! End calculation of dv/dx.
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+! Calculate the first parenthetical term of
+! updraft helicity = w ( dv/dx - du/dy ) at vorticity points.
+
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+      rvort(i,k,j) = mm(i,j) * (  &
+                     rdx * ( hat(i,k,j) - hat(i-1,k,j) ) - tmp1(i,k,j) )
+    END DO
+    END DO
+    END DO
+
+! End calculation of the first parenthetical term of updraft helicity.
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+! Calculate du/dy.
+
+! Apply a coordinate transformation to zonal velocity, u.
+
+    DO j =j_start-1, j_end
+    DO k =kts, ktf
+    DO i =i_start, i_end
+      ! Fixes to set_physical_bc2/3d for polar boundary conditions
+      ! remove issues with loop over j
+      hat(i,k,j) = u(i,k,j) / msfux(i,j)
+    END DO
+    END DO
+    END DO
+
+! Average in y and z.
+
+    DO j=j_start,j_end
+    DO k=kts+1,ktf
+    DO i=i_start,i_end
+      hatavg(i,k,j) = 0.5 * (  &
+                      fnm(k) * ( hat(i,k  ,j-1) + hat(i,k  ,j) ) +  &
+                      fnp(k) * ( hat(i,k-1,j-1) + hat(i,k-1,j) ) )
+    END DO
+    END DO
+    END DO
+
+! Extrapolate to top and bottom of domain (to w levels).
+
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+      hatavg(i,1,j)   =  0.5 * (  &
+                         cf1 * hat(i,1,j-1) +  &
+                         cf2 * hat(i,2,j-1) +  &
+                         cf3 * hat(i,3,j-1) +  &
+                         cf1 * hat(i,1,j  ) +  &
+                         cf2 * hat(i,2,j  ) +  &
+                         cf3 * hat(i,3,j  ) )
+      hatavg(i,kte,j) =  0.5 * (  &
+                         cft1 * ( hat(i,ktes1,j-1) + hat(i,ktes1,j) ) +  &
+                         cft2 * ( hat(i,ktes2,j-1) + hat(i,ktes2,j) ) )
+    END DO
+    END DO
+
+    ! tmpzy = averaged value of dpsi/dy (=zy) on vorticity grid
+    ! tmp1  = partial dpsi/dy * partial du^/dpsi
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+      tmpzy       = 0.25 * (  &
+                    zy(i-1,k  ,j) + zy(i,k  ,j) +  &
+                    zy(i-1,k+1,j) + zy(i,k+1,j) )
+      tmp1(i,k,j) = ( hatavg(i,k+1,j) - hatavg(i,k,j) ) *  &
+                    0.25 * tmpzy * ( rdzw(i,k,j) + rdzw(i-1,k,j) + &
+                                     rdzw(i-1,k,j-1) + rdzw(i,k,j-1) )
+    END DO
+    END DO
+    END DO
+
+! End calculation of du/dy.
+!----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+! Add (subtract, actually) the second parenthetical term to
+! updraft helicity = w ( dv/dx - du/dy ) at vorticity points.
+
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+      rvort(i,k,j) = rvort(i,k,j) -  &
+                     mm(i,j) * (  &
+                     rdy * ( hat(i,k,j) - hat(i,k,j-1) ) - tmp1(i,k,j) )
+    END DO
+    END DO
+    END DO
+
+! End addition of the second parenthetical term to updraft helicity.
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+! Update the boundary for the vorticity.
+
+     IF ( .NOT. config_flags%periodic_x .AND. i_start .EQ. ids+1 ) THEN
+       DO j = jts, jte
+       DO k = kts, kte
+         rvort(ids,k,j) = rvort(ids+1,k,j)
+       END DO
+       END DO
+     END IF
+
+     IF ( .NOT. config_flags%periodic_y .AND. j_start .EQ. jds+1) THEN
+       DO k = kts, kte
+       DO i = its, ite
+         rvort(i,k,jds) = rvort(i,k,jds+1)
+       END DO
+       END DO
+     END IF
+
+     IF ( .NOT. config_flags%periodic_x .AND. i_end .EQ. ide-1) THEN
+       DO j = jts, jte
+       DO k = kts, kte
+         rvort(ide,k,j) = rvort(ide-1,k,j)
+       END DO
+       END DO
+     END IF
+
+     IF ( .NOT. config_flags%periodic_y .AND. j_end .EQ. jde-1) THEN
+       DO k = kts, kte
+       DO i = its, ite
+         rvort(i,k,jde) = rvort(i,k,jde-1)
+       END DO
+       END DO
+     END IF
+
+! End update of boundary for the vorticity.
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+! Calculate an 8-point average of w used to complete the
+! calculation of updraft helicity = w ( dv/dx - du/dy ).
+
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+      wavg(i,k,j) = 0.125 * (  &
+                    w(i,k  ,j  ) + w(i-1,k  ,j  ) +  &
+                    w(i,k  ,j-1) + w(i-1,k  ,j-1) +  &
+                    w(i,k+1,j  ) + w(i-1,k+1,j  ) +  &
+                    w(i,k+1,j-1) + w(i-1,k+1,j-1) )
+    END DO
+    END DO
+    END DO
+
+! End addition of the average w calculation for updraft helicity.
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+! Complete the updraft helicity calculation, only including columns with
+! positive vertical velocity between the 2000 m and 5000 m levels.
+
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+      use_column(i,j) = .true.
+      uh(i,j) = 0.
+    END DO
+    END DO
+
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+      zl = ( 0.25 * (  &
+           (( ph(i  ,k  ,j  ) + phb(i  ,k  ,j  ) ) / g - ht(i  ,j  ) ) +  &
+           (( ph(i-1,k  ,j  ) + phb(i-1,k  ,j  ) ) / g - ht(i-1,j  ) ) +  &
+           (( ph(i  ,k  ,j-1) + phb(i  ,k  ,j-1) ) / g - ht(i  ,j-1) ) +  &
+           (( ph(i-1,k  ,j-1) + phb(i-1,k  ,j-1) ) / g - ht(i-1,j-1) ) ) )
+
+!           ph(i  ,k  ,j  ) + phb(i  ,k  ,j  ) +  &
+!           ph(i-1,k  ,j  ) + phb(i-1,k  ,j  ) +  &
+!           ph(i  ,k  ,j-1) + phb(i  ,k  ,j-1) +  &
+!           ph(i-1,k  ,j-1) + phb(i-1,k  ,j-1) ) ) / g
+
+      zu = ( 0.25 * (  &
+           (( ph(i  ,k+1,j  ) + phb(i  ,k+1,j  ) ) / g - ht(i  ,j  ) ) +  &
+           (( ph(i-1,k+1,j  ) + phb(i-1,k+1,j  ) ) / g - ht(i-1,j  ) ) +  &
+           (( ph(i  ,k+1,j-1) + phb(i  ,k+1,j-1) ) / g - ht(i  ,j-1) ) +  &
+           (( ph(i-1,k+1,j-1) + phb(i-1,k+1,j-1) ) / g - ht(i-1,j-1) ) ) )
+
+!           ph(i  ,k+1,j  ) + phb(i  ,k+1,j  ) +  &
+!           ph(i-1,k+1,j  ) + phb(i-1,k+1,j  ) +  &
+!           ph(i  ,k+1,j-1) + phb(i  ,k+1,j-1) +  &
+!           ph(i-1,k+1,j-1) + phb(i-1,k+1,j-1) ) ) / g
+
+      IF ( zl .GE. 2000. .AND. zu .LE. 5000. ) THEN
+        IF ( wavg(i,k,j) .GT. 0. .AND. wavg(i,k+1,j) .GT. 0. ) THEN
+          uh(i,j) = uh(i,j) + ( ( wavg(i,k,j) * rvort(i,k,j) + &
+                    wavg(i,k+1,j) * rvort(i,k+1,j) ) * 0.5 ) &
+                    * ( zu - zl )
+        ELSE
+          use_column(i,j) = .false.
+          uh(i,j) = 0.
+        ENDIF
+      ENDIF
+    END DO
+    END DO
+    END DO
+
+! Apply a smoother
+
+    DO j = j_start, j_end
+    DO i = i_start, i_end
+!     uh_smth = 0.25   *   uh(i  ,j  ) + &
+!               0.125  * ( uh(i+1,j  ) + uh(i-1,j  ) + &
+!                          uh(i  ,j+1) + uh(i  ,j-1) ) + &
+!               0.0625 * ( uh(i+1,j+1) + uh(i+1,j-1) + &
+!                          uh(i-1,j+1) + uh(i-1,j-1) )
+      uh_smth = uh(i,j)
+
+      IF ( use_column(i,j) ) THEN
+        IF ( uh_smth .GT. up_heli_max(i,j) ) THEN
+           up_heli_max(i,j) = uh_smth
+        ENDIF
+      ENDIF
+
+!     IF ( up_heli_max(i,j) .GT. 1.0e+3 ) THEN
+!       print *,' i,j,up_heli_max = ', i,j,up_heli_max(i,j)
+!     ENDIF
+    END DO
+    END DO
+
+! End addition of the average w calculation for updraft helicity.
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+! Update the boundary for updraft helicity (might need to change later).
+
+    IF ( .NOT. config_flags%periodic_x .AND. i_start .EQ. ids+1 ) THEN
+      DO j = jts, jte
+      DO k = kts, kte
+!        rvort(ids,k,j) = rvort(ids+1,k,j)
+        up_heli_max(ids,j) = up_heli_max(ids+1,j)
+      END DO
+      END DO
+    END IF
+
+    IF ( .NOT. config_flags%periodic_y .AND. j_start .EQ. jds+1) THEN
+      DO k = kts, kte
+      DO i = its, ite
+!        rvort(i,k,jds) = rvort(i,k,jds+1)
+        up_heli_max(i,jds) = up_heli_max(i,jds+1)
+      END DO
+      END DO
+    END IF
+
+    IF ( .NOT. config_flags%periodic_x .AND. i_end .EQ. ide-1) THEN
+      DO j = jts, jte
+      DO k = kts, kte
+!        rvort(ide,k,j) = rvort(ide-1,k,j)
+        up_heli_max(ide,j) = up_heli_max(ide-1,j)
+      END DO
+      END DO
+    END IF
+
+    IF ( .NOT. config_flags%periodic_y .AND. j_end .EQ. jde-1) THEN
+      DO k = kts, kte
+      DO i = its, ite
+!        rvort(i,k,jde) = rvort(i,k,jde-1)
+        up_heli_max(i,jde) = up_heli_max(i,jde-1)
+      END DO
+      END DO
+    END IF
+
+! End update of boundary for updraft helicity.
+
+    END SUBROUTINE cal_helicity
+
 !=======================================================================
 !=======================================================================
 
@@ -6011,5 +6469,3 @@ END SUBROUTINE phy_bc
 
 !=======================================================================
 !=======================================================================
-
-

@@ -87,12 +87,17 @@ CONTAINS
 !     RG     01/2012 - Removed FIRSTIME Logic that computes PX Landuse characteristics at first time step only. This resulted 
 !                      in different solutions when OpenMP was used and would not work with moving domains.
 !     RG     08/2012 - Added CURR_SECS variable in argument list as replacement for PX internal CURRTIME internally comp var.
-! This is neccessary for PX to correctly interpolate analyses for soil nudging. Also, changes were made to 
-!  ensure PX LSM will work with not only MODIS and USGS, but also both the 40 and 50 class NLCD-MODIS data.
+!                      This is neccessary for PX to correctly interpolate analyses for soil nudging. In this same calculation
+!                      logic was added for cases where user does not specify the analysis interval, or no analysis interval is
+!                      relevant as in the no PX soil nudging via namelist (pxlsm_soil_nudge = 0). Prior to this fix the default
+!                      analysis interval was zero, so if not speficied a divide by zero was the result. Also, changes were made to 
+!                      ensure PX LSM will work with not only MODIS and USGS, but also both the 40 and 50 class NLCD-MODIS data.
 !                      Also, coupled module_sf_pxlsm_data.F was updated so landuse characteristics across datasets are more
 !                      consistent. Albedo for NLCD two grassland categories were lowered from 23 and 25 to 18 and 19.
 !                      For the NLCD40 and NLCD50 roughness and leaf area were made consistent between the US NLCD and
 !                      outside US MODIS datasets. Prior, US boundaries created boundaries of roughness and LAI.
+!
+!
 !--------------------------------------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------------------------------------
 !   ARGUMENT LIST:
@@ -298,6 +303,9 @@ CONTAINS
 !-------------------------------------------------------------------------
 !-------------------------------Executable starts here--------------------
 !
+      ALN10  = ALOG(10.0)
+      G1000  = g*1.0E-3            ! G/1000
+      WEIGHT = 0
       ! Determine Landuse Dataset by the number of categories
       IF (NLCAT == 50) THEN
          LAND_USE_TYPE = 'NLCD50'
@@ -308,26 +316,35 @@ CONTAINS
       ELSE IF (NLCAT == 24) THEN
          LAND_USE_TYPE = 'USGS'
       ELSE
-         PRINT *, 'Error: Unknown Land Use Category'
-         STOP
+         call wrf_error_fatal("Error: Unknown Land Use Category")
       END IF 
       
       IF (ITIMESTEP .EQ. 1) THEN
        CALL wrf_message( 'PX LSM will use the ' // TRIM(LAND_USE_TYPE) // ' landuse tables' )
+       PRINT *, 'The analysis interval for surface soil and temp nudging = ',ANAL_INTERVAL,'sec.'
+      ENDIF
+
+      !-----------------------------------------------------------------------------------
+      ! Kill WRF if user specifies soil nudging but provides no analysis interval, then provide helpful message.
+      IF (ANAL_INTERVAL .LE. 0.0 .AND. PXLSM_SOIL_NUDGE .EQ. 1) THEN
+       CALL wrf_message('PX LSM Error: The User specified analysis interval is zero or negative.')
+       CALL wrf_message('If the PX LSM is used with soil nudging (pxlsm_soil_nudge=1) a wrfsfdda_d0* file is required.')
+       CALL wrf_message('Make sure these files are present and')
+       CALL wrf_message('Check the namelist to ensure sgfdda_interval_m is set to proper sfc analysis interval')
+       STOP
       ENDIF                                                                    
       !-----------------------------------------------------------------------------------
       !--- Compute time relatve to old and new analysis time for timestep interpolation
-      ALN10  = ALOG(10.0)
-      G1000  = g*1.0E-3            ! G/1000
-      WEIGHT = 0
-      DT_FDDA = ANAL_INTERVAL * 1.0    ! Convert DT of Analysis to real 
-      TIME_BETWEEN_ANALYSIS = MOD(CURR_SECS,DT_FDDA)
-      IF (TIME_BETWEEN_ANALYSIS .EQ. 0.0) THEN   
-        CORB = 1.0       
-        CORE = 0.0    
-      ELSE    
-        CORE = TIME_BETWEEN_ANALYSIS  / DT_FDDA     
-        CORB = 1.0 - CORE  
+      IF(PXLSM_SOIL_NUDGE .EQ. 1) THEN
+        DT_FDDA = ANAL_INTERVAL * 1.0    ! Convert DT of Analysis to real 
+        TIME_BETWEEN_ANALYSIS = MOD(CURR_SECS,DT_FDDA)
+        IF (TIME_BETWEEN_ANALYSIS .EQ. 0.0) THEN   
+          CORB = 1.0       
+          CORE = 0.0    
+        ELSE    
+          CORE = TIME_BETWEEN_ANALYSIS  / DT_FDDA     
+          CORB = 1.0 - CORE  
+        ENDIF 
       ENDIF 
       !-----------------------------------------------------------------------------------
       ! Compute vegetation and land-use characteristics by land-use fraction weighting

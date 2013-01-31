@@ -278,8 +278,7 @@ end subroutine gocart_dust_driver
 !              cw = 1.0 - water(i,j)
               
               ! Case of surface dry enough to erode
-              IF (gwet(i,j) < 0.2) THEN
-!              IF (gwet(i,j) < 0.5) THEN  !  Pete's modified value
+              IF (gwet(i,j) < 0.5) THEN  
                  u_ts = MAX(0.0D+0,u_ts0*(1.2D+0+2.0D-1*LOG10(MAX(1.0D-3, gwet(i,j)))))
               ELSE
                  ! Case of wet surface, no erosion

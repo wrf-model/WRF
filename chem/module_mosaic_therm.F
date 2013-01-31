@@ -99,7 +99,7 @@
 !     include 'v33com3'
 !     include 'mosaic.h'
 !   subr arguments
-      integer iclm, jclm, kclm_calcbgn, kclm_calcend, idiagaa,vbs_nbin
+      integer iclm, jclm, kclm_calcbgn, kclm_calcend, idiagaa,vbs_nbin(1)
       real dtchem_sngl
 !   local variables
       real(kind=8) :: dtchem
@@ -130,7 +130,7 @@
 
           istat_mosaic_fe1 = 1
 
-          call mosaic( k, m, dtchem,vbs_nbin )
+          call mosaic( k, m, dtchem,vbs_nbin)
 
           if (istat_mosaic_fe1 .lt. 0) then
              nfe1_mosaic_cur = nfe1_mosaic_cur + 1
@@ -186,7 +186,7 @@
 !     include 'v33com3'
 !     include 'mosaic.h'
 !   subr arguments
-      integer k, m,vbs_nbin
+      integer k, m,vbs_nbin(1)
       real(kind=8) dtchem
 !   local variables
       real(kind=8) yh2o, dumdum
@@ -270,7 +270,7 @@
 ! subr arguments
       real(kind=8) dtchem
 ! local variables
-      integer ibin, iv, k, m,vbs_nbin
+      integer ibin, iv, k, m,vbs_nbin(1)
       real(kind=8) xt, dumdum
 !     real(kind=8) aerosol_water_up				! mosaic func
 
@@ -4657,7 +4657,7 @@
 ! local variables
       integer ibin
       real(kind=8) dumdum
-      integer vbs_nbin
+      integer vbs_nbin(1)
 
 !      logical first
 !      save first
@@ -4720,11 +4720,12 @@
 
 ! condense secondary organic gases (8 sorgam species)
       if (istat_mosaic_fe1 .lt. 0) return
-      if (vbs_nbin.eq.0) then
-      call equilibrium_smp
-      else
+!BSINGH (PNNL)- Following 3 lines are commented due to array out of bound error in equilibrium_smp
+      !if (vbs_nbin.eq.0) then
+      !call equilibrium_smp
+      !else
       call equilibrium
-      end if
+      !Bend if
 ! template for error status checking
 !        if (iprint_mosaic_fe1 .gt. 0) then
 !          write(6,*)'error in computing dtmax for soa'
@@ -8107,7 +8108,7 @@
 !     include 'v33com9a'
 !     include 'mosaic.h'
 ! local variables
-      integer nghq,vbs_nbin
+      integer nghq,vbs_nbin(1)
       parameter (nghq = 2)		! gauss-hermite quadrature order
       integer ibin, iq, iv
       real(kind=8) tworootpi, root2, beta
@@ -8342,7 +8343,7 @@
       enddo
 
 ! soa
-      if(vbs_nbin .eq. 0) then
+      if(vbs_nbin(1) .eq. 0) then
       do iv = ismpa_g, ngas_volatile
         speed = mean_molecular_speed(t_k,mw_vol(iv))    ! cm/s
         dg(iv) = 0.1                                    ! cm^2/s (increased from 0.2 to 0.035 by Manish Shrivastava)
@@ -15244,7 +15245,7 @@
 !     implicit none
 !     include 'mosaic.h'
 ! local variables
-      integer iv, j_index, ibin, je,vbs_nbin
+      integer iv, j_index, ibin, je,vbs_nbin(1)
       real(kind=8) :: tr, rt, term
       real(kind=8) :: gam_nh4no3_0, gam_nh4cl_0, m_nh4no3_0, m_nh4cl_0  ! raz update 6/25/2008
 ! function
@@ -15293,7 +15294,7 @@
       keq_sl(jcano3)  = fn_keq(4.31d5, 7.83d0,42.01d0, t_k)*1.e5  ! ca(no3)2(s) = ca++ + 2no3-
       keq_sl(jcamsa2) = 1.e15				 ! CaMSA2(s)= Ca+ + 2MSA-
 
-      if (vbs_nbin.eq.0) then
+      if (vbs_nbin(1).eq.0) then
       do iv = ismpa_g, ngas_volatile
         sat_soa(iv) = 0.0       ! [nmol/m^3(air)]
       enddo
@@ -15303,7 +15304,7 @@
       enddo
       end if
 
-      if (vbs_nbin.eq.9) then
+       if (vbs_nbin(1).eq.9) then
 ! vapor pressures of soa species
       po_soa(ipcg1_b_c_g) = fn_po(9.91d-8, 112.0d0, T_K) ! [Pascal]
       po_soa(ipcg2_b_c_g) = fn_po(9.91d-7, 106.0d0, T_K) ! [Pascal]
@@ -15392,7 +15393,7 @@
       po_soa(ibiog4_o_g) = fn_po(9.91d-3, 82.0d0, T_K) ! [Pascal]
       endif
 
-      if (vbs_nbin.eq.2) then
+      if (vbs_nbin(1).eq.2) then
       po_soa(ipcg1_b_c_g) = fn_po(9.91d-8, 83.0d0, T_K) ! [Pascal]
       po_soa(ipcg2_b_c_g) = fn_po(9.91d-1, 83.0d0, T_K) ! [Pascal]
       po_soa(iopcg1_b_c_g) = fn_po(9.91d-8, 83.0d0, T_K) ! [Pascal]
@@ -15410,14 +15411,14 @@
       po_soa(ibiog1_c_g) = fn_po(9.91d-6, 83.0d0, T_K) ! [Pascal]
       po_soa(ibiog1_o_g) = fn_po(9.91d-6, 83.0d0, T_K) ! [Pascal]
       endif
-      if (vbs_nbin.eq.0) then
+      if (vbs_nbin(1).eq.0) then
         po_soa(ismpa_g) = fn_po(9.91d-8, 83.0d0, T_K) ! [Pascal]
         po_soa(ismpbb_g) = fn_po(9.91d-8, 83.0d0, T_K) ! [Pascal]
         po_soa(ibiog1_c_g) = fn_po(9.91d-6, 83.0d0, T_K) ! [Pascal]
         po_soa(ibiog1_o_g) = fn_po(9.91d-6, 83.0d0, T_K) ! [Pascal]
       endif
 
-      if (vbs_nbin.eq.0) then
+      if (vbs_nbin(1).eq.0) then
       do iv = ismpa_g, ngas_volatile
         sat_soa(iv) = 1.e9*po_soa(iv)/(8.314*t_k)       ! [nmol/m^3(air)]
       enddo

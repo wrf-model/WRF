@@ -1,6 +1,7 @@
 #undef DEBUG
 #define WRF_PORT
-
+#define MODAL_AERO
+! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
 module cldwat
 !----------------------------------------------------------------------- 
 ! 
@@ -20,19 +21,20 @@ module cldwat
 !
 !-----------------------------------------------------------------------
    use shr_kind_mod,  only: r8 => shr_kind_r8
-   use physconst,     only: tmelt
 #ifndef WRF_PORT
    use spmd_utils,    only: masterproc
    use ppgrid,        only: pcols, pver, pverp
+#endif
    use wv_saturation, only: estblf, hlatv, tmin, hlatf, rgasv, pcf, &
                             cp, epsqs, ttrice
+#ifndef WRF_PORT
    use abortutils,    only: endrun
    use cam_logfile,   only: iulog
 #else
    use module_cam_support, only: masterproc, &
-                                 pcols, pver, pverp, &
-                                 endrun, &
-                                 iulog
+        pcols, pver, pverp, &
+        endrun, &
+        iulog
 #endif
 
    implicit none
@@ -46,17 +48,15 @@ module cldwat
    public inimc, pcond          ! Public interfaces
 #endif
    public cldwat_fice          ! Public interfaces
-#ifndef WRF_PORT
    public cldwat_readnl
-#endif
    integer, public::  ktop      ! Level above 10 hPa
-
 #ifndef WRF_PORT
    real(r8),public ::  icritc               ! threshold for autoconversion of cold ice
    real(r8),public ::  icritw               ! threshold for autoconversion of warm ice
 !!$   real(r8),public,parameter::  conke  = 1.e-6    ! tunable constant for evaporation of precip
 !!$   real(r8),public,parameter::  conke  =  2.e-6    ! tunable constant for evaporation of precip
-   real(r8),public ::  conke                          ! tunable constant for evaporation of precip
+   real(r8),public ::  conke                ! tunable constant for evaporation of precip
+   real(r8),public ::  r3lcrit              ! critical radius where liq conversion begins
 #else
 ! Currently, the WRF_PORT bipasses the namelist initialization of these
 ! tunable parameters. We are hard-coding them to the default values for
@@ -71,13 +71,10 @@ module cldwat
 !-----------------------------------------------------------------------
 ! PRIVATE: Everything else is private to this module
 !-----------------------------------------------------------------------
-   real(r8), private, parameter :: tmax_fice = tmelt - 10._r8       ! max temperature for cloud ice formation
-!!$   real(r8), private, parameter :: tmax_fice = tmelt          ! max temperature for cloud ice formation
-!!$   real(r8), private, parameter :: tmin_fice = tmax_fice - 20.! min temperature for cloud ice formation
-   real(r8), private, parameter :: tmin_fice = tmax_fice - 30._r8   ! min temperature for cloud ice formation
-!  pjr
-   real(r8), private, parameter :: tmax_fsnow = tmelt            ! max temperature for transition to convective snow
-   real(r8), private, parameter :: tmin_fsnow = tmelt-5._r8         ! min temperature for transition to convective snow
+   real(r8), private:: tmax_fice! max temperature for cloud ice formation
+   real(r8), private:: tmin_fice! min temperature for cloud ice formation
+   real(r8), private:: tmax_fsnow ! max temperature for transition to convective snow
+   real(r8), private:: tmin_fsnow ! min temperature for transition to convective snow
    real(r8), private:: rhonot   ! air density at surface
    real(r8), private:: t0       ! Freezing temperature
    real(r8), private:: cldmin   ! assumed minimum cloud amount
@@ -109,7 +106,6 @@ module cldwat
    integer, private ::  k1mb    ! index of the eta level near 1 mb
 
 ! Parameters used in findmcnew
-   real(r8) :: r3lcrit              ! critical radius at which autoconversion become efficient
    real(r8) :: capnsi               ! sea ice cloud particles / cm3
    real(r8) :: capnc                ! cold and oceanic cloud particles / cm3
    real(r8) :: capnw                ! warm continental cloud particles / cm3
@@ -143,19 +139,17 @@ contains
 
    character(len=*), intent(in) :: nlfile  ! filepath for file containing namelist input
 #ifndef WRF_PORT
-
-
-
    ! Namelist variables
-   real(r8) :: cldwat_icritw = unset_r8    !   icritw = threshold for autoconversion of warm ice  
-   real(r8) :: cldwat_icritc = unset_r8    !   icritc = threshold for autoconversion of cold ice  
-   real(r8) :: cldwat_conke  = unset_r8    !   conke  = tunable constant for evaporation of precip
+   real(r8) :: cldwat_icritw  = unset_r8    !   icritw  = threshold for autoconversion of warm ice  
+   real(r8) :: cldwat_icritc  = unset_r8    !   icritc  = threshold for autoconversion of cold ice  
+   real(r8) :: cldwat_conke   = unset_r8    !   conke   = tunable constant for evaporation of precip
+   real(r8) :: cldwat_r3lcrit = unset_r8    !   r3lcrit = critical radius where liq conversion begins
 
    ! Local variables
    integer :: unitn, ierr
    character(len=*), parameter :: subname = 'cldwat_readnl'
 
-   namelist /cldwat_nl/ cldwat_icritw, cldwat_icritc, cldwat_conke
+   namelist /cldwat_nl/ cldwat_icritw, cldwat_icritc, cldwat_conke, cldwat_r3lcrit
 
    !-----------------------------------------------------------------------------
 
@@ -173,9 +167,10 @@ contains
       call freeunit(unitn)
 
       ! set local variables
-      icritw = cldwat_icritw 
-      icritc = cldwat_icritc
-      conke  = cldwat_conke
+      icritw  = cldwat_icritw 
+      icritc  = cldwat_icritc
+      conke   = cldwat_conke
+      r3lcrit = cldwat_r3lcrit
 
    end if
 
@@ -186,11 +181,9 @@ contains
    call mpibcast(icritw,            1, mpir8,  0, mpicom)
    call mpibcast(icritc,            1, mpir8,  0, mpicom)
    call mpibcast(conke,             1, mpir8,  0, mpicom)
+   call mpibcast(r3lcrit,           1, mpir8,  0, mpicom)
 #endif
-
-!endif for WRF_PORT:
 #endif
-
 end subroutine cldwat_readnl
 
 !================================================================================================
@@ -203,6 +196,7 @@ end subroutine cldwat_readnl
 ! Author: B. A. Boville Sept 10, 2002
 !  modified: PJR 3/13/03 (added fsnow to ascribe snow production for convection )
 !-----------------------------------------------------------------------
+    use physconst,          only: tmelt
     implicit none
 
 ! Arguments
@@ -217,6 +211,14 @@ end subroutine cldwat_readnl
 
 !-----------------------------------------------------------------------
 
+    !BSINGH - This is a temporary fix for uninitialized tmax_* and tmin_* variables
+    !This can be fixed by calling the inimc subroutine in physics init calls
+    tmax_fice = tmelt    - 10._r8
+    tmin_fice = tmax_fice - 30._r8
+    tmax_fsnow = tmelt
+    tmin_fsnow = tmelt   - 5._r8
+
+    
 ! Define fractional amount of cloud that is ice
     do k=1,pver
        do i=1,ncol
@@ -254,7 +256,6 @@ end subroutine cldwat_readnl
 
     return
   end subroutine cldwat_fice
-
 #ifndef WRF_PORT
 subroutine inimc( tmeltx, rhonotx, gravitx, rh2ox)
 !----------------------------------------------------------------------- 
@@ -265,9 +266,10 @@ subroutine inimc( tmeltx, rhonotx, gravitx, rh2ox)
 ! Author: P. Rasch, April 1997
 ! 
 !-----------------------------------------------------------------------
-   use pmgrid, only: plev, plevp
-   use dycore, only: dycore_is, get_resolution
-   use hycoef, only: hypm
+   use pmgrid,       only: plev, plevp
+   use dycore,       only: dycore_is, get_resolution
+   use hycoef,       only: hypm
+   use phys_control, only: phys_getopts
 
    integer k
    real(r8), intent(in) :: tmeltx
@@ -279,104 +281,147 @@ subroutine inimc( tmeltx, rhonotx, gravitx, rh2ox)
    real(r8) signgam              ! variable required by cray gamma function
    external gamma
 #endif
-   rhonot = rhonotx          ! air density at surface (gm/cm3)
-   gravit = gravitx
-   rh2o   = rh2ox
-   rhos = .1_r8                 ! assumed snow density (gm/cm3)
-   rhow = 1._r8                 ! water density
-   rhoi = 1._r8                 ! ice density
-   esi = 1.0_r8                 ! collection efficient for ice by snow
-   esw = 0.1_r8                 ! collection efficient for water by snow
-   t0 = tmeltx               ! approximate freezing temp
-   cldmin = 0.02_r8             ! assumed minimum cloud amount
-   small = 1.e-22_r8            ! a small number compared to unity
-   c = 152.93_r8                ! constant for graupel like snow cm**(1-d)/s
-   d = 0.25_r8                  ! constant for graupel like snow
-   nos = 3.e-2_r8               ! particles snow / cm**4
-   pi = 4._r8*atan(1.0_r8)
-   prhonos = pi*rhos*nos
-   thrpd = 3._r8 + d
-   if (d==0.25_r8) then
-      gam3pd = 2.549256966718531_r8 ! only right for d = 0.25
-      gam4pd = 8.285085141835282_r8
-   else
+   character(len=16)    :: microp_scheme 
+
+! Get microphysics option
+
+   call phys_getopts( microp_scheme_out = microp_scheme )
+
+! Set following for all physics packages
+
+   tmax_fice = tmeltx    - 10._r8
+!! tmax_fice = tmeltx
+!! tmin_fice = tmax_fice - 20.
+   tmin_fice = tmax_fice - 30._r8
+   tmax_fsnow = tmeltx
+   tmin_fsnow = tmeltx   - 5._r8
+
+! Set remaining for RK microphysics
+
+   if( microp_scheme .eq. 'RK' ) then
+      rhonot = rhonotx             ! air density at surface (gm/cm3)
+      gravit = gravitx
+      rh2o   = rh2ox
+      rhos = .1_r8                 ! assumed snow density (gm/cm3)
+      rhow = 1._r8                 ! water density
+      rhoi = 1._r8                 ! ice density
+      esi = 1.0_r8                 ! collection efficient for ice by snow
+      esw = 0.1_r8                 ! collection efficient for water by snow
+      t0 = tmeltx                  ! approximate freezing temp
+      cldmin = 0.02_r8             ! assumed minimum cloud amount
+      small = 1.e-22_r8            ! a small number compared to unity
+      c = 152.93_r8                ! constant for graupel like snow cm**(1-d)/s
+      d = 0.25_r8                  ! constant for graupel like snow
+      nos = 3.e-2_r8               ! particles snow / cm**4
+      pi = 4._r8*atan(1.0_r8)
+      prhonos = pi*rhos*nos
+      thrpd = 3._r8 + d
+      if (d==0.25_r8) then
+         gam3pd = 2.549256966718531_r8 ! only right for d = 0.25
+         gam4pd = 8.285085141835282_r8
+      else
 #ifdef UNICOSMP
-      call gamma(3._r8+d, signgam, gam3pd)
-      gam3pd = sign(exp(gam3pd),signgam)
-      call gamma(4._r8+d, signgam, gam4pd)
-      gam4pd = sign(exp(gam4pd),signgam)
-      write(iulog,*) ' d, gamma(3+d), gamma(4+d) =', gam3pd, gam4pd
-#else
-      write(iulog,*) ' can only use d ne 0.25 on a cray '
-      stop
+         call gamma(3._r8+d, signgam, gam3pd)
+         gam3pd = sign(exp(gam3pd),signgam)
+         call gamma(4._r8+d, signgam, gam4pd)
+         gam4pd = sign(exp(gam4pd),signgam)
+         write(iulog,*) ' d, gamma(3+d), gamma(4+d) =', gam3pd, gam4pd
+#ifdef WRF_PORT
+        call wrf_message(iulog)
 #endif
-   endif
-   mcon01 = pi*nos*c*gam3pd/4._r8
-   mcon02 = 1._r8/(c*gam4pd*sqrt(rhonot)/(6*prhonos**(d/4._r8)))
-   mcon03 = -(0.5_r8+d/4._r8)
-   mcon04 = 4._r8/(4._r8+d)
-   mcon05 = (3+d)/(4+d)
-   mcon06 = (3+d)/4._r8
-   mcon07 = mcon01*sqrt(rhonot)*mcon02**mcon05/prhonos**mcon06
-   mcon08 = -0.5_r8/(4._r8+d)
+#else
+         write(iulog,*) ' can only use d ne 0.25 on a cray '
+#ifdef WRF_PORT
+        call wrf_message(iulog)
+#endif
+         stop
+#endif
+      endif
+      mcon01 = pi*nos*c*gam3pd/4._r8
+      mcon02 = 1._r8/(c*gam4pd*sqrt(rhonot)/(6*prhonos**(d/4._r8)))
+      mcon03 = -(0.5_r8+d/4._r8)
+      mcon04 = 4._r8/(4._r8+d)
+      mcon05 = (3+d)/(4+d)
+      mcon06 = (3+d)/4._r8
+      mcon07 = mcon01*sqrt(rhonot)*mcon02**mcon05/prhonos**mcon06
+      mcon08 = -0.5_r8/(4._r8+d)
 
 !  find the level about 1mb, we wont do the microphysics above this level
-   k1mb = 1
-   do k=1,pver-1
-      if (hypm(k) < 1.e2_r8 .and. hypm(k+1) >= 1.e2_r8) then
-         if (1.e2_r8-hypm(k) < hypm(k+1)-1.e2_r8) then
-            k1mb = k
-         else
-            k1mb = k + 1
+      k1mb = 1
+      do k=1,pver-1
+         if (hypm(k) < 1.e2_r8 .and. hypm(k+1) >= 1.e2_r8) then
+            if (1.e2_r8-hypm(k) < hypm(k+1)-1.e2_r8) then
+               k1mb = k
+            else
+               k1mb = k + 1
+            end if
+            goto 20
          end if
-         goto 20
+      end do
+      if (masterproc) then
+         write(iulog,*)'inimc: model levels bracketing 1 mb not found'
+#ifdef WRF_PORT
+        call wrf_message(iulog)
+#endif
       end if
-   end do
-   if (masterproc) then
-      write(iulog,*)'inimc: model levels bracketing 1 mb not found'
-   end if
-!  call endrun
-   k1mb = 1
-20 if( masterproc ) write(iulog,*)'inimc: model level nearest 1 mb is',k1mb,'which is',hypm(k1mb),'pascals'
+!     call endrun
+      k1mb = 1
+20    if( masterproc ) write(iulog,*)'inimc: model level nearest 1 mb is',k1mb,'which is',hypm(k1mb),'pascals'
+#ifdef WRF_PORT
+        call wrf_message(iulog)
+#endif
 
-   if( masterproc ) write(iulog,*) 'cloud water initialization by inimc complete '
+      if( masterproc ) write(iulog,*) 'cloud water initialization by inimc complete '
+#ifdef WRF_PORT
+        call wrf_message(iulog)
+#endif
 
 ! Initialize parameters used by findmcnew
-   capnw = 400._r8              ! warm continental cloud particles / cm3
-   capnc = 150._r8              ! cold and oceanic cloud particles / cm3
-!  capnsi = 40._r8              ! sea ice cloud particles density  / cm3
-   capnsi = 75._r8              ! sea ice cloud particles density  / cm3
+      capnw = 400._r8              ! warm continental cloud particles / cm3
+      capnc = 150._r8              ! cold and oceanic cloud particles / cm3
+!     capnsi = 40._r8              ! sea ice cloud particles density  / cm3
+      capnsi = 75._r8              ! sea ice cloud particles density  / cm3
 
-   kconst = 1.18e6_r8           ! const for terminal velocity
+      kconst = 1.18e6_r8           ! const for terminal velocity
 
-!      effc = 1._r8                 ! autoconv collection efficiency following boucher 96
-!      effc = .55*0.05_r8           ! autoconv collection efficiency following baker 93
-   effc = 0.55_r8               ! autoconv collection efficiency following tripoli and cotton
-!   effc = 0._r8    ! turn off warm-cloud autoconv
-   alpha = 1.1_r8**4
-   capc = pi**(-.333_r8)*kconst*effc *(0.75_r8)**(1.333_r8)*alpha  ! constant for autoconversion
-
-   !r3lcrit: critical radius where liq conversion begins (10.0 micron)
-   r3lcrit = 10.0e-6_r8
+!     effc = 1._r8                 ! autoconv collection efficiency following boucher 96
+!     effc = .55*0.05_r8           ! autoconv collection efficiency following baker 93
+      effc = 0.55_r8               ! autoconv collection efficiency following tripoli and cotton
+!     effc = 0._r8    ! turn off warm-cloud autoconv
+      alpha = 1.1_r8**4
+      capc = pi**(-.333_r8)*kconst*effc *(0.75_r8)**(1.333_r8)*alpha  ! constant for autoconversion
 
 ! critical precip rate at which we assume the collector drops can change the
 ! drop size enough to enhance the auto-conversion process (mm/day)
-   critpr = 0.5_r8
-   convfw = 1.94_r8*2.13_r8*sqrt(rhow*1000._r8*9.81_r8*2.7e-4_r8)
+      critpr = 0.5_r8
+      convfw = 1.94_r8*2.13_r8*sqrt(rhow*1000._r8*9.81_r8*2.7e-4_r8)
 
 ! liquid microphysics
-!      cracw = 6_r8                 ! beheng
-   cracw = .884_r8*sqrt(9.81_r8/(rhow*1000._r8*2.7e-4_r8)) ! tripoli and cotton
+!     cracw = 6_r8                 ! beheng
+      cracw = .884_r8*sqrt(9.81_r8/(rhow*1000._r8*2.7e-4_r8)) ! tripoli and cotton
 
 ! ice microphysics
-   ciautb = 5.e-4_r8
-
-    if ( masterproc ) then
-       write(iulog,*)'tuning parameters cldwat: icritw',icritw,'icritc',icritc,'conke',conke
-       write(iulog,*)'tuning parameters cldwat: capnw',capnw,'capnc',capnc,'capnsi',capnsi,'kconst',kconst
-       write(iulog,*)'tuning parameters cldwat: effc',effc,'alpha',alpha,'capc',capc,'r3lcrit',r3lcrit
-       write(iulog,*)'tuning parameters cldwat: critpr',critpr,'convfw',convfw,'cracw',cracw,'ciautb',ciautb
-    endif
+      ciautb = 5.e-4_r8
+      
+      if ( masterproc ) then
+         write(iulog,*)'tuning parameters cldwat: icritw',icritw,'icritc',icritc,'conke',conke,'r3lcrit',r3lcrit
+#ifdef WRF_PORT
+         call wrf_message(iulog)
+#endif
+         write(iulog,*)'tuning parameters cldwat: capnw',capnw,'capnc',capnc,'capnsi',capnsi,'kconst',kconst
+#ifdef WRF_PORT
+         call wrf_message(iulog)
+#endif
+         write(iulog,*)'tuning parameters cldwat: effc',effc,'alpha',alpha,'capc',capc
+#ifdef WRF_PORT
+         call wrf_message(iulog)
+#endif
+         write(iulog,*)'tuning parameters cldwat: critpr',critpr,'convfw',convfw,'cracw',cracw,'ciautb',ciautb
+#ifdef WRF_PORT
+         call wrf_message(iulog)
+#endif
+      endif
+   endif
 
    return
 end subroutine inimc
@@ -388,7 +433,8 @@ subroutine pcond (lchnk   ,ncol    , &
                   meltheat,precip  ,snowab  ,deltat  ,fwaut   , &
                   fsaut   ,fracw   ,fsacw   ,fsaci   ,lctend  , &
                   rhdfda  ,rhu00   ,seaicef, zi      ,ice2pr, liq2pr, &
-                  liq2snow, snowh, rkflxprc, rkflxsnw)  
+                  liq2snow, snowh, rkflxprc, rkflxsnw, pracwo, psacwo, psacio)
+
 !----------------------------------------------------------------------- 
 ! 
 ! Purpose: 
@@ -450,8 +496,12 @@ subroutine pcond (lchnk   ,ncol    , &
    real(r8), intent(out) :: ice2pr(pcols,pver)   ! rate of conversion of ice to precip
    real(r8), intent(out) :: liq2pr(pcols,pver)   ! rate of conversion of liquid to precip
    real(r8), intent(out) :: liq2snow(pcols,pver) ! rate of conversion of liquid to snow
-   real(r8), intent(out) :: rkflxprc(pcols,pverp)   ! grid-box mean RK flux_large_scale_cloud_rain at interfaces (kg m^-2 s^-1)
+   real(r8), intent(out) :: rkflxprc(pcols,pverp)   ! grid-box mean RK flux_large_scale_cloud_rain+snow at interfaces (kg m^-2 s^-1)
    real(r8), intent(out) :: rkflxsnw(pcols,pverp)   ! grid-box mean RK flux_large_scale_cloud_snow at interfaces (kg m^-2 s^-1)
+! intent(out)s here for pcond to pass to stratiform.F90 to be addflded/outflded
+   real(r8), intent(out) :: pracwo(pcols,pver)      ! accretion of cloud water by rain (1/s)
+   real(r8), intent(out) :: psacwo(pcols,pver)      ! accretion of cloud water by snow (1/s)
+   real(r8), intent(out) :: psacio(pcols,pver)      ! accretion of cloud ice by snow (1/s)
 
    real(r8) nice2pr     ! rate of conversion of ice to snow
    real(r8) nliq2pr     ! rate of conversion of liquid to precip
@@ -587,6 +637,9 @@ subroutine pcond (lchnk   ,ncol    , &
    rkflxprc(:ncol,:) = 0._r8
    rkflxsnw(:ncol,:) = 0._r8
 
+   pracwo(:ncol,:) = 0._r8
+   psacwo(:ncol,:) = 0._r8
+   psacio(:ncol,:) = 0._r8
 !
 ! find the wet bulb temp and saturation value
 ! for the provisional t and q without condensation
@@ -678,7 +731,13 @@ subroutine pcond (lchnk   ,ncol    , &
               else
                  if (rhdfda(i,k) .eq. 0. .and. icwc(i).eq.0.) then
                     write (iulog,*) ' cldwat.F90:  empty rh cloud ', i, k, lchnk
+#ifdef WRF_PORT
+                    call wrf_message(iulog)
+#endif
                     write (iulog,*) ' relhum, iter ', relhum(i), l, rhu00(i,k), cldm(i), cldn(i,k)
+#ifdef WRF_PORT
+                    call wrf_message(iulog)
+#endif
                     call endrun ()
                  endif
                   csigma(i) = 1.0_r8/(rhdfda(i,k)+cgamma(i)*icwc(i))
@@ -774,7 +833,8 @@ subroutine pcond (lchnk   ,ncol    , &
                          k       ,prprov  ,snowab,  t       ,p        , &
                          cwm     ,cldm    ,cldmax  ,fice(1,k),coef    , &
                          fwaut(1,k),fsaut(1,k),fracw(1,k),fsacw(1,k),fsaci(1,k), &
-                         seaicef, snowh)
+                         seaicef, snowh, pracwo(1,k), psacwo(1,k), psacio(1,k))
+
 !
 ! calculate the precip rate
 !
@@ -974,7 +1034,8 @@ subroutine pcond (lchnk   ,ncol    , &
          snowab(i) = snowab(i) + pdel(i,k)/gravit * (prodsnow(i,k) - evapsnow(i,k))
 
          ! If temperature above freezing, all precip is rain flux.  if temperature below freezing, all precip is snow flux.
-         rkflxprc(i,k+1) = precab(i) - snowab(i)
+         rkflxprc(i,k+1) = precab(i)   !! making this consistent with other precip fluxes.  prc = rain + snow
+         !!rkflxprc(i,k+1) = precab(i) - snowab(i)
          rkflxsnw(i,k+1) = snowab(i)
 
 !!$         if ((precab(i)) < 1.e-10) then      
@@ -1005,18 +1066,30 @@ subroutine pcond (lchnk   ,ncol    , &
                if (rcwn(i,l,k).lt.0._r8) then
                   write(iulog,*) ' prob with neg rcwn1 ', rcwn(i,l,k),  &
                      cwnsave(i,l,k)
+#ifdef WRF_PORT
+                  call wrf_message(iulog)
+#endif
                   write(iulog,*) ' cwat, cme*deltat, prodprec*deltat ', &
                      cwat(i,k), cmesave(i,l,k)*deltat,               &
                      prodprecsave(i,l,k)*deltat,                     &
                      (cmesave(i,l,k)-prodprecsave(i,l,k))*deltat
+#ifdef WRF_PORT
+                  call wrf_message(iulog)
+#endif                  
                   call endrun('PCOND')
                endif
                if (rliq(i,l,k).lt.0._r8) then
                   write(iulog,*) ' prob with neg rliq1 ', rliq(i,l,k)
+#ifdef WRF_PORT
+                  call wrf_message(iulog)
+#endif
                   call endrun('PCOND')
                endif
                if (rice(i,l,k).lt.0._r8) then
                   write(iulog,*) ' prob with neg rice ', rice(i,l,k)
+#ifdef WRF_PORT
+                  call wrf_message(iulog)
+#endif
                   call endrun('PCOND')
                endif
             enddo
@@ -1034,7 +1107,8 @@ subroutine findmcnew (lchnk   ,ncol    , &
                       k       ,precab  ,snowab,  t       ,p       , &
                       cwm     ,cldm    ,cldmax  ,fice    ,coef    , &
                       fwaut   ,fsaut   ,fracw   ,fsacw   ,fsaci   , &
-                      seaicef ,snowh   )
+                      seaicef ,snowh,  pracwo, psacwo, psacio )
+ 
 !----------------------------------------------------------------------- 
 ! 
 ! Purpose: 
@@ -1076,6 +1150,10 @@ subroutine findmcnew (lchnk   ,ncol    , &
    real(r8), intent(out) :: fracw(pcols)         ! relative importance of rain accreting liquid (a diagnostic)
    real(r8), intent(out) :: fsacw(pcols)         ! relative importance of snow accreting liquid (a diagnostic)
    real(r8), intent(out) :: fsaci(pcols)         ! relative importance of snow accreting ice    (a diagnostic)
+   real(r8), intent(out) :: pracwo(pcols)        ! accretion of cloud water by rain (1/s)
+   real(r8), intent(out) :: psacwo(pcols)        ! accretion of cloud water by snow (1/s)
+   real(r8), intent(out) :: psacio(pcols)        ! accretion of cloud ice by snow (1/s)
+
 
 ! work variables
 
@@ -1251,6 +1329,9 @@ subroutine findmcnew (lchnk   ,ncol    , &
          if (i == ilook(1)) then
             write(iulog,*) ' findmcnew: lat, k, seaicef, landm, wp, capnoice, capn ', &
                  lat(i), k, seaicef(i), landm(i,lat(i)), wp, capnoice, capn
+#ifdef WRF_PORT
+            call wrf_message(iulog)
+#endif
          endif
       endif
 #endif
@@ -1320,6 +1401,9 @@ subroutine findmcnew (lchnk   ,ncol    , &
 !
 !        pracw = cracw*rho(i)*liqmr(i)*rainmr(i) !(beheng 1994)
       pracw = cracw*rho(i)*sqrt(rho(i))*liqmr(i)*rainmr(i) !(tripoli and cotton)
+
+      pracwo(i)=pracw
+
 !!      pracw = 0.
 !
 ! the following lines calculate the slope parameter and snow mixing ratio
@@ -1345,11 +1429,16 @@ subroutine findmcnew (lchnk   ,ncol    , &
 ! this is necessary for pergro
       psacw = 0._r8
 #endif
+
+      psacwo(i)=psacw
+
 !
 ! collection of ice by snow (lin et al 1983)
 !
       psaci = csacx*icemr(i)*esi
 !
+      psacio(i)=psaci
+
 ! total conversion of condensate to precipitate
 !
       ptot = pwaut + psaut + pracw + psacw + psaci
@@ -1506,7 +1595,13 @@ subroutine findsp (lchnk, ncol, q, t, p, tsp, qsp)
 #ifdef DEBUG
          if ( (lchnk == lchnklook(nlook) ) .and. (i == icollook(nlook) ) ) then
             write(iulog,*) ' '
+#ifdef WRF_PORT
+            call wrf_message(iulog)
+#endif            
             write(iulog,*) ' level, t, q, p', k, t(i,k), q(i,k), p(i,k)
+#ifdef WRF_PORT
+            call wrf_message(iulog)
+#endif
          endif
 #endif
 ! limit the temperature range to that relevant to the sat vap pres tables
@@ -1559,7 +1654,13 @@ subroutine findsp (lchnk, ncol, q, t, p, tsp, qsp)
 #ifdef DEBUG
              if ( (lchnk == lchnklook(nlook) ) .and. (i == icollook(nlook) ) ) then
                 write(iulog,*) ' relative humidity ', q(i,k)/qs
+#ifdef WRF_PORT
+                call wrf_message(iulog)
+#endif
                 write(iulog,*) ' first guess ', tsp(i,k)
+#ifdef WRF_PORT
+                call wrf_message(iulog)
+#endif
              endif
 #endif
              es = estblf(tsp(i,k))
@@ -1625,6 +1726,9 @@ subroutine findsp (lchnk, ncol, q, t, p, tsp, qsp)
 #ifdef DEBUG
                if ( (lchnk == lchnklook(nlook) ) .and. (i == icollook(nlook) ) ) then
                   write(iulog,*) ' rel chg lev, iter, t, q ', k, l, dt, dq, g
+#ifdef WRF_PORT
+                  call wrf_message(iulog)
+#endif                  
                endif
 #endif
                dtm = max(dtm,dt)
@@ -1662,8 +1766,17 @@ subroutine findsp (lchnk, ncol, q, t, p, tsp, qsp)
             do i = 1,ncol
                if (doit(i) == 0) then
                   write(iulog,*) ' findsp not converging at point i, k ', i, k
+#ifdef WRF_PORT
+                  call wrf_message(iulog)
+#endif
                   write(iulog,*) ' t, q, p, enin ', t(i,k), q(i,k), p(i,k), enin(i)
+#ifdef WRF_PORT
+                  call wrf_message(iulog)
+#endif
                   write(iulog,*) ' tsp, qsp, enout ', tsp(i,k), qsp(i,k), enout(i)
+#ifdef WRF_PORT
+                  call wrf_message(iulog)
+#endif
                   call endrun ('FINDSP')
                endif
             end do
@@ -1679,8 +1792,17 @@ subroutine findsp (lchnk, ncol, q, t, p, tsp, qsp)
             if (doit(i) == 2 .and. abs((enin(i)-enout(i))/(enin(i)+enout(i))) > 1.e-4_r8) then
                write(iulog,*) ' the enthalpy is not conserved for point ', &
                   i, k, enin(i), enout(i)
+#ifdef WRF_PORT
+               call wrf_message(iulog)
+#endif
                write(iulog,*) ' t, q, p, enin ', t(i,k), q(i,k), p(i,k), enin(i)
+#ifdef WRF_PORT
+               call wrf_message(iulog)
+#endif
                write(iulog,*) ' tsp, qsp, enout ', tsp(i,k), qsp(i,k), enout(i)
+#ifdef WRF_PORT
+               call wrf_message(iulog)
+#endif
                call endrun ('FINDSP')
             endif
          end do
@@ -1690,7 +1812,5 @@ subroutine findsp (lchnk, ncol, q, t, p, tsp, qsp)
 
    return
 end subroutine findsp
-
 #endif
-
 end module cldwat

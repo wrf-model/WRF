@@ -13,7 +13,8 @@ subroutine da_qc_rad (it, ob, iv)
    type (iv_type), intent(inout)   :: iv         ! O-B structure.
 
    integer :: i, nchan,p,j
-   logical   :: amsua, amsub, hirs, msu, airs, hsb, ssmis, mhs, iasi, atms
+   logical   :: amsua, amsub, hirs, msu,airs, hsb, ssmis, mhs, iasi
+   logical   :: mwts, mwhs, atms
 
    integer, allocatable :: index(:)
    integer :: num_tovs_avg
@@ -57,6 +58,8 @@ subroutine da_qc_rad (it, ob, iv)
       ssmis = trim(rttov_inst_name(rtminit_sensor(i))) == 'ssmis'
       mhs   = trim(rttov_inst_name(rtminit_sensor(i))) == 'mhs'
       iasi  = trim(rttov_inst_name(rtminit_sensor(i))) == 'iasi'	  
+      mwts  = trim(rttov_inst_name(rtminit_sensor(i))) == 'mwts'
+      mwhs  = trim(rttov_inst_name(rtminit_sensor(i))) == 'mwhs'
       atms  = trim(rttov_inst_name(rtminit_sensor(i))) == 'atms'
 
       if (hirs) then
@@ -80,6 +83,10 @@ subroutine da_qc_rad (it, ob, iv)
          call da_qc_mhs(it,i,nchan,ob,iv)
       else if (iasi) then
          call da_qc_iasi(it,i,nchan,ob,iv)		 
+      else if (mwhs) then
+         call da_qc_mwhs(it,i,nchan,ob,iv)
+      else if (mwts) then
+         call da_qc_mwts(it,i,nchan,ob,iv)
       else if (atms) then
          call da_qc_atms(it,i,nchan,ob,iv)
       else

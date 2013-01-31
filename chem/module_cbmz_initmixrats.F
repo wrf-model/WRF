@@ -7,7 +7,7 @@
 ! CBMZ module: see module_cbmz.F for references and terms of use
 !**********************************************************************************  
 
-#define CASENAME 0
+#define CASENAME 4
       module module_cbmz_initmixrats
 
 

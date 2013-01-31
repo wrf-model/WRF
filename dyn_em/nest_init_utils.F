@@ -35,6 +35,11 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    nest%tlp     = parent%tlp
    nest%p00     = parent%p00
    nest%t00     = parent%t00
+!cyl: variables for trajectory /float
+   nest%traj_k = parent%traj_k
+   nest%traj_long = parent%traj_long
+   nest%traj_lat = parent%traj_lat
+   nest%this_is_an_ideal_run = parent%this_is_an_ideal_run
 
    CALL nl_get_mminlu ( 1, char_junk )
    CALL nl_get_iswater( 1, iswater )

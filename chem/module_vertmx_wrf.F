@@ -81,8 +81,8 @@ CONTAINS
 ! .. Array Arguments ..
       REAL, INTENT(IN), DIMENSION (kts:ktem1+1) :: k_turb
       REAL, INTENT(IN), DIMENSION (kts+1:ktem1) :: a_coeff
-      REAL, INTENT(IN), DIMENSION (kts:ktem1) :: b_coeff, dryrho
-      REAL, INTENT(OUT), DIMENSION (kts:ktem1) :: lhs1, lhs2, lhs3, phi, rhs
+      REAL, INTENT(IN), DIMENSION (kts:ktem1) :: b_coeff, dryrho, phi      
+      REAL, INTENT(OUT), DIMENSION (kts:ktem1) :: lhs1, lhs2, lhs3, rhs
 ! ..
 ! .. Local Scalars ..
       REAL :: a1, a2, alfa_explicit = .25, beta_implicit = .75

@@ -18,6 +18,10 @@
       integer, private  :: next, last
       integer, private  :: curjulday = 0
 
+!++alma 2012-12-01 modis landuse from sw
+      integer, private, allocatable :: luse2usgs(:)
+!--
+
       real(dp), private :: esfact = 1.0_dp
       real(dp), private :: dobson
 
@@ -294,7 +298,12 @@
         if( config_flags%chem_opt == MOZART_KPP .or. &
             config_flags%chem_opt == MOZCART_KPP .or. &
             config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
-           if( ivgtyp(i,j) /= 16 ) then
+
+!++alma 2012-12-01 modis landuse from sw
+!          if( ivgtyp(i,j) /= 16 ) then
+           if( luse2usgs( ivgtyp(i,j) ) /= 16 ) then
+!--
+
               lu = 1
            else
               lu = 2
@@ -506,8 +515,13 @@ level_loop : &
 
       end subroutine ftuv_driver
 
+!++alma 2012-12-01 modis landse from
+!     subroutine ftuv_init( id,ips, ipe, jps, jpe, kte, &
+!                            ide, jde, config_flags )
       subroutine ftuv_init( id,ips, ipe, jps, jpe, kte, &
-                            ide, jde, config_flags )
+                            ide, jde, config_flags, num_land_cat, mminlu_loc)
+!--
+
 !---------------------------------------------------------------------
 !	... new initialization routine for ftuv
 !---------------------------------------------------------------------
@@ -524,7 +538,13 @@ level_loop : &
       integer, intent(in) :: id
       integer, intent(in) :: ips, ipe, jps, jpe, kte
       integer, intent(in) :: ide, jde
+
+!++alma 2012-12-01 modis landuse from sw
+      integer, intent(in) :: num_land_cat
+      character(len=*), intent(in) :: mminlu_loc
       type(grid_config_rec_type),  intent(in   ) :: config_flags
+!--
+
 
 !---------------------------------------------------------------------
 !	... local variables
@@ -539,6 +559,7 @@ level_loop : &
       integer :: lon_e, lat_e
       integer :: ncoldens_levs
       integer :: ndays_of_year
+      integer :: i
       real, allocatable :: coldens(:,:,:,:)
       character(len=128) :: err_msg
       character(len=64)  :: filename
@@ -553,7 +574,7 @@ include 'netcdf.inc'
       if( config_flags%chem_opt == MOZART_KPP .or. &
           config_flags%chem_opt == MOZCART_KPP .or. &
           config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
-         call wrf_message( 'ftuv_init: mozart,mozcart chem option requires netcdf' )
+         call wrf_message( 'ftuv_init: mozart,mozcart requires netcdf' )
          call wrf_abort
       end if
 #endif
@@ -713,6 +734,27 @@ col_dens_allocated : &
           write(*,'(1p,5g15.7)') col_dens(id)%col_levs(:)
           write(*,*) ' '
         endif col_dens_allocated
+
+!++alma 2012-12-01 modis landuse from sw
+        if( id == 1 ) then
+          !allocate( luse2usgs(config_flags%num_land_cat),stat=astat )
+          print*,"num_land_cat: ", num_land_cat
+          allocate( luse2usgs(num_land_cat),stat=astat )
+          if( astat /= 0 ) then
+            CALL wrf_message( 'ftuv_init: failed to allocate luse2usgs')
+            CALL wrf_abort
+          end if
+          if( trim(mminlu_loc) == 'USGS' ) then
+            !luse2usgs(:) = (/ (i,i=1,config_flags%num_land_cat) /)
+            luse2usgs(:) = (/ (i,i=1,num_land_cat) /)
+          elseif( trim(mminlu_loc) == 'MODIFIED_IGBP_MODIS_NOAH' ) then
+            luse2usgs(:) = (/ 14,13,12,11,15,8,9,10,10,7, &
+                              17,4,1,5,24,19,16,21,22,23 /)
+          endif
+        endif
+!--
+
+
       endif is_mozart
 #endif
 !---------------------------------------------------------------------

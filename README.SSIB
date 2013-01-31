@@ -26,22 +26,33 @@ Currently, the SSIB will only work with the following options:
  
 Please note that SSiB does not provide U10 and V10 outputs.  The data shown in the SSiB output files for U10 and V10 
 are calculated by  thermal-diffusion surface layer scheme to avoid zero values in display"
+
 ----------
  WPS
 ----------
-By default, SSiB will work with the USGS land-use maps, however,
-for better results, we suggest that you use the SSiB land-use (vegetation) maps.
-This can be done by prefixing the variable geog_data_res with string "ssib+"
+By default, SSiB will work with the USGS land-use/vegetation maps, however, for better results, we suggest you use SSiB the 12-type vegetation maps. This files are available in the WPS_GEOG directory.
+This can be done by prefixing the variable geog_data_res with the string "ssib_+", according to the resolution
 
-For instance, to use SSiB 10-minute resolution land-use map:
-geog_data_res     = 'ssib+10m',
+For instance, to use SSiB 10-minute resolution vegetation map, enter:
+geog_data_res     = 'ssib_10m+10m',
+Only 10-minute and 5-minute maps are currently available.
 
-Make sure to set the correct path for the SSIB land-use maps
-in the GEOGRID.TBL file 
+SSiB vegetation classification:
 
-abs_path=  ssib:your_path/vegtype_10m/
+1      tropical rainforest
+2      broadleaf deciduous trees
+3      broadleaf and needleaf trees
+4      needleaf evergreen trees
+5      needleaf deciduous trees
+6      broadleaf trees with ground cover
+7      groundcover only
+8      broadleaf shrubs with ground cover
+9      broadleaf shrubs with bare soil
+10     dwarf trees with ground cover
+11     bare soil
+12     crops
+
 
 **
-For further assistance please contact Dr. Yongkang Xue (yxue@geog.ucla.edu)
-or Dr. Fernando De Sales (fsales@ucla.edu)
+For further assistance please contact Dr. Yongkang Xue (yxue@geog.ucla.edu) or Dr. Fernando De Sales (fsales@ucla.edu)
 **

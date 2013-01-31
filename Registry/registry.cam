@@ -1,9 +1,15 @@
-# CAMUW PBL Variables
-state    real   tauresx2d      ij      misc        1         -      r        "tauresx2d"            "X-COMP OF RESIDUAL STRESS"                 "m2 s-2"
-state    real   tauresy2d      ij      misc        1         -      r        "tauresy2d"            "Y-COMP OF RESIDUAL STRESS"                 "m2 s-2"
-state    real   tpert2d        ij      misc        1         -      r        "tpert2d"              "Convective temperature excess "            "K"
-state    real   qpert2d        ij      misc        1         -      r        "qpert2d"              "Convective humidity excess "               "kg/kg"
-state    real   wpert2d        ij      misc        1         -      r        "wpert2d"              "Turbulent velocity excess "                "m/s"
+# CAMUWPBL PBL Variables 
+state  real   tauresx2d ij     misc     1    -   r     "tauresx2d"    "X-COMP OF RESIDUAL STRESS"                                       "m2 s-2"
+state  real   tauresy2d ij     misc     1    -   r     "tauresy2d"    "Y-COMP OF RESIDUAL STRESS"                                       "m2 s-2"
+state  real   tpert2d  ij      misc     1    -   r     "tpert2d"      "Convective temperature excess "                                  "K"
+state  real   qpert2d  ij      misc     1    -   r     "qpert2d"      "Convective humidity excess "                                     "kg/kg"
+state  real   wpert2d  ij      misc     1    -   r     "wpert2d"      "Turbulent velocity excess "                                      "m/s"
+state  real   turbtype3d ikj   misc     1    Z   r     "turbtype3d"   "Turbulent interface types"                                       ""
+state  real   smaw3d   ikj     misc     1    Z   r     "smaw3d"       "Normalized Galperin instability function for momentum"           ""
+state  real   wsedl3d  ikj     misc     1    -   r     "wsedl3d"      "Sedimentation velocity of stratiform liquid cloud droplet"       "m s-1"
+state  real   tke_pbl8w ikj    misc     1    Z   r     "tke8w"        "TKE at the interfaces"                                           "m2 s-2"
+state  real   EXCH_H8W ikj     misc     1    Z   r     "EXCH_H8W"     "SCALAR EXCHANGE COEFFICIENTS at interfaces "
+state  real   EXCH_M8W ikj     misc     1    Z   r     "EXCH_M8W"     "EXCHANGE COEFFICIENTS at interfaces "
 
 # CAM Zhang-McFarlane variables
 state  real   rliq     ij     misc      1    -   r     "RLIQ"         "vertically-integrated reserved cloud condensate"                 "m s-1"
@@ -39,6 +45,9 @@ state  real   zmicuu   ikj    misc      1    -   h6    "ZMICUU"       "ZM in-clo
 state  real   zmicud   ikj    misc      1    -   h6    "ZMICUD"       "ZM in-cloud U downdrafts"                                        "m s-1"
 state  real   zmicvu   ikj    misc      1    -   h6    "ZMICVU"       "ZM in-cloud V updrafts"                                          "m s-1"
 state  real   zmicvd   ikj    misc      1    -   h6    "ZMICVD"       "ZM in-cloud V downdrafts"                                        "m s-1"
+state  real   evapcdp3d ikj   misc      1    -   r     "EVAPCDP3D"    "Evaporation of deep convective precipitation"                    "kg/kg/s"
+state  real   icwmrdp3d ikj   misc      1    -   r     "ICWMRDP3D"    "Deep Convection in-cloud water mixing ratio"                     "kg/m2"
+state  real   rprddp3d ikj    misc      1    -   r     "RPRDDP3D"     "dq/dt due to deep convective rainout"                            "kg/kg/s"
 
 # CAM UW Shallow Convection variables
 state  real   cmfsl    ikj    misc      1    Z   rh6   "CMFSL "       "moist shallow convection liquid water static energy flux"        "W m-2"
@@ -53,6 +62,10 @@ state  real   snowsh   ij     misc      1    -   r     "SNOWSH"       "convectiv
 #state  real   rprddp   ikj    misc      1    -   r     "RPRDDP"       "dq/dt due to deep convective rainout"                            "~?"
 state  real   rprdsh   ikj    misc      1    -   rh6   "RPRDSH"       "dq/dt due to deep(~?) and shallow convective rainout"            "~?"
 state  real   rliq2    ij     misc      1    -   r     "RLIQ2"        "vertically-integrated reserved cloud condensate for shallow Cu"  "m s-1"
+state  real   dlf2     ikj    misc      1    -   rh     "DLF2"         "dq/dt due to export of cloud water into environment by shallow convection"  "kg/kg/s"
+state  real   shfrc3d  ikj    misc      1    -   r     "SHFRC3D"      "Shallow cloud fraction"                                            ""
+state  real   EVAPCSH3D ikj   misc      1    -   r     "EVAPCSH3D"    "Evaporation of shallow convection precipitation"                  "kg/kg/s"
+#~~~above here needs to be added to package definition
 state  real   qtflx_cu ikj    misc      1    Z   h6    "QTFLX_CU"     "cumulus qt flux"                                                 "kg m-2 s-1"
 state  real   slflx_cu ikj    misc      1    Z   h6    "SLFLX_CU"     "cumulus sl flux"                                                 "J m-2 s-1"
 state  real   uflx_cu  ikj    misc      1    Z   h6    "UFLX_CU"      "cumulus u flux"                                                  "kg m s-2"
@@ -144,3 +157,25 @@ state  real limit_cbmf_cu  ij misc      1    -   h6    "LIMIT_CBMF_CU" "limit_cb
 state  real limit_rei_cu   ij misc      1    -   h6    "LIMIT_REI_CU"  "limit_rei_cu"                                                   ""
 state  real ind_delcin_cu  ij misc      1    -   h6    "IND_DELCIN_CU" "ind_delcin_cu"                                                  ""
 
+#CAMMGMP
+state    real  rh_old_mp       ikj      misc        1         -      r        "RH_OLD_MP"             "previous time level RH for CAMMGMP microphysics"                          ""
+state    real  lcd_old_mp      ikj      misc        1         -      r        "LCD_OLD_MP"            "previous time level liquid cldfra for CAMMGMP microphysics"                    ""
+state    real  CLDFRA_OLD_MP   ikj      misc        1         -      r        "CLDFRA_OLD_MP"         "previous time level cldfra for CAMMGMP microphysics"                          ""
+state    real  CLDFRA_MP       ikj      misc        1         -      rh       "CLDFRA_MP"             "current time level cldfra for CAMMGMP microphysics"                          ""
+state    real  CLDFRA_MP_ALL   ikj      misc        1         -      rh       "CLDFRA_MP_ALL"         "current time level cldfra for CAMMGMP microphysics"                          ""
+state    real  CLDFRA_CONV     ikj      misc        1         -      rh       "CLDFRA_CONV"           "current time level cldfra for CAMMGMP microphysics"                          ""
+state    real  CLDFRAI         ikj      misc        1         -      rh       "CLDFRAI"               "current time level cldfrai for CAMMGMP microphysics"                          ""
+state    real  CLDFRAL         ikj      misc        1         -      rh       "CLDFRAL"               "current time level cldfral for CAMMGMP microphysics"                          ""
+state    real  ALST_3D         ikj      misc        1         -      -        "ALST_3D"               "liquid cloud fraction for CAMMGMP microphysics"                          "" 
+state    real  AIST_3D         ikj      misc        1         -      -        "AIST_3D"               "ice cloud fraction for CAMMGMP microphysics"                          "" 
+state    real  STATE_Q1_3D     ikj      misc        1         -      -        "STATE_Q1_3D"           "Water vapor specific humidity for CAMMGMP microphysics"                          "" 
+state    real  QVS_3D          ikj      misc        1         -      -        "QVS_3D"                "Saturation specific humudity of liquid for CAMMGMP microphysics"                          "" 
+state    real  QVI_3D          ikj      misc        1         -      -        "QVI_3D"                 "Saturation specific humudity of ice for CAMMGMP microphysics"                          "" 
+state    real  NAAI_3D         ikj      misc        1         -      -        "NAAI_3D"                "Ice Neucleation Number for CAMMGMP microphysics"                          "" 
+state    real  STATE_Q6_3D     ikj      misc        1         -      -        "STATE_Q6_3D"            "Q6 for CAMMGMP microphysics"                          "" 
+state    real  STATE_Q7_3D     ikj      misc        1         -      -        "STATE_Q7_3D"            "Q7 for CAMMGMP microphysics"                          "" 
+state    real  STATE_Q8_3D     ikj      misc        1         -      -        "STATE_Q8_3D"            "Q8 for CAMMGMP microphysics"                          "" 
+state    real  STATE_Q9_3D     ikj      misc        1         -      -        "STATE_Q9_3D"            "Q9 for CAMMGMP microphysics"                          "" 
+state    real  STATE_Q10_3D    ikj      misc        1         -      -        "STATE_Q10_3D"           "Q10 for CAMMGMP microphysics"                          "" 
+state    real  STATE_Q11_3D    ikj      misc        1         -      -        "STATE_Q11_3D"           "Q11 for CAMMGMP microphysics"                          "" 
+state    real  STATE_Q12_3D    ikj      misc        1         -      -        "STATE_Q12_3D"           "Q12 for CAMMGMP microphysics"                          "" 

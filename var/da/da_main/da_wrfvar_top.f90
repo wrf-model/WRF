@@ -30,7 +30,7 @@ module da_wrfvar_top
       num_dfi_moist, num_scalar, num_a_scalar, num_g_scalar, num_dfi_scalar, &
       num_fdda3d, num_fdda2d, num_ozmixm, num_aerosolc, num_chem, num_asym_par, &
       num_bscat_coef, num_ext_coef, PARAM_FIRST_SCALAR, num_advh_t, num_advz_t, &
-      num_tracer
+      num_tracer, num_aerod
    use module_tiles, only : set_tiles
 
 #ifdef DM_PARALLEL

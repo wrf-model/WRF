@@ -1,4 +1,4 @@
-subroutine da_ao_stats_synop (stats_unit, iv, re)
+subroutine da_ao_stats_synop (stats_unit, iv, re, ob)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -9,10 +9,12 @@ subroutine da_ao_stats_synop (stats_unit, iv, re)
    integer,        intent (in)    :: stats_unit    ! Output unit for stats.
    type (iv_type), intent (inout) :: iv            ! iv
    type  (y_type), intent (in)    :: re            ! A - O
+   type(y_type),   intent (in) :: ob       ! Observation structure.
 
    type (stats_synop_type) :: stats
    integer                 :: nu, nv, nt, np, nq
    integer                 :: n
+   real                    :: u_inv, v_inv, sp_inv, dir_inv
 
    if (trace_use_dull) call da_trace_entry("da_ao_stats_synop")
 
@@ -38,12 +40,20 @@ subroutine da_ao_stats_synop (stats_unit, iv, re)
 
    do n=1, iv%info(synop)%nlocal
       if (iv%info(synop)%proc_domain(1,n)) then
+         u_inv = re%synop(n)%u
+         v_inv = re%synop(n)%v
+         if(var_wind) then
+            sp_inv = re%synop(n)%u
+            dir_inv = re%synop(n)%v
+            call da_cal_sd (ob%synop(n)%u, ob%synop(n)%v, &
+                            u_inv, v_inv, sp_inv, dir_inv)
+         end if
          call da_stats_calculate (n, 0, iv%synop(n)%u%qc,  & 
-            re%synop(n)%u, nu, & 
+            u_inv, nu, & 
             stats%minimum%u, stats%maximum%u, &
             stats%average%u, stats%rms_err%u)
          call da_stats_calculate (n, 0, iv%synop(n)%v%qc,  & 
-            re%synop(n)%v, nv, & 
+            v_inv, nv, & 
             stats%minimum%v, stats%maximum%v, &
             stats%average%v, stats%rms_err%v)
          call da_stats_calculate (n, 0, iv%synop(n)%t%qc,  & 

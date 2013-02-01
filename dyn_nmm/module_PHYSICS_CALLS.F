@@ -1648,7 +1648,7 @@
      &               ,HANGL=HANGL,HANIS=HANIS,HSLOP=HSLOP,HZMAX=HZMAX   &
      &               ,CROT=CROT,SROT=SROT                               &
      &               ,DUDT=DUDT_GWD,DVDT=DVDT_GWD                       &
-     &               ,UGWDsfc=UGWDsfc,VGWDsfc=VGWDsfc                   &
+     &               ,UGWDsfc=UGWDsfc,VGWDsfc=VGWDsfc,XLAND=XLAND       &    !ADDED BY KWON FOR OCEAN
      &               ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE   &
      &               ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME   &
      &               ,ITS=IGS,ITE=IGE,JTS=JGS,JTE=JGE,KTS=KTS,KTE=KTE )

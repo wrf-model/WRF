@@ -111,6 +111,12 @@ subroutine da_radiance_init(iv,ob)
    else if ( trim( crtm_sensor_name(rtminit_sensor(n))) == 'ssmis' ) then
       nchanl(n)  = 24
       nscan(n)   = 60
+   else if ( trim( crtm_sensor_name(rtminit_sensor(n))) == 'mwts' ) then
+      nchanl(n)  = 4
+      nscan(n)   = 15
+   else if ( trim( crtm_sensor_name(rtminit_sensor(n))) == 'mwhs' ) then
+      nchanl(n)  = 5
+      nscan(n)   = 98
    else if ( trim( crtm_sensor_name(rtminit_sensor(n))) == 'atms' ) then
       nchanl(n)  = 22
       nscan(n)   = 96

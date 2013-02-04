@@ -1,10 +1,14 @@
+#define WRF_PORT
+#define MODAL_AERO
+! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
 !------------------------------------------------------------------------
 ! Based on csm_share/shr/shr_kind_mod.F90 from CAM
 ! Ported to WRF by William.Gustafson@pnl.gov, Nov. 2009
+! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
 !------------------------------------------------------------------------
 !===============================================================================
 ! SVN $Id: shr_kind_mod.F90 11926 2008-09-25 21:10:40Z mvertens $
-! SVN $URL: https://svn-ccsm-models.cgd.ucar.edu/csm_share/branch_tags/cesm1_0_rel_tags/cesm1_0_rel03_share3_100802/shr/shr_kind_mod.F90 $
+! SVN $URL: https://svn-ccsm-models.cgd.ucar.edu/csm_share/branch_tags/cesm1_0_rel_tags/cesm1_0_3_n01_share3_110527/shr/shr_kind_mod.F90 $
 !===============================================================================
 
 MODULE shr_kind_mod

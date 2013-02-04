@@ -28,6 +28,10 @@
 
       INTEGER :: month = 0
       INTEGER :: ixxxlu(nlu)
+!     include modis landuse 
+      INTEGER, allocatable :: luse2usgs(:)
+!--
+
       REAL    :: kpart(nlu)
       REAL    :: rac(nlu,dep_seasons), rclo(nlu,dep_seasons), rcls(nlu,dep_seasons)
       REAL    :: rgso(nlu,dep_seasons), rgss(nlu,dep_seasons)
@@ -178,7 +182,10 @@ tile_lat_loop : &
 tile_lon_loop : &
          do i = its,ite 
             iprt  = 0
-            iland = ivgtyp(i,j)
+
+            iland = luse2usgs( ivgtyp(i,j) )
+!--
+
             if( config_flags%chem_opt == MOZART_KPP .or. &
                 config_flags%chem_opt == MOZCART_KPP .or. &
           config_flags%chem_opt == MOZART_MOSAIC_4BIN_VBS0_KPP ) then
@@ -263,6 +270,7 @@ tile_lon_loop : &
            (config_flags%chem_opt == CBMZ_BB       ) .or.          &
            (config_flags%chem_opt == CBMZ_BB_KPP   ) .or.          &
            (config_flags%chem_opt == CBMZ_MOSAIC_KPP   ) .or.      &
+           (config_flags%chem_opt == CBMZ_MOSAIC_4BIN_VBS2_KPP).or.&
            (config_flags%chem_opt == CBMZ_MOSAIC_4BIN_AQ) .or.     &
            (config_flags%chem_opt == CBMZ_MOSAIC_8BIN_AQ) .or.     &
            (config_flags%chem_opt == CBMZ_MOSAIC_4BIN) .or.        &
@@ -270,7 +278,11 @@ tile_lon_loop : &
            (config_flags%chem_opt == CBMZ_MOSAIC_DMS_4BIN_AQ) .or. &
            (config_flags%chem_opt == CBMZ_MOSAIC_DMS_8BIN_AQ) .or. &
            (config_flags%chem_opt == CBMZ_MOSAIC_DMS_4BIN) .or.    &
-           (config_flags%chem_opt == CBMZ_MOSAIC_DMS_8BIN) ) then
+           (config_flags%chem_opt == CBMZ_MOSAIC_DMS_8BIN) .or.    &
+           (config_flags%chem_opt == CBMZ_CAM_MAM3_NOAQ ) .or.     &
+           (config_flags%chem_opt == CBMZ_CAM_MAM3_AQ   ) .or.     &
+           (config_flags%chem_opt == CBMZ_CAM_MAM7_NOAQ ) .or.     &
+           (config_flags%chem_opt == CBMZ_CAM_MAM7_AQ   ) ) then
          do j=jts,jte
             do i=its,ite
                ddvel(i,j,p_sulf)        = ddvel(i,j,p_hno3)
@@ -310,6 +322,12 @@ tile_lon_loop : &
                   ddvel(i,j,p_ch3so2oo)    = 0
                   ddvel(i,j,p_ch3so2ch2oo) = 0
                   ddvel(i,j,p_mtf)         = 0
+               end if
+               if( ( config_flags%chem_opt == CBMZ_CAM_MAM3_NOAQ ) .or.   &
+                   ( config_flags%chem_opt == CBMZ_CAM_MAM3_AQ   ) .or.   &
+                   ( config_flags%chem_opt == CBMZ_CAM_MAM7_NOAQ ) .or.   &
+                   ( config_flags%chem_opt == CBMZ_CAM_MAM7_AQ   ) ) then
+                  ddvel(i,j,p_soag)        = 0.0
                end if
             end do
          end do
@@ -1198,8 +1216,10 @@ is_nh3: if( p_nh3 > 1 ) then
 
       END SUBROUTINE depvel
 
-      SUBROUTINE dep_init( id, config_flags, numgas, &
+      SUBROUTINE dep_init( id, config_flags, numgas, mminlu_loc, &
                            ips, ipe, jps, jpe, ide, jde )
+!--
+
 !--------------------------------------------------
 ! .. Initialize simple deposition velocity routine
 !--------------------------------------------------
@@ -1209,6 +1229,8 @@ is_nh3: if( p_nh3 > 1 ) then
   USE module_state_description                       
 
    TYPE (grid_config_rec_type) , INTENT (in) ::     config_flags
+        character(len=*), intent(in) :: mminlu_loc
+!--
 
 !--------------------------------------------------
 ! .. Scalar Arguments ..
@@ -1528,6 +1550,24 @@ include 'netcdf.inc'
         dhr(1:numgas)    = 0.
         f0(1:numgas)     = 0.
         dvj(1:numgas)    = 99.
+
+        if( id == 1 .or. id == 2 ) then
+!       print*,"modis: num_land ",id,config_flags%num_land_cat
+
+        allocate( luse2usgs(config_flags%num_land_cat),stat=astat )
+        if( astat /= 0 ) then
+           CALL wrf_message( 'ftuv_init: failed to allocate luse2usgs array' )
+           CALL wrf_abort
+        end if
+        if( trim(mminlu_loc) == 'USGS' ) then
+           luse2usgs(:) = (/ (iland,iland=1,config_flags%num_land_cat) /)
+        elseif( trim(mminlu_loc) == 'MODIFIED_IGBP_MODIS_NOAH' ) then
+           luse2usgs(:) = (/ 14,13,12,11,15,8,9,10,10,7, &
+                              17,4,1,5,24,19,16,21,22,23 /)
+        endif
+        endif
+!--
+
 
 !--------------------------------------------------
 !     HENRY''S LAW COEFFICIENTS

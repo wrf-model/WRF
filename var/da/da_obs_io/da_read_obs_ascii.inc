@@ -51,7 +51,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
    logical                      :: outside_all
    logical                      :: uvq_direct               ![cys_add]
    integer                      :: surface_level
-   real                         :: height_error, u_comp, v_comp
+   real                         :: height_error, u_comp, v_comp, sp, dir
    integer                      :: nlocal(num_ob_indexes)
    integer                      :: ntotal(num_ob_indexes)
 
@@ -269,12 +269,25 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
          if (.not. uvq_direct) then   !cys_add
          if (platform%each (i)%speed%qc /= missing_data .and. &
              platform%each (i)%v%qc /= missing_data) then
-            call da_ffdduv (platform%each (i)%speed%inv, platform%each (i)%v%inv,     &
-               U_comp, V_comp, platform%info%lon, convert_fd2uv)
-               platform%each (i)%u = platform%each (i)%speed
-               platform%each (i)%v = platform%each (i)%speed
-            platform%each (i)%u%inv = U_comp
-            platform%each (i)%v%inv = V_comp
+             if (.not. var_wind) then
+                 call da_ffdduv (platform%each (i)%speed%inv, platform%each (i)%v%inv,     &
+                                 U_comp, V_comp, platform%info%lon, convert_fd2uv)
+                 platform%each (i)%u = platform%each (i)%speed
+                 platform%each (i)%v = platform%each (i)%speed
+                 platform%each (i)%u%inv = U_comp
+                 platform%each (i)%v%inv = V_comp
+             else
+                 if ( .not. project )then
+                      platform%each (i)%u = platform%each (i)%speed
+                 else
+                      call da_ffdduv (platform%each (i)%speed%inv, platform%each (i)%v%inv,     &
+                                      U_comp, V_comp, platform%info%lon, convert_fd2uv)
+                      call da_ffdduv2 (sp, dir, U_comp, V_comp, platform%info%lon, convert_uv2fd)
+                      platform%each (i)%u = platform%each (i)%speed
+                      platform%each (i)%u%inv = sp
+                      platform%each (i)%v%inv = dir
+                 end if
+             end if
          else
             platform%each (i)%u%inv   = missing_r
             platform%each (i)%v%inv   = missing_r

@@ -27,6 +27,18 @@ CONTAINS
                      ,bucket_mm, bucket_J                             &
                      ,prec_acc_c, prec_acc_nc, snow_acc_nc            &
                      ,snowncv, prec_acc_dt, curr_secs                 &
+                     ,nwp_diagnostics, diagflag                       &
+                     ,history_interval                                &
+                     ,itimestep                                       &
+                     ,u10,v10,w                                       &
+                     ,wspd10max                                       &
+                     ,up_heli_max                                     &
+                     ,w_up_max,w_dn_max                               &
+                     ,znw,w_colmean                                   &
+                     ,numcolpts,w_mean                                &
+                     ,grpl_max,grpl_colint,refd_max,refl_10cm         &
+                     ,qg_curr                                         &
+                     ,rho,ph,phb,g                                    &
                                                                       )
 !----------------------------------------------------------------------
 
@@ -58,6 +70,19 @@ CONTAINS
 !-- SNOW_ACC_NC   accumulated explicit snow precip over accumulation time prec_acc_dt
 !-- PREC_ACC_DT   precip accumulation time, default is 60 min
 !-- CURR_SECS     model time in seconds
+!-- NWP_DIAGNOSTICS  = 1, compute hourly maximum fields
+!-- DIAGFLAG      logical flag to indicate if this is a history output time
+!-- U10, V10      10 m wind components
+!-- WSPD10MAX     10 m max wind speed
+!-- UP_HELI_MAX   max updraft helicity
+!-- W_UP_MAX      max updraft vertical velocity
+!-- W_DN_MAX      max downdraft vertical velocity
+!-- W_COLMEAN     column mean vertical velocity
+!-- NUMCOLPTS     no of column points
+!-- GRPL_MAX      max column-integrated graupel
+!-- GRPL_COLINT   column-integrated graupel
+!-- REF_MAX       max derived radar reflectivity
+!-- REFL_10CM     model computed 3D reflectivity
 !
 !-- ids           start index for i in domain
 !-- ide           end index for i in domain
@@ -97,6 +122,8 @@ CONTAINS
 
    INTEGER,      INTENT(IN   )    ::   diag_print
    REAL,      INTENT(IN   )    ::   bucket_mm, bucket_J
+   INTEGER,   INTENT(IN   )    ::   nwp_diagnostics
+   LOGICAL,   INTENT(IN   )    ::   diagflag
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(IN ) ::                                       u  &
@@ -153,6 +180,40 @@ CONTAINS
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
    CHARACTER*256     :: outstring
    CHARACTER*6       :: grid_str
+
+   INTEGER, INTENT(IN) ::                                        &
+                                     history_interval,itimestep
+
+   REAL, DIMENSION( kms:kme ), INTENT(IN) ::                     &
+                                                            znw
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) ::   &
+                                                              w  &
+                                                       ,qg_curr  &
+                                                           ,rho  &
+                                                     ,refl_10cm  &
+                                                        ,ph,phb
+
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) ::            &
+                                                            u10  &
+                                                           ,v10
+
+   REAL, INTENT(IN) :: g
+
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) ::        &
+                                                      wspd10max  &
+                                                   ,up_heli_max  &
+                                             ,w_up_max,w_dn_max  &
+                                    ,w_colmean,numcolpts,w_mean  &
+                                          ,grpl_max,grpl_colint  &
+                                                      ,refd_max
+
+   INTEGER :: idump
+
+   REAL :: wind_vel
+   REAL :: depth
+   REAL :: dbz,dbzr,dbzs,dbzg
+   REAL, PARAMETER :: dbzmin=-20.
 
 !-----------------------------------------------------------------
 ! Handle accumulations with buckets to prevent round-off truncation in long runs
@@ -325,6 +386,150 @@ CONTAINS
 
 !  !$OMP END PARALLEL DO
    ENDIF
+
+! NSSL
+
+   IF ( nwp_diagnostics .EQ. 1 ) THEN
+
+     idump = (history_interval * 60.) / dt
+
+!   print *,' history_interval = ', history_interval
+!   print *,' itimestep        = ', itimestep
+!   print *,' idump            = ', idump
+!   print *,' xtime            = ', xtime
+
+! IF ( MOD(itimestep, idump) .eq. 0 ) THEN
+!    WRITE(outstring,*) 'Computing PH0 for this domain with curr_secs = ', curr_secs
+!    CALL wrf_message ( TRIM(outstring) )
+
+   IF ( MOD((itimestep - 1), idump) .eq. 0 ) THEN
+     WRITE(outstring,*) 'NSSL Diagnostics: Resetting max arrays for domain with dt = ', dt
+     CALL wrf_message ( TRIM(outstring) )
+
+!  !$OMP PARALLEL DO   &
+!  !$OMP PRIVATE ( ij )
+     DO ij = 1 , num_tiles
+       DO j=j_start(ij),j_end(ij)
+       DO i=i_start(ij),i_end(ij)
+         wspd10max(i,j)   = 0.
+         up_heli_max(i,j) = 0.
+         w_up_max(i,j)    = 0.
+         w_dn_max(i,j)    = 0.
+         w_mean(i,j)      = 0.
+         grpl_max(i,j)    = 0.
+         refd_max(i,j)    = 0.
+       ENDDO
+       ENDDO
+     ENDDO
+!  !$OMP END PARALLEL DO
+   ENDIF
+
+!  !$OMP PARALLEL DO   &
+!  !$OMP PRIVATE ( ij )
+   DO ij = 1 , num_tiles
+     DO j=j_start(ij),j_end(ij)
+     DO i=i_start(ij),i_end(ij)
+
+! Zero some accounting arrays that will be used below
+
+       w_colmean(i,j)   = 0.
+       numcolpts(i,j)   = 0.
+       grpl_colint(i,j) = 0.
+     ENDDO
+     ENDDO
+   ENDDO
+!  !$OMP END PARALLEL DO
+
+!  !$OMP PARALLEL DO   &
+!  !$OMP PRIVATE ( ij )
+   DO ij = 1 , num_tiles
+     DO j=j_start(ij),j_end(ij)
+     DO k=kms,kme
+     DO i=i_start(ij),i_end(ij)
+
+! Find vertical velocity max (up and down) below 400 mb
+
+       IF ( p8w(i,k,j) .GT. 40000. .AND. w(i,k,j) .GT. w_up_max(i,j) ) THEN
+         w_up_max(i,j) = w(i,k,j)
+       ENDIF
+
+       IF ( p8w(i,k,j) .GT. 40000. .AND. w(i,k,j) .LT. w_dn_max(i,j) ) THEN
+         w_dn_max(i,j) = w(i,k,j)
+       ENDIF
+
+! For the column mean vertical velocity calculation, first
+! total the vertical velocity between sigma levels 0.5 and 0.8
+
+       IF ( znw(k) .GE. 0.5 .AND. znw(k) .LE. 0.8 ) THEN
+         w_colmean(i,j) = w_colmean(i,j) + w(i,k,j)
+         numcolpts(i,j) = numcolpts(i,j) + 1
+       ENDIF
+     ENDDO
+     ENDDO
+     ENDDO
+   ENDDO
+!  !$OMP END PARALLEL DO
+
+!  !$OMP PARALLEL DO   &
+!  !$OMP PRIVATE ( ij )
+   DO ij = 1 , num_tiles
+     DO j=j_start(ij),j_end(ij)
+     DO k=kms,kme-1
+     DO i=i_start(ij),i_end(ij)
+
+! Calculate the column integrated graupel
+
+       depth = ( ( ph(i,k+1,j) + phb(i,k+1,j) ) / g ) - \
+               ( ( ph(i,k  ,j) + phb(i,k  ,j) ) / g )
+       grpl_colint(i,j) = grpl_colint(i,j) + qg_curr(i,k,j) * depth * rho(i,k,j)
+     ENDDO
+     ENDDO
+     ENDDO
+   ENDDO
+!  !$OMP END PARALLEL DO
+
+!  !$OMP PARALLEL DO   &
+!  !$OMP PRIVATE ( ij )
+   DO ij = 1 , num_tiles
+     DO j=j_start(ij),j_end(ij)
+     DO i=i_start(ij),i_end(ij)
+
+! Calculate the max 10 m wind speed between output times
+
+       wind_vel = sqrt ( u10(i,j)*u10(i,j) + v10(i,j)*v10(i,j) )
+       IF ( wind_vel .GT. wspd10max(i,j) ) THEN
+         wspd10max(i,j) = wind_vel
+       ENDIF
+
+! Calculate the column mean vertical velocity between output times
+
+       w_mean(i,j) = w_mean(i,j) + w_colmean(i,j) / numcolpts(i,j)
+
+       IF ( MOD(itimestep, idump) .eq. 0 ) THEN
+         w_mean(i,j) = w_mean(i,j) / idump
+       ENDIF
+
+! Calculate the max column integrated graupel between output times
+
+       IF ( grpl_colint(i,j) .gt. grpl_max(i,j) ) THEN
+          grpl_max(i,j) = grpl_colint(i,j)
+       ENDIF
+
+! Calculate the max radar reflectivity between output times
+
+       dbz = dbzr + dbzs + dbzg
+       IF ( dbz  .GT. 0. ) dbz  = 10.0 * LOG10 ( dbz  )
+       dbz  = MAX ( dbzmin, dbz  )
+
+       IF ( refl_10cm(i,kms,j) .GT. refd_max(i,j) ) THEN
+         refd_max(i,j) = refl_10cm(i,kms,j)
+       ENDIF
+     ENDDO
+     ENDDO
+   ENDDO
+!  !$OMP END PARALLEL DO
+   ENDIF
+! NSSL
 
    if (diag_print .eq. 0 ) return
 

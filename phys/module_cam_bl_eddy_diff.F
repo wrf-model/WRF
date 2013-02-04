@@ -1,6 +1,8 @@
 #define WRF_PORT
+#define MODAL_AERO
+! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
 
-module eddy_diff
+  module eddy_diff
 
   !--------------------------------------------------------------------------------- !
   !                                                                                  !
@@ -92,8 +94,9 @@ module eddy_diff
 #ifndef WRF_PORT
   !pver is not a parameter in cam_support module in WRF, therefore ncvmax cannot be equated to pver as parameter 
   integer,          parameter :: ncvmax         =   pver        ! Max numbers of CLs (good to set to 'pver')
+#else
+  integer                     :: ncvmax  
 #endif
-  integer                     :: ncvmax                         ! Max numbers of CLs (good to set to 'pver') !Pver is not a parameter in cam_support module
   real(r8),         parameter :: qmin           =   1.e-5_r8    ! Minimum grid-mean LWC counted as clouds [kg/kg]
   real(r8),         parameter :: ntzero         =   1.e-12_r8   ! Not zero (small positive number used in 's2')
   real(r8),         parameter :: b1             =   5.8_r8      ! TKE dissipation D = e^3/(b1*leng), e = b1*W.
@@ -199,12 +202,15 @@ module eddy_diff
 
     character(128)       :: errstring  ! Error status for init_vdiff
     integer              :: k          ! Vertical loop index
-
+#ifdef WRF_PORT    
     !As pver is not parameter in the cam_support module in WRF, a value to ncvmax is given here
     ncvmax = pver        ! Max numbers of CLs (good to set to 'pver') 
-
+#endif
     if( kind .ne. r8 ) then
         write(iulog,*) 'wrong KIND of reals passed to init_diffusvity -- exiting.'
+#ifdef WRF_PORT
+        call wrf_message(iulog)
+#endif 
         stop 'init_eddy_diff'
     endif
 
@@ -227,8 +233,8 @@ module eddy_diff
 
     ! Set the square of the mixing lengths. Only for CAM3 HB PBL scheme.
     ! Not used for UW moist PBL. Used for free air eddy diffusivity.
-
-#if 0
+#ifndef WRF_PORT 
+    ! ml2 is never used currently as use_kvf is set to false
     allocate(ml2(pver+1))
     ml2(1:ntop_turb) = 0._r8
     do k = ntop_turb + 1, nbot_turb
@@ -244,9 +250,21 @@ module eddy_diff
     ! Select the fields which will be diffused 
 
     if(vdiff_select(fieldlist_wet,'s').ne.'')   write(iulog,*) 'error: ', vdiff_select(fieldlist_wet,'s')
+#ifdef WRF_PORT
+        call wrf_message(iulog)
+#endif 
     if(vdiff_select(fieldlist_wet,'q',1).ne.'') write(iulog,*) 'error: ', vdiff_select(fieldlist_wet,'q',1)
+#ifdef WRF_PORT
+        call wrf_message(iulog)
+#endif 
     if(vdiff_select(fieldlist_wet,'u').ne.'')   write(iulog,*) 'error: ', vdiff_select(fieldlist_wet,'u')
+#ifdef WRF_PORT
+        call wrf_message(iulog)
+#endif 
     if(vdiff_select(fieldlist_wet,'v').ne.'')   write(iulog,*) 'error: ', vdiff_select(fieldlist_wet,'v')
+#ifdef WRF_PORT
+        call wrf_message(iulog)
+#endif 
 
     ! ------------------------------------------------------------------- !
     ! Writing outputs for detailed analysis of UW moist turbulence scheme !
@@ -569,8 +587,11 @@ module eddy_diff
        endif
 
      ! Get free atmosphere exchange coefficients. This 'kvf' is not used in UW moist PBL scheme
-
-       if( use_kvf )call austausch_atm( pcols, pver, ncol, ri, s2, kvf )
+#ifndef WRF_PORT
+       call austausch_atm( pcols, pver, ncol, ri, s2, kvf )
+#else
+       if(use_kvf)call austausch_atm( pcols, pver, ncol, ri, s2, kvf )
+#endif
 
      ! Initialize kvh/kvm to send to caleddy, depending on model timestep and iteration number
      ! This is necessary for 'wstar-based' entrainment closure.
@@ -1642,6 +1663,9 @@ module eddy_diff
         ghmin    = -1.e10_r8
     else
         write(iulog,*) 'Error : ricrit should be larger than 0.19 in UW PBL'       
+#ifdef WRF_PORT
+        call wrf_message(iulog)
+#endif 
         stop
     endif
 
@@ -1988,11 +2012,26 @@ module eddy_diff
                              wbrk(i,ncvnew) = tkes(i) / b1    
         
                              write(iulog,*) 'Major mistake in SRCL: bflxs > 0 for surface-based SRCL'
+#ifdef WRF_PORT
+                             call wrf_message(iulog)
+#endif 
                              write(iulog,*) 'bflxs = ', bflxs(i)
+#ifdef WRF_PORT
+                             call wrf_message(iulog)
+#endif                              
                              write(iulog,*) 'ncvfin_o = ', ncvfin_o(i)
+#ifdef WRF_PORT
+                             call wrf_message(iulog)
+#endif 
                              write(iulog,*) 'ncvfin_mg = ', ncvfin_mg(i)
+#ifdef WRF_PORT
+                             call wrf_message(iulog)
+#endif 
                              do ks = 1, ncvmax
                                 write(iulog,*) 'ncv =', ks, ' ', kbase_o(i,ks), ktop_o(i,ks), kbase_mg(i,ks), ktop_mg(i,ks)
+#ifdef WRF_PORT
+                                call wrf_message(iulog)
+#endif 
                              end do
                              stop
 
@@ -2526,6 +2565,9 @@ module eddy_diff
 
           if( ebrk(i,ncv) .le. 0._r8 ) then
               write(iulog,*) 'CALEDDY: Warning, CL with zero TKE, i, kt, kb ', i, kt, kb
+#ifdef WRF_PORT
+              call wrf_message(iulog)
+#endif               
               belongcv(i,kt) = .false.
               belongcv(i,kb) = .false. 
           end if
@@ -2816,6 +2858,9 @@ module eddy_diff
               ! Sanity Check
               if( det .lt. 0._r8 ) then
                   write(iulog,*) 'The det < 0. for the STL in UW eddy_diff'             
+#ifdef WRF_PORT
+                  call wrf_message(iulog)
+#endif                   
                   stop
               end if                  
               gh = (-trmb + sqrt(det))/(2._r8*trma)
@@ -3511,7 +3556,11 @@ module eddy_diff
  
      ! do while (  dwinc .gt. ( rinc*dzinc*wint/(lint+(1._r8-rinc)*dzinc)) )  ! Merging test based on wint
      ! do while ( -dl2n2 .gt. (-rinc*dzinc*l2n2/(lint+(1._r8-rinc)*dzinc)) )  ! Merging test based on l2n2 
+#ifndef WRF_PORT
+       do while ( -dl2n2 .gt. (-rinc*l2n2/(1._r8-rinc)) )                     ! Integral merging test
+#else
        do while ( -dl2n2 .gt. (-rinc*l2n2/(1._r8-rinc)) .and. kt-1 .gt. ntop_turb )                     ! Integral merging test
+#endif
 
           ! Add contribution of top external interface to interior energy.
           ! Note even when we chose 'use_dw_surf='true.', the contribution
@@ -3534,6 +3583,9 @@ module eddy_diff
           extend_up = .true.
           if( kt .eq. ntop_turb ) then
               write(iulog,*) 'zisocl: Error: Tried to extend CL to the model top'
+#ifdef WRF_PORT
+              call wrf_message(iulog)
+#endif 
               stop
           end if
 
@@ -3799,6 +3851,9 @@ module eddy_diff
 
           if( (kb.eq.pver+1) .and. (ncv.ne.1) ) then 
                write(iulog,*) 'Major mistake zisocl: the CL based at surface is not indexed 1'
+#ifdef WRF_PORT
+               call wrf_message(iulog)
+#endif 
                stop
           end if
 

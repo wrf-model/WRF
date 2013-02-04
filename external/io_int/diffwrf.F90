@@ -1,21 +1,6 @@
 module read_util_module
 
-#ifdef crayx1
-#define iargc ipxfargc
-#endif
-
 contains
-
-#ifdef crayx1
-   subroutine getarg(i, harg)
-     implicit none
-     character(len=*) :: harg
-     integer :: ierr, ilen, i
-
-     call pxfgetarg(i, harg, ilen, ierr)
-     return
-   end subroutine getarg
-#endif
 
    subroutine arguments(v2file, lmore)
      implicit none
@@ -24,15 +9,14 @@ contains
      logical :: lmore
    
      integer :: ierr, i, numarg
-     integer, external :: iargc
    
-     numarg = iargc()
+     numarg = command_argument_count()
    
      i = 1
      lmore = .false.
    
      do while ( i < numarg) 
-        call getarg(i, harg)
+        call get_command_argument(number=i, value=harg)
         print*, 'harg = ', trim(harg)
    
         if (harg == "-v") then
@@ -44,14 +28,14 @@ contains
    
      enddo
    
-     call getarg(i,harg)
+     call get_command_argument(number=i, value=harg)
      v2file = harg
    end subroutine arguments
    
    subroutine help
      implicit none
      character(len=120) :: cmd
-     call getarg(0, cmd)
+     call get_command_argument(number=0, value=cmd)
    
      write(*,'(/,"Usage: ", A, " [-v] v2file ")') trim(cmd)
      write(*,'(8x, "-v     : Print extra info")')
@@ -120,8 +104,8 @@ end module read_util_module
   Justplot = .false.
 ! get arguments
   if ( iargc() .ge. 2 ) then
-    call getarg(1,flnm)
-    call getarg(2,flnm2)
+    call get_command_argument(number=1, value=flnm)
+    call get_command_argument(number=2, value=flnm2)
     ierr = 0
     call ext_int_open_for_read( trim(flnm), 0, 0, "", dh1, Status)
     if ( Status /= 0 ) then 
@@ -140,7 +124,7 @@ end module read_util_module
     Justplot = .true.
 924    continue
   if ( iargc() .eq. 3 ) then
-    call getarg(3,arg3)
+    call get_command_argument(number=3, value=arg3)
     read(arg3,*)levlim
     print*,'LEVLIM = ',LEVLIM
   endif

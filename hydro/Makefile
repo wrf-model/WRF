@@ -8,4 +8,4 @@ clean:
 	(cd Main; make clean)
 	(make -f Makefile.comm clean)
 	(cd HRLDAS; make clean)
-	(rm -f */*.mod */*.o mod/*.mod lib/*.a)
+	(rm -f */*.mod */*.o lib/*.a)

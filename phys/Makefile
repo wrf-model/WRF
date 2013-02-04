@@ -21,6 +21,16 @@ MODULES = \
 	module_cam_upper_bc.o \
 	module_cam_bl_diffusion_solver.o \
 	module_cam_bl_eddy_diff.o \
+	module_cam_mp_microp_aero.o \
+	module_cam_mp_cldwat2m_micro.o \
+	module_cam_mp_ndrop.o \
+	module_cam_mp_modal_aero_initialize_data_phys.o \
+	module_cam_mp_radconstants.o \
+	module_cam_mp_conv_water.o \
+	module_cam_mp_qneg3.o \
+	module_data_cam_mam_aero.o \
+	module_data_cam_mam_asect.o \
+	module_cam_infnan.o \
 	module_bl_ysu.o \
 	module_bl_mrf.o \
 	module_bl_gfs.o \
@@ -37,6 +47,7 @@ MODULES = \
 	module_bl_mfshconvpbl.o \
 	module_cu_camuwshcu_driver.o \
 	module_cu_camuwshcu.o \
+	module_shcu_grims.o \
 	module_cu_camzm_driver.o \
 	module_cu_camzm.o \
 	module_bl_temf.o \
@@ -47,6 +58,7 @@ MODULES = \
 	module_cu_kfeta.o \
 	module_cu_tiedtke.o\
 	module_cu_gd.o \
+	module_cu_gf.o \
 	module_cu_nsas.o \
 	module_cu_sas.o \
 	module_cu_osas.o \
@@ -67,6 +79,7 @@ MODULES = \
 	module_mp_nssl_2mom.o \
 	module_mp_wdm5.o \
 	module_mp_wdm6.o \
+	module_mp_cammgmp_driver.o \
 	module_ra_sw.o  \
 	module_ra_clWRF_support.o  \
 	module_ra_gsfcsw.o \
@@ -87,12 +100,14 @@ MODULES = \
 	module_sf_slab.o  \
 	module_sf_noahdrv.o  \
 	module_sf_noahlsm.o  \
+	module_sf_clm.o  \
         module_sf_ssib.o  \
 	module_sf_noah_seaice.o \
 	module_sf_noah_seaice_drv.o \
 	module_sf_noahlsm_glacial_only.o \
 	module_sf_noahmpdrv.o \
 	module_sf_noahmplsm.o \
+	module_sf_noahmp_glacier.o \
         module_sf_urban.o  \
         module_sf_bep.o  \
         module_sf_bep_bem.o \
@@ -129,6 +144,10 @@ MODULES = \
 	module_radiation_driver.o \
 	module_surface_driver.o \
 	module_diagnostics.o \
+	module_lightning_driver.o \
+	module_ltng_cpmpr92z.o \
+	module_ltng_crmpr92.o \
+	module_ltng_iccg.o \
 	module_fdda_psufddagd.o \
 	module_fdda_spnudging.o \
 	module_fddagd_driver.o  \
@@ -138,13 +157,13 @@ MODULES = \
 	module_wind_fitch.o
 
 FIRE_MODULES = \
-        module_fr_sfire_driver.o \
-        module_fr_sfire_driver_wrf.o \
-        module_fr_sfire_atm.o \
-        module_fr_sfire_model.o \
-        module_fr_sfire_core.o \
-        module_fr_sfire_phys.o \
-        module_fr_sfire_util.o
+        module_fr_fire_driver.o \
+        module_fr_fire_driver_wrf.o \
+        module_fr_fire_atm.o \
+        module_fr_fire_model.o \
+        module_fr_fire_core.o \
+        module_fr_fire_phys.o \
+        module_fr_fire_util.o
   
 OBJS    =
 

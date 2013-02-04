@@ -14,7 +14,7 @@
 !             2   Mexico City
 !             3   Mexico City for Testbed, to be consistent with MADE/SORGAM too
 !             4   bc,ic values from wrfinput and wrfbdy files
-#define CASENAME 0
+#define CASENAME 4
 
 	module module_mosaic_initmixrats
 

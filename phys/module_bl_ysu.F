@@ -28,6 +28,7 @@ contains
                   ims,ime, jms,jme, kms,kme,                                   &
                   its,ite, jts,jte, kts,kte,                                   &
                 !optional
+                  wscalek2,delta2,                                             &
                   regime                                           )
 !-------------------------------------------------------------------
       implicit none
@@ -162,6 +163,10 @@ contains
              intent(out  )   ::                                        kpbl2d
   logical, intent(in)        ::                                       flag_qi
 !optional
+   real,     dimension( ims:ime, kms:kme, jms:jme )                          , &
+              intent(inout), optional   ::                           wscalek2
+   real,     dimension( ims:ime, jms:jme )                                   , &
+              intent(inout), optional   ::                             delta2
    real,     dimension( ims:ime, jms:jme )                                   , &
              optional                                                        , &
              intent(inout)   ::                                        regime
@@ -196,6 +201,9 @@ contains
                                                                         dvsfc, &
                                                                         dtsfc, &
                                                                         dqsfc
+   real,     dimension( its:ite, kts:kte )  ::                        wscalek 
+   real,     dimension( its:ite )  ::                                   delta
+
 !
    qv2d(its:ite,:) = 0.0
    do j = jts,jte
@@ -243,6 +251,8 @@ contains
               ,dusfc=dusfc,dvsfc=dvsfc,dtsfc=dtsfc,dqsfc=dqsfc                 &
               ,dt=dt,rcl=1.0,kpbl1d=kpbl2d(ims,j)                              &
               ,exch_hx=exch_h(ims,kms,j)                                       &
+              ,wscalek=wscalek                                                 &
+              ,delta=delta                                                     &
               ,u10=u10(ims,j),v10=v10(ims,j)                                   &
               ,ctopo=ctopo(ims,j),ctopo2=ctopo2(ims,j)                         &
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
@@ -255,8 +265,14 @@ contains
           rqvblten(i,k,j) = rqvbl2dt(i,k)
           rqcblten(i,k,j) = rqvbl2dt(i,k+kte)
           if(present(rqiblten)) rqiblten(i,k,j) = rqvbl2dt(i,k+kte+kte)
+          if(present(wscalek2)) wscalek2(i,k,j) = wscalek(i,k)
         enddo
       enddo
+      if (present (delta2)) then
+      do i = its,ite
+          delta2(i,j) = delta(i)
+      enddo
+      endif
    enddo
 !
    end subroutine ysu
@@ -272,6 +288,7 @@ contains
                   dusfc,dvsfc,dtsfc,dqsfc,                                     &
                   dt,rcl,kpbl1d,                                               &
                   exch_hx,                                                     &
+                  wscalek,delta,                                               &
                   u10,v10,                                                     &
                   ctopo,ctopo2,                                                &
                   ids,ide, jds,jde, kds,kde,                                   &
@@ -409,6 +426,9 @@ contains
    real,     dimension( ims:ime )                                            , &
              optional                                                        , &
              intent(inout)   ::                                        regime
+
+   real, dimension( its:ite, kts:kte ), intent(out)     ::            wscalek
+   real, dimension( its:ite ), intent(out)              ::              delta
 !
 ! local vars
 !
@@ -475,8 +495,6 @@ contains
    real    ::  dtstep,govrthv
    real    ::  cont, conq, conw, conwrc 
 !
-   real, dimension( its:ite, kts:kte )     ::                         wscalek
-   real, dimension( its:ite )              ::                         delta
    real, dimension( its:ite, kts:kte )     ::                     xkzml,xkzhl, &
                                                                zfacent,entfac
    real, dimension( its:ite )              ::                            ust3, &

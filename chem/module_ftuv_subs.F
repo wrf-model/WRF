@@ -25,8 +25,13 @@
 !     data for schu_inti, schu
 !-----------------------------------------------------------------------------
       integer, private, parameter  :: tdim = 501
-      real(dp), private, parameter :: t_del = 5._dp/real(tdim-1,kind=dp)
-      real(dp), private, parameter :: t_fac = real(tdim-1,kind=dp)/5._dp
+      !BSINGH(PNNL)-Lahey compiler doesn't allow use of 'real' in variable declaration
+      real(dp), private, parameter  :: tdim_real = 501.0
+      !real(dp), private, parameter :: t_del = 5._dp/real(tdim-1,kind=dp)!BSINGH(PNNL)-commented out
+      !real(dp), private, parameter :: t_fac = real(tdim-1,kind=dp)/5._dp!BSINGH(PNNL)-commented out
+      real(dp), private, parameter :: t_del = 5._dp/(tdim_real-1._dp)!BSINGH(PNNL)-redefined t_del and t_fac
+      real(dp), private, parameter :: t_fac = (tdim_real-1._dp)/5._dp
+
       integer, private  :: ii, jj
       real(dp), private :: d_table(0:tdim,ngast-1)
       real(dp), private :: x_table(0:tdim,ngast-1)

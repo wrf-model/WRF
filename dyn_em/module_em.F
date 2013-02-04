@@ -13,9 +13,17 @@ MODULE module_em
 	vertical_diffusion_v, vertical_diffusion, vertical_diffusion_3dmp, sixth_order_diffusion, rk_rayleigh_damp, theta_relaxation, vertical_diffusion_mp, zero_tend
 	
    USE module_state_description, only: param_first_scalar, p_qr, p_qv, p_qc, p_qg, p_qi, p_qs, tiedtkescheme, heldsuarez, positivedef, &
-   	gdscheme, g3scheme, kfetascheme, monotonic, wenopd_scalar, weno_scalar, weno_mom
+   	gdscheme, g3scheme, gfscheme, kfetascheme, monotonic, wenopd_scalar, weno_scalar, weno_mom
 	
    USE module_damping_em, only: held_suarez_damp
+
+   USE module_dm 
+
+   USE module_llxy 
+
+   USE module_domain, ONLY : domain, get_ijk_from_grid
+
+   USE module_configure, ONLY: grid_config_rec_type, model_config_rec, model_to_grid_config_rec
 
 CONTAINS
 
@@ -2012,6 +2020,399 @@ SUBROUTINE bound_tke ( tke, tke_upper_bound,       &
 
   END SUBROUTINE bound_tke
 
+!----------------------------------------------------------------------------------
+!cyl: Implement the forward Lagrangian trajectory calculation in WRF 
+!Chiaying Lee RSMAS/UM 
+!----------------------------------------------------------------------------------
+subroutine trajectory (     grid,config_flags,               &
+                            dt,itimestep,ru_m, rv_m, ww_m, mut,muu,muv,&
+                            rdx, rdy, rdn, rdnw,rdzw,        &
+                            traj_i,traj_j,traj_k,            &
+                            traj_long,traj_lat,              &
+                            xlong,xlat,                      &
+                            msft,msfu,msfv,                  &
+                            ids, ide, jds, jde, kds, kde,    &
+                            ims, ime, jms, jme, kms, kme,    &
+                            its, ite, jts, jte, kts, kte    )
 
+!---------------------------------------------------------------------------------------------------
+  implicit none
+!---------------------------------------------------------------------------------------------------
+! Subroutine trajectory calculates forward Lagrangian trajectory  
+! of the selecting points. The trajectory of each point is subjected to u, v, and w.
+! (Lee and Chen 2013, MWR).     
+!
+! The trajectories is initialized with given longitude (degree), latitude (degree), and height(eta level).
+!
+!--traj_i 	grid number in x direction (on mass grid), float
+!--traj_j 	grid number in y direction (on mass grid), float
+!--traj_k	grid number in z direction (on mass grid), float
+!--traj_long	longitude of trajectories, float
+!--traj_lat	longitude of trajectories, float
+!
+!--------------------------------------------------------------------------------------------------
+  TYPE(proj_info) :: proj
+  TYPE(domain), INTENT(IN) :: grid
+  TYPE (grid_config_rec_type) , INTENT(IN)          :: config_flags
+  INTEGER ,                INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
+                                             ims, ime, jms, jme, kms, kme, &
+                                             its, ite, jts, jte, kts, kte
+   INTEGER ,                                      INTENT(IN   ) :: itimestep
+   REAL ,                                      INTENT(IN   ) :: rdx,     &
+                                                                rdy,     &
+                                                                dt
+   REAL , DIMENSION( kms:kme ) ,               INTENT(IN   ) :: rdn,     &
+                                                                rdnw
+
+   REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) ,              &
+                                        INTENT(IN   ) :: ru_m,     &
+                                                         rv_m,     &
+                                                         ww_m
+   REAL , DIMENSION( ims:ime , jms:jme  ) ,              &
+                                        INTENT(IN   ) ::xlong, xlat
+
+  real, dimension(kms:kme), intent(inout) :: traj_i,traj_j,traj_k
+  real, dimension(kms:kme), intent(inout) :: traj_long,traj_lat
+  real, dimension(ims:ime,kms:kme,jms:jme),intent(in) :: rdzw
+  real, dimension(ims:ime,kms:kme,jms:jme)::u,v,w
+  real, dimension(ims:ime,jms:jme),intent(in)::msft,msfu,msfv
+  real, dimension(ims:ime,jms:jme),intent(in)::muu,muv,mut
+  integer :: i_traj,j_traj,k_traj,tjk,k
+  real :: traj_u,traj_v,traj_w
+  real :: rdx_grid,rdy_grid,rdz_grid
+  real :: deltx, delty, deltz,ax
+  real :: const1
+  real :: temp_i,temp_j
+  integer :: i_u,j_v,k_w
+  real :: u_a,u_b,u_c,u_d,v_a,v_b,v_c,v_d,w_a,w_b,w_c,w_d
+  real :: d_a,d_b,d_c,d_d
+  real :: u_temp_upper,u_temp_lower
+  real :: v_temp_upper,v_temp_lower
+  real :: w_temp_upper,w_temp_lower
+  real :: eta_old, eta_new
+  integer :: keta, keta_temp
+! varalbe for map projectory
+  real:: known_lat, known_lon
+  TYPE (grid_config_rec_type)                       :: config_flags_temp
+
+  config_flags_temp = config_flags
+  call trajmapproj(grid, config_flags_temp,proj)
+
+
+! convert ru_m, rv_m and ww_m in u,v,w 
+   const1=1.0/2.0/sqrt(2.0)
+do k=kms,kme
+   u(:,k,:)=ru_m(:,k,:)/muu(:,:)*msfu(:,:)
+   v(:,k,:)=rv_m(:,k,:)/muv(:,:)*msfv(:,:)
+   w(:,k,:)=ww_m(:,k,:)/mut(:,:)*msft(:,:)
+enddo
+do tjk = 1,config_flags%num_traj
+    eta_old = 0.0
+    eta_new = 0.0
+    keta=0
+    keta_temp=0
+    if (traj_lat(tjk) .ne. -9999.0) then                                                         
+      call latlon_to_ij (proj, traj_lat(tjk),traj_long(tjk),traj_i(tjk),traj_j(tjk))
+      i_traj=floor(traj_i(tjk)) ! find the lower_left_bottom corner for trajectory 
+      j_traj=floor(traj_j(tjk)) ! 
+      k_traj=floor(traj_k(tjk)) ! 
+       if ((i_traj .ge. its .and. i_traj .le. ite .and. i_traj .lt. ide) .and. &
+           (j_traj .ge. jts .and. j_traj .le. jte .and. j_traj .lt. jde) .and. &
+           (k_traj .le. kte .and. k_traj .lt. kde)) then
+
+! for u : check x stagger
+        if (traj_i(tjk)-real(floor(traj_i(tjk))) .ge. 0.5 ) then
+          i_u=floor(traj_i(tjk)) + 1
+        else
+          i_u=floor(traj_i(tjk))
+        endif
+! for layer k_traj
+      if (k_traj .ge. 1 ) then
+        u_a=u(i_u  ,k_traj,j_traj+1)
+        u_b=u(i_u  ,k_traj,j_traj  )
+        u_c=u(i_u+1,k_traj,j_traj  )
+        u_d=u(i_u+1,k_traj,j_traj+1)
+      else
+        u_a=0.0
+        u_b=0.0
+        u_c=0.0
+        u_d=0.0
+      endif
+        d_a=abs((real(i_u+1)-(traj_i(tjk)+0.5))*(real(j_traj  )-traj_j(tjk)))
+        d_b=abs((real(i_u+1)-(traj_i(tjk)+0.5))*(real(j_traj+1)-traj_j(tjk)))
+        d_c=abs((real(i_u  )-(traj_i(tjk)+0.5))*(real(j_traj+1)-traj_j(tjk)))
+        d_d=abs((real(i_u  )-(traj_i(tjk)+0.5))*(real(j_traj  )-traj_j(tjk)))
+        u_temp_lower=(u_a*d_a+u_b*d_b+u_c*d_c+u_d*d_d)/(d_a+d_b+d_c+d_d)
+
+!for layer k_traj+1
+        u_a=u(i_u  ,k_traj+1,j_traj+1)
+        u_b=u(i_u  ,k_traj+1,j_traj  )
+        u_c=u(i_u+1,k_traj+1,j_traj  )
+        u_d=u(i_u+1,k_traj+1,j_traj+1)
+        d_a=abs((real(i_u+1)-(traj_i(tjk)+0.5))*(real(j_traj  )-traj_j(tjk)))
+        d_b=abs((real(i_u+1)-(traj_i(tjk)+0.5))*(real(j_traj+1)-traj_j(tjk)))
+        d_c=abs((real(i_u  )-(traj_i(tjk)+0.5))*(real(j_traj+1)-traj_j(tjk)))
+        d_d=abs((real(i_u  )-(traj_i(tjk)+0.5))*(real(j_traj  )-traj_j(tjk)))
+        u_temp_upper=(u_a*d_a+u_b*d_b+u_c*d_c+u_d*d_d)/(d_a+d_b+d_c+d_d)
+
+        traj_u=u_temp_upper*abs(real(k_traj)-traj_k(tjk))+u_temp_lower*abs(real(k_traj+1)-traj_k(tjk))
+
+! for v: check y-stagger
+        if (traj_j(tjk)-real(floor(traj_j(tjk))) .ge. 0.5 ) then
+          j_v=floor(traj_j(tjk)) + 1
+        else
+          j_v=floor(traj_j(tjk))
+        endif
+! for layer k_traj
+      if (k_traj .ge. 1 ) then
+        v_a=v(i_traj  ,k_traj,j_v+1)
+        v_b=v(i_traj  ,k_traj,j_v  )
+        v_c=v(i_traj+1,k_traj,j_v  )
+        v_d=v(i_traj+1,k_traj,j_v+1)
+      else
+        v_a=0.0
+        v_b=0.0
+        v_c=0.0
+        v_d=0.0
+      endif
+        d_a=abs((real(i_traj+1)-traj_i(tjk))*(real(j_v  )-(traj_j(tjk)+0.5)))
+        d_b=abs((real(i_traj+1)-traj_i(tjk))*(real(j_v+1)-(traj_j(tjk)+0.5)))
+        d_c=abs((real(i_traj  )-traj_i(tjk))*(real(j_v+1)-(traj_j(tjk)+0.5)))
+        d_d=abs((real(i_traj  )-traj_i(tjk))*(real(j_v  )-(traj_j(tjk)+0.5)))
+        v_temp_lower=(v_a*d_a+v_b*d_b+v_c*d_c+v_d*d_d)/(d_a+d_b+d_c+d_d)
+!for layer k_traj+1
+        v_a=v(i_traj  ,k_traj+1,j_v+1)
+        v_b=v(i_traj  ,k_traj+1,j_v  )
+        v_c=v(i_traj+1,k_traj+1,j_v  )
+        v_d=v(i_traj+1,k_traj+1,j_v+1)
+        d_a=abs((real(i_traj+1)-traj_i(tjk))*(real(j_v  )-(traj_j(tjk)+0.5)))
+        d_b=abs((real(i_traj+1)-traj_i(tjk))*(real(j_v+1)-(traj_j(tjk)+0.5)))
+        d_c=abs((real(i_traj  )-traj_i(tjk))*(real(j_v+1)-(traj_j(tjk)+0.5)))
+        d_d=abs((real(i_traj  )-traj_i(tjk))*(real(j_v  )-(traj_j(tjk)+0.5)))
+        v_temp_upper=(v_a*d_a+v_b*d_b+v_c*d_c+v_d*d_d)/(d_a+d_b+d_c+d_d)
+
+        traj_v=v_temp_upper*abs(real(k_traj)-traj_k(tjk))+v_temp_lower*abs(real(k_traj+1)-traj_k(tjk))
+
+
+!for w: check for z-stagger
+        if (traj_k(tjk)-real(floor(traj_k(tjk))) .ge. 0.5 ) then
+          k_w=floor(traj_k(tjk)) + 1
+        else
+          k_w=floor(traj_k(tjk))
+        endif
+!for layer j_traj
+        if (k_w .ge. 1) then
+          w_b=w(i_traj  ,k_w  ,j_traj)
+          w_c=w(i_traj+1,k_w  ,j_traj)
+        else
+          w_b=0.0
+          w_c=0.0
+        endif
+        w_a=w(i_traj  ,k_w+1,j_traj)
+        w_d=w(i_traj+1,k_w+1,j_traj)
+        d_a=abs((real(i_traj+1)-traj_i(tjk))*(real(k_w  )-(traj_k(tjk)+0.5)))
+        d_b=abs((real(i_traj+1)-traj_i(tjk))*(real(k_w+1)-(traj_k(tjk)+0.5)))
+        d_c=abs((real(i_traj  )-traj_i(tjk))*(real(k_w+1)-(traj_k(tjk)+0.5)))
+        d_d=abs((real(i_traj  )-traj_i(tjk))*(real(k_w  )-(traj_k(tjk)+0.5)))
+        w_temp_lower=(w_a*d_a+w_b*d_b+w_c*d_c+w_d*d_d)/(d_a+d_b+d_c+d_d)
+!for layer j_traj+1
+        if (k_w .ge. 1) then
+          w_b=w(i_traj  ,k_w  ,j_traj+1)
+          w_c=w(i_traj+1,k_w  ,j_traj+1)
+        else
+          w_b=0.0
+          w_c=0.0
+        endif
+        w_a=w(i_traj  ,k_w+1,j_traj+1)
+        w_d=w(i_traj+1,k_w+1,j_traj+1)
+        d_a=abs((real(i_traj+1)-traj_i(tjk))*(real(k_w  )-(traj_k(tjk)+0.5)))
+        d_b=abs((real(i_traj+1)-traj_i(tjk))*(real(k_w+1)-(traj_k(tjk)+0.5)))
+        d_c=abs((real(i_traj  )-traj_i(tjk))*(real(k_w+1)-(traj_k(tjk)+0.5)))
+        d_d=abs((real(i_traj  )-traj_i(tjk))*(real(k_w  )-(traj_k(tjk)+0.5)))
+        w_temp_upper=(w_a*d_a+w_b*d_b+w_c*d_c+w_d*d_d)/(d_a+d_b+d_c+d_d)
+
+        traj_w=w_temp_upper*abs(real(j_traj)-traj_j(tjk))+w_temp_lower*abs(real(j_traj+1)-traj_j(tjk))
+!get old eta 
+        eta_old=grid%znw(k_w+1)*abs(traj_k(tjk)+0.5-real(k_w))+grid%znw(k_w)*abs(traj_k(tjk)+0.5-real(k_w+1))
+
+        rdx_grid=rdx*msft(i_traj,j_traj)! 1/(dx/msft)
+        rdy_grid=rdy*msft(i_traj,j_traj)
+        rdz_grid=rdnw(k_traj)
+        deltx=traj_u*DT
+        delty=traj_v*DT
+        deltz=traj_w*DT
+        traj_i(tjk)=traj_i(tjk)+deltx*rdx_grid
+        traj_j(tjk)=traj_j(tjk)+delty*rdy_grid
+        eta_new=eta_old+deltz
+! get new traj_k(tjk)
+        keta_temp = 0
+        do keta=1, kme-1
+          if (eta_new .le. grid%znw(keta) .and. eta_new .gt. grid%znw(keta+1)) then
+           keta_temp=keta
+          endif
+        enddo
+        if (keta_temp .eq. 0)  then
+            traj_k(tjk) = traj_k(tjk)
+        else
+            traj_k(tjk) = (real(keta_temp)*abs(eta_new-grid%znw(keta_temp+1))+ &
+                           real(keta_temp+1)*abs(eta_new-grid%znw(keta_temp))) &
+                           /(grid%znw(keta_temp)-grid%znw(keta_temp+1))
+            traj_k(tjk) = traj_k(tjk)-0.5
+        endif
+!! convert i,j,k into lon, lat 
+        call ij_to_latlon (proj, traj_i(tjk), traj_j(tjk),traj_lat(tjk),traj_long(tjk))
+     else
+        traj_i(tjk) = -9999.0
+        traj_j(tjk) = -9999.0
+        traj_k(tjk) = -9999.0
+        traj_long(tjk) = -9999.0
+        traj_lat(tjk) = -9999.0
+     endif
+ endif
+    traj_i(tjk) = wrf_dm_max_real(traj_i(tjk))! save the information from highest fomain
+    traj_j(tjk) = wrf_dm_max_real(traj_j(tjk))
+    traj_k(tjk) = wrf_dm_max_real(traj_k(tjk))
+    traj_long(tjk) = wrf_dm_max_real(traj_long(tjk))
+    traj_lat(tjk) = wrf_dm_max_real(traj_lat(tjk))
+enddo                                                                                            
+!end trajectory
+
+END SUBROUTINE trajectory
+!------------------------------------------------------------------------
+!cyl:Implement the map prpjection code for trajectory calculation 
+!                                    Chiaying Lee  RSMAS/UM        
+!------------------------------------------------------------------------
+subroutine trajmapproj (grid,config_flags,ts_proj)
+!------------------------------------------------------------------------
+!!! This code calculates map-projection of trajectories. It is from share/wrf_timeseries.F
+!------------------------------------------------------------------------
+
+   IMPLICIT NONE
+
+
+   ! Arguments
+   TYPE (domain), INTENT(IN) :: grid
+   TYPE (grid_config_rec_type) , INTENT(IN)  :: config_flags
+   ! Externals
+   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+   INTEGER, EXTERNAL :: get_unused_unit
+
+
+   ! Local variables
+   INTEGER :: ntsloc_temp
+   INTEGER :: i, k, iunit
+   REAL :: ts_rx, ts_ry, ts_xlat, ts_xlong, ts_hgt
+   REAL :: known_lat, known_lon
+   CHARACTER (LEN=132) :: message
+   TYPE (PROJ_INFO), INTENT(out) :: ts_proj
+
+
+   INTEGER :: ids, ide, jds, jde, kds, kde,        &
+              ims, ime, jms, jme, kms, kme,        &
+              ips, ipe, jps, jpe, kps, kpe,        &
+              imsx, imex, jmsx, jmex, kmsx, kmex,  &
+              ipsx, ipex, jpsx, jpex, kpsx, kpex,  &
+              imsy, imey, jmsy, jmey, kmsy, kmey,  &
+              ipsy, ipey, jpsy, jpey, kpsy, kpey
+   TYPE (grid_config_rec_type)               :: config_flags_temp
+
+
+   config_flags_temp = config_flags
+
+     CALL get_ijk_from_grid ( grid ,                               &
+                               ids, ide, jds, jde, kds, kde,        &
+                               ims, ime, jms, jme, kms, kme,        &
+                               ips, ipe, jps, jpe, kps, kpe,        &
+                               imsx, imex, jmsx, jmex, kmsx, kmex,  &
+                               ipsx, ipex, jpsx, jpex, kpsx, kpex,  &
+                               imsy, imey, jmsy, jmey, kmsy, kmey,  &
+                               ipsy, ipey, jpsy, jpey, kpsy, kpey )
+
+     CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags_temp )
+
+
+      ! Set up map transformation structure
+      CALL map_init(ts_proj)
+
+
+      IF (ips <= 1 .AND. 1 <= ipe .AND. &
+          jps <= 1 .AND. 1 <= jpe) THEN
+         known_lat = grid%xlat(1,1)
+         known_lon = grid%xlong(1,1)
+      ELSE
+         known_lat = 9999.
+         known_lon = 9999.
+      END IF
+      known_lat = wrf_dm_min_real(known_lat)
+      known_lon = wrf_dm_min_real(known_lon)
+
+
+      ! Mercator
+      IF (config_flags%map_proj == PROJ_MERC) THEN
+         CALL map_set(PROJ_MERC, ts_proj,               &
+                      truelat1 = config_flags%truelat1, &
+                      lat1     = known_lat,             &
+                      lon1     = known_lon,             &
+                      knowni   = 1.,                    &
+                      knownj   = 1.,                    &
+                      dx       = config_flags%dx)
+      ! Lambert conformal
+      ELSE IF (config_flags%map_proj == PROJ_LC) THEN
+      CALL map_set(PROJ_LC, ts_proj,                  &
+                      truelat1 = config_flags%truelat1,  &
+                      truelat2 = config_flags%truelat2,  &
+                      stdlon   = config_flags%stand_lon, &
+                      lat1     = known_lat,              &
+                      lon1     = known_lon,              &
+                      knowni   = 1.,                     &
+                      knownj   = 1.,                     &
+                      dx       = config_flags%dx)
+      ! Polar stereographic
+      ELSE IF (config_flags%map_proj == PROJ_PS) THEN
+         CALL map_set(PROJ_PS, ts_proj,                  &
+                      truelat1 = config_flags%truelat1,  &
+                      stdlon   = config_flags%stand_lon, &
+                      lat1     = known_lat,              &
+                      lon1     = known_lon,              &
+                      knowni   = 1.,                     &
+                      knownj   = 1.,                     &
+                      dx       = config_flags%dx)
+
+
+      ! Cassini (global ARW)
+      ELSE IF (config_flags%map_proj == PROJ_CASSINI) THEN
+         CALL map_set(PROJ_CASSINI, ts_proj,                            &
+                      latinc   = grid%dy*360.0/(2.0*EARTH_RADIUS_M*PI), &
+                      loninc   = grid%dx*360.0/(2.0*EARTH_RADIUS_M*PI), &
+                      lat1     = known_lat,                             &
+                      lon1     = known_lon,                             &
+! We still need to get POLE_LAT and POLE_LON metadata variables before
+!   this will work for rotated poles.
+                      lat0     = 90.0,                                  &
+                      lon0     = 0.0,                                   &
+                      knowni   = 1.,                                    &
+                      knownj   = 1.,                                    &
+                      stdlon   = config_flags%stand_lon)
+
+
+      ! Rotated latitude-longitude
+      ELSE IF (config_flags%map_proj == PROJ_ROTLL) THEN
+         CALL map_set(PROJ_ROTLL, ts_proj,                      &
+! I have no idea how this should work for NMM nested domains
+                      ixdim    = grid%e_we-1,                   &
+                      jydim    = grid%e_sn-1,                   &
+                      phi      = real(grid%e_sn-2)*grid%dy/2.0, &
+                      lambda   = real(grid%e_we-2)*grid%dx,     &
+                      lat1     = config_flags%cen_lat,          &
+                      lon1     = config_flags%cen_lon,          &
+                      latinc   = grid%dy,                       &
+                      loninc   = grid%dx,                       &
+                      stagger  = HH)
+
+
+      END IF
+
+
+end subroutine trajmapproj
 
 END MODULE module_em

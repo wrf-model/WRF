@@ -1,5 +1,6 @@
 #define WRF_PORT
-
+#define MODAL_AERO
+! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
 module upper_bc
 
 !---------------------------------------------------------------------------------
@@ -15,9 +16,8 @@ module upper_bc
   use ppgrid,       only: pcols, pverp
   use constituents, only: pcnst
 #else
-  use module_cam_support,       only: pcols, pverp, pcnst
+  use module_cam_support,       only: pcols, pverp, pcnst =>pcnst_runtime
 #endif
-
 
   implicit none
   private
@@ -28,7 +28,7 @@ module upper_bc
   public :: ubc_defaultopts    ! set default values of namelist variables
   public :: ubc_setopts        ! get namelist input
   public :: ubc_init           ! global initialization
-#ifndef WRF_PORT     
+#ifndef WRF_PORT   
   public :: ubc_timestep_init  ! time step initialization
 #endif
   public :: ubc_get_vals       ! get ubc values for this step
@@ -85,7 +85,6 @@ end subroutine ubc_setopts
 
   end subroutine ubc_timestep_init
 #endif
-
 !===============================================================================
 
   subroutine ubc_get_vals (lchnk, ncol, ntop_molec, pint, zi, msis_temp, ubc_mmr)

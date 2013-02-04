@@ -45,6 +45,16 @@
 
 ! 1) very minor change to limits on autoconversion source of rain number when cloud water is depleted
 
+! WRFV3.5
+! hm/A. Ackerman bug fix 11/08/12
+
+! 1) for accelerated melting from collisions, should use graupel mass collected by rain, not rain mass 
+!    collected by graupel
+! 2) minor changes to some comments
+! 3) reduction of maximum-allowed ice concentration from 10 cm-3 to 0.3
+!    cm-3. This was done to address the problem of excessive and persistent
+!    anvil cirrus produced by the scheme.
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! THIS SCHEME IS A BULK DOUBLE-MOMENT SCHEME THAT PREDICTS MIXING
@@ -983,8 +993,8 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
      REAL, DIMENSION(KTS:KTE) ::  NSAGG     ! SELF-COLLECTION OF SNOW
      REAL, DIMENSION(KTS:KTE) ::  NPRC      ! CHANGE NC AUTOCONVERSION DROPLETS
      REAL, DIMENSION(KTS:KTE) ::  NPRC1      ! CHANGE NR AUTOCONVERSION DROPLETS
-     REAL, DIMENSION(KTS:KTE) ::  PRAI      ! CHANGE Q AUTOCONVERSION CLOUD ICE
-     REAL, DIMENSION(KTS:KTE) ::  PRCI      ! CHANGE Q ACCRETION CLOUD ICE BY SNOW
+     REAL, DIMENSION(KTS:KTE) ::  PRAI      ! CHANGE Q ACCRETION CLOUD ICE BY SNOW
+     REAL, DIMENSION(KTS:KTE) ::  PRCI      ! CHANGE Q AUTOCONVERSIN CLOUD ICE TO SNOW
      REAL, DIMENSION(KTS:KTE) ::  PSACWS    ! CHANGE Q DROPLET ACCRETION BY SNOW
      REAL, DIMENSION(KTS:KTE) ::  NPSACWS   ! CHANGE N DROPLET ACCRETION BY SNOW
      REAL, DIMENSION(KTS:KTE) ::  PSACWI    ! CHANGE Q DROPLET ACCRETION BY CLOUD ICE
@@ -1545,7 +1555,6 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
             PRACG(K) = 0.
             NPRACG(K) = 0.
             PSMLT(K) = 0.
-            EVPMS(K) = 0.
             PGMLT(K) = 0.
             EVPMG(K) = 0.
             PRACS(K) = 0.
@@ -1759,6 +1768,23 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! IF WATER SUPERSATURATION, GRAUPEL MELTS TO FORM RAIN
 
           IF (QG3D(K).GE.1.E-8) THEN
+
+! hm/aa fix 11-08-12
+
+          IF (QR3D(K).GE.1.E-8) THEN
+
+! HERE PRACG IS MIXING RATIO OF GRAUPEL PER SEC COLLECTED BY RAIN
+
+            PRACG(K) = CONS33*(((1.2*UMR-0.95*UMG)**2+              &
+                  0.08*UMG*UMR)**0.5*RHO(K)*                     &
+                 N0RR(K)*N0G(K)/LAMG(K)**3*                    &
+                  (5./(LAMG(K)**3*LAMR(K))+                    &
+                  2./(LAMG(K)**2*LAMR(K)**2)+                  &
+                  0.5/(LAMG(K)*LAMR(K)**3)))
+
+          ELSE
+             PRACG(K)=0.
+          END IF
 
 ! fix 053011
 ! HM, MODIFY FOR V3.2, ADD ACCELERATED MELTING DUE TO COLLISION WITH RAIN
@@ -3863,7 +3889,12 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! HM ADD 1/10/06, ADD UPPER BOUND ON ICE NUMBER, THIS IS NEEDED
 ! TO PREVENT VERY LARGE ICE NUMBER DUE TO HOMOGENEOUS FREEZING
 ! OF DROPLETS, ESPECIALLY WHEN INUM = 1, SET MAX AT 10 CM-3
-          NI3D(K) = MIN(NI3D(K),10.E6/RHO(K))
+!          NI3D(K) = MIN(NI3D(K),10.E6/RHO(K))
+! HM, 12/28/12, LOWER MAXIMUM ICE CONCENTRATION TO ADDRESS PROBLEM
+! OF EXCESSIVE AND PERSISTENT ANVIL
+! NOTE: THIS MAY CHANGE/REDUCE SENSITIVITY TO AEROSOL/CCN CONCENTRATION
+          NI3D(K) = MIN(NI3D(K),0.3E6/RHO(K))
+
 ! ADD BOUND ON DROPLET NUMBER - CANNOT EXCEED AEROSOL CONCENTRATION
           IF (iinum.EQ.0.AND.IACT.EQ.2) THEN
           NC3D(K) = MIN(NC3D(K),(NANEW1+NANEW2)/RHO(K))

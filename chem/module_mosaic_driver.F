@@ -189,7 +189,7 @@
 		ids, ide, jds, jde, kds, kde,   &
 		ims, ime, jms, jme, kms, kme,   &
 		its, ite, jts, jte, kts, kte,   &
-                vbs_nbin
+                vbs_nbin(1)
 !   id - domain index
 !   ktau - time step number
 !   ktauc - gas and aerosol chemistry time step number
@@ -1331,21 +1331,6 @@
                   enddo
                enddo
 
-      hsoa_c(its:imax,kts:kmax,jts:jmax) = hsoa_c(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-      hsoa_o(its:imax,kts:kmax,jts:jmax) = hsoa_o(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-      bbsoa_c(its:imax,kts:kmax,jts:jmax) = bbsoa_c(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-      bbsoa_o(its:imax,kts:kmax,jts:jmax) = bbsoa_o(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-      biog_v1(its:imax,kts:kmax,jts:jmax) = biog_v1(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-      ant_v1(its:imax,kts:kmax,jts:jmax) = ant_v1(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-
-
    do iphase=1,nphase_aer
    do itype=1,ntype_aer
          do j=jts,jmax
@@ -1602,83 +1587,6 @@
    enddo ! type
    enddo ! phase
 
-!Factor of 1.4 used below to convert OC to OA
-        hoa_a01(its:imax,kts:kmax,jts:jmax) =hoa_a01(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        soa_a01(its:imax,kts:kmax,jts:jmax) =soa_a01(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        bboa_a01(its:imax,kts:kmax,jts:jmax) =bboa_a01(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        bbsoa_a01(its:imax,kts:kmax,jts:jmax) =bbsoa_a01(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        hsoa_a01(its:imax,kts:kmax,jts:jmax) =hsoa_a01(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        arosoa_a01(its:imax,kts:kmax,jts:jmax) =arosoa_a01(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-
-        biog_a01(its:imax,kts:kmax,jts:jmax) =biog_a01(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        totoa_a01(its:imax,kts:kmax,jts:jmax) =totoa_a01(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        hoa_a02(its:imax,kts:kmax,jts:jmax) =hoa_a02(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        soa_a02(its:imax,kts:kmax,jts:jmax) =soa_a02(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        bboa_a02(its:imax,kts:kmax,jts:jmax) =bboa_a02(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        bbsoa_a02(its:imax,kts:kmax,jts:jmax) =bbsoa_a02(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        hsoa_a02(its:imax,kts:kmax,jts:jmax) =hsoa_a02(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        arosoa_a02(its:imax,kts:kmax,jts:jmax) =arosoa_a02(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        biog_a02(its:imax,kts:kmax,jts:jmax) =biog_a02(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        totoa_a02(its:imax,kts:kmax,jts:jmax) =totoa_a02(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        hoa_a03(its:imax,kts:kmax,jts:jmax) =hoa_a03(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        soa_a03(its:imax,kts:kmax,jts:jmax) =soa_a03(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        bboa_a03(its:imax,kts:kmax,jts:jmax) =bboa_a03(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        bbsoa_a03(its:imax,kts:kmax,jts:jmax) =bbsoa_a03(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        hsoa_a03(its:imax,kts:kmax,jts:jmax) =hsoa_a03(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        arosoa_a03(its:imax,kts:kmax,jts:jmax) =arosoa_a03(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        biog_a03(its:imax,kts:kmax,jts:jmax) =biog_a03(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        totoa_a03(its:imax,kts:kmax,jts:jmax) =totoa_a03(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        hoa_a04(its:imax,kts:kmax,jts:jmax) =hoa_a04(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        soa_a04(its:imax,kts:kmax,jts:jmax) =soa_a04(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        bboa_a04(its:imax,kts:kmax,jts:jmax) =bboa_a04(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        bbsoa_a04(its:imax,kts:kmax,jts:jmax) =bbsoa_a04(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        hsoa_a04(its:imax,kts:kmax,jts:jmax) =hsoa_a04(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        arosoa_a04(its:imax,kts:kmax,jts:jmax) =arosoa_a04(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        biog_a04(its:imax,kts:kmax,jts:jmax) =biog_a04(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        totoa_a04(its:imax,kts:kmax,jts:jmax) =totoa_a04(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
 
    end subroutine sum_vbs2
 
@@ -1897,33 +1805,6 @@
                     enddo
                   enddo
                enddo
-
-      hsoa_c(its:imax,kts:kmax,jts:jmax) = hsoa_c(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-      hsoa_o(its:imax,kts:kmax,jts:jmax) = hsoa_o(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-      bbsoa_c(its:imax,kts:kmax,jts:jmax) = bbsoa_c(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-      bbsoa_o(its:imax,kts:kmax,jts:jmax) = bbsoa_o(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-      biog_v1(its:imax,kts:kmax,jts:jmax) = biog_v1(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-      biog_v2(its:imax,kts:kmax,jts:jmax) = biog_v2(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-      biog_v3(its:imax,kts:kmax,jts:jmax) = biog_v3(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-      biog_v4(its:imax,kts:kmax,jts:jmax) = biog_v4(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-      ant_v1(its:imax,kts:kmax,jts:jmax) = ant_v1(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-      ant_v2(its:imax,kts:kmax,jts:jmax) = ant_v2(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-      ant_v3(its:imax,kts:kmax,jts:jmax) = ant_v3(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-      ant_v4(its:imax,kts:kmax,jts:jmax) = ant_v4(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-
 
    do iphase=1,nphase_aer
    do itype=1,ntype_aer
@@ -2770,84 +2651,6 @@
          enddo
    enddo ! type
    enddo ! phase
-
-!Factor of 1.4 used below to convert OC to OA
-        hoa_a01(its:imax,kts:kmax,jts:jmax) =hoa_a01(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        soa_a01(its:imax,kts:kmax,jts:jmax) =soa_a01(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        bboa_a01(its:imax,kts:kmax,jts:jmax) =bboa_a01(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        bbsoa_a01(its:imax,kts:kmax,jts:jmax) =bbsoa_a01(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        hsoa_a01(its:imax,kts:kmax,jts:jmax) =hsoa_a01(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        arosoa_a01(its:imax,kts:kmax,jts:jmax) =arosoa_a01(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-
-        biog_a01(its:imax,kts:kmax,jts:jmax) =biog_a01(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        totoa_a01(its:imax,kts:kmax,jts:jmax) =totoa_a01(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        hoa_a02(its:imax,kts:kmax,jts:jmax) =hoa_a02(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        soa_a02(its:imax,kts:kmax,jts:jmax) =soa_a02(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        bboa_a02(its:imax,kts:kmax,jts:jmax) =bboa_a02(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        bbsoa_a02(its:imax,kts:kmax,jts:jmax) =bbsoa_a02(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        hsoa_a02(its:imax,kts:kmax,jts:jmax) =hsoa_a02(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        arosoa_a02(its:imax,kts:kmax,jts:jmax) =arosoa_a02(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        biog_a02(its:imax,kts:kmax,jts:jmax) =biog_a02(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        totoa_a02(its:imax,kts:kmax,jts:jmax) =totoa_a02(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        hoa_a03(its:imax,kts:kmax,jts:jmax) =hoa_a03(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        soa_a03(its:imax,kts:kmax,jts:jmax) =soa_a03(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        bboa_a03(its:imax,kts:kmax,jts:jmax) =bboa_a03(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        bbsoa_a03(its:imax,kts:kmax,jts:jmax) =bbsoa_a03(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        hsoa_a03(its:imax,kts:kmax,jts:jmax) =hsoa_a03(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        arosoa_a03(its:imax,kts:kmax,jts:jmax) =arosoa_a03(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        biog_a03(its:imax,kts:kmax,jts:jmax) =biog_a03(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        totoa_a03(its:imax,kts:kmax,jts:jmax) =totoa_a03(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        hoa_a04(its:imax,kts:kmax,jts:jmax) =hoa_a04(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        soa_a04(its:imax,kts:kmax,jts:jmax) =soa_a04(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        bboa_a04(its:imax,kts:kmax,jts:jmax) =bboa_a04(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        bbsoa_a04(its:imax,kts:kmax,jts:jmax) =bbsoa_a04(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        hsoa_a04(its:imax,kts:kmax,jts:jmax) =hsoa_a04(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-        arosoa_a04(its:imax,kts:kmax,jts:jmax) =arosoa_a04(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        biog_a04(its:imax,kts:kmax,jts:jmax) =biog_a04(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
-
-        totoa_a04(its:imax,kts:kmax,jts:jmax) =totoa_a04(its:imax,kts:kmax,jts:jmax) &
-                                           / alt(its:imax,kts:kmax,jts:jmax)
 
 
    end subroutine sum_vbs9
@@ -5391,7 +5194,7 @@
 		y_cw_ca, y_cw_oin, y_cw_oc, y_cw_bc, y_cw_num
 
 	character*200 msg
-	character*8 phasetxt, sizetxt, spectxt, typetxt
+	character*20 phasetxt, sizetxt, spectxt, typetxt
 
 
 	p1st = param_first_scalar

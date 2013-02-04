@@ -1635,7 +1635,7 @@
      &            ,grid%ivgtyp,grid%isltyp,grid%vegfrc,grid%shdmin,grid%shdmax,grid%grnflx           &
      &            ,grid%snotime                                             &
      &            ,grid%sfcexc,grid%acsnow,grid%acsnom,grid%snopcx,grid%sice,grid%tg,grid%soiltb          &
-     &            ,grid%icedepth                                                                          &
+     &            ,grid%albsi,grid%icedepth,grid%snowsi                                                   &
      &            ,grid%albase,grid%mxsnal,grid%albedo,grid%sh2o,grid%si,grid%epsr,grid%embck             &
      &            ,grid%u10,grid%v10,grid%th10,grid%q10,grid%tshltr,grid%qshltr,grid%pshltr               &
      &            ,grid%t2,grid%qsg,grid%qvg,grid%qcg,grid%soilt1,grid%tsnav,grid%smfr3d,grid%keepfr3dflag     &
@@ -1849,7 +1849,7 @@
      &             ,grid%apr_capme,grid%apr_capmi                                &
      &             ,grid%mass_flux,grid%xf_ens                                   &
      &             ,grid%pr_ens,grid%gsw                                         &
-     &             ,grid%GD_CLOUD,grid%GD_CLOUD2                                 &
+     &             ,grid%GD_CLOUD,grid%GD_CLOUD2,grid%ktop_deep                  &
 #ifdef WRF_CHEM
      &             ,RAINCV                          &
 #endif
@@ -2847,132 +2847,6 @@
 !----------------------------------------------------------------------
 !
       END SUBROUTINE VWR
-!----------------------------------------------------------------------
-!**********************************************************************
-!----------------------------------------------------------------------
-      SUBROUTINE EXIT(NAME,pint,t,q,u,v,q2,w                           &
-     &               ,ntsd,MYPE,MPI_COMM_COMP                          &
-     &               ,IDS,IDE,JDS,JDE,KDS,KDE                          &
-     &               ,IMS,IME,JMS,JME,KMS,KME                          &
-     &               ,ITS,ITE,JTS,JTE,KTS,KTE)
-!----------------------------------------------------------------------
-!**********************************************************************
-      USE MODULE_EXT_INTERNAL
-!
-!----------------------------------------------------------------------
-      IMPLICIT NONE
-!----------------------------------------------------------------------
-#if defined(DM_PARALLEL) && !defined(STUBMPI)
-      INCLUDE "mpif.h"
-#endif
-!----------------------------------------------------------------------
-      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
-     &                     ,IMS,IME,JMS,JME,KMS,KME                    &
-     &                     ,ITS,ITE,JTS,JTE,KTS,KTE                    &
-     &                     ,MYPE,MPI_COMM_COMP,ntsd
-!
-      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: pint,t,q   &
-                                                           ,u,v,q2,w
-      CHARACTER(*),INTENT(IN) :: NAME
-!
-      INTEGER :: I,J,K,IEND,IERR,IRET
-      CHARACTER(256) :: ERRMESS
-      LOGICAL :: E_BDY,S_BDY
-!----------------------------------------------------------------------
-      IRET=0
-  100 FORMAT(' EXIT ',A,' AT ntsd=',I5)
-      IEND=ITE
-      S_BDY=(JTS==JDS)
-      E_BDY=(ITE==IDE-1)
-!
-      DO K=KTS,KTE
-      DO J=JTS,JTE
-      IEND=ITE
-      IF(E_BDY.AND.MOD(J,2)==0)IEND=ITE-1
-!
-      DO I=ITS,IEND
-        IF(t(I,J,K)>330..OR.t(I,J,K)<180..OR.t(I,J,K)/=t(I,J,K))THEN
-          WRITE(errmess,100)NAME,ntsd
-          CALL wrf_message(trim(errmess))
-          WRITE(errmess,200)I,J,K,t(I,J,K),MYPE,ntsd
-          CALL wrf_message(trim(errmess))
-  200     FORMAT(' BAD VALUE I=',I3,' J=',I3,' K=',I2,' t=',E12.5      &
-     &,          ' MYPE=',I3,' ntsd=',I5)
-          IRET=666
-          return
-!         WRITE(ERRMESS,205)NAME,t(I,J,K),I,J,K,MYPE
-  205     FORMAT(' EXIT ',A,' TEMPERATURE=',E12.5                      &
-     &,          ' AT (',I3,',',I2,',',I3,')',' MYPE=',I3)
-!         CALL WRF_ERROR_FATAL(ERRMESS)
-!         CALL MPI_ABORT(MPI_COMM_WORLD,1,IERR)
-        ELSEIF(q(I,J,K)<-1.E-4.OR.q(I,J,K)>30.E-3                      &
-     &         .OR.q(I,J,K)/=q(I,J,K))THEN
-          WRITE(errmess,100)NAME,ntsd
-          CALL wrf_message(trim(errmess))
-          WRITE(errmess,300)I,J,K,q(I,J,K),MYPE,ntsd
-          CALL wrf_message(trim(errmess))
-  300     FORMAT(' BAD VALUE I=',I3,' J=',I3,' K=',I2,' q=',E12.5      &
-     &,          ' MYPE=',I3,' ntsd=',I5)
-          IRET=666
-          return
-!         WRITE(ERRMESS,305)NAME,q(I,J,K),I,J,K,MYPE
-  305     FORMAT(' EXIT ',A,' SPEC HUMIDITY=',E12.5                    &
-     &,          ' AT (',I3,',',I2,',',I3,')',' MYPE=',I3)
-!         CALL WRF_ERROR_FATAL(ERRMESS)
-!         CALL MPI_ABORT(MPI_COMM_WORLD,1,IERR)
-        ELSEIF(pint(I,J,K)<0..OR.pint(I,J,K)/=pint(I,J,K))THEN
-          WRITE(errmess,100)NAME,ntsd
-          CALL wrf_message(trim(errmess))
-          WRITE(errmess,315)I,J,K,pint(I,J,K),MYPE,ntsd
-          CALL wrf_message(trim(errmess))
-  315     FORMAT(' BAD VALUE I=',I3,' J=',I3,' K=',I2,' pint=',E12.5      &
-     &,          ' MYPE=',I3,' ntsd=',I5)
-          IRET=666
-          return
-!         CALL WRF_ERROR_FATAL(ERRMESS)
-!         CALL MPI_ABORT(MPI_COMM_WORLD,1,IERR)
-        ELSEIF(w(I,J,K)/=w(I,J,K))THEN
-          WRITE(errmess,100)NAME,ntsd
-          CALL wrf_message(trim(errmess))
-          WRITE(errmess,325)I,J,K,w(I,J,K),MYPE,ntsd
-          CALL wrf_message(trim(errmess))
-  325     FORMAT(' BAD VALUE I=',I3,' J=',I3,' K=',I2,' w=',E12.5      &
-     &,          ' MYPE=',I3,' ntsd=',I5)
-          IRET=666
-          return
-!         CALL WRF_ERROR_FATAL(ERRMESS)
-!         CALL MPI_ABORT(MPI_COMM_WORLD,1,IERR)
-        ENDIF
-      ENDDO
-      ENDDO
-      ENDDO
-!
-      DO K=KTS,KTE
-      DO J=JTS,JTE
-      IEND=ITE
-      IF(E_BDY.AND.MOD(J,2)==1)IEND=ITE-1
-      DO I=ITS,IEND
-        IF(ABS(u(I,J,K))>125..OR.ABS(v(I,J,K))>125.                    &
-     &         .OR.u(I,J,K)/=u(I,J,K).OR.v(I,J,K)/=v(I,J,K))THEN
-          WRITE(errmess,100)NAME,ntsd
-          CALL wrf_message(trim(errmess))
-          WRITE(errmess,400)I,J,K,u(I,J,K),v(I,J,K),MYPE,ntsd
-          CALL wrf_message(trim(errmess))
-  400     FORMAT(' BAD VALUE I=',I3,' J=',I3,' K=',I2,' u=',E12.5      &
-     &,          ' v=',E12.5,' MYPE=',I3,' ntsd=',I5)
-          IRET=666
-          return
-!         WRITE(ERRMESS,405)NAME,u(I,J,K),v(I,J,K),I,J,K,MYPE
-  405     FORMAT(' EXIT ',A,' u=',E12.5,' v=',E12.5                    &
-     &,          ' AT (',I3,',',I2,',',I3,')',' MYPE=',I3)
-!         CALL WRF_ERROR_FATAL(ERRMESS)
-!         CALL MPI_ABORT(MPI_COMM_WORLD,1,IERR)
-        ENDIF
-      ENDDO
-      ENDDO
-      ENDDO
-!----------------------------------------------------------------------
-      END SUBROUTINE EXIT
 !----------------------------------------------------------------------
 !**********************************************************************
 !----------------------------------------------------------------------

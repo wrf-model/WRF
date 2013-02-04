@@ -11339,6 +11339,7 @@ CONTAINS
                        p8w, p3d, pi3d,                            &
                        dz8w, tsk, t3d, t8w, rho3d, r, g,          &
                        icloud, warm_rain, cldfra3d,               &
+                       cldfra_mp_all,itimestep,is_CAMMGMP_used,   &
                        f_ice_phy, f_rain_phy,                     &
                        xland, xice, snow,                         &
                        qv3d, qc3d, qr3d,                          &
@@ -11367,13 +11368,13 @@ CONTAINS
 
    IMPLICIT NONE
 !------------------------------------------------------------------
-   LOGICAL, INTENT(IN )      ::        warm_rain
+   LOGICAL, INTENT(IN )      ::        warm_rain, is_CAMMGMP_used
 !
    INTEGER, INTENT(IN )      ::        ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
                                        its,ite, jts,jte, kts,kte
 
-   INTEGER, INTENT(IN )      ::        ICLOUD
+   INTEGER, INTENT(IN )      ::        ICLOUD,itimestep
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          INTENT(IN   ) ::                                   dz8w, &
@@ -11415,6 +11416,7 @@ CONTAINS
          OPTIONAL                                               , &
          INTENT(IN   ) ::                                         &
                                                         CLDFRA3D, &
+                                                   CLDFRA_MP_ALL, &
                                                             QV3D, &
                                                             QC3D, &
                                                             QR3D, &
@@ -11751,11 +11753,26 @@ CONTAINS
 ! moist variables
 
          IF (ICLOUD .ne. 0) THEN
-            IF ( PRESENT( CLDFRA3D ) ) THEN
-              DO K=kts,kte
-                 CLDFRA1D(k)=CLDFRA3D(I,K,J)
-              ENDDO
-            ENDIF
+            if(.NOT.is_CAMMGMP_used) then
+               IF ( PRESENT( CLDFRA3D ) ) THEN
+                  DO K=kts,kte
+                     CLDFRA1D(k)=CLDFRA3D(I,K,J)
+                  ENDDO
+               ENDIF
+            else
+               !BSINGH: cloud fraction from CAMMGMP is being used (Mods by Po-Lun)
+               if (itimestep .eq. 1) then
+                  DO K=kts,kte
+                     CLDFRA1D(k) = CLDFRA3D(I,K,J)
+                  ENDDO
+               else
+                  DO K=kts,kte
+                     CLDFRA1D(k) = CLDFRA_MP_ALL(I,K,J) !PMA
+                  ENDDO
+               end if
+            endif
+
+            
 
             IF (PRESENT(F_QC) .AND. PRESENT(QC3D)) THEN
               IF ( F_QC) THEN
@@ -12001,6 +12018,7 @@ CONTAINS
         if(present(o33d)) then
          do k = kts, nlayers
             o3vmr(ncol,k) = o3mmr(k) * amdo
+            IF ( PRESENT( O33D ) ) THEN
             if(o3input .eq. 2)then
                if(k.le.kte)then
                  o3vmr(ncol,k) = o31d(k)
@@ -12010,6 +12028,7 @@ CONTAINS
                  if(o3vmr(ncol,k) .le. 0.)o3vmr(ncol,k) = o3mmr(k)*amdo
                endif
             endif
+            ENDIF
          enddo
         else
          do k = kts, nlayers

@@ -21,15 +21,18 @@ SUBROUTINE camuwshcu_driver(                                  &
              ,p, p8w, pi_phy, z, z_at_w, dz8w                 &
              ,t_phy, u_phy, v_phy                             &
              ,moist, qv, qc, qi                               &
-             ,pblh_in, tke_pbl, cldfra, cldfra_old, cldfrash  &
-             ,cush_inout, rainsh, pratesh, snowsh, icwmrsh    &
+             ,pblh_in, tke_pbl8w, cldfra, cldfra_old          &
+             ,cldfra_old_mp,cldfra_conv, is_CAMMGMP_used      &
+             ,cldfrash                                        &
+             ,cush_inout, pratesh, snowsh, icwmrsh    &
              ,cmfmc, cmfmc2_inout, rprdsh_inout, cbmf_inout   &
-             ,cmfsl, cmflq, dlf, evapcsh_inout                &
+             ,cmfsl, cmflq, dlf, dlf2, evapcsh_inout          &
              ,rliq, rliq2_inout, cubot, cutop                 &
              ,rushten, rvshten, rthshten                      &
              ,rqvshten, rqcshten, rqrshten                    &
              ,rqishten, rqsshten, rqgshten                    &
-             ,ht                                              &
+             ,rqcnshten,rqinshten                             &
+             ,ht, shfrc3d,itimestep                           &
                                                               )
 ! This routine is based on convect_shallow_tend in CAM. It handles the
 ! mapping of variables from the WRF to the CAM framework for the UW
@@ -38,18 +41,19 @@ SUBROUTINE camuwshcu_driver(                                  &
 ! Author: William.Gustafson@pnl.gov, Jan. 2010
 !------------------------------------------------------------------------
   USE module_state_description, only: param_first_scalar, &
-                                      p_qc, p_qr, p_qi, p_qs, p_qg
-  USE module_cam_support,       only: pcols, pver
+                                      p_qc, p_qr, p_qi, p_qs, p_qg, p_qnc, p_qni
+  USE module_cam_support,       only: pcols, pver, pcnst =>pcnst_runtime
   USE constituents,             only: cnst_get_ind
-  USE physconst,                only: cpair, gravit, latvap
+  USE physconst,                only: latice,cpair, gravit, latvap
   USE uwshcu,                   only: compute_uwshcu_inv
   USE wv_saturation,            only: fqsatd
 
 ! Subroutine arguments...
+  LOGICAL, INTENT(IN) :: is_CAMMGMP_used
   INTEGER, INTENT(IN   ) ::    ids,ide, jds,jde, kds,kde,  &
                                ims,ime, jms,jme, kms,kme,  &
                                its,ite, jts,jte, kts,kte,  &
-                               num_moist
+                               num_moist,itimestep
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ), INTENT(IN) :: &
                               moist    !moist tracer array
@@ -57,13 +61,15 @@ SUBROUTINE camuwshcu_driver(                                  &
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) :: &
                              cldfra, & !cloud fraction
                          cldfra_old, & !previous time step cloud fraction
+                      cldfra_old_mp, &
+                        cldfra_conv, &
                                dz8w, & !height between layer interface (m)
                                   p, & !pressure at mid-level (Pa)
                                 p8w, & !pressure at level interface (Pa)
                              pi_phy, & !exner function, (p0/p)^(R/cpair) (none)
                                  qv, & !water vapor mixing ratio (kg/kg-dry air)
                               t_phy, & !temperature (K)
-                            tke_pbl, & !turbulent kinetic energy from PBL (m2/s2)
+                          tke_pbl8w, & !turbulent kinetic energy from PBL (m2/s2)
                               u_phy, & !zonal wind component on T points (m/s)
                               v_phy, & !meridional wind component on T points (m/s)
                                   z, & !height above sea level at mid-level (m)
@@ -95,7 +101,10 @@ SUBROUTINE camuwshcu_driver(                                  &
                            rqrshten, & !UNcoupled raindrop mixing ratio tend from shallow Cu scheme (kg/kg/s)
                            rqishten, & !UNcoupled ice crystal mixing ratio tend from shallow Cu scheme (kg/kg/s)
                            rqsshten, & !UNcoupled snow mixing ratio tend from shallow Cu scheme (kg/kg/s)
-                           rqgshten    !UNcoupled graupel mixing ratio tend from shallow Cu scheme (kg/kg/s)
+                           rqgshten, & !UNcoupled graupel mixing ratio tend from shallow Cu scheme (kg/kg/s)
+                          rqcnshten, & !PMA
+                          rqinshten
+
 
   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: &
                          cbmf_inout, & !cloud base mass flux (kg/m2/s)
@@ -103,7 +112,6 @@ SUBROUTINE camuwshcu_driver(                                  &
                               cutop, & !level number of top of convection
                          cush_inout, & !convective scale height (~units?)
                             pratesh, & !time-step shallow cumulus precip rate at surface (mm/s)
-                             rainsh, & !time-step shallow cumulus precip (rain+snow) at surface (mm)
                                rliq, & !vertically-integrated reserved cloud condensate (m/s)
                         rliq2_inout, & !vertically-integrated reserved cloud condensate for shallow (m/s)
                              snowsh    !accumulated convective snow rate at surface for shallow Cu (m/s) ~are these the units we should use for WRF?
@@ -111,9 +119,14 @@ SUBROUTINE camuwshcu_driver(                                  &
   REAL, INTENT(IN) :: &
                                  dt    !time step (s)
 
+  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT) ::   &
+                        dlf2           ! Required by CAMMGMP Microphysics                            
+ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT) ::   &
+                           shfrc3d     !Shallow cloud fraction
+
 ! Local variables...
   !Variables dimensioned for input to CAM routines
-  REAL(r8), DIMENSION(pcols, kte, 5) ::  &   ! dimensioned by 5(=ncnst) associated with CAM constituents (cnst_name size)
+  REAL(r8), DIMENSION(pcols, kte, pcnst) ::  &
                              moist8, & !tracer array for CAM routines
                          tnd_tracer    !tracer tendency
 
@@ -122,7 +135,12 @@ SUBROUTINE camuwshcu_driver(                                  &
                                 zi8, & !height above the ground at interfaces (m)
                                tke8, & !turbulent kinetic energy at level interfaces (m2/s2)
                               slflx, & !convective liquid water static energy flux (~units?)
-                              qtflx    !convective total water flux (~units?)
+                              qtflx, & !convective total water flux (~units?)
+                            flxprec, & ! Shallow convective-scale flux of precip (rain+snow) at interfaces [ kg/m2/s ]
+                            flxsnow, & ! Shallow convective-scale flux of snow at interfaces [ kg/m2/s ]
+!BSINGH - CMFMC should be declared for staggered grid
+                            cmfmc2     !cloud fraction
+
                                                             
 
 
@@ -130,7 +148,8 @@ SUBROUTINE camuwshcu_driver(                                  &
                                cld8, & !cloud fraction
                             cldold8, & !previous time step cloud fraction ~should this be just the convective part?
                              cmfdqs, & !convective snow production (~units?)
-                             cmfmc2, & !cloud fraction
+!BSINGH - CMFMC should be declared for staggered grid
+!                             cmfmc2, & !cloud fraction
                             evapcsh, & !evaporation of shallow convection precipitation >= 0. (kg/kg/s)
                            iccmr_uw, & !in-cloud cumulus LWC+IWC (kg/m2)
                            icwmr_uw, & !in-cloud cumulus LWC (kg/m2)
@@ -156,6 +175,13 @@ SUBROUTINE camuwshcu_driver(                                  &
                                vtnd, & !meridional wind tendency (m/s2)
                                 zm8    !height between interfaces (m)
 
+  REAL(r8), DIMENSION(pcols, kte) ::  &
+                           qcten_det, &
+                           qiten_det, &
+                          qcnten_det, &
+                          qinten_det, &
+                           qsten_det
+
   REAL(r8), DIMENSION(pcols) ::  &
                                cbmf, & !cloud base mass flux (kg/m2/s)
                                cnb2, & !bottom level of convective activity
@@ -167,7 +193,7 @@ SUBROUTINE camuwshcu_driver(                                  &
                                snow    !convective snow rate at surface (m/s)
 
   !Other local vars
-  REAL(r8) :: ztodt        !2 delta-t (s)
+  REAL(r8) :: ztodt,dum1
   INTEGER :: i, j, k, kflip, m, mp1
   INTEGER :: cnb, cnt      !index of cloud base and top in CAM world (indices decrease with height)
   INTEGER :: lchnk         !chunk identifier, used to map 2-D to 1-D arrays in WRF
@@ -178,9 +204,9 @@ SUBROUTINE camuwshcu_driver(                                  &
 ! Initialize...
 !
   ncol  = 1           !chunk size in WRF is 1 since we loop over all columns in a tile
-! ncnst = num_moist-1 !currently we only handle the moist array for tracers
-  ncnst = 5 ! this is associated with moist8 array
-  ztodt = 2.*dt
+!  ncnst = num_moist-1 !currently we only handle the moist array for tracers
+  ncnst = pcnst !Balwinder.Singh@pnnl.gov
+  ztodt = dt
 !
 ! Map variables to inputs for zm_convr and call it...
 ! Loop over the points in the tile and treat them each as a CAM chunk.
@@ -200,9 +226,19 @@ SUBROUTINE camuwshcu_driver(                                  &
         !Flip variables on the layer middles
         do k = kts,kte
            kflip = kte-k+1
+           if(is_CAMMGMP_used) then
+              cld8(1,kflip)    = cldfra_old_mp(i,k,j)
+              cldold8(1,kflip) = cldfra_conv(i,k,j)
+           else
+              cld8(1,kflip)    = cldfra(i,k,j)
+              cldold8(1,kflip) = cldfra_old(i,k,j)
+           endif
+           if (itimestep .eq. 1) then
+             cld8(1,kflip)    = 0._r8
+             cldold8(1,kflip) = 0._r8
+           end if
+           cld8(1,kflip) = min(max((cld8(1,kflip) + cldold8(1,kflip)),0._r8),1._r8)
 
-           cld8(1,kflip)    = cldfra(i,k,j)
-           cldold8(1,kflip) = cldfra_old(i,k,j)
            pdel8(1,kflip)   = p8w(i,k,j) - p8w(i,k+1,j)
            pmid8(1,kflip)   = p(i,k,j)
            qh8(1,kflip)     = max( qv(i,k,j)/(1. + qv(i,k,j)), 1e-30 ) !values of 0 cause a crash in entropy
@@ -221,18 +257,29 @@ SUBROUTINE camuwshcu_driver(                                  &
            s8(1,kflip)      = cpair*t8(1,kflip) + gravit*(z(i,k,j)-ht(i,j))
            u8(1,kflip)      = u_phy(i,k,j)
            v8(1,kflip)      = v_phy(i,k,j)
-           zm8(1,kflip)     = dz8w(i,k,j)
+           zm8(1,kflip)     = z(i,k,j)-ht(i,j)!dz8w(i,k,j) !Balwinder.Singh@pnnl.gov: Corrected zm8 computation
         end do
 
         !TKE in CAM is on the interfaces but in WRF it is on the layer
         !middle. We will interpolate the TKE from the to the interfaces
         !and then just use the lowest TKE for the surface and the highest
         !TKE at the top.
-        tke8(1,kte+1) = tke_pbl(i,1,j)    !surface
-        tke8(1,1)     = tke_pbl(i,kte,j)  !model top interface
-        do k = kts,kte-1
-           kflip = kte-k+1
-           tke8(1,kflip) = 0.5*(tke_pbl(i,k,j) + tke_pbl(i,k+1,j))
+
+        !BSINGH - TKE_PBL8W is the TKE at the interfaces, so following code for
+        !interpolation is commented out
+        
+        !tke8(1,kte+1) = tke_pbl(i,1,j)    !surface
+        !tke8(1,1)     = tke_pbl(i,kte,j)  !model top interface
+        !do k = kts,kte-1
+        !   kflip = kte-k+1
+        !   tke8(1,kflip) = 0.5*(tke_pbl(i,k,j) + tke_pbl(i,k+1,j))
+        !end do
+
+        !BSINGH - TKE at the interfaces
+        do k = kts, kte+1
+           kflip = kte - k + 2
+           
+           tke8(1,kflip) = tke_pbl8w(i,k,j)  !Turbulent kinetic energy            
         end do
 
         !Flip the tracer array -
@@ -282,6 +329,7 @@ SUBROUTINE camuwshcu_driver(                                  &
              t8, s8, moist8,                            &
              tke8, cld8, cldold8, pblh, cush,           &
              cmfmc2, slflx, qtflx,                      &
+             flxprec, flxsnow,                          &
              qhtnd, qctnd, qitnd,                       &
              stnd, utnd, vtnd, tnd_tracer,              &
              rprdsh, cmfdqs, precc, snow,               &
@@ -292,9 +340,27 @@ SUBROUTINE camuwshcu_driver(                                  &
 ! Map output into WRF-dimensioned arrays...
 !
         cush_inout(i,j) = cush(1)
-
+!PMA>
+       do k = kts,kte
+           kflip = kte-k+1
+           qc2(1,kflip)=max(0._r8,min(1.e-6_r8,qc2(1,kflip)))
+            if( t8(1,kflip) > 268.15_r8 ) then
+              dum1 = 0.0_r8
+            elseif( t8(1,kflip) < 238.15_r8 ) then
+              dum1 = 1.0_r8
+            else
+              dum1 = ( 268.15_r8 - t8(1,kflip) ) / 30._r8
+            endif
+           qcten_det(1,kflip) = qc2(1,kflip) * ( 1._r8 - dum1 )
+           qiten_det(1,kflip) = qc2(1,kflip) * dum1 
+           qcnten_det(1,kflip) = 3._r8 * (qc2(1,kflip)    * ( 1._r8 - dum1 ) ) / (4._r8*3.14159_r8*(10.e-6_r8**3)*997._r8) 
+           qinten_det(1,kflip) = 3._r8 * (qc2(1,kflip)    *  dum1 ) / (4._r8*3.14159_r8*(50.e-6_r8**3)*500._r8)  
+           qsten_det(1,kflip)      =  qc2(1,kflip) * dum1 * latice                    ! liquid to ice heating
+        end do
         do k = kts,kte
            kflip = kte-k+1
+           dlf2(i,k,j)         = qc2(1,kflip)
+           shfrc3d(i,k,j)      = shfrc(1,kflip)   ! Required by CAM's wet scavenging - Balwinder.Singh@pnnl.gov
 
            !Add shallow reserved cloud condensate to deep reserved cloud condensate
            ! dlf (kg/kg/s, qc in CAM),  rliq done below
@@ -311,12 +377,19 @@ SUBROUTINE camuwshcu_driver(                                  &
            !fields treated specifically by UW scheme
            rushten(i,k,j)  = utnd(1,kflip)
            rvshten(i,k,j)  = vtnd(1,kflip)
-           rthshten(i,k,j) = stnd(1,kflip)/cpair/pi_phy(i,k,j)
+           rthshten(i,k,j) = (stnd(1,kflip)+qsten_det(1,kflip))/cpair/pi_phy(i,k,j)
            rqvshten(i,k,j) = qhtnd(1,kflip)/(1. - qv(i,k,j))
            if( p_qc >= param_first_scalar ) &
-                rqcshten(i,k,j) = qctnd(1,kflip)/(1. - qv(i,k,j))
+                rqcshten(i,k,j) = (qctnd(1,kflip)+qcten_det(1,kflip))/(1. - qv(i,k,j))
            if( p_qi >= param_first_scalar ) &
-                rqishten(i,k,j) = qitnd(1,kflip)/(1. - qv(i,k,j))
+                rqishten(i,k,j) = (qitnd(1,kflip)+qiten_det(1,kflip))/(1. - qv(i,k,j))
+!PMA needs Balwinder to add number tendencies
+           if( p_qnc >= param_first_scalar ) &
+                rqcnshten(i,k,j) = qcnten_det(1,kflip)
+           if( p_qni >= param_first_scalar ) &
+                rqinshten(i,k,j) = qinten_det(1,kflip)
+
+!PMA<
 
 !~Turn off tendencies for most condensates since CAM treats them diagnostically.
 !           !Tendencies of tracers except qv,qc,qi
@@ -336,8 +409,9 @@ SUBROUTINE camuwshcu_driver(                                  &
 !           end do
 
            !Combine shallow and deep cumulus updraft mass flux
-           cmfmc2_inout(i,k,j) = cmfmc2(1,kflip)
-           cmfmc(i,k,j)        = cmfmc(i,k,j) + cmfmc2(1,kflip)
+           !BSINGH - Following quantities should be stored at interfaces
+           !cmfmc2_inout(i,k,j) = cmfmc2(1,kflip)
+           !cmfmc(i,k,j)        = cmfmc(i,k,j) + cmfmc2(1,kflip)
 
         end do !k-loop to kte
 
@@ -347,13 +421,15 @@ SUBROUTINE camuwshcu_driver(                                  &
            !Convective fluxes of 'sl' and 'qt' in energy unit
            cmfsl(i,k,j) = slflx(1,kflip)
            cmflq(i,k,j) = qtflx(1,kflip)*latvap
+           !BSINGH - Storing CMFMC and CMFMC2 at the interfaces
+           cmfmc2_inout(i,k,j) = cmfmc2(1,kflip)
+           cmfmc(i,k,j)        = cmfmc(i,k,j) + cmfmc2(1,kflip)
         end do !k-loop to kte+1
 
         !Calculate fractional occurance of shallow convection
         !~Not doing this since it would require adding time averaging ability across output times
 
         !Rain rate for shallow convection
-!       rainsh(i,j)  = precc(1)*1e3
         pratesh(i,j) = precc(1)*1e3/dt !~this will need changing for adaptive time steps and cudt
 
         !Get indices of convection top and bottom based on deep+shallow

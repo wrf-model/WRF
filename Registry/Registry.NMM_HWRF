@@ -145,10 +145,51 @@ state    real   guessdtc       -        dyn_nmm      1     -     irh     "GUESSD
 state  integer    nrnd1    k    dyn_nmm     1      -      r    "NRND1"
 
 #
+# For the Inlined NCEP Tracker
+#
+
+state real    track_stderr_m1 - dyn_nmm     1      -    rh  "track_stderr_m1" "Standard deviation of tracker centers one hour ago" "km"
+state real    track_stderr_m2 - dyn_nmm     1      -    rh  "track_stderr_m2" "Standard deviation of tracker centers two hours ago" "km"
+state real    track_stderr_m3 - dyn_nmm     1      -    rh  "track_stderr_m3" "Standard deviation of tracker centers three hours ago" "km"
+state integer track_last_hour - dyn_nmm     1      -    rh  "track_last_hour" "Last completed forecast hour" "hours"
+state integer tracker_fixes  ij dyn_nmm     1      -    rh  "tracker_fixes"   "Tracker fix information" ""
+state real    tracker_fixlon  - dyn_nmm     1      -    rh  "tracker_fixlon"  "Storm fix longitude according to inline NCEP tracker" "degrees"
+state real    tracker_fixlat  - dyn_nmm     1      -    rh  "tracker_fixlat"  "Storm fix latitude according to inline NCEP tracker" "degrees"
+state integer tracker_ifix    - dyn_nmm     1      -    rh  "tracker_ifix"    "Storm fix i location (H grid)" ""
+state integer tracker_jfix    - dyn_nmm     1      -    rh  "tracker_jfix"    "Storm fix j location (H grid)" ""
+state logical tracker_havefix - dyn_nmm     1      -    rh  "tracker_havefix" "True = storm fix locations are valid" ""
+state logical tracker_gave_up - dyn_nmm     1      -    rh  "tracker_gave_up" "True = inline tracker gave up on tracking the storm" ""
+
+state real membrane_mslp ij     dyn_nmm     1      -    rh  "membrane_mslp" "Mean Sea Level Pressure using UPP Membrane MSLP method" "Pa"
+state  real   relaxwork  ij     dyn_nmm     1      -    r  "relaxwork" "Temporary Tv storage array for the membrane MSLP overrelaxation loops" "K"
+state  integer relaximask ij    dyn_nmm     1      -    r  "relaximask" "Integer mask array for the membrane MSLP overrelaxation loops" "K"
+state  logical relaxmask ij     dyn_nmm     1      -    r  "relaxmask" "Mask array for the membrane MSLP overrelaxation loops" "K"
+
+state  real   p850rv     ij     dyn_nmm     1      -    rh  "P850rv" "Relative vorticity at 850mbar mass points" "s^-1"
+state  real   p700rv     ij     dyn_nmm     1      -    rh  "P700rv" "Relative vorticity at 700mbar mass points" "s^-1"
+state  real   p850wind   ij     dyn_nmm     1      -    rh  "P850wind" "Wind magnitude at 850mbar mass points" "m/s"
+state  real   p700wind   ij     dyn_nmm     1      -    rh  "P700wind" "Wind magnitude at 700mbar mass points" "m/s"
+state  real   p850z      ij     dyn_nmm     1      -    rh  "P850z" "Height at 850mbar mass points" "m"
+state  real   p700z      ij     dyn_nmm     1      -    rh  "P700z" "Height at 700mbar mass points" "m"
+state  real   m10wind    ij     dyn_nmm     1      -    rh  "m10wind" "Wind magnitude at 10m mass points" "m/s"
+state  real   m10rv      ij     dyn_nmm     1      -    rh  "m10rv" "Relative vorticity at 10m mass points" "m/s"
+
+state  real   sp850rv     ij     dyn_nmm     1      -    rh  "sP850rv" "Smoothed relative vorticity at 850mbar mass points" "s^-1"
+state  real   sp700rv     ij     dyn_nmm     1      -    rh  "sP700rv" "Smoothed relative vorticity at 700mbar mass points" "s^-1"
+state  real   sp850wind   ij     dyn_nmm     1      -    rh  "sP850wind" "Smoothed wind magnitude at 850mbar mass points" "m/s"
+state  real   sp700wind   ij     dyn_nmm     1      -    rh  "sP700wind" "Smoothed wind magnitude at 700mbar mass points" "m/s"
+state  real   sp850z      ij     dyn_nmm     1      -    rh  "sP850z" "Smoothed height at 850mbar mass points" "m"
+state  real   sp700z      ij     dyn_nmm     1      -    rh  "sP700z" "Smoothed height at 700mbar mass points" "m"
+state  real   sm10wind    ij     dyn_nmm     1      -    rh  "sm10wind" "Smoothed wind magnitude at 10m mass points" "m/s"
+state  real   sm10rv      ij     dyn_nmm     1      -    rh  "sm10rv" "Smoothed relative vorticity at 10m mass points" "m/s"
+
+state  real   smslp       ij     dyn_nmm     1      -    rh  "smslp" "Smoothed membrane_mslp" "Pa"
+
+#
 # For the moving nest. This is gopal's doing
 #
 
-state  real   pdyn       ij     dyn_nmm     1      -    rh  "PDYN"  "DYNAMIC PRESSURE USED FOR TRACKING GRID MOTION" 
+state  real   pdyn       ij     dyn_nmm     1      -    rh  "PDYN"  "Dynamic pressure at mean sea level" 
 state  real   mslp       ij     dyn_nmm     1      -    rh  "MSLP"  "MSLP USED TO DETERMINE STORM LOCATION"
 state  real   sqws       ij     dyn_nmm     1      -    r  "SQWS"  "SQUARE OF WIND SPEED AT LEVEL 10"
 state integer xloc         -    dyn_nmm     2      -    r  "XLOC"  "I-LOCATION OF MINIMUM DYNAMIC PRESSURE"
@@ -175,26 +216,26 @@ state real    random         ij     dyn_nmm     1      -    rh "random" "random 
 
 # Location of the SOUTH-WEST nested pointed in terms of parent grid
 
-state integer  IIH      ij     dyn_nmm     1      -      rh
-state integer  JJH      ij     dyn_nmm     1      -      rh
-state integer  IIV      ij     dyn_nmm     1      -      rh
-state integer  JJV      ij     dyn_nmm     1      -      rh
+state integer  IIH      ij     dyn_nmm     1      -      r
+state integer  JJH      ij     dyn_nmm     1      -      r
+state integer  IIV      ij     dyn_nmm     1      -      r
+state integer  JJV      ij     dyn_nmm     1      -      r
 
 # Location of nearest parent point:
 
-state integer  hnear_i  ij     dyn_nmm     1      -      rh "HNEAR_I" "I index of nearest parent point on H grid"
-state integer  hnear_j  ij     dyn_nmm     1      -      rh "HNEAR_J" "J index of nearest parent point on H grid"
+state integer  hnear_i  ij     dyn_nmm     1      -      r "HNEAR_I" "I index of nearest parent point on H grid"
+state integer  hnear_j  ij     dyn_nmm     1      -      r "HNEAR_J" "J index of nearest parent point on H grid"
 
 # Bi-linear weights
 
-state  real   HBWGT1       ij     dyn_nmm     1      -      rh
-state  real   HBWGT2       ij     dyn_nmm     1      -      rh
-state  real   HBWGT3       ij     dyn_nmm     1      -      rh
-state  real   HBWGT4       ij     dyn_nmm     1      -      rh
-state  real   VBWGT1       ij     dyn_nmm     1      -      rh
-state  real   VBWGT2       ij     dyn_nmm     1      -      rh
-state  real   VBWGT3       ij     dyn_nmm     1      -      rh
-state  real   VBWGT4       ij     dyn_nmm     1      -      rh
+state  real   HBWGT1       ij     dyn_nmm     1      -      r
+state  real   HBWGT2       ij     dyn_nmm     1      -      r
+state  real   HBWGT3       ij     dyn_nmm     1      -      r
+state  real   HBWGT4       ij     dyn_nmm     1      -      r
+state  real   VBWGT1       ij     dyn_nmm     1      -      r
+state  real   VBWGT2       ij     dyn_nmm     1      -      r
+state  real   VBWGT3       ij     dyn_nmm     1      -      r
+state  real   VBWGT4       ij     dyn_nmm     1      -      r
 #end of HWRF: 
 
 #
@@ -498,7 +539,7 @@ state  real   pdwdt     ijk   dyn_nmm   1    -     r
 state  real   pint      ijk   dyn_nmm   1    Z     irhd=(DownCopy)u=(NoInterp)f=(NoInterp)       "PINT"      "Model layer interface pressure"   "Pa"
 state  real   w         ijk   dyn_nmm   1    Z     rd=(DownCopy)       "W"         "Vertical velocity"                "m s-1"
 state  real   w_tot     ijk   dyn_nmm   1    Z     hd=(DownCopy)       "W"         "Vertical velocity"                "m s-1"
-state  real   z         ijk   dyn_nmm   1    Z     -        "Z"         "Distance from ground"             "m"
+state  real   z         ijk   dyn_nmm   1    Z     hd=(DownCopy)        "Z"         "Distance from ground"             "m"
 #
 # module_ACCUM.F
 #
@@ -582,21 +623,35 @@ state integer iup_adh   ij   dyn_nmm     1    -    -
 state integer iup_adv   ij   dyn_nmm     1    -    -
 state integer imicrogram -   misc        -    -    r   "imicrogram"  "flag 0/1 0=mixratio, 1=mcrograms/m3"  ""
 
-#
-# Vortex Tracker #4 Variables
-#
+# Vortex Tracker Variables
+
+# Revised Centroid Method (tracker #4)
 state  real   distsq    ij     dyn_nmm     1      -      irh       "DISTSQ"  "Approximate square of distance from nest center for vortex tracker #4" "m2"
 state  real   weightout ij     dyn_nmm     1      -      irh       "WEIGHTOUT"  "Vortex center finder weight array for vortex tracker #4" ""
 state integer mslp_noisy ij    dyn_nmm     1      -      irh       "MSLP_NOISY"  "0=okay, 1=noisy MSLP, 2=outside search radius, 3=boundary (vortex tracker #4)" ""
 
+# Dynamic Pressure Method (tracker #5)
+state  real    vt5searchrad     -      dyn_nmm     1      -    rh  "vt5searchrad" "Search radius from domain center" "m"
+
+# Smoothed Dynamic Pressure (needed for #5, must be passed down by all)
+
+state  integer pdyn_parent_age  -      dyn_nmm     1      -    rh  "PDYN_PARENT_AGE" "Last update of parent pdyn_parent propagated to this nest" ""
+state  integer pdyn_smooth_age  -      dyn_nmm     1      -    rh  "PDYN_SMOOTH_AGE" "Counter of updates of pdyn_smooth" ""
+state  real   pdyn_smooth ij    dyn_nmm     1      -    rhd=(NoInterp)f=(NoInterp)u=(NoInterp)  "PDYN_SMOOTH" "Average of PDYN and PDYN_PARENT" "Pa"
+state  real   pdyn_parent ij    dyn_nmm     1      -   rhu=(NoInterp)\
+d=(DownAged2D:0,n%pdyn_parent_age,c%pdyn_smooth)\
+f=(DownAged2D:c%pdyn_smooth_age,n%pdyn_parent_age,c%pdyn_smooth)\
+                  "PDYN_PARENT" "Parent PDYN_SMOOTH for tracking grid motion" "Pa"
+
+
 # Interpolation information
-state real winfo ijkb dyn_nmm 1 Z hu=(NoInterp)d=(NoInterp) "winfo"  "Nest-parent interpolation/extrapolation weight" ""
-state integer iinfo ijkb dyn_nmm 1 Z hu=(NoInterp)d=(NoInterp) "iinfo" "Nest-parent interpolation index" ""
+state real winfo ijkb dyn_nmm 1 Z u=(NoInterp)d=(NoInterp) "winfo"  "Nest-parent interpolation/extrapolation weight" ""
+state integer iinfo ijkb dyn_nmm 1 Z u=(NoInterp)d=(NoInterp) "iinfo" "Nest-parent interpolation index" ""
 
 # Dummy variable to ensure needed variables are passed to intermediate domain:
 state real interpdummy ij dyn_nmm 1 m f=(NoInterp:pint,pd,q,t,hres_fis,fis,hnear_i,hnear_j,iih,jjh,iiv,jjv,hbwgt1,hbwgt2,hbwgt3,hbwgt4,vbwgt1,vbwgt2,vbwgt3,vbwgt4)d=(NoInterp:pint,pd,q,t,hres_fis,fis,hnear_i,hnear_j,iih,jjh,iiv,jjv,hbwgt1,hbwgt2,hbwgt3,hbwgt4,vbwgt1,vbwgt2,vbwgt3,vbwgt4)u=(NoInterp:pint,pd,q,t,hres_fis,hnear_i,hnear_j,iih,jjh,iiv,jjv,hbwgt1,hbwgt2,hbwgt3,hbwgt4,vbwgt1,vbwgt2,vbwgt3,vbwgt4) "interpdummy" "Dummy array for ensuring variables are transmitted" ""
 
-#                                               
+#                                              
 # table entries are of the form                                         
 #<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>   
 #
@@ -1270,6 +1325,7 @@ rconfig   real    vt4_noise_pmin          namelist,physics      max_domains  850
 rconfig   real    vt4_noise_dpdr          namelist,physics      max_domains  0.6      -      "vt4_noise_dpdr" "Noise Removal: Maximum Realistic dMSLP/dr" "Pa/m"
 rconfig   integer vt4_noise_iter          namelist,physics      max_domains  2        -      "vt4_noise_iter" "Noise Removal: number of iterations" ""
 
+
 # nmm variables
 rconfig   integer idtad                   namelist,physics     max_domains    2       irh    "idtad"  "fundamental timesteps between calls to NMM passive advection scheme"
 rconfig   integer nsoil                   namelist,physics     max_domains    4       irh    "nsoil"  "number of soil layers"
@@ -1444,9 +1500,19 @@ rconfig   integer maxpatch                namelist,physics      1            10 
 **** namelist variable dyn_opt that means to select our exp dyncore.
 package   dyn_exp       dyn_opt==5                   -             -
 
-package   vt4           vortex_tracker==4            -             state:weightout,mslp_noisy,distsq
+#---------------------------------------------------------------
+# Vortex tracker options
 
-#package   passivec1     chem_opt==0                  -
+# NOTE: ALL methods except #1 must use pdyn_parent and pdyn_smooth,
+#       if ANY domains use option #5
+
+package   vt_old_hwrf   vortex_tracker==1            -             -
+package   vt_track_nest vortex_tracker==2            -             state:pdyn_parent,pdyn_smooth
+package   vt_centroid   vortex_tracker==3            -             state:pdyn_parent,pdyn_smooth
+package   vt_rev_centr  vortex_tracker==4            -             state:weightout,mslp_noisy,pdyn_parent,pdyn_smooth,distsq
+package   vt_pdyn       vortex_tracker==5            -             state:pdyn_parent,pdyn_smooth,distsq
+package   vt_ncep       vortex_tracker==6            -             state:pdyn_parent,pdyn_smooth,p850rv,p700rv,p850wind,p700wind,p850z,p700z,m10wind,m10rv,sp850rv,sp700rv,sp850wind,sp700wind,sp850z,sp700z,sm10wind,sm10rv,smslp,tracker_fixes,distsq
+#---------------------------------------------------------------
 package   passiveqv     mp_physics==0                -             moist:qv
 package   kesslerscheme mp_physics==1                -             moist:qv,qc,qr
 package   linscheme     mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg
@@ -1667,9 +1733,9 @@ halo      HALO_NMM_TURBL_B  dyn_nmm 8:dudt,dvdt
 # following halos added for nesting purpose  (gopal's doing):
 
 halo HALO_NMM_TRACK dyn_nmm 120:sm,pdyn,mslp,sqws
-halo HALO_NMM_INTERP_DOWN1 dyn_nmm 24:sm,fis,t,u,v,q,q2,pd,albase,nmm_tsk,mxsnal,tg,islope,cmc,soiltb,vegfrc,sh2o,smc,stc,toposoil,xice,ivgtyp,isltyp,vegfra,sst,weasd,snowh,hlat,hlon,z0,landmask,cwm,ustar,ths,qsh,cldefi,pshltr,dwdt,acprec,thz0,qz0,uz0,vz0,htop,hbot,cuppt,rlwtt,rswtt,t_adj,f_ice,f_rain,f_rimef,pint,hres_fis
+halo HALO_NMM_INTERP_DOWN1 dyn_nmm 24:sm,fis,t,u,v,q,q2,pd,albase,nmm_tsk,mxsnal,tg,islope,cmc,soiltb,vegfrc,sh2o,smc,stc,toposoil,xice,ivgtyp,isltyp,vegfra,sst,weasd,snowh,hlat,hlon,z0,landmask,cwm,ustar,ths,qsh,cldefi,pshltr,dwdt,acprec,thz0,qz0,uz0,vz0,htop,hbot,cuppt,rlwtt,rswtt,t_adj,f_ice,f_rain,f_rimef,pint,hres_fis,pdyn_parent,pdyn_smooth
 halo HALO_NMM_INTERP_DOWN1M dyn_nmm 24:MOIST,SCALAR
-halo HALO_NMM_FORCE_DOWN1 dyn_nmm 24:t,u,v,q,q2,cwm,pint,pd,hres_fis,fis
+halo HALO_NMM_FORCE_DOWN1 dyn_nmm 24:t,u,v,q,q2,cwm,pint,pd,hres_fis,fis,pdyn_parent,pdyn_smooth
 halo HALO_NMM_FORCE_DOWN1M dyn_nmm 24:MOIST,SCALAR
 halo HALO_NMM_WEIGHTS dyn_nmm 48:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4,HNEAR_I,HNEAR_J
 
@@ -1681,8 +1747,14 @@ halo HALO_NMM_FORCE_DOWN_SST dyn_nmm 120:sst
 
 halo HALO_NMM_TERRAIN_SMOOTH   dyn_nmm      24:HRES_AVC
 
+halo HALO_NMM_MSLP dyn_nmm 24:MSLP
+
 halo HALO_NMM_VT4_MSLP  dyn_nmm 8:mslp
 halo HALO_NMM_VT4_NOISE dyn_nmm 8:mslp_noisy
 
 halo HALO_NMM_INTERP_INFO dyn_nmm 8:pd,iinfo,winfo,pint
 halo HALO_NMM_INT_UP dyn_nmm 8:pd,fis,hres_fis,sm
+
+halo HALO_NMM_MEMBRANE_RELAX dyn_nmm 8:relaxwork
+halo HALO_NMM_MEMBRANE_MASK dyn_nmm 8:relaximask
+halo HALO_NMM_MEMBRANE_INTERP dyn_nmm 8:u10,v10,u,v

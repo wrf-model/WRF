@@ -5209,6 +5209,62 @@ print *,'column of cg pres = ',cprs
 
    end subroutine NoInterpMany
 
+   subroutine DownAged2D(junk,                &
+        cids, cide, ckds, ckde, cjds, cjde,   &
+        cims, cime, ckms, ckme, cjms, cjme,   &
+        cits, cite, ckts, ckte, cjts, cjte,   &
+        nfld,                                 &  ! ND field
+        nids, nide, nkds, nkde, njds, njde,   &
+        nims, nime, nkms, nkme, njms, njme,   &
+        nits, nite, nkts, nkte, njts, njte,   &
+        shw,                                  &  ! stencil half width for interp
+        imask,                                &  ! interpolation mask
+        xstag, ystag,                         &  ! staggering of field
+        ipos, jpos,                           &  ! Position of lower left of nest in CD
+        nri, nrj, &
+        c_age,n_age, cfld)
+
+     use module_interp_nmm, only: c2n_copy2d_nomask
+     use module_interp_store
+     implicit none
+     LOGICAL,INTENT(IN) :: xstag, ystag
+     INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+          cims, cime, ckms, ckme, cjms, cjme,   &
+          cits, cite, ckts, ckte, cjts, cjte,   &
+          nids, nide, nkds, nkde, njds, njde,   &
+          nims, nime, nkms, nkme, njms, njme,   &
+          nits, nite, nkts, nkte, njts, njte,   &
+          shw,ipos,jpos,nri,nrj
+
+     integer, intent(in) :: c_age
+     integer, intent(inout) :: n_age
+
+     INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
+     REAL,DIMENSION(cims:cime,cjms:cjme),   INTENT(IN)           :: CFLD,junk
+     REAL,DIMENSION(nims:nime,njms:njme),   INTENT(INOUT)        :: nfld
+
+     logical bad
+     integer i,j
+     ! Skip if the nest is up-to-date with the parent.  Special age
+     ! of 0 means the values are invalid (parent just moved, nest
+     ! just moved or one was initialized).
+     if(n_age==c_age .and. n_age/=0 .and. c_age/=0) then
+        !write(0,*) 'Grid ',grid_id,' not storing pdyn in DownAged2D'
+        !write(0,*) '  reason: n_age=',n_age,' c_age=',c_age
+        return
+     end if
+     n_age=c_age
+     !write(0,*) 'Storing grid ',parent_grid_id,' pdyn_smooth in grid ',grid_id,' pdyn_parent'
+
+     call c2n_copy2d_nomask(IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+          cfld,nfld,                &
+          cims, cime, cjms, cjme,   &
+          nids, nide, njds, njde,   &
+          nims, nime, njms, njme,   &
+          nits, nite, njts, njte, .true.)
+
+   end subroutine DownAged2D
+
    subroutine ForceNearSST   (cfld,                                 &  ! CD field
         cids, cide, ckds, ckde, cjds, cjde,   &
         cims, cime, ckms, ckme, cjms, cjme,   &

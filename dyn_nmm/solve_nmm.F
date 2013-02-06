@@ -45,6 +45,8 @@
 #ifdef WRF_CHEM
       USE MODULE_INPUT_CHEM_DATA,       ONLY: GET_LAST_GAS
 #endif
+
+
 !-----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -308,6 +310,9 @@
          ETAMP_PHYSICS=.TRUE.
 !
       ENDIF
+
+
+
 !
 !-----------------------------------------------------------------------
 !***  SET FLAG FOR THE OPERATIONAL PHYSICS SUITE.
@@ -2391,18 +2396,15 @@
 !
 ! FOR VORTEX FOLLOWING MOVING NEST
 !
+
+
+
 !-----------------------------------------------------------------------------
 !***  CRITERIA SET FOR GRID MOTION. This is gopal's doing
 !-----------------------------------------------------------------------------
 !
 #ifdef MOVE_NESTS
-   IF(grid%id .NE. 1 .AND. MOD(grid%ntsd,1)==0 .AND. grid%num_moves.EQ.-99)THEN
-!-----------------
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_TRACK.inc"
-#endif
-!-----------------
-
+   IF ( grid%num_moves.EQ.-99 ) THEN
       call start_timing()
       call stats_for_move(grid,config_flags &
                          ,IDS,IDE,JDS,JDE,KDS,KDE &

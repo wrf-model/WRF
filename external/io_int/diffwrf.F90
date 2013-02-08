@@ -90,20 +90,22 @@ end module read_util_module
   real, allocatable, dimension(:,:,:,:) :: data,data2
 
   integer :: ierr, ierr2, ier, ier2, Status, Status_next_time, Status_next_time2, Status_next_var, Status_next_var_2
+  integer :: nargs
 
   logical :: newtime = .TRUE.
   logical :: justplot, efound
 
-  integer, external :: iargc
   logical, external :: iveceq
 
   levlim = -1
 
   call ext_int_ioinit(' ', Status)
+ 
+  nargs = command_argument_count()
 
   Justplot = .false.
 ! get arguments
-  if ( iargc() .ge. 2 ) then
+  if ( nargs .ge. 2 ) then
     call get_command_argument(number=1, value=flnm)
     call get_command_argument(number=2, value=flnm2)
     ierr = 0
@@ -123,7 +125,7 @@ end module read_util_module
     name = flnm2
     Justplot = .true.
 924    continue
-  if ( iargc() .eq. 3 ) then
+  if ( nargs .eq. 3 ) then
     call get_command_argument(number=3, value=arg3)
     read(arg3,*)levlim
     print*,'LEVLIM = ',LEVLIM

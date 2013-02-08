@@ -70,6 +70,32 @@
   int oldstate;
   extern int yyerrflag;
 
+#define INITIAL 0
+#define CMD_STATE 1
+#define INC_STATE 2
+#define MOD_STATE 3
+#define INT_STATE 4
+#define PRM_STATE 5
+#define DSP_STATE 6
+#define SSP_STATE 7
+#define INI_STATE 8
+#define EQN_STATE 9
+#define EQNTAG_STATE 10
+#define RATE_STATE 11
+#define LMP_STATE 12
+#define CR_IGNORE 13
+#define SC_IGNORE 14
+#define ATM_STATE 15
+#define LKT_STATE 16
+#define INL_STATE 17
+#define MNI_STATE 18
+#define TPT_STATE 19
+#define USE_STATE 20
+#define COMMENT 21
+#define COMMENT2 22
+#define EQN_ID 23
+#define INL_CODE 24
+
   typedef struct {
                    char *name;
                    int next;
@@ -342,7 +368,7 @@ YY_BUFFER_STATE newb;
     return;
   }
 
-  yy_buffers[ yy_buf_level ]  = yy_current_buffer;
+  yy_buffers[ yy_buf_level ]  = YY_CURRENT_BUFFER;
   yy_line_no[ yy_buf_level ]  = crt_line_no;
   yy_filename[ yy_buf_level ] = crt_filename;
   yy_buf_level++;
@@ -367,7 +393,7 @@ YY_BUFFER_STATE oldb;
 char * oldn;
 
   if ( yy_buf_level > 0 ) {
-    oldb = yy_current_buffer;
+    oldb = YY_CURRENT_BUFFER;
     oldn = crt_filename; 
     yy_buf_level--;
     yy_switch_to_buffer( yy_buffers[yy_buf_level] );

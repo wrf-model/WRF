@@ -23621,11 +23621,10 @@ contains
 ! !USES:
     use shr_kind_mod, only: r8 => shr_kind_r8
     use clm_varpar                      !parameters
-    use clm_varsur                      !surface data 
     use pftvarcon, only : noveg, crop  !vegetation type (PFT) 
     use clm_varcon,only : sand,clay,soic,plant,cover,num_landcover_types
     use clm_varsur      , only :gti, wtxy,vegxy,soic2d,sand3d,clay3d,organic3d,efisop2d &
-                                 ,pctgla,pctlak,pctwet,pcturb
+                                 ,pctgla,pctlak,pctwet,pcturb     !surface data 
     use decompMod , only: get_proc_bounds
 !
 ! !ARGUMENTS:

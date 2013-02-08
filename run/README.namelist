@@ -162,7 +162,7 @@ Additional settings when running WRFVAR:
  s_sn (max_dom)                      = 1,	; start index in y (south-north) direction (leave as is)
  e_sn (max_dom)                      = 82,	; end index in y (south-north) direction (staggered dimension)
  s_vert (max_dom)                    = 1,	; start index in z (vertical) direction (leave as is)
- e_vert (max_dom)                    = 28,	; end index in z (vertical) direction (staggered dimension)
+ e_vert (max_dom)                    = 30,	; end index in z (vertical) direction (staggered dimension)
                                                   Note: this refers to full levels including surface and top
                                                   vertical dimensions need to be the same for all nests
                                                   Note: most variables are unstaggered (= staggered dim - 1)

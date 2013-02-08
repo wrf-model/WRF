@@ -400,7 +400,8 @@
      &                 ,QR=MOIST_TRANS(IMS,KMS,JMS,P_QR),F_QR=F_QR      &
      &                 ,QI=MOIST_TRANS(IMS,KMS,JMS,P_QI),F_QI=F_QI      &
      &                 ,QS=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS      &
-     &                 ,QG=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG     )
+     &                 ,QG=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG      &
+     &                 ,EXPLICIT_CONVECTION=config_flags%cu_physics==0)
 
 
 !
@@ -1430,7 +1431,6 @@
          PQ_I=P_QI
       ENDIF
       CALL nl_get_var_ric(1, var_ric)
-      write(0,*) 'var_ric from namelist Kwon  ',var_ric
 !
       CALL PBL_DRIVER(                                                &
      &                ITIMESTEP=NTSD,DT=DT                            &

@@ -126,9 +126,9 @@
 
    IF ( ( MOD (ide-ids,config_flags%parent_grid_ratio) .NE. 0 ) .OR. &
         ( MOD (jde-jds,config_flags%parent_grid_ratio) .NE. 0 ) ) THEN
-      WRITE(message, FMT='("Nested dimensions are illegal for domain ",I2,":  Both &
-         &MOD(",I4,"-",I1,",",I2,") and MOD(",I4,"-",I1,",",I2,") must = 0" )') &
-         grid%id,ide,ids,config_flags%parent_grid_ratio,jde,jds,config_flags%parent_grid_ratio
+      WRITE(message, FMT='(A,I2,":  Both MOD(",I4,"-",I1,",",I2,") and MOD(",I4,"-",I1,",",I2,") must = 0" )') &
+         "Nested dimensions are illegal for domain ",grid%id,ide,ids,config_flags%parent_grid_ratio,&
+         jde,jds,config_flags%parent_grid_ratio
       CALL wrf_error_fatal ( message )
    END IF
 

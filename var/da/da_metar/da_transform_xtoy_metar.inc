@@ -20,6 +20,9 @@ subroutine da_transform_xtoy_metar (grid, iv, y)
    real, allocatable :: model_q(:,:)
    real, allocatable :: model_p(:)
 
+   real, allocatable :: ub(:,:)
+   real, allocatable :: vb(:,:)
+
    if (trace_use_dull) call da_trace_entry("da_transform_xtoy_metar")
 
    if (sfc_assi_options == sfc_assi_options_1) then
@@ -28,6 +31,11 @@ subroutine da_transform_xtoy_metar (grid, iv, y)
       allocate (model_t(1,iv%info(metar)%n1:iv%info(metar)%n2))
       allocate (model_q(1,iv%info(metar)%n1:iv%info(metar)%n2))
       allocate (model_p(iv%info(metar)%n1:iv%info(metar)%n2))
+
+      allocate (ub(1,iv%info(metar)%n1:iv%info(metar)%n2))
+      allocate (vb(1,iv%info(metar)%n1:iv%info(metar)%n2))
+
+
       ! [1.2] Interpolate horizontally:
 #ifdef A2C
       call da_interp_lin_3d (grid%xa%u, iv%info(metar),model_u,'u')
@@ -41,18 +49,32 @@ subroutine da_transform_xtoy_metar (grid, iv, y)
 
       call da_interp_lin_2d (grid%xa%psfc, iv%info(metar), 1, model_p)
 
+      call da_interp_lin_3d (grid%xb%u, iv%info(metar), ub)
+      call da_interp_lin_3d (grid%xb%v, iv%info(metar), vb)
+
       do n=iv%info(metar)%n1,iv%info(metar)%n2
-         y%metar(n)%u = model_u(1,n)
-         y%metar(n)%v = model_v(1,n)
+
          y%metar(n)%t = model_t(1,n)
          y%metar(n)%q = model_q(1,n)
          y%metar(n)%p = model_p(n)
+
+         if (var_wind) then
+            call da_uv_wind_tgl(y%metar(n)%u,y%metar(n)%v,model_u(1,n),model_v(1,n),ub(1,n),vb(1,n))
+         else
+            y%metar(n)%u = model_u(1,n)
+            y%metar(n)%v = model_v(1,n)
+         end if
+
       end do
+
       deallocate (model_u)
       deallocate (model_v)
       deallocate (model_t)
       deallocate (model_q)
       deallocate (model_p)
+      deallocate (ub)
+      deallocate (vb)
+
    else if (sfc_assi_options == sfc_assi_options_2) then
       ! [2.0] Surface assmiilation approach 2
       call da_transform_xtopsfc(grid,iv,metar,iv%metar(:),y%metar(:))

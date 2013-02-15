@@ -1,4 +1,4 @@
-subroutine da_oi_stats_sonde_sfc (stats_unit, iv)
+subroutine da_oi_stats_sonde_sfc (stats_unit, iv, ob)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -8,10 +8,12 @@ subroutine da_oi_stats_sonde_sfc (stats_unit, iv)
 
    integer,        intent (in) :: stats_unit    ! Output unit for stats.
    type (iv_type), intent (in) :: iv            ! OI
+   type(y_type),   intent (in) :: ob       ! Observation structure.
 
    type (stats_sonde_sfc_type) :: stats
    integer                     :: nu, nv, nt, np, nq
    integer                     :: n
+   real                        :: u_inv, v_inv, sp_inv, dir_inv
 
    if (trace_use_dull) call da_trace_entry("da_oi_stats_sonde_sfc")
 
@@ -37,14 +39,22 @@ subroutine da_oi_stats_sonde_sfc (stats_unit, iv)
 
    do n=1, iv%info(sound)%nlocal
       if (iv%info(sonde_sfc)%proc_domain(1,n)) then
+         u_inv = iv%sonde_sfc(n)%u%inv
+         v_inv = iv%sonde_sfc(n)%v%inv
+         if(var_wind) then
+            sp_inv = iv%sonde_sfc(n)%u%inv
+            dir_inv = iv%sonde_sfc(n)%v%inv
+            call da_cal_sd (ob%sonde_sfc(n)%u, ob%sonde_sfc(n)%v, &
+                            u_inv, v_inv, sp_inv, dir_inv)
+         end if
          call da_stats_calculate(iv%info(sonde_sfc)%obs_global_index(n), &
             0, iv%sonde_sfc(n)%u%qc, &
-            iv%sonde_sfc(n)%u%inv, nu, &
+            u_inv, nu, &
             stats%minimum%u, stats%maximum%u, &
             stats%average%u, stats%rms_err%u)
          call da_stats_calculate(iv%info(sonde_sfc)%obs_global_index(n), &
             0, iv%sonde_sfc(n)%v%qc, &
-            iv%sonde_sfc(n)%v%inv, nv, &
+            v_inv, nv, &
             stats%minimum%v, stats%maximum%v, &
             stats%average%v, stats%rms_err%v)
          call da_stats_calculate(iv%info(sonde_sfc)%obs_global_index(n), &

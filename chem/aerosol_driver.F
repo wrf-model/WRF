@@ -8,9 +8,10 @@
       SUBROUTINE aerosols_driver (id,curr_secs,ktau,dtstep,ktauc,          &
                config_flags,dtstepc,dx,                                    &
                alt,t_phy,moist,aerwrf,p8w,t8w,p_phy,chem,rho_phy,dz8w,rh,  &
-               z,z_at_w,vbs_nbin,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,  &
+               z,z_at_w,pbl_h,cldfra,cldfra_mp_all,vbs_nbin,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,  &
                cvaro2,cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,vcsulf_old,&
-               vdrog3, vdrog3_vbs,brch_ratio,                               &
+               vdrog3, vdrog3_vbs,brch_ratio,dgnum,dgnumwet,wetdens_ap,    &
+               del_h2so4_gasprod,dvmrdt_sv13d,dvmrcwdt_sv13d,              &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
@@ -28,6 +29,10 @@
    USE module_mosaic_driver, only:  mosaic_aerchem_driver
    USE module_aerosols_soa_vbs, only: soa_vbs_driver
    USE module_data_soa_vbs, only: ldrog_vbs
+   USE module_cam_mam_aerchem_driver, only:  cam_mam_aerchem_driver
+   USE modal_aero_data, only:  ntot_amode_cam_mam => ntot_amode
+   USE module_cam_support, only: gas_pcnst => gas_pcnst_modal_aero, &
+        gas_pcnst_pos => gas_pcnst_modal_aero_pos
 
    !  This driver calls subroutines for aerosols parameterizations.
    !
@@ -110,7 +115,7 @@
                                       ids,ide, jds,jde, kds,kde,    &
                                       ims,ime, jms,jme, kms,kme,    &
                                       its,ite, jts,jte, kts,kte,    &
-                                      id,ktau,ktauc,vbs_nbin
+                                      id,ktau,ktauc,vbs_nbin(1) !BSINGH(PNNL)- Lahey compiler forces vbs_nbin to be an array
    REAL(KIND=8), INTENT(IN   ) :: curr_secs
    REAL,         INTENT(IN   ) :: dtstep,dtstepc,dx
 !
@@ -130,6 +135,15 @@
          INTENT(INOUT ) ::                                          &
            h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
            cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,brch_ratio
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, ntot_amode_cam_mam ), &
+         INTENT(INOUT ) ::                                   &
+           dgnum, dgnumwet, wetdens_ap
+
+! del_h2so4_gasprod is h2so4 change during gas-phase chemistry
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), &
+         INTENT(IN ) ::                                   &
+           del_h2so4_gasprod
 !
 ! arrays for aerosol/radiation feedback
 !
@@ -157,13 +171,25 @@
                                                       rh,           & 
                                                       z    ,        &
                                             t8w,p8w,z_at_w ,        &
-                                                    rho_phy
+                                                    rho_phy,        &
+                                                     cldfra,        &
+                                                     cldfra_mp_all    !Cloud fraction from CAMMGMP microphysics
+
+   REAL,  DIMENSION( ims:ime , jms:jme )                   ,        &
+          INTENT(IN   ) ::                                          &
+                                                      pbl_h
 !
 ! sulf concentration before modification by chemical mechanism
 !
      REAL, dimension (ims:ime,kms:kme-0,jms:jme),                   &
                INTENT(INOUT) ::                                     &
                                vcsulf_old
+!
+!tendencies:dvmrdt_sv13d,dvmrcwdt_sv13d are the tendencies which are passsed on from the CAM-MAM cloud chemistry
+!           to gasaerexch subroutine
+!
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, gas_pcnst_pos ),          &
+        INTENT(IN ) ::                                  dvmrdt_sv13d,dvmrcwdt_sv13d 
 
 ! LOCAL  VAR
      integer :: ii,jj,kk
@@ -183,7 +209,7 @@
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
-   CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP)
+   CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,CBMZSORG,CBMZSORG_AQ)
        CALL wrf_debug(15,'aerosols_driver calling sorgam_driver')
        do ii=its,ite
           do kk=kts,kte
@@ -227,7 +253,7 @@
                its,ite, jts,jte, kts,kte                                )
 
    CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, &
-         CBMZ_MOSAIC_8BIN_AQ, SAPRC99_MOSAIC_4BIN_VBS2_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP,  &
+         CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP,  &
          CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
        CALL wrf_debug(15,'aerosols_driver calling mosaic_aerchem_driver')
        CALL mosaic_aerchem_driver(                                      &
@@ -258,6 +284,18 @@
             ims,ime, jms,jme, kms,kme,                               &
             its,ite, jts,jte, kts,kte                                ) 
 !--------------------------------------------------------------------------------------------------
+   CASE (CBMZ_CAM_MAM3_NOAQ, CBMZ_CAM_MAM3_AQ, CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ)
+       CALL wrf_debug(15,'aerosols_driver calling cam_mam_aerchem_driver')
+       CALL cam_mam_aerchem_driver(                                     &
+            id, curr_secs, ktau, dtstep, ktauc, dtstepc, config_flags,  &
+            t_phy, rho_phy, p_phy, p8w, alt, z, z_at_w, pbl_h, cldfra,  &
+            cldfra_mp_all, moist, chem,                                 &
+            dgnum, dgnumwet, wetdens_ap, del_h2so4_gasprod,             &
+            dvmrdt_sv13d,dvmrcwdt_sv13d,                                & 
+            ids,ide, jds,jde, kds,kde,                                  &
+            ims,ime, jms,jme, kms,kme,                                  &
+            its,ite, jts,jte, kts,kte                                   )
+
 
    CASE DEFAULT 
 
@@ -377,7 +415,7 @@
             ims,ime, jms,jme, kms,kme,                                 &
             its,ite, jts,jte, kts,kte                                  )
 
-   CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP)
+   CASE (CBMZ_MOSAIC_4BIN_VBS2_KPP, SAPRC99_MOSAIC_4BIN_VBS2_KPP)
 
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_mosaic_vbs2')
        call sum_pm_mosaic_vbs2 (                                       &

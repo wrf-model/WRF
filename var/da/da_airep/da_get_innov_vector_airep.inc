@@ -22,6 +22,7 @@ subroutine da_get_innov_vector_airep( it,num_qcstat_conv, grid, ob, iv)
    real    :: dy (kms:kme)
    real    :: dym(kms:kme)  
    integer :: k                   ! Index dimension.
+   real    :: speed, direction
 
    real, allocatable :: model_u(:,:)  ! Model value u at ob location.
    real, allocatable :: model_v(:,:)  ! Model value v at ob location.
@@ -128,14 +129,27 @@ subroutine da_get_innov_vector_airep( it,num_qcstat_conv, grid, ob, iv)
          !----------------------------------------------------------------
          ! [3.0] Fast interpolation:
          !----------------------------------------------------------------
+         if (.not. var_wind) then
+             if (ob % airep(n) % u(k) > missing_r .AND. iv % airep(n) % u(k) % qc >= obs_qc_pointer) then
+                 iv % airep(n) % u(k) % inv = ob % airep(n) % u(k) - model_u(k,n)
+             end if
 
-         if (ob % airep(n) % u(k) > missing_r .AND. iv % airep(n) % u(k) % qc >= obs_qc_pointer) then
-            iv % airep(n) % u(k) % inv = ob % airep(n) % u(k) - model_u(k,n)
-         end if
+             if (ob % airep(n) % v(k) > missing_r .AND. iv % airep(n) % v(k) % qc >= obs_qc_pointer) then
+                 iv % airep(n) % v(k) % inv = ob % airep(n) % v(k) - model_v(k,n)
+             end if
+         else
+             call da_ffdduv2 (speed,direction,model_u(k,n), model_v(k,n), iv%info(airep)%lon(k,n), convert_uv2fd)
 
-         if (ob % airep(n) % v(k) > missing_r .AND. iv % airep(n) % v(k) % qc >= obs_qc_pointer) then
-            iv % airep(n) % v(k) % inv = ob % airep(n) % v(k) - model_v(k,n)
-         end if
+             if (ob%airep(n)%u(k) > missing_r .AND. iv%airep(n)%u(k)%qc >= obs_qc_pointer) then
+                 iv%airep(n)%u(k)%inv = ob%airep(n)%u(k) - speed
+             end if
+
+             if (ob%airep(n)%v(k) > missing_r .AND. iv%airep(n)%v(k)%qc >= obs_qc_pointer) then
+                 iv%airep(n)%v(k)%inv = ob%airep(n)%v(k) - direction
+                 if (iv%airep(n)%v(k)%inv > 180.0 ) iv%airep(n)%v(k)%inv = iv%airep(n)%v(k)%inv - 360.0
+                 if (iv%airep(n)%v(k)%inv < -180.0 ) iv%airep(n)%v(k)%inv = iv%airep(n)%v(k)%inv + 360.0
+             end if
+         endif
 
          if (ob % airep(n) % t(k) > missing_r .AND. iv % airep(n) % t(k) % qc >= obs_qc_pointer) then
             iv % airep(n) % t(k) % inv = ob % airep(n) % t(k) - model_t(k,n)

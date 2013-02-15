@@ -90,7 +90,9 @@ SUBROUTINE wrf_ioinit( Status )
   CALL wrf_debug( DEBUG_LVL, 'module_io.F: in wrf_ioinit' )
   CALL init_io_handles    ! defined below
 #ifdef NETCDF
+  if ( model_config_rec%use_netcdf_classic ) SysDepInfo="use_netcdf_classic"
   CALL ext_ncd_ioinit(   SysDepInfo, ierr(1) )
+  SysDepInfo = " "
 #endif
 #ifdef INTIO
   CALL ext_int_ioinit(   SysDepInfo, ierr(2) )
@@ -1154,6 +1156,7 @@ SUBROUTINE wrf_ioclose ( DataHandle, Status )
 
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
+  CALL free_handle( DataHandle )
   IF ( Hndl .GT. -1 ) THEN
     IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
       SELECT CASE ( use_package(io_form) )
@@ -1214,7 +1217,6 @@ SUBROUTINE wrf_ioclose ( DataHandle, Status )
     ELSE
       Status = 0
     ENDIF
-    CALL free_handle( DataHandle )
   ELSE
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS
   ENDIF

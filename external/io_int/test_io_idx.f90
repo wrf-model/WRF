@@ -34,7 +34,7 @@ program test_io_idx
     nrecords = 0
 
     ! Get the file name to index
-    argc = iargc()
+    argc = command_argument_count()
     if (argc .lt. 1 ) then
         write(0, *) 'Must supply a filename to index'
         call exit(1)

@@ -2539,16 +2539,16 @@ PROGRAM convert_emissions
        status=system('rm -f scratem*')
 
 !   All reference emissions except NO
-       IF(i.LE.15)THEN 
-        onefil='../../run/BIOREF_'//             &
+       IF(i.LE.17)THEN 
+        onefil='BIOREF_'//             &
          TRIM(ADJUSTL(emfil(i)))//'.gz'
 !   NO reference emissions
-       ELSE IF(i.GE.16.AND.i.LE.18)THEN 
-        onefil='../../run/AVG_'//                &
+       ELSE IF(i.GE.18.AND.i.LE.20)THEN 
+        onefil='AVG_'//                &
          TRIM(ADJUSTL(emfil(i)))//'.gz'
 !   LAI
        ELSE
-        onefil='../../run/LAI_'//                &
+        onefil='LAI_'//                &
          TRIM(ADJUSTL(emfil(i)))//'S.gz'
        ENDIF
 

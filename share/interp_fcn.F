@@ -1043,6 +1043,95 @@ print *,'column of cg pres = ',cprs
 
 !==================================
 
+   SUBROUTINE c2f_interp ( cfld,                                 &  ! CD field
+                           cids, cide, ckds, ckde, cjds, cjde,   &
+                           cims, cime, ckms, ckme, cjms, cjme,   &
+                           cits, cite, ckts, ckte, cjts, cjte,   &
+                           nfld,                                 &  ! ND field
+                           nids, nide, nkds, nkde, njds, njde,   &
+                           nims, nime, nkms, nkme, njms, njme,   &  
+                           nits, nite, nkts, nkte, njts, njte,   &
+                           shw,                                  &  ! stencil half width
+                           imask,                                &  ! interpolation mask
+                           xstag, ystag,                         &  ! staggering of field
+                           ipos, jpos,                           &  ! Position of lower left of nest in CD
+                           nri, nrj,                             &  ! nest ratios
+                           cbdy_xs, nbdy_xs,                           &
+                           cbdy_xe, nbdy_xe,                           &
+                           cbdy_ys, nbdy_ys,                           &
+                           cbdy_ye, nbdy_ye,                           &
+                           cbdy_txs, nbdy_txs,                       &
+                           cbdy_txe, nbdy_txe,                       &
+                           cbdy_tys, nbdy_tys,                       &
+                           cbdy_tye, nbdy_tye,                       &
+                           parent_id,nest_id                        &!cyl    
+                           )   ! boundary arrays
+     USE module_configure
+     IMPLICIT NONE
+
+!------------------------------------------------------------
+! Subroutine c2f_interp interpolate field from coarse resolution domain
+! to its nested domain. It is written by Dave Gill in NCAR for the purpose 
+! running phys/module_sf_oml.F-DPWP in only d01 and d02 
+!                                       Chiaying Lee RSMAS/UM
+!------------------------------------------------------------
+                            
+     INTEGER, INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+                            cims, cime, ckms, ckme, cjms, cjme,   &
+                            cits, cite, ckts, ckte, cjts, cjte,   &
+                            nids, nide, nkds, nkde, njds, njde,   &
+                            nims, nime, nkms, nkme, njms, njme,   &
+                            nits, nite, nkts, nkte, njts, njte,   &
+                            shw,                                  &
+                            ipos, jpos,                           &
+                            nri, nrj,parent_id,nest_id            !cyl
+
+     LOGICAL, INTENT(IN) :: xstag, ystag
+     
+     REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
+     REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
+     INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
+     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_xs, cbdy_txs, nbdy_xs, nbdy_txs
+     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_xe, cbdy_txe, nbdy_xe, nbdy_txe
+     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_ys, cbdy_tys, nbdy_ys, nbdy_tys
+     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_ye, cbdy_tye, nbdy_ye, nbdy_tye
+     REAL cdt, ndt
+     
+     ! Local
+
+     INTEGER ci, cj, ck, ni, nj, nk, ip, jp
+
+     ! Iterate over the ND tile and compute the values
+     ! from the CD tile. 
+
+!write(0,'("mask cits:cite, ckts:ckte, cjts:cjte ",6i4)')cits,cite, ckts,ckte, cjts,cjte
+!write(0,'("mask nits:nite, nkts:nkte, njts:njte ",6i4)')nits,nite, nkts,nkte, njts,njte
+!     write(0,*)'cyl parentid',parent_id
+!     write(0,*)'cyl nestid',nest_id
+!     If ( nest_id .le. 2 .and. (1.0/rdx .ge. 3000.0 .and. 1.0/rdy .ge. 3000.0)  ) then ! cyl: only run it in the nest domain with dx, dy < 3 km
+     If ( nest_id .eq. 3 ) then 
+     DO nj = njts, njte
+     
+        cj = jpos + (nj-1) / nrj     ! j coord of CD point 
+        jp = mod ( nj , nrj )  ! coord of ND w/i CD point
+        DO nk = nkts, nkte
+           ck = nk
+           DO ni = nits, nite
+              ci = ipos + (ni-1) / nri      ! j coord of CD point 
+              ip = mod ( ni , nri )  ! coord of ND w/i CD point
+              ! This is a trivial implementation of the interp_fcn; just copies
+              ! the values from the CD into the ND
+              nfld( ni, nk, nj ) = cfld( ci , ck , cj )
+           ENDDO
+        ENDDO
+     ENDDO
+     ENDIF  ! cyl
+     RETURN
+
+   END SUBROUTINE c2f_interp
+
+!==================================
+
    SUBROUTINE bdy_interp ( cfld,                                 &  ! CD field
                            cids, cide, ckds, ckde, cjds, cjde,   &
                            cims, cime, ckms, ckme, cjms, cjme,   &
@@ -5119,6 +5208,62 @@ print *,'column of cg pres = ',cprs
      REAL,DIMENSION(nims:nime,njms:njme,nkms:nkme),   INTENT(IN)           :: NFLD,npint,nt,nq
 
    end subroutine NoInterpMany
+
+   subroutine DownAged2D(junk,                &
+        cids, cide, ckds, ckde, cjds, cjde,   &
+        cims, cime, ckms, ckme, cjms, cjme,   &
+        cits, cite, ckts, ckte, cjts, cjte,   &
+        nfld,                                 &  ! ND field
+        nids, nide, nkds, nkde, njds, njde,   &
+        nims, nime, nkms, nkme, njms, njme,   &
+        nits, nite, nkts, nkte, njts, njte,   &
+        shw,                                  &  ! stencil half width for interp
+        imask,                                &  ! interpolation mask
+        xstag, ystag,                         &  ! staggering of field
+        ipos, jpos,                           &  ! Position of lower left of nest in CD
+        nri, nrj, &
+        c_age,n_age, cfld)
+
+     use module_interp_nmm, only: c2n_copy2d_nomask
+     use module_interp_store
+     implicit none
+     LOGICAL,INTENT(IN) :: xstag, ystag
+     INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+          cims, cime, ckms, ckme, cjms, cjme,   &
+          cits, cite, ckts, ckte, cjts, cjte,   &
+          nids, nide, nkds, nkde, njds, njde,   &
+          nims, nime, nkms, nkme, njms, njme,   &
+          nits, nite, nkts, nkte, njts, njte,   &
+          shw,ipos,jpos,nri,nrj
+
+     integer, intent(in) :: c_age
+     integer, intent(inout) :: n_age
+
+     INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
+     REAL,DIMENSION(cims:cime,cjms:cjme),   INTENT(IN)           :: CFLD,junk
+     REAL,DIMENSION(nims:nime,njms:njme),   INTENT(INOUT)        :: nfld
+
+     logical bad
+     integer i,j
+     ! Skip if the nest is up-to-date with the parent.  Special age
+     ! of 0 means the values are invalid (parent just moved, nest
+     ! just moved or one was initialized).
+     if(n_age==c_age .and. n_age/=0 .and. c_age/=0) then
+        !write(0,*) 'Grid ',grid_id,' not storing pdyn in DownAged2D'
+        !write(0,*) '  reason: n_age=',n_age,' c_age=',c_age
+        return
+     end if
+     n_age=c_age
+     !write(0,*) 'Storing grid ',parent_grid_id,' pdyn_smooth in grid ',grid_id,' pdyn_parent'
+
+     call c2n_copy2d_nomask(IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+          cfld,nfld,                &
+          cims, cime, cjms, cjme,   &
+          nids, nide, njds, njde,   &
+          nims, nime, njms, njme,   &
+          nits, nite, njts, njte, .true.)
+
+   end subroutine DownAged2D
 
    subroutine ForceNearSST   (cfld,                                 &  ! CD field
         cids, cide, ckds, ckde, cjds, cjde,   &

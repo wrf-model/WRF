@@ -515,10 +515,12 @@ MODULE module_wrf_quilt
 !</DESCRIPTION>
       USE module_state_description
       USE module_quilt_outbuf_ops
+      USE module_configure, only : grid_config_rec_type, model_config_rec, model_to_grid_config_rec
       IMPLICIT NONE
       INCLUDE 'mpif.h'
 #include "intio_tags.h"
 #include "wrf_io_flags.h"
+      TYPE (grid_config_rec_type)  :: config_flags
       INTEGER itag, ninbuf, ntasks_io_group, ntasks_local_group, mytask_local, ierr
       INTEGER istat
       INTEGER mytask_io_group
@@ -538,11 +540,14 @@ MODULE module_wrf_quilt
       CHARACTER (len=256) :: DateStr , Element, VarName, MemoryOrder , Stagger , DimNames(3), FileName, SysDepInfo, mess
       INTEGER, EXTERNAL :: use_package
       LOGICAL           :: stored_write_record, retval
-      INTEGER iii, jjj, vid, CC, DD
+      INTEGER iii, jjj, vid, CC, DD, dom_id
       LOGICAL           :: call_server_ready
 
 logical okay_to_w
 character*120 sysline
+
+      dom_id = 1 ! always a valid assumption for domain id for this netcdf setting
+      CALL model_to_grid_config_rec ( dom_id , model_config_rec , config_flags )
 
 ! If we've been built with PNETCDF_QUILT defined then we use parallel I/O
 ! within the group of I/O servers rather than gathering the data onto the
@@ -558,7 +563,9 @@ character*120 sysline
 ! Call ext_pkg_ioinit() routines to initialize I/O packages.  
       SysDepInfo = " "
 #ifdef NETCDF
-      CALL ext_ncd_ioinit( SysDepInfo, ierr)
+      if ( config_flags%use_netcdf_classic ) SysDepInfo="use_netcdf_classic"
+      CALL ext_ncd_ioinit( SysDepInfo, ierr )
+      SysDepInfo = " "
 #endif
 #ifdef INTIO
       CALL ext_int_ioinit( SysDepInfo, ierr )

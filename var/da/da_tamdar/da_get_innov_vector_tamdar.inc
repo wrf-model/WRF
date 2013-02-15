@@ -25,6 +25,8 @@ subroutine da_get_innov_vector_tamdar (it, num_qcstat_conv, grid, ob, iv)
    real, allocatable :: model_t(:,:)  ! Model value t at ob location.
    real, allocatable :: model_q(:,:)  ! Model value q at ob location.
 
+   real    :: speed, direction
+
    real    :: v_h(kts:kte)      ! Model value h at ob hor. location.
    real    :: v_p(kts:kte)      ! Model value p at ob hor. location.
 
@@ -132,23 +134,39 @@ subroutine da_get_innov_vector_tamdar (it, num_qcstat_conv, grid, ob, iv)
 
          !-------------------------------------------------------------------
          ! [3.0] Interpolation:
-         !-------------------------------------------------------------------
+         !-----------------------------------------------------------------
+          if (.not. var_wind) then
+             if (ob%tamdar(n)%u(k) > missing_r .AND. iv%tamdar(n)%u(k)%qc >= obs_qc_pointer) then
+                 iv%tamdar(n)%u(k)%inv = ob%tamdar(n)%u(k) - model_u(k,n)
+             end if
 
-         if (ob%tamdar(n)%u(k) > missing_r .AND. iv%tamdar(n)%u(k)%qc >= obs_qc_pointer) then
-            iv%tamdar(n)%u(k)%inv = ob%tamdar(n)%u(k) - model_u(k,n)
-         end if
+             if (ob%tamdar(n)%v(k) > missing_r .AND. iv%tamdar(n)%v(k)%qc >= obs_qc_pointer) then
+                 iv%tamdar(n)%v(k)%inv = ob%tamdar(n)%v(k) - model_v(k,n)
+             end if
 
-         if (ob%tamdar(n)%v(k) > missing_r .AND. iv%tamdar(n)%v(k)%qc >= obs_qc_pointer) then
-            iv%tamdar(n)%v(k)%inv = ob%tamdar(n)%v(k) - model_v(k,n)
-         end if
+            else
 
-         if (ob%tamdar(n)%t(k) > missing_r .AND. iv%tamdar(n)%t(k)%qc >= obs_qc_pointer) then
-            iv%tamdar(n)%t(k)%inv = ob%tamdar(n)%t(k) - model_t(k,n)
-         end if
+              call da_ffdduv2 (speed,direction,model_u(k,n), model_v(k,n), iv%info(tamdar)%lon(k,n), convert_uv2fd)
 
-         if (ob%tamdar(n)%q(k) > missing_r .AND. iv%tamdar(n)%q(k)%qc >= obs_qc_pointer) then
-            iv%tamdar(n)%q(k)%inv = ob%tamdar(n)%q(k) - model_q(k,n)
-         end if
+              if (ob%tamdar(n)%u(k) > missing_r .AND. iv%tamdar(n)%u(k)%qc >= obs_qc_pointer) then
+                  iv%tamdar(n)%u(k)%inv = ob%tamdar(n)%u(k) - speed
+              end if
+
+              if (ob%tamdar(n)%v(k) > missing_r .AND. iv%tamdar(n)%v(k)%qc >= obs_qc_pointer) then
+                  iv%tamdar(n)%v(k)%inv = ob%tamdar(n)%v(k) - direction
+                  if (iv%tamdar(n)%v(k)%inv > 180.0 ) iv%tamdar(n)%v(k)%inv = iv%tamdar(n)%v(k)%inv - 360.0
+                  if (iv%tamdar(n)%v(k)%inv < -180.0 ) iv%tamdar(n)%v(k)%inv = iv%tamdar(n)%v(k)%inv + 360.0
+              end if
+          end if
+
+
+             if (ob%tamdar(n)%t(k) > missing_r .AND. iv%tamdar(n)%t(k)%qc >= obs_qc_pointer) then
+                 iv%tamdar(n)%t(k)%inv = ob%tamdar(n)%t(k) - model_t(k,n)
+             end if
+
+             if (ob%tamdar(n)%q(k) > missing_r .AND. iv%tamdar(n)%q(k)%qc >= obs_qc_pointer) then
+                 iv%tamdar(n)%q(k)%inv = ob%tamdar(n)%q(k) - model_q(k,n)
+             end if
       end do
    end do
 

@@ -1,11 +1,13 @@
 #define WRF_PORT
-
+#define MODAL_AERO
+! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
 !
 ! Common block and statement functions for saturation vapor pressure
 ! look-up procedure, J. J. Hack, February 1990
 !
 ! Ported to WRF by William.Gustafson@pnl.gov, Nov. 2009
 ! Updated to version from CESM1_0_1, Nov. 2010
+! Updated to version CESM1.0.3 (CAM5.1.01)- Balwinder.Singh@pnnl.gov
 !
 ! $Id$
 !
@@ -15,10 +17,7 @@ module wv_saturation
   use abortutils,   only: endrun
   use cam_logfile,  only: iulog
 #else
-  use module_cam_support, only: &
-       masterproc, &
-       endrun, &
-       iulog
+  use module_cam_support, only: endrun, iulog
   use module_wrf_error
 #endif
 
@@ -33,22 +32,24 @@ module wv_saturation
   public aqsat    ! Returns saturation vapor pressure
 #ifndef WRF_PORT
   public aqsatd   ! Same as aqsat, but also returns a temperature derivitive
-  public vqsatd   ! Vector version of aqsatd
 #endif
+  public vqsatd   ! Vector version of aqsatd
   public fqsatd   ! Function version of vqsatd
-#ifndef WRF_PORT
   public qsat_water  ! saturation mixing ration with respect to liquid water
+#ifndef WRF_PORT
   public vqsat_water ! vector version of qsat_water
   public qsat_ice    ! saturation mixing ration with respect to ice
   public vqsat_ice   ! vector version of qsat_ice
+#endif
   public vqsatd_water
+#ifndef WRF_PORT
   public aqsat_water
   public vqsatd2_water         ! Variant of vqsatd_water to print out dqsdT
   public vqsatd2_water_single  ! Single value version of vqsatd2_water
+#endif
   public vqsatd2
   public vqsatd2_single
   public polysvp
-#endif
 !
 ! Data used by cldwat
 !
@@ -115,6 +116,7 @@ subroutine gestbl(tmn     ,tmx     ,trice   ,ip      ,epsil   , &
 #ifndef WRF_PORT
    use spmd_utils, only: masterproc
 #else
+   use module_cam_support, only: masterproc
    use module_cam_gffgch
 #endif
 !------------------------------Arguments--------------------------------
@@ -217,7 +219,7 @@ subroutine gestbl(tmn     ,tmx     ,trice   ,ip      ,epsil   , &
    if (masterproc) then
       write(iulog,*)' *** SATURATION VAPOR PRESSURE TABLE COMPLETED ***'
 #ifdef WRF_PORT
-      call wrf_debug(100,iulog)
+      call wrf_message(iulog)
 #endif
    end if
 
@@ -295,8 +297,8 @@ subroutine aqsat(t       ,p       ,es      ,qs        ,ii      , &
    return
 end subroutine aqsat
 
-#ifndef WRF_PORT
 !++xl
+#ifndef WRF_PORT
 subroutine aqsat_water(t       ,p       ,es      ,qs        ,ii      , &
                        ilen    ,kk      ,kstart  ,kend      )
 !-----------------------------------------------------------------------
@@ -507,7 +509,6 @@ subroutine aqsatd(t       ,p       ,es      ,qs      ,gam     , &
 20 return
 end subroutine aqsatd
 #endif
-
 subroutine vqsatd(t       ,p       ,es      ,qs      ,gam      , &
                   len     )
 !----------------------------------------------------------------------- 
@@ -637,7 +638,6 @@ subroutine vqsatd(t       ,p       ,es      ,qs      ,gam      , &
 !
 end subroutine vqsatd
 
-#ifndef WRF_PORT
 !++xl
 subroutine vqsatd_water(t       ,p       ,es      ,qs      ,gam      , &
                         len     )
@@ -753,7 +753,6 @@ end subroutine vqsatd_water
 
       end function polysvp
 !--xl
-#endif
 
 integer function fqsatd(t    ,p    ,es    ,qs   ,gam   , len     )
   !----------------------------------------------------------------------- 
@@ -774,7 +773,6 @@ integer function fqsatd(t    ,p    ,es    ,qs   ,gam   , len     )
   return
 end function fqsatd
 
-#ifndef WRF_PORT
 real(r8) function qsat_water(t,p)
   !  saturation mixing ratio w/respect to liquid water
   real(r8) t ! temperature
@@ -802,7 +800,7 @@ real(r8) function qsat_water(t,p)
   if(qsat_water < 0.) qsat_water = 1.
 
 end function qsat_water
-
+#ifndef WRF_PORT
 subroutine vqsat_water(t,p,qsat_water,len)
   !  saturation mixing ratio w/respect to liquid water
   integer, intent(in)  :: len
@@ -1035,7 +1033,7 @@ subroutine vqsatd2_water_single(t       ,p       ,es      ,qs      ,dqsdt)
 !
 end subroutine vqsatd2_water_single
 
-
+#endif
 subroutine vqsatd2(t       ,p       ,es      ,qs      ,dqsdt      , &
                    len     )
 !----------------------------------------------------------------------- 
@@ -1336,6 +1334,6 @@ subroutine vqsatd2_single(t       ,p       ,es      ,qs      ,dqsdt)
    return
 !
 end subroutine vqsatd2_single
-#endif
+
 
 end module wv_saturation 

@@ -18,6 +18,8 @@ subroutine da_get_innov_vector_buoy( it,num_qcstat_conv, grid, ob, iv)
    integer :: i, j, k  ! Index dimension.
    real    :: dx, dxm  ! Interpolation weights.
    real    :: dy, dym  ! Interpolation weights.
+   real    :: speed, direction
+
    real, allocatable :: model_u(:,:)  ! Model value u at oblocation.
    real, allocatable :: model_v(:,:)  ! Model value v at oblocation.
    real, allocatable :: model_t(:,:)  ! Model value t at oblocation.
@@ -180,6 +182,7 @@ subroutine da_get_innov_vector_buoy( it,num_qcstat_conv, grid, ob, iv)
       !-----------------------------------------------------------------------
       ! [3.0] Fast interpolation: 
       !-----------------------------------------------------------------------
+   if(.not. var_wind)then
       if (ob % buoy(n) % u > missing_r .AND. iv % buoy(n) % u % qc >= obs_qc_pointer) then
          iv % buoy(n) % u % inv = iv%buoy(n)%u%inv - model_u(1,n)
       else
@@ -191,6 +194,23 @@ subroutine da_get_innov_vector_buoy( it,num_qcstat_conv, grid, ob, iv)
       else
          iv % buoy(n) % v % inv = 0.0
       end if
+    else
+      call da_ffdduv2 (speed,direction,model_u(1,n), model_v(1,n), iv%info(buoy)%lon(1,n), convert_uv2fd)
+
+      if (ob%buoy(n)%u > missing_r .AND. iv%buoy(n)%u%qc >= obs_qc_pointer) then
+          iv%buoy(n)%u%inv = iv%buoy(n)%u%inv - speed
+      else
+         iv % buoy(n) % u % inv = 0.0
+      end if
+
+      if (ob%buoy(n)%v > missing_r .AND. iv%buoy(n)%v%qc >= obs_qc_pointer) then
+          iv%buoy(n)%v%inv = iv%buoy(n)%v%inv - direction
+          if (iv%buoy(n)%v%inv > 180.0 ) iv%buoy(n)%v%inv = iv%buoy(n)%v%inv - 360.0
+          if (iv%buoy(n)%v%inv < -180.0 ) iv%buoy(n)%v%inv = iv%buoy(n)%v%inv + 360.0
+      else
+         iv % buoy(n) % v % inv = 0.0
+      end if
+    end if
 
       if (ob % buoy(n) % p > 0.0 .AND. iv % buoy(n) % p % qc >= obs_qc_pointer) then
          iv % buoy(n) % p % inv = iv%buoy(n)%p%inv - model_p(1,n)

@@ -12,9 +12,11 @@
 
       SUBROUTINE cloudchem_driver(                                   &
                id, ktau, ktauc, dtstep, dtstepc, config_flags,       &
-               t_phy, p_phy, rho_phy, alt, dz8w,                     &
-               moist, cldfra, ph_no2,                                &
-               chem, gas_aqfrac, numgas_aqfrac,                      &
+               t_phy, p_phy, rho_phy, alt, dz8w,                           &
+               p8w, prain3d,scalar,dvmrdt_sv13d,dvmrcwdt_sv13d,      & !Balwinder.Singh@pnnl.gov: Variables required for CAM-MAM cloud chemistry
+               f_ice_phy, f_rain_phy, cldfrai, cldfral,              &
+	       moist, cldfra, cldfra_mp_all, ph_no2,                 &
+	       chem, gas_aqfrac, numgas_aqfrac,                      &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
@@ -28,8 +30,11 @@
    USE module_configure
    USE module_state_description
    USE module_model_constants
-   USE module_mosaic_cloudchem, only: mosaic_cloudchem_driver
-   USE module_sorgam_cloudchem, only: sorgam_cloudchem_driver
+   USE module_cam_support, only: gas_pcnst => gas_pcnst_modal_aero, &
+        gas_pcnst_pos => gas_pcnst_modal_aero_pos
+   USE module_mosaic_cloudchem,  only: mosaic_cloudchem_driver
+   USE module_sorgam_cloudchem,  only: sorgam_cloudchem_driver
+   USE module_cam_mam_cloudchem, only: cam_mam_cloudchem_driver
    USE module_sorgam_aqchem, only: sorgam_aqchem_driver
 
    !  This driver calls subroutines for wet scavenging.
@@ -73,6 +78,7 @@
 !-- t_phy	  temperature (K)
 !-- w             vertical velocity (m/s)
 !-- moist	  moisture array (4D - last index is species) (kg/kg)
+!-- scalar        scalar array (4D) #/kg
 !-- dz8w	  dz between full levels (m)
 !-- p8w		  pressure at full levels (Pa)	
 !-- p_phy	  pressure (Pa)
@@ -125,6 +131,14 @@
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),         &
          INTENT(IN ) ::                                   moist
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_scalar ),         &
+         INTENT(IN ) ::                                   scalar    !Balwinder.Singh@pnnl.gov: Variables required for CAM-MAM cloud chemistry
+!
+!tendencies:dvmrdt_sv13d,dvmrcwdt_sv13d are the tendencies which are passsed on from the CAM-MAM cloud chemistry
+!           to gasaerexch subroutine in cam_mam_aerchem_driver
+!
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, gas_pcnst_pos ),          &
+        INTENT(OUT ) ::                                  dvmrdt_sv13d,dvmrcwdt_sv13d 
 
 ! input from meteorology
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
@@ -135,7 +149,14 @@
                                 alt,                                &
                                 dz8w,                               &
                                 cldfra,                             &
-                                ph_no2
+                                ph_no2,                             &
+                                p8w,                                & !Balwinder.Singh@pnnl.gov: Variables required for CAM-MAM cloud chemistry
+                                prain3d,                            &
+                                F_ICE_PHY,                          &
+                                F_RAIN_PHY,                         &
+                                cldfrai,                            &
+                                cldfral,                            &
+                                cldfra_mp_all
 !
 ! all advected chemical species
 !
@@ -180,7 +201,7 @@
             ims,ime, jms,jme, kms,kme,                &
             its,ite, jts,jte, kts,kte )
 
-   CASE ( RADM2SORG_AQ, RACMSORG_AQ )
+   CASE ( RADM2SORG_AQ, RACMSORG_AQ, CBMZSORG_AQ )
 
        call wrf_debug(15, &
        'cloudchem_driver calling sorgam_cloudchem_driver')
@@ -193,6 +214,21 @@
             ids,ide, jds,jde, kds,kde,                &
             ims,ime, jms,jme, kms,kme,                &
             its,ite, jts,jte, kts,kte )
+    CASE (CBMZ_CAM_MAM3_NOAQ,CBMZ_CAM_MAM3_AQ,CBMZ_CAM_MAM7_NOAQ,CBMZ_CAM_MAM7_AQ)       
+       CALL wrf_debug(15,'cloudchem_driver calling mam_cloudchem_driver')       
+       call cam_mam_cloudchem_driver (                &
+            !Intent Outs
+            dvmrdt_sv13d,dvmrcwdt_sv13d,              & 
+            !Intent in-outs
+            chem,                                     &
+            !Intent ins
+            moist, scalar, p8w, prain3d, p_phy,       &
+            t_phy, dtstepc, ktau,alt, f_ice_phy,      &
+            f_rain_phy, cldfra, cldfra_mp_all,        &
+            cldfrai, cldfral, config_flags,           & 
+            ids,ide, jds,jde, kds,kde,                &
+            ims,ime, jms,jme, kms,kme,                &
+            its,ite, jts,jte, kts,kte                 )
 
    CASE ( RADM2SORG_AQCHEM, RACMSORG_AQCHEM )
 

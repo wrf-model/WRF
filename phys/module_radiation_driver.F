@@ -37,7 +37,7 @@ CONTAINS
               ,ALEVSIZ, no_src_types               &
               ,LEVSIZ, N_OZMIXM                    &
               ,N_AEROSOLC                                    &
-              ,PAERLEV                                       &
+              ,PAERLEV   ,ID                                 &
               ,CAM_ABS_DIM1, CAM_ABS_DIM2 &
               ,CAM_ABS_FREQ_S                         &
               ,XTIME                                           &
@@ -54,7 +54,9 @@ CONTAINS
               , SLWDN, SLWUP                        & ! goddard schemes
               , TSWDN, TSWUP                        & ! goddard schemes
               , SSWDN, SSWUP                        & ! goddard schemes
-              , CLDFRA                                        &
+              , CLDFRA,CLDFRA_MP_ALL                              &
+              , mp_physics                                        &
+              , re_cloud, re_ice, re_snow    & ! G. Thompson
               , PB                                                &
               , F_ICE_PHY,F_RAIN_PHY       &
               , QV, F_QV                     &
@@ -114,6 +116,7 @@ CONTAINS
               ,ALSWVISDIR, ALSWVISDIF, ALSWNIRDIR, ALSWNIRDIF             & !fds ssib alb comp (06/2010)
               ,SWVISDIR, SWVISDIF, SWNIRDIR, SWNIRDIF                     & !fds ssib swr comp (06/2010)
               ,SF_SURFACE_PHYSICS                                         & !fds
+              ,EXPLICIT_CONVECTION                                        & ! .true.=no conv. scheme
                                                                           )
 
 
@@ -130,6 +133,9 @@ CONTAINS
 #endif
                                        ,goddardlwscheme                 & 
                                        ,goddardswscheme                 &  
+# if (EM_CORE == 1)
+                                       ,CAMMGMPSCHEME                   &
+# endif
                                        ,FLGLWSCHEME, FLGSWSCHEME
 
    USE module_model_constants
@@ -266,6 +272,7 @@ CONTAINS
 !-- XLONG         longitude, west is negative (degree)
 !-- ALBEDO                albedo (between 0 and 1)
 !-- CLDFRA        cloud fraction (between 0 and 1)
+!-- CLDFRA_MP_ALL cloud fraction from CAMMGMP microphysics scheme
 !-- EMISS         surface emissivity (between 0 and 1)
 !-- rho_phy       density (kg/m^3)
 !-- rr            dry air density (kg/m^3)
@@ -316,13 +323,17 @@ CONTAINS
 !
 !==================================================================
 !
+   LOGICAL, OPTIONAL, INTENT(IN) :: explicit_convection
+   LOGICAL :: expl_conv
    INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
                                                          kts,kte, &
                                        num_tiles
 
    INTEGER, INTENT(IN)            :: lw_physics, sw_physics
+   INTEGER, INTENT(IN), OPTIONAL       ::  mp_physics
    INTEGER, OPTIONAL, INTENT(IN)  :: o3input, aer_opt
+   INTEGER, INTENT(IN)            :: id
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
                 i_start,i_end,j_start,j_end
@@ -499,7 +510,7 @@ CONTAINS
 
 ! Optional, only for Goddard LW and SW
    REAL, DIMENSION(IMS:IME, JMS:JME, 1:8)       :: ERBE_out  !extra output for SDSU
-   REAL, DIMENSION(IMS:IME, JMS:JME), OPTIONAL, INTENT(OUT) ::   &
+   REAL, DIMENSION(IMS:IME, JMS:JME), OPTIONAL, INTENT(INOUT) ::   & !BSINGH(PNNL)- Lahey compiler forced this specification to be intent-inout
                                                TLWDN, TLWUP,     &
                                                SLWDN, SLWUP,     &
                                                TSWDN, TSWUP,     &
@@ -521,11 +532,15 @@ CONTAINS
          OPTIONAL,                                                &
          INTENT(INOUT) ::                                 CLDFRA
 
+!..G. Thompson
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL:: re_cloud, re_ice, re_snow
+
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                     &
          OPTIONAL,                                                   &
          INTENT(IN   ) ::                                            &
                                                           F_ICE_PHY, &
-                                                         F_RAIN_PHY
+                                                         F_RAIN_PHY, &
+                                                         CLDFRA_MP_ALL
 
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          OPTIONAL,                                                &
@@ -577,7 +592,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_save,qc_save
 
    REAL    ::    next_rad_time
-   LOGICAL ::    run_param , doing_adapt_dt , decided
+   LOGICAL ::    run_param , doing_adapt_dt , decided, is_CAMMGMP_used
    LOGICAL ::    flg_lw, flg_sw
 !------------------------------------------------------------------
 ! solar related variables are added to declaration
@@ -589,6 +604,15 @@ CONTAINS
 #ifdef HWRF
    CHARACTER(len=265) :: wrf_err_message
 #endif
+
+   ! This allows radiation schemes (mainly HWRF) to correctly
+   ! interface with the convection scheme when convection is only
+   ! enabled in some domains:
+   if(present(explicit_convection)) then
+      expl_conv=explicit_convection
+   else
+      expl_conv=.true. ! backward compatibility for ARW
+   endif
 
    CALL wrf_debug (1, 'Top of Radiation Driver')
 !  WRITE ( wrf_err_message , * ) 'itimestep = ',itimestep,', dt = ',dt,', lw and sw options = ',lw_physics,sw_physics
@@ -680,6 +704,14 @@ CONTAINS
 
    gfdl_lw = .false.
    gfdl_sw = .false.
+
+   !BSINGH: Find out if CAMMGMPSCHEME is beingh used in this simulation:
+   is_CAMMGMP_used = .false.
+# if (EM_CORE == 1)
+   if(mp_physics == CAMMGMPSCHEME) then
+      is_CAMMGMP_used = .true.
+   endif
+# endif
 
 
 ! moved up and out of OMP loop because it only needs to be computed once
@@ -878,7 +910,8 @@ CONTAINS
 
 ! ww: Interpolating climatological ozone and aerosol to model time and levels
 !     Adapted from camrad code
-     IF ( o3input .EQ. 2 ) THEN
+     IF ( PRESENT( O3RAD ) ) THEN
+     IF ( o3input .EQ. 2 .AND. id .EQ. 1 ) THEN
 !       ! Find the current month (adapted from Cavallo)
 !       CALL cam_time_interp( ozmixm, pin, levsiz, date_str, &
 !                             ids , ide , jds , jde , kds , kde , &
@@ -897,8 +930,10 @@ CONTAINS
                               ims , ime , jms , jme , kms , kme ,     &
                               its , ite , jts , jte , kts , kte )
      ENDIF
+     ENDIF
 
-     IF ( aer_opt .EQ. 1 ) THEN
+     IF ( PRESENT( AEROD ) ) THEN
+     IF ( aer_opt .EQ. 1 .AND. id .EQ. 1 ) THEN
         call aer_time_int(julday,julian,aerodm,aerodt,alevsiz,n_ozmixm-1,no_src_types,    &
                               ids , ide , jds , jde , kds , kde ,     &
                               ims , ime , jms , jme , kms , kme ,     &
@@ -908,7 +943,7 @@ CONTAINS
                               ids , ide , jds , jde , kds , kde ,     &
                               ims , ime , jms , jme , kms , kme ,     &
                               its , ite , jts , jte , kts , kte )
-
+     ENDIF
      ENDIF
 
      lwrad_select: SELECT CASE(lw_physics)
@@ -1017,7 +1052,9 @@ CONTAINS
 
              gfdl_lw  = .true.
 
-               CALL HWRFRA(DT=dt,thraten=RTHRATEN,thratenlw=RTHRATENLW,thratensw=RTHRATENSW,pi3d=pi, &
+
+               CALL HWRFRA(explicit_convection=expl_conv, &
+                    DT=dt,thraten=RTHRATEN,thratenlw=RTHRATENLW,thratensw=RTHRATENSW,pi3d=pi, &
                         XLAND=xland,P8w=p8w,DZ8w=dz8w,RHO_PHY=rho,P_PHY=p,T=t,          &
                         QV=qv,QW=qc_temp,QI=Qi,                      &
                         TSK2D=tsk,GLW=GLW,GSW=GSW,                                 &
@@ -1106,6 +1143,8 @@ CONTAINS
                   P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t,    &
                   T8W=t8w,RHO3D=rho,R=R_d,G=G,                      &
                   ICLOUD=icloud,WARM_RAIN=warm_rain,CLDFRA3D=CLDFRA,&
+                  CLDFRA_MP_ALL=CLDFRA_MP_ALL,ITIMESTEP=itimestep,  &
+                  IS_CAMMGMP_USED=is_CAMMGMP_used,                  &                
                   F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &
                   XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                   QV3D=QV,QC3D=QC,QR3D=QR,                          &
@@ -1113,6 +1152,7 @@ CONTAINS
                   O3INPUT=O3INPUT,O33D=O3RAD,                       &
                   F_QV=F_QV,F_QC=F_QC,F_QR=F_QR,                    &
                   F_QI=F_QI,F_QS=F_QS,F_QG=F_QG,                    &
+                  RE_CLOUD=re_cloud,RE_ICE=re_ice,RE_SNOW=re_snow,  & ! G. Thompson
 #ifdef WRF_CHEM
                   TAUAERLW1=tauaerlw1,TAUAERLW2=tauaerlw2,          & ! jcb
                   TAUAERLW3=tauaerlw3,TAUAERLW4=tauaerlw4,          & ! jcb
@@ -1431,7 +1471,9 @@ CONTAINS
                      COSZR=COSZR,JULDAY=JULDAY,SOLCON=SOLCON,          &
                      ALBEDO=ALBEDO,t3d=t,t8w=t8w,TSK=TSK,              &
                      p3d=p,p8w=p8w,pi3d=pi,rho3d=rho,                  &
-                     dz8w=dz8w,CLDFRA3D=CLDFRA,R=R_D,G=G,              &
+                     dz8w=dz8w,CLDFRA3D=CLDFRA,                        &
+                     CLDFRA_MP_ALL=CLDFRA_MP_ALL,ITIMESTEP=itimestep,  &
+                     is_CAMMGMP_used=is_CAMMGMP_used,R=R_D,G=G,        &
                      ICLOUD=icloud,WARM_RAIN=warm_rain,                &
                      F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &
                      XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
@@ -1446,6 +1488,7 @@ CONTAINS
                      SF_SURFACE_PHYSICS=sf_surface_physics,            &  !Zhenxin ssib sw_phy   (06/2010)
                      F_QV=f_qv,F_QC=f_qc,F_QR=f_qr,                    &
                      F_QI=f_qi,F_QS=f_qs,F_QG=f_qg,                    &
+                     RE_CLOUD=re_cloud,RE_ICE=re_ice,RE_SNOW=re_snow,  & ! G. Thompson
 #ifdef WRF_CHEM
                      TAUAER300=tauaer300,TAUAER400=tauaer400,          & ! jcb
                      TAUAER600=tauaer600,TAUAER999=tauaer999,          & ! jcb
@@ -1518,7 +1561,8 @@ CONTAINS
              CALL wrf_debug (100, 'CALL hwrfsw')
 
              gfdl_sw = .true.
-               CALL HWRFRA(DT=dt,thraten=RTHRATEN,thratenlw=RTHRATENLW,thratensw=RTHRATENSW,pi3d=pi, &
+               CALL HWRFRA(explicit_convection=expl_conv, &
+                        DT=dt,thraten=RTHRATEN,thratenlw=RTHRATENLW,thratensw=RTHRATENSW,pi3d=pi, &
                         XLAND=xland,P8w=p8w,DZ8w=dz8w,RHO_PHY=rho,P_PHY=p,T=t,          &
                         QV=qv,QW=qc_temp,QI=Qi,                      &
                         TSK2D=tsk,GLW=GLW,GSW=GSW,                                 &

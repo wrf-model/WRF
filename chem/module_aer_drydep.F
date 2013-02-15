@@ -67,6 +67,7 @@ CONTAINS
 	use module_data_mosaic_asect
 	use module_data_mosaic_other
 
+        use modal_aero_data, only:  ntot_amode_cam_mam => ntot_amode
 	implicit none
 
 !   subr arguments
@@ -155,6 +156,8 @@ CONTAINS
 
 	else if (aer_mech_id == 3) then
 	    nbin_add = sum( nsize_aer(1:ntype_aer) )
+        else if (aer_mech_id == 4) then
+            nbin_add = ntot_amode_cam_mam
 	else
 	    write(txtaa,'(a,2(1x,i10))') &
 		'*** aer_drydep_driver - bad aer_mech_id, aer_drydep_opt = ', &
@@ -205,6 +208,18 @@ main_i_loop:   &
 		ids,ide, jds,jde, kds,kde,                                 &
 		ims,ime, jms,jme, kms,kme,                                 &
 		its,ite, jts,jte, kts,kte                                  )
+       else if (aer_mech_id == 4) then
+            call cam_mam_aer_drydep_prep(                                  &
+                id, ktau, dtstep, config_flags, aer_mech_id,               &
+                gmt, julday,                                               &
+                t_phy, rho_phy, p_phy, alt, p8w, t8w,                      &
+                moist, chem,                                               &
+                nbin_add, alnsg_add, wetdgnum_add, wetdens_add,            &
+                yextra_add,                                                &
+                i, j,                                                      &
+                ids,ide, jds,jde, kds,kde,                                 &
+                ims,ime, jms,jme, kms,kme,                                 &
+                its,ite, jts,jte, kts,kte                                  )
 
 	else
 	    txtaa = '*** aer_drydep_driver - fatal error 200'
@@ -373,6 +388,15 @@ main_i_loop:   &
 		ids,ide, jds,jde, kds,kde,                                 &
 		ims,ime, jms,jme, kms,kme,                                 &
 		its,ite, jts,jte, kts,kte                                  )
+        else if (aer_mech_id == 4) then
+            call cam_mam_aer_drydep_load_ddvel(                            &
+                id, ktau, dtstep, config_flags, aer_mech_id,               &
+                ddvel,                                                     &
+                nbin_add, depvel0_add, depvel3_add,                        &
+                i, j,                                                      &
+                ids,ide, jds,jde, kds,kde,                                 &
+                ims,ime, jms,jme, kms,kme,                                 &
+                its,ite, jts,jte, kts,kte                                  )
 
 	else
 	    txtaa = '*** aer_drydep_driver - fatal error 400'
@@ -1583,6 +1607,8 @@ main_i_loop:   &
         vdplim = utscale*(eff_dif+eff_imp+eff_int)*rbcor
 !       vdplim = .002*utscale
         vdplim = min(vdplim,.02)
+!PMA
+        vdplim = max(vdplim,1.e-20)
         rsurfq = ra+1./vdplim
         sum0 = sum0 + wgaus(n)*(vsedq + 1./rsurfq)  ! quadrature sum for 0 moment
         sum3 = sum3 + wgaus(n)*(vsedq + 1./rsurfq)*dq**3  ! quadrature sum for 3rd moment
@@ -1913,6 +1939,295 @@ main_i_loop:   &
 
       return
       end subroutine zhang2001_aer_drydepvel_1
+
+!-----------------------------------------------------------------------
+        subroutine cam_mam_aer_drydep_prep(                                 &
+                id, ktau, dtstep, config_flags, aer_mech_id,               &
+                gmt, julday,                                               &
+                t_phy, rho_phy, p_phy, alt, p8w, t8w,                      &
+                moist, chem,                                               &
+                nbin_add, alnsg_add, wetdgnum_add, wetdens_add,            &
+                yextra_add,                                                &
+                i, j,                                                      &
+                ids,ide, jds,jde, kds,kde,                                 &
+                ims,ime, jms,jme, kms,kme,                                 &
+                its,ite, jts,jte, kts,kte                                  )
+
+        use module_configure, only:  num_moist, num_chem, &
+                grid_config_rec_type
+        use module_state_description, only:  param_first_scalar
+
+        use module_data_cam_mam_asect
+
+        implicit none
+
+!   subr arguments
+        integer, intent(in) ::   &
+                id, ktau, julday, aer_mech_id, nbin_add,   &
+                i, j
+
+        integer, intent(in) ::   &
+                ids, ide, jds, jde, kds, kde,   &
+                ims, ime, jms, jme, kms, kme,   &
+                its, ite, jts, jte, kts, kte
+
+        real, intent(in) :: dtstep, gmt
+
+        real, intent(in),   &
+                dimension( ims:ime, kms:kme, jms:jme ) :: &
+                t_phy, rho_phy, p_phy, alt, p8w, t8w
+
+        real, intent(in),   &
+                dimension( ims:ime, kms:kme, jms:jme, 1:num_moist ) :: &
+                moist
+
+        real, intent(in),   &
+                dimension( ims:ime, kms:kme, jms:jme, 1:num_chem ) :: &
+                chem
+
+        real, intent(inout),   &
+                dimension( 1:nbin_add ) :: &
+                alnsg_add, wetdgnum_add, wetdens_add
+
+        real, intent(inout),   &
+                dimension( 1:nbin_add, 10 ) :: &
+                yextra_add
+
+        type(grid_config_rec_type), intent(in) :: config_flags
+
+
+!   local variables
+        integer :: ibin, iok, iphase, itype
+        integer :: itmpa
+        integer :: k
+        integer :: l, ll, l1, n
+        integer :: p1st
+
+        real, parameter :: densdefault = 2.0
+        real, parameter :: smallmassaa = 1.0e-20
+        real, parameter :: smallmassbb = 1.0e-30
+        real, parameter :: pi = 3.1415926536
+        real, parameter :: piover6 = pi/6.0
+        real, parameter :: onethird = 1.0/3.0
+
+        real :: drydens, drydp, drymass, dryvol
+        real :: rnum
+        real :: tmpa, tmp_lnsg
+        real :: wetdgnum, wetdens, wetdp, wetmass, wetvol
+        real :: wetdgnum_si, wetdens_si
+
+        character(len=160) :: txtaa
+
+
+        n = sum( nsize_aer(1:ntype_aer) )
+        if (n /= nbin_add) then
+            write(txtaa,'(a,2(1x,i10))') &
+                '*** cam_mam_aer_drydep_prep - bad nbin_add, sum(nsize)', &
+                nbin_add, n
+            write(*,'(a)') trim(txtaa)
+            call wrf_error_fatal( txtaa )
+            stop
+        end if
+
+
+!   set some variables to their wrf-chem "standard" values
+        p1st = param_first_scalar
+
+        k = kts
+
+!   *** for now, just calc vdep_aer for iphase = ai_phase
+        iphase = ai_phase
+
+!   calculate vdep_aer for each type and size
+        ibin = 0
+        do 2900 itype = 1, ntype_aer
+        do 2800 n = 1, nsize_aer(itype)
+        ibin = ibin + 1
+
+!   calculate dry and wet mass, volume, density, and mass-mean diameters
+        dryvol = 0.0
+        drymass = 0.0
+        do ll = 1, ncomp_aer(itype)
+            l1 = massptr_aer(ll,n,itype,iphase)
+            tmpa = max( chem(i,k,j,l1), 0.0 )
+            drymass = drymass + tmpa
+            dryvol = dryvol + tmpa/dens_aer(ll,itype)
+        end do
+
+        l1 = waterptr_aer(n,itype)
+        tmpa = max( chem(i,k,j,l1), 0.0 )
+        wetmass = drymass + tmpa
+        wetvol = dryvol + tmpa/dens_water_aer
+
+        l1 = numptr_aer(n,itype,iphase)
+        rnum = max( chem(i,k,j,l1), 0.0 )
+
+        drymass = drymass*28.966e-9 ! ug/kg-air --> g/mol-air
+        wetmass = wetmass*28.966e-9
+        dryvol  = dryvol *28.966e-9 ! "u-cm3"/kg-air --> cm3/mol-air
+        wetvol  = wetvol *28.966e-9
+        rnum    = rnum*28.966e-3    ! #/kg-air  --> #/mol-air
+
+        if (drymass <= smallmassbb) then
+            drydp = dcen_sect(n,itype)
+            drydens = densdefault
+            wetdp = drydp
+            wetdens = drydens
+
+        else
+            if (drymass <= smallmassaa) then
+                wetmass = drymass
+                wetvol = dryvol
+            end if
+            drydens = drymass/dryvol
+            wetdens = wetmass/wetvol
+
+            if (rnum >= dryvol/volumlo_sect(n,itype)) then
+                drydp = dlo_sect(n,itype)
+            else if (rnum <= dryvol/volumhi_sect(n,itype)) then
+                drydp = dhi_sect(n,itype)
+            else
+                drydp = (dryvol/(piover6*rnum))**onethird
+            end if
+
+            if (abs(wetvol) > (1000.*abs(dryvol))) then
+              tmpa=10.0
+            else
+              tmpa=abs(wetvol/dryvol)**onethird
+              tmpa=max(1.0,min(tmpa,10.0))
+            endif
+            wetdp = drydp*tmpa
+
+        end if
+
+
+!   "within section" size distribution currently assumed to be
+!   monodisperse, but could assume otherwise
+        tmp_lnsg = log( sigmag_aer(n,itype) )
+        wetdgnum = wetdp * exp( -1.5*tmp_lnsg*tmp_lnsg )
+
+        wetdgnum_add(ibin) = wetdgnum * 1.0e-2 ! cm --> m
+        wetdens_add(ibin) = wetdens * 1.0e3    ! g/cm3 --> kg/m3
+        alnsg_add(ibin) = tmp_lnsg
+
+
+        yextra_add(ibin,1) = drymass/28.966e-9 ! g/mol-air --> ug/kg-air = "n-kg"/kg-air
+        yextra_add(ibin,5) = wetmass/28.966e-9
+        yextra_add(ibin,2) = dryvol/28.966e-6  ! cm3/mol-air --> "n-m3"/kg-air
+        yextra_add(ibin,6) = wetvol/28.966e-6
+        yextra_add(ibin,3) = drydens*1.0e3     ! g/cm3 --> kg/m3
+        yextra_add(ibin,7) = wetdens*1.0e3
+        yextra_add(ibin,4) = drydp*1.0e-2      ! cm --> m
+        yextra_add(ibin,8) = wetdp*1.0e-2
+
+        yextra_add(ibin,9) = dcen_sect(n,itype)*1.0e-2   ! cm --> m
+        yextra_add(ibin,10) = rnum/28.966e-3    ! #/mol-air  --> #/kg-air
+
+
+2800    continue
+2900    continue
+
+
+        return
+        end subroutine cam_mam_aer_drydep_prep
+
+
+
+!-----------------------------------------------------------------------
+        subroutine cam_mam_aer_drydep_load_ddvel(                           &
+                id, ktau, dtstep, config_flags, aer_mech_id,               &
+                ddvel,                                                     &
+                nbin_add, depvel0_add, depvel3_add,                        &
+                i, j,                                                      &
+                ids,ide, jds,jde, kds,kde,                                 &
+                ims,ime, jms,jme, kms,kme,                                 &
+                its,ite, jts,jte, kts,kte                                  )
+
+        use module_configure, only:  num_moist, num_chem, &
+                grid_config_rec_type
+        use module_state_description, only:  param_first_scalar
+
+        use module_data_cam_mam_asect
+
+        implicit none
+
+!   subr arguments
+        integer, intent(in) ::   &
+                id, ktau, aer_mech_id, nbin_add,   &
+                i, j
+
+        integer, intent(in) ::   &
+                ids, ide, jds, jde, kds, kde,   &
+                ims, ime, jms, jme, kms, kme,   &
+                its, ite, jts, jte, kts, kte
+
+        real, intent(in) :: dtstep
+
+        real, intent(in),   &
+                dimension( 1:nbin_add ) :: &
+                depvel0_add, depvel3_add
+
+        real, intent(out),   &
+                dimension( its:ite, jts:jte, 1:num_chem ) :: &
+                ddvel
+
+        type(grid_config_rec_type), intent(in) :: config_flags
+
+
+!   local variables
+        integer :: ibin, iphase, itype
+        integer :: l, ll, n
+
+        character(len=160) :: txtaa
+
+
+        n = sum( nsize_aer(1:ntype_aer) )
+        if (n /= nbin_add) then
+            write(txtaa,'(a,2(1x,i10))') &
+                '*** cam_mam_aer_drydep_load_ddvel - bad nbin_add, sum(nsize)', &
+                nbin_add, n
+            write(*,'(a)') trim(txtaa)
+            call wrf_error_fatal( txtaa )
+            stop
+        end if
+
+
+! copy from vdep_aer array to ddvel array
+        do iphase = 1, nphase_aer
+        ibin = 0
+        do itype = 1, ntype_aer
+        do n = 1, nsize_aer(itype)
+            ibin = ibin + 1
+            do ll = -2, ncomp_plustracer_aer(itype)
+                if (iphase /= ai_phase) cycle
+
+                if (ll == -2) then
+                    l = numptr_aer(n,itype,iphase)
+                else if (ll == -1) then
+                    l = -1
+                    if (iphase == ai_phase) l = waterptr_aer(n,itype)
+                else if (ll == 0) then
+                    l = -1
+                    if (iphase == ai_phase) l = hyswptr_aer(n,itype)
+                else
+                    l = massptr_aer(ll,n,itype,iphase)
+                end if
+
+                if ((l >= param_first_scalar) .and. (l <= num_chem)) then
+                    if (l == numptr_aer(n,itype,iphase)) then
+                        ddvel(i,j,l) = depvel0_add(ibin)
+                    else
+                        ddvel(i,j,l) = depvel3_add(ibin)
+                    end if
+                end if
+            end do
+        end do
+        end do
+        end do
+
+
+        return
+        end subroutine cam_mam_aer_drydep_load_ddvel
 
 
 

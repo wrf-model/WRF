@@ -17,9 +17,9 @@ M4      = m4 -Uinclude -Uindex -Ulen
 all : $(LIB) diffwrf test_io_idx
 
 $(LIB): $(OBJS)
-	$(RM) $@
-	$(AR) $(ARFLAGS) $@ $^
-	$(RANLIB) $@
+	$(RM) $(LIB)
+	$(AR) $(ARFLAGS) $(LIB) $(OBJS)
+	$(RANLIB) $(LIB)
 
 io_int.f: io_int.F90 module_internal_header_util.o
 	$(CPP1)  -I../../inc -I../ioapi_share $*.F90 | $(M4) - > $@

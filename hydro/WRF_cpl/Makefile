@@ -30,4 +30,3 @@ wrf_drv_HYDRO.o: module_wrf_HYDRO.o
 
 clean:
 	rm -f *.o *.mod *.stb *~ *.f
-	cd ..; make clean

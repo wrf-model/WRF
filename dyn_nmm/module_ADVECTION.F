@@ -3115,7 +3115,6 @@ real,dimension(its-5:ite+5,jts-5:jte+5,kts:kte,kss:kse):: &
           DO J=JTS-5,JTE+5
             DO I=ITS-5,ITE+5
               rsts(i,j,k,ks)=0.
-              s1  (i,j,k,ks)=0.
             enddo
           enddo
         enddo

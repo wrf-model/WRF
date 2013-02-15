@@ -16,8 +16,10 @@ subroutine da_transform_xtoy_mtgirs (grid, iv, y)
    real, allocatable :: v(:,:)
    real, allocatable :: t(:,:)
    real, allocatable :: q(:,:)
+   real, allocatable :: ub(:,:)
+   real, allocatable :: vb(:,:)
 
-   integer :: n
+   integer :: n,k
 
    if (trace_use_dull) call da_trace_entry("da_transform_xtoy_mtgirs")
 
@@ -26,6 +28,9 @@ subroutine da_transform_xtoy_mtgirs (grid, iv, y)
    allocate (t(iv%info(mtgirs)%max_lev,iv%info(mtgirs)%n1:iv%info(mtgirs)%n2))
    allocate (q(iv%info(mtgirs)%max_lev,iv%info(mtgirs)%n1:iv%info(mtgirs)%n2))
   
+   allocate (ub(iv%info(mtgirs)%max_lev,iv%info(mtgirs)%n1:iv%info(mtgirs)%n2))
+   allocate (vb(iv%info(mtgirs)%max_lev,iv%info(mtgirs)%n1:iv%info(mtgirs)%n2))
+
 #ifdef A2C
    call da_interp_lin_3d (grid%xa%u, iv%info(mtgirs), u,'u')
    call da_interp_lin_3d (grid%xa%v, iv%info(mtgirs), v,'v')
@@ -36,9 +41,18 @@ subroutine da_transform_xtoy_mtgirs (grid, iv, y)
    call da_interp_lin_3d (grid%xa%t, iv%info(mtgirs), t)
    call da_interp_lin_3d (grid%xa%q, iv%info(mtgirs), q)
 
+   call da_interp_lin_3d (grid%xb%u, iv%info(mtgirs), ub)
+   call da_interp_lin_3d (grid%xb%v, iv%info(mtgirs), vb)
+
    do n=iv%info(mtgirs)%n1,iv%info(mtgirs)%n2
-      y%mtgirs(n)%u(:) = u(1:size(y%mtgirs(n)%u),n)
-      y%mtgirs(n)%v(:) = v(1:size(y%mtgirs(n)%v),n)
+      do k = 1, iv%info(mtgirs)%levels(n)
+         if(.not. var_wind) then
+            y%mtgirs(n)%u(k) = u(k,n)
+            y%mtgirs(n)%v(k) = v(k,n)
+         else
+            call da_uv_wind_tgl(y%mtgirs(n)%u(k),y%mtgirs(n)%v(k),u(k,n),v(k,n),ub(k,n),vb(k,n))
+         end if
+      end do
       y%mtgirs(n)%t(:) = t(1:size(y%mtgirs(n)%t),n)
       y%mtgirs(n)%q(:) = q(1:size(y%mtgirs(n)%q),n)
    end do
@@ -47,6 +61,8 @@ subroutine da_transform_xtoy_mtgirs (grid, iv, y)
    deallocate (v)
    deallocate (t)
    deallocate (q)
+   deallocate (ub)
+   deallocate (vb)
 
    if (trace_use_dull) call da_trace_exit("da_transform_xtoy_mtgirs")
 

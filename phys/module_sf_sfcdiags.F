@@ -5,7 +5,7 @@ MODULE module_sf_sfcdiags
 CONTAINS
 
    SUBROUTINE SFCDIAGS(HFX,QFX,TSK,QSFC,CHS2,CQS2,T2,TH2,Q2,       &
-                     PSFC,CP,R_d,ROVCP,                            &
+                     PSFC,CP,R_d,ROVCP,CHS,T3D,QV3D,UA_PHYS,       &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     )
@@ -29,6 +29,14 @@ CONTAINS
                                                              CHS2, &
                                                              CQS2
       REAL,     INTENT(IN   )               ::       CP,R_d,ROVCP
+
+! UA changes
+      LOGICAL, INTENT(IN) :: UA_PHYS   ! UA: flag for UA option
+      REAL,    DIMENSION( ims:ime, kms:kme, jms:jme )            , &
+            INTENT(IN   )    ::                           QV3D,T3D
+      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
+                INTENT(IN)                  ::               CHS
+
 ! LOCAL VARS
       INTEGER ::  I,J
       REAL    ::  RHO
@@ -39,12 +47,20 @@ CONTAINS
           if(CQS2(I,J).lt.1.E-5) then
              Q2(I,J)=QSFC(I,J)
           else
-             Q2(I,J) = QSFC(I,J) - QFX(I,J)/(RHO*CQS2(I,J))
+              IF ( UA_PHYS ) THEN
+                  Q2(I,J) = QSFC(I,J) - CHS(I,J)/CQS2(I,J)*(QSFC(I,J) - QV3D(i,1,j))
+              ELSE
+                  Q2(I,J) = QSFC(I,J) - QFX(I,J)/(RHO*CQS2(I,J))
+              ENDIF
           endif
           if(CHS2(I,J).lt.1.E-5) then
              T2(I,J) = TSK(I,J) 
           else
-             T2(I,J) = TSK(I,J) - HFX(I,J)/(RHO*CP*CHS2(I,J))
+              IF ( UA_PHYS ) THEN
+                  T2(I,J) = TSK(I,J) - CHS(I,J)/CHS2(I,J)*(TSK(I,J) - T3D(i,1,j))
+              ELSE
+                  T2(I,J) = TSK(I,J) - HFX(I,J)/(RHO*CP*CHS2(I,J))
+              ENDIF
           endif
           TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**ROVCP
         ENDDO

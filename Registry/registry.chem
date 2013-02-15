@@ -117,6 +117,32 @@ state    real  e_co_bb          i+jf     emis_ant     1         Z      i5     "E
 state    real  e_bc          i+jf     emis_ant     1         Z      i5     "E_BC"                "EMISSIONS BC AER"       "ug/m3 m/s"
 state    real  e_oc          i+jf     emis_ant     1         Z      i5     "E_OC"                "EMISSIONS BC AER"       "ug/m3 m/s"
 state    real  e_sulf        i+jf     emis_ant     1         Z      i5     "E_sulf"              "EMISSIONS SO4"          "mol km^-2 hr^-1"
+# MAM
+state    real  e_soag_bigalk   i+jf     emis_ant     1         Z      i5      "E_SOAG_BIGALK"       "EMISSIONS"               "ug/m2/s"
+state    real  e_soag_bigene   i+jf     emis_ant     1         Z      i5      "E_SOAG_BIGENE"       "EMISSIONS"               "ug/m2/s"
+state    real  e_soag_isoprene i+jf     emis_ant     1         Z      i5      "E_SOAG_ISOPRENE"     "EMISSIONS"               "ug/m2/s"
+state    real  e_soag_terpene  i+jf     emis_ant     1         Z      i5      "E_SOAG_TERPENE"      "EMISSIONS"               "ug/m2/s"
+state    real  e_soag_toluene  i+jf     emis_ant     1         Z      i5      "E_SOAG_TOLUENE"      "EMISSIONS"               "ug/m2/s"
+state    real  e_dust_a1       i+jf     emis_ant     1         Z      i5      "E_DUST_A1"           "J-MODE DUST"             "ug/m2/s"
+state    real  e_dust_a3       i+jf     emis_ant     1         Z      i5      "E_DUST_A3"           "J-MODE DUST"             "ug/m2/s"
+state    real  e_ncl_a1        i+jf     emis_ant     1         Z      i5      "E_NCL_A1"            "J-MODE SEA-SALT"         "ug/m2/s"
+state    real  e_ncl_a2        i+jf     emis_ant     1         Z      i5      "E_NCL_A2"            "I-MODE SEA-SALT"         "ug/m2/s"
+state    real  e_ncl_a3        i+jf     emis_ant     1         Z      i5      "E_NCL_A3"            "COARSE-MODE SEA-SALT"    "ug/m2/s"
+state    real  e_orgj_num      i+jf     emis_ant     1         Z      i5      "E_ORGJ_NUM"          "J-MODE ORGANIC NUMBER"   "particle/m2/s"
+state    real  e_ecj_num       i+jf     emis_ant     1         Z      i5      "E_ECJ_NUM"           "J-MODE BC NUMBER"        "particle/m2/s"
+state    real  e_so4j_num      i+jf     emis_ant     1         Z      i5      "E_SO4J_NUM"          "J-MODE SO4 NUMBER"       "particle/m2/s"
+state    real  e_so4i_num      i+jf     emis_ant     1         Z      i5      "E_SO4I_NUM"          "I-MODE SO4 NUMBER"       "particle/m2/s"
+#CAMMGMP WRF_CHEM variables
+state    real  DGNUM4D         ikj{nmode} misc      1         -      r        "DGNUM4D"                "Number mode diameter"                                   "" 
+state    real  DGNUMWET4D      ikj{nmode} misc      1         -      r        "DGNUMWET4D"             "Number mode diameter WET"                               "" 
+state    real  QME3D           ikj        misc      1         -      r        "QME3D"                  "Net condensation rate "                              "kg/kg/s" 
+state    real  PRAIN3D         ikj        misc      1         -      r        "PRAIN3D"                "Rate of conversion of condensate to precipitation"   "kg/kg/s"
+state    real  NEVAPR3D        ikj        misc      1         -      r        "NEVAPR3D"               "Evaporation rate of rain + snow"                     "kg/kg/s"
+state    real  RATE1ORD_CW2PR_ST3D ikj    misc      1         -      r        "RATE1ORD_CW2PR_ST3D"    "1st order rate for direct conversion of strat. cloud water to precip" "1/s"
+
+#CAM5's wet scavenging output variables
+state    real  FRACIS3D        ikj        misc      1         -      r        "FRACIS3D"               "fraction of transported species that are insoluble"    ""
+
 
 #SAPRCNOV additional emissions, automatically created using diff_mechEmiss_wrfRegistry.m script (pablo-saide@uiowa.edu)
 state   real    e_c2h2          i+jf    emis_ant        1       Z       i5      "E_C2H2"        "C2H2 emissions"        "mol km^-2 hr^-1"
@@ -325,10 +351,6 @@ state    real  firesize_agef      ij      misc      1         -        i07h     
 state    real  firesize_agsv      ij      misc      1         -        i07h       "firesize_agsv"         "mean firesize for savanna"  "?"
 state    real  firesize_aggr      ij      misc      1         -        i07h       "firesize_aggr"         "mean firesize for grassland"  "?"
 
-# Lightning
-state    real  ic_flshrate    ij      misc        1         -      rh      "IC_FR"                 "Cuml. IC Flash rate"                 "number"
-state    real  cg_flshrate    ij      misc        1         -      rh      "CG_FR"                 "Cuml. CG Flash rate"                 "number"
-
 # track state filed
 state    real  radfld        i{tz}j{tr}   misc     1        -      -       "radfld"             "radfld"                     ""
 state    real  adjcoe        i{tz}j{tt}   misc     1        -      -       "adjcoe"             "adjcoe"                     ""
@@ -484,11 +506,6 @@ state    real  erup_end     ij      misc        1         -      i{13}    "ERUP_
 state    real  dep_vel_o3     ij      misc        1         -      -        "DEP_VEL"               "deposition velocities for o3"        "?"
 state    real  cu_co_ten      ikj     misc        1         -      -        "CU_CO_TEN"             "CONV. TRANSPORT FOR CO"              "?"
 
-# for lightning
-state    integer  ktop           ij      misc        1         -     r           "KTOP"            "Convective Cloud top index"        "#"
-state    integer  ktop_adj       ij      misc        1         -     r           "KTOP_ADJ"        "KTOP limited by WMO tropopause"    "#"
-
-#
 # Tendency diagnostics for chemistry (chemdiag)
 #
 # Currently index references to chem array is done within the code and requires
@@ -2259,6 +2276,97 @@ state   real   seas_2       ikjftb   chem       1         -   i0{12}rhusdf=(bdy_
 state   real   seas_3       ikjftb   chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "SEAS_3"    "sea-salt size bin 3: 3.2um effective radius"     "ug/kg-dryair"
 state   real   seas_4       ikjftb   chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "SEAS_4"    "sea-salt size bin 4: 7.5um effective radius"     "ug/kg-dryair"
 
+#Additional CAM modal aerosol variables inside the chem array...
+
+state   real   soag        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "soag"      "Gas-phase SOA"                      "ppmv"
+
+state   real   so4_a1      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "so4_a1"    "Sulfate aerosol, mode 1"            "ug/kg-dryair"
+state   real   nh4_a1      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "nh4_a1"    "Ammonium aerosol, mode 1"           "ug/kg-dryair"
+state   real   bc_a1       ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "bc_a1"     "Black carbon aerosol, mode 1"       "ug/kg-dryair"
+state   real   pom_a1      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "pom_a1"    "Primary organic aerosol, mode 1"    "ug/kg-dryair"
+state   real   soa_a1      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "soa_a1"    "Secondary organic aerosol, mode 1"  "ug/kg-dryair"
+state   real   ncl_a1      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "ncl_a1"    "Sea salt aerosol, mode 1"           "ug/kg-dryair"
+state   real   dst_a1      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "dst_a1"    "Dust aerosol, mode 1"               "ug/kg-dryair"
+state   real   wtr_a1      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "wtr_a1"    "Aerosol water, mode 1"              "ug/kg-dryair"
+state   real   num_a1      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "num_a1"    "Aerosol number, mode 1"             "#/kg-dryair"
+
+state   real   so4_a2      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "so4_a2"    "Sulfate aerosol, mode 2"            "ug/kg-dryair"
+state   real   nh4_a2      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "nh4_a2"    "Ammonium aerosol, mode 2"           "ug/kg-dryair"
+state   real   soa_a2      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "soa_a2"    "Secondary organic aerosol, mode 2"  "ug/kg-dryair"
+state   real   ncl_a2      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "ncl_a2"    "Sea salt aerosol, mode 2"           "ug/kg-dryair"
+state   real   wtr_a2      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "wtr_a2"    "Aerosol water, mode 2"              "ug/kg-dryair"
+state   real   num_a2      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "num_a2"    "Aerosol number, mode 2"             "#/kg-dryair"
+
+state   real   so4_a3      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "so4_a3"    "Sulfate aerosol, mode 3"            "ug/kg-dryair"
+state   real   bc_a3       ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "bc_a3"     "Black carbon aerosol, mode 3"       "ug/kg-dryair"
+state   real   pom_a3      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "pom_a3"    "Primary organic aerosol, mode 3"    "ug/kg-dryair"
+state   real   ncl_a3      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "ncl_a3"    "Sea salt aerosol, mode 3"           "ug/kg-dryair"
+state   real   dst_a3      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "dst_a3"    "Dust aerosol, mode 3"               "ug/kg-dryair"
+state   real   wtr_a3      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "wtr_a3"    "Aerosol water, mode 3"              "ug/kg-dryair"
+state   real   num_a3      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "num_a3"    "Aerosol number, mode 3"             "#/kg-dryair"
+state   real   so4_a4      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "so4_a4"    "Sulfate aerosol, mode 4"            "ug/kg-dryair"
+state   real   nh4_a4      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "nh4_a4"    "Ammonium aerosol, mode 4"           "ug/kg-dryair"
+state   real   ncl_a4      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "ncl_a4"    "Sea salt aerosol, mode 4"           "ug/kg-dryair"
+state   real   wtr_a4      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "wtr_a4"    "Aerosol water, mode 4"              "ug/kg-dryair"
+state   real   num_a4      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "num_a4"    "Aerosol number, mode 4"             "#/kg-dryair"
+
+state   real   so4_a5      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "so4_a5"    "Sulfate aerosol, mode 5"            "ug/kg-dryair"
+state   real   nh4_a5      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "nh4_a5"    "Ammonium aerosol, mode 5"           "ug/kg-dryair"
+state   real   dst_a5      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "dst_a5"    "Dust aerosol, mode 5"               "ug/kg-dryair"
+state   real   wtr_a5      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "wtr_a5"    "Aerosol water, mode 5"              "ug/kg-dryair"
+state   real   num_a5      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "num_a5"    "Aerosol number, mode 5"             "#/kg-dryair"
+
+state   real   so4_a6      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "so4_a6"    "Sulfate aerosol, mode 6"            "ug/kg-dryair"
+state   real   nh4_a6      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "nh4_a6"    "Ammonium aerosol, mode 6"           "ug/kg-dryair"
+state   real   ncl_a6      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "ncl_a6"    "Sea salt aerosol, mode 6"           "ug/kg-dryair"
+state   real   wtr_a6      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "wtr_a6"    "Aerosol water, mode 6"              "ug/kg-dryair"
+state   real   num_a6      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "num_a6"    "Aerosol number, mode 6"             "#/kg-dryair"
+
+state   real   so4_a7      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "so4_a7"    "Sulfate aerosol, mode 7"            "ug/kg-dryair"
+state   real   nh4_a7      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "nh4_a7"    "Ammonium aerosol, mode 7"           "ug/kg-dryair"
+state   real   dst_a7      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "dst_a7"    "Dust aerosol, mode 7"               "ug/kg-dryair"
+state   real   wtr_a7      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "wtr_a7"    "Aerosol water, mode 7"              "ug/kg-dryair"
+state   real   num_a7      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "num_a7"    "Aerosol number, mode 7"             "#/kg-dryair"
+state   real   so4_c1      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "so4_c1"    "Sulfate aerosol, mode 1"            "ug/kg-dryair"
+state   real   nh4_c1      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "nh4_c1"    "Ammonium aerosol, mode 1"           "ug/kg-dryair"
+state   real   bc_c1       ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "bc_c1"     "Black carbon aerosol, mode 1"       "ug/kg-dryair"
+state   real   pom_c1      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "pom_c1"    "Primary organic aerosol, mode 1"    "ug/kg-dryair"
+state   real   soa_c1      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "soa_c1"    "Secondary organic aerosol, mode 1"  "ug/kg-dryair"
+state   real   ncl_c1      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "ncl_c1"    "Sea salt aerosol, mode 1"           "ug/kg-dryair"
+state   real   dst_c1      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "dst_c1"    "Dust aerosol, mode 1"               "ug/kg-dryair"
+state   real   num_c1      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "num_c1"    "Aerosol number, mode 1"             "#/kg-dryair"
+
+state   real   so4_c2      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "so4_c2"    "Sulfate aerosol, mode 2"            "ug/kg-dryair"
+state   real   nh4_c2      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "nh4_c2"    "Ammonium aerosol, mode 2"           "ug/kg-dryair"
+state   real   soa_c2      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "soa_c2"    "Secondary organic aerosol, mode 2"  "ug/kg-dryair"
+state   real   ncl_c2      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "ncl_c2"    "Sea salt aerosol, mode 2"           "ug/kg-dryair"
+state   real   num_c2      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "num_c2"    "Aerosol number, mode 2"             "#/kg-dryair"
+
+state   real   so4_c3      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "so4_c3"    "Sulfate aerosol, mode 3"            "ug/kg-dryair"
+state   real   bc_c3       ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "bc_c3"     "Black carbon aerosol, mode 3"       "ug/kg-dryair"
+state   real   pom_c3      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "pom_c3"    "Primary organic aerosol, mode 3"    "ug/kg-dryair"
+state   real   ncl_c3      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "ncl_c3"    "Sea salt aerosol, mode 3"           "ug/kg-dryair"
+state   real   dst_c3      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "dst_c3"    "Dust aerosol, mode 3"               "ug/kg-dryair"
+state   real   num_c3      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "num_c3"    "Aerosol number, mode 3"             "#/kg-dryair"
+
+state   real   so4_c4      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "so4_c4"    "Sulfate aerosol, mode 4"            "ug/kg-dryair"
+state   real   nh4_c4      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "nh4_c4"    "Ammonium aerosol, mode 4"           "ug/kg-dryair"
+state   real   ncl_c4      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "ncl_c4"    "Sea salt aerosol, mode 4"           "ug/kg-dryair"
+state   real   num_c4      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "num_c4"    "Aerosol number, mode 4"             "#/kg-dryair"
+
+state   real   so4_c5      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "so4_c5"    "Sulfate aerosol, mode 5"            "ug/kg-dryair"
+state   real   nh4_c5      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "nh4_c5"    "Ammonium aerosol, mode 5"           "ug/kg-dryair"
+state   real   dst_c5      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "dst_c5"    "Dust aerosol, mode 5"               "ug/kg-dryair"
+state   real   num_c5      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "num_c5"    "Aerosol number, mode 5"             "#/kg-dryair"
+state   real   so4_c6      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "so4_c6"    "Sulfate aerosol, mode 6"            "ug/kg-dryair"
+state   real   nh4_c6      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "nh4_c6"    "Ammonium aerosol, mode 6"           "ug/kg-dryair"
+state   real   ncl_c6      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "ncl_c6"    "Sea salt aerosol, mode 6"           "ug/kg-dryair"
+state   real   num_c6      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "num_c6"    "Aerosol number, mode 6"             "#/kg-dryair"
+
+state   real   so4_c7      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "so4_c7"    "Sulfate aerosol, mode 7"            "ug/kg-dryair"
+state   real   nh4_c7      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "nh4_c7"    "Ammonium aerosol, mode 7"           "ug/kg-dryair"
+state   real   dst_c7      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "dst_c7"    "Dust aerosol, mode 7"               "ug/kg-dryair"
+state   real   num_c7      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "num_c7"    "Aerosol number, mode 7"             "#/kg-dryair"
 # KPP Mechanism from MATCH-MPI MAINZ global chemistry
 state   real    pa       ikjftb   chem        1         -     i0{12}rhusdf=(bdy_interp:dt)         "pa"          ""         "" 
 state   real    aca      ikjftb   chem        1         -     i0{12}rhusdf=(bdy_interp:dt)         "aca"        ""         "" 
@@ -2338,6 +2446,8 @@ rconfig   integer kemit_aircraft           namelist,chem        1              1
 rconfig   integer kdvel                    namelist,chem        1              1       -       "kdvel"                ""      ""
 rconfig   integer erosion_dim              namelist,chem        1              3       -       "erosion_dim"          ""      ""
 rconfig   integer    biomass_emiss_opt     namelist,chem        max_domains    0       rh      "biomass_emiss_opt"                   ""    ""
+rconfig   integer cam_mam_mode             namelist,chem        1              3       irh     "cam_mam_mode"                   ""    ""
+rconfig   logical CAM_MP_MAM_cpled         namelist,chem        1            .true.    irh     "CAM_MP_MAM_cpled"                   ""    ""
 # Lightning
 rconfig   integer     lightning_opt       namelist,chem        max_domains        0       rh      "lightning_opt"     ""      ""
 rconfig   integer     lightning_time_step namelist,chem        max_domains        0       rh     "lightning_time_step"  ""      ""
@@ -2508,8 +2618,10 @@ package saprc99_kpp    chem_opt==195   -       chem:o3,h2o2,no,no2,no3,n2o5,hono
 
 package saprc99_mosaic_4bin_vbs2_kpp    chem_opt==198   -       chem:o3,h2o2,no,no2,no3,n2o5,hono,hno3,hno4,so2,h2so4,co,hcho,ccho,rcho,acet,mek,hcooh,meoh,etoh,cco_oh,rco_oh,gly,mgly,bacl,cres,bald,isoprod,methacro,mvk,prod2,dcb1,dcb2,dcb3,ethene,isoprene,c2h6,c3h8,c2h2,c3h6,alk3,alk4,alk5,aro1,aro2,ole1,ole2,terp,rno3,nphe,phen,pan,pan2,pbzn,ma_pan,co2,cco_ooh,rco_o2,rco_ooh,xn,xc,ho,ho2,c_o2,cooh,rooh,ro2_r,r2o2,ro2_n,cco_o2,bzco_o2,ma_rco3,sesq,pcg1_b_c,pcg2_b_c,pcg1_b_o,pcg2_b_o,opcg1_b_c,opcg1_b_o,pcg1_f_c,pcg2_f_c,pcg1_f_o,pcg2_f_o,opcg1_f_c,opcg1_f_o,psd1,psd2,nh3,hcl,nume,den,ant1_c,ant1_o,biog1_c,biog1_o,ch4,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,pcg1_b_c_a01,pcg2_b_c_a01,pcg1_b_o_a01,pcg2_b_o_a01,opcg1_b_c_a01,opcg1_b_o_a01,pcg1_f_c_a01,pcg2_f_c_a01,pcg1_f_o_a01,pcg2_f_o_a01,opcg1_f_c_a01,opcg1_f_o_a01,ant1_c_a01,ant1_o_a01,biog1_c_a01,biog1_o_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,pcg1_b_c_a02,pcg2_b_c_a02,pcg1_b_o_a02,pcg2_b_o_a02,opcg1_b_c_a02,opcg1_b_o_a02,pcg1_f_c_a02,pcg2_f_c_a02,pcg1_f_o_a02,pcg2_f_o_a02,opcg1_f_c_a02,opcg1_f_o_a02,ant1_c_a02,ant1_o_a02,biog1_c_a02,biog1_o_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,pcg1_b_c_a03,pcg2_b_c_a03,pcg1_b_o_a03,pcg2_b_o_a03,opcg1_b_c_a03,opcg1_b_o_a03,pcg1_f_c_a03,pcg2_f_c_a03,pcg1_f_o_a03,pcg2_f_o_a03,opcg1_f_c_a03,opcg1_f_o_a03,ant1_c_a03,ant1_o_a03,biog1_c_a03,biog1_o_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,pcg1_b_c_a04,pcg2_b_c_a04,pcg1_b_o_a04,pcg2_b_o_a04,opcg1_b_c_a04,opcg1_b_o_a04,pcg1_f_c_a04,pcg2_f_c_a04,pcg1_f_o_a04,pcg2_f_o_a04,opcg1_f_c_a04,opcg1_f_o_a04,ant1_c_a04,ant1_o_a04,biog1_c_a04,biog1_o_a04,num_a04,ca_a01,ca_a02,ca_a03,ca_a04,co3_a01,co3_a02,co3_a03,co3_a04
 
+package cbmz_mosaic_4bin_vbs2_kpp    chem_opt==199   -       chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,aro1,aro2,alk1,ole1,api1,api2,lim1,lim2,api,lim,pcg1_b_c,pcg2_b_c,pcg1_b_o,pcg2_b_o,opcg1_b_c,opcg1_b_o,pcg1_f_c,pcg2_f_c,pcg1_f_o,pcg2_f_o,opcg1_f_c,opcg1_f_o,psd1,psd2,nh3,hcl,ch4,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,pcg1_b_c_a01,pcg2_b_c_a01,pcg1_b_o_a01,pcg2_b_o_a01,opcg1_b_c_a01,opcg1_b_o_a01,pcg1_f_c_a01,pcg2_f_c_a01,pcg1_f_o_a01,pcg2_f_o_a01,opcg1_f_c_a01,opcg1_f_o_a01,ant1_c_a01,ant1_o_a01,biog1_c_a01,biog1_o_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,pcg1_b_c_a02,pcg2_b_c_a02,pcg1_b_o_a02,pcg2_b_o_a02,opcg1_b_c_a02,opcg1_b_o_a02,pcg1_f_c_a02,pcg2_f_c_a02,pcg1_f_o_a02,pcg2_f_o_a02,opcg1_f_c_a02,opcg1_f_o_a02,ant1_c_a02,ant1_o_a02,biog1_c_a02,biog1_o_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,pcg1_b_c_a03,pcg2_b_c_a03,pcg1_b_o_a03,pcg2_b_o_a03,opcg1_b_c_a03,opcg1_b_o_a03,pcg1_f_c_a03,pcg2_f_c_a03,pcg1_f_o_a03,pcg2_f_o_a03,opcg1_f_c_a03,opcg1_f_o_a03,ant1_c_a03,ant1_o_a03,biog1_c_a03,biog1_o_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,pcg1_b_c_a04,pcg2_b_c_a04,pcg1_b_o_a04,pcg2_b_o_a04,opcg1_b_c_a04,opcg1_b_o_a04,pcg1_f_c_a04,pcg2_f_c_a04,pcg1_f_o_a04,pcg2_f_o_a04,opcg1_f_c_a04,opcg1_f_o_a04,ant1_c_a04,ant1_o_a04,biog1_c_a04,biog1_o_a04,num_a04,ca_a01,ca_a02,ca_a03,ca_a04,co3_a01,co3_a02,co3_a03,co3_a04
+
 # using an empirical soa scheme for anthropogenic and biomass burning sources
-package mozart_mosaic_4bin_vbs0_kpp    chem_opt==199   -       chem:o3,o1d_cb4,o,no,no2,no3,n2o5,hno3,hno4,so2,ho,ho2,h2o2,sulf,co,hcho,ch3ooh,ch3o2,ch4,h2,eo2,ch3cooh,c2h4,n2o,ch3oh,aco3,acet,mgly,paa,gly,c3h6ooh,pan,mpan,macr,mvk,c3h6,etooh,prooh,acetp,xooh,onitr,isooh,acetol,glyald,mek,eto2,open,alkooh,mekooh,tolooh,terpooh,ald,mco3,c2h5oh,eo,c2h6,c3h8,pro2,po2,aceto2,bigene,bigalk,eneo2,alko2,isopr,iso2,mvko2,mvkooh,hydrald,xo2,c10h16,terpo2,tol,cres,to2,xoh,onit,isopn,dms,nh3,nume,den,voca,vocbb,smpa,smpbb,biog1_c,biog1_o,meko2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,smpa_a01,smpbb_a01,biog1_c_a01,biog1_o_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,smpa_a02,smpbb_a02,biog1_c_a02,biog1_o_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,smpa_a03,smpbb_a03,biog1_c_a03,biog1_o_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,smpa_a04,smpbb_a04,biog1_c_a04,biog1_o_a04,num_a04,ca_a01,ca_a02,ca_a03,ca_a04,co3_a01,co3_a02,co3_a03,co3_a04
+package mozart_mosaic_4bin_vbs0_kpp    chem_opt==201   -       chem:o3,o1d_cb4,o,no,no2,no3,n2o5,hno3,hno4,so2,ho,ho2,h2o2,sulf,co,hcho,ch3ooh,ch3o2,ch4,h2,eo2,ch3cooh,c2h4,n2o,ch3oh,aco3,acet,mgly,paa,gly,c3h6ooh,pan,mpan,macr,mvk,c3h6,etooh,prooh,acetp,xooh,onitr,isooh,acetol,glyald,mek,eto2,open,alkooh,mekooh,tolooh,terpooh,ald,mco3,c2h5oh,eo,c2h6,c3h8,pro2,po2,aceto2,bigene,bigalk,eneo2,alko2,isopr,iso2,mvko2,mvkooh,hydrald,xo2,c10h16,terpo2,tol,cres,to2,xoh,onit,isopn,dms,nh3,nume,den,voca,vocbb,smpa,smpbb,biog1_c,biog1_o,meko2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,smpa_a01,smpbb_a01,biog1_c_a01,biog1_o_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,smpa_a02,smpbb_a02,biog1_c_a02,biog1_o_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,smpa_a03,smpbb_a03,biog1_c_a03,biog1_o_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,smpa_a04,smpbb_a04,biog1_c_a04,biog1_o_a04,num_a04,ca_a01,ca_a02,ca_a03,ca_a04,co3_a01,co3_a02,co3_a03,co3_a04
 
 # KPP mechanism from MATCH-MPI Mainz used for global chemistry
 package   nmhc9_kpp     chem_opt==200                   -             chem:o3,h2o2,ch4,op1,hcho,ch3oh,co,hno3,no3,n2o5,hno4,no,no2,isopr,mvk,iso2,isooh,mvko2,mvkooh,ison,aca,acol,hcooh,mpan,naca,pan,pa,paa,mglo,c2h6,eTooh,ald,c3h8,pRooh,acet,acooh,eTo2,pRo2,aco2,c3h6,c3h6ooh,c2h4,c4h10,buooh,mek,mekooh,mEcoco,c3h6o2,c4h9o2,meko2,onit,pRono2,ch3o2,acetol,acetp,aceto2,ch3cooh,c4h9ooh,mEoh,ho,ho2,mEo2,mEo2no2
@@ -2530,6 +2642,20 @@ package   dust   chem_opt==401              -             chem:dust_1,dust_2,dus
 # volc ash plus SO2 and Sulf
 package   chem_volc   chem_opt==402              -             chem:so2,sulf,vash_1,vash_2,vash_3,vash_4,vash_5,vash_6,vash_7,vash_8,vash_9,vash_10
 package   chem_volc_4bin   chem_opt==403              -             chem:vash_7,vash_8,vash_9,vash_10
+
+# CAM modal aerosol packages (with online gas-phase chemistry)
+package   cbmz_cam_mam3_noaq chem_opt==501               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,soag,so4_a1,pom_a1,soa_a1,bc_a1,dst_a1,ncl_a1,wtr_a1,num_a1,so4_a2,soa_a2,ncl_a2,wtr_a2,num_a2,dst_a3,ncl_a3,so4_a3,wtr_a3,num_a3
+
+package   cbmz_cam_mam7_noaq chem_opt==502               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,soag,so4_a1,nh4_a1,pom_a1,soa_a1,bc_a1,ncl_a1,wtr_a1,num_a1,so4_a2,nh4_a2,soa_a2,ncl_a2,wtr_a2,num_a2,pom_a3,bc_a3,wtr_a3,num_a3,ncl_a4,so4_a4,nh4_a4,wtr_a4,num_a4,dst_a5,so4_a5,nh4_a5,wtr_a5,num_a5,ncl_a6,so4_a6,nh4_a6,wtr_a6,num_a6,dst_a7,so4_a7,nh4_a7,wtr_a7,num_a7
+
+package   cbmz_cam_mam3_aq chem_opt==503               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,soag,so4_a1,pom_a1,soa_a1,bc_a1,dst_a1,ncl_a1,wtr_a1,num_a1,so4_a2,soa_a2,ncl_a2,wtr_a2,num_a2,dst_a3,ncl_a3,so4_a3,wtr_a3,num_a3,so4_c1,pom_c1,soa_c1,bc_c1,dst_c1,ncl_c1,num_c1,so4_c2,soa_c2,ncl_c2,num_c2,dst_c3,ncl_c3,so4_c3,num_c3
+
+package   cbmz_cam_mam7_aq chem_opt==504               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,soag,so4_a1,nh4_a1,pom_a1,soa_a1,bc_a1,ncl_a1,wtr_a1,num_a1,so4_a2,nh4_a2,soa_a2,ncl_a2,wtr_a2,num_a2,pom_a3,bc_a3,wtr_a3,num_a3,ncl_a4,so4_a4,nh4_a4,wtr_a4,num_a4,dst_a5,so4_a5,nh4_a5,wtr_a5,num_a5,ncl_a6,so4_a6,nh4_a6,wtr_a6,num_a6,dst_a7,so4_a7,nh4_a7,wtr_a7,num_a7,so4_c1,nh4_c1,pom_c1,soa_c1,bc_c1,ncl_c1,num_c1,so4_c2,nh4_c2,soa_c2,ncl_c2,num_c2,pom_c3,bc_c3,num_c3,ncl_c4,so4_c4,nh4_c4,num_c4,dst_c5,so4_c5,nh4_c5,num_c5,ncl_c6,so4_c6,nh4_c6,num_c6,dst_c7,so4_c7,nh4_c7,num_c7
+
+#package   radm2_cam_mam3     chem_opt==411                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,hcl,ho,ho2,soag,so4_a1,pom_a1,soa_a1,bc_a1,dst_a1,ncl_a1,wtr_a1,num_a1,so4_a2,soa_a2,ncl_a2,wtr_a2,num_a2,dst_a3,ncl_a3,so4_a3,wtr_a3,num_a3
+
+#package   radm2_cam_mam7     chem_opt==412                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,hcl,ho,ho2,soag,so4_a1,nh4_a1,pom_a1,soa_a1,bc_a1,ncl_a1,wtr_a1,num_a1,so4_a2,nh4_a2,soa_a2,ncl_a2,wtr_a2,num_a2,pom_a3,bc_a3,wtr_a3,num_a3,ncl_a4,so4_a4,nh4_a4,wtr_a4,num_a4,dst_a5,so4_a5,nh4_a5,wtr_a5,num_a5,ncl_a6,so4_a6,nh4_a6,wtr_a6,num_a6,dst_a7,so4_a7,nh4_a7,wtr_a7,num_a7
+#
 #
 #emission package definitions
 #
@@ -2540,6 +2666,7 @@ package   ecptec          emiss_opt==5                   -             emis_ant:
 package   gocart_ecptec   emiss_opt==6                   -             emis_ant:e_so2,e_sulf,e_bc,e_oc,e_pm_25,e_pm_10
 package   mozem           emiss_opt==7                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16,e_sulf
 package   mozcem          emiss_opt==8                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16,e_pm_10,e_pm_25,e_bc,e_oc,e_sulf
+package   cammam          emiss_opt==9                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_ecj,e_orgj,e_so4i,e_so4j,e_soag_bigene,e_soag_isoprene,e_soag_terpene,e_soag_toluene,e_dust_a1,e_dust_a3,e_ncl_a1,e_ncl_a2,e_ncl_a3,e_orgj_num,e_ecj_num,e_so4j_num,e_so4i_num
 package   mozmem           emiss_opt==10                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_co_a,e_orgj_a,e_co_bb,e_orgj_bb,e_voca,e_vocbb
 package   esaprcnov       emiss_opt==13                  -             emis_ant:e_so2,e_c2h6,e_c3h8,e_c2h2,e_alk3,e_alk4,e_alk5,e_ethene,e_c3h6,e_ole1,e_ole2,e_aro1,e_aro2,e_hcho,e_ccho,e_rcho,e_acet,e_mek,e_isoprene,e_terp,e_sesq,e_co,e_no,e_no2,e_phen,e_cres,e_meoh,e_gly,e_mgly,e_bacl,e_isoprod,e_methacro,e_mvk,e_prod2,e_ch4,e_bald,e_hcooh,e_cco_oh,e_rco_oh,e_nh3,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_orgi_a,e_orgj_a,e_orgi_bb,e_orgj_bb
 # Anthropogenic CO2, CO and CH4 emissions:
@@ -2597,12 +2724,14 @@ package   shell_exact      aer_op_opt==5                -             -
 # emiss_inpt_default        = radm2-sorgam emissions in "standard(=grell)" wrf-chem
 # emiss_inpt_pnnl_cm        = cbmz-mosaic  emissions in "PNNL" format
 # emiss_inpt_pnnl_rs        = radm2-sorgam emissions in "PNNL" format (same as default except isoprene added)
+# emiss_inpt_pnnl_mam       = mam emissions in "PNNL" format
 package   emiss_inpt_default          emiss_inpt_opt==1            -             -
 package   emiss_inpt_cptec            emiss_inpt_opt==3            -             -
 package   emiss_inpt_ghg              emiss_inpt_opt==16           -             -
 package   emiss_inpt_pnnl_cm          emiss_inpt_opt==101          -             -
 package   emiss_inpt_pnnl_rs          emiss_inpt_opt==102          -             -
 package   emiss_inpt_cb4              emiss_inpt_opt==103          -             -
+package   emiss_inpt_pnnl_mam         emiss_inpt_opt==104          -             -
 package   emiss_inpt_mozcem           emiss_inpt_opt==111          -             -
 package   emiss_inpt_mozmem           emiss_inpt_opt==112          -             -
 
@@ -2631,13 +2760,25 @@ package   tracer_test1  tracer_opt==2       -             tracer:tr17_1,tr17_2,t
 package   tracer_test2  tracer_opt==3       -             tracer:tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8
 package   tracer_test3  tracer_opt==4       -             tracer:tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8,tr18_1,tr18_2
 
-# Lightning
-package   crmpickering  lightning_opt==1   -   state:ic_flshrate,cg_flshrate
-package   cpmPRO        lightning_opt==101 -   state:ic_flshrate 
-
 # the following arrays only needed for aircraft emissions options
 package   aircraft1      aircraft_emiss_opt==1             -       emis_aircraft:eac_no,eac_co,eac_so2,eac_ch4
 
 package   nochemdiag     chemdiag==0         -                -
 package   usechemdiag    chemdiag==1         -                conv_ct:conv_co,conv_o3,conv_no,conv_no2,conv_hno3,conv_iso,conv_ho,conv_ho2;chem_ct:chem_co,chem_o3,chem_no,chem_no2,chem_hno3,chem_iso,chem_ho,chem_ho2;vmix_ct:vmix_co,vmix_o3,vmix_no,vmix_no2,vmix_hno3,vmix_iso,vmix_ho,vmix_ho2;advh_ct:advh_co,advh_o3,advh_no,advh_no2,advh_hno3,advh_iso,advh_ho,advh_ho2;advz_ct:advz_co,advz_o3,advz_no,advz_no2,advz_hno3,advz_iso,advz_ho,advz_ho2
 
+
+# Lightning NOx tracers
+state   real    lnox_total   ikjf    tracer        1         -     i8rhusdf=(bdy_interp:dt)    "lnox_total"      "Total LNOx tracer"          "ppmv"
+state   real    lnox_ic      ikjf    tracer        1         -     i8rhusdf=(bdy_interp:dt)    "lnox_ic"         "IC LNOx tracer"             "ppmv"
+state   real    lnox_cg      ikjf    tracer        1         -     i8rhusdf=(bdy_interp:dt)    "lnox_cg"         "CG LNOx tracer"             "ppmv"
+
+rconfig   real      N_IC            namelist,chem     max_domains        500.     rh     "N_IC"               "IC emission factor"                "moles/flash"
+rconfig   real      N_CG            namelist,chem     max_domains        500.     rh     "N_CG"               "CG emission factor"                "moles/flash"
+rconfig   integer   lnox_opt        namelist,chem     max_domains        0        rh     "lnox_opt"           "Method for vertical distribution"   ""
+rconfig   logical   lnox_passive    namelist,chem     max_domains        .false.  rh     "lnox_passive"       "true = tracer only (no emission)"   ""
+rconfig  real       ltng_temp_upper          namelist,physics   max_domains    -45.    -   "ltng_temp_upper"           "Upper isotherm for lightning modes"         "C"
+rconfig  real       ltng_temp_lower          namelist,physics   max_domains    -15.    -   "ltng_temp_lower"           "Lower isotherm for lightning modes"         "C"
+
+package  lnox_opt_none      lnox_opt==0    -   -
+package  lnox_opt_ott       lnox_opt==1    -   tracer:lnox_total
+package  lnox_opt_decaria   lnox_opt==2    -   tracer:lnox_ic,lnox_cg

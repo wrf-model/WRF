@@ -143,8 +143,8 @@
         !  base-state height (phb).
 
         CALL wrf_get_dom_ti_char ( fid , 'TITLE' , input_name , ierr )
-        this_is_an_ideal_run = INDEX(TRIM(input_name) , 'IDEAL' ) .NE. 0
-        IF ( this_is_an_ideal_run ) THEN
+        grid%this_is_an_ideal_run = INDEX(TRIM(input_name) , 'IDEAL' ) .NE. 0
+        IF ( grid%this_is_an_ideal_run ) THEN
           grid%hypsometric_opt = 1
           config_flags%hypsometric_opt = 1
 	  DO loop = 1 , grid%max_dom

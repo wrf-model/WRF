@@ -155,6 +155,19 @@
 
 #endif
 
+#if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+! In program real, if hypsometric_opt = 2, adjust_heights cannot be set to .true. 
+!-----------------------------------------------------------------------
+      IF ( model_config_rec%hypsometric_opt .EQ. 2 \
+           .AND. model_config_rec%adjust_heights ) THEN
+           WRITE (wrf_err_message, FMT='(A,A)') '--- NOTE: hypsometric_opt is 2, ', &
+                  'setting adjust_heights = F'
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec%adjust_heights = .false.
+      ENDIF
+#endif
+
 !-----------------------------------------------------------------------
 ! If sst_update = 0, set io_form_auxinput4 to 0 so WRF will not try to
 ! input the data; auxinput_interval must also be 0
@@ -285,6 +298,23 @@
       END IF
 
 !-----------------------------------------------------------------------
+!  shcu_physics = 3 (grimsshcuscheme) only works with YSU PBL.     
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%bl_pbl_physics(i) .NE. YSUSCHEME ) .AND. &
+              ( model_config_rec%shcu_physics(i) .EQ. GRIMSSHCUSCHEME ) ) THEN
+            model_config_rec%shcu_physics(i) = 0
+            oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = 'bl_pbl_physics /= 1, implies shcu_physics cannot be 3, resetting'
+         CALL wrf_message ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
 !  If analysis FDDA is turned off, reset the io_forms to zero so that
 !  there is no chance that WRF tries to input the data.
 !-----------------------------------------------------------------------
@@ -386,6 +416,7 @@
        DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec%cu_diag(i) .EQ. G3TAVE ) THEN
           IF ( ( model_config_rec%cu_physics(i) .NE. GDSCHEME ) .AND. &
+               ( model_config_rec%cu_physics(i) .NE. GFSCHEME ) .AND. &
                ( model_config_rec%cu_physics(i) .NE. G3SCHEME ) ) THEN
                 wrf_err_message = '--- ERROR: Using cu_diag=1 requires use of one of the following CU schemes:'
                 CALL wrf_message ( wrf_err_message )
@@ -405,6 +436,7 @@
 
       DO i = 1, model_config_rec % max_dom
          IF ( ( model_config_rec%cu_physics(i) .EQ. GDSCHEME ) .OR. &
+              ( model_config_rec%cu_physics(i) .EQ. GFSCHEME ) .OR. &
               ( model_config_rec%cu_physics(i) .EQ. G3SCHEME ) ) THEN
             model_config_rec%cu_diag(i) = 1
          ELSE
@@ -457,6 +489,23 @@
       END IF
 
 !-----------------------------------------------------------------------
+! Set the namelist parameters for the RRTMG radiation scheme if either
+! ra_lw_physics = RRTMG_LWSCHEME or ra_sw_physics = RRTMG_SWSCHEME.
+!-----------------------------------------------------------------------
+
+      IF (( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME ) .OR. &
+          ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME )) THEN
+         model_config_rec % levsiz = 59
+         model_config_rec % alevsiz = 12
+         model_config_rec % no_src_types = 6
+
+         wrf_err_message = '--- NOTE: RRTMG radiation is in use, setting:  ' // &
+                           'levsiz=59, alevsiz=12, no_src_types=6'
+         CALL wrf_message ( wrf_err_message )
+
+      END IF
+
+!-----------------------------------------------------------------------
 ! Set namelist parameter num_soil_levels depending on the value of 
 ! sf_surface_physics
 !-----------------------------------------------------------------------
@@ -473,6 +522,8 @@
            model_config_rec % num_soil_layers = 6
       IF ( model_config_rec % sf_surface_physics(1) .EQ. PXLSMSCHEME ) &
            model_config_rec % num_soil_layers = 2
+      IF ( model_config_rec % sf_surface_physics(1) .EQ. CLMSCHEME ) &
+           model_config_rec % num_soil_layers = 10
       IF ( model_config_rec % sf_surface_physics(1) .EQ. 88          ) &
            model_config_rec % num_soil_layers = 4
 

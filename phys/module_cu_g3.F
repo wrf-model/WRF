@@ -17,7 +17,7 @@ CONTAINS
               ,APR_CAPMA,APR_CAPME,APR_CAPMI                    &
               ,MASS_FLUX,XF_ENS,PR_ENS,HT,XLAND,gsw,edt_out     &
               ,GDC,GDC2 ,kpbl,k22_shallow,kbcon_shallow         &
-              ,ktop_shallow,xmb_shallow                         &
+              ,ktop_shallow,xmb_shallow,ktop_deep               &
               ,cugd_tten,cugd_qvten ,cugd_qcten                 &
               ,cugd_ttens,cugd_qvtens,cugd_avedx,imomentum      &
               ,ensdim,maxiens,maxens,maxens2,maxens3,ichoice    &
@@ -78,6 +78,7 @@ CONTAINS
    INTEGER, DIMENSION( ims:ime , jms:jme ),INTENT(IN) :: KPBL
    INTEGER, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT) :: k22_shallow, &
                  kbcon_shallow,ktop_shallow
+   INTEGER, DIMENSION( ims:ime , jms:jme ),INTENT(  OUT) :: ktop_deep
 !
    REAL, INTENT(IN   ) :: DT, DX
 !
@@ -237,6 +238,7 @@ CONTAINS
      kbcon_shallow(i,j)=0
      ktop_shallow(i,j)=0
      xmb_shallow(i,j)=0
+     ktop_deep(i,j)=0
    enddo
    enddo
    tcrit=258.
@@ -486,6 +488,7 @@ CONTAINS
               k22_shallow(i,j)=k22s(i)
               kbcon_shallow(i,j)=kbcons(i)
               ktop_shallow(i,j)=ktops(i)
+              ktop_deep(i,j)=ktop(i)
               cuten(i)=0.
               if(pret(i).gt.0.)then
                  cuten(i)=1.

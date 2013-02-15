@@ -1179,7 +1179,6 @@ crnt:    DO                      !-- loop on the courant condition
          call write_chanel_real(cd,nlinks_index,mpp_nlinks,nlinks)
          if(my_id .eq. IO_id) then
            write(unit,*) cd
-           call flush(unit)
          endif
 #endif
          return

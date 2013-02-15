@@ -257,6 +257,8 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
       )
 #endif
    nested_grid%intermediate_grid%interp_mp=parent_grid%interp_mp .or. nested_grid%interp_mp
+  nested_grid%intermediate_grid%pdyn_parent_age=parent_grid%pdyn_parent_age
+  nested_grid%intermediate_grid%pdyn_smooth_age=parent_grid%pdyn_smooth_age
 
 
     ! couple parent domain

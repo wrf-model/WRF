@@ -88,6 +88,7 @@ module wrf_data
 ! to .FALSE. when the first field is read or written.  
     logical                               :: first_operation
     logical                               :: R4OnOutput
+    logical                               :: use_netcdf_classic
   end type wrf_data_handle
   type(wrf_data_handle),target            :: WrfDataHandles(WrfDataHandleMax)
 end module wrf_data
@@ -1046,14 +1047,7 @@ subroutine ext_ncd_open_for_read_begin( FileName, Comm, IOComm, SysDepInfo, Data
     return
   endif
 
-#ifdef USE_NETCDF4_FEATURES
-! open_mode = IOR(nf_netcdf4, nf_classic_model)
-  open_mode = nf_netcdf4
-! open_mode = IOR(open_mode, NF_NOWRITE)
-  stat = NF_OPEN(FileName, open_mode, DH%NCID)
-#else
   stat = NF_OPEN(FileName, NF_NOWRITE, DH%NCID)
-#endif
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
@@ -1190,14 +1184,7 @@ subroutine ext_ncd_open_for_update( FileName, Comm, IOComm, SysDepInfo, DataHand
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
-#ifdef USE_NETCDF4_FEATURES
-! open_mode = IOR(nf_netcdf4, nf_classic_model)
-  open_mode = nf_netcdf4
-! open_mode = IOR(open_mode, NF_WRITE)
-  stat = NF_OPEN(FileName, open_mode, DH%NCID)
-#else
   stat = NF_OPEN(FileName, NF_WRITE, DH%NCID)
-#endif
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
@@ -1333,9 +1320,19 @@ SUBROUTINE ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   DH%Times     = ZeroDate
 #ifdef USE_NETCDF4_FEATURES
 ! create_mode = IOR(nf_netcdf4, nf_classic_model)
+  if ( DH%use_netcdf_classic ) then
+  write(msg,*) 'output will be in classic NetCDF format'
+  call wrf_debug ( WARN , TRIM(msg))
+#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
+  stat = NF_CREATE(FileName, IOR(NF_CLOBBER,NF_64BIT_OFFSET), DH%NCID)
+#else
+  stat = NF_CREATE(FileName, NF_CLOBBER, DH%NCID)
+#endif
+  else
   create_mode = nf_netcdf4
   stat = NF_CREATE(FileName, create_mode, DH%NCID)
   stat = NF_SET_CHUNK_CACHE(cache_size, cache_nelem, cache_preemption)
+  endif
 #else
 #ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
   stat = NF_CREATE(FileName, IOR(NF_CLOBBER,NF_64BIT_OFFSET), DH%NCID)
@@ -1652,6 +1649,11 @@ subroutine ext_ncd_ioinit(SysDepInfo, Status)
   WrfDataHandles(1:WrfDataHandleMax)%TimesName    = 'Times'
   WrfDataHandles(1:WrfDataHandleMax)%DimUnlimName = 'Time'
   WrfDataHandles(1:WrfDataHandleMax)%FileStatus   = WRF_FILE_NOT_OPENED
+  if(trim(SysDepInfo) == "use_netcdf_classic" ) then
+     WrfDataHandles(1:WrfDataHandleMax)%use_netcdf_classic = .true.
+  else
+     WrfDataHandles(1:WrfDataHandleMax)%use_netcdf_classic = .false.
+  endif
   Status = WRF_NO_ERR
   return
 end subroutine ext_ncd_ioinit
@@ -2436,11 +2438,6 @@ subroutine ext_ncd_write_field(DataHandle,DateStr,Var,Field,FieldTypeIn,  &
     return
   endif
 
-#ifdef USE_NETCDF4_FEATURES
-  call set_chunking(MemoryOrder,need_chunking)
-  compression_level = 2
-#endif
-
   call DateCheck(DateStr,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'Warning DATE STRING ERROR |',DateStr,'| in ',__FILE__,', line', __LINE__ 
@@ -2455,6 +2452,15 @@ subroutine ext_ncd_write_field(DataHandle,DateStr,Var,Field,FieldTypeIn,  &
     return
   endif
   NCID = DH%NCID
+
+#ifdef USE_NETCDF4_FEATURES
+if ( .not. DH%use_netcdf_classic ) then
+  call set_chunking(MemoryOrder,need_chunking)
+  compression_level = 2
+else
+  need_chunking = .false.
+endif
+#endif
 
   if ( DH%R4OnOutput .and. FieldTypeIn == WRF_DOUBLE ) then
      FieldType = WRF_REAL

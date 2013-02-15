@@ -71,7 +71,9 @@ nl_get_0_routines.o : nl_get_0_routines.F
 nl_get_1_routines.o : nl_get_1_routines.F
 nl_set_0_routines.o : nl_set_0_routines.F
 nl_set_1_routines.o : nl_set_1_routines.F
+module_sf_clm.o: module_sf_clm.F
 
+module_sf_clm.o \
 mediation_integrate.o \
 track_driver.o \
 convert_nmm.o \

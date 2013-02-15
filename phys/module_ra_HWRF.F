@@ -111,12 +111,12 @@ CONTAINS
 !
 !
 !-----------------------------------------------------------------------
-      SUBROUTINE HWRFRA(DT,THRATEN,THRATENLW,THRATENSW,PI3D              & 
+      SUBROUTINE HWRFRA(explicit_convection, DT,THRATEN,THRATENLW,THRATENSW,PI3D &
      &                ,XLAND,P8W,DZ8W,RHO_PHY,P_PHY,T                   &
      &                ,QV,QW,QI                                         & 
      &                ,TSK2D,GLW,GSW                                    &
      &                ,TOTSWDN,TOTLWDN,RSWTOA,RLWTOA,CZMEAN             & 
-     &                ,GLAT,GLON,HTOP,HBOT,htopr,hbotr,ALBEDO,CUPPT                 &
+     &                ,GLAT,GLON,HTOP,HBOT,htopr,hbotr,ALBEDO,CUPPT     &
      &                ,VEGFRA,SNOW,G,GMT                                &
      &                ,NSTEPRA,NPHS,ITIMESTEP                           &
      &                ,JULYR,JULDAY,GFDL_LW,GFDL_SW                     &
@@ -128,6 +128,7 @@ CONTAINS
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------------------
+      LOGICAL, INTENT(IN) :: explicit_convection
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE,ITIMESTEP           &
@@ -148,7 +149,7 @@ CONTAINS
      &                                                TSK2D,VEGFRA,     &
      &                                                XLAND
       REAL, INTENT(IN), DIMENSION(ims:ime, jms:jme):: GLAT,GLON
-      REAL, INTENT(INOUT), DIMENSION(ims:ime, jms:jme):: HTOP,HBOT,htopr,hbotr,CUPPT
+      REAL, INTENT(INOUT), DIMENSION(ims:ime, jms:jme):: HTOP,HBOT,htopr,hbotr,cuppt
       REAL, INTENT(INOUT), DIMENSION(ims:ime, jms:jme):: RSWTOA,        & !Added
      &                                                   RLWTOA,        & !Added
      &                                                   ACFRST,        & !Added
@@ -174,6 +175,7 @@ CONTAINS
 !***********************************************************************
 !-----------------------------------------------------------------------
       IF(GFDL_LW.AND.GFDL_SW )GO TO 100
+
 !
 ! NEED HYDROSTATIC PRESSURE HERE (MONOTONIC CHANGE WITH HEIGHT)
       DO J=JTS,JTE
@@ -224,7 +226,7 @@ CONTAINS
         HTOPR(I,J)=HTOP(I,J)        
       ENDDO
       ENDDO
-
+         
       DO J=JTS,JTE
       DO I=ITS,ITE
         HBOT(I,J)=KTE+1-HBOT(I,J)
@@ -244,7 +246,8 @@ CONTAINS
 !-----------------------------------------------------------------------
       CALL RADTN (DT,TFLIP,QFLIP,QWFLIP,QIFLIP,                         &
      &            PFLIP,P8WFLIP,XLAND,TSK2D,                            &
-     &            GLAT,GLON,HTOP,HBOT,ALBEDO,CUPPT,                     &
+     &            GLAT,GLON,HTOP,HBOT,ALBEDO,cuppt,                     &
+     &            .not.explicit_convection,                             &
      &            ACFRCV,NCFRCV,ACFRST,NCFRST,                          &
      &            VEGFRA,SNOW,GLW,GSW,                                  &
      &            TOTSWDN,TOTLWDN,                                      &
@@ -297,7 +300,7 @@ CONTAINS
         CUPPT(I,J)=0.
       ENDDO
       ENDDO
-!
+         !
   100 IF(GFDL_SW)THEN
         DO J=JTS,JTE
         DO K=KTS,KTE
@@ -314,7 +317,7 @@ CONTAINS
 !-----------------------------------------------------------------------
       SUBROUTINE RADTN(DT,T,Q,QCW,QICE,                                 &
      &                 PFLIP,P8WFLIP,XLAND,TSK2D,                       &
-     &                 GLAT,GLON,HTOP,HBOT,ALB,CUPPT,                   &
+     &                 GLAT,GLON,HTOP,HBOT,ALB,CUPPT,CNCLD,             &
 !    &                 RAD1,RAD2,RAD3,RAD4,                             &
 !    &                 TABLE1,TABLE2,TABLE3,EM1,EM1WDE,EM3,             &
      &                 ACFRCV,NCFRCV,ACFRST,NCFRST,                     &
@@ -422,6 +425,7 @@ CONTAINS
 !**********************************************************************
 !-----------------------------------------------------------------------
 !     INTEGER, PARAMETER         :: NL=81
+      LOGICAL, INTENT(IN)        :: cncld
       INTEGER, INTENT(IN)        :: ids,ide, jds,jde, kds,kde ,         &
      &                              ims,ime, jms,jme, kms,kme ,         &
      &                              its,ite, jts,jte, kts,kte
@@ -451,7 +455,7 @@ CONTAINS
 !-----------------------------------------------------------------------
       LOGICAL :: SHORT,LONG
       LOGICAL :: BITX,BITY,BITZ,BITW,BIT1,BIT2,BITC,BITS,BITCP1,BITSP1
-      LOGICAL :: CNCLD,NEW_CLOUD
+      LOGICAL :: NEW_CLOUD
 !-----------------------------------------------------------------------
       REAL, INTENT(IN), DIMENSION(ims:ime,jms:jme) :: XLAND,TSK2D
       REAL, INTENT(IN), DIMENSION(its:ite, kms:kme, jts:jte):: Q,QCW,   &
@@ -571,7 +575,7 @@ CONTAINS
       LM=kte
       LM1=LM-1
       LP1=LM+1
-      CNCLD=.TRUE.
+!     CNCLD=.TRUE.
 !
       DO J=JTS,JTE
       DO I=ITS,ITE

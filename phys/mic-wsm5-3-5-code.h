@@ -10,8 +10,8 @@
                    ,rain,rainncv                                  &
                    ,sr                                            &
                    ,snow,snowncv                                  &
-                   ,nx0,nk0,irestrict                              &
-                   ,doit,kts,kte  ) ! ,tid,ip                                   )
+                   ,nx0,nk0,irestrict                             &
+                   ,doit,kts,kte                                  ) 
 
 !-------------------------------------------------------------------
   IMPLICIT NONE
@@ -92,11 +92,7 @@
                                                          snowncv
 
   LOGICAL, INTENT(IN) :: doit    ! added for conformity with standalone driver
-#ifndef NOTYET
-!  INTEGER, INTENT(IN) :: ip,tid  ! added for conformity with standalone driver
-  INTEGER :: ip,tid  ! added for conformity with standalone driver
-#endif
-! LOCAL VAR
+! Local var
   REAL, DIMENSION( its:ite , kts:kte , 2) ::                      &
                                                               rh, &
                                                               qs, &
@@ -153,6 +149,8 @@
   LOGICAL, DIMENSION( its:ite ) ::                        flgcld
 #ifdef WSM_NO_CONDITIONAL_IN_VECTOR
   REAL, DIMENSION(its:ite) :: xal, xbl
+#else
+  REAL tr, logtr
 #endif
   REAL  ::                                                        &
             cpmcal, xlcal, diffus,                                &
@@ -176,7 +174,6 @@
 ! Temporaries used for inlining fpvs function, and other vector stuff
   REAL  :: dldti, xb, xai, xbi, xa, hvap, cvap, hsub, dldt, ttp
   REAL :: tr_v(its:ite),logtr_v(its:ite),supcol_v(its:ite),supcolt_v(its:ite),xlf_v(its:ite),temp_v(its:ite)
-real qqqq
 ! mask variable
   LOGICAL*4 :: lmask(CHUNK)
 ! 
@@ -202,6 +199,7 @@ real qqqq
 !     conden(a,b,c,d,e) = (max(b,qmin)-c)/(1.+d*d/(rv*e)*c/(a*a))
 !
 !----------------------------------------------------------------
+#if 1
 !DIR$ ASSUME_ALIGNED t:64
 !DIR$ ASSUME_ALIGNED qci:64
 !DIR$ ASSUME_ALIGNED qrs:64
@@ -214,6 +212,7 @@ real qqqq
 !DIR$ ASSUME_ALIGNED sr:64
 !DIR$ ASSUME_ALIGNED snow:64
 !DIR$ ASSUME_ALIGNED snowncv:64
+#endif
       if ( irestrict .le. 0 .OR. .NOT. doit ) return
       idim = ite-its+1
       kdim = kte-kts+1
@@ -326,7 +325,28 @@ real qqqq
         ENDWHERE
       enddo
 #else
-   Bad --- XEON_OPTIMIZED VERSION NEEDS WSM5_NO_CONDITIONAL_IN_VECTOR
+!   Bad --- XEON_OPTIMIZED VERSION NEEDS WSM5_NO_CONDITIONAL_IN_VECTOR
+      do k = kts, kte
+        do i = its, ite
+          tr=ttp/t(i,k)
+          logtr=log(tr)
+          qs(i,k,1)=psat*exp(logtr*(xa)+xb*(1.-tr))
+          qs(i,k,1) = min(qs(i,k,1),0.99*p(i,k))
+          qs(i,k,1) = ep2 * qs(i,k,1) / (p(i,k) - qs(i,k,1))
+          qs(i,k,1) = max(qs(i,k,1),qmin)
+          rh(i,k,1) = max(q(i,k) / qs(i,k,1),qmin)
+          if(t(i,k).lt.ttp) then
+            qs(i,k,2)=psat*exp(logtr*(xai)+xbi*(1.-tr))
+          else
+            qs(i,k,2)=psat*exp(logtr*(xa)+xb*(1.-tr))
+          endif
+          qs(i,k,2) = min(qs(i,k,2),0.99*p(i,k))
+          qs(i,k,2) = ep2 * qs(i,k,2) / (p(i,k) - qs(i,k,2))
+          qs(i,k,2) = max(qs(i,k,2),qmin)
+          rh(i,k,2) = max(q(i,k) / qs(i,k,2),qmin)
+        enddo
+      enddo
+
 #endif
 !
 !----------------------------------------------------------------
@@ -373,9 +393,9 @@ real qqqq
 !     first, vertical terminal velosity for minor loops
 !----------------------------------------------------------------
       qrs_tmp = qrs
-      call slope_wsm5(qrs_tmp,den_tmp,denfac,t,rslope,rslopeb,rslope2,rslope3, &
-                     work1,irestrict,kts,kte,lmask)
-!                     work1,its,ite,kts,kte)
+      call slope_wsm5(QRS=qrs_tmp,DEN=den_tmp,DENFAC=denfac,T=t, &
+                     RSLOPE=rslope,RSLOPEB=rslopeb,RSLOPE2=rslope2,RSLOPE3=rslope3, &
+                     VT=work1,IRESTRICT=irestrict,KTS=kts,KTE=kte,LMASK=lmask)
 !
       WHERE( qrs(:,:,1) .le. 0.0 )
         workr = 0.0
@@ -389,20 +409,23 @@ real qqqq
       ENDWHERE
       denqrs1 = den*qrs(:,:,1)
       denqrs2 = den*qrs(:,:,2)
-      call nislfv_rain_plm(idim,kdim,den_tmp,denfac,t,delz_tmp,workr,denqrs1,  &
-                           delqrs1,dtcld,1,1,irestrict,lon,lat,.true.)
-      call nislfv_rain_plm(idim,kdim,den_tmp,denfac,t,delz_tmp,works,denqrs2,  &
-                           delqrs2,dtcld,2,1,irestrict,lon,lat,.false.)
+      call nislfv_rain_plm(IM0=idim,KM=kdim,DEN=den_tmp,DENFAC=denfac,TK=t,DZ=delz_tmp,&
+                           WW0=workr,QQ0=denqrs1,PRECIP0=delqrs1,DT=dtcld,ID=1,ITER=1,&
+                           IRESTRICT=irestrict,LON=lon,LAT=lat,DOIT=.true.,CALL=1)
+      call nislfv_rain_plm(IM0=idim,KM=kdim,DEN=den_tmp,DENFAC=denfac,TK=t,DZ=delz_tmp,&
+                           WW0=works,QQ0=denqrs2,PRECIP0=delqrs2,DT=dtcld,ID=2,ITER=1,&
+                           IRESTRICT=irestrict,LON=lon,LAT=lat,DOIT=.false.,CALL=2)
       qrs(:,:,1) = max(denqrs1/den,0.)
       qrs(:,:,2) = max(denqrs2/den,0.)
       fall(:,:,1) = denqrs1*workr/delz
       fall(:,:,2) = denqrs2*works/delz
       fall(:,1,1) = delqrs1/delz(:,1)/dtcld
       fall(:,1,2) = delqrs2/delz(:,1)/dtcld
+
       qrs_tmp = qrs 
-      call slope_wsm5(qrs_tmp,den_tmp,denfac,t,rslope,rslopeb,rslope2,rslope3, &
-                     work1,irestrict,kts,kte,lmask )
-!                     work1,its,ite,kts,kte)
+      call slope_wsm5(QRS=qrs_tmp,DEN=den_tmp,DENFAC=denfac,T=t, &
+                      RSLOPE=rslope,RSLOPEB=rslopeb,RSLOPE2=rslope2,RSLOPE3=rslope3, &
+                      VT=work1,IRESTRICT=irestrict,KTS=kts,KTE=kte,LMASK=lmask )
       !note reuse of tr_v as temporary for coeres
       xlf = xlf0
       do k = kte, kts, -1
@@ -447,8 +470,9 @@ real qqqq
                )
       ENDWHERE
       denqci = den*qci(:,:,2)
-      call nislfv_rain_plm(idim,kdim,den_tmp,denfac,t,delz_tmp,work1c,denqci,  &
-                           delqi,dtcld,1,0,irestrict,lon,lat,.false.)
+      call nislfv_rain_plm(IM0=idim,KM=kdim,DEN=den_tmp,DENFAC=denfac,TK=t,DZ=delz_tmp,&
+                           WW0=work1c,QQ0=denqci,PRECIP0=delqi,DT=dtcld,ID=1,ITER=0,&
+                           IRESTRICT=irestrict,LON=lon,LAT=lat,DOIT=.false.,CALL=3)
       do k = kts, kte
         WHERE(lmask)
           qci(:,k,2) = max(denqci(:,k)/den(:,k),0.)
@@ -535,9 +559,9 @@ real qqqq
 !     update the slope parameters for microphysics computation
 !
       qrs_tmp = qrs
-      call slope_wsm5(qrs_tmp,den_tmp,denfac,t,rslope,rslopeb,rslope2,rslope3, &
-                     work1,irestrict,kts,kte,lmask)
-!                     work1,its,ite,kts,kte)
+      call slope_wsm5(QRS=qrs_tmp,DEN=den_tmp,DENFAC=denfac,T=t, &
+                      RSLOPE=rslope,RSLOPEB=rslopeb,RSLOPE2=rslope2,RSLOPE3=rslope3, &
+                      VT=work1,IRESTRICT=irestrict,KTS=kts,KTE=kte,LMASK=lmask )
 !------------------------------------------------------------------
 !     work1:  the thermodynamic term in the denominator associated with
 !             heat conduction and vapor diffusion
@@ -908,8 +932,9 @@ real qqqq
       enddo                  ! big loops
   END SUBROUTINE wsm52d
 !------------------------------------------------------------------------------
+
   SUBROUTINE slope_wsm5(qrs,den,denfac,t,rslope,rslopeb,rslope2,rslope3,   &
-                            vt,kts,kte,irestrict,lmask)
+                            vt,irestrict,kts,kte,lmask)
   IMPLICIT NONE
   INTEGER       ::               irestrict,kts,kte
   REAL, DIMENSION( its:ite , kts:kte,2) ::                                     &
@@ -1089,7 +1114,7 @@ real qqqq
 
 !-------------------------------------------------------------------
 !  SUBROUTINE nislfv_rain_plm(im,km,denl,denfacl,tkl,dzl,wwl,rql,precip,dt,id,iter)
-  SUBROUTINE nislfv_rain_plm(im0,km,den,denfac,tk,dz,ww0,qq0,precip0,dt,id,iter,irestrict,lon,lat,doit)
+  SUBROUTINE nislfv_rain_plm(im0,km,den,denfac,tk,dz,ww0,qq0,precip0,dt,id,iter,irestrict,lon,lat,doit,call)
 !-------------------------------------------------------------------
 !
 ! for non-iteration semi-Lagrangain forward advection for cloud
@@ -1123,7 +1148,8 @@ real qqqq
       real, intent(  out) ::  precip0(im)
       real, intent(inout) ::  qq0(im,km)
       real, intent(in   ) ::  dt
-logical, intent(in) :: doit
+      logical, intent(in) :: doit
+      integer :: call
 !
       integer  i,k,m,kk,iter
       integer n
@@ -1177,7 +1203,7 @@ logical, intent(in) :: doit
       enddo
 !
 ! save departure wind
-      wd = ww
+     wd = ww
      DO n = 0, iter
       where(lmask)
 ! plm is 2nd order, we can use 2nd order wi or 3rd order wi
@@ -1211,12 +1237,18 @@ logical, intent(in) :: doit
 ! diffusivity of wi
       con1 = 0.05
       do k=km,1,-1
-        
-        where (lmask) decfl = (wi(:,k+1)-wi(:,k))*dt/dz(:,k)
-        where (lmask .and. decfl .gt. con1 )
-          wi(:,k) = wi(:,k+1) - con1*dz(:,k)/dt
+        where (lmask) 
+          decfl = (wi(:,k+1)-wi(:,k))*dt/dz(:,k)
+        elsewhere
+          decfl = 0.
+        endwhere
+        where (lmask ) 
+          where (decfl .gt. con1 )
+            wi(:,k) = wi(:,k+1) - con1*dz(:,k)/dt
+          endwhere
         endwhere
       enddo
+
 ! compute arrival point
       do k=1,km+1
         where (lmask) za(:,k) = zi(:,k) - wi(:,k)*dt
@@ -1237,9 +1269,13 @@ logical, intent(in) :: doit
 ! then back to use mean terminal velocity
       if( n.le.iter-1 ) then
         if (id.eq.1) then
-          call slope_rain(qr,den,denfac,tk,tmp,tmp1,tmp2,tmp3,wa,irestrict,1,km,lmask)
+          call slope_rain(QRS=qr,DEN=den,DENFAC=denfac,T=tk,RSLOPE=tmp, &
+                          RSLOPEB=tmp1,RSLOPE2=tmp2,RSLOPE3=tmp3,VT=wa, &
+                          IRESTRICT=irestrict,KTS=1,KTE=km,LMASK=lmask)
         else
-          call slope_snow(qr,den,denfac,tk,tmp,tmp1,tmp2,tmp3,wa,irestrict,1,km,lmask)
+          call slope_snow(QRS=qr,DEN=den,DENFAC=denfac,T=tk,RSLOPE=tmp, &
+                          RSLOPEB=tmp1,RSLOPE2=tmp2,RSLOPE3=tmp3,VT=wa, &
+                          IRESTRICT=irestrict,KTS=1,KTE=km,LMASK=lmask)
         endif 
         do k=1,km
           if( n.ge.1 ) where (lmask) wa(:,k)=0.5*(wa(:,k)+was(:,k))
@@ -1247,7 +1283,7 @@ logical, intent(in) :: doit
         enddo
         was = wa
       endif
-      ENDDO
+     ENDDO  ! n loop
 !
 ! estimate values at arrival cell interface with monotone
       do k=2,km
@@ -1305,11 +1341,17 @@ logical, intent(in) :: doit
                  tmask = .FALSE.
                END WHERE
              enddo find_kt
-             kt = kt - 1
+             kt = max(kt - 1,1)
 
+#define RANGE_CHECKING
+#ifndef RANGE_CHECKING
 # define DX1 (i+(kb(i)-1)*im),1
 # define DX2 (i+(kt(i)-1)*im),1
-!DEC$ SIMD
+#else
+# define DX1 i,kb(i)
+# define DX2 i,kt(i)
+#endif
+!out$ SIMD
              DO i = 1, CHUNK
                qa_gath_b(i) = qa(DX1)
                za_gath_b(i) = za(DX1)
@@ -1317,7 +1359,7 @@ logical, intent(in) :: doit
                qpi_gath_b(i) = qpi(DX1)
                qmi_gath_b(i) = qmi(DX1)
              ENDDO
-!DEC$ SIMD
+!out$ SIMD
              DO i = 1, CHUNK
                za_gath_t(i) = za(DX2)
                dza_gath_t(i) = dza(DX2)

@@ -452,11 +452,11 @@
          IF ( ( model_config_rec%bl_pbl_physics(i) .EQ. TEMFPBLSCHEME ) .AND. &
               ( model_config_rec%sf_sfclay_physics(i) .NE. TEMFSFCSCHEME ) )  THEN
             wrf_err_message = '--- ERROR: Using bl_pbl_physics=10 requires sf_sfclay_physics=10 '
-            CALL wrf_fatal ( wrf_err_message )
+            CALL wrf_error_fatal ( TRIM(wrf_err_message) )
          ELSEIF ( ( model_config_rec%bl_pbl_physics(i) .NE. TEMFPBLSCHEME ) .AND. &
                   ( model_config_rec%sf_sfclay_physics(i) .EQ. TEMFSFCSCHEME ) ) THEN
             wrf_err_message = '--- ERROR: Using sf_sfclay_physics=10 requires bl_pbl_physics=10 '
-            CALL wrf_fatal ( wrf_err_message )
+            CALL wrf_error_fatal ( TRIM(wrf_err_message) )
          END IF
       ENDDO      ! Loop over domains
 

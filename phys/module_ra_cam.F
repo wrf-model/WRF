@@ -495,10 +495,10 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 !ccc
    IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'CAM interpolated values_____ year:',yr,' julian day:',julian
-     call wrf_debug( 0, message)
+     call wrf_debug( 100, message)
      WRITE(message,*)'CAM co2vmr: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr,' cfc11:',f11vmr,&
        ' cfc12:',f12vmr
-     call wrf_debug( 0, message)
+     call wrf_debug( 100, message)
    ENDIF
 #endif
 !ccc

@@ -280,6 +280,15 @@ em_real : wrf
                ln -sf ../../run/RRTMG_SW_DATA . ;                      \
                ln -sf ../../run/CAM_ABS_DATA . ;                       \
                ln -sf ../../run/CAM_AEROPT_DATA . ;                    \
+               ln -sf ../../run/CLM_ALB_ICE_DFS_DATA . ;               \
+               ln -sf ../../run/CLM_ALB_ICE_DRC_DATA . ;               \
+               ln -sf ../../run/CLM_ASM_ICE_DFS_DATA . ;               \
+               ln -sf ../../run/CLM_ASM_ICE_DRC_DATA . ;               \
+               ln -sf ../../run/CLM_DRDSDT0_DATA . ;                   \
+               ln -sf ../../run/CLM_EXT_ICE_DFS_DATA . ;               \
+               ln -sf ../../run/CLM_EXT_ICE_DRC_DATA . ;               \
+               ln -sf ../../run/CLM_KAPPA_DATA . ;                     \
+               ln -sf ../../run/CLM_TAU_DATA . ;                       \
                ln -sf ../../run/ozone.formatted . ;                    \
                ln -sf ../../run/ozone_lat.formatted . ;                \
                ln -sf ../../run/ozone_plev.formatted . ;               \
@@ -319,6 +328,15 @@ em_real : wrf
              ln -sf ../../run/RRTMG_SW_DATA . ;                     \
              ln -sf ../../run/CAM_ABS_DATA . ;                      \
              ln -sf ../../run/CAM_AEROPT_DATA . ;                   \
+             ln -sf ../../run/CLM_ALB_ICE_DFS_DATA . ;              \
+             ln -sf ../../run/CLM_ALB_ICE_DRC_DATA . ;              \
+             ln -sf ../../run/CLM_ASM_ICE_DFS_DATA . ;              \
+             ln -sf ../../run/CLM_ASM_ICE_DRC_DATA . ;              \
+             ln -sf ../../run/CLM_DRDSDT0_DATA . ;                  \
+             ln -sf ../../run/CLM_EXT_ICE_DFS_DATA . ;              \
+             ln -sf ../../run/CLM_EXT_ICE_DRC_DATA . ;              \
+             ln -sf ../../run/CLM_KAPPA_DATA . ;                    \
+             ln -sf ../../run/CLM_TAU_DATA . ;                      \
              ln -sf ../../run/ozone.formatted . ;                   \
              ln -sf ../../run/ozone_lat.formatted . ;               \
              ln -sf ../../run/ozone_plev.formatted . ;              \

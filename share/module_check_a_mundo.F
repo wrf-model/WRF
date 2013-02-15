@@ -1,4 +1,4 @@
-!=======================================================================
+=======================================================================
 !
    MODULE module_check_a_mundo
 
@@ -429,7 +429,7 @@
        END DO
  
 !-----------------------------------------------------------------------
-! The two Grell cumulus parameterization schemes need to have the 
+! The three Grell cumulus parameterization schemes need to have the 
 ! namelist flag cu_diag=1, and all other cumulus schemes must have
 ! cu_diag=0.
 !-----------------------------------------------------------------------
@@ -443,6 +443,23 @@
             model_config_rec%cu_diag(i) = 0
          END IF
       END DO
+
+!-----------------------------------------------------------------------
+!  Only implement the TEMF PBL scheme with the TEMP SFCLAY scheme.  
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%bl_pbl_physics(i) .EQ. TEMFPBLSCHEME ) .AND. &
+              ( model_config_rec%sf_sfclay_physics(i) .NE. TEMFSFCSCHEME ) )  THEN
+            wrf_err_message = '--- ERROR: Using bl_pbl_physics=10 requires sf_sfclay_physics=10 '
+            CALL wrf_fatal ( wrf_err_message )
+         ELSEIF ( ( model_config_rec%bl_pbl_physics(i) .NE. TEMFPBLSCHEME ) .AND. &
+                  ( model_config_rec%sf_sfclay_physics(i) .EQ. TEMFSFCSCHEME ) ) THEN
+            wrf_err_message = '--- ERROR: Using sf_sfclay_physics=10 requires bl_pbl_physics=10 '
+            CALL wrf_fatal ( wrf_err_message )
+         END IF
+      ENDDO      ! Loop over domains
+
  
 !-----------------------------------------------------------------------
 !  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.

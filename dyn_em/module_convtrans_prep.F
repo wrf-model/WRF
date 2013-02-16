@@ -110,7 +110,10 @@ subroutine convtrans_prep(gd_cloud,gd_cloud2,gd_cloud_a,         &
 ! do the same for convective parameterization cloud water mix ratio,
 ! currently only for cu_physics=3,5, used by both photolysis and atmospheric radiation
 !
-  if(cu_phys.eq.3.or.cu_phys.eq.5)then
+  if(cu_phys.eq.3.or.cu_phys.eq.5.or.cu_phys.eq.93)then
+! if(config_flags%cu_physics == GDSCHEME  .OR. &
+!    config_flags%cu_physics == GFSCHEME  .OR. &
+!    config_flags%cu_physics == GFSCHEME ) THEN
 !    pmax=maxval(gd_cloud)
 !    pmin=maxval(gd_cloud2)
 !    print *,pmax,pmin

@@ -42,7 +42,7 @@ CONTAINS
 !aeroevap, 1=old,2=?, 3=average
       integer, parameter :: aeroevap=1
       integer, parameter :: training=0
-      integer, parameter :: use_excess=1
+      integer, parameter :: use_excess=0
       integer, parameter :: use_excess_sh=0
       integer, parameter :: maxiens=1
       integer, parameter :: maxens=1
@@ -660,6 +660,12 @@ CONTAINS
      real,    dimension (its:ite,jts:jte)                              &
         ,intent (in   )                   ::                           &
                gsw
+
+#if ( WRF_DFI_RADAR == 1 )
+    INTEGER,      INTENT(IN   ) ,OPTIONAL   :: do_capsuppress
+    REAL, DIMENSION( its:ite ) :: cap_suppress_j
+#endif
+
   ! outtem = output temp tendency (per s)
   ! outq   = output q tendency (per s)
   ! outqc  = output qc tendency (per s)
@@ -1025,7 +1031,7 @@ CONTAINS
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
        DO 36 i=its,itf
-         IF(ierr(I).eq.0.)THEN
+         IF(ierr(I).eq.0)THEN
          IF(K22(I).GE.KBMAX(i))then
            ierr(i)=2
            ierrc(i)="could not find k22"
@@ -1045,8 +1051,8 @@ CONTAINS
       CALL cup_minimi(HEso_cup,Kbcon,kstabm,kstabi,ierr,  &
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
-      DO i=its,ite
-         IF(ierr(I).eq.0.)THEN
+      DO i=its,itf
+         IF(ierr(I).eq.0)THEN
             do k=kts,ktf
    ! Saulo's approach
                frh = min(qo_cup(i,k)/qeso_cup(i,k),1.)
@@ -1133,7 +1139,7 @@ CONTAINS
       enddo
       enddo
       do i=its,itf
-       IF(ierr(I).eq.0.)THEN
+       IF(ierr(I).eq.0)THEN
          hkb(i)=he_cup(i,k22(i))
          hkbo(i)=heo_cup(i,k22(i))
          if(use_excess == 1) then
@@ -1246,14 +1252,14 @@ CONTAINS
       call cup_minimi(HEso_cup,K22,kzdown,JMIN,ierr, &
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
-      DO 100 i=its,ite
+      DO 100 i=its,itf
 !        if(i.eq.ipr.and.j.eq.jpr)then
 !             write(0,*)i,j,'k,p_cup(i,k),heo_cup(i,k),heso_cup(i,k),hco(i,k)'
 !           do k=kts,ktf
 !             write(0,*)k,p_cup(i,k),heo_cup(i,k),heso_cup(i,k),hco(i,k)
 !           enddo
 !        endif
-         IF(ierr(I).eq.0.)THEN
+         IF(ierr(I).eq.0)THEN
 !
 !--- check whether it would have buoyancy, if there where
 !--- no entrainment/detrainment
@@ -1296,7 +1302,7 @@ CONTAINS
 !     and cloud top.
 !
       do i=its,itf
-         IF(ierr(I).eq.0.)THEN
+         IF(ierr(I).eq.0)THEN
             IF(-zo_cup(I,KBCON(I))+zo_cup(I,KTOP(I)).LT.depth_min)then
                ierr(i)=6
                ierrc(i)="cloud depth very shallow"
@@ -2395,7 +2401,7 @@ CONTAINS
 
 
       do k=kts,ktf
-      do i=its,ite
+      do i=its,itf
         qes_cup(i,k)=0.
         q_cup(i,k)=0.
         hes_cup(i,k)=0.
@@ -3843,7 +3849,7 @@ CONTAINS
         enddo
         enddo
       do i=its,itf
-      if(ierr(i).eq.0.)then
+      if(ierr(i).eq.0)then
       do k=k22(i),kbcon(i)-1
         qc(i,k)=qe_cup(i,k22(i))
         qch(i,k)=qe_cup(i,k22(i))
@@ -3860,7 +3866,7 @@ CONTAINS
 !        write(0,*)'in cup_mois'
         do i=its,itf
 
-         if(ierr(i).eq.0.)then
+         if(ierr(i).eq.0)then
              k1=max(1,k22(i)-2)
              k2=max(1,min(kbcon(i)-1,k22(i)+2))  !kbcon(i)-1
           do k=k22(i),kbcon(i)-1
@@ -4372,7 +4378,7 @@ CONTAINS
       DO i=its,itf
 !      if(j.eq.jpr .and. i.eq.ipr)write(0,*)'initial k22 = ',k22(ipr)
          if(kpbl(i).gt.5)cap_max(i)=po_cup(i,kpbl(i))
-         IF(ierr(I).eq.0.)THEN
+         IF(ierr(I).eq.0)THEN
             IF(K22(I).Gt.Kbmax(i))then
               ierr(i)=2
               ierrc(i)="could not find k22"
@@ -4460,8 +4466,8 @@ CONTAINS
            hkbo,ierr,kbmax,po_cup,cap_max, &
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
-      DO i=its,ite
-         IF(ierr(I).eq.0.)THEN
+      DO i=its,itf
+         IF(ierr(I).eq.0)THEN
             if(kbcon(i).gt.ktf-4)then
 !               write(0,*)i,j,kbcon(i)
                 ierr(i)=231

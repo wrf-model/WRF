@@ -1836,7 +1836,8 @@ rconfig   integer o3input                 namelist,physics      1             0 
 rconfig   integer aer_opt                 namelist,physics      1             0       -      "aer_opt"      "aerosol input option for radiation"      ""
 rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .false.  -     "feedback cumulus to radiation"  ""
 rconfig   integer pxlsm_smois_init        namelist,physics      max_domains   1       irh    "PXLSM_SMOIS_INIT"    "Soil moisture initialization option 0-From analysis 1-From MAVAIL"   ""
-rconfig   integer omlcall                 namelist,physics      1            0         h     "omlcall"     "activate simple ocean mixed layer model  0=no, 1=old 1d ocean, 2=PWP" ""
+rconfig   integer omlcall                 namelist,physics      1            0         h     "omlcall"     "temporary holder to allow checking for new name: oml_opt"
+rconfig   integer sf_ocean_physics        namelist,physics      1            0         h     "sf_ocean_physics"     "activate ocean model  0=no, 1=1d mixed layer, 2=3D PWP" ""
 rconfig   integer trajcall                namelist,physics     1            0         h     "trajcall"     "activate trajectory calculation  0=no, 1=on"   ""
 rconfig   integer tracercall              namelist,physics     1            0         h     "tracercall"     "activate tracer calculation  0=no, 1=on"   ""
 rconfig   real    OMDT                    namelist,physics      1            0       h    "OMDT"          "Timestep of ocean model"      "s"
@@ -2285,8 +2286,8 @@ package   spnudging      grid_fdda==2               -              fdda3d:u_ndg_
 
 package   slopeopt       slope_rad==1               -              -
 package   gwdopt         gwd_opt==1                 -              state:oc12d,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,dtaux3d,dtauy3d,dusfcg,dvsfcg
-package   omlcolumn      omlcall==1                 -              state:tml,t0ml,hml,h0ml,huml,hvml,tmoml
-package   omlmiami       omlcall==2                 -              state:tml,t0ml,hml,h0ml,huml,hvml,tmoml,om_tmp,om_s,om_depth,om_u,om_v,om_lat,om_lon,om_tini,om_sini
+package   omlscheme      sf_ocean_physics==1        -              state:tml,t0ml,hml,h0ml,huml,hvml,tmoml
+package   pwp3dscheme    sf_ocean_physics==2        -              state:tml,t0ml,hml,h0ml,huml,hvml,tmoml,om_tmp,om_s,om_depth,om_u,om_v,om_lat,om_lon,om_tini,om_sini
 package   scmopt         scm_force==1               -              state:z_force,z_force_tend,u_g,u_g_tend,v_g,v_g_tend,w_subs,w_subs_tend,th_upstream_x,th_upstream_x_tend,th_upstream_y,th_upstream_y_tend,qv_upstream_x,qv_upstream_x_tend,qv_upstream_y,qv_upstream_y_tend,u_upstream_x,u_upstream_x_tend,u_upstream_y,u_upstream_y_tend,v_upstream_x,v_upstream_x_tend,v_upstream_y,v_upstream_y_tend,tau_x,tau_x_tend,tau_y,tau_y_tend,th_largescale,th_largescale_tend,qv_largescale,qv_largescale_tend,ql_largescale,ql_largescale_tend,u_largescale,u_largescale_tend,v_largescale,v_largescale_tend,tau_largescale,tau_largescale_tend,ql_upstream_x,ql_upstream_x_tend,ql_upstream_y,ql_upstream_y_tend,t_soil_forcing_val,t_soil_forcing_tend,q_soil_forcing_val,q_soil_forcing_tend,tau_soil,soil_depth_force,th_t_tend,qv_t_tend
 
 package   prec_acc       prec_acc_opt==1            -              state:prec_acc_c,prec_acc_nc,snow_acc_nc

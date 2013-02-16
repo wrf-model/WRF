@@ -637,9 +637,15 @@ module_surface_driver.o: \
 		module_sf_idealscmsfclay.o	\
 		module_sf_scmflux.o		\
 		module_sf_scmskintemp.o		\
+		module_sf_ocean_driver.o	\
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o  
+
+module_sf_ocean_driver.o : \
+		module_sf_oml.o \
+		module_sf_3dpwp.o \
+		../frame/module_state_description.o 
 
 module_diagnostics.o: ../frame/module_dm.o \
 		../share/module_model_constants.o

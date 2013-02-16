@@ -370,6 +370,20 @@
       END IF
 
 !-----------------------------------------------------------------------
+! Name change in the namelist.input file.  We used to only have the
+! ocean mixed layer option (omlcall=1).  With the addition of a 3D ocean,
+! now let's change the name of the option.  If the old name is present,
+! tell the user to swap their namelist, and then stop.
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec%omlcall .NE. 0 ) THEN
+         wrf_err_message = '--- ERROR:  The namelist.input variable "omlcall" has been renamed.'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '---         Replace "omlcall" with the new name "sf_ocean_physics".'
+         CALL wrf_error_fatal ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
 ! For adaptive time stepping, certain physics schemes are not allowed
 ! to have intermittent frequencies.  So, for those schemes below, we just
 ! turn the frequencies so that the schemes are called for each time step.
@@ -392,6 +406,7 @@
             END DO
          END IF
       END IF
+
 !-----------------------------------------------------------------------
 ! The cu_rad_feedback namelist flag with the two Grell cumulus parameterization 
 ! schemes needs to have the namelist flag cu_diag=1

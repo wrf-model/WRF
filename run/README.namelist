@@ -1,4 +1,4 @@
-Description of namelist variables
+uescription of namelist variables
 ---------------------------------
  
 For WRF-NMM users, please see Chapter 5 of the WRF-NMM User's Guide for 
@@ -374,13 +374,14 @@ Namelist variables for controlling the adaptive time step option:
                                      = 8, Thompson scheme (new for V3.1)
                                      = 9, Milbrandt-Yau 2-moment scheme (new for V3.2)
                                      = 10, Morrison (2 moments)
+                                     = 11, Morrison-Gettleman (Adapted from CAM physics)
                                      = 13, SBU_YLIN scheme
                                      = 14, WDM 5-class scheme
                                      = 16, WDM 6-class scheme
                                      = 17, NSSL 2-moment 4-ice scheme (steady background CCN)
                                      = 18, NSSL 2-moment 4-ice scheme with predicted CCN (better for idealized than real cases)
                                      = 19, NSSL 1-moment (7 class: qv,qc,qr,qi,qs,qg,qh; predicts graupel density)
-                                     = 20, NSSL 1-moment, (6-class), very similar to Gilmore et al. 2004
+                                     = 21, NSSL 1-moment, (6-class), very similar to Gilmore et al. 2004
                                            Can set intercepts and particle densities in physics namelist, e.g., nssl_cnor
                                        For NSSL 1-moment schemes, intercept and particle densities can be set for snow, 
                                        graupel, hail, and rain. For the 1- and 2-moment schemes, the shape parameters 
@@ -499,6 +500,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 2, Unified Noah land-surface model
                                      = 3, RUC land-surface model
                                      = 4, Noah-MP land-surface model (see additional &noah_mp namelist)
+                                     = 5, Community Land Model version 4 (CLM4), adapted from CAM
                                      = 7, Pleim-Xiu LSM (ARW)
                                      = 8, Simplified Simple Biosphere Model (SSiB) 
                                           - can be used with Dudhia/RRTM, CAM or RRTMG radiation options
@@ -525,6 +527,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 8, Bougeault and Lacarrere (BouLac) PBL
                                      = 9, UW boundary layer scheme from CAM5 (CESM 1_0_1)
                                      = 10, TEMF (Total Energy Mass Flux) scheme (ARW only)
+                                          sf_sfclay_physics=10
                                      = 94, Quasi-Normal Scale Elimination PBL
                                      = 99, MRF scheme
 

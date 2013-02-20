@@ -1605,6 +1605,7 @@ package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -
 package   gdscheme       cu_physics==93              -             -
 package   sasscheme      cu_physics==84              -             state:hpbl2d,heat2d,evap2d
+package   meso_sas       cu_physics==85              -             state:hpbl2d,heat2d,evap2d
 package   osasscheme     cu_physics==4               -             state:randstate1,randstate2,randstate3,randstate4,random
 package   g3scheme       cu_physics==5               -             -
 package   gfscheme       cu_physics==3               -             -

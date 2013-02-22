@@ -790,7 +790,7 @@ CONTAINS
             CALL wrf_error_fatal ( wrf_err_message )
           END IF
           CALL wrf_debug(100,'in cu_mesosas')
-          CALL CU_SAS(                                          &
+          CALL CU_MESO_SAS(                                          &
                 DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &
                ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
                ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &

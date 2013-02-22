@@ -41,6 +41,8 @@
 
       IMPLICIT NONE
 
+      LOGICAL :: exists
+      LOGICAL , EXTERNAL :: wrf_dm_on_monitor
       INTEGER :: i, oops
 
 !-----------------------------------------------------------------------
@@ -443,6 +445,21 @@
          END IF
        END DO
  
+!-----------------------------------------------------------------------
+! Test to see if we allocate space for the time series.
+!-----------------------------------------------------------------------
+
+      IF ( wrf_dm_on_monitor() ) THEN
+         CALL wrf_tsin_exist ( exists )
+         IF ( exists ) THEN
+            model_config_rec%process_time_series = 1
+         ELSE
+            model_config_rec%process_time_series = 0
+         END IF
+      END IF
+#ifdef DM_PARALLEL
+      CALL wrf_dm_bcast_integer(model_config_rec%process_time_series, 1)
+#endif
 !-----------------------------------------------------------------------
 ! The three Grell cumulus parameterization schemes need to have the 
 ! namelist flag cu_diag=1, and all other cumulus schemes must have

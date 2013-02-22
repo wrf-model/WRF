@@ -31,9 +31,9 @@ SUBROUTINE wrf_tsin ( grid , ierr )
        IF ( grid%max_ts_locs <= 0 ) RETURN
    
        IF ( wrf_dm_on_monitor() ) THEN
-   
-          INQUIRE(FILE='tslist', EXIST=exists)
 
+          CALL wrf_tsin_exist ( exists )
+   
           IF (exists) THEN
 
              iunit = get_unused_unit()
@@ -91,6 +91,12 @@ SUBROUTINE wrf_tsin ( grid , ierr )
 #endif
 
 END SUBROUTINE wrf_tsin
+
+SUBROUTINE wrf_tsin_exist ( exists )
+   IMPLICIT NONE
+   LOGICAL , INTENT(OUT) :: exists
+   INQUIRE(FILE='tslist', EXIST=exists)
+END SUBROUTINE wrf_tsin_exist
 
 
 INTEGER FUNCTION get_unused_unit()

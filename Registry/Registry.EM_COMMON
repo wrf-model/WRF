@@ -1866,6 +1866,8 @@ rconfig   real    prec_acc_dt             namelist,physics      max_domains    0
 rconfig   integer prec_acc_opt            derived               1              0       -     "prec_acc_opt" "option to output precip in a time window"          ""
 rconfig   integer bucketr_opt             derived               1              0       -     "bucketr_opt"  "option to output water accum based on bucket_mm "          ""
 
+rconfig   integer process_time_series     derived               1              0       -     "process_time_series" "0=no, 1=yes"  ""
+
 rconfig   integer grav_settling           namelist,physics      max_domains  0         h    "grav_settling"     "activate gravitationalsettling of fog  0=no, 1=yes"
 
 # For Noah-MP
@@ -2324,6 +2326,10 @@ package   tconly         use_wps_input==2            -             state:u_gc,v_
 # Tendency diagnostics for non-chemistry decoupled advective tendency arrays
 package   notenddiag    tenddiag==0                  -             -
 package   usetenddiag   tenddiag==1                  -             advh_t:advh_qv;advz_t:advz_qv
+
+#Time series options for text output
+package   notseries   process_time_series==0                 -             -
+package   tseries     process_time_series==1                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile
                                                 
 # lightning
 
@@ -2605,4 +2611,3 @@ state    real   dif_yyy          ikjy    -           1
 
 xpose XPOSE_SPECTRAL_NUDGING dyn_em dif_analysis,dif_xxx,dif_yyy
 ##
-

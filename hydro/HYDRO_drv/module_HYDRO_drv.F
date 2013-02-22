@@ -75,14 +75,18 @@ module module_HYDRO_drv
 #ifdef MPP_LAND
    if(IO_id .eq. my_id) then
 #endif
-      if(nlst_rt(did)%olddate(1:19) == nlst_rt(did)%startdate(1:19) ) then
+      if(nlst_rt(did)%olddate(1:19) .eq. nlst_rt(did)%startdate(1:19) .and. rt_domain(did)%his_out_counts .eq. 0) then
 #ifdef HYDRO_D
          write(6,*) "output hydrology at time : ",nlst_rt(did)%olddate(1:19)
 #endif
          call geth_newdate(rt_out_date, nlst_rt(did)%olddate, -1*nint(rt_domain(did)%his_out_counts*nlst_rt(did)%out_dt*60))
          outflag = 99
       else
-         call geth_newdate(out_date, nlst_rt(did)%startdate, nint(nlst_rt(did)%out_dt*60*rt_domain(did)%out_counts))
+         if(nlst_rt(did)%dt .gt. nlst_rt(did)%out_dt*60) then
+             call geth_newdate(out_date, nlst_rt(did)%startdate, nint(nlst_rt(did)%dt*rt_domain(did)%out_counts))
+         else
+             call geth_newdate(out_date, nlst_rt(did)%startdate, nint(nlst_rt(did)%out_dt*60*rt_domain(did)%out_counts))
+         endif
          if ( out_date(1:19) == nlst_rt(did)%olddate(1:19) ) then
 #ifdef HYDRO_D
              write(6,*) "output hydrology at time : ",nlst_rt(did)%olddate(1:19)
@@ -104,9 +108,11 @@ module module_HYDRO_drv
      rt_domain(did)%out_counts = rt_domain(did)%out_counts + 1
      rt_domain(did)%his_out_counts = rt_domain(did)%his_out_counts + 1
 
-     kt = rt_domain(did)%his_out_counts*nlst_rt(did)%out_dt*60/nlst_rt(did)%DT
-
-
+     if(nlst_rt(did)%out_dt*60 .gt. nlst_rt(did)%DT) then
+        kt = rt_domain(did)%his_out_counts*nlst_rt(did)%out_dt*60/nlst_rt(did)%DT
+     else
+        kt = rt_domain(did)%his_out_counts
+     endif
 
      call output_lsm(trim(nlst_rt(did)%olddate(1:4)//nlst_rt(did)%olddate(6:7)//nlst_rt(did)%olddate(9:10)  &
                  //nlst_rt(did)%olddate(12:13)//nlst_rt(did)%olddate(15:16)//  &

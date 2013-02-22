@@ -46,6 +46,17 @@
       INTEGER :: i, oops
 
 !-----------------------------------------------------------------------
+! Set up the WRF Hydro namelist option to allow dynamic allocation of
+! variables.
+!-----------------------------------------------------------------------
+#ifdef WRF_HYDRO
+   model_config_rec % wrf_hydro = 1
+#else
+   model_config_rec % wrf_hydro = 0
+#endif
+
+
+!-----------------------------------------------------------------------
 ! Check that all values of sf_surface_physics are the same for all domains
 !-----------------------------------------------------------------------
 

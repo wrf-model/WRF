@@ -238,6 +238,7 @@
       integer  :: msectional_mp = -1
       integer  :: modeptr_accum_mp    
       integer  :: modeptr_coarse_mp   
+      integer  :: modeptr_coardust_mp !BSINGH - declared for MAM7 complaince
       integer  :: modeptr_aitken_mp   
       integer  :: ntot_amode_mp = ntot_amode
 
@@ -245,10 +246,11 @@
       integer  :: lptr_dust_a_amode_mp(ntot_amode)
       integer  :: lptr_nacl_a_amode_mp(ntot_amode)
       integer  :: numptr_amode_mp(ntot_amode) 	 
-
+#if ( defined MODAL_AERO_7MODE )
+      integer  :: nspec_amode_mp(ntot_amode)  = (/ 6, 4, 2, 3, 3, 3, 3 /)  ! SS
+#elif ( defined MODAL_AERO_3MODE )
       integer  :: nspec_amode_mp(ntot_amode)  = (/ 6, 3, 3 /)
-
-
+#endif    
       integer  :: lmassptr_amode_mp(maxd_aspectype, ntot_amode) 
       integer  :: lspectype_amode_mp(maxd_aspectype, ntot_amode)       
       integer  :: lmassptrcw_amode_mp(maxd_aspectype, ntot_amode)

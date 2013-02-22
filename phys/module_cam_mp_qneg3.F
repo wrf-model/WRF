@@ -110,7 +110,7 @@ subroutine qneg3 (subnam  ,idx     ,ncol    ,ncold   ,lver    ,lconst_beg  , &
       if (found .and. abs(worst)>1.e-12_r8) then
          write(iulog,9000)subnam,m,idx,nvals,qmin(m),worst,iw,kw
 #ifdef WRF_PORT
-         call wrf_message(iulog)
+         call wrf_debug(400,iulog)
 #endif
       end if
    end do
@@ -242,7 +242,7 @@ subroutine qneg3_modalx1 (subnam  ,idx     ,ncol    ,ncold   ,lver    ,lconst_be
       if (found .and. abs(worst)>tmp_worst_thresh) then
          write(iulog,9000)subnam,m,idx,nvals,qmin(m),worst,iw,kw
 #ifdef WRF_PORT
-         call wrf_message(iulog)
+         call wrf_debug(400,iulog)
 #endif
       end if
    end do

@@ -51,7 +51,7 @@ CONTAINS
 use module_scalar_tables
 #ifdef DM_PARALLEL
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
-    USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub,halo_pwp_sub
+    USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub,halo_pwp_sub,halo_em_chem_e_3_sub,halo_em_chem_e_5_sub
 #endif
     USE module_utility
     IMPLICIT NONE
@@ -137,6 +137,7 @@ use module_scalar_tables
                                       sips , sipe , sjps , sjpe , skps , skpe
 
    CHARACTER (LEN=256) :: mminlu
+   CHARACTER (LEN=1000) :: message
 
 #if ( WRF_DFI_RADAR == 1 )
     INTEGER  do_capsupress   ! =1 do CAP supress, other = don't
@@ -313,7 +314,6 @@ BENCH_START(rad_driver_tim)
 !JJS 20101020 ^^^^^
 
      &        , CLDFRA=grid%cldfra, CLDFRA_MP_ALL=grid%cldfra_mp_all      &
-     &        , mp_physics = config_flags%mp_physics                      &
      &        , PB=grid%pb                                                &
      &        , F_ICE_PHY=grid%f_ice_phy,F_RAIN_PHY=grid%f_rain_phy       &
      &        , QV=moist(ims,kms,jms,P_QV), F_QV=F_QV                     &
@@ -369,7 +369,8 @@ BENCH_START(rad_driver_tim)
      &        ,progn=config_flags%progn                                            &
 #endif
      &         ,slope_rad=config_flags%slope_rad,topo_shading=config_flags%topo_shading     &
-     &         ,shadowmask=grid%shadowmask,ht=grid%ht,dx=grid%dx,dy=grid%dy    )
+     &         ,shadowmask=grid%shadowmask,ht=grid%ht,dx=grid%dx,dy=grid%dy &           
+     &         ,IS_CAMMGMP_USED = grid%is_CAMMGMP_used    )
 
 BENCH_END(rad_driver_tim)
 
@@ -813,7 +814,7 @@ BENCH_START(pbl_driver_tim)
      &        ,XLAT_U=grid%xlat_u,XLONG_U=grid%xlong_u                    &
 !Variables required for camuwpbl scheme
      &        ,Z_AT_W=grid%z_at_w,CLDFRA_OLD_MP=grid%cldfra_old_mp        &
-     &        ,CLDFRA=grid%cldfra,mp_physics=config_flags%mp_physics      &
+     &        ,CLDFRA=grid%cldfra                                        &
      &        ,RTHRATENLW=grid%rthratenlw,TAURESX2D=grid%tauresx2d        &
      &        ,TAURESY2D=grid%tauresy2d                                   &
      &        ,TPERT2D=grid%tpert2d,QPERT2D=grid%qpert2d                  &
@@ -825,7 +826,7 @@ BENCH_START(pbl_driver_tim)
      &        ,QNI_CURR=scalar(ims,kms,jms,P_QNI), F_QNI=f_qni            &
      &        ,RQNIBLTEN=grid%rqniblten                                   &
      &        ,XLAT_V=grid%xlat_v,XLONG_V=grid%xlong_v,FNM=grid%fnm       &
-     &        ,FNP=grid%fnp                                               &
+     &        ,FNP=grid%fnp, IS_CAMMGMP_USED = grid%is_CAMMGMP_used       &
 ! for grims shallow convection with ysupbl
      &        ,WSCALEK=grid%wscale_ysu,DELTA=grid%delta_ysu               &
      &        )
@@ -908,7 +909,7 @@ BENCH_START(cu_driver_tim)
      &             ,ktop_deep=grid%ktop_deep                              &
      &             ,PERIODIC_X=(config_flags%polar .OR. config_flags%periodic_x)  &
      &             ,PERIODIC_Y=config_flags%periodic_y                    &
-     &             ,TKE_PBL8W=grid%tke_pbl8w                              & !BSINGH - TKE at the interfaces for Zhang-McFarlane Scheme 
+     &             ,TKE_PBL8W=grid%tke_pbl8w,IS_CAMMGMP_USED = grid%is_CAMMGMP_used  & !BSINGH - TKE at the interfaces for Zhang-McFarlane Scheme 
                  ! Zhang-McFarlane outputs
      &             ,EVAPCDP3D=grid%evapcdp3d, ICWMRDP3D=grid%icwmrdp3d    & !Balwinder.Singh@pnnl.gov: For CAM's wetscavenging
      &             ,RPRDDP3D=grid%rprddp3d                                & 
@@ -928,6 +929,11 @@ BENCH_START(cu_driver_tim)
      &             ,ZMICUU=grid%zmicuu, ZMICUD=grid%zmicud                &
      &             ,ZMICVU=grid%zmicvu, ZMICVD=grid%zmicvd                &
      &             ,ZMDICE=grid%zmdice, ZMDLIQ=grid%zmdliq                &
+     &             ,dp3d=grid%dp3d, du3d=grid%du3d, ed3d=grid%ed3d        &
+     &             ,eu3d=grid%eu3d, md3d=grid%md3d, mu3d=grid%mu3d        &
+     &             ,dsubcld2d=grid%dsubcld2d,ideep2d=grid%ideep2d         &
+     &             ,jt2d=grid%jt2d,maxg2d=grid%maxg2d                     &
+     &             ,lengath2d=grid%lengath2d                              &
                  ! Selection flag
      &             ,pgcon=config_flags%sas_pgcon                          &
      &             ,CU_PHYSICS=config_flags%cu_physics                    &
@@ -1017,7 +1023,6 @@ BENCH_START(shcu_driver_tim)
      &             ,CLDFRA=grid%cldfra, CLDFRA_OLD=grid%cldfra_old        &
      &             ,CLDFRA_OLD_MP=grid%cldfra_old_mp                      &
      &             ,CLDFRA_CONV=grid%cldfra_conv                          &
-     &             ,mp_physics=config_flags%mp_physics                    &
      &             ,CLDFRASH=grid%cldfrash, HTOP=grid%htop, HBOT=grid%hbot&
      &             ,SHCU_PHYSICS=grid%shcu_physics                        &
      &             ,QV_CURR=moist(ims,kms,jms,P_QV)                       &
@@ -1026,6 +1031,11 @@ BENCH_START(shcu_driver_tim)
      &             ,QI_CURR=moist(ims,kms,jms,P_QI)                       &
      &             ,QS_CURR=moist(ims,kms,jms,P_QS)                       &
      &             ,QG_CURR=moist(ims,kms,jms,P_QG)                       &
+     &             ,QNC_CURR=scalar(ims,kms,jms,P_QNC)                    & !BSINGH - Neede for UWSHCU scheme
+     &             ,QNI_CURR=scalar(ims,kms,jms,P_QNI)                    & !BSINGH - Neede for UWSHCU schem 
+#ifdef WRF_CHEM
+     &             ,CHEM=chem,chem_opt=config_flags%chem_opt              &
+#endif
      &             ,DLF=grid%dlf, RLIQ=grid%rliq, RLIQ2=grid%rliq2        &
      &             ,DLF2=grid%dlf2                                        & ! Required for CAMMGMP microphysics scheme
      &             ,CMFMC=grid%cmfmc, CMFMC2=grid%cmfmc2                  &
@@ -1046,10 +1056,27 @@ BENCH_START(shcu_driver_tim)
      &             ,HT=grid%ht                                            &
      &             ,SHFRC3D=grid%shfrc3d                                  & !Balwinder.Singh@pnnl.gov: For CAM's wetscavenging
      &             ,TKE_PBL8W=grid%tke_pbl8w                              & !BSINGH - TKE at the interfaces for UWSHCU Scheme 
+     &             ,IS_CAMMGMP_USED = grid%is_CAMMGMP_used                &
      &             ,WSCALEK=grid%wscale_ysu,DELTA=grid%delta_ysu          &
      &             ,KPBL=grid%kpbl,ZNU=grid%znu                           &
      &             ,RAINCV=grid%raincv                                    &
      &                                                                    )
+
+#ifdef WRF_CHEM
+#ifdef DM_PARALLEL
+      IF( config_flags%shcu_physics == CAMUWSHCUSCHEME ) THEN
+         CALL wrf_debug ( 200 , ' call HALO CHEM AFTER SHALLOW CUMULUS' )
+         IF      ( config_flags%h_mom_adv_order <= 4 ) THEN
+#      include "HALO_EM_CHEM_E_3.inc"
+         ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
+#      include "HALO_EM_CHEM_E_5.inc"
+         ELSE
+            WRITE(message,*)'module_first_rk_step_part1: invalid h_mom_adv_order = ',config_flags%h_mom_adv_order
+            CALL wrf_error_fatal(TRIM(message))
+         ENDIF
+      ENDIF
+#endif
+#endif
 BENCH_END(shcu_driver_tim)
 
 ! JPH call force_scm to update bl tendencies

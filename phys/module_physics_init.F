@@ -51,7 +51,7 @@ CONTAINS
                          TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_PBL,  &
                          EXCH_H,THC,SNOWC,MAVAIL,HFX,QFX,RAINBL, &
                          TSLB,ZS,DZS,num_soil_layers,warm_rain,  &
-                         adv_moist_cond,                         &
+                         adv_moist_cond,is_CAMMGMP_used,         &
                          APR_GR,APR_W,APR_MC,APR_ST,APR_AS,      &
                          APR_CAPMA,APR_CAPME,APR_CAPMI,          &
                          XICE,XICEM,VEGFRA,SNOW,CANWAT,SMSTAV,   &
@@ -160,10 +160,8 @@ CONTAINS
                          nssl_rho_qh, nssl_rho_qhl,              &
                          nssl_rho_qs,                             &
    ! OPTIONAL 
-!mchen # if (EM_CORE == 1 )
                          RQCNCUTEN, RQINCUTEN,                   &
-                         rliq                    &
-!mchen # endif
+                         rliq                                    &  !BSINGH:01/31/2013 - Added rliq and is_CAMMGMP_used for CAM5 physics
                          ,te_temf          & ! WA 12/21/09
                          ,cf3d_temf        & ! WA 9/27/10
                          ,wm_temf          & ! WA 2/22/11
@@ -177,6 +175,9 @@ CONTAINS
    USE module_wrf_error
    USE module_wind_generic
    USE module_wind_fitch
+#ifdef WRF_CHEM
+   USE module_cam_support,         ONLY : cam_mam_aerosols
+#endif
    IMPLICIT NONE
 !-----------------------------------------------------------------
    TYPE (grid_config_rec_type)              :: config_flags
@@ -184,6 +185,7 @@ CONTAINS
    INTEGER , INTENT(IN)        :: id
    INTEGER , INTENT(IN) ,OPTIONAL       :: tmn_update
    LOGICAL , INTENT(OUT)       :: warm_rain,adv_moist_cond
+   LOGICAL , INTENT(OUT)       :: is_CAMMGMP_used !BSINGH:01/31/2013 - Added for CAM5 physics
 !   LOGICAL , INTENT (IN)       :: FNDSOILW, FNDSNOWH
    LOGICAL, PARAMETER          :: FNDSOILW=.true., FNDSNOWH=.true.
    INTEGER , INTENT(IN)        :: ids, ide, jds, jde, kds, kde,  &
@@ -609,7 +611,7 @@ integer myproc
      !BSINGH - When all the CAM parameterizations are not executed in WRF,
      !rliq can have undefined behaviour
      IF(PRESENT(rliq)) THEN
-     rliq(:,:) = 0.0 
+        rliq(:,:) = 0.0 
      ENDIF
    IF ( .NOT. moved ) THEN
    DO j=jts,jtf
@@ -732,7 +734,23 @@ integer myproc
                 allowed_to_read,                                  &
                 kds,kde,kms,kme,kts,kte)
 
-! CAM parameterizations specific initializations [Currently incorporates initializations for CAMZM, CAMUWPBL, CAMUWSHCU and CAMMGMP parameterizations]
+   ! CAM parameterizations specific initializations [Currently incorporates initializations for CAMZM, CAMUWPBL, CAMUWSHCU and CAMMGMP parameterizations]
+
+   !Findout whether CAMMGMP scheme is used used or not in this simulation
+   is_CAMMGMP_used = .FALSE.
+# if (EM_CORE == 1)
+   if(config_flags%mp_physics == CAMMGMPSCHEME) is_CAMMGMP_used = .TRUE.
+# endif
+
+#ifdef WRF_CHEM
+   !BSINGH:02/01/2013 - For WRF_CHEM simulations, initialize cam_mam_aerosols variable
+   cam_mam_aerosols = .FALSE.
+   if(config_flags%chem_opt == CBMZ_CAM_MAM3_NOAQ .OR. config_flags%chem_opt == CBMZ_CAM_MAM3_AQ &
+        .OR. config_flags%chem_opt == CBMZ_CAM_MAM7_NOAQ .OR. config_flags%chem_opt == CBMZ_CAM_MAM7_AQ) cam_mam_aerosols = .TRUE.
+      
+#endif
+
+
    if(       config_flags%bl_pbl_physics == CAMUWPBLSCHEME     .OR. config_flags%cu_physics == CAMZMSCHEME      &
         .OR. config_flags%shcu_physics   == CAMUWSHCUSCHEME                                                     & 
 # if (EM_CORE == 1)
@@ -832,7 +850,8 @@ integer myproc
                 its, ite, jts, jte, kts, kte,                   &
                 ACHFX,ACLHF,ACGRDFLX,                           &
                 oml_hml0, sf_ocean_physics,                     & !Optional oml
-                TML,T0ML,HML,H0ML,HUML,HVML,TMOML               & !Optional oml
+                TML,T0ML,HML,H0ML,HUML,HVML,TMOML,              & !Optional oml
+                is_CAMMGMP_used                                 &
                ,TSK_SAVE                                        & !Optional oml
 ! CLM vraiables 
                ,numc,nump,snl,                                      &
@@ -882,9 +901,7 @@ integer myproc
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte,                   &
-!mchen #if ( EM_CORE == 1 )
                 RQCNCUTEN,RQINCUTEN                            ) 
-!mchen #endif
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to shcu_init' )
 
@@ -1651,7 +1668,8 @@ integer myproc
                 its, ite, jts, jte, kts, kte,                   &
                 ACHFX,ACLHF,ACGRDFLX,                           &
                 oml_hml0, sf_ocean_physics,                     & !Optional oml
-                TML,T0ML,HML,H0ML,HUML,HVML,TMOML               &
+                TML,T0ML,HML,H0ML,HUML,HVML,TMOML,              &
+                is_CAMMGMP_used                                 &
                ,TSK_SAVE                                        & !Optional fractional seaice
 ! CLM vraiables 
                ,numc,nump,snl,                                      &
@@ -1731,6 +1749,7 @@ integer myproc
    LOGICAL , INTENT(IN)        :: restart
    LOGICAL, INTENT(IN)         ::   FNDSOILW, FNDSNOWH
    LOGICAL, INTENT(IN)         ::   RDMAXALB
+   LOGICAL, INTENT(IN)         :: is_CAMMGMP_used !BSINGH:02/01/2013: For CAMUWPBL scheme
 
    INTEGER , INTENT(IN)        ::     ids, ide, jds, jde, kds, kde, &
                                       ims, ime, jms, jme, kms, kme, &
@@ -2441,11 +2460,11 @@ integer myproc
         CASE (CAMUWPBLSCHEME)
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
             ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
-           CALL camuwpblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN, &
-                restart,TKE_PBL,                                &
-                ids, ide, jds, jde, kds, kde,                   &
-                ims, ime, jms, jme, kms, kme,                   &
-                its, ite, jts, jte, kts, kte          )
+           CALL camuwpblinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,        &
+                restart,TKE_PBL,is_CAMMGMP_used, &
+                ids, ide, jds, jde, kds, kde,                          &
+                ims, ime, jms, jme, kms, kme,                          &
+                its, ite, jts, jte, kts, kte                           )
 #endif
 
 #if ( EM_CORE == 1 )
@@ -2532,9 +2551,7 @@ integer myproc
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       its, ite, jts, jte, kts, kte,                &
-!mchen #if ( EM_CORE == 1 )
                       RQCNCUTEN,RQINCUTEN                          )                        
-!mchen #endif
 !------------------------------------------------------------------
    USE module_cu_kf
    USE module_cu_kfeta
@@ -2849,6 +2866,7 @@ integer myproc
 !  USE module_mp_milbrandt3mom
    USE module_mp_wdm5
    USE module_mp_wdm6
+   USE module_mp_cammgmp_driver, ONLY:CAMMGMP_INIT !CAM5's microphysics
 #if (EM_CORE==1)
    USE module_mp_nssl_2mom
    USE module_mp_cammgmp_driver, ONLY:CAMMGMP_INIT !CAM5's microphysics
@@ -3366,14 +3384,9 @@ integer myproc
      !above, then the above values for pcnst should be adjusted accordingly
 
      !CAMMGMP Scheme is supposed to run with MODAL treatment of AEROSOLS only
-! mchen #if ( EM_CORE == 1 )
-! mchen  IF(config_flags%mp_physics == CAMMGMPSCHEME)) then
-! mchen  call wrf_error_fatal('CAMMGMP (mp_physics=17) ONLY works with CAM MAM package (chem_opt =501,502,503 or 504)')
-! mchen  ENDIF
-! mchen # endif
-     IF(config_flags%chem_opt .NE. CBMZ_CAM_MAM3_NOAQ .AND. config_flags%chem_opt .NE. CBMZ_CAM_MAM3_AQ &
+     IF((config_flags%chem_opt .NE. CBMZ_CAM_MAM3_NOAQ .AND. config_flags%chem_opt .NE. CBMZ_CAM_MAM3_AQ &
           .AND. config_flags%chem_opt .NE. CBMZ_CAM_MAM7_NOAQ .AND. config_flags%chem_opt .NE. CBMZ_CAM_MAM7_AQ &
-          .AND. config_flags%chem_opt .NE. 0) THEN                                                                    
+          .AND. config_flags%chem_opt .NE. 0) .AND. config_flags%mp_physics == CAMMGMPSCHEME) THEN
         call wrf_error_fatal('CAMMGMP (mp_physics=17) ONLY works with CAM MAM package (chem_opt =501,502,503 or 504)')
      ENDIF
 

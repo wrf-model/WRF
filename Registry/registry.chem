@@ -139,9 +139,11 @@ state    real  QME3D           ikj        misc      1         -      r        "Q
 state    real  PRAIN3D         ikj        misc      1         -      r        "PRAIN3D"                "Rate of conversion of condensate to precipitation"   "kg/kg/s"
 state    real  NEVAPR3D        ikj        misc      1         -      r        "NEVAPR3D"               "Evaporation rate of rain + snow"                     "kg/kg/s"
 state    real  RATE1ORD_CW2PR_ST3D ikj    misc      1         -      r        "RATE1ORD_CW2PR_ST3D"    "1st order rate for direct conversion of strat. cloud water to precip" "1/s"
+state    real  dvmrdt_sv13d    ikj{nspecmam} misc   1         -      r        "DVMRDT_SV13D"           "Volume mixing ration tendency for interstitial aerosols" ""
+state    real  dvmrcwdt_sv13d  ikj{nspecmam} misc   1         -      r        "DVMCWRDT_SV13D"         "Volume mixing ration tendency for cloud borne aerosols" ""
 
 #CAM5's wet scavenging output variables
-state    real  FRACIS3D        ikj        misc      1         -      r        "FRACIS3D"               "fraction of transported species that are insoluble"    ""
+state    real  FRACIS3D        ikj{nspecmam} misc   1         -      r        "FRACIS3D"               "fraction of transported species that are insoluble"    ""
 
 
 #SAPRCNOV additional emissions, automatically created using diff_mechEmiss_wrfRegistry.m script (pablo-saide@uiowa.edu)
@@ -2447,6 +2449,7 @@ rconfig   integer kdvel                    namelist,chem        1              1
 rconfig   integer erosion_dim              namelist,chem        1              3       -       "erosion_dim"          ""      ""
 rconfig   integer    biomass_emiss_opt     namelist,chem        max_domains    0       rh      "biomass_emiss_opt"                   ""    ""
 rconfig   integer cam_mam_mode             namelist,chem        1              3       irh     "cam_mam_mode"                   ""    ""
+rconfig   integer cam_mam_nspec            namelist,chem        1              74      irh     "cam_mam_nspec"                   ""    ""
 rconfig   logical CAM_MP_MAM_cpled         namelist,chem        1            .true.    irh     "CAM_MP_MAM_cpled"                   ""    ""
 # Lightning
 rconfig   integer     lightning_opt       namelist,chem        max_domains        0       rh      "lightning_opt"     ""      ""

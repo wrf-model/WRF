@@ -17,7 +17,8 @@ contains
     !--------------------------------------------------------------
     ! ... local variables
     !--------------------------------------------------------------
-    real n, pi, tmpsg(ntot_amode)
+    integer n
+    real pi, tmpsg(ntot_amode)
     
     pi = 4.*atan(1._r8)
     

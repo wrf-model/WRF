@@ -17,6 +17,7 @@
                f_ice_phy, f_rain_phy, cldfrai, cldfral,              &
 	       moist, cldfra, cldfra_mp_all, ph_no2,                 &
 	       chem, gas_aqfrac, numgas_aqfrac,                      &
+               is_CAMMGMP_used,                                      &!BSINGH:01/31/2013: Added is_CAMMGMP_used for CAM_MAM_cloudchem
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
@@ -118,7 +119,7 @@
 !======================================================================
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-
+   LOGICAL,      INTENT(IN)       :: is_CAMMGMP_used
    INTEGER,      INTENT(IN   )    ::                                &
                                       ids,ide, jds,jde, kds,kde,    &
                                       ims,ime, jms,jme, kms,kme,    &
@@ -225,7 +226,7 @@
             moist, scalar, p8w, prain3d, p_phy,       &
             t_phy, dtstepc, ktau,alt, f_ice_phy,      &
             f_rain_phy, cldfra, cldfra_mp_all,        &
-            cldfrai, cldfral, config_flags,           & 
+            cldfrai, cldfral, is_CAMMGMP_used,        & 
             ids,ide, jds,jde, kds,kde,                &
             ims,ime, jms,jme, kms,kme,                &
             its,ite, jts,jte, kts,kte                 )

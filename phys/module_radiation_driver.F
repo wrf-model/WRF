@@ -55,7 +55,6 @@ CONTAINS
               , TSWDN, TSWUP                        & ! goddard schemes
               , SSWDN, SSWUP                        & ! goddard schemes
               , CLDFRA,CLDFRA_MP_ALL                              &
-              , mp_physics                                        &
               , PB                                                &
               , F_ICE_PHY,F_RAIN_PHY       &
               , QV, F_QV                     &
@@ -114,7 +113,7 @@ CONTAINS
               ,radtacttime                                                &
               ,ALSWVISDIR, ALSWVISDIF, ALSWNIRDIR, ALSWNIRDIF             & !fds ssib alb comp (06/2010)
               ,SWVISDIR, SWVISDIF, SWNIRDIR, SWNIRDIF                     & !fds ssib swr comp (06/2010)
-              ,SF_SURFACE_PHYSICS                                         & !fds
+              ,SF_SURFACE_PHYSICS, IS_CAMMGMP_USED                        & !fds
               ,EXPLICIT_CONVECTION                                        & ! .true.=no conv. scheme
                                                                           )
 
@@ -330,7 +329,6 @@ CONTAINS
                                        num_tiles
 
    INTEGER, INTENT(IN)            :: lw_physics, sw_physics
-   INTEGER, INTENT(IN), OPTIONAL       ::  mp_physics
    INTEGER, OPTIONAL, INTENT(IN)  :: o3input, aer_opt
    INTEGER, INTENT(IN)            :: id
 
@@ -344,6 +342,7 @@ CONTAINS
    REAL,      INTENT(IN   )       ::   cam_abs_freq_s
 
    LOGICAL,      INTENT(IN   )    ::   warm_rain
+   LOGICAL,      INTENT(IN   )    ::   is_CAMMGMP_used !BSINGH:01/31/2013: Added for CAM5 RRTMG
 
    REAL,      INTENT(IN   )       ::   RADT
 
@@ -588,7 +587,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_save,qc_save
 
    REAL    ::    next_rad_time
-   LOGICAL ::    run_param , doing_adapt_dt , decided, is_CAMMGMP_used
+   LOGICAL ::    run_param , doing_adapt_dt , decided
    LOGICAL ::    flg_lw, flg_sw
 !------------------------------------------------------------------
 ! solar related variables are added to declaration
@@ -700,14 +699,6 @@ CONTAINS
 
    gfdl_lw = .false.
    gfdl_sw = .false.
-
-   !BSINGH: Find out if CAMMGMPSCHEME is beingh used in this simulation:
-   is_CAMMGMP_used = .false.
-# if (EM_CORE == 1)
-   if(mp_physics == CAMMGMPSCHEME) then
-      is_CAMMGMP_used = .true.
-   endif
-# endif
 
 
 ! moved up and out of OMP loop because it only needs to be computed once

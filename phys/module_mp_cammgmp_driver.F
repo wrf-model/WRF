@@ -3,7 +3,7 @@
 
 !----------------------------------------------------------------------------------------------------------
 !Possible future Modifications:
-!1. conv_water_in_rad is hardwired to be equal to 1. It should be a namelist variable
+!1. *** IMPORTANT-WARNING *** conv_water_in_rad is hardwired to be equal to 1. It should be a namelist variable
 !2. QME3D computation is WRONG as it doesn't include CMELIQ contribution as CMELIQ is 
 !   computed in macrophysics, which is not ported into WRF yet
 !3. Computations such as cldfsnow,icswp etc. are not correct as CONCLD (convective 
@@ -35,8 +35,17 @@ module module_mp_cammgmp_driver
   
   use shr_kind_mod,  only: r8=>shr_kind_r8
   use physconst,     only: gravit  
-  use module_cam_support,      only: pcnst =>pcnst_mp, pcols, pver, pverp
+  use module_cam_support,  only: pcnst =>pcnst_mp, pcols, pver, pverp
+#ifdef WRF_CHEM
+   use module_cam_support, only: cam_mam_aerosols
+#endif
   use constituents,  only: cnst_get_ind, cnst_name, qmin
+
+#ifdef WRF_CHEM
+  use module_state_description,  only: num_chem, param_first_scalar, &
+         CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ, CBMZ_CAM_MAM3_NOAQ,     &
+         CBMZ_CAM_MAM3_AQ
+#endif
 
   
   implicit none
@@ -139,10 +148,7 @@ contains
          nspec_amode    => nspec_amode_mp
 #endif
     
-#ifdef WRF_CHEM   
-    use module_state_description,  only: num_chem, param_first_scalar, &
-         CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ, CBMZ_CAM_MAM3_NOAQ,     &
-         CBMZ_CAM_MAM3_AQ
+#ifdef WRF_CHEM       
     use module_data_cam_mam_asect, only: lptr_chem_to_q, lptr_chem_to_qqcw, factconv_chem_to_q
 #endif
     
@@ -220,8 +226,8 @@ contains
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: qndrop         !droplet number mixing ratio (#/kg)
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: th             !Potential temperature (K)
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: wsedl3d        !Sedimentation velocity of stratiform liquid cloud droplet (m/s)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: cldfra_mp  !New Cloud fraction 
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: cldfra_conv  !New Cloud fraction 
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: cldfra_mp      !New Cloud fraction 
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: cldfra_conv    !New Cloud fraction 
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: cldfra_mp_all  !New Cloud fraction 
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: cldfrai
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: cldfral
@@ -249,7 +255,7 @@ contains
     logical  :: is_first_step                             !Flag to know if this a first time step
     logical  :: ptend_loc_ls, ptend_all_ls                !Flag for updating tendencies
     logical  :: ptend_loc_lq(pcnst),ptend_all_lq(pcnst)   !Flag for updating tendencies
-    integer   :: i,k,m,iw,jw,kw,imode,itsm1,itile_len,ktep1,kflip,ips,kcam
+    integer   :: i,k,m,n,iw,jw,kw,imode,itsm1,itile_len,ktep1,kflip,ips,kcam
 #ifdef WRF_CHEM
     integer  :: p1st,l2                                   !For iterating loop of NUM_CHEM for CHEM array
 #endif
@@ -291,7 +297,7 @@ contains
     real(r8) :: ptend_all_s(pcols,kte)
     real(r8) :: ptend_all_q(pcols,kte,pcnst)
 
-    real(r8) :: tmpnaer,tmpmaer,n
+    real(r8) :: tmpnaer,tmpmaer
     real(r8) :: cmeliq(pcols,kte)                 ! Rate of cond-evap of liq within the cloud
     real(r8) :: nrout(pcols,kte)                  ! rain number concentration (1/m3)
     real(r8) :: nsout(pcols,kte)                  ! snow number concentration (1/m3)
@@ -313,7 +319,7 @@ contains
     !Following variables are added by PMA for Macrophysics
     real(r8), dimension(pcols,kte) :: ttt         ! Temperature (PMA)
     real(r8), dimension(pcols,kte) :: rh_old      ! RH at previous timestep (PMA)
-    real(r8), dimension(pcols,kte) :: qi_mac         ! Temperature (PMA)
+    real(r8), dimension(pcols,kte) :: qi_mac      ! Temperature (PMA)
 
 
     !End variables addition by PMA
@@ -561,10 +567,10 @@ contains
     
     
     !cmeliq is an output from Macro physics. Its assigned zero here as Macrophysics is NOT implemented yet
-    !*NOTE* The following assignment will produce an incorrect value of QME3D
+    !*** IMPORTANT-WARNING ***: The following assignment will produce an incorrect value of QME3D
     cmeliq(:,:)=0.0_r8
     
-    !Should be in the namelist file. Hardwired currently
+    !*** IMPORTANT-WARNING *** :Should be in the namelist file. Hardwired currently
     conv_water_in_rad = 1
     
 #ifdef WRF_CHEM
@@ -572,9 +578,17 @@ contains
 #endif          
     
     ! Specify diameter for each mode
-    dgnumwet(:,:,:)              = 0.1e-6_r8      !Constant value for the whole domain (prescribed value). The value match precribe_aerosol_mixactivate, but units change
+#ifndef WRF_CHEM
+    dgnumwet(:,:,:)              = 0.1e-6_r8      !*** IMPORTANT-WARNING *** :Constant value for the whole domain (prescribed value). The value match precribe_aerosol_mixactivate, but units change
     dgnumwet(:,:,modeptr_aitken) = 0.02e-6
-    dgnumwet(:,:,modeptr_coarse) = 1.0e-6   
+    dgnumwet(:,:,modeptr_coarse) = 1.0e-6 
+#else
+    if(chem_opt == 0 ) then
+       dgnumwet(:,:,:)              = 0.1e-6_r8      !*** IMPORTANT-WARNING *** :Constant value for the whole domain (prescribed value). The value match precribe_aerosol_mixactivate, but units change
+       dgnumwet(:,:,modeptr_aitken) = 0.02e-6
+       dgnumwet(:,:,modeptr_coarse) = 1.0e-6 
+    endif
+#endif
     
     !dgnum wet and dry are assumed to be same for now
     dgnum(:,:,:) = dgnumwet(:,:,:) 
@@ -604,12 +618,12 @@ contains
        call wrf_error_fatal('Number of CAM Columns (NCOL) in CAMMGMP scheme must be 1')
     endif
     
-    !Initializing variables which are NEVER used but required for call consistency for CAM specific subroutine calls
+    !*** IMPORTANT-WARNING ***:Initializing variables which are **NEVER** used but required for call consistency for CAM specific subroutine calls
     concld(:,:)      =0.0_r8  !Required for computing some diagnostic variables. These diagnostic variables are 
                               !commented out for now as we didn't map 'concld' with the WRF sided variables
     
     state_omega(:,:) = 0.0_r8 !Required for calling mmicro_pcond and microp_aero_ts. Used in microp_aero_ts for 
-                              !calling dropmixnuc but NEVER used for any output from dropmixnuc
+                              !calling dropmixnuc but **NEVER** used for any output from dropmixnuc
     
     !Divide domain in chuncks and map WRF variables into CAM
     !Loop counters are named iw,jw,kw to represent that they index WRF sided variables
@@ -662,32 +676,32 @@ contains
 
              !Set negative values to qmin and generate a warning message
              if(state_q(1,kflip,1) < 0.0_r8)then
-                write(wrfmessage,*)'Water vapor mass mixing ratio was:', state_q(1,kflip,1),'; Reset to',qmin(1), 'in CAMMGMP driver'
-                call wrf_message(wrfmessage)                                
+                !write(wrfmessage,*)'Water vapor mass mixing ratio was:', state_q(1,kflip,1),'; Reset to',qmin(1), 'in CAMMGMP driver'
+                !call wrf_message(wrfmessage)                                
                 state_q(1,kflip,1)        = qmin(1)
              endif
              
              if(state_q(1,kflip,ixcldliq) < 0.0_r8) then
-                write(wrfmessage,*)'Liquid cloud mass mixing ratio was:', state_q(1,kflip,ixcldliq),'; Reset to',qmin(ixcldliq), 'in CAMMGMP driver'
-                call wrf_message(wrfmessage) 
+                !write(wrfmessage,*)'Liquid cloud mass mixing ratio was:', state_q(1,kflip,ixcldliq),'; Reset to',qmin(ixcldliq), 'in CAMMGMP driver'
+                !call wrf_message(wrfmessage) 
                 state_q(1,kflip,ixcldliq) = qmin(ixcldliq)
              endif
 
              if(state_q(1,kflip,ixcldice) < 0.0_r8) then
-                write(wrfmessage,*)'Ice cloud mass mixing ratio was:', state_q(1,kflip,ixcldice),'; Reset to',qmin(ixcldice), 'in CAMMGMP driver'
-                call wrf_message(wrfmessage) 
+                !write(wrfmessage,*)'Ice cloud mass mixing ratio was:', state_q(1,kflip,ixcldice),'; Reset to',qmin(ixcldice), 'in CAMMGMP driver'
+                !call wrf_message(wrfmessage) 
                 state_q(1,kflip,ixcldice) = qmin(ixcldice)
              endif
 
              if(state_q(1,kflip,ixnumliq) < 0.0_r8) then
-                write(wrfmessage,*)'Liquid droplet number was:', state_q(1,kflip,ixnumliq),'; Reset to',qmin(ixnumliq), 'in CAMMGMP driver'
-                call wrf_message(wrfmessage) 
+                !write(wrfmessage,*)'Liquid droplet number was:', state_q(1,kflip,ixnumliq),'; Reset to',qmin(ixnumliq), 'in CAMMGMP driver'
+                !call wrf_message(wrfmessage) 
                 state_q(1,kflip,ixnumliq) = qmin(ixnumliq)
              endif
              
              if(state_q(1,kflip,ixnumice) < 0.0_r8) then
-                write(wrfmessage,*)'Ice crystal number was:', state_q(1,kflip,ixnumice),'; Reset to',qmin(ixnumice), 'in CAMMGMP driver'
-                call wrf_message(wrfmessage) 
+                !write(wrfmessage,*)'Ice crystal number was:', state_q(1,kflip,ixnumice),'; Reset to',qmin(ixnumice), 'in CAMMGMP driver'
+                !call wrf_message(wrfmessage) 
                 state_q(1,kflip,ixnumice) = qmin(ixnumice)
              endif
              ! For prescribed aerosols
@@ -700,8 +714,8 @@ contains
                    if ((l2 >= 1) .and. (l2 <= pcnst)) then
                       state_q(1,kflip,l2) = chem(iw,kw,jw,l)*factconv_chem_to_q(l)
                       if(state_q(1,kflip,l2) < 0.0_r8) then
-                         write(wrfmessage,*)'Chem species with index', l,' was:', state_q(1,kflip,l2),'; Reset to 0.0 in CAMMGMP driver'
-                         call wrf_message(wrfmessage) 
+                         !write(wrfmessage,*)'Chem species with index', l,' was:', state_q(1,kflip,l2),'; Reset to 0.0 in CAMMGMP driver'
+                         !call wrf_message(wrfmessage) 
                          state_q(1,kflip,l2) = 0.0_r8
                       endif
                    end if
@@ -709,8 +723,8 @@ contains
                    if ((l2 >= 1) .and. (l2 <= pcnst)) then
                       qqcw(1,kflip,l2) = chem(iw,kw,jw,l)*factconv_chem_to_q(l)
                        if(qqcw(1,kflip,l2)< 0.0_r8) then
-                         write(wrfmessage,*)'Chem species with index', l,' was:', qqcw(1,kflip,l2),'; Reset to 0.0 in CAMMGMP driver'
-                         call wrf_message(wrfmessage) 
+                          !write(wrfmessage,*)'Chem species with index', l,' was:', qqcw(1,kflip,l2),'; Reset to 0.0 in CAMMGMP driver'
+                          !call wrf_message(wrfmessage) 
                          qqcw(1,kflip,l2) = 0.0_r8
                       endif
                    end if
@@ -729,22 +743,6 @@ contains
 #endif
 
              cldo(1,kflip)        = cldfra_mp_all(iw,kw,jw)
-             !BSINGH - OLD code below is commented out
-             !For computing alst and aist
-             !esl(1,kflip)         = polysvp(state_t(1,kflip),0)
-             !esi(1,kflip)         = polysvp(state_t(1,kflip),1)
-             
-             !if (state_t(1,kflip).gt.tmelt)esi(1,kflip)=esl(1,kflip)
-             
-             !qvs(1,kflip)         = epsqs*esl(1,kflip)/(state_pmid(1,kflip)-(1._r8-epsqs)*esl(1,kflip))
-             !qvi(1,kflip)         = epsqs*esi(1,kflip)/(state_pmid(1,kflip)-(1._r8-epsqs)*esi(1,kflip))
-             
-             !alst(1,kflip)        = 0._r8
-             !aist(1,kflip)        = 0._r8
-             !if(state_q(1,kflip,1) > qvs(1,kflip))alst(1,kflip) = 1.0_r8
-             !if(state_q(1,kflip,1) > qvi(1,kflip) .and. state_t(1,kflip).lt.273.15)aist(1,kflip) = 1.0_r8
-             !dlf(1,kflip)         = dlf3d(iw,kw,jw)
-             !dlf2(1,kflip)        = dlf2_3d(iw,kw,jw)
              
              !New code by PMA
              rh_old(1,kflip)      = rh_old_mp(iw,kw,jw)
@@ -808,7 +806,7 @@ contains
           state1_s(:,:)     = state_s(:,:)
           state1_pint(:,:)  = state_pint(:,:)
           state1_q(:,:,:)   = state_q(:,:,:)
-          state1_omega(:,:) = state_omega(:,:) !State_omega is *NOT* used for any meaningful computation at this time
+          state1_omega(:,:) = state_omega(:,:) !*** IMPORTANT-WARNING ***:State_omega is *NOT* used for any meaningful computation at this time
           
           call physics_ptend_init(ptend_loc_name,ptend_loc_q,ptend_loc_s,ptend_loc_lq,ptend_loc_ls,pcnst)  !! Initialize local ptend type 
           call physics_ptend_init(ptend_all_name,ptend_all_q,ptend_all_s,ptend_all_lq,ptend_all_ls,pcnst)  !! Initialize output ptend type
@@ -829,7 +827,7 @@ contains
           if( is_first_step) then
              kkvh(:,:)     = 0._r8
              tke(:,:)      = 0._r8
-             ! turbtype and smaw are used to compute 'smm' in microp_aero_ts subroutine but 'smm' is NEVER
+             ! *** IMPORTANT-WARNING ***:turbtype and smaw are used to compute 'smm' in microp_aero_ts subroutine but 'smm' is NEVER
              ! again used for any output from microp_aero_ts. Therefore, these variables are NOT used in any
              ! meaningful computations
              turbtype(:,:) = 0._r8
@@ -849,9 +847,7 @@ contains
           lambdaconv(:,:) = (mucon + 1._r8)/dcon
           deiconv(:,:)    = deicon
           
-          
-          !============================BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
-          
+          !BSINGH - CALL Macrophysics
           call Macrophysics_simple(is_first_step, pcnst, pcols, kte, ixcldliq, ixnumliq,         &
                lchnk, dtime, state1_t, state_pmid, state_q, dp_icwmr, sh_icwmr, dp_frac,      &
                sh_frac, ast,aist,alst,qi_mac,xland_pt,snowh_pt,                               &
@@ -859,7 +855,7 @@ contains
                state1_s, state1_q, rh_old, cldo, esl, qvs, ptend_loc_name, ptend_loc_ls,      &
                ptend_loc_lq, ptend_loc_s,ptend_loc_q, ptend_all_name, ptend_all_ls,           &
                ptend_all_lq,ptend_all_s,ptend_all_q                                           )          
-          !============================BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+          
           do kw = kts , kte
              kflip                   = kte-kw+1
 
@@ -1121,7 +1117,7 @@ contains
           end do
           
           !! Net microp_driver condensation rate
-          !*NOTE*: Following computation of QME will yeild WRONG answer as CMELIQ is set to zero
+          !*** IMPORTANT-WARNING ***: Following computation of QME will yeild WRONG answer as CMELIQ is set to zero
           qme(:ncol,:pver) = cmeliq(:ncol,:pver) + cmeiout(:ncol,:pver) 
           
           
@@ -1183,7 +1179,7 @@ contains
              !Following formulation is obtained from macrop_driver.F90 of CAM
              call cldwat_fice( ncol, state1_t, fice, fsnow )
 
-             !Balwinder.Singh@pnnl.ogv: Changed the argument list to avoid pbuf
+             !Balwinder.Singh@pnnl.gov: Changed the argument list to avoid pbuf
              call conv_water_4rad( lchnk, ncol, ast, sh_icwmr, dp_icwmr,       &
                   fice, sh_frac, dp_frac, conv_water_in_rad, rei, state1_pdel, &
                   state1_q(:,:,ixcldliq), state1_q(:,:,ixcldice),              &
@@ -2118,6 +2114,7 @@ contains
          ,its, ite, jts, jte, kts, kte  
     
     !Local variables
+    character(len=1000) :: msg
     integer :: jtf,ktf,itf
     
     chem_opt = chem_opt_in
@@ -2145,6 +2142,12 @@ contains
     !When WRF_CHEM is 1, activate_init is called from MODULE_CAM_MAM_INIT after initializing aerosols
     call activate_init
 #else
+    !BSINGH:02/01/2013: Sanity check for Non-MAM simulations
+    if(.NOT.cam_mam_aerosols .AND. chem_opt .NE. 0) then
+       write(msg,*)'CAMMGMP DRIVER - cammgmp is valid for only MAM aerosols ', &
+            '(chem_opts:',CBMZ_CAM_MAM3_NOAQ,CBMZ_CAM_MAM3_AQ,CBMZ_CAM_MAM7_NOAQ,CBMZ_CAM_MAM7_AQ ,')'
+       call wrf_error_fatal( msg )
+    endif
     if(chem_opt == 0)then
        !NOTE*: Not tested yet for other CHEM packages except MAM packages
        call activate_init

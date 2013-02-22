@@ -20,13 +20,17 @@ CONTAINS
                      ,z,z_at_w,dz8w,mavail,pblh,p8w                   &
                      ,tke_pbl                                         &
                      ,cldfra,cldfra_old,cldfra_old_mp,cldfra_conv     &
-                     ,mp_physics,cldfrash                             &
+                     ,cldfrash                                        &
                      ,htop,hbot                                       &
                  ! Package selection variables
                      ,shcu_physics                                    &
                  ! Optional moisture tracers 
                      ,qv_curr, qc_curr, qr_curr                       &
                      ,qi_curr, qs_curr, qg_curr                       & 
+                     ,qnc_curr,qni_curr                               &
+#ifdef WRF_CHEM
+                     ,chem, chem_opt                                  &
+#endif
                  ! Optional output arguments for CAMZM scheme
                      ,dlf, rliq, rliq2,dlf2  &
                      ,cmfmc, cmfmc2       &
@@ -43,7 +47,7 @@ CONTAINS
                  ! Optional moisture tracer flags 
                      ,f_qv,f_qc,f_qr                                  &
                      ,f_qi,f_qs,f_qg                                  &
-                     ,ht,shfrc3d,tke_pbl8w                            &
+                     ,ht,shfrc3d,tke_pbl8w,is_CAMMGMP_used            &
                  ! for grims shallow convection with ysupbl
                      ,wscalek,delta,kpbl,znu,raincv                   &
                                                                       )
@@ -61,6 +65,9 @@ CONTAINS
    USE module_shcu_grims
    USE module_dm
    USE module_domain, ONLY: domain
+#ifdef WRF_CHEM
+      USE module_state_description, ONLY: num_chem
+#endif
 
    !  This driver calls subroutines for the shallow cumulus
    !  parameterizations.
@@ -213,12 +220,15 @@ CONTAINS
 !-- periodic_y    T/F this is using periodic lateral boundaries in the Y-direction
 !
 !======================================================================
-
+   LOGICAL,      INTENT(IN   )    :: is_CAMMGMP_used !BSINGH:01/31/2013: Added for CAMUWSHCU
    INTEGER,      INTENT(IN   )    ::                             &
                                       ids,ide, jds,jde, kds,kde, &
                                       ims,ime, jms,jme, kms,kme, &
                                                         kts,kte, &
-                                      itimestep, num_tiles, mp_physics
+                                      itimestep, num_tiles
+#ifdef WRF_CHEM
+   INTEGER,      INTENT(IN   )    :: chem_opt
+#endif
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
      &           i_start,i_end,j_start,j_end
@@ -231,6 +241,12 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),      &
          INTENT(INOUT)  ::                                       &
                                                           moist
+#ifdef WRF_CHEM
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ),       &
+         INTENT(INOUT)  ::                                    &
+                                                          chem
+#endif
+   
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(IN ) ::                                          &
@@ -284,6 +300,8 @@ CONTAINS
                       ! optional moisture tracers
                       qv_curr, qc_curr, qr_curr                  &
                      ,qi_curr, qs_curr, qg_curr                  & 
+                     ! optional scalar tracers !BSINGH
+                     ,qnc_curr,qni_curr                          &
                       ! optional moisture and other tendencies
                      ,rqvshten,rqcshten,rqrshten                 &
                      ,rqishten,rqsshten,rqgshten                 &
@@ -339,7 +357,7 @@ CONTAINS
 
    INTEGER :: i,j,k,its,ite,jts,jte,ij
    CHARACTER(len=200) :: message
-   LOGICAL :: is_CAMMGMP_used
+
 
 !-----------------------------------------------------------------
 
@@ -373,14 +391,6 @@ CONTAINS
    IF (shcu_physics .eq. 0) return
    
    
-   !BSINGH: Find out if CAMMGMPSCHEME is beingh used in this simulation:
-   is_CAMMGMP_used = .false.
-# if (EM_CORE == 1)
-   if(mp_physics == CAMMGMPSCHEME) then
-      is_CAMMGMP_used = .true.
-   endif
-# endif
-
 ! DON'T JUDGE TIME STEP HERE, SINCE KF NEEDS ACCUMULATED W FIELD.
 ! DO IT INSIDE THE INDIVIDUAL CUMULUS SCHEME
 
@@ -414,6 +424,10 @@ CONTAINS
            ,Z=z, Z_AT_W=z_at_w, DZ8W=dz8w                                &
            ,T_PHY=t, U_PHY=u, V_PHY=v                                    &
            ,MOIST=moist, QV=qv_curr, QC=qc_curr, QI=qi_curr              &
+           ,QNC=qnc_curr, QNI=qni_curr                                   & 
+#ifdef WRF_CHEM
+           ,CHEM=chem, CHEM_OPT=chem_opt                                 &
+#endif
            ,PBLH_IN=pblh, TKE_PBL8W=tke_pbl8w                            &
            ,CLDFRA=cldfra, CLDFRA_OLD=cldfra_old                         &
            ,CLDFRA_OLD_MP=cldfra_old_mp                                  &

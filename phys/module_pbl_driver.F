@@ -82,13 +82,14 @@ CONTAINS
 ! Wind Turbine Parameterizations
                ,phb,xlat_u,xlong_u,xlat_v,xlong_v,id                 &
 ! variables required for camuwpbl scheme
-               , z_at_w,cldfra_old_mp,cldfra, mp_physics, rthratenlw &
+               , z_at_w,cldfra_old_mp,cldfra, rthratenlw             &
                , tauresx2d,tauresy2d                                 &
                , tpert2d,qpert2d,wpert2d,wsedl3d                     &
                , turbtype3d,smaw3d,tke_pbl8w,exch_h8w,exch_m8w       &
                , fnm,fnp                                             &
 ! variables required for camuwpbl scheme (optional)               
                ,qnc_curr,f_qnc,qni_curr,f_qni,rqniblten              &
+               ,IS_CAMMGMP_USED                                      &
 ! for grims shallow convection with ysupbl
                , wscalek,delta                                       &
                                                                      )       
@@ -329,7 +330,6 @@ CONTAINS
 
 
    INTEGER,    INTENT(IN   )    ::     bl_pbl_physics, ra_lw_physics,sf_sfclay_physics,sf_urban_physics
-   INTEGER,    INTENT(IN   ), OPTIONAL    ::     mp_physics
 
    INTEGER,    INTENT(IN   )    ::     ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
@@ -343,6 +343,7 @@ CONTAINS
                INTENT(IN   )    ::                        LOWLYR
 !
    LOGICAL,      INTENT(IN   )    ::   warm_rain
+   LOGICAL,      INTENT(IN   )    ::   is_CAMMGMP_used !BSINGH:01/31/2013: Added for CAMUWPBL
 #if (NMM_CORE==1)
    LOGICAL,      INTENT(IN   )    ::   DISHEAT ! (for HWRF)
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
@@ -663,7 +664,7 @@ CONTAINS
    CHARACTER*256 :: message
    REAL    :: next_bl_time
    LOGICAL :: run_param , doing_adapt_dt , decided
-   LOGICAL :: do_adapt, is_CAMMGMP_used
+   LOGICAL :: do_adapt
    integer iu_bep,iurb,idiff
    real seamask,thsk,zzz,unew,vnew,tnew,qnew,umom,vmom
    REAL :: z0,z1,z2,w1,w2
@@ -831,14 +832,6 @@ CONTAINS
      ALLOCATE (sf(ims:ime,kms:kme,jms:jme) )       ! surfaces
      ALLOCATE (vl(ims:ime,kms:kme,jms:jme) )       ! volumes
    ENDIF
-   
-   !BSINGH: Find out if CAMMGMPSCHEME is beingh used in this simulation:
-   is_CAMMGMP_used = .false.
-# if (EM_CORE == 1)
-   if(mp_physics == CAMMGMPSCHEME) then
-      is_CAMMGMP_used = .true.
-   endif
-# endif
    
 ! SAVE OLD VALUES
 

@@ -81,4 +81,8 @@ include $(BUILD_DIR)/library_rules.mk
 #
 #  Compile dependencies.  These are appended to this file by make depend. 
 #
+read_grib2map.o: grib2tbls_types.o
+
+io_grib2.o: grib2tbls_types.o
+
 # DO NOT DELETE THIS LINE -- make depend depends on it.

@@ -58,7 +58,7 @@ module_internal_header_util.f: ../../frame/module_internal_header_util.F
 module_internal_header_util.o: module_internal_header_util.f
 	$(FC) $(FCFLAGS) -o $@ -c $*.f
 
-diffwrf.f: diffwrf.F90
+diffwrf.f: diffwrf.F90 io_int.o
 	if [ `echo "$(FC)" | awk '{print $$1}'` = "gfortran" ] ; then \
 		echo removing external declaration of iargc for gfortran ; \
 		$(CPP1)  -I../ioapi_share $*.F90 | \

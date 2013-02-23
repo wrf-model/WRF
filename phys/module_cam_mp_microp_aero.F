@@ -1029,7 +1029,9 @@ end subroutine microp_aero_ts
       do m=1,nmode
 !         internal mixture of aerosols
           volc(m)=ma(m)/(rhodry(m)) ! only if variable size dist
-         if(volc(m).gt.1.e-39.and.na(m).gt.1.e-39)then
+! pjj/cray - use TINY intrinsic
+!        if(volc(m).gt.1.e-39.and.na(m).gt.1.e-39)then
+         if(volc(m).gt. TINY(volc) .and.na(m).gt. TINY(na))then
             etafactor2(m)=1./(na(m)*beta*sqrtg)  !fixed or variable size dist
 !            number mode radius (m)
             amcubeloc(m)=(3.*volc(m)/(4.*pi*exp45logsig(m)*na(m)))  ! only if variable size dist
@@ -1508,7 +1510,9 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
 
       function derf(x)
       implicit real (a - h, o - z)
-      real(r8) a,b,x
+! pjj/cray function type
+!     real(r8) a,b,x
+      real(r8) a,b,x,derf
       dimension a(0 : 64), b(0 : 64)
       integer i,k
       data (a(i), i = 0, 12) / & 

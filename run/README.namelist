@@ -1,4 +1,4 @@
-uescription of namelist variables
+Description of namelist variables
 ---------------------------------
  
 For WRF-NMM users, please see Chapter 5 of the WRF-NMM User's Guide for 
@@ -668,6 +668,12 @@ Namelist variables for controlling the adaptive time step option:
                                                 ; works with sf_surface_physics = 1 only
  oml_hml0                            = 50       ; oml model can be initialized with a constant depth everywhere (m)
  oml_gamma                           = 0.14     ; oml deep water lapse rate (K m-1)
+ omdt                                = 1.       ; 3D PWP time step (min).  It can be set to be the same as WRF time step 
+                                                ; in corresponding nested grids, but omdt should be no less than 1.0 minute.
+ ocean_levels                        = 30       ; number of vertical levels in 3DPWP. Note that the depth of each ocean 
+                                                ; model layers is specified in OM_DEPTH in wrfinput_d01
+ traj_opt                            = 0        ; Forward trajectory calculation (Lee and Chen 2013)
+ num_traj                            = 50       ; number of trajectories to be released
  isftcflx                            = 0        ; alternative Ck, Cd formulation for tropical storm application 
                                                 ; sf_sfclay=1 and 11
                                                 ; 0=default

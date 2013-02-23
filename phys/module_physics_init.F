@@ -1717,7 +1717,9 @@ integer myproc
    USE module_sf_qnsesfc
    USE module_sf_noahdrv
    USE module_sf_noahmpdrv
+#ifdef WRF_USE_CLM
    USE module_sf_clm, only : clminit
+#endif
    USE module_sf_urban
    USE module_sf_bep                                  !BEP
    USE module_sf_bep_bem
@@ -2254,6 +2256,7 @@ integer myproc
         IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
                 CALL wrf_error_fatal ( 'CLM DOES NOT WORK WITH URBAN SCHEME' ) 
         ENDIF
+#ifdef WRF_USE_CLM
         IF(PRESENT(numc))THEN
         ! added by Jiming Jin 10/14/2012
         if(config_flags%num_land_cat .ne. 24) CALL wrf_error_fatal &
@@ -2302,6 +2305,9 @@ integer myproc
         ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling CLM' )
         ENDIF
+#else
+        CALL wrf_error_fatal ( "SF CLM CURRENTLY ifdef'ed out, set -DWRF_USE_CLM in configure.wrf in ARCH_LOCAL" )
+#endif
 
       CASE DEFAULT
 

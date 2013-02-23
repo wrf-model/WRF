@@ -584,7 +584,9 @@ contains
    real                 ::  thema(ilev)
    real                 ::  pv,tdpd
    real                 ::  slklcl,thelcl,tlcl
-   real                 ::  xj,yj,jx,jy
+! pjj/cray - correct type
+!  real                 ::  xj,yj,jx,jy
+   integer              ::  xj,yj,jx,jy
    real                 ::  ftx1,ftx2,ftma1,qx1,qx2,qma,tma,tvcld,tvenv
    !
    integer,parameter    ::  nx=151,ny=121
@@ -647,8 +649,11 @@ contains
             !
             xj=min(max(c1xma+c2xma*thema(i),1.),float(nx))
             yj=min(max(c1yma+c2yma*prslk(i,k),1.),float(ny))
-            jx=min(xj,nx-1.)
-            jy=min(yj,ny-1.)
+! pjj/cray - type
+!           jx=min(xj,nx-1.)
+!           jy=min(yj,ny-1.)
+            jx=min(xj,nx-1)
+            jy=min(yj,ny-1)
             ftx1=tbtma(jx,jy)+(xj-jx)*                                         &
                      (tbtma(jx+1,jy)-tbtma(jx,jy))
             ftx2=tbtma(jx,jy+1)+(xj-jx)*                                       &

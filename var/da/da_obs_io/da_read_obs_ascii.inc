@@ -277,16 +277,12 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
                  platform%each (i)%u%inv = U_comp
                  platform%each (i)%v%inv = V_comp
              else
-                 if ( .not. project )then
-                      platform%each (i)%u = platform%each (i)%speed
-                 else
-                      call da_ffdduv (platform%each (i)%speed%inv, platform%each (i)%v%inv,     &
-                                      U_comp, V_comp, platform%info%lon, convert_fd2uv)
-                      call da_ffdduv2 (sp, dir, U_comp, V_comp, platform%info%lon, convert_uv2fd)
-                      platform%each (i)%u = platform%each (i)%speed
-                      platform%each (i)%u%inv = sp
-                      platform%each (i)%v%inv = dir
-                 end if
+                 call da_ffdduv (platform%each (i)%speed%inv, platform%each (i)%v%inv,     &
+                                 U_comp, V_comp, platform%info%lon, convert_fd2uv)
+                 call da_ffdduv2 (sp, dir, U_comp, V_comp, platform%info%lon, convert_uv2fd)
+                 platform%each (i)%u = platform%each (i)%speed
+                 platform%each (i)%u%inv = sp
+                 platform%each (i)%v%inv = dir
              end if
          else
             platform%each (i)%u%inv   = missing_r

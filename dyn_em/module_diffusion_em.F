@@ -5783,10 +5783,14 @@ END SUBROUTINE phy_bc
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( OUT )  &
     :: rdz, rdzw, zx, zy, z
 
+
     REAL, INTENT( IN )  &
     :: rdx, rdy
 
 ! Local variables.
+
+    REAL, DIMENSION( its-1:ite, kts:kte, jts-1:jte )  &
+    :: z_at_w
 
     INTEGER  &
     :: i, j, k, i_start, i_end, j_start, j_end, ktf
@@ -5823,26 +5827,26 @@ END SUBROUTINE phy_bc
 ! Bug fix, WCS, 22 april 2002
 
       DO i = i_start, i_end
-        z(i,k,j) = ( ph(i,k,j) + phb(i,k,j) ) / g
+        z_at_w(i,k,j) = ( ph(i,k,j) + phb(i,k,j) ) / g
       END DO
       END DO
 
       DO k = 1, ktf
       DO i = i_start, i_end
-        rdzw(i,k,j) = 1.0 / ( z(i,k+1,j) - z(i,k,j) )
+        rdzw(i,k,j) = 1.0 / ( z_at_w(i,k+1,j) - z_at_w(i,k,j) )
       END DO
       END DO
 
       DO k = 2, ktf
       DO i = i_start, i_end
-        rdz(i,k,j) = 2.0 / ( z(i,k+1,j) - z(i,k-1,j) )
+        rdz(i,k,j) = 2.0 / ( z_at_w(i,k+1,j) - z_at_w(i,k-1,j) )
       END DO
       END DO
 
 ! Bug fix, WCS, 22 april 2002; added the following code
 
       DO i = i_start, i_end
-        rdz(i,1,j) = 2./(z(i,2,j)-z(i,1,j))
+        rdz(i,1,j) = 2./(z_at_w(i,2,j)-z_at_w(i,1,j))
       END DO
 
     END DO

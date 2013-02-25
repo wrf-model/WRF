@@ -396,8 +396,10 @@ state integer lpbl      ij    dyn_nmm   1    -     ir       "LPBL"     "Model la
 state  real   mixht     ij    dyn_nmm   1    -     rh        "MIXHT"                 "MXL HEIGHT"              "m"
 state  real   ustar     ij    dyn_nmm   1    -     irhd=(DownNear) "USTAR"    "Friction velocity"                    "m s-1"
 state  real   z0        ij    dyn_nmm   1    -     i01rhd=(DownNear) "Z0"   "Thermal Roughness length"                    "m"
-state  real   mz0       ij    dyn_nmm   1    -      rh        "MZ0"       "momentum Roughness length"                     "m"
-state  real     rc2d    ij    dyn_nmm   1    -     irh        "RC2D"     "critical Richardson number" "m"
+state  real   mz0       ij    dyn_nmm   1    -       h        "MZ0"       "momentum Roughness length"                     "m"
+state  real     rc2d    ij    dyn_nmm   1    -       h        "RC2D"     "critical Richardson number" "m"
+state  real   dku3d    ijk    dyn_nmm   1    -       h        "DKU3D"     "Momentum Diffusivity" "m*m/s"
+state  real   dkt3d    ijk    dyn_nmm   1    -       h        "DKT3D"     "Thermal Diffusivity" "m*m/s"
 state  real   hpbl2d    ij    dyn_nmm   1    -     irh        "HPBL2D"     "HEIGHT OF PBL from new GFS pbl" "m"
 state  real   heat2d    ij    dyn_nmm   1    -     irh        "HEAT2D"     "" ""
 state  real   evap2d    ij    dyn_nmm   1    -     irh        "EVAP2D"     "" ""
@@ -1311,6 +1313,8 @@ rconfig   real    sas_shal_pgcon          namelist,physics      max_domains  -1 
 rconfig   integer sas_shal_conv           namelist,physics     max_domains    1        -     "sas_shal_conv"   "1=enable shallow convection in SAS (must use bl_pbl_physics=83)"
 rconfig   real    sas_mass_flux           namelist,physics      max_domains  9e9       -     "sas_mass_flux"   "mass flux limit (SAS scheme)" ""
 rconfig   real    var_ric                 namelist,physics      1             1.       -     "1: use variable Ric 0: constant Ric"
+rconfig   real    coef_ric_l              namelist,physics      1             0.16     -     "Regression coeff for Ric 0.16:origianl value over land"
+rconfig   real    coef_ric_s              namelist,physics      1             0.16     -     "Regression coeff for Ric 0.16:origianl value OVER SEA"
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
 
 # Vortex Tracking (physics namelist)

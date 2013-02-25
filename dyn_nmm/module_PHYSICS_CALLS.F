@@ -674,7 +674,7 @@
      &                ,RC_MF                                            & ! QNSE
      &                ,GRID,CONFIG_FLAGS                                &
      &                ,IHE,IHW,IVE,IVW                                  &
-     &                ,DISHEAT                                          &
+     &                ,DISHEAT,DKU3D,DKT3D                              &
      &                ,HPBL2D, EVAP2D, HEAT2D,RC2D                      &  !Kwon S&P
      &                ,SFCHEADRT,INFXSRT,SOLDRAIN                       &  !Hydrology, no-op right now
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
@@ -827,6 +827,7 @@
      &                                                      ,EXCH_H     &
      &                                                      ,EXCH_M
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(OUT) :: DKU3D,DKT3D   ! KWON
       REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME),INTENT(INOUT) :: KEEPFR3DFLAG & !<--- Used only in physics (IKJ)
      &                                                      ,SH2O,SMC     &
      &                                                      ,SMFR3D,STC
@@ -920,7 +921,7 @@
 
     INTEGER  :: isurban
     CHARACTER(len=256) :: MMINLU
-    REAL :: VAR_RIC                                !KWON for variable Ric (=1)
+    REAL :: VAR_RIC,coef_ric_s,coef_ric_l                             !KWON for variable Ric (=1)
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -1431,6 +1432,9 @@
          PQ_I=P_QI
       ENDIF
       CALL nl_get_var_ric(1, var_ric)
+      CALL nl_get_coef_ric_s(1, coef_ric_s)
+      CALL nl_get_coef_ric_l(1, coef_ric_l)
+      write(0,*) 'var_ric & coef_ric_s l from namelist Kwon  ',var_ric,coef_ric_s,coef_ric_l
 !
       CALL PBL_DRIVER(                                                &
      &                ITIMESTEP=NTSD,DT=DT                            &
@@ -1475,6 +1479,8 @@
      &               ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D     &    !Kwon S&P
      &               ,RC2D=RC2D                                       &    !KWON
      &               ,VAR_RIC=VAR_RIC                                 &    !Kwon Ric
+     &               ,DKU3D=DKU3D,DKT3D=DKT3D 
+     &               ,coef_ric_l=coef_ric_l,coef_ric_s=coef_ric_s     &    !Kwon for Ric
      &               ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &               ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &
      &               ,QI_CURR=MOIST_TRANS(IMS,KMS,JMS,PQ_I),F_QI=FQ_I &

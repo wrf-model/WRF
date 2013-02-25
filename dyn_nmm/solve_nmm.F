@@ -1666,7 +1666,7 @@
      &            ,grid%rc_mf                                          & ! QNSE
      &            ,GRID,CONFIG_FLAGS                                   &
      &            ,grid%ihe,grid%ihw,grid%ive,grid%ivw                 &
-     &            ,GRID%DISHEAT                                        &
+     &            ,GRID%DISHEAT,GRID%DKU3D,GRID%DKT3D                          &
      &            ,GRID%HPBL2D, GRID%EVAP2D, GRID%HEAT2D,GRID%RC2D               &  !S&P Kwon
      &            ,GRID%SFCHEADRT,GRID%INFXSRT,GRID%SOLDRAIN           &  !Hydrology, no-op right now
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &

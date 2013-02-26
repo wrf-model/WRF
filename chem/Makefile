@@ -149,9 +149,9 @@ module_gocart_so2so4.o:
 
 module_vash_settling.o:
 
-module_gocart_settling.o: ../phys/module_data_gocart_dust.o
+module_gocart_settling.o: ../phys/module_data_gocart_dust.o module_data_gocart_seas.o
 
-module_gocart_aerosols.o: 
+module_gocart_aerosols.o: module_data_gocartchem.o
 
 module_gocart_drydep.o: 
 
@@ -159,11 +159,11 @@ module_wetdep_ls.o:
 
 module_gocart_dmsemis.o: module_data_gocartchem.o
 
-module_data_cbmz.o: 
+module_data_cbmz.o: module_peg_util.o
 
 module_peg_util.o: 
 
-module_cbmz.o: module_data_sorgam.o module_cbmz_rodas_prep.o
+module_cbmz.o: module_data_sorgam.o module_cbmz_rodas_prep.o module_peg_util.o
 
 module_chem_plumerise_scalar.o: module_zero_plumegen_coms.o
 
@@ -181,13 +181,13 @@ module_cbm4_addemiss.o: module_aerosols_sorgam.o
 
 module_cbmz_rodas_prep.o: module_cbmz_rodas3_solver.o
 
-module_cbmz_initmixrats.o: module_input_chem_data.o
+module_cbmz_initmixrats.o: module_input_chem_data.o module_peg_util.o
 
-module_cbm4_initmixrats.o: module_input_chem_data.o
+module_cbm4_initmixrats.o: module_input_chem_data.o module_peg_util.o
 
-module_phot_mad.o: 
+module_phot_mad.o: module_data_radm2.o
 
-module_phot_fastj.o: module_mosaic_driver.o
+module_phot_fastj.o: module_mosaic_driver.o module_peg_util.o
 
 module_ftuv_driver.o: module_wave_data.o module_ftuv_subs.o module_data_sorgam.o module_data_soa_vbs.o
 
@@ -209,7 +209,7 @@ module_input_gocart_dms.o: module_aerosols_sorgam.o module_aerosols_soa_vbs.o
 
 module_dep_simple.o: module_data_sorgam.o module_aerosols_soa_vbs.o
 
-module_bioemi_simple.o: 
+module_bioemi_simple.o: module_data_radm2.o
 
 module_aer_opt_out.o: 
 
@@ -269,7 +269,7 @@ module_cmu_dvode_solver.o:
 
 module_data_cmu_bulkaqchem.o:
 
-module_cmu_bulkaqchem.o: module_data_cmu_bulkaqchem.o module_cmu_dvode_solver.o
+module_cmu_bulkaqchem.o: module_data_cmu_bulkaqchem.o module_cmu_dvode_solver.o module_peg_util.o
 
 module_mosaic_cloudchem.o: module_data_cmu_bulkaqchem.o module_cmu_bulkaqchem.o module_data_mosaic_asect.o module_mosaic_movesect.o module_mosaic_driver.o
 
@@ -277,9 +277,9 @@ module_sorgam_cloudchem.o: module_data_cmu_bulkaqchem.o module_cmu_bulkaqchem.o 
 
 module_fastj_data.o:
 
-module_fastj_mie.o:
+module_fastj_mie.o: module_peg_util.o
 
-module_optical_averaging.o: module_data_sorgam.o module_data_rrtmgaeropt.o
+module_optical_averaging.o: module_data_sorgam.o module_data_rrtmgaeropt.o module_data_gocart_seas.o module_peg_util.o
 
 module_ctrans_grell.o: module_dep_simple.o module_input_chem_data.o
 
@@ -305,7 +305,7 @@ photolysis_driver.o: module_phot_mad.o module_phot_fastj.o module_ftuv_driver.o
 
 mechanism_driver.o: module_data_radm2.o module_radm.o module_aerosols_sorgam.o module_aerosols_soa_vbs.o module_data_cbmz.o module_cbmz.o
 
-optical_driver.o: module_optical_averaging.o
+optical_driver.o: module_optical_averaging.o module_peg_util.o
 
 emissions_driver.o: module_add_emiss_burn.o module_data_radm2.o module_radm.o module_bioemi_simple.o module_bioemi_beis314.o module_bioemi_megan2.o module_emissions_anthropogenics.o module_cbmz_addemiss.o module_mosaic_addemiss.o module_aerosols_sorgam.o module_aerosols_soa_vbs.o module_plumerise1.o module_gocart_dust.o module_gocart_dust_afwa.o module_gocart_seasalt.o module_lightning_driver.o module_ghg_fluxes.o
 

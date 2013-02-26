@@ -74,9 +74,9 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
    call da_get_unit(ounit)
 
 #ifdef DM_PARALLEL
-   write(unit=filename, fmt='(a,i3.3)') 'filtered_obs.', myproc
+   write(unit=filename, fmt='(a,i4.4)') 'filtered_obs.', myproc
 #else
-   write(unit=filename, fmt='(a)') 'filtered_obs.000'
+   write(unit=filename, fmt='(a)') 'filtered_obs.0000'
 #endif
    open(unit=ounit,file=trim(filename),form='formatted', & 
       status='replace', iostat=iost)

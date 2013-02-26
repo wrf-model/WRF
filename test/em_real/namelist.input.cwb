@@ -61,6 +61,7 @@ mp_zero_out=0,
 mp_zero_out_thresh=1.e-8,
 /
 &dynamics
+dyn_opt=102,
 w_damping=1,
 diff_opt=1,
 km_opt=4,

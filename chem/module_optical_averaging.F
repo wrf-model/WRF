@@ -221,8 +221,10 @@
 !                 call peg_message( lunerr, msg )
    chem_select: SELECT CASE(config_flags%chem_opt)
 !
-   CASE (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
-         RACM_ESRLSORG_KPP, RACMSORG_AQ, RACMSORG_AQCHEM, RACMSORG_KPP, CBMZSORG, CBMZSORG_AQ)
+   CASE (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP,     &
+         RACM_SOA_VBS_KPP,                                             &
+         RACM_ESRLSORG_KPP, RACMSORG_AQ, RACMSORG_AQCHEM, RACMSORG_KPP,&
+         CBMZSORG, CBMZSORG_AQ                                         )
      call optical_prep_modal(nbin_o, chem, alt,                        &
 !         h2oai, h2oaj, refindx, radius_wet, number_bin,               &
 !         radius_core, refindx_core, refindx_shell,                    &

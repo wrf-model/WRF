@@ -639,8 +639,6 @@ Namelist variables for controlling the adaptive time step option:
                                                 ;   (default) =0: z0, zt, and zq from COARE3.0 (Fairall et al 2003)
                                                 ;             =1: z0 from Davis et al (2008), zt & zq from COARE3.0
                                                 ;             =2: z0 from Davis et al (2008), zt & zq from Garratt (1992)
-                                                ;             =3: z0 from Taylor and Yelland (2004), zt and zq from COARE3.0
-                                                ;             =4: z0 from Zilitinkevich (2001), zt & zq from COARE3.0
  fractional_seaice                   = 0        ; treat sea-ice as fractional field (1) or ice/no-ice flag (0)
  seaice_albedo_opt                   = 0        ; option to set albedo over sea ice
                                                 ; 0 = seaice albedo is a constant 0.80
@@ -685,10 +683,10 @@ Options for use with the Noah-MP Land Surface Model:
 
 &noah_mp
  dveg                               = 2,        ; Noah-MP Dynamic Vegetation option:
-                                                ;    0 = Off (LAI from table; FVEG = shdfac)
-                                                ;    1 = On
-                                                ;    2 = Off (LAI from table; FVEG calculated)
-                                                ;    3 = Off (LAI from table; FVEG = maximum veg. fraction)
+                                                ;    1 = Off (LAI from table; FVEG = shdfac)
+                                                ;    2 = On
+                                                ;    3 = Off (LAI from table; FVEG calculated)
+                                                ;    4 = Off (LAI from table; FVEG = maximum veg. fraction)
  opt_crs                            = 1,        ; Noah-MP Stomatal Resistance option:
                                                 ;    1 = Ball-Berry; 2 = Jarvis
  opt_sfc                            = 1         ; Noah-MP surface layer drag coefficient calculation

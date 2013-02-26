@@ -54,7 +54,7 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
 ! YLIN
 ! Added the RI_CURR array to the call
                       ,ri_curr                                           &
-                      ,diagflag                                          &
+                      ,diagflag,   do_radar_ref                          &
                                                    )
 ! Framework
 #if(NMM_CORE==1)
@@ -101,6 +101,11 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
 
    USE module_mp_nconvp 
    USE a_module_mp_nconvp 
+
+! For checking model timestep is history time (for radar reflectivity)
+   USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
+   USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep
+
 !----------------------------------------------------------------------
    ! This driver calls subroutines for the microphys.
    !
@@ -384,7 +389,8 @@ SUBROUTINE a_microphysics_driver(   th, a_th, rho, a_rho                 &
                        ,f_qns,f_qnr,f_qng,f_qnn,f_qnc,f_qh,f_qnh,f_qzr       &
                        ,f_qzi,f_qzs,f_qzg,f_qzh,f_qvolg
 
-   LOGICAL, OPTIONAL :: diagflag
+   LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
+   INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
 
 ! LOCAL  VAR
 

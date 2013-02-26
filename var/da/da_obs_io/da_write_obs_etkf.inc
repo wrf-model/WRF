@@ -28,9 +28,9 @@ subroutine da_write_obs_etkf(ob, iv, re)
    call da_get_unit(ounit)
 
 #ifdef DM_PARALLEL
-    write(unit=filename, fmt='(a,i3.3)') 'ob.etkf.', myproc
+    write(unit=filename, fmt='(a,i4.4)') 'ob.etkf.', myproc
 #else
-    write(unit=filename, fmt='(a)') 'ob.etkf.000'
+    write(unit=filename, fmt='(a)') 'ob.etkf.0000'
 #endif
 
    open (unit=ounit,file=trim(filename),form='formatted',status='replace', &

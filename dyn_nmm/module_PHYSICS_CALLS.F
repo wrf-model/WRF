@@ -390,12 +390,14 @@
      &                 ,ACFRCV=ACFRCV,NCFRCV=NCFRCV                     &
      &                 ,F_ICE_PHY=F_ICE,F_RAIN_PHY=F_RAIN               &
      &                 ,LWCF=LWCF,SWCF=SWCF                             &
+     &                 ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS &
      &                 ,QV=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV      &
      &                 ,QC=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC      &
      &                 ,QR=MOIST_TRANS(IMS,KMS,JMS,P_QR),F_QR=F_QR      &
      &                 ,QI=MOIST_TRANS(IMS,KMS,JMS,P_QI),F_QI=F_QI      &
      &                 ,QS=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS      &
      &                 ,QG=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG     )
+
 
 !
 !-----------------------------------------------------------------------
@@ -1325,7 +1327,7 @@
      &        ,runsfxy=grid%runsfxy ,runsbxy=grid%runsbxy ,ecanxy=grid%ecanxy &
      &        ,edirxy=grid%edirxy   ,etranxy=grid%etranxy  ,fsaxy=grid%fsaxy  &
      &        ,firaxy=grid%firaxy                                             &
-     &        ,aparxy=grid%aparxy ,psnxy=grid%psnxy                           &
+     &        ,aparxy=grid%aparxy ,psnxy=grid%psnxy  ,taussxy=grid%taussxy    &
      &        ,savxy=grid%savxy    ,sagxy=grid%sagxy ,fsnoxy=grid%fsnoxy      &
      &        ,t2mvxy=grid%t2mvxy ,t2mbxy=grid%t2mbxy ,chstarxy=grid%chstarxy &
      &        ,rssunxy=grid%rssunxy ,rsshaxy=grid%rsshaxy ,bgapxy=grid%bgapxy &
@@ -2047,6 +2049,12 @@
 !Biswas
        REAL,DIMENSION(IMS:IME,JMS:JME) :: HFX,QFX,PBLH
        REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: TWBS,QWBS
+       REAL,DIMENSION(KMS:KME) :: ZNU
+       REAL, DIMENSION(IMS:IME, KMS:KME, JMS:JME) ::                    &
+                                        RUCUTEN,                        &
+                                        RVCUTEN,RQVFTEN
+
+
 
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: F_ICE       &
@@ -2103,7 +2111,8 @@
       INTEGER,DIMENSION(IMS:IME,JMS:JME) :: KPBL,LBOT,LOWLYR,LTOP
 !
       REAL :: CAPA,CF_HI,DPL,DQDT,DTCNVC,DTDT,FICE,FRAIN,G_INV          &
-     &       ,PCPCOL,PLYR,QI,QL_K,QR,QW,RDTCNVC,TL_K,WC,WMID
+     &       ,PCPCOL,PLYR,QI,QL_K,QR,QW,RDTCNVC,TL_K,WC,WMID,PLYRB
+
 !
       REAL,DIMENSION(KMS:KME-1) :: QL,TL
 !
@@ -2182,6 +2191,8 @@
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==NSASSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
+     &   CONFIG_FLAGS%CU_PHYSICS==TIEDTKESCHEME)RETURN
+      IF(MOD(NTSD,NCNVC)/=0.AND. &
      &   CONFIG_FLAGS%CU_PHYSICS==OSASSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)RETURN
@@ -2258,6 +2269,8 @@
           DPL=DETA1(K)*PDTOP+DETA2(K)*PDSL(I,J)
           QL(K)=MAX(Q(I,J,K),EPSQ)
           PLYR=AETA1(K)*PDTOP+AETA2(K)*PDSL(I,J)+PT
+          PLYRB=AETA1(K)*PDTOP+AETA2(K)*(1.E5-PDTOP)+PT
+          ZNU(K)=(PLYRB-PT)/1.E5
           TL(K)=T(I,J,K)
 !
           RR(I,K,J)=PLYR/(R_D*TL(K)*(P608*QL(K)+1.))
@@ -2442,6 +2455,7 @@
      &                 ,CU_ACT_FLAG=CU_ACT_FLAG,WARM_RAIN=WARM_RAIN     &
 !Biswas
      &                 ,HFX=HFX,QFX=QFX,PBLH=PBLH                       &
+     &                 ,ZNU=ZNU                                         &
      &                 ,STEPCU=NSTEP_CNV,GSW=GSW                        &
      &                 ,PERIODIC_X=.FALSE.,PERIODIC_Y=.FALSE.           &
      &                 ,HTOP=CUTOP,HBOT=CUBOT,KPBL=KPBL,HT=SFCZ,Z=Z     &
@@ -2590,7 +2604,7 @@
 !
           cps_select: SELECT CASE(config_flags%cu_physics)
 !
-          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,OSASSCHEME,NSASSCHEME)
+          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,OSASSCHEME,NSASSCHEME,TIEDTKESCHEME)
             IF (ETAMP_Regional) THEN
               MOIST_TRANS(I,K,J,P_QS)=MAX(0.,MOIST_TRANS(I,K,J,P_QS)+RQICUTEN(I,K,J)*DTCNVC+RQSCUTEN(I,K,J)*DTCNVC)
             ELSE

@@ -883,18 +883,18 @@ state    real   rc_mf           ikj     misc        1         -      r        "R
 
 
 # For Noah-MP
-rconfig   integer dveg        namelist,noah_mp      max_domains  2         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
-rconfig   integer opt_crs     namelist,noah_mp      max_domains  1         h    "opt_crs"  "canopy stomatal resistance (1-> Ball-Berry; 2->Jarvis)"   ""
-rconfig   integer opt_btr     namelist,noah_mp      max_domains  1         h    "opt_btr"  "soil moisture factor for stomatal resistance (1-> Noah; 2-> CLM; 3-> SSiB)"   ""
-rconfig   integer opt_run     namelist,noah_mp      max_domains  1         h    "opt_run"  "runoff and groundwater (1->SIMGM; 2->SIMTOP; 3->Schaake96; 4->BATS)"   ""
-rconfig   integer opt_sfc     namelist,noah_mp      max_domains  1         h    "opt_sfc"  "surface layer drag coeff (CH & CM) (1->M-O; 2->Chen97)"   ""
-rconfig   integer opt_frz     namelist,noah_mp      max_domains  1         h    "opt_frz"  "supercooled liquid water (1-> NY06; 2->Koren99)"   ""
-rconfig   integer opt_inf     namelist,noah_mp      max_domains  1         h    "opt_inf"  "frozen soil permeability (1-> NY06; 2->Koren99)"   ""
-rconfig   integer opt_rad     namelist,noah_mp      max_domains  1         h    "opt_rad"  "radiation transfer (1->gap=F(3D,cosz); 2->gap=0; 3->gap=1-Fveg)"   ""
-rconfig   integer opt_alb     namelist,noah_mp      max_domains  2         h    "opt_alb"  "snow surface albedo (1->BATS; 2->CLASS)"   ""
-rconfig   integer opt_snf     namelist,noah_mp      max_domains  1         h    "opt_snf"  "rainfall & snowfall (1-Jordan91; 2->BATS; 3->Noah)"   ""
-rconfig   integer opt_tbot    namelist,noah_mp      max_domains  2         h    "opt_tbot" "lower boundary of soil temperature (1->zero-flux; 2->Noah)"   ""
-rconfig   integer opt_stc     namelist,noah_mp      max_domains  1         h    "opt_stc"  "soil/snow temperature time scheme 1->semi-implicit; 2->full-implicit (original Noah)"   ""
+rconfig   integer dveg        namelist,noah_mp      1            2         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
+rconfig   integer opt_crs     namelist,noah_mp      1            1         h    "opt_crs"  "canopy stomatal resistance (1-> Ball-Berry; 2->Jarvis)"   ""
+rconfig   integer opt_btr     namelist,noah_mp      1            1         h    "opt_btr"  "soil moisture factor for stomatal resistance (1-> Noah; 2-> CLM; 3-> SSiB)"   ""
+rconfig   integer opt_run     namelist,noah_mp      1            1         h    "opt_run"  "runoff and groundwater (1->SIMGM; 2->SIMTOP; 3->Schaake96; 4->BATS)"   ""
+rconfig   integer opt_sfc     namelist,noah_mp      1            1         h    "opt_sfc"  "surface layer drag coeff (CH & CM) (1->M-O; 2->Chen97)"   ""
+rconfig   integer opt_frz     namelist,noah_mp      1            1         h    "opt_frz"  "supercooled liquid water (1-> NY06; 2->Koren99)"   ""
+rconfig   integer opt_inf     namelist,noah_mp      1            1         h    "opt_inf"  "frozen soil permeability (1-> NY06; 2->Koren99)"   ""
+rconfig   integer opt_rad     namelist,noah_mp      1            1         h    "opt_rad"  "radiation transfer (1->gap=F(3D,cosz); 2->gap=0; 3->gap=1-Fveg)"   ""
+rconfig   integer opt_alb     namelist,noah_mp      1            2         h    "opt_alb"  "snow surface albedo (1->BATS; 2->CLASS)"   ""
+rconfig   integer opt_snf     namelist,noah_mp      1            1         h    "opt_snf"  "rainfall & snowfall (1-Jordan91; 2->BATS; 3->Noah)"   ""
+rconfig   integer opt_tbot    namelist,noah_mp      1            2         h    "opt_tbot" "lower boundary of soil temperature (1->zero-flux; 2->Noah)"   ""
+rconfig   integer opt_stc     namelist,noah_mp      1            1         h    "opt_stc"  "soil/snow temperature time scheme 1->semi-implicit; 2->full-implicit (original Noah)"   ""
 state   integer isnowxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "isnow"      "no. of snow layer"     "m3 m-3"
 state    real   tvxy       ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "tv"         "vegetation temperature"  "K"
 state    real   tgxy       ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "tg"         "ground temperature" "K"
@@ -956,6 +956,7 @@ state    real   tgvxy      ij      -       1      -     i02rhd=(interp_mask_land
 state    real   tgbxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "tgb"       "bare ground temperature" ""
 state    real   chvxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "chv"       "vegetated heat exchange coefficient"""
 state    real   chbxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "chb"       "bare-ground heat exchange coefficient" ""
+state    real   taussxy    ij      -       1      -        rh                                                    "taussxy"   "non-dimensional snow age" ""
 
 
 # added state for etampnew microphysics (needed for restarts)
@@ -1422,7 +1423,7 @@ package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
 package   ruclsmscheme   sf_surface_physics==3       -             -
 
-package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,zsnsoxy,tsnoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,tradxy,tsxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,fsnoxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,chstarxy,rssunxy,rsshaxy,bgapxy,wgapxy,gapxy,tgvxy,tgbxy,chvxy,chbxy
+package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,zsnsoxy,tsnoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,tradxy,tsxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,fsnoxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,chstarxy,rssunxy,rsshaxy,bgapxy,wgapxy,gapxy,tgvxy,tgbxy,chvxy,chbxy,taussxy
 
 package   gfdlslab       sf_surface_physics==88      -             -
 package   pxlsmscheme    sf_surface_physics==7       -             -

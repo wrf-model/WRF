@@ -792,6 +792,13 @@
                      deallocate(iv%instid(i)%graupel_r_jacobian)
                      deallocate(iv%instid(i)%hail_r_jacobian)
                  end if
+                 if ( calc_weightfunc ) then
+                    deallocate(iv%instid(i)%lod)
+                    deallocate(iv%instid(i)%lod_jacobian)
+                    deallocate(iv%instid(i)%trans)
+                    deallocate(iv%instid(i)%trans_jacobian)
+                    deallocate(iv%instid(i)%der_trans)
+                 end if
               end if
             end if
 

@@ -37,7 +37,8 @@ subroutine da_read_y_unit(filename,unit_out,num,obs_type_in, nc)
 
    ! If radiance data treat differently
    if ( (index(iv_type,'noaa') > 0) .or. (index(iv_type,'eos') > 0) .or.   &
-        (index(iv_type,'dmsp') > 0) .or. (index(iv_type,'metop') > 0) ) then             
+        (index(iv_type,'dmsp') > 0) .or. (index(iv_type,'metop') > 0) .or. &
+        (index(iv_type,'tiros') > 0) ) then
       do n = 1, num_obs        
          if (if_write) num = num + 1
          read(unit_in,'(2i8,e15.7)')n1, n2, fld_rad                              

@@ -567,7 +567,7 @@ BENCH_START(surf_driver_tim)
      &        ,runsfxy=grid%runsfxy ,runsbxy=grid%runsbxy ,ecanxy=grid%ecanxy &
      &        ,edirxy=grid%edirxy   ,etranxy=grid%etranxy  ,fsaxy=grid%fsaxy  &
      &        ,firaxy=grid%firaxy                                             &
-     &        ,aparxy=grid%aparxy ,psnxy=grid%psnxy                           &
+     &        ,aparxy=grid%aparxy ,psnxy=grid%psnxy,  taussxy=grid%taussxy    &
      &        ,savxy=grid%savxy    ,sagxy=grid%sagxy ,fsnoxy=grid%fsnoxy      &
      &        ,t2mvxy=grid%t2mvxy ,t2mbxy=grid%t2mbxy ,chstarxy=grid%chstarxy & 
      &        ,rssunxy=grid%rssunxy ,rsshaxy=grid%rsshaxy ,bgapxy=grid%bgapxy &
@@ -863,9 +863,7 @@ BENCH_START(cu_driver_tim)
 ! Variables for Tiedtke and NSAS schemes
      &             ,ZNU=grid%znu                                          &
      &             ,MP_PHYSICS=config_flags%mp_physics                    &
-#ifdef WRF_CHEM
      &             ,GD_CLOUD=grid%GD_CLOUD,GD_CLOUD2=grid%GD_CLOUD2       &
-#endif
 #if ( WRF_DFI_RADAR == 1 )
      &             ,DO_CAPSUPPRESS=do_capsupress                          &
 #endif

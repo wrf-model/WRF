@@ -981,8 +981,9 @@
                               ims, ime, jms, jme, kms, kme,                    &
                               its, ite, jts, jte, kts, kte                     ) 
       END IF
+   END IF
 
-
+   IF ( .NOT. config_flags%restart ) THEN
 ! set up slope-radiation constant arrays based on topography
 ! paj: also computes laplacian for topo_wind
 !

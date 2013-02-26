@@ -9,6 +9,9 @@
 !Including inline expansion statistical function 
 MODULE module_mp_wdm5
 !
+   USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
+   USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep
+   USE module_mp_radar
 !
    REAL, PARAMETER, PRIVATE :: dtcldcr     = 120. ! maximum time step for minor loops
    REAL, PARAMETER, PRIVATE :: n0r = 8.e6         ! intercept parameter rain
@@ -77,6 +80,7 @@ CONTAINS
                  ,rain, rainncv                                    &
                  ,snow, snowncv                                    &
                  ,sr                                               &
+                 ,refl_10cm, diagflag, do_radar_ref                &
                  ,itimestep                                        &
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
@@ -159,6 +163,11 @@ CONTAINS
         INTENT(INOUT) ::                                    rain, &
                                                          rainncv, &
                                                               sr
+!+---+-----------------------------------------------------------------+
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::     &  ! GT
+                                                       refl_10cm
+!+---+-----------------------------------------------------------------+
+
   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,                 &
         INTENT(INOUT) ::                                    snow, &
                                                          snowncv
@@ -169,7 +178,13 @@ CONTAINS
   CHARACTER*256 :: emess
   INTEGER :: mkx_test
   INTEGER ::               i,j,k
-!-------------------------------------------------------------------
+
+!+---+-----------------------------------------------------------------+
+      REAL, DIMENSION(kts:kte):: qv1d, t1d, p1d, qr1d, nr1d, qs1d, dBZ
+      LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
+      INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
+!+---+-----------------------------------------------------------------+
+
 #ifndef RUN_ON_GPU
       IF (itimestep .eq. 1) THEN
         DO j=jms,jme
@@ -223,6 +238,29 @@ CONTAINS
             nr(i,k,j) = ncr(i,k,3)
          ENDDO
          ENDDO
+
+!+---+-----------------------------------------------------------------+
+         IF ( PRESENT (diagflag) ) THEN
+         if (diagflag .and. do_radar_ref == 1) then
+            DO I=its,ite
+               DO K=kts,kte
+                  t1d(k)=th(i,k,j)*pii(i,k,j)
+                  p1d(k)=p(i,k,j)
+                  qv1d(k)=q(i,k,j)
+                  qr1d(k)=qr(i,k,j)
+                  nr1d(k)=nr(i,k,j)
+                  qs1d(k)=qs(i,k,j)
+               ENDDO
+               call refl10cm_wdm5 (qv1d, qr1d, nr1d, qs1d,              &
+                       t1d, p1d, dBZ, kts, kte, i, j)
+               do k = kts, kte
+                  refl_10cm(i,k,j) = MAX(-35., dBZ(k))
+               enddo
+            ENDDO
+         endif
+         ENDIF
+!+---+-----------------------------------------------------------------+
+
       ENDDO
 #else
       CALL get_wsm5_gpu_levels ( mkx_test )
@@ -1602,6 +1640,23 @@ CONTAINS
    rsloper3max = rsloper2max * rslopermax
    rslopes3max = rslopes2max * rslopesmax
 !
+!+---+-----------------------------------------------------------------+
+!..Set these variables needed for computing radar reflectivity.  These
+!.. get used within radar_init to create other variables used in the
+!.. radar module.
+   xam_r = PI*denr/6.
+   xbm_r = 3.
+   xmu_r = 0.
+   xam_s = PI*dens/6.
+   xbm_s = 3.
+   xmu_s = 0.
+   xam_g = PI*dens/6.      !  These 3 variables for graupel are set but unused.
+   xbm_g = 3.
+   xmu_g = 0.
+
+   call radar_init
+!+---+-----------------------------------------------------------------+
+
   END SUBROUTINE wdm5init
 !------------------------------------------------------------------------------
       subroutine slope_wdm5(qrs,ncr,den,denfac,t,rslope,rslopeb,rslope2,rslope3, &
@@ -2012,4 +2067,148 @@ CONTAINS
       enddo i_loop
 !
   END SUBROUTINE nislfv_rain_plm
+
+
+!+---+-----------------------------------------------------------------+
+      subroutine refl10cm_wdm5 (qv1d, qr1d, nr1d, qs1d,                 &
+                       t1d, p1d, dBZ, kts, kte, ii, jj)
+
+      IMPLICIT NONE
+
+!..Sub arguments
+      INTEGER, INTENT(IN):: kts, kte, ii, jj
+      REAL, DIMENSION(kts:kte), INTENT(IN)::                            &
+                      qv1d, qr1d, nr1d, qs1d, t1d, p1d
+      REAL, DIMENSION(kts:kte), INTENT(INOUT):: dBZ
+
+!..Local variables
+      REAL, DIMENSION(kts:kte):: temp, pres, qv, rho
+      REAL, DIMENSION(kts:kte):: rr, nr, rs
+      REAL:: temp_C
+
+      DOUBLE PRECISION, DIMENSION(kts:kte):: ilamr, ilams
+      DOUBLE PRECISION, DIMENSION(kts:kte):: N0_r, N0_s
+      DOUBLE PRECISION:: lamr, lams
+      LOGICAL, DIMENSION(kts:kte):: L_qr, L_qs
+
+      REAL, DIMENSION(kts:kte):: ze_rain, ze_snow
+      DOUBLE PRECISION:: fmelt_s
+
+      INTEGER:: i, k, k_0, kbot, n
+      LOGICAL:: melti
+
+      DOUBLE PRECISION:: cback, x, eta, f_d
+      REAL, PARAMETER:: R=287.
+
+!+---+
+
+      do k = kts, kte
+         dBZ(k) = -35.0
+      enddo
+
+!+---+-----------------------------------------------------------------+
+!..Put column of data into local arrays.
+!+---+-----------------------------------------------------------------+
+      do k = kts, kte
+         temp(k) = t1d(k)
+         temp_C = min(-0.001, temp(K)-273.15)
+         qv(k) = MAX(1.E-10, qv1d(k))
+         pres(k) = p1d(k)
+         rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
+
+         if (qr1d(k) .gt. 1.E-9) then
+            rr(k) = qr1d(k)*rho(k)
+            nr(k) = nr1d(k)*rho(k)
+            lamr = (xam_r*xcrg(3)*xorg2*nr(k)/rr(k))**xobmr
+            ilamr(k) = 1./lamr
+            N0_r(k) = nr(k)*xorg2*lamr**xcre(2)
+            L_qr(k) = .true.
+         else
+            rr(k) = 1.E-12
+            nr(k) = 1.E-12
+            L_qr(k) = .false.
+         endif
+
+         if (qs1d(k) .gt. 1.E-9) then
+            rs(k) = qs1d(k)*rho(k)
+            N0_s(k) = min(n0smax, n0s*exp(-alpha*temp_C))
+            lams = (xam_s*xcsg(3)*N0_s(k)/rs(k))**(1./xcse(1))
+            ilams(k) = 1./lams
+            L_qs(k) = .true.
+         else
+            rs(k) = 1.E-12
+            L_qs(k) = .false.
+         endif
+
+      enddo
+
+!+---+-----------------------------------------------------------------+
+!..Locate K-level of start of melting (k_0 is level above).
+!+---+-----------------------------------------------------------------+
+      melti = .false.
+      k_0 = kts
+      do k = kte-1, kts, -1
+         if ( (temp(k).gt.273.15) .and. L_qr(k) .and. L_qs(k+1) ) then
+            k_0 = MAX(k+1, k_0)
+            melti=.true.
+            goto 195
+         endif
+      enddo
+ 195  continue
+
+!+---+-----------------------------------------------------------------+
+!..Assume Rayleigh approximation at 10 cm wavelength. Rain (all temps)
+!.. and non-water-coated snow and graupel when below freezing are
+!.. simple. Integrations of m(D)*m(D)*N(D)*dD.
+!+---+-----------------------------------------------------------------+
+
+      do k = kts, kte
+         ze_rain(k) = 1.e-22
+         ze_snow(k) = 1.e-22
+         if (L_qr(k)) ze_rain(k) = N0_r(k)*xcrg(4)*ilamr(k)**xcre(4)
+         if (L_qs(k)) ze_snow(k) = (0.176/0.93) * (6.0/PI)*(6.0/PI)     &
+                                 * (xam_s/900.0)*(xam_s/900.0)          &
+                                 * N0_s(k)*xcsg(4)*ilams(k)**xcse(4)
+      enddo
+
+
+!+---+-----------------------------------------------------------------+
+!..Special case of melting ice (snow/graupel) particles.  Assume the
+!.. ice is surrounded by the liquid water.  Fraction of meltwater is
+!.. extremely simple based on amount found above the melting level.
+!.. Uses code from Uli Blahak (rayleigh_soak_wetgraupel and supporting
+!.. routines).
+!+---+-----------------------------------------------------------------+
+
+      if (melti .and. k_0.ge.kts+1) then
+       do k = k_0-1, kts, -1
+
+!..Reflectivity contributed by melting snow
+          if (L_qs(k) .and. L_qs(k_0) ) then
+           fmelt_s = MAX(0.005d0, MIN(1.0d0-rs(k)/rs(k_0), 0.99d0))
+           eta = 0.d0
+           lams = 1./ilams(k)
+           do n = 1, nrbins
+              x = xam_s * xxDs(n)**xbm_s
+              call rayleigh_soak_wetgraupel (x,DBLE(xocms),DBLE(xobms), &
+                    fmelt_s, melt_outside_s, m_w_0, m_i_0, lamda_radar, &
+                    CBACK, mixingrulestring_s, matrixstring_s,          &
+                    inclusionstring_s, hoststring_s,                    &
+                    hostmatrixstring_s, hostinclusionstring_s)
+              f_d = N0_s(k)*xxDs(n)**xmu_s * DEXP(-lams*xxDs(n))
+              eta = eta + f_d * CBACK * simpson(n) * xdts(n)
+           enddo
+           ze_snow(k) = SNGL(lamda4 / (pi5 * K_w) * eta)
+          endif
+       enddo
+      endif
+
+      do k = kte, kts, -1
+         dBZ(k) = 10.*log10((ze_rain(k)+ze_snow(k))*1.d18)
+      enddo
+
+
+      end subroutine refl10cm_wdm5
+!+---+-----------------------------------------------------------------+
+
 END MODULE module_mp_wdm5

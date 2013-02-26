@@ -324,15 +324,15 @@ state    real   p_hyd           ikj     dyn_em      1         -      irh       "
 state    real   p_hyd_w         ikj     dyn_em      1         Z       r        "p_hyd_w"     "hydrostatic pressure at full levels"         "Pa"
 
 # 2m and 10m output diagnostics
-state    real   Q2               ij     misc        1         -     irh0{23}d      "Q2"                   "QV at 2 M"         "kg kg-1"
-state    real   T2               ij     misc        1         -     i01rh0{23}d    "T2"                   "TEMP at 2 M"       "K"
-state    real   TH2              ij     misc        1         -     irhd      "TH2"                  "POT TEMP at 2 M"   "K"
-state    real   PSFC             ij     misc        1         -     i01rhd    "PSFC"                 "SFC PRESSURE"      "Pa"
+state    real   Q2               ij     misc        1         -     irh0{23}du     "Q2"                   "QV at 2 M"         "kg kg-1"
+state    real   T2               ij     misc        1         -     i01rh0{23}du   "T2"                   "TEMP at 2 M"       "K"
+state    real   TH2              ij     misc        1         -     irhdu     "TH2"                  "POT TEMP at 2 M"   "K"
+state    real   PSFC             ij     misc        1         -     i01rhdu   "PSFC"                 "SFC PRESSURE"      "Pa"
 
 # these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
 # with wave model, only if compiled with -DMCELIO, JM 2003/05/29
-state    real   U10              ij     misc        1         -     irh01d      "U10"                "U at 10 M"         "m s-1"
-state    real   V10              ij     misc        1         -     irh01d      "V10"                "V at 10 M"         "m s-1"
+state    real   U10              ij     misc        1         -     irh01du     "U10"                "U at 10 M"         "m s-1"
+state    real   V10              ij     misc        1         -     irh01du     "V10"                "V at 10 M"         "m s-1"
 
 # these next 4 are for observational nudging
 state    real   uratx           ij      misc        1         -      r          "URATX"            "Ratio of U over U10 on mass points "         "dimensionless"
@@ -816,8 +816,8 @@ state   real   OL3              ij     misc        1         -     i012rhdus "OL
 state   real   OL4              ij     misc        1         -     i012rhdus "OL4"                   "OROGRAPHIC DIRECTION ASYMMETRY FUNCTION"   ""   ""
 
 # Additional for topo_wind
-state    real   ctopo             ij      misc        1         -     r           "ctopo"              "Correction for topography"       ""
-state    real   ctopo2            ij      misc        1         -     r           "ctopo2"             "Correction for topography 2"     ""
+state    real   ctopo             ij      misc        1         -     rdu         "ctopo"              "Correction for topography"       ""
+state    real   ctopo2            ij      misc        1         -     rdu         "ctopo2"             "Correction for topography 2"     ""
 
 # BEP urban scheme  variables
 state    real    a_u_bep       ikj     misc        1         Z      -        "a_u_bep"               "IMPLICIT FOR X-COMP."      "s-1"
@@ -999,7 +999,7 @@ state    real  HAILNC           ij      misc        1         -      rhdu     "H
 state    real  SNOWNCV          ij      misc        1         -      r        "SNOWNCV"               "TIME-STEP NONCONVECTIVE SNOW AND ICE"                    "mm"
 state    real  GRAUPELNCV       ij      misc        1         -      r        "GRAUPELNCV"            "TIME-STEP NONCONVECTIVE GRAUPEL"                         "mm"
 state    real  HAILNCV          ij      misc        1         -      r        "HAILNCV"               "TIME-STEP NONCONVECTIVE HAIL"                            "mm"
-state    real    refl_10cm      ikj     dyn_em      1         -     hdu     "refl_10cm" "Radar reflectivity (lamda = 10 cm)"  "dBZ"
+state    real    refl_10cm      ikj     dyn_em      1         -     hdu       "refl_10cm"             "Radar reflectivity (lamda = 10 cm)"  "dBZ"
 state    real  NCA              ij      misc        1         -      r        "NCA"                   "COUNTER OF THE CLOUD RELAXATION TIME IN KF CUMULUS SCHEME"    ""      
 state    integer  LOWLYR        ij      misc        1         -     -         "LOWLYR"                "INDEX OF LOWEST MODEL LAYER ABOVE THE GROUND IN BMJ SCHEME"   ""      
 state    real  MASS_FLUX        ij      misc        1         -      r        "MASS_FLUX"             "DOWNDRAFT MASS FLUX FOR IN GRELL CUMULUS SCHEME"  "mb hour-1"
@@ -1056,42 +1056,42 @@ state    real  GLW              ij      misc        1         -      rhd      "G
 state    real  SWNORM           ij      misc        1         -      rhd      "SWNORM"                "NORMAL SHORT WAVE FLUX AT GROUND SURFACE (SLOPE-DEPENDENT)"           "W m-2"
 
 # CLWRF-WRF4G
-state    real  T2MIN            ij      misc        1         -      rh3      "T2MIN"                 "MINIMUM TEMPERATURE AT 2M HEIGHT IN CLWRFH HOURS"                      "K"
-state    real  T2MAX            ij      misc        1         -      rh3      "T2MAX"                 "MAXIMUM TEMPERATURE AT 2M HEIGHT IN CLWRFH HOURS"                      "K"
-state    real  TT2MIN           ij      misc        1         -      rh3      "TT2MIN"                 "TIME OF MINIMUM TEMPERATURE AT 2M HEIGHT IN CLWRFH HOURS"             "minute"
-state    real  TT2MAX           ij      misc        1         -      rh3      "TT2MAX"                 "TIME OF MAXIMUM TEMPERATURE AT 2M HEIGHT IN CLWRFH HOURS"             "minute"
-state    real  T2MEAN           ij      misc        1         -      rh3      "T2MEAN"                 "MEAN TEMPERATURE AT 2M HEIGHT IN CLWRFH HOURS"                        "K"
-state    real  T2STD            ij      misc        1         -      rh3      "T2STD"                  "STANDARD DEV. TEMPERATURE AT 2M HEIGHT IN CLWRFH HOURS"               "k"
-state    real  Q2MIN            ij      misc        1         -      rh3      "Q2MIN"                  "MINIMUM WATER VAPOR MIX. RAT. AT 2M HEIGHT IN CLWRFH HOURS"           "kg kg-1"
-state    real  Q2MAX            ij      misc        1         -      rh3      "Q2MAX"                  "MAXIMUM WATER VAPOR MIX. RAT. AT 2M HEIGHT IN CLWRFH HOURS"           "kg kg-1"
-state    real  TQ2MIN           ij      misc        1         -      rh3      "TQ2MIN"                 "TIME OF MINIMUM WATER VAPOR MIX. RAT. AT 2M HEIGHT IN CLWRFH HOURS"   "minute"
-state    real  TQ2MAX           ij      misc        1         -      rh3      "TQ2MAX"                 "TIME OF MAXIMUM WATER VAPOR MIX. RAT. AT 2M HEIGHT IN CLWRFH HOURS"   "minute"
-state    real  Q2MEAN           ij      misc        1         -      rh3      "Q2MEAN"                 "MEAN WATER VAPOR MIX. RAT. AT 2M HEIGHT IN CLWRFH HOURS"              "kg kg-1"
-state    real  Q2STD            ij      misc        1         -      rh3      "Q2STD"                  "STANDARD DEV. WATER VAPOR MIX. RAT. AT 2M HEIGHT IN CLWRFH HOURS"     "kg kg-1"
-state    real  SKINTEMPMIN      ij      misc        1         -      rh3      "SKINTEMPMIN"            "MINIMUM SKIN TEMPERATURE IN CLWRFH HOURS"                             "K"
-state    real  SKINTEMPMAX      ij      misc        1         -      rh3      "SKINTEMPMAX"            "MAXIMUM SKIN TEMPERATURE IN CLWRFH HOURS"                             "K"
-state    real  TSKINTEMPMIN     ij      misc        1         -      rh3      "TSKINTEMPMIN"           "TIME OF MINIMUM SKIN TEMPERATURE IN CLWRFH HOURS"                     "minute"
-state    real  TSKINTEMPMAX     ij      misc        1         -      rh3      "TSKINTEMPMAX"           "TIME OF MAXIMUM SKIN TEMPERATURE IN CLWRFH HOURS"                     "minute"
-state    real  SKINTEMPMEAN     ij      misc        1         -      rh3      "SKINTEMPMEAN"           "MEAN SKIN TEMPERATURE IN CLWRFH HOURS"                                "K"
+state    real  T2MIN            ij      misc        1         -      rh3      "T2MIN"                 "MINIMUM TEMPERATURE AT 2M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"                      "K"
+state    real  T2MAX            ij      misc        1         -      rh3      "T2MAX"                 "MAXIMUM TEMPERATURE AT 2M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"                      "K"
+state    real  TT2MIN           ij      misc        1         -      rh3      "TT2MIN"                 "TIME OF MINIMUM TEMPERATURE AT 2M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"             "minute"
+state    real  TT2MAX           ij      misc        1         -      rh3      "TT2MAX"                 "TIME OF MAXIMUM TEMPERATURE AT 2M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"             "minute"
+state    real  T2MEAN           ij      misc        1         -      rh3      "T2MEAN"                 "MEAN TEMPERATURE AT 2M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"                        "K"
+state    real  T2STD            ij      misc        1         -      rh3      "T2STD"                  "STANDARD DEV. TEMPERATURE AT 2M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"               "k"
+state    real  Q2MIN            ij      misc        1         -      rh3      "Q2MIN"                  "MINIMUM WATER VAPOR MIX. RAT. AT 2M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"           "kg kg-1"
+state    real  Q2MAX            ij      misc        1         -      rh3      "Q2MAX"                  "MAXIMUM WATER VAPOR MIX. RAT. AT 2M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"           "kg kg-1"
+state    real  TQ2MIN           ij      misc        1         -      rh3      "TQ2MIN"                 "TIME OF MINIMUM WATER VAPOR MIX. RAT. AT 2M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"   "minute"
+state    real  TQ2MAX           ij      misc        1         -      rh3      "TQ2MAX"                 "TIME OF MAXIMUM WATER VAPOR MIX. RAT. AT 2M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"   "minute"
+state    real  Q2MEAN           ij      misc        1         -      rh3      "Q2MEAN"                 "MEAN WATER VAPOR MIX. RAT. AT 2M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"              "kg kg-1"
+state    real  Q2STD            ij      misc        1         -      rh3      "Q2STD"                  "STANDARD DEV. WATER VAPOR MIX. RAT. AT 2M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"     "kg kg-1"
+state    real  SKINTEMPMIN      ij      misc        1         -      rh3      "SKINTEMPMIN"            "MINIMUM SKIN TEMPERATURE IN DIAGNOSTIC OUTPUT INTERVAL"                             "K"
+state    real  SKINTEMPMAX      ij      misc        1         -      rh3      "SKINTEMPMAX"            "MAXIMUM SKIN TEMPERATURE IN DIAGNOSTIC OUTPUT INTERVAL"                             "K"
+state    real  TSKINTEMPMIN     ij      misc        1         -      rh3      "TSKINTEMPMIN"           "TIME OF MINIMUM SKIN TEMPERATURE IN DIAGNOSTIC OUTPUT INTERVAL"                     "minute"
+state    real  TSKINTEMPMAX     ij      misc        1         -      rh3      "TSKINTEMPMAX"           "TIME OF MAXIMUM SKIN TEMPERATURE IN DIAGNOSTIC OUTPUT INTERVAL"                     "minute"
+state    real  SKINTEMPMEAN     ij      misc        1         -      rh3      "SKINTEMPMEAN"           "MEAN SKIN TEMPERATURE IN DIAGNOSTIC OUTPUT INTERVAL"                                "K"
 state    real  SKINTEMPSTD      ij      misc        1         -      rh3      "SKINTEMPSTD"            "STANDARD DEV. OF SKIN TEMPERATURE IN CLWRF HOURS"                     "K"
-state    real  U10MAX           ij      misc        1         -      rh3      "U10MAX"                 "MAXIMUM U AT 10M HEIGHT IN CLWRFH HOURS"                              "m s-1"
-state    real  V10MAX           ij      misc        1         -      rh3      "V10MAX"                 "MAXIMUM V AT 10M HEIGHT IN CLWRFH HOURS"                              "m s-1"
-state    real  SPDUV10MAX       ij      misc        1         -      rh3      "SPDUV10MAX"             "MAXIMUM WIND SPEED AT 10M HEIGHT IN CLWRFH HOURS"                     "m s-1"
-state    real  TSPDUV10MAX      ij      misc        1         -      rh3      "TSPDUV10MAX"            "TIME OF MAXIMUM WIND SPEED AT 10M HEIGHT IN CLWRFH HOURS"             "minute"
-state    real  U10MEAN          ij      misc        1         -      rh3      "U10MEAN"                "MEAN U AT 10M HEIGHT IN CLWRFH HOURS"                                 "m s-1"
-state    real  V10MEAN          ij      misc        1         -      rh3      "V10MEAN"                "MEAN V AT 10M HEIGHT IN CLWRFH HOURS"                                 "m s-1"
-state    real  SPDUV10MEAN      ij      misc        1         -      rh3      "SPDUV10MEAN"            "MEAN WIND SPEED AT 10M HEIGHT IN CLWRFH HOURS"                        "m s-1"
-state    real  U10STD           ij      misc        1         -      rh3      "U10STD"                 "STANDARD DEV. U AT 10M HEIGHT IN CLWRFH HOURS"                        "m s-1"
-state    real  V10STD           ij      misc        1         -      rh3      "V10STD"                 "STANDARD DEV. V AT 10M HEIGHT IN CLWRFH HOURS"                        "m s-1"
-state    real  SPDUV10STD       ij      misc        1         -      rh3      "SPDUV10STD"             "STANDARD DEV. WIND SPEED AT 10M HEIGHT IN CLWRFH HOURS"               "m s-1"
-state    real  RAINCVMAX        ij      misc        1         -      rh3      "RAINCVMAX"              "MAXIMUM CUMULUS PRECIPITATION FLUX IN CLWRFH HOURS"                   "kg m-2 s-1"
-state    real  RAINNCVMAX       ij      misc        1         -      rh3      "RAINNCVMAX"              "MAXIMUM GRID SCALE PRECIPITATION FLUX IN CLWRFH HOURS"                "kg m-2 s-1"
-state    real  TRAINCVMAX       ij      misc        1         -      rh3      "TRAINCVMAX"             "TIME OF MAXIMUM CUMULUS PRECIPITATION FLUX IN CLWRFH HOURS"           "minute"
-state    real  TRAINNCVMAX      ij      misc        1         -      rh3      "TRAINNCVMAX"            "TIME OF MAXIMUM GRID SCALE PRECIPITATION FLUX IN CLWRFH HOURS"        "minute"
-state    real  RAINCVMEAN       ij      misc        1         -      rh3      "RAINCVMEAN"             "MEAN CUMULUS PRECIPITATION FLUX IN CLWRFH HOURS"                      "kg m-2 s-1"
-state    real  RAINNCVMEAN      ij      misc        1         -      rh3      "RAINNCVMEAN"            "MEAN GRID SCALE PRECIPITATION FLUX IN CLWRFH HOURS"                   "kg m-2 s-1"
-state    real  RAINCVSTD        ij      misc        1         -      rh3      "RAINCVSTD"              "STANDARD DEV. CUMULUS PRECIPITATION FLUX IN CLWRFH HOURS"             "kg m-2 s-1"
-state    real  RAINNCVSTD       ij      misc        1         -      rh3      "RAINNCVSTD"             "STANDARD DEV. GRID SCALE PRECIPITATION IN FLUX CLWRFH HOURS"          "kg m-2 s-1"
+state    real  U10MAX           ij      misc        1         -      rh3      "U10MAX"                 "MAXIMUM U AT 10M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"                              "m s-1"
+state    real  V10MAX           ij      misc        1         -      rh3      "V10MAX"                 "MAXIMUM V AT 10M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"                              "m s-1"
+state    real  SPDUV10MAX       ij      misc        1         -      rh3      "SPDUV10MAX"             "MAXIMUM WIND SPEED AT 10M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"                     "m s-1"
+state    real  TSPDUV10MAX      ij      misc        1         -      rh3      "TSPDUV10MAX"            "TIME OF MAXIMUM WIND SPEED AT 10M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"             "minute"
+state    real  U10MEAN          ij      misc        1         -      rh3      "U10MEAN"                "MEAN U AT 10M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"                                 "m s-1"
+state    real  V10MEAN          ij      misc        1         -      rh3      "V10MEAN"                "MEAN V AT 10M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"                                 "m s-1"
+state    real  SPDUV10MEAN      ij      misc        1         -      rh3      "SPDUV10MEAN"            "MEAN WIND SPEED AT 10M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"                        "m s-1"
+state    real  U10STD           ij      misc        1         -      rh3      "U10STD"                 "STANDARD DEV. U AT 10M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"                        "m s-1"
+state    real  V10STD           ij      misc        1         -      rh3      "V10STD"                 "STANDARD DEV. V AT 10M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"                        "m s-1"
+state    real  SPDUV10STD       ij      misc        1         -      rh3      "SPDUV10STD"             "STANDARD DEV. WIND SPEED AT 10M HEIGHT IN DIAGNOSTIC OUTPUT INTERVAL"               "m s-1"
+state    real  RAINCVMAX        ij      misc        1         -      rh3      "RAINCVMAX"              "MAXIMUM CUMULUS PRECIPITATION FLUX IN DIAGNOSTIC OUTPUT INTERVAL"                   "kg m-2 s-1"
+state    real  RAINNCVMAX       ij      misc        1         -      rh3      "RAINNCVMAX"              "MAXIMUM GRID SCALE PRECIPITATION FLUX IN DIAGNOSTIC OUTPUT INTERVAL"                "kg m-2 s-1"
+state    real  TRAINCVMAX       ij      misc        1         -      rh3      "TRAINCVMAX"             "TIME OF MAXIMUM CUMULUS PRECIPITATION FLUX IN DIAGNOSTIC OUTPUT INTERVAL"           "minute"
+state    real  TRAINNCVMAX      ij      misc        1         -      rh3      "TRAINNCVMAX"            "TIME OF MAXIMUM GRID SCALE PRECIPITATION FLUX IN DIAGNOSTIC OUTPUT INTERVAL"        "minute"
+state    real  RAINCVMEAN       ij      misc        1         -      rh3      "RAINCVMEAN"             "MEAN CUMULUS PRECIPITATION FLUX IN DIAGNOSTIC OUTPUT INTERVAL"                      "kg m-2 s-1"
+state    real  RAINNCVMEAN      ij      misc        1         -      rh3      "RAINNCVMEAN"            "MEAN GRID SCALE PRECIPITATION FLUX IN DIAGNOSTIC OUTPUT INTERVAL"                   "kg m-2 s-1"
+state    real  RAINCVSTD        ij      misc        1         -      rh3      "RAINCVSTD"              "STANDARD DEV. CUMULUS PRECIPITATION FLUX IN DIAGNOSTIC OUTPUT INTERVAL"             "kg m-2 s-1"
+state    real  RAINNCVSTD       ij      misc        1         -      rh3      "RAINNCVSTD"             "STANDARD DEV. GRID SCALE PRECIPITATION IN FLUX DIAGNOSTIC OUTPUT INTERVAL"          "kg m-2 s-1"
 
 # upward and downward clearsky and total diagnostic fluxes for CAM radiation
 state    real  ACSWUPT          ij      misc        1         -      rhdu     "ACSWUPT"               "ACCUMULATED UPWELLING SHORTWAVE FLUX AT TOP"          "J m-2"
@@ -1173,18 +1173,6 @@ state    real  RQCBLTEN        ikj      misc        1         -      r        "R
 state    real  RQIBLTEN        ikj      misc        1         -      r        "RQIBLTEN"              "COUPLED Q_I TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"      
 
 # For Noah-MP
-rconfig   integer dveg        namelist,noah_mp      max_domains  2         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
-rconfig   integer opt_crs     namelist,noah_mp      max_domains  1         h    "opt_crs"  "canopy stomatal resistance (1-> Ball-Berry; 2->Jarvis)"   ""
-rconfig   integer opt_btr     namelist,noah_mp      max_domains  1         h    "opt_btr"  "soil moisture factor for stomatal resistance (1-> Noah; 2-> CLM; 3-> SSiB)"   ""
-rconfig   integer opt_run     namelist,noah_mp      max_domains  1         h    "opt_run"  "runoff and groundwater (1->SIMGM; 2->SIMTOP; 3->Schaake96; 4->BATS)"   ""
-rconfig   integer opt_sfc     namelist,noah_mp      max_domains  1         h    "opt_sfc"  "surface layer drag coeff (CH & CM) (1->M-O; 2->Chen97)"   ""
-rconfig   integer opt_frz     namelist,noah_mp      max_domains  1         h    "opt_frz"  "supercooled liquid water (1-> NY06; 2->Koren99)"   ""
-rconfig   integer opt_inf     namelist,noah_mp      max_domains  1         h    "opt_inf"  "frozen soil permeability (1-> NY06; 2->Koren99)"   ""
-rconfig   integer opt_rad     namelist,noah_mp      max_domains  1         h    "opt_rad"  "radiation transfer (1->gap=F(3D,cosz); 2->gap=0; 3->gap=1-Fveg)"   ""
-rconfig   integer opt_alb     namelist,noah_mp      max_domains  2         h    "opt_alb"  "snow surface albedo (1->BATS; 2->CLASS)"   ""
-rconfig   integer opt_snf     namelist,noah_mp      max_domains  1         h    "opt_snf"  "rainfall & snowfall (1-Jordan91; 2->BATS; 3->Noah)"   ""
-rconfig   integer opt_tbot    namelist,noah_mp      max_domains  2         h    "opt_tbot" "lower boundary of soil temperature (1->zero-flux; 2->Noah)"   ""
-rconfig   integer opt_stc     namelist,noah_mp      max_domains  1         h    "opt_stc"  "soil/snow temperature time scheme 1->semi-implicit; 2->full-implicit (original Noah)"   ""
 state   integer isnowxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "isnow"      "no. of snow layer"     "m3 m-3"
 state    real   tvxy       ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "tv"         "vegetation temperature"  "K"
 state    real   tgxy       ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "tg"         "ground temperature" "K"
@@ -1246,6 +1234,7 @@ state    real   tgvxy      ij      -       1      -     i02rhd=(interp_mask_land
 state    real   tgbxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "tgb"       "bare ground temperature" ""
 state    real   chvxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "chv"       "vegetated heat exchange coefficient"""
 state    real   chbxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "chb"       "bare-ground heat exchange coefficient" ""
+state    real   taussxy    ij      -       1      -        rh                                                    "tauss"     "non-dimensional snow age" ""
 
 # State vector for etampnew microphysics. Must be declared state because it is not read-once and is needed for restarting.
 state    real  mp_restart_state   p      misc        1         -      r       "MP_RESTART_STATE"       "STATE VECTOR FOR MICROPHYSICS RESTARTS"
@@ -1631,6 +1620,7 @@ rconfig   integer     mp_physics          namelist,physics	max_domains    0     
 rconfig   integer     gsfcgce_hail        namelist,physics      1              0       rh       "gsfcgce select hail/graupel"  ""      ""
 rconfig   integer     gsfcgce_2ice        namelist,physics      1              0       rh       "gsfcgce select 2ice/3ice"  ""      ""
 rconfig   integer     progn               namelist,physics      max_domains    0       rh       "progn"                 ""      ""
+rconfig   integer     do_radar_ref        namelist,physics      1              0       rh       "compute radar reflectivity for a number of schemes"                 ""      ""
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    0       rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    0       rh       "ra_sw_physics"         ""      ""
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
@@ -1639,7 +1629,7 @@ rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0     
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0       rh       "sf_surface_physics"            ""      ""
 rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    0       rh       "bl_pbl_physics"                ""      ""
 rconfig   integer     bl_mynn_tkebudget   namelist,physics      1              0       rh       "bl_mynn_tkebudget"             ""      ""
-rconfig   integer     mfshconv            namelist,physics      max_domains    1       rh       "mfshconv"         "To activate mass flux scheme with qnse true or false"      ""
+rconfig   integer     mfshconv            namelist,physics      max_domains    1       rh       "mfshconv"         "To activate mass flux scheme with qnse, 1=true or 0=false"      ""
 rconfig   integer     sf_urban_physics    namelist,physics      max_domains    0       rh       "sf_urban_physics"     "activate urban model  0=no, 1=Noah_UCM 2=BEP_UCM"   ""
 rconfig   real    BLDT                    namelist,physics      max_domains    0       h    "BLDT"          ""      ""
 rconfig   integer cu_physics              namelist,physics      max_domains    0       rh   "cu_physics"    ""      ""
@@ -1712,6 +1702,20 @@ rconfig   integer prec_acc_opt            derived               1              0
 rconfig   integer bucketr_opt             derived               1              0       -     "bucketr_opt"  "option to output water accum based on bucket_mm "          ""
 
 rconfig   integer grav_settling           namelist,physics      max_domains  0         h    "grav_settling"     "activate gravitationalsettling of fog  0=no, 1=yes"
+
+# For Noah-MP
+rconfig   integer dveg        namelist,noah_mp      1           2         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
+rconfig   integer opt_crs     namelist,noah_mp      1           1         h    "opt_crs"  "canopy stomatal resistance (1-> Ball-Berry; 2->Jarvis)"   ""
+rconfig   integer opt_btr     namelist,noah_mp      1           1         h    "opt_btr"  "soil moisture factor for stomatal resistance (1-> Noah; 2-> CLM; 3-> SSiB)"   ""
+rconfig   integer opt_run     namelist,noah_mp      1           1         h    "opt_run"  "runoff and groundwater (1->SIMGM; 2->SIMTOP; 3->Schaake96; 4->BATS)"   ""
+rconfig   integer opt_sfc     namelist,noah_mp      1           1         h    "opt_sfc"  "surface layer drag coeff (CH & CM) (1->M-O; 2->Chen97)"   ""
+rconfig   integer opt_frz     namelist,noah_mp      1           1         h    "opt_frz"  "supercooled liquid water (1-> NY06; 2->Koren99)"   ""
+rconfig   integer opt_inf     namelist,noah_mp      1           1         h    "opt_inf"  "frozen soil permeability (1-> NY06; 2->Koren99)"   ""
+rconfig   integer opt_rad     namelist,noah_mp      1           1         h    "opt_rad"  "radiation transfer (1->gap=F(3D,cosz); 2->gap=0; 3->gap=1-Fveg)"   ""
+rconfig   integer opt_alb     namelist,noah_mp      1           2         h    "opt_alb"  "snow surface albedo (1->BATS; 2->CLASS)"   ""
+rconfig   integer opt_snf     namelist,noah_mp      1           1         h    "opt_snf"  "rainfall & snowfall (1-Jordan91; 2->BATS; 3->Noah)"   ""
+rconfig   integer opt_tbot    namelist,noah_mp      1           2         h    "opt_tbot" "lower boundary of soil temperature (1->zero-flux; 2->Noah)"   ""
+rconfig   integer opt_stc     namelist,noah_mp      1           1         h    "opt_stc"  "soil/snow temperature time scheme 1->semi-implicit; 2->full-implicit (original Noah)"   ""
 
 #FDDA namelist parameters
 rconfig   real    FGDT                    namelist,fdda         max_domains    0       h        "FGDT"          ""      ""
@@ -2000,14 +2004,14 @@ package   etampnew      mp_physics==5                -             moist:qv,qc,q
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
 package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;g_scalar:g_qni,g_qnr;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;a_scalar:a_qni,a_qnr
-package   milbrandt2mom mp_physics==9                -             state:refl_10cm;moist:qv,qc,qr,qi,qs,qg,qh;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh;scalar:qnc,qnr,qni,qns,qng,qnh;a_scalar:a_qnc,a_qnr,a_qni,a_qns,a_qng,a_qnh;g_scalar:g_qnc,g_qnr,g_qni,g_qns,g_qng,g_qnh
+package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh;scalar:qnc,qnr,qni,qns,qng,qnh;a_scalar:a_qnc,a_qnr,a_qni,a_qns,a_qng,a_qnh;g_scalar:g_qnc,g_qnr,g_qni,g_qns,g_qng,g_qnh
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;a_scalar:a_qni,a_qns,a_qnr,a_qng;g_scalar:g_qni,g_qns,g_qnr,g_qng
 #package   milbrandt3mom mp_physics==12               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qzr,qzi,qzs,qzg,qzh
 package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs;state:rimi;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs;
 package   wdm5scheme    mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs;a_scalar:a_qnn,a_qnc,a_qnr;g_scalar:g_qnn,g_qnc,g_qnr;
 package   wdm6scheme    mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_scalar:a_qnn,a_qnc,a_qnr;g_scalar:g_qnn,g_qnc,g_qnr;
-package   nssl_2mom     mp_physics==17                -            state:refl_10cm;moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qvolg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_scalar:a_qnc,a_qnr,a_qni,a_qns,a_qng,a_qnh,a_qvolg;g_scalar:g_qnc,g_qnr,g_qni,g_qns,g_qng,g_qnh,g_qvolg;
-package   nssl_2momccn  mp_physics==18                -            state:refl_10cm;moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qnc,qnr,qni,qns,qng,qnh,qvolg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_scalar:a_qnn,a_qnc,a_qnr,a_qni,a_qns,a_qng,a_qnh,a_qvolg;g_scalar:g_qnn,g_qnc,g_qnr,g_qni,g_qns,g_qng,g_qnh,g_qvolg;
+package   nssl_2mom     mp_physics==17                -            moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qvolg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_scalar:a_qnc,a_qnr,a_qni,a_qns,a_qng,a_qnh,a_qvolg;g_scalar:g_qnc,g_qnr,g_qni,g_qns,g_qng,g_qnh,g_qvolg;
+package   nssl_2momccn  mp_physics==18                -            moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qnc,qnr,qni,qns,qng,qnh,qvolg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_scalar:a_qnn,a_qnc,a_qnr,a_qni,a_qns,a_qng,a_qnh,a_qvolg;g_scalar:g_qnn,g_qnc,g_qnr,g_qni,g_qns,g_qng,g_qnh,g_qvolg;
 package   etampold      mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 
 package   nodfimoist        mp_physics_dfi==-1       -             -
@@ -2066,7 +2070,7 @@ package   bep_bemscheme  sf_urban_physics==3         -             state:a_u_bep
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
 package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1
-package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,zsnsoxy,tsnoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,tradxy,tsxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,fsnoxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,chstarxy,rssunxy,rsshaxy,bgapxy,wgapxy,gapxy,tgvxy,tgbxy,chvxy,chbxy
+package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,zsnsoxy,tsnoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,tradxy,tsxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,fsnoxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,chstarxy,rssunxy,rsshaxy,bgapxy,wgapxy,gapxy,tgvxy,tgbxy,chvxy,chbxy,taussxy
 package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old
 package   ssibscheme     sf_surface_physics==8       -             state:ssib_fm,ssib_fh,ssib_cm,ssibxdd,ssib_br,ssib_lhf,ssib_shf,ssib_ghf,ssib_egs,ssib_eci,ssib_ect,ssib_egi,ssib_egt,ssib_sdn,ssib_sup,ssib_ldn,ssib_lup,ssib_wat,ssib_shc,ssib_shg,ssib_lai,ssib_vcf,ssib_z00,ssib_veg,isnow,swe,snowden,snowdepth,tkair,dzo1,wo1,tssn1,tssno1,bwo1,bto1,cto1,fio1,flo1,bio1,blo1,ho1,dzo2,wo2,tssn2,tssno2,bwo2,bto2,cto2,fio2,flo2,bio2,blo2,ho2,dzo3,wo3,tssn3,tssno3,bwo3,bto3,cto3,fio3,flo3,bio3,blo3,ho3,dzo4,wo4,tssn4,tssno4,bwo4,bto4,cto4,fio4,flo4,bio4,blo4,ho4
 

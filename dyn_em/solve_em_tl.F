@@ -11,7 +11,7 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
    USE module_domain, ONLY : &
                   domain, get_ijk_from_grid, get_ijk_from_subgrid                          &
                  ,domain_get_current_time, domain_get_start_time                           &
-                 ,domain_get_sim_start_time, domain_clock_get
+                 ,domain_get_sim_start_time, domain_clock_get,is_alarm_tstep
    USE module_domain_type, ONLY : history_alarm, restart_alarm
    USE module_configure, ONLY : grid_config_rec_type
    USE module_driver_constants
@@ -123,9 +123,9 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
    ! Whether advection should produce decoupled horizontal and vertical advective tendency outputs
    LOGICAL                        :: tenddec
 
-   ! Flag for microphysics routines to produce diagnostic fields (e.g., radar reflectivity)
-   LOGICAL                        :: diagflag
-      
+   ! Flag for producing diagnostic fields (e.g., radar reflectivity)
+   LOGICAL                        :: diag_flag
+
 #ifdef WRF_CHEM
    ! Index cross-referencing array for tendency accumulation
    INTEGER, DIMENSION( num_chem ) :: adv_ct_indices
@@ -280,6 +280,14 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
    ENDIF
 ! End of adaptive time step modifications
 !-----------------------------------------------------------------------------
+!
+! Set diagnostic flag value history output time
+!-----------------------------------------------------------------------------
+!  if ( Is_alarm_tstep(grid_clock, grid_alarms(HISTORY_ALARM)) ) then
+   diag_flag = .false.
+   if ( Is_alarm_tstep(grid%domain_clock, grid%alarms(HISTORY_ALARM)) ) then
+      diag_flag = .true.
+   endif
 
    grid%itimestep = grid%itimestep + 1
    
@@ -3369,18 +3377,22 @@ BENCH_START(g_micro_driver_tim)
 ! WRFU_AlarmIsRinging always returned false, so using an alternate  method to find out if it is time 
 ! to dump history/restart files so microphysics can be told to calculate things like radar reflectivity.
 !
-      diagflag = .false.
-      CALL WRFU_ALARMGET(grid%alarms( HISTORY_ALARM ),prevringtime=temp_time,RingInterval=intervaltime)
-      CALL WRFU_ALARMGET(grid%alarms( RESTART_ALARM ),prevringtime=restart_time,RingInterval=restartinterval)
-      CALL domain_clock_get ( grid, current_time=CurrTime )
-      old_dt=min(old_dt,grid%dt)
-      num = INT(old_dt * precision)
-      den = precision
-      CALL WRFU_TimeIntervalSet(dtInterval, Sn=num, Sd=den)
-      IF (CurrTime .ge. temp_time + intervaltime - dtInterval .or. &
-          CurrTime .ge. restart_time + restartinterval - dtInterval ) THEN
-        diagflag = .true.
-      ENDIF
+!     diagflag = .false.
+!     CALL WRFU_ALARMGET(grid%alarms( HISTORY_ALARM
+!     ),prevringtime=temp_time,RingInterval=intervaltime)
+!     CALL WRFU_ALARMGET(grid%alarms( RESTART_ALARM
+!     ),prevringtime=restart_time,RingInterval=restartinterval)
+!     CALL domain_clock_get ( grid, current_time=CurrTime )
+!     old_dt=min(old_dt,grid%dt)
+!     num = INT(old_dt * precision)
+!     den = precision
+!     CALL WRFU_TimeIntervalSet(dtInterval, Sn=num, Sd=den)
+!     IF (CurrTime .ge. temp_time + intervaltime - dtInterval .or. &
+!         CurrTime .ge. restart_time + restartinterval - dtInterval ) THEN
+!       diagflag = .true.
+!     ENDIF
+!     WRITE(wrf_err_message,*)'diag_flag=',diag_flag
+!     CALL wrf_debug ( 0 , wrf_err_message )
 
      CALL g_microphysics_driver(                                            &
       &         DT=dtm             ,DX=grid%dx              ,DY=grid%dy     &
@@ -3462,7 +3474,7 @@ BENCH_START(g_micro_driver_tim)
 ! YLIN
 ! RI_CURR INPUT
       &        , RI_CURR=grid%rimi                                          &
-      &        , diagflag=diagflag                                          &
+      &        , diagflag=diag_flag, do_radar_ref=config_flags%do_radar_ref &
                                                                           )
 BENCH_END(g_micro_driver_tim)
 

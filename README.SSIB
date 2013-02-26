@@ -22,7 +22,10 @@ Currently, the SSIB will only work with the following options:
                  0.152, 0.121, 0.093, 0.069, 0.048,
                  0.029, 0.014, 0.000,
 5) num_soil_layers = 3
-
+6) fractional_seaice = 1
+ 
+Please note that SSiB does not provide U10 and V10 outputs.  The data shown in the SSiB output files for U10 and V10 
+are calculated by  thermal-diffusion surface layer scheme to avoid zero values in display"
 ----------
  WPS
 ----------

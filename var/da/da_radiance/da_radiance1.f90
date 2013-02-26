@@ -21,7 +21,7 @@ module da_radiance1
       global, gas_constant, gravity, monitor_on,kts,kte,use_rttov_kmatrix, &
       use_pseudo_rad, pi, t_triple, crtm_cloud, DT_cloud_model,write_jacobian, &
       use_crtm_kmatrix,use_airs_mmr, use_satcv, cv_size_domain, &
-      cv_size_domain_js
+      cv_size_domain_js, calc_weightfunc
    use da_define_structures, only : info_type,model_loc_type,maxmin_type, &
       iv_type, y_type, jo_type,bad_data_type,bad_data_type,number_type, &
       be_type

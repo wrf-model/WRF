@@ -938,7 +938,7 @@ MODULE module_llxy
       rho = sqrt((x*proj%dx)**2.0 + (y*proj%dx)**2.0)
       t = rho * tc / (A_WGS84 * mc) 
 
-      lon = h*proj%stdlon + h*atan2(h*x,h*(-y))
+      lon = h*proj%stdlon*rad_per_deg + h*atan2(h*x,h*(-y))
 
       chi = PI/2.0-2.0*atan(t)
       a = 1./2.*E_WGS84**2. + 5./24.*E_WGS84**4. +  1./40.*E_WGS84**6.  +    73./2016.*E_WGS84**8.

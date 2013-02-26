@@ -45,11 +45,11 @@ CONTAINS
      &          ,stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy                        &
      &          ,tradxy   ,tsxy     ,neexy    ,gppxy    ,nppxy    ,fvegxy   ,qinxy     &
      &          ,runsfxy  ,runsbxy  ,ecanxy   ,edirxy   ,etranxy  ,fsaxy    ,firaxy    &
-     &          ,aparxy   ,psnxy    ,savxy    ,sagxy                                   &
+     &          ,aparxy   ,psnxy    ,savxy    ,sagxy    ,taussxy                       &
      &          ,fsnoxy                                                                &
      &          ,t2mvxy   ,t2mbxy   ,chstarxy ,rssunxy  ,rsshaxy  ,bgapxy   ,wgapxy    &    
      &          ,gapxy    ,tgvxy    ,tgbxy    ,q2mvxy   ,q2mbxy   ,chvxy    ,chbxy     &
-#if ( EM_CORE==1)
+#if (EM_CORE==1)
      &          ,ch,tsq,qsq,cov                                       & ! MYNN
 #endif
             !  Optional urban
@@ -631,7 +631,7 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) :: tvxy, tgxy, canicexy, canliqxy, eahxy, tahxy, cmxy, chxy,               &
         fwetxy, sneqvoxy, alboldxy, qsnowxy, wslakexy, zwtxy, waxy, wtxy, lfmassxy, rtmassxy, stmassxy, woodxy, stblcpxy, fastcpxy,       &
         xsaixy, tradxy, tsxy, neexy, gppxy, nppxy, fvegxy, qinxy, runsfxy, runsbxy, ecanxy, edirxy, etranxy, fsaxy, firaxy,               &
-        aparxy, psnxy, savxy, sagxy, fsnoxy, q2mvxy, q2mbxy
+        aparxy, psnxy, savxy, sagxy, fsnoxy, q2mvxy, q2mbxy, taussxy
    REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) ::  t2mvxy   ,t2mbxy   ,chstarxy, rssunxy, rsshaxy, bgapxy,wgapxy,gapxy , &
         tgvxy ,tgbxy, chvxy, chbxy
 
@@ -1579,10 +1579,11 @@ CONTAINS
                XICE,SST,TSK_SEA,                                   &
                CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA, &
                HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,    &
-               TICE2TSK_IF2COLD,XICE_THRESHOLD,                                     &
+               TICE2TSK_IF2COLD,XICE_THRESHOLD,                    &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
-               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, &   
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
          ELSE
           CALL SFCLAY_mynn(u_phytmp,v_phytmp,t_phy,qv_curr,        &
                p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
@@ -1596,8 +1597,7 @@ CONTAINS
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte,&
-               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 &
-               &)
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
          ENDIF
        ELSE
           CALL wrf_error_fatal('Lacking arguments for SFCLAY_mynn in surface driver')
@@ -2092,7 +2092,7 @@ CONTAINS
                 stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,lai      ,xsaixy   ,           &
                 tradxy   ,tsxy     ,neexy    ,gppxy    ,nppxy    ,fvegxy   ,qinxy    , &
                 runsfxy  ,runsbxy  ,ecanxy   ,edirxy   ,etranxy  ,fsaxy    ,firaxy   , &
-                aparxy   ,psnxy    ,savxy    ,sagxy    ,                               &
+                aparxy   ,psnxy    ,savxy    ,sagxy    ,taussxy  ,                     &
                 fsnoxy   ,YR       ,JULIAN_IN,                                         &
                 potevp,                                         & !o
 !jref:start
@@ -2508,19 +2508,18 @@ CONTAINS
        day=float(int(julian_in+0.01))+1.
        DO j=j_start(ij),j_end(ij)
        DO i=i_start(ij),i_end(ij)
+
 !check land mask and land-use map !fds (02/2012)
-! IF(itimestep .EQ. 1 ) THEN
+!       IF(itimestep .EQ. 1 ) THEN
 !          IF(IVGTYP(i,j).NE.ISWATER)THEN
 !            XLAND(I,J)=1.0
 !          ELSE
 !            XLAND(I,J)=2.0
 !          ENDIF
-!         IF (IVGTYP(I,J).LE.0 .AND. XLAND(I,J).NE.ISWATER ) IVGTYP(I,J) = 7.0
-! ENDIF
-!
+!          IF (IVGTYP(I,J).LE.0 .AND. XLAND(I,J).NE.ISWATER ) IVGTYP(I,J) = 7.0
+!       ENDIF
 
-!        IF(XLAND(I,J).LT.1.5 .AND. IVGTYP(I,J).NE.ISICE) THEN !land and seaice-free points
-         IF(XLAND(I,J).LT.1.5) THEN !land points, including land ice points
+       IF(XLAND(I,J).LT.1.5) THEN ! seaice and land points
 
            CLOUDFRAC=0.
            IF(PRESENT(CLDFRA))THEN
@@ -2528,6 +2527,30 @@ CONTAINS
              CLOUDFRAC=AMAX1(CLOUDFRAC,AMIN1(CLDFRA(I,K,J),1.0))
            ENDDO
            ENDIF
+
+         IF (XICE(I,J) .GE. XICE_THRESHOLD) THEN !sea ice points only
+
+           CALL ssib_seaice                                                        &
+                    ( i, j, DTBL, itimestep, xlat_urb2d(i,j), coszen(i,j),         &
+                      rainncv(i,j), raincv(i,j), glw(i,j), dz8w(i,1,j),            &
+                      smois(i,1,j), smois(i,2,j), smois(i,3,j),                    &
+                      tslb(i,1,j), tslb(i,2,j), tslb(i,3,j),                       &
+                      snow(i,j), sfcrunoff(i,j), xicem(i,j),                        &
+                      u_phytmp(i,1,j),v_phytmp(i,1,j),qv_curr(i,1,j),t_phy(i,1,j), &
+                      p_phy(i,1,j), psfc(i,j),                                     &
+                      swdown(i,j), canwat(i,j),                                    &
+                 alswvisdir(i,j),alswvisdif(i,j),alswnirdir(i,j),alswnirdif(i,j),  &
+                      swvisdir(i,j), swvisdif(i,j), swnirdir(i,j), swnirdif(i,j),  &
+                      hfx(i,j), lh(i,j), grdflx(i,j), qfx(i,j), tsk(i,j),          &
+                      ust(i,j), ssib_br(i,j), ssib_fm(i,j), ssib_fh(i,j), ssib_cm(i,j), &
+                      ssib_lhf(i,j), ssib_shf(i,j), ssib_ghf(i,j),                 &
+                      ssib_sdn(i,j), ssib_sup(i,j), ssib_ldn(i,j), ssib_lup(i,j),  &
+                      ssib_wat(i,j),                                               &
+                                     ssib_z00(i,j), ssib_veg(i,j),                 &
+                      day, cloudfrac, q2(i,j), t2(i,j), albedo(i,j),               &
+                      ra_sw_physics,xice_threshold                                 &
+                                                                                   )
+         ELSE  !land points only (including land ice)
 
            CALL ssib( i, j, DTBL, itimestep, xlat_urb2d(i,j), coszen(i,j),        &
                      rainncv(i,j), raincv(i,j), glw(i,j), dz8w(i,1,j),            &
@@ -2558,60 +2581,30 @@ CONTAINS
                      day, cloudfrac, q2(i,j), t2(i,j), albedo(i,j),               &
                      ra_sw_physics, mminlu                                        &
                                                                                   )
-                     BR(i,j)=ssib_br(i,j)
-                     ZNT(i,j) = ssib_z00(i,j)
-                     SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
-                     snowh(i,j) = snowdepth(i,j)
-                     IF (itimestep .ne. 1) THEN
-                       ZDIFF=(0.5*dz8w(i,1,j))-SSiBXDD(I,J)
-                       IF(ZDIFF.LE.ZNT(I,J)) ZDIFF=ZNT(I,J)+0.2
-                       GZ1OZ0(I,J)=ALOG(ZDIFF/ZNT(I,J))
-                     ENDIF
-!                    Overwrite WSPD to remove convective velocity (wspd=wspd1 in YSU)
-                     WSPD(I,J)=sqrt( u_phytmp(i,1,j)*u_phytmp(i,1,j) +      &
-                                     v_phytmp(i,1,j)*v_phytmp(i,1,j) ) + 1.e-9
-
-         ELSE IF (XICE(I,J) .GE. XICE_THRESHOLD) THEN !sea ice points
-
-           CLOUDFRAC=0.
-           DO K=KMS,KME
-             CLOUDFRAC=AMAX1(CLOUDFRAC,AMIN1(CLDFRA(I,K,J),1.0))
-           ENDDO
-
-!          CALL wrf_message ( 'Calling ssib_seaice' ) !fds
-           CALL ssib_seaice                                                        &
-                    ( i, j, DTBL, itimestep, xlat_urb2d(i,j), coszen(i,j),         &
-                      rainncv(i,j), raincv(i,j), glw(i,j), dz8w(i,1,j),            &
-                      smois(i,1,j), smois(i,2,j), smois(i,3,j),                    &
-                      tslb(i,1,j), tslb(i,2,j), tslb(i,3,j),                       &
-                      snow(i,j), sfcrunoff(i,j), xicem(i,j),                        &
-                      u_phytmp(i,1,j),v_phytmp(i,1,j),qv_curr(i,1,j),t_phy(i,1,j), &
-                      p_phy(i,1,j), psfc(i,j),                                     &
-                      swdown(i,j), canwat(i,j),                                    &
-                 alswvisdir(i,j),alswvisdif(i,j),alswnirdir(i,j),alswnirdif(i,j),  &
-                      swvisdir(i,j), swvisdif(i,j), swnirdir(i,j), swnirdif(i,j),  &
-                      hfx(i,j), lh(i,j), grdflx(i,j), qfx(i,j), tsk(i,j),          &
-                      ust(i,j), ssib_br(i,j), ssib_fm(i,j), ssib_fh(i,j), ssib_cm(i,j), &
-                      ssib_lhf(i,j), ssib_shf(i,j), ssib_ghf(i,j),                 &
-                      ssib_sdn(i,j), ssib_sup(i,j), ssib_ldn(i,j), ssib_lup(i,j),  &
-                      ssib_wat(i,j),                                               &
-                                     ssib_z00(i,j), ssib_veg(i,j),                 &
-                      day, cloudfrac, q2(i,j), t2(i,j), albedo(i,j),               &
-                      ra_sw_physics,xice_threshold                                 &
-                                                                                   )
-                     BR(i,j)=ssib_br(i,j)
-                     ZNT(i,j) = ssib_z00(i,j)
-                     SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
-                    t2(i,j) = tsk(i,j) !use SSiB's TGEFF as 2m temperature (Nov/2011)
-                     IF (itimestep .ne. 1) THEN
-                       ZDIFF=(0.5*dz8w(i,1,j))-SSiBXDD(I,J)
-                       IF(ZDIFF.LE.ZNT(I,J)) ZDIFF=ZNT(I,J)+0.2
-                       GZ1OZ0(I,J)=ALOG(ZDIFF/ZNT(I,J))
-                     ENDIF
-!                    Overwrite WSPD to remove convective velocity (wspd=wspd1 in YSU)
-                     WSPD(I,J)=sqrt( u_phytmp(i,1,j)*u_phytmp(i,1,j) +      &
-                                     v_phytmp(i,1,j)*v_phytmp(i,1,j) ) + 1.e-9
          ENDIF
+!
+         BR(i,j)=ssib_br(i,j)
+         ZNT(i,j) = ssib_z00(i,j)
+         SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
+         t2(i,j) = tsk(i,j)  !keep this
+         IF (itimestep .ne. 1) THEN
+           ZDIFF=(0.5*dz8w(i,1,j))-SSiBXDD(I,J)
+           IF(ZDIFF.LE.ZNT(I,J)) ZDIFF=ZNT(I,J)+0.2
+           GZ1OZ0(I,J)=ALOG(ZDIFF/ZNT(I,J))
+         ENDIF
+         IF (XICE(I,J) .GE. XICE_THRESHOLD) THEN
+           snowh(i,j) = 0.0
+         ELSE
+           snowh(i,j) = snowdepth(i,j)
+         ENDIF
+!mchen         U10(i,j) = 0.0
+!mchen         V10(i,j) = 0.0
+!        Overwrite WSPD to remove convective velocity (wspd=wspd1 in YSU)
+         WSPD(I,J)=sqrt( u_phytmp(i,1,j)*u_phytmp(i,1,j) +      &
+                         v_phytmp(i,1,j)*v_phytmp(i,1,j) ) + 1.e-9
+!
+       ENDIF
+!
        ENDDO
        ENDDO
 !
@@ -3117,8 +3110,9 @@ HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
 TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte)
-!                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd           )
+                     its,ite, jts,jte, kts,kte,                    &
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
+
      USE module_sf_mynn, ONLY: sfclay_mynn
      implicit none
 
@@ -3193,9 +3187,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                                                              &QC3D,&
                                               &th3d,pi3d,tsq,qsq,cov
 
-!     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
-!               INTENT(OUT)     ::              ck,cka,cd,cda,ustm
-!     INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
+     REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
+               INTENT(OUT)     ::              ck,cka,cd,cda,ustm
+     INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX,IZ0TLND
 
 !--------------------------------------------------------------------
 !    New for wrapper
@@ -3254,7 +3248,12 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                                                 T2_SEA,           &
                                                 TH2_SEA,          &
                                                 U10_SEA,          &
-                                                V10_SEA
+                                                V10_SEA,          &
+                                                CD_SEA,           &
+                                                CDA_SEA,          &
+                                                CK_SEA,           &
+                                                CKA_SEA,          &
+                                                USTM_SEA
 
      REAL,     DIMENSION( ims:ime, jms:jme ) ::                   &
                                                 BR_SEA,           &
@@ -3359,7 +3358,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                &tsq,qsq,cov,qcg,                                   &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
-               its,ite, jts,jte, kts,kte    )
+               its,ite, jts,jte, kts,kte,                          &
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
+
      ! Set up for open-water call
      DO j = JTS , JTE
         DO i = ITS , ITE
@@ -3443,7 +3444,8 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                &tsq,qsq,cov,qcg,                                   &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
-               its,ite, jts,jte, kts,kte    )
+               its,ite, jts,jte, kts,kte,                          &
+               ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd )
 
      DO j = JTS , JTE
         DO i = ITS, ITE
@@ -3472,15 +3474,26 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
               ch(i,j)     = ( ch(i,j)     * XICE(i,j) ) + ( (1.0-XICE(i,j)) * ch_sea(i,j)    )
               ! INTENT(OUT)
               ! --------------------------------------------------------------------
+              IF ( PRESENT ( CD ) ) THEN
+                 CD(i,j)  = ( CD(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * CD_sea(i,j)    )
+              ENDIF
+              IF ( PRESENT ( CDA ) ) THEN
+                 CDA(i,j) = ( CDA(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * CDA_sea(i,j)   )
+              ENDIF
+              IF ( PRESENT ( CK ) ) THEN
+                 CK(i,j)  = ( CK(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * CK_sea(i,j)    )
+              ENDIF
+              IF ( PRESENT ( CKA ) ) THEN
+                 CKA(i,j) = ( CKA(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * CKA_sea(i,j)   )
+              ENDIF
               q2(i,j)     = ( q2(i,j)     * XICE(i,j) ) + ( (1.0-XICE(i,j)) * q2_sea(i,j)     )
               ! QSFC -- wait
               t2(i,j)     = ( t2(i,j)     * XICE(i,j) ) + ( (1.0-XICE(i,j)) * t2_sea(i,j)     )
               th2(i,j)    = ( th2(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * th2_sea(i,j)    )
               u10(i,j)    = ( u10(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * u10_sea(i,j)    )
-!              IF ( PRESENT ( USTM ) ) THEN
-!                 USTM(i,j)    = ( USTM(i,j)    * XICE(i,j) ) + (
-!                 (1.0-XICE(i,j)) * USTM_sea(i,j)    )
-!              ENDIF
+              IF ( PRESENT ( USTM ) ) THEN
+                 USTM(i,j) = ( USTM(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * USTM_sea(i,j)   )
+              ENDIF
               v10(i,j)    = ( v10(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * v10_sea(i,j)    )
            ENDIF
         END DO

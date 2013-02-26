@@ -477,6 +477,7 @@ BENCH_START(g_cu_driver_tim)
 ! Variables for Tiedtke and NSAS schemes
      &             ,ZNU=grid%znu                                          &
      &             ,MP_PHYSICS=config_flags%mp_physics                    &
+     &             ,GD_CLOUD=grid%GD_CLOUD,GD_CLOUD2=grid%GD_CLOUD2       &
      &             ,cfu1=grid%cfu1,cfd1=grid%cfd1,dfu1=grid%dfu1,efu1=grid%efu1,dfd1=grid%dfd1,efd1=grid%efd1,f_flux=l_flux)
 BENCH_END(g_cu_driver_tim)
 !

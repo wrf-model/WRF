@@ -51,7 +51,7 @@ module da_radiance
       pseudo_rad_err, use_simulated_rad,use_rttov_kmatrix, use_crtm_kmatrix , &
       use_rad,crtm_cloud, DT_cloud_model, global, use_varbc, freeze_varbc, &
       airs_warmest_fov, time_slots, interp_option, ids, ide, jds, jde, &
-      ips, ipe, jps, jpe, simulated_rad_ngrid, obs_qc_pointer
+      ips, ipe, jps, jpe, simulated_rad_ngrid, obs_qc_pointer, use_blacklist_rad
  
 #ifdef CRTM
    use da_crtm, only : da_crtm_init, da_get_innov_vector_crtm
@@ -115,6 +115,7 @@ contains
 #include "da_radiance_init.inc"
 #include "da_get_innov_vector_radiance.inc"
 #include "da_read_pseudo_rad.inc"
+#include "da_blacklist_rad.inc"
 
 #endif
 

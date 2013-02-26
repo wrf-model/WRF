@@ -616,7 +616,8 @@ END SUBROUTINE TERMITE
    z_dsoil   =       6.0           ! soil depth in cm at which the oxidation activity is assumed
    conv_Fk   =       616.9         !mg/ppmv cm CH4  conversion factor fpr giving soil_flux right units of kgCH4/m^2s
    conv_ch4  =       (28.97/26.0)*1e6  !ppm to kgCH4/kgair
-   methane_0 =       9.66*1e-7     ! 1750ppb CH4 global average concentration
+!   methane_0 =       9.66*1e-7     ! 1750ppb CH4 global average concentration
+   methane_0 =       1.77     ! 1770ppb CH4 global average concentration
 
  DO j=jts,min(jte,jde-1)
   DO i=its,min(ite,ide-1)

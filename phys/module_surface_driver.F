@@ -10,7 +10,7 @@ CONTAINS
      &          ,grdflx,gsw,swdown,gz1oz0,hfx,ht,ifsnow,isfflx        &
      &          ,fractional_seaice,seaice_albedo_opt,tice2tsk_if2cold &
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
-     &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,psih          &
+     &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih    &
 #if (NMM_CORE==1)
      &          ,psim,p_phy,q10,q2,qfx,taux,tauy,qsfc,qshltr,qz0      &
 #else
@@ -573,6 +573,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   CHKLOWQ
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   GZ1OZ0
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   PSHLTR
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   FHH
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   FM
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   PSIH
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   PSIM
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   Q10
@@ -1274,7 +1276,7 @@ CONTAINS
          IF ( FRACTIONAL_SEAICE == 1 ) THEN
             CALL SFCLAY_SEAICE_WRAPPER(u_phytmp,v_phytmp,t_phy,qv_curr,&
                  p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
-                 znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
+                 znt,ust,pblh,mavail,zol,mol,regime,psim,psih,fm,fhh, &
                  xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
                  u10,v10,th2,t2,q2,                                  &
                  gz1oz0,wspd,br,isfflx,dx,                           &
@@ -1292,7 +1294,7 @@ CONTAINS
          ELSE
          CALL SFCLAY(u_phytmp,v_phytmp,t_phy,qv_curr,              &
                p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
-               znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
+               znt,ust,pblh,mavail,zol,mol,regime,psim,psih,fm,fhh, &
                xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
                u10,v10,th2,t2,q2,                                  &
                gz1oz0,wspd,br,isfflx,dx,                           &
@@ -1347,7 +1349,7 @@ CONTAINS
 !         ELSE
          CALL SFCLAYREV(u_phytmp,v_phytmp,t_phy,qv_curr,&
                p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
-               znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
+               znt,ust,pblh,mavail,zol,mol,regime,psim,psih,fm,fhh, &
                xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
                u10,v10,th2,t2,q2,                                  &
                gz1oz0,wspd,br,isfflx,dx,                           &
@@ -1582,18 +1584,20 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
          ELSE
-          CALL SFCLAY_mynn(u_phytmp,v_phytmp,t_phy,qv_curr,&
+          CALL SFCLAY_mynn(u_phytmp,v_phytmp,t_phy,qv_curr,        &
                p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
-               znt,ust,pblh,mavail,zol,mol,regime,psim,psih, &
+               znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
                xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
                u10,v10,th2,t2,q2,                                  &
                gz1oz0,wspd,br,isfflx,dx,                           &
                svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
-               &itimestep,ch,th_phy,pi_phy,qc_curr,&
-               &tsq,qsq,cov,qcg,&
+               &itimestep,ch,th_phy,pi_phy,qc_curr,                &
+               &tsq,qsq,cov,qcg,                                   &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
-               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+               i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte,&
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 &
+               &)
          ENDIF
        ELSE
           CALL wrf_error_fatal('Lacking arguments for SFCLAY_mynn in surface driver')
@@ -3747,6 +3751,7 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
    SUBROUTINE sfclay_seaice_wrapper(U3D,V3D,T3D,QV3D,P3D,dz8w,     &
                      CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,      &
                      ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH, &
+                     FM,FH,                                        &
                      XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QGH,QSFC,RMOL, &
                      U10,V10,TH2,T2,Q2,                            &
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
@@ -3804,7 +3809,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
 
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(INOUT)   ::                 GZ1OZ0,WSPD,BR, &
-                                                        PSIM,PSIH
+                                                 PSIM,PSIH,FM,FH
 
      REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                INTENT(IN   )   ::                            U3D, &
@@ -3881,6 +3886,8 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                                                 MOL_HOLD,         &
                                                 PSIH_HOLD,        &
                                                 PSIM_HOLD,        &
+                                                FH_HOLD,          &
+                                                FM_HOLD,          &
                                                 QFX_HOLD,         &
                                                 QGH_HOLD,         &
                                                 REGIME_HOLD,      &
@@ -3910,6 +3917,8 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                                                 MOL_SEA,          &
                                                 PSIH_SEA,         &
                                                 PSIM_SEA,         &
+                                                FH_SEA,           &
+                                                FM_SEA,           &
                                                 REGIME_SEA,       &
                                                 RMOL_SEA,         &
                                                 UST_SEA,          &
@@ -3957,6 +3966,8 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      MOL_HOLD  = MOL
      PSIH_HOLD = PSIH
      PSIM_HOLD = PSIM
+     FH_HOLD   = FH
+     FM_HOLD   = FM
      QFX_HOLD  = QFX
      QGH_HOLD  = QGH
      REGIME_HOLD = REGIME
@@ -3990,6 +4001,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      call sfclay(U3D,V3D,T3D,QV3D,P3D,dz8w,                    & ! I
                  CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,      & ! I,I,I,I,I,I,IO,IO,IO,IO,
                  ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH, &
+                 FM,FH,                                        &
                  XLAND,HFX,QFX,LH,TSK_LOCAL,FLHC,FLQC,QGH,QSFC,RMOL, &
                  U10,V10,TH2,T2,Q2,                            &
                  GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
@@ -4058,6 +4070,8 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      MOL_SEA  = MOL_HOLD
      PSIH_SEA = PSIH_HOLD
      PSIM_SEA = PSIM_HOLD
+     FH_SEA   = FH_HOLD
+     FM_SEA   = FM_HOLD
      QFX_SEA  = QFX_HOLD
      QGH_SEA  = QGH_HOLD
      REGIME_SEA = REGIME_HOLD
@@ -4073,6 +4087,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
                  ZNT_SEA,UST_SEA,                              & ! I/O
                  PBLH,MAVAIL_SEA,                              & ! I
                  ZOL_SEA,MOL_SEA,REGIME_SEA,PSIM_SEA,PSIH_SEA, & ! I/O
+                 FM_SEA,FH_SEA,                                &
                  XLAND_SEA,                              & ! I
                  HFX_SEA,QFX_SEA,LH_SEA,                       & ! I/O
                  TSK_SEA,                                      & ! I
@@ -4105,6 +4120,8 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
               mol(i,j)    = ( mol(i,j)    * XICE(i,j) ) + ( (1.0-XICE(i,j)) * mol_sea(i,j)    )
               psih(i,j)   = ( psih(i,j)   * XICE(i,j) ) + ( (1.0-XICE(i,j)) * psih_sea(i,j)   )
               psim(i,j)   = ( psim(i,j)   * XICE(i,j) ) + ( (1.0-XICE(i,j)) * psim_sea(i,j)   )
+              fh(i,j)    = ( fh(i,j)   * XICE(i,j) ) + ( (1.0-XICE(i,j)) * fh_sea(i,j)   )
+              fm(i,j)    = ( fm(i,j)   * XICE(i,j) ) + ( (1.0-XICE(i,j)) * fm_sea(i,j)   )
               ! QFX  -- wait
               ! QGH  -- wait
               if ( XICE(i,j).GE. 0.5 ) regime(i,j) = regime_hold(i,j)

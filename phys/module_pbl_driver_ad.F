@@ -27,12 +27,13 @@ SUBROUTINE a_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 &  , xland, znt, ht, ust, pblh, hfx, qfx, grdflx, u_phy, a_u_phy, v_phy, &
 &  a_v_phy, th_phy, rho, p_phy, pi_phy, p8w, t_phy, dz8w, z, a_z, exch_h, &
 &  exch_m, akhs, akms, thz0, qz0, uz0, vz0, qsfc, f, lowlyr, u10, v10, t2&
-&  , psim, psih, gz1oz0, wspd, br, chklowq, bl_pbl_physics, ra_lw_physics&
+&  , psim, psih, fm, fhh, gz1oz0, wspd, br, chklowq, bl_pbl_physics, ra_lw_physics&
 &  , dx, stepbl, warm_rain, kpbl, mixht, ct, lh, snow, xice, znu, znw, &
 &  mut, p_top, ctopo, ctopo2, te_temf, km_temf, kh_temf, shf_temf, qf_temf, uw_temf, &
 &  vw_temf, hd_temf, lcl_temf, hct_temf, wupd_temf, mf_temf, thup_temf, &
 &  qtup_temf, qlup_temf, exch_temf, cf3d_temf, cfm_temf, flhc, flqc, qke&
 &  , tsq, qsq, cov, rmol, ch, qcg, grav_settling, el_mynn,dqke,qWT,qSHEAR,qBUOY,qDISS, &
+&  bl_mynn_tkebudget , &
 &  ids, ide, jds, jde, kds&
 &  , kde, ims, ime, jms, jme, kms, kme, i_start, i_end, j_start, j_end, &
 &  kts, kte, num_tiles, hol, mol, regime, gwd_opt, dtaux3d, dtauy3d, &
@@ -246,7 +247,7 @@ SUBROUTINE a_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 !
 !
   REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: xland, ht, psim, psih&
-&  , gz1oz0, br, f, chklowq
+&  , fm, fhh, gz1oz0, br, f, chklowq
 !
   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: tsk, ust, pblh, &
 &  hfx, qfx, znt, qsfc, akhs, akms, mixht, qz0, thz0, uz0, vz0, ct, &
@@ -259,8 +260,9 @@ SUBROUTINE a_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 &  wq_tur
 !
 !,k_m,k_h,k_q
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
+  REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::&
 &  qke, tsq, qsq, cov, el_mynn,dqke,qWT,qSHEAR,qBUOY,qDISS
+  INTEGER, OPTIONAL, INTENT(IN)  :: bl_mynn_tkebudget
   INTEGER, OPTIONAL :: id
   REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN) :: qcg, rmol, &
 &  ch

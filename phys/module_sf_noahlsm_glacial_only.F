@@ -1,6 +1,6 @@
 MODULE module_sf_noahlsm_glacial_only
   USE module_model_constants
-  USE module_sf_noahlsm, ONLY : RD, SIGMA, CPH2O, CPICE, LSUBF, EMISSI_S, ERR_MESSAGE, ROSR12
+  USE module_sf_noahlsm, ONLY : RD, SIGMA, CPH2O, CPICE, LSUBF, EMISSI_S, ROSR12
   USE module_sf_noahlsm, ONLY : LVCOEF_DATA
 
   PRIVATE :: ALCALC

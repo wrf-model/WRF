@@ -1501,10 +1501,6 @@ END subroutine cup_env_clev_tr
             if (nv.eq.p_seas_3 .or. nv.eq.p_seas_4) aq_gas_ratio=1.
             if (nv.eq.p_bc2 .or. nv.eq.p_oc2) aq_gas_ratio=0.8
             
-            ! Assume that all non-gas species (aerosol mass and number)
-            ! partion completely into the liquid phase:
-            
-            
             if (aq_gas_ratio > 0.0) then
               tr_c(i,k,nv)  = aq_gas_ratio*tr_up(i,k,nv) ! Amount of species cloud + rain water
               trch          = tr_up(i,k,nv)-tr_c(i,k,nv) ! Amount of species remaining in gas phase

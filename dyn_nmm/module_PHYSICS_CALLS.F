@@ -858,6 +858,7 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME) :: BR,CHKLOWQ,CT,CWMLOW,ELFLX     &
      &                                  ,EXNSFC,FACTRS,FLHC,FLQC,GZ1OZ0 &
+     &                                  ,FH,FM                          &
      &                                  ,ONE,PDSL,PLM,PSFC_OUT,PSIH     &
      &                                  ,PSIM,Q2X,QLOW,RAIN,RAINBL      &
      &                                  ,RLW_DN_SFC,RSW_NET_SFC         &
@@ -1251,6 +1252,7 @@
      &          ,XLAND=XLAND,Z=Z,ZNT=Z0,ZS=SLDPTH,CT=CT,TKE_PBL=TKE,SFENTH=SFENTH     &
      &          ,ALBBCK=ALBASE,LH=ELFLX,SH2O=SH2O,SHDMAX=SHDMAX         &
      &          ,SHDMIN=SHDMIN,Z0=Z0BASE,FLQC=FLQC,FLHC=FLHC            &
+     &          ,FM=FM,FHH=FH                                           &
      &          ,PSFC=PSFC_OUT,EMISS=EPSR,EMBCK=EMBCK                   &
      &          ,SF_SFCLAY_PHYSICS=CONFIG_FLAGS%SF_SFCLAY_PHYSICS       &
      &          ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS     &
@@ -1398,6 +1400,7 @@
      &               ,P_PHY=P_PHY,PI_PHY=PI_PHY,P8W=P8W,T_PHY=T_PHY   &
      &               ,DZ8W=DZ,Z=Z,TKE_PBL=TKE,EL_PBL=EL_MYJ,F=F       &
      &               ,EXCH_H=EXCH_H,EXCH_M=EXCH_M,AKHS=AKHS,AKMS=AKMS &
+     &               ,FM=FM,FHH=FH                                    &
      &               ,THZ0=THZ0,QZ0=QZ0,UZ0=UZ0H,VZ0=VZ0H             &
      &               ,QSFC=QS,LOWLYR=LOWLYR                           &
      &               ,PSIM=PSIM,PSIH=PSIH,GZ1OZ0=GZ1OZ0               &

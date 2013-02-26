@@ -384,7 +384,9 @@ module_sf_gfs.o: module_gfs_machine.o \
 		 module_gfs_physcons.o \
 		 module_progtm.o
 
-module_sf_noahdrv.o: module_sf_noahlsm.o module_data_gocart_dust.o \
+module_sf_noahdrv.o: module_sf_noahlsm.o \
+                     module_sf_noahlsm_glacial_only.o \
+                     module_data_gocart_dust.o \
                      module_sf_urban.o module_sf_bep.o module_sf_bep_bem.o 
 
 module_sf_noahlsm.o: ../share/module_model_constants.o

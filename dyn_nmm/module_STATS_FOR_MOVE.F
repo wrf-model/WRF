@@ -394,9 +394,11 @@ contains
 #ifdef DM_PARALLEL
     USE module_dm, only: wrf_dm_maxval_real, wrf_dm_sum_real, &
          local_communicator_y, local_communicator_x
-    INCLUDE 'mpif.h'
-#endif
     IMPLICIT NONE
+    INCLUDE 'mpif.h'
+#else
+    IMPLICIT NONE
+#endif
     character*512 :: message
     integer, intent(out) :: xloc,yloc
     integer, intent(in) :: cx,cy

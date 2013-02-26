@@ -16,8 +16,8 @@ CONTAINS
                  ,p_phy,pi_phy,p8w,t_phy,dz8w,z                    &
                  ,exch_h,exch_m,akhs,akms                          &
                  ,thz0,qz0,uz0,vz0,qsfc,f                          &
-                 ,lowlyr,u10,v10,t2                                   &
-                 ,psim,psih,gz1oz0, wspd,br,chklowq                &
+                 ,lowlyr,u10,v10,t2                                &
+                 ,psim,psih,fm,fhh,gz1oz0, wspd,br,chklowq         &
                  ,bl_pbl_physics, ra_lw_physics, dx                &
                  ,stepbl,warm_rain                                 &
                  ,kpbl,mixht,ct,lh,snow,xice                       &
@@ -33,9 +33,10 @@ CONTAINS
                  ,flhc,flqc                                        &
               ! 
                  ,qke,tsq,qsq,cov,rmol,ch,qcg,grav_settling        &
-!startJOE
-                 ,el_mynn,dqke,qWT,qSHEAR,qBUOY,qDISS              &
-!endJOE
+!JOE-start
+                 ,el_mynn                                          &
+                 ,dqke,qWT,qSHEAR,qBUOY,qDISS,bl_mynn_tkebudget    &
+!JOE-end
 #if (NMM_CORE==1)
                  ,DISHEAT,RTHRATEN                                 &
                  ,HPBL2D, EVAP2D, HEAT2D                           &   !Kwon FOR SHAL. CON.
@@ -364,6 +365,8 @@ CONTAINS
                                                               HT, &
                                                             PSIM, &
                                                             PSIH, &
+                                                              FM, &
+                                                             FHH, &
                                                           GZ1OZ0, &
                                                               BR, &
                                                                F, &
@@ -403,12 +406,14 @@ CONTAINS
 !
 #endif
 
-   REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ), &
-        &OPTIONAL, INTENT(INOUT) :: &
+   REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), &
+        & INTENT(INOUT) :: &
         & qke,tsq,qsq,cov & !,k_m,k_h,k_q &
-!startJOE
-        & ,el_mynn,dqke,qWT,qSHEAR,qBUOY,qDISS 
-!endJOE
+!JOE-begin
+        & ,el_mynn &
+        & ,dqke,qWT,qSHEAR,qBUOY,qDISS 
+   INTEGER, OPTIONAL, INTENT(IN)  :: bl_mynn_tkebudget
+!JOE-end
 
    INTEGER, OPTIONAL :: id
 
@@ -972,8 +977,8 @@ CONTAINS
               ,DZ8W=dz8w,XLV=XLV,RV=r_v,PSFC=PSFC                   &
               ,ZNU=znu,ZNW=znw,MUT=mut,P_TOP=p_top                  &
               ,ZNT=znt,UST=ust,HPBL=pblh                            &
-              ,PSIM=psim,PSIH=psih,XLAND=xland                      &
-              ,HFX=hfx,QFX=qfx,GZ1OZ0=gz1oz0                        &
+              ,PSIM=fm,PSIH=fhh,XLAND=xland                         &
+              ,HFX=hfx,QFX=qfx                                      &
               ,U10=u10,V10=v10                                      &
 ! paj
               ,CTOPO=ctopo,CTOPO2=ctopo2                &
@@ -1390,7 +1395,10 @@ CONTAINS
                 & PRESENT(qsq) .AND. PRESENT(cov) .AND. &
                 & PRESENT(rmol) .AND. PRESENT(el_mynn).AND. &
                 & PRESENT(qcg) .AND. PRESENT(ch) .AND. &
-                & PRESENT(grav_settling) ) THEN
+                & PRESENT(grav_settling) .AND. PRESENT(dqke) .AND. &
+                & PRESENT(qWT) .AND. PRESENT(qSHEAR) .AND. & 
+                & PRESENT(qBUOY) .AND. PRESENT(qDISS) .AND. &
+                & PRESENT(bl_mynn_tkebudget) ) THEN
 
               CALL wrf_debug(100,'in MYNNPBL')
 
@@ -1414,10 +1422,12 @@ CONTAINS
                    &Dqv=rqvblten,Dqc=rqcblten,&
                    &k_h=exch_h,k_m=exch_m,&
                    &pblh=pblh&
-!startJOE -added for extra output
-                   &,el_mynn=el_mynn,dqke=dqke                           &
+!JOE-start
+                   &,el_mynn=el_mynn                                     &
+                   &,dqke=dqke                                           &
                    &,qWT=qWT,qSHEAR=qSHEAR,qBUOY=qBUOY,qDISS=qDISS       &
-!endJOE
+                   &,bl_mynn_tkebudget=bl_mynn_tkebudget                 &
+!JOE-end
                    ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
                    ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
                    ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &

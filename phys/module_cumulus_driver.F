@@ -497,7 +497,7 @@ CONTAINS
    IF ( adapt_step_flag_pass ) THEN
       doing_adapt_dt = .TRUE.
       IF ( cudtacttime_pass .EQ. 0. ) THEN
-         cudtacttime_pass = curr_secs_pass + cudt*60.
+         cudtacttime_pass = curr_secs_pass + cudt_pass*60.
       END IF
    ELSE
       doing_adapt_dt = .FALSE.
@@ -530,7 +530,7 @@ CONTAINS
    END IF
 
    IF ( ( .NOT. decided ) .AND. &
-        ( ( cudt .EQ. 0. ) .OR. ( stepcu .EQ. 1 ) ) ) THEN
+        ( ( cudt_pass .EQ. 0. ) .OR. ( stepcu .EQ. 1 ) ) ) THEN
       run_param   = .TRUE.
       decided     = .TRUE.
    END IF
@@ -547,7 +547,7 @@ CONTAINS
         ( curr_secs_pass .GE. cudtacttime_pass ) ) THEN
       run_param   = .TRUE.
       decided     = .TRUE.
-      cudtacttime_pass = curr_secs_pass + cudt*60
+      cudtacttime_pass = curr_secs_pass + cudt_pass*60
    END IF
 
    IF ( run_param ) THEN

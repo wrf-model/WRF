@@ -272,22 +272,22 @@ state  real   hbm2      ij     dyn_nmm     1      -      irh     "HBM2"    "Heig
 state  real   hbm3      ij     dyn_nmm     1      -      irh     "HBM3"    "Height boundary mask; =0 outer 3 rows on H points"       ""
 state  real   vbm2      ij     dyn_nmm     1      -      irh     "VBM2"    "Velocity boundary mask; =0 outer 2 rows on V points"     ""
 state  real   vbm3      ij     dyn_nmm     1      -      irh     "VBM3"    "Velocity boundary mask; =0 outer 3 rows on V points"     ""
-state  real   sm        ij     dyn_nmm     1      -      i01rhd=(DownNear)  "SM"      "Sea mask; =1 for sea, =0 for land"      ""
-state  real   sice      ij     dyn_nmm     1      -      irhd=(DownNear)     "SICE"    "Sea ice mask; =1 for sea ice, =0 for no sea ice"         ""
+state  real   sm        ij     dyn_nmm     1      -      i01rh02d=(DownNear)  "SM"      "Sea mask; =1 for sea, =0 for land"      ""
+state  real   sice      ij     dyn_nmm     1      -      irh02d=(DownNear)     "SICE"    "Sea ice mask; =1 for sea ice, =0 for no sea ice"         ""
 #
 # module_VRBLS
 #
 state  integer ntsd     -       dyn_nmm     -      -      rh       "NTSD"    "Number of timesteps done"                      ""
 state  integer nstart_hour  -   dyn_nmm     -      -      r       "NSTART_HOUR"   "Forecast hour at start of integration"   ""
 
-state  real   pd        ijb     dyn_nmm     1      -      i01rhu=(NoInterp)d=(NoInterp)f=(NoInterp)  "PD"      "Mass at I,J in the sigma domain"               "Pa"
-state  real   fis       ij     dyn_nmm     1      -      i01rhu=(NoInterp)d=(NoInterp)f=(NoInterp)   "FIS"     "Surface geopotential"                          "m2 s-2"
+state  real   pd        ijb     dyn_nmm     1      -      i01rh02u=(NoInterp)d=(NoInterp)f=(NoInterp)  "PD"      "Mass at I,J in the sigma domain"               "Pa"
+state  real   fis       ij     dyn_nmm     1      -      i01rh02u=(NoInterp)d=(NoInterp)f=(NoInterp)   "FIS"     "Surface geopotential"                          "m2 s-2"
 state  real   res       ij     dyn_nmm     1      -      irh     "RES"     "Reciprocal of surface sigma"                   ""
-state  real   t         ijkb    dyn_nmm     1      -      i01rhu=(NoInterp)d=(NoInterp)f=(NoInterp)  "T"       "Sensible temperature"                          "K"
-state  real   q         ijkb    dyn_nmm     1      -      i01rhu=(NoInterp)d=(NoInterp)f=(NoInterp)  "Q"       "Specific humidity"                             "kg kg-1"
+state  real   t         ijkb    dyn_nmm     1      -      i01rh02u=(NoInterp)d=(NoInterp)f=(NoInterp)  "T"       "Sensible temperature"                          "K"
+state  real   q         ijkb    dyn_nmm     1      -      i01rh02u=(NoInterp)d=(NoInterp)f=(NoInterp)  "Q"       "Specific humidity"                             "kg kg-1"
 state  real   test_vgrid ij     dyn_nmm     1      v      - "test_vgrid" "Testing V grid staggering" "gibbletrons"
-state  real   u         ijkb    dyn_nmm     1      v      i01rhu=(UpVel)d=(DownVel)f=(BdyVel)   "U"       "U component of wind"                           "m s-1"
-state  real   v         ijkb    dyn_nmm     1      v      i01rhu=(UpVel)d=(DownVel)f=(BdyVel)   "V"       "V component of wind"                           "m s-1"
+state  real   u         ijkb    dyn_nmm     1      v      i01rh02u=(UpVel)d=(DownVel)f=(BdyVel)   "U"       "U component of wind"                           "m s-1"
+state  real   v         ijkb    dyn_nmm     1      v      i01rh02u=(UpVel)d=(DownVel)f=(BdyVel)   "V"       "V component of wind"                           "m s-1"
 state  real   told      ijk    dyn_nmm     1      -      r       "TOLD"    "T from previous timestep"                      "K"
 state  real   uold      ijk    dyn_nmm     1      -      r       "UOLD"    "U from previous timestep"                      "m s-1"
 state  real   vold      ijk    dyn_nmm     1      -      r       "VOLD"    "V from previous timestep"                      "m s-1"
@@ -322,7 +322,7 @@ state    real  dfi_SNOWC        ij      misc        1       -      r  "dfi_SNOWC
 #
 # module_DYNAM
 #
-state  real   dx_nmm    ij     dyn_nmm     1      -      irh     "DX_NMM"  "East-west distance H-to-V points"              "m"
+state  real   dx_nmm    ij     dyn_nmm     1      -      irh02     "DX_NMM"  "East-west distance H-to-V points"              "m"
 state  real   wpdar     ij     dyn_nmm     1      -      ir
 state  real   cpgfu     ij     dyn_nmm     1      -      ir
 state  real   curv      ij     dyn_nmm     1      -      ir      "CURV"    "Curvature term= .5*DT*TAN(phi)/RadEarth"       "s m-1"
@@ -338,12 +338,12 @@ state  real   aeta      k      dyn_nmm     1      -      i01r
 state  real   f4q2      k      dyn_nmm     1      -      ir
 state  real   etax      k      dyn_nmm     1      -      i01r
 state  real   dfl       k      dyn_nmm     1      Z      i01r    "DFL"     "Standard atmosphere geopotential"              "m2 s-2"
-state  real   deta1     k      dyn_nmm     1      -      i01rh    "DETA1"   "Delta sigma in pressure domain"                ""
-state  real   aeta1     k      dyn_nmm     1      -      i01rh    "AETA1"   "Midlayer sigma value in pressure domain"       ""
-state  real   eta1      k      dyn_nmm     1      Z      i01rh   "ETA1"    "Interface sigma value in pressure domain"      ""
-state  real   deta2     k      dyn_nmm     1      -      i01rh    "DETA2"   "Delta sigma in sigma domain"                   ""
-state  real   aeta2     k      dyn_nmm     1      -      i01rh    "AETA2"   "Midlayer sigma value in sigma domain"          ""
-state  real   eta2      k      dyn_nmm     1      Z      i01rh   "ETA2"    "Interface sigma value in sigma domain"         ""
+state  real   deta1     k      dyn_nmm     1      -      i01rh02    "DETA1"   "Delta sigma in pressure domain"                ""
+state  real   aeta1     k      dyn_nmm     1      -      i01rh02    "AETA1"   "Midlayer sigma value in pressure domain"       ""
+state  real   eta1      k      dyn_nmm     1      Z      i01rh02   "ETA1"    "Interface sigma value in pressure domain"      ""
+state  real   deta2     k      dyn_nmm     1      -      i01rh02    "DETA2"   "Delta sigma in sigma domain"                   ""
+state  real   aeta2     k      dyn_nmm     1      -      i01rh02    "AETA2"   "Midlayer sigma value in sigma domain"          ""
+state  real   eta2      k      dyn_nmm     1      Z      i01rh02   "ETA2"    "Interface sigma value in sigma domain"         ""
 state  real   em        q      dyn_nmm     1      -      ir
 state  real   emt       q      dyn_nmm     1      -      ir
 #for HWRF: add to restart
@@ -353,7 +353,7 @@ state  real   adv       ij     dyn_nmm     1      -      r       "ADV"     "Chan
 #end HWRF:
 state  real   em_loc    q      dyn_nmm     1      -      r
 state  real   emt_loc   q      dyn_nmm     1      -      r
-state  real   dy_nmm    -      dyn_nmm     -      -      ir      "DY_NMM"  "North-south distance H-to-V points"            "m"
+state  real   dy_nmm    -      dyn_nmm     -      -      irh02      "DY_NMM"  "North-south distance H-to-V points"            "m"
 state  real   cpgfv     -      dyn_nmm     -      -      ir
 state  real   en        -      dyn_nmm     -      -      ir
 state  real   ent       -      dyn_nmm     -      -      ir
@@ -363,10 +363,10 @@ state  real   ef4t      -      dyn_nmm     -      -      ir
 #for HWRF: add to restart
 state  logical upstrm   -      dyn_nmm     -      -      -       "UPSTRM"  ".TRUE. => In upstream advec region of grid"    ""
 #end HWRF:
-state  real   dlmd      -      dyn_nmm     -      -      irh      "DLMD"    "East-west angular distance H-to-V points"      "degrees"
-state  real   dphd      -      dyn_nmm     -      -      irh      "DPHD"    "North-south angular distance H-to-V points"    "degrees"
-state  real   pdtop     -      dyn_nmm     -      -      i01rh   "PDTOP"   "Mass at I,J in pressure domain"                "Pa"
-state  real   pt        -      dyn_nmm     -      -      i01rh   "PT"      "Pressure at top of domain"                     "Pa"
+state  real   dlmd      -      dyn_nmm     -      -      irh02      "DLMD"    "East-west angular distance H-to-V points"      "degrees"
+state  real   dphd      -      dyn_nmm     -      -      irh02      "DPHD"    "North-south angular distance H-to-V points"    "degrees"
+state  real   pdtop     -      dyn_nmm     -      -      i01rh02   "PDTOP"   "Mass at I,J in pressure domain"                "Pa"
+state  real   pt        -      dyn_nmm     -      -      i01rh02   "PT"      "Pressure at top of domain"                     "Pa"
 #
 # module_CONTIN
 #
@@ -418,7 +418,7 @@ state  real   cuprec    ij    dyn_nmm   1    -     rh       "CUPREC"   "Accumula
 state  real   lspa      ij    dyn_nmm   1    -     h        "LSPA"     "Land Surface Precipitation Accumulation"   "kg m-2"
 state  real   ddata     ij    dyn_nmm   1    -     -        "DDATA"    "Observed precip to each physics timestep"  "kg m-2"
 state  real   accliq    ij    dyn_nmm   1    -     r
-state  real   sno       ij    dyn_nmm   1    -     irh      "SNO"      "Liquid water eqiv of snow on ground"  "kg m-2"
+state  real   sno       ij    dyn_nmm   1    -     irh02      "SNO"      "Liquid water eqiv of snow on ground"  "kg m-2"
 state  real   si        ij    dyn_nmm   1    -     irh      "SI"       "Depth of snow on ground"              "mm"
 state  real   cldefi    ij    dyn_nmm   1    -     rhd=(DownCopy) "CLDEFI"   "Convective cloud efficiency"          ""
 state  real   deep      ij    dyn_nmm   1    -     r        "DEEP"     "Deep convection =>.TRUE."             ""
@@ -447,9 +447,9 @@ state  real   czmean    ij    dyn_nmm   1    -     irh      "CZMEAN"    "Mean CZ
 state  real   embck     ij    dyn_nmm   1    -     ir       "EMBCK"     "Background radiative emissivity"                 ""
 state  real   epsr      ij    dyn_nmm   1    -     irh      "EPSR"      "Radiative emissivity"                            ""
 state  real   gffc      ij    dyn_nmm   1    -     ir
-state  real   glat      ij    dyn_nmm   1    -     i01rh    "GLAT"      "Geographic latitude, radians"                    ""
-state  real   glon      ij    dyn_nmm   1    -     i01rh    "GLON"      "Geographic longitude, radians"                   ""
-state  real   NMM_TSK   ij    dyn_nmm   1    -     i01rd=(DownNear)     "TSK"       "Skin temperature"                                "K"
+state  real   glat      ij    dyn_nmm   1    -     i01rh02    "GLAT"      "Geographic latitude, radians"                    ""
+state  real   glon      ij    dyn_nmm   1    -     i01rh02    "GLON"      "Geographic longitude, radians"                   ""
+state  real   NMM_TSK   ij    dyn_nmm   1    -     i01rh02d=(DownNear)     "TSK"       "Skin temperature"                                "K"
 state  real   hdac      ij    dyn_nmm   1    -     ir       "HDAC"      "Composite diffusion coeff for mass points"       "s m-1"
 state  real   hdacv     ij    dyn_nmm   1    -     ir       "HDACV"     "Composite diffusion coeff for velocity points"   "s m-1"
 state  real   mxsnal    ij    dyn_nmm   1    -     i01rhd=(DownNear) "MXSNAL"    "Maximum deep snow albedo"                        ""
@@ -475,7 +475,7 @@ state    real  GD_CLDFR         ikj      misc        1         -      r     "GD_
 #
 # module_CLDWTR.F
 #
-state  real   cwm       ijkb   dyn_nmm   1    -     rhu=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)  "CWM"       "Total condensate"                     "kg kg-1"
+state  real   cwm       ijkb   dyn_nmm   1    -     rh02u=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)  "CWM"       "Total condensate"                     "kg kg-1"
 state  real   rrw       ijkb  dyn_nmm   1    -     rh       "RRW"       "Tracer"                               "kg kg-1"
 state  real   f_ice     ikj   dyn_nmm   1    -     rhd=(DownMassIKJ:@EExtrap,0.0)u=(UpMassIKJ:@EExtrap,0.0)  "F_ICE"     "Frozen fraction of CWM"               ""
 state  real   f_rain    ikj   dyn_nmm   1    -     rhd=(DownMassIKJ:@EExtrap,0.0)u=(UpMassIKJ:@EExtrap,0.0)  "F_RAIN"    "Rain fraction of liquid part of CWM"  ""
@@ -497,12 +497,12 @@ state  real   cmc       ij    dyn_nmm   1    -     i01rhd=(DownNear) "CMC"      
 state  real   grnflx    ij    dyn_nmm   1    -     irh      "GRNFLX"    "Deep soil heat flux"              "W m-2"
 state  real   pctsno    ij    dyn_nmm   1    -     irh
 state  real   soiltb    ij    dyn_nmm   1    -     i01rhd=(DownNear) "SOILTB"    "Deep ground soil temperature"     "K"
-state  real   vegfrc    ij    dyn_nmm   1    -     i014rhd=(DownNear) "VEGFRC"    "Vegetation fraction"              ""
+state  real   vegfrc    ij    dyn_nmm   1    -     i014rh02d=(DownNear) "VEGFRC"    "Vegetation fraction"              ""
 state  real   shdmin    ij    dyn_nmm   1    -     -
 state  real   shdmax    ij    dyn_nmm   1    -     -
 state  real   sh2o      ilj   dyn_nmm   1    Z     irhd=(DownNearIKJ)   "SH2O"      "Unfrozen soil moisture volume fraction"  ""
-state  real   smc       ilj   dyn_nmm   1    Z     irhd=(DownNearIKJ)   "SMC"       "Soil moisture volume fraction"    ""
-state  real   stc       ilj   dyn_nmm   1    Z     irhd=(DownNearIKJ)   "STC"       "Soil temperature"                 "K"
+state  real   smc       ilj   dyn_nmm   1    Z     irh02d=(DownNearIKJ)   "SMC"       "Soil moisture volume fraction"    ""
+state  real   stc       ilj   dyn_nmm   1    Z     irh02d=(DownNearIKJ)   "STC"       "Soil temperature"                 "K"
 #
 # module_GWD.F
 #
@@ -538,7 +538,7 @@ state  real   dwdtmx    ij    dyn_nmm   1    -     -        "DWDTMX"    "Maximum
 state  real   baro      ij    dyn_nmm   1    -     -        "BARO"      "external mode vvel"           "m s-1"
 state  real   dwdt      ijk   dyn_nmm   1    -     rd=(DownCopy) "DWDT"      "dwdt and 1+(dwdt)/g"              "m s-2"
 state  real   pdwdt     ijk   dyn_nmm   1    -     r
-state  real   pint      ijk   dyn_nmm   1    Z     irhd=(DownCopy)u=(NoInterp)f=(NoInterp)       "PINT"      "Model layer interface pressure"   "Pa"
+state  real   pint      ijk   dyn_nmm   1    Z     irh02d=(DownCopy)u=(NoInterp)f=(NoInterp)       "PINT"      "Model layer interface pressure"   "Pa"
 state  real   w         ijk   dyn_nmm   1    Z     rd=(DownCopy)       "W"         "Vertical velocity"                "m s-1"
 state  real   w_tot     ijk   dyn_nmm   1    Z     hd=(DownCopy)       "W"         "Vertical velocity"                "m s-1"
 state  real   z         ijk   dyn_nmm   1    Z     hd=(DownCopy)        "Z"         "Distance from ground"             "m"
@@ -898,9 +898,9 @@ state    real   SFCHEADRT        ij     misc        1         -      r          
 state    real   INFXSRT          ij     misc        1         -      r                                          "INFXSRT"          "time step infiltration excess"  "mm"
 state    real   SFCRUNOFF        ij     misc        1         -     rh       "SFROFF"               "SURFACE RUNOFF" ""
 state    real   UDRUNOFF         ij     misc        1         -     rh       "UDROFF"               "UNDERGROUND RUNOFF" ""
-state  integer  IVGTYP           ij     misc        1         -     irhd=(DownINear)       "IVGTYP"               "VEGETATION TYPE" ""
-state  integer  ISLTYP           ij     misc        1         -     irhd=(DownINear)       "ISLTYP"               "SOIL TYPE"         " "
-state    real   VEGFRA           ij     misc        1         -     i014rhd=(DownNear)       "VEGFRA"               "VEGETATION FRACTION" ""
+state  integer  IVGTYP           ij     misc        1         -     irh02d=(DownINear)       "IVGTYP"               "VEGETATION TYPE" ""
+state  integer  ISLTYP           ij     misc        1         -     irh02d=(DownINear)       "ISLTYP"               "SOIL TYPE"         " "
+state    real   VEGFRA           ij     misc        1         -     i014rh02d=(DownNear)       "VEGFRA"               "VEGETATION FRACTION" ""
 state    real   SFCEVP           ij     misc        1         -     irh     "SFCEVP"               "SURFACE EVAPORATION" ""
 state    real   GRDFLX           ij     misc        1         -     irh     "GRDFLX"               "GROUND HEAT FLUX" ""
 state    real   ALBBCK           ij     misc        1         -     i0124r   "ALBBCK"          "BACKGROUND ALBEDO"        "NA"
@@ -912,7 +912,7 @@ state    real   RMOL             ij     misc        1         -     ir       "RM
 state    real   SNOW             ij     misc        1         -     i01rh       "SNOW"                 "SNOW WATER EQUIVALENT"         "kg m-2"
 state    real   CANWAT           ij     misc        1         -     i01rh       "CANWAT"               "CANOPY WATER" ""
 state  integer  FORCE_SST        k      misc        1         -     -        "FORCE_SST"          "IF FORCE_SST(1) IS 1, FEED SST FROM PARENT EVERY DT" ""
-state    real   SST              ij     misc        1         -     i014rhd=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)       "SST"                  "SEA SURFACE TEMPERATURE" "K"
+state    real   SST              ij     misc        1         -     i014rh02d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)       "SST"                  "SEA SURFACE TEMPERATURE" "K"
 state    real   WEASD            ij     misc        1         -     i01rhd=(DownNear)       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" "kg m-2"
 state    real  ZNT              ij      misc        1         -     irh        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"

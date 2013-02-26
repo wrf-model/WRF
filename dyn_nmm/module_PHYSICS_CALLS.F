@@ -1434,7 +1434,7 @@
       CALL nl_get_var_ric(1, var_ric)
       CALL nl_get_coef_ric_s(1, coef_ric_s)
       CALL nl_get_coef_ric_l(1, coef_ric_l)
-      write(0,*) 'var_ric & coef_ric_s l from namelist Kwon  ',var_ric,coef_ric_s,coef_ric_l
+!      write(0,*) 'var_ric & coef_ric_s l from namelist Kwon  ',var_ric,coef_ric_s,coef_ric_l
 !
       CALL PBL_DRIVER(                                                &
      &                ITIMESTEP=NTSD,DT=DT                            &

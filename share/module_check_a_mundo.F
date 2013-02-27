@@ -139,6 +139,20 @@
            model_config_rec % stoch_force_global_opt=1 
          endif
    ENDDO 
+
+!--------------------------------------------------------------------------------
+! KRS: 9/12/2012
+! Check if boundary perturbations is turned on and set to '1' (perturb_bdy=1).
+! If so, make sure stoch_force_global_opt is also turned on. (stoch_force_opt=1)
+!--------------------------------------------------------------------------------
+   IF ( model_config_rec % perturb_bdy .EQ. 1 ) then
+        model_config_rec % stoch_force_global_opt=1
+      wrf_err_message = '--- WARNING: perturb_bdy=1 option uses SKEBS pattern and may'
+      CALL wrf_message ( wrf_err_message )
+      wrf_err_message = '             increase computation time.'
+      CALL wrf_message ( wrf_err_message )
+   ENDIF
+
 #endif
 
 !-----------------------------------------------------------------------

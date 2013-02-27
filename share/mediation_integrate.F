@@ -178,7 +178,8 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 ! - Get chemistry data
      ELSE IF( ialarm .EQ. AUXINPUT5_ALARM .AND. config_flags%chem_opt > 0 ) THEN
        IF( config_flags%emiss_inpt_opt /= 0 ) THEN
-         IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
+         IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) .OR.  &
+         ((config_flags%restart) .AND. ( currTime .EQ. startTime ))) THEN
            call wrf_debug(15,' CALL med_read_wrf_chem_emiss ')
            CALL med_read_wrf_chem_emiss ( grid , config_flags )
            CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
@@ -537,6 +538,11 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
         TYPE(domain) , POINTER                 :: parent , nest
      END SUBROUTINE med_interp_domain
 
+     SUBROUTINE med_interp_domain_small ( parent , nest )
+        USE module_domain	, ONLY : domain
+        TYPE(domain) , POINTER                 :: parent , nest
+     END SUBROUTINE med_interp_domain_small
+
      SUBROUTINE med_initialdata_input_ptr( nest , config_flags )
         USE module_domain	, ONLY : domain
         USE module_configure	, ONLY : grid_config_rec_type
@@ -721,6 +727,14 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      parent%ht_coarse = parent%ht
 
      CALL med_nest_feedback ( parent , nest , config_flags )
+
+! This is the new interpolation for specific 3d arrays that are sensitive to the
+! topography diffs betwixt the CG and the FG.
+     IF ( config_flags%nest_interp_coord .EQ. 1 ) THEN
+       call wrf_debug(1,'mediation_integrate.F, calling   med_interp_domain_small')
+       CALL med_interp_domain_small( parent, nest )
+       call wrf_debug(1,'mediation_integrate.F, back from med_interp_domain_small')
+     END IF
 
 ! set some other initial fields, fill out halos, base fields; re-do parent due
 ! to new terrain elevation from feedback
@@ -1942,8 +1956,8 @@ integer myproc,i,j,k
          lbc_opened = .FALSE.
        ENDIF
        CALL wrf_dm_bcast_bytes ( lbc_opened , LWORDSIZE )
+       CALL construct_filename2a ( bdyname , grid%bdy_inname , grid%id , 2 , " " )
        IF ( .NOT. lbc_opened ) THEN
-         CALL construct_filename1 ( bdyname , 'wrfbdy' , grid%id , 2 )
          WRITE(message,*)'Opening: ',TRIM(bdyname)
          CALL wrf_debug(100,TRIM(message))
          CALL open_r_dataset ( grid%lbc_fid, TRIM(bdyname) , grid , config_flags , "DATASET=BOUNDARY", ierr )

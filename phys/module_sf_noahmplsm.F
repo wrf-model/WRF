@@ -4020,10 +4020,7 @@ contains
 
     REAL    :: CMFM, CHFH
 ! -------------------------------------------------------------------------------------------------
-! Monin-Obukhov stability parameter moz for next iteration
 
-    MOZOLD = MOZ
-  
     IF(ZLVL <= ZPD) THEN
        write(*,*) 'critical problem: ZLVL <= ZPD; model stops'
        call wrf_error_fatal("STOP in Noah-MP")
@@ -4036,7 +4033,9 @@ contains
        FV   = 0.0
        MOZ  = 0.0
        MOL  = 0.0
+       MOZOLD = MOZ
     ELSE
+       MOZOLD = MOZ
        TVIR = (1. + 0.61*QAIR) * SFCTMP
        TMP1 = VKC * (GRAV/TVIR) * H/(RHOAIR*CPAIR)
        IF (ABS(TMP1) .LE. MPE) TMP1 = MPE

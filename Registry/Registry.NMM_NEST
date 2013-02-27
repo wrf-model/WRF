@@ -477,6 +477,11 @@ state  real   srot      ij    dyn_nmm   1    -      -       "SROT"      "Sine of
 state  real   UGWDsfc   ij    dyn_nmm   1    -      h       "UGWDsfc"   "Surface zonal wind stress due to gravity wave drag"    "N m-2"
 state  real   VGWDsfc   ij    dyn_nmm   1    -      h       "VGWDsfc"   "Surface meridional wind stress due to gravity wave drag"    "N m-2"
 #
+# Additional for topo_wind
+#
+state    real   ctopo             ij      misc        1         -     rdu         "ctopo"              "Correction for topography"       ""
+state    real   ctopo2            ij      misc        1         -     rdu         "ctopo2"             "Correction for topography 2"     ""
+#
 # module_NHYDRO.F
 #
 state logical hydro     -     dyn_nmm   -    -     -        "HYDRO"     ".FALSE. => nonhydrostatic"        ""
@@ -796,6 +801,7 @@ state    real   T2               ij     misc        1         -     ir        "T
 state    real   U10              ij     misc        1         -     irh01d=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "U10"                  "U at 10 M"         " "
 state    real   V10              ij     misc        1         -     irh01d=(interp_h_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)       "V10"                  "V at 10 M"         " "
 state    real   XICE             ij     misc        1         -     i01rd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)      "XICE"                 "SEA ICE"         ""
+state    real   ICEDEPTH         ij     misc        1         -     i0124rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)  "ICEDEPTH"     "SEA ICE THICKNESS"  "m"
 state    real   LAI              ij     misc        1         -     i0124rh   "LAI"                  "Leaf area index"          "area/area"
 state    real   SMSTAV           ij     misc        1         -     irh       "SMSTAV"               "MOISTURE VARIBILITY" ""
 state    real   SMSTOT           ij     misc        1         -     irh     "SMSTOT"               "TOTAL SOIL MOISTURE" ""
@@ -1165,11 +1171,13 @@ rconfig   integer ensdim                  namelist,physics	1            144     
 rconfig   integer     chem_opt            namelist,physics	max_domains    0       rh       "chem_opt"              ""      ""
 rconfig   integer num_land_cat            namelist,physics	1            24       -      "num_land_cat"                  ""      ""
 rconfig   integer num_soil_cat            namelist,physics	1            16       -      "num_soil_cat"                  ""      ""
+rconfig   integer topo_wind               namelist,physics      max_domains    0       -     "topo_wind"  "2: Use Mass sfc drag scheme, 1: improve effects topography over surface wind, 0:not" ""
 rconfig   integer mp_zero_out             namelist,physics	1             0       -      "mp_zero_out"  "microphysics fields set to zero  0=no action taken, 1=all fields but Qv, 2=all fields including Qv"      "flag"
 rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8      -      "mp_zero_out_thresh"  "minimum threshold for non-Qv moist fields, below are set to zero"  "kg/kg"
 rconfig   real    seaice_threshold        namelist,physics      1            271       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
 rconfig   integer fractional_seaice       namelist,physics      1            0        -     "fractional_seiace" "Fractional sea-ice option"
 rconfig   integer seaice_albedo_opt       namelist,physics      1            0        -     "seaice_albedo_opt" "Method for setting albedo over sea ice"
+rconfig   integer seaice_thickness_opt    namelist,physics      1            0        -     "seaice_thickness_opt" "Method for setting sea-ice thickness"
 rconfig   logical tice2tsk_if2cold        namelist,physics      1              .false. -     "tice2tsk_if2cold" "Avoid low ice temps when ice frac and Tsk are inconsistent"
 rconfig   integer sst_update              namelist,physics      1            0        i01rh    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
 rconfig   integer sf_urban_physics        namelist,physics      max_domains  0         h    "sf_urban_physics"   "activate urban model  0=no, 1=Noah_UCM 2=BEP_UCM"   ""

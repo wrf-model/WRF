@@ -5547,7 +5547,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
      CALL wrf_message( 'INITIALIZE THREE LSM RELATED TABLES' )
       if(mminlu == 'USGS') then
         MMINLURUC='USGS-RUC'
-      elseif(mminlu == 'MODIS') then
+      elseif(mminlu == 'MODIFIED_IGBP_MODIS_NOAH') then
         MMINLURUC='MODI-RUC'
       endif
         MMINSL='STAS-RUC'

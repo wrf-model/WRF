@@ -2025,6 +2025,15 @@
       grid%gmt_rst=grid%gmt_rst
 !end of zhang's doing
 #endif
+
+!
+! computes ct and ct2 for topo_wind=1 or topo_wind=2
+! NOTE: not yet implemented for NMM: =1.0 will have no effect
+!
+       grid%ctopo=1.
+       grid%ctopo2=1.
+!
+
 !-----------------------------------------------------------------------
 !---- Initialization for gravity wave drag (GWD) & mountain blocking (MB)
 !

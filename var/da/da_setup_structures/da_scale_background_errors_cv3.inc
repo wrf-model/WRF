@@ -22,7 +22,7 @@ subroutine da_scale_background_errors_cv3 ( grid, be, it )
 
    integer                     :: ier, be_rf_unit, be_print_unit
 !
-! 1, to get global_fac from grid:
+! 1, get global_fac from grid:
 
 #ifdef DM_PARALLEL
    ij = ( ide- ids+1)*( jde- jds+1)
@@ -89,7 +89,7 @@ subroutine da_scale_background_errors_cv3 ( grid, be, it )
 !     write (*,'(3x,a9,2x,a6,2x,i3)') chr, vname, i
    enddo
 
-!  Pscf Variance before the normalization.
+!  Psfc Variance before the normalization.
    if (rootproc) &
       read (be_rf_unit) chr, vname, ii, global_2d
    call wrf_dm_bcast_string( chr, 9 )
@@ -130,7 +130,7 @@ subroutine da_scale_background_errors_cv3 ( grid, be, it )
 !     write (*,'(3x,a9,2x,a6,2x,i3)') chr, vname, n
    enddo
 !
-! 2.5 Read in the Horizotal scales, and write out vertical scales to "be_print_unit":
+! 2.5 Read in the Horizontal scales, and write out vertical scales to "be_print_unit":
 
    if (rootproc .and. print_detail_be) &
    write (be_print_unit,'(3x,a)')  'READ IN THE HORIZONTAL SCALES:'
@@ -165,13 +165,13 @@ subroutine da_scale_background_errors_cv3 ( grid, be, it )
      write (be_print_unit,'(5x,i3,1x,a,2x,"sum^2=",e20.12)') ii, 'TMP-PSI', xsum(1)
    enddo
 
-!  Rg. Coeff. has already stored in "be" data structure, not need to be save.
+!  Rg. Coeff. already stored in "be" data structure, no need to save.
    xsum(1) = sum (be%bvz*be%bvz)
    call da_proc_sum_real(xsum)
    if (rootproc) &
    write (be_print_unit,'(9x,a,2x,"sum^2=",e20.12)') 'CHI-PSI', xsum(1)
 
-!  Rg. Coeff. has already stored in "be" data structure, not need to be save.
+!  Rg. Coeff. already stored in "be" data structure, no need to save.
    xsum(1) = sum (be%wgvz*be%wgvz)
    call da_proc_sum_real(xsum)
    if (rootproc) &
@@ -225,7 +225,7 @@ subroutine da_scale_background_errors_cv3 ( grid, be, it )
    if ( as1(n) <= 1.0E-7 .or. as2(n) <= 1.0E-7 .or. as3(n) <= 1.0E-7 .or. as4(n) <= 1.0E-7 .or. as5(n) <= 1.0E-7 ) then
      Write (i_char, '(i8)') it
      call da_error(__FILE__,__LINE__, &
-                    (/"Missing or invaliad AS1 ~ AS5 value for IT = "//i_char/))
+                    (/"Missing or invalid AS1 ~ AS5 value for IT = "//i_char/))
    endif
 
    as(1)=sqrt(as1(1+(it-1)*3))
@@ -255,7 +255,7 @@ subroutine da_scale_background_errors_cv3 ( grid, be, it )
                vv(k,k)=1.
             enddo
 
-     ! Apply pseudo-Guassian "right-left" smoother in vertical with 
+     ! Apply pseudo-Gaussian "right-left" smoother in vertical with 
      ! the vertical scale length be%vz: 
             call da_rfz0(vv,kz,kz,be%ndeg,&
                          be%vz(kts:kte,i,j,n),be%be,be%table,be%nta,be%swidth)
@@ -328,7 +328,7 @@ subroutine da_scale_background_errors_cv3 ( grid, be, it )
     enddo
 !    write (*,'("a, be%sljy:sum^2=",e20.12)') sum(be%sljy*be%sljy)
 
-    ! Above level ku,the sljy fields are set to a constant 
+    ! Above level ku, the sljy fields are set to a constant 
     ! for psi and chi, i.e. homogenous:
     do n=1,2
        do k=max(ku, grid%xp%kpsy), grid%xp%kpey
@@ -365,7 +365,7 @@ subroutine da_scale_background_errors_cv3 ( grid, be, it )
     enddo
 !    write (*,'("a, be%slix:sum^2=",e20.12)') sum(be%slix*be%slix)
 
-   ! Above level ku,the sljy fields are set to a constant 
+   ! Above level ku, the sljy fields are set to a constant 
    ! for psi and chi, i.e. homogenous:
     do n=1,2
       do k=max(ku, grid%xp%kpsx), grid%xp%kpex

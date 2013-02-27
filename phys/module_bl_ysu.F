@@ -197,7 +197,7 @@ contains
                                                                         dtsfc, &
                                                                         dqsfc
 !
-   qv2d(:,:) = 0.0
+   qv2d(its:ite,:) = 0.0
    do j = jts,jte
       if(present(mut))then
 ! For ARW we will replace p and p8w with dry hydrostatic pressure
@@ -244,9 +244,7 @@ contains
               ,dt=dt,rcl=1.0,kpbl1d=kpbl2d(ims,j)                              &
               ,exch_hx=exch_h(ims,kms,j)                                       &
               ,u10=u10(ims,j),v10=v10(ims,j)                                   &
-#if ( ! NMM_CORE == 1 )
               ,ctopo=ctopo(ims,j),ctopo2=ctopo2(ims,j)                         &
-#endif
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
@@ -563,10 +561,10 @@ contains
 !
 !-----initialize vertical tendencies and
 !
-   utnp(:,:) = 0.
-   vtnp(:,:) = 0.
-   ttnp(:,:) = 0.
-   qtnp(:,:) = 0.
+   utnp(its:ite,:) = 0.
+   vtnp(its:ite,:) = 0.
+   ttnp(its:ite,:) = 0.
+   qtnp(its:ite,:) = 0.
 !
    do i = its,ite
      wspd1(i) = sqrt(ux(i,1)*ux(i,1)+vx(i,1)*vx(i,1))+1.e-9
@@ -1154,14 +1152,8 @@ contains
 !
    do i = its,ite
 ! paj: ctopo=1 if topo_wind=0 (default)
-! mchen  add this line to make sure NMM can still work with YSU PBL
-     if(present(ctopo)) then 
-       ad(i,1) = 1.+ctopo(i)*ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2         &
+     ad(i,1) = 1.+ctopo(i)*ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2         &
         *(wspd1(i)/wspd(i))**2
-     else               
-       ad(i,1) = 1.+ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2                  &
-        *(wspd1(i)/wspd(i))**2
-     endif 
      f1(i,1) = ux(i,1)
      f2(i,1) = vx(i,1)
    enddo
@@ -1230,10 +1222,8 @@ contains
 ! paj: ctopo2=1 if topo_wind=0 (default)
 !
    do i = its,ite
-     if(present(ctopo).and.present(ctopo2)) then   ! mchen for NMM
      u10(i) = ctopo2(i)*u10(i)+(1-ctopo2(i))*ux(i,1)
      v10(i) = ctopo2(i)*v10(i)+(1-ctopo2(i))*vx(i,1)
-     endif  !mchen
    enddo
 !
 !---- end of vertical diffusion

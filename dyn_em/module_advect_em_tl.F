@@ -12371,7 +12371,7 @@ SUBROUTINE G_ADVECT_SCALAR_WENOPD(field, fieldd, field_old, field_oldd, &
   DOUBLE PRECISION :: beta0d, beta1d, beta2d, f0d, f1d, f2d, wi0d, wi1d&
 &  , wi2d, sumwkd
   DOUBLE PRECISION, PARAMETER :: gi0=1.d0/10.d0, gi1=6.d0/10.d0, gi2=&
-&    3.d0/10.d0, eps1=1.0d-18
+&    3.d0/10.d0, eps1=1.0d-28
   INTEGER, PARAMETER :: pw=2
 ! definition of flux operators, 3rd, 4th, 5th or 6th order
   REAL :: flux3, flux4, flux5, flux6, flux_upwind
@@ -15955,7 +15955,7 @@ SUBROUTINE G_ADVECT_SCALAR_WENO(field, fieldd, field_old, field_oldd, &
   DOUBLE PRECISION :: beta0d, beta1d, beta2d, f0d, f1d, f2d, wi0d, wi1d&
 &  , wi2d, sumwkd
   DOUBLE PRECISION, PARAMETER :: gi0=1.d0/10.d0, gi1=6.d0/10.d0, gi2=&
-&    3.d0/10.d0, eps=1.0d-18
+&    3.d0/10.d0, eps=1.0d-28
   INTEGER, PARAMETER :: pw=2
 ! definition of flux operators, 3rd, 4th, 5th or 6th order
   REAL :: flux3, flux4, flux5, flux6

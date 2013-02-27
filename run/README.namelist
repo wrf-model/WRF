@@ -373,6 +373,21 @@ Namelist variables for controlling the adaptive time step option:
                                      = 16, WDM 6-class scheme
                                      = 17, NSSL 2-moment 4-ice scheme (steady background CCN)
                                      = 18, NSSL 2-moment 4-ice scheme with predicted CCN (better for idealized than real cases)
+                                     = 19, NSSL 1-moment (7 class: qv,qc,qr,qi,qs,qg,qh; predicts graupel density)
+                                     = 20, NSSL 1-moment, (6-class), very similar to Gilmore et al. 2004
+                                           Can set intercepts and particle densities in physics namelist, e.g., nssl_cnor
+                                       For NSSL 1-moment schemes, intercept and particle densities can be set for snow, 
+                                       graupel, hail, and rain. For the 1- and 2-moment schemes, the shape parameters 
+                                       for graupel and hail can be set.
+                                       nssl_alphah  = 0.    ! shape parameter for graupel
+                                       nssl_alphahl = 2.    ! shape parameter for hail
+                                       nssl_cnoh    = 4.e5  ! graupel intercept
+                                       nssl_cnohl   = 4.e4  ! hail intercept
+                                       nssl_cnor    = 8.e5  ! rain intercept
+                                       nssl_cnos    = 3.e6  ! snow intercept
+                                       nssl_rho_qh  = 500.  ! graupel density
+                                       nssl_rho_qhl = 900.  ! hail density
+                                       nssl_rho_qs  = 100.  ! snow density
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
@@ -506,8 +521,10 @@ Namelist variables for controlling the adaptive time step option:
                                                 overridden by namelist value; bldt will
                                                 be computed from this.
  mfshconv (max_dom)                  = 1,; whether to turn on new day-time EDMF QNSE (0=no)
- topo_wind (max_dom)                 = 0, turn off, =1, turn on topographic surface wind correction from Jimenez 
+ topo_wind (max_dom)                 = 0, turn off, 
+                                     =1, turn on topographic surface wind correction from Jimenez 
                                        (YSU PBL only, and require extra input from geogrid)
+                                     =2, turn on topographic surface wind correction from Mass (YSU PBL only)
  bl_mynn_tkebudget                   = 0 default off, = 1 adds MYNN tke budget terms to output
 
  cu_physics (max_dom)                cumulus option
@@ -674,6 +691,9 @@ Options for stochastic kinetic-energy backscatter scheme:
                                       1,        : Random phase vertical structure random pattern generator
  tot_backscat_psi                   = 1.0E-05   ; Controls amplitude of rotational wind perturbations
  tot_backscat_t                     = 1.0E-06   ; Controls amplitude of potential temperature perturbations
+ perturb_bdy                        = 0         ; No boundary perturbations
+                                      1         ; Use SKEBS pattern for boundary perturbations
+                                      2         ; User other user provided pattern for boundary perturbations
  nens                               = 1         ; an integer that controls the random number stream which will then
                                                   change the run. When running an ensemble, this can be
                                                   ensemble member number, so that each ensemble member gets a
@@ -964,6 +984,10 @@ The following are for observation nudging:
  m_opt (max_dom)                     = 0       ; no added output
                                      = 1       ; adds output of Mij stress terms when NBA is not used
  tracer_opt(max_dom)                 = 0       ; 
+
+ perturb_bdy                         = 0       ; No boundary perturbations
+                                       1       ; Use SKEBS pattern for boundary perturbations
+                                       2       ; User other user provided pattern for boundary perturbations
 
  &bdy_control
  spec_bdy_width                      = 5,       ; total number of rows for specified boundary value nudging

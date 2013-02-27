@@ -522,6 +522,80 @@ CONTAINS
 
    END SUBROUTINE spec_bdy_dry 
 
+
+!------------------------------------------------------------------------
+! KRS 9/13/2012: New subroutine spec_bdy_dry_perturb.
+! Perturbation field passed in: field_(u,v,t)_tend_perturb
+! field_(u,v,t)_tend_perturb=r(u,v,t)_tendf_stoch if perturb_bdy=1
+! field_(u,v,t)_tend_perturb=User provided patterns if perturb_bdy=2
+! This routine calls spec_bdytend_perturb in share/module_bc.F for u,v,t.
+!------------------------------------------------------------------------
+
+   SUBROUTINE spec_bdy_dry_perturb ( config_flags,                                   &
+                                     ru_tend, rv_tend, t_tend,mu_2, mub,             &
+      			             msfu, msfv, msft,                               &
+                                     field_u_tend_perturb,field_v_tend_perturb,field_t_tend_perturb, &
+				     spec_bdy_width, spec_zone,  &
+                                     ids,ide, jds,jde, kds,kde,  & ! domain dims
+				     ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                     ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                     its, ite, jts, jte, kts, kte)
+   IMPLICIT NONE
+
+   !  Input data.
+   TYPE( grid_config_rec_type ) config_flags
+
+
+   INTEGER ,               INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
+                                            ims, ime, jms, jme, kms, kme, &
+                                            ips, ipe, jps, jpe, kps, kpe, & 
+                                            its, ite, jts, jte, kts, kte
+   INTEGER ,               INTENT(IN   ) :: spec_bdy_width, spec_zone
+
+   REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) , INTENT(INOUT) :: ru_tend, &
+                                                                      rv_tend, &
+                                                                      t_tend
+
+   REAL,  DIMENSION( ims:ime ,           jms:jme ), INTENT(INOUT  )   :: mu_2	
+   REAL,  DIMENSION( ims:ime ,           jms:jme ), INTENT(INOUT  )   :: mub
+   REAL,  DIMENSION( ims:ime ,           jms:jme ), INTENT(IN     )   :: msfu
+   REAL,  DIMENSION( ims:ime ,           jms:jme ), INTENT(IN     )   :: msfv
+   REAL,  DIMENSION( ims:ime ,           jms:jme ), INTENT(IN     )   :: msft
+
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN     )   :: field_u_tend_perturb, &
+                                                                         field_v_tend_perturb, &
+                                                                         field_t_tend_perturb
+
+         CALL spec_bdytend_perturb (   ru_tend,            &
+                               field_u_tend_perturb, mu_2,mub,   &
+                               'u', msfu, config_flags,    &
+                               spec_bdy_width, spec_zone,  & 
+                               ids,ide, jds,jde, kds,kde,  & ! domain dims
+                               ims,ime, jms,jme, kms,kme,  & ! memory dims
+                               ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                               its,ite, jts,jte, kts,kte )
+         CALL spec_bdytend_perturb (   rv_tend,            &
+                               field_v_tend_perturb,mu_2,mub,    &
+                               'v', msfv, config_flags,    &
+                               spec_bdy_width, spec_zone,  &
+                               ids,ide, jds,jde, kds,kde,  & ! domain dims
+                               ims,ime, jms,jme, kms,kme,  & ! memory dims
+                               ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                               its,ite, jts,jte, kts,kte )
+
+         CALL spec_bdytend_perturb (   t_tend,             &
+                               field_t_tend_perturb,mu_2,mub,    &
+                               't', msft, config_flags,    &
+                               spec_bdy_width, spec_zone,  &
+                               ids,ide, jds,jde, kds,kde,  & ! domain dims
+                               ims,ime, jms,jme, kms,kme,  & ! memory dims
+                               ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                               its,ite, jts,jte, kts,kte )
+
+   END SUBROUTINE spec_bdy_dry_perturb 
+
+
+
 !------------------------------------------------------------------------
    SUBROUTINE spec_bdy_scalar ( scalar_tend,    &
                           scalar_bxs,scalar_bxe,scalar_bys,scalar_bye,  &

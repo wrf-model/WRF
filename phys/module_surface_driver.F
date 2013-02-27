@@ -8,9 +8,10 @@ CONTAINS
      &          ,acsnom,acsnow,akhs,akms,albedo,br,canwat             &
      &          ,chklowq,dt,dx,dz8w,dzs,glw                           &
      &          ,grdflx,gsw,swdown,gz1oz0,hfx,ht,ifsnow,isfflx        &
-     &          ,fractional_seaice,seaice_albedo_opt,tice2tsk_if2cold &
+     &          ,fractional_seaice,seaice_albedo_opt                  &
+     &          ,seaice_thickness_opt,tice2tsk_if2cold                &
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
-     &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih    &
+     &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih   &
 #if (NMM_CORE==1)
      &          ,psim,p_phy,q10,q2,qfx,taux,tauy,qsfc,qshltr,qz0      &
 #else
@@ -23,6 +24,7 @@ CONTAINS
      &          ,tyr,tyra,tdly,tlag,lagday,nyear,nday,tmn_update,yr   &
      &          ,t_phy,u10,udrunoff,ust,uz0,u_frame,u_phy,v10,vegfra  &
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt,zs &
+     &          ,icedepth                                             &
 #if (NMM_CORE==1)
      &          ,xicem,isice,iswater,ct,tke_pbl,sfenth                &
 #else
@@ -388,6 +390,7 @@ CONTAINS
 
    INTEGER, INTENT(IN)::   FRACTIONAL_SEAICE
    INTEGER, INTENT(IN)::   SEAICE_ALBEDO_OPT
+   INTEGER, INTENT(IN)::   SEAICE_THICKNESS_OPT
 
    INTEGER, INTENT(IN)::   NLCAT, mosaic_lu, mosaic_soil
    INTEGER, INTENT(IN)::   NSCAT
@@ -444,6 +447,7 @@ CONTAINS
 !------fds (06/2010)--------------------------
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XICE
 !---------------------------------------------
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   ICEDEPTH
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XLAND
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XICEM
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   MAVAIL
@@ -1147,6 +1151,9 @@ CONTAINS
             (sf_sfclay_physics .EQ. SFCLAYSCHEME ) .OR. &
             (sf_sfclay_physics .EQ. PXSFCSCHEME  ) .OR. &
             (sf_sfclay_physics .EQ. MYJSFCSCHEME ) .OR. &
+#if (EM_CORE==1)
+            (sf_sfclay_physics .EQ. MYNNSFCSCHEME ) .OR. &
+#endif
             (sf_sfclay_physics .EQ. GFSSFCSCHEME ) )    &
            )
 
@@ -1886,15 +1893,16 @@ CONTAINS
                 sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,      & !H multi-layer urban
                 th_phy,rho,p_phy,ust,                           & !I multi-layer urban
                 gmt,julday,xlong,xlat,                          & !I multi-layer urban
-                a_u_bep,a_v_bep,a_t_bep,a_q_bep,                & !O multi-layer urban 
+                a_u_bep,a_v_bep,a_t_bep,a_q_bep,                & !O multi-layer urban
                 a_e_bep,b_u_bep,b_v_bep,                        & !O multi-layer urban
                 b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
                 )
 
-         call seaice_noah( SEAICE_ALBEDO_OPT,                                          &
+         call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_THICKNESS_OPT,                    &
               &            t_phy, qv_curr, p8w, dz8w, num_soil_layers, dt, frpcpn, sr, &
               &            glw, swdown, rainbl, snoalb, qgh, xice, xice_threshold,     &
+              &            icedepth,                                                   &
               &            tslb, emiss, albedo, albbck, z0, tsk, snow, snowc, snowh,   &
               &            chs, chs2, cqs2,                                            &
               &            br, znt, lh, hfx, qfx, potevp, grdflx, qsfc, acsnow,        &
@@ -2104,9 +2112,10 @@ CONTAINS
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
 
-         call seaice_noah( SEAICE_ALBEDO_OPT,                                          &
+         call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_THICKNESS_OPT,                    &
               &            t_phy, qv_curr, p8w, dz8w, num_soil_layers, dt, frpcpn, sr, &
               &            glw, swdown, rainbl, snoalb, qgh, xice, xice_threshold,     &
+              &            icedepth,                                                   &
               &            tslb, emiss, albedo, albbck, z0, tsk, snow, snowc, snowh,   &
               &            chs, chs2, cqs2,                                            &
               &            br, znt, lh, hfx, qfx, potevp, grdflx, qsfc, acsnow,        &

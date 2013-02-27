@@ -887,6 +887,7 @@
       INTEGER :: NUM_ROOF_LAYERS,NUM_WALL_LAYERS,NUM_ROAD_LAYERS   ! urban
       INTEGER :: FRACTIONAL_SEAICE
       INTEGER :: SEAICE_ALBEDO_OPT
+      INTEGER :: SEAICE_THICKNESS_OPT
 !
       INTEGER :: IGS,IGE,JGS,JGE, PQ_I   !BSF
       LOGICAL :: FQ_I, ETAMP_PHYSICS,ETAMP_Regional            !BSF
@@ -922,6 +923,8 @@
       IF ( SEAICE_ALBEDO_OPT /= 0 ) THEN
          CALL WRF_ERROR_FATAL("NMM must use SEAICE_ALBEDO_OPT = 0")
       ENDIF
+      
+      SEAICE_THICKNESS_OPT = CONFIG_FLAGS%SEAICE_THICKNESS_OPT
 !
       DTPHS=NPHS*DT
       RDTPHS=1./DTPHS
@@ -1231,6 +1234,7 @@
      &          ,HT=SFCZ,IFSNOW=IDUMMY,ISFFLX=ISFFLX                    &
      &          ,FRACTIONAL_SEAICE=FRACTIONAL_SEAICE                    &
      &          ,SEAICE_ALBEDO_OPT=SEAICE_ALBEDO_OPT                    &
+     &          ,SEAICE_THICKNESS_OPT=SEAICE_THICKNESS_OPT              &
      &          ,TICE2TSK_IF2COLD=CONFIG_FLAGS%TICE2TSK_IF2COLD         &
      &          ,ISLTYP=ISLTYP                                          &
      &          ,ITIMESTEP=NTSD,IVGTYP=IVGTYP,LOWLYR=LOWLYR             &
@@ -1418,6 +1422,7 @@
      &               ,I_START=GRID%I_START,I_END=GRID%I_END           &
      &               ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &               ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
+     &               ,CTOPO=grid%ctopo,CTOPO2=grid%ctopo2             &
 #if (NMM_CORE==1)
      &               ,DISHEAT=DISHEAT,  RTHRATEN=RTHRATEN             &
 #endif

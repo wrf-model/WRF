@@ -2438,7 +2438,7 @@ subroutine ext_ncd_write_field(DataHandle,DateStr,Var,Field,FieldTypeIn,  &
 
 #ifdef USE_NETCDF4_FEATURES
   call set_chunking(MemoryOrder,need_chunking)
-  compression_level = 3
+  compression_level = 2
 #endif
 
   call DateCheck(DateStr,Status)
@@ -2628,7 +2628,7 @@ subroutine ext_ncd_write_field(DataHandle,DateStr,Var,Field,FieldTypeIn,  &
        return
      endif
 
-      stat = NF_DEF_VAR_DEFLATE(NCID, VarID, 0, 1, compression_level)
+      stat = NF_DEF_VAR_DEFLATE(NCID, VarID, 1, 1, compression_level)
       call netcdf_err(stat,Status)
       if(Status /= WRF_NO_ERR) then
          write(msg,*) 'ext_ncd_write_field: NetCDF def compression  error for ',TRIM(VarName),' in ',__FILE__,', line', __LINE__

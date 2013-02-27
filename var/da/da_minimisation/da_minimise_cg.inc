@@ -15,7 +15,8 @@ subroutine da_minimise_cg(grid, config_flags,            &
    ! History: 12/12/08 - Split J and GradJ calculations (Tom Auligne)
    !          12/12/08 - Re-orthonormalization option   (Tom Auligne)
    !
-   ! History: Sep. 2010 - Add Cloud control variables   (hongli Wang)
+   !          Sep. 2010 - Add Cloud control variables   (hongli Wang)
+   !          09/06/12 - Allow for variable ntmax in each outerloop (Mike Kavulich)
    !-------------------------------------------------------------------------
 
    implicit none
@@ -122,7 +123,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
    j_grad_norm_target = sqrt (rrmold)
 
    if (orthonorm_gradient) then
-      allocate(qhat(0:ntmax))
+      allocate(qhat(0:ntmax(it)))
       allocate(qhat(0)%values(1:cv_size))
       qhat(0)%values = ghat / sqrt(rrmold)
    end if
@@ -140,7 +141,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
    ! [2.0] iteratively solve for minimum of cost function:
    !-------------------------------------------------------------------------
 
-   do iter=1, ntmax
+   do iter=1, ntmax(it)
       if (rrmold == 0.0) exit
 
       call da_calculate_gradj(it,iter,cv_size,be%cv%size_jb,be%cv%size_je,be%cv%size_jp, &
@@ -198,7 +199,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
    !-------------------------------------------------------------------------
    ! End of the minimization of cost function
    !-------------------------------------------------------------------------
-   iter = MIN(iter, ntmax)
+   iter = MIN(iter, ntmax(it))
 
    ! Free memory used for reorthonormalization
    !------------------------------------------

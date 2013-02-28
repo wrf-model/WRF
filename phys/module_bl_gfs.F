@@ -406,7 +406,7 @@ CONTAINS
      DO i=its,ite
      DO k=kts,kte
       DKU3D(I,J,K) = DKU(I,K)
-      DKU3D(I,J,K) = DKU(I,K)
+      DKT3D(I,J,K) = DKT(I,K)
      ENDDO
      ENDDO
 

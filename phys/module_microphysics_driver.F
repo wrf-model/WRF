@@ -402,7 +402,47 @@ SUBROUTINE microphysics_driver(                                          &
      sz = 0
    ENDIF
 
-#ifndef RUN_ON_GPU
+#ifdef XEON_OPTIMIZED_WSM5
+   ! the OpenMP loops are inside the scheme when running on MIC
+   IF ( mp_physics .EQ. WSM5SCHEME ) THEN
+       IF (channel) THEN
+         its = max(ips,ids)
+         ite = min(ipe,ide-1)
+       ELSE
+         its = max(ips,ids+sz)
+         ite = min(ipe,ide-1-sz)
+       ENDIF
+       jts = max(jps,jds+sz)
+       jte = min(jpe,jde-1-sz)
+
+       CALL wsm5(                                              &
+             TH=th                                             &
+            ,Q=qv_curr                                         &
+            ,QC=qc_curr                                        &
+            ,QR=qr_curr                                        &
+            ,QI=qi_curr                                        &
+            ,QS=qs_curr                                        &
+            ,DEN=rho,PII=pi_phy,P=p,DELZ=dz8w                  &
+            ,DELT=dt,G=g,CPD=cp,CPV=cpv                        &
+            ,RD=r_d,RV=r_v,T0C=svpt0                           &
+            ,EP1=ep_1, EP2=ep_2, QMIN=epsilon                  &
+            ,XLS=xls, XLV0=xlv, XLF0=xlf                       &
+            ,DEN0=rhoair0, DENR=rhowater                       &
+            ,CLIQ=cliq,CICE=cice,PSAT=psat                     &
+            ,RAIN=rainnc ,RAINNCV=rainncv                      &
+            ,SNOW=snownc ,SNOWNCV=snowncv                      &
+            ,SR=sr                                             &
+            ,REFL_10CM=refl_10cm                               &
+            ,diagflag=diagflag                                 &
+            ,do_radar_ref=do_radar_ref                         &
+            ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+            ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+            ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+            )
+
+   ELSE
+#endif
+
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij, its, ite, jts, jte, i,j,k,n )
 
@@ -416,19 +456,6 @@ SUBROUTINE microphysics_driver(                                          &
        ENDIF
        jts = max(j_start(ij),jds+sz)
        jte = min(j_end(ij),jde-1-sz)
-#else
-   DO ij = 1 , 1
-       IF (channel) THEN
-         its = max(ips,ids)
-         ite = min(ipe,ide-1)
-       ELSE
-         its = max(ips,ids+sz)
-         ite = min(ipe,ide-1-sz)
-       ENDIF
-       jts = max(jps,jds+sz)
-       jte = min(jpe,jde-1-sz)
-#endif
-
 
 ! 2009-06009 rce - zero all these for safety
        IF( PRESENT(qlsink) ) qlsink(its:ite,kts:kte,jts:jte) = 0.
@@ -1104,6 +1131,7 @@ SUBROUTINE microphysics_driver(                                          &
                 CALL wrf_error_fatal ( 'arguments not present for calling wsm3' )
              ENDIF
 
+#ifndef XEON_OPTIMIZED_WSM5
         CASE (WSM5SCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling wsm5' )
              IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
@@ -1139,6 +1167,7 @@ SUBROUTINE microphysics_driver(                                          &
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling wsm5' )
              ENDIF
+#endif
 
         CASE (WSM6SCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling wsm6' )
@@ -1377,8 +1406,10 @@ SUBROUTINE microphysics_driver(                                          &
       END SELECT micro_select
 
    ENDDO
-#ifndef RUN_ON_GPU
    !$OMP END PARALLEL DO
+
+#ifdef XEON_OPTIMIZED_WSM5
+   ENDIF
 #endif
 
    CALL wrf_debug ( 200 , 'microphysics_driver: returning from' )

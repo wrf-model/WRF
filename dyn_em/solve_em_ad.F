@@ -279,7 +279,8 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
 
 !  Compute these starting and stopping locations for each tile and number of tiles.
 !  See: http://www.mmm.ucar.edu/wrf/WG2/topics/settiles
-   CALL set_tiles ( grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
+   CALL set_tiles ( ZONE_SOLVE_EM, grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
+!   CALL set_tiles ( grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
 
 !  Max values of CFL for adaptive time step scheme
 
@@ -2212,7 +2213,7 @@ BENCH_END(small_step_finish_tim)
              CALL PUSHREAL8ARRAY ( moist(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
              CALL PUSHREAL8ARRAY ( moist_old(:,:,:,im), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
              !$OMP PARALLEL DO   &
-             !$OMP PRIVATE ( ij )
+             !$OMP PRIVATE ( ij, tenddec )
              moist_tile_loop_1: DO ij = 1 , grid%num_tiles
 
                CALL wrf_debug ( 200 , ' call rk_scalar_tend' )
@@ -2301,7 +2302,7 @@ BENCH_END(rlx_bdy_scalar_tim)
                CALL PUSHREAL8ARRAY ( advect_tend, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
              END IF 
              !$OMP PARALLEL DO   &
-             !$OMP PRIVATE ( ij )
+             !$OMP PRIVATE ( ij, tenddec )
              moist_tile_loop_2: DO ij = 1 , grid%num_tiles
 
                CALL wrf_debug ( 200 , ' call rk_update_scalar' )
@@ -2378,7 +2379,7 @@ BENCH_START(tke_adv_tim)
          CALL PUSHREAL8ARRAY ( grid%ww_m , (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
          !CALL push4backup (grid%tke_2,grid%tke_1, "tke_2,tke_1")
          !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !$OMP PRIVATE ( ij, tenddec )
          tke_tile_loop_1: DO ij = 1 , grid%num_tiles
 
            CALL wrf_debug ( 200 , ' call rk_scalar_tend for tke' )
@@ -2418,7 +2419,7 @@ BENCH_START(tke_adv_tim)
          !                     "tke_1,tke_tend,advect_tend" ) 
          !END IF 
          !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !$OMP PRIVATE ( ij, tenddec )
          tke_tile_loop_2: DO ij = 1 , grid%num_tiles
 
            CALL wrf_debug ( 200 , ' call rk_update_scalar' )
@@ -2476,7 +2477,7 @@ BENCH_START(chem_adv_tim)
          chem_variable_loop: DO ic = PARAM_FIRST_SCALAR, num_3d_c
 
            !$OMP PARALLEL DO   &
-           !$OMP PRIVATE ( ij )
+           !$OMP PRIVATE ( ij, tenddec )
            chem_tile_loop_1: DO ij = 1 , grid%num_tiles
 
              CALL wrf_debug ( 200 , ' call rk_scalar_tend in chem_tile_loop_1' )
@@ -2550,7 +2551,7 @@ BENCH_START(chem_adv_tim)
          !$OMP END PARALLEL DO
 
          !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !$OMP PRIVATE ( ij, tenddec )
 
          chem_tile_loop_2: DO ij = 1 , grid%num_tiles
 
@@ -2614,7 +2615,7 @@ BENCH_START(tracer_adv_tim)
            CALL PUSHREAL8ARRAY ( grid%ww_m, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
            CALL PUSHREAL8ARRAY ( tracer(:,:,:,ic), (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
            !$OMP PARALLEL DO   &
-           !$OMP PRIVATE ( ij )
+           !$OMP PRIVATE ( ij, tenddec )
            tracer_tile_loop_1: DO ij = 1 , grid%num_tiles
 
              CALL wrf_debug ( 15 , ' call rk_scalar_tend in tracer_tile_loop_1' )
@@ -2688,7 +2689,7 @@ BENCH_START(tracer_adv_tim)
          !$OMP END PARALLEL DO
 
          !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
+         !$OMP PRIVATE ( ij, tenddec )
 
          tracer_tile_loop_2: DO ij = 1 , grid%num_tiles
 
@@ -2768,7 +2769,7 @@ BENCH_END(tracer_adv_tim)
          !CALL push4backup (scalar(:,:,:,is),scalar_old(:,:,:,is), &
          !                    "scalar,scalar_old")
          !OMP PARALLEL DO   &
-         !OMP PRIVATE ( ij )
+         !OMP PRIVATE ( ij, tenddec )
          scalar_tile_loop_1: DO ij = 1 , grid%num_tiles
 
            CALL wrf_debug ( 200 , ' call rk_scalar_tend' )
@@ -2844,7 +2845,7 @@ BENCH_END(tracer_adv_tim)
          !                    "scalar_old,scalar_tend,advect_tend" ) 
          !END IF 
          !OMP PARALLEL DO   &
-         !OMP PRIVATE ( ij )
+         !OMP PRIVATE ( ij, tenddec )
          scalar_tile_loop_2: DO ij = 1 , grid%num_tiles
 
            CALL wrf_debug ( 200 , ' call rk_update_scalar' )
@@ -3621,9 +3622,7 @@ BENCH_START(micro_driver_tim)
       &        ,ID=grid%id                                                &
       &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde         &
       &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme         &
-#ifdef RUN_ON_GPU
       &        ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe         &
-#endif
       &        ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)         &
       &        ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)         &
       &        ,KTS=k_start, KTE=min(k_end,kde-1)                         &
@@ -4841,9 +4840,7 @@ BENCH_START(adj_micro_driver_tim)
       &        ,ID=grid%id                                                &
       &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde         &
       &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme         &
-#ifdef RUN_ON_GPU
       &        ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe         &
-#endif
       &        ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)         &
       &        ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)         &
       &        ,KTS=k_start, KTE=min(k_end,kde-1)                         &

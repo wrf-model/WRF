@@ -708,6 +708,8 @@ CONTAINS
       new_grid%is_intermediate = .FALSE.
       new_grid%have_displayed_alloc_stats = .FALSE.
 
+      new_grid%tiling_latch = .FALSE.  ! 20121003
+
       ! set up the pointers that represent the nest hierarchy
       ! set this up *prior* to calling the patching or allocation
       ! routines so that implementations of these routines can

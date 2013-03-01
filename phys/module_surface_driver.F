@@ -941,13 +941,25 @@ CONTAINS
   endif
 
 
-  v_phytmp = 0.
-  u_phytmp = 0.
-  ZOL = 0.
-  QGH = 0.
-  CHS = 0.
-  CPM = 0.
-  CHS2 = 0.
+!$OMP PARALLEL DO &
+!$OMP PRIVATE (ij, i, j, k)
+  DO ij = 1,num_tiles
+    DO j = j_start(ij),j_end(ij)
+      DO k = kms,kme
+        DO i = i_start(ij),i_end(ij)
+          v_phytmp(i, k, j) = 0.
+          u_phytmp(i, k, j) = 0.
+        ENDDO
+      ENDDO
+      DO i = i_start(ij),i_end(ij)
+         ZOL(i,j) = 0.
+         QGH(i,j) = 0.
+         CHS(i,j) = 0.
+         CPM(i,j) = 0.
+         CHS2(i,j) = 0.
+      ENDDO
+    ENDDO
+  ENDDO
   DTMIN = 0.
   DTBL = 0.
 
@@ -1748,7 +1760,7 @@ CONTAINS
 
      IF (ISFFLX.EQ.0 ) GOTO 430
      !$OMP PARALLEL DO   &
-     !$OMP PRIVATE ( ij, i, j, k )
+     !$OMP PRIVATE ( ij, i, j, k ) firstprivate(frpcpn)
      DO ij = 1 , num_tiles
 
      sfc_select: SELECT CASE(sf_surface_physics)

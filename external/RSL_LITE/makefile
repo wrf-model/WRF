@@ -6,6 +6,9 @@ LIBS    =
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
 CFLAGS = 
+CPPFLAGS =
+FFLAGS =
+
 
 .SUFFIXES:      .F90 .F .f .o .code
 
@@ -40,7 +43,8 @@ buf_for_proc.o:	        buf_for_proc.c
 			$(CC) $(CFLAGS) -c buf_for_proc.c
 
 f_pack.o:	        f_pack.F90
-			$(FC) -o $@ $(FFLAGS) -c f_pack.F90
+			$(CPP) $(CPPFLAGS) f_pack.F90 > f_pack.f
+			$(FC) -o $@ $(FFLAGS) -c f_pack.f
 
 f_xpose.o:	        f_xpose.F90 f_pack.o
 			$(CPP) f_xpose.F90 > f_xpose.f

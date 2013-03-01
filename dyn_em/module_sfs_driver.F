@@ -59,6 +59,7 @@ SUBROUTINE sfs_driver( grid, config_flags, &
 
 ! Driver layer modules
   USE module_domain
+  USE module_model_constants
   USE module_configure
   USE module_tiles
   USE module_machine
@@ -123,7 +124,8 @@ SUBROUTINE sfs_driver( grid, config_flags, &
 ! Compute these starting and stopping locations for each tile and number of tiles.
 ! See: http://www.mmm.ucar.edu/wrf/WG2/topics/settiles
 
-  CALL set_tiles ( grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
+! Solve_em has already called this, so should not be necessary to reset tiles here
+  CALL set_tiles ( ZONE_SFS, grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
 
   IF ( (config_flags%sfs_opt .EQ. 1) .OR. (config_flags%sfs_opt .EQ. 2) ) THEN
 

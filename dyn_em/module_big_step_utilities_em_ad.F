@@ -1117,361 +1117,219 @@ END SUBROUTINE A_COUPLE_MOMENTUM
 
    END SUBROUTINE a_calc_ww_cp
 
-   SUBROUTINE a_calc_cq(moist,a_moist,cqu,a_cqu,cqv,a_cqv,cqw,a_cqw,n_moist, &
-   ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
-
-!PART I: DECLARATION OF VARIABLES
-
-   IMPLICIT NONE
-
-   INTEGER :: K0_ADJ,K1_ADJ,K2_ADJ,K3_ADJ
-   INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
-   INTEGER :: n_moist
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme,n_moist) :: moist,a_moist
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: cqu,a_cqu,cqv,a_cqv,cqw,a_cqw
-   REAL :: qtot,a_qtot
-   INTEGER :: i,j,k,itf,jtf,ktf,ispe
-
-   REAL :: a_Tmpv1,Tmpv001,a_Tmpv2,Tmpv002
-   REAL,DIMENSION(its:ite,kts:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv400
-   REAL,DIMENSION(its:min(ite,ide-1),kts:min(kte,kde-1),jts:jte) :: Tmpv401
-   REAL,DIMENSION(its:min(ite,ide-1),kts+1:min(kte,kde-1),jts:min(jte,jde-1)) :: Tmpv402
-   REAL,DIMENSION(PARAM_FIRST_SCALAR:n_moist,its:ite,kts:min(kte,kde-1),jts:min(jte,jde- &
-   1)) :: Tmpv500
-   REAL,DIMENSION(PARAM_FIRST_SCALAR:n_moist,its:min(ite,ide-1),kts:min(kte,kde-1) &
-   ,jts:jte) :: Tmpv501
-   REAL,DIMENSION(PARAM_FIRST_SCALAR:n_moist,its:min(ite,ide-1),kts+1:min(kte,kde-1) &
-   ,jts:min(jte,jde-1)) :: Tmpv502
-
-!PART II: CALCULATIONS OF B. S. TRAJECTORY
-
-!LPB[0]
-!         itf=ite               ! Remarked by Ning Pan, 2010-07-13
-!         jtf=MIN(jte,jde-1)    ! Remarked by Ning Pan, 2010-07-13
-         ktf=MIN(kte,kde-1)
-
-!!LPB[1]
-!      IF(  n_moist >= PARAM_FIRST_SCALAR ) THEN
-
-!           DO j=jts,jtf
-!           DO k=kts,ktf
-!           DO i=its,itf
-!             qtot = 0.
-
-!             DO ispe=PARAM_FIRST_SCALAR,n_moist
-!               qtot = qtot + moist(i,k,j,ispe) + moist(i-1,k,j,ispe)
-!             ENDDO
-!              cqu(i,k,j) = 1./(1.+0.5*qtot)
-!           ENDDO
-!           ENDDO
-!           ENDDO
-!           itf=MIN(ite,ide-1)
-!           jtf=jte
-
-!           DO j=jts,jtf
-!           DO k=kts,ktf
-!           DO i=its,itf
-!             qtot = 0.
-
-!             DO ispe=PARAM_FIRST_SCALAR,n_moist
-!               qtot = qtot + moist(i,k,j,ispe) + moist(i,k,j-1,ispe)
-!             ENDDO
-!              cqv(i,k,j) = 1./(1.+0.5*qtot)
-!           ENDDO
-!           ENDDO
-!           ENDDO
-!           itf=MIN(ite,ide-1)
-!           jtf=MIN(jte,jde-1)
-
-!           DO j=jts,jtf
-!           DO k=kts+1,ktf
-!           DO i=its,itf
-!             qtot = 0.
-
-!             DO ispe=PARAM_FIRST_SCALAR,n_moist
-!               qtot = qtot + moist(i,k,j,ispe) + moist(i,k-1,j,ispe)
-!             ENDDO
-!              cqw(i,k,j) = 0.5*qtot
-!           ENDDO
-!           ENDDO
-!           ENDDO
-!         ELSE
-
-!           DO j=jts,jtf
-!           DO k=kts,ktf
-!           DO i=its,itf
-!              cqu(i,k,j) = 1.
-!           ENDDO
-!           ENDDO
-!           ENDDO
-!           itf=MIN(ite,ide-1)
-!           jtf=jte
-
-!           DO j=jts,jtf
-!           DO k=kts,ktf
-!           DO i=its,itf
-!              cqv(i,k,j) = 1.
-!           ENDDO
-!           ENDDO
-!           ENDDO
-!           itf=MIN(ite,ide-1)
-!           jtf=MIN(jte,jde-1)
-
-!           DO j=jts,jtf
-!           DO k=kts+1,ktf
-!           DO i=its,itf
-!              cqw(i,k,j) = 0.
-!           ENDDO
-!           ENDDO
-!           ENDDO
-
-!   END IF
-
-!PART III: INITIALIZATION OF LOCAL ADJOINT PERTURBATIONS
-
-   a_qtot =0.0
-
-!PART IV: REVERSE/BACKWARD ACCUMULATIONS
-
-!LPB[1]
-
-!  Remarked by Ning Pan, 2010-07-13
-!   IF(  n_moist >= PARAM_FIRST_SCALAR ) THEN
-!   DO j =jts, jtf
-!   DO k =kts, ktf
-!   DO i =its, itf
-!   Tmpv400(i,k,j) =qtot
-!   qtot =0.
-
-!   DO ispe =PARAM_FIRST_SCALAR, n_moist
-!   Tmpv001 =qtot +moist(i,k,j,ispe)
-!   Tmpv002 =Tmpv001 +moist(i-1,k,j,ispe)
-!   Tmpv500(ispe,i,k,j) =qtot
-!   qtot =Tmpv002
-
-!   ENDDO
-!!  cqu(i,k,j) =1./(1. +0.5*qtot)
-
-!   ENDDO
-!   ENDDO
-!   ENDDO
-!   itf =min(ite, ide-1)
-!   jtf =jte
-!   DO j =jts, jtf
-!   DO k =kts, ktf
-!   DO i =its, itf
-!   Tmpv401(i,k,j) =qtot
-!   qtot =0.
-
-!   DO ispe =PARAM_FIRST_SCALAR, n_moist
-!   Tmpv001 =qtot +moist(i,k,j,ispe)
-!   Tmpv002 =Tmpv001 +moist(i,k,j-1,ispe)
-!   Tmpv501(ispe,i,k,j) =qtot
-!   qtot =Tmpv002
-
-!   ENDDO
-!!  cqv(i,k,j) =1./(1. +0.5*qtot)
-
-!   ENDDO
-!   ENDDO
-!   ENDDO
-!   itf =min(ite, ide-1)
-!   jtf =min(jte, jde-1)
-!   DO j =jts, jtf
-!   DO k =kts+1, ktf
-!   DO i =its, itf
-!   Tmpv402(i,k,j) =qtot
-!   qtot =0.
-
-!   DO ispe =PARAM_FIRST_SCALAR, n_moist
-!   Tmpv001 =qtot +moist(i,k,j,ispe)
-!   Tmpv002 =Tmpv001 +moist(i,k-1,j,ispe)
-!   Tmpv502(ispe,i,k,j) =qtot
-!   qtot =Tmpv002
-
-!   ENDDO
-!!  cqw(i,k,j) =0.5*qtot
-
-!   ENDDO
-!   ENDDO
-!   ENDDO
-!   ELSE
-!   DO j =jts, jtf
-!   DO k =kts, ktf
-!   DO i =its, itf
-!   cqu(i,k,j) =1.
-
-!   ENDDO
-!   ENDDO
-!   ENDDO
-!   itf =min(ite, ide-1)
-!   jtf =jte
-!   DO j =jts, jtf
-!   DO k =kts, ktf
-!   DO i =its, itf
-!   cqv(i,k,j) =1.
-
-!   ENDDO
-!   ENDDO
-!   ENDDO
-!   itf =min(ite, ide-1)
-!   jtf =min(jte, jde-1)
-!   DO j =jts, jtf
-!   DO k =kts+1, ktf
-!   DO i =its, itf
-!   cqw(i,k,j) =0.
-
-!   ENDDO
-!   ENDDO
-!   ENDDO
-!   END IF
-
-   IF(  n_moist >= PARAM_FIRST_SCALAR ) THEN
-
-   ! Added by Ning Pan, 2010-07-13
-   itf =min(ite,ide-1)
-   jtf =min(jte,jde-1)
-
-   DO j =jtf, jts, -1
-   DO k =ktf, kts+1, -1
-   DO i =itf, its, -1
-   a_qtot =a_qtot +0.5*a_cqw(i,k,j)
-   a_cqw(i,k,j) =0.0
-   DO ispe =n_moist, PARAM_FIRST_SCALAR, -1
-
-!   qtot =Tmpv502(ispe,i,k,j)  ! Remarked by Ning Pan, 2010-07-13
-
-   a_Tmpv2 =a_qtot
-   a_qtot =0.0
-   a_Tmpv1 =a_Tmpv2
-   a_moist(i,k-1,j,ispe) =a_moist(i,k-1,j,ispe) +a_Tmpv2
-   a_qtot =a_qtot +a_Tmpv1
-   a_moist(i,k,j,ispe) =a_moist(i,k,j,ispe) +a_Tmpv1
-   ENDDO
-
-!   qtot =Tmpv402(i,k,j)  ! Remarked by Ning Pan, 2010-07-13
-
-   a_qtot =0.0
-   ENDDO
-   ENDDO
-   ENDDO
-
-   ! Added by Ning Pan, 2010-07-13
-   itf =min(ite,ide-1)
-   jtf =jte
-
-   DO j =jtf, jts, -1
-   DO k =ktf, kts, -1
-   DO i =itf, its, -1
-
-   ! Added by Ning Pan, 2010-07-13 : recalculate qtot
-   qtot =0.
-   DO ispe =PARAM_FIRST_SCALAR,n_moist
-     qtot =qtot +moist(i,k,j,ispe) +moist(i,k,j-1,ispe)
-   ENDDO
-
-   a_qtot =a_qtot -1.*0.5/((1. +0.5*qtot)*(1. +0.5*qtot))*a_cqv(i,k,j)
-   a_cqv(i,k,j) =0.0
-   DO ispe =n_moist, PARAM_FIRST_SCALAR, -1
-
-!   qtot =Tmpv501(ispe,i,k,j)  ! Remarked by Ning Pan, 2010-07-13
-
-   a_Tmpv2 =a_qtot
-   a_qtot =0.0
-   a_Tmpv1 =a_Tmpv2
-   a_moist(i,k,j-1,ispe) =a_moist(i,k,j-1,ispe) +a_Tmpv2
-   a_qtot =a_qtot +a_Tmpv1
-   a_moist(i,k,j,ispe) =a_moist(i,k,j,ispe) +a_Tmpv1
-   ENDDO
-
-!   qtot =Tmpv401(i,k,j)  ! Remarked by Ning Pan, 2010-07-13
-
-   a_qtot =0.0
-   ENDDO
-   ENDDO
-   ENDDO
-
-   ! Added by Ning Pan, 2010-07-13
-   itf =ite
-   jtf =min(jte,jde-1)
-
-   DO j =jtf, jts, -1
-   DO k =ktf, kts, -1
-   DO i =itf, its, -1
-
-   ! Added by Ning Pan, 2010-07-13 : recalculate qtot
-   qtot =0.
-   DO ispe =PARAM_FIRST_SCALAR,n_moist
-     qtot =qtot +moist(i,k,j,ispe) +moist(i-1,k,j,ispe)
-   ENDDO
-
-   a_qtot =a_qtot -1.*0.5/((1. +0.5*qtot)*(1. +0.5*qtot))*a_cqu(i,k,j)
-   a_cqu(i,k,j) =0.0
-   DO ispe =n_moist, PARAM_FIRST_SCALAR, -1
-
-!   qtot =Tmpv500(ispe,i,k,j)  ! Remarked by Ning Pan, 2010-07-13
-
-   a_Tmpv2 =a_qtot
-   a_qtot =0.0
-   a_Tmpv1 =a_Tmpv2
-   a_moist(i-1,k,j,ispe) =a_moist(i-1,k,j,ispe) +a_Tmpv2
-   a_qtot =a_qtot +a_Tmpv1
-   a_moist(i,k,j,ispe) =a_moist(i,k,j,ispe) +a_Tmpv1
-   ENDDO
-
-!   qtot =Tmpv400(i,k,j)  ! Remarked by Ning Pan, 2010-07-13
-
-   a_qtot =0.0
-   ENDDO
-   ENDDO
-   ENDDO
-
-   ELSE
-
-   ! Added by Ning Pan, 2010-07-13
-   itf =min(ite,ide-1)
-   jtf =min(jte,jde-1)
-
-   DO j =jtf, jts, -1
-   DO k =ktf, kts+1, -1
-   DO i =itf, its, -1
-   a_cqw(i,k,j) =0.0
-   ENDDO
-   ENDDO
-   ENDDO
-
-   ! Added by Ning Pan, 2010-07-13
-   itf =min(ite,ide-1)
-   jtf =jte
-
-   DO j =jtf, jts, -1
-   DO k =ktf, kts, -1
-   DO i =itf, its, -1
-   a_cqv(i,k,j) =0.0
-   ENDDO
-   ENDDO
-   ENDDO
-
-   ! Added by Ning Pan, 2010-07-13
-   itf =ite
-   jtf =min(jte,jde-1)
-
-   DO j =jtf, jts, -1
-   DO k =ktf, kts, -1
-   DO i =itf, its, -1
-   a_cqu(i,k,j) =0.0
-   ENDDO
-   ENDDO
-   ENDDO
-
-   END IF
-
-!LPB[0]
-!  itf =ite
-!  jtf =min(jte, jde-1)
-!  ktf =min(kte, kde-1)
-
-   END SUBROUTINE a_calc_cq
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of calc_cq in reverse (adjoint) mode:
+!   gradient     of useful results: cqu cqv cqw moist
+!   with respect to varying inputs: cqu cqv cqw moist
+!   RW status of diff variables: cqu:in-out cqv:in-out cqw:in-out
+!                moist:incr
+SUBROUTINE A_CALC_CQ(moist, moistb, cqu, cqub, cqv, cqvb, cqw, cqwb, &
+&  n_moist, ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, &
+&  its, ite, jts, jte, kts, kte)
+  IMPLICIT NONE
+! Input data
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte
+  INTEGER, INTENT(IN) :: n_moist
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme, n_moist), INTENT(IN) :: &
+&  moist
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme, n_moist) :: moistb
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: cqu, cqv, cqw
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: cqub, cqvb, cqwb
+! Local stuff
+! Changes from Larry Meadows, Intel Corp.  Improve vectorization of this routine
+  REAL :: qtot(its:ite)
+  REAL :: qtotb(its:ite)
+  INTEGER :: i, j, k, itf, jtf, ktf, ispe
+  INTEGER :: ad_to
+  INTEGER :: ad_to0
+  INTEGER :: ad_to1
+  INTEGER :: ad_to2
+  INTEGER :: ad_to3
+  INTEGER :: ad_to4
+  INTEGER :: ad_to5
+  INTEGER :: ad_to6
+  INTEGER :: ad_to7
+  INTEGER :: ad_to8
+  IF (kte .GT. kde - 1) THEN
+    ktf = kde - 1
+  ELSE
+    ktf = kte
+  END IF
+  IF (n_moist .GE. param_first_scalar) THEN
+    itf = ite
+    IF (jte .GT. jde - 1) THEN
+      jtf = jde - 1
+    ELSE
+      jtf = jte
+    END IF
+    DO j=jts,jtf
+      DO k=kts,ktf
+        CALL PUSHREAL8ARRAY(qtot, ite - its + 1)
+        qtot = 0.
+        DO ispe=param_first_scalar,n_moist
+          DO i=its,itf
+            qtot(i) = qtot(i) + moist(i, k, j, ispe) + moist(i-1, k, j, &
+&              ispe)
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+        END DO
+        i = itf + 1
+        CALL PUSHINTEGER4(i - 1)
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    IF (ite .GT. ide - 1) THEN
+      itf = ide - 1
+    ELSE
+      itf = ite
+    END IF
+    jtf = jte
+    DO j=jts,jtf
+      DO k=kts,ktf
+        CALL PUSHREAL8ARRAY(qtot, ite - its + 1)
+        qtot = 0.
+        DO ispe=param_first_scalar,n_moist
+          DO i=its,itf
+            qtot(i) = qtot(i) + moist(i, k, j, ispe) + moist(i, k, j-1, &
+&              ispe)
+          END DO
+          CALL PUSHINTEGER4(i - 1)
+        END DO
+        i = itf + 1
+        CALL PUSHINTEGER4(i - 1)
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    IF (ite .GT. ide - 1) THEN
+      itf = ide - 1
+    ELSE
+      itf = ite
+    END IF
+    IF (jte .GT. jde - 1) THEN
+      jtf = jde - 1
+    ELSE
+      jtf = jte
+    END IF
+    DO j=jtf,jts,-1
+      DO k=ktf,kts+1,-1
+        qtotb = 0.0
+        DO i=itf,its,-1
+          qtotb(i) = qtotb(i) + 0.5*cqwb(i, k, j)
+          cqwb(i, k, j) = 0.0
+        END DO
+        DO ispe=n_moist,param_first_scalar,-1
+          DO i=itf,its,-1
+            moistb(i, k, j, ispe) = moistb(i, k, j, ispe) + qtotb(i)
+            moistb(i, k-1, j, ispe) = moistb(i, k-1, j, ispe) + qtotb(i)
+          END DO
+        END DO
+      END DO
+    END DO
+    CALL POPINTEGER4(ad_to8)
+    DO j=ad_to8,jts,-1
+      DO k=ktf,kts,-1
+        qtotb = 0.0
+        CALL POPINTEGER4(ad_to7)
+        DO i=ad_to7,its,-1
+          qtotb(i) = qtotb(i) - 0.5*cqvb(i, k, j)/(0.5*qtot(i)+1.)**2
+          cqvb(i, k, j) = 0.0
+        END DO
+        DO ispe=n_moist,param_first_scalar,-1
+          CALL POPINTEGER4(ad_to6)
+          DO i=ad_to6,its,-1
+            moistb(i, k, j, ispe) = moistb(i, k, j, ispe) + qtotb(i)
+            moistb(i, k, j-1, ispe) = moistb(i, k, j-1, ispe) + qtotb(i)
+          END DO
+        END DO
+        CALL POPREAL8ARRAY(qtot, ite - its + 1)
+      END DO
+    END DO
+    CALL POPINTEGER4(ad_to5)
+    DO j=ad_to5,jts,-1
+      DO k=ktf,kts,-1
+        qtotb = 0.0
+        CALL POPINTEGER4(ad_to4)
+        DO i=ad_to4,its,-1
+          qtotb(i) = qtotb(i) - 0.5*cqub(i, k, j)/(0.5*qtot(i)+1.)**2
+          cqub(i, k, j) = 0.0
+        END DO
+        DO ispe=n_moist,param_first_scalar,-1
+          CALL POPINTEGER4(ad_to3)
+          DO i=ad_to3,its,-1
+            moistb(i, k, j, ispe) = moistb(i, k, j, ispe) + qtotb(i)
+            moistb(i-1, k, j, ispe) = moistb(i-1, k, j, ispe) + qtotb(i)
+          END DO
+        END DO
+        CALL POPREAL8ARRAY(qtot, ite - its + 1)
+      END DO
+    END DO
+  ELSE
+    itf = ite
+    IF (jte .GT. jde - 1) THEN
+      jtf = jde - 1
+    ELSE
+      jtf = jte
+    END IF
+    DO j=jts,jtf
+      DO k=kts,ktf
+        i = itf + 1
+        CALL PUSHINTEGER4(i - 1)
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    IF (ite .GT. ide - 1) THEN
+      itf = ide - 1
+    ELSE
+      itf = ite
+    END IF
+    jtf = jte
+    DO j=jts,jtf
+      DO k=kts,ktf
+        i = itf + 1
+        CALL PUSHINTEGER4(i - 1)
+      END DO
+    END DO
+    CALL PUSHINTEGER4(j - 1)
+    IF (ite .GT. ide - 1) THEN
+      itf = ide - 1
+    ELSE
+      itf = ite
+    END IF
+    IF (jte .GT. jde - 1) THEN
+      jtf = jde - 1
+    ELSE
+      jtf = jte
+    END IF
+    DO j=jtf,jts,-1
+      DO k=ktf,kts+1,-1
+        DO i=itf,its,-1
+          cqwb(i, k, j) = 0.0
+        END DO
+      END DO
+    END DO
+    CALL POPINTEGER4(ad_to2)
+    DO j=ad_to2,jts,-1
+      DO k=ktf,kts,-1
+        CALL POPINTEGER4(ad_to1)
+        DO i=ad_to1,its,-1
+          cqvb(i, k, j) = 0.0
+        END DO
+      END DO
+    END DO
+    CALL POPINTEGER4(ad_to0)
+    DO j=ad_to0,jts,-1
+      DO k=ktf,kts,-1
+        CALL POPINTEGER4(ad_to)
+        DO i=ad_to,its,-1
+          cqub(i, k, j) = 0.0
+        END DO
+      END DO
+    END DO
+  END IF
+END SUBROUTINE A_CALC_CQ
 
    SUBROUTINE a_calc_alt(alt,a_alt,al,a_al,alb,ids,ide,jds,jde,kds,kde,ims,ime, &
    jms,jme,kms,kme,its,ite,jts,jte,kts,kte)

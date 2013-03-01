@@ -40,6 +40,7 @@ MODULE module_sf_noahlsm
         CHARACTER*256  :: err_message
 
         integer, private :: iloc, jloc
+!$omp threadprivate(iloc, jloc)
 !
 CONTAINS
 !

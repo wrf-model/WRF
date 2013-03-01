@@ -39,7 +39,13 @@ $sw_stubmpi = "" ;
 $sw_usenetcdff = "" ;    # for 3.6.2 and greater, the fortran bindings might be in a separate lib file
 $sw_time = "" ;          # name of a timer to time fortran compiles, e.g. timex or time
 $sw_ifort_r8 = 0 ;
-
+$sw_hdf5 = "-lhdf5 -lhdf5_hl";
+$sw_zlib = "-lz";
+$sw_dep_lib_path = "";
+$sw_gpfs_path = "";
+$sw_gpfs_lib  = "-lgpfs";
+$sw_curl_path = "";
+$sw_curl_lib  = "-lcurl";
 while ( substr( $ARGV[0], 0, 1 ) eq "-" )
  {
   if ( substr( $ARGV[0], 1, 5 ) eq "perl=" )
@@ -49,6 +55,33 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   if ( substr( $ARGV[0], 1, 7 ) eq "netcdf=" )
   {
     $sw_netcdf_path = substr( $ARGV[0], 8 ) ;
+  }
+  if ( substr( $ARGV[0], 1, 13 ) eq "dep_lib_path=" )
+  {
+    $sw_dep_lib_path = substr( $ARGV[0], 14 ) ;
+    $sw_dep_lib_path =~ s/\r|\n/ /g ;
+  }
+  if ( substr( $ARGV[0], 1, 5 ) eq "gpfs=" )
+  {
+    $sw_gpfs_path = substr( $ARGV[0], 6 ) ;
+    if ( $sw_gpfs_path ne "" ) 
+      {
+        if ( substr( $sw_gpfs_path, -1, 1 ) eq "/" )
+          {
+            $sw_gpfs_path = substr($sw_gpfs_path, 0, length($sw_gpfs_path)-1 ) ;
+          }
+      }
+  }
+  if ( substr( $ARGV[0], 1, 5 ) eq "curl=" )
+  {
+    $sw_curl_path = substr( $ARGV[0], 6 ) ;
+    if ( $sw_curl_path ne "" )
+      {
+        if ( substr( $sw_curl_path, -1, 1 ) eq "/" )
+          {
+            $sw_curl_path = substr($sw_curl_path, 0, length($sw_curl_path)-1 ) ;
+          }
+      }
   }
   if ( substr( $ARGV[0], 1, 8 ) eq "pnetcdf=" )
   {
@@ -337,6 +370,7 @@ while ( <CONFIGURE_DEFAULTS> )
       open CONFIGURE_DEFAULTS, "cat ./arch/postamble_new ./arch/noopt_exceptions |"  or die "horribly" ;
     }
   }
+  $_ =~ s:CONFIGURE_NMM_CORE:$sw_nmm_core:g ;
   if ( $latchon == 1 )
   {
     $_ =~ s/CONFIGURE_PERL_PATH/$sw_perl_path/g ;
@@ -376,7 +410,9 @@ while ( <CONFIGURE_DEFAULTS> )
     if ( $sw_netcdf_path ) 
       { $_ =~ s/CONFIGURE_WRFIO_NF/wrfio_nf/g ;
 	$_ =~ s:CONFIGURE_NETCDF_FLAG:-DNETCDF: ;
-        if ( $sw_os eq "Interix" ) {
+        if ( $ENV{NETCDF_LDFLAGS} ) {
+          $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a $ENV{NETCDF_LDFLAGS} : ;
+        } elsif ( $sw_os eq "Interix" ) {
 	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf/libwrfio_nf.a -L$sw_netcdf_path/lib $sw_usenetcdff -lnetcdf : ;
         } else {
 	  $_ =~ s:CONFIGURE_NETCDF_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_netcdf -lwrfio_nf -L$sw_netcdf_path/lib $sw_usenetcdff -lnetcdf : ;
@@ -469,6 +505,19 @@ while ( <CONFIGURE_DEFAULTS> )
         $_ =~ s/CONFIGURE_ATMOCN//g ;
         $_ =~ s:CONFIGURE_ATMOCN_INC::g;
        }
+     if ( $ENV{NETCDF4} )
+       { if ( $ENV{NETCDF4} eq "1" )
+           {
+             if ( /(^ARCH_LOCAL.*=|^TRADFLAG.*=)/ ) 
+               { $_  =~ s/\r|\n//g; 
+                 $_ .= " \$\(NETCDF4_IO_OPTS\)\n" ; 
+               }
+             if (/^LIB.*=/) 
+               { $_  =~ s/\r|\n//g ;
+                 $_ .=" \$\(NETCDF4_DEP_LIB\)\n" ;
+               }
+           }
+       }
 
     if ( ! (substr( $_, 0, 5 ) eq "#ARCH") ) { @machopts = ( @machopts, $_ ) ; }
     if ( substr( $_, 0, 10 ) eq "ENVCOMPDEF" )
@@ -522,6 +571,8 @@ while ( <CONFIGURE_DEFAULTS> )
         until ( $validresponse ) {
           if ( $paropt eq 'serial' || $paropt eq 'smpar' ) {
             printf "Compile for nesting? (0=no nesting, 1=basic, 2=preset moves, 3=vortex following) [default 0]: " ;
+          } elsif ( $ENV{WRF_NMM_CORE} eq "1" ) {
+            printf "Compile for nesting? (1=basic, 2=preset moves) [default 1]: " ;
           } else {
             printf "Compile for nesting? (1=basic, 2=preset moves, 3=vortex following) [default 1]: " ;
           }
@@ -643,6 +694,35 @@ while ( <ARCH_PREAMBLE> )
   $_ =~ s:CONFIGURE_NMM_CORE:$sw_nmm_core:g ;
   $_ =~ s:CONFIGURE_COAMPS_CORE:$sw_coamps_core:g ;
   $_ =~ s:CONFIGURE_EXP_CORE:$sw_exp_core:g ;
+
+  $_ =~ s/CONFIGURE_DEP_LIB_PATH/$sw_dep_lib_path/g ;
+
+  if ( $sw_gpfs_path ne "" )
+    { if (/^GPFS.*=/)
+        { $_  =~ s/\r|\n//g;
+          if ( $sw_gpfs_path ne "DEFAULT" )
+            { $_ .= " -L" . $sw_gpfs_path ; }
+          $_ .= " " . $sw_gpfs_lib . "\n" ;
+        }
+    }
+  if ( $sw_curl_path ne "" )
+    { if (/^CURL.*=/)
+        { $_  =~ s/\r|\n//g;
+          if ( $sw_curl_path ne "DEFAULT" ) 
+            { $_ .= " -L" . $sw_curl_path ; }
+          $_ .= " " . $sw_curl_lib . "\n" ;
+        }
+    }
+  if ( $sw_dep_lib_path ne "" )
+    { if (/^HDF5.*=/)
+        { $_  =~ s/\r|\n//g;
+          $_ .= " " . $sw_hdf5 . "\n" ;
+        }
+      if (/^ZLIB.*=/)
+        { $_  =~ s/\r|\n//g;
+          $_ .= " " . $sw_zlib . "\n" ;
+        }
+    }
 
   @preamble = ( @preamble, $_ ) ;
   }

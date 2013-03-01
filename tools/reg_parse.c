@@ -457,6 +457,10 @@ reg_parse( FILE * infile )
 	if ( tolower(tokens[FIELD_STAG][i]) == 'x' || sw_all_x_staggered ) field_struct->stag_x = 1 ;
 	if ( tolower(tokens[FIELD_STAG][i]) == 'y' || sw_all_y_staggered ) field_struct->stag_y = 1 ;
 	if ( tolower(tokens[FIELD_STAG][i]) == 'z' ) field_struct->stag_z = 1 ;
+        if ( tolower(tokens[FIELD_STAG][i]) == 'v' )
+          field_struct->nmm_v_grid = 1 ;
+        if ( tolower(tokens[FIELD_STAG][i]) == 'm' )
+          field_struct->mp_var = 1;
       }
 
       field_struct->restart  = 0 ; field_struct->boundary  = 0 ;

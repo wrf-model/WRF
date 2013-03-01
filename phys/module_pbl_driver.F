@@ -82,8 +82,15 @@ CONTAINS
 ! Wind Turbine Parameterizations
                ,phb,xlat_u,xlong_u,xlat_v,xlong_v,id                 &
 ! variables required for camuwpbl scheme
-               , z_at_w,cldfra,rthratenlw,tauresx2d,tauresy2d        &
-               , tpert2d,qpert2d,wpert2d                 &
+               , z_at_w,cldfra_old_mp,cldfra, mp_physics, rthratenlw &
+               , tauresx2d,tauresy2d                                 &
+               , tpert2d,qpert2d,wpert2d,wsedl3d                     &
+               , turbtype3d,smaw3d,tke_pbl8w,exch_h8w,exch_m8w       &
+               , fnm,fnp                                             &
+! variables required for camuwpbl scheme (optional)               
+               ,qnc_curr,f_qnc,qni_curr,f_qni,rqniblten              &
+! for grims shallow convection with ysupbl
+               , wscalek,delta                                       &
                                                                      )       
 !------------------------------------------------------------------
 #if (EM_CORE==1)
@@ -92,13 +99,14 @@ CONTAINS
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
                    SURFDRAGSCHEME, TEMFPBLSCHEME,QNSEPBL09SCHEME,GBMPBLSCHEME,  &
-                   p_qi,param_first_scalar 
+                   CAMMGMPSCHEME,p_qi,p_qni,p_qnc,param_first_scalar  !CAMMGMPSCHEME, p_qni,p_qnc is used for camuwpbl scheme
    USE module_wind_generic, ONLY : windspec
 #else
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
                    , QNSEPBLSCHEME, p_qi,param_first_scalar &
                    , TEMFPBLSCHEME, GFS2011SCHEME,QNSEPBL09SCHEME         &
+                   , CAMUWPBLSCHEME                                       &
                    , GBMPBLSCHEME, MYJSFCSCHEME
 #endif
 
@@ -183,6 +191,8 @@ CONTAINS
 ! Qr         rain water mixing ratio (kg/kg)
 ! Qi         cloud ice mixing ratio (kg/kg)
 ! Qs         snow mixing ratio (kg/kg)
+! QNC        cloud Liq number concentration (#/kg) !For CAMUWPBL scheme
+! QNI        cloud ice number concentration (#/kg) !For CAMUWPBL scheme
 !-----------------------------------------------------------------
 !-- RUBLTEN       U tendency due to 
 !                 PBL parameterization (m/s^2)
@@ -196,6 +206,8 @@ CONTAINS
 !                 PBL parameterization (kg/kg/s)
 !-- RQIBLTEN      Qi tendency due to 
 !                 PBL parameterization (kg/kg/s)
+!-- RQNIBLTEN     Qni tendency due to 
+!                 PBL parameterization (#/kg/s) !For CAMUWPBL scheme
 !-- id            WRF grid id  (optional, only needed by turbine drag schemes)
 !-- itimestep     number of time steps
 !-- GLW           downward long wave flux at ground surface (W/m^2)
@@ -223,6 +235,9 @@ CONTAINS
 !-- akhs          sfc exchange coefficient of heat/moisture from MYJ
 !-- akms          sfc exchange coefficient of momentum from MYJ
 !-- tke_pbl       turbulence kinetic energy from PBL schemes (m^2/s^2)
+!*NOTE* tke_pbl8w is populated ONLY when CAMUWPBL(bl_pbl_physics = 9) scheme is selected !BSINGH
+!otherwise, its value is interpolated from tke_pbl
+!-- tke_pbl8w     turbulence kinetic energy from PBL schemes (m^2/s^2) at the interfaces
 !-- el_pbl        length scale from PBL schemes (m)
 !-- wu_tur        turbulent flux of momentum (x) (m^2/s^2)
 !-- wv_tur        turbulent flux of momentum (y) (m^2/s^2)
@@ -272,11 +287,25 @@ CONTAINS
 !-- DZS
 !-- num_soil_layers number of soil layer
 !-- IFSNOW      ifsnow=1 for snow-cover effects
+!-- z_at_w      Height above sea level at layer interfaces (m) 
+!-- cldfra      Cloud fraction [unitless]
+!-- cldfra_old_mp      Cloud fraction [unitless]
+!-- rthratenlw  Tendency for LW ( K/s)
+!-- tauresx2d   X-COMP OF RESIDUAL STRESS(m^2/s^2)
+!-- tauresy2d   Y-COMP OF RESIDUAL STRESS(m^2/s^2)
+!-- tpert2d     Convective temperature excess (K)
+!-- qpert2d     Convective humidity excess (kg/kg)
+!-- wpert2d     Turbulent velocity excess (m/s)
+!-- wsedl3d     Sedimentation velocity of stratiform liquid cloud droplet (m/s)
+!-- turbtype3d  Turbulent interface types [ no unit ]  
+!-- smaw3d      Normalized Galperin instability function for momentum  ( 0<= <=4.964 and 1 at neutral ) [no units]
 !
 !-- P_QV          species index for water vapor
 !-- P_QC          species index for cloud water
 !-- P_QR          species index for rain water
 !-- P_QI          species index for cloud ice
+!-- P_QNC         species index for cloud liq number concentration !For CAMUWPBL scheme
+!-- P_QNI         species index for cloud ice number concentration !For CAMUWPBL scheme
 !-- P_QS          species index for snow
 !-- P_QG          species index for graupel
 !-- ids           start index for i in domain
@@ -302,6 +331,7 @@ CONTAINS
 
 
    INTEGER,    INTENT(IN   )    ::     bl_pbl_physics, ra_lw_physics,sf_sfclay_physics,sf_urban_physics
+   INTEGER,    INTENT(IN   ), OPTIONAL    ::     mp_physics
 
    INTEGER,    INTENT(IN   )    ::     ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
@@ -352,12 +382,19 @@ CONTAINS
                                                            v_phy, &
                                                             dz8w, &
                                                                z, &
-                                                          th_phy                                                             
+                                                          th_phy
+!1D variables required for CAMUWPBL scheme
+   REAL , DIMENSION( kms:kme ) ,                                      &
+        INTENT(IN   ) , OPTIONAL ::                                        fnm,  & !Factors for interpolation at "w" grid (interfaces)
+                                                                fnp                                                                  
 !3D Variables for camuwpbl scheme
     REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),           &
                INTENT(IN   ), OPTIONAL    ::              z_at_w, &
+                                                   cldfra_old_mp, &
                                                           cldfra, &
-                                                      rthratenlw
+                                                      rthratenlw, &
+                                                      wsedl3d
+
 
 !2D Variables required by camuwpbl scheme
     REAL,       DIMENSION( ims:ime , jms:jme ),                   &
@@ -366,7 +403,25 @@ CONTAINS
                                                          tpert2d, &
                                                          qpert2d, &
                                                          wpert2d
+
+
+!3D Variables for camuwpbl scheme - inout
+    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),           &
+               INTENT(INOUT), OPTIONAL    ::                      exch_h8w, &
+                                                        exch_m8w
+
+!3D Variables for camuwpbl scheme - out
+    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),           &
+               INTENT(OUT) , OPTIONAL   ::                      turbtype3d, &
+                                                          smaw3d, &   
+                                                       tke_pbl8w
 !
+! for grims shallow convection with ysupbl
+!
+    REAL,      DIMENSION( ims:ime, kms:kme, jms:jme )           , &
+               INTENT(INOUT   ), OPTIONAL    ::          wscalek
+    REAL,      DIMENSION( ims:ime, jms:jme )                    , &
+               INTENT(INOUT   ), OPTIONAL    ::            delta
 !
    REAL,       DIMENSION( ims:ime , jms:jme ),                    &
                INTENT(IN   )    ::                         XLAND, &
@@ -508,7 +563,9 @@ CONTAINS
                                                      ,f_qr      &
                                                      ,f_qi      &
                                                      ,f_qs      &
-                                                     ,f_qg
+                                                     ,f_qg      &
+                                                     ,f_qnc     & !used in CAMUWPBL
+                                                     ,f_qni       !used in CAMUWPBL
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          OPTIONAL, INTENT(INOUT) ::                              &
@@ -516,8 +573,10 @@ CONTAINS
                       ! 2 time levels; if only one then use CURR
                       qv_curr, qc_curr, qr_curr                  &
                      ,qi_curr, qs_curr, qg_curr                  &
+                     ,qnc_curr,qni_curr                          & !used in CAMUWPBL
                      ,rqvblten,rqcblten,rqrblten                 &
-                     ,rqiblten,rqsblten,rqgblten
+                     ,rqiblten,rqsblten,rqgblten,rqniblten         !rqniblten  used in CAMUWPBL
+
 
    REAL,       DIMENSION( ims:ime, jms:jme )                    , &
                OPTIONAL                                         , &
@@ -602,13 +661,14 @@ CONTAINS
    LOGICAL :: radiation
    LOGICAL :: flag_bep
    LOGICAL :: flag_myjsfc
-   LOGICAL :: flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg
+   LOGICAL :: flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg, flag_qnc,flag_qni !flag_qnc,flag_qnc are used in camuwpbl scheme
    CHARACTER*256 :: message
    REAL    :: next_bl_time
    LOGICAL :: run_param , doing_adapt_dt , decided
-   LOGICAL :: do_adapt
+   LOGICAL :: do_adapt, is_CAMMGMP_used
    integer iu_bep,iurb,idiff
    real seamask,thsk,zzz,unew,vnew,tnew,qnew,umom,vmom
+   REAL :: z0,z1,z2,w1,w2
 
 !------------------------------------------------------------------
 !
@@ -637,9 +697,8 @@ CONTAINS
   flag_qi = .FALSE. ; IF ( PRESENT( F_QI ) ) flag_qi = F_QI
   flag_qs = .FALSE. ; IF ( PRESENT( F_QS ) ) flag_qs = F_QS
   flag_qg = .FALSE. ; IF ( PRESENT( F_QG ) ) flag_qg = F_QG
-
-!print *,flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg,' flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg'
-!print *,f_qv, f_qc, f_qr, f_qi, f_qs, f_qg,' f_qv, f_qc, f_qr, f_qi, f_qs, f_qg'
+  flag_qnc = .FALSE. ; IF ( PRESENT( F_QNC ) ) flag_qnc = F_QNC !Used in CAMUWPBL
+  flag_qni = .FALSE. ; IF ( PRESENT( F_QNI ) ) flag_qni = F_QNI !Used in CAMUWPBL
 
   if (bl_pbl_physics .eq. 0) return
 
@@ -774,7 +833,15 @@ CONTAINS
      ALLOCATE (sf(ims:ime,kms:kme,jms:jme) )       ! surfaces
      ALLOCATE (vl(ims:ime,kms:kme,jms:jme) )       ! volumes
    ENDIF
-
+   
+   !BSINGH: Find out if CAMMGMPSCHEME is beingh used in this simulation:
+   is_CAMMGMP_used = .false.
+# if (EM_CORE == 1)
+   if(mp_physics == CAMMGMPSCHEME) then
+      is_CAMMGMP_used = .true.
+   endif
+# endif
+   
 ! SAVE OLD VALUES
 
    !$OMP PARALLEL DO   &
@@ -811,6 +878,12 @@ CONTAINS
          IF (flag_QI .AND. PRESENT(RQIBLTEN) ) THEN
             DO k=kts,min(kte+1,kde)
                RQIBLTEN(I,K,J)=0.
+            ENDDO
+         ENDIF
+         !Following if condition is added for CAMUWPBL scheme
+         IF (flag_QNI .AND. PRESENT(RQNIBLTEN) ) THEN
+            DO k=kts,min(kte+1,kde)
+               RQNIBLTEN(I,K,J)=0.
             ENDDO
          ENDIF
       ENDDO
@@ -999,6 +1072,8 @@ CONTAINS
               ,WSPD=wspd,BR=br,DT=dtbl,KPBL2D=kpbl                  &
               ,EP1=ep_1,EP2=ep_2,KARMAN=karman                      &
               ,EXCH_H=exch_h,REGIME=regime                          &
+! for grims shallow convection with ysupbl
+              ,WSCALEK2=wscalek,DELTA2=delta                        &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
@@ -1566,26 +1641,63 @@ CONTAINS
 
            CASE (CAMUWPBLSCHEME)
               
-           IF ( PRESENT( z_at_w )  .AND. PRESENT( tauresx2d )) THEN 
               CALL wrf_debug(100,'in camuwpbl')
+              IF ( PRESENT( qv_curr  )  .AND. PRESENT( qc_curr   )  .AND. &
+                   PRESENT( qi_curr  )  .AND. PRESENT( qnc_curr  )  .AND. &
+                   PRESENT( qni_curr )  .AND.                             &
+                   PRESENT( rqvblten )  .AND. PRESENT( rqcblten  )  .AND. &
+                   PRESENT( rqiblten )  .AND. PRESENT( rqniblten )        &                   
+                 )THEN
+                 CALL CAMUWPBL(DT=dt,U_PHY=u_phy,V_PHY=v_phy,TH_PHY=th_phy,RHO=rho   &
+                      ,QV_CURR=qv_curr,HFX=hfx,QFX=qfx,USTAR=ust,P8W=p8w,P_PHY=p_phy &
+                      ,Z=z,T_PHY=t_phy,QC_CURR=qc_curr,QI_CURR=qi_curr,Z_AT_W=z_at_w &
+                      ,CLDFRA_OLD_mp=cldfra_old_mp,CLDFRA=cldfra,HT=ht               &
+                      ,RTHRATENLW=rthratenlw,EXNER=pi_phy                            &
+                      ,is_CAMMGMP_used=is_CAMMGMP_used                               &
+                      ,ITIMESTEP=itimestep,QNC_CURR=qnc_curr,QNI_CURR=qni_curr       &
+                      ,WSEDL3D=wsedl3d                                               &
+
+                      ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde             &
+                      ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme             &
+                      ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte             &
+!Intent-inout 
+                      ,TAURESX2D=tauresx2d,TAURESY2D=tauresy2d,EXCH_H8W=exch_h8w     &
+                      ,EXCH_M8W=exch_m8w                                             &
+                      ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten             &
+                      ,RQIBLTEN=rqiblten,RQNIBLTEN=rqniblten,RQVBLTEN=rqvblten       &
+                      ,RQCBLTEN=rqcblten                                             &
+!Intent-out
+                      ,TPERT2D=tpert2d,QPERT2D=qpert2d,WPERT2D=wpert2d,SMAW3D=smaw3d &
+                      ,TURBTYPE3D=turbtype3d,TKE_pbl8w=tke_pbl8w                     &
+                      ,TKE_pbl=tke_pbl,PBLH2D=pblh,KPBL2D=kpbl,KVH3D=exch_h          &
+                      ,KVM3D=exch_m                                                  &
+                      )
+              ELSE
+                 WRITE ( message , FMT = '(A,8(L1,1X))' )            &
+                      'present: '//                                      &
+                      'qv_curr, '//                                      &
+                      'qc_curr, '//                                      &
+                      'qi_curr, '//                                      &
+                      'qnc_curr, '//                                     &
+                      'qni_curr, '//                                     &
+                      'rqvblten, '//                                     &
+                      'rqcblten, '//                                     &
+                      'rqiblten, '//                                     &
+                      'rqniblten= ',                                     &
+                      PRESENT( qv_curr ) ,                              &
+                      PRESENT( qc_curr ) ,                              &
+                      PRESENT( qi_curr ) ,                              &
+                      PRESENT( qnc_curr ) ,                             &
+                      PRESENT( qni_curr ) ,                             &
+                      PRESENT( rqvblten ) ,                             &
+                      PRESENT( rqcblten ) ,                             &
+                      PRESENT( rqiblten ) ,                             &
+                      PRESENT( rqniblten ) 
+
+                 CALL wrf_debug(0,message)
+                 CALL wrf_error_fatal('Lack arguments to call CAMUWPBL pbl')
+              ENDIF
               
-              CALL CAMUWPBL(DT=dt,U_PHY=u_phy,V_PHY=v_phy,TH_PHY=th_phy,RHO=rho   &
-               ,QV_CURR=qv_curr,HFX=hfx,QFX=qfx,USTAR=ust,RUBLTEN=rublten         &
-               ,RVBLTEN=rvblten,RTHBLTEN=rthblten,RQVBLTEN=rqvblten               &
-               ,RQCBLTEN=rqcblten,TKE_PBL=tke_pbl,PBLH2D=pblh,KPBL2D=kpbl         &
-               ,P8W=p8w,P_PHY=p_phy,Z=z,T_PHY=t_phy,QC_CURR=qc_curr               &
-               ,QI_CURR=qi_curr,Z_AT_W=z_at_w,CLDFRA=cldfra,HT=ht                 &
-               ,RTHRATENLW=rthratenlw,EXNER=pi_phy,ITIMESTEP=itimestep            &
-               ,TAURESX2D=tauresx2d,TAURESY2D=tauresy2d,KVH3D=exch_h,KVM3D=exch_m &
-               ,TPERT2D=tpert2d,QPERT2D=qpert2d,WPERT2D=wpert2d                   & 
-               ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde                 &
-               ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme                 &
-               ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte                 )
-              
-           ELSE
-               CALL wrf_debug(0,message)
-               CALL wrf_error_fatal('Lack arguments to call CAMUWPBL pbl')
-           ENDIF
 #endif
 
            CASE (GBMPBLSCHEME)
@@ -1625,6 +1737,53 @@ CONTAINS
        CALL wrf_error_fatal ( message )
 
    END SELECT pbl_select
+   
+   !BSINGH - For cases where CAMUWPBL scheme is not being selected, 
+   ! TKE_PBL8W, EXCH_H8W and EXCH_M8W are interpolated from their values
+   ! at midpoints.
+# if (EM_CORE == 1)
+   if ( bl_pbl_physics .NE. CAMUWPBLSCHEME ) then
+      
+      !Interpolate TKE_PBL to populate TKE_PBL8W
+      !Following formulation is adapted from module_chem_utilities.F
+      do j = j_start(ij),j_end(ij)
+         do k = 2, kte
+            do i = i_start(ij), i_end(ij)
+               tke_pbl8w(i,k,j) = fnm(k)*tke_pbl(i,k,j)+fnp(k)*tke_pbl(i,k-1,j)
+               exch_h8w(i,k,j)  = fnm(k)*exch_h(i,k,j)+fnp(k)*exch_h(i,k-1,j)
+               exch_m8w(i,k,j)  = fnm(k)*exch_m(i,k,j)+fnp(k)*exch_m(i,k-1,j)
+            enddo
+         enddo
+      enddo
+      !Extrapolate TKE_PBL8W to surface and top.
+      !We'll use an extrapolation in z for now
+      
+      do j = j_start(ij),j_end(ij)
+         do i = i_start(ij), i_end(ij)
+            !Bottom
+            z0 = z_at_w(i,1,j)
+            z1 = z(i,1,j)
+            z2 = z(i,2,j)
+            w1 = (z0 - z2)/(z1 - z2)
+            w2 = 1. - w1
+            tke_pbl8w(i,1,j) = w1*tke_pbl(i,1,j)+w2*tke_pbl(i,2,j)
+            exch_h8w(i,1,j)  = w1*exch_h(i,1,j)+w2*exch_h(i,2,j)
+            exch_m8w(i,1,j)  = w1*exch_m(i,1,j)+w2*exch_m(i,2,j)
+            !Top
+            z0 = z_at_w(i,kte,j)
+            z1 = z(i,kte,j)
+            z2 = z(i,kte-1,j)
+            w1 = (z0 - z2)/(z1 - z2)
+            w2 = 1. - w1
+            
+            tke_pbl8w(i,kde,j) = w1*tke_pbl(i,kde-1,j)+w2*tke_pbl(i,kde-2,j)
+            exch_h8w(i,kde,j)  = w1*exch_h(i,kde-1,j)+w2*exch_h(i,kde-2,j)
+            exch_m8w(i,kde,j)  = w1*exch_m(i,kde-1,j)+w2*exch_m(i,kde-2,j)
+            
+         enddo
+      enddo
+   endif
+#endif
 
    IF (PRESENT(dtaux3d)) THEN
        IF(gwd_opt .EQ. 1)THEN

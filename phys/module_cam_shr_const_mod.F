@@ -1,11 +1,10 @@
-!------------------------------------------------------------------------
-! Based on shr_const_mod.F90 from CAM
-! Ported to WRF by William.Gustafson@pnl.gov, Nov. 2009
-!------------------------------------------------------------------------
+#define WRF_PORT
+#define MODAL_AERO
+! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
 
 !===============================================================================
 ! SVN $Id: shr_const_mod.F90 6749 2007-10-04 20:58:20Z jwolfe $
-! SVN $URL: https://svn-ccsm-models.cgd.ucar.edu/csm_share/branch_tags/cesm1_0_rel_tags/cesm1_0_rel03_share3_100802/shr/shr_const_mod.F90 $
+! SVN $URL: https://svn-ccsm-models.cgd.ucar.edu/csm_share/branch_tags/cesm1_0_rel_tags/cesm1_0_3_n01_share3_110527/shr/shr_const_mod.F90 $
 !===============================================================================
 
 MODULE shr_const_mod

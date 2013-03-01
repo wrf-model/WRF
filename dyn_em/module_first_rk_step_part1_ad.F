@@ -211,6 +211,9 @@ use module_scalar_tables
                         grid%rthften,  grid%rqvften,                     &
                         grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN, &
                         grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,&
+!jdf
+                        grid%landmask,grid%xland,                 &
+!jdf
                         ids, ide, jds, jde, kds, kde,                    &
                         ims, ime, jms, jme, kms, kme,                    &
                         grid%i_start(ij), grid%i_end(ij),                &
@@ -475,6 +478,9 @@ BENCH_END(a_pbl_driver_tim)
                         grid%rthften,  grid%a_rthften, grid%rqvften, grid%a_rqvften,                    &
                         grid%RUNDGDTEN, grid%a_RUNDGDTEN, grid%RVNDGDTEN, grid%a_RVNDGDTEN, grid%RTHNDGDTEN, grid%a_RTHNDGDTEN, &
                         grid%RPHNDGDTEN,grid%a_RPHNDGDTEN,grid%RQVNDGDTEN, grid%a_RQVNDGDTEN,grid%RMUNDGDTEN,&
+!jdf
+                        grid%landmask,grid%xland,                 &
+!jdf
                         ids, ide, jds, jde, kds, kde,           &
                         ims, ime, jms, jme, kms, kme,           &
                         grid%i_start(ij), grid%i_end(ij),       &

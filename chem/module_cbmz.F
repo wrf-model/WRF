@@ -88,7 +88,11 @@
                its,ite, jts,jte, kts,kte  )
 
    USE module_configure, only:  grid_config_rec_type, num_moist, num_chem,  &
-	p_qv, p_so2, p_ho2, p_so4aj, p_corn, p_hcl, p_mtf
+!	p_qv, p_so2, p_ho2, p_so4aj, p_corn, p_hcl, p_mtf
+!jdf
+	p_qv, p_so2, p_ho2, p_so4aj, p_corn, p_hcl, p_mtf, &
+        p_xyl, p_tol, p_csl, p_oli, p_olt, p_ho, p_o3, p_no
+!jdf
    USE module_data_sorgam, only:  ldrog
    USE module_data_cbmz
    IMPLICIT NONE
@@ -150,7 +154,7 @@
 
 
 !   local variables
-	integer :: idum, iok
+	integer :: idum, iok,iprog
 	integer :: iregime
 	integer :: igaschem_allowed_m1, igaschem_allowed_m2,   &
                    igaschem_allowed_m3, igaschem_allowed_m4
@@ -169,11 +173,11 @@
 	real :: airdenbox, pressbox, tempbox
 	real :: cair_mlc
 	real :: h2o, ch4, oxygen, nitrogen, hydrogen
-	real :: cboxnew(ngas_z), cboxold(ngas_z)
+	real :: cboxnew(ngas_z), cboxold(ngas_z),prodrog(ldrog) !MS
 	real :: Aperox(nperox,nperox), Bperox(nperox,nperox)
 	real :: rk_param(nperox), rk_photo(nphoto)
 	real :: rk_m1(nrxn_m1), rk_m2(nrxn_m2), rk_m3(nrxn_m3), rk_m4(nrxn_m4)
-
+        real factorprog
 	integer, dimension(2,6), save :: inforodas=0
 	integer, dimension(6), save :: iodestatus_count=0, ioderegime_count=0
 
@@ -363,6 +367,36 @@
 !   it must be commented out for actual wrf applications
 !	call boxtest_set_extra_args( iregime, it, jt, kt )
 
+         if (iok .gt. 0) then
+        call update_vdrog3_cbmz(rk_m2,rk_m3,dtstepc,cboxnew, cboxold, &
+                                prodrog)
+!prodrog units are in molecules/cm3
+!   chem units = (ppm)
+        airdenbox = rho_phy(it,kt,jt)/28.966e3
+        if (i_boxtest_units_convert .eq. 10) then
+            airdenbox = rho_phy(it,kt,jt)
+        end if
+
+
+        factorprog = airdenbox*1.0e-6
+        if (i_boxtest_units_convert .eq. 10) factorprog = airdenbox
+        factorprog = factorprog*avognumkpp
+
+
+!  convert prodrog from units of molecules/cm3 to ppmv        
+         do iprog=1,ldrog
+           prodrog(iprog)=prodrog(iprog)/factorprog
+          enddo
+ 
+
+!  Now assign the prodrog values to vdrog3 array
+          do iprog=1,ldrog
+          vdrog3(it,kt,jt,iprog)=prodrog(iprog)
+          vdrog3(it,kt,jt,iprog)=max(0.,vdrog3(it,kt,jt,iprog))
+          enddo
+
+        endif ! iok .gt. 0
+!MS
 2900	continue
 
 	if (i_print_gasode_stats .gt. 0)   &
@@ -371,7 +405,105 @@
 	return
 	end subroutine cbmz_driver                      
  
+
+!***********************************************************************
+! < xx.> subr update_vdrog3_cbmz
+!
+! purpose: updates vdrog3 concentrations for MADE-SORGAM-CBMZ package
+! Written by Manish Shrivastava on 12/20/2011
+!-----------------------------------------------------------------------
+
+      subroutine update_vdrog3_cbmz(rk_m2,rk_m3,dtstepc,cboxnew, cboxold, &
+                                prodrog)
+   USE module_data_sorgam, only:  ldrog
+   USE module_data_cbmz
+
+      implicit none
+     
+      real,intent(in) :: rk_m2(nrxn_m2),cboxnew(ngas_z), cboxold(ngas_z)
+      real,intent(in) :: rk_m3(nrxn_m3)
+      real,intent(in) :: dtstepc
+      real,intent(inout) :: prodrog(ldrog)
+      integer i
+      real temp_par_new,temp_par_old,f_api,f_lim
+
+!  f_api is fraction of isoprene attributed to API
+!  f_lim is fraction of isoprene attributed to LIM
+
+      f_api=0.292
+      f_lim=0.064
+
+! First initialize prodrog
+
+        temp_par_new=0.0
+        temp_par_old=0.0
+        do i=1,ldrog
+        prodrog(i)=0.0
+        enddo
+         
+        temp_par_new=temp_par_new+cboxnew(ipar_z)/7.9
+!since hc8 emissions are multiplied by 7.9 to calculate par, we divide by this number
  
+       temp_par_old=temp_par_old+cboxold(ipar_z)/7.9
+!since hc8 emissions are multiplied by 7.9 to calculate par, we divide by this number
+
+
+
+! The order of following reactions is from module_data_sorgam.F
+! prodrog(1) is rxn of XYL+OH rk_m2(19)
+      prodrog(1)=0.5*(cboxnew(ixyl_z)+cboxold(ixyl_z))*0.5*(cboxnew(ioh_z)+cboxold(ioh_z)) &
+                    *rk_m2(19)*dtstepc
+!prodrog(2) is rxn of TOL+OH rk_m2(18)
+     prodrog(2)=0.5*(cboxnew(itol_z)+cboxold(itol_z))*0.5*(cboxnew(ioh_z)+cboxold(ioh_z)) &
+                    *rk_m2(18)*dtstepc
+!prodrog(3) is rxn of CRES+OH rk_m2(21)
+     prodrog(3)=0.5*(cboxnew(icres_z)+cboxold(icres_z))*0.5*(cboxnew(ioh_z)+cboxold(ioh_z)) &
+                    *rk_m2(21)*dtstepc
+!prodrog(4) is rxn of CRES+NO3 rk_m2(22)
+     prodrog(4)=0.5*(cboxnew(icres_z)+cboxold(icres_z))*0.5*(cboxnew(ino3_z)+cboxold(ino3_z)) &
+                    *rk_m2(22)*dtstepc
+!prodrog(5) is rxn of HC+OH rk_m2(1)
+     prodrog(5)=0.5*(temp_par_new+temp_par_old)*0.5*(cboxnew(ioh_z)+cboxold(ioh_z)) &
+                    *rk_m2(1)*dtstepc !Set to 0.0 as PAR should be replaced by HC8 or higher alkanes
+!prodrog(6) is rxn of OLEI+OH rk_m2(15)
+     prodrog(6)=0.5*(cboxnew(iolei_z)+cboxold(iolei_z))*0.5*(cboxnew(ioh_z)+cboxold(ioh_z)) &
+                    *rk_m2(15)*dtstepc
+!prodrog(7) is rxn of OLEI+NO3 rk_m2(17)
+     prodrog(7)=0.5*(cboxnew(iolei_z)+cboxold(iolei_z))*0.5*(cboxnew(ino3_z)+cboxold(ino3_z)) &
+                    *rk_m2(17)*dtstepc
+!prodrog(8) is rxn of OLEI+O3 rk_m2(13)
+     prodrog(8)=0.5*(cboxnew(iolei_z)+cboxold(iolei_z))*0.5*(cboxnew(io3_z)+cboxold(io3_z)) &
+                    *rk_m2(13)*dtstepc
+!prodrog(9) is rxn of OLET+OH rk_m2(14)
+     prodrog(9)=0.5*(cboxnew(iolet_z)+cboxold(iolet_z))*0.5*(cboxnew(ioh_z)+cboxold(ioh_z)) &
+                    *rk_m2(14)*dtstepc
+!prodrog(10) is rxn of OLET+NO3 rk_m2(16)
+     prodrog(10)=0.5*(cboxnew(iolet_z)+cboxold(iolet_z))*0.5*(cboxnew(ino3_z)+cboxold(ino3_z)) &
+                    *rk_m2(16)*dtstepc
+!prodrog(11) is rxn of OLET+O3 rk_m2(12)
+     prodrog(11)=0.5*(cboxnew(iolet_z)+cboxold(iolet_z))*0.5*(cboxnew(io3_z)+cboxold(io3_z)) &
+                    *rk_m2(12)*dtstepc
+    
+     prodrog(12)=0.5*(cboxnew(iisop_z)+cboxold(iisop_z))*0.5*(cboxnew(ioh_z)+cboxold(ioh_z)) &
+                    *rk_m3(1)*dtstepc*f_api
+     prodrog(13)=0.5*(cboxnew(iisop_z)+cboxold(iisop_z))*0.5*(cboxnew(ino3_z)+cboxold(ino3_z)) &
+                    *rk_m3(3)*dtstepc*f_api
+     prodrog(14)=0.5*(cboxnew(iisop_z)+cboxold(iisop_z))*0.5*(cboxnew(io3_z)+cboxold(io3_z)) &
+                    *rk_m3(2)*dtstepc*f_api
+     prodrog(15)=0.5*(cboxnew(iisop_z)+cboxold(iisop_z))*0.5*(cboxnew(ioh_z)+cboxold(ioh_z)) &
+                    *rk_m3(1)*dtstepc*f_lim
+     prodrog(16)=0.5*(cboxnew(iisop_z)+cboxold(iisop_z))*0.5*(cboxnew(ino3_z)+cboxold(ino3_z)) &
+                    *rk_m3(3)*dtstepc*f_lim
+     prodrog(17)=0.5*(cboxnew(iisop_z)+cboxold(iisop_z))*0.5*(cboxnew(io3_z)+cboxold(io3_z)) &
+                    *rk_m3(2)*dtstepc*f_lim
+
+
+ 
+! prodrog(12) to prodrog(17) are for biogenic species API and LIM
+! Since these species are not available in CBMZ prodrog(12) to prodrog(17) are not calculated
+
+        return
+        end subroutine update_vdrog3_cbmz
  
 !***********************************************************************
 ! < xx.> subr print_gasode_stats

@@ -88,7 +88,6 @@
       USE MODULE_ADVECTION,    ONLY: ADVE, VAD2, HAD2
       USE MODULE_NONHY_DYNAM,  ONLY: VADZ, HADZ
       USE MODULE_DIFFUSION_NMM,ONLY: HDIFF
-      USE MODULE_BNDRY_COND,   ONLY: BOCOH, BOCOV
       USE MODULE_PHYSICS_INIT
       USE MODULE_GWD
 !     USE MODULE_RA_GFDLETA
@@ -2017,6 +2016,7 @@
      &                STBLCPXY=grid%STBLCPXY, FASTCPXY=grid%FASTCPXY,                    & ! Optional Noah-MP
      &                XSAIXY=grid%XSAIXY,                                                & ! Optional Noah-MP
      &                T2MVXY=grid%T2MVXY, T2MBXY=grid%T2MBXY, CHSTARXY=grid%CHSTARXY     & ! Optional Noah-MP
+     &                ,MAXPATCH=1 & ! CLM
      &                )
 
 #ifdef HWRF
@@ -2085,9 +2085,9 @@
 #ifdef HWRF
       IF (.NOT. RESTRT .and. ALLOWED_TO_READ) THEN   !zhang
         moist = 0.0
-        grid%f_ice = grid%f_ice_phy
-        grid%f_rimef = grid%f_rimef_phy
-        grid%f_rain = grid%f_rain_phy
+        if(size(grid%f_ice)>1) grid%f_ice = grid%f_ice_phy
+        if(size(grid%f_rimef)>1) grid%f_rimef = grid%f_rimef_phy
+        if(size(grid%f_rain)>1) grid%f_rain = grid%f_rain_phy
       ENDIF                  !zhang
 #endif
 
@@ -2135,22 +2135,29 @@
                IF (i_m==P_qi .or. i_m==P_qg ) ICE1_indx=.TRUE.
                ICE2_indx=ICE1_indx
                IF (i_m==P_qs) ICE2_indx=.TRUE.
+              IF (ETAMP_Regional .AND. ICE1_indx) THEN
             DO J=JFS,JFE
             DO K=KPS,KPE
             DO I=IFS,IFE
-              IF (ETAMP_Regional .AND. ICE1_indx) THEN
                  moist(I,J,K,p_qs)=moist(I,J,K,p_qs)+moist(I,J,K,i_m)
                  moist(I,J,K,i_m) =0.
+            enddo
+            enddo
+            enddo
+            if(size(grid%f_ice)>1) then
+               DO J=JFS,JFE
+                  DO K=KPS,KPE
+                     DO I=IFS,IFE
+                        grid%f_ice(I,K,J) = grid%f_ice(I,K,J) + moist(I,J,K,i_m)
+                     enddo
+                  enddo
+               enddo
+            endif
               ENDIF
-              IF ( moist(I,J,K,i_m)>EPSQ .AND. ICE2_indx) THEN
-                 grid%f_ice(I,K,J) = grid%f_ice(I,K,J) + moist(I,J,K,i_m)
-              ENDIF
-            enddo
-            enddo
-            enddo
             enddo
             CALL wrf_message(' computing f_rain')
 !
+            if(size(grid%f_ice)>1 .and. size(grid%f_rain)>1) then
             DO J=JFS,JFE
             DO K=KPS,KPE
             DO I=IFS,IFE
@@ -2170,39 +2177,46 @@
             enddo
             enddo
             enddo
+         endif
           ENDIF
         ENDIF
 ! End addition by Greg Thompson
 
-        IF (maxval(grid%f_ice) .gt. 0.) THEN
-         do J=JMS,JME
-         do K=KMS,KME
-         do I=IMS,IME
-          grid%f_ice_phy(I,K,J)=grid%f_ice(I,K,J)
-         enddo
-         enddo
-         enddo
-        ENDIF
+        if(size(grid%f_ice)>1) then
+           IF (maxval(grid%f_ice) .gt. 0.) THEN
+              do J=JMS,JME
+                 do K=KMS,KME
+                    do I=IMS,IME
+                       grid%f_ice_phy(I,K,J)=grid%f_ice(I,K,J)
+                    enddo
+                 enddo
+              enddo
+           ENDIF
+        endif
 
-        IF (maxval(grid%f_rain) .gt. 0.) THEN
-         do J=JMS,JME
-         do K=KMS,KME
-         do I=IMS,IME
-          grid%f_rain_phy(I,K,J)=grid%f_rain(I,K,J)
-         enddo
-         enddo
-         enddo
-        ENDIF
+        if(size(grid%f_rain)>1) then
+           IF (maxval(grid%f_rain) .gt. 0.) THEN
+              do J=JMS,JME
+                 do K=KMS,KME
+                    do I=IMS,IME
+                       grid%f_rain_phy(I,K,J)=grid%f_rain(I,K,J)
+                    enddo
+                 enddo
+              enddo
+           ENDIF
+        endif
 
-        IF (maxval(grid%f_rimef) .gt. 0.) THEN
-          do J=JMS,JME
-          do K=KMS,KME
-          do I=IMS,IME
-            grid%f_rimef_phy(I,K,J)=grid%f_rimef(I,K,J)
-          enddo
-          enddo
-          enddo
-        ENDIF
+        if(size(grid%f_rimef)>1) then
+           IF (maxval(grid%f_rimef) .gt. 0.) THEN
+              do J=JMS,JME
+                 do K=KMS,KME
+                    do I=IMS,IME
+                       grid%f_rimef_phy(I,K,J)=grid%f_rimef(I,K,J)
+                    enddo
+                 enddo
+              enddo
+           ENDIF
+        endif
       ENDIF
 !
       IF (.NOT. RESTRT) THEN

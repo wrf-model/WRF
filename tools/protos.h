@@ -142,7 +142,8 @@ int gen_nest_packing ( char * dirname );
 int gen_nest_pack ( char * dirname );
 int gen_nest_unpack ( char * dirname );
 int gen_nest_packunpack ( FILE *fp , node_t * node , int dir, int down_path );
-int count_fields ( node_t * node , int * d2 , int * d3 ,  char * fourd_names, int down_path );
+int count_fields ( node_t * node , int * d2 , int * d3 ,  
+                   char * fourd_names, int down_path, int send_mp, int no_mp );
 int gen_debug (  char * dirname );
 
 void reset_mask ( unsigned int * mask , int e ) ;

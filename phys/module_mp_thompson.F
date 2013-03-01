@@ -725,7 +725,7 @@
 
       END SUBROUTINE thompson_init
 !+---+-----------------------------------------------------------------+
-!ctrlL
+!
 !+---+-----------------------------------------------------------------+
 !..This is a wrapper routine designed to transfer values from 3D to 1D.
 !+---+-----------------------------------------------------------------+
@@ -1016,7 +1016,7 @@
       END SUBROUTINE mp_gt_driver
 
 !+---+-----------------------------------------------------------------+
-!ctrlL
+!
 !+---+-----------------------------------------------------------------+
 !+---+-----------------------------------------------------------------+
 !.. This subroutine computes the moisture tendencies of water vapor,
@@ -2825,7 +2825,7 @@
 
       end subroutine mp_thompson
 !+---+-----------------------------------------------------------------+
-!ctrlL
+!
 !+---+-----------------------------------------------------------------+
 !..Creation of the lookup tables and support functions found below here.
 !+---+-----------------------------------------------------------------+
@@ -2940,7 +2940,7 @@
 
       end subroutine qr_acr_qg
 !+---+-----------------------------------------------------------------+
-!ctrlL
+!
 !+---+-----------------------------------------------------------------+
 !..Rain collecting snow (and inverse).  Explicit CE integration.
 !+---+-----------------------------------------------------------------+
@@ -3132,7 +3132,7 @@
 
       end subroutine qr_acr_qs
 !+---+-----------------------------------------------------------------+
-!ctrlL
+!
 !+---+-----------------------------------------------------------------+
 !..This is a literal adaptation of Bigg (1954) probability of drops of
 !..a particular volume freezing.  Given this probability, simply freeze
@@ -3214,7 +3214,7 @@
 
       end subroutine freezeH2O
 !+---+-----------------------------------------------------------------+
-!ctrlL
+!
 !+---+-----------------------------------------------------------------+
 !..Cloud ice converting to snow since portion greater than min snow
 !.. size.  Given cloud ice content (kg/m**3), number concentration
@@ -3270,7 +3270,7 @@
       enddo
 
       end subroutine qi_aut_qs
-!ctrlL
+!
 !+---+-----------------------------------------------------------------+
 !..Variable collision efficiency for rain collecting cloud water using
 !.. method of Beard and Grover, 1974 if a/A less than 0.25; otherwise
@@ -3334,7 +3334,7 @@
       enddo
 
       end subroutine table_Efrw
-!ctrlL
+!
 !+---+-----------------------------------------------------------------+
 !..Variable collision efficiency for snow collecting cloud water using
 !.. method of Wang and Ji, 2000 except equate melted snow diameter to
@@ -3378,7 +3378,7 @@
       enddo
 
       end subroutine table_Efsw
-!ctrlL
+!
 !+---+-----------------------------------------------------------------+
 !..Integrate rain size distribution from zero to D-star to compute the
 !.. number of drops smaller than D-star that evaporate in a single
@@ -3446,7 +3446,7 @@
 !         pnr_rev(k) = MIN(nr(k)*odts, SNGL(tnr_rev(idx_d,idx_r1,idx_r) &   ! RAIN2M
 !                    * odts))
 !
-!ctrlL
+!
 !+---+-----------------------------------------------------------------+
 !+---+-----------------------------------------------------------------+
       SUBROUTINE GCF(GAMMCF,A,X,GLN)

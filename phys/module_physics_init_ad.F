@@ -129,9 +129,9 @@ CONTAINS
     INTEGER, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: ivgtyp, &
 &    isltyp
 ! rad
-    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: rthraten&
+    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthraten&
 &    , rthratenlw, rthratensw, cldfra
-    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(OUT) ::&
+    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
 &    cldfra_old
 !EMBCK new
     REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: gsw, albedo, &
@@ -232,9 +232,9 @@ CONTAINS
 !fdda
     REAL, OPTIONAL, INTENT(IN) :: fgdt
     INTEGER, OPTIONAL, INTENT(OUT) :: stepfg
-    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(OUT) ::&
+    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
 &    rundgdten, rvndgdten, rthndgdten, rphndgdten, rqvndgdten
-    REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(OUT) :: &
+    REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(INOUT) :: &
 &    rmundgdten
 !URBAN
 !   REAL, DIMENSION(1:num_roof_layers), INTENT(INOUT) :: DZR   !urban
@@ -870,7 +870,7 @@ CONTAINS
 &    :: cugd_tten, cugd_ttens, cugd_qvten, cugd_qvtens, cugd_qcten
     REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: w0avg
     REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: w0avgb
-    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: rthften, &
+    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthften, &
 &    rqvften
     REAL, DIMENSION(ims:ime, jms:jme) :: rainc, raincv
     REAL, DIMENSION(ims:ime, jms:jme) :: raincb, raincvb

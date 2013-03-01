@@ -4,11 +4,13 @@
 include registry.dimspec
 include Registry.EM_COMMON
 include registry.io_boilerplate
+
 include registry.fire
 include registry.avgflx
 include registry.stoch
 include registry.les
 include registry.cam
+include registry.clm
 include registry.ssib
 package   lscondscheme  mp_physics==98               -             moist:qv;g_moist:g_qv;a_moist:a_qv
 package   mkesslerscheme mp_physics==99              -             moist:qv,qc,qr;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr

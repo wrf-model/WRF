@@ -247,7 +247,7 @@ CONTAINS
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
 
-         DO k=kts,min(kte+1,kde)
+         DO k=kts,kte !min(kte+1,kde) !BSINGH(PNNL)- Undefined behavior at k=kte+1
             u_ndg_old(i,k,j) = u3d(i,k,j)
             v_ndg_old(i,k,j) = v3d(i,k,j)
             t_ndg_old(i,k,j) = th_phy(i,k,j) - 300.0

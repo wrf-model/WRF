@@ -42,7 +42,7 @@
 !  CASENAME = 0   Uses Texas August 2004 case values and profiles
 !             1   Uses same concentrations as TX, but uses different
 !                 profiles depending on the species. (NEAQS2004 case)
-#define CASENAME 0
+#define CASENAME 4
 
 
 MODULE module_input_chem_data
@@ -349,10 +349,11 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
 
 
   case (CBMZ, CBMZ_BB, CBMZ_BB_KPP, &
-        CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_4BIN,  &
+        CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_4BIN_VBS2_KPP,  &
         CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ,CBMZSORG, &
         CBMZSORG_AQ, CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, &
-        CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
+        CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
+		CBMZ_CAM_MAM3_NOAQ, CBMZ_CAM_MAM3_AQ, CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ)
 !    This call works for CBMZ_BB_KPP and CBMZ_SORGAM_KPP if all additional
 !    gas species such as ch4, api, lim etc. are put after ho2 in the
 !    package definitions in registry.chem. This is important to not mess
@@ -975,10 +976,11 @@ SUBROUTINE input_chem_profile (si_grid)
 !
       SELECT CASE(chem_opt)
       CASE (CBMZ,CBMZ_BB,CBMZ_BB_KPP, CBMZ_MOSAIC_KPP, &
-            CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN, &
+            CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN,CBMZ_MOSAIC_4BIN_VBS2_KPP, &
             CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ, &
             CBMZSORG,CBMZSORG_AQ, CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, & 
-            CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
+            CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
+            CBMZ_CAM_MAM3_NOAQ, CBMZ_CAM_MAM3_AQ, CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ)
          do j = ny1,ny2
          do k = nz1,nz2
          do i = nx1,nx2
@@ -1503,6 +1505,7 @@ END SUBROUTINE bdy_chem_value_ghg
 !  spec_zone is the width of the outer specified b.c.s that are set here.
 !  (JD August 2000)
 
+      USE module_cam_mam_initmixrats, only:  bdy_chem_value_cam_mam
       IMPLICIT NONE
 
       INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
@@ -1615,6 +1618,16 @@ END SUBROUTINE bdy_chem_value_ghg
       else if (config_flags%chem_opt==CO2_TRACER .OR. config_flags%chem_opt==GHG_TRACER) then
           i_bdy_method = 16
 !         CALL wrf_message( "For GHGs strongly recommended to include LBCs from a global model!" )
+      else if (config_flags%chem_opt == cbmz_cam_mam3_noaq .or. &
+               config_flags%chem_opt == cbmz_cam_mam3_aq  ) then
+          if ((ic .ge. p_so4_a1) .and. (ic .le. p_num_a3)) then
+              i_bdy_method = 501
+          end if
+      else if (config_flags%chem_opt == cbmz_cam_mam7_noaq .or. &
+               config_flags%chem_opt == cbmz_cam_mam7_aq  ) then
+          if ((ic .ge. p_so4_a1) .and. (ic .le. p_num_a7)) then
+              i_bdy_method = 501
+          end if
       end if
       if (have_bcs_chem) i_bdy_method =6
       if (ic .lt. param_first_scalar) i_bdy_method = 0
@@ -1677,6 +1690,11 @@ END SUBROUTINE bdy_chem_value_ghg
                    CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bys(i,k,1),chem_btys(i,k,1),dt,ic)
                 else if (i_bdy_method .eq. 16) then
                    CALL bdy_chem_value_ghg ( chem(i,k,j), ic ) 
+                else if (i_bdy_method .eq. 501) then
+                   tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
+                   convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
+                   CALL bdy_chem_value_cam_mam(   &
+                        chem(i,k,j), z(i,k,j), ic, config_flags, alt(i,k,j), convfac, g )
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -1724,6 +1742,11 @@ END SUBROUTINE bdy_chem_value_ghg
                    chem(i,k,j) = 0.
                 else if (i_bdy_method .eq. 16) then
                    CALL bdy_chem_value_ghg ( chem(i,k,j), ic )  ! For GHGs
+                else if (i_bdy_method .eq. 501) then
+                   tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
+                   convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
+                   CALL bdy_chem_value_cam_mam(   &
+                        chem(i,k,j), z(i,k,j), ic, config_flags, alt(i,k,j), convfac, g )
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -1772,6 +1795,11 @@ END SUBROUTINE bdy_chem_value_ghg
                    chem(i,k,j) = 0.
                 else if (i_bdy_method .eq. 16) then
                    CALL bdy_chem_value_ghg ( chem(i,k,j), ic )  ! For GHGs
+                else if (i_bdy_method .eq. 501) then
+                   tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
+                   convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
+                   CALL bdy_chem_value_cam_mam(   &
+                        chem(i,k,j), z(i,k,j), ic, config_flags, alt(i,k,j), convfac, g )
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -1820,6 +1848,11 @@ END SUBROUTINE bdy_chem_value_ghg
                    chem(i,k,j) = 0.
                 else if (i_bdy_method .eq. 16) then
                    CALL bdy_chem_value_ghg ( chem(i,k,j), ic ) ! For GHGs
+                else if (i_bdy_method .eq. 501) then
+                   tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
+                   convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
+                   CALL bdy_chem_value_cam_mam(   &
+                        chem(i,k,j), z(i,k,j), ic, config_flags, alt(i,k,j), convfac, g )
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
@@ -2529,7 +2562,7 @@ END SUBROUTINE bdy_chem_value_ghg
 	   GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
         get_last_gas = p_ho2
 
-     case (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
+     case (CBMZ_MOSAIC_4BIN_VBS2_KPP, SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
         get_last_gas = p_ch4
 
 
@@ -2570,7 +2603,8 @@ END SUBROUTINE bdy_chem_value_ghg
 
      case (CO2_TRACER,GHG_TRACER) ! No gas chemistry or deposition for GHGs
         get_last_gas = 0
-
+     case ( CBMZ_CAM_MAM3_NOAQ, CBMZ_CAM_MAM3_AQ, CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ )
+        get_last_gas = p_soag
      case default
         call wrf_error_fatal("get_last_gas: could not decipher chem_opt value")
 

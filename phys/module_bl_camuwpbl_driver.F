@@ -1,5 +1,27 @@
+#define MODAL_AERO
 MODULE module_bl_camuwpbl_driver
-  !Note: Comments starting with "!!" are directly taken from CAM's interface routine for the UW PBL
+  !Note: Comments starting with "!!" are directly taken from CAM's interface routine for the UW PBL (vertical_diffusion.F90)
+  !This modules is based on vertical_diffusion.F90 of CAM5
+
+  !List of possible modifications in the future:
+  !_____________________________________________
+  !1. Constituents(per Kg of DRY air or "dry" constituents) are not diffused currently. The call which 
+  !   makes DRY constituents diffusion decision flag 'true' is commented out in camuwpblinit subroutine. 
+  !   Therefore the flag is ALWAYS false for DRY constituent diffusion.
+  !
+  !   REASON: DRY constituents are Aerosols and other species (excepts for cloud mass mixing ratios and number concentrations).
+  !   ------  In WRF, DRY constituents appear only when WRF_CHEM simulations are run. DRY constituents are vertically mixed(diffused)
+  !           in dry_dep_driver of WRF_CHEM. Therefore, DRY constituents are not diffused in this PBL subroutine
+  !
+  !2. The liquid number concentrations is NOT diffused(or mixed) in PBL to mimic CAM5, which diffuses liquid number 
+  !   concentrations in dropmixnuc. 
+  !3. Surface fluxes for ALL the constituents are ZERO except for the water vapours (1st constituent)
+  !4. Molecular diffusion is turned off for now
+  !5. Mountain stresses are not computed for now (all calls to Mountain stresses currently may hold undefined variables)
+  !6. *Formulas used for computing surface stresses is based on the formula given in CAM5's BareGround.F90.
+  !   This formula may not work well for ocean surfaces (possible future modification)
+  !_____________________________________________
+
 
   !!----------------------------------------------------------------------------------------------------- !
   !! Module to compute vertical diffusion of momentum,  moisture, trace constituents                      !
@@ -33,7 +55,7 @@ MODULE module_bl_camuwpbl_driver
   !!----------------------------------------------------------------------------------------------------- !
 
   use shr_kind_mod,       only : r8 => shr_kind_r8
-  use module_cam_support, only : pcols, pver, pverp, endrun, iulog,fieldname_len,pcnst
+  use module_cam_support, only : pcols, pver, pverp, endrun, iulog,fieldname_len,pcnst =>pcnst_runtime
   use constituents,       only : qmin
   use diffusion_solver,   only : vdiff_selector
   use physconst,          only :          &
@@ -81,6 +103,7 @@ MODULE module_bl_camuwpbl_driver
   logical              :: do_molec_diff = .false.      !! Switch for molecular diffusion
   logical              :: do_tms                       !! Switch for turbulent mountain stress
   real(r8)             :: tms_orocnst                  !! Converts from standard deviation to height
+  real(r8)             :: tms_z0fac                    ! Converts from standard deviation to height
   
   type(vdiff_selector) :: fieldlist_wet                !! Logical switches for moist mixing ratio diffusion
   type(vdiff_selector) :: fieldlist_dry                !! Logical switches for dry mixing ratio diffusion
@@ -92,24 +115,32 @@ MODULE module_bl_camuwpbl_driver
  
   integer              :: ixcldice, ixcldliq           !! Constituent indices for cloud liquid and ice water
   integer              :: ixnumice, ixnumliq
-  integer              :: wgustd_index
-  logical              :: vd_registered = .false.      !! Detect if vd_register called
-  
-  
+#ifdef MODAL_AERO
+  integer              :: ixndrop
+#endif
+  integer              :: wgustd_index   
 CONTAINS
   
-  subroutine camuwpbl(dt,u_phy,v_phy,th_phy,rho,qv_curr,hfx             &
-       ,qfx,ustar,rublten,rvblten,rthblten,rqvblten,rqcblten            & 
-       ,tke_pbl,pblh2d,kpbl2d,p8w,p_phy,z,t_phy,qc_curr,qi_curr,z_at_w  &
-       ,cldfra,ht,rthratenlw,exner,itimestep,tauresx2d,tauresy2d,kvh3d  &
-       ,kvm3d,tpert2d,qpert2d,wpert2d                                   & 
-       ,ids,ide, jds,jde, kds,kde                                       &
-       ,ims,ime, jms,jme, kms,kme                                       &
-       ,its,ite, jts,jte, kts,kte)                    
-
+  subroutine camuwpbl(dt,u_phy,v_phy,th_phy,rho,qv_curr,hfx,qfx,ustar,p8w &
+       ,p_phy,z,t_phy,qc_curr,qi_curr,z_at_w,cldfra_old_mp,cldfra,ht      &
+       ,rthratenlw,exner,is_CAMMGMP_used                                  &
+       ,itimestep,qnc_curr,qni_curr,wsedl3d                               &
+       ,ids,ide, jds,jde, kds,kde                                         &
+       ,ims,ime, jms,jme, kms,kme                                         &
+       ,its,ite, jts,jte, kts,kte                                         &
+!Intent-inout 
+       ,tauresx2d,tauresy2d,exch_h8w,exch_m8w                             &
+       ,rublten,rvblten,rthblten,rqiblten,rqniblten,rqvblten,rqcblten     &
+!Intent-out
+       ,tpert2d,qpert2d,wpert2d,smaw3d,turbtype3d,tke_pbl8w               &
+       ,tke_pbl,pblh2d,kpbl2d,kvh3d,kvm3d)  
 
     !!---------------------------------------------------- !
     !! This is an interface routine for vertical diffusion !
+    !  This subroutine is called by module_pbl_driver and  !
+    !  it calls: wrf_error_fatal,compute_tms,              !
+    !  compute_eddy_diff,aqsat,compute_vdiff and           !
+    !  positive_moisture.
     !!---------------------------------------------------- !
     use module_cam_support,    only : pcols
     use trb_mtn_stress,        only : compute_tms
@@ -118,12 +149,16 @@ CONTAINS
     use molec_diff,            only : compute_molec_diff, vd_lu_qdecomp
     use constituents,          only : qmincg, qmin
     use diffusion_solver !!, only : compute_vdiff, any, operator(.not.)
+#ifdef MODAL_AERO
+    use modal_aero_data
+#endif
     
     implicit none   
     
     !------------------------------------------------------------------------!
     !                             Input                                      !
     !------------------------------------------------------------------------!
+    logical, intent(in) :: is_CAMMGMP_used
     integer, intent(in) :: ids,ide, jds,jde, kds,kde
     integer, intent(in) :: ims,ime, jms,jme, kms,kme
     integer, intent(in) :: its,ite, jts,jte, kts,kte
@@ -131,41 +166,52 @@ CONTAINS
 
     real, intent(in) :: dt                                                ! Time step (s)
     
-    real, dimension( ims:ime,jms:jme ), intent(in) :: ustar               ! Friction velocity (m/s)
-    real, dimension( ims:ime,jms:jme ), intent(in) :: hfx                 ! Sensible heat flux at surface (w/m2)
-    real, dimension( ims:ime,jms:jme ), intent(in) :: qfx                 ! Moisture      flux at surface (kg m-2 s-1)
-    real, dimension( ims:ime,jms:jme ), intent(in) :: ht                  ! Terrain height (m)
+    real, dimension( ims:ime,jms:jme ), intent(in) :: hfx                   !Sensible heat flux at surface (w/m2)
+    real, dimension( ims:ime,jms:jme ), intent(in) :: qfx                   !Moisture      flux at surface (kg m-2 s-1)
+    real, dimension( ims:ime,jms:jme ), intent(in) :: ustar                 !Friction velocity (m/s)
+    real, dimension( ims:ime,jms:jme ), intent(in) :: ht                    !Terrain height (m)
 
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: v_phy       !Y-component of wind (m/s)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: u_phy       !X-component of wind (m/s)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: th_phy      !Potential temperature (K)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: rho         !Air density (kg/m3)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: qv_curr     !Water vapor mixing ratio - Moisture  (kg/kg)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: qc_curr     !Cloud water mixing ratio - Cloud liq (kg/kg)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: qi_curr     !Ice mixing ratio         - Cloud ice  (kg/kg)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: qnc_curr    !Liq # mixing ratio       - Cloud liq #  (#/kg)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: qni_curr    !Ice # mixing ratio       - Cloud ice #  (#/kg)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: p_phy       !Pressure at mid-level (Pa)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: p8w         !Pressure at level interface (Pa)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: z           !Height above sea level at mid-level (m) 
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: t_phy       !Temperature (K)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: z_at_w      !Height above sea level at layer interfaces (m) 
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: cldfra_old_mp !Cloud fraction [unitless]
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: cldfra      !Cloud fraction [unitless]
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: exner       !Dimensionless pressure [unitless]
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: rthratenlw  !Tendency for LW ( K/s)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: wsedl3d     !Sedimentation velocity of stratiform liquid cloud droplet (m/s)
 
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: rho       ! Air density (kg/m3)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: th_phy    ! Potential temperature (K)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: u_phy     ! X-component of wind (m/s)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: v_phy     ! Y-component of wind (m/s)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: p_phy     ! Pressure at mid-level (Pa)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: p8w       ! Pressure at level interface (Pa)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: z         ! Height above sea level at mid-level (m) 
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: t_phy     ! temperature (K)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: qv_curr   ! Water vapor mixing ratio - Moisture  (kg/kg)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: qc_curr   ! Cloud water mixing ratio - Cloud liq (kg/kg)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: qi_curr   ! Ice mixing ratio         -Cloud ice  (kg/kg)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: z_at_w    ! Height above sea level at layer interfaces (m) 
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: cldfra    ! Cloud fraction [unitless]
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: exner     ! Dimensionless pressure [unitless]
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: rthratenlw  ! Tendency for LW ( K/s)
     
     
     !------------------------------------------------------------------------!
     !                          Output                                        !
     !------------------------------------------------------------------------!   
-    integer, dimension( ims:ime,jms:jme ), intent(out) :: kpbl2d          ! Layer index containing PBL top within or at the base interface
-    real,    dimension( ims:ime,jms:jme ), intent(out) :: pblh2d          ! Planetary boundary layer height (m)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: rublten     !Tendency for u_phy   (Pa m s-2)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: rvblten     !Tendency for v_phy   (Pa m s-2)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: rthblten    !Tendency for th_phy  (Pa K s-1)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: rqvblten    !Tendency for qv_curr (Pa kg kg-1 s-1)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: rqcblten    !Tendency for qc_curr (Pa kg kg-1 s-1)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: rqiblten    !Tendency for qi_curr (Pa kg kg-1 s-1)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: rqniblten   !Tendency for qni_curr(Pa # kg-1 s-1)
 
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: rublten  !Tendency for u_phy   (Pa m s-2)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: rvblten  !Tendency for v_phy   (Pa m s-2)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: rthblten !Tendency for th_phy  (Pa K s-1)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: rqvblten !Tendency for qv_curr (Pa kg kg-1 s-1)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: rqcblten !Tendency for qc_curr (Pa kg kg-1 s-1)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: tke_pbl  !Turbulence kinetic energy from PBL scheme (m^2/s^2)
+    integer, dimension( ims:ime,jms:jme ), intent(out) :: kpbl2d !Layer index containing PBL top within or at the base interface
+    real,    dimension( ims:ime,jms:jme ), intent(out) :: pblh2d !Planetary boundary layer height (m)
+
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: tke_pbl8w   !Turbulence kinetic energy at interfaces (m^2/s^2)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: tke_pbl     !Turbulence kinetic energy at midpoints  (m^2/s^2)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: turbtype3d  !Turbulent interface types [ no unit ]
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: smaw3d      !Normalized Galperin instability function for momentum  ( 0<= <=4.964 and 1 at neutral ) [no units]
+        
 
     
     !---------------------------------------------------------------------------!
@@ -177,7 +223,10 @@ CONTAINS
     real, dimension( ims:ime, jms:jme )         , intent(out)   :: qpert2d             ! Convective humidity excess (kg/kg)
     real, dimension( ims:ime, jms:jme )         , intent(out)   :: wpert2d             ! Turbulent velocity excess (m/s)
 
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: kvm3d,kvh3d         !Eddy diffusivity for momentum and heat(m^2/s)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(out)   :: kvm3d,kvh3d         !Eddy diffusivity for momentum and heat(m^2/s)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: exch_h8w            !Eddy diffusivity at interfaces for heat(m^2/s)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: exch_m8w            !Eddy diffusivity at interfaces for momentum(m^2/s)
+
 
     !---------------------------------------------------------------------------!
     !                               Local                                       !
@@ -186,12 +235,12 @@ CONTAINS
     character(128) :: errstring                              ! Error status for compute_vdiff
     logical        :: kvinit                                 ! Tell compute_eddy_diff/ caleddy to initialize kvh, kvm (uses kvf)
     logical        :: is_first_step                          ! Flag to know if this a first time step
-    integer        :: i,j,k,itsp1,itile_len,ktep1,kflip,ncol,ips 
+    integer        :: i,j,k,itsp1,itile_len,ktep1,kflip,ncol,ips,icnst,m,kp1
     integer        :: lchnk                                  ! Chunk identifier
-    integer        :: pcnstmax                               ! Max number of constituents considered
-    real(r8)       :: tauFac, uMean, dp
+    real(r8)       :: tauFac, uMean, dp, multFrc
     real(r8)       :: ztodt                                  ! 2*delta-t (s)
     real(r8)       :: rztodt                                 ! 1./ztodt (1/s)
+	real(r8),parameter :: invalidVal = -999888777.0_r8
 
     real(r8) :: topflx(  pcols)                              ! Molecular heat flux at top interface                                                
     real(r8) :: wpert(   pcols)                              ! Turbulent velocity excess (m/s)
@@ -255,6 +304,7 @@ CONTAINS
     real(r8) :: rpdel8(     pcols,kte)                       ! Inverse of pressure difference (1/Pa)
     real(r8) :: pdel8(      pcols,kte)                       ! Pressure difference (Pa) 
     real(r8) :: rpdeldry8(  pcols,kte)                       ! Inverse of dry pressure difference (1/Pa)
+    real(r8) :: pdeldry8(   pcols,kte)                       ! dry pressure difference (1/Pa)
     REAL(r8) :: stnd(       pcols,kte)                       ! Heating rate (dry static energy tendency, W/kg)
     
     real(r8) :: tke8(     pcols,kte+1)                       ! Turbulent kinetic energy [ m2/s2 ]
@@ -275,130 +325,40 @@ CONTAINS
     real(r8) :: pintdry8( pcols,kte+1)                       ! Dry pressure at the interfaces in CAM's data structure (Pa)
     real(r8) :: zi8(      pcols,kte+1)                       ! Height at the interfacesin CAM's data structure  (m)
 
-    real(r8) :: cloud(     pcols,kte,3)                      ! Holder for cloud water and ice (q in cam)
-    real(r8) :: cloudtnd(  pcols,kte,3)                      ! Holder for cloud tendencies (ptend_loc%q in cam)
+    real(r8) :: cloud(     pcols,kte,pcnst)                      ! Holder for cloud water and ice (q in cam)
+    real(r8) :: cloudtnd(  pcols,kte,pcnst)                      ! Holder for cloud tendencies (ptend_loc%q in cam)
     real(r8) :: wind_tends(pcols,kte,2)                      ! Wind component tendencies (m/s2)
 
     real(r8) :: cflx(pcols,pcnst)                            ! Surface constituent flux [ kg/m2/s ]
     
-
+#ifdef MODAL_AERO
+    real(r8) :: tmp1(pcols)                                         ! Temporary storage
+    integer  :: l, lspec
+#endif
     !! ----------------------- !
     !! Main Computation Begins !
     !! ----------------------- !
+
+    do icnst = 1 , pcnst
+       !Setting curface fluxes for all constituents to be zero. Later, cflx(:,1) is populated by the water vapour surface flux
+       cflx(:pcols,icnst)  = 0.0_r8
+    enddo
 
     is_first_step  = .false.
     if(itimestep == 1) then
        is_first_step = .true.
     endif
-    !-------------------------------------------------------------------------------------!
-    !Declare maximum number of constituents to be considered. pcnst is 7 in WRF but we are! 
-    !using 1 constituent as we have cflx for only water vapours                                                                 !
-    !-------------------------------------------------------------------------------------!
-
-    pcnstmax      = 1
-    
     ncol   = pcols
-    ztodt  = 2.0_r8 * DT
+    ztodt  = DT
     rztodt = 1.0_r8 / ztodt
-
 
     !Few definitions in this subroutine require that ncol==1
     if(ncol .NE. 1) then
        call wrf_error_fatal('Number of CAM Columns (NCOL) in CAMUWPBL scheme must be 1')
     endif
 
-    !Initialize all variables which will be used by CAM's modules to zero
-    !This is done to avoid any uninitialized variable
-    
+    !Initialize errstring
     errstring = ''
-    topflx(  :) = 0.0_r8
-    wpert(   :) = 0.0_r8
-    tauresx( :) = 0.0_r8
-    tauresy( :) = 0.0_r8
-    ipbl(    :) = 0.0_r8
-    kpblh(   :) = 0.0_r8
-    wstarPBL(:) = 0.0_r8
-    sgh(     :) = 0.0_r8
-    landfrac(:) = 0.0_r8
-    taux(    :) = 0.0_r8
-    tauy(    :) = 0.0_r8
-    tautotx( :) = 0.0_r8
-    tautoty( :) = 0.0_r8
-    ksrftms( :) = 0.0_r8
-    tautmsx( :) = 0.0_r8
-    tautmsy( :) = 0.0_r8
-    ustar8(  :) = 0.0_r8
-    pblh(    :) = 0.0_r8
-    tpert(   :) = 0.0_r8
-    qpert(   :) = 0.0_r8
-    shflx(   :) = 0.0_r8
-    phis(    :) = 0.0_r8
-
-
-    cldn8(      :,:) = 0.0_r8                     
-    qrl8(       :,:) = 0.0_r8                                          
-    wsedl8(     :,:) = 0.0_r8                                          
-    dtk(        :,:) = 0.0_r8                                          
-    qt(         :,:) = 0.0_r8                                          
-    sl_prePBL(  :,:) = 0.0_r8                                            
-    qt_prePBL(  :,:) = 0.0_r8                                            
-    slten(      :,:) = 0.0_r8                                            
-    qtten(      :,:) = 0.0_r8                                            
-    sl(         :,:) = 0.0_r8                                                                   
-    ftem(       :,:) = 0.0_r8                                            
-    ftem_prePBL(:,:) = 0.0_r8                            
-    ftem_aftPBL(:,:) = 0.0_r8                            
-    tem2(       :,:) = 0.0_r8                            
-    t_aftPBL(   :,:) = 0.0_r8                            
-    tten(       :,:) = 0.0_r8                           
-    rhten(      :,:) = 0.0_r8                           
-    qv_aft_PBL( :,:) = 0.0_r8                           
-    ql_aft_PBL( :,:) = 0.0_r8                           
-    qi_aft_PBL( :,:) = 0.0_r8                     
-    s_aft_PBL(  :,:) = 0.0_r8                     
-    u_aft_PBL(  :,:) = 0.0_r8                     
-    v_aft_PBL(  :,:) = 0.0_r8                     
-    qv_pro(     :,:) = 0.0_r8                     
-    ql_pro(     :,:) = 0.0_r8                           
-    qi_pro(     :,:) = 0.0_r8                     
-    s_pro(      :,:) = 0.0_r8                     
-    t_pro(      :,:) = 0.0_r8                     
-    u8(         :,:) = 0.0_r8                     
-    v8(         :,:) = 0.0_r8                           
-    t8(         :,:) = 0.0_r8                     
-    pmid8(      :,:) = 0.0_r8                     
-    pmiddry8(   :,:) = 0.0_r8                     
-    zm8(        :,:) = 0.0_r8                     
-    exner8(     :,:) = 0.0_r8                     
-    s8(         :,:) = 0.0_r8                     
-    rpdel8(     :,:) = 0.0_r8                     
-    pdel8(      :,:) = 0.0_r8                     
-    rpdeldry8(  :,:) = 0.0_r8                     
-    stnd(       :,:) = 0.0_r8                           
-    
-    tke8(     :,:) = 0.0_r8                             
-    turbtype( :,:) = 0.0_r8                             
-    smaw(     :,:) = 0.0_r8                             
-                          
-    cgs(      :,:) = 0.0_r8                             
-    cgh(      :,:) = 0.0_r8                             
-    kvh(      :,:) = 0.0_r8                             
-    kvm(      :,:) = 0.0_r8                             
-    kvq(      :,:) = 0.0_r8                             
-    kvh_in(   :,:) = 0.0_r8                             
-    kvm_in(   :,:) = 0.0_r8                             
-    bprod(    :,:) = 0.0_r8                             
-    sprod(    :,:) = 0.0_r8                             
-    sfi(      :,:) = 0.0_r8                             
-    pint8(    :,:) = 0.0_r8                             
-    pintdry8( :,:) = 0.0_r8        
-    zi8(      :,:) = 0.0_r8       
-
-    cloud(     :,:,:) = 0.0_r8   
-    cloudtnd(  :,:,:) = 0.0_r8   
-    wind_tends(:,:,:) = 0.0_r8   
-    tke_pbl(   :,:,:) = 0.0_r8 
-    cflx(:,:)         = 0.0_r8
 
     
     !-------------------------------------------------------------------------------------!
@@ -417,14 +377,20 @@ CONTAINS
           ktep1 = kte + 1
           do k  = kts,kte
              kflip               = ktep1 - k
+             
+             !Loop is used as vector assignment may take more computational time
+             do icnst = 1 , pcnst
+                !Setting cloud and cloudtnd to values (obtained from module_cam_support) which should produce errors if used 
+                !1st,2nd,3rd and 5th constituents are used (see the assignments below) and diffused presently in this scheme
+                cloud(1,kflip,icnst)    = invalidVal
+                cloudtnd(1,kflip,icnst) = invalidVal
+             enddo
 
              u8(      1,kflip)   = u_phy(i,k,j)  ! X-component of velocity at the mid-points (m/s) [state%u in CAM]
              v8(      1,kflip)   = v_phy(i,k,j)  ! Y-component of velocity at the mid-points (m/s) [state%v in CAM]
 
              pmid8(   1,kflip)   = p_phy(i,k,j)  ! Pressure     at the mid-points    (Pa)      [state%pmid    in CAM]  
              
-             !The following pmiddry mapping is wrong. Presently, it is not being used in the computations
-             pmiddry8(1,kflip)   = p_phy(i,k,j)  ! Dry pressure at the mid-points    (Pa)      [state%pmiddry in CAM]
              dp                  = p8w(i,k,j) - p8w(i,k+1,j) !Change in pressure (Pa) 
              pdel8(  1,kflip)    = dp
              rpdel8(  1,kflip)   = 1.0_r8/dp     ! Reciprocal of pressure difference (1/Pa)     [state%rpdel in CAM]
@@ -434,29 +400,35 @@ CONTAINS
              s8(      1,kflip)   = cpair *t8(1,kflip) + gravit*zm8(1,kflip) + phis(1) ! Dry static energy (m2/s2) [state%s in CAM]-Formula tested in vertical_diffusion.F90 of CAM
              qrl8(    1,kflip)   = rthratenlw(i,k,j)* cpair * dp ! Long Wave heating rate (W/kg*Pa)- Formula obtained from definition of qrlw(pcols,pver) in eddy_diff.F90 in CAM
 
-             !The following is set to zero currently. This value should be passed on from the microphysics subroutine in future
-             wsedl8(  1,kflip)   = 0.0_r8                    ! Sedimentation velocity of stratiform liquid cloud droplet (m/s)
-
+             wsedl8(  1,kflip)   = wsedl3d(i,k,j)               ! Sedimentation velocity of stratiform liquid cloud droplet (m/s)
+             
              !Following three formulas are obtained from ported CAM's ZM cumulus scheme
              !Values of 0 cause a crash in entropy
-             cloud( 1,kflip,1) = max( qv_curr(i,k,j)/(1.+qv_curr(i,k,j)), 1e-30 ) !Specific humidity                       [state%q(:,:,1) in CAM]
-             cloud( 1,kflip,2) = qc_curr(i,k,j)/(1.+qv_curr(i,k,j))               !Convert to moist mix ratio-cloud liquid [state%q(:,:,2) in CAM]
-             cloud( 1,kflip,3) = qi_curr(i,k,j)/(1.+qv_curr(i,k,j))               !cloud ice                               [state%q(:,:,3) in CAM]
+             multFrc                  =  1._r8/(1._r8 + qv_curr(i,k,j))
+             cloud( 1,kflip,1)        = max( qv_curr(i,k,j) * multFrc, 1.0e-30_r8 ) !Specific humidity                       [state%q(:,:,1) in CAM]
+             cloud( 1,kflip,ixcldliq) = qc_curr(i,k,j)  * multFrc              !Convert to moist mix ratio-cloud liquid [state%q(:,:,2) in CAM]
+             cloud( 1,kflip,ixcldice) = qi_curr(i,k,j)  * multFrc              !cloud ice                               [state%q(:,:,3) in CAM]
+             cloud( 1,kflip,ixnumliq) = qnc_curr(i,k,j) * multFrc 
+             cloud( 1,kflip,ixnumice) = qni_curr(i,k,j) * multFrc 
 
              exner8(1,kflip)   = exner(i,k,j)   !Exner function (no units)
-             cldn8( 1,kflip)   = cldfra(i,k,j)  !Cloud fraction (no unit)
+             if(is_CAMMGMP_used) then
+                cldn8( 1,kflip)   = cldfra_old_mp(i,k,j)  !Cloud fraction (no unit)
+             else
+                cldn8( 1,kflip)   = cldfra(i,k,j)  !Cloud fraction (no unit)
+             endif
+
+             !Following formula is obtained from physics_types.F90 of CAM (CESM101)
+             pdeldry8(1,kflip)    =  pdel8(1,kflip)*(1._r8-cloud(1,kflip,1))            
+             rpdeldry8(1,kflip)   =  1._r8/pdeldry8(1,kflip)
 
           enddo
           
-          !Future work: Merge the above and below do-loops to avoid extra do-loop, if possible
-
           do k = kts,kte+1
              kflip = kte - k + 2
 
              pint8(   1,kflip) = p8w(   i,k,j) ! Pressure at interfaces [state%pint in CAM]
 
-             !The following pintdry mapping is wrong.Presently, it is not being used in the computations
-             pintdry8(1,kflip) = p8w(   i,k,j) ! Dry pressure at interfaces [state%pintdry in CAM] 
              zi8(     1,kflip) = z_at_w(i,k,j) -ht(i,j) ! Height at interfaces [state%zi   in CAM]
 
              !Initialize Variables to zero, these are outputs from the "compute_eddy_diff" 
@@ -464,11 +436,19 @@ CONTAINS
              cgh(1,kflip)   = 0.0_r8        ! Counter-gradient term for heat
              cgs(1,kflip)   = 0.0_r8        ! Counter-gradient star     (cg/flux)
              if( is_first_step ) then
-                kvh3d(i,k,j) = 0.0_r8     ! Eddy diffusivity for heat     (m2/s)
-                kvm3d(i,k,j) = 0.0_r8     ! Eddy diffusivity for momentum (m2/s)
+                exch_h8w(i,k,j) = 0.0_r8     ! Eddy diffusivity for heat     (m2/s)
+                exch_m8w(i,k,j) = 0.0_r8     ! Eddy diffusivity for momentum (m2/s)
              endif
-             kvh(1,kflip)   = kvh3d(i,k,j)  
-             kvm(1,kflip)   = kvm3d(i,k,j)  
+             kvh(1,kflip)   = exch_h8w(i,k,j)  
+             kvm(1,kflip)   = exch_m8w(i,k,j)  
+          end do
+
+          !Compute pintdry8 and pmiddry8
+          !Following formula is obtained from physics_types.F90 of CAM (CESM101)
+          pintdry8(1,1) = pint8(1,1)          
+          do k = 1, pver
+             pintdry8(1,k+1) =  pintdry8(1,k)  + pdeldry8(1,k)
+             pmiddry8(1,k)   = (pintdry8(1,k+1)+ pintdry8(1,k))*0.5_r8
           end do
 
           shflx(   ncol) = hfx(i,j)  ! Surface sensible heat flux (w/m2) 
@@ -521,8 +501,7 @@ CONTAINS
           endif
           
           !-------------------------------------------------------------------------------------!
-          !We are currenly using just water vapour flux at the surface, therefore we will use   !
-          !just one constituent for the flux                                                        !
+          !We are currenly using just water vapour flux at the surface, rest are set to zero
           !-------------------------------------------------------------------------------------!
           cflx(:pcols,1)   = qfx(i,j) ! Surface constituent flux (kg/m2/s)
           
@@ -574,8 +553,8 @@ CONTAINS
              do k = kts,kte+1
                 kflip          = kte - k + 2
                 
-                kvh3d(i,k,j)   = kvh(1,kflip)
-                kvm3d(i,k,j)   = kvm(1,kflip)  
+                exch_h8w(i,k,j)   = kvh(1,kflip)
+                exch_m8w(i,k,j)   = kvm(1,kflip)  
              end do
              
              
@@ -613,7 +592,7 @@ CONTAINS
           !! Note that the output 'tauresx,tauresy' from below subroutines are fully implicit ones.
 
           if( any(fieldlist_wet) ) then
-             call compute_vdiff( lchnk, pcols, pver, pcnstmax, ncol, pmid8, pint8, rpdel8, t8, ztodt, &
+             call compute_vdiff( lchnk, pcols, pver, pcnst, ncol, pmid8, pint8, rpdel8, t8, ztodt, &
                   taux, tauy, shflx, cflx, ntop, nbot, kvh, kvm, kvq, cgs, cgh, zi8, ksrftms, qmincg, &
                   fieldlist_wet, wind_tends(:,:,1), wind_tends(:,:,2), cloudtnd, stnd, tautmsx,       &
                   tautmsy, dtk, topflx, errstring, tauresx, tauresy, 1, do_molec_diff,                &
@@ -630,7 +609,7 @@ CONTAINS
                 call wrf_error_fatal(errstring)
              end if
              
-             call compute_vdiff( lchnk, pcols, pver, pcnstmax, ncol, pmiddry8, pintdry8, rpdeldry8, t8, &
+             call compute_vdiff( lchnk, pcols, pver, pcnst, ncol, pmiddry8, pintdry8, rpdeldry8, t8, &
                   ztodt, taux, tauy, shflx, cflx, ntop, nbot, kvh, kvm, kvq, cgs, cgh, zi8, ksrftms,    &
                   qmincg, fieldlist_dry, wind_tends(:,:,1), wind_tends(:,:,2), cloudtnd, stnd, tautmsx, &
                   tautmsy, dtk, topflx, errstring, tauresx, tauresy, 1, do_molec_diff,                  &
@@ -640,10 +619,28 @@ CONTAINS
 
           end if
           
-          ! Store updated tauresx, tauresy to use here on the next timestep
+          !! Store updated tauresx, tauresy to use here on the next timestep
           tauresx2d(i,j) = tauresx(ncol)
           tauresy2d(i,j) = tauresy(ncol)
+
+#ifdef MODAL_AERO
           
+          !! Add the explicit surface fluxes to the lowest layer
+          !! Modification : I should check whether this explicit adding is consistent with
+          !!                the treatment of other tracers.
+
+          !The following code is commented out as the diffusion for the Aerosols and other species is handled by CAMMGMP and WRF_CHEM's dry_dep_driver subroutines          
+          !tmp1(:ncol) = ztodt * gravit * rpdel8(:ncol,pver)
+          !do m = 1, ntot_amode
+          !   l = numptr_amode(m)
+          !   cloudtnd(:ncol,pver,l) = cloudtnd(:ncol,pver,l) + tmp1(:ncol) * cflx(:ncol,l)
+          !   do lspec = 1, nspec_amode(m)
+          !      l = lmassptr_amode(lspec,m)
+          !      cloudtnd(:ncol,pver,l) = cloudtnd(:ncol,pver,l) + tmp1(:ncol) * cflx(:ncol,l)
+          !   enddo
+          !enddo
+          
+#endif          
           !! -------------------------------------------------------- !
           !! Diagnostics and output writing after applying PBL scheme !
           !! -------------------------------------------------------- !
@@ -723,24 +720,42 @@ CONTAINS
           rhten(:ncol,:pver)       = ( ftem_aftPBL(:ncol,:pver) - ftem_prePBL(:ncol,:pver) )          * rztodt 
 
 
-          !Post processing of the output from CAM 
+          !Post processing of the output from CAM's parameterization
           do k=kts,kte
           
              kflip = kte-k+1
              
-             rublten(i,k,j)  = wind_tends(1,kflip,1)
-             rvblten(i,k,j)  = wind_tends(1,kflip,2)
-             rthblten(i,k,j) = stnd(1,kflip)/cpair/exner8(1,kflip)
-             !rqvblten tendency is making the code unstable. Assigned zero for now.Still looking into this issue...
-             !rqiblten tendency computed but not output (JD) ? also above comment may be no longer valid
-             rqvblten(i,k,j) = cloudtnd(1,kflip,1)/(1. - qv_curr(i,k,j))
-             rqcblten(i,k,j) = cloudtnd(1,kflip,2)/(1. - qv_curr(i,k,j))
-             tke_pbl (i,k,j) = tke8(1,kflip)
-             !if(k==kts+10)print*,i,j,k,rublten(i,k,j),rvblten(i,k,j), rqvblten(i,k,j),rqcblten(i,k,j) ,tke_pbl (i,k,j)
-                          
+             rublten(i,k,j)    = wind_tends(1,kflip,1)
+             rvblten(i,k,j)    = wind_tends(1,kflip,2)
+             rthblten(i,k,j)   = stnd(1,kflip)/cpair/exner8(1,kflip)
+             
+             multFrc           =  1._r8/(1._r8 - qv_curr(i,k,j))
+
+             rqvblten(i,k,j)   = cloudtnd(1,kflip,1       ) * multFrc
+             rqcblten(i,k,j)   = cloudtnd(1,kflip,ixcldliq) * multFrc
+             rqiblten(i,k,j)   = cloudtnd(1,kflip,ixcldice) * multFrc
+             !*Important* : ixnumliq is mixed in the dropmixnuc, therefore ixnumliq is NOT mixed here
+             rqniblten(i,k,j)  = cloudtnd(1,kflip,ixnumice) * multFrc
+
+             !TKE at the midpoints
+             tke_pbl(i,k,j)    = 0.5*(tke8(1,kflip) + tke8(1,kflip + 1))
+             !Diffusivity coefficients at the midpoints
+             kp1 = k + 1
+             kvh3d(i,k,j) = 0.5*(exch_h8w(i,k,j) +  exch_h8w(i,kp1,j))
+             kvm3d(i,k,j) = 0.5*(exch_m8w(i,k,j) +  exch_m8w(i,kp1,j))
           end do
 
-          kpbl2d(i,j)  = int(kpblh(1))
+          do k = kts,kte+1
+             kflip             = kte - k + 2
+             
+             tke_pbl8w(i,k,j)  = tke8(1,kflip)    !TKE at the interfaces
+             turbtype3d(i,k,j) = turbtype(1,kflip)
+             smaw3d(i,k,j)     = smaw(1,kflip)
+          end do
+
+          
+
+          kpbl2d(i,j)  = kte - int(kpblh(1)) + 1  !int(kpblh(1)) 
           pblh2d(i,j)  = pblh( 1)
           tpert2d(i,j) = tpert(1)
           qpert2d(i,j) = qpert(1)
@@ -826,6 +841,7 @@ CONTAINS
              enddo
           else 
              write(iulog,*) 'Full positive_moisture is impossible in vertical_diffusion'
+             call wrf_message(iulog)
           endif
        endif
     end do
@@ -837,9 +853,9 @@ CONTAINS
  
  !-----------------------------------------------------------------------------------------   
   subroutine camuwpblinit(rublten,rvblten,rthblten,rqvblten, &
-       restart,tke_pbl,grid_id,                              &
-       ids,ide,jds,jde,kds,kde,                            &
-       ims,ime,jms,jme,kms,kme,                            &
+       restart,tke_pbl,                                      &
+       ids,ide,jds,jde,kds,kde,                              &
+       ims,ime,jms,jme,kms,kme,                              &
        its,ite,jts,jte,kts,kte)
     !!------------------------------------------------------------------!
     !! Initialization of time independent fields for vertical diffusion !
@@ -849,6 +865,8 @@ CONTAINS
     !This subroutine is based on vertical_diffusion_init of CAM. This subroutine 
     !initializes variables for vertical diffusion subroutine calls. The layout 
     !is kept similar to the original CAM subroutine to facillitate future adaptations.
+    !Called by : physics_init.F
+    !Calls: vd_register, cnst_get_ind, wrf_error_fatal,init_eddy_diff,init_tms,init_vdiff 
 !-----------------------------------------------------------------------------------------
 
     use eddy_diff,              only : init_eddy_diff
@@ -858,6 +876,9 @@ CONTAINS
     use constituents,           only : cnst_get_ind, cnst_get_type_byind, cnst_name
     use module_cam_support,     only : masterproc
     use module_model_constants, only : epsq2
+#ifdef MODAL_AERO
+    use modal_aero_data
+#endif
     
     implicit none
 
@@ -865,13 +886,13 @@ CONTAINS
     !Input and output variables                                                           !
     !-------------------------------------------------------------------------------------!
     logical,intent(in) :: restart
-    integer,intent(in) :: grid_id
     integer,intent(in) :: ids,ide,jds,jde,kds,kde
     integer,intent(in) :: ims,ime,jms,jme,kms,kme
     integer,intent(in) :: its,ite,jts,jte,kts,kte
     
-    real,dimension(ims:ime,kms:kme,jms:jme),intent(out) :: &
-         rublten, rvblten, rthblten, rqvblten,TKE_PBL
+    real,dimension(ims:ime,kms:kme,jms:jme),intent(inout) :: &
+         rublten, rvblten, rthblten, rqvblten
+    real,dimension(ims:ime,kms:kme,jms:jme),intent(out) :: TKE_PBL
 
     !-------------------------------------------------------------------------------------!
     !Local Variables                                                                      ! 
@@ -881,166 +902,183 @@ CONTAINS
     integer        :: nbot_eddy         !! Bottom interface level to which eddy vertical diffusion is applied ( = pver )
     integer        :: ntop_molec        !! Top    interface level to which molecular vertical diffusion is applied ( = 1 )
     integer        :: nbot_molec        !! Bottom interface level to which molecular vertical diffusion is applied
-    integer        :: pcnstmax          !  number of constituents
     character(128) :: errstring         !! Error status for init_vdiff
     real(r8)       :: hypm(kte)         !! reference state midpoint pressures
+#ifdef MODAL_AERO
+    integer        :: m, l
+#endif
+
     
+    jtf   = min(jte,jde-1)
+    ktf   = min(kte,kde-1)
+    itf   = min(ite,ide-1)
+    
+    !Map CAM veritcal level variables
+    pver  = ktf - kts + 1
+    pverp = pver + 1
+    
+    !Initialize flags and add constituents
+    call vd_register()  
+    
+    !! ----------------------------------------------------------------- !
+    !! Get indices of cloud liquid and ice within the constituents array !
+    !! ----------------------------------------------------------------- !
+    
+    call cnst_get_ind( 'CLDLIQ', ixcldliq )
+    call cnst_get_ind( 'CLDICE', ixcldice )
+    if( microp_scheme .eq. 'MG' ) then
+       call cnst_get_ind( 'NUMLIQ', ixnumliq )
+       call cnst_get_ind( 'NUMICE', ixnumice )
+    endif
+    
+    if (masterproc) then
+       write(iulog,*)'Initializing vertical diffusion (vertical_diffusion_init)'
+       call wrf_message(iulog)
+    end if
+    
+    !! ---------------------------------------------------------------------------------------- !
+    !! Initialize molecular diffusivity module                                                  !
+    !! Molecular diffusion turned on above ~60 km (50 Pa) if model top is above ~90 km (.1 Pa). !
+    !! Note that computing molecular diffusivities is a trivial expense, but constituent        !
+    !! diffusivities depend on their molecular weights. Decomposing the diffusion matric        !
+    !! for each constituent is a needless expense unless the diffusivity is significant.        !
+    !! ---------------------------------------------------------------------------------------- !
+    
+    ntop_molec = 1       !! Should always be 1
+    nbot_molec = 0       !! Should be set below about 70 km
+    
+    !! ---------------------------------- !    
+    !! Initialize eddy diffusivity module !
+    !! ---------------------------------- !
+    
+    ntop_eddy  = 1       !! No reason not to make this 1, if > 1, must be <= nbot_molec
+    nbot_eddy  = pver    !! Should always be pver
+    
+    if( masterproc ) write(iulog,fmt='(a,i3,5x,a,i3)') 'NTOP_EDDY  =', ntop_eddy, 'NBOT_EDDY  =', nbot_eddy
+    call wrf_message(iulog)
+    
+    select case ( eddy_scheme )
+    case ( 'diag_TKE' ) 
+       if( masterproc ) write(iulog,*) 'vertical_diffusion_init: eddy_diffusivity scheme: UW Moist Turbulence Scheme by Bretherton and Park'
+       call wrf_message(iulog)
+       !! Check compatibility of eddy and shallow scheme
+       if( shallow_scheme .ne. 'UW' ) then
+          write(iulog,*) 'ERROR: shallow convection scheme ', shallow_scheme,' is incompatible with eddy scheme ', eddy_scheme
+          call wrf_message(iulog)
+          call wrf_error_fatal( 'convect_shallow_init: shallow_scheme and eddy_scheme are incompatible' )
+       endif
+       
+       call init_eddy_diff( r8, pver, gravit, cpair, rair, zvir, latvap, latice, &
+            ntop_eddy, nbot_eddy, hypm, karman )
+       
+       if( masterproc ) write(iulog,*) 'vertical_diffusion: nturb, ntop_eddy, nbot_eddy ', nturb, ntop_eddy, nbot_eddy
+       call wrf_message(iulog)
+    end select
+    
+    !!-------------------------------------------------------------------------------------!
+    !! The vertical diffusion solver must operate                                          !
+    !! over the full range of molecular and eddy diffusion                                 !
+    !!-------------------------------------------------------------------------------------!
+    
+    ntop = min(ntop_molec,ntop_eddy)
+    nbot = max(nbot_molec,nbot_eddy)
+    
+    !! ------------------------------------------- !
+    !! Initialize turbulent mountain stress module !
+    !! ------------------------------------------- !
+    
+    if( do_tms ) then
+       call init_tms( r8, tms_orocnst, tms_z0fac, karman, gravit, rair )
+       if (masterproc) then
+          write(iulog,*)'Using turbulent mountain stress module'
+          call wrf_message(iulog)
+          write(iulog,*)'  tms_orocnst = ',tms_orocnst
+          call wrf_message(iulog)
+       end if
+    endif
+    
+    !! ---------------------------------- !
+    !! Initialize diffusion solver module !
+    !! ---------------------------------- !
+    
+    call init_vdiff( r8, pcnst, rair, gravit, fieldlist_wet, fieldlist_dry, errstring )
+    if( errstring .ne. '' ) call wrf_error_fatal( errstring )
+    
+    !!-------------------------------------------------------------------------------------
+    !! Use fieldlist_wet to select the fields which will be diffused using moist mixing ratios ( all by default )
+    !! Use fieldlist_dry to select the fields which will be diffused using dry   mixing ratios.
+    !!-------------------------------------------------------------------------------------
+    
+    if( vdiff_select( fieldlist_wet, 'u' ) .ne. '' ) call wrf_error_fatal( vdiff_select( fieldlist_wet, 'u' ) )
+    if( vdiff_select( fieldlist_wet, 'v' ) .ne. '' ) call wrf_error_fatal( vdiff_select( fieldlist_wet, 'v' ) )
+    if( vdiff_select( fieldlist_wet, 's' ) .ne. '' ) call wrf_error_fatal( vdiff_select( fieldlist_wet, 's' ) )
 
-     !Declare maximum number of constituents to be considered. pcnst is 7 in WRF but we are using 4 constituents
-     pcnstmax = 4 
- 
-     jtf   = min(jte,jde-1)
-     ktf   = min(kte,kde-1)
-     itf   = min(ite,ide-1)
- 
-     !Map CAM veritcal level variables
-     pver  = ktf - kts + 1
-     pverp = pver + 1
+#ifdef MODAL_AERO
+    !Get index for the liquid number concentration (#/kg)
+    call cnst_get_ind( 'NUMLIQ', ixndrop )
+#endif    
 
-     !Initialize flags and add constituents
-     call vd_register()  
- 
-     !! ----------------------------------------------------------------- !
-     !! Get indices of cloud liquid and ice within the constituents array !
-     !! ----------------------------------------------------------------- !
-     
-     call cnst_get_ind( 'CLDLIQ', ixcldliq )
-     call cnst_get_ind( 'CLDICE', ixcldice )
-     if( microp_scheme .eq. 'MG' ) then
-        call cnst_get_ind( 'NUMLIQ', ixnumliq )
-        call cnst_get_ind( 'NUMICE', ixnumice )
-     endif
- 
-     if (masterproc) then
-        write(iulog,*)'Initializing vertical diffusion (vertical_diffusion_init)'
-     end if
-     
-     !! ---------------------------------------------------------------------------------------- !
-     !! Initialize molecular diffusivity module                                                  !
-     !! Molecular diffusion turned on above ~60 km (50 Pa) if model top is above ~90 km (.1 Pa). !
-     !! Note that computing molecular diffusivities is a trivial expense, but constituent        !
-     !! diffusivities depend on their molecular weights. Decomposing the diffusion matric        !
-     !! for each constituent is a needless expense unless the diffusivity is significant.        !
-     !! ---------------------------------------------------------------------------------------- !
-     
-     ntop_molec = 1       !! Should always be 1
-     nbot_molec = 0       !! Should be set below about 70 km
-  
-     !! ---------------------------------- !    
-     !! Initialize eddy diffusivity module !
-     !! ---------------------------------- !
-     
-     ntop_eddy  = 1       !! No reason not to make this 1, if > 1, must be <= nbot_molec
-     nbot_eddy  = pver    !! Should always be pver
+    do k = 1, pcnst
+       
+#ifdef MODAL_AERO
+       !! Do not diffuse droplet number - treated in dropmixnuc
+       if( k == ixndrop ) cycle
+       !BSINGH-08/31/2012: In WRF, Physics init is called before chem init therefore
+       !aerosol species are not yet added. Following condition, skip all other constituents
+       !(which will be added in chem init) except first five (vapor, cld liq, cld ice, liq num and ice num)
+       if( k > 5 ) cycle
 
-     if( masterproc ) write(iulog,fmt='(a,i3,5x,a,i3)') 'NTOP_EDDY  =', ntop_eddy, 'NBOT_EDDY  =', nbot_eddy
 
-     select case ( eddy_scheme )
-     case ( 'diag_TKE' ) 
-        if( masterproc ) write(iulog,*) 'vertical_diffusion_init: eddy_diffusivity scheme: UW Moist Turbulence Scheme by Bretherton and Park'
+       !The Following do-loop is commented out as Aerosols and other species are diffused in CAMMGMP and WRF_CHEM's dry_dep_driver subroutines
 
-        !! Check compatibility of eddy and shallow scheme
-        if( shallow_scheme .ne. 'UW' ) then
-           write(iulog,*) 'ERROR: shallow convection scheme ', shallow_scheme,' is incompatible with eddy scheme ', eddy_scheme
-           call wrf_error_fatal( 'convect_shallow_init: shallow_scheme and eddy_scheme are incompatible' )
-        endif
-        
-        call init_eddy_diff( r8, pver, gravit, cpair, rair, zvir, latvap, latice, &
-             ntop_eddy, nbot_eddy, hypm, karman )
-
-        if( masterproc ) write(iulog,*) 'vertical_diffusion: nturb, ntop_eddy, nbot_eddy ', nturb, ntop_eddy, nbot_eddy
-     end select
-
-     !!-------------------------------------------------------------------------------------!
-     !! The vertical diffusion solver must operate                                          !
-     !! over the full range of molecular and eddy diffusion                                 !
-     !!-------------------------------------------------------------------------------------!
-     
-     ntop = min(ntop_molec,ntop_eddy)
-     nbot = max(nbot_molec,nbot_eddy)
-
-     !! ------------------------------------------- !
-     !! Initialize turbulent mountain stress module !
-     !! ------------------------------------------- !
-     
-     if( do_tms ) then
-        call init_tms( r8, tms_orocnst, karman, gravit, rair )
-        if (masterproc) then
-           write(iulog,*)'Using turbulent mountain stress module'
-           write(iulog,*)'  tms_orocnst = ',tms_orocnst
-        end if
-     endif
-     
-     !! ---------------------------------- !
-     !! Initialize diffusion solver module !
-     !! ---------------------------------- !
- 
-     call init_vdiff( r8, pcnstmax, rair, gravit, fieldlist_wet, fieldlist_dry, errstring )
-     if( errstring .ne. '' ) call wrf_error_fatal( errstring )
-     
-     !!-------------------------------------------------------------------------------------
-     !! Use fieldlist_wet to select the fields which will be diffused using moist mixing ratios ( all by default )
-     !! Use fieldlist_dry to select the fields which will be diffused using dry   mixing ratios.
-     !!-------------------------------------------------------------------------------------
-     
-     if( vdiff_select( fieldlist_wet, 'u' ) .ne. '' ) call wrf_error_fatal( vdiff_select( fieldlist_wet, 'u' ) )
-     if( vdiff_select( fieldlist_wet, 'v' ) .ne. '' ) call wrf_error_fatal( vdiff_select( fieldlist_wet, 'v' ) )
-     if( vdiff_select( fieldlist_wet, 's' ) .ne. '' ) call wrf_error_fatal( vdiff_select( fieldlist_wet, 's' ) )
- 
-     do k = 1, pcnstmax
-        if( cnst_get_type_byind(k) .eq. 'wet' ) then
-           if( vdiff_select( fieldlist_wet, 'q', k ) .ne. '' ) call wrf_error_fatal( vdiff_select( fieldlist_wet, 'q', k ) )
-        else
-           if( vdiff_select( fieldlist_dry, 'q', k ) .ne. '' ) call wrf_error_fatal( vdiff_select( fieldlist_dry, 'q', k ) )
-        endif
-     enddo
- 
-     !Initialize the tendencies
-     jtf=min0(jte,jde-1)
-     ktf=min0(kte,kde-1)
-     itf=min0(ite,ide-1)
-     
-     if(.not.restart)then
-        do j = jts , jtf
-           do k = kts , ktf
-              do i = its , itf
-                 tke_pbl(i,k,j)  = epsq2
-                 rublten(i,k,j)  = 0.
-                 rvblten(i,k,j)  = 0.
-                 rthblten(i,k,j) = 0.
-                 rqvblten(i,k,j) = 0.
-              enddo
-           enddo
-        enddo
-     endif
-   end subroutine camuwpblinit
+       !! Don't diffuse aerosol - treated in dropmixnuc
+       !do m = 1, ntot_amode
+       !   if( k == numptr_amode(m)   ) cycle
+          !!         if( k == numptrcw_amode(m) ) go to 20
+       !   do l = 1, nspec_amode(m)
+       !      if( k == lmassptr_amode(l,m)   )cycle
+             !!            if( k == lmassptrcw_amode(l,m) ) go to 20
+       !   enddo
+          !!         if( k == lwaterptr_amode(m) ) go to 20
+       !enddo
+#endif
+       !endif
+       if( cnst_get_type_byind(k) .eq. 'wet' ) then
+          if( vdiff_select( fieldlist_wet, 'q', k ) .ne. '' ) call wrf_error_fatal( vdiff_select( fieldlist_wet, 'q', k ) )
+       else
+          !The DRY constituents are not diffused currently in PBL, they are diffused in WRF_CHEM's dry_dep_driver subroutine. Therefore the following line is commented out
+          !if( vdiff_select( fieldlist_dry, 'q', k ) .ne. '' ) call wrf_error_fatal( vdiff_select( fieldlist_dry, 'q', k ) )
+       endif
+    enddo
+    
+    !Initialize the tendencies
+    jtf=min0(jte,jde-1)
+    ktf=min0(kte,kde-1)
+    itf=min0(ite,ide-1)
+    
+    if(.not.restart)then
+       do j = jts , jtf
+          do k = kts , ktf
+             do i = its , itf
+                tke_pbl(i,k,j)  = epsq2
+                rublten(i,k,j)  = 0.
+                rvblten(i,k,j)  = 0.
+                rthblten(i,k,j) = 0.
+                rqvblten(i,k,j) = 0.
+             enddo
+          enddo
+       enddo
+    endif
+  end subroutine camuwpblinit
 
 
 
 !-----------------------------------------------------------------------------------------
   subroutine vd_register()
 !
-!This subroutine is based on the vd_register subroutine of CAM. Some additional 
-!initializations are included in this subroutine.
-!
+!This subroutine is based on the vd_register subroutine of CAM.
 !-----------------------------------------------------------------------------------------
     
-    use module_cam_esinti, only : esinti
-    use physconst,         only : mwh2o, cpwv, epsilo, latvap, latice, rh2o, cpair, tmelt
-    use constituents,      only : cnst_add
-    
-    !Local Workspace
-    integer            :: mm
-    logical            :: moist_physics 
-    
-    !Following declarations are from CAM's stratiform.F90 module
-    integer, parameter :: ncnstmax = 4                    ! Number of constituents
-
-    character(len=8), dimension(ncnstmax), parameter :: cnst_names = & 
-         (/'CLDLIQ', 'CLDICE','NUMLIQ','NUMICE'/)         ! Constituent names
-
-    if(vd_registered) return
-
     !Set flags for the PBL scheme (these flags are obtained using phys_getopts in CAM) 
     microp_scheme  = 'MG'       !Used for adding constituents
     eddy_scheme    = 'diag_TKE' !Used for calling eddy scheme 
@@ -1050,48 +1088,6 @@ CONTAINS
 
     do_tms         = .false.    !To include stresses due to orography
     tms_orocnst    = 1._r8      !Orography constant
-    
-    !-------------------------------------------------------------------------------------!
-    !Calls to add constituents (these calls are imported from in initindx.F90 in CAM)     !
-    !                                                                                     !
-    ! Register water vapor.                                                               !
-    ! ** This must be the first call to cnst_add so that water vapor is constituent 1.**  !
-    !-------------------------------------------------------------------------------------!
-
-    moist_physics  = .true.  !This declaration is included to mimic CAM 
-
-    if (moist_physics) then
-       call cnst_add('Q', mwh2o, cpwv, 1.E-12_r8, mm, &
-            longname='Specific humidity', readiv=.true. )
-    else
-       call cnst_add('Q', mwh2o, cpwv, 0.0_r8   , mm, &
-            longname='Specific humidity', readiv=.false.)
-    end if
-    
-    !Following add constituent calls are imported from the stratiform.F90 in CAM
-    
-    call cnst_add(cnst_names(1), mwdry, cpair, 0._r8, ixcldliq, &
-         longname='Grid box averaged cloud liquid amount')
-    call cnst_add(cnst_names(2), mwdry, cpair, 0._r8, ixcldice, &
-         longname='Grid box averaged cloud ice amount'   )
-
-    if ( microp_scheme .eq. 'MG' ) then
-       call cnst_add(cnst_names(3), mwdry, cpair, 0._r8, ixnumliq, &
-            longname='Grid box averaged cloud liquid number')
-       call cnst_add(cnst_names(4), mwdry, cpair, 0._r8, ixnumice, &
-            longname='Grid box averaged cloud ice number'   )
-    end if
-    
-    !-------------------------------------------------------------------------------------!
-    ! Initialize the saturation vapor pressure look-up table...                           !
-    ! This could be moved to a master cam-init subroutine too if it is needed             !
-    ! by more than one CAM parameterization. In CAM this is called from                   !
-    ! phys_init.                                                                          !
-    !-------------------------------------------------------------------------------------!
-
-    call esinti(epsilo, latvap, latice, rh2o, cpair, tmelt)
-
-    vd_registered = .true.
     
   end subroutine vd_register
   

@@ -50,7 +50,11 @@
    USE module_mixactivate_wrappers, only: mosaic_mixactivate_init
    USE module_upper_bc_driver, only: upper_bc_init
    USE module_tropopause,      only: tropopause_init
+   USE module_cam_mam_init, only: cam_mam_init
+   USE module_cam_mam_initmixrats, only: cam_mam_initmixrats
 
+   USE module_cam_mam_wetscav, only:wetscav_cam_mam_driver_init
+   USE module_cam_support, only: gas_pcnst_modal_aero,gas_pcnst_modal_aero_pos !BSINGH - Fix for non-MAM simulations
    IMPLICIT NONE
 
    real  , intent(in) :: bioemdt,photdt,chemdt,dt,gmt
@@ -163,7 +167,11 @@ call wrf_message("**************************************************************
      CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP )
        CALL wrf_debug(15,'calling SAPRC99_MOSAIC_4BIN_VBS2_4BIN from chem_driver')
        call wrf_message("WARNING: SAPRC99_MOSAIC_4BIN_VBS2_4BIN chemistry option is highly experimental and not recommended for use.")
-       call wrf_error_fatal("WARNING: SAPRC99_MOSAIC_4BIN_VBS2_4BIN chemistry option is useable but does not fully pass regtesting. It is recommended that you contact Jerome.Fast@pnl.gov for information regarding this option.")
+!jdf   call wrf_error_fatal("WARNING: SAPRC99_MOSAIC_4BIN_VBS2_4BIN chemistry option is useable but does not fully pass regtesting. It is recommended that you contact Jerome.Fast@pnl.gov for information regarding this option.")
+     CASE (CBMZ_MOSAIC_4BIN_VBS2_KPP )
+       CALL wrf_debug(15,'calling CBMZ_MOSAIC_4BIN_VBS2_4BIN from chem_driver')
+       call wrf_message("WARNING: CBMZ_MOSAIC_4BIN_VBS2_4BIN chemistry option is highly experimental and not recommended for use.")
+!jdf   call wrf_error_fatal("WARNING: CBMZ_MOSAIC_4BIN_VBS2_4BIN chemistry option is useable but does not fully pass regtesting. It is recommended that you contact Jerome.Fast@pnl.gov for information regarding this option.")
      CASE (MOZART_MOSAIC_4BIN_VBS0_KPP )
        CALL wrf_debug(15,'calling MOZART_MOSAIC_4BIN_VBS0_KPP from chem_driver')
        call wrf_message("WARNING: MOZART_MOSAIC_4BIN_VBS0_KPP chemistry option is highly experimental and not recommended for use.")
@@ -220,13 +228,14 @@ call wrf_message("**************************************************************
          config_flags%chem_opt /= MOZART_MOSAIC_4BIN_VBS0_KPP ) then
        if(  ( config_flags%chem_opt >= 8 .AND. config_flags%chem_opt <= 13) .OR.  &
             ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36) .OR. &
-            ( config_flags%chem_opt >= 41 .AND. config_flags%chem_opt <= 42) ) then
+            ( config_flags%chem_opt >= 41 .AND. config_flags%chem_opt <= 42) .OR. &
+            ( config_flags%chem_opt /= 503 .OR. config_flags%chem_opt /= 504) ) then
          call wrf_debug( 15, 'Chemics_init: Wet scavenging turned on' )
        else
-         call wrf_error_fatal("ERROR: wet scavenging option requires chem_opt = 8 through 13 or 31 to 36 or 41 to 42 to function.")
+         call wrf_error_fatal("ERROR: wet scavenging option requires chem_opt = 8 through 13 or 31 to 36 or 41 to 42 or 503 or 504 to function.")
        endif
-       if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10) then
-         call wrf_error_fatal("ERROR: wet scavenging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) to function.")
+       if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 19) then
+         call wrf_error_fatal("ERROR: wet scavenging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 19 (CAMMGMP) to function.")
        endif
      elseif( id == 1 ) then
        if ( config_flags%mp_physics /= 8 ) then
@@ -240,15 +249,16 @@ call wrf_message("**************************************************************
    endif
 
    if ( config_flags%cldchem_onoff == 1 ) then
-      if(  ( config_flags%chem_opt >= 8 .AND. config_flags%chem_opt <= 13) .OR.  &
-           ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36) .OR. &
+      if(  ( config_flags%chem_opt >= 8 .AND. config_flags%chem_opt <= 13)    .OR. &
+           ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36)   .OR. &
+           ( config_flags%chem_opt >= 501 .AND. config_flags%chem_opt <= 504) .OR. &
            ( config_flags%chem_opt >= 41 .AND. config_flags%chem_opt <= 42) ) then
            call wrf_debug( 15, 'Chemics_init: Cloud chemistry turned on' )
       else
         call wrf_error_fatal("ERROR: cloud chemistry option requires chem_opt = 8 through 13 or 31 to 36 or 41 to 42 to function.")
       endif
-      if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 ) then
-        call wrf_error_fatal("ERROR: cloud chemistry option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) to function.")
+      if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 19 ) then
+        call wrf_error_fatal("ERROR: cloud chemistry option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 19 (CAMMGMP)to function.")
       endif
    endif
 
@@ -284,9 +294,21 @@ call wrf_message("**************************************************************
 !   ENDIF
 
     CALL nl_get_mminlu( 1, mminlu_loc )
-    IF ( (mminlu_loc .NE. 'USGS') .AND. (config_flags%chem_opt .NE. CO2_TRACER .OR. config_flags%chem_opt .NE. GHG_TRACER) ) THEN
-      call wrf_error_fatal(" ERROR: CHEM_INIT: Chemistry routines function with USGS data. Need to change land use option. ")
+
+    IF (trim(mminlu_loc) /= 'USGS' .and. trim(mminlu_loc) /= 'MODIFIED_IGBP_MODIS_NOAH' ) THEN
+      print*,mminlu_loc
+      message_txt = " ERROR: CHEM_INIT: Chemistry routines require USGS or MODIS_NOAH land use maps. Need to change land use option."
+      call wrf_error_fatal( trim(message_txt) )
+    ELSE
+      IF (trim(mminlu_loc) == 'USGS' .and. grid%num_land_cat /= 24 ) THEN
+        message_txt = " ERROR: CHEM_INIT: USGS land use map should have 24 catagories."
+        call wrf_error_fatal( trim(message_txt) )
+      ELSEIF (trim(mminlu_loc) == 'MODIFIED_IGBP_MODIS_NOAH' .and. grid%num_land_cat /= 20 ) THEN
+        message_txt = " ERROR: CHEM_INIT: MODIS_NOAH land use map should have 20 catagories."
+        call wrf_error_fatal( trim(message_txt) )
+      ENDIF
     ENDIF
+!--
 
     if( .NOT. config_flags%restart ) then
        do j=jts,jte
@@ -427,8 +449,10 @@ end if
                its,ite, jts,jte, kts,kte                             )
       CASE (FTUV)
         CALL wrf_debug(00,'call ftuv phot initialization')
+
         call ftuv_init( id, its, ite, jts, jte, kte, &
-                        ide, jde, config_flags )
+                  ide, jde, config_flags,config_flags%num_land_cat,mminlu_loc )
+!---
 
   END SELECT phot_select
 !
@@ -556,9 +580,9 @@ end if
 
 
 
-        CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP)
+        CASE (CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
         if(config_flags%chem_in_opt == 0 )then
-                   grid%vbs_nbin=2
+                   grid%vbs_nbin(1)=2
           do j=jts,jte
              do k=kts,kte
                 do i=its,ite
@@ -894,10 +918,34 @@ ENDIF ghg_block
         endif
         chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+     CASE ( CBMZ_CAM_MAM3_NOAQ, CBMZ_CAM_MAM3_AQ, CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ )
+       call wrf_debug(15,'call CAM_MODAL aerosols initialization')
+       call cam_mam_init(                                            &
+               id, numgas, config_flags,                             &
+               ids,ide, jds,jde, kds,kde,                            &
+               ims,ime, jms,jme, kms,kme,                            &
+               its,ite, jts,jte, kts,kte                             )
+       if(config_flags%chem_in_opt == 0 )then
+           if( .NOT. config_flags%restart ) &
+           call cam_mam_initmixrats(                                 &
+               id, numgas, config_flags,                             &
+               chem, convfac, alt, z_at_w, g,                        &
+               ids,ide, jds,jde, kds,kde,                            &
+               ims,ime, jms,jme, kms,kme,                            &
+               its,ite, jts,jte, kts,kte                             )
+       endif
+       if(config_flags%wetscav_onoff == 1 .and. .NOT. config_flags%restart ) then
+          if(config_flags%mp_physics == 19) then
+             call wetscav_cam_mam_driver_init(ids,ide, jds,jde, kds,kde, &
+                  ims,ime, jms,jme, kms,kme,                             &
+                  its,ite, jts,jte, kts,kte                              )
+          else
+             call wrf_error_fatal("ERROR: wet scavaging option requires mp_phys = 19 (CAMMGMP) to function.")
+          endif
+       endif
      CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
            CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
-           SAPRC99_MOSAIC_4BIN_VBS2_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP )
+           CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP )
        call wrf_debug(15,'call MOSAIC aerosols initialization')
        call init_data_mosaic_asect(is_aerosol)
        if(config_flags%chem_in_opt == 0 )then
@@ -914,7 +962,8 @@ ENDIF ghg_block
 
    progn_sanity_check : SELECT CASE(config_flags%chem_opt)
    CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM, &
-         CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
+         CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_DMS_4BIN_AQ, &
+         CBMZ_MOSAIC_DMS_8BIN_AQ, CBMZSORG_AQ)
       if( config_flags%progn /= 1 ) &
            call wrf_error_fatal( &
            "ERROR: When using a ..._AQ chemistry package, progn must be 1")
@@ -936,8 +985,10 @@ ENDIF ghg_block
    drydep_select: SELECT CASE(config_flags%gas_drydep_opt)
      CASE (WESELY)
        CALL wrf_debug(15,'initializing dry dep (wesely)')
-       call dep_init( id, config_flags, numgas, &
+
+        call dep_init( id, config_flags, numgas, mminlu_loc, &
                       its, ite, jts, jte, ide, jde )
+!--
 
    END SELECT drydep_select
 !
@@ -947,7 +998,7 @@ ENDIF ghg_block
      CASE (CBMZ, CBMZ_BB, CBMZ_BB_KPP,CBMZ_MOSAIC_KPP,  CBMZ_MOSAIC_4BIN, &
            CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZSORG,CBMZSORG_AQ, &
            CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, & 
-           CBMZ_MOSAIC_DMS_8BIN_AQ)
+           CBMZ_MOSAIC_DMS_8BIN_AQ, CBMZ_CAM_MAM3_NOAQ, CBMZ_CAM_MAM3_AQ, CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ )
        CALL wrf_debug(15,'initializing cbmz gas-phase chemistry')
        if(config_flags%chem_in_opt == 0 )then
        if( .NOT. config_flags%restart ) &
@@ -1025,7 +1076,7 @@ ENDIF ghg_block
                             ims,ime, jms,jme, kms,kme,       &
                             its,ite, jts,jte, kts,kte        )
     end if
-
+    gas_pcnst_modal_aero_pos = max(1,gas_pcnst_modal_aero) !BSINGH - Fix for non-MAM simulations
     END SUBROUTINE chem_init
 
 !---------------------------------------------------------------------------------------------
@@ -1291,7 +1342,8 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_ch3so2oo,"ch3so2oo"
      print*,p_ch3so2ch2oo,"ch3so2ch2oo"
      print*,p_mtf,"mtf"
-  case (CBMZ_BB, CBMZ_BB_KPP, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZSORG,CBMZSORG_AQ)
+  case (CBMZ_BB, CBMZ_BB_KPP, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZSORG,CBMZSORG_AQ, &
+        CBMZ_CAM_MAM3_NOAQ, CBMZ_CAM_MAM3_AQ, CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ)
      print*,p_so2,"so2"
      print*,p_sulf,"sulf"
      print*,p_no2,"no2"
@@ -1355,7 +1407,13 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_isopn,"isopn"
      print*,p_isopo2,"isopo2"
 
-  case (CBMZ_MOSAIC_KPP)
+  select case (chem_opt)
+  case( CBMZ_CAM_MAM3_NOAQ, CBMZ_CAM_MAM3_AQ, CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ )
+        print*,p_soag,"soag"
+     end select
+  end select
+  
+  case (CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_4BIN_VBS2_KPP)
     print*,p_so2,"so2"
      print*,p_sulf,"sulf"
      print*,p_no2,"no2"
@@ -1521,7 +1579,7 @@ subroutine print_chem_species_index( chem_opt )
 !
   select case (chem_opt)
   case (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, RACMSORG_AQ, RACMSORG_AQCHEM, RACMSORG_KPP, RACM_ESRLSORG_KPP, &
-        CBMZSORG, CBMZSORG_AQ)
+        CBMZSORG, CBMZSORG_AQ,RACMSORG)
      print*,p_so4aj,"so4aj"
      print*,p_so4ai,"so4ai"
      print*,p_nh4aj,"nh4aj"
@@ -2148,6 +2206,114 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_oc_cw08,"oc_cw08"
      print*,p_bc_cw08,"bc_cw08"
      print*,p_num_cw08,"num_cw08"
+
+  case ( CBMZ_CAM_MAM3_NOAQ, CBMZ_CAM_MAM3_AQ )
+     print*,p_so4_a1,"so4_a1"
+     print*,p_pom_a1,"pom_a1"
+     print*,p_soa_a1,"soa_a1"
+     print*,p_bc_a1, "bc_a1"
+     print*,p_dst_a1,"dst_a1"
+     print*,p_ncl_a1,"ncl_a1"
+     print*,p_wtr_a1,"wtr_a1"
+     print*,p_num_a1,"num_a1"
+     print*,p_so4_a2,"so4_a2"
+     print*,p_soa_a1,"soa_a2"
+     print*,p_wtr_a1,"wtr_a2"
+     print*,p_num_a2,"num_a2"
+     print*,p_dst_a3,"dst_a3"
+     print*,p_ncl_a3,"ncl_a3"
+     print*,p_so4_a3,"so4_a3"
+     print*,p_wtr_a1,"wtr_a3"
+     print*,p_num_a3,"num_a3"
+
+  case ( CBMZ_CAM_MAM3_AQ )
+     print*,p_so4_c1,"so4_c1"
+     print*,p_pom_c1,"pom_c1"
+     print*,p_soa_c1,"soa_c1"
+     print*,p_bc_c1, "bc_c1"
+     print*,p_dst_c1,"dst_c1"
+     print*,p_ncl_c1,"ncl_c1"
+     print*,p_num_c1,"num_c1"
+     print*,p_so4_c2,"so4_c2"
+     print*,p_soa_c1,"soa_c2"
+     print*,p_num_c2,"num_c2"
+     print*,p_dst_c3,"dst_c3"
+     print*,p_ncl_c3,"ncl_c3"
+     print*,p_so4_c3,"so4_c3"
+     print*,p_num_c3,"num_c3"
+
+  case ( CBMZ_CAM_MAM7_NOAQ, CBMZ_CAM_MAM7_AQ )
+     print*,p_so4_a1,"so4_a1"
+     print*,p_nh4_a1,"nh4_a1"
+     print*,p_pom_a1,"pom_a1"
+     print*,p_soa_a1,"soa_a1"
+     print*,p_bc_a1, "bc_a1"
+     print*,p_ncl_a1,"ncl_a1"
+     print*,p_wtr_a1,"wtr_a1"
+     print*,p_num_a1,"num_a1"
+     print*,p_so4_a2,"so4_a2"
+     print*,p_nh4_a2,"nh4_a2"
+     print*,p_soa_a2,"soa_a2"
+     print*,p_ncl_a2,"ncl_a2"
+     print*,p_wtr_a2,"wtr_a2"
+     print*,p_num_a2,"num_a2"
+     print*,p_pom_a3,"pom_a3"
+     print*,p_bc_a3, "bc_a3"
+     print*,p_wtr_a3,"wtr_a3"
+     print*,p_num_a3,"num_a3"
+     print*,p_ncl_a4,"ncl_a4"
+     print*,p_so4_a4,"so4_a4"
+     print*,p_nh4_a4,"nh4_a4"
+     print*,p_wtr_a4,"wtr_a4"
+     print*,p_num_a4,"num_a4"
+     print*,p_dst_a5,"dst_a5"
+     print*,p_so4_a5,"so4_a5"
+     print*,p_nh4_a5,"nh4_a5"
+     print*,p_wtr_a5,"wtr_a5"
+     print*,p_num_a5,"num_a5"
+     print*,p_ncl_a6,"ncl_a6"
+     print*,p_so4_a6,"so4_a6"
+     print*,p_nh4_a6,"nh4_a6"
+     print*,p_wtr_a6,"wtr_a6"
+     print*,p_num_a6,"num_a6"
+     print*,p_dst_a7,"dst_a7"
+     print*,p_so4_a7,"so4_a7"
+     print*,p_nh4_a7,"nh4_a7"
+     print*,p_wtr_a7,"wtr_a7"
+     print*,p_num_a7,"num_a7"
+
+  case ( CBMZ_CAM_MAM7_AQ )
+     print*,p_so4_c1,"so4_c1"
+     print*,p_nh4_c1,"nh4_c1"
+     print*,p_pom_c1,"pom_c1"
+     print*,p_soa_c1,"soa_c1"
+     print*,p_bc_c1, "bc_c1"
+     print*,p_ncl_c1,"ncl_c1"
+     print*,p_num_c1,"num_c1"
+     print*,p_so4_c2,"so4_c2"
+     print*,p_nh4_c2,"nh4_c2"
+     print*,p_soa_c2,"soa_c2"
+     print*,p_ncl_c2,"ncl_c2"
+     print*,p_num_c2,"num_c2"
+     print*,p_pom_c3,"pom_c3"
+     print*,p_bc_c3, "bc_c3"
+     print*,p_num_c3,"num_c3"
+     print*,p_ncl_c4,"ncl_c4"
+     print*,p_so4_c4,"so4_c4"
+     print*,p_nh4_c4,"nh4_c4"
+     print*,p_num_c4,"num_c4"
+     print*,p_dst_c5,"dst_c5"
+     print*,p_so4_c5,"so4_c5"
+     print*,p_nh4_c5,"nh4_c5"
+     print*,p_num_c5,"num_c5"
+     print*,p_ncl_c6,"ncl_c6"
+     print*,p_so4_c6,"so4_c6"
+     print*,p_nh4_c6,"nh4_c6"
+     print*,p_num_c6,"num_c6"
+     print*,p_dst_c7,"dst_c7"
+     print*,p_so4_c7,"so4_c7"
+     print*,p_nh4_c7,"nh4_c7"
+     print*,p_num_c7,"num_c7"
 
   case (RACM_SOA_VBS_KPP)
      print*,p_so4aj,"so4aj"

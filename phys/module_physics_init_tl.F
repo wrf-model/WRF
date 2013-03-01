@@ -132,9 +132,9 @@ CONTAINS
     INTEGER, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: ivgtyp, &
 &    isltyp
 ! rad
-    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: rthraten&
+    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthraten&
 &    , rthratenlw, rthratensw, cldfra
-    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(OUT) ::&
+    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&
 &    cldfra_old
 !EMBCK new
     REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: gsw, albedo, &
@@ -144,17 +144,17 @@ CONTAINS
     INTEGER, INTENT(OUT) :: stepra, stepbl, stepcu
     INTEGER, INTENT(IN) :: julyr, julday
 ! cps
-    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: rucuten, &
+    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rucuten, &
 &    rvcuten, rthcuten, rqvcuten, rqrcuten, rqccuten, rqscuten, rqicuten&
 &    , rushten, rvshten, rthshten, rqvshten, rqrshten, rqcshten, rqsshten&
 &    , rqishten, rqgshten
-    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: rthcutend&
+    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthcutend&
 &    , rqvcutend, rqccutend
     REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: w0avg
     REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: w0avgd
     REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) :: mass_flux, apr_gr&
 &    , apr_w, apr_mc, apr_st, apr_as, apr_capma, apr_capme, apr_capmi
-    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: rthften, &
+    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthften, &
 &    rqvften
     REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) :: rainnc, rainc, &
 &    raincv, rainncv, snownc, snowncv, graupelnc, graupelncv
@@ -165,9 +165,9 @@ CONTAINS
 !pbl
 ! soil layer
     REAL, DIMENSION(num_soil_layers), INTENT(INOUT) :: zs, dzs
-    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: rublten, &
+    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rublten, &
 &    rvblten, rthblten, rqvblten, rqcblten, rqiblten, exch_h, tke_pbl
-    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: rubltend&
+    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rubltend&
 &    , rvbltend, rthbltend, rqvbltend
     REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT), OPTIONAL ::&
 &    massflux_edkf, entr_edkf, detr_edkf, thl_up, thv_up, rt_up, rv_up, &
@@ -758,9 +758,9 @@ CONTAINS
     INTEGER, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: ivgtyp, &
 &    isltyp, lowlyr
     REAL, DIMENSION(num_soil_layers), INTENT(INOUT) :: zs, dzs
-    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: rublten, &
+    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rublten, &
 &    rvblten, exch_h, rthblten, rqvblten, rqcblten, rqiblten, tke_pbl
-    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: rubltend&
+    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rubltend&
 &    , rvbltend, rthbltend, rqvbltend
     REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT), OPTIONAL ::&
 &    massflux_edkf, entr_edkf, detr_edkf, thl_up, thv_up, rt_up, rv_up, &
@@ -1064,7 +1064,7 @@ CONTAINS
 &    :: cugd_tten, cugd_ttens, cugd_qvten, cugd_qvtens, cugd_qcten
     REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: w0avg
     REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: w0avgd
-    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: rthften, &
+    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthften, &
 &    rqvften
     REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) :: rainc, raincv
     REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) :: raincd, raincvd

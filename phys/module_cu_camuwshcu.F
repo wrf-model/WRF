@@ -1,33 +1,36 @@
 #define WRF_PORT
-
-!------------------------------------------------------------------------
-! Based on uwshcu.F90 from CAM
-! Ported to WRF by William.Gustafson@pnl.gov, Jan. 2010
-!------------------------------------------------------------------------
-
+#define MODAL_AERO
+! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
   module uwshcu
-
 #ifndef WRF_PORT
   use cam_history,    only: outfld, addfld, phys_decomp
+#else
+  use module_cam_support, only: outfld, addfld, phys_decomp
+  use module_state_description, only: CAMUWPBLSCHEME, MYJPBLSCHEME
+#endif
+  use error_function, only: erfc
+#ifndef WRF_PORT
   use cam_logfile,    only: iulog
   use ppgrid,         only: pcols, pver, pverp
   use abortutils,     only: endrun
+  use spmd_utils,     only: masterproc
 #else
-  use module_state_description, only: CAMUWPBLSCHEME, MYJPBLSCHEME
-  use module_cam_support, only: outfld, addfld, phys_decomp, iulog, pcols, pver, pverp, endrun
-  use module_bl_camuwpbl_driver, only: vd_register
+  use module_cam_support, only: iulog, pcols, pver, pverp, endrun, masterproc
 #endif
-  use error_function, only: erfc
+
 
   implicit none
   private
   save
 
-  public init_uwshcu
-  public compute_uwshcu
-  public compute_uwshcu_inv
+  public &
+     uwshcu_readnl,      &
+     init_uwshcu,        &
+     compute_uwshcu,     &
+     compute_uwshcu_inv
   
   integer , parameter :: r8 = selected_real_kind(12)    !  8 byte real
+  real(r8), parameter :: unset_r8 = huge(1.0_r8)
   real(r8)            :: xlv                            !  Latent heat of vaporization
   real(r8)            :: xlf                            !  Latent heat of fusion
   real(r8)            :: xls                            !  Latent heat of sublimation = xlv + xlf
@@ -39,7 +42,12 @@
   real(r8)            :: p00                            !  Reference pressure for exner function
   real(r8)            :: rovcp                          !  R/cp
 
-  contains
+  ! Tuning parameters set via namelist
+  real(r8) :: rpen          !  For penetrative entrainment efficiency
+
+!===============================================================================
+contains
+!===============================================================================
   
   real(r8) function exnf(pressure)
            real(r8), intent(in)              :: pressure
@@ -47,14 +55,64 @@
            return
   end function exnf
 
-  subroutine init_uwshcu(                                        &
-       kind, xlv_in, cp_in, xlf_in, zvir_in, r_in, g_in, ep2_in  &
+!===============================================================================
+
+subroutine uwshcu_readnl(nlfile)
+#ifndef WRF_PORT
+   use namelist_utils,  only: find_group_name
+   use units,           only: getunit, freeunit
+   use mpishorthand
+#endif
+
+   character(len=*), intent(in) :: nlfile  ! filepath for file containing namelist input
+
+#ifndef WRF_PORT
+   ! Local variables
+   integer :: unitn, ierr
+   character(len=*), parameter :: subname = 'uwshcu_readnl'
+
+   ! Namelist variables
+   real(r8) :: uwshcu_rpen =  unset_r8    !  For penetrative entrainment efficiency
+
+   namelist /uwshcu_nl/ uwshcu_rpen
+   !-----------------------------------------------------------------------------
+
+   if (masterproc) then
+      unitn = getunit()
+      open( unitn, file=trim(nlfile), status='old' )
+      call find_group_name(unitn, 'uwshcu_nl', status=ierr)
+      if (ierr == 0) then
+         read(unitn, uwshcu_nl, iostat=ierr)
+         if (ierr /= 0) then
+            call endrun(subname // ':: ERROR reading namelist')
+         end if
+      end if
+      close(unitn)
+      call freeunit(unitn)
+   end if
+
+#ifdef SPMD
+   ! Broadcast namelist variables
+   call mpibcast(uwshcu_rpen,            1, mpir8,  0, mpicom)
+#endif
+   
+   rpen=uwshcu_rpen
+#else
+   !Balwinder.Singh@pnnl.gov: rpen value has been obtained from previous incarnation 
+   !of this module (see CESM101)
+   rpen= 10.0_r8
+#endif  
+
+end subroutine uwshcu_readnl
+
+!===============================================================================
+
+  subroutine init_uwshcu( kind, xlv_in, cp_in, xlf_in, zvir_in, r_in, g_in, ep2_in &
 #ifdef WRF_PORT
        , rushten, rvshten, rthshten, rqvshten,                   &
        rqcshten, rqrshten, rqishten, rqsshten, rqgshten,         &
        p_qc, p_qr, p_qi, p_qs, p_qg,                             &
        bl_pbl_physics, param_first_scalar, restart,              &
-       grid_id,                                                  &
        ids, ide, jds, jde, kds, kde,                             &
        ims, ime, jms, jme, kms, kme,                             &
        its, ite, jts, jte, kts, kte                              )
@@ -67,14 +125,11 @@
     ! Purpose:                                                     !
     ! Initialize key constants for the shallow convection package. !
     !------------------------------------------------------------- !
-
 #ifndef WRF_PORT
     use cam_history,   only: outfld, addfld, phys_decomp
     use ppgrid,        only: pcols, pver, pverp
 #else
-    use module_cam_esinti,  only: esinti
     use module_cam_support, only: outfld, addfld, phys_decomp, pcols, pver, pverp
-    use physconst, only: epsilo, latvap, latice, rh2o, cpair, tmelt
 #endif
     implicit none
     integer , intent(in) :: kind       !  kind of reals being passed in
@@ -86,9 +141,9 @@
     real(r8), intent(in) :: g_in       !  Gravitational constant
     real(r8), intent(in) :: ep2_in     !  mol wgt water vapor / mol wgt dry air 
 
+    character(len=*), parameter :: subname = 'init_uwshcu'
 #ifdef WRF_PORT
     LOGICAL , INTENT(IN)           ::   restart
-    INTEGER , INTENT(IN)           ::   grid_id
     INTEGER , INTENT(IN)           ::   ids, ide, jds, jde, kds, kde, &
                                         ims, ime, jms, jme, kms, kme, &
                                         its, ite, jts, jte, kts, kte, &
@@ -96,7 +151,7 @@
                                         param_first_scalar,           &
                                         bl_pbl_physics
 
-    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(OUT) :: &
+    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: &
                                                              rushten, &
                                                              rvshten, &
                                                             rthshten, &
@@ -112,13 +167,19 @@
   jtf = min(jte,jde-1)
   ktf = min(kte,kde-1)
   itf = min(ite,ide-1)
+
+#ifdef WRF_PORT
+  !Balwinder.Singh@pnnl.gov - Call to assign rpen
+  call uwshcu_readnl('dummyString')
+#endif
 !
 ! The CAM UW shallow Cu scheme only works with PBL schemes that generate
 ! TKE. So, for example, YSU would be an invalid choice to combine with
-! the UW scheme. For now, we are coupling into the tke_pbl version of
-! TKE used by MYJ, CAMUWPBL and others. At some point, it would be great to unify
+! the UW scheme. For now, we are coupling into the tke_myj version of
+! TKE used by MYJ and CAMUWPBL. At some point, it would be great to unify
 ! all the different TKEs output so that things work together properly.
-! QKE from MYNN remains separate
+! For now, we are not trying to deal with the cacophony of variables,
+! i.e. tke & tke_pbl.
 !
   select case(bl_pbl_physics)
   case (CAMUWPBLSCHEME, MYJPBLSCHEME)
@@ -135,24 +196,7 @@
 !
   pver  = ktf-kts+1
   pverp = pver+1
-!
-! Initialize the saturation vapor pressure look-up table...
-! This could be moved to a master cam-init subroutine too if it is needed
-! by more than one CAM parameterization. In CAM this is called from
-! phys_init.
-!
-  call esinti(epsilo, latvap, latice, rh2o, cpair, tmelt)
-!
-!~If the PBL scheme is not UW PBL, then we need to initialize the CAM
-! consituents array. Eventually, this should really be done once for
-! all the CAM routines through a call from phys_init, or equiv. location.
-! This would avoid mistakes from multiple initiations.
-!
-  if( bl_pbl_physics /= CAMUWPBLSCHEME ) then
-     if(grid_id.eq.1)call vd_register
-  end if
 #endif
-
     ! ------------------------- !
     ! Internal Output Variables !
     ! ------------------------- !
@@ -256,9 +300,13 @@
     call addfld('ind_delcin_Cu'   , 'no'      , 1     , 'A' , 'ind_delcin'                                          , phys_decomp ) 
 
     if( kind .ne. r8 ) then
-        write(iulog,*) 'wrong KIND of reals passed to init_uwshcu -- exiting.'
-        call endrun
+        write(iulog,*) subname//': ERROR -- real KIND does not match internal specification.'
+#ifdef WRF_PORT
+        call wrf_message(iulog)
+#endif
+        call endrun(subname//': ERROR -- real KIND does not match internal specification.')
     endif
+
     xlv   = xlv_in
     xlf   = xlf_in
     xls   = xlv + xlf
@@ -270,27 +318,38 @@
     p00   = 1.e5_r8
     rovcp = r/cp
 
+    if (rpen == unset_r8) then
+       call endrun(subname//': uwshcu_rpen must be set in the namelist')
+    end if
+
+    if ( masterproc ) then 
+       write(iulog,*) subname//': tuning parameters: rpen=',rpen
 #ifdef WRF_PORT
-!
-! Set initial values for WRF arrays dependent on restart conditions
-!
-  if(.not.restart)then
-     do j=jts,jtf
-        do k=kts,ktf
-           do i=its,itf
-              rushten(i,k,j)  = 0.
-              rvshten(i,k,j)  = 0.
-              rthshten(i,k,j) = 0.
-              rqvshten(i,k,j) = 0.
-              if( p_qc > param_first_scalar ) rqcshten(i,k,j) = 0.
-              if( p_qr > param_first_scalar ) rqrshten(i,k,j) = 0.
-              if( p_qi > param_first_scalar ) rqishten(i,k,j) = 0.
-              if( p_qs > param_first_scalar ) rqsshten(i,k,j) = 0.
-              if( p_qg > param_first_scalar ) rqgshten(i,k,j) = 0.
-           enddo
-        enddo
-     enddo
-  end if
+       call wrf_message(iulog)
+#endif
+    endif
+
+#ifdef WRF_PORT
+    !
+    ! Set initial values for WRF arrays dependent on restart conditions
+    !
+    if(.not.restart)then
+       do j=jts,jtf
+          do k=kts,ktf
+             do i=its,itf
+                rushten(i,k,j)  = 0.
+                rvshten(i,k,j)  = 0.
+                rthshten(i,k,j) = 0.
+                rqvshten(i,k,j) = 0.
+                if( p_qc > param_first_scalar ) rqcshten(i,k,j) = 0.
+                if( p_qr > param_first_scalar ) rqrshten(i,k,j) = 0.
+                if( p_qi > param_first_scalar ) rqishten(i,k,j) = 0.
+                if( p_qs > param_first_scalar ) rqsshten(i,k,j) = 0.
+                if( p_qg > param_first_scalar ) rqgshten(i,k,j) = 0.
+             enddo
+          enddo
+       enddo
+    end if   
 #endif
 
   end subroutine init_uwshcu
@@ -301,12 +360,13 @@
                                  t0_inv   , s0_inv     , tr0_inv       ,                         &
                                  tke_inv  , cldfrct_inv, concldfrct_inv, pblh      , cush     ,  & 
                                  umf_inv  , slflx_inv  , qtflx_inv     ,                         & 
+                                 flxprc1_inv, flxsnow1_inv,     				 &
                                  qvten_inv, qlten_inv  , qiten_inv     ,                         &
                                  sten_inv , uten_inv   , vten_inv      , trten_inv ,             &  
                                  qrten_inv, qsten_inv  , precip        , snow      , evapc_inv,  &
                                  cufrc_inv, qcu_inv    , qlu_inv       , qiu_inv   ,             &   
                                  cbmf     , qc_inv     , rliq          ,                         &
-                                 cnt_inv  , cnb_inv    , qsat          , lchnk     , dpdry0_inv ) 
+                                 cnt_inv  , cnb_inv    , qsat          , lchnk     , dpdry0_inv )
 
     implicit none
     integer , intent(in)    :: lchnk     
@@ -350,6 +410,9 @@
     real(r8), intent(out)   :: rliq(mix)                !  Vertical integral of tendency of detrained cloud condensate qc [ m/s ]
     real(r8), intent(out)   :: slflx_inv(mix,mkx+1)     !  Updraft liquid static energy flux [ J/kg * kg/m2/s ]
     real(r8), intent(out)   :: qtflx_inv(mix,mkx+1)     !  Updraft total water flux [ kg/kg * kg/m2/s ]
+    real(r8), intent(out)   :: flxprc1_inv(mix,mkx+1)   ! uw grid-box mean rain+snow flux (kg m^-2 s^-1) for physics buffer calls in convect_shallow.F90
+    real(r8), intent(out)   :: flxsnow1_inv(mix,mkx+1)  ! uw grid-box mean snow flux (kg m^-2 s^-1) for physics buffer calls in convect_shallow.F90
+
     real(r8), intent(out)   :: cufrc_inv(mix,mkx)       !  Shallow cumulus cloud fraction at the layer mid-point [ fraction ]
     real(r8), intent(out)   :: qcu_inv(mix,mkx)         !  Liquid+ice specific humidity within cumulus updraft [ kg/kg ]
     real(r8), intent(out)   :: qlu_inv(mix,mkx)         !  Liquid water specific humidity within cumulus updraft [ kg/kg ]
@@ -390,6 +453,8 @@
     real(r8)                :: evapc(mix,mkx)           !  Tendency of evaporation of precipitation [ kg/kg/s ]
     real(r8)                :: slflx(mix,0:mkx)         !  Updraft liquid static energy flux [ J/kg * kg/m2/s ]
     real(r8)                :: qtflx(mix,0:mkx)         !  Updraft total water flux [ kg/kg * kg/m2/s ]
+    real(r8)                :: flxprc1(mix,0:mkx)       ! uw grid-box mean rain+snow flux (kg m^-2 s^-1) for physics buffer calls in convect_shallow.F90
+    real(r8)                :: flxsnow1(mix,0:mkx)      ! uw grid-box mean snow flux (kg m^-2 s^-1) for physics buffer calls in convect_shallow.F90
     real(r8)                :: cufrc(mix,mkx)           !  Shallow cumulus cloud fraction at the layer mid-point [ fraction ]
     real(r8)                :: qcu(mix,mkx)             !  Condensate water specific humidity within cumulus updraft at the layer mid-point [ kg/kg ]
     real(r8)                :: qlu(mix,mkx)             !  Liquid water specific humidity within cumulus updraft at the layer mid-point [ kg/kg ]
@@ -434,6 +499,7 @@
                          t0   , s0     , tr0       ,                & 
                          tke  , cldfrct, concldfrct, pblh  , cush , & 
                          umf  , slflx  , qtflx     ,                &  
+                         flxprc1  , flxsnow1  ,		            &
                          qvten, qlten  , qiten     ,                & 
                          sten , uten   , vten      , trten ,        &
                          qrten, qsten  , precip    , snow  , evapc, &
@@ -450,7 +516,9 @@
        k_inv                  = mkx + 1 - k
        umf_inv(:iend,k_inv)   = umf(:iend,k)       
        slflx_inv(:iend,k_inv) = slflx(:iend,k)     
-       qtflx_inv(:iend,k_inv) = qtflx(:iend,k)     
+       qtflx_inv(:iend,k_inv) = qtflx(:iend,k)
+       flxprc1_inv(:iend,k_inv) = flxprc1(:iend,k)     ! reversed for output to cam
+       flxsnow1_inv(:iend,k_inv) = flxsnow1(:iend,k)   ! ""
     end do
 
     do k = 1, mkx
@@ -472,10 +540,10 @@
        do m = 1, ncnst
           trten_inv(:iend,k_inv,m)   = trten(:iend,k,m) 
        enddo
-    enddo
-    
-  end subroutine compute_uwshcu_inv
 
+    enddo
+
+  end subroutine compute_uwshcu_inv
 
   subroutine compute_uwshcu( mix      , mkx       , iend         , ncnst    , dt        , &
                              ps0_in   , zs0_in    , p0_in        , z0_in    , dp0_in    , &
@@ -483,6 +551,7 @@
                              t0_in    , s0_in     , tr0_in       ,                        &
                              tke_in   , cldfrct_in, concldfrct_in,  pblh_in , cush_inout, & 
                              umf_out  , slflx_out , qtflx_out    ,                        &
+                             flxprc1_out  , flxsnow1_out  , 			 	  &
                              qvten_out, qlten_out , qiten_out    ,                        & 
                              sten_out , uten_out  , vten_out     , trten_out,             &
                              qrten_out, qsten_out , precip_out   , snow_out , evapc_out , &
@@ -506,7 +575,6 @@
     !                                  sungsu@atmos.washington.edu !
     !                                                              !
     ! ------------------------------------------------------------ !
-
 #ifndef WRF_PORT 
     use cam_history,     only : outfld, addfld, phys_decomp
 #else
@@ -567,6 +635,8 @@
     real(r8), intent(out)   :: evapc_out(mix,mkx)             !  Tendency of evaporation of precipitation [ kg/kg/s ]
     real(r8), intent(out)   :: slflx_out(mix,0:mkx)           !  Updraft/pen.entrainment liquid static energy flux [ J/kg * kg/m2/s ]
     real(r8), intent(out)   :: qtflx_out(mix,0:mkx)           !  updraft/pen.entrainment total water flux [ kg/kg * kg/m2/s ]
+    real(r8), intent(out)   :: flxprc1_out(mix,0:mkx)         ! precip (rain+snow) flux
+    real(r8), intent(out)   :: flxsnow1_out(mix,0:mkx)        ! snow flux
     real(r8), intent(out)   :: cufrc_out(mix,mkx)             !  Shallow cumulus cloud fraction at the layer mid-point [ fraction ]
     real(r8), intent(out)   :: qcu_out(mix,mkx)               !  Condensate water specific humidity within cumulus updraft [ kg/kg ]
     real(r8), intent(out)   :: qlu_out(mix,mkx)               !  Liquid water specific humidity within cumulus updraft [ kg/kg ]
@@ -780,7 +850,7 @@
     real(r8)    pe, dpe, exne, thvebot, thle, qte, ue, ve, thlue, qtue, wue
     real(r8)    mu, mumin0, mumin1, mumin2, mulcl, mulclstar
     real(r8)    cbmf, wcrit, winv, wlcl, ufrcinv, ufrclcl, rmaxfrac
-    real(r8)    criqc, exql, exqi, rpen, ppen
+    real(r8)    criqc, exql, exqi, ppen
     real(r8)    thl0top, thl0bot, qt0bot, qt0top, thvubot, thvutop
     real(r8)    thlu_top, qtu_top, qlu_top, qiu_top, qlu_mid, qiu_mid, exntop
     real(r8)    thl0lcl, qt0lcl, thv0lcl, thv0rel, rho0inv, autodet
@@ -1032,7 +1102,6 @@
 !   parameter (rkm = 16.0_r8)        !  Determine the amount of air that is involved in buoyancy-sorting [no unit] 
     parameter (rkm = 14.0_r8)        !  Determine the amount of air that is involved in buoyancy-sorting [no unit]
 
-    parameter (rpen = 10.0_r8)       !  For penetrative entrainment efficiency
     parameter (rkfre = 1.0_r8)       !  Vertical velocity variance as fraction of  tke. 
     parameter (rmaxfrac = 0.10_r8)   !  Maximum allowable 'core' updraft fraction
     parameter (mumin1 = 0.906_r8)    !  Normalized CIN ('mu') corresponding to 'rmaxfrac' at the PBL top
@@ -1079,6 +1148,8 @@
     umf_out(:iend,0:mkx)         = 0.0_r8
     slflx_out(:iend,0:mkx)       = 0.0_r8
     qtflx_out(:iend,0:mkx)       = 0.0_r8
+    flxprc1_out(:iend,0:mkx)     = 0.0_r8
+    flxsnow1_out(:iend,0:mkx)    = 0.0_r8
     qvten_out(:iend,:mkx)        = 0.0_r8
     qlten_out(:iend,:mkx)        = 0.0_r8
     qiten_out(:iend,:mkx)        = 0.0_r8
@@ -2091,6 +2162,9 @@
            mumin2 = compute_mumin2(mulcl,rmaxfrac,mu)
            if( mu .gt. mumin2 ) then
                write(iulog,*) 'Critical error in mu calculation in UW_ShCu'
+#ifdef WRF_PORT
+               call wrf_message(iulog)
+#endif
                call endrun
            endif
            mu = max(mu,mumin2)
@@ -4283,6 +4357,9 @@
      umf_out(i,0:mkx)             = umf(0:mkx)
      slflx_out(i,0:mkx)           = slflx(0:mkx)
      qtflx_out(i,0:mkx)           = qtflx(0:mkx)
+!the indices are not reversed, these variables go into compute_mcshallow_inv, this is why they are called "flxprc1" and "flxsnow1". 
+     flxprc1_out(i,0:mkx)         = flxrain(0:mkx) + flxsnow(0:mkx)
+     flxsnow1_out(i,0:mkx)        = flxsnow(0:mkx)
      qvten_out(i,:mkx)            = qvten(:mkx)
      qlten_out(i,:mkx)            = qlten(:mkx)
      qiten_out(i,:mkx)            = qiten(:mkx)
@@ -4853,6 +4930,9 @@
        end if
     end do
     write(iulog,*) 'pLCL does not converge and is set to psmin in uwshcu.F90', qt, thl, psfc 
+#ifdef WRF_PORT
+           call wrf_message(iulog)
+#endif
     qsinvert = psmin
     return
   end function qsinvert
@@ -4941,6 +5021,11 @@
                                  (SB*x0+bogbot-SB/(2._r8*D))/(D*rho0j)
            fs = -2._r8*D*exp(-2._r8*D*x0)*(wtwb-(bogbot-SB/(2._r8*D))/(D*rho0j)) + &
                                  (SB)/(D*rho0j)
+           if( fs .ge. 0._r8 ) then
+		fs = max(fs, 1.e-10_r8)
+           else
+           	fs = min(fs,-1.e-10_r8)
+           endif
            x1 = x0 - f/fs     
            x0 = x1
       end do
@@ -5079,6 +5164,9 @@
             enddo 
         else 
             write(iulog,*) 'Full positive_moisture is impossible in uwshcu'
+#ifdef WRF_PORT
+            call wrf_message(iulog)
+#endif
         endif
     endif 
 
@@ -5192,7 +5280,13 @@
 #ifdef DEBUG
          if ( (lchnk == lchnklook(nlook) ) .and. (i == icollook(nlook) ) ) then
             write(iulog,*) ' '
+#ifdef WRF_PORT
+            call wrf_message(iulog)
+#endif
             write(iulog,*) ' level, t, q, p', k, t(i,k), q(i,k), p(i,k)
+#ifdef WRF_PORT
+            call wrf_message(iulog)
+#endif
          endif
 #endif
 ! limit the temperature range to that relevant to the sat vap pres tables
@@ -5245,7 +5339,13 @@
 #ifdef DEBUG
              if ( (lchnk == lchnklook(nlook) ) .and. (i == icollook(nlook) ) ) then
                 write(iulog,*) ' relative humidity ', q(i,k)/qs
+#ifdef WRF_PORT
+                call wrf_message(iulog)
+#endif
                 write(iulog,*) ' first guess ', tsp(i,k)
+#ifdef WRF_PORT
+                call wrf_message(iulog)
+#endif
              endif
 #endif
              es = estblf(tsp(i,k))
@@ -5311,6 +5411,9 @@
 #ifdef DEBUG
                if ( (lchnk == lchnklook(nlook) ) .and. (i == icollook(nlook) ) ) then
                   write(iulog,*) ' rel chg lev, iter, t, q ', k, l, dt, dq, g
+#ifdef WRF_PORT
+                  call wrf_message(iulog)
+#endif
                endif
 #endif
                dtm = max(dtm,dt)
@@ -5348,8 +5451,17 @@
             do i = 1,ncol
                if (doit(i) == 0) then
                   write(iulog,*) ' findsp not converging at point i, k ', i, k
+#ifdef WRF_PORT
+                  call wrf_message(iulog)
+#endif
                   write(iulog,*) ' t, q, p, enin ', t(i,k), q(i,k), p(i,k), enin(i)
+#ifdef WRF_PORT
+                  call wrf_message(iulog)
+#endif
                   write(iulog,*) ' tsp, qsp, enout ', tsp(i,k), qsp(i,k), enout(i)
+#ifdef WRF_PORT
+                  call wrf_message(iulog)
+#endif
                   call endrun ('FINDSP')
                endif
             end do
@@ -5365,8 +5477,17 @@
             if (doit(i) == 2 .and. abs((enin(i)-enout(i))/(enin(i)+enout(i))) > 1.e-4_r8) then
                write(iulog,*) ' the enthalpy is not conserved for point ', &
                   i, k, enin(i), enout(i)
+#ifdef WRF_PORT
+               call wrf_message(iulog)
+#endif
                write(iulog,*) ' t, q, p, enin ', t(i,k), q(i,k), p(i,k), enin(i)
+#ifdef WRF_PORT
+               call wrf_message(iulog)
+#endif
                write(iulog,*) ' tsp, qsp, enout ', tsp(i,k), qsp(i,k), enout(i)
+#ifdef WRF_PORT
+               call wrf_message(iulog)
+#endif
                call endrun ('FINDSP')
             endif
          end do

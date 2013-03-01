@@ -366,14 +366,14 @@ SUBROUTINE med_nest_move ( parent, nest )
                              ims, ime, jms, jme, kms, kme,    &
                              ips, ipe, jps, jpe, kps, kpe    )
 
-    CALL BASE_STATE_PARENT ( parent%Z3d,parent%Q3d,parent%T3d,parent%PSTD,  &
-                             parent%PINT,parent%T,parent%Q,parent%CWM,      &
-                             parent%FIS,parent%QSH,parent%PD,parent%pdtop,parent%pt,   &
-                             parent%ETA1,parent%ETA2,                               &
-                             parent%DETA1,parent%DETA2,                             &
-                             IDS,IDE,JDS,JDE,KDS,KDE,                                       &
-                             IMS,IME,JMS,JME,KMS,KME,                                       &
-                             IPS,IPE,JPS,JPE,KPS,KPE                                        )
+    ! CALL BASE_STATE_PARENT ( parent%Z3d,parent%Q3d,parent%T3d,parent%PSTD,  &
+    !                          parent%PINT,parent%T,parent%Q,parent%CWM,      &
+    !                          parent%FIS,parent%QSH,parent%PD,parent%pdtop,parent%pt,   &
+    !                          parent%ETA1,parent%ETA2,                               &
+    !                          parent%DETA1,parent%DETA2,                             &
+    !                          IDS,IDE,JDS,JDE,KDS,KDE,                                       &
+    !                          IMS,IME,JMS,JME,KMS,KME,                                       &
+    !                          IPS,IPE,JPS,JPE,KPS,KPE                                        )
 
 !   Initialize some more constants required especially for terrain adjustment processes
 
@@ -1569,6 +1569,19 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
       REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: VBWGT1,VBWGT2,VBWGT3,VBWGT4
       INTEGER, DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: IIV,JJV
      END SUBROUTINE G2T2V_new
+     subroutine init_hnear(iih,jjh,hbwgt1,hbwgt2,hbwgt3,hbwgt4, &
+          hnear_i,hnear_j,                     &
+          IDS,IDE,JDS,JDE,KDS,KDE,             &
+          IMS,IME,JMS,JME,KMS,KME,             &
+          ITS,ITE,JTS,JTE,KTS,KTE)
+       implicit none
+       integer, intent(in) :: ids,ide,jds,jde,kds,kde, &
+            ims,ime,jms,jme,kms,kme, &
+            its,ite,jts,jte,kts,kte, &
+            iih(ims:ime,jms:jme), jjh(ims:ime,jms:jme)
+       integer, intent(out), dimension(ims:ime,jms:jme) :: hnear_i,hnear_j
+       real, dimension(ims:ime,jms:jme), intent(in) :: hbwgt1, hbwgt2, hbwgt3, hbwgt4
+     end subroutine init_hnear
    END INTERFACE
 ! executable
 ! 
@@ -1711,6 +1724,14 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
                        grid%nests(kid)%ptr%VBWGT3,grid%nests(kid)%ptr%VBWGT4,                      &
                        grid%nests(kid)%ptr%I_PARENT_START,grid%nests(kid)%ptr%J_PARENT_START,      & ! nest start I, J in parent domain
                        3,                              & ! Ratio of parent and child grid ( always = 3 for NMM)
+                       IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
+                       IMS,IME,JMS,JME,KMS,KME,            &
+                       ITS,ITE,JTS,JTE,KTS,KTE      )
+
+         CALL init_hnear(    grid%nests(kid)%ptr%IIH,grid%nests(kid)%ptr%JJH,                            & ! output grid index in parent grid
+                       grid%nests(kid)%ptr%HBWGT1,grid%nests(kid)%ptr%HBWGT2,                      & ! output weights in terms of parent grid
+                       grid%nests(kid)%ptr%HBWGT3,grid%nests(kid)%ptr%HBWGT4,                      &
+                       grid%nests(kid)%ptr%hnear_i,grid%nests(kid)%ptr%hnear_j,                    &
                        IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
                        IMS,IME,JMS,JME,KMS,KME,            &
                        ITS,ITE,JTS,JTE,KTS,KTE      )

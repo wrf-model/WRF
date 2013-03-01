@@ -285,6 +285,23 @@
       END IF
 
 !-----------------------------------------------------------------------
+!  shcu_physics = 3 (grimsshcuscheme) only works with YSU PBL.     
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%bl_pbl_physics(i) .NE. YSUSCHEME ) .AND. &
+              ( model_config_rec%shcu_physics(i) .EQ. GRIMSSHCUSCHEME ) ) THEN
+            model_config_rec%shcu_physics(i) = 0
+            oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = 'bl_pbl_physics /= 1, implies shcu_physics cannot be 3, resetting'
+         CALL wrf_message ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
 !  If analysis FDDA is turned off, reset the io_forms to zero so that
 !  there is no chance that WRF tries to input the data.
 !-----------------------------------------------------------------------
@@ -481,6 +498,8 @@
            model_config_rec % num_soil_layers = 6
       IF ( model_config_rec % sf_surface_physics(1) .EQ. PXLSMSCHEME ) &
            model_config_rec % num_soil_layers = 2
+      IF ( model_config_rec % sf_surface_physics(1) .EQ. CLMSCHEME ) &
+           model_config_rec % num_soil_layers = 10
       IF ( model_config_rec % sf_surface_physics(1) .EQ. 88          ) &
            model_config_rec % num_soil_layers = 4
 

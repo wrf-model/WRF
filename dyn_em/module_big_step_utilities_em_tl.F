@@ -5394,7 +5394,7 @@ SUBROUTINE G_PHY_PREP(config_flags, mu, mud, muu, muud, muv, muvd, u, ud&
 &  rqishtend, rqsshten, rqsshtend, rqgshten, rqgshtend, rthften, rthftend&
 &  , rqvften, rqvftend, rundgdten, rundgdtend, rvndgdten, rvndgdtend, &
 &  rthndgdten, rthndgdtend, rphndgdten, rphndgdtend, rqvndgdten, &
-&  rqvndgdtend, rmundgdten, ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  rqvndgdtend, rmundgdten, landmask, xland, ids, ide, jds, jde, kds, kde, ims, ime, jms, &
 &  jme, kms, kme, its, ite, jts, jte, kts, kte)
   IMPLICIT NONE
 !----------------------------------------------------------------------
@@ -5447,6 +5447,11 @@ SUBROUTINE G_PHY_PREP(config_flags, mu, mud, muu, muud, muv, muvd, u, ud&
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: &
 &  rundgdtend, rvndgdtend, rthndgdtend, rphndgdtend, rqvndgdtend
   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: rmundgdten
+!jdf
+  REAL,  DIMENSION( ims:ime, jms:jme )                            , &
+          INTENT(INOUT)   ::                               landmask, &
+                                                              xland
+!jdf
   INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, &
 &  j_startv
   INTEGER :: i, j, k
@@ -5487,6 +5492,15 @@ SUBROUTINE G_PHY_PREP(config_flags, mu, mud, muu, muud, muv, muvd, u, ud&
   ELSE
     k_end = kte
   END IF
+
+!jdf
+    do j = j_start,j_end
+    do i = i_start, i_end
+      if(landmask(i,j).lt.0.5) xland(i,j)=2.0
+    enddo
+    enddo
+!jdf
+
 !  compute thermodynamics and velocities at pressure points (or half levels)
   DO j=j_start,j_end
     DO k=k_start,k_end

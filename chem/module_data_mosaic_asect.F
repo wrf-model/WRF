@@ -339,7 +339,7 @@
           dhi_sect( maxd_asize, maxd_atype ),       &
           sigmag_aer(maxd_asize, maxd_atype)
 
-	character*10, save ::   &
+	character*20, save ::   &
       	  name_mastercomp_aer( maxd_acomp ),  &
       	  name_aer( maxd_acomp, maxd_atype )
 

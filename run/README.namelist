@@ -101,6 +101,8 @@ For SST updating (used only with sst_update=1):
  auxinput4_interval                  = 360      ; minutes generally matches time given by interval_seconds
  io_form_auxinput4                   = 2        ; IO format, required in V3.2
 
+ nwp_diagnostics                     = 1        ; adds 7 history-interval max diagnostic fields
+
 For additional regional climate surface fields
 
  output_diagnostics                  = 1        ; adds 36 surface diagnostic arrays (max/min/mean/std)
@@ -668,8 +670,19 @@ Namelist variables for controlling the adaptive time step option:
                                                 ;             =2: z0 from Davis et al (2008), zt & zq from Garratt (1992)
  fractional_seaice                   = 0        ; treat sea-ice as fractional field (1) or ice/no-ice flag (0)
  seaice_albedo_opt                   = 0        ; option to set albedo over sea ice
-                                                ; 0 = seaice albedo is a constant 0.80
+                                                ; 0 = seaice albedo is a constant value from namelist option seaice_albedo_default
                                                 ; 1 = seaice albedo is f(Tair,Tskin,Snow) follwing Mills (2011) for Arctic Ocean
+ seaice_albedo_default               =  0.80    ; default value of seaice albedo for seaice_albedo_opt=0
+ seaice_snowdepth_opt                = 0        ; method for treating snow depth on sea ice
+                                                ; 0 = snow depth on sea ice is bounded by seaice_snowdepth_min and seaice_snowdepth_max
+                                                ; 1 = snow depth on sea ice read in from input array SNOWSI (bounded by 
+                                                ;     seaice_snowdepth_min and seaice_snodepth_max)
+ seaice_snowdepth_max                = 1.E10    ; maximum allowed accumulation of snow (m) on sea ice
+ seaice_snowdepth_min                = 0.001    ; minimum snow depth (m) on sea ice
+ seaice_thickness_opt                = 0        ; option for treating seaice thickness
+                                                ; 0 = seaice thickness is uniform value taken from namelist variable seaice_thickness_default
+                                                ; 1 = seaice_thickness is read in from input variable ICEDEPTH
+ seaice_thickness_default            = 3.0      ; default value of seaice thickness for seaice_thickness_opt=0
  tice2tsk_if2cold                    = .false.  ; set Tice to Tsk to avoid unrealistically low sea ice temperatures
  iz0tlnd                             = 0        ; thermal roughness length for sfclay and myjsfc (0 = old, 1 = veg dependent Chen-Zhang Czil)
                                                 ;     for mynn sfc (0=Zilitinkevitch,1=Chen-Zhang,2=mod Yang,3=const zt)
@@ -677,6 +690,7 @@ Namelist variables for controlling the adaptive time step option:
  prec_acc_dt (max_dom)               = 0.,      ; number of minutes in precipitation bucket (ARW only) - will add three
                                                   new 2d output fields: prec_acc_c, prec_acc_nc and snow_acc_nc
  topo_wind (max_dom)                 = 0,       ; 1 = improve effect of topography for surface winds.
+ ua_phys                             = .false.  ; Option to activate UA Noah changes
 
 Options for wind turbine drag parameterization:
 
@@ -734,7 +748,7 @@ Options for use with the Noah-MP Land Surface Model:
  opt_inf                            = 1,        ; Noah-MP Soil Permeability option
                                                 ;    1 = Linear effects, more permeable;
                                                 ;    2 = Non-linear effects, less permeable
- opt_rad                            = 1,        ; Noah-MP Radiative Transfer option
+ opt_rad                            = 3,        ; Noah-MP Radiative Transfer option
                                                 ;    1 = Modified two-stream;
                                                 ;    2 = Two-stream applied to grid-cell
                                                 ;    3 = Two-stream applied to vegetated fraction

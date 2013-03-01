@@ -247,6 +247,9 @@ BENCH_END(g_init_zero_tend_tim)
                         grid%rthften,  grid%g_rthften, grid%rqvften, grid%g_rqvften,                    &
                         grid%RUNDGDTEN, grid%g_RUNDGDTEN, grid%RVNDGDTEN, grid%g_RVNDGDTEN, grid%RTHNDGDTEN, grid%g_RTHNDGDTEN, &
                         grid%RPHNDGDTEN,grid%g_RPHNDGDTEN,grid%RQVNDGDTEN, grid%g_RQVNDGDTEN,grid%RMUNDGDTEN,&
+!jdf
+                        grid%landmask,grid%xland,                 &
+!jdf
                         ids, ide, jds, jde, kds, kde,           &
                         ims, ime, jms, jme, kms, kme,           &
                         grid%i_start(ij), grid%i_end(ij),       &

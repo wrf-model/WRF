@@ -9,7 +9,7 @@ MODULE module_sf_noahdrv
       &                         NSLTYPE, SLPCATS, SLOPE_DATA, SBETA_DATA, FXEXP_DATA, CSOIL_DATA,           &
       &                         SALP_DATA, REFDK_DATA, REFKDT_DATA, FRZK_DATA, ZBOT_DATA, CZIL_DATA,        &
       &                         SMLOW_DATA, SMHIGH_DATA, LVCOEF_DATA, NSLOPE, &
-      &                         FRH2O
+      &                         FRH2O,ZTOPVTBL,ZBOTVTBL
 
   USE module_sf_urban,    only: urban
   USE module_sf_noahlsm_glacial_only, only: sflx_glacial
@@ -47,6 +47,8 @@ CONTAINS
                   RDLAI2D,USEMONALB,                            &
                   RIB,                                          & !?
                   NOAHRES,                                      &
+! Noah UA changes
+                  ua_phys,flx4_2d,fvb_2d,fbur_2d,fgsn_2d,       &
                   ids,ide, jds,jde, kds,kde,                    &
                   ims,ime, jms,jme, kms,kme,                    &
                   its,ite, jts,jte, kts,kte,                    &
@@ -315,6 +317,11 @@ CONTAINS
                                                            ZNT
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(OUT)      ::                         NOAHRES
+
+! Noah UA changes
+   LOGICAL,                                INTENT(IN)  :: UA_PHYS
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: FLX4_2D,FVB_2D,FBUR_2D,FGSN_2D
+   REAL                                                :: FLX4,FVB,FBUR,FGSN
 
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
                INTENT(OUT)    ::                        CHKLOWQ
@@ -890,6 +897,7 @@ CONTAINS
                  EC,EDIR,ET,ETT,ESNOW,DRIP,DEW,                   &    !O
                  BETA,ETP,SSOIL,                                  &    !O
                  FLX1,FLX2,FLX3,                                  &    !O
+		 FLX4,FVB,FBUR,FGSN,UA_PHYS,                      &    !UA 
                  SNOMLT,SNCOVR,                                   &    !O
                  RUNOFF1,RUNOFF2,RUNOFF3,                         &    !O
                  RC,PC,RSMIN,XLAI,RCS,RCT,RCQ,RCSOIL,             &    !O
@@ -1022,10 +1030,23 @@ CONTAINS
    80     CONTINUE
 !       ENDIF
 
+        FLX4_2D(I,J)  = FLX4
+	FVB_2D(I,J)   = FVB
+	FBUR_2D(I,J)  = FBUR
+	FGSN_2D(I,J)  = FGSN
+
      !
      ! Residual of surface energy balance equation terms
      !
-     noahres(i,j) =     ( solnet + lwdn ) - sheat + ssoil - eta - ( emissi * STBOLT * (t1**4) ) - flx1 - flx2 - flx3
+
+     IF ( UA_PHYS ) THEN
+         noahres(i,j) = ( solnet + lwdn ) - sheat + ssoil - eta &
+              - ( emissi * STBOLT * (t1**4) ) - flx1 - flx2 - flx3 - flx4
+
+     ELSE
+         noahres(i,j) = ( solnet + lwdn ) - sheat + ssoil - eta &
+              - ( emissi * STBOLT * (t1**4) ) - flx1 - flx2 - flx3
+     ENDIF
 
 
         IF (SF_URBAN_PHYSICS == 1 ) THEN                                              ! Beginning of UCM CALL if block
@@ -1723,6 +1744,8 @@ CONTAINS
              SIZE(Z0MAXTBL)     < LUCATS .OR. &
              SIZE(ALBEDOMINTBL) < LUCATS .OR. &
              SIZE(ALBEDOMAXTBL) < LUCATS .OR. &
+             SIZE(ZTOPVTBL) < LUCATS .OR. &
+             SIZE(ZBOTVTBL) < LUCATS .OR. &
              SIZE(EMISSMINTBL ) < LUCATS .OR. &
              SIZE(EMISSMAXTBL ) < LUCATS ) THEN
            CALL wrf_error_fatal('Table sizes too small for value of LUCATS in module_sf_noahdrv.F')
@@ -1735,7 +1758,8 @@ CONTAINS
                         SNUPTBL(LC),MAXALB(LC), LAIMINTBL(LC),     &
                         LAIMAXTBL(LC),EMISSMINTBL(LC),             &
                         EMISSMAXTBL(LC), ALBEDOMINTBL(LC),         &
-                        ALBEDOMAXTBL(LC), Z0MINTBL(LC), Z0MAXTBL(LC)
+                        ALBEDOMAXTBL(LC), Z0MINTBL(LC), Z0MAXTBL(LC),&
+			ZTOPVTBL(LC), ZBOTVTBL(LC)
           ENDDO
 !
           READ (19,*)
@@ -1778,6 +1802,8 @@ CONTAINS
       CALL wrf_dm_bcast_real    ( EMISSMAXTBL  , NLUS )
       CALL wrf_dm_bcast_real    ( ALBEDOMINTBL , NLUS )
       CALL wrf_dm_bcast_real    ( ALBEDOMAXTBL , NLUS )
+      CALL wrf_dm_bcast_real    ( ZTOPVTBL , NLUS )
+      CALL wrf_dm_bcast_real    ( ZBOTVTBL , NLUS )
       CALL wrf_dm_bcast_real    ( MAXALB  , NLUS )
       CALL wrf_dm_bcast_real    ( TOPT_DATA    , 1 )
       CALL wrf_dm_bcast_real    ( CMCMAX_DATA  , 1 )

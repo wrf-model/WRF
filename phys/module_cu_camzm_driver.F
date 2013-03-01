@@ -2,7 +2,7 @@ MODULE module_cu_camzm_driver
 
 !Roughly based on zm_conv_intr.F90 from CAM
 
-  USE module_cam_support, only: pcnst, pcols, pver, pverp
+  USE module_cam_support, only: pcnst =>pcnst_runtime, pcols, pver, pverp
 
   IMPLICIT NONE
 
@@ -19,24 +19,27 @@ SUBROUTINE camzm_driver(                                      &
              ,ims,ime, jms,jme, kms,kme                       &
              ,its,ite, jts,jte, kts,kte                       &
              ,itimestep, bl_pbl_physics, sf_sfclay_physics    &
-             ,th, t_phy, tsk, tke_pbl, ust, qv, qc, qi        &
+             ,th, t_phy, tsk, tke_pbl8w, ust, qv, qc, qi      &
              ,mavail, kpbl, pblh, xland, z                    &
              ,z_at_w, dz8w, ht, p, p8w, pi_phy, psfc          &
-             ,u_phy, v_phy, hfx, qfx, cldfra                  &
-             ,tpert_camuwpbl                                  &
-             ,dx, dt                                          &
+             ,u_phy, v_phy, hfx, qfx, cldfra, cldfra_mp_all   &
+             ,is_CAMMGMP_used, tpert_camuwpbl                 &
+             ,dx, dt, stepcu, cudt, curr_secs, adapt_step_flag&
+             ,cudtacttime                                     & 
              ,cape_out, mu_out, md_out, zmdt, zmdq            &
              ,rliq_out, dlf_out                               &
              ,pconvb, pconvt, cubot, cutop, raincv, pratec    &
              ,rucuten, rvcuten                                &
              ,rthcuten, rqvcuten, rqccuten, rqicuten          &
+             ,rqcncuten, rqincuten                            &
              ,evaptzm, fzsntzm, evsntzm, evapqzm, zmflxprc    &
              ,zmflxsnw, zmntprpd, zmntsnpd, zmeiheat          &
              ,cmfmc, cmfmcdzm, preccdzm, precz                &
              ,zmmtu, zmmtv, zmupgu, zmupgd, zmvpgu, zmvpgd    &
              ,zmicuu, zmicud, zmicvu, zmicvd                  &
              ,zmdice, zmdliq                                  &
-                                                              )
+             !Following intent-OUT variables are required by wet scavenging code of WRF_CHEM package- Balwinder.Singh@pnnl.gov
+             ,evapcdp3d, icwmrdp3d, rprddp3d                  )
 ! This routine is based on zm_conv_tend in CAM. It handles the mapping of
 ! variables from the WRF to the CAM framework for the Zhang-McFarlane
 ! convective parameterization.
@@ -45,26 +48,30 @@ SUBROUTINE camzm_driver(                                      &
 ! Last modified: William.Gustafson@pnl.gov, Nov. 2010
 !------------------------------------------------------------------------
   USE shr_kind_mod,    only: r8 => shr_kind_r8
-  USE physconst, only: cpair, gravit
+  USE physconst, only: latice,cpair, gravit
   USE module_cu_camzm, only: convtran, momtran, zm_conv_evap, zm_convr
+  USE wv_saturation,            only: fqsatd,epsqs, polysvp
 
 ! Subroutine arguments...
+  logical, intent(in)    ::    is_CAMMGMP_used
   INTEGER, INTENT(IN   ) ::    ids,ide, jds,jde, kds,kde,  &
                                ims,ime, jms,jme, kms,kme,  &
                                its,ite, jts,jte, kts,kte,  &
                      bl_pbl_physics, & !pbl scheme
                           itimestep, & !time step index
-                  sf_sfclay_physics    !surface layer scheme
+                  sf_sfclay_physics, & !surface layer scheme
+                             stepcu    !number of time steps between Cu calls
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) :: &
                              cldfra, & !cloud fraction
+                      cldfra_mp_all, & !cloud fraction from CAMMGMP microphysics
                                dz8w, & !height between interfaces (m)
                                   p, & !pressure at mid-level (Pa)
                                 p8w, & !pressure at level interface (Pa)
                              pi_phy, & !exner function, (p0/p)^(R/cpair) (none)
                                  qv, & !water vapor mixing ratio (kg/kg-dry air)
                                  th, & !potential temperature (K)
-                            tke_pbl, & !turbulent kinetic energy from PBL (m2/s2)
+                          tke_pbl8w, & !turbulent kinetic energy from PBL (m2/s2)
                               t_phy, & !temperature (K)
                               u_phy, & !zonal wind component on T points (m/s)
                               v_phy, & !meridional wind component on T points (m/s)
@@ -111,8 +118,16 @@ SUBROUTINE camzm_driver(                                      &
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT), OPTIONAL :: &
                            rqccuten, & !UNcoupled cloud droplet mixing ratio tendency due to Cu scheme (kg/kg/s)
-                           rqicuten    !UNcoupled ice crystal mixing ratio tendency due to Cu scheme (kg/kg/s)
+                           rqicuten, & !UNcoupled ice crystal mixing ratio tendency due to Cu scheme (kg/kg/s)
+                          rqcncuten, & !PMA
+                          rqincuten    !PMA
 
+
+  !variables required by wet scavenging in WRF_CHEM -Balwinder.Singh@pnnl.gov
+  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT) :: & 
+                          evapcdp3d, & !Evaporation of deep convective precipitation (kg/kg/s)
+                          icwmrdp3d, & !Deep Convection in-cloud water mixing ratio (kg/m2)
+                           rprddp3d    !dq/dt due to deep convective rainout (kg/kg/s)
   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: &
                                 hfx, & !upward heat flux at sfc (W/m2)
                                  ht, & !terrain height (m)
@@ -138,11 +153,19 @@ SUBROUTINE camzm_driver(                                      &
                            rliq_out    !vertical integral of reserved cloud water
 
   REAL, INTENT(IN) :: &
+                               cudt, & !cumulus time step (min)
+                          curr_secs, & !current forecast time (s)
                                  dt, & !domain time step (s)
                                  dx    !grid spacing (m)
 
+  REAL, INTENT (INOUT) :: &
+                        cudtacttime    !for adaptive time stepping, next to to run scheme (s)   
+
   INTEGER, DIMENSION( ims:ime, jms:jme), INTENT(IN) :: &
                                kpbl    !index of PBL level
+
+  LOGICAL, INTENT(IN), OPTIONAL :: &
+                    adapt_step_flag    !using adaptive time steps?
 
 ! Local variables...
   !Variables dimensioned for input to ZM routines
@@ -150,7 +173,10 @@ SUBROUTINE camzm_driver(                                      &
                                mcon, & !convective mass flux--m sub c (sub arg out in CAM)
                                pflx, & !scattered precip flux at each level (sub arg out in CAM)
                               pint8, & !pressure at layer interface (Pa)
-                                zi8    !height above sea level at mid-level (m)
+                                zi8, & !height above sea level at mid-level (m)
+                            flxprec, & !evap outfld: convective-scale flux of precip at interfaces (kg/m2/s)
+                            flxsnow    !evap outfld: convective-scale flux of snow at interfaces (kg/m2/s)
+
 
   REAL(r8), DIMENSION(pcols, kte, pcnst) ::  &
                                 qh8    !specific humidity (kg/kg-moist air)
@@ -173,8 +199,6 @@ SUBROUTINE camzm_driver(                                      &
                                 cme, & !cmf condensation - evaporation (~units?, sub arg out in CAM)
                                 dlf, & !scattered version of the detraining cld h2o tendency (~units?)
                          fake_dpdry, & !place holder for dpdry, delta pres. of dry atmos.
-                            flxprec, & !evap outfld: convective-scale flux of precip at interfaces (kg/m2/s)
-                            flxsnow, & !evap outfld: convective-scale flux of snow at interfaces (kg/m2/s)
                             ntprprd, & !evap outfld: net precip production in layer (kg/kg/s)
                             ntsnprd, & !evap outfld: net snow production in layer (kg/kg/s)
                               pdel8, & !pressure thickness of layer (between interfaces, Pa)
@@ -188,8 +212,17 @@ SUBROUTINE camzm_driver(                                      &
                                stnd, & !heating rate (dry static energy tendency, W/kg)
                       tend_s_snwprd, & !heating rate of snow production (~units?)
                     tend_s_snwevmlt, & !heating rate of evap/melting of snow (~units?)
-                                zdu    !detraining mass flux (~units? sub arg out in CAM)
+                                zdu, & !detraining mass flux (~units? sub arg out in CAM)
+                            evapcdp    !Evaporation of deep convective precipitation (kg/kg/s)
 
+  REAL(r8), DIMENSION(pcols, kte) ::  &
+                                esl, & !saturation vapor pressure
+                                qvs, & !saturation specific humidity
+                          qcten_det, &
+                          qiten_det, &
+                         qcnten_det, &
+                         qinten_det, &
+                          qsten_det
   REAL(r8), DIMENSION(pcols) ::  &
                                cape, & !convective available potential energy (J/kg)
                               jctop, & !row of top-of-deep-convection indices passed out (sub arg out in CAM)
@@ -231,12 +264,87 @@ SUBROUTINE camzm_driver(                                      &
                             lengath    ! number of gathered points
 
   !Other local vars
+  REAL(r8):: dum1,cudts,hcudts
   INTEGER :: i, j, k, kflip, n, ncnst
   INTEGER :: lchnk         !chunk identifier, used to map 2-D to 1-D arrays in WRF
   INTEGER :: ncol          !number of atmospheric columns in chunk
   LOGICAL, DIMENSION(3) :: l_qt    !logical switches for constituent tendency presence
   LOGICAL, DIMENSION(2) :: l_windt !logical switches for wind tendency presence
+  LOGICAL :: run_param , & !flag for handling alternate cumulus call freq.
+             doing_adapt_dt , decided
+!
+! Check to see if this is a convection timestep...
+!
 
+!  Initialization for adaptive time step.
+
+   if (cudt .eq. 0.) then
+    cudts = dt
+    hcudts=cudts*0.5_r8
+   else 
+    cudts=cudt*60._r8
+    hcudts=cudts*0.5_r8
+   end if
+
+   doing_adapt_dt = .FALSE.
+   IF ( PRESENT(adapt_step_flag) ) THEN
+      IF ( adapt_step_flag ) THEN
+         doing_adapt_dt = .TRUE.
+         IF ( cudtacttime .EQ. 0. ) THEN
+            cudtacttime = curr_secs + cudt*60.
+         END IF
+      END IF
+   END IF
+
+!  Do we run through this scheme or not?
+
+!    Test 1:  If this is the initial model time, then yes.
+!                ITIMESTEP=1
+!    Test 2:  If the user asked for the cumulus to be run every time step, then yes.
+!                CUDT=0 or STEPCU=1
+!    Test 3:  If not adaptive dt, and this is on the requested cumulus frequency, then yes.
+!                MOD(ITIMESTEP,STEPCU)=0
+!    Test 4:  If using adaptive dt and the current time is past the last requested activate cumulus time, then yes.
+!                CURR_SECS >= CUDTACTTIME
+
+!  If we do run through the scheme, we set the flag run_param to TRUE and we set the decided flag
+!  to TRUE.  The decided flag says that one of these tests was able to say "yes", run the scheme.
+!  We only proceed to other tests if the previous tests all have left decided as FALSE.
+
+!  If we set run_param to TRUE and this is adaptive time stepping, we set the time to the next
+!  cumulus run.
+
+   decided = .FALSE.
+   run_param = .FALSE.
+   IF ( ( .NOT. decided ) .AND. &
+        ( itimestep .EQ. 1 ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( ( cudt .EQ. 0. ) .OR. ( stepcu .EQ. 1 ) ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( .NOT. doing_adapt_dt ) .AND. &
+        ( MOD(itimestep,stepcu) .EQ. 0 ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+   END IF
+
+   IF ( ( .NOT. decided ) .AND. &
+        ( doing_adapt_dt ) .AND. &
+        ( curr_secs .GE. cudtacttime ) ) THEN
+      run_param   = .TRUE.
+      decided     = .TRUE.
+      cudtacttime = curr_secs + cudt*60
+   END IF
+
+  !Leave the subroutine if it is not yet time to call the cumulus param
+  if( .not. run_param ) return
 !
 ! Initialize...
 !
@@ -257,8 +365,12 @@ SUBROUTINE camzm_driver(                                      &
         !Flip variables on the layer middles
         do k = kts,kte
            kflip = kte-k+1
-
-           cld8(1,kflip)  = cldfra(i,k,j)
+           if(is_CAMMGMP_used) then
+              cld8(1,kflip)  = cldfra_mp_all(i,k,j)
+           else
+              cld8(1,kflip)  = cldfra(i,k,j)
+           endif
+		   if (itimestep .eq. 1) cld8(1,kflip) =0.
            pdel8(1,kflip) = p8w(i,k,j) - p8w(i,k+1,j)
            pmid8(1,kflip) = p(i,k,j)
            qh8(1,kflip,1) = max( qv(i,k,j)/(1.+qv(i,k,j)), 1e-30 ) !values of 0 cause a crash in entropy
@@ -296,7 +408,7 @@ SUBROUTINE camzm_driver(                                      &
         call get_tpert(bl_pbl_physics, sf_sfclay_physics, dx, &
              mavail(i,j), kpbl(i,j), pblh(i,j), &
              dz8w(i,1,j), psfc(i,j), qv(i,1,j), t_phy(i,1,j), &
-             th(i,1,j), tsk(i,j), tke_pbl(i,:,j), ust(i,j), &
+             th(i,1,j), tsk(i,j), tke_pbl8w(i,:,j), ust(i,j), &
              u_phy(i,1,j), v_phy(i,1,j), hfx(i,j), qfx(i,j), &
              tpert_camuwpbl(i,j), kte, &
              tpert(1))
@@ -309,11 +421,14 @@ SUBROUTINE camzm_driver(                                      &
         !      2*dt is passed into the subroutines. In WRF we use 1*dt
         !      in place of CAM's 2*dt since the adjustment is made
         !      elsewhere.
+        !Modified by Balwinder.Singh@pnnl.gov: We are no longer using 0.5*dt
+
+        !PMA: pass in 0.5 x cudt (sec)
         call zm_convr( lchnk, ncol, &
              t8, qh8, prec, jctop, jcbot, &
              pblh8, zm8, phis, zi8, qtnd, &
              stnd, pmid8, pint8, pdel8, &
-             0.5_r8*real(dt,r8), mcon, cme, cape, &
+             hcudts, mcon, cme, cape, &
              tpert, dlf, pflx, zdu, rprd, &
              mu(:,:,lchnk), md(:,:,lchnk),du(:,:,lchnk),eu(:,:,lchnk),ed(:,:,lchnk), &
              dp(:,:,lchnk), dsubcld(:,lchnk), jt(:,lchnk), maxg(:,lchnk), ideep(:,lchnk), &
@@ -323,13 +438,14 @@ SUBROUTINE camzm_driver(                                      &
         !same order as in CAM's zm_conv_tend to ease maintenance...
         do k=kts,kte
            kflip = kte-k+1
+           dlf(1,kflip)    = max(min(1.e-6_r8,dlf(1,kflip)),0._r8)
            dlf_out(i,k,j)  = dlf(1,kflip)
         end do
         cape_out(i,j) = cape(1)
         rliq_out(i,j) = rliq(1)
 
         !Convert mass flux from reported mb/s to kg/m2/s
-        mcon(:ncol,:pver) = mcon(:ncol,:pver) * 100._r8/gravit
+        mcon(:ncol,:pverp) = mcon(:ncol,:pverp) * 100._r8/gravit
 
         ! Store upward and downward mass fluxes in un-gathered arrays
         ! + convert from mb/s to kg/m2/s
@@ -375,8 +491,8 @@ SUBROUTINE camzm_driver(                                      &
            rthcuten(i,k,j) = zmdt(i,k,j)/pi_phy(i,k,j)
            rqvcuten(i,k,j) = zmdq(i,k,j)/(1._r8 - zmdq(i,k,j))
 
-           t8(1,kflip)    = t8(1,kflip) + zmdt(i,k,j)*real(dt,r8)
-           qh8(1,kflip,1) = qh8(1,kflip,1) + zmdq(i,k,j)*real(dt,r8)
+           t8(1,kflip)    = t8(1,kflip) + zmdt(i,k,j)*cudts   !PMA
+           qh8(1,kflip,1) = qh8(1,kflip,1) + zmdq(i,k,j)*cudts   !PMA
         end do
 
         ! Determine the phase of the precipitation produced and add latent heat of fusion
@@ -388,8 +504,9 @@ SUBROUTINE camzm_driver(                                      &
         call zm_conv_evap(ncol, lchnk, &
              t8, pmid8, pdel8, qh8(:,:,1), &
              stnd, tend_s_snwprd, tend_s_snwevmlt, qtnd, &
-             rprd, cld8, real(dt,r8), &
+             rprd, cld8, cudts, &                            !PMA: This subroutine uses delt not 2xdelt, so pass in cudts
              prec, snow, ntprprd, ntsnprd , flxprec, flxsnow)
+        evapcdp(:ncol,:pver) = qtnd(:ncol,:pver) !Added by Balwinder.Singh@pnnl.gov for assisting wetscavenging in WRF_CHEM package
 
         ! Parse output variables from zm_conv_evap
         do k=kts,kte
@@ -404,14 +521,21 @@ SUBROUTINE camzm_driver(                                      &
            zmntprpd(i,k,j) = ntprprd(1,kflip)
            zmntsnpd(i,k,j) = ntsnprd(1,kflip)
            zmeiheat(i,k,j) = stnd(1,kflip) !Do we really need this and evaptzm?
-           cmfmc(i,k,j)    = mcon(1,kflip) !Set to deep value here, shallow added in UW scheme
-           cmfmcdzm(i,k,j) = mcon(1,kflip)
+           !BSINGH - Following quantities are to be stored at interfaces
+           !cmfmc(i,k,j)    = mcon(1,kflip) !Set to deep value here, shallow added in UW scheme
+           !cmfmcdzm(i,k,j) = mcon(1,kflip)
            preccdzm(i,j)   = prec(1)       !Rain rate from just deep
            precz(i,j)      = prec(1)       !Rain rate for total convection (just deep right now)
            pratec(i,j)     = prec(1)*1e3   !Rain rate used in WRF for accumulation (mm/s)
-           raincv(i,j)     = pratec(i,j)*dt !Rain amount for time step returned back to WRF
+           raincv(i,j)     = pratec(i,j)*cudts !Rain amount for time step returned back to WRF   !PMA
         end do
 
+        !BSINGH - storing quantities at interfaces
+        do k = kts,kte+1
+           kflip             = kte - k + 2
+           cmfmc(i,k,j)    = mcon(1,kflip) !Set to deep value here, shallow added in UW scheme
+           cmfmcdzm(i,k,j) = mcon(1,kflip)
+        end do
         !Add tendency from zm_conv_evap to tendencies arrays. Also,
         !increment the local state arrays to reflect additional tendency
         !Note that we are not readjusting the pressure levels to hydrostatic
@@ -428,8 +552,8 @@ SUBROUTINE camzm_driver(                                      &
            rqvcuten(i,k,j) = rqvcuten(i,k,j) + &
                              evapqzm(i,k,j)/(1. - qv(i,k,j))
 
-           t8(1,kflip)    = t8(1,kflip) + evaptzm(i,k,j)*real(dt,r8)
-           qh8(1,kflip,1) = qh8(1,kflip,1) + evapqzm(i,k,j)*real(dt,r8)
+           t8(1,kflip)    = t8(1,kflip) + evaptzm(i,k,j)*cudts    !PMA
+           qh8(1,kflip,1) = qh8(1,kflip,1) + evapqzm(i,k,j)*cudts !PMA
         end do
 
         ! Momentum transport
@@ -446,7 +570,7 @@ SUBROUTINE camzm_driver(                                      &
              l_windt, winds, 2, mu(:,:,lchnk), md(:,:,lchnk), &
              du(:,:,lchnk), eu(:,:,lchnk), ed(:,:,lchnk), dp(:,:,lchnk), dsubcld(:,lchnk), &
              jt(:,lchnk),maxg(:,lchnk), ideep(:,lchnk), 1, lengath(lchnk), &
-             itimestep, wind_tends, pguall, pgdall, icwu, icwd, real(dt,r8), stnd )
+             itimestep, wind_tends, pguall, pgdall, icwu, icwd, hcudts, stnd )  !PMA
         
         !Add tendency from momtran to tendencies arrays. Also,
         !increment the local state arrays to reflect additional tendency
@@ -462,9 +586,9 @@ SUBROUTINE camzm_driver(                                      &
            rucuten(i,k,j)  = wind_tends(1,kflip,1)
            rvcuten(i,k,j)  = wind_tends(1,kflip,2)
            rthcuten(i,k,j) = rthcuten(i,k,j) + &
-                                 stnd(1,kflip)/cpair/pi_phy(i,k,j)
+                                stnd(1,kflip)/cpair/pi_phy(i,k,j)
 
-           t8(1,kflip) = t8(1,kflip) + stnd(1,kflip)/cpair*real(dt,r8)
+           t8(1,kflip) = t8(1,kflip) + stnd(1,kflip)/cpair*cudts   !PMA
            !winds is not used again so do not bother updating them
         end do
 
@@ -512,18 +636,49 @@ SUBROUTINE camzm_driver(                                      &
              itimestep, fracis, cloudtnd, fake_dpdry)
 
         !Parse output for convtran and increment tendencies
+!PMA>
+        do k=kts,kte
+           kflip = kte-k+1
+           esl(1,kflip)     = polysvp(t8(1,kflip),0)
+           qvs(1,kflip)     = epsqs*esl(1,kflip)/(pmid8(1,kflip)-(1._r8-epsqs)*esl(1,kflip))
+            if( t8(1,kflip) > 268.15_r8 ) then
+              dum1 = 0.0_r8
+            elseif( t8(1,kflip) < 238.15_r8 ) then
+              dum1 = 1.0_r8
+            else
+              dum1 = ( 268.15_r8 - t8(1,kflip) ) / 30._r8
+            endif
+           qcten_det(1,kflip) = dlf(1,kflip) * ( 1._r8 - dum1 )
+           qiten_det(1,kflip) = dlf(1,kflip) * dum1
+           qcnten_det(1,kflip) = 3._r8 * (dlf(1,kflip)    * ( 1._r8 - dum1 ) ) / (4._r8*3.14159_r8*(8.e-6_r8**3)*997._r8)
+           qinten_det(1,kflip) = 3._r8 * (dlf(1,kflip)    *  dum1 ) / (4._r8*3.14159_r8*(25.e-6_r8**3)*500._r8)
+           qsten_det(1,kflip)  =  dlf(1,kflip) * dum1 * latice                    ! liquid to ice heating
+        end do
         do k=kts,kte
            kflip = kte-k+1
 
-           zmdice(i,k,j) = cloudtnd(1,kflip,3)
-           zmdliq(i,k,j) = cloudtnd(1,kflip,2)
+           !For assisting wetscavenging in WRF_CHEM package -Balwinder.Singh@pnnl.gov
+           evapcdp3d(i,k,j) = evapcdp(1,kflip) 
+           icwmrdp3d(i,k,j) = ql8(1,kflip)     
+           rprddp3d(i,k,j)  = rprd(1,kflip)    
+
+           zmdice(i,k,j) = cloudtnd(1,kflip,3)+qiten_det(1,kflip)
+           zmdliq(i,k,j) = cloudtnd(1,kflip,2)+qcten_det(1,kflip)
+           rthcuten(i,k,j) = rthcuten(i,k,j) + &
+                            qsten_det(1,kflip)/cpair/pi_phy(i,k,j)
 
            !Convert cloud tendencies from wet to dry mix ratios
            if( present(rqccuten) ) then
-              rqccuten(i,k,j) = cloudtnd(1,kflip,2)/(1. - qv(i,k,j))
+              rqccuten(i,k,j) = (cloudtnd(1,kflip,2)+qcten_det(1,kflip))/(1. - qv(i,k,j))
            end if
            if( present(rqicuten) ) then
-              rqicuten(i,k,j) = cloudtnd(1,kflip,3)/(1. - qv(i,k,j))
+              rqicuten(i,k,j) = (cloudtnd(1,kflip,3)+qiten_det(1,kflip))/(1. - qv(i,k,j))
+           end if
+           if( present(rqcncuten) ) then
+              rqcncuten(i,k,j) = qcnten_det(1,kflip)
+           end if
+           if( present(rqincuten) ) then
+              rqincuten(i,k,j) = qinten_det(1,kflip)
            end if
         end do
         
@@ -534,8 +689,8 @@ END SUBROUTINE camzm_driver
 
 !------------------------------------------------------------------------
 SUBROUTINE zm_conv_init(rucuten, rvcuten, rthcuten, rqvcuten,           &
-                     rqccuten, rqicuten,                                &
-                     p_qc, p_qi, param_first_scalar,                    &
+                     rqccuten, rqicuten, rqcncuten, rqincuten,          &
+                     p_qc, p_qi, p_qnc, p_qni, param_first_scalar,      &
                      restart,                                           &
                      ids, ide, jds, jde, kds, kde,                      &
                      ims, ime, jms, jme, kms, kme,                      &
@@ -546,24 +701,25 @@ SUBROUTINE zm_conv_init(rucuten, rvcuten, rthcuten, rqvcuten,           &
 !
 ! Author: William.Gustafson@pnl.gov, Nov. 2009
 !------------------------------------------------------------------------
-  USE module_cam_esinti,  only: esinti
   USE physconst, only: epsilo, latvap, latice, rh2o, cpair, tmelt
-  USE module_bl_camuwpbl_driver, only: vd_register
   USE module_cu_camzm, only: zm_convi, zmconv_readnl
 
   LOGICAL , INTENT(IN)           ::   restart
   INTEGER , INTENT(IN)           ::   ids, ide, jds, jde, kds, kde, &
                                       ims, ime, jms, jme, kms, kme, &
                                       its, ite, jts, jte, kts, kte, &
-                                      p_qc, p_qi, param_first_scalar
+                                      p_qc, p_qi, p_qnc, p_qni,     &
+                                      param_first_scalar
 
-  REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(OUT) :: &
+  REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: &
                                                            rucuten, &
                                                            rvcuten, &
                                                           rthcuten, &
                                                           rqvcuten, &
                                                           rqccuten, &
-                                                          rqicuten
+                                                          rqicuten, &
+                                                          rqcncuten,&
+                                                          rqincuten
 
   integer :: i, itf, j, jtf, k, ktf
   integer :: limcnv
@@ -580,14 +736,6 @@ SUBROUTINE zm_conv_init(rucuten, rvcuten, rthcuten, rqvcuten,           &
 !
   pver  = ktf-kts+1
   pverp = pver+1
-!
-! Initialize the saturation vapor pressure look-up table...
-! This could be moved to a master cam-init subroutine too if it is needed
-! by more than one CAM parameterization. In CAM this is called from
-! phys_init.
-!
-  call esinti(epsilo, latvap, latice, rh2o, cpair, tmelt)
-
 !~Need code here to set limcnv to max convective level of 40 mb... To 
 ! properly set an average value for the whole domain would involve doing
 ! a collective operation across the whole domain to get pressure averages
@@ -613,7 +761,7 @@ SUBROUTINE zm_conv_init(rucuten, rvcuten, rthcuten, rqvcuten,           &
 ! 
 !~need to determine if convection should happen in PBL and set
 ! no_deep_pbl_in accordingly
-  call zm_convi(limcnv, NO_DEEP_PBL_IN=.false.)
+  call zm_convi(limcnv, NO_DEEP_PBL_IN=.true.)
 
 !
 ! Set initial values for arrays dependent on restart conditions
@@ -626,8 +774,10 @@ SUBROUTINE zm_conv_init(rucuten, rvcuten, rthcuten, rqvcuten,           &
               rvcuten(i,k,j)  = 0.
               rthcuten(i,k,j) = 0.
               rqvcuten(i,k,j) = 0.
-              if( p_qc > param_first_scalar ) rqccuten(i,k,j) = 0.
-              if( p_qi > param_first_scalar ) rqicuten(i,k,j) = 0.
+              if( p_qc  > param_first_scalar ) rqccuten(i,k,j)  = 0.
+              if( p_qi  > param_first_scalar ) rqicuten(i,k,j)  = 0.
+              if( p_qnc > param_first_scalar ) rqcncuten(i,k,j) = 0.
+              if( p_qni > param_first_scalar ) rqincuten(i,k,j) = 0.
            enddo
         enddo
      enddo
@@ -639,7 +789,7 @@ END SUBROUTINE zm_conv_init
 !------------------------------------------------------------------------
 SUBROUTINE get_tpert(bl_pbl_physics, sf_sfclay_physics, dx, &
      mavail, kpbl, pblh, dzlowest, &
-     psfc, qvlowest, t_phylowest, thlowest, tsk, tke_pbl, ust, &
+     psfc, qvlowest, t_phylowest, thlowest, tsk, tke_pbl8w, ust, &
      u_phylowest, v_phylowest, hfx, qfx, tpert_camuwpbl, kte, tpert)
 ! Calculates the temperature perturbation used to trigger convection.
 ! This should only be used if tpert is not already provided by CAM's PBL
@@ -667,7 +817,7 @@ SUBROUTINE get_tpert(bl_pbl_physics, sf_sfclay_physics, dx, &
 !
 ! Subroutine arguments...
 !
-  real, dimension(:), intent(in) :: tke_pbl
+  real, dimension(:), intent(in) :: tke_pbl8w
   real, intent(in) :: dx, dzlowest, hfx, mavail, pblh, psfc, qvlowest, &
        tpert_camuwpbl, tsk, t_phylowest, thlowest, ust, u_phylowest, &
        v_phylowest
@@ -768,8 +918,8 @@ SUBROUTINE get_tpert(bl_pbl_physics, sf_sfclay_physics, dx, &
      if( UnstableOrNeutral ) then
         !1st, get avg TKE w/n the PBL as a proxy for ebrk variable in CAM
         ebrk = 0.
-        do k=1,min(kpbl,kte)
-           ebrk = ebrk + tke_pbl(k)
+        do k=1,min(kpbl,kte+1) !BSINGH - Changed KTE to KTE+1 as tke_pbl8w is @ interfaces
+           ebrk = ebrk + tke_pbl8w(k)
         end do
         ebrk = ebrk/real(kpbl)
 

@@ -69,8 +69,8 @@ MODULE module_wrf_quilt
 
   INTEGER, PARAMETER :: int_num_handles = 99
   INTEGER, PARAMETER :: max_servers = int_num_handles+1  ! why +1?
-  LOGICAL, DIMENSION(int_num_handles) :: okay_to_write, int_handle_in_use, okay_to_commit
-  INTEGER, DIMENSION(int_num_handles) :: int_num_bytes_to_write, io_form
+  LOGICAL, DIMENSION(0:int_num_handles) :: okay_to_write, int_handle_in_use, okay_to_commit
+  INTEGER, DIMENSION(0:int_num_handles) :: int_num_bytes_to_write, io_form
   REAL, POINTER,SAVE :: int_local_output_buffer(:)
   INTEGER,      SAVE :: int_local_output_cursor
   LOGICAL          :: quilting_enabled
@@ -916,6 +916,8 @@ okay_to_w = .false.
 ! other servers in this I/O server group.
           IF ( mytask_local .EQ. ntasks_local_group-1 ) THEN
             ALLOCATE( bigbuf( (bigbufsize+1)/itypesize ) )
+         else
+            ALLOCATE( bigbuf(1) )
           ENDIF
 
 ! Collect buffers and fields from all I/O servers in this I/O server group
@@ -1464,7 +1466,7 @@ okay_to_w = .false.
           DEALLOCATE( bigbuf )
         ENDIF
 #endif
-
+        if(allocated(bigbuf)) deallocate(bigbuf)
 ! Retrieve header and all patches for the next field from the internal 
 ! buffers.  
         CALL retrieve_pieces_of_field ( obuf , VarName, obufsize, sz, retval )

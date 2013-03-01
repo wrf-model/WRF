@@ -15,6 +15,8 @@ MODULES1=                               \
 	module_linked_lisk2.o	\
         module_random.o                 \
         module_llxy.o                   \
+        module_interp_nmm.o             \
+        module_interp_store.o           \
         module_MPP.o 
 
 MODULES2=                               \

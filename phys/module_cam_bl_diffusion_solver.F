@@ -1,6 +1,7 @@
 #define WRF_PORT
-
-module diffusion_solver
+#define MODAL_AERO
+! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
+  module diffusion_solver
 
   !------------------------------------------------------------------------------------ !
   ! Module to solve vertical diffusion equations using a tri-diagonal solver.           !
@@ -22,12 +23,10 @@ module diffusion_solver
   ! Modularization      :  J. McCaa, September 2004                                     !
   ! Most Recent Code    :  Sungsu Park, Aug. 2006, Dec. 2008, Jan. 2010.                !
   !------------------------------------------------------------------------------------ !
-  
-
-#ifndef WRF_PORT 
+#ifndef WRF_PORT
   use cam_logfile,   only : iulog
 #else
-  use module_cam_support,   only: iulog
+  use module_cam_support,   only : iulog
 #endif
 
   implicit none
@@ -108,6 +107,9 @@ module diffusion_solver
     errstring = ''
     if( kind .ne. r8 ) then
         write(iulog,*) 'KIND of reals passed to init_vdiff -- exiting.'
+#ifdef WRF_PORT
+        call wrf_message(iulog)
+#endif        
         errstring = 'init_vdiff'
         return
     endif
@@ -287,8 +289,9 @@ module diffusion_solver
     timeres  = 7200._r8                                  ! Relaxation time scale of residual stress ( >= dt ) [ s ]
 #ifndef WRF_PORT 
     call phys_getopts( do_iss_out = do_iss )
+#else
+    do_iss = .true. !hardwired to true
 #endif
-    do_iss = .true.
 
     ! ----------------------- !
     ! Main Computation Begins !

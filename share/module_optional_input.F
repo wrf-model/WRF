@@ -21,7 +21,7 @@ MODULE module_optional_input
 
    INTEGER :: flag_sst      , flag_toposoil
 
-   INTEGER :: flag_icedepth , flag_icefrac
+   INTEGER :: flag_icedepth , flag_icefrac  , flag_albsi , flag_snowsi
 
    INTEGER :: flag_ptheta
 
@@ -633,6 +633,14 @@ USE module_io_domain
 
       flag_icedepth = 0 
       flag_icefrac  = 0 
+      flag_albsi    = 0
+      flag_snowsi   = 0
+
+      flag_name(1:8) = 'ICEFRAC '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_icefrac  = itmp
+      END IF
 
       flag_name(1:8) = 'ICEDEPTH'
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
@@ -640,10 +648,16 @@ USE module_io_domain
          flag_icedepth = itmp
       END IF
 
-      flag_name(1:8) = 'ICEFRAC '
+      flag_name(1:8) = 'ALBSI   '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
       IF ( ierr .EQ. 0 ) THEN
-         flag_icefrac  = itmp
+         flag_albsi  = itmp
+      END IF
+    
+      flag_name(1:8) = 'SNOWSI  '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_snowsi  = itmp
       END IF
 
       !
@@ -658,6 +672,30 @@ USE module_io_domain
           ENDDO
       ENDIF
     
+      !
+      !  If sea-ice albedo is not found, set it to a large negative
+      !  that we can check on later.
+      !
+      IF ( flag_albsi == 0 ) THEN
+          DO j = jts , MIN(jde-1,jte)
+              DO i = its , MIN(ide-1,ite)
+                  grid%albsi(i,j) = -1.E8
+              ENDDO
+          ENDDO
+      ENDIF
+
+      !
+      !  If snow depth on sea ice is not found, set it to a large negative
+      !  that we can check on later.
+      !
+      IF ( flag_snowsi == 0 ) THEN
+          DO j = jts , MIN(jde-1,jte)
+              DO i = its , MIN(ide-1,ite)
+                  grid%snowsi(i,j) = -1.E8
+              ENDDO
+          ENDDO
+      ENDIF
+
    END SUBROUTINE optional_ice
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

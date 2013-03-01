@@ -3265,8 +3265,16 @@ BENCH_START(micro_driver_tim)
       &        ,QLSINK=grid%qlsink,CLDFRA_OLD=grid%cldfra_old             &
       &        ,PRECR=grid%precr, PRECI=grid%preci, PRECS=grid%precs, PRECG=grid%precg &
       &        ,CHEM_OPT=config_flags%chem_opt, PROGN=config_flags%progn  &
+!======================
+      ! Variables required for CAMMGMP Scheme when run with WRF_CHEM
+      &        ,CHEM=chem                                                 &
+      &        ,QME3D=grid%qme3d,PRAIN3D=grid%prain3d                     &
+      &        ,NEVAPR3D=grid%nevapr3d                                    &
+      &        ,RATE1ORD_CW2PR_ST3D=grid%rate1ord_cw2pr_st3d              &
+      &        ,DGNUM4D=grid%dgnum4d,DGNUMWET4D=grid%dgnumwet4d           &
+!======================
 #endif
-      &        ,XLAND=grid%xland                                          &
+      &        ,XLAND=grid%xland,SNOWH=grid%SNOW                           &  !PMA
       &        ,SPECIFIED=specified_bdy, CHANNEL_SWITCH=channel_bdy       &
       &        ,F_RAIN_PHY=grid%f_rain_phy                                &
       &        ,F_RIMEF_PHY=grid%f_rimef_phy                              &
@@ -3280,6 +3288,26 @@ BENCH_START(micro_driver_tim)
       &        ,KTS=k_start, KTE=min(k_end,kde-1)                         &
       &        ,NUM_TILES=grid%num_tiles                                  &
       &        ,NAER=grid%naer                                            &
+!======================
+      ! Variables required for CAMMGMP Scheme
+      &        ,DLF=grid%dlf,DLF2=grid%dlf2,T_PHY=grid%t_phy,P_HYD=grid%p_hyd  &
+      &        ,P8W_HYD=grid%p_hyd_w,TKE_PBL8w=grid%tke_pbl8w             &
+      &        ,Z_AT_W=grid%z_at_w,QFX=grid%qfx,RLIQ=grid%rliq            &
+      &        ,TURBTYPE3D=grid%turbtype3d,SMAW3D=grid%smaw3d             &
+      &        ,WSEDL3D=grid%wsedl3d,CLDFRA_OLD_MP=grid%cldfra_old_mp     &
+      &        ,CLDFRA_MP=grid%cldfra_mp,CLDFRA_MP_ALL=grid%cldfra_mp_ALL &
+      &        ,CLDFRAI=grid%cldfrai             &
+      &        ,CLDFRAL=grid%cldfral,CLDFRA_CONV=grid%CLDFRA_CONV         &
+      &        ,ALT=grid%alt,EXCH_H8W=grid%exch_h8w                       &
+      &        ,ACCUM_MODE=config_flags%accum_mode                        &
+      &        ,AITKEN_MODE=config_flags%aitken_mode                      &
+      &        ,COARSE_MODE=config_flags%coarse_mode                      &
+      &        ,ICWMRSH3D=grid%icwmrsh,ICWMRDP3D=grid%icwmrdp3d           &
+      &        ,SHFRC3D=grid%shfrc3d,CMFMC3D=grid%cmfmc                   &
+      &        ,CMFMC2_3D=grid%cmfmc2,CONFIG_FLAGS=config_flags           &
+      &        ,FNM=grid%fnm,FNP=grid%fnp,RH_OLD_MP=grid%rh_old_mp        &
+      &        ,LCD_OLD_MP=grid%lcd_old_mp                                &
+!======================
                  ! Optional
       &        , RAINNC=grid%rainnc, RAINNCV=grid%rainncv                 &
       &        , SNOWNC=grid%snownc, SNOWNCV=grid%snowncv                 &
@@ -3901,6 +3929,21 @@ BENCH_END(bc_2d_tim)
       &             ,PREC_ACC_NC=grid%prec_acc_nc                          &
       &             ,PREC_ACC_DT=config_flags%prec_acc_dt                  &
       &             ,CURR_SECS=curr_secs                                   &
+      &             ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics          &
+      &             ,DIAGFLAG=diag_flag                                    &
+      &             ,HISTORY_INTERVAL=grid%history_interval                &
+      &             ,ITIMESTEP=grid%itimestep                              &
+      &             ,U10=grid%u10,V10=grid%v10,W=grid%w_2                  &
+      &             ,WSPD10MAX=grid%wspd10max                              &
+      &             ,UP_HELI_MAX=grid%up_heli_max                          &
+      &             ,W_UP_MAX=grid%w_up_max,W_DN_MAX=grid%w_dn_max         &
+      &             ,ZNW=grid%znw,W_COLMEAN=w_colmean                      &
+      &             ,NUMCOLPTS=numcolpts,W_MEAN=grid%w_mean                &
+      &             ,GRPL_MAX=grid%grpl_max,GRPL_COLINT=grpl_colint        &
+      &             ,REFD_MAX=grid%refd_max                                &
+      &             ,refl_10cm=grid%refl_10cm                              &
+      &             ,QG_CURR=moist(ims,kms,jms,P_QG)                       &
+      &             ,RHO=rho,PH=grid%ph_2,PHB=grid%phb,G=g                 &
                   ! Dimension arguments
       &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
       &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &

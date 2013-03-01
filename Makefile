@@ -7,7 +7,8 @@ RM      =       /bin/rm -f
 CHEM_FILES =	../chem/module_aerosols_sorgam.o \
 		../chem/module_gocart_aerosols.o \
 		../chem/module_mosaic_driver.o \
-		../chem/module_input_tracer.o
+		../chem/module_input_tracer.o \
+		../chem/module_aerosols_soa_vbs.o
 
 deflt :
 		@ echo Please compile the code using ./compile
@@ -608,6 +609,10 @@ fseek_test :
 	@ cd tools ; /bin/rm -f fseeko_test ; $(SCC) -DTEST_FSEEKO -o fseeko_test fseek_test.c ; cd ..
 	@ cd tools ; /bin/rm -f fseeko64_test ; $(SCC) -DTEST_FSEEKO64 -o fseeko64_test fseek_test.c ; cd ..
 
+# rule used by configure to test if this will compile with netcdf4
+nc4_test:
+	@cd tools ; /bin/rm -f nc4_test.{exe,nc,o} ; $(SCC) -o nc4_test.exe nc4_test.c -I$(NETCDF)/include -L$(NETCDF)/lib -lnetcdf $(NETCDF4_DEP_LIB) ; cd ..
+
 ### 3.b.  sub-rule to build the expimental core
 
 # uncomment the two lines after exp_core for EXP
@@ -626,7 +631,7 @@ nmm_core :
 
 toolsdir :
 	@ echo '--------------------------------------'
-	( cd tools ; $(MAKE) CC_TOOLS="$(CC_TOOLS) -DIWORDSIZE=$(IWORDSIZE) -DMAX_HISTORY=$(MAX_HISTORY) -DWRFPLUS" )
+	( cd tools ; $(MAKE) CC_TOOLS_CFLAGS="$(CC_TOOLS_CFLAGS)" CC_TOOLS="$(CC_TOOLS) -DIWORDSIZE=$(IWORDSIZE) -DMAX_HISTORY=$(MAX_HISTORY) -DWRFPLUS" )
 
 
 #	( cd tools ; $(MAKE) CC_TOOLS="$(CC_TOOLS) -DIO_MASK_SIZE=$(IO_MASK_SIZE)" )

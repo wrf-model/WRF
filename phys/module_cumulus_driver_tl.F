@@ -363,7 +363,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    !Kwon for sas2010 shallow convection
                     INTENT(INOUT) ::  HPBL2D, EVAP2D, HEAT2D
 !
-   REAL, DIMENSION( ims:ime, jms:jme, kms:kme ),                 &
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
                    INTENT(INOUT) :: rucuten,rvcuten
 !
 ! optional arguments

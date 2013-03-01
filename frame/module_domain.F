@@ -947,6 +947,12 @@ CONTAINS
       CALL wrf_dm_define_comms( grid )
 #endif
 
+#if ( NMM_CORE==1 )
+      grid%interp_mp = .not. ( size(grid%f_ice)>1 .or. size(grid%f_rain)>1 .or. size(grid%f_rimef)>1 )
+#else
+      grid%interp_mp = .true.
+#endif
+
    END SUBROUTINE alloc_and_configure_domain
 
    SUBROUTINE get_fieldstr(ix,c,instr,outstr,noutstr,noerr)

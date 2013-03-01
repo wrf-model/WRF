@@ -1,14 +1,14 @@
 #define WRF_PORT
+#define MODAL_AERO
+! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
+  module trb_mtn_stress
 
-module trb_mtn_stress
-
-#ifndef WRF_PORT 
+  use shr_kind_mod,  only : r8 => shr_kind_r8
+#ifndef WRF_PORT
   use cam_logfile,   only : iulog
 #else
   use module_cam_support,   only: iulog
 #endif
-  use shr_kind_mod,  only : r8 => shr_kind_r8
-
 
   implicit none
   private      
@@ -21,17 +21,11 @@ module trb_mtn_stress
   ! Private data !
   ! ------------ !
 
-#if( defined WACCM_PHYS)
-  real(r8), parameter :: z0fac  = 0.1_r8      ! Factor determining z_0 from orographic standard deviation [ no unit ]
   real(r8), parameter :: horomin= 1._r8       ! Minimum value of subgrid orographic height for mountain stress [ m ]
-#else
-  real(r8), parameter :: z0fac  = 0.075_r8    ! Factor determining z_0 from orographic standard deviation [ no unit ]
-  real(r8), parameter :: horomin= 1._r8       ! Minimum value of subgrid orographic height for mountain stress [ m ]
-#endif
-
   real(r8), parameter :: z0max  = 100._r8     ! Maximum value of z_0 for orography [ m ]
   real(r8), parameter :: dv2min = 0.01_r8     ! Minimum shear squared [ m2/s2 ]
-  real(r8)            :: oroconst             ! Converts from standard deviation to height [ no unit ]
+  real(r8)            :: orocnst              ! Converts from standard deviation to height [ no unit ]
+  real(r8)            :: z0fac                ! Factor determining z_0 from orographic standard deviation [ no unit ] 
   real(r8)            :: karman               ! von Karman constant
   real(r8)            :: gravit               ! Acceleration due to gravity
   real(r8)            :: rair                 ! Gas constant for dry air
@@ -42,17 +36,18 @@ module trb_mtn_stress
   !                                                                             !
   !============================================================================ !
 
-  subroutine init_tms( kind, oro_in, karman_in, gravit_in, rair_in )
+  subroutine init_tms( kind, oro_in, z0fac_in, karman_in, gravit_in, rair_in )
     
     integer,  intent(in) :: kind   
-    real(r8), intent(in) :: oro_in, karman_in, gravit_in, rair_in
+    real(r8), intent(in) :: oro_in, z0fac_in, karman_in, gravit_in, rair_in
     
     if( kind .ne. r8 ) then
         write(iulog,*) 'KIND of reals passed to init_tms -- exiting.'
         stop 'compute_tms'
     endif
 
-    oroconst = oro_in
+    orocnst  = oro_in
+    z0fac    = z0fac_in
     karman   = karman_in
     gravit   = gravit_in
     rair     = rair_in
@@ -124,7 +119,7 @@ module trb_mtn_stress
 
      ! determine subgrid orgraphic height ( mean to peak )
 
-       horo = oroconst * sgh(i)
+       horo = orocnst * sgh(i)
 
      ! No mountain stress if horo is too small
 

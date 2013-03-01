@@ -1,7 +1,7 @@
 .SUFFIXES: .c .o
 
 CC_TOOLS = cc
-CFLAGS = #-ansi
+CFLAGS = $(CC_TOOLS_CFLAGS) #-ansi
 LDFLAGS =
 DEBUG = -g 
 OBJ = registry.o my_strtok.o reg_parse.o data.o type.o misc.o \

@@ -63,7 +63,7 @@ CFLAGS_LOCAL    =       -w -O3 -c -DLANDREAD_STUB
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       -O3 -ftree-vectorize -ftree-loop-linear -funroll-loops
+FCOPTIM         =       -O2 -ftree-vectorize -funroll-loops
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT         =       -O0
 FCDEBUG         =       # -g $(FCNOOPT)
@@ -124,7 +124,7 @@ RANLIB          =      ranlib
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
-#ARCH    Linux x86_64, PGI compiler with gcc # serial smpar dmpar dm+sm
+#ARCH    Linux x86_64 i486 i586 i686, PGI compiler with gcc # serial smpar dmpar dm+sm
 #
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
@@ -167,19 +167,6 @@ CC_TOOLS        =      $(SCC)
 ###########################################################
 #ARCH    Linux x86_64 i486 i586 i686 PGI compiler with pgcc YELLOWSTONE # serial smpar dmpar dm+sm
 #
-
-#	New NETCDF4 pieces
-
-NETCDFPATH	=	/glade/user/huangwei/lib/netcdf/4.1.3_seq
-HDFPATH		=	/glade/user/huangwei/lib/hdf5/1.8.7_seq
-ZLIBPATH	=	/contrib/ncl_with_nc4/libs/zlib/1.2.5
-NETCDF4_IO_OPTS	=	-DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT
-
-#	Modify existing WRF Makefile macros
-
-LIB_LOCAL	=	-L$(NETCDFPATH)/lib -lnetcdf -lnetcdff -lgpfs \
-			-L$(HDFPATH)/lib -lhdf5 -lhdf5_hl \
-			-L$(ZLIBPATH)/lib -lz
 
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
@@ -386,7 +373,7 @@ CC              =       $(DM_CC)
 LD              =       $(FC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION       =       -i4
-ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DINTEL_ALIGN64 -DCHUNK=16 -DXEON_OPTIMIZED_WSM5
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DINTEL_ALIGN64 -DCHUNK=16 -DXEON_OPTIMIZED_WSM5 -DOPTIMIZE_CFL_TEST
 OPTNOSIMD       =
 OPTKNC          =       -mP2OPT_hlo_fusion=F -mGLOB_default_function_attrs="knc_stream_store_controls=2" -fimf-precision=low -fimf-domain-exclusion=15 -mP2OPT_hpo_vec_check_dp_trip=F
 CFLAGS_LOCAL    =       -w -O3 $(OPTKNC)
@@ -430,7 +417,7 @@ CC              =       $(DM_CC)
 LD              =       $(FC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION       =       -i4
-ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DINTEL_ALIGN64 -DCHUNK=60 -DXEON_OPTIMIZED_WSM5
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DINTEL_ALIGN64 -DCHUNK=60 -DXEON_OPTIMIZED_WSM5 -DOPTIMIZE_CFL_TEST
 OPTNOSIMD       =
 OPTAVX          =       -xAVX
 CFLAGS_LOCAL    =       -w -O3 $(OPTAVX)
@@ -459,19 +446,6 @@ CC_TOOLS        =      gcc
 ###########################################################
 #ARCH    Linux x86_64 i486 i586 i686, ifort compiler with icc YELLOWSTONE #serial smpar dmpar dm+sm
 #
-
-#	New NETCDF4 pieces
-
-NETCDFPATH	=	/glade/user/huangwei/lib/netcdf/4.1.3_seq
-HDFPATH		=	/glade/user/huangwei/lib/hdf5/1.8.7_seq
-ZLIBPATH	=	/contrib/ncl_with_nc4/libs/zlib/1.2.5
-NETCDF4_IO_OPTS	=	-DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT
-
-#	Modify existing WRF Makefile macros
-
-LIB_LOCAL	=	-L$(NETCDFPATH)/lib -lnetcdf -lnetcdff -lgpfs \
-			-L$(HDFPATH)/lib -lhdf5 -lhdf5_hl \
-			-L$(ZLIBPATH)/lib -lz
 
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
@@ -558,6 +532,52 @@ PROMOTION       =       -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC
 CFLAGS_LOCAL    =       -w -O3 -ip
 LDFLAGS_LOCAL   =       -ip -lmpi
+CPLUSPLUSLIB    =       
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -O3
+FCREDUCEDOPT	=       $(FCOPTIM)
+FCNOOPT		=       -O0 -fno-inline -fno-ip
+FCDEBUG         =       # -g $(FCNOOPT) -traceback
+FORMAT_FIXED    =       -FI
+FORMAT_FREE     =       -FR
+FCSUFFIX        =
+BYTESWAPIO      =       -convert big_endian
+FCBASEOPTS_NO_G =       -w -ftz -align all -fno-alias -fp-model precise $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =     
+TRADFLAG        =      -traditional
+CPP             =      /lib/cpp -C -P
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4
+RANLIB          =      ranlib
+CC_TOOLS        =      $(SCC) 
+
+###########################################################
+#ARCH    Linux x86_64 i486 i586 i686, ifort compiler with icc, IBM POE #serial smpar dmpar dm+sm
+
+# This is identical to the Intel Fortran with Intel MPI but configured
+# to use IBM POE as the MPI implementation.  NCEP needs this
+# configuration to run on the new WCOSS Tide and Gyre operational
+# forecasting machines.
+
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -openmp -fpp -auto
+OMPCC           =       # -openmp -fpp -auto
+SFC             =       ifort
+SCC             =       icc
+CCOMP           =       icc
+DM_FC           =       mpfort
+DM_CC           =       mpcc
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -i4
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC
+CFLAGS_LOCAL    =       -w -O3 -ip
+LDFLAGS_LOCAL   =       -ip
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
@@ -800,7 +820,7 @@ CFLAGS_LOCAL    =       -w -O3 -c -DLANDREAD_STUB
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       -O3 -ftree-vectorize -ftree-loop-linear -funroll-loops
+FCOPTIM         =       -O2 -ftree-vectorize -funroll-loops
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0
 FCDEBUG         =       # -g $(FCNOOPT)
@@ -850,7 +870,7 @@ FORMAT_FREE     =       -Mfree
 FCSUFFIX        =       
 BYTESWAPIO      =       -byteswapio
 FCBASEOPTS_NO_G =       -w -Kieee -Ktrap=fp $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
-FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG) -Mnomod
 MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
 TRADFLAG        =      -traditional
 CPP             =      cpp -C -P -xassembler-with-cpp
@@ -1010,7 +1030,7 @@ CFLAGS_LOCAL    =       -w -O3 -c -DLANDREAD_STUB -DMACOS
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       -O3 -ftree-vectorize -funroll-loops
+FCOPTIM         =       -O2 -ftree-vectorize -funroll-loops
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT         =       -O0
 FCDEBUG         =       # -g $(FCNOOPT)
@@ -1109,63 +1129,6 @@ FCBASEOPTS_NO_G =       -w -qspill=81920 -qmaxmem=-1 $(FORMAT_FREE) $(BYTESWAPIO
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =       
-CPP             =       /lib/cpp -C -P
-AR              =       ar
-ARFLAGS         =       ru
-M4 		=       m4 -B 14000
-RANLIB 		=       ranlib
-CC_TOOLS        =       cc
-
-###########################################################
-#ARCH    AIX xlf compiler with xlc NETCDF4 #serial smpar dmpar dm+sm
-
-#	New NETCDF4 pieces
-
-NETCDFPATH	=	/glade/user/huangwei/lib/netcdf/4.1.3_seq
-HDFPATH		=	/glade/user/huangwei/lib/hdf5/1.8.7_seq
-ZLIBPATH	=	/contrib/ncl_with_nc4/libs/zlib/1.2.5
-NETCDF4_IO_OPTS	=	-DUSE_NETCDF4_FEATURES -DWRFIO_NCD_LARGE_FILE_SUPPORT
-
-#	Modify existing WRF Makefile macros
-
-LIB_LOCAL	=	-L$(NETCDFPATH)/lib -lnetcdf -lnetcdff -lgpfs \
-			-L$(HDFPATH)/lib -lhdf5 -lhdf5_hl \
-			-L$(ZLIBPATH)/lib -lz
-
-DMPARALLEL      =       # 1
-OMPCPP		=	# -D_OPENMP
-OMP		=	# -qsmp=noauto
-OMPCC		=	# -qsmp=noauto
-SFC		=       xlf90_r
-SCC		=       cc_r
-SC99		=	c99_r
-CCOMP		=       cc_r
-DM_FC		=	mpxlf90_r
-DM_CC		=       mpcc_r
-FC              =       CONFIGURE_FC
-CC              =       CONFIGURE_CC
-LD		=	$(FC)
-RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
-ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DNATIVE_MASSV $(NETCDF4_IO_OPTS)
-CFLAGS_LOCAL    =       -DNOUNDERSCORE
-LDFLAGS_LOCAL   =       -lmass -lmassv
-CPLUSPLUSLIB    =       -lC
-ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-# -qhot commented out in 3.0.1.1 release because of reported problems with 
-# model results under certain configurations. Use at your own risk.
-FCOPTIM		=       -O3 # -qhot
-FCREDUCEDOPT	=       -O2
-FCNOOPT		=       -qnoopt
-FCDEBUG         =       # -g $(FCNOOPT) -qfullpath
-FORMAT_FIXED    =       -qfixed
-FORMAT_FREE     =       -qfree=f90
-FCSUFFIX        =       -qsuffix=f=f90
-BYTESWAPIO      =       
-FCBASEOPTS_NO_G =       -w -qspill=81920 -qmaxmem=-1 $(FORMAT_FREE) $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
-FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
-MODULE_SRCH_FLAG =     
-TRADFLAG	=	$(NETCDF4_IO_OPTS)
 CPP             =       /lib/cpp -C -P
 AR              =       ar
 ARFLAGS         =       ru

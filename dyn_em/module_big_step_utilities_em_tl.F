@@ -17,8 +17,9 @@
 
  USE module_model_constants
  USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, kfetascheme, g3scheme, &
- p_qv, param_first_scalar, p_qr, p_qc
+ p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
  USE module_configure, ONLY : grid_config_rec_type
+ USE module_wrf_error
 
  CONTAINS
 
@@ -6143,7 +6144,6 @@ SUBROUTINE G_MOIST_PHYSICS_FINISH_EM(t_new, t_newd, t_old, t0, mut, &
   REAL, INTENT(IN) :: t0, dt
   INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end
   INTEGER :: i, j, k, imax, jmax, imin, jmin
-  INTRINSIC MIN
 !--------------------------------------------------------------------
 !<DESCRIPTION>
 !
@@ -6184,6 +6184,28 @@ SUBROUTINE G_MOIST_PHYSICS_FINISH_EM(t_new, t_newd, t_old, t0, mut, &
         DO i=i_start,i_end
           mptend = th_phyd(i, k, j) - h_diabaticd(i, k, j)
           mpten = th_phy(i, k, j) - h_diabatic(i, k, j)
+          IF (mpten .GT. mptenmax) THEN
+            mptenmax = mpten
+            imax = i
+            jmax = j
+          END IF
+          IF (mpten .LT. mptenmin) THEN
+            mptenmin = mpten
+            imin = i
+            jmin = j
+          END IF
+          IF (config_flags%mp_tend_lim*dt .GT. mpten) THEN
+            mpten = mpten
+          ELSE
+            mpten = config_flags%mp_tend_lim*dt
+            mptend = 0.0
+          END IF
+          IF (-(config_flags%mp_tend_lim*dt) .LT. mpten) THEN
+            mpten = mpten
+          ELSE
+            mpten = -(config_flags%mp_tend_lim*dt)
+            mptend = 0.0
+          END IF
           t_newd(i, k, j) = t_newd(i, k, j) + mptend
           t_new(i, k, j) = t_new(i, k, j) + mpten
           h_diabaticd(i, k, j) = mptend/dt

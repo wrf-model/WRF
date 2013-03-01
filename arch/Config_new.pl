@@ -496,6 +496,22 @@ while ( <CONFIGURE_DEFAULTS> )
       $x = $x." (".$paropt.")" ;
       if ( $x eq $optstr[$optchoice] )
       {
+
+        if($ENV{WRF_HYDRO} eq 1) {
+          if($x =~ "PGI") {
+              if($paropt eq 'serial') { $tt = `cd hydro; configure 1`;}
+              else {$tt = `cd hydro; configure 2`;}
+          }
+          if($x =~ "AIX") {
+              if($paropt eq 'serial') { $tt = `cd hydro; configure 3`;}
+              else {$tt = `cd hydro; configure 4`;}
+          }
+          if($x =~ "gfortran") {
+              if($paropt eq 'serial') { $tt = `cd hydro; configure 5`;}
+              else {$tt = `cd hydro; configure 6`;}
+          }
+        }
+
         $latchon = 1 ;
         $sw_ompparallel = "" ;
         $sw_dmparallel = "" ;
@@ -636,7 +652,7 @@ close ARCH_PREAMBLE ;
 printf CONFIGURE_WRF "# Settings for %s\n", $optstr[$optchoice] ;
 print CONFIGURE_WRF @machopts  ;
 print "$ENV{WRF_MARS}" ;
-if ( $ENV{WRF_MARS} || $ENV{WRF_TITAN} || $ENV{WRF_VENUS} )
+	if ( $ENV{WRF_MARS} || $ENV{WRF_TITAN} || $ENV{WRF_VENUS} )
 {
     open ARCH_PLANETAMBLE, "< arch/planetamble" or die "cannot open arch/planetamble" ;
     while ( <ARCH_PLANETAMBLE> ) { print CONFIGURE_WRF } ;

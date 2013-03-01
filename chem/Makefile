@@ -1,4 +1,9 @@
 #
+#  Changing this file requires mods to 
+#	WRFV3_top/chem/KPP/util/wkc/change_chem_Makefile.c
+#	Right now it looks at the line in MODULES with module_data_sorgam
+#	AND it cares about the word DEPENDENCIES.  DO NOT EVEN CHANGE
+#	SPACING ON THESE TWO LINES.
 
 LN      =       ln -sf
 MAKE    =       make -i -r

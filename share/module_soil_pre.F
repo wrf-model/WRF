@@ -1153,7 +1153,9 @@ cycle
       zs  = (/ 0.00 , 0.05 , 0.20 , 0.40 , 1.60 , 3.00 /)
 !      dzs = (/ 0.00 , 0.125, 0.175 , 0.70 , 1.30 , 1.40 /)
      ELSEIF ( num_soil_layers .EQ. 9) THEN
-      zs  = (/ 0.00 , 0.05 , 0.20 , 0.40 , 0.60, 1.00, 1.60 , 2.20, 3.00 /)
+      zs  = (/ 0.00 , 0.01 , 0.04 , 0.10 , 0.30, 0.60, 1.00 , 1.60, 3.00 /)
+!test3 in ppt      zs  = (/ 0.00 , 0.005 , 0.02 , 0.10 , 0.30, 0.60, 1.00 , 1.60, 3.00 /)
+!      zs  = (/ 0.00 , 0.05 , 0.20 , 0.40 , 0.60, 1.00, 1.60 , 2.20, 3.00 /)
 !      dzs = (/ 0.00 , 0.125, 0.175 , 0.70 , 1.30 , 1.40 /)
      ENDIF
 
@@ -1594,7 +1596,28 @@ cycle
          !  Any liquid soil moisture to worry about?
 
          IF ( num_sw_levels_input .GT. 1 ) THEN
+      !  Interpolate between the layers we have (zhave) and those that we want
+      !  (zs).
+      IF ( flag_soil_levels == 1 ) THEN
+!tgs: for RUC LSM
+      z_wantw : DO lwant = 1 , num_soil_layers
+         z_havew : DO lhave = 1 , num_sw_levels_input -1
+            IF ( ( zs(lwant) .GE. zhave(lhave  ) ) .AND. &
+                 ( zs(lwant) .LE. zhave(lhave+1) ) ) THEN
+               DO j = jts , MIN(jde-1,jte)
+                  DO i = its , MIN(ide-1,ite)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+                     sh2o(i,lwant,j)= ( sw_input(i,lhave,j ) * ( zhave(lhave+1) - zs   (lwant) ) + &
+                                         sw_input(i,lhave+1,j) * ( zs   (lwant) - zhave(lhave) ) ) / &
+                                                                 ( zhave(lhave+1) - zhave(lhave) )
+                  END DO
+               END DO
+               EXIT z_havew
+            END IF
+         END DO z_havew
+      END DO z_wantw
 
+     ELSE
             zhave(1) = 0.
             DO l = 1 , num_sw_levels_input
                zhave(l+1) = sw_levels_input(l) / 100.
@@ -1603,22 +1626,23 @@ cycle
 
             !  Interpolate between the layers we have (zhave) and those that we want (zs).
 
-            z_wantw : DO lwant = 1 , num_soil_layers
-               z_havew : DO lhave = 1 , num_sw_levels_input +2 -1
+            z_wantw_2 : DO lwant = 1 , num_soil_layers
+               z_havew_2 : DO lhave = 1 , num_sw_levels_input +2 -1
                   IF ( ( zs(lwant) .GE. zhave(lhave  ) ) .AND. &
                        ( zs(lwant) .LE. zhave(lhave+1) ) ) THEN
                      DO j = jts , MIN(jde-1,jte)
                         DO i = its , MIN(ide-1,ite)
-                           IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                           IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
                            sh2o(i,lwant,j)= ( sw_input(i,lhave  ,j) * ( zhave(lhave+1) - zs   (lwant) ) + &
-                                               sw_input(i,lhave+1,j) * ( zs   (lwant  ) - zhave(lhave) ) ) / &
+                                               sw_input(i,lhave+1,j) * ( zs (lwant  ) - zhave(lhave) ) ) / &
                                                                        ( zhave(lhave+1) - zhave(lhave) )
                         END DO
                      END DO
-                     EXIT z_havew
+                     EXIT z_havew_2
                   END IF
-               END DO z_havew
-            END DO z_wantw
+               END DO z_havew_2
+            END DO z_wantw_2
+       ENDIF
 
          END IF
 
@@ -3109,10 +3133,10 @@ endif
          CALL init_soil_2_real ( tsk , tmn , smois , sh2o , tslb , &
                                  st_input , sm_input , sw_input , landmask , sst , &
                                  zs , dzs , &
-                                 st_levels_input , sm_levels_input , sw_levels_input , &
+                                 st_levels_input , sm_levels_input , sw_levels_input ,&
                                  num_soil_layers , num_st_levels_input , num_sm_levels_input , num_sw_levels_input , &
                                  num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc , &
-                                 flag_sst , flag_soilt000 , flag_soilm000 , &
+                                 flag_sst , flag_soilt000 , flag_soilm000, &
                                  ids , ide , jds , jde , kds , kde , &
                                  ims , ime , jms , jme , kms , kme , &
                                  its , ite , jts , jte , kts , kte )
@@ -3132,7 +3156,7 @@ endif
          CALL init_soil_2_real ( tsk , tmn , smois , sh2o , tslb , &
                                  st_input , sm_input , sw_input , landmask , sst , &
                                  zs , dzs , &
-                                 st_levels_input , sm_levels_input , sw_levels_input , &
+                                 st_levels_input , sm_levels_input , sw_levels_input ,&
                                  num_soil_layers , num_st_levels_input , num_sm_levels_input , num_sw_levels_input , &
                                  num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc , &
                                  flag_sst , flag_soilt000 , flag_soilm000 , &
@@ -3459,7 +3483,8 @@ cycle
       zs  = (/ 0.00 , 0.05 , 0.20 , 0.40 , 1.60 , 3.00 /)
 !      dzs = (/ 0.00 , 0.125, 0.175 , 0.70 , 1.30 , 1.40 /)
      ELSEIF ( num_soil_layers .EQ. 9) THEN
-      zs  = (/ 0.00 , 0.05 , 0.20 , 0.40 , 0.60, 1.00, 1.60 , 2.20, 3.00 /)
+      zs  = (/ 0.00 , 0.01 , 0.04 , 0.10 , 0.30, 0.60, 1.00 , 1.60, 3.00 /)
+!      zs  = (/ 0.00 , 0.05 , 0.20 , 0.40 , 0.60, 1.00, 1.60 , 2.20, 3.00 /)
 !      dzs = (/ 0.00 , 0.125, 0.175 , 0.70 , 1.30 , 1.40 /)
      ENDIF
 
@@ -3575,7 +3600,7 @@ cycle
    SUBROUTINE init_soil_2_real ( tsk , tmn , smois , sh2o , tslb , &
                                  st_input , sm_input , sw_input , landmask , sst , &
                                  zs , dzs , &
-                                 st_levels_input , sm_levels_input , sw_levels_input , &
+                                 st_levels_input , sm_levels_input ,sw_levels_input , &
                                  num_soil_layers , num_st_levels_input , num_sm_levels_input ,  num_sw_levels_input , &
                                  num_st_levels_alloc , num_sm_levels_alloc ,  num_sw_levels_alloc , &
                                  flag_sst , flag_soilt000 , flag_soilm000 , &
@@ -3728,12 +3753,14 @@ cycle
             END DO innerw
          END DO outerw
          IF ( num_sw_levels_input .GT. 1 ) THEN
+           IF ( flag_soilm000 .NE. 1 ) THEN
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
                   sw_input(i,1,j) = sw_input(i,2,j)
                   sw_input(i,num_sw_levels_input+2,j) = sw_input(i,num_sw_levels_input+1,j)
                END DO
             END DO
+           ENDIF
          END IF
 
          found_levels = .TRUE.
@@ -3871,6 +3898,7 @@ cycle
 
          IF ( num_sw_levels_input .GT. 1 ) THEN
 
+      IF ( flag_soilm000 .NE. 1 ) THEN
             zhave(1) = 0.
             DO l = 1 , num_sw_levels_input
                zhave(l+1) = sw_levels_input(l) / 100.
@@ -3894,7 +3922,33 @@ cycle
                   END IF
                END DO z_havew
             END DO z_wantw
+     ELSE
 
+!tgs  initialize from RUCLSM data
+         DO l = 1 , num_sw_levels_input
+            zhave(l) = sw_levels_input(l) / 100.
+         END DO
+
+      !  Interpolate between the layers we have (zhave) and those that we want
+      !  (zs).
+
+      z_wantw_2 : DO lwant = 1 , num_soil_layers
+         z_havew_2 : DO lhave = 1 , num_sw_levels_input -1
+            IF ( ( zs(lwant) .GE. zhave(lhave  ) ) .AND. &
+                 ( zs(lwant) .LE. zhave(lhave+1) ) ) THEN
+               DO j = jts , MIN(jde-1,jte)
+                  DO i = its , MIN(ide-1,ite)
+                     sh2o(i,lwant,j)= ( sw_input(i,lhave,j ) * ( zhave(lhave+1) - zs   (lwant) ) + &
+                                         sw_input(i,lhave+1,j) * ( zs   (lwant) - zhave(lhave) ) ) / &
+                                                                 ( zhave(lhave+1) - zhave(lhave) )
+                  END DO
+               END DO
+               EXIT z_havew_2
+             END IF
+         END DO z_havew_2
+      END DO z_wantw_2
+
+     ENDIF
          END IF
 
 

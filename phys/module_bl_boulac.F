@@ -33,7 +33,7 @@ MODULE module_bl_boulac
    CONTAINS
  
       subroutine boulac(frc_urb2d,idiff,flag_bep,dz8w,dt,u_phy,v_phy   & 
-                      ,th_phy,rho,qv_curr,hfx                                  &
+                      ,th_phy,rho,qv_curr,qc_curr,hfx                                  &
                       ,qfx,ustar,cp,g                                          &
                       ,rublten,rvblten,rthblten                                &
                       ,rqvblten,rqcblten                        & 
@@ -60,6 +60,7 @@ MODULE module_bl_boulac
    integer, INTENT(IN) :: idiff
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::   DZ8W      !vertical resolution       
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::   qv_curr   !moisture  
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::   qc_curr   !liquid water
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::   RHO       !air density
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::   TH_PHY    !potential temperature
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   )    ::   U_PHY     !x-component of wind
@@ -127,7 +128,8 @@ MODULE module_bl_boulac
       real u1D(kms:kme)                 ! wind speed in the x directions
       real v1D(kms:kme)                 ! wind speed in the y directions
       real th1D(kms:kme)                ! potential temperature
-      real q1D(kms:kme)                 ! potential temperature
+      real q1D(kms:kme)                 ! moisture
+      real qc1D(kms:kme)                 ! liquid water
       real rho1D(kms:kme)               ! air density
       real rhoz1D(kms:kme)            ! air density at the faces
       real tke1D(kms:kme)               ! air pressure
@@ -141,11 +143,13 @@ MODULE module_bl_boulac
       real a_v1D(kms:kme)               ! Implicit component of the momentum sources or sinks in the Y-direction
       real a_t1D(kms:kme)               ! Implicit component of the heat sources or sinks
       real a_q1D(kms:kme)               ! Implicit component of the moisture sources or sinks
+      real a_qc1D(kms:kme)               ! Implicit component of the liquid water sources or sinks
       real a_e1D(kms:kme)               ! Implicit component of the TKE sources or sinks
       real b_u1D(kms:kme)               ! Explicit component of the momentum sources or sinks in the X-direction
       real b_v1D(kms:kme)               ! Explicit component of the momentum sources or sinks in the Y-direction
       real b_t1D(kms:kme)               ! Explicit component of the heat sources or sinks
       real b_q1D(kms:kme)               ! Explicit component of the moisture sources or sinks
+      real b_qc1D(kms:kme)               ! Explicit component of the liquid water sources or sinks
       real b_e1D(kms:kme)               ! Explicit component of the TKE sources or sinks
       real dlg1D(kms:kme)               ! Height above ground (L_ground in formula (24) of the BLM paper). 
       real dl_u1D(kms:kme)              ! Length scale (lb in formula (22) ofthe BLM paper)
@@ -155,21 +159,23 @@ MODULE module_bl_boulac
       real wv1D(kms:kme)              ! turbulent flux of momentum (y component)
       real wt1D(kms:kme)              ! turbulent flux of temperature
       real wq1D(kms:kme)              ! turbulent flux of water vapor
+      real wqc1D(kms:kme)              ! turbulent flux of liquid water 
+      real gamma1D(kms:kme)              ! non local term
+      real t2_1D(kms:kme)              ! temperature variance
+      real w2_1D(kms:kme)              ! vertical velocity variance
 ! local added only for diagnostic output
       real a_e(ims:ime,kms:kme,jms:jme) ! implicit term in TKE
       real b_e(ims:ime,kms:kme,jms:jme) ! explicit term in TKE
       real bu(ims:ime,kms:kme,jms:jme) ! buoyancy term in TKE
       real sh(ims:ime,kms:kme,jms:jme) ! shear term in TKE
       real wrk(ims:ime) ! working array
-      integer ix,iy,iz,id,iz_u,iw_u,ig,ir_u,ix1,iy1
+      integer ix,iy,iz,id,iz_u,iw_u,ig,ir_u,ix1,iy1,igamma
       real ufrac_int                                              ! urban fraction     
       real vect,time_tke,hour,zzz
-      real ustarf
+      real ustarf,wstar,wts,t2,w2,tstar_w,zzi
       real summ1,summ2,summ3
       save time_tke,hour
 !
-! store reference state for potential temperature
-! and initialize tke  
 !    
 
 !here I fix the value of the reference state equal to the value of the potnetial temperature
@@ -184,54 +190,51 @@ MODULE module_bl_boulac
         enddo
         enddo
         enddo
-        
-         bu1d=0.
-         sh1d=0.         
-         b_e1d=0.
-         b_u1d=0.
-         b_v1d=0.
-         b_t1d=0.
-         b_q1d=0.
-         a_e1d=0.
-         a_u1d=0.
-         a_v1d=0.
-         a_t1d=0.
-         a_q1d=0.
-       z1D=0.               ! vertical coordinates (faces of the grid)
-       dz1D=0.              ! vertical resolution
-       u1D =0.                ! wind speed in the x directions
-       v1D =0.                ! wind speed in the y directions
-       th1D=0.                ! potential temperature
-       q1D=0.                 ! potential temperature
-       rho1D=0.               ! air density
-       rhoz1D=0.            ! air density at the faces
-       tke1D =0.              ! air pressure
-       th01D =0.              ! reference potential temperature
-       dlk1D =0.              ! dlk
-       dls1D =0.              ! dls
-       exch1D=0.            ! exch
-       sf1D  =1.            ! surface of the grid cells
-       vl1D  =1.             ! volume of the  grid cells
-       a_u1D =0.              ! Implicit component of the momentum sources or sinks in the X-direction
-       a_v1D =0.              ! Implicit component of the momentum sources or sinks in the Y-direction
-       a_t1D =0.              ! Implicit component of the heat sources or sinks
-       a_q1D =0.              ! Implicit component of the moisture sources or sinks
-       a_e1D =0.              ! Implicit component of the TKE sources or sinks
-       b_u1D =0.              ! Explicit component of the momentum sources or sinks in the X-direction
-       b_v1D =0.              ! Explicit component of the momentum sources or sinks in the Y-direction
-       b_t1D =0.              ! Explicit component of the heat sources or sinks
-       b_q1D =0.              ! Explicit component of the moisture sources or sinks
-       b_e1D =0.              ! Explicit component of the TKE sources or sinks
-       dlg1D =0.              ! Height above ground (L_ground in formula (24) of the BLM paper). 
-       dl_u1D=0.              ! Length scale (lb in formula (22) ofthe BLM paper)
-       sh1D  =0.            ! shear
-       bu1D  =0.            ! buoyancy
-       wu1D  =0.            ! turbulent flux of momentum (x component)
-       wv1D  =0.            ! turbulent flux of momentum (y component)
-       wt1D =0.              ! turbulent flux of temperature
-       wq1D =0.             ! turbulent flux of water vapor
-! local added only for diagnostic output
-         
+! initialization
+       z1D=0.               
+       dz1D=0.              
+       u1D =0.               
+       v1D =0.                
+       th1D=0.              
+       q1D=0.                
+       rho1D=0.              
+       rhoz1D=0.            
+       tke1D =0.             
+       th01D =0.             
+       dlk1D =0.              
+       dls1D =0.              
+       exch1D=0.            
+       sf1D  =1.            
+       vl1D  =1.             
+       a_u1D =0.              
+       a_v1D =0.              
+       a_t1D =0.              
+       a_q1D =0. 
+       a_qc1D =0.              
+       a_e1D =0.              
+       b_u1D =0.             
+       b_v1D =0.              
+       b_t1D =0.            
+       b_q1D =0.
+       b_qc1D =0.              
+       b_e1D =0.             
+       dlg1D =0.             
+       dl_u1D=0.              
+       sh1D  =0.            
+       bu1D  =0.            
+       wu1D  =0.           
+       wv1D  =0.            
+       wt1D =0.              
+       wq1D =0.             
+
+! flag to choose the method for the calcaulation of the gamma non local term:
+! igamma=0 - no term
+! igamma=1 Troen and Mahrt
+! igamma=2 Deardroff and Therry-Lacarrere
+! igamma=3 Holstag and Moeng
+    
+      igamma=1    
+      write(*,*)'igamma=',igamma
 ! loop over the columns. 
 ! put variables in 1D temporary arrays
 !     
@@ -244,6 +247,7 @@ MODULE module_bl_boulac
 	  v1D(iz)=v_phy(ix,iz,iy)
 	  th1D(iz)=th_phy(ix,iz,iy)
           q1D(iz)=qv_curr(ix,iz,iy)
+          qc1D(iz)=qc_curr(ix,iz,iy)
           tke1D(iz)=tke(ix,iz,iy)
 	  rho1D(iz)=rho(ix,iz,iy)	   
 	  th01D(iz)=th_0(ix,iz,iy)	  
@@ -279,15 +283,68 @@ MODULE module_bl_boulac
          ufrac_int=0.
          sf1D(kte+1)=1.
         endif
-! call the routine that will solve the turbulence in 1D for tke
+
+! compute the pbl_height
+        call pbl_height(kms,kme,kts,kte,dz1d,z1d,th1D,q1D,pblh(ix,iy))
+
+! compute the values of wstar
+        wts=max(0.,hfx(ix,iy)/rho1D(1)/cp)
+        wstar=(g*wts*pblh(ix,iy)/th01D(1))**(1./3.)
+        tstar_w=wts/wstar
+        t2_1D=0.
+        w2_1D=0.
+        gamma1D=0.
+! compute the variances
+         do iz=kts+1,kte
+	   zzi=z1D(iz)/pblh(ix,iy)
+	   t2_1D(iz)=1.8*(zzi**(-2./3.))*(tstar_w**2.)
+	   w2_1D(iz)=1.8*(zzi**(2./3.))*((1.-0.8*zzi)**2.)*(wstar**2.)
+        enddo
+
+! compute gamma 
+     
+ 
+       if(igamma.eq.1)then
+! (Troen and Mahrt)
+        do iz=kts+1,kte
+         if(z1D(iz).le.1.0*pblh(ix,iy).and.wts.gt.0.)then
+          gamma1D(iz)=10.*wts/wstar/pblh(ix,iy)
+         else
+          gamma1D(iz)=0.
+         endif
+        enddo
+
+       elseif(igamma.eq.2)then
+! Deardorff, and Therry -Lacarrere
+         do iz=kts+1,kte
+	  if(wts.gt.0)then
+           if(z1D(iz).le.(1.0*pblh(ix,iy)).and.z1D(iz).gt.(0.1*pblh(ix,iy)))then
+            gamma1D(iz)=g/th01D(iz)*t2_1D(iz)/w2_1D(iz)
+           else
+            gamma1D(iz)=0.
+           endif
+	  endif
+         enddo
+
+       elseif(igamma.eq.3)then! (Holtslag and Moeng)
+         do iz=kts+1,kte
+          if(z1D(iz).le.(1.0*pblh(ix,iy)).and.wts.gt.0)then
+           gamma1D(iz)=2.*wstar*wts/w2_1D(iz)/pblh(ix,iy)
+          else
+           gamma1D(iz)=0.
+          endif
+         enddo
+	  
+
+       endif
+       
 
          call boulac1D(ix,iy,ufrac_int,kms,kme,kts,kte,dz1d,z1D,dt,u1D,v1D,th1D,rho1D,rhoz1D,q1D,th01D,&
                    tke1D,ustar(ix,iy),hfx(ix,iy),qfx(ix,iy),cp,g,        & 
                    a_e1D,b_e1D,                              & 
-                   dlg1D,dl_u1D,sf1D,vl1D,dlk1D,dls1D,exch1D,sh1D,bu1D)                    
+                   dlg1D,dl_u1D,sf1D,vl1D,dlk1D,dls1D,exch1D,sh1D,bu1D,gamma1D)                    
 
-         call pbl_height(kms,kme,kts,kte,dz1d,z1d,th1D,q1D,pblh(ix,iy))
-
+         
 
 ! store turbulent exchange coefficients, TKE, and other variables
          
@@ -337,6 +394,21 @@ MODULE module_bl_boulac
           a_v1D(1)=(-ustar(ix,iy)*ustar(ix,iy)/dz1D(1)/((u1D(1)**2.+v1D(1)**2.)**.5))
         endif
 
+ 
+!
+       
+! compute the value of the extra term that will be added to b_t1D
+        do iz=kts+1,kte
+         if(z1D(iz).le.1.0*pblh(ix,iy).and.wts.gt.0.)then
+          b_t1D(iz)=b_t1D(iz)-(exch1D(iz+1)*gamma1D(iz+1)-exch1D(iz)*gamma1D(iz))/dz1D(iz)
+         endif
+        enddo
+       
+    
+!
+
+
+         
 ! solve diffusion equation for momentum x component          
        call diff(kms,kme,kts,kte,1,1,dt,u1D,rho1D,rhoz1D,exch1D,a_u1D,b_u1D,sf1D,vl1D,dz1D,wu1D)
         
@@ -349,11 +421,15 @@ MODULE module_bl_boulac
 ! solve diffusion equation for water vapor mixing ratio     
        call diff(kms,kme,kts,kte,1,1,dt,q1D,rho1D,rhoz1D,exch1D,a_q1D,b_q1D,sf1D,vl1D,dz1D,wq1D)
 
+! solve diffusion equation for liquid water mixing ratio     
+       call diff(kms,kme,kts,kte,1,1,dt,qc1D,rho1D,rhoz1D,exch1D,a_qc1D,b_qc1D,sf1D,vl1D,dz1D,wqc1D)
+
 ! compute the tendencies
                              
          do iz= kts,kte
           rthblten(ix,iz,iy)=rthblten(ix,iz,iy)+(th1D(iz)-th_phy(ix,iz,iy))/dt
           rqvblten(ix,iz,iy)=rqvblten(ix,iz,iy)+(q1D(iz)-qv_curr(ix,iz,iy))/dt
+          rqcblten(ix,iz,iy)=rqcblten(ix,iz,iy)+(qc1D(iz)-qc_curr(ix,iz,iy))/dt
           rublten(ix,iz,iy)=rublten(ix,iz,iy)+(u1D(iz)-u_phy(ix,iz,iy))/dt
           rvblten(ix,iz,iy)=rvblten(ix,iz,iy)+(v1D(iz)-v_phy(ix,iz,iy))/dt  
           wu(ix,iz,iy)=wu1D(iz)
@@ -365,9 +441,6 @@ MODULE module_bl_boulac
    
       enddo  ! iy
       enddo  ! ix
-
-         
-         time_tke=time_tke+dt
 
   
       return
@@ -381,7 +454,7 @@ MODULE module_bl_boulac
       subroutine boulac1D(ix,iy,ufrac_int,kms,kme,kts,kte,dz,z,dt,u,v,th,rho,rhoz,qa,th0,te,    &
                    ustar,hfx,qfx,cp,g,                               & 
                    a_e,b_e,                        & 
-                   dlg,dl_u,sf,vl,dlk,dls,exch,sh,bu)                           
+                   dlg,dl_u,sf,vl,dlk,dls,exch,sh,bu,gamma)                           
 
 ! ----------------------------------------------------------------------
 ! 1D resolution of TKE following Bougeault and Lacarrere
@@ -426,6 +499,7 @@ MODULE module_bl_boulac
 ! local variables
       real sh(kms:kme)    ! shear term in TKE eqn.
       real bu(kms:kme)    ! buoyancy term in TKE eqn.
+      real gamma(kms:kme)    ! gamma term
       real td(kms:kme)    ! dissipation term in TKE eqn.
       real exch(kms:kme) ! turbulent diffusion coefficients (defined at the faces)
       real dls(kms:kme)   ! dissipation length scale
@@ -458,7 +532,7 @@ MODULE module_bl_boulac
 
 ! compute source and sink terms in the TKE equation (shear, buoyancy and dissipation)
        
-       call tke_bougeault(ix,iy,g,kms,kme,kts,kte,z,dz,vl,u,v,th,te,th0,ustar,tstar,exch,dls,td,sh,bu,b_e,a_e,sf,ufrac_int)
+       call tke_bougeault(ix,iy,g,kms,kme,kts,kte,z,dz,vl,u,v,th,te,th0,ustar,tstar,exch,dls,td,sh,bu,gamma,b_e,a_e,sf,ufrac_int)
         
 ! solve for tke 
       
@@ -695,13 +769,13 @@ MODULE module_bl_boulac
 ! ===6=8===============================================================72
 ! ===6=8===============================================================72
 
-       subroutine buoy(ix,iy,g,kms,kme,kts,kte,th,th0,exch,dz,bu,ustar,tstar,ufrac_int)
+       subroutine buoy(ix,iy,g,kms,kme,kts,kte,th,th0,exch,dz,bu,gamma,ustar,tstar,ufrac_int)
 ! compute buoyancy term
        implicit none
        integer kms,kme,kts,kte,iz,ix,iy
        real dtdz1,dtdz2,cdm,dtmdz,g      
-       real th(kms:kme),exch(kms:kme),dz(kms:kme),bu(kms:kme)
-       real th0(kms:kme),ustar,tstar,ufrac_int
+       real th(kms:kme),exch(kms:kme),dz(kms:kme),bu(kms:kme),gamma(kms:kme)
+       real th0(kms:kme),ustar,tstar,ufrac_int,gammam
         
 !       bu(1)=-ustar*tstar*g/th0(1)*(1.-ufrac_int) 
       bu(kts)=0. 
@@ -712,7 +786,8 @@ MODULE module_bl_boulac
         dtdz2=2.*(th(iz+1)-th(iz))/(dz(iz+1)+dz(iz))                  
         dtmdz=0.5*(dtdz1+dtdz2)
         cdm=0.5*(exch(iz+1)+exch(iz))
-        bu(iz)=-cdm*dtmdz*g/th0(iz)         
+        gammam=0.5*(gamma(iz+1)+gamma(iz))
+        bu(iz)=-cdm*(dtmdz-gammam)*g/th0(iz)         
        enddo
 !
                  
@@ -799,7 +874,7 @@ MODULE module_bl_boulac
 ! ===6=8===============================================================72
               
        subroutine tke_bougeault(ix,iy,g,kms,kme,kts,kte,z,dz,vl,u,v,th,te,th0,ustar,tstar,exch,   &
-                         dls,td,sh,bu,b_e,a_e,sf,ufrac_int)
+                         dls,td,sh,bu,gamma,b_e,a_e,sf,ufrac_int)
 ! in this routine the shear, buoyancy and part of the dissipation terms
 ! of the TKE equation are computed       
 
@@ -807,14 +882,14 @@ MODULE module_bl_boulac
        integer kms,kme,kts,kte,iz,ix,iy
        real g,ustar,tstar,ufrac_int
        real z(kms:kme),dz(kms:kme),u(kms:kme),v(kms:kme),th(kms:kme),th0(kms:kme),te(kms:kme)
-       real exch(kms:kme),dls(kms:kme),td(kms:kme),sh(kms:kme),bu(kms:kme)
+       real exch(kms:kme),dls(kms:kme),td(kms:kme),sh(kms:kme),bu(kms:kme),gamma(kms:kme)
        real a_e(kms:kme),b_e(kms:kme)
        real vl(kms:kme),sf(kms:kme)
        real te1,dl1
     
        call shear(ix,iy,g,kms,kme,kts,kte,u,v,exch,dz,sh,ustar,tstar,th(kts),ufrac_int)
       
-       call buoy(ix,iy,g,kms,kme,kts,kte,th,th0,exch,dz,bu,ustar,tstar,ufrac_int)
+       call buoy(ix,iy,g,kms,kme,kts,kte,th,th0,exch,dz,bu,gamma,ustar,tstar,ufrac_int)
      
        do iz=kts,kte          
         te1=max(te(iz),temin)
@@ -829,6 +904,53 @@ MODULE module_bl_boulac
          
        return
        end subroutine tke_bougeault    
+
+! ===6=8===============================================================72
+      SUBROUTINE BOULACINIT(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,          &
+     &                      TKE_PBL,EXCH_H,RESTART,ALLOWED_TO_READ,     &
+     &                      IDS,IDE,JDS,JDE,KDS,KDE,                    &
+     &                      IMS,IME,JMS,JME,KMS,KME,                    &
+     &                      ITS,ITE,JTS,JTE,KTS,KTE                 )
+!-----------------------------------------------------------------------
+      IMPLICIT NONE
+!-----------------------------------------------------------------------
+      LOGICAL,INTENT(IN) :: ALLOWED_TO_READ,RESTART
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE,                    &
+     &                      IMS,IME,JMS,JME,KMS,KME,                    &
+     &                      ITS,ITE,JTS,JTE,KTS,KTE
+
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) ::    EXCH_H, &
+     &                                                         RUBLTEN, &
+     &                                                         RVBLTEN, &
+     &                                                        RTHBLTEN, &
+     &                                                        RQVBLTEN, &
+     &                                                        RQCBLTEN, &
+     &                                                         TKE_PBL
+      INTEGER :: I,J,K,ITF,JTF,KTF
+!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
+
+      JTF=MIN0(JTE,JDE-1)
+      KTF=MIN0(KTE,KDE-1)
+      ITF=MIN0(ITE,IDE-1)
+
+      IF(.NOT.RESTART)THEN
+        DO J=JTS,JTF
+        DO K=KTS,KTF
+        DO I=ITS,ITF
+          TKE_PBL(I,K,J)=0.0001
+          RUBLTEN(I,K,J)=0.
+          RVBLTEN(I,K,J)=0.
+          RTHBLTEN(I,K,J)=0.
+          RQVBLTEN(I,K,J)=0.
+          RQCBLTEN(I,K,J)=0.
+          EXCH_H(I,K,J)=0.
+        ENDDO
+        ENDDO
+        ENDDO
+      ENDIF
+
+      END SUBROUTINE BOULACINIT
 !######################################################################
        subroutine pbl_height(kms,kme,kts,kte,dz,z,th,q,pblh)
 
@@ -868,52 +990,6 @@ MODULE module_bl_boulac
 
 
 ! ===6=8===============================================================72
-
-
-! ===6=8===============================================================72
-      SUBROUTINE BOULACINIT(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,          &
-     &                      TKE_PBL,EXCH_H,RESTART,ALLOWED_TO_READ,     &
-     &                      IDS,IDE,JDS,JDE,KDS,KDE,                    &
-     &                      IMS,IME,JMS,JME,KMS,KME,                    &
-     &                      ITS,ITE,JTS,JTE,KTS,KTE                 )
-!-----------------------------------------------------------------------
-      IMPLICIT NONE
-!-----------------------------------------------------------------------
-      LOGICAL,INTENT(IN) :: ALLOWED_TO_READ,RESTART
-      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE,                    &
-     &                      IMS,IME,JMS,JME,KMS,KME,                    &
-     &                      ITS,ITE,JTS,JTE,KTS,KTE
-
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(OUT) ::    EXCH_H, &
-     &                                                         RUBLTEN, &
-     &                                                         RVBLTEN, &
-     &                                                        RTHBLTEN, &
-     &                                                        RQVBLTEN, &
-     &                                                         TKE_PBL
-      INTEGER :: I,J,K,ITF,JTF,KTF
-!-----------------------------------------------------------------------
-!-----------------------------------------------------------------------
-
-      JTF=MIN0(JTE,JDE-1)
-      KTF=MIN0(KTE,KDE-1)
-      ITF=MIN0(ITE,IDE-1)
-
-      IF(.NOT.RESTART)THEN
-        DO J=JTS,JTF
-        DO K=KTS,KTF
-        DO I=ITS,ITF
-          TKE_PBL(I,K,J)=0.0001
-          RUBLTEN(I,K,J)=0.
-          RVBLTEN(I,K,J)=0.
-          RTHBLTEN(I,K,J)=0.
-          RQVBLTEN(I,K,J)=0.
-          EXCH_H(I,K,J)=0.
-        ENDDO
-        ENDDO
-        ENDDO
-      ENDIF
-
-      END SUBROUTINE BOULACINIT
 
 
 

@@ -9,8 +9,9 @@ MODULE a_module_big_step_utilities_em
 
    USE module_model_constants
    USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, kfetascheme, g3scheme, &
-   p_qv, param_first_scalar, p_qr, p_qc
+   p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
    USE module_configure, ONLY : grid_config_rec_type
+   USE module_wrf_error
 #if (RWORDSIZE == 4)
 #   define VPOWX vspowx
 #   define VPOW  vspow
@@ -12999,7 +13000,7 @@ SUBROUTINE A_MOIST_PHYSICS_FINISH_EM(t_new, t_newb, t_old, t0, mut, &
   REAL, INTENT(IN) :: t0, dt
   INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end
   INTEGER :: i, j, k, imax, jmax, imin, jmin
-  INTRINSIC MIN
+  INTEGER :: branch
 !--------------------------------------------------------------------
 !<DESCRIPTION>
 !
@@ -13033,13 +13034,36 @@ SUBROUTINE A_MOIST_PHYSICS_FINISH_EM(t_new, t_newb, t_old, t0, mut, &
   END IF
 !  add microphysics theta diff to perturbation theta, set h_diabatic
   IF (config_flags%no_mp_heating .EQ. 0) THEN
-    th_phyb = 0.0
+    DO j=j_start,j_end
+      DO k=k_start,k_end
+        DO i=i_start,i_end
+          mpten = th_phy(i, k, j) - h_diabatic(i, k, j)
+          IF (config_flags%mp_tend_lim*dt .GT. mpten) THEN
+            CALL PUSHCONTROL1B(0)
+            mpten = mpten
+          ELSE
+            mpten = config_flags%mp_tend_lim*dt
+            CALL PUSHCONTROL1B(1)
+          END IF
+          IF (-(config_flags%mp_tend_lim*dt) .LT. mpten) THEN
+            CALL PUSHCONTROL1B(0)
+          ELSE
+            CALL PUSHCONTROL1B(1)
+          END IF
+        END DO
+      END DO
+    END DO
     DO j=j_end,j_start,-1
       DO k=k_end,k_start,-1
         DO i=i_end,i_start,-1
           mptenb = t_newb(i, k, j) + h_diabaticb(i, k, j)/dt
-          h_diabaticb(i, k, j) = -mptenb
+          h_diabaticb(i, k, j) = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .NE. 0) mptenb = 0.0
+          CALL POPCONTROL1B(branch)
+          IF (branch .NE. 0) mptenb = 0.0
           th_phyb(i, k, j) = th_phyb(i, k, j) + mptenb
+          h_diabaticb(i, k, j) = h_diabaticb(i, k, j) - mptenb
         END DO
       END DO
     END DO
@@ -13051,7 +13075,6 @@ SUBROUTINE A_MOIST_PHYSICS_FINISH_EM(t_new, t_newb, t_old, t0, mut, &
         END DO
       END DO
     END DO
-    th_phyb = 0.0
   END IF
 END SUBROUTINE A_MOIST_PHYSICS_FINISH_EM
 

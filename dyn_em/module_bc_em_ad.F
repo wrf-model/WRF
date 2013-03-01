@@ -789,7 +789,9 @@ CONTAINS
                               mu_btys,a_mu_btys,mu_btye,a_mu_btye, &
                               moist_btxs,a_moist_btxs,moist_btxe,a_moist_btxe, &
                               moist_btys,a_moist_btys,moist_btye,a_moist_btye, &
-                              spec_bdy_width,n_moist,                          &
+                              scalar_btxs,a_scalar_btxs,scalar_btxe,a_scalar_btxe, &
+                              scalar_btys,a_scalar_btys,scalar_btye,a_scalar_btye, &
+                              spec_bdy_width,n_moist,n_scalar,                 &
                               ids,ide, jds,jde, kds,kde,  & ! domain dims
                               ims,ime, jms,jme, kms,kme,  & ! memory dims
                               ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -798,7 +800,7 @@ CONTAINS
 
    !  Input data.
 
-   INTEGER ,               INTENT(IN   ) :: spec_bdy_width, n_moist
+   INTEGER ,               INTENT(IN   ) :: spec_bdy_width, n_moist, n_scalar
 
    INTEGER ,               INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                             ims, ime, jms, jme, kms, kme, &
@@ -824,6 +826,11 @@ CONTAINS
                               moist_btxs,a_moist_btxs,moist_btxe,a_moist_btxe
    REAL,DIMENSION(ims:ime,kds:kde,spec_bdy_width,n_moist),INTENT(INOUT) ::  & 
                               moist_btys,a_moist_btys,moist_btye,a_moist_btye
+
+   REAL,DIMENSION(jms:jme,kds:kde,spec_bdy_width,n_scalar),INTENT(INOUT) ::  &
+                              scalar_btxs,a_scalar_btxs,scalar_btxe,a_scalar_btxe
+   REAL,DIMENSION(ims:ime,kds:kde,spec_bdy_width,n_scalar),INTENT(INOUT) ::  & 
+                              scalar_btys,a_scalar_btys,scalar_btye,a_scalar_btye
 
 ! setting adj of bdy tendencies to zero during DFI
 
@@ -852,6 +859,10 @@ CONTAINS
        a_moist_btxe = 0.
        a_moist_btys = 0.
        a_moist_btye = 0.
+       a_scalar_btxs = 0.
+       a_scalar_btxe = 0.
+       a_scalar_btys = 0.
+       a_scalar_btye = 0.
 
 !  ENDIF
 

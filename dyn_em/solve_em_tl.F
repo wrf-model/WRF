@@ -359,7 +359,9 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
                             grid%mu_btys,grid%g_mu_btys,grid%mu_btye,grid%g_mu_btye, &
                             moist_btxs,g_moist_btxs,moist_btxe,g_moist_btxe, &
                             moist_btys,g_moist_btys,moist_btye,g_moist_btye, &
-                            grid%spec_bdy_width,num_3d_m,                &
+                            scalar_btxs,g_scalar_btxs,scalar_btxe,g_scalar_btxe, &
+                            scalar_btys,g_scalar_btys,scalar_btye,g_scalar_btye, &
+                            grid%spec_bdy_width,num_3d_m,num_3d_s,       &
                             ids,ide, jds,jde, kds,kde,                   &
                             ims,ime, jms,jme, kms,kme,                   &
                             ips,ipe, jps,jpe, kps,kpe,                   &
@@ -635,6 +637,7 @@ BENCH_END(g_set_phys_bc_tim)
                              , tracer, g_tracer, tracer_tend, g_tracer_tend  &
                              , scalar , g_scalar, scalar_tend, g_scalar_tend &
                              , fdda3d, fdda2d           &
+                             , aerod                    &
                              , ru_tendf,g_ru_tendf,rv_tendf,g_rv_tendf    &
                              , rw_tendf,g_rw_tendf, t_tendf ,g_t_tendf     &
                              , ph_tendf,g_ph_tendf, mu_tendf,g_mu_tendf    &

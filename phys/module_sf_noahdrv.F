@@ -67,6 +67,7 @@ CONTAINS
                   num_road_layers, DZR, DZB, DZG,               & !I urban
                   FRC_URB2D,UTYPE_URB2D,                        & !O
                   num_urban_layers,                             & !I multi-layer urban
+                  num_urban_hi,                                 & !I multi-layer urban
                   trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,      & !H multi-layer urban
                   tlev_urb3d,qlev_urb3d,                        & !H multi-layer urban
                   tw1lev_urb3d,tw2lev_urb3d,                    & !H multi-layer urban
@@ -75,12 +76,14 @@ CONTAINS
                   sfvent_urb3d,lfvent_urb3d,                    & !H multi-layer urban
                   sfwin1_urb3d,sfwin2_urb3d,                    & !H multi-layer urban
                   sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,    & !H multi-layer urban
+                  lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d,         & !H multi-layer urban
+                  mh_urb2d,stdh_urb2d,lf_urb2d,                 & !SLUCM
                   th_phy,rho,p_phy,ust,                         & !I multi-layer urban
                   gmt,julday,xlong,xlat,                        & !I multi-layer urban
                   a_u_bep,a_v_bep,a_t_bep,a_q_bep,              & !O multi-layer urban
                   a_e_bep,b_u_bep,b_v_bep,                      & !O multi-layer urban
                   b_t_bep,b_q_bep,b_e_bep,dlg_bep,              & !O multi-layer urban
-                  dl_u_bep,sf_bep,vl_bep                         )   !O multi-layer urban         
+                  dl_u_bep,sf_bep,vl_bep,sfcheadrt,INFXSRT, soldrain      )   !O multi-layer urban         
 
 !----------------------------------------------------------------
     IMPLICIT NONE
@@ -225,6 +228,14 @@ CONTAINS
    INTEGER,  INTENT(IN   )   ::  sf_urban_physics               !urban
    INTEGER,  INTENT(IN   )   ::  isurban
    INTEGER,  INTENT(IN   )   ::  isice
+
+!added by Wei Yu  for routing
+    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
+             INTENT(INOUT)  :: sfcheadrt,INFXSRT,soldrain 
+    real :: etpnd1
+!end added
+
+
 
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
             INTENT(IN   )    ::                            TMN, &
@@ -494,11 +505,18 @@ CONTAINS
      REAL :: CHS_URB
      REAL :: CHS2_URB
      REAL :: UST_URB
+! NUDAPT Parameters urban --> lam
+     REAL :: mh_urb
+     REAL :: stdh_urb
+     REAL :: lp_urb
+     REAL :: hgt_urb
+     REAL, DIMENSION(4) :: lf_urb
 ! Variables for multi-layer UCM (Martilli et al. 2002)
    REAL, OPTIONAL, INTENT(IN  )   ::                                   GMT 
    INTEGER, OPTIONAL, INTENT(IN  ) ::                               JULDAY
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   )        ::XLAT, XLONG
    INTEGER, INTENT(IN  ) ::                               NUM_URBAN_LAYERS
+   INTEGER, INTENT(IN  ) ::                               NUM_URBAN_HI
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: trb_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2_urb4d
@@ -520,6 +538,13 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfw2_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfr_urb3d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfg_urb3d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_hi, jms:jme ), INTENT(IN) :: hi_urb2d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: lp_urb2d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: lb_urb2d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: hgt_urb2d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: mh_urb2d
+   REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: stdh_urb2d
+   REAL, OPTIONAL, DIMENSION( ims:ime, 4, jms:jme ), INTENT(IN) :: lf_urb2d
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_u_bep   !Implicit momemtum component X-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_v_bep   !Implicit momemtum component Y-direction
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::a_t_bep   !Implicit component pot. temperature
@@ -551,6 +576,8 @@ CONTAINS
    REAL :: SIGMA_SB,RL_UP_RURAL,RL_UP_TOT,RS_ABS_TOT,UMOM,VMOM
    REAL :: r1,r2,r3
    REAL :: CMR_URB, CHR_URB, CMC_URB, CHC_URB
+   REAL :: frc_urb,lb_urb
+   REAL :: check 
 ! ----------------------------------------------------------------------
 ! DECLARATIONS END - urban
 ! ----------------------------------------------------------------------
@@ -870,8 +897,14 @@ CONTAINS
                  RDLAI2D,USEMONALB,                               &
                  SNOTIME1,                                        &
                  RIBB,                                            &
-                 SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT)
+                 SMCWLT,SMCDRY,SMCREF,SMCMAX,NROOT,               &
+                 sfcheadrt(i,j),                                   &    !I
+                 INFXSRT(i,j),ETPND1                          &    !O
+                 )
 
+#ifdef WRF_HYDRO
+                 soldrain(i,j) = RUNOFF2*DT*1000.0
+#endif
     ELSEIF (ICE == -1) THEN
 
        !
@@ -953,6 +986,15 @@ CONTAINS
         POTEVP(I,J)=POTEVP(I,J)+ETP*FDTW
           QFX(I,J)=ETA_KINEMATIC
           QFX_RURAL(I,J)=ETA_KINEMATIC
+
+#ifdef WRF_HYDRO
+!added by Wei Yu
+!         QFX(I,J) = QFX(I,J) + ETPND1
+!         ETA = ETA + ETPND1/2.501E6*dt
+!end added by Wei Yu
+#endif
+
+
           LH(I,J)=ETA
           LH_RURAL(I,J)=ETA
           GRDFLX(I,J)=SSOIL
@@ -1064,6 +1106,22 @@ CONTAINS
                CMC_URB = CMC_SFCDIF(I,J)
                CHC_URB = CHC_SFCDIF(I,J)
             ENDIF
+
+! NUDAPT for SLUCM
+            mh_urb = mh_urb2d(I,J)
+            stdh_urb = stdh_urb2d(I,J)
+            lp_urb = lp_urb2d(I,J)
+            hgt_urb = hgt_urb2d(I,J)
+            lf_urb = 0.0
+            DO K = 1,4
+              lf_urb(K)=lf_urb2d(I,K,J)
+            ENDDO
+            frc_urb = frc_urb2d(I,J)
+            lb_urb = lb_urb2d(I,J)
+            check = 0
+            if (I.eq.73.and.J.eq.125)THEN
+               check = 1
+            end if
 !
 ! Call urban
 
@@ -1083,7 +1141,8 @@ CONTAINS
                        GZ1OZ0_URB,                                      & !O
                        CMR_URB, CHR_URB, CMC_URB, CHC_URB,              &
                        U10_URB, V10_URB, TH2_URB, Q2_URB,               & ! O
-                       UST_URB)                                           !O
+                       UST_URB,mh_urb, stdh_urb, lf_urb, lp_urb,        & ! 0
+                       hgt_urb,frc_urb,lb_urb, check)                            !O
 
 #if 0
           IF(IPRINT) THEN
@@ -1199,6 +1258,8 @@ CONTAINS
           DO NS=1,NSOIL
           SMCREL(I,NS,J)=SMAV(NS)
           ENDDO
+
+
 !         Convert the water unit into mm
           SFCRUNOFF(I,J)=SFCRUNOFF(I,J)+RUNOFF1*DT*1000.0
           UDRUNOFF(I,J)=UDRUNOFF(I,J)+RUNOFF2*DT*1000.0
@@ -1232,12 +1293,13 @@ CONTAINS
        CALL BEP(frc_urb2d,utype_urb2d,itimestep,dz8w,dt,u_phy,v_phy,   &
                 th_phy,rho,p_phy,swdown,glw,                           &
                 gmt,julday,xlong,xlat,declin_urb,cosz_urb2d,omg_urb2d, &
-                num_urban_layers,                                      &
+                num_urban_layers,num_urban_hi,                         &
                 trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,               &
                 sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,             &
+                lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d,                  &
                 a_u_bep,a_v_bep,a_t_bep,                               &
                 a_e_bep,b_u_bep,b_v_bep,                               &
-                b_t_bep,b_e_bep,dlg_bep,                               &
+                b_t_bep,b_e_bep,b_q_bep,dlg_bep,                       &
                 dl_u_bep,sf_bep,vl_bep,                                &
                 rl_up_urb,rs_abs_urb,emiss_urb,grdflx_urb,             &
                 ids,ide, jds,jde, kds,kde,                             &
@@ -1259,17 +1321,19 @@ CONTAINS
             b_q_bep(i,kts:kte,j)=0.
          end do
          end do
-          
+        
+
        CALL BEP_BEM(frc_urb2d,utype_urb2d,itimestep,dz8w,dt,u_phy,v_phy, &
                 th_phy,rho,p_phy,swdown,glw,                           &
                 gmt,julday,xlong,xlat,declin_urb,cosz_urb2d,omg_urb2d, &
-                num_urban_layers,                                      &
+                num_urban_layers,num_urban_hi,                         &
                 trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,               &
                 tlev_urb3d,qlev_urb3d,tw1lev_urb3d,tw2lev_urb3d,       &
                 tglev_urb3d,tflev_urb3d,sf_ac_urb3d,lf_ac_urb3d,       &
                 cm_ac_urb3d,sfvent_urb3d,lfvent_urb3d,                 &
                 sfwin1_urb3d,sfwin2_urb3d,                             &
                 sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,             &
+                lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d,                  &
                 a_u_bep,a_v_bep,a_t_bep,                               &
                 a_e_bep,b_u_bep,b_v_bep,                               &
                 b_t_bep,b_e_bep,b_q_bep,dlg_bep,                       &

@@ -7,7 +7,7 @@ MODULE module_sf_bep
 ! Access urban_param.tbl values through calling urban_param_init in module_physics_init
 ! for CASE (BEPSCHEME) select sf_urban_physics
 !
- ! -----------------------------------------------------------------------
+! -----------------------------------------------------------------------
 !  Dimension for the array used in the BEP module
 ! -----------------------------------------------------------------------
 
@@ -18,7 +18,7 @@ MODULE module_sf_bep
       parameter (ndm=2)
 
       integer nz_um           ! Maximum number of vertical levels in the urban grid
-      parameter(nz_um=13)
+      parameter(nz_um=18)
 
       integer ng_u            ! Number of grid levels in the ground
       parameter (ng_u=10)
@@ -57,11 +57,12 @@ MODULE module_sf_bep
                       th_phy,rho,p_phy,swdown,glw,                    &
                       gmt,julday,xlong,xlat,                          &
                       declin_urb,cosz_urb2d,omg_urb2d,                &
-                      num_urban_layers,                               &
+                      num_urban_layers,num_urban_hi,                  &
                       trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,        &
                       sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,      &
+                      lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d,           &
                       a_u,a_v,a_t,a_e,b_u,b_v,                        &
-                      b_t,b_e,dlg,dl_u,sf,vl,                         &
+                      b_t,b_e,b_q,dlg,dl_u,sf,vl,                     &
                       rl_up,rs_abs,emiss,grdflx_urb,                  &
                       ids,ide, jds,jde, kds,kde,                      &
                       ims,ime, jms,jme, kms,kme,                      &
@@ -100,6 +101,7 @@ MODULE module_sf_bep
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: COSZ_URB2D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: OMG_URB2D
    INTEGER, INTENT(IN  ) :: num_urban_layers
+   INTEGER, INTENT(IN  ) :: num_urban_hi
    REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: trb_urb4d
    REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1_urb4d
    REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2_urb4d
@@ -108,6 +110,11 @@ MODULE module_sf_bep
    REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfw2_urb3d
    REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfr_urb3d
    REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfg_urb3d
+   REAL, DIMENSION( ims:ime, 1:num_urban_hi, jms:jme ), INTENT(IN) :: hi_urb2d
+   REAL, DIMENSION( ims:ime,jms:jme), INTENT(IN) :: lp_urb2d
+   REAL, DIMENSION( ims:ime,jms:jme), INTENT(IN) :: lb_urb2d
+   REAL, DIMENSION( ims:ime,jms:jme), INTENT(IN) :: hgt_urb2d
+
 !      integer nx,ny,nz              ! Number of points in the mesocsale grid
       real z(ims:ime,kms:kme,jms:jme)            ! Vertical coordinates
       REAL, INTENT(IN )::   DT      ! Time step
@@ -130,6 +137,7 @@ MODULE module_sf_bep
       real b_v(ims:ime,kms:kme,jms:jme)         ! Explicit component for the momemtum in Y-direction (center)
       real b_t(ims:ime,kms:kme,jms:jme)         ! Explicit component for the temperature
       real b_e(ims:ime,kms:kme,jms:jme)         ! Explicit component for the TKE
+      real b_q(ims:ime,kms:kme,jms:jme)         ! Explicit component for the humidity
       real dlg(ims:ime,kms:kme,jms:jme)         ! Height above ground (L_ground in formula (24) of the BLM paper). 
       real dl_u(ims:ime,kms:kme,jms:jme)        ! Length scale (lb in formula (22) ofthe BLM paper).
 ! urban surface and volumes        
@@ -144,6 +152,15 @@ MODULE module_sf_bep
 !     Local
 !------------------------------------------------------------------------
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      real hi_urb(ims:ime,1:nz_um,jms:jme)    ! Height histograms of buildings
+      real hi_urb1D(nz_um)                    ! Height histograms of buildings
+      real hb_u(nz_um)                        ! Bulding's heights
+      real ss_urb(nz_um)  ! Probability that a building has an height equal to z
+      real pb_urb(nz_um)  ! Probability that a building has an height greater or equal to z
+      integer nz_urb(nurbm)                   ! Number of layer in the urban grid
+      integer nzurban(nurbm)                  
+
 !    Building parameters      
       real alag_u(nurbm)                      ! Ground thermal diffusivity [m^2 s^-1]
       real alaw_u(nurbm)                      ! Wall thermal diffusivity [m^2 s^-1]
@@ -155,9 +172,18 @@ MODULE module_sf_bep
       real trini_u(nurbm)                     ! Initial temperature inside the building's roof [K]
       real tgini_u(nurbm)                     ! Initial road temperature
 !
+!   Building materials
+!
+      real csg(ng_u)                          ! Specific heat of the ground material [J m^3 K^-1]
+      real csr(nwr_u)                         ! Specific heat of the roof material [J m^3 K^-1]
+      real csw(nwr_u)                         ! Specific heat of the wall material [J m^3 K^-1]
+      real alag(ng_u)                         ! Ground thermal diffusivity [m^2 s^-1]
+      real alaw(nwr_u)                        ! Wall thermal diffusivity [m^2 s^-1]
+      real alar(nwr_u)                        ! Roof thermal diffusivity [m^2 s^-1]
+!
 ! for twini_u, and trini_u the initial value at the deepest level is kept constant during the simulation
 !
-!    Radiation paramters
+!    Radiation parameters
       real albg_u(nurbm)                      ! Albedo of the ground
       real albw_u(nurbm)                      ! Albedo of the wall
       real albr_u(nurbm)                      ! Albedo of the roof
@@ -165,18 +191,21 @@ MODULE module_sf_bep
       real emw_u(nurbm)                       ! Emissivity of wall
       real emr_u(nurbm)                       ! Emissivity of roof
 
-!   fww,fwg,fgw,fsw,fsg are the view factors used to compute the long wave
+!   fww_u,fwg_u,fgw_u,fsw_u,fsg_u are the view factors used to compute the long wave
 !   and the short wave radation. 
-      real fww(nz_um,nz_um,ndm,nurbm)         !  from wall to wall
-      real fwg(nz_um,ndm,nurbm)               !  from wall to ground
-      real fgw(nz_um,ndm,nurbm)               !  from ground to wall
-      real fsw(nz_um,ndm,nurbm)               !  from sky to wall
-      real fws(nz_um,ndm,nurbm)               !  from sky to wall
-      real fsg(ndm,nurbm)                     !  from sky to ground
+      real fww_u(nz_um,nz_um,ndm,nurbm)         !  from wall to wall
+      real fwg_u(nz_um,ndm,nurbm)               !  from wall to ground
+      real fgw_u(nz_um,ndm,nurbm)               !  from ground to wall
+      real fsw_u(nz_um,ndm,nurbm)               !  from sky to wall
+      real fws_u(nz_um,ndm,nurbm)               !  from sky to wall
+      real fsg_u(ndm,nurbm)                     !  from sky to ground
 
 !    Roughness parameters
       real z0g_u(nurbm)         ! The ground's roughness length
       real z0r_u(nurbm)         ! The roof's roughness length
+
+!    Roughness parameters
+      real z0(ndm,nz_um)           ! Roughness lengths "profiles"
 
 !    Street parameters
       integer nd_u(nurbm)       ! Number of street direction for each urban class 
@@ -188,9 +217,18 @@ MODULE module_sf_bep
       real d_b(nz_um,nurbm)     ! Probability that a building has an height h_b
       real ss_u(nz_um,nurbm)  ! Probability that a building has an height equal to z
       real pb_u(nz_um,nurbm)  ! Probability that a building has an height greater or equal to z
-
+!
+!    Street parameters
+!
+      real bs(ndm)                 ! Building width 
+      real ws(ndm)                 ! Street width
+      real drst(ndm)               ! street directions 
+      real strd(ndm)               ! Street lengths 
+      real ss(nz_um)               ! Probability to have a building with height h
+      real pb(nz_um)               ! Probability to have a building with an height equal
 
 !    Grid parameters
+
       integer nz_u(nurbm)       ! Number of layer in the urban grid
       
       real z_u(nz_um)         ! Height of the urban grid levels
@@ -229,7 +267,6 @@ MODULE module_sf_bep
       real b_e1D(kms:kme)               ! Explicit component of the TKE sources or sinks
       real dlg1D(kms:kme)               ! Height above ground (L_ground in formula (24) of the BLM paper). 
       real dl_u1D(kms:kme)              ! Length scale (lb in formula (22) ofthe BLM paper)
-      real tsk1D                        ! Average of the road surface temperatures
       real time_bep
 ! arrays used to collapse indexes
       integer ind_zwd(nz_um,nwr_u,ndm)
@@ -239,20 +276,20 @@ MODULE module_sf_bep
       integer ix,iy,iz,iurb,id,iz_u,iw,ig,ir,ix1,iy1,k
       integer it, nint
       integer iii
-      real time_h,tempo,shtot
+      real time_h,tempo
       logical first
       character(len=80) :: text
       data first/.true./
       save first,time_bep 
 
       save alag_u,alaw_u,alar_u,csg_u,csw_u,csr_u,                      &
-          albg_u,albw_u,albr_u,emg_u,emw_u,emr_u,fww,fwg,fgw,fsw,fws,fsg,   &
-          z0g_u,z0r_u, nd_u,strd_u,drst_u,ws_u,bs_u,h_b,d_b,ss_u,pb_u,  &
-          nz_u,z_u 
+           albg_u,albw_u,albr_u,emg_u,emw_u,emr_u,                      &
+           z0g_u,z0r_u, nd_u,strd_u,drst_u,ws_u,bs_u,h_b,d_b,ss_u,pb_u, &
+           nz_u,z_u 
 
 !------------------------------------------------------------------------
 !    Calculation of the momentum, heat and turbulent kinetic fluxes
-!     produced by buildings
+!     produced by builgings
 !
 ! Reference:
 ! Martilli, A., Clappier, A., Rotach, M.W.:2002, 'AN URBAN SURFACE EXCHANGE
@@ -290,38 +327,67 @@ MODULE module_sf_bep
        ind_zd(iz_u,id)=iii
       enddo
       enddo
+
+      if (num_urban_hi.ge.nz_um)then
+          write(*,*)'nz_um too small, please increase to at least ', num_urban_hi+1
+          stop         
+      endif
+
+      hi_urb=0.
+      
       do ix=its,ite
       do iy=jts,jte
        z(ix,kts,iy)=0.
        do iz=kts+1,kte+1
         z(ix,iz,iy)=z(ix,iz-1,iy)+dz8w(ix,iz-1,iy)
-       enddo
+       enddo !iz
+       do iz_u=1,num_urban_hi
+          hi_urb(ix,iz_u,iy)= hi_urb2d(ix,iz_u,iy)
+       enddo !iz_u
       enddo
       enddo
 
+
       if (first) then                           ! True only on first call
+         
          call init_para(alag_u,alaw_u,alar_u,csg_u,csw_u,csr_u,&
                 twini_u,trini_u,tgini_u,albg_u,albw_u,albr_u,emg_u,emw_u,&
                 emr_u,z0g_u,z0r_u,nd_u,strd_u,drst_u,ws_u,bs_u,h_b,d_b)
 
 !      Initialisation of the urban parameters and calculation of the view factors
-       call icBEP(alag_u,alaw_u,alar_u,csg_u,csw_u,csr_u,          & 
-                 albg_u,albw_u,albr_u,emg_u,emw_u,emr_u,           & 
-                 fww,fwg,fgw,fsw,fws,fsg,                          & 
-                 z0g_u,z0r_u,                                      & 
-                 nd_u,strd_u,drst_u,ws_u,bs_u,h_b,d_b,ss_u,pb_u,   & 
-                 nz_u,z_u,                                         & 
-                 twini_u,trini_u)                                  
-
-       first=.false.
+             
+         call icBEP(nd_u,h_b,d_b,ss_u,pb_u,nz_u,z_u)                                  
+          
+         first=.false.
 
       endif ! first
-      
+
       do ix=its,ite
       do iy=jts,jte
-        if (FRC_URB2D(ix,iy).gt.0.) then    ! Calling BEP only for existing urban classes.
-	
-         iurb=UTYPE_URB2D(ix,iy)
+        if (FRC_URB2D(ix,iy).gt.0.) then    ! Calling BEP only for existing urban classes.	
+           iurb=UTYPE_URB2D(ix,iy)
+
+           hi_urb1D=0.
+           do iz_u=1,nz_um
+              hi_urb1D(iz_u)=hi_urb(ix,iz_u,iy)
+           enddo
+
+           call icBEPHI_XY(hb_u,hi_urb1D,ss_urb,pb_urb,    &
+                           nz_urb(iurb),z_u)
+           
+           call param(iurb,nz_u(iurb),nz_urb(iurb),nzurban(iurb),    &
+                      nd_u(iurb),csg_u,csg,alag_u,alag,csr_u,csr,    &
+                      alar_u,alar,csw_u,csw,alaw_u,alaw,             &
+                      ws_u,ws,bs_u,bs,z0g_u,z0r_u,z0,                &
+                      strd_u,strd,drst_u,drst,ss_u,ss_urb,ss,pb_u,   &
+                      pb_urb,pb,lp_urb2d(ix,iy),                     &
+                      lb_urb2d(ix,iy),hgt_urb2d(ix,iy),FRC_URB2D(ix,iy))  
+!
+!We compute the view factors in the icBEP_XY routine
+!           
+         
+           call icBEP_XY(iurb,fww_u,fwg_u,fgw_u,fsw_u,fws_u,fsg_u,   &
+                         nd_u(iurb),strd,ws,nzurban(iurb),z_u)   
 
        do iz= kts,kte
           ua1D(iz)=u_phy(ix,iz,iy)
@@ -358,13 +424,13 @@ MODULE module_sf_bep
          do id=1,ndm
           do ig=1,ng_u
 !           tg1D(id,ig)=tg_u(ix,iy,ind_gd(ig,id))
-           tg1D(id,ig)=tgb_urb4d(ix,ind_gd(ig,id),iy)
+            tg1D(id,ig)=tgb_urb4d(ix,ind_gd(ig,id),iy)
           enddo
           do iz_u=1,nz_um
           do ir=1,nwr_u
 !           tr1D(id,iz_u,ir)=tr_u(ix,iy,ind_zwd(iz_u,ir,id))
             if(ind_zwd(iz_u,ir,id).gt.num_urban_layers)write(*,*)'ind_zwd too big r',ind_zwd(iz_u,ir,id)
-           tr1D(id,iz_u,ir)=trb_urb4d(ix,ind_zwd(iz_u,ir,id),iy)
+            tr1D(id,iz_u,ir)=trb_urb4d(ix,ind_zwd(iz_u,ir,id),iy)
           enddo
           enddo
          enddo
@@ -399,21 +465,22 @@ MODULE module_sf_bep
          deltar1D=DECLIN_URB
          ah1D=OMG_URB2D(ix,iy)
 !	 call angle(xlong(ix,iy),xlat(ix,iy),julday,time_h,zr1D,deltar1D,ah1D)
-
+!        write(*,*) 'entro en BEP1D'
          call BEP1D(iurb,kms,kme,kts,kte,z1D,dt,ua1D,va1D,pt1D,da1D,pr1D,pt01D,  &
                    zr1D,deltar1D,ah1D,rs1D,rld1D,                   & 
-                   alag_u,alaw_u,alar_u,csg_u,csw_u,csr_u,          & 
-                   albg_u,albw_u,albr_u,emg_u,emw_u,emr_u,          & 
-                   fww,fwg,fgw,fsw,fws,fsg,                         & 
-                   z0g_u,z0r_u,                                     & 
-                   nd_u,strd_u,drst_u,ws_u,bs_u,h_b,d_b,ss_u,pb_u,  & 
-                   nz_u,z_u,                                        & 
+                   alag,alaw,alar,csg,csw,csr,                      & 
+                   albg_u(iurb),albw_u(iurb),albr_u(iurb),          &
+                   emg_u(iurb),emw_u(iurb),emr_u(iurb),             & 
+                   fww_u,fwg_u,fgw_u,fsw_u,                         &                    
+                   fws_u,fsg_u,z0,                                  &                               
+                   nd_u(iurb),strd,drst,ws,bs,ss,pb,                & 
+                   nzurban(iurb),z_u,                               & 
                    tw1D,tg1D,tr1D,sfw1D,sfg1D,sfr1D,                & 
                    a_u1D,a_v1D,a_t1D,a_e1D,                         & 
                    b_u1D,b_v1D,b_t1D,b_e1D,                         & 
-                   dlg1D,dl_u1D,tsk1D,sf1D,vl1D,rl_up(ix,iy),       &
+                   dlg1D,dl_u1D,sf1D,vl1D,rl_up(ix,iy),             &
                    rs_abs(ix,iy),emiss(ix,iy),grdflx_urb(ix,iy))                            
-
+!        write(*,*) 'salgo de BEP1D'
          do id=1,ndm
 	 do iz=1,nz_um
 	  sfw1_urb3d(ix,ind_zd(iz,id),iy)=sfw1D(2*id-1,iz) 
@@ -450,6 +517,20 @@ MODULE module_sf_bep
           enddo
           enddo
          enddo
+        
+          sf(ix,kts:kte,iy)=0.
+          vl(ix,kts:kte,iy)=0.
+          a_u(ix,kts:kte,iy)=0.
+          a_v(ix,kts:kte,iy)=0.
+          a_t(ix,kts:kte,iy)=0.
+          a_e(ix,kts:kte,iy)=0.
+          b_u(ix,kts:kte,iy)=0.
+          b_v(ix,kts:kte,iy)=0.
+          b_t(ix,kts:kte,iy)=0.
+          b_e(ix,kts:kte,iy)=0.
+          b_q(ix,kts:kte,iy)=0.
+          dlg(ix,kts:kte,iy)=0.
+          dl_u(ix,kts:kte,iy)=0.
 
         do iz= kts,kte
           sf(ix,iz,iy)=sf1D(iz)
@@ -466,7 +547,6 @@ MODULE module_sf_bep
           dl_u(ix,iz,iy)=dl_u1D(iz)
          enddo
          sf(ix,kte+1,iy)=sf1D(kte+1)
-!         tsk(ix,iy)=tsk1D
 !
          endif ! FRC_URB2D
    
@@ -484,16 +564,15 @@ MODULE module_sf_bep
 
       subroutine BEP1D(iurb,kms,kme,kts,kte,z,dt,ua,va,pt,da,pr,pt0,  &  
                       zr,deltar,ah,rs,rld,                            & 
-                      alag_u,alaw_u,alar_u,csg_u,csw_u,csr_u,         & 
-                      albg_u,albw_u,albr_u,emg_u,emw_u,emr_u,         & 
-                      fww,fwg,fgw,fsw,fws,fsg,                        & 
-                      z0g_u,z0r_u,                                    & 
-                      nd_u,strd_u,drst_u,ws_u,bs_u,h_b,d_b,ss_u,pb_u, & 
-                      nz_u,z_u,                                       & 
+                      alag,alaw,alar,csg,csw,csr,                     & 
+                      albg,albw,albr,emg,emw,emr,                     & 
+                      fww,fwg,fgw,fsw,fws,fsg,z0,                     &                                             
+                      ndu,strd,drst,ws,bs,ss,pb,                      & 
+                      nzu,z_u,                                        & 
                       tw,tg,tr,sfw,sfg,sfr,                           & 
                       a_u,a_v,a_t,a_e,                                &
                       b_u,b_v,b_t,b_e,                                & 
-                      dlg,dl_u,tsk,sf,vl,rl_up,rs_abs,emiss,grdflx_urb)                             
+                      dlg,dl_u,sf,vl,rl_up,rs_abs,emiss,grdflx_urb)                             
 
 ! ----------------------------------------------------------------------
 ! This routine computes the effects of buildings on momentum, heat and
@@ -566,20 +645,20 @@ MODULE module_sf_bep
       integer iurb               ! Current urban class
 
 !    Building parameters      
-      real alag_u(nurbm)         ! Ground thermal diffusivity [m^2 s^-1]
-      real alaw_u(nurbm)         ! Wall thermal diffusivity [m^2 s^-1]
-      real alar_u(nurbm)         ! Roof thermal diffusivity [m^2 s^-1]
-      real csg_u(nurbm)          ! Specific heat of the ground material [J m^3 K^-1]
-      real csw_u(nurbm)          ! Specific heat of the wall material [J m^3 K^-1]
-      real csr_u(nurbm)          ! Specific heat of the roof material [J m^3 K^-1]
+      real alag(ng_u)            ! Ground thermal diffusivity [m^2 s^-1]
+      real alaw(nwr_u)           ! Wall thermal diffusivity [m^2 s^-1]
+      real alar(nwr_u)           ! Roof thermal diffusivity [m^2 s^-1]
+      real csg(ng_u)             ! Specific heat of the ground material [J m^3 K^-1]
+      real csw(nwr_u)            ! Specific heat of the wall material [J m^3 K^-1]
+      real csr(nwr_u)            ! Specific heat of the roof material [J m^3 K^-1]
 
 !    Radiation parameters
-      real albg_u(nurbm)         ! Albedo of the ground
-      real albw_u(nurbm)         ! Albedo of the wall
-      real albr_u(nurbm)         ! Albedo of the roof
-      real emg_u(nurbm)          ! Emissivity of ground
-      real emw_u(nurbm)          ! Emissivity of wall
-      real emr_u(nurbm)          ! Emissivity of roof
+      real albg                  ! Albedo of the ground
+      real albw                  ! Albedo of the wall
+      real albr                  ! Albedo of the roof
+      real emg                   ! Emissivity of ground
+      real emw                   ! Emissivity of wall
+      real emr                   ! Emissivity of roof
 
 !    fww,fwg,fgw,fsw,fsg are the view factors used to compute the long and 
 !    short wave radation. 
@@ -592,24 +671,20 @@ MODULE module_sf_bep
       real fsg(ndm,nurbm)              !  from sky to ground
 
 !    Roughness parameters
-      real z0g_u(nurbm)            ! The ground's roughness length
-      real z0r_u(nurbm)            ! The roof's roughness length
+      real z0(ndm,nz_um)           ! Roughness lengths "profiles"
       
 !    Street parameters
-      integer nd_u(nurbm)          ! Number of street direction for each urban class 
-      real strd_u(ndm,nurbm)       ! Street length (set to a greater value then the horizontal length of the cells)
-      real drst_u(ndm,nurbm)       ! Street direction
-      real ws_u(ndm,nurbm)         ! Street width
-      real bs_u(ndm,nurbm)         ! Building width
-      real h_b(nz_um,nurbm)        ! Bulding's heights
-      real d_b(nz_um,nurbm)        ! The probability that a building has an height "h_b"
-      real ss_u(nz_um,nurbm)     ! The probability that a building has an height equal to "z"
-      real pb_u(nz_um,nurbm)     ! The probability that a building has an height greater or equal to "z"
+      integer ndu                  ! Number of street direction for each urban class 
+      real strd(ndm)               ! Street length (set to a greater value then the horizontal length of the cells)
+      real drst(ndm)               ! Street direction
+      real ws(ndm)                 ! Street width
+      real bs(ndm)                 ! Building width
+      real ss(nz_um)               ! The probability that a building has an height equal to "z"
+      real pb(nz_um)               ! The probability that a building has an height greater or equal to "z"
         
 !    Grid parameters
-      integer nz_u(nurbm)     ! Number of layer in the urban grid
-!      real dz_u               ! Urban grid resolution
-      real z_u(nz_um)       ! Height of the urban grid levels
+      integer nzu                  ! Number of layer in the urban grid
+      real z_u(nz_um)              ! Height of the urban grid levels
 
 
 ! ----------------------------------------------------------------------
@@ -648,7 +723,6 @@ MODULE module_sf_bep
       real b_e(kms:kme)              ! Explicit component of the TKE sources or sinks
       real dlg(kms:kme)              ! Height above ground (L_ground in formula (24) of the BLM paper). 
       real dl_u(kms:kme)             ! Length scale (lb in formula (22) ofthe BLM paper).
-      real tsk                  ! Average of the road surface temperatures
       
 ! ----------------------------------------------------------------------
 ! LOCAL:
@@ -664,25 +738,6 @@ MODULE module_sf_bep
       real da_u(nz_um)          ! Air density
       real pt0_u(nz_um)         ! Reference potential temperature
       real pr_u(nz_um)          ! Air pressure
-
-! Data defining the building and street charateristics
-
-      integer nd                ! Number of street direction for the current urban class
-
-      real alag(ng_u)           ! Ground thermal diffusivity for the current urban class [m^2 s^-1] 
-      real alar(nwr_u)           ! Roof thermal diffusivity for the current urban class [m^2 s^-1]
-      real alaw(nwr_u)           ! Walls thermal diffusivity for the current urban class [m^2 s^-1] 
-      real csg(ng_u)            ! Specific heat of the ground material of the current urban class [J m^3 K^-1]
-      real csr(nwr_u)            ! Specific heat of the roof material for the current urban class [J m^3 K^-1]
-      real csw(nwr_u)            ! Specific heat of the wall material for the current urban class [J m^3 K^-1]
-
-      real z0(ndm,nz_um)      ! Roughness lengths "profiles"
-      real ws(ndm)              ! Street widths of the current urban class
-      real bs(ndm)              ! Building widths of the current urban class
-      real strd(ndm)            ! Street lengths for the current urban class
-      real drst(ndm)            ! Street directions for the current urban class
-      real ss(nz_um)          ! Probability to have a building with height h
-      real pb(nz_um)          ! Probability to have a building with an height equal
 
 ! Solar radiation at each level of the "urban grid"
 
@@ -720,11 +775,8 @@ MODULE module_sf_bep
       real rl_up ! longwave radiation emitted by urban surface to the atmosphere 
       real emiss ! mean emissivity of the urban surface
       real grdflx_urb ! ground heat flux
-      real shtot,aaa
-      real dt_int ! internal time step
-      integer nt_int ! number of internal time step
-      integer iz,id, it_int
-      integer iwrong,iw,ix,iy
+      integer iz,id
+      integer iw,ix,iy
 
 ! ----------------------------------------------------------------------
 ! END VARIABLES DEFINITIONS
@@ -735,53 +787,49 @@ MODULE module_sf_bep
       do iz=kts,kte
          dz(iz)=z(iz+1)-z(iz)
       end do
-      call param(iurb,nz_u(iurb),nd_u(iurb),         &
-                       csg_u,csg,alag_u,alag,csr_u,csr,             &
-                       alar_u,alar,csw_u,csw,alaw_u,alaw,           &
-                       ws_u,ws,bs_u,bs,z0g_u,z0r_u,z0,              &
-                       strd_u,strd,drst_u,drst,ss_u,ss,pb_u,pb)
 
 ! Interpolation on the "urban grid"
-      call interpol(kms,kme,kts,kte,nz_u(iurb),z,z_u,ua,ua_u)
-      call interpol(kms,kme,kts,kte,nz_u(iurb),z,z_u,va,va_u)
-      call interpol(kms,kme,kts,kte,nz_u(iurb),z,z_u,pt,pt_u)
-      call interpol(kms,kme,kts,kte,nz_u(iurb),z,z_u,pt0,pt0_u)
-      call interpol(kms,kme,kts,kte,nz_u(iurb),z,z_u,pr,pr_u)
-      call interpol(kms,kme,kts,kte,nz_u(iurb),z,z_u,da,da_u)
+      call interpol(kms,kme,kts,kte,nzu,z,z_u,ua,ua_u)
+      call interpol(kms,kme,kts,kte,nzu,z,z_u,va,va_u)
+      call interpol(kms,kme,kts,kte,nzu,z,z_u,pt,pt_u)
+      call interpol(kms,kme,kts,kte,nzu,z,z_u,pt0,pt0_u)
+      call interpol(kms,kme,kts,kte,nzu,z,z_u,pr,pr_u)
+      call interpol(kms,kme,kts,kte,nzu,z,z_u,da,da_u)
 
                    
 ! Compute the modification of the radiation due to the buildings
 
-      call modif_rad(iurb,nd_u(iurb),nz_u(iurb),z_u,ws, &
-                    drst,strd,ss,pb,                              &
-                    tw,tg,albg_u(iurb),albw_u(iurb),              &
-                    emw_u(iurb),emg_u(iurb),                      &
-                    fww,fwg,fgw,fsw,fsg,                          &
-                    zr,deltar,ah,                                 &
+      call modif_rad(iurb,ndu,nzu,z_u,ws,               &
+                    drst,strd,ss,pb,                    &
+                    tw,tg,albg,albw,emw,emg,            &
+                    fww,fwg,fgw,fsw,fsg,                &
+                    zr,deltar,ah,                       &
                     rs,rld,rsw,rsg,rlw,rlg)                       
  
 ! calculation of the urban albedo and the upward long wave radiation
-       call upward_rad(nd_u(iurb),iurb,nz_u(iurb),ws,bs,sigma,fsw,fsg,pb,ss,   &
-                       tg,emg_u(iurb),albg_u(iurb),rlg,rsg,sfg,                & 
-                       tw,emw_u(iurb),albw_u(iurb),rlw,rsw,sfw,                & 
-                       tr,emr_u(iurb),albr_u(iurb),rld,rs,sfr,                 & 
+       
+       call upward_rad(ndu,nzu,ws,bs,                   &
+                       sigma,pb,ss,                     &
+                       tg,emg,albg,rlg,rsg,sfg,         & 
+                       tw,emw,albw,rlw,rsw,sfw,         & 
+                       tr,emr,albr,rld,rs,sfr,          & 
                        rs_abs,rl_up,emiss,grdflx_urb)               
         
 ! Compute the surface temperatures
      
 
-      call surf_temp(nz_u(iurb),nd_u(iurb),pr_u,dt,ss,                  & 
-                    rs,rld,rsg,rlg,rsw,rlw,                             &
-                    tg,alag,csg,emg_u(iurb),albg_u(iurb),ptg,sfg,gfg,  &
-                    tr,alar,csr,emr_u(iurb),albr_u(iurb),ptr,sfr,gfr,  &
-                    tw,alaw,csw,emw_u(iurb),albw_u(iurb),ptw,sfw,gfw)  
+      call surf_temp(nzu,ndu,pr_u,dt,ss,                & 
+                    rs,rld,rsg,rlg,rsw,rlw,             &
+                    tg,alag,csg,emg,albg,ptg,sfg,gfg,   &
+                    tr,alar,csr,emr,albr,ptr,sfr,gfr,   &
+                    tw,alaw,csw,emw,albw,ptw,sfw,gfw)  
       
       
 ! Compute the implicit and explicit components of the sources or sinks on the "urban grid"
        
-      call buildings(nd_u(iurb),nz_u(iurb),z0,ua_u,va_u,                & 
-                     pt_u,pt0_u,ptg,ptr,da_u,ptw,drst,                  &                      
-                     uva_u,vva_u,uvb_u,vvb_u,tva_u,tvb_u,evb_u,         & 
+      call buildings(ndu,nzu,z0,ua_u,va_u,                       & 
+                     pt_u,pt0_u,ptg,ptr,da_u,ptw,drst,           &                      
+                     uva_u,vva_u,uvb_u,vvb_u,tva_u,tvb_u,evb_u,  & 
                      uhb_u,vhb_u,thb_u,ehb_u,ss,dt)                        
  
          
@@ -791,13 +839,13 @@ MODULE module_sf_bep
 !  
 ! 
  
-      do id=1,nd_u(iurb)         
+      do id=1,ndu         
          sfg(id)=-da_u(1)*cp_u*thb_u(id,1)
-         do iz=2,nz_u(iurb)
+         do iz=2,nzu
             sfr(id,iz)=-da_u(iz)*cp_u*thb_u(id,iz)
          enddo
          
-         do iz=1,nz_u(iurb)
+         do iz=1,nzu
             sfw(2*id-1,iz)=-da_u(iz)*cp_u*(tvb_u(2*id-1,iz)+     &
                 tva_u(2*id-1,iz)*pt_u(iz))
             sfw(2*id,iz)=-da_u(iz)*cp_u*(tvb_u(2*id,iz)+         &
@@ -807,31 +855,27 @@ MODULE module_sf_bep
       
 ! calculation of the urban albedo and the upward long wave radiation
           
-!       call upward_rad(nd_u(iurb),iurb,nz_u(iurb),ws,bs,sigma,fsw,fsg,pb,ss,  &
-!                       tg,emg_u(iurb),albg_u(iurb),rlg,rsg,                & 
-!                       tw,emw_u(iurb),albw_u(iurb),rlw,rsw,                & 
-!                       tr,emr_u(iurb),albr_u(iurb),rld,rs,                  & 
-!                       rs_abs,rl_up,emiss)             
+!!       call upward_rad(ndu,nzu,ws,bs,                      &
+!!                       sigma,pb,ss,                        &
+!!                       tg,emg,albg,rlg,rsg,sfg,            & 
+!!                       tw,emw,albw,rlw,rsw,sfw,            & 
+!!                       tr,emr,albr,rld,rs,sfr,             & 
+!!                       rs_abs,rl_up,emiss,grdflx_urb)             
 
 ! Interpolation on the "mesoscale grid"
 
-      call urban_meso(nd_u(iurb),kms,kme,kts,kte,nz_u(iurb),z,dz,z_u,pb,ss,bs,ws,sf,  & 
-                     vl,uva_u,vva_u,uvb_u,vvb_u,tva_u,tvb_u,evb_u,       &
-                     uhb_u,vhb_u,thb_u,ehb_u,                            &
+      call urban_meso(ndu,kms,kme,kts,kte,nzu,z,dz,z_u,pb,ss,bs,ws,sf, & 
+                     vl,uva_u,vva_u,uvb_u,vvb_u,tva_u,tvb_u,evb_u,     &
+                     uhb_u,vhb_u,thb_u,ehb_u,                          &
                      a_u,a_v,a_t,a_e,b_u,b_v,b_t,b_e)                    
        
 
 ! computation of the mean road temperature tsk (this value could be used 
 ! to replace the surface temperature in the radiation routines, if needed).
 
-!      tsk=0.
-!      do id=1,nd_u(iurb)
-!         tsk=tsk+tg(id,ng_u)/nd_u(iurb)
-!      enddo
-
 ! Calculation of the length scale taking into account the buildings effects
 
-      call interp_length(nd_u(iurb),kms,kme,kts,kte,nz_u(iurb),z_u,z,ss,ws,bs,dlg,dl_u)
+      call interp_length(ndu,kms,kme,kts,kte,nzu,z_u,z,ss,ws,bs,dlg,dl_u)
 
       return
       end subroutine BEP1D
@@ -839,11 +883,12 @@ MODULE module_sf_bep
 ! ===6=8===============================================================72
 ! ===6=8===============================================================72
 
-       subroutine param(iurb,nz,nd,                                   &
+       subroutine param(iurb,nzu,nzurb,nzurban,ndu,                   &
                        csg_u,csg,alag_u,alag,csr_u,csr,               &
                        alar_u,alar,csw_u,csw,alaw_u,alaw,             &
                        ws_u,ws,bs_u,bs,z0g_u,z0r_u,z0,                &  
-                       strd_u,strd,drst_u,drst,ss_u,ss,pb_u,pb)        
+                       strd_u,strd,drst_u,drst,ss_u,ss_urb,ss,pb_u,   &
+                       pb_urb,pb,lp_urb,lb_urb,hgt_urb,frc_urb)        
 
 ! ----------------------------------------------------------------------
 !    This routine prepare some usefull parameters       
@@ -856,8 +901,9 @@ MODULE module_sf_bep
 ! INPUT:
 ! ----------------------------------------------------------------------
       integer iurb                 ! Current urban class
-      integer nz                   ! Number of vertical urban levels in the current class
-      integer nd                   ! Number of street direction for the current urban class
+      integer nzu                  ! Number of vertical urban levels in the current class
+      integer nzurb                ! Number of vertical urban levels in the current class
+      integer ndu                  ! Number of street direction for the current urban class
       real alag_u(nurbm)           ! Ground thermal diffusivity [m^2 s^-1]
       real alar_u(nurbm)           ! Roof thermal diffusivity [m^2 s^-1]
       real alaw_u(nurbm)           ! Wall thermal diffusivity [m^2 s^-1]
@@ -872,7 +918,13 @@ MODULE module_sf_bep
       real z0r_u(nurbm)            ! The roof's roughness length
       real ss_u(nz_um,nurbm)     ! The probability that a building has an height equal to "z"
       real pb_u(nz_um,nurbm)     ! The probability that a building has an height greater or equal to "z"
-
+      real ss_urb(nz_um)     ! The probability that a building has an height equal to "z"
+      real pb_urb(nz_um)     ! The probability that a building has an height greater or equal to "z"
+      real lp_urb                ! Building plan area density
+      real lb_urb                ! Building surface area to plan area ratio
+      real hgt_urb               ! Average building height weighted by building plan area [m]
+      real frc_urb               ! Urban fraction
+     
 ! ----------------------------------------------------------------------
 ! OUTPUT:
 ! ----------------------------------------------------------------------
@@ -889,17 +941,18 @@ MODULE module_sf_bep
       real z0(ndm,nz_um)      ! Roughness lengths "profiles"
       real ss(nz_um)          ! Probability to have a building with height h
       real pb(nz_um)          ! Probability to have a building with an height equal
+      integer nzurban
 
 ! ----------------------------------------------------------------------
 ! LOCAL:
 ! ----------------------------------------------------------------------
-      integer id,ig,ir,iw,iz
+      integer id,ig,ir,iw,iz,ihu
 
 ! ----------------------------------------------------------------------
 ! END VARIABLES DEFINITIONS
 ! ----------------------------------------------------------------------     
 !
-!Initialize the variables
+!Initialize
 !
       ss=0.
       pb=0.
@@ -914,11 +967,39 @@ MODULE module_sf_bep
       bs=0.
       strd=0.
       drst=0.
+      nzurban=0
       
-      do iz=1,nz+1
-         ss(iz)=ss_u(iz,iurb)
-         pb(iz)=pb_u(iz,iurb)
-      end do
+      ihu=0
+
+       do iz=1,nz_um
+          if (ss_urb(iz)/=0.) then
+             ihu=1
+             exit
+          else
+             continue
+          endif
+       enddo
+           
+       if (ihu==1) then
+          do iz=1,nzurb+1
+             ss(iz)=ss_urb(iz)
+             pb(iz)=pb_urb(iz)
+          enddo
+          nzurban=nzurb
+       else
+          do iz=1,nzu+1
+             ss(iz)=ss_u(iz,iurb)
+             pb(iz)=pb_u(iz,iurb)
+          end do 
+          nzurban=nzu
+       endif
+
+       do id=1,ndu
+        z0(id,1)=z0g_u(iurb)
+        do iz=2,nzurban+1
+           z0(id,iz)=z0r_u(iurb)
+        enddo
+       enddo
                  
        do ig=1,ng_u
         csg(ig)=csg_u(iurb)
@@ -934,22 +1015,38 @@ MODULE module_sf_bep
         csw(iw)=csw_u(iurb)
         alaw(iw)=alaw_u(iurb)
        enddo
-       
-       do id=1,nd
-        z0(id,1)=z0g_u(iurb)
-        do iz=2,nz+1
-         z0(id,iz)=z0r_u(iurb)
-        enddo
-       enddo
       
-       do id=1,nd
-        ws(id)=ws_u(id,iurb)
-        bs(id)=bs_u(id,iurb)
+       do id=1,ndu
         strd(id)=strd_u(id,iurb)
         drst(id)=drst_u(id,iurb)     
        enddo
-
-       
+    
+       do id=1,ndu
+          if ((hgt_urb<=0.).OR.(lp_urb<=0.).OR.(lb_urb<=0.)) then
+             ws(id)=ws_u(id,iurb)
+             bs(id)=bs_u(id,iurb)
+          else if ((lp_urb/frc_urb<1.).and.(lp_urb<lb_urb)) then
+                  bs(id)=2.*hgt_urb*lp_urb/(lb_urb-lp_urb)
+                  ws(id)=2.*hgt_urb*lp_urb*((frc_urb/lp_urb)-1.)/(lb_urb-lp_urb)
+               else
+                  ws(id)=ws_u(id,iurb)
+                  bs(id)=bs_u(id,iurb) 
+          endif
+       enddo
+       do id=1,ndu
+          if ((bs(id)<=1.).OR.(bs(id)>=150.)) then
+!            write(*,*) 'WARNING, WIDTH OF THE BUILDING WRONG',id,bs(id)
+!            write(*,*) 'WIDTH OF THE STREET',id,ws(id)
+             bs(id)=bs_u(id,iurb)
+             ws(id)=ws_u(id,iurb)
+          endif
+          if ((ws(id)<=1.).OR.(ws(id)>=150.)) then
+!            write(*,*) 'WARNING, WIDTH OF THE STREET WRONG',id,ws(id)
+!            write(*,*) 'WIDTH OF THE BUILDING',id,bs(id)
+             bs(id)=bs_u(id,iurb)
+             ws(id)=ws_u(id,iurb)
+          endif
+       enddo
        return
        end subroutine param
        
@@ -977,13 +1074,14 @@ MODULE module_sf_bep
 ! Data relative to the "urban grid"
       integer nz_u          ! Number of levels
 !!    real z_u(nz_u+1)      ! Altitude of the cell interface
-      real z_u(nz_um)      ! Altitude of the cell interface
+      real z_u(nz_um)       ! Altitude of the cell interface
 ! ----------------------------------------------------------------------
 ! OUTPUT:
 ! ----------------------------------------------------------------------
 !!    real c_u(nz_u)        ! Interpolated paramters in the "urban grid"
-      real c_u(nz_um)        ! Interpolated paramters in the "urban grid"
+      real c_u(nz_um)       ! Interpolated paramters in the "urban grid"
 
+       
 ! LOCAL:
 ! ----------------------------------------------------------------------
       integer iz_u,iz
@@ -1009,9 +1107,9 @@ MODULE module_sf_bep
 ! ===6=8===============================================================72     
 
       subroutine modif_rad(iurb,nd,nz_u,z,ws,drst,strd,ss,pb,    &
-                          tw,tg,albg,albw,emw,emg,                     &
-                          fww,fwg,fgw,fsw,fsg,                         &
-                          zr,deltar,ah,                                &    
+                          tw,tg,albg,albw,emw,emg,               &
+                          fww,fwg,fgw,fsw,fsg,                   &
+                          zr,deltar,ah,                          &    
                           rs,rl,rsw,rsg,rlw,rlg)                       
  
 ! ----------------------------------------------------------------------
@@ -1067,7 +1165,7 @@ MODULE module_sf_bep
 
 !  Calculation of the shadow effects
 
-      call shadow_mas(nd,nz_u,zr,deltar,ah,drst,ws,ss,pb,z,  &
+      call shadow_mas(nd,nz_u,zr,deltar,ah,drst,ws,ss,pb,z,           &
                      rs,rsw,rsg)
 
 ! Calculation of the reflection effects          
@@ -1649,7 +1747,7 @@ MODULE module_sf_bep
 ! ===6=8===============================================================72
 ! ===6=8===============================================================72   
 
-      subroutine shadow_mas(nd,nz_u,zr,deltar,ah,drst,ws,ss,pb,z,    &
+      subroutine shadow_mas(nd,nz_u,zr,deltar,ah,drst,ws,ss,pb,z,         &
                            rs,rsw,rsg)
         
 ! ----------------------------------------------------------------------
@@ -1728,20 +1826,18 @@ MODULE module_sf_bep
             do iz=1,nz_u
                rsw(2*id-1,iz)=0.
                rsw(2*id,iz)=0.          
-            if(pb(iz+1).gt.0.)then       
+            if(pb(iz+1).gt.0.)then           
                do jz=1,nz_u                    
                 if(abs(sin(aae)).gt.1.e-10)then
                   call shade_wall(z(iz),z(iz+1),z(jz+1),phix,aae,   &    
                       ws(id),rd)                  
                   rsw(2*id-1,iz)=rsw(2*id-1,iz)+rs*rd*ss(jz+1)/pb(iz+1)
-                  
                 endif
               
                 if(abs(sin(aaw)).gt.1.e-10)then
                   call shade_wall(z(iz),z(iz+1),z(jz+1),phix,aaw,   &    
                       ws(id),rd)
-                  rsw(2*id,iz)=rsw(2*id,iz)+rs*rd*ss(jz+1)/pb(iz+1)   
-                                
+                  rsw(2*id,iz)=rsw(2*id,iz)+rs*rd*ss(jz+1)/pb(iz+1)                  
                 endif
                enddo             
             endif  
@@ -1901,7 +1997,7 @@ MODULE module_sf_bep
         bbb(i)=fsw(i,id,iurb)*rl+emg*fgw(i,id,iurb)*sigma*tg(id,ng_u)**4
         do j=1,nz_u
          bbb(i)=bbb(i)+pb(j+1)*emw*sigma*fww(j,i,id,iurb)*       &
-               tw(2*id,j,nwr_u)**4+                                 &
+               tw(2*id,j,nwr_u)**4+                              &
                fww(j,i,id,iurb)*rl*(1.-pb(j+1))
         enddo
         
@@ -1929,7 +2025,7 @@ MODULE module_sf_bep
 
         do j=1,nz_u
          bbb(i)=bbb(i)+pb(j+1)*emw*sigma*fww(j,i-nz_u,id,iurb)*  &   
-                tw(2*id-1,j,nwr_u)**4+                              &   
+                tw(2*id-1,j,nwr_u)**4+                           &   
                 fww(j,i-nz_u,id,iurb)*rl*(1.-pb(j+1))
         enddo
        
@@ -1950,7 +2046,7 @@ MODULE module_sf_bep
        
        do i=1,nz_u
         bbb(2*nz_u+1)=bbb(2*nz_u+1)+emw*sigma*fwg(i,id,iurb)*pb(i+1)*    &
-                      (tw(2*id-1,i,nwr_u)**4+tw(2*id,i,nwr_u)**4)+             &
+                      (tw(2*id-1,i,nwr_u)**4+tw(2*id,i,nwr_u)**4)+       &
                       2.*fwg(i,id,iurb)*(1.-pb(i+1))*rl                  
        enddo
    
@@ -2545,64 +2641,18 @@ MODULE module_sf_bep
 ! ===6=8===============================================================72
 ! ===6=8===============================================================72
 
-      subroutine icBEP (alag_u,alaw_u,alar_u,csg_u,csw_u,csr_u,        &
-                       albg_u,albw_u,albr_u,emg_u,emw_u,emr_u,         &
-                       fww,fwg,fgw,fsw,fws,fsg,                        &
-                       z0g_u,z0r_u,                                    &
-                       nd_u,strd_u,drst_u,ws_u,bs_u,h_b,d_b,ss_u,pb_u, &
-                       nz_u,z_u,                                  &
-                       twini_u,trini_u)                               
+      subroutine icBEP (nd_u,h_b,d_b,ss_u,pb_u,nz_u,z_u)                               
 
-
-      implicit none 
-      
-   
-!    Building parameters      
-      real alag_u(nurbm)      ! Ground thermal diffusivity [m^2 s^-1]
-      real alaw_u(nurbm)      ! Wall thermal diffusivity [m^2 s^-1]
-      real alar_u(nurbm)      ! Roof thermal diffusivity [m^2 s^-1]
-      real csg_u(nurbm)       ! Specific heat of the ground material [J m^3 K^-1]
-      real csw_u(nurbm)       ! Specific heat of the wall material [J m^3 K^-1]
-      real csr_u(nurbm)       ! Specific heat of the roof material [J m^3 K^-1]
-      real twini_u(nurbm)     ! Temperature inside the buildings behind the wall [K]
-      real trini_u(nurbm)     ! Temperature inside the buildings behind the roof [K]
-
-!    Radiation parameters
-      real albg_u(nurbm)      ! Albedo of the ground
-      real albw_u(nurbm)      ! Albedo of the wall
-      real albr_u(nurbm)      ! Albedo of the roof
-      real emg_u(nurbm)       ! Emissivity of ground
-      real emw_u(nurbm)       ! Emissivity of wall
-      real emr_u(nurbm)       ! Emissivity of roof
-
-!    Roughness parameters
-      real z0g_u(nurbm)       ! The ground's roughness length      
-      real z0r_u(nurbm)       ! The roof's roughness length     
+      implicit none       
+        
 
 !    Street parameters
       integer nd_u(nurbm)     ! Number of street direction for each urban class
-
-      real strd_u(ndm,nurbm)  ! Street length (fix to greater value to the horizontal length of the cells)
-      real drst_u(ndm,nurbm)  ! Street direction [degree]
-      real ws_u(ndm,nurbm)    ! Street width [m]
-      real bs_u(ndm,nurbm)    ! Building width [m]
       real h_b(nz_um,nurbm)   ! Bulding's heights [m]
       real d_b(nz_um,nurbm)   ! The probability that a building has an height h_b
 ! -----------------------------------------------------------------------
 !     Output
 !------------------------------------------------------------------------
-
-
-
-!   fww,fwg,fgw,fsw,fsg are the view factors used to compute the long wave
-!   and the short wave radation. They are the part of radiation from a surface
-!   or from the sky to another surface.
-      real fww(nz_um,nz_um,ndm,nurbm)        !  from wall to wall
-      real fwg(nz_um,ndm,nurbm)              !  from wall to ground
-      real fgw(nz_um,ndm,nurbm)              !  from ground to wall
-      real fsw(nz_um,ndm,nurbm)              !  from sky to wall
-      real fws(nz_um,ndm,nurbm)              !  from wall to sky
-      real fsg(ndm,nurbm)                    !  from sky to ground
 
       real ss_u(nz_um,nurbm)     ! The probability that a building has an height equal to z
       real pb_u(nz_um,nurbm)     ! The probability that a building has an height greater or equal to z
@@ -2630,17 +2680,11 @@ MODULE module_sf_bep
 !
 !Initialize variables
 !
-      nz_u=0
       z_u=0.
+      nz_u=0
       ss_u=0.
       pb_u=0.
-      fww=0.
-      fwg=0.
-      fgw=0.
-      fsw=0.
-      fws=0.
-      fsg=0. 
-        
+
 ! Computation of the urban levels height
 
       z_u(1)=0.
@@ -2678,10 +2722,6 @@ MODULE module_sf_bep
          nz_u(iurb)=iz_u+1
 
          do id=1,nd_u(iurb)
-
-            call view_factors(iurb,nz_u(iurb),id,strd_u(id,iurb),   &    
-                            z_u,ws_u(id,iurb),                      &    
-                            fww,fwg,fgw,fsg,fsw,fws) 
 
             do iz_u=1,nz_u(iurb)
                ss_u(iz_u,iurb)=0.
@@ -3123,12 +3163,14 @@ MODULE module_sf_bep
       return
 
       END SUBROUTINE angle
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!====6=8===============================================================72         
+!====6=8===============================================================72 
 
-      subroutine upward_rad(nd_u,iurb,nz_u,ws,bs,sigma,fsw,fsg,pb,ss,           &
-                       tg,emg_u,albg_u,rlg,rsg,sfg,                          & 
-                       tw,emw_u,albw_u,rlw,rsw,sfw,                          & 
-                       tr,emr_u,albr_u,rld,rs, sfr,                            & 
+      subroutine upward_rad(ndu,nzu,ws,bs,sigma,pb,ss,                     &
+                       tg,emg_u,albg_u,rlg,rsg,sfg,                        & 
+                       tw,emw_u,albw_u,rlw,rsw,sfw,                        & 
+                       tr,emr_u,albr_u,rld,rs, sfr,                        & 
                        rs_abs,rl_up,emiss,grdflx_urb)
 !
 ! IN this surboutine we compute the upward longwave flux, and the albedo
@@ -3155,20 +3197,17 @@ MODULE module_sf_bep
       real bs(ndm)
                         ! building size
       real pb(nz_um)                ! Probability to have a building with an height equal or higher   
-      integer nz_u
+      integer nzu
       real ss(nz_um)                ! Probability to have a building of a given height
       real sigma                       
       real emg_u                       ! emissivity of the street
       real emw_u                       ! emissivity of the wall
       real emr_u                       ! emissivity of the roof
-      real fsw(nz_um,ndm,nurbm)        ! View factors from sky to wall                
-      real fsg(ndm,nurbm)                      ! groud to sky view factor
       real tw(2*ndm,nz_um,nwr_u)  ! Temperature in each layer of the wall [K]
       real tr(ndm,nz_um,nwr_u)  ! Temperature in each layer of the roof [K]
       real tg(ndm,ng_u)          ! Temperature in each layer of the ground [K]
-      integer iurb ! urban class
       integer id ! street direction
-      integer nd_u ! number of street directions
+      integer ndu ! number of street directions
 !OUTPUT/INPUT
       real rs_abs  ! absrobed solar radiationfor this street direction
       real rl_up   ! upward longwave radiation for this street direction
@@ -3181,15 +3220,31 @@ MODULE module_sf_bep
       integer ix,iy,iwrong
 
          iwrong=1
-      do iz=1,nz_u+1
-      do id=1,nd_u
+      do iz=1,nzu+1
+      do id=1,ndu
       do iw=1,nwr_u
         if(tr(id,iz,iw).lt.100.)then
               write(*,*)'in upward_rad ',iz,id,iw,tr(id,iz,iw) 
               iwrong=0
         endif
+        if(tw(2*id-1,iz,iw).lt.100.) then
+           write(*,*)'in upward_rad ',iz,id,iw,tw(2*id-1,iz,iw) 
+           iwrong=0
+        endif
+        if(tw(2*id,iz,iw).lt.100.) then
+           write(*,*)'in upward_rad ',iz,id,iw,tw(2*id,iz,iw) 
+           iwrong=0
+        endif
       enddo
       enddo
+      enddo
+      do id=1,ndu
+      do iw=1,ng_u
+          if(tg(id,iw).lt.100.) then
+            write(*,*)'in upward_rad ',id,iw,tg(id,iw) 
+            iwrong=0
+          endif
+      enddo   
       enddo
            if(iwrong.eq.0)stop
 
@@ -3200,29 +3255,29 @@ MODULE module_sf_bep
       emiss=0.
       rl_emit=0.
       grdflx_urb=0.
-      do id=1,nd_u          
-       rl_emit=rl_emit-( emg_u*sigma*(tg(id,ng_u)**4.)+(1-emg_u)*rlg(id))*ws(id)/(ws(id)+bs(id))/nd_u
-       rl_inc=rl_inc+rlg(id)*ws(id)/(ws(id)+bs(id))/nd_u       
-       rs_abs=rs_abs+(1.-albg_u)*rsg(id)*ws(id)/(ws(id)+bs(id))/nd_u
+      do id=1,ndu          
+       rl_emit=rl_emit-( emg_u*sigma*(tg(id,ng_u)**4.)+(1-emg_u)*rlg(id))*ws(id)/(ws(id)+bs(id))/ndu
+       rl_inc=rl_inc+rlg(id)*ws(id)/(ws(id)+bs(id))/ndu       
+       rs_abs=rs_abs+(1.-albg_u)*rsg(id)*ws(id)/(ws(id)+bs(id))/ndu
          gfl=(1.-albg_u)*rsg(id)+emg_u*rlg(id)-emg_u*sigma*(tg(id,ng_u)**4.)+sfg(id)
-         grdflx_urb=grdflx_urb-gfl*ws(id)/(ws(id)+bs(id))/nd_u  
+         grdflx_urb=grdflx_urb-gfl*ws(id)/(ws(id)+bs(id))/ndu  
  
-          do iz=2,nz_u
-            rl_emit=rl_emit-(emr_u*sigma*(tr(id,iz,nwr_u)**4.)+(1-emr_u)*rld)*ss(iz)*bs(id)/(ws(id)+bs(id))/nd_u
-            rl_inc=rl_inc+rld*ss(iz)*bs(id)/(ws(id)+bs(id))/nd_u            
-            rs_abs=rs_abs+(1.-albr_u)*rs*ss(iz)*bs(id)/(ws(id)+bs(id))/nd_u
+          do iz=2,nzu
+            rl_emit=rl_emit-(emr_u*sigma*(tr(id,iz,nwr_u)**4.)+(1-emr_u)*rld)*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
+            rl_inc=rl_inc+rld*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu            
+            rs_abs=rs_abs+(1.-albr_u)*rs*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
             gfl=(1.-albr_u)*rs+emr_u*rld-emr_u*sigma*(tr(id,iz,nwr_u)**4.)+sfr(id,iz)
-            grdflx_urb=grdflx_urb-gfl*ss(iz)*bs(id)/(ws(id)+bs(id))/nd_u
+            grdflx_urb=grdflx_urb-gfl*ss(iz)*bs(id)/(ws(id)+bs(id))/ndu
          enddo
            
-         do iz=1,nz_u            
+         do iz=1,nzu            
             rl_emit=rl_emit-(emw_u*sigma*( tw(2*id-1,iz,nwr_u)**4.+tw(2*id,iz,nwr_u)**4. )+          &
-               (1-emw_u)*( rlw(2*id-1,iz)+rlw(2*id,iz) ) )*dz_u*pb(iz+1)/(ws(id)+bs(id))/nd_u
-            rl_inc=rl_inc+(( rlw(2*id-1,iz)+rlw(2*id,iz) ) )*dz_u*pb(iz+1)/(ws(id)+bs(id))/nd_u
-            rs_abs=rs_abs+((1.-albw_u)*( rsw(2*id-1,iz)+rsw(2*id,iz) ) )*dz_u*pb(iz+1)/(ws(id)+bs(id))/nd_u 
+               (1-emw_u)*( rlw(2*id-1,iz)+rlw(2*id,iz) ) )*dz_u*pb(iz+1)/(ws(id)+bs(id))/ndu
+            rl_inc=rl_inc+(( rlw(2*id-1,iz)+rlw(2*id,iz) ) )*dz_u*pb(iz+1)/(ws(id)+bs(id))/ndu
+            rs_abs=rs_abs+((1.-albw_u)*( rsw(2*id-1,iz)+rsw(2*id,iz) ) )*dz_u*pb(iz+1)/(ws(id)+bs(id))/ndu 
             gfl=(1.-albw_u)*(rsw(2*id-1,iz)+rsw(2*id,iz)) +emw_u*( rlw(2*id-1,iz)+rlw(2*id,iz) )   &
              -emw_u*sigma*( tw(2*id-1,iz,nwr_u)**4.+tw(2*id,iz,nwr_u)**4. )+(sfw(2*id-1,iz)+sfw(2*id,iz))            
-            grdflx_urb=grdflx_urb-gfl*dz_u*pb(iz+1)/(ws(id)+bs(id))/nd_u
+            grdflx_urb=grdflx_urb-gfl*dz_u*pb(iz+1)/(ws(id)+bs(id))/ndu
          enddo
           
       enddo
@@ -3236,4 +3291,186 @@ MODULE module_sf_bep
 
 !====6=8===============================================================72         
 !====6=8===============================================================72 
+! ===6=8===============================================================72
+! ===6=8===============================================================72
+
+      subroutine icBEP_XY(iurb,fww_u,fwg_u,fgw_u,fsw_u,             &
+                          fws_u,fsg_u,ndu,strd,ws,nzu,z_u)                               
+
+      implicit none       
+        
+!    Street parameters
+      integer ndu     ! Number of street direction for each urban class
+      integer iurb
+
+      real strd(ndm)        ! Street length (fix to greater value to the horizontal length of the cells)
+      real ws(ndm)          ! Street width [m]
+
+!    Grid parameters
+      integer nzu          ! Number of layer in the urban grid
+      real z_u(nz_um)       ! Height of the urban grid levels
+! -----------------------------------------------------------------------
+!     Output
+!------------------------------------------------------------------------
+
+!   fww_u,fwg_u,fgw_u,fsw_u,fsg_u are the view factors used to compute the long wave
+!   and the short wave radation. They are the part of radiation from a surface
+!   or from the sky to another surface.
+
+      real fww_u(nz_um,nz_um,ndm,nurbm)         !  from wall to wall
+      real fwg_u(nz_um,ndm,nurbm)               !  from wall to ground
+      real fgw_u(nz_um,ndm,nurbm)               !  from ground to wall
+      real fsw_u(nz_um,ndm,nurbm)               !  from sky to wall
+      real fws_u(nz_um,ndm,nurbm)               !  from sky to wall
+      real fsg_u(ndm,nurbm)                     !  from sky to ground
+
+! -----------------------------------------------------------------------
+!     Local
+!------------------------------------------------------------------------
+
+      integer id
+
+! -----------------------------------------------------------------------
+!     This routine compute the view factors
+!------------------------------------------------------------------------
+!
+!Initialize
+!
+      fww_u=0.
+      fwg_u=0.
+      fgw_u=0.
+      fsw_u=0.
+      fws_u=0.
+      fsg_u=0.
+      
+      do id=1,ndu
+
+            call view_factors(iurb,nzu,id,strd(id),z_u,ws(id),  &    
+                              fww_u,fwg_u,fgw_u,fsg_u,fsw_u,fws_u) 
+      
+      enddo               
+      return       
+      end subroutine icBEP_XY
+! ===6=8===============================================================72
+! ===6=8===============================================================72
+
+      subroutine icBEPHI_XY(hb_u,hi_urb1D,ss_u,pb_u,nzu,z_u)
+
+      implicit none   
+!-----------------------------------------------------------------------
+!    Inputs
+!-----------------------------------------------------------------------
+!    Street parameters
+!
+      real hi_urb1D(nz_um)    ! The probability that a building has an height h_b
+!
+!     Grid parameters
+!
+      real z_u(nz_um)         ! Height of the urban grid levels
+! -----------------------------------------------------------------------
+!     Output
+!------------------------------------------------------------------------
+
+      real ss_u(nz_um)   ! The probability that a building has an height equal to z
+      real pb_u(nz_um)         ! The probability that a building has an height greater or equal to z
+!        
+!    Grid parameters
+!
+      integer nzu                ! Number of layer in the urban grid
+
+! -----------------------------------------------------------------------
+!     Local
+!------------------------------------------------------------------------
+      real hb_u(nz_um)        ! Bulding's heights [m]
+      integer iz_u,id,ilu
+
+      real dtot
+      real hbmax
+
+!------------------------------------------------------------------------
+
+!Initialize variables
+!
+      
+      nzu=0
+      ss_u=0.
+      pb_u=0.
+      
+! Normalisation of the building density
+
+         dtot=0.
+         hb_u=0.
+
+         do ilu=1,nz_um
+            dtot=dtot+hi_urb1D(ilu)
+         enddo
+         
+         do ilu=1,nz_um
+            if (hi_urb1D(ilu)<0.) then
+!              write(*,*) 'WARNING, HI_URB1D(ilu) < 0 IN BEP'
+               go to 20
+            endif
+         enddo
+
+         if (dtot.gt.0.) then
+            continue
+         else
+!           write(*,*) 'WARNING, HI_URB1D <= 0 IN BEP'
+            go to 20
+         endif
+
+         do ilu=1,nz_um
+            hi_urb1D(ilu)=hi_urb1D(ilu)/dtot
+         enddo
+         
+         hb_u(1)=dz_u   
+         do ilu=2,nz_um
+            hb_u(ilu)=dz_u+hb_u(ilu-1)
+         enddo
+           
+
+! Compute pb and ss 
+      
+            
+         hbmax=0.
+       
+         do ilu=1,nz_um
+            if (hi_urb1D(ilu)>0.and.hi_urb1D(ilu)<=1.) then
+                hbmax=hb_u(ilu)
+            endif
+         enddo
+         
+         do iz_u=1,nz_um-1
+            if(z_u(iz_u+1).gt.hbmax)go to 10
+         enddo
+
+10       continue 
+        
+         nzu=iz_u+1
+
+         if ((nzu+1).gt.nz_um) then 
+             write(*,*) 'error, nz_um has to be increased to at least',nzu+1
+             stop
+         endif
+
+            do iz_u=1,nzu
+               ss_u(iz_u)=0.
+               do ilu=1,nz_um
+                  if(z_u(iz_u).le.hb_u(ilu)                      &    
+                    .and.z_u(iz_u+1).gt.hb_u(ilu))then            
+                        ss_u(iz_u)=ss_u(iz_u)+hi_urb1D(ilu)
+                  endif 
+               enddo
+            enddo
+
+            pb_u(1)=1.
+            do iz_u=1,nzu
+               pb_u(iz_u+1)=max(0.,pb_u(iz_u)-ss_u(iz_u))
+            enddo
+
+20    continue    
+      return
+      end subroutine icBEPHI_XY
+! ===6=8===============================================================72
+! ===6=8===============================================================72
 END MODULE module_sf_bep

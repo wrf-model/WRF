@@ -52,6 +52,7 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
 	  */RRTM_DATA */SOILPARM.TBL */VEGPARM.TBL */MPTABLE.TBL */URBPARM.TBL */grib2map.tbl \
 	  */CAM_ABS_DATA */CAM_AEROPT_DATA */RRTMG_LW_DATA */RRTMG_SW_DATA \
 	  */ozone.formatted */ozone_lat.formatted */ozone_plev.formatted \
+	  */aerosol.formatted */aerosol_lat.formatted */aerosol_plev.formatted */aerosol_lon.formatted \
 	  */gribmap.txt */tr??t?? */co2_trans */namelist.output ) >& /dev/null
   else if ( "$arg" == '-aa' ) then
     /bin/rm -f configure.wrf.backup
@@ -68,3 +69,10 @@ if ( -d chem ) then
   endif
 endif
 #cms--
+
+#wrf_hydro++
+  if( -d hydro) then
+    (cd hydro; make -f Makefile.comm clean)
+  endif
+#wrf_hydro--
+

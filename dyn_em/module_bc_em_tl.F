@@ -879,7 +879,9 @@ CONTAINS
                               mu_btys,g_mu_btys,mu_btye,g_mu_btye, &
                               moist_btxs,g_moist_btxs,moist_btxe,g_moist_btxe, &
                               moist_btys,g_moist_btys,moist_btye,g_moist_btye, &
-                              spec_bdy_width,n_moist,                          &
+                              scalar_btxs,g_scalar_btxs,scalar_btxe,g_scalar_btxe, &
+                              scalar_btys,g_scalar_btys,scalar_btye,g_scalar_btye, &
+                              spec_bdy_width,n_moist,n_scalar,                 &
                               ids,ide, jds,jde, kds,kde,  & ! domain dims
                               ims,ime, jms,jme, kms,kme,  & ! memory dims
                               ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -888,7 +890,7 @@ CONTAINS
 
    !  Input data.
 
-   INTEGER ,               INTENT(IN   ) :: spec_bdy_width, n_moist
+   INTEGER ,               INTENT(IN   ) :: spec_bdy_width, n_moist, n_scalar
 
    INTEGER ,               INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                             ims, ime, jms, jme, kms, kme, &
@@ -914,6 +916,10 @@ CONTAINS
                               moist_btxs,g_moist_btxs,moist_btxe,g_moist_btxe
    REAL,DIMENSION(ims:ime,kds:kde,spec_bdy_width,n_moist),INTENT(INOUT) ::  & 
                               moist_btys,g_moist_btys,moist_btye,g_moist_btye
+   REAL,DIMENSION(jms:jme,kds:kde,spec_bdy_width,n_scalar),INTENT(INOUT) ::  &
+                              scalar_btxs,g_scalar_btxs,scalar_btxe,g_scalar_btxe
+   REAL,DIMENSION(ims:ime,kds:kde,spec_bdy_width,n_scalar),INTENT(INOUT) ::  & 
+                              scalar_btys,g_scalar_btys,scalar_btye,g_scalar_btye
 
 ! setting tl of bdy tendencies to zero during DFI
 
@@ -942,6 +948,10 @@ CONTAINS
        g_moist_btxe = 0.
        g_moist_btys = 0.
        g_moist_btye = 0.
+       g_scalar_btxs = 0.
+       g_scalar_btxe = 0.
+       g_scalar_btys = 0.
+       g_scalar_btye = 0.
 
        u_btxs = 0.
        u_btxe = 0.
@@ -967,6 +977,10 @@ CONTAINS
        moist_btxe = 0.
        moist_btys = 0.
        moist_btye = 0.
+       scalar_btxs = 0.
+       scalar_btxe = 0.
+       scalar_btys = 0.
+       scalar_btye = 0.
 
 !  ENDIF
 

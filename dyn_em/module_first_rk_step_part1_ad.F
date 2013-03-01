@@ -13,6 +13,7 @@ CONTAINS
                              , tracer, a_tracer, tracer_tend, a_tracer_tend      &
                              , scalar , a_scalar , scalar_tend , a_scalar_tend   &
                              , fdda3d, fdda2d                   &
+                             , aerod                            &
                              , ru_tendf, a_ru_tendf, rv_tendf, a_rv_tendf        &
                              , rw_tendf, a_rw_tendf, t_tendf, a_t_tendf          &
                              , ph_tendf, a_ph_tendf, mu_tendf, a_mu_tendf        &
@@ -92,6 +93,7 @@ use module_scalar_tables
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: a_scalar_tend
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_fdda3d),INTENT(INOUT)  :: fdda3d
     REAL    ,DIMENSION(ims:ime,1:1,jms:jme,num_fdda2d),INTENT(INOUT)      :: fdda2d
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_aerod),INTENT(INOUT)   :: aerod
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psim
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psih
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: wspd
@@ -405,13 +407,13 @@ BENCH_START(a_pbl_driver_tim)
      &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
      &        ,HOL=HOL, MOL=grid%mol, REGIME=grid%REGIME                  &
 !mynn mp
-     &        ,QKE=scalar(ims,kms,jms,P_qke), tsq=grid%tsq, qsq=grid%qsq  &
+     &        ,QKE=scalar(ims,kms,jms,P_qke_adv), tsq=grid%tsq, qsq=grid%qsq  &
      &        ,cov=grid%cov, EL_MYNN=grid%el_mynn                         &
      &        ,DQKE=grid%dqke,QWT=grid%qWT                                &
      &        ,QSHEAR=grid%qSHEAR,QBUOY=grid%qBUOY,QDISS=grid%qDISS &
      &        ,bl_mynn_tkebudget=config_flags%bl_mynn_tkebudget           &
      &        ,rmol=grid%rmol, ch=grid%ch                                 &
-     &        ,qcg=grid%qcg, grav_settling=grid%grav_settling             &
+     &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling             &
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
 !GWD for ARW
      &        ,GWD_OPT=config_flags%gwd_opt &

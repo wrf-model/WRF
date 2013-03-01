@@ -1649,6 +1649,7 @@
      &            ,grid%ivgtyp,grid%isltyp,grid%vegfrc,grid%shdmin,grid%shdmax,grid%grnflx           &
      &            ,grid%snotime                                             &
      &            ,grid%sfcexc,grid%acsnow,grid%acsnom,grid%snopcx,grid%sice,grid%tg,grid%soiltb          &
+     &            ,grid%icedepth                                                                          &
      &            ,grid%albase,grid%mxsnal,grid%albedo,grid%sh2o,grid%si,grid%epsr,grid%embck             &
      &            ,grid%u10,grid%v10,grid%th10,grid%q10,grid%tshltr,grid%qshltr,grid%pshltr               &
      &            ,grid%t2,grid%qsg,grid%qvg,grid%qcg,grid%soilt1,grid%tsnav,grid%smfr3d,grid%keepfr3dflag     &
@@ -1673,9 +1674,10 @@
      &            ,grid%dew                                            & ! RUC LSM
      &            ,grid%rc_mf                                          & ! QNSE
      &            ,GRID,CONFIG_FLAGS                                   &
-     &            ,grid%ihe,grid%ihw,grid%ive,grid%ivw                                     &
-     &            ,GRID%DISHEAT                                             &
+     &            ,grid%ihe,grid%ihw,grid%ive,grid%ivw                 &
+     &            ,GRID%DISHEAT                                        &
      &            ,GRID%HPBL2D, GRID%EVAP2D, GRID%HEAT2D               &  !S&P Kwon
+     &            ,GRID%SFCHEADRT,GRID%INFXSRT,GRID%SOLDRAIN           &  !Hydrology, no-op right now
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)

@@ -385,7 +385,9 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
                           grid%mu_btxs,grid%mu_btxe,grid%mu_btys,grid%mu_btye, &
                           moist_btxs,moist_btxe,                               &
                           moist_btys,moist_btye,                               &
-                          grid%spec_bdy_width,num_3d_m,                &
+                          scalar_btxs,scalar_btxe,                             &
+                          scalar_btys,scalar_btye,                             &
+                          grid%spec_bdy_width,num_3d_m,num_3d_s,       &
                           ids,ide, jds,jde, kds,kde,                   &
                           ims,ime, jms,jme, kms,kme,                   &
                           ips,ipe, jps,jpe, kps,kpe,                   &
@@ -651,6 +653,7 @@ BENCH_END(set_phys_bc_tim)
                              , tracer, tracer_tend              &
                              , scalar , scalar_tend             &
                              , fdda3d, fdda2d                   &
+                             , aerod                            &
                              , ru_tendf, rv_tendf               &
                              , rw_tendf, t_tendf                &
                              , ph_tendf, mu_tendf               &
@@ -6988,6 +6991,7 @@ BENCH_END(adj_rk_tend_tim)
                              , tracer, a_tracer, tracer_tend, a_tracer_tend   &
                              , scalar , a_scalar, scalar_tend , a_scalar_tend  &
                              , fdda3d, fdda2d                   &
+                             , aerod                            &
                              , ru_tendf, a_ru_tendf, rv_tendf , a_rv_tendf  &
                              , rw_tendf, a_rw_tendf, t_tendf , a_t_tendf    &
                              , ph_tendf, a_ph_tendf, mu_tendf , a_mu_tendf  &
@@ -7115,7 +7119,9 @@ BENCH_END(adj_step_prep_tim)
                             grid%mu_btys,grid%a_mu_btys,grid%mu_btye,grid%a_mu_btye, &
                             moist_btxs,a_moist_btxs,moist_btxe,a_moist_btxe, &
                             moist_btys,a_moist_btys,moist_btye,a_moist_btye, &
-                            grid%spec_bdy_width,num_3d_m,                &
+                            scalar_btxs,a_scalar_btxs,scalar_btxe,a_scalar_btxe, &
+                            scalar_btys,a_scalar_btys,scalar_btye,a_scalar_btye, &
+                            grid%spec_bdy_width,num_3d_m,num_3d_s,           &
                             ids,ide, jds,jde, kds,kde,                   &
                             ims,ime, jms,jme, kms,kme,                   &
                             ips,ipe, jps,jpe, kps,kpe,                   &

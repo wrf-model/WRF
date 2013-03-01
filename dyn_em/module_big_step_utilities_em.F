@@ -14,8 +14,9 @@ MODULE module_big_step_utilities_em
 
    USE module_model_constants
    USE module_state_description, only: p_qg, p_qs, p_qi, gdscheme, tiedtkescheme, kfetascheme, g3scheme, &
-   p_qv, param_first_scalar, p_qr, p_qc
+   p_qv, param_first_scalar, p_qr, p_qc, DFI_FWD
    USE module_configure, ONLY : grid_config_rec_type
+   USE module_wrf_error
 
 CONTAINS
 
@@ -5394,7 +5395,6 @@ END SUBROUTINE phy_prep
      DO k = k_start, k_end
      DO i = i_start, i_end
           mpten = th_phy(i,k,j)-h_diabatic(i,k,j)
-#if ( WRF_DFI_RADAR == 1 )
        if(mpten.gt.mptenmax) then
           mptenmax=mpten
           imax=i
@@ -5408,6 +5408,7 @@ END SUBROUTINE phy_prep
           mpten=min(config_flags%mp_tend_lim*dt, mpten)
           mpten=max(-config_flags%mp_tend_lim*dt, mpten)
 
+#if ( WRF_DFI_RADAR == 1 )
        if(k < k_end ) then
          if(dfi_tten_max < dfi_tten_rad(i,k,j) ) dfi_tten_max = dfi_tten_rad(i,k,j)
          if(old_max < (th_phy(i,k,j)-h_diabatic(i,k,j)) ) old_max=th_phy(i,k,j)-h_diabatic(i,k,j)

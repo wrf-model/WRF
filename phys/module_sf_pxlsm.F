@@ -26,7 +26,7 @@ CONTAINS
 !-------------------------------------------------------------------------
    SUBROUTINE pxlsm(U3D, V3D, DZ8W, QV3D,T3D,TH3D, RHO,         &   
                     PSFC, GSW, GLW, RAINBL, EMISS,              &
-                    ITIMESTEP, NSOIL, DT, ANAL_INTERVAL,        &            
+                    ITIMESTEP,CURR_SECS, NSOIL, DT, ANAL_INTERVAL, &            
                     XLAND, XICE, ALBBCK, ALBEDO, SNOALB,        &
                     SMOIS, TSLB, MAVAIL, TA2, QA2,              &
                     ZS,DZS, PSIH,                               &
@@ -86,7 +86,13 @@ CONTAINS
 !     RG     12/2011 - Basic code clean, removed commented out debug statements, lined up columns, etc.
 !     RG     01/2012 - Removed FIRSTIME Logic that computes PX Landuse characteristics at first time step only. This resulted 
 !                      in different solutions when OpenMP was used and would not work with moving domains.
-!                      
+!     RG     08/2012 - Added CURR_SECS variable in argument list as replacement for PX internal CURRTIME internally comp var.
+! This is neccessary for PX to correctly interpolate analyses for soil nudging. Also, changes were made to 
+!  ensure PX LSM will work with not only MODIS and USGS, but also both the 40 and 50 class NLCD-MODIS data.
+!                      Also, coupled module_sf_pxlsm_data.F was updated so landuse characteristics across datasets are more
+!                      consistent. Albedo for NLCD two grassland categories were lowered from 23 and 25 to 18 and 19.
+!                      For the NLCD40 and NLCD50 roughness and leaf area were made consistent between the US NLCD and
+!                      outside US MODIS datasets. Prior, US boundaries created boundaries of roughness and LAI.
 !--------------------------------------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------------------------------------
 !   ARGUMENT LIST:
@@ -106,10 +112,11 @@ CONTAINS
 !-- RAINBL		Timestep rainfall 
 !-- EMISS		surface emissivity (between 0 and 1)
 
-!-- ITIMESTEP		time step number 
+!-- ITIMESTEP		  time step number 
 !-- NSOIL	        number of soil layers
-!-- DT			time step (second)
-!-- ANAL_INTERVAL       Interval of analyses used for soil moisture and temperature nudging
+!-- DT			      time step (second)
+!-- CURR_SECS     time on model domain in seconds, universal WRF variable
+!-- ANAL_INTERVAL Interval of analyses used for soil moisture and temperature nudging
 
 !-- XLAND       	land mask (1 for land, 2 for water)
 !-- XICE          Sea ice
@@ -211,6 +218,8 @@ CONTAINS
    INTEGER,   INTENT(IN)  ::      NSOIL, ITIMESTEP, NLCAT, NSCAT,             &
                                   ANAL_INTERVAL, PXLSM_SMOIS_INIT, PXLSM_SOIL_NUDGE
 
+   REAL,       INTENT(IN   ),OPTIONAL    ::     curr_secs
+
    REAL,     INTENT(IN )  ::      DT,DTBL 
 
    INTEGER,   DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::   ISLTYP
@@ -281,17 +290,19 @@ CONTAINS
             G1000, ALN10,RH2OBS, HU, SNOBS,           &
             FWSAT,FWFC,FWWLT,FB,FCGSAT,FJP,FAS,       &
             FSEAS, T2I, HC_SNOW, SNOW_FRA,SNOWALB,    &
-            QST12,ZFUNC,ZF1,ZA2,QV2, DT_FDDA,CURTIME, &
+            QST12,ZFUNC,ZF1,ZA2,QV2, DT_FDDA,         &
             FC2R,FC1SAT, DTPBL
 
-      CHARACTER (LEN = 5) :: LAND_USE_TYPE
+      CHARACTER (LEN = 6) :: LAND_USE_TYPE
 
 !-------------------------------------------------------------------------
 !-------------------------------Executable starts here--------------------
 !
       ! Determine Landuse Dataset by the number of categories
       IF (NLCAT == 50) THEN
-         LAND_USE_TYPE = 'NLCD'
+         LAND_USE_TYPE = 'NLCD50'
+      ELSE IF (NLCAT == 40) THEN
+         LAND_USE_TYPE = 'NLCD40'
       ELSE IF (NLCAT == 20) THEN
          LAND_USE_TYPE = 'MODIS'
       ELSE IF (NLCAT == 24) THEN
@@ -300,26 +311,17 @@ CONTAINS
          PRINT *, 'Error: Unknown Land Use Category'
          STOP
       END IF 
-
+      
+      IF (ITIMESTEP .EQ. 1) THEN
+       CALL wrf_message( 'PX LSM will use the ' // TRIM(LAND_USE_TYPE) // ' landuse tables' )
+      ENDIF                                                                    
+      !-----------------------------------------------------------------------------------
+      !--- Compute time relatve to old and new analysis time for timestep interpolation
       ALN10  = ALOG(10.0)
       G1000  = g*1.0E-3            ! G/1000
       WEIGHT = 0
       DT_FDDA = ANAL_INTERVAL * 1.0    ! Convert DT of Analysis to real 
-
-      !-----------------------------------------------------------------------------------
-      ! Compute vegetation and land-use characteristics by land-use fraction weighting
-      ! These parameters include LAI, VEGF, ZNT, ALBEDO, RS, etc.
-      CALL VEGELAND(LANDUSEF, VEGFRA, SHDMIN, SHDMAX,         &
-                    SOILCTOP, SOILCBOT, NLCAT, NSCAT,         &
-                    ZNT,XLAI,XLAIMN,RSTMIN,XVEG,XVEGMN,XSNUP,	&
-                    XLAND, XALB,                              &
-                    ids,ide, jds,jde, kds,kde,			          &
-                    ims,ime, jms,jme, kms,kme,			          &
-                    its,ite, jts,jte, kts,kte, LAND_USE_TYPE   )
-      !-----------------------------------------------------------------------------------
-      !--- Compute time relatve to old and new analysis time for timestep interpolation
-      CURTIME = (ITIMESTEP-1) * DT
-      TIME_BETWEEN_ANALYSIS = MOD(CURTIME,DT_FDDA)
+      TIME_BETWEEN_ANALYSIS = MOD(CURR_SECS,DT_FDDA)
       IF (TIME_BETWEEN_ANALYSIS .EQ. 0.0) THEN   
         CORB = 1.0       
         CORE = 0.0    
@@ -327,6 +329,16 @@ CONTAINS
         CORE = TIME_BETWEEN_ANALYSIS  / DT_FDDA     
         CORB = 1.0 - CORE  
       ENDIF 
+      !-----------------------------------------------------------------------------------
+      ! Compute vegetation and land-use characteristics by land-use fraction weighting
+      ! These parameters include LAI, VEGF, ZNT, ALBEDO, RS, etc.
+      CALL VEGELAND(LANDUSEF, VEGFRA, SHDMIN, SHDMAX,         &
+                    SOILCTOP, SOILCBOT, NLCAT, NSCAT,         &
+                    ZNT,XLAI,XLAIMN,RSTMIN,XVEG,XVEGMN,XSNUP,&
+                    XLAND, XALB,                              &
+                    ids,ide, jds,jde, kds,kde,          &
+                    ims,ime, jms,jme, kms,kme,          &
+                    its,ite, jts,jte, kts,kte, LAND_USE_TYPE   )
       !-----------------------------------------------------------------------------------
 
       !-----------------------------------------------------------------------------------
@@ -366,7 +378,7 @@ CONTAINS
           PRECIP = MAX ( 1.0E-3*RAINBL(i,j)/DTBL,0.0) ! accumulated precip. rate during DT (=dtpbl)
                                                       ! convert RAINBL from mm to m for PXLSM
           WR     = 1.0E-3*CANWAT(I,J)                 ! convert CANWAT from mm to m for PXLSM
-          THETA1 = TH3D(i,1,j)			                  ! potential temp at first layer
+          THETA1 = TH3D(i,1,j)                  ! potential temp at first layer
           SNOBS  = SNOW(I,J)                          ! Set snow cover to existing model value
                                                       !   this is overwritten below if snow analysis is availiable
                                                       !   otherwise snow cover remains constant through simulation
@@ -517,13 +529,13 @@ CONTAINS
 
 !-------------------------------------------------------------------------
 !-------------------------------------------------------------------------
-      SUBROUTINE VEGELAND( landusef, vegfra,    			                  & 
+      SUBROUTINE VEGELAND( landusef, vegfra,                      & 
                             shdmin, shdmax,                             &                          
                             soilctop, soilcbot, nlcat, nscat,           &
-                            znt,  xlai, xlaimn, rstmin, xveg, xvegmn,	  &
+                            znt,  xlai, xlaimn, rstmin, xveg, xvegmn,  &
                             xsnup, xland, xalb,                         &
-                            ids,ide, jds,jde, kds,kde,			            &
-                            ims,ime, jms,jme, kms,kme,			            &
+                            ids,ide, jds,jde, kds,kde,            &
+                            ims,ime, jms,jme, kms,kme,            &
                             its,ite, jts,jte, kts,kte,                  &
                             LAND_USE_TYPE                                 )
 !-------------------------------------------------------------------------
@@ -560,7 +572,7 @@ CONTAINS
 
       REAL,     DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: XLAI, XLAIMN, RSTMIN, XALB, &
                                                               XVEG, XVEGMN, XSNUP, XLAND 
-      CHARACTER (LEN = 5), INTENT(IN) :: LAND_USE_TYPE
+      CHARACTER (LEN = 6), INTENT(IN) :: LAND_USE_TYPE
 
                                      
 !... local variables
@@ -578,7 +590,6 @@ CONTAINS
 
       INTEGER, SAVE :: KWAT
       INTEGER, SAVE :: LIMIT1, LIMIT2
-
      ! Initialize LU characteristics by LU Dataset
       IF (LAND_USE_TYPE == 'USGS') THEN
          KWAT = 16
@@ -592,16 +603,28 @@ CONTAINS
          ALBF   => ALBF_USGS
          LIMIT1 = 2
          LIMIT1 = 6
-      ELSE IF (LAND_USE_TYPE == 'NLCD') THEN
+      ELSE IF (LAND_USE_TYPE == 'NLCD50') THEN
          KWAT = 1
-         RSMIN  => RSMIN_NLCD
-         Z00    => Z00_NLCD  
-         VEG0   => VEG0_NLCD 
-         VEGMN0 => VEGMN0_NLCD 
-         LAI0   => LAI0_NLCD 
-         LAIMN0 => LAIMN0_NLCD 
-         SNUP0  => SNUP0_NLCD 
-         ALBF   => ALBF_NLCD
+         RSMIN  => RSMIN_NLCD50
+         Z00    => Z00_NLCD50  
+         VEG0   => VEG0_NLCD50 
+         VEGMN0 => VEGMN0_NLCD50 
+         LAI0   => LAI0_NLCD50 
+         LAIMN0 => LAIMN0_NLCD50 
+         SNUP0  => SNUP0_NLCD50 
+         ALBF   => ALBF_NLCD50
+         LIMIT1 = 20
+         LIMIT1 = 43
+      ELSE IF (LAND_USE_TYPE == 'NLCD40') THEN
+         KWAT = 17
+         RSMIN  => RSMIN_NLCD40
+         Z00    => Z00_NLCD40  
+         VEG0   => VEG0_NLCD40 
+         VEGMN0 => VEGMN0_NLCD40 
+         LAI0   => LAI0_NLCD40 
+         LAIMN0 => LAIMN0_NLCD40 
+         SNUP0  => SNUP0_NLCD40 
+         ALBF   => ALBF_NLCD40
          LIMIT1 = 20
          LIMIT1 = 43
       ELSE IF (LAND_USE_TYPE == 'MODIS') THEN
@@ -617,7 +640,6 @@ CONTAINS
          LIMIT1 = 12
          LIMIT1 = 14
       END IF
-
       !--------------------------------------------------------------------
       DO J = jts,jte
         DO I = its,ite
@@ -628,8 +650,8 @@ CONTAINS
           XVEGMN(I,J) = 0.0
           XSNUP(I,J)  = 0.0                                                            
           XALB(I,J)   = 0.0                                                            
-        ENDDO		! END LOOP THROUGH GRID CELLS
-      ENDDO		! END LOOP THROUGH GRID CELLS
+        ENDDO   ! END LOOP THROUGH GRID CELLS
+      ENDDO     ! END LOOP THROUGH GRID CELLS
       !--------------------------------------------------------------------
 
       DO J = jts,jte
@@ -688,7 +710,7 @@ CONTAINS
                       Z0(K)  = 0.5 * (ZNOTC + Z00(K))
                    ENDIF
                 ENDIF
-              ELSE IF (LAND_USE_TYPE == 'NLCD') THEN
+              ELSE IF (LAND_USE_TYPE == 'NLCD50') THEN
                 !-- USE THE VEGFRAC DATA ONLY FOR CROPS
                 IF (K.EQ.20 .OR. K.EQ.43 .OR. K.EQ.45) THEN
                    LAIMX(K) = LAIMN0(K) * (1-VSEAS) + LAI0(K) * VSEAS
@@ -700,6 +722,21 @@ CONTAINS
                       Z0(K) = ZNOTC
                    !-- CrNatM (k=45) USE AVG WITH GRASS AND FOREST
                   ELSE IF (K.EQ.45) THEN
+                      Z0(K)  = 0.5 * (ZNOTC + Z00(K))
+                  ENDIF
+                ENDIF
+              ELSE IF (LAND_USE_TYPE == 'NLCD40') THEN
+                !-- USE THE VEGFRAC DATA ONLY FOR CROPS
+                IF (K.EQ.12 .OR. K.EQ.14 .OR. K.EQ.38) THEN
+                   LAIMX(K) = LAIMN0(K) * (1-VSEAS) + LAI0(K) * VSEAS
+                   LAIMN(K) = LAIMX(K)
+                   VEG(K)   = VEGMN0(K) * (1-VSEAS) + VEG0(K) * VSEAS
+                   VEGMN(K) = VEG(K)
+                   !-- SEASONALLY VARY Zo FOR Crop (k=12 for MODIS or 38 for NLCD)
+                   IF (K.EQ.12 .OR. K.EQ.38) THEN
+                      Z0(K) = ZNOTC
+                   !-- CrNatM (k=14) USE AVG WITH GRASS AND FOREST
+                   ELSE IF (K.EQ.14) THEN
                       Z0(K)  = 0.5 * (ZNOTC + Z00(K))
                   ENDIF
                 ENDIF
@@ -723,6 +760,7 @@ CONTAINS
             ENDDO
 
           ENDIF       !-- IF cell is vegetation
+
           !-------------------------------------
           !-- LOOP THROUGH LANDUSE Fraction and compute totals
           DO K = 1, NLCAT 
@@ -775,8 +813,8 @@ CONTAINS
           XLAND(I,J)  = 1.0 + FWAT
           XALB(I,J)   = XALB(I,J) * 0.01
         
-        ENDDO		! END LOOP THROUGH GRID CELLS
-      ENDDO		  ! END LOOP THROUGH GRID CELLS
+        ENDDO     ! END LOOP THROUGH GRID CELLS
+      ENDDO       ! END LOOP THROUGH GRID CELLS
       !--------------------------------------------------------------------
 
   END SUBROUTINE vegeland
@@ -984,7 +1022,8 @@ CONTAINS
         IF (ISNOW .LT. 0.5.AND.TG.GT.273.15)                            &                                                                               
                     LV = (2.501 - 0.00237 * (TG - 273.15)) * 1.E6  !-- FROM STULL(1988) in J/KG
         
-        IF (IFLAND .LT. 1.5 )  QFX = ET     !-- Recaculate QFX over land to account for P-X LSM EG, ER and ETR
+        ! IF (IFLAND .LT. 1.5 )  QFX = ET     !-- Recaculate QFX over land to account for P-X LSM EG, ER and ETR
+        QFX = ET
         LH  = LV * QFX
         !-----------------------------------------------------------------------------------------
 
@@ -1001,9 +1040,7 @@ CONTAINS
         TA2  = (THETAG + TST * (PR0 / KARMAN * (ALOG(ZOBS / ZNT) - PSIOB)+5.))/CPOT
         QA2  = QV1 - QST1 * PR0/ KARMAN *  (ALOG(Z1 / ZOBS) - PSIH15)
 
-        IF ((LAND_USE_TYPE == 'NLCD') .OR. (LAND_USE_TYPE == 'USGS')) THEN
-           IF (QA2.LE.0.0) QA2 = QV1
-        END IF
+        IF (QA2.LE.0.0) QA2 = QV1
 
         !--  Relative humidity
         VAPPRS = SVP1 * EXP(SVP2 * (TA2 - SVPT0) / (TA2 - SVP3))
@@ -1077,7 +1114,7 @@ CONTAINS
         !-----------------------------------------------------------------------------------------
 
         !-----------------------------------------------------------------------------------------
-	      ! Compute new subsurface soil and canopy moisture values DENS1. No change required over ocean.
+      ! Compute new subsurface soil and canopy moisture values DENS1. No change required over ocean.
         IF (IFLAND .LT. 1.5.AND. XICE1.LT.0.5) THEN  
           !-- Compute WR
           ROFF  = 0.0
@@ -1122,7 +1159,7 @@ CONTAINS
         !-----------------------------------------------------------------------------------------
 
         !-----------------------------------------------------------------------------------------
-	      ! Compute new surface soil moisture values (WR).
+      ! Compute new surface soil moisture values (WR).
         IF (IFLAND .LT. 1.5.AND. XICE1.LT.0.5) THEN  ! over ocean no change to wg w2,wr
         !--    FOR SNOW COVERED SURFACE, ASSUME SURFACE IS SATURATED AND
         !      WG AND W2 ARE NOT CHANGED
@@ -1668,7 +1705,7 @@ CONTAINS
             LIQSN_RATIO, SNEQV, RSNOW
 !-----------------------------------------------
              
-     SNEQV=ASNOW*0.001			              ! Snow water in meters
+     SNEQV=ASNOW*0.001              ! Snow water in meters
      RHO_SNOWPACK = 450                   ! Snowpack density (kg/m3), this should be computed in the future
      LIQSN_RATIO  = DENW/RHO_SNOWPACK     ! Ratio of water density and snowpack density
      

@@ -50,7 +50,7 @@ CONTAINS
 &    , mass_flux, rthften, rqvften, cldfra, cldfra_old, glw, gsw, emiss, &
 &    embck, lu_index, landuse_isice, landuse_lucats, landuse_luseas, &
 &    landuse_isn, lu_state, xlat, xlong, albedo, albbck, gmt, julyr, &
-&    julday, levsiz, n_ozmixm, n_aerosolc, paerlev, tmn, xland, znt, z0, &
+&    julday, levsiz, n_ozmixm, n_aerosolc, paerlev, alevsiz, no_src_types, tmn, xland, znt, z0, &
 &    ust, mol, pblh, tke_pbl, exch_h, thc, snowc, mavail, hfx, qfx, &
 &    rainbl, tslb, zs, dzs, num_soil_layers, warm_rain, adv_moist_cond, &
 &    apr_gr, apr_w, apr_mc, apr_st, apr_as, apr_capma, apr_capme, &
@@ -60,7 +60,7 @@ CONTAINS
 &    , f_rimef_phy, mp_restart_state, tbpvs_state, tbpvs0_state, &
 &    allowed_to_read, moved, start_of_simulation, lagday, ids, ide, jds, &
 &    jde, kds, kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte, kts&
-&    , kte, num_urban_layers, raincv_a, raincv_b, gd_cloud, gd_cloud2, &
+&    , kte, num_urban_layers, NUM_URBAN_HI, raincv_a, raincv_b, gd_cloud, gd_cloud2, &
 &    gd_cloud_a, gd_cloud2_a, gd_cloud_b, gd_cloud2_b, ozmixm, pin, &
 &    m_ps_1, m_ps_2, m_hybi, aerosolc_1, aerosolc_2, rundgdten, rvndgdten&
 &    , rthndgdten, rphndgdten, rqvndgdten, rmundgdten, fgdt, stepfg, &
@@ -111,6 +111,7 @@ CONTAINS
     REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: tsk, xlat, xlong
     INTEGER, INTENT(IN) :: levsiz, n_ozmixm
     INTEGER, INTENT(IN) :: paerlev, n_aerosolc
+    INTEGER, INTENT(IN   )    ::   alevsiz, no_src_types
     REAL, DIMENSION(ims:ime, levsiz, jms:jme, n_ozmixm), OPTIONAL, &
 &    INTENT(INOUT) :: ozmixm
     REAL, DIMENSION(levsiz), OPTIONAL, INTENT(INOUT) :: pin
@@ -309,6 +310,7 @@ CONTAINS
     INTEGER, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(INOUT) :: &
 &    utype_urb2d
     INTEGER, INTENT(IN) :: num_urban_layers
+    INTEGER, INTENT(IN) :: num_urban_hi
 ! multi-layer UCM
     REAL, DIMENSION(ims:ime, num_urban_layers, jms:jme), OPTIONAL, &
 &    INTENT(INOUT) :: trb_urb4d

@@ -14,6 +14,7 @@ gen_be : 	gen_be_ensrf.exe	\
 		gen_be_ep1.exe	\
 		gen_be_ep2.exe	\
 		gen_be_vertloc.exe	\
+		gen_be_addmean.exe	
 		gen_be_stage1.exe	\
 		gen_be_stage1_1dvar.exe	\
 		gen_be_stage2.exe	\
@@ -67,6 +68,11 @@ gen_be_vertloc.exe     : gen_be_vertloc.f90 $(GEN_BE_OBJS) $(GEN_BE_LIBS)
         $(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc gen_be_vertloc.f90 > gen_be_vertloc.f
         $(SFC) -c $(FCFLAGS) -I../da $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) gen_be_vertloc.f
         $(SFC) -o gen_be_vertloc.exe $(LDFLAGS) $(GEN_BE_OBJS)  gen_be_vertloc.o $(GEN_BE_LIB)
+
+gen_be_addmean.exe : gen_be_addmean.f90 $(GEN_BE_OBJS) $(GEN_BE_LIBS)
+	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc -I$(NETCDFPATH)/include gen_be_addmean.f90 > gen_be_addmean.f
+	$(SFC) -c $(FCFLAGS) -I../da $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) gen_be_addmean.f
+	$(SFC) -o gen_be_addmean.exe $(LDFLAGS) $(GEN_BE_OBJS) gen_be_addmean.o $(GEN_BE_LIB)
 
 gen_be_stage1.exe : gen_be_stage1.f90 $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc gen_be_stage1.f90 > gen_be_stage1.f

@@ -235,7 +235,7 @@
       integer :: i_v=49,j_v=475,n_v=07
       integer :: num_ozmixm, num_aerosolc
       real :: cen_lat,cen_lon,dtphs   ! GWD
-      integer :: num_urban_layers
+      integer :: num_urban_layers,num_urban_hi
 !Rogers GMT
       INTEGER :: hr, mn, sec, ms, rc
       TYPE(WRFU_Time) :: currentTime
@@ -1983,6 +1983,7 @@
      &             ,grid%xlat,grid%xlong,grid%albedo,grid%albbck                            &
      &             ,GRID%GMT,GRID%JULYR,GRID%JULDAY                     &
      &             ,GRID%LEVSIZ, NUM_OZMIXM, NUM_AEROSOLC, GRID%PAERLEV &
+     &             ,grid%alevsiz, grid%no_src_types                     &
      &             ,TMN,grid%xland,grid%znt,grid%z0,grid%ustar,grid%mol,grid%pblh,grid%tke_pbl             &
      &             ,grid%exch_h,THC,SNOWC,grid%mavail,HFX,QFX,RAINBL              &
      &             ,grid%stc,grid%sldpth,grid%DZSoil,GRID%NUM_SOIL_LAYERS,WARM_RAIN           &
@@ -2001,7 +2002,7 @@
      &             ,IDS, IDE, JDS, JDE, KDS, KDE                        &
      &             ,IMS, IME, JMS, JME, KMS, KME                        &
      &             ,ITS, ITE, JTS, JTE, KTS, KTE                        &
-     &             ,NUM_URBAN_LAYERS                                    &
+     &             ,NUM_URBAN_LAYERS,NUM_URBAN_HI                       &
      &             ,GRID%RAINCV_A,GRID%RAINCV_B                         &
      &               ,ISNOWXY=grid%ISNOWXY, ZSNSOXY=grid%ZSNSOXY, TSNOXY=grid%TSNOXY,    & ! Optional Noah-MP
      &                SNICEXY=grid%SNICEXY, SNLIQXY=grid%SNLIQXY, TVXY=grid%TVXY,        & ! Optional Noah-MP

@@ -126,9 +126,9 @@
 
    IF ( ( MOD (ide-ids,config_flags%parent_grid_ratio) .NE. 0 ) .OR. &
         ( MOD (jde-jds,config_flags%parent_grid_ratio) .NE. 0 ) ) THEN
-      WRITE(message, FMT='("Nested dimensions are illegal for domain ",I2,":  Both &
-         &MOD(",I4,"-",I1,",",I2,") and MOD(",I4,"-",I1,",",I2,") must = 0" )') &
-         grid%id,ide,ids,config_flags%parent_grid_ratio,jde,jds,config_flags%parent_grid_ratio
+      WRITE(message, FMT='(A,I2,":  Both MOD(",I4,"-",I1,",",I2,") and MOD(",I4,"-",I1,",",I2,") must = 0" )') &
+         "Nested dimensions are illegal for domain ",grid%id,ide,ids,config_flags%parent_grid_ratio,&
+         jde,jds,config_flags%parent_grid_ratio
       CALL wrf_error_fatal ( message )
    END IF
 
@@ -504,20 +504,32 @@
      ENDDO
     ELSE
 ! with nests, grid%t_init generally needs recomputations (since it is not interpolated)
-     DO j = jts,min(jte,jde-1)
-     DO k = kts,kte-1
-     DO i = its, min(ite,ide-1)
-       IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
-         grid%pb(i,k,j) = grid%znu(k)*grid%mub(i,j)+grid%p_top
-         temp = MAX ( tiso, t00 + A*LOG(grid%pb(i,k,j)/p00) )
-         grid%t_init(i,k,j) = temp*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
-         grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
-!        grid%alb(i,k,j) = -grid%rdnw(k)*(grid%phb(i,k+1,j)-grid%phb(i,k,j))/grid%mub(i,j)
-!        grid%t_init(i,k,j) = grid%alb(i,k,j)*(p1000mb/r_d)/((grid%pb(i,k,j)/p1000mb)**cvpm) - t0
-       ENDIF
-     ENDDO
-     ENDDO
-     ENDDO
+     IF ( .NOT. grid%this_is_an_ideal_run ) THEN
+        DO j = jts,min(jte,jde-1)
+        DO k = kts,kte-1
+        DO i = its, min(ite,ide-1)
+          IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
+            grid%pb(i,k,j) = grid%znu(k)*grid%mub(i,j)+grid%p_top
+            temp = MAX ( tiso, t00 + A*LOG(grid%pb(i,k,j)/p00) )
+            grid%t_init(i,k,j) = temp*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
+            grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
+          ENDIF
+        ENDDO
+        ENDDO
+        ENDDO
+     ELSE
+        DO j = jts,min(jte,jde-1)
+        DO k = kts,kte-1
+        DO i = its, min(ite,ide-1)
+          IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
+            grid%pb(i,k,j) = grid%znu(k)*grid%mub(i,j)+grid%p_top
+            grid%alb(i,k,j) = -grid%rdnw(k)*(grid%phb(i,k+1,j)-grid%phb(i,k,j))/grid%mub(i,j)
+            grid%t_init(i,k,j) = grid%alb(i,k,j)*(p1000mb/r_d)/((grid%pb(i,k,j)/p1000mb)**cvpm) - t0
+          ENDIF
+        ENDDO
+        ENDDO
+        ENDDO
+     END IF
     ENDIF
 
 ! Use equations from calc_p_rho_phi to derive p and al from ph: linear in log p

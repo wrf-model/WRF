@@ -256,7 +256,7 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
    1-D ocean mixed layer (add these in namelist record &physics):
 
  isftcflx                            = 1,
- omlcall                             = 1,
+ sf_ocean_physics                    = 1,
  oml_hml0                            = 50,
  oml_gamma                           = 0.14
 

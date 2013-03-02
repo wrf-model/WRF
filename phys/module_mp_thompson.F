@@ -3175,7 +3175,7 @@
                sum2 = 0.0d0
                sumn1 = 0.0d0
                sumn2 = 0.0d0
-               do n2 = 1, nbr
+               do n2 = nbr, 1, -1
                   N_r(n2) = N0_r*Dr(n2)**mu_r*DEXP(-lamr*Dr(n2))*dtr(n2)
                   vol = massr(n2)*orho_w
                   prob = 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp)
@@ -3186,6 +3186,7 @@
                      sumn2 = sumn2 + prob*N_r(n2)
                      sum2 = sum2 + prob*N_r(n2)*massr(n2)
                   endif
+                  if ((sum1+sum2) .ge. r_r(i)) EXIT
                enddo
                tpi_qrfz(i,j,k) = sum1
                tni_qrfz(i,j,k) = sumn1
@@ -3198,7 +3199,7 @@
             N0_c = 1.0D-18 * Nt_c*ocg1 * lamc**cce(1)
             sum1 = 0.0d0
             sumn2 = 0.0d0
-            do n = 1, nbc
+            do n = nbc, 1, -1
                y = Dc(n)*1.0D6
                vol = massc(n)*orho_w
                prob = 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp)
@@ -3206,6 +3207,7 @@
                N_c(n) = 1.0D24 * N_c(n)
                sumn2 = sumn2 + prob*N_c(n)
                sum1 = sum1 + prob*N_c(n)*massc(n)
+               if (sum1 .ge. r_c(i)) EXIT
             enddo
             tpi_qcfz(i,k) = sum1
             tni_qcfz(i,k) = sumn2

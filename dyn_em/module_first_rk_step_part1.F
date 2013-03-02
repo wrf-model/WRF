@@ -466,7 +466,7 @@ BENCH_START(surf_driver_tim)
      &        ,USTM=grid%ustm          ,CK=grid%ck         ,CKA=grid%cka            &
      &                                 ,CD=grid%cd         ,CDA=grid%cda            &
      &        ,ISFTCFLX=config_flags%isftcflx, IZ0TLND=config_flags%iz0tlnd         &
-     &        ,OMLCALL=config_flags%omlcall ,OML_HML0=config_flags%oml_hml0 ,OML_GAMMA=config_flags%oml_gamma &
+     &        ,SF_OCEAN_PHYSICS=config_flags%sf_ocean_physics ,OML_HML0=config_flags%oml_hml0 ,OML_GAMMA=config_flags%oml_gamma &
      &        ,TML=grid%tml, T0ML=grid%t0ml, HML=grid%hml, H0ML=grid%h0ml, HUML=grid%huml, HVML=grid%hvml, F=grid%f &
      &        ,TMOML=grid%TMOML,ISWATER=iswater &
 ! CLM Varaibles

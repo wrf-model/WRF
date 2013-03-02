@@ -985,7 +985,7 @@ CONTAINS
    !$OMP END PARALLEL DO
 !
   !$OMP PARALLEL DO   &
-  !$OMP PRIVATE ( ij, i,j,k, its, ite, jts, jte )
+  !$OMP PRIVATE ( ij, i,j,k, its, ite, jts, jte, z0, z1, z2, w1, w2, message, initflag )
   DO ij = 1 , num_tiles
 
    its = i_start(ij)

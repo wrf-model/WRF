@@ -490,6 +490,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                           its, ite, jts, jte, kts, kte ) 
 
      IF ( config_flags%cu_physics == GDSCHEME  .OR.     &
+          config_flags%cu_physics == GFSCHEME  .OR.     &
           config_flags%cu_physics == G3SCHEME ) THEN
 
      ! theta advection only:
@@ -1058,6 +1059,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
       END IF
 
      IF((config_flags%cu_physics == GDSCHEME .OR. config_flags%cu_physics == G3SCHEME .OR. &
+         config_flags%cu_physics == GFSCHEME .OR.    & 
          config_flags%cu_physics == KFETASCHEME .OR. &      ! new trigger in KF
          config_flags%cu_physics == TIEDTKESCHEME  ) &      ! Tiedtke
                      .and. moist_step .and. ( im == P_QV) ) THEN

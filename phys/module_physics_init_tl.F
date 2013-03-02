@@ -422,7 +422,7 @@ CONTAINS
     INTEGER :: isice
     INTEGER :: isurban
     INTEGER :: sf_urban_physics
-    INTEGER :: omlcall
+    INTEGER :: sf_ocean_physics
     REAL :: oml_hml0
     LOGICAL :: usemonalb
     LOGICAL :: rdmaxalb
@@ -440,7 +440,7 @@ CONTAINS
     obs_twindo_cg = model_config_rec%obs_twindo(1)
     obs_twindo = config_flags%obs_twindo
     oml_hml0 = config_flags%oml_hml0
-    omlcall = config_flags%omlcall
+    sf_ocean_physics=config_flags%sf_ocean_physics
 !-- should be from the namelist
     sfull = 0.
     shalf = 0.
@@ -648,7 +648,7 @@ CONTAINS
 &             a_e_bep, b_u_bep, b_v_bep, b_t_bep, b_q_bep, b_e_bep, &
 &             dlg_bep, dl_u_bep, sf_bep, vl_bep, ids, ide, jds, jde, kds&
 &             , kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte, &
-&             kts, kte, achfx, aclhf, acgrdflx, oml_hml0, omlcall, tml, &
+&             kts, kte, achfx, aclhf, acgrdflx, oml_hml0, sf_ocean_physics, tml, &
 &             t0ml, hml, h0ml, huml, hvml, tmoml)
 !Optional oml
     CALL WRF_DEBUG(200, 'module_start: phy_init: Before call to cu_init'&
@@ -728,7 +728,7 @@ CONTAINS
 &    , a_v_bep, a_t_bep, a_q_bep, a_e_bep, b_u_bep, b_v_bep, b_t_bep, &
 &    b_q_bep, b_e_bep, dlg_bep, dl_u_bep, sf_bep, vl_bep, ids, ide, jds, &
 &    jde, kds, kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte, kts&
-&    , kte, achfx, aclhf, acgrdflx, oml_hml0, omlcall, tml, t0ml, hml, &
+&    , kte, achfx, aclhf, acgrdflx, oml_hml0, sf_ocean_physics, tml, t0ml, hml, &
 &    h0ml, huml, hvml, tmoml)
 
     USE module_sf_sfclay
@@ -978,7 +978,7 @@ CONTAINS
 ! Optional OML variables
     REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(INOUT) :: tml, &
 &    t0ml, hml, h0ml, huml, hvml, tmoml
-    INTEGER, OPTIONAL, INTENT(IN) :: omlcall
+    INTEGER, OPTIONAL, INTENT(IN) :: sf_ocean_physics
     REAL, OPTIONAL, INTENT(IN) :: oml_hml0
     LOGICAL, INTENT(IN) :: start_of_simulation
     INTEGER :: i, j

@@ -539,7 +539,7 @@ CONTAINS
    INTEGER :: ISICE
    INTEGER :: ISURBAN
    INTEGER :: sf_urban_physics
-   INTEGER :: omlcall
+   INTEGER :: sf_ocean_physics
    REAL    :: oml_hml0
    LOGICAL :: usemonalb
    LOGICAL :: rdmaxalb
@@ -558,7 +558,7 @@ integer myproc
    obs_twindo_cg=model_config_rec%obs_twindo(1)
    obs_twindo=config_flags%obs_twindo
    oml_hml0=config_flags%oml_hml0
-   omlcall=config_flags%omlcall
+   sf_ocean_physics=config_flags%sf_ocean_physics
 #endif
 
 !-- should be from the namelist
@@ -831,7 +831,7 @@ integer myproc
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte,                   &
                 ACHFX,ACLHF,ACGRDFLX,                           &
-                oml_hml0, omlcall,                              & !Optional oml
+                oml_hml0, sf_ocean_physics,                     & !Optional oml
                 TML,T0ML,HML,H0ML,HUML,HVML,TMOML               & !Optional oml
                ,TSK_SAVE                                        & !Optional oml
 ! CLM vraiables 
@@ -1650,7 +1650,7 @@ integer myproc
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte,                   &
                 ACHFX,ACLHF,ACGRDFLX,                           &
-                oml_hml0, omlcall,                              & !Optional oml
+                oml_hml0, sf_ocean_physics,                     & !Optional oml
                 TML,T0ML,HML,H0ML,HUML,HVML,TMOML               &
                ,TSK_SAVE                                        & !Optional fractional seaice
 ! CLM vraiables 
@@ -1925,7 +1925,7 @@ integer myproc
 ! Optional OML variables
    REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
                                         TML,T0ML,HML,H0ML,HUML,HVML,TMOML
-   INTEGER,  OPTIONAL,  INTENT(IN) :: omlcall
+   INTEGER,  OPTIONAL,  INTENT(IN) :: sf_ocean_physics
    REAL,  OPTIONAL,  INTENT(IN) :: oml_hml0
    REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
                                         TSK_SAVE
@@ -2289,8 +2289,10 @@ integer myproc
 
    END SELECT sfc_select
 
-   IF(PRESENT(OMLCALL))THEN
-     IF ( ( omlcall .EQ. 1 ) .OR. ( omlcall .EQ. 2 ) ) THEN
+#if ( EM_CORE == 1 )
+   IF(PRESENT(SF_OCEAN_PHYSICS))THEN
+     IF ( ( sf_ocean_physics .EQ. OMLSCHEME   ) .OR. &
+          ( sf_ocean_physics .EQ. PWP3DSCHEME ) ) THEN
         CALL omlinit(oml_hml0, tsk,                           &
                      tml,t0ml,hml,h0ml,huml,hvml,tmoml,       &
                      allowed_to_read, start_of_simulation,    &
@@ -2299,6 +2301,7 @@ integer myproc
                      its,ite, jts,jte, kts,kte                )
      ENDIF
    ENDIF
+#endif
 
 !-- initialize pbl scheme
 

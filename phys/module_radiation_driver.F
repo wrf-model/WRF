@@ -115,6 +115,7 @@ CONTAINS
               ,ALSWVISDIR, ALSWVISDIF, ALSWNIRDIR, ALSWNIRDIF             & !fds ssib alb comp (06/2010)
               ,SWVISDIR, SWVISDIF, SWNIRDIR, SWNIRDIF                     & !fds ssib swr comp (06/2010)
               ,SF_SURFACE_PHYSICS                                         & !fds
+              ,EXPLICIT_CONVECTION                                        & ! .true.=no conv. scheme
                                                                           )
 
 
@@ -321,6 +322,8 @@ CONTAINS
 !
 !==================================================================
 !
+   LOGICAL, OPTIONAL, INTENT(IN) :: explicit_convection
+   LOGICAL :: expl_conv
    INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
                                                          kts,kte, &
@@ -597,6 +600,15 @@ CONTAINS
 #ifdef HWRF
    CHARACTER(len=265) :: wrf_err_message
 #endif
+
+   ! This allows radiation schemes (mainly HWRF) to correctly
+   ! interface with the convection scheme when convection is only
+   ! enabled in some domains:
+   if(present(explicit_convection)) then
+      expl_conv=explicit_convection
+   else
+      expl_conv=.true. ! backward compatibility for ARW
+   endif
 
    CALL wrf_debug (1, 'Top of Radiation Driver')
 !  WRITE ( wrf_err_message , * ) 'itimestep = ',itimestep,', dt = ',dt,', lw and sw options = ',lw_physics,sw_physics
@@ -1036,7 +1048,8 @@ CONTAINS
 
              gfdl_lw  = .true.
 
-               CALL HWRFRA(DT=dt,thraten=RTHRATEN,thratenlw=RTHRATENLW,thratensw=RTHRATENSW,pi3d=pi, &
+               CALL HWRFRA(explicit_convection=expl_conv, &
+                    DT=dt,thraten=RTHRATEN,thratenlw=RTHRATENLW,thratensw=RTHRATENSW,pi3d=pi, &
                         XLAND=xland,P8w=p8w,DZ8w=dz8w,RHO_PHY=rho,P_PHY=p,T=t,          &
                         QV=qv,QW=qc_temp,QI=Qi,                      &
                         TSK2D=tsk,GLW=GLW,GSW=GSW,                                 &
@@ -1541,7 +1554,8 @@ CONTAINS
              CALL wrf_debug (100, 'CALL hwrfsw')
 
              gfdl_sw = .true.
-               CALL HWRFRA(DT=dt,thraten=RTHRATEN,thratenlw=RTHRATENLW,thratensw=RTHRATENSW,pi3d=pi, &
+               CALL HWRFRA(explicit_convection=expl_conv, &
+                        DT=dt,thraten=RTHRATEN,thratenlw=RTHRATENLW,thratensw=RTHRATENSW,pi3d=pi, &
                         XLAND=xland,P8w=p8w,DZ8w=dz8w,RHO_PHY=rho,P_PHY=p,T=t,          &
                         QV=qv,QW=qc_temp,QI=Qi,                      &
                         TSK2D=tsk,GLW=GLW,GSW=GSW,                                 &

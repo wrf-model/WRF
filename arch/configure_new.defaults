@@ -66,7 +66,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O2 -ftree-vectorize -funroll-loops
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT         =       -O0
-FCDEBUG         =       # -g $(FCNOOPT)
+FCDEBUG         =       # -g $(FCNOOPT)  # -ggdb -fbounds-check -ffpe-trap=invalid,zero,overflow
 FORMAT_FIXED    =       -ffixed-form
 FORMAT_FREE     =       -ffree-form -ffree-line-length-none
 FCSUFFIX        =       
@@ -148,7 +148,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3 #-fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed # -Minfo=all =Mneginfo=all
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0
-FCDEBUG         =       # -g $(FCNOOPT)
+FCDEBUG         =       # -g $(FCNOOPT)  # -C -Ktrap=fp
 FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =
@@ -190,7 +190,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3 #-fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed # -Minfo=all =Mneginfo=all
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0
-FCDEBUG         =       # -g $(FCNOOPT)
+FCDEBUG         =       # -g $(FCNOOPT) # -C -Ktrap=fp
 FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =
@@ -231,7 +231,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3 #-fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed # -Minfo=all =Mneginfo=all
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0
-FCDEBUG         =       # -g $(FCNOOPT)
+FCDEBUG         =       # -g $(FCNOOPT) # -C -Ktrap=fp
 FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =
@@ -272,7 +272,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -ta=nvidia:fastmath,host # -Minfo=all =Mneginfo=all
 FCREDUCEDOPT    =       $(FCOPTIM)
 FCNOOPT         =       -O0
-FCDEBUG         =       # -g $(FCNOOPT)
+FCDEBUG         =       # -g $(FCNOOPT) # -C -Ktrap=fp
 FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =
@@ -339,7 +339,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3 -override-limits
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -fno-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -373,7 +373,7 @@ CC              =       $(DM_CC)
 LD              =       $(FC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION       =       -i4
-ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DINTEL_ALIGN64 -DCHUNK=16 -DXEON_OPTIMIZED_WSM5 -DOPTIMIZE_CFL_TEST
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DINTEL_ALIGN64 -DCHUNK=16 -DXEON_OPTIMIZED_WSM5 -DOPTIMIZE_CFL_TEST -DFSEEKO64_OK -DINTEL_YSU_KLUDGE
 OPTNOSIMD       =
 OPTKNC          =       -mP2OPT_hlo_fusion=F -mGLOB_default_function_attrs="knc_stream_store_controls=2" -fimf-precision=low -fimf-domain-exclusion=15 -mP2OPT_hpo_vec_check_dp_trip=F
 CFLAGS_LOCAL    =       -w -O3 $(OPTKNC)
@@ -388,7 +388,7 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
-FCBASEOPTS_NO_G =       -w -auto -ftz -fno-alias -fp-model fast=1 -no-prec-div -no-prec-sqrt $(FORMAT_FREE) $(BYTESWAPIO) -auto -align array64byte #-vec-report6
+FCBASEOPTS_NO_G =       -w -openmp -auto -ftz -fno-alias -fp-model fast=1 -no-prec-div -no-prec-sqrt $(FORMAT_FREE) $(BYTESWAPIO) -auto -align array64byte #-vec-report6
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =      -traditional
@@ -432,7 +432,7 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
-FCBASEOPTS_NO_G =       -w -auto -ftz -fno-alias -fp-model fast=1 -no-prec-div -no-prec-sqrt $(FORMAT_FREE) $(BYTESWAPIO) -auto -align array64byte #-vec-report6
+FCBASEOPTS_NO_G =       -w $(OMP) -auto -ftz -fno-alias -fp-model fast=1 -no-prec-div -no-prec-sqrt $(FORMAT_FREE) $(BYTESWAPIO) -auto -align array64byte #-vec-report6
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
 TRADFLAG        =      -traditional
@@ -469,7 +469,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -fno-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -537,7 +537,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -fno-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -583,7 +583,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -fno-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -659,7 +659,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -fno-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -739,7 +739,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -fno-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -823,7 +823,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O2 -ftree-vectorize -funroll-loops
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0
-FCDEBUG         =       # -g $(FCNOOPT)
+FCDEBUG         =       # -g $(FCNOOPT) # -ggdb -fbounds-check -ffpe-trap=invalid,zero,overflow
 FORMAT_FIXED    =       -ffixed-form
 FORMAT_FREE     =       -ffree-form -ffree-line-length-none
 FCSUFFIX        =       
@@ -864,7 +864,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM		=       -O2 -fast
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0
-FCDEBUG         =       # -g $(FCNOOPT)
+FCDEBUG         =       # -g $(FCNOOPT) # -C -Ktrap=fp
 FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =       
@@ -1033,7 +1033,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O2 -ftree-vectorize -funroll-loops
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT         =       -O0
-FCDEBUG         =       # -g $(FCNOOPT)
+FCDEBUG         =       # -g $(FCNOOPT) # -ggdb -fbounds-check -ffpe-trap=invalid,zero,overflow
 FORMAT_FIXED    =       -ffixed-form
 FORMAT_FREE     =       -ffree-form -ffree-line-length-none
 FCSUFFIX        =       
@@ -1176,7 +1176,7 @@ OPTERON_TYPE    =
 #OPTERON_TYPE    =      -tp shanghai-64
 # Use this for AMD Opteron six-way Istanbul
 #OPTERON_TYPE    =      -tp istanbul
-FCDEBUG         =       # -g $(FCNOOPT)
+FCDEBUG         =       # -g $(FCNOOPT) # -C -Ktrap=fp
 FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 # For Pathscale compiler
@@ -1404,7 +1404,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -fastsse -Mvect=noaltcode -Mprefetch=distance:8 -Mfprelaxed -tp core2-64 # -Minfo=all 
 FCREDUCEDOPT    =       $(FCOPTIM)
 FCNOOPT         =       -O0
-FCDEBUG         =       # -g $(FCNOOPT)
+FCDEBUG         =       # -g $(FCNOOPT) # -C -Ktrap=fp
 FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =

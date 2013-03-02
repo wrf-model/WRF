@@ -1840,9 +1840,9 @@ CONTAINS
  
   IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
-     call wrf_debug( 0, message)
+     call wrf_debug( 1, message)
      WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr
-     call wrf_debug( 0, message)
+     call wrf_debug( 1, message)
    ENDIF
 
 

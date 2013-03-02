@@ -5,5 +5,5 @@
   INTEGER ::               i,j,k
   INTEGER ::               ii,ic,ip
   INTEGER :: iii
-  INTEGER :: ntds
-  INTEGER, EXTERNAL :: omp_get_max_threads
+  INTEGER :: ntds,tid
+  INTEGER, EXTERNAL :: omp_get_max_threads, omp_get_thread_num

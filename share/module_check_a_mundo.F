@@ -370,6 +370,20 @@
       END IF
 
 !-----------------------------------------------------------------------
+! Name change in the namelist.input file.  We used to only have the
+! ocean mixed layer option (omlcall=1).  With the addition of a 3D ocean,
+! now let's change the name of the option.  If the old name is present,
+! tell the user to swap their namelist, and then stop.
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec%omlcall .NE. 0 ) THEN
+         wrf_err_message = '--- ERROR:  The namelist.input variable "omlcall" has been renamed.'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '---         Replace "omlcall" with the new name "sf_ocean_physics".'
+         CALL wrf_error_fatal ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
 ! For adaptive time stepping, certain physics schemes are not allowed
 ! to have intermittent frequencies.  So, for those schemes below, we just
 ! turn the frequencies so that the schemes are called for each time step.
@@ -392,6 +406,7 @@
             END DO
          END IF
       END IF
+
 !-----------------------------------------------------------------------
 ! The cu_rad_feedback namelist flag with the two Grell cumulus parameterization 
 ! schemes needs to have the namelist flag cu_diag=1
@@ -429,7 +444,7 @@
        END DO
  
 !-----------------------------------------------------------------------
-! The two Grell cumulus parameterization schemes need to have the 
+! The three Grell cumulus parameterization schemes need to have the 
 ! namelist flag cu_diag=1, and all other cumulus schemes must have
 ! cu_diag=0.
 !-----------------------------------------------------------------------
@@ -443,6 +458,23 @@
             model_config_rec%cu_diag(i) = 0
          END IF
       END DO
+
+!-----------------------------------------------------------------------
+!  Only implement the TEMF PBL scheme with the TEMP SFCLAY scheme.  
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%bl_pbl_physics(i) .EQ. TEMFPBLSCHEME ) .AND. &
+              ( model_config_rec%sf_sfclay_physics(i) .NE. TEMFSFCSCHEME ) )  THEN
+            wrf_err_message = '--- ERROR: Using bl_pbl_physics=10 requires sf_sfclay_physics=10 '
+            CALL wrf_error_fatal ( TRIM(wrf_err_message) )
+         ELSEIF ( ( model_config_rec%bl_pbl_physics(i) .NE. TEMFPBLSCHEME ) .AND. &
+                  ( model_config_rec%sf_sfclay_physics(i) .EQ. TEMFSFCSCHEME ) ) THEN
+            wrf_err_message = '--- ERROR: Using sf_sfclay_physics=10 requires bl_pbl_physics=10 '
+            CALL wrf_error_fatal ( TRIM(wrf_err_message) )
+         END IF
+      ENDDO      ! Loop over domains
+
  
 !-----------------------------------------------------------------------
 !  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.

@@ -475,10 +475,10 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 
    IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'write 1 CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
-     call wrf_debug( 0, message)
+     call wrf_debug( 1, message)
      WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr,' cfc11:'&
        ,f11vmr,' cfc12:',f12vmr
-     call wrf_debug( 0, message)
+     call wrf_debug( 1, message)
    ENDIF
 
 #else
@@ -495,10 +495,10 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 !ccc
    IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'CAM interpolated values_____ year:',yr,' julian day:',julian
-     call wrf_debug( 0, message)
+     call wrf_debug( 100, message)
      WRITE(message,*)'CAM co2vmr: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr,' cfc11:',f11vmr,&
        ' cfc12:',f12vmr
-     call wrf_debug( 0, message)
+     call wrf_debug( 100, message)
    ENDIF
 #endif
 !ccc

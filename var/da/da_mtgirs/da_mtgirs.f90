@@ -6,7 +6,9 @@ module da_mtgirs
       max_error_p,max_error_q, fails_error_max, &
       max_stheight_diff,test_dm_exact, anal_type_verify, &
       kms,kme,kts,kte, &
-      trace_use_dull, mtgirs, position_lev_dependant, max_ext_its, qcstat_conv_unit, ob_vars
+      trace_use_dull, mtgirs, position_lev_dependant, max_ext_its, qcstat_conv_unit, ob_vars, &
+      convert_fd2uv, convert_uv2fd, max_error_sp, max_error_dir, var_wind, max_omb_sp, max_omb_dir, pi,standard
+   use da_grid_definitions, only : da_ffdduv, da_ffdduv2, da_cal_sd, da_uv_wind_adj, da_uv_wind_tgl
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type
    use module_domain, only : domain

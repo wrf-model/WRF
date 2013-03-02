@@ -62,7 +62,11 @@ CONTAINS
 #if (EM_CORE==1)
      &          ,ch,tsq,qsq,cov                                       & ! MYNN
 #endif
-! CLM varaibles
+            !  cyl ocean variable
+                ,OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH,OM_ML,OM_LON          &
+     &          ,OM_LAT,okms,okme,rdx,rdy,msfu,msfv,msft              &
+     &          ,XTIME,OM_TINI,OM_SINI,id,omdt                        &
+! CLM variables
      &          ,numc,nump,sabv,sabg,lwup,snl,history_interval &
      &          ,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
      &           h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm ,         &
@@ -979,6 +983,7 @@ CONTAINS
                                                             CQS2
 ! SSIB local variables
    REAL ZDIFF
+   REAL, DIMENSION( ims:ime , jms:jme ) :: XICE_save
 !
    REAL    :: DTMIN,DTBL
 !
@@ -1073,6 +1078,15 @@ CONTAINS
      REAL, DIMENSION( ims:ime, jms:jme ) :: TSK_LOCAL
 !
    REAL   :: xice_threshold
+
+! cyl ocean variable 
+   integer :: okms, okme
+   real, optional , dimension(ims:ime, okms:okme, jms:jme), INTENT(INOUT):: OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH
+   real, optional , dimension(ims:ime, okms:okme, jms:jme), INTENT(IN):: OM_TINI,OM_SINI
+   real, optional , dimension(ims:ime, jms:jme),INTENT(INOUT):: OM_ML, OM_LAT, OM_LON
+   REAL, OPTIONAL , INTENT(IN   ) :: rdx, rdy,xtime,omdt
+   REAL , OPTIONAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: msfu, msfv, msft
+   INTEGER , OPTIONAL , INTENT(IN)        :: id
 !
   real,    dimension(ims:ime,1:maxpatch,jms:jme ) ::  q_ref2m   ! clm
 
@@ -1160,6 +1174,8 @@ CONTAINS
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
 
+         XICE_save(I,J) = XICEM(I,J) 
+
          IF ( FRACTIONAL_SEAICE == 1 ) then
             IF ( ( XICE(I,J) .NE. XICEM(I,J) ) .AND. ( XICEM(I,J) .GT. XICE_THRESHOLD ) ) THEN
                ! Fractional values of ALBEDO and EMISSIVITY are valid according to the 
@@ -1244,6 +1260,7 @@ CONTAINS
           ENDDO
         ENDIF
 
+        XICE_save(I,J) = XICEM(I,J)
         XICEM(i,j) = XICE(i,j)
 
       ENDDO
@@ -2516,7 +2533,7 @@ CONTAINS
                 sfcrunoff,udrunoff,sfcexc,                      &
                 sfcevp,grdflx,acsnow,acsnom,                    &
                 smfr3d,keepfr3dflag,                            &
-                myj,                                            &
+                myj,shdmin,shdmax,                              &
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
@@ -2844,13 +2861,6 @@ CONTAINS
                  )
 
          IF ( FRACTIONAL_SEAICE == 1 ) THEN
-            ! LSM Returns full land/ice values, no fractional values.
-            ! We return to a fractional component here.  SFLX currently
-            ! hard-wires
-            ! emissivity over sea ice to 0.98, the same value as over open
-            ! water, so
-            ! the fractional consideration doesn't have any effect for
-            ! emissivity.
             DO j=j_start(ij),j_end(ij)
                DO i=i_start(ij),i_end(ij)
                   IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE.  1.0 ) ) THEN
@@ -2906,48 +2916,12 @@ CONTAINS
 
 ! update land variables from CLM
               IF(XLAND(I,J).LT.1.5) then
-!              IF((XLAND(I,J).LT.1.5 .AND. IVGTYP(I,J) .NE. ISWATER) .OR. &
-!                 (IVGTYP(I,J) == ISWATER .AND. HT(I,J) >= LAKEMINALT .AND.
-!                 DOCLMLAKE == 1)) then
                   Q2(I,J) = sum(q_ref2m(i,1:nump(i,j),j)*wtp(i,1:nump(i,j),j))
                   T2(I,J) = sum(t_ref2m(i,1:nump(i,j),j)*wtp(i,1:nump(i,j),j))
                   TH2(I,J)= T2(I,J)*(1.E5/PSFC(I,J))**RCP
-                 ! IF (UCMCALL == 1 ) THEN
-!update urban impact 
-!Add more here?
-                 ! END IF
               END IF
            ENDDO
            ENDDO
-!urban
-     IF(sf_urban_physics == 1) THEN
-       DO j=j_start(ij),j_end(ij)                             !urban
-         DO i=i_start(ij),i_end(ij)                           !urban
-          IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == 31 .or. &  !urban
-              IVGTYP(I,J) == 32 .or. IVGTYP(I,J) == 33 ) THEN !urban
-!             TH2(I,J)  = TH2_URB2D(I,J)                       !urban
-!             T2(I,J)   = TH2_URB2D(I,J)/(1.E5/PSFC(I,J))**RCP !urban
-!m             T2(I,J)   = TH2_URB2D(I,J)                       !urban
-!             T2(I,J)   = FRC_URB2D(i,j)*TH2_URB2D(I,J) +
-!             (1-FRC_URB2D(i,j))*T2(I,J) !urban
-!             TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**RCP
-!             !urban
-!m             Q2(I,J)   = Q2_URB2D(I,J)
-!!urban
-!             Q2(I,J)   = FRC_URB2D(i,j)*Q2_URB2D(I,J) +(1-FRC_URB2D(i,j))*
-!             Q2(I,J)  !urban
-             U10(I,J)  = U10_URB2D(I,J)                       !urban
-             V10(I,J)  = V10_URB2D(I,J)                       !urban
-             PSIM(I,J) = PSIM_URB2D(I,J)                      !urban
-             PSIH(I,J) = PSIH_URB2D(I,J)                      !urban
-             GZ1OZ0(I,J) = GZ1OZ0_URB2D(I,J)                  !urban
-!m             AKHS(I,J) = AKHS_URB2D(I,J)                    !urban
-             AKHS(I,J) = CHS(I,J)                             !urban
-             AKMS(I,J) = AKMS_URB2D(I,J)                      !urban
-           END IF                                             !urban
-         ENDDO                                                !urban
-       ENDDO                                                  !urban
-     ENDIF
 
        ELSE
          CALL wrf_error_fatal('Lacking arguments for CLM in surface driver')
@@ -3038,7 +3012,7 @@ CONTAINS
                       rainncv(i,j), raincv(i,j), glw(i,j), dz8w(i,1,j),            &
                       smois(i,1,j), smois(i,2,j), smois(i,3,j),                    &
                       tslb(i,1,j), tslb(i,2,j), tslb(i,3,j),                       &
-                      snow(i,j), sfcrunoff(i,j), xicem(i,j),                        &
+                      snow(i,j), sfcrunoff(i,j), xice_save(i,j),                   &
                       u_phytmp(i,1,j),v_phytmp(i,1,j),qv_curr(i,1,j),t_phy(i,1,j), &
                       p_phy(i,1,j), psfc(i,j),                                     &
                       swdown(i,j), canwat(i,j),                                    &
@@ -3167,7 +3141,7 @@ CONTAINS
  430 CONTINUE
 
 #if ( EM_CORE==1)
-   IF (omlcall .EQ. 1) THEN
+   IF (omlcall .EQ. 1 .or. omlcall .EQ. 2) THEN
 ! simple ocean mixed layer model based Pollard, Rhines and Thompson (1973)
      CALL wrf_debug( 100, 'Call OCEANML' )
      !$OMP PARALLEL DO   &
@@ -3179,7 +3153,13 @@ CONTAINS
                      dtbl,STBOLT,                                 &
                      ids,ide, jds,jde, kds,kde,                   &
                      ims,ime, jms,jme, kms,kme,                   &
-                     i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte)
+                     i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, & 
+                     omlcall,okms, okme, &                           !cyl
+                     om_tmp,om_s,om_u, om_v,  om_depth, om_ml, &   !cyl
+                     om_lat, om_lon, &                                        !cyl
+                     QFX,  &                 !cyl 
+                     rdx, rdy, msfu, msfv, msft,xtime,om_tini,om_sini,id,omdt, &
+                     itimestep ) !cyl
      ENDDO
      !$OMP END PARALLEL DO
    ENDIF

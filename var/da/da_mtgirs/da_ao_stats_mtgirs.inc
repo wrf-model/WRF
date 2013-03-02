@@ -1,4 +1,4 @@
-subroutine da_ao_stats_mtgirs (stats_unit, iv, re)
+subroutine da_ao_stats_mtgirs (stats_unit, iv, re, ob)
 
    !-------------------------------------------------------------
    ! Purpose: TBD   
@@ -9,10 +9,12 @@ subroutine da_ao_stats_mtgirs (stats_unit, iv, re)
    integer,        intent (in)    :: stats_unit    ! Output unit for stats.
    type (iv_type), intent (inout) :: iv            ! iv
    type (y_type),  intent (in)    :: re            ! A - O
+   type(y_type),   intent (in) :: ob       ! Observation structure.
 
    type (stats_mtgirs_type) :: stats
    integer                 :: nu, nv, nt, nq
    integer                 :: n, k
+   real                    :: u_inv, v_inv, sp_inv, dir_inv
 
    if (trace_use_dull) call da_trace_entry("da_ao_stats_mtgirs")
 
@@ -36,12 +38,20 @@ subroutine da_ao_stats_mtgirs (stats_unit, iv, re)
    do n=1, iv%info(mtgirs)%nlocal
       do k=1, iv%info(mtgirs)%levels(n)
          if (iv%info(mtgirs)%proc_domain(1,n)) then
+            u_inv = re%mtgirs(n)%u(k)
+            v_inv = re%mtgirs(n)%v(k)
+            if(var_wind) then
+               sp_inv = re%mtgirs(n)%u(k)
+               dir_inv = re%mtgirs(n)%v(k)
+               call da_cal_sd (ob%mtgirs(n)%u(k), ob%mtgirs(n)%v(k), &
+                               u_inv, v_inv, sp_inv, dir_inv)
+            end if
             call da_stats_calculate (n, k, iv%mtgirs(n)%u(k)%qc, & 
-               re%mtgirs(n)%u(k), nu, &
+               u_inv, nu, &
                stats%minimum%u, stats%maximum%u, &
                stats%average%u, stats%rms_err%u)
             call da_stats_calculate (n, k, iv%mtgirs(n)%v(k)%qc, & 
-               re%mtgirs(n)%v(k), nv, &
+               v_inv, nu, &
                stats%minimum%v, stats%maximum%v, &
                stats%average%v, stats%rms_err%v)
             call da_stats_calculate (n, k, iv%mtgirs(n)%t(k)%qc, & 

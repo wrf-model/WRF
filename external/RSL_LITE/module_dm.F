@@ -3866,6 +3866,9 @@ END
       INTEGER local_comm, myproc, nproc, idum1, idum2
       INTEGER thisdomain_max_halo_width
 
+!cyl: add variables for trajectory
+      integer tjk
+
       INTERFACE
           SUBROUTINE feedback_nest_prep ( grid, config_flags    &
 !
@@ -3984,6 +3987,9 @@ END
 
       LOGICAL, EXTERNAL  :: cd_feedback_mask
 
+!cyl: add variables for trajectory
+      integer tjk
+
 ! On entry to this routine, 
 !  "grid" refers to the parent domain
 !  "intermediate_grid" refers to local copy of parent domain that overlies this patch of nest
@@ -4009,6 +4015,28 @@ END
                                 nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe    )
+
+!cyl add this for trajectory
+
+    do tjk = 1,config_flags%num_traj
+     if (ngrid%traj_long(tjk) .eq. -9999.0) then
+!       print*,'n=-9999',tjk
+        ngrid%traj_long(tjk)=grid%traj_long(tjk)
+        ngrid%traj_k(tjk)=grid%traj_k(tjk)
+     else
+!       print*,'p!=-9999',tjk
+        grid%traj_long(tjk)=ngrid%traj_long(tjk)
+        grid%traj_k(tjk)=ngrid%traj_k(tjk)
+     endif
+     if (ngrid%traj_lat(tjk) .eq. -9999.0) then
+         ngrid%traj_lat(tjk)=grid%traj_lat(tjk)
+         ngrid%traj_k(tjk)=grid%traj_k(tjk)
+     else
+         grid%traj_lat(tjk)=ngrid%traj_lat(tjk)
+         grid%traj_k(tjk)=ngrid%traj_k(tjk)
+     endif
+    enddo
+!endcyl
 
       CALL nl_get_i_parent_start ( intermediate_grid%id, iparstrt )
       CALL nl_get_j_parent_start ( intermediate_grid%id, jparstrt )
@@ -4576,6 +4604,8 @@ grid=>cgrid
       USE module_dm, ONLY : ntasks, ntasks_x, ntasks_y, itrace, local_communicator, mytask, &
                             ipe_save, jpe_save, ips_save, jps_save, get_dm_max_halo_width
       USE module_comm_dm, ONLY : HALO_NMM_WEIGHTS_sub
+      USE module_comm_nesting_dm, ONLY : HALO_INTERP_UP_sub
+
       IMPLICIT NONE
 !
       TYPE(domain), TARGET :: grid          ! name of the grid being dereferenced (must be "grid")
@@ -4610,6 +4640,7 @@ grid=>cgrid
                                 ips, ipe, jps, jpe, kps, kpe    )
 
 #ifdef DM_PARALLEL
+#include "HALO_INTERP_UP.inc"
 #include "HALO_NMM_WEIGHTS.inc"
 #endif
 

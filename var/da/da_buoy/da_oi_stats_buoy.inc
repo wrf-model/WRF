@@ -1,4 +1,4 @@
-subroutine da_oi_stats_buoy (stats_unit, iv)
+subroutine da_oi_stats_buoy (stats_unit, iv, ob)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -8,10 +8,12 @@ subroutine da_oi_stats_buoy (stats_unit, iv)
 
    integer,        intent (in) :: stats_unit    ! Output unit for stats.
    type (iv_type), intent (in) :: iv            ! OI
+   type(y_type),   intent (in) :: ob       ! Observation structure.
 
    type (stats_buoy_type) :: stats      
    integer                :: nu, nv, nt, np, nq
    integer                :: n
+   real                   :: u_inv, v_inv, sp_inv, dir_inv
 
    if (trace_use_dull) call da_trace_entry("da_oi_stats_buoy")
 
@@ -37,14 +39,22 @@ subroutine da_oi_stats_buoy (stats_unit, iv)
 
    do n=1, iv%info(buoy)%nlocal
       if (iv%info(buoy)%proc_domain(1,n)) then
+         u_inv = iv%buoy(n)%u%inv
+         v_inv = iv%buoy(n)%v%inv
+         if(var_wind) then
+            sp_inv = iv%buoy(n)%u%inv
+            dir_inv = iv%buoy(n)%v%inv
+            call da_cal_sd (ob%buoy(n)%u, ob%buoy(n)%v, &
+                            u_inv, v_inv, sp_inv, dir_inv)
+         end if
          call da_stats_calculate(iv%info(buoy)%obs_global_index(n), &
             0, iv%buoy(n)%u%qc, &
-            iv%buoy(n)%u%inv, nu, &
+            u_inv, nu, &
             stats%minimum%u, stats%maximum%u, &
             stats%average%u, stats%rms_err%u)
          call da_stats_calculate(iv%info(buoy)%obs_global_index(n), &
             0, iv%buoy(n)%v%qc, &
-            iv%buoy(n)%v%inv, nv, &
+            v_inv, nv, &
             stats%minimum%v, stats%maximum%v, &
             stats%average%v, stats%rms_err%v)
          call da_stats_calculate(iv%info(buoy)%obs_global_index(n), &

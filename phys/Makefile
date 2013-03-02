@@ -61,7 +61,6 @@ MODULES = \
 	module_cu_kfeta.o \
 	module_cu_tiedtke.o\
 	module_cu_gd.o \
-	module_cu_gf.o \
 	module_cu_nsas.o \
 	module_cu_sas.o \
 	module_cu_du.o \
@@ -177,13 +176,13 @@ MODULES = \
 	module_wind_fitch.o
 
 FIRE_MODULES = \
-        module_fr_sfire_driver.o \
-        module_fr_sfire_driver_wrf.o \
-        module_fr_sfire_atm.o \
-        module_fr_sfire_model.o \
-        module_fr_sfire_core.o \
-        module_fr_sfire_phys.o \
-        module_fr_sfire_util.o
+        module_fr_fire_driver.o \
+        module_fr_fire_driver_wrf.o \
+        module_fr_fire_atm.o \
+        module_fr_fire_model.o \
+        module_fr_fire_core.o \
+        module_fr_fire_phys.o \
+        module_fr_fire_util.o
   
 OBJS    =
 

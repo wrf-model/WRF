@@ -20,7 +20,7 @@
  
                  )
 !----------------------------------------------------------------------
-  USE module_domain
+  USE module_domain , only : domain
   USE module_configure
 #if ( EM_CORE == 1 )
   USE module_driver_constants

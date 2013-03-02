@@ -6,7 +6,9 @@ module da_airep
       check_max_iv_print, check_max_iv_unit, v_interp_p, v_interp_h, &
       check_max_iv, missing, max_error_uv, max_error_t, rootproc, &
       airep, anal_type_verify, kms,kme,kts,kte, trace_use_dull, &
-      position_lev_dependant,qcstat_conv_unit,ob_vars, fails_error_max
+      position_lev_dependant,qcstat_conv_unit,ob_vars, fails_error_max, &
+      convert_fd2uv, convert_uv2fd, max_error_sp, max_error_dir, var_wind, max_omb_sp, max_omb_dir, pi, standard
+   use da_grid_definitions, only : da_ffdduv, da_ffdduv2, da_cal_sd, da_uv_wind_adj, da_uv_wind_tgl
 
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type
@@ -17,6 +19,7 @@ module da_airep
    use da_statistics, only : da_stats_calculate
    use da_tools, only : da_max_error_qc, da_residual, da_convert_zk, da_get_print_lvl
    use da_tracing, only : da_trace_entry, da_trace_exit
+
 
    ! The "stats_airep_type" is ONLY used locally in da_airep:
 

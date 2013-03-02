@@ -25,7 +25,8 @@ subroutine da_get_innov_vector_pilot( it,num_qcstat_conv, grid, ob, iv)
 
    real    :: v_h(kms:kme)      ! Model value h at ob hor. location.
    real    :: v_p(kms:kme)      ! Model value p at ob hor. location.
-   
+   real    :: speed, direction
+
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_pilot")
 
    allocate (model_u(iv%info(pilot)%max_lev,iv%info(pilot)%n1:iv%info(pilot)%n2))
@@ -96,13 +97,30 @@ subroutine da_get_innov_vector_pilot( it,num_qcstat_conv, grid, ob, iv)
          ! [4.0] Fast interpolation:
          !------------------------------------------------------------------------
 
-         if (ob % pilot(n) % u(k) > missing_r .AND. iv % pilot(n) % u(k) % qc >= obs_qc_pointer) then
-            iv % pilot(n) % u(k) % inv = ob % pilot(n) % u(k) - model_u(k,n)
-         end if
 
-         if (ob % pilot(n) % v(k) > missing_r .AND. iv % pilot(n) % v(k) % qc >= obs_qc_pointer) then
-            iv % pilot(n) % v(k) % inv = ob % pilot(n) % v(k) - model_v(k,n)
-         end if
+          if (.not. var_wind) then
+             if (ob%pilot(n)%u(k) > missing_r .AND. iv%pilot(n)%u(k)%qc >= obs_qc_pointer) then
+                 iv%pilot(n)%u(k)%inv = ob%pilot(n)%u(k) - model_u(k,n)
+             end if
+
+             if (ob%pilot(n)%v(k) > missing_r .AND. iv%pilot(n)%v(k)%qc >= obs_qc_pointer) then
+                 iv%pilot(n)%v(k)%inv = ob%pilot(n)%v(k) - model_v(k,n)
+             end if
+           else
+              call da_ffdduv2 (speed,direction,model_u(k,n), model_v(k,n), iv%info(pilot)%lon(k,n), convert_uv2fd)
+
+              if (ob%pilot(n)%u(k) > missing_r .AND. iv%pilot(n)%u(k)%qc >= obs_qc_pointer) then
+                  iv%pilot(n)%u(k)%inv = ob%pilot(n)%u(k) - speed
+              end if
+
+              if (ob%pilot(n)%v(k) > missing_r .AND. iv%pilot(n)%v(k)%qc >= obs_qc_pointer) then
+                  iv%pilot(n)%v(k)%inv = ob%pilot(n)%v(k) - direction
+                  if (iv%pilot(n)%v(k)%inv > 180.0 ) iv%pilot(n)%v(k)%inv = iv%pilot(n)%v(k)%inv - 360.0
+                  if (iv%pilot(n)%v(k)%inv < -180.0 ) iv%pilot(n)%v(k)%inv = iv%pilot(n)%v(k)%inv + 360.0
+              end if
+
+          end if
+
       end do
    end do
 

@@ -378,6 +378,7 @@
      &                 ,DZ8W=DZ,T=T_PHY,T8W=T8W,GMT=GMT                 &
      &                 ,JULDAY=JULDAY,JULYR=JULYR,NPHS=NPHS             &
      &                 ,JULIAN=JULIAN,XTIME=XTIME                       &
+     &                 ,YR=JULYR                                        &
      &                 ,LW_PHYSICS=CONFIG_FLAGS%RA_LW_PHYSICS           &
      &                 ,SW_PHYSICS=CONFIG_FLAGS%RA_SW_PHYSICS           &
      &                 ,RADT=RADT,RA_CALL_OFFSET=GRID%RA_CALL_OFFSET    &
@@ -1236,6 +1237,7 @@
          CALL wrf_error_fatal('WRFU_TimeGet failed')
          ENDIF
 
+
 !
 !-----------------------------------------------------------------------
 !
@@ -1337,6 +1339,8 @@
 ! for Noah UA changes
      &        ,ua_phys=config_flags%ua_phys,flx4=grid%flx4,fvb=grid%fvb       &
      &        ,fbur=grid%fbur,fgsn=grid%fgsn                                  &
+! vertical dimensions for ocean model, not used for NMM
+     &        ,okms = 1, okme=2                                          &
 ! for NOAH-MP LSM
      &        ,YR=yr                                       &
      &        ,idveg=config_flags%dveg,         iopt_crs=config_flags%opt_crs &

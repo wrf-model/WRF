@@ -42,7 +42,7 @@ CONTAINS
     USE module_cumulus_driver, ONLY : cumulus_driver
     USE module_shallowcu_driver, ONLY : shallowcu_driver
     USE module_pbl_driver, ONLY : pbl_driver
-    USE module_fr_sfire_driver_wrf, ONLY : sfire_driver_em_step
+    USE module_fr_fire_driver_wrf, ONLY : fire_driver_em_step
     USE module_fddagd_driver, ONLY : fddagd_driver
     USE module_em, ONLY : init_zero_tendency
     USE module_force_scm
@@ -51,7 +51,7 @@ CONTAINS
 use module_scalar_tables
 #ifdef DM_PARALLEL
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
-    USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub,halo_em_phys_a_bl_surf_sub
+    USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub,halo_pwp_sub,halo_em_phys_a_bl_surf_sub
 #endif
     USE module_utility
     IMPLICIT NONE
@@ -388,6 +388,10 @@ BENCH_START(surf_driver_tim)
       CALL nl_get_isurban(grid%id, isurban)
       call nl_get_mminlu(grid%id, mminlu)
 
+#ifdef DM_PARALLEL
+#     include "HALO_PWP.inc"
+#endif
+
       CALL wrf_debug ( 200 , ' call surface_driver' )
 
       if( grid%num_nests .lt. 1 )then
@@ -678,6 +682,12 @@ BENCH_START(surf_driver_tim)
      &        ,NOAHRES=grid%noahres                                       &
 !mynn mp
      &         ,ch=grid%ch,tsq=grid%tsq,qsq=grid%qsq,cov=grid%cov &
+     &        ,OM_TMP=grid%om_tmp, OM_S=grid%om_s, OM_U=grid%om_u, OM_V=grid%om_v   & !cyl:3DPWP
+     &        ,OM_DEPTH=grid%om_depth, OM_ML=grid%OM_ML, OM_LON=grid%om_lon         & !cyl:3DPWP
+     &        ,OM_LAT=grid%om_lat                                                  & !cy:3DPWP
+     &        , okms = 1, okme=config_flags%ocean_levels                  & ! cyl:3DPWP
+     &        ,rdx=grid%rdx, rdy=grid%rdy,msfu=grid%msfu,msfv=grid%msfv,msft=grid%msft &!cyl: 3DPWP
+     &        ,XTIME=grid%xtime,OM_TINI=grid%om_tini,OM_SINI=grid%om_sini,id=grid%id,omdt=config_flags%omdt &!cyl: 3DPWP 
      &                                                              )
 
 #ifdef WRF_HYDRO
@@ -838,12 +848,12 @@ BENCH_START(fire_driver_tim)
         if(config_flags%ifire.eq.2)then 
             ! initialization moved to start_em:start_domain_em
 !            if(grid%initestep.eq.1) &
-!            call sfire_driver_em_init (  grid , config_flags    &
+!            call fire_driver_em_init (  grid , config_flags    &
 !            ,ids,ide, kds,kde, jds,jde                              &
 !            ,ims,ime, kms,kme, jms,jme                              &
 !            ,ips,ipe, kps,kpe, jps,jpe  )
             ! one timestep of the fire model
-            call sfire_driver_em_step (  grid , config_flags    &
+            call fire_driver_em_step (  grid , config_flags    &
             ,ids,ide, kds,kde, jds,jde                              &
             ,ims,ime, kms,kme, jms,jme                              &
             ,ips,ipe, kps,kpe, jps,jpe                              &

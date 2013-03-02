@@ -2218,6 +2218,9 @@ integer myproc
 !--------------------------------------------------------------
 ! CLM Init Coupling
       CASE (CLMSCHEME)
+        IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
+                CALL wrf_error_fatal ( 'CLM DOES NOT WORK WITH URBAN SCHEME' ) 
+        ENDIF
         IF(PRESENT(numc))THEN
         ! added by Jiming Jin 10/14/2012
         if(config_flags%num_land_cat .ne. 24) CALL wrf_error_fatal &
@@ -2272,7 +2275,7 @@ integer myproc
    END SELECT sfc_select
 
    IF(PRESENT(OMLCALL))THEN
-     IF (omlcall .EQ. 1) THEN
+     IF ( ( omlcall .EQ. 1 ) .OR. ( omlcall .EQ. 2 ) ) THEN
         CALL omlinit(oml_hml0, tsk,                           &
                      tml,t0ml,hml,h0ml,huml,hvml,tmoml,       &
                      allowed_to_read, start_of_simulation,    &
@@ -2648,7 +2651,7 @@ integer myproc
                       its, ite, jts, jte, kts, kte                )
 
 #if ( EM_CORE == 1 )
-     CASE (G3SCHEME,GFSCHEME)
+     CASE (G3SCHEME)
           CALL g3init(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,        &
                       MASS_FLUX,cp,restart,                       &
                       P_QC,P_QI,PARAM_FIRST_SCALAR,               &

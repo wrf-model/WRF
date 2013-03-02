@@ -135,6 +135,18 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
          call da_read_obs_bufrtovs('mhs  ', iv, filename)
       end if
 
+      if (use_mwtsobs) then
+         write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from mwts.dat'
+         filename = 'mwts'
+         call da_read_obs_fy3('mwts ', iv, filename)
+      end if
+
+      if (use_mwhsobs) then
+         write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from mwhs.dat'
+         filename = 'mwhs'
+         call da_read_obs_fy3('mwhs ', iv, filename)
+      end if
+
       if (use_atmsobs) then
          write(unit=stdout,fmt='(a)') 'Reading radiance 1b data from atms.bufr'
          filename = 'atms'

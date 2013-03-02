@@ -27,7 +27,7 @@ module infnan
 #elif __GNUC__
   real(r8), parameter :: inf = 1.e19
   real(r8), parameter :: nan = 1.e21
-  integer,  parameter :: bigint = O'17777777777'    
+  integer,  parameter :: bigint = O'17777777777'
 #else
 ! signaling nan otherwise
   real(r8), parameter :: inf = O'0777600000000000000000'

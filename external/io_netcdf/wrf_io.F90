@@ -1046,14 +1046,7 @@ subroutine ext_ncd_open_for_read_begin( FileName, Comm, IOComm, SysDepInfo, Data
     return
   endif
 
-#ifdef USE_NETCDF4_FEATURES
-! open_mode = IOR(nf_netcdf4, nf_classic_model)
-  open_mode = nf_netcdf4
-! open_mode = IOR(open_mode, NF_NOWRITE)
-  stat = NF_OPEN(FileName, open_mode, DH%NCID)
-#else
   stat = NF_OPEN(FileName, NF_NOWRITE, DH%NCID)
-#endif
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
@@ -1190,14 +1183,7 @@ subroutine ext_ncd_open_for_update( FileName, Comm, IOComm, SysDepInfo, DataHand
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
-#ifdef USE_NETCDF4_FEATURES
-! open_mode = IOR(nf_netcdf4, nf_classic_model)
-  open_mode = nf_netcdf4
-! open_mode = IOR(open_mode, NF_WRITE)
-  stat = NF_OPEN(FileName, open_mode, DH%NCID)
-#else
   stat = NF_OPEN(FileName, NF_WRITE, DH%NCID)
-#endif
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__

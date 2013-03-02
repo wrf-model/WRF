@@ -3159,9 +3159,11 @@ end subroutine get_albedo12m_netcdf
          start_posO = (cnt+1)+(nobs * (output_count-1))
 
 !Write frxst_pts to text file...
-           write(999,117) seconds_since,trim(date),cnt,chlon(i),chlat(i), &
+!yw          write(999,117) seconds_since,trim(date),cnt,chlon(i),chlat(i), &
+           write(999,117) seconds_since,date(1:10),date(12:19),cnt,chlon(i),chlat(i), &
                     abs(qlink(i,1)), abs(qlink(i,1))*35.315,hlink(i)
-117 FORMAT(I8,1X,A25,1X,I7,1X,F10.5,1X,F8.5,1X,F9.3,1x,F12.3,1X,F6.3)
+!yw 117 FORMAT(I8,1X,A25,1X,I7,1X,F10.5,1X,F8.5,1X,F9.3,1x,F12.3,1X,F6.3)
+117 FORMAT(I8,1X,A10,1X,A8,1x,I7,1X,F10.5,1X,F8.5,1X,F9.3,1x,F12.3,1X,F6.3)
 
          !!--time in seconds since startdate
          iret = nf_inq_varid(ncid2,"time_observation", varid)

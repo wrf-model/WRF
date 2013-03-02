@@ -71,7 +71,11 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
  debug_level                         = 0, 	; 50,100,200,300 values give increasing prints
  diag_print                          = 0, 	; print out time series of model diagnostics
                                                 ; 0 = no print
-                                                ; 1 = no print
+                                                ; 1 = domain averaged 3-hourly hydrostatic surface pressure tendency 
+                                                      (Dpsfc/Dt), and dry-hydrostatic column pressure tendency (Dmu/Dt)
+                                                      will appear in stdout file
+                                                ; 2 = in addition to those above, domain averaged rainfall, 
+                                                  surface evaporation, and sensible and latent heat fluxes will be output
  all_ic_times                        = .false., ; whether to write out wrfinput for all processing times
  adjust_output_times                 = .false., ; adjust output times to the nearest hour
  override_restart_timers             = .false., ; whether to change the alarms from what is previously set
@@ -624,7 +628,8 @@ Namelist variables for controlling the adaptive time step option:
  num_soil_cat                        = 16,      ; number of soil categories in input data
 
  pxlsm_smois_init(max_dom)           = 1        ; PXLSM Soil moisture initialization option 
-                                                   0 - From analysis, 1 - From MAVAIL
+                                                   0 - From analysis, 1 - From moisture availability
+                                                   or SLMO in LANDUSE.TBL
 
  maxiens                             = 1,       ; Grell-Devenyi only
  maxens                              = 3,       ; G-D only
@@ -655,8 +660,8 @@ Namelist variables for controlling the adaptive time step option:
  slope_rad (max_dom)                 = 0        ; slope effects for solar radiation (1=on, 0=off)
  topo_shading (max_dom)              = 0        ; neighboring-point shadow effects for solar radiation (1=on, 0=off)
  shadlen                             = 25000.   ; max shadow length in meters for topo_shading=1
- omlcall                             = 0        ; activate simple ocean mixed layer model (0=no, 1=yes); works with 
-                                                  sf_surface_physics = 1 only
+ omlcall                             = 0        ; activate simple ocean mixed layer model (0=no, 1=1d, 2=U Miami 3d 
+                                                ; mixed-layer ocean) works with sf_surface_physics = 1 only
  oml_hml0                            = 50       ; oml model can be initialized with a constant depth everywhere (m)
  oml_gamma                           = 0.14     ; oml deep water lapse rate (K m-1)
  isftcflx                            = 0        ; alternative Ck, Cd formulation for tropical storm application 
@@ -669,6 +674,7 @@ Namelist variables for controlling the adaptive time step option:
                                                 ;             =1: z0 from Davis et al (2008), zt & zq from COARE3.0
                                                 ;             =2: z0 from Davis et al (2008), zt & zq from Garratt (1992)
  fractional_seaice                   = 0        ; treat sea-ice as fractional field (1) or ice/no-ice flag (0)
+                                                  works for sf_sfclay_physics=1,2,5,or 7.
  seaice_albedo_opt                   = 0        ; option to set albedo over sea ice
                                                 ; 0 = seaice albedo is a constant value from namelist option seaice_albedo_default
                                                 ; 1 = seaice albedo is f(Tair,Tskin,Snow) follwing Mills (2011) for Arctic Ocean
@@ -715,9 +721,6 @@ Options for stochastic kinetic-energy backscatter scheme:
                                       1,        : Random phase vertical structure random pattern generator
  tot_backscat_psi                   = 1.0E-05   ; Controls amplitude of rotational wind perturbations
  tot_backscat_t                     = 1.0E-06   ; Controls amplitude of potential temperature perturbations
- perturb_bdy                        = 0         ; No boundary perturbations
-                                      1         ; Use SKEBS pattern for boundary perturbations
-                                      2         ; User other user provided pattern for boundary perturbations
  nens                               = 1         ; an integer that controls the random number stream which will then
                                                   change the run. When running an ensemble, this can be
                                                   ensemble member number, so that each ensemble member gets a
@@ -1036,6 +1039,10 @@ The following are for observation nudging:
  nested (max_dom)                    = .false., ; nested boundary conditions (must be used for nests)
  polar                               = .false., ; polar boundary condition
                                                   (v=0 at polarward-most v-point)
+ perturb_bdy                        = 0         ; No boundary perturbations
+                                      1         ; Use SKEBS pattern for boundary perturbations
+                                      2         ; User other user provided pattern for boundary perturbations
+
  euler_adv                           = .false., ; conservative Eulerian passive advection (NMM only)
  idtadt                              = 1,       ; fundamental timesteps between calls to Euler advection, dynamics (NMM only)
  idtadc                              = 1        ; fundamental timesteps between calls to Euler advection, chemistry (NMM only)
@@ -1058,7 +1065,8 @@ The following are for observation nudging:
  &namelist_quilt    This namelist record controls asynchronized I/O for MPI applications. 
 
  nio_tasks_per_group                 = 0,        default value is 0: no quilting; > 0 quilting I/O
- nio_groups                          = 1,        default 1, don't change
+ nio_groups                          = 1,        default 1. May be set to higher value for nesting IO 
+                                                 or history and restart IO
 
 
  &grib2:

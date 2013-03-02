@@ -966,7 +966,7 @@ nested_grid%chem_in_opt = parent_grid%chem_in_opt
                                                                   ips , ipe , jps , jpe , kps , kpe )
          END DO
 
-         DO nvchem=PARAM_FIRST_SCALAR, num_scalar
+         DO nvscalar=PARAM_FIRST_SCALAR, num_scalar
            sbdy3dtemp1=sbdy3dtemp0(:,:,:,nvscalar)
            sbdy3dtemp2=nested_grid%scalar(:,:,:,nvscalar)
            CALL stuff_bdytend ( sbdy3dtemp2 , sbdy3dtemp1 , new_bdy_frq ,  &
@@ -1263,7 +1263,7 @@ print *,'bdy time = ',time_loop-1,'  bdy date = ',current_date,' ',start_date
                                                                   ips , ipe , jps , jpe , kps , kpe )
          END DO
 
-         DO nvchem=PARAM_FIRST_SCALAR, num_scalar
+         DO nvscalar=PARAM_FIRST_SCALAR, num_scalar
            sbdy3dtemp1=sbdy3dtemp0(:,:,:,nvscalar)
            sbdy3dtemp2=nested_grid%scalar(:,:,:,nvscalar)
            CALL stuff_bdytend ( sbdy3dtemp2 , sbdy3dtemp1 , new_bdy_frq ,  &

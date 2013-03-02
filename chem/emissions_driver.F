@@ -49,18 +49,12 @@ CONTAINS
          mebio_acet, mebio_mbo, mebio_no,                                  &
          current_month,                                                    &
          ! end stuff for MEGAN v2.04
-         !            stuff for lightning NOx
-         ter_ht, dy,                                                       &
-         ltng_timestep, ltng_startsec, passive_ltng,                       &
-         temp_upper, temp_lower, N_IC, N_CG,                               &
-         lflash_data, ic_fr, cg_fr,                                        &
-         flashrate_factor, flashrate_method, iccg_method,                  &
-         cellcount_method,                                                 &
-         ktop, &
-         !            end suff for lightning
+         ! stuff for LNOx emissions
+         ht, refl_10cm,                                                    &
+         ic_flashrate, cg_flashrate,                                       &
+         ! end stuff for LNOx emissions
          ! stuff for aircraft emissions
          emis_aircraft,                                                    &
-
          ! stuff for GHG fluxes
          vprm_in,rad_vprm,lambda_vprm,alpha_vprm,resp_vprm,               &
          xtime,tslb,wet_in,rainc,rainnc,potevp,sfcevp,lu_index,            &
@@ -89,9 +83,9 @@ CONTAINS
   USE module_add_emis_cptec
   USE module_add_emiss_burn
   USE module_plumerise1
-  USE module_lightning_driver
   USE module_aerosols_soa_vbs, only: soa_vbs_addemiss
-  USE module_ghg_fluxes 
+  USE module_ghg_fluxes
+  USE module_lightning_nox_driver
   USE module_cam_mam_addemiss, only: cam_mam_addemiss
   
   IMPLICIT NONE
@@ -247,23 +241,6 @@ CONTAINS
    integer, intent(in) :: current_month
 
    ! end stuff for MEGAN v2.04
-!     stuff for lightning NO
-      REAL,  DIMENSION( ims:ime , jms:jme ) ,                          &
-         INTENT(IN)   ::                      ter_ht                         ! terrain height
-      REAL,    INTENT(IN   )  ::  dy
-      REAL,    INTENT(IN   )  ::  temp_upper, temp_lower, N_IC, N_CG         ! upper/lower T(K) modes of vert distrib, nbr of IC and CG flashes
-      INTEGER, INTENT(IN   )  ::  ltng_timestep, ltng_startsec,        &     ! timestep for ltng data, starting time for lightning data
-                                  passive_ltng, lflash_data                  ! flag for putting LNOx into only the scalar array, 
-                                                                             ! flag to choose observed or simulated flash rate
-      REAL , DIMENSION( ims:ime , jms:jme ) ,                       &
-        INTENT(INOUT)   ::                            ic_fr,           &     ! cumulative number of intracloud flashes (diagnostic)
-                                                      cg_fr                  ! cumulative number of cloud-to-ground flashes (diagnostic)
-      REAL,    INTENT(IN   )  ::  flashrate_factor                           ! factor to adjust predicted flashrates -- for PR prediction
-      INTEGER, INTENT(IN   )  ::  flashrate_method                           ! flashrate calculation method
-      INTEGER, INTENT(IN   )  ::  iccg_method                                ! choosing ic to cg ratio method
-      INTEGER, INTENT(IN   )  ::  cellcount_method                           ! choosing tile_wide or domain_wide method
-      INTEGER, DIMENSION( ims:ime , jms:jme ) , INTENT(IN) :: ktop
-!     end stuff for lightning NO
 
       REAL(KIND=8), INTENT(IN   ) ::                                   &
            curr_secs
@@ -299,6 +276,10 @@ CONTAINS
       REAL, DIMENSION(ims:ime,1,jms:jme,num_wet_in), INTENT(IN)  :: wet_in
       REAL, INTENT(IN) :: xtime
 ! end ghg tracer stuff
+! stuff for lightning NOx
+     REAL, DIMENSION( ims:ime,          jms:jme ),           INTENT(IN   ) :: ht, ic_flashrate, cg_flashrate
+     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),           INTENT(IN   ) :: refl_10cm
+! end stuff for lightning NOx
 !
 ! Local variables...
 !
@@ -1478,36 +1459,37 @@ CONTAINS
        call wrf_debug(15,'emissions_driver NOT CALLING aer add_... routines')
 
     END SELECT aer_addemiss_select
-!        
-!    production of NO from lightning
-!    code from Mary Barth with contributions from:
-!    Lesley Ott, Ken Pickering (crm_decaria scheme)
-!    Christelle Barthe (crm_barthe scheme)    -- not included yet
-!    Regional-scale LNOx schemes from MOZART provided by Louisa Emmons    -- not included yet
-!
-  IF (config_flags%lightning_opt  /= 0)  then
-    
-       CALL lightning_driver(t_phy, p_phy, rho_phy,        &
-                  u_phy, v_phy, vvel,                      &
-                  ter_ht,xlat,xlong,dx,dy,z,               &
-                  moist,                                   &
-                  ids,ide, jds,jde, kds,kde,               &
-                  ims,ime, jms,jme, kms,kme,               &
-                  its,ite, jts,jte, kts,kte,               &
-                  chem(ims,kms,jms,p_no),                  &
-                  tracer(ims,kms,jms,p_tr18_1),            &
-                  tracer(ims,kms,jms,p_tr18_2),            &
-                  config_flags%tracer_opt,                 &
-                  config_flags%lightning_opt, ktau,        &
-                  dtstep, ltng_timestep, ltng_startsec,    &
-                  passive_ltng,temp_upper,temp_lower,      &
-                  N_IC,N_CG,lflash_data,flashrate_factor,  &
-                  flashrate_method,iccg_method,            &
-                  cellcount_method,                        &
-                  ic_fr,cg_fr,xland,ktop)
 
-   END IF
-
+! Lightning NO emission
+    CALL lightning_nox_driver ( &
+          ! Frequently used prognostics
+            itimestep=ktau, dt=dtstep, dx=dx, dy=dx,                &
+            xlat=xlat, xlon=xlong, xland=xland, ht=ht,                &
+            t_phy=t_phy, p_phy=p_phy, rho=rho_phy, u=u_phy, v=v_phy, w=vvel,        &
+            z=z, moist=moist,                         &
+            ic_flashrate=ic_flashrate, cg_flashrate=cg_flashrate,    &
+          ! Scheme specific prognostics
+            refl=refl_10cm,                                     &
+          ! Mandatory namelist inputs
+            lightning_option=config_flags%lightning_option,          &
+            lightning_dt=config_flags%lightning_dt,                  &
+            lightning_start_seconds=config_flags%lightning_start_seconds,                    &
+            N_IC=config_flags%N_IC, N_CG=config_flags%N_CG,          &
+            lnox_opt=config_flags%lnox_opt, lnox_passive=config_flags%lnox_passive, &
+          ! Scheme specific namelist inputs
+            ltng_temp_upper=config_flags%ltng_temp_upper,                 &
+            ltng_temp_lower=config_flags%ltng_temp_lower,                 &
+            cellcount_method=config_flags%cellcount_method,               &
+          ! Order dependent args for domain, mem, and tile dims
+            ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde,         &
+            ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme,         &
+            its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte,         &
+          ! outputs
+            c_no=chem(:,:,:,p_no),                                 & ! NO concentration
+            lnox_total=tracer(:,:,:,p_lnox_total),       &
+            lnox_ic=tracer(:,:,:,p_lnox_ic),             &
+            lnox_cg=tracer(:,:,:,p_lnox_cg)          &
+          )
 
     END subroutine emissions_driver
 

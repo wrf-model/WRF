@@ -5102,8 +5102,8 @@ END SUBROUTINE sorgam_depdriver
             bb = -(tno3+fnh3)
             disc = bb*bb - 4.0*cc
 
-!...Check for complex roots of the quadratic
-!...  set nitrate to zero and RETURN if complex roots are found
+!...Check for no real positive roots of the quadratic
+!...  set nitrate to zero and RETURN if no real positive roots are found
 
             IF (disc<0.0) THEN
               xno3 = 0.0
@@ -5167,7 +5167,9 @@ END SUBROUTINE sorgam_depdriver
 
 !...Check for complex roots, if so set nitrate to zero and RETURN
 
-          IF (disc<0.0) THEN
+          IF((disc<0.0) .OR. &
+             (bb>0.0 .AND. aa>0.0 .AND.cc >0.0) .OR. &
+             (bb<0.0 .AND. aa<0.0 .AND.cc <0.0)) THEN
             xno3 = 0.0
             ah2o = 1000.0*wh2o
             ynh4 = twoso4

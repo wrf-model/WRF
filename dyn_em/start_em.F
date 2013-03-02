@@ -24,6 +24,7 @@
    USE module_comm_dm
 
    USE module_physics_init
+   USE module_lightning_driver, ONLY : lightning_init
    USE module_fr_fire_driver_wrf, ONLY : fire_driver_em_init
    USE module_stoch, ONLY : SETUP_STOCH, update_stoch
 #ifdef WRF_CHEM
@@ -68,7 +69,7 @@
 
    INTEGER     :: i_m
 
-   REAL        :: p00, t00, a, tiso, p_surf, pd_surf, temp
+   REAL        :: p00, t00, a, tiso, p_surf, pd_surf, temp, tiso_tmp
 #ifdef WRF_CHEM
    REAL        RGASUNIV ! universal gas constant [ J/mol-K ]
    PARAMETER ( RGASUNIV = 8.314510 )
@@ -362,34 +363,46 @@
       END IF
    END IF
 
+   IF ( config_flags%use_baseparam_fr_nml ) then
+      CALL nl_get_base_pres  ( 1 , p00 )
+      CALL nl_get_base_temp  ( 1 , t00 )
+      CALL nl_get_base_lapse ( 1 , a   )
+      CALL nl_get_iso_temp   ( 1 , tiso )
+      IF ( ( t00 .LT. 100. .or. p00 .LT. 10000.) .AND. ( .NOT. grid%this_is_an_ideal_run ) ) THEN
+         WRITE(wrf_err_message,*) 'start_em: BAD BASE STATE for T00 or P00 in namelist.input file'
+         CALL wrf_error_fatal(TRIM(wrf_err_message))
+      END IF
+
+   ELSE
+   ! get these constants from model data
+
+      t00  = grid%t00
+      p00  = grid%p00
+      a    = grid%tlp
+      tiso = grid%tiso
+      IF ( ( t00 .LT. 100. .or. p00 .LT. 10000.) .AND. ( .NOT. grid%this_is_an_ideal_run ) ) THEN
+         WRITE(wrf_err_message,*)&
+         'start_em: did not find base state parameters in wrfinput. Add use_baseparam_fr_nml = .t. in &dynamics and rerun'
+         CALL wrf_error_fatal(TRIM(wrf_err_message))
+      ENDIF
+
+   ENDIF
+
+!  check if tiso in the input file agrees with namelist value
+
+   CALL nl_get_iso_temp   ( 1 , tiso_tmp )
+   IF ( ( tiso_tmp .NE. tiso ) .AND. ( .NOT. grid%this_is_an_ideal_run ) ) THEN
+      WRITE(wrf_err_message,*)&
+      'start_em: namelist iso_temp is not equal to iso_temp in wrfinput. Reset nml value and rerun'
+      CALL wrf_error_fatal(TRIM(wrf_err_message))
+   ENDIF
+
    IF ( .NOT. config_flags%restart .AND. &
         (( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ))) THEN
 
       IF ( config_flags%map_proj .EQ. 0 ) THEN
          CALL wrf_error_fatal ( 'start_domain: Idealized case cannot have a separate nested input file' )
       END IF
-
-      IF ( config_flags%use_baseparam_fr_nml ) then
-      CALL nl_get_base_pres  ( 1 , p00 )
-      CALL nl_get_base_temp  ( 1 , t00 )
-      CALL nl_get_base_lapse ( 1 , a   )
-      CALL nl_get_iso_temp   ( 1 , tiso )
-
-      ELSE
-      ! get these constants from model data
-
-      t00  = grid%t00
-      p00  = grid%p00
-      a    = grid%tlp
-      tiso = grid%tiso
-
-      IF (t00 .LT. 100. .or. p00 .LT. 10000.) THEN
-      WRITE(wrf_err_message,*)&
-      'start_em: did not find base state parameters in wrfinput. Add use_baseparam_fr_nml = .t. in &dynamics and rerun'
-      CALL wrf_error_fatal(TRIM(wrf_err_message))
-      ENDIF
-
-      ENDIF
 
       !  Base state potential temperature and inverse density (alpha = 1/rho) from
       !  the half eta levels and the base-profile surface pressure.  Compute 1/rho
@@ -496,8 +509,11 @@
      DO i = its, min(ite,ide-1)
        IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
          grid%pb(i,k,j) = grid%znu(k)*grid%mub(i,j)+grid%p_top
-         grid%alb(i,k,j) = -grid%rdnw(k)*(grid%phb(i,k+1,j)-grid%phb(i,k,j))/grid%mub(i,j)
-         grid%t_init(i,k,j) = grid%alb(i,k,j)*(p1000mb/r_d)/((grid%pb(i,k,j)/p1000mb)**cvpm) - t0
+         temp = MAX ( tiso, t00 + A*LOG(grid%pb(i,k,j)/p00) )
+         grid%t_init(i,k,j) = temp*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
+         grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
+!        grid%alb(i,k,j) = -grid%rdnw(k)*(grid%phb(i,k+1,j)-grid%phb(i,k,j))/grid%mub(i,j)
+!        grid%t_init(i,k,j) = grid%alb(i,k,j)*(p1000mb/r_d)/((grid%pb(i,k,j)/p1000mb)**cvpm) - t0
        ENDIF
      ENDDO
      ENDDO
@@ -755,6 +771,7 @@
                       grid%B_Q_BEP,grid%B_E_BEP,grid%DLG_BEP,                          & !multi-layer urban
                       grid%DL_U_BEP,grid%SF_BEP,grid%VL_BEP,                           & !multi-layer urban
                       grid%TML,grid%T0ML,grid%HML,grid%H0ML,grid%HUML,grid%HVML,grid%TMOML,     & !Optional oml
+                      grid%TSK_SAVE,                                                   & !Optional fractional seaice
               grid%numc,grid%nump,grid%snl,grid%snowdp,&   ! start of CLM variables
               grid%wtc,grid%wtp,&
               grid%h2osno,grid%t_grnd,grid%t_veg,grid%h2ocan, &
@@ -852,6 +869,36 @@
    grid%LU_MASK = 0.
    WHERE ( grid%lu_index .EQ. 16 ) grid%LU_MASK = 1.
 #endif
+
+   call wrf_debug(100,'start_em: calling lightning_init')
+   CALL lightning_init ( itimestep=grid%itimestep, restart=grid%restart, dt=grid%dt, dx=grid%dx   &
+                    ! Namelist control options
+                        ,cu_physics=config_flags%cu_physics,mp_physics=config_flags%mp_physics    &
+                        ,do_radar_ref=config_flags%do_radar_ref                                   &
+                        ,lightning_option=config_flags%lightning_option                           &
+                        ,lightning_dt=config_flags%lightning_dt                                   &
+                        ,lightning_start_seconds=config_flags%lightning_start_seconds             &
+                        ,iccg_prescribed_num=config_flags%iccg_prescribed_num                     &
+                        ,iccg_prescribed_den=config_flags%iccg_prescribed_den                     &
+                        ,cellcount_method=config_flags%cellcount_method                           &
+                    ! Order dependent args for domain, mem, and tile dims
+                        ,ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde             &
+                        ,ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme             &
+                        ,its=grid%i_start(ij), ite=grid%i_end(ij)                         &
+                        ,jts=grid%j_start(ij), jte=grid%j_end(ij), kts=kts, kte=kte       &
+                    ! IC and CG flash rates and accumulated flash count
+                        ,ic_flashcount=grid%ic_flashcount, ic_flashrate=grid%ic_flashrate        &
+                        ,cg_flashcount=grid%cg_flashcount, cg_flashrate=grid%cg_flashrate        &
+#ifdef WRF_CHEM
+                        ,lnox_opt=config_flags%lnox_opt           &
+                        ,lnox_passive=config_flags%lnox_passive   &
+                        ,lnox_total=tracer(:,:,:,p_lnox_total)    &
+                        ,lnox_ic=tracer(:,:,:,p_lnox_ic)          &
+                        ,lnox_cg=tracer(:,:,:,p_lnox_cg)          &
+#endif
+                    )
+
+    call wrf_debug(100,'start_em: after calling lightning_init')
 
    END IF
 

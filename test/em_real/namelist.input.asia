@@ -101,6 +101,7 @@
  moist_adv_opt                       = 1,      1,      1,     
  scalar_adv_opt                      = 1,      1,      1,     
  use_baseparam_fr_nml                = .t.,
+ iso_temp                            = 0.,
  /
 
  &bdy_control

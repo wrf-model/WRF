@@ -1380,10 +1380,11 @@ package   gbmpblscheme   bl_pbl_physics==12          -             -
 
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -
-package   gdscheme       cu_physics==3               -             -
+package   gdscheme       cu_physics==93              -             -
 package   sasscheme      cu_physics==84              -             state:hpbl2d,heat2d,evap2d
 package   osasscheme     cu_physics==4               -             state:randstate1,randstate2,randstate3,randstate4,random
 package   g3scheme       cu_physics==5               -             -
+package   gfscheme       cu_physics==3               -             -
 package   camzmscheme    cu_physics==7               -             -
 package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,GD_CLOUD_A,GD_CLOUD_B,GD_CLOUD2_A,GD_CLOUD2_B,kbcon_deep,ktop_deep,k22_deep
 package   tiedtkescheme  cu_physics==6               -             -
@@ -1425,6 +1426,12 @@ package   io_zzz      io_form_restart==9                     -             -
 package   io_grib2    io_form_restart==10                    -             -
 package   io_pnetcdf  io_form_restart==11                     -             -
                                                 
+#lightning
+package ltng_none           lightning_option==0            -       -
+package ltng_crm_PR92w      lightning_option==1            -       -
+package ltng_crm_PR92z      lightning_option==2            -       -
+package ltng_cpm_PR92z      lightning_option==11           -       -
+
 ## communications                                               
 
 ### 8. Edit the Registry file and create a halo-exchange for x_1.

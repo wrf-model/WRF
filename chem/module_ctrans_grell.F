@@ -22,7 +22,7 @@ CONTAINS
    SUBROUTINE GRELLDRVCT(DT,itimestep,DX,                           &
               rho_phy,RAINCV,chem,                                  &
               U,V,t_phy,moist,dz8w,p_phy,                           &
-              XLV,CP,G,r_v,z,cu_co_ten,ktop_out,                    &
+              XLV,CP,G,r_v,z,cu_co_ten,                             &
               wd_no3,wd_so4,                                        &
               k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow,   &
               ishallow,num_moist,numgas,num_chem,chemopt,scalaropt, &
@@ -64,8 +64,6 @@ CONTAINS
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,    &
           INTENT(INOUT   ) ::                                   &
                                                     cu_co_ten
-
-   INTEGER,  DIMENSION( ims:ime , jms:jme  ) , INTENT(  OUT) :: ktop_out
 
 !
    REAL, INTENT(IN   ) :: DT, DX
@@ -153,10 +151,12 @@ CONTAINS
          kbcon3(i)=kbcon_shallow(i,j)
      ENDDO
      else
-         xmb3(i)=0
+     DO I=ITS,ITF
+         xmb3(i)=0.
          ktop3(i)=0
          k23(i)=0
          kbcon3(i)=0
+     ENDDO
      endif
      DO K=kts,ktf
      DO I=ITS,ITF
@@ -245,7 +245,6 @@ CONTAINS
        ENDDO
 
     wetdep_2d(its:ite,j,:) = wetdep_1d(its:ite,:)
-      ktop_out(its:itf,J) = ktop(its:itf)
 
  100    continue
 
@@ -497,7 +496,7 @@ CONTAINS
         IERR(i)=0
         IERR5(i)=0
         if(ktop3(i).lt.2)ierr5(i)=20
-        if(xmb3(i).eq.0)ierr5(i)=21
+        if(xmb3(i).eq.0.)ierr5(i)=21
  7    CONTINUE
       do i=its,itf
           cap_max(i)=cap_maxs

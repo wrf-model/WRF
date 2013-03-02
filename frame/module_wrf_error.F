@@ -209,6 +209,7 @@ SUBROUTINE wrf_message( str )
      call wrf_log_action(wrf_log_write,len_trim(str),str)
 #endif
   else
+!$OMP MASTER
      if(stderrlog/=0) then
         write(0,*) trim(str)
 # ifdef _WIN32
@@ -216,6 +217,7 @@ SUBROUTINE wrf_message( str )
 # endif
      endif
      print *,trim(str)
+!$OMP END MASTER
   endif
 
 #ifdef ESMFIO
@@ -236,10 +238,12 @@ SUBROUTINE wrf_message2( str )
 #endif
   IMPLICIT NONE
   CHARACTER*(*) str
+!$OMP MASTER
   write(0,*) str
 # ifdef _WIN32
   FLUSH(0)
 # endif
+!$OMP END MASTER
 #ifdef ESMFIO
   CALL ESMF_LogWrite(TRIM(str),ESMF_LOGMSG_INFO)
 #endif

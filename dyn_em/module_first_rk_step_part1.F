@@ -292,7 +292,7 @@ BENCH_START(rad_driver_tim)
      &        ,ALEVSIZ=grid%alevsiz, no_src_types=grid%no_src_types       &
      &        ,LEVSIZ=grid%levsiz, N_OZMIXM=num_ozmixm                    &
      &        ,N_AEROSOLC=num_aerosolc                                    &
-     &        ,PAERLEV=grid%paerlev                                       &
+     &        ,PAERLEV=grid%paerlev   ,ID=grid%id                         &
      &        ,CAM_ABS_DIM1=grid%cam_abs_dim1, CAM_ABS_DIM2=grid%cam_abs_dim2 &
      &        ,CAM_ABS_FREQ_S=grid%cam_abs_freq_s                         &
      &        ,XTIME=grid%xtime                                                &
@@ -680,6 +680,7 @@ BENCH_START(surf_driver_tim)
      &        ,RDLAI2D=config_flags%rdlai2d                               &
      &        ,usemonalb=config_flags%usemonalb                           &
      &        ,NOAHRES=grid%noahres                                       &
+     &        ,TSK_SAVE=grid%tsk_save                                     &
 !mynn mp
      &         ,ch=grid%ch,tsq=grid%tsq,qsq=grid%qsq,cov=grid%cov &
      &        ,OM_TMP=grid%om_tmp, OM_S=grid%om_s, OM_U=grid%om_u, OM_V=grid%om_v   & !cyl:3DPWP
@@ -909,6 +910,7 @@ BENCH_START(cu_driver_tim)
      &             ,GSW=grid%gsw,cugd_avedx=config_flags%cugd_avedx       &
      &             ,k22_shallow=grid%k22_shallow,kbcon_shallow=grid%kbcon_shallow &
      &             ,ktop_shallow=grid%ktop_shallow,xmb_shallow=grid%xmb_shallow   &
+     &             ,ktop_deep=grid%ktop_deep                              &
      &             ,PERIODIC_X=(config_flags%polar .OR. config_flags%periodic_x)  &
      &             ,PERIODIC_Y=config_flags%periodic_y                    &
      &             ,TKE_PBL8W=grid%tke_pbl8w                              & !BSINGH - TKE at the interfaces for Zhang-McFarlane Scheme 

@@ -58711,7 +58711,7 @@ subroutine driver (doalb,ilx,jlx,nextsw_cday, declinp1, declin)
   integer  :: begl, endl    ! clump beginning and ending landunit indices
   integer  :: begg, endg    ! clump beginning and ending gridcell indices
   type(column_type)  , pointer :: cptr    ! pointer to column derived subtype
-  logical, external :: do_restwrite ! determine if time to write restart
+! logical, external :: do_restwrite ! determine if time to write restart
   real(r8), intent(in) :: nextsw_cday                   ! calendar day at Greenwich (1.00, ..., 365.99)
   real(r8), intent(in) :: declinp1                   ! declination angle (radians) for next time step
   real(r8), intent(in) :: declin      ! declination angle for current time step

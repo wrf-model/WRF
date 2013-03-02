@@ -5489,6 +5489,21 @@ print *,'namelist p_top (Pa) = ',p_top
          znw(10) = 0.50 * znw( 8) + 0.50 * znw(12)
          znw(11) = 0.25 * znw( 8) + 0.75 * znw(12)
 
+         DO k = 8, kte-1
+            pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
+            temp = MAX ( tiso, t00 + A*LOG(pb/p00) )
+            t_init = temp*(p00/pb)**(r_d/cp) - t0
+            alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
+            phb(k) = phb(k-1) - (znw(k)-znw(k-1)) * mub*alb(k-1)
+         END DO
+         phb(kte) = phb(kte-1) - (znw(kte)-znw(kte-1)) * mub*alb(kte-1)
+
+k=1
+print *,k,'  z (m)            = ',phb(1)/g
+do k = 2 ,kte
+print *,k,'  z (m) and dz (m) = ',phb(k)/g,(phb(k)-phb(k-1))/g
+end do
+
       END IF
 
    END SUBROUTINE compute_eta

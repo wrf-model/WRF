@@ -9994,7 +9994,9 @@ CONTAINS
          DO K=kts,kte
             QV1D(K)=QV3D(I,K,J)
             QV1D(K)=max(0.,QV1D(K))
+            IF ( PRESENT( O33D ) ) THEN
             O31D(K)=O33D(I,K,J)
+            ENDIF
          ENDDO
 
          DO K=kts,kte
@@ -10193,6 +10195,7 @@ CONTAINS
 
          do k = kts, kte+1
             o3vmr(ncol,k) = o3mmr(k) * amdo
+            IF ( PRESENT( O33D ) ) THEN
             if(o3input .eq. 2)then
                if(k.le.kte)then
                  o3vmr(ncol,k) = o31d(k)
@@ -10202,6 +10205,7 @@ CONTAINS
                  if(o3vmr(ncol,k) .le. 0.)o3vmr(ncol,k) = o3mmr(k)*amdo
                endif
             endif
+            ENDIF
          enddo
 
 ! Set surface albedo for direct and diffuse radiation in UV/visible and
@@ -10498,6 +10502,13 @@ CONTAINS
 
 ! Zero array for input of aerosol optical thickness for use with
 ! ECMWF aerosol types (not used)
+         do na = 1, naerec
+            do k = kts, kte+1
+               ecaer(ncol,k,na) = 0.
+            enddo
+         enddo
+
+      IF ( PRESENT( aerod ) ) THEN
       if ( aer_opt .eq. 0 ) then
          do na = 1, naerec
             do k = kts, kte+1
@@ -10514,6 +10525,7 @@ CONTAINS
             ecaer(ncol,kte+1,na) = 0.
          enddo
       endif
+      ENDIF
 
 ! Call RRTMG shortwave radiation model
 

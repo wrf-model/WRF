@@ -20,6 +20,10 @@ CONTAINS
                       itimestep)
 
 !----------------------------------------------------------------
+#if ( EM_CORE==1)
+   USE module_state_description, ONLY : OMLCOLUMN , OMLMIAMI
+#endif
+
    IMPLICIT NONE
 !----------------------------------------------------------------
 !
@@ -95,6 +99,7 @@ CONTAINS
   INTEGER , INTENT(IN)        :: id,itimestep
   integer :: stepom
 
+#if ( EM_CORE==1)
 ! calculate the steps of om
 
   stepom=nint(omdt*60/deltsm)
@@ -102,7 +107,7 @@ CONTAINS
 
 ! cyl:OML1D or DPWP
 
-if ( omlcall .eq. 2 ) then
+if ( omlcall .eq. OMLCOLUMN ) then
 
    DO J=jts,jte
 
@@ -123,7 +128,7 @@ if ( omlcall .eq. 2 ) then
 
 ! call 3DPWP
 
-elseif ( omlcall .eq. 1) then 
+elseif ( omlcall .eq. OMLMIAMI ) then 
        call wrf_debug ( 100, 'call 3DPWP' )
        if ( itimestep .eq. 1 .or. mod(itimestep, stepom) .eq. 0 ) then
          ! run 3DPWP only when the grid resolution larger than 3.0 km
@@ -149,6 +154,7 @@ elseif ( omlcall .eq. 1) then
           endif 
        endif
 endif 
+#endif
 
    END SUBROUTINE OCEANML
 

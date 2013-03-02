@@ -61,6 +61,7 @@ MODULES = \
 	module_cu_kfeta.o \
 	module_cu_tiedtke.o\
 	module_cu_gd.o \
+	module_cu_gf.o \
 	module_cu_nsas.o \
 	module_cu_sas.o \
 	module_cu_du.o \
@@ -167,6 +168,10 @@ MODULES = \
 	module_radiation_driver.o \
 	module_surface_driver.o \
 	module_diagnostics.o \
+	module_lightning_driver.o \
+	module_ltng_cpmpr92z.o \
+	module_ltng_crmpr92.o \
+	module_ltng_iccg.o \
 	module_fdda_psufddagd.o \
 	module_fdda_spnudging.o \
 	module_fddagd_driver.o  \

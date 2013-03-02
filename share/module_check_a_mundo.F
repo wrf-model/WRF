@@ -155,6 +155,19 @@
 
 #endif
 
+#if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+! In program real, if hypsometric_opt = 2, adjust_heights cannot be set to .true. 
+!-----------------------------------------------------------------------
+      IF ( model_config_rec%hypsometric_opt .EQ. 2 \
+           .AND. model_config_rec%adjust_heights ) THEN
+           WRITE (wrf_err_message, FMT='(A,A)') '--- NOTE: hypsometric_opt is 2, ', &
+                  'setting adjust_heights = F'
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec%adjust_heights = .false.
+      ENDIF
+#endif
+
 !-----------------------------------------------------------------------
 ! If sst_update = 0, set io_form_auxinput4 to 0 so WRF will not try to
 ! input the data; auxinput_interval must also be 0
@@ -403,6 +416,7 @@
        DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec%cu_diag(i) .EQ. G3TAVE ) THEN
           IF ( ( model_config_rec%cu_physics(i) .NE. GDSCHEME ) .AND. &
+               ( model_config_rec%cu_physics(i) .NE. GFSCHEME ) .AND. &
                ( model_config_rec%cu_physics(i) .NE. G3SCHEME ) ) THEN
                 wrf_err_message = '--- ERROR: Using cu_diag=1 requires use of one of the following CU schemes:'
                 CALL wrf_message ( wrf_err_message )
@@ -422,6 +436,7 @@
 
       DO i = 1, model_config_rec % max_dom
          IF ( ( model_config_rec%cu_physics(i) .EQ. GDSCHEME ) .OR. &
+              ( model_config_rec%cu_physics(i) .EQ. GFSCHEME ) .OR. &
               ( model_config_rec%cu_physics(i) .EQ. G3SCHEME ) ) THEN
             model_config_rec%cu_diag(i) = 1
          ELSE
@@ -477,6 +492,23 @@
 
          wrf_err_message = '--- NOTE: CAM radiation is in use, setting:  ' // &
                            'paerlev=29, levsiz=59, cam_abs_dim1=4, cam_abs_dim2=e_vert'
+         CALL wrf_message ( wrf_err_message )
+
+      END IF
+
+!-----------------------------------------------------------------------
+! Set the namelist parameters for the RRTMG radiation scheme if either
+! ra_lw_physics = RRTMG_LWSCHEME or ra_sw_physics = RRTMG_SWSCHEME.
+!-----------------------------------------------------------------------
+
+      IF (( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME ) .OR. &
+          ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME )) THEN
+         model_config_rec % levsiz = 59
+         model_config_rec % alevsiz = 12
+         model_config_rec % no_src_types = 6
+
+         wrf_err_message = '--- NOTE: RRTMG radiation is in use, setting:  ' // &
+                           'levsiz=59, alevsiz=12, no_src_types=6'
          CALL wrf_message ( wrf_err_message )
 
       END IF

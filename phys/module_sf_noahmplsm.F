@@ -839,7 +839,7 @@ contains
      ELSE IF (DVEG == 2 .or. DVEG == 3) THEN
         FVEG = 1.-EXP(-0.52*(LAI+SAI))
         IF(FVEG <= 0.01) FVEG = 0.01
-     ELSE IF (DVEG == 4) THEN
+     ELSE IF (DVEG == 4 .or. DVEG == 5) THEN
         FVEG = SHDMAX
         IF(FVEG <= 0.01) FVEG = 0.01
      ELSE
@@ -847,6 +847,7 @@ contains
         CALL wrf_error_fatal("Namelist parameter DVEG unknown") 
      ENDIF
      IF(VEGTYP == ISURBAN .OR. VEGTYP == ISBARREN) FVEG = 0.0
+     IF(ELAI+ESAI == 0.0) FVEG = 0.0
 
 !     CALL PHENOLOGY (VEGTYP,IMONTH ,IDAY   ,SNOWH  ,TV     ,LAT   , & !in
 !                     LAI   ,SAI    ,TROOT  ,                & !in
@@ -904,7 +905,7 @@ contains
 
 ! compute carbon budgets (carbon storages and co2 & bvoc fluxes)
 
-   IF (DVEG == 2) THEN
+   IF (DVEG == 2 .OR. DVEG == 5) THEN
     CALL CARBON (NSNOW  ,NSOIL  ,VEGTYP ,NROOT  ,DT     ,ZSOIL  , & !in
                  DZSNSO ,STC    ,SMC    ,TV     ,TG     ,PSN    , & !in
                  FOLN   ,SMCMAX ,BTRAN  ,APAR   ,FVEG   ,IGS    , & !in
@@ -1063,6 +1064,8 @@ contains
      LAI = WT1*LAIM(VEGTYP,IT1) + WT2*LAIM(VEGTYP,IT2)
      SAI = WT1*SAIM(VEGTYP,IT1) + WT2*SAIM(VEGTYP,IT2)
   ENDIF
+  IF (SAI < 0.1) SAI = 0.0  ! MB: SAI CHECK
+  IF (LAI < 0.1 .OR. SAI == 0.0) LAI = 0.0  ! MB: LAI CHECK
 
   IF ( ( VEGTYP == ISWATER ) .OR. ( VEGTYP == ISBARREN ) .OR. ( VEGTYP == ISSNOW ) .or. ( VEGTYP == ISURBAN) ) THEN
      LAI  = 0.
@@ -1081,6 +1084,8 @@ contains
 
      ELAI =  LAI*(1.-FB)
      ESAI =  SAI*(1.-FB)
+     IF (ESAI < 0.1) ESAI = 0.0  ! MB: ESAI CHECK
+     IF (ELAI < 0.1 .OR. ESAI == 0.0) ELAI = 0.0  ! MB: LAI CHECK
 
      IF (TV .GT. TMIN(VEGTYP)) THEN
          IGS = 1.
@@ -1658,7 +1663,7 @@ contains
 
 ! Surface temperatures of the ground and canopy and energy fluxes
 
-    IF (VEG) THEN 
+    IF (VEG .AND. FVEG > 0) THEN 
     TGV = TG
     CMV = CM
     CHV = CH
@@ -1705,7 +1710,7 @@ contains
 !energy balance at vege ground: SAG*    FVEG =(IRG+SHG+EVG+GHV)    *FVEG  at   FVEG
 !energy balance at bare ground: SAG*(1.-FVEG)=(IRB+SHB+EVB+GHB)*(1.-FVEG) at 1-FVEG
 
-    IF (VEG) THEN 
+    IF (VEG .AND. FVEG > 0) THEN 
         TAUX  = FVEG * TAUXV     + (1.0 - FVEG) * TAUXB
         TAUY  = FVEG * TAUYV     + (1.0 - FVEG) * TAUYB
         FIRA  = FVEG * IRG       + (1.0 - FVEG) * IRB       + IRC
@@ -1782,7 +1787,7 @@ contains
       IF (SNOWH > 0.05 .AND. TG > TFRZ) THEN
         TGV = TFRZ
         TGB = TFRZ
-          IF (VEG) THEN
+          IF (VEG .AND. FVEG > 0) THEN
              TG    = FVEG * TGV       + (1.0 - FVEG) * TGB
              TS    = FVEG * TV        + (1.0 - FVEG) * TGB
           ELSE
@@ -6686,20 +6691,28 @@ contains
                   ISNOW  ,SNOWH  ,DZSNSO ,STC    ,SNICE  , & !inout
                   SNLIQ  ,SNEQV  )                           !inout
 
-   if(isnow < 0) then        !when more than one layer
+! MB: do each if block separately
+
+   IF(ISNOW < 0) &        ! when multi-layer
    CALL  COMPACT (NSNOW  ,NSOIL  ,DT     ,STC    ,SNICE  , & !in
                   SNLIQ  ,ZSOIL  ,IMELT  ,FICEOLD,ILOC   , JLOC ,& !in
                   ISNOW  ,DZSNSO ,ZSNSO  )                   !inout
 
+   IF(ISNOW < 0) &        !when multi-layer
    CALL  COMBINE (NSNOW  ,NSOIL  ,ILOC   ,JLOC   ,         & !in
                   ISNOW  ,SH2O   ,STC    ,SNICE  ,SNLIQ  , & !inout
                   DZSNSO ,SICE   ,SNOWH  ,SNEQV  ,         & !inout
                   PONDING1       ,PONDING2)                  !out
 
+   IF(ISNOW < 0) &        !when multi-layer
    CALL   DIVIDE (NSNOW  ,NSOIL  ,                         & !in
                   ISNOW  ,STC    ,SNICE  ,SNLIQ  ,DZSNSO )   !inout
 
-   end if
+   CALL  SNOWH2O (NSNOW  ,NSOIL  ,DT     ,QSNFRO ,QSNSUB , & !in 
+                  QRAIN  ,ILOC   ,JLOC   ,                 & !in
+                  ISNOW  ,DZSNSO ,SNOWH  ,SNEQV  ,SNICE  , & !inout
+                  SNLIQ  ,SH2O   ,SICE   ,STC    ,         & !inout
+                  QSNBOT ,PONDING1       ,PONDING2)           !out
 
 !set empty snow layers to zero
 
@@ -6710,12 +6723,6 @@ contains
         dzsnso(iz)= 0.
         zsnso(iz) = 0.
    enddo
-
-   CALL  SNOWH2O (NSNOW  ,NSOIL  ,DT     ,QSNFRO ,QSNSUB , & !in 
-                  QRAIN  ,ILOC   ,JLOC   ,                 & !in
-                  ISNOW  ,DZSNSO ,SNOWH  ,SNEQV  ,SNICE  , & !inout
-                  SNLIQ  ,SH2O   ,SICE   ,STC    ,         & !inout
-                  QSNBOT ,PONDING1       ,PONDING2)           !out
 
 !to obtain equilibrium state of snow in glacier region
        
@@ -6729,7 +6736,7 @@ contains
 
 ! sum up snow mass for layered snow
 
-   IF(ISNOW /= 0) THEN
+   IF(ISNOW < 0) THEN  ! MB: only do for multi-layer
        SNEQV = 0.
        DO IZ = ISNOW+1,0
              SNEQV = SNEQV + SNICE(IZ) + SNLIQ(IZ)
@@ -6804,7 +6811,8 @@ contains
 
 ! creating a new layer
  
-    IF(ISNOW == 0  .AND. QSNOW>0. .AND. SNOWH >= 0.05) THEN
+    IF(ISNOW == 0  .AND. QSNOW>0. .AND. SNOWH >= 0.025) THEN !MB: change limit
+!    IF(ISNOW == 0  .AND. QSNOW>0. .AND. SNOWH >= 0.05) THEN
       ISNOW    = -1
       NEWNODE  =  1
       DZSNSO(0)= SNOWH
@@ -6862,7 +6870,8 @@ contains
     REAL    :: ZWLIQ                 ! total liquid water in snow
 
     REAL    :: DZMIN(3)              ! minimum of top snow layer
-    DATA DZMIN /0.045, 0.05, 0.2/
+!    DATA DZMIN /0.045, 0.05, 0.2/
+    DATA DZMIN /0.025, 0.025, 0.1/  ! MB: change limit
 !-----------------------------------------------------------------------
 
        ISNOW_OLD = ISNOW
@@ -6873,12 +6882,12 @@ contains
                 SNLIQ(J+1) = SNLIQ(J+1) + SNLIQ(J)
                 SNICE(J+1) = SNICE(J+1) + SNICE(J)
              ELSE
-               IF (ISNOW_OLD < -1) THEN
+               IF (ISNOW_OLD < -1) THEN    ! MB/KM: change to ISNOW
                 SNLIQ(J-1) = SNLIQ(J-1) + SNLIQ(J)
                 SNICE(J-1) = SNICE(J-1) + SNICE(J)
                ELSE
                 PONDING1 = SNLIQ(J)       ! ISNOW WILL GET SET TO ZERO BELOW
-                SNEQV = SNICE(J)          ! PONDING WILL GET ADDED TO PONDING FROM
+                SNEQV = SNICE(J)          ! PONDING1 WILL GET ADDED TO PONDING FROM
                 SNOWH = DZSNSO(J)         ! PHASECHANGE WHICH SHOULD BE ZERO HERE
                 SNLIQ(J) = 0.0            ! BECAUSE THERE IT WAS ONLY CALCULATED
                 SNICE(J) = 0.0            ! FOR THIN SNOW
@@ -6908,6 +6917,7 @@ contains
           SICE(1) = 0.
        END IF
 
+       IF(ISNOW ==0) RETURN   ! MB: get out if no longer multi-layer
 
        SNEQV  = 0.
        SNOWH  = 0.
@@ -6924,7 +6934,8 @@ contains
 ! check the snow depth - all snow gone
 ! the liquid water assumes ponding on soil surface.
 
-       IF (SNOWH < 0.05 .AND. ISNOW < 0 ) THEN
+       IF (SNOWH < 0.025 .AND. ISNOW < 0 ) THEN ! MB: change limit
+!       IF (SNOWH < 0.05 .AND. ISNOW < 0 ) THEN
           ISNOW  = 0
           SNEQV = ZWICE
           PONDING2 = ZWLIQ           ! LIMIT OF ISNOW < 0 MEANS INPUT PONDING
@@ -7067,7 +7078,8 @@ contains
                   ZWLIQ, ZWICE, TSNO(1))
 
              ! subdivide a new layer
-             IF (MSNO <= 2 .AND. DZ(2) > 0.10) THEN
+             IF (MSNO <= 2 .AND. DZ(2) > 0.20) THEN  ! MB: change limit
+!             IF (MSNO <= 2 .AND. DZ(2) > 0.10) THEN
                 MSNO = 3
                 DTDZ = (TSNO(1) - TSNO(2))/((DZ(1)+DZ(2))/2.)
                 DZ(2)    = DZ(2)/2.

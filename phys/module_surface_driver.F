@@ -2451,7 +2451,7 @@ CONTAINS
                    T2(I,J) = TSK(I,J) - HFX(I,J)/(PSFC(I,J)/(R_d * TSK(I,J))*CP*CHS2(I,J))
                  ENDIF
                    TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**ROVCP
-              ELSEIF (IVGTYP(I,J) == ISURBAN .OR. IVGTYP(I,J) == ISICE ) THEN
+              ELSEIF (IVGTYP(I,J) == ISURBAN .OR. IVGTYP(I,J) == ISICE .OR. FVEGXY(I,J) == 0.0 ) THEN
                    Q2(I,J)  = Q2MBXY(I,J)
                    T2(I,J)  = T2MBXY(I,J)
                    TH2(I,J) = T2(i,j)*(1.E5/PSFC(i,j))**RCP

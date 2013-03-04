@@ -5150,6 +5150,10 @@ END SUBROUTINE nssl_2mom_driver
       jstag = 0
       kstag = 1
 
+      imixedphase = 0
+      IF ( mixedphase ) imixedphase = 1
+
+
 !
 !  slope intercepts
 !

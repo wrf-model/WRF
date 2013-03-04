@@ -1794,6 +1794,10 @@
            pni_wfz(k) = tni_qcfz(idx_c,idx_tc)*odts
            pni_wfz(k) = MIN(DBLE(Nt_c*odts), pri_wfz(k)/(2.*xm0i), &
                                 pni_wfz(k))
+          elseif (rc(k).gt. R1 .and. temp(k).lt.HGFR) then
+           pri_wfz(k) = rc(k)*odts
+           pni_wfz(k) = MIN(DBLE(Nt_c*odts), pri_wfz(k)/(2.*xm0i), &
+                                pni_wfz(k))
           endif
 
 !..Nucleate ice from deposition & condensation freezing (Cooper 1986)

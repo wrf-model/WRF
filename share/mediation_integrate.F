@@ -104,9 +104,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    IF( WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) .AND. &
        (grid%dfi_write_dfi_history .OR. grid%dfi_stage == DFI_FST .OR. grid%dfi_opt == DFI_NODFI) ) THEN
      IF       ( ( config_flags%restart )                    .AND. &
-#if (EM_CORE == 1)
                 ( config_flags%write_hist_at_0h_rst )       .AND. &
-#endif
                 ( currTime .EQ. startTime )                       ) THEN
 #if ( NMM_CORE == 1 )
 ! NMM-only: outputs boundary arrays of certain variables:
@@ -118,9 +116,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
        CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
       
      ELSE IF  ( ( config_flags%restart )                    .AND. &
-#if (EM_CORE == 1)
                 ( .NOT. config_flags%write_hist_at_0h_rst ) .AND. &
-#endif
                 ( currTime .EQ. startTime )                       ) THEN
        !  we do not do anything
      ELSE
@@ -128,13 +124,11 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
        
      END IF
      CALL WRFU_AlarmRingerOff( grid%alarms( HISTORY_ALARM ), rc=rc )
-#if (EM_CORE == 1)
    ELSE IF  ( (config_flags%restart) .AND. ( currTime .EQ. startTime ) .AND. &
               ( config_flags%write_hist_at_0h_rst ) ) THEN
      !  output history at beginning of restart even if alarm is not ringing
      CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
      CALL WRFU_AlarmRingerOff( grid%alarms( HISTORY_ALARM ), rc=rc )
-#endif
    ENDIF
 
    IF( WRFU_AlarmIsRinging( grid%alarms( INPUTOUT_ALARM ), rc=rc ) ) THEN

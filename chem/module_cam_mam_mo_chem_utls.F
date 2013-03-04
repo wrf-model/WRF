@@ -5,7 +5,7 @@ module mo_chem_utls
 #ifndef WRF_PORT
   public :: get_spc_ndx, get_het_ndx, get_extfrc_ndx, get_rxt_ndx, get_inv_ndx
 #else
-  public :: get_spc_ndx, get_inv_ndx
+  public :: get_spc_ndx, get_het_ndx, get_inv_ndx
 #endif
 
   save
@@ -85,13 +85,16 @@ contains
 #endif
   end function get_inv_ndx
 
-#ifndef WRF_PORT
+
   integer function get_het_ndx( het_name )
     !-----------------------------------------------------------------------
     !     ... return overall het process index associated with spc_name
     !-----------------------------------------------------------------------
-
+#ifndef WRF_PORT
     use gas_wetdep_opts,only : gas_wetdep_method, gas_wetdep_list, gas_wetdep_cnt
+#else
+    use module_cam_support, only: gas_wetdep_method, gas_wetdep_list, gas_wetdep_cnt
+#endif
 
     implicit none
 
@@ -117,7 +120,7 @@ contains
     enddo
 
   end function get_het_ndx
-
+#ifndef WRF_PORT
   integer function get_extfrc_ndx( frc_name )
     !-----------------------------------------------------------------------
     !     ... return overall external frcing index associated with spc_name

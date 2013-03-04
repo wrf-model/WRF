@@ -9991,744 +9991,420 @@ Tmpv001 =(rdz(i,k+1,j)+rdz(i,k,j))
 
    END SUBROUTINE a_tke_shear
 
-   SUBROUTINE a_compute_diff_metrics(config_flags,ph,a_ph,phb,z,a_z,rdz,a_rdz, &
-   rdzw,a_rdzw,zx,a_zx,zy,a_zy,rdx,rdy,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme, &
-   kms,kme,its,ite,jts,jte,kts,kte)
-
-!PART I: DECLARATION OF VARIABLES
-
-   IMPLICIT NONE
-
-   INTEGER :: K0_ADJ,K1_ADJ,K2_ADJ,K3_ADJ
-   TYPE(grid_config_rec_type) :: config_flags
-   INTEGER :: ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: ph,a_ph,phb
-   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: rdz,a_rdz,rdzw,a_rdzw,zx,a_zx,zy,a_zy,z,a_z
-   REAL :: rdx,rdy
-   INTEGER :: i,j,k,i_start,i_end,j_start,j_end,ktf
-
-!BIG ERRORS, ADDED BY WALLSWALLSWALLS
-!BIG ERRORS, ADDED BY WALLSWALLSWALLS
-!BIG ERRORS, ADDED BY WALLSWALLSWALLS
-   REAL :: a_Tmpv1,Tmpv001,a_Tmpv2,Tmpv002,a_Tmpv3,Tmpv003,a_Tmpv4,Tmpv004
-
-!PART II: CALCULATIONS OF B. S. TRAJECTORY
-
-!LPB[0]
-!DELETED BY WALLS
-      ktf = MIN( kte, kde-1 )
-      j_start = jts-1
-      j_end   = jte
-
-!!LPB[1]
-!       DO j = j_start, j_end
-
-!      IF ( ( j_start >= jts ) .AND. ( j_end <= MIN( jte, jde-1 ) ) ) THEN
-
-!           i_start = its-1
-!           i_end   = ite
-!         ELSE
-!           i_start = its
-!           i_end   = MIN( ite, ide-1 )
-!         END IF
-
-!         DO k = 1, kte
-!         DO i = i_start, i_end
-!           z(i,k,j) = ( ph(i,k,j) + phb(i,k,j) ) / g
-!         END DO
-!         END DO
-
-!         DO k = 1, ktf
-!         DO i = i_start, i_end
-!           rdzw(i,k,j) = 1.0 / ( z(i,k+1,j) - z(i,k,j) )
-!         END DO
-!         END DO
-
-!         DO k = 2, ktf
-!         DO i = i_start, i_end
-!           rdz(i,k,j) = 2.0 / ( z(i,k+1,j) - z(i,k-1,j) )
-!         END DO
-!         END DO
-
-!         DO i = i_start, i_end
-!           rdz(i,1,j) = 2./(z(i,2,j)-z(i,1,j))
-!         END DO
-
-!       END DO
-
-!!LPB[2]
-!       i_start = its
-!       i_end   = MIN( ite, ide-1 )
-!       j_start = jts
-!       j_end   = MIN( jte, jde-1 )
-
-!!LPB[3]
-!       DO j = j_start, j_end
-
-!       DO k = 1, kte
-!       DO i = MAX( ids+1, its ), i_end
-!         zx(i,k,j) = rdx * ( phb(i,k,j) - phb(i-1,k,j) ) / g
-!       END DO
-!       END DO
-
-!       END DO
-
-!!LPB[4]
-!       DO j = j_start, j_end
-
-!       DO k = 1, kte
-!       DO i = MAX( ids+1, its ), i_end
-!         zx(i,k,j) = zx(i,k,j) + rdx * ( ph(i,k,j) - ph(i-1,k,j) ) / g
-!       END DO
-!       END DO
-
-!       END DO
-
-!!LPB[5]
-!       DO j = MAX( jds+1, jts ), j_end
-
-!       DO k = 1, kte
-!       DO i = i_start, i_end
-!         zy(i,k,j) = rdy * ( phb(i,k,j) - phb(i,k,j-1) ) / g
-!       END DO
-!       END DO
-
-!       END DO
-
-!!LPB[6]
-!       DO j = MAX( jds+1, jts ), j_end
-
-!       DO k = 1, kte
-!       DO i = i_start, i_end
-!         zy(i,k,j) = zy(i,k,j) + rdy * ( ph(i,k,j) - ph(i,k,j-1) ) / g
-!       END DO
-!       END DO
-
-!       END DO
-
-!!LPB[7]
-
-!!LPB[8]
-!    IF ( .NOT. config_flags%periodic_x ) THEN
-
-!      IF ( ite == ide ) THEN
-
-!           DO j = j_start, j_end
-!           DO k = 1, ktf
-!             zx(ide,k,j) = 0.0
-!           END DO
-!           END DO
-!         END IF
-!      IF ( its == ids ) THEN
-
-!           DO j = j_start, j_end
-!           DO k = 1, ktf
-!             zx(ids,k,j) = 0.0
-!           END DO
-!           END DO
-!         END IF
-!       ELSE
-!      IF ( ite == ide ) THEN
-
-!           DO j=j_start,j_end
-!           DO k=1,ktf
-!            zx(ide,k,j) = rdx * ( phb(ide,k,j) - phb(ide-1,k,j) ) / g
-!           END DO
-!           END DO
-
-!           DO j = j_start, j_end
-!           DO k = 1, ktf
-!             zx(ide,k,j) = zx(ide,k,j) + rdx * ( ph(ide,k,j) - ph(ide-1,k,j) ) / g
-!           END DO
-!           END DO
-!         END IF
-!      IF ( its == ids ) THEN
-
-!           DO j = j_start, j_end
-!           DO k = 1, ktf
-!             zx(ids,k,j) = rdx * ( phb(ids,k,j) - phb(ids-1,k,j) ) / g
-!           END DO
-!           END DO
-
-!           DO j =j_start,j_end
-!           DO k =1,ktf
-!             zx(ids,k,j) = zx(ids,k,j) + rdx * ( ph(ids,k,j) - ph(ids-1,k,j) ) / g
-!           END DO
-!           END DO
-!         END IF
-
-!   END IF
-
-!!LPB[9]
-
-!!LPB[10]
-!   
-!    IF ( .NOT. config_flags%periodic_y ) THEN
-
-!      IF ( jte == jde ) THEN
-
-!           DO k =1, ktf
-!           DO i =i_start, i_end
-!             zy(i,k,jde) = 0.0
-!           END DO
-!           END DO
-!         END IF
-!      IF ( jts == jds ) THEN
-
-!           DO k =1, ktf
-!           DO i =i_start, i_end
-!             zy(i,k,jds) = 0.0
-!           END DO
-!           END DO
-!         END IF
-!       ELSE
-!      IF ( jte == jde ) THEN
-
-!           DO j=j_start, j_end
-!           DO k=1, ktf
-!             zy(i,k,jde) = rdy * ( phb(i,k,jde) - phb(i,k,jde-1) ) / g
-!           END DO
-!           END DO
-
-!           DO j = j_start, j_end
-!           DO k = 1, ktf
-!             zy(i,k,jde) = zy(i,k,jde) + rdy * ( ph(i,k,jde) - ph(i,k,jde-1) ) / g
-!           END DO
-!           END DO
-!         END IF
-!      IF ( jts == jds ) THEN
-
-!           DO j = j_start, j_end
-!           DO k = 1, ktf
-!             zy(i,k,jds) = rdy * ( phb(i,k,jds) - phb(i,k,jds-1) ) / g
-!           END DO
-!           END DO
-
-!           DO j = j_start, j_end
-!           DO k = 1, ktf
-!             zy(i,k,jds) = zy(i,k,jds) + rdy * ( ph(i,k,jds) - ph(i,k,jds-1) ) / g
-!           END DO
-!           END DO
-!         END IF
-
-!   END IF
-
-!       DO j = j_start, j_end
-
-!   
-!         DO k = 1, ktf
-!         DO i = i_start, i_end
-!           z(i,k,j) = 0.5 *    &
-!                      ( ph(i,k,j) + phb(i,k,j) + ph(i,k+1,j) + phb(i,k+1,j) ) / g
-!         END DO
-!         END DO
-
-!       END DO
-
-!PART IV: REVERSE/BACKWARD ACCUMULATIONS
-
-!ADDED BY WALLS, BIG ERRORS
-!FROM LPB[2]
-   i_start = its
-   i_end   = MIN( ite, ide-1 )
-   j_start = jts
-   j_end   = MIN( jte, jde-1 )
-
-!LPB[11]
-   DO j =j_end, j_start, -1
-
-!  DO k =1, ktf
-!  DO i =i_start, i_end
-!  Tmpv001 =ph(i,k,j) +phb(i,k,j) +ph(i,k+1,j)
-!  Tmpv002 =Tmpv001 +phb(i,k+1,j)
-!  Tmpv003 =0.5*Tmpv002
-!  Tmpv004 =Tmpv003/g
-!  z(i,k,j) =Tmpv004
-
-!  ENDDO
-!  ENDDO
-
-   DO k =ktf, 1, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv4 =a_z(i,k,j)
-   a_z(i,k,j) =0.0
-   a_Tmpv3 =a_Tmpv4/g
-   a_Tmpv2 =0.5*a_Tmpv3
-   a_Tmpv1 =a_Tmpv2
-   a_ph(i,k,j) =a_ph(i,k,j) +a_Tmpv1
-   a_ph(i,k+1,j) =a_ph(i,k+1,j) +a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ENDDO
-
-!LPB[10]
-
-!  IF( .NOT. config_flags%periodic_y ) THEN
-!  IF( jte == jde ) THEN
-!  DO k =1, ktf
-!  DO i =i_start, i_end
-!  zy(i,k,jde) =0.0
-
-!  ENDDO
-!  ENDDO
-!  END IF
-!  IF( jts == jds ) THEN
-!  DO k =1, ktf
-!  DO i =i_start, i_end
-!  zy(i,k,jds) =0.0
-
-!  ENDDO
-!  ENDDO
-!  END IF
-!  ELSE
-!  IF( jte == jde ) THEN
-!  DO j =j_start, j_end
-!  DO k =1, ktf
-!  zy(i,k,jde) =rdy*(phb(i,k,jde)-phb(i,k,jde-1))/g
-
-!  ENDDO
-!  ENDDO
-!  DO j =j_start, j_end
-!  DO k =1, ktf
-!  Tmpv001 =ph(i,k,jde) -ph(i,k,jde-1)
-!  Tmpv002 =rdy*Tmpv001
-!  Tmpv003 =Tmpv002/g
-!  Tmpv004 =zy(i,k,jde) +Tmpv003
-!  zy(i,k,jde) =Tmpv004
-
-!  ENDDO
-!  ENDDO
-!  END IF
-!  IF( jts == jds ) THEN
-!  DO j =j_start, j_end
-!  DO k =1, ktf
-!  zy(i,k,jds) =rdy*(phb(i,k,jds)-phb(i,k,jds-1))/g
-
-!  ENDDO
-!  ENDDO
-!  DO j =j_start, j_end
-!  DO k =1, ktf
-!  Tmpv001 =ph(i,k,jds) -ph(i,k,jds-1)
-!  Tmpv002 =rdy*Tmpv001
-!  Tmpv003 =Tmpv002/g
-!  Tmpv004 =zy(i,k,jds) +Tmpv003
-!  zy(i,k,jds) =Tmpv004
-
-!  ENDDO
-!  ENDDO
-!  END IF
-!  END IF
-
-   IF( .NOT. config_flags%periodic_y ) THEN
-
-   IF( jts == jds ) THEN
-
-   DO k =ktf, 1, -1
-   DO i =i_end, i_start, -1
-   a_zy(i,k,jds) =0.0
-   ENDDO
-   ENDDO
-
-   END IF
-
-   IF( jte == jde ) THEN
-
-   DO k =ktf, 1, -1
-   DO i =i_end, i_start, -1
-   a_zy(i,k,jde) =0.0
-   ENDDO
-   ENDDO
-
-   END IF
-
-   ELSE
-
-   IF( jts == jds ) THEN
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, 1, -1
-   a_Tmpv4 =a_zy(i,k,jds)
-   a_zy(i,k,jds) =0.0
-   a_zy(i,k,jds) =a_zy(i,k,jds) +a_Tmpv4
-   a_Tmpv3 =a_Tmpv4
-   a_Tmpv2 =a_Tmpv3/g
-   a_Tmpv1 =rdy*a_Tmpv2
-   a_ph(i,k,jds) =a_ph(i,k,jds) +a_Tmpv1
-   a_ph(i,k,jds-1) =a_ph(i,k,jds-1) -a_Tmpv1
-   ENDDO
-   ENDDO
-   DO j =j_end, j_start, -1
-   DO k =ktf, 1, -1
-   a_zy(i,k,jds) =0.0
-   ENDDO
-   ENDDO
-
-   END IF
-
-   IF( jte == jde ) THEN
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, 1, -1
-   a_zy(i,k,jde) =0.0
-   ENDDO
-   ENDDO
-   DO j =j_end, j_start, -1
-   DO k =ktf, 1, -1
-   a_Tmpv4 =a_zy(i,k,jde)
-   a_zy(i,k,jde) =0.0
-   a_zy(i,k,jde) =a_zy(i,k,jde) +a_Tmpv4
-   a_Tmpv3 =a_Tmpv4
-   a_Tmpv2 =a_Tmpv3/g
-   a_Tmpv1 =rdy*a_Tmpv2
-   a_ph(i,k,jde) =a_ph(i,k,jde) +a_Tmpv1
-   a_ph(i,k,jde-1) =a_ph(i,k,jde-1) -a_Tmpv1
-   ENDDO
-   ENDDO
-
-   END IF
-
-   END IF
-
-!LPB[9]
-
-!LPB[8]
-
-!  IF( .NOT. config_flags%periodic_x ) THEN
-!  IF( ite == ide ) THEN
-!  DO j =j_start, j_end
-!  DO k =1, ktf
-!  zx(ide,k,j) =0.0
-
-!  ENDDO
-!  ENDDO
-!  END IF
-!  IF( its == ids ) THEN
-!  DO j =j_start, j_end
-!  DO k =1, ktf
-!  zx(ids,k,j) =0.0
-
-!  ENDDO
-!  ENDDO
-!  END IF
-!  ELSE
-!  IF( ite == ide ) THEN
-!  DO j =j_start, j_end
-!  DO k =1, ktf
-!  zx(ide,k,j) =rdx*(phb(ide,k,j)-phb(ide-1,k,j))/g
-
-!  ENDDO
-!  ENDDO
-!  DO j =j_start, j_end
-!  DO k =1, ktf
-!  Tmpv001 =ph(ide,k,j) -ph(ide-1,k,j)
-!  Tmpv002 =rdx*Tmpv001
-!  Tmpv003 =Tmpv002/g
-!  Tmpv004 =zx(ide,k,j) +Tmpv003
-!  zx(ide,k,j) =Tmpv004
-
-!  ENDDO
-!  ENDDO
-!  END IF
-!  IF( its == ids ) THEN
-!  DO j =j_start, j_end
-!  DO k =1, ktf
-!  zx(ids,k,j) =rdx*(phb(ids,k,j)-phb(ids-1,k,j))/g
-
-!  ENDDO
-!  ENDDO
-!  DO j =j_start, j_end
-!  DO k =1, ktf
-!  Tmpv001 =ph(ids,k,j) -ph(ids-1,k,j)
-!  Tmpv002 =rdx*Tmpv001
-!  Tmpv003 =Tmpv002/g
-!  Tmpv004 =zx(ids,k,j) +Tmpv003
-!  zx(ids,k,j) =Tmpv004
-
-!  ENDDO
-!  ENDDO
-!  END IF
-!  END IF
-
-   IF( .NOT. config_flags%periodic_x ) THEN
-
-   IF( its == ids ) THEN
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, 1, -1
-   a_zx(ids,k,j) =0.0
-   ENDDO
-   ENDDO
-
-   END IF
-
-   IF( ite == ide ) THEN
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, 1, -1
-   a_zx(ide,k,j) =0.0
-   ENDDO
-   ENDDO
-
-   END IF
-
-   ELSE
-
-   IF( its == ids ) THEN
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, 1, -1
-   a_Tmpv4 =a_zx(ids,k,j)
-   a_zx(ids,k,j) =0.0
-   a_zx(ids,k,j) =a_zx(ids,k,j) +a_Tmpv4
-   a_Tmpv3 =a_Tmpv4
-   a_Tmpv2 =a_Tmpv3/g
-   a_Tmpv1 =rdx*a_Tmpv2
-   a_ph(ids,k,j) =a_ph(ids,k,j) +a_Tmpv1
-   a_ph(ids-1,k,j) =a_ph(ids-1,k,j) -a_Tmpv1
-   ENDDO
-   ENDDO
-   DO j =j_end, j_start, -1
-   DO k =ktf, 1, -1
-   a_zx(ids,k,j) =0.0
-   ENDDO
-   ENDDO
-
-   END IF
-
-   IF( ite == ide ) THEN
-
-   DO j =j_end, j_start, -1
-   DO k =ktf, 1, -1
-   a_zx(ide,k,j) =0.0
-   ENDDO
-   ENDDO
-   DO j =j_end, j_start, -1
-   DO k =ktf, 1, -1
-   a_Tmpv4 =a_zx(ide,k,j)
-   a_zx(ide,k,j) =0.0
-   a_zx(ide,k,j) =a_zx(ide,k,j) +a_Tmpv4
-   a_Tmpv3 =a_Tmpv4
-   a_Tmpv2 =a_Tmpv3/g
-   a_Tmpv1 =rdx*a_Tmpv2
-   a_ph(ide,k,j) =a_ph(ide,k,j) +a_Tmpv1
-   a_ph(ide-1,k,j) =a_ph(ide-1,k,j) -a_Tmpv1
-   ENDDO
-   ENDDO
-
-   END IF
-
-   END IF
-
-!LPB[7]
-
-!LPB[6]
-   DO j =j_end, max(jds+1, jts), -1
-
-!  DO k =1, kte
-!  DO i =i_start, i_end
-!  Tmpv001 =ph(i,k,j) -ph(i,k,j-1)
-!  Tmpv002 =rdy*Tmpv001
-!  Tmpv003 =Tmpv002/g
-!  Tmpv004 =zy(i,k,j) +Tmpv003
-!  zy(i,k,j) =Tmpv004
-
-!  ENDDO
-!  ENDDO
-
-   DO k =kte, 1, -1
-   DO i =i_end, i_start, -1
-   a_Tmpv4 =a_zy(i,k,j)
-   a_zy(i,k,j) =0.0
-   a_zy(i,k,j) =a_zy(i,k,j) +a_Tmpv4
-   a_Tmpv3 =a_Tmpv4
-   a_Tmpv2 =a_Tmpv3/g
-   a_Tmpv1 =rdy*a_Tmpv2
-   a_ph(i,k,j) =a_ph(i,k,j) +a_Tmpv1
-   a_ph(i,k,j-1) =a_ph(i,k,j-1) -a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ENDDO
-
-!LPB[5]
-   DO j =j_end, max(jds+1, jts), -1
-
-!  DO k =1, kte
-!  DO i =i_start, i_end
-!  zy(i,k,j) =rdy*(phb(i,k,j)-phb(i,k,j-1))/g
-
-!  ENDDO
-!  ENDDO
-
-   DO k =kte, 1, -1
-   DO i =i_end, i_start, -1
-   a_zy(i,k,j) =0.0
-   ENDDO
-   ENDDO
-
-   ENDDO
-
-!LPB[4]
-   DO j =j_end, j_start, -1
-
-!  DO k =1, kte
-!  DO i =max(ids+1, its), i_end
-!  Tmpv001 =ph(i,k,j) -ph(i-1,k,j)
-!  Tmpv002 =rdx*Tmpv001
-!  Tmpv003 =Tmpv002/g
-!  Tmpv004 =zx(i,k,j) +Tmpv003
-!  zx(i,k,j) =Tmpv004
-
-!  ENDDO
-!  ENDDO
-
-   DO k =kte, 1, -1
-   DO i =i_end, max(ids+1, its), -1
-   a_Tmpv4 =a_zx(i,k,j)
-   a_zx(i,k,j) =0.0
-   a_zx(i,k,j) =a_zx(i,k,j) +a_Tmpv4
-   a_Tmpv3 =a_Tmpv4
-   a_Tmpv2 =a_Tmpv3/g
-   a_Tmpv1 =rdx*a_Tmpv2
-   a_ph(i,k,j) =a_ph(i,k,j) +a_Tmpv1
-   a_ph(i-1,k,j) =a_ph(i-1,k,j) -a_Tmpv1
-   ENDDO
-   ENDDO
-
-   ENDDO
-
-!LPB[3]
-   DO j =j_end, j_start, -1
-
-!  DO k =1, kte
-!  DO i =max(ids+1, its), i_end
-!  zx(i,k,j) =rdx*(phb(i,k,j)-phb(i-1,k,j))/g
-
-!  ENDDO
-!  ENDDO
-
-   DO k =kte, 1, -1
-   DO i =i_end, max(ids+1, its), -1
-   a_zx(i,k,j) =0.0
-   ENDDO
-   ENDDO
-
-   ENDDO
-
-!LPB[2]
-!  i_start =its
-!  i_end =min(ite, ide-1)
-!  j_start =jts
-!  j_end =min(jte, jde-1)
-
-!ADDED BY WALLS, BIG ERRORS
-!FROM LPB[0]
-   ktf = MIN( kte, kde-1 )
-   j_start = jts-1
-   j_end   = jte
-
-!LPB[1]
-   DO j =j_end, j_start, -1
-
-   IF( ( j_start >= jts ) .AND. ( j_end <= MIN( jte, jde-1 ) ) ) THEN
-   i_start =its-1
-   i_end =ite
-   ELSE
-   i_start =its
-   i_end =min(ite, ide-1)
-   END IF
-   DO k =1, kte
-   DO i =i_start, i_end
-   z(i,k,j) =(ph(i,k,j) +phb(i,k,j))/g
-
-   ENDDO
-   ENDDO
-   DO k =1, ktf
-   DO i =i_start, i_end
-   Tmpv001 =z(i,k+1,j) -z(i,k,j)
-   Tmpv002 =1.0/Tmpv001
-   rdzw(i,k,j) =Tmpv002
-   ENDDO
-   ENDDO
-   DO k =2, ktf
-   DO i =i_start, i_end
-   Tmpv001 =z(i,k+1,j) -z(i,k-1,j)
-   Tmpv002 =2.0/Tmpv001
-   rdz(i,k,j) =Tmpv002
-   ENDDO
-   ENDDO
-   DO i =i_start, i_end
-   Tmpv001 =z(i,2,j) -z(i,1,j)
-   Tmpv002 =2./Tmpv001
-   rdz(i,1,j) =Tmpv002
-   ENDDO
-
-!THE SEQUENCES OF ALL THE FOLLOWING STRUCTURES ARE CHANGED IN REVERSE BY WALLS
-!REVISED BY WALLS
-
-   DO i =i_end, i_start, -1
-!ADDED BY WALLS
-Tmpv001 =z(i,2,j) -z(i,1,j)
-
-   a_Tmpv2 =a_rdz(i,1,j)
-   a_rdz(i,1,j) =0.0
-   a_Tmpv1 =-(2.)*a_Tmpv2/(Tmpv001*Tmpv001)
-   a_z(i,2,j) =a_z(i,2,j) +a_Tmpv1
-   a_z(i,1,j) =a_z(i,1,j) -a_Tmpv1
-   ENDDO
-
-   DO k =ktf, 2, -1
-   DO i =i_end, i_start, -1
-!BIG ERRORS, ADDED BY WALLS
-!BIG ERRORS, ADDED BY WALLS
-!BIG ERRORS, ADDED BY WALLS
-Tmpv001 =z(i,k+1,j) -z(i,k-1,j)
-
-   a_Tmpv2 =a_rdz(i,k,j)
-   a_rdz(i,k,j) =0.0
-   a_Tmpv1 =-(2.0)*a_Tmpv2/(Tmpv001*Tmpv001)
-   a_z(i,k+1,j) =a_z(i,k+1,j) +a_Tmpv1
-   a_z(i,k-1,j) =a_z(i,k-1,j) -a_Tmpv1
-   ENDDO
-   ENDDO
-
-   DO k =ktf, 1, -1
-   DO i =i_end, i_start, -1
-!BIG ERRORS, ADDED BY WALLS
-!BIG ERRORS, ADDED BY WALLS
-!BIG ERRORS, ADDED BY WALLS
-Tmpv001 =z(i,k+1,j) -z(i,k,j)
-
-   a_Tmpv2 =a_rdzw(i,k,j)
-   a_rdzw(i,k,j) =0.0
-   a_Tmpv1 =-(1.0)*a_Tmpv2/(Tmpv001*Tmpv001)
-   a_z(i,k+1,j) =a_z(i,k+1,j) +a_Tmpv1
-   a_z(i,k,j) =a_z(i,k,j) -a_Tmpv1
-   ENDDO
-   ENDDO
-
-   DO k =kte, 1, -1
-   DO i =i_end, i_start, -1
-   a_ph(i,k,j) =a_ph(i,k,j) +1.0/g*a_z(i,k,j)
-   a_z(i,k,j) =0.0
-   ENDDO
-   ENDDO
-
-   IF( ( j_start >= jts ) .AND. ( j_end <= MIN( jte, jde-1 ) ) ) THEN
-
-   ELSE
-
-   END IF
-
-   ENDDO
-
-!LPB[0]
-!  ktf =min(kte, kde-1)
-!  j_start =jts-1
-!  j_end =jte
-
-   END SUBROUTINE a_compute_diff_metrics
+!        Generated by TAPENADE     (INRIA, Tropics team)
+!  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35
+!
+!  Differentiation of compute_diff_metrics in reverse (adjoint) mode:
+!   gradient     of useful results: zx zy z rdzw rdz ph
+!   with respect to varying inputs: zx zy z rdzw rdz ph
+!   RW status of diff variables: zx:in-out zy:in-out z:in-out rdzw:in-out
+!                rdz:in-out ph:incr
+SUBROUTINE A_COMPUTE_DIFF_METRICS(config_flags, ph, phb0, phb, z, zb, &
+&  rdz, rdzb, rdzw, rdzwb, zx, zxb, zy, zyb, rdx, rdy, ids, ide, jds, jde&
+&  , kds, kde, ims, ime, jms, jme, kms, kme, its, ite, jts, jte, kts, kte&
+&)
+  IMPLICIT NONE
+  TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: ph, phb
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: phb0
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: rdz, rdzw, zx, zy, z
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: rdzb, rdzwb, zxb, zyb, &
+&  zb
+  REAL, INTENT(IN) :: rdx, rdy
+! Local variables.
+  REAL, DIMENSION(its - 1:ite, kts:kte, jts - 1:jte) :: z_at_w
+  REAL, DIMENSION(its-1:ite, kts:kte, jts-1:jte) :: z_at_wb
+  INTEGER :: i, j, k, i_start, i_end, j_start, j_end, ktf
+  INTEGER :: ad_from
+  INTEGER :: ad_to
+  INTEGER :: ad_from0
+  INTEGER :: ad_to0
+  INTEGER :: ad_from1
+  INTEGER :: ad_to1
+  INTEGER :: ad_from2
+  INTEGER :: ad_to2
+  INTEGER :: ad_from3
+  INTEGER :: ad_to3
+  INTEGER :: ad_from4
+  INTEGER :: ad_from5
+  INTEGER :: branch
+  REAL :: temp1
+  REAL :: temp0
+  INTEGER :: min1
+  REAL :: temp0b
+  REAL :: temp2b5
+  REAL :: temp2b4
+  REAL :: temp2b3
+  REAL :: temp2b2
+  REAL :: temp2b1
+  REAL :: temp2b0
+  REAL :: tempb
+  REAL :: temp2b
+  REAL :: temp1b
+  INTEGER :: max4
+  REAL :: temp
+  INTEGER :: max3
+  INTEGER :: max2
+  INTEGER :: max1
+  IF (kte .GT. kde - 1) THEN
+    ktf = kde - 1
+  ELSE
+    ktf = kte
+  END IF
+! Bug fix, WCS, 22 april 2002.
+! We need rdzw in halo for average to u and v points.
+  j_start = jts - 1
+  j_end = jte
+  ad_from3 = j_start
+! Begin with dz computations.
+  DO j=ad_from3,j_end
+    IF (jte .GT. jde - 1) THEN
+      min1 = jde - 1
+    ELSE
+      min1 = jte
+    END IF
+    IF (j_start .GE. jts .AND. j_end .LE. min1) THEN
+      i_start = its - 1
+      i_end = ite
+    ELSE
+      i_start = its
+      IF (ite .GT. ide - 1) THEN
+        i_end = ide - 1
+      ELSE
+        i_end = ite
+      END IF
+    END IF
+! Compute z at w points for rdz and rdzw computations.  We'll switch z
+! to z at p points before returning
+    DO k=1,kte
+      ad_from = i_start
+! Bug fix, WCS, 22 april 2002
+      DO i=ad_from,i_end
+        z_at_w(i, k, j) = (ph(i, k, j)+phb(i, k, j))/g
+      END DO
+      CALL PUSHINTEGER4(i - 1)
+      CALL PUSHINTEGER4(ad_from)
+    END DO
+    DO k=1,ktf
+      ad_from0 = i_start
+      i = i_end + 1
+      CALL PUSHINTEGER4(i - 1)
+      CALL PUSHINTEGER4(ad_from0)
+    END DO
+    DO k=2,ktf
+      ad_from1 = i_start
+      i = i_end + 1
+      CALL PUSHINTEGER4(i - 1)
+      CALL PUSHINTEGER4(ad_from1)
+    END DO
+    ad_from2 = i_start
+! Bug fix, WCS, 22 april 2002; added the following code
+    i = i_end + 1
+    CALL PUSHINTEGER4(i - 1)
+    CALL PUSHINTEGER4(ad_from2)
+  END DO
+  CALL PUSHINTEGER4(j - 1)
+  CALL PUSHINTEGER4(ad_from3)
+! End bug fix.
+! Now compute zx and zy; we'll assume that the halo for ph and phb is
+! properly filled.
+  i_start = its
+  IF (ite .GT. ide - 1) THEN
+    i_end = ide - 1
+  ELSE
+    i_end = ite
+  END IF
+  j_start = jts
+  IF (jte .GT. jde - 1) THEN
+    j_end = jde - 1
+  ELSE
+    j_end = jte
+  END IF
+  DO j=j_start,j_end
+    DO k=1,kte
+      IF (ids + 1 .LT. its) THEN
+        max1 = its
+      ELSE
+        max1 = ids + 1
+      END IF
+      ad_from4 = max1
+      i = i_end + 1
+      CALL PUSHINTEGER4(ad_from4)
+    END DO
+  END DO
+  DO j=j_start,j_end
+    DO k=1,kte
+      IF (ids + 1 .LT. its) THEN
+        max2 = its
+      ELSE
+        max2 = ids + 1
+      END IF
+      ad_from5 = max2
+      i = i_end + 1
+      CALL PUSHINTEGER4(ad_from5)
+    END DO
+  END DO
+  IF (jds + 1 .LT. jts) THEN
+    max3 = jts
+  ELSE
+    max3 = jds + 1
+  END IF
+  DO j=max3,j_end
+    DO k=1,kte
+      i = i_end + 1
+    END DO
+  END DO
+  IF (jds + 1 .LT. jts) THEN
+    max4 = jts
+  ELSE
+    max4 = jds + 1
+  END IF
+  DO j=max4,j_end
+    DO k=1,kte
+      i = i_end + 1
+    END DO
+  END DO
+! Some b.c. on zx and zy.
+  IF (.NOT.config_flags%periodic_x) THEN
+    IF (ite .EQ. ide) THEN
+      CALL PUSHCONTROL1B(0)
+    ELSE
+      CALL PUSHCONTROL1B(1)
+    END IF
+    IF (its .EQ. ids) THEN
+      CALL PUSHCONTROL2B(0)
+    ELSE
+      CALL PUSHCONTROL2B(1)
+    END IF
+  ELSE
+    IF (ite .EQ. ide) THEN
+      CALL PUSHCONTROL1B(0)
+    ELSE
+      CALL PUSHCONTROL1B(1)
+    END IF
+    IF (its .EQ. ids) THEN
+      CALL PUSHCONTROL2B(2)
+    ELSE
+      CALL PUSHCONTROL2B(3)
+    END IF
+  END IF
+  IF (.NOT.config_flags%periodic_y) THEN
+    IF (jte .EQ. jde) THEN
+      CALL PUSHCONTROL1B(0)
+    ELSE
+      CALL PUSHCONTROL1B(1)
+    END IF
+    IF (jts .EQ. jds) THEN
+      CALL PUSHCONTROL2B(3)
+    ELSE
+      CALL PUSHCONTROL2B(2)
+    END IF
+  ELSE
+    IF (jte .EQ. jde) THEN
+      CALL PUSHCONTROL1B(0)
+    ELSE
+      CALL PUSHCONTROL1B(1)
+    END IF
+    IF (jts .EQ. jds) THEN
+      CALL PUSHCONTROL2B(1)
+    ELSE
+      CALL PUSHCONTROL2B(0)
+    END IF
+  END IF
+! Calculate z at p points.
+  DO j=j_start,j_end
+    DO k=1,ktf
+      CALL PUSHINTEGER4(i)
+    END DO
+  END DO
+  DO j=j_end,j_start,-1
+    DO k=ktf,1,-1
+      DO i=i_end,i_start,-1
+        temp2b5 = 0.5*zb(i, k, j)/g
+        phb0(i, k, j) = phb0(i, k, j) + temp2b5
+        phb0(i, k+1, j) = phb0(i, k+1, j) + temp2b5
+        zb(i, k, j) = 0.0
+      END DO
+      CALL POPINTEGER4(i)
+    END DO
+  END DO
+  CALL POPCONTROL2B(branch)
+  IF (branch .LT. 2) THEN
+    IF (branch .NE. 0) THEN
+      DO j=j_end,j_start,-1
+        DO k=ktf,1,-1
+          temp2b4 = rdy*zyb(i, k, jds)/g
+          phb0(i, k, jds) = phb0(i, k, jds) + temp2b4
+          phb0(i, k, jds-1) = phb0(i, k, jds-1) - temp2b4
+        END DO
+      END DO
+      DO j=j_end,j_start,-1
+        DO k=ktf,1,-1
+          zyb(i, k, jds) = 0.0
+        END DO
+      END DO
+    END IF
+    CALL POPCONTROL1B(branch)
+    IF (branch .EQ. 0) THEN
+      DO j=j_end,j_start,-1
+        DO k=ktf,1,-1
+          temp2b3 = rdy*zyb(i, k, jde)/g
+          phb0(i, k, jde) = phb0(i, k, jde) + temp2b3
+          phb0(i, k, jde-1) = phb0(i, k, jde-1) - temp2b3
+        END DO
+      END DO
+      DO j=j_end,j_start,-1
+        DO k=ktf,1,-1
+          zyb(i, k, jde) = 0.0
+        END DO
+      END DO
+    END IF
+  ELSE
+    IF (branch .NE. 2) THEN
+      DO k=ktf,1,-1
+        DO i=i_end,i_start,-1
+          zyb(i, k, jds) = 0.0
+        END DO
+      END DO
+    END IF
+    CALL POPCONTROL1B(branch)
+    IF (branch .EQ. 0) THEN
+      DO k=ktf,1,-1
+        DO i=i_end,i_start,-1
+          zyb(i, k, jde) = 0.0
+        END DO
+      END DO
+    END IF
+  END IF
+  CALL POPCONTROL2B(branch)
+  IF (branch .LT. 2) THEN
+    IF (branch .EQ. 0) THEN
+      DO j=j_end,j_start,-1
+        DO k=ktf,1,-1
+          zxb(ids, k, j) = 0.0
+        END DO
+      END DO
+    END IF
+    CALL POPCONTROL1B(branch)
+    IF (branch .EQ. 0) THEN
+      DO j=j_end,j_start,-1
+        DO k=ktf,1,-1
+          zxb(ide, k, j) = 0.0
+        END DO
+      END DO
+    END IF
+  ELSE
+    IF (branch .EQ. 2) THEN
+      DO j=j_end,j_start,-1
+        DO k=ktf,1,-1
+          temp2b2 = rdx*zxb(ids, k, j)/g
+          phb0(ids, k, j) = phb0(ids, k, j) + temp2b2
+          phb0(ids-1, k, j) = phb0(ids-1, k, j) - temp2b2
+        END DO
+      END DO
+      DO j=j_end,j_start,-1
+        DO k=ktf,1,-1
+          zxb(ids, k, j) = 0.0
+        END DO
+      END DO
+    END IF
+    CALL POPCONTROL1B(branch)
+    IF (branch .EQ. 0) THEN
+      DO j=j_end,j_start,-1
+        DO k=ktf,1,-1
+          temp2b1 = rdx*zxb(ide, k, j)/g
+          phb0(ide, k, j) = phb0(ide, k, j) + temp2b1
+          phb0(ide-1, k, j) = phb0(ide-1, k, j) - temp2b1
+        END DO
+      END DO
+      DO j=j_end,j_start,-1
+        DO k=ktf,1,-1
+          zxb(ide, k, j) = 0.0
+        END DO
+      END DO
+    END IF
+  END IF
+  DO j=j_end,max4,-1
+    DO k=kte,1,-1
+      DO i=i_end,i_start,-1
+        temp2b0 = rdy*zyb(i, k, j)/g
+        phb0(i, k, j) = phb0(i, k, j) + temp2b0
+        phb0(i, k, j-1) = phb0(i, k, j-1) - temp2b0
+      END DO
+    END DO
+  END DO
+  DO j=j_end,max3,-1
+    DO k=kte,1,-1
+      DO i=i_end,i_start,-1
+        zyb(i, k, j) = 0.0
+      END DO
+    END DO
+  END DO
+  DO j=j_end,j_start,-1
+    DO k=kte,1,-1
+      CALL POPINTEGER4(ad_from5)
+      DO i=i_end,ad_from5,-1
+        temp2b = rdx*zxb(i, k, j)/g
+        phb0(i, k, j) = phb0(i, k, j) + temp2b
+        phb0(i-1, k, j) = phb0(i-1, k, j) - temp2b
+      END DO
+    END DO
+  END DO
+  DO j=j_end,j_start,-1
+    DO k=kte,1,-1
+      CALL POPINTEGER4(ad_from4)
+      DO i=i_end,ad_from4,-1
+        zxb(i, k, j) = 0.0
+      END DO
+    END DO
+  END DO
+  z_at_wb = 0.0
+  CALL POPINTEGER4(ad_from3)
+  CALL POPINTEGER4(ad_to3)
+  DO j=ad_to3,ad_from3,-1
+    CALL POPINTEGER4(ad_from2)
+    CALL POPINTEGER4(ad_to2)
+    DO i=ad_to2,ad_from2,-1
+      temp1 = z_at_w(i, 2, j) - z_at_w(i, 1, j)
+      temp1b = -(2.*rdzb(i, 1, j)/temp1**2)
+      z_at_wb(i, 2, j) = z_at_wb(i, 2, j) + temp1b
+      z_at_wb(i, 1, j) = z_at_wb(i, 1, j) - temp1b
+      rdzb(i, 1, j) = 0.0
+    END DO
+    DO k=ktf,2,-1
+      CALL POPINTEGER4(ad_from1)
+      CALL POPINTEGER4(ad_to1)
+      DO i=ad_to1,ad_from1,-1
+        temp0 = z_at_w(i, k+1, j) - z_at_w(i, k-1, j)
+        temp0b = -(2.0*rdzb(i, k, j)/temp0**2)
+        z_at_wb(i, k+1, j) = z_at_wb(i, k+1, j) + temp0b
+        z_at_wb(i, k-1, j) = z_at_wb(i, k-1, j) - temp0b
+        rdzb(i, k, j) = 0.0
+      END DO
+    END DO
+    DO k=ktf,1,-1
+      CALL POPINTEGER4(ad_from0)
+      CALL POPINTEGER4(ad_to0)
+      DO i=ad_to0,ad_from0,-1
+        temp = z_at_w(i, k+1, j) - z_at_w(i, k, j)
+        tempb = -(rdzwb(i, k, j)/temp**2)
+        z_at_wb(i, k+1, j) = z_at_wb(i, k+1, j) + tempb
+        z_at_wb(i, k, j) = z_at_wb(i, k, j) - tempb
+        rdzwb(i, k, j) = 0.0
+      END DO
+    END DO
+    DO k=kte,1,-1
+      CALL POPINTEGER4(ad_from)
+      CALL POPINTEGER4(ad_to)
+      DO i=ad_to,ad_from,-1
+        phb0(i, k, j) = phb0(i, k, j) + z_at_wb(i, k, j)/g
+        z_at_wb(i, k, j) = 0.0
+      END DO
+    END DO
+  END DO
+END SUBROUTINE A_COMPUTE_DIFF_METRICS
 
    SUBROUTINE a_horizontal_diffusion_2(rt_tendf,a_rt_tendf,ru_tendf,a_ru_tendf, &
    rv_tendf,a_rv_tendf,rw_tendf,a_rw_tendf,tke_tendf,a_tke_tendf,moist_tendf, &

@@ -25,7 +25,7 @@ subroutine da_check_max_iv_buoy(iv,ob, it, num_qcstat_conv)
    !---------------------------------------------------------------------------
 
       do n=iv%info(buoy)%n1,iv%info(buoy)%n2
-         if(standard)then
+         if(.not. qc_rej_both)then
             if(var_wind)then
                failed=.false.
                if( iv%buoy(n)%u%qc >= obs_qc_pointer ) then

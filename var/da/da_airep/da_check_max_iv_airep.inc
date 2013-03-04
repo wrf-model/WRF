@@ -25,7 +25,7 @@ subroutine da_check_max_iv_airep(iv, it, num_qcstat_conv)
       do k = 1, iv%info(airep)%levels(n)
          call da_get_print_lvl(iv%airep(n)%p(k),ipr)
 
-         if(standard)then
+         if(.not. qc_rej_both)then
              if(var_wind)then
                failed=.false.
                if( iv%airep(n)%u(k)%qc >= obs_qc_pointer ) then

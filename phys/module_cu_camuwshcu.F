@@ -5062,7 +5062,7 @@ end subroutine uwshcu_readnl
 
     xflx(0:mkx) = 0._r8
     dp = ps0(kinv-1) - ps0(kinv) 
-    
+#ifndef WRF_PORT    
     if( abs(xbotin-xtopin) .le. 1.e-13_r8 ) then
         xbot = xbotin - 1.e-13_r8
         xtop = xtopin + 1.e-13_r8
@@ -5070,13 +5070,22 @@ end subroutine uwshcu_readnl
         xbot = xbotin
         xtop = xtopin
     endif
+#else
+    xbot = xbotin
+    xtop = xtopin
+#endif
     ! -------------------------------------- !
     ! Compute reconstructed inversion height !
     ! -------------------------------------- !
     xtop_ori = xtop
     xbot_ori = xbot
     rcbmf = ( cbmf * g * dt ) / dp                  ! Can be larger than 1 : 'OK'      
+#ifndef WRF_PORT
     rpeff = ( xmean - xtop ) / ( xbot - xtop ) 
+#else
+    rpeff = ( xmean - xtop ) / max(1.e-13_r8, (xbot - xtop) ) 
+    rpeff = abs(rpeff)
+#endif
     rpeff = min( max(0._r8,rpeff), 1._r8 )          ! As of this, 0<= rpeff <= 1   
     if( rpeff .eq. 0._r8 .or. rpeff .eq. 1._r8 ) then
         xbot = xmean

@@ -88,6 +88,7 @@ dimspec    tr      -     namelist=track_rad_num            c     track_rad_num
 dimspec    tt      -     namelist=track_tuv_num            c     track_tuv_num
 dimspec    tz      -     namelist=track_tuv_lev            c     track_tuv_lev
 dimspec   nmode    4     namelist=cam_mam_mode             c     cam_mam_mode
+dimspec   nspecmam 4     namelist=cam_mam_nspec            c     cam_mam_nspec
 endif
 dimspec    tl      -     namelist=track_loc_in             c     track_loc_in
 

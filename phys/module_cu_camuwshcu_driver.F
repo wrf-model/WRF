@@ -4,6 +4,20 @@ MODULE module_cu_camuwshcu_driver
 ! Roughly based on convect_shallow_tend in convect_shallow.F90 from CAM
 ! but tailored for the UW shallow cumulus scheme.
 
+  !-------------------------------------------
+  !Future modifications and important warnings (BSINGH:02/01/2013- Notes from WIG):
+  !===========================================
+  !1. UWShCu is hard-wired for certain moisture variables that could cause trouble 
+  !   depending on which MP is used 
+  !2. Mixing for rain, snow, and graupel moist vars is commented out. 
+  !   For other MP routines that treat this prognostically, we need to implement 
+  !   ShCu mixing of these (and other possible) moist species.
+  !3. Fractional occurrence of shallow convection is currently not calculated.
+  !-------------------------------------------
+
+
+
+
   IMPLICIT NONE
 
   PRIVATE                  !Default to private
@@ -20,7 +34,10 @@ SUBROUTINE camuwshcu_driver(                                  &
              ,num_moist, dt                                   &
              ,p, p8w, pi_phy, z, z_at_w, dz8w                 &
              ,t_phy, u_phy, v_phy                             &
-             ,moist, qv, qc, qi                               &
+             ,moist, qv, qc, qi, qnc, qni                     &
+#ifdef WRF_CHEM
+             ,chem, chem_opt                                  &
+#endif
              ,pblh_in, tke_pbl8w, cldfra, cldfra_old          &
              ,cldfra_old_mp,cldfra_conv, is_CAMMGMP_used      &
              ,cldfrash                                        &
@@ -43,10 +60,19 @@ SUBROUTINE camuwshcu_driver(                                  &
   USE module_state_description, only: param_first_scalar, &
                                       p_qc, p_qr, p_qi, p_qs, p_qg, p_qnc, p_qni
   USE module_cam_support,       only: pcols, pver, pcnst =>pcnst_runtime
+#ifdef WRF_CHEM
+  USE module_cam_support,       only:  cam_mam_aerosols
+#endif
   USE constituents,             only: cnst_get_ind
   USE physconst,                only: latice,cpair, gravit, latvap
   USE uwshcu,                   only: compute_uwshcu_inv
   USE wv_saturation,            only: fqsatd
+#ifdef WRF_CHEM
+  use module_state_description,  only: num_chem, param_first_scalar,CBMZ_CAM_MAM3_NOAQ, &
+       CBMZ_CAM_MAM3_AQ,CBMZ_CAM_MAM7_NOAQ,CBMZ_CAM_MAM7_AQ
+  use module_data_cam_mam_asect, only: lptr_chem_to_q, factconv_chem_to_q
+  use module_mp_cammgmp_driver,  only: physics_update, physics_ptend_init
+#endif
 
 ! Subroutine arguments...
   LOGICAL, INTENT(IN) :: is_CAMMGMP_used
@@ -54,9 +80,16 @@ SUBROUTINE camuwshcu_driver(                                  &
                                ims,ime, jms,jme, kms,kme,  &
                                its,ite, jts,jte, kts,kte,  &
                                num_moist,itimestep
+#ifdef WRF_CHEM
+  INTEGER, INTENT(IN   ) ::    chem_opt
+#endif
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ), INTENT(IN) :: &
                               moist    !moist tracer array
+#ifdef WRF_CHEM
+  REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ), INTENT(INOUT) :: &
+                              chem    !moist tracer array
+#endif
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) :: &
                              cldfra, & !cloud fraction
@@ -77,7 +110,9 @@ SUBROUTINE camuwshcu_driver(                                  &
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN), OPTIONAL :: &
                                  qc, & !cloud droplet mixing ratio (kg/kg-dry air)
-                                 qi    !cloud ice crystal mixing ratio (kg/kg-dry air)
+                                 qi, & !cloud ice crystal mixing ratio (kg/kg-dry air)
+                                qnc, & !cloud water  number concentration (#/kg)
+                                qni    !cloud ice number concentration (#/kg)
 
   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: &
                             pblh_in, & !height of PBL (m)
@@ -138,7 +173,6 @@ SUBROUTINE camuwshcu_driver(                                  &
                               qtflx, & !convective total water flux (~units?)
                             flxprec, & ! Shallow convective-scale flux of precip (rain+snow) at interfaces [ kg/m2/s ]
                             flxsnow, & ! Shallow convective-scale flux of snow at interfaces [ kg/m2/s ]
-!BSINGH - CMFMC should be declared for staggered grid
                             cmfmc2     !cloud fraction
 
                                                             
@@ -148,8 +182,6 @@ SUBROUTINE camuwshcu_driver(                                  &
                                cld8, & !cloud fraction
                             cldold8, & !previous time step cloud fraction ~should this be just the convective part?
                              cmfdqs, & !convective snow production (~units?)
-!BSINGH - CMFMC should be declared for staggered grid
-!                             cmfmc2, & !cloud fraction
                             evapcsh, & !evaporation of shallow convection precipitation >= 0. (kg/kg/s)
                            iccmr_uw, & !in-cloud cumulus LWC+IWC (kg/m2)
                            icwmr_uw, & !in-cloud cumulus LWC (kg/m2)
@@ -199,12 +231,30 @@ SUBROUTINE camuwshcu_driver(                                  &
   INTEGER :: lchnk         !chunk identifier, used to map 2-D to 1-D arrays in WRF
   INTEGER :: ncnst         !number of tracers
   INTEGER :: ncol          !number of atmospheric columns in chunk
-  CHARACTER(LEN=250) :: msg
+  CHARACTER(LEN=1000) :: msg
+
+  character*24 :: ptend_name            !ptend%name in CAM5 - used in parameterization
+  logical      :: ptend_ls              !ptend%ls   in CAM5 - used for calling physics_update subroutine
+  logical      :: ptend_lq(pcnst)       !ptend%lq   in CAM5
+
+  integer :: l, l2
+  real(r8) :: state_s(pcols,kte)
+  real(r8) :: ptend_s(pcols,kte)                   !Dummy arguments for physics_update call
+
+#ifdef WRF_CHEM
+  !BSINGH:02/01/2013: Sanity check for Non-MAM simulations
+  if(.NOT.cam_mam_aerosols .AND. chem_opt .NE. 0) then
+     write(msg,*)'CAMUWSHACU DRIVER - camuwshcu_driver is valid for only MAM aerosols ', &
+          '(chem_opts:',CBMZ_CAM_MAM3_NOAQ,CBMZ_CAM_MAM3_AQ,CBMZ_CAM_MAM7_NOAQ,CBMZ_CAM_MAM7_AQ ,')'
+     call wrf_error_fatal( msg )
+  endif
+#endif
+
+
 !
 ! Initialize...
 !
-  ncol  = 1           !chunk size in WRF is 1 since we loop over all columns in a tile
-!  ncnst = num_moist-1 !currently we only handle the moist array for tracers
+  ncol  = 1     !chunk size in WRF is 1 since we loop over all columns in a tile
   ncnst = pcnst !Balwinder.Singh@pnnl.gov
   ztodt = dt
 !
@@ -257,23 +307,8 @@ SUBROUTINE camuwshcu_driver(                                  &
            s8(1,kflip)      = cpair*t8(1,kflip) + gravit*(z(i,k,j)-ht(i,j))
            u8(1,kflip)      = u_phy(i,k,j)
            v8(1,kflip)      = v_phy(i,k,j)
-           zm8(1,kflip)     = z(i,k,j)-ht(i,j)!dz8w(i,k,j) !Balwinder.Singh@pnnl.gov: Corrected zm8 computation
+           zm8(1,kflip)     = z(i,k,j)-ht(i,j)
         end do
-
-        !TKE in CAM is on the interfaces but in WRF it is on the layer
-        !middle. We will interpolate the TKE from the to the interfaces
-        !and then just use the lowest TKE for the surface and the highest
-        !TKE at the top.
-
-        !BSINGH - TKE_PBL8W is the TKE at the interfaces, so following code for
-        !interpolation is commented out
-        
-        !tke8(1,kte+1) = tke_pbl(i,1,j)    !surface
-        !tke8(1,1)     = tke_pbl(i,kte,j)  !model top interface
-        !do k = kts,kte-1
-        !   kflip = kte-k+1
-        !   tke8(1,kflip) = 0.5*(tke_pbl(i,k,j) + tke_pbl(i,k+1,j))
-        !end do
 
         !BSINGH - TKE at the interfaces
         do k = kts, kte+1
@@ -287,30 +322,33 @@ SUBROUTINE camuwshcu_driver(                                  &
         !convert to wet instead of dry mixing ratios.
         do k = kts,kte
            kflip = kte-k+1
-!!$           do m = 1,ncnst
-!!$              moist8(1,kflip,m) = moist(i,k,j,m+1)/(1. + qv(i,k,j))
-!!$           end do
 
-!~For now, send replicate part of the tracer array and send zeros for the
-! rest since CAM treats condensate diagnostically compared to WRF that is
-! prognostic. This avoids issues with hard-wired assumptions in the UW
-! ShCu scheme. This should be looked at again when more time is available.
-! Set to zero for most then overwrite as needed...
            moist8(1,kflip,1:ncnst) = 0.
 
-           moist8(1,kflip,1) = qv(i,k,j)/(1. + qv(i,k,j))
+           moist8(1,kflip,1) = max(0.0_r8,qv(i,k,j)/(1. + qv(i,k,j)))
 
            call cnst_get_ind( 'CLDLIQ', m )
-           moist8(1,kflip,m) = qc(i,k,j)/(1. + qv(i,k,j))
+           moist8(1,kflip,m) = max(0.0_r8,qc(i,k,j)/(1. + qv(i,k,j)))
 
            call cnst_get_ind( 'CLDICE', m )
-           moist8(1,kflip,m) = qi(i,k,j)/(1. + qv(i,k,j))
+           moist8(1,kflip,m) = max(0.0_r8,qi(i,k,j)/(1. + qv(i,k,j)))
 
            call cnst_get_ind( 'NUMLIQ', m )
-           moist8(1,kflip,m) = 0.
+           moist8(1,kflip,m) = max(0.0_r8,qnc(i,k,j)/(1. + qv(i,k,j)))
 
            call cnst_get_ind( 'NUMICE', m )
-           moist8(1,kflip,m) = 0.
+           moist8(1,kflip,m) = max(0.0_r8,qni(i,k,j)/(1. + qv(i,k,j)))
+
+#ifdef WRF_CHEM
+           !Following Do-Loop is obtained from chem/module_cam_mam_aerchem_driver.F 
+           do l = param_first_scalar, num_chem
+              l2 = lptr_chem_to_q(l)
+              if ((l2 >= 1) .and. (l2 <= pcnst)) then
+                 moist8(1,kflip,l2) = max(0.0_r8,chem(i,k,j,l)*factconv_chem_to_q(l))
+              end if
+           end do ! l             
+#endif           
+
         end do
 
         !Some remapping to get arrays to pass into the routine
@@ -383,37 +421,42 @@ SUBROUTINE camuwshcu_driver(                                  &
                 rqcshten(i,k,j) = (qctnd(1,kflip)+qcten_det(1,kflip))/(1. - qv(i,k,j))
            if( p_qi >= param_first_scalar ) &
                 rqishten(i,k,j) = (qitnd(1,kflip)+qiten_det(1,kflip))/(1. - qv(i,k,j))
-!PMA needs Balwinder to add number tendencies
-           if( p_qnc >= param_first_scalar ) &
-                rqcnshten(i,k,j) = qcnten_det(1,kflip)
-           if( p_qni >= param_first_scalar ) &
-                rqinshten(i,k,j) = qinten_det(1,kflip)
 
+           if( p_qnc >= param_first_scalar ) then
+              call cnst_get_ind( 'NUMLIQ', m )
+              rqcnshten(i,k,j) = (tnd_tracer(1,kflip,m)+qcnten_det(1,kflip))/(1. - qv(i,k,j))
+           endif
+           if( p_qni >= param_first_scalar ) then
+              call cnst_get_ind( 'NUMICE', m )
+              rqinshten(i,k,j) = (tnd_tracer(1,kflip,m)+qinten_det(1,kflip))/(1. - qv(i,k,j))
+           endif
+        end do !k-loop to kte              
 !PMA<
+           
+#ifdef WRF_CHEM
+           !BSINGH - update moist8 by physics update call
+           !Update chem array and state constituents
+           !populate state_s, ptend_s, ptend_ls with dummy values (zeros) for physics update call
+           state_s(:,:)  = 0.0_r8
+           ptend_s(:,:)  = 0.0_r8
+           ptend_ls      = .FALSE.
+           ptend_lq(:)   = .TRUE.
+           ptend_lq(1:5) = .FALSE.
+           ptend_name    = 'convect_shallow'
 
-!~Turn off tendencies for most condensates since CAM treats them diagnostically.
-!           !Tendencies of tracers except qv,qc,qi
-!!~need to make sure qg tendency is propagated through to application
-!           do m = 4,ncnst
-!              mp1 = m+1 !shift to p_ value for the tracer
-!              if( mp1==p_qr ) then
-!                 rqrshten(i,k,j) = tnd_tracer(1,kflip,m)/(1. - qv(i,k,j))
-!              else if( mp1==p_qs ) then
-!                 rqsshten(i,k,j) = tnd_tracer(1,kflip,m)/(1. - qv(i,k,j))
-!              else if( mp1==p_qg ) then
-!                 rqgshten(i,k,j) = tnd_tracer(1,kflip,m)/(1. - qv(i,k,j))
-!              else
-!                 write(msg,'(a,i3)') "WARNING: UW shallow Cu cannot handle tracer ",m
-!                 call wrf_debug(100, msg)
-!              end if
-!           end do
+        
+           call physics_update(lchnk,ztodt,moist8,tnd_tracer,state_s,ptend_s,ptend_name,ptend_lq,ptend_ls,pcnst)
+           do k = kts,kte
+              kflip = kte-k+1
+              do l = param_first_scalar, num_chem
+                 l2 = lptr_chem_to_q(l)
+                 if ((l2 >= 1) .and. (l2 <= pcnst)) then
+                    chem(i,k,j,l) = moist8(1,kflip,l2)/factconv_chem_to_q(l)
+                 end if
+              end do ! l
+           end do !k-loop to kte              
+#endif          
 
-           !Combine shallow and deep cumulus updraft mass flux
-           !BSINGH - Following quantities should be stored at interfaces
-           !cmfmc2_inout(i,k,j) = cmfmc2(1,kflip)
-           !cmfmc(i,k,j)        = cmfmc(i,k,j) + cmfmc2(1,kflip)
-
-        end do !k-loop to kte
 
         do k = kts,kte+1
            kflip = kte-k+2

@@ -1108,6 +1108,7 @@ contains
        
        modeptr_accum_mp         = modeptr_accum
        modeptr_coarse_mp        = modeptr_coarse
+       modeptr_coardust_mp      = modeptr_coardust !BSINGH - declared for MAM7 complaince
        modeptr_aitken_mp        = modeptr_aitken
 
        numptrcw_amode_mp(:)     = numptrcw_amode(:)

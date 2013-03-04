@@ -25,7 +25,7 @@ subroutine da_check_max_iv_polaramv(iv,it,num_qcstat_conv)
    do n = iv%info(polaramv)%n1,iv%info(polaramv)%n2
       do k = 1, iv%info(polaramv)%levels(n)
         call da_get_print_lvl(iv%polaramv(n)%p(k),ipr)
-         if(standard)then
+         if(.not. qc_rej_both)then
              if(var_wind)then
                failed=.false.
                if( iv%polaramv(n)%u(k)%qc >= obs_qc_pointer ) then

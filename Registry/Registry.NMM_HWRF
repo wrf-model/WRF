@@ -934,6 +934,9 @@ rconfig   integer opt_snf     namelist,noah_mp      1            1         h    
 rconfig   integer opt_tbot    namelist,noah_mp      1            2         h    "opt_tbot" "lower boundary of soil temperature (1->zero-flux; 2->Noah)"   ""
 rconfig   integer opt_stc     namelist,noah_mp      1            1         h    "opt_stc"  "soil/snow temperature time scheme 1->semi-implicit; 2->full-implicit (original Noah)"   ""
 
+# For WRF Hydro
+rconfig   integer wrf_hydro               derived              1     0      h     "wrf_hydro"   "descrip"  "unit"
+
 # For Noah UA changes
 state    real   flx4            ij         -        1         -      h        "FLX4"         "sensible heat from canopy"              "W m{-2}"
 state    real   fvb             ij         -        1         -      h        "FVB"          "fraction of vegetation with snow below" ""
@@ -1585,6 +1588,11 @@ package ltng_none           lightning_option==0            -       -
 package ltng_crm_PR92w      lightning_option==1            -       -
 package ltng_crm_PR92z      lightning_option==2            -       -
 package ltng_cpm_PR92z      lightning_option==11           -       -
+
+#WRF Hydro
+package   no_wrfhydro    wrf_hydro==0                -            -
+package   wrfhydro       wrf_hydro==1                -            state:SOLDRAIN, SFCHEADRT, INFXSRT
+
 
 ## communications                                               
 

@@ -1,5 +1,6 @@
 #define WRF_PORT
 #define MODAL_AERO
+#include "../chem/MODAL_AERO_CPP_DEFINES.h"
 ! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
 module microp_aero
 
@@ -406,7 +407,8 @@ subroutine ini_microp_aero
    use modal_aero_data, only:numptr_amode => numptr_amode_mp, modeptr_accum => modeptr_accum_mp, &
         modeptr_coarse    => modeptr_coarse_mp   , modeptr_aitken    => modeptr_aitken_mp, &
         lptr_dust_a_amode => lptr_dust_a_amode_mp, lptr_nacl_a_amode => lptr_nacl_a_amode_mp, &
-        ntot_amode        => ntot_amode_mp
+        ntot_amode        => ntot_amode_mp, modeptr_coardust => modeptr_coardust_mp  !BSINGH - Added modeptr_coarsedust for MAM7 compliance
+     
 #endif
 #endif
 
@@ -768,22 +770,28 @@ subroutine ini_microp_aero
          if (t(i,k).lt.269.15_r8) then
 
 #ifdef MODAL_AERO
-
+!BSINGH - Following #if added for MAM7 compliance
+#ifdef MODAL_AERO_7MODE 
+             nacon(i,k,3)=qaer(i,k,numptr_amode(modeptr_coardust))*rho(i,k)
+             rndst(i,k,3)=0.5_r8*dgnumwet(i,k,modeptr_coardust)
+#elif ( defined MODAL_AERO_3MODE )
 ! For modal aerosols:
 !  use size '3' for dust coarse mode...
 !  scale by dust fraction in coarse mode
+               dmc= qaer(i,k,lptr_dust_a_amode(modeptr_coarse))
+               ssmc=qaer(i,k,lptr_nacl_a_amode(modeptr_coarse))
+               if (dmc.gt.0.0_r8) then
+                  nacon(i,k,3)=dmc/(ssmc+dmc) * qaer(i,k,numptr_amode(modeptr_coarse))*rho(i,k) !*tcnt
+               else 
+                  nacon(i,k,3)=0._r8
+               endif
+               
+               !also redefine parameters based on size...
+               
+               rndst(i,k,3)=0.5_r8*dgnumwet(i,k,modeptr_coarse)
 
-           dmc= qaer(i,k,lptr_dust_a_amode(modeptr_coarse))
-           ssmc=qaer(i,k,lptr_nacl_a_amode(modeptr_coarse))
-           if (dmc.gt.0.0_r8) then
-              nacon(i,k,3)=dmc/(ssmc+dmc) * qaer(i,k,numptr_amode(modeptr_coarse))*rho(i,k) !*tcnt
-           else 
-              nacon(i,k,3)=0._r8
-           endif
-
-!also redefine parameters based on size...
-
-           rndst(i,k,3)=0.5_r8*dgnumwet(i,k,modeptr_coarse)
+!BSINGH - Following #endif added for MAM7 compliance
+# endif 
            if (rndst(i,k,3).le.0._r8) then 
               rndst(i,k,3)=rn_dst3
            endif
@@ -1021,7 +1029,9 @@ end subroutine microp_aero_ts
       do m=1,nmode
 !         internal mixture of aerosols
           volc(m)=ma(m)/(rhodry(m)) ! only if variable size dist
-         if(volc(m).gt.1.e-39.and.na(m).gt.1.e-39)then
+! pjj/cray - use TINY intrinsic
+!        if(volc(m).gt.1.e-39.and.na(m).gt.1.e-39)then
+         if(volc(m).gt. TINY(volc) .and.na(m).gt. TINY(na))then
             etafactor2(m)=1./(na(m)*beta*sqrtg)  !fixed or variable size dist
 !            number mode radius (m)
             amcubeloc(m)=(3.*volc(m)/(4.*pi*exp45logsig(m)*na(m)))  ! only if variable size dist
@@ -1158,7 +1168,8 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
       use modal_aero_data, only:numptr_amode => numptr_amode_mp, modeptr_accum => modeptr_accum_mp, &
            modeptr_coarse    => modeptr_coarse_mp   , modeptr_aitken    => modeptr_aitken_mp, &
            ntot_amode        => ntot_amode_mp       , sigmag_amode      => sigmag_amode_mp,   &
-           lptr_dust_a_amode => lptr_dust_a_amode_mp, lptr_nacl_a_amode => lptr_nacl_a_amode_mp 
+           lptr_dust_a_amode => lptr_dust_a_amode_mp, lptr_nacl_a_amode => lptr_nacl_a_amode_mp, &
+           modeptr_coardust => modeptr_coardust_mp  !BSINGH - Added modeptr_coarsedust for MAM7 compliance
       use module_cam_support, only: pcnst =>pcnst_mp
 #endif
 #endif
@@ -1225,6 +1236,10 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
 
 #ifdef MODAL_AERO
       soot_num = qaerpt(numptr_amode(modeptr_accum))*1.0e-6_r8 !#/cm^3
+!BSINGH - Following #if added for MAM7 compliance
+#ifdef MODAL_AERO_7MODE
+      dst_num=qaerpt(numptr_amode(modeptr_coardust))*1.0e-6_r8 !#/cm^3
+#elif ( defined MODAL_AERO_3MODE )
       dmc= qaerpt(lptr_dust_a_amode(modeptr_coarse))
       ssmc=qaerpt(lptr_nacl_a_amode(modeptr_coarse))
       if (dmc.gt.0._r8) then
@@ -1232,6 +1247,8 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
       else 
          dst_num=0.0_r8
       endif
+!BSINGH - Following #endif added for MAM7 compliance
+#endif
       if (dgnum(modeptr_aitken) .gt. 0._r8  ) then
          so4_num  = qaerpt(numptr_amode(modeptr_aitken))*1.0e-6_r8 & !#/cm^3, only allow so4 with D>0.1 um in ice nucleation
                * (0.5_r8 - 0.5_r8*erf(log(0.1e-6_r8/dgnum(modeptr_aitken))/  &
@@ -1493,7 +1510,9 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
 
       function derf(x)
       implicit real (a - h, o - z)
-      real(r8) a,b,x
+! pjj/cray function type
+!     real(r8) a,b,x
+      real(r8) a,b,x,derf
       dimension a(0 : 64), b(0 : 64)
       integer i,k
       data (a(i), i = 0, 12) / & 

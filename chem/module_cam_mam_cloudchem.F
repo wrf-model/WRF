@@ -47,7 +47,7 @@ contains
        moist, scalar, p8w, prain3d, p_phy,       &
        t_phy, dtstepc, ktau,alt, f_ice_phy,      &
        f_rain_phy,cldfra, cldfra_mp_all,         &
-       cldfrai, cldfral, config_flags,           & 
+       cldfrai, cldfral, is_CAMMGMP_used,        & 
        ids,ide, jds,jde, kds,kde,                &
        ims,ime, jms,jme, kms,kme,                &
        its,ite, jts,jte, kts,kte                 )
@@ -59,7 +59,7 @@ contains
     use module_configure,          only: grid_config_rec_type
     use module_state_description,  only: num_moist, num_chem, p_qv, p_qc,    &
          p_qi, p_qs, p_qnc, p_qni, param_first_scalar, num_scalar, f_qc,     &
-         f_qi,  f_qv, f_qs ,CAMMGMPSCHEME
+         f_qi,  f_qv, f_qs 
     use module_cam_support,        only: pcnst =>pcnst_runtime, pcols, pver, &
          pcnst_non_chem => pcnst_non_chem_modal_aero, nfs,                   &
          gas_pcnst => gas_pcnst_modal_aero,                                  &
@@ -76,8 +76,7 @@ contains
     !
     implicit none
 
-    TYPE(grid_config_rec_type),  INTENT(IN) :: config_flags
-
+    logical, intent(in) :: is_CAMMGMP_used
     !Scalar Intent-ins
     integer, intent(in) :: ktau       !Time step number
     integer, intent(in) ::          &
@@ -236,7 +235,7 @@ contains
              end do ! l
 
              prain(1,kflip)        = prain3d(iw,kw,jw)                      !Rate of conversion of condensate to precipitation (kg/kg/s)
-             if(config_flags%mp_physics == CAMMGMPSCHEME) then
+             if(is_CAMMGMP_used) then
                 cldfr(1,kflip)        = cldfral(iw,kw,jw)                       !Cloud fraction from CAMMGMP
              else
                 cldfr(1,kflip)        = cldfra(iw,kw,jw)                        !Cloud fraction

@@ -11761,6 +11761,7 @@ CONTAINS
                else
                   DO K=kts,kte
                      CLDFRA1D(k) = CLDFRA_MP_ALL(I,K,J) !PMA
+                     if (CLDFRA1D(k) .lt. 0.01) CLDFRA1D(k) = 0.
                   ENDDO
                end if
             endif

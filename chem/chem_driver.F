@@ -61,7 +61,10 @@
   USE module_upper_bc_driver, only: upper_bc_driver
   USE module_tropopause,      only: tropopause_driver
   USE modal_aero_data, only: ntot_amode_cam_mam => ntot_amode
-  USE module_cam_support, only: gas_pcnst => gas_pcnst_modal_aero,gas_pcnst_pos => gas_pcnst_modal_aero_pos
+  USE module_cam_support, only: gas_pcnst => gas_pcnst_modal_aero,gas_pcnst_pos => gas_pcnst_modal_aero_pos, &
+       pcnst =>pcnst_runtime, numgas_mam, cam_mam_aerosols
+  USE module_cu_camzm_driver, only: zm_conv_tend_2
+  USE module_cam_mam_gas_wetdep_driver, only: cam_mam_gas_wetdep_driver
 
   IMPLICIT NONE
 
@@ -225,11 +228,7 @@
 
       REAL :: chem_minval, dtstepc
 
-      INTEGER :: numgas_aqfrac    ! last dimension of gas_aqfrac
-      REAL, ALLOCATABLE, DIMENSION(:,:,:,:) :: gas_aqfrac
-                                      ! fraction of gas that is in cloud water
-      !REAL, DIMENSION( grid%sm31:grid%em31, grid%sm32:grid%em32, grid%sm33:grid%em33, ntot_amode_cam_mam ) :: & !Balwinder.Singh@pnnl.gov: dgnum and dgnumwet are now Registry variables (as 
-      !   dgnum, dgnumwet, wetdens_ap  ! modal diameters and wet densities for cam_mam packages                  !dgnum4d and dgnumwet4d respectively)They are needed for the CAMMGMP microphysics scheme
+      REAL, DIMENSION(grid%sm31:grid%em31, grid%sm32:grid%em32, grid%sm33:grid%em33, numgas_mam) :: gas_aqfrac ! fraction of gas that is in cloud water
       
       REAL, DIMENSION( grid%sm31:grid%em31, grid%sm32:grid%em32, grid%sm33:grid%em33, ntot_amode_cam_mam ) :: &
          wetdens_ap  ! modal diameters and wet densities for cam_mam packages
@@ -241,9 +240,8 @@
       !to gasaerexch subroutine in cam_mam_aerchem_driver
       REAL, DIMENSION( grid%sm31:grid%em31, grid%sm32:grid%em32, grid%sm33:grid%em33,gas_pcnst_pos) :: dvmrdt_sv13d,dvmrcwdt_sv13d 
 
-      LOGICAL :: cam_mam_aerosols
-
       LOGICAL :: haveaer
+      CHARACTER (LEN=1000) :: msg !BSINGH:01/31/2013: For message string
       CHARACTER (LEN=256) :: current_date_char !shc
       integer :: current_month                 !shc
 ! ..
@@ -440,7 +438,6 @@
   num_3d_c        = num_chem
   num_3d_s        = num_scalar
   numgas          = get_last_gas(config_flags%chem_opt)
-  numgas_aqfrac   = 0    !will be set upon allocation of gas_aqfrac
 
 
 
@@ -630,9 +627,16 @@
       grid%dgnum4d(:,:,:,:) = 0.0 !Balwinder.Singh@pnnl: dgnum is now defined in Registry as dgnum4d
       grid%dgnumwet4d(:,:,:,:) = 0.0 !Balwinder.Singh@pnnl: dgnumwet is now defined in Registry as dgnumwet4d
       wetdens_ap(:,:,:,:) = 0.0
-      cam_mam_aerosols = .true.
-   else
-      cam_mam_aerosols = .false.
+      !BSINGH: 01/31/2013: Sanity check for numgas_mam
+      if(numgas_mam < numgas) then
+         write(msg,*)'CHEM_DRIVER - NUMGAS_MAM is should be equal to numgas (check chemics_init.F), numgas_mam=',numgas_mam,' and numgas=',numgas
+         call wrf_error_fatal( msg )
+      endif
+      !BSINGH:02/01/2013 - Sanity check for cam_mam_aerols, it should be true (updated in module_cam_mam_init.F)
+      if(.NOT.cam_mam_aerosols) then
+         write(msg,*)'CHEM_DRIVER - cam_mam_aerosol should be TRUE (check module_physics_init.F), module_cam_mam_aerosol=',cam_mam_aerosols
+         call wrf_error_fatal(msg)
+      endif
    end if
 
 !
@@ -1128,6 +1132,7 @@
                  grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,grid%dep_vel_o3,     &
                  emis_ant(ims,kms,jms,p_e_co),config_flags%kemit,                     &
                  config_flags%sf_urban_physics,numgas,current_month,dvel,grid%snowh,  &
+                 grid%is_CAMMGMP_used,                                                & !BSINGH:01/31/2013: Added is_CAMMGMP_used for MAM drydep
                  ids,ide, jds,jde, kds,kde,                                           &
                  ims,ime, jms,jme, kms,kme,                                           &
                  its,ite,jts,jte,kts,kte)
@@ -1419,20 +1424,45 @@ CALL kpp_mechanism_driver (chem,                                                
 if ( cam_mam_aerosols ) &
            del_h2so4_gasprod(:,:,:) = chem(:,:,:,p_sulf) - del_h2so4_gasprod(:,:,:)
 
-!   allocate gas_aqfrac if either cldchem or wetscav is on
+! initialize gas_aqfrac if either cldchem or wetscav is on
         if ( (config_flags%cldchem_onoff > 0) .or.                                    &
              (config_flags%wetscav_onoff > 0) ) then
-            numgas_aqfrac = max( numgas, 1 )
-#if  (NMM_CORE==1)
-            allocate( gas_aqfrac( grid%sm31:grid%em31, grid%sm33:grid%em33,           &
-                                  grid%sm32:grid%em32, numgas_aqfrac ) )
-#endif
-#if  (EM_CORE==1)
-            allocate( gas_aqfrac( grid%sm31:grid%em31, grid%sm32:grid%em32,           &
-                                  grid%sm33:grid%em33, numgas_aqfrac ) )
-#endif
             gas_aqfrac(its:ite,kts:kte,jts:jte,:) = 0.0
         end if
+        
+        !BSINGH -  The following call is for wet deposition of gases for MAM
+        !aerosol model ONLY. In other WRF aerosol models wet deposition of gasses
+        !is handled after dry deposition. This call doesn't belong here as there should 
+        !be a formal driver for gas wet deposition and this call should be called
+        !from that driver (something for future mods)
+
+        !**IMPORTANT-WARNING**: We are going to operate on only 6 gases (following MOSAIC -
+        !module_mosaic_wetscav.F). MOSAIC actually operates upon 7 gases but MAM
+        !doesn't have msa, therefore MAM will operate on only 6 gases        
+        !so2,h2o2,h2so4,hno3,hcl,nh3 (msa not included)
+        
+        !For adding more gasses, look into phys/module_cam_support.F
+        if (((config_flags%chem_opt == CBMZ_CAM_MAM3_NOAQ) .or. &
+             (config_flags%chem_opt == CBMZ_CAM_MAM3_AQ  ) .or. &
+             (config_flags%chem_opt == CBMZ_CAM_MAM7_NOAQ) .or. &
+             (config_flags%chem_opt == CBMZ_CAM_MAM7_AQ  )).and. &
+             (config_flags%cu_physics == CAMZMSCHEME)) then
+           !BSINGH - Wetdep for gases (MAM only)
+           
+           call cam_mam_gas_wetdep_driver(                &
+                !Intent in-outs
+                chem,                                     &
+                !Intent ins
+                dtstepc, config_flags, grid%ht,grid%XLAT, &
+                grid%nevapr3d, grid%rprdsh,               &
+                grid%rprddp3d, grid%prain3d, grid%z,      & 
+                p_phy, t_phy, grid%alt, moist, scalar,    &
+                ids,ide, jds,jde, kds,kde,                &
+                ims,ime, jms,jme, kms,kme,                &
+                its,ite, jts,jte, kts,kte                 )
+           
+        endif
+        
 
 !
 !   now do cloud chemistry
@@ -1442,7 +1472,7 @@ if ( cam_mam_aerosols ) &
         call cloudchem_driver(                                                        &
                grid%id, ktau, grid%ktauc, grid%dt, dtstepc, config_flags,             &
                t_phy, p_phy, rho, rri, dz8w,                                          &
-               p8w,grid%prain3d,scalar,dvmrdt_sv13d,dvmrcwdt_sv13d, grid%f_ice_phy,   & !Balwinder.Singh@pnnl.gov: Variables required for CAM-MAM cloud chemistry
+               p8w,grid%prain3d,scalar,grid%dvmrdt_sv13d,grid%dvmrcwdt_sv13d, grid%f_ice_phy,   & !Balwinder.Singh@pnnl.gov: Variables required for CAM-MAM cloud chemistry
                grid%f_rain_phy,grid%cldfrai, grid%cldfral,                            &
 #if (NMM_CORE == 1)
                moist_trans, grid%cldfra, grid%ph_no2,                                 &
@@ -1450,7 +1480,7 @@ if ( cam_mam_aerosols ) &
 #if (EM_CORE == 1)
                moist, grid%cldfra, grid%cldfra_mp_all, grid%ph_no2,                   &
 #endif
-               chem, gas_aqfrac, numgas_aqfrac,                                       &
+               chem, gas_aqfrac, numgas_mam,grid%is_CAMMGMP_used,                     &!BSINGH:01/31/2013: Added is_CAMMGMP_used for CAM_MAM_cloudchem
                ids,ide, jds,jde, kds,kde,                                             &
                ims,ime, jms,jme, kms,kme,                                             &
                its,ite, jts,jte, kts,kte                                              )
@@ -1477,7 +1507,8 @@ if ( cam_mam_aerosols ) &
               grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,   &
               grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,vcsulf_old,             &
               vdrog3,vdrog3_vbs,grid%br_rto,grid%dgnum4d,grid%dgnumwet4d,wetdens_ap,  &
-              del_h2so4_gasprod,dvmrdt_sv13d,dvmrcwdt_sv13d,                          &
+              del_h2so4_gasprod,grid%dvmrdt_sv13d,grid%dvmrcwdt_sv13d,                &
+              grid%is_CAMMGMP_used,                                                   &!BSINGH:01/31/2013: Added is_CAMMGMP_used for cam_mam_aerchem_driver
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &
               its,ite,jts,jte,kts,kte                                                 )
@@ -1517,7 +1548,7 @@ if ( cam_mam_aerosols ) &
               p_phy,chem,rho,grid%cldfra,grid%cldfra2,                                &
               grid%rainprod,grid%evapprod,grid%hno3_col_mdel,                         &
               grid%qlsink,grid%precr,grid%preci,grid%precs,grid%precg,                &
-              gas_aqfrac, numgas_aqfrac,dz8w,                                         &
+              gas_aqfrac, numgas_mam,dz8w,                                         &
               grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,                      &
               grid%asulf,grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,                &
               grid%cvalk1,grid%cvole1,grid%cvapi1,grid%cvapi2,                        &
@@ -1531,7 +1562,7 @@ if ( cam_mam_aerosols ) &
               grid%shfrc3d,grid%cmfmc,grid%cmfmc2,grid%evapcsh,grid%icwmrsh,          &
               grid%rprdsh,grid%evapcdp3d,grid%icwmrdp3d,grid%rprddp3d,grid%fracis3d,  &               
               grid%f_ice_phy,grid%f_rain_phy,grid%cldfrai,grid%cldfral,               &
-              grid%cldfra_mp_all,                                                     &
+              grid%cldfra_mp_all,grid%is_CAMMGMP_used,                                &
 !======================================================================================
               ids,ide, jds,jde, kds,kde,                                              &
               ims,ime, jms,jme, kms,kme,                                              &
@@ -1539,10 +1570,21 @@ if ( cam_mam_aerosols ) &
        
        endif
 
-       if (numgas_aqfrac > 0) then
-           deallocate( gas_aqfrac )
-           numgas_aqfrac = 0
-       end if
+       !BSINGH - zm_conv_tend_2 call HAS to be called after wetscavenging call as it uses 'fracis3d'
+       !variable from wetscav driver.
+       if (((config_flags%chem_opt == CBMZ_CAM_MAM3_NOAQ) .or. &
+            (config_flags%chem_opt == CBMZ_CAM_MAM3_AQ  ) .or. &
+            (config_flags%chem_opt == CBMZ_CAM_MAM7_NOAQ) .or. &
+            (config_flags%chem_opt == CBMZ_CAM_MAM7_AQ  )).and. &
+            (config_flags%cu_physics == CAMZMSCHEME)) then
+          !BSINGH - CALL ZM cumulus scheme for convective transport of the aerosols
+          call zm_conv_tend_2(grid%itimestep, grid%dt, p8w, grid%fracis3d, grid%dp3d,    &
+               grid%du3d, grid%ed3d, grid%eu3d, grid%md3d, grid%mu3d, grid%dsubcld2d,    &
+               grid%ideep2d, grid%jt2d, grid%maxg2d, grid%lengath2d, moist, scalar, chem,&
+               ids,ide, jds,jde, kds,kde, &
+               ims,ime, jms,jme, kms,kme, &
+               its,ite, jts,jte, kts,kte)     
+       endif
 
 end if !Chemistry time step check
 !

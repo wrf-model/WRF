@@ -734,7 +734,7 @@ CONTAINS
              rqvblten(i,k,j)   = cloudtnd(1,kflip,1       ) * multFrc
              rqcblten(i,k,j)   = cloudtnd(1,kflip,ixcldliq) * multFrc
              rqiblten(i,k,j)   = cloudtnd(1,kflip,ixcldice) * multFrc
-             !*Important* : ixnumliq is mixed in the dropmixnuc, therefore ixnumliq is NOT mixed here
+             !*Important* : ixnumliq is mixed in the dropmixnuc, therefore ixnumliq is NOT mixed here (ONLY if CAMMGMP is used for mp_physics)
              rqniblten(i,k,j)  = cloudtnd(1,kflip,ixnumice) * multFrc
 
              !TKE at the midpoints
@@ -853,7 +853,7 @@ CONTAINS
  
  !-----------------------------------------------------------------------------------------   
   subroutine camuwpblinit(rublten,rvblten,rthblten,rqvblten, &
-       restart,tke_pbl,                                      &
+       restart,tke_pbl,is_CAMMGMP_used,                      &
        ids,ide,jds,jde,kds,kde,                              &
        ims,ime,jms,jme,kms,kme,                              &
        its,ite,jts,jte,kts,kte)
@@ -885,7 +885,7 @@ CONTAINS
     !-------------------------------------------------------------------------------------!
     !Input and output variables                                                           !
     !-------------------------------------------------------------------------------------!
-    logical,intent(in) :: restart
+    logical,intent(in) :: restart,is_CAMMGMP_used 
     integer,intent(in) :: ids,ide,jds,jde,kds,kde
     integer,intent(in) :: ims,ime,jms,jme,kms,kme
     integer,intent(in) :: its,ite,jts,jte,kts,kte
@@ -1022,7 +1022,13 @@ CONTAINS
        
 #ifdef MODAL_AERO
        !! Do not diffuse droplet number - treated in dropmixnuc
-       if( k == ixndrop ) cycle
+
+       !BSINGH:01/31/2013: The following if condition is modified from its original form[which is:if( k == ixndrop ) cycle]
+       !to allow the PBL scheme to mix liquid number when CAMMGMP scheme is not being used
+
+       if(is_CAMMGMP_used) then!BSINGH:01/31/2013: Modified this if cond. see comment above
+          if( k == ixndrop ) cycle 
+       endif
        !BSINGH-08/31/2012: In WRF, Physics init is called before chem init therefore
        !aerosol species are not yet added. Following condition, skip all other constituents
        !(which will be added in chem init) except first five (vapor, cld liq, cld ice, liq num and ice num)

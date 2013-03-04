@@ -204,6 +204,7 @@ module_sf_gfdl.o : \
 module_cu_bmj.o: ../share/module_model_constants.o
 
 module_cu_camuwshcu_driver.o: module_cam_support.o \
+		module_mp_cammgmp_driver.o \
                 module_cam_physconst.o \
                 module_cam_wv_saturation.o \
                 module_cu_camuwshcu.o
@@ -219,6 +220,7 @@ module_cu_camzm_driver.o: ../share/module_model_constants.o \
                 module_cam_shr_kind_mod.o \
                 module_cam_support.o \
                 module_cam_physconst.o \
+		module_mp_cammgmp_driver.o \
                 module_bl_camuwpbl_driver.o \
                 module_cu_camzm.o
 

@@ -1402,29 +1402,6 @@ CONTAINS
 
    END SELECT pbl_select
 
-   IF (PRESENT(dtaux3d)) THEN
-       IF(gwd_opt .EQ. 1)THEN
-             CALL gwdo(                                              &
-               U3D=u_phytmp,V3D=v_phytmp,T3D=t_phy      &
-              ,QV3D=qv_curr                                         &
-              ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy,Z=z                        &
-              ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
-              ,DTAUX3D=dtaux3d,DTAUY3D=dtauy3d                      &
-              ,DUSFCG=dusfcg,DVSFCG=dvsfcg &
-              ,VAR2D=var2d,OC12D=oc12d     &
-              ,OA2D1=oa1,OA2D2=oa2,OA2D3=oa3,OA2D4=oa4  &
-              ,OL2D1=ol1,OL2D2=ol2,OL2D3=ol3,OL2D4=ol4  &
-              ,ZNU=znu,ZNW=znw,MUT=mut,P_TOP=p_top                  &
-              ,CP=cp,G=g,RD=r_d                           &
-              ,RV=r_v,EP1=ep_1,PI=3.141592653                        &
-              ,DT=dtbl,DX=dx,KPBL2D=kpbl,ITIMESTEP=itimestep      &
-              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
-              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
-              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )
-       ENDIF
-   ENDIF
-
-
 #if (NMM_CORE != 1)
 
      IF (idiff.eq.1) THEN

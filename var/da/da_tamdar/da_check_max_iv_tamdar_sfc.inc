@@ -26,7 +26,7 @@ subroutine da_check_max_iv_tamdar_sfc(iv,ob, it, num_qcstat_conv)
    !---------------------------------------------------------------------------
 
    do n=iv%info(tamdar_sfc)%n1,iv%info(tamdar_sfc)%n2
-         if(standard)then
+         if(.not. qc_rej_both)then
             if(var_wind)then
                failed=.false.
                if( iv%tamdar_sfc(n)%u%qc >= obs_qc_pointer ) then

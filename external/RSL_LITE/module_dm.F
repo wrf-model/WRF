@@ -225,7 +225,11 @@ CONTAINS
                                       sp3y , ep3y , sm3y , em3y , &
                                 bdx , bdy )
 
+#if ( defined(SGIALTIX) && (! defined(MOVE_NESTS) ) ) || ( defined(FUJITSU_FX10) && (! defined(MOVE_NESTS) ) )
       USE module_domain, ONLY : domain, head_grid, find_grid_by_id, alloc_space_field
+#else
+      USE module_domain, ONLY : domain, head_grid, find_grid_by_id
+#endif
 
       IMPLICIT NONE
       INTEGER, INTENT(IN)   :: sd1 , ed1 , sd2 , ed2 , sd3 , ed3 , bdx , bdy

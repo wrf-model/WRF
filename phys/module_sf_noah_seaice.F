@@ -192,6 +192,7 @@ CONTAINS
       REAL, PARAMETER :: LSUBS = 2.83E+6
       REAL, PARAMETER :: R = 287.04
 
+!$omp threadprivate(iloc, jloc)
       iloc = iiloc
       jloc = jjloc
 ! ----------------------------------------------------------------------

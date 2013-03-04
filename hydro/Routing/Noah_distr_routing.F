@@ -859,8 +859,8 @@
 
 !! Declare Passed variables
 
-        REAL, INTENT(IN) :: dt, gsize(xx,yy,9)
         INTEGER, INTENT(IN) :: XX,YY
+        REAL, INTENT(IN) :: dt, gsize(xx,yy,9)
 
 !! Declare passed arrays
 

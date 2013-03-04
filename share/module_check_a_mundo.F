@@ -41,7 +41,20 @@
 
       IMPLICIT NONE
 
+      LOGICAL :: exists
+      LOGICAL , EXTERNAL :: wrf_dm_on_monitor
       INTEGER :: i, oops
+
+!-----------------------------------------------------------------------
+! Set up the WRF Hydro namelist option to allow dynamic allocation of
+! variables.
+!-----------------------------------------------------------------------
+#ifdef WRF_HYDRO
+   model_config_rec % wrf_hydro = 1
+#else
+   model_config_rec % wrf_hydro = 0
+#endif
+
 
 !-----------------------------------------------------------------------
 ! Check that all values of sf_surface_physics are the same for all domains
@@ -444,6 +457,21 @@
        END DO
  
 !-----------------------------------------------------------------------
+! Test to see if we allocate space for the time series.
+!-----------------------------------------------------------------------
+
+      IF ( wrf_dm_on_monitor() ) THEN
+         CALL wrf_tsin_exist ( exists )
+         IF ( exists ) THEN
+            model_config_rec%process_time_series = 1
+         ELSE
+            model_config_rec%process_time_series = 0
+         END IF
+      END IF
+#ifdef DM_PARALLEL
+      CALL wrf_dm_bcast_integer(model_config_rec%process_time_series, 1)
+#endif
+!-----------------------------------------------------------------------
 ! The three Grell cumulus parameterization schemes need to have the 
 ! namelist flag cu_diag=1, and all other cumulus schemes must have
 ! cu_diag=0.
@@ -474,6 +502,28 @@
             CALL wrf_error_fatal ( TRIM(wrf_err_message) )
          END IF
       ENDDO      ! Loop over domains
+
+!-----------------------------------------------------------------------
+!  The CLM scheme may not even be compiled, so make sure it is not allowed
+!  to be run if the code is not available.
+!-----------------------------------------------------------------------
+
+#if !defined ( WRF_USE_CLM )
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%sf_surface_physics(i) .EQ. CLMSCHEME ) THEN
+            oops = oops + 1 
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: The CLM surface scheme was requested in the namelist.input file.'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         wrf_err_message = '--- ERROR: However, the WRF CLM scheme was not compiled in WRF.'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         wrf_err_message = '--- ERROR: Please place the -DWRF_USE_CLM option in configure.wrf file, and recompile.'
+         CALL wrf_error_fatal ( wrf_err_message )
+      END IF
+#endif
 
  
 !-----------------------------------------------------------------------

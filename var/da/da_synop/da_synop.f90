@@ -11,7 +11,7 @@ module da_synop
       max_stheight_diff,test_dm_exact, anal_type_verify, &
       kts,kte,kms,kme,sfc_assi_options_1,sfc_assi_options_2 , &
       trace_use_dull, synop, max_ext_its,qcstat_conv_unit,ob_vars, &
-      convert_fd2uv, convert_uv2fd, max_error_sp, max_error_dir, var_wind, max_omb_sp, max_omb_dir, pi, spscale_surf, dirscale_surf, standard 
+      convert_fd2uv, convert_uv2fd, max_error_sp, max_error_dir, var_wind, max_omb_sp, max_omb_dir, pi, spscale_surf, dirscale_surf, qc_rej_both 
    use da_grid_definitions, only : da_ffdduv, da_ffdduv2, da_cal_sd, da_uv_wind_adj, da_uv_wind_tgl
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type

@@ -26,7 +26,7 @@ subroutine da_check_max_iv_geoamv(iv, it, num_qcstat_conv)
       do k = 1, iv%info(geoamv)%levels(n)
          call da_get_print_lvl(iv%geoamv(n)%p(k),ipr)
 
-         if(standard)then
+         if(.not. qc_rej_both)then
             if(var_wind)then
                failed=.false.
                if( iv%geoamv(n)%u(k)%qc >= obs_qc_pointer ) then

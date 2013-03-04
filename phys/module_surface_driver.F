@@ -271,7 +271,9 @@ CONTAINS
    USE module_sf_noahdrv, only : lsm
    USE module_sf_noahmpdrv, only : noahmplsm
    USE module_sf_noah_seaice_drv
+#ifdef WRF_USE_CLM
    USE module_sf_clm
+#endif
    USE module_sf_ssib  ! ssib
    USE module_sf_ruclsm
    USE module_sf_pxsfclay
@@ -2714,6 +2716,7 @@ CONTAINS
        ELSE
          CALL wrf_error_fatal('Lacking arguments for P-X LSM in surface driver')
        ENDIF
+#ifdef WRF_USE_CLM
 !---------------------------------------------------------------------
 ! CLM coupling currently version 4 added by Yaqiong Lu and Jiming Jin
 
@@ -2948,6 +2951,7 @@ CONTAINS
 
 ! end of CLM scehme
 ! -------------------------------------------------------------------
+#endif
 
      CASE (SSIBSCHEME)
      IF(PRESENT(alswvisdir))THEN

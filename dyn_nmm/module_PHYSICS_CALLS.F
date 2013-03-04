@@ -189,6 +189,8 @@
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS
 !
       LOGICAL :: WARM_RAIN
+      LOGICAL :: IS_CAMMGMP_USED=.FALSE.
+
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -401,6 +403,7 @@
      &                 ,QI=MOIST_TRANS(IMS,KMS,JMS,P_QI),F_QI=F_QI      &
      &                 ,QS=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS      &
      &                 ,QG=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG      &
+     &                 ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
      &                 ,EXPLICIT_CONVECTION=config_flags%cu_physics==0)
 
 
@@ -896,6 +899,7 @@
       REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME) :: ZERO_SOIL
 !
       LOGICAL :: E_BDY,WARM_RAIN
+      LOGICAL :: IS_CAMMGMP_USED=.FALSE.
 !
       INTEGER :: NUM_ROOF_LAYERS,NUM_WALL_LAYERS,NUM_ROAD_LAYERS   ! urban
       INTEGER :: FRACTIONAL_SEAICE
@@ -1478,6 +1482,7 @@
      &               ,QS_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS &
      &               ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG &
      &               ,HOL=HOL,sf_sfclay_physics=CONFIG_FLAGS%SF_SFCLAY_PHYSICS &
+     &               ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
      &               ,sf_urban_physics=CONFIG_FLAGS%SF_URBAN_PHYSICS)
 !
 !***  NOTE THAT THE EXCHANGE COEFFICIENTS FOR HEAT EXCH_H COMING OUT OF
@@ -2142,6 +2147,7 @@
 #endif
 !
       LOGICAL,INTENT(IN) :: HYDRO,RESTRT
+      LOGICAL :: IS_CAMMGMP_USED=.FALSE.
 !
       TYPE(DOMAIN),TARGET :: GRID
 !
@@ -2528,6 +2534,7 @@
      &                 ,sas_mass_flux=config_flags%sas_mass_flux        &
      &                 ,shalconv=config_flags%sas_shal_conv             &
      &                 ,shal_pgcon=config_flags%sas_shal_pgcon          &
+     &                 ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
                   ! Selection argument
      &                 ,CU_PHYSICS=CONFIG_FLAGS%CU_PHYSICS              &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &

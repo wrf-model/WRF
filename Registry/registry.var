@@ -563,7 +563,7 @@ rconfig   logical   var4d                   namelist,wrfvar1  1  .false.  -  "va
 rconfig   integer   var4d_bin               namelist,wrfvar1  1  3600     -  "var4d_bin"               ""  ""
 rconfig   integer   var4d_bin_rain          namelist,wrfvar1  1  3600     -  "var4d_bin_rain"          ""  ""
 rconfig   logical   var4d_lbc               namelist,wrfvar1  1  .false.  -  "var4d_lbc"               ""  ""
-rconfig   integer   multi_inc               namelist,wrfvar1  1  0        -  "multi_incremental flag"  ""  ""
+rconfig   integer   multi_inc               namelist,wrfvar1  1  0        -  "multi_incremental_flag"  ""  ""
 rconfig   logical   print_detail_radar      namelist,wrfvar1  1  .false.  -  "print_detail_radar"      ""  ""
 rconfig   logical   print_detail_rain       namelist,wrfvar1  1  .false.  -  "print_detail_rain"       ""  ""
 rconfig   logical   print_detail_rad        namelist,wrfvar1  1  .false.  -  "print_detail_rad"        ""  ""
@@ -586,11 +586,7 @@ rconfig   logical   calc_w_increment        namelist,wrfvar2  1  .false.  -  "ca
 rconfig   logical   dt_cloud_model          namelist,wrfvar2  1  .false.  -  "dt_cloud_model"          ""  ""
 rconfig   logical   write_mod_filtered_obs  namelist,wrfvar2  1  .false.  -  "write_mod_filtered_obs"  ""  ""
 rconfig   logical   var_wind                namelist,wrfvar2  1  .false.  -  "var_wind"                ""  ""
-#wind DA
-rconfig   logical   standard                namelist,wrfvar2  1  .true.  -   "standard"                ""  ""
-#OMB check scheme
-rconfig   logical   project                 namelist,wrfvar2  1  .true.  -   "project"                 ""  ""
-#filter ob 4 verification
+rconfig   logical   qc_rej_both             namelist,wrfvar2  1  .true.  -   "qc_rej_both"             ""  ""
 rconfig   integer   fg_format               namelist,wrfvar3  1  1        - "fg_format"                ""  "1=WRF, 3=KMA"
 rconfig   integer   ob_format               namelist,wrfvar3  1  2        - "ob_format"                ""  "1=BUFR,2=ASCII"
 rconfig   integer   num_fgat_time           namelist,wrfvar3  1  1        - "num_fgat_time"            ""  ""
@@ -651,7 +647,7 @@ rconfig   real      max_error_t             namelist,wrfvar5  1   5.0     - "max
 rconfig   real      max_error_uv            namelist,wrfvar5  1   5.0     - "max_error_uv"             ""  ""
 rconfig   real      max_error_sp            namelist,wrfvar5  1   5.0     - "max_error_sp"             ""  ""
 rconfig   real      max_error_dir           namelist,wrfvar5  1   5.0     - "max_error_dir"            ""  ""
-rconfig   real      max_omb_sp              namelist,wrfvar5  1   15.0    - "max_omb_sp"               ""  ""
+rconfig   real      max_omb_sp              namelist,wrfvar5  1   14.0    - "max_omb_sp"               ""  ""
 rconfig   real      max_omb_dir             namelist,wrfvar5  1   135.0   - "max_omb_dir"              ""  ""
 rconfig   real      spscale_surf            namelist,wrfvar5  1   0.8     - "spscale_surf"             ""  ""
 rconfig   real      dirscale_surf           namelist,wrfvar5  1   1.2     - "dirscale_surf"            ""  ""

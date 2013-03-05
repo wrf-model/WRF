@@ -20,7 +20,8 @@ CONTAINS
                xland,ash_fall,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,       &
                anh3,cvaro1,cvaro2,   &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,dep_vel_o3,      &
-               e_co,kemit,sf_urban_physics,numgas,current_month,dvel,     &
+               emis_ant,ebu_in,                                           &
+               sf_urban_physics,numgas,current_month,dvel,                &
                snowh,is_CAMMGMP_used,                                     & !BSINGH:01/31/2013: Added is_CAMMGMP_used for MAM drydep
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
@@ -73,11 +74,11 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_tracer ),         &
          INTENT(INOUT ) ::                                 tracer
 
+   REAL, DIMENSION( ims:ime, 1:config_flags%kemit, jms:jme,num_emis_ant),&
+         INTENT(IN ) ::                                    emis_ant
 
-   INTEGER,      INTENT(IN   ) :: kemit
-   REAL, DIMENSION( ims:ime, kms:kemit, jms:jme ),            &
-         INTENT(IN ) ::                                                    &
-          e_co
+   REAL, DIMENSION( ims:ime, 1, jms:jme, num_ebu_in ),                     &
+         INTENT(INOUT ) ::                                   ebu_in
 
    REAL, DIMENSION( ims:ime, config_flags%kdvel, jms:jme, num_dvel ), &
          INTENT(INOUT ) ::                                   dvel
@@ -545,17 +546,36 @@ CONTAINS
 !!$! UNCOMMENT THIS AND FINE TUNE LEVELS TO YOUR DOMAIN IF YOU WANT TO
 !!$! FORCE MIXING ESPECIALLY OVER URBAN AREAS TO A CERTAIN DEPTH:
 !!$!
-!!$! --- Mix the emissions up several layers
+!!$! --- Mix the emissions up several layers in urban areas if no urban surface physics
 !!$!     if e_co > 0., the grid cell should not be over water
 !!$!     if e_co > 200, the grid cell should be over a large urban region
 !!$!
-     if (sf_urban_physics .eq. 0) then
-      if (e_co(i,kts,j) .gt. 0) then
+     if (p_e_co > param_first_scalar )then
+       if (sf_urban_physics .eq. 0 ) then
+         if (emis_ant(i,kts,j,p_e_co) .gt. 0) then
           ekmfull(kts:kts+10) = max(ekmfull(kts:kts+10),1.)
-       endif
-       if (e_co(i,kts,j) .gt. 200) then
+         endif
+         if (emis_ant(i,kts,j,p_e_co) .gt. 200) then
           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+         endif
+         if (p_e_pm25i > param_first_scalar )then
+          if (emis_ant(i,kts,j,p_e_pm25i)+ emis_ant(i,kts,j,p_e_pm25j) .GT. 8.19e-4*200) then
+           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+          endif
+         endif
+         if (p_e_pm_25 > param_first_scalar )then
+          if (emis_ant(i,kts,j,p_e_pm_25) .GT. 8.19e-4*200) then
+           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+          endif
+         endif
        endif
+     endif
+!!$! --- Mix the emissions up several layers when satellite data shows a wildfire
+!!$!     if ebu_in_e_co > 0., a wildfire exists so increase vertical mixing
+     if (p_ebu_in_co > param_first_scalar )then
+         if (ebu_in(i,1,j,p_ebu_in_co) .gt. 0) then
+          ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+         endif
      endif
 
      do k=kts,kte

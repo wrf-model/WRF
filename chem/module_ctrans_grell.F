@@ -104,6 +104,7 @@ CONTAINS
      integer, dimension (its:ite)            ::                    &
         ktop,k23,kbcon3,ktop3
 
+   INTEGER :: ishallow_gf = 0
    INTEGER :: nv,i,j,k,ICLDCK,ipr,jpr,npr
    REAL    :: tcrit,dp,dq,epsilc
    INTEGER :: itf,jtf,ktf,iopt
@@ -248,6 +249,7 @@ CONTAINS
 
  100    continue
 
+   if(chemopt > 0) then  ! skip for tracers (chemopt=0)
    ! Calculate the wet deposition over the time step:
    
    wdi_no3(:,:) = 0.0
@@ -268,6 +270,7 @@ CONTAINS
    
    wd_no3(its:ite,jts:jte) = wd_no3(its:ite,jts:jte) + wdi_no3(its:ite,jts:jte) ! mmol/m2
    wd_so4(its:ite,jts:jte) = wd_so4(its:ite,jts:jte) + wdi_so4(its:ite,jts:jte) ! mmol/m2
+   endif
    
    END SUBROUTINE GRELLDRVCT
 
@@ -823,7 +826,7 @@ CONTAINS
 
        call cup_dd_tracer(ierr,z_cup,qrcd,tracer,tre_cup,tr_up,tr_dd, &
                     tr_pw,tr_pwd,jmin,cdd,mentrd_rate,zd,pwdper,wetdep,xmb,k22, &
-                    numgas,ids,ide, jds,jde, kds,kde, &
+                    numgas,num_chem,ids,ide, jds,jde, kds,kde, &
                     ims,ime, jms,jme, kms,kme, &
                     its,ite, jts,jte, kts,kte)
        if(j.eq.jpr)print *,'called dd_tracer'
@@ -1525,11 +1528,10 @@ END subroutine cup_up_tracer
 
   SUBROUTINE  cup_dd_tracer(ierr,z_cup,qrcd,tracer,tre_cup,tr_up,tr_dd, &
                           tr_pw,tr_pwd,jmin,cdd,entr,zd,pwdper,wetdep,xmb,k22, &
-                          numgas,ids,ide, jds,jde, kds,kde, &
+                          numgas,num_chem,ids,ide, jds,jde, kds,kde, &
                           ims,ime, jms,jme, kms,kme, &
                           its,ite, jts,jte, kts,kte)
-  USE module_configure
-  USE module_state_description
+
   USE module_model_constants, only: mwdry
 
         implicit none
@@ -1541,7 +1543,8 @@ END subroutine cup_up_tracer
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-                               numgas,ids,ide, jds,jde, kds,kde,       &
+                               numgas,num_chem,                        &
+                                  ids,ide, jds,jde, kds,kde,           &
                                   ims,ime, jms,jme, kms,kme,           &
                                   its,ite, jts,jte, kts,kte
      real,    dimension (its:ite,kts:kte)                              &

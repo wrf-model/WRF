@@ -908,7 +908,7 @@ CONTAINS
                ,CU_ACT_FLAG=CU_ACT_FLAG,warm_rain=warm_rain     &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
-               ,IPS=ips,IPE=ipe,JPS=jps,JPE=jpe,KPS=kps,KPE=kpe &
+!              ,IPS=ips,IPE=ipe,JPS=jps,JPE=jpe,KPS=kps,KPE=kpe &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
               ! optionals

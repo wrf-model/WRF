@@ -1945,7 +1945,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 #ifdef CLWRFGHG
          IF ( wrf_dm_on_monitor() ) THEN
            WRITE(message,*)'CLWRF-CAM_call-trcmix n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr,' f11vmr:',f11vmr,' f12vmr:',f12vmr
-           CALL wrf_debug(0, message)
+           CALL wrf_debug(1, message)
          END IF
          call trcmix_clwrf(lchnk   ,ncol    ,pcols, pver,  &
                      pmid    ,clat, n2ovmr, ch4vmr, f11vmr, f12vmr, n2o,   &

@@ -1043,6 +1043,7 @@ CONTAINS
              zuhe(i)=zuhe(i)+entr_rate_2d(i,k)*dz*zuhe(i)-cd(i,k)*dz*zuhe(i)
             enddo
             kbegzu=kstabi(i)+4
+            kbegzu=min(kbegzu,ktf-1)
             kfinalzu=kbegzu+1
             do k=kts,ktf
                cd(i,k)=entr_rate_2d(i,kbcon(i))
@@ -1061,6 +1062,7 @@ CONTAINS
          enddo
 411      continue
              kfinalzu=max(kfinalzu,kbegzu+1)
+             kfinalzu=min(kfinalzu,ktf-1)
             frh=-(0.2-zuhe(i))/((float(kfinalzu*kfinalzu))-(float(kbegzu*kbegzu)))
             dh=zuhe(i)+frh*(float(kbegzu*kbegzu))
                do k=kbegzu+1,kfinalzu

@@ -896,8 +896,7 @@
                     ! Order dependent args for domain, mem, and tile dims
                         ,ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde             &
                         ,ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme             &
-                        ,its=grid%i_start(ij), ite=grid%i_end(ij)                         &
-                        ,jts=grid%j_start(ij), jte=grid%j_end(ij), kts=kts, kte=kte       &
+                        ,its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte             &
                     ! IC and CG flash rates and accumulated flash count
                         ,ic_flashcount=grid%ic_flashcount, ic_flashrate=grid%ic_flashrate        &
                         ,cg_flashcount=grid%cg_flashcount, cg_flashrate=grid%cg_flashrate        &

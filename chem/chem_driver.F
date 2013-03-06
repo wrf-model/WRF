@@ -1130,7 +1130,7 @@
                  grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,        &
                  grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,&
                  grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,grid%dep_vel_o3,     &
-                 emis_ant(ims,kms,jms,p_e_co),config_flags%kemit,                     &
+                 emis_ant,ebu_in,                                                     &
                  config_flags%sf_urban_physics,numgas,current_month,dvel,grid%snowh,  &
                  grid%is_CAMMGMP_used,                                                & !BSINGH:01/31/2013: Added is_CAMMGMP_used for MAM drydep
                  ids,ide, jds,jde, kds,kde,                                           &

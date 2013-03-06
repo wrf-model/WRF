@@ -900,7 +900,7 @@ CONTAINS
 !  !$OMP PRIVATE ( ij )
 
 !  IF ( MOD(NINT(XTIME), clwrfH) == 0 ) THEN
-  IF (( MOD(NINT(XTIME*60./dt),NINT(clwrfH*60./dt)) == 0) .AND. (.NOT.is_restart)) THEN
+  IF (( MOD(NINT(XTIME/dt*60.),NINT(clwrfH/dt*60.)) == 0) .AND. (.NOT.is_restart)) THEN
     DO ij = 1 , num_tiles
       IF  ( wrf_dm_on_monitor() ) THEN
         WRITE(message, *)'CLWRFdiag - T2; tile: ',ij,' T2clmin:',           & 

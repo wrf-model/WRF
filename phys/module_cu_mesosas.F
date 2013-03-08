@@ -7162,8 +7162,8 @@ CONTAINS
               tem = po(i,k) / (rd * to(i,k) * (1. + delta * qo(i,k))) * 100.
               tem1 = -doto(i,k) / (tem * g)
               tem1 = tem1 / (wc(i) + 1.E-20)
-              tem1 = max(tem1,0.)
-              tem1 = min(tem1,1.)
+              tem1 = max(tem1,real(0.,kind=kind_phys))
+              tem1 = min(tem1,real(1.,kind=kind_phys))
 !              delqz = dellaq(i,k)* (1.-tem1) *mbdt / (1. - sigma)
 !     &              + delqx(i,k)*ardt / ((1. - sigma(i)) * tem * wc(i))
               delqz = dellaq(i,k) * mbdt

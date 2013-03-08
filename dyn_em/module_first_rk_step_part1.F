@@ -828,7 +828,7 @@ BENCH_START(pbl_driver_tim)
      &        ,XLAT_V=grid%xlat_v,XLONG_V=grid%xlong_v,FNM=grid%fnm       &
      &        ,FNP=grid%fnp, IS_CAMMGMP_USED = grid%is_CAMMGMP_used       &
 ! for grims shallow convection with ysupbl
-     &        ,WSCALEK=grid%wscale_ysu,DELTA=grid%delta_ysu               &
+     &        ,WSTAR=grid%wstar_ysu,DELTA=grid%delta_ysu               &
      &        )
                                                          
 
@@ -1057,7 +1057,7 @@ BENCH_START(shcu_driver_tim)
      &             ,SHFRC3D=grid%shfrc3d                                  & !Balwinder.Singh@pnnl.gov: For CAM's wetscavenging
      &             ,TKE_PBL8W=grid%tke_pbl8w                              & !BSINGH - TKE at the interfaces for UWSHCU Scheme 
      &             ,IS_CAMMGMP_USED = grid%is_CAMMGMP_used                &
-     &             ,WSCALEK=grid%wscale_ysu,DELTA=grid%delta_ysu          &
+     &             ,WSTAR=grid%wstar_ysu,DELTA=grid%delta_ysu             &
      &             ,KPBL=grid%kpbl,ZNU=grid%znu                           &
      &             ,RAINCV=grid%raincv                                    &
      &                                                                    )

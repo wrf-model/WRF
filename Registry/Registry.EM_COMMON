@@ -781,7 +781,7 @@ i1      real   GZ1OZ0         ij     misc        1         -     -         "GZ1O
 i1      real   BR             ij     misc        1         -     -         "BR"                  "Bulk Richardson"                       ""
 
 # ysupbl variables for grims shallow convection
-state   real   WSCALE_YSU     ikj     misc        1         -     -        "WSCALE_YSU"          "mixed-layer velocity scale from ysupbl" "m/s"
+state   real   WSTAR_YSU     ij     misc        1         -     -        "WSTAR_YSU"          "mixed-layer velocity scale from ysupbl" "m/s"
 state   real   DELTA_YSU      ij      misc        1         -     -        "DELTA_YSU"           "entrainment layer depth from ysupbl"    "m"
 
 # MYJ PBL variables; GBM PBL: EXCH_H, EXCH_M

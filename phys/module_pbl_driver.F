@@ -91,7 +91,7 @@ CONTAINS
                ,qnc_curr,f_qnc,qni_curr,f_qni,rqniblten              &
                ,IS_CAMMGMP_USED                                      &
 ! for grims shallow convection with ysupbl
-               , wscalek,delta                                       &
+               , wstar,delta                                       &
                                                                      )       
 !------------------------------------------------------------------
 #if (EM_CORE==1)
@@ -417,8 +417,8 @@ CONTAINS
 !
 ! for grims shallow convection with ysupbl
 !
-    REAL,      DIMENSION( ims:ime, kms:kme, jms:jme )           , &
-               INTENT(INOUT   ), OPTIONAL    ::          wscalek
+    REAL,      DIMENSION( ims:ime, jms:jme )                    , &
+               INTENT(INOUT   ), OPTIONAL    ::          wstar
     REAL,      DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(INOUT   ), OPTIONAL    ::            delta
 !
@@ -1064,7 +1064,7 @@ CONTAINS
               ,EP1=ep_1,EP2=ep_2,KARMAN=karman                      &
               ,EXCH_H=exch_h,REGIME=regime                          &
 ! for grims shallow convection with ysupbl
-              ,WSCALEK2=wscalek,DELTA2=delta                        &
+              ,WSTAR=wstar,DELTA=delta                        &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &

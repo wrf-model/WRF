@@ -2542,7 +2542,11 @@ END
        INTEGER  Patch(3,2), Gpatch(3,2,ntasks)
     ! allocated further down, after the D indices are potentially recalculated for staggering
        REAL, ALLOCATABLE :: tmpbuf( : )
+#if (WRFPLUS == 1)
+       REAL locbuf( (PE1a-PS1a+1)*(PE2a-PS2a+1)*(PE3a-PS3a+1)/typesize*typesize+32 )
+#else
        REAL locbuf( (PE1a-PS1a+1)*(PE2a-PS2a+1)*(PE3a-PS3a+1)/RWORDSIZE*typesize+32 )
+#endif
 
        DS1 = DS1a ; DE1 = DE1a ; DS2=DS2a ; DE2 = DE2a ; DS3 = DS3a ; DE3 = DE3a
        MS1 = MS1a ; ME1 = ME1a ; MS2=MS2a ; ME2 = ME2a ; MS3 = MS3a ; ME3 = ME3a

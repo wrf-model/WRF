@@ -898,6 +898,8 @@
 !
       REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME) :: ZERO_SOIL
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME) :: wstar_ysu, delta_ysu
+!
       LOGICAL :: E_BDY,WARM_RAIN
       LOGICAL :: IS_CAMMGMP_USED=.FALSE.
 !
@@ -1483,6 +1485,7 @@
      &               ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG &
      &               ,HOL=HOL,sf_sfclay_physics=CONFIG_FLAGS%SF_SFCLAY_PHYSICS &
      &               ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
+     &               ,wstar=wstar_ysu,delta=delta_ysu                 &
      &               ,sf_urban_physics=CONFIG_FLAGS%SF_URBAN_PHYSICS)
 !
 !***  NOTE THAT THE EXCHANGE COEFFICIENTS FOR HEAT EXCH_H COMING OUT OF

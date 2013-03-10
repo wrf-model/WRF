@@ -547,7 +547,7 @@ while ( <CONFIGURE_DEFAULTS> )
       {
 
         if($ENV{WRF_HYDRO} eq 1) {
-           $tt = `cd hydro; wrf_hydro_config "$x" "$paropt"`;
+           $tt = `cd hydro; ./wrf_hydro_config "$x" "$paropt"`;
         }
 
         $latchon = 1 ;

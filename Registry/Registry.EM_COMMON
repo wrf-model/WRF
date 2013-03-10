@@ -781,7 +781,7 @@ i1      real   GZ1OZ0         ij     misc        1         -     -         "GZ1O
 i1      real   BR             ij     misc        1         -     -         "BR"                  "Bulk Richardson"                       ""
 
 # ysupbl variables for grims shallow convection
-state   real   WSCALE_YSU     ikj     misc        1         -     -        "WSCALE_YSU"          "mixed-layer velocity scale from ysupbl" "m/s"
+state   real   WSTAR_YSU     ij     misc        1         -     -        "WSTAR_YSU"          "mixed-layer velocity scale from ysupbl" "m/s"
 state   real   DELTA_YSU      ij      misc        1         -     -        "DELTA_YSU"           "entrainment layer depth from ysupbl"    "m"
 
 # MYJ PBL variables; GBM PBL: EXCH_H, EXCH_M
@@ -2412,7 +2412,6 @@ halo      HALO_EM_TKE_E dyn_em 8:xkmv,xkmh,xkhv,xkhh,BN2,moist
 halo      HALO_EM_TKE_3 dyn_em   24:tke_1,tke_2
 halo      HALO_EM_TKE_5 dyn_em   48:tke_1,tke_2
 halo      HALO_EM_TKE_7 dyn_em   80:tke_1,tke_2
-halo      HALO_EM_TKE_F dyn_em   48:tke_1,tke_2
 halo      HALO_EM_TKE_OLD_E_5 dyn_em   48:tke_1
 halo      HALO_EM_TKE_OLD_E_7 dyn_em   80:tke_1
 halo      HALO_EM_HELICITY dyn_em 8:u_2,v_2,w_2,ph_2,phb,z,zx,zy,rdz,rdzw,uh,up_heli_max

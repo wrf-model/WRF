@@ -107,7 +107,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O2 -ftree-vectorize -funroll-loops
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT         =       -O0
-FCDEBUG         =       # -g $(FCNOOPT)  # -ggdb -fbounds-check -ffpe-trap=invalid,zero,overflow
+FCDEBUG         =       # -g $(FCNOOPT)  # -fbacktrace -ggdb -fbounds-check -ffpe-trap=invalid,zero,overflow
 FORMAT_FIXED    =       -ffixed-form
 FORMAT_FREE     =       -ffree-form -ffree-line-length-none
 FCSUFFIX        =       
@@ -189,7 +189,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3 #-fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed # -Minfo=all =Mneginfo=all
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0
-FCDEBUG         =       # -g $(FCNOOPT)  # -C -Ktrap=fp
+FCDEBUG         =       # -g $(FCNOOPT)  # -C -Ktrap=fp -traceback
 FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =
@@ -231,7 +231,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3 #-fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed # -Minfo=all =Mneginfo=all
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0
-FCDEBUG         =       # -g $(FCNOOPT) # -C -Ktrap=fp
+FCDEBUG         =       # -g $(FCNOOPT) # -C -Ktrap=fp -traceback
 FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =
@@ -272,7 +272,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3 #-fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed # -Minfo=all =Mneginfo=all
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0
-FCDEBUG         =       # -g $(FCNOOPT) # -C -Ktrap=fp
+FCDEBUG         =       # -g $(FCNOOPT) # -C -Ktrap=fp -traceback
 FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =
@@ -313,7 +313,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -ta=nvidia:fastmath,host # -Minfo=all =Mneginfo=all
 FCREDUCEDOPT    =       $(FCOPTIM)
 FCNOOPT         =       -O0
-FCDEBUG         =       # -g $(FCNOOPT) # -C -Ktrap=fp
+FCDEBUG         =       # -g $(FCNOOPT) # -C -Ktrap=fp -traceback
 FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =
@@ -424,7 +424,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3 $(OPTKNC)
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -fno-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -468,7 +468,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3 $(OPTAVX)
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -fno-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -823,7 +823,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O -OPT:Ofast:Olimit=5000
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT         =       -O0
-FCDEBUG         =       # -g $(FCNOOPT)
+FCDEBUG         =       # -g $(FCNOOPT)  # -C -trapuv 
 FORMAT_FIXED    =       -fixedform
 FORMAT_FREE     =       -freeform
 FCSUFFIX        =
@@ -864,7 +864,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O2 -ftree-vectorize -funroll-loops
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0
-FCDEBUG         =       # -g $(FCNOOPT) # -ggdb -fbounds-check -ffpe-trap=invalid,zero,overflow
+FCDEBUG         =       # -g $(FCNOOPT) # -ggdb -fbacktrace -fbounds-check -ffpe-trap=invalid,zero,overflow
 FORMAT_FIXED    =       -ffixed-form
 FORMAT_FREE     =       -ffree-form -ffree-line-length-none
 FCSUFFIX        =       
@@ -905,7 +905,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM		=       -O2 -fast
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0
-FCDEBUG         =       # -g $(FCNOOPT) # -C -Ktrap=fp
+FCDEBUG         =       # -g $(FCNOOPT) # -C -Ktrap=fp -traceback
 FORMAT_FIXED    =       -Mfixed
 FORMAT_FREE     =       -Mfree
 FCSUFFIX        =       
@@ -947,7 +947,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT         =       -O0 -fno-inline -fno-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback
+FCDEBUG         =       # -g $(FCNOOPT) -traceback  # -fpe0 -check all 
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -990,7 +990,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O3
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT         =       -O0 -fno-inline -fno-ip
-FCDEBUG         =       # -g $(FCNOOPT) -traceback
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check all 
 FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
@@ -1074,7 +1074,7 @@ ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       -O2 -ftree-vectorize -funroll-loops
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT         =       -O0
-FCDEBUG         =       # -g $(FCNOOPT) # -ggdb -fbounds-check -ffpe-trap=invalid,zero,overflow
+FCDEBUG         =       # -g $(FCNOOPT) # -fbacktrace -ggdb -fbounds-check -ffpe-trap=invalid,zero,overflow
 FORMAT_FIXED    =       -ffixed-form
 FORMAT_FREE     =       -ffree-form -ffree-line-length-none
 FCSUFFIX        =       

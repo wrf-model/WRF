@@ -49,7 +49,7 @@ CONTAINS
                      ,f_qi,f_qs,f_qg                                  &
                      ,ht,shfrc3d,tke_pbl8w,is_CAMMGMP_used            &
                  ! for grims shallow convection with ysupbl
-                     ,wscalek,delta,kpbl,znu,raincv                   &
+                     ,wstar,delta,kpbl,znu,raincv                   &
                                                                       )
 !----------------------------------------------------------------------
    USE module_model_constants
@@ -327,8 +327,8 @@ CONTAINS
                  shfrc3d                                           ! Required by wet scavenging code in WRF_CHEM
 ! for grims shallow convection with ysupbl
 !
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                , &
-         OPTIONAL, INTENT(IN   )                 ::      wscalek
+   REAL, DIMENSION( ims:ime, jms:jme )                         , &
+         OPTIONAL, INTENT(IN   )                 ::      wstar
    REAL, DIMENSION( ims:ime, jms:jme )                         , &
          OPTIONAL, INTENT(IN   )                 ::        delta
    REAL, DIMENSION( ims:ime, jms:jme )                         , &
@@ -449,13 +449,13 @@ CONTAINS
 
    CASE (GRIMSSHCUSCHEME)
       CALL wrf_debug(100,'in grims_scps')
-      IF ( PRESENT( wscalek ) ) THEN
+      IF ( PRESENT( wstar ) ) THEN
       CALL grims(                                                        &
             QV3D=qv_curr,T3D=t                                           &
            ,P3DI=p8w,P3D=p,PI3D=pi,Z3DI=Z_AT_W                           &
-           ,WSCALEK=wscalek,HPBL=pblh,DELTA=delta                        &
+           ,WSTAR=wstar,HPBL=pblh,DELTA=delta                        &
            ,RTHSHTEN=rthshten,RQVSHTEN=rqvshten                          &
-           ,DT=dt,CP=cp,G=g,XLV=xlv,RD=r_d,RV=r_v                        &
+           ,DT=dt,G=g,XLV=xlv,RD=r_d,RV=r_v                        &
            ,RCP=rcp,P1000MB=p1000mb                                      &
            ,KPBL2D=kpbl,ZNU=znu,RAINCV=raincv                            &
            ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde              &

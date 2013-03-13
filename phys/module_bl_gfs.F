@@ -402,9 +402,18 @@ CONTAINS
         KPBL2D(i,j)=kpbl(i)
         rc2D(i,j)=rbcr(i)
       ENDDO
-
+! INITIALIZE DKU3D and DKT3D  (3D momentum and thermal diffusivity for
+! diagnostics)
+!
      DO i=its,ite
      DO k=kts,kte
+      DKU3D(I,J,K) = 0.
+      DKT3D(I,J,K) = 0.
+     ENDDO
+     ENDDO
+
+     DO i=its,ite
+     DO k=kts,kte-1
       DKU3D(I,J,K) = DKU(I,K)
       DKT3D(I,J,K) = DKT(I,K)
      ENDDO

@@ -275,6 +275,20 @@ if ( ! contains_tok ( halo_define , vname  , ":," ) ) {
         if(p->mp_var)
           fprintf(fp," .and. (interp_mp .eqv. .true.)");
         fprintf(fp," ) THEN \n");
+#if NMM_CORE==1
+        if(strcasecmp(fcn_name,"nointerp")) {
+          /* We get here if we are calling any function other than
+             "NoInterp," a placeholder function that does not
+             interpolate and only exists to ensure the variable is
+             allocated on the intermediate domain.  This is a
+             workaround for a bug in the IBM compiler: when the
+             interpolation routine is NoInterp, we do not generate the
+             call.
+
+             This workaround is only enabled for the NMM
+             configurations since the other configurations do not use
+             the NoInterp placeholder function. */
+#endif
 fprintf(fp,"CALL %s (  &         \n", fcn_name ) ;
 
 if ( !strcmp( fcn_name, "interp_mask_land_field" ) || !strcmp( fcn_name, "interp_mask_water_field" ) ) {
@@ -425,7 +439,11 @@ fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio
         }
 
 fprintf(fp,"                  ) \n") ;
-
+#if NMM_CORE==1
+        } else {
+          fprintf(fp,"CONTINUE ! do not call %s\n", fcn_name ) ;
+        } /* end of "skip this if we would call NoInterp" */ 
+#endif
         if ( p->node_kind & FOURD )
         {
 fprintf(fp,"ENDIF\n") ;

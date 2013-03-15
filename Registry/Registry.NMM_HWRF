@@ -591,9 +591,6 @@ state integer mslp_noisy ij    dyn_nmm     1      -      irh       "MSLP_NOISY" 
 state real winfo ijkb dyn_nmm 1 Z hu=(NoInterp)d=(NoInterp) "winfo"  "Nest-parent interpolation/extrapolation weight" ""
 state integer iinfo ijkb dyn_nmm 1 Z hu=(NoInterp)d=(NoInterp) "iinfo" "Nest-parent interpolation index" ""
 
-# Dummy variable to ensure needed variables are passed to intermediate domain:
-state real interpdummy ij dyn_nmm 1 m f=(NoInterp:pint,pd,q,t,hres_fis,fis,hnear_i,hnear_j,iih,jjh,iiv,jjv,hbwgt1,hbwgt2,hbwgt3,hbwgt4,vbwgt1,vbwgt2,vbwgt3,vbwgt4)d=(NoInterp:pint,pd,q,t,hres_fis,fis,hnear_i,hnear_j,iih,jjh,iiv,jjv,hbwgt1,hbwgt2,hbwgt3,hbwgt4,vbwgt1,vbwgt2,vbwgt3,vbwgt4)u=(NoInterp:pint,pd,q,t,hres_fis,hnear_i,hnear_j,iih,jjh,iiv,jjv,hbwgt1,hbwgt2,hbwgt3,hbwgt4,vbwgt1,vbwgt2,vbwgt3,vbwgt4) "interpdummy" "Dummy array for ensuring variables are transmitted" ""
-
 #                                               
 # table entries are of the form                                         
 #<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>   

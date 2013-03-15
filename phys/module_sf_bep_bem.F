@@ -182,14 +182,14 @@ MODULE module_sf_bep_bem
       real sf(ims:ime,kms:kme,jms:jme)           ! surface of the urban grid cells
       real vl(ims:ime,kms:kme,jms:jme)             ! volume of the urban grid cells
 ! urban fluxes
-      real rl_up(ims:ime,jms:jme) ! upward long wave radiation
-      real rs_abs(ims:ime,jms:jme) ! absorbed short wave radiation
-      real emiss(ims:ime,jms:jme)  ! emissivity averaged for urban surfaces
-      real grdflx_urb(ims:ime,jms:jme)  ! ground heat flux for urban areas
+      real rl_up(its:ite,jts:jte) ! upward long wave radiation
+      real rs_abs(its:ite,jts:jte) ! absorbed short wave radiation
+      real emiss(its:ite,jts:jte)  ! emissivity averaged for urban surfaces
+      real grdflx_urb(its:ite,jts:jte)  ! ground heat flux for urban areas
 !------------------------------------------------------------------------
 !     Local
 !------------------------------------------------------------------------
-      real hi_urb(ims:ime,1:nz_um,jms:jme) ! Height histograms of buildings
+      real hi_urb(its:ite,1:nz_um,jts:jte) ! Height histograms of buildings
       real hi_urb1D(nz_um)                 ! Height histograms of buildings
       real ss_urb(nz_um,nurbm)             ! Probability that a building has an height equal to z
       real pb_urb(nz_um)                   ! Probability that a building has an height greater or equal to z
@@ -559,7 +559,13 @@ MODULE module_sf_bep_bem
           stop         
       endif
    
-      hi_urb=0.
+      do ix=its,ite
+      do iy=jts,jte
+      do iz_u=1,nz_um
+          hi_urb(ix,iz_u,iy)=0.
+      enddo
+      enddo
+      enddo
 
       do ix=its,ite
       do iy=jts,jte

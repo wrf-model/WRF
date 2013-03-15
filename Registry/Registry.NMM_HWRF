@@ -970,6 +970,7 @@ state    real  pr_ens           ije     misc        1         Z      r        "P
 
 state    real  RTHFTEN          ikj     misc        1         -      r        "RTHFTEN"               "TOTAL ADVECTIVE POTENTIAL TEMPERATURE TENDENCY"  "K s-1"
 state    real  RQVFTEN          ikj     misc        1         -      r        "RQVFTEN"               "TOTAL ADVECTIVE MOISTURE TENDENCY"     "kg kg-1 s-1"
+state    real  RTHRATEN         ikj     misc        1         -      rh       "RTHRATEN"              "TOTAL RADIATIVE TEMPERATURE TENDENCY"  "K s-1"
 state    real   SNOWH            ij     misc        1         -     i01rhd=(DownCopy)      "SNOWH"                 "PHYSICAL SNOW DEPTH"  "m"
 state    real   RHOSN            ij     misc        1         -     i01rd=(DownCopy)    "RHOSN"            " SNOW DENSITY"      "kg m-3"
 state    real   SMFR3D           ilj    misc        1         Z      rh       "SMFR3D"               "SOIL ICE" ""

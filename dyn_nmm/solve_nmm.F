@@ -119,7 +119,7 @@
 !-----------------------------------------------------------------------
 !
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: TTEN,QTEN
-      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RTHRATEN,RTHBLTEN,RQVBLTEN
+      REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RTHBLTEN,RQVBLTEN
 !
 !-----------------------------------------------------------------------
 !
@@ -343,7 +343,7 @@
       ALLOCATE(QTEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
       ALLOCATE(RTHBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
       ALLOCATE(RQVBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
-      ALLOCATE(RTHRATEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
+!      ALLOCATE(RTHRATEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
 #ifdef WRF_CHEM
   NUMGAS          = GET_LAST_GAS(CONFIG_FLAGS%CHEM_OPT)
 #endif
@@ -1549,7 +1549,7 @@
      &                ,grid%cuppt,grid%vegfrc,grid%sno,grid%htop,grid%hbot                      &
      &                ,grid%z,grid%sice,NUM_AEROSOLC,NUM_OZMIXM                  &
      &                ,GRID,CONFIG_FLAGS                               &
-     &                ,RTHRATEN                                        &  
+     &                ,grid%RTHRATEN                                   &  
 #ifdef WRF_CHEM
      &                ,PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC            &
      &                ,TAUAER1, TAUAER2, TAUAER3, TAUAER4              & 
@@ -1645,7 +1645,7 @@
      &            ,grid%u10,grid%v10,grid%th10,grid%q10,grid%tshltr,grid%qshltr,grid%pshltr               &
      &            ,grid%t2,grid%qsg,grid%qvg,grid%qcg,grid%soilt1,grid%tsnav,grid%smfr3d,grid%keepfr3dflag     &
 #if (NMM_CORE==1)
-     &            ,grid%twbs,grid%qwbs,grid%taux,grid%tauy,grid%sfcshx,grid%sfclhx,grid%sfcevp,RTHRATEN                      &
+     &            ,grid%twbs,grid%qwbs,grid%taux,grid%tauy,grid%sfcshx,grid%sfclhx,grid%sfcevp,grid%RTHRATEN   &
 #else
      &            ,grid%twbs,grid%qwbs,grid%sfcshx,grid%sfclhx,grid%sfcevp                      &
 #endif
@@ -1864,7 +1864,7 @@
      &             ,grid%prec,grid%acprec,grid%cuprec,grid%cuppt,grid%cprate                    &
      &             ,grid%sm,grid%hbm2,grid%pblh,grid%lpbl,grid%cnvbot,grid%cnvtop                         &
      &             ,grid%htop,grid%hbot,grid%htopd,grid%hbotd,grid%htops,grid%hbots                  &
-     &             ,RTHBLTEN,RQVBLTEN,RTHRATEN                         & 
+     &             ,RTHBLTEN,RQVBLTEN,grid%RTHRATEN                    & 
 #if (NMM_CORE==1)                  
      &             ,grid%twbs,grid%qwbs                                &
      &                 ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random             &
@@ -2390,7 +2390,7 @@
 !     if(last_time)then
       DEALLOCATE(TTEN,STAT=ISTAT)
       DEALLOCATE(QTEN,STAT=ISTAT)
-      DEALLOCATE(RTHRATEN,STAT=ISTAT)
+!      DEALLOCATE(RTHRATEN,STAT=ISTAT)
       DEALLOCATE(RTHBLTEN,STAT=ISTAT)
       DEALLOCATE(RQVBLTEN,STAT=ISTAT)
 #ifdef WRF_CHEM

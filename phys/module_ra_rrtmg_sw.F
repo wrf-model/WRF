@@ -9974,7 +9974,6 @@ CONTAINS
          tem1=sin(xxlat)*sin(declin)
          tem2=cos(xxlat)*cos(declin)*cos(hrang)
          coszr(i,j) = tem1+tem2
-         write(0,*)'Chanh_sw:tem1,tem2,icloud',tem1,tem2,icloud
 
 ! Set flag to prevent shortwave calculation when sun below horizon
          if (coszrs.le.0.0) dorrsw = .false.
@@ -10437,7 +10436,7 @@ CONTAINS
       end do
       end do
 
-#ifdef HWRF
+#if defined(WRF_CHEM) || defined(HWRF)
    IF ( AER_RA_FEEDBACK == 1) then
       do nb = 1, nbndsw
          wavemid(nb)=0.5*(wavemin(nb)+wavemax(nb))  ! um

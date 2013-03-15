@@ -322,7 +322,6 @@ CONTAINS
 !
 !==================================================================
 !
-   REAL DEGRAD1
    LOGICAL, OPTIONAL, INTENT(IN) :: explicit_convection
    LOGICAL :: expl_conv
    INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
@@ -601,7 +600,7 @@ CONTAINS
 #ifdef HWRF
    CHARACTER(len=265) :: wrf_err_message
 #endif
-   DEGRAD1=180.0/3.14
+
    ! This allows radiation schemes (mainly HWRF) to correctly
    ! interface with the convection scheme when convection is only
    ! enabled in some domains:
@@ -1126,7 +1125,6 @@ CONTAINS
              ENDIF
 
         CASE (RRTMG_LWSCHEME)
-             write(0,*)'Chanh calls rrtmg_sw'
 
              CALL RRTMG_LWRAD(                                      &
                   RTHRATENLW=RTHRATEN,                              &
@@ -1148,7 +1146,7 @@ CONTAINS
                   O3INPUT=O3INPUT,O33D=O3RAD,                       &
                   F_QV=F_QV,F_QC=F_QC,F_QR=F_QR,                    &
                   F_QI=F_QI,F_QS=F_QS,F_QG=F_QG,                    &
-#ifdef HWRF
+#if defined(WRF_CHEM) || defined(HWRF)
                   TAUAERLW1=tauaerlw1,TAUAERLW2=tauaerlw2,          & ! jcb
                   TAUAERLW3=tauaerlw3,TAUAERLW4=tauaerlw4,          & ! jcb
                   TAUAERLW5=tauaerlw5,TAUAERLW6=tauaerlw6,          & ! jcb
@@ -1157,9 +1155,15 @@ CONTAINS
                   TAUAERLW11=tauaerlw11,TAUAERLW12=tauaerlw12,          & ! jcb
                   TAUAERLW13=tauaerlw13,TAUAERLW14=tauaerlw14,          & ! jcb
                   TAUAERLW15=tauaerlw15,TAUAERLW16=tauaerlw16,          & ! jcb
-                  aer_ra_feedback=0,                                 &
-!jdfcz            progn=progn,prescribe=prescribe,                   &
+#ifdef WRF_CHEM
+                  aer_ra_feedback=aer_ra_feedback,                  &
+                  progn=progn,                                      &
+#else
+                  ! Disable these for HWRF:
+                  aer_ra_feedback=0,                                &
                   progn=0,                                          &
+#endif
+!jdfcz            progn=progn,prescribe=prescribe,                   &
 #endif
                   QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
 !ccc Added for time-varying trace gases.
@@ -1453,7 +1457,6 @@ CONTAINS
              ENDDO
 
         CASE (RRTMG_SWSCHEME)
-             write(0,*)'Chanh calls rrtmg_sw'
 
              CALL RRTMG_SWRAD(                                         &
                      RTHRATENSW=RTHRATENSW,                            &
@@ -1484,14 +1487,16 @@ CONTAINS
                      SF_SURFACE_PHYSICS=sf_surface_physics,            &  !Zhenxin ssib sw_phy   (06/2010)
                      F_QV=f_qv,F_QC=f_qc,F_QR=f_qr,                    &
                      F_QI=f_qi,F_QS=f_qs,F_QG=f_qg,                    &
-#ifdef HWRF
+#if defined(WRF_CHEM) || defined(HWRF)
                      TAUAER300=tauaer300,TAUAER400=tauaer400,          & ! jcb
                      TAUAER600=tauaer600,TAUAER999=tauaer999,          & ! jcb
                      GAER300=gaer300,GAER400=gaer400,                  & ! jcb
                      GAER600=gaer600,GAER999=gaer999,                  & ! jcb
                      WAER300=waer300,WAER400=waer400,                  & ! jcb
                      WAER600=waer600,WAER999=waer999,                  & ! jcb
+#ifdef HWRF
                      aer_ra_feedback=0,                                &
+#else
 !jdfcz               progn=progn,prescribe=prescribe,                  &
                      progn=0,                                          &
 #endif

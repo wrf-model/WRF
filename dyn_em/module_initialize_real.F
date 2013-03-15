@@ -1516,6 +1516,26 @@ integer::oops1,oops2
          grid%ifndsoilw = 0
       END IF
 
+      !  Set flag integers for presence of albsi, snowsi, and icedepth fields
+
+      IF ( config_flags%seaice_albedo_opt == 2 ) THEN
+          grid%ifndalbsi = flag_albsi
+      ELSE
+          grid%ifndalbsi = 0
+      ENDIF
+          
+      IF ( config_flags%seaice_snowdepth_opt == 1 ) THEN
+          grid%ifndsnowsi = flag_snowsi
+      ELSE
+          grid%ifndsnowsi = 0
+      ENDIF
+          
+      IF ( config_flags%seaice_thickness_opt == 1 ) THEN
+          grid%ifndicedepth = flag_icedepth
+      ELSE
+          grid%ifndicedepth = 0
+      ENDIF
+
       !  We require input data for the various LSM schemes.
 
       enough_data : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )

@@ -912,6 +912,9 @@
       INTEGER :: SEAICE_SNOWDEPTH_OPT
       REAL    :: SEAICE_SNOWDEPTH_MAX
       REAL    :: SEAICE_SNOWDEPTH_MIN
+      INTEGER :: IFNDALBSI
+      INTEGER :: IFNDICEDEPTH
+      INTEGER :: IFNDSNOWSI
 !
       INTEGER :: IGS,IGE,JGS,JGE, PQ_I   !BSF
       LOGICAL :: FQ_I, ETAMP_PHYSICS,ETAMP_Regional            !BSF
@@ -947,6 +950,10 @@
       IF ( SEAICE_ALBEDO_OPT /= 0 ) THEN
          CALL WRF_ERROR_FATAL("NMM must use SEAICE_ALBEDO_OPT = 0")
       ENDIF
+
+      IFNDALBSI = 0
+      IFNDSNOWSI = 0
+      IFNDICEDEPTH = 0
 
       SEAICE_ALBEDO_DEFAULT = CONFIG_FLAGS%SEAICE_ALBEDO_DEFAULT
       SEAICE_THICKNESS_OPT = CONFIG_FLAGS%SEAICE_THICKNESS_OPT
@@ -1274,6 +1281,8 @@
      &          ,SEAICE_SNOWDEPTH_MAX=SEAICE_SNOWDEPTH_MAX              &
      &          ,SEAICE_SNOWDEPTH_MIN=SEAICE_SNOWDEPTH_MIN              &
      &          ,TICE2TSK_IF2COLD=CONFIG_FLAGS%TICE2TSK_IF2COLD         &
+     &          ,IFNDALBSI=IFNDALBSI,IFNDICEDEPTH=IFNDICEDEPTH          &
+     &          ,IFNDSNOWSI=IFNDSNOWSI                                  &
      &          ,ISLTYP=ISLTYP                                          &
      &          ,ITIMESTEP=NTSD,IVGTYP=IVGTYP,LOWLYR=LOWLYR             &
      &          ,MAVAIL=ONE,RMOL=RMOL,MOL=MOL                           &

@@ -3274,7 +3274,7 @@ MODULE module_sf_bep_bem
                         icol=k
                      endif
                   elseif(ipiv(k).gt.1)then
-                     pause 'singular matrix in gaussj'
+                     CALL wrf_error_fatal('singular matrix in gaussj')
                   endif
                enddo
             endif
@@ -3295,7 +3295,7 @@ MODULE module_sf_bep_bem
           
          endif
          
-         if(a(icol,icol).eq.0)pause 'singular matrix in gaussj'
+         if(a(icol,icol).eq.0) CALL wrf_error_fatal('singular matrix in gaussj')
          
          pivinv=1./a(icol,icol)
          a(icol,icol)=1

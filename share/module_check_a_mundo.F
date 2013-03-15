@@ -166,6 +166,18 @@
       CALL wrf_message ( wrf_err_message )
    ENDIF
 
+!----------------------------------------------------------------------------
+! If trajectory option is turned off, make sure the number of trajectories is 
+! zero.
+!----------------------------------------------------------------------------
+   IF ( ( model_config_rec%traj_opt .EQ. 0 ) .AND. &
+        ( model_config_rec%num_traj .NE. 0 ) ) THEN
+         WRITE (wrf_err_message, FMT='(A,A)') '--- WARNING: traj_opt is zero, but ', &
+                'num_traj is not zero; setting num_traj to zero.'
+         CALL wrf_message ( wrf_err_message )
+         model_config_rec%num_traj = 0 
+   END IF
+
 #endif
 
 #if (EM_CORE == 1)

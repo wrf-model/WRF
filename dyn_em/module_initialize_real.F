@@ -1577,30 +1577,35 @@ integer::oops1,oops2
 
       !  Spliti NUDAPT  Urban Parameters
 
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-               grid%LP_URB2D(i,j)  = grid%URB_PARAM(i,91,j)
-               grid%LB_URB2D(i,j)  = grid%URB_PARAM(i,95,j)
-               grid%HGT_URB2D(i,j)  = grid%URB_PARAM(i,94,j)
-            END DO
-         END DO
-
-
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-               DO k = 1, 15
-                  grid%HI_URB2D(i,k,j)  = grid%URB_PARAM(i,k+117,j)
+         IF ( ( config_flags%sf_urban_physics == 1 ) .OR. ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  grid%LP_URB2D(i,j)  = grid%URB_PARAM(i,91,j)
+                  grid%LB_URB2D(i,j)  = grid%URB_PARAM(i,95,j)
+                  grid%HGT_URB2D(i,j)  = grid%URB_PARAM(i,94,j)
                END DO
             END DO
-         END DO
+         ENDIF
+
+         IF ( ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  DO k = 1, 15
+                     grid%HI_URB2D(i,k,j)  = grid%URB_PARAM(i,k+117,j)
+                  END DO
+               END DO
+            END DO
+         ENDIF
 
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-               grid%MH_URB2D(i,j)  = grid%URB_PARAM(i,92,j)
-               grid%STDH_URB2D(i,j)  = grid%URB_PARAM(i,93,j)
+               IF ( config_flags%sf_urban_physics==1 ) THEN
+                  grid%MH_URB2D(i,j)  = grid%URB_PARAM(i,92,j)
+                  grid%STDH_URB2D(i,j)  = grid%URB_PARAM(i,93,j)
+               ENDIF
                grid%H2W_URB2D(i,j)  = grid%URB_PARAM(i,101,j)
                grid%Z0S_URB2D(i,j)  = grid%URB_PARAM(i,103,j)
                grid%ZDS_URB2D(i,j)  = grid%URB_PARAM(i,104,j)
@@ -1636,7 +1641,9 @@ integer::oops1,oops2
             DO i = its , MIN(ide-1,ite)
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                DO k = 1, 4
-                  grid%LF_URB2D(i,k,j)  = grid%URB_PARAM(i,k+95,j)
+                  IF ( config_flags%sf_urban_physics==1 ) THEN
+                     grid%LF_URB2D(i,k,j)  = grid%URB_PARAM(i,k+95,j)
+                  ENDIF
                   grid%Z0M_URB2D(i,k,j)  = grid%URB_PARAM(i,k+112,j)
                END DO
             END DO

@@ -45,8 +45,8 @@ MODULES = \
 	module_bl_boulac.o \
 	module_bl_camuwpbl_driver.o \
 	module_bl_mfshconvpbl.o \
-	module_cu_camuwshcu_driver.o \
-	module_cu_camuwshcu.o \
+	module_shcu_camuwshcu_driver.o \
+	module_shcu_camuwshcu.o \
 	module_shcu_grims.o \
 	module_cu_camzm_driver.o \
 	module_cu_camzm.o \

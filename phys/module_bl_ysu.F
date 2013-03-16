@@ -80,7 +80,7 @@ contains
 !-- br          bulk richardson number in surface layer
 !-- dt          time step (s)
 !-- rvovrd      r_v divided by r_d (dimensionless)
-!-- ep1         constant for virtual temperature (r_v/r_d - 1) (dimensionless)
+!-- ep1         constant for virtual temperature (r_v/r_d - 1)
 !-- ep2         constant for specific humidity calculation
 !-- karman      von karman constant
 !-- ids         start index for i in domain
@@ -159,13 +159,13 @@ contains
                                                                          hpbl, &
                                                                           wspd
 !
-  real,      dimension( ims:ime, kms:kme, jms:jme )                          , &
+   real,     dimension( ims:ime, kms:kme, jms:jme )                          , &
              intent(in   )   ::                                           u3d, &
                                                                           v3d
 !
-  integer,   dimension( ims:ime, jms:jme )                                   , &
+   integer,  dimension( ims:ime, jms:jme )                                   , &
              intent(out  )   ::                                        kpbl2d
-  logical, intent(in)        ::                                       flag_qi
+   logical,  intent(in)      ::                                       flag_qi
 !
 !optional
 !
@@ -207,7 +207,7 @@ contains
    qv2d(its:ite,:) = 0.0
 !
    do j = jts,jte
-      if(present(mut))then
+     if(present(mut))then
 !
 ! For ARW we will replace p and p8w with dry hydrostatic pressure
 !
@@ -492,9 +492,9 @@ contains
    real    ::  cont, conq, conw, conwrc
 !
 
-   real, dimension( its:ite, kts:kte ) :: wscalek
-   real, dimension( ims:ime ) :: wstar
-   real, dimension( ims:ime ) :: delta
+   real, dimension( its:ite, kts:kte )     ::                         wscalek
+   real, dimension( ims:ime )              ::                           wstar
+   real, dimension( ims:ime )              ::                           delta
    real, dimension( its:ite, kts:kte )     ::                     xkzml,xkzhl, &
                                                                zfacent,entfac
    real, dimension( its:ite )              ::                            ust3, &
@@ -1172,10 +1172,10 @@ contains
 ! paj: ctopo=1 if topo_wind=0 (default)
 ! mchen add this line to make sure NMM can still work with YSU PBL
      if(present(ctopo)) then
-       ad(i,1) = 1.+ctopo(i)*ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2 &
+       ad(i,1) = 1.+ctopo(i)*ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2         &
         *(wspd1(i)/wspd(i))**2
      else
-       ad(i,1) = 1.+ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2 &
+       ad(i,1) = 1.+ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2                  &
         *(wspd1(i)/wspd(i))**2
      endif
      f1(i,1) = ux(i,1)

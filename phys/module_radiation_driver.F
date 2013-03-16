@@ -881,6 +881,21 @@ CONTAINS
                    ims,ime, jms,jme, kms,kme,              &
                    its,ite, jts,jte, kts,kte               )
 
+        IF ( PRESENT (cldfra_mp_all) ) THEN
+          IF (is_CAMMGMP_used) THEN
+            !BSINGH: cloud fraction from CAMMGMP is being used (Mods by Po-Lun)
+            IF (itimestep .NE. 1) THEN
+               DO j=jts,jte
+               DO k=kts,kte
+               DO i=its,ite
+                  CLDFRA(i,k,j) = CLDFRA_MP_ALL(I,K,J) !PMA
+                  if (CLDFRA(i,k,j) .lt. 0.01) CLDFRA(i,k,j) = 0.
+               ENDDO
+               ENDDO
+               ENDDO
+            ENDIF 
+          ENDIF
+        ENDIF
      ENDIF
  
         CASE DEFAULT
@@ -1129,8 +1144,6 @@ CONTAINS
                   P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t,    &
                   T8W=t8w,RHO3D=rho,R=R_d,G=G,                      &
                   ICLOUD=icloud,WARM_RAIN=warm_rain,CLDFRA3D=CLDFRA,&
-                  CLDFRA_MP_ALL=CLDFRA_MP_ALL,ITIMESTEP=itimestep,  &
-                  IS_CAMMGMP_USED=is_CAMMGMP_used,                  &                
                   F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &
                   XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                   QV3D=QV,QC3D=QC,QR3D=QR,                          &
@@ -1456,9 +1469,7 @@ CONTAINS
                      COSZR=COSZR,JULDAY=JULDAY,SOLCON=SOLCON,          &
                      ALBEDO=ALBEDO,t3d=t,t8w=t8w,TSK=TSK,              &
                      p3d=p,p8w=p8w,pi3d=pi,rho3d=rho,                  &
-                     dz8w=dz8w,CLDFRA3D=CLDFRA,                        &
-                     CLDFRA_MP_ALL=CLDFRA_MP_ALL,ITIMESTEP=itimestep,  &
-                     is_CAMMGMP_used=is_CAMMGMP_used,R=R_D,G=G,        &
+                     dz8w=dz8w,CLDFRA3D=CLDFRA,R=R_D,G=G,              &
                      ICLOUD=icloud,WARM_RAIN=warm_rain,                &
                      F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &
                      XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
@@ -2016,7 +2027,7 @@ CONTAINS
 ! cal_cldfra_xr - Compute cloud fraction.
 ! Code adapted from that in module_ra_gfdleta.F in WRF_v2.0.3 by James Done
 !!
-!!---  Cloud fraction parameterization follows Randall, 1994
+!!---  Cloud fraction parameterization follows Xu and Randall (JAS), 1996
 !!     (see Hong et al., 1998)
 !!     (modified by Ferrier, Feb '02)
 !

@@ -194,11 +194,13 @@
     CALL nl_get_obs_dtramp     ( 1       , obs_dtramp )
     ENDIF
 
-    call nl_get_stoch_force_opt        ( grid%id, stoch_force_opt        )
-    call nl_get_stoch_vertstruc_opt    ( grid%id, stoch_vertstruc_opt    )
-    call nl_get_nens                   ( grid%id, nens                   )
-    call nl_get_tot_backscat_psi       ( grid%id, tot_backscat_psi       )
-    call nl_get_tot_backscat_t         ( grid%id, tot_backscat_t         )
+#if ( DA_CORE != 1)
+    CALL nl_get_stoch_force_opt     ( grid%id, stoch_force_opt     )
+    CALL nl_get_stoch_vertstruc_opt ( grid%id, stoch_vertstruc_opt )
+    CALL nl_get_nens                ( grid%id, nens                )
+    CALL nl_get_tot_backscat_psi    ( grid%id, tot_backscat_psi    )
+    CALL nl_get_tot_backscat_t      ( grid%id, tot_backscat_t      )
+#endif
 #endif
 
 ! julday and gmt can be set in namelist_03 for ideal.exe run
@@ -446,6 +448,7 @@ endif
        END IF
     END IF
 
+#if ( DA_CORE != 1)
     IF (switch .EQ. history_only) THEN
        CALL    wrf_put_dom_ti_integer( fid, 'STOCH_FORCE_OPT'        , stoch_force_opt       , 1, ierr )
        IF ( stoch_force_opt .NE. 0 )  THEN
@@ -455,6 +458,7 @@ endif
           CALL wrf_put_dom_ti_real   ( fid, 'tot_backscat_t'         , tot_backscat_t        , 1, ierr )
        END IF
     END IF
+#endif
 #endif
 
 ! added this metadatum for H. Chuan, NCEP, 030417, JM

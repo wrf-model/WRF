@@ -5783,10 +5783,14 @@ END SUBROUTINE phy_bc
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( OUT )  &
     :: rdz, rdzw, zx, zy, z
 
+
     REAL, INTENT( IN )  &
     :: rdx, rdy
 
 ! Local variables.
+
+    REAL, DIMENSION( its-1:ite, kts:kte, jts-1:jte )  &
+    :: z_at_w
 
     INTEGER  &
     :: i, j, k, i_start, i_end, j_start, j_end, ktf
@@ -5823,26 +5827,26 @@ END SUBROUTINE phy_bc
 ! Bug fix, WCS, 22 april 2002
 
       DO i = i_start, i_end
-        z(i,k,j) = ( ph(i,k,j) + phb(i,k,j) ) / g
+        z_at_w(i,k,j) = ( ph(i,k,j) + phb(i,k,j) ) / g
       END DO
       END DO
 
       DO k = 1, ktf
       DO i = i_start, i_end
-        rdzw(i,k,j) = 1.0 / ( z(i,k+1,j) - z(i,k,j) )
+        rdzw(i,k,j) = 1.0 / ( z_at_w(i,k+1,j) - z_at_w(i,k,j) )
       END DO
       END DO
 
       DO k = 2, ktf
       DO i = i_start, i_end
-        rdz(i,k,j) = 2.0 / ( z(i,k+1,j) - z(i,k-1,j) )
+        rdz(i,k,j) = 2.0 / ( z_at_w(i,k+1,j) - z_at_w(i,k-1,j) )
       END DO
       END DO
 
 ! Bug fix, WCS, 22 april 2002; added the following code
 
       DO i = i_start, i_end
-        rdz(i,1,j) = 2./(z(i,2,j)-z(i,1,j))
+        rdz(i,1,j) = 2./(z_at_w(i,2,j)-z_at_w(i,1,j))
       END DO
 
     END DO
@@ -6064,16 +6068,15 @@ END SUBROUTINE phy_bc
     REAL  &
     :: zl, zu, uh_smth
 
-    REAL, DIMENSION( its:ite, jts:jte )  &
-    :: mm, zzavg, zeta_zd12
+    REAL, DIMENSION( its-2:ite+2, jts-2:jte+2 )  :: mm
 
     REAL, DIMENSION( its-2:ite+2, kts:kte, jts-2:jte+2 )  &
     :: tmp1, hat, hatavg
 
-    REAL, DIMENSION( its:ite, kts:kte, jts:jte )  &
+    REAL, DIMENSION( its-2:ite+2, kts:kte, jts-2:jte+2 )  &
     :: wavg, rvort
 
-    LOGICAL, DIMENSION( its:ite, jts:jte )  &
+    LOGICAL, DIMENSION( its-2:ite+2, jts-2:jte+2 )  &
     :: use_column
 
 ! End declarations.
@@ -6100,13 +6103,13 @@ END SUBROUTINE phy_bc
     j_end   = jte
 
     IF ( config_flags%open_xs .OR. config_flags%specified .OR. &
-         config_flags%nested) i_start = MAX( ids+1, its )
+         config_flags%nested) i_start = MAX( ids+1, its-2 )
     IF ( config_flags%open_xe .OR. config_flags%specified .OR. &
-         config_flags%nested) i_end   = MIN( ide-1, ite )
+         config_flags%nested) i_end   = MIN( ide-1, ite+2 )
     IF ( config_flags%open_ys .OR. config_flags%specified .OR. &
-         config_flags%nested) j_start = MAX( jds+1, jts )
+         config_flags%nested) j_start = MAX( jds+1, jts-2 )
     IF ( config_flags%open_ye .OR. config_flags%specified .OR. &
-         config_flags%nested) j_end   = MIN( jde-1, jte )
+         config_flags%nested) j_end   = MIN( jde-1, jte+2 )
     IF ( config_flags%periodic_x ) i_start = its
     IF ( config_flags%periodic_x ) i_end = ite
 
@@ -6354,6 +6357,9 @@ END SUBROUTINE phy_bc
     END DO
     END DO
 
+    !  We want zl and zu to be the height above ground, so we subtract
+    !  the terrain elevation from the geopotential/g.
+
     DO j = j_start, j_end
     DO k = kts, ktf
     DO i = i_start, i_end
@@ -6363,21 +6369,11 @@ END SUBROUTINE phy_bc
            (( ph(i  ,k  ,j-1) + phb(i  ,k  ,j-1) ) / g - ht(i  ,j-1) ) +  &
            (( ph(i-1,k  ,j-1) + phb(i-1,k  ,j-1) ) / g - ht(i-1,j-1) ) ) )
 
-!           ph(i  ,k  ,j  ) + phb(i  ,k  ,j  ) +  &
-!           ph(i-1,k  ,j  ) + phb(i-1,k  ,j  ) +  &
-!           ph(i  ,k  ,j-1) + phb(i  ,k  ,j-1) +  &
-!           ph(i-1,k  ,j-1) + phb(i-1,k  ,j-1) ) ) / g
-
       zu = ( 0.25 * (  &
            (( ph(i  ,k+1,j  ) + phb(i  ,k+1,j  ) ) / g - ht(i  ,j  ) ) +  &
            (( ph(i-1,k+1,j  ) + phb(i-1,k+1,j  ) ) / g - ht(i-1,j  ) ) +  &
            (( ph(i  ,k+1,j-1) + phb(i  ,k+1,j-1) ) / g - ht(i  ,j-1) ) +  &
            (( ph(i-1,k+1,j-1) + phb(i-1,k+1,j-1) ) / g - ht(i-1,j-1) ) ) )
-
-!           ph(i  ,k+1,j  ) + phb(i  ,k+1,j  ) +  &
-!           ph(i-1,k+1,j  ) + phb(i-1,k+1,j  ) +  &
-!           ph(i  ,k+1,j-1) + phb(i  ,k+1,j-1) +  &
-!           ph(i-1,k+1,j-1) + phb(i-1,k+1,j-1) ) ) / g
 
       IF ( zl .GE. 2000. .AND. zu .LE. 5000. ) THEN
         IF ( wavg(i,k,j) .GT. 0. .AND. wavg(i,k+1,j) .GT. 0. ) THEN
@@ -6395,14 +6391,13 @@ END SUBROUTINE phy_bc
 
 ! Apply a smoother
 
-    DO j = j_start, j_end
-    DO i = i_start, i_end
-!     uh_smth = 0.25   *   uh(i  ,j  ) + &
-!               0.125  * ( uh(i+1,j  ) + uh(i-1,j  ) + &
-!                          uh(i  ,j+1) + uh(i  ,j-1) ) + &
-!               0.0625 * ( uh(i+1,j+1) + uh(i+1,j-1) + &
-!                          uh(i-1,j+1) + uh(i-1,j-1) )
-      uh_smth = uh(i,j)
+    DO j = MAX(jds+1,jts),MIN(jde-2,jte)
+    DO i = MAX(ids+1,its),MIN(ide-2,ite)
+      uh_smth = 0.25   *   uh(i  ,j  ) + &
+                0.125  * ( uh(i+1,j  ) + uh(i-1,j  ) + &
+                           uh(i  ,j+1) + uh(i  ,j-1) ) + &
+                0.0625 * ( uh(i+1,j+1) + uh(i+1,j-1) + &
+                           uh(i-1,j+1) + uh(i-1,j-1) )
 
       IF ( use_column(i,j) ) THEN
         IF ( uh_smth .GT. up_heli_max(i,j) ) THEN

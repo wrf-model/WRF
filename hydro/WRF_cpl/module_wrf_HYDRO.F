@@ -1,18 +1,21 @@
 module module_WRF_HYDRO
 
+#ifdef MPP_LAND
     use module_mpp_land, only: global_nx, global_ny, decompose_data_real, &
                  write_io_real, my_id, mpp_land_bcast_real1, IO_id, &
                 mpp_land_bcast_real
+#endif
     use module_HYDRO_drv, only: HYDRO_ini, HYDRO_exe
 
     use module_rt_data, only:  rt_domain
-    use module_CPL_LAND, only: CPL_LAND_INIT, cpl_outdate
+#ifdef MPP_LAND
+    use module_CPL_LAND, only: CPL_LAND_INIT
+#endif
     use module_namelist, only: nlst_rt
     USE module_domain, ONLY : domain, domain_clock_get
 
     implicit none
      
-
 
 
 
@@ -25,6 +28,7 @@ CONTAINS
        TYPE ( domain ), INTENT(INOUT) :: grid
        integer its, ite, jts, jte, ij
        real :: HYDRO_dt
+       character(len=19) :: cpl_outdate
 
 
         integer k, ix,jx, mm, nn
@@ -56,7 +60,9 @@ CONTAINS
             nlst_rt(did)%startdate(1:19) = cpl_outdate(1:19)
             nlst_rt(did)%olddate(1:19) = cpl_outdate(1:19)
 
-            call CPL_LAND_INIT(its,ite,jts,jte)
+#ifdef MPP_LAND
+           call CPL_LAND_INIT(its,ite,jts,jte)
+#endif
 
             call HYDRO_ini(ntime,did,ix0=ix,jx0=jx,vegtyp=grid%IVGTYP(its:ite,jts:jte),soltyp=grid%isltyp(its:ite,jts:jte))
 

@@ -1385,7 +1385,7 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
             endif
          endif
       endif nest_following
-      revised_nest_motion: if(grid%vortex_tracker==4) then
+      revised_nest_motion: if(grid%vortex_tracker>3) then
          if((grid%XLOC_1-grid%XLOC_2) .GE. 3) then
             move_cd_x=-1
          elseif((grid%XLOC_2-grid%XLOC_1) .GE. 3) then

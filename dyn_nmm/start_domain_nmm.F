@@ -99,6 +99,7 @@
    USE MODULE_GOCART_AEROSOLS, ONLY: SUM_PM_GOCART
    USE MODULE_MOSAIC_DRIVER, ONLY: SUM_PM_MOSAIC
 #endif
+
 !
 !----------------------------------------------------------------------
 !
@@ -149,7 +150,7 @@
      &          ,K,K400,KBI,KBI2,KCCO2,KNT,KNTI                         &
      &          ,LB,LRECBC,L                                            &
      &          ,N,NMAP,NRADLH,NRADSH,NREC,NS,RECL,STAT                 &
-     &          ,STEPBL,STEPCU,STEPRA
+     &          ,STEPBL,STEPCU,STEPRA, KFE,KFS
 !
       INTEGER :: MY_E,MY_N,MY_S,MY_W                                    &
      &          ,MY_NE,MY_NW,MY_SE,MY_SW,MYI,MYJ,NPE
@@ -222,6 +223,7 @@
       LOGICAL :: START_OF_SIMULATION
       LOGICAL :: LRESTART
       LOGICAL :: ETAMP_Regional, ICE1_indx, ICE2_indx
+      LOGICAL :: IS_CAMMGMP_USED=.FALSE.
 
 
       integer :: jam,retval
@@ -353,18 +355,6 @@
          CALL WRF_ERROR_FATAL(wrf_err_message)
       END IF
 
-#if (HWRF==1)
-      if(grid%vortex_tracker<1 .or. grid%vortex_tracker>3) then
-         write(wrf_err_message,*)' domain ',grid%id,' has an invalid value ',grid%vortex_tracker,' for grid%vortex_tracker.  It must be 1, 2 or 3.'
-      endif
-#endif
-      
-#if (HWRF==1)
-      if(grid%vortex_tracker<1 .or. grid%vortex_tracker>3) then
-         write(wrf_err_message,*)' domain ',grid%id,' has an invalid value ',grid%vortex_tracker,' for grid%vortex_tracker.  It must be 1, 2 or 3.'
-      endif
-#endif
-      
 !!!!!!tlb
 !!!! For now, set NPES to 1
       NPES=1
@@ -567,8 +557,10 @@
 !
       IFS=IPS
       JFS=JPS
+      KFS=KPS
       JFE=MIN(JPE,JDE-1)
       IFE=MIN(IPE,IDE-1)
+      KFE=MIN(KPE,KDE-1)
 
       if((allowed_to_read.and..not.(restrt)) .or. .not.allowed_to_read) then
          randif: IF(in_use_for_config(grid%id,'random'))THEN
@@ -627,12 +619,13 @@
 ! end of high-freq output
 #endif
 #ifdef HWRF
-! Begin Sam Trahan's doing for vortex_tracker=4 option
+! Begin Sam Trahan's doing for vortex tracker initialization
          call VORTTRAK_INIT(grid,config_flags,       &
+                            (allowed_to_read .and. .not. restrt), &
                             IDS,IDE,JDS,JDE,KDS,KDE, &
                             IMS,IME,JMS,JME,KMS,KME, &
                             ITS,ITE,JTS,JTE,KTS,KTE)
-! End Sam Trahan's doing for vortex_tracker=4 option
+! End Sam Trahan's doing for vortex tracker initialization
 #endif
 #ifdef HWRF
 !zhang's doing
@@ -1616,20 +1609,14 @@
 
 #ifdef HWRF
       hwrfx_mslp: if(grid%vortex_tracker /= 1) then
-! XUEJIN's doing
-! add to output MSLP at the initial time
-!
-!    COMPUTATION OF MSLP         ! This is gopal's doing
-!
-
-
      DO J=JFS,JFE
       DO I=IFS,IFE
-         grid%Z(I,J,1)=grid%FIS(I,J)*GI
+         grid%Z(I,J,KFS)=grid%FIS(I,J)*GI
       ENDDO
      ENDDO
 
-     DO K=KPS,2
+     ! Z now correctly calculated after nest move.  Needed by membrane MSLP.
+     DO K=KFS,KFE
       DO J=JFS,JFE
        DO I=IFS,IFE
           APELP      = (grid%PINT(I,J,K+1)+grid%PINT(I,J,K))
@@ -1640,22 +1627,20 @@
       ENDDO
      ENDDO
 
-     grid%MSLP=-9999.99
-     DO J=JFS,JFE
-      DO I=IFS,IFE
-         SFCT      = grid%T(I,J,1)*(1.+D608*grid%Q(I,J,1)) + LAPSR*(grid%Z(I,J,1)+grid%Z(I,J,2))*0.5
-         A         = LAPSR*grid%Z(I,J,1)/SFCT
-         grid%MSLP(I,J) = grid%PINT(I,J,1)*(1-A)**COEF2
+     DO K=KFS,KFE
+      DO J=JFS,JFE
+       DO I=IFS,IFE
+          grid%Z(i,j,k)=(grid%Z(i,j,k)+grid%Z(i,j,k+1))*0.5
+       ENDDO
       ENDDO
      ENDDO
 
-! SET BACK Z AS IN ORIGINAL CODE
-
-     DO K=KPS,KPE
-      DO J=JFS,JFE
-       DO I=IFS,IFE
-         grid%Z(I,J,K)=grid%PINT(I,J,K)
-       ENDDO
+     grid%MSLP=-9999.99
+     DO J=JFS,JFE
+      DO I=IFS,IFE
+         SFCT      = grid%T(I,J,1)*(1.+D608*grid%Q(I,J,1)) + LAPSR*grid%Z(I,J,1)
+         A         = LAPSR*grid%FIS(i,j)*gi/SFCT
+         grid%MSLP(I,J) = grid%PINT(I,J,1)*(1-A)**COEF2
       ENDDO
      ENDDO
 
@@ -1986,7 +1971,7 @@
      &             ,TMN,grid%xland,grid%znt,grid%z0,grid%ustar,grid%mol,grid%pblh,grid%tke_pbl             &
      &             ,grid%exch_h,THC,SNOWC,grid%mavail,HFX,QFX,RAINBL              &
      &             ,grid%stc,grid%sldpth,grid%DZSoil,GRID%NUM_SOIL_LAYERS,WARM_RAIN           &
-     &             ,ADV_MOIST_COND                                      &
+     &             ,ADV_MOIST_COND,IS_CAMMGMP_USED                      &
      &             ,grid%apr_gr,grid%apr_w,grid%apr_mc,grid%apr_st,grid%apr_as                   &
      &             ,grid%apr_capma,grid%apr_capme,grid%apr_capmi                       &
      &             ,grid%xice,grid%xice,grid%vegfra,grid%snow,grid%canwat,grid%smstav                 &
@@ -2314,7 +2299,8 @@
                 IMS,IME, JMS,JME, KMS,KME,                                  &
                 ITS,ITE, JTS,JTE, KTS,KTE-1                                 )
              
-        CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ)
+        CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
+             CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
            CALL SUM_PM_MOSAIC (                                             &
                 RRI, CHEM,                                            &
                 PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC, PM10,                 &

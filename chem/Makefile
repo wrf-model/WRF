@@ -119,6 +119,8 @@ MODULES =                                 \
         module_cam_mam_mo_chem_utls.o     \
         module_mosaic_cloudchem.o         \
         module_sorgam_cloudchem.o         \
+        module_cam_mam_gas_wetdep_driver.o \
+        module_cam_mam_mo_sethet.o         \
         module_phot_fastj.o
 
 OBJS    =                           \

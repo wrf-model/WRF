@@ -304,8 +304,18 @@ SUBROUTINE solve_em ( grid , config_flags  &
        IF( config_flags%progn > 0 ) THEN
 #         include "HALO_EM_SCALAR_E_3.inc"
        ENDIF
+#ifdef WRF_CHEM
+       IF( config_flags%cu_physics == CAMZMSCHEME ) THEN
+#         include "HALO_EM_SCALAR_E_3.inc"
+       ENDIF
+#endif
      ELSE IF ( config_flags%h_mom_adv_order <= 6 ) THEN
 #      include "HALO_EM_CHEM_E_5.inc"
+#ifdef WRF_CHEM
+       IF( config_flags%cu_physics == CAMZMSCHEME ) THEN
+#         include "HALO_EM_SCALAR_E_5.inc"
+       ENDIF
+#endif
        IF( config_flags%progn > 0 ) THEN
 #         include "HALO_EM_SCALAR_E_5.inc"
       ENDIF
@@ -3091,7 +3101,7 @@ BENCH_END(bc_end_tim)
 
    END DO Runge_Kutta_loop
 
-   IF      ( config_flags%trajcall .gt. 0 ) THEN
+   IF      ( config_flags%traj_opt .EQ. UM_TRAJECTORY ) THEN
 #ifdef DM_PARALLEL
 #    include "HALO_EM_F.inc"
 #    include "HALO_EM_D.inc"

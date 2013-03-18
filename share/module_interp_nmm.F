@@ -97,7 +97,7 @@ module module_interp_nmm
   public :: c2n_massikj, n2c_massikj
   public :: c2b_copy3d, c2n_copy3d, n2c_copy3d
 
-  public :: c2b_copy2d, c2n_copy2d, n2c_copy2d
+  public :: c2b_copy2d, c2n_copy2d, n2c_copy2d, c2n_copy2d_nomask
   public :: c2b_near2d, c2n_near2d, n2c_near2d
   public :: c2b_inear2d, c2n_inear2d, n2c_inear2d
 
@@ -655,6 +655,41 @@ contains
     end do bigj
   end subroutine c2n_copy2d
 
+    subroutine c2n_copy2d_nomask (II,JJ,W1,W2,W3,W4,    &
+       cfield,nfield,     &
+       cims, cime, cjms, cjme,   &
+       nids, nide, njds, njde,   &
+       nims, nime, njms, njme,   &
+       nits, nite, njts, njte, hgrid)
+    implicit none
+    logical, intent(in) :: hgrid
+    real, intent(in), dimension(nims:nime,njms:njme) :: &
+         W1,W2,W3,W4
+    integer, intent(in), dimension(nims:nime,njms:njme) :: II,JJ
+
+    integer, intent(in):: cims, cime, cjms, cjme,   &
+         nids, nide, njds, njde,   &
+         nims, nime, njms, njme,   &
+         nits, nite, njts, njte
+    real, intent(in) :: cfield(cims:cime,cjms:cjme)
+    real, intent(out) :: nfield(nims:nime,njms:njme)
+
+    integer :: j,i,a,nx
+
+    nx=min(nide-1,nite)-max(nids,nits)+1
+
+    bigj: do j=max(njds,njts),min(njde-1,njte)
+       interploop: do i=max(nids,nits),min(nide-1,nite)
+          if(hgrid) then
+             a=1-mod(JJ(i,j),2)
+          else
+             a=mod(JJ(i,j),2)
+          endif
+          nfield(i,j)=ICOPY2D(cfield,i,j)
+       enddo interploop
+    end do bigj
+  end subroutine c2n_copy2d_nomask
+
 
   ! ********************************************************************
   ! subs *_COPY3D -- horizontally interpolate but do not vertically
@@ -1049,7 +1084,9 @@ contains
              if(nk>1) then
                 cfield(i,j,k) = &
                      NGRAB(nfield,ni,nj,nk)   * weight + &
-                     NGRAB(nfield,ni,nj,nk-1) * (1.0-weight)
+! pjj/cray - source line limit in Cray compiler
+             NGRAB(nfield,ni,nj,nk-1) &
+             * (1.0-weight)
              else
                 ! Extrapolate
                 if(emethod==EConst) then
@@ -1114,7 +1151,9 @@ contains
              if(nk>1) then
                 cfield(i,k,j) = &
                      NGRABIKJ(nfield,ni,nk,nj)   * weight + &
-                     NGRABIKJ(nfield,ni,nk-1,nj) * (1.0-weight)
+! pjj/cray - source line limit in Cray compiler
+             NGRABIKJ(nfield,ni,nk-1,nj) &
+             * (1.0-weight)
              else
                 ! Extrapolate
                 if(emethod==EConst) then

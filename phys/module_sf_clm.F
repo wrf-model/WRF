@@ -2,6 +2,7 @@
    call abort
    return
    end
+#ifdef WRF_USE_CLM
 module TridiagonalMod
 
 !-----------------------------------------------------------------------
@@ -226,6 +227,7 @@ subroutine mkrank (n, a, miss, iv, num)
 !
 ! !USES:
   use shr_kind_mod, only: r8 => shr_kind_r8
+  use module_cam_support, only: endrun
 !
 ! !ARGUMENTS:
   implicit none
@@ -1132,6 +1134,7 @@ module clm_varsur
 ! !USES:
   use shr_kind_mod, only: r8 => shr_kind_r8
   use clm_varpar, only : maxpatch,lsmlon, lsmlat, nlevsoi
+  use module_cam_support, only: endrun
 !
 ! !PUBLIC TYPES:
   implicit none
@@ -3737,6 +3740,7 @@ MODULE module_sf_clm
   use clm_varpar, only: numpft, clm_varpar_mod,nlevgrnd, nlevsoi,nlevlak,nlevsno,maxpatch_pft
   use clm_varcon, only: hvap, hsub,tfrz, vkc, sb  ,&
                         snowage_drdt0,ndep,organic,fmax,efisop
+  use module_cam_support, only: endrun
   
 !
 CONTAINS
@@ -14285,6 +14289,7 @@ module pftdynMod
   use decompMod   , only : get_proc_bounds
   use clm_varpar  , only : max_pft_per_col
   use shr_kind_mod, only : r8 => shr_kind_r8
+  use module_cam_support, only: endrun
 !
 ! !DESCRIPTION:
 ! Determine pft weights at current time using dynamic landuse datasets.
@@ -17263,6 +17268,7 @@ subroutine iniTimeConst
                            resist, pftpar20, pftpar28, pftpar29, pftpar30, pftpar31, &
                            allom1s, allom2s, &
                            allom1 , allom2 , allom3  , reinickerp, dwood
+  use module_cam_support, only: endrun
 #if (defined CROP)
   use pftvarcon   , only : graincn
 #endif
@@ -17931,6 +17937,7 @@ module QSatMod
 ! !DESCRIPTION:
 ! Computes saturation mixing ratio and the change in saturation
 !
+  use module_cam_support, only: endrun
 ! !PUBLIC TYPES:
   implicit none
   save
@@ -18089,6 +18096,7 @@ module initGridcellsMod
   use clmtype
   use clm_varpar, only : lsmlon, lsmlat,npatch_urban,npatch_glacier,npatch_crop, maxpatch, maxpatch_pft
   use clm_varsur, only : wtxy,vegxy,numlon, area, latixy, longxy
+  use module_cam_support, only: endrun
 
 ! !PUBLIC TYPES:
   implicit none
@@ -19620,6 +19628,7 @@ module VOCEmissionMod
 ! Volatile organic compound emission
 !
 ! !USES:
+  use module_cam_support, only: endrun
 !
 ! !PUBLIC TYPES:
   implicit none
@@ -20578,6 +20587,7 @@ module subgridAveMod
   use clmtype , only : clm3
   use clm_varcon, only : spval, isturb,  icol_roof, icol_sunwall, icol_shadewall, &
                          icol_road_perv, icol_road_imperv
+  use module_cam_support, only: endrun
 
 ! !PUBLIC TYPES:
   implicit none
@@ -22925,6 +22935,7 @@ MODULE shr_orb_mod
 
    use shr_kind_mod
    use shr_const_mod
+   use module_cam_support, only: endrun
 
    IMPLICIT none
 
@@ -23621,12 +23632,13 @@ contains
 ! !USES:
     use shr_kind_mod, only: r8 => shr_kind_r8
     use clm_varpar                      !parameters
-    use clm_varsur                      !surface data 
+    !use clm_varsur                      !surface data  !BSINGH:02/04/2013: Commented out this use statement as it is repeated below
     use pftvarcon, only : noveg, crop  !vegetation type (PFT) 
     use clm_varcon,only : sand,clay,soic,plant,cover,num_landcover_types
     use clm_varsur      , only :gti, wtxy,vegxy,soic2d,sand3d,clay3d,organic3d,efisop2d &
-                                 ,pctgla,pctlak,pctwet,pcturb
+                                 ,pctgla,pctlak,pctwet,pcturb     !surface data 
     use decompMod , only: get_proc_bounds
+    use module_cam_support, only: endrun
 !
 ! !ARGUMENTS:
     implicit none
@@ -24098,6 +24110,7 @@ module SNICARMod
                         ,idx_Tgrd_max             &
                         ,idx_rhos_max             &
                         ,numrad_snw
+  use module_cam_support, only: endrun
 
   implicit none
   save
@@ -25913,6 +25926,7 @@ module aerdepMOD
   use shr_kind_mod,    only : r8 => shr_kind_r8
   use clm_varcon     , only : secspday,set_caerdep_from_file, set_dustdep_from_file
   use decompMod    , only : get_proc_bounds
+  use module_cam_support, only: endrun
 
 
 !
@@ -26400,6 +26414,7 @@ module accumulMod
 ! !USES:
   use shr_kind_mod, only: r8 => shr_kind_r8
   use clm_varpar  , only: maxpatch
+  use module_cam_support, only: endrun
 !
 ! !PUBLIC TYPES:
   implicit none
@@ -27027,6 +27042,7 @@ module accFldsMod
 !
 ! !USES:
   use shr_kind_mod, only: r8 => shr_kind_r8
+  use module_cam_support, only: endrun
 !
 ! !PUBLIC TYPES:
   implicit none
@@ -28121,6 +28137,7 @@ module SurfaceRadiationMod
 ! !USES:
    use shr_kind_mod, only: r8 => shr_kind_r8
    use globals, only : nstep
+   use module_cam_support, only: endrun
 !
 ! !PUBLIC TYPES:
   implicit none
@@ -34170,7 +34187,8 @@ module STATICEcosysdynMOD
 !
 ! !USES:
   use shr_kind_mod, only: r8 => shr_kind_r8
-   use decompMod    , only : get_proc_bounds
+  use decompMod    , only : get_proc_bounds
+  use module_cam_support, only: endrun
 !
 ! !PUBLIC TYPES:
   implicit none
@@ -36186,6 +36204,7 @@ module CanopyFluxesMod
 ! accumulation due to evaporation.
 !
 ! !USES:
+  use module_cam_support, only: endrun
 !
 ! !PUBLIC TYPES:
    implicit none
@@ -38189,6 +38208,7 @@ module BalanceCheckMod
 !
 ! !USES:
   use shr_kind_mod, only: r8 => shr_kind_r8
+  use module_cam_support, only: endrun
 !
 ! !PUBLIC TYPES:
   implicit none
@@ -42118,6 +42138,7 @@ module CNBalanceCheckMod
 !    use abortutils  , only: endrun
     use shr_kind_mod, only: r8 => shr_kind_r8
 !    use clm_varctl  , only: iulog
+    use module_cam_support, only: endrun
     implicit none
     save
     private
@@ -52492,6 +52513,7 @@ subroutine CNPrecisionControl(num_soilc, filter_soilc, num_soilp, filter_soilp)
    use clmtype
 !   use abortutils,   only: endrun
 !   use clm_varctl,   only: iulog
+   use module_cam_support, only: endrun
 !
 ! !ARGUMENTS:
    implicit none
@@ -59260,3 +59282,5 @@ subroutine driver (doalb,ilx,jlx,nextsw_cday, declinp1, declin)
 
 
 end subroutine driver
+
+#endif

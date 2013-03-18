@@ -54,7 +54,7 @@
    USE module_cam_mam_initmixrats, only: cam_mam_initmixrats
 
    USE module_cam_mam_wetscav, only:wetscav_cam_mam_driver_init
-   USE module_cam_support, only: gas_pcnst_modal_aero,gas_pcnst_modal_aero_pos !BSINGH - Fix for non-MAM simulations
+   USE module_cam_support, only: numgas_mam, gas_pcnst_modal_aero,gas_pcnst_modal_aero_pos !BSINGH - Fix for non-MAM simulations
    IMPLICIT NONE
 
    real  , intent(in) :: bioemdt,photdt,chemdt,dt,gmt
@@ -194,6 +194,23 @@ call wrf_message("**************************************************************
        call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
      CASE (CO2_TRACER, GHG_TRACER )
        call wrf_message("WARNING: Users interested in the GHG options should check the comments/references in header of module_ghg_fluxes")
+     CASE (CBMZ_CAM_MAM3_NOAQ)
+        numgas_mam = numgas
+        CALL wrf_debug(15,'calling CBMZ_CAM_MAM3_NOAQ chemistry from chem_driver')
+     CASE (CBMZ_CAM_MAM3_AQ)
+        numgas_mam = numgas
+        CALL wrf_debug(15,'calling CBMZ_CAM_MAM3_AQ with AQCHEM chemistry from chem_driver')
+     CASE (CBMZ_CAM_MAM7_NOAQ)
+        numgas_mam = numgas
+        CALL wrf_debug(15,'calling CBMZ_CAM_MAM7_NOAQ chemistry from chem_driver')
+        call wrf_message("WARNING: CBMZ_CAM_MAM7_NOAQ  chemistry option is highly experimental and not recommended for use.")
+        call wrf_error_fatal("ERROR: It is recommended that you contact phil.rasch at pnnl.gov for information regarding this option")
+     CASE (CBMZ_CAM_MAM7_AQ)
+        numgas_mam = numgas
+        CALL wrf_debug(15,'calling CBMZ_CAM_MAM7_AQ with AQCHEM chemistry from chem_driver')
+        call wrf_message("WARNING: CBMZ_CAM_MAM7_AQ  chemistry option is highly experimental and not recommended for use.")
+        call wrf_error_fatal("ERROR: It is recommended that you contact phil.rasch at pnnl.gov for information regarding this option")
+
    END SELECT chem_select
 
    if ( config_flags%dust_opt == 1 ) then
@@ -229,13 +246,13 @@ call wrf_message("**************************************************************
        if(  ( config_flags%chem_opt >= 8 .AND. config_flags%chem_opt <= 13) .OR.  &
             ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36) .OR. &
             ( config_flags%chem_opt >= 41 .AND. config_flags%chem_opt <= 42) .OR. &
-            ( config_flags%chem_opt /= 503 .OR. config_flags%chem_opt /= 504) ) then
+            ( config_flags%chem_opt == 503 .OR. config_flags%chem_opt == 504) ) then
          call wrf_debug( 15, 'Chemics_init: Wet scavenging turned on' )
        else
          call wrf_error_fatal("ERROR: wet scavenging option requires chem_opt = 8 through 13 or 31 to 36 or 41 to 42 or 503 or 504 to function.")
        endif
-       if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 19) then
-         call wrf_error_fatal("ERROR: wet scavenging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 19 (CAMMGMP) to function.")
+       if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 11) then
+         call wrf_error_fatal("ERROR: wet scavenging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 11 (CAMMGMP) to function.")
        endif
      elseif( id == 1 ) then
        if ( config_flags%mp_physics /= 8 ) then
@@ -257,17 +274,11 @@ call wrf_message("**************************************************************
       else
         call wrf_error_fatal("ERROR: cloud chemistry option requires chem_opt = 8 through 13 or 31 to 36 or 41 to 42 to function.")
       endif
-      if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 19 ) then
-        call wrf_error_fatal("ERROR: cloud chemistry option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 19 (CAMMGMP)to function.")
+      if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 11 ) then
+        call wrf_error_fatal("ERROR: cloud chemistry option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 11 (CAMMGMP)to function.")
       endif
    endif
 
-   if ( config_flags%chem_opt > 0 .and. config_flags%chem_conv_tr == 1 ) then
-      if ( config_flags%cu_physics /= 5 ) then
-!        call wrf_error_fatal("ERROR: chem_conv_tr=1 requires cu_physics=5")
-         call wrf_message("ERROR: chem_conv_tr=1 requires cu_physics=5")
-      end if
-   end if
    if ( config_flags%cu_physics == 5 .OR. config_flags%cu_physics == 3) then
    if ( config_flags%cu_diag == 0) then
          call wrf_message(" No time averaged variables. Time averaged chem variables requires cu_diag = 1")
@@ -280,7 +291,8 @@ call wrf_message("**************************************************************
    endif
    endif
 
-   if ( config_flags%chem_conv_tr == 1 .and. config_flags%cu_diag == 0) then
+   if ( config_flags%chem_opt /= 0 .AND. &
+      ( config_flags%chem_conv_tr == 1 .and. config_flags%cu_diag == 0) ) then
          call wrf_error_fatal("ERROR: chem_conv_tr=1 requires cu_diag=1")
    endif
 
@@ -935,12 +947,12 @@ ENDIF ghg_block
                its,ite, jts,jte, kts,kte                             )
        endif
        if(config_flags%wetscav_onoff == 1 .and. .NOT. config_flags%restart ) then
-          if(config_flags%mp_physics == 19) then
+          if(config_flags%mp_physics == CAMMGMPSCHEME ) then
              call wetscav_cam_mam_driver_init(ids,ide, jds,jde, kds,kde, &
                   ims,ime, jms,jme, kms,kme,                             &
                   its,ite, jts,jte, kts,kte                              )
           else
-             call wrf_error_fatal("ERROR: wet scavaging option requires mp_phys = 19 (CAMMGMP) to function.")
+             call wrf_error_fatal("ERROR: wet scavaging option requires mp_phys = CAMMGMP SCHEME to function.")
           endif
        endif
      CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &

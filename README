@@ -353,7 +353,7 @@ What is in WRF V3?
       Mac Intel/ppc, PGI/ifort/g95
       NEC SX/8
       HP-UX
-      Fujitsu VPP 5000
+      Fujitsu VPP 5000, FX10
   * RSL_LITE: communication layer, scalable to very large domains, supports nesting.
   * I/O: NetCDF, parallel NetCDF (Argonne), HDF5, GRIB, raw binary, Quilting (asynchronous I/O), MCEL (coupling)
   * ESMF Time Management, including exact arithmetic for fractional

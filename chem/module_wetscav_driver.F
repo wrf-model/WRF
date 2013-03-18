@@ -33,6 +33,7 @@ CONTAINS
                nevapr3d,rate1ord_cw2pr_st3d,shfrc3d,cmfmc,cmfmc2,evapcsh,  &
                icwmrsh,rprdsh,evapcdp3d,icwmrdp3d,rprddp3d,fracis3d,       &
                f_ice_phy,f_rain_phy,cldfrai,cldfral,cldfra_mp_all,         &
+               is_CAMMGMP_used,                                            &
 !======================================================================================
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
@@ -58,11 +59,14 @@ CONTAINS
    USE module_model_constants
    USE modal_aero_data,        only:  ntot_amode               ! For cam_mam_wetscav variables
    USE module_mozcart_wetscav, only:  wetscav_mozcart
-   USE module_mosaic_wetscav, only:  wetscav_cbmz_mosaic
+   USE module_mosaic_wetscav,  only:  wetscav_cbmz_mosaic
+   USE modal_aero_data,        only:  ntot_amode               ! For cam_mam_wetscav variables
+   USE module_mosaic_wetscav,  only:  wetscav_cbmz_mosaic
    USE modal_aero_data,        only:  ntot_amode               ! For cam_mam_wetscav variables
    USE module_mosaic_wetscav,  only:  wetscav_cbmz_mosaic
    USE module_aerosols_sorgam, only:  wetscav_sorgam_driver
    USE module_cam_mam_wetscav, only:  wetscav_cam_mam_driver
+   USE module_cam_support,     only:  pcnst =>pcnst_runtime
 
    IMPLICIT NONE
 
@@ -157,7 +161,7 @@ CONTAINS
 !======================================================================
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-
+   LOGICAL,      INTENT(IN)       :: is_CAMMGMP_used
    INTEGER,      INTENT(IN   )    ::                                &
                                       ids,ide, jds,jde, kds,kde,    &
                                       ims,ime, jms,jme, kms,kme,    &
@@ -236,7 +240,7 @@ REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
 
 !
 ! output variables (3D)
-   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,        &
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme, pcnst )         ,        &
           INTENT(OUT  ) ::                                          &
                                                         fracis3d
 
@@ -317,7 +321,7 @@ CASE (CBMZ_CAM_MAM3_NOAQ,CBMZ_CAM_MAM3_AQ,CBMZ_CAM_MAM7_NOAQ,CBMZ_CAM_MAM7_AQ)
             rate1ord_cw2pr_st3d,shfrc3d,cmfmc,cmfmc2,evapcsh,icwmrsh,      &
             rprdsh,evapcdp3d,icwmrdp3d,rprddp3d,moist(ims,kms,jms,P_QS),   &
             f_ice_phy,f_rain_phy,config_flags,cldfra_mp_all,cldfrai,       &
-            cldfral,cldfra,                                                &                             
+            cldfral,cldfra,is_CAMMGMP_used,                                &                             
             ids,ide, jds,jde, kds,kde,                                     &
             ims,ime, jms,jme, kms,kme,                                     &
             its,ite, jts,jte, kts,kte,                                     &

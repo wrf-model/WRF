@@ -2002,6 +2002,10 @@ SUBROUTINE READ_OBSERR_WIND (iunit, filein, keyword, endword, fmt_err, err)
                                        xxxx,yyyy
 
          CASE ('SYNOPS')              ! Synop
+
+                WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
+                       TRIM (sensor (line1)),','
+
                 READ (line1, fmt_err) (err (i) % synop % wind, i = 26, 20,-1)
                 READ (line2, fmt_err) (err (i) % synop % wind, i = 19, 13,-1)
                 READ (line3, fmt_err) (err (i) % synop % wind, i = 12,  6,-1)
@@ -2321,6 +2325,10 @@ SUBROUTINE READ_OBSERR_DIR (iunit, filein, keyword, endword, fmt_err, err)
                                        xxxx,yyyy
 
          CASE ('SYNOPS') 
+ 
+                WRITE (UNIT = 0, FMT = '(1X,2A)',ADVANCE='no') &
+                       TRIM (sensor (line1)),','
+
                 READ (line1, fmt_err) (err (i) % synop % dir , i = 26, 20,-1)
                 READ (line2, fmt_err) (err (i) % synop % dir , i = 19, 13,-1)
                 READ (line3, fmt_err) (err (i) % synop % dir , i = 12,  6,-1)

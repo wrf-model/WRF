@@ -9,6 +9,7 @@
 ! pjj/cray
   if(IO == 'write') then
 !dir$ concurrent
+!$OMP PARALLEL DO SCHEDULE(RUNTIME) PRIVATE(i,j,k)
   do k=k1,k2
     do j=j1,j2
 !dir$ prefervector
@@ -19,8 +20,10 @@
       enddo
     enddo
   enddo
+!$OMP END PARALLEL DO
 else
 !dir$ concurrent
+!$OMP PARALLEL DO SCHEDULE(RUNTIME) PRIVATE(i,j,k)
   do k=k1,k2
     do j=j1,j2
 !dir$ prefervector
@@ -31,6 +34,7 @@ else
       enddo
     enddo
   enddo
+!$OMP END PARALLEL DO
 endif
 
   return

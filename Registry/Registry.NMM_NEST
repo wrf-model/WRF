@@ -571,9 +571,6 @@ state integer imicrogram -   misc        -    -    r   "imicrogram"  "flag 0/1 0
 state real winfo ijkb dyn_nmm 1 Z hu=(NoInterp)d=(NoInterp) "winfo"  "Nest-parent interpolation/extrapolation weight" ""
 state integer iinfo ijkb dyn_nmm 1 Z hu=(NoInterp)d=(NoInterp) "iinfo" "Nest-parent interpolation index" ""
 
-# Dummy variable to ensure needed variables are passed to intermediate domain:
-state real interpdummy ij dyn_nmm 1 m f=(NoInterp:pint,pd,q,t,hres_fis,fis,hnear_i,hnear_j,iih,jjh,iiv,jjv,hbwgt1,hbwgt2,hbwgt3,hbwgt4,vbwgt1,vbwgt2,vbwgt3,vbwgt4)d=(NoInterp:pint,pd,q,t,hres_fis,fis,hnear_i,hnear_j,iih,jjh,iiv,jjv,hbwgt1,hbwgt2,hbwgt3,hbwgt4,vbwgt1,vbwgt2,vbwgt3,vbwgt4)u=(NoInterp:pint,pd,q,t,hres_fis,hnear_i,hnear_j,iih,jjh,iiv,jjv,hbwgt1,hbwgt2,hbwgt3,hbwgt4,vbwgt1,vbwgt2,vbwgt3,vbwgt4) "interpdummy" "Dummy array for ensuring variables are transmitted" ""
-
 #                                               
 # table entries are of the form                                         
 #<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>   
@@ -904,6 +901,9 @@ rconfig   integer opt_snf     namelist,noah_mp      1            1         h    
 rconfig   integer opt_tbot    namelist,noah_mp      1            2         h    "opt_tbot" "lower boundary of soil temperature (1->zero-flux; 2->Noah)"   ""
 rconfig   integer opt_stc     namelist,noah_mp      1            1         h    "opt_stc"  "soil/snow temperature time scheme 1->semi-implicit; 2->full-implicit (original Noah)"   ""
 
+# For WRF Hydro
+rconfig   integer wrf_hydro               derived              1     0      h     "wrf_hydro"   "descrip"  "unit"
+
 # For Noah UA changes
 state    real   flx4            ij         -        1         -      h        "FLX4"         "sensible heat from canopy"              "W m{-2}"
 state    real   fvb             ij         -        1         -      h        "FVB"          "fraction of vegetation with snow below" ""
@@ -1073,6 +1073,7 @@ rconfig   character  rst_outname       namelist,time_control		1  "wrfrst_d<domai
 rconfig   character  anl_outname         namelist,time_control    max_domains  "wrfanl_d<domain>_<date>"     -     "name of analysis outfile"   ""      ""
 rconfig   logical write_input             namelist,time_control		1             .false. -    "write input data for 3dvar etc."              ""      ""
 rconfig   logical write_restart_at_0h     namelist,time_control		1             .false. h    "write_restart_at_0h"              ""      ""
+rconfig   logical write_hist_at_0h_rst    namelist,time_control         1             .false. h    "write_hist_at_0h_rst" "T/F write hist at 0 h of restarted forecast"
 rconfig   logical adjust_output_times     namelist,time_control         1             .false. -    "adjust_output_times"
 rconfig   logical adjust_input_times      namelist,time_control         1             .false. -    "adjust_input_times"
 rconfig   real    tstart                  namelist,time_control     max_domains       0.       irh   "tstart"  "forecast hour at the start of the NMM integration"
@@ -1200,7 +1201,7 @@ rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8     
 rconfig   real    seaice_threshold        namelist,physics      1            271       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
 rconfig   integer fractional_seaice       namelist,physics      1            0        -     "fractional_seiace" "Fractional sea-ice option"
 rconfig   integer seaice_albedo_opt       namelist,physics      1            0        -     "seaice_albedo_opt" "Method for setting albedo over sea ice"
-rconfig   real    seaice_albedo_default   namelist,physics      1           0.80      -     "seaice_albedo_default" "Default value for sea-ice over albedo with seaice_albeo_opt=0"
+rconfig   real    seaice_albedo_default   namelist,physics      1           0.65      -     "seaice_albedo_default" "Default value for sea-ice over albedo with seaice_albeo_opt=0"
 rconfig   integer seaice_snowdepth_opt    namelist,physics      1            0        -     "seaice_snowdepth_opt" "Method for treating snow depth on sea ice"
 rconfig   real    seaice_snowdepth_max    namelist,physics      1         1.E10       -     "seaice_snowdepth_max" "Maximum allowed accumulation (m) of snow on sea ice"
 rconfig   real    seaice_snowdepth_min    namelist,physics      1         0.001       -     "seaice_snowdepth_min" "Minimum snow depth (m) on sea ice"
@@ -1462,7 +1463,7 @@ package   sfclayrevscheme sf_sfclay_physics==11        -             -
 package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 
 package   slabscheme     sf_surface_physics==1       -             -
-package   lsmscheme      sf_surface_physics==2       -             -
+package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn
 package   ruclsmscheme   sf_surface_physics==3       -             -
 
 package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy
@@ -1515,6 +1516,13 @@ package   dfi_ddfi      dfi_opt==2                  -            \
 package   dfi_tdfi      dfi_opt==3                  -            \
  state:dfi_pd,dfi_pint,dfi_dwdt,dfi_t,dfi_q,dfi_u,dfi_v,dfi_q2,dfi_cwm,dfi_rrw,dfi_STC,dfi_SMC,dfi_SH2O,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_NMM_TSK,dfi_SNOWC
 
+package   albsi_zero     seaice_albedo_opt==0        -             -
+package   albsi_one      seaice_albedo_opt==1        -             -
+package   albsi_two      seaice_albedo_opt==2        -             state:albsi
+package   snowsi_zero    seaice_snowdepth_opt==0     -             -
+package   snowsi_one     seaice_snowdepth_opt==1     -             state:snowsi
+package   icedepth_zero  seaice_thickness_opt==0     -             -
+package   icedepth_one   seaice_thickness_opt==1     -             state:icedepth
 
 # only need to specify these once; not for every io_form* variable
 package   io_intio    io_form_restart==1                     -             -
@@ -1537,6 +1545,11 @@ package ltng_none           lightning_option==0            -       -
 package ltng_crm_PR92w      lightning_option==1            -       -
 package ltng_crm_PR92z      lightning_option==2            -       -
 package ltng_cpm_PR92z      lightning_option==11           -       -
+
+#WRF Hydro
+package   no_wrfhydro    wrf_hydro==0                -            -
+package   wrfhydro       wrf_hydro==1                -            state:SOLDRAIN, SFCHEADRT, INFXSRT
+
 
 ## communications                                               
 

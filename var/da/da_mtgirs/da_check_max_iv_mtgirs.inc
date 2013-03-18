@@ -25,7 +25,7 @@ subroutine da_check_max_iv_mtgirs(iv, it, num_qcstat_conv)
    do n = iv%info(mtgirs)%n1,iv%info(mtgirs)%n2
     do k = 1, iv%info(mtgirs)%levels(n)
          call da_get_print_lvl(iv%mtgirs(n)%p(k),ipr)
-         if(standard)then
+         if(.not. qc_rej_both)then
              if(var_wind)then
                failed=.false.
                if( iv%mtgirs(n)%u(k)%qc >= obs_qc_pointer ) then

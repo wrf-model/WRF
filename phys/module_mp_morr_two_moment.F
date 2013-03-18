@@ -48,8 +48,8 @@
 ! WRFV3.5
 ! hm/A. Ackerman bug fix 11/08/12
 
-! 1) for accelerated melting from collisions, should use graupel mass collected by rain, not rain mass 
-!    collected by graupel
+! 1) for accelerated melting from collisions, should use rain mass collected by snow, not snow mass 
+!    collected by rain
 ! 2) minor changes to some comments
 ! 3) reduction of maximum-allowed ice concentration from 10 cm-3 to 0.3
 !    cm-3. This was done to address the problem of excessive and persistent
@@ -1615,12 +1615,22 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
             UMR=MIN(UMR,9.1*dum)
             UNR=MIN(UNR,9.1*dum)
 
-            PRACS(K) = CONS31*(((1.2*UMR-0.95*UMS)**2+              &
-                  0.08*UMS*UMR)**0.5*RHO(K)*                     &
-                 N0RR(K)*N0S(K)/LAMS(K)**3*                    &
-                  (5./(LAMS(K)**3*LAMR(K))+                    &
-                  2./(LAMS(K)**2*LAMR(K)**2)+                  &
-                  0.5/(LAMS(K)*LAMR(K)**3)))
+! hm fix, 2/12/13
+! for above freezing conditions to get accelerated melting of snow,
+! we need collection of rain by snow (following Lin et al. 1983)
+!            PRACS(K) = CONS31*(((1.2*UMR-0.95*UMS)**2+              &
+!                  0.08*UMS*UMR)**0.5*RHO(K)*                     &
+!                 N0RR(K)*N0S(K)/LAMS(K)**3*                    &
+!                  (5./(LAMS(K)**3*LAMR(K))+                    &
+!                  2./(LAMS(K)**2*LAMR(K)**2)+                  &
+!                  0.5/(LAMS(K)*LAMR(K)**3)))
+
+            PRACS(K) = CONS41*(((1.2*UMR-0.95*UMS)**2+                   &
+                  0.08*UMS*UMR)**0.5*RHO(K)*                      &
+                  N0RR(K)*N0S(K)/LAMR(K)**3*                              &
+                  (5./(LAMR(K)**3*LAMS(K))+                    &
+                  2./(LAMR(K)**2*LAMS(K)**2)+                  &				 
+                  0.5/(LAMR(k)*LAMS(k)**3)))
 
 ! fix 053011, npracs no longer subtracted from snow
 !            NPRACS(K) = CONS32*RHO(K)*(1.7*(UNR-UNS)**2+            &
@@ -1768,23 +1778,6 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! IF WATER SUPERSATURATION, GRAUPEL MELTS TO FORM RAIN
 
           IF (QG3D(K).GE.1.E-8) THEN
-
-! hm/aa fix 11-08-12
-
-          IF (QR3D(K).GE.1.E-8) THEN
-
-! HERE PRACG IS MIXING RATIO OF GRAUPEL PER SEC COLLECTED BY RAIN
-
-            PRACG(K) = CONS33*(((1.2*UMR-0.95*UMG)**2+              &
-                  0.08*UMG*UMR)**0.5*RHO(K)*                     &
-                 N0RR(K)*N0G(K)/LAMG(K)**3*                    &
-                  (5./(LAMG(K)**3*LAMR(K))+                    &
-                  2./(LAMG(K)**2*LAMR(K)**2)+                  &
-                  0.5/(LAMG(K)*LAMR(K)**3)))
-
-          ELSE
-             PRACG(K)=0.
-          END IF
 
 ! fix 053011
 ! HM, MODIFY FOR V3.2, ADD ACCELERATED MELTING DUE TO COLLISION WITH RAIN

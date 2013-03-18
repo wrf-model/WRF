@@ -141,4 +141,36 @@ include $(BUILD_DIR)/library_rules.mk
 #
 #  Compile dependencies.  These are appended to this file by make depend. 
 #
+addfield.o: pdstemplates.o drstemplates.o
+
+addgrid.o: gridtemplates.o
+
+getfield.o: gridtemplates.o pdstemplates.o drstemplates.o
+
+getg2ir.o: realloc.o
+
+getgb2.o: gribmod.o
+
+getgb2l.o: gribmod.o
+
+getgb2p.o: gribmod.o
+
+getgb2r.o: gribmod.o
+
+getgb2s.o: gribmod.o
+
+gf_free.o: gribmod.o
+
+gf_getfld.o: gribmod.o
+
+gf_unpack3.o: gridtemplates.o realloc.o
+
+gf_unpack4.o: pdstemplates.o realloc.o
+
+gf_unpack5.o: drstemplates.o realloc.o
+
+ixgb2.o: realloc.o
+
+putgb2.o: gribmod.o
+
 # DO NOT DELETE THIS LINE -- make depend depends on it.

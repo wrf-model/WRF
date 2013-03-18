@@ -189,6 +189,8 @@
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS
 !
       LOGICAL :: WARM_RAIN
+      LOGICAL :: IS_CAMMGMP_USED=.FALSE.
+
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -400,7 +402,9 @@
      &                 ,QR=MOIST_TRANS(IMS,KMS,JMS,P_QR),F_QR=F_QR      &
      &                 ,QI=MOIST_TRANS(IMS,KMS,JMS,P_QI),F_QI=F_QI      &
      &                 ,QS=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS      &
-     &                 ,QG=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG     )
+     &                 ,QG=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG      &
+     &                 ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
+     &                 ,EXPLICIT_CONVECTION=config_flags%cu_physics==0)
 
 
 !
@@ -673,7 +677,7 @@
      &                ,RC_MF                                            & ! QNSE
      &                ,GRID,CONFIG_FLAGS                                &
      &                ,IHE,IHW,IVE,IVW                                  &
-     &                ,DISHEAT                                          &
+     &                ,DISHEAT,DKU3D,DKT3D                              &
      &                ,HPBL2D, EVAP2D, HEAT2D,RC2D                      &  !Kwon S&P
      &                ,SFCHEADRT,INFXSRT,SOLDRAIN                       &  !Hydrology, no-op right now
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
@@ -826,6 +830,7 @@
      &                                                      ,EXCH_H     &
      &                                                      ,EXCH_M
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(OUT) :: DKU3D,DKT3D   ! KWON
       REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME),INTENT(INOUT) :: KEEPFR3DFLAG & !<--- Used only in physics (IKJ)
      &                                                      ,SH2O,SMC     &
      &                                                      ,SMFR3D,STC
@@ -894,7 +899,10 @@
 !
       REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME) :: ZERO_SOIL
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME) :: wstar_ysu, delta_ysu
+!
       LOGICAL :: E_BDY,WARM_RAIN
+      LOGICAL :: IS_CAMMGMP_USED=.FALSE.
 !
       INTEGER :: NUM_ROOF_LAYERS,NUM_WALL_LAYERS,NUM_ROAD_LAYERS   ! urban
       INTEGER :: FRACTIONAL_SEAICE
@@ -905,6 +913,9 @@
       INTEGER :: SEAICE_SNOWDEPTH_OPT
       REAL    :: SEAICE_SNOWDEPTH_MAX
       REAL    :: SEAICE_SNOWDEPTH_MIN
+      INTEGER :: IFNDALBSI
+      INTEGER :: IFNDICEDEPTH
+      INTEGER :: IFNDSNOWSI
 !
       INTEGER :: IGS,IGE,JGS,JGE, PQ_I   !BSF
       LOGICAL :: FQ_I, ETAMP_PHYSICS,ETAMP_Regional            !BSF
@@ -919,7 +930,7 @@
 
     INTEGER  :: isurban
     CHARACTER(len=256) :: MMINLU
-    REAL :: VAR_RIC                                !KWON for variable Ric (=1)
+    REAL :: VAR_RIC,coef_ric_s,coef_ric_l                             !KWON for variable Ric (=1)
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -941,6 +952,10 @@
       IF ( SEAICE_ALBEDO_OPT /= 0 ) THEN
          CALL WRF_ERROR_FATAL("NMM must use SEAICE_ALBEDO_OPT = 0")
       ENDIF
+
+      IFNDALBSI = 0
+      IFNDSNOWSI = 0
+      IFNDICEDEPTH = 0
 
       SEAICE_ALBEDO_DEFAULT = CONFIG_FLAGS%SEAICE_ALBEDO_DEFAULT
       SEAICE_THICKNESS_OPT = CONFIG_FLAGS%SEAICE_THICKNESS_OPT
@@ -1268,6 +1283,8 @@
      &          ,SEAICE_SNOWDEPTH_MAX=SEAICE_SNOWDEPTH_MAX              &
      &          ,SEAICE_SNOWDEPTH_MIN=SEAICE_SNOWDEPTH_MIN              &
      &          ,TICE2TSK_IF2COLD=CONFIG_FLAGS%TICE2TSK_IF2COLD         &
+     &          ,IFNDALBSI=IFNDALBSI,IFNDICEDEPTH=IFNDICEDEPTH          &
+     &          ,IFNDSNOWSI=IFNDSNOWSI                                  &
      &          ,ISLTYP=ISLTYP                                          &
      &          ,ITIMESTEP=NTSD,IVGTYP=IVGTYP,LOWLYR=LOWLYR             &
      &          ,MAVAIL=ONE,RMOL=RMOL,MOL=MOL                           &
@@ -1430,7 +1447,9 @@
          PQ_I=P_QI
       ENDIF
       CALL nl_get_var_ric(1, var_ric)
-      write(0,*) 'var_ric from namelist Kwon  ',var_ric
+      CALL nl_get_coef_ric_s(1, coef_ric_s)
+      CALL nl_get_coef_ric_l(1, coef_ric_l)
+!      write(0,*) 'var_ric & coef_ric_s l from namelist Kwon  ',var_ric,coef_ric_s,coef_ric_l
 !
       CALL PBL_DRIVER(                                                &
      &                ITIMESTEP=NTSD,DT=DT                            &
@@ -1475,6 +1494,8 @@
      &               ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D     &    !Kwon S&P
      &               ,RC2D=RC2D                                       &    !KWON
      &               ,VAR_RIC=VAR_RIC                                 &    !Kwon Ric
+     &               ,DKU3D=DKU3D,DKT3D=DKT3D 
+     &               ,coef_ric_l=coef_ric_l,coef_ric_s=coef_ric_s     &    !Kwon for Ric
      &               ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &               ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &
      &               ,QI_CURR=MOIST_TRANS(IMS,KMS,JMS,PQ_I),F_QI=FQ_I &
@@ -1482,6 +1503,8 @@
      &               ,QS_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS &
      &               ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG &
      &               ,HOL=HOL,sf_sfclay_physics=CONFIG_FLAGS%SF_SFCLAY_PHYSICS &
+     &               ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
+     &               ,wstar=wstar_ysu,delta=delta_ysu                 &
      &               ,sf_urban_physics=CONFIG_FLAGS%SF_URBAN_PHYSICS)
 !
 !***  NOTE THAT THE EXCHANGE COEFFICIENTS FOR HEAT EXCH_H COMING OUT OF
@@ -1673,7 +1696,7 @@
      &               ,HANGL=HANGL,HANIS=HANIS,HSLOP=HSLOP,HZMAX=HZMAX   &
      &               ,CROT=CROT,SROT=SROT                               &
      &               ,DUDT=DUDT_GWD,DVDT=DVDT_GWD                       &
-     &               ,UGWDsfc=UGWDsfc,VGWDsfc=VGWDsfc                   &
+     &               ,UGWDsfc=UGWDsfc,VGWDsfc=VGWDsfc,XLAND=XLAND       &    !ADDED BY KWON FOR OCEAN
      &               ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE   &
      &               ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME   &
      &               ,ITS=IGS,ITE=IGE,JTS=JGS,JTE=JGE,KTS=KTS,KTE=KTE )
@@ -2146,6 +2169,7 @@
 #endif
 !
       LOGICAL,INTENT(IN) :: HYDRO,RESTRT
+      LOGICAL :: IS_CAMMGMP_USED=.FALSE.
 !
       TYPE(DOMAIN),TARGET :: GRID
 !
@@ -2242,10 +2266,12 @@
      &   CONFIG_FLAGS%CU_PHYSICS==NSASSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==TIEDTKESCHEME)RETURN
-      IF(MOD(NTSD,NCNVC)/=0.AND. &
+      IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==OSASSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)RETURN
+      IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
+     &   CONFIG_FLAGS%CU_PHYSICS==MESO_SAS)RETURN             !Kwon
       
 !-----------------------------------------------------------------------
       NSTEP_CNV=NCNVC
@@ -2532,6 +2558,7 @@
      &                 ,sas_mass_flux=config_flags%sas_mass_flux        &
      &                 ,shalconv=config_flags%sas_shal_conv             &
      &                 ,shal_pgcon=config_flags%sas_shal_pgcon          &
+     &                 ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
                   ! Selection argument
      &                 ,CU_PHYSICS=CONFIG_FLAGS%CU_PHYSICS              &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
@@ -2663,7 +2690,7 @@
 !
           cps_select: SELECT CASE(config_flags%cu_physics)
 !
-          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,OSASSCHEME,NSASSCHEME,TIEDTKESCHEME)
+          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,MESO_SAS,OSASSCHEME,NSASSCHEME,TIEDTKESCHEME)
             IF (ETAMP_Regional) THEN
               MOIST_TRANS(I,K,J,P_QS)=MAX(0.,MOIST_TRANS(I,K,J,P_QS)+RQICUTEN(I,K,J)*DTCNVC+RQSCUTEN(I,K,J)*DTCNVC)
             ELSE

@@ -45,6 +45,8 @@
 #ifdef WRF_CHEM
       USE MODULE_INPUT_CHEM_DATA,       ONLY: GET_LAST_GAS
 #endif
+
+
 !-----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -308,6 +310,9 @@
          ETAMP_PHYSICS=.TRUE.
 !
       ENDIF
+
+
+
 !
 !-----------------------------------------------------------------------
 !***  SET FLAG FOR THE OPERATIONAL PHYSICS SUITE.
@@ -1661,7 +1666,7 @@
      &            ,grid%rc_mf                                          & ! QNSE
      &            ,GRID,CONFIG_FLAGS                                   &
      &            ,grid%ihe,grid%ihw,grid%ive,grid%ivw                 &
-     &            ,GRID%DISHEAT                                        &
+     &            ,GRID%DISHEAT,GRID%DKU3D,GRID%DKT3D                          &
      &            ,GRID%HPBL2D, GRID%EVAP2D, GRID%HEAT2D,GRID%RC2D               &  !S&P Kwon
      &            ,GRID%SFCHEADRT,GRID%INFXSRT,GRID%SOLDRAIN           &  !Hydrology, no-op right now
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
@@ -1786,6 +1791,7 @@
      &   (CONFIG_FLAGS%CU_PHYSICS.eq.KFETASCHEME .or.                     &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME .or.                       &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.NSASSCHEME .or.                       &
+     &   CONFIG_FLAGS%CU_PHYSICS.eq.MESO_SAS .or.                         &   !Kwon
      &   CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN                       ! 
 !
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -1889,6 +1895,7 @@
         IF(MOD(grid%ntsd, GRID%NCNVC).eq.0.and.                 &
      &    (CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME.or.            &
      &     CONFIG_FLAGS%CU_PHYSICS.eq.NSASSCHEME.or.            &
+     &     CONFIG_FLAGS%CU_PHYSICS.eq.MESO_SAS.or.              & !Kwon
      &     CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN 
 !emc_2010_bugfix_h50
 !
@@ -2391,18 +2398,15 @@
 !
 ! FOR VORTEX FOLLOWING MOVING NEST
 !
+
+
+
 !-----------------------------------------------------------------------------
 !***  CRITERIA SET FOR GRID MOTION. This is gopal's doing
 !-----------------------------------------------------------------------------
 !
 #ifdef MOVE_NESTS
-   IF(grid%id .NE. 1 .AND. MOD(grid%ntsd,1)==0 .AND. grid%num_moves.EQ.-99)THEN
-!-----------------
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_TRACK.inc"
-#endif
-!-----------------
-
+   IF ( grid%num_moves.EQ.-99 ) THEN
       call start_timing()
       call stats_for_move(grid,config_flags &
                          ,IDS,IDE,JDS,JDE,KDS,KDE &

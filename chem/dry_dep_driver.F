@@ -20,8 +20,9 @@ CONTAINS
                xland,ash_fall,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,       &
                anh3,cvaro1,cvaro2,   &
                cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,dep_vel_o3,      &
-               e_co,kemit,sf_urban_physics,numgas,current_month,dvel,     &
-               snowh,                                                     &
+               emis_ant,ebu_in,                                           &
+               sf_urban_physics,numgas,current_month,dvel,                &
+               snowh,is_CAMMGMP_used,                                     & !BSINGH:01/31/2013: Added is_CAMMGMP_used for MAM drydep
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )
@@ -48,11 +49,12 @@ CONTAINS
   USE module_data_cam_mam_asect, only: lptr_chem_to_q, lptr_chem_to_qqcw !Balwinder.Singh@pnnl.gov: Added to avoid mixing of CHEM array constituents multiple times
   USE modal_aero_data,         only: numptr_amode, lmassptr_amode, ntot_amode, nspec_amode !Added by Balwinder.Singh@pnnl.gov to avoid mixing of CHEM array constituents multiple times
   USE module_cam_mam_drydep, only:  cam_mam_drydep_driver
+  use module_scalar_tables,     only: chem_dname_table !Balwinder.Singh@pnnl.gov:Added for MAM aerosols dry deposition
   
   IMPLICIT NONE
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-
+   LOGICAL, INTENT(IN)                           :: is_CAMMGMP_used !BSINGH:01/31/2013: Added is_CAMMGMP_used for MAM drydep
    INTEGER,      INTENT(IN   ) :: id,julday,                    &
                                   sf_urban_physics,             &
                                   numgas,                       &
@@ -72,11 +74,11 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_tracer ),         &
          INTENT(INOUT ) ::                                 tracer
 
+   REAL, DIMENSION( ims:ime, 1:config_flags%kemit, jms:jme,num_emis_ant),&
+         INTENT(IN ) ::                                    emis_ant
 
-   INTEGER,      INTENT(IN   ) :: kemit
-   REAL, DIMENSION( ims:ime, kms:kemit, jms:jme ),            &
-         INTENT(IN ) ::                                                    &
-          e_co
+   REAL, DIMENSION( ims:ime, 1, jms:jme, num_ebu_in ),                     &
+         INTENT(INOUT ) ::                                   ebu_in
 
    REAL, DIMENSION( ims:ime, config_flags%kdvel, jms:jme, num_dvel ), &
          INTENT(INOUT ) ::                                   dvel
@@ -161,6 +163,9 @@ CONTAINS
 
    real, parameter :: m2cm = 100.
 
+   integer :: k_a, k_c, kmax, m_mam
+   real, dimension( its:ite, jts:jte ) :: frac_removed
+
 
 ! ..
 ! .. Intrinsic Functions ..
@@ -169,7 +174,7 @@ CONTAINS
       !Balwinder.Singh@pnnl.gov: Following code sets vertMixAero(:) flag to true or false based on whether
       !a particular CHEM array constituent should be mixed (vertically) by dry_dep_driver or not
       !The constituents which are  mixed in CAMMGMP microphysics are NOT mixed in dry_dep_driver. 
-      if(config_flags%mp_physics==CAMMGMPSCHEME) then ! If CAMMGMP microphysics is selected
+      if(is_CAMMGMP_used) then ! If CAMMGMP microphysics is selected
          vertMixAero(:)    = .FALSE. 
          lptr_q_to_chem(:) = -999888777 ! pointer which maps Q array (CAM's STATE%Q array) to CHEM array
          
@@ -482,9 +487,21 @@ CONTAINS
           end if
        end if
 
-
-
-     CASE DEFAULT 
+       !For MAM aersols dry deposition
+       if ((aer_mech_id == 4)) then
+          do m_mam = 1, num_chem
+             !Look for species with _a or _c and adjust these species for dry deposition
+             k_a   = index(trim(adjustl(chem_dname_table(1,m_mam))),'_a') !To include *_a* species
+             k_c   = index(trim(adjustl(chem_dname_table(1,m_mam))),'_c') !To include *_c* species
+             kmax = max(k_a, k_c)
+             if(kmax > 0 ) then !kmax>0 means a species has _a or _c
+                frac_removed(its:ite,jts:jte) = max( 0.0, min( 1.0, ddvel(its:ite,jts:jte,m_mam)*dtstep/dz8w(its:ite,1,jts:jte) ) )
+                chem(its:ite,1,jts:jte,m_mam) = chem(its:ite,1,jts:jte,m_mam)*(1.0 - frac_removed(its:ite,jts:jte)) !update lowest layer
+             endif
+          enddo
+       endif
+       
+    CASE DEFAULT 
                                                      
    END SELECT drydep_select                              
 
@@ -529,17 +546,36 @@ CONTAINS
 !!$! UNCOMMENT THIS AND FINE TUNE LEVELS TO YOUR DOMAIN IF YOU WANT TO
 !!$! FORCE MIXING ESPECIALLY OVER URBAN AREAS TO A CERTAIN DEPTH:
 !!$!
-!!$! --- Mix the emissions up several layers
+!!$! --- Mix the emissions up several layers in urban areas if no urban surface physics
 !!$!     if e_co > 0., the grid cell should not be over water
 !!$!     if e_co > 200, the grid cell should be over a large urban region
 !!$!
-     if (sf_urban_physics .eq. 0) then
-      if (e_co(i,kts,j) .gt. 0) then
+     if (p_e_co > param_first_scalar )then
+       if (sf_urban_physics .eq. 0 ) then
+         if (emis_ant(i,kts,j,p_e_co) .gt. 0) then
           ekmfull(kts:kts+10) = max(ekmfull(kts:kts+10),1.)
-       endif
-       if (e_co(i,kts,j) .gt. 200) then
+         endif
+         if (emis_ant(i,kts,j,p_e_co) .gt. 200) then
           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+         endif
+         if (p_e_pm25i > param_first_scalar )then
+          if (emis_ant(i,kts,j,p_e_pm25i)+ emis_ant(i,kts,j,p_e_pm25j) .GT. 8.19e-4*200) then
+           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+          endif
+         endif
+         if (p_e_pm_25 > param_first_scalar )then
+          if (emis_ant(i,kts,j,p_e_pm_25) .GT. 8.19e-4*200) then
+           ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+          endif
+         endif
        endif
+     endif
+!!$! --- Mix the emissions up several layers when satellite data shows a wildfire
+!!$!     if ebu_in_e_co > 0., a wildfire exists so increase vertical mixing
+     if (p_ebu_in_co > param_first_scalar )then
+         if (ebu_in(i,1,j,p_ebu_in_co) .gt. 0) then
+          ekmfull(kts:kte/2) = max(ekmfull(kts:kte/2),2.)
+         endif
      endif
 
      do k=kts,kte
@@ -553,7 +589,7 @@ CONTAINS
 !
       dep_vel_o3(i,j)=ddvel(i,j,p_o3)
       do nv=2,num_chem-0
-         if(config_flags%mp_physics==CAMMGMPSCHEME .and. .not.vertMixAero(nv))cycle !Balwinder.Singh@pnnl.gov: Do mix constituents which are already mixed by CAMMGMP microphysics
+         if(is_CAMMGMP_used .and. .not.vertMixAero(nv))cycle !Balwinder.Singh@pnnl.gov: Do mix constituents which are already mixed by CAMMGMP microphysics
          do k=kts,kte
             pblst(k)=max(epsilc,chem(i,k,j,nv))
             dryrho_1d(k) = 1./alt(i,k,j)

@@ -364,7 +364,7 @@ module my_fncs_mod
 
  gln=gammln(a)
  if(x.le.0.)then
-    if(x.lt.0.)pause 'x <0 in gser'
+    if(x.lt.0.) call wrf_error_fatal ( 'WARNING: x <0 in gser' )
     gamser=0.
     return
  endif
@@ -377,7 +377,7 @@ module my_fncs_mod
     summ=summ+de1
     if(abs(de1).lt.abs(summ)*eps) goto 1
  enddo
- pause 'a too large, itmax too small in gser'
+ call wrf_error_fatal ( 'Warning: a too large, itmax too small in gser')
 1 gamser=summ*exp(-x+a*log(x)-gln)
  return
 
@@ -433,7 +433,7 @@ END SUBROUTINE gser
 
  real :: a,x,gammcf,gamser,gln
 
- if(x.lt.0..or.a.le.0.) pause 'bad arguments in gammq'
+ if(x.lt.0..or.a.le.0.) call wrf_error_fatal ( 'warning : bad arguments in gammq' )
  if(x.lt.a+1.)then
     call gser(gamser,a,x,gln)
     gammp=gamser
@@ -479,7 +479,7 @@ END SUBROUTINE gser
    h=h*de1
    if(abs(de1-1.).lt.eps) goto 1
  enddo
- pause 'a too large, itmax too small in gcf'
+ call wrf_error_fatal ( 'Warning: a too large, itmax too small in gcf')
 1 gammcf=exp(-x+a*log(x)-gln)*h
  return
 

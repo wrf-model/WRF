@@ -15,6 +15,7 @@ MODULE module_sf_noah_seaice
 
   INTEGER, PRIVATE :: ILOC
   INTEGER, PRIVATE :: JLOC
+!$omp threadprivate(iloc, jloc)
 
   REAL, PARAMETER, PRIVATE :: TFREEZ = 273.15
 !

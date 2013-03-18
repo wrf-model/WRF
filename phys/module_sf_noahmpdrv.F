@@ -346,10 +346,11 @@ CONTAINS
     INTEGER                             :: SLOPETYP
     LOGICAL                             :: IPRINT
 
-    INTEGER                             :: ISC       ! soil color index
-    INTEGER                             :: IST       ! surface type 1-soil; 2-lake
+    INTEGER                             :: ISC          ! soil color index
+    INTEGER                             :: IST          ! surface type 1-soil; 2-lake
     INTEGER                             :: YEARLEN
 
+    INTEGER, PARAMETER                  :: NSNOW = 3    ! number of snow layers fixed to 3
     REAL, PARAMETER                     :: CO2 = 395.e-06
     REAL, PARAMETER                     :: O2 = 0.209
     REAL, PARAMETER                     :: undefined_value = -1.E36
@@ -409,7 +410,7 @@ CONTAINS
 
     IF (XICE(I,J) >= XICE_THRES) THEN
        ICE = 1                            ! Sea-ice point
-    ELSE IF ( VEGTYP == ISICE ) THEN
+    ELSE IF ( IVGTYP(I,J) == ISICE ) THEN
        ICE = -1                           ! Land-ice point
     ELSE
        ICE=0                              ! Neither sea ice or land ice.
@@ -451,48 +452,49 @@ CONTAINS
 
 ! IN/OUT fields
 
-       SMC  (      1:NSOIL) = SMOIS   (I,      1:NSOIL,J)  ! soil total moisture [m3/m3]
-       SMH2O(      1:NSOIL) = SH2O    (I,      1:NSOIL,J)  ! soil liquid moisture [m3/m3]
-       STC  (ISNOW+1:    0) = TSNOXY  (I,ISNOW+1:    0,J)  ! snow temperatures [K]
-       STC  (      1:NSOIL) = TSLB    (I,      1:NSOIL,J)  ! soil temperatures [K]
-       SWE                  = SNOW    (I,J)                ! snow water equivalent [mm]
-       SNDPTH               = SNOWH   (I,J)                ! snow depth [m]
-       QSFC1D               = QSFC    (I,J)
+       ISNOW                 = ISNOWXY (I,J)                ! snow layers []
+       SMC  (      1:NSOIL)  = SMOIS   (I,      1:NSOIL,J)  ! soil total moisture [m3/m3]
+       SMH2O(      1:NSOIL)  = SH2O    (I,      1:NSOIL,J)  ! soil liquid moisture [m3/m3]
+       STC  (-NSNOW+1:    0) = TSNOXY  (I,-NSNOW+1:    0,J) ! snow temperatures [K]
+       STC  (      1:NSOIL)  = TSLB    (I,      1:NSOIL,J)  ! soil temperatures [K]
+       SWE                   = SNOW    (I,J)                ! snow water equivalent [mm]
+       SNDPTH                = SNOWH   (I,J)                ! snow depth [m]
+       QSFC1D                = QSFC    (I,J)
 
 ! INOUT (with no Noah LSM equivalent)
 
-       ISNOW                = ISNOWXY (I,J)                ! snow layers []
-       TV                   = TVXY    (I,J)                ! leaf temperature [K]
-       TG                   = TGXY    (I,J)                ! ground temperature [K]
-       CANLIQ               = CANLIQXY(I,J)                ! canopy liquid water [mm]
-       CANICE               = CANICEXY(I,J)                ! canopy frozen water [mm]
-       EAH                  = EAHXY   (I,J)                ! canopy vapor pressure [Pa]
-       TAH                  = TAHXY   (I,J)                ! canopy temperature [K]
-       CM                   = CMXY    (I,J)                ! avg. momentum exchange (MP only) [m/s]
-       CH                   = CHXY    (I,J)                ! avg. heat exchange (MP only) [m/s]
-       FWET                 = FWETXY  (I,J)                ! canopy fraction wet or snow
-       SNEQVO               = SNEQVOXY(I,J)                ! SWE previous timestep
-       ALBOLD               = ALBOLDXY(I,J)                ! albedo previous timestep, for snow aging
-       QSNOW                = QSNOWXY (I,J)                ! snow falling on ground
-       WSLAKE               = WSLAKEXY(I,J)                ! lake water storage (can be neg.) (mm)
-       ZWT                  = ZWTXY   (I,J)                ! depth to water table [m]
-       WA                   = WAXY    (I,J)                ! water storage in aquifer [mm]
-       WT                   = WTXY    (I,J)                ! water in aquifer&saturated soil [mm]
-       ZSNSO(ISNOW+1:NSOIL) = ZSNSOXY (I,ISNOW+1:NSOIL,J)  ! depth to layer interface
-       SNICE(ISNOW+1:    0) = SNICEXY (I,ISNOW+1:    0,J)  ! snow layer ice content
-       SNLIQ(ISNOW+1:    0) = SNLIQXY (I,ISNOW+1:    0,J)  ! snow layer water content
-       LFMASS               = LFMASSXY(I,J)                ! leaf mass
-       RTMASS               = RTMASSXY(I,J)                ! root mass
-       STMASS               = STMASSXY(I,J)                ! stem mass
-       WOOD                 = WOODXY  (I,J)                ! mass of wood (incl. woody roots) [g/m2]
-       STBLCP               = STBLCPXY(I,J)                ! stable carbon pool
-       FASTCP               = FASTCPXY(I,J)                ! fast carbon pool
-       PLAI                 = XLAIXY  (I,J)                ! leaf area index [-] (no snow effects)
-       PSAI                 = XSAIXY  (I,J)                ! stem area index [-] (no snow effects)
-       TAUSS                = TAUSSXY (I,J)                ! non-dimensional snow age
+       TV                    = TVXY    (I,J)                ! leaf temperature [K]
+       TG                    = TGXY    (I,J)                ! ground temperature [K]
+       CANLIQ                = CANLIQXY(I,J)                ! canopy liquid water [mm]
+       CANICE                = CANICEXY(I,J)                ! canopy frozen water [mm]
+       EAH                   = EAHXY   (I,J)                ! canopy vapor pressure [Pa]
+       TAH                   = TAHXY   (I,J)                ! canopy temperature [K]
+       CM                    = CMXY    (I,J)                ! avg. momentum exchange (MP only) [m/s]
+       CH                    = CHXY    (I,J)                ! avg. heat exchange (MP only) [m/s]
+       FWET                  = FWETXY  (I,J)                ! canopy fraction wet or snow
+       SNEQVO                = SNEQVOXY(I,J)                ! SWE previous timestep
+       ALBOLD                = ALBOLDXY(I,J)                ! albedo previous timestep, for snow aging
+       QSNOW                 = QSNOWXY (I,J)                ! snow falling on ground
+       WSLAKE                = WSLAKEXY(I,J)                ! lake water storage (can be neg.) (mm)
+       ZWT                   = ZWTXY   (I,J)                ! depth to water table [m]
+       WA                    = WAXY    (I,J)                ! water storage in aquifer [mm]
+       WT                    = WTXY    (I,J)                ! water in aquifer&saturated soil [mm]
+       ZSNSO(-NSNOW+1:NSOIL) = ZSNSOXY (I,-NSNOW+1:NSOIL,J) ! depth to layer interface
+       SNICE(-NSNOW+1:    0) = SNICEXY (I,-NSNOW+1:    0,J) ! snow layer ice content
+       SNLIQ(-NSNOW+1:    0) = SNLIQXY (I,-NSNOW+1:    0,J) ! snow layer water content
+       LFMASS                = LFMASSXY(I,J)                ! leaf mass
+       RTMASS                = RTMASSXY(I,J)                ! root mass
+       STMASS                = STMASSXY(I,J)                ! stem mass
+       WOOD                  = WOODXY  (I,J)                ! mass of wood (incl. woody roots) [g/m2]
+       STBLCP                = STBLCPXY(I,J)                ! stable carbon pool
+       FASTCP                = FASTCPXY(I,J)                ! fast carbon pool
+       PLAI                  = XLAIXY  (I,J)                ! leaf area index [-] (no snow effects)
+       PSAI                  = XSAIXY  (I,J)                ! stem area index [-] (no snow effects)
+       TAUSS                 = TAUSSXY (I,J)                ! non-dimensional snow age
 
 ! Initialized local
 
+       FICEOLD = 0.0
        FICEOLD(ISNOW+1:0) = SNICEXY(I,ISNOW+1:0,J) &  ! snow ice fraction  
            /(SNICEXY(I,ISNOW+1:0,J)+SNLIQXY(I,ISNOW+1:0,J))
        CO2PP  = CO2 * P_ML                            ! partial pressure co2 [Pa]
@@ -528,7 +530,7 @@ CONTAINS
     IF ( ICE == -1 ) THEN
 
 
-       CALL NOAHMP_GLACIER(       I,       J,    COSZ,       3,   NSOIL,      DT, & ! IN : Time/Space/Model-related
+       CALL NOAHMP_GLACIER(       I,       J,    COSZ,   NSNOW,   NSOIL,      DT, & ! IN : Time/Space/Model-related
                                T_ML,    P_ML,    U_ML,    V_ML,    Q_ML,    SWDN, & ! IN : Forcing
                                PRCP,    LWDN,    TBOT,    Z_ML, FICEOLD,   ZSOIL, & ! IN : Forcing
                               QSNOW,  SNEQVO,  ALBOLD,      CM,      CH,   ISNOW, & ! IN/OUT :
@@ -650,7 +652,7 @@ end if
 
        CALL NOAHMP_SFLX (&
             I       , J       , LAT     , YEARLEN , JULIAN  , COSZ    , & ! IN : Time/Space-related
-            DT      , DX      , DZ8W1D  , NSOIL   , ZSOIL   , 3       , & ! IN : Model configuration 
+            DT      , DX      , DZ8W1D  , NSOIL   , ZSOIL   , NSNOW   , & ! IN : Model configuration 
             FVEG    , FVGMAX  , VEGTYP  , ISURBAN , ICE     , IST     , & ! IN : Vegetation/Soil characteristics
             ISC     ,                                                   & ! IN : Vegetation/Soil characteristics
             IZ0TLND ,                                                   & ! IN : User options
@@ -681,106 +683,106 @@ end if
 
 ! INPUT/OUTPUT
 
-             TSK      (I,J)               = TRAD
-             HFX      (I,J)               = FSH
-             LH       (I,J)               = FCEV + FGEV + FCTR
-             GRDFLX   (I,J)               = SSOIL
-	     SMSTAV   (I,J)               = 0.0  ! [maintained as Noah consistency]
-             SMSTOT   (I,J)               = 0.0  ! [maintained as Noah consistency]
-             SFCRUNOFF(I,J)               = SFCRUNOFF(I,J) + RUNSF * DT
-             UDRUNOFF (I,J)               = UDRUNOFF(I,J)  + RUNSB * DT
+             TSK      (I,J)                = TRAD
+             HFX      (I,J)                = FSH
+             LH       (I,J)                = FCEV + FGEV + FCTR
+             GRDFLX   (I,J)                = SSOIL
+	     SMSTAV   (I,J)                = 0.0  ! [maintained as Noah consistency]
+             SMSTOT   (I,J)                = 0.0  ! [maintained as Noah consistency]
+             SFCRUNOFF(I,J)                = SFCRUNOFF(I,J) + RUNSF * DT
+             UDRUNOFF (I,J)                = UDRUNOFF(I,J)  + RUNSB * DT
              IF ( SALB > -999 ) THEN
-                ALBEDO(I,J)               = SALB
+                ALBEDO(I,J)                = SALB
              ENDIF
-             SNOWC    (I,J)               = FSNO
-             SMOIS    (I,      1:NSOIL,J) = SMC   (      1:NSOIL)
-             SH2O     (I,      1:NSOIL,J) = SMH2O (      1:NSOIL)
-             TSLB     (I,      1:NSOIL,J) = STC   (      1:NSOIL)
-             SNOW     (I,J)               = SWE
-             SNOWH    (I,J)               = SNDPTH
-             CANWAT   (I,J)               = CANLIQ + CANICE
-             ACSNOW   (I,J)               = ACSNOW(I,J) + PRCP * FPICE
-             ACSNOM   (I,J)               = ACSNOM(I,J) + QSNBOT*DT + PONDING + PONDING1 + PONDING2
-             EMISS    (I,J)               = EMISSI
-             QSFC     (I,J)               = QSFC1D
+             SNOWC    (I,J)                = FSNO
+             SMOIS    (I,      1:NSOIL,J)  = SMC   (      1:NSOIL)
+             SH2O     (I,      1:NSOIL,J)  = SMH2O (      1:NSOIL)
+             TSLB     (I,      1:NSOIL,J)  = STC   (      1:NSOIL)
+             SNOW     (I,J)                = SWE
+             SNOWH    (I,J)                = SNDPTH
+             CANWAT   (I,J)                = CANLIQ + CANICE
+             ACSNOW   (I,J)                = ACSNOW(I,J) + PRCP * FPICE
+             ACSNOM   (I,J)                = ACSNOM(I,J) + QSNBOT*DT + PONDING + PONDING1 + PONDING2
+             EMISS    (I,J)                = EMISSI
+             QSFC     (I,J)                = QSFC1D
 
-             ISNOWXY  (I,J)               = ISNOW
-             TVXY     (I,J)               = TV
-             TGXY     (I,J)               = TG
-             CANLIQXY (I,J)               = CANLIQ
-             CANICEXY (I,J)               = CANICE
-             EAHXY    (I,J)               = EAH
-             TAHXY    (I,J)               = TAH
-             CMXY     (I,J)               = CM
-             CHXY     (I,J)               = CH
-             FWETXY   (I,J)               = FWET
-             SNEQVOXY (I,J)               = SNEQVO
-             ALBOLDXY (I,J)               = ALBOLD
-             QSNOWXY  (I,J)               = QSNOW
-             WSLAKEXY (I,J)               = WSLAKE
-             ZWTXY    (I,J)               = ZWT
-             WAXY     (I,J)               = WA
-             WTXY     (I,J)               = WT
-             TSNOXY   (I,ISNOW+1:    0,J) = STC   (ISNOW+1:    0)
-             ZSNSOXY  (I,ISNOW+1:NSOIL,J) = ZSNSO (ISNOW+1:NSOIL)
-             SNICEXY  (I,ISNOW+1:    0,J) = SNICE (ISNOW+1:    0)
-             SNLIQXY  (I,ISNOW+1:    0,J) = SNLIQ (ISNOW+1:    0)
-             LFMASSXY (I,J)               = LFMASS
-             RTMASSXY (I,J)               = RTMASS
-             STMASSXY (I,J)               = STMASS
-             WOODXY   (I,J)               = WOOD
-             STBLCPXY (I,J)               = STBLCP
-             FASTCPXY (I,J)               = FASTCP
-             XLAIXY   (I,J)               = PLAI
-             XSAIXY   (I,J)               = PSAI
-             TAUSSXY  (I,J)               = TAUSS
+             ISNOWXY  (I,J)                = ISNOW
+             TVXY     (I,J)                = TV
+             TGXY     (I,J)                = TG
+             CANLIQXY (I,J)                = CANLIQ
+             CANICEXY (I,J)                = CANICE
+             EAHXY    (I,J)                = EAH
+             TAHXY    (I,J)                = TAH
+             CMXY     (I,J)                = CM
+             CHXY     (I,J)                = CH
+             FWETXY   (I,J)                = FWET
+             SNEQVOXY (I,J)                = SNEQVO
+             ALBOLDXY (I,J)                = ALBOLD
+             QSNOWXY  (I,J)                = QSNOW
+             WSLAKEXY (I,J)                = WSLAKE
+             ZWTXY    (I,J)                = ZWT
+             WAXY     (I,J)                = WA
+             WTXY     (I,J)                = WT
+             TSNOXY   (I,-NSNOW+1:    0,J) = STC   (-NSNOW+1:    0)
+             ZSNSOXY  (I,-NSNOW+1:NSOIL,J) = ZSNSO (-NSNOW+1:NSOIL)
+             SNICEXY  (I,-NSNOW+1:    0,J) = SNICE (-NSNOW+1:    0)
+             SNLIQXY  (I,-NSNOW+1:    0,J) = SNLIQ (-NSNOW+1:    0)
+             LFMASSXY (I,J)                = LFMASS
+             RTMASSXY (I,J)                = RTMASS
+             STMASSXY (I,J)                = STMASS
+             WOODXY   (I,J)                = WOOD
+             STBLCPXY (I,J)                = STBLCP
+             FASTCPXY (I,J)                = FASTCP
+             XLAIXY   (I,J)                = PLAI
+             XSAIXY   (I,J)                = PSAI
+             TAUSSXY  (I,J)                = TAUSS
 
 ! OUTPUT
 
-             T2MVXY   (I,J)               = T2MV
-             T2MBXY   (I,J)               = T2MB
-             Q2MVXY   (I,J)               = Q2MV/(1.0 - Q2MV)  ! specific humidity to mixing ratio
-             Q2MBXY   (I,J)               = Q2MB/(1.0 - Q2MB)  ! consistent with registry def of Q2
-             TRADXY   (I,J)               = TRAD
-             NEEXY    (I,J)               = NEE
-             GPPXY    (I,J)               = GPP
-             NPPXY    (I,J)               = NPP
-             FVEGXY   (I,J)               = FVEGMP
-             RUNSFXY  (I,J)               = RUNSF
-             RUNSBXY  (I,J)               = RUNSB
-             ECANXY   (I,J)               = ECAN
-             EDIRXY   (I,J)               = ESOIL
-             ETRANXY  (I,J)               = ETRAN
-             FSAXY    (I,J)               = FSA
-             FIRAXY   (I,J)               = FIRA
-             APARXY   (I,J)               = APAR
-             PSNXY    (I,J)               = PSN
-             SAVXY    (I,J)               = SAV
-             SAGXY    (I,J)               = SAG
-             RSSUNXY  (I,J)               = RSSUN
-             RSSHAXY  (I,J)               = RSSHA
-             BGAPXY   (I,J)               = BGAP
-             WGAPXY   (I,J)               = WGAP
-             TGVXY    (I,J)               = TGV
-             TGBXY    (I,J)               = TGB
-             CHVXY    (I,J)               = CHV
-             CHBXY    (I,J)               = CHB
-             IRCXY    (I,J)               = IRC
-             IRGXY    (I,J)               = IRG
-             SHCXY    (I,J)               = SHC
-             SHGXY    (I,J)               = SHG
-             EVGXY    (I,J)               = EVG
-             GHVXY    (I,J)               = GHV
-             IRBXY    (I,J)               = IRB
-             SHBXY    (I,J)               = SHB
-             EVBXY    (I,J)               = EVB
-             GHBXY    (I,J)               = GHB
-             TRXY     (I,J)               = TR
-             EVCXY    (I,J)               = EVC
-             CHLEAFXY (I,J)               = CHLEAF
-             CHUCXY   (I,J)               = CHUC
-             CHV2XY   (I,J)               = CHV2
-             CHB2XY   (I,J)               = CHB2
+             T2MVXY   (I,J)                = T2MV
+             T2MBXY   (I,J)                = T2MB
+             Q2MVXY   (I,J)                = Q2MV/(1.0 - Q2MV)  ! specific humidity to mixing ratio
+             Q2MBXY   (I,J)                = Q2MB/(1.0 - Q2MB)  ! consistent with registry def of Q2
+             TRADXY   (I,J)                = TRAD
+             NEEXY    (I,J)                = NEE
+             GPPXY    (I,J)                = GPP
+             NPPXY    (I,J)                = NPP
+             FVEGXY   (I,J)                = FVEGMP
+             RUNSFXY  (I,J)                = RUNSF
+             RUNSBXY  (I,J)                = RUNSB
+             ECANXY   (I,J)                = ECAN
+             EDIRXY   (I,J)                = ESOIL
+             ETRANXY  (I,J)                = ETRAN
+             FSAXY    (I,J)                = FSA
+             FIRAXY   (I,J)                = FIRA
+             APARXY   (I,J)                = APAR
+             PSNXY    (I,J)                = PSN
+             SAVXY    (I,J)                = SAV
+             SAGXY    (I,J)                = SAG
+             RSSUNXY  (I,J)                = RSSUN
+             RSSHAXY  (I,J)                = RSSHA
+             BGAPXY   (I,J)                = BGAP
+             WGAPXY   (I,J)                = WGAP
+             TGVXY    (I,J)                = TGV
+             TGBXY    (I,J)                = TGB
+             CHVXY    (I,J)                = CHV
+             CHBXY    (I,J)                = CHB
+             IRCXY    (I,J)                = IRC
+             IRGXY    (I,J)                = IRG
+             SHCXY    (I,J)                = SHC
+             SHGXY    (I,J)                = SHG
+             EVGXY    (I,J)                = EVG
+             GHVXY    (I,J)                = GHV
+             IRBXY    (I,J)                = IRB
+             SHBXY    (I,J)                = SHB
+             EVBXY    (I,J)                = EVB
+             GHBXY    (I,J)                = GHB
+             TRXY     (I,J)                = TR
+             EVCXY    (I,J)                = EVC
+             CHLEAFXY (I,J)                = CHLEAF
+             CHUCXY   (I,J)                = CHUC
+             CHV2XY   (I,J)                = CHV2
+             CHB2XY   (I,J)                = CHB2
 
           ENDIF                                                         ! endif of land-sea test
 
@@ -876,7 +878,7 @@ end if
     REAL, DIMENSION(1:NSOIL)  :: ZSOIL      ! Depth of the soil layer bottom (m) from 
     !                                                   the surface (negative)
 
-    REAL                      :: BX, SMCMAX, PSISAT, FREE
+    REAL                      :: BX, SMCMAX, PSISAT
 
     REAL, PARAMETER           :: BLIM  = 5.5
     REAL, PARAMETER           :: HLICE = 3.335E5
@@ -930,40 +932,19 @@ end if
 
 ! initialize soil liquid water content SH2O
 
-!  IF(.NOT.FNDSOILW) THEN
-
-! If no SWC, do the following
-!         PRINT *,'SOIL WATER NOT FOUND - VALUE SET IN LSMINIT'
        DO J = jts , jtf
           DO I = its , itf
              BX = BB(ISLTYP(I,J))
              SMCMAX = MAXSMC(ISLTYP(I,J))
              PSISAT = SATPSI(ISLTYP(I,J))
-             IF ( ( bx > 0.0 ) .AND. ( smcmax > 0.0 ) .AND. ( psisat > 0.0 ) ) THEN
+             IF ( ( BX > 0.0 ) .AND. ( SMCMAX > 0.0 ) .AND. ( PSISAT > 0.0 ) ) THEN
                 DO NS=1, NSOIL
-
-                   IF ( TSLB(I,NS,J) < 273.149 ) THEN
-                      ! SH2O <= SMOIS for T < 273.149K (-0.001C)
-
-                      ! First guess of SH2O following explicit solution for 
-                      ! Flerchinger Eqn from Koren et al, JGR, 1999, Eqn 17 
-                      ! (KCOUNT=0 in function FRH2O).
-                      BX = BB(ISLTYP(I,J))
-                      SMCMAX = MAXSMC(ISLTYP(I,J))
-                      PSISAT = SATPSI(ISLTYP(I,J))
-                      IF ( BX >  BLIM ) BX = BLIM
+                   IF ( TSLB(I,NS,J) < 273.149 ) THEN    ! Use explicit as initial soil ice
                       FK=(( (HLICE/(GRAV*(-PSISAT))) *                              &
                            ((TSLB(I,NS,J)-T0)/TSLB(I,NS,J)) )**(-1/BX) )*SMCMAX
                       FK = MAX(FK, 0.02)
                       SH2O(I,NS,J) = MIN( FK, SMOIS(I,NS,J) )
-
-                      ! Use iterative solution for liquid soil water content
-                      ! using function FRH2O, with the initial guess for SH2O 
-                      ! from the above explicit first guess.
-                      CALL FRH2O ( FREE , TSLB(I,NS,J) , SMOIS(I,NS,J) , SH2O(I,NS,J) )
-                      SH2O(I,NS,J) = FREE
                    ELSE
-                      ! SH2O = SMOIS ( for T => 273.149K (-0.001C)
                       SH2O(I,NS,J)=SMOIS(I,NS,J)
                    ENDIF
                 END DO
@@ -999,7 +980,7 @@ end if
              canicexy   (I,J) = 0.
              eahxy      (I,J) = 2000. 
              tahxy      (I,J) = TSK(I,J)
-             tahxy      (I,J) = 287.
+!             tahxy      (I,J) = 287.
 !jref:start
              t2mvxy     (I,J) = TSK(I,J)
              t2mbxy     (I,J) = TSK(I,J)
@@ -1104,15 +1085,15 @@ end if
                 ISNOWXY(I,J)    = -2
                 DZSNO(-1) = 0.05
                 DZSNO( 0) = SNODEP(I,J) - DZSNO(-1)
-             ELSE IF ( ( SNODEP(I,J) > 0.25 ) .AND. ( SNODEP(I,J) <= 0.35 ) ) THEN
+             ELSE IF ( ( SNODEP(I,J) > 0.25 ) .AND. ( SNODEP(I,J) <= 0.45 ) ) THEN
                 ISNOWXY(I,J)    = -3
                 DZSNO(-2) = 0.05
                 DZSNO(-1) = 0.5*(SNODEP(I,J)-DZSNO(-2))
                 DZSNO( 0) = 0.5*(SNODEP(I,J)-DZSNO(-2))
-             ELSE IF ( SNODEP(I,J) > 0.35 ) THEN
+             ELSE IF ( SNODEP(I,J) > 0.45 ) THEN
                 ISNOWXY(I,J)     = -3
                 DZSNO(-2) = 0.05
-                DZSNO(-1) = 0.10
+                DZSNO(-1) = 0.20
                 DZSNO( 0) = SNODEP(I,J) - DZSNO(-1) - DZSNO(-2)
              ELSE
                 CALL wrf_error_fatal("Problem with the logic assigning snow layers.")

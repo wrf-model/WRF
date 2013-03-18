@@ -251,15 +251,6 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  corral_dist                         =  8, 15, 15,
  track_level                         = 50000,
 
-** Using different flux formulation for tropical storm simulations 
-   (more effective when grid sizes are smaller than 2 km), and simple 
-   1-D ocean mixed layer (add these in namelist record &physics):
-
- isftcflx                            = 1,
- omlcall                             = 1,
- oml_hml0                            = 50,
- oml_gamma                           = 0.14
-
 ** Miscellaneous physics options for namelist record &physics:
 
 Topographic shading (only effective when grid sizes are a few kilometers)
@@ -355,4 +346,30 @@ between selected output times (e.g. daily) in auxhist3
  press_levels                        = 85000, 70000, 50000, 25000
  use_tot_or_hyd_p                    = 2
  /
+
+
+** Using different flux formulation for tropical storm simulations
+   (best for grid spacing less than 2 km) 
+   simple 1-D ocean mixed layer, or University of Miami 3DPWP ocean model
+   (add these in namelist record &physics):
+
+ isftcflx                            = 1,
+ sf_ocean_physics                    = 0 (off), 1 (OML), 2 (3D PWP)
+ oml_hml0                            = 50,
+ oml_gamma                           = 0.14
+ omdt                                = 1
+ ocean_levels                        = 30
+
+References for 3D ocean circulation model:
+Lee, C.-Y., and S. S. Chen, 2013: Stable Boundary Layer and Its Impact on Tropical Cyclone Structure in a Coupled Atmosphere-Ocean Model, Mon. Wea. Rev.
+Price, J. F., T. B. Sanford, and G. Z. Forristal, 1994: Forced stage response to a moving hurricane. J. Phy. Oceanogr., 24, 233-260.
+
+
+
+** Using U. Miami Forward Lagrangian trajectory calculation 
+  (add it in namelist record &physics):
+ trajcall                            = 1,
+ num_traj                            = 50
+
+
 

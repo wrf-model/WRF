@@ -703,6 +703,7 @@ contains
 	       if ( (f_qi) ) then
                   cwc(i,k,1)=max(0.,qi3d(i,nk,j))
                   reff(i,k,1) = 125. + (t2d(i,k)-243.16)*5.  ! ice effective radius depends on temp
+                  reff(i,k,1) = min(125.,max(25.,reff(i,k,1)))
                   x=1.02*10000.*( p8w2d(i,k+1)-p8w2d(i,k) )
                   taucldi(i,nk,j) = x * cwc(i,k,1) * ( -6.59e-3 + 1.65/reff(i,k,1) ) ! output purpose
                else
@@ -722,6 +723,7 @@ contains
                   if ( cwc(i,k,1) > 0. ) then !ice exist
                     cwc(i,k,1)=cwc(i,k,1) + max(0.,qs3d(i,nk,j)) ! ice + snow
                     reff(i,k,1) = 125. + (t2d(i,k)-243.16)*5.    ! ice + snow (use ice definition) 
+                    reff(i,k,1) = min(125.,max(25.,reff(i,k,1)))
                   else
                     cwc(i,k,1)= max(0.,qs3d(i,nk,j))  ! snow only (define snow is large aggrefated ice)
                     reff(i,k,1) = 125.                ! snow only (use largest reff of ice)
@@ -729,7 +731,7 @@ contains
                   x=1.02*10000.*( p8w2d(i,k+1)-p8w2d(i,k) )
                   taucldi(i,nk,j) = x * cwc(i,k,1) * ( -6.59e-3 + 1.65/reff(i,k,1) ) ! output purpose
                else
-                  cwc(i,k,1)=cwc(i,k,1)
+                  ! cwc(i,k,1)=cwc(i,k,1)
                endif
             enddo
          enddo

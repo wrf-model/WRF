@@ -15,6 +15,7 @@ MODULE module_sf_noahlsm_glacial_only
   PRIVATE :: SNOW_NEW
 
   integer, private :: iloc, jloc
+!$omp threadprivate(iloc, jloc)
 
 CONTAINS
 

@@ -12,6 +12,7 @@
                cvaro2,cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,vcsulf_old,&
                vdrog3, vdrog3_vbs,brch_ratio,dgnum,dgnumwet,wetdens_ap,    &
                del_h2so4_gasprod,dvmrdt_sv13d,dvmrcwdt_sv13d,              &
+               is_CAMMGMP_used,                                            &!BSINGH:01/31/2013: Added is_CAMMGMP_used for cam_mam_aerchem_driver
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
@@ -110,7 +111,7 @@
 !======================================================================
 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-
+   LOGICAL,      INTENT(IN)       :: is_CAMMGMP_used
    INTEGER,      INTENT(IN   )    ::                                &
                                       ids,ide, jds,jde, kds,kde,    &
                                       ims,ime, jms,jme, kms,kme,    &
@@ -292,6 +293,7 @@
             cldfra_mp_all, moist, chem,                                 &
             dgnum, dgnumwet, wetdens_ap, del_h2so4_gasprod,             &
             dvmrdt_sv13d,dvmrcwdt_sv13d,                                & 
+            is_CAMMGMP_used,                                            &
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )

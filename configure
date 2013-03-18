@@ -12,6 +12,7 @@ wrf_core=""
 while [ $# -ge 1 ]; do
     case $1 in
       -d) opt_level="-d" ;;
+      -D) opt_level="-D" ;;
       -s) opt_level="-s" ;;
       -f) opt_level="-f" ;;
       -h) print_usage="yes" ;;
@@ -35,7 +36,7 @@ while [ $# -ge 1 ]; do
     shift
 done
 if [ -n "$print_usage" ] ; then
-  echo usage: $thiscmd '[-d|-s|-f|-os os|-mach mach|-time timecommand] [chem] [kpp]'
+  echo usage: $thiscmd '[-d|-D|-s|-f|-os os|-mach mach|-time timecommand] [chem] [kpp]'
   exit 
 fi
 
@@ -549,6 +550,10 @@ if test -n "$PERL" ; then
        exit 1
      fi
      if [ "$opt_level" = "-d" ] ; then
+        sed -e 's/FCOPTIM[	 ]*=/& # /' -e '/FCDEBUG[	 ]*=/s/#//' configure.wrf > configure.wrf.edit
+        /bin/mv configure.wrf.edit configure.wrf
+     fi
+     if [ "$opt_level" = "-D" ] ; then
         sed -e 's/FCOPTIM[	 ]*=/& # /' -e '/FCDEBUG[	 ]*=/s/#//g' configure.wrf > configure.wrf.edit
         /bin/mv configure.wrf.edit configure.wrf
      fi
@@ -693,20 +698,23 @@ cat > ${foo}.f <<EOF
           end program test_exit
 EOF
 
-  # Detecting whether if mpi compiler wrapper supports -cc/-f90 options
-  if [ "`grep -i -E '^DMPARALLEL[ \t]*=.*#' configure.wrf`" = "" ]; then
-    mpicc -cc=$SCC -o ${foo} ${foo}.c > /dev/null 2>&1
-    if [ $? != 0 ]; then
-      sed 's/-cc=$(SCC)//' configure.wrf > configure.wrf.edit
-      mv configure.wrf.edit configure.wrf
+  # do not do this test for MIC, which cross compiles
+  if [ -z "`grep 'SCC.*mmic' configure.wrf`" ] ; then
+    # Detecting whether if mpi compiler wrapper supports -cc/-f90 options
+    if [ -z "`grep -i -E '^DMPARALLEL[ \t]*=.*#' configure.wrf`" ] ; then
+      mpicc -cc=$SCC -o ${foo} ${foo}.c > /dev/null 2>&1
+      if [ $? != 0 ]; then
+        sed 's/-cc=$(SCC)//' configure.wrf > configure.wrf.edit
+        mv configure.wrf.edit configure.wrf
+      fi
+      rm ${foo} ${foo}.o 2> /dev/null
+      mpif90 -f90=$SFC -o ${foo} ${foo}.f > /dev/null 2>&1
+      if [ $? != 0 ]; then
+        sed 's/-f90=$(SFC)//'  configure.wrf > configure.wrf.edit
+        mv configure.wrf.edit configure.wrf
+      fi
+      rm ${foo} ${foo}.o 2> /dev/null
     fi
-    rm ${foo} ${foo}.o 2> /dev/null
-    mpif90 -f90=$SFC -o ${foo} ${foo}.f > /dev/null 2>&1
-    if [ $? != 0 ]; then
-      sed 's/-f90=$(SFC)//'  configure.wrf > configure.wrf.edit
-      mv configure.wrf.edit configure.wrf
-    fi
-    rm ${foo} ${foo}.o 2> /dev/null
   fi
 
   if [ -e $NETCDF/lib/libnetcdf.a -a "$SFC" != "" -a "$SCC" != "" -a "$CCOMP" != "" ]; then

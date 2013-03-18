@@ -17,7 +17,10 @@ contains
     !--------------------------------------------------------------
     ! ... local variables
     !--------------------------------------------------------------
-    real n, pi, tmpsg(ntot_amode)
+! pjj/cray - correct type
+!   real n, pi, tmpsg(ntot_amode)
+    real pi, tmpsg(ntot_amode)
+    integer :: n
     
     pi = 4.*atan(1._r8)
     

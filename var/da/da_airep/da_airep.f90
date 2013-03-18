@@ -7,7 +7,7 @@ module da_airep
       check_max_iv, missing, max_error_uv, max_error_t, rootproc, &
       airep, anal_type_verify, kms,kme,kts,kte, trace_use_dull, &
       position_lev_dependant,qcstat_conv_unit,ob_vars, fails_error_max, &
-      convert_fd2uv, convert_uv2fd, max_error_sp, max_error_dir, var_wind, max_omb_sp, max_omb_dir, pi, standard
+      convert_fd2uv, convert_uv2fd, max_error_sp, max_error_dir, var_wind, max_omb_sp, max_omb_dir, pi, qc_rej_both
    use da_grid_definitions, only : da_ffdduv, da_ffdduv2, da_cal_sd, da_uv_wind_adj, da_uv_wind_tgl
 
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &

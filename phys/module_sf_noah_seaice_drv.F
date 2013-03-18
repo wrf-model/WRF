@@ -194,8 +194,12 @@ contains
 
           ! Skip the points that are not sea-ice points.
           IF ( XICE(I,J) < XICE_THRESHOLD ) THEN
-              ICEDEPTH(I,J) = 0.0
-              SNOWSI(I,J) = 0.0
+              IF ( SEAICE_THICKNESS_OPT == 1 ) THEN
+                  ICEDEPTH(I,J) = 0.0
+              ENDIF
+              IF ( SEAICE_SNOWDEPTH_OPT == 1 ) THEN
+                  SNOWSI(I,J) = 0.0
+              ENDIF
               CYCLE SEAICE_ILOOP
           ENDIF
 
@@ -216,8 +220,8 @@ contains
                   call wrf_error_fatal("SEAICE_THICKNESS_OPT")
               ENDIF
               SITHICK = MIN ( MAX ( 0.10 , ICEDEPTH(I,J) ) , 10.0 )
+              ICEDEPTH(I,J) = SITHICK
           END SELECT
-          ICEDEPTH(I,J) = SITHICK
 
           SFCTMP = T3D(I,1,J)
           T1     = TSK(I,J)

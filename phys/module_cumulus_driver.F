@@ -25,7 +25,7 @@ CONTAINS
                      ,htop,hbot,kpbl,ht                               &
                      ,ensdim,maxiens,maxens,maxens2,maxens3           &
                      ,periodic_x,periodic_y                           &
-                     ,tke_pbl8w                                       & !BSINGH - TKE at the interfaces for Zhang-McFarlane Scheme 
+                     ,tke_pbl8w,is_CAMMGMP_used                       & !BSINGH - TKE at the interfaces for Zhang-McFarlane Scheme 
                      ,evapcdp3d,icwmrdp3d,rprddp3d                    & !Balwinder.Singh@pnnl.gov: Used for CAM's wet scavenging
                  ! Package selection variables
                      ,cu_physics, bl_pbl_physics, sf_sfclay_physics   &
@@ -49,6 +49,8 @@ CONTAINS
                      ,cmfmc, cmfmcdzm, preccdzm, precz                &
                      ,zmmtu, zmmtv, zmupgu, zmupgd, zmvpgu, zmvpgd    &
                      ,zmicuu, zmicud, zmicvu, zmicvd, zmdice, zmdliq  &
+                     ,dp3d, du3d, ed3d, eu3d, md3d, mu3d, dsubcld2d   &
+                     ,ideep2d, jt2d, maxg2d, lengath2d                &
                      ,k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow &
                      ,ktop_deep &
                  ! Optional arguments for SAS scheme
@@ -85,7 +87,7 @@ CONTAINS
                                           ,G3SCHEME,GFSCHEME          &
                                           ,P_QC,P_QI,Param_FIRST_SCALAR &
                                           ,CAMZMSCHEME, SASSCHEME     &
-                                          ,OSASSCHEME                 &
+                                          ,OSASSCHEME,MESO_SAS        &  !Kwon
                                           ,NSASSCHEME                 &
 # if (EM_CORE == 1)
                                           , CAMMGMPSCHEME             &
@@ -109,6 +111,7 @@ CONTAINS
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
    USE module_cu_sas
    USE module_cu_osas   
+   USE module_cu_mesosas   
    USE module_cu_camzm_driver, ONLY : camzm_driver
    USE module_cu_tiedtke, ONLY : cu_tiedtke
    USE module_cu_nsas   , ONLY : cu_nsas
@@ -302,6 +305,7 @@ CONTAINS
    INTEGER,      INTENT(IN   )    ::                 cu_physics  
    INTEGER,      INTENT(IN   )    ::   STEPCU
    LOGICAL,      INTENT(IN   )    ::   warm_rain
+   LOGICAL,      INTENT(IN   )    ::   is_CAMMGMP_used !BSINGH:01/31/2013: Added for CAMZM
 
    REAL, INTENT(IN), OPTIONAL :: pgcon,shal_pgcon,sas_mass_flux
    INTEGER, INTENT(IN), OPTIONAL :: shalconv
@@ -387,7 +391,8 @@ CONTAINS
 !
    INTEGER, DIMENSION( ims:ime, jms:jme ),                       &
          OPTIONAL, INTENT(INOUT) ::                              &
-     k22_shallow,kbcon_shallow,ktop_shallow
+     k22_shallow,kbcon_shallow,ktop_shallow,ideep2d,jt2d,maxg2d, &
+     lengath2d 
    INTEGER, DIMENSION( ims:ime, jms:jme ),                       &
          OPTIONAL, INTENT(  OUT) :: ktop_deep
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
@@ -415,7 +420,9 @@ CONTAINS
                 apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma      &
                ,apr_capme,apr_capmi,edt_out,xmb_shallow          &
                                                     , MASS_FLUX  &
-               ,cape, pconvb, pconvt, preccdzm, precz, rliq
+               ,cape, pconvb, pconvt, preccdzm, precz, rliq      &
+               ,dsubcld2d
+
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          OPTIONAL, INTENT(INOUT) ::                              &
                   GD_CLOUD,GD_CLOUD2,                            &
@@ -424,7 +431,9 @@ CONTAINS
                   zmflxsnw, zmntprpd, zmntsnpd, zmeiheat,        &
                   cmfmc, cmfmcdzm,                               &
                   zmmtu, zmmtv, zmupgu, zmupgd, zmvpgu, zmvpgd,  &
-                  zmicuu, zmicud, zmicvu, zmicvd, zmdice, zmdliq
+                  zmicuu, zmicud, zmicvu, zmicvd, zmdice, zmdliq,&
+                  dp3d, du3d, ed3d, eu3d, md3d, mu3d
+                  
    REAL, DIMENSION( ims:ime , jms:jme , 1:ensdim ),              &
           OPTIONAL,                                              &
           INTENT(INOUT) ::                       XF_ENS, PR_ENS
@@ -468,7 +477,7 @@ CONTAINS
 ! LOCAL  VAR
 
    INTEGER :: i,j,k,its,ite,jts,jte,ij,trigger_kf
-   logical :: l_flux, is_CAMMGMP_used
+   logical :: l_flux
    LOGICAL :: decided , run_param , doing_adapt_dt
 
 
@@ -607,14 +616,6 @@ CONTAINS
       ENDIF
 #endif
 
-
-      !BSINGH: Find out if CAMMGMPSCHEME is beingh used in this simulation:
-      is_CAMMGMP_used = .false.
-# if (EM_CORE == 1)
-      if(mp_physics == CAMMGMPSCHEME) then
-         is_CAMMGMP_used = .true.
-      endif
-# endif
 
 ! DON'T JUDGE TIME STEP HERE, SINCE KF NEEDS ACCUMULATED W FIELD.
 ! DO IT INSIDE THE INDIVIDUAL CUMULUS SCHEME
@@ -782,6 +783,34 @@ CONTAINS
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                                                                 )
+     CASE (MESO_SAS)                  !Kwon
+
+          IF ( adapt_step_flag_pass ) THEN
+            WRITE( wrf_err_message , * ) 'The meso SAS cumulus option will not work properly with an adaptive time step'
+            CALL wrf_error_fatal ( wrf_err_message )
+          END IF
+          CALL wrf_debug(100,'in cu_mesosas')
+          CALL CU_MESO_SAS(                                          &
+                DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &
+               ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
+               ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
+               ,RUCUTEN=RUCUTEN, RVCUTEN=RVCUTEN                &
+               ,RAINCV=RAINCV,PRATEC=tmpPRATEC,HTOP=HTOP,HBOT=HBOT &
+               ,U3D=u,V3D=v,W=w,T3D=t                           &
+               ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
+               ,PI3D=pi,RHO3D=rho                               &
+               ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND            &
+               ,CU_ACT_FLAG=CU_ACT_FLAG                         &
+               ,P_QC=p_qc                                       &
+               ,MOMMIX=MOMMIX  &
+               ,pgcon=pgcon,sas_mass_flux=sas_mass_flux         &
+               ,shalconv=shalconv,shal_pgcon=shal_pgcon         &
+               ,hpbl2d=hpbl2d,evap2d=evap2d,heat2d=heat2d       &
+               ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+                                                                )
      CASE (OSASSCHEME)
                                                                                                                                            
           IF ( adapt_step_flag_pass ) THEN
@@ -908,7 +937,7 @@ CONTAINS
                ,CU_ACT_FLAG=CU_ACT_FLAG,warm_rain=warm_rain     &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
-               ,IPS=ips,IPE=ipe,JPS=jps,JPE=jpe,KPS=kps,KPE=kpe &
+!              ,IPS=ips,IPE=ipe,JPS=jps,JPE=jpe,KPS=kps,KPE=kpe &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
               ! optionals
@@ -979,7 +1008,10 @@ CONTAINS
                ,ZMICUU=zmicuu, ZMICUD=zmicud, ZMICVU=zmicvu         &
                ,ZMICVD=zmicvd, ZMDICE=zmdice, ZMDLIQ=zmdliq         &
                ,EVAPCDP3D=evapcdp3d, ICWMRDP3D=icwmrdp3d            &
-               ,RPRDDP3D=rprddp3d                                   )
+               ,RPRDDP3D=rprddp3d,DP3D=dp3d, DU3D=du3d, ED3D=ed3d   &
+               ,EU3D=eu3d, MD3D=md3d, MU3D=mu3d,DSUBCLD2D=dsubcld2d &
+               ,IDEEP2D=ideep2d, JT2D=jt2d, MAXG2D=maxg2d           &
+               ,LENGATH2D=lengath2d                                 )
         ELSE
              WRITE( wrf_err_message , * ) 'Insufficient arguments to call CAMZM cu scheme'
              CALL wrf_error_fatal ( wrf_err_message )

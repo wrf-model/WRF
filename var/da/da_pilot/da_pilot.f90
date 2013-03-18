@@ -7,7 +7,7 @@ module da_pilot
       check_max_iv, missing_data, max_error_uv, max_error_t, rootproc, &
       pilot, max_error_p,max_error_q, trace_use_dull,fails_error_max, &
       max_stheight_diff, anal_type_verify, kms,kme,kts,kte,ob_vars,qcstat_conv_unit, &
-      convert_fd2uv, convert_uv2fd, max_error_sp, max_error_dir, var_wind, max_omb_sp, max_omb_dir, pi, standard
+      convert_fd2uv, convert_uv2fd, max_error_sp, max_error_dir, var_wind, max_omb_sp, max_omb_dir, pi, qc_rej_both
    use da_grid_definitions, only : da_ffdduv, da_ffdduv2, da_cal_sd, da_uv_wind_adj, da_uv_wind_tgl
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type

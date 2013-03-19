@@ -6,6 +6,7 @@ USE module_domain, ONLY : domain, get_ijk_from_grid
 USE module_configure, ONLY : grid_config_rec_type
 USE module_state_description, ONLY : PARAM_FIRST_SCALAR, num_moist, num_scalar, num_tracer
 USE module_tiles, ONLY : set_tiles
+USE module_driver_constants, ONLY: max_sens
 
 REAL, ALLOCATABLE :: s_u_2(:,:,:), s_v_2(:,:,:), s_w_2(:,:,:)
 REAL, ALLOCATABLE :: s_ph_2(:,:,:), s_t_2(:,:,:), s_mu_2(:,:)
@@ -2071,6 +2072,120 @@ CONTAINS
    RETURN
   END SUBROUTINE zero_out_ad
 
+
+  SUBROUTINE zero_out_tl ( grid )
+   TYPE (domain), INTENT(INOUT) :: grid
+
+   grid%g_u_1 = 0.0
+   grid%g_u_2 = 0.0
+
+   grid%g_v_1 = 0.0
+   grid%g_v_2 = 0.0
+
+   grid%g_w_1 = 0.0
+   grid%g_w_2 = 0.0
+
+   grid%g_t_1 = 0.0
+   grid%g_t_2 = 0.0
+
+   grid%g_ph_1 = 0.0
+   grid%g_ph_2 = 0.0
+
+   grid%g_mu_1 = 0.0
+   grid%g_mu_2 = 0.0
+
+   grid%g_moist = 0.0
+   grid%g_tracer = 0.0
+   
+   grid%g_scalar = 0.0
+
+   grid%g_h_diabatic = 0.0
+
+   grid%g_rainnc = 0.0
+   grid%g_rainncv = 0.0
+   grid%g_rainc = 0.0
+   grid%g_raincv = 0.0
+
+   grid%g_p = 0.0
+
+! I&O variables
+   grid%g_tke_1 = 0.0
+   grid%g_tke_2 = 0.0
+   grid%g_al=0.0
+
+! O variables
+   grid%g_ru = 0.0
+   grid%g_rv = 0.0
+   grid%g_rw = 0.0
+   grid%g_ww = 0.0
+   grid%g_alt = 0.0
+   grid%g_php = 0.0
+   grid%g_mut = 0.0
+   grid%g_muu = 0.0
+   grid%g_muv = 0.0
+   grid%g_p_hyd_w = 0.0
+   grid%g_p_hyd = 0.0
+   grid%g_z_at_w = 0.0
+   grid%g_z = 0.0
+   grid%g_zx = 0.0
+   grid%g_zy = 0.0
+   grid%g_rdz = 0.0
+   grid%g_rdzw = 0.0
+   grid%g_div = 0.0
+   grid%g_nba_mij = 0.0
+   grid%g_nba_rij = 0.0
+   grid%g_defor11 = 0.0
+   grid%g_defor22 = 0.0
+   grid%g_defor33 = 0.0
+   grid%g_defor12 = 0.0
+   grid%g_defor13 = 0.0
+   grid%g_defor23 = 0.0
+   grid%g_bn2 = 0.0
+   grid%g_xkmh = 0.0
+   grid%g_xkmv = 0.0
+   grid%g_xkhh = 0.0
+   grid%g_xkhv = 0.0
+   grid%g_ru_tend = 0.0
+   grid%g_rv_tend = 0.0
+   grid%g_u_save = 0.0
+   grid%g_v_save = 0.0
+   grid%g_t_save = 0.0
+   grid%g_rthften = 0.0
+   grid%g_rqvften = 0.0
+   grid%g_muts = 0.0
+   grid%g_mudf = 0.0
+   grid%g_ru_m = 0.0
+   grid%g_rv_m = 0.0
+   grid%g_ww_m = 0.0
+
+! I variables
+   grid%g_ustm=0.0
+   grid%g_hfx=0.0
+   grid%g_qfx=0.0
+
+   grid%g_u_bxs = 0.0; grid%g_u_bxe = 0.0; grid%g_u_bys = 0.0; grid%g_u_bye = 0.0
+   grid%g_v_bxs = 0.0; grid%g_v_bxe = 0.0; grid%g_v_bys = 0.0; grid%g_v_bye = 0.0
+   grid%g_w_bxs = 0.0; grid%g_w_bxe = 0.0; grid%g_w_bys = 0.0; grid%g_w_bye = 0.0
+   grid%g_ph_bxs = 0.0; grid%g_ph_bxe = 0.0; grid%g_ph_bys = 0.0; grid%g_ph_bye = 0.0
+   grid%g_t_bxs = 0.0; grid%g_t_bxe = 0.0; grid%g_t_bys = 0.0; grid%g_t_bye = 0.0
+   grid%g_mu_bxs = 0.0; grid%g_mu_bxe = 0.0; grid%g_mu_bys = 0.0; grid%g_mu_bye = 0.0
+   grid%g_moist_bxs = 0.0; grid%g_moist_bxe = 0.0; grid%g_moist_bys = 0.0; grid%g_moist_bye = 0.0
+   grid%g_tracer_bxs = 0.0; grid%g_tracer_bxe = 0.0; grid%g_tracer_bys = 0.0; grid%g_tracer_bye = 0.0
+   grid%g_scalar_bxs = 0.0; grid%g_scalar_bxe = 0.0; grid%g_scalar_bys = 0.0; grid%g_scalar_bye = 0.0
+
+   grid%g_u_btxs = 0.0; grid%g_u_btxe = 0.0; grid%g_u_btys = 0.0; grid%g_u_btye = 0.0
+   grid%g_v_btxs = 0.0; grid%g_v_btxe = 0.0; grid%g_v_btys = 0.0; grid%g_v_btye = 0.0
+   grid%g_w_btxs = 0.0; grid%g_w_btxe = 0.0; grid%g_w_btys = 0.0; grid%g_w_btye = 0.0
+   grid%g_ph_btxs = 0.0; grid%g_ph_btxe = 0.0; grid%g_ph_btys = 0.0; grid%g_ph_btye = 0.0
+   grid%g_t_btxs = 0.0; grid%g_t_btxe = 0.0; grid%g_t_btys = 0.0; grid%g_t_btye = 0.0
+   grid%g_mu_btxs = 0.0; grid%g_mu_btxe = 0.0; grid%g_mu_btys = 0.0; grid%g_mu_btye = 0.0
+   grid%g_moist_btxs = 0.0; grid%g_moist_btxe = 0.0; grid%g_moist_btys = 0.0; grid%g_moist_btye = 0.0
+   grid%g_tracer_btxs = 0.0; grid%g_tracer_btxe = 0.0; grid%g_tracer_btys = 0.0; grid%g_tracer_btye = 0.0
+   grid%g_scalar_btxs = 0.0; grid%g_scalar_btxe = 0.0; grid%g_scalar_btys = 0.0; grid%g_scalar_btye = 0.0
+
+   RETURN
+  END SUBROUTINE zero_out_tl
+
   SUBROUTINE inner_dot_a_b_adjtest ( grid, save, its, ite, jts, jte )
    TYPE (domain), INTENT(IN) :: grid
    INTEGER, INTENT(IN) :: its, ite, jts, jte
@@ -2417,6 +2532,284 @@ CONTAINS
 
    RETURN
   END SUBROUTINE inner_dot_a_b_adjtest
+
+  SUBROUTINE spot_force_ad ( grid, i, j, k, factor, nvars )
+   TYPE (domain), INTENT(INOUT)       :: grid
+   INTEGER, INTENT(IN)                :: i, j, k, nvars
+   REAL, DIMENSION(nvars), INTENT(IN) :: factor
+   INTEGER                            :: mm
+   
+   grid%a_u_2(i,k,j)  = factor(1)
+   grid%a_v_2(i,k,j)  = factor(2)
+   grid%a_w_2(i,k,j)  = factor(3)
+   grid%a_t_2(i,k,j)  = factor(4)
+   grid%a_ph_2(i,k,j) = factor(5)
+   grid%a_mu_2(i,j)   = factor(6)
+
+   DO mm = PARAM_FIRST_SCALAR, num_moist
+      grid%a_moist(i,k,j,mm) = factor(6+mm)
+   ENDDO
+   DO mm = PARAM_FIRST_SCALAR, num_tracer
+      grid%a_tracer(i,k,j,mm) = factor(6+mm+num_moist)
+  ENDDO
+
+  END SUBROUTINE spot_force_ad
+
+
+  SUBROUTINE spot_force_tl ( grid, i, j, k, factor, nvars )
+   TYPE (domain), INTENT(INOUT)       :: grid
+   INTEGER, INTENT(IN)                :: i, j, k, nvars
+   REAL, DIMENSION(nvars), INTENT(IN) :: factor
+   INTEGER                            :: mm
+
+   grid%g_u_2(i,k,j)  = factor(1)
+   grid%g_v_2(i,k,j)  = factor(2)
+   grid%g_w_2(i,k,j)  = factor(3)
+   grid%g_t_2(i,k,j)  = factor(4)
+   grid%g_ph_2(i,k,j) = factor(5)
+   grid%g_mu_2(i,j)   = factor(6)
+
+   DO mm = PARAM_FIRST_SCALAR, num_moist
+      grid%g_moist(i,k,j,mm) = factor(6+mm)
+   ENDDO
+   DO mm = PARAM_FIRST_SCALAR, num_tracer
+      grid%g_tracer(i,k,j,mm) = factor(6+mm+num_moist)
+  ENDDO
+
+  END SUBROUTINE spot_force_tl
+
+
+  SUBROUTINE spot_force_nl ( grid, i, j, k, factor, nvars, nl_pert )
+   TYPE (domain), INTENT(INOUT)       :: grid
+   INTEGER, INTENT(IN)                :: i, j, k, nvars
+   REAL, DIMENSION(nvars), INTENT(IN) :: factor
+   REAL, INTENT(IN)                   :: nl_pert
+   INTEGER                            :: mm
+
+   grid%u_2(i,k,j)  = ( 1.0 + nl_pert * factor(1) ) * s_u_2(i,k,j)
+   grid%v_2(i,k,j)  = ( 1.0 + nl_pert * factor(2) ) * s_v_2(i,k,j)
+   grid%w_2(i,k,j)  = ( 1.0 + nl_pert * factor(3) ) * s_w_2(i,k,j)
+   grid%t_2(i,k,j)  = ( 1.0 + nl_pert * factor(4) ) * s_t_2(i,k,j)
+   grid%ph_2(i,k,j) = ( 1.0 + nl_pert * factor(5) ) * s_ph_2(i,k,j)
+   grid%mu_2(i,j)   = ( 1.0 + nl_pert * factor(6) ) * s_mu_2(i,j)
+
+   DO mm = PARAM_FIRST_SCALAR, num_moist
+      grid%moist(i,k,j,mm) = ( 1.0 + nl_pert * factor(6+mm) ) * s_moist(i,k,j,mm)
+   ENDDO
+   DO mm = PARAM_FIRST_SCALAR, num_tracer
+      grid%tracer(i,k,j,mm) = ( 1.0 + nl_pert * factor(6+mm+num_moist) ) * s_tracer(i,k,j,mm)
+   ENDDO
+
+  END SUBROUTINE spot_force_nl
+
+
+  SUBROUTINE extract_ad_der ( grid, der, i, j , k, factor, nvars )
+   TYPE (domain), INTENT(INOUT)       :: grid
+   INTEGER, INTENT(IN)                :: i, j, k, nvars
+   REAL, DIMENSION(nvars), INTENT(IN) :: factor
+   REAL, INTENT(OUT)                  :: der
+   INTEGER                            :: mm
+
+   der = 0.0
+   der = grid%a_u_2(i,k,j) * factor(1) + der
+   der = grid%a_v_2(i,k,j) * factor(2) + der
+   der = grid%a_w_2(i,k,j) * factor(3) + der
+   der = grid%a_t_2(i,k,j) * factor(4) + der
+   der = grid%a_ph_2(i,k,j) * factor(5) + der
+   der = grid%a_mu_2(i,j) * factor(6) + der
+
+   DO mm = PARAM_FIRST_SCALAR, num_moist
+      der = grid%a_moist(i,k,j,mm) * factor(6+mm) + der
+   ENDDO
+   DO mm = PARAM_FIRST_SCALAR, num_tracer
+      der = grid%a_tracer(i,k,j,mm) * factor(6+mm+num_moist) + der
+   ENDDO
+
+  END SUBROUTINE extract_ad_der
+
+
+  SUBROUTINE extract_tl_der ( grid, der, i, j , k, factor, nvars )
+   TYPE (domain), INTENT(INOUT)       :: grid
+   INTEGER, INTENT(IN)                :: i, j, k, nvars
+   REAL, DIMENSION(nvars), INTENT(IN) :: factor
+   REAL, INTENT(OUT)                  :: der
+   INTEGER                            :: mm
+   der = 0.0
+   der = grid%g_u_2(i,k,j) * factor(1) + der
+   der = grid%g_v_2(i,k,j) * factor(2) + der
+   der = grid%g_w_2(i,k,j) * factor(3) + der
+   der = grid%g_t_2(i,k,j) * factor(4) + der
+   der = grid%g_ph_2(i,k,j) * factor(5) + der
+   der = grid%g_mu_2(i,j) * factor(6) + der
+
+   DO mm = PARAM_FIRST_SCALAR, num_moist
+      der = grid%g_moist(i,k,j,mm) * factor(6+mm) + der
+   ENDDO
+   DO mm = PARAM_FIRST_SCALAR, num_tracer
+      der = grid%g_tracer(i,k,j,mm) * factor(6+mm+num_moist) + der
+   ENDDO
+
+  END SUBROUTINE extract_tl_der
+
+
+  SUBROUTINE extract_nl_num ( grid, num, i, j , k, factor, nvars )
+   TYPE (domain), INTENT(INOUT)       :: grid
+   INTEGER, INTENT(IN)                :: i, j, k, nvars
+   REAL, DIMENSION(nvars), INTENT(IN) :: factor
+   REAL, INTENT(OUT)                  :: num
+   INTEGER                            :: mm
+
+   num = 0.0
+   num = (grid%u_2(i,k,j) - b_u_2(i,k,j)) * factor(1) + num
+   num = (grid%v_2(i,k,j) - b_v_2(i,k,j)) * factor(2) + num
+   num = (grid%w_2(i,k,j) - b_w_2(i,k,j)) * factor(3) + num
+   num = (grid%t_2(i,k,j) - b_t_2(i,k,j)) * factor(4) + num
+   num = (grid%ph_2(i,k,j) - b_ph_2(i,k,j)) * factor(5) + num
+   num = (grid%mu_2(i,j) - b_mu_2(i,j)) * factor(6) + num
+
+   DO mm = PARAM_FIRST_SCALAR, num_moist
+      num = (grid%moist(i,k,j,mm) - b_moist(i,k,j,mm)) * factor(6+mm) + num
+   ENDDO
+   DO mm = PARAM_FIRST_SCALAR, num_tracer
+      num = (grid%tracer(i,k,j,mm) - b_tracer(i,k,j,mm)) * factor(6+mm+num_moist) + num
+   ENDDO
+
+  END SUBROUTINE extract_nl_num
+
+
+  SUBROUTINE extract_nl_den ( den, i, j, k, factor, nvars, nl_pert )
+   INTEGER, INTENT(IN)                :: i, j, k, nvars
+   REAL, DIMENSION(nvars), INTENT(IN) :: factor
+   REAL, INTENT(OUT)                  :: den
+   REAL, INTENT(IN)                   :: nl_pert
+   INTEGER                            :: mm
+
+   den = 0.0
+   den = nl_pert * s_u_2(i,k,j) * factor(1) + den
+   den = nl_pert * s_v_2(i,k,j) * factor(2) + den
+   den = nl_pert * s_w_2(i,k,j) * factor(3) + den
+   den = nl_pert * s_t_2(i,k,j) * factor(4) + den
+   den = nl_pert * s_ph_2(i,k,j) * factor(5) + den
+   den = nl_pert * s_mu_2(i,j) * factor(6) + den
+
+   DO mm = PARAM_FIRST_SCALAR, num_moist
+      den = nl_pert * s_moist(i,k,j,mm) * factor(6+mm) + den
+   ENDDO
+   DO mm = PARAM_FIRST_SCALAR, num_tracer
+      den = nl_pert * s_tracer(i,k,j,mm) * factor(6+mm+num_moist) + den
+   ENDDO
+
+  END SUBROUTINE extract_nl_den
+
+
+  SUBROUTINE gen_scenario_matrix(config_flags, scenario, nvars, numer_vars, denom_vars)
+   TYPE (grid_config_rec_type), INTENT(IN) :: config_flags
+   INTEGER, INTENT(IN)                            :: nvars
+   INTEGER, DIMENSION(nvars,nvars), INTENT(INOUT) :: scenario
+   INTEGER, DIMENSION(max_sens), INTENT(IN)       :: numer_vars, denom_vars
+   INTEGER                                        :: i, j, k, l
+
+   IF(config_flags%scenario_type .EQ. 1) THEN
+      !List form for test variables (more targeted)
+      IF(config_flags%max_numer .NE. config_flags%max_denom) THEN
+         CALL wrf_error_fatal ( &
+              'share/module_adtl_grid_utilities.f: Failed gen_scenario' )
+      ENDIF
+      DO i = 1, config_flags%max_numer
+         k = numer_vars(i)
+         l = denom_vars(i)
+         IF ( k .GT. nvars .OR. l .GT. nvars) CYCLE
+         scenario(k,l) = 1
+      ENDDO
+   ELSE
+      !Combination form for test variables (only use when you want to cross-reference every variable in the lists)
+      DO i = 1, config_flags%max_numer
+         k = numer_vars(i)
+         IF ( k .GT. nvars ) CYCLE
+         DO j = 1, config_flags%max_denom
+            l = denom_vars(j)
+            IF ( l .GT. nvars ) CYCLE
+            scenario(k,l) = 1
+         ENDDO
+      ENDDO
+   ENDIF
+
+
+  END SUBROUTINE gen_scenario_matrix
+
+  SUBROUTINE allocate_locations( filename, locations, nloc, ierr )
+   INTEGER, EXTERNAL :: get_unused_unit
+
+   CHARACTER(LEN=*), INTENT(IN) :: filename
+   INTEGER, DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: locations
+   INTEGER, INTENT(OUT) :: nloc, ierr
+   CHARACTER*256 :: message
+   INTEGER :: loc, iunit, index1, index2, index3
+
+   iunit = get_unused_unit()
+   OPEN(UNIT=iunit, &
+        FILE=TRIM(filename), &
+        FORM='FORMATTED', &
+        ACCESS='SEQUENTIAL', &
+        IOSTAT=ierr)
+
+   IF( ierr .NE. 0 ) THEN
+      WRITE(UNIT=message, FMT='(3(A))') &
+          'Error reading file ',filename,' in allocate_locations.'
+      CALL wrf_message(TRIM(message))
+      CLOSE(UNIT=iunit)
+      RETURN
+   ENDIF
+   loc = 0
+   points: DO
+      loc = loc + 1
+      READ(UNIT=iunit, FMT='(3(I6))',IOSTAT=ierr) index1, index2, index3
+      IF( ierr .NE. 0 ) exit points
+      nloc = loc
+   END DO points
+   CLOSE(UNIT=iunit)
+
+   IF( ierr .LT. 0 ) ALLOCATE(locations(nloc,3))
+
+  END SUBROUTINE allocate_locations
+
+
+  SUBROUTINE get_forc_locations( filename, locations, nloc, ierr )
+   INTEGER, EXTERNAL :: get_unused_unit
+
+   CHARACTER(LEN=*), INTENT(IN) :: filename
+   INTEGER, DIMENSION(nloc,3), INTENT(INOUT) :: locations
+   INTEGER, INTENT(IN) :: nloc
+   INTEGER, INTENT(OUT) :: ierr
+   CHARACTER*256 :: message
+   INTEGER :: loc, iunit, index1, index2, index3
+
+   iunit = get_unused_unit()
+   OPEN(UNIT=iunit, &
+        FILE=TRIM(filename), &
+        FORM='FORMATTED', &
+        ACCESS='SEQUENTIAL', &
+        IOSTAT=ierr)
+
+   IF( ierr .NE. 0 ) THEN
+      WRITE(UNIT=message, FMT='(3(A))') &
+          'Error reading file ',filename,' in get_forc_locations.'
+      CALL wrf_message(TRIM(message))
+      CLOSE(UNIT=iunit)
+      RETURN
+   ENDIF
+   loc = 0
+   points: DO    
+      loc = loc + 1
+      READ(UNIT=iunit, FMT='(3(I6))',IOSTAT=ierr) index1, index2, index3
+      IF( ierr .NE. 0 ) exit points
+      locations(loc,1) = index1
+      locations(loc,2) = index2
+      locations(loc,3) = index3
+   END DO points
+   CLOSE(UNIT=iunit)
+
+  END SUBROUTINE get_forc_locations
 
   SUBROUTINE deallocate_grid ( )
    INTEGER :: ierr

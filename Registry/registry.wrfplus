@@ -20,6 +20,13 @@ rconfig   logical check_moist           namelist,perturbation          1      .t
 rconfig   logical check_tracer          namelist,perturbation          1      .true. -    "AD/TL check TRACER"        ""      ""
 rconfig   logical check_TL              namelist,perturbation          1      .true. -    "TL check"                  ""      ""
 rconfig   logical check_AD              namelist,perturbation          1      .true. -    "AD check"                  ""      ""
+rconfig   real    nl_pert               namelist,perturbation          1         0.1 -    "nl_pert"    "nonlinear perturbation for TL check"      ""
+rconfig   integer max_numer             namelist,perturbation          1           1 -    "max_numer"    ""      ""
+rconfig   integer max_denom             namelist,perturbation          1           1 -    "max_denom"    ""      ""
+rconfig   integer numer_vars            namelist,perturbation          max_sens    1 -    "numer_vars"    ""      ""
+rconfig   integer denom_vars            namelist,perturbation          max_sens    1 -    "denom_vars"    ""      ""
+rconfig   integer scenario_type         namelist,perturbation          1           1 -    "scenario_type"    ""      ""
+
 rconfig   logical tl_standalone         namelist,perturbation          1      .false. -   "Run TLM standalone"                  ""      ""
 rconfig   logical jcdfi_use             namelist,perturbation          1     .false. -    "jcdfi_use"   "JcDFI on/off"      ""
 rconfig   integer jcdfi_diag            namelist,perturbation          1           1 -    "jcdfi_diag"  "JcDFI diag. on/off"      ""
@@ -611,9 +618,9 @@ halo_nta      HALO_EM_TRACER_E_5 dyn_em 48:tracer
 halo_nta      HALO_EM_TRACER_E_7 dyn_em 80:tracer
 halo_nta      HALO_EM_TRACER_OLD_E_5 dyn_em 48:tracer_old
 halo_nta      HALO_EM_TRACER_OLD_E_7 dyn_em 80:tracer_old
-halo      HALO_GSI_EM_E          dyn_em 4:mu_2,mub
-halo      HALO_GSI_EM_E_TL       dyn_em 4:g_mu_2,mu_2,mub
-halo      HALO_GSI_EM_BDY        dyn_em 4:a_u_1,a_v_1,a_ph_1,a_mu_1,a_t_1,a_w_1
+halo          HALO_GSI_EM_E          dyn_em 4:mu_2,mub
+halo          HALO_GSI_EM_E_TL       dyn_em 4:g_mu_2,mu_2,mub
+halo          HALO_GSI_EM_BDY        dyn_em 4:a_u_1,a_v_1,a_ph_1,a_mu_1,a_t_1,a_w_1
 
 #halo      HALO_EM_MU_AD dyn_em  4:a_muu,a_muv,a_mu_2,a_ru,a_rv
 #halo      HALO_EM_SAVE_AD dyn_em  4:a_ph_save,a_t_save,a_u_save,a_v_save

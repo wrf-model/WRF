@@ -146,4 +146,10 @@
  check_moist = .true.
  check_tracer = .true.
  tl_standalone = .false.
+ nl_pert       = 0.1,
+ numer_vars    = 1,2,3,
+ max_numer     = 3,
+ denom_vars    = 1,2,3,
+ max_denom     = 3,
+ scenario_type = 0,
  /

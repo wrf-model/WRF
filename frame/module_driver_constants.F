@@ -61,6 +61,10 @@ MODULE module_driver_constants
 
    INTEGER , PARAMETER :: max_outer_iterations = 10
 
+   !  The maximum number of cost functions to find sensitivity w.r.t (for custom sensitivity)
+
+   INTEGER , PARAMETER :: max_sens = 100
+
    !  The maximum number of instruments (for radiance DA)
 
    INTEGER , PARAMETER :: max_instruments =   30

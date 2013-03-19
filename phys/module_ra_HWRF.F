@@ -111,8 +111,7 @@ CONTAINS
 !
 !
 !-----------------------------------------------------------------------
-
-      SUBROUTINE HWRFRA(explicit_convection,DT,THRATEN,THRATENLW,THRATENSW,PI3D & 
+      SUBROUTINE HWRFRA(explicit_convection, DT,THRATEN,THRATENLW,THRATENSW,PI3D &
      &                ,XLAND,P8W,DZ8W,RHO_PHY,P_PHY,T                   &
      &                ,QV,QW,QI                                         & 
      &                ,TSK2D,GLW,GSW                                    &
@@ -129,8 +128,7 @@ CONTAINS
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------------------
-
-      LOGICAL,INTENT(IN) :: explicit_convection
+      LOGICAL, INTENT(IN) :: explicit_convection
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE,ITIMESTEP           &

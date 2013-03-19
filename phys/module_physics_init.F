@@ -36,6 +36,8 @@ CONTAINS
                          STEPBL,STEPRA,STEPCU,                   &
                          W0AVG, RAINNC, RAINC, RAINCV, RAINNCV,  &
                          SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV, &
+                         re_cloud, re_ice, re_snow,              & ! G. Thompson
+                         has_reqc, has_reqi, has_reqs,           & ! G. Thompson
                          NCA,swrad_scat,                         &
                          CLDEFI,LOWLYR,                          &
                          MASS_FLUX,                              &
@@ -253,6 +255,11 @@ CONTAINS
                                                         ISLTYP
 
 ! rad
+
+!..Added by G. Thompson to couple cloud physics variables with RRTMG radiation.
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: re_cloud, &
+             re_ice, re_snow
+   INTEGER, INTENT(INOUT):: has_reqc, has_reqi, has_reqs
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &!BSINGH(PNNL)- should be declared inout
              RTHRATEN, RTHRATENLW, RTHRATENSW, CLDFRA
@@ -561,6 +568,20 @@ integer myproc
    omlcall=config_flags%omlcall
 #endif
 
+!..Added G. Thompson to determine if we will compute and pass radiative
+!.. effective radii of cloud water, ice, and snow.  Currently ONLY properly
+!.. connected if using Physics options Thompson-MP and RRTMG-LW/SW.
+   has_reqc = 0
+   has_reqi = 0
+   has_reqs = 0
+   if (config_flags%ra_lw_physics.eq.4 .and. &
+              config_flags%ra_sw_physics.eq.4 .and. &
+              config_flags%mp_physics.eq.8) then
+      has_reqc = 1
+      has_reqi = 1
+      has_reqs = 1
+   endif
+
 !-- should be from the namelist
 
    sfull = 0.
@@ -704,6 +725,37 @@ integer myproc
            raincv_b(i,j)=0.
       end do
     end do
+
+!..Fill initial starting values of radiative effective radii for
+!.. cloud water (2.51 microns), cloud ice (5.01 microns), and
+!.. snow (10.01 microns).
+    if (has_reqc.ne.0) then
+       do j=jts,jtf
+          do k=kts,ktf
+          do i=its,itf
+             re_cloud(i,k,j) = 2.51E-6
+          end do
+          end do
+       end do
+    endif
+    if (has_reqi.ne.0) then
+       do j=jts,jtf
+          do k=kts,ktf
+          do i=its,itf
+             re_ice(i,k,j) = 5.01E-6
+          end do
+          end do
+       end do
+    endif
+    if (has_reqs.ne.0) then
+       do j=jts,jtf
+          do k=kts,ktf
+          do i=its,itf
+             re_snow(i,k,j) = 10.01E-6
+          end do
+          end do
+       end do
+    endif
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to landuse_init' )
 
@@ -2539,6 +2591,7 @@ integer myproc
    USE module_cu_gd,  ONLY : GDINIT
    USE module_cu_g3,  ONLY : G3INIT
    USE module_cu_sas
+   USE module_cu_mesosas
    USE module_cu_osas
    USE module_cu_camzm_driver, ONLY : zm_conv_init
    USE module_cu_nsas
@@ -2674,6 +2727,15 @@ integer myproc
 #endif
      CASE (SASSCHEME)
           CALL sasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,       &
+                      RUCUTEN,RVCUTEN,                            &   ! gopal's doing for SAS
+                      restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &
+                      allowed_to_read ,                           &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
+
+     CASE (MESO_SAS)   !Kwon
+          CALL msasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,       &
                       RUCUTEN,RVCUTEN,                            &   ! gopal's doing for SAS
                       restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &
                       allowed_to_read ,                           &

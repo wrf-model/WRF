@@ -739,6 +739,7 @@
 #endif
                               refl_10cm, diagflag, do_radar_ref,      &
                               re_cloud, re_ice, re_snow,              &
+                              has_reqc, has_reqi, has_reqs,           &
                               ids,ide, jds,jde, kds,kde, &             ! domain dims
                               ims,ime, jms,jme, kms,kme, &             ! memory dims
                               its,ite, jts,jte, kts,kte)               ! tile dims
@@ -751,8 +752,9 @@
                             its,ite, jts,jte, kts,kte
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           qv, qc, qr, qi, qs, qg, ni, nr, th
-      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT):: &
+      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           re_cloud, re_ice, re_snow
+      INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
 #ifdef WRF_CHEM
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           rainprod, evapprod
@@ -1003,11 +1005,11 @@
          endif
          ENDIF
 
-         IF ( PRESENT(re_cloud) .and. PRESENT(re_ice) .and.  PRESENT(re_snow) ) THEN
+         IF ( (has_reqc.ne.0) .and. (has_reqi.ne.0) .and. (has_reqs.ne.0) ) THEN
           do k = kts, kte
              re_qc1d(k) = 2.51E-6
              re_qi1d(k) = 5.01E-6
-             re_qs1d(k) = 10.E-6
+             re_qs1d(k) = 10.01E-6
           enddo
           call calc_effectRad (t1d, p1d, qv1d, qc1d, nc1d, qi1d, ni1d, qs1d,  &
                       re_qc1d, re_qi1d, re_qs1d, kts, kte)
@@ -1817,6 +1819,10 @@
            pri_wfz(k) = tpi_qcfz(idx_c,idx_tc)*odts
            pri_wfz(k) = MIN(DBLE(rc(k)*odts), pri_wfz(k))
            pni_wfz(k) = tni_qcfz(idx_c,idx_tc)*odts
+           pni_wfz(k) = MIN(DBLE(Nt_c*odts), pri_wfz(k)/(2.*xm0i), &
+                                pni_wfz(k))
+          elseif (rc(k).gt. R1 .and. temp(k).lt.HGFR) then
+           pri_wfz(k) = rc(k)*odts
            pni_wfz(k) = MIN(DBLE(Nt_c*odts), pri_wfz(k)/(2.*xm0i), &
                                 pni_wfz(k))
           endif

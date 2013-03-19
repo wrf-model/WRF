@@ -9734,6 +9734,7 @@ CONTAINS
                        dz8w, cldfra3d,CLDFRA_MP_ALL,itimestep,    &
                        is_CAMMGMP_used, r, g,                     &
                        re_cloud,re_ice,re_snow,                   &
+                       has_reqc,has_reqi,has_reqs,                &
                        icloud, warm_rain,                         &
                        f_ice_phy, f_rain_phy,                     &
                        xland, xice, snow,                         &
@@ -9835,11 +9836,12 @@ CONTAINS
                                                             QG3D, &
                                                         QNDROP3D
 
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
-         OPTIONAL                                               , &
-         INTENT(INOUT) ::                               RE_CLOUD, &
+!..Added by G. Thompson to couple cloud physics effective radii.
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN)::       &
+                                                        RE_CLOUD, &
                                                           RE_ICE, &
                                                          RE_SNOW
+   INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
 
    real pi,third,relconst,lwpmin,rhoh2o
 
@@ -10296,7 +10298,7 @@ CONTAINS
 
 !Mukul change the flags here with reference to the new effective cloud/ice/snow radius
          IF (ICLOUD .ne. 0) THEN
-            IF ( PRESENT( RE_CLOUD ) ) THEN
+            IF ( has_reqc .ne. 0) THEN
                inflgsw = 3
                DO K=kts,kte
                   recloud1D(ncol,K) = MAX(2.5, re_cloud(I,K,J)*1.E6)
@@ -10307,7 +10309,7 @@ CONTAINS
                ENDDO
             ENDIF
 
-            IF ( PRESENT( RE_ICE ) ) THEN
+            IF ( has_reqi .ne. 0) THEN
                inflgsw  = 4
                iceflgsw = 4
                DO K=kts,kte
@@ -10319,7 +10321,7 @@ CONTAINS
                ENDDO
             ENDIF
 
-            IF ( PRESENT( RE_SNOW ) ) THEN
+            IF ( has_reqs .ne. 0) THEN
                inflgsw  = 5
                iceflgsw = 5
                DO K=kts,kte

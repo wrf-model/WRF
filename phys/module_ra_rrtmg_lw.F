@@ -11410,6 +11410,7 @@ CONTAINS
                        o3input, o33d,                             &
                        f_qv, f_qc, f_qr, f_qi, f_qs, f_qg,        &
                        re_cloud, re_ice, re_snow,                 &  ! G. Thompson
+                       has_reqc, has_reqi, has_reqs,              &  ! G. Thompson
                        tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4,   & ! czhao 
                        tauaerlw5,tauaerlw6,tauaerlw7,tauaerlw8,   & ! czhao 
                        tauaerlw9,tauaerlw10,tauaerlw11,tauaerlw12,   & ! czhao 
@@ -11488,7 +11489,12 @@ CONTAINS
                                                             QG3D, &
                                                         QNDROP3D
 
-   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL:: re_cloud, re_ice, re_snow
+!..Added by G. Thompson to couple cloud physics effective radii.
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN)::         &
+                                                        re_cloud, &
+                                                          re_ice, &
+                                                         re_snow
+   INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
 
    real pi,third,relconst,lwpmin,rhoh2o
 
@@ -11975,7 +11981,7 @@ CONTAINS
 
 !Mukul change the flags here with reference to the new effective cloud/ice/snow radius
          IF (ICLOUD .ne. 0) THEN
-            IF ( PRESENT( RE_CLOUD ) ) THEN
+            IF ( has_reqc .ne. 0) THEN
                IF ( wrf_dm_on_monitor() ) THEN
                  WRITE(message,*)'RRTMG: pre-computed cloud droplet effective radius found, setting inflglw=3'
                  call wrf_debug(150, message)
@@ -11990,7 +11996,7 @@ CONTAINS
                ENDDO
             ENDIF
 
-            IF ( PRESENT( RE_ICE ) ) THEN
+            IF ( has_reqi .ne. 0) THEN
                IF ( wrf_dm_on_monitor() ) THEN
                  WRITE(message,*)'RRTMG: pre-computed cloud ice effective radius found, setting inflglw=4 and iceflglw=4'
                  call wrf_debug(150, message)
@@ -12006,7 +12012,7 @@ CONTAINS
                ENDDO
             ENDIF
 
-            IF ( PRESENT( RE_SNOW ) ) THEN
+            IF ( has_reqs .ne. 0) THEN
                IF ( wrf_dm_on_monitor() ) THEN
                  WRITE(message,*)'RRTMG: pre-computed snow effective radius found, setting inflglw=5 and iceflglw=5'
                  call wrf_debug(150, message)

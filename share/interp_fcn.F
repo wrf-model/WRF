@@ -1056,14 +1056,14 @@ print *,'column of cg pres = ',cprs
                            xstag, ystag,                         &  ! staggering of field
                            ipos, jpos,                           &  ! Position of lower left of nest in CD
                            nri, nrj,                             &  ! nest ratios
-                           cbdy_xs, nbdy_xs,                           &
-                           cbdy_xe, nbdy_xe,                           &
-                           cbdy_ys, nbdy_ys,                           &
-                           cbdy_ye, nbdy_ye,                           &
-                           cbdy_txs, nbdy_txs,                       &
-                           cbdy_txe, nbdy_txe,                       &
-                           cbdy_tys, nbdy_tys,                       &
-                           cbdy_tye, nbdy_tye,                       &
+!                          cbdy_xs, nbdy_xs,                           &
+!                          cbdy_xe, nbdy_xe,                           &
+!                          cbdy_ys, nbdy_ys,                           &
+!                          cbdy_ye, nbdy_ye,                           &
+!                          cbdy_txs, nbdy_txs,                       &
+!                          cbdy_txe, nbdy_txe,                       &
+!                          cbdy_tys, nbdy_tys,                       &
+!                          cbdy_tye, nbdy_tye,                       &
                            parent_id,nest_id                        &!cyl    
                            )   ! boundary arrays
      USE module_configure
@@ -1091,10 +1091,10 @@ print *,'column of cg pres = ',cprs
      REAL, DIMENSION ( cims:cime, ckms:ckme, cjms:cjme ) :: cfld
      REAL, DIMENSION ( nims:nime, nkms:nkme, njms:njme ) :: nfld
      INTEGER, DIMENSION ( nims:nime, njms:njme ) :: imask
-     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_xs, cbdy_txs, nbdy_xs, nbdy_txs
-     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_xe, cbdy_txe, nbdy_xe, nbdy_txe
-     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_ys, cbdy_tys, nbdy_ys, nbdy_tys
-     REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_ye, cbdy_tye, nbdy_ye, nbdy_tye
+!    REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_xs, cbdy_txs, nbdy_xs, nbdy_txs
+!    REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_xe, cbdy_txe, nbdy_xe, nbdy_txe
+!    REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_ys, cbdy_tys, nbdy_ys, nbdy_tys
+!    REAL,  DIMENSION( * ), INTENT(INOUT) :: cbdy_ye, cbdy_tye, nbdy_ye, nbdy_tye
      REAL cdt, ndt
      
      ! Local

@@ -434,38 +434,40 @@ integer::oops1,oops2
 
       IF ( flag_metgrid .EQ. 1 ) THEN  !   <----- START OF VERTICAL INTERPOLATION PART ---->
 
-
          num_metgrid_levels = grid%num_metgrid_levels
 
-         !  At the location of maximum pressure in the column, get the temperature and height.  These
-         !  will be written out and could be used for vertical interpolation - to avoid extrapolation.
-         !  Hey, we can also do minimum values, too.
+         IF ( config_flags%nest_interp_coord .EQ. 1 ) THEN
 
-         DO j=jts,jte
-            DO i=its,ite
-               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-               grid%max_p(i,j) = grid%p_gc(i,1,j) 
-               k_max_p = 1
-               IF      ( grid%p_gc(i,2,j) .GT. grid%max_p(i,j) ) THEN
-                  grid%max_p(i,j) = grid%p_gc(i,2,j)
-                  k_max_p = 2
-               ELSE IF ( grid%p_gc(i,num_metgrid_levels,j) .GT. grid%max_p(i,j) ) THEN
-                  grid%max_p(i,j) = grid%p_gc(i,num_metgrid_levels,j)
-                  k_max_p = num_metgrid_levels
-               END IF
-               grid%t_max_p(i,j) = grid%t_gc(i,k_max_p,j)
-               grid%ght_max_p(i,j) = grid%ght_gc(i,k_max_p,j)
-
-               grid%min_p(i,j) = grid%p_gc(i,num_metgrid_levels,j) 
-               k_min_p = num_metgrid_levels
-               IF      ( grid%p_gc(i,2,j) .LT. grid%min_p(i,j) ) THEN
-                  grid%min_p(i,j) = grid%p_gc(i,2,j)
-                  k_min_p = 2
-               END IF
-               grid%t_min_p(i,j) = grid%t_gc(i,k_min_p,j)
-               grid%ght_min_p(i,j) = grid%ght_gc(i,k_min_p,j)
+            !  At the location of maximum pressure in the column, get the temperature and height.  These
+            !  will be written out and could be used for vertical interpolation - to avoid extrapolation.
+            !  Hey, we can also do minimum values, too.
+   
+            DO j=jts,jte
+               DO i=its,ite
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  grid%max_p(i,j) = grid%p_gc(i,1,j) 
+                  k_max_p = 1
+                  IF      ( grid%p_gc(i,2,j) .GT. grid%max_p(i,j) ) THEN
+                     grid%max_p(i,j) = grid%p_gc(i,2,j)
+                     k_max_p = 2
+                  ELSE IF ( grid%p_gc(i,num_metgrid_levels,j) .GT. grid%max_p(i,j) ) THEN
+                     grid%max_p(i,j) = grid%p_gc(i,num_metgrid_levels,j)
+                     k_max_p = num_metgrid_levels
+                  END IF
+                  grid%t_max_p(i,j) = grid%t_gc(i,k_max_p,j)
+                  grid%ght_max_p(i,j) = grid%ght_gc(i,k_max_p,j)
+   
+                  grid%min_p(i,j) = grid%p_gc(i,num_metgrid_levels,j) 
+                  k_min_p = num_metgrid_levels
+                  IF      ( grid%p_gc(i,2,j) .LT. grid%min_p(i,j) ) THEN
+                     grid%min_p(i,j) = grid%p_gc(i,2,j)
+                     k_min_p = 2
+                  END IF
+                  grid%t_min_p(i,j) = grid%t_gc(i,k_min_p,j)
+                  grid%ght_min_p(i,j) = grid%ght_gc(i,k_min_p,j)
+               END DO
             END DO
-         END DO
+         END IF
 
          !  If this is data from the PINTERP program, it is emulating METGRID output.
          !  One of the caveats of this data is the way that the vertical structure is
@@ -1516,6 +1518,26 @@ integer::oops1,oops2
          grid%ifndsoilw = 0
       END IF
 
+      !  Set flag integers for presence of albsi, snowsi, and icedepth fields
+
+      IF ( config_flags%seaice_albedo_opt == 2 ) THEN
+          grid%ifndalbsi = flag_albsi
+      ELSE
+          grid%ifndalbsi = 0
+      ENDIF
+          
+      IF ( config_flags%seaice_snowdepth_opt == 1 ) THEN
+          grid%ifndsnowsi = flag_snowsi
+      ELSE
+          grid%ifndsnowsi = 0
+      ENDIF
+          
+      IF ( config_flags%seaice_thickness_opt == 1 ) THEN
+          grid%ifndicedepth = flag_icedepth
+      ELSE
+          grid%ifndicedepth = 0
+      ENDIF
+
       !  We require input data for the various LSM schemes.
 
       enough_data : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
@@ -1577,30 +1599,35 @@ integer::oops1,oops2
 
       !  Spliti NUDAPT  Urban Parameters
 
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-               grid%LP_URB2D(i,j)  = grid%URB_PARAM(i,91,j)
-               grid%LB_URB2D(i,j)  = grid%URB_PARAM(i,95,j)
-               grid%HGT_URB2D(i,j)  = grid%URB_PARAM(i,94,j)
-            END DO
-         END DO
-
-
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-               DO k = 1, 15
-                  grid%HI_URB2D(i,k,j)  = grid%URB_PARAM(i,k+117,j)
+         IF ( ( config_flags%sf_urban_physics == 1 ) .OR. ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  grid%LP_URB2D(i,j)  = grid%URB_PARAM(i,91,j)
+                  grid%LB_URB2D(i,j)  = grid%URB_PARAM(i,95,j)
+                  grid%HGT_URB2D(i,j)  = grid%URB_PARAM(i,94,j)
                END DO
             END DO
-         END DO
+         ENDIF
+
+         IF ( ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  DO k = 1, 15
+                     grid%HI_URB2D(i,k,j)  = grid%URB_PARAM(i,k+117,j)
+                  END DO
+               END DO
+            END DO
+         ENDIF
 
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-               grid%MH_URB2D(i,j)  = grid%URB_PARAM(i,92,j)
-               grid%STDH_URB2D(i,j)  = grid%URB_PARAM(i,93,j)
+               IF ( config_flags%sf_urban_physics==1 ) THEN
+                  grid%MH_URB2D(i,j)  = grid%URB_PARAM(i,92,j)
+                  grid%STDH_URB2D(i,j)  = grid%URB_PARAM(i,93,j)
+               ENDIF
                grid%H2W_URB2D(i,j)  = grid%URB_PARAM(i,101,j)
                grid%Z0S_URB2D(i,j)  = grid%URB_PARAM(i,103,j)
                grid%ZDS_URB2D(i,j)  = grid%URB_PARAM(i,104,j)
@@ -1636,7 +1663,9 @@ integer::oops1,oops2
             DO i = its , MIN(ide-1,ite)
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                DO k = 1, 4
-                  grid%LF_URB2D(i,k,j)  = grid%URB_PARAM(i,k+95,j)
+                  IF ( config_flags%sf_urban_physics==1 ) THEN
+                     grid%LF_URB2D(i,k,j)  = grid%URB_PARAM(i,k+95,j)
+                  ENDIF
                   grid%Z0M_URB2D(i,k,j)  = grid%URB_PARAM(i,k+112,j)
                END DO
             END DO

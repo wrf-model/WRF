@@ -163,9 +163,9 @@ gf_free.o: gribmod.o
 
 gf_getfld.o: gribmod.o
 
-gfunpack3.o: gridtemplates.o realloc.o
+gf_unpack3.o: gridtemplates.o realloc.o
 
-gfunpack4.o: psdtemplates.o realloc.o
+gf_unpack4.o: pdstemplates.o realloc.o
 
 gf_unpack5.o: drstemplates.o realloc.o
 

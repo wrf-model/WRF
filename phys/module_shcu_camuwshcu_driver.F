@@ -1,4 +1,4 @@
-MODULE module_cu_camuwshcu_driver
+MODULE module_shcu_camuwshcu_driver
   USE shr_kind_mod,    only: r8 => shr_kind_r8
 
 ! Roughly based on convect_shallow_tend in convect_shallow.F90 from CAM
@@ -497,4 +497,4 @@ SUBROUTINE camuwshcu_driver(                                  &
   end do ij_loops
 END SUBROUTINE camuwshcu_driver
 
-END MODULE module_cu_camuwshcu_driver
+END MODULE module_shcu_camuwshcu_driver

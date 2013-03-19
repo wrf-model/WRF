@@ -849,7 +849,6 @@ CONTAINS
     parameter (nmax=100)
     integer j
     real rbet,gam(nmax)
-    !      if(b(1).eq.0.)pause 'tridag: rewrite equations'
     rbet=1./b(1)
     u(1)=r(1)*rbet
     do j=2,n

@@ -2890,7 +2890,6 @@ integer myproc
 !  USE module_mp_milbrandt3mom
    USE module_mp_wdm5
    USE module_mp_wdm6
-   USE module_mp_cammgmp_driver, ONLY:CAMMGMP_INIT !CAM5's microphysics
 #if (EM_CORE==1)
    USE module_mp_nssl_2mom
    USE module_mp_cammgmp_driver, ONLY:CAMMGMP_INIT !CAM5's microphysics

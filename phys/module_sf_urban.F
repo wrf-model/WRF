@@ -355,7 +355,7 @@ MODULE module_sf_urban
    REAL, INTENT(INOUT) :: lp_urb   ! plan area fraction [-]
    REAL, INTENT(INOUT) :: frc_urb  ! urban fraction [-]
    REAL, INTENT(INOUT) :: lb_urb   ! building surface to plan area ratio [-]
-   REAL, INTENT(INOUT), DIMENSION(4) :: lf_urb   ! frantal area index [-]
+   REAL, INTENT(INOUT), DIMENSION(4) :: lf_urb   ! frontal area index [-]
    REAL, INTENT(INOUT) :: zo_check  ! check for printing ZOC
 
 !-------------------------------------------------------------------------------
@@ -2200,14 +2200,17 @@ MODULE module_sf_urban
                   LP_URB2D(I,J)=0.
                   LB_URB2D(I,J)=0.
                   HGT_URB2D(I,J)=0.
-                  MH_URB2D(I,J)=0.
-                  STDH_URB2D(I,J)=0.
-                  DO K=1,4
-                    LF_URB2D(I,K,J)=0.
-                  ENDDO
-                  DO K=1,num_urban_hi
-                     HI_URB2D(I,K,J)=0.
-                  ENDDO
+                  IF ( sf_urban_physics == 1 ) THEN
+                     MH_URB2D(I,J)=0.
+                     STDH_URB2D(I,J)=0.
+                     DO K=1,4
+                       LF_URB2D(I,K,J)=0.
+                     ENDDO
+                  ELSE IF ( ( sf_urban_physics == 2 ) .or. ( sf_urban_physics == 3 ) ) THEN
+                     DO K=1,num_urban_hi
+                        HI_URB2D(I,K,J)=0.
+                     ENDDO
+                  ENDIF
                ENDIF
                 IF (FRC_URB2D(I,J)>0.and.FRC_URB2D(I,J)<=1.) THEN
                   CONTINUE
@@ -2232,14 +2235,17 @@ MODULE module_sf_urban
                   LP_URB2D(I,J)=0.
                   LB_URB2D(I,J)=0.
                   HGT_URB2D(I,J)=0.
-                  MH_URB2D(I,J)=0.
-                  STDH_URB2D(I,J)=0.
-                  DO K=1,4
-                    LF_URB2D(I,K,J)=0.
-                  ENDDO
-                  DO K=1,num_urban_hi
-                     HI_URB2D(I,K,J)=0.
-                  ENDDO
+                  IF ( sf_urban_physics == 1 ) THEN
+                     MH_URB2D(I,J)=0.
+                     STDH_URB2D(I,J)=0.
+                     DO K=1,4
+                       LF_URB2D(I,K,J)=0.
+                     ENDDO
+                  ELSE IF ( ( sf_urban_physics == 2 ) .or. ( sf_urban_physics == 3 ) ) THEN
+                     DO K=1,num_urban_hi
+                        HI_URB2D(I,K,J)=0.
+                     ENDDO
+                  ENDIF
                ENDIF
                 IF (FRC_URB2D(I,J)>0.and.FRC_URB2D(I,J)<=1.) THEN
                   CONTINUE
@@ -2264,14 +2270,17 @@ MODULE module_sf_urban
                   LP_URB2D(I,J)=0.
                   LB_URB2D(I,J)=0.
                   HGT_URB2D(I,J)=0.
-                  MH_URB2D(I,J)=0.
-                  STDH_URB2D(I,J)=0.
-                  DO K=1,4
-                    LF_URB2D(I,K,J)=0.
-                  ENDDO
-                  DO K=1,num_urban_hi
-                     HI_URB2D(I,K,J)=0.
-                  ENDDO
+                  IF ( sf_urban_physics == 1 ) THEN
+                     MH_URB2D(I,J)=0.
+                     STDH_URB2D(I,J)=0.
+                     DO K=1,4
+                       LF_URB2D(I,K,J)=0.
+                     ENDDO
+                  ELSE IF ( ( sf_urban_physics == 2 ) .or. ( sf_urban_physics == 3 ) ) THEN
+                     DO K=1,num_urban_hi
+                        HI_URB2D(I,K,J)=0.
+                     ENDDO
+                  ENDIF
                ENDIF
                 IF (FRC_URB2D(I,J)>0.and.FRC_URB2D(I,J)<=1.) THEN
                   CONTINUE
@@ -2296,14 +2305,17 @@ MODULE module_sf_urban
                   LP_URB2D(I,J)=0.
                   LB_URB2D(I,J)=0.
                   HGT_URB2D(I,J)=0.
-                  MH_URB2D(I,J)=0.
-                  STDH_URB2D(I,J)=0.
-                  DO K=1,4
-                    LF_URB2D(I,K,J)=0.
-                  ENDDO
-                  DO K=1,num_urban_hi
-                     HI_URB2D(I,K,J)=0.
-                  ENDDO
+                  IF ( sf_urban_physics == 1 ) THEN
+                     MH_URB2D(I,J)=0.
+                     STDH_URB2D(I,J)=0.
+                     DO K=1,4
+                       LF_URB2D(I,K,J)=0.
+                     ENDDO
+                  ELSE IF ( ( sf_urban_physics == 2 ) .or. ( sf_urban_physics == 3 ) ) THEN
+                     DO K=1,num_urban_hi
+                        HI_URB2D(I,K,J)=0.
+                     ENDDO
+                  ENDIF
                ENDIF
                 IF (FRC_URB2D(I,J)>0.and.FRC_URB2D(I,J)<=1.) THEN
                   CONTINUE
@@ -2324,14 +2336,17 @@ MODULE module_sf_urban
                 LP_URB2D(I,J)=0.
                 LB_URB2D(I,J)=0.
                 HGT_URB2D(I,J)=0.
-                  MH_URB2D(I,J)=0.
-                  STDH_URB2D(I,J)=0.
-                  DO K=1,4
-                    LF_URB2D(I,K,J)=0.
-                  ENDDO
-                DO K=1,num_urban_hi
-                   HI_URB2D(I,K,J)=0.
-                ENDDO
+                IF ( sf_urban_physics == 1 ) THEN
+                   MH_URB2D(I,J)=0.
+                   STDH_URB2D(I,J)=0.
+                   DO K=1,4
+                      LF_URB2D(I,K,J)=0.
+                   ENDDO
+                ELSE IF ( ( sf_urban_physics == 2 ) .or. ( sf_urban_physics == 3 ) ) THEN
+                   DO K=1,num_urban_hi
+                      HI_URB2D(I,K,J)=0.
+                   ENDDO
+                ENDIF
             ENDIF
 
 

@@ -291,7 +291,8 @@ call wrf_message("**************************************************************
    endif
    endif
 
-   if ( config_flags%chem_conv_tr == 1 .and. config_flags%cu_diag == 0) then
+   if ( config_flags%chem_opt /= 0 .AND. &
+      ( config_flags%chem_conv_tr == 1 .and. config_flags%cu_diag == 0) ) then
          call wrf_error_fatal("ERROR: chem_conv_tr=1 requires cu_diag=1")
    endif
 

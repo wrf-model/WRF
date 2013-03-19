@@ -1679,11 +1679,17 @@ END subroutine cup_up_tracer
       do nv=1,num_chem
         if (nv <= numgas) then
           do i=its,itf
+           if(ierr(I).eq.0)then
             wetdep(i,nv)=wetdep(i,nv)*xmb(i)/mwdry ! mmol/m2/s for gas phase species
+            wetdep(i,nv) = max(0.0,wetdep(i,nv))
+           endif
           enddo
         else
           do i=its,itf
+           if(ierr(I).eq.0)then
             wetdep(i,nv)=wetdep(i,nv)*xmb(i) ! ug/m2/s for aerosol mass, #/m2/s for aerosol number
+            wetdep(i,nv) = max(0.0,wetdep(i,nv))
+           endif
           enddo
         endif
       enddo

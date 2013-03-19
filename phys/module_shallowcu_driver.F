@@ -61,7 +61,7 @@ CONTAINS
                                        , GRIMSSHCUSCHEME 
 ! *** add new modules of schemes here
 
-   USE module_cu_camuwshcu_driver, ONLY : camuwshcu_driver
+   USE module_shcu_camuwshcu_driver, ONLY : camuwshcu_driver
    USE module_shcu_grims
    USE module_dm
    USE module_domain, ONLY: domain

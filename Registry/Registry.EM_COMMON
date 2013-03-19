@@ -610,24 +610,24 @@ state    real   LP_URB2D       ij       misc      1        -     i0  "BUILD_AREA
 state    real   HI_URB2D       i{uhi}j misc       1        Z     i0  "HEIGHT_HISTOGRAMS" "DISTRIBUTION OF BUILDING HEIGHTS" "dimensionless"
 state    real   LB_URB2D       ij       misc      1        -     i0  "BUILD_SURF_RATIO" "BUILDING SURFACE AREA TO PLAN AREA RATIO" "dimensionless"
 state    real   HGT_URB2D      ij       misc      1        -     i0  "BUILD_HEIGHT" "AVERAGE BUILDING HEIGHT WEIGHTED BY BUILDING PLAN AREA" "m"
-state    real   FAD0_URB2D     i{uhi}j  misc      1        Z     i0  "FAD0_URB2D" "Frontal Area Density from the 0 Degree Wind Direction" "m-1"
-state    real   FAD135_URB2D   i{uhi}j  misc      1        Z     i0  "FAD135_URB2D" "Frontal Area Density from the 135 Degree Direction" "m-1"
-state    real   FAD45_URB2D    i{uhi}j  misc      1        Z     i0  "FAD45_URB2D" "Frontal Area Density from the 45 Degree Wind Direction" "m-1"
-state    real   PAD_URB2D      i{uhi}j  misc      1        Z     i0  "PAD_URB2D" "Building Plan Area Density" "m-1"
-state    real   FAD90_URB2D    i{uhi}j  misc      1        Z     i0  "FAD90_URB2D" "Frontal Area Density from the 90 Degree Wind Direction" "m-1"
-state    real   RAD_URB2D      i{uhi}j  misc      1        -     i0  "RAD_URB2D" "Roof Area Density" "m-1"
+state    real   FAD0_URB2D     i{uhi}j  misc      1        Z      -  "FAD0_URB2D" "Frontal Area Density from the 0 Degree Wind Direction" "m-1"
+state    real   FAD135_URB2D   i{uhi}j  misc      1        Z      -  "FAD135_URB2D" "Frontal Area Density from the 135 Degree Direction" "m-1"
+state    real   FAD45_URB2D    i{uhi}j  misc      1        Z      -  "FAD45_URB2D" "Frontal Area Density from the 45 Degree Wind Direction" "m-1"
+state    real   PAD_URB2D      i{uhi}j  misc      1        Z      -  "PAD_URB2D" "Building Plan Area Density" "m-1"
+state    real   FAD90_URB2D    i{uhi}j  misc      1        Z      -  "FAD90_URB2D" "Frontal Area Density from the 90 Degree Wind Direction" "m-1"
+state    real   RAD_URB2D      i{uhi}j  misc      1        -      -  "RAD_URB2D" "Roof Area Density" "m-1"
 state    real   MH_URB2D       ij       misc      1        -     i0  "MH_URB2D"  "Mean Building Height" "m"
 state    real   STDH_URB2D     ij       misc      1        -     i0  "STDH_URB2D" "Standard Deviation of Building Height" "m2"
 state    real   LF_URB2D       i{udr}j  misc      1        Z     i0  "LF_URB2D"   "Frontal Area Index" "dimensionless"
-state    real   CAR_URB2D      ij       misc      1        -     i0  "CAR_URB2D"  "Complete Aspect Ratio" "dimensionless"
-state    real   H2W_URB2D      ij       misc      1        -     i0  "H2W_URB2D"  "Height-to-Width Ratio" "dimensionless"
-state    real   SVF_URB2D      ij       misc      1        -     i0  "SVF_URB2D"  "Sky View Factor"   "dimensionless"
-state    real   Z0S_URB2D      ij       misc      1        -     i0  "Z0S_URB2D"   "Roughness Length S" "m"
-state    real   Z0R_URB2D      i{udr}j  misc      1        Z     i0  "Z0R_URB2D"   "Roughness Length R" "m"
-state    real   Z0M_URB2D      i{udr}j  misc      1        Z     i0  "Z0M_URB2D"   "Roughness Length M" "m"
-state    real   ZDS_URB2D      ij       misc      1        -     i0  "ZDS_URB2D"   "Displacement Height S" "m"
-state    real   ZDM_URB2D      ij       misc      1        -     i0  "ZDM_URB2D"   "Displacement Height M" "m"
-state    real   ZDR_URB2D      i{udr}j  misc      1        Z     i0  "ZDR_URB2D"   "Displacement Height R" "m"
+state    real   CAR_URB2D      ij       misc      1        -      -  "CAR_URB2D"  "Complete Aspect Ratio" "dimensionless"
+state    real   H2W_URB2D      ij       misc      1        -      -  "H2W_URB2D"  "Height-to-Width Ratio" "dimensionless"
+state    real   SVF_URB2D      ij       misc      1        -      -  "SVF_URB2D"  "Sky View Factor"   "dimensionless"
+state    real   Z0S_URB2D      ij       misc      1        -      -  "Z0S_URB2D"   "Roughness Length S" "m"
+state    real   Z0R_URB2D      i{udr}j  misc      1        Z      -  "Z0R_URB2D"   "Roughness Length R" "m"
+state    real   Z0M_URB2D      i{udr}j  misc      1        Z      -  "Z0M_URB2D"   "Roughness Length M" "m"
+state    real   ZDS_URB2D      ij       misc      1        -      -  "ZDS_URB2D"   "Displacement Height S" "m"
+state    real   ZDM_URB2D      ij       misc      1        -      -  "ZDM_URB2D"   "Displacement Height M" "m"
+state    real   ZDR_URB2D      i{udr}j  misc      1        Z      -  "ZDR_URB2D"   "Displacement Height R" "m"
 
 
 # lsm State Variables
@@ -663,6 +663,9 @@ state    real   SNOWH            ij     misc        1         -     i012rhd=(int
 state    real   CANWAT           ij     misc        1         -     i012rhd=(interp_mask_land_field:lu_index)u=(copy_fcnm)    "CANWAT"           "CANOPY WATER"             "kg m-2"
 state  integer  IFNDSNOWH        -      misc        1         -     i         "FNDSNOWH" "SNOWH_LOGICAL"
 state  integer  IFNDSOILW        -      misc        1         -     i         "FNDSOILW" "SOILW_LOGICAL"
+state  integer  IFNDALBSI        -      misc        1         -     i         "FNDALBSI" "ALBSI_LOGICAL"
+state  integer  IFNDSNOWSI       -      misc        1         -     i         "FNDSNOWSI" "SNOWSI_LOGICAL"
+state  integer  IFNDICEDEPTH     -      misc        1         -     i         "FNDICEDEPTH" "ICEDEPTH_LOGICAL"
 # SKIN SST
 state    real   SSTSK            ij     misc        1         -     rhd=(interp_mask_water_field:lu_index,iswater)   "SSTSK"              "SKIN SEA SURFACE TEMPERATURE" "K"
 state    real   DTW              ij     misc        1         -     r   "DTW"              "WARM LAYER TEMP DIFF" "C"
@@ -975,14 +978,14 @@ state   real    F_RIMEF_PHY    ikj     misc         1         -      rhdu     "F
 state   real    qndropsource   ikj     misc         1         -      r        "qndropsource"         "Droplet number source"   "#/kg/s"
 
 # cyl 3DPWP variables
-state   real    OM_TMP        i{nocnl}jb     misc         1        Z     i012rhdu=(copy_fcnm)f=(c2f_interp:grid_id)    "OM_TMP" "temperature"   "k"
-state   real    OM_S          i{nocnl}jb     misc         1        Z     i012rhdu=(copy_fcnm)f=(c2f_interp:grid_id)  "OM_S" "salinity"       "degree"
+state   real    OM_TMP        i{nocnl}j      misc         1        Z     i012rhdu=(copy_fcnm)f=(c2f_interp:grid_id)    "OM_TMP" "temperature"   "k"
+state   real    OM_S          i{nocnl}j      misc         1        Z     i012rhdu=(copy_fcnm)f=(c2f_interp:grid_id)  "OM_S" "salinity"       "degree"
 state   real    OM_DEPTH      i{nocnl}j      misc         1        Z     i012rhd   "OM_DEPTH"   "depth"     "m"
-state   real    OM_U          i{nocnl}jb     misc         1        Z     i012rhdu=(copy_fcnm)f=(c2f_interp:grid_id)   "OM_U"   "u current"     "m/s"
-state   real    OM_V          i{nocnl}jb     misc         1        Z     i012rhdu=(copy_fcnm)f=(c2f_interp:grid_id)   "OM_V"   "v current"     "m/s"
+state   real    OM_U          i{nocnl}j      misc         1        Z     i012rhdu=(copy_fcnm)f=(c2f_interp:grid_id)   "OM_U"   "u current"     "m/s"
+state   real    OM_V          i{nocnl}j      misc         1        Z     i012rhdu=(copy_fcnm)f=(c2f_interp:grid_id)   "OM_V"   "v current"     "m/s"
 state   real    OM_LAT        ij       misc         1        -     i012rd   "OM_LAT"  "om lat"       "degree"
 state   real    OM_LON        ij       misc         1        -     i012rd   "OM_LON"  "om lon"       "degree"
-state   real    OM_ML         ijb      misc         1        -     i012rhdu=(copy_fcnm)f=(c2f_interp:grid_id)   "OM_ML"  "om ml"       "m"
+state   real    OM_ML         ij       misc         1        -     i012rhdu=(copy_fcnm)f=(c2f_interp:grid_id)   "OM_ML"  "om ml"       "m"
 state   real    OM_TINI       i{nocnl}j      misc         1        Z     i012rd   "OM_TINI"   "temperature init"     "k"
 state   real    OM_SINI       i{nocnl}j      misc         1        Z     i012rd   "OM_SINI"       "salinity init"     "degree"
 
@@ -1855,7 +1858,7 @@ rconfig   integer seaice_snowdepth_opt    namelist,physics      1              0
 rconfig   real    seaice_snowdepth_max    namelist,physics      1          1.E10       -     "seaice_snowdepth_max" "Maximum allowed accumulation (m) of snow on sea ice"
 rconfig   real    seaice_snowdepth_min    namelist,physics      1          0.001       -     "seaice_snowdepth_min" "Minimum snow depth (m) on sea ice"
 rconfig   integer seaice_albedo_opt       namelist,physics      1              0       -     "seaice_albedo_opt" "Method for setting albedo over sea ice"
-rconfig   real    seaice_albedo_default   namelist,physics      1             0.80     -     "seaice_albedo_default" "Default value for sea-ice over albedo with seaice_albeo_opt=0"
+rconfig   real    seaice_albedo_default   namelist,physics      1             0.65     -     "seaice_albedo_default" "Default value for sea-ice over albedo with seaice_albeo_opt=0"
 rconfig   integer seaice_thickness_opt    namelist,physics      1              0       -     "seaice_thickness_opt" "Method for setting sea-ice thickness"
 rconfig   real   seaice_thickness_default namelist,physics      1              3.0     -     "seaice_thickness_default" "Default value for sea-ice thickness"
 rconfig   logical tice2tsk_if2cold        namelist,physics      1              .false. -     "tice2tsk_if2cold" "Avoid low ice temps when ice frac and Tsk are inconsistent"
@@ -2239,9 +2242,9 @@ package   temfsfcscheme  sf_sfclay_physics==10       -             state:wm_temf
 package   sfclayrevscheme sf_sfclay_physics==11      -             -
 package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 
-package   noahucmscheme  sf_urban_physics==1         -             state:trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep
-package   bepscheme      sf_urban_physics==2         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d
-package   bep_bemscheme  sf_urban_physics==3         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,tlev_urb3d,qlev_urb3d,tw1lev_urb3d,tw2lev_urb3d,tglev_urb3d,tflev_urb3d,sf_ac_urb3d,lf_ac_urb3d,cm_ac_urb3d,sfvent_urb3d,lfvent_urb3d,sfwin1_urb3d,sfwin2_urb3d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d
+package   noahucmscheme  sf_urban_physics==1         -             state:trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,mh_urb2d,stdh_urb2d,lf_urb2d,lp_urb2d,hgt_urb2d,lb_urb2d
+package   bepscheme      sf_urban_physics==2         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,hi_urb2d,lp_urb2d,hgt_urb2d,lb_urb2d
+package   bep_bemscheme  sf_urban_physics==3         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,tlev_urb3d,qlev_urb3d,tw1lev_urb3d,tw2lev_urb3d,tglev_urb3d,tflev_urb3d,sf_ac_urb3d,lf_ac_urb3d,cm_ac_urb3d,sfvent_urb3d,lfvent_urb3d,sfwin1_urb3d,sfwin2_urb3d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,hi_urb2d,lp_urb2d,hgt_urb2d,lb_urb2d
 
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn
@@ -2290,7 +2293,8 @@ package   spnudging      grid_fdda==2               -              fdda3d:u_ndg_
 package   slopeopt       slope_rad==1               -              -
 package   gwdopt         gwd_opt==1                 -              state:oc12d,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,dtaux3d,dtauy3d,dusfcg,dvsfcg
 package   omlscheme      sf_ocean_physics==1        -              state:tml,t0ml,hml,h0ml,huml,hvml,tmoml
-package   pwp3dscheme    sf_ocean_physics==2        -              state:tml,t0ml,hml,h0ml,huml,hvml,tmoml,om_tmp,om_s,om_depth,om_u,om_v,om_lat,om_lon,om_tini,om_sini
+package   pwp3dscheme    sf_ocean_physics==2        -              state:tml,t0ml,hml,h0ml,huml,hvml,tmoml,om_tmp,om_s,om_depth,om_u,om_v,om_lat,om_lon,om_ml,om_tini,om_sini
+
 package   scmopt         scm_force==1               -              state:z_force,z_force_tend,u_g,u_g_tend,v_g,v_g_tend,w_subs,w_subs_tend,th_upstream_x,th_upstream_x_tend,th_upstream_y,th_upstream_y_tend,qv_upstream_x,qv_upstream_x_tend,qv_upstream_y,qv_upstream_y_tend,u_upstream_x,u_upstream_x_tend,u_upstream_y,u_upstream_y_tend,v_upstream_x,v_upstream_x_tend,v_upstream_y,v_upstream_y_tend,tau_x,tau_x_tend,tau_y,tau_y_tend,th_largescale,th_largescale_tend,qv_largescale,qv_largescale_tend,ql_largescale,ql_largescale_tend,u_largescale,u_largescale_tend,v_largescale,v_largescale_tend,tau_largescale,tau_largescale_tend,ql_upstream_x,ql_upstream_x_tend,ql_upstream_y,ql_upstream_y_tend,t_soil_forcing_val,t_soil_forcing_tend,q_soil_forcing_val,q_soil_forcing_tend,tau_soil,soil_depth_force,th_t_tend,qv_t_tend
 
 package   prec_acc       prec_acc_opt==1            -              state:prec_acc_c,prec_acc_nc,snow_acc_nc
@@ -2322,14 +2326,26 @@ package   dfi_nodfi     dfi_opt==0                  -             -
 package   dfi_dfl       dfi_opt==1                  -             state:dfi_u,dfi_v,dfi_w,dfi_ph,dfi_phb,dfi_ph0,dfi_php,dfi_t,dfi_p,dfi_ww,dfi_mu,dfi_tke,dfi_pb,dfi_al,dfi_alt,dfi_TSLB,dfi_SMOIS,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_SMFR3D,dfi_KEEPFR3DFLAG,dfi_TSK,dfi_SOILT1,dfi_TSNAV,dfi_SNOWC,dfi_QVG,dfi_rh,dfi_tten_rad
 package   dfi_ddfi      dfi_opt==2                  -             state:dfi_u,dfi_v,dfi_w,dfi_ph,dfi_phb,dfi_ph0,dfi_php,dfi_t,dfi_p,dfi_ww,dfi_mu,dfi_tke,dfi_pb,dfi_al,dfi_alt,dfi_TSLB,dfi_SMOIS,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_SMFR3D,dfi_KEEPFR3DFLAG,dfi_TSK,dfi_SOILT1,dfi_TSNAV,dfi_SNOWC,dfi_QVG,dfi_rh,dfi_tten_rad
 package   dfi_tdfi      dfi_opt==3                  -             state:dfi_u,dfi_v,dfi_w,dfi_ph,dfi_phb,dfi_ph0,dfi_php,dfi_t,dfi_p,dfi_ww,dfi_mu,dfi_tke,dfi_pb,dfi_al,dfi_alt,dfi_TSLB,dfi_SMOIS,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_SMFR3D,dfi_KEEPFR3DFLAG,dfi_TSK,dfi_SOILT1,dfi_TSNAV,dfi_SNOWC,dfi_QVG,dfi_rh,dfi_tten_rad
-package   realonly       use_wps_input==1            -            state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,sct_dom_gc,scb_dom_gc,greenfrac,albedo12m,pd_gc,psfc_gc,intq_gc,pdhs,sh_gc,qv_gc,qr_gc,qc_gc,qs_gc,qi_gc,qg_gc,qh_gc,qni_gc,icefrac_gc,sm000007,sm007028,sm028100,sm100255,st000007,st007028,st028100,st100255,sm000010,sm010040,sm040100,sm100200,sm010200,soilm000,soilm005,soilm020,soilm040,soilm160,soilm300,sw000010,sw010040,sw040100,sw100200,sw010200,soilw000,soilw005,soilw020,soilw040,soilw160,soilw300,st000010,st010040,st040100,st100200,st010200,soilt000,soilt005,soilt020,soilt040,soilt160,soilt300
+package   realonly       use_wps_input==1            -            state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,sct_dom_gc,scb_dom_gc,greenfrac,albedo12m,pd_gc,psfc_gc,intq_gc,pdhs,sh_gc,qv_gc,qr_gc,qc_gc,qs_gc,qi_gc,qg_gc,qh_gc,qni_gc,icefrac_gc,sm000007,sm007028,sm028100,sm100255,st000007,st007028,st028100,st100255,sm000010,sm010040,sm040100,sm100200,sm010200,soilm000,soilm005,soilm020,soilm040,soilm160,soilm300,sw000010,sw010040,sw040100,sw100200,sw010200,soilw000,soilw005,soilw020,soilw040,soilw160,soilw300,st000010,st010040,st040100,st100200,st010200,soilt000,soilt005,soilt020,soilt040,soilt160,soilt300,fad0_urb2d,fad135_urb2d,fad45_urb2d,pad_urb2d,fad90_urb2d,rad_urb2d,car_urb2d,h2w_urb2d,svf_urb2d,z0s_urb2d,z0r_urb2d,z0m_urb2d,zds_urb2d,zdm_urb2d,zdr_urb2d
 package   tconly         use_wps_input==2            -             state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,sct_dom_gc,scb_dom_gc,greenfrac,albedo12m,pd_gc,psfc_gc,intq_gc,pdhs,sh_gc,qv_gc,qr_gc,qc_gc,qs_gc,qi_gc,qg_gc,qh_gc,qni_gc,icefrac_gc
+package   reg_interp    nest_interp_coord==0         -             - 
+package   flat_p_interp nest_interp_coord==1         -             state:t_max_p,ght_max_p,max_p,t_min_p,ght_min_p,min_p
 # Tendency diagnostics for non-chemistry decoupled advective tendency arrays
 package   notenddiag    tenddiag==0                  -             -
 package   usetenddiag   tenddiag==1                  -             advh_t:advh_qv;advz_t:advz_qv
 
 package   no_trajectory traj_opt==0                  -             -
 package   um_trajectory traj_opt==1                  -             state:traj_i,traj_j,traj_k,traj_lat,traj_long
+
+package   albsi_zero     seaice_albedo_opt==0        -             -
+package   albsi_one      seaice_albedo_opt==1        -             -
+package   albsi_two      seaice_albedo_opt==2        -             state:albsi
+
+package   snowsi_zero    seaice_snowdepth_opt==0     -             -
+package   snowsi_one     seaice_snowdepth_opt==1     -             state:snowsi
+
+package   icedepth_zero  seaice_thickness_opt==0     -             -
+package   icedepth_one   seaice_thickness_opt==1     -             state:icedepth
 
 #Time series options for text output
 package   notseries   process_time_series==0                 -             -
@@ -2414,7 +2430,7 @@ halo      HALO_EM_TKE_5 dyn_em   48:tke_1,tke_2
 halo      HALO_EM_TKE_7 dyn_em   80:tke_1,tke_2
 halo      HALO_EM_TKE_OLD_E_5 dyn_em   48:tke_1
 halo      HALO_EM_TKE_OLD_E_7 dyn_em   80:tke_1
-halo      HALO_EM_HELICITY dyn_em 8:u_2,v_2,w_2,ph_2,phb,z,zx,zy,rdz,rdzw,uh,up_heli_max
+halo      HALO_EM_HELICITY dyn_em 48:u_2,v_2,w_2,ph_2,zx,zy,rdz,rdzw
 halo      HALO_EM_B dyn_em 4:ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt,pb
 halo      HALO_EM_B2 dyn_em 4:ru_tend,rv_tend
 halo      HALO_EM_C dyn_em    4:u_2,v_2

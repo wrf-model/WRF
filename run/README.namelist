@@ -688,7 +688,8 @@ Namelist variables for controlling the adaptive time step option:
  seaice_albedo_opt                   = 0        ; option to set albedo over sea ice
                                                 ; 0 = seaice albedo is a constant value from namelist option seaice_albedo_default
                                                 ; 1 = seaice albedo is f(Tair,Tskin,Snow) follwing Mills (2011) for Arctic Ocean
- seaice_albedo_default               =  0.80    ; default value of seaice albedo for seaice_albedo_opt=0
+                                                ; 2 = seaice albedo read in from input variable ALBSI
+ seaice_albedo_default               =  0.65    ; default value of seaice albedo for seaice_albedo_opt=0
  seaice_snowdepth_opt                = 0        ; method for treating snow depth on sea ice
                                                 ; 0 = snow depth on sea ice is bounded by seaice_snowdepth_min and seaice_snowdepth_max
                                                 ; 1 = snow depth on sea ice read in from input array SNOWSI (bounded by 

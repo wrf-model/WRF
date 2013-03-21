@@ -10,7 +10,11 @@ CONTAINS
                  ,bldt,curr_secs,adapt_step_flag                   &
                  ,bldtacttime                                      & 
                  ,rublten,rvblten,rthblten                         &
-                 ,tsk,xland,znt,mznt,ht                            &    !KWON MZNT
+                 ,tsk,xland,znt                                    &
+#if (HWRF==1)
+                 ,mznt                                             &
+#endif
+                 ,ht                                               &   
                  ,ust,pblh,hfx,qfx,grdflx                          &
                  ,u_phy,v_phy,th_phy,rho                           &
                  ,p_phy,pi_phy,p8w,t_phy,dz8w,z                    &
@@ -42,10 +46,10 @@ CONTAINS
                  ,DISHEAT                                          &
                  ,HPBL2D, EVAP2D, HEAT2D, RC2D                     &   !Kwon FOR SHAL. CON.
                  ,VAR_RIC                                          &   !Kwon for Variable Ric
-                 ,DKU3D,DKT3D,coef_ric_l,coef_ric_s                &
+                 ,DKU3D,DKT3D                                      &
 #endif
 #if (HWRF==1)
-                 ,gfs_alpha                                        &
+                 ,coef_ric_l,coef_ric_s,gfs_alpha                  &
 #endif
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
@@ -447,7 +451,9 @@ CONTAINS
                                                              HFX, &
                                                              QFX, &
                                                              ZNT, &
+#if (HWRF==1)
                                                             MZNT, &  ! KWON FOR MOMENTUM Z0
+#endif
                                                             QSFC, &
                                                             AKHS, &
                                                             AKMS, &

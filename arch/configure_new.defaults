@@ -1,45 +1,4 @@
 ###########################################################
-#ARCH    Linux x86_64, Fujitsu FX10 mpifrtpx and mpifccpx compilers #serial smpar dmpar dm+sm
-#
-DMPARALLEL      =       # 1
-OMPCPP          =       # -D_OPENMP
-OMP             =       # -Kopenmp
-OMPCC           =       # -Kopenmp
-SFC             =       frtpx
-SCC             =       fccpx
-CCOMP           =       fccpx
-DM_FC           =       mpifrtpx
-DM_CC           =       mpifccpx
-FC              =       CONFIGURE_FC
-CC              =       CONFIGURE_CC
-LD              =       $(FC)
-RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       #-CcdRR8  # uncomment manually
-ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -Kfast -Xg -DSUN
-LDFLAGS_LOCAL   =
-CPLUSPLUSLIB    =       
-ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       -Kfast
-FCREDUCEDOPT	=       $(FCOPTIM)
-FCNOOPT         =       -O1
-FCDEBUG         =       # -g $(FCNOOPT)
-FORMAT_FIXED    =       -Fixed
-FORMAT_FREE     =       -Free
-FCSUFFIX        =       
-BYTESWAPIO      =       
-FCBASEOPTS_NO_G =       -Kautoobjstack,ocl -V -Qa,d,i,p,t,x -Koptmsg=2 $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
-FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
-MODULE_SRCH_FLAG =
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -C -P
-AR              =      ar
-ARFLAGS         =      ru
-M4              =      m4
-RANLIB          =      ranlib
-CC_TOOLS        =      /usr/bin/gcc -Wall
-
-###########################################################
 #ARCH    Linux i486 i586 i686,  NEC SX sxf90 sxcc #serial smpar dmpar dm+sm
 #
 DMPARALLEL      =       # 1
@@ -1262,6 +1221,47 @@ ARFLAGS         =      ru
 M4              =      m4
 RANLIB          =      ranlib
 CC_TOOLS        =      gcc
+
+###########################################################
+#ARCH    Linux x86_64, Fujitsu FX10 mpifrtpx and mpifccpx compilers #serial smpar dmpar dm+sm
+#
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -Kopenmp
+OMPCC           =       # -Kopenmp
+SFC             =       frtpx
+SCC             =       fccpx
+CCOMP           =       fccpx
+DM_FC           =       mpifrtpx
+DM_CC           =       mpifccpx
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       #-CcdRR8  # uncomment manually
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DWRF_USE_CLM
+CFLAGS_LOCAL    =       -Kfast -Xg -DSUN
+LDFLAGS_LOCAL   =
+CPLUSPLUSLIB    =       
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -Kfast
+FCREDUCEDOPT	=       $(FCOPTIM)
+FCNOOPT         =       -O1
+FCDEBUG         =       # -g $(FCNOOPT)
+FORMAT_FIXED    =       -Fixed
+FORMAT_FREE     =       -Free
+FCSUFFIX        =       
+BYTESWAPIO      =       
+FCBASEOPTS_NO_G =       -Kautoobjstack,ocl -V -Qa,d,i,p,t,x -Koptmsg=2 $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =
+TRADFLAG        =      -traditional
+CPP             =      /lib/cpp -C -P
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4
+RANLIB          =      ranlib
+CC_TOOLS        =      /usr/bin/gcc -Wall
 
 ###########################################################
 #ARCH    Linux ppc64 BG /L blxlf compiler with blxlc # dmpar

@@ -7,7 +7,7 @@ endif
 
 
 RMD		=	rm -f
-COMPILER90=	mpif90 -f90=ifort 
+COMPILER90=	mpif90
 FORMAT_FREE = -FR
 BYTESWAPIO = -convert big_endian
 F90FLAGS  =      -w -c -ftz -align all -fno-alias -fp-model precise $(FORMAT_FREE) $(BYTESWAPIO)

@@ -207,3 +207,13 @@
 
       end subroutine  exeRouting
 
+      subroutine time_seconds(i3)
+          integer time_array(8)
+          real*8 i3
+          call date_and_time(values=time_array)
+          i3 = time_array(4)*24*3600+time_array(5) * 3600 + time_array(6) * 60 + &
+                time_array(7) + 0.001 * time_array(8)
+          return
+      end subroutine time_seconds
+
+

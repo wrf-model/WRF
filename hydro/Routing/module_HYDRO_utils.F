@@ -136,9 +136,9 @@ contains
       if(my_id .eq. IO_id) then
  ! read the lat and lon. 
          iret =  get2d_real("LONGITUDE",lonrt,global_rt_nx,global_rt_ny,&
-                     trim(nlst_rt(did)%wrfsi_finegrid_flnm ))
+                     trim(nlst_rt(did)%GEO_FINEGRID_FLNM ))
          iret =  get2d_real("LATITUDE",latrt,global_rt_nx,global_rt_ny,&
-                     trim(nlst_rt(did)%wrfsi_finegrid_flnm ))
+                     trim(nlst_rt(did)%GEO_FINEGRID_FLNM ))
          call get_dist_ll(dist,latrt,lonrt,global_rt_nx,global_rt_ny)
       end if
      do k = 1 , 9
@@ -149,9 +149,9 @@ contains
       real, dimension(rt_domain(did)%ixrt,rt_domain(did)%jxrt):: latrt, lonrt
  ! read the lat and lon. 
          iret =  get2d_real("LONGITUDE",lonrt,rt_domain(did)%ixrt,rt_domain(did)%jxrt,&
-                     trim(nlst_rt(did)%wrfsi_finegrid_flnm ))
+                     trim(nlst_rt(did)%GEO_FINEGRID_FLNM ))
          iret =  get2d_real("LATITUDE",latrt,rt_domain(did)%ixrt,rt_domain(did)%jxrt,&
-                     trim(nlst_rt(did)%wrfsi_finegrid_flnm ))
+                     trim(nlst_rt(did)%GEO_FINEGRID_FLNM ))
          call get_dist_ll(rt_domain(did)%dist,latrt,lonrt,rt_domain(did)%ixrt,rt_domain(did)%jxrt)
 #endif
 

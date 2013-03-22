@@ -8,7 +8,7 @@
        logical            :: history_output
        integer            :: split_output_count
        integer :: igrid
-       character(len=256) :: wrfsi_static_flnm = ""
+       character(len=256) :: geo_static_flnm = ""
        integer  :: DEEPGWSPIN
        integer :: HIRES_OUT, order_to_write, rst_typ
        
@@ -32,7 +32,7 @@
           character(len=256) :: route_order_f=""
           character(len=256) :: gwbasmskfil =""
           character(len=256) :: gwstrmfil =""
-          character(len=256) :: wrfsi_finegrid_flnm =""
+          character(len=256) :: geo_finegrid_flnm =""
 
    END TYPE namelist_rt_field 
 

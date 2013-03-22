@@ -1520,6 +1520,15 @@ MODULE MODULE_MPP_LAND
      return 
   end  subroutine gather_1d_real_tmp
 
+  subroutine sum_double(inout)
+      implicit none
+      real*8:: inout, send
+      integer :: ierr
+      send = inout
+      CALL MPI_ALLREDUCE(send,inout,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD,ierr)
+  end subroutine sum_double
+
+
 END MODULE MODULE_MPP_LAND
 
         subroutine mpp_land_abort()

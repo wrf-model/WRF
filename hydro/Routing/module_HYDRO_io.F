@@ -85,7 +85,7 @@ module module_HYDRO_io
               iret = nf_open(fileName, NF_NOWRITE, ncid)
               if (iret /= 0) then
 #ifdef HYDRO_D
-                 write(*,'("Problem opening wrfsi_static file: ''", A, "''")') &
+                 write(*,'("Problem opening geo_static file: ''", A, "''")') &
                       trim(fileName)
                  call hydro_stop()
 #endif
@@ -131,7 +131,7 @@ module module_HYDRO_io
             iret = nf_open(fileName, NF_NOWRITE, ncid)
             if (iret /= 0) then
 #ifdef HYDRO_D
-               write(*,'("Problem opening wrfsi_static file: ''", A, "''")') &
+               write(*,'("Problem opening geo_static file: ''", A, "''")') &
                     trim(fileName)
                call hydro_stop()
 #endif
@@ -196,7 +196,7 @@ module module_HYDRO_io
               iret = nf_open(fileName, NF_NOWRITE, ncid)
               if (iret /= 0) then
 #ifdef HYDRO_D
-                 write(*,'("Problem opening wrfsi_static file: ''", A, "''")') &
+                 write(*,'("Problem opening geo_static file: ''", A, "''")') &
                       trim(fileName)
                  call hydro_stop()
 #endif
@@ -572,7 +572,7 @@ end subroutine get_albedo12m_netcdf
 !---------------------------------------------------------
        SUBROUTINE READ_ROUTEDIM(IXRT,JXRT,route_chan_f,route_link_f, &
             route_direction_f, route_lake_f, NLINKS, NLAKES, &
-            CH_NETLNK, channel_option, wrfsi_finegrid_flnm)
+            CH_NETLNK, channel_option, geo_finegrid_flnm)
 
          implicit none
 #include <netcdf.inc>
@@ -595,7 +595,7 @@ end subroutine get_albedo12m_netcdf
 
         CHARACTER(len=*)       :: route_chan_f, route_link_f,route_direction_f,route_lake_f
         CHARACTER(len=256)       :: InputLine
-        CHARACTER(len=256)       :: wrfsi_finegrid_flnm
+        CHARACTER(len=256)       :: geo_finegrid_flnm
         CHARACTER(len=256)       :: var_name
 !        external get2d_real
 !       integer ::  get2d_real
@@ -615,23 +615,23 @@ end subroutine get_albedo12m_netcdf
 
          var_name = "CHANNELGRID"
          call get2d_int(var_name,CH_NETRT_inv,ixrt,jxrt,&
-                   trim(wrfsi_finegrid_flnm))
+                   trim(geo_finegrid_flnm))
          
          var_name = "FLOWDIRECTION"
          call get2d_int(var_name,DIRECTION_inv,ixrt,jxrt,&
-                   trim(wrfsi_finegrid_flnm))
+                   trim(geo_finegrid_flnm))
 
          var_name = "LAKEGRID"
          call get2d_int(var_name,LAKE_MSKRT_inv,ixrt,jxrt,&
-                   trim(wrfsi_finegrid_flnm))
+                   trim(geo_finegrid_flnm))
 
 
         var_name = "LATITUDE"
         iret =  get2d_real(var_name,LAT_inv,ixrt,jxrt,&
-                     trim(wrfsi_finegrid_flnm))
+                     trim(geo_finegrid_flnm))
         var_name = "LONGITUDE"
         iret = get2d_real(var_name,LON_inv,ixrt,jxrt,&
-                     trim(wrfsi_finegrid_flnm))
+                     trim(geo_finegrid_flnm))
 
 !!!Flip y-dimension of highres grids from exported Arc files...
 
@@ -850,7 +850,7 @@ end subroutine get_albedo12m_netcdf
             CHANRTSWCRT,dist, ZELEV, LAKENODE, CH_NETLNK, &
             CHANXI, CHANYJ, CHLAT, CHLON,  &
             channel_option,LATVAL,LONVAL, &
-            STRMFRXSTPTS,wrfsi_finegrid_flnm)
+            STRMFRXSTPTS,geo_finegrid_flnm)
 #include <netcdf.inc>
         INTEGER, INTENT(IN)                          :: IXRT,JXRT
         INTEGER                                      :: CHANRTSWCRT, NLINKS, NLAKES
@@ -912,7 +912,7 @@ end subroutine get_albedo12m_netcdf
         CHARACTER(len=256)                           :: route_lake_f
         CHARACTER(len=256)                           :: route_direction_f
         CHARACTER(len=256)                           :: route_order_f
-        CHARACTER(len=256)                           :: wrfsi_finegrid_flnm
+        CHARACTER(len=256)                           :: geo_finegrid_flnm
         CHARACTER(len=256)                           :: var_name
 
         INTEGER                                      :: tmp, cnt, ncid, iret, jj,ct
@@ -943,10 +943,10 @@ end subroutine get_albedo12m_netcdf
 
         var_name = "LATITUDE"
         iret = get2d_real(var_name,LATVAL_inv,ixrt,jxrt,&
-                     trim(wrfsi_finegrid_flnm))
+                     trim(geo_finegrid_flnm))
         var_name = "LONGITUDE"
         iret = get2d_real(var_name,LONVAL_inv,ixrt,jxrt,&
-                     trim(wrfsi_finegrid_flnm))
+                     trim(geo_finegrid_flnm))
 
     END IF
 
@@ -960,36 +960,36 @@ end subroutine get_albedo12m_netcdf
 
        var_name = "LAKEGRID"
        call get2d_int(var_name,LAKE_MSKRT_inv,ixrt,jxrt,&
-               trim(wrfsi_finegrid_flnm))
+               trim(geo_finegrid_flnm))
        var_name = "FLOWDIRECTION"
        call get2d_int(var_name,DIRECTION_inv,ixrt,jxrt,&
-               trim(wrfsi_finegrid_flnm))
+               trim(geo_finegrid_flnm))
        var_name = "STREAMORDER"
        call get2d_int(var_name,GORDER_inv,ixrt,jxrt,&
-               trim(wrfsi_finegrid_flnm))
+               trim(geo_finegrid_flnm))
        var_name = "frxst_pts"
        call get2d_int(var_name,GSTRMFRXSTPTS_inv,ixrt,jxrt,&
-               trim(wrfsi_finegrid_flnm))
+               trim(geo_finegrid_flnm))
 
 !--1/13/2011 real hi res sfc calibrtion parameters (...)
 !       var_name = "LAKEGRID"
 !       call get2d_int(var_name,LAKE_MSKRT_inv,ixrt,jxrt,&
-!               trim(wrfsi_finegrid_flnm))
+!               trim(geo_finegrid_flnm))
 !       var_name = "LAKEGRID"
 !       call get2d_int(var_name,LAKE_MSKRT_inv,ixrt,jxrt,&
-!               trim(wrfsi_finegrid_flnm))
+!               trim(geo_finegrid_flnm))
 
 
 !-- real hi res channel properties (not yet implemented...)
 !        var_name = "MANNINGS"
 !        iret = get2d_real(var_name,MannNG,ixrt,jxrt,&
-!                     trim(wrfsi_finegrid_flnm))
+!                     trim(geo_finegrid_flnm))
 !        var_name = "SIDE_SLOPE"
 !        iret = get2d_real(var_name,ChSSlpG,ixrt,jxrt,&
-!                     trim(wrfsi_finegrid_flnm))
+!                     trim(geo_finegrid_flnm))
 !        var_name = "BOTTOM_WIDTH"
 !        iret = get2d_real(var_name,BwG,ixrt,jxrt,&
-!                     trim(wrfsi_finegrid_flnm))
+!                     trim(geo_finegrid_flnm))
 
 
 !!!Flip y-dimension of highres grids from exported Arc files...
@@ -1828,7 +1828,8 @@ end subroutine get_albedo12m_netcdf
   subroutine output_rt(igrid, split_output_count, ixrt, jxrt, nsoil, &
        startdate, date, QSUBRT,ZWATTABLRT,SMCRT,SUB_RESID,       &
        q_sfcflx_x,q_sfcflx_y,soxrt,soyrt,QSTRMVOLRT,SFCHEADSUBRT, &
-       wrfsi_finegrid_flnm,dt,sldpth,LATVAL,LONVAL,dist,HIRES_OUT)
+       geo_finegrid_flnm,dt,sldpth,LATVAL,LONVAL,dist,HIRES_OUT,  &
+       QBDRYRT)
 
 !output the routing variables over routing grid.
     implicit none
@@ -1843,7 +1844,7 @@ end subroutine get_albedo12m_netcdf
     integer,                                  intent(in) :: HIRES_OUT 
     character(len=*),                         intent(in) :: startdate
     character(len=*),                         intent(in) :: date
-    character(len=*),          intent(in)                :: wrfsi_finegrid_flnm
+    character(len=*),          intent(in)                :: geo_finegrid_flnm
     real,             dimension(nsoil),       intent(in) :: sldpth
     real, allocatable, DIMENSION(:,:)                   :: xdumd  !-- decimated variable
     real*8, allocatable, DIMENSION(:)                   :: xcoord_d, xcoord
@@ -1870,7 +1871,7 @@ end subroutine get_albedo12m_netcdf
     real, dimension(ixrt,jxrt) :: QSTRMVOLRT
     real, dimension(ixrt,jxrt) :: SFCHEADSUBRT
     real, dimension(ixrt,jxrt) :: soxrt,soyrt
-    real, dimension(ixrt,jxrt) :: LATVAL,LONVAL
+    real, dimension(ixrt,jxrt) :: LATVAL,LONVAL, QBDRYRT
     real, dimension(ixrt,jxrt,nsoil) :: SMCRT
 
     integer :: seconds_since, decimation, ixrtd,jxrtd, hires_flag
@@ -1895,9 +1896,10 @@ end subroutine get_albedo12m_netcdf
         chan_in=chan_in+QSTRMVOLRT(I,J)/1000.0*(dist(i,j,9))  !(units m^3)
       enddo
     enddo
-    open (unit=46,file='chan_inflow.txt',form='formatted',&
+    open (unit=46,file='qstrmvolrt_accum.txt',form='formatted',&
              status='unknown',position='append')
-    write (46,*) chan_in
+    write (46,713) chan_in
+713 FORMAT (F20.7)
     close (46)
 !    return
 !DJG end dump of channel inflow for calibration....
@@ -1908,14 +1910,14 @@ end subroutine get_albedo12m_netcdf
 
    !-- Open the  finemesh static files to obtain projection information
 #ifdef HYDRO_D
-      write(*,'("wrfsi_finegrid_flnm: ''", A, "''")') trim(wrfsi_finegrid_flnm)
+      write(*,'("geo_finegrid_flnm: ''", A, "''")') trim(geo_finegrid_flnm)
 #endif
-      iret = nf_open(trim(wrfsi_finegrid_flnm), NF_NOWRITE, ncstatic)
+      iret = nf_open(trim(geo_finegrid_flnm), NF_NOWRITE, ncstatic)
 
       if (iret /= 0) then
 #ifdef HYDRO_D
-         write(*,'("Problem opening wrfsi_finegrid file: ''", A, "''")') &
-         trim(wrfsi_finegrid_flnm)
+         write(*,'("Problem opening geo_finegrid file: ''", A, "''")') &
+         trim(geo_finegrid_flnm)
          write(*,*) "HIRES_OUTPUT will not be georeferenced..."
 #endif
          
@@ -2084,6 +2086,12 @@ end subroutine get_albedo12m_netcdf
 
 !       iret = nf_def_var(ncid,"SUB_RESID",NF_FLOAT, 3, (/dimid_ix,dimid_jx,dimid_times/), varid)
 
+       iret = nf_def_var(ncid,"QBDRYRT",NF_FLOAT, 3, (/dimid_ix,dimid_jx,dimid_times/), varid)
+       iret = nf_put_att_text(ncid,varid,'long_name',12,'QBDRYRT')
+       iret = nf_put_att_text(ncid,varid,'coordinates',3,'x y')
+       iret = nf_put_att_text(ncid,varid,'grid_mapping',23,'lambert_conformal_conic')
+       iret = nf_put_att_real(ncid,varid,'missing_value',NF_REAL,1,-9E15)
+
 !-- place projection information
      if(hires_flag.eq.1) then !if/then hires_georef
       iret = nf_def_var(ncid,"lambert_conformal_conic",NF_INT,0, 0,varid)
@@ -2251,7 +2259,23 @@ end subroutine get_albedo12m_netcdf
 !      enddo
 !     iret = nf_inq_varid(ncid,  "Q_SFCFLX_Y", varid)
 !     iret = nf_put_vara_real(ncid, varid, (/1,1,output_count/), (/ixrtd,jxrtd,1/), xdumd)
- 
+
+       jj = 1
+       ii = 0
+       do j = 1,jxrt,decimation
+        do i = 1,ixrt,decimation
+         ii = ii + 1  
+         if(ii <= ixrtd .and. jj <= jxrtd .and. jj >0) then
+          xdumd(ii,jj) = QBDRYRT(i,j)
+         endif
+       enddo 
+       ii = 0
+       jj = jj + 1 
+      enddo
+     iret = nf_inq_varid(ncid,  "QBDRYRT", varid)
+     iret = nf_put_vara_real(ncid, varid, (/1,1,output_count/), (/ixrtd,jxrtd,1/), xdumd)
+
+
 !    xdum = QSTRMVOLRT
 !!   where (vegtyp(:,:) == 16) xdum = -1.E33
 !DJG inv       jj = int(jxrt/decimation)
@@ -2334,7 +2358,7 @@ end subroutine get_albedo12m_netcdf
 !bftodo: clean up an customize for GW usage
   subroutine output_gw(igrid, split_output_count, ixrt, jxrt, nsoil, &
        startdate, date, HEAD, SMCRT, convgw, SFCHEADSUBRT, &
-       wrfsi_finegrid_flnm,dt,sldpth,LATVAL,LONVAL,dist,HIRES_OUT)
+       geo_finegrid_flnm,dt,sldpth,LATVAL,LONVAL,dist,HIRES_OUT)
 
 #ifdef MPP_LAND
        USE module_mpp_land
@@ -2352,7 +2376,7 @@ end subroutine get_albedo12m_netcdf
     integer,                                  intent(in) :: HIRES_OUT 
     character(len=*),                         intent(in) :: startdate
     character(len=*),                         intent(in) :: date
-    character(len=*),          intent(in)                :: wrfsi_finegrid_flnm
+    character(len=*),          intent(in)                :: geo_finegrid_flnm
     real,             dimension(nsoil),       intent(in) :: sldpth
     real, allocatable, DIMENSION(:,:)                   :: xdumd  !-- decimated variable
     real*8, allocatable, DIMENSION(:)                   :: xcoord_d, xcoord
@@ -2427,15 +2451,15 @@ end subroutine get_albedo12m_netcdf
 
    !-- Open the  finemesh static files to obtain projection information
 #ifdef HYDRO_D
-      write(*,'("wrfsi_finegrid_flnm: ''", A, "''")') trim(wrfsi_finegrid_flnm)
+      write(*,'("geo_finegrid_flnm: ''", A, "''")') trim(geo_finegrid_flnm)
 
 #endif
-      iret = nf_open(trim(wrfsi_finegrid_flnm), NF_NOWRITE, ncstatic)
+      iret = nf_open(trim(geo_finegrid_flnm), NF_NOWRITE, ncstatic)
 
       if (iret /= 0) then
 #ifdef HYDRO_D
-         write(*,'("Problem opening wrfsi_finegrid file: ''", A, "''")') &
-         trim(wrfsi_finegrid_flnm)
+         write(*,'("Problem opening geo_finegrid file: ''", A, "''")') &
+         trim(geo_finegrid_flnm)
          write(*,*) "HIRES_OUTPUT will not be georeferenced..."
 #endif
         hires_flag = 0
@@ -3001,6 +3025,17 @@ end subroutine get_albedo12m_netcdf
         iret = nf_put_att_text(ncid2,varid,'units',5,'meter')
         iret = nf_put_att_text(ncid2,varid,'long_name',11,'River Stage')
 
+
+!     !- order definition, var
+        iret = nf_def_var(ncid, "order", NF_INT, 1, (/dimdata/), varid)
+        iret = nf_put_att_text(ncid,varid,'long_name',21,'Strahler Stream Order')
+        iret = nf_put_att_int(ncid,varid,'_FillValue',2,-1)
+
+        iret = nf_def_var(ncid2, "order", NF_INT, 1, (/dimdataO/), varid)
+        iret = nf_put_att_text(ncid2,varid,'long_name',21,'Strahler Stream Order')
+        iret = nf_put_att_int(ncid,varid,'_FillValue',2,-1)
+
+
      !-- station  id
      ! define character-position dimension for strings of max length 11
          iret = NF_DEF_DIM(ncid, "id_len", 11, charid)
@@ -3128,6 +3163,9 @@ end subroutine get_albedo12m_netcdf
          iret = nf_inq_varid(ncid,"head", varid)
          iret = nf_put_vara_real(ncid, varid, (/start_pos/), (/1/), hlink(i))
 
+         iret = nf_inq_varid(ncid,"order", varid)
+         iret = nf_put_vara_int(ncid, varid, (/start_pos/), (/1/), ORDER(i))
+
          !-- station index.. will repeat for every timesstep
          iret = nf_inq_varid(ncid,"parent_index", varid)
          iret = nf_put_vara_int(ncid, varid, (/start_pos/), (/1/), cnt)
@@ -3174,6 +3212,9 @@ end subroutine get_albedo12m_netcdf
 
          iret = nf_inq_varid(ncid2,"head", varid)
          iret = nf_put_vara_real(ncid2, varid, (/start_posO/), (/1/), hlink(i))
+
+         iret = nf_inq_varid(ncid,"order", varid)
+         iret = nf_put_vara_int(ncid2, varid, (/start_posO/), (/1/), ORDER(i))
 
          !-- station index.. will repeat for every timesstep
          iret = nf_inq_varid(ncid2,"parent_index", varid)
@@ -3591,7 +3632,7 @@ end subroutine mpp_output_chrt
 !-- output the channel route in an IDV 'grid' compatible format
    subroutine mpp_output_chrtgrd(igrid, split_output_count, ixrt,jxrt, &
         NLINKS,CH_NETRT_in, CH_NETLNK_in, ORDER, startdate, date, &
-        qlink, dt, wrfsi_finegrid_flnm, mpp_nlinks,nlinks_index,g_ixrt,g_jxrt )
+        qlink, dt, geo_finegrid_flnm, mpp_nlinks,nlinks_index,g_ixrt,g_jxrt )
 #ifdef MPP_LAND
    USE module_mpp_land
 #endif
@@ -3606,7 +3647,7 @@ end subroutine mpp_output_chrt
      integer, dimension(g_IXRT,g_JXRT)         :: CH_NETRT,CH_NETLNK
      integer, dimension(IXRT,JXRT),            intent(in) :: CH_NETRT_in,CH_NETLNK_in
      integer, dimension(NLINKS),               intent(in) :: ORDER !--currently not used here, see finegrid.f
-     character(len=*),          intent(in)     :: wrfsi_finegrid_flnm
+     character(len=*),          intent(in)     :: geo_finegrid_flnm
      character(len=*),                         intent(in) :: startdate
      character(len=*),                         intent(in) :: date
     
@@ -3619,7 +3660,7 @@ end subroutine mpp_output_chrt
 
      call  output_chrtgrd(igrid, split_output_count, ixrt,jxrt, &
         NLINKS,CH_NETRT, CH_NETLNK, ORDER, startdate, date, &
-        qlink, dt, wrfsi_finegrid_flnm)
+        qlink, dt, geo_finegrid_flnm)
   
      return
      end subroutine mpp_output_chrtgrd
@@ -3628,7 +3669,7 @@ end subroutine mpp_output_chrt
 !-- output the channel route in an IDV 'grid' compatible format
    subroutine output_chrtgrd(igrid, split_output_count, ixrt,jxrt, &
         NLINKS,CH_NETRT, CH_NETLNK, ORDER, startdate, date, &
-        qlink, dt, wrfsi_finegrid_flnm)
+        qlink, dt, geo_finegrid_flnm)
 
      integer,                                  intent(in) :: igrid
      integer,                                  intent(in) :: split_output_count
@@ -3637,7 +3678,7 @@ end subroutine mpp_output_chrt
      real, dimension(NLINKS,2),                intent(in) :: qlink
      integer, dimension(IXRT,JXRT),            intent(in) :: CH_NETRT,CH_NETLNK
      integer, dimension(NLINKS),               intent(in) :: ORDER !--currently not used here, see finegrid.f
-     character(len=*),          intent(in)     :: wrfsi_finegrid_flnm
+     character(len=*),          intent(in)     :: geo_finegrid_flnm
      character(len=*),                         intent(in) :: startdate
      character(len=*),                         intent(in) :: date
      character(len=32)  :: convention
@@ -3664,14 +3705,14 @@ end subroutine mpp_output_chrt
 
     !-- Open the  finemesh static files to obtain projection information
 #ifdef HYDRO_D
-      write(*,'("wrfsi_finegrid_flnm: ''", A, "''")') trim(wrfsi_finegrid_flnm)
+      write(*,'("geo_finegrid_flnm: ''", A, "''")') trim(geo_finegrid_flnm)
 #endif
-      iret = nf_open(wrfsi_finegrid_flnm, NF_NOWRITE, ncstatic)
+      iret = nf_open(geo_finegrid_flnm, NF_NOWRITE, ncstatic)
 
       if (iret /= 0) then
 #ifdef HYDRO_D
-         write(*,'("Problem opening wrfsi_finegrid file: ''", A, "''")') &
-         trim(wrfsi_finegrid_flnm)
+         write(*,'("Problem opening geo_finegrid file: ''", A, "''")') &
+         trim(geo_finegrid_flnm)
          call hydro_stop()
 #endif
       endif
@@ -3814,7 +3855,8 @@ end subroutine mpp_output_chrt
        QSUBRT_in,ZWATTABLRT_in,SMCRT_in,SUB_RESID_in,       &
        q_sfcflx_x_in,q_sfcflx_y_in,soxrt_in,soyrt_in,       &
        QSTRMVOLRT_in,SFCHEADSUBRT_in, &
-       wrfsi_finegrid_flnm,dt,sldpth,LATVAL_in,LONVAL_in,dist,HIRES_OUT)
+       geo_finegrid_flnm,dt,sldpth,LATVAL_in,LONVAL_in,dist,HIRES_OUT, &
+       QBDRYRT_in)
 
 !output the routing variables over routing grid.
 #ifdef MPP_LAND
@@ -3834,20 +3876,20 @@ end subroutine mpp_output_chrt
     integer,                                  intent(in) :: HIRES_OUT
     character(len=*),                         intent(in) :: startdate
     character(len=*),                         intent(in) :: olddate
-    character(len=*),          intent(in)                :: wrfsi_finegrid_flnm
+    character(len=*),          intent(in)                :: geo_finegrid_flnm
     real,             dimension(nsoil),       intent(in) :: sldpth
 
     real, dimension(ixrt_in,jxrt_in) :: QSUBRT_in,ZWATTABLRT_in,SUB_RESID_in
     real, dimension(ixrt_in,jxrt_in) :: q_sfcflx_x_in,q_sfcflx_y_in
     real, dimension(ixrt_in,jxrt_in) :: QSTRMVOLRT_in
-    real, dimension(ixrt_in,jxrt_in) :: SFCHEADSUBRT_in
+    real, dimension(ixrt_in,jxrt_in) :: SFCHEADSUBRT_in, QBDRYRT_in
     real, dimension(ixrt_in,jxrt_in) :: soxrt_in,soyrt_in
     real, dimension(ixrt_in,jxrt_in,nsoil) :: SMCRT_in
     real, dimension(ixrt_in,jxrt_in) :: LATVAL_in,LONVAL_in
 
     real, dimension(ixrt,jxrt) :: QSUBRT,ZWATTABLRT,SUB_RESID
     real, dimension(ixrt,jxrt) :: q_sfcflx_x,q_sfcflx_y
-    real, dimension(ixrt,jxrt) :: QSTRMVOLRT
+    real, dimension(ixrt,jxrt) :: QSTRMVOLRT, QBDRYRT
     real, dimension(ixrt,jxrt) :: SFCHEADSUBRT
     real, dimension(ixrt,jxrt) :: soxrt,soyrt
     real, dimension(ixrt,jxrt,nsoil) :: SMCRT
@@ -3857,7 +3899,7 @@ end subroutine mpp_output_chrt
 
 
 #ifdef HYDRO_D
-    write(6,*) "mpp_output_RT output file: ",trim(wrfsi_finegrid_flnm)
+    write(6,*) "mpp_output_RT output file: ",trim(geo_finegrid_flnm)
 #endif
 
     call write_IO_rt_real(LATVAL_in,LATVAL)
@@ -3878,6 +3920,7 @@ end subroutine mpp_output_chrt
     call write_IO_rt_real(SFCHEADSUBRT_in,SFCHEADSUBRT)
     call write_IO_rt_real(soxrt_in,soxrt)
 
+    call write_IO_rt_real(QBDRYRT_in,QBDRYRT)
 
 
 
@@ -3906,7 +3949,8 @@ end subroutine mpp_output_chrt
        call output_rt(igrid, split_output_count, ixrt, jxrt, nsoil, &
           startdate, olddate, QSUBRT,ZWATTABLRT,SMCRT,SUB_RESID,       &
           q_sfcflx_x,q_sfcflx_y,soxrt,soyrt,QSTRMVOLRT,SFCHEADSUBRT, &
-          wrfsi_finegrid_flnm,DT,SLDPTH,latval,lonval,dist_g,HIRES_OUT)
+          geo_finegrid_flnm,DT,SLDPTH,latval,lonval,dist_g,HIRES_OUT, &
+          QBDRYRT)
     end if
 
 #ifdef HYDRO_D
@@ -3915,113 +3959,6 @@ end subroutine mpp_output_chrt
   end subroutine mpp_output_rt
 
 #endif
-
-!BF parallel version for output_gw
-!bftodo: implementation
-
-
-#ifdef MPP_LAND
-  subroutine mpp_output_gw(ixrt, jxrt,igrid, split_output_count, &
-       ixrt_in, jxrt_in,nsoil, startdate, olddate, &
-       QSUBRT_in,ZWATTABLRT_in,SMCRT_in,SUB_RESID_in,       &
-       q_sfcflx_x_in,q_sfcflx_y_in,soxrt_in,soyrt_in,       &
-       QSTRMVOLRT_in,SFCHEADSUBRT_in, &
-       wrfsi_finegrid_flnm,dt,sldpth,LATVAL_in,LONVAL_in,dist,HIRES_OUT)
-
-!output the routing variables over routing grid.
-   USE module_mpp_land
-    implicit none
-#include <netcdf.inc>
-
-    integer,                                  intent(in) :: igrid
-    integer,                                  intent(in) :: split_output_count
-
-! ixrt and jxrt are global. ixrt_in and jxrt_in are local array index.
-    integer,                                  intent(in) :: ixrt,jxrt,ixrt_in,jxrt_in
-    real,                                     intent(in) :: dt
-    real,                                     intent(in) :: dist(ixrt_in,jxrt_in,9)
-    integer,                                  intent(in) :: nsoil
-    integer,                                  intent(in) :: HIRES_OUT
-    character(len=*),                         intent(in) :: startdate
-    character(len=*),                         intent(in) :: olddate
-    character(len=*),          intent(in)                :: wrfsi_finegrid_flnm
-    real,             dimension(nsoil),       intent(in) :: sldpth
-
-    real, dimension(ixrt_in,jxrt_in) :: QSUBRT_in,ZWATTABLRT_in,SUB_RESID_in
-    real, dimension(ixrt_in,jxrt_in) :: q_sfcflx_x_in,q_sfcflx_y_in
-    real, dimension(ixrt_in,jxrt_in) :: QSTRMVOLRT_in
-    real, dimension(ixrt_in,jxrt_in) :: SFCHEADSUBRT_in
-    real, dimension(ixrt_in,jxrt_in) :: soxrt_in,soyrt_in
-    real, dimension(ixrt_in,jxrt_in,nsoil) :: SMCRT_in
-    real, dimension(ixrt_in,jxrt_in) :: LATVAL_in,LONVAL_in
-
-    real, dimension(ixrt,jxrt) :: QSUBRT,ZWATTABLRT,SUB_RESID
-    real, dimension(ixrt,jxrt) :: q_sfcflx_x,q_sfcflx_y
-    real, dimension(ixrt,jxrt) :: QSTRMVOLRT
-    real, dimension(ixrt,jxrt) :: SFCHEADSUBRT
-    real, dimension(ixrt,jxrt) :: soxrt,soyrt
-    real, dimension(ixrt,jxrt,nsoil) :: SMCRT
-    real, dimension(ixrt,jxrt,9) :: dist_g 
-    real, dimension(ixrt,jxrt) :: LATVAL,LONVAL
-    integer i
-
-
-#ifdef HYDRO_D
-    write(6,*) "mpp_output_GW output file: ",trim(wrfsi_finegrid_flnm)
-#endif 
-
-    call write_IO_rt_real(LATVAL_in,LATVAL)
-    call write_IO_rt_real(LONVAL_in,LONVAL)
-    call write_IO_rt_real(QSUBRT_in,QSUBRT)
-   
-
-    call write_IO_rt_real(ZWATTABLRT_in,ZWATTABLRT)
-
-
-    call write_IO_rt_real(SUB_RESID_in,SUB_RESID)
-
-
-    call write_IO_rt_real(QSTRMVOLRT_in,QSTRMVOLRT)
-
-
-
-    call write_IO_rt_real(SFCHEADSUBRT_in,SFCHEADSUBRT)
-    call write_IO_rt_real(soxrt_in,soxrt)
-
-
-
-
-    call write_IO_rt_real(soyrt_in,soyrt)
-    call write_IO_rt_real(q_sfcflx_x_in,q_sfcflx_x)
-    call write_IO_rt_real(q_sfcflx_y_in,q_sfcflx_y)
-
-
-
-
-    do i = 1, NSOIL
-         call write_IO_rt_real(SMCRT_in(:,:,i),SMCRT(:,:,i))
-    end do
-  
-    do i = 1, 9    
-         call write_IO_rt_real(dist(:,:,i),dist_g(:,:,i))
-    end do
-
-
-
-
-    if(my_id.eq.IO_id) then
-       call output_rt(igrid, split_output_count, ixrt, jxrt, nsoil, &
-          startdate, olddate, QSUBRT,ZWATTABLRT,SMCRT,SUB_RESID,       &
-          q_sfcflx_x,q_sfcflx_y,soxrt,soyrt,QSTRMVOLRT,SFCHEADSUBRT, &
-          wrfsi_finegrid_flnm,DT,SLDPTH,latval,lonval,dist_g,HIRES_OUT)
-    end if
-
-#ifdef HYDRO_D
-    write(6,*) "return from mpp_output_GW"
-#endif
-  end subroutine mpp_output_gw
-#endif
-! BF end mpp gw output section
 
  subroutine read_chan_forcing( &
        indir,olddate,startdate,hgrid,&
@@ -4104,7 +4041,7 @@ end subroutine mpp_output_chrt
        SUBROUTINE MPP_READ_ROUTEDIM(g_IXRT,g_JXRT, IXRT,JXRT, &
             route_chan_f,route_link_f, &
             route_direction_f, route_lake_f, NLINKS, NLAKES, &
-            CH_NETLNK, channel_option, wrfsi_finegrid_flnm)
+            CH_NETLNK, channel_option, geo_finegrid_flnm)
 
 
          USE module_mpp_land
@@ -4125,13 +4062,13 @@ end subroutine mpp_output_chrt
 
 
         CHARACTER(len=256)       :: route_chan_f, route_link_f,route_direction_f,route_lake_f
-        CHARACTER(len=256)       :: wrfsi_finegrid_flnm
-!       CHARACTER(len=*)       :: wrfsi_finegrid_flnm
+        CHARACTER(len=256)       :: geo_finegrid_flnm
+!       CHARACTER(len=*)       :: geo_finegrid_flnm
 
         if(my_id .eq. IO_id) then
           CALL READ_ROUTEDIM(g_IXRT, g_JXRT, route_chan_f, route_link_f, &
               route_direction_f, route_lake_f, NLINKS, NLAKES, &
-              g_CH_NETLNK, channel_option,wrfsi_finegrid_flnm)
+              g_CH_NETLNK, channel_option,geo_finegrid_flnm)
         endif
         
 
@@ -4147,7 +4084,7 @@ end subroutine mpp_output_chrt
 
       SUBROUTINE MPP_READ_ROUTING(IXRT,JXRT,ELRT,  &
               CH_NETRT,LKSATFAC,route_topo_f,    &
-            route_chan_f, wrfsi_finegrid_flnm,g_IXRT,g_JXRT, &
+            route_chan_f, geo_finegrid_flnm,g_IXRT,g_JXRT, &
             OVROUGHRTFAC,RETDEPRTFAC)
 
         implicit none
@@ -4163,11 +4100,11 @@ end subroutine mpp_output_chrt
         REAL, DIMENSION(g_IXRT,g_JXRT)               :: g1_OVROUGHRTFAC
         REAL, DIMENSION(g_IXRT,g_JXRT)               :: g1_RETDEPRTFAC
 
-        CHARACTER(len=256)                           :: route_topo_f,route_chan_f,wrfsi_finegrid_flnm
+        CHARACTER(len=256)                           :: route_topo_f,route_chan_f,geo_finegrid_flnm
 
         if(my_id .eq. IO_id)  then
           CALL READ_ROUTING_seq(g_IXRT,g_JXRT,g1_ELRT,g1_CH_NETRT,g1_LKSATFAC,&
-              route_topo_f, route_chan_f,wrfsi_finegrid_flnm,g1_OVROUGHRTFAC,&
+              route_topo_f, route_chan_f,geo_finegrid_flnm,g1_OVROUGHRTFAC,&
                g1_RETDEPRTFAC)
         endif
 
@@ -4228,7 +4165,7 @@ end subroutine mpp_output_chrt
             CHANRTSWCRT,dist, ZELEV, LAKENODE, CH_NETLNK, &
             CHANXI, CHANYJ, CHLAT, CHLON,  &
             channel_option,LATVAL,&
-            LONVAL,STRMFRXSTPTS,wrfsi_finegrid_flnm,g_ixrt,g_jxrt)
+            LONVAL,STRMFRXSTPTS,geo_finegrid_flnm,g_ixrt,g_jxrt)
         implicit none
 #include <netcdf.inc>
         INTEGER, INTENT(IN)                          :: IXRT,JXRT,g_IXRT,g_JXRT
@@ -4275,7 +4212,7 @@ end subroutine mpp_output_chrt
         CHARACTER(len=256)                           :: route_lake_f
         CHARACTER(len=256)                           :: route_direction_f
         CHARACTER(len=256)                           :: route_order_f
-        CHARACTER(len=256)                           :: wrfsi_finegrid_flnm
+        CHARACTER(len=256)                           :: geo_finegrid_flnm
         CHARACTER(len=256)                           :: var_name
 
         INTEGER                                      :: tmp, cnt, ncid
@@ -4311,7 +4248,7 @@ end subroutine mpp_output_chrt
                route_direction_f, route_order_f, &
                CHANRTSWCRT,g_dist, ZELEV, LAKENODE, g1_CH_NETLNK, CHANXI, CHANYJ, &
                CHLAT, CHLON, channel_option, g1_latval,g1_lonval,&
-               STRMFRXSTPTS,wrfsi_finegrid_flnm)
+               STRMFRXSTPTS,geo_finegrid_flnm)
         endif
 
         call decompose_RT_int(g1_LAKE_MSKRT,LAKE_MSKRT,g_IXRT,G_JXRT,ixrt,jxrt)
@@ -4327,7 +4264,7 @@ end subroutine mpp_output_chrt
 #endif
         
       SUBROUTINE READ_ROUTING_seq(IXRT,JXRT,ELRT,CH_NETRT,LKSATFAC,route_topo_f,    &
-            route_chan_f, wrfsi_finegrid_flnm,OVROUGHRTFAC,RETDEPRTFAC)
+            route_chan_f, geo_finegrid_flnm,OVROUGHRTFAC,RETDEPRTFAC)
 
 
 #include <netcdf.inc>
@@ -4346,11 +4283,11 @@ end subroutine mpp_output_chrt
         CHARACTER(len=256)        :: var_name
         CHARACTER(len=256)       :: route_topo_f
         CHARACTER(len=256)       :: route_chan_f
-        CHARACTER(len=256)       :: wrfsi_finegrid_flnm
+        CHARACTER(len=256)       :: geo_finegrid_flnm
 
         var_name = "TOPOGRAPHY"
         iret = get2d_real(var_name,ELRT_inv,ixrt,jxrt,&
-                     trim(wrfsi_finegrid_flnm))
+                     trim(geo_finegrid_flnm))
 #ifdef HYDRO_D
         write(6,*) "read ",var_name
 #endif
@@ -4358,11 +4295,11 @@ end subroutine mpp_output_chrt
 !!!DY to be fixed ... 6/27/08
 !        var_name = "BED_ELEVATION"
 !        iret = get2d_real(var_name,ELRT,ixrt,jxrt,&
-!                     trim(wrfsi_finegrid_flnm))
+!                     trim(geo_finegrid_flnm))
 
         var_name = "CHANNELGRID"
         call get2d_int(var_name,CH_NETRT_inv,ixrt,jxrt,&
-               trim(wrfsi_finegrid_flnm))
+               trim(geo_finegrid_flnm))
 
 #ifdef HYDRO_D
         write(6,*) "read ",var_name
@@ -4371,7 +4308,7 @@ end subroutine mpp_output_chrt
         var_name = "LKSATFAC"
         LKSATFAC_inv = -9999.9
         iret = get2d_real(var_name,LKSATFAC_inv,ixrt,jxrt,&
-               trim(wrfsi_finegrid_flnm))
+               trim(geo_finegrid_flnm))
 
 #ifdef HYDRO_D
         write(6,*) "read ",var_name
@@ -4383,12 +4320,12 @@ end subroutine mpp_output_chrt
 !1.12.2012...Read in routing calibration factors...
         var_name = "RETDEPRTFAC"
         iret = get2d_real(var_name,RETDEPRTFAC_inv,ixrt,jxrt,&
-                     trim(wrfsi_finegrid_flnm))
+                     trim(geo_finegrid_flnm))
         where (RETDEPRTFAC_inv < 0.) RETDEPRTFAC_inv = 1.0  ! reset grid to = 1.0 if non-valid value exists
 
         var_name = "OVROUGHRTFAC"
         iret = get2d_real(var_name,OVROUGHRTFAC_inv,ixrt,jxrt,&
-                     trim(wrfsi_finegrid_flnm))
+                     trim(geo_finegrid_flnm))
         where (OVROUGHRTFAC_inv <= 0.) OVROUGHRTFAC_inv = 1.0 ! reset grid to = 1.0 if non-valid value exists
 
 
@@ -5096,7 +5033,7 @@ end subroutine mpp_output_chrt
       end subroutine hrldas_out
 
       SUBROUTINE READ_ROUTING_old(IXRT,JXRT,ELRT,CH_NETRT,LKSATFAC,route_topo_f,    &
-            route_chan_f, wrfsi_finegrid_flnm,OVROUGHRTFAC,RETDEPRTFAC)
+            route_chan_f, geo_finegrid_flnm,OVROUGHRTFAC,RETDEPRTFAC)
 
 
 #include <netcdf.inc>
@@ -5115,11 +5052,11 @@ end subroutine mpp_output_chrt
         CHARACTER(len=256)        :: var_name
         CHARACTER(len=256)       :: route_topo_f
         CHARACTER(len=256)       :: route_chan_f
-        CHARACTER(len=256)       :: wrfsi_finegrid_flnm
+        CHARACTER(len=256)       :: geo_finegrid_flnm
 
         var_name = "TOPOGRAPHY"
         iret = get2d_real(var_name,ELRT_inv,ixrt,jxrt,&
-                     trim(wrfsi_finegrid_flnm))
+                     trim(geo_finegrid_flnm))
 #ifdef HYDRO_D
         write(6,*) "read ",var_name
 #endif
@@ -5127,11 +5064,11 @@ end subroutine mpp_output_chrt
 !!!DY to be fixed ... 6/27/08
 !        var_name = "BED_ELEVATION"
 !        iret = get2d_real(var_name,ELRT,ixrt,jxrt,&
-!                     trim(wrfsi_finegrid_flnm))
+!                     trim(geo_finegrid_flnm))
 
         var_name = "CHANNELGRID"
         call get2d_int(var_name,CH_NETRT_inv,ixrt,jxrt,&
-               trim(wrfsi_finegrid_flnm))
+               trim(geo_finegrid_flnm))
 
 #ifdef HYDRO_D
         write(6,*) "read ",var_name
@@ -5140,7 +5077,7 @@ end subroutine mpp_output_chrt
         var_name = "LKSATFAC"
         LKSATFAC_inv = -9999.9
         iret = get2d_real(var_name,LKSATFAC_inv,ixrt,jxrt,&
-               trim(wrfsi_finegrid_flnm))
+               trim(geo_finegrid_flnm))
 #ifdef HYDRO_D
         write(6,*) "read ",var_name
 #endif
@@ -5151,12 +5088,12 @@ end subroutine mpp_output_chrt
 !1.12.2012...Read in routing calibration factors...
         var_name = "RETDEPRTFAC"
         iret = get2d_real(var_name,RETDEPRTFAC_inv,ixrt,jxrt,&
-                     trim(wrfsi_finegrid_flnm))
+                     trim(geo_finegrid_flnm))
         where (RETDEPRTFAC_inv < 0.) RETDEPRTFAC_inv = 1.0  ! reset grid to = 1.0 if non-valid value exists
 
         var_name = "OVROUGHRTFAC"
         iret = get2d_real(var_name,OVROUGHRTFAC_inv,ixrt,jxrt,&
-                     trim(wrfsi_finegrid_flnm))
+                     trim(geo_finegrid_flnm))
         where (OVROUGHRTFAC_inv <= 0.) OVROUGHRTFAC_inv = 1.0 ! reset grid to = 1.0 if non-valid value exists
 
 

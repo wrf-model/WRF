@@ -96,7 +96,7 @@ contains
   
   subroutine CAMMGMP(itimestep, dt, p8w, p_hyd   &
        , t_phy, pi_phy, z_at_w, qfx              &
-       , tke_pbl8w, turbtype3d, smaw3d           &
+       , tke_pbl, turbtype3d, smaw3d           &
        , dlf3d, dlf2_3d, rliq2d, z_sea_level     &
        , kvh3d, ht, alt, accum_mode              &
        , aitken_mode, coarse_mode, icwmrsh3d     &
@@ -187,7 +187,7 @@ contains
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(in)    :: t_phy       !Temperature (K)
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(in)    :: z_at_w      !Height above sea level at layer interfaces (m) 
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(in)    :: pi_phy      !Dimensionless pressure [unitless]
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in)    :: tke_pbl8w   !Turbulence kinetic energy from Mellor-Yamada-Janjic (MYJ) (m^2/s^2)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(in)    :: tke_pbl     !Turbulence kinetic energy from Mellor-Yamada-Janjic (MYJ) (m^2/s^2)
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(in)    :: kvh3d       !Eddy diffusivity for heat(m^2/s)
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(in)    :: turbtype3d  !Turbulent interface types [ no unit ]
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(in)    :: smaw3d      !Normalized Galperin instability function for momentum  ( 0<= <=4.964 and 1 at neutral ) [no units]
@@ -769,7 +769,7 @@ contains
              kflip = kte - kw + 2
              
              state_pint(1,kflip) = p8w(iw,kw,jw)        !Pressure at interfaces [state%pint in CAM]
-             tke(1,kflip)        = tke_pbl8w(iw,kw,jw)  !Turbulent kinetic energy 
+             tke(1,kflip)        = tke_pbl(iw,kw,jw)    !Turbulent kinetic energy 
              kkvh(1,kflip)       = kvh3d(iw,kw,jw)      !Vertical diffusivity (m2/s)
              turbtype(1,kflip)   = turbtype3d(iw,kw,jw) !Turbulent interface types [ no unit ]
              smaw(1,kflip)       = smaw3d(iw,kw,jw)     !Normalized Galperin instability function for momentum  ( 0<= <=4.964 and 1 at neutral ) [no units]

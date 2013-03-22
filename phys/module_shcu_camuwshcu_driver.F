@@ -38,7 +38,7 @@ SUBROUTINE camuwshcu_driver(                                  &
 #ifdef WRF_CHEM
              ,chem, chem_opt                                  &
 #endif
-             ,pblh_in, tke_pbl8w, cldfra, cldfra_old          &
+             ,pblh_in, tke_pbl, cldfra, cldfra_old            &
              ,cldfra_old_mp,cldfra_conv, is_CAMMGMP_used      &
              ,cldfrash                                        &
              ,cush_inout, pratesh, snowsh, icwmrsh    &
@@ -102,7 +102,7 @@ SUBROUTINE camuwshcu_driver(                                  &
                              pi_phy, & !exner function, (p0/p)^(R/cpair) (none)
                                  qv, & !water vapor mixing ratio (kg/kg-dry air)
                               t_phy, & !temperature (K)
-                          tke_pbl8w, & !turbulent kinetic energy from PBL (m2/s2)
+                            tke_pbl, & !turbulent kinetic energy from PBL (m2/s2)
                               u_phy, & !zonal wind component on T points (m/s)
                               v_phy, & !meridional wind component on T points (m/s)
                                   z, & !height above sea level at mid-level (m)
@@ -314,7 +314,7 @@ SUBROUTINE camuwshcu_driver(                                  &
         do k = kts, kte+1
            kflip = kte - k + 2
            
-           tke8(1,kflip) = tke_pbl8w(i,k,j)  !Turbulent kinetic energy            
+           tke8(1,kflip) = tke_pbl(i,k,j)  !Turbulent kinetic energy            
         end do
 
         !Flip the tracer array -

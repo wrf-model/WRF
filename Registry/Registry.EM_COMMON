@@ -788,8 +788,8 @@ state   real   WSTAR_YSU     ij     misc        1         -     -        "WSTAR_
 state   real   DELTA_YSU      ij      misc        1         -     -        "DELTA_YSU"           "entrainment layer depth from ysupbl"    "m"
 
 # MYJ PBL variables; GBM PBL: EXCH_H, EXCH_M
-state    real   EXCH_H          ikj     misc        1         -     r         "EXCH_H"               "SCALAR EXCHANGE COEFFICIENTS "
-state    real   EXCH_M          ikj     misc        1         -     r         "EXCH_M"               "EXCHANGE COEFFICIENTS "
+state    real   EXCH_H          ikj     misc        1         Z     r         "EXCH_H"               "SCALAR EXCHANGE COEFFICIENTS "
+state    real   EXCH_M          ikj     misc        1         Z     r         "EXCH_M"               "EXCHANGE COEFFICIENTS "
 state    real  CT              ij      misc        1         -      r        "CT"                    "COUNTERGRADIENT TERM"    "K"
 state   real   THZ0             ij     misc        1         -      r        "THZ0"                  "POTENTIAL TEMPERATURE AT ZNT"                 "K"
 state    real  Z0               ij     misc        1         -      r        "Z0"                    "Background ROUGHNESS LENGTH"                  "m"
@@ -896,7 +896,7 @@ state    real    dlg_bep       ikj     misc        1         Z      -        "dl
 state    real    dl_u_bep      ikj     misc        1         Z      -        "dl_u_bep"              "urban length scale"        "m"
 state    real    sf_bep        ikj     misc        1         Z      -        "sf_bep"                "surface grid"              "-"
 state    real    vl_bep        ikj     misc        1         Z      -        "vl_bep"                "volume grid"               "-"
-state    real   tke_pbl        ikj     misc        1         -      rh       "tke_pbl"              "TKE from PBL"      "m2 s-2"
+state    real   tke_pbl        ikj     misc        1         Z      rh       "tke_pbl"              "TKE from PBL"      "m2 s-2"
 state    real   el_pbl         ikj     misc        1         -      h        "el_pbl"               "Length scale from PBL"      "m"
 # Diagnostic BOULAC PBL variables
 state    real   wu_tur         ikj     misc        1         -      r        "wu_tur"               "Turbulent flux of momentum(x)"      "m2 s-2"

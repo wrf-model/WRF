@@ -85,7 +85,7 @@ CONTAINS
                , z_at_w,cldfra_old_mp,cldfra, rthratenlw             &
                , tauresx2d,tauresy2d                                 &
                , tpert2d,qpert2d,wpert2d,wsedl3d                     &
-               , turbtype3d,smaw3d,tke_pbl8w,exch_h8w,exch_m8w       &
+               , turbtype3d,smaw3d                                   &
                , fnm,fnp                                             &
 ! variables required for camuwpbl scheme (optional)               
                ,qnc_curr,f_qnc,qni_curr,f_qni,rqniblten              &
@@ -234,9 +234,6 @@ CONTAINS
 !-- akhs          sfc exchange coefficient of heat/moisture from MYJ
 !-- akms          sfc exchange coefficient of momentum from MYJ
 !-- tke_pbl       turbulence kinetic energy from PBL schemes (m^2/s^2)
-!*NOTE* tke_pbl8w is populated ONLY when CAMUWPBL(bl_pbl_physics = 9) scheme is selected !BSINGH
-!otherwise, its value is interpolated from tke_pbl
-!-- tke_pbl8w     turbulence kinetic energy from PBL schemes (m^2/s^2) at the interfaces
 !-- el_pbl        length scale from PBL schemes (m)
 !-- wu_tur        turbulent flux of momentum (x) (m^2/s^2)
 !-- wv_tur        turbulent flux of momentum (y) (m^2/s^2)
@@ -404,16 +401,10 @@ CONTAINS
                                                          wpert2d
 
 
-!3D Variables for camuwpbl scheme - inout
-    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),           &
-               INTENT(INOUT), OPTIONAL    ::                      exch_h8w, &
-                                                        exch_m8w
-
 !3D Variables for camuwpbl scheme - out
     REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),           &
                INTENT(OUT) , OPTIONAL   ::                      turbtype3d, &
-                                                          smaw3d, &   
-                                                       tke_pbl8w
+                                                          smaw3d
 !
 ! for grims shallow convection with ysupbl
 !
@@ -1639,17 +1630,14 @@ CONTAINS
                       ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme             &
                       ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte             &
 !Intent-inout 
-                      ,TAURESX2D=tauresx2d,TAURESY2D=tauresy2d,EXCH_H8W=exch_h8w     &
-                      ,EXCH_M8W=exch_m8w                                             &
+                      ,TAURESX2D=tauresx2d,TAURESY2D=tauresy2d                       &
                       ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten             &
                       ,RQIBLTEN=rqiblten,RQNIBLTEN=rqniblten,RQVBLTEN=rqvblten       &
-                      ,RQCBLTEN=rqcblten                                             &
+                      ,RQCBLTEN=rqcblten,KVM3D=exch_m,KVH3D=exch_h                   &
 !Intent-out
                       ,TPERT2D=tpert2d,QPERT2D=qpert2d,WPERT2D=wpert2d,SMAW3D=smaw3d &
-                      ,TURBTYPE3D=turbtype3d,TKE_pbl8w=tke_pbl8w                     &
-                      ,TKE_pbl=tke_pbl,PBLH2D=pblh,KPBL2D=kpbl,KVH3D=exch_h          &
-                      ,KVM3D=exch_m                                                  &
-                      )
+                      ,TURBTYPE3D=turbtype3d                                         &
+                      ,TKE_pbl=tke_pbl,PBLH2D=pblh,KPBL2D=kpbl                       )
               ELSE
                  WRITE ( message , FMT = '(A,8(L1,1X))' )            &
                       'present: '//                                      &
@@ -1716,53 +1704,6 @@ CONTAINS
 
    END SELECT pbl_select
    
-   !BSINGH - For cases where CAMUWPBL scheme is not being selected, 
-   ! TKE_PBL8W, EXCH_H8W and EXCH_M8W are interpolated from their values
-   ! at midpoints.
-# if (EM_CORE == 1)
-   if ( bl_pbl_physics .NE. CAMUWPBLSCHEME ) then
-      
-      !Interpolate TKE_PBL to populate TKE_PBL8W
-      !Following formulation is adapted from module_chem_utilities.F
-      do j = j_start(ij),j_end(ij)
-         do k = 2, kte
-            do i = i_start(ij), i_end(ij)
-               tke_pbl8w(i,k,j) = fnm(k)*tke_pbl(i,k,j)+fnp(k)*tke_pbl(i,k-1,j)
-               exch_h8w(i,k,j)  = fnm(k)*exch_h(i,k,j)+fnp(k)*exch_h(i,k-1,j)
-               exch_m8w(i,k,j)  = fnm(k)*exch_m(i,k,j)+fnp(k)*exch_m(i,k-1,j)
-            enddo
-         enddo
-      enddo
-      !Extrapolate TKE_PBL8W to surface and top.
-      !We'll use an extrapolation in z for now
-      
-      do j = j_start(ij),j_end(ij)
-         do i = i_start(ij), i_end(ij)
-            !Bottom
-            z0 = z_at_w(i,1,j)
-            z1 = z(i,1,j)
-            z2 = z(i,2,j)
-            w1 = (z0 - z2)/(z1 - z2)
-            w2 = 1. - w1
-            tke_pbl8w(i,1,j) = w1*tke_pbl(i,1,j)+w2*tke_pbl(i,2,j)
-            exch_h8w(i,1,j)  = w1*exch_h(i,1,j)+w2*exch_h(i,2,j)
-            exch_m8w(i,1,j)  = w1*exch_m(i,1,j)+w2*exch_m(i,2,j)
-            !Top
-            z0 = z_at_w(i,kte,j)
-            z1 = z(i,kte,j)
-            z2 = z(i,kte-1,j)
-            w1 = (z0 - z2)/(z1 - z2)
-            w2 = 1. - w1
-            
-            tke_pbl8w(i,kde,j) = w1*tke_pbl(i,kde-1,j)+w2*tke_pbl(i,kde-2,j)
-            exch_h8w(i,kde,j)  = w1*exch_h(i,kde-1,j)+w2*exch_h(i,kde-2,j)
-            exch_m8w(i,kde,j)  = w1*exch_m(i,kde-1,j)+w2*exch_m(i,kde-2,j)
-            
-         enddo
-      enddo
-   endif
-#endif
-
    IF (PRESENT(dtaux3d)) THEN
        IF(gwd_opt .EQ. 1)THEN
              CALL gwdo(                                              &

@@ -2718,7 +2718,7 @@ integer myproc
 
      CASE (CAMZMSCHEME)
           IF (PRESENT(RQCNCUTEN)) THEN
-          CALL zm_conv_init(rucuten, rvcuten, rthcuten, rqvcuten,       &
+          CALL zm_conv_init(DT, rucuten, rvcuten, rthcuten, rqvcuten,       &
                       rqccuten, rqicuten, rqcncuten, rqincuten,         &
                       p_qc, p_qi, p_qnc, p_qni, param_first_scalar,     &
                       restart,                                          &

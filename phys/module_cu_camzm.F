@@ -140,13 +140,17 @@ subroutine zmconv_readnl(nlfile)
 end subroutine zmconv_readnl
 
 
-subroutine zm_convi(limcnv_in, no_deep_pbl_in)
+subroutine zm_convi(DT,limcnv_in, no_deep_pbl_in)
 #ifndef WRF_PORT
    use dycore,       only: dycore_is, get_resolution
 #endif
 
    integer, intent(in)           :: limcnv_in       ! top interface level limit for convection
    logical, intent(in), optional :: no_deep_pbl_in  ! no_deep_pbl = .true. eliminates ZM convection entirely within PBL 
+   REAL ,    INTENT(IN)        :: DT
+   real(r8) :: DTT
+
+
 
    ! local variables
    character(len=32)   :: hgrid           ! horizontal grid specifier
@@ -168,15 +172,29 @@ subroutine zm_convi(limcnv_in, no_deep_pbl_in)
       no_deep_pbl = .true.
    endif
 
+   DTT=DT
+
    ! tau=4800. were used in canadian climate center. however, in echam3 t42, 
    ! convection is too weak, thus adjusted to 2400.
 #ifndef WRF_PORT
    hgrid = get_resolution()
 #endif
-   tau = 3600._r8
+!   tau = 3600._r8
+!  PMA: Standard 2-deg CAM5.1 uses 1-hr relaxation time scale which is too long for the
+!  mesoscale model to remove CAPE quickly. As a result, the model generates grid-scale 
+!  storms and becomes unstable sometimes (Williamson, 2012). Hence, we sets tau as a function
+!  of the length of time step. The caveat of this is that the model behavior
+!  of precipitation will be different to CAM5. We acknowledge that reducing dynamical
+!  time step can also make a stable model simulation. March 12, 2013
+!
+   tau = max(min(2._r8*DTT,1200._r8),120._r8)
 
    if ( masterproc ) then
       write(iulog,*) 'tuning parameters zm_convi: tau',tau
+#ifdef WRF_PORT
+      call wrf_message(iulog)
+#endif
+      write(iulog,*) 'Standard 2-deg CAM5.1 sets tau=3600s and is reduced for the mesoscale model WRF'
 #ifdef WRF_PORT
       call wrf_message(iulog)
 #endif
@@ -3725,6 +3743,10 @@ converge: do i=0, LOOPMAX
 #ifdef WRF_PORT
       call wrf_message(iulog)
 #endif
+      write(iulog,*) '*** Please report this crash to Po-Lun.Ma@pnnl.gov ***'
+#ifdef WRF_PORT
+      call wrf_message(iulog)
+#endif 
       call endrun('**** ZM_CONV IENTROPY: Tmix did not converge ****')
    end if
 enddo converge

@@ -47,7 +47,7 @@ CONTAINS
                  ! Optional moisture tracer flags 
                      ,f_qv,f_qc,f_qr                                  &
                      ,f_qi,f_qs,f_qg                                  &
-                     ,ht,shfrc3d,tke_pbl8w,is_CAMMGMP_used            &
+                     ,ht,shfrc3d,is_CAMMGMP_used                      &
                  ! for grims shallow convection with ysupbl
                      ,wstar,delta,kpbl,znu,raincv                   &
                                                                       )
@@ -152,7 +152,6 @@ CONTAINS
 !-- th_phy        potential temperature (K)
 !-- t_phy         temperature (K)
 !-- tke_pbl       turbulent kinetic energy from PBL scheme (m2/s2)
-!-- tke_pbl8w     turbulent kinetic energy from PBL scheme at interfaces (m2/s2)
 !-- w             vertical velocity (m/s)
 !-- moist         moisture array (4D - last index is species) (kg/kg)
 !-- z             height above sea level at middle of layers (m)
@@ -265,7 +264,6 @@ CONTAINS
                                                       ,      th  &
                                                       ,       t  &
                                                       , tke_pbl  &
-                                                    , tke_pbl8w  &
                                                       ,     rho
 
 
@@ -428,7 +426,7 @@ CONTAINS
 #ifdef WRF_CHEM
            ,CHEM=chem, CHEM_OPT=chem_opt                                 &
 #endif
-           ,PBLH_IN=pblh, TKE_PBL8W=tke_pbl8w                            &
+           ,PBLH_IN=pblh, TKE_PBL=tke_pbl                                &
            ,CLDFRA=cldfra, CLDFRA_OLD=cldfra_old                         &
            ,CLDFRA_OLD_MP=cldfra_old_mp                                  &
            ,CLDFRA_CONV=cldfra_conv,IS_CAMMGMP_USED=is_CAMMGMP_used      &

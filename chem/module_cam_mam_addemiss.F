@@ -181,6 +181,11 @@ CONTAINS
 	itype_pcarbon  = modeptr_accum
 	itype_finedust = modeptr_accum
 	itype_coardust = modeptr_coarse
+#elif ( defined MODAL_AERO_7MODE )
+    if ( (config_flags%chem_opt /= CBMZ_CAM_MAM7_NOAQ) .and. &
+         (config_flags%chem_opt /= CBMZ_CAM_MAM7_AQ  ) ) then
+       call wrf_error_fatal( 'emission package for MAM7 is not implemented yet' )
+    end if
 #else
 	itype_pcarbon  = modeptr_pcarbon
 	itype_finedust = modeptr_finedust
@@ -385,87 +390,88 @@ CONTAINS
 
 	CASE( emiss_inpt_pnnl_mam )
 
-	do 1910 lemit_type = 1, 9
+	do 1910 lemit_type = 1, 14
 
 	iphase = 1
-	isize = 1
+        isize = 1
 	if (lemit_type == 1) then
 	    lemit = p_e_so4i
 	    itype = itype_aitken
 	    l = lptr_so4_aer(isize,itype,iphase)
-	    tmp_dens = dens_so4_aer
 	    factbb_mass = so4_emit_1p2_factor
-	    tmp_dp = dp_anth_emiss_aitken
 	else if (lemit_type == 2) then
 	    lemit = p_e_so4j
 	    itype = itype_accum
 	    l = lptr_so4_aer(isize,itype,iphase)
-	    tmp_dens = dens_so4_aer
 ! so4_emit_1p2_factor is 115/96 if so4 (in 3-mode) is being treated 
 ! as ammonium bisulfate, or 1.0 if treated as pure sulfate
 	    factbb_mass = so4_emit_1p2_factor
-	    tmp_dp = dp_anth_emiss_accum
 	else if (lemit_type == 3) then
 	    lemit = p_e_orgj
 	    itype = itype_pcarbon
 	    l = lptr_pom_aer(isize,itype,iphase)
-	    tmp_dens = dens_pom_aer
 	    factbb_mass = pom_emit_1p4_factor
-	    tmp_dp = dp_anth_emiss_accum
 	else if (lemit_type == 4) then
 	    lemit = p_e_ecj
 	    itype = itype_pcarbon
 	    l = lptr_bc_aer(isize,itype,iphase)
-	    tmp_dens = dens_bc_aer
 	    factbb_mass = 1.0
-	    tmp_dp = dp_anth_emiss_accum
 	else if (lemit_type == 5) then
 	    lemit = p_e_dust_a1
 	    itype = itype_finedust
 	    l = lptr_dust_aer(isize,itype,iphase)
-	    tmp_dens = dens_dust_aer
 	    factbb_mass = 1.0
-	    tmp_dp = dp_anth_emiss_accum
 	else if (lemit_type == 6) then
 	    lemit = p_e_dust_a3
 	    itype = itype_coardust
 	    l = lptr_dust_aer(isize,itype,iphase)
-	    tmp_dens = dens_dust_aer
 	    factbb_mass = 1.0
-	    tmp_dp = dp_anth_emiss_coarse
 	else if (lemit_type == 7) then
 	    lemit = p_e_ncl_a1
 	    itype = itype_accum
 	    l = lptr_seas_aer(isize,itype,iphase)
-	    tmp_dens = dens_seas_aer
 	    factbb_mass = 1.0
-	    tmp_dp = dp_anth_emiss_accum
 	else if (lemit_type == 8) then
 	    lemit = p_e_ncl_a2
 	    itype = itype_aitken
 	    l = lptr_seas_aer(isize,itype,iphase)
-	    tmp_dens = dens_seas_aer
 	    factbb_mass = 1.0
-	    tmp_dp = dp_anth_emiss_aitken
 	else if (lemit_type == 9) then
 	    lemit = p_e_ncl_a3
 	    itype = itype_coardust
 	    l = lptr_seas_aer(isize,itype,iphase)
-	    tmp_dens = dens_seas_aer
 	    factbb_mass = 1.0
-	    tmp_dp = dp_anth_emiss_coarse
-	else
+!PMA
+!Currently my pre-processing script put num_a1 and num_a2 emissions from 
+!sea salt and dust into so4j_num and so4i_num 
+!num_a3 emissions are solely from dust and sea salt
+!
+
+        else if (lemit_type == 10) then
+            lemit = p_e_so4i_num
+            itype = itype_aitken
+            l = numptr_aer(isize,itype,iphase)
+        else if (lemit_type == 11) then
+            lemit = p_e_so4j_num
+            itype = itype_accum
+            l = numptr_aer(isize,itype,iphase)
+        else if (lemit_type == 12) then
+            lemit = p_e_orgj_num
+            itype = itype_accum
+            l = numptr_aer(isize,itype,iphase)
+        else if (lemit_type == 13) then
+            lemit = p_e_ecj_num
+            itype = itype_accum
+            l = numptr_aer(isize,itype,iphase)
+        else if (lemit_type == 14) then
+            lemit = p_e_num_a3
+            itype = itype_coardust
+            l = numptr_aer(isize,itype,iphase)
+        else
 	    cycle
 	end if
 
 	if ((l < p1st) .or. (l > num_chem)) cycle
-
-	lnumb = numptr_aer(isize,itype,iphase)
-	if ((lnumb < p1st) .or. (lnumb > num_chem)) lnumb = -999888777
-
-	tmp_vol1p = (pi/6.0)*(tmp_dp**3)   ! mean volume of emitted particles (cm3)
-! factbb_numb convert mass emissions (ug/m2/s) to number emissions (#/m2/s)
-	factbb_numb = 1.0e-6/(tmp_dens*tmp_vol1p)
 
 	do j = jts, jte
 	do k =   1, min(config_flags%kemit,kte)
@@ -474,28 +480,13 @@ CONTAINS
 ! emissions fluxes are ug/m2/s
 ! mult by tmp_fact_mass to get mixing ratio change (ug/kg) over dtstep
 	fact_mass = (dtstep/dz8w(i,k,j))*alt(i,k,j)*factbb_mass
-
+!PMA 
+        factbb_numb = (dtstep/dz8w(i,k,j))*alt(i,k,j)
+        if (lemit_type < 10) then 
 	chem(i,k,j,l) = chem(i,k,j,l) + emis_ant(i,k,j,lemit)*fact_mass
-
-! units for e_*_num assumed to be particles/m2/s for now
-	if (lnumb > 0) then
-        if (lemit_type == 1) then 
-	chem(i,k,j,lnumb) = chem(i,k,j,lnumb) + &
-		emis_ant(i,k,j,p_e_so4i_num)
-        endif
-        if (lemit_type == 2) then 
-	chem(i,k,j,lnumb) = chem(i,k,j,lnumb) + &
-		emis_ant(i,k,j,p_e_so4j_num)
-        endif
-        if (lemit_type == 3) then 
-	chem(i,k,j,lnumb) = chem(i,k,j,lnumb) + &
-		emis_ant(i,k,j,p_e_orgj_num)
-        endif
-        if (lemit_type == 4) then 
-	chem(i,k,j,lnumb) = chem(i,k,j,lnumb) + &
-		emis_ant(i,k,j,p_e_ecj_num)
-        endif
-	end if
+        else
+        chem(i,k,j,l) = chem(i,k,j,l) + emis_ant(i,k,j,lemit)*factbb_numb
+        end if
 
 	end do ! i
 	end do ! k
@@ -627,7 +618,7 @@ CONTAINS
    USE module_data_cam_mam_asect, only:  ai_phase,   &
          lptr_seas_aer,   &
          maxd_asize, maxd_atype, nsize_aer, ntype_aer, numptr_aer
-!   USE module_mosaic_addemiss, only:  seasalt_emitfactors_1bin
+   USE module_mosaic_addemiss, only:  seasalt_emitfactors_1bin
 
    IMPLICIT NONE
 

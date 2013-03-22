@@ -1196,7 +1196,7 @@ CONTAINS
       REAL             :: FX, SRATIO
 
       REAL, INTENT(INOUT) :: SFHEAD1RT,ETPND1
-      REAL, INTENT(OUT):: DT
+      REAL, INTENT(IN   ) :: DT
        REAL             :: EDIRTMP
 
 

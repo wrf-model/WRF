@@ -1959,7 +1959,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
          IF ( wrf_dm_on_monitor() ) THEN
            WRITE(message,*)'CLWRF post_trcmix_values. n2o:', n2o(pcols/2,pver/2), ' ch4:',      &
              ch4(pcols/2,pver/2),' cfc11:', cfc11(pcols/2,pver/2),' cfc12:', cfc12(pcols/2,pver/2) 
-           CALL wrf_debug(0, message)
+           CALL wrf_debug(1, message)
          END IF 
 !ccc
 !        call t_startf("radclwmx")

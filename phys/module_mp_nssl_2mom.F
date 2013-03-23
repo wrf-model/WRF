@@ -453,7 +453,7 @@ MODULE module_mp_nssl_2mom
       real, parameter :: tfrcbi = tfr - cbi
 
       real, parameter ::  bfnu0 = (rnu + 2.0)/(rnu + 1.0) 
-      real :: ventr, ventc, c1sw
+      real :: ventr,ventrn, ventc, c1sw
 
       real, parameter :: cwmasn = 5.23e-13   ! minimum mass, defined by radius of 5.0e-6
       real, parameter :: cwmasn5 =  5.23e-13
@@ -821,7 +821,9 @@ SUBROUTINE nssl_2mom_init(ims,ime, jms,jme, kms,kme, nssl_params, ipctmp, mixpha
       cdx(ls) = 2.00
       IF ( lhl .gt. 1 ) cdx(lhl) = 0.45
      
-      ido(lc) = idocw ; ido(lr) = idorw ; ido(li) = idoci
+      ido(lc) = idocw
+      ido(lr) = idorw 
+      ido(li) = idoci
       ido(ls) = idosw
       ido(lh)  = idohw
       IF ( lhl .gt. 1 ) ido(lhl) = idohl
@@ -858,6 +860,7 @@ SUBROUTINE nssl_2mom_init(ims,ime, jms,jme, kms,kme, nssl_params, ipctmp, mixpha
       IF ( lhl < 1 ) ifrzg = 1
 
       ventr   = Gamma(rnu + 4./3.)/(rnu + 1.)**(1./3.)/Gamma(rnu + 1.)
+      ventrn =  Gamma(rnu + 1.5 + br/6.)/Gamma(rnu + 1.)  ! adapted from Wisner et al. 1972
       ventc   = Gamma(cnu + 4./3.)/(cnu + 1.)**(1./3.)/Gamma(cnu + 1.)
       c1sw = Gamma(snu + 4./3.)*(snu + 1.0)**(-1./3.)/gamma(snu + 1.0) 
 
@@ -2549,6 +2552,7 @@ END SUBROUTINE nssl_2mom_driver
 !      real cnu,rnu,snu,cinu
 !      parameter ( cnu = 0.0, rnu = -0.8, snu = -0.8, cinu = 0.0 )
       real ventrx(ngs)
+      real ventrxn(ngs)
       real volb, t2s
       real, parameter :: aa1 = 9.44e15, aa2 = 5.78e3  ! a1 in Ziegler
 
@@ -2612,6 +2616,12 @@ END SUBROUTINE nssl_2mom_driver
       real cc3(ngs),cqv1(ngs),cqv2(ngs)
       real qcwtmp(ngs),qtmp
 
+      real fvent(ngs) !,fraci(ngs),fracl(ngs)
+      real fwvdf(ngs),ftka(ngs),fthdf(ngs)
+      real fadvisc(ngs),fakvisc(ngs)
+      real fci(ngs),fcw(ngs)
+      real fschm(ngs),fpndl(ngs)
+
       real pres(ngs)
       real pk(ngs)
       real rho0(ngs),pi0(ngs)
@@ -2653,7 +2663,7 @@ END SUBROUTINE nssl_2mom_driver
       kzbeg = 1
       nzbeg = 1
       
-      IF ( ipconc == 0 ) GOTO 2200
+      IF ( ipconc <= 1 ) GOTO 2200
 
 !
 !  Ziegler nucleation 
@@ -2946,7 +2956,24 @@ END SUBROUTINE nssl_2mom_driver
 
 !
 !  Ventilation coefficients
-!
+
+      do mgs = 1,ngscnt
+
+
+      fadvisc(mgs) = advisc0*(416.16/(temg(mgs)+120.0))* & 
+     &  (temg(mgs)/296.0)**(1.5)
+
+      fakvisc(mgs) = fadvisc(mgs)*rhoinv(mgs)
+
+      fwvdf(mgs) = (2.11e-05)*((temg(mgs)/tfr)**1.94)* & 
+     &  (101325.0/(pres(mgs)))
+      
+      fschm(mgs) = (fakvisc(mgs)/fwvdf(mgs))
+
+      fvent(mgs) = (fschm(mgs)**(1./3.)) * (fakvisc(mgs)**(-0.5))
+
+      end do
+
 !
 !  Ziegler nucleation 
 !
@@ -3043,7 +3070,12 @@ END SUBROUTINE nssl_2mom_driver
        ENDIF
 
        IF ( rcond .eq. 2 .and. qx(mgs,lr) .gt. qxmin(lr) .and. cx(mgs,lr) > 1.e-9 ) THEN
-       rwvent(mgs) = ventr*(1.6 + 124.9*(1.e-3*rho0(mgs)*qx(mgs,lr))**.2046)
+!       rwvent(mgs) = ventr*(1.6 + 124.9*(1.e-3*rho0(mgs)*qx(mgs,lr))**.2046)
+!  Following Wisner et al. (1972) but using gamma of volume. Note that Ferrier's rain fall speed does not integrate with gamma of volume, so using Vr = ar*d^br
+          rwvent(mgs) =   &
+     &  (0.78*ventr + 0.308*ventrn*fvent(mgs)   &
+     &   *Sqrt((ar*rhovt(mgs)))   &
+     &    *(xdia(mgs,lr,1)**((1.0+br)/2.0)) )
 
        d1r = (1./(ac1 + bc))*4.0*pi*rwvent(mgs) & 
      &        *0.5*xdia(mgs,lr,1)*cx(mgs,lr)*rhoinv(mgs)
@@ -4574,7 +4606,7 @@ END SUBROUTINE nssl_2mom_driver
        real :: qxmxd(ngs,lv:lhab)
        real :: scx(ngs,lc:lhab)
        real :: xv(ngs,lc:lhab)
-       real :: xsfca(ngs,lc:lhab)
+!       real :: xsfca(ngs,lc:lhab)
        real :: vtxbar(ngs,lc:lhab,3)
        real :: xmas(ngs,lc:lhab)
        real :: xdn(ngs,lc:lhab)
@@ -4591,6 +4623,7 @@ END SUBROUTINE nssl_2mom_driver
        real :: g1x(ngs,lr:lhab)
       
       real ventrx(ngs)
+      real ventrxn(ngs)
       real g1shr, alphashr
       real g1mlr, alphamlr
       
@@ -5157,7 +5190,6 @@ END SUBROUTINE nssl_2mom_driver
 !
 !  slope intercepts
 !
-!      ipconc = 5
       
       IF ( ngs .lt. nz ) THEN
 !       write(0,*) 'Error in ICEZVD: Must have ngs .ge. nz!'
@@ -5330,6 +5362,14 @@ END SUBROUTINE nssl_2mom_driver
 !
       jy = jgs
       
+      IF ( ipconc < 2 ) THEN ! Make a copy of cloud droplet mixing ratio to use for homogeneous freezing
+        DO kz = 1,nz
+         DO ix = 1,nx
+           t9(ix,jy,kz) = an(ix,jy,kz,lc)
+         ENDDO
+        ENDDO
+      ENDIF
+
 !
 !..Gather microphysics  
 !
@@ -5408,7 +5448,7 @@ END SUBROUTINE nssl_2mom_driver
 
       
       xv(:,:) = 0.0
-      xsfca(:,:) = 0.0
+!      xsfca(:,:) = 0.0
       xmas(:,:) = 0.0
       vtxbar(:,:,:) = 0.0
       xdia(:,:,:) = 0.0
@@ -5515,6 +5555,7 @@ END SUBROUTINE nssl_2mom_driver
       ENDIF
       
       ventrx(:) = ventr
+      ventrxn(:) = ventrn
 
 !
 !  set concentrations
@@ -8064,7 +8105,12 @@ END SUBROUTINE nssl_2mom_driver
       do mgs = 1,ngscnt
       IF ( qx(mgs,lr) .gt. qxmin(lr) ) THEN
         IF ( ipconc .ge. 3 ) THEN
-         rwvent(mgs) = ventrx(mgs)*(1.6 + 124.9*(1.e-3*rho0(mgs)*qx(mgs,lr))**.2046)
+!         rwvent(mgs) = ventrx(mgs)*(1.6 + 124.9*(1.e-3*rho0(mgs)*qx(mgs,lr))**.2046)
+!  Following Wisner et al. (1972) but using gamma of volume. Note that Ferrier's rain fall speed does not integrate with gamma of volume, so using Vr = ar*d^br
+          rwvent(mgs) =   &
+     &  (0.78*ventrx(mgs) + 0.308*ventrxn(mgs)*fvent(mgs)   &
+     &   *Sqrt((ar*rhovt(mgs)))   &
+     &    *(xdia(mgs,lr,1)**((1.0+br)/2.0)) )
         ELSE
          rwvent(mgs) =   &
      &  (rwventa + rwventb*fvent(mgs)   &
@@ -11070,6 +11116,10 @@ END SUBROUTINE nssl_2mom_driver
 !      if( temg(mgs) .lt. tfrh ) THEN
 !       write(0,*) 'GS: mgs,temp,qc,qi = ',mgs,temg(mgs),temcg(mgs),qx(mgs,lc),qx(mgs,li)
 !      ENDIF
+
+      qtmp = 0.0
+      ctmp = 0.0
+      frac = 0.0
       
       if( temg(mgs) .lt. thnuc + 2. .and.    &
      &  qx(mgs,lc) .gt. 0.0 ) then
@@ -11087,8 +11137,8 @@ END SUBROUTINE nssl_2mom_driver
 !        cx(mgs,li) = cx(mgs,li) + cx(mgs,lc)
         cx(mgs,li) = cx(mgs,li) + ctmp
       ELSE ! (ipconc .lt. 2 )
-        IF ( an(igs(mgs),jgs,kgs(mgs)-1,lc) .gt. qx(mgs,lc) ) THEN
-           qtmp = frac*an(igs(mgs),jgs,kgs(mgs)-1,lc)  
+        IF ( t9(igs(mgs),jgs,kgs(mgs)-1) .gt. qx(mgs,lc) ) THEN
+           qtmp = frac*t9(igs(mgs),jgs,kgs(mgs)-1)  
 
 !           cx(mgs,lc) = cx(mgs,lc)*qx(mgs,lc)*rho0(mgs)/qtmp
            ctmp = cx(mgs,lc)*qx(mgs,lc)*rho0(mgs)/qtmp
@@ -11745,7 +11795,7 @@ END SUBROUTINE nssl_2mom_driver
         xv(mgs,lc) = xmas(mgs,lc)/xdn(mgs,lc)
       ELSE
        IF ( ipconc .lt. 2 ) THEN
-         cx(mgs,lc) = rho0(mgs)*ccn
+         cx(mgs,lc) = rho0(mgs)*ccn/rho00
        ENDIF
        IF ( qx(mgs,lc) .gt. qxmin(lc) .and. cx(mgs,lc) .gt. 0.01 ) THEN !{
         xmas(mgs,lc) =  &
@@ -12682,12 +12732,6 @@ END SUBROUTINE nssl_2mom_driver
       integer ierr
       
       logical flag
-      logical ldovol, ldoliq
-      integer lvol(lc:lhab)
-      integer ln(lc:lhab)
-      integer lz(lc:lhab)
-      integer lliq(ls:lhab)
-      
     
       real chw, qr, z, rd, alp, z1, g1, vr, nrx, tmp
       
@@ -12725,50 +12769,6 @@ END SUBROUTINE nssl_2mom_driver
 
 !  constants
 !
-      ldovol = .false.
-      lvol(:) = 0
-      IF ( lvi .gt. 1 ) lvol(li) = lvi
-      IF ( lvs .gt. 1 ) lvol(ls) = lvs
-      IF ( lvh .gt. 1 ) lvol(lh) = lvh
-      IF ( lhl .gt. 1 .and. lvhl .gt. 1 ) lvol(lhl) = lvhl
-      
-      
-      IF ( li .gt. 1 ) THEN
-      DO il = li,lhab
-        ldovol = ldovol .or. ( lvol(il) .gt. 1 )
-      ENDDO
-      ENDIF
-
-      ln(:) = 0
-      ln(lc) = lnc
-      ln(lr) = lnr
-      IF ( li > 0 ) THEN
-      ln(li) = lni
-      ln(ls) = lns
-      ln(lh) = lnh
-      ENDIF
-      IF ( lhl .gt. 1 ) ln(lhl) = lnhl
-
-      lz(:) = 0
-      lz(lr) = lzr
-      IF ( li > 0 ) THEN
-      lz(li) = lzi
-      lz(ls) = lzs
-      lz(lh) = lzh
-      ENDIF
-      IF ( lhl .gt. 1 .and. lzhl > 1 ) lz(lhl) = lzhl
-
-      lliq(:) = 0
-      IF ( lsw .gt. 1 ) lliq(ls) = lsw
-      IF ( lhw .gt. 1 ) lliq(lh) = lhw
-      IF ( lhl .gt. 1 .and. lhlw .gt. 1 ) lliq(lhl) = lhlw
-
-      ldoliq = .false.
-      IF ( ls .gt. 1 ) THEN
-      DO il = ls,lhab
-        ldoliq = ldoliq .or. ( lliq(il) .gt. 1 )
-      ENDDO
-      ENDIF
       
       poo = 1.0e+05
       cp608 = 0.608
@@ -12880,7 +12880,7 @@ END SUBROUTINE nssl_2mom_driver
 
 
       IF ( ildo > 0 ) THEN
-        vtxbar(:,:,ildo) = 0.0
+        vtxbar(:,ildo,:) = 0.0
       ELSE
         vtxbar(:,:,:) = 0.0
       ENDIF

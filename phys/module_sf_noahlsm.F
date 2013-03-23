@@ -709,7 +709,7 @@ CONTAINS
 !  FROZEN GROUND EXTENSION: TOTAL SOIL WATER "SMC" WAS REPLACED
 !  BY UNFROZEN SOIL WATER "SH2O" IN CALL TO CANRES BELOW
 ! ----------------------------------------------------------------------
-         IF (SHDFAC > 0.) THEN
+         IF ( (SHDFAC > 0.) .AND. (XLAI > 0.) ) THEN
             CALL CANRES (SOLDN,CH,SFCTMP,Q2,SFCPRS,SH2O,ZSOIL,NSOIL,     &
                           SMCWLT,SMCREF,RSMIN,RC,PC,NROOT,Q2SAT,DQSDT2,  &
                           TOPT,RSMAX,RGL,HS,XLAI,                        &

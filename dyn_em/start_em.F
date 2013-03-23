@@ -611,7 +611,7 @@
    CALL domain_setgmtetc( grid, start_of_simulation )
 !tgs
    IF(config_flags%cycling) start_of_simulation = .true.
-  print *,'cycling, start_of_simulation -->',config_flags%cycling, start_of_simulation
+!  print *,'cycling, start_of_simulation -->',config_flags%cycling, start_of_simulation
 
 !-----------------------------------------------------------------------------
 ! Adaptive time step: Added by T. Hutchinson, WSI  11/6/07
@@ -1161,7 +1161,7 @@
            else                      ! over water, leave it alone
               vfac = 1.
            endif
-         print *, j,i,grid%ctopo(i,j),vfac
+!          print *, j,i,grid%ctopo(i,j),vfac
            grid%ctopo(i,j)=grid%ctopo(i,j)*vfac
          ENDDO
          ENDDO

@@ -374,7 +374,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 8, Thompson scheme (new for V3.1)
                                      = 9, Milbrandt-Yau 2-moment scheme (new for V3.2)
                                      = 10, Morrison (2 moments)
-                                     = 11, Morrison-Gettleman (Adapted from CAM physics)
+                                     = 11, CAM 5.1 microphysics
                                      = 13, SBU_YLIN scheme
                                      = 14, WDM 5-class scheme
                                      = 16, WDM 6-class scheme
@@ -528,6 +528,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 9, UW boundary layer scheme from CAM5 (CESM 1_0_1)
                                      = 10, TEMF (Total Energy Mass Flux) scheme (ARW only)
                                           sf_sfclay_physics=10
+                                     = 12, Grenier-Bretherton-McCaa scheme (ARW only)
                                      = 94, Quasi-Normal Scale Elimination PBL
                                      = 99, MRF scheme
 
@@ -564,6 +565,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 0, no independent shallow cumulus
                                      = 1, Grell 3D ensemble scheme (use with cu_physics=93 or 5) (PLACEHOLDER: SWITCH NOT YET IMPLEMENTED--use ishallow)
                                      = 2, Park and Bretherton shallow cumulus from CAM5 (CESM 1_0_1)
+                                     = 3, GRIMS shallow cumulus from YSU group
 
  ishallow                            = 1,   Shallow convection used with Grell 3D ensemble schemes (cu_physics = 3 or 5)
  clos_choice                         = 0,   closure choice (place holder only)
@@ -623,6 +625,7 @@ Namelist variables for controlling the adaptive time step option:
                                                   = 5: thermal diffusion scheme
                                                   = 4: Noah landsurface model
                                                   = 6: RUC landsurface model
+                                                  = 10: CLM4 landsurface model
                                                   = 2: Pleim-Xu landsurface model
                                                   = 3: SSiB landsurface model
  num_land_cat                        = 24,      ; number of land categories in input data.
@@ -1023,10 +1026,6 @@ The following are for observation nudging:
                                      = 1       ; adds output of Mij stress terms when NBA is not used
  tracer_opt(max_dom)                 = 0       ; 
 
- perturb_bdy                         = 0       ; No boundary perturbations
-                                       1       ; Use SKEBS pattern for boundary perturbations
-                                       2       ; User other user provided pattern for boundary perturbations
-
  &bdy_control
  spec_bdy_width                      = 5,       ; total number of rows for specified boundary value nudging
  spec_zone                           = 1,       ; number of points in specified zone (spec b.c. option)
@@ -1052,7 +1051,7 @@ The following are for observation nudging:
                                                   (v=0 at polarward-most v-point)
  perturb_bdy                        = 0         ; No boundary perturbations
                                       1         ; Use SKEBS pattern for boundary perturbations
-                                      2         ; User other user provided pattern for boundary perturbations
+                                      2         ; Use other user-provided pattern for boundary perturbations
 
  euler_adv                           = .false., ; conservative Eulerian passive advection (NMM only)
  idtadt                              = 1,       ; fundamental timesteps between calls to Euler advection, dynamics (NMM only)

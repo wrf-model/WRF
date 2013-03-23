@@ -618,7 +618,7 @@ CONTAINS
    USE module_data_cam_mam_asect, only:  ai_phase,   &
          lptr_seas_aer,   &
          maxd_asize, maxd_atype, nsize_aer, ntype_aer, numptr_aer
-   USE module_mosaic_addemiss, only:  seasalt_emitfactors_1bin
+!  USE module_mosaic_addemiss, only:  seasalt_emitfactors_1bin
 
    IMPLICIT NONE
 

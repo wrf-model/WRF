@@ -3331,7 +3331,7 @@ BENCH_START(micro_driver_tim)
 !======================
       ! Variables required for CAMMGMP Scheme
       &        ,DLF=grid%dlf,DLF2=grid%dlf2,T_PHY=grid%t_phy,P_HYD=grid%p_hyd  &
-      &        ,P8W_HYD=grid%p_hyd_w                                      &
+      &        ,P8W_HYD=grid%p_hyd_w,TKE_PBL=grid%tke_pbl                 &
       &        ,Z_AT_W=grid%z_at_w,QFX=grid%qfx,RLIQ=grid%rliq            &
       &        ,TURBTYPE3D=grid%turbtype3d,SMAW3D=grid%smaw3d             &
       &        ,WSEDL3D=grid%wsedl3d,CLDFRA_OLD_MP=grid%cldfra_old_mp     &

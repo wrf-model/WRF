@@ -1550,6 +1550,8 @@
      &                ,grid%z,grid%sice,NUM_AEROSOLC,NUM_OZMIXM                  &
      &                ,GRID,CONFIG_FLAGS                               &
      &                ,RTHRATEN                                        &  
+     &                ,grid%re_cloud,grid%re_ice,grid%re_snow          &  ! G. Thompson
+     &                ,grid%has_reqc,grid%has_reqi,grid%has_reqs       &  ! G. Thompson
 #ifdef WRF_CHEM
      &                ,PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC            &
      &                ,TAUAER1, TAUAER2, TAUAER3, TAUAER4              & 
@@ -1953,6 +1955,8 @@
      &               ,grid%tbpvs_state                                      &
      &               ,grid%tbpvs0_state                                     &
      &               ,GRID,CONFIG_FLAGS                                &
+     &               ,grid%re_cloud,grid%re_ice,grid%re_snow           &  ! G. Thompson
+     &               ,grid%has_reqc,grid%has_reqi,grid%has_reqs        &  ! G. Thompson
      &               ,IDS,IDF,JDS,JDF,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)

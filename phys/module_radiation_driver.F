@@ -56,6 +56,8 @@ CONTAINS
               , SSWDN, SSWUP                        & ! goddard schemes
               , CLDFRA,CLDFRA_MP_ALL                              &
               , mp_physics                                        &
+              , re_cloud, re_ice, re_snow           & ! G. Thompson
+              , has_reqc, has_reqi, has_reqs        & ! G. Thompson
               , PB                                                &
               , F_ICE_PHY,F_RAIN_PHY       &
               , QV, F_QV                     &
@@ -530,6 +532,10 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(INOUT) ::                                 CLDFRA
+
+!..G. Thompson
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN):: re_cloud, re_ice, re_snow
+   INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                     &
          OPTIONAL,                                                   &
@@ -1147,6 +1153,8 @@ CONTAINS
                   O3INPUT=O3INPUT,O33D=O3RAD,                       &
                   F_QV=F_QV,F_QC=F_QC,F_QR=F_QR,                    &
                   F_QI=F_QI,F_QS=F_QS,F_QG=F_QG,                    &
+                  RE_CLOUD=re_cloud,RE_ICE=re_ice,RE_SNOW=re_snow,  & ! G. Thompson
+                  has_reqc=has_reqc,has_reqi=has_reqi,has_reqs=has_reqs, & ! G. Thompson
 #ifdef WRF_CHEM
                   TAUAERLW1=tauaerlw1,TAUAERLW2=tauaerlw2,          & ! jcb
                   TAUAERLW3=tauaerlw3,TAUAERLW4=tauaerlw4,          & ! jcb
@@ -1482,6 +1490,8 @@ CONTAINS
                      SF_SURFACE_PHYSICS=sf_surface_physics,            &  !Zhenxin ssib sw_phy   (06/2010)
                      F_QV=f_qv,F_QC=f_qc,F_QR=f_qr,                    &
                      F_QI=f_qi,F_QS=f_qs,F_QG=f_qg,                    &
+                     RE_CLOUD=re_cloud,RE_ICE=re_ice,RE_SNOW=re_snow,  & ! G. Thompson
+                     has_reqc=has_reqc,has_reqi=has_reqi,has_reqs=has_reqs, & ! G. Thompson
 #ifdef WRF_CHEM
                      TAUAER300=tauaer300,TAUAER400=tauaer400,          & ! jcb
                      TAUAER600=tauaer600,TAUAER999=tauaer999,          & ! jcb

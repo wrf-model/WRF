@@ -65,6 +65,8 @@ SUBROUTINE microphysics_driver(                                          &
 ! Added the RI_CURR array to the call
                       ,ri_curr                                           &
                       ,diagflag,   do_radar_ref                          &
+                      ,re_cloud, re_ice, re_snow                         & ! G. Thompson
+                      ,has_reqc, has_reqi, has_reqs                      & ! G. Thompson
                                                    )
 ! Framework
 #if(NMM_CORE==1)
@@ -470,6 +472,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
    LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
    INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) ::  & ! G. Thompson
+                 re_cloud, re_ice, re_snow
+   INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
 
 ! LOCAL  VAR
 
@@ -684,6 +689,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      REFL_10CM=refl_10cm,                &
                      diagflag=diagflag,                  &
                      do_radar_ref=do_radar_ref,          &
+                     re_cloud=re_cloud,                  & ! G. Thompson
+                     re_ice=re_ice,                      & ! G. Thompson
+                     re_snow=re_snow,                    & ! G. Thompson
+                     has_reqc=has_reqc,                  & ! G. Thompson
+                     has_reqi=has_reqi,                  & ! G. Thompson
+                     has_reqs=has_reqs,                  & ! G. Thompson
                  IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
                  IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
                  ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)

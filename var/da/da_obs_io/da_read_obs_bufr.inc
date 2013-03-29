@@ -78,6 +78,9 @@ subroutine da_read_obs_bufr (iv)
    integer              :: ibufr
    integer              :: num_outside_all, num_outside_time, num_thinned,num_p,numbufr
 
+!added by yw
+   logical :: fexist, ywflag
+
    type datalink_BUFR              !for PREPBUFR data reading
        type (multi_level_type_BUFR)          :: platform_BUFR
        integer                               :: fm_BUFR
@@ -151,6 +154,16 @@ if (num_fgat_time>1) then
  end if
   
   if (numbufr==0) numbufr=1
+
+!yw added by Wei Yu
+  inquire (file="ob1.bufr", exist=fexist)
+  ywflag = .false.  
+  if (fexist ) then
+     numbufr = 2
+     ywflag = .true. 
+  endif 
+!yw end added
+
      
 bufrfile:  do ibufr=1,numbufr   
      if (num_fgat_time==1) then
@@ -162,6 +175,13 @@ bufrfile:  do ibufr=1,numbufr
             write(filename,fmt='(A,I1,A)') 'ob0',num_bufr(ibufr),'.bufr'   
         end if
      end if
+
+!yw added by Wei Yu
+     if( (ibufr .eq. 2) .and. ywflag)  then
+         filename='ob1.bufr'
+     endif
+!yw end added
+       
 !
 !     We want to use specific unit number to read preppbufr data, which enable us to control its endian
       iunit = 96 
@@ -1118,6 +1138,7 @@ if ( use_errtable ) then
 end if
 
 end do bufrfile   
+
 
 !  3.0 Thinning based on FGAT
 !      Only for 4dvar

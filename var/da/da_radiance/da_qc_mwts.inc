@@ -103,13 +103,13 @@ subroutine da_qc_mwts (it, i, nchan, ob, iv)
          if (ob%instid(i)%tb(1,n) > 0.0) then
             si = iv%instid(i)%tb_inv(1,n)
             if (isflg .eq.0 .AND. si >= 3.0) then
-               iv%instid(i)%tb_qc(:,n) = qc_bad
-               iv%instid(i)%cloud_flag(:,n) = qc_bad
+               iv%instid(i)%tb_qc(1:3,n) = qc_bad
+               iv%instid(i)%cloud_flag(1:3,n) = qc_bad
                if (iv%instid(i)%info%proc_domain(1,n)) &
                   nrej_si = nrej_si + 1
             elseif (isflg .gt.0 .AND. si >= 1.5) then
-               iv%instid(i)%tb_qc(:,n) = qc_bad
-               iv%instid(i)%cloud_flag(:,n) = qc_bad
+               iv%instid(i)%tb_qc(1:3,n) = qc_bad
+               iv%instid(i)%cloud_flag(1:3,n) = qc_bad
                if (iv%instid(i)%info%proc_domain(1,n)) &
                   nrej_si = nrej_si + 1
             end if

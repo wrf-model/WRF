@@ -1,0 +1,5 @@
+sensor channel IR/MW use idum  varch  polarisation(0:vertical;1:horizontal)
+  2047    1    1   -1    0  0.5000000000E+01  0.0000000000E+00  amsua-3
+  2047    2    1    1    0  0.3000000000E+00  0.1000000000E+01  amsua-5
+  2047    3    1    1    0  0.2700000000E+00  0.0000000000E+00  amsua-7
+  2047    4    1    1    0  0.3000000000E+00  0.1000000000E+01  amsua-9

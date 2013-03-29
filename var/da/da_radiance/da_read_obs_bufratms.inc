@@ -1,15 +1,18 @@
-subroutine da_read_obs_fy3 (obstype,iv, infile)
+subroutine da_read_obs_bufratms (obstype,iv, infile)
 
    !---------------------------------------------------------------------------
-   !  Purpose: read in fy3 1b data to innovation structure
+   !  Purpose: read in NCEP bufr atms 1b data to innovation structure
    !
-   !   Dong peiming 2012/03/09
    !   METHOD: use F90 sequential data structure to avoid reading file twice  
    !            so that da_scan_bufrtovs is not necessary any more.
    !            1. read file radiance data in sequential data structure
    !            2. do gross QC check
    !            3. assign sequential data structure to innovation structure
    !               and deallocate sequential data structure
+   !   Peiming Dong Added NPP atms, 2012/4/17
+   !   Peiming Dong seperated the atms from da_read_obs_bufrtovs.inc in that
+   !                all the data needs to be read in together first to make 
+   !                the spatial average, 2013/1/10
    !---------------------------------------------------------------------------
 
    implicit none
@@ -18,35 +21,48 @@ subroutine da_read_obs_fy3 (obstype,iv, infile)
    character(20)     ,  intent (in)    :: infile
    type (iv_type)    ,  intent (inout) :: iv
 
-!
-TYPE type_rad_FY3
-    INTEGER :: yyyy,mn,dd,hh,mm,ss
-    INTEGER :: iscanline,iscanpos
-    REAL*4  :: rlat,rlon !lat/lon in degrees for Anfovs
-    INTEGER :: isurf_height, isurf_type !height/type for Anfovs
-    REAL*4  :: satzen,satazi,solzen,solazi !scan angles for Anfovs
-    REAL*4  :: tbb(20) !bright temperatures
-!   REAL*4  :: btemps(20)
-    INTEGER :: iavhrr(13),ihirsflag
-    INTEGER :: iprepro(5) ! values from pre-processing
-    REAL*4  :: clfra ! Cloud cover (<1.0)
-    REAL*4  :: ts ! Skin temperature
-    REAL*4  :: tctop ! Cloud top temperature
-END TYPE type_rad_FY3
+#ifdef BUFR
 
-  TYPE (type_rad_FY3)   :: rad
-  integer :: iscan,nscan
-!
    integer          :: iost
    integer(i_kind), allocatable :: nread(:)
+!Dongpm for the spatial average
+    integer(i_kind) ,parameter :: Num_Obs = 800000
+    integer(i_kind) ,parameter :: NChanl  = 22
+    integer(i_kind) ,allocatable :: Fov_save(:)
+    real(r_kind)    ,allocatable :: Time_save(:)
+    real(r_kind)    ,allocatable :: BT_InOut_save(:,:)
+    integer(i_kind) ,allocatable :: Scanline_save(:)
+    integer(i_kind)  :: Error_Status
+    integer(i_kind)  :: nnum, nn
+    real(r_kind)    ,allocatable :: lat_save(:)
+    real(r_kind)    ,allocatable :: lon_save(:)
+    real(r_kind)    ,allocatable :: obs_time_save(:)
+    real(r_kind)    ,allocatable :: satzen_save(:)
+    real(r_kind)    ,allocatable :: satazi_save(:)
+    real(r_kind)    ,allocatable :: solzen_save(:)
+    real(r_kind)    ,allocatable :: solazi_save(:)
+    real(r_kind)    ,allocatable :: srf_height_save(:)
+    integer(i_kind) ,allocatable :: landsea_mask_save(:)
+    integer(i_kind) ,allocatable :: satid_save(:)
+    character(len=19),allocatable :: date_char_save(:)
+!Dongpm
+   integer(i_kind),parameter:: n1bhdr=15
+   integer(i_kind),parameter:: n2bhdr=2
+!Dongpm   integer(i_kind),parameter:: n1bhdr=13
+   integer(i_kind),parameter:: maxinfo=12
+   integer(i_kind),parameter:: maxchanl=100
 
-!dongpm   logical hirs2,hirs3,hirs4,msu,amsua,amsub,mhs
-   logical mwts,mwhs
+   logical atms
    logical outside, outside_all, iuse
    integer :: inst
 
-   integer(i_kind) i,j,k,ifov
-   integer(i_kind) nchan
+   character(10) date
+   character(8) subset,subfgn
+   character(80) hdr1b
+!Dongpm
+   character(80) hdr2b
+   integer(i_kind) ihh,i,j,k,ifov,idd,ireadmg,ireadsb
+   integer(i_kind) iret,idate,im,iy,nchan
    integer :: num_bufr(7), numbufr, ibufr
    character(20) :: filename
 
@@ -56,7 +72,14 @@ END TYPE type_rad_FY3
    real(r_kind) dlon_earth,dlat_earth
 
    real(r_kind) tbmin,tbmax, tbbad
+   real(r_kind) panglr,rato
    ! real(r_kind) rmask
+   real(r_kind) step,start
+
+   real(r_double),dimension(maxinfo+maxchanl):: data1b8
+   real(r_double),dimension(n1bhdr):: bfr1bhdr
+!Dongpm
+   real(r_double),dimension(n2bhdr):: bfr2bhdr
 
    ! Instrument triplet, follow the convension of RTTOV 
    integer   :: platform_id, satellite_id, sensor_id
@@ -78,6 +101,11 @@ END TYPE type_rad_FY3
    type(info_type)                ::  info
    type(model_loc_type)           ::  loc
 
+!Dongpm
+   data hdr1b /'SAID FOVN YEAR MNTH DAYS HOUR MINU SECO CLAT CLON SAZA SOZA HMSL LSQL SOLAZI'/
+   data hdr2b /'CLATH CLONH'/
+   !  data hdr1b /'FOVN YEAR MNTH DAYS HOUR MINU SECO CLAT CLON SAZA SOZA HOLS LSQL SLNM BEARAZ'/
+
    data tbmin,tbmax,tbbad / 50.0_r_kind, 550.0_r_kind, -9.99e11_r_kind /
    integer :: num_tovs_local, num_tovs_file, num_tovs_global, num_tovs_selected
    integer :: num_tovs_thinned, num_tovs_used, num_tovs_used_tmp
@@ -87,11 +115,13 @@ END TYPE type_rad_FY3
    real , allocatable :: in(:), out(:)
    logical :: found, head_found
 
-   call da_trace_entry("da_read_obs_fy3")
+   call da_trace_entry("da_read_obs_bufratms")
 
    ! Initialize variables
 
-   nchan = 20
+!Dongpm
+!Dongpm   nchan = 20
+   nchan = NChanl
    allocate(nread(1:rtminit_nsensor))
    allocate(ptotal(0:num_fgat_time))
    nread(1:rtminit_nsensor) = 0
@@ -102,70 +132,15 @@ END TYPE type_rad_FY3
    ! platform_id  = 1                 !! for NOAA series
    ! platform_id  = 10                !! for METOP series
 
-!dongpm   hirs2=     obstype == 'hirs2'
-!dongpm   hirs3=     obstype == 'hirs3'
-!dongpm   hirs4=     obstype == 'hirs4'
-!dongpm   msu=       obstype == 'msu  '
-!dongpm   amsua=     obstype == 'amsua'
-!dongpm   amsub=     obstype == 'amsub'
-!dongpm   mhs=       obstype == 'mhs  '
-          mwts=      obstype == 'mwts '
-          mwhs=      obstype == 'mwhs '
+   atms=      obstype == 'atms '
 
-!dongpm   if (hirs2) then
-!dongpm      sensor_id    =  0
-!dongpm      step   = 1.80_r_kind
-!dongpm      start  = -49.5_r_kind
-!dongpm      nchan=nchan_hirs2
-!dongpm      subfgn='NC021021'
-!dongpm      rato=1.1363987_r_kind
-!dongpm   else if (hirs3) then 
-!dongpm      sensor_id    =  0
-!dongpm      step   = 1.80_r_kind
-!dongpm      start  = -49.5_r_kind
-!dongpm      nchan=nchan_hirs3
-!dongpm      subfgn='NC021025'
-!dongpm   else if (hirs4) then 
-!dongpm      sensor_id    =  0
-!dongpm      step   = 1.80_r_kind
-!dongpm      start  = -49.5_r_kind
-!dongpm      nchan=nchan_hirs4
-!dongpm      subfgn='NC021028'
-!dongpm   else if (mhs) then 
-!dongpm      sensor_id    =  15
-!dongpm      step   = 10.0_r_kind/9.0_r_kind
-!dongpm      start  = -445.0_r_kind/9.0_r_kind
-!dongpm      nchan=nchan_mhs
-!dongpm      subfgn='NC021027'
-!dongpm   else if (msu) then
-!dongpm      sensor_id    =  1
-!dongpm      step   = 9.474_r_kind
-!dongpm      start  = -47.37_r_kind
-!dongpm      nchan=nchan_msu
-!dongpm      subfgn='NC021022'
-!dongpm      rato=1.1363987_r_kind
-!dongpm   else if (amsua) then
-!dongpm      sensor_id    =  3
-!dongpm      step   = three + one/three
-!dongpm      start  = -48.33_r_kind
-!dongpm      nchan=nchan_amsua
-!dongpm      subfgn='NC021023'
-!dongpm   else if (amsub)  then
-!dongpm      sensor_id    =  4
-!dongpm      step   = 1.1_r_kind
-!dongpm      start  = -48.95_r_kind
-!dongpm      nchan=nchan_amsub
-!dongpm      subfgn='NC021024'
-!dongpm   end if
-          if (mwts) then
-           sensor_id    =  40
-           nchan=4
-           nscan=15
-          else if(mwhs) then
-           sensor_id    =  41
-           nchan=5
-           nscan=98
-          endif
+   if (atms) then
+      sensor_id    =  19
+      step   = 1.11_r_kind
+      start  = -52.725_r_kind
+      nchan=22
+      subfgn='NC021203'
+   end if
 
    allocate (tb_inv(nchan))
 
@@ -179,17 +154,33 @@ END TYPE type_rad_FY3
 
    ! 0.0  Open unit to satellite bufr file and read file header
    !--------------------------------------------------------------
-
+   allocate(Fov_save(1:Num_obs))
+   allocate(Time_save(1:Num_Obs))
+   allocate(BT_InOut_save(1:NChanl,1:Num_Obs))
+   allocate(Scanline_save(1:Num_Obs))
+   allocate(lat_save(1:Num_Obs))
+   allocate(lon_save(1:Num_Obs))
+   allocate(satid_save(1:Num_Obs))
+   allocate(obs_time_save(1:Num_Obs))
+   allocate(satzen_save(1:Num_Obs))
+   allocate(satazi_save(1:Num_Obs))
+   allocate(solzen_save(1:Num_Obs))
+   allocate(solazi_save(1:Num_Obs))
+   allocate(srf_height_save(1:Num_Obs))
+   allocate(landsea_mask_save(1:Num_Obs))
+   allocate(date_char_save(1:Num_Obs))
+!
    num_bufr(:)=0
    numbufr=0
+   nnum=1
    if (num_fgat_time>1) then
       do i=1,7
          call da_get_unit(lnbufr)
-         write(filename,fmt='(A,2I1,A)') trim(infile),0,i,'.dat'
+         write(filename,fmt='(A,2I1,A)') trim(infile),0,i,'.bufr'
          open(unit   = lnbufr, FILE   = trim(filename),iostat =  iost, form = 'unformatted', STATUS = 'OLD')
          if (iost == 0) then
             numbufr=numbufr+1
-            num_bufr(numbufr)=i
+	    num_bufr(numbufr)=i
          else
             close (lnbufr)
          end if
@@ -203,12 +194,12 @@ END TYPE type_rad_FY3
 
 bufrfile:  do ibufr=1,numbufr   
    if (num_fgat_time==1) then
-      filename=trim(infile)//'.dat'
+      filename=trim(infile)//'.bufr'
    else
       if ((numbufr ==1) .and. (num_bufr(ibufr) == 0)) then
-         filename=trim(infile)//'.dat'
+         filename=trim(infile)//'.bufr'
       else
-         write(filename,fmt='(A,2I1,A)') trim(infile),0,num_bufr(ibufr),'.dat'   
+         write(filename,fmt='(A,2I1,A)') trim(infile),0,num_bufr(ibufr),'.bufr'   
       end if
    end if
 
@@ -220,78 +211,81 @@ bufrfile:  do ibufr=1,numbufr
    if (iost /= 0) then
       call da_warning(__FILE__,__LINE__, &
          (/"Cannot open file "//infile/))
-      call da_trace_exit("da_read_obs_fy3")
+      call da_trace_exit("da_read_obs_bufratms")
       return
    end if
 
+   call openbf(lnbufr,'IN',lnbufr)
+   call datelen(10)
+   call readmg(lnbufr,subset,idate,iret)
+   if (subset /= subfgn) then
+      call closbf(lnbufr)
+      close(lnbufr)
+      message(1)='The file title does not match the data subset'
+      write(unit=message(2),fmt=*) &
+         'infile=', lnbufr, infile,' subset=', subset, ' subfgn=',subfgn
+      call da_error(__FILE__,__LINE__,message(1:2))
+   end if
 
-   if ( ibufr == 1 ) then
-      allocate (head)
-      !  allocate ( head % tb_inv (1:nchan) )
-      nullify  ( head % next )
-      p => head
-   endif
+   iy=0
+   im=0
+   idd=0
+   ihh=0
+   write(unit=date,fmt='( i10)') idate
+   read(unit=date,fmt='(i4,3i2)') iy,im,idd,ihh
+   write(unit=stdout,fmt=*) &
+      'Bufr file date is ',iy,im,idd,ihh,infile
+
+   ! Loop to read bufr file and assign information to a sequential structure
+   !-------------------------------------------------------------------------
+
+!   if ( ibufr == 1 ) then
+!      allocate (head)
+!      !  allocate ( head % tb_inv (1:nchan) )
+!      nullify  ( head % next )
+!      p => head
+!   endif
 
    if (tovs_start > 1) then
       write (unit=stdout,fmt='(A,I6)') "   Skipping tovs obs before", tovs_start
    end if
+   bufrobs: do while (ireadmg(lnbufr,subset,idate)==0 .and. subset==subfgn .and. nnum <  Num_Obs)
+      do while (ireadsb(lnbufr)==0 .and. nnum <  Num_Obs)
 
-   obs: do while (.true.)
-        do iscan=1,nscan
+         ! 1.0     Read header record and data record
 
-         ! 1.0     Read fy3 data
-         read(lnbufr,end=1000) rad
+         call ufbint(lnbufr,bfr1bhdr,n1bhdr,1,iret,hdr1b)
+         call ufbint(lnbufr,bfr2bhdr,n2bhdr,1,iret,hdr2b)
+         ! Dongpm call ufbrep(lnbufr,data1b8,1,nchan,iret,'TMBR')
+         call ufbrep(lnbufr,data1b8,1,nchan,iret,'TMANT')
+         ! call ufbrep(lnbufr,data1b8,1,1,iret,'BEARAZ')
 
-         num_tovs_file = num_tovs_file + 1
+         ! check if observation outside range
+         ! 1.5     To save the data
 
-         ! 2.0     Extract observation location and other required information
-         !     QC1:  judge if data is in the domain, read next record if not
-         !------------------------------------------------------------------------
-         ! rlat = bfr1bhdr(bufr_lat)
-         ! rlon = bfr1bhdr(bufr_lat)
-         ! if (rlon < 0.0) rlon = rlon+360.0
-
-         info%lat  =  rad%rlat
-
-         info%lon  =  rad%rlon
-         call da_llxy (info, loc, outside, outside_all)
-
-         if (outside_all) cycle
-
-         !  3.0     Extract other information
-         !------------------------------------------------------
-         !  3.1     Extract satellite id and scan position. 
-   
-         platform_id = 23
-         if(infile(5:5)=='a') then
-          satellite_id = 1
-         elseif(infile(5:5)=='b') then
-          satellite_id = 2
-         else
-          write(*,*) 'This character is not coped with presently'
-          return
+         if(abs(bfr2bhdr(1)) <= 90. .and. abs(bfr2bhdr(2)) <= 360.)then
+              lat_save(nnum) = bfr2bhdr(1)
+              lon_save(nnum) = bfr2bhdr(2)
+         elseif(abs(bfr1bhdr(9)) <= 90. .and. abs(bfr1bhdr(10)) <= 360.)then
+              lat_save(nnum) = bfr1bhdr(9)
+              lon_save(nnum) = bfr1bhdr(10)
          endif
-         ifov = rad%iscanpos    
+         ifov = nint(bfr1bhdr(bufr_ifov))
+         Fov_save(nnum) = ifov
+         satid_save(nnum)=nint(bfr1bhdr(bufr_satellite_id))         
+         year   = bfr1bhdr(bufr_year)
+         month  = bfr1bhdr(bufr_month)
+         day    = bfr1bhdr(bufr_day)
+         hour   = bfr1bhdr(bufr_hour)
+         minute = bfr1bhdr(bufr_minute)
+         second = bfr1bhdr(bufr_second)
+!Dongpm for test
+!         year  = 2008
+!         month = 7
+!         day   = 20
+!         hour  = 0
 
-         !  QC2:  limb pixel rejected (not implemented)
-
-         !  3.2     Extract date information.
-    
-         year   = rad%yyyy   
-         month  = rad%mn  
-         day    = rad%dd    
-         hour   = rad%hh   
-         minute = rad%mm 
-         second = rad%ss 
-!dongpm for test
-!          year   = 2008
-!          month  = 8
-!          day    = 5
-!          hour   = 18
-!          minute = 0
-!          second = 0     
-         
-         write(unit=info%date_char, fmt='(i4,a,i2.2,a,i2.2,a,i2.2,a,i2.2,a,i2.2)')  &
+         write(unit=date_char_save(nnum), fmt='(i4,a,i2.2,a,i2.2,a,i2.2,a,i2.2,a,i2.2)')  &
             year, '-', month, '-', day, '_', hour, ':', minute, ':', second
 
          !  QC3: time consistency check with the background date
@@ -305,6 +299,89 @@ bufrfile:  do ibufr=1,numbufr
          end if
 
          call da_get_julian_time(year,month,day,hour,minute,obs_time)
+         obs_time_save(nnum)=obs_time
+         Time_save(nnum)=obs_time_save(nnum)*60.0+second         
+
+         panglr=(start+float(ifov-1)*step)*deg2rad
+         satzen_save(nnum) = bfr1bhdr(bufr_satzen) !*deg2rad   ! local zenith angle
+         satazi_save(nnum) = panglr*rad2deg            ! look angle
+         solzen_save(nnum) = bfr1bhdr(bufr_solzen)              ! solar zenith angle
+         solazi_save(nnum) = bfr1bhdr(bufr_solazi)              !RTTOV9_3
+         srf_height_save(nnum) = bfr1bhdr(bufr_station_height)          ! station height
+         landsea_mask_save(nnum) = nint(bfr1bhdr(bufr_landsea_mask))  ! 0:land ; 1:sea (same as RTTOV)
+         BT_InOut_save(1:nchan,nnum)= data1b8(1:nchan)
+!
+         nnum=nnum+1
+         num_tovs_file = num_tovs_file + 1
+
+      end do
+   end do bufrobs
+
+!
+         call closbf(lnbufr)
+         close(lnbufr)
+
+ end do bufrfile
+!
+         write(*,*) 'The num of observation is:',nnum-1
+!Dongpm         write(*,*) Time_save(20),Fov_save(20), Scanline_save(20),BT_InOut_save(:,20)
+         nnum=nnum-1
+         if(nnum <= 0) then
+          write(*,*) 'READ_ATMS: No ATMS data were read in'
+          return
+         endif
+      call ATMS_Spatial_Average(nnum, NChanl, Fov_save(1:nnum), Time_save(1:nnum), BT_InOut_save(1:NChanl,1:nnum), &
+                                Scanline_save, Error_Status)
+!Dongpm      write(*,*) Time_save(20),Fov_save(20), Scanline_save(20),BT_InOut_save(:,20)
+      if(Error_Status==1) then
+       print*,'Error! Check it!'
+       stop 121212
+      endif         
+!
+!
+
+ obs: do nn=1, nnum
+   if ( nn == 1 ) then
+      allocate (head)
+!      !  allocate ( head % tb_inv (1:nchan) )
+      nullify  ( head % next )
+      p => head
+   endif
+
+         ! 2.0     Extract observation location and other required information
+         !     QC1:  judge if data is in the domain, read next record if not
+         !------------------------------------------------------------------------
+         ! rlat = bfr1bhdr(bufr_lat)
+         ! rlon = bfr1bhdr(bufr_lat)
+         ! if (rlon < 0.0) rlon = rlon+360.0
+!Dongpm
+!Dongpm         info%lat  =  bfr1bhdr(bufr_lat)
+
+!Dongpm         info%lon  =  bfr1bhdr(bufr_lon)
+              info%lat = lat_save(nn)
+              info%lon = lon_save(nn)
+
+         call da_llxy (info, loc, outside, outside_all)
+
+         if (outside_all) cycle
+
+         !  3.0     Extract other information
+         !------------------------------------------------------
+         !  3.1     Extract satellite id and scan position. 
+   
+         if ( satid_save(nn) == 224 ) then ! npp
+            platform_id = 17
+            satellite_id = 0
+         end if
+         ifov = Fov_save(nn) 
+!Dongpm         write(*,*),'ifov',ifov
+
+         !  QC2:  limb pixel rejected (not implemented)
+
+         !  3.2     Extract date information.
+    
+         info%date_char=date_char_save(nn)
+         obs_time=obs_time_save(nn)
 
          if (obs_time < time_slots(0) .or.  &
             obs_time >= time_slots(num_fgat_time)) cycle
@@ -332,17 +409,16 @@ bufrfile:  do ibufr=1,numbufr
 
          ! 3.4 extract satellite and solar angle
    
-            satzen = rad%satzen !*deg2rad   ! local zenith angle
+            satzen = satzen_save(nn)
             satzen = abs(satzen)
- 
             ! if (amsua .and. ifov .le. 15) satzen=-satzen
             ! if (amsub .and. ifov .le. 45) satzen=-satzen
             ! if (hirs3 .and. ifov .le. 28) satzen=-satzen
-!dongpm         if ( satzen > 65.0 ) cycle   ! CRTM has a satzen > 65.0 check
-         satazi = rad%satazi*0.01           ! look angle
+         if ( satzen > 65.0 ) cycle   ! CRTM has a satzen > 65.0 check
+         satazi = satazi_save(nn)            ! look angle
          ! if (satazi<0.0) satazi = satazi+360.0
-         solzen = rad%solzen*0.01              ! solar zenith angle
-         solazi = rad%solazi*0.01              !RTTOV9_3
+         solzen = solzen_save(nn)              ! solar zenith angle
+         solazi = solazi_save(nn)              !RTTOV9_3
 
          num_tovs_global = num_tovs_global + 1
          ptotal(ifgat) = ptotal(ifgat) + 1
@@ -382,8 +458,7 @@ bufrfile:  do ibufr=1,numbufr
             dlat_earth = dlat_earth*deg2rad
             dlon_earth = dlon_earth*deg2rad           
             timedif = 0.0 !2.0_r_kind*abs(tdiff)        ! range:  0 to 6
-!dongpm            terrain = 0.01_r_kind*abs(bfr1bhdr(13))
-            terrain = 0.01_r_kind*abs(rad%satzen)
+            terrain = 0.01_r_kind*abs(bfr1bhdr(13))
             crit = 1.0 !0.01_r_kind+terrain + timedif !+ 10.0_r_kind*float(iskip)
             call map2grids(inst,ifgat,dlat_earth,dlon_earth,crit,iobs,itx,1,itt,iout,iuse)
             if (.not. iuse) then
@@ -392,28 +467,24 @@ bufrfile:  do ibufr=1,numbufr
             end if
          end if
 
+        
          num_tovs_used = num_tovs_used + 1
          nread(inst) = nread(inst) + 1
 
          ! 3.5 extract surface information
-         srf_height = rad%isurf_height          ! station height
+         srf_height = srf_height_save(nn)          ! station height
          if (srf_height < 8888.0 .AND. srf_height > -416.0) then
          else
             srf_height = 0.0
          endif  
 
-!dongpm         landsea_mask = rad%isurf_type  ! 0:land ; 1:sea (same as RTTOV)
-!fy3 isurf_type is just reversed as RTTOV
-         if(rad%isurf_type .eq. 0) then   ! sea
-           landsea_mask = 1
-         elseif(rad%isurf_type .eq. 1) then   !coast 
-           landsea_mask = 0
-         elseif(rad%isurf_type .eq. 2) then   !land
-           landsea_mask = 0
+         landsea_mask = landsea_mask_save(nn)  ! 0:land ; 1:sea (same as RTTOV)
+!Dongpm  There is no landsea-mask in atms bufr data
+         if (landsea_mask <= 1 .AND. landsea_mask >= 0) then
          else
-           landsea_mask = rad%isurf_type
-           print*,'Warning, Unknown surface type!'
+            landsea_mask = 0
          endif
+         
          ! rmask=one                          ! land
          ! if (nint(bfr1bhdr(bufr_landsea_mask))==1) rmask=0.0_r_kind   ! reverse the land/sea mask in bufr
          ! landsea_mask = rmask+.001_r_kind             ! land sea mask
@@ -422,7 +493,7 @@ bufrfile:  do ibufr=1,numbufr
 
          ! 3.6 extract channel bright temperature
    
-         tb_inv(1:nchan) = rad%tbb(1:nchan)
+         tb_inv(1:nchan) = BT_InOut_save(1:nchan,nn)
          do k = 1, nchan
             if ( tb_inv(k) < tbmin .or. tb_inv(k) > tbmax) &
                tb_inv(k) = missing_r
@@ -433,7 +504,6 @@ bufrfile:  do ibufr=1,numbufr
             nread(inst) = nread(inst) - 1
             cycle
          end if
-
          !  4.0   assign information to sequential radiance structure
          !--------------------------------------------------------------------------
          allocate (p % tb_inv (1:nchan))
@@ -454,13 +524,13 @@ bufrfile:  do ibufr=1,numbufr
 
          p => p%next
          nullify (p%next)
-      end do
+!      end do
    end do obs
 
-   call closbf(lnbufr)
-   close(lnbufr)
-1000  continue
-end do bufrfile
+!   call closbf(lnbufr)
+!   close(lnbufr)
+
+!end do bufrfile
 
    if (thinning .and. num_tovs_global > 0 ) then
 
@@ -612,7 +682,22 @@ end do bufrfile
       deallocate ( current % tb_inv )
       deallocate ( current )
    end do
-
+!  deallocate the save data
+   deallocate(Fov_save)
+   deallocate(Time_save)
+   deallocate(BT_InOut_save)
+   deallocate(Scanline_save)
+   deallocate(lat_save)
+   deallocate(lon_save)
+   deallocate(satid_save)
+   deallocate(obs_time_save)
+   deallocate(satzen_save)
+   deallocate(satazi_save)
+   deallocate(solzen_save)
+   deallocate(solazi_save)
+   deallocate(srf_height_save)
+   deallocate(landsea_mask_save)
+   deallocate(date_char_save)
    deallocate ( p )
 
    deallocate (nread)
@@ -626,10 +711,12 @@ end do bufrfile
    !    p => p%next
    ! end do
 
-   call da_trace_exit("da_read_obs_fy3")
-
+   call da_trace_exit("da_read_obs_bufratms")
+#else
+   call da_error(__FILE__,__LINE__,(/"Needs to be compiled with a BUFR library"/)) 
+#endif
   
 
-end subroutine da_read_obs_fy3
+end subroutine da_read_obs_bufratms
 
 

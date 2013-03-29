@@ -201,24 +201,7 @@ subroutine change_date( ccyy, mm, dd, delta )
    integer, intent(inout) :: ccyy, mm, dd
    integer, intent(in)    :: delta
 
-   integer, dimension(12) :: mmday
    integer                :: dday, direction
-
-   mmday = (/31,28,31,30,31,30,31,31,30,31,30,31/)
-
-   mmday(2) = 28
-
-   if (mod(ccyy,4) == 0) then
-      mmday(2) = 29
-
-      if (mod(ccyy,100) == 0) then
-         mmday(2) = 28
-      end if
-
-      if (mod(ccyy,400) == 0) then
-         mmday(2) = 29
-      end if
-   end if
 
    dday = abs(delta)
    direction = sign(1,delta)
@@ -235,8 +218,9 @@ subroutine change_date( ccyy, mm, dd, delta )
             ccyy = ccyy - 1
          end if
 
-         dd = mmday(mm)
-      elseif ( dd > mmday(mm)) then
+         dd = getmmday(ccyy,mm)
+
+      elseif ( dd > getmmday(ccyy,mm)) then
          dd = 1
          mm = mm + 1
          if(mm > 12 ) then
@@ -422,5 +406,22 @@ function validdate(ccyy,mm,dd,hh,nn,ss)
                      ((.not. isleapyear(ccyy)) .and. dd > 28))) &
       validdate = .false.
 end function validdate
+
+function getmmday(ccyy,mm)
+   integer, intent(in) :: ccyy,mm
+
+   integer :: getmmday
+   integer, dimension(12) :: mmday, mmday_ly
+
+   mmday = (/31,28,31,30,31,30,31,31,30,31,30,31/)
+   mmday_ly = (/31,29,31,30,31,30,31,31,30,31,30,31/)
+
+   if(isleapyear(ccyy)) then
+     getmmday=mmday_ly(mm)
+   else
+     getmmday=mmday(mm)
+   endif
+
+end function getmmday
 
 end program da_advance_time

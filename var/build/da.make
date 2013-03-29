@@ -359,10 +359,10 @@ da_wrfvar_top.o :
         fi
 	if $(FGREP) '!$$OMP' $*.f ; then \
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITH OMP ; fi ; \
-	  $(FC) -c $(FCFLAGS) $(OMP) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) -I$(WRFPLUS_DIR)/main -I$(WRFPLUS_DIR)/frame -I$(WRFPLUS_DIR)/share $*.f ; \
+	  $(FC) -c $(FCFLAGS) $(OMP) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) -I$(WRFPLUS_DIR)/main -I$(WRFPLUS_DIR)/frame -I$(WRFPLUS_DIR)/share -I$(NETCDF)/include $*.f ; \
         else \
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITHOUT OMP ; fi ; \
-	  $(FC) -c $(FCFLAGS) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) -I$(WRFPLUS_DIR)/main -I$(WRFPLUS_DIR)/frame -I$(WRFPLUS_DIR)/share $*.f ; \
+	  $(FC) -c $(FCFLAGS) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) -I$(WRFPLUS_DIR)/main -I$(WRFPLUS_DIR)/frame -I$(WRFPLUS_DIR)/share -I$(NETCDF)/include $*.f ; \
         fi
 
 da_radiance1.o \

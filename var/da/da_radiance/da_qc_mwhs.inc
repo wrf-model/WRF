@@ -84,10 +84,14 @@ subroutine da_qc_mwhs (it, i, nchan, ob, iv)
 
          !  d. check cloud/precipitation 
          !-----------------------------------------------------------
-         if (ob%instid(i)%tb(1,n) > 0.0 .and. &
-              ob%instid(i)%tb(2,n) > 0.0) then
-            si = ob%instid(i)%tb(1,n) - ob%instid(i)%tb(2,n)
-            if (si >= 3.0) then
+         if (ob%instid(i)%tb(1,n) > 0.0 ) then
+            si = abs(iv%instid(i)%tb_inv(1,n))
+            if (isflg .eq.0 .AND. si >= 5.0) then
+               iv%instid(i)%tb_qc(:,n) = qc_bad
+               iv%instid(i)%cloud_flag(:,n) = qc_bad
+               if (iv%instid(i)%info%proc_domain(1,n)) &
+                  nrej_si = nrej_si + 1
+            elseif (isflg .gt.0 .AND. si >= 3.0) then
                iv%instid(i)%tb_qc(:,n) = qc_bad
                iv%instid(i)%cloud_flag(:,n) = qc_bad
                if (iv%instid(i)%info%proc_domain(1,n)) &

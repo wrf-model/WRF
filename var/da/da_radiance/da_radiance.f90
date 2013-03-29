@@ -108,6 +108,8 @@ contains
 #include "da_write_filtered_rad.inc"
 #include "da_read_obs_bufrtovs.inc"
 #include "da_read_obs_fy3.inc"
+#include "da_read_obs_bufratms.inc"
+#include "ATMS_Spatial_Average.inc"
 #include "da_read_obs_bufrairs.inc"
 #include "da_read_obs_bufrssmis.inc"
 #include "da_read_obs_bufriasi.inc"

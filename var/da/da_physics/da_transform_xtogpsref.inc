@@ -38,6 +38,7 @@ subroutine da_transform_xtogpsref(grid)
 
             !  3, Refractivity:
             grid%xb%ref(i,j,k)= partone * parttwo
+            grid%xb%reflog(i,j,k)= log(grid%xb%ref(i,j,k))
          end do
       end do
    end do

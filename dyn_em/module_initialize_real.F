@@ -109,7 +109,7 @@ CONTAINS
       LOGICAL :: were_bad
 
       LOGICAL :: stretch_grid, dry_sounding, debug
-      INTEGER IICOUNT
+      INTEGER :: IICOUNT, icount
 
       REAL :: p_top_requested , temp
       INTEGER :: num_metgrid_levels

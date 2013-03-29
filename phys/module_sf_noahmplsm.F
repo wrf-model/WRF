@@ -6572,7 +6572,7 @@ contains
          QINTS = MAX(QINTS, 0.)
          FT = MAX(0.0,(TV - 270.15) / 1.87E5)
          FV = SQRT(UU*UU + VV*VV) / 1.56E5
-         QDRIPS = MAX(0.,CANICE/DT) * (FV+FT)
+         QDRIPS = MAX(0.,CANICE) * (FV+FT)
          QTHROS = (1.0-FVEG) * SNOW + (FVEG * SNOW - QINTS)
       ELSE
          QINTS  = 0.

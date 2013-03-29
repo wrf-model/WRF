@@ -2019,7 +2019,7 @@ end subroutine get_albedo12m_netcdf
         iret = nf_put_att_text(ncid,varid,'long_name',19,'depth of soil layer')
 
          iret = nf_def_var(ncid,  "SOIL_M",  NF_FLOAT, 4, (/dimid_ix,dimid_jx,dimid_soil,dimid_times/), varid)
-            iret = nf_put_att_text(ncid,varid,'units',6,'kg m-2')
+            iret = nf_put_att_text(ncid,varid,'units',7,'m^3/m^3')
             iret = nf_put_att_text(ncid,varid,'description',16,'moisture content')
             iret = nf_put_att_text(ncid,varid,'long_name',26,soilm)
             iret = nf_put_att_text(ncid,varid,'coordinates',5,'x y z')
@@ -2058,7 +2058,7 @@ end subroutine get_albedo12m_netcdf
 
        iret = nf_def_var(ncid,"QSTRMVOLRT",NF_FLOAT, 3, (/dimid_ix,dimid_jx,dimid_times/), varid)
        iret = nf_put_att_text(ncid,varid,'units',2,'mm')
-       iret = nf_put_att_text(ncid,varid,'long_name',12,'channel flux')
+       iret = nf_put_att_text(ncid,varid,'long_name',14,'channel inflow')
        iret = nf_put_att_text(ncid,varid,'coordinates',3,'x y')
        iret = nf_put_att_text(ncid,varid,'grid_mapping',23,'lambert_conformal_conic')
        iret = nf_put_att_real(ncid,varid,'missing_value',NF_REAL,1,-9E15)
@@ -2087,7 +2087,9 @@ end subroutine get_albedo12m_netcdf
 !       iret = nf_def_var(ncid,"SUB_RESID",NF_FLOAT, 3, (/dimid_ix,dimid_jx,dimid_times/), varid)
 
        iret = nf_def_var(ncid,"QBDRYRT",NF_FLOAT, 3, (/dimid_ix,dimid_jx,dimid_times/), varid)
-       iret = nf_put_att_text(ncid,varid,'long_name',12,'QBDRYRT')
+       iret = nf_put_att_text(ncid,varid,'units',2,'mm')
+       iret = nf_put_att_text(ncid,varid,'long_name',70, &
+          'accumulated value of the boundary flux, + into domain, - out of domain')
        iret = nf_put_att_text(ncid,varid,'coordinates',3,'x y')
        iret = nf_put_att_text(ncid,varid,'grid_mapping',23,'lambert_conformal_conic')
        iret = nf_put_att_real(ncid,varid,'missing_value',NF_REAL,1,-9E15)

@@ -72,7 +72,7 @@ endif
 #cms--
 
 #wrf_hydro++
-  if( -d hydro) then
+  if ( -e "hydro/Makefile.comm" ) then
     (cd hydro; make -f Makefile.comm clean)
   endif
 #wrf_hydro--

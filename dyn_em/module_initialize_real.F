@@ -2644,6 +2644,48 @@ endif
 !  Set flag to denote that we are saving original values of HT, MUB, and
 !  PHB for 2-way nesting and cycling.
 
+
+!added for use of trajectories in parallel -kk
+      
+      grid%traj_i = -9999
+      grid%traj_j = -9999
+      grid%traj_k = -9999
+      grid%traj_lat = -9999
+      grid%traj_long = -9999
+    
+  	  if (config_flags%num_traj .gt. 0 .and. config_flags%traj_opt .gt. 0) then
+            icount = 1
+      		DO j = (jde + jds)/2 - 2, (jde + jds)/2 + 2, 1 
+	   	DO i = (ide + ids)/2 - 2, (ide + ids)/2 + 2, 1
+	      		if ( its .le. i    .and. ite .ge. i   .and.  jts .le. j    .and. jte .ge. j ) then
+	      			grid%traj_i(icount) = i
+	      			grid%traj_j(icount) = j
+	      			grid%traj_k(icount) = 10
+	     		        grid%traj_lat(icount) = grid%xlat(i,j)
+	      			grid%traj_long(icount) = grid%xlong(i,j)
+             
+	    	        endif
+
+                grid%traj_i(icount) = wrf_dm_max_real ( grid%traj_i(icount) )
+	        grid%traj_j(icount) = wrf_dm_max_real ( grid%traj_j(icount) )
+	        grid%traj_k(icount) = wrf_dm_max_real ( grid%traj_k(icount) )
+	        grid%traj_lat(icount) = wrf_dm_max_real ( grid%traj_lat(icount) )
+	        grid%traj_long(icount) = wrf_dm_max_real ( grid%traj_long(icount) )
+	      
+	           icount = icount + 1
+	  		if (icount .gt. config_flags%num_traj) then
+				exit
+
+			endif	
+		END DO
+		END DO  
+         endif
+	 
+	 
+	 
+	 
+	 
+
       grid%save_topo_from_real=1
 
       ips = its ; ipe = ite ; jps = jts ; jpe = jte ; kps = kts ; kpe = kte

@@ -1874,7 +1874,7 @@ rconfig   integer process_time_series     derived               1              0
 rconfig   integer grav_settling           namelist,physics      max_domains  0         h    "grav_settling"     "activate gravitationalsettling of fog  0=no, 1=yes"
 
 # For Noah-MP
-rconfig   integer dveg        namelist,noah_mp      1           2         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
+rconfig   integer dveg        namelist,noah_mp      1           4         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
 rconfig   integer opt_crs     namelist,noah_mp      1           1         h    "opt_crs"  "canopy stomatal resistance (1-> Ball-Berry; 2->Jarvis)"   ""
 rconfig   integer opt_btr     namelist,noah_mp      1           1         h    "opt_btr"  "soil moisture factor for stomatal resistance (1-> Noah; 2-> CLM; 3-> SSiB)"   ""
 rconfig   integer opt_run     namelist,noah_mp      1           1         h    "opt_run"  "runoff and groundwater (1->SIMGM; 2->SIMTOP; 3->Schaake96; 4->BATS)"   ""

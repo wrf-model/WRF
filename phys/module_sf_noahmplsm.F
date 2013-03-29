@@ -133,7 +133,7 @@ module noahmp_globals
 ! 3 -> off (use table LAI; calculate FVEG)
 ! 4 -> off (use table LAI; use maximum vegetation fraction)
 
-  INTEGER :: DVEG    != 2   !
+  INTEGER :: DVEG    != 4   !
 
 ! options for canopy stomatal resistance
 ! 1-> Ball-Berry; 2->Jarvis

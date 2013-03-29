@@ -743,7 +743,7 @@ Options for stochastic kinetic-energy backscatter scheme:
 Options for use with the Noah-MP Land Surface Model:
 
 &noah_mp
- dveg                               = 2,        ; Noah-MP Dynamic Vegetation option:
+ dveg                               = 4,        ; Noah-MP Dynamic Vegetation option:
                                                 ;    1 = Off (LAI from table; FVEG = shdfac)
                                                 ;    2 = On
                                                 ;    3 = Off (LAI from table; FVEG calculated)

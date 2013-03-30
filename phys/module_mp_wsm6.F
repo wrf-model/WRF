@@ -732,7 +732,7 @@ CONTAINS
         ENDIF
         endif
         if(fallsum_qg.gt.0.) then
-          tstepgraup(i)  = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.            &
+          tstepgraup(i)  = fallsum_qg*delz(i,kts)/denr*dtcld*1000.            &
                            +tstepgraup(i)
         IF ( PRESENT (graupelncv) .AND. PRESENT (graupel)) THEN
           graupelncv(i,lat) = fallsum_qg*delz(i,kts)/denr*dtcld*1000.          &   

@@ -224,8 +224,9 @@ contains
    implicit none
 !-------------------------------------------------------------------------------
 !
-!   grimscv is devised by introducing an explicit coupling of shallow convection
-!   of eddy-diffusion approach and pal algorithms. this scheme names the grims
+!   this scheme applies an eddy-diffusion approach within the shallow convective 
+!   layer defined by the moist static energy profile and is coupled to the 
+!   ysu pbl properties. this scheme names after the grims
 !   shallow convection scheme since it was developed/evaluated in grims.
 !
 !   coded by song-you hong (yonsei university; ysu) and

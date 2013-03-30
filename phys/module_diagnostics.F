@@ -404,7 +404,7 @@ CONTAINS
 
    IF ( MOD((itimestep - 1), idump) .eq. 0 ) THEN
      WRITE(outstring,*) 'NSSL Diagnostics: Resetting max arrays for domain with dt = ', dt
-     CALL wrf_message ( TRIM(outstring) )
+     CALL wrf_debug ( 10,TRIM(outstring) )
 
 !  !$OMP PARALLEL DO   &
 !  !$OMP PRIVATE ( ij )

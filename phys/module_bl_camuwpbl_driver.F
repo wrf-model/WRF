@@ -927,7 +927,7 @@ CONTAINS
     
     if (masterproc) then
        write(iulog,*)'Initializing vertical diffusion (vertical_diffusion_init)'
-       call wrf_message(iulog)
+       call wrf_debug(1,iulog)
     end if
     
     !! ---------------------------------------------------------------------------------------- !
@@ -949,12 +949,12 @@ CONTAINS
     nbot_eddy  = pver    !! Should always be pver
     
     if( masterproc ) write(iulog,fmt='(a,i3,5x,a,i3)') 'NTOP_EDDY  =', ntop_eddy, 'NBOT_EDDY  =', nbot_eddy
-    call wrf_message(iulog)
+    call wrf_debug(1,iulog)
     
     select case ( eddy_scheme )
     case ( 'diag_TKE' ) 
        if( masterproc ) write(iulog,*) 'vertical_diffusion_init: eddy_diffusivity scheme: UW Moist Turbulence Scheme by Bretherton and Park'
-       call wrf_message(iulog)
+       call wrf_debug(1,iulog)
        !! Check compatibility of eddy and shallow scheme
        if( shallow_scheme .ne. 'UW' ) then
           write(iulog,*) 'ERROR: shallow convection scheme ', shallow_scheme,' is incompatible with eddy scheme ', eddy_scheme
@@ -966,7 +966,7 @@ CONTAINS
             ntop_eddy, nbot_eddy, hypm, karman )
        
        if( masterproc ) write(iulog,*) 'vertical_diffusion: nturb, ntop_eddy, nbot_eddy ', nturb, ntop_eddy, nbot_eddy
-       call wrf_message(iulog)
+       call wrf_debug(1,iulog)
     end select
     
     !!-------------------------------------------------------------------------------------!

@@ -196,25 +196,25 @@ subroutine zm_convi(DT,limcnv_in, no_deep_pbl_in)
 #endif
       write(iulog,*) 'Standard 2-deg CAM5.1 sets tau=3600s and is reduced for the mesoscale model WRF'
 #ifdef WRF_PORT
-      call wrf_message(iulog)
+      call wrf_debug(1,iulog)
 #endif
       write(iulog,*) 'tuning parameters zm_convi: c0_lnd',c0_lnd, ', c0_ocn', c0_ocn 
 #ifdef WRF_PORT
-      call wrf_message(iulog)
+      call wrf_debug(1,iulog)
 #endif
       write(iulog,*) 'tuning parameters zm_convi: ke',ke
 #ifdef WRF_PORT
-      call wrf_message(iulog)
+      call wrf_debug(1,iulog)
 #endif
       write(iulog,*) 'tuning parameters zm_convi: no_deep_pbl',no_deep_pbl
 #ifdef WRF_PORT
-      call wrf_message(iulog)
+      call wrf_debug(1,iulog)
 #endif
    endif
 
    if (masterproc) write(iulog,*)'**** ZM: DILUTE Buoyancy Calculation ****'
 #ifdef WRF_PORT
-      call wrf_message(iulog)
+      call wrf_debug(1,iulog)
 #endif
 
 end subroutine zm_convi

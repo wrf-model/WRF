@@ -325,7 +325,7 @@ end subroutine uwshcu_readnl
     if ( masterproc ) then 
        write(iulog,*) subname//': tuning parameters: rpen=',rpen
 #ifdef WRF_PORT
-       call wrf_message(iulog)
+       call wrf_debug(1,iulog)
 #endif
     endif
 

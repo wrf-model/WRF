@@ -4492,7 +4492,6 @@ END SUBROUTINE decouple
 
 !-------------------------------------------------------------------------------
 
-
 SUBROUTINE zero_tend ( tendency,                     &
                        ids, ide, jds, jde, kds, kde, &
                        ims, ime, jms, jme, kms, kme, &
@@ -4530,6 +4529,43 @@ SUBROUTINE zero_tend ( tendency,                     &
       END SUBROUTINE zero_tend
 
 !-------------------------------------------------------------------------------
+
+SUBROUTINE zero_tend2d( tendency,                     &
+                       ids, ide, jds, jde, kds, kde, &
+                       ims, ime, jms, jme, kms, kme, &
+                       its, ite, jts, jte, kts, kte )
+
+
+   IMPLICIT NONE
+   
+   ! Input data
+   
+   INTEGER ,                                   INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
+                                                                ims, ime, jms, jme, kms, kme, &
+                                                                its, ite, jts, jte, kts, kte
+
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) :: tendency
+
+   ! Local data
+   
+   INTEGER :: i, j, k, itf, jtf, ktf
+
+!<DESCRIPTION>
+!
+!  zero_tend sets the input tendency array to zero.
+!
+!</DESCRIPTION>
+
+      DO j = jts, jte
+      DO i = its, ite
+        tendency(i,j) = 0.
+      ENDDO
+      ENDDO
+
+      END SUBROUTINE zero_tend2d
+
+!-------------------------------------------------------------------------------
+
 ! Sets the an array on the polar v point(s) to zero
 SUBROUTINE zero_pole ( field,                        &
                        ids, ide, jds, jde, kds, kde, &

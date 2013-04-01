@@ -26152,6 +26152,9 @@ contains
     logical ,save :: firstCallC = .true.   ! id 1st occurance of case C
     character(1)  :: case                  ! flags case A, B, or C
     logical       ::  readNewData          ! T <=> read new LB,UB data
+    integer, parameter :: ndaypm(12) = &
+         (/31,28,31,30,31,30,31,31,30,31,30,31/) !days per month
+
     
     character(*),parameter :: subName =  '(interpMonthlyAerdep) '
     character(*),parameter :: F00    = "('(interpMonthlyAerdep) ',4a)"
@@ -26172,7 +26175,7 @@ contains
    !----------------------------------------------------------------------------
    ! find input data LB & UB, time units are elapsed days since 0000-01-01
    !----------------------------------------------------------------------------
-
+    t = (kda-0.5) / ndaypm(kmo)
    CASE = "B"                    ! => interpolate within input time series
    if (t < time( 1) ) CASE = "A" ! => loop over 1st  year of input data
    if (t > time(nt) ) CASE = "C" ! => loop over last year of input data

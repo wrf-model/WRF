@@ -610,9 +610,11 @@ integer myproc
 !-- initialize common variables
      !BSINGH - When all the CAM parameterizations are not executed in WRF,
      !rliq can have undefined behaviour
+ IF (config_flags%cu_physics == CAMZMSCHEME .or. config_flags%shcu_physics == CAMUWSHCUSCHEME ) THEN
      IF(PRESENT(rliq)) THEN
         rliq(:,:) = 0.0 
      ENDIF
+ ENDIF
    IF ( .NOT. moved ) THEN
    DO j=jts,jtf
    DO i=its,itf

@@ -280,6 +280,7 @@ em_real : wrf
                ln -sf ../../run/RRTMG_SW_DATA . ;                      \
                ln -sf ../../run/CAM_ABS_DATA . ;                       \
                ln -sf ../../run/CAM_AEROPT_DATA . ;                    \
+               cp     ../../run/CAMtr_volume_mixing_ratio.RCP4.5 CAMtr_volume_mixing_ratio ;   \
                ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP4.5 . ;   \
                ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 . ;   \
                ln -sf ../../run/CLM_ALB_ICE_DFS_DATA . ;               \
@@ -330,6 +331,7 @@ em_real : wrf
              ln -sf ../../run/RRTMG_SW_DATA . ;                     \
              ln -sf ../../run/CAM_ABS_DATA . ;                      \
              ln -sf ../../run/CAM_AEROPT_DATA . ;                   \
+             cp     ../../run/CAMtr_volume_mixing_ratio.RCP4.5 CAMtr_volume_mixing_ratio ;   \
              ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP4.5 . ;  \
              ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 . ;  \
              ln -sf ../../run/CLM_ALB_ICE_DFS_DATA . ;              \

@@ -671,8 +671,8 @@ fi
 echo "  "
 
 if [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "WRF_PLUS_CORE" -o "$wrf_core" = "4D_DA_CORE" ]; then
-  if [ "`grep '^SFC' configure.wrf | grep -i 'gfortran'`" != "" ]; then
-    echo "WRFDA/WRFPLUS using gfortran needs realsize=8"
+  if [ "`grep '^SFC' configure.wrf | grep -i 'gfortran'`" != "" -o "`grep '^SFC' configure.wrf | grep -i 'frtpx'`" != "" ]; then
+    echo "WRFDA/WRFPLUS using gfortran/frtpx needs realsize=8"
     sed -e '/^PROMOTION.*=/s/#//' configure.wrf > configure.wrf.edit
     /bin/mv configure.wrf.edit configure.wrf
   fi

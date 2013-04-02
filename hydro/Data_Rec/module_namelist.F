@@ -32,7 +32,7 @@ CONTAINS
           character(len=256) :: route_order_f=""
           character(len=256) :: gwbasmskfil =""
           character(len=256) :: gwstrmfil =""
-          character(len=256) :: wrfsi_finegrid_flnm =""
+          character(len=256) :: geo_finegrid_flnm =""
        integer :: nsoil, SOLVEG_INITSWC
        real ZSOIL8(8)
        real out_dt, rst_dt
@@ -40,7 +40,7 @@ CONTAINS
        logical            :: history_output
        integer            :: split_output_count, order_to_write
        integer :: igrid
-       character(len=256) :: wrfsi_static_flnm = ""
+       character(len=256) :: geo_static_flnm = ""
        integer  :: DEEPGWSPIN
 
        integer :: HIRES_OUT
@@ -48,14 +48,14 @@ CONTAINS
 
        namelist /HYDRO_nlist/NSOIL, ZSOIL8,  &
             RESTART_FILE,HISTORY_OUTPUT,SPLIT_OUTPUT_COUNT,IGRID,&
-            wrfsi_static_flnm, &
+            geo_static_flnm, &
             out_dt, rst_dt, &
             HIRES_OUT, &
             DEEPGWSPIN, SOLVEG_INITSWC, &
             RT_OPTION, CHANRTSWCRT, channel_option, &
                     SUBRTSWCRT,OVRTSWCRT,AGGFACTRT, dtrt,dxrt,&
                     GWBASESWCRT,route_topo_f,route_chan_f,route_link_f,route_lake_f, &
-                    route_direction_f,route_order_f,gwbasmskfil, wrfsi_finegrid_flnm,&
+                    route_direction_f,route_order_f,gwbasmskfil, geo_finegrid_flnm,&
                     gwstrmfil,GW_RESTART,RSTRT_SWC,TERADJ_SOLAR, sys_cpl, &
                     order_to_write , rst_typ
 #ifdef MPP_LAND
@@ -90,7 +90,7 @@ CONTAINS
   nlst%HISTORY_OUTPUT = HISTORY_OUTPUT
   nlst%SPLIT_OUTPUT_COUNT = SPLIT_OUTPUT_COUNT
   nlst%IGRID = IGRID
-  nlst%wrfsi_static_flnm = wrfsi_static_flnm
+  nlst%geo_static_flnm = geo_static_flnm
   nlst%out_dt = out_dt
   nlst%rst_dt = rst_dt
   nlst%HIRES_OUT = HIRES_OUT
@@ -144,7 +144,7 @@ CONTAINS
     nlst%route_order_f =  route_order_f
     nlst%gwbasmskfil =  gwbasmskfil
     nlst%gwstrmfil =  gwstrmfil
-    nlst%wrfsi_finegrid_flnm =  wrfsi_finegrid_flnm
+    nlst%geo_finegrid_flnm =  geo_finegrid_flnm
 
 #ifdef MPP_LAND
   if(my_id .eq. IO_id) then
@@ -175,7 +175,7 @@ CONTAINS
     write(6,*) " nlst%route_order_f ",  route_order_f
     write(6,*) " nlst%gwbasmskfil ",  gwbasmskfil
     write(6,*) " nlst%gwstrmfil ",  gwstrmfil
-    write(6,*) " nlst%wrfsi_finegrid_flnm ",  wrfsi_finegrid_flnm
+    write(6,*) " nlst%geo_finegrid_flnm ",  geo_finegrid_flnm
 #endif
 #ifdef MPP_LAND
   endif

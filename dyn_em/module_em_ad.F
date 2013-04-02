@@ -11,7 +11,7 @@ MODULE a_module_em
    USE module_big_step_utilities_em, only: calculate_full, calc_mu_uv
    USE a_module_big_step_utilities_em, only: grid_config_rec_type, a_calculate_full, a_couple_momentum, a_calc_mu_uv, a_calc_ww_cp, a_calc_cq, a_calc_alt, a_calc_php, a_set_tend, a_rhs_ph, &
         a_horizontal_pressure_gradient, a_pg_buoy_w, a_w_damp, a_perturbation_coriolis, a_coriolis, a_curvature, a_horizontal_diffusion, a_horizontal_diffusion_3dmp, a_vertical_diffusion_u, &
-        a_vertical_diffusion_v, a_vertical_diffusion, a_vertical_diffusion_3dmp, a_sixth_order_diffusion, a_rk_rayleigh_damp, a_theta_relaxation, a_vertical_diffusion_mp, a_zero_tend
+        a_vertical_diffusion_v, a_vertical_diffusion, a_vertical_diffusion_3dmp, a_sixth_order_diffusion, a_rk_rayleigh_damp, a_theta_relaxation, a_vertical_diffusion_mp, a_zero_tend, a_zero_tend2d
 
    USE module_state_description, only: param_first_scalar, p_qr, p_qv, p_qc, p_qg, p_qi, p_qs, tiedtkescheme, heldsuarez, positivedef, &
         gdscheme, g3scheme, kfetascheme, monotonic, wenopd_scalar, weno_scalar, weno_mom
@@ -2131,9 +2131,9 @@ CONTAINS
    ENDIF
 
 ! Added by Ning Pan, 2010-07-30
-   CALL a_zero_tend(a_mu_save,ids,ide,jds,jde,1,1,ims,ime,jms,jme,1,1,  &
+   CALL a_zero_tend2d(a_mu_save,ids,ide,jds,jde,1,1,ims,ime,jms,jme,1,1,  &
    its,ite,jts,jte,1,1)
-   CALL a_zero_tend(a_mu_tend,ids,ide,jds,jde,1,1,ims,ime,jms,jme,1,1,  &
+   CALL a_zero_tend2d(a_mu_tend,ids,ide,jds,jde,1,1,ims,ime,jms,jme,1,1,  &
    its,ite,jts,jte,1,1)
    CALL a_zero_tend(a_t_save,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,  &
    kme,its,ite,jts,jte,kts,kte)
@@ -3848,7 +3848,7 @@ SUBROUTINE a_init_zero_tendency(a_ru_tendf, &
                       ims, ime, jms, jme, kms, kme,    &
                       its, ite, jts, jte, kts, kte     )
 
-   CALL a_zero_tend ( a_mu_tendf,            &
+   CALL a_zero_tend2d ( a_mu_tendf,            &
                       ids, ide, jds, jde, kds, kds,    &
                       ims, ime, jms, jme, kms, kms,    &
                       its, ite, jts, jte, kts, kts     )

@@ -253,8 +253,6 @@ CONTAINS
                   e_bio(i,j,p_oli-1)*conv_rho
         chem(i,kts,j,p_xyl)=chem(i,kts,j,p_xyl)+ &
                   e_bio(i,j,p_xyl-1)*conv_rho
-        chem(i,kts,j,p_hc3)=chem(i,kts,j,p_hc3)+ &
-                  e_bio(i,j,p_hc3-1)*conv_rho
         chem(i,kts,j,p_olt)=chem(i,kts,j,p_olt)+ &
                   e_bio(i,j,p_olt-1)*conv_rho
         chem(i,kts,j,p_ket)=chem(i,kts,j,p_ket)+ &
@@ -274,8 +272,22 @@ CONTAINS
 !
 ! RADM only
 !
+        if(p_hc3.gt.1) chem(i,kts,j,p_hc3)=chem(i,kts,j,p_hc3)+ &
+                  e_bio(i,j,p_hc3-1)*conv_rho
         if(p_ol2.gt.1)chem(i,kts,j,p_ol2)=chem(i,kts,j,p_ol2)+ &
                   e_bio(i,j,p_ol2-1)*conv_rho
+
+!BSINGH -  Added for CBMZ
+!
+!CBMZ Only
+!
+        if(p_par .gt. 1) chem(i,kts,j,p_par) = chem(i,kts,j,p_par)  &
+                + (e_bio(i,j,p_ald-1)*0.4        &
+                + e_bio(i,j,p_ket-1)*0.9         &     
+                + e_bio(i,j,p_olt-1)*1.8         &
+                + e_bio(i,j,p_ora2-1)*1.0 )*conv_rho
+        if(p_hc3 .gt. 1) chem(i,kts,j,p_par) = chem(i,kts,j,p_par)  &
+                + e_bio(i,j,p_hc3-1)*4.8*conv_rho
  100  continue
 !     enddo
      CASE (BEIS314)

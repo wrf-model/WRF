@@ -749,10 +749,10 @@ state    real  ZNT              ij      misc        1         -     ir        "Z
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
 state    real  NOAHRES          ij      misc        1         -     rh        "NOAHRES"               "RESIDUAL OF THE NOAH SURFACE ENERGY BUDGET" "W m{-2}"
 
-state    real   tke_pbl         ijk     misc        1         -     r         "TKE_PBL"               "TKE FROM PBL SCHEME"     "m2 s-2"
-state    real   el_pbl          ikj     misc        1         -     -         "EL_PBL"                "MIXING LENGTH FROM PBL SCHEME"     "m"
-state    real   EXCH_H         ikj     misc        1         -      r         "EXCH_H"               "EXCHANGE COEFFICIENTS FOR HEAT"               "m2 s-1"
-state    real   EXCH_M         ikj     misc        1         -      r         "EXCH_M"               "EXCHANGE COEFFICIENTS FOR MOMENTUM"           "m2 s-1"
+state    real   tke_pbl         ijk     misc        1         Z     r         "TKE_PBL"               "TKE FROM PBL SCHEME"     "m2 s-2"
+state    real   el_pbl          ikj     misc        1         Z     -         "EL_PBL"                "MIXING LENGTH FROM PBL SCHEME"     "m"
+state    real   EXCH_H         ikj     misc        1         Z      r         "EXCH_H"               "EXCHANGE COEFFICIENTS FOR HEAT"               "m2 s-1"
+state    real   EXCH_M         ikj     misc        1         Z      r         "EXCH_M"               "EXCHANGE COEFFICIENTS FOR MOMENTUM"           "m2 s-1"
 state   real   THZ0             ij     misc        1         -     irh       "THZ0"        "POT. TEMPERATURE AT TOP OF VISC. SUBLYR"       "K"
 state   real   QZ0              ij     misc        1         -     irh       "QZ0"         "SPECIFIC HUMIDITY AT TOP OF VISC. SUBLYR"      "kg kg-1"
 state   real   UZ0              ij     misc        1         -     irh       "UZ0"         "U WIND COMPONENT AT TOP OF VISC. SUBLYR"       "m s-1"
@@ -811,7 +811,7 @@ state    real   KEEPFR3DFLAG     ilj    misc        1         Z      r         "
 state    real   rc_mf           ikj     misc        1         -      r        "RC_MF"                "RC IN THE GRID COMPUTED BY EDKF"  "kg/kg"
 
 # For Noah-MP
-rconfig   integer dveg        namelist,noah_mp      1            2         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
+rconfig   integer dveg        namelist,noah_mp      1            4         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
 rconfig   integer opt_crs     namelist,noah_mp      1            1         h    "opt_crs"  "canopy stomatal resistance (1-> Ball-Berry; 2->Jarvis)"   ""
 rconfig   integer opt_btr     namelist,noah_mp      1            1         h    "opt_btr"  "soil moisture factor for stomatal resistance (1-> Noah; 2-> CLM; 3-> SSiB)"   ""
 rconfig   integer opt_run     namelist,noah_mp      1            1         h    "opt_run"  "runoff and groundwater (1->SIMGM; 2->SIMTOP; 3->Schaake96; 4->BATS)"   ""

@@ -351,7 +351,7 @@
    CALL domain_setgmtetc( grid, start_of_simulation )
 !tgs
    IF(config_flags%cycling) start_of_simulation = .true.
-  print *,'cycling, start_of_simulation -->',config_flags%cycling, start_of_simulation
+!  print *,'cycling, start_of_simulation -->',config_flags%cycling, start_of_simulation
 
    CALL set_tiles ( grid , grid%imask_nostag, ims, ime, jms, jme, ips, ipe, jps, jpe )
 !

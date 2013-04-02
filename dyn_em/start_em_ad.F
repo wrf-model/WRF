@@ -318,7 +318,7 @@
    CALL domain_setgmtetc( grid, start_of_simulation )
 !tgs
    IF(config_flags%cycling) start_of_simulation = .true.
-  print *,'cycling, start_of_simulation -->',config_flags%cycling, start_of_simulation
+!  print *,'cycling, start_of_simulation -->',config_flags%cycling, start_of_simulation
 
 ! Set the w at the surface.  If this is the start of a forecast, or if this is a cycled run
 ! and the start of that forecast, we define the w field.  However, if this a restart, then 

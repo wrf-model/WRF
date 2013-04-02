@@ -19,11 +19,6 @@
   }
 
   if(-e macros) {system (rm -f macros);}
-  if(-e Makefile) {system "rm -f Makefile" ;}
-
-  system("cp arc/Makefile ."); 
-
-#  if((! (-d "Main")) && (-d "HRLDAS") ) {system "cp -r HRLDAS_cpl Main";}
 
   if($#ARGV == 0) {
      $response = shift(@ARGV) ;

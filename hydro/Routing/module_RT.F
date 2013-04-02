@@ -322,7 +322,7 @@ CONTAINS
 #endif
               IXRT, JXRT, nlst_rt(did)%route_chan_f, nlst_rt(did)%route_link_f, &
               nlst_rt(did)%route_direction_f, nlst_rt(did)%route_lake_f, rt_domain(did)%NLINKS, rt_domain(did)%NLAKES, &
-              CH_NETLNK, nlst_rt(did)%channel_option, nlst_rt(did)%wrfsi_finegrid_flnm)
+              CH_NETLNK, nlst_rt(did)%channel_option, nlst_rt(did)%geo_finegrid_flnm)
 
 #ifdef HYDRO_D
         write(6,*) "before rt_allocate after READ_ROUTEDIM"
@@ -379,7 +379,7 @@ CONTAINS
 #ifdef MPP_LAND
     CALL MPP_READ_ROUTING(rt_domain(did)%IXRT,rt_domain(did)%JXRT,rt_domain(did)%ELRT,rt_domain(did)%CH_NETRT, &
           rt_domain(did)%LKSATFAC,trim(nlst_rt(did)%route_topo_f),&
-          nlst_rt(did)%route_chan_f,nlst_rt(did)%wrfsi_finegrid_flnm,rt_domain(did)%g_IXRT,rt_domain(did)%g_JXRT, &
+          nlst_rt(did)%route_chan_f,nlst_rt(did)%geo_finegrid_flnm,rt_domain(did)%g_IXRT,rt_domain(did)%g_JXRT, &
            rt_domain(did)%OVROUGHRTFAC,rt_domain(did)%RETDEPRTFAC)
 
 #else
@@ -387,12 +387,12 @@ CONTAINS
     write(6,*) "ixrt, jxrt=",rt_domain(did)%ixrt, rt_domain(did)%jxrt
     write(6,*) "route_topo_f", nlst_rt(did)%route_topo_f
     write(6,*) "route_chan_f", nlst_rt(did)%route_chan_f
-    write(6,*) "wrfsi_finegrid_flnm", nlst_rt(did)%wrfsi_finegrid_flnm
+    write(6,*) "geo_finegrid_flnm", nlst_rt(did)%geo_finegrid_flnm
 #endif
     
     CALL READ_ROUTING_old(rt_domain(did)%IXRT,rt_domain(did)%JXRT,rt_domain(did)%ELRT,rt_domain(did)%CH_NETRT, &
           rt_domain(did)%LKSATFAC,nlst_rt(did)%route_topo_f,nlst_rt(did)%route_chan_f, &
-          nlst_rt(did)%wrfsi_finegrid_flnm, rt_domain(did)%OVROUGHRTFAC,rt_domain(did)%RETDEPRTFAC )
+          nlst_rt(did)%geo_finegrid_flnm, rt_domain(did)%OVROUGHRTFAC,rt_domain(did)%RETDEPRTFAC )
 #endif
 
 
@@ -413,7 +413,7 @@ CONTAINS
                rt_domain(did)%CHANXI, rt_domain(did)%CHANYJ, &
                rt_domain(did)%CHLAT, rt_domain(did)%CHLON, nlst_rt(did)%channel_option,&
                rt_domain(did)%latval, rt_domain(did)%lonval,&
-               rt_domain(did)%STRMFRXSTPTS,nlst_rt(did)%wrfsi_finegrid_flnm, rt_domain(did)%g_IXRT,rt_domain(did)%g_JXRT)
+               rt_domain(did)%STRMFRXSTPTS,nlst_rt(did)%geo_finegrid_flnm, rt_domain(did)%g_IXRT,rt_domain(did)%g_JXRT)
 
           call MPP_CHROUTING_CONF(rt_domain(did)%g_ixrt,rt_domain(did)%g_jxrt,rt_domain(did)%ixrt,rt_domain(did)%jxrt, rt_domain(did)%NLAKES,rt_domain(did)%NLINKS,&
                rt_domain(did)%lake_mskrt, rt_domain(did)%lake_index,rt_domain(did)%link_location,rt_domain(did)%HRZAREA,rt_domain(did)%LAKEMAXH,&
@@ -439,7 +439,7 @@ CONTAINS
                rt_domain(did)%CHANXI, rt_domain(did)%CHANYJ, &
                rt_domain(did)%CHLAT, rt_domain(did)%CHLON, nlst_rt(did)%channel_option, &
                rt_domain(did)%LATVAL,rt_domain(did)%LONVAL, &
-               rt_domain(did)%STRMFRXSTPTS,nlst_rt(did)%wrfsi_finegrid_flnm)
+               rt_domain(did)%STRMFRXSTPTS,nlst_rt(did)%geo_finegrid_flnm)
 #endif
     endif
   END IF

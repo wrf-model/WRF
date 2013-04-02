@@ -224,13 +224,19 @@ contains
    implicit none
 !-------------------------------------------------------------------------------
 !
-! grimscv is devised by introducing an explicit coupling of shallow
-! convection of eddy-diffusion approach and pbl algorithms
+!   this scheme applies an eddy-diffusion approach within the shallow convective 
+!   layer defined by the moist static energy profile and is coupled to the 
+!   ysu pbl properties. this scheme names after the grims
+!   shallow convection scheme since it was developed/evaluated in grims.
 !
-! coded by song-you hong (yonsei university) winter 2012
+!   coded by song-you hong (yonsei university; ysu) and
+!   implemented by jihyeon jang, junhong lee (ysu), and wei wang (ncar)
+!       winter 2012
 !
 ! references:
-! hong et al. (2013), asia-pacific j. atmos. sci.
+!   hong et al. (2013, manuscript in preparation)
+!   hong et al. (2013, asia-pacific j. atmos. sci.) the global/regional 
+!       integrated model system (grims)        
 !
 !-------------------------------------------------------------------------------
 !

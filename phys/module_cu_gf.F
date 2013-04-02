@@ -4536,7 +4536,7 @@ CONTAINS
                entup=0.
                detup=0.
             endif
-            totmas=subin-subdown+detup-entup+ &
+            totmas=subin-subdown+detup-entup  &
              -entupk+detupk+zuo(i,k+1)-zuo(i,k)
 !               print *,'*********************',k,totmas
 !              write(0,123)k,subin+zuo(i,k+1),subdown-zuo(i,k),detup,entup, &

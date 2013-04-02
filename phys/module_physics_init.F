@@ -610,9 +610,11 @@ integer myproc
 !-- initialize common variables
      !BSINGH - When all the CAM parameterizations are not executed in WRF,
      !rliq can have undefined behaviour
+ IF (config_flags%cu_physics == CAMZMSCHEME .or. config_flags%shcu_physics == CAMUWSHCUSCHEME ) THEN
      IF(PRESENT(rliq)) THEN
         rliq(:,:) = 0.0 
      ENDIF
+ ENDIF
    IF ( .NOT. moved ) THEN
    DO j=jts,jtf
    DO i=its,itf
@@ -2225,7 +2227,8 @@ integer myproc
                      its,ite, jts,jte, kts,kte                     )
 
       CASE (PXLSMSCHEME)
-          if(config_flags%num_land_cat .ne. 24) CALL wrf_error_fatal &
+          if(config_flags%num_land_cat .ne. 20 .and. config_flags%num_land_cat .ne. 24 .and. &
+             config_flags%num_land_cat .ne. 40 .and. config_flags%num_land_cat .ne. 50 ) CALL wrf_error_fatal &
             ( 'module_physics_init: 24 cat USGS must be used with PX LSM option' )
           CALL LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,  &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,        &
@@ -2726,7 +2729,7 @@ integer myproc
 
      CASE (CAMZMSCHEME)
           IF (PRESENT(RQCNCUTEN)) THEN
-          CALL zm_conv_init(rucuten, rvcuten, rthcuten, rqvcuten,       &
+          CALL zm_conv_init(DT, rucuten, rvcuten, rthcuten, rqvcuten,       &
                       rqccuten, rqicuten, rqcncuten, rqincuten,         &
                       p_qc, p_qi, p_qnc, p_qni, param_first_scalar,     &
                       restart,                                          &

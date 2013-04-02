@@ -292,7 +292,7 @@ init_modules.o :
 da_bias_verif.o da_bias_scan.o da_bias_sele.o da_bias_airmass.o da_rad_diags.o \
 da_tune_obs_hollingsworth1.o da_tune_obs_hollingsworth2.o da_tune_obs_desroziers.o \
 da_verif_obs_control.o da_verif_obs_init.o da_verif_grid_control.o da_verif_obs.o \
-da_verif_grid.o da_update_bc.o da_update_bc_ad.o:
+da_verif_grid.o da_update_bc.o da_update_bc_ad.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) -I$(NETCDF)/include $*.b  > $*.f
@@ -332,6 +332,13 @@ da_etkf.o da_tools.o :
 	$(FC) -c $(FCFLAGS) $(PROMOTION) $*.f
 
 da_4dvar.o :
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          ${LN} ${WRFPLUS_DIR}/dyn_em/module_big_step_utilities_em.mod . ; \
+          ${LN} ${WRFPLUS_DIR}/dyn_em/g_module_big_step_utilities_em.mod . ; \
+          ${LN} ${WRFPLUS_DIR}/dyn_em/a_module_big_step_utilities_em.mod . ; \
+          ${LN} ${WRFPLUS_DIR}/main/module_wrf_top.mod . ; \
+          ${LN} ${WRFPLUS_DIR}/share/mediation_pertmod_io.mod . ; \
+        fi
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $*.b  > $*.f
@@ -352,10 +359,10 @@ da_wrfvar_top.o :
         fi
 	if $(FGREP) '!$$OMP' $*.f ; then \
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITH OMP ; fi ; \
-	  $(FC) -c $(FCFLAGS) $(OMP) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) -I$(WRFPLUS_DIR)/main -I$(WRFPLUS_DIR)/frame -I$(WRFPLUS_DIR)/share $*.f ; \
+	  $(FC) -c $(FCFLAGS) $(OMP) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) -I$(WRFPLUS_DIR)/main -I$(WRFPLUS_DIR)/frame -I$(WRFPLUS_DIR)/share -I$(NETCDF)/include $*.f ; \
         else \
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITHOUT OMP ; fi ; \
-	  $(FC) -c $(FCFLAGS) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) -I$(WRFPLUS_DIR)/main -I$(WRFPLUS_DIR)/frame -I$(WRFPLUS_DIR)/share $*.f ; \
+	  $(FC) -c $(FCFLAGS) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) -I$(WRFPLUS_DIR)/main -I$(WRFPLUS_DIR)/frame -I$(WRFPLUS_DIR)/share -I$(NETCDF)/include $*.f ; \
         fi
 
 da_radiance1.o \

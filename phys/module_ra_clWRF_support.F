@@ -149,7 +149,7 @@ CONTAINS
              idata = 1
              DO WHILE (istatus == 0)
                 READ(UNIT=iunit, FMT='(I4, 1x, F8.3,1x, 4(F10.3,1x))', IOSTAT=istatus)    &
-                     yrdata(idata), mondata(idata), co2r(idata), n2or(idata), ch4r(idata), cfc11r(idata), &
+                     yrdata(idata), co2r(idata), n2or(idata), ch4r(idata), cfc11r(idata), &
                      cfc12r(idata)
                 IF ( wrf_dm_on_monitor() ) THEN
                    WRITE(message,*)'CLWRF reading...: istatus:',istatus,' idata:',idata,   &

@@ -635,6 +635,7 @@ Namelist variables for controlling the adaptive time step option:
                                                   24 - for USGS (default); 20 for MODIS
                                                   28 - for USGS if including lake category
                                                   21 - for MODIS if including lake category
+						  40 - for NCLD
  num_soil_cat                        = 16,      ; number of soil categories in input data
 
  pxlsm_smois_init(max_dom)           = 1        ; PXLSM Soil moisture initialization option 
@@ -716,26 +717,31 @@ Namelist variables for controlling the adaptive time step option:
  ua_phys                             = .false.  ; Option to activate UA Noah changes: a different snow-cover physics in
                                                   Noah, aimed particularly toward improving treatment of snow as it relates 
                                                   to the vegetation canopy. Also uses new columns added in VEGPARM.TBL
+ do_radar_ref			     = 0, 	; 1 = allows radar reflectivity to be computed using mp-scheme-specific
+ 						  parameters.  Currently works for mp_physics = 2,4,6,7,8,10,14,16
+				
 
 Options for lightning parameterization:
 
- lightning_option                    Lightning parameterization option to allow flash rate prediction without chemistry
+ lightning_option (max_dom)                     ; Lightning parameterization option to allow flash rate prediction without chemistry
                                      = 0        ; off
-                                     = 1        ; PR92 based on maximum w, redistributes flashes within dBZ > 20 (for convection resolved runs)
-                                     = 2        ; PR92 based on 20 dBZ top, redistributes flashes within dBZ > 20 (for convection resolved runs)
+                                     = 1        ; PR92 based on maximum w, redistributes flashes within dBZ > 20 (for convection resolved runs; must also use 
+				     		  do_radar_ref = 1, and mp_physics = 2,4,6,7,8,10,14, or 16)
+                                     = 2        ; PR92 based on 20 dBZ top, redistributes flashes within dBZ > 20 (for convection resolved runs; must also use 
+				     		  do_radar_ref = 1, and mp_physics = 2,4,6,7,8,10,14, or 16)
                                      = 11       ; PR92 based on level of neutral buoyancy from convective parameterization (for scales
-                                                  where a CPS is used, intended for use at 10 < dx < 50 km
- lightning_dt                        = 0.       ; time interval (seconds) for calling lightning parameterization. Default uses model time step
- lightning_start_seconds             = 0.       ; Start time for calling lightning parameterization. Recommends at least 10 minutes for spin-up.
- flashrate_factor                    = 1.0      ; Factor to adjust the predicted number of flashes. Recommends 1.0 for lightning_option = 11
+                                                  where a CPS is used, intended for use at 10 < dx < 50 km; must also use cu_physics = 5 or 93)
+ lightning_dt  (max_dom)             = 0.       ; time interval (seconds) for calling lightning parameterization. Default uses model time step
+ lightning_start_seconds (max_dom)   = 0.       ; Start time for calling lightning parameterization. Recommends at least 10 minutes for spin-up.
+ flashrate_factor  (max_dom)         = 1.0      ; Factor to adjust the predicted number of flashes. Recommends 1.0 for lightning_option = 11
                                                   between dx=10 and 50 km. Manual tuning recommended for all other options independently
                                                   for each nest.
- cellcount_method                               ; Method for counting storm cells. Used by CRM options (lightning_options=1,2).
+ cellcount_method (max_dom)                     ; Method for counting storm cells. Used by CRM options (lightning_options=1,2).
                                      = 0,       ; model determines method used
                                      = 1,       ; tile-wide, appropriate for large domains
                                      = 2,       ; domain-wide, appropriate for sing-storm domains
- cldtop_adjustment                   = 0.       ; Adjustment from LNB in km. Used by lightning_option=11. Default is 0, but recommends 2 km
- iccg_method                                    ; IC:CG partitioning method (IC: intra-cloud; CG: cloud-to-ground)
+ cldtop_adjustment (max_dom)         = 0.       ; Adjustment from LNB in km. Used by lightning_option=11. Default is 0, but recommends 2 km
+ iccg_method (max_dom)                          ; IC:CG partitioning method (IC: intra-cloud; CG: cloud-to-ground)
                                      = 0        ; Default method depending on lightning option, currently all options use iccg_method=2 by default
                                      = 1        ; Constant everywhere, set with namelist options iccg_prescribed (num|den)#, default is 0./1. (all CG).
                                      = 2        ; Coarsely prescribed 1995-1999 NLDN/OTD climatology based on Boccippio et al. (2001)

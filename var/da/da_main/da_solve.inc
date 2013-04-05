@@ -146,26 +146,6 @@
          ' Resetting ntmax = 0 for analysis_type = randomcv' 
    end if
 
-   if ( max_ext_its > 1 .and. print_detail_outerloop ) then
-      do it = 1, max_ext_its - 1
-         write(outerloop,'(i2.2)') it
-         inquire(file=trim('wrfvar_output_'//outerloop), exist=ex)
-         if ( .not. ex ) then 
-            write(unit=message(1),fmt='(a)') 'A template of wrfvar_output_'//outerloop//" should be copied from fg. "
-            call da_message(message(1:1))
-            write(unit=message(1),fmt='(a)') 'wrfvar_output_'//outerloop//" does not exist "
-            call da_error(__FILE__,__LINE__,message(1:1))
-         end if
-      end do
-   end if
-   inquire(file=trim('wrfvar_output'), exist=ex)
-   if ( .not. ex ) then 
-      write(unit=message(1),fmt='(a)') "A template of wrfvar_output should be copied from fg. "
-      call da_message(message(1:1))
-      write(unit=message(1),fmt='(a)') "wrfvar_output does not exist "
-      call da_error(__FILE__,__LINE__,message(1:1))
-   end if
-
    !---------------------------------------------------------------------------
    ! [2.0] Initialise wrfvar parameters:
    !---------------------------------------------------------------------------

@@ -14,6 +14,10 @@ module da_wrfvar_io
    use da_reporting, only : da_error, message, da_message
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace
 
+   use, intrinsic :: iso_c_binding,                       &
+                     ONLY: c_int32_t, C_CHAR, C_NULL_CHAR
+
+
 #ifdef VAR4D
    use da_4dvar, only : model_grid
 #endif

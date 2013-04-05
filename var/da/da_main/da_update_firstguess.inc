@@ -3,8 +3,11 @@ subroutine da_update_firstguess(grid, out_filename)
 !---------------------------------------------------------------------------
 !  Purpose: Only replce the fields touched by WRFDA, other than re-generate 
 !           whole wrfvar_output from the scratch.
-!           Requires the fg being copied to out_filename beforehand.
 !
+!  Update  :   jliu@ucar.edu Apr 1, 2013
+!              Minor change for Purpose
+!              Added copy file mods instead of copying file outside 
+!              Requires Fortran 2003 standard compiler
 !  Creator :   Junmei Ban, Mar 14, 2013
 !         
 !  The following WRF fields are modified:
@@ -25,6 +28,13 @@ subroutine da_update_firstguess(grid, out_filename)
   use module_state_description, only : p_qv
 
   implicit none
+
+  INTERFACE
+    integer(c_int32_t) function copyfile(ifile, ofile) bind(c)
+      import :: c_int32_t, C_CHAR
+      CHARACTER(KIND=C_CHAR), DIMENSION(*), intent(in) :: ifile, ofile
+    END function copyfile
+  END INTERFACE
 
   include 'netcdf.inc'
 
@@ -75,10 +85,15 @@ subroutine da_update_firstguess(grid, out_filename)
      file_name = 'wrfvar_output'
   end if
 
+  ierr = copyfile('fg'//C_NULL_CHAR, trim(file_name)//C_NULL_CHAR)
+  if ( ierr /= 0 ) then
+    write(unit=message(1),fmt='(a)') "Failed to create "//trim(file_name)
+    call da_error(__FILE__,__LINE__,message(1:1))
+  endif
   call ext_ncd_open_for_update( trim(file_name), 0, 0, "", dh1, Status)
   if ( Status /= 0 )then
-!    write(6,*) 'Netcdf error opening file:', trim(file_name)
-     call da_error(__FILE__,__LINE__,(/"please copy wrfinput_d01 to wrfvar_output"/))
+     write(unit=message(1),fmt='(a)') "Failed to open "//trim(file_name)
+     call da_error(__FILE__,__LINE__,message(1:1))
   endif
      
 !-------------  get date info

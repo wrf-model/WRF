@@ -9,7 +9,12 @@ SUBROUTINE wrf_shutdown
 #ifdef DM_PARALLEL
     CALL wrf_dm_shutdown
 #else
+# ifdef NO_IEEE_MODULE
     STOP
+# else
+    CALL IEEE_SET_FLAG(IEEE_INEXACT,.false.)
+    STOP
+# endif
 #endif
 END SUBROUTINE wrf_shutdown
 

@@ -26,6 +26,7 @@ MODULE module_initialize_real
                           ,HALO_EM_INIT_3_sub   &
                           ,HALO_EM_INIT_4_sub   &
                           ,HALO_EM_INIT_5_sub   &
+                          ,HALO_EM_INIT_6_sub   &
                           ,HALO_EM_VINTERP_UV_1_sub
 #endif
 
@@ -2645,45 +2646,94 @@ endif
 !  PHB for 2-way nesting and cycling.
 
 
-!added for use of trajectories in parallel -kk
+      !  Template for initializing trajectories.  The i, j, and k starting locations
+      !  are specified.  Right now, a small plane in the middle of the domain is 
+      !  selected.
       
-      grid%traj_i = -9999
-      grid%traj_j = -9999
-      grid%traj_k = -9999
-      grid%traj_lat = -9999
+      grid%traj_i    = -9999
+      grid%traj_j    = -9999
+      grid%traj_k    = -9999
+      grid%traj_lat  = -9999
       grid%traj_long = -9999
     
-  	  if (config_flags%num_traj .gt. 0 .and. config_flags%traj_opt .gt. 0) then
-            icount = 1
-      		DO j = (jde + jds)/2 - 2, (jde + jds)/2 + 2, 1 
-	   	DO i = (ide + ids)/2 - 2, (ide + ids)/2 + 2, 1
-	      		if ( its .le. i    .and. ite .ge. i   .and.  jts .le. j    .and. jte .ge. j ) then
-	      			grid%traj_i(icount) = i
-	      			grid%traj_j(icount) = j
-	      			grid%traj_k(icount) = 10
-	     		        grid%traj_lat(icount) = grid%xlat(i,j)
-	      			grid%traj_long(icount) = grid%xlong(i,j)
-             
-	    	        endif
+      IF (config_flags%num_traj .gt. 0 .and. config_flags%traj_opt .gt. 0) THEN
+         icount = 1
+         DO j = (jde + jds)/2 - 2, (jde + jds)/2 + 2, 1 
+            DO i = (ide + ids)/2 - 2, (ide + ids)/2 + 2, 1
+               IF ( its .LE. i    .and. ite .GE. i   .and.  jts .LE. j    .and. jte .GE. j ) THEN
+                  grid%traj_i   (icount) = i
+                  grid%traj_j   (icount) = j
+                  grid%traj_k   (icount) = 10
+                  grid%traj_lat (icount) = grid%xlat(i,j)
+                  grid%traj_long(icount) = grid%xlong(i,j)
+               END IF
+         
+               grid%traj_i   (icount) = wrf_dm_max_real ( grid%traj_i   (icount) )
+               grid%traj_j   (icount) = wrf_dm_max_real ( grid%traj_j   (icount) )
+               grid%traj_k   (icount) = wrf_dm_max_real ( grid%traj_k   (icount) )
+               grid%traj_lat (icount) = wrf_dm_max_real ( grid%traj_lat (icount) )
+               grid%traj_long(icount) = wrf_dm_max_real ( grid%traj_long(icount) )
+         	      
+               icount = icount + 1
+               IF (icount .GT. config_flags%num_traj) THEN
+                  EXIT
+               END IF
+            END DO
+         END DO  
+      END IF
 
-                grid%traj_i(icount) = wrf_dm_max_real ( grid%traj_i(icount) )
-	        grid%traj_j(icount) = wrf_dm_max_real ( grid%traj_j(icount) )
-	        grid%traj_k(icount) = wrf_dm_max_real ( grid%traj_k(icount) )
-	        grid%traj_lat(icount) = wrf_dm_max_real ( grid%traj_lat(icount) )
-	        grid%traj_long(icount) = wrf_dm_max_real ( grid%traj_long(icount) )
-	      
-	           icount = icount + 1
-	  		if (icount .gt. config_flags%num_traj) then
-				exit
+      !  Simple initialization for 3d ocean.  
 
-			endif	
-		END DO
-		END DO  
-         endif
-	 
-	 
-	 
-	 
+      IF ( config_flags%sf_ocean_physics .EQ. PWP3DSCHEME ) THEN
+
+         !  From a profile of user defined temps, depths, and salinity - we 
+         !  construct a 3d ocean.  Because this is a 1d profile, domains that
+         !  have varied ocean characteristics that deviate should significantly from 
+         !  the provided initial state will probably give poor results.
+
+         DO k = 1,model_config_rec%ocean_levels
+            grid%om_depth(:,k,:) = model_config_rec%ocean_z(k)
+            grid%om_tmp  (:,k,:) = model_config_rec%ocean_t(k)
+            grid%om_s    (:,k,:) = model_config_rec%ocean_s(k)
+            grid%om_tini (:,k,:) = model_config_rec%ocean_t(k)
+            grid%om_sini (:,k,:) = model_config_rec%ocean_s(k)
+            grid%om_u    (:,k,:) = 0.
+            grid%om_v    (:,k,:) = 0.
+         END DO
+
+         !  Apparently, the mixed layer is 5 m.
+
+         grid%om_ml = 5    
+
+         !  Keep lat, lon info for the ocean model.
+
+         grid%om_lon = grid%xlong
+         grid%om_lat = grid%xlat
+
+         !  If we have access to a non-horizontally isotropic SST, let's 
+         !  use that as a better starting point for the ocean temp.  Note that
+         !  we assume if this is an ice point that implies this is a land point
+         !  for WRF.  If it is a land point, then we do not have any ocean underneath.
+
+         IF ( ( grid%landmask(i,j) .LT. 0.5 ) .AND. ( flag_sst .EQ. 1 ) ) THEN
+            DO j = jts, min(jde-1,jte)
+               DO k = 1,model_config_rec%ocean_levels
+                  DO i = its, min(ide-1,ite)
+                     grid%om_tmp(i,k,j) = grid%sst(i,j) - ( grid%om_tini(i,1,j) - grid%om_tini(i,k,j) )
+                  END DO
+               END DO
+            END DO
+   
+            DO j = jts, min(jde-1,jte)
+               DO k = 1,model_config_rec%ocean_levels
+                  DO i = its, min(ide-1,ite)
+                     grid%om_tini(i,k,j) = grid%om_tmp(i,k,j)
+                  END DO
+               END DO
+            END DO
+         END IF
+
+      END IF
 	 
 
       grid%save_topo_from_real=1
@@ -2695,6 +2745,9 @@ endif
 #   include "HALO_EM_INIT_3.inc"
 #   include "HALO_EM_INIT_4.inc"
 #   include "HALO_EM_INIT_5.inc"
+      IF ( config_flags%sf_ocean_physics .EQ. PWP3DSCHEME ) THEN
+#   include "HALO_EM_INIT_6.inc"
+      END IF
 #endif
 
       RETURN

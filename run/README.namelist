@@ -262,6 +262,34 @@ a known first several layers, then generates equi-height spaced levels up to the
                                        0.150, 0.127, 0.106, 0.088, 0.070,
                                        0.055, 0.040, 0.026, 0.013, 0.000
 
+Variables specifically for the 3d ocean initialization with a single profile. Set
+the ocean physics option to #2.  Specify a number of levels.  For each of those levels,
+provide a depth (m) below the surface.  At each depth provide a temperature (K) and
+a salinity (ppt).  The default is not to use the 3d ocean.  Even when the 3d ocean is
+activated, the user must specify a reasonable ocean.  Currently, this is the only way
+available to run the 3d ocean option.
+
+ &physics
+ sf_ocean_physics                    = 0 (default), 1 (mixed layer model), 2 (3d ocean)
+
+ &domains
+ ocean_levels                        = 30,
+ ocean_z                             =        5,        15,        25,        35,        45,        55,
+                                             65,        75,        85,        95,       105,       115,
+                                            125,       135,       145,       155,       165,       175,
+                                            185,       195,       210,       230,       250,       270,
+                                            290,       310,       330,       350,       370,       390
+ ocean_t                             = 302.3493,  302.3493,  302.3493,  302.1055,  301.9763,  301.6818,
+                                       301.2220,  300.7531,  300.1200,  299.4778,  298.7443,  297.9194,
+                                       297.0883,  296.1443,  295.1941,  294.1979,  293.1558,  292.1136,
+                                       291.0714,  290.0293,  288.7377,  287.1967,  285.6557,  284.8503,
+                                       284.0450,  283.4316,  283.0102,  282.5888,  282.1674,  281.7461
+ ocean_s                             =  34.0127,   34.0127,   34.0127,   34.3217,   34.2624,   34.2632,
+                                        34.3240,   34.3824,   34.3980,   34.4113,   34.4220,   34.4303,
+                                        34.6173,   34.6409,   34.6535,   34.6550,   34.6565,   34.6527,
+                                        34.6490,   34.6446,   34.6396,   34.6347,   34.6297,   34.6247,
+                                        34.6490,   34.6446,   34.6396,   34.6347,   34.6297,   34.6247
+
 Namelist variables for controling the specified moving nest: 
                    Note that this moving nest option needs to be activated at the compile time by adding -DMOVE_NESTS
                    to the ARCHFLAGS. The maximum number of moves, max_moves, is set to 50 

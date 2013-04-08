@@ -8,13 +8,7 @@ MODULE module_machine
    !  Machine characteristics and utilities here.
 
    ! Tile strategy defined constants
-   INTEGER, PARAMETER :: TILE_X = 1, TILE_Y = 2, TILE_XY = 3
-
-   TYPE machine_type
-      INTEGER                       :: tile_strategy
-   END TYPE machine_type
-
-   TYPE (machine_type) machine_info
+   INTEGER, PARAMETER :: TILE_NONE = 0, TILE_X = 1, TILE_Y = 2, TILE_XY = 3
 
    CONTAINS
 
@@ -138,7 +132,7 @@ MODULE module_machine
    END SUBROUTINE least_aspect
 
    SUBROUTINE init_module_machine
-      machine_info%tile_strategy = TILE_Y
+     RETURN
    END SUBROUTINE init_module_machine
 
 END MODULE module_machine

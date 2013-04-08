@@ -135,7 +135,7 @@ integer::oops1,oops2
       LOGICAL , PARAMETER :: want_full_levels = .TRUE.
       LOGICAL , PARAMETER :: want_half_levels = .FALSE.
 
-      CHARACTER (LEN=256) :: a_message
+      CHARACTER (LEN=256) :: a_message, mminlu
       REAL :: max_mf
     
       !  Excluded middle.
@@ -1538,6 +1538,28 @@ integer::oops1,oops2
       ELSE
           grid%ifndicedepth = 0
       ENDIF
+
+      !  Only certain land surface schemes are able to work with the NLCD data.
+
+      CALL nl_get_mminlu ( grid%id , mminlu )
+      write(a_message,*) 'MMINLU = ',trim(mminlu)
+      CALL wrf_debug ( 1 , a_message )
+      write(a_message,*) 'sf_surface_physics = ',model_config_rec%sf_surface_physics(grid%id)
+      CALL wrf_debug ( 1, a_message )
+
+      probs_with_nlcd : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
+
+         CASE ( RUCLSMSCHEME, NOAHMPSCHEME, CLMSCHEME, SSIBSCHEME )
+            IF ( TRIM(mminlu) .EQ. 'NLCD40' ) THEN
+               CALL wrf_message ( 'NLCD40 data may be used with SLABSCHEME, LSMSCHEME, PXLSMSCHEME' )
+               CALL wrf_message ( 'Re-run geogrid and choose a different land cover source, or select a different sf_surface_physics option' )
+               CALL wrf_error_fatal ( 'NLCD40 data may not be used with: RUCLSMSCHEME, NOAHMPSCHEME, CLMSCHEME, SSIBSCHEME' )
+            END IF
+
+         CASE ( SLABSCHEME, LSMSCHEME, PXLSMSCHEME )
+               CALL wrf_debug ( 1, 'NLCD40 being used with an OK scheme' )
+
+      END SELECT probs_with_nlcd
 
       !  We require input data for the various LSM schemes.
 

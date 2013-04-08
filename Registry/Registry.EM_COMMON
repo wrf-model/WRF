@@ -924,7 +924,7 @@ state    real   acfrcv           ij     misc        1         -      -
 state integer   ncfrcv           ij     misc        1         -      -
 
 # new rad variables
-state    real   o3rad           ikj     misc        1         -      irhdf=(p2c)      "o3rad"    "RADIATION 3D OZONE" "ppmv"
+state    real   o3rad           ikj     misc        1         -      irdf=(p2c)      "o3rad"    "RADIATION 3D OZONE" "ppmv"
 
 # incoming optical depth derived from aerosol data
 state  real   aerodm    i{lsa}jm{ty}    misc        1    -   -     -
@@ -938,7 +938,7 @@ state  real   dust      ikjf            aerod       1    -   df=(p2c)     "dust"
 state  real   bcarbon   ikjf            aerod       1    -   df=(p2c)     "bcarbon"         "black carbon"            -
 state  real   sulfate   ikjf            aerod       1    -   df=(p2c)     "sulfate"         "sulfate"                 -
 state  real   upperaer  ikjf            aerod       1    -   df=(p2c)     "upperaer"        "volcanic ash"            -
-state  real   aodtot    ij              misc        1    -      rh        "aodtot"          "TOTAL AEROSOL OPTICAL DEPTH"  -
+state  real   aodtot    ij              misc        1    -      r         "aodtot"          "TOTAL AEROSOL OPTICAL DEPTH"  -
 
 # cam radiation variables
 state  real    -       i{ls}jf ozmixm      1    -   -     -

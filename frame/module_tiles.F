@@ -228,7 +228,7 @@ CONTAINS
 #endif
      CHARACTER*255              :: mess
      CHARACTER*255              :: envval
-     INTEGER                   :: tnum_tiles
+     INTEGER                   :: tnum_tiles, istat
      LOGICAL                   :: verbose ! whether to output tile info messages
 
      data_ordering : SELECT CASE ( model_data_order )
@@ -277,8 +277,8 @@ CONTAINS
 #else
          num_tiles = 1
 #endif
-         CALL get_environment_variable("WRF_NUM_TILES",envval)
-         IF ( envval .NE. "" ) THEN
+         CALL get_environment_variable("WRF_NUM_TILES",envval, status=istat)
+         IF ( envval .NE. "" .and. istat .eq. 0) THEN
            READ (envval,*) tnum_tiles
            IF ( tnum_tiles .GT. 0 ) THEN
              num_tiles=tnum_tiles
@@ -295,8 +295,8 @@ CONTAINS
        CALL nl_get_numtiles_x( 1, num_tiles_x )
        CALL nl_get_numtiles_y( 1, num_tiles_y )
        IF ( num_tiles_x .EQ. 0 ) THEN
-         CALL get_environment_variable ("WRF_NUM_TILES_X",envval)
-         IF ( envval .NE. "" ) THEN
+         CALL get_environment_variable ("WRF_NUM_TILES_X",envval, status=istat)
+         IF ( envval .NE. "" .and. istat .eq. 0) THEN
            READ (envval,*) tnum_tiles
            IF ( tnum_tiles .GT. 0 ) THEN
              num_tiles_x=tnum_tiles
@@ -307,8 +307,8 @@ CONTAINS
        ENDIF
 
        IF ( num_tiles_y .EQ. 0 ) THEN
-         CALL get_environment_variable ("WRF_NUM_TILES_Y",envval)
-         IF ( envval .NE. "" ) THEN
+         CALL get_environment_variable ("WRF_NUM_TILES_Y",envval, status=istat)
+         IF ( envval .NE. "" .and. istat .eq. 0) THEN
            READ (envval,*) tnum_tiles
            IF ( tnum_tiles .GT. 0 ) THEN
              num_tiles_y=tnum_tiles
@@ -319,8 +319,8 @@ CONTAINS
        ENDIF
 
        IF ( num_tiles_inc .EQ. 0 ) THEN
-         CALL get_environment_variable ("WRF_NUM_TILES_INC",envval)
-         IF ( envval .NE. "" ) THEN
+         CALL get_environment_variable ("WRF_NUM_TILES_INC",envval, status=istat)
+         IF ( envval .NE. "" .and. istat .eq. 0) THEN
            READ (envval,*) tnum_tiles
            IF ( tnum_tiles .GT. 0 ) THEN
              num_tiles_inc=tnum_tiles

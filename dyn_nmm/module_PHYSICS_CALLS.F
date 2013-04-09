@@ -1266,6 +1266,7 @@
       CALL SURFACE_DRIVER(                                              &
      &           HYDRO_dt=-1.0,  SFCHEADRT=SFCHEADRT,                   &
      &           INFXSRT=INFXSRT,  SOLDRAIN=SOLDRAIN,                   &
+     &           JULIAN_IN=grid%julian,                                 &
      &           ACSNOM=ACSNOM,ACSNOW=ACSNOW,AKHS=AKHS,AKMS=AKMS        &
      &          ,ALBEDO=ALBEDO,BR=BR,CANWAT=CMC,CHKLOWQ=CHKLOWQ         &
      &          ,DT=DT,DX=DX,DZ8W=DZ,DZS=DZSOIL,GLW=RLW_DN_SFC          &

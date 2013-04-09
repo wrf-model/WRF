@@ -372,16 +372,16 @@ OMPCC           =       -openmp -fpp -auto
 SFC             =       ifort -mmic
 SCC             =       icc -mmic
 CCOMP           =       icc -mmic
-DM_FC           =       mpif90 -f90=$(SFC)
-DM_CC           =       mpicc -cc=$(SCC)
+DM_FC           =       mpiifort -mmic
+DM_CC           =       mpicc -mmic
 FC              =       $(DM_FC)
 CC              =       $(DM_CC)
 LD              =       $(FC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION       =       -i4
-ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DINTEL_ALIGN64 -DCHUNK=16 -DXEON_OPTIMIZED_WSM5 -DOPTIMIZE_CFL_TEST -DFSEEKO64_OK -DINTEL_YSU_KLUDGE -DWRF_USE_CLM
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DCHUNK=16 -DXEON_OPTIMIZED_WSM5 -DOPTIMIZE_CFL_TEST -DFSEEKO64_OK -DINTEL_YSU_KLUDGE -DWRF_USE_CLM
 OPTNOSIMD       =
-OPTKNC          =       -mP2OPT_hlo_fusion=F -mGLOB_default_function_attrs="knc_stream_store_controls=2" -fimf-precision=low -fimf-domain-exclusion=15 -mP2OPT_hpo_vec_check_dp_trip=F
+OPTKNC          =       -fimf-precision=low -fimf-domain-exclusion=15 -opt-assume-safe-padding -opt-streaming-stores always -opt-streaming-cache-evict=0 -mP2OPT_hlo_pref_use_outer_strategy=F
 CFLAGS_LOCAL    =       -w -O3 $(OPTKNC)
 LDFLAGS_LOCAL   =       $(OPTKNC)
 CPLUSPLUSLIB    =       
@@ -423,7 +423,7 @@ CC              =       $(DM_CC)
 LD              =       $(FC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION       =       -i4
-ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DINTEL_ALIGN64 -DCHUNK=60 -DXEON_OPTIMIZED_WSM5 -DOPTIMIZE_CFL_TEST -DWRF_USE_CLM
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DINTEL_ALIGN64 -DCHUNK=64 -DXEON_OPTIMIZED_WSM5 -DOPTIMIZE_CFL_TEST -DWRF_USE_CLM
 OPTNOSIMD       =
 OPTAVX          =       -xAVX
 CFLAGS_LOCAL    =       -w -O3 $(OPTAVX)

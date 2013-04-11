@@ -643,6 +643,10 @@ fseek_test :
 nc4_test:
 	@cd tools ; /bin/rm -f nc4_test.{exe,nc,o} ; $(SCC) -o nc4_test.exe nc4_test.c -I$(NETCDF)/include -L$(NETCDF)/lib -lnetcdf $(NETCDF4_DEP_LIB) ; cd ..
 
+# rule used by configure to test if Fortran 2003 IEEE signaling is available
+fortran_2003_test:
+	@cd tools ; /bin/rm -f fortran_2003_test.{exe,o} ; $(SFC) -o fortran_2003_test.exe fortran_2003_test.F ; cd ..
+
 ### 3.b.  sub-rule to build the expimental core
 
 # uncomment the two lines after exp_core for EXP

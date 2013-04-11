@@ -1058,7 +1058,7 @@ The following are for observation nudging:
  h_sca_adv_order (max_dom)           = 5,       ; horizontal scalar advection order
  v_sca_adv_order (max_dom)           = 3,       ; vertical scalar advection order
 
- momentum_adv_opt                    = 1,       ; advection options for momentum variables: 
+ momentum_adv_opt(max_dom)           = 1,       ; advection options for momentum variables: 
                                                   1=original, 3 = 5th-order WENO
                                                 ; advection options for scalar variables: 0=simple, 1=positive definite,
                                                   2=monotonic, 3=5th order WENO, 4=5th-order WENO with positive definite filter

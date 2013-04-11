@@ -1,0 +1,233 @@
+#EQUATIONS
+{ 1.} NO2 + hv =  NO + O              :  8.89E-3*SUN ;
+{ 2.} O {+ O2 + M} = O3               :  ARR2(1.4E+3, 1175.0) ;
+{ 3.} O3 + NO = NO2                   :  ARR2(1.8E-12, -1370.0) ;
+{ 4.} O + NO2 = NO                    :  9.3E-12 ;
+{ 5.} O + NO2   = NO3                 :  ARR2(1.6E-13, 687.0) ;
+{ 6.} O + NO   =  NO2                 :  ARR2(2.2E-13, 602.0) ;
+{ 7.} O3 + NO2 =  NO3                 :  ARR2(1.2E-13, -2450.0) ;
+{ 8.} O3 + hv = O                     :  4.0E-2*RCONST(1) ;
+{ 9.} O3 + hv = O1D                   :  2.8E-3*RCONST(1) ;
+{10.} O1D   = O                       :  ARR2(1.9E+8, 390.0)  ;
+
+{11.} O1D + H2O = 2OH                 :  2.2E-10 ;
+{12.} O3 + OH = HO2                   :  ARR2(1.6E-12, -940.0) ;
+{13.} O3 + HO2 = OH                   :  ARR2(1.4E-14, -580.0) ;
+{14.} NO3 + hv = 0.89 NO2 + 0.89 O 
+                 + 0.11 NO            :  15.5*RCONST(1)  ;
+{15.} NO3 + NO = 2 NO2                :  ARR2(1.3E-11, 250.0) ;
+{16.} NO3 + NO2 = NO + NO2            :  ARR2(2.5E-14, -1230.0) ;
+{17.} NO3 + NO2   =  N2O5             :  ARR2(5.3E-13, 256.0) ;
+{18.} N2O5 + H2O = 2 HNO3             :  1.3E-21 ;
+{19.} N2O5   =  NO3 + NO2             :  ARR2(3.5E+14, -10897.0) ;
+{20.} 2 NO  =  2 NO2                  :  ARR2(1.8E-20, 530.0) ;
+
+
+{21.} NO + NO2 + H2O = 2 HONO         :  4.4E-40 ;
+{22.} OH + NO   =  HONO               :  ARR2(4.5E-13, 806.0) ;
+{23.} HONO + hv =  OH + NO            :  0.17*RCONST(1) ;
+{24.} OH + HONO =  NO2                :  6.6E-12 ;
+{25.} 2 HONO = NO + NO2               :  1.0E-20 ;
+{26.} OH + NO2   =  HNO3              :  ARR2(1.0E-12, 713.0) ;
+{27.} OH + HNO3   =  NO3              :  ARR2(5.1E-15, 1000.0) ;
+{28.} HO2 + NO = OH + NO2             :  ARR2(3.7E-12, 240.0) ;
+{29.} HO2 + NO2   =  PNA              :  ARR2(1.2E-13, 749.0) ;
+{30.} PNA   = HO2 + NO2               :  ARR2(4.8E+13, -10121.0) ;
+
+{31.} OH + PNA = NO2                  :  ARR2(1.3E-12, 380.0) ;
+{32.} 2 HO2 = H2O2                    :  ARR2(5.9E-14, 1150.0)  ;
+{33.} 2 HO2 + H2O = H2O2              :  ARR2(2.2E-38, 5800.0) ;
+{34.} H2O2 + hv = 2 OH                :  7.1E-4*RCONST(1) ;
+{35.} OH + H2O2 = HO2                 :  ARR2(3.1E-12, -187.0) ;
+{36.} OH + CO  = HO2                  :  2.2E-13 ;
+{37.} HCHO + OH  =  HO2 + CO    :  1.0E-11 ;
+{38.} HCHO + hv {+ 2 O2} = 2 HO2 + CO :  3.2E-3*RCONST(1) ;
+{39.} HCHO +  hv = CO                 :  4.2E-3*RCONST(1) ;
+{40.} HCHO + O = OH + HO2 + CO        :  ARR2(3.0E-11, -1550.0) ;
+
+{41.} HCHO + NO3  = HNO3 
+                        + HO2 + CO    :  6.3E-16 ;
+{42.} ALD2 + O  =  C2O3 + OH          :  ARR2(1.2E-11, -986.0) ;
+{43.} ALD2 + OH = C2O3                :  ARR2(7.0E-12, 250.0) ;
+{44.} ALD2 + NO3  = C2O3 + HNO3 :  2.5E-15  ;
+{45.} ALD2 + hv {+ 2 O2} = HCHO + XO2 
+                         + CO + 2 HO2 :  4.5E-4*RCONST(1) ;
+{46.} C2O3 + NO  = HCHO + XO2 
+                       + HO2 + NO2    :  ARR2(5.4E-12, 250.0) ;
+{47.} C2O3 + NO2 = PAN                :  ARR2(8.0E-20, 5500.0) ;
+{48.} PAN = C2O3 + NO2                :  ARR2(9.4E+16, -14000.0) ;
+{49.} 2 C2O3 = 2 HCHO + 2 XO2 + 2 HO2 : 2.0E-12  ;
+{50.} C2O3 + HO2 = 0.79 HCHO 
+   + 0.79 XO2 + 0.79 HO2 + 0.79 OH    :  6.5E-12 ;
+
+{51.} OH = HCHO + XO2 + HO2           :  ARR2(1.1E+2, -1710.0) ;
+{52.} PAR + OH =  0.87 XO2 + 0.13 XO2N 
+                  + 0.11 HO2 + 0.11 ALD2
+                  + 0.76 ROR - 0.11 PAR        :  8.1E-13 ;
+{53.} ROR = 1.1 ALD2 + 0.96 XO2 + 0.94 HO2 + 0.04 XO2N
+            + 0.02 ROR - 2.10 PAR     :  ARR2(1.0E+15, -8000.0) ;
+{54.} ROR = HO2                       :  1.6E+3 ;
+{55.} ROR + NO2 =  PROD               : 1.5E-11  ;
+{56.} O + OLE = 0.63 ALD2 + 0.38 HO2 
+                + 0.28 XO2 + 0.3 CO
+                + 0.2 HCHO + 0.02 XO2N 
+                + 0.22 PAR + 0.2 OH   :  ARR2(1.2E-11, -324.0) ;
+{57.} OH + OLE = HCHO + ALD2 + XO2 
+                 + HO2 - PAR          :  ARR2(5.2E-12, 504.0) ;
+{58.} O3 + OLE = 0.5 ALD2 + 0.74 HCHO 
+                 + 0.33 CO + 0.44 HO2 
+                 + 0.22 XO2
+                 + 0.1 OH - PAR       :   ARR2(1.4E-14, -2105.0)  ;
+{59.} NO3 + OLE = 0.91 XO2 + HCHO 
+                  + ALD2 + 0.09 XO2N                          
+                  + NO2 - PAR         :  7.7E-15 ;
+{60.} O + ETH = HCHO + 0.7 XO2 + CO + 1.7 HO2 + 0.3 OH    :  ARR2(1.0E-11, -792.0) ;
+
+{61.} OH + ETH = XO2 + 1.56 HCHO + HO2 + 0.22 ALD2        :  ARR2(2.0E-12, 411.0)  ;
+{62.} O3 + ETH = HCHO + 0.42 CO + 0.12 HO2                :  ARR2(1.3E-14, -2633.0) ;
+{63.} OH + TOL = 0.08 XO2 + 0.36 CRES 
+                 + 0.44 HO2 + 0.56 TO2                    :  ARR2(2.1E-12, 322.0) ;
+{64.} TO2 + NO =  0.9 NO2 + 0.9 OPEN + 0.9 HO2            :  8.1E-12 ;
+{65.} TO2 = HO2 + CRES                                    :  4.2 ;
+{66.} OH + CRES = 0.4 CRO + 0.6 XO2 + 0.6 HO2 + 0.3 OPEN  :  4.1E-11  ;
+{67.} NO3 + CRES = CRO + HNO3                             :  2.2E-11 ;
+{68.} CRO + NO2 = PROD                                    :  1.4E-11 ;
+{69.} OH + XYL = 0.7 HO2 + 0.5 XO2 + 0.2 CRES + 0.8 MGLY
+                 + 1.10 PAR + 0.3 TO2                     :  ARR2(1.7E-11, 116.0) ;
+{70.} OH + OPEN = XO2 + C2O3 + 2 HO2 + 2 CO + HCHO        :  3.0E-11 ;
+
+{71.} OPEN + hv = C2O3 + CO + HO2                         :  6.0E-3*RCONST(1) ;
+{72.} O3 + OPEN = 0.03 ALD2 + 0.62 C2O3 
+                  + 0.7 HCHO + 0.03 XO2 + 0.69 CO 
+                  + 0.08 OH + 0.76 HO2 + 0.2 MGLY         : ARR2(5.4E-17, -500.0)  ;
+{73.} OH + MGLY =  XO2 + C2O3                             : 1.7E-11 ;
+{74.} MGLY + hv = C2O3 + CO + HO2                         : 1.86E-2*RCONST(1)  ;
+{75.} O + ISOP =  0.6 HO2 + 0.8 ALD2 + 0.55 OLE + 0.5 XO2
+                  + 0.5 CO + 0.45 ETH + 0.9 PAR           :   1.8E-11  ;
+{76.} OH + ISOP = HCHO + XO2 + 0.67 HO2 
+                  + 0.4 MGLY + 0.2 C2O3
+                  + ETH + 0.2 ALD2 + 0.13 XO2N            :   9.6E-11  ;
+{77.} O3 + ISOP = HCHO + 0.4 ALD2 + 0.55 ETH + 0.2 MGLY 
+                  + 0.06 CO + 0.1 PAR + 0.44 HO2 + 0.1 OH :  1.2E-17 ;
+{78.} NO3 + ISOP =  XO2N                                  :  3.2E-13 ;
+{79.} XO2 + NO = NO2                                      :  8.1E-12 ;
+{80.} 2 XO2 =  PROD                                       :  ARR2(1.7E-14, 1300.0) ;
+{81.} XO2N + NO =  PROD                                   :  6.8E-13 ;
+ 
+{62/RG71}      SO2  + OH  = HO2  + PROD  :           1.0870e-12 ;
+{63/RG72}      SO2  = PROD  :                        1.3833e-06 ;
+
+{Methane and Methylperoxyl Radical Reactions}
+{}  CH4 + OH = CH3O2      :                        ARR2(2.4E-12,-1710.0) ;
+{}  CH3O2 + NO = CH3O + NO2 :                      ARR2(4.15E-12,180.0)  ;
+{}  CH3O2 + HO2 = PROD :                           ARR2(1.7E-13,1000.0) ;
+{}  2 CH3O2 = 0.76 CH3O + 0.62 HCHO + PROD :       ARR2(1.62E-13, 220.0) ;
+{}  CH3O + O2 = HCHO + HO2 :                       ARR2(7.12E-14,-1080.0);
+
+{82/RE21}      HO2  = HO2aq :                        3.3000e-01 ;
+{83/RE22}      HO2aq = HO2 :                         2.2492e+01 ;   
+{84/RE31}      H2O2  = H2O2aq  :                     3.3000e-01 ;     
+{85/RE32}      H2O2aq = H2O2  :                      6.0790e-01 ;     
+{86/RE41}      O3  = O3aq :                          1.0500e-02 ;        
+{87/RE42}      O3aq = O3  :                          1.3012e+05 ;       
+{88/RE51}      HCHO  = HCHOaq :                      2.4000e-01 ; 
+{89/RE52}      HCHOaq = HCHO :                       5.1931e+00 ;  
+{90/RE61}      HCOOH  = HCOOHaq  :                   2.4000e-01 ;       
+{91/RE62}      HCOOHaq = HCOOH :                     8.8422e+00 ;        
+{92/RE71}      ROOH  = CH3O2Haq :                    2.4000e-01 ;    
+{93/RE72}      CH3O2Haq = ROOH  :                    1.4871e+02 ;   
+{94/RE81}      XO2  = CH3O2aq :                      2.4000e-01 ;   
+{95/RE82}      CH3O2aq = XO2  :                      1.6358e+01 ;  
+{96/RE91}      HNO3  = HNO3aq  :                     2.4000e-01 ;  
+{97/RE92}      HNO3aq = HNO3  :                      1.5579e-01 ;  
+{98/RE101}     NO3  = NO3aq  :                       2.4000e-01 ;  
+{99/RE102}     NO3aq = NO3 :                         2.1811e+03 ;   
+{100/RE111}    NH3  = NH3aq :                        2.4000e-01 ; 
+{101/RE112}    NH3aq = NH3  :                        4.3622e+02 ;
+{102/RE121}    SO2  = SO2aq :                        2.4000e-01 ;         
+{103/RE122}    SO2aq = SO2 :                         2.6599e+04 ;         
+{104/RE131}    OH  = OHaq :                          2.4000e-01 ;         
+{105/RE132}    OHaq = OH  :                          3.6351e+00 ;        
+{106/RE141}    N2O5  = HNO3aq + HNO3aq :             7.5000e-02 ;
+{107/RE151}    H2Oaq = HPLUSaq + OHMINaq   :         2.3636e-05 ; 
+{108/RE152}    HPLUSaq + OHMINaq = H2Oaq  :          7.1958e-04 ; 
+{109/RE171}    HCOOHaq = HPLUSaq + HCOOMINaq  :      8.6000e+06 ;   
+{110/RE172}    HPLUSaq + HCOOMINaq = HCOOHaq  :      2.6016e-04 ;  
+{111/RE181}    HO2aq = HPLUSaq + O2MINaq :           1.6000e+05 ;      
+{112/RE182}    HPLUSaq + O2MINaq = HO2aq  :          5.5353e-05 ;    
+{113/RE191}    SO2aq = HSO3MINaq + HPLUSaq :         3.6000e+06 ;  
+{114/RE192}    HSO3MINaq + HPLUSaq = SO2aq  :        1.6606e-06 ;
+{115/RE201}    HSO3MINaq = SO32MINaq + HPLUSaq  :    1.0000e+04 ;   
+{116/RE202}    SO32MINaq + HPLUSaq = HSO3MINaq  :    8.3029e-04 ;  
+{117/RE211}    NH3aq = NH4aq + OHMINaq  :            6.0000e+05 ;     
+{118/RE212}    NH4aq + OHMINaq = NH3aq :             1.8820e-04 ;     
+{119/RE221}    HNO3aq = NO3MINaq + HPLUSaq :         2.2000e+09 ;    
+{120/RE222}    NO3MINaq + HPLUSaq = HNO3aq  :        7.7494e-07 ;  
+
+{121/RW01}      FE3PLUSaq = FE2PLUSaq + OHaq :       0.4583E-03  ; 
+{122/RW02}      H2O2aq = OHaq + OHaq :               0.7219E-05 ;         
+{123/RW03 }     HCHOaq + OHaq = HCOOHaq 
+                      + HO2aq + H2Oaq :              0.1107E-04  ;   
+{124/RW05}      HCOOMINaq + OHaq = O2MINaq + CO2aq : 0.1771E-04  ;   
+{125/RW06}      HCOOHaq + OHaq = O2MINaq 
+                    + HPLUSaq + CO2aq :              0.7196E-06  ; 
+{126/RW07}      HSO3MINaq + OHaq = SO42MINaq + HPLUSaq :  0.2491E-04  ;  
+{127/RW08}      HMSAaq + OHaq = SO42MINaq 
+                      + HCHOaq + HPLUSaq :            0.5535E-05  ;
+{128/RW09}      FE2PLUSaq + OHaq = FE3PLUSaq
+                      + OHMINaq:                      0.2380E-05  ;
+{129/RW10}      H2O2aq + OHaq = H2Oaq + HO2aq  :      0.1495E-06  ;      
+{130/RW11}      O3aq + OHaq = HO2aq  :                0.1661E-04  ;             
+
+{131/RW13}      O2MINaq + FE2PLUSaq = FE3PLUSaq
+                     + H2O2aq + OHMINaq + OHMINaq :   0.5535E-07  ;
+{132/RW14}      O2MINaq + FE3PLUSaq = FE2PLUSaq :     0.8303E-06  ;                      
+{133/RW15}      O2MINaq + CUPLUSaq = CU2PLUSaq 
+                  + H2O2aq + OHMINaq + OHMINaq :      0.4982E-04 ;
+{134/RW16}      O2MINaq + CU2PLUSaq = CUPLUSaq  :     0.4428E-04 ;                    
+{135/RW17}      O2MINaq + O3aq = OHaq + OHMINaq  :    0.8303E-05 ;                    
+{136/RW18}      HO2aq   + FE2PLUSaq = FE3PLUSaq 
+                    + H2O2aq + OHMINaq   :            0.6642E-08  ;   
+{137/RW19}      HO2aq + FE3PLUSaq = FE2PLUSaq + HPLUSaq : 0.5535E-10  ;              
+{138/RW20}      HO2aq + CUPLUSaq = CU2PLUSaq 
+                    + H2O2aq + OHMINaq  :             0.5535E-05 ;   
+{139/RW21}      HO2aq + CU2PLUSaq = CUPLUSaq + HPLUSaq :  0.2768E-06  ;              
+{140/RW22}      H2O2aq  + HSO3MINaq = SO42MINaq 
+                    + H2Oaq + HPLUSaq  :              0.5535E-14  ;    
+{141/RW23}      H2O2aq  + FE2PLUSaq = FE3PLUSaq 
+                   + OHaq + OHMINaq :                 0.5535E-14  ; 
+{142/RW24}      H2O2aq  + CUPLUSaq = CU2PLUSaq 
+                   + OHaq + OHMINaq  :                0.2214E-08  ;
+{143/RW25}      CUPLUSaq = CU2PLUSaq + O2MINaq :      0.2500E-03  ;            
+{144/RW26}      CUPLUSaq + FE3PLUSaq = CU2PLUSaq 
+                   + FE2PLUSaq :                      0.1661E-06 ;
+{145/RW27}      CUPLUSaq + O3aq = CU2PLUSaq
+                   + OHaq + OHMINaq :                 0.5535E-07  ;
+{146/RW28}      FE2PLUSaq + O3aq = FE3PLUSaq 
+                   + OHaq + OHMINaq :                 0.4539E-08  ;
+{147/RW29}      FE3PLUSaq + HSO3MINaq = FE2PLUSaq 
+                      + SO42MINaq + HPLUSaq  :        0.5535E-14  ;
+{148/RW30}      O3aq + HSO3MINaq = SO42MINaq + HPLUSaq  : 0.1716E-08  ;              
+{149/RW31}      O3aq + SO32MINaq = SO42MINaq  :       0.5535E-05  ;                 
+{150/RW32}      O3aq = H2O2aq  :                      0.2355E-04  ;          
+{151/RW34}      HO2aq + O2MINaq = H2O2aq + OHMINaq :  0.5535E-06  ;            
+{152/RW35}      HO2aq + HO2aq = H2O2aq  :             0.4594E-08  ;                    
+{153/RW39}      SO32MINaq + HCHOaq = HMSAaq 
+                     + OHMINaq  :                     0.1384E-06  ;      
+{154/RW40}      HMSAaq + OHMINaq = SO32MINaq 
+                     + HCHOaq :                       0.1993E-10  ;      
+{155/RW42}      CH3O2aq + O2MINaq = CH3O2Haq 
+                     + OHMINaq  :                     0.2768E-06  ;   
+{156/RW43}      CH3O2Haq + OHaq = CH3O2aq + H2Oaq  :  0.1495E-06  ;       
+{157/RW44}      CH3O2Haq + OHaq = HCHOaq + OHaq  :    0.1052E-06  ; 
+
+{CO2 reactions}
+CO2aq = HPLUSaq + HCO3MINaq :  1.0E-4 ;
+HPLUSaq + HCO3MINaq = CO2aq :  1.2178E-12 ;
+
+{CO2aq + H2Oaq = H2CO3aq :                    0*3.0E-2 ;
+H2CO3aq = CO2aq + H2Oaq :                     0*1.19E+1 ;
+H2CO3aq = HPLUSaq + HCO3MINaq :             0*8.0E+6  ;
+HPLUSaq + HCO3MINaq = H2CO3aq :             0*4.7E+10 ;
+HPLUSaq + HCO3MINaq  = CO2aq :              0*1.5E+4 ; 
+CO2aq  + H2Oaq = HPLUSaq + HCO3MINaq :      0*1.0E-2 ;} 

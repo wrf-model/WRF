@@ -1,0 +1,28 @@
+#!/usr/bin/perl
+#input argument: Compiler/System sequential/parallel
+#This is called by WRF configuration only.
+if($#ARGV ne 1) {
+  print("Error: No such configuration for Hydro \n");
+  exit(1);
+}
+         $x = lc(shift(@ARGV));
+         $paropt = lc(shift(@ARGV));
+
+         print("Configure option for Hydro : $x  $paropt \n");  
+          if($x =~ "pgi") {
+              if($paropt eq 'serial') { system("./configure 1");}
+              else {system("./configure 2");}
+          }
+          if($x =~ "aix") {
+              if($paropt eq 'serial') { system("./configure 3");}
+              else {system("./configure 4");}
+          }
+          if($x =~ "gfortran") {
+              if($paropt eq 'serial') { system("./configure 5");}
+              else {system("./configure 6");}
+          }
+          if($x =~ "ifort") {
+              if($paropt eq 'serial') { system("./configure 7");}
+              else {system("./configure 8");}
+          }
+

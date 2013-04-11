@@ -1,0 +1,20 @@
+.IGNORE:
+ifeq ($(HYDRO_D),1)
+HYDRO_D = -DHYDRO_D
+else
+HYDRO_D =   
+endif
+
+
+RMD		=	rm -f
+COMPILER90=	mpif90
+FORMAT_FREE = -FR
+BYTESWAPIO = -convert big_endian
+F90FLAGS  =      -w -c -ftz -align all -fno-alias -fp-model precise $(FORMAT_FREE) $(BYTESWAPIO)
+MODFLAG	=	-I./ -I ../../MPP -I ../MPP -I ../mod
+LDFLAGS	=	
+CPP	=       cpp
+CPPFLAGS	=       -C -P -traditional -DMPP_LAND -I ../Data_Rec $(HYDRO_D)
+LIBS 	=	
+NETCDFINC       =       $(NETCDF_INC)
+NETCDFLIB       =       -L$(NETCDF_LIB) -lnetcdff -lnetcdf

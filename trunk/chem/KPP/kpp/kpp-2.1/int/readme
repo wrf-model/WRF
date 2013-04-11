@@ -1,0 +1,21 @@
+The integrator naming conventions:
+
+*.def = definition file
+*.f   = Fortran 77 source code
+*.f90 = Fortran 90 source code
+*.c   = C source code
+
+atm_* = off-the-shelf integrators, adapted to work with KPP
+        use the native full linear algebra
+	useful for providing reference solutions
+	
+kpp_* = off-the-shelf integrators, using the KPP sparse linear algebra	
+        very efficient, useful for production runs
+	
+plain names = original integrators
+        either use the KPP sparse linear algebra, or provide
+	explicit solutions	
+	
+*_ddm = direct decoupled method
+        integrate for both the concentrations and their sensitivities
+	implements the forward and the tangent linear models together	

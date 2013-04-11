@@ -1,0 +1,33 @@
+                                                         --------------
+This test case is described in the paper "A proposal for the 
+intercomparison of the dynamical cores of atmospheric general 
+circulation models" by Held and Suarez (HS94, Bulletin of the American 
+Meteorological Society; 1994, Vol 75, 1825-1830), and you should read 
+this paper for a detailed description of the test configuration and 
+expected test results. 
+
+This test of the global solver is dry (no moist effects or moisture), 
+there is no terrain, and the flow is driven by an imposed forcing and 
+dissipation. The forcing (a prescribed temperature distribution towards 
+which the atmosphere is relaxed) and dissipation (a simple drag term in 
+the lower atmosphere) produces midlatitude jets, breaking midlatitude 
+baroclinic waves, etc. 
+
+The default ARW namelist specifies a one-thousand day integration for 
+this test - that is approximately the length of the simulations 
+presented in HS94, where statistics of the flow are calculated using 
+time averaged fields from the last few hundred days of the simulations. 
+The midlatitude jets and baroclinic instabilities appear early (within 
+the first 100 days) so long integrations are not required to observe 
+the main features of the flow. The default ARW configuration for this 
+test case is very coarse - much coarser horizontal resolution than that 
+presented in HS94, so care should be taken in comparing any results from 
+the default configuration to the HS94 results (the coarse grid allows 
+one to run the long simulation on a single processor of a present-day 
+PC). The HS94 results are presented in the form of vertical cross 
+sections of zonal means, which are not standard analysis plots for the 
+ARW plotting packages. The results are also sensitive to the horizontal 
+dissipation (numerical filters) used in these simulations. 
+
+There is no exact solution for this test, so the results can only be 
+compared with that from others models in a qualitative manner.

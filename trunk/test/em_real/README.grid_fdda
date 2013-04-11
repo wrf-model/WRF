@@ -1,0 +1,51 @@
+Running grid nudging
+--------------------
+Grid nudging is available in Version 2.2.
+This nudges the WRF run towards a gridded analysis linearly interpolated in time between
+specified analyses. It only requires multiple time periods of analyses for each domain
+to be nudged, and these are input to real in the same format as the initial conditions.
+To run an fdda job
+
+- run real.exe with grid_fdda = 1
+  This will generate an extra input file with the time-varying analyses called wrffdda_d0<n>
+- note that each domain can have grid_fdda = 1 or 0 when running nesting
+- run wrf.exe with the same grid_fdda setting to use the wrffdda files generated
+  Also select wrf run-time options from the list described below to determine which fields to nudge,
+    how strongly to nudge, whether to nudge in the boundary layer, or whether to truncate
+    nudging below a certain grid level
+- There is a ramping capability for dynamic initialization that turns nudging off over a
+    specified period
+
+ &fdda
+ grid_fdda (max_dom)                 = 1        ; grid-nudging fdda on (=0 off) for each domain
+ gfdda_inname                        = "wrffdda_d<domain>" ; defined name in real
+ gfdda_interval_m (max_dom)          = 360      ; time interval (min) between analysis times
+ gfdda_end_h (max_dom)               = 6        ; time (h) to stop nudging after start of forecast
+ io_form_gfdda                       = 2        ; analysis data io format (2 = netCDF)
+ fgdt (max_dom)                      = 0        ; calculation frequency (minutes) for grid-nudging (0=every step)
+ if_no_pbl_nudging_uv (max_dom)      = 0        ; 1= no nudging of u and v in the pbl, 0=nudging in the pbl
+ if_no_pbl_nudging_t (max_dom)       = 0        ; 1= no nudging of temp in the pbl, 0=nudging in the pbl
+ if_no_pbl_nudging_q (max_dom)       = 0        ; 1= no nudging of qvapor in the pbl, 0=nudging in the pbl
+ if_zfac_uv (max_dom)                = 0        ; 0= nudge u and v all layers, 1= limit nudging to levels above k_zfac_uv
+  k_zfac_uv (max_dom)                = 10       ; 10=model level below which nudging is switched off for u and v
+ if_zfac_t (max_dom)                 = 0        ; 0= nudge temp all layers, 1= limit nudging to levels above k_zfac_t
+  k_zfac_t (max_dom)                 = 10       ; 10=model level below which nudging is switched off for temp
+ if_zfac_q (max_dom)                 = 0        ; 0= nudge qvapor all layers, 1= limit nudging to levels above k_zfac_q
+  k_zfac_q (max_dom)                 = 10       ; 10=model level below which nudging is switched off for qvapor
+ guv (max_dom)                       = 0.0003   ; nudging coefficient for u and v (sec-1)
+ gt (max_dom)                        = 0.0003   ; nudging coefficient for temp (sec-1)
+ gq (max_dom)                        = 0.0003   ; nudging coefficient for qvapor (sec-1)
+ if_ramping                          = 0        ; 0= nudging ends as a step function, 1= ramping nudging down at end of period
+ dtramp_min                          = 60.0     ; time (min) for ramping function, 60.0=ramping starts at last analysis time, 
+                                                                                  -60.0=ramping ends at last analysis time
+
+ grid_sfdda (max_dom)                = 0        ; surface fdda switch (1, on; 0, off)
+ sgfdda_inname                       = "wrfsfdda_d<domain>" ; defined name for sfc nudgingn input file (from program obsgrid)
+ sgfdda_end_h (max_dom)              = 6        ; time (in hours) to stop sfc nudging after start of forecast
+ sgfdda_interval_m (max_dom)         = 180      ; time interval (in min) between sfc analysis times (must use minutes)
+ io_form_sgfdda                      = 2        ; sfc analysis data io format (2 = netCDF)
+ guv_sfc (max_dom)                   = 0.0003   ; nudging coefficient for sfc u and v (sec-1)
+ gt_sfc (max_dom)                    = 0.0003   ; nudging coefficient for sfc temp (sec-1)
+ gq_sfc (max_dom)                    = 0.0003   ; nudging coefficient for sfc qvapor (sec-1)
+ rinblw                              = 250.0    ; radius
+

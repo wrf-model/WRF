@@ -1,0 +1,6 @@
+#MODEL      small_strato
+#INTEGRATOR rosenbrock 
+#LANGUAGE   C
+#DRIVER     general
+#HESSIAN    on
+#STOICMAT   on

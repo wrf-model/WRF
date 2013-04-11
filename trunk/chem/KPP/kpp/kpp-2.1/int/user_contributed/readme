@@ -1,0 +1,3 @@
+Integrators in this directory have been contributed by KPP users. By
+default, KPP will not search for integrators in this directory. To
+activate them, move them into the int/ directory.

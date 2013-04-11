@@ -1,0 +1,24 @@
+The wgrib program is by Wesley Ebisuzaki.  He can be
+reached at Wesley.Ebisuzaki@noaa.gov
+
+The wgrib homepage is:
+http://www.cpc.ncep.noaa.gov/products/wesley/wgrib.html
+
+This has source available, help, hints, docs, beta
+releases, etc.
+
+- - - - - - 
+
+Simple usage of the wgrib program (under the "howto:
+grib -> ieee" section of the web page:
+
+usage similar to diffwrf
+wgrib -s GRIBFILE | wgrib -s -i GRIBFILE
+This generates an ieee binary file called dump
+
+wgrib -s GRIBFILE | wgrib -s -i -text GRIBFILE
+This generates a text file called dump (text is
+50-100x slower than ieee)
+
+wgrib -s GRIBFILE | wgrib -s -i -text -o outfile GRIBFILE
+This generates a text file called outfile

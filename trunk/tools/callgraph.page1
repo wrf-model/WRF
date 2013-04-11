@@ -1,0 +1,36 @@
+<!-- Adapted from the example in chapter 18 of
+     Danny Goodman's "JavaScript Handbook", IDG Books, 1996.
+
+     -John Michalakes
+-->
+<HTML>
+<HEAD>
+<TITLE>Weather Research and Forecast Model</TITLE>
+<SCRIPT LANGUAGE="JavaScript">
+<!-- begin hiding
+
+// **functions that establish objects and environment**
+// basic array maker
+function makeArray(n) {
+	this.length = n
+        for ( var i = 1; i <= n ; i++ ) {
+          this[i] = 0
+        }
+	return this 
+}
+
+// object constructor for each outline entry
+// (see object-building calls, below)
+function dbRecord(mother,display,URL,indent){
+	this.mother = mother   // is this item a parent?
+	this.display = display // text to display
+	this.URL = URL         // link tied to text
+	this.indent = indent   // how deeply nested?
+	return this
+}
+
+// create object containing outline content and attributes
+// To adapt outline for your use, modify this table.  Make sure
+// that the size of the array (db[i]) is reflected in the call
+// to makeArray(i).  See the dbRecord() function, above, for the
+// meaning of the four parameters in each array entry.

@@ -1,0 +1,162 @@
+#!/bin/sh 
+
+# much of the nice documentation for some of the options was taken from  
+# KPP's Makefile.defs.  To give a little credit let's
+cat chem/KPP/documentation/wkc_kpp.txt
+
+
+#    The name of your lexical analizer. KPP requires FLEX to be used.
+#    FLEX is a public domain lexical analizer and you can download it from
+#    http://www.gnu.org/software/flex/ or any other mirror site. If flex
+#    directory is not included in your path use the complete pathname.
+
+FLEX="flex"
+
+
+#
+#
+#    The complete pathname of the FLEX library (libfl.a).
+#    On many systems this is: /usr/local/util/lib/flex
+#    on other systems, the path can be a bit strange
+#    FLEX_LIB_DIR=/afs/ipp-garching.mpg.de/rs_aix53/soft/gnu/lib
+#    the default is FLEX_LIB_DIR="/usr/lib"
+
+
+# Look for flex lib directory 
+# if FLEX_LIB_DIR environment variable is not set then check in /usr/lib
+
+if test -z "$FLEX_LIB_DIR" ; then
+  for p in /usr/lib
+  do
+    if test -d $p ; then
+      FLEX_LIB_DIR=$p
+      break
+    fi
+  done
+fi
+
+# if FLEX_LIB_DIR environment variable is not set then check in /usr/lib64
+
+if test -z "$FLEX_LIB_DIR" ; then
+  for p in /usr/lib64
+  do
+    if test -d $p ; then
+      FLEX_LIB_DIR=$p
+      break
+    fi
+  done
+fi
+
+
+# if FLEX_LIB_DIR environment variable is not set then check in /usr/local/lib
+
+if test -z "$FLEX_LIB_DIR" ; then
+  for p in /usr/local/lib
+  do
+    if test -d $p ; then
+      FLEX_LIB_DIR=$p
+      break
+    fi
+  done
+fi
+
+
+#    Platform independent C compiler flags. By default "-O" is used which 
+#    turns on optimisation. If you are experiencing problems you may try 
+#    "-g" to include debuging informations.
+
+CC_FLAGS="-O"
+
+
+
+export FLEX
+export FLEX_LIB_DIR
+export CC_FLAGS
+
+echo "------------------------------------------"
+echo " configure_kpp, settings:"
+
+# see if we can find libfl.a
+if test -e "${FLEX_LIB_DIR}/libfl.a" ; then
+echo location of flex library: ${FLEX_LIB_DIR}/libfl.a
+
+else
+          echo  No libfl.a in ${FLEX_LIB_DIR} 
+          echo '  check if FLEX_LIB_DIR environment variable is set correctly'
+          echo '       (FLEX_LIB_DIR should be the complete pathname of the FLEX library libfl.a)'
+          echo '   OR: Enter full path to flex library on your system'
+          read FLEX_LIB_DIR
+          if  test ! -e ${FLEX_LIB_DIR}/libfl.a ; then
+           echo PROBLEM: libfl.a NOT FOUND IN ${FLEX_LIB_DIR} 
+           read FLEX_LIB_DIR
+          fi 
+
+fi
+
+
+ 
+# get SCC from configure.wrf
+
+PCC=`grep -e CC ./configure.wrf | grep -v make | grep -e "=" | grep -v SCC | grep -v TOOLS`
+PSCC=`grep -e SCC ./configure.wrf | grep -v make | grep -e "="` 
+
+
+##PSCC="SCC = cc"
+
+export PCC
+export PSCC
+
+
+echo $PCC
+echo $PSCC
+echo  writing chem/${WKC_DIRNAME}/configure.kpp
+pwd
+echo "-----------------------------------------"
+
+
+
+cat <<END1 >chem/${WKC_DIRNAME}/configure.kpp 
+#
+# This file was automatically written by the configure_kpp script
+#  MANUAL CHANGES WILL BE LOST !
+#
+# this file is in parts based on the original Makefile.defs from KPP
+
+
+
+$PCC
+$PSCC
+
+
+# Uncomment or set your path to yacc in your environment
+#  YACC=yacc -d 
+
+
+#    The name of your lexical analizer. KPP requires FLEX to be used.
+#    FLEX is a public domain lexical analizer and you can download it from
+#    http://www.gnu.org/software/flex/ or any other mirror site. If flex
+#    directory is not included in your path use the complete pathname.
+
+
+FLEX=$FLEX
+
+
+#    The complete pathname of the FLEX library (libfl.a).
+#    On many systems this is: /usr/local/util/lib/flex
+FLEX_LIB_DIR = $FLEX_LIB_DIR 
+
+
+
+
+
+
+CC_FLAGS=$CC_FLAGS
+
+##############################################################################
+
+END1
+
+exit 0
+
+
+

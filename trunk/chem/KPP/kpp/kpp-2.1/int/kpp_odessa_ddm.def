@@ -1,0 +1,42 @@
+ 
+#FUNCTION AGGREGATE
+#JACOBIAN SPARSE_LU_ROW
+#DOUBLE ON 
+#INTFILE kpp_odessa_ddm
+
+#INLINE F77_GLOBAL
+      INTEGER Autonomous
+      COMMON /INTGDATA/ Autonomous
+      REAL*8 STEPSTART
+      COMMON /GDATA/ STEPSTART
+#ENDINLINE
+
+#INLINE F77_INIT
+        STEPMIN=0.0001
+        STEPMAX=3600.
+        Autonomous = 0
+        STEPSTART=STEPMIN
+#ENDINLINE
+
+
+
+#INLINE C_GLOBAL
+extern int Autonomous;
+extern double STEPSTART;
+#ENDINLINE
+
+#INLINE C_DATA_INT
+int Autonomous;
+double STEPSTART;
+#ENDINLINE
+
+
+
+#INLINE C_INIT
+        STEPMIN=0.0001;
+        STEPMAX=3600.0;
+        Autonomous = 0;
+        STEPSTART=STEPMIN;
+#ENDINLINE
+
+

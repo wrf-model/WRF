@@ -1,0 +1,103 @@
+ &time_control
+ run_days                            = 1,
+ run_hours                           = 0,   
+ run_minutes                         = 0,
+ run_seconds                         = 0,
+ start_year                          = 2005,     2005,
+ start_month                         = 01,       01,
+ start_day                           = 23,       23,
+ start_hour                          = 00,       00,
+ start_minute                        = 00,       00,
+ start_second                        = 00,       00,
+ tstart                              = 00,       
+ end_year                            = 2005,     2005,
+ end_month                           = 01,       01,
+ end_day                             = 24,       24,
+ end_hour                            = 00,       00,
+ end_minute                          = 00,       00,
+ end_second                          = 00,       00,
+ interval_seconds                    = 10800,
+ history_interval                    = 60,       60,
+ frames_per_outfile                  = 1,        1,
+ restart                             = .false.,
+ restart_interval                    = 5400,
+ reset_simulation_start              = F,
+ io_form_input                       = 2
+ io_form_history                     = 2
+ io_form_restart                     = 2
+ io_form_boundary                    = 2
+ io_form_auxinput1                   = 2
+ debug_level                         = 1 
+ /
+
+ &domains
+ time_step                           = 34,
+ time_step_fract_num                 = 2,
+ time_step_fract_den                 = 7,
+ max_dom                             = 1,
+ e_we                                = 56,       58,
+ e_sn                                = 92,       100,
+ e_vert                              = 38,       38,
+ num_metgrid_levels                  = 40,
+ dx                                  = .096,     .032,   
+ dy                                  = .095,     .031667,
+ p_top_requested                     = 5000. 
+ ptsgm                               = 42000.,
+ grid_id                             = 1,        2,
+ parent_id                           = 0,        1,    
+ i_parent_start                      = 1,        17,
+ j_parent_start                      = 1,        31,
+ parent_grid_ratio                   = 1,        3, 
+ parent_time_step_ratio              = 1,        3, 
+ /
+
+ &physics
+ mp_physics                          = 5,        5,
+ ra_lw_physics                       = 99,       99,
+ ra_sw_physics                       = 99,       99,
+ nrads                               = 105,      315,
+ nradl                               = 105,      315,
+ co2tf                               = 1,
+ sf_sfclay_physics                   = 2,        2,
+ sf_surface_physics                  = 2,        2, 
+ bl_pbl_physics                      = 2,        2,
+ nphs                                = 6,        18,
+ cu_physics                          = 2,        2,
+ ncnvc                               = 6,        18,
+ tprec                               = 3,        3,
+ theat                               = 6,        6,
+ tclod                               = 6,        6,
+ trdsw                               = 6,        6,
+ trdlw                               = 6,        6,
+ tsrfc                               = 6,        6,
+ pcpflg                              = .false.,  .false.,
+ num_soil_layers                     = 4,
+ mp_zero_out                         = 0
+ gwd_opt                             = 0
+ /
+
+ &dynamics
+ coac                                = 1.6,
+ codamp                              = 6.4,
+ slophc                              = 0.0064,
+ euler_adv                           = .true.,
+ idtadt                              = 2,
+ idtadc                              = 1
+ /
+
+ &bdy_control
+ spec_bdy_width                      = 1,
+ specified                           = .true.,
+ nested                              = .false.
+ /
+
+ &fdda
+ /
+ 
+ &grib2
+ /
+
+ &namelist_quilt
+ nio_tasks_per_group = 0,
+ nio_groups = 1
+ /

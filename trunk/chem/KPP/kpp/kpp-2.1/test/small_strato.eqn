@@ -1,0 +1,15 @@
+#EQUATIONS { Small Stratospheric Mechanism }
+
+
+<R1>  O2   + hv = 2O		: (2.643E-10) * SUN*SUN*SUN;
+<R2>  O    + O2 = O3		: (8.018E-17);
+<R3>  O3   + hv = O   + O2 	: (6.120E-04) * SUN;
+<R4>  O    + O3 = 2O2		: (1.576E-15);
+<R5>  O3   + hv = O1D + O2	: (1.070E-03) * SUN*SUN;
+<R6>  O1D  + M  = O   + M	: (7.110E-11);
+<R7>  O1D  + O3 = 2O2 		: (1.200E-10);
+<R8>  NO   + O3 = NO2 + O2 	: (6.062E-15);
+<R9>  NO2  + O  = NO  + O2	: (1.069E-11);
+<R10> NO2  + hv = NO  + O	: (1.289E-02) * SUN;
+ 
+

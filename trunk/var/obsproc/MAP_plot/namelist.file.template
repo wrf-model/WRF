@@ -1,0 +1,27 @@
+ &MAPBG
+ PHIC  =  28.5 ,
+ XLONC = 116.0,
+ IEXP  =  0,
+ AEXP  =   120.,
+ IPROJ = 'LAMCON',
+ 
+ 
+ TRUELAT1=10.,
+ TRUELAT2=45.,
+ &
+ &DOMAINS
+ MAXNES = 5,
+ NESTIX=   97,   74,  110,  130,  194,
+ NESTJX=  111,   92,  110,  146,  146,
+ DIS   = 135., 135.,  45.,  15.,   5.,
+ MTHRD =    1,    1,   2,     3,    4,
+ NESTI =    1,   12,  16,    33,   36,
+ NESTJ =    1,   10,  31,    30,   56,
+ 
+ &
+ &Exp_Name
+ MDATE = 98053012,
+ &
+ &PLTOPTN
+ ND = 2,  
+ &

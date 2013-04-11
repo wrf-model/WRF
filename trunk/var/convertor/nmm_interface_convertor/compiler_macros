@@ -1,0 +1,24 @@
+# For IBM Bluefire using xlf
+FC	= xlf90
+FCFLAGS	= -qlanglvl=90pure -O3 -qarch=auto -qnosave -qmaxmem=-1 -Q
+LDFLAGS	= -O2
+FPPFLAG	= -DIBM -I/usr/local/include -I.
+LIBS	= -L/blhome/wrfhelp/external/netcdf/netcdf-3.6.1/ibm_powerpc -lnetcdf
+
+# For Intel Mac using G95
+#FC	= g95
+#FCFLAGS	= -ffree-form -fendian=big -ffree-line-length-huge -O2
+#LDFLAGS	= -O2
+#FPPFLAG	= -I$(NETCDF)/include -I.
+#LIBS	= -L$(NETCDF)/lib -lnetcdf
+
+CPP	= /usr/lib/cpp
+CPPFLAGS= -I. -C -P 
+AR	= ar ru
+RM	= /bin/rm -f
+RM_LIST	= *.o core *.i *.mod fort.* *.out namelist.* *~ *.exe
+CD	= cd
+LN	= ln -s
+MAKE	= make -f Makefile
+SHELL	= /bin/sh
+TOUCH	= touch

@@ -1,0 +1,55 @@
+&madis_general
+ madis_debug = 0 /
+
+&madis_metar
+ madis_metar_db = 'FSL',
+ madis_metar_minbck = -90,
+ madis_metar_minfwd = 90,
+ madis_metar_recwin = 4,
+ madis_metar_all_providers = .TRUE.,
+ madis_metar_provider_list = '/fullpath/madis_metar_providers.list' /
+
+&madis_ships
+ madis_ships_db = 'FSL',
+ madis_ships_minbck = -90,
+ madis_ships_minfwd = 90,
+ madis_ships_recwin = 4 /
+
+&madis_gpspw
+ madis_gpspw_db = 'FSL',
+ madis_gpspw_minbck = -90,
+ madis_gpspw_minfwd = 90,
+ madis_gpspw_recwin = 4 /
+
+&madis_sound
+ madis_sound_db = 'FSL',
+ madis_sound_minbck = -90,
+ madis_sound_minfwd = 90,
+ madis_sound_recwin = 4 /
+
+&madis_profiler
+ madis_profiler_db = 'FSL',
+ madis_profiler_minbck = -90,
+ madis_profiler_minfwd = 90,
+ madis_profiler_recwin = 4,
+ madis_profiler_all_providers = .TRUE.,
+ madis_profiler_provider_list = '/fullpath/madis_profiler_providers.list' /
+
+&madis_airep
+ madis_airep_db = 'FSL',
+ madis_airep_minbck = -90,
+ madis_airep_minfwd = 90,
+ madis_airep_recwin = 4 /
+
+&madis_geoamv
+ madis_geoamv_db = 'FSL',
+ madis_geoamv_minbck = -90,
+ madis_geoamv_minfwd = 90,
+ madis_geoamv_recwin = 4,
+ madis_geoamv_all_providers = .TRUE.,
+ madis_geoamv_provider_list = '/fullpath/madis_geoamv_providers.list',
+ madis_geoamv_wv = .TRUE.,
+ madis_geoamv_ir = .TRUE.,
+ madis_geoamv_vis = .FALSE. /
+ 
+

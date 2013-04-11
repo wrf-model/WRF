@@ -1,0 +1,39 @@
+#!/bin/sh
+UNAME_MACHINE=`(uname -m) 2>/dev/null` || UNAME_MACHINE=unknown
+UNAME_RELEASE=`(uname -r) 2>/dev/null` || UNAME_RELEASE=unknown
+UNAME_SYSTEM=`(uname -s) 2>/dev/null` || UNAME_SYSTEM=unknown
+UNAME_VERSION=`(uname -v) 2>/dev/null` || UNAME_VERSION=unknown
+
+CC=cc
+if [ x$1 != x ]; then CC=$1; fi
+
+exec 5>./cflags
+
+# Note: order is significant - the case branches are not exclusive.
+
+case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}:${CC}" in
+
+    *:HP-UX:*:*:cc*) # For HP-UX workstations
+        echo " -Aa -D_HPUX_SOURCE " 1>&5; exit 0 ;;
+
+    *:AIX:*:*:cc*) # For machines running AIX
+        echo " -Aa " 1>&5; exit 0 ;;
+
+    *:IRIX:*:*:cc*) # For machines running IRIX
+        echo " " 1>&5; exit 0 ;;
+
+    *:IRIX64:*:*:cc*) # For machines running IRIX64 
+        echo " " 1>&5; exit 0 ;;
+
+    *:Linux:*:*:cc*) # For Linux machines
+        echo " " 1>&5; exit 0 ;;
+
+    *:SunOS:*:*:cc*) # For SUN machines
+        echo " Please use gcc compiler on SUN machines."; exit 1 ;;
+
+    *:*:*:*:gcc*) # this is the default case, for gcc
+        echo " " 1>&5; exit 0 ;;
+
+    *:*:*:*:*) # this is the default case
+        echo " " 1>&5; exit 0 ;;
+esac

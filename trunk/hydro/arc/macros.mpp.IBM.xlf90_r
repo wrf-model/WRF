@@ -1,0 +1,20 @@
+.IGNORE:
+ifeq ($(HYDRO_D),1)
+HYDRO_D = -DHYDRO_D
+else
+HYDRO_D =   
+endif
+
+RM		=	rm -f 
+RMD		=	rm -f 
+COMPILER90=	mpxlf90_r
+F90FLAGS  =     -O2 -qfree=f90 -c -w -qspill=20000 -qmaxmem=64000
+LDFLAGS  =     -O2 -qfree=f90  -w -qspill=20000 -qmaxmem=64000
+MODFLAG	=	-I./ -I ../MPP -I../../MPP -I ../mod
+LDFLAGS	=	
+CPP	=       cpp
+LIBS 	=	
+CPPFLAGS	=	-C -P -traditional -DMPP_LAND -I../Data_Rec $(HYDRO_D)
+NETCDFINC	=	$(NETCDF_INC) 
+NETCDFLIB	=	-L$(NETCDF_LIB) -lnetcdff -lnetcdf
+

@@ -1,0 +1,15 @@
+#!/bin/csh
+
+#sed 's/\(<font color=#cc0000>\)\([a-zA-Z0-9_][a-zA-Z0-9_]*\)\(<\/font>\)/\1<href=\" \2 \"> \2 <\/a> \3 /' frame/module_configure.F.html
+
+# very hard coded -- expects wrf browser to live at:
+
+  cd /users/michalak/wrfbrowser/html_code
+
+foreach f ( */*.html )
+
+  sed 's/\(<font color=#cc0000>\)\([a-zA-Z0-9_][a-zA-Z0-9_]*\)\(<\/font>\)/\1 \2 <a href=\"http:\/\/www.mmm.ucar.edu\/wrf\/WG2\/WRFV2\/tools\/code_dbase\/\2\.html" target="_blank"><img HEIGHT=20 WIDTH=20 src="http:\/\/www.mmm.ucar.edu\/wrf\/WG2\/manpage.gif">(docs)<\/a> \3 /' $f > foo
+
+  /bin/mv foo $f
+
+end

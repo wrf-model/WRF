@@ -1,0 +1,68 @@
+#EQUATIONS {-------- background CH4-CO-NOx-HOx chemistry ------updated with nmhc6 July 18.2000---------------}
+{ NOTE that the numbers at the beginning of each line are used by the budget routines in MATCH,
+       so keep them updated!!! }
+{ based on Rolf von Kuhlmann, ...}
+{ last changed:; cms -added PAN based on RvK ...}
+{1} O3 + hv = O1D                    : j(P_RJ_O1D);
+{2} O1D + M = O3                     : .78084D0*1.8D-11*exp(110.D0/TEMP)+.20946D0*3.2D-11*exp(70./TEMP); {JPL97}
+{3} O1D + H2O = 2 OH                 : 2.2D-10; {JPL97}
+{4} M + hv = 2 O3                    : min(1.D-11,.20946D0*j(P_RJ_O2));
+{5} O3 + OH = HO2                    : 1.5D-12*exp(-880.D0/TEMP); {JPL2000}
+{6} O3 + HO2 = OH                    : 2.D-14*exp(-680.D0/TEMP); {JPL2000}
+{7} HO2 + OH = H2O                   : 4.8D-11*exp(250.D0/TEMP); {JPL97,JPL2000}
+{8} 2 HO2 = H2O2                     : RHO2HO2(F(2),F(1),TEMP); {JPL97}
+{9} H2O2 + hv = 2 OH                 : j(P_RJ_H2O2);
+{10} OH + H2O2 = HO2                 : 2.9D-12*exp(-160.D0/TEMP); {JPL97}
+{11} OH + CO  = HO2 {+ CO2}          : 1.5D-13*(1.D0+0.6D0*PRESS/101325.); {JPL97}
+{12} CH4 + OH = MeO2 + H2O           : 2.8D-14*exp(0.667D0*log(TEMP)-1575./TEMP); {JPL97}
+{13} MeO2 + HO2 = MeOOH              : 4.15D-13*exp(750.D0/TEMP);{Tyn00; note that a <10% HCHO-channel may exist}
+{14} MeO2 + NO = HCHO + HO2 + NO2    : 2.8D-12*exp(300.D0/TEMP); {Tyn00, MCM-.1% MeONO2,J.Crowley<1D-5,+oth.path.}
+{15} 2 MeO2 = 2 HCHO + 2 HO2         : 9.5D-14*exp(390.D0/TEMP)/(1.+1./26.2*EXP(1130./TEMP)); {Tyn00}
+{16} 2 MeO2 = HCHO + MeOH            : 9.5D-14*exp(390.D0/TEMP)/(1.+26.2*EXP(-1130./TEMP)); {Tyn00}
+{17} MeO2 + NO3 = HCHO + HO2 + NO2   : 1.3D-12; {Atk. 99}
+{18} MeOOH + hv = HCHO + HO2 + OH    : j(P_RJ_CH3OOH);
+{19} MeOOH + OH = .7 MeO2 + .3 HCHO + .3 OH : 3.8D-12*exp(200.D0/TEMP); {JPL97}
+{20} HCHO + hv {+ 2 O2} = CO + 2 HO2 : j(P_RJ_CHOH);
+{21} HCHO + hv = CO {+ H2}           : j(P_RJ_COH2);
+{22} HCHO + OH = CO + HO2 + H2O      : 1.D-11; {JPL97}
+{23} HCHO + NO3 = HNO3 + CO + HO2    : 3.4D-13*exp(-1900.D0/TEMP); {JPL97, E/R ass. same as ALD+NO3}
+{24} NO + O3 = NO2 {+O2}             : 3.D-12*exp(-1500.D0/TEMP); {JPL2000}
+{25} NO + HO2 = NO2 + OH             : 3.5D-12*exp(250.D0/TEMP); {JPL97}
+{26} NO2 + hv =  NO + O3             : j(P_RJ_NO2);
+{27} NO2 + O3 =  NO3                 : 1.2D-13*exp(-2450.D0/TEMP); {JPL97}
+{28} NO2 + OH {+M} = HNO3            : TROE(F(2),TEMP,.933D0,2.85D-30,-2.67D0,3.13D-11,  363.D0);{Dransfield '99}
+{29} NO2 + HO2 {+M} = HNO4           : RJPL(1.8D-31, 3.2D0, 4.7D-12, 1.4D0,F(2),TEMP);{JPL97}
+{30} HNO3 + hv = OH + NO2            : j(P_RJ_HNO3);
+{31} OH + HNO3 {+M} =  NO3           : RHNO3(F(2),TEMP); {Brown '99b, JPL2000}
+{32} NO3 + hv {+O2} = NO2 + O3       : j(P_RJ_NO2O);
+{33} NO3 + hv = NO                   : j(P_RJ_NOO2);
+{34} NO3 + NO = 2 NO2                : 1.5D-11*exp(170.D0/TEMP); {JPL97}
+{35} NO3 + NO2 {+M} =  N2O5          : RJPL(2.D-30,4.4D0,1.4D-12,0.7D0,F(2),TEMP);{JPL2000}
+{36} NO3 + HO2 = .8 NO2 + .8 OH + .2 HNO3 : 3.5D-12;{JPL97, branching: see comment C14}
+{37} N2O5 + hv  =  NO3 + NO2         : j(P_RJ_N2O5);
+{38} N2O5 {+M}  =  NO3 + NO2         : RCONST(35)/(3.D-27*exp(10991.D0/TEMP));{JPL2000}
+{39} N2O5 = 2 HNO3                   : hetn2o5; {~10D-5,Dentener&Crutzen93}
+{40} N2O5 + H2O = 2 HNO3             : 4.D-22; {JPL97;<2.D-21,from 3 studies, a 4th study gets <5.D-22}
+{41} HNO4 + hv = .39 NO3 + .39 OH + .61 NO2 + .61 HO2 : j(P_RJ_HNO4);{Atk.97,S.Sander:.56 +-.17 NO2 yield}
+{42} HNO4 {+M}  = HO2 + NO2          : RCONST(29)/(2.1D-27*exp(10900.D0/TEMP)); {JPL97}
+{43} HNO4 + OH = NO2 {+H2O +O2}      : 1.3D-12*exp(380./TEMP); {JPL97}
+{44} M{=H2} + OH {+O2} = HO2 + H2O   : 5.31D-7*5.5D-12*exp(-2000.D0/TEMP);{JPL97, fixed H2 (531ppb) Novelli '99}
+{45} MeOH + OH = HCHO + HO2          : 6.7D-12*exp(-600.D0/TEMP); {JPL97, possibly different products}
+{PAN ------------------------------------------------------------------------------------------------------ }
+{46} PA + HO2 = PAA                        : 4.3D-13*exp(1040.D0/TEMP)/(1.D0+1.D0/37.D0*exp(660.D0/TEMP)); {Tyn01}
+{47} PA + HO2 = CH3COOH + O3               : 4.3D-13*exp(1040.D0/TEMP)/(1.D0+37.D0*exp(-660.D0/TEMP)); {Tyn01}
+{48} PA + NO = MeO2 + NO2 {+CO2}           : 8.1D-12*exp(270.D0/TEMP); {Tyn01}
+{49} PA + NO2 = PAN                        : RJPL(8.5D-29,6.5D0,1.1D-11,1.0D0,F(2),TEMP); {Tyn01}
+{50} PA + MeO2 = HCHO + HO2 + MeO2 {+CO2}  : 2.0D-12*exp(500.D0/TEMP)/(1.D0+1.D0/2.2D6*exp(3820.D0/TEMP));{Tyn01,br.JPL97}
+{51} PA + MeO2 = CH3COOH + HCHO            : 2.0D-12*exp(500.D0/TEMP)/(1.D0+2.2D6* exp(-3820.D0/TEMP));{Tyn01,br.:JPL97}
+{52} 2 PA = 2 MeO2 { + 2 CO2 +O2}          : 2.5D-12*exp(500.D0/TEMP); {Tyn01}
+{53} PA + NO3 = MeO2 + NO2 {+CO2}          : 4.D-12; {K&S 96,MCM}
+{54} PAA + hv = MeO2 + OH                  : j(P_RJ_CHOH);{rvk99,Giguerre&Olmos56 extrapol. 300-340nm}
+{55} PAA + OH = PA                         : RCONST(19);{as MeOOH+OH, different products used in RACM}
+{56} PAN + OH = HCHO + NO2 {+CO2}          : 2.D-14; {JPL97:<4.D-14(products unknown), could probably skip this}
+{57} PAN + hv = PA + NO2                   : j(P_RJ_PAN);
+{58} PAN {+M} = PA + NO2                   : RCONST(49)/9.D-29*exp(-14000./TEMP); {JPL97}
+{59} CH3COOH + OH = MeO2 {+CO2}            : 4.D-13*exp(200.D0/TEMP); {JPL97}
+
+
+

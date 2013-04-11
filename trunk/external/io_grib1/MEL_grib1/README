@@ -1,0 +1,14 @@
+10/6/99
+Todd A. Hutchinson
+TASC (WSI Contractor)
+
+The code in this directory builds a library which is used to read and write 
+grib data.  The code is a modified subset of the Navy's Master Environmental 
+Laboratory's grib library.  The MEL grib library was ported to linux, then
+taken apart to fit into the standard directory structure and Makefile structure
+that we use as part of WxPredictor.
+
+For more information on the MEL Grib Library, go to 
+http://mel.dmso.mil/mel_tools/user_software.html.
+
+

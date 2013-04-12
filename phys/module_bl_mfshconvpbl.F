@@ -1070,7 +1070,10 @@ INTEGER             :: JRR
   PAMOIST(:,:,:) = 0.
   PATHETA(:,:,:) = 0.
   ZFRAC_ICE(:,:,:) = 0.0
-
+  ZAMOIST_W(:,:,:) = 0.0
+  ZATHETA_W(:,:,:) = 0.0
+  ZAMOIST_I(:,:,:) = 0.0
+  ZATHETA_I(:,:,:) = 0.0
 !
 !*       Cph
 !

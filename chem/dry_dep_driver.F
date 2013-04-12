@@ -678,7 +678,7 @@ CONTAINS
    END SELECT mixactivate_select
    settling_select: SELECT CASE(config_flags%chem_opt)
    CASE (DUST,GOCART_SIMPLE,GOCARTRACM_KPP,MOZCART_KPP,RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM)
-       CALL wrf_debug(0,'call gocart settling routine')
+       CALL wrf_debug(15,'call gocart settling routine')
          call gocart_settling_driver(dtstep,config_flags,t_phy,moist,  &
          chem,rho_phy,dz8w,p8w,p_phy,         &
          dustin,seasin,dx,g, &

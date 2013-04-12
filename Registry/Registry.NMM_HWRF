@@ -471,6 +471,12 @@ state  real  GD_CLOUD2_A   ikj  misc     1   -      r      "GD_CLOUD2_A"  "taver
 state  real  GD_CLOUD_B    ikj  misc     1   -      r       "GD_CLOUD_B"   "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
 state  real  GD_CLOUD2_B   ikj  misc     1   -      r       "GD_CLOUD2_B"  "taveragd cloud ice mix ratio in GD"         "kg kg-1"
 state    real  GD_CLDFR         ikj      misc        1         -      r     "GD_CLDFR"              "GD CLOUD Fraction"         " ? "
+state  real  re_cloud   ikj     misc     1    -     -       "re_cloud"        "Effective radius, cloud drops"      "m"
+state  real  re_ice     ikj     misc     1    -     -       "re_ice"          "Effective radius, cloud ice"        "m"
+state  real  re_snow    ikj     misc     1    -     -       "re_snow"         "Effective radius, snow"             "m"
+state  integer  has_reqc   -    misc     1    -     -       "has_reqc"        "Flag for has effective radius of cloud water"    ""
+state  integer  has_reqi   -    misc     1    -     -       "has_reqi"        "Flag for has effective radius of cloud ice"      ""
+state  integer  has_reqs   -    misc     1    -     -       "has_reqs"        "Flag for has effective radius of snow"           ""
 
 #
 # module_CLDWTR.F
@@ -628,9 +634,9 @@ state integer imicrogram -   misc        -    -    r   "imicrogram"  "flag 0/1 0
 # Vortex Tracker Variables
 
 # Revised Centroid Method (tracker #4)
-state  real   distsq    ij     dyn_nmm     1      -      irh       "DISTSQ"  "Approximate square of distance from nest center for vortex tracker #4" "m2"
-state  real   weightout ij     dyn_nmm     1      -      irh       "WEIGHTOUT"  "Vortex center finder weight array for vortex tracker #4" ""
-state integer mslp_noisy ij    dyn_nmm     1      -      irh       "MSLP_NOISY"  "0=okay, 1=noisy MSLP, 2=outside search radius, 3=boundary (vortex tracker #4)" ""
+state  real   distsq    ij     dyn_nmm     1      -      rh       "DISTSQ"  "Approximate square of distance from nest center for vortex tracker #4" "m2"
+state  real   weightout ij     dyn_nmm     1      -      rh       "WEIGHTOUT"  "Vortex center finder weight array for vortex tracker #4" ""
+state integer mslp_noisy ij    dyn_nmm     1      -      rh       "MSLP_NOISY"  "0=okay, 1=noisy MSLP, 2=outside search radius, 3=boundary (vortex tracker #4)" ""
 
 # Dynamic Pressure Method (tracker #5)
 state  real    vt5searchrad     -      dyn_nmm     1      -    rh  "vt5searchrad" "Search radius from domain center" "m"
@@ -650,7 +656,6 @@ f=(DownAged2D:c%pdyn_smooth_age,n%pdyn_parent_age,c%pdyn_smooth)\
 state real winfo ijkb dyn_nmm 1 Z u=(NoInterp)d=(NoInterp) "winfo"  "Nest-parent interpolation/extrapolation weight" ""
 state integer iinfo ijkb dyn_nmm 1 Z u=(NoInterp)d=(NoInterp) "iinfo" "Nest-parent interpolation index" ""
 
-#                                               
 # table entries are of the form                                         
 #<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>   
 #
@@ -915,10 +920,10 @@ state    real  ZNT              ij      misc        1         -     irh        "
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
 state    real  NOAHRES          ij      misc        1         -     rh        "NOAHRES"               "RESIDUAL OF THE NOAH SURFACE ENERGY BUDGET" "W m{-2}"
 
-state    real   tke_pbl         ijk     misc        1         -     r         "TKE_PBL"               "TKE FROM PBL SCHEME"     "m2 s-2"
-state    real   el_pbl          ikj     misc        1         -     -         "EL_PBL"                "MIXING LENGTH FROM PBL SCHEME"     "m"
-state    real   EXCH_H         ikj     misc        1         -     r         "EXCH_H"               "EXCHANGE COEFFICIENTS FOR HEAT"               "m2 s-1"
-state    real   EXCH_M         ikj     misc        1         -     r         "EXCH_M"               "EXCHANGE COEFFICIENTS FOR MOMENTUM"           "m2 s-1"
+state    real   tke_pbl         ijk     misc        1         Z     r         "TKE_PBL"               "TKE FROM PBL SCHEME"     "m2 s-2"
+state    real   el_pbl          ikj     misc        1         Z     -         "EL_PBL"                "MIXING LENGTH FROM PBL SCHEME"     "m"
+state    real   EXCH_H         ikj     misc        1         Z     r         "EXCH_H"               "EXCHANGE COEFFICIENTS FOR HEAT"               "m2 s-1"
+state    real   EXCH_M         ikj     misc        1         Z     r         "EXCH_M"               "EXCHANGE COEFFICIENTS FOR MOMENTUM"           "m2 s-1"
 state   real   THZ0             ij     misc        1         -     irhd=(DownCopy)       "THZ0"                  "POT. TEMPERATURE AT TOP OF VISC. SUBLYR"                 "K"
 state   real   QZ0              ij     misc        1         -     irhd=(DownCopy)       "QZ0"                   "SPECIFIC HUMIDITY AT TOP OF VISC. SUBLYR"                     "kg kg-1"
 state   real   UZ0              ij     misc        1         -     irhd=(DownVel)       "UZ0"                   "U WIND COMPONENT AT TOP OF VISC. SUBLYR"                      "m s-1"
@@ -977,7 +982,7 @@ state    real   KEEPFR3DFLAG     ilj    misc        1         Z      r         "
 state    real   rc_mf           ikj     misc        1         -      r        "RC_MF"                "RC IN THE GRID COMPUTED BY EDKF"  "kg/kg"
 
 # For Noah-MP
-rconfig   integer dveg        namelist,noah_mp      1            2         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
+rconfig   integer dveg        namelist,noah_mp      1            4         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
 rconfig   integer opt_crs     namelist,noah_mp      1            1         h    "opt_crs"  "canopy stomatal resistance (1-> Ball-Berry; 2->Jarvis)"   ""
 rconfig   integer opt_btr     namelist,noah_mp      1            1         h    "opt_btr"  "soil moisture factor for stomatal resistance (1-> Noah; 2-> CLM; 3-> SSiB)"   ""
 rconfig   integer opt_run     namelist,noah_mp      1            1         h    "opt_run"  "runoff and groundwater (1->SIMGM; 2->SIMTOP; 3->Schaake96; 4->BATS)"   ""
@@ -1221,6 +1226,10 @@ rconfig   integer shw                     namelist,domains	max_domains    2     
 rconfig   integer tile_sz_x               namelist,domains	1             0       -      "tile_sz_x"             ""      ""
 rconfig   integer tile_sz_y               namelist,domains	1             0       -      "tile_sz_y"             ""      ""
 rconfig   integer numtiles                namelist,domains	1             1       -      "numtiles"              ""      ""
+rconfig   integer numtiles_inc            namelist,domains	1             0       -      "numtiles_inc"          ""      ""
+rconfig   integer numtiles_x              namelist,domains	1             0       -      "numtiles_x"            ""      ""
+rconfig   integer numtiles_y              namelist,domains	1             0       -      "numtiles_y"            ""      ""
+rconfig   integer tile_strategy           namelist,domains	1             0       -      "tile_strategy"         ""      ""
 rconfig   integer nproc_x                 namelist,domains	1             -1       -      "nproc_x"              "-1 means not set"      ""
 rconfig   integer nproc_y		  namelist,domains	1             -1       -      "nproc_y"              "-1 means not set"      ""
 rconfig   integer irand                   namelist,domains	1             0       -      "irand"           ""      ""
@@ -1526,7 +1535,7 @@ package   wsm5scheme    mp_physics==4                -             moist:qv,qc,q
 package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qs;state:f_ice,f_rain,f_rimef
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
-package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr
+package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
 package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
 package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs

@@ -340,6 +340,23 @@
       END IF
 
 !-----------------------------------------------------------------------
+!  shcu_physics = 3 (grimsshcuscheme) only works with YSU PBL.
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%bl_pbl_physics(i) .NE. YSUSCHEME ) .AND. &
+              ( model_config_rec%gwd_opt .EQ. GWDOPT ) ) THEN
+            model_config_rec%gwd_opt = 0
+            oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = 'bl_pbl_physics /= 1, implies shcu_physics cannot be 3, resetting'
+         CALL wrf_message ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
 !  If analysis FDDA is turned off, reset the io_forms to zero so that
 !  there is no chance that WRF tries to input the data.
 !-----------------------------------------------------------------------
@@ -392,6 +409,18 @@
                                                  model_config_rec%auxhist23_interval_m(i)*   60 + &
                                                  model_config_rec%auxhist23_interval_s(i)
          END DO
+      END IF
+
+!-----------------------------------------------------------------------
+! For nwp_diagnostics = 1, history_interval must be used.           
+!-----------------------------------------------------------------------
+
+      IF ( ( model_config_rec%nwp_diagnostics .NE. 0 ) .AND. &
+           ( model_config_rec%history_interval(1) .EQ. 0 ) ) THEN
+         wrf_err_message = '--- ERROR:  nwp_diagnostics requires the use of "history_interval" namelist.'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '---         Replace interval variable with "history_interval".'
+         CALL wrf_error_fatal ( wrf_err_message )
       END IF
 
 !-----------------------------------------------------------------------

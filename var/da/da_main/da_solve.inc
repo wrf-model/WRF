@@ -56,6 +56,12 @@
       call nl_get_base_temp  ( 1 , base_temp )
       call nl_get_base_lapse ( 1 , base_lapse )
       call nl_get_iso_temp   ( 1 , iso_temp )
+      if ( iso_temp .NE. grid%tiso ) THEN
+         write(unit=message(1),fmt='(A)') &
+           'da_solve: namelist iso_temp does not equal iso_temp from fg. Reset namelist value and rerun'
+         call da_error(__FILE__,__LINE__,message(1:1))
+      end if
+
       grid%p00   = base_pres
       grid%t00   = base_temp
       grid%tlp   = base_lapse
@@ -602,7 +608,7 @@
 
      if ( it < max_ext_its .and. print_detail_outerloop ) then
         write(outerloop,'(i2.2)') it
-        call da_med_initialdata_output (grid , config_flags, 'wrfvar_output_'//outerloop)
+        call da_update_firstguess(grid,'wrfvar_output_'//outerloop)
 #ifdef VAR4D
         !if (var4d) call da_med_initialdata_output_lbc (grid , config_flags, 'wrfvar_bdyout_'//outerloop)
 #endif
@@ -626,7 +632,7 @@
 
    if ((config_flags%real_data_init_type == 1) .or. &
        (config_flags%real_data_init_type == 3)) then
-      call da_med_initialdata_output (head_grid, config_flags)
+      call da_update_firstguess(grid)
 #ifdef VAR4D
       !if (var4d) call da_med_initialdata_output_lbc (head_grid , config_flags)
       if ( var4d_lbc ) then
@@ -642,7 +648,7 @@
               xhat(jl_start:jl_end), grid%vv6, grid%vp6)
          grid%xa  = shuffle
          call da_transfer_xatoanalysis (it, xbx, grid, config_flags)
-         call da_med_initialdata_output (grid, config_flags,'ana02')
+         call da_update_firstguess (grid, 'ana02')
          call domain_clock_get (grid, start_timestr=timestr1)
          call domain_clock_set( grid, current_timestr=timestr1 )
       endif

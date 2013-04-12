@@ -441,14 +441,13 @@ endif
     end if
 #endif
 
-#if (EM_CORE == 1)
+#if ((EM_CORE == 1) && (DA_CORE != 1))
     IF ( config_flags%p_lev_diags .NE. 0 ) THEN
        IF (switch .EQ. auxhist23_only) THEN
           CALL wrf_put_dom_ti_real( fid, 'P_LEV_MISSING' , config_flags%p_lev_missing, 1, ierr )
        END IF
     END IF
 
-#if ( DA_CORE != 1)
     IF (switch .EQ. history_only) THEN
        CALL    wrf_put_dom_ti_integer( fid, 'STOCH_FORCE_OPT'        , stoch_force_opt       , 1, ierr )
        IF ( stoch_force_opt .NE. 0 )  THEN
@@ -458,7 +457,6 @@ endif
           CALL wrf_put_dom_ti_real   ( fid, 'tot_backscat_t'         , tot_backscat_t        , 1, ierr )
        END IF
     END IF
-#endif
 #endif
 
 ! added this metadatum for H. Chuan, NCEP, 030417, JM
@@ -736,10 +734,10 @@ endif
     CALL wrf_put_dom_ti_integer ( fid , 'ISOILWATER' ,  config_flags%isoilwater , 1 , ierr )
 ! added these fields for restarting of moving nests, JM
 !For HWRF: zhang 
-#ifdef HWRF
+#if defined (HWRF)
     CALL wrf_put_dom_ti_integer ( fid , 'I_PARENT_START' ,  grid%i_parent_start  , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'J_PARENT_START' ,  grid%j_parent_start  , 1 , ierr )
-#else
+#elseif ! defined(EM_CORE)
     CALL wrf_put_dom_ti_integer ( fid , 'I_PARENT_START' ,  config_flags%i_parent_start  , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'J_PARENT_START' ,  config_flags%j_parent_start  , 1 , ierr )
 #endif

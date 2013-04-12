@@ -35,6 +35,10 @@ CONTAINS
          ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,              &
          ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,ebio_so2,     &
          ebio_dms,                                                         &
+         ebio_alk3, ebio_alk4, ebio_alk5, ebio_ole1, ebio_ole2,            &    
+         ebio_aro1, ebio_aro2, ebio_ccho, ebio_meoh,                       &    
+         ebio_ethene, ebio_hcooh, ebio_terp, ebio_bald,                    &    
+         ebio_cco_oh, ebio_rco_oh,                                         &    
          clayfrac,sandfrac,dust_alpha,dust_gamma,dust_smtune,              &
          snowh,zs,                                                         &
          ! stuff for MEGAN v2.04                                                 
@@ -204,7 +208,11 @@ CONTAINS
                ebio_c10h16,ebio_tol,ebio_bigalk, ebio_ch3oh,ebio_acet, &
                ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,    &
                ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,    &
-               ebio_so2,ebio_dms, ebio_co2oce 
+               ebio_so2,ebio_dms, ebio_co2oce ,                        &
+               ebio_alk3, ebio_alk4, ebio_alk5, ebio_ole1, ebio_ole2,  &    
+               ebio_aro1, ebio_aro2, ebio_ccho, ebio_meoh,             &    
+               ebio_ethene, ebio_hcooh, ebio_terp, ebio_bald,          &    
+               ebio_cco_oh, ebio_rco_oh
 
 
    ! stuff for MEGAN v2.04...most of these arrays are optional and package dependent 
@@ -784,6 +792,10 @@ CONTAINS
                ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,ebio_so2,   &
                ebio_dms,                                                       &
                ebio_sesq, ebio_mbo,                                            &
+               ebio_alk3, ebio_alk4, ebio_alk5, ebio_ole1, ebio_ole2,    &    
+               ebio_aro1, ebio_aro2, ebio_ccho, ebio_meoh,               &    
+               ebio_ethene, ebio_hcooh, ebio_terp, ebio_bald,            &    
+               ebio_cco_oh, ebio_rco_oh,                                 &
                e_bio,                                                  &
                ids,ide, jds,jde, kds,kde,                              &
                ims,ime, jms,jme, kms,kme,                              &
@@ -880,13 +892,29 @@ CONTAINS
             ims,ime, jms,jme, kms,kme,                                   &
             its,ite, jts,jte, kts,kte                                    )
        call wrf_debug(15,'emissions_driver calling cbmz_addemiss_bio')
+       !**BSINGH- Should I delete this comment??
        ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
        ! module
-         call cbmz_addemiss_bio( id, dtstep, dz8w, config_flags,         &
-              rho_phy, chem, e_bio, ne_area, emis_ant(ims,kms,jms,p_e_iso),&
-              ids,ide, jds,jde, kds,kde,                                 &
-              ims,ime, jms,jme, kms,kme,                                 &
-              its,ite, jts,jte, kts,kte                                  )
+
+       !BSINGH: 03/13/2013
+       !Commented out (or delete??) the following call to "cbmz_addemiss_bio"and
+       !replaced with an "add_biogenic" call to make it consistent 
+       !with other packages
+       !call cbmz_addemiss_bio( id, dtstep, dz8w, config_flags,         &
+       !       rho_phy, chem, e_bio, ne_area, emis_ant(ims,kms,jms,p_e_iso),&
+       !       ids,ide, jds,jde, kds,kde,                                 &
+       !       ims,ime, jms,jme, kms,kme,                                 &
+       !       its,ite, jts,jte, kts,kte                                  )
+       
+       call add_biogenics(id,dtstep,dz8w,config_flags, rho_phy,chem,    &
+            e_bio,ne_area,                                              &
+            ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
+            ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,               &
+            ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,       &
+            ebio_sesq,ebio_mbo,                                         & 
+            ids,ide, jds,jde, kds,kde,                                  &
+            ims,ime, jms,jme, kms,kme,                                  &
+            its,ite, jts,jte, kts,kte                                   )
 
     CASE (CHEM_TRACER)
        do j=jts,jte  
@@ -962,7 +990,6 @@ CONTAINS
                             chem,emis_ant,eghg_bio,ebio_co2oce  )
    END IF
 !**************************************************************************************************
-
     CASE (SAPRC99_KPP) !FIX FOR SAPRC07A
      if(config_flags%emiss_opt == 13 ) then
        do j=jts,jte
@@ -1069,6 +1096,17 @@ CONTAINS
        end do
       endif
 
+      !BSINGH - Adding add_biogenics call
+      call add_biogenics(id,dtstep,dz8w,config_flags, rho_phy,chem,     &
+            e_bio,ne_area,                                              &
+            ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
+            ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,               &
+            ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,       &
+            ebio_sesq,ebio_mbo,                                         & 
+            ids,ide, jds,jde, kds,kde,                                  &
+            ims,ime, jms,jme, kms,kme,                                  &
+            its,ite, jts,jte, kts,kte                                   )
+      
                   
     CASE (CBMZ_MOSAIC_4BIN_VBS2_KPP) !FIX FOR SAPRC07A
      if(config_flags%emiss_opt == 3 ) then
@@ -1083,14 +1121,30 @@ CONTAINS
             ims,ime, jms,jme, kms,kme,                                   &
             its,ite, jts,jte, kts,kte                                    )
        call wrf_debug(15,'emissions_driver calling cbmz_addemiss_bio')
+
+       !**BSINGH- Should I delete this comment??
        ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
        ! module
        if ( config_flags%bio_emiss_opt .ne. megan2 ) then 
-         call cbmz_addemiss_bio( id, dtstep, dz8w, config_flags,         &
-              rho_phy, chem, e_bio, ne_area, emis_ant(ims,kms,jms,p_e_iso),&
-              ids,ide, jds,jde, kds,kde,                                 &
-              ims,ime, jms,jme, kms,kme,                                 &
-              its,ite, jts,jte, kts,kte                                  )
+          !BSINGH: 03/13/2013
+          !Commented out (or delete??) the following call to "cbmz_addemiss_bio"and
+          !replaced with an "add_biogenic" call to make it consistent 
+          !with other packages
+          !call cbmz_addemiss_bio( id, dtstep, dz8w, config_flags,         &
+          !    rho_phy, chem, e_bio, ne_area, emis_ant(ims,kms,jms,p_e_iso),&
+          !    ids,ide, jds,jde, kds,kde,                                 &
+          !    ims,ime, jms,jme, kms,kme,                                 &
+          !    its,ite, jts,jte, kts,kte                                  )
+       
+          call add_biogenics(id,dtstep,dz8w,config_flags, rho_phy,chem,    &
+               e_bio,ne_area,                                              &
+               ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
+               ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,               &
+               ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,       &
+               ebio_sesq,ebio_mbo,                                         & 
+               ids,ide, jds,jde, kds,kde,                                  &
+               ims,ime, jms,jme, kms,kme,                                  &
+               its,ite, jts,jte, kts,kte                                   )
        endif
        do j=jts,jte
           do i=its,ite
@@ -1126,7 +1180,6 @@ CONTAINS
           end do
        end do
      endif
-
     CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP) !FIX FOR SAPRC07A
      if(config_flags%emiss_opt == 13 ) then
        do j=jts,jte
@@ -1260,7 +1313,16 @@ CONTAINS
           end do
        end do
       endif
-
+      !BSINGH - Adding add_biogenics call
+      call add_biogenics(id,dtstep,dz8w,config_flags, rho_phy,chem,     &
+            e_bio,ne_area,                                              &
+            ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
+            ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,               &
+            ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,       &
+            ebio_sesq,ebio_mbo,                                         & 
+            ids,ide, jds,jde, kds,kde,                                  &
+            ims,ime, jms,jme, kms,kme,                                  &
+            its,ite, jts,jte, kts,kte                                   )
 
     CASE (GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
        IF(config_flags%emiss_inpt_opt /= 3 ) then

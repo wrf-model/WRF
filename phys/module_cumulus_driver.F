@@ -25,7 +25,7 @@ CONTAINS
                      ,htop,hbot,kpbl,ht                               &
                      ,ensdim,maxiens,maxens,maxens2,maxens3           &
                      ,periodic_x,periodic_y                           &
-                     ,tke_pbl8w,is_CAMMGMP_used                       & !BSINGH - TKE at the interfaces for Zhang-McFarlane Scheme 
+                     ,is_CAMMGMP_used                                 & 
                      ,evapcdp3d,icwmrdp3d,rprddp3d                    & !Balwinder.Singh@pnnl.gov: Used for CAM's wet scavenging
                  ! Package selection variables
                      ,cu_physics, bl_pbl_physics, sf_sfclay_physics   &
@@ -203,7 +203,6 @@ CONTAINS
 !-- t_phy         temperature (K)
 !-- tsk           skin temperature (K)
 !-- tke_pbl       turbulent kinetic energy from PBL scheme (m2/s2)
-!-- tke_pbl8w     turbulent kinetic energy from PBL scheme at the interfaces (m2/s2)
 !-- ust           u* in similarity theory (m/s)
 !-- w             vertical velocity (m/s)
 !-- moist         moisture array (4D - last index is species) (kg/kg)
@@ -327,7 +326,6 @@ CONTAINS
                                                       ,     rho  &
                                                       ,       w  
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT ), OPTIONAL ::  evapcdp3d, icwmrdp3d, rprddp3d
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN ), OPTIONAL :: tke_pbl8w
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(IN ),OPTIONAL ::                         z_at_w  &
@@ -974,7 +972,7 @@ CONTAINS
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte     &
                ,ITIMESTEP=itimestep, BL_PBL_PHYSICS=bl_pbl_physics  &
                ,SF_SFCLAY_PHYSICS=sf_sfclay_physics                 &
-               ,TH=th, T_PHY=t, TSK=tsk, TKE_PBL8w=tke_pbl8w        &
+               ,TH=th, T_PHY=t, TSK=tsk, TKE_PBL=tke_pbl            &
                ,UST=ust, QV=qv_curr, QC=qc_curr, QI=qi_curr         &
                ,MAVAIL=mavail,KPBL=kpbl, PBLH=pblh, XLAND=xland     & 
                ,Z=z, Z_AT_W=z_at_w                                  &

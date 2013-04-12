@@ -49,6 +49,8 @@
      &                    ,Z,SICE,NUM_AEROSOLC,NUM_OZMIXM               &
      &                    ,GRID,CONFIG_FLAGS                            &
      &                    ,RTHRATEN                                     &
+     &                    ,re_cloud,re_ice,re_snow                      & ! G. Thompson
+     &                    ,has_reqc,has_reqi,has_reqs                   & ! G. Thompson
 #ifdef WRF_CHEM
      &                    ,PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC         &
      &                    ,TAUAER1, TAUAER2, TAUAER3, TAUAER4           &
@@ -150,6 +152,10 @@
 #endif
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: CLDFRA
+!
+!..Additions for coupling cloud physics effective radii and radiation.  G. Thompson
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN):: re_cloud, re_ice, re_snow
+      INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
 !
       LOGICAL,INTENT(IN) :: RESTRT
 !
@@ -388,6 +394,12 @@
      &                 ,STEPRA=NRAD,ICLOUD=ICLOUD                       &
      &                 ,WARM_RAIN=WARM_RAIN                             &
      &                 ,SWDOWNC=TOTSWDNC,CLDFRA=CLFR                    &
+     &                 ,re_cloud=grid%re_cloud                          & ! G. Thompson
+     &                 ,re_ice=grid%re_ice                              & ! G. Thompson
+     &                 ,re_snow=grid%re_snow                            & ! G. Thompson
+     &                 ,has_reqc=has_reqc                               & ! G. Thompson
+     &                 ,has_reqi=has_reqi                               & ! G. Thompson
+     &                 ,has_reqs=has_reqs                               & ! G. Thompson
      &                 ,RSWTOA=RSWTOA,RLWTOA=RLWTOA                     &
      &                 ,CZMEAN=CZMEAN,CFRACL=CFRACL                     &
      &                 ,CFRACM=CFRACM,CFRACH=CFRACH                     &
@@ -1268,6 +1280,7 @@
       CALL SURFACE_DRIVER(                                              &
      &           HYDRO_dt=-1.0,  SFCHEADRT=SFCHEADRT,                   &
      &           INFXSRT=INFXSRT,  SOLDRAIN=SOLDRAIN,                   &
+     &           JULIAN_IN=grid%julian,                                 &
      &           ACSNOM=ACSNOM,ACSNOW=ACSNOW,AKHS=AKHS,AKMS=AKMS        &
      &          ,ALBEDO=ALBEDO,BR=BR,CANWAT=CMC,CHKLOWQ=CHKLOWQ         &
      &          ,DT=DT,DX=DX,DZ8W=DZ,DZS=DZSOIL,GLW=RLW_DN_SFC          &
@@ -2748,6 +2761,8 @@
      &                   ,TBPVS_STATE                                   &
      &                   ,TBPVS0_STATE                                  &
      &                   ,GRID,CONFIG_FLAGS                             &
+     &                   ,re_cloud,re_ice,re_snow                       & ! G. Thompson
+     &                   ,has_reqc,has_reqi,has_reqs                    & ! G. Thompson
      &                   ,IDS,IDE,JDS,JDE,KDS,KDE                       &
      &                   ,IMS,IME,JMS,JME,KMS,KME                       &
      &                   ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -2813,6 +2828,10 @@
      &                                  ,TBPVS_STATE,TBPVS0_STATE
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: SR
+!
+!..Additions for coupling cloud physics effective radii and radiation.  G. Thompson
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: re_cloud, re_ice, re_snow
+      INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
 !
       TYPE(DOMAIN),TARGET :: GRID
 !
@@ -2991,6 +3010,12 @@
      &                 ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &                 ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
      &                 ,ID=grid%id                                      &
+     &                 ,re_cloud=grid%re_cloud                          & ! G. Thompson
+     &                 ,re_ice=grid%re_ice                              & ! G. Thompson
+     &                 ,re_snow=grid%re_snow                            & ! G. Thompson
+     &                 ,has_reqc=has_reqc                               & ! G. Thompson
+     &                 ,has_reqi=has_reqi                               & ! G. Thompson
+     &                 ,has_reqs=has_reqs                               & ! G. Thompson
                                                                         )
 
 !$omp parallel do                                                       &

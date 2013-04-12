@@ -36,6 +36,8 @@ CONTAINS
                          STEPBL,STEPRA,STEPCU,                   &
                          W0AVG, RAINNC, RAINC, RAINCV, RAINNCV,  &
                          SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV, &
+                         re_cloud, re_ice, re_snow,              & ! G. Thompson
+                         has_reqc, has_reqi, has_reqs,           & ! G. Thompson
                          NCA,swrad_scat,                         &
                          CLDEFI,LOWLYR,                          &
                          MASS_FLUX,                              &
@@ -255,6 +257,11 @@ CONTAINS
                                                         ISLTYP
 
 ! rad
+
+!..Added by G. Thompson to couple cloud physics variables with RRTMG radiation.
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: re_cloud, &
+             re_ice, re_snow
+   INTEGER, INTENT(INOUT):: has_reqc, has_reqi, has_reqs
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &!BSINGH(PNNL)- should be declared inout
              RTHRATEN, RTHRATENLW, RTHRATENSW, CLDFRA
@@ -563,6 +570,20 @@ integer myproc
    sf_ocean_physics=config_flags%sf_ocean_physics
 #endif
 
+!..Added G. Thompson to determine if we will compute and pass radiative
+!.. effective radii of cloud water, ice, and snow.  Currently ONLY properly
+!.. connected if using Physics options Thompson-MP and RRTMG-LW/SW.
+   has_reqc = 0
+   has_reqi = 0
+   has_reqs = 0
+   if (config_flags%ra_lw_physics.eq.4 .and. &
+              config_flags%ra_sw_physics.eq.4 .and. &
+              config_flags%mp_physics.eq.8) then
+      has_reqc = 1
+      has_reqi = 1
+      has_reqs = 1
+   endif
+
 !-- should be from the namelist
 
    sfull = 0.
@@ -610,9 +631,11 @@ integer myproc
 !-- initialize common variables
      !BSINGH - When all the CAM parameterizations are not executed in WRF,
      !rliq can have undefined behaviour
+ IF (config_flags%cu_physics == CAMZMSCHEME .or. config_flags%shcu_physics == CAMUWSHCUSCHEME ) THEN
      IF(PRESENT(rliq)) THEN
         rliq(:,:) = 0.0 
      ENDIF
+ ENDIF
    IF ( .NOT. moved ) THEN
    DO j=jts,jtf
    DO i=its,itf
@@ -706,6 +729,37 @@ integer myproc
            raincv_b(i,j)=0.
       end do
     end do
+
+!..Fill initial starting values of radiative effective radii for
+!.. cloud water (2.51 microns), cloud ice (5.01 microns), and
+!.. snow (10.01 microns).
+    if (has_reqc.ne.0) then
+       do j=jts,jtf
+          do k=kts,ktf
+          do i=its,itf
+             re_cloud(i,k,j) = 2.51E-6
+          end do
+          end do
+       end do
+    endif
+    if (has_reqi.ne.0) then
+       do j=jts,jtf
+          do k=kts,ktf
+          do i=its,itf
+             re_ice(i,k,j) = 5.01E-6
+          end do
+          end do
+       end do
+    endif
+    if (has_reqs.ne.0) then
+       do j=jts,jtf
+          do k=kts,ktf
+          do i=its,itf
+             re_snow(i,k,j) = 10.01E-6
+          end do
+          end do
+       end do
+    endif
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to landuse_init' )
 
@@ -2224,7 +2278,8 @@ integer myproc
                      its,ite, jts,jte, kts,kte                     )
 
       CASE (PXLSMSCHEME)
-          if(config_flags%num_land_cat .ne. 24) CALL wrf_error_fatal &
+          if(config_flags%num_land_cat .ne. 20 .and. config_flags%num_land_cat .ne. 24 .and. &
+             config_flags%num_land_cat .ne. 40 .and. config_flags%num_land_cat .ne. 50 ) CALL wrf_error_fatal &
             ( 'module_physics_init: 24 cat USGS must be used with PX LSM option' )
           CALL LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,  &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,        &
@@ -2728,7 +2783,7 @@ integer myproc
 
      CASE (CAMZMSCHEME)
           IF (PRESENT(RQCNCUTEN)) THEN
-          CALL zm_conv_init(rucuten, rvcuten, rthcuten, rqvcuten,       &
+          CALL zm_conv_init(DT, rucuten, rvcuten, rthcuten, rqvcuten,       &
                       rqccuten, rqicuten, rqcncuten, rqincuten,         &
                       p_qc, p_qi, p_qnc, p_qni, param_first_scalar,     &
                       restart,                                          &

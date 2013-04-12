@@ -3,6 +3,27 @@
 !#define NO_UPSTREAM_ADVECTION
 !----------------------------------------------------------------------
 !
+  SUBROUTINE GET_OR_SET_IN_REAL_NMM(arg)
+    IMPLICIT NONE
+    INTEGER, INTENT(INOUT) :: ARG
+    INTEGER, SAVE :: REAL_MODE=0
+
+    IF(ARG==1) THEN
+       ! Turning on REAL_MODE to indicate we're in real_nmm:
+       REAL_MODE=ARG
+    ELSEIF(ARG==0) THEN
+       ! Want to get the value of REAL_MODE:
+       ARG=REAL_MODE
+    ELSE
+       call wrf_error_fatal("Invalid value for ARG in GET_OR_SET_IN_REAL_NMM: must be 0 (get) or 1 (set)")
+    END IF
+  END SUBROUTINE GET_OR_SET_IN_REAL_NMM
+  SUBROUTINE IN_REAL_NMM()
+    IMPLICIT NONE
+    INTEGER :: JUNK
+    CALL GET_OR_SET_IN_REAL_NMM(1)
+  END SUBROUTINE IN_REAL_NMM
+
 #ifdef HWRF
         SUBROUTINE GUESS_COUPLING_TIMESTEP(gridid,DTC)
           USE module_configure
@@ -111,6 +132,7 @@
 !***
       TYPE(DOMAIN),INTENT(INOUT) :: GRID
       LOGICAL , INTENT(IN)       :: allowed_to_read
+      LOGICAL :: in_real
 !
 #include <dummy_new_decl.inc>
 !
@@ -241,7 +263,7 @@
       INTEGER :: hr, mn, sec, ms, rc
       TYPE(WRFU_Time) :: currentTime
 
-      INTEGER :: interval_seconds, restart_interval
+      INTEGER :: interval_seconds, restart_interval, in_real_int
 
 #ifdef HWRF
       REAL :: xshift,xfar,yfar,dfar,close2edge
@@ -267,6 +289,7 @@
 !**********************************************************************
 !----------------------------------------------------------------------
 !
+
       call start_timing
 
 #ifdef HWRF
@@ -276,6 +299,13 @@
          grid%force_sst=2
       endif
 #endif
+
+      ! ----------------------------------------
+      ! Determine if we're in REAL_NMM.EXE
+      in_real_int=0
+      call GET_OR_SET_IN_REAL_NMM(in_real_int)
+      in_real = (in_real_int==1)
+      ! ----------------------------------------
 
       CALL GET_IJK_FROM_GRID(GRID,                                     &
      &                       IDS,IDE,JDS,JDE,KDS,KDE,                  &
@@ -620,11 +650,13 @@
 #endif
 #ifdef HWRF
 ! Begin Sam Trahan's doing for vortex tracker initialization
+      IF(.not.IN_REAL) THEN
          call VORTTRAK_INIT(grid,config_flags,       &
                             (allowed_to_read .and. .not. restrt), &
                             IDS,IDE,JDS,JDE,KDS,KDE, &
                             IMS,IME,JMS,JME,KMS,KME, &
                             ITS,ITE,JTS,JTE,KTS,KTE)
+      ENDIF
 ! End Sam Trahan's doing for vortex tracker initialization
 #endif
 #ifdef HWRF
@@ -1956,6 +1988,8 @@
      &             ,STEPBL,STEPRA,STEPCU                                &
      &             ,grid%w0avg, RAINNC, RAINC, grid%raincv, RAINNCV               &
      &             ,SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV              &
+     &             ,grid%re_cloud, grid%re_ice, grid%re_snow            & ! G. Thompson
+     &             ,grid%has_reqc,grid%has_reqi,grid%has_reqs           & ! G. Thompson
      &             ,NCA,GRID%SWRAD_SCAT                                 &
      &             ,grid%cldefi,LOWLYR                                       &
      &             ,grid%mass_flux                                           &

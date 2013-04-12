@@ -145,7 +145,7 @@
 
 !-- Resolve auto-cellcount method option (cellcount_method=0)
  IF ( ( cellcount_method .eq. 0 ) .and. (lightning_option .eq. ltng_crm_PR92w )) THEN
-   IF ( (ite-its+1)*dx .gt. 1E4 ) THEN ! use patch only if path size > 10 km
+   IF ( (ime-ims+1)*dx .gt. 1E4 ) THEN ! use patch only if path size > 10 km
      cellcount_method = 1
      WRITE(message, * ) ' lightning_init: setting auto cellcount_method to patch (cellcount_method=1'
    ELSE

@@ -103,7 +103,7 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in, nc)
                do k = 1, levels
                   read(unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
                      kk,l, stn_id, &          ! Station
-                     lat, lon, height, &       ! Lat/lon, pressure
+                     lat, lon, height, &       ! Lat/lon, height
                      u_obs, u_inv, u_qc, u_error, u_inc, &
                      v_obs, v_inv, v_qc, v_error, v_inc, &
                      t_obs, t_inv, t_qc, t_error, t_inc, &
@@ -123,7 +123,7 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in, nc)
                   if (if_write) &
                      write(omb_unit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
                         num, k, stn_id,  &       ! Station
-                        lat, lon, press,&       ! Lat/lon, pressure
+                        lat, lon, height,&       ! Lat/lon, height
                         u_obs, u_inv, u_qc, u_error, u_inc, &
                         v_obs, v_inv, v_qc, v_error, v_inc, &
                         t_obs, t_inv, t_qc, t_error, t_inc, &

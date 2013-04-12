@@ -263,7 +263,14 @@ bufrfile:  do ibufr=1,numbufr
          !  3.1     Extract satellite id and scan position. 
    
          platform_id = 23
-         satellite_id = 1
+         if(infile(5:5)=='a') then
+          satellite_id = 1
+         elseif(infile(5:5)=='b') then
+          satellite_id = 2
+         else
+          write(*,*) 'This character is not coped with presently'
+          return
+         endif
          ifov = rad%iscanpos    
 
          !  QC2:  limb pixel rejected (not implemented)

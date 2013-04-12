@@ -690,7 +690,7 @@ contains
     ! HISTORY:
     !   Nov 08 2011 - written by Sam Trahan
 
-#ifdef DM_PARALLEL && !defined(STUBMPI)
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
     USE module_dm, only: wrf_dm_maxval_real, wrf_dm_sum_real, &
          local_communicator_y, local_communicator_x
     IMPLICIT NONE

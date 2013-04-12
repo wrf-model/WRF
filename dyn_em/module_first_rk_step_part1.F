@@ -822,8 +822,6 @@ BENCH_START(pbl_driver_tim)
      &        ,TPERT2D=grid%tpert2d,QPERT2D=grid%qpert2d                  &
      &        ,WPERT2D=grid%wpert2d,WSEDL3D=grid%wsedl3d                  &
      &        ,TURBTYPE3D=grid%turbtype3d,SMAW3D=grid%smaw3d              &
-     &        ,TKE_PBL8W=grid%tke_pbl8w,EXCH_H8W=grid%exch_h8w            &
-     &        ,EXCH_M8W=grid%exch_m8w                                     &
      &        ,QNC_CURR=scalar(ims,kms,jms,P_QNC), F_QNC=f_qnc            &
      &        ,QNI_CURR=scalar(ims,kms,jms,P_QNI), F_QNI=f_qni            &
      &        ,RQNIBLTEN=grid%rqniblten                                   &
@@ -911,7 +909,7 @@ BENCH_START(cu_driver_tim)
      &             ,ktop_deep=grid%ktop_deep                              &
      &             ,PERIODIC_X=(config_flags%polar .OR. config_flags%periodic_x)  &
      &             ,PERIODIC_Y=config_flags%periodic_y                    &
-     &             ,TKE_PBL8W=grid%tke_pbl8w,IS_CAMMGMP_USED = grid%is_CAMMGMP_used  & !BSINGH - TKE at the interfaces for Zhang-McFarlane Scheme 
+     &             ,IS_CAMMGMP_USED = grid%is_CAMMGMP_used  & !BSINGH - TKE at the interfaces for Zhang-McFarlane Scheme 
                  ! Zhang-McFarlane outputs
      &             ,EVAPCDP3D=grid%evapcdp3d, ICWMRDP3D=grid%icwmrdp3d    & !Balwinder.Singh@pnnl.gov: For CAM's wetscavenging
      &             ,RPRDDP3D=grid%rprddp3d                                & 
@@ -1057,7 +1055,6 @@ BENCH_START(shcu_driver_tim)
      &             ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                         &
      &             ,HT=grid%ht                                            &
      &             ,SHFRC3D=grid%shfrc3d                                  & !Balwinder.Singh@pnnl.gov: For CAM's wetscavenging
-     &             ,TKE_PBL8W=grid%tke_pbl8w                              & !BSINGH - TKE at the interfaces for UWSHCU Scheme 
      &             ,IS_CAMMGMP_USED = grid%is_CAMMGMP_used                &
      &             ,WSTAR=grid%wstar_ysu,DELTA=grid%delta_ysu             &
      &             ,KPBL=grid%kpbl,ZNU=grid%znu                           &

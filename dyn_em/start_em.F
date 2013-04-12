@@ -569,15 +569,27 @@
     ENDDO
     ENDDO
 
-    DO j=jts,min(jte,jde-1)
-       DO i=its,min(ite,ide-1)
-          p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
-          grid%p_hyd_w(i,1,j) = grid%p(i,1,j) + grid%znw(1)*(p_surf - grid%p_top) + grid%p_top
-          DO k=kts+1,kte
-             grid%p_hyd_w(i,k,j) = ( 2.*(grid%p(i,k-1,j)+grid%pb(i,k-1,j)) - grid%p_hyd_w(i,k-1,j) )
+    IF ( .NOT. grid%this_is_an_ideal_run ) THEN
+       DO j=jts,min(jte,jde-1)
+          DO i=its,min(ite,ide-1)
+             p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
+             grid%p_hyd_w(i,1,j) = grid%p(i,1,j) + grid%znw(1)*(p_surf - grid%p_top) + grid%p_top
+             DO k=kts+1,kte
+                grid%p_hyd_w(i,k,j) = ( 2.*(grid%p(i,k-1,j)+grid%pb(i,k-1,j)) - grid%p_hyd_w(i,k-1,j) )
+             ENDDO
           ENDDO
        ENDDO
-    ENDDO
+    ELSE
+       DO j=jts,min(jte,jde-1)
+          DO i=its,min(ite,ide-1)
+             p_surf = grid%mub(i,j)+grid%p_top
+             grid%p_hyd_w(i,1,j) = grid%p(i,1,j) + grid%znw(1)*(p_surf - grid%p_top) + grid%p_top
+             DO k=kts+1,kte
+                grid%p_hyd_w(i,k,j) = ( 2.*(grid%p(i,k-1,j)+grid%pb(i,k-1,j)) - grid%p_hyd_w(i,k-1,j) )
+             ENDDO
+          ENDDO
+       ENDDO
+    END IF
 
    ENDIF
 
@@ -611,7 +623,7 @@
    CALL domain_setgmtetc( grid, start_of_simulation )
 !tgs
    IF(config_flags%cycling) start_of_simulation = .true.
-  print *,'cycling, start_of_simulation -->',config_flags%cycling, start_of_simulation
+!  print *,'cycling, start_of_simulation -->',config_flags%cycling, start_of_simulation
 
 !-----------------------------------------------------------------------------
 ! Adaptive time step: Added by T. Hutchinson, WSI  11/6/07
@@ -989,6 +1001,9 @@
 #  include "HALO_EM_INIT_3.inc"
 #  include "HALO_EM_INIT_4.inc"
 #  include "HALO_EM_INIT_5.inc"
+      IF ( config_flags%sf_ocean_physics .EQ. PWP3DSCHEME ) THEN
+#  include "HALO_EM_INIT_6.inc"
+      END IF
 #  include "PERIOD_BDY_EM_INIT.inc"
 #  include "PERIOD_BDY_EM_MOIST.inc"
 #  include "PERIOD_BDY_EM_TKE.inc"
@@ -1161,7 +1176,7 @@
            else                      ! over water, leave it alone
               vfac = 1.
            endif
-         print *, j,i,grid%ctopo(i,j),vfac
+!          print *, j,i,grid%ctopo(i,j),vfac
            grid%ctopo(i,j)=grid%ctopo(i,j)*vfac
          ENDDO
          ENDDO

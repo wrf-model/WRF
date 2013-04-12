@@ -24,11 +24,11 @@ SUBROUTINE microphysics_driver(                                          &
                       ,num_tiles, naer                                   &
 !======================
                       !Variables required for CAMMGMP Scheme
-                      ,dlf,dlf2,t_phy,p_hyd,p8w_hyd,tke_pbl8w,z_at_w,qfx &
+                      ,dlf,dlf2,t_phy,p_hyd,p8w_hyd,tke_pbl,z_at_w,qfx   &
                       ,rliq,turbtype3d,smaw3d,wsedl3d,cldfra_old_mp      &
                       ,cldfra_mp,cldfra_mp_all,cldfrai,cldfral,cldfra_conv&
                       ,alt       &
-                      ,exch_h8w,accum_mode,aitken_mode,coarse_mode       &
+                      ,accum_mode,aitken_mode,coarse_mode                &
                       ,icwmrsh3d,icwmrdp3d,shfrc3d,cmfmc3d,cmfmc2_3d     &
                       ,config_flags,fnm,fnp,rh_old_mp,lcd_old_mp         &
 #ifdef WRF_CHEM
@@ -65,6 +65,8 @@ SUBROUTINE microphysics_driver(                                          &
 ! Added the RI_CURR array to the call
                       ,ri_curr                                           &
                       ,diagflag,   do_radar_ref                          &
+                      ,re_cloud, re_ice, re_snow                         & ! G. Thompson
+                      ,has_reqc, has_reqi, has_reqs                      & ! G. Thompson
                                                    )
 ! Framework
 #if(NMM_CORE==1)
@@ -227,7 +229,6 @@ SUBROUTINE microphysics_driver(                                          &
 !-- t8w           temperature at layer interfaces
 !-- cldfra, cldfra_old, current, previous cloud fraction
 !-- exch_h        vertical diffusivity (m2/s)
-!-- exch_h8w      vertical diffusivity at interfaces(m2/s)
 !-- qlsink        Fractional cloud water sink (/s)
 !-- precr         rain precipitation rate at all levels (kg/m2/s)
 !-- preci         ice precipitation rate at all levels (kg/m2/s)
@@ -329,7 +330,7 @@ SUBROUTINE microphysics_driver(                                          &
                                                                p_hyd, &    !Hydrostatic pressure(Pa)
                                                              p8w_hyd, &    !Hydrostatic Pressure at level interface (Pa)
                                                               z_at_w, &    !Height above sea level at layer interfaces (m) 
-                                                           tke_pbl8w, &    !Turbulence kinetic energy
+                                                             tke_pbl, &    !Turbulence kinetic energy
                                                           turbtype3d, &    !Turbulent interface types [ no unit ]
                                                               smaw3d, &    !Normalized Galperin instability function for momentum  ( 0<= <=4.964 and 1 at neutral ) [no units]
                                                                  alt, &    !inverse density(m3/kg)
@@ -412,7 +413,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
          OPTIONAL,                                                &
          INTENT(INOUT ) ::                                        &
                   w, z, t8w                                       &
-                 ,cldfra, cldfra_old, exch_h,exch_h8w             &
+                 ,cldfra, cldfra_old, exch_h                      &
                  ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr &
                  ,qt_curr,qndrop_curr,qni_curr,qh_curr,qnh_curr   &
                  ,qns_curr,qnr_curr,qng_curr,qnn_curr,qnc_curr    &
@@ -470,6 +471,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
    LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
    INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) ::  & ! G. Thompson
+                 re_cloud, re_ice, re_snow
+   INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
 
 ! LOCAL  VAR
 
@@ -576,45 +580,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
        END IF
        END IF
 
-       !BSINGH - Make sure that EXCH_H8W and EXCH_H match for cases where
-       ! CAMMGMPSCHEME is not selected
-#if(EM_CORE==1)
-       if(mp_physics .NE. CAMMGMPSCHEME) then
-          !Interpolate EXCH_H to populate EXCH8W
-          !Following formulation is adapted from module_chem_utilities.F
-          do j = j_start(ij),j_end(ij)
-             do k = 2, kte
-                do i = i_start(ij), i_end(ij)
-                   exch_h8w(i,k,j) = fnm(k)*exch_h(i,k,j)+fnp(k)*exch_h(i,k-1,j)
-                enddo
-             enddo
-          enddo
-          !Extrapolate exch_h8w to surface and top.
-          !We'll use an extrapolation in z for now
-          
-          do j = j_start(ij),j_end(ij)
-             do i = i_start(ij), i_end(ij)
-                !Bottom
-                z0 = z_at_w(i,1,j)
-                z1 = z(i,1,j)
-                z2 = z(i,2,j)
-                w1 = (z0 - z2)/(z1 - z2)
-                w2 = 1. - w1
-                exch_h8w(i,1,j) = w1*exch_h(i,1,j)+w2*exch_h(i,2,j)
-                !Top
-                z0 = z_at_w(i,kte,j)
-                z1 = z(i,kte,j)
-                z2 = z(i,kte-1,j)
-                w1 = (z0 - z2)/(z1 - z2)
-                w2 = 1. - w1
-                
-                exch_h8w(i,kde,j) = w1*exch_h(i,kde-1,j)+w2*exch_h(i,kde-2,j)
-                
-             enddo
-          enddo
-       endif
-# endif       
-
      micro_select: SELECT CASE(mp_physics)
 
         CASE (KESSLERSCHEME)
@@ -684,6 +649,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      REFL_10CM=refl_10cm,                &
                      diagflag=diagflag,                  &
                      do_radar_ref=do_radar_ref,          &
+                     re_cloud=re_cloud,                  & ! G. Thompson
+                     re_ice=re_ice,                      & ! G. Thompson
+                     re_snow=re_snow,                    & ! G. Thompson
+                     has_reqc=has_reqc,                  & ! G. Thompson
+                     has_reqi=has_reqi,                  & ! G. Thompson
+                     has_reqs=has_reqs,                  & ! G. Thompson
                  IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
                  IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
                  ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
@@ -1448,7 +1419,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
           CASE (CAMMGMPSCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling CAMMGMPSCHEME')
              IF ( PRESENT( z          ) .AND. PRESENT( ht          ) .AND. &
-                  PRESENT( exch_h8w   ) .AND. PRESENT( qs_curr     ) .AND. &
+                  PRESENT( qs_curr    ) .AND.                              &
                   PRESENT( qv_curr    ) .AND. PRESENT( qc_curr     ) .AND. &
                   PRESENT( qi_curr    ) .AND. PRESENT( f_qc        ) .AND. &
                   PRESENT( qr_curr    ) .AND. PRESENT( qndrop_curr ) .AND. &                  
@@ -1463,9 +1434,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   
                 CALL CAMMGMP(ITIMESTEP=itimestep,DT=dt,P8W=p8w_hyd,P_HYD=p_hyd    &
                      ,T_PHY=t_phy,PI_PHY=pi_phy,Z_AT_W=z_at_w,QFX=qfx             &
-                     ,TKE_PBL8W=tke_pbl8w,TURBTYPE3D=turbtype3d,SMAW3D=smaw3d     &
+                     ,TKE_PBL=tke_pbl,TURBTYPE3D=turbtype3d,SMAW3D=smaw3d     &
                      ,DLF3D=dlf,DLF2_3D=dlf2,RLIQ2D=rliq,Z_SEA_LEVEL=z            &
-                     ,KVH3D=exch_h8w,HT=ht,ALT=alt,ACCUM_MODE=accum_mode          &
+                     ,KVH3D=exch_h,HT=ht,ALT=alt,ACCUM_MODE=accum_mode            &
                      ,AITKEN_MODE=aitken_mode,COARSE_MODE=coarse_mode             &
                      ,ICWMRSH3D=icwmrsh3d,ICWMRDP3D=icwmrdp3d,SHFRC3D=shfrc3d     &
                      ,CMFMC3D=cmfmc3d,CMFMC2_3D=cmfmc2_3d                         &

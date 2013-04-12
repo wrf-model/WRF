@@ -29,9 +29,6 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
    real    :: distance_h       ! cal. h-difference between obs and model
    real,allocatable :: min_dis(:)   ! minimum difference
                                                ! hor. location.
-! t_iwabuchi 20111216 linear-log interpolation for N
-   real, allocatable :: log_ref(:,:,:)   ! for log (N)
-
 ! t_iwabuchi 20111216 T for QC 
    real, allocatable :: int_t(:,:,:)     ! for T
 
@@ -227,11 +224,7 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
    call da_convert_zk (iv%info(gpsref))
 
 ! t_iwabuchi 20111216 (hmn's update) linear interpolation of log(n) 
-!   call da_interp_lin_3d (grid%xb%ref, iv%info(gpsref), model_ref)
-   allocate (log_ref(ims:ime, jms:jme, kms:kme))
-   log_ref = log(grid%xb%ref)
-   call da_interp_lin_3d (log_ref, iv%info(gpsref), model_ref)
-   deallocate(log_ref)
+   call da_interp_lin_3d (grid%xb%reflog, iv%info(gpsref), model_ref)
    allocate (int_t(ims:ime, jms:jme, kms:kme))
    int_t = grid%xb%t
    call da_interp_lin_3d (int_t, iv%info(gpsref), model_t)

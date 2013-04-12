@@ -107,15 +107,15 @@ CONTAINS
       REAL,  DIMENSION(ims:ime, jms:jme), INTENT(OUT) ::              &
                                         HPBL2D,                         &    !ADDED BY KWON FOR SHALLOW CONV.
                                         EVAP2D,                         &    !ADDED BY KWON FOR SHALLOW CONV.
-                                        HEAT2D,RC2D                          !ADDED BY KWON FOR SHALLOW CONV.
-      REAL,  DIMENSION(ims:ime, jms:jme, kms:kme), INTENT(OUT) :: DKU3D,DKT3D  
-#endif
-
+                                        HEAT2D,RC2D,MZNT                     !ADDED BY KWON FOR SHALLOW CONV.
       REAL,  DIMENSION(ims:ime, jms:jme), INTENT(IN) ::              &
                                         U10,                         &    !ADDED BY KWON FOR VARIABLE Ric
-                                        V10,                         &    !ADDED BY KWON FOR VARIABLE Ric
-                                        ZNT,                         &    !ADDED BY KWON FOR VARIABLE Ric
-                                        MZNT                              !ADDED BY KWON FOR VARIABLE Ric
+                                        V10,XLAND,                   &    !ADDED BY KWON FOR VARIABLE Ric
+                                        ZNT                               !ADDED BY KWON FOR VARIABLE Ric
+      REAL,  DIMENSION(ims:ime, jms:jme, kms:kme), INTENT(OUT) :: DKU3D,DKT3D  
+      REAL,    INTENT(IN) :: VAR_RIC,coef_ric_l,coef_ric_s                   !ADDED BY KWON
+#endif
+
 
 
       INTEGER, INTENT(IN) ::            ids,ide, jds,jde, kds,kde,      &
@@ -131,7 +131,6 @@ CONTAINS
                                         KARMAN,                         &
                                         R,                              & 
                                         ROVCP,                          &
-                                        VAR_RIC,coef_ric_l,coef_ric_s,  & !ADDED BY KWON FOR VARIABLE Ric
                                         ROVG 
 
       REAL,    DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) ::      & 
@@ -164,7 +163,6 @@ CONTAINS
                                         PSIM,                           &
                                         PSIH,                           &
                                         QFX,                            &
-                                        xland,                            &
                                         TSK
  
       REAL,    DIMENSION(ims:ime, jms:jme), INTENT(INOUT) ::            & 
@@ -189,8 +187,11 @@ CONTAINS
                                         T1,                             &
                                         TAU,                            &
                                         dishx,                          &
+#if (HWRF==1)
+                                        dku,dkt,   &       !Kwon for diffusivity
+#endif
                                         U1,                             &
-                                        V1,dku,dkt        !Kwon for diffusivity
+                                        V1
 
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte+1) ::       &
                                         PHII,                           & 
@@ -272,11 +273,12 @@ CONTAINS
         QSS(i)=QV3D(i,kts,j)               ! not used in moninp so set to qv3d for now
         HEAT(i)=HFX(i,j)/CPM*RRHOX
         EVAP(i)=QFX(i,j)*RRHOX
-        XLAND1(i) = XLAND(I,J)
+        XLAND1(i) = 0.0        
 #if (HWRF==1)
 ! Kwon FOR NEW SHALLOW CONVECTION 
         HEAT2D(i,j)=HFX(i,j)/CPM*RRHOX
         EVAP2D(i,j)=QFX(i,j)*RRHOX
+        XLAND1(i) = XLAND(I,J)
 #endif
 !
         STRESS(i)=KARMAN*KARMAN*WSPD(i,j)*WSPD(i,j)/(FMTMP*FMTMP)
@@ -285,8 +287,10 @@ CONTAINS
         PHII(I,kts)=0.
         RCL(i)=1.
         RBSOIL(I)=BR(i,j)
+#if (HWRF==1)
 ! Kwon for variable Ric   : Ro=W10/(f*zo): surface Rossby number
        Ro(I)=SQRT(U10(I,J)**2 + V10(I,J)**2) / (1.E-4 * MZNT(I,J))
+#endif
       ENDDO
 
       DO k=kts,kte
@@ -342,12 +346,15 @@ CONTAINS
           ENDDO
         ENDDO
       ENDDO
-
+!
       CALL MONINP(IM,IM,KX,NTRAC,DV,DU,TAU,RTG,U1,V1,T1,Q1,             &
                   PSK,RBSOIL,FM,FH,TSEA,QSS,HEAT,EVAP,STRESS,           &
                   SPD1,KPBL,PRSI,DEL,PRSL,PRSLK,PHII,PHIL,RCL,          &
-                  DELTIM,DUSFC,DVSFC,DTSFC,DQSFC,HPBL,HGAMT,HGAMQ,      &
-                  ALPHA,VAR_RIC,Ro,RBCR,DKU,DKT,coef_ric_l,coef_ric_s,xland1)
+                  DELTIM,DUSFC,DVSFC,DTSFC,DQSFC,HPBL,HGAMT,            &
+#if (HWRF==1)
+               VAR_RIC,Ro,DKU,DKT,coef_ric_l,coef_ric_s,xland1,  &
+#endif
+                RBCR,HGAMQ,ALPHA)
 
 !============================================================================
 !    ADD  IN  DISSIPATIVE HEATING .... v*dv. This is Bob's doing
@@ -397,14 +404,15 @@ CONTAINS
 #if (HWRF==1)
 !Kwon For new shallow convection
         HPBL2D(i,j)=HPBL(i)
+        rc2D(i,j)=rbcr(i)
 #endif
 !
         KPBL2D(i,j)=kpbl(i)
-        rc2D(i,j)=rbcr(i)
       ENDDO
 ! INITIALIZE DKU3D and DKT3D  (3D momentum and thermal diffusivity for
 ! diagnostics)
 !
+#if (HWRF==1)
      DO i=its,ite
      DO k=kts,kte
       DKU3D(I,J,K) = 0.
@@ -418,6 +426,7 @@ CONTAINS
       DKT3D(I,J,K) = DKT(I,K)
      ENDDO
      ENDDO
+#endif
 
     ENDDO
 
@@ -497,8 +506,11 @@ CONTAINS
      &     U1,V1,T1,Q1,                                                 &
      &     PSK,RBSOIL,FM,FH,TSEA,QSS,HEAT,EVAP,STRESS,SPD1,KPBL,        &
      &     PRSI,DEL,PRSL,PRSLK,PHII,PHIL,RCL,DELTIM,                    &
-     &     DUSFC,DVSFC,DTSFC,DQSFC,HPBL,HGAMT,HGAMQ,ALPHA,VAR_RIC,      &
-     &     Ro,RBCR,DKU,DKT,coef_ric_l,coef_ric_s,xland1)
+     &     DUSFC,DVSFC,DTSFC,DQSFC,HPBL,HGAMT,                     &
+#if (HWRF==1)
+           VAR_RIC,Ro,DKU,DKT,coef_ric_l,coef_ric_s,xland1,   &
+#endif
+           RBCR,HGAMQ,ALPHA)
 !
       USE MODULE_GFS_MACHINE, ONLY : kind_phys
       USE MODULE_GFS_PHYSCONS, grav => con_g, RD => con_RD, CP => con_CP &
@@ -514,7 +526,11 @@ CONTAINS
       integer IX, IM, KM, ntrac, KPBL(IM)
 !
       real(kind=kind_phys) DELTIM
-      real :: ALPHA,VAR_RIC,coef_ric_l,coef_ric_s
+      real :: ALPHA
+
+#if (HWRF==1)
+      real :: VAR_RIC,coef_ric_l,coef_ric_s
+#endif
       real(kind=kind_phys) DV(IM,KM),     DU(IM,KM),                    &
      &                     TAU(IM,KM),    RTG(IM,KM,ntrac),             &
      &                     U1(IX,KM),     V1(IX,KM),                    &
@@ -530,9 +546,11 @@ CONTAINS
      &                     PHII(IX,KM+1), PHIL(IX,KM),                  & 
      &                     RCL(IM),       DUSFC(IM),                    &
      &                     dvsfc(IM),     dtsfc(IM),                    & 
-     &                     DQSFC(IM),     HPBL(IM), RO(IM),             &
-     &                     HGAMT(IM),     hgamq(IM), RBCR(IM),          &  !KWON RBCR
-     &                     DKU(IM,KM-1),    DKT(IM,KM-1),xland1(IM)
+     &                     DQSFC(IM),     HPBL(IM),                     &
+     &                     HGAMT(IM),     hgamq(IM), RBCR(IM)
+#if (HWRF==1)
+real(kind=kind_phys) RO(IM),xland1(IM)
+#endif
 !
 !    Locals
 !
@@ -551,7 +569,7 @@ CONTAINS
      &                     AL(IM,KM-1),     AD(IM,KM),                  &
      &                     AU(IM,KM-1),     A1(IM,KM),                  &
      &                     A2(IM,KM),       THETA(IM,KM),               &
-     &                     AT(IM,KM*(ntrac-1))
+     &                     AT(IM,KM*(ntrac-1)),DKU(IM,KM-1),DKT(IM,KM-1)
       logical              pblflg(IM),   sfcflg(IM), stable(IM)
 !
       real(kind=kind_phys) aphi16,  aphi5,  bet1,   bvf2,               &
@@ -624,12 +642,14 @@ CONTAINS
 !
      do i=1,im
      RBCR(I) = 0.25
+#if (HWRF==1)
      IF(var_ric.eq.1.) THEN             
       IF(xland1(i).eq.1)  RBCR(I) = coef_ric_l*(1.E-7*Ro(I))**(-0.18)
       IF(xland1(i).eq.2)  RBCR(I) = coef_ric_s*(1.E-7*Ro(I))**(-0.18)
 !      write(0,*) 'xland1 coef_ric_l coef_ric_s ',xland1(i),coef_ric_l,coef_ric_s
      ENDIF
      IF(RBCR(I).GT.0.5) RBCR(I)=0.5    !set upper limit Suggsted by Han
+#endif
      enddo
 !
       gravi = 1.0 / grav

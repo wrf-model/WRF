@@ -212,8 +212,6 @@ CONTAINS
 
    REAL :: wind_vel
    REAL :: depth
-   REAL :: dbz,dbzr,dbzs,dbzg
-   REAL, PARAMETER :: dbzmin=-20.
 
 !-----------------------------------------------------------------
 ! Handle accumulations with buckets to prevent round-off truncation in long runs
@@ -516,10 +514,6 @@ CONTAINS
        ENDIF
 
 ! Calculate the max radar reflectivity between output times
-
-       dbz = dbzr + dbzs + dbzg
-       IF ( dbz  .GT. 0. ) dbz  = 10.0 * LOG10 ( dbz  )
-       dbz  = MAX ( dbzmin, dbz  )
 
        IF ( refl_10cm(i,kms,j) .GT. refd_max(i,j) ) THEN
          refd_max(i,j) = refl_10cm(i,kms,j)

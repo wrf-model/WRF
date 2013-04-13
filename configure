@@ -902,6 +902,26 @@ EOF
   rm -f ${foo} ${foo}.[cfo] 2> /dev/null
 fi
 
+# testing for Fortran 2003 IEEE signaling features
+make fortran_2003_test > tools/fortran_2003_test.log 2>&1
+rm -f tools/fortran_2003_test.log
+retval=-1
+if [ -f tools/fortran_2003_test.exe ] ; then
+  retval=0
+fi
+if [ $retval -ne 0 ] ; then
+  sed -e '/^ARCH_LOCAL/s/$/ -DNO_IEEE_MODULE/' configure.wrf > configure.wrf.edit
+  mv configure.wrf.edit configure.wrf
+  echo " "
+  echo " "
+  echo "************************** W A R N I N G ************************************"
+  echo " "
+  echo "There are some Fortran 20003 features in WRF that your compiler does not recognize"
+  echo "The IEEE signaling call has been removed.  That may not be enough."
+  echo " "
+  echo "*****************************************************************************"
+fi
+
 # testing for netcdf4 IO features
 if [ -n "$NETCDF4" ] ; then
   if [ $NETCDF4 -eq 1 ] ; then

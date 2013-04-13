@@ -174,7 +174,7 @@ CONTAINS
 !-- ACSNOM      snow melt (mm) (water equivalent)
 !-- ACSNOW      accumulated snow fall (mm) (water equivalent)
 !-- SNOPCX      snow phase change heat flux (W/m^2)
-!-- POTEVP      accumulated potential evaporation (W/m^2)
+!-- POTEVP      accumulated potential evaporation (m)
 !-- RIB         Documentation needed!!!
 ! ----------------------------------------------------------------------
 !-- RUNOFF1     surface runoff (m s-1), not infiltrating the surface

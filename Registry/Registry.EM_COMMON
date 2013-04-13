@@ -924,7 +924,7 @@ state    real   acfrcv           ij     misc        1         -      -
 state integer   ncfrcv           ij     misc        1         -      -
 
 # new rad variables
-state    real   o3rad           ikj     misc        1         -      irhdf=(p2c)      "o3rad"    "RADIATION 3D OZONE" "ppmv"
+state    real   o3rad           ikj     misc        1         -      irdf=(p2c)      "o3rad"    "RADIATION 3D OZONE" "ppmv"
 
 # incoming optical depth derived from aerosol data
 state  real   aerodm    i{lsa}jm{ty}    misc        1    -   -     -
@@ -938,7 +938,7 @@ state  real   dust      ikjf            aerod       1    -   df=(p2c)     "dust"
 state  real   bcarbon   ikjf            aerod       1    -   df=(p2c)     "bcarbon"         "black carbon"            -
 state  real   sulfate   ikjf            aerod       1    -   df=(p2c)     "sulfate"         "sulfate"                 -
 state  real   upperaer  ikjf            aerod       1    -   df=(p2c)     "upperaer"        "volcanic ash"            -
-state  real   aodtot    ij              misc        1    -      rh        "aodtot"          "TOTAL AEROSOL OPTICAL DEPTH"  -
+state  real   aodtot    ij              misc        1    -      r         "aodtot"          "TOTAL AEROSOL OPTICAL DEPTH"  -
 
 # cam radiation variables
 state  real    -       i{ls}jf ozmixm      1    -   -     -
@@ -1707,8 +1707,12 @@ rconfig   integer shw                     namelist,domains	max_domains    2     
 rconfig   integer tile_sz_x               namelist,domains	1             0       -      "tile_sz_x"             ""      ""
 rconfig   integer tile_sz_y               namelist,domains	1             0       -      "tile_sz_y"             ""      ""
 rconfig   integer numtiles                namelist,domains	1             1       -      "numtiles"              ""      ""
-rconfig   integer nproc_x                 namelist,domains	1             -1       -      "nproc_x"              "-1 means not set"      ""
-rconfig   integer nproc_y		  namelist,domains	1             -1       -      "nproc_y"              "-1 means not set"      ""
+rconfig   integer numtiles_inc            namelist,domains	1             0       -      "numtiles_inc"          ""      ""
+rconfig   integer numtiles_x              namelist,domains	1             0       -      "numtiles_x"            ""      ""
+rconfig   integer numtiles_y              namelist,domains	1             0       -      "numtiles_y"            ""      ""
+rconfig   integer tile_strategy           namelist,domains	1             0       -      "tile_strategy"         ""      ""
+rconfig   integer nproc_x                 namelist,domains	1             -1      -      "nproc_x"              "-1 means not set"      ""
+rconfig   integer nproc_y		  namelist,domains	1             -1      -      "nproc_y"              "-1 means not set"      ""
 rconfig   integer irand                   namelist,domains	1             0       -      "irand"           ""      ""
 rconfig   real    dt                      derived              max_domains    2.      h     "dt"        "TEMPORAL RESOLUTION"      "SECONDS"
 rconfig   integer   num_moves       namelist,domains    1                0
@@ -1732,6 +1736,9 @@ rconfig   logical   perturb_input   namelist,domains    1              .false. h
 rconfig   real      eta_levels      namelist,domains    max_eta        -1.
 rconfig   real      max_dz          namelist,domains    1               1000.
 rconfig   integer   ocean_levels    namelist,domains    1               30     irh   "ocean level"        ""      ""
+rconfig   real      ocean_z         namelist,domains    max_ocean      -1      -     "vertical profile of layer depths for ocean" "m"
+rconfig   real      ocean_t         namelist,domains    max_ocean      -1      -     "vertical profile of ocean temps" "K"
+rconfig   real      ocean_s         namelist,domains    max_ocean      -1      -     "vertical profile of salinity" 
 rconfig   integer   num_traj        namelist,domains    1               25      irh   "num_traj" "#of trajectory" ""
 
 # variable for time series of vertical profile of U, V, Theta, GHT,a nd QVAPOR
@@ -2403,12 +2410,12 @@ package   wrfhydro       wrf_hydro==1                -            state:SOLDRAIN
 ### 8. Edit the Registry file and create a halo-exchange for x_1.
 
 # Halo Update Communications
-
 halo      HALO_EM_INIT_1 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,ph_1,ph_2
 halo      HALO_EM_INIT_2 dyn_em 48:t_1,t_2,mu_1,mu_2,tke_1,tke_2,ww,phb
 halo      HALO_EM_INIT_3 dyn_em 48:ph0,php,t_init,mub,mu0,p,al,alt,alb
 halo      HALO_EM_INIT_4 dyn_em 48:pb,h_diabatic,msftx,msfty,msfux,msfuy,msfvx,msfvy,msfvx_inv,f,e,sina,cosa,ht,potevp,snopcx,soiltb,xlat,xlong,xlat_u,xlat_v,xlong_u,xlong_v,clat
 halo      HALO_EM_INIT_5 dyn_em 48:moist,chem,scalar,tracer
+halo      HALO_EM_INIT_6 dyn_em 48:om_tmp,om_s,om_u,om_v,om_depth,om_tini,om_sini,om_lat,om_lon,om_ml
 halo      HALO_EM_VINTERP_UV_1 dyn_em 8:pd_gc,pb
 halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2

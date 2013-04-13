@@ -3,8 +3,11 @@ subroutine da_update_firstguess(grid, out_filename)
 !---------------------------------------------------------------------------
 !  Purpose: Only replce the fields touched by WRFDA, other than re-generate 
 !           whole wrfvar_output from the scratch.
-!           Requires the fg being copied to out_filename beforehand.
 !
+!  Update  :   jliu@ucar.edu Apr 1, 2013
+!              Minor change for Purpose
+!              Added copy file mods instead of copying file outside 
+!              Requires Fortran 2003 standard compiler
 !  Creator :   Junmei Ban, Mar 14, 2013
 !         
 !  The following WRF fields are modified:
@@ -22,9 +25,18 @@ subroutine da_update_firstguess(grid, out_filename)
 !---------------------------------------------------------------------------
 
   use module_domain, only : get_ijk_from_grid
-  use module_state_description, only : p_qv
+  use da_control,    only : use_radarobs, use_radar_rf, use_rad, crtm_cloud 
+  use module_state_description, only : p_qv, p_qc, p_qr, p_qi, &
+                                       p_qs, p_qg
 
   implicit none
+
+  INTERFACE
+    integer(c_int32_t) function copyfile(ifile, ofile) bind(c)
+      import :: c_int32_t, C_CHAR
+      CHARACTER(KIND=C_CHAR), DIMENSION(*), intent(in) :: ifile, ofile
+    END function copyfile
+  END INTERFACE
 
   include 'netcdf.inc'
 
@@ -37,14 +49,13 @@ subroutine da_update_firstguess(grid, out_filename)
   character(len=4)   :: staggering=' N/A'
   character(len=3)   :: ordering  
   character(len=80), dimension(3)  ::  dimnames
-  character(len=80)  :: SysDepInfo  
   character(len=31)  :: rmse_var  
   integer            :: dh1
   integer            :: i,j,k
   integer            :: ndim1
   integer            :: WrfType
-  integer            :: it, ierr, istatus, Status, Status_next_time
-  integer            :: wrf_double  ! wrf_real
+  integer            :: it, ierr, Status, Status_next_time
+  integer            :: wrf_real
   integer            :: iyear,imonth,iday,ihour,iminute,isecond
   integer            :: nlon_regional,nlat_regional,nsig_regional
   integer            :: ids, ide, jds, jde, kds, kde,    &
@@ -52,14 +63,11 @@ subroutine da_update_firstguess(grid, out_filename)
                         ips, ipe, jps, jpe, kps, kpe    
   integer, dimension(4)           :: start_index, end_index1
   real, dimension(:), allocatable :: globbuf  
-  real               :: pt_regional,pdtop_regional,dy_nmm
-  real,allocatable   :: field3(:,:,:),field2(:,:),field1(:)
-  real,allocatable   :: field3u(:,:,:),field3v(:,:,:),field3ph(:,:,:)
-  integer,allocatable:: ifield2(:,:)
+  real*4,allocatable :: field3(:,:,:),field2(:,:)
+  real*4,allocatable :: field3u(:,:,:),field3v(:,:,:),field3ph(:,:,:)
 
-  wrf_double=105    ! wrf_real=104
+  wrf_real=104
   end_index1=0
-
 
   call get_ijk_from_grid (  grid ,                         &
                           ids, ide, jds, jde, kds, kde,    &
@@ -75,33 +83,41 @@ subroutine da_update_firstguess(grid, out_filename)
      file_name = 'wrfvar_output'
   end if
 
-  call ext_ncd_open_for_update( trim(file_name), 0, 0, "", dh1, Status)
-  if ( Status /= 0 )then
-!    write(6,*) 'Netcdf error opening file:', trim(file_name)
-     call da_error(__FILE__,__LINE__,(/"please copy wrfinput_d01 to wrfvar_output"/))
-  endif
-     
+  if (rootproc) then
+     ierr = copyfile('fg'//C_NULL_CHAR, trim(file_name)//C_NULL_CHAR)
+     if ( ierr /= 0 ) then
+        write(unit=message(1),fmt='(a)') "Failed to create "//trim(file_name)
+        call da_error(__FILE__,__LINE__,message(1:1))
+     endif
+
+     call ext_ncd_open_for_update( trim(file_name), 0, 0, "", dh1, Status)
+     if ( Status /= 0 )then
+        write(unit=message(1),fmt='(a)') "Failed to open "//trim(file_name)
+        call da_error(__FILE__,__LINE__,message(1:1))
+     endif
+    
 !-------------  get date info
 
-  call ext_ncd_get_next_time(dh1, DateStr1, Status_next_time)
-  read(DateStr1,'(i4,1x,i2,1x,i2,1x,i2,1x,i2,1x,i2)') iyear,imonth,iday,ihour,iminute,isecond
-! write(6,*)' iy,m,d,h,m,s=',iyear,imonth,iday,ihour,iminute,isecond
+     call ext_ncd_get_next_time(dh1, DateStr1, Status_next_time)
+     read(DateStr1,'(i4,1x,i2,1x,i2,1x,i2,1x,i2,1x,i2)') iyear,imonth,iday,ihour,iminute,isecond
+!    write(6,*)' iy,m,d,h,m,s=',iyear,imonth,iday,ihour,iminute,isecond
 
 !-------------  get grid info
-  rmse_var='T'
-  call ext_ncd_get_var_info (dh1,rmse_var,ndim1,ordering,staggering, &
+     rmse_var='T'
+     call ext_ncd_get_var_info (dh1,rmse_var,ndim1,ordering,staggering, &
                                start_index,end_index1, WrfType, ierr    )
-  nlon_regional=end_index1(1)
-  nlat_regional=end_index1(2)
-  nsig_regional=end_index1(3)
-! write(6,*)' nlon,lat,sig_regional=',nlon_regional,nlat_regional,nsig_regional
-  allocate(field2(nlon_regional,nlat_regional),field3(nlon_regional,nlat_regional,nsig_regional))
-  allocate(field3u(nlon_regional+1,nlat_regional,nsig_regional))
-  allocate(field3v(nlon_regional,nlat_regional+1,nsig_regional))
-  allocate(field3ph(nlon_regional,nlat_regional,nsig_regional+1))
-  allocate(ifield2(nlon_regional,nlat_regional))
-  allocate(field1(max(nlon_regional,nlat_regional,nsig_regional)))
- 
+     nlon_regional=end_index1(1)
+     nlat_regional=end_index1(2)
+     nsig_regional=end_index1(3)
+
+!    write(6,*)' nlon,lat,sig_regional=',nlon_regional,nlat_regional,nsig_regional
+     allocate(field2(nlon_regional,nlat_regional),field3(nlon_regional,nlat_regional,nsig_regional))
+     allocate(field3u(nlon_regional+1,nlat_regional,nsig_regional))
+     allocate(field3v(nlon_regional,nlat_regional+1,nsig_regional))
+     allocate(field3ph(nlon_regional,nlat_regional,nsig_regional+1))
+
+  end if ! end of rootproc 
+
 !
 ! update MU
 ! 
@@ -132,13 +148,13 @@ subroutine da_update_firstguess(grid, out_filename)
           start_index,end_index1, WrfType, ierr    )
 !    write(6,*)' rmse_var=',trim(rmse_var)
 !    write(6,*)' ordering=',ordering
-!    write(6,*)' WrfType,WRF_DOUBLE=',WrfType,WRF_DOUBLE
+!    write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
 !    write(6,*)' ndim1=',ndim1
 !    write(6,*)' staggering=',staggering
 !    write(6,*)' start_index=',start_index
 !    write(6,*)' end_index1=',end_index1
      call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),       &
-                             field2,WRF_DOUBLE,0,0,0,ordering,   &
+                             field2,WRF_REAL,0,0,0,ordering,   &
                              staggering, dimnames ,              &
                              start_index,end_index1,             & !dom
                              start_index,end_index1,             & !mem
@@ -154,7 +170,7 @@ subroutine da_update_firstguess(grid, out_filename)
 ! update PSFC 
 !
 #ifdef DM_PARALLEL
- if (rootproc) then
+  if (rootproc) then
      ALLOCATE(globbuf((ide-1-ids+3)*3*(jde-1-jds+3)))    ! global_mu_2(ids:ide-1,jds:jde-1) )
   else
      ALLOCATE(globbuf(1))
@@ -180,13 +196,13 @@ subroutine da_update_firstguess(grid, out_filename)
                                start_index,end_index1, WrfType, ierr    )
 !    write(6,*)' rmse_var=',trim(rmse_var)
 !    write(6,*)' ordering=',ordering
-!    write(6,*)' WrfType,WRF_DOUBLE=',WrfType,WRF_DOUBLE
+!    write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
 !    write(6,*)' ndim1=',ndim1
 !    write(6,*)' staggering=',staggering
 !    write(6,*)' start_index=',start_index
 !    write(6,*)' end_index1=',end_index1
      call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),        &
-                             field2,WRF_DOUBLE,0,0,0,ordering,    &
+                             field2,WRF_REAL,0,0,0,ordering,    &
                              staggering, dimnames ,               &
                              start_index,end_index1,              & !dom
                              start_index,end_index1,              & !mem
@@ -228,13 +244,13 @@ subroutine da_update_firstguess(grid, out_filename)
           start_index,end_index1, WrfType, ierr    )
 !    write(6,*)' rmse_var=',trim(rmse_var)
 !    write(6,*)' ordering=',ordering
-!    write(6,*)' WrfType,WRF_DOUBLE=',WrfType,WRF_DOUBLE
+!    write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
 !    write(6,*)' ndim1=',ndim1
 !    write(6,*)' staggering=',staggering
 !    write(6,*)' start_index=',start_index
 !    write(6,*)' end_index1=',end_index1
      call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
-                             field2,WRF_DOUBLE,0,0,0,ordering,     &
+                             field2,WRF_REAL,0,0,0,ordering,     &
                              staggering, dimnames ,                &
                              start_index,end_index1,               & !dom
                              start_index,end_index1,               & !mem
@@ -276,13 +292,13 @@ subroutine da_update_firstguess(grid, out_filename)
           start_index,end_index1, WrfType, ierr    )
 !    write(6,*)' rmse_var=',trim(rmse_var)
 !    write(6,*)' ordering=',ordering
-!    write(6,*)' WrfType,WRF_DOUBLE=',WrfType,WRF_DOUBLE
+!    write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
 !    write(6,*)' ndim1=',ndim1
 !    write(6,*)' staggering=',staggering
 !    write(6,*)' start_index=',start_index
 !    write(6,*)' end_index1=',end_index1
      call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
-                             field2,WRF_DOUBLE,0,0,0,ordering,     &
+                             field2,WRF_REAL,0,0,0,ordering,     &
                              staggering, dimnames ,                &
                              start_index,end_index1,               & !dom
                              start_index,end_index1,               & !mem
@@ -324,13 +340,13 @@ subroutine da_update_firstguess(grid, out_filename)
           start_index,end_index1, WrfType, ierr    )
 !    write(6,*)' rmse_var=',trim(rmse_var)
 !    write(6,*)' ordering=',ordering
-!    write(6,*)' WrfType,WRF_DOUBLE=',WrfType,WRF_DOUBLE
+!    write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
 !    write(6,*)' ndim1=',ndim1
 !    write(6,*)' staggering=',staggering
 !    write(6,*)' start_index=',start_index
 !    write(6,*)' end_index1=',end_index1
      call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),        &
-                             field2,WRF_DOUBLE,0,0,0,ordering,    &
+                             field2,WRF_REAL,0,0,0,ordering,    &
                              staggering, dimnames ,               &
                              start_index,end_index1,              & !dom
                              start_index,end_index1,              & !mem
@@ -372,13 +388,13 @@ subroutine da_update_firstguess(grid, out_filename)
           start_index,end_index1, WrfType, ierr    )
 !    write(6,*)' rmse_var=',trim(rmse_var)
 !    write(6,*)' ordering=',ordering
-!    write(6,*)' WrfType,WRF_DOUBLE=',WrfType,WRF_DOUBLE
+!    write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
 !    write(6,*)' ndim1=',ndim1
 !    write(6,*)' staggering=',staggering
 !    write(6,*)' start_index=',start_index
 !    write(6,*)' end_index1=',end_index1
      call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
-                             field2,WRF_DOUBLE,0,0,0,ordering,     &
+                             field2,WRF_REAL,0,0,0,ordering,     &
                              staggering, dimnames ,                &
                              start_index,end_index1,               & !dom
                              start_index,end_index1,               & !mem
@@ -420,13 +436,13 @@ subroutine da_update_firstguess(grid, out_filename)
           start_index,end_index1, WrfType, ierr    )
 !    write(6,*)' rmse_var=',trim(rmse_var)
 !    write(6,*)' ordering=',ordering
-!    write(6,*)' WrfType,WRF_DOUBLE=',WrfType,WRF_DOUBLE
+!    write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
 !    write(6,*)' ndim1=',ndim1
 !    write(6,*)' staggering=',staggering
 !    write(6,*)' start_index=',start_index
 !    write(6,*)' end_index1=',end_index1
      call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
-                             field2,WRF_DOUBLE,0,0,0,ordering,     &
+                             field2,WRF_REAL,0,0,0,ordering,     &
                              staggering, dimnames ,                &
                              start_index,end_index1,               & !dom
                              start_index,end_index1,               & !mem
@@ -471,13 +487,13 @@ subroutine da_update_firstguess(grid, out_filename)
           start_index,end_index1, WrfType, ierr    )
 !    write(6,*)' rmse_var=',trim(rmse_var)
 !    write(6,*)' ordering=',ordering
-!    write(6,*)' WrfType,WRF_DOUBLE=',WrfType,WRF_DOUBLE
+!    write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
 !    write(6,*)' ndim1=',ndim1
 !    write(6,*)' staggering=',staggering
 !    write(6,*)' start_index=',start_index
 !    write(6,*)' end_index1=',end_index1
      call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
-                             field3,WRF_DOUBLE,0,0,0,ordering,     &
+                             field3,WRF_REAL,0,0,0,ordering,     &
                              staggering, dimnames ,                &
                              start_index,end_index1,               & !dom
                              start_index,end_index1,               & !mem
@@ -499,7 +515,7 @@ subroutine da_update_firstguess(grid, out_filename)
     allocate( globbuf( 1 ) )
   endif
   globbuf=0.0
-  CALL wrf_patch_to_global_double ( grid%t_2, globbuf, 1, '', 'xyz' ,             &
+  CALL wrf_patch_to_global_double ( grid%t_2, globbuf, 1, '', 'xyz' ,                       &
                                     ids, ide-1,          jds, jde-1,          kds, kde-1, &
                                     ims, ime,            jms, jme,            kms, kme,   &
                                     ips, min(ipe,ide-1), jps, min(jpe,jde-1), kps, kpe-1  )
@@ -521,13 +537,13 @@ subroutine da_update_firstguess(grid, out_filename)
           start_index,end_index1, WrfType, ierr    )
 !    write(6,*)' rmse_var=',trim(rmse_var)
 !    write(6,*)' ordering=',ordering
-!    write(6,*)' WrfType,WRF_DOUBLE=',WrfType,WRF_DOUBLE
+!    write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
 !    write(6,*)' ndim1=',ndim1
 !    write(6,*)' staggering=',staggering
 !    write(6,*)' start_index=',start_index
 !    write(6,*)' end_index1=',end_index1
      call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
-                             field3,WRF_DOUBLE,0,0,0,ordering,     &
+                             field3,WRF_REAL,0,0,0,ordering,       &
                              staggering, dimnames ,                &
                              start_index,end_index1,               & !dom
                              start_index,end_index1,               & !mem
@@ -549,7 +565,7 @@ subroutine da_update_firstguess(grid, out_filename)
     allocate( globbuf( 1 ) )
   endif
   globbuf=0.0
-  CALL wrf_patch_to_global_double ( grid%moist(:,:,:,p_qv), globbuf, 1, '', 'xyz' ,       &
+  CALL wrf_patch_to_global_double ( grid%moist(:,:,:,p_qv), globbuf, 1, '', 'xyz' ,         &
                                     ids, ide-1,          jds, jde-1,          kds, kde-1, &
                                     ims, ime,            jms, jme,            kms, kme,   &
                                     ips, min(ipe,ide-1), jps, min(jpe,jde-1), kps, kpe-1  )
@@ -571,13 +587,13 @@ subroutine da_update_firstguess(grid, out_filename)
           start_index,end_index1, WrfType, ierr    )
 !    write(6,*)' rmse_var=',trim(rmse_var)
 !    write(6,*)' ordering=',ordering
-!    write(6,*)' WrfType,WRF_DOUBLE=',WrfType,WRF_DOUBLE
+!    write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
 !    write(6,*)' ndim1=',ndim1
 !    write(6,*)' staggering=',staggering
 !    write(6,*)' start_index=',start_index
 !    write(6,*)' end_index1=',end_index1
      call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
-                             field3,WRF_DOUBLE,0,0,0,ordering,     &
+                             field3,WRF_REAL,0,0,0,ordering,       &
                              staggering, dimnames ,                &
                              start_index,end_index1,               & !dom
                              start_index,end_index1,               & !mem
@@ -599,7 +615,7 @@ subroutine da_update_firstguess(grid, out_filename)
     allocate( globbuf( 1 ) )
   endif
   globbuf=0.0
-  CALL wrf_patch_to_global_double ( grid%ph_2, globbuf, 1, 'Z', 'xyz' ,             &
+  CALL wrf_patch_to_global_double ( grid%ph_2, globbuf, 1, 'Z', 'xyz' ,                   &
                                     ids, ide-1,          jds, jde-1,          kds, kde, &
                                     ims, ime,            jms, jme,            kms, kme, &
                                     ips, min(ipe,ide-1), jps, min(jpe,jde-1), kps, kpe  )
@@ -621,13 +637,13 @@ subroutine da_update_firstguess(grid, out_filename)
           start_index,end_index1, WrfType, ierr    )
 !    write(6,*)' rmse_var=',trim(rmse_var)
 !    write(6,*)' ordering=',ordering
-!    write(6,*)' WrfType,WRF_DOUBLE=',WrfType,WRF_DOUBLE
+!    write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
 !    write(6,*)' ndim1=',ndim1
 !    write(6,*)' staggering=',staggering
 !    write(6,*)' start_index=',start_index
 !    write(6,*)' end_index1=',end_index1
      call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
-                             field3ph,WRF_DOUBLE,0,0,0,ordering,   &
+                             field3ph,WRF_REAL,0,0,0,ordering,     &
                              staggering, dimnames ,                &
                              start_index,end_index1,               & !dom
                              start_index,end_index1,               & !mem
@@ -649,7 +665,7 @@ subroutine da_update_firstguess(grid, out_filename)
     allocate( globbuf( 1 ) )
   endif
   globbuf=0.0
-  CALL wrf_patch_to_global_double ( grid%u_2, globbuf, 1, 'X', 'xyz' ,             &
+  CALL wrf_patch_to_global_double ( grid%u_2, globbuf, 1, 'X', 'xyz' ,                    &
                                     ids, ide,          jds, jde-1,          kds, kde-1, &
                                     ims, ime,          jms, jme,            kms, kme,   &
                                     ips, min(ipe,ide), jps, min(jpe,jde-1), kps, kpe-1  )
@@ -671,13 +687,13 @@ subroutine da_update_firstguess(grid, out_filename)
           start_index,end_index1, WrfType, ierr    )
 !    write(6,*)' rmse_var=',trim(rmse_var)
 !    write(6,*)' ordering=',ordering
-!    write(6,*)' WrfType,WRF_DOUBLE=',WrfType,WRF_DOUBLE
+!    write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
 !    write(6,*)' ndim1=',ndim1
 !    write(6,*)' staggering=',staggering
 !    write(6,*)' start_index=',start_index
 !    write(6,*)' end_index1=',end_index1
      call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
-                             field3u,WRF_DOUBLE,0,0,0,ordering,    &
+                             field3u,WRF_REAL,0,0,0,ordering,      &
                              staggering, dimnames ,                &
                              start_index,end_index1,               & !dom
                              start_index,end_index1,               & !mem
@@ -699,7 +715,7 @@ subroutine da_update_firstguess(grid, out_filename)
     allocate( globbuf( 1 ) )
   endif
   globbuf=0.0
-  CALL wrf_patch_to_global_double ( grid%v_2, globbuf, 1, 'Y', 'xyz' ,             &
+  CALL wrf_patch_to_global_double ( grid%v_2, globbuf, 1, 'Y', 'xyz' ,                    &
                                     ids, ide-1,          jds, jde,          kds, kde-1, &
                                     ims, ime,            jms, jme,          kms, kme,   &
                                     ips, min(ipe,ide-1), jps, min(jpe,jde), kps, kpe-1  )
@@ -721,13 +737,13 @@ subroutine da_update_firstguess(grid, out_filename)
           start_index,end_index1, WrfType, ierr    )
 !    write(6,*)' rmse_var=',trim(rmse_var)
 !    write(6,*)' ordering=',ordering
-!    write(6,*)' WrfType,WRF_DOUBLE=',WrfType,WRF_DOUBLE
+!    write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
 !    write(6,*)' ndim1=',ndim1
 !    write(6,*)' staggering=',staggering
 !    write(6,*)' start_index=',start_index
 !    write(6,*)' end_index1=',end_index1
      call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
-                             field3v,WRF_DOUBLE,0,0,0,ordering,    &
+                             field3v,WRF_REAL,0,0,0,ordering,      &
                              staggering, dimnames ,                &
                              start_index,end_index1,               & !dom
                              start_index,end_index1,               & !mem
@@ -749,7 +765,7 @@ subroutine da_update_firstguess(grid, out_filename)
     allocate( globbuf( 1 ) )
   endif
   globbuf=0.0
-  CALL wrf_patch_to_global_double ( grid%w_2, globbuf, 1, 'Z', 'xyz' ,             &
+  CALL wrf_patch_to_global_double ( grid%w_2, globbuf, 1, 'Z', 'xyz' ,                    &
                                     ids, ide-1,          jds, jde-1,          kds, kde, &
                                     ims, ime,            jms, jme,            kms, kme, &
                                     ips, min(ipe,ide-1), jps, min(jpe,jde-1), kps, kpe  )
@@ -771,35 +787,299 @@ subroutine da_update_firstguess(grid, out_filename)
           start_index,end_index1, WrfType, ierr    )
 !    write(6,*)' rmse_var=',trim(rmse_var)
 !    write(6,*)' ordering=',ordering
-!    write(6,*)' WrfType,WRF_DOUBLE=',WrfType,WRF_DOUBLE
+!    write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
 !    write(6,*)' ndim1=',ndim1
 !    write(6,*)' staggering=',staggering
 !    write(6,*)' start_index=',start_index
 !    write(6,*)' end_index1=',end_index1
      call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
-                             field3ph,WRF_DOUBLE,0,0,0,ordering,   &
+                             field3ph,WRF_REAL,0,0,0,ordering,     &
                              staggering, dimnames ,                &
                              start_index,end_index1,               & !dom
                              start_index,end_index1,               & !mem
                              start_index,end_index1,               & !pat
-                             ierr                                 )
-  end if  
+                             ierr                                  )
+  end if    
 
 #ifdef DM_PARALLEL
   deallocate(globbuf) 
 #endif
 
-  deallocate(field1,field2,ifield2,field3,field3u,field3v,field3ph)
-  call ext_ncd_ioclose(dh1, Status)
+!-------------Update QCLOUD, QRAIN, QICE, QSNOW & QGROUP 
+if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
+   if (size(grid%moist,dim=4) >= 4) then         ! update QCLOUD & QRAIN
+!
+!  update QCLOUD
+!
+#ifdef DM_PARALLEL
+      if (rootproc) then
+         allocate( globbuf((ide-1-ids+3)*(jde-1-jds+3)*(kde-1-kds+3)))
+      else
+         allocate( globbuf( 1 ) )
+      endif
+      globbuf=0.0
+      CALL wrf_patch_to_global_double ( grid%moist(:,:,:,p_qc), globbuf, 1, '', 'xyz' ,     &
+                                    ids, ide-1,          jds, jde-1,          kds, kde-1, &
+                                    ims, ime,            jms, jme,            kms, kme,   &
+                                    ips, min(ipe,ide-1), jps, min(jpe,jde-1), kps, kpe-1  )
+#endif
+      if (rootproc) then 
+         do k= 1,nsig_regional 
+            do j= 1,nlat_regional 
+               do i= 1,nlon_regional
+#ifdef DM_PARALLEL	   
+                  field3(i,j,k)=globbuf(i+(j-1)*(nlon_regional+1)+(k-1)*(nlon_regional+1)*(nlat_regional+1))
+#else
+                  field3(i,j,k)=grid%moist(i,j,k,p_qc)
+#endif
+               end do 
+            end do
+         end do 
+         rmse_var='QCLOUD'
+         call ext_ncd_get_var_info (dh1,trim(rmse_var),ndim1,ordering,staggering, &
+              start_index,end_index1, WrfType, ierr    )
+!        write(6,*)' rmse_var=',trim(rmse_var)
+!        write(6,*)' ordering=',ordering
+!        write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
+!        write(6,*)' ndim1=',ndim1
+!        write(6,*)' staggering=',staggering
+!        write(6,*)' start_index=',start_index
+!        write(6,*)' end_index1=',end_index1
+         call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
+                                 field3,WRF_REAL,0,0,0,ordering,       &
+                                 staggering, dimnames ,                &
+                                 start_index,end_index1,               & !dom
+                                 start_index,end_index1,               & !mem
+                                 start_index,end_index1,               & !pat
+                                 ierr                                  )
+      end if  ! end of rootproc
 
+#ifdef DM_PARALLEL
+      deallocate(globbuf) 
+#endif
+
+!
+!  update QRAIN
+!
+#ifdef DM_PARALLEL
+      if (rootproc) then
+         allocate( globbuf((ide-1-ids+3)*(jde-1-jds+3)*(kde-1-kds+3)))
+      else
+         allocate( globbuf( 1 ) )
+      endif
+      globbuf=0.0
+      CALL wrf_patch_to_global_double ( grid%moist(:,:,:,p_qr), globbuf, 1, '', 'xyz' ,     &
+                                    ids, ide-1,          jds, jde-1,          kds, kde-1, &
+                                    ims, ime,            jms, jme,            kms, kme,   &
+                                    ips, min(ipe,ide-1), jps, min(jpe,jde-1), kps, kpe-1  )
+#endif
+      if (rootproc) then 
+         do k= 1,nsig_regional 
+            do j= 1,nlat_regional 
+               do i= 1,nlon_regional
+#ifdef DM_PARALLEL	   
+                  field3(i,j,k)=globbuf(i+(j-1)*(nlon_regional+1)+(k-1)*(nlon_regional+1)*(nlat_regional+1))
+#else
+                  field3(i,j,k)=grid%moist(i,j,k,p_qr)
+#endif
+               end do 
+            end do
+         end do 
+         rmse_var='QRAIN'
+         call ext_ncd_get_var_info (dh1,trim(rmse_var),ndim1,ordering,staggering, &
+              start_index,end_index1, WrfType, ierr    )
+!        write(6,*)' rmse_var=',trim(rmse_var)
+!        write(6,*)' ordering=',ordering
+!        write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
+!        write(6,*)' ndim1=',ndim1
+!        write(6,*)' staggering=',staggering
+!        write(6,*)' start_index=',start_index
+!        write(6,*)' end_index1=',end_index1
+         call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
+                                 field3,WRF_REAL,0,0,0,ordering,       &
+                                 staggering, dimnames ,                &
+                                 start_index,end_index1,               & !dom
+                                 start_index,end_index1,               & !mem
+                                 start_index,end_index1,               & !pat
+                                 ierr                                  )
+      end if  ! end of rootproc
+
+#ifdef DM_PARALLEL
+      deallocate(globbuf) 
+#endif
+
+   end if    ! end of update QCLOUD & QRAIN
+
+   if (size(grid%moist,dim=4) >= 6) then     ! update QICE & QSNOW
+!
+!  update QICE
+!
+#ifdef DM_PARALLEL
+      if (rootproc) then
+         allocate( globbuf((ide-1-ids+3)*(jde-1-jds+3)*(kde-1-kds+3)))
+      else
+         allocate( globbuf( 1 ) )
+      endif
+      globbuf=0.0
+      CALL wrf_patch_to_global_double ( grid%moist(:,:,:,p_qi), globbuf, 1, '', 'xyz' ,     &
+                                    ids, ide-1,          jds, jde-1,          kds, kde-1, &
+                                    ims, ime,            jms, jme,            kms, kme,   &
+                                    ips, min(ipe,ide-1), jps, min(jpe,jde-1), kps, kpe-1  )
+#endif
+      if (rootproc) then 
+         do k= 1,nsig_regional 
+            do j= 1,nlat_regional 
+               do i= 1,nlon_regional
+#ifdef DM_PARALLEL	   
+                  field3(i,j,k)=globbuf(i+(j-1)*(nlon_regional+1)+(k-1)*(nlon_regional+1)*(nlat_regional+1))
+#else
+                  field3(i,j,k)=grid%moist(i,j,k,p_qi)
+#endif
+               end do 
+            end do
+         end do 
+         rmse_var='QICE'
+         call ext_ncd_get_var_info (dh1,trim(rmse_var),ndim1,ordering,staggering, &
+              start_index,end_index1, WrfType, ierr    )
+!        write(6,*)' rmse_var=',trim(rmse_var)
+!        write(6,*)' ordering=',ordering
+!        write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
+!        write(6,*)' ndim1=',ndim1
+!        write(6,*)' staggering=',staggering
+!        write(6,*)' start_index=',start_index
+!        write(6,*)' end_index1=',end_index1
+         call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
+                                 field3,WRF_REAL,0,0,0,ordering,       &
+                                 staggering, dimnames ,                &
+                                 start_index,end_index1,               & !dom
+                                 start_index,end_index1,               & !mem
+                                 start_index,end_index1,               & !pat
+                                 ierr                                 )
+      end if  ! end of rootproc
+
+#ifdef DM_PARALLEL
+      deallocate(globbuf) 
+#endif
+
+!
+!  update QSNOW
+!
+#ifdef DM_PARALLEL
+      if (rootproc) then
+         allocate( globbuf((ide-1-ids+3)*(jde-1-jds+3)*(kde-1-kds+3)))
+      else
+         allocate( globbuf( 1 ) )
+      endif
+      globbuf=0.0
+      CALL wrf_patch_to_global_double ( grid%moist(:,:,:,p_qs), globbuf, 1, '', 'xyz' ,     &
+                                    ids, ide-1,          jds, jde-1,          kds, kde-1, &
+                                    ims, ime,            jms, jme,            kms, kme,   &
+                                    ips, min(ipe,ide-1), jps, min(jpe,jde-1), kps, kpe-1  )
+#endif
+      if (rootproc) then 
+         do k= 1,nsig_regional 
+            do j= 1,nlat_regional 
+               do i= 1,nlon_regional
+#ifdef DM_PARALLEL	   
+                  field3(i,j,k)=globbuf(i+(j-1)*(nlon_regional+1)+(k-1)*(nlon_regional+1)*(nlat_regional+1))
+#else
+                  field3(i,j,k)=grid%moist(i,j,k,p_qs)
+#endif
+               end do 
+            end do
+         end do 
+         rmse_var='QSNOW'
+         call ext_ncd_get_var_info (dh1,trim(rmse_var),ndim1,ordering,staggering, &
+              start_index,end_index1, WrfType, ierr    )
+!        write(6,*)' rmse_var=',trim(rmse_var)
+!        write(6,*)' ordering=',ordering
+!        write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
+!        write(6,*)' ndim1=',ndim1
+!        write(6,*)' staggering=',staggering
+!        write(6,*)' start_index=',start_index
+!        write(6,*)' end_index1=',end_index1
+         call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
+                                 field3,WRF_REAL,0,0,0,ordering,       &
+                                 staggering, dimnames ,                &
+                                 start_index,end_index1,               & !dom
+                                 start_index,end_index1,               & !mem
+                                 start_index,end_index1,               & !pat
+                                 ierr                                 )
+      end if  ! end of rootproc
+
+#ifdef DM_PARALLEL
+      deallocate(globbuf) 
+#endif
+
+   end if    ! end of update QICE & QSNOW 
+
+   if (size(grid%moist,dim=4) >= 7) then      ! update QGRAUP
+!
+!  update QGRAUP
+!
+#ifdef DM_PARALLEL
+      if (rootproc) then
+         allocate( globbuf((ide-1-ids+3)*(jde-1-jds+3)*(kde-1-kds+3)))
+      else
+         allocate( globbuf( 1 ) )
+      endif
+      globbuf=0.0
+      CALL wrf_patch_to_global_double ( grid%moist(:,:,:,p_qg), globbuf, 1, '', 'xyz' ,     &
+                                    ids, ide-1,          jds, jde-1,          kds, kde-1, &
+                                    ims, ime,            jms, jme,            kms, kme,   &
+                                    ips, min(ipe,ide-1), jps, min(jpe,jde-1), kps, kpe-1  )
+#endif
+      if (rootproc) then 
+         do k= 1,nsig_regional 
+            do j= 1,nlat_regional 
+               do i= 1,nlon_regional
+#ifdef DM_PARALLEL	   
+                  field3(i,j,k)=globbuf(i+(j-1)*(nlon_regional+1)+(k-1)*(nlon_regional+1)*(nlat_regional+1))
+#else
+                  field3(i,j,k)=grid%moist(i,j,k,p_qg)
+#endif
+               end do 
+            end do
+         end do 
+         rmse_var='QGRAUP'
+         call ext_ncd_get_var_info (dh1,trim(rmse_var),ndim1,ordering,staggering, &
+              start_index,end_index1, WrfType, ierr    )
+!        write(6,*)' rmse_var=',trim(rmse_var)
+!        write(6,*)' ordering=',ordering
+!        write(6,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL
+!        write(6,*)' ndim1=',ndim1
+!        write(6,*)' staggering=',staggering
+!        write(6,*)' start_index=',start_index
+!        write(6,*)' end_index1=',end_index1
+         call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
+                                 field3,WRF_REAL,0,0,0,ordering,       &
+                                 staggering, dimnames ,                &
+                                 start_index,end_index1,               & !dom
+                                 start_index,end_index1,               & !mem
+                                 start_index,end_index1,               & !pat
+                                 ierr                                 )
+      end if  ! end of rootproc
+
+#ifdef DM_PARALLEL
+      deallocate(globbuf) 
+#endif
+
+   end if     ! end of update QGRAUP
+end if        ! end of radar or radiance
+!-------------End of update QCLOUD, QRAIN, QICE, QSNOW & QGROUP
+
+  if (rootproc) then
+     deallocate(field2,field3,field3u,field3v,field3ph)
+     call ext_ncd_ioclose(dh1, Status)
 !
 !  update START_TIME to analysis time
 !
-  ierr = NF_OPEN(trim(file_name), NF_WRITE, dh1)
-  IF (ierr .NE. NF_NOERR) print *, 'OPEN ',NF_STRERROR(ierr)
-  ierr = NF_PUT_ATT_TEXT (dh1,NF_GLOBAL,'START_DATE',len_trim(DateStr1),DateStr1)
-  IF (ierr .NE. NF_NOERR) print *,'PUT ', NF_STRERROR(ierr)
-  ierr = NF_CLOSE(dh1)
-  IF (ierr .NE. NF_NOERR) print *, 'CLOSE ',NF_STRERROR(ierr)
+     ierr = NF_OPEN(trim(file_name), NF_WRITE, dh1)
+     IF (ierr .NE. NF_NOERR) print *, 'OPEN ',NF_STRERROR(ierr)
+     ierr = NF_PUT_ATT_TEXT (dh1,NF_GLOBAL,'START_DATE',len_trim(DateStr1),DateStr1)
+     IF (ierr .NE. NF_NOERR) print *,'PUT ', NF_STRERROR(ierr)
+     ierr = NF_CLOSE(dh1)
+     IF (ierr .NE. NF_NOERR) print *, 'CLOSE ',NF_STRERROR(ierr)
+  end if   ! end of rootproc
   
 end subroutine da_update_firstguess 

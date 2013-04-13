@@ -1124,7 +1124,7 @@ c
      +     (adr8buf(i),i=1,adr8ibuf-1)
       write (6,1012) 'REAL*4    BUFFER:[',adr4ibuf-1, ']: ',
      +     (adr4buf(i),i=1,adr4ibuf-1)
-1012  format(a,512(e8.2))
+1012  format(a,512(e10.2))
       call showrecentcstack()
 c
       END

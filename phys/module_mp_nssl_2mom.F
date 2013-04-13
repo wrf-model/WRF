@@ -1803,7 +1803,7 @@ END SUBROUTINE nssl_2mom_driver
       DO kz = kzb,kze
       DO ix = ixb,ixe
        db1(ix,kz) = dn(ix,jy,kz)
-       rhovtzx(kz,ix) = Sqrt(dn(ix,jy,kz)/rho00)
+       rhovtzx(kz,ix) = Sqrt(rho00/dn(ix,jy,kz))
       ENDDO
       ENDDO
 

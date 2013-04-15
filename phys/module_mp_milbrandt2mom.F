@@ -4234,11 +4234,11 @@ END MODULE my_dmom_mod
       imax_qg = 0;   imax_ng = 0;   jmax_qg = 0;   jmax_ng = 0;   kmax_qg = 0;   kmax_ng = 0
       imax_qh = 0;   imax_nh = 0;   jmax_qh = 0;   jmax_nh = 0;   kmax_qh = 0;   kmax_nh = 0
 
-      RAINNCV = 0.
-      SNOWNCV = 0.
-      GRPLNCV = 0.
-      HAILNCV = 0.
-      SR      = 0.
+      RAINNCV(its:ite,jts:jte) = 0.
+      SNOWNCV(its:ite,jts:jte) = 0.
+      GRPLNCV(its:ite,jts:jte) = 0.
+      HAILNCV(its:ite,jts:jte) = 0.
+      SR(its:ite,jts:jte)      = 0.
 
       do i = 1, 512
          mp_debug(i:i) = char(0)
@@ -4282,7 +4282,7 @@ END MODULE my_dmom_mod
             qs2d(i2d,k2d) = qs(i,k,j);   ns2d(i2d,k2d) = ns(i,k,j)
             qg2d(i2d,k2d) = qg(i,k,j);   ng2d(i2d,k2d) = ng(i,k,j)
             qh2d(i2d,k2d) = qh(i,k,j);   nh2d(i2d,k2d) = nh(i,k,j)
-            sigma2d(i2d,k2d)= p2d(i2d,k2d)/p2d(i2d,kte-kts+1)
+            !sigma2d(i2d,k2d)= p2d(i2d,k2d)/p2d(i2d,kte-kts+1)
 
          enddo k_loop1
 

@@ -1227,7 +1227,7 @@ CONTAINS
 ! paacw: Accretion of cloud water by averaged snow/graupel 
 !        (T<T0: QC->QG or QS, and T>=T0: QC->QR) 
 !-------------------------------------------------------------
-          if(qrs(i,k,2).gt.qcrmin .and. qrs(i,k,3).gt.qcrmin) then
+          if(qsum(i,k) .gt. 1.e-15) then
             paacw(i,k) = (qrs(i,k,2)*psacw(i,k)+qrs(i,k,3)*pgacw(i,k))/(qsum(i,k))
 !-------------------------------------------------------------
 ! naacw: Accretion of cloud water by averaged snow/graupel
@@ -2526,7 +2526,7 @@ CONTAINS
 ! skip for no precipitation for all layers
       allold = 0.0
       do k=1,km
-        allold = allold + qq(k)
+        allold = allold + qq(k) + qq2(k)
       enddo
       if(allold.le.0.0) then
         cycle i_loop

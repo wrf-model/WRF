@@ -29261,8 +29261,8 @@ contains
        do fp = 1,num_nourbanp
           p = filter_nourbanp(fp)
 !         if (pwtgcell(p)>0._r8) then ! "if" added due to chg in filter definition
-          albd(p,ib) = 1._r8
-          albi(p,ib) = 1._r8
+          albd(p,ib) = 0.999._r8
+          albi(p,ib) = 0.999._r8
           fabd(p,ib) = 0._r8
           fabi(p,ib) = 0._r8
           ftdd(p,ib) = 0._r8

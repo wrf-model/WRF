@@ -96,6 +96,9 @@
   0 | 1 |234|QNDROPSOURCE|Droplet number source [#/kg/s]           |  3 |  0 |
   0 | 1 |235| PRATEC    | Convective precip rate[kg/m^2/s]         |  7 |  0 |
   0 | 1 |236| GRAUPELNC | Accumulated total grid scale graupel [mm]|  1 |  0 |
+  0 | 1 |237| RAINSH    | Accumulated Shallow Cumulus Precip [mm]  |  2 |  0 |
+  0 | 1 |238| HAILNC    | Accumulated total grid scale hail [mm]   |  2 |  0 |
+  0 | 1 |239| GRAUPELNC | Accumulated total grid scale graupel [mm]|  2 |  0 |
   0 | 2 | 2 | U,U10,UZ0 | U-component of wind [m/s]                |  2 |  0 |
   0 | 2 | 3 | V,V10,VZ0 | V-component of wind [m/s]                |  2 |  0 |
   0 | 2 | 7 | WW        | Sigma coordinate vertical velocity [s^-1]|  3 |  0 |
@@ -136,6 +139,7 @@
   0 | 3 |205| AL        | Inverse perturbation density [m3 kg-1]   |  5 |  0 |
   0 | 3 |206| ALT       | Inverse density [m3 kg-1]                |  4 |  0 |
   0 | 3 |207| XF_ENS    | Mass flux PDF in GRELL                   |  4 |  0 |
+  0 | 3 |208| P_HYD     | Hydrostatic pressure [Pa]                |  0 |  0 |
   0 | 4 | 0 | GSW       | Net short wave flux [W/m^2]              |  3 |  0 |
   0 | 4 |192| SWDOWN    | Downward short wave flux [W/m^2]         |  1 |  0 |
   0 | 4 |193| TOTSWDN   | Radiation State Variable                 |  2 |  0 |
@@ -149,19 +153,28 @@
   0 | 4 |201| NCFRST    | Radiation State Variable                 |  4 |  0 |
   0 | 4 |202| ACFRCV    | Radiation State Variable                 |  4 |  0 |
   0 | 4 |203| NCFRCV    | Radiation State Variable                 |  4 |  0 |
+  0 | 4 |204| SWNORM    | Normal sw flux at ground (slope dep.)    |  3 |  0 |
+  0 | 4 |205| NOAHRES   | Resid. of NOAH sfc energy budget [W/m^w] |  3 |  0 |
+  0 | 4 |206| ACHFX     | Acc. upward heat flx at sfc [J/m^2]      |  4 |  0 |
+  0 | 4 |207| ACLHF     | Acc. upward latent heat flx at sf [J/m^2]|  4 |  0 |
+  0 | 4 |208| SWDOWNC   | Down clear-sky SW flux at ground [W/m^2] |  1 |  0 |
   0 | 5 | 0 | GLW       | Net long wave flux [W/m^2]               |  2 |  0 |
   0 | 5 |193| TOTLWDN   | Radiation State Variable                 |  4 |  0 |
   0 | 5 |194| OLR       | TOA Outgoing Long Wave [W/m^2]           |  1 |  0 |
+  0 | 5 |195|ACGRDFLX   | Accumulated Ground Heat Flux [J / m^2]   |  3 |  0 |
   0 | 6 | 1 | CLDFRA    | Total Cloud Cover [%]                    |  2 |  0 |
   0 | 6 |192| TAUCLDI   | Cloud optical thickness for ice          |  2 |  0 |
   0 | 6 |193| TAUCLDC   | Cloud optical thickness for water        |  2 |  0 |
   0 | 13|192|MASS_AER_WATER| aerosol liquid water content          |  6 |  0 |
   0 | 13|193|MASS_AER_DRY| dry aerosol mass                        |  6 |  0 |
+  0 | 15|  1|REFL_10CM  | Radar reflectivity (lambda = 10cm) [dBz] |  1 |  0 |
   0 | 19|  1| ALBEDO    | Albedo [%]                               |  2 |  0 |
+  0 | 19|  3| EL_PBL    | Mixing length from PBL scheme [m]        |  1 |  0 |
   0 | 19| 11|TKE,TKE_MYJ| Turbulent Kinetic Energy [J/kg]          |  3 |  0 |
   0 | 19|192| ALBBCK    | Background Albedo [%]                    |  4 |  0 |
   0 | 19|193| TKE_1     | Restart Parameter                        |  3 |  0 |
   0 | 19|194| TKE_2     | Restart Parameter                        |  3 |  0 |
+  0 | 19|195| TKE_PBL   | Turbulent Kinetic Energy from PBL [J/kg] |  3 |  0 |
   0 |191|192| CFN       | CFN from WRF [?]                         |  3 |  0 |
   0 |191|193| CFN1      | CFN1 from WRF [?]                        |  3 |  0 |
   0 |191|194| ZNU       | Eta values on half (mass) levels         |  6 |  0 |
@@ -350,6 +363,10 @@
   2 | 0 |205| SHDMIN    | Annual MIN veg fraction                  |  3 |  0 |
   2 | 0 |206| Z0        | Background Roughness length [m]          |  6 |  0 |
   2 | 0 |207| EMISS     | Surface Emissivity                       |  4 |  0 |
+  2 | 0 |208|VAR_SSO    | variance of subgrid-scale orography [m^2]|  3 |  0 |
+  2 | 0 |209|LAP_HGT    | Laplacian of orography [m]               |  2 |  0 |
+  2 | 0 |210|LAI        | Leaf area index [area / area]            |  3 |  0 |
+  2 | 0 |211|VAR        | Oragraphic Variance                      |  3 |  0 |
   2 | 3 | 0 | ISLTYP    | Soil Type                                |  1 |  0 |
   2 | 3 | 1 |TSLB,ST000010,ST010040,ST040100,ST100200|Soil Temperature|1|  0 |
   2 | 3 | 2 | SMSTOT    | Soil Moisture content [kg/m^2]           |  3 |  0 |
@@ -367,9 +384,17 @@
   2 | 3 |201| SMFR3D    | Soil Ice                                 |  2 |  0 |
   2 | 3 |202|KEEPFR3DFLAG| Flag - 1. Forzen Soil Yes, 0 - NO       |  1 |  0 |
   2 | 3 |203| CAPG      | Heat capacity for soil [j /(K m^3)]      |  0 |  0 |
+  2 | 3 |204| SMCREL    | Relative Soil Moisture                   |  2 |  0 |
  10 | 2 | 0 |XICE,SEAICE| Ice Concentration [fraction]             |  1 |  0 |
- 10 | 3 | 0 | SST       | Temperature                              |  2 |  0 |
+ 10 | 2 | 1 | ICEDEPTH  | Sea Ice Thickness [m]                    |  3 |  0 |
+ 10 | 3 | 0 | SST,SSTSK | Temperature                              |  2 |  0 |
  10 | 3 |192|XICEM      | Sea Ice Flag - previous step             |  0 |  0 |
+ 10 | 2 |193|ALBSI      | Sea Ice Albedo                           |  2 |  0 |
+ 10 | 2 |194|SNOWSI     | Snow Depth on Sea Ice [m]                |  2 |  0 |
+192 |192|192|OM_ML      | OM_ML??                                  |  3 |  0 |
+192 |192|193|DLF2       | DLF2??                                   |  3 |  0 |
+192 |192|194|AODTOT     | AODTOT??                                 |  3 |  0 |
+
 #
 # Ind | center | subcenter | Master Tbl Version | Local Tbl Version |
 #-----+--------+-----------+--------------------+-------------------+

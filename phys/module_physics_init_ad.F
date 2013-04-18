@@ -460,7 +460,7 @@ CONTAINS
 &             tbpvs0_state, allowed_to_read, start_of_simulation, ids, &
 &             ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, its&
 &             , ite, jts, jte, kts, kte)
-    CALL CU_INIT_B(stepcu, cudt, dt, rucuten, rvcuten, rthcuten, &
+    CALL CU_INIT_B(dx, stepcu, cudt, dt, rucuten, rvcuten, rthcuten, &
 &             rthcutenb, rqvcuten, rqvcutenb, rqrcuten, rqccuten, &
 &             rqccutenb, rqscuten, rqicuten, nca, rainc, raincb, raincv, &
 &             raincvb, w0avg, w0avgb, config_flags, restart, cldefi, &
@@ -838,7 +838,7 @@ CONTAINS
 !   with respect to varying inputs: raincv rqccuten rthcuten rainc
 !                w0avg rqvcuten
 !==================================================================
-  SUBROUTINE CU_INIT_B(stepcu, cudt, dt, rucuten, rvcuten, rthcuten, &
+  SUBROUTINE CU_INIT_B(dx, stepcu, cudt, dt, rucuten, rvcuten, rthcuten, &
 &    rthcutenb, rqvcuten, rqvcutenb, rqrcuten, rqccuten, rqccutenb, &
 &    rqscuten, rqicuten, nca, rainc, raincb, raincv, raincvb, w0avg, &
 &    w0avgb, config_flags, restart, cldefi, lowlyr, mass_flux, rthften, &
@@ -857,7 +857,7 @@ CONTAINS
     LOGICAL, INTENT(IN) :: restart
     INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
 &    jme, kms, kme, its, ite, jts, jte, kts, kte
-    REAL, INTENT(IN) :: dt, cudt
+    REAL, INTENT(IN) :: dt, cudt, dx
     LOGICAL, INTENT(IN) :: start_of_simulation
     LOGICAL, INTENT(IN) :: allowed_to_read
     INTEGER, INTENT(INOUT) :: stepcu

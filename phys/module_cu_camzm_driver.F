@@ -760,7 +760,7 @@ END SUBROUTINE camzm_driver
 
 
 !------------------------------------------------------------------------
-SUBROUTINE zm_conv_init(DT,rucuten, rvcuten, rthcuten, rqvcuten,           &
+SUBROUTINE zm_conv_init(DT, DX, rucuten, rvcuten, rthcuten, rqvcuten,   &
                      rqccuten, rqicuten, rqcncuten, rqincuten,          &
                      p_qc, p_qi, p_qnc, p_qni, param_first_scalar,      &
                      restart,                                           &
@@ -784,7 +784,7 @@ SUBROUTINE zm_conv_init(DT,rucuten, rvcuten, rthcuten, rqvcuten,           &
                                       p_qc, p_qi, p_qnc, p_qni,     &
                                       param_first_scalar
 
-   REAL ,    INTENT(IN)        :: DT
+   REAL ,    INTENT(IN)        :: DT, DX
 
 
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: &
@@ -843,7 +843,7 @@ SUBROUTINE zm_conv_init(DT,rucuten, rvcuten, rthcuten, rqvcuten,           &
 ! 
 !~need to determine if convection should happen in PBL and set
 ! no_deep_pbl_in accordingly
-  call zm_convi(DT,limcnv, NO_DEEP_PBL_IN=.true.)
+  call zm_convi(DT, DX, limcnv, NO_DEEP_PBL_IN=.true.)
 
 !
 ! Set initial values for arrays dependent on restart conditions

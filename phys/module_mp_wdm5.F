@@ -1526,7 +1526,7 @@ CONTAINS
         do i = its, ite
           if(qci(i,k,1).le.qmin) qci(i,k,1) = 0.0
           if(qci(i,k,2).le.qmin) qci(i,k,2) = 0.0
-          if(qrs(i,k,1).ge.qcrmin) then
+          if(qrs(i,k,1).ge.qcrmin .and. ncr(i,k,3) .ge. nrmin) then
             lamdr_tmp(i,k) = exp(log(((pidnr*ncr(i,k,3))                       &
                          /(den(i,k)*qrs(i,k,1))))*((.33333333)))
             if(lamdr_tmp(i,k) .le. lamdarmin) then
@@ -1537,7 +1537,7 @@ CONTAINS
               ncr(i,k,3) = den(i,k)*qrs(i,k,1)*lamdr_tmp(i,k)**3/pidnr
             endif
           endif
-          if(qci(i,k,1).ge.qmin) then
+          if(qci(i,k,1).ge.qmin .and. ncr(i,k,2) .ge. ncmin ) then
             lamdc_tmp(i,k) = exp(log(((pidnc*ncr(i,k,2))                       &
                          /(den(i,k)*qci(i,k,1))))*((.33333333)))
             if(lamdc_tmp(i,k) .le. lamdacmin) then

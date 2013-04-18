@@ -890,7 +890,7 @@ integer myproc
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to cu_init' )
 
-   CALL cu_init(STEPCU,CUDT,DT,RUCUTEN,RVCUTEN,RTHCUTEN,        &
+   CALL cu_init(DX,STEPCU,CUDT,DT,RUCUTEN,RVCUTEN,RTHCUTEN,     &
                 RQVCUTEN,RQRCUTEN,RQCCUTEN,RQSCUTEN,RQICUTEN,   &
                 NCA,RAINC,RAINCV,W0AVG,config_flags,restart,    &
                 CLDEFI,LOWLYR,MASS_FLUX,                        &
@@ -2554,7 +2554,7 @@ integer myproc
    END SUBROUTINE bl_init
 
 !==================================================================
-   SUBROUTINE cu_init(STEPCU,CUDT,DT,RUCUTEN,RVCUTEN,RTHCUTEN,     &
+   SUBROUTINE cu_init(DX,STEPCU,CUDT,DT,RUCUTEN,RVCUTEN,RTHCUTEN,  &
                       RQVCUTEN,RQRCUTEN,RQCCUTEN,RQSCUTEN,RQICUTEN,&
                       NCA,RAINC,RAINCV,W0AVG,config_flags,restart, &
                       CLDEFI,LOWLYR,MASS_FLUX,                     &
@@ -2591,7 +2591,7 @@ integer myproc
                                   ims, ime, jms, jme, kms, kme,   &
                                   its, ite, jts, jte, kts, kte
 
-   REAL ,    INTENT(IN)        :: DT, CUDT
+   REAL ,    INTENT(IN)        :: DT, CUDT, DX
    LOGICAL , INTENT(IN)        :: start_of_simulation
    LOGICAL , INTENT(IN)        :: allowed_to_read
    INTEGER , INTENT(INOUT)     :: STEPCU
@@ -2729,7 +2729,7 @@ integer myproc
 
      CASE (CAMZMSCHEME)
           IF (PRESENT(RQCNCUTEN)) THEN
-          CALL zm_conv_init(DT, rucuten, rvcuten, rthcuten, rqvcuten,       &
+          CALL zm_conv_init(DT, DX, rucuten, rvcuten, rthcuten, rqvcuten, &
                       rqccuten, rqicuten, rqcncuten, rqincuten,         &
                       p_qc, p_qi, p_qnc, p_qni, param_first_scalar,     &
                       restart,                                          &

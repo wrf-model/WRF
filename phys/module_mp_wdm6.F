@@ -1227,7 +1227,7 @@ CONTAINS
 ! paacw: Accretion of cloud water by averaged snow/graupel 
 !        (T<T0: QC->QG or QS, and T>=T0: QC->QR) 
 !-------------------------------------------------------------
-          if(qrs(i,k,2).gt.qcrmin .and. qrs(i,k,3).gt.qcrmin) then
+          if(qsum(i,k) .gt. 1.e-15) then
             paacw(i,k) = (qrs(i,k,2)*psacw(i,k)+qrs(i,k,3)*pgacw(i,k))/(qsum(i,k))
 !-------------------------------------------------------------
 ! naacw: Accretion of cloud water by averaged snow/graupel
@@ -1813,7 +1813,7 @@ CONTAINS
         do i = its, ite
           if(qci(i,k,1).le.qmin) qci(i,k,1) = 0.0
           if(qci(i,k,2).le.qmin) qci(i,k,2) = 0.0
-          if(qrs(i,k,1).ge.qcrmin) then
+          if(qrs(i,k,1).ge.qcrmin .and. ncr(i,k,3) .ge. nrmin) then
             lamdr_tmp(i,k) = exp(log(((pidnr*ncr(i,k,3))                       & 
                          /(den(i,k)*qrs(i,k,1))))*((.33333333)))
             if(lamdr_tmp(i,k) .le. lamdarmin) then
@@ -1824,7 +1824,7 @@ CONTAINS
               ncr(i,k,3) = den(i,k)*qrs(i,k,1)*lamdr_tmp(i,k)**3/pidnr
             endif
           endif  
-          if(qci(i,k,1).ge.qmin) then
+          if(qci(i,k,1).ge.qmin .and. ncr(i,k,2) .ge. ncmin ) then
             lamdc_tmp(i,k) = exp(log(((pidnc*ncr(i,k,2))                       &
                          /(den(i,k)*qci(i,k,1))))*((.33333333)))
             if(lamdc_tmp(i,k) .le. lamdacmin) then
@@ -2526,7 +2526,7 @@ CONTAINS
 ! skip for no precipitation for all layers
       allold = 0.0
       do k=1,km
-        allold = allold + qq(k)
+        allold = allold + qq(k) + qq2(k)
       enddo
       if(allold.le.0.0) then
         cycle i_loop

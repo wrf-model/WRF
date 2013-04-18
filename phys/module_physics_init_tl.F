@@ -653,7 +653,7 @@ CONTAINS
 !Optional oml
     CALL WRF_DEBUG(200, 'module_start: phy_init: Before call to cu_init'&
 &            )
-    CALL CU_INIT_D(stepcu, cudt, dt, rucuten, rvcuten, rthcuten, &
+    CALL CU_INIT_D(dx, stepcu, cudt, dt, rucuten, rvcuten, rthcuten, &
 &             rthcutend, rqvcuten, rqvcutend, rqrcuten, rqccuten, &
 &             rqccutend, rqscuten, rqicuten, nca, rainc, raincd, raincv, &
 &             raincvd, w0avg, w0avgd, config_flags, restart, cldefi, &
@@ -1032,7 +1032,7 @@ CONTAINS
 !   with respect to varying inputs: raincv rqccuten rthcuten rainc
 !                w0avg rqvcuten
 !==================================================================
-  SUBROUTINE CU_INIT_D(stepcu, cudt, dt, rucuten, rvcuten, rthcuten, &
+  SUBROUTINE CU_INIT_D(dx, stepcu, cudt, dt, rucuten, rvcuten, rthcuten, &
 &    rthcutend, rqvcuten, rqvcutend, rqrcuten, rqccuten, rqccutend, &
 &    rqscuten, rqicuten, nca, rainc, raincd, raincv, raincvd, w0avg, &
 &    w0avgd, config_flags, restart, cldefi, lowlyr, mass_flux, rthften, &
@@ -1051,7 +1051,7 @@ CONTAINS
     LOGICAL, INTENT(IN) :: restart
     INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
 &    jme, kms, kme, its, ite, jts, jte, kts, kte
-    REAL, INTENT(IN) :: dt, cudt
+    REAL, INTENT(IN) :: dt, cudt, dx
     LOGICAL, INTENT(IN) :: start_of_simulation
     LOGICAL, INTENT(IN) :: allowed_to_read
     INTEGER, INTENT(INOUT) :: stepcu

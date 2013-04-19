@@ -1267,7 +1267,7 @@ rconfig   integer     cu_physics          namelist,physics	max_domains    0     
 rconfig   integer shcu_physics            namelist,physics      max_domains    0       rh   "shcu_physics"  ""      ""
 rconfig   integer     cu_diag             namelist,physics      max_domains    0       rh       "cu_diag"            " additional t-averaged stuff for cuphys"      ""
 
-rconfig   integer vortex_tracker          namelist,physics      max_domains    1      -      "vortex_tracker" "Vortex Tracking Algorithm" ""
+rconfig   integer vortex_tracker          namelist,physics      max_domains    6      -      "vortex_tracker" "Vortex Tracking Algorithm" ""
 rconfig   real      gfs_alpha             namelist,physics      max_domains    1       irh      "boundary depth factor"  "" ""
 
 rconfig   real    CUDT                    namelist,physics	max_domains    0       h    "CUDT"          ""      ""

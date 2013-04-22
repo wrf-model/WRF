@@ -1,6 +1,10 @@
 #define WRF_PORT
-#define MODAL_AERO
-#include "../chem/MODAL_AERO_CPP_DEFINES.h"
+#if defined ( WRF_CHEM )
+#       include "../chem/MODAL_AERO_CPP_DEFINES.h"
+#else
+#       define MODAL_AERO
+#       define MODAL_AERO_3MODE
+#endif
 ! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
 module microp_aero
 

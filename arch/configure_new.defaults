@@ -373,13 +373,13 @@ SFC             =       ifort -mmic
 SCC             =       icc -mmic
 CCOMP           =       icc -mmic
 DM_FC           =       mpiifort -mmic
-DM_CC           =       mpicc -mmic
+DM_CC           =       mpiicc -mmic
 FC              =       $(DM_FC)
 CC              =       $(DM_CC)
 LD              =       $(FC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION       =       -i4
-ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DCHUNK=16 -DXEON_OPTIMIZED_WSM5 -DOPTIMIZE_CFL_TEST -DFSEEKO64_OK -DINTEL_YSU_KLUDGE -DWRF_USE_CLM
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DCHUNK=16 -DXEON_OPTIMIZED_WSM5 -DXEON_SIMD -DOPTIMIZE_CFL_TEST -DFSEEKO64_OK -DINTEL_YSU_KLUDGE -DWRF_USE_CLM
 OPTNOSIMD       =
 OPTKNC          =       -fimf-precision=low -fimf-domain-exclusion=15 -opt-assume-safe-padding -opt-streaming-stores always -opt-streaming-cache-evict=0 -mP2OPT_hlo_pref_use_outer_strategy=F
 CFLAGS_LOCAL    =       -w -O3 $(OPTKNC)
@@ -423,7 +423,7 @@ CC              =       $(DM_CC)
 LD              =       $(FC)
 RWORDSIZE       =       $(NATIVE_RWORDSIZE)
 PROMOTION       =       -i4
-ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DINTEL_ALIGN64 -DCHUNK=64 -DXEON_OPTIMIZED_WSM5 -DOPTIMIZE_CFL_TEST -DWRF_USE_CLM
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DCHUNK=64 -DXEON_OPTIMIZED_WSM5 -DOPTIMIZE_CFL_TEST -DWRF_USE_CLM
 OPTNOSIMD       =
 OPTAVX          =       -xAVX
 CFLAGS_LOCAL    =       -w -O3 $(OPTAVX)

@@ -4,6 +4,7 @@ module module_bdywrite
 #ifdef EXTRA_HWRF_DEBUG_STUFF
   private
   public :: bdywrite
+  CHACARCTER (LEN=256) , PRIVATE :: a_message
 contains
   subroutine bdywrite(grid,filename)
     use module_domain_type, only: domain
@@ -128,7 +129,7 @@ contains
                           ,IMS,IME,JMS,JME,KMS,KME                    &
                           ,IPS,IPE,JPS,JPE,KPS,KPE )
 
-    write(0,*) "Sam's special boundary output (TM) for domain ",grid%id
+    write(a_message,*) "Sam's special boundary output (TM) for domain ",grid%id ; CALL wrf_message ( a_message )
     ! call CHECK_MOIST('MOIST',grid%moist,PARAM_FIRST_SCALAR, num_moist, &
     !        grid%moist_bxs,grid%moist_bxe, &
     !        grid%moist_bys,grid%moist_bye, &
@@ -192,14 +193,30 @@ contains
     if(f_qnr) write_vars3d_part(qnr,scalar,real,p_qnr)
     if(f_qni) write_vars3d_part(qni,scalar,real,p_qni)
 
-    if(f_qv) write(0,*) f_qv,p_qv
-    if(f_qc) write(0,*) f_qc,p_qc
-    if(f_qr) write(0,*) f_qr,p_qr
-    if(f_qi) write(0,*) f_qi,p_qi
-    if(f_qg) write(0,*) f_qg,p_qg
-    if(f_qs) write(0,*) f_qs,p_qs
-    if(f_qnr) write(0,*) f_qnr,p_qnr
-    if(f_qni) write(0,*) f_qni,p_qni
+    if(f_qv) then
+       write(a_message,*) f_qv,p_qv ; CALL wrf_message ( a_message )
+    endif
+    if(f_qc) then
+       write(a_message,*) f_qc,p_qc ; CALL wrf_message ( a_message )
+    endif
+    if(f_qr) then
+       write(a_message,*) f_qr,p_qr ; CALL wrf_message ( a_message )
+    endif
+    if(f_qi) then
+       write(a_message,*) f_qi,p_qi ; CALL wrf_message ( a_message )
+    endif
+    if(f_qg) then
+       write(a_message,*) f_qg,p_qg ; CALL wrf_message ( a_message )
+    endif
+    if(f_qs) then
+       write(a_message,*) f_qs,p_qs ; CALL wrf_message ( a_message )
+    endif
+    if(f_qnr) then
+       write(a_message,*) f_qnr,p_qnr ; CALL wrf_message ( a_message )
+    endif
+    if(f_qni) then
+       write(a_message,*) f_qni,p_qni ; CALL wrf_message ( a_message )
+    endif
 !    write_vars2d(utemp,real)
 !    write_vars2d(vtemp,real)
 !    write_vars2d(ttemp,real)
@@ -208,7 +225,7 @@ contains
 !    write_vars2d(cwmtemp,real)
 
     assert(nf_close(fid))
-    write(0,*) "Finished Sam's special boundary output (TM) for domain ",grid%id
+    write(a_message,*) "Finished Sam's special boundary output (TM) for domain ",grid%id ; CALL wrf_message ( a_message )
 
   end subroutine bdywrite
 

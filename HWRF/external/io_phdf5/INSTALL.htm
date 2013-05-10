@@ -1,0 +1,1207 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"><html><head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252"><title>To integrate HDF5</title></head><body><big><big><b>Build and Install the HDF5-WRF IO Module</b></big></big><br>
+<br>
+There are two HDF5 WRF IO modules, <i>sequential</i> and <i>parallel.</i>  The either or both modules can be configured as optional IO modules for WRF.<br>
+<br>
+The sequential HDF module (<i>io_hdf5</i>) uses the serial HDF5 library.  The parallel
+HDF module (<i>io_phdf5</i>) uses parallel HDF5 (which requires MPI-IO).<br>
+<br>
+The installation for the two modules is similar.<br>
+<br>
+<big><b>Prerequisites</b></big><br>
+<br>
+<b>WRF 1.3</b><br>
+<br>
+The HDF5 WRF IO modules require Version 1.3 of WRF.  Information and downloads are available at:<br>
+ 
+<blockquote><a href="http://www.mmm.ucar.edu/wrf/users/user_main.html">http://www.mmm.ucar.edu/wrf/users/user_main.html</a><br>
+</blockquote>
+<br>
+<b>HDF5-1.6 .2 or later</b><br>
+<br>
+The HDF5 WRF IO modules require HDF5-1.6.2 or more recent. The parallel HDF5
+WRF module requires parallel HDF5 (which requires MPI IO). <br>
+<br>
+Installing HDF5<br>
+<blockquote>
+  </blockquote>
+<ol>
+  <li>To obtain 
+  HDF5, download from to <a href="http://hdf.ncsa.uiuc.edu/HDF5/release/obtain5.html">
+  http://hdf.ncsa.uiuc.edu/HDF5/release/obtain5.html</a>. Install HDF5 according to the instructions. The HDF5 library must have he Fortran 90 interface installed. <br><br>
+ For the sequential WRF module,  SZIP compression can be enabled.  </li>
+  <li>
+For the parallel WRF module, parallel HDF5 must be installed (this requires MPI-IO). <br>
+Set the environment variable PHDF5 = &lt;&lt;path where phdf5 is installed&gt;&gt;.
+  
+   </li>
+
+  <li>For the sequential HDF WRF IO module, either serial or parallel HDF must be installed.<br>
+The HDF library may be installed with the optional SZIP compression enabled. <br>
+Set the environment variable HDF5 = &lt;&lt;path where hdf5 is installed&gt;&gt;.
+  
+  <br>
+  </li>
+</ol>
+<br>
+<big><b>Platforms</b></big><br>
+<p><small><small><font size="5"><small><small>This prototype has been tested
+on a few platforms. The HDF WRF IO modules should work on any platform that
+WRF3.1 and HDF5 support, although the details of the configuration may need
+to be worked out.<br>
+</small></small></font></small></small></p>
+<table cellpadding="2" cellspacing="2" border="1" width="100%">
+  <tbody>
+    <tr>
+      <td valign="top"><b>Module<br>
+      </b></td>
+      <td valign="top"><b>Platforms<br>
+      </b></td>
+      <td valign="top"><b>Notes<br>
+      </b></td>
+    </tr>
+    <tr>
+      <td valign="top">Sequential <br>
+      </td>
+      <td valign="top"><small><small><font size="5"><small><small> 
+NCSA IBM P690</small></small></font></small></small>.<br>
+      <small><small><font size="5"><small><small> NCAR IBM SP3 </small></small></font></small></small><br>
+      <small><small><font size="5"><small><small>PC Linux </small></small></font></small></small>with PGI Fortran 90 Compiler, Vers. 4<br>
+      <small><small><font size="5"><small><small>SGI IRIX6.5-64 bi</small></small></font></small></small>t<br>
+      </td>
+      <td valign="top">To date, WRF3.1 does not work on Linux with PGF, version 5.<br>
+      </td>
+    </tr>
+    <tr>
+      <td valign="top">Parallel<br>
+      </td>
+      <td valign="top"><small><small><font size="5"><small><small> 
+NCSA IBM P690</small></small></font></small></small>.<br>
+
+      <small><small><font size="5"><small><small> NCAR IBM SP3 </small></small></font></small></small><br>
+      </td>
+      <td valign="top"><br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<br>
+<br>
+<big><b>Installation of the HDF5 WRF IO Modules</b></big><br>
+<br>
+The HDF5 WRF IO modules are used by adding it to a standard WRF configuration.  This process has four main steps<br>
+<ol>
+  <li>Downoad the HDF WRF IO module(s)</li><li>Add the HDF5 WRF IO module(s) as an "extern" module</li>
+
+  <li>Modifying relevant files in the WRF distribution</li>
+  <li>Compile WRF following the usual procedures<br>
+  </li>
+
+</ol>
+The parallel, sequential, or both may be configured.<br>
+<br>
+<b>1. Download the WRD-HDF5 IO modules</b><br>
+<br>
+The HDF WRF IO modules are available from:<br>
+<ul>
+  <li>sequential: <a href="ftp://ftp.ncsa.uiuc.edu/HDF/pub/outgoing/wrf-hdf5-modules/io_hdf5.tar">
+    ftp://ftp.ncsa.uiuc.edu/HDF/pub/outgoing/wrf-hdf5-modules/io_hdf5.tar</a></li>
+  <li>parallel: 
+    <a href="ftp://ftp.ncsa.uiuc.edu/HDF/pub/outgoing/wrf-hdf5-modules/io_phdf5.tar">
+    ftp://ftp.ncsa.uiuc.edu/HDF/pub/outgoing/wrf-hdf5-modules/io_phdf5.tar</a><br>
+  </li>
+</ul>
+<blockquote><p></p>
+</blockquote>
+<p><b><small>
+    <font size="4"><small>2. Add WRF-HDF5 IO module(s) to the WRF source</small></font></small></b></p>
+
+    
+<p>
+    The HDF5 WRF IO modules are added as sub-directories in the 'external' directory of the WRF source.<br>
+</p>
+<blockquote><blockquote>
+    
+    
+    <p> cd external;<br>
+tar xvf io_hdf5.tar<br>
+tar xvf io_phdf5.tar<br>
+    </p>
+</blockquote></blockquote>
+
+<p>
+  </p>
+
+<table cellpadding="2" cellspacing="2" border="1" width="90%" align="center">
+
+
+    <tbody>
+      <tr>
+        <td valign="top">contents of the sequential HDF WRF IO module:<br>
+      <br>
+  ./io_hdf5<br>  ./io_hdf5/wrf-hdf5.F90<br>  ./io_hdf5/wrf_status_codes.h<br>  ./io_hdf5/Makefile<br>  ./io_hdf5/wrf-hdf5attr.F90<br>  ./io_hdf5/wrf-hdf5support.F90<br>  ./io_hdf5/wrf_io_flags.h<br>
+        </td>
+      </tr>
+    </tbody>
+  
+</table>
+
+
+<br>
+
+<br>
+
+
+  
+<table cellpadding="2" cellspacing="2" border="1" width="90%" align="center">
+
+
+    <tbody>
+      <tr>
+        <td valign="top">contents of the sequential HDF WRF IO module:<br>
+      <br>
+  ./io_phdf5/<br>  ./io_phdf5/Makefile<br>  ./io_phdf5/wrf_status_codes.h<br>  ./io_phdf5/wrf-phdf5attr.F90<br>  ./io_phdf5/wrf-phdf5support.F90<br>  ./io_phdf5/wrf_io_flags.h<br>  ./io_phdf5/wrf-phdf5.F90<br>
+        </td>
+      </tr>
+    </tbody>
+  
+</table>
+
+
+<br>
+
+
+<p><b><small><small><font size="5"><small><small>Design note:</small></small></font></small></small></b></p>
+
+<p><small><small><font size="5"><small><small>In the sequential HDF5 WRF
+IO modules, arrays larger thatn 8096 bytes are compressed by default. In
+this case, the HDF5 dataset is configured to use the shuffle filter plus deflate
+(GZIP) compression, with compression level 6.  <br>
+</small></small></font></small></small></p>
+
+
+<p><small><small><font size="5"><small><small>In the current prototype, there is no option in the namelist for 
+users to change this default. To modify this behavior, it is necessary to modify the source code.</small></small></font><br>
+<font size="5"><small><small><br>
+<i>To disable compression:</i></small></small></font></small></small></p>
+
+
+
+<blockquote>
+  <p><small><font size="5"><small><small>Edit</small></small></font><font size="4"><small> the file '</small></font></small><small><font size="4"><small>wrf/external/io_hdf5/</small></font></small><small><font size="4"><small>wrf-hdf5.F90</small></font></small><small><font size="4"><small>'<br>
+</small></font></small></p>
+  <p><small><font size="4"><small>Comment out the lines: </small></font></small></p>
+  <p><small><font face="Arial" size="4"><small>            
+call h5pset_shuffle_f(crp_list,hdf5err) </small></font></small></p>
+  <p><small><font size="4"><small>                
+and </small></font></small></p>
+  <p><small><font size="4" face="Arial"><small>            
+call h5pset_deflate_f(crp_list,6,hdf5err) </small></font></small></p>
+</blockquote>
+
+
+
+
+
+
+
+
+
+<p><i><small><small><font size="5"><small><small>To use  SZIP compression instead:</small></small></font></small></small></i></p>
+
+
+<blockquote>
+  <p><small><font size="4"><small>For SZIP information and downloads, see the szip at 
+<a href="http://hdf.ncsa.uiuc.edu/doc_resource/SZIP/">
+http://hdf.ncsa.uiuc.edu/doc_resource/SZIP/</a>.<br>
+</small></font></small></p>
+  <p><small><font size="4"><small>Edit the file 'wrf/external/io_hdf5/</small></font></small><small><font size="4"><small>wrf-hdf5.F90'.</small></font></small></p>
+  <p><small><font size="4"><small>Comment out the lines: </small></font></small></p>
+  <p><small><font face="Arial" size="4"><small>            
+call h5pset_shuffle_f(crp_list,hdf5err) </small></font></small></p>
+  <p><small><font size="4"><small>                
+and </small></font></small></p>
+  <p><small><font size="4" face="Arial"><small>            
+call h5pset_deflate_f(crp_list,6,hdf5err) </small></font></small></p>
+  <p><small><font size="4"><small>Uncomment the line:
+</small></font></small></p>
+  <p><small><font size="4"><small>             
+<font face="Arial">call 
+h5pset_szip_f(crp_list,H5_SZIP_AK13_OM_F+H5_SZIP_NN_OM_F,8,hdf5err)</font><br>
+</small></font></small></p>
+  <p><small><font size="4"><small>Change the value 
+of the parameters in the function <i>h5pset_szip_f</i> if necessary.</small></font></small>  See the SZIP documentation for more information about the parameters.<br>
+  </p>
+</blockquote>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p><br>
+</p>
+<p><font size="4"><b><small>3. Modifications to WRF files</small></b><br>
+</font></p>
+
+<p><font size="4"><small>In order to add a new IO module to WRF,  several
+files in the WRF source code must be changed. The following files need to be
+modified:<br>
+</small></font></p>
+<table cellpadding="2" cellspacing="2" border="1" width="50%" align="center">
+  <tbody>
+    <tr>
+      <td valign="top">WRFV1/configure<br>
+WRFV1/Registry/Registry<br>
+WRFV1/arch/Config.pl<br>
+WRFV1/arch/configure.defaults<br>
+WRFV1/frame/md_calls.m4<br>
+WRFV1/frame/module_io.F<br>
+WRFV1/share/module_io_wrf.F<br>
+WRFV1/external/Makefile<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<br>
+The exact changes depend on how WRF has been configured on the sytsem.  <br>
+<p>Examples of the changes to the files of the WRF1.3 distribution are available at:<br>
+</p>
+<p> 
+    
+    <a href="ftp://ftp.ncsa.uiuc.edu/HDF/pub/outgoing/wrf-hdf5-modules">
+    ftp://ftp.ncsa.uiuc.edu/HDF/pub/outgoing/wrf-hdf5-modules</a><br>
+</p>
+
+<blockquote>
+  </blockquote>
+<p><i><b>WRF configuration files<br>
+</b></i>
+</p>
+<p>The 'configure' file must be updated to add the HDF5 and PHDF5 variables.<br>
+</p>
+<table cellpadding="2" cellspacing="2" border="1" align="center" width="90%">
+  <tbody>
+    <tr>
+      <td valign="top">*** ../WRFV1/configure	Thu Feb  6 13:10:56 2003<br>
+--- ./WRFV1-with-hdf/configure	Thu May 13 12:18:40 2004<br>
+***************<br>
+*** 206,211 ****<br>
+--- 206,223 ----<br>
+    echo "Will configure for use without NetCDF"<br>
+  fi<br>
+  <br>
++ if [ -n "$HDF5" ] ; then<br>
++   echo "Will use HDF5 in dir: $HDF5"<br>
++ else<br>
++   echo "Will configure for use without HDF5"<br>
++ fi<br>
++ <br>
++ if [ -n "$PHDF5" ] ; then<br>
++   echo "Will use PHDF5 in dir: $PHDF5"<br>
++ else<br>
++   echo "Will configure for use without PHDF5"<br>
++ fi<br>
++ <br>
+  # if the uname command exists, give it a shot and see if<br>
+  # we can narrow the choices; otherwise, spam 'em<br>
+  os="ARCH"<br>
+***************<br>
+*** 227,232 ****<br>
+  <br>
+  # Found perl, so proceed with configuration<br>
+  if test -n "$PERL" ; then<br>
+!   $PERL arch/Config.pl -perl=$PERL -netcdf=$NETCDF -os=$os -mach=$mach<br>
+  fi<br>
+  <br>
+--- 239,244 ----<br>
+  <br>
+  # Found perl, so proceed with configuration<br>
+  if test -n "$PERL" ; then<br>
+!   $PERL arch/Config.pl -perl=$PERL -netcdf=$NETCDF -hdf5=$HDF5 -phdf5=$PHDF5 -os=$os -mach=$mach<br>
+  fi<br>
+  <br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<p>The file 'Registry/Registry' must be updated to add the HDF IO modules (<i>io_hdf5</i> and <i>io_phdf5</i>).<br>
+</p>
+<table cellpadding="2" cellspacing="2" border="1" width="90%" align="center">
+  <tbody>
+    <tr>
+      <td valign="top">*** ../WRFV1/Registry/Registry	Wed Feb 12 09:28:28 2003<br>
+--- ./WRFV1-with-hdf/Registry/Registry	Thu May 13 12:18:39 2004<br>
+***************<br>
+*** 738,745 ****<br>
+  # Four placeholders for additional packages (we can go beyond zzz <br>
+  # but that will entail modifying frame/module_io.F and frame/md_calls.m4)<br>
+  # Please note these are placeholders; HDF has not been implemented yet.<br>
+! package   io_hdf      io_form_restart==3                     -             -<br>
+! package   io_xxx      io_form_restart==4                     -             -<br>
+  package   io_yyy      io_form_restart==5                     -             -<br>
+  package   io_zzz      io_form_restart==6                     -             -<br>
+                                                  <br>
+--- 738,745 ----<br>
+  # Four placeholders for additional packages (we can go beyond zzz <br>
+  # but that will entail modifying frame/module_io.F and frame/md_calls.m4)<br>
+  # Please note these are placeholders; HDF has not been implemented yet.<br>
+! package   io_hdf5     io_form_restart==3                     -             -<br>
+! package   io_phdf5    io_form_restart==4                     -             -<br>
+  package   io_yyy      io_form_restart==5                     -             -<br>
+  package   io_zzz      io_form_restart==6                     -             -<br>
+                                                 <br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<p>The file 'arch/Config.pl' needs to be changed to add the code to use the HDF5 and PHDF5 variables.<br>
+</p>
+<table cellpadding="2" cellspacing="2" border="1" width="90%" align="center">
+  <tbody>
+    <tr>
+      <td valign="top">*** ../WRFV1/arch/Config.pl	Fri Mar 16 12:06:46 2001<br>
+--- ./WRFV1-with-hdf/arch/Config.pl	Thu May 13 12:18:37 2004<br>
+***************<br>
+*** 7,12 ****<br>
+--- 7,14 ----<br>
+  <br>
+  $sw_perl_path = perl ;<br>
+  $sw_netcdf_path = "" ;<br>
++ $sw_hdf5_path ="";<br>
++ $sw_phdf5_path=""; <br>
+  $sw_os = "ARCH" ;           # ARCH will match any<br>
+  $sw_mach = "ARCH" ;         # ARCH will match any<br>
+  <br>
+***************<br>
+*** 20,25 ****<br>
+--- 22,35 ----<br>
+    {<br>
+      $sw_netcdf_path = substr( $ARGV[0], 8 ) ;<br>
+    }<br>
++   if ( substr( $ARGV[0], 1, 5 ) eq "hdf5=" )<br>
++   {<br>
++     $sw_hdf5_path = substr( $ARGV[0], 6 ) ;<br>
++   }<br>
++   if ( substr( $ARGV[0], 1, 6 ) eq "phdf5=" )<br>
++   {<br>
++     $sw_phdf5_path = substr( $ARGV[0], 7 ) ;<br>
++   }<br>
+    if ( substr( $ARGV[0], 1, 3 ) eq "os=" )<br>
+    {<br>
+      $sw_os = substr( $ARGV[0], 4 ) ;<br>
+***************<br>
+*** 89,94 ****<br>
+--- 99,106 ----<br>
+    {<br>
+      $_ =~ s/CONFIGURE_PERL_PATH/$sw_perl_path/g ;<br>
+      $_ =~ s/CONFIGURE_NETCDF_PATH/$sw_netcdf_path/g ;<br>
++     $_ =~ s/CONFIGURE_HDF5_PATH/$sw_hdf5_path/g ;<br>
++     $_ =~ s/CONFIGURE_PHDF5_PATH/$sw_phdf5_path/g ;<br>
+      if ( $sw_netcdf_path ) <br>
+        { $_ =~ s/CONFIGURE_WRFIO_NF/wrfio_nf/g ;<br>
+  	$_ =~ s:CONFIGURE_NETCDF_FLAG:-DNETCDF: ;<br>
+***************<br>
+*** 99,104 ****<br>
+--- 111,140 ----<br>
+  	$_ =~ s:CONFIGURE_NETCDF_FLAG::g ;<br>
+  	$_ =~ s:CONFIGURE_NETCDF_LIB_PATH::g ;<br>
+  	 }<br>
++ <br>
++     if ( $sw_hdf5_path ) <br>
++ <br>
++       { $_ =~ s/CONFIGURE_WRFIO_HDF5/wrfio_hdf5/g ;<br>
++ 	$_ =~ s:CONFIGURE_HDF5_FLAG:-DHDF5: ;<br>
++ 	$_ =~ s:CONFIGURE_HDF5_LIB_PATH:-L../external/io_hdf5 -lwrfio_hdf5 -L$sw_hdf5_path/lib
+-lhdf5_fortran -lhdf5 -lm -lz -L$sw_hdf5_path/lib -lsz: ;<br>
++ 	 }<br>
++     else                   <br>
++       { $_ =~ s/CONFIGURE_WRFIO_HDF5//g ;<br>
++ 	$_ =~ s:CONFIGURE_HDF5_FLAG::g ;<br>
++ 	$_ =~ s:CONFIGURE_HDF5_LIB_PATH::g ;<br>
++ 	 }<br>
++ <br>
++     if ( $sw_phdf5_path ) <br>
++ <br>
++       { $_ =~ s/CONFIGURE_WRFIO_PHDF5/wrfio_phdf5/g ;<br>
++ 	$_ =~ s:CONFIGURE_PHDF5_FLAG:-DPHDF5: ;<br>
++ 	$_ =~ s:CONFIGURE_PHDF5_LIB_PATH:-L../external/io_phdf5 -lwrfio_phdf5 -L$sw_phdf5_path/lib -lhdf5_fortran -lhdf5 -lm -lz: ;<br>
++ 	 }<br>
++     else                   <br>
++       { $_ =~ s/CONFIGURE_WRFIO_PHDF5//g ;<br>
++ 	$_ =~ s:CONFIGURE_PHDF5_FLAG::g ;<br>
++ 	$_ =~ s:CONFIGURE_PHDF5_LIB_PATH::g ;<br>
++ 	 }<br>
+      @machopts = ( @machopts, $_ ) ;<br>
+    }<br>
+    if ( substr( $_, 0, 5 ) eq "#ARCH" &amp;&amp; $latchon == 0 )<br>
+      <br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<p>The file 'arch/configure.defauts' must be edited to reflect the configuration of the current system.<br>
+</p>
+<table cellpadding="2" cellspacing="2" border="1" width="90%" align="center">
+  <tbody>
+    <tr>
+      <td valign="top">*** ../WRFV1/arch/configure.defaults	Fri Mar 28 14:08:48 2003<br>
+--- ./WRFV1-with-hdf/arch/configure.defaults	Thu May 13 12:18:40 2004<br>
+***************<br>
+*** 732,758 ****<br>
+  <br>
+  <br>
+  ###########################################################<br>
+! #ARCH	AIX DM          (RSL-IO, IBM-MPI)<br>
+  #<br>
+  DMPARALLEL      =       1<br>
+! SFC             =       xlf90_r<br>
+  SCC             =       xlc_r<br>
+! FC              =       mpxlf90_r<br>
+  CC              =       mpcc_r<br>
+  CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \<br>
+                          -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)<br>
+! FCOPTIM         =       -O2 -qarch=auto -qmaxmem=32676<br>
+  FCDEBUG         =       # -g -qfullpath<br>
+  FCBASEOPTS      =       -qspill=20000 $(FCDEBUG)<br>
+  FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)<br>
+! INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_int  \<br>
+                          -I../frame -I../share -I../phys -I../inc<br>
+  EXTRAMODULES    =       <br>
+  ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DRWORDSIZE=4 \<br>
+!                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG -DTRIEDNTRUE -DONLY_WRFMODEL_IO -DINTIO<br>
+  PERL            =       perl<br>
+  REGISTRY        =       Registry<br>
+! LIB             =       CONFIGURE_NETCDF_LIB_PATH -L../external/RSL/RSL -lrsl -lmass \<br>
+                          -L../external/io_int -lwrfio_int  \<br>
+  			../frame/internal_header_util.o ../frame/pack_utils.o<br>
+  LDFLAGS         =	-bmaxstack:256000000<br>
+--- 732,823 ----<br>
+  <br>
+  <br>
+  ###########################################################<br>
+! #ARCH	AIX DM          (RSL-IO, IBM-MPI)(PARALLEL HDF5)<br>
+  #<br>
+  DMPARALLEL      =       1<br>
+! SFC             =       xlf90_r <br>
+  SCC             =       xlc_r<br>
+! FC              =       mpxlf90_r <br>
+  CC              =       mpcc_r<br>
+  CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \<br>
+                          -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)<br>
+! FCOPTIM         =       -O1 -qarch=auto -qmaxmem=-1<br>
+! #FCOPTIM         =       -O2 <br>
+! FCDEBUG         =       -g -qfullpath<br>
+! FCBASEOPTS      =       -qspill=20000 $(FCDEBUG)<br>
+! FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)<br>
+! INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_phdf5 -I../external/io_int  \<br>
+!                         -I../frame -I../share -I../phys -I../inc<br>
+! EXTRAMODULES    =       <br>
+! ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DRWORDSIZE=4 \<br>
+!                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG CONFIGURE_PHDF5_FLAG -DTRIEDNTRUE -DONLY_WRFMODEL_IO -DINTIO<br>
+! PERL            =       perl<br>
+! REGISTRY        =       Registry<br>
+! LIB             =       CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PHDF5_LIB_PATH -L../external/RSL/RSL -lrsl -lmass \<br>
+!                         -L../external/io_int -lwrfio_int  \<br>
+! 			../frame/internal_header_util.o ../frame/pack_utils.o<br>
+! LDFLAGS         =	-bmaxstack:256000000 -bmaxdata:0x80000000<br>
+! CPP		=	/lib/cpp<br>
+! CPPFLAGS	=	-I$(LIBINCLUDE) -C -P $(ARCHFLAGS) -I../external/RSL/RSL `cat ../inc/dm_comm_cpp_flags`<br>
+! MAX_DOMAINS     =       4<br>
+! MAX_PROC        =       1024<br>
+! AR              =       ar ru<br>
+! M4              =       m4 -B 8000<br>
+! RANLIB          =       ranlib<br>
+! <br>
+! externals : CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_PHDF5 ../external/RSL/RSL/librsl.a wrfio_int<br>
+! 	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c
+&gt;&gt; ../tools/gen_comms.c ;  \<br>
+!           /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F &gt;&gt; module_dm.F )<br>
+! <br>
+! wrfio_nf : <br>
+! 	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH FC="$(SFC)
+$(FCDEBUG) -qarch=auto -qzerosize" ; /bin/cp wrf_io_flags.h wrf_status_codes.h
+../../inc )<br>
+! <br>
+! wrfio_phdf5 : <br>
+! 	( cd ../external/io_phdf5 ; make PHDF5PATH=CONFIGURE_PHDF5_PATH FC="$(FC)
+$(FCDEBUG) -qarch=auto -qfree=F90 -qzerosize" ; /bin/cp wrf_io_flags.h wrf_status_codes.h
+../../inc )<br>
+! <br>
+! wrfio_int : <br>
+! 	( cd ../external/io_int ; \<br>
+!           make CC=$(CC) FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all diffwrf )<br>
+! <br>
+! ../external/RSL/RSL/librsl.a :<br>
+! 	( cd ../external/RSL/RSL ; make MAX_DOMAINS=$(MAX_DOMAINS) MAX_PROC=$(MAX_PROC) LEARN_BCAST=-DLEARN_BCAST sp2 )<br>
+! <br>
+! # compile these without high optimization to speed compile<br>
+! mediation_force_domain.o : mediation_force_domain.F<br>
+! mediation_interp_domain.o : mediation_interp_domain.F<br>
+! <br>
+! mediation_force_domain.o \<br>
+! mediation_interp_domain.o :<br>
+! 	$(RM) $@<br>
+! 	sed /\!.\*\'/s/\'//g $*.F &gt; $*.b<br>
+! 	$(CPP) -I../inc $(CPPFLAGS) $*.b  &gt; $*.f<br>
+! 	$(RM) $*.b<br>
+! 	$(FC) -c $(FCBASEOPTS) $(MODULE_DIRS) $*.f<br>
+! <br>
+! ###########################################################<br>
+! #ARCH	AIX DM          (RSL-IO, IBM-MPI)(SERIAL HDF5)<br>
+! #<br>
+! DMPARALLEL      =       1<br>
+! SFC             =       xlf90_r <br>
+! SCC             =       xlc_r<br>
+! FC              =       mpxlf90_r <br>
+! CC              =       mpcc_r<br>
+! CFLAGS          =       -DNOUNDERSCORE -DWRF_RSL_IO  -I../external/RSL/RSL -DDM_PARALLEL  \<br>
+!                         -DMAXDOM_MAKE=$(MAX_DOMAINS) -DMAXPROC_MAKE=$(MAX_PROC)<br>
+! FCOPTIM         =       -O1 -qarch=auto -qmaxmem=32676<br>
+! #FCOPTIM         =       -O2 <br>
+  FCDEBUG         =       # -g -qfullpath<br>
+  FCBASEOPTS      =       -qspill=20000 $(FCDEBUG)<br>
+  FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)<br>
+! INCLUDE_MODULES =       -I../external/io_netcdf -I../external/io_hdf5 -I../external/io_int  \<br>
+                          -I../frame -I../share -I../phys -I../inc<br>
+  EXTRAMODULES    =       <br>
+  ARCHFLAGS       =       -DWRF_RSL_IO -DRSL -DDM_PARALLEL -DIWORDSIZE=4 -DRWORDSIZE=4 \<br>
+!                         -DLWORDSIZE=4 CONFIGURE_NETCDF_FLAG CONFIGURE_HDF5_FLAG -DTRIEDNTRUE -DONLY_WRFMODEL_IO -DINTIO<br>
+  PERL            =       perl<br>
+  REGISTRY        =       Registry<br>
+! LIB             =       CONFIGURE_NETCDF_LIB_PATH CONFIGURE_HDF5_LIB_PATH  \<br>
+!                         -L../external/RSL/RSL -lrsl -lmass \<br>
+                          -L../external/io_int -lwrfio_int  \<br>
+  			../frame/internal_header_util.o ../frame/pack_utils.o<br>
+  LDFLAGS         =	-bmaxstack:256000000<br>
+***************<br>
+*** 764,776 ****<br>
+  M4              =       m4 -B 8000<br>
+  RANLIB          =       ranlib<br>
+  <br>
+! externals : CONFIGURE_WRFIO_NF ../external/RSL/RSL/librsl.a wrfio_int<br>
+  	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c
+&gt;&gt; ../tools/gen_comms.c ;  \<br>
+            /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F &gt;&gt; module_dm.F )<br>
+  <br>
+  wrfio_nf : <br>
+  	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH FC="$(SFC)
+$(FCDEBUG) -qarch=auto -qzerosize" ; /bin/cp wrf_io_flags.h wrf_status_codes.h
+../../inc )<br>
+  <br>
+  wrfio_int : <br>
+  	( cd ../external/io_int ; \<br>
+            make CC=$(CC) FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all diffwrf )<br>
+--- 829,844 ----<br>
+  M4              =       m4 -B 8000<br>
+  RANLIB          =       ranlib<br>
+  <br>
+! externals : CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_HDF5 ../external/RSL/RSL/librsl.a wrfio_int<br>
+  	( /bin/cp ../tools/gen_comms_warning ../tools/gen_comms.c ; cat ../external/RSL/gen_comms.c
+&gt;&gt; ../tools/gen_comms.c ;  \<br>
+            /bin/cp module_dm_warning module_dm.F ; cat ../external/RSL/module_dm.F &gt;&gt; module_dm.F )<br>
+  <br>
+  wrfio_nf : <br>
+  	( cd ../external/io_netcdf ; make NETCDFPATH=CONFIGURE_NETCDF_PATH FC="$(SFC)
+$(FCDEBUG) -qarch=auto -qzerosize" ; /bin/cp wrf_io_flags.h wrf_status_codes.h
+../../inc )<br>
+  <br>
++ wrfio_hdf5 : <br>
++ 	( cd ../external/io_hdf5 ; make HDF5PATH=CONFIGURE_HDF5_PATH FC="$(SFC)
+$(FCDEBUG) -qarch=auto -qfree=F90 -qzerosize" ; /bin/cp wrf_io_flags.h wrf_status_codes.h
+../../inc )<br>
++ <br>
+  wrfio_int : <br>
+  	( cd ../external/io_int ; \<br>
+            make CC=$(CC) FC="$(SFC) $(FCDEBUG) -qarch=auto -qzerosize" all diffwrf )<br>
+***************<br>
+*** 1650,1663 ****<br>
+  FCBASEOPTS      =       -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)<br>
+  FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)<br>
+  ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DRWORDSIZE=4 -DLWORDSIZE=4 \<br>
+!                          CONFIGURE_NETCDF_FLAG \<br>
+                          -DTRIEDNTRUE -DONLY_WRFMODEL_IO<br>
+! INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_int \<br>
+                          -I../frame -I../share -I../phys -I../inc<br>
+  EXTRAMODULES    =       <br>
+  PERL            =       perl<br>
+  REGISTRY        =       Registry<br>
+! LIB             =       CONFIGURE_NETCDF_LIB_PATH \<br>
+  			../frame/internal_header_util.o ../frame/pack_utils.o<br>
+  LDFLAGS         =<br>
+  CPP             =       /lib/cpp<br>
+--- 1718,1731 ----<br>
+  FCBASEOPTS      =       -byteswapio -Ktrap=fp -Mfree -tp p6 $(FCDEBUG)<br>
+  FCFLAGS         =       $(FCOPTIM) $(FCBASEOPTS)<br>
+  ARCHFLAGS       =       -DDEREF_KLUDGE -DIO_DEREF_KLUDGE -DIWORDSIZE=4 -DRWORDSIZE=4 -DLWORDSIZE=4 \<br>
+!                          CONFIGURE_NETCDF_FLAG CONFIGURE_HDF5_FLAG\<br>
+                          -DTRIEDNTRUE -DONLY_WRFMODEL_IO<br>
+! INCLUDE_MODULES =       -module ../main -I../external/io_netcdf -I../external/io_hdf5 -I../external/io_int \<br>
+                          -I../frame -I../share -I../phys -I../inc<br>
+  EXTRAMODULES    =       <br>
+  PERL            =       perl<br>
+  REGISTRY        =       Registry<br>
+! LIB             =       CONFIGURE_NETCDF_LIB_PATH CONFIGURE_HDF5_LIB_PATH \<br>
+  			../frame/internal_header_util.o ../frame/pack_utils.o<br>
+  LDFLAGS         =<br>
+  CPP             =       /lib/cpp<br>
+***************<br>
+*** 1666,1672 ****<br>
+  M4              =       m4<br>
+  RANLIB          =       ranlib<br>
+  <br>
+! externals : CONFIGURE_WRFIO_NF wrfio_int<br>
+  	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F &gt;&gt; module_dm.F )<br>
+  <br>
+  wrfio_nf : <br>
+--- 1734,1740 ----<br>
+  M4              =       m4<br>
+  RANLIB          =       ranlib<br>
+  <br>
+! externals : CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_HDF5 wrfio_int<br>
+  	( /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F &gt;&gt; module_dm.F )<br>
+  <br>
+  wrfio_nf : <br>
+***************<br>
+*** 1675,1680 ****<br>
+--- 1743,1754 ----<br>
+            FFLAGS='$(FCFLAGS) -ICONFIGURE_NETCDF_PATH/include' ; \<br>
+            /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )<br>
+  <br>
++ wrfio_hdf5 : <br>
++ 	( cd ../external/io_hdf5 ; \<br>
++           make HDF5PATH=CONFIGURE_HDF5_PATH FC=$(FC) TRADFLAG="-traditional" \<br>
++           FFLAGS='$(FCFLAGS) -ICONFIGURE_HDF5_PATH/lib' ; \<br>
++           /bin/cp wrf_io_flags.h wrf_status_codes.h ../../inc )<br>
++ <br>
+  wrfio_int : <br>
+  	( cd ../external/io_int ; \<br>
+            make CC=$(CC) FC="$(SFC) $(FCDEBUG) $(FCBASEOPTS)" \<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<p><br>
+
+  </p>
+<blockquote>
+  <ul>
+    </ul><p></p>
+  </blockquote>
+<p><i>Modifications of source code inside WRF</i><b><br>
+</b></p>
+<p>The<i> io_hdf5</i> and/or<i> io_phdf5</i> modules must be added to the WRF source. In addition, the WRF source must be modified in a few places.<br>
+</p>
+<p>The 'frame/md_calls.m4' must be modified to recognize the HDF modules.<br>
+</p>
+<blockquote>
+  </blockquote>
+<table cellpadding="2" cellspacing="2" border="1" width="90%" align="center">
+  <tbody>
+    <tr>
+      <td valign="top">*** ../WRFV1/frame/md_calls.m4	Mon Dec 10 18:10:43 2001<br>
+--- ./WRFV1-with-hdf/frame/md_calls.m4	Thu May 13 12:18:44 2004<br>
+***************<br>
+*** 70,78 ****<br>
+            CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )<br>
+          ENDIF<br>
+  #endif<br>
+! #ifdef HDF<br>
+!       CASE ( IO_HDF   )<br>
+!         CALL ext_hdf_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &amp;<br>
+                                ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )<br>
+  #endif<br>
+  #ifdef XXX<br>
+--- 70,99 ----<br>
+            CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )<br>
+          ENDIF<br>
+  #endif<br>
+! #ifdef HDF5<br>
+!       CASE ( IO_HDF5   )<br>
+!         IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN<br>
+!            CALL ext_hdf5_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &amp;<br>
+!                               ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )<br>
+!         ENDIF <br>
+!         IF ( .NOT. multi_files(io_form) ) THEN<br>
+!           ifelse($1,get,ifelse($3,integer,`CALL wrf_dm_bcast_bytes( locCount, IWORDSIZE )'))<br>
+!           ifelse($1,get,ifelse($3,integer,`CALL wrf_dm_bcast_bytes( Data, IWORDSIZE*locCount )'))<br>
+!           ifelse($1,get,ifelse($3,real,   `CALL wrf_dm_bcast_bytes( locCount, IWORDSIZE )'))<br>
+!           ifelse($1,get,ifelse($3,real,   `CALL wrf_dm_bcast_bytes( Data, RWORDSIZE*locCount )'))<br>
+!           ifelse($1,get,ifelse($3,logical,`CALL wrf_dm_bcast_bytes( locCount, IWORDSIZE )'))<br>
+!           ifelse($1,get,ifelse($3,logical,`CALL wrf_dm_bcast_bytes( Data, LWORDSIZE*locCount )'))<br>
+!           ifelse($1,get,ifelse($4,char,   `len_of_str = LEN(Data)'))<br>
+!           ifelse($1,get,ifelse($4,char,   `CALL wrf_dm_bcast_bytes( len_of_str, IWORDSIZE )'))<br>
+!           ifelse($1,get,ifelse($4,char,   `CALL wrf_dm_bcast_string( Data, len_of_str )'))<br>
+!           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )<br>
+!         ENDIF<br>
+!        <br>
+! <br>
+! #endif<br>
+! #ifdef PHDF5<br>
+!       CASE ( IO_PHDF5   )<br>
+!            CALL ext_phdf5_$1_$2_$6_$3$4 ( Hndl, Element, ifelse($6,td,`DateStr,') ifelse($2,var,`Varname,') Data, &amp;<br>
+                                ifelse($4,char,,`locCount, ifelse($1,get,`Outcount,')') Status )<br>
+  #endif<br>
+  #ifdef XXX<br>
+      <br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<p><br>
+The 'frame/module_io.F' file must be modified to add code to call the HDF5 modules if selected.<br>
+</p>
+<table cellpadding="2" cellspacing="2" border="1" width="90%" align="center">
+  <tbody>
+    <tr>
+      <td valign="top">*** ../WRFV1/frame/module_io.F	Tue Dec  3 14:10:48 2002<br>
+--- ./WRFV1-with-hdf/frame/module_io.F	Thu May 13 12:18:45 2004<br>
+***************<br>
+*** 34,39 ****<br>
+--- 34,48 ----<br>
+  #ifdef NETCDF<br>
+    CALL ext_ncd_ioinit( SysDepInfo, Status )<br>
+  #endif<br>
++ <br>
++ #ifdef HDF5<br>
++   CALL ext_hdf5_ioinit(SysDepInfo, Status)<br>
++ #endif<br>
++ <br>
++ #ifdef PHDF5<br>
++   CALL ext_phdf5_ioinit(SysDepInfo, Status)<br>
++ #endif<br>
++  <br>
+  END SUBROUTINE wrf_ioinit<br>
+  <br>
+  !--- ioexit<br>
+***************<br>
+*** 47,52 ****<br>
+--- 56,70 ----<br>
+  #ifdef NETCDF<br>
+    CALL ext_ncd_ioexit( Status )<br>
+  #endif<br>
++ <br>
++ #ifdef HDF5<br>
++   CALL ext_hdf5_ioexit(Status)<br>
++ #endif<br>
++ <br>
++ #ifdef PHDF5<br>
++   CALL ext_phdf5_ioexit(Status)<br>
++ #endif<br>
++ <br>
+    IF ( use_output_servers() ) CALL ext_quilt_ioexit( Status )<br>
+  END SUBROUTINE<br>
+  <br>
+***************<br>
+*** 134,139 ****<br>
+--- 152,179 ----<br>
+          CALL ext_hdf_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &amp;<br>
+                                              Hndl , Status )<br>
+  #endif<br>
++ #ifdef HDF5<br>
++       CASE ( IO_HDF5   )<br>
++         IF ( multi_files(io_form) .OR. wrf_dm_on_monitor() ) THEN<br>
++           IF ( multi_files(io_form) ) THEN<br>
++             CALL wrf_get_myproc ( myproc )<br>
++             CALL append_to_filename ( LocFilename , FileName , myproc, 4 )<br>
++           ELSE<br>
++             LocFilename = FileName<br>
++           ENDIF<br>
++           CALL ext_hdf5_open_for_write_begin ( LocFileName , Comm_compute, Comm_io, SysDepInfo, &amp;<br>
++                                               Hndl , Status )<br>
++         ENDIF<br>
++         IF ( .NOT. multi_files(io_form) ) THEN<br>
++           CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )<br>
++           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )<br>
++         ENDIF<br>
++ #endif<br>
++ #ifdef PHDF5<br>
++       CASE ( IO_PHDF5   )<br>
++           CALL ext_phdf5_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &amp;<br>
++                                               Hndl , Status )<br>
++ #endif<br>
+  #ifdef XXX<br>
+        CASE ( IO_XXX   )<br>
+          CALL ext_xxx_open_for_write_begin ( FileName , Comm_compute, Comm_io, SysDepInfo, &amp;<br>
+***************<br>
+*** 214,219 ****<br>
+--- 254,270 ----<br>
+        CASE ( IO_HDF   )<br>
+          CALL ext_hdf_open_for_write_commit ( Hndl , Status )<br>
+  #endif<br>
++ #ifdef HDF5<br>
++       CASE ( IO_HDF5   )<br>
++           IF ( multi_files(io_form) .OR. wrf_dm_on_monitor() ) THEN<br>
++             CALL ext_hdf5_open_for_write_commit ( Hndl , Status )<br>
++           ENDIF<br>
++           IF ( .NOT. multi_files(io_form) ) CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )<br>
++ #endif<br>
++ #ifdef PHDF5<br>
++       CASE ( IO_PHDF5   )<br>
++             CALL ext_phdf5_open_for_write_commit ( Hndl , Status )<br>
++ #endif<br>
+  #ifdef XXX<br>
+        CASE ( IO_XXX   )<br>
+          CALL ext_xxx_open_for_write_commit ( Hndl , Status )<br>
+***************<br>
+*** 316,321 ****<br>
+--- 367,388 ----<br>
+        CALL ext_hdf_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &amp;<br>
+                                 Hndl , Status )<br>
+  #endif<br>
++ #ifdef HDF5<br>
++     CASE ( IO_HDF5   )<br>
++       IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) THEN<br>
++         CALL ext_hdf5_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &amp;<br>
++                                      Hndl , Status )<br>
++       ENDIF<br>
++       IF ( .NOT. multi_files(io_form) ) THEN<br>
++         CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )<br>
++         CALL wrf_dm_bcast_bytes( Hndl, IWORDSIZE )<br>
++       ENDIF<br>
++ #endif<br>
++ #ifdef PHDF5<br>
++     CASE ( IO_PHDF5   )<br>
++         CALL ext_phdf5_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &amp;<br>
++                                      Hndl , Status )<br>
++ #endif<br>
+  #ifdef XXX<br>
+      CASE ( IO_XXX   )<br>
+        CALL ext_xxx_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &amp;<br>
+***************<br>
+*** 420,425 ****<br>
+--- 487,502 ----<br>
+        CASE ( IO_HDF   )<br>
+            CALL ext_hdf_inquire_opened ( Hndl, FileName , FileStatus, Status )<br>
+  #endif<br>
++ #ifdef HDF5<br>
++       CASE ( IO_HDF5   )<br>
++           IF (wrf_dm_on_monitor()) CALL ext_hdf5_inquire_opened ( Hndl, FileName , FileStatus, Status )<br>
++           CALL wrf_dm_bcast_bytes( FileStatus, IWORDSIZE )<br>
++           CALL wrf_dm_bcast_bytes( Status    , IWORDSIZE )<br>
++ #endif<br>
++ #ifdef PHDF5<br>
++       CASE ( IO_PHDF5   )<br>
++           CALL ext_phdf5_inquire_opened ( Hndl, FileName , FileStatus, Status )<br>
++ #endif<br>
+  #ifdef XXX<br>
+        CASE ( IO_XXX   )<br>
+            CALL ext_xxx_inquire_opened ( Hndl, FileName , FileStatus, Status )<br>
+***************<br>
+*** 486,491 ****<br>
+--- 563,578 ----<br>
+          CASE ( IO_HDF   )<br>
+            CALL ext_hdf_inquire_filename ( Hndl, FileName , FileStatus, Status )<br>
+  #endif<br>
++ #ifdef HDF5<br>
++         CASE ( IO_HDF5   )<br>
++           IF (wrf_dm_on_monitor()) CALL ext_hdf5_inquire_filename ( Hndl, FileName , FileStatus, Status )<br>
++           CALL wrf_dm_bcast_bytes( FileStatus, IWORDSIZE )<br>
++           CALL wrf_dm_bcast_bytes( Status    , IWORDSIZE )<br>
++ #endif<br>
++ #ifdef PHDF5<br>
++         CASE ( IO_PHDF5   )<br>
++           CALL ext_phdf5_inquire_filename ( Hndl, FileName , FileStatus, Status )<br>
++ #endif<br>
+  #ifdef XXX<br>
+          CASE ( IO_XXX   )<br>
+            CALL ext_xxx_inquire_filename ( Hndl, FileName , FileStatus, Status )<br>
+***************<br>
+*** 607,612 ****<br>
+--- 694,708 ----<br>
+          CASE ( IO_HDF   )<br>
+            CALL ext_ncd_ioclose( Hndl, Status )<br>
+  #endif<br>
++ #ifdef HDF5<br>
++         CASE ( IO_HDF5   )<br>
++           IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_hdf5_ioclose( Hndl, Status )<br>
++           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )<br>
++ #endif<br>
++ #ifdef PHDF5<br>
++         CASE ( IO_PHDF5   )<br>
++           CALL ext_phdf5_ioclose( Hndl, Status )<br>
++ #endif<br>
+  #ifdef XXX<br>
+          CASE ( IO_XXX   )<br>
+            CALL ext_xxx_ioclose( Hndl, Status )<br>
+***************<br>
+*** 675,680 ****<br>
+--- 771,790 ----<br>
+          CASE ( IO_HDF   )<br>
+            CALL ext_hdf_get_next_time( Hndl, DateStr, Status )<br>
+  #endif<br>
++ #ifdef HDF5<br>
++         CASE ( IO_HDF5   )<br>
++           IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_hdf5_get_next_time( Hndl, DateStr, Status )<br>
++           IF ( .NOT. multi_files(io_form) ) THEN<br>
++             CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )<br>
++             len_of_str = LEN(DateStr)<br>
++             CALL wrf_dm_bcast_bytes( len_of_str, IWORDSIZE )<br>
++             CALL wrf_dm_bcast_string ( DateStr , len_of_str )<br>
++           ENDIF<br>
++ #endif<br>
++ #ifdef PHDF5<br>
++         CASE ( IO_PHDF5   )<br>
++           CALL ext_phdf5_get_next_time( Hndl, DateStr, Status )<br>
++ #endif<br>
+  #ifdef XXX<br>
+          CASE ( IO_XXX   )<br>
+            CALL ext_xxx_get_next_time( Hndl, DateStr, Status )<br>
+***************<br>
+*** 742,747 ****<br>
+--- 852,866 ----<br>
+          CASE ( IO_HDF   )<br>
+            CALL ext_hdf_set_time( Hndl, DateStr, Status )<br>
+  #endif<br>
++ #ifdef HDF5<br>
++         CASE ( IO_HDF5   )<br>
++           IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_hdf5_set_time( Hndl, DateStr, Status )<br>
++           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )<br>
++ #endif<br>
++ #ifdef PHDF5<br>
++         CASE ( IO_PHDF5   )<br>
++           CALL ext_phdf5_set_time( Hndl, DateStr, Status )<br>
++ #endif<br>
+  #ifdef XXX<br>
+          CASE ( IO_XXX   )<br>
+            CALL ext_xxx_set_time( Hndl, DateStr, Status )<br>
+***************<br>
+*** 875,880 ****<br>
+--- 994,1002 ----<br>
+  #ifdef HDF<br>
+    EXTERNAL ext_hdf_read_field<br>
+  #endif<br>
++ #ifdef HDF5<br>
++   EXTERNAL ext_hdf5_read_field<br>
++ #endif<br>
+  #ifdef XXX<br>
+    EXTERNAL ext_xxx_read_field<br>
+  #endif<br>
+***************<br>
+*** 911,916 ****<br>
+--- 1033,1058 ----<br>
+                                       PatchStart , PatchEnd ,                                      &amp;<br>
+                                       Status )<br>
+  #endif<br>
++ #ifdef HDF5<br>
++         CASE ( IO_HDF5 )<br>
++           CALL call_pkg_and_dist   ( ext_hdf5_read_field, multi_files(io_form),                  &amp;<br>
++                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &amp;<br>
++                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &amp;<br>
++                                      DomainStart , DomainEnd ,                                    &amp;<br>
++                                      MemoryStart , MemoryEnd ,                                    &amp;<br>
++                                      PatchStart , PatchEnd ,                                      &amp;<br>
++                                      Status )<br>
++ #endif<br>
++ #ifdef PHDF5                                                                                                              <br>
++        CASE (IO_PHDF5)<br>
++           CALL  ext_phdf5_read_field  (                 &amp;<br>
++                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &amp;<br>
++                                      DomainDesc ,  MemoryOrder , Stagger , DimNames ,              &amp;<br>
++                                      DomainStart , DomainEnd ,                                    &amp;<br>
++                                      MemoryStart , MemoryEnd ,                                    &amp;<br>
++                                      PatchStart , PatchEnd ,                                      &amp;<br>
++                                      Status )<br>
++ #endif<br>
+  #ifdef XXX<br>
+          CASE ( IO_XXX )<br>
+            CALL call_pkg_and_dist   ( ext_xxx_read_field, multi_files(io_form),                  &amp;<br>
+***************<br>
+*** 994,999 ****<br>
+--- 1136,1144 ----<br>
+  #ifdef HDF<br>
+    EXTERNAL ext_hdf_write_field<br>
+  #endif<br>
++ #ifdef HDF5<br>
++   EXTERNAL ext_hdf5_write_field<br>
++ #endif<br>
+  #ifdef XXX<br>
+    EXTERNAL ext_xxx_write_field<br>
+  #endif<br>
+***************<br>
+*** 1028,1033 ****<br>
+--- 1173,1198 ----<br>
+                                       PatchStart , PatchEnd ,                                      &amp;<br>
+                                       Status )<br>
+  #endif<br>
++ #ifdef HDF5<br>
++         CASE ( IO_HDF5 )<br>
++           CALL collect_fld_and_call_pkg ( ext_hdf5_write_field, multi_files(io_form),                  &amp;<br>
++                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &amp;<br>
++                                      DomainDesc , bdy_mask, MemoryOrder , Stagger , DimNames ,              &amp;<br>
++                                      DomainStart , DomainEnd ,                                    &amp;<br>
++                                      MemoryStart , MemoryEnd ,                                    &amp;<br>
++                                      PatchStart , PatchEnd ,                                      &amp;<br>
++                                      Status )<br>
++ #endif<br>
++ #ifdef PHDF5<br>
++         CASE ( IO_PHDF5 )<br>
++           CALL ext_phdf5_write_field (                  &amp;<br>
++                                      Hndl , DateStr , VarName , Field , FieldType , Comm , IOComm , &amp;<br>
++                                      DomainDesc , MemoryOrder , Stagger , DimNames ,              &amp;<br>
++                                      DomainStart , DomainEnd ,                                    &amp;<br>
++                                      MemoryStart , MemoryEnd ,                                    &amp;<br>
++                                      PatchStart , PatchEnd ,                                      &amp;<br>
++                                      Status )<br>
++ #endif<br>
+  #ifdef XXX<br>
+          CASE ( IO_XXX )<br>
+            CALL collect_fld_and_call_pkg ( ext_xxx_write_field, multi_files(io_form),                  &amp;<br>
+***************<br>
+*** 1115,1120 ****<br>
+--- 1280,1293 ----<br>
+                                        DomainStart , DomainEnd ,                &amp;<br>
+                                        Status )<br>
+  #endif<br>
++ #ifdef HDF5<br>
++         CASE ( IO_HDF5 )<br>
++          write(*,*) "NOT IMPLEMENT at HDF5" <br>
++          ! CALL ext_hdf5_get_var_info ( Hndl , VarName , NDim ,            &amp;<br>
++          !                             MemoryOrder , Stagger ,                  &amp;<br>
++          !                             DomainStart , DomainEnd ,                &amp;<br>
++          !                             Status )<br>
++ #endif<br>
+  #ifdef XXX<br>
+          CASE ( IO_XXX )<br>
+            CALL ext_xxx_get_var_info ( Hndl , VarName , NDim ,            &amp;<br>
+      <br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<p><br>
+The 'share/module_io.F' file must be modified to recognize the HDF5 options for IO.<br>
+</p>
+<table cellpadding="2" cellspacing="2" border="1" width="90%" align="center">
+  <tbody>
+    <tr>
+      <td valign="top">*** ../WRFV1/share/module_io_wrf.F	Tue Feb 18 14:26:22 2003<br>
+--- ./WRFV1-with-hdf/share/module_io_wrf.F	Thu May 13 12:18:46 2004<br>
+***************<br>
+*** 1032,1037 ****<br>
+--- 1032,1079 ----<br>
+  		      ,Status )<br>
+      ENDIF<br>
+  <br>
++     IF (io_form .EQ. IO_HDF5) THEN<br>
++       CALL wrf_put_var_ti_char( &amp;<br>
++                        DataHandle                 &amp;  ! DataHandle<br>
++ 		      ,"description"              &amp;  ! Element<br>
++                       ,Var                        &amp;  ! Data Name<br>
++                       ,Desc                       &amp;  ! Data<br>
++ 		      ,Status )<br>
++       CALL wrf_put_var_ti_char( &amp;<br>
++                        DataHandle                 &amp;  ! DataHandle<br>
++ 		      ,"units"                    &amp;  ! Element<br>
++                       ,Var                        &amp;  ! Data Name<br>
++                       ,Units                      &amp;  ! Data<br>
++ 		      ,Status )<br>
++       CALL wrf_put_var_ti_char( &amp;<br>
++                        DataHandle                 &amp;  ! DataHandle<br>
++ 		      ,"stagger"                  &amp;  ! Element<br>
++                       ,Var                        &amp;  ! Data Name<br>
++                       ,Stagger                    &amp;  ! Data<br>
+4/ Build WRF<br>
+      <br>
++ 		      ,Status )<br>
++     ENDIF<br>
++ <br>
++     IF (io_form .EQ. IO_PHDF5) THEN<br>
++       CALL wrf_put_var_ti_char( &amp;<br>
++                        DataHandle                 &amp;  ! DataHandle<br>
++ 		      ,"description"              &amp;  ! Element<br>
++                       ,Var                        &amp;  ! Data Name<br>
++                       ,Desc                       &amp;  ! Data<br>
++ 		      ,Status )<br>
++       CALL wrf_put_var_ti_char( &amp;<br>
++                        DataHandle                 &amp;  ! DataHandle<br>
++ 		      ,"units"                    &amp;  ! Element<br>
++                       ,Var                        &amp;  ! Data Name<br>
++                       ,Units                      &amp;  ! Data<br>
++ 		      ,Status )<br>
++       CALL wrf_put_var_ti_char( &amp;<br>
++                        DataHandle                 &amp;  ! DataHandle<br>
++ 		      ,"stagger"                  &amp;  ! Element<br>
++                       ,Var                        &amp;  ! Data Name<br>
++                       ,Stagger                    &amp;  ! Data<br>
++ 		      ,Status )<br>
++     ENDIF<br>
++ <br>
+      IF ( wrf_at_debug_level(300) ) THEN<br>
+        WRITE(wrf_err_message,*) debug_message,' Status = ',Status<br>
+        CALL wrf_message ( TRIM(wrf_err_message) )<br>
+      <br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<p>The 'Makefile' for the 'external' directory must be updated to build the new IO modules.<br>
+</p>
+<table cellpadding="2" cellspacing="2" border="1" width="90%" align="center">
+  <tbody>
+    <tr>
+      <td valign="top">*** ../WRFV1/external/Makefile	Mon Dec 10 18:07:21 2001<br>
+--- ./WRFV1-with-hdf/external/Makefile	Thu May 13 12:18:38 2004<br>
+***************<br>
+*** 3,12 ****<br>
+  	( cd RSL/RSL ; make clean )<br>
+  	( cd io_netcdf ; make clean )<br>
+  	( cd io_int ; make clean )<br>
+  <br>
+  superclean : clean<br>
+  	/bin/rm -f RSL/RSL/librsl.a RSL/RSL/rsl.inc<br>
+  	/bin/rm -f io_netcdf/libwrfio_nf.a io_netcdf/diffwrf io_netcdf/*.o io_netcdf/*.f \<br>
+                     io_int/libwrfio_int.a io_int/diffwrf        */*.mod<br>
+! <br>
+! <br>
+--- 3,14 ----<br>
+  	( cd RSL/RSL ; make clean )<br>
+  	( cd io_netcdf ; make clean )<br>
+  	( cd io_int ; make clean )<br>
++ 	(cd io_hdf5; make clean)<br>
++ 	(cd io_phdf5; make clean)<br>
+  <br>
+  superclean : clean<br>
+  	/bin/rm -f RSL/RSL/librsl.a RSL/RSL/rsl.inc<br>
+  	/bin/rm -f io_netcdf/libwrfio_nf.a io_netcdf/diffwrf io_netcdf/*.o io_netcdf/*.f \<br>
+                     io_int/libwrfio_int.a io_int/diffwrf        */*.mod<br>
+! 	/bin/rm -f io_phdf5/*.a io_phdf5/*.o  *.f *.mod<br>
+! 	/bin/rm -f io_hdf5/*.a io_hdf5/*.o *.f *.mod<br>
+      <br>
+      <br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+    <p><b><small>
+    <font size="4"><small></small></font></small></b><br>
+</p>
+<p><i>Last Modified: 17 May 2004 </i></p>
+<blockquote>
+  <blockquote>
+    
+    <p> </p>
+  </blockquote>
+
+</blockquote>
+
+
+<br>
+<br>
+</body></html>

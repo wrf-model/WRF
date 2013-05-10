@@ -1,0 +1,132 @@
+ &time_control
+ run_days                            = 1,
+ run_hours                           = 0,   
+ run_minutes                         = 0,
+ run_seconds                         = 0,
+ start_year                          = 2005,
+ start_month                         = 01,
+ start_day                           = 23,
+ start_hour                          = 00,
+ start_minute                        = 00,
+ start_second                        = 00,
+ tstart                              = 00,
+ end_year                            = 2005,
+ end_month                           = 01,
+ end_day                             = 24,
+ end_hour                            = 00,
+ end_minute                          = 00,
+ end_second                          = 00,
+ interval_seconds                    = 10800,
+ history_interval                    = 60
+ frames_per_outfile                  = 1,
+ restart                             = .false.,
+ restart_interval                    = 5760,
+ reset_simulation_start              = F,
+ io_form_input                       = 2
+ io_form_history                     = 2
+ io_form_restart                     = 2
+ io_form_boundary                    = 2
+ io_form_auxinput1                   = 2
+ auxinput1_inname                    = "met_nmm.d<domain>.<date>"
+ debug_level                         = 1 
+ /
+
+ &domains
+ time_step                           = 34,
+ time_step_fract_num                 = 2,
+ time_step_fract_den                 = 7,
+ max_dom                             = 1,
+ s_we                                = 1,
+ e_we                                = 56,
+ s_sn                                = 1,
+ e_sn                                = 92,
+ s_vert                              = 1,
+ e_vert                              = 38,
+ num_metgrid_levels                  = 40,
+ dx                                  = .096,
+ dy                                  = .095,
+ grid_id                             = 1,
+ p_top_requested                     = 5000.
+ ptsgm                               = 42000.,
+ eta_levels   =   1.000, 0.994, 0.983, 0.968, 0.950, 0.930, 0.908, 0.882, 0.853, 0.821,
+                  0.788, 0.752, 0.715, 0.677, 0.637, 0.597, 0.557, 0.517, 0.477,
+                  0.438, 0.401, 0.365, 0.332, 0.302, 0.274, 0.248, 0.224, 0.201,
+                  0.179, 0.158, 0.138, 0.118, 0.098, 0.078, 0.058, 0.038, 0.018, 0.000
+ tile_sz_x		   	     = 0,
+ tile_sz_y		   	     = 0,
+ numtiles			     = 1
+/
+ &physics
+ mp_physics                          = 5,
+ ra_lw_physics                       = 99,
+ ra_sw_physics                       = 99,
+ nrads                               = 105, 
+ nradl                               = 105,
+ co2tf                               = 1,
+ sf_sfclay_physics                   = 2,
+ sf_surface_physics                  = 99,
+ bl_pbl_physics                      = 2,
+ nphs                                = 6,
+ cu_physics                          = 2,
+ ncnvc                               = 6,
+ tprec                               = 3,
+ theat                               = 6,
+ tclod                               = 6,
+ trdsw                               = 6,
+ trdlw                               = 6,
+ tsrfc                               = 6,
+ pcpflg                              = .false.,
+ num_soil_layers                     = 4,
+ mp_zero_out                         = 0
+ cu_rad_feedback                     = .false.,
+ gwd_opt                             = 0
+ /
+
+ &dynamics
+ euler_advect                        = .false.,
+ idtadt                              = 1,
+ idtadc                              = 1
+ /
+
+ &bdy_control
+ spec_bdy_width                      = 1,
+ specified                           = .true.,
+ nested                              = .false.
+ /
+
+ &grib2
+/
+
+ &namelist_quilt
+ nio_tasks_per_group = 0,
+ nio_groups = 1
+ /
+
+ &chem
+ kemit                               = 10,
+ chem_opt                            = 2,
+ bioemdt                             = 30,
+ photdt                              = 30,
+ chemdt                              = 0.5,
+ frames_per_emissfile                = 12
+ io_style_emissions                  = 1
+ emiss_inpt_opt                      = 1,
+ chem_in_opt                         = 0,
+ phot_opt                            = 1,
+ drydep_opt                          = 1,
+ bio_emiss_opt                       = 1,
+ gas_bc_opt                          = 1,
+ gas_ic_opt                          = 1,
+ aer_bc_opt                          = 1,
+ aer_ic_opt                          = 1,
+ gaschem_onoff                       = 1,
+ aerchem_onoff                       = 1,
+ aer_ra_feedback                     = 0,
+ wetscav_onoff                       = 0,
+ cldchem_onoff                       = 0,
+ vertmix_onoff                       = 1,
+ chem_conv_tr                        = 1,
+ aer_ra_feedback                     = 0,
+ have_bcs_chem                       = .false.,
+ /
+

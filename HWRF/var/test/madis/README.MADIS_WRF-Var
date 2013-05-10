@@ -1,0 +1,513 @@
+              README file for the MADIS Interface to
+               the WRF-Var Data Assimilation Package
+
+                      MADIS_WRF-Var Version 3.0
+                           December 2, 2008
+--------------------------------------------------------------------------------
+
+The Meteorological Assimilation Data Ingest System (MADIS) is
+dedicated toward making value-added data available from the National
+Oceanic and Atmospheric Administration's (NOAA) Earth System Research
+Laboratory (ESRL) Global Systems Division (GSD) (formerly the Forecast
+Systems Laboratory (FSL)) for the purpose of improving weather
+forecasting, by providing support for data assimilation, numerical
+weather prediction, and other hydrometeorological applications.
+
+MADIS subscribers have access to a reliable and easy-to-use database
+containing quality-controlled, real-time and archived datasets.  The
+ESRL/GSD MADIS database is available via ftp, by using Unidata's Local
+Data Manager (LDM) software, or through the use of OPen source project
+for Network Data Access Protocol (OPeNDAP (formerly DODS)) clients.
+Users can subscribe to the entire database, or ask for only particular
+datasets of interest.  Depending on the dataset, the real-time data
+are updated as often as every 5 minutes.  An on-line archive of saved
+real-time data is available back to July 1, 2001 (for most datasets).
+The data access software supplied by MADIS also supports the database
+used in the National Weather Service (NWS) Advanced Weather
+Interactive Processing System (AWIPS) deployed at NWS weather forecast
+offices.
+
+The MADIS_WRF-Var interface supports the ingest of the following
+observation types: land surface (including ASOS, other METAR, Canadian
+SAO's, modernized NWS Cooperative Observer, UrbaNet and a large number of
+mesonets), maritime (including ships, buoys and C-MAN stations),
+GPSMET Integrated Precipitable Water, NOAA Profiler Network (NPN)
+winds, Multi-Agency Profiler (MAP) winds, automated aircraft,
+radiosonde, and GOES satellite winds (operational or experimental).
+
+By downloading and installing the MADIS_WRF-Var interface, users of
+the Weather Research and Forecasting (WRF) variational data
+assimilation package (WRF-Var) can ingest MADIS data from ESRL/GSD, or
+AWIPS data, into the variational analysis.  The interface is a
+superset of the WRF-Var package, once it has been installed, users
+will be able to switch back and forth between the observation formats
+supported by the original package, and MADIS or AWIPS observations.
+
+For more information on MADIS in general, and details such as the quality
+control processing applied to the different datasets and variables, see:
+
+   http://madis.noaa.gov
+
+For more information on WRF-Var see:
+
+   http://www.mmm.ucar.edu/wrf/WG4
+
+Also:
+
+   Barker, D. M., W. Huang, Y. R. Guo, and Q. N. Xiao., 2004: A
+   Three-Dimensional (3DVAR) Data Assimilation System For Use With MM5:
+   Implementation and Initial Results. Mon. Wea. Rev., 132, 897-914.
+
+
+-------------
+Prerequisites
+-------------
+
+In order to install and run the MADIS_WRF-Var interface, you will need
+to have the following software packages installed on your system:
+
+   Component                       URL
+   ---------                       ---
+   - Unidata netCDF                http://www.unidata.ucar.edu/software/netcdf
+   - WRF-Var (Version 3.0.1.1)     http://www.mmm.ucar.edu/wrf/users/download
+                                         /get_source.html
+   - MADIS API 3.2 or higher       http://madis.noaa.gov/madis_api.html
+
+In addition, you will need to set up MADIS data directories and populate
+them with the datasets of interest, per instructions that are provided
+when you subscribe.  Interested parties can subscribe to MADIS data at:
+
+   http://madis.noaa.gov/data_application.html
+
+
+------------
+Installation
+------------
+
+The MADIS_WRF-Var interface consists of 6 source code files that
+replace files included in the WRF-Var package, and 4 additional
+files.  The WRF-Var package is then recompiled to pick up the changes
+in these files.  
+
+1.  Install netCDF.
+
+    - If you don't want OPeNDAP access, just use the normal netCDF
+      installation, obtained from the URL shown in the prerequisites section
+      above.
+
+    - If you wish to access the data via OPeNDAP, you will need to use the
+      OPeNDAP/DODS netCDF client library instead of the normal netCDF library.  
+      This would allow to use the MADIS_WRF-Var interface to access MADIS 
+      netCDF files stored on your local disk or served over the web from the 
+      MADIS OPeNDAP server.  The OPeNDAP/DODS netCDF client library (and other 
+      supporting software) can be obtained from:
+
+      Current Version       http://www.opendap.org
+      Version 3.2.1         ftp://ftp.unidata.ucar.edu/pub/dods/DODS-3.2/3.2.1
+
+      Although the OPeNDAP/DODS interface has only been tested with the Linux
+      version of the MADIS API, any site that has the OPeNDAP/DODS (version 
+      3.2.1) netCDF client library installed should be able to build the MADIS 
+      API to link to it by following the instructions in the MADIS makefile.
+
+      In order to support the least-common-denominator RedHat Linux version,
+      the MADIS binaries are built using RedHat AS 2.1.  The latest version of
+      OPeNDAP/DODS binaries that work with RedHat AS 2.1 is 3.2.1, so that's 
+      what's been successfully tested with the MADIS API.  Note that we have
+      been unable to successfully link and/or run with the OPeNDAP/DODS 3.4.3 
+      and 3.4.4 versions.  The OPeNDAP/DODS documentation strongly recommends 
+      that you should not use their binary versions if you intend to link 
+      user-supplied code (e.g., the MADIS API), but you should build 
+      OPeNDAP/DODS from source using the same compiler that will be used with 
+      your source.  Any MADIS users who want to use the newer OPeNDAP/DODS 
+      versions for Linux, or wish to run OPeNDAP/DODS-enabled MADIS API 
+      programs on another operating system, should probably take that approach.
+      If you do manage to succeed in this effort, please let us know so we can 
+      update this documentation.
+
+2.  Install and build WRF-Var Version 3.0.1.1 (Released in August 2008).
+
+3.  Install and build the MADIS Applications Program Interface (API).  
+
+    - If you already have the MADIS API installed on your system, you must 
+      make sure you have version 3.2 or higher.  To determine which version 
+      you have, look at the README file in the doc directory in your MADIS 
+      distribution.  
+
+    - You must also compile the API with the same Fortran compiler that was 
+      used to compile the WRF-Var.  See the makefile in the MADIS src
+      directory for instructions on compiling.  Also note that if you
+      already had the API installed, and you now need to recompile, do a
+      "make clean" before doing the compilation.
+
+4.  Save the WRF-Var files that will get replaced by MADIS_WRF-Var, in
+    case you want to revert back to the original WRF-Var package:
+
+    - .../var/da/da.make
+    - .../var/da/da_control/da_control.f90
+    - .../var/da/da_setup_structures/da_setup_obs_structures.inc
+    - .../var/da/da_setup_structures/da_setup_structures.f90
+    - .../var/scripts/da_set_defaults.ksh
+
+5.  Download the MADIS_WRF-Var package:
+
+    - cd .../var
+
+    - Get the package from the link to it in the "Software Download"
+      section at the bottom of:
+
+      http://madis.noaa.gov/madis_wrf-var.html
+
+    - tar -xzvf MADIS_WRF-Var-3.0.tar.gz
+
+    - rm MADIS_WRF-Var-3.0.tar.gz    (if desired, or save it elsewhere, etc.)
+
+    In addition to the replacement files listed in the previous step, you will
+    now have these additional files:
+
+    - .../var/da_setup_structures/da_setup_obs_structures_madis.inc
+
+      This routine reads in the observations.
+
+    - .../var/namelist.3dvar_madis
+
+      The MADIS namelist.  Put this into your working directory at run-time.
+
+    - .../var/README.MADIS_WRF-Var and RELEASE_NOTES.MADIS_WRF-Var
+
+6.  Rebuild the WRF-Var with the MADIS_WRF-Var interface:
+
+    - Edit .../var/da/da.make with the location of your MADIS API library.
+      (Replace "/usr/local/madis/lib/madislib.a" with your location.)
+
+    - cd .../WRFVDA
+    
+    - ./compile all_wrfvar >& compile.out
+
+
+----------------------------------------------------
+Running the WRF-Var with the MADIS_WRF-Var Interface
+----------------------------------------------------
+
+Use the .../var/scripts/da_set_defaults.ksh script supplied in the package.
+This script is invoked in the run script examples provided with the
+WRF-Var package.
+ 
+- There are two MADIS-specific environment variables that need to be
+  set in the script.  These variables include:
+
+  - MADIS_STATIC, which points to the static directory in your MADIS API
+    distribution.
+ 
+  - MADIS_DATA, which points to the top of the data directory tree where the 
+    observations for this run are stored.
+ 
+  Find where these are defined in da_set_defaults.ksh and edit in your
+  values for these variables.
+
+- Edit namelist.3dvar_madis for your options (see below), then place
+  it in your run directory.
+
+- Several of the WRF-Var namelist variables are relevant when running with 
+  the MADIS_WRF-Var interface.  There are two different ways you can
+  set these:
+
+  1) Edit WRFV3/Registry/Registry.wrfvar.  Here the variables are all
+     lower case, e.g., ob_format.
+
+  2) Set environment variables in your run script.  Here, the variables
+     are all upper-case, and are prefixed with "NL_", e.g., NL_OB_FORMAT.
+     
+
+  Here are the relevant variables (using the "NL_" environment variable form):
+
+  - NL_OB_FORMAT, which indicates the format of the observations that
+    will be ingest.  In the MADIS version of the script, this has been
+    set to 3 to select the MADIS_WRF-Var interface.
+
+  - NL_USE_SHIPSOBS, NL_USE_METAROBS, NL_USE_SOUNDOBS, NL_USE_GEOAMVOBS,
+    NL_USE_AIREPOBS, NL_USE_GPSPWOBS, which indicate whether or not
+    to use these WRF datasets in the ingest.  When set to .TRUE., these
+    are used, when .FALSE., they are excluded.  These choices are
+    honored when using the MADIS_WRF-Var interface.  The defaults in
+    the Registry are all .TRUE..
+
+  - NL_PRINT_DETAIL_OBS, which indicates whether or not you want to get a
+    summary listing of the number of observations read in for each WRF
+    dataset.  Set this to 1 to get the summary.  If you are selecting
+    a subset of the MADIS datasets to be ingest (see the section on
+    namelist.3dvar_madis), this option will also provide a summary of
+    what subset has been selected.  
+
+
+--------------------
+namelist.3dvar_madis
+--------------------
+
+By editing this file you can control certain options for what data
+MADIS will ingest into the WRF-Var.  These options are set
+independently for each dataset, and can be used to specify the
+database (MADIS or AWIPS), the time window, the data providers to be
+used (for some datasets), and the type of satellite wind products to
+be used.  These options are in addition to the "use-this-dataset"
+WRF-Var namelist variables described above.  For example, if you've
+excluded the ships dataset via NL_USE_SHIPSOBS it doesn't matter what
+ships settings you use in namelist.3dvar_madis, because the ships data
+won't be ingest at all.
+
+The namelist.3dvar_madis file included in the MADIS_WRF-Var package has
+default settings that will return at least one hour's worth of data
+for all potential datasets and providers, centered around the analysis
+time, using the MADIS (also called 'FSL') database.
+
+There is one record in namelist.3dvar_madis for each dataset, with several
+variables used to select the choices for the current run.  These are
+described in the following sections.
+
+
+Database Selection
+------------------
+
+- madis_<dataset>_db
+
+  Use 'FSL' or 'AWIPS'.  ('FSL' is the MADIS database.)
+  
+
+Time Window Selection
+---------------------
+
+- madis_<dataset>_minbck
+- madis_<dataset>_minfwd
+- madis_<dataset>_recwin
+
+"Time windowing" is used so that the program will know how close in
+time each station's observation time needs to be to the analysis time
+in order to be included, and whether or not duplicate records from the
+same station that are within the time window should be included.  The
+time window is specified by selecting the number of minutes before
+(minbck) and after (minfwd) the analysis time to be used for the
+window, and how duplicates should be handled (recwin).
+
+The maximum window is 180 minutes (minfwd-minbck).  Also note that the
+window is inclusive, that is, using start & end minutes -30,30 with an
+analysis time of 12:00 will return observations with times ranging from
+11:30 through 12:30.
+
+Here are the recwin options:
+
+1 - return one record per station, closest to analysis time
+2 - return one record per station, closest to start of window
+3 - return one record per station, closest to end of window
+4 - return all records within window
+
+Depending on the characteristics of the dataset, and whether you're
+processing data in real-time or using archived data, different time
+window specifications can produce very different sets of data.  Here
+are the basic things to keep in mind about each dataset when
+considering the time window:
+
+- METAR, SHIPS, PROFILER (MAP providers)
+
+  These stations report observation times around the hour, and many stations 
+  report multiple times per hour.  Because the METAR WRF dataset includes
+  mesonets, and because of the large amount of mesonet data available from MADIS, 
+  it is possible that you can set the METAR time window so that it would 
+  retrieve more data than can be accommodated in the WRF-Var (the limit is 
+  200,000 records for the METAR dataset).  In that case, you will get the 
+  following error message:
+
+     MSFCSTA: TOO MANY RECORDS REQUESTED
+
+  The recommended workaround for this is to change recwin to only return
+  one record per station (recwin options 1, 2 or 3).  You could also use
+  a smaller time window, or limit the data by expressly selecting which
+  providers you want.
+
+- AIREP 
+
+  These reports are also continuous, and you should always use recwin=4
+  (taking one report per aircraft doesn't make much sense).
+
+- PROFILER (NPN provider) 
+
+  The NPN stations report hourly, at minute 0.
+
+  Note that if you intend to use a time window longer than 1 hour that
+  includes NPN data, you will need to get MADIS API version 3.7, then
+  request a patch for it from madis-support@noaa.gov.  Once version 3.8
+  has been released (this is not yet scheduled), no patch will be
+  required.
+
+- GPSPW
+
+  These stations report at minute 15 and minute 45.  Note, however, that
+  because of reasons too complicated to go into here, you should always
+  use recwin=4 to be sure to get the desired reports.
+
+- SOUND
+
+  The twice-daily North American radiosonde launches with synoptic times
+  of 0000 and 1200 UTC have observation times that are actually spread
+  out over 3 hours.  Using 0000 as the example, what's typical is that
+  most of the data will be between 0000-0059, but a significant amount
+  will be between 2300-2359, with a smaller amount available between
+  0100-0159.
+
+- GEOAMV
+
+  The satellite wind products are available on different schedules for the 
+  different satellites, and for the different types of wind products.  The 
+  observation times vary, and the latency ranges from about one and a half 
+  to three hours (latency is defined as the time the data are available 
+  minus the observation time).  
+
+
+Provider Selection
+------------------
+
+- madis_<dataset>_all_providers
+- madis_<dataset>_provider_list
+
+The METAR and PROFILER datasets include many different networks run by
+different "providers", and the GEOAMV dataset includes data from
+different satellites and even different processing methods for the
+same satellite.  If desired, the user can select only a subset of the
+total for each of these datasets by specifying which providers are to
+be included or excluded.  The default case (use all for METAR and
+profiler, use operational products for GEOAMV) is specified by
+setting all_providers = .TRUE.  In that event, the provider_list
+variable is ignored.  If all_providers = .FALSE., then provider_list
+should be set to the full path specifying a file that will list the
+desired providers.  Inside the provider list file should be a list of
+provider names, specified one per line, starting in the first column.
+The names are case sensitive.  Here are the choices for the different
+datasets:
+
+
+METAR
+-----
+
+ALL-SFC      All land surface providers
+ALL-MESO     All mesonet providers
+ALL-MTR      All METAR reports
+ASOS         ASOS METAR reports (NWS & FAA)
+OTHER-MTR    Non-ASOS METAR reports
+SAO          SAO reports (Canada)
+COOP         Modernized NWS Cooperative Observer stations
+UrbaNet      UrbaNet
+
+To specify a specific mesonet, see the list of provider names for mesonets 
+that are currently available from MADIS at:
+
+  http://madis.noaa.gov/mesonet_providers.html
+
+For AWIPS users, the "Data provider" specified for each mesonet in the 
+/data/fxa/LDAD/data/*.desc files is what's used for the MADIS provider name.
+
+
+PROFILER
+--------
+
+ALL-PROF     All profilers              
+ALL-MAP      All MAP profilers
+NOAA         NOAA Profiler Network
+NO-PROF      Don't use any profilers
+
+To specify a specific MAP provider, see the list of provider names that are
+currently available from FSL at:
+
+  http://madis.noaa.gov/map_providers.html
+
+IMPORTANT NOTE:
+
+The PROFILER dataset is something of a special case.  Rather than
+being split out as a separate dataset it is included in the analysis
+by being lumped in with radiosonde data in the "sounding" data
+structures used in the code.  Therefore, the NL_USE_SOUNDOBS namelist
+variable is honored -- if that's set to off, no profiler data will be
+included.  Including the NO-PROF provider name meets the requirement
+to have a global "don't-use-this-dataset" option for the profilers.
+
+
+GEOAMV
+------
+
+ALL-GOES-O   Both GOES satellites, operational winds
+ALL-GOES-X   Both GOES satellites, experimental winds
+GOES-11-O    GOES-11, operational winds
+GOES-11-X    GOES-11, experimental winds
+GOES-12-O    GOES-12, operational winds
+GOES-12-X    GOES-12, experimental winds
+
+As this is being written (June 2008), GOES-11 is the West satellite and 
+GOES-12 is the East satellite.  When new GOES satellites are launched and 
+replace GOES-11 and -12, you don't need to get new MADIS_WRF-Var software 
+-- just put the number of the desired satellite in your provider selection.  
+
+The "operational" winds are created every 3 hours, and the "experimental" 
+winds are created hourly.  Techniques, including quality control, used to 
+derive the hourly winds are basically the same as those used to derive the 
+3-h winds. The only real difference is the geographic coverage. For GOES-E 
+winds the coverage is limited to the CONUS scan; for GOES-W the geographic 
+coverage is limited to the PACUS scan. Use of these scans offers imagery 
+which is separated by 15 minutes, which is very useful for cloud tracking 
+(for IR & VIS).  The operational 3-h winds also make use of the CONUS & PACUS 
+sectors as well (using the imagery separated by 15 minutes), along with the 
+NHEM and SHEM sectors where the imagery is separated by 30 minutes.
+
+
+Satellite Wind Product Selection
+--------------------------------
+
+- madis_geoamv_wv
+- madis_geoamv_ir
+- madis_geoamv_vis
+- madis_geoamv_s10
+- madis_geoamv_s11
+
+By setting these values to either .TRUE. or .FALSE. you can choose whether or
+not to include water vapor winds, infrared winds, visible winds, sounder
+channel 10 (7.4 um) and sounder channel 11 (7.0 um) water vapor winds.  The
+default settings will use water vapor and infrared winds, as these are what
+are typically used by operational data assimilation systems.
+
+
+Debug Options
+-------------
+
+- madis_debug
+
+This namelist variable is used primarily to support the MADIS developers in
+maintaining the code, but it might be of use to the general user.  Here
+are the possible values:
+
+0 - no debug (default)
+1 - print all obs to stdout
+2 - print all obs to stdout, stop after obs ingest (don't run the analysis)
+
+Along with the observations themselves, all of the associated data
+that are ultimately returned to the WRF-Var (e.g., station
+identification and location, observation error) are output as well.
+For details on what information is being output in what order for each
+dataset, get into the following file with a text editor and search for
+"madis_debug":
+
+   .../var/da_setup_structures/da_setup_obs_structures_madis.inc
+
+                                           
+-------
+Support
+-------
+
+For questions on the MADIS_WRF-Var interface, the MADIS API, and MADIS observations
+in general, please contact:  
+
+   Michael.F.Barth@noaa.gov   and/or 
+   Patrica.A.Miller@noaa.gov
+
+For questions on WRF-Var please contact:  wrfhelp@wrf-model.org
+
+MADIS has an email distribution list that's used to distribute information about
+new MADIS_WRF-Var interface versions, problems that are found, and similar
+information.  If you are interested in receiving these emails, please send
+an email to Mike Barth and/or Patty Miller at the addresses shown above.

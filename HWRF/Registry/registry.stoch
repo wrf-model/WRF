@@ -1,0 +1,63 @@
+# Stochastic forcing option, for ARW only
+
+# 3D arrays
+state    real   VERTSTRUCC         ikj dyn_em  1  -  rhd  "VERTSTRUCC    "  "vertical structure for stoch. forcing " ""
+state    real   VERTSTRUCS         ikj dyn_em  1  -  rhd  "VERTSTRUCS    "  "vertical structure for stoch. forcing " ""
+
+state real ru_tendf_stoch     ikj dyn_em 1 X rhdf=(p2c) "ru_tendf_stoch" "stochastic forcing, U " "m/s"
+state real rv_tendf_stoch     ikj dyn_em 1 Y rhdf=(p2c) "rv_tendf_stoch" "stochastic forcing, V " "m/s"
+state real rt_tendf_stoch     ikj dyn_em 1 - rhdf=(p2c) "rt_tendf_stoch" "stochastic forcing, T " "K/s"
+
+# 2d arrays
+state    real  SPSTREAMFORCC  ij  misc    1  -   r    "SPSTREAMFORCC" "real  spect. coeff. of stoch. streamfunction perturb." ""
+state    real  SPSTREAMFORCS  ij  misc    1  -   r    "SPSTREAMFORCS" "imag. spect. coeff. of stoch. streamfunction perturb." ""
+state    real  SPTFORCC       ij  misc    1  -   r    "SPTFORCC"      "real  spect. coeff. of stoch. temperature perturb." "" ""
+state    real  SPTFORCS       ij  misc    1  -   r    "SPTFORCS"      "imag. spect. coeff. of stoch. temperature perturb." "" ""
+state    real  SPSTREAM_AMP   ij  misc    1  -   r    "SPSTREAM_AMP"  "amplitude of stoch. streamfunction perturb." "" ""
+state    real  SPT_AMP        ij  misc    1  -   r    "SPT_AMP"       "amplitude of stoch. temperature perturb." "" ""
+
+# 1d arrays for FFT transpose
+state    real   RU_REAL          ikj    dyn_em       1        XYZ
+state    real   RU_IMAG          ikj    dyn_em       1        XYZ
+state    real   RU_REAL_xxx      ikjx   dyn_em       1        XYZ
+state    real   RU_REAL_yyy      ikjy   dyn_em       1        XYZ
+state    real   RU_IMAG_xxx      ikjx   dyn_em       1        XYZ
+state    real   RU_IMAG_yyy      ikjy   dyn_em       1        XYZ
+state    real   RV_REAL          ikj    dyn_em       1        XYZ
+state    real   RV_IMAG          ikj    dyn_em       1        XYZ
+state    real   RV_REAL_xxx      ikjx   dyn_em       1        XYZ
+state    real   RV_REAL_yyy      ikjy   dyn_em       1        XYZ
+state    real   RV_IMAG_xxx      ikjx   dyn_em       1        XYZ
+state    real   RV_IMAG_yyy      ikjy   dyn_em       1        XYZ
+state    real   RT_REAL          ikj    dyn_em       1        XYZ
+state    real   RT_IMAG          ikj    dyn_em       1        XYZ
+state    real   RT_REAL_xxx      ikjx   dyn_em       1        XYZ
+state    real   RT_REAL_yyy      ikjy   dyn_em       1        XYZ
+state    real   RT_IMAG_xxx      ikjx   dyn_em       1        XYZ
+state    real   RT_IMAG_yyy      ikjy   dyn_em       1        XYZ
+
+xpose XPOSE_STOCH_BACK_U_REAL dyn_em RU_REAL,RU_REAL_xxx,RU_REAL_yyy
+xpose XPOSE_STOCH_BACK_U_IMAG dyn_em RU_IMAG,RU_IMAG_xxx,RU_IMAG_yyy
+xpose XPOSE_STOCH_BACK_V_REAL dyn_em RV_REAL,RV_REAL_xxx,RV_REAL_yyy
+xpose XPOSE_STOCH_BACK_V_IMAG dyn_em RV_IMAG,RV_IMAG_xxx,RV_IMAG_yyy
+xpose XPOSE_STOCH_BACK_T_REAL dyn_em RT_REAL,RT_REAL_xxx,RT_REAL_yyy
+xpose XPOSE_STOCH_BACK_T_IMAG dyn_em RT_IMAG,RT_IMAG_xxx,RT_IMAG_yyy
+
+# Variables 
+state integer   SEED1            -      misc        1         -     rh        "SEED1"                "RANDOM SEED NUMBER 1"  ""
+state integer   SEED2            -      misc        1         -     rh        "SEED2"                "RANDOM SEED NUMBER 2"  ""
+state logical   did_stoch        -      misc        1         -     r         "DID_STOCH"            "Logical to tell us that we already did the initialization for dom 1"  ""
+
+# Namelist parameters
+rconfig   integer     stoch_force_opt     namelist,physics	max_domains    0   -     "stochastic forcing option: 0=none, 1=backscatter"
+rconfig   integer     stoch_vertstruc_opt namelist,physics	max_domains    0   -     "vertical structure for stochastic forcing: 0=constant, 1=random phase"
+rconfig   integer     nens                namelist,physics      1              1   -     "random number seed for ensemble members "    ""   ""
+rconfig   real        tot_backscat_psi    namelist,physics      max_domains    1.0E-05   - "total backscattered dissipation rate for streamfunction m2 s-3"   ""
+rconfig   real        tot_backscat_t      namelist,physics      max_domains    1.0E-06   - "total backscattered dissipation rate for temperature"    "m2 s-3" ""
+
+rconfig   real        stoch_force_global_opt       derived      1              0      h    "stoch_force_global_opt" "global (across domains) stochastic forcing option"  ""
+
+
+# Package declarations
+package   no_stoch_force      stoch_force_global_opt==0                  -             -
+package   stoch_backscatter   stoch_force_global_opt==1                  -             state:ru_tendf_stoch,rv_tendf_stoch,rt_tendf_stoch,SPSTREAMFORCC,SPSTREAMFORCS,SPTFORCC,SPTFORCS,SPSTREAM_AMP,SPT_AMP,VERTSTRUCC,VERTSTRUCS,RU_IMAG,RU_REAL_xxx,RU_REAL_yyy,RU_IMAG_xxx,RU_IMAG_yyy,RV_IMAG,RV_REAL_xxx,RV_REAL_yyy,RV_IMAG_xxx,RV_IMAG_yyy,RT_IMAG,RT_REAL_xxx,RT_REAL_yyy,RT_IMAG_xxx,RT_IMAG_yyy,RU_REAL,RV_REAL,RT_REAL

@@ -1,0 +1,160 @@
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# User: Set here the F90 compiler and options
+#       Pedefined compilers: INTEL, PGF, HPUX, LAHEY
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+COMPILER = GNU
+#COMPILER = LAHEY
+#COMPILER = INTEL
+#COMPILER = PGF
+#COMPILER = HPUX
+
+FC_GNU     = g95
+FOPT_GNU   = -cpp -O -pg -fbounds-check 
+FC_LAHEY   = lf95
+FOPT_LAHEY = -Cpp --pca
+#FOPT_LAHEY = -Cpp --chk a,e,s,u --pca --ap -O0 -g --trap
+FC_INTEL   = ifort 
+FOPT_INTEL = -cpp -O -mp -pc80 -prec_div -tpp7 -implicitnone
+FC_PGF     = pgf90
+FOPT_PGF   = -Mpreprocess -O -fast -pc 80 -Kieee
+FC_HPUX    = f90
+FOPT_HPUX  = -O -u +Oall +check=on
+
+# define FULL_ALGEBRA for non-sparse integration
+FC   = $(FC_$(COMPILER))
+FOPT = $(FOPT_$(COMPILER)) # -DFULL_ALGEBRA
+
+LIBS =
+#LIBS = -llapack -lblas
+
+# Command to create Matlab mex gateway routines 
+# Note: use $(FC) as the mex Fortran compiler
+MEX  = mex
+
+GENSRC = pan_Precision.f90  \
+	 pan_Parameters.f90     \
+	 pan_Global.f90  
+
+GENOBJ = pan_Precision.o    \
+	 pan_Parameters.o       \
+	 pan_Global.o     
+
+FUNSRC = pan_Function.f90 
+FUNOBJ = pan_Function.o 
+
+JACSRC = pan_JacobianSP.f90  pan_Jacobian.f90
+JACOBJ = pan_JacobianSP.o    pan_Jacobian.o
+
+HESSRC = pan_HessianSP.f90   pan_Hessian.f90
+HESOBJ = pan_HessianSP.o     pan_Hessian.o
+
+STMSRC = pan_StoichiomSP.f90 pan_Stoichiom.f90 
+STMOBJ = pan_StoichiomSP.o   pan_Stoichiom.o
+
+UTLSRC = pan_Rates.f90 pan_Util.f90 pan_Monitor.f90
+UTLOBJ = pan_Rates.o   pan_Util.o   pan_Monitor.o
+
+LASRC  = pan_LinearAlgebra.f90 
+LAOBJ  = pan_LinearAlgebra.o   
+
+STOCHSRC = pan_Stochastic.f90 
+STOCHOBJ = pan_Stochastic.o 
+
+MAINSRC = pan_Main.f90   pan_Initialize.f90   pan_Integrator.f90 pan_Model.f90
+MAINOBJ = pan_Main.o     pan_Initialize.o     pan_Integrator.o   pan_Model.o 
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# User: modify the line below to include only the
+#       objects needed by your application
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ALLOBJ = $(GENOBJ) $(FUNOBJ) $(JACOBJ) $(HESOBJ) $(STMOBJ) \
+	 $(UTLOBJ) $(LAOBJ)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# User: modify the line below to include only the
+#       executables needed by your application
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+all:    exe
+
+exe:	$(ALLOBJ) $(MAINOBJ) 
+	$(FC) $(FOPT) $(ALLOBJ) $(MAINOBJ) $(LIBS) -o pan.exe
+
+stochastic:$(ALLOBJ) $(STOCHOBJ) $(MAINOBJ)
+	$(FC) $(FOPT) $(ALLOBJ) $(STOCHOBJ) $(MAINOBJ) $(LIBS) \
+	-o pan_stochastic.exe
+
+mex:    $(ALLOBJ)
+	$(MEX) FC#$(FC) -fortran -O pan_mex_Fun.f90     $(ALLOBJ)
+	$(MEX) FC#$(FC) -fortran -O pan_mex_Jac_SP.f90  $(ALLOBJ)
+	$(MEX) FC#$(FC) -fortran -O pan_mex_Hessian.f90 $(ALLOBJ)
+
+clean:
+	rm -f pan*.o pan*.mod \
+	pan*.dat pan.exe pan*.mexglx \
+	pan.map
+
+distclean:
+	rm -f pan*.o pan*.mod \
+	pan*.dat pan.exe pan.map \
+	pan*.f90 pan_*.mexglx
+
+pan_Precision.o: pan_Precision.f90 
+	$(FC) $(FOPT) -c $<
+
+pan_Parameters.o: pan_Parameters.f90 \
+	            pan_Precision.o
+	$(FC) $(FOPT) -c $<
+
+pan_Monitor.o: pan_Monitor.f90 \
+	             pan_Precision.o
+	$(FC) $(FOPT) -c $<
+
+pan_Global.o: pan_Global.f90 \
+	            pan_Parameters.o pan_Precision.o
+	$(FC) $(FOPT) -c $<
+
+pan_Initialize.o: pan_Initialize.f90  $(GENOBJ) 
+	$(FC) $(FOPT) -c $<
+
+pan_Function.o: pan_Function.f90  $(GENOBJ) 
+	$(FC) $(FOPT) -c $<
+
+pan_Stochastic.o: pan_Stochastic.f90  $(GENOBJ) 
+	$(FC) $(FOPT) -c $<
+
+pan_JacobianSP.o: pan_JacobianSP.f90 $(GENOBJ)
+	$(FC) $(FOPT) -c $<
+
+pan_Jacobian.o: pan_Jacobian.f90  $(GENOBJ) pan_JacobianSP.o
+	$(FC) $(FOPT) -c $<
+
+pan_LinearAlgebra.o: pan_LinearAlgebra.f90 $(GENOBJ) pan_JacobianSP.o
+	$(FC) $(FOPT) -c $<
+
+pan_Rates.o: pan_Rates.f90  $(GENOBJ) 
+	$(FC) $(FOPT) -c $<
+
+pan_HessianSP.o: pan_HessianSP.f90  $(GENOBJ)
+	$(FC) $(FOPT) -c $<
+
+pan_Hessian.o:  pan_Hessian.f90 $(GENOBJ) pan_HessianSP.o
+	$(FC) $(FOPT) -c $<
+
+pan_StoichiomSP.o: pan_StoichiomSP.f90 $(GENOBJ)
+	$(FC) $(FOPT) -c $<
+
+pan_Stoichiom.o: pan_Stoichiom.f90  $(GENOBJ) pan_StoichiomSP.o
+	$(FC) $(FOPT) -c $<
+
+pan_Util.o: pan_Util.f90  $(GENOBJ) pan_Monitor.o
+	$(FC) $(FOPT) -c $<
+
+pan_Main.o: pan_Main.f90  $(ALLOBJ) pan_Initialize.o pan_Model.o pan_Integrator.o
+	$(FC) $(FOPT) -c $<
+
+pan_Model.o: pan_Model.f90  $(ALLOBJ) pan_Integrator.o
+	$(FC) $(FOPT) -c $<
+
+pan_Integrator.o: pan_Integrator.f90  $(ALLOBJ)
+	$(FC) $(FOPT) -c $<

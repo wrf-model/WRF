@@ -1,0 +1,19 @@
+{To specify a KPP model build a *.kpp file with the following lines:}
+
+{Choose any model defined in $KPP_HOME/models}
+#MODEL small_strato
+
+{Choose any integrator defined in $KPP_HOME/int}
+#INTEGRATOR none 
+
+{Choose the output language in which KPP will generate the model}
+#LANGUAGE [ Fortran77 | Fortran90 | C | Matlab ]
+
+{Choose any driver file defined in $KPP_HOME/drv}
+#DRIVER general
+
+{Hessian}
+#HESSIAN [ ON | OFF ] 
+
+{Stoichiometric matrix}
+#STOICMAT [ ON | OFF ]

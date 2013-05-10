@@ -1,0 +1,94 @@
+README for wind turbine drag parameterization schemes, added 20101220.  JM
+
+*Compiling the code.* no different from normal
+
+*Running the code.*  There are new variables added to the phys block of
+the namelist.input file.  The string valued variable windturbines_spec
+controls the overall operation of the scheme.  If it's set to "none"
+(quotes included) the wind turbine scheme is off.  If it's set to
+"ideal",  the turbine drag scheme is in idealized mode and other namelist
+variables in the block control the geometry and characteristics of the
+wind farm.  If it's set to the name of a file in the run directory --
+for example, "windspec.in" -- then the scheme is on and the location and
+characteristics of each turbine is set individually from the contents of
+that file.  Which scheme is active will be controlled by another variable
+TBD (not yet implemented, since there's only one scheme right now).
+
+*Idealized configuration.* If windturbines_spec is set to "ideal", the
+geometry and characteristics of the farm are controlled by the following
+additional variables in the phys block of the namelist.input file:
+
+ name        type     sample description
+                      value
+ turbgridid  integer   1     id of the WRF domain containing the farm
+ hubheight   real     100.   height in meters of all turbine hubs in farm
+ diameter    real     100.   diameter in meters of all turbine rotors in farm
+ stdthrcoef  real     0.158  standing thrust coefficient of all turbines in farm
+ cutinspeed  real     3.5    cut in speed (m/s) of all turbines in farm
+ cutoutspeed real     30.    cut out speed (m/s) of all turbines in farm
+ power       real     5.0    nominal power (MW) of all turbines in farm
+ turbpercell real     1.0    number of turbines per grid cell
+ ewfx        integer  10     x-extent of rectangular wind farm in grid cells
+ ewfy        integer  10     y-extent of rectangular wind farm in grid cells
+ pwfx        integer  45     x-coordinate of grid cell in sw corner of farm
+ pwfy        integer  45     y-coordinate of grid cell in sw corner of farm
+
+
+*Real-world configuration.*  The location and characteristics of each
+turbine is specified individually in the file named by the variable
+windturbines_spec.  Each line of the file specifies one turbine.
+The entries of a line are separated by spaces.  The entries are listed
+in order on the line and specify the following, by position on the line:
+
+     1. The WRF grid id into which the turbine is placed [integer]
+     2. True latitude of the wind turbine in degrees   [real]
+     3. True longitude of the wind turbine in degrees  [real]
+     4. Height in meters of the turbine hub [real]
+     5. Diameter in meters of the rotor     [real]
+     6. Standing thrust coefficient         [real]
+     7. Nominal power of turbine (MW)       [real]
+     8. Cutin speed (m/s) [real]
+     9. Cutout speed (m/s) [real]
+
+The location of each turbine is specified using the lat and lon elements
+for the turbine's entry in the windspec file.  That is, the i,j index
+in the grid is computed from the true latitude (entry 2) and the true
+longitude (entry 3).  The coordinate in the j dimension is computed by
+checking true latitude against the LAT_V field in the wrfinput initial
+conditions file.  The i dimension is computed by checking the true
+longitude against LONG_U field in the wrfinput file.
+
+*Pseudo-real configuration.*  This mode is only for testing the real-world
+specification mechanism.  The contents of the windspec.in file in the
+em_seabreeze2d_x directory contains a specification that is identical
+to the ideal specification shown above.  However, instead of true
+latitude and true longitude, elements 2 and 3 of each entry specify
+the i,j grid coordinates of the turbine.  The code knows to treat
+these as grid coordinates instead of latitude and longitude because
+for idealized WRF cases, the LAT and LONG fields in wrfinput files are
+set to all zero.  When the model reads a wrfinput file for an idealized
+case, it checks to see if the lat and lon fields of the case have data
+in them or if they are just zeros.  If they do not have data in them
+(just have zeros) fields 2 and 3 of the windspec file are treated as i,j
+coordinates are used.  A sample windspec file for a pseudo-real run is
+in test/em_seabreeze2d_x/windspec.in).
+
+*Specific note for the Fitch scheme.*  The Fitch scheme is based on
+Blahak et al, 2010, of Wetter Jetzt GbR.  The specific implementation
+comes from Anna Fitch, Alok Gupta, and Idar Barstad at Uni Bergen,
+Norway.  It was added to this release of WRF by Jimy Dudhia, Joe Olson
+(NOAA), Julie Lundquist (U. Colorado/NREL), and John Michalakes (NREL).
+It works with the MYNN PBL and modifies the QKE field representing 2xTKE
+to include the TKE produced by wind turbines. QKE is advected as a part
+of the scalar 4D tracer array in WRF.
+
+References: 
+
+Fitch, A. C., J. B. Olson, J. K. Lundquist, J. Dudhia, A. K. Gupta, 
+J. Michalakes, and I. Barstad, 2012: Local and Mesoscale Impacts 
+of Wind Farms as Parameterized in a Mesoscale NWP Model. 
+Monthly Weather Review, doi:10.1175/MWR-D-11-00352.1.
+
+Fitch, A. C., J. K. Lundquist, and J. B. Olson, 2012: Mesoscale 
+Influences of Wind Farms Throughout a Diurnal Cycle. 
+Monthly Weather Review, submitted.

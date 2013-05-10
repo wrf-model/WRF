@@ -1,0 +1,109 @@
+#include wet.spc
+#include wet.eqn
+
+{#LANGUAGE Fortran77
+#INTEGRATOR rodas3
+#DRIVER general}
+
+#LOOKATALL
+
+#MONITOR O3;
+
+#INITVALUES
+  CFACTOR = 2.55E+10; {ppb-to-mcm}
+  ALL_SPEC= 1.0E-10;
+{Variable species}
+  NO2        = 0.5 ;
+  NO         = 0.2 ; 
+  O3         = 60.0 ;
+  HNO3       = 1.6594E-06 ;
+  HNO2       = 8.4898E-03 ;
+  H2O2       = 1.5 ;
+  CO         = 200 ;
+  HCHO       = 1.0 ;
+  ALD2       = 0.1 {3.2067E-02} ;
+  PAN        = 0.1 {1.5022E-02} ;
+  MGLY       = 7.3500E-03 ;
+  PAR        = 1.2 ;
+  OLE        = 6.6095E-03 ;
+  ETH        = 1.0 {2.4286E-02} ;
+  TOL        = 3.0184E-02 ;
+  CRES       = 6.4171E-03 ;
+  XYL        = 2.0E-02 ;
+  ROOH       = 7.0E-02 ;
+  SO2        = 3.3371E-02 ;
+  PNA        = 1.6736E-02 ;
+  OPEN       = 1.0E-03 ;
+  ISOP       = 1.0 ;
+  HONO       = 1.0E-3 ;
+  NO3        = 5.0E-05 ;
+  OH         = 6.0E-04 ;
+  HO2        = 2.8900E-02 ;
+  N2O5       = 4.6513E-05 ;
+  C2O3       = 6.1457E-05 ;
+  XO2        = 6.2020E-03 ;
+  XO2N       = 4.0E-3 ;
+  ROR        = 4.2461E-09 ;
+  TO2        = 8.6120E-07 ;
+  NH3        = 1.3637E-02 ;
+  CRO        = 3.1320E-06 ;
+  H2O        = 1.35e+7 ;
+  O2         = 2.1E+8 ;
+  CH4        = 1.7E+3 ;
+  CO2aq      = 3.0E-1 ;
+  HO2aq      = 4.2400E-04 ;
+  H2O2aq     = 9.6683E-01 ;
+  O3aq       = 4.8688E-06 ;
+  HCHOaq     = 2.0245E-02 ;
+  HCOOH      = 0.2 ;
+  HCOOHaq    = 2.0180E-03 ;
+  CH3O2Haq   = 1.1101E-04 ;
+  CH3O2aq    = 9.0994E-05 ;
+  HNO3aq     = 2.5563E-06 ;
+  NO3aq      = 5.2533E-09 ;
+  NH3aq      = 5.8021E-06 ;
+  SO2aq      = 3.0071E-07 ;
+  OHaq       = 4.0141E-05 ;
+  H2Oaq      = 4.3638E+05 ;
+  HPLUSaq    = 1.9654E-01 ;
+  OHaq       = 3.1392E-06 ;
+  HCOOMINaq  = 3.6325E-03 ;
+  O2MINaq    = 6.7840E-05 ;
+  HSO3MINaq  = 5.1188E-05 ;
+  SO32MINaq  = 3.4183E-08 ;
+  NH4aq      = 9.8636E-01 ;
+  NO3aq      = 3.9367E-01 ;
+  FE3PLUSaq  = 7.8548E-03 ;
+  FE2PLUSaq  = 3.1419E-02 ;
+  SO42MINaq  = 2.3564E+00 ;
+  CU2PLUSaq  = 2.1601E-04 ;
+
+#INLINE F77_INIT
+        TSTART = 12.D0*3600.D0
+        TEND = TSTART + 24.D0*3600.D0 * 5
+        DT = 3600.D0
+        TEMP = 288.15
+#ENDINLINE
+
+#INLINE F90_INIT
+        TSTART = 12.D0*3600.D0
+        TEND = TSTART + 24.D0*3600.D0 * 5
+        DT = 3600.D0
+        TEMP = 288.15
+#ENDINLINE
+
+#INLINE MATLAB_INIT
+  global TSTART TEND DT TEMP
+  TSTART = 12.0*3600.0;
+  TEND = TSTART + 24.0*3600.0*5;
+  DT = 3600.0;
+  TEMP = 288.15;
+#ENDINLINE
+
+#INLINE C_INIT
+  TSTART = 12.0*3600.0;
+  TEND = TSTART + 24.0*3600.0*5;
+  DT = 3600.0;
+  TEMP = 288.15;
+#ENDINLINE
+

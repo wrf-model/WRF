@@ -1,0 +1,15 @@
+/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!                  W A R N I N G
+   !!
+   !!  This is a temporary version of gen_comms.c
+   !!  It has been compied from somewhere else
+   !!  (If not DM_PARALLEL this is tools/gen_comms.stub
+   !!  otherwise, it is from one of the external package
+   !!  directories.)
+   !!
+   !!                B E   A D V I S E D
+   !!
+   !!  Changes to this file are liable to be LOST.
+   !!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  */
+

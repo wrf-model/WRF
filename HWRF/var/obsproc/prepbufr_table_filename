@@ -1,0 +1,724 @@
+.------------------------------------------------------------------------------.
+| ------------   USER DEFINITIONS FOR TABLE-A TABLE-B TABLE    --------------  |
+|------------------------------------------------------------------------------|
+| MNEMONIC | NUMBER | DESCRIPTION                                              |
+|----------|--------|----------------------------------------------------------|
+*                                                                              |
+*                                                                              |
+*       THE FOLLOWING ARE TABLE A ENTRIES FOR PREPBUFR MESSAGE TYPES           |
+*                                                                              |
+| ADPUPA   | A60230 | UPPER-AIR (RAOB, PIBAL, RECCO, DROPS) REPORTS            |
+| AIRCAR   | A60231 | ACARS AIRCRAFT REPORTS                                   |
+| AIRCFT   | A60232 | CONVENTIONAL (AIREP, PIREP) AND ASDAR AIRCRAFT REPORTS   |
+| SATWND   | A60233 | SATELLITE-DERIVED WIND REPORTS                           |
+| PROFLR   | A60234 | WIND PROFILER REPORTS                                    |
+| VADWND   | A60235 | VAD (NEXRAD) WIND REPORTS                                |
+| SATEMP   | A60236 | TOVS SATELLITE DATA (SOUNDINGS, RETRIEVALS, RADIANCES)   |
+| ADPSFC   | A60237 | SURFACE LAND (SYNOPTIC, METAR) REPORTS                   |
+| SFCSHP   | A60238 | SURFACE MARINE (SHIP, BUOY, C-MAN PLATFORM) REPORTS      |
+| SFCBOG   | A60239 | MEAN SEA-LEVEL PRESSURE BOGUS REPORTS                    |
+| SPSSMI   | A60240 | SSM/I RETRIEVAL PRODUCTS (REPROCESSED WIND SPEED, TPW)   |
+| SYNDAT   | A60241 | SYNTHETIC TROPICAL CYCLONE BOGUS REPORTS                 |
+| ERS1DA   | A60242 | ERS SCATTEROMETER DATA (REPROCESSED WIND SPEED)          |
+| GOESND   | A60243 | GOES SATELLITE DATA (SOUNDINGS, RETRIEVALS, RADIANCES)   |
+| QKSWND   | A60244 | QUIKSCAT SCATTEROMETER DATA (REPROCESSED WIND SPEED)     |
+| GPSIPW   | A60246 | GLOBAL POSITIONING SATELLITE INTEGRATED PRECIPBL WATER   |
+| GPSREF   | A60248 | GLOBAL POSITIONING SATELLITE REFRACTIVITY SOUNDING       |
+*                                                                              |
+*                                                                              |
+* THE FOLLOWING ARE TABLE D ENTRIES FOR SEQUENCES DEFINED IN TABLE A ENTRIES   |
+*                                                                              |
+| HEADR    | 361001 | REPORT HEADER SEQUENCE                                   |
+| PLEVL    | 361002 | PRESSURE LEVEL SEQUENCE (ALL TYPES EXCEPT GOESND)        |
+| PMSL     | 361003 | MEAN SEA LEVEL PRESSURE SEQUENCE                         |
+| BTLEVL   | 361004 | BRIGHTNESS TEMPERATURE "LEVEL" SEQUENCE                  |
+| ALTMSQ   | 361005 | ALTIMETER SETTING SEQUENCE                               |
+| TURB1SQ  | 361006 | AIREP, PIREP, AMDAR AIRCRAFT DEGREE OF TURBULENCE SEQ    |
+| TURB2SQ  | 361007 | ACARS AIRCRAFT DEGREE OF TURBULENCE SEQUENCE             |
+| PHASSQ   | 361008 | AIRCRAFT PHASE OF FLIGHT SEQUENCE                        |
+| RFFLSQ   | 361009 | NESDIS RECURSIVE FILTER FLAG SEQUENCE                    |
+| WSPDSQ   | 361010 | WIND SPEED SEQUENCE                                      |
+| PLEVLG   | 361011 | GOESND PRESSURE LEVEL SEQUENCE                           |
+| PLEVLR   | 361012 | PRESSURE LEVEL SEQUENCE FOR GPSREF                       |
+*                                                                              |
+*                                                                              |
+*      THE FOLLOWING ARE TABLE D ENTRIES FOR DATA "INFORMATION" SEQUENCES      |
+*                                                                              |
+| PINFO    | 362001 | PRESSURE INFORMATION                                     |
+| QINFO    | 362002 | SPECIFIC HUMIDITY INFORMATION                            |
+| TINFO    | 362003 | TEMPERATURE INFORMATION                                  |
+| ZINFO    | 362004 | HEIGHT INFORMATION                                       |
+| WINFO    | 362005 | WIND INFORMATION                                         |
+| PWINFO   | 362006 | PRECIPITABLE WATER INFORMATION                           |
+| PWTINF   | 362007 | TOTAL PRECIPITABLE WATER INFORMATION                     |
+| PWLINF   | 362008 | LAYER PRECIPITABLE WATER INFORMATION                     |
+| PW1INF   | 362009 | 1.0 TO 0.9 SIGMA LAYER PRECIPITABLE WATER INFORMATION    |
+| PW2INF   | 362010 | 0.9 TO 0.7 SIGMA LAYER PRECIPITABLE WATER INFORMATION    |
+| PW3INF   | 362011 | 0.7 TO 0.3 SIGMA LAYER PRECIPITABLE WATER INFORMATION    |
+| PW4INF   | 362012 | 0.3 TO 0.0 SIGMA LAYER PRECIPITABLE WATER INFORMATION    |
+| BTINFO   | 362014 | TOVS BRIGHTNESS TEMPERATURE INFORMATION                  |
+| SCINFO   | 362015 | SCATTEROMETER DATA INFORMATION                           |
+| DRINFO   | 362016 | RADIOSONDE DRIFT INFORMATION                             |
+| RRINFO   | 362017 | RAIN RATE INFORMATION                                    |
+| CTINFO   | 362018 | CLOUD TOP INFORMATION                                    |
+| RINFO    | 362019 | REFRACTIVITY INFORMATION                                 |
+*                                                                              |
+*                                                                              |
+*         THE FOLLOWING ARE TABLE D ENTRIES FOR DATA "EVENT" SEQUENCES         |
+*                                                                              |
+| PEVN     | 362101 | PRESSURE EVENT SEQUENCE                                  |
+| QEVN     | 362102 | SPECIFIC HUMIDITY EVENT SEQUENCE                         |
+| TEVN     | 362103 | TEMPERATURE EVENT SEQUENCE                               |
+| ZEVN     | 362104 | HEIGHT EVENT SEQUENCE                                    |
+| WEVN     | 362105 | WIND EVENT SEQUENCE                                      |
+| DFEVN    | 362106 | WIND (DIRECTION/SPEED) EVENT SEQUENCE                    |
+| PWTEVN   | 362107 | TOTAL PRECIPITABLE WATER EVENT SEQUENCE                  |
+| PW1EVN   | 362108 | 1.0 TO 0.9 PRECIPITABLE WATER EVENT SEQUENCE             |
+| PW2EVN   | 362109 | 0.9 TO 0.7 PRECIPITABLE WATER EVENT SEQUENCE             |
+| PW3EVN   | 362110 | 0.7 TO 0.3 PRECIPITABLE WATER EVENT SEQUENCE             |
+| PW4EVN   | 362111 | 0.3 TO 0.0 PRECIPITABLE WATER EVENT SEQUENCE             |
+| RREVN    | 362112 | RATE RATE EVENT SEQUENCE                                 |
+| CTPEVN   | 362113 | CLOUD TOP PRESSURE EVENT SEQUENCE                        |
+| REFEVN   | 362114 | REFREACTIVITY EVENT SEQUENCE                             |
+*                                                                              |
+*                                                                              |
+*      THE FOLLOWING ARE TABLE D ENTRIES FOR DATA "BACKGROUND" SEQUENCES       |
+*                                                                              |
+| PBACKG   | 362201 | PRESSURE BACKGROUND SEQUENCE                             |
+| QBACKG   | 362202 | SPECIFIC HUMIDITY BACKGROUND SEQUENCE                    |
+| TBACKG   | 362203 | TEMPERATURE BACKGROUND SEQUENCE                          |
+| ZBACKG   | 362204 | HEIGHT BACKGROUND SEQUENCE                               |
+| WBACKG   | 362205 | WIND BACKGROUND SEQUENCE                                 |
+| PWTBAK   | 362206 | TOTAL PRECIPITABLE WATER BACKGROUND SEQUENCE             |
+| PW1BAK   | 362207 | 1.0 TO 0.9 SIGMA LAYER PRECIP WATER BACKGROUND SEQUENCE  |
+| PW2BAK   | 362208 | 0.9 TO 0.7 SIGMA LAYER PRECIP WATER BACKGROUND SEQUENCE  |
+| PW3BAK   | 362209 | 0.7 TO 0.3 SIGMA LAYER PRECIP WATER BACKGROUND SEQUENCE  |
+| PW4BAK   | 362210 | 0.3 TO 0.0 SIGMA LAYER PRECIP WATER BACKGROUND SEQUENCE  |
+| RRBACKG  | 362211 | RAIN RATE BACKGROUND SEQUENCE                            |
+| CTPBAK   | 362212 | CLOUD TOP PRESSURE BACKGROUND SEQUENCE                   |
+| REFBAK   | 362213 | REFRACTIVITY BACKGROUND SEQUENCE                         |
+*                                                                              |
+*                                                                              |
+*      THE FOLLOWING ARE TABLE D ENTRIES FOR DATA "POSTPROCESSING" SEQUENCES   |
+*                                                                              |
+| PPOSTP   | 362221 | PRESSURE POSTPROCESSING SEQUENCE                         |
+| QPOSTP   | 362222 | SPECIFIC HUMIDITY POSTPROCESSING SEQUENCE                |
+| TPOSTP   | 362223 | TEMPERATURE POSTPROCESSING SEQUENCE                      |
+| ZPOSTP   | 362224 | HEIGHT POSTPROCESSING SEQUENCE                           |
+| WPOSTP   | 362225 | WIND POSTPROCESSING SEQUENCE                             |
+| PWTPST   | 362226 | TOTAL PRECIPITABLE WATER POSTPROCESSING SEQUENCE         |
+| PW1PST   | 362227 | 1.0 TO 0.9 SIGMA LAYER PRECIP WATER POSTPROCESSING SEQ.  |
+| PW2PST   | 362228 | 0.9 TO 0.7 SIGMA LAYER PRECIP WATER POSTPROCESSING SEQ.  |
+| PW3PST   | 362229 | 0.7 TO 0.3 SIGMA LAYER PRECIP WATER POSTPROCESSING SEQ.  |
+| PW4PST   | 362230 | 0.3 TO 0.0 SIGMA LAYER PRECIP WATER POSTPROCESSING SEQ.  |
+| RRPOSTP  | 362231 | RAIN RATE POSTPROCESSING SEQUENCE                        |
+| CTPPST   | 362232 | CLOUD TOP PRESSURE POSTPROCESSING SEQUENCE               |
+*                                                                              |
+*                                                                              |
+*      THE FOLLOWING ARE TABLE D ENTRIES FOR DATA "CLIMATOLOGY" SEQUENCES      |
+*                                                                              |
+| PCLIM    | 362241 | PRESSURE CLIMATOLOGY SEQUENCE                            |
+| QCLIM    | 362242 | SPECIFIC HUMIDITY CLIMATOLOGY SEQUENCE                   |
+| TCLIM    | 362243 | TEMPERATURE CLIMATOLOGY SEQUENCE                         |
+| ZCLIM    | 362244 | HEIGHT CLIMATOLOGY SEQUENCE                              |
+| WCLIM    | 362245 | WIND CLIMATOLOGY SEQUENCE                                |
+*                                                                              |
+*                                                                              |
+*  THE FOLLOWING ARE TABLE D ENTRIES FOR TEMPRY CURRENT MODEL GUESS SEQUENCES  |
+*                                                                              |
+| PFC_MSQ  | 363201 | MODEL PRESSURE FORECAST SEQUENCE                         |
+| QFC_MSQ  | 363202 | MODEL SPECIFIC HUMIDITY FORECAST SEQUENCE                |
+| TFC_MSQ  | 363203 | MODEL TEMPERATURE FORECAST SEQUENCE                      |
+| ZFC_MSQ  | 363204 | MODEL HEIGHT FORECAST SEQUENCE                           |
+| WFC_MSQ  | 363205 | MODEL WIND FORECAST SEQUENCE                             |
+| PWF_MSQ  | 363206 | MODEL TOTAL PRECIPITABLE WATER FORECAST SEQUENCE         |
+| PW1F_MSQ | 363207 | MODEL 1.0 TO 0.9 SIGMA LAYER PRECIP WATER FORECAST SEQ.  |
+| PW2F_MSQ | 363208 | MODEL 0.9 TO 0.7 SIGMA LAYER PRECIP WATER FORECAST SEQ.  |
+| PW3F_MSQ | 363209 | MODEL 0.7 TO 0.3 SIGMA LAYER PRECIP WATER FORECAST SEQ.  |
+| PW4F_MSQ | 363210 | MODEL 0.3 TO 0.0 SIGMA LAYER PRECIP WATER FORECAST SEQ.  |
+*                                                                              |
+*                                                                              |
+*     THE FOLLOWING ARE TABLE D ENTRIES FOR EVENTS CODES FOR THE VARIOUS       |
+*    PREPBUFR PROCESSING "STEPS" (PROGRAMS OR SUBROUTINES WITHIN PROGRAMS)     |
+*  THE LAST THREE DIGITS OF THE DESCRIPTOR NUMBER BECOMES THE "PROGRAM CODE"   |
+*                                                                              |
+| PREPRO   | 363001 | INITIAL PREPBUFR PROCESSING STEP                         |
+*          |        |  (PREPDATA PROGRAM, PRIOR TO PREVENTS OR VTPEVN SUBR.)   |
+| SYNDATA  | 363002 | SYNTHETIC TROPICAL CYCLONE BOGUS PROCESSING STEP         |
+*          |        |  (SYNDATA PROGRAM, PRIOR TO PREVENTS SUBROUTINE)         |
+| CLIMO    | 363003 | CLIMO PROGRAM                                            |
+*                                                                              |
+| PREVENT  | 363004 | PRE-EVENTS BACKGROUND/OBS. ERROR PROCESSING STEP         |
+*          |        |  (PREVENTS SUBROUTINE IN PREPDATA OR SYNDATA PROGRAM;    |
+*          |        |   PREVENTS PROGRAM IN CDAS NETWORK RUNS)                 |
+| CQCHT    | 363005 | RAWINSONDE HEIGHT/TEMP COMPLEX QUALITY CONTROL STEP      |
+*          |        |  (CQCBUFR PROGRAM)                                       |
+| RADCOR   | 363006 | RAWINSONDE HEIGHT/TEMP RADIATION CORRECTION STEP         |
+*          |        |  (RADEVN SUBROUTINE IN CQCBUFR PROGRAM)                  |
+| PREPACQC | 363007 | AIRCRAFT QUALITY CONTROL STEP                            |
+*          |        |  (PREPACQC PROGRAM)                                      |
+| VIRTMP   | 363008 | VIRTUAL TEMPERATURE/SPECIFIC HUMIDITY PROCESSING STEP    |
+*          |        |  (VTPEVN SUBROUTINE IN PREPDATA, CQCBUFR OR PREVENTS     |
+*          |        |   PROGRAM; DEPENDING UPON DATA TYPE)                     |
+| CQCPROF  | 363009 | WIND PROFILER QUALITY CONTROL STEP                       |
+*          |        |  (PROFCQC PROGRAM)                                       |
+| OIQC     | 363010 | OI-QUALITY CONTROL STEP                                  |
+*          |        |  (OIQCBUFR PROGRAM - GLOBAL VERSION ONLY)                |
+| SSI      | 363011 | SSI ANALYSIS STEP                                        |
+*          |        |  (SSIANL PROGRAM - GLOBAL VERSION ONLY)                  |
+| CQCVAD   | 363012 | VAD WIND QUALITY CONTROL STEP                            |
+*          |        |  (CQCVAD PROGRAM)                                        |
+| R3DVAR   | 363013 | 3DVAR ANALYSIS STEP                                      |
+*          |        |  (R3DVAR PROGRAM - ETA VERSION ONLY)                     |
+*                                                                              |
+*                                                                              |
+*             THE FOLLOWING ARE TABLE B ENTRIES FOR THE REPORT HEADER          |
+*                                                                              |
+| SID      | 001192 | STATION IDENTIFICATION                                   |
+| TYP      | 001193 | PREPBUFR REPORT TYPE                                     |
+| CAT      | 001194 | PREPBUFR DATA CATEGORY                                   |
+| ITP      | 002001 | INSTRUMENT TYPE                                          |
+| SIRC     | 002013 | RAWINSONDE SOLAR & INFRARED RADIATION CORR. INDICATOR    |
+| RPT      | 004194 | REPORTED OBSERVATION TIME                                |
+| DHR      | 004192 | OBSERVATION TIME MINUS CYCLE TIME                        |
+| TCOR     | 004195 | INDICATOR WHETHER OBS. TIME IN "DHR" WAS CORRECTED       |
+| RCT      | 004193 | RECEIPT TIME                                             |
+| YOB      | 005002 | LATITUDE                                                 |
+| XOB      | 006002 | LONGITUDE                                                |
+| SQN      | 050001 | REPORT SEQUENCE NUMBER                                   |
+| T29      | 055006 | INPUT REPORT TYPE                                        |
+| TSB      | 055192 | REPORT SUBTYPE (HAS VARIOUS MEANINGS DEPENDING ON TYPE)  |
+| ACAV     | 008022 | TOTAL # W.R.T. ACCUMULATION OR AVGE (GOES SNDGS ONLY)    |
+| ATRN     | 005034 | ALONG TRACK ROW NUMBER (QUIKSCAT REPORTS ONLY)           |
+| CTCN     | 006034 | CROSS TRACK CELL NUMBER (QUIKSCAT REPORTS ONLY)          |
+| SPRR     | 021120 | SEAWINDS PROBABILITY OF RAIN (QUIKSCAT REPORTS ONLY)     |
+| SAID     | 001007 | SATELLITE IDENTIFIER (SATELLITE REPORTS ONLY)            |
+*                                                                              |
+*                                                                              |
+*          THE FOLLOWING ARE TABLE B ENTRIES FOR THE REPORT LEVEL DATA         |
+*                                                                              |
+| POB      | 007192 | PRESSURE OBSERVATION                                     |
+| PQM      | 007193 | PRESSURE (QUALITY) MARKER                                |
+| PPC      | 007194 | PRESSURE PROGRAM CODE                                    |
+| PRC      | 007195 | PRESSURE REASON CODE                                     |
+| PFC      | 007196 | PRESSURE FORECAST VALUE                                  |
+| POE      | 007197 | PRESSURE OBSERVATION ERROR                               |
+| PAN      | 007198 | PRESSURE ANALYZED VALUE                                  |
+| PCL      | 007199 | PRESSURE CLIMATOLOGY                                     |
+| PCS      | 007200 | PRESSURE CLIMATOLOGY STANDARD DEVIATION                  |
+|          |        |                                                          |
+| POAF     | 008004 | PHASE OF AIRCRAFT FLIGHT                                 |
+|          |        |                                                          |
+| ALSE     | 010052 | ALTIMETER SETTING OBSERVATION                            |
+| PMO      | 010192 | MEAN SEA-LEVEL PRESSURE OBSERVATION                      |
+| PMQ      | 010193 | MEAN SEA-LVL PRESSURE (QUALITY) MARKER                   |
+| ELV      | 010194 | STATION ELEVATION                                        |
+| PRSS     | 010195 | SURFACE PRESSURE OBSERVATION                             |
+| ZOB      | 010196 | HEIGHT OBSERVATION                                       |
+| ZQM      | 010197 | HEIGHT (QUALITY) MARKER                                  |
+| ZPC      | 010198 | HEIGHT PROGRAM CODE                                      |
+| ZRC      | 010199 | HEIGHT REASON CODE                                       |
+| ZFC      | 010200 | HEIGHT FORECAST VALUE                                    |
+| ZAN      | 010201 | HEIGHT ANALYZED VALUE                                    |
+| ZOE      | 010202 | HEIGHT OBSERVATION ERROR                                 |
+| ZCL      | 010203 | HEIGHT CLIMATOLOGY                                       |
+| ZCS      | 010204 | HEIGHT CLIMATOLOGY STANDARD DEVIATION                    |
+|          |        |                                                          |
+| UOB      | 011003 | U-COMPONENT WIND OBSERVATION                             |
+| VOB      | 011004 | V-COMPONENT WIND OBSERVATION                             |
+| WQM      | 011192 | WIND (QUALITY) MARKER                                    |
+| WPC      | 011193 | WIND PROGRAM CODE                                        |
+| WRC      | 011194 | WIND REASON CODE                                         |
+| UFC      | 011195 | U-COMPONENT FORECAST VALUE                               |
+| VFC      | 011196 | V-COMPONENT FORECAST VALUE                               |
+| UAN      | 011197 | U-COMPONENT ANALYZED VALUE                               |
+| VAN      | 011198 | V-COMPONENT ANALYZED VALUE                               |
+| WOE      | 011199 | WIND OBSERVATION ERROR                                   |
+| UCL      | 011200 | U-COMPONENT CLIMATOLOGY                                  |
+| VCL      | 011201 | V-COMPONENT CLIMATOLOGY                                  |
+| UCS      | 011202 | U-COMPONENT CLIMATOLOGY STANDARD DEVIATION               |
+| VCS      | 011203 | V-COMPONENT CLIMATOLOGY STANDARD DEVIATION               |
+|          |        |                                                          |
+| DDO      | 011001 | WIND DIRECTION OBSERVATION (NOT ASSIMILATED)             |
+*          |        |  (AFTER "PREPACQC" STEP ONLY - SUBSEQUENT CODES DO NOT   |
+*          |        |   PROCESS)                                               |
+| SOB      | 011002 | WIND SPEED OBSERVATION                                   |
+*          |        |  (STORED WHEN DIRECTION IS MISSING; E.G. METARS)         |
+| FFO      | 011191 | WIND SPEED OBSERVATION (NOT ASSIMILATED)                 |
+*          |        |  (AFTER "PREPACQC" STEP ONLY - SUBSEQUENT CODES DO NOT   |
+*          |        |   PROCESS)                                               |
+| DFQ      | 011204 | WIND (DIRECTION/SPEED) (QUALITY) MARKER                  |
+| DFP      | 011205 | WIND (DIRECTION/SPEED) PROGRAM CODE                      |
+| DFR      | 011206 | WIND (DIRECTION/SPEED) REASON CODE                       |
+|          |        |                                                          |
+| SQM      | 011209 | WIND SPEED (QUALITY) MARKER                              |
+*          |        |  (STORED WHEN DIRECTION IS MISSING; E.G. METARS)         |
+|          |        |                                                          |
+| DGOT     | 011031 | DEGREE OF TURBULENCE                                     |
+| TRBX10   | 011236 | TURBULENCE INDEX FOR PERIOD (TOB-1 MIN) -> TOB           |
+| TRBX21   | 011237 | TURBULENCE INDEX FOR PERIOD (TOB-2 MIN) -> (TOB-1 MIN)   |
+| TRBX32   | 011238 | TURBULENCE INDEX FOR PERIOD (TOB-3 MIN) -> (TOB-2 MIN)   |
+| TRBX43   | 011239 | TURBULENCE INDEX FOR PERIOD (TOB-4 MIN) -> (TOB-3 MIN)   |
+|          |        |                                                          |
+| TOB      | 012192 | TEMPERATURE OBSERVATION                                  |
+*          |        | (AFTER "PREPRO" STEP - REPORTED TEMP, EITHER SENSIBLE    |
+*          |        |  OR VIRTUAL DEPENDING UPON DATA TYPE;                    |
+*          |        |  AFTER "VIRTMP" STEP - VIRTUAL TEMPERATURE IF MOISTURE   |
+*          |        |  AVAILABLE, OTHERWISE SENSIBLE)                          |
+| TQM      | 012195 | TEMPERATURE (QUALITY) MARKER                             |
+| TPC      | 012196 | TEMPERATURE PROGRAM CODE                                 |
+| TRC      | 012197 | TEMPERATURE REASON CODE                                  |
+| TFC      | 012198 | TEMPERATURE FORECAST VALUE                               |
+| TAN      | 012199 | TEMPERATURE ANALYZED VALUE                               |
+| TOE      | 012200 | TEMPERATURE OBSERVATION ERROR                            |
+| TCL      | 012201 | TEMPERATURE CLIMATOLOGY                                  |
+| TCS      | 012202 | TEMPERATURE CLIMATOLOGY STANDARD DEVIATION               |
+|          |        |                                                          |
+| TDO      | 012194 | DEWPOINT TEMPERATURE OBSERVATION (NOT ASSIMILATED)       |
+*          |        |  (AFTER "VIRTMP" STEP ONLY - SUBSEQUENT CODES DO NOT     |
+*          |        |   PROCESS)                                               |
+| TVO      | 012193 | NON-Q. CONTROLLED VIRTUAL TEMP OBS (NOT ASSIMILATED)     |
+*          |        |  (AFTER "PREPRO" STEP ONLY - SUBSEQUENT CODES DO NOT     |
+*          |        |   PROCESS)                                               |
+| GCDTT    | 012210 | GOES CLOUD TOP TEMPERATURE OBSERVATION                   |
+|          |        |                                                          |
+| QOB      | 013192 | SPECIFIC HUMIDITY OBSERVATION                            |
+*          |        | (AFTER "VIRTMP" STEP - ALWAYS RECALCULATED FROM QUALITY  |
+*          |        |  CONTROLLED VIRTUAL TEMPERATURE DATA)                    |
+| QQM      | 013193 | SPECIFIC HUMIDITY (QUALITY) MARKER                       |
+| QPC      | 013194 | SPECIFIC HUMIDITY PROGRAM CODE                           |
+| QRC      | 013195 | SPECIFIC HUMIDITY REASON CODE                            |
+| QFC      | 013196 | SPECIFIC HUMIDITY FORECAST VALUE                         |
+| QAN      | 013197 | SPECIFIC HUMIDITY ANALYZED VALUE                         |
+| QOE      | 013198 | RELATIVE HUMIDITY OBSERVATION ERROR                      |
+| QCL      | 013199 | SPECIFIC HUMIDITY CLIMATOLOGY                            |
+| QCS      | 013200 | SPECIFIC HUMIDITY CLIMATOLOGY STANDARD DEVIATION         |
+|          |        |                                                          |
+| REQ6     | 013206 | RAINFALL/WATER EQUIVALENT OF SNOW (AVERAGE RATE)         |
+| REQ6_QM  | 013207 | RAINFALL (AVERAGE RATE) (QUALITY) MARKER                 |
+| REQ6_PC  | 013208 | RAINFALL (AVERAGE RATE) PROGRAM CODE                     |
+| REQ6_RC  | 013209 | RAINFALL (AVERAGE RATE) REASON CODE                      |
+| REQ6_FC  | 013210 | RAINFALL (AVERAGE RATE) FORECAST VALUE                   |
+| REQ6_AN  | 013211 | RAINFALL (AVERAGE RATE) ANALYZED VALUE                   |
+| REQ6_OE  | 013212 | RAINFALL (AVERAGE RATE) OBSERVATION ERROR                |
+|          |        |                                                          |
+| PWO      | 013213 | TOTAL PRECIPITABLE WATER OBSERVATION                     |
+| PWQ      | 013214 | TOTAL PRECIPITABLE WATER (QUALITY) MARKER                |
+| PWP      | 013215 | TOTAL PRECIPITABLE WATER PROGRAM CODE                    |
+| PWR      | 013216 | TOTAL PRECIPITABLE WATER REASON CODE                     |
+| PWF      | 013217 | TOTAL PRECIPITABLE WATER FORECAST VALUE                  |
+| PWA      | 013218 | TOTAL PRECIPITABLE WATER ANALYZED VALUE                  |
+| PWE      | 013219 | TOTAL PRECIPITABLE WATER OBSERVATION ERROR               |
+| PW1O     | 013220 | 1.0 TO 0.9 SIGMA LAYER PRECIPITABLE WATER OBSERVATION    |
+| PW1Q     | 013221 | 1.0 TO 0.9 SIGMA LAYER PRECIPITABLE WATER MARKER         |
+| PW1P     | 013222 | 1.0 TO 0.9 SIGMA LAYER PRECIPITABLE WATER PROGRAM CODE   |
+| PW1R     | 013223 | 1.0 TO 0.9 SIGMA LAYER PRECIPITABLE WATER REASON CODE    |
+| PW1F     | 013224 | 1.0 TO 0.9 SIGMA LAYER PRECIPITABLE WATER FORECAST VAL   |
+| PW1A     | 013225 | 1.0 TO 0.9 SIGMA LAYER PRECIPITABLE WATER ANALYZED VAL   |
+| PW1E     | 013226 | 1.0 TO 0.9 SIGMA LAYER PRECIPITABLE WATER OBS. ERROR     |
+| PW2O     | 013227 | 0.9 TO 0.7 SIGMA LAYER PRECIPITABLE WATER OBSERVATION    |
+| PW2Q     | 013228 | 0.9 TO 0.7 SIGMA LAYER PRECIPITABLE WATER MARKER         |
+| PW2P     | 013229 | 0.9 TO 0.7 SIGMA LAYER PRECIPITABLE WATER PROGRAM CODE   |
+| PW2R     | 013230 | 0.9 TO 0.7 SIGMA LAYER PRECIPITABLE WATER REASON CODE    |
+| PW2F     | 013231 | 0.9 TO 0.7 SIGMA LAYER PRECIPITABLE WATER FORECAST VAL   |
+| PW2A     | 013232 | 0.9 TO 0.7 SIGMA LAYER PRECIPITABLE WATER ANALYZED VAL   |
+| PW2E     | 013233 | 0.9 TO 0.7 SIGMA LAYER PRECIPITABLE WATER OBS. ERROR     |
+| PW3O     | 013234 | 0.7 TO 0.3 SIGMA LAYER PRECIPITABLE WATER OBSERVATION    |
+| PW3Q     | 013235 | 0.7 TO 0.3 SIGMA LAYER PRECIPITABLE WATER MARKER         |
+| PW3P     | 013236 | 0.7 TO 0.3 SIGMA LAYER PRECIPITABLE WATER PROGRAM CODE   |
+| PW3R     | 013237 | 0.7 TO 0.3 SIGMA LAYER PRECIPITABLE WATER REASON CODE    |
+| PW3F     | 013238 | 0.7 TO 0.3 SIGMA LAYER PRECIPITABLE WATER FORECAST VAL   |
+| PW3A     | 013239 | 0.7 TO 0.3 SIGMA LAYER PRECIPITABLE WATER ANALYZED VAL   |
+| PW3E     | 013240 | 0.7 TO 0.3 SIGMA LAYER PRECIPITABLE WATER OBS. ERROR     |
+| PW4O     | 013241 | 0.3 TO 0.0 SIGMA LAYER PRECIPITABLE WATER OBSERVATION    |
+| PW4Q     | 013242 | 0.3 TO 0.0 SIGMA LAYER PRECIPITABLE WATER MARKER         |
+| PW4P     | 013243 | 0.3 TO 0.0 SIGMA LAYER PRECIPITABLE WATER PROGRAM CODE   |
+| PW4R     | 013244 | 0.3 TO 0.0 SIGMA LAYER PRECIPITABLE WATER REASON CODE    |
+| PW4F     | 013245 | 0.3 TO 0.0 SIGMA LAYER PRECIPITABLE WATER FORECAST VAL   |
+| PW4A     | 013246 | 0.3 TO 0.0 SIGMA LAYER PRECIPITABLE WATER ANALYZED VAL   |
+| PW4E     | 013247 | 0.3 TO 0.0 SIGMA LAYER PRECIPITABLE WATER OBS. ERROR     |
+|          |        |                                                          |
+| TOCC     | 020010 | CLOUD COVER (TOTAL)                                      |
+| CDTP     | 020016 | CLOUD TOP PRESSURE OBSERVATION                           |
+| CDTP_QM  | 020207 | CLOUD TOP PRESSURE (QUALITY) MARKER                      |
+| CDTP_PC  | 020208 | CLOUD TOP PRESSURE PROGRAM CODE                          |
+| CDTP_RC  | 020209 | CLOUD TOP PRESSURE REASON CODE                           |
+| CDTP_FC  | 020210 | CLOUD TOP PRESSURE FORECAST VALUE                        |
+| CDTP_AN  | 020211 | CLOUD TOP PRESSURE ANALYZED VALUE                        |
+| CDTP_OE  | 020212 | CLOUD TOP PRESSURE OBSERVATION ERROR                     |
+|          |        |                                                          |
+| RFFL     | 025202 | NESDIS RECURSIVE FILTER FLAG                             |
+|          |        |                                                          |
+| ELEV     | 007021 | SATELLITE ELEVATION (ZENITH ANGLE)                       |
+| SOEL     | 007022 | SOLAR ELEVATION (ZENITH ANGLE)                           |
+| OZON     | 015001 | OZONE                                                    |
+| TMSK     | 012061 | SKIN TEMPERATURE                                         |
+| CLAM     | 020011 | CLOUD AMOUNT                                             |
+| CHNM     | 005042 | CHANNEL NUMBER                                           |
+| TMBR     | 012063 | BRIGHTNESS TEMPERATURE                                   |
+|          |        |                                                          |
+| A1       | 048001 | ERS INCIDENT ANGLE #1                                    |
+| A2       | 048002 | ERS INCIDENT ANGLE #2                                    |
+| A3       | 048003 | ERS INCIDENT ANGLE #3                                    |
+|          |        |                                                          |
+| B1       | 048004 | ERS AZIMUTH  ANGLE #1                                    |
+| B2       | 048005 | ERS AZIMUTH  ANGLE #2                                    |
+| B3       | 048006 | ERS AZIMUTH  ANGLE #3                                    |
+|          |        |                                                          |
+| S1       | 048007 | ERS BACKSCATTER #1                                       |
+| S2       | 048008 | ERS BACKSCATTER #2                                       |
+| S3       | 048009 | ERS BACKSCATTER #3                                       |
+|          |        |                                                          |
+| E1       | 048010 | ERS ERROR ESTIMATE #1                                    |
+| E2       | 048011 | ERS ERROR ESTIMATE #2                                    |
+| E3       | 048012 | ERS ERROR ESTIMATE #3                                    |
+|          |        |                                                          |
+| HRDR     | 004202 | RADIOSONDE BALLOON DRIFT TIME MINUS CYCLE TIME           |
+| YDR      | 005202 | RADIOSONDE BALLOON DRIFT LATITUDE                        |
+| XDR      | 006202 | RADIOSONDE BALLOON DRIFT LONGITUDE                       |
+|          |        |                                                          |
+*  The following are added temporarily until PFC, ZFC, etc. contain current    |
+*   model guess instead of Global guess (applies for all models except Global) |
+|          |        |                                                          |
+| PFC_MOD  | 007201 | MODEL PRESSURE FORECAST VALUE (GLOBAL MODEL SEE PFC)     |
+| ZFC_MOD  | 010205 | MODEL HEIGHT FORECAST VALUE (GLOBAL MODEL SEE ZFC)       |
+| UFC_MOD  | 011207 | MODEL U-COMPONENT FORECAST VALUE (GLOBAL MODEL SEE UFC)  |
+| VFC_MOD  | 011208 | MODEL V-COMPONENT FORECAST VALUE (GLOBAL MODEL SEE VFC)  |
+| TFC_MOD  | 012203 | MODEL TEMPERATURE FORECAST VALUE (GLOBAL MODEL SEE TFC)  |
+| QFC_MOD  | 013248 | MODEL S. HUMIDITY FORECAST VALUE (GLOBAL MODEL SEE QFC)  |
+| PWF_MOD  | 013249 | MODEL TOTAL PWATER FORECAST VALUE (GLOBAL MODEL SEE PWC) |
+| PW1F_MOD | 013250 | MODEL 1.-.9 SIG. LYR PWATER FCST (GLOBAL MODEL SEE PW1F) |
+| PW2F_MOD | 013251 | MODEL .9-.7 SIG. LYR PWATER FCST (GLOBAL MODEL SEE PW2F) |
+| PW3F_MOD | 013252 | MODEL .7-.3 SIG. LYR PWATER FCST (GLOBAL MODEL SEE PW3F) |
+| PW4F_MOD | 013253 | MODEL .3-0. SIG. LYR PWATER FCST (GLOBAL MODEL SEE PW4F) |
+|          |        |                                                          |
+*  The following are added for gps refractivity
+|          |        |                                                          |
+| ROB      | 051162 | REFRACTIVITY OBSERVATION                                 |
+| RQM      | 051163 | REFRACTIVITY (QUALITY) MARKER                            |
+| RPC      | 051164 | REFRACTIVITY PROGRAM CODE                                |
+| RRC      | 051165 | REFRACTIVITY REASON CODE                                 |
+| RFC      | 051166 | REFRACTIVITY FORECAST VALUE                              |
+| ROE      | 051167 | REFRACTIVITY OBSERVATION ERROR                           |
+|          |        |                                                          |
+|------------------------------------------------------------------------------|
+| MNEMONIC | SEQUENCE                                                          |
+|----------|-------------------------------------------------------------------|
+|          |                                                                   |
+| ADPUPA   | HEADR  {PLEVL}  SIRC                                              |
+| AIRCAR   | HEADR   PLEVL           <TURB2SQ>  <PHASSQ>                       |
+| AIRCFT   | HEADR   PLEVL   RCT     <TURB1SQ>  <PHASSQ>                       |
+| SATWND   | HEADR   PLEVL   SAID    <RFFLSQ>                                  |
+| PROFLR   | HEADR  {PLEVL}                                                    |
+| VADWND   | HEADR  {PLEVL}                                                    |
+| SATEMP   | HEADR  {PLEVL}  SAID    <BTINFO> {BTLEVL}                         |
+| GOESND   | HEADR  {PLEVLG} SAID    <BTINFO> {BTLEVL}  ACAV                   |
+| ADPSFC   | HEADR   PLEVL  <PMSL>   <ALTMSQ> <WSPDSQ>                         |
+| SFCSHP   | HEADR   PLEVL  <PMSL>                                             |
+| SFCBOG   | HEADR   PLEVL                                                     |
+| SPSSMI   | HEADR   CAT     SAID    <PINFO>  <WINFO>  <PWINFO>  <RRINFO>      |
+| SPSSMI   | {BTLEVL}                                                          |
+| SYNDAT   | HEADR  {PLEVL}                                                    |
+| ERS1DA   | HEADR   CAT     SAID    <PINFO>  <WINFO>  <SCINFO>                |
+| QKSWND   | HEADR   CAT     SAID    <PINFO>  <WINFO>   CTCN    ATRN    SPRR   |
+| GPSIPW   | HEADR   CAT     PWINFO                                            |
+| GPSREF   | HEADR  {PLEVLR}                                                   |
+|          |                                                                   |
+| HEADR    | SID   XOB   YOB   DHR   ELV   TYP   T29   TSB   ITP   SQN         |
+| HEADR    | RPT   TCOR                                                        |
+| PLEVL    | CAT <PINFO> <QINFO> <TINFO> <ZINFO> <WINFO>  <DRINFO>             |
+| PLEVLG   | CAT <PINFO> <QINFO> <TINFO> <ZINFO> <PWINFO> <CTINFO>             |
+| PLEVLR   | CAT <PINFO> <QINFO> <TINFO> <ZINFO> <RINFO>                       |
+| BTLEVL   | CHNM  TMBR                                                        |
+|          |                                                                   |
+| PINFO    | [PEVN]             <PBACKG>  <PPOSTP>                             |
+| QINFO    | [QEVN]    TDO      <QBACKG>  <QPOSTP>                             |
+| TINFO    | [TEVN]    TVO      <TBACKG>  <TPOSTP>                             |
+| ZINFO    | [ZEVN]             <ZBACKG>  <ZPOSTP>                             |
+| WINFO    | [WEVN]   [DFEVN]   <WBACKG>  <WPOSTP>                             |
+| PWINFO   | <PWTINF> <PWLINF>                                                 |
+| PWTINF   | [PWTEVN]           <PWTBAK>  <PWTPST>                             |
+| PWLINF   | <PW1INF> <PW2INF>  <PW3INF>  <PW4INF>  PRSS                       |
+| PW1INF   | [PW1EVN]           <PW1BAK>  <PW1PST>                             |
+| PW2INF   | [PW2EVN]           <PW2BAK>  <PW2PST>                             |
+| PW3INF   | [PW3EVN]           <PW3BAK>  <PW3PST>                             |
+| PW4INF   | [PW4EVN]           <PW4BAK>  <PW4PST>                             |
+| BTINFO   | ELEV      SOEL     OZON     TMSK     CLAM                         |
+| SCINFO   | A1  A2  A3  B1  B2  B3  S1  S2  S3  E1  E2  E3                    |
+| PMSL     | PMO       PMQ                                                     |
+| ALTMSQ   | ALSE                                                              |
+| WSPDSQ   | SOB  SQM                                                          |
+| TURB1SQ  | DGOT                                                              |
+| TURB2SQ  | TRBX10  TRBX21  TRBX32  TRBX43                                    |
+| RFFLSQ   | RFFL                                                              |
+| PHASSQ   | POAF                                                              |
+| DRINFO   | XDR      YDR     HRDR                                             |
+| RRINFO   | [RREVN]                    <RRBACKG> <RRPOSTP>                    |
+| CTINFO   | [CTPEVN] TOCC    GCDTT     <CTPBAK>  <CTPPST>                     |
+| RINFO    | [REFEVN] <REFBAK>                                                 |
+|          |                                                                   |
+| PEVN     | POB  PQM  PPC  PRC                                                |
+| QEVN     | QOB  QQM  QPC  QRC                                                |
+| TEVN     | TOB  TQM  TPC  TRC                                                |
+| ZEVN     | ZOB  ZQM  ZPC  ZRC                                                |
+| WEVN     | UOB  WQM  WPC  WRC  VOB                                           |
+| DFEVN    | DDO  FFO  DFQ  DFP  DFR                                           |
+| PWTEVN   | PWO  PWQ  PWP  PWR                                                |
+| PW1EVN   | PW1O PW1Q PW1P PW1R                                               |
+| PW2EVN   | PW2O PW2Q PW2P PW2R                                               |
+| PW3EVN   | PW3O PW3Q PW3P PW3R                                               |
+| PW4EVN   | PW4O PW4Q PW4P PW4R                                               |
+| RREVN    | REQ6 REQ6_QM   REQ6_PC REQ6_RC                                    |
+| CTPEVN   | CDTP CDTP_QM   CDTP_PC CDTP_RC                                    |
+| REFEVN   | ROB  RQM  RPC  RRC                                                |
+|          |                                                                   |
+| PBACKG   | POE  PFC  <PFC_MSQ>                                               |
+| QBACKG   | QOE  QFC  <QFC_MSQ>                                               |
+| TBACKG   | TOE  TFC  <TFC_MSQ>                                               |
+| ZBACKG   | ZOE  ZFC  <ZFC_MSQ>                                               |
+| WBACKG   | WOE  UFC  VFC  <WFC_MSQ>                                          |
+| PWTBAK   | PWE  PWF  <PWF_MSQ>                                               |
+| PW1BAK   | PW1E PW1F <PW1F_MSQ>                                              |
+| PW2BAK   | PW2E PW2F <PW2F_MSQ>                                              |
+| PW3BAK   | PW3E PW3F <PW3F_MSQ>                                              |
+| PW4BAK   | PW4E PW4F <PW4F_MSQ>                                              |
+| RRBACKG  | REQ6_OE   REQ6_FC                                                 |
+| CTPBAK   | CDTP_OE   CDTP_FC                                                 |
+| REFBAK   | ROE  RFC                                                          |
+|          |                                                                   |
+| PPOSTP   | PAN       <PCLIM>                                                 |
+| QPOSTP   | QAN       <PCLIM>                                                 |
+| TPOSTP   | TAN       <PCLIM>                                                 |
+| ZPOSTP   | ZAN       <PCLIM>                                                 |
+| WPOSTP   | UAN  VAN  <PCLIM>                                                 |
+| PWTPST   | PWA                                                               |
+| PW1PST   | PW1A                                                              |
+| PW2PST   | PW2A                                                              |
+| PW3PST   | PW3A                                                              |
+| PW4PST   | PW4A                                                              |
+| RRPOSTP  | REQ6_AN                                                           |
+| CTPPST   | CDTP_AN                                                           |
+|          |                                                                   |
+| PCLIM    | PCL  PCS                                                          |
+| QCLIM    | QCL  QCS                                                          |
+| TCLIM    | TCL  TCS                                                          |
+| ZCLIM    | ZCL  ZCS                                                          |
+| WCLIM    | UCL  UCS  VCL  VCS                                                |
+|          |                                                                   |
+| PFC_MSQ  | PFC_MOD                                                           |
+| QFC_MSQ  | QFC_MOD                                                           |
+| TFC_MSQ  | TFC_MOD                                                           |
+| ZFC_MSQ  | ZFC_MOD                                                           |
+| WFC_MSQ  | UFC_MOD   VFC_MOD                                                 |
+| PWF_MSQ  | PWF_MOD                                                           |
+| PW1F_MSQ | PW1F_MOD                                                          |
+| PW2F_MSQ | PW2F_MOD                                                          |
+| PW3F_MSQ | PW3F_MOD                                                          |
+| PW4F_MSQ | PW4F_MOD                                                          |
+|          |                                                                   |
+|------------------------------------------------------------------------------|
+| MNEMONIC | SCAL | REFERENCE   | BIT | UNITS                    |-------------|
+|----------|------|-------------|-----|--------------------------|-------------|
+|          |      |             |     |                          |-------------|
+| SID      |    0 |           0 |  64 | CCITT IA5                |-------------|
+| XOB      |    2 |      -18000 |  16 | DEG E                    |-------------|
+| XDR      |    2 |      -18000 |  16 | DEG E                    |-------------|
+| YOB      |    2 |       -9000 |  15 | DEG N                    |-------------|
+| YDR      |    2 |       -9000 |  15 | DEG N                    |-------------|
+| RPT      |    3 |           0 |  16 | HOURS                    |-------------|
+| DHR      |    3 |      -24000 |  16 | HOURS                    |-------------|
+| TCOR     |    0 |           0 |   2 | CODE TABLE               |-------------|
+| RCT      |    2 |           0 |  12 | HOURS                    |-------------|
+| HRDR     |    3 |      -24000 |  16 | HOURS                    |-------------|
+| ELV      |    0 |       -1000 |  17 | METER                    |-------------|
+| TYP      |    0 |           0 |   9 | CODE TABLE               |-------------|
+| T29      |    0 |           0 |  10 | CODE TABLE               |-------------|
+| TSB      |    0 |           0 |   2 | CODE TABLE               |-------------|
+| ITP      |    0 |           0 |   8 | CODE TABLE               |-------------|
+| SIRC     |    0 |           0 |   4 | CODE TABLE               |-------------|
+| SQN      |    0 |           0 |  17 | NUMERIC                  |-------------|
+| ACAV     |    0 |           0 |  16 | NUMERIC                  |-------------|
+| ATRN     |    0 |           0 |  11 | NUMERIC                  |-------------|
+| CTCN     |    0 |           0 |   7 | NUMERIC                  |-------------|
+| SPRR     |    3 |           0 |  10 | NUMERIC                  |-------------|
+| SAID     |    0 |           0 |  10 | CODE TABLE               |-------------|
+|          |      |             |     |                          |-------------|
+| CAT      |    0 |           0 |   6 | CODE TABLE               |-------------|
+|          |      |             |     |                          |-------------|
+| POB      |    1 |           0 |  14 | MB                       |-------------|
+| PFC      |    1 |           0 |  14 | MB                       |-------------|
+| PAN      |    1 |           0 |  14 | MB                       |-------------|
+| PCL      |    1 |           0 |  14 | MB                       |-------------|
+| POE      |    1 |           0 |  14 | MB                       |-------------|
+| PCS      |    1 |           0 |  14 | MB                       |-------------|
+| PMO      |    1 |           0 |  14 | MB                       |-------------|
+| PQM      |    0 |           0 |   5 | CODE TABLE               |-------------|
+| PMQ      |    0 |           0 |   5 | CODE TABLE               |-------------|
+| PPC      |    0 |           0 |   4 | CODE TABLE               |-------------|
+| PRC      |    0 |           0 |  10 | CODE TABLE               |-------------|
+|          |      |             |     |                          |-------------|
+| ROB      |    1 |           0 |  14 | N                        |-------------|
+| RFC      |    1 |           0 |  14 | N                        |-------------|
+| ROE      |    1 |           0 |  14 | N                        |-------------|
+| RQM      |    0 |           0 |   5 | CODE TABLE               |-------------|
+| RPC      |    0 |           0 |   4 | CODE TABLE               |-------------|
+| RRC      |    0 |           0 |  10 | CODE TABLE               |-------------|
+|          |      |             |     |                          |-------------|
+| PRSS     |   -1 |           0 |  14 | PASCALS                  |-------------|
+|          |      |             |     |                          |-------------|
+| ALSE     |   -1 |           0 |  14 | PASCALS                  |-------------|
+|          |      |             |     |                          |-------------|
+| RFFL     |    0 |           0 |   8 | CODE TABLE               |-------------|
+|          |      |             |     |                          |-------------|
+| POAF     |    0 |           0 |   3 | CODE TABLE               |-------------|
+| DGOT     |    0 |           0 |   4 | CODE TABLE               |-------------|
+| TRBX10   |    0 |           0 |   6 | CODE TABLE               |-------------|
+| TRBX21   |    0 |           0 |   6 | CODE TABLE               |-------------|
+| TRBX32   |    0 |           0 |   6 | CODE TABLE               |-------------|
+| TRBX43   |    0 |           0 |   6 | CODE TABLE               |-------------|
+|          |      |             |     |                          |-------------|
+| QOB      |    0 |           0 |  16 | MG/KG                    |-------------|
+| QFC      |    0 |           0 |  16 | MG/KG                    |-------------|
+| QAN      |    0 |           0 |  16 | MG/KG                    |-------------|
+| QCL      |    0 |           0 |  16 | MG/KG                    |-------------|
+| QOE      |    0 |           0 |  16 | PERCENT DIVIDED BY 10    |-------------|
+| QCS      |    0 |           0 |  16 | MG/KG                    |-------------|
+| QQM      |    0 |           0 |   5 | CODE TABLE               |-------------|
+| QPC      |    0 |           0 |   4 | CODE TABLE               |-------------|
+| QRC      |    0 |           0 |  10 | CODE TABLE               |-------------|
+|          |      |             |     |                          |-------------|
+| TOB      |    1 |       -2732 |  14 | DEG C                    |-------------|
+| TVO      |    1 |       -2732 |  14 | DEG C                    |-------------|
+| TDO      |    1 |       -2732 |  14 | DEG C                    |-------------|
+| TFC      |    1 |       -2732 |  14 | DEG C                    |-------------|
+| TAN      |    1 |       -2732 |  14 | DEG C                    |-------------|
+| TCL      |    1 |       -2732 |  14 | DEG C                    |-------------|
+| TOE      |    1 |           0 |  10 | DEG C                    |-------------|
+| TCS      |    1 |           0 |  10 | DEG C                    |-------------|
+| TQM      |    0 |           0 |   5 | CODE TABLE               |-------------|
+| TPC      |    0 |           0 |   4 | CODE TABLE               |-------------|
+| TRC      |    0 |           0 |  10 | CODE TABLE               |-------------|
+|          |      |             |     |                          |-------------|
+| GCDTT    |    2 |           0 |  16 | DEGREES KELVIN           |-------------|
+|          |      |             |     |                          |-------------|
+| ZOB      |    0 |       -1000 |  17 | METER                    |-------------|
+| ZFC      |    0 |       -1000 |  17 | METER                    |-------------|
+| ZAN      |    0 |       -1000 |  17 | METER                    |-------------|
+| ZCL      |    0 |       -1000 |  17 | METER                    |-------------|
+| ZOE      |    0 |           0 |  10 | METER                    |-------------|
+| ZCS      |    0 |           0 |  10 | METER                    |-------------|
+| ZQM      |    0 |           0 |   5 | CODE TABLE               |-------------|
+| ZPC      |    0 |           0 |   4 | CODE TABLE               |-------------|
+| ZRC      |    0 |           0 |  10 | CODE TABLE               |-------------|
+|          |      |             |     |                          |-------------|
+| DDO      |    0 |           0 |   9 | DEGREES                  |-------------|
+| SOB      |    1 |           0 |  12 | M/S                      |-------------|
+| UOB      |    1 |       -4096 |  13 | M/S                      |-------------|
+| VOB      |    1 |       -4096 |  13 | M/S                      |-------------|
+| FFO      |    0 |           0 |   9 | KNOTS                    |-------------|
+| UFC      |    1 |       -4096 |  13 | M/S                      |-------------|
+| VFC      |    1 |       -4096 |  13 | M/S                      |-------------|
+| UAN      |    1 |       -4096 |  13 | M/S                      |-------------|
+| VAN      |    1 |       -4096 |  13 | M/S                      |-------------|
+| UCL      |    1 |       -4096 |  13 | M/S                      |-------------|
+| VCL      |    1 |       -4096 |  13 | M/S                      |-------------|
+| WOE      |    1 |           0 |  10 | M/S                      |-------------|
+| UCS      |    1 |           0 |  10 | M/S                      |-------------|
+| VCS      |    1 |           0 |  10 | M/S                      |-------------|
+| WQM      |    0 |           0 |   5 | CODE TABLE               |-------------|
+| WPC      |    0 |           0 |   4 | CODE TABLE               |-------------|
+| WRC      |    0 |           0 |  10 | CODE TABLE               |-------------|
+| DFQ      |    0 |           0 |   5 | CODE TABLE               |-------------|
+| DFP      |    0 |           0 |   4 | CODE TABLE               |-------------|
+| DFR      |    0 |           0 |  10 | CODE TABLE               |-------------|
+| SQM      |    0 |           0 |   5 | CODE TABLE               |-------------|
+|          |      |             |     |                          |-------------|
+| PWO      |    1 |           0 |  10 | MM                       |-------------|
+| PWF      |    1 |           0 |  10 | MM                       |-------------|
+| PWA      |    1 |           0 |  10 | MM                       |-------------|
+| PWE      |    1 |           0 |  10 | MM                       |-------------|
+| PWQ      |    0 |           0 |   5 | CODE TABLE               |-------------|
+| PWP      |    0 |           0 |   4 | CODE TABLE               |-------------|
+| PWR      |    0 |           0 |  10 | CODE TABLE               |-------------|
+| PW1O     |    1 |           0 |  10 | MM                       |-------------|
+| PW1F     |    1 |           0 |  10 | MM                       |-------------|
+| PW1A     |    1 |           0 |  10 | MM                       |-------------|
+| PW1E     |    1 |           0 |  10 | MM                       |-------------|
+| PW1Q     |    0 |           0 |   5 | CODE TABLE               |-------------|
+| PW1P     |    0 |           0 |   4 | CODE TABLE               |-------------|
+| PW1R     |    0 |           0 |  10 | CODE TABLE               |-------------|
+| PW2O     |    1 |           0 |  10 | MM                       |-------------|
+| PW2F     |    1 |           0 |  10 | MM                       |-------------|
+| PW2A     |    1 |           0 |  10 | MM                       |-------------|
+| PW2E     |    1 |           0 |  10 | MM                       |-------------|
+| PW2Q     |    0 |           0 |   5 | CODE TABLE               |-------------|
+| PW2P     |    0 |           0 |   4 | CODE TABLE               |-------------|
+| PW2R     |    0 |           0 |  10 | CODE TABLE               |-------------|
+| PW3O     |    1 |           0 |  10 | MM                       |-------------|
+| PW3F     |    1 |           0 |  10 | MM                       |-------------|
+| PW3A     |    1 |           0 |  10 | MM                       |-------------|
+| PW3E     |    1 |           0 |  10 | MM                       |-------------|
+| PW3Q     |    0 |           0 |   5 | CODE TABLE               |-------------|
+| PW3P     |    0 |           0 |   4 | CODE TABLE               |-------------|
+| PW3R     |    0 |           0 |  10 | CODE TABLE               |-------------|
+| PW4O     |    1 |           0 |  10 | MM                       |-------------|
+| PW4F     |    1 |           0 |  10 | MM                       |-------------|
+| PW4A     |    1 |           0 |  10 | MM                       |-------------|
+| PW4E     |    1 |           0 |  10 | MM                       |-------------|
+| PW4Q     |    0 |           0 |   5 | CODE TABLE               |-------------|
+| PW4P     |    0 |           0 |   4 | CODE TABLE               |-------------|
+| PW4R     |    0 |           0 |  10 | CODE TABLE               |-------------|
+|          |      |             |     |                          |-------------|
+| REQ6     |    6 |           0 |  18 | KG / ((M ** 2)*SEC)      |-------------|
+| REQ6_FC  |    6 |           0 |  18 | KG / ((M ** 2)*SEC)      |-------------|
+| REQ6_AN  |    6 |           0 |  18 | KG / ((M ** 2)*SEC)      |-------------|
+| REQ6_OE  |    6 |           0 |  18 | KG / ((M ** 2)*SEC)      |-------------|
+| REQ6_QM  |    0 |           0 |   5 | CODE TABLE               |-------------|
+| REQ6_PC  |    0 |           0 |   4 | CODE TABLE               |-------------|
+| REQ6_RC  |    0 |           0 |  10 | CODE TABLE               |-------------|
+|          |      |             |     |                          |-------------|
+| TOCC     |    0 |           0 |   7 | PERCENT                  |-------------|
+| CDTP     |   -1 |           0 |  14 | PASCALS                  |-------------|
+| CDTP_FC  |   -1 |           0 |  14 | PASCALS                  |-------------|
+| CDTP_AN  |   -1 |           0 |  14 | PASCALS                  |-------------|
+| CDTP_OE  |   -1 |           0 |  14 | PASCALS                  |-------------|
+| CDTP_QM  |    0 |           0 |   5 | CODE TABLE               |-------------|
+| CDTP_PC  |    0 |           0 |   4 | CODE TABLE               |-------------|
+| CDTP_RC  |    0 |           0 |  10 | CODE TABLE               |-------------|
+|          |      |             |     |                          |-------------|
+| ELEV     |    2 |       -9000 |  15 | DEGREE                   |-------------|
+| SOEL     |    2 |       -9000 |  15 | DEGREE                   |-------------|
+| OZON     |    0 |           0 |  10 | DOBSON UNITS             |-------------|
+| TMSK     |    1 |           0 |  12 | DEGREES KELVIN           |-------------|
+| CLAM     |    0 |           0 |   4 | CODE TABLE               |-------------|
+| CHNM     |    0 |           0 |   6 | NUMERIC                  |-------------|
+| TMBR     |    2 |           0 |  19 | KELVIN                   |-------------|
+|          |      |             |     |                          |-------------|
+| A1       |    1 |           0 |  12 | DEGREE                   |-------------|
+| A2       |    1 |           0 |  12 | DEGREE                   |-------------|
+| A3       |    1 |           0 |  12 | DEGREE                   |-------------|
+|          |      |             |     |                          |-------------|
+| B1       |    1 |           0 |  12 | DEGREE                   |-------------|
+| B2       |    1 |           0 |  12 | DEGREE                   |-------------|
+| B3       |    1 |           0 |  12 | DEGREE                   |-------------|
+|          |      |             |     |                          |-------------|
+| S1       |    2 |       -5000 |  13 | BACKSCATTER              |-------------|
+| S2       |    2 |       -5000 |  13 | BACKSCATTER              |-------------|
+| S3       |    2 |       -5000 |  13 | BACKSCATTER              |-------------|
+|          |      |             |     |                          |-------------|
+| E1       |    0 |           0 |   7 | PERCENT                  |-------------|
+| E2       |    0 |           0 |   7 | PERCENT                  |-------------|
+| E3       |    0 |           0 |   7 | PERCENT                  |-------------|
+|          |      |             |     |                          |-------------|
+| PFC_MOD  |    1 |           0 |  14 | MB                       |-------------|
+| ZFC_MOD  |    0 |       -1000 |  17 | METER                    |-------------|
+| UFC_MOD  |    1 |       -4096 |  13 | M/S                      |-------------|
+| VFC_MOD  |    1 |       -4096 |  13 | M/S                      |-------------|
+| TFC_MOD  |    1 |       -2732 |  14 | DEG C                    |-------------|
+| QFC_MOD  |    0 |           0 |  16 | MG/KG                    |-------------|
+| PWF_MOD  |    1 |           0 |  10 | MM                       |-------------|
+| PW1F_MOD |    1 |           0 |  10 | MM                       |-------------|
+| PW2F_MOD |    1 |           0 |  10 | MM                       |-------------|
+| PW3F_MOD |    1 |           0 |  10 | MM                       |-------------|
+| PW4F_MOD |    1 |           0 |  10 | MM                       |-------------|
+`------------------------------------------------------------------------------'

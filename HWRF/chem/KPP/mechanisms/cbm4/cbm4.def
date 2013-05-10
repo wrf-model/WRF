@@ -1,0 +1,4 @@
+#include atoms
+#include ./cbm4.spc
+#include ./cbm4.eqn
+

@@ -640,7 +640,7 @@ contains
 
 
                    !Pmsl(i,j)=P/exp(-Z*post_G/(post_RD*presTv(i,j,ip)))
-                   Pmsl(i,j)=(Z*newP-newZ*P)/-dZ
+                   Pmsl(i,j)=(Z*newP-newZ*P)/(-dZ)
 10221              format('  result: ',F0.3)
                    !write(0,10221) Pmsl(i,j)
 !                   method(i,j)=ip

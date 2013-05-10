@@ -738,6 +738,8 @@
                               rainprod, evapprod, &
 #endif
                               refl_10cm, diagflag, do_radar_ref,      &
+                              re_cloud, re_ice, re_snow,              &
+                              has_reqc, has_reqi, has_reqs,           &
                               ids,ide, jds,jde, kds,kde, &             ! domain dims
                               ims,ime, jms,jme, kms,kme, &             ! memory dims
                               its,ite, jts,jte, kts,kte)               ! tile dims
@@ -750,6 +752,9 @@
                             its,ite, jts,jte, kts,kte
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           qv, qc, qr, qi, qs, qg, ni, nr, th
+      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
+                          re_cloud, re_ice, re_snow
+      INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
 #ifdef WRF_CHEM
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           rainprod, evapprod
@@ -768,7 +773,8 @@
 !..Local variables
       REAL, DIMENSION(kts:kte):: &
                           qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
-                          nr1d, t1d, p1d, dz1d, dBZ
+                          nr1d, nc1d, t1d, p1d, dz1d, dBZ
+      REAL, DIMENSION(kts:kte):: re_qc1d, re_qi1d, re_qs1d
 #ifdef WRF_CHEM
       REAL, DIMENSION(kts:kte):: &
                           rainprod1d, evapprod1d
@@ -889,6 +895,9 @@
          SR(i,j) = (pptsnow + pptgraul + pptice)/(RAINNCV(i,j)+1.e-12)
 
          do k = kts, kte
+            nc1d(k) = Nt_c
+         enddo
+         do k = kts, kte
             qv(i,k,j) = qv1d(k)
             qc(i,k,j) = qc1d(k)
             qi(i,k,j) = qi1d(k)
@@ -973,14 +982,16 @@
              CALL wrf_debug(150, mp_debug)
             endif
             if (qv1d(k) .lt. 0.0) then
-             if (k.lt.kte-2 .and. k.gt.kts+1) then
-                qv(i,k,j) = 0.5*(qv(i,k-1,j) + qv(i,k+1,j))
-             else
-                qv(i,k,j) = 1.E-7
-             endif
              write(mp_debug,*) 'WARNING, negative qv ', qv1d(k),        &
                         ' at i,j,k=', i,j,k
              CALL wrf_debug(150, mp_debug)
+             if (k.lt.kte-2 .and. k.gt.kts+1) then
+                write(mp_debug,*) '   below and above are: ', qv(i,k-1,j), qv(i,k+1,j)
+                CALL wrf_debug(150, mp_debug)
+                qv(i,k,j) = MAX(1.E-7, 0.5*(qv(i,k-1,j) + qv(i,k+1,j)))
+             else
+                qv(i,k,j) = 1.E-7
+             endif
             endif
          enddo
 
@@ -993,6 +1004,22 @@
           enddo
          endif
          ENDIF
+
+         IF ( (has_reqc.ne.0) .and. (has_reqi.ne.0) .and. (has_reqs.ne.0) ) THEN
+          do k = kts, kte
+             re_qc1d(k) = 2.51E-6
+             re_qi1d(k) = 5.01E-6
+             re_qs1d(k) = 10.01E-6
+          enddo
+          call calc_effectRad (t1d, p1d, qv1d, qc1d, nc1d, qi1d, ni1d, qs1d,  &
+                      re_qc1d, re_qi1d, re_qs1d, kts, kte)
+          do k = kts, kte
+             re_cloud(i,k,j) = MAX(2.51E-6, MIN(re_qc1d(k), 50.E-6))
+             re_ice(i,k,j)   = MAX(5.01E-6, MIN(re_qi1d(k), 125.E-6))
+             re_snow(i,k,j)  = MAX(10.E-6, MIN(re_qs1d(k), 999.E-6))
+          enddo
+         ENDIF
+
 
       enddo i_loop
       enddo j_loop
@@ -1792,6 +1819,10 @@
            pri_wfz(k) = tpi_qcfz(idx_c,idx_tc)*odts
            pri_wfz(k) = MIN(DBLE(rc(k)*odts), pri_wfz(k))
            pni_wfz(k) = tni_qcfz(idx_c,idx_tc)*odts
+           pni_wfz(k) = MIN(DBLE(Nt_c*odts), pri_wfz(k)/(2.*xm0i), &
+                                pni_wfz(k))
+          elseif (rc(k).gt. R1 .and. temp(k).lt.HGFR) then
+           pri_wfz(k) = rc(k)*odts
            pni_wfz(k) = MIN(DBLE(Nt_c*odts), pri_wfz(k)/(2.*xm0i), &
                                 pni_wfz(k))
           endif
@@ -3175,7 +3206,7 @@
                sum2 = 0.0d0
                sumn1 = 0.0d0
                sumn2 = 0.0d0
-               do n2 = 1, nbr
+               do n2 = nbr, 1, -1
                   N_r(n2) = N0_r*Dr(n2)**mu_r*DEXP(-lamr*Dr(n2))*dtr(n2)
                   vol = massr(n2)*orho_w
                   prob = 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp)
@@ -3186,6 +3217,7 @@
                      sumn2 = sumn2 + prob*N_r(n2)
                      sum2 = sum2 + prob*N_r(n2)*massr(n2)
                   endif
+                  if ((sum1+sum2) .ge. r_r(i)) EXIT
                enddo
                tpi_qrfz(i,j,k) = sum1
                tni_qrfz(i,j,k) = sumn1
@@ -3198,7 +3230,7 @@
             N0_c = 1.0D-18 * Nt_c*ocg1 * lamc**cce(1)
             sum1 = 0.0d0
             sumn2 = 0.0d0
-            do n = 1, nbc
+            do n = nbc, 1, -1
                y = Dc(n)*1.0D6
                vol = massc(n)*orho_w
                prob = 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp)
@@ -3206,6 +3238,7 @@
                N_c(n) = 1.0D24 * N_c(n)
                sumn2 = sumn2 + prob*N_c(n)
                sum1 = sum1 + prob*N_c(n)*massc(n)
+               if (sum1 .ge. r_c(i)) EXIT
             enddo
             tpi_qcfz(i,k) = sum1
             tni_qcfz(i,k) = sumn2
@@ -3636,6 +3669,111 @@
 
       END FUNCTION RSIF
 !+---+-----------------------------------------------------------------+
+
+!+---+-----------------------------------------------------------------+
+!..Compute _radiation_ effective radii of cloud water, ice, and snow.
+!.. These are entirely consistent with microphysics assumptions, not
+!.. constant or otherwise ad hoc as is internal to most radiation
+!.. schemes.  Since only the smallest snowflakes should impact
+!.. radiation, compute from first portion of complicated Field number
+!.. distribution, not the second part, which is the larger sizes.
+!+---+-----------------------------------------------------------------+
+
+      subroutine calc_effectRad (t1d, p1d, qv1d, qc1d, nc1d, qi1d, ni1d, qs1d,   &
+     &                re_qc1d, re_qi1d, re_qs1d, kts, kte)
+
+      IMPLICIT NONE
+
+!..Sub arguments
+      INTEGER, INTENT(IN):: kts, kte
+      REAL, DIMENSION(kts:kte), INTENT(IN):: &
+     &                    t1d, p1d, qv1d, qc1d, nc1d, qi1d, ni1d, qs1d
+      REAL, DIMENSION(kts:kte), INTENT(INOUT):: re_qc1d, re_qi1d, re_qs1d
+!..Local variables
+      INTEGER:: k
+      REAL, DIMENSION(kts:kte):: rho, rc, nc, ri, ni, rs
+      REAL:: smo2, smob, smoc
+      REAL:: tc0, loga_, a_, b_
+      DOUBLE PRECISION:: lamc, lami
+      LOGICAL:: has_qc, has_qi, has_qs
+      INTEGER:: inu_c
+      real, dimension(15), parameter:: g_ratio = (/24,60,120,210,336,   &
+     &                504,720,990,1320,1716,2184,2730,3360,4080,4896/)
+
+      has_qc = .false.
+      has_qi = .false.
+      has_qs = .false.
+
+      do k = kts, kte
+         rho(k) = 0.622*p1d(k)/(R*t1d(k)*(qv1d(k)+0.622))
+         rc(k) = MAX(R1, qc1d(k)*rho(k))
+         nc(k) = MAX(R2, nc1d(k)*rho(k))
+         if (rc(k).gt.R1 .and. nc(k).gt.R2) has_qc = .true.
+         ri(k) = MAX(R1, qi1d(k)*rho(k))
+         ni(k) = MAX(R2, ni1d(k)*rho(k))
+         if (ri(k).gt.R1 .and. ni(k).gt.R2) has_qi = .true.
+         rs(k) = MAX(R1, qs1d(k)*rho(k))
+         if (rs(k).gt.R1) has_qs = .true.
+      enddo
+
+      if (has_qc) then
+      do k = kts, kte
+         if (rc(k).le.R1 .or. nc(k).le.R2) CYCLE
+         inu_c = MIN(15, NINT(1000.E6/nc(k)) + 2)
+         lamc = (nc(k)*am_r*g_ratio(inu_c)/rc(k))**obmr
+         re_qc1d(k) = MAX(2.51E-6, MIN(SNGL(0.5D0 * DBLE(3.+inu_c)/lamc), 50.E-6))
+      enddo
+      endif
+
+      if (has_qi) then
+      do k = kts, kte
+         if (ri(k).le.R1 .or. ni(k).le.R2) CYCLE
+         lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
+         re_qi1d(k) = MAX(5.01E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
+      enddo
+      endif
+
+      if (has_qs) then
+      do k = kts, kte
+         if (rs(k).le.R1) CYCLE
+         tc0 = MIN(-0.1, t1d(k)-273.15)
+         smob = rs(k)*oams
+
+!..All other moments based on reference, 2nd moment.  If bm_s.ne.2,
+!.. then we must compute actual 2nd moment and use as reference.
+         if (bm_s.gt.(2.0-1.e-3) .and. bm_s.lt.(2.0+1.e-3)) then
+            smo2 = smob
+         else
+            loga_ = sa(1) + sa(2)*tc0 + sa(3)*bm_s &
+     &         + sa(4)*tc0*bm_s + sa(5)*tc0*tc0 &
+     &         + sa(6)*bm_s*bm_s + sa(7)*tc0*tc0*bm_s &
+     &         + sa(8)*tc0*bm_s*bm_s + sa(9)*tc0*tc0*tc0 &
+     &         + sa(10)*bm_s*bm_s*bm_s
+            a_ = 10.0**loga_
+            b_ = sb(1) + sb(2)*tc0 + sb(3)*bm_s &
+     &         + sb(4)*tc0*bm_s + sb(5)*tc0*tc0 &
+     &         + sb(6)*bm_s*bm_s + sb(7)*tc0*tc0*bm_s &
+     &         + sb(8)*tc0*bm_s*bm_s + sb(9)*tc0*tc0*tc0 &
+     &         + sb(10)*bm_s*bm_s*bm_s
+            smo2 = (smob/a_)**(1./b_)
+         endif
+!..Calculate bm_s+1 (th) moment.  Useful for diameter calcs.
+         loga_ = sa(1) + sa(2)*tc0 + sa(3)*cse(1) &
+     &         + sa(4)*tc0*cse(1) + sa(5)*tc0*tc0 &
+     &         + sa(6)*cse(1)*cse(1) + sa(7)*tc0*tc0*cse(1) &
+     &         + sa(8)*tc0*cse(1)*cse(1) + sa(9)*tc0*tc0*tc0 &
+     &         + sa(10)*cse(1)*cse(1)*cse(1)
+         a_ = 10.0**loga_
+         b_ = sb(1)+ sb(2)*tc0 + sb(3)*cse(1) + sb(4)*tc0*cse(1) &
+     &        + sb(5)*tc0*tc0 + sb(6)*cse(1)*cse(1) &
+     &        + sb(7)*tc0*tc0*cse(1) + sb(8)*tc0*cse(1)*cse(1) &
+     &        + sb(9)*tc0*tc0*tc0 + sb(10)*cse(1)*cse(1)*cse(1)
+         smoc = a_ * smo2**b_
+         re_qs1d(k) = MAX(10.E-6, MIN((3./Lam0) * (smoc/smob), 999.E-6))
+      enddo
+      endif
+
+      end subroutine calc_effectRad
 
 !+---+-----------------------------------------------------------------+
 !..Compute radar reflectivity assuming 10 cm wavelength radar and using

@@ -1550,6 +1550,8 @@
      &                ,grid%z,grid%sice,NUM_AEROSOLC,NUM_OZMIXM                  &
      &                ,GRID,CONFIG_FLAGS                               &
      &                ,RTHRATEN                                        &  
+     &                ,grid%re_cloud,grid%re_ice,grid%re_snow          &  ! G. Thompson
+     &                ,grid%has_reqc,grid%has_reqi,grid%has_reqs       &  ! G. Thompson
 #ifdef WRF_CHEM
      &                ,PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC            &
      &                ,TAUAER1, TAUAER2, TAUAER3, TAUAER4              & 
@@ -1666,7 +1668,7 @@
      &            ,grid%rc_mf                                          & ! QNSE
      &            ,GRID,CONFIG_FLAGS                                   &
      &            ,grid%ihe,grid%ihw,grid%ive,grid%ivw                 &
-     &            ,GRID%DISHEAT                                        &
+     &            ,GRID%DISHEAT,GRID%DKU3D,GRID%DKT3D                          &
      &            ,GRID%HPBL2D, GRID%EVAP2D, GRID%HEAT2D,GRID%RC2D               &  !S&P Kwon
      &            ,GRID%SFCHEADRT,GRID%INFXSRT,GRID%SOLDRAIN           &  !Hydrology, no-op right now
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
@@ -1791,6 +1793,7 @@
      &   (CONFIG_FLAGS%CU_PHYSICS.eq.KFETASCHEME .or.                     &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME .or.                       &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.NSASSCHEME .or.                       &
+     &   CONFIG_FLAGS%CU_PHYSICS.eq.MESO_SAS .or.                         &   !Kwon
      &   CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN                       ! 
 !
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -1894,6 +1897,7 @@
         IF(MOD(grid%ntsd, GRID%NCNVC).eq.0.and.                 &
      &    (CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME.or.            &
      &     CONFIG_FLAGS%CU_PHYSICS.eq.NSASSCHEME.or.            &
+     &     CONFIG_FLAGS%CU_PHYSICS.eq.MESO_SAS.or.              & !Kwon
      &     CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN 
 !emc_2010_bugfix_h50
 !
@@ -1951,6 +1955,8 @@
      &               ,grid%tbpvs_state                                      &
      &               ,grid%tbpvs0_state                                     &
      &               ,GRID,CONFIG_FLAGS                                &
+     &               ,grid%re_cloud,grid%re_ice,grid%re_snow           &  ! G. Thompson
+     &               ,grid%has_reqc,grid%has_reqi,grid%has_reqs        &  ! G. Thompson
      &               ,IDS,IDF,JDS,JDF,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)

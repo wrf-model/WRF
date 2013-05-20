@@ -592,12 +592,12 @@
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
 !-----------------------------------------------------------------------
 !
-#ifdef HWRF
-!zhang
-      IF(NTSD_current==0)THEN
-#else
+!!#ifdef HWRF
+!!!zhang
+!!      IF(NTSD_current==0)THEN
+!!#else
       IF(grid%ntsd==0)THEN
-#endif
+!!#endif
         FIRST=.TRUE.
 !       call hpm_init()
 #ifdef NMM_FIND_LOAD_IMBALANCE

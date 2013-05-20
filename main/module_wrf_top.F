@@ -52,6 +52,7 @@ MODULE module_wrf_top
 
    CHARACTER (LEN=80)      :: rstname
    CHARACTER (LEN=80)      :: message
+   CHARACTER (LEN=256) , PRIVATE :: a_message
 
    INTERFACE 
      SUBROUTINE Setup_Timekeeping( grid )
@@ -236,7 +237,10 @@ CONTAINS
    ALLOCATE( hostids(nproc) )
    ALLOCATE( budds(nproc) )
    CALL mpi_allgather( hostid, 1, MPI_INTEGER, hostids, 1, MPI_INTEGER, loccomm, ierr )
-   if ( ierr .NE. 0 ) write(0,*)__FILE__,__LINE__,'error in mpi_allgather ',ierr
+   IF ( ierr .NE. 0 ) THEN
+      write(a_message,*)__FILE__,__LINE__,'error in mpi_allgather ',ierr
+      CALL wrf_message ( a_message ) 
+   END IF
    budds = -1
    buddcounter = 0 
    ! mark the ones i am on the same node with

@@ -2690,11 +2690,13 @@ endif
                   grid%traj_long(icount) = grid%xlong(i,j)
                END IF
          
+#ifdef DM_PARALLEL
                grid%traj_i   (icount) = wrf_dm_max_real ( grid%traj_i   (icount) )
                grid%traj_j   (icount) = wrf_dm_max_real ( grid%traj_j   (icount) )
                grid%traj_k   (icount) = wrf_dm_max_real ( grid%traj_k   (icount) )
                grid%traj_lat (icount) = wrf_dm_max_real ( grid%traj_lat (icount) )
                grid%traj_long(icount) = wrf_dm_max_real ( grid%traj_long(icount) )
+#endif
          	      
                icount = icount + 1
                IF (icount .GT. config_flags%num_traj) THEN

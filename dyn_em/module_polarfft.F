@@ -2,6 +2,7 @@ MODULE module_polarfft
 
   USE module_model_constants
   USE module_wrf_error
+  CHARACTER (LEN=256) , PRIVATE :: a_message
 
 CONTAINS
 
@@ -576,14 +577,16 @@ SUBROUTINE polar_filter_fft_2d_ncar(nx,ny,fin,lat,filter_latitude,piggyback)
 
   call rfftmi(n,wsave,lensav,ier)
   IF(ier /= 0) THEN
-    write(0,*) ' error in rfftmi ',ier
+    write(a_message,*) ' error in rfftmi ',ier
+    CALL wrf_message ( a_message ) 
   END IF
 
 !  do the forward transform
 
   call rfftmf( lot, jump, n, inc, fin, lenr, wsave, lensav, work, lenwrk, ier )
   IF(ier /= 0) THEN
-    write(0,*) ' error in rfftmf ',ier
+    write(a_message,*) ' error in rfftmf ',ier
+    CALL wrf_message ( a_message ) 
   END IF
 
   if(MOD(n,2) == 0) then
@@ -639,7 +642,8 @@ SUBROUTINE polar_filter_fft_2d_ncar(nx,ny,fin,lat,filter_latitude,piggyback)
 
   call rfftmb( lot, jump, n, inc, fin, lenr, wsave, lensav, work, lenwrk, ier )
   IF(ier /= 0) THEN
-    write(0,*) ' error in rfftmb ',ier
+    write(a_message,*) ' error in rfftmb ',ier
+    CALL wrf_message ( a_message ) 
   END IF
 
 END SUBROUTINE polar_filter_fft_2d_ncar

@@ -239,8 +239,8 @@ state  real   VBWGT4       ij     dyn_nmm     1      -      r
 #end of HWRF: 
 
 #
-state  real   HLON        ij     dyn_nmm     1      -      h01d=(test_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)
-state  real   HLAT        ij     dyn_nmm     1      -      h01d=(test_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)
+state  real   HLON        ij     dyn_nmm     1      -      h01
+state  real   HLAT        ij     dyn_nmm     1      -      h01
 state  real   VLON        ij     dyn_nmm     1      -      irh
 state  real   VLAT        ij     dyn_nmm     1      -      irh
 
@@ -656,6 +656,7 @@ f=(DownAged2D:c%pdyn_smooth_age,n%pdyn_parent_age,c%pdyn_smooth)\
 state real winfo ijkb dyn_nmm 1 Z u=(NoInterp)d=(NoInterp) "winfo"  "Nest-parent interpolation/extrapolation weight" ""
 state integer iinfo ijkb dyn_nmm 1 Z u=(NoInterp)d=(NoInterp) "iinfo" "Nest-parent interpolation index" ""
 
+#                                               
 # table entries are of the form                                         
 #<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>   
 #
@@ -1274,7 +1275,7 @@ rconfig   integer     cu_physics          namelist,physics	max_domains    0     
 rconfig   integer shcu_physics            namelist,physics      max_domains    0       rh   "shcu_physics"  ""      ""
 rconfig   integer     cu_diag             namelist,physics      max_domains    0       rh       "cu_diag"            " additional t-averaged stuff for cuphys"      ""
 
-rconfig   integer vortex_tracker          namelist,physics      max_domains    1      -      "vortex_tracker" "Vortex Tracking Algorithm" ""
+rconfig   integer vortex_tracker          namelist,physics      max_domains    6      -      "vortex_tracker" "Vortex Tracking Algorithm" ""
 rconfig   real      gfs_alpha             namelist,physics      max_domains    1       irh      "boundary depth factor"  "" ""
 
 rconfig   real    CUDT                    namelist,physics	max_domains    0       h    "CUDT"          ""      ""

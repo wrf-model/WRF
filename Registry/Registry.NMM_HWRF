@@ -239,8 +239,8 @@ state  real   VBWGT4       ij     dyn_nmm     1      -      r
 #end of HWRF: 
 
 #
-state  real   HLON        ij     dyn_nmm     1      -      h01d=(test_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)
-state  real   HLAT        ij     dyn_nmm     1      -      h01d=(test_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4)
+state  real   HLON        ij     dyn_nmm     1      -      h01
+state  real   HLAT        ij     dyn_nmm     1      -      h01
 state  real   VLON        ij     dyn_nmm     1      -      irh
 state  real   VLAT        ij     dyn_nmm     1      -      irh
 

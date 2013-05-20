@@ -1734,11 +1734,11 @@ contains
           a=1-mod(JJ(i,j),2)
           nPD(i,j,1)=inPD(1,used)
           pdcheck=npd(i,j,1)+ptop+pdtop
-          if(pdcheck<50000.0 .or. pdcheck>105000.0) then
- 3131         format('Invalid output nest PD in C2N interpolation: PD(',I0,',',I0,') = ',F0.7,' which is ',F0.7,' Pa')
-              write(0,3131) i,j,nPD(i,j,1),pdcheck
-              call wrf_error_fatal('Invalid output nest PD')
-          endif
+ !          if(pdcheck<50000.0 .or. pdcheck>105000.0) then
+ ! 3131         format('Invalid output nest PD in C2N interpolation: PD(',I0,',',I0,') = ',F0.7,' which is ',F0.7,' Pa')
+ !              write(0,3131) i,j,nPD(i,j,1),pdcheck
+ !              call wrf_error_fatal('Invalid output nest PD')
+ !          endif
        enddo iloop2
     enddo bigj
 

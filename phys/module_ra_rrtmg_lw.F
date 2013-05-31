@@ -11402,7 +11402,6 @@ CONTAINS
                        p8w, p3d, pi3d,                            &
                        dz8w, tsk, t3d, t8w, rho3d, r, g,          &
                        icloud, warm_rain, cldfra3d,               &
-                       cldfra_mp_all,itimestep,is_CAMMGMP_used,   &
                        f_ice_phy, f_rain_phy,                     &
                        xland, xice, snow,                         &
                        qv3d, qc3d, qr3d,                          &
@@ -11433,13 +11432,13 @@ CONTAINS
 
    IMPLICIT NONE
 !------------------------------------------------------------------
-   LOGICAL, INTENT(IN )      ::        warm_rain, is_CAMMGMP_used
+   LOGICAL, INTENT(IN )      ::        warm_rain
 !
    INTEGER, INTENT(IN )      ::        ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
                                        its,ite, jts,jte, kts,kte
 
-   INTEGER, INTENT(IN )      ::        ICLOUD,itimestep
+   INTEGER, INTENT(IN )      ::        ICLOUD
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          INTENT(IN   ) ::                                   dz8w, &
@@ -11480,7 +11479,6 @@ CONTAINS
          OPTIONAL                                               , &
          INTENT(IN   ) ::                                         &
                                                         CLDFRA3D, &
-                                                   CLDFRA_MP_ALL, &
                                                             QV3D, &
                                                             QC3D, &
                                                             QR3D, &
@@ -11786,9 +11784,9 @@ CONTAINS
 
    IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
-     call wrf_debug( 0, message)
+     call wrf_debug( 1, message)
      WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2,' n2ovmr:',n2o,' ch4vmr:',ch4,' cfc11vmr:',cfc11,' cfc12vmr:',cfc12
-     call wrf_debug( 0, message)
+     call wrf_debug( 1, message)
    ENDIF
 
 #endif
@@ -11839,26 +11837,11 @@ CONTAINS
 ! moist variables
 
          IF (ICLOUD .ne. 0) THEN
-            if(.NOT.is_CAMMGMP_used) then
-               IF ( PRESENT( CLDFRA3D ) ) THEN
-                  DO K=kts,kte
-                     CLDFRA1D(k)=CLDFRA3D(I,K,J)
-                  ENDDO
-               ENDIF
-            else
-               !BSINGH: cloud fraction from CAMMGMP is being used (Mods by Po-Lun)
-               if (itimestep .eq. 1) then
-                  DO K=kts,kte
-                     CLDFRA1D(k) = CLDFRA3D(I,K,J)
-                  ENDDO
-               else
-                  DO K=kts,kte
-                     CLDFRA1D(k) = CLDFRA_MP_ALL(I,K,J) !PMA
-                  ENDDO
-               end if
-            endif
-
-            
+            IF ( PRESENT( CLDFRA3D ) ) THEN
+              DO K=kts,kte
+                 CLDFRA1D(k)=CLDFRA3D(I,K,J)
+              ENDDO
+            ENDIF
 
             IF (PRESENT(F_QC) .AND. PRESENT(QC3D)) THEN
               IF ( F_QC) THEN

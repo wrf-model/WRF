@@ -24,8 +24,10 @@ MODULE module_mp_wdm5
    REAL, PARAMETER, PRIVATE :: avts = 11.72       ! a constant for terminal velocity of snow
    REAL, PARAMETER, PRIVATE :: bvts = .41         ! a constant for terminal velocity of snow
    REAL, PARAMETER, PRIVATE :: n0smax =  1.e11    ! maximum n0s (t=-90C unlimited)
-   REAL, PARAMETER, PRIVATE :: lamdacmax = 1.e10  ! limited maximum value for slope parameter of cloud water 
-   REAL, PARAMETER, PRIVATE :: lamdarmax = 1.e8   ! limited maximum value for slope parameter of rain
+   REAL, PARAMETER, PRIVATE :: lamdacmax = 5.0e5  ! limited maximum value for slope parameter of cloud water
+   REAL, PARAMETER, PRIVATE :: lamdacmin = 2.0e4  ! limited minimum value for slope parameter of cloud water
+   REAL, PARAMETER, PRIVATE :: lamdarmax = 5.0e4  ! limited maximum value for slope parameter of rain
+   REAL, PARAMETER, PRIVATE :: lamdarmin = 2.0e3  ! limited minimum value for slope parameter of rain
    REAL, PARAMETER, PRIVATE :: lamdasmax = 1.e5   ! limited maximum value for slope parameter of snow
    REAL, PARAMETER, PRIVATE :: lamdagmax = 6.e4   ! limited maximum value for slope parameter of graupel
    REAL, PARAMETER, PRIVATE :: dicon = 11.9       ! constant for the cloud-ice diamter
@@ -365,6 +367,10 @@ CONTAINS
         works
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
         den_tmp, delz_tmp, ncr_tmp
+  REAL, DIMENSION( its:ite , kts:kte ) ::                         &
+        lamdr_tmp
+  REAL, DIMENSION( its:ite , kts:kte ) ::                         &
+        lamdc_tmp
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
               falkc, work1c, work2c, fallc
   REAL, DIMENSION( its:ite , kts:kte ) ::                         &
@@ -1520,6 +1526,28 @@ CONTAINS
         do i = its, ite
           if(qci(i,k,1).le.qmin) qci(i,k,1) = 0.0
           if(qci(i,k,2).le.qmin) qci(i,k,2) = 0.0
+          if(qrs(i,k,1).ge.qcrmin .and. ncr(i,k,3) .ge. nrmin) then
+            lamdr_tmp(i,k) = exp(log(((pidnr*ncr(i,k,3))                       &
+                         /(den(i,k)*qrs(i,k,1))))*((.33333333)))
+            if(lamdr_tmp(i,k) .le. lamdarmin) then
+              lamdr_tmp(i,k) = lamdarmin
+              ncr(i,k,3) = den(i,k)*qrs(i,k,1)*lamdr_tmp(i,k)**3/pidnr
+            elseif(lamdr_tmp(i,k) .ge. lamdarmax) then
+              lamdr_tmp(i,k) = lamdarmax
+              ncr(i,k,3) = den(i,k)*qrs(i,k,1)*lamdr_tmp(i,k)**3/pidnr
+            endif
+          endif
+          if(qci(i,k,1).ge.qmin .and. ncr(i,k,2) .ge. ncmin ) then
+            lamdc_tmp(i,k) = exp(log(((pidnc*ncr(i,k,2))                       &
+                         /(den(i,k)*qci(i,k,1))))*((.33333333)))
+            if(lamdc_tmp(i,k) .le. lamdacmin) then
+              lamdc_tmp(i,k) = lamdacmin
+              ncr(i,k,2) = den(i,k)*qci(i,k,1)*lamdc_tmp(i,k)**3/pidnc
+            elseif(lamdc_tmp(i,k) .ge. lamdacmax) then
+              lamdc_tmp(i,k) = lamdacmax
+              ncr(i,k,2) = den(i,k)*qci(i,k,1)*lamdc_tmp(i,k)**3/pidnc
+            endif
+          endif
         enddo
       enddo
       enddo                  ! big loops

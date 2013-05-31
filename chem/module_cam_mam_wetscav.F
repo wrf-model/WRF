@@ -54,7 +54,7 @@ contains
        prain3d,nevapr3d,rate1ord_cw2pr_st3d,shfrc3d,cmfmc3d,cmfmc2_3d,     &
        evapcsh3d,icwmrsh3d,rprdsh3d,evapcdp3d,icwmrdp3d,rprddp3d,          &
        qs_curr, f_ice_phy,f_rain_phy,config_flags,cldfra_mp_all,cldfrai,   &
-       cldfral,cldfra,                                                     &
+       cldfral,cldfra,is_CAMMGMP_used,                                     &
        ids,ide, jds,jde, kds,kde,                                          &
        ims,ime, jms,jme, kms,kme,                                          &
        its,ite, jts,jte, kts,kte,                                          &
@@ -80,7 +80,7 @@ contains
     use module_mp_cammgmp_driver,  only: physics_update, physics_ptend_init
     use module_cam_support,        only: pcnst =>pcnst_runtime, pcols, pver
     use module_state_description,  only: num_chem, param_first_scalar,F_QC, F_QI, F_QV, F_QS, &
-         CAMZMSCHEME, CAMUWSHCUSCHEME, CAMMGMPSCHEME 
+         CAMZMSCHEME, CAMUWSHCUSCHEME
     use module_data_cam_mam_asect, only: lptr_chem_to_q, lptr_chem_to_qqcw, factconv_chem_to_q, waterptr_aer
     use wetdep,                    only: clddiag
 #if ( defined TROPCHEM || defined MODAL_AERO )
@@ -99,7 +99,9 @@ contains
     !
     !
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    
+
+    logical, intent(in) :: is_CAMMGMP_used
+
     integer, intent(in) :: itimestep                           !Time step number
     integer, intent(in) :: ids,ide, jds,jde, kds,kde
     integer, intent(in) :: ims,ime, jms,jme, kms,kme
@@ -150,7 +152,7 @@ contains
     real, dimension( ims:ime, kms:kme, jms:jme, num_chem ),   intent(inout) :: chem     !Chem array
 
     !3D-Intent-out-real array
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: fracis3d      !Fraction of transported species that are insoluble
+    real, dimension( ims:ime, kms:kme, jms:jme, pcnst ), intent(out) :: fracis3d      !Fraction of transported species that are insoluble
 
     !Local variable specific to CAM 
     real(r8) :: dt                      !Time step
@@ -334,7 +336,7 @@ contains
              evapr(1,kflip)       = nevapr3d(iw,kw,jw)                           !Evaporation rate of rain + snow (kg/kg/s)
              
              rate1ord_cw2pr_st(1,kflip) = rate1ord_cw2pr_st3d(iw,kw,jw)          !1st order rate for direct conversion of strat. cloud water to precip (1/s)
-             if(config_flags%mp_physics == CAMMGMPSCHEME) then
+             if(is_CAMMGMP_used) then
                 cldn(1,kflip)              = cldfra_mp_all(iw,kw,jw)                !Cloud fraction
              else
                 cldn(1,kflip)              = cldfra(iw,kw,jw)
@@ -414,7 +416,7 @@ contains
           !Balwinder.Singh@pnnl.gov: Changed the arguments to the following 
           ! call in CAM so that 'state','ptend' and 'cam_out' data structures are not 
           ! passed into the call.
-          
+          fracis(:,:,:) = 1.0_r8
           call mz_aero_wet_intr (lchnk, ncol, state_q,                 &
                state_pdel, state_pmid, state_t, ptend_name,            &
                ptend_lq, ptend_q, nstep, dt, cme, prain, evapr, cldv,  &
@@ -443,18 +445,20 @@ contains
              qi_curr(iw,kw,jw)       = state_q(1,kflip,3) * multFrc 
              nc3d(iw,kw,jw)          = state_q(1,kflip,4) * multFrc  
              ni3d(iw,kw,jw)          = state_q(1,kflip,5) * multFrc
-             
+             do l = 1 ,5
+                fracis3d(iw,kw,jw,l)     = fracis(1,kflip,l)          !Fraction of transported species that are insoluble             
+             enddo
              do l = p1st, num_chem
                 l2 = lptr_chem_to_q(l)
                 if ((l2 >= 1) .and. (l2 <= pcnst)) then
                    chem(iw,kw,jw,l) = state_q(1,kflip,l2)/factconv_chem_to_q(l)
+                   fracis3d(iw,kw,jw,l2)     = fracis(1,kflip,l2)          !Fraction of transported species that are insoluble             
                 end if
                 l2 = lptr_chem_to_qqcw(l)
                 if ((l2 >= 1) .and. (l2 <= pcnst)) then
                    chem(iw,kw,jw,l) = qqcw(1,kflip,l2)/factconv_chem_to_q(l)
                 end if
              end do ! l
-             !fracis3d(iw,kw,jw)     = fracis(1,kflip)          !Fraction of transported species that are insoluble
           end do
           
        enddo !iw loop

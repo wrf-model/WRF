@@ -60,28 +60,28 @@ rconfig   integer ntracers                namelist,physics     1              4 
 
 # option 2
 state   real    -     ijkf  szj   1  -  - - - 
-state   real    szj1  ijkf  szj   1  -  - "szj1" "szj" "units"
-state   real    szj2  ijkf  szj   1  -  - "szj2" "szj" "units"
-state   real    szj3  ijkf  szj   1  -  - "szj3" "szj" "units"
-state   real    szj4  ijkf  szj   1  -  - "szj4" "szj" "units"
+state   real    szj1  ijkf  szj   1  -  r "szj1" "szj" "units"
+state   real    szj2  ijkf  szj   1  -  r "szj2" "szj" "units"
+state   real    szj3  ijkf  szj   1  -  r "szj3" "szj" "units"
+state   real    szj4  ijkf  szj   1  -  r "szj4" "szj" "units"
 
 state   real    -     ijkf  s1z   1  -  - - -
-state   real    s1z1  ijkf  s1z   1  -  - "s1z1" "s1z" "units"
-state   real    s1z2  ijkf  s1z   1  -  - "s1z2" "s1z" "units"
-state   real    s1z3  ijkf  s1z   1  -  - "s1z3" "s1z" "units"
-state   real    s1z4  ijkf  s1z   1  -  - "s1z4" "s1z" "units"
+state   real    s1z1  ijkf  s1z   1  -  r "s1z1" "s1z" "units"
+state   real    s1z2  ijkf  s1z   1  -  r "s1z2" "s1z" "units"
+state   real    s1z3  ijkf  s1z   1  -  r "s1z3" "s1z" "units"
+state   real    s1z4  ijkf  s1z   1  -  r "s1z4" "s1z" "units"
 
 state   real    -     ijkf  spz   1  -  - - - 
-state   real    spz1  ijkf  spz   1  -  - "spz1" "spz" "units"
-state   real    spz2  ijkf  spz   1  -  - "spz2" "spz" "units"
-state   real    spz3  ijkf  spz   1  -  - "spz3" "spz" "units"
-state   real    spz4  ijkf  spz   1  -  - "spz4" "spz" "units"
+state   real    spz1  ijkf  spz   1  -  r "spz1" "spz" "units"
+state   real    spz2  ijkf  spz   1  -  r "spz2" "spz" "units"
+state   real    spz3  ijkf  spz   1  -  r "spz3" "spz" "units"
+state   real    spz4  ijkf  spz   1  -  r "spz4" "spz" "units"
 
 state   real    -     ijkf  tcs   1  -  - - - 
-state   real    tcs1  ijkf  tcs   1  -  - "tcs1" "tcs" "units"
-state   real    tcs2  ijkf  tcs   1  -  - "tcs2" "tcs" "units"
-state   real    tcs3  ijkf  tcs   1  -  - "tcs3" "tcs" "units"
-state   real    tcs4  ijkf  tcs   1  -  - "tcs4" "tcs" "units"
+state   real    tcs1  ijkf  tcs   1  -  r "tcs1" "tcs" "units"
+state   real    tcs2  ijkf  tcs   1  -  r "tcs2" "tcs" "units"
+state   real    tcs3  ijkf  tcs   1  -  r "tcs3" "tcs" "units"
+state   real    tcs4  ijkf  tcs   1  -  r "tcs4" "tcs" "units"
 
 package tracer_option_2 ntracers==4 - szj:szj1,szj2,szj3,szj4;s1z:s1z1,s1z2,s1z3,s1z4;spz:spz1,spz2,spz3,spz4;tcs:tcs1,tcs2,tcs3,tcs4
 
@@ -256,16 +256,16 @@ state  real   pt        -      dyn_nmm     -      -      i01rh   "PT"      "Pres
 #
 # module_CONTIN
 #
-state  real   pdsl      ij     dyn_nmm     1      -      -       "PDSL"    "Sigma-domain pressure at sigma=1"           "Pa"
-state  real   pdslo     ij     dyn_nmm     1      -      -       "PDSLO"   "PDSL from previous timestep"                "Pa"
+state  real   pdsl      ij     dyn_nmm     1      -      r       "PDSL"    "Sigma-domain pressure at sigma=1"           "Pa"
+state  real   pdslo     ij     dyn_nmm     1      -      r       "PDSLO"   "PDSL from previous timestep"                "Pa"
 state  real   psdt      ij     dyn_nmm     1      -      r       "PSDT"    "Surface pressure tendency"                  "Pa s-1"
 state  real   div       ijk    dyn_nmm     1      -      r       "DIV"     "Divergence"                                 "Pa s-1"
-state  real   few       ijk    dyn_nmm     1      -      -       "FEW"     "Integrated east-west mass flux"             "Pa m2 s-1"
-state  real   fne       ijk    dyn_nmm     1      -      -       "FNE"     "Integrated northeast-southwest mass flux"   "Pa m2 s-1"
-state  real   fns       ijk    dyn_nmm     1      -      -       "FNS"     "Integrated north-south mass flux"           "Pa m2 s-1"
-state  real   fse       ijk    dyn_nmm     1      -      -       "FSE"     "Integrated southeast-northwest mass flux"   "Pa m2 s-1"
+state  real   few       ijk    dyn_nmm     1      -      r       "FEW"     "Integrated east-west mass flux"             "Pa m2 s-1"
+state  real   fne       ijk    dyn_nmm     1      -      r       "FNE"     "Integrated northeast-southwest mass flux"   "Pa m2 s-1"
+state  real   fns       ijk    dyn_nmm     1      -      r       "FNS"     "Integrated north-south mass flux"           "Pa m2 s-1"
+state  real   fse       ijk    dyn_nmm     1      -      r       "FSE"     "Integrated southeast-northwest mass flux"   "Pa m2 s-1"
 state  real   omgalf    ijk    dyn_nmm     1      -      r       "OMGALF"  "Omega-alpha"                                "K"
-state  real   petdt     ijk    dyn_nmm     1      -      -       "PETDT"   "Vertical mass flux"                         "Pa s-1"
+state  real   petdt     ijk    dyn_nmm     1      -      r       "PETDT"   "Vertical mass flux"                         "Pa s-1"
 state  real   rtop      ijk    dyn_nmm     1      -      r       "RTOP"    "Rd * Tv / P"                                "m3 kg-1"
 #
 # module_PVRBLS
@@ -434,7 +434,7 @@ state  real   alwtoa    ij    dyn_nmm     1    -    rh    "ALWTOA"    "Accum RLW
 state  real   rswin     ij    dyn_nmm     1    -    rh    "RSWIN"     "Downward shortwave at surface"     "W m-2"
 state  real   rswinc    ij    dyn_nmm     1    -    rh    "RSWINC"    "Clear-sky equivalent of RSWIN"     "W m-2"
 state  real   rswout    ij    dyn_nmm     1    -    rh    "RSWOUT"    "Upward shortwave at surface"       "W m-2"
-state  real   rswtoa    ij    dyn_nmm     1    -    -     "RSWTOA"    "Outgoing SW flux at top of atmos"  "W m-2"
+state  real   rswtoa    ij    dyn_nmm     1    -    r     "RSWTOA"    "Outgoing SW flux at top of atmos"  "W m-2"
 state  real   aswin     ij    dyn_nmm     1    -    rh    "ASWIN"     "Accum SW down at surface"          "W m-2"
 state  real   aswout    ij    dyn_nmm     1    -    rh    "ASWOUT"    "Accum RSWOUT"                      "W m-2"
 state  real   aswtoa    ij    dyn_nmm     1    -    rh    "ASWTOA"    "Accum RSWTOA"                      "W m-2"
@@ -453,8 +453,8 @@ state  real   rh02_min  ij    dyn_nmm     1    -    rh    "RH02_MIN" "Hourly Min
 state  real   rh02_max  ij    dyn_nmm     1    -    rh    "RH02_MAX" "Hourly Max Relative Humidity"    ""
 state  real   rlwtt     ijk   dyn_nmm     1    -    r     "RLWTT"     "Longwave temperature tendency"     "K s-1"
 state  real   rswtt     ijk   dyn_nmm     1    -    r     "RSWTT"     "Shortwave temperature tendency"    "K s-1"
-state  real   tcucn     ijk   dyn_nmm     1    -    -     "TCUCN"     "Accum convec temperature tendency" "K s-1"
-state  real   train     ijk   dyn_nmm     1    -    -     "TRAIN"     "Accum stratiform temp tendency"    "K s-1"
+state  real   tcucn     ijk   dyn_nmm     1    -    r     "TCUCN"     "Accum convec temperature tendency" "K s-1"
+state  real   train     ijk   dyn_nmm     1    -    r     "TRAIN"     "Accum stratiform temp tendency"    "K s-1"
 state integer ncfrcv    ij    dyn_nmm     1    -    irh   "NCFRCV"    "# times convec cloud >0 between rad calls"  ""
 state integer ncfrst    ij    dyn_nmm     1    -    irh   "NCFRST"    "# times stratiform cloud >0 between rad calls"  ""
 state integer nphs0     -     dyn_nmm     -    -    rh
@@ -749,10 +749,10 @@ state    real  ZNT              ij      misc        1         -     ir        "Z
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
 state    real  NOAHRES          ij      misc        1         -     rh        "NOAHRES"               "RESIDUAL OF THE NOAH SURFACE ENERGY BUDGET" "W m{-2}"
 
-state    real   tke_pbl         ijk     misc        1         -     r         "TKE_PBL"               "TKE FROM PBL SCHEME"     "m2 s-2"
-state    real   el_pbl          ikj     misc        1         -     -         "EL_PBL"                "MIXING LENGTH FROM PBL SCHEME"     "m"
-state    real   EXCH_H         ikj     misc        1         -      r         "EXCH_H"               "EXCHANGE COEFFICIENTS FOR HEAT"               "m2 s-1"
-state    real   EXCH_M         ikj     misc        1         -      r         "EXCH_M"               "EXCHANGE COEFFICIENTS FOR MOMENTUM"           "m2 s-1"
+state    real   tke_pbl         ijk     misc        1         Z     r         "TKE_PBL"               "TKE FROM PBL SCHEME"     "m2 s-2"
+state    real   el_pbl          ikj     misc        1         Z     -         "EL_PBL"                "MIXING LENGTH FROM PBL SCHEME"     "m"
+state    real   EXCH_H         ikj     misc        1         Z      r         "EXCH_H"               "EXCHANGE COEFFICIENTS FOR HEAT"               "m2 s-1"
+state    real   EXCH_M         ikj     misc        1         Z      r         "EXCH_M"               "EXCHANGE COEFFICIENTS FOR MOMENTUM"           "m2 s-1"
 state   real   THZ0             ij     misc        1         -     irh       "THZ0"        "POT. TEMPERATURE AT TOP OF VISC. SUBLYR"       "K"
 state   real   QZ0              ij     misc        1         -     irh       "QZ0"         "SPECIFIC HUMIDITY AT TOP OF VISC. SUBLYR"      "kg kg-1"
 state   real   UZ0              ij     misc        1         -     irh       "UZ0"         "U WIND COMPONENT AT TOP OF VISC. SUBLYR"       "m s-1"
@@ -811,7 +811,7 @@ state    real   KEEPFR3DFLAG     ilj    misc        1         Z      r         "
 state    real   rc_mf           ikj     misc        1         -      r        "RC_MF"                "RC IN THE GRID COMPUTED BY EDKF"  "kg/kg"
 
 # For Noah-MP
-rconfig   integer dveg        namelist,noah_mp      1            2         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
+rconfig   integer dveg        namelist,noah_mp      1            4         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
 rconfig   integer opt_crs     namelist,noah_mp      1            1         h    "opt_crs"  "canopy stomatal resistance (1-> Ball-Berry; 2->Jarvis)"   ""
 rconfig   integer opt_btr     namelist,noah_mp      1            1         h    "opt_btr"  "soil moisture factor for stomatal resistance (1-> Noah; 2-> CLM; 3-> SSiB)"   ""
 rconfig   integer opt_run     namelist,noah_mp      1            1         h    "opt_run"  "runoff and groundwater (1->SIMGM; 2->SIMTOP; 3->Schaake96; 4->BATS)"   ""
@@ -823,6 +823,9 @@ rconfig   integer opt_alb     namelist,noah_mp      1            2         h    
 rconfig   integer opt_snf     namelist,noah_mp      1            1         h    "opt_snf"  "rainfall & snowfall (1-Jordan91; 2->BATS; 3->Noah)"   ""
 rconfig   integer opt_tbot    namelist,noah_mp      1            2         h    "opt_tbot" "lower boundary of soil temperature (1->zero-flux; 2->Noah)"   ""
 rconfig   integer opt_stc     namelist,noah_mp      1            1         h    "opt_stc"  "soil/snow temperature time scheme 1->semi-implicit; 2->full-implicit (original Noah)"   ""
+
+# For WRF Hydro
+rconfig   integer wrf_hydro               derived              1     0      h     "wrf_hydro"   "descrip"  "unit"
 
 # For Noah UA changes
 state    real   flx4            ij         -        1         -      h        "FLX4"         "sensible heat from canopy"              "W m{-2}"
@@ -987,6 +990,7 @@ rconfig   character  rst_inname        namelist,time_control		1  "wrfrst_d<domai
 rconfig   character  rst_outname       namelist,time_control		1  "wrfrst_d<domain>_<date>"     -     "name of restrt outfile"   ""      ""
 rconfig   logical write_input             namelist,time_control		1             .false. -    "write input data for 3dvar etc."              ""      ""
 rconfig   logical write_restart_at_0h     namelist,time_control		1             .false. h    "write_restart_at_0h"              ""      ""
+rconfig   logical write_hist_at_0h_rst    namelist,time_control         1             .false. h    "write_hist_at_0h_rst" "T/F write hist at 0 h of restarted forecast"
 rconfig   logical adjust_output_times     namelist,time_control         1             .false. -    "adjust_output_times"
 rconfig   logical adjust_input_times      namelist,time_control         1             .false. -    "adjust_input_times"
 rconfig   real    tstart                  namelist,time_control     max_domains       0.       irh   "tstart"  "forecast hour at the start of the NMM integration"
@@ -1044,6 +1048,10 @@ rconfig   integer shw                     namelist,domains	max_domains    2     
 rconfig   integer tile_sz_x               namelist,domains	1             0       -      "tile_sz_x"             ""      ""
 rconfig   integer tile_sz_y               namelist,domains	1             0       -      "tile_sz_y"             ""      ""
 rconfig   integer numtiles                namelist,domains	1             1       -      "numtiles"              ""      ""
+rconfig   integer numtiles_inc            namelist,domains	1             0       -      "numtiles_inc"          ""      ""
+rconfig   integer numtiles_x              namelist,domains	1             0       -      "numtiles_x"            ""      ""
+rconfig   integer numtiles_y              namelist,domains	1             0       -      "numtiles_y"            ""      ""
+rconfig   integer tile_strategy           namelist,domains	1             0       -      "tile_strategy"         ""      ""
 rconfig   integer nproc_x                 namelist,domains	1             -1       -      "nproc_x"              "-1 means not set"      ""
 rconfig   integer nproc_y		  namelist,domains	1             -1       -      "nproc_y"              "-1 means not set"      ""
 rconfig   integer irand                   namelist,domains	1             0       -      "irand"           ""      ""
@@ -1110,7 +1118,7 @@ rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8     
 rconfig   real    seaice_threshold        namelist,physics      1            271       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
 rconfig   integer fractional_seaice       namelist,physics      1            0        -     "fractional_seiace" "Fractional sea-ice option"
 rconfig   integer seaice_albedo_opt       namelist,physics      1            0        -     "seaice_albedo_opt" "Method for setting albedo over sea ice"
-rconfig   real    seaice_albedo_default   namelist,physics      1           0.80      -     "seaice_albedo_default" "Default value for sea-ice over albedo with seaice_albeo_opt=0"
+rconfig   real    seaice_albedo_default   namelist,physics      1           0.65      -     "seaice_albedo_default" "Default value for sea-ice over albedo with seaice_albeo_opt=0"
 rconfig   integer seaice_snowdepth_opt    namelist,physics      1            0        -     "seaice_snowdepth_opt" "Method for treating snow depth on sea ice"
 rconfig   real    seaice_snowdepth_max    namelist,physics      1         1.E10       -     "seaice_snowdepth_max" "Maximum allowed accumulation (m) of snow on sea ice"
 rconfig   real    seaice_snowdepth_min    namelist,physics      1         0.001       -     "seaice_snowdepth_min" "Minimum snow depth (m) on sea ice"
@@ -1356,7 +1364,7 @@ package   temfsfcscheme  sf_sfclay_physics==10       -             -
 package   sfclayrevscheme sf_sfclay_physics==11        -             -
 package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 package   slabscheme     sf_surface_physics==1       -             -
-package   lsmscheme      sf_surface_physics==2       -             -
+package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn
 package   ruclsmscheme   sf_surface_physics==3       -             -
 
 package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy
@@ -1410,6 +1418,13 @@ package   dfi_ddfi      dfi_opt==2                  -            \
 package   dfi_tdfi      dfi_opt==3                  -            \
  state:dfi_pd,dfi_pint,dfi_dwdt,dfi_t,dfi_q,dfi_u,dfi_v,dfi_q2,dfi_cwm,dfi_rrw,dfi_STC,dfi_SMC,dfi_SH2O,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_NMM_TSK,dfi_SNOWC
 
+package   albsi_zero     seaice_albedo_opt==0        -             -
+package   albsi_one      seaice_albedo_opt==1        -             -
+package   albsi_two      seaice_albedo_opt==2        -             state:albsi
+package   snowsi_zero    seaice_snowdepth_opt==0     -             -
+package   snowsi_one     seaice_snowdepth_opt==1     -             state:snowsi
+package   icedepth_zero  seaice_thickness_opt==0     -             -
+package   icedepth_one   seaice_thickness_opt==1     -             state:icedepth
 
 # only need to specify these once; not for every io_form* variable
 package   io_intio    io_form_restart==1                     -             -
@@ -1432,6 +1447,11 @@ package ltng_none           lightning_option==0            -       -
 package ltng_crm_PR92w      lightning_option==1            -       -
 package ltng_crm_PR92z      lightning_option==2            -       -
 package ltng_cpm_PR92z      lightning_option==11           -       -
+
+#WRF Hydro
+package   no_wrfhydro    wrf_hydro==0                -            -
+package   wrfhydro       wrf_hydro==1                -            state:SOLDRAIN, SFCHEADRT, INFXSRT
+
 
 ## communications                                               
 

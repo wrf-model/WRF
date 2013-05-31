@@ -174,7 +174,7 @@ CONTAINS
 !-- ACSNOM      snow melt (mm) (water equivalent)
 !-- ACSNOW      accumulated snow fall (mm) (water equivalent)
 !-- SNOPCX      snow phase change heat flux (W/m^2)
-!-- POTEVP      accumulated potential evaporation (W/m^2)
+!-- POTEVP      accumulated potential evaporation (m)
 !-- RIB         Documentation needed!!!
 ! ----------------------------------------------------------------------
 !-- RUNOFF1     surface runoff (m s-1), not infiltrating the surface
@@ -568,18 +568,17 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::dl_u_bep  !Length scale
 
 ! Local variables for multi-layer UCM (Martilli et al. 2002)
-   REAL,    DIMENSION( ims:ime, jms:jme ) :: HFX_RURAL,LH_RURAL,GRDFLX_RURAL,RN_RURAL
-   REAL,    DIMENSION( ims:ime, jms:jme ) :: QFX_RURAL,QSFC_RURAL,UMOM_RURAL,VMOM_RURAL
-   REAL,    DIMENSION( ims:ime, jms:jme ) :: ALB_RURAL,EMISS_RURAL,UST_RURAL,TSK_RURAL
-!   REAL,    DIMENSION( ims:ime, jms:jme ) :: GRDFLX_URB
-!   REAL,    DIMENSION( ims:ime, jms:jme ) :: QFX_URB,QSFC_URB,UMOM_URB,VMOM_URB
-   REAL,    DIMENSION( ims:ime, jms:jme ) :: HFX_URB,UMOM_URB,VMOM_URB
-   REAL,    DIMENSION( ims:ime, jms:jme ) :: QFX_URB
+   REAL,    DIMENSION( its:ite, jts:jte ) :: HFX_RURAL,LH_RURAL,GRDFLX_RURAL ! ,RN_RURAL
+   REAL,    DIMENSION( its:ite, jts:jte ) :: QFX_RURAL ! ,QSFC_RURAL,UMOM_RURAL,VMOM_RURAL
+   REAL,    DIMENSION( its:ite, jts:jte ) :: ALB_RURAL,EMISS_RURAL,TSK_RURAL ! ,UST_RURAL
+!   REAL,    DIMENSION( ims:ime, jms:jme ) :: QSFC_URB
+   REAL,    DIMENSION( its:ite, jts:jte ) :: HFX_URB,UMOM_URB,VMOM_URB
+   REAL,    DIMENSION( its:ite, jts:jte ) :: QFX_URB
 !   REAL,    DIMENSION( ims:ime, jms:jme ) :: ALBEDO_URB,EMISS_URB,UMOM,VMOM,UST
-   REAL, DIMENSION(ims:ime,jms:jme) ::EMISS_URB
-   REAL, DIMENSION(ims:ime,jms:jme) :: RL_UP_URB
-   REAL, DIMENSION(ims:ime,jms:jme) ::RS_ABS_URB
-   REAL, DIMENSION(ims:ime,jms:jme) ::GRDFLX_URB
+   REAL, DIMENSION(its:ite,jts:jte) ::EMISS_URB
+   REAL, DIMENSION(its:ite,jts:jte) :: RL_UP_URB
+   REAL, DIMENSION(its:ite,jts:jte) ::RS_ABS_URB
+   REAL, DIMENSION(its:ite,jts:jte) ::GRDFLX_URB
    REAL :: SIGMA_SB,RL_UP_RURAL,RL_UP_TOT,RS_ABS_TOT,UMOM,VMOM
    REAL :: r1,r2,r3
    REAL :: CMR_URB, CHR_URB, CMC_URB, CHC_URB
@@ -919,7 +918,7 @@ CONTAINS
        ! Set values that the LSM is expected to update,
        ! but don't get updated for glacial points.
        !
-
+       SOILM = 0.0 !BSINGH(PNNL)- SOILM is undefined for this case, it is used for diagnostics so setting it to zero
        XLAI = 0.01 ! KWM Should this be Zero over land ice?  Does this value matter?
        RUNOFF2 = 0.0
        RUNOFF3 = 0.0
@@ -1020,7 +1019,7 @@ CONTAINS
 ! Convert QSFC back to mixing ratio
            QSFC(I,J)= Q1/(1.0-Q1)
 !
-           QSFC_RURAL(I,J)= Q1/(1.0-Q1)
+           ! QSFC_RURAL(I,J)= Q1/(1.0-Q1)
 ! Calculate momentum flux from rural surface for use with multi-layer UCM (Martilli et al. 2002)
 
           DO 80 NS=1,NSOIL

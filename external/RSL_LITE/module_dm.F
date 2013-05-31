@@ -61,7 +61,6 @@ CONTAINS
       IF ( MINM .LT. PROCMIN_M .OR. MINN .LT. PROCMIN_N ) THEN
         WRITE( wrf_err_message , * )'MPASPECT: UNABLE TO GENERATE PROCESSOR MESH.  STOPPING.'
         CALL wrf_message ( TRIM ( wrf_err_message ) )
-        WRITE(0,*)' PROCMIN_M ', PROCMIN_M
         WRITE( wrf_err_message , * )' PROCMIN_M ', PROCMIN_M
         CALL wrf_message ( TRIM ( wrf_err_message ) )
         WRITE( wrf_err_message , * )' PROCMIN_N ', PROCMIN_N
@@ -225,7 +224,11 @@ CONTAINS
                                       sp3y , ep3y , sm3y , em3y , &
                                 bdx , bdy )
 
+#if ( defined(SGIALTIX) && (! defined(MOVE_NESTS) ) ) || ( defined(FUJITSU_FX10) && (! defined(MOVE_NESTS) ) )
       USE module_domain, ONLY : domain, head_grid, find_grid_by_id, alloc_space_field
+#else
+      USE module_domain, ONLY : domain, head_grid, find_grid_by_id
+#endif
 
       IMPLICIT NONE
       INTEGER, INTENT(IN)   :: sd1 , ed1 , sd2 , ed2 , sd3 , ed3 , bdx , bdy

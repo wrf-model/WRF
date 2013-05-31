@@ -23,7 +23,7 @@ subroutine da_check_max_iv_qscat(iv, it, num_qcstat_conv)
    !---------------------------------------------------------------------------
 
    do n=iv%info(qscat)%n1,iv%info(qscat)%n2
-      if(standard)then
+      if(.not. qc_rej_both)then
          if(var_wind)then
             failed=.false.
             if( iv%qscat(n)%u%qc >= obs_qc_pointer ) then

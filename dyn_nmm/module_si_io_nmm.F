@@ -1548,7 +1548,7 @@ print *,'------------------> skipping ', var_info%name(1:8)
       call io_int_fetch_data(iunit, r, 'FLAG_SNOWH', flag_snowh, ierr)
 
       call io_int_fetch_data(iunit, r, 'MMINLU', mminlu_loc, ierr)
-      call nl_set_mminlu(grid%id, trim(mminlu_loc))
+      call nl_set_mminlu(grid%id, mminlu_loc)
 
 !      call io_int_fetch_data(iunit, 'NUM_METGRID_SOIL_LEVELS', igarb, ierr)
 

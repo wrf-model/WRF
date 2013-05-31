@@ -79,7 +79,7 @@
 77:BLI:Best lifted index (to 500 hPa) [K]::
 78:SNOC:Convective snow [kg/m^2]::
 79:SNOL:Large scale snow [kg/m^2]::
-80:WTMP:Water temp. [K]:SST:2
+80:WTMP:Water temp. [K]:SST,SSTSK:2
 81:LAND:Land cover (land=1;sea=0) [fraction]:LANDMASK,LANDSEA:1
 82:DSLM:Deviation of sea level from mean [m]::
 83:SFCR:Surface roughness [m]:ZNT:6
@@ -974,43 +974,43 @@
 201:MAX_MSTFX:Max map factor in domain:MAX_MSTFX:7
 202:MAX_MSTFY:Max map factor in domain:MAX_MSTFY:7
 203:EDT_OUT:EDT from GD scheme:EDT_OUT:5
-204:var204:undefined::
-205:var205:undefined::
-206:var206:undefined::
-207:var207:undefined::
-208:var208:undefined::
-209:var209:undefined::
-210:var210:undefined::
-211:var211:undefined::
-212:var212:undefined::
-213:var213:undefined::
-214:var214:undefined::
-215:var215:undefined::
-216:var216:undefined::
-217:var217:undefined::
-218:var218:undefined::
-219:var219:undefined::
-220:var220:undefined::
-221:var221:undefined::
-222:var222:undefined::
-223:var223:undefined::
-224:var224:undefined::
-225:var225:undefined::
-226:var226:undefined::
-227:var227:undefined::
-228:var228:undefined::
-229:var229:undefined::
-230:var230:undefined::
-231:var231:undefined::
-232:var232:undefined::
-233:var233:undefined::
-234:var234:undefined::
-235:var235:undefined::
-236:var236:undefined::
-237:var237:undefined::
-238:var238:undefined::
-239:var239:undefined::
-240:var240:undefined::
+204:VAR_SSO:variance of subgrid-scale orography [m^2]:VAR_SSO:3
+205:LAP_HGT:Laplacian of orography [m]:LAP_HGT:2
+206:HFX_FORCE:SCM ideal surface sensible heat flux [W / m^2]:HFX_FORCE:2
+207:LH_FORCE:SCM ideal surface latent heat flux [W / m^2]:LH_FORCE:2
+208:TSK_FORCE:SCM ideal surface skin temperature [W / m^2]:TSK_FORCE:2
+209:HFX_FORCE_TEND:SCM ideal surface sensible heat flux tendency [W m-2 s-1]:HFX_FORCE_TEND:5
+210:LH_FORCE_TEND:SCM ideal surface latent heat flux [W m-2 s-1]:LH_FORCE_TEND:5
+211:TSK_FORCE_TEND:SCM ideal surface skin temperature tendency [W m-2 s-1]:TSK_FORCE_TEND:5
+212:P_HYD:Hydrostatic Pressure [Pa]:P_HYD:0
+213:SMCREL:RELATIVE SOIL MOISTURE:SMCREL:2
+214:ICEDEPTH:SEA ICE THICKNESS [m]:ICEDEPTH:3
+215:ALBSI:SEA ICE ALBEDO:ALBSI:2
+216:SNOWSI:SNOW DEPTH ON SEA ICE [m]:SNOWSI:2
+217:ACGRDFLX:ACCUMULATED GROUND HEAT FLUX [J m-2]:ACGRDFLX:3
+218:LAI:Leaf area index [area/area]:LAI:3
+219:RAINSH:ACCUMULATED SHALLOW CUMULUS PRECIPITATION [kg/m^2]:RAINSH:2
+220:HAILNC:ACCUMULATED TOTAL GRID SCALE HAIL:HAILNC:2
+221:REFL_10CM:Radar reflectivity (lamda = 10 cm)  [dBZ]:REFL_10CM:1
+222:SWNORM:NORMAL SHORT WAVE FLUX AT GROUND SURFACE (SLOPE-DEPENDENT) [W / m^2]:SWNORM:3
+223:NOAHRES:RESIDUAL OF THE NOAH SURFACE ENERGY BUDGET [W / m^2]:NOAHRES:3
+224:ACHFX:ACCUMULATED UPWARD HEAT FLUX AT THE SURFACE [J / m^2]:ACHFX:4
+225:ACLHF:ACCUMULATED UPWARD LATENT HEAT FLUX AT THE SURFACE [J / m^2]:ACLHF:4
+226:DLF2:DLF2??????:DLF2:3
+227:VAR:Orographic Variance:VAR:3
+228:AODTOT:AODTOT????:AODTOT:3
+229:OM_ML:OM_ML?????:OM_ML:3
+230:T00:Base-state Temp [K]:T00:1
+231:P00:Base-state pres:P00:0
+232:TLP:Base-state lapse rate:TLP:2
+233:TISO:Temp at which the base T turns const [K]:TISO:1
+234:SAVE_TOPO_FROM_REAL:1=original topo from real, 0=modified by WRF:SAVE_TOPO_FROM_REAL:0
+235:SEED1:Random number seed 1:SEED1:1
+236:SEED2:Random number seed 2:SEED2:1
+237:EL_PBL:Mixing length from PBL scheme [m]:EL_PBL:1
+238:GRAUPELNC:Accumulated total grid scale graupel [mm]:GRAUPELNC:2
+239:SWDOWNC:Downward clear-sky short wave flux at ground surface [W/m^2]:SWDOWNC:1
+240:TKE_PBL:TKE from PBL scheme [m^2/s^2]:TKE_PBL:3
 241:var241:undefined::
 242:var242:undefined::
 243:var243:undefined::

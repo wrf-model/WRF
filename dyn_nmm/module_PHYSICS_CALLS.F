@@ -195,6 +195,8 @@
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS
 !
       LOGICAL :: WARM_RAIN
+      LOGICAL :: IS_CAMMGMP_USED=.FALSE.
+
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
@@ -413,6 +415,7 @@
      &                 ,QI=MOIST_TRANS(IMS,KMS,JMS,P_QI),F_QI=F_QI      &
      &                 ,QS=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS      &
      &                 ,QG=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG      &
+     &                 ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
      &                 ,EXPLICIT_CONVECTION=config_flags%cu_physics==0)
 
 
@@ -908,7 +911,10 @@
 !
       REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME) :: ZERO_SOIL
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME) :: wstar_ysu, delta_ysu
+!
       LOGICAL :: E_BDY,WARM_RAIN
+      LOGICAL :: IS_CAMMGMP_USED=.FALSE.
 !
       INTEGER :: NUM_ROOF_LAYERS,NUM_WALL_LAYERS,NUM_ROAD_LAYERS   ! urban
       INTEGER :: FRACTIONAL_SEAICE
@@ -919,6 +925,9 @@
       INTEGER :: SEAICE_SNOWDEPTH_OPT
       REAL    :: SEAICE_SNOWDEPTH_MAX
       REAL    :: SEAICE_SNOWDEPTH_MIN
+      INTEGER :: IFNDALBSI
+      INTEGER :: IFNDICEDEPTH
+      INTEGER :: IFNDSNOWSI
 !
       INTEGER :: IGS,IGE,JGS,JGE, PQ_I   !BSF
       LOGICAL :: FQ_I, ETAMP_PHYSICS,ETAMP_Regional            !BSF
@@ -955,6 +964,10 @@
       IF ( SEAICE_ALBEDO_OPT /= 0 ) THEN
          CALL WRF_ERROR_FATAL("NMM must use SEAICE_ALBEDO_OPT = 0")
       ENDIF
+
+      IFNDALBSI = 0
+      IFNDSNOWSI = 0
+      IFNDICEDEPTH = 0
 
       SEAICE_ALBEDO_DEFAULT = CONFIG_FLAGS%SEAICE_ALBEDO_DEFAULT
       SEAICE_THICKNESS_OPT = CONFIG_FLAGS%SEAICE_THICKNESS_OPT
@@ -1267,6 +1280,7 @@
       CALL SURFACE_DRIVER(                                              &
      &           HYDRO_dt=-1.0,  SFCHEADRT=SFCHEADRT,                   &
      &           INFXSRT=INFXSRT,  SOLDRAIN=SOLDRAIN,                   &
+     &           JULIAN_IN=grid%julian,                                 &
      &           ACSNOM=ACSNOM,ACSNOW=ACSNOW,AKHS=AKHS,AKMS=AKMS        &
      &          ,ALBEDO=ALBEDO,BR=BR,CANWAT=CMC,CHKLOWQ=CHKLOWQ         &
      &          ,DT=DT,DX=DX,DZ8W=DZ,DZS=DZSOIL,GLW=RLW_DN_SFC          &
@@ -1282,6 +1296,8 @@
      &          ,SEAICE_SNOWDEPTH_MAX=SEAICE_SNOWDEPTH_MAX              &
      &          ,SEAICE_SNOWDEPTH_MIN=SEAICE_SNOWDEPTH_MIN              &
      &          ,TICE2TSK_IF2COLD=CONFIG_FLAGS%TICE2TSK_IF2COLD         &
+     &          ,IFNDALBSI=IFNDALBSI,IFNDICEDEPTH=IFNDICEDEPTH          &
+     &          ,IFNDSNOWSI=IFNDSNOWSI                                  &
      &          ,ISLTYP=ISLTYP                                          &
      &          ,ITIMESTEP=NTSD,IVGTYP=IVGTYP,LOWLYR=LOWLYR             &
      &          ,MAVAIL=ONE,RMOL=RMOL,MOL=MOL                           &
@@ -1500,6 +1516,8 @@
      &               ,QS_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS &
      &               ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG &
      &               ,HOL=HOL,sf_sfclay_physics=CONFIG_FLAGS%SF_SFCLAY_PHYSICS &
+     &               ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
+     &               ,wstar=wstar_ysu,delta=delta_ysu                 &
      &               ,sf_urban_physics=CONFIG_FLAGS%SF_URBAN_PHYSICS)
 !
 !***  NOTE THAT THE EXCHANGE COEFFICIENTS FOR HEAT EXCH_H COMING OUT OF
@@ -2164,6 +2182,7 @@
 #endif
 !
       LOGICAL,INTENT(IN) :: HYDRO,RESTRT
+      LOGICAL :: IS_CAMMGMP_USED=.FALSE.
 !
       TYPE(DOMAIN),TARGET :: GRID
 !
@@ -2552,6 +2571,7 @@
      &                 ,sas_mass_flux=config_flags%sas_mass_flux        &
      &                 ,shalconv=config_flags%sas_shal_conv             &
      &                 ,shal_pgcon=config_flags%sas_shal_pgcon          &
+     &                 ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
                   ! Selection argument
      &                 ,CU_PHYSICS=CONFIG_FLAGS%CU_PHYSICS              &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &

@@ -126,9 +126,9 @@
 
    IF ( ( MOD (ide-ids,config_flags%parent_grid_ratio) .NE. 0 ) .OR. &
         ( MOD (jde-jds,config_flags%parent_grid_ratio) .NE. 0 ) ) THEN
-      WRITE(message, FMT='("Nested dimensions are illegal for domain ",I2,":  Both &
-         &MOD(",I4,"-",I1,",",I2,") and MOD(",I4,"-",I1,",",I2,") must = 0" )') &
-         grid%id,ide,ids,config_flags%parent_grid_ratio,jde,jds,config_flags%parent_grid_ratio
+      WRITE(message, FMT='(A,I2,":  Both MOD(",I4,"-",I1,",",I2,") and MOD(",I4,"-",I1,",",I2,") must = 0" )') &
+         "Nested dimensions are illegal for domain ",grid%id,ide,ids,config_flags%parent_grid_ratio,&
+         jde,jds,config_flags%parent_grid_ratio
       CALL wrf_error_fatal ( message )
    END IF
 
@@ -504,20 +504,32 @@
      ENDDO
     ELSE
 ! with nests, grid%t_init generally needs recomputations (since it is not interpolated)
-     DO j = jts,min(jte,jde-1)
-     DO k = kts,kte-1
-     DO i = its, min(ite,ide-1)
-       IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
-         grid%pb(i,k,j) = grid%znu(k)*grid%mub(i,j)+grid%p_top
-         temp = MAX ( tiso, t00 + A*LOG(grid%pb(i,k,j)/p00) )
-         grid%t_init(i,k,j) = temp*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
-         grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
-!        grid%alb(i,k,j) = -grid%rdnw(k)*(grid%phb(i,k+1,j)-grid%phb(i,k,j))/grid%mub(i,j)
-!        grid%t_init(i,k,j) = grid%alb(i,k,j)*(p1000mb/r_d)/((grid%pb(i,k,j)/p1000mb)**cvpm) - t0
-       ENDIF
-     ENDDO
-     ENDDO
-     ENDDO
+     IF ( .NOT. grid%this_is_an_ideal_run ) THEN
+        DO j = jts,min(jte,jde-1)
+        DO k = kts,kte-1
+        DO i = its, min(ite,ide-1)
+          IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
+            grid%pb(i,k,j) = grid%znu(k)*grid%mub(i,j)+grid%p_top
+            temp = MAX ( tiso, t00 + A*LOG(grid%pb(i,k,j)/p00) )
+            grid%t_init(i,k,j) = temp*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
+            grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
+          ENDIF
+        ENDDO
+        ENDDO
+        ENDDO
+     ELSE
+        DO j = jts,min(jte,jde-1)
+        DO k = kts,kte-1
+        DO i = its, min(ite,ide-1)
+          IF ( grid%imask_nostag(i,j) .EQ. 1 ) THEN
+            grid%pb(i,k,j) = grid%znu(k)*grid%mub(i,j)+grid%p_top
+            grid%alb(i,k,j) = -grid%rdnw(k)*(grid%phb(i,k+1,j)-grid%phb(i,k,j))/grid%mub(i,j)
+            grid%t_init(i,k,j) = grid%alb(i,k,j)*(p1000mb/r_d)/((grid%pb(i,k,j)/p1000mb)**cvpm) - t0
+          ENDIF
+        ENDDO
+        ENDDO
+        ENDDO
+     END IF
     ENDIF
 
 ! Use equations from calc_p_rho_phi to derive p and al from ph: linear in log p
@@ -557,15 +569,27 @@
     ENDDO
     ENDDO
 
-    DO j=jts,min(jte,jde-1)
-       DO i=its,min(ite,ide-1)
-          p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
-          grid%p_hyd_w(i,1,j) = grid%p(i,1,j) + grid%znw(1)*(p_surf - grid%p_top) + grid%p_top
-          DO k=kts+1,kte
-             grid%p_hyd_w(i,k,j) = ( 2.*(grid%p(i,k-1,j)+grid%pb(i,k-1,j)) - grid%p_hyd_w(i,k-1,j) )
+    IF ( .NOT. grid%this_is_an_ideal_run ) THEN
+       DO j=jts,min(jte,jde-1)
+          DO i=its,min(ite,ide-1)
+             p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
+             grid%p_hyd_w(i,1,j) = grid%p(i,1,j) + grid%znw(1)*(p_surf - grid%p_top) + grid%p_top
+             DO k=kts+1,kte
+                grid%p_hyd_w(i,k,j) = ( 2.*(grid%p(i,k-1,j)+grid%pb(i,k-1,j)) - grid%p_hyd_w(i,k-1,j) )
+             ENDDO
           ENDDO
        ENDDO
-    ENDDO
+    ELSE
+       DO j=jts,min(jte,jde-1)
+          DO i=its,min(ite,ide-1)
+             p_surf = grid%mub(i,j)+grid%p_top
+             grid%p_hyd_w(i,1,j) = grid%p(i,1,j) + grid%znw(1)*(p_surf - grid%p_top) + grid%p_top
+             DO k=kts+1,kte
+                grid%p_hyd_w(i,k,j) = ( 2.*(grid%p(i,k-1,j)+grid%pb(i,k-1,j)) - grid%p_hyd_w(i,k-1,j) )
+             ENDDO
+          ENDDO
+       ENDDO
+    END IF
 
    ENDIF
 
@@ -599,7 +623,7 @@
    CALL domain_setgmtetc( grid, start_of_simulation )
 !tgs
    IF(config_flags%cycling) start_of_simulation = .true.
-  print *,'cycling, start_of_simulation -->',config_flags%cycling, start_of_simulation
+!  print *,'cycling, start_of_simulation -->',config_flags%cycling, start_of_simulation
 
 !-----------------------------------------------------------------------------
 ! Adaptive time step: Added by T. Hutchinson, WSI  11/6/07
@@ -714,7 +738,7 @@
                       grid%tmn,grid%xland,grid%znt,grid%z0,grid%ust,grid%mol,grid%pblh,grid%tke_pbl,    &
                       grid%exch_h,grid%thc,grid%snowc,grid%mavail,grid%hfx,grid%qfx,grid%rainbl, &
                       grid%tslb,grid%zs,grid%dzs,config_flags%num_soil_layers,grid%warm_rain,  &
-                      grid%adv_moist_cond,                         &
+                      grid%adv_moist_cond, grid%is_CAMMGMP_used,                               &
                       grid%apr_gr,grid%apr_w,grid%apr_mc,grid%apr_st,grid%apr_as,      &
                       grid%apr_capma,grid%apr_capme,grid%apr_capmi,          &
                       grid%xice,grid%xicem,grid%vegfra,grid%snow,grid%canwat,grid%smstav,         &
@@ -884,8 +908,7 @@
                     ! Order dependent args for domain, mem, and tile dims
                         ,ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde             &
                         ,ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme             &
-                        ,its=grid%i_start(ij), ite=grid%i_end(ij)                         &
-                        ,jts=grid%j_start(ij), jte=grid%j_end(ij), kts=kts, kte=kte       &
+                        ,its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte             &
                     ! IC and CG flash rates and accumulated flash count
                         ,ic_flashcount=grid%ic_flashcount, ic_flashrate=grid%ic_flashrate        &
                         ,cg_flashcount=grid%cg_flashcount, cg_flashrate=grid%cg_flashrate        &
@@ -978,6 +1001,9 @@
 #  include "HALO_EM_INIT_3.inc"
 #  include "HALO_EM_INIT_4.inc"
 #  include "HALO_EM_INIT_5.inc"
+      IF ( config_flags%sf_ocean_physics .EQ. PWP3DSCHEME ) THEN
+#  include "HALO_EM_INIT_6.inc"
+      END IF
 #  include "PERIOD_BDY_EM_INIT.inc"
 #  include "PERIOD_BDY_EM_MOIST.inc"
 #  include "PERIOD_BDY_EM_TKE.inc"
@@ -1150,7 +1176,7 @@
            else                      ! over water, leave it alone
               vfac = 1.
            endif
-         print *, j,i,grid%ctopo(i,j),vfac
+!          print *, j,i,grid%ctopo(i,j),vfac
            grid%ctopo(i,j)=grid%ctopo(i,j)*vfac
          ENDDO
          ENDDO

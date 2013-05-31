@@ -212,8 +212,6 @@ CONTAINS
 
    REAL :: wind_vel
    REAL :: depth
-   REAL :: dbz,dbzr,dbzs,dbzg
-   REAL, PARAMETER :: dbzmin=-20.
 
 !-----------------------------------------------------------------
 ! Handle accumulations with buckets to prevent round-off truncation in long runs
@@ -404,7 +402,7 @@ CONTAINS
 
    IF ( MOD((itimestep - 1), idump) .eq. 0 ) THEN
      WRITE(outstring,*) 'NSSL Diagnostics: Resetting max arrays for domain with dt = ', dt
-     CALL wrf_message ( TRIM(outstring) )
+     CALL wrf_debug ( 10,TRIM(outstring) )
 
 !  !$OMP PARALLEL DO   &
 !  !$OMP PRIVATE ( ij )
@@ -516,10 +514,6 @@ CONTAINS
        ENDIF
 
 ! Calculate the max radar reflectivity between output times
-
-       dbz = dbzr + dbzs + dbzg
-       IF ( dbz  .GT. 0. ) dbz  = 10.0 * LOG10 ( dbz  )
-       dbz  = MAX ( dbzmin, dbz  )
 
        IF ( refl_10cm(i,kms,j) .GT. refd_max(i,j) ) THEN
          refd_max(i,j) = refl_10cm(i,kms,j)
@@ -900,7 +894,7 @@ CONTAINS
 !  !$OMP PRIVATE ( ij )
 
 !  IF ( MOD(NINT(XTIME), clwrfH) == 0 ) THEN
-  IF (( MOD(NINT(XTIME*60./dt),NINT(clwrfH*60./dt)) == 0) .AND. (.NOT.is_restart)) THEN
+  IF (( MOD(NINT(XTIME/dt*60.),NINT(clwrfH/dt*60.)) == 0) .AND. (.NOT.is_restart)) THEN
     DO ij = 1 , num_tiles
       IF  ( wrf_dm_on_monitor() ) THEN
         WRITE(message, *)'CLWRFdiag - T2; tile: ',ij,' T2clmin:',           & 

@@ -475,10 +475,10 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 
    IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'write 1 CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
-     call wrf_debug( 0, message)
+     call wrf_debug( 1, message)
      WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr,' cfc11:'&
        ,f11vmr,' cfc12:',f12vmr
-     call wrf_debug( 0, message)
+     call wrf_debug( 1, message)
    ENDIF
 
 #else
@@ -495,10 +495,10 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 !ccc
    IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'CAM interpolated values_____ year:',yr,' julian day:',julian
-     call wrf_debug( 0, message)
+     call wrf_debug( 100, message)
      WRITE(message,*)'CAM co2vmr: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr,' cfc11:',f11vmr,&
        ' cfc12:',f12vmr
-     call wrf_debug( 0, message)
+     call wrf_debug( 100, message)
    ENDIF
 #endif
 !ccc
@@ -1945,7 +1945,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 #ifdef CLWRFGHG
          IF ( wrf_dm_on_monitor() ) THEN
            WRITE(message,*)'CLWRF-CAM_call-trcmix n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr,' f11vmr:',f11vmr,' f12vmr:',f12vmr
-           CALL wrf_debug(0, message)
+           CALL wrf_debug(1, message)
          END IF
          call trcmix_clwrf(lchnk   ,ncol    ,pcols, pver,  &
                      pmid    ,clat, n2ovmr, ch4vmr, f11vmr, f12vmr, n2o,   &
@@ -1959,7 +1959,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
          IF ( wrf_dm_on_monitor() ) THEN
            WRITE(message,*)'CLWRF post_trcmix_values. n2o:', n2o(pcols/2,pver/2), ' ch4:',      &
              ch4(pcols/2,pver/2),' cfc11:', cfc11(pcols/2,pver/2),' cfc12:', cfc12(pcols/2,pver/2) 
-           CALL wrf_debug(0, message)
+           CALL wrf_debug(1, message)
          END IF 
 !ccc
 !        call t_startf("radclwmx")

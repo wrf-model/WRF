@@ -12,6 +12,7 @@ wrf_core=""
 while [ $# -ge 1 ]; do
     case $1 in
       -d) opt_level="-d" ;;
+      -D) opt_level="-D" ;;
       -s) opt_level="-s" ;;
       -f) opt_level="-f" ;;
       -h) print_usage="yes" ;;
@@ -35,7 +36,7 @@ while [ $# -ge 1 ]; do
     shift
 done
 if [ -n "$print_usage" ] ; then
-  echo usage: $thiscmd '[-d|-s|-f|-os os|-mach mach|-time timecommand] [chem] [kpp]'
+  echo usage: $thiscmd '[-d|-D|-s|-f|-os os|-mach mach|-time timecommand] [chem] [kpp]'
   exit 
 fi
 
@@ -549,6 +550,10 @@ if test -n "$PERL" ; then
        exit 1
      fi
      if [ "$opt_level" = "-d" ] ; then
+        sed -e 's/FCOPTIM[	 ]*=/& # /' -e '/FCDEBUG[	 ]*=/s/#//' configure.wrf > configure.wrf.edit
+        /bin/mv configure.wrf.edit configure.wrf
+     fi
+     if [ "$opt_level" = "-D" ] ; then
         sed -e 's/FCOPTIM[	 ]*=/& # /' -e '/FCDEBUG[	 ]*=/s/#//g' configure.wrf > configure.wrf.edit
         /bin/mv configure.wrf.edit configure.wrf
      fi
@@ -657,8 +662,8 @@ fi
 echo "  "
 
 if [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "4D_DA_CORE" ]; then
-  if [ "`grep '^SFC' configure.wrf | grep -i 'gfortran'`" != "" ]; then
-    echo "WRFDA using gfortran needs realsize=8"
+  if [ "`grep '^SFC' configure.wrf | grep -i 'gfortran'`" != "" -o "`grep '^SFC' configure.wrf | grep -i 'frtpx'`" != "" ]; then
+    echo "WRFDA using gfortran/frtpx needs realsize=8"
     sed -e '/^PROMOTION.*=/s/#//' configure.wrf > configure.wrf.edit
     /bin/mv configure.wrf.edit configure.wrf
   fi
@@ -693,20 +698,23 @@ cat > ${foo}.f <<EOF
           end program test_exit
 EOF
 
-  # Detecting whether if mpi compiler wrapper supports -cc/-f90 options
-  if [ "`grep -i -E '^DMPARALLEL[ \t]*=.*#' configure.wrf`" = "" ]; then
-    mpicc -cc=$SCC -o ${foo} ${foo}.c > /dev/null 2>&1
-    if [ $? != 0 ]; then
-      sed 's/-cc=$(SCC)//' configure.wrf > configure.wrf.edit
-      mv configure.wrf.edit configure.wrf
+  # do not do this test for MIC, which cross compiles
+  if [ -z "`grep 'SCC.*mmic' configure.wrf`" ] ; then
+    # Detecting whether if mpi compiler wrapper supports -cc/-f90 options
+    if [ -z "`grep -i -E '^DMPARALLEL[ \t]*=.*#' configure.wrf`" ] ; then
+      mpicc -cc=$SCC -o ${foo} ${foo}.c > /dev/null 2>&1
+      if [ $? != 0 ]; then
+        sed 's/-cc=$(SCC)//' configure.wrf > configure.wrf.edit
+        mv configure.wrf.edit configure.wrf
+      fi
+      rm ${foo} ${foo}.o 2> /dev/null
+      mpif90 -f90=$SFC -o ${foo} ${foo}.f > /dev/null 2>&1
+      if [ $? != 0 ]; then
+        sed 's/-f90=$(SFC)//'  configure.wrf > configure.wrf.edit
+        mv configure.wrf.edit configure.wrf
+      fi
+      rm ${foo} ${foo}.o 2> /dev/null
     fi
-    rm ${foo} ${foo}.o 2> /dev/null
-    mpif90 -f90=$SFC -o ${foo} ${foo}.f > /dev/null 2>&1
-    if [ $? != 0 ]; then
-      sed 's/-f90=$(SFC)//'  configure.wrf > configure.wrf.edit
-      mv configure.wrf.edit configure.wrf
-    fi
-    rm ${foo} ${foo}.o 2> /dev/null
   fi
 
   if [ -e $NETCDF/lib/libnetcdf.a -a "$SFC" != "" -a "$SCC" != "" -a "$CCOMP" != "" ]; then
@@ -873,6 +881,26 @@ EOF
     echo
   fi
   rm -f ${foo} ${foo}.[cfo] 2> /dev/null
+fi
+
+# testing for Fortran 2003 IEEE signaling features
+make fortran_2003_test > tools/fortran_2003_test.log 2>&1
+rm -f tools/fortran_2003_test.log
+retval=-1
+if [ -f tools/fortran_2003_test.exe ] ; then
+  retval=0
+fi
+if [ $retval -ne 0 ] ; then
+  sed -e '/^ARCH_LOCAL/s/$/ -DNO_IEEE_MODULE/' configure.wrf > configure.wrf.edit
+  mv configure.wrf.edit configure.wrf
+  echo " "
+  echo " "
+  echo "************************** W A R N I N G ************************************"
+  echo " "
+  echo "There are some Fortran 20003 features in WRF that your compiler does not recognize"
+  echo "The IEEE signaling call has been removed.  That may not be enough."
+  echo " "
+  echo "*****************************************************************************"
 fi
 
 # testing for netcdf4 IO features

@@ -25,7 +25,7 @@ CONTAINS
                      ,htop,hbot,kpbl,ht                               &
                      ,ensdim,maxiens,maxens,maxens2,maxens3           &
                      ,periodic_x,periodic_y                           &
-                     ,tke_pbl8w                                       & !BSINGH - TKE at the interfaces for Zhang-McFarlane Scheme 
+                     ,is_CAMMGMP_used                                 & 
                      ,evapcdp3d,icwmrdp3d,rprddp3d                    & !Balwinder.Singh@pnnl.gov: Used for CAM's wet scavenging
                  ! Package selection variables
                      ,cu_physics, bl_pbl_physics, sf_sfclay_physics   &
@@ -49,6 +49,8 @@ CONTAINS
                      ,cmfmc, cmfmcdzm, preccdzm, precz                &
                      ,zmmtu, zmmtv, zmupgu, zmupgd, zmvpgu, zmvpgd    &
                      ,zmicuu, zmicud, zmicvu, zmicvd, zmdice, zmdliq  &
+                     ,dp3d, du3d, ed3d, eu3d, md3d, mu3d, dsubcld2d   &
+                     ,ideep2d, jt2d, maxg2d, lengath2d                &
                      ,k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow &
                      ,ktop_deep &
                  ! Optional arguments for SAS scheme
@@ -201,7 +203,6 @@ CONTAINS
 !-- t_phy         temperature (K)
 !-- tsk           skin temperature (K)
 !-- tke_pbl       turbulent kinetic energy from PBL scheme (m2/s2)
-!-- tke_pbl8w     turbulent kinetic energy from PBL scheme at the interfaces (m2/s2)
 !-- ust           u* in similarity theory (m/s)
 !-- w             vertical velocity (m/s)
 !-- moist         moisture array (4D - last index is species) (kg/kg)
@@ -303,6 +304,7 @@ CONTAINS
    INTEGER,      INTENT(IN   )    ::                 cu_physics  
    INTEGER,      INTENT(IN   )    ::   STEPCU
    LOGICAL,      INTENT(IN   )    ::   warm_rain
+   LOGICAL,      INTENT(IN   )    ::   is_CAMMGMP_used !BSINGH:01/31/2013: Added for CAMZM
 
    REAL, INTENT(IN), OPTIONAL :: pgcon,shal_pgcon,sas_mass_flux
    INTEGER, INTENT(IN), OPTIONAL :: shalconv
@@ -324,7 +326,6 @@ CONTAINS
                                                       ,     rho  &
                                                       ,       w  
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT ), OPTIONAL ::  evapcdp3d, icwmrdp3d, rprddp3d
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN ), OPTIONAL :: tke_pbl8w
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(IN ),OPTIONAL ::                         z_at_w  &
@@ -388,7 +389,8 @@ CONTAINS
 !
    INTEGER, DIMENSION( ims:ime, jms:jme ),                       &
          OPTIONAL, INTENT(INOUT) ::                              &
-     k22_shallow,kbcon_shallow,ktop_shallow
+     k22_shallow,kbcon_shallow,ktop_shallow,ideep2d,jt2d,maxg2d, &
+     lengath2d 
    INTEGER, DIMENSION( ims:ime, jms:jme ),                       &
          OPTIONAL, INTENT(  OUT) :: ktop_deep
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
@@ -416,7 +418,9 @@ CONTAINS
                 apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma      &
                ,apr_capme,apr_capmi,edt_out,xmb_shallow          &
                                                     , MASS_FLUX  &
-               ,cape, pconvb, pconvt, preccdzm, precz, rliq
+               ,cape, pconvb, pconvt, preccdzm, precz, rliq      &
+               ,dsubcld2d
+
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          OPTIONAL, INTENT(INOUT) ::                              &
                   GD_CLOUD,GD_CLOUD2,                            &
@@ -425,7 +429,9 @@ CONTAINS
                   zmflxsnw, zmntprpd, zmntsnpd, zmeiheat,        &
                   cmfmc, cmfmcdzm,                               &
                   zmmtu, zmmtv, zmupgu, zmupgd, zmvpgu, zmvpgd,  &
-                  zmicuu, zmicud, zmicvu, zmicvd, zmdice, zmdliq
+                  zmicuu, zmicud, zmicvu, zmicvd, zmdice, zmdliq,&
+                  dp3d, du3d, ed3d, eu3d, md3d, mu3d
+                  
    REAL, DIMENSION( ims:ime , jms:jme , 1:ensdim ),              &
           OPTIONAL,                                              &
           INTENT(INOUT) ::                       XF_ENS, PR_ENS
@@ -469,7 +475,7 @@ CONTAINS
 ! LOCAL  VAR
 
    INTEGER :: i,j,k,its,ite,jts,jte,ij,trigger_kf
-   logical :: l_flux, is_CAMMGMP_used
+   logical :: l_flux
    LOGICAL :: decided , run_param , doing_adapt_dt
 
 
@@ -608,14 +614,6 @@ CONTAINS
       ENDIF
 #endif
 
-
-      !BSINGH: Find out if CAMMGMPSCHEME is beingh used in this simulation:
-      is_CAMMGMP_used = .false.
-# if (EM_CORE == 1)
-      if(mp_physics == CAMMGMPSCHEME) then
-         is_CAMMGMP_used = .true.
-      endif
-# endif
 
 ! DON'T JUDGE TIME STEP HERE, SINCE KF NEEDS ACCUMULATED W FIELD.
 ! DO IT INSIDE THE INDIVIDUAL CUMULUS SCHEME
@@ -937,7 +935,7 @@ CONTAINS
                ,CU_ACT_FLAG=CU_ACT_FLAG,warm_rain=warm_rain     &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
-               ,IPS=ips,IPE=ipe,JPS=jps,JPE=jpe,KPS=kps,KPE=kpe &
+!              ,IPS=ips,IPE=ipe,JPS=jps,JPE=jpe,KPS=kps,KPE=kpe &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
               ! optionals
@@ -974,7 +972,7 @@ CONTAINS
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte     &
                ,ITIMESTEP=itimestep, BL_PBL_PHYSICS=bl_pbl_physics  &
                ,SF_SFCLAY_PHYSICS=sf_sfclay_physics                 &
-               ,TH=th, T_PHY=t, TSK=tsk, TKE_PBL8w=tke_pbl8w        &
+               ,TH=th, T_PHY=t, TSK=tsk, TKE_PBL=tke_pbl            &
                ,UST=ust, QV=qv_curr, QC=qc_curr, QI=qi_curr         &
                ,MAVAIL=mavail,KPBL=kpbl, PBLH=pblh, XLAND=xland     & 
                ,Z=z, Z_AT_W=z_at_w                                  &
@@ -1008,7 +1006,10 @@ CONTAINS
                ,ZMICUU=zmicuu, ZMICUD=zmicud, ZMICVU=zmicvu         &
                ,ZMICVD=zmicvd, ZMDICE=zmdice, ZMDLIQ=zmdliq         &
                ,EVAPCDP3D=evapcdp3d, ICWMRDP3D=icwmrdp3d            &
-               ,RPRDDP3D=rprddp3d                                   )
+               ,RPRDDP3D=rprddp3d,DP3D=dp3d, DU3D=du3d, ED3D=ed3d   &
+               ,EU3D=eu3d, MD3D=md3d, MU3D=mu3d,DSUBCLD2D=dsubcld2d &
+               ,IDEEP2D=ideep2d, JT2D=jt2d, MAXG2D=maxg2d           &
+               ,LENGATH2D=lengath2d                                 )
         ELSE
              WRITE( wrf_err_message , * ) 'Insufficient arguments to call CAMZM cu scheme'
              CALL wrf_error_fatal ( wrf_err_message )

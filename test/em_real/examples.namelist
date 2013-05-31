@@ -42,7 +42,7 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
    sf_surface_physics = 4
 
 &noah_mp
- dveg                               = 2,
+ dveg                               = 4,
  opt_crs                            = 1,
  opt_btr                            = 1,
  opt_sfc                            = 1,
@@ -251,15 +251,6 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  corral_dist                         =  8, 15, 15,
  track_level                         = 50000,
 
-** Using different flux formulation for tropical storm simulations 
-   (more effective when grid sizes are smaller than 2 km), and simple 
-   1-D ocean mixed layer (add these in namelist record &physics):
-
- isftcflx                            = 1,
- omlcall                             = 1,
- oml_hml0                            = 50,
- oml_gamma                           = 0.14
-
 ** Miscellaneous physics options for namelist record &physics:
 
 Topographic shading (only effective when grid sizes are a few kilometers)
@@ -355,4 +346,52 @@ between selected output times (e.g. daily) in auxhist3
  press_levels                        = 85000, 70000, 50000, 25000
  use_tot_or_hyd_p                    = 2
  /
+
+
+** Using different flux formulation for tropical storm simulations
+   (best for grid spacing less than 2 km) 
+   simple 1-D ocean mixed layer, or University of Miami 3DPWP ocean model
+   (add these in namelist record &physics):
+
+ isftcflx                            = 1,
+ sf_ocean_physics                    = 0 (off), 1 (OML), 2 (3D PWP)
+ oml_hml0                            = 50,
+ oml_gamma                           = 0.14
+ omdt                                = 1
+
+ Add these in the &domains section.  Note that the example here is for
+ a warm ocean: ocean_z is the depth of each layer (m), from the surface
+ downward; the associated temperature is ocean_t (K); and the associated 
+ salinity is ocean_s (ppt).
+
+ ocean_levels                        = 30,
+ ocean_z                             =        5,        15,        25,        35,        45,        55,
+                                             65,        75,        85,        95,       105,       115,
+                                            125,       135,       145,       155,       165,       175,
+                                            185,       195,       210,       230,       250,       270,
+                                            290,       310,       330,       350,       370,       390
+ ocean_t                             = 302.3493,  302.3493,  302.3493,  302.1055,  301.9763,  301.6818,
+                                       301.2220,  300.7531,  300.1200,  299.4778,  298.7443,  297.9194,
+                                       297.0883,  296.1443,  295.1941,  294.1979,  293.1558,  292.1136,
+                                       291.0714,  290.0293,  288.7377,  287.1967,  285.6557,  284.8503,
+                                       284.0450,  283.4316,  283.0102,  282.5888,  282.1674,  281.7461
+ ocean_s                             =  34.0127,   34.0127,   34.0127,   34.3217,   34.2624,   34.2632,
+                                        34.3240,   34.3824,   34.3980,   34.4113,   34.4220,   34.4303,
+                                        34.6173,   34.6409,   34.6535,   34.6550,   34.6565,   34.6527,
+                                        34.6490,   34.6446,   34.6396,   34.6347,   34.6297,   34.6247,
+                                        34.6490,   34.6446,   34.6396,   34.6347,   34.6297,   34.6247
+
+
+References for 3D ocean circulation model:
+Lee, C.-Y., and S. S. Chen, 2013: Stable Boundary Layer and Its Impact on Tropical Cyclone Structure in a Coupled Atmosphere-Ocean Model, Mon. Wea. Rev.
+Price, J. F., T. B. Sanford, and G. Z. Forristal, 1994: Forced stage response to a moving hurricane. J. Phy. Oceanogr., 24, 233-260.
+
+
+
+** Using U. Miami Forward Lagrangian trajectory calculation 
+  (add it in namelist record &physics):
+ trajcall                            = 1,
+ num_traj                            = 50
+
+
 

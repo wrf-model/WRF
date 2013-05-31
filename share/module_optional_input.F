@@ -189,6 +189,9 @@ CONTAINS
                                  its, ite, jts, jte, kts, kte  )
 
       CALL optional_ice        ( grid , fid , &
+                                 config_flags%seaice_albedo_opt , &
+                                 config_flags%seaice_snowdepth_opt , &
+                                 config_flags%seaice_thickness_opt , &
                                  ids, ide, jds, jde, kds, kde, &
                                  ims, ime, jms, jme, kms, kme, &
                                  its, ite, jts, jte, kts, kte  )
@@ -610,6 +613,9 @@ USE module_io_domain
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    SUBROUTINE optional_ice ( grid , fid , &
+                             seaice_albedo_opt , &
+                             seaice_snowdepth_opt , &
+                             seaice_thickness_opt , &
                              ids, ide, jds, jde, kds, kde, &
                              ims, ime, jms, jme, kms, kme, &
                              its, ite, jts, jte, kts, kte  )
@@ -623,6 +629,9 @@ USE module_io_domain
 
       TYPE ( domain ) :: grid
       INTEGER , INTENT(IN) :: fid
+      INTEGER , INTENT(IN) :: seaice_albedo_opt
+      INTEGER , INTENT(IN) :: seaice_snowdepth_opt
+      INTEGER , INTENT(IN) :: seaice_thickness_opt
 
       INTEGER :: ids, ide, jds, jde, kds, kde, &
                  ims, ime, jms, jme, kms, kme, &
@@ -662,39 +671,45 @@ USE module_io_domain
       END IF
 
       !
-      !  If ice depth is not found, set it to a large negative
-      !  that we can check on later.
+      !  Check that ICEDEPTH field is available for SEAICE_THICKNESS_OPT == 1
       !
       IF ( flag_icedepth == 0 ) THEN
-          DO j = jts , MIN(jde-1,jte)
-              DO i = its , MIN(ide-1,ite)
-                  grid%icedepth(i,j) = -1.E8
-              ENDDO
-          ENDDO
+          IF ( seaice_thickness_opt == 1 ) THEN
+             call wrf_error_fatal("Field ICEDEPTH not found in input.  Field ICEDEPTH is required if SEAICE_THICKNESS_OPT=1")
+             ! DO j = jts , MIN(jde-1,jte)
+             !     DO i = its , MIN(ide-1,ite)
+             !         grid%icedepth(i,j) = -1.E8
+             !     ENDDO
+             ! ENDDO
+          ENDIF
       ENDIF
     
       !
-      !  If sea-ice albedo is not found, set it to a large negative
-      !  that we can check on later.
+      !  Check that ALBSI field is available for SEAICE_ALBEDO_OPT == 2
       !
       IF ( flag_albsi == 0 ) THEN
-          DO j = jts , MIN(jde-1,jte)
-              DO i = its , MIN(ide-1,ite)
-                  grid%albsi(i,j) = -1.E8
-              ENDDO
-          ENDDO
+          IF ( seaice_albedo_opt == 2 ) THEN
+             call wrf_error_fatal("Field ALBSI not found in input.  Field ALBSI is required if SEAICE_ALBEDO_OPT=2")
+             ! DO j = jts , MIN(jde-1,jte)
+             !     DO i = its , MIN(ide-1,ite)
+             !         grid%albsi(i,j) = -1.E8
+             !     ENDDO
+             ! ENDDO
+          ENDIF
       ENDIF
 
       !
-      !  If snow depth on sea ice is not found, set it to a large negative
-      !  that we can check on later.
+      !  Check that SNOWSI field is available for SEAICE_SNOWDEPTH_OPT == 1
       !
       IF ( flag_snowsi == 0 ) THEN
-          DO j = jts , MIN(jde-1,jte)
-              DO i = its , MIN(ide-1,ite)
-                  grid%snowsi(i,j) = -1.E8
-              ENDDO
-          ENDDO
+          IF ( seaice_snowdepth_opt == 1 ) THEN
+             call wrf_error_fatal("Field SNOWSI not found in input.  Field SNOWSI is required if SEAICE_SNOWDEPTH_OPT=1")
+             ! DO j = jts , MIN(jde-1,jte)
+             !     DO i = its , MIN(ide-1,ite)
+             !         grid%snowsi(i,j) = -1.E8
+             !     ENDDO
+             ! ENDDO
+          ENDIF
       ENDIF
 
    END SUBROUTINE optional_ice

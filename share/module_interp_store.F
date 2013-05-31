@@ -36,7 +36,7 @@ subroutine store_interp_info(grid, parent_grid)
   implicit none
   type(domain), intent(in) :: grid, parent_grid
   
-#if ( NMM_NEST == 1 )
+#if (NMM_CORE == 1 && NMM_NEST == 1)
   
   grid_id=grid%id
   parent_grid_id=parent_grid%id

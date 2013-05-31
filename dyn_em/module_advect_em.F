@@ -7572,10 +7572,11 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
    DO j=j_start, j_end
    DO k=kts, ktf
-#ifdef INTEL_ALIGN64
-!DEC$ ASSUME_ALIGNED fqx:64, fqy:64, fqz:64, fqxl:64, fqyl:64, fqzl:64
+#ifdef XEON_SIMD
+!DIR$ simd
+#else
+!DIR$ vector always
 #endif
-!DEC$ vector always
    DO i=i_start, i_end
 
      ph_low = (mub(i,j)+mu_old(i,j))*field_old(i,k,j)        &

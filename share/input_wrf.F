@@ -95,6 +95,8 @@
     LOGICAL :: this_is_an_ideal_run
     INTEGER :: loop, hypsometric_opt
 
+    CHARACTER (LEN=256) :: a_message
+
 
 !<DESCRIPTION>
 !
@@ -865,7 +867,10 @@
         CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
 #if (DA_CORE != 1)
         IF( currentTime .GE. grid%next_bdy_time ) THEN
-          IF ( wrf_dm_on_monitor() ) write(0,*) 'THIS TIME ',this_datestr(1:19),'NEXT TIME ',next_datestr(1:19)
+          IF ( wrf_dm_on_monitor() ) THEN
+             write(a_message,*) 'THIS TIME ',this_datestr(1:19),'NEXT TIME ',next_datestr(1:19)
+             CALL wrf_message ( a_message ) 
+          END IF
           RETURN
         ENDIF
 #endif

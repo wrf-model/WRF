@@ -22,6 +22,32 @@ WRFDA, including infringement actions.
 This is the main directory for the WRFDA Version 3 source code release.
 ======================================
 
+V3.5 Release Notes :
+-------------------
+
+Version 3.5 is released on April 18. 2013.
+
+  For more information on WRFDA, visit the WRFDA Users home page
+  http://www.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+  New features:
+
+    -Wind Speed/Direction Assimilation: Wind speed/direction observations can now be directly assimilated.
+    -New satellite instruments can be assimilated:
+        -METOP Infrared Atmospheric Sounding Interferometer (IASI)
+        -NPP Advanced Technology Microwave Sounder (ATMS)
+        -FY3 Microwave Temperature Sounder (MWTS) and Microwave Humidity Sounder (MWHS)
+
+  Updated features:
+
+    -Yellowstone compilation options: Specific compilation options for the new NCAR supercomputer 
+        Yellowstone have been added.
+    -Updated I/O for improved back-compatability with previous versions of WRF and WRFDA
+    -WRFDA-3DVAR can now read two different PREPBUFR observation files at once
+    -The "ntmax" namelist variable is now a vector, and can be set to a different value for each outer loop
+    -WRFPLUS has been upgraded to V3.5 and it is consistent with the released WRF version 3.5.
+
+======================================
 V3.4.1 Release Notes :
 -------------------
 
@@ -194,6 +220,8 @@ WRFDA update history:
 - V3.3:     Apr  6, 2011
 - V3.3.1:   Sep 27, 2011
 - V3.4:     Apr  6, 2012
+- V3.4.1:   Aug 16, 2012
+- V3.5:     Apr 18, 2013
 
 ======================================
 
@@ -214,7 +242,7 @@ How to compile and run?
         setenv CRTM 1 (optional, set to compile WRFDA with CRTM capability)
         setenv RTTOV /usr/local/rttov10 (optional, set to compile WRFDA with RTTOV capability)
 
-- Type 'compile all_wrfvar' when your are ready:
+- Type 'compile all_wrfvar' when you are ready:
 
 - If sucessful, this will create da_wrfvar.exe and a set of utilities
   in directory WRFDA/var/build/. 

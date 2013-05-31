@@ -28,7 +28,11 @@ module module_HYDRO_drv
 #ifdef MPP_LAND
    if(IO_id .eq. my_id) then
 #endif
-     call geth_newdate(out_date, nlst_rt(did)%startdate, nint(nlst_rt(did)%rst_dt*60*rt_domain(did)%rst_counts))
+     if(nlst_rt(did)%dt .gt. nlst_rt(did)%rst_dt*60) then
+        call geth_newdate(out_date, nlst_rt(did)%startdate, nint(nlst_rt(did)%dt*rt_domain(did)%rst_counts))
+     else
+        call geth_newdate(out_date, nlst_rt(did)%startdate, nint(nlst_rt(did)%rst_dt*60*rt_domain(did)%rst_counts))
+     endif
      if ( out_date(1:19) == nlst_rt(did)%olddate(1:19) ) then
            rst_out = 99
            rt_domain(did)%rst_counts = rt_domain(did)%rst_counts + 1
@@ -48,7 +52,7 @@ module module_HYDRO_drv
    if(IO_id .eq. my_id) then
 #endif
 #ifdef HYDRO_D
-      write(6,*) "yyww =",  "RESTART."//nlst_rt(did)%olddate(1:16)   &
+      write(6,*) "restartFile  =",  "RESTART."//nlst_rt(did)%olddate(1:16)   &
                  //"_DOMAIN"//trim(nlst_rt(did)%hgrid)
 #endif
 #ifdef MPP_LAND
@@ -75,14 +79,18 @@ module module_HYDRO_drv
 #ifdef MPP_LAND
    if(IO_id .eq. my_id) then
 #endif
-      if(nlst_rt(did)%olddate(1:19) == nlst_rt(did)%startdate(1:19) ) then
+      if(nlst_rt(did)%olddate(1:19) .eq. nlst_rt(did)%startdate(1:19) .and. rt_domain(did)%his_out_counts .eq. 0) then
 #ifdef HYDRO_D
-         write(6,*) "output hydrology at time : ",nlst_rt(did)%olddate(1:19)
+         write(6,*) "output hydrology at time : ",nlst_rt(did)%olddate(1:19), rt_domain(did)%his_out_counts
 #endif
          call geth_newdate(rt_out_date, nlst_rt(did)%olddate, -1*nint(rt_domain(did)%his_out_counts*nlst_rt(did)%out_dt*60))
          outflag = 99
       else
-         call geth_newdate(out_date, nlst_rt(did)%startdate, nint(nlst_rt(did)%out_dt*60*rt_domain(did)%out_counts))
+         if(nlst_rt(did)%dt .gt. nlst_rt(did)%out_dt*60) then
+             call geth_newdate(out_date, nlst_rt(did)%startdate, nint(nlst_rt(did)%dt*rt_domain(did)%out_counts))
+         else
+             call geth_newdate(out_date, nlst_rt(did)%startdate, nint(nlst_rt(did)%out_dt*60*rt_domain(did)%out_counts))
+         endif
          if ( out_date(1:19) == nlst_rt(did)%olddate(1:19) ) then
 #ifdef HYDRO_D
              write(6,*) "output hydrology at time : ",nlst_rt(did)%olddate(1:19)
@@ -104,7 +112,12 @@ module module_HYDRO_drv
      rt_domain(did)%out_counts = rt_domain(did)%out_counts + 1
      rt_domain(did)%his_out_counts = rt_domain(did)%his_out_counts + 1
 
-     kt = rt_domain(did)%his_out_counts*nlst_rt(did)%out_dt*60/nlst_rt(did)%DT
+     if(nlst_rt(did)%out_dt*60 .gt. nlst_rt(did)%DT) then
+        kt = rt_domain(did)%his_out_counts*nlst_rt(did)%out_dt*60/nlst_rt(did)%DT
+     else
+        kt = rt_domain(did)%his_out_counts
+     endif
+
 
 
 
@@ -136,9 +149,10 @@ module module_HYDRO_drv
                    RT_DOMAIN(did)%q_sfcflx_x,RT_DOMAIN(did)%q_sfcflx_y,&
                 RT_DOMAIN(did)%soxrt,RT_DOMAIN(did)%soyrt,&
                 RT_DOMAIN(did)%QSTRMVOLRT,RT_DOMAIN(did)%SFCHEADSUBRT, &
-                nlst_rt(did)%wrfsi_finegrid_flnm,nlst_rt(did)%DT,&
+                nlst_rt(did)%geo_finegrid_flnm,nlst_rt(did)%DT,&
                 RT_DOMAIN(did)%SLDPTH,RT_DOMAIN(did)%LATVAL,&
-                RT_DOMAIN(did)%LONVAL,RT_DOMAIN(did)%dist,nlst_rt(did)%HIRES_OUT)
+                RT_DOMAIN(did)%LONVAL,RT_DOMAIN(did)%dist,nlst_rt(did)%HIRES_OUT,&
+                RT_DOMAIN(did)%QBDRYRT )
 
            if(nlst_rt(did)%GWBASESWCRT .eq. 3) then
 	     
@@ -150,7 +164,7 @@ module module_HYDRO_drv
                 rt_out_date, nlst_rt(did)%olddate,    &
                 gw2d(did)%h, RT_DOMAIN(did)%SMCRT,                 &
                 gw2d(did)%convgw, RT_DOMAIN(did)%SFCHEADSUBRT,     &
-                nlst_rt(did)%wrfsi_finegrid_flnm,nlst_rt(did)%DT, &
+                nlst_rt(did)%geo_finegrid_flnm,nlst_rt(did)%DT, &
                 RT_DOMAIN(did)%SLDPTH,RT_DOMAIN(did)%LATVAL,       &
                 RT_DOMAIN(did)%LONVAL,rt_domain(did)%dist,           &
                 nlst_rt(did)%HIRES_OUT)
@@ -814,7 +828,7 @@ module module_HYDRO_drv
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! get the dimension 
-     call get_file_dimension(trim(nlst_rt(did)%wrfsi_static_flnm), ix,jx)
+     call get_file_dimension(trim(nlst_rt(did)%geo_static_flnm), ix,jx)
    
        
 #ifdef MPP_LAND
@@ -982,13 +996,13 @@ module module_HYDRO_drv
          allocate(soltyp(RT_DOMAIN(did)%ix,RT_DOMAIN(did)%jx) )
 
          soltyp = 0
-         call get2d_lsm_soltyp(soltyp,RT_DOMAIN(did)%ix,RT_DOMAIN(did)%jx,trim(nlst_rt(did)%wrfsi_static_flnm))
+         call get2d_lsm_soltyp(soltyp,RT_DOMAIN(did)%ix,RT_DOMAIN(did)%jx,trim(nlst_rt(did)%geo_static_flnm))
 
-         call get2d_lsm_real("HGT",RT_DOMAIN(did)%TERRAIN,RT_DOMAIN(did)%ix,RT_DOMAIN(did)%jx,trim(nlst_rt(did)%wrfsi_static_flnm))
+         call get2d_lsm_real("HGT",RT_DOMAIN(did)%TERRAIN,RT_DOMAIN(did)%ix,RT_DOMAIN(did)%jx,trim(nlst_rt(did)%geo_static_flnm))
 
-         call get2d_lsm_real("XLAT",RT_DOMAIN(did)%lat_lsm,RT_DOMAIN(did)%ix,RT_DOMAIN(did)%jx,trim(nlst_rt(did)%wrfsi_static_flnm))
-         call get2d_lsm_real("XLONG",RT_DOMAIN(did)%lon_lsm,RT_DOMAIN(did)%ix,RT_DOMAIN(did)%jx,trim(nlst_rt(did)%wrfsi_static_flnm))
-         call get2d_lsm_vegtyp(RT_DOMAIN(did)%VEGTYP,RT_DOMAIN(did)%ix,RT_DOMAIN(did)%jx,trim(nlst_rt(did)%wrfsi_static_flnm))
+         call get2d_lsm_real("XLAT",RT_DOMAIN(did)%lat_lsm,RT_DOMAIN(did)%ix,RT_DOMAIN(did)%jx,trim(nlst_rt(did)%geo_static_flnm))
+         call get2d_lsm_real("XLONG",RT_DOMAIN(did)%lon_lsm,RT_DOMAIN(did)%ix,RT_DOMAIN(did)%jx,trim(nlst_rt(did)%geo_static_flnm))
+         call get2d_lsm_vegtyp(RT_DOMAIN(did)%VEGTYP,RT_DOMAIN(did)%ix,RT_DOMAIN(did)%jx,trim(nlst_rt(did)%geo_static_flnm))
 
 
 

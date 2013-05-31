@@ -41,7 +41,20 @@
 
       IMPLICIT NONE
 
+      LOGICAL :: exists
+      LOGICAL , EXTERNAL :: wrf_dm_on_monitor
       INTEGER :: i, oops
+
+!-----------------------------------------------------------------------
+! Set up the WRF Hydro namelist option to allow dynamic allocation of
+! variables.
+!-----------------------------------------------------------------------
+#ifdef WRF_HYDRO
+   model_config_rec % wrf_hydro = 1
+#else
+   model_config_rec % wrf_hydro = 0
+#endif
+
 
 !-----------------------------------------------------------------------
 ! Check that all values of sf_surface_physics are the same for all domains
@@ -152,6 +165,18 @@
       wrf_err_message = '             increase computation time.'
       CALL wrf_message ( wrf_err_message )
    ENDIF
+
+!----------------------------------------------------------------------------
+! If trajectory option is turned off, make sure the number of trajectories is 
+! zero.
+!----------------------------------------------------------------------------
+   IF ( ( model_config_rec%traj_opt .EQ. 0 ) .AND. &
+        ( model_config_rec%num_traj .NE. 0 ) ) THEN
+         WRITE (wrf_err_message, FMT='(A,A)') '--- WARNING: traj_opt is zero, but ', &
+                'num_traj is not zero; setting num_traj to zero.'
+         CALL wrf_message ( wrf_err_message )
+         model_config_rec%num_traj = 0 
+   END IF
 
 #endif
 
@@ -315,6 +340,23 @@
       END IF
 
 !-----------------------------------------------------------------------
+!  shcu_physics = 3 (grimsshcuscheme) only works with YSU PBL.
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%bl_pbl_physics(i) .NE. YSUSCHEME ) .AND. &
+              ( model_config_rec%gwd_opt .EQ. GWDOPT ) ) THEN
+            model_config_rec%gwd_opt = 0
+            oops = oops + 1
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = 'bl_pbl_physics /= 1, implies shcu_physics cannot be 3, resetting'
+         CALL wrf_message ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
 !  If analysis FDDA is turned off, reset the io_forms to zero so that
 !  there is no chance that WRF tries to input the data.
 !-----------------------------------------------------------------------
@@ -370,6 +412,32 @@
       END IF
 
 !-----------------------------------------------------------------------
+! For nwp_diagnostics = 1, history_interval must be used.           
+!-----------------------------------------------------------------------
+
+      IF ( ( model_config_rec%nwp_diagnostics .NE. 0 ) .AND. &
+           ( model_config_rec%history_interval(1) .EQ. 0 ) ) THEN
+         wrf_err_message = '--- ERROR:  nwp_diagnostics requires the use of "history_interval" namelist.'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '---         Replace interval variable with "history_interval".'
+         CALL wrf_error_fatal ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
+! Name change in the namelist.input file.  We used to only have the
+! ocean mixed layer option (omlcall=1).  With the addition of a 3D ocean,
+! now let's change the name of the option.  If the old name is present,
+! tell the user to swap their namelist, and then stop.
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec%omlcall .NE. 0 ) THEN
+         wrf_err_message = '--- ERROR:  The namelist.input variable "omlcall" has been renamed.'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '---         Replace "omlcall" with the new name "sf_ocean_physics".'
+         CALL wrf_error_fatal ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
 ! For adaptive time stepping, certain physics schemes are not allowed
 ! to have intermittent frequencies.  So, for those schemes below, we just
 ! turn the frequencies so that the schemes are called for each time step.
@@ -393,6 +461,7 @@
             END DO
          END IF
       END IF
+
 !-----------------------------------------------------------------------
 ! The cu_rad_feedback namelist flag with the two Grell cumulus parameterization 
 ! schemes needs to have the namelist flag cu_diag=1
@@ -430,7 +499,22 @@
        END DO
  
 !-----------------------------------------------------------------------
-! The two Grell cumulus parameterization schemes need to have the 
+! Test to see if we allocate space for the time series.
+!-----------------------------------------------------------------------
+
+      IF ( wrf_dm_on_monitor() ) THEN
+         CALL wrf_tsin_exist ( exists )
+         IF ( exists ) THEN
+            model_config_rec%process_time_series = 1
+         ELSE
+            model_config_rec%process_time_series = 0
+         END IF
+      END IF
+#ifdef DM_PARALLEL
+      CALL wrf_dm_bcast_integer(model_config_rec%process_time_series, 1)
+#endif
+!-----------------------------------------------------------------------
+! The three Grell cumulus parameterization schemes need to have the 
 ! namelist flag cu_diag=1, and all other cumulus schemes must have
 ! cu_diag=0.
 !-----------------------------------------------------------------------
@@ -444,6 +528,45 @@
             model_config_rec%cu_diag(i) = 0
          END IF
       END DO
+
+!-----------------------------------------------------------------------
+!  Only implement the TEMF PBL scheme with the TEMP SFCLAY scheme.  
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%bl_pbl_physics(i) .EQ. TEMFPBLSCHEME ) .AND. &
+              ( model_config_rec%sf_sfclay_physics(i) .NE. TEMFSFCSCHEME ) )  THEN
+            wrf_err_message = '--- ERROR: Using bl_pbl_physics=10 requires sf_sfclay_physics=10 '
+            CALL wrf_error_fatal ( TRIM(wrf_err_message) )
+         ELSEIF ( ( model_config_rec%bl_pbl_physics(i) .NE. TEMFPBLSCHEME ) .AND. &
+                  ( model_config_rec%sf_sfclay_physics(i) .EQ. TEMFSFCSCHEME ) ) THEN
+            wrf_err_message = '--- ERROR: Using sf_sfclay_physics=10 requires bl_pbl_physics=10 '
+            CALL wrf_error_fatal ( TRIM(wrf_err_message) )
+         END IF
+      ENDDO      ! Loop over domains
+
+!-----------------------------------------------------------------------
+!  The CLM scheme may not even be compiled, so make sure it is not allowed
+!  to be run if the code is not available.
+!-----------------------------------------------------------------------
+
+#if !defined ( WRF_USE_CLM )
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%sf_surface_physics(i) .EQ. CLMSCHEME ) THEN
+            oops = oops + 1 
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: The CLM surface scheme was requested in the namelist.input file.'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         wrf_err_message = '--- ERROR: However, the WRF CLM scheme was not compiled in WRF.'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         wrf_err_message = '--- ERROR: Please place the -DWRF_USE_CLM option in configure.wrf file, and recompile.'
+         CALL wrf_error_fatal ( wrf_err_message )
+      END IF
+#endif
+
  
 !-----------------------------------------------------------------------
 !  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.

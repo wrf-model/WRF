@@ -132,16 +132,7 @@ state    real  e_orgj_num      i+jf     emis_ant     1         Z      i5      "E
 state    real  e_ecj_num       i+jf     emis_ant     1         Z      i5      "E_ECJ_NUM"           "J-MODE BC NUMBER"        "particle/m2/s"
 state    real  e_so4j_num      i+jf     emis_ant     1         Z      i5      "E_SO4J_NUM"          "J-MODE SO4 NUMBER"       "particle/m2/s"
 state    real  e_so4i_num      i+jf     emis_ant     1         Z      i5      "E_SO4I_NUM"          "I-MODE SO4 NUMBER"       "particle/m2/s"
-#CAMMGMP WRF_CHEM variables
-state    real  DGNUM4D         ikj{nmode} misc      1         -      r        "DGNUM4D"                "Number mode diameter"                                   "" 
-state    real  DGNUMWET4D      ikj{nmode} misc      1         -      r        "DGNUMWET4D"             "Number mode diameter WET"                               "" 
-state    real  QME3D           ikj        misc      1         -      r        "QME3D"                  "Net condensation rate "                              "kg/kg/s" 
-state    real  PRAIN3D         ikj        misc      1         -      r        "PRAIN3D"                "Rate of conversion of condensate to precipitation"   "kg/kg/s"
-state    real  NEVAPR3D        ikj        misc      1         -      r        "NEVAPR3D"               "Evaporation rate of rain + snow"                     "kg/kg/s"
-state    real  RATE1ORD_CW2PR_ST3D ikj    misc      1         -      r        "RATE1ORD_CW2PR_ST3D"    "1st order rate for direct conversion of strat. cloud water to precip" "1/s"
-
-#CAM5's wet scavenging output variables
-state    real  FRACIS3D        ikj        misc      1         -      r        "FRACIS3D"               "fraction of transported species that are insoluble"    ""
+state    real  e_num_a3        i+jf     emis_ant     1         Z      i5      "E_NUM_A3"            "COARSE MODE NUMBER"      "particle/m2/s"
 
 
 #SAPRCNOV additional emissions, automatically created using diff_mechEmiss_wrfRegistry.m script (pablo-saide@uiowa.edu)
@@ -438,6 +429,22 @@ state    real  ebio_ora2      ij      misc        1         -      -        "ebi
 state    real  ebio_co        ij      misc        1         -      -        "ebio_co"          "Actual biog emiss"  "mol km^-2 hr^-1"
 state    real  ebio_nr        ij      misc        1         -      -        "ebio_nr"          "Actual biog emiss"  "mol km^-2 hr^-1"
 state    real  ebio_no        ij      misc        1         -      -        "ebio_no"          "Actual biog emiss"  "mol km^-2 hr^-1"
+# saprc 
+state    real  ebio_alk3      ij      misc        1         -      -        "ebio_alk3"        "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_alk4      ij      misc        1         -      -        "ebio_alk4"        "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_alk5      ij      misc        1         -      -        "ebio_alk5"        "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_ole1      ij      misc        1         -      -        "ebio_ole1"        "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_ole2      ij      misc        1         -      -        "ebio_ole2"        "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_aro1      ij      misc        1         -      -        "ebio_aro1"        "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_aro2      ij      misc        1         -      -        "ebio_aro2"        "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_ccho      ij      misc        1         -      -        "ebio_ccho"        "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_meoh      ij      misc        1         -      -        "ebio_meoh"        "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_ethene    ij      misc        1         -      -        "ebio_ethene"      "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_hcooh     ij      misc        1         -      -        "ebio_hcooh"       "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_terp      ij      misc        1         -      -        "ebio_terp"        "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_bald      ij      misc        1         -      -        "ebio_bald"        "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_cco_oh    ij      misc        1         -      -        "ebio_cco_oh"      "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_rco_oh    ij      misc        1         -      -        "ebio_rco_oh"      "Actual biog emiss"  "mol km^-2 hr^-1"
 # mozcart megan2 bio emission species 
 state    real  ebio_c10h16    ij      misc        1         -      -        "ebio_c10h16"      "Actual biog emiss"  "mol km^-2 hr^-1"
 state    real  ebio_tol       ij      misc        1         -      -        "ebio_tol"         "Actual biog emiss"  "mol km^-2 hr^-1"
@@ -2447,6 +2454,7 @@ rconfig   integer kdvel                    namelist,chem        1              1
 rconfig   integer erosion_dim              namelist,chem        1              3       -       "erosion_dim"          ""      ""
 rconfig   integer    biomass_emiss_opt     namelist,chem        max_domains    0       rh      "biomass_emiss_opt"                   ""    ""
 rconfig   integer cam_mam_mode             namelist,chem        1              3       irh     "cam_mam_mode"                   ""    ""
+rconfig   integer cam_mam_nspec            namelist,chem        1              74      irh     "cam_mam_nspec"                   ""    ""
 rconfig   logical CAM_MP_MAM_cpled         namelist,chem        1            .true.    irh     "CAM_MP_MAM_cpled"                   ""    ""
 # Lightning
 rconfig   integer     lightning_opt       namelist,chem        max_domains        0       rh      "lightning_opt"     ""      ""

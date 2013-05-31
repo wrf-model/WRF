@@ -280,6 +280,21 @@ em_real : wrf
                ln -sf ../../run/RRTMG_SW_DATA . ;                      \
                ln -sf ../../run/CAM_ABS_DATA . ;                       \
                ln -sf ../../run/CAM_AEROPT_DATA . ;                    \
+               cp     ../../run/CAMtr_volume_mixing_ratio.RCP8.5 CAMtr_volume_mixing_ratio ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP4.5 . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP6   . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.A1B    . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.A2     . ;   \
+               ln -sf ../../run/CLM_ALB_ICE_DFS_DATA . ;               \
+               ln -sf ../../run/CLM_ALB_ICE_DRC_DATA . ;               \
+               ln -sf ../../run/CLM_ASM_ICE_DFS_DATA . ;               \
+               ln -sf ../../run/CLM_ASM_ICE_DRC_DATA . ;               \
+               ln -sf ../../run/CLM_DRDSDT0_DATA . ;                   \
+               ln -sf ../../run/CLM_EXT_ICE_DFS_DATA . ;               \
+               ln -sf ../../run/CLM_EXT_ICE_DRC_DATA . ;               \
+               ln -sf ../../run/CLM_KAPPA_DATA . ;                     \
+               ln -sf ../../run/CLM_TAU_DATA . ;                       \
                ln -sf ../../run/ozone.formatted . ;                    \
                ln -sf ../../run/ozone_lat.formatted . ;                \
                ln -sf ../../run/ozone_plev.formatted . ;               \
@@ -319,6 +334,21 @@ em_real : wrf
              ln -sf ../../run/RRTMG_SW_DATA . ;                     \
              ln -sf ../../run/CAM_ABS_DATA . ;                      \
              ln -sf ../../run/CAM_AEROPT_DATA . ;                   \
+             cp     ../../run/CAMtr_volume_mixing_ratio.RCP8.5 CAMtr_volume_mixing_ratio ;   \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP4.5 . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP6   . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.A1B    . ;  \
+             ln -sf ../../run/CAMtr_volume_mixing_ratio.A2     . ;  \
+             ln -sf ../../run/CLM_ALB_ICE_DFS_DATA . ;              \
+             ln -sf ../../run/CLM_ALB_ICE_DRC_DATA . ;              \
+             ln -sf ../../run/CLM_ASM_ICE_DFS_DATA . ;              \
+             ln -sf ../../run/CLM_ASM_ICE_DRC_DATA . ;              \
+             ln -sf ../../run/CLM_DRDSDT0_DATA . ;                  \
+             ln -sf ../../run/CLM_EXT_ICE_DFS_DATA . ;              \
+             ln -sf ../../run/CLM_EXT_ICE_DRC_DATA . ;              \
+             ln -sf ../../run/CLM_KAPPA_DATA . ;                    \
+             ln -sf ../../run/CLM_TAU_DATA . ;                      \
              ln -sf ../../run/ozone.formatted . ;                   \
              ln -sf ../../run/ozone_lat.formatted . ;               \
              ln -sf ../../run/ozone_plev.formatted . ;              \
@@ -544,7 +574,7 @@ framework :
 	       LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf; \
           cd ../io_int ; \
-          $(MAKE) SFC="$(SFC) $(FCBASEOPTS)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP)" DM_FC="$(DM_FC) $(FCBASEOPTS)"\
+          $(MAKE) SFC="$(SFC) $(FCBASEOPTS)" FC="$(SFC) $(FCBASEOPTS)" RANLIB="$(RANLIB)" CPP="$(CPP) $(ARCH_LOCAL)" DM_FC="$(DM_FC) $(FCBASEOPTS)"\
                TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf ; \
           cd ../../frame )
@@ -612,6 +642,10 @@ fseek_test :
 # rule used by configure to test if this will compile with netcdf4
 nc4_test:
 	@cd tools ; /bin/rm -f nc4_test.{exe,nc,o} ; $(SCC) -o nc4_test.exe nc4_test.c -I$(NETCDF)/include -L$(NETCDF)/lib -lnetcdf $(NETCDF4_DEP_LIB) ; cd ..
+
+# rule used by configure to test if Fortran 2003 IEEE signaling is available
+fortran_2003_test:
+	@cd tools ; /bin/rm -f fortran_2003_test.{exe,o} ; $(SFC) -o fortran_2003_test.exe fortran_2003_test.F ; cd ..
 
 ### 3.b.  sub-rule to build the expimental core
 

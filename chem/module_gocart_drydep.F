@@ -101,7 +101,7 @@ CONTAINS
       z0(1,1) = real( znt(i,j),kind=8 )
       ts(1,1) = real( tsk(i,j),kind=8 )
 !    if(i.eq.23.and.j.eq.74)ipr=1
-      call depvel_gocart(ipr,ii,imx,jmx,lmx,&
+      call depvel_gocart(config_flags,ipr,ii,imx,jmx,lmx,&
                          airden, delz_sfc, pblz, ts, ustar, hflux, ilwi, &
                          ps, z0, dvel, drydf,g,rmol(i,j),aer_res(i,j))
       do nv = p_p25,num_chem
@@ -114,7 +114,7 @@ CONTAINS
 
 end subroutine gocart_drydep_driver
 
-SUBROUTINE depvel_gocart( ipr,ii,imx,jmx,lmx, &
+SUBROUTINE depvel_gocart( config_flags,ipr,ii,imx,jmx,lmx, &
                           airden, delz_sfc, pblz, ts, ustar, hflux, ilwi, &
                           ps, z0, dvel, drydf,g0,rmol,aer_res)
 
@@ -151,6 +151,7 @@ SUBROUTINE depvel_gocart( ipr,ii,imx,jmx,lmx, &
 ! *                                                                          *
 ! **************************************************************************** 
 
+  USE module_configure
 
   IMPLICIT NONE
 
@@ -163,6 +164,8 @@ SUBROUTINE depvel_gocart( ipr,ii,imx,jmx,lmx, &
   REAL*8,    INTENT(IN)  :: z0(imx,jmx)
   REAL,    INTENT(IN)  :: g0,rmol,aer_res
   REAL*8,    INTENT(OUT) :: dvel(imx,jmx), drydf(imx,jmx)
+
+  TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
   
   REAL*8    :: obk, vds, czh, rttl, frac, logmfrac, psi_h, cz, eps
   REAL*8    :: vd, ra, rb, rs  
@@ -278,7 +281,11 @@ SUBROUTINE depvel_gocart( ipr,ii,imx,jmx,lmx, &
            czh  = pblz(i,j)/obk
            IF (czh < -30.0_8) vds = 0.0009_8*ustar(i,j)*(-czh)**0.6667_8
            if(ipr.eq.1) write(0,*)ra,aer_res,vds
-           ra = real(aer_res,kind=8)
+
+           IF( config_flags%chem_opt /= CHEM_VASH      .and.                  &
+               config_flags%chem_opt /= DUST           )THEN
+              ra = real(aer_res,kind=8)
+           ENDIF
 
            ! --Set Vds to be less than VDSMAX (entry in input file divided --
            !   by 1.E4). VDSMAX is taken from Table 2 of Walcek et al. [1986].

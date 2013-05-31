@@ -60,6 +60,12 @@ CONTAINS
 
             call HYDRO_ini(ntime,did,ix0=ix,jx0=jx,vegtyp=grid%IVGTYP(its:ite,jts:jte),soltyp=grid%isltyp(its:ite,jts:jte))
 
+            if(nlst_rt(did)%sys_cpl .ne. 2) then
+               write(6,*) "Error: sys_cpl should be 2."
+               call hydro_stop()
+            endif
+
+
             nlst_rt(did)%startdate(1:19) = cpl_outdate(1:19)
             nlst_rt(did)%olddate(1:19) = cpl_outdate(1:19)
 

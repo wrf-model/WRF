@@ -87,6 +87,29 @@ MODULE module_cam_support
 
   !From cam_history_support.F90
   real(r8), parameter, public :: fillvalue = 1.e36_r8     ! fill value for netcdf fields
+
+#ifdef WRF_CHEM
+  !For module_cam_mam_gas_wetdep_driver.F
+  !BSINGH - We are going to operate on only 6 gases (following MOSAIC -
+  !module_mosaic_wetscav.F). MOSAIC actually operates upon 7 gases but MAM
+  !doesn't have msa, therefore MAM will operate on only 6 gases
+  
+  !so2,h2o2,h2so4,hno3,hcl,nh3 (msa not included)
+  
+  integer, public, parameter :: gas_wetdep_cnt = 6
+  character(len=3), public, parameter  :: gas_wetdep_method = 'MOZ'
+  !BSINGH - Following list should be all UPPER CASE and 'sulf' should be replaced with 'H2SO4'
+  character(len=5), public, parameter   :: gas_wetdep_list(1:gas_wetdep_cnt) = (/'SO2  ','H2O2 ','H2SO4','HNO3 ','HCL  ','NH3  '/) !Upper Case
+
+  !BSINGH:01/31/2013 - numgas_mam is being used for specifying a variable dimension in che_driver
+  !This variable is *UPDATED* in chemics_init.F, where it is assigned a new value based
+  !on number of gases being used in the simulation
+  integer :: numgas_mam = 1
+
+  !BSINGH:02/01/2013 - Define cam_mam_aerosol to know if the simulation is a mam simulation or not
+  ! This variable is updated in module_physics_init.F
+  logical :: cam_mam_aerosols = .FALSE.
+#endif
   
   !------------------------------------------------------------------------
 CONTAINS

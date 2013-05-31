@@ -14,6 +14,7 @@ CONTAINS
      &          seaice_thickness_default                              &
      &          ,seaice_snowdepth_opt,seaice_snowdepth_max            &
      &          ,seaice_snowdepth_min,tice2tsk_if2cold                &
+     &          ,ifndalbsi, ifndicedepth, ifndsnowsi                  &
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih   &
 #if (NMM_CORE==1)
@@ -188,12 +189,12 @@ CONTAINS
              ! OPTIONAL, Required by TEMF surface layer 1/7/09 WA
      &          ,hd_temf,te_temf,fCor,exch_temf,wm_temf               &
              ! Required by ideal SCM surface layer 1/6/10 WA
-     &          ,hfx_force,lh_force,tsk_force                       &
+     &          ,hfx_force,lh_force,tsk_force                         &
      &          ,hfx_force_tend,lh_force_tend,tsk_force_tend          &
              !  Optional observation nudging
      &          ,uratx,vratx,tratx                                    &
-             !  Optional simple oml model
-     &          ,omlcall,oml_hml0,oml_gamma                           &
+             !  Optional ocean model
+     &          ,sf_ocean_physics,oml_hml0,oml_gamma                  &
      &          ,tml,t0ml,hml,h0ml,huml,hvml,f,tmoml                  &
      &          ,ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                  &
      &         ,isurban, mminlu                                       &
@@ -242,7 +243,9 @@ CONTAINS
                                        ,PXLSMSCHEME               &
                                        ,CLMSCHEME                 &
                                        ,SSIBSCHEME                & !ssib
-                                       ,MYNNSFCSCHEME             
+                                       ,MYNNSFCSCHEME             &
+                                       ,OMLSCHEME                 &
+                                       ,PWP3DSCHEME
 #else
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,SFCLAYREVSCHEME           &
@@ -273,7 +276,9 @@ CONTAINS
    USE module_sf_noahdrv, only : lsm
    USE module_sf_noahmpdrv, only : noahmplsm
    USE module_sf_noah_seaice_drv
+#ifdef WRF_USE_CLM
    USE module_sf_clm
+#endif
    USE module_sf_ssib  ! ssib
    USE module_sf_ruclsm
    USE module_sf_pxsfclay
@@ -283,7 +288,7 @@ CONTAINS
    USE module_sf_noah_seaice_drv
 #if ( EM_CORE==1)
    USE module_sf_mynn
-   USE module_sf_oml
+   USE module_sf_ocean_driver
    USE module_sf_idealscmsfclay
 #endif
    USE module_sf_scmflux       
@@ -317,7 +322,9 @@ CONTAINS
 !      2.  BEP
 !
 !  ocean mixed layer model
-!      omlcall = 1
+!      sf_ocean_physics = 1
+!  ocean 3d PWP
+!      sf_ocean_physics = 2
 !------------------------------------------------------------------
    IMPLICIT NONE
 !======================================================================
@@ -427,7 +434,7 @@ CONTAINS
 !-- DZS
 !-- num_soil_layers number of soil layer
 !-- IFSNOW      ifsnow=1 for snow-cover effects
-!-- omlcall       whether to call simple ocean mixed layer model from slab (1 = use oml)
+!-- sf_ocean_physics       whether to call ocean model from slab (1 = oml, 2=3d PWP)
 !-- oml_hml0      initial mixed layer depth (if real-data not available, default 50 m)
 !-- oml_gamma     lapse rate below mixed layer in ocean (default 0.14 K m-1)
 !-- ck            enthalpy exchange coeff at 10 meters
@@ -482,6 +489,9 @@ CONTAINS
    INTEGER, INTENT(IN)::   SEAICE_SNOWDEPTH_OPT
    REAL,    INTENT(IN)::   SEAICE_SNOWDEPTH_MAX
    REAL,    INTENT(IN)::   SEAICE_SNOWDEPTH_MIN
+   INTEGER, INTENT(IN)::   IFNDALBSI
+   INTEGER, INTENT(IN)::   IFNDICEDEPTH
+   INTEGER, INTENT(IN)::   IFNDSNOWSI
 
    INTEGER, INTENT(IN)::   NLCAT, mosaic_lu, mosaic_soil
    INTEGER, INTENT(IN)::   NSCAT
@@ -817,7 +827,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN):: slope,slp_azi
 
    INTEGER, OPTIONAL, INTENT(IN )::   ISFTCFLX,IZ0TLND
-   INTEGER, OPTIONAL, INTENT(IN )::   OMLCALL
+   INTEGER, OPTIONAL, INTENT(IN )::   SF_OCEAN_PHYSICS
    REAL   , OPTIONAL, INTENT(IN )::   OML_HML0
    REAL   , OPTIONAL, INTENT(IN )::   OML_GAMMA
 !
@@ -1087,7 +1097,7 @@ CONTAINS
 !
    REAL   :: xice_threshold
 
-! cyl ocean variable 
+! cyl 3d ocean variable 
    integer :: okms, okme
    real, optional , dimension(ims:ime, okms:okme, jms:jme), INTENT(INOUT):: OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH
    real, optional , dimension(ims:ime, okms:okme, jms:jme), INTENT(IN):: OM_TINI,OM_SINI
@@ -1122,6 +1132,17 @@ CONTAINS
      xice_threshold = 0.02
   endif
 
+  if ( ( seaice_albedo_opt == 2 ) .and. ( ifndalbsi == 0 ) ) then
+      call wrf_error_fatal("Field ALBSI not found in input.  Field ALBSI is required if SEAICE_ALBEDO_OPT=2")
+  endif
+
+  if ( ( seaice_thickness_opt == 1 ) .and. ( ifndicedepth == 0 ) ) then
+      call wrf_error_fatal("Field ICEDEPTH not found in input.  Field ICEDEPTH is required if SEAICE_THICKNESS_OPT=1")
+  endif
+
+  if ( ( seaice_snowdepth_opt == 1 ) .and. ( ifndsnowsi == 0 ) ) then
+      call wrf_error_fatal("Field SNOWSI not found in input.  Field SNOWSI is required if SEAICE_SNOWDEPTH_OPT=1")
+  endif
 
 !$OMP PARALLEL DO &
 !$OMP PRIVATE (ij, i, j, k)
@@ -2457,7 +2478,7 @@ CONTAINS
                    T2(I,J) = TSK(I,J) - HFX(I,J)/(PSFC(I,J)/(R_d * TSK(I,J))*CP*CHS2(I,J))
                  ENDIF
                    TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**ROVCP
-              ELSEIF (IVGTYP(I,J) == ISURBAN .OR. IVGTYP(I,J) == ISICE ) THEN
+              ELSEIF (IVGTYP(I,J) == ISURBAN .OR. IVGTYP(I,J) == ISICE .OR. FVEGXY(I,J) == 0.0 ) THEN
                    Q2(I,J)  = Q2MBXY(I,J)
                    T2(I,J)  = T2MBXY(I,J)
                    TH2(I,J) = T2(i,j)*(1.E5/PSFC(i,j))**RCP
@@ -2722,6 +2743,7 @@ CONTAINS
        ELSE
          CALL wrf_error_fatal('Lacking arguments for P-X LSM in surface driver')
        ENDIF
+#ifdef WRF_USE_CLM
 !---------------------------------------------------------------------
 ! CLM coupling currently version 4 added by Yaqiong Lu and Jiming Jin
 
@@ -2956,6 +2978,7 @@ CONTAINS
 
 ! end of CLM scehme
 ! -------------------------------------------------------------------
+#endif
 
      CASE (SSIBSCHEME)
      IF(PRESENT(alswvisdir))THEN
@@ -3170,25 +3193,26 @@ CONTAINS
  430 CONTINUE
 
 #if ( EM_CORE==1)
-   IF (omlcall .EQ. 1 .or. omlcall .EQ. 2) THEN
+   IF (sf_ocean_physics .EQ. OMLSCHEME .or. sf_ocean_physics .EQ. PWP3DSCHEME) THEN
 ! simple ocean mixed layer model based Pollard, Rhines and Thompson (1973)
      CALL wrf_debug( 100, 'Call OCEANML' )
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
      DO ij = 1 , num_tiles
-        CALL oceanml(tml,t0ml,hml,h0ml,huml,hvml,ust,u_phy,v_phy, &
+        CALL ocean_driver(tml,t0ml,hml,h0ml,huml,hvml,ust,u_phy,v_phy, &
                      tmoml,f,g,oml_gamma,                         &
                      xland,hfx,lh,tsk,gsw,glw,emiss,              &
                      dtbl,STBOLT,                                 &
                      ids,ide, jds,jde, kds,kde,                   &
                      ims,ime, jms,jme, kms,kme,                   &
                      i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, & 
-                     omlcall,okms, okme, &                           !cyl
-                     om_tmp,om_s,om_u, om_v,  om_depth, om_ml, &   !cyl
-                     om_lat, om_lon, &                                        !cyl
-                     QFX,  &                 !cyl 
-                     rdx, rdy, msfu, msfv, msft,xtime,om_tini,om_sini,id,omdt, &
-                     itimestep ) !cyl
+                     sf_ocean_physics,okms, okme,                 & !cyl
+                     om_tmp,om_s,om_u, om_v,  om_depth, om_ml,    & !cyl
+                     om_lat, om_lon,                              & !cyl
+                     QFX,                                         & !cyl 
+                     rdx, rdy, msfu, msfv, msft,xtime,            & !cyl 
+                     om_tini,om_sini,id,omdt,                     & !cyl 
+                     itimestep )                                    !cyl
      ENDDO
      !$OMP END PARALLEL DO
    ENDIF

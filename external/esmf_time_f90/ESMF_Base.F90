@@ -547,15 +547,21 @@ end function
       else
               ournamespace = "global"
       endif
-!     ! Construct a default name if one is not given
-      if((.not. present(name)) .or. (name .eq. "")) then
 
-          write(defaultname, 20) trim(ournamespace), seqnum
-20        format(A,I3.3)
-          seqnum = seqnum + 1
-          anytype%name = defaultname
+!     ! Construct a default name if one is not given
+      if( present(name) ) then
+         if( name .eq. "" ) then
+            write(defaultname, 20) trim(ournamespace), seqnum
+20          format(A,I3.3)
+            seqnum = seqnum + 1
+            anytype%name = defaultname
+         else
+            anytype%name = name
+         endif
       else
-          anytype%name = name
+         write(defaultname, 20) trim(ournamespace), seqnum
+         seqnum = seqnum + 1
+         anytype%name = defaultname
       endif
 
       if (rcpresent) rc = ESMF_SUCCESS

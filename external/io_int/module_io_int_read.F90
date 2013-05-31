@@ -601,8 +601,157 @@ contains
 
     end subroutine read_c1
 
+#else      /* defined(DM_PARALLEL) && !defined(STUBMPI) */
 
-#else
+#ifdef __PATHSCALE__
+!>
+!! It appears Pathscale (v4) does not support Fortran 2003 stream IO.
+!! So we can not compile this module serially.
+!! Instead all these subroutine will cause FATAL error messages.
+
+contains
+    subroutine read_i0(ifd, records, varname, dst, ierr)
+
+    integer,                 intent(in)  :: ifd
+    type(r_info), pointer,   intent(in)  :: records(:)
+    character(len=*),        intent(in)  :: varname
+    integer,                 intent(out) :: dst
+    integer,                 intent(out) :: ierr
+
+    write(message,*) 'Stream IO unsupported'
+    call wrf_error_fatal3(__FILE__, __LINE__, message)
+
+    end subroutine read_i0
+
+    !>
+    !! Read a 1D integer array.
+    !
+    subroutine read_i1(ifd, records, varname, dst, ierr)
+
+    integer,                 intent(in)    :: ifd
+    type(r_info), pointer,   intent(in)    :: records(:)
+    character(len=*),        intent(in)    :: varname
+    integer,                 intent(inout) :: dst(:)
+    integer,                 intent(out)   :: ierr
+
+    write(message,*) 'Stream IO unsupported'
+    call wrf_error_fatal3(__FILE__, __LINE__, message)
+
+    end subroutine read_i1
+
+    !>
+    !! Read a 2D integer array.
+    !
+    subroutine read_i2(ifd, records, varname, dst, ierr)
+
+    integer,                 intent(in)    :: ifd
+    type(r_info), pointer,   intent(in)    :: records(:)
+    character(len=*),        intent(in)    :: varname
+    integer,                 intent(inout) :: dst(:,:)
+    integer,                 intent(out)   :: ierr
+
+    write(message,*) 'Stream IO unsupported'
+    call wrf_error_fatal3(__FILE__, __LINE__, message)
+
+    end subroutine read_i2
+
+    !>
+    !! Read a 3D integer array
+    !
+    subroutine read_i3(ifd, records, varname, dst, ierr)
+
+    integer,                 intent(in)    :: ifd
+    type(r_info), pointer,   intent(in)    :: records(:)
+    character(len=*),        intent(in)    :: varname
+    integer,                 intent(inout) :: dst(:,:,:)
+    integer,                 intent(out)   :: ierr
+
+    write(message,*) 'Stream IO unsupported'
+    call wrf_error_fatal3(__FILE__, __LINE__, message)
+
+    end subroutine read_i3
+
+    !>
+    !! Read a single real.
+    !
+    subroutine read_r0(ifd, records, varname, dst, ierr)
+
+    integer,                 intent(in)  :: ifd
+    type(r_info), pointer,   intent(in)  :: records(:)
+    character(len=*),        intent(in)  :: varname
+    real,                    intent(out) :: dst
+    integer,                 intent(out) :: ierr
+
+    write(message,*) 'Stream IO unsupported'
+    call wrf_error_fatal3(__FILE__, __LINE__, message)
+
+    end subroutine read_r0
+
+    !>
+    !! Read a 1D real array.
+    !
+    subroutine read_r1(ifd, records, varname, dst, ierr)
+
+    integer,                 intent(in)    :: ifd
+    type(r_info), pointer,   intent(in)    :: records(:)
+    character(len=*),        intent(in)    :: varname
+    real,                    intent(inout) :: dst(:)
+    integer,                 intent(out)   :: ierr
+
+    write(message,*) 'Stream IO unsupported'
+    call wrf_error_fatal3(__FILE__, __LINE__, message)
+
+    end subroutine read_r1
+
+    !>
+    !! Read a 2D real array.
+    !
+    subroutine read_r2(ifd, records, varname, dst, ierr)
+
+    integer,                 intent(in)    :: ifd
+    type(r_info), pointer,   intent(in)    :: records(:)
+    character(len=*),        intent(in)    :: varname
+    real,                    intent(inout) :: dst(:,:)
+    integer,                 intent(out)   :: ierr
+
+    write(message,*) 'Stream IO unsupported'
+    call wrf_error_fatal3(__FILE__, __LINE__, message)
+
+    end subroutine read_r2
+
+    !>
+    !! Read a 3D real array
+    !
+    subroutine read_r3(ifd, records, varname, dst, ierr)
+
+    integer,                 intent(in)    :: ifd
+    type(r_info), pointer,   intent(in)    :: records(:)
+    character(len=*),        intent(in)    :: varname
+    real,                    intent(inout) :: dst(:,:,:)
+    integer,                 intent(out)   :: ierr
+
+    write(message,*) 'Stream IO unsupported'
+    call wrf_error_fatal3(__FILE__, __LINE__, message)
+
+    end subroutine read_r3
+
+    !>
+    !! Read a 1D character array.
+    !
+    subroutine read_c1(ifd, records, varname, dst, ierr)
+
+    integer,                 intent(in)    :: ifd
+    type(r_info), pointer,   intent(in)    :: records(:)
+    character(len=*),        intent(in)    :: varname
+    character(len=*),        intent(inout) :: dst
+    integer,                 intent(out)   :: ierr
+
+    write(message,*) 'Stream IO unsupported'
+    call wrf_error_fatal3(__FILE__, __LINE__, message)
+
+    end subroutine read_c1
+
+#else       /* __PATHSCALE__ */
 
 contains
     !>
@@ -918,5 +1067,6 @@ contains
 !     call wrf_debug(2, message)
 
     end subroutine read_c1
-#endif
+#endif         /* __PATHSCALE__ */
+#endif         /* defined(DM_PARALLEL) && !defined(STUBMPI) */
 end module module_io_int_read

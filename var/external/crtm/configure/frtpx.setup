@@ -1,0 +1,30 @@
+#-------------------------------------------------------------------------------#
+# PRODUCTION build settings for Linux ifort compiler
+#-------------------------------------------------------------------------------#
+
+# The compiler and linker name
+export FC="frtpx"
+
+export FL="frtpx"
+
+# Compiler and linker settings for PRODUCTION builds
+F_COMMON_FLAGS=${ABI_CRTM}
+
+export FC_FLAGS="\
+ -O2 \
+ -Free \
+ -Kautoobjstack,ocl -Qa,d,i,p,t,x -Knofp_contract -Koptmsg=2 \
+ ${F_COMMON_FLAGS}"
+
+export FL_FLAGS="\
+ ${F_COMMON_FLAGS}"
+
+
+echo "========================================="
+echo " CRTM compilation environment variables:"
+echo "   FC:       ${FC}"
+echo "   FC_FLAGS: ${FC_FLAGS}"
+echo "   FL:       ${FL}"
+echo "   FL_FLAGS: ${FL_FLAGS}"
+echo "========================================="
+echo

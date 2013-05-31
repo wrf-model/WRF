@@ -201,9 +201,9 @@
  endif
 
  if ( mostlyLand .lt. 1.5 ) then
-    total_fr = 3.44E-5 * (zmax**4.9) /60. ! PR 92 continental eq
+    total_fr = 3.44E-5 * (zmax**4.9)  ! PR 92 continental eq
  else
-    total_fr = 6.57E-6 * (zmax**4.9) /60. ! Michalon 99 marine eq
+    total_fr = 6.57E-6 * (zmax**4.9)  ! Michalon 99 marine eq
  ENDIF
 
 ! Locating widest part of convective core

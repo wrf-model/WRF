@@ -9,7 +9,7 @@ module da_sound
       max_stheight_diff,test_dm_exact, anal_type_verify, &
       kms,kme,kts,kte,sfc_assi_options_1,sfc_assi_options_2, num_procs, comm, &
       trace_use_dull, sound, sonde_sfc, position_lev_dependant, max_ext_its,qcstat_conv_unit,ob_vars, &
-      convert_fd2uv, convert_uv2fd, max_error_sp, max_error_dir, var_wind, max_omb_sp, max_omb_dir, pi, standard
+      convert_fd2uv, convert_uv2fd, max_error_sp, max_error_dir, var_wind, max_omb_sp, max_omb_dir, pi, qc_rej_both
    use da_grid_definitions, only : da_ffdduv, da_ffdduv2, da_cal_sd, da_uv_wind_adj, da_uv_wind_tgl
 #ifdef DM_PARALLEL
 !  use mpi, only : mpi_integer, mpi_real8, mpi_max

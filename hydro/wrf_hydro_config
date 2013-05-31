@@ -21,4 +21,8 @@ if($#ARGV ne 1) {
               if($paropt eq 'serial') { system("./configure 5");}
               else {system("./configure 6");}
           }
+          if($x =~ "ifort") {
+              if($paropt eq 'serial') { system("./configure 7");}
+              else {system("./configure 8");}
+          }
 

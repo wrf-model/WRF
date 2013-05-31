@@ -1084,7 +1084,9 @@ contains
              if(nk>1) then
                 cfield(i,j,k) = &
                      NGRAB(nfield,ni,nj,nk)   * weight + &
-                     NGRAB(nfield,ni,nj,nk-1) * (1.0-weight)
+! pjj/cray - source line limit in Cray compiler
+             NGRAB(nfield,ni,nj,nk-1) &
+             * (1.0-weight)
              else
                 ! Extrapolate
                 if(emethod==EConst) then
@@ -1149,7 +1151,9 @@ contains
              if(nk>1) then
                 cfield(i,k,j) = &
                      NGRABIKJ(nfield,ni,nk,nj)   * weight + &
-                     NGRABIKJ(nfield,ni,nk-1,nj) * (1.0-weight)
+! pjj/cray - source line limit in Cray compiler
+             NGRABIKJ(nfield,ni,nk-1,nj) &
+             * (1.0-weight)
              else
                 ! Extrapolate
                 if(emethod==EConst) then

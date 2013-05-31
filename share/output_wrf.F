@@ -41,6 +41,8 @@
             sf_surface_physics, bl_pbl_physics, cu_physics, hypsometric_opt
     REAL    khdif, kvdif, swrad_scat, dampcoef
     INTEGER sf_urban_physics, w_damping, smooth_option, feedback, surface_input_source, sst_update
+    INTEGER stoch_force_opt, stoch_vertstruc_opt, nens
+    REAL    tot_backscat_psi, tot_backscat_t
 #if (EM_CORE == 1)
     INTEGER grid_id , parent_id , i_parent_start , j_parent_start , parent_grid_ratio
     INTEGER diff_6th_opt
@@ -191,6 +193,14 @@
     CALL nl_get_obs_idynin     ( 1       , obs_idynin )
     CALL nl_get_obs_dtramp     ( 1       , obs_dtramp )
     ENDIF
+
+#if ( DA_CORE != 1)
+    CALL nl_get_stoch_force_opt     ( grid%id, stoch_force_opt     )
+    CALL nl_get_stoch_vertstruc_opt ( grid%id, stoch_vertstruc_opt )
+    CALL nl_get_nens                ( grid%id, nens                )
+    CALL nl_get_tot_backscat_psi    ( grid%id, tot_backscat_psi    )
+    CALL nl_get_tot_backscat_t      ( grid%id, tot_backscat_t      )
+#endif
 #endif
 
 ! julday and gmt can be set in namelist_03 for ideal.exe run
@@ -431,10 +441,20 @@ endif
     end if
 #endif
 
-#if (EM_CORE == 1)
+#if ((EM_CORE == 1) && (DA_CORE != 1))
     IF ( config_flags%p_lev_diags .NE. 0 ) THEN
        IF (switch .EQ. auxhist23_only) THEN
           CALL wrf_put_dom_ti_real( fid, 'P_LEV_MISSING' , config_flags%p_lev_missing, 1, ierr )
+       END IF
+    END IF
+
+    IF (switch .EQ. history_only) THEN
+       CALL    wrf_put_dom_ti_integer( fid, 'STOCH_FORCE_OPT'        , stoch_force_opt       , 1, ierr )
+       IF ( stoch_force_opt .NE. 0 )  THEN
+          CALL wrf_put_dom_ti_integer( fid, 'STOCH_VERTSTRUC_OPT'    , stoch_vertstruc_opt   , 1, ierr )
+          CALL wrf_put_dom_ti_integer( fid, 'NENS'                   , nens                  , 1, ierr )
+          CALL wrf_put_dom_ti_real   ( fid, 'tot_backscat_psi'       , tot_backscat_psi      , 1, ierr )
+          CALL wrf_put_dom_ti_real   ( fid, 'tot_backscat_t'         , tot_backscat_t        , 1, ierr )
        END IF
     END IF
 #endif
@@ -557,7 +577,7 @@ endif
       CALL wrf_put_dom_ti_real      ( fid, 'BUCKET_MM',   config_flags%bucket_mm   , 1 , ierr ) 
       CALL wrf_put_dom_ti_real      ( fid, 'BUCKET_J',    config_flags%bucket_J    , 1 , ierr ) 
       CALL wrf_put_dom_ti_real      ( fid, 'PREC_ACC_DT', config_flags%prec_acc_dt , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer   ( fid, 'OMLCALL',     config_flags%omlcall     , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer   ( fid, 'SF_OCEAN_PHYSICS',     config_flags%sf_ocean_physics     , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer   ( fid, 'ISFTCFLX',    config_flags%isftcflx    , 1 , ierr ) 
       CALL wrf_put_dom_ti_integer   ( fid, 'ISHALLOW',    config_flags%ishallow    , 1 , ierr ) 
 
@@ -680,7 +700,21 @@ endif
       CALL wrf_put_dom_ti_integer ( fid , 'JULDAY' ,  config_flags%julday , 1 , ierr )
 #endif
     ENDIF
+
     CALL wrf_put_dom_ti_integer ( fid , 'MAP_PROJ' ,  config_flags%map_proj , 1 , ierr )
+    IF      ( config_flags%map_proj .EQ.   0 ) THEN
+       CALL wrf_put_dom_ti_char ( fid , 'MAP_PROJ_CHAR' ,  "Cartesian"               , ierr )
+    ELSE IF ( config_flags%map_proj .EQ.   1 ) THEN
+       CALL wrf_put_dom_ti_char ( fid , 'MAP_PROJ_CHAR' ,  "Lambert Conformal"       , ierr )
+    ELSE IF ( config_flags%map_proj .EQ.   2 ) THEN
+       CALL wrf_put_dom_ti_char ( fid , 'MAP_PROJ_CHAR' ,  "Polar Stereographic"     , ierr )
+    ELSE IF ( config_flags%map_proj .EQ.   3 ) THEN
+       CALL wrf_put_dom_ti_char ( fid , 'MAP_PROJ_CHAR' ,  "Mercator"                , ierr )
+    ELSE IF ( config_flags%map_proj .EQ.   6 ) THEN
+       CALL wrf_put_dom_ti_char ( fid , 'MAP_PROJ_CHAR' ,  "Cylindrical Equidistant" , ierr )
+    ELSE IF ( config_flags%map_proj .EQ. 203 ) THEN
+       CALL wrf_put_dom_ti_char ( fid , 'MAP_PROJ_CHAR' ,  "NMM Rotated Lat Lon"     , ierr )
+    END IF
 
     IF(MMINLU(1:4) == 'USGS') THEN
       MMINLU='USGS'
@@ -700,10 +734,10 @@ endif
     CALL wrf_put_dom_ti_integer ( fid , 'ISOILWATER' ,  config_flags%isoilwater , 1 , ierr )
 ! added these fields for restarting of moving nests, JM
 !For HWRF: zhang 
-#ifdef HWRF
+#if defined (HWRF)
     CALL wrf_put_dom_ti_integer ( fid , 'I_PARENT_START' ,  grid%i_parent_start  , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'J_PARENT_START' ,  grid%j_parent_start  , 1 , ierr )
-#else
+#elif ! defined(EM_CORE)
     CALL wrf_put_dom_ti_integer ( fid , 'I_PARENT_START' ,  config_flags%i_parent_start  , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'J_PARENT_START' ,  config_flags%j_parent_start  , 1 , ierr )
 #endif

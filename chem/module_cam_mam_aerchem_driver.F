@@ -20,6 +20,7 @@
          cldfra_mp_all, moist, chem,                                &
          dgnum, dgnumwet, wetdens_ap, del_h2so4_gasprod,            &
          dvmrdt_sv13d, dvmrcwdt_sv13d,                              & !Output from cloud chemistry
+         is_CAMMGMP_used,                                           &!BSINGH:01/31/2013: Added is_CAMMGMP_used 
          ids,ide, jds,jde, kds,kde,                                 &
          ims,ime, jms,jme, kms,kme,                                 &
          its,ite, jts,jte, kts,kte                                  )
@@ -51,7 +52,7 @@
             p_qv
 
       use module_state_description, only:  num_moist, num_chem, &
-                                           param_first_scalar, CAMMGMPSCHEME
+                                           param_first_scalar
 
       use shr_kind_mod, only: r8 => shr_kind_r8
       use module_cam_support, only: pcols, pver, pverp, &
@@ -88,7 +89,7 @@
 !   subr arguments
       type(grid_config_rec_type), intent(in) :: config_flags
 !   config_flags - configuration and control parameters
-
+      logical, intent(in) :: is_CAMMGMP_used
       integer, intent(in) ::             &
          id, ktau, ktauc,                &
          ids, ide, jds, jde, kds, kde,   &
@@ -311,7 +312,7 @@
          pdel8(icol,kcam) = p8w(i,k,j) - p8w(i,k+1,j)
          pmid8(icol,kcam) = p_phy(i,k,j)
          zm8(icol,kcam)   = z(i,k,j)
-         if(config_flags%mp_physics == CAMMGMPSCHEME) then
+         if(is_CAMMGMP_used) then
             cld8(icol,kcam) = cldfra_mp_all(i,k,j)
          else
             cld8(icol,kcam) = cldfra(i,k,j)

@@ -45,8 +45,8 @@ MODULES = \
 	module_bl_boulac.o \
 	module_bl_camuwpbl_driver.o \
 	module_bl_mfshconvpbl.o \
-	module_cu_camuwshcu_driver.o \
-	module_cu_camuwshcu.o \
+	module_shcu_camuwshcu_driver.o \
+	module_shcu_camuwshcu.o \
 	module_shcu_grims.o \
 	module_cu_camzm_driver.o \
 	module_cu_camzm.o \
@@ -120,7 +120,9 @@ MODULES = \
 	module_sf_sfcdiags_ruclsm.o \
 	module_sf_sstskin.o \
 	module_sf_tmnupdate.o \
+	module_sf_ocean_driver.o \
 	module_sf_oml.o \
+	module_sf_3dpwp.o \
 	module_sf_myjsfc.o \
 	module_sf_qnsesfc.o \
 	module_sf_mynn.o \

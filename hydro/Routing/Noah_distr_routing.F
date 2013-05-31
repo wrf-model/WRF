@@ -1653,9 +1653,11 @@
 #ifdef MPP_LAND
         use module_mpp_land, only: left_id,down_id,right_id, &
               up_id,mpp_land_com_real, my_id, &
-             mpp_land_sync,mpp_land_com_integer,mpp_land_max_int1
+             mpp_land_sync,mpp_land_com_integer,mpp_land_max_int1, &
+            sum_double
 #endif
      implicit none
+
 ! Define the variables
        integer IX,JX,NSOIL,IXRT,JXRT
        real,DIMENSION(IX,JX,NSOIL)::SMC,STC,SH2OX,SICE
@@ -1934,6 +1936,14 @@
          end do
         end do
 
+#ifdef MPP_LAND
+! not tested
+        CALL sum_double(suminfxs1)
+        CALL sum_double(chan_in1)
+        CALL sum_double(lake_in1)
+        CALL sum_double(qbdry1)
+#endif
+
 
 !DJG.7.20.2007 - Global check for infxs>retdep & skip if not...(set sfcrt_flag)
 !DJG.7.20.2007 - this check will skip ov rtng when no flow is present...
@@ -1989,6 +1999,13 @@
             qbdry2=qbdry2+QBDRYRT(I,J)/float(IXRT*JXRT)
          end do
         end do
+#ifdef MPP_LAND
+! not tested
+        CALL sum_double(suminfxsrt)
+        CALL sum_double(chan_in2)
+        CALL sum_double(lake_in2)
+        CALL sum_double(qbdry2)
+#endif
 
 #ifdef HYDRO_D
 	print *, "OV Routing Mass Bal: "

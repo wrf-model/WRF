@@ -732,7 +732,7 @@ CONTAINS
         ENDIF
         endif
         if(fallsum_qg.gt.0.) then
-          tstepgraup(i)  = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.            &
+          tstepgraup(i)  = fallsum_qg*delz(i,kts)/denr*dtcld*1000.            &
                            +tstepgraup(i)
         IF ( PRESENT (graupelncv) .AND. PRESENT (graupel)) THEN
           graupelncv(i,lat) = fallsum_qg*delz(i,kts)/denr*dtcld*1000.          &   
@@ -979,10 +979,10 @@ CONTAINS
 ! paacw: Accretion of cloud water by averaged snow/graupel 
 !        (T<T0: C->G or S, and T>=T0: C->R) 
 !-------------------------------------------------------------
-          if(qrs(i,k,2).gt.qcrmin.and.qrs(i,k,3).gt.qcrmin) then
+          if(qsum(i,k) .gt. 1.e-15) then
             paacw(i,k) = (qrs(i,k,2)*psacw(i,k)+qrs(i,k,3)*pgacw(i,k))         & 
                         /(qsum(i,k))
-           endif      
+          endif      
 !-------------------------------------------------------------
 ! pracs: Accretion of snow by rain [HL A11] [LFO 27]
 !         (T<T0: S->G)
@@ -2059,7 +2059,7 @@ CONTAINS
 ! skip for no precipitation for all layers
       allold = 0.0
       do k=1,km
-        allold = allold + qq(k)
+        allold = allold + qq(k) + qq2(k)
       enddo
       if(allold.le.0.0) then
         cycle i_loop

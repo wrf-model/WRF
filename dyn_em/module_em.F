@@ -10,7 +10,7 @@ MODULE module_em
    
    USE module_big_step_utilities_em, only: grid_config_rec_type, calculate_full, couple_momentum, calc_mu_uv, calc_ww_cp, calc_cq, calc_alt, calc_php, set_tend, rhs_ph, &
    	horizontal_pressure_gradient, pg_buoy_w, w_damp, perturbation_coriolis, coriolis, curvature, horizontal_diffusion, horizontal_diffusion_3dmp, vertical_diffusion_u, &
-	vertical_diffusion_v, vertical_diffusion, vertical_diffusion_3dmp, sixth_order_diffusion, rk_rayleigh_damp, theta_relaxation, vertical_diffusion_mp, zero_tend
+	vertical_diffusion_v, vertical_diffusion, vertical_diffusion_3dmp, sixth_order_diffusion, rk_rayleigh_damp, theta_relaxation, vertical_diffusion_mp, zero_tend, zero_tend2d
 	
    USE module_state_description, only: param_first_scalar, p_qr, p_qv, p_qc, p_qg, p_qi, p_qs, tiedtkescheme, heldsuarez, positivedef, &
    	gdscheme, g3scheme, gfscheme, kfetascheme, monotonic, wenopd_scalar, weno_scalar, weno_mom
@@ -394,12 +394,12 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                     ims, ime, jms, jme, kms, kme, &
                     its, ite, jts, jte, kts, kte )
 
-   CALL zero_tend ( mu_tend,                  &
+   CALL zero_tend2d( mu_tend,                  &
                     ids, ide, jds, jde, 1, 1, &
                     ims, ime, jms, jme, 1, 1, &
                     its, ite, jts, jte, 1, 1 )
 
-   CALL zero_tend ( mu_save,                  &
+   CALL zero_tend2d( mu_save,                  &
                     ids, ide, jds, jde, 1, 1, &
                     ims, ime, jms, jme, 1, 1, &
                     its, ite, jts, jte, 1, 1 )
@@ -490,6 +490,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                           its, ite, jts, jte, kts, kte ) 
 
      IF ( config_flags%cu_physics == GDSCHEME  .OR.     &
+          config_flags%cu_physics == GFSCHEME  .OR.     &
           config_flags%cu_physics == G3SCHEME ) THEN
 
      ! theta advection only:
@@ -1058,6 +1059,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
       END IF
 
      IF((config_flags%cu_physics == GDSCHEME .OR. config_flags%cu_physics == G3SCHEME .OR. &
+         config_flags%cu_physics == GFSCHEME .OR.    & 
          config_flags%cu_physics == KFETASCHEME .OR. &      ! new trigger in KF
          config_flags%cu_physics == TIEDTKESCHEME  ) &      ! Tiedtke
                      .and. moist_step .and. ( im == P_QV) ) THEN
@@ -1536,7 +1538,7 @@ SUBROUTINE init_zero_tendency(ru_tendf, rv_tendf, rw_tendf, ph_tendf,  &
                     ims, ime, jms, jme, kms, kme,    &
                     its, ite, jts, jte, kts, kte     )
 
-   CALL zero_tend ( mu_tendf,                        &
+   CALL zero_tend2d( mu_tendf,                        &
                     ids, ide, jds, jde, kds, kds,    &
                     ims, ime, jms, jme, kms, kms,    &
                     its, ite, jts, jte, kts, kts     )

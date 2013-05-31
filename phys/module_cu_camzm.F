@@ -140,16 +140,32 @@ subroutine zmconv_readnl(nlfile)
 end subroutine zmconv_readnl
 
 
-subroutine zm_convi(limcnv_in, no_deep_pbl_in)
 #ifndef WRF_PORT
+   subroutine zm_convi(limcnv_in, no_deep_pbl_in)
    use dycore,       only: dycore_is, get_resolution
+#else
+   subroutine zm_convi(DT,DX,limcnv_in, no_deep_pbl_in)
 #endif
+
 
    integer, intent(in)           :: limcnv_in       ! top interface level limit for convection
    logical, intent(in), optional :: no_deep_pbl_in  ! no_deep_pbl = .true. eliminates ZM convection entirely within PBL 
+#ifdef WRF_PORT
+   REAL ,    INTENT(IN)        :: DT, DX
+#endif
+   real(r8) :: DTT
+
+
 
    ! local variables
    character(len=32)   :: hgrid           ! horizontal grid specifier
+
+#ifdef WRF_PORT
+   real(r8) :: deltax     ! model delta x   
+   real(r8) :: ref_dx     ! reference delta x (CAM5 1.9 x 2.5 deg)
+   real(r8) :: taumin     ! minimum allowable tau
+   real(r8) :: taumax     ! maximum allowable tau 
+#endif
 
    ! Initialization of ZM constants
    limcnv = limcnv_in
@@ -161,6 +177,13 @@ subroutine zm_convi(limcnv_in, no_deep_pbl_in)
    rgas   = rair
    grav   = gravit
    cp     = cpres
+#ifdef WRF_PORT
+   !PMA sets parameters
+   ref_dx = 275000._r8
+   taumin = 600._r8
+   taumax = 3600._r8
+   deltax=dx
+#endif
 
    if ( present(no_deep_pbl_in) )  then
       no_deep_pbl = no_deep_pbl_in
@@ -168,35 +191,64 @@ subroutine zm_convi(limcnv_in, no_deep_pbl_in)
       no_deep_pbl = .true.
    endif
 
+   DTT=DT
+
    ! tau=4800. were used in canadian climate center. however, in echam3 t42, 
    ! convection is too weak, thus adjusted to 2400.
 #ifndef WRF_PORT
    hgrid = get_resolution()
 #endif
-   tau = 3600._r8
+
+!PMA: The 1.9x2.5 deg CAM5 uses tau = 3600s. With higher resolution and shorter timestep in CAM,
+!     tau is set to a smaller value. Williamson (2012) found that without reducing tau in a high-res
+!     simulation, 'grid-scale storms' can form because the ZM scheme fails to remove CAPE quickly enough
+!     so that the resolved scheme (micro+macro) has to work very hard. WRF usually is run at much higher 
+!     resolution than CAM and this grid-scale storm problem is apparent, which can cause the model to 
+!     crash. Hence, we make tau to be a function of spatial resolution. 
+!     For WRF, one needs to make dt very small if tau=3600s for the model to run stably. 
+
+!   tau = 3600._r8
+
+!PMA formula: tau = 3600s when dx = 275km ~ 2.5deg
+!             tau =  600s when dx = 10km
+
+!  tau = 11.32_r8 * deltax + 489.68_r8
+
+!PMA adopts PJR formula
+
+   tau = max(taumin, taumax*min(1._r8,deltax/ref_dx))
 
    if ( masterproc ) then
+      write(iulog,*) 'delta X =',deltax
+#ifdef WRF_PORT
+      call wrf_debug(1,iulog)
+#endif
+      write(iulog,*) 'Convective relaxation time scale (tau) is a tunable parameter in CAM and is a function of spatial resolution.'
+      write(iulog,*) 'Users are encouraged to consult with the PNNL WRF-CAM5 development team if they want to change tau.'
+#ifdef WRF_PORT
+      call wrf_debug(1,iulog)
+#endif
       write(iulog,*) 'tuning parameters zm_convi: tau',tau
 #ifdef WRF_PORT
-      call wrf_message(iulog)
+      call wrf_debug(1,iulog)
 #endif
       write(iulog,*) 'tuning parameters zm_convi: c0_lnd',c0_lnd, ', c0_ocn', c0_ocn 
 #ifdef WRF_PORT
-      call wrf_message(iulog)
+      call wrf_debug(1,iulog)
 #endif
       write(iulog,*) 'tuning parameters zm_convi: ke',ke
 #ifdef WRF_PORT
-      call wrf_message(iulog)
+      call wrf_debug(1,iulog)
 #endif
       write(iulog,*) 'tuning parameters zm_convi: no_deep_pbl',no_deep_pbl
 #ifdef WRF_PORT
-      call wrf_message(iulog)
+      call wrf_debug(1,iulog)
 #endif
    endif
 
    if (masterproc) write(iulog,*)'**** ZM: DILUTE Buoyancy Calculation ****'
 #ifdef WRF_PORT
-      call wrf_message(iulog)
+      call wrf_debug(1,iulog)
 #endif
 
 end subroutine zm_convi
@@ -3716,15 +3768,19 @@ converge: do i=0, LOOPMAX
 #endif
       write(iulog,*) '*** ZM_CONV: IENTROPY: Failed and about to exit, info follows ****'
 #ifdef WRF_PORT
-      call wrf_message(iulog)
+      call wrf_debug(1,iulog)
 #endif
       write(iulog,100) 'ZM_CONV: IENTROPY. Details: call#,lchnk,icol= ',rcall,lchnk,icol, &
        ' lat: ',this_lat,' lon: ',this_lon, &
        ' P(mb)= ', p, ' Tfg(K)= ', Tfg, ' qt(g/kg) = ', 1000._r8*qt, &
        ' qsat(g/kg) = ', 1000._r8*qsat,', s(J/kg) = ',s
 #ifdef WRF_PORT
-      call wrf_message(iulog)
+      call wrf_debug(1,iulog)
 #endif
+      write(iulog,*) '*** Please report this crash to Po-Lun.Ma@pnnl.gov ***'
+#ifdef WRF_PORT
+      call wrf_debug(1,iulog)
+#endif 
       call endrun('**** ZM_CONV IENTROPY: Tmix did not converge ****')
    end if
 enddo converge

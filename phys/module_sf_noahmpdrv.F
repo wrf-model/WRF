@@ -410,7 +410,7 @@ CONTAINS
 
     IF (XICE(I,J) >= XICE_THRES) THEN
        ICE = 1                            ! Sea-ice point
-    ELSE IF ( VEGTYP == ISICE ) THEN
+    ELSE IF ( IVGTYP(I,J) == ISICE ) THEN
        ICE = -1                           ! Land-ice point
     ELSE
        ICE=0                              ! Neither sea ice or land ice.

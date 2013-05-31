@@ -33,6 +33,19 @@
       ! EXTRA-TERRESTIAL IRRADIANCE
       ! FILE CREATED AUGUST 19, 1994
       ! FROM MADRONICH 1989 DATA FILE
+
+      ! SAMcKeen 2/17/13 Update 296.309 to 305nm flux from SAO (K Chance et al., 2010)
+      ! 2.5% increase in JO1D at 17.34deg SZA, ~1% at 58.8deg SZA, both at 500m AGL
+      ! SAM 2/15/13  Dobson value set to 325., OMI - 5 days of eval. in May 2010 over LA
+      ! 14.2% dobson reduction leads to 25% increase in surf. JO1D at 17deg SZA, ~50% at 80deg SZA
+      !
+      ! SAMcKeen, 2/14/13 update O3 cross sections and quantum yields, from NASA-JPL-2011 recommendation
+      ! O3->O1D+O2 quantum yields taken from FTUV function fo3qy, based on
+      ! Matsumi, Y., F. J. Comes, G. Hancock, A. Hofzumahaus, A. J. Hynes,
+      ! M. Kawasaki, and A. R. Ravishankara, Quantum yields for production of O(1D)
+      ! in the ultraviolet photolysis of ozone:  Recommendation based on evaluation
+      ! of laboratory data, J. Geophys. Res., 107, 10.1029/2001JD000510, 2002.
+      ! Revised numbers give 23.3% JO1D increase at 17.34deg SZA, ~50% at 58.8deg, both at 500m AGL.
       ! -----------------------------------------------------------------------
       ! current jindex assignments - if calculation order changes
       ! these change - subroutine yield must be changed!
@@ -153,8 +166,8 @@
       INTEGER :: ip, kl
       ! .. Local Arrays ..
       REAL :: aerstd(51), airstd(51), albedoph(130), caabv(nabv), fext(130), &
-        o3abv(nabv), o3std(51), pabv(nabv), so3tx(70,3), sra(11,9), srb(11,5), &
-        tabv(nabv), tstd(51), txs(130,nreakj), wl(130), xqy(130,23), &
+        o3abv(nabv), o3std(51), pabv(nabv), jpl295(130), jpl218(130), sra(11,9), &
+        srb(11,5), tabv(nabv), tstd(51), txs(130,nreakj), wl(130), xqy(130,23), &
         xs(130,nreakj), zabv(nabv), zstd(51)
       ! .. Data Statements ..
       DATA zabv/21., 22., 23., 24., 25., 30., 35., 40., 45., 50./
@@ -198,21 +211,35 @@
         -5.978911E+02, 4.370384E+01, -1.406715E+00, 1.683967E-02, &
         -2.535815E+00, 0., 0., 0., 0., -4.474937E+00, 0., 0., 0., 0., &
         -2.996639E+00, 0., 0., 0., 0./
-      DATA ((so3tx(kl,ip),kl=33,61),ip=1,3)/9.630E+00, 8.320E+00, 6.880E+00, &
-        5.370E+00, 3.960E+00, 2.710E+00, 1.750E+00, 1.060E+00, 5.960E-01, &
-        3.330E-01, 2.400E-01, 2.100E-01, 1.800E-01, 1.600E-01, 1.400E-01, &
-        1.200E-01, 1.050E-01, 9.000E-02, 8.000E-02, 7.000E-02, 6.000E-02, &
-        5.500E-02, 4.000E-02, 2.190E-02, 1.010E-02, 5.080E-03, 2.120E-03, &
-        8.290E-04, 2.940E-04, 1.190E-03, 3.640E-04, 2.460E-04, 1.030E-03, &
-        1.690E-03, 1.450E-03, 8.940E-04, 7.830E-04, 4.940E-04, 3.550E-04, &
-        2.950E-04, 2.750E-04, 2.500E-04, 2.300E-04, 2.080E-04, 1.860E-04, &
-        1.640E-04, 1.450E-04, 1.280E-04, 1.121E-04, 1.000E-04, 9.200E-05, &
-        7.500E-05, 4.830E-05, 3.430E-05, 1.820E-05, 8.850E-06, 4.270E-06, &
-        5.300E-06, -1.740E-05, 2.470E-06, 1.170E-05, 1.260E-06, -6.860E-06, &
-        -2.890E-06, 3.590E-06, 2.000E-06, 3.660E-06, 2.600E-06, 2.170E-06, &
-        1.950E-06, 1.380E-06, 1.650E-06, 1.550E-06, 1.460E-06, 1.340E-06, &
-        1.210E-06, 1.130E-06, 1.060E-06, 9.400E-07, 8.700E-07, 7.500E-07, &
-        5.200E-07, 2.660E-07, 1.630E-07, 1.260E-07, 8.710E-08, 3.500E-08/
+! SAMcKeen, 2/14/13 update O3 cross sections and quantum yields, from NASA-JPL-2011 recommendation
+      DATA (jpl295(kl),kl=1,130)/ 62.2, 57.5844, 52.5359, 47.7, 42.8638, 38.4591,  &
+        34.9, 32.4255, 31.5, 32.6204, 36.3, 42.2149, 53.9, 69.3001, 90.3, 118., &
+        154., 199., 255., 322., 401., 490., 590., 693., 802., 908., 1001., 1080.,  &
+        1125., 1148., 1122., 1064., 968., 840., 698.001, 547., 406., 282., 184., &
+        113., 65.1, 37.2611, 26.2, 23.4, 20.1, 17.9, 15.5, 13.5, 12.2, 10.2, 9.24, &
+        7.95, 6.91, 6.25, 4.66, 2.82778, 1.378, 0.697, 0.32, 0.146, 0.0779, 0.0306, &
+        0.0136, 0.00694, 0.00305, 0.0013, 0.00085, 0.000572, 0.000542, 0.000668, &
+        0.000956, 0.00115, 0.00158, 0.00258, 0.00295, 0.00393, 0.00656, 0.00697, &
+        0.00882, 0.0137, 0.0165, 0.0185, 0.0218, 0.0366, 0.0367, 0.041, 0.0481, &
+        0.0754, 0.0813, 0.0816, 0.0908, 0.121, 0.16, 0.158, 0.166, 0.183, 0.219, &
+        0.267, 0.287, 0.295, 0.319, 0.337, 0.358, 0.398, 0.439, 0.467, 0.481, 0.464, &
+        0.446, 0.447, 0.476, 0.513, 0.514, 0.478, 0.438, 0.406, 0.382, 0.356, 0.327, &
+        0.297, 0.271, 0.245684, 0.21025, 0.17025, 0.13775, 0.112725, 0.087725, 0.07355, &
+        0.062075, 0.048525/
+      DATA (jpl218(kl),kl=1,130)/ 62.2, 57.5844, 52.5359, 47.7, 42.8638, 38.4535,  &
+        34.4, 32.0245, 31.2, 32.4203, 36.2, 42.1149, 54.2, 69.6001, 90.6, 119., &
+        155., 201., 256., 323., 403., 492., 589., 692., 799., 905., 995., 1074.,   &
+        1116., 1136., 1105., 1047., 952., 823., 681.001, 531., 391., 271., 175., &
+        105., 59.4, 33.3104, 22.9, 20.6, 17.3, 15.6, 13.3, 11.5, 10.4, 8.5, 7.76, &
+        6.53, 5.62, 5.05, 3.67, 2.15, 0.9852, 0.483, 0.204, 0.0797, 0.0779, 0.0306, &
+        0.0136, 0.00694, 0.00305, 0.0013, 0.00085, 0.000572, 0.000542, 0.000668, &
+        0.000956, 0.00115, 0.00158, 0.00258, 0.00295, 0.00393, 0.00656, 0.00697, &
+        0.00882, 0.0137, 0.0165, 0.0185, 0.0218, 0.0366, 0.0367, 0.041, 0.0481, &
+        0.0754, 0.0813, 0.0816, 0.0908, 0.121, 0.16, 0.158, 0.166, 0.183, 0.219, &
+        0.267, 0.287, 0.295, 0.319, 0.337, 0.358, 0.398, 0.439, 0.467, 0.481, 0.464, &
+        0.446, 0.447, 0.476, 0.513, 0.514, 0.478, 0.438, 0.406, 0.382, 0.356, 0.327, &
+        0.297, 0.271, 0.245684, 0.21025, 0.17025, 0.13775, 0.112725, 0.087725, 0.07355, &
+        0.062075, 0.048525/
       DATA aerstd/2.40E-1, 1.06E-1, 4.56E-2, 1.91E-2, 1.01E-2, 7.63E-3, &
         5.38E-3, 5.00E-3, 5.15E-3, 4.94E-3, 4.82E-3, 4.51E-3, 4.74E-3, &
         4.37E-3, 4.28E-3, 4.03E-3, 3.83E-3, 3.78E-3, 3.88E-3, 3.08E-3, &
@@ -250,7 +277,7 @@
         1.380E+13, 1.600E+13, 1.450E+13, 2.200E+13, 1.990E+13, 1.970E+13, &
         1.940E+13, 2.910E+13, 4.950E+13, 4.530E+13, 1.070E+14, 1.200E+14, &
         1.100E+14, 1.040E+14, 8.240E+13, 1.520E+14, 2.150E+14, 3.480E+14, &
-        3.396E+14, 2.730E+14, 9.109E+13, 8.745E+13, 9.577E+13, 8.507E+13, &
+        3.790E+14, 2.990E+14, 1.003E+14, 9.294E+13, 1.024E+14, 8.507E+13, &
         9.383E+13, 1.030E+14, 9.722E+13, 7.751E+13, 1.277E+14, 1.087E+14, &
         1.102E+14, 1.184E+14, 3.153E+14, 5.930E+14, 6.950E+14, 8.150E+14, &
         7.810E+14, 8.350E+14, 8.140E+14, 8.530E+14, 9.170E+14, 8.380E+14, &
@@ -1346,7 +1373,8 @@
         endif
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         rhoa(1)=p8w(i,kts,j)/t8w(i,kts,j)/r_d
-        dobsi=350.
+!       dobsi=350.
+        dobsi=325.
 !         if((i.eq.87.and.j.eq.66).or.(i.eq.105.and.j.eq.70))then
 !            print *,'before photmad, i,j = ',i,j,pm2_5_dry(i,1,j),pm2_5_water(i,1,j)
 !            print *,k,rhoa(1),phizz(1),qll(1),aerext(1),o33(1),tt(1),zenita
@@ -1391,6 +1419,7 @@
           ph_macr(i,k,j) = phot1(22,k)
 !         if(i.eq.5.and.j.eq.5)print *,i,j,k,phot1(3,k),phot1(4,k),phot1(17,k)
         END DO
+
  100    continue
 
 END SUBROUTINE madronich1_driver
@@ -1946,6 +1975,7 @@ END SUBROUTINE madronich1_driver
         ! .. Local Scalars ..
         REAL :: a, ak300, akt, b, c, dz, dzo, dzt, dzu, fnum, hlocal, phi1, &
           phi2, phi20, sum, tau, tdiffx, x0, xl, xl0
+        REAL :: kt, q1, q2     ! SAMcKeen add for updated JPL recommended JO1D  2/14/13
         INTEGER :: i, idt, ii, il, lay, lev, llbt, nr
         ! .. Intrinsic Functions ..
         ! EXTERNAL trapez
@@ -2115,20 +2145,35 @@ END SUBROUTINE madronich1_driver
 
         DO 60 lev = 1, nlevel
           ! o3 ozone:
-          tau = zt(lev) - 230.
-          a = 0.9*(0.369+2.85E-4*tau+1.28E-5*tau*tau+2.57E-8*tau*tau*tau)
-          b = -0.575 + 5.59E-3*tau - 1.439E-5*tau*tau - 3.27E-8*tau*tau*tau
-          c = 0.9*(0.518+9.87E-4*tau-3.94E-5*tau*tau+3.91E-7*tau*tau*tau)
-          xl0 = 308.20 + 4.4871E-2*tau + 6.9380E-5*tau*tau - &
-            2.5452E-6*tau*tau*tau
+!orig     tau = zt(lev) - 230.
+!orig     a = 0.9*(0.369+2.85E-4*tau+1.28E-5*tau*tau+2.57E-8*tau*tau*tau)
+!orig     b = -0.575 + 5.59E-3*tau - 1.439E-5*tau*tau - 3.27E-8*tau*tau*tau
+!orig     c = 0.9*(0.518+9.87E-4*tau-3.94E-5*tau*tau+3.91E-7*tau*tau*tau)
+!orig     xl0 = 308.20 + 4.4871E-2*tau + 6.9380E-5*tau*tau - &
+!orig       2.5452E-6*tau*tau*tau
 
           DO 60 kl = kl0, kl1
             xl = wl(kl)
-            qy(lev,kl,2) = a*atan(b*(xl-xl0)) + c
-
-            IF (qy(lev,kl,2)<0.) qy(lev,kl,2) = 0.0
-
-            IF (qy(lev,kl,2)>0.9) qy(lev,kl,2) = 0.9
+!orig       qy(lev,kl,2) = a*atan(b*(xl-xl0)) + c
+!orig       IF (qy(lev,kl,2)<0.) qy(lev,kl,2) = 0.0
+!orig       IF (qy(lev,kl,2)>0.9) qy(lev,kl,2) = 0.9
+      qy(lev,kl,2) = 0.
+      kt = 0.695 * zt(lev)
+      q1 = 1.
+      q2 = exp( -825.518/kt )
+      if( xl <= 305. ) then
+         qy(lev,kl,2) = .90
+      else if( xl > 305. .and. xl <= 328. ) then
+         tau  = zt(lev)/300.
+         qy(lev,kl,2) = 0.0765 &
+                + 0.8036*          (q1/(q1+q2))*exp( -((304.225 - xl)/5.576)**4 ) &
+                + 8.9061*(tau)**2 *(q2/(q1+q2))*exp( -((314.957 - xl)/6.601)**2 ) &
+                + 0.1192*(tau)**1.5            *exp( -((310.737 - xl)/2.187)**2 )
+      else if( xl > 328. .and. xl <= 340. ) then
+         qy(lev,kl,2) = 0.08
+      else if( xl > 340. ) then
+         qy(lev,kl,2) = 0.
+      end if
             qy(lev,kl,3) = 1.0 - qy(lev,kl,2)
             ! ch2o formaldehyde:
             IF ((xl>=330.) .AND. qy(lev,kl,12)>0.) THEN
@@ -2168,16 +2213,21 @@ END SUBROUTINE madronich1_driver
         ! _______________________________________________________________________
         ! correct absorption cross sections for t and p dep.  for now, do
         ! 2=ozone
-        DO 90 kl = kl0, kl1
-
+!orig   DO 90 kl = kl0, kl1
+        DO 90 kl = 1, 130
           DO 80 lev = 1, nlevel
-
-            IF (kl<33 .OR. kl>61) GO TO 70
-            tdiffx = zt(lev) - 230.
-            s(lev,kl,2) = (so3tx(kl,1)+so3tx(kl,2)*tdiffx+so3tx(kl,3)*tdiffx* &
-              tdiffx)*1.0E-18
+!orig       IF (kl<33 .OR. kl>61) GO TO 70
+!orig       tdiffx = zt(lev) - 230.
+!orig       s(lev,kl,2) = (so3tx(kl,1)+so3tx(kl,2)*tdiffx+so3tx(kl,3)*tdiffx* &
+!orig         tdiffx)*1.0E-18
+! SAMcKeen, 2/14/13 update O3 cross sections and quantum yields, from NASA-JPL-2011 recommendation
+            s(lev,kl,2) = jpl218(kl) +  &
+            (jpl295(kl) - jpl218(kl))*(zt(lev) - 218.)/(295. - 218.)
+            IF (zt(lev) .LE. 218.) s(lev,kl,2) = jpl218(kl)
+            IF (zt(lev) .GE. 295.) s(lev,kl,2) = jpl295(kl)
+            s(lev,kl,2)=s(lev,kl,2)*1.E-20
             s(lev,kl,3) = s(lev,kl,2)
-70          CONTINUE
+!orig 70          CONTINUE
 80        CONTINUE
 90      CONTINUE
 
@@ -2245,15 +2295,19 @@ END SUBROUTINE madronich1_driver
         ! correct attenuation coefficients for pressure and/or temperature
         ! dep.
         ! for now do only ozone absorption.
-        DO 160 kl = kl0, kl1
-
+!orig   DO 160 kl = kl0, kl1
+        DO 160 kl = 1, 130
           DO 150 lay = 1, nlayer
-            tdiffx = vt(lay) - 230.
-            ao3(lay,kl) = xs(kl,2)
-
-            IF (kl>=33 .AND. kl<=61) ao3(lay,kl) = (so3tx(kl,1)+so3tx(kl,2)* &
-              tdiffx+so3tx(kl,3)*tdiffx*tdiffx)*1.0E-18
-
+!orig       tdiffx = vt(lay) - 230.
+!orig       ao3(lay,kl) = xs(kl,2)
+!orig       IF (kl>=33 .AND. kl<=61) ao3(lay,kl) = (so3tx(kl,1)+so3tx(kl,2)* &
+!orig         tdiffx+so3tx(kl,3)*tdiffx*tdiffx)*1.0E-18
+! SAMcKeen, 2/14/13 update O3 cross sections and quantum yields, from NASA-JPL-2011 recommendation
+            ao3(lay,kl) = jpl218(kl) +  &
+            (jpl295(kl) - jpl218(kl))*(vt(lay) - 218.)/(295. - 218.)
+            IF (vt(lay) .LE. 218.) ao3(lay,kl) = jpl218(kl)
+            IF (vt(lay) .GE. 295.) ao3(lay,kl) = jpl295(kl)
+            ao3(lay,kl)=ao3(lay,kl)*1.E-20
 150       CONTINUE
 160     CONTINUE
 
@@ -3403,3 +3457,4 @@ END SUBROUTINE madronich1_driver
       END SUBROUTINE airmas
 
     END MODULE module_phot_mad
+

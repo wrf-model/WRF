@@ -143,7 +143,7 @@ CONTAINS
 
    LOGICAL , EXTERNAL  :: wrf_dm_on_monitor
 
-   CHARACTER (LEN=256) :: message
+   CHARACTER (LEN=256) :: wrf_err_message
 
 #if  ! ( NMM_CORE == 1 )
 
@@ -199,12 +199,12 @@ CONTAINS
      IF( xtime-xtime_old < 0.5*dt/60.0 ) THEN
 
        IF( xtime < end_fdda_hour*60.0 ) THEN
-         WRITE(message,FMT='(a,i2.2,a,f15.3,a)') &
+         WRITE(wrf_err_message,FMT='(a,i2.2,a,f15.3,a)') &
           'D',id,' Spectral nudging read in new data at time = ', xtime, ' min.'
-         CALL wrf_message( TRIM(message) )
-         WRITE(message,FMT='(a,i2.2,a,2(f15.3,1x),a)') &
+         CALL wrf_message( TRIM(wrf_err_message) )
+         WRITE(wrf_err_message,FMT='(a,i2.2,a,2(f15.3,1x),a)') &
           'D',id,' Spectral nudging bracketing times = ', xtime_old, xtime_new, ' min.'
-         CALL wrf_message( TRIM(message) )
+         CALL wrf_message( TRIM(wrf_err_message) )
        ENDIF
 
        actual_end_fdda_min = end_fdda_hour*60.0
@@ -218,34 +218,34 @@ CONTAINS
 
          IF( guv > 0.0 ) THEN
            DO k = kts, kte
-             WRITE(message,'(a,i1,a,3i4,a,f10.4,a,f10.4)') &
+             WRITE(wrf_err_message,'(a,i1,a,3i4,a,f10.4,a,f10.4)') &
                '    D0',id,' sample analysis values at i,k,j=', i0, k, j0, &
                ' u_ndg_old=', u_ndg_old(i0,k,j0), ' u_ndg_new=', u_ndg_new(i0,k,j0)
-             CALL wrf_message( TRIM(message) )
+             CALL wrf_message( TRIM(wrf_err_message) )
            ENDDO
            DO k = kts, kte
-             WRITE(message,'(a,i1,a,3i4,a,f10.4,a,f10.4)') &
+             WRITE(wrf_err_message,'(a,i1,a,3i4,a,f10.4,a,f10.4)') &
                '    D0',id,' sample analysis values at i,k,j=', i0, k, j0, &
                ' v_ndg_old=', v_ndg_old(i0,k,j0), ' v_ndg_new=', v_ndg_new(i0,k,j0)
-             CALL wrf_message( TRIM(message) )
+             CALL wrf_message( TRIM(wrf_err_message) )
            ENDDO
          ENDIF
 
          IF( gt > 0.0 ) THEN
            DO k = kts, kte
-             WRITE(message,'(a,i1,a,3i4,a,f10.4,a,f10.4)') &
+             WRITE(wrf_err_message,'(a,i1,a,3i4,a,f10.4,a,f10.4)') &
                '    D0',id,' sample analysis values at i,k,j=', i0, k, j0, &
                ' t_ndg_old=', t_ndg_old(i0,k,j0), ' t_ndg_new=', t_ndg_new(i0,k,j0)
-             CALL wrf_message( TRIM(message) )
+             CALL wrf_message( TRIM(wrf_err_message) )
            ENDDO
          ENDIF
 
          IF( gph > 0.0 ) THEN
            DO k = kts, kte
-             WRITE(message,'(a,i1,a,3i4,a,f10.4,a,f10.4)') &
+             WRITE(wrf_err_message,'(a,i1,a,3i4,a,f10.4,a,f10.4)') &
                '    D0',id,' sample analysis values at i,k,j=', i0, k, j0, &
                ' ph_ndg_old=', ph_ndg_old(i0,k,j0), ' ph_ndg_new=', ph_ndg_new(i0,k,j0)
-             CALL wrf_message( TRIM(message) )
+             CALL wrf_message( TRIM(wrf_err_message) )
            ENDDO
          ENDIF
 
@@ -862,6 +862,7 @@ SUBROUTINE spectralnudgingfilterfft2dncar(nx,ny,nwave,fin)
   INTEGER :: lot, jump, n, inc, lenr, lensav, lenwrk
   REAL, DIMENSION(nx+15) :: wsave
   REAL, DIMENSION(nx,ny) :: work
+  
 
 
 
@@ -881,14 +882,16 @@ SUBROUTINE spectralnudgingfilterfft2dncar(nx,ny,nwave,fin)
 
   call rfftmi(n,wsave,lensav,ier)
   IF(ier /= 0) THEN
-    write(0,*) ' error in rfftmi ',ier
+    write(wrf_err_message,*) ' error in rfftmi ',ier
+    CALL wrf_message(TRIM(wrf_err_message))
   END IF
 
 !  do the forward transform
 
   call rfftmf( lot, jump, n, inc, fin, lenr, wsave, lensav, work, lenwrk, ier )
   IF(ier /= 0) THEN
-    write(0,*) ' error in rfftmf ',ier
+    write(wrf_err_message,*) ' error in rfftmf ',ier
+    CALL wrf_message(TRIM(wrf_err_message))
   END IF
 
   if(MOD(n,2) == 0) then
@@ -919,7 +922,8 @@ SUBROUTINE spectralnudgingfilterfft2dncar(nx,ny,nwave,fin)
 
   call rfftmb( lot, jump, n, inc, fin, lenr, wsave, lensav, work, lenwrk, ier )
   IF(ier /= 0) THEN
-    write(0,*) ' error in rfftmb ',ier
+    write(wrf_err_message,*) ' error in rfftmb ',ier
+    CALL wrf_message(TRIM(wrf_err_message))
   END IF
 
 END SUBROUTINE spectralnudgingfilterfft2dncar
@@ -968,82 +972,82 @@ END SUBROUTINE spectralnudgingfilterfft2dncar
 
    LOGICAL , EXTERNAL     ::      wrf_dm_on_monitor
 
-   CHARACTER (LEN=256) :: message
+   CHARACTER (LEN=256) :: wrf_err_message
 
    IF ( wrf_dm_on_monitor() ) THEN
 
      IF( guv > 0.0) THEN
-       WRITE(message,'(a,i1,a,e12.4,a,i4,a,i4)') &
+       WRITE(wrf_err_message,'(a,i1,a,e12.4,a,i4,a,i4)') &
            'D0',id,' Spectral nudging for wind is turned on and Guv= ', guv,' xwave= ',xwavenum,' ywavenum= ',ywavenum
-       CALL wrf_message(TRIM(message))
+       CALL wrf_message(TRIM(wrf_err_message))
      ELSE IF( guv < 0.0 ) THEN
        CALL wrf_error_fatal('In grid FDDA, Guv must be positive.')
      ELSE
-       WRITE(message,'(a,i1,a,e12.4)') &
+       WRITE(wrf_err_message,'(a,i1,a,e12.4)') &
            'D0',id,' Spectral nudging for wind is turned off and Guv= ', guv
-       CALL wrf_message(TRIM(message))
+       CALL wrf_message(TRIM(wrf_err_message))
      ENDIF
 
      IF( gt > 0.0) THEN
-       WRITE(message,'(a,i1,a,e12.4,a,i4,a,i4)') &
+       WRITE(wrf_err_message,'(a,i1,a,e12.4,a,i4,a,i4)') &
            'D0',id,' Spectral nudging for temperature is turned on and Gt= ', gt,' xwave= ',xwavenum,' ywavenum= ',ywavenum
-       CALL wrf_message(TRIM(message))
+       CALL wrf_message(TRIM(wrf_err_message))
      ELSE IF( gt < 0.0 ) THEN
        CALL wrf_error_fatal('In grid FDDA, Gt must be positive.')
      ELSE
-       WRITE(message,'(a,i1,a,e12.4)') &
+       WRITE(wrf_err_message,'(a,i1,a,e12.4)') &
            'D0',id,' Spectral nudging for temperature is turned off and Gt= ', gt
-       CALL wrf_message(TRIM(message))
+       CALL wrf_message(TRIM(wrf_err_message))
      ENDIF
 
      IF( gph > 0.0) THEN
-       WRITE(message,'(a,i1,a,e12.4,a,i4,a,i4)') &
+       WRITE(wrf_err_message,'(a,i1,a,e12.4,a,i4,a,i4)') &
          'D0',id,' Spectral nudging for geopotential is turned on and Gph= ', gph,' xwave= ',xwavenum,' ywavenum= ',ywavenum
-       CALL wrf_message(TRIM(message))
+       CALL wrf_message(TRIM(wrf_err_message))
      ELSE IF( gph < 0.0 ) THEN
        CALL wrf_error_fatal('In grid FDDA, Gph must be positive.')
      ELSE
-       WRITE(message,'(a,i1,a,e12.4)') &
+       WRITE(wrf_err_message,'(a,i1,a,e12.4)') &
          'D0',id,' Spectral nudging for geopotential is turned off and Gph= ', gph
-       CALL wrf_message(TRIM(message))
+       CALL wrf_message(TRIM(wrf_err_message))
      ENDIF
 
      IF( guv > 0.0 .AND. if_no_pbl_nudging_uv == 1 ) THEN
-        WRITE(message,'(a,i1,a)') &
+        WRITE(wrf_err_message,'(a,i1,a)') &
            'D0',id,' Spectral nudging for wind is turned off within the PBL.'
-        CALL wrf_message(TRIM(message))
+        CALL wrf_message(TRIM(wrf_err_message))
              IF( dk_zfac_uv < 1 ) CALL wrf_error_fatal('In spectral nudging, dk_zfac_uv must be greater or equal than 1.')
      ELSEIF( guv > 0.0 .AND. if_zfac_uv == 1 ) THEN
-        WRITE(message,'(a,i1,a,i3)') &
+        WRITE(wrf_err_message,'(a,i1,a,i3)') &
            'D0',id,' Spectral nudging for wind is turned off below layer', k_zfac_uv
-        CALL wrf_message(TRIM(message))
+        CALL wrf_message(TRIM(wrf_err_message))
              IF( dk_zfac_uv < 1 ) CALL wrf_error_fatal('In spectral nudging, dk_zfac_uv must  be greater or equal than 1.')       
      ENDIF
 
 
      IF( gt > 0.0 .AND. if_no_pbl_nudging_t == 1 ) THEN
-        WRITE(message,'(a,i1,a)') &
+        WRITE(wrf_err_message,'(a,i1,a)') &
            'D0',id,' Spectral nudging for temperature is turned off within the PBL.'
-        CALL wrf_message(TRIM(message))
+        CALL wrf_message(TRIM(wrf_err_message))
              IF( dk_zfac_t < 1 ) CALL wrf_error_fatal('In spectral nudging, dk_zfac_t must be greater or equal than 1.')
      ELSEIF( gt > 0.0 .AND. if_zfac_t == 1 ) THEN
-        WRITE(message,'(a,i1,a,i3)') &
+        WRITE(wrf_err_message,'(a,i1,a,i3)') &
            'D0',id,' Spectral nudging for temperature is turned off below layer', k_zfac_t
-        CALL wrf_message(TRIM(message))
+        CALL wrf_message(TRIM(wrf_err_message))
             IF( dk_zfac_t < 1 ) CALL wrf_error_fatal('In spectral nudging, dk_zfac_t must be greater or equal than 1.')
      ENDIF
 
 
      IF( gph > 0.0 .AND. if_no_pbl_nudging_ph == 1 ) THEN
-        WRITE(message,'(a,i1,a)') &
+        WRITE(wrf_err_message,'(a,i1,a)') &
          'D0',id,' Spectral nudging for geopotential is turned off within the PBL.'
-        CALL wrf_message(TRIM(message))
+        CALL wrf_message(TRIM(wrf_err_message))
             IF( dk_zfac_ph < 1 ) CALL wrf_error_fatal('In spectral nudging, dk_zfac_ph must be greater or equal than 1.')
      ELSEIF( gph > 0.0 .AND. if_zfac_ph == 1 ) THEN
-        WRITE(message,'(a,i1,a,i3)') &
+        WRITE(wrf_err_message,'(a,i1,a,i3)') &
           'D0',id,' Spectral nudging for geopotential is turned off below layer', &
            k_zfac_ph
-        CALL wrf_message(TRIM(message))
+        CALL wrf_message(TRIM(wrf_err_message))
             IF( dk_zfac_ph < 1 ) CALL wrf_error_fatal('In spectral nudging, dk_zfac_ph must be greater or equal than 1.')
      ENDIF
 
@@ -1055,14 +1059,14 @@ END SUBROUTINE spectralnudgingfilterfft2dncar
        ENDIF
 
        IF( actual_end_fdda_min <= run_hours*60. ) THEN
-          WRITE(message,'(a,i1,a)') &
+          WRITE(wrf_err_message,'(a,i1,a)') &
             'D0',id,' Spectral nudging is ramped down near the end of the nudging period,'
-          CALL wrf_message(TRIM(message))
+          CALL wrf_message(TRIM(wrf_err_message))
 
-          WRITE(message,'(a,f6.2,a,f6.2,a)') &
+          WRITE(wrf_err_message,'(a,f6.2,a,f6.2,a)') &
              '      starting at ', (actual_end_fdda_min - ABS(dtramp_min))/60.0,&
              'h, ending at ', actual_end_fdda_min/60.0,'h.'
-          CALL wrf_message(TRIM(message))
+          CALL wrf_message(TRIM(wrf_err_message))
        ENDIF
      ENDIF
 

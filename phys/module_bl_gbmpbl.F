@@ -5,15 +5,15 @@
 ! REFERENCES
 ! 1) Grenier, H., and C. S. Bretherton, 2001: A moist PBL parameterization 
 !    for large-scale models and its application to subtropical cloud-topped 
-!    marine boundary layers. Mon. Wea. Rev., 129, 357–377. 
+!    marine boundary layers. Mon. Wea. Rev., 129, 357-377. 
 !    ("GB01" in the comments)
 ! 2) Galperin, B., L. H. Kantha, S. Hassid, and A. Rosati, 1988: 
 !    A quasi-equilibrium turbulent energy model for geophysical flows. 
-!    J. Atmos. Sci., 45, 55–62.
+!    J. Atmos. Sci., 45, 55-62.
 !    ("Gal88" in the comments)
 ! 3) Mellor, G., and T. Yamada, 1982: Development of a turbulence closure
 !    model for geophysical fluid problems. Rev. Astrophys.Space Phys., 
-!    20, 851–875.
+!    20, 851-875.
 !    ("MY82" in the comments)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Natalie Perlin, October 2012 nperlin@coas.oregonstate.edu
@@ -849,7 +849,6 @@ CONTAINS
     parameter (nmax=100)
     integer j
     real rbet,gam(nmax)
-    !      if(b(1).eq.0.)pause 'tridag: rewrite equations'
     rbet=1./b(1)
     u(1)=r(1)*rbet
     do j=2,n

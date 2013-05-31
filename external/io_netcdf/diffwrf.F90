@@ -1,9 +1,5 @@
 module read_util_module
 
-#ifdef crayx1
-#define iargc ipxfargc
-#endif
-
 contains
 
    subroutine arguments(v2file, lmore)
@@ -106,7 +102,6 @@ end module read_util_module
   logical :: newtime = .TRUE.
   logical :: justplot, efound
 
-  integer, external :: iargc
   logical, external :: iveceq
 
   levlim = -1
@@ -114,7 +109,7 @@ end module read_util_module
   call ext_ncd_ioinit(SysDepInfo,Status)
   call set_wrf_debug_level ( 1 )
 
-  nargs = iargc()
+  nargs = command_argument_count()
 
   Justplot = .false.
   searchcoords = .false.

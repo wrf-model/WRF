@@ -1833,16 +1833,21 @@ CONTAINS
 #ifdef CLWRFGHG
    CALL read_CAMgases(yr,julian,"RRTM",co2vmr,n2ovmr,ch4vmr)
 #else
-   co2vmr = 330.e-6
-   n2ovmr = 0.
-   ch4vmr = 0.
+! values used in pre-V3.5
+!  co2vmr = 330.e-6
+!  n2ovmr = 0.
+!  ch4vmr = 0.
+! values updated to RRTMG in V3.5
+   co2vmr = 379.e-6
+   n2ovmr = 319.e-9
+   ch4vmr = 1774.e-9
 #endif
  
   IF ( wrf_dm_on_monitor() ) THEN
      WRITE(message,*)'CAM-CLWRF interpolated values______ year:',yr,' julian day:',julian
-     call wrf_debug( 0, message)
+     call wrf_debug( 1, message)
      WRITE(message,*)'  CAM-CLWRF co2vmr: ',co2vmr,' n2ovmr:',n2ovmr,' ch4vmr:',ch4vmr
-     call wrf_debug( 0, message)
+     call wrf_debug( 1, message)
    ENDIF
 
 

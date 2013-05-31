@@ -79,7 +79,7 @@ subroutine da_qc_atms (it, i, nchan, ob, iv)
          !    reject limb obs 
          !------------------------------------------------------
          scanpos = iv%instid(i)%scanpos(n)
-         if (scanpos <= 6 .or. scanpos >= 90) then
+         if (scanpos <= 0 .or. scanpos >= 97) then
             iv%instid(i)%tb_qc(:,n)  =  qc_bad
             if (iv%instid(i)%info%proc_domain(1,n)) &
                   nrej_limb = nrej_limb + 1
@@ -93,17 +93,27 @@ subroutine da_qc_atms (it, i, nchan, ob, iv)
          if (ob%instid(i)%tb(1,n) > 0.0) then
             si = iv%instid(i)%tb_inv(1,n)
             if (isflg .eq.0 .AND. si >= 3.0) then
-               iv%instid(i)%tb_qc(1:15,n) = qc_bad
-               iv%instid(i)%cloud_flag(1:15,n) = qc_bad
+               iv%instid(i)%tb_qc(1:8,n) = qc_bad
+               iv%instid(i)%cloud_flag(1:8,n) = qc_bad
                if (iv%instid(i)%info%proc_domain(1,n)) &
                   nrej_si = nrej_si + 1
             elseif (isflg .gt.0 .AND. si >= 1.5) then
-               iv%instid(i)%tb_qc(1:15,n) = qc_bad
-               iv%instid(i)%cloud_flag(1:15,n) = qc_bad
+               iv%instid(i)%tb_qc(1:8,n) = qc_bad
+               iv%instid(i)%cloud_flag(1:8,n) = qc_bad
                if (iv%instid(i)%info%proc_domain(1,n)) &
                   nrej_si = nrej_si + 1
             end if
          end if
+!ECMWF for atms
+         if (ob%instid(i)%tb(3,n) > 0.0) then
+            si = abs(iv%instid(i)%tb_inv(3,n))
+            if (si >= 5.0) then
+               iv%instid(i)%tb_qc(1:8,n) = qc_bad
+               iv%instid(i)%cloud_flag(1:8,n) = qc_bad
+               if (iv%instid(i)%info%proc_domain(1,n)) &
+                  nrej_si = nrej_si + 1
+            endif
+         endif
 
          if (ob%instid(i)%tb(16,n) > 0.0 .and. &
               ob%instid(i)%tb(17,n) > 0.0) then
@@ -115,6 +125,16 @@ subroutine da_qc_atms (it, i, nchan, ob, iv)
                   nrej_si = nrej_si + 1
             end if
          end if
+!ECMWF for atms
+         if (ob%instid(i)%tb(3,n) > 0.0) then
+            si = abs(iv%instid(i)%tb_inv(3,n))
+            if (si >= 5.0) then
+               iv%instid(i)%tb_qc(16:22,n) = qc_bad
+               iv%instid(i)%cloud_flag(16:22,n) = qc_bad
+               if (iv%instid(i)%info%proc_domain(1,n)) &
+                  nrej_si = nrej_si + 1
+            endif
+         endif
 
 
          if (iv%instid(i)%clwp(n) >= 0.2) then

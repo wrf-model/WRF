@@ -26,6 +26,7 @@ MODULE module_initialize_real
                           ,HALO_EM_INIT_3_sub   &
                           ,HALO_EM_INIT_4_sub   &
                           ,HALO_EM_INIT_5_sub   &
+                          ,HALO_EM_INIT_6_sub   &
                           ,HALO_EM_VINTERP_UV_1_sub
 #endif
 
@@ -109,7 +110,7 @@ CONTAINS
       LOGICAL :: were_bad
 
       LOGICAL :: stretch_grid, dry_sounding, debug
-      INTEGER IICOUNT
+      INTEGER :: IICOUNT, icount
 
       REAL :: p_top_requested , temp
       INTEGER :: num_metgrid_levels
@@ -134,7 +135,7 @@ integer::oops1,oops2
       LOGICAL , PARAMETER :: want_full_levels = .TRUE.
       LOGICAL , PARAMETER :: want_half_levels = .FALSE.
 
-      CHARACTER (LEN=256) :: a_message
+      CHARACTER (LEN=256) :: a_message, mminlu
       REAL :: max_mf
     
       !  Excluded middle.
@@ -434,38 +435,40 @@ integer::oops1,oops2
 
       IF ( flag_metgrid .EQ. 1 ) THEN  !   <----- START OF VERTICAL INTERPOLATION PART ---->
 
-
          num_metgrid_levels = grid%num_metgrid_levels
 
-         !  At the location of maximum pressure in the column, get the temperature and height.  These
-         !  will be written out and could be used for vertical interpolation - to avoid extrapolation.
-         !  Hey, we can also do minimum values, too.
+         IF ( config_flags%nest_interp_coord .EQ. 1 ) THEN
 
-         DO j=jts,jte
-            DO i=its,ite
-               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-               grid%max_p(i,j) = grid%p_gc(i,1,j) 
-               k_max_p = 1
-               IF      ( grid%p_gc(i,2,j) .GT. grid%max_p(i,j) ) THEN
-                  grid%max_p(i,j) = grid%p_gc(i,2,j)
-                  k_max_p = 2
-               ELSE IF ( grid%p_gc(i,num_metgrid_levels,j) .GT. grid%max_p(i,j) ) THEN
-                  grid%max_p(i,j) = grid%p_gc(i,num_metgrid_levels,j)
-                  k_max_p = num_metgrid_levels
-               END IF
-               grid%t_max_p(i,j) = grid%t_gc(i,k_max_p,j)
-               grid%ght_max_p(i,j) = grid%ght_gc(i,k_max_p,j)
-
-               grid%min_p(i,j) = grid%p_gc(i,num_metgrid_levels,j) 
-               k_min_p = num_metgrid_levels
-               IF      ( grid%p_gc(i,2,j) .LT. grid%min_p(i,j) ) THEN
-                  grid%min_p(i,j) = grid%p_gc(i,2,j)
-                  k_min_p = 2
-               END IF
-               grid%t_min_p(i,j) = grid%t_gc(i,k_min_p,j)
-               grid%ght_min_p(i,j) = grid%ght_gc(i,k_min_p,j)
+            !  At the location of maximum pressure in the column, get the temperature and height.  These
+            !  will be written out and could be used for vertical interpolation - to avoid extrapolation.
+            !  Hey, we can also do minimum values, too.
+   
+            DO j=jts,jte
+               DO i=its,ite
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  grid%max_p(i,j) = grid%p_gc(i,1,j) 
+                  k_max_p = 1
+                  IF      ( grid%p_gc(i,2,j) .GT. grid%max_p(i,j) ) THEN
+                     grid%max_p(i,j) = grid%p_gc(i,2,j)
+                     k_max_p = 2
+                  ELSE IF ( grid%p_gc(i,num_metgrid_levels,j) .GT. grid%max_p(i,j) ) THEN
+                     grid%max_p(i,j) = grid%p_gc(i,num_metgrid_levels,j)
+                     k_max_p = num_metgrid_levels
+                  END IF
+                  grid%t_max_p(i,j) = grid%t_gc(i,k_max_p,j)
+                  grid%ght_max_p(i,j) = grid%ght_gc(i,k_max_p,j)
+   
+                  grid%min_p(i,j) = grid%p_gc(i,num_metgrid_levels,j) 
+                  k_min_p = num_metgrid_levels
+                  IF      ( grid%p_gc(i,2,j) .LT. grid%min_p(i,j) ) THEN
+                     grid%min_p(i,j) = grid%p_gc(i,2,j)
+                     k_min_p = 2
+                  END IF
+                  grid%t_min_p(i,j) = grid%t_gc(i,k_min_p,j)
+                  grid%ght_min_p(i,j) = grid%ght_gc(i,k_min_p,j)
+               END DO
             END DO
-         END DO
+         END IF
 
          !  If this is data from the PINTERP program, it is emulating METGRID output.
          !  One of the caveats of this data is the way that the vertical structure is
@@ -1516,6 +1519,48 @@ integer::oops1,oops2
          grid%ifndsoilw = 0
       END IF
 
+      !  Set flag integers for presence of albsi, snowsi, and icedepth fields
+
+      IF ( config_flags%seaice_albedo_opt == 2 ) THEN
+          grid%ifndalbsi = flag_albsi
+      ELSE
+          grid%ifndalbsi = 0
+      ENDIF
+          
+      IF ( config_flags%seaice_snowdepth_opt == 1 ) THEN
+          grid%ifndsnowsi = flag_snowsi
+      ELSE
+          grid%ifndsnowsi = 0
+      ENDIF
+          
+      IF ( config_flags%seaice_thickness_opt == 1 ) THEN
+          grid%ifndicedepth = flag_icedepth
+      ELSE
+          grid%ifndicedepth = 0
+      ENDIF
+
+      !  Only certain land surface schemes are able to work with the NLCD data.
+
+      CALL nl_get_mminlu ( grid%id , mminlu )
+      write(a_message,*) 'MMINLU = ',trim(mminlu)
+      CALL wrf_debug ( 1 , a_message )
+      write(a_message,*) 'sf_surface_physics = ',model_config_rec%sf_surface_physics(grid%id)
+      CALL wrf_debug ( 1, a_message )
+
+      probs_with_nlcd : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
+
+         CASE ( RUCLSMSCHEME, NOAHMPSCHEME, CLMSCHEME, SSIBSCHEME )
+            IF ( TRIM(mminlu) .EQ. 'NLCD40' ) THEN
+               CALL wrf_message ( 'NLCD40 data may be used with SLABSCHEME, LSMSCHEME, PXLSMSCHEME' )
+               CALL wrf_message ( 'Re-run geogrid and choose a different land cover source, or select a different sf_surface_physics option' )
+               CALL wrf_error_fatal ( 'NLCD40 data may not be used with: RUCLSMSCHEME, NOAHMPSCHEME, CLMSCHEME, SSIBSCHEME' )
+            END IF
+
+         CASE ( SLABSCHEME, LSMSCHEME, PXLSMSCHEME )
+               CALL wrf_debug ( 1, 'NLCD40 being used with an OK scheme' )
+
+      END SELECT probs_with_nlcd
+
       !  We require input data for the various LSM schemes.
 
       enough_data : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
@@ -1577,30 +1622,35 @@ integer::oops1,oops2
 
       !  Spliti NUDAPT  Urban Parameters
 
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-               grid%LP_URB2D(i,j)  = grid%URB_PARAM(i,91,j)
-               grid%LB_URB2D(i,j)  = grid%URB_PARAM(i,95,j)
-               grid%HGT_URB2D(i,j)  = grid%URB_PARAM(i,94,j)
-            END DO
-         END DO
-
-
-         DO j = jts , MIN(jde-1,jte)
-            DO i = its , MIN(ide-1,ite)
-               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-               DO k = 1, 15
-                  grid%HI_URB2D(i,k,j)  = grid%URB_PARAM(i,k+117,j)
+         IF ( ( config_flags%sf_urban_physics == 1 ) .OR. ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  grid%LP_URB2D(i,j)  = grid%URB_PARAM(i,91,j)
+                  grid%LB_URB2D(i,j)  = grid%URB_PARAM(i,95,j)
+                  grid%HGT_URB2D(i,j)  = grid%URB_PARAM(i,94,j)
                END DO
             END DO
-         END DO
+         ENDIF
+
+         IF ( ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
+            DO j = jts , MIN(jde-1,jte)
+               DO i = its , MIN(ide-1,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                  DO k = 1, 15
+                     grid%HI_URB2D(i,k,j)  = grid%URB_PARAM(i,k+117,j)
+                  END DO
+               END DO
+            END DO
+         ENDIF
 
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-               grid%MH_URB2D(i,j)  = grid%URB_PARAM(i,92,j)
-               grid%STDH_URB2D(i,j)  = grid%URB_PARAM(i,93,j)
+               IF ( config_flags%sf_urban_physics==1 ) THEN
+                  grid%MH_URB2D(i,j)  = grid%URB_PARAM(i,92,j)
+                  grid%STDH_URB2D(i,j)  = grid%URB_PARAM(i,93,j)
+               ENDIF
                grid%H2W_URB2D(i,j)  = grid%URB_PARAM(i,101,j)
                grid%Z0S_URB2D(i,j)  = grid%URB_PARAM(i,103,j)
                grid%ZDS_URB2D(i,j)  = grid%URB_PARAM(i,104,j)
@@ -1636,7 +1686,9 @@ integer::oops1,oops2
             DO i = its , MIN(ide-1,ite)
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                DO k = 1, 4
-                  grid%LF_URB2D(i,k,j)  = grid%URB_PARAM(i,k+95,j)
+                  IF ( config_flags%sf_urban_physics==1 ) THEN
+                     grid%LF_URB2D(i,k,j)  = grid%URB_PARAM(i,k+95,j)
+                  ENDIF
                   grid%Z0M_URB2D(i,k,j)  = grid%URB_PARAM(i,k+112,j)
                END DO
             END DO
@@ -2615,6 +2667,99 @@ endif
 !  Set flag to denote that we are saving original values of HT, MUB, and
 !  PHB for 2-way nesting and cycling.
 
+
+      !  Template for initializing trajectories.  The i, j, and k starting locations
+      !  are specified.  Right now, a small plane in the middle of the domain is 
+      !  selected.
+      
+      grid%traj_i    = -9999
+      grid%traj_j    = -9999
+      grid%traj_k    = -9999
+      grid%traj_lat  = -9999
+      grid%traj_long = -9999
+    
+      IF (config_flags%num_traj .gt. 0 .and. config_flags%traj_opt .gt. 0) THEN
+         icount = 1
+         DO j = (jde + jds)/2 - 2, (jde + jds)/2 + 2, 1 
+            DO i = (ide + ids)/2 - 2, (ide + ids)/2 + 2, 1
+               IF ( its .LE. i    .and. ite .GE. i   .and.  jts .LE. j    .and. jte .GE. j ) THEN
+                  grid%traj_i   (icount) = i
+                  grid%traj_j   (icount) = j
+                  grid%traj_k   (icount) = 10
+                  grid%traj_lat (icount) = grid%xlat(i,j)
+                  grid%traj_long(icount) = grid%xlong(i,j)
+               END IF
+         
+#ifdef DM_PARALLEL
+               grid%traj_i   (icount) = wrf_dm_max_real ( grid%traj_i   (icount) )
+               grid%traj_j   (icount) = wrf_dm_max_real ( grid%traj_j   (icount) )
+               grid%traj_k   (icount) = wrf_dm_max_real ( grid%traj_k   (icount) )
+               grid%traj_lat (icount) = wrf_dm_max_real ( grid%traj_lat (icount) )
+               grid%traj_long(icount) = wrf_dm_max_real ( grid%traj_long(icount) )
+#endif
+         	      
+               icount = icount + 1
+               IF (icount .GT. config_flags%num_traj) THEN
+                  EXIT
+               END IF
+            END DO
+         END DO  
+      END IF
+
+      !  Simple initialization for 3d ocean.  
+
+      IF ( config_flags%sf_ocean_physics .EQ. PWP3DSCHEME ) THEN
+
+         !  From a profile of user defined temps, depths, and salinity - we 
+         !  construct a 3d ocean.  Because this is a 1d profile, domains that
+         !  have varied ocean characteristics that deviate should significantly from 
+         !  the provided initial state will probably give poor results.
+
+         DO k = 1,model_config_rec%ocean_levels
+            grid%om_depth(:,k,:) = model_config_rec%ocean_z(k)
+            grid%om_tmp  (:,k,:) = model_config_rec%ocean_t(k)
+            grid%om_s    (:,k,:) = model_config_rec%ocean_s(k)
+            grid%om_tini (:,k,:) = model_config_rec%ocean_t(k)
+            grid%om_sini (:,k,:) = model_config_rec%ocean_s(k)
+            grid%om_u    (:,k,:) = 0.
+            grid%om_v    (:,k,:) = 0.
+         END DO
+
+         !  Apparently, the mixed layer is 5 m.
+
+         grid%om_ml = 5    
+
+         !  Keep lat, lon info for the ocean model.
+
+         grid%om_lon = grid%xlong
+         grid%om_lat = grid%xlat
+
+         !  If we have access to a non-horizontally isotropic SST, let's 
+         !  use that as a better starting point for the ocean temp.  Note that
+         !  we assume if this is an ice point that implies this is a land point
+         !  for WRF.  If it is a land point, then we do not have any ocean underneath.
+
+         IF ( ( grid%landmask(i,j) .LT. 0.5 ) .AND. ( flag_sst .EQ. 1 ) ) THEN
+            DO j = jts, min(jde-1,jte)
+               DO k = 1,model_config_rec%ocean_levels
+                  DO i = its, min(ide-1,ite)
+                     grid%om_tmp(i,k,j) = grid%sst(i,j) - ( grid%om_tini(i,1,j) - grid%om_tini(i,k,j) )
+                  END DO
+               END DO
+            END DO
+   
+            DO j = jts, min(jde-1,jte)
+               DO k = 1,model_config_rec%ocean_levels
+                  DO i = its, min(ide-1,ite)
+                     grid%om_tini(i,k,j) = grid%om_tmp(i,k,j)
+                  END DO
+               END DO
+            END DO
+         END IF
+
+      END IF
+	 
+
       grid%save_topo_from_real=1
 
       ips = its ; ipe = ite ; jps = jts ; jpe = jte ; kps = kts ; kpe = kte
@@ -2624,6 +2769,9 @@ endif
 #   include "HALO_EM_INIT_3.inc"
 #   include "HALO_EM_INIT_4.inc"
 #   include "HALO_EM_INIT_5.inc"
+      IF ( config_flags%sf_ocean_physics .EQ. PWP3DSCHEME ) THEN
+#   include "HALO_EM_INIT_6.inc"
+      END IF
 #endif
 
       RETURN

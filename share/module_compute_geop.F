@@ -88,7 +88,8 @@ CONTAINS
 
       if(kp .gt. ke) then
         write(mess,*) ' interp too high: pressure, p(ke), i, j = ',pressure,p(ke),i,j
-        write(0,*)'p: ',p
+        call wrf_message ( mess )
+        write(mess,*)'p: ',p
         call wrf_error_fatal( mess )
       end if
  

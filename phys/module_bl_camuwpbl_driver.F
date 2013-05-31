@@ -129,11 +129,12 @@ CONTAINS
        ,ims,ime, jms,jme, kms,kme                                         &
        ,its,ite, jts,jte, kts,kte                                         &
 !Intent-inout 
-       ,tauresx2d,tauresy2d,exch_h8w,exch_m8w                             &
+       ,tauresx2d,tauresy2d                                               &
        ,rublten,rvblten,rthblten,rqiblten,rqniblten,rqvblten,rqcblten     &
+       ,kvm3d,kvh3d                                                       &
 !Intent-out
-       ,tpert2d,qpert2d,wpert2d,smaw3d,turbtype3d,tke_pbl8w               &
-       ,tke_pbl,pblh2d,kpbl2d,kvh3d,kvm3d)  
+       ,tpert2d,qpert2d,wpert2d,smaw3d,turbtype3d                         &
+       ,tke_pbl,pblh2d,kpbl2d                                             )  
 
     !!---------------------------------------------------- !
     !! This is an interface routine for vertical diffusion !
@@ -207,7 +208,6 @@ CONTAINS
     integer, dimension( ims:ime,jms:jme ), intent(out) :: kpbl2d !Layer index containing PBL top within or at the base interface
     real,    dimension( ims:ime,jms:jme ), intent(out) :: pblh2d !Planetary boundary layer height (m)
 
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: tke_pbl8w   !Turbulence kinetic energy at interfaces (m^2/s^2)
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: tke_pbl     !Turbulence kinetic energy at midpoints  (m^2/s^2)
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: turbtype3d  !Turbulent interface types [ no unit ]
     real, dimension( ims:ime, kms:kme, jms:jme ), intent(out) :: smaw3d      !Normalized Galperin instability function for momentum  ( 0<= <=4.964 and 1 at neutral ) [no units]
@@ -223,9 +223,7 @@ CONTAINS
     real, dimension( ims:ime, jms:jme )         , intent(out)   :: qpert2d             ! Convective humidity excess (kg/kg)
     real, dimension( ims:ime, jms:jme )         , intent(out)   :: wpert2d             ! Turbulent velocity excess (m/s)
 
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(out)   :: kvm3d,kvh3d         !Eddy diffusivity for momentum and heat(m^2/s)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: exch_h8w            !Eddy diffusivity at interfaces for heat(m^2/s)
-    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: exch_m8w            !Eddy diffusivity at interfaces for momentum(m^2/s)
+    real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout) :: kvm3d,kvh3d         !Eddy diffusivity for momentum and heat(m^2/s)
 
 
     !---------------------------------------------------------------------------!
@@ -436,11 +434,11 @@ CONTAINS
              cgh(1,kflip)   = 0.0_r8        ! Counter-gradient term for heat
              cgs(1,kflip)   = 0.0_r8        ! Counter-gradient star     (cg/flux)
              if( is_first_step ) then
-                exch_h8w(i,k,j) = 0.0_r8     ! Eddy diffusivity for heat     (m2/s)
-                exch_m8w(i,k,j) = 0.0_r8     ! Eddy diffusivity for momentum (m2/s)
+                kvm3d(i,k,j) = 0.0_r8     ! Eddy diffusivity for heat     (m2/s)
+                kvh3d(i,k,j) = 0.0_r8     ! Eddy diffusivity for momentum (m2/s)
              endif
-             kvh(1,kflip)   = exch_h8w(i,k,j)  
-             kvm(1,kflip)   = exch_m8w(i,k,j)  
+             kvh(1,kflip)   = kvh3d(i,k,j)  
+             kvm(1,kflip)   = kvm3d(i,k,j)  
           end do
 
           !Compute pintdry8 and pmiddry8
@@ -553,8 +551,8 @@ CONTAINS
              do k = kts,kte+1
                 kflip          = kte - k + 2
                 
-                exch_h8w(i,k,j)   = kvh(1,kflip)
-                exch_m8w(i,k,j)   = kvm(1,kflip)  
+                kvh3d(i,k,j)   = kvh(1,kflip)
+                kvm3d(i,k,j)   = kvm(1,kflip)  
              end do
              
              
@@ -734,21 +732,17 @@ CONTAINS
              rqvblten(i,k,j)   = cloudtnd(1,kflip,1       ) * multFrc
              rqcblten(i,k,j)   = cloudtnd(1,kflip,ixcldliq) * multFrc
              rqiblten(i,k,j)   = cloudtnd(1,kflip,ixcldice) * multFrc
-             !*Important* : ixnumliq is mixed in the dropmixnuc, therefore ixnumliq is NOT mixed here
+             !*Important* : ixnumliq is mixed in the dropmixnuc, therefore ixnumliq is NOT mixed here (ONLY if CAMMGMP is used for mp_physics)
              rqniblten(i,k,j)  = cloudtnd(1,kflip,ixnumice) * multFrc
 
-             !TKE at the midpoints
-             tke_pbl(i,k,j)    = 0.5*(tke8(1,kflip) + tke8(1,kflip + 1))
              !Diffusivity coefficients at the midpoints
              kp1 = k + 1
-             kvh3d(i,k,j) = 0.5*(exch_h8w(i,k,j) +  exch_h8w(i,kp1,j))
-             kvm3d(i,k,j) = 0.5*(exch_m8w(i,k,j) +  exch_m8w(i,kp1,j))
           end do
 
           do k = kts,kte+1
              kflip             = kte - k + 2
              
-             tke_pbl8w(i,k,j)  = tke8(1,kflip)    !TKE at the interfaces
+             tke_pbl(i,k,j)    = tke8(1,kflip)    !TKE at the interfaces
              turbtype3d(i,k,j) = turbtype(1,kflip)
              smaw3d(i,k,j)     = smaw(1,kflip)
           end do
@@ -853,7 +847,7 @@ CONTAINS
  
  !-----------------------------------------------------------------------------------------   
   subroutine camuwpblinit(rublten,rvblten,rthblten,rqvblten, &
-       restart,tke_pbl,                                      &
+       restart,tke_pbl,is_CAMMGMP_used,                      &
        ids,ide,jds,jde,kds,kde,                              &
        ims,ime,jms,jme,kms,kme,                              &
        its,ite,jts,jte,kts,kte)
@@ -885,7 +879,7 @@ CONTAINS
     !-------------------------------------------------------------------------------------!
     !Input and output variables                                                           !
     !-------------------------------------------------------------------------------------!
-    logical,intent(in) :: restart
+    logical,intent(in) :: restart,is_CAMMGMP_used 
     integer,intent(in) :: ids,ide,jds,jde,kds,kde
     integer,intent(in) :: ims,ime,jms,jme,kms,kme
     integer,intent(in) :: its,ite,jts,jte,kts,kte
@@ -933,7 +927,7 @@ CONTAINS
     
     if (masterproc) then
        write(iulog,*)'Initializing vertical diffusion (vertical_diffusion_init)'
-       call wrf_message(iulog)
+       call wrf_debug(1,iulog)
     end if
     
     !! ---------------------------------------------------------------------------------------- !
@@ -955,12 +949,12 @@ CONTAINS
     nbot_eddy  = pver    !! Should always be pver
     
     if( masterproc ) write(iulog,fmt='(a,i3,5x,a,i3)') 'NTOP_EDDY  =', ntop_eddy, 'NBOT_EDDY  =', nbot_eddy
-    call wrf_message(iulog)
+    call wrf_debug(1,iulog)
     
     select case ( eddy_scheme )
     case ( 'diag_TKE' ) 
        if( masterproc ) write(iulog,*) 'vertical_diffusion_init: eddy_diffusivity scheme: UW Moist Turbulence Scheme by Bretherton and Park'
-       call wrf_message(iulog)
+       call wrf_debug(1,iulog)
        !! Check compatibility of eddy and shallow scheme
        if( shallow_scheme .ne. 'UW' ) then
           write(iulog,*) 'ERROR: shallow convection scheme ', shallow_scheme,' is incompatible with eddy scheme ', eddy_scheme
@@ -972,7 +966,7 @@ CONTAINS
             ntop_eddy, nbot_eddy, hypm, karman )
        
        if( masterproc ) write(iulog,*) 'vertical_diffusion: nturb, ntop_eddy, nbot_eddy ', nturb, ntop_eddy, nbot_eddy
-       call wrf_message(iulog)
+       call wrf_debug(1,iulog)
     end select
     
     !!-------------------------------------------------------------------------------------!
@@ -1022,7 +1016,13 @@ CONTAINS
        
 #ifdef MODAL_AERO
        !! Do not diffuse droplet number - treated in dropmixnuc
-       if( k == ixndrop ) cycle
+
+       !BSINGH:01/31/2013: The following if condition is modified from its original form[which is:if( k == ixndrop ) cycle]
+       !to allow the PBL scheme to mix liquid number when CAMMGMP scheme is not being used
+
+       if(is_CAMMGMP_used) then!BSINGH:01/31/2013: Modified this if cond. see comment above
+          if( k == ixndrop ) cycle 
+       endif
        !BSINGH-08/31/2012: In WRF, Physics init is called before chem init therefore
        !aerosol species are not yet added. Following condition, skip all other constituents
        !(which will be added in chem init) except first five (vapor, cld liq, cld ice, liq num and ice num)

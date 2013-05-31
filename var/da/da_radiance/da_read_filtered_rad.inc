@@ -28,13 +28,13 @@ subroutine da_read_filtered_rad( iv )
 #endif
 
       if (print_detail_rad) then
-         write(unit=stdout,fmt=*) 'Reading in ', trim(filename) 
+         write(unit=stdout,fmt='(2a)') 'Reading in ', trim(filename) 
       end if
 
       call da_get_unit(filtered_rad_unit)
       open(unit=filtered_rad_unit,file=trim(filename),form='unformatted',status='old',iostat=ios)
       if (ios /= 0) then
-         write(unit=stdout,fmt=*) 'Cannot open filtered radiance file ', filename
+         write(unit=stdout,fmt='(2a)') 'Cannot open filtered radiance file ', filename
          iv%instid(i)%num_rad = 0
          cycle
       end if

@@ -530,7 +530,11 @@ CONTAINS
     IF ( ICE == -1 ) THEN
 
 
-       CALL NOAHMP_GLACIER(       I,       J,    COSZ,   NSNOW,   NSOIL,      DT, & ! IN : Time/Space/Model-related
+      CALL NOAHMP_OPTIONS_GLACIER(IDVEG  ,IOPT_CRS  ,IOPT_BTR  ,IOPT_RUN  ,IOPT_SFC  ,IOPT_FRZ , &
+                      IOPT_INF  ,IOPT_RAD  ,IOPT_ALB  ,IOPT_SNF  ,IOPT_TBOT, IOPT_STC )
+      
+      TBOT = MIN(TBOT,263.15)                      ! set deep temp to at most -10C
+      CALL NOAHMP_GLACIER(       I,       J,    COSZ,   NSNOW,   NSOIL,      DT, & ! IN : Time/Space/Model-related
                                T_ML,    P_ML,    U_ML,    V_ML,    Q_ML,    SWDN, & ! IN : Forcing
                                PRCP,    LWDN,    TBOT,    Z_ML, FICEOLD,   ZSOIL, & ! IN : Forcing
                               QSNOW,  SNEQVO,  ALBOLD,      CM,      CH,   ISNOW, & ! IN/OUT :
@@ -793,9 +797,9 @@ end if
   END SUBROUTINE noahmplsm
 !------------------------------------------------------
 
-  SUBROUTINE NOAHMP_INIT ( MMINLU, SNOW , SNOWH , CANWAT , ISLTYP ,           &
-       TSLB , SMOIS , SH2O , DZS , FNDSOILW , FNDSNOWH ,                      &
-       TSK, isnowxy , tvxy     ,tgxy     ,canicexy ,                          &
+  SUBROUTINE NOAHMP_INIT ( MMINLU, SNOW , SNOWH , CANWAT , ISLTYP ,   IVGTYP, &
+       TSLB , SMOIS , SH2O , DZS , FNDSOILW , FNDSNOWH ,   ISICE,             &
+       TSK, isnowxy , tvxy     ,tgxy     ,canicexy ,         TMN,     XICE,   &
        canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy     ,                     &
        fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,wslakexy ,zwtxy    ,waxy     , &
        wtxy     ,tsnoxy   ,zsnsoxy  ,snicexy  ,snliqxy  ,lfmassxy ,rtmassxy , &
@@ -815,7 +819,7 @@ end if
          &                           ims,ime, jms,jme, kms,kme,  &
          &                           its,ite, jts,jte, kts,kte
 
-    INTEGER, INTENT(IN)       ::     NSOIL
+    INTEGER, INTENT(IN)       ::     NSOIL, ISICE
 
     LOGICAL, INTENT(IN)       ::     restart,                    &
          &                           allowed_to_read
@@ -833,12 +837,15 @@ end if
          &                           CANWAT
 
     INTEGER, DIMENSION( ims:ime, jms:jme ),                      &
-         &   INTENT(IN)       ::     ISLTYP
+         &   INTENT(IN)       ::     ISLTYP,  &
+                                     IVGTYP
 
     LOGICAL, INTENT(IN)       ::     FNDSOILW,                   &
          &                           FNDSNOWH
 
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: TSK         !skin temperature (k)
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: TMN         !deep soil temperature (k)
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: XICE         !sea ice fraction
     INTEGER, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: isnowxy     !actual no. of snow layers
     REAL, DIMENSION(ims:ime,-2:NSOIL,jms:jme), INTENT(INOUT) :: zsnsoxy  !snow layer depth [m]
     REAL, DIMENSION(ims:ime,-2:              0,jms:jme), INTENT(INOUT) :: tsnoxy   !snow temperature [K]
@@ -934,6 +941,16 @@ end if
 
        DO J = jts , jtf
           DO I = its , itf
+	    IF(IVGTYP(I,J)==ISICE .AND. XICE(I,J) <= 0.0) THEN
+              DO NS=1, NSOIL
+	        SMOIS(I,NS,J) = 1.0                     ! glacier starts all frozen
+	        SH2O(I,NS,J) = 0.0
+	        TSLB(I,NS,J) = MIN(TSLB(I,NS,J),263.15) ! set glacier temp to at most -10C
+              END DO
+	        !TMN(I,J) = MIN(TMN(I,J),263.15)         ! set deep temp to at most -10C
+		SNOW(I,J) = MAX(SNOW(I,J), 10.0)        ! set SWE to at least 10mm
+	    ELSE
+	      
              BX = BB(ISLTYP(I,J))
              SMCMAX = MAXSMC(ISLTYP(I,J))
              PSISAT = SATPSI(ISLTYP(I,J))
@@ -953,6 +970,7 @@ end if
                    SH2O(I,NS,J)=SMOIS(I,NS,J)
                 END DO
              ENDIF
+            ENDIF
           ENDDO
        ENDDO
 !  ENDIF

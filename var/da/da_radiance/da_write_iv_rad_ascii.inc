@@ -58,8 +58,8 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
                         ' index-of-channels : '
       write(unit=innov_rad_unit,fmt='(10i5)') iv%instid(i)%ichan
 
-      write(unit=innov_rad_unit,fmt=*) ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi'
-      write(unit=innov_rad_unit,fmt=*) ' grid%xb-surf-info : i t2m mr2m(ppmv) u10 v10 ps ts smois tslb snowh isflg &
+      write(unit=innov_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi'
+      write(unit=innov_rad_unit,fmt='(a)') ' grid%xb-surf-info : i t2m mr2m(ppmv) u10 v10 ps ts smois tslb snowh isflg &
                     & soiltyp vegtyp vegfra elev clwp'
       ndomain = 0
       do n =1,iv%instid(i)%num_rad
@@ -131,7 +131,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
                if ( rtm_option == rtm_option_rttov ) then
 #ifdef RTTOV
                   ! first, write RTTOV levels
-                  write(unit=innov_rad_unit,fmt=*) 'RTM_level pres(mb) T(k) Q(ppmv)'
+                  write(unit=innov_rad_unit,fmt='(a)') 'RTM_level pres(mb) T(k) Q(ppmv)'
                   do k = 1, nlevelss
                      write(unit=innov_rad_unit,fmt='(i3,f10.2,f8.2,e11.4)') &
                         k, &                             ! RTTOV levels
@@ -140,7 +140,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
                         iv%instid(i)%mr(k,n)
                   end do  ! end loop RTTOV level
                   ! second, write WRF model levels
-                  write(unit=innov_rad_unit,fmt=*) &
+                  write(unit=innov_rad_unit,fmt='(a)') &
                      'WRF_level pres(mb) T(k) q(g/kg) clw(g/kg) rain(g/kg)'
                   do k=kts,kte
                      write(unit=innov_rad_unit,fmt='(i3,f10.2,f8.2,3e11.4)') &
@@ -156,7 +156,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
 
                if ( rtm_option == rtm_option_crtm ) then
 #ifdef CRTM
-                  write(unit=innov_rad_unit,fmt=*) &
+                  write(unit=innov_rad_unit,fmt='(a)') &
                      'level fullp(mb) halfp(mb) t(k) q(g/kg) water(mm) ice(mm) rain(mm) snow(mm) graupel(mm) hail(mm)'
                   if (crtm_cloud) then
                      do k=1,iv%instid(i)%nlevels-1
@@ -217,7 +217,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
                   lod_jac(:,:)     = 0.0
                end if
 
-               write(unit=innov_rad_unit,fmt=*) &
+               write(unit=innov_rad_unit,fmt='(a)') &
                   'channel level halfp(mb) t(k) q(g/kg) der_trans trans_jac trans lod_jac lod water(mm) ice(mm) rain(mm) snow(mm) graupel(mm) hail(mm)'
                if (crtm_cloud) then
                   do l=1,iv%instid(i)%nchan

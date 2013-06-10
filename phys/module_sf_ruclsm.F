@@ -5646,10 +5646,13 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
         MMINLURUC='USGS-RUC'
       elseif(mminlu == 'MODIFIED_IGBP_MODIS_NOAH') then
         MMINLURUC='MODI-RUC'
+      else
+        WRITE (err_message,*)"module_sf_ruclsm.F: input landuse data is not supported: ",trim(mminlu)
+        CALL wrf_error_fatal(err_message)
       endif
         MMINSL='STAS-RUC'
 !     CALL  RUCLSM_PARM_INIT
-    print *,'RUCLSMINIT uses ',mminluruc
+!     print *,'RUCLSMINIT uses ',mminluruc
      call RUCLSM_SOILVEGPARM( MMINLURUC, MMINSL)   
    ENDIF
 

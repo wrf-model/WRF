@@ -1012,9 +1012,10 @@ CONTAINS
 !      prevent diagnostic ground q (q1) from being greater than qsat(tsk)
 !      as happens over snow cover where the cqs2 value also becomes irrelevant
 !      by setting cqs2=chs in this situation the 2m q should become just qv(k=1)
-          IF (Q1 .GT. QSFC(I,J)) THEN
-            CQS2(I,J) = CHS(I,J)
-          ENDIF
+! ww: comment out this change to avoid Q2 drop due to change of radiative flux
+!         IF (Q1 .GT. QSFC(I,J)) THEN
+!           CQS2(I,J) = CHS(I,J)
+!         ENDIF
 !          QSFC(I,J)=Q1
 ! Convert QSFC back to mixing ratio
            QSFC(I,J)= Q1/(1.0-Q1)

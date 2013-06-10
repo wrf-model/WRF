@@ -1,6 +1,7 @@
 module module_stats_for_move
   implicit none
   private
+#if ( NMM_NEST == 1 )
   public :: stats_for_move, vorttrak_init
 
   ! Tuning parameters for the PDYN-following algorithm:
@@ -23,7 +24,9 @@ contains
                            ITS,ITE,JTS,JTE,KTS,KTE)
     USE MODULE_CONFIGURE, ONLY : grid_config_rec_type
     USE MODULE_DOMAIN, ONLY : domain
+#ifdef HWRF
     USE module_tracker, only: ncep_tracker_init
+#endif
     IMPLICIT NONE
     integer, intent(in) :: IDS,IDE,JDS,JDE,KDS,KDE
     integer, intent(in) :: IMS,IME,JMS,JME,KMS,KME
@@ -105,12 +108,15 @@ contains
     endif distsq
 #endif
 
+#ifdef HWRF
     if(init .and. vortex_tracker==6) then
        call ncep_tracker_init(grid)
     endif
+#endif
 
   END SUBROUTINE VORTTRAK_INIT
 
+#ifdef HWRF
   !----------------------------------------------------------------------
   !
   SUBROUTINE UPDATE_PDYN_MSLP(grid,config_flags, &
@@ -176,6 +182,8 @@ contains
 
   END SUBROUTINE UPDATE_PDYN_MSLP
 
+#endif
+
   !----------------------------------------------------------------------
   !
   SUBROUTINE STATS_FOR_MOVE(grid,config_flags, &
@@ -215,7 +223,9 @@ contains
     !   late  2010  - sam added a new child tracker (vortex_tracker=2)
     !   Nov 08 2011 - sam split implementation into several functions and
     !                 added the vortex_tracker=4 option
+#ifdef HWRF
     USE module_tracker, only: ncep_tracker_center
+#endif
     USE MODULE_CONFIGURE, ONLY : grid_config_rec_type
     USE MODULE_DOMAIN, ONLY : domain,get_ijk_from_grid
     use module_membrane_mslp
@@ -258,6 +268,7 @@ contains
        skip_nest_motion=.true.
     ENDIF
 
+#ifdef HWRF
     if(skip_nest_motion .and. ( grid%pdyn_smooth_age/=0 .or. size(grid%pdyn_smooth)<=1)) then
        ! Pdyn_smooth is up to date and it is not yet time to move the
        ! nest, so we can return now.
@@ -272,6 +283,7 @@ contains
     ! Update membrane_mslp:
     call make_membrane_mslp(grid)
 
+
     ! Update regular mslp:
     CALL UPDATE_PDYN_MSLP(grid,config_flags, &
                           IDS,IDE,JDS,JDE,KDS,KDE, &
@@ -283,6 +295,7 @@ contains
        ! yet time to move the nest.
        return
     endif
+#endif
 
     !     HAND OFF CONTROL TO STATS_FOR_MOVE_123 FOR TRACKERS 1, 2 and 3
     oldmove: if(vortex_tracker<4) then
@@ -306,6 +319,7 @@ contains
             ,IMS,IME,JMS,JME,KMS,KME                                      &
             ,ITS,ITE,JTS,JTE,KTS,KTE)
        RETURN
+#ifdef HWRF
     elseif(vortex_tracker==6) then
        ! Tracker #6: do whatever the inline NCEP Tracker says
        call ncep_tracker_center(grid)
@@ -338,7 +352,6 @@ contains
        write(message,13011) grid%vt5searchrad/1000.0,grid%id
        call wrf_debug(1,message)
     else
-#ifdef HWRF
     !     HANDLE VORTEX TRACKER 4 HERE
 
        ! (we only get here in HWRF mode)
@@ -1318,4 +1331,8 @@ contains
     RETURN
 
   END SUBROUTINE STATS_FOR_MOVE_123
+
+! End "if NMM_NEST == 1"
+#endif
+
 END module module_stats_for_move

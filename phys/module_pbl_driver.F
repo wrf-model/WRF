@@ -45,7 +45,9 @@ CONTAINS
 #if (NMM_CORE==1)
                  ,DISHEAT                                          &
                  ,HPBL2D, EVAP2D, HEAT2D, RC2D                     &   !Kwon FOR SHAL. CON.
+#ifdef HWRF
                  ,VAR_RIC                                          &   !Kwon for Variable Ric
+#endif
                  ,DKU3D,DKT3D                                      &
 #endif
 #if (HWRF==1)
@@ -355,9 +357,11 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime , jms:jme , kms:kme ),                         &
                    INTENT(OUT) ::  DKU3D,DKT3D                      !Kwon duffusivity
-   REAL,       INTENT(IN)         ::   VAR_RIC                       !Kwon for variable Ric
 #endif
+#ifdef HWRF
+   REAL,       INTENT(IN)         ::   VAR_RIC                       !Kwon for variable Ric
 
+#endif
 #if defined(HWRF)
    REAL,       INTENT(IN)         ::   gfs_alpha,coef_ric_l,coef_ric_s
 #endif

@@ -716,6 +716,8 @@
                       grid%stepbl,grid%stepra,grid%stepcu,                   &
                       grid%w0avg, grid%rainnc, grid%rainc, grid%raincv, grid%rainncv,  &
                       grid%snownc, grid%snowncv, grid%graupelnc, grid%graupelncv,  &
+                      grid%re_cloud, grid%re_ice, grid%re_snow,         & ! G. Thompson
+                      grid%has_reqc, grid%has_reqi, grid%has_reqs,      & ! G. Thompson
                       grid%nca,grid%swrad_scat,                    &
                       grid%cldefi,grid%lowlyr,                          &
                       grid%mass_flux,                              &

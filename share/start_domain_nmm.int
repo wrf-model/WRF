@@ -2,11 +2,12 @@
 !
 #          include <dummy_new_args.inc>
 !
-                                 )
+                                 ,in_real)
          USE module_domain
          USE module_driver_constants
          TYPE(domain) , INTENT(INOUT)  :: grid
          LOGICAL      , INTENT(IN)     :: allowed_to_read
+         LOGICAL, INTENT(IN), OPTIONAL :: in_real
 #include <dummy_decl.inc>
       END SUBROUTINE start_domain_nmm
 

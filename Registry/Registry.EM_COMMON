@@ -438,6 +438,12 @@ state   real    dfi_qg         ikjftb   dfi_moist       1         -     \
 state   real    dfi_qh         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QHAIL"        "Hail mixing ratio"             "kg kg-1"
 state    real   rimi             ikj    misc        1         -     irh         "RIMI"           "riming intensity"  "fraction"
+state    real   re_cloud         ikj    misc        1         -     h         "RE_CLOUD"       "Effective radius cloud water"  "m"
+state    real   re_ice           ikj    misc        1         -     h         "RE_ICE"         "Effective radius cloud ice"    "m"
+state    real   re_snow          ikj    misc        1         -     h         "RE_SNOW"        "Effective radius snow"         "m"
+state  integer  has_reqc          -     misc        1         -     -         "has_reqc"       "Flag for having effective radius cloud water"  ""
+state  integer  has_reqi          -     misc        1         -     -         "has_reqi"       "Flag for having effective radius cloud ice"  ""
+state  integer  has_reqs          -     misc        1         -     -         "has_reqs"       "Flag for having effective radius snow"  ""
 
 
 # Other Scalars
@@ -2185,7 +2191,7 @@ package   wsm5scheme    mp_physics==4                -             moist:qv,qc,q
 package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
-package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr
+package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
 package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
 package   cammgmpscheme mp_physics==11               -             moist:qv,qc,qi,qr,qs;scalar:qnc,qni,qnr,qns;state:rh_old_mp,lcd_old_mp,cldfra_old_mp,cldfra_mp,cldfra_mp_all,cldfra_conv,cldfrai,cldfral,turbtype3d,smaw3d,wsedl3d,icwmrdp3d,dp3d,shfrc3d,dlf,dlf2,tke_pbl

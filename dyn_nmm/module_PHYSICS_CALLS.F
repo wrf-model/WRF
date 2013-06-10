@@ -933,7 +933,9 @@
       LOGICAL :: FQ_I, ETAMP_PHYSICS,ETAMP_Regional            !BSF
 
       CHARACTER(len=255) :: message
+#if HWRF==1
 !dbg integer :: kpblmin,kpblmax,lpblmin,lpblmax    !dbg
+#endif
 !
 !
     TYPE(WRFU_Time)                :: currentTime
@@ -1318,7 +1320,11 @@
      &          ,WARM_RAIN=WARM_RAIN,WSPD=WSPD,XICE=SICE,XICEM=SICE     &
      &          ,ALBSI=albsi,ICEDEPTH=icedepth,SNOWSI=snowsi            &
      &          ,ISICE=GRID%LANDUSE_ISICE,ISWATER=GRID%ISWATER          &
-     &          ,XLAND=XLAND,Z=Z,ZNT=Z0,MZNT=MZ0,ZS=SLDPTH,CT=CT,TKE_PBL=TKE,SFENTH=SFENTH     &   !KWON
+     &          ,XLAND=XLAND,Z=Z,ZNT=Z0                                 &
+#ifdef HWRF
+     &          ,MZNT=MZ0                                               &
+#endif
+     &          ,ZS=SLDPTH,CT=CT,TKE_PBL=TKE,SFENTH=SFENTH              &   !KWON
      &          ,ALBBCK=ALBASE,LH=ELFLX,SH2O=SH2O,SHDMAX=SHDMAX         &
      &          ,SHDMIN=SHDMIN,Z0=Z0BASE,FLQC=FLQC,FLHC=FLHC            &
      &          ,FM=FM,FHH=FH                                           &
@@ -1459,10 +1465,12 @@
          FQ_I=F_QI
          PQ_I=P_QI
       ENDIF
+#if HWRF==1
       CALL nl_get_var_ric(1, var_ric)
       CALL nl_get_coef_ric_s(1, coef_ric_s)
       CALL nl_get_coef_ric_l(1, coef_ric_l)
 !      write(0,*) 'var_ric & coef_ric_s l from namelist Kwon  ',var_ric,coef_ric_s,coef_ric_l
+#endif
 !
       CALL PBL_DRIVER(                                                &
      &                ITIMESTEP=NTSD,DT=DT                            &
@@ -1472,7 +1480,11 @@
      &               ,RQCBLTEN=RQCBLTEN,RQIBLTEN=RQIBLTEN             & !BSF
 !BSF &               ,RQRBLTEN=RQRBLTEN,RQSBLTEN=RQSBLTEN             & !BSF
 !BSF &               ,RQGBLTEN=RQGBLTEN                               & !BSF
-     &               ,TSK=TSFC,XLAND=XLAND,ZNT=Z0,MZNT=MZ0,HT=SFCZ             &   !KWON
+     &               ,TSK=TSFC,XLAND=XLAND,ZNT=Z0                     &
+#ifdef HWRF
+     &               ,MZNT=MZ0                                        &
+#endif
+     &               ,HT=SFCZ                                         &   !KWON
      &               ,UST=USTAR,MIXHT=MIXHT,PBLH=PBLH                 &
      &               ,HFX=TWBS,QFX=QWBS,GRDFLX=GRNFLX                 &
      &               ,U_PHY=U_PHY,V_PHY=V_PHY,TH_PHY=TH_PHY,RHO=RR    &
@@ -1506,9 +1518,13 @@
 #endif
      &               ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D     &    !Kwon S&P
      &               ,RC2D=RC2D                                       &    !KWON
+#if HWRF==1
      &               ,VAR_RIC=VAR_RIC                                 &    !Kwon Ric
+#endif
      &               ,DKU3D=DKU3D,DKT3D=DKT3D 
+#if HWRF==1
      &               ,coef_ric_l=coef_ric_l,coef_ric_s=coef_ric_s     &    !Kwon for Ric
+#endif
      &               ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &               ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &
      &               ,QI_CURR=MOIST_TRANS(IMS,KMS,JMS,PQ_I),F_QI=FQ_I &

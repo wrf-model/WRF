@@ -185,10 +185,12 @@ call wrf_message("**************************************************************
        call wrf_message("WARNING: RACMSORG_AQ chemistry option is highly experimental and not recommended for use.")
        call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
      CASE (RADM2SORG_AQCHEM )
+       numgas_mam = numgas
        CALL wrf_debug(15,'calling RADM2/MADE/SORGAM with AQCHEM chemistry from chem_driver')
        call wrf_message("WARNING: RADM2SORG_AQCHEM chemistry option is experimental and not yet fully tested.")
        call wrf_message("         We recommend contacting wrfchemhelp for assistance.")
      CASE (RACMSORG_AQCHEM )
+       numgas_mam = numgas
        CALL wrf_debug(15,'calling RACM/MADE/SORGAM with AQCHEM chemistry from chem_driver')
        call wrf_message("WARNING: RACMSORG_AQCHEM chemistry option is highly experimental and not recommended for use.")
        call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")

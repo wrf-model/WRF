@@ -310,6 +310,8 @@ subroutine parsedt(dt,dday,dh,dn,ds)
            nounit=0
            ds=ds+d*s
            d=0
+         case ('.')
+           stop "Decimal values not allowed"
          case default
       end select
    end do

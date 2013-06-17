@@ -10,7 +10,11 @@ CONTAINS
                  ,bldt,curr_secs,adapt_step_flag                   &
                  ,bldtacttime                                      & 
                  ,rublten,rvblten,rthblten                         &
-                 ,tsk,xland,znt,ht                                 &
+                 ,tsk,xland,znt                                    &
+#if (HWRF==1)
+                 ,mznt                                             &
+#endif
+                 ,ht                                               &   
                  ,ust,pblh,hfx,qfx,grdflx                          &
                  ,u_phy,v_phy,th_phy,rho                           &
                  ,p_phy,pi_phy,p8w,t_phy,dz8w,z                    &
@@ -40,10 +44,14 @@ CONTAINS
                  ,dqke,qWT,qSHEAR,qBUOY,qDISS,bl_mynn_tkebudget    &
 #if (NMM_CORE==1)
                  ,DISHEAT                                          &
-                 ,HPBL2D, EVAP2D, HEAT2D                           &   !Kwon FOR SHAL. CON.
+                 ,HPBL2D, EVAP2D, HEAT2D, RC2D                     &   !Kwon FOR SHAL. CON.
+#ifdef HWRF
+                 ,VAR_RIC                                          &   !Kwon for Variable Ric
+#endif
+                 ,DKU3D,DKT3D                                      &
 #endif
 #if (HWRF==1)
-                 ,gfs_alpha                                        &
+                 ,coef_ric_l,coef_ric_s,gfs_alpha                  &
 #endif
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
@@ -215,7 +223,8 @@ CONTAINS
 !-- TSK           surface temperature (K)
 !-- TMN           soil temperature at lower boundary (K)
 !-- XLAND         land mask (1 for land, 2 for water)
-!-- ZNT           roughness length (m)
+!-- ZNT           thermal roughness length (m)
+!-- MZNT          momentum roughness length (m)
 !-- MAVAIL        surface moisture availability (between 0 and 1)
 !-- UST           u* in similarity theory (m/s)
 !-- MOL           T* (similarity theory) (K)
@@ -344,11 +353,17 @@ CONTAINS
 #if (NMM_CORE==1)
    LOGICAL,      INTENT(IN   )    ::   DISHEAT ! (for HWRF)
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
-                    INTENT(OUT) ::  HPBL2D, EVAP2D, HEAT2D                 !Kwon for Shallow Convection
-#endif
+                   INTENT(OUT) ::  HPBL2D, EVAP2D, HEAT2D, RC2D      !Kwon for Shallow Convection
 
+   REAL, DIMENSION( ims:ime , jms:jme , kms:kme ),                         &
+                   INTENT(OUT) ::  DKU3D,DKT3D                      !Kwon duffusivity
+#endif
+#ifdef HWRF
+   REAL,       INTENT(IN)         ::   VAR_RIC                       !Kwon for variable Ric
+
+#endif
 #if defined(HWRF)
-   REAL,       INTENT(IN)         ::   gfs_alpha
+   REAL,       INTENT(IN)         ::   gfs_alpha,coef_ric_l,coef_ric_s
 #endif
 
 
@@ -432,6 +447,9 @@ CONTAINS
                                                              HFX, &
                                                              QFX, &
                                                              ZNT, &
+#if (HWRF==1)
+                                                            MZNT, &  ! KWON FOR MOMENTUM Z0
+#endif
                                                             QSFC, &
                                                             AKHS, &
                                                             AKMS, &
@@ -1155,6 +1173,10 @@ CONTAINS
 #if defined(HWRF)
               ,ALPHA=gfs_alpha                                      &
               ,HPBL2D=HPBL2D, EVAP2D=EVAP2D, HEAT2D=HEAT2D          &   !Kwon add FOR SHAL. CON.
+              ,VAR_RIC=VAR_RIC                                      &   !Kwon for variable Ric
+              ,U10=U10,V10=V10,ZNT=ZNT,MZNT=MZNT,RC2D=RC2D          &   !Kwon for variable Ric
+              ,DKU3D=DKU3D,DKT3D=DKT3D                              &
+              ,coef_ric_l=coef_ric_l,coef_ric_s=coef_ric_s,xland=xland    &
 #endif
               ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar          &
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &

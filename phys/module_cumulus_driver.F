@@ -87,7 +87,7 @@ CONTAINS
                                           ,G3SCHEME,GFSCHEME          &
                                           ,P_QC,P_QI,Param_FIRST_SCALAR &
                                           ,CAMZMSCHEME, SASSCHEME     &
-                                          ,OSASSCHEME                 &
+                                          ,OSASSCHEME,MESO_SAS        &  !Kwon
                                           ,NSASSCHEME                 &
 # if (EM_CORE == 1)
                                           , CAMMGMPSCHEME             &
@@ -111,6 +111,7 @@ CONTAINS
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
    USE module_cu_sas
    USE module_cu_osas   
+   USE module_cu_mesosas   
    USE module_cu_camzm_driver, ONLY : camzm_driver
    USE module_cu_tiedtke, ONLY : cu_tiedtke
    USE module_cu_nsas   , ONLY : cu_nsas
@@ -760,6 +761,34 @@ CONTAINS
           END IF
           CALL wrf_debug(100,'in cu_sas')
           CALL CU_SAS(                                          &
+                DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &
+               ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
+               ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
+               ,RUCUTEN=RUCUTEN, RVCUTEN=RVCUTEN                &
+               ,RAINCV=RAINCV,PRATEC=tmpPRATEC,HTOP=HTOP,HBOT=HBOT &
+               ,U3D=u,V3D=v,W=w,T3D=t                           &
+               ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
+               ,PI3D=pi,RHO3D=rho                               &
+               ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND            &
+               ,CU_ACT_FLAG=CU_ACT_FLAG                         &
+               ,P_QC=p_qc                                       &
+               ,MOMMIX=MOMMIX  &
+               ,pgcon=pgcon,sas_mass_flux=sas_mass_flux         &
+               ,shalconv=shalconv,shal_pgcon=shal_pgcon         &
+               ,hpbl2d=hpbl2d,evap2d=evap2d,heat2d=heat2d       &
+               ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+                                                                )
+     CASE (MESO_SAS)                  !Kwon
+
+          IF ( adapt_step_flag_pass ) THEN
+            WRITE( wrf_err_message , * ) 'The meso SAS cumulus option will not work properly with an adaptive time step'
+            CALL wrf_error_fatal ( wrf_err_message )
+          END IF
+          CALL wrf_debug(100,'in cu_mesosas')
+          CALL CU_MESO_SAS(                                          &
                 DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &
                ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
                ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &

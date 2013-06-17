@@ -347,6 +347,12 @@ state  real  GD_CLOUD2_A   ikj  misc     1   -      r      "GD_CLOUD2_A"  "taver
 state  real  GD_CLOUD_B    ikj  misc     1   -      r       "GD_CLOUD_B"   "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
 state  real  GD_CLOUD2_B   ikj  misc     1   -      r       "GD_CLOUD2_B"  "taveragd cloud ice mix ratio in GD"         "kg kg-1"
 state    real  GD_CLDFR         ikj      misc        1         -      r     "GD_CLDFR"              "GD CLOUD Fraction"         " ? "
+state  real  re_cloud   ikj     misc     1    -     -       "re_cloud"        "Effective radius, cloud drops"      "m"
+state  real  re_ice     ikj     misc     1    -     -       "re_ice"          "Effective radius, cloud ice"        "m"
+state  real  re_snow    ikj     misc     1    -     -       "re_snow"         "Effective radius, snow"             "m"
+state  integer  has_reqc   -    misc     1    -     -       "has_reqc"        "Flag for has effective radius of cloud water"    ""
+state  integer  has_reqi   -    misc     1    -     -       "has_reqi"        "Flag for has effective radius of cloud ice"      ""
+state  integer  has_reqs   -    misc     1    -     -       "has_reqs"        "Flag for has effective radius of snow"           ""
 
 #
 # module_CLDWTR.F
@@ -1304,7 +1310,7 @@ package   wsm5scheme    mp_physics==4                -             moist:qv,qc,q
 package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qs
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
-package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr
+package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
 package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
 package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs

@@ -142,6 +142,10 @@ state  integer    nrnd1    k    dyn_nmm     1      -      r    "NRND1"
 # For the moving nest. This is gopal's doing
 #
 
+state  real   relaxwork  ij     dyn_nmm     1      -    r  "relaxwork" "Temporary Tv storage array for the membrane MSLP overrelaxation loops" "K"
+state  integer relaximask ij    dyn_nmm     1      -    r  "relaximask" "Integer mask array for the membrane MSLP overrelaxation loops" "K"
+state  logical relaxmask ij     dyn_nmm     1      -    r  "relaxmask" "Mask array for the membrane MSLP overrelaxation loops" "K"
+
 state  real   pdyn       ij     dyn_nmm     1      -    r  "PDYN"  "DYNAMIC PRESSURE USED FOR TRACKING GRID MOTION" 
 state  real   mslp       ij     dyn_nmm     1      -    rh  "MSLP"  "MSLP USED TO DETERMINE STORM LOCATION"
 state  real   sqws       ij     dyn_nmm     1      -    r  "SQWS"  "SQUARE OF WIND SPEED AT LEVEL 10"
@@ -1643,6 +1647,9 @@ halo      HALO_NMM_TURBL_B  dyn_nmm 8:dudt,dvdt
 
 # following halos added for nesting purpose  (gopal's doing):
 
+
+halo HALO_NMM_MEMBRANE_RELAX dyn_nmm 8:relaxwork
+halo HALO_NMM_MEMBRANE_MASK dyn_nmm 8:relaximask
 halo HALO_NMM_TRACK dyn_nmm 120:sm,pdyn,mslp,sqws
 halo HALO_NMM_INTERP_DOWN1 dyn_nmm 24:sm,fis,t,u,v,q,q2,pd,albase,nmm_tsk,mxsnal,tg,islope,cmc,soiltb,vegfrc,sh2o,smc,stc,toposoil,xice,ivgtyp,isltyp,vegfra,sst,weasd,snowh,hlat,hlon,z0,landmask,cwm,ustar,ths,qsh,cldefi,pshltr,dwdt,acprec,thz0,qz0,uz0,vz0,htop,hbot,cuppt,rlwtt,rswtt,t_adj,f_ice,f_rain,f_rimef,pint,hres_fis
 halo HALO_NMM_INTERP_DOWN1M dyn_nmm 24:MOIST,SCALAR

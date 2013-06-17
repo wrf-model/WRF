@@ -41,10 +41,14 @@
       USE MODULE_EXT_INTERNAL
       USE MODULE_PRECIP_ADJUST
       USE MODULE_NEST_UTIL     ! USEs module_MPP (contains MYPE,NPES,MPI_COMM_COMP)
+#ifdef MOVE_NESTS
       USE MODULE_STATS_FOR_MOVE,        ONLY: STATS_FOR_MOVE
+#endif
 #ifdef WRF_CHEM
       USE MODULE_INPUT_CHEM_DATA,       ONLY: GET_LAST_GAS
 #endif
+
+
 !-----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -308,6 +312,9 @@
          ETAMP_PHYSICS=.TRUE.
 !
       ENDIF
+
+
+
 !
 !-----------------------------------------------------------------------
 !***  SET FLAG FOR THE OPERATIONAL PHYSICS SUITE.
@@ -587,12 +594,12 @@
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
 !-----------------------------------------------------------------------
 !
-#ifdef HWRF
-!zhang
-      IF(NTSD_current==0)THEN
-#else
+!!#ifdef HWRF
+!!!zhang
+!!      IF(NTSD_current==0)THEN
+!!#else
       IF(grid%ntsd==0)THEN
-#endif
+!!#endif
         FIRST=.TRUE.
 !       call hpm_init()
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -2402,13 +2409,7 @@
 !-----------------------------------------------------------------------------
 !
 #ifdef MOVE_NESTS
-   IF(grid%id .NE. 1 .AND. MOD(grid%ntsd,1)==0 .AND. grid%num_moves.EQ.-99)THEN
-!-----------------
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_TRACK.inc"
-#endif
-!-----------------
-
+   IF ( grid%num_moves.EQ.-99 ) THEN
       call start_timing()
       call stats_for_move(grid,config_flags &
                          ,IDS,IDE,JDS,JDE,KDS,KDE &

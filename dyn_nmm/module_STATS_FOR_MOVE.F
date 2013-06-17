@@ -1,15 +1,32 @@
 module module_stats_for_move
   implicit none
   private
+#if ( NMM_NEST == 1 )
   public :: stats_for_move, vorttrak_init
+
+  ! Tuning parameters for the PDYN-following algorithm:
+
+  ! Maximum, minimum and initial search radii:
+  real, parameter :: vt5_max_radius=250000.0
+  real, parameter :: vt5_min_radius=100000.0
+  real, parameter :: vt5_start_radius=vt5_max_radius
+
+  ! How much to increase or decrease search radius after a move or
+  ! non-move (but it will never exceed the prescribed min/max):
+  real, parameter :: vt5_move_factor=1.1
+  real, parameter :: vt5_nomove_factor=0.8
+
 contains
 
-  SUBROUTINE VORTTRAK_INIT(grid,config_flags,       &
+  SUBROUTINE VORTTRAK_INIT(grid,config_flags,init,  &
                            IDS,IDE,JDS,JDE,KDS,KDE, &
                            IMS,IME,JMS,JME,KMS,KME, &
                            ITS,ITE,JTS,JTE,KTS,KTE)
     USE MODULE_CONFIGURE, ONLY : grid_config_rec_type
     USE MODULE_DOMAIN, ONLY : domain
+#ifdef HWRF
+    USE module_tracker, only: ncep_tracker_init
+#endif
     IMPLICIT NONE
     integer, intent(in) :: IDS,IDE,JDS,JDE,KDS,KDE
     integer, intent(in) :: IMS,IME,JMS,JME,KMS,KME
@@ -18,6 +35,7 @@ contains
     type(grid_config_rec_type), intent(in) :: config_flags
     integer :: vortex_tracker
     character*255 :: message
+    logical, intent(in) :: init ! True if this is the simulation start
 
     ! For vortex_tracker==4 option:
     integer :: cx,cy ! center x,y
@@ -27,20 +45,47 @@ contains
     
 #ifdef HWRF
     vortex_tracker=grid%vortex_tracker
-    if(vortex_tracker<1 .or. vortex_tracker>4) then
-       write(message,*)' domain ',grid%id,' has an invalid value ',vortex_tracker,' for vortex_tracker.  It must be 1, 2, 3 or 4.'
+    if(vortex_tracker<1 .or. vortex_tracker>6) then
+       write(message,*)' domain ',grid%id,' has an invalid value ',vortex_tracker,' for vortex_tracker.  It must be 1, 2, 3, 4 or 5.'
        call wrf_error_fatal(message)
     endif
-    
-    is_vt4: if(vortex_tracker==4) then
-       call wrf_message('in VORTTRAK_INIT for vortex tracker 4')
-       if(.not.(grid%vt4_pmax<0.0)) then
-          if(grid%vt4_pmax<100000.0 .or. grid%vt4_pmax>107000) then
-             write(message,'("vt4_pmax bad: vt4_pmax must be either <0 or within [1e5,1.07e5], but it is ",F15.5,".  We recommend -1.")') grid%vt4_pmax
-             call wrf_error_fatal(message)
+
+    ! Signify that the pdyn smooth and parent smooth are invalid in
+    ! this domain:
+    grid%pdyn_parent_age=0
+    grid%pdyn_smooth_age=0
+
+    if(size(grid%pdyn_smooth)>1) then
+       !write(0,*) 'in start domain, call update_pdyn_mslp for grid ',grid%id
+       CALL UPDATE_PDYN_MSLP(grid,config_flags, &
+                            IDS,IDE,JDS,JDE,KDS,KDE, &
+                            IMS,IME,JMS,JME,KMS,KME, &
+                            ITS,ITE,JTS,JTE,KTS,KTE )
+       
+    end if
+
+    is_vt45: if(vortex_tracker==4 .or. vortex_tracker==5) then
+       call wrf_message('in VORTTRAK_INIT for vortex tracker 4 or 5')
+       if(vortex_tracker==4) then
+          if(.not.(grid%vt4_pmax<0.0)) then
+             if(grid%vt4_pmax<100000.0 .or. grid%vt4_pmax>107000) then
+                write(message,'("vt4_pmax bad: vt4_pmax must be either <0 or within [1e5,1.07e5], but it is ",F15.5,".  We recommend -1.")') grid%vt4_pmax
+                call wrf_error_fatal(message)
+             endif
           endif
        endif
 
+       if(vortex_tracker==5) then
+          if(init) then 
+             grid%vt5searchrad=vt5_start_radius
+13011        format("Search radius now ",F0.3,"km for domain ",I0)
+             !write(message,13011) grid%vt5searchrad/1000.0,grid%id
+             !call wrf_debug(1,message)
+          endif
+       endif
+    endif is_vt45
+
+    distsq: if(size(grid%distsq)>1) then
        cx=ide/2
        cy=jde/2
        ! Calculate distance of various points from the domain center:
@@ -60,10 +105,84 @@ contains
              GRID%distsq(i,j)=far
           enddo
        enddo jdo
-    endif is_vt4
+    endif distsq
+#endif
+
+#ifdef HWRF
+    if(init .and. vortex_tracker==6) then
+       call ncep_tracker_init(grid)
+    endif
 #endif
 
   END SUBROUTINE VORTTRAK_INIT
+
+#ifdef HWRF
+  !----------------------------------------------------------------------
+  !
+  SUBROUTINE UPDATE_PDYN_MSLP(grid,config_flags, &
+                            IDS,IDE,JDS,JDE,KDS,KDE, &
+                            IMS,IME,JMS,JME,KMS,KME, &
+                            IPS,IPE,JPS,JPE,KPS,KPE )
+    USE MODULE_CONFIGURE, ONLY : grid_config_rec_type
+    USE MODULE_DOMAIN, ONLY : domain,get_ijk_from_grid
+#ifdef DM_PARALLEL
+    USE MODULE_COMM_DM, ONLY : HALO_NMM_TRACK_sub
+    USE MODULE_DM, ONLY: ntasks_x, ntasks_y, mytask, ntasks, local_communicator
+#endif
+    use module_membrane_mslp
+    implicit none
+    type(domain), intent(inout) :: grid
+    type(grid_config_rec_type), intent(in) :: config_flags
+    integer, intent(in) :: IDS,IDE,JDS,JDE,KDS,KDE
+    integer, intent(in) :: IMS,IME,JMS,JME,KMS,KME
+    integer, intent(in) :: IPS,IPE,JPS,JPE,KPS,KPE
+    integer :: i,j
+    logical bad
+
+    ! Update pdyn, mslp and sqws:
+    CALL STATS_MAKE_MSLP (grid%PDYN,grid%membrane_MSLP,grid%MSLP,grid%SQWS,         &
+                          grid%PINT,grid%T,grid%Q,grid%U,grid%V, &
+                          grid%FIS,grid%PD,grid%SM,              &
+                          grid%PDTOP,grid%PT,                    &
+                          grid%DETA1,grid%DETA2,grid%ETA2,       &
+                          IDS,IDE,JDS,JDE,KDS,KDE,               &
+                          IMS,IME,JMS,JME,KMS,KME,               &
+                          IPS,IPE,JPS,JPE,KPS,KPE)
+
+    ! Store average of parent pdyn_smooth and my pdyn in pdyn_smooth
+    ! to send to child for its tracking for vortex tracker 5
+    if(size(grid%pdyn_smooth)>1) then
+       if(grid%id==1) then
+          ! No parent, so pdyn_smooth==pdyn and pdyn_parent is ignored
+          !write(0,*) 'no parent (gid=1) so storing pdyn in pdyn_smooth'
+          do j=max(jds,jps),min(jpe,jde-1)
+             do i=max(ids,ips),min(ipe,ide-1)
+                grid%pdyn_smooth(i,j)=grid%pdyn(i,j)
+             enddo
+          enddo
+       else
+          !write(0,*) 'grid ',grid%id,' storing average of pdyn and pdyn_parent in pdyn_smooth'
+          do j=max(jds,jps),min(jpe,jde-1)
+             do i=max(ids,ips),min(ipe,ide-1)
+                grid%pdyn_smooth(i,j) = &
+                     0.5*grid%pdyn(i,j) + &
+                     0.5*grid%pdyn_parent(i,j)
+             enddo
+          enddo
+       endif
+
+       grid%pdyn_smooth_age=max(1,grid%pdyn_smooth_age+1)
+    else
+       call wrf_error_fatal('pdyn_smooth not allocated')
+    endif
+
+#ifdef DM_PARALLEL
+#   include "HALO_NMM_TRACK.inc"
+#endif
+
+  END SUBROUTINE UPDATE_PDYN_MSLP
+
+#endif
 
   !----------------------------------------------------------------------
   !
@@ -95,6 +214,7 @@ contains
     !       option 3, but uses the dynamic pressure PDYN and includes PDYN
     !       noise removal.  Plus, it only searches within X km of the nest
     !       center to avoid other nearby systems.
+    !   vortex_tracker=5 -- track average of parent and grandparent PDYN
     !
     ! HISTORY:
     !   2004?       - initial implementation by gopal
@@ -103,8 +223,12 @@ contains
     !   late  2010  - sam added a new child tracker (vortex_tracker=2)
     !   Nov 08 2011 - sam split implementation into several functions and
     !                 added the vortex_tracker=4 option
+#ifdef HWRF
+    USE module_tracker, only: ncep_tracker_center
+#endif
     USE MODULE_CONFIGURE, ONLY : grid_config_rec_type
     USE MODULE_DOMAIN, ONLY : domain,get_ijk_from_grid
+    use module_membrane_mslp
 #ifdef DM_PARALLEL
 # ifdef HWRF
     USE MODULE_COMM_DM, ONLY : HALO_NMM_VT4_NOISE_sub, HALO_NMM_VT4_MSLP_sub
@@ -119,9 +243,12 @@ contains
     integer, intent(in) :: IMS,IME,JMS,JME,KMS,KME
     integer, intent(in) :: IPS,IPE,JPS,JPE,KPS,KPE
     integer, intent(in) :: ITS,ITE,JTS,JTE,KTS,KTE
-    integer :: vortex_tracker
+    integer :: vortex_tracker,j
+    character*255 :: message
+    logical :: skip_nest_motion
 
     !     KEEP NEST MOTION IN SINK WITH PHYSICS TIME STEPS
+
 #if ( NMM_NEST == 1 )
 #ifdef HWRF
     MOVEFREQ=grid%movemin*grid%nphs
@@ -130,25 +257,48 @@ contains
     MOVEFREQ=grid%nphs
     vortex_tracker=-1
 #endif
-    IF(MOD(grid%NTSD+1,MOVEFREQ)/=0)THEN
+    skip_nest_motion=.false.
+    IF(MOD(grid%NTSD+1,MOVEFREQ)/=0 .or. grid%id==1)THEN
 #ifdef HWRF
-       IF(grid%MOVED) grid%NTIME0=grid%NTSD             !FOR UPDATING NTIM0
+       IF(grid%MOVED .and. grid%id/=1) then
+          grid%NTIME0=grid%NTSD             !FOR UPDATING NTIM0
+       ENDIF
 #endif
        grid%MVNEST=.FALSE.
-       RETURN
+       skip_nest_motion=.true.
     ENDIF
 
-    CALL STATS_MAKE_MSLP (grid%PDYN,grid%MSLP,grid%SQWS,         &
-                          grid%PINT,grid%T,grid%Q,grid%U,grid%V, &
-                          grid%FIS,grid%PD,grid%SM,              &
-                          grid%PDTOP,grid%PT,                    &
-                          grid%DETA1,grid%DETA2,                 &
-                          IDS,IDE,JDS,JDE,KDS,KDE,               &
-                          IMS,IME,JMS,JME,KMS,KME,               &
-                          ITS,ITE,JTS,JTE,KTS,KTE)
+#ifdef HWRF
+    if(skip_nest_motion .and. ( grid%pdyn_smooth_age/=0 .or. size(grid%pdyn_smooth)<=1)) then
+       ! Pdyn_smooth is up to date and it is not yet time to move the
+       ! nest, so we can return now.
+       !write(0,*) 'skipping pdyn_smooth in grid ',grid%id
+       return
+    else
+       ! Either we need to move the nest, or the pdyn values are
+       ! invalid due to nest initialization or recent nest motion, so
+       ! we cannot return yet.
+    endif
+
+    ! Update membrane_mslp:
+    call make_membrane_mslp(grid)
+
+
+    ! Update regular mslp:
+    CALL UPDATE_PDYN_MSLP(grid,config_flags, &
+                          IDS,IDE,JDS,JDE,KDS,KDE, &
+                          IMS,IME,JMS,JME,KMS,KME, &
+                          IPS,IPE,JPS,JPE,KPS,KPE)
+
+    if(skip_nest_motion) then
+       ! We get here if we had to update pdyn_smooth, but it is not
+       ! yet time to move the nest.
+       return
+    endif
+#endif
 
     !     HAND OFF CONTROL TO STATS_FOR_MOVE_123 FOR TRACKERS 1, 2 and 3
-    oldmove: if(vortex_tracker /= 4) then
+    oldmove: if(vortex_tracker<4) then
        ! PDYN causes noise in the presence of strong vorticity variations,
        ! so it is not used by HWRF for nest tracking.
        CALL STATS_FOR_MOVE_123 (grid%XLOC_2,grid%YLOC_2                   &
@@ -169,8 +319,39 @@ contains
             ,IMS,IME,JMS,JME,KMS,KME                                      &
             ,ITS,ITE,JTS,JTE,KTS,KTE)
        RETURN
-    else
 #ifdef HWRF
+    elseif(vortex_tracker==6) then
+       ! Tracker #6: do whatever the inline NCEP Tracker says
+       call ncep_tracker_center(grid)
+       call vt6_move(grid%tracker_ifix,grid%tracker_jfix,  &
+                     grid%tracker_gave_up,grid%tracker_havefix, &
+                     grid%xloc_2,grid%yloc_2, grid%id,     &
+                     grid%xloc_1,grid%yloc_1, grid%mvnest, &
+                     IDS,IDE,JDS,JDE,KDS,KDE,              &
+                     IMS,IME,JMS,JME,KMS,KME,              &
+                     ITS,ITE,JTS,JTE,KTS,KTE)
+    elseif(vortex_tracker==5) then
+       ! Tracker #5: follow average of grandparent and parent PDYN
+       call vt5_move(grid%pdyn_parent,grid%distsq,grid%vt5searchrad, &
+                     grid%xloc_2,grid%yloc_2, grid%id,     &
+                     grid%xloc_1,grid%yloc_1, grid%mvnest, &
+                     IDS,IDE,JDS,JDE,KDS,KDE,              &
+                     IMS,IME,JMS,JME,KMS,KME,              &
+                     ITS,ITE,JTS,JTE,KTS,KTE)
+
+       ! Adjust nest movement search radius for the next timestep
+       ! based on whether we moved this timestep or not.
+       if(grid%mvnest) then
+          grid%vt5searchrad=max(vt5_min_radius,min(vt5_max_radius, &
+               grid%vt5searchrad*vt5_move_factor))
+       else
+          grid%vt5searchrad=max(vt5_min_radius,min(vt5_max_radius, &
+               grid%vt5searchrad*vt5_nomove_factor))
+       endif
+13011  format("Search radius now ",F0.3,"km for domain ",I0)
+       write(message,13011) grid%vt5searchrad/1000.0,grid%id
+       call wrf_debug(1,message)
+    else
     !     HANDLE VORTEX TRACKER 4 HERE
 
        ! (we only get here in HWRF mode)
@@ -361,6 +542,139 @@ contains
   END SUBROUTINE vt4_noise_detect
 
 #ifdef HWRF
+  SUBROUTINE vt5_move(PDYN,distsq,searchrad,xloc,yloc,gridid,cx,cy,mvnest, &
+                      IDS,IDE,JDS,JDE,KDS,KDE,                   &
+                      IMS,IME,JMS,JME,KMS,KME,                   &
+                      ITS,ITE,JTS,JTE,KTS,KTE)
+    use module_dm, only: wrf_dm_minval_real
+    implicit none
+    real, intent(in) :: PDYN(ims:ime,jms:jme)
+    real, intent(in) :: distsq(ims:ime,jms:jme)
+    real, intent(in) :: searchrad
+    integer, intent(inout) :: xloc,yloc
+    integer, intent(in) :: cx,cy,gridid
+    logical, intent(out) :: mvnest 
+    integer :: &
+                      IDS,IDE,JDS,JDE,KDS,KDE,                   &
+                      IMS,IME,JMS,JME,KMS,KME,                   &
+                      ITS,ITE,JTS,JTE,KTS,KTE
+   
+    real, parameter :: big_pdyn=999999.9
+    integer i,j,iloc,jloc
+    real pdynloc,xdiff,ydiff,radsq
+    character*255 message
+
+    if(gridid==1) then ! Do nothing for MOAD
+       !write(0,*) 'Grid 1 (MOAD): skipping vt5_move'
+       mvnest=.false.
+       xloc=cx
+       yloc=cy
+       return
+    endif
+
+201 format("Search for minimum PDYN (<",F10.2,") within searchrad=",F0.3,"km of domain center cx=",I0," cy=",I0)
+    !write(message,201) big_pdyn,searchrad/1000.0,cx,cy
+
+    radsq=searchrad*searchrad
+    iloc=-1
+    jloc=-1
+    pdynloc=big_pdyn
+    do j=jts,min(jde-1,jte)
+       do i=its,min(ide-1,ite)
+          if(distsq(i,j)<radsq .and. PDYN(i,j)<pdynloc) then
+             pdynloc=PDYN(i,j)
+             iloc=i
+             jloc=j
+          endif
+       enddo
+    enddo
+
+303 format("local loc: pdyn=",F0.3," i=",I0," j=",I0)
+    !write(0,303) pdynloc,iloc,jloc
+
+#ifdef DM_PARALLEL
+    call wrf_dm_minval_real(pdynloc,iloc,jloc)
+#endif
+
+304 format("global loc: pdyn=",F0.3," i=",I0," j=",I0)
+    !write(0,304) pdynloc,iloc,jloc
+
+    if(iloc==-1) then
+       call wrf_error_fatal('ERROR: cannot find min PDYN.  Either distsq or searchrad are erroneous, or your resolution is worse than 100km.')
+    endif
+
+    xdiff=abs(iloc-real(cx))/3.0
+    ydiff=abs(jloc-real(cy))/6.0
+    if(xdiff>=1. .or. ydiff>=1.) then
+       ! We have moved >1 parent gridpoints in X or >2 parent
+       ! gridpoints in Y, so trigger a nest move:
+       mvnest=.true.
+       xloc=iloc
+       yloc=jloc
+       call wrf_debug(1,'Moving: PDYN minimum left nest center')
+    else
+       mvnest=.false.
+       xloc=cx
+       yloc=cy
+       call wrf_debug(1,'Not moving: PDYN minimum is near nest center')
+    endif
+  END SUBROUTINE vt5_move
+  SUBROUTINE vt6_move(ifix,jfix,gaveup,havefix, &
+                      xloc,yloc,gridid,cx,cy,mvnest, &
+                      IDS,IDE,JDS,JDE,KDS,KDE,                   &
+                      IMS,IME,JMS,JME,KMS,KME,                   &
+                      ITS,ITE,JTS,JTE,KTS,KTE)
+    use module_dm, only: wrf_dm_minval_real
+    implicit none
+    integer, intent(in) :: ifix,jfix
+    logical, intent(in) :: gaveup,havefix
+    integer, intent(inout) :: xloc,yloc
+    integer, intent(in) :: cx,cy,gridid
+    logical, intent(out) :: mvnest 
+    integer :: &
+                      IDS,IDE,JDS,JDE,KDS,KDE,                   &
+                      IMS,IME,JMS,JME,KMS,KME,                   &
+                      ITS,ITE,JTS,JTE,KTS,KTE
+   
+    real, parameter :: big_pdyn=999999.9
+    integer i,j,iloc,jloc
+    real pdynloc,xdiff,ydiff,radsq
+    character*255 message
+
+    mvnest=.false.
+    xloc=cx
+    yloc=cy
+    
+    if(gridid==1) then ! Do nothing for MOAD
+       return
+    endif
+
+    if(gaveup) then
+       call wrf_debug(1,'Not moving: tracker decided the storm dissapated')
+       return
+    endif
+
+    if(.not.havefix) then
+       call wrf_debug(1,'Not moving: tracker did not find a storm')
+       return
+    endif
+
+    xdiff=abs(ifix-real(cx))/3.0
+    ydiff=abs(jfix-real(cy))/6.0
+    if(xdiff>=1. .or. ydiff>=1.) then
+       ! We have moved >1 parent gridpoints in X or >2 parent
+       ! gridpoints in Y, so trigger a nest move:
+       mvnest=.true.
+       xloc=ifix
+       yloc=jfix
+       call wrf_debug(1,'Moving: tracker center left nest center')
+    else
+       mvnest=.false.
+       xloc=cx
+       yloc=cy
+       call wrf_debug(1,'Not moving: tracker center is near nest center')
+    endif
+  END SUBROUTINE vt6_move
   SUBROUTINE vt4_move(MSLP,WEIGHTOUT,DISTSQ,NOISY,DX_NMM,DY_NMM, &
                       xloc,yloc,cx,cy,mvnest,                    &
                       searchrad,searchpow,searchpmax,            &
@@ -389,7 +703,7 @@ contains
     ! HISTORY:
     !   Nov 08 2011 - written by Sam Trahan
 
-#ifdef DM_PARALLEL && !defined(STUBMPI)
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
     USE module_dm, only: wrf_dm_maxval_real, wrf_dm_sum_real, &
          local_communicator_y, local_communicator_x
     IMPLICIT NONE
@@ -512,7 +826,7 @@ contains
 
     if_pow_1: if(abs(searchpow-1.0)<1e-5) then
        ! Special copy of loop for exponent of 1, for efficiency
-       call wrf_debug(10,'got into pow=1 loop')
+       !call wrf_debug(10,'got into pow=1 loop')
        do j = max(jds+2,jts), min(jte,jde-3)
           do i = max(ids+1,its), min(ite,ide-2)
              if(noisy(i,j)==0) then
@@ -537,7 +851,7 @@ contains
        enddo
     else
        if_sqrt: if(abs(searchpow-0.5)<1e-5) then
-          call wrf_debug(10,'got into pow=0.5 loop')
+          !call wrf_debug(10,'got into pow=0.5 loop')
           do j = max(jds+2,jts), min(jte,jde-3)
              do i = max(ids+1,its), min(ite,ide-2)
                 if(noisy(i,j)==0) then
@@ -588,10 +902,10 @@ contains
     endif if_pow_1
 
     if(maxweight<=0) then
-       call wrf_debug(1,'No valid points found in this tile.')
+       !call wrf_debug(1,'No valid points found in this tile.')
     else
-       write(message,'("Max weight was ",F0.3)') maxweight
-       call wrf_debug(1,message)
+       !write(message,'("Max weight was ",F0.3)') maxweight
+       !call wrf_debug(1,message)
     endif
 
     xwsum = wrf_dm_sum_real(xwsum)
@@ -657,10 +971,10 @@ contains
   END SUBROUTINE vt4_move
 #endif
 
-  SUBROUTINE STATS_MAKE_MSLP(PDYN,MSLP,SQWS          &
+  SUBROUTINE STATS_MAKE_MSLP(PDYN,MEMBRANE_MSLP,MSLP,SQWS          &
                           ,PINT,T,Q,U,V              &
                           ,FIS,PD,SM,PDTOP,PTOP      &
-                          ,DETA1,DETA2               &
+                          ,DETA1,DETA2,ETA2          &
                           ,IDS,IDE,JDS,JDE,KDS,KDE   &
                           ,IMS,IME,JMS,JME,KMS,KME   &
                           ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -681,11 +995,12 @@ contains
                           ,IMS,IME,JMS,JME,KMS,KME   &
                           ,ITS,ITE,JTS,JTE,KTS,KTE
 
-    REAL, DIMENSION(KMS:KME),                 INTENT(IN)  :: DETA1,DETA2
+    REAL, DIMENSION(KMS:KME),                 INTENT(IN)  :: DETA1,DETA2,ETA2
     REAL,                                     INTENT(IN)  :: PDTOP,PTOP
     REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(IN)  :: FIS,PD,SM
     REAL, DIMENSION(IMS:IME,JMS:JME,KMS:KME), INTENT(IN)  :: PINT,T,Q,U,V
     REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(OUT) :: PDYN,MSLP,SQWS
+    REAL, DIMENSION(IMS:IME,JMS:JME),         INTENT(IN)  :: MEMBRANE_MSLP
 
     INTEGER :: ITF,JTF, i,j,k
     REAL :: DZ,RTOPP,APELP,A,TSFC
@@ -696,20 +1011,23 @@ contains
 
     REAL, DIMENSION(IMS:IME,JMS:JME,KMS:KME)              :: Z
 
+    REAL :: densum,presum,density,pdyntemp,vpres
+
     ITF=MIN(ITE,IDE-1)
     JTF=MIN(JTE,JDE-1)
 
     !     DETERMINE THE HEIGHTS ON THE PARENT DOMAIN
 
-    DO J = JTS, MIN(JTE,JDE)
-       DO I = ITS, MIN(ITE,IDE)
+    DO J = JTS, MIN(JTE,JDE-1)
+       DO I = ITS, MIN(ITE,IDE-1)
           Z(I,J,1)=FIS(I,J)*GI
        ENDDO
     ENDDO
     !
-    DO K = KTS,KTE
-       DO J = JTS, MIN(JTE,JDE)
-          DO I = ITS, MIN(ITE,IDE)
+    !write(0,*) 'kde=',kde,' kte=',kte
+    DO K = KTS,min(kde-1,KTE)
+       DO J = JTS, MIN(JTE,JDE-1)
+          DO I = ITS, MIN(ITE,IDE-1)
              APELP      = (PINT(I,J,K+1)+PINT(I,J,K))
              RTOPP      = TRG*T(I,J,K)*(1.0+Q(I,J,K)*P608)/APELP
              DZ         = RTOPP*(DETA1(K)*PDTOP+DETA2(K)*PD(I,J))
@@ -722,15 +1040,17 @@ contains
     !     SPEED AT ABOUT LEVELS 9 10 AND 11 AND THE DYNAMIC PRESSURES DEFINED
     !     FROM BASIC BERNOULLI's THEOREM
 
-    DO J = JTS, MIN(JTE,JDE)
-       DO I = ITS, MIN(ITE,IDE)
+    DO J = JTS, MIN(JTE,JDE-1)
+       DO I = ITS, MIN(ITE,IDE-1)
           TSFC      = T(I,J,1)*(1.+D608*Q(I,J,1)) + LAPSR*(Z(I,J,1)+Z(I,J,2))*0.5
           A         = LAPSR*Z(I,J,1)/TSFC
           MSLP(I,J) = PINT(I,J,1)*(1-A)**COEF2
+
           SQWS(I,J) =  (U(I,J,9)*U(I,J,9) + V(I,J,9)*V(I,J,9)           &
-               +   U(I,J,10)*U(I,J,10) + V(I,J,10)*V(I,J,10)       &
-               +   U(I,J,11)*U(I,J,11) + V(I,J,11)*V(I,J,11))/3.0
-          PDYN(I,J) =   MSLP(I,J)  + 1.1*SQWS(I,J)/2.0
+              +   U(I,J,10)*U(I,J,10) + V(I,J,10)*V(I,J,10)       &
+              +   U(I,J,11)*U(I,J,11) + V(I,J,11)*V(I,J,11))/3.0
+
+          PDYN(I,J) = 1.1*SQWS(I,J)/2.0 + MEMBRANE_MSLP(I,J)
        ENDDO
     ENDDO
 
@@ -903,10 +1223,10 @@ contains
        XLOC = NXLOC
        YLOC = NYLOC
 
-       WRITE(message,*)'NEW CALC',NSUM1,NSUM2,NSUM3
-       call wrf_debug(1,message)
-       WRITE(message,*)'XLOC,YLOC',NXLOC,XLOC,NYLOC,YLOC
-       call wrf_debug(1,message)
+       !WRITE(message,*)'NEW CALC',NSUM1,NSUM2,NSUM3
+       !call wrf_debug(1,message)
+       !WRITE(message,*)'XLOC,YLOC',NXLOC,XLOC,NYLOC,YLOC
+       !call wrf_debug(1,message)
 
     endif hwrfx_tracker
     !   END HWRF-X TRACKER CODE ---------------------------------------------------
@@ -1011,4 +1331,8 @@ contains
     RETURN
 
   END SUBROUTINE STATS_FOR_MOVE_123
+
+! End "if NMM_NEST == 1"
+#endif
+
 END module module_stats_for_move

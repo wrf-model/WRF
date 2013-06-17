@@ -131,6 +131,12 @@ state    real   vlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_V
 state    real   hlon_gc        ij       dyn_nmm      1     -     i1      "XLONG_M" "longitude, positive east" "degrees"
 state    real   hlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_M" "latitude, positive north" "degrees"
     
+
+# Smoother work variables:
+state  real   relaxwork  ij     dyn_nmm     1      -    r  "relaxwork" "Temporary Tv storage array for the membrane MSLP overrelaxation loops" "K"
+state  integer relaximask ij    dyn_nmm     1      -    r  "relaximask" "Integer mask array for the membrane MSLP overrelaxation loops" "K"
+state  logical relaxmask ij     dyn_nmm     1      -    r  "relaxmask" "Mask array for the membrane MSLP overrelaxation loops" "K"
+
 ##############################################################
 # Variables for nmm dynamics                                            
 #
@@ -1520,6 +1526,8 @@ halo      HALO_NMM_D  dyn_nmm 24:pd
 halo      HALO_NMM_E  dyn_nmm 24:petdt
 halo      HALO_NMM_F  dyn_nmm 24:t,u,v
 halo      HALO_NMM_F1 dyn_nmm 80:pdslo          
+halo HALO_NMM_MEMBRANE_RELAX dyn_nmm 8:relaxwork
+halo HALO_NMM_MEMBRANE_MASK dyn_nmm 8:relaximask
 halo      HALO_NMM_G  dyn_nmm 24:u,v;24:z                    
 halo      HALO_NMM_H  dyn_nmm 24:w
 halo      HALO_NMM_I  dyn_nmm 48:q,q2,cwm                    

@@ -7,12 +7,15 @@ solve_nmm.o:   module_BC_NMM.o module_STATS_FOR_MOVE.o \
                module_CTLBLK.o module_HIFREQ.o \
                ../share/module_random.o ../frame/hires_timer.o
 
+module_membrane_mslp.o: module_relax.o ../frame/module_dm.o ../frame/module_domain.o
+module_tracker.o: module_relax.o ../frame/module_dm.o ../frame/module_domain.o
+
 NMM_NEST_UTILS1.o: module_TERRAIN.o module_SMOOTH_TERRAIN.o \
 	../frame/module_dm.o ../frame/module_domain.o \
 	../frame/module_configure.o ../frame/module_timing.o
 
 module_STATS_FOR_MOVE.o: ../frame/module_dm.o ../frame/module_domain.o \
-	../frame/module_configure.o
+	../frame/module_configure.o module_membrane_mslp.o module_tracker.o
 
 start_domain_nmm.o: module_HIFREQ.o ../share/module_random.o module_STATS_FOR_MOVE.o
 

@@ -1565,7 +1565,7 @@ print *,'column of cg pres = ',cprs
 
       USE module_configure
       USE module_wrf_error
-
+      USE module_dm, only : wrf_dm_sum_real, wrf_dm_sum_integer
       IMPLICIT NONE
    
    
@@ -1728,8 +1728,8 @@ print *,'column of cg pres = ',cprs
          sum = 0.
          icount = 0
        ENDIF
-       CALL wrf_dm_bcast_real( sum, 1 )
-       CALL wrf_dm_bcast_integer( icount, 1 )
+       sum = wrf_dm_sum_real(sum)
+       icount = wrf_dm_sum_integer(icount)
        IF ( enable ) THEN
          IF ( icount .GT. 0 ) THEN
            avg = sum / REAL ( icount ) 
@@ -1803,7 +1803,7 @@ print *,'column of cg pres = ',cprs
 
       USE module_configure
       USE module_wrf_error
-
+      USE module_dm, only : wrf_dm_sum_real, wrf_dm_sum_integer
       IMPLICIT NONE
    
    
@@ -1959,8 +1959,8 @@ print *,'column of cg pres = ',cprs
          sum = 0.
          icount = 0
        ENDIF
-       CALL wrf_dm_bcast_real( sum, 1 )
-       CALL wrf_dm_bcast_integer( icount, 1 )
+       sum = wrf_dm_sum_real(sum)
+       icount = wrf_dm_sum_integer(icount)
        IF ( enable ) THEN
          IF ( icount .NE. 0 ) THEN
            avg = sum / REAL ( icount ) 

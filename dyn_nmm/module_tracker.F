@@ -1,6 +1,7 @@
 module module_tracker
   implicit none
   private
+#ifdef HWRF
   public :: ncep_tracker_center, ncep_tracker_init
 
   real, parameter :: invE=0.36787944117 ! 1/e
@@ -985,5 +986,5 @@ contains
        ierr=95
     endif
   end subroutine get_lonlat
-
+#endif
 end module module_tracker

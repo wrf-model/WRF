@@ -1,6 +1,9 @@
 module module_membrane_mslp
   implicit none
   private
+
+#ifdef HWRF
+
   public :: make_membrane_mslp
 
   integer, parameter :: npres = 33
@@ -719,4 +722,5 @@ contains
 
   end subroutine smoothMSLP
 
+#endif
 end module module_membrane_mslp

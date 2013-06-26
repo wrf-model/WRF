@@ -269,8 +269,6 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
 #include "deref_kludge.h"
 
-   call in_real_nmm
-
    grid%input_from_file = .true.
    grid%input_from_file = .false.
 

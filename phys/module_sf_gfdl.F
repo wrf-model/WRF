@@ -9,7 +9,11 @@ CONTAINS
 !-------------------------------------------------------------------
    SUBROUTINE SF_GFDL(U3D,V3D,T3D,QV3D,P3D,                     &
                      CP,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2, CPM,    &
-                     DT, SMOIS,num_soil_layers,ISLTYP,ZNT,MZNT,UST,PSIM,PSIH,  &     !MZNT ADDED BY KWON
+                     DT, SMOIS,num_soil_layers,ISLTYP,ZNT,      &
+#if (HWRF==1)
+                     MZNT,                                      & 
+#endif
+                     UST,PSIM,PSIH,                             &   
                      XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,    & ! gopal's doing for Ocean coupling
                      QGH,QSFC,U10,V10,                          &
                      GZ1OZ0,WSPD,BR,ISFFLX,                     &
@@ -131,7 +135,9 @@ CONTAINS
                                         QSFC,                           &
                                         UST,                            &
                                         ZNT,                            &
+#if (HWRF==1)
                                         MZNT,                           &   !KWON momentum zo
+#endif
                                         WSPD,                           &
                                         TAUX,                           & ! gopal's doing for Ocean coupling
                                         TAUY
@@ -378,7 +384,9 @@ CONTAINS
 
 
         znt(i,j)= 0.01*abs(zoc(i))
+#if (HWRF==1)
         mznt(i,j)= 0.01*abs(mzoc(i))
+#endif
         wspd(i,j) = SQRT(upc(kts,i)*upc(kts,i) + vpc(kts,i)*vpc(kts,i))
         wspd(i,j) = amax1(wspd(i,j)    ,100.)/100.
         u10m(i) = u1(i)*(wind10(i)/wspd(i,j))/100.

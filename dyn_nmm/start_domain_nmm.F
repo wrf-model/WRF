@@ -3,27 +3,6 @@
 !#define NO_UPSTREAM_ADVECTION
 !----------------------------------------------------------------------
 !
-  SUBROUTINE GET_OR_SET_IN_REAL_NMM(arg)
-    IMPLICIT NONE
-    INTEGER, INTENT(INOUT) :: ARG
-    INTEGER, SAVE :: REAL_MODE=0
-
-    IF(ARG==1) THEN
-       ! Turning on REAL_MODE to indicate we're in real_nmm:
-       REAL_MODE=ARG
-    ELSEIF(ARG==0) THEN
-       ! Want to get the value of REAL_MODE:
-       ARG=REAL_MODE
-    ELSE
-       call wrf_error_fatal("Invalid value for ARG in GET_OR_SET_IN_REAL_NMM: must be 0 (get) or 1 (set)")
-    END IF
-  END SUBROUTINE GET_OR_SET_IN_REAL_NMM
-  SUBROUTINE IN_REAL_NMM()
-    IMPLICIT NONE
-    INTEGER :: JUNK
-    CALL GET_OR_SET_IN_REAL_NMM(1)
-  END SUBROUTINE IN_REAL_NMM
-
 #ifdef HWRF
         SUBROUTINE GUESS_COUPLING_TIMESTEP(gridid,DTC)
           USE module_configure
@@ -83,7 +62,9 @@
      &           )
 !----------------------------------------------------------------------
 !
+#ifdef HWRF
       USE MODULE_STATS_FOR_MOVE, only: vorttrak_init
+#endif
       USE MODULE_TIMING
 #ifdef HWRF
       USE MODULE_HIFREQ, only : hifreq_open
@@ -132,7 +113,6 @@
 !***
       TYPE(DOMAIN),INTENT(INOUT) :: GRID
       LOGICAL , INTENT(IN)       :: allowed_to_read
-      LOGICAL :: in_real
 !
 #include <dummy_new_decl.inc>
 !
@@ -263,7 +243,7 @@
       INTEGER :: hr, mn, sec, ms, rc
       TYPE(WRFU_Time) :: currentTime
 
-      INTEGER :: interval_seconds, restart_interval, in_real_int
+      INTEGER :: interval_seconds, restart_interval
 
 #ifdef HWRF
       REAL :: xshift,xfar,yfar,dfar,close2edge
@@ -299,13 +279,6 @@
          grid%force_sst=2
       endif
 #endif
-
-      ! ----------------------------------------
-      ! Determine if we're in REAL_NMM.EXE
-      in_real_int=0
-      call GET_OR_SET_IN_REAL_NMM(in_real_int)
-      in_real = (in_real_int==1)
-      ! ----------------------------------------
 
       CALL GET_IJK_FROM_GRID(GRID,                                     &
      &                       IDS,IDE,JDS,JDE,KDS,KDE,                  &
@@ -644,13 +617,13 @@
            write(message,'("Domain ",I0," does not have hifreq out.")') grid%id
         endif
       else
-        write(message,'("Domain ",I0," is not being initialized.")') grid%id
+          write(message,'("Domain ",I0," is not being initialized.")') grid%id
       endif
 ! end of high-freq output
 #endif
 #ifdef HWRF
 ! Begin Sam Trahan's doing for vortex tracker initialization
-      IF(.not.IN_REAL) THEN
+    IF ( program_name(1:8) .NE. "REAL_NMM" ) THEN
          call VORTTRAK_INIT(grid,config_flags,       &
                             (allowed_to_read .and. .not. restrt), &
                             IDS,IDE,JDS,JDE,KDS,KDE, &

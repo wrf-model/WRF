@@ -158,13 +158,11 @@
       END IF
 #endif
 
-! simulation start time is a Singleton maintained by head_grid
-    IF ( ( switch .EQ.     input_only  ) .OR. &
-         ( switch .EQ.          restart_only ) ) THEN
-
       ! INPUT ONLY (KK)
+
       IF ( switch .EQ. restart_only ) THEN
-        ! recover the restart alarms from input if avialable
+
+        ! recover the restart alarms from input if available
  
         CALL wrf_get_dom_ti_integer( fid , 'MAX_WRF_ALARMS', max_wrf_alarms_compare, 1, icnt, ierr )
         IF ( max_wrf_alarms_compare .NE. MAX_WRF_ALARMS ) THEN
@@ -186,9 +184,20 @@
                 ! Get and set interval so that we are sure to have both the
                 ! interval and first ring time set correctly
                 CALL WRFU_AlarmGet( grid%alarms(i), ringinterval=interval2 )
+
+                IF (config_flags%override_restart_timers) THEN
+                   IF (i .EQ. restart_only) THEN
+                      seconds = grid%restart_interval_d * 86400 + &
+                                grid%restart_interval_h *  3600 + &
+                                grid%restart_interval_m *    60 + &
+                                grid%restart_interval   *    60 + &
+                                grid%restart_interval_s
+                   ENDIF
+                ENDIF
+
                 CALL WRFU_TimeIntervalSet(interval,S=seconds)
                 ringTime = curtime + interval
-                CALL WRFU_AlarmSet( grid%alarms(i), RingInterval=interval2, RingTime=ringTime )
+                CALL WRFU_AlarmSet( grid%alarms(i), RingInterval=interval, RingTime=ringTime )
 
               ENDIF
 
@@ -201,11 +210,12 @@
           ENDDO
         ENDIF
 
-      ENDIF
      
      !OUTPUT ONLY (KK)
+
       IF ( switch .EQ. restart_only .AND. .NOT. config_flags%override_restart_timers ) THEN
-        ! recover the restart alarms from input if avialable
+
+        ! recover the restart alarms from input if available
  
         CALL wrf_get_dom_ti_integer( fid , 'MAX_WRF_ALARMS', max_wrf_alarms_compare, 1, icnt, ierr )
         IF ( max_wrf_alarms_compare .NE. MAX_WRF_ALARMS ) THEN
@@ -227,9 +237,20 @@
                 ! Get and set interval so that we are sure to have both the
                 ! interval and first ring time set correctly
                 CALL WRFU_AlarmGet( grid%alarms(i), ringinterval=interval2 )
+
+                IF (config_flags%override_restart_timers) THEN
+                   IF (i .EQ. history_only) THEN
+                      seconds = grid%history_interval_d * 86400 + &
+                                grid%history_interval_h *  3600 + &
+                                grid%history_interval_m *    60 + &
+                                grid%history_interval   *    60 + &
+                                grid%history_interval_s
+                   ENDIF
+                ENDIF
+
                 CALL WRFU_TimeIntervalSet(interval,S=seconds)
                 ringTime = curtime + interval
-                CALL WRFU_AlarmSet( grid%alarms(i), RingInterval=interval2, RingTime=ringTime )
+                CALL WRFU_AlarmSet( grid%alarms(i), RingInterval=interval, RingTime=ringTime )
 
               ENDIF
 

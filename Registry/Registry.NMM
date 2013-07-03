@@ -131,6 +131,12 @@ state    real   vlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_V
 state    real   hlon_gc        ij       dyn_nmm      1     -     i1      "XLONG_M" "longitude, positive east" "degrees"
 state    real   hlat_gc        ij       dyn_nmm      1     -     i1      "XLAT_M" "latitude, positive north" "degrees"
     
+
+# Smoother work variables:
+state  real   relaxwork  ij     dyn_nmm     1      -    r  "relaxwork" "Temporary Tv storage array for the membrane MSLP overrelaxation loops" "K"
+state  integer relaximask ij    dyn_nmm     1      -    r  "relaximask" "Integer mask array for the membrane MSLP overrelaxation loops" "K"
+state  logical relaxmask ij     dyn_nmm     1      -    r  "relaxmask" "Mask array for the membrane MSLP overrelaxation loops" "K"
+
 ##############################################################
 # Variables for nmm dynamics                                            
 #
@@ -274,6 +280,10 @@ state real  pblh        ij    dyn_nmm   1    -     rh       "PBLH"     "PBL Heig
 state integer lpbl      ij    dyn_nmm   1    -     ir       "LPBL"     "Model layer of PBL top"               ""
 state  real   mixht     ij    dyn_nmm   1    -     rh       "MIXHT"                 "MXL HEIGHT"              "m"
 state  real   ustar     ij    dyn_nmm   1    -     irh      "USTAR"    "Friction velocity"                    "m s-1"
+state  real   mz0       ij    dyn_nmm   1    -     h        "MZ0"      "momentum Roughness length"            "m"
+state  real     rc2d    ij    dyn_nmm   1    -       h        "RC2D"     "critical Richardson number" "m"
+state  real   dku3d    ijk    dyn_nmm   1    -       h        "DKU3D"     "Momentum Diffusivity" "m*m/s"
+state  real   dkt3d    ijk    dyn_nmm   1    -       h        "DKT3D"     "Thermal Diffusivity" "m*m/s"
 state  real   z0        ij    dyn_nmm   1    -     i01rh    "Z0"       "Roughness height"                     "m"
 state  real   hpbl2d    ij    dyn_nmm   1    -     irh        "HPBL2D"     "HEIGHT OF PBL from new2010 GFS pbl" "m"
 state  real   heat2d    ij    dyn_nmm   1    -     irh        "HEAT2D"     "" ""
@@ -347,6 +357,12 @@ state  real  GD_CLOUD2_A   ikj  misc     1   -      r      "GD_CLOUD2_A"  "taver
 state  real  GD_CLOUD_B    ikj  misc     1   -      r       "GD_CLOUD_B"   "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
 state  real  GD_CLOUD2_B   ikj  misc     1   -      r       "GD_CLOUD2_B"  "taveragd cloud ice mix ratio in GD"         "kg kg-1"
 state    real  GD_CLDFR         ikj      misc        1         -      r     "GD_CLDFR"              "GD CLOUD Fraction"         " ? "
+state  real  re_cloud   ikj     misc     1    -     -       "re_cloud"        "Effective radius, cloud drops"      "m"
+state  real  re_ice     ikj     misc     1    -     -       "re_ice"          "Effective radius, cloud ice"        "m"
+state  real  re_snow    ikj     misc     1    -     -       "re_snow"         "Effective radius, snow"             "m"
+state  integer  has_reqc   -    misc     1    -     -       "has_reqc"        "Flag for has effective radius of cloud water"    ""
+state  integer  has_reqi   -    misc     1    -     -       "has_reqi"        "Flag for has effective radius of cloud ice"      ""
+state  integer  has_reqs   -    misc     1    -     -       "has_reqs"        "Flag for has effective radius of snow"           ""
 
 #
 # module_CLDWTR.F
@@ -1304,7 +1320,7 @@ package   wsm5scheme    mp_physics==4                -             moist:qv,qc,q
 package   etampnew      mp_physics==5                -             moist:qv,qc,qr,qs
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
-package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr
+package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
 package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
 package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs
@@ -1510,6 +1526,8 @@ halo      HALO_NMM_D  dyn_nmm 24:pd
 halo      HALO_NMM_E  dyn_nmm 24:petdt
 halo      HALO_NMM_F  dyn_nmm 24:t,u,v
 halo      HALO_NMM_F1 dyn_nmm 80:pdslo          
+halo HALO_NMM_MEMBRANE_RELAX dyn_nmm 8:relaxwork
+halo HALO_NMM_MEMBRANE_MASK dyn_nmm 8:relaximask
 halo      HALO_NMM_G  dyn_nmm 24:u,v;24:z                    
 halo      HALO_NMM_H  dyn_nmm 24:w
 halo      HALO_NMM_I  dyn_nmm 48:q,q2,cwm                    

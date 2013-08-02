@@ -55,6 +55,18 @@
 !    cm-3. This was done to address the problem of excessive and persistent
 !    anvil cirrus produced by the scheme.
 
+! CHANGES FOR WRFV3.5.1
+! 1) added output for snow+cloud ice and graupel time step and accumulated
+!    surface precipitation
+! 2) bug fix to option w/o graupel/hail (IGRAUP = 1), include PRACI, PGSACW,
+!    and PGRACS as sources for snow instead of graupel/hail, bug reported by
+!    Hailong Wang (PNNL)
+! 3) very minor fix to immersion freezing rate formulation (negligible impact)
+! 4) clarifications to code comments
+! 5) minor change to shedding of rain, remove limit so that the number of 
+!    collected drops can smaller than number of shed drops
+! 6) change of specific heat of liquid water from 4218 to 4187 J/kg/K
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! THIS SCHEME IS A BULK DOUBLE-MOMENT SCHEME THAT PREDICTS MIXING
@@ -366,7 +378,9 @@ SUBROUTINE MORR_TWO_MOMENT_INIT
          EII = 0.1
          ECI = 0.7
 ! HM, ADD FOR V3.2
-         CPW = 4218.
+! hm, 7/23/13
+!         CPW = 4218.
+         CPW = 4187.
 
 ! SIZE DISTRIBUTION PARAMETERS
 
@@ -524,6 +538,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
                 TH, QV, QC, QR, QI, QS, QG, NI, NS, NR, NG, &
                 RHO, PII, P, DT_IN, DZ, HT, W,          &
                 RAINNC, RAINNCV, SR,                    &
+		SNOWNC,SNOWNCV,GRAUPELNC,GRAUPELNCV,    & ! hm added 7/13/13
                 refl_10cm, diagflag, do_radar_ref,      & ! GT added for reflectivity calcs
                 qrcuten, qscuten, qicuten, mu           & ! hm added
                ,F_QNDROP, qndrop                        & ! hm added, wrf-chem 
@@ -554,6 +569,10 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 ! ITIMESTEP - time step counter
 ! RAINNC - accumulated grid-scale precipitation (mm)
 ! RAINNCV - one time step grid scale precipitation (mm/time step)
+! SNOWNC - accumulated grid-scale snow plus cloud ice (mm)
+! SNOWNCV - one time step grid scale snow plus cloud ice (mm/time step)
+! GRAUPELNC - accumulated grid-scale graupel (mm)
+! GRAUPELNCV - one time step grid scale graupel (mm/time step)
 ! SR - one time step mass ratio of snow to total precip
 ! qrcuten, rain tendency from parameterized cumulus convection
 ! qscuten, snow tendency from parameterized cumulus convection
@@ -613,7 +632,9 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
    INTEGER, INTENT(IN):: ITIMESTEP
 
    REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT):: &
-                          RAINNC, RAINNCV, SR
+                          RAINNC, RAINNCV, SR, &
+! hm added 7/13/13
+                          SNOWNC,SNOWNCV,GRAUPELNC,GRAUPELNCV
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::       &  ! GT
                           refl_10cm
@@ -658,7 +679,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 ! HM add reflectivity      
    REAL, DIMENSION(kts:kte) :: dBZ
                           
-   REAL PRECPRT1D, SNOWRT1D
+   REAL PRECPRT1D, SNOWRT1D, SNOWPRT1D, GRPLPRT1D ! hm added 7/13/13
 
    INTEGER I,K,J
 
@@ -760,6 +781,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
        QC1D, QI1D, QS1D, QR1D,NI1D, NS1D, NR1D,                                          &
        T_TEND1D,QV_TEND1D, T1D, QV1D, P1D, DZ1D, W1D, WVAR1D,                   &
        PRECPRT1D,SNOWRT1D,                                                               &
+       SNOWPRT1D,GRPLPRT1D,                 & ! hm added 7/13/13
        EFFC1D,EFFI1D,EFFS1D,EFFR1D,DT,                                                   &
                                             IMS,IME, JMS,JME, KMS,KME,                   &
                                             ITS,ITE, JTS,JTE, KTS,KTE,                   & ! HM ADD GRAUPEL
@@ -827,6 +849,11 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 ! hm modified so that m2005 precip variables correctly match wrf precip variables
       RAINNC(i,j) = RAINNC(I,J)+PRECPRT1D
       RAINNCV(i,j) = PRECPRT1D
+! hm, added 7/13/13
+      SNOWNC(i,j) = SNOWNC(I,J)+SNOWPRT1D
+      SNOWNCV(i,j) = SNOWPRT1D
+      GRAUPELNC(i,j) = GRAUPELNC(I,J)+GRPLPRT1D
+      GRAUPELNCV(i,j) = GRPLPRT1D
       SR(i,j) = SNOWRT1D/(PRECPRT1D+1.E-12)
 
 !+---+-----------------------------------------------------------------+
@@ -851,6 +878,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
       SUBROUTINE MORR_TWO_MOMENT_MICRO(QC3DTEN,QI3DTEN,QNI3DTEN,QR3DTEN,         &
        NI3DTEN,NS3DTEN,NR3DTEN,QC3D,QI3D,QNI3D,QR3D,NI3D,NS3D,NR3D,              &
        T3DTEN,QV3DTEN,T3D,QV3D,PRES,DZQ,W3D,WVAR,PRECRT,SNOWRT,            &
+       SNOWPRT,GRPLPRT,                & ! hm added 7/13/13
        EFFC,EFFI,EFFS,EFFR,DT,                                                   &
                                             IMS,IME, JMS,JME, KMS,KME,           &
                                             ITS,ITE, JTS,JTE, KTS,KTE,           & ! ADD GRAUPEL
@@ -941,6 +969,9 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
         REAL PRECRT                ! TOTAL PRECIP PER TIME STEP (mm)
         REAL SNOWRT                ! SNOW PER TIME STEP (mm)
+! hm added 7/13/13
+        REAL SNOWPRT      ! TOTAL CLOUD ICE PLUS SNOW PER TIME STEP (mm)
+	REAL GRPLPRT	  ! TOTAL GRAUPEL PER TIME STEP (mm)
 
         REAL, DIMENSION(KTS:KTE) ::   EFFC            ! DROPLET EFFECTIVE RADIUS (MICRON)
         REAL, DIMENSION(KTS:KTE) ::   EFFI            ! CLOUD ICE EFFECTIVE RADIUS (MICRON)
@@ -989,7 +1020,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
      REAL, DIMENSION(KTS:KTE) ::  MNUCCR    ! CHANGE Q DUE TO CONTACT FREEZ RAIN
      REAL, DIMENSION(KTS:KTE) ::  NNUCCR    ! CHANGE N DUE TO CONTACT FREEZ RAIN
      REAL, DIMENSION(KTS:KTE) ::  NPRA      ! CHANGE IN N DUE TO DROPLET ACC BY RAIN
-     REAL, DIMENSION(KTS:KTE) ::  NRAGG     ! SELF-COLLECTION OF RAIN
+     REAL, DIMENSION(KTS:KTE) ::  NRAGG     ! SELF-COLLECTION/BREAKUP OF RAIN
      REAL, DIMENSION(KTS:KTE) ::  NSAGG     ! SELF-COLLECTION OF SNOW
      REAL, DIMENSION(KTS:KTE) ::  NPRC      ! CHANGE NC AUTOCONVERSION DROPLETS
      REAL, DIMENSION(KTS:KTE) ::  NPRC1      ! CHANGE NR AUTOCONVERSION DROPLETS
@@ -1678,7 +1709,10 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
                  1./(LAMR(K)**2*LAMG(K)**2)+                   &
                  1./(LAMR(K)*LAMG(K)**3))
 
-            NPRACG(K)=MAX(NPRACG(K)-DUM,0.)
+! hm 7/15/13, remove limit so that the number of collected drops can smaller than 
+! number of shed drops
+!            NPRACG(K)=MAX(NPRACG(K)-DUM,0.)
+            NPRACG(K)=NPRACG(K)-DUM
 
 	    END IF
 
@@ -2247,13 +2281,22 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
 ! IMMERSION FREEZING (BIGG 1953)
 
+!           MNUCCC(K) = MNUCCC(K)+CONS39*                   &
+!                  EXP(LOG(CDIST1(K))+LOG(GAMMA(7.+PGAM(K)))-6.*LOG(LAMC(K)))*             &
+!                   EXP(AIMM*(273.15-T3D(K)))
+
+!           NNUCCC(K) = NNUCCC(K)+                                  &
+!            CONS40*EXP(LOG(CDIST1(K))+LOG(GAMMA(PGAM(K)+4.))-3.*LOG(LAMC(K)))              &
+!                *EXP(AIMM*(273.15-T3D(K)))
+
+! hm 7/15/13 fix for consistency w/ original formula
            MNUCCC(K) = MNUCCC(K)+CONS39*                   &
                   EXP(LOG(CDIST1(K))+LOG(GAMMA(7.+PGAM(K)))-6.*LOG(LAMC(K)))*             &
-                   EXP(AIMM*(273.15-T3D(K)))
+                   (EXP(AIMM*(273.15-T3D(K)))-1.)
 
            NNUCCC(K) = NNUCCC(K)+                                  &
             CONS40*EXP(LOG(CDIST1(K))+LOG(GAMMA(PGAM(K)+4.))-3.*LOG(LAMC(K)))              &
-                *EXP(AIMM*(273.15-T3D(K)))
+                *(EXP(AIMM*(273.15-T3D(K)))-1.)
 
 ! PUT IN A CATCH HERE TO PREVENT DIVERGENCE BETWEEN NUMBER CONC. AND
 ! MIXING RATIO, SINCE STRICT CONSERVATION NOT CHECKED FOR NUMBER CONC
@@ -2401,8 +2444,6 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! COLLECTION OF SNOW BY RAIN - NEEDED FOR GRAUPEL CONVERSION CALCULATIONS
 ! ONLY CALCULATE IF SNOW AND RAIN MIXING RATIOS EXCEED 0.1 G/KG
 
-! ASSUME COLLECTION OF SNOW BY RAIN PRODUCES GRAUPEL NOT HAIL
-
 ! HM MODIFY FOR WRFV3.1
 !            IF (IHAIL.EQ.0) THEN
             IF (QNI3D(K).GE.0.1E-3.AND.QR3D(K).GE.0.1E-3) THEN
@@ -2530,7 +2571,6 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! HM ADD THRESHOLD SNOW MIXING RATIO FOR RIME-SPLINTERING
 ! TO LIMIT RIME-SPLINTERING IN STRATIFORM CLOUDS
 
-! ONLY CALCULATE FOR GRAUPEL NOT HAIL
 !         IF (IHAIL.EQ.0) THEN
 ! v1.4
          IF (QG3D(K).GE.0.1E-3) THEN
@@ -2584,10 +2624,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 !         END IF
 
 !........................................................................
-! CONVERSION OF RIMED CLOUD WATER ONTO SNOW TO GRAUPEL
-! ASSUME CONVERTED SNOW FORMS GRAUPEL NOT HAIL
-! HAIL ASSUMED TO ONLY FORM BY FREEZING OF RAIN
-! OR COLLISIONS OF RAIN WITH CLOUD ICE
+! CONVERSION OF RIMED CLOUD WATER ONTO SNOW TO GRAUPEL/HAIL
 
 !           IF (IHAIL.EQ.0) THEN
 	   IF (PSACWS(K).GT.0.) THEN
@@ -2645,10 +2682,16 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
          IF (T3D(K).LT.269.15.AND.QR3D(K).GE.QSMALL) THEN
 
 ! IMMERSION FREEZING (BIGG 1953)
-            MNUCCR(K) = CONS20*NR3D(K)*EXP(AIMM*(273.15-T3D(K)))/LAMR(K)**3 &
+!            MNUCCR(K) = CONS20*NR3D(K)*EXP(AIMM*(273.15-T3D(K)))/LAMR(K)**3 &
+!                 /LAMR(K)**3
+
+!            NNUCCR(K) = PI*NR3D(K)*BIMM*EXP(AIMM*(273.15-T3D(K)))/LAMR(K)**3
+
+! hm fix 7/15/13 for consistency w/ original formula
+            MNUCCR(K) = CONS20*NR3D(K)*(EXP(AIMM*(273.15-T3D(K)))-1.)/LAMR(K)**3 &
                  /LAMR(K)**3
 
-            NNUCCR(K) = PI*NR3D(K)*BIMM*EXP(AIMM*(273.15-T3D(K)))/LAMR(K)**3
+            NNUCCR(K) = PI*NR3D(K)*BIMM*(EXP(AIMM*(273.15-T3D(K)))-1.)/LAMR(K)**3
 
 ! PREVENT DIVERGENCE BETWEEN MIXING RATIO AND NUMBER CONC
             NNUCCR(K) = MIN(NNUCCR(K),NR3D(K)/DT)
@@ -2929,8 +2972,6 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
             PRACG(K) = 0.
             PSACR(K) = 0.
 	    PSACWG(K) = 0.
-	    PGSACW(K) = 0.
-            PGRACS(K) = 0.
 	    PRDG(K) = 0.
 	    EPRDG(K) = 0.
             EVPMG(K) = 0.
@@ -2945,6 +2986,13 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! fix 053011
             PIACRS(K)=PIACRS(K)+PIACR(K)
             PIACR(K) = 0.
+! fix 070713
+	    PRACIS(K)=PRACIS(K)+PRACI(K)
+	    PRACI(K) = 0.
+	    PSACWS(K)=PSACWS(K)+PGSACW(K)
+	    PGSACW(K) = 0.
+	    PRACS(K)=PRACS(K)+PGRACS(K)
+	    PGRACS(K) = 0.
        END IF
 
 ! CONSERVATION OF QC
@@ -3190,6 +3238,9 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 ! INITIALIZE PRECIP AND SNOW RATES
       PRECRT = 0.
       SNOWRT = 0.
+! hm added 7/13/13
+      SNOWPRT = 0.
+      GRPLPRT = 0.
 
 ! IF THERE ARE NO HYDROMETEORS, THEN SKIP TO END OF SUBROUTINE
 
@@ -3511,6 +3562,9 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
         PRECRT = PRECRT+(FALOUTR(KTS)+FALOUTC(KTS)+FALOUTS(KTS)+FALOUTI(KTS)+FALOUTG(KTS))  &
                      *DT/NSTEP
         SNOWRT = SNOWRT+(FALOUTS(KTS)+FALOUTI(KTS)+FALOUTG(KTS))*DT/NSTEP
+! hm added 7/13/13
+        SNOWPRT = SNOWPRT+(FALOUTI(KTS)+FALOUTS(KTS))*DT/NSTEP
+        GRPLPRT = GRPLPRT+(FALOUTG(KTS))*DT/NSTEP
 
       END DO
 

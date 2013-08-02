@@ -697,6 +697,10 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      W=w                                 &  !*
                     ,RAINNC=RAINNC                       &  !*
                     ,RAINNCV=RAINNCV                     &  !*
+                    ,SNOWNC=SNOWNC                       &  !*
+                    ,SNOWNCV=SNOWNCV                     &  !*
+                    ,GRAUPELNC=GRAUPELNC                 &  !*
+                    ,GRAUPELNCV=GRAUPELNCV               &  !*
                     ,SR=SR                               &  !* !hm
                     ,REFL_10CM=refl_10cm                 &  ! added for radar reflectivity
                     ,diagflag=diagflag                   &  ! added for radar reflectivity

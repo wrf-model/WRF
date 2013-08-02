@@ -449,12 +449,12 @@ CONTAINS
                  ivolcano=0
             elseif(julday.eq.begday)then
                if(beghr.gt.int(gmtp))then
-                 write(message,'("before volcano stuff at gmtp = ",i8)') gmtp
+                 write(message,'("before volcano stuff at gmtp = ",i8)') int(gmtp)
                  call wrf_debug(15,message)
                  ivolcano=0
                elseif(beghr.eq.int(gmtp))then
                   if(begmin.gt.gmtm)then
-                     write(message,'("before volcano stuff at gmtp,begmin = ",2i8)') gmtp,begmin
+                     write(message,'("before volcano stuff at gmtp,begmin = ",2i8)') int(gmtp),int(begmin)
                      call wrf_debug(15,message)
                      ivolcano=0
                   endif
@@ -466,12 +466,12 @@ CONTAINS
                  ivolcano=0
             elseif(julday.eq.endday)then
                if(endhr.lt.int(gmtp))then
-                 write(message,'("after volcano stuff at gmtp = ",i8)') gmtp
+                 write(message,'("after volcano stuff at gmtp = ",i8)') int(gmtp)
                  call wrf_debug(15,message)
                  ivolcano=0
                elseif(endhr.eq.int(gmtp))then
                   if(endmin.lt.gmtm)then
-                     write(message,'("after volcano stuff at gmtm,endmin = ",2i8)') gmtm,endmin
+                     write(message,'("after volcano stuff at gmtm,endmin = ",2i8)') int(gmtm),int(endmin)
                      call wrf_debug(15,message)
                      ivolcano=0
                   endif

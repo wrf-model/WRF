@@ -89,11 +89,11 @@
    USE module_configure
    USE module_state_description
    USE module_data_mosaic_therm, only: nbin_a, nbin_a_maxd
-   USE module_data_mosaic_asect
-   USE module_data_mosaic_other
+!  USE module_data_mosaic_asect
+   USE module_data_mosaic_other, only: kmaxd, nsubareas
    USE module_fastj_mie
 !  USE module_mosaic_therm, only: aerosol_optical_properties
-   USE module_mosaic_driver, only: mapaer_tofrom_host
+!  USE module_mosaic_driver, only: mapaer_tofrom_host
    USE module_fastj_data, only:  nb, nc
 
    implicit none
@@ -237,7 +237,8 @@
            CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
            CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, &
            CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
-           MOZART_MOSAIC_4BIN_VBS0_KPP )
+           MOZART_MOSAIC_4BIN_VBS0_KPP, CRI_MOSAIC_8BIN_AQ_KPP, &
+           CRI_MOSAIC_4BIN_AQ_KPP )
        processingAerosols = .true.
     case default
        processingAerosols = .false.

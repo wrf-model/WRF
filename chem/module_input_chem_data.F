@@ -73,7 +73,7 @@ MODULE module_input_chem_data
     INTEGER :: kx              ! number of vertical levels in temp profile        
     INTEGER :: kxm1
 
-    PARAMETER( kx=16, kxm1=kx-1, logg=200, lo=34) ! Changed value of logg from 100 to 200 for additional gas species
+    PARAMETER( kx=16, kxm1=kx-1, logg=350, lo=34) ! DL (6/2/2013) Changed value of logg from 200 to 350 for additional gas species
    
     INTEGER, DIMENSION(logg)                     :: iref
 
@@ -378,6 +378,9 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
      call wrf_debug("setup_profile_maps: nothing done for volcanic ash")
   case (MOZART_KPP)
      call wrf_debug("setup_profile_maps: nothing done for mozart_kpp")
+
+  case (CRIMECH_KPP, CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
+      call wrf_debug("setup_profile_maps: nothing done for crimech")
 
   case (MOZCART_KPP)
      call wrf_debug("setup_profile_maps: nothing done for mozcart_kpp")
@@ -2594,6 +2597,9 @@ END SUBROUTINE bdy_chem_value_ghg
         get_last_gas = 0
      case (MOZART_KPP)
         get_last_gas = p_meko2
+
+     case (CRIMECH_KPP, CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
+        GET_LAST_GAS = p_ic3h7no3
 
      case (MOZCART_KPP)
         get_last_gas = p_meko2

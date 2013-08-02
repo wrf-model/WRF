@@ -40,12 +40,13 @@
 ! mosaic-specific parameters
 ! Alma added 2 smp species - just before the traditional ant1_c 
 ! SOA is treated using a simplified approach for anthropogenic and biomass burning species based on Hodzic and Jimenez, GMD, 2011
-      integer ngas_ioa, ngas_soa, ngas_volatile,	&
+      integer ngas_ioa, ngas_soa, ngas_volatile, ngas_het,	&
               naer, naercomp, nelectrolyte, nsalt,	&
               nsoluble, ncation, nanion
       parameter(ngas_ioa = 5)	! inorganic volatile aerosol species that have a gaseous counterpart
       parameter(ngas_soa = 68+2+16)	! volatile soa species that have a gaseous counterpart
       parameter(ngas_volatile = ngas_ioa + ngas_soa)
+      parameter(ngas_het = 2)   ! gas species only involved in heterogeneous reactions ! DL - 9/9/2011
       parameter(naer = 11+68+2+16)	! num of chemical species per bin (inorg + oc + bc + oin + soa)
       parameter(naercomp = 26+68+2+16)	! num of electrolytes + oc, bc, oin, & soa
       parameter(nelectrolyte = 22) ! num of electrolytes
@@ -99,7 +100,7 @@
 ! gas
       integer, save ::   &
        ih2so4_g,     ihno3_g,      ihcl_g,      inh3_g,   &
-       imsa_g
+       imsa_g, in2o5_g, iclno2_g
 
       integer, save ::   &
       ipcg1_b_c_g,ipcg2_b_c_g,ipcg3_b_c_g,ipcg4_b_c_g, &
@@ -222,7 +223,8 @@
 	jhyst_leg(nbin_a_maxd),		&  ! hysteresis leg: jhyst_up, jhyst_lo
 	iprint_input,			&  ! flag: mon, moff
 	lunerr_aer,			&  ! 
-	ncorecnt_aer			   !
+	ncorecnt_aer,       &  !
+	n2o5_flag				! flag to control N2O5 het chem (0=off, 1=no Cl pathway, 2=full)
 
 ! NOTE: Some of the following informational output defaults are overridden in 
 !       module_mosaic_driver.F based on the internal MOSAIC debug_level setting.
@@ -273,14 +275,14 @@
       	electrolyte(nelectrolyte,3,nbin_a_maxd),   &  ! nmol/m^3
       	electrolyte_sum(nelectrolyte,nbin_a_maxd), &  ! nmol/m^3
       	epercent(nelectrolyte,3,nbin_a_maxd),	   &  ! %
-      	gas(ngas_volatile),		&  ! nmol/m^3
+      	gas(ngas_volatile+ngas_het),		&  ! nmol/m^3
       	ah2o,				&  ! -
       	ah2o_a(nbin_a_maxd),		&  ! -
       	dpmv(nbin_a_maxd),		&  ! 
       	volume_a(nbin_a_maxd),		&  ! 
 	volume_bin(nbin_a_maxd),	&  ! dry volume of one particle
       	kelvin(nbin_a_maxd),		&  ! kelvin factor
-	kel(ngas_volatile,nbin_a_maxd),	&  ! kelvin factor for condensing species
+	kel(ngas_volatile+ngas_het,nbin_a_maxd),	&  ! kelvin factor for condensing species
 	kelvin_nh4no3,			&  ! -
 	kelvin_nh4cl,			&  ! - 
 	total_species(ngas_volatile)	   ! 
@@ -310,7 +312,7 @@
 	x_soa(naer),				&  ! soa mole fraction
 	sfc_a(ngas_volatile),			&  ! nmol/m^3
 	Heff(ngas_volatile,nbin_a_maxd),	&  ! 
-	kg(ngas_volatile,nbin_a_maxd),		&  ! 1/s
+	kg(ngas_volatile+ngas_het,nbin_a_maxd),		&  ! 1/s
         fraceq(ngas_volatile,nbin_a_maxd),      &  ! 1/s
 	df_gas_s(ngas_volatile,nbin_a_maxd),	&  ! nmol/m^3 (g-g*) = driving force)
 	df_gas_l(ngas_volatile,nbin_a_maxd),	&  ! nmol/m^3 (g-g*) = driving force)
@@ -323,6 +325,7 @@
 	sumkg_nh3,				&  ! 1/s
 	sumkg_hno3,				&  ! 1/s
 	sumkg_hcl,				&  ! 1/s
+	sumkg_n2o5,				&  ! 1/s
 	delta_nh3_max(nbin_a_maxd),		&  ! nmol/m^3
 	delta_hno3_max(nbin_a_maxd),		&  ! nmol/m^3
 	delta_hcl_max(nbin_a_maxd),		&  ! nmol/m^3
@@ -387,7 +390,7 @@
       character(len=8), save ::		&
 	ename(nelectrolyte),		&  ! electrolyte names
 	aer_name(naer),			&  ! generic aerosol species name
-	gas_name(ngas_volatile)		   ! gas species name
+	gas_name(ngas_volatile+ngas_het)		   ! gas species name
 
       character(len=6), save ::		&
 	phasestate(4)
@@ -411,7 +414,7 @@
 	dens_electrolyte(nelectrolyte),	&  ! g/cc
 	dens_aer_mac(naer),		&  ! g/cc
 	dens_comp_a(naercomp),		&  ! g/cc (density of compounds)
-	partial_molar_vol(ngas_volatile), & ! cc/mol
+	partial_molar_vol(ngas_volatile+ngas_het), & ! cc/mol
 	sigma_water,			&  ! water surface tension (n/m)
 	sigma_soln(nbin_a_maxd),	&  ! solution surface tension (n/m)
 	keq_gl(nrxn_aer_gl),		&  ! gas-liq eqblm const
@@ -422,8 +425,8 @@
 	kp_nh4no3, 			&  !
 	kp_nh4no3_0, 			&  !
 	kp_nh4cl,	                &  !
-	kp_nh4cl_0			   !
-
+	kp_nh4cl_0,			&   !
+	frac_n2o5_h2o(nbin_a_maxd)	! fraction of N2O5 which reacts with H2O after heterogeneous uptake
 
       complex, save ::			&
       		ref_index_a(naercomp),	&  ! refractive index of compounds

@@ -481,6 +481,9 @@
      CASE (RADM2_KPP)
        CALL wrf_debug(15,'calling radm2_kpp from chem_driver')
        haveaer = .false.
+     CASE (CRIMECH_KPP)
+       CALL wrf_debug(15,'calling crimech_kpp from chem_driver')
+       haveaer = .false.
      CASE (RADM2SORG)
        CALL wrf_debug(15,'calling radm2sorg aerosols driver from chem_driver')
        haveaer = .true.
@@ -582,6 +585,12 @@
        haveaer = .true.
      CASE (CBMZ_MOSAIC_DMS_8BIN_AQ)
        CALL wrf_debug(15,'calling cbmz_mosaic_dms_8bin_aq aerosols driver from chem_driver')
+       haveaer = .true.
+     CASE (CRI_MOSAIC_8BIN_AQ_KPP)
+       CALL wrf_debug(15,'calling cri_mosaic_8bin_aq_kpp aerosols driver from chem_driver')
+       haveaer = .true.
+     CASE (CRI_MOSAIC_4BIN_AQ_KPP)
+       CALL wrf_debug(15,'calling cri_mosaic_4bin_aq_kpp aerosols driver from chem_driver')
        haveaer = .true.
      CASE (MOZART_KPP)
        CALL wrf_debug(15,'calling mozart driver from chem_driver')
@@ -943,6 +952,9 @@
               grid%ebio_cco_oh, grid%ebio_rco_oh,                                         &    
               grid%clayfrac,grid%sandfrac,grid%dust_alpha,grid%dust_gamma,grid%dust_smtune,&
               grid%snowh,grid%zs,                                                          &
+              grid%ebio_c5h8,grid%ebio_apinene,grid%ebio_bpinene,grid%ebio_toluene,        &
+              grid%ebio_ch3cho,grid%ebio_ch3co2h,grid%ebio_tbut2ene,                      &
+              grid%ebio_c2h5cho,grid%ebio_nc4h10,					                      &
 #if (NMM_CORE == 1)
               grid%T2,grid%RSWIN,                                                         &
 #endif

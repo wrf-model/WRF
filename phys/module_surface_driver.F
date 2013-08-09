@@ -1413,6 +1413,7 @@ CONTAINS
             (sf_sfclay_physics .EQ. SFCLAYSCHEME ) .OR. &
             (sf_sfclay_physics .EQ. PXSFCSCHEME  ) .OR. &
             (sf_sfclay_physics .EQ. MYJSFCSCHEME ) .OR. &
+            (sf_sfclay_physics .EQ. QNSESFCSCHEME ) .OR. &  !emt
 #if (EM_CORE==1)
             (sf_sfclay_physics .EQ. MYNNSFCSCHEME ) .OR. &
 #endif
@@ -1770,6 +1771,30 @@ CONTAINS
        IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr) .AND.    &
                                                       .TRUE. ) THEN
             CALL wrf_debug(100,'in QNSESFC')
+             IF ( FRACTIONAL_SEAICE == 1 ) THEN
+           CALL QNSESFC_SEAICE_WRAPPER(itimestep,ht,dz8w,             &
+                p_phy,p8w,th_phy,t_phy,                              &
+                qv_curr,qc_curr,                                     &
+                u_phy,v_phy,tke_pbl,                                 &
+                tsk,qsfc,thz0,qz0,uz0,vz0,                           &
+                lowlyr,                                              &
+                xland,                                               &
+                TICE2TSK_IF2COLD,                                    & ! Extra for wrapper.
+                XICE_THRESHOLD,                                      & ! Extra for wrapper.
+                XICE, SST,                                           & ! Extra for wrapper.
+                CHS_SEA, CHS2_SEA, CQS2_SEA, CPM_SEA,            &
+                FLHC_SEA, FLQC_SEA, QSFC_SEA, &
+                QGH_SEA, QZ0_SEA, HFX_SEA, QFX_SEA, LH_SEA,         &
+                TSK_SEA,                                             &
+                ust,znt,z0,pblh,mavail,rmol,                         &
+                akhs,akms,                                           &
+                br,                                                 &
+                chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
+                u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,               &
+                ids,ide, jds,jde, kds,kde,                           &
+                ims,ime, jms,jme, kms,kme,                           &
+                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,SCM_FORCE_FLUX    )
+           ELSE
             CALL QNSESFC(itimestep,ht,dz8w,                         &
               p_phy,p8w,th_phy,t_phy,                              &
               qv_curr,qc_curr,                                     &
@@ -1781,12 +1806,23 @@ CONTAINS
               akhs,akms,                                           &
               br,                                                 &
               chs,chs2,cqs2,hfx,qfx,lh,flhc,flqc,qgh,cpm,ct,       &
-              u10,v10,tshltr,th10,qshltr,q10,pshltr,               &
+              u10,v10,t2,th2,tshltr,th10,q2,qshltr,q10,pshltr,               &
               ids,ide, jds,jde, kds,kde,                           &
               ims,ime, jms,jme, kms,kme,                           &
               i_start(ij),i_end(ij), j_start(ij),j_end(ij),     &
               kts,kte,scm_force_flux    )
-       ELSE
+#if ( EM_CORE==1)
+         DO j = j_start(ij),j_end(ij)
+            DO i = i_start(ij),i_end(ij)
+               wspd(i,j) = MAX(SQRT(u_phy(i,kts,j)**2+v_phy(i,kts,j)**2),0.001)
+               ch(i,j) = chs (i,j)
+!!           ch(i,j) = flhc(i,j)/( cpm(i,j)*rho(i,kts,j) )
+            END DO
+         END DO
+#endif         
+
+        ENDIF
+        ELSE
          CALL wrf_error_fatal('Lacking arguments for QNSESFC in surface driver')
        ENDIF
 
@@ -2217,6 +2253,9 @@ CONTAINS
                         qsfc(i,j) = ( qsfc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qsfc_sea(i,j) )
                         qgh(i,j)  = ( qgh(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qgh_sea(i,j)  )
                         qz0(i,j)  = ( qz0(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qz0_sea(i,j)  )
+                                                            !  print *,'hfx =',hfx_sea(170,20)
+                                                            !   print *,'XICE =',XICE(170,20)
+                                                            !    print *,'QSFC =',QSFC(170,20)
                         hfx(i,j)  = ( hfx(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * hfx_sea(i,j)  )
                         qfx(i,j)  = ( qfx(i,j)  * XICE(i,j) ) + ( (1.0-XICE(i,j)) * qfx_sea(i,j)  )
                         lh(i,j)   = ( lh(i,j)   * XICE(i,j) ) + ( (1.0-XICE(i,j)) * lh_sea(i,j)   )
@@ -3627,6 +3666,365 @@ CONTAINS
      ENDDO
 
    END SUBROUTINE myjsfc_seaice_wrapper
+
+!------------------------------------------------------------------------
+
+ subroutine qnsesfc_seaice_wrapper(ITIMESTEP,HT,DZ,      &
+        &     PMID,PINT,TH,T,QV,QC,U,V,Q2,                &
+        &     TSK,QSFC,THZ0,QZ0,UZ0,VZ0,                  &
+        &     LOWLYR,XLAND,       &
+        &     TICE2TSK_IF2COLD,                           &  ! Extra for wrapper
+        &     XICE_THRESHOLD,                             &  ! Extra for wrapper
+        &     XICE,SST,                                   &  ! Extra for wrapper
+        &     CHS_SEA, CHS2_SEA, CQS2_SEA, CPM_SEA,       &  ! Extra for wrapper
+        &     FLHC_SEA, FLQC_SEA, QSFC_SEA,               &  ! Extra for wrapper
+        &     QGH_SEA, QZ0_SEA, HFX_SEA, QFX_SEA,         &  ! Extra for wrapper
+        &     FLX_LH_SEA, TSK_SEA,                        &  ! Extra for wrapper
+        &     USTAR,ZNT,Z0BASE,PBLH,MAVAIL,RMOL,          &
+        &     AKHS,AKMS,                                  &
+        &     BR,                                         &
+        &     CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC,     &
+        &     QGH,CPM,CT,                                 &
+        &     U10,V10,T02,TH02,TSHLTR,TH10,Q02,QSHLTR,Q10,PSHLTR,          &
+        &     IDS,IDE,JDS,JDE,KDS,KDE,                        &
+        &     IMS,IME,JMS,JME,KMS,KME,                        &
+        &     ITS,ITE,JTS,JTE,KTS,KTE,SCM_FORCE_FLUX )
+!     USE module_model_constants
+     USE module_sf_qnsesfc
+
+     IMPLICIT NONE
+
+     INTEGER,                                INTENT(IN)    :: ITIMESTEP
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)    :: HT
+     REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN)    :: DZ
+     REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN)    :: PMID
+     REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN)    :: PINT
+     REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN)    :: TH
+     REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN)    :: T
+     REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN)    :: QV
+     REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN)    :: QC
+     REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN)    :: U
+     REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN)    :: V
+     REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN)    :: Q2   ! Q2 is TKE?
+
+     ! REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)    :: TSK
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(INOUT)    :: TSK
+
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(INOUT) :: QSFC
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(INOUT) :: THZ0
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(INOUT) :: QZ0
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(INOUT) :: UZ0
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(INOUT) :: VZ0
+     INTEGER,DIMENSION(IMS:IME,JMS:JME),     INTENT(IN)    :: LOWLYR
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)    :: XLAND
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)    :: XICE       ! Extra for wrapper
+     ! REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)    :: SST        ! Extra for wrapper
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(INOUT) :: SST        ! Extra for wrapper
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: BR
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: CHS_SEA    ! Extra for wrapper
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: CHS2_SEA   ! Extra for wrapper
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: CQS2_SEA   ! Extra for wrapper
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: CPM_SEA    ! Extra for wrapper
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: QZ0_SEA   ! Extra for wrapper
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: QSFC_SEA   ! Extra for wrapper
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: QGH_SEA   ! Extra for wrapper
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: FLHC_SEA  ! Extra for wrapper
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: FLQC_SEA  ! Extra for wrapper
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: HFX_SEA    ! Extra for wrapper
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: QFX_SEA    ! Extra for wrapper
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: FLX_LH_SEA ! Extra for wrapper
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: TSK_SEA    ! Extra for wrapper
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(INOUT) :: USTAR
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(INOUT) :: ZNT
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)    :: Z0BASE
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(INOUT) :: PBLH
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(IN)    :: MAVAIL
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(INOUT) :: RMOL
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(INOUT) :: AKHS
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(INOUT) :: AKMS
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: CHS
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: CHS2
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: CQS2
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: HFX
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: QFX
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: FLX_LH
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: FLHC
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: FLQC
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: QGH
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: CPM
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: CT
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: U10
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: V10
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: T02
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: TH02
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: TSHLTR
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: TH10
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: Q02
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: QSHLTR
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: Q10
+     REAL,DIMENSION(IMS:IME,JMS:JME),        INTENT(OUT)   :: PSHLTR
+     REAL,                                   INTENT(IN)    :: XICE_THRESHOLD
+     LOGICAL,                                INTENT(IN)    :: TICE2TSK_IF2COLD
+     INTEGER,                                INTENT(IN)    :: SCM_FORCE_FLUX
+     INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE,       &
+          &                IMS,IME,JMS,JME,KMS,KME,       &
+          &                ITS,ITE,JTS,JTE,KTS,KTE
+
+
+     ! Local
+     INTEGER :: i
+     INTEGER :: j
+     REAL, DIMENSION( ims:ime, jms:jme ) :: ct_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: u10_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: v10_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: t02_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: th02_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: tshltr_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: pshltr_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: qshltr_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: th10_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: q02_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: q10_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: thz0_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: uz0_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: vz0_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: ustar_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: pblh_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: rmol_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: akhs_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: akms_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: xland_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: mavail_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: znt_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: z0base_sea
+     REAL, DIMENSION( ims:ime, jms:jme ) :: br_sea
+
+     REAL, DIMENSION( ims:ime, jms:jme ) :: QSFC_HOLD
+     REAL, DIMENSION( ims:ime, jms:jme ) :: QZ0_HOLD
+     REAL, DIMENSION( ims:ime, jms:jme ) :: THZ0_HOLD
+     REAL, DIMENSION( ims:ime, jms:jme ) :: UZ0_HOLD
+     REAL, DIMENSION( ims:ime, jms:jme ) :: VZ0_HOLD
+     REAL, DIMENSION( ims:ime, jms:jme ) :: USTAR_HOLD
+     REAL, DIMENSION( ims:ime, jms:jme ) :: ZNT_HOLD
+     REAL, DIMENSION( ims:ime, jms:jme ) :: PBLH_HOLD
+     REAL, DIMENSION( ims:ime, jms:jme ) :: RMOL_HOLD
+     REAL, DIMENSION( ims:ime, jms:jme ) :: AKHS_HOLD
+     REAL, DIMENSION( ims:ime, jms:jme ) :: AKMS_HOLD
+     REAL, DIMENSION( ims:ime, jms:jme ) :: TSK_LOCAL
+     REAL :: PSFC
+
+     ! Set things up for the frozen-surface call to qnsesfc
+
+     ! We want a TSK valid for the ice-covered regions of the grid cell.
+
+     CALL get_local_ice_tsk( ims, ime, jms, jme, its, ite, jts, jte,  &
+                             itimestep, .true., tice2tsk_if2cold,     &
+                             XICE, XICE_THRESHOLD,                    &
+                             SST, TSK, TSK_SEA, TSK_LOCAL )
+     DO j = JTS , JTE
+        DO i = ITS , ITE
+           TSK(i,j) = TSK_LOCAL(i,j)
+           IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .and. ( XICE(i,j) .LE. 1.0 ) ) THEN
+
+              ! Over fractional sea-ice points, back out an ice portion of QSFC as well.
+              ! QSFC_SEA calculation as done in qnsesfc for open water points
+              PSFC = PINT(I,LOWLYR(I,J),J)
+              QSFC_SEA(i,j) = PQ0SEA/PSFC*EXP(A2S*(TSK(i,j)-A3S)/(TSK(i,j)-A4S))
+              QSFC(i,j) = QSFC(i,j) - (1.0-XICE(i,j)) * QSFC_SEA(i,j) / XICE(i,j)
+!
+              HFX_SEA(i,j)  = HFX(i,j)
+              QFX_SEA(i,j)  = QFX(i,j)
+              FLX_LH_SEA(i,j)   = FLX_LH(i,j)
+           ENDIF
+        ENDDO
+     ENDDO
+
+!
+! frozen ocean call for sea ice points
+!
+
+! Strictly INTENT(IN) to QNSESFC, should be unchanged by call.
+
+     ! DZ
+     ! HT
+     ! LOWLYR
+     ! MAVAIL
+     ! PINT
+     ! PMID
+     ! QC
+     ! QV
+     ! Q2
+     ! T
+     ! TH
+     ! TSK
+     ! U
+     ! V
+     ! XLAND
+     ! Z0BASE
+
+! INTENT (INOUT),  updated by QNSESFC.  Values will need to be saved before the first call to QNSESFC, so that
+! the second call to QNSESFC does not double-count the effect.
+
+     ! Save INTENT(INOUT) variables before the frozen-water/true-land call to QNSESFC:
+     QSFC_HOLD  = QSFC
+     QZ0_HOLD   = QZ0
+     THZ0_HOLD  = THZ0
+     UZ0_HOLD   = UZ0
+     VZ0_HOLD   = VZ0
+     USTAR_HOLD = USTAR
+     ZNT_HOLD   = ZNT
+     PBLH_HOLD  = PBLH
+     RMOL_HOLD  = RMOL
+     AKHS_HOLD  = AKHS
+     AKMS_HOLD  = AKMS
+
+! Strictly INTENT(OUT):  Set by QNSESFC
+
+     ! CHS
+     ! CHS2
+     ! CPM
+     ! CQS2
+     ! CT
+     ! FLHC
+     ! FLQC
+     ! FLX_LH
+     ! HFX
+     ! PSHLTR
+     ! QFX
+     ! QGH
+     ! QSHLTR
+     ! Q02
+     ! Q10
+     ! TH02
+     ! TH10
+     ! TSHLTR
+     ! T02
+     ! U10
+     ! V10
+
+     ! Frozen-water/true-land call.
+     CALL QNSESFC ( ITIMESTEP, HT, DZ,                              &  ! I,I,I,
+          &        PMID, PINT, TH, T, QV, QC, U, V, Q2,            &  ! I,I,I,I,I,I,I,I,I,
+          &        TSK, QSFC, THZ0, QZ0, UZ0, VZ0,                 &  ! I,IO,IO,IO,IO,IO,
+          &        LOWLYR, XLAND,      &  ! I,I
+          &        USTAR, ZNT, Z0BASE, PBLH, MAVAIL, RMOL,         &  ! IO,IO,I,IO,I,IO,
+          &        AKHS, AKMS,                                     &  ! IO,IO,
+          &        BR,                                             &  ! O
+          &        CHS, CHS2, CQS2, HFX, QFX, FLX_LH, FLHC, FLQC,  &  ! O,O,O,0,0,0,0,0,
+          &        QGH, CPM, CT, U10, V10,T02,TH02,                    &  ! 0,0,0,0,0,0,0
+          &        TSHLTR, TH10, Q02,                    &  ! 0,0,0
+          &        QSHLTR, Q10, PSHLTR,                            &  ! 0,0,0,
+          &        ids,ide, jds,jde, kds,kde,                      &
+          &        ims,ime, jms,jme, kms,kme,                      &
+          &        its,ite, jts,jte, kts,kte, SCM_FORCE_FLUX    )
+
+     ! Set up things for the open ocean call.
+     DO j = JTS, JTE
+        DO i = ITS, ITE
+           IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
+              XLAND_SEA(i,j)=2.
+              MAVAIL_SEA(I,J)  = 1.
+              ZNT_SEA(I,J) = 0.0001
+              Z0BASE_SEA(I,J) = ZNT_SEA(I,J)
+              IF ( SST(i,j) .LT. 271.4 ) THEN
+                 SST(i,j) = 271.4
+              ENDIF
+              TSK_SEA(i,j) = SST(i,j)
+              PSFC = PINT(I,LOWLYR(I,J),J)
+              QSFC_SEA(I,J) = PQ0SEA/PSFC*EXP(A2S*(TSK_SEA(i,j)-A3S)/(TSK_SEA(i,j)-A4S))
+           ELSE
+              ! This should be a land point or a true open water point
+              XLAND_SEA(i,j)=xland(i,j)
+              MAVAIL_SEA(i,j) = mavail(i,j)
+              ZNT_SEA(I,J)    = ZNT_HOLD(I,J)
+              Z0BASE_SEA(I,J) = Z0BASE(I,J)
+              TSK_SEA(i,j)  = TSK(i,j)
+              QSFC_SEA(i,j) = QSFC_HOLD(i,j)
+           ENDIF
+        ENDDO
+     ENDDO
+
+     QZ0_SEA  = QZ0_HOLD
+     THZ0_SEA = THZ0_HOLD
+     UZ0_SEA  = UZ0_HOLD
+     VZ0_SEA  = VZ0_HOLD
+     USTAR_SEA = USTAR_HOLD
+     PBLH_SEA = PBLH_HOLD
+     RMOL_SEA = RMOL_HOLD
+     AKHS_SEA = AKHS_HOLD
+     AKMS_SEA = AKMS_HOLD
+
+!
+! open water call
+!
+     CALL QNSESFC ( ITIMESTEP, HT, DZ,                                                          & ! I,I,I,
+          &        PMID, PINT, TH, T, QV, QC, U, V, Q2,                                        & ! I,I,I,I,I,I,I,I,I,
+          &        TSK_SEA, QSFC_SEA, THZ0_SEA, QZ0_SEA, UZ0_SEA, VZ0_SEA,                     & ! I,IO,IO,IO,IO,IO,
+          &        LOWLYR, XLAND_SEA,                             & ! I,I,
+          &        USTAR_SEA, ZNT_SEA, Z0BASE_SEA, PBLH_SEA, MAVAIL_SEA, RMOL_SEA,             & ! IO,IO,I,IO,I,IO,
+          &        AKHS_SEA, AKMS_SEA,                                                         & ! IO,IO,
+          &        BR_SEA,                                                                     & ! dummy space holder
+          &        CHS_SEA, CHS2_SEA, CQS2_SEA, HFX_SEA, QFX_SEA, FLX_LH_SEA, FLHC_SEA,        & ! 0,0,0,0,0,0,0,
+          &        FLQC_SEA, QGH_SEA, CPM_SEA, CT_SEA, U10_SEA, V10_SEA,T02_SEA,TH02_SEA,   & ! 0,0,0,0,0,0,0,0
+          &        TSHLTR_SEA, TH10_SEA, Q02_SEA, QSHLTR_SEA, Q10_SEA, PSHLTR_SEA,             & ! 0,0,0,0,0,0
+          &        ids,ide, jds,jde, kds,kde,                                                  &
+          &        ims,ime, jms,jme, kms,kme,                                                  &
+          &        its,ite, jts,jte, kts,kte, SCM_FORCE_FLUX    )
+
+!
+! Scale the appropriate terms between open-water values and ice-covered values
+         
+
+     DO j = JTS, JTE
+        DO i = ITS, ITE
+           IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .and. ( XICE(i,j) .LE. 1.0 ) ) THEN
+              ! Over sea-ice points, blend the results.
+
+              ! INTENT(OUT) from QNSESFC
+              ! CHS  wait
+              ! CHS2 wait
+              ! CPM  wait
+              ! CQS2 wait
+              CT(i,j)     = CT(i,j)     * XICE(i,j) + (1.0-XICE(i,j)) * CT_SEA (i,j)
+              ! FLHC(i,j)   = FLHC(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * FLHC_SEA (i,j)
+              ! FLQC(i,j)   = FLQC(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * FLQC_SEA (i,j)
+              ! FLX_LH wait
+              ! HFX  wait
+              PSHLTR(i,j) = PSHLTR(i,j) * XICE(i,j) + (1.0-XICE(i,j)) * PSHLTR_SEA(i,j)
+              ! QFX  wait
+              ! QGH  wait
+              QSHLTR(i,j) = QSHLTR(i,j) * XICE(i,j) + (1.0-XICE(i,j)) * QSHLTR_SEA(i,j)
+              Q10(i,j)    = Q10(i,j)    * XICE(i,j) + (1.0-XICE(i,j)) * Q10_SEA(i,j)
+              Q02(i,j)    = Q02(i,j)    * XICE(i,j) + (1.0-XICE(i,j)) * Q02_SEA(i,j)
+              TH10(i,j)   = TH10(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * TH10_SEA(i,j)
+               TH02(i,j)   = TH02(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * TH02_SEA(i,j)
+              TSHLTR(i,j) = TSHLTR(i,j) * XICE(i,j) + (1.0-XICE(i,j)) * TSHLTR_SEA(i,j)
+              T02(i,j)    = T02(i,j)    * XICE(i,j) + (1.0-XICE(i,j)) * T02_SEA(i,j)
+              U10(i,j)    = U10(i,j)    * XICE(i,j) + (1.0-XICE(i,j)) * U10_SEA(i,j)
+              V10(i,j)    = V10(i,j)    * XICE(i,j) + (1.0-XICE(i,j)) * V10_SEA(i,j)
+
+              ! INTENT(INOUT):  updated by QNSESFC
+              ! QSFC:  wait
+              THZ0(i,j)   = THZ0(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * THZ0_SEA(i,j)
+              ! qz0 wait
+              UZ0(i,j)    = UZ0(i,j)    * XICE(i,j) + (1.0-XICE(i,j)) * UZ0_SEA(i,j)
+              VZ0(i,j)    = VZ0(i,j)    * XICE(i,j) + (1.0-XICE(i,j)) * VZ0_SEA(i,j)
+              USTAR(i,j)  = USTAR(i,j)  * XICE(i,j) + (1.0-XICE(i,j)) * USTAR_SEA(i,j)
+              ! ZNT wait
+              PBLH(i,j)   = PBLH(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * PBLH_SEA(i,j)
+              RMOL(i,j)   = RMOL(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * RMOL_SEA(i,j)
+              AKHS(i,j)   = AKHS(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * AKHS_SEA(i,j)
+              AKMS(i,j)   = AKMS(i,j)   * XICE(i,j) + (1.0-XICE(i,j)) * AKMS_SEA(i,j)
+
+              !         tsk(i,j) = tsk(i,j)*XICE(i,j) + (1.0-XICE(i,j))*TSK_SEA(i,j)
+           ELSE
+              ! We're not over sea ice.  Take the results from the first call.
+           ENDIF
+        ENDDO
+     ENDDO
+
+   END SUBROUTINE qnsesfc_seaice_wrapper
+
 
 !-------------------------------------------------------------------------
 

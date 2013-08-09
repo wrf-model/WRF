@@ -356,23 +356,18 @@ contains
 !
 ! TE model constants
    logical, parameter :: MFopt = .true.  ! Use mass flux or not
-!   real, parameter :: visc_temf = 1.57e-5
-!   real, parameter :: conduc_temf = 1.57e-5 / 0.733
    real, parameter :: visc_temf = 1.57e-4   ! WA TEST bigger minimum K
    real, parameter :: conduc_temf = 1.57e-4 / 0.733
    real, parameter :: Pr_temf = 0.733
    real, parameter :: TEmin = 1e-3
    real, parameter :: ftau0 = 0.17
    real, parameter :: fth0 = 0.145
-!   real, parameter :: fth0 = 0.12    ! WA 10/13/10 to make PrT0 ~= 1
    real, parameter :: critRi = 0.25
    real, parameter :: Cf = 0.185
    real, parameter :: CN = 2.0
-!   real, parameter :: Ceps = ftau0**1.5
    real, parameter :: Ceps = 0.070
    real, parameter :: Cgamma = Ceps
    real, parameter :: Cphi = Ceps
-!   real, parameter :: PrT0 = Cphi/Ceps * ftau0**2. / 2 / fth0**2.
    real, parameter :: PrT0 = Cphi/Ceps * ftau0**2 / 2. / fth0**2
 ! EDMF constants
    real, parameter :: CM = 0.03      ! Proportionality constant for subcloud MF
@@ -391,8 +386,8 @@ contains
    real, dimension( its:ite)    ::  sfcTHVF
    real, dimension( its:ite)    ::  z0t
    integer, dimension( its:ite) ::  hdidx,lclidx,hctidx,htidx
+   integer, dimension( its:ite) ::  hmax_idx
    integer, dimension( its:ite) ::  tval
-   ! real, dimension( its:ite )   ::  sfcHF, sfcQF
    real, dimension( its:ite, kts:kte) :: thetal, qt
    real, dimension( its:ite, kts:kte) :: u_temf, v_temf
    real, dimension( its:ite, kts:kte) :: rv, rl, rt
@@ -425,7 +420,7 @@ contains
    real, dimension( its:ite, kts:kte) :: thup_new, qvup_new
    real, dimension( its:ite, kts:kte) :: beta1 ! For saturation humidity calculations
    real Cepsmf    ! Prefactor for entrainment rate
-   real red_fact  ! WA TEST for reducing MF components
+   real red_fact  ! for reducing MF components
    logical is_convective
    ! Vars for cloud fraction calculation
    real, dimension( its:ite, kts:kte) :: au, sigq, qst, satdef
@@ -462,9 +457,7 @@ contains
 !                                 z2d(1) - zsrf
 !
 ! WA I take the temperature at z0 to be
-! TSK.  This isn't exactly robust.  Also I pass out the surface
-! exchange coefficients flhc, flqc for the surface scheme to use in the 
-! next timestep.
+! TSK.  This isn't exactly robust.
 ! WA 2/16/11 removed calculation of flhc, flqc which are not needed here.
 ! These should be removed from the calling sequence someday.
 !
@@ -477,20 +470,13 @@ contains
 
       ! Get incoming surface theta from TSK (WA for now)
       thetal(i,1) = tsk(i) / pi2d(i,1)  ! WA really should use Exner func. at z0
-      if (exch_temfx(i) > 1.0e-12) then
-         qt(i,1) = qfx(i) / exch_temfx(i) + qvx(i,1)  ! WA assumes no liquid at z0
-      else
-         qt(i,1) = qvx(i,1)
-      end if
+      qt(i,1) = qvx(i,1)
       rv(i,1) = qt(i,1) / (1.-qt(i,1))   ! Water vapor
       rl(i,1) = 0.
       rt(i,1) = rv(i,1) + rl(i,1)        ! Total water (without ice)
       chi_poisson(i,1) = rcp * (1.+rv(i,1)/ep2) / (1.+rv(i,1)*cpv/cp)
       gam(i,1) = rv(i,1) * r_v / (cp + rv(i,1)*cpv)
-      ! thetav(i,1) = thetal(i,1) * (1. + 0.608*qt(i,1))  ! WA Assumes ql(env)=0, what if it isn't?
       thetav(i,1) = thetal(i,1) * (1. + 0.608*qt(i,1) - qcx(i,1))  ! WA 4/6/10 allow environment liquid
-      ! WA TEST (R5) set z0t = z0
-      ! z0t(i) = znt(i) / 10.0   ! WA this is hard coded in Matlab version
       z0t(i) = znt(i)
 
       ! Convert incoming theta to thetal and qv,qc to qt
@@ -504,7 +490,6 @@ contains
          gam(i,k) = rt(i,k) * r_v / (cp + rt(i,k)*cpv)
          thetal(i,k) = thx(i,k-1) * ((ep2+rv(i,k))/(ep2+rt(i,k)))**chi_poisson(i,k) * (rv(i,k)/rt(i,k))**(-gam(i,k)) * exp( -xlv*rl(i,k) / ((cp + rt(i,k)*cpv) * tx(i,k)))
          qt(i,k) = qvx(i,k-1) + qcx(i,k-1)
-         ! thetav(i,k) = thetal(i,k) * (1. + 0.608*qt(i,k))  ! WA Assumes ql(env)=0, what if it isn't?
          thetav(i,k) = thetal(i,k) * (1. + 0.608*qt(i,k) - qcx(i,k-1))  ! WA 4/6/10 allow environment liquid
       end do
 
@@ -545,18 +530,15 @@ contains
       h0idx(i) = 1
       h0(i) = zm(i,1)
 
-      ! WA TEST (R4) remove lower limit on leps
-      ! lepsmin(i,kts) = min(0.4*zt(i,kts), 5.)
       lepsmin(i,kts) = 0.
 
+      ! WA 2/11/13 find index just above hmax for use below
+      hmax_idx(i) = kte-1
+
       do k = kts+1,kte-1
-         ! WA TEST (R4) remove lower limit on leps
-         ! lepsmin(i,k) = min(0.4*zt(i,k), 5.)
          lepsmin(i,k) = 0.
-         ! lepsmin(i,k) = min(zt(i,k), 20.)  ! WA to deal with runaway
 
          ! Mean gradients
-         ! dthdz(i,k) = (thx(i,k) - thx(i,k-1)) / dzt(i,k)  ! WA 1/12/10
          dthdz(i,k) = (thetal(i,k+1) - thetal(i,k)) / dzt(i,k)
          dqtdz(i,k) = (qt(i,k+1) - qt(i,k)) / dzt(i,k)
          dudz(i,k) = (u_temf(i,k+1) - u_temf(i,k)) / dzt(i,k)
@@ -572,6 +554,10 @@ contains
                h0idx(i) = k
                h0(i) = hmax
             end if
+         end if
+         ! WA 2/11/13 find index just above hmax for use below
+         if (zm(i,k) > hmax) then
+            hmax_idx(i) = min(hmax_idx(i),k)
          end if
       end do
 
@@ -620,9 +606,9 @@ contains
          TKE(i,kt) = te_temfx(i,kt) * (1. - ratio(i,kt))
          ustrtilde(i,kt) = sqrt(ftau(i,kt) * TKE(i,kt))
          if (N2(i,kt) > 0.) then
-            linv(i,kt) = 1./karman / zt(i,kt) + abs(fCor(i)) / (Cf*ustrtilde(i,kt)) + sqrt(N2(i,kt))/(CN*ustrtilde(i,kt)) + 1./lasymp  ! WA Test 11/20/09
+            linv(i,kt) = 1./karman / zt(i,kt) + abs(fCor(i)) / (Cf*ustrtilde(i,kt)) + sqrt(N2(i,kt))/(CN*ustrtilde(i,kt)) + 1./lasymp
          else
-            linv(i,kt) = 1./karman / zt(i,kt) + abs(fCor(i)) / (Cf*ustrtilde(i,kt)) + 1./lasymp  ! WA Test 11/20/09
+            linv(i,kt) = 1./karman / zt(i,kt) + abs(fCor(i)) / (Cf*ustrtilde(i,kt)) + 1./lasymp
          end if
          leps(i,kt) = 1./linv(i,kt)
          leps(i,kt) = max(leps(i,kt),lepsmin(i,kt))
@@ -664,7 +650,6 @@ contains
                km(i,kt) = km_conv(i,kt)
                kh(i,kt) = kh_conv(i,kt)
             end if
-            ! WA TEST 1/11/10 go back to max in upper BL
             if (zt(i,kt) > h0(i)/2. .AND. kt <= h0idx(i)) then
                km(i,kt) = max(km(i,kt),km_conv(i,kt),visc_temf)
                kh(i,kt) = max(kh(i,kt),kh_conv(i,kt),conduc_temf)
@@ -674,9 +659,9 @@ contains
          kh(i,kt) = max(kh(i,kt),conduc_temf)
          Fz(i,kt) = -kh(i,kt) * dthdz(i,kt)  ! Diffusive heat flux
       end do
-      km(i,kte) = km(i,kte-1)  ! WA 12/22/09
+      km(i,kte) = km(i,kte-1)
       kh(i,kte) = kh(i,kte-1)
-      Fz(i,kte) = 0.0          ! WA 4/2/10
+      Fz(i,kte) = 0.0
 
 
       !*** Mass flux block starts here ***
@@ -684,7 +669,7 @@ contains
       if ( is_convective) then
 
          Cepsmf = 2. / max(200.,h0(i))
-         Cepsmf = max(Cepsmf,0.002)    ! WA 7/20/10
+         Cepsmf = max(Cepsmf,0.002)
          do k = kts,kte
             ! Calculate lateral entrainment fraction for subcloud layer
             ! epsilon and delta are defined on mass grid (half levels)
@@ -702,7 +687,6 @@ contains
          thetavUPD(i,1) = thup_temfx(i,1) * (1. + 0.608*qtup_temfx(i,1))  ! WA Assumes no liquid
          thetavUPDmoist(i,1) = thup_temfx(i,1) * (1. + 0.608*qtup_temfx(i,1))  ! WA Assumes no liquid
          TEUPD(i,1) = te_temfx(i,1) + g / thetav(i,1) * sfcTHVF(i)
-         ! qlUPD(i,1) = 0.
          qlUPD(i,1) = qcx(i,1)  ! WA allow environment liquid
          TUPD(i,1) = thup_temfx(i,1) * pi2d(i,1)   
          rstUPD(i,1) = rsat(p2d(i,1),TUPD(i,1),ep2)  
@@ -710,53 +694,61 @@ contains
 
          ! Calculate updraft parameters counting up
          do k = 2,kte
-            dthUPDdz(i,k-1) = -epsmf(i,k) * (thup_temfx(i,k-1) - thetal(i,k-1))
-            thup_temfx(i,k) = thup_temfx(i,k-1) + dthUPDdz(i,k-1) * dzm(i,k-1)
-            dqtup_temfxdz(i,k-1) = -epsmf(i,k) * (qtup_temfx(i,k-1) - qt(i,k-1))
-            qtup_temfx(i,k) = qtup_temfx(i,k-1) + dqtup_temfxdz(i,k-1) * dzm(i,k-1)
-            thetavUPD(i,k) = thup_temfx(i,k) * (1. + 0.608*qtup_temfx(i,k))  ! WA Assumes no liquid
-            B(i,k-1) = g * (thetavUPD(i,k) - thetav(i,k)) / thetav(i,k)
-            if ( wupd_dry(i,k-1) < 1e-15 ) then
+            ! WA 2/11/13 use hmax index to prevent oddness high up
+            if ( k < hmax_idx(i)) then
+               dthUPDdz(i,k-1) = -epsmf(i,k) * (thup_temfx(i,k-1) - thetal(i,k-1))
+               thup_temfx(i,k) = thup_temfx(i,k-1) + dthUPDdz(i,k-1) * dzm(i,k-1)
+               dqtup_temfxdz(i,k-1) = -epsmf(i,k) * (qtup_temfx(i,k-1) - qt(i,k-1))
+               qtup_temfx(i,k) = qtup_temfx(i,k-1) + dqtup_temfxdz(i,k-1) * dzm(i,k-1)
+               thetavUPD(i,k) = thup_temfx(i,k) * (1. + 0.608*qtup_temfx(i,k))  ! WA Assumes no liquid
+               B(i,k-1) = g * (thetavUPD(i,k) - thetav(i,k)) / thetav(i,k)
+               if ( wupd_dry(i,k-1) < 1e-15 ) then
+                  wupd_dry(i,k) = 0.
+               else
+                  dwUPDdz(i,k-1) = -2. *epsmf(i,k)*wupd_dry(i,k-1) + 0.33*B(i,k-1)/wupd_dry(i,k-1)
+                  wupd_dry(i,k) = wupd_dry(i,k-1) + dwUPDdz(i,k-1) * dzm(i,k-1)
+               end if
+               dUUPDdz(i,k-1) = -epsmf(i,k) * (UUPD(i,k-1) - u_temf(i,k-1))
+               UUPD(i,k) = UUPD(i,k-1) + dUUPDdz(i,k-1) * dzm(i,k-1)
+               dVUPDdz(i,k-1) = -epsmf(i,k) * (VUPD(i,k-1) - v_temf(i,k-1))
+               VUPD(i,k) = VUPD(i,k-1) + dVUPDdz(i,k-1) * dzm(i,k-1)
+               dTEUPDdz(i,k-1) = -epsmf(i,k) * (TEUPD(i,k-1) - te_temfx(i,k-1))
+               TEUPD(i,k) = TEUPD(i,k-1) + dTEUPDdz(i,k-1) * dzm(i,k-1)
+               ! Alternative updraft velocity based on moist thetav
+               ! Need thetavUPDmoist, qlUPD
+               rUPD(i,k) = qtup_temfx(i,k) / (1. - qtup_temfx(i,k))
+               ! WA Updraft temperature assuming no liquid
+               TUPD(i,k) = thup_temfx(i,k) * pi2d(i,k)   
+               ! Updraft saturation mixing ratio 
+               rstUPD(i,k) = rsat(p2d(i,k-1),TUPD(i,k),ep2)  
+               ! Correct to actual temperature (Sommeria & Deardorff 1977)
+               beta1(i,k) = 0.622 * (xlv/(r_d*TUPD(i,k))) * (xlv/(cp*TUPD(i,k)))
+               rstUPD(i,k) = rstUPD(i,k) * (1.0+beta1(i,k)*rUPD(i,k)) / (1.0+beta1(i,k)*rstUPD(i,k))
+               qstUPD(i,k) = rstUPD(i,k) / (1. + rstUPD(i,k))
+               if (rUPD(i,k) > rstUPD(i,k)) then
+                  rlUPD(i,k) = rUPD(i,k) - rstUPD(i,k)
+                  qlUPD(i,k) = rlUPD(i,k) / (1. + rlUPD(i,k))
+                  thetavUPDmoist(i,k) = (thup_temfx(i,k) + ((xlv/cp)*qlUPD(i,k)/pi2d(i,k))) * (1. + 0.608*qstUPD(i,k) - qlUPD(i,k))
+               else
+                  rlUPD(i,k) = 0.
+                  qlUPD(i,k) = qcx(i,k-1)   ! WA 4/6/10 allow environment liquid
+                  thetavUPDmoist(i,k) = thup_temfx(i,k) * (1. + 0.608*qtup_temfx(i,k))
+               end if
+               Bmoist(i,k-1) = g * (thetavUPDmoist(i,k) - thetav(i,k)) / thetav(i,k)
+               if ( wupd_temfx(i,k-1) < 1e-15 ) then
+                  wupd_temfx(i,k) = 0.
+               else
+                  dwUPDmoistdz(i,k-1) = -2. *epsmf(i,k)*wupd_temfx(i,k-1) + 0.33*Bmoist(i,k-1)/wupd_temfx(i,k-1)
+                  wupd_temfx(i,k) = wupd_temfx(i,k-1) + dwUPDmoistdz(i,k-1) * dzm(i,k-1)
+               end if
+            else
+               thup_temfx(i,k) = thetal(i,k)
+               qtup_temfx(i,k) = qt(i,k)
                wupd_dry(i,k) = 0.
-            else
-               dwUPDdz(i,k-1) = -2. *epsmf(i,k)*wupd_dry(i,k-1) + 0.33*B(i,k-1)/wupd_dry(i,k-1)
-               wupd_dry(i,k) = wupd_dry(i,k-1) + dwUPDdz(i,k-1) * dzm(i,k-1)
-            end if
-            dUUPDdz(i,k-1) = -epsmf(i,k) * (UUPD(i,k-1) - u_temf(i,k-1))
-            UUPD(i,k) = UUPD(i,k-1) + dUUPDdz(i,k-1) * dzm(i,k-1)
-            dVUPDdz(i,k-1) = -epsmf(i,k) * (VUPD(i,k-1) - v_temf(i,k-1))
-            VUPD(i,k) = VUPD(i,k-1) + dVUPDdz(i,k-1) * dzm(i,k-1)
-            dTEUPDdz(i,k-1) = -epsmf(i,k) * (TEUPD(i,k-1) - te_temfx(i,k-1))
-            TEUPD(i,k) = TEUPD(i,k-1) + dTEUPDdz(i,k-1) * dzm(i,k-1)
-            ! Alternative updraft velocity based on moist thetav
-            ! Need thetavUPDmoist, qlUPD
-            rUPD(i,k) = qtup_temfx(i,k) / (1. - qtup_temfx(i,k))
-            ! WA Updraft temperature assuming no liquid
-            TUPD(i,k) = thup_temfx(i,k) * pi2d(i,k)   
-            ! Updraft saturation mixing ratio 
-            ! rstUPD(i,k) = rsat(p2d(i,k),TUPD(i,k),ep2)  ! WA 4/19/10
-            rstUPD(i,k) = rsat(p2d(i,k-1),TUPD(i,k),ep2)  
-            ! Correct to actual temperature (Sommeria & Deardorff 1977)
-            beta1(i,k) = 0.622 * (xlv/(r_d*TUPD(i,k))) * (xlv/(cp*TUPD(i,k)))
-            rstUPD(i,k) = rstUPD(i,k) * (1.0+beta1(i,k)*rUPD(i,k)) / (1.0+beta1(i,k)*rstUPD(i,k))
-            qstUPD(i,k) = rstUPD(i,k) / (1. + rstUPD(i,k))
-            if (rUPD(i,k) > rstUPD(i,k)) then
-               rlUPD(i,k) = rUPD(i,k) - rstUPD(i,k)
-               qlUPD(i,k) = rlUPD(i,k) / (1. + rlUPD(i,k))
-               thetavUPDmoist(i,k) = (thup_temfx(i,k) + ((xlv/cp)*qlUPD(i,k)/pi2d(i,k))) * (1. + 0.608*qstUPD(i,k) - qlUPD(i,k))
-            else
-               rlUPD(i,k) = 0.
-               ! qlUPD(i,k) = 0.
-               qlUPD(i,k) = qcx(i,k-1)   ! WA 4/6/10 allow environment liquid
-               ! WA does this make sense?  Should be covered above?
-               thetavUPDmoist(i,k) = thup_temfx(i,k) * (1. + 0.608*qtup_temfx(i,k))
-            end if
-            Bmoist(i,k-1) = g * (thetavUPDmoist(i,k) - thetav(i,k)) / thetav(i,k)
-            if ( wupd_temfx(i,k-1) < 1e-15 ) then
+               UUPD(i,k) = u_temf(i,k)
+               VUPD(i,k) = v_temf(i,k)
+               TEUPD(i,k) = te_temfx(i,k)
                wupd_temfx(i,k) = 0.
-            else
-               dwUPDmoistdz(i,k-1) = -2. *epsmf(i,k)*wupd_temfx(i,k-1) + 0.33*Bmoist(i,k-1)/wupd_temfx(i,k-1)
-               wupd_temfx(i,k) = wupd_temfx(i,k-1) + dwUPDmoistdz(i,k-1) * dzm(i,k-1)
             end if
          end do
 
@@ -767,15 +759,14 @@ contains
             hdidx(i) = kte  ! In case wUPD <= 0 not found
             do k = 2,kte
                ! if (wupd_dry(i,k) <= 0.) then
-               if (wupd_dry(i,k) <= 0. .OR. zm(i,k) > hmax) then  ! WA Test
+               if (wupd_dry(i,k) <= 0. .OR. zm(i,k) > hmax) then 
                   hdidx(i) = k
                   goto 100   ! FORTRAN made me do it!
                end if
             end do
          end if
 100      hd(i) = zm(i,hdidx(i))
-         ! kpbl1d(i) = hd(i)        ! WA not sure if this is what I want for diagnostic out to larger WRF universe....and it's not right if not convective
-         kpbl1d(i) = hdidx(i)  ! WA 5/11/10 kpbl should be index
+         kpbl1d(i) = hdidx(i)
          hpbl(i) = hd(i)       ! WA 5/11/10 hpbl is height.  Should still be replaced by something that works whether convective or not.
 
          ! Find LCL, hct, and ht
@@ -795,7 +786,7 @@ contains
             else
                hctidx(i) = kte  ! In case wUPD <= 0 not found
                do k = 2,kte
-                  if (wupd_temfx(i,k) <= 0. .OR. zm(i,k) > hmax) then  ! WA Test
+                  if (wupd_temfx(i,k) <= 0. .OR. zm(i,k) > hmax) then
                      hctidx(i) = k
                      goto 300   ! FORTRAN made me do it!
                   end if
@@ -827,7 +818,10 @@ contains
             thup_temfx(i,k) = tval(i) * thup_temfx(i,k) + (1-tval(i))*thetal(i,k)
             thetavUPD(i,k) = tval(i) * thetavUPD(i,k) + (1-tval(i))*thetav(i,k)
             qtup_temfx(i,k) = tval(i) * qtup_temfx(i,k) + (1-tval(i)) * qt(i,k)
-            qlUPD(i,k) = tval(i) * qlUPD(i,k) + (1-tval(i)) * qcx(i,k-1)
+            ! WA 6/21/13 was a subscript error when k=1
+            if (k > 1) then
+               qlUPD(i,k) = tval(i) * qlUPD(i,k) + (1-tval(i)) * qcx(i,k-1)
+            end if
             UUPD(i,k) = tval(i) * UUPD(i,k) + (1-tval(i)) * u_temf(i,k)
             VUPD(i,k) = tval(i) * VUPD(i,k) + (1-tval(i)) * v_temf(i,k)
             TEUPD(i,k) = tval(i) * TEUPD(i,k) + (1-tval(i)) * te_temfx(i,k)
@@ -983,21 +977,16 @@ contains
       vw_temfx(i,1) = -sin(ang(i)) * ust(i)**2.
 
       ! Calculate mixed scaling velocity (Moeng & Sullivan 1994 JAS p.1021)
-      ! Replaces ust everywhere (WA need to reconsider?)
-      ! wm(i) = (1./5. * (wstr(i)**3. + 5. * ust(i)**3.)) ** (1./3.) 
-      ! WA TEST (R2,R11) 7/23/10 reduce velocity scale to fix excessive fluxes
+      ! Replaces ust everywhere
+      ! WA 7/23/10 reduce velocity scale to fix excessive fluxes
       wm(i) = 0.5 * (1./5. * (wstr(i)**3. + 5. * ust(i)**3.)) ** (1./3.) 
-      ! WA TEST 2/14/11 limit contribution of w*
-      ! wm(i) = 0.5 * (1./5. * (min(0.8,wstr(i))**3. + 5. * ust(i)**3.)) ** (1./3.) 
-      ! WA TEST (R3-R11) 7/23/10 wm = u*
-      ! wm(i) = ust(i)
 
       ! Specified flux versions (flux is modified by land surface)
-      shf_temfx(i,1) = hfx(i)/(rho(i,1)*cp) + (shf_temfx(i,2) - hfx(i)/(rho(i,1)*cp)) * (zt(i,2)-zt(i,1)) / (zt(i,2)-znt(i))
-      qf_temfx(i,1) = qfx(i)/rho(i,1) + (qf_temfx(i,2)-qfx(i)/rho(i,1)) * (zt(i,2)-zt(i,1)) / (zt(i,2)-znt(i))
+      ! WA 5/31/13 use whole surface flux to improve heat conservation
+      shf_temfx(i,1) = hfx(i)/(rho(i,1)*cp)
+      qf_temfx(i,1) = qfx(i)/rho(i,1)
       Fz(i,1) = shf_temfx(i,1) - MFCth(i,1)
       QFK(i,1) = qf_temfx(i,1) - MFCq(i,1)
-
 
       ! Calculate thetav and its flux
       ! From Lewellen 2004 eq. 3
@@ -1083,7 +1072,7 @@ contains
          te_temfx(i,kt) = te_temfx(i,kt) + dt * (-(MFCTE(i,kt)-MFCTE(i,kt-1))) / dzt(i,kt)
          if (te_temfx(i,kt) < TEmin) te_temfx(i,kt) = TEmin
       end do
-      te_temfx(i,kte) = 0.0   ! WA 4/2/10
+      te_temfx(i,kte) = 0.0
       do kt = 2,kte-1
          if (te_temfx(i,kt) > 20.0) then
             te_temfx(i,kt) = 20.0    ! WA 9/29/11 reduce limit max TE from 30
@@ -1121,17 +1110,7 @@ contains
 
       ! Populate surface exchange coefficient variables to go back out
       ! for next time step of surface scheme
-      ! Unit specifications in SLAB and sfclay are conflicting and probably
-      ! incorrect.  This will give a dynamic heat flux (W/m^2) or moisture
-      ! flux (kg(water)/(m^2*s)) when multiplied by a difference.
-      ! These formulae are the same as what's used above to get surface
-      ! flux from surface temperature and specific humidity.
       ! WA 2/16/11 removed, not needed in BL
-      ! flhc(i) = rho(i,1) * cp * fth(i,1)/fth0 * wm(i) * leps(i,1) / PrT0 / log(zm(i,2)/z0t(i)) / zt(i,1)
-      ! flqc(i)  = rho(i,1) * fth(i,1)/fth0 * wm(i) * leps(i,1) / PrT0 / log(zm(i,2)/z0t(i)) / zt(i,1)
-      ! WA Must exchange coeffs be limited to avoid runaway in some 
-      ! (convective?) conditions?  Something like this is done in sfclay.
-      ! Doing nothing for now.
 
       ! Populate 10 m winds and 2 m temp
       ! WA Note this only works if first mass level is above 10 m

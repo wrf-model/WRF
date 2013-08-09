@@ -229,7 +229,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 !ccc To use CLWRF time-varying trace gases
    USE MODULE_RA_CLWRF_SUPPORT, ONLY : read_CAMgases
    USE module_wrf_error
-   USE module_state_description, ONLY : SSIBSCHEME              !ssib
+   USE module_state_description, ONLY : SSIBSCHEME, CLMSCHEME          !ssib & clm
 
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -696,6 +696,32 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
          aldif(ii) = albedo(i,j)
       enddo
    endif
+   CASE (CLMSCHEME)
+   if (xtime .gt. 1.0) then
+      do i = its,ite
+         ii = i - its + 1
+         if (xland(i,j).lt.1.5) then   !land points only
+           asdir(ii) = ALSWVISDIR(i,j) ! CLM visdir albedo
+           asdif(ii) = ALSWVISDIF(i,j) ! CLM visdif albedo
+           aldir(ii) = ALSWNIRDIR(i,j) ! CLM nirdir albedo
+           aldif(ii) = ALSWNIRDIF(i,j) ! CLM nirdif albedo
+         else
+           asdir(ii) = albedo(i,j)
+           asdif(ii) = albedo(i,j)
+           aldir(ii) = albedo(i,j)
+           aldif(ii) = albedo(i,j)
+         endif
+      enddo
+   else
+      do i = its,ite
+         ii = i - its + 1
+         asdir(ii) = albedo(i,j)
+         asdif(ii) = albedo(i,j)
+         aldir(ii) = albedo(i,j)
+         aldif(ii) = albedo(i,j)
+      enddo
+   endif
+
    CASE DEFAULT
       do i = its,ite
       ii = i - its + 1
@@ -855,6 +881,17 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
         SWNIRDIF(I,J) = solld(ii) !SSiB 
       enddo
       endif
+  CASE (CLMSCHEME)
+      if(dosw)then
+      do i = its,ite
+        ii = i - its + 1
+        SWVISDIR(I,J) = sols(ii)  !CLM
+        SWVISDIF(I,J) = solsd(ii) !CLM
+        SWNIRDIR(I,J) = soll(ii)  !CLM
+        SWNIRDIF(I,J) = solld(ii) !CLM
+      enddo
+      endif
+
    END SELECT
 !-----------------------------
 

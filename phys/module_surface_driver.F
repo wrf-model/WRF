@@ -3005,6 +3005,10 @@ CONTAINS
 ! update land variables from CLM
               IF(XLAND(I,J).LT.1.5) then
                   Q2(I,J) = sum(q_ref2m(i,1:nump(i,j),j)*wtp(i,1:nump(i,j),j))
+
+! convert specific humidty to mixing ratio unit: kg/kg)
+                  Q2(I,J) = Q2(I,J)/(1.0-Q2(I,J))
+
                   T2(I,J) = sum(t_ref2m(i,1:nump(i,j),j)*wtp(i,1:nump(i,j),j))
                   TH2(I,J)= T2(I,J)*(1.E5/PSFC(I,J))**RCP
               END IF

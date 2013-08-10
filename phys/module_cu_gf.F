@@ -833,12 +833,12 @@ CONTAINS
 !--- specify entrainmentrate and detrainmentrate
 !--- highly tuneable !
 !
-      entr_rate=1.e-4
+      entr_rate=7.e-5
       radius=.2/entr_rate
-      frh=3.14*(2.*radius)*(2.*radius)/dx/dx
+      frh=3.14*(radius*radius)/dx/dx
       if(frh .gt. 0.7)then
          frh=.7
-         radius=sqrt(frh*dx*dx/(3.14*4.))
+         radius=sqrt(frh*dx*dx/3.14)
          entr_rate=.2/radius
       endif
       do i=its,itf
@@ -987,11 +987,13 @@ CONTAINS
            its,ite, jts,jte, kts,kte)
        DO 36 i=its,itf
          IF(ierr(I).eq.0)THEN
-         IF(K22(I).GE.KBMAX(i))then
-           ierr(i)=2
-           ierrc(i)="could not find k22"
-         endif
-         endif
+           frh=q_cup(i,k22(i))/qes_cup(i,k22(i))
+           IF(omeg(i,k22(i),1).lt.0. .and. frh.ge.0.99 .and. sig(i).lt.0.091)ierr(i)=1200
+           IF(K22(I).GE.KBMAX(i))THEN
+             ierr(i)=2
+             ierrc(i)="could not find k22"
+           ENDIF
+         ENDIF
  36   CONTINUE
 !
 !--- DETERMINE THE LEVEL OF CONVECTIVE CLOUD BASE  - KBCON
@@ -1021,6 +1023,14 @@ CONTAINS
       CALL cup_minimi(HEso_cup,Kbcon,kstabm,kstabi,ierr,  &
            itf,jtf,ktf, &
            its,ite, jts,jte, kts,kte)
+      DO i=its,itf
+         IF(ierr(I).eq.0)THEN
+         do k=k22(i),kbcon(i)
+         frh=q_cup(i,k)/qes_cup(i,k)
+         if(omeg(i,k,1).lt.-1.e-6 .and. frh.ge.0.99 .and. sig(i).lt.0.091)ierr(i)=1200
+         enddo
+         endif
+      enddo
 !
 ! the following section insures a smooth normalized mass flux profile. See Grell
 ! and Freitas (2013) for a description

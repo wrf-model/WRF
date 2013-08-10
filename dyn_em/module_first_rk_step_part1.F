@@ -686,8 +686,11 @@ BENCH_START(surf_driver_tim)
      &        ,usemonalb=config_flags%usemonalb                           &
      &        ,NOAHRES=grid%noahres                                       &
      &        ,TSK_SAVE=grid%tsk_save                                     &
-!mynn mp
-     &         ,ch=grid%ch,tsq=grid%tsq,qsq=grid%qsq,cov=grid%cov &
+     &        ,ch=grid%ch,tsq=grid%tsq,qsq=grid%qsq,cov=grid%cov          & !MYNN - MP
+     &        ,Sh3d=grid%sh3d,EL_PBL=grid%el_pbl                          & !JOE- MYNN cloudpdf
+     &        ,bl_mynn_cloudpdf=config_flags%bl_mynn_cloudpdf             & !JOE- MYNN cloudpdf
+     &        ,fgdp=grid%fgdp,dfgdp=grid%dfgdp,vdfg=grid%vdfg             & !Katata - fogdes                                                                                                 
+     &        ,grav_settling=config_flags%grav_settling                   & !Katata - fogdes
      &        ,OM_TMP=grid%om_tmp, OM_S=grid%om_s, OM_U=grid%om_u, OM_V=grid%om_v   & !cyl:3DPWP
      &        ,OM_DEPTH=grid%om_depth, OM_ML=grid%OM_ML, OM_LON=grid%om_lon         & !cyl:3DPWP
      &        ,OM_LAT=grid%om_lat                                                  & !cy:3DPWP
@@ -786,19 +789,18 @@ BENCH_START(pbl_driver_tim)
      &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
      &        ,HOL=HOL, MOL=grid%mol, REGIME=grid%REGIME                  &
 !mynn mp@
-     &        ,QKE=grid%qke                                               &                                                                                                                                     
-!ACF-QKE advection
-     &        ,QKE_ADV=scalar(ims,kms,jms,P_qke_adv)                      &                                                                                                                                     
-     &        ,bl_mynn_tkeadvect=config_flags%bl_mynn_tkeadvect           &                                                                                                                                     
-!ACF-end                                                                                                                                                                                                        
+     &        ,QKE=grid%qke, Sh3d=grid%sh3d                               &
+     &        ,QKE_ADV=scalar(ims,kms,jms,P_qke_adv)                      & !ACF-QKE advection
+     &        ,bl_mynn_tkeadvect=config_flags%bl_mynn_tkeadvect           & !ACF-QKE advection
      &        ,tsq=grid%tsq, qsq=grid%qsq, cov=grid%cov                   &
-     &        ,EL_MYNN=grid%el_mynn                                       &
      &        ,DQKE=grid%dqke,QWT=grid%qWT                                &
      &        ,QSHEAR=grid%qSHEAR,QBUOY=grid%qBUOY,QDISS=grid%qDISS       &
      &        ,bl_mynn_tkebudget=config_flags%bl_mynn_tkebudget           &
+     &        ,bl_mynn_cloudpdf=config_flags%bl_mynn_cloudpdf             &
      &        ,rmol=grid%rmol, ch=grid%ch                                 &
      &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling     &
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
+     &        ,vdfg=grid%vdfg                                             & ! Katata - fogdep
 !GWD for ARW
      &        ,GWD_OPT=config_flags%gwd_opt &
      &        ,DTAUX3D=grid%dtaux3d,DTAUY3D=grid%dtauy3d &

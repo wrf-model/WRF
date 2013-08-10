@@ -565,7 +565,11 @@ Namelist variables for controlling the adaptive time step option:
 
  bldt (max_dom)                      = 0,       ; minutes between boundary-layer physics calls
 
- grav_settling                       = 0, ; MYNN PBL only; gravitational settling of fog/cloud droplets (1=yes)
+ grav_settling                       gravitational settling of fog/cloud droplets (Now works for any PBL scheme)
+ 				     = 0, No settling of cloud droplets
+				     = 1, Settling from Dyunkerke 1991 (in atmos and at surface)
+				     = 2, Fogdes at surface and Dyunkerke in the atmos.
+
  nphs (max_dom)                      = FOR NMM: number of fundamental timesteps between
                                                 calls to turbulence and microphysics;
                                                 the value is set in Registry.NMM but is

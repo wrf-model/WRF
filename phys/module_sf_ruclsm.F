@@ -365,11 +365,14 @@ CONTAINS
 !       sh2o    (i,k,j)=soilmois(i,k,j)-smfr3d(i,k,j)/1.e3*900.
        keepfr3dflag(i,k,j)=0.
             enddo
-!--- initializing to zero snow fraction
-           snowc(i,j) = min(1.,snowh(i,j)/0.05)
+!--- initializing snow fraction, thereshold = 32 mm of snow water 
+!    or ~100 mm of snow height
+!
+           snowc(i,j) = min(1.,snow(i,j)/32.)
+          if(snow(i,j).le.32.) soilt1(i,j)=tso(i,1,j)
 !--- initializing inside snow temp if it is not defined
         IF((soilt1(i,j) .LT. 170.) .or. (soilt1(i,j) .GT.400.)) THEN
-            IF(snowc(i,j).gt.0.1) THEN
+            IF(snow(i,j).gt.32.) THEN
            soilt1(i,j)=0.5*(soilt(i,j)+tso(i,1,j))
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
         WRITE ( message , FMT='(A,F8.3,2I6)' ) &
@@ -377,7 +380,7 @@ CONTAINS
         CALL wrf_debug ( 0 , message )
     ENDIF
             ELSE
-           soilt1(i,j) = soilt(i,j)
+           soilt1(i,j) = tso(i,1,j)
             ENDIF
         ENDIF
            tsnav(i,j) =0.5*(soilt(i,j)+tso(i,1,j))-273.
@@ -630,7 +633,7 @@ CONTAINS
 !         print *,'NROOT, iforest, ivgtyp, i,j ', nroot,iforest(ivgtyp(i,j)),ivgtyp(I,J),I,J
     ENDIF
 
-!*** SET ZERO-VALUE FOR SOME OUTPUT DIAGNOSTIC ARRAYS
+!!*** SET ZERO-VALUE FOR SOME OUTPUT DIAGNOSTIC ARRAYS
 
         IF((XLAND(I,J)-1.5).GE.0.)THEN
 !-- Water 
@@ -1072,6 +1075,7 @@ CONTAINS
           enddo
 
         GSWnew=GSW
+
         ALBice=ALB_SNOW_FREE
 !--- sea ice properties
 !--- N.N Zubov "Arctic Ice"
@@ -1089,10 +1093,8 @@ CONTAINS
 !-- below critical value of -10C - no change to albedo.
 !-- If temperature is higher that -10C then albedo is decreasing.
 !-- The minimum albedo at t=0C for ice is 0.1 less.
-         GSWNEW=GSW/(1.-ALB)
        ALBice = MIN(ALB_SNOW_FREE,MAX(ALB_SNOW_FREE - 0.05,   &
                ALB_SNOW_FREE - 0.1*(tice(1)+10.)/10. ))
-         GSWNEW=GSW*(1.-ALBice)
        endif
 
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
@@ -1106,6 +1108,7 @@ CONTAINS
          T3      = STBOLT*SOILT*SOILT*SOILT
          UPFLUX  = T3 *SOILT
          XINET   = EMISS*(GLW-UPFLUX)
+! - at this point GSWnew=GSW
          RNET    = GSWnew + XINET
 
 !Calculate the amount (m) of fresh snow
@@ -1191,10 +1194,10 @@ CONTAINS
 !5mar12      IF(znt.lt.0.2 .and. snowfrac.gt.0.99) znt=z0tbl(iland)
 
          KEEP_SNOW_ALBEDO = 0.
-      IF (NEWSN.GT.0.) KEEP_SNOW_ALBEDO = 1.
+      IF (NEWSN.GT.0. .and. snowfrac.gt.0.05) KEEP_SNOW_ALBEDO = 1.
 
-!---  GSW in-coming solar
-         GSWNEW=GSW/(1.-ALB)
+!---  GSWNEW in-coming solar for snow on land or on ice
+         GSWNEW=GSWnew/(1.-ALB)
 
     IF(SEAICE .LT. 0.5) THEN
 !----- SNOW on soil
@@ -1211,13 +1214,14 @@ CONTAINS
 !-- If temperature is higher that -10C then albedo is decreasing.
 !-- The minimum albedo at t=0C for snow on land is 15% less than
 !-- albedo of temperatures below -10C.
-     if(albsn.lt.0.5) then
+     if(albsn.lt.0.4) then
         ALB=ALBsn
       else
 !-- change albedo when no fresh snow and snow albedo is higher than 0.5
         ALB = MIN(ALBSN,MAX(ALBSN - 0.1*(soilt - 263.15)/       &
                 (273.15-263.15)*ALBSN, ALBSN - 0.05))
       endif
+
     ELSE
 !----- SNOW on ice
        ALBsn   = MAX(keep_snow_albedo*alb_snow,                 &
@@ -1240,11 +1244,11 @@ CONTAINS
 !--- for new value of albedo
          gswnew=gswnew*(1.-alb)
 
-        XINET   = EMISS*(GLW-UPFLUX)
+! Recompute RNET with current GSWnew
         RNET    = GSWnew + XINET
 
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
-        print *,'I,J,GSW,GSWnew,GLW,UPFLUX,ALB',&
+        print *,'SNOW - I,J,GSW,GSWnew,GLW,UPFLUX,ALB',&
                  i,j,GSW,GSWnew,GLW,UPFLUX,ALB
     ENDIF
 
@@ -1344,6 +1348,12 @@ CONTAINS
             infiltr)
         else
 ! SEA ICE
+! If current ice albedo is not the same as from the previous time step, then
+! update GSW, ALB and RNET for surface energy budget
+         if(ALB.ne.ALBice) GSWnew=GSW/(1.-ALB)*(1.-ALBice)
+         alb=albice
+         RNET    = GSWnew + XINET
+
           CALL SICE(                                            &
 !--- input variables
             i,j,iland,isoil,delt,ktau,conflx,nzs,nddzs,nroot,   &
@@ -5644,15 +5654,13 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
      CALL wrf_message( 'INITIALIZE THREE LSM RELATED TABLES' )
       if(mminlu == 'USGS') then
         MMINLURUC='USGS-RUC'
-      elseif(mminlu == 'MODIFIED_IGBP_MODIS_NOAH') then
+      elseif(mminlu == 'MODIS' .OR. &
+        &    mminlu == 'MODIFIED_IGBP_MODIS_NOAH') then
         MMINLURUC='MODI-RUC'
-      else
-        WRITE (err_message,*)"module_sf_ruclsm.F: input landuse data is not supported: ",trim(mminlu)
-        CALL wrf_error_fatal(err_message)
       endif
         MMINSL='STAS-RUC'
 !     CALL  RUCLSM_PARM_INIT
-!     print *,'RUCLSMINIT uses ',mminluruc
+    print *,'RUCLSMINIT uses ',mminluruc
      call RUCLSM_SOILVEGPARM( MMINLURUC, MMINSL)   
    ENDIF
 

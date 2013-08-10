@@ -16,10 +16,11 @@ MODULE module_sf_mynn
 !
 !   LAND only:
 !1) iz0tlnd option is now available with the following options:
-!   (default) =0: Zilitinkevich (1995) with Czil=0.1, 
+!   (default) =0: Zilitinkevich (1995) 
 !             =1: Czil_new (modified according to Chen & Zhang 2008)
 !             =2: Modified Yang et al (2002, 2008) - generalized for all landuse
 !             =3: constant zt = z0/7.4 (original form; Garratt 1992)
+!             =4: Pan et al. (1994) with RUC mods for z_q, zili for z_t
 !2) Relaxed u* minimum from 0.1 to 0.01
 !
 !   WATER only:
@@ -43,7 +44,7 @@ MODULE module_sf_mynn
 
   USE module_sf_sfclay, ONLY: sfclayinit
   USE module_bl_mynn,   only: tv0, mym_condensation
-  
+!  USE module_wrf_error
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -51,15 +52,10 @@ MODULE module_sf_mynn
   REAL, PARAMETER :: xlvcp=xlv/cp, ep_3=1.-ep_2
  
   REAL, PARAMETER :: wmin=0.1    ! Minimum wind speed
-  REAL, PARAMETER :: zm2h=7.4    ! = z_0m/z_0h
-
-  REAL, PARAMETER :: charnock=0.016, bvisc=1.5e-5, z0hsea=5.e-5
-
   REAL, PARAMETER :: VCONVC=1.0
   REAL, PARAMETER :: SNOWZ0=0.012
-  
-  REAL, DIMENSION(0:1000 ),SAVE          :: PSIMTB,PSIHTB
 
+  REAL, DIMENSION(0:1000 ),SAVE          :: PSIMTB,PSIHTB
 
 CONTAINS
 
@@ -76,41 +72,40 @@ CONTAINS
 
   END SUBROUTINE mynn_sf_init_driver
 
-
 !-------------------------------------------------------------------
    SUBROUTINE SFCLAY_mynn(U3D,V3D,T3D,QV3D,P3D,dz8w,               &
-                     CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,      &
+                     CP,G,ROVCP,R,XLV,PSFCPA,CHS,CHS2,CQS2,CPM,    &
                      ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH, &
                      XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QGH,QSFC,RMOL, &
-                     U10,V10,TH2,T2,Q2,                            &
+                     U10,V10,TH2,T2,Q2,SNOWH,                      &
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
-                     KARMAN,EOMEG,STBOLT,                          &
-                     itimestep,ch,th3d,pi3d,qc3d,                  &
-                     tsq,qsq,cov,qcg,                              &
+                     KARMAN,itimestep,ch,th3d,pi3d,qc3d,rho3d,     &
+                     tsq,qsq,cov,sh3d,el_pbl,qcg,                  &
 !JOE-add output
 !                     z0zt_ratio,BulkRi,wstar,qstar,resist,logres,  &
-!                     Rreynolds,niters,psixrat,psitrat,             &
 !JOE-end 
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
-                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd           )
+                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,          &
+                     bl_mynn_cloudpdf)
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
 !-- U3D         3D u-velocity interpolated to theta points (m/s)
 !-- V3D         3D v-velocity interpolated to theta points (m/s)
-!-- T3D         temperature (K)
+!-- T3D         3D temperature (K)
 !-- QV3D        3D water vapor mixing ratio (Kg/Kg)
 !-- P3D         3D pressure (Pa)
-!-- dz8w        dz between full levels (m)
+!-- RHO3D       3D density (kg/m3) 
+!-- dz8w        3D dz between full levels (m)
 !-- CP          heat capacity at constant pressure for dry air (J/kg/K)
 !-- G           acceleration due to gravity (m/s^2)
 !-- ROVCP       R/CP
 !-- R           gas constant for dry air (J/kg/K)
 !-- XLV         latent heat of vaporization for water (J/kg)
-!-- PSFC        surface pressure (Pa)
+!-- PSFCPA      surface pressure (Pa)
 !-- ZNT         roughness length (m)
 !-- UST         u* in similarity theory (m/s)
 !-- USTM        u* in similarity theory (m/s) w* added to WSPD. This is                                                                         
@@ -120,6 +115,7 @@ CONTAINS
 !-- MAVAIL      surface moisture availability (between 0 and 1)
 !-- ZOL         z/L height over Monin-Obukhov length
 !-- MOL         T* (similarity theory) (K)
+!-- RMOL        Reciprocal of M-O length (/m)
 !-- REGIME      flag indicating PBL regime (stable, unstable, etc.)
 !-- PSIM        similarity stability function for momentum
 !-- PSIH        similarity stability function for heat
@@ -132,12 +128,15 @@ CONTAINS
 !-- FLQC        exchange coefficient for moisture (kg/m^2/s)
 !-- CHS         heat/moisture exchange coefficient for LSM (m/s)
 !-- QGH         lowest-level saturated mixing ratio
+!-- QSFC        qv (specific humidity) at the surface
+!-- QSFCMR      qv (mixing ratio) at the surface
 !-- U10         diagnostic 10m u wind
 !-- V10         diagnostic 10m v wind
 !-- TH2         diagnostic 2m theta (K)
 !-- T2          diagnostic 2m temperature (K)
 !-- Q2          diagnostic 2m mixing ratio (kg/kg)
-!-- GZ1OZ0      log(z/z0) where z0 is roughness length
+!-- SNOWH       Snow height (m)
+!-- GZ1OZ0      log((z1+ZNT)/ZNT) where ZNT is roughness length 
 !-- WSPD        wind speed at lowest model level (m/s)
 !-- BR          bulk Richardson number in surface layer
 !-- ISFFLX      isfflx=1 for surface heat and moisture fluxes
@@ -150,8 +149,6 @@ CONTAINS
 !-- EP2         constant for spec. hum. calc (Rd/Rv = 0.622) (dimensionless)
 !-- EP3         constant for spec. hum. calc (1 - Rd/Rv = 0.378 ) (dimensionless)
 !-- KARMAN      Von Karman constant
-!-- EOMEG       angular velocity of earth's rotation (rad/s)
-!-- STBOLT      Stefan-Boltzmann constant (W/m^2/K^4)
 !-- ck          enthalpy exchange coeff at 10 meters                                                                                           
 !-- cd          momentum exchange coeff at 10 meters                                                                                           
 !-- cka         enthalpy exchange coeff at the lowest model level                                                                              
@@ -161,10 +158,19 @@ CONTAINS
 !    only)      =2: z0 from Davis et al (2008), zt & zq from Garratt (1992)
 !               =3: z0 from Taylor and Yelland (2004), zt and zq from COARE3.0                                                                 
 !               =4: z0 from Zilitinkevich (2001), zt & zq from COARE3.0
-!-- iz0tlnd     =0: Zilitinkevich (1995) with Czil=0.1, 
+!-- iz0tlnd     =0: Zilitinkevich (1995) with Czil=0.14, 
 !   (land       =1: Czil_new (modified according to Chen & Zhang 2008)
 !    only)      =2: Modified Yang et al (2002, 2008) - generalized for all landuse
 !               =3: constant zt = z0/7.4 (Garratt 1992)
+!               =4: Pan et al (1994) for zq; ZIlitintevich for zt
+!-- bl_mynn_cloudpdf =0: Mellor & Yamada
+!                    =1: Kuwano et al.
+!-- el_pbl      = mixing length from PBL scheme (meters)
+!-- Sh3d        = Stability finction for heat (unitless)
+!-- cov         = T'q' from PBL scheme
+!-- tsq         = T'T' from PBL scheme
+!-- qsq         = q'q' from PBL scheme
+!
 !-- ids         start index for i in domain
 !-- ide         end index for i in domain
 !-- jds         start index for j in domain
@@ -183,125 +189,106 @@ CONTAINS
 !-- jte         end index for j in tile
 !-- kts         start index for k in tile
 !-- kte         end index for k in tile
-!-------------------------------------------------------------------
-      INTEGER,  INTENT(IN )   ::        ids,ide, jds,jde, kds,kde, &
-                                        ims,ime, jms,jme, kms,kme, &
-                                        its,ite, jts,jte, kts,kte
-!                                                               
-      INTEGER,  INTENT(IN )   ::        ISFFLX
-      REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
-      REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN,EOMEG,STBOLT
-!
+!=================================================================
+! SCALARS
+!===================================
+      INTEGER,  INTENT(IN)   ::        ids,ide, jds,jde, kds,kde, &
+                                       ims,ime, jms,jme, kms,kme, &
+                                       its,ite, jts,jte, kts,kte
+      INTEGER,  INTENT(IN)   ::        itimestep
+      REAL,     INTENT(IN)   ::        SVP1,SVP2,SVP3,SVPT0
+      REAL,     INTENT(IN)   ::        EP1,EP2,KARMAN
+      REAL,     INTENT(IN)   ::        CP,G,ROVCP,R,XLV,DX
+!NAMELIST OPTIONS:
+      INTEGER,  INTENT(IN)   ::        ISFFLX
+      INTEGER,  OPTIONAL,  INTENT(IN)   ::     ISFTCFLX, IZ0TLND,&
+                                                bl_mynn_cloudpdf
+!===================================
+! 3D VARIABLES
+!===================================
       REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
-                INTENT(IN   )   ::                           dz8w
-                                        
-      REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
-                INTENT(IN   )   ::                           QV3D, &
+                INTENT(IN   )   ::                           dz8w, &
+                                                             QV3D, &
                                                               P3D, &
                                                               T3D, &
-                                                             QC3D,&
-                                            th3d,pi3d,tsq,qsq,cov
-
-      INTEGER, INTENT(in) :: itimestep
-
-      REAL,     DIMENSION( ims:ime, jms:jme ), INTENT(IN) ::&
-           &    qcg
-      
-      REAL,     DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::&
-           & ch
-
+                                                             QC3D, &
+                                                          U3D,V3D, &
+                             RHO3D,th3d,pi3d,tsq,qsq,cov,sh3d,el_pbl
+!===================================
+! 2D VARIABLES
+!===================================
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(IN   )               ::             MAVAIL, &
                                                              PBLH, &
                                                             XLAND, &
-                                                              TSK
-      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
-                INTENT(OUT  )               ::                U10, &
-                                                              V10, &
-                                                              TH2, &
-                                                               T2, &
-!JOE-use value from LSM                                        Q2, &
-                                                               Q2
-!JOE-moved down below                                          QSFC
+                                                              TSK, &
+                                                              QCG, &
+                                                           PSFCPA , &
+                                                            SNOWH
 
+      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
+                INTENT(OUT  )               ::            U10,V10, &
+                                                        TH2,T2,Q2
+
+      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
+                INTENT(OUT)     ::              ck,cka,cd,cda,ustm
 !
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(INOUT)               ::             REGIME, &
                                                               HFX, &
                                                               QFX, &
                                                                LH, &
-                                                    MOL,RMOL,QSFC
-!m the following 5 are change to memory size
-!
-      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
-                INTENT(INOUT)   ::                 GZ1OZ0,WSPD,BR, &
-                                                        PSIM,PSIH
-
-      REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
-                INTENT(IN   )   ::                            U3D, &
-                                                              V3D
-                                        
-      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
-                INTENT(IN   )               ::               PSFC
-
-      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
-                INTENT(INOUT)   ::                            ZNT, &
+                                                         MOL,RMOL, &
+                                                        QSFC, QGH, &
+                                                              ZNT, &
                                                               ZOL, &
                                                               UST, &
                                                               CPM, &
                                                              CHS2, &
                                                              CQS2, &
-                                                              CHS
+                                                              CHS, &
+                                                               CH, &
+                                                        FLHC,FLQC, &
+                                                   GZ1OZ0,WSPD,BR, &
+                                                        PSIM,PSIH
 
-      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
-                INTENT(INOUT)   ::                      FLHC,FLQC
-
-      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
-                INTENT(INOUT)   ::                            QGH
-
+!ADDITIONAL OUTPUT
 !JOE-begin
-!      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
-!                INTENT(OUT)               ::           z0zt_ratio, &
-!                                 BulkRi,wstar,qstar,resist,logres, &
-!                                 Rreynolds,niters,psixrat,psitrat
+      REAL,     DIMENSION( ims:ime, jms:jme )    ::    z0zt_ratio, &
+                                 BulkRi,wstar,qstar,resist,logres
 !JOE-end 
-                                    
-      REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
-
-      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
-                INTENT(OUT)     ::              ck,cka,cd,cda,ustm
-
-      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
-
-!----------- LOCAL VARS -----------------------------------
-
+!===================================
+! 1D LOCAL ARRAYS
+!===================================
       REAL,     DIMENSION( its:ite ) ::                       U1D, &
                                                               V1D, &
                                                              QV1D, &
                                                               P1D, &
-                                                         T1D,qc1d
-
-      REAL,     DIMENSION( its:ite ) ::                    dz8w1d
+                                                         T1D,QC1D, &
+                                                            RHO1D, &
+                                                           dz8w1d
 
       REAL,     DIMENSION( its:ite ) ::  vt1,vq1
       REAL,     DIMENSION(kts:kts+1) ::  thl, qw, vt, vq
       REAL                           ::  ql
 
-      INTEGER ::  I,J,K
+      INTEGER ::  I,J,K,itf,jtf,ktf
 !-----------------------------------------------------------
+
+      itf=MIN0(ite,ide-1)
+      jtf=MIN0(jte,jde-1)
+      ktf=MIN0(kte,kde-1)
 
       DO J=jts,jte
         DO i=its,ite
-          dz8w1d(I) = dz8w(i,kts,j)
-        ENDDO
-   
-        DO i=its,ite
+           dz8w1d(I) = dz8w(i,kts,j)
            U1D(i) =U3D(i,kts,j)
            V1D(i) =V3D(i,kts,j)
            QV1D(i)=QV3D(i,kts,j)
            QC1D(i)=QC3D(i,kts,j)
            P1D(i) =P3D(i,kts,j)
            T1D(i) =T3D(i,kts,j)
+           RHO1D(i)=RHO3D(i,kts,j)
         ENDDO
 
         IF (itimestep==1) THEN
@@ -310,7 +297,8 @@ CONTAINS
               vq1(i)=0.
               UST(i,j)=MAX(0.025*SQRT(U1D(i)*U1D(i) + V1D(i)*V1D(i)),0.001)
               MOL(i,j)=0.     ! Tstar
-              !qstar(i,j)=0.0  
+              QSFC(i,j)=QV3D(i,kts,j)/(1.+QV3D(i,kts,j))
+              qstar(i,j)=0.0
            ENDDO
         ELSE
            DO i=its,ite
@@ -320,39 +308,39 @@ CONTAINS
                 thl(k) = th3d(i,k,j)-xlvcp*ql/pi3d(i,k,j)
               end do
 
-! NOTE: The last grid number is kts+1 instead of kte.
+              ! NOTE: The last grid number is kts+1 instead of kte.
               CALL mym_condensation (kts,kts+1, &
                    &            dz8w(i,kts:kts+1,j), &
                    &            thl(kts:kts+1), qw(kts:kts+1), &
-                   &            p3d(i,kts:kts+1,j),&
-                   &            pi3d(i,kts:kts+1,j), &
-                   &            tsq(i,kts:kts+1,j), &
-                   &            qsq(i,kts:kts+1,j), &
-                   &            cov(i,kts:kts+1,j), &
+                   &            p3d(i,kts:kts+1,j),     &
+                   &            pi3d(i,kts:kts+1,j),    &
+                   &            tsq(i,kts:kts+1,j),     &
+                   &            qsq(i,kts:kts+1,j),     &
+                   &            cov(i,kts:kts+1,j),     &
+                   &            Sh3d(i,kts:kts+1,j),    & !JOE - cloud PDF testing
+                   &            el_pbl(i,kts:kts+1,j),  & !JOE - cloud PDF testing
+                   &            bl_mynn_cloudpdf,       & !JOE - cloud PDF testing
                    &            vt(kts:kts+1), vq(kts:kts+1))
-
               vt1(i) = vt(kts)
               vq1(i) = vq(kts)
            ENDDO
         ENDIF
 
-        CALL SFCLAY1D_mynn(J,U1D,V1D,T1D,QV1D,P1D,dz8w1d,          &
-                CP,G,ROVCP,R,XLV,PSFC(ims,j),CHS(ims,j),CHS2(ims,j),&
+        CALL SFCLAY1D_mynn(J,U1D,V1D,T1D,QV1D,P1D,dz8w1d,rho1d,    &
+                CP,G,ROVCP,R,XLV,PSFCPA(ims,j),CHS(ims,j),CHS2(ims,j),&
                 CQS2(ims,j),CPM(ims,j),PBLH(ims,j), RMOL(ims,j),   &
                 ZNT(ims,j),UST(ims,j),MAVAIL(ims,j),ZOL(ims,j),    &
                 MOL(ims,j),REGIME(ims,j),PSIM(ims,j),PSIH(ims,j),  &
                 XLAND(ims,j),HFX(ims,j),QFX(ims,j),TSK(ims,j),     &
                 U10(ims,j),V10(ims,j),TH2(ims,j),T2(ims,j),        &
-                Q2(ims,j),FLHC(ims,j),FLQC(ims,j),QGH(ims,j),      &
-                QSFC(ims,j),LH(ims,j),                             &
+                Q2(ims,j),FLHC(ims,j),FLQC(ims,j),SNOWH(ims,j),    &
+                QGH(ims,j),QSFC(ims,j),LH(ims,j),                  &
                 GZ1OZ0(ims,j),WSPD(ims,j),BR(ims,j),ISFFLX,DX,     &
-                SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,EOMEG,STBOLT,  &
-                ch(ims,j),vt1,vq1,qc1d,qcg(ims,j),&
-                itimestep,&
-!JOE-begin 
-!                z0zt_ratio(ims,j),BulkRi(ims,j),wstar(ims,j),qstar(ims,j),  &
-!                resist(ims,j),logres(ims,j),Rreynolds(ims,j),niters(ims,j), &
-!                psixrat(ims,j),psitrat(ims,j),                     &
+                SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,               &
+                ch(ims,j),vt1,vq1,qc1d,qcg(ims,j),itimestep,       &
+!JOE-begin additional output
+                z0zt_ratio(ims,j),BulkRi(ims,j),wstar(ims,j),      &
+                qstar(ims,j),resist(ims,j),logres(ims,j),          &
 !JOE-end
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
@@ -364,280 +352,233 @@ CONTAINS
 
       ENDDO
 
-
     END SUBROUTINE SFCLAY_MYNN
 
 !-------------------------------------------------------------------
-   SUBROUTINE SFCLAY1D_mynn(J,UX,VX,T1D,QV1D,P1D,dz8w1d,                &
-                     CP,G,ROVCP,R,XLV,PSFCPA,CHS,CHS2,CQS2,CPM,PBLH,RMOL, &
-                     ZNT,UST,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH,      &
-                     XLAND,HFX,QFX,TSK,                            &
-                     U10,V10,TH2,T2,Q2,FLHC,FLQC,QGH,              &
+   SUBROUTINE SFCLAY1D_mynn(J,U1D,V1D,T1D,QV1D,P1D,dz8w1d,rho1d,   &
+                     CP,G,ROVCP,R,XLV,PSFCPA,CHS,CHS2,CQS2,CPM,    &
+                     PBLH,RMOL,ZNT,UST,MAVAIL,ZOL,MOL,REGIME,      &
+                     PSIM,PSIH,XLAND,HFX,QFX,TSK,                  &
+                     U10,V10,TH2,T2,Q2,FLHC,FLQC,SNOWH,QGH,        &
                      QSFC,LH,GZ1OZ0,WSPD,BR,ISFFLX,DX,             &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
-                     KARMAN,EOMEG,STBOLT,                          &
-                     ch,vt1,vq1,qc1d,qcg,                          &
-                     itimestep,                                    &
-!JOE-add
-!                     zratio,BRi,wstar,qstar,resist,logres,         &
-!                     Rreynolds,niters,psixrat,psitrat,             &
+                     KARMAN,ch,vt1,vq1,qc1d,qcg,itimestep,         &
+!JOE-additional output
+                     zratio,BRi,wstar,qstar,resist,logres,         &
 !JOE-end
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte,                    &
-                     isftcflx, iz0tlnd,                            &
-                     ustm,ck,cka,cd,cda                            )
+                     its,ite, jts,jte, kts,kte                     &
+                     ,isftcflx, iz0tlnd,                           &
+                     ustm,ck,cka,cd,cda                            &
+                     )
 
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
+! SCALARS
+!-----------------------------
+      INTEGER,  INTENT(IN) ::        ids,ide, jds,jde, kds,kde, &
+                                     ims,ime, jms,jme, kms,kme, &
+                                     its,ite, jts,jte, kts,kte, &
+                                     J, itimestep
+
       REAL,     PARAMETER  :: XKA=2.4E-5   !molecular diffusivity
       REAL,     PARAMETER  :: PRT=1.       !prandlt number
+      REAL,     INTENT(IN) :: SVP1,SVP2,SVP3,SVPT0,EP1,EP2
+      REAL,     INTENT(IN) :: KARMAN,CP,G,ROVCP,R,XLV,DX
 
-      INTEGER,  INTENT(IN )   ::        ids,ide, jds,jde, kds,kde, &
-                                        ims,ime, jms,jme, kms,kme, &
-                                        its,ite, jts,jte, kts,kte, &
-                                        J
-!                                                               
-      INTEGER,  INTENT(in)    :: itimestep
-      INTEGER,  INTENT(IN )   ::        ISFFLX
-      REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
-      REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN,EOMEG,STBOLT
+!-----------------------------
+! NAMELIST OPTIONS
+!-----------------------------
+      INTEGER,  INTENT(IN) :: ISFFLX
+      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
 
-!
-      REAL,     DIMENSION( ims:ime )                             , &
-                INTENT(IN   )               ::             MAVAIL, &
+!-----------------------------
+! 1D ARRAYS
+!-----------------------------
+      REAL,     DIMENSION( ims:ime ), INTENT(IN)    ::     MAVAIL, &
                                                              PBLH, &
                                                             XLAND, &
-                                                              TSK
-!
-      REAL,     DIMENSION( ims:ime )                             , &
-                INTENT(IN   )               ::             PSFCPA
+                                                              TSK, &
+                                                           PSFCPA, &
+                                                              QCG, &
+                                                            SNOWH
 
-      REAL,     DIMENSION( ims:ime )                             , &
-                INTENT(INOUT)               ::             REGIME, &
-                                                              HFX, &
-                                                              QFX, &
-                                                         MOL,RMOL
-!m the following 5 are changed to memory size---
-!
-      REAL,     DIMENSION( ims:ime )                             , &
-                INTENT(INOUT)   ::                 GZ1OZ0,WSPD,BR, &
-                                                        PSIM,PSIH
+      REAL,     DIMENSION( its:ite ), INTENT(IN)   ::     U1D,V1D, &
+                                                         QV1D,P1D, &
+                                                         T1D,QC1d, &
+                                                           dz8w1d, &
+                                                            RHO1D, &
+                                                          vt1,vq1
 
-      REAL,     DIMENSION( ims:ime )                             , &
-                INTENT(INOUT)   ::                            ZNT, &
+      REAL,     DIMENSION( ims:ime ), INTENT(INOUT) ::     REGIME, &
+                                                       HFX,QFX,LH, &
+                                                         MOL,RMOL, &
+                                                         QGH,QSFC, &
+                                                              ZNT, &
                                                               ZOL, &
                                                               UST, &
                                                               CPM, &
-                                                             CHS2, &
-                                                             CQS2, &
-                                                              CHS
-!JOE-add
-      REAL,     DIMENSION( its:ite )     :: zratio,BRi,wstar,qstar,&
-                                          resist,logres,Rreynolds, &
-                                         niters,psixrat,psitrat
-!      REAL,     DIMENSION( ims:ime )                             , &
-!                INTENT(OUT)     ::         zratio,BRi,wstar,qstar, &
-!                                          resist,logres,Rreynolds, &
-!                                         niters,psixrat,psitrat 
-!JOE-end
+                                                        CHS2,CQS2, &
+                                                           CHS,CH, &
+                                                        FLHC,FLQC, &
+                                                           GZ1OZ0, &
+                                                             WSPD, &
+                                                               BR, &
+                                                        PSIM,PSIH
 
-      REAL,     DIMENSION( ims:ime )                             , &
-                INTENT(INOUT)   ::                      FLHC,FLQC
-
-      REAL,     DIMENSION( ims:ime )                             , &
-                INTENT(INOUT)   ::                       QGH,QSFC
-
-      REAL,     DIMENSION( ims:ime )                             , &
-                INTENT(OUT)     ::                        U10,V10, &
-!JOE-make qsfc inout (moved up)                   TH2,T2,Q2,QSFC,LH
-                                                TH2,T2,Q2,LH
-                                    
-      REAL,     INTENT(IN)               ::   CP,G,ROVCP,R,XLV,DX
-
-! MODULE-LOCAL VARIABLES, DEFINED IN SUBROUTINE SFCLAY
-      REAL,     DIMENSION( its:ite ),  INTENT(IN   )   ::  dz8w1d
-
-      REAL,     DIMENSION( its:ite ),  INTENT(IN   )   ::      UX, &
-                                                               VX, &
-                                                             QV1D, &
-                                                              P1D, &
-                                                         T1D,qc1d
- 
-      REAL,     DIMENSION( ims:ime ), INTENT(IN)    :: qcg
-      REAL,     DIMENSION( ims:ime ), INTENT(INOUT) :: ch
-
-      REAL,     DIMENSION( its:ite ), INTENT(IN)    :: vt1,vq1
+      ! DIAGNOSTIC OUTPUT
+      REAL,     DIMENSION( ims:ime ), INTENT(OUT)   ::    U10,V10, &
+                                                        TH2,T2,Q2
 
       REAL, OPTIONAL, DIMENSION( ims:ime )                       , &
                 INTENT(OUT)     ::              ck,cka,cd,cda,ustm
-
-      INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
-
-
+!--------------------------------------------
+!JOE-additinal output
+      REAL,     DIMENSION( ims:ime ) ::    zratio,BRi,wstar,qstar, &
+                                                    resist,logres
+!JOE-end
+!----------------------------------------------------------------
 ! LOCAL VARS
-
-      REAL,     DIMENSION( its:ite ) :: z_t,z_q
-
+!----------------------------------------------------------------
       REAL :: thl1,sqv1,sqc1,exner1,sqvg,sqcg,vv,ww
 
-      REAL,     DIMENSION( its:ite )        ::                 ZA, &
-                                                        THVX,ZQKL, &
-                                                           THX,QX, &
-                                                            PSIH2, &
-                                                            PSIM2, &
-                                                           PSIH10, &
-                                                           PSIM10, &
-                                                           GZ2OZ0, &
-                                                          GZ10OZ0, &
-                                                            WSPDI
-!
-      REAL,     DIMENSION( its:ite )        ::        RHOX,GOVRTH
-!
-      REAL,     DIMENSION( its:ite)         ::          SCR4
-      REAL,     DIMENSION( its:ite )        ::         THGB, PSFC, QSFCMR
+      REAL, DIMENSION(its:ite) :: &
+                 ZA, &    !Height of lowest 1/2 sigma level(m)
+              THV1D, &    !Theta-v at lowest 1/2 sigma (K)
+               TH1D, &    !Theta at lowest 1/2 sigma (K)
+               TV1D, &    !Tv at lowest 1/2 sigma (K)
+               QVSH, &    !qv at lowest 1/2 sigma (spec humidity)
+        PSIH2,PSIM2, &    !M-O stability functions at z=2 m
+      PSIH10,PSIM10, &    !M-O stability functions at z=10 m
+              WSPDI, & 
+            z_t,z_q, &    !thermal & moisture roughness lengths
+             GOVRTH, &    !g/theta
+               THGB, &    !theta at ground
+              THVGB, &    !theta-v at ground
+               PSFC, &    !press at surface (Pa/1000)
+             QSFCMR, &    !qv at surface (mixing ratio, kg/kg)
+             GZ2OZ0, &    !LOG((2.0+ZNT(I))/ZNT(I))
+            GZ10OZ0, &    !LOG((10.+ZNT(I))/ZNT(I))
+             GZ2OZt, &    !LOG((2.0+z_t(i))/z_t(i))
+            GZ10OZt, &    !LOG((10.+z_t(i))/z_t(i))
+             GZ1OZt       !LOG((ZA(I)+z_t(i))/z_t(i))
 
-      REAL,     DIMENSION( its:ite )        :: GZ2OZt,GZ10OZt,GZ1OZt
-
-!
-      INTEGER ::  N,I,K,KK,L,NZOL,NK,NZOL2,NZOL10, ITER
+      INTEGER ::  N,I,K,L,NZOL,NK,NZOL2,NZOL10, ITER
       INTEGER, PARAMETER :: ITMAX=5
 
       REAL    ::  PL,THCON,TVCON,E1
-      REAL    ::  ZL,TSKV,DTHVDZ,DTHVM,VCONV,RZOL,RZOL2,RZOL10,ZOL2,ZOL10
+      REAL    ::  DTHVDZ,DTHVM,VCONV,RZOL,RZOL2,RZOL10,ZOL2,ZOL10
       REAL    ::  DTG,PSIX,DTTHX,DTHDZ,PSIX10,PSIT,PSIT2,PSIT10, &
                   PSIQ,PSIQ2,PSIQ10
       REAL    ::  FLUXC,VSGD
-      real    ::  restar,VISC,psilim,DQG,OLDUST,OLDTST
+      REAL    ::  restar,VISC,DQG,OLDUST,OLDTST
+      REAL, PARAMETER :: psilim = -10.  ! ONLY AFFECTS z/L > 2.0
 !-------------------------------------------------------------------
 
-!----CONVERT GROUND TEMPERATURE TO POTENTIAL TEMPERATURE:  
       DO I=its,ite
-         ! PSFC cmb (or kPa)
+         ! CONVERT GROUND & LOWEST LAYER TEMPERATURE TO POTENTIAL TEMPERATURE:
+         ! PSFC cmb
          PSFC(I)=PSFCPA(I)/1000.
-         THGB(I)=TSK(I)*(100./PSFC(I))**ROVCP                
-      ENDDO                                              
-!                                                                                   
-!     SCR4(I,K) STORES EITHER TEMPERATURE OR VIRTUAL TEMPERATURE,
-!     DEPENDING ON IFDRY (CURRENTLY NOT USED, SO SCR4 == TVX).                                       
-                                                                                 
-      DO 30 I=its,ite
+         THGB(I)=TSK(I)*(100./PSFC(I))**ROVCP   !(K)              
          ! PL cmb
          PL=P1D(I)/1000.                                                   
          THCON=(100./PL)**ROVCP                                                 
-         THX(I)=T1D(I)*THCON                                               
-         SCR4(I)=T1D(I)                                                    
-         THVX(I)=THX(I)                                                     
-         QX(I)=0.                                                             
-   30 CONTINUE                                                                 
+         TH1D(I)=T1D(I)*THCON                   !(K)    
 
-      ! INITIALIZE SOME VARIABLES HERE:
-      DO I=its,ite
-         niters(I)=0.                                                                
-         QGH(I)=0.                                                                
-         CPM(I)=CP                                                             
-         IF (itimestep .LE. 1) THEN
-           qstar(I)=0.0 
-         ENDIF 
-      ENDDO
-                                                                                
-!     IF(IDRY.EQ.1)GOTO 80                                                   
-      DO 50 I=its,ite
-         QX(I)=QV1D(I)/(1.+QV1D(I))        !CONVERT TO SPEC HUM
-         TVCON=(1.+EP1*QX(I))                                      
-         THVX(I)=THX(I)*TVCON                                               
-         SCR4(I)=T1D(I)*TVCON                                              
-   50 CONTINUE                                                                 
-!                                                                                
-      DO 60 I=its,ite
-        IF (TSK(I) .LT. 273.15) THEN
-           !SATURATION VAPOR PRESSURE WRT ICE (SVP1=.6112; 10*mb)
-           E1=SVP1*EXP(4648*(1./273.15 - 1./TSK(I)) - &
-                  11.64*LOG(273.15/TSK(I)) + 0.02265*(273.15 - TSK(I)))
-        ELSE
-           !SATURATION VAPOR PRESSURE WRT WATER (Bolton 1980)
-           E1=SVP1*EXP(SVP2*(TSK(I)-SVPT0)/(TSK(I)-SVP3))
-        ENDIF
-        QSFC(I)=EP2*E1/(PSFC(I)-ep_3*E1)   !specific humidity
-        QSFCMR(I)=EP2*E1/(PSFC(I)-E1)      !mixing ratio                                           
-        !FOR LAND POINTS, QSFC can come from previous time step (in LSM)
-        !if(xland(i).gt.1.5 .or. QSFC(i).le.0.0) QSFC(I)=EP2*E1/(PSFC(I)-ep_3*E1)     
-  
-        ! QGH CHANGED TO USE LOWEST-LEVEL AIR TEMP CONSISTENT WITH MYJSFC CHANGE
-        ! Q2SAT = QGH IN LSM
-        IF (TSK(I) .LT. 273.15) THEN
-           !SATURATION VAPOR PRESSURE WRT ICE
-           E1=SVP1*EXP(4648*(1./273.15 - 1./T1D(I)) - &
-                  11.64*LOG(273.15/T1D(I)) + 0.02265*(273.15 - T1D(I)))
-        ELSE
-           !SATURATION VAPOR PRESSURE WRT WATER (Bolton 1980)
-           E1=SVP1*EXP(SVP2*(T1D(I)-SVPT0)/(T1D(I)-SVP3))
-        ENDIF
-        PL=P1D(I)/1000.
-        QGH(I)=EP2*E1/(PL-ep_3*E1)    !specific humidity
-        !QGH(I)=EP2*E1/(PL-E1)        !mixing ratio
-        CPM(I)=CP*(1.+0.84*QX(I)/(1.-qx(i)))
+         ! CONVERT TO VIRTUAL TEMPERATURE
+         QVSH(I)=QV1D(I)/(1.+QV1D(I))        !CONVERT TO SPEC HUM (kg/kg)
+         TVCON=(1.+EP1*QVSH(I))
+         THV1D(I)=TH1D(I)*TVCON                 !(K)
+         TV1D(I)=T1D(I)*TVCON                   !(K)
 
-   60 CONTINUE                                                                   
-   80 CONTINUE
-                                                                                 
-!-----COMPUTE THE HEIGHT OF FULL- AND HALF-SIGMA LEVELS ABOVE GROUND             
-!     LEVEL, AND THE LAYER THICKNESSES.                                          
-                                                                                 
-      DO I=its,ite
-         RHOX(I)=PSFC(I)*1000./(R*SCR4(I))                                       
-         ZQKL(I)=dz8w1d(I)            !first full-sigma level
-         ZA(I)=0.5*ZQKL(I)            !first half-sigma level                            
-         GOVRTH(I)=G/THX(I)                                                    
+         !RHO1D(I)=PSFCPA(I)/(R*TV1D(I)) !now using value calculated in sfc driver
+         ZA(I)=0.5*dz8w1d(I)             !height of first half-sigma level 
+         GOVRTH(I)=G/TH1D(I)
       ENDDO
-                                                                                 
+
       DO I=its,ite
-         WSPD(I)=SQRT(UX(I)*UX(I)+VX(I)*VX(I))                        
+         IF (TSK(I) .LT. 273.15) THEN
+            !SATURATION VAPOR PRESSURE WRT ICE (SVP1=.6112; 10*mb)
+            E1=SVP1*EXP(4648*(1./273.15 - 1./TSK(I)) - &
+            & 11.64*LOG(273.15/TSK(I)) + 0.02265*(273.15 - TSK(I)))
+         ELSE
+            !SATURATION VAPOR PRESSURE WRT WATER (Bolton 1980)
+            E1=SVP1*EXP(SVP2*(TSK(I)-SVPT0)/(TSK(I)-SVP3))
+         ENDIF
+         !FOR LAND POINTS, QSFC can come from LSM, ONLY RECOMPUTE OVER WATER
+         IF (xland(i).gt.1.5 .or. QSFC(i).le.0.0) THEN   !WATER
+            QSFC(I)=EP2*E1/(PSFC(I)-ep_3*E1)             !specific humidity    
+            QSFCMR(I)=EP2*E1/(PSFC(I)-E1)                !mixing ratio 
+         ELSE                                            !LAND 
+            QSFCMR(I)=QSFC(I)/(1.-QSFC(I))
+         ENDIF
+
+         ! QGH CHANGED TO USE LOWEST-LEVEL AIR TEMP CONSISTENT WITH MYJSFC CHANGE
+         ! Q2SAT = QGH IN LSM
+         IF (TSK(I) .LT. 273.15) THEN
+            !SATURATION VAPOR PRESSURE WRT ICE
+            E1=SVP1*EXP(4648*(1./273.15 - 1./T1D(I)) - &
+            &  11.64*LOG(273.15/T1D(I)) + 0.02265*(273.15 - T1D(I)))
+         ELSE
+            !SATURATION VAPOR PRESSURE WRT WATER (Bolton 1980)
+            E1=SVP1*EXP(SVP2*(T1D(I)-SVPT0)/(T1D(I)-SVP3))
+         ENDIF
+         PL=P1D(I)/1000.
+         !QGH(I)=EP2*E1/(PL-ep_3*E1)    !specific humidity
+         QGH(I)=EP2*E1/(PL-E1)          !mixing ratio
+         CPM(I)=CP*(1.+0.84*QV1D(I))
+      ENDDO
+
+      DO I=its,ite
+         WSPD(I)=SQRT(U1D(I)*U1D(I)+V1D(I)*V1D(I))     
 
          !account for partial condensation
-         exner1=(p1d(i)/p1000mb)**ROVCP
-         sqc1=qc1d(i)/(1.+qc1d(i))         !convert to spec hum.
-         sqv1=qx(i)
-         thl1=THX(I)-xlvcp/exner1*sqc1
-         sqvg=qsfc(i)
-         sqcg=qcg(i)/(1.+qcg(i))           !convert to spec hum.
+         exner1=(p1d(I)/p1000mb)**ROVCP
+         sqc1=qc1d(I)/(1.+qc1d(I))         !lowest mod level cloud water spec hum
+         sqv1=QVSH(I)                      !lowest mod level water vapor spec hum
+         thl1=TH1D(I)-xlvcp/exner1*sqc1
+         sqvg=qsfc(I)                      !sfc water vapor spec hum
+         sqcg=qcg(I)/(1.+qcg(I))           !sfc cloud water spec hum
 
          vv = thl1-THGB(I)
-         ww = mavail(i)*(sqv1-sqvg) + (sqc1-sqcg)
+         !TGS:ww = mavail(I)*(sqv1-sqvg) + (sqc1-sqcg)
+         ww = (sqv1-sqvg) + (sqc1-sqcg)
 
-         TSKV=THGB(I)*(1.+EP1*QSFC(I)*MAVAIL(I)) 
+         !TGS:THVGB(I)=THGB(I)*(1.+EP1*QSFC(I)*MAVAIL(I)) 
+         THVGB(I)=THGB(I)*(1.+EP1*QSFC(I))
 
-         DTHDZ=(THX(I)-THGB(I))
-         !DTHVDZ=(THVX(I)-TSKV)
-         DTHVDZ= (vt1(i) + 1.0)*vv + (vq1(i) + tv0)*ww
+         DTHDZ=(TH1D(I)-THGB(I))
+         DTHVDZ=(THV1D(I)-THVGB(I))
+         !DTHVDZ= (vt1(i) + 1.0)*vv + (vq1(i) + tv0)*ww
 
          !--------------------------------------------------------
          !  Calculate the convective velocity scale (WSTAR) and 
          !  subgrid-scale velocity (VSGD) following Beljaars (1995, QJRMS) 
          !  and Mahrt and Sun (1995, MWR), respectively
          !-------------------------------------------------------
-         !       VCONV = 0.25*sqrt(g/tskv*pblh(i)*dthvm)
+         !       VCONV = 0.25*sqrt(g/THVGB(I)*pblh(i)*dthvm)
          !  Use Beljaars over land, old MM5 (Wyngaard) formula over water
          IF (xland(i).lt.1.5) then     !LAND (xland == 1)
 
-            fluxc = max(hfx(i)/rhox(i)/cp                    &
-                + ep1*tskv*qfx(i)/rhox(i),0.)
+            fluxc = max(hfx(i)/RHO1D(i)/cp                    &
+            &    + ep1*THVGB(I)*qfx(i)/RHO1D(i),0.)
             WSTAR(I) = vconvc*(g/TSK(i)*pblh(i)*fluxc)**.33
 
          ELSE                          !WATER (xland == 2)
 
-            IF(-DTHVDZ.GE.0)THEN
-               DTHVM=-DTHVDZ
-            ELSE
-               DTHVM=0.
-            ENDIF
             !JOE-the Wyngaard formula is ~3 times larger than the Beljaars 
             !formula, so switch to Beljaars for water, but use VCONVC = 1.25,
             !as in the COARE3.0 bulk parameterizations.
+            !IF(-DTHVDZ.GE.0)THEN
+            !   DTHVM=-DTHVDZ
+            !ELSE
+            !   DTHVM=0.
+            !ENDIF
             !WSTAR(I) = 2.*SQRT(DTHVM)
-            fluxc = max(hfx(i)/rhox(i)/cp                    &
-                 + ep1*tskv*qfx(i)/rhox(i),0.)
+            fluxc = max(hfx(i)/RHO1D(i)/cp                    &
+            &     + ep1*THVGB(I)*qfx(i)/RHO1D(i),0.)
             WSTAR(I) = 1.25*(g/TSK(i)*pblh(i)*fluxc)**.33
 
          ENDIF
@@ -681,11 +622,10 @@ CONTAINS
 !--------------------------------------------------------------------
 !--------------------------------------------------------------------
 
-DO I=its,ite
+ DO I=its,ite
 
    ITER = 1
    DO WHILE (ITER .LE. ITMAX)
-      niters(I)=ITER
 
       !COMPUTE KINEMATIC VISCOSITY
       VISC=(1.32+0.009*(T1D(I)-273.15))*1.E-5
@@ -694,11 +634,7 @@ DO I=its,ite
           !--------------------------------------
           ! WATER
           !--------------------------------------
-
-          !COMPUTE KINEMATIC VISCOSITY
-          VISC=(1.32+0.009*(T1D(I)-273.15))*1.E-5
-          !--------------------------------------
-          !CALCULATE z0 (znt)
+          ! CALCULATE z0 (znt)
           !--------------------------------------
           IF ( PRESENT(ISFTCFLX) ) THEN
              IF ( ISFTCFLX .EQ. 0 ) THEN
@@ -750,18 +686,20 @@ DO I=its,ite
           ! LAND
           !--------------------------------------
           !COMPUTE ROUGHNESS REYNOLDS NUMBER (restar) USING DEFAULT ZNT
-          VISC=(1.32+0.009*(T1D(I)-273.15))*1.E-5
           restar=MAX(ust(i)*ZNT(i)/visc, 0.1)
 
           !--------------------------------------
           !GET z_t and z_q
           !--------------------------------------
           !CHECK FOR SNOW/ICE POINTS OVER LAND
-          IF ( ZNT(i) .LE. SNOWZ0  .AND.  TSK(I) .LE. 273.15 ) THEN
+          !IF ( ZNT(i) .LE. SNOWZ0  .AND.  TSK(I) .LE. 273.15 ) THEN
+          IF ( SNOWH(i) .GE. 0.1) THEN
              CALL Andreas_2002(ZNT(i),restar,z_t(i),z_q(i))
           ELSE
              IF ( PRESENT(IZ0TLND) ) THEN
-                IF ( IZ0TLND .LE. 1 ) THEN
+                IF ( IZ0TLND .LE. 1 .OR. IZ0TLND .EQ. 4) THEN
+                   !IF IZ0TLND==4, THEN PSIQ WILL BE RECALCULATED USING
+                   !PAN ET AL (1994), but PSIT FROM ZILI WILL BE USED.
                    CALL zilitinkevich_1995(ZNT(i),z_t(i),z_q(i),restar,&
                                   UST(I),KARMAN,XLAND(I),IZ0TLND)
                 ELSEIF ( IZ0TLND .EQ. 2 ) THEN
@@ -772,7 +710,7 @@ DO I=its,ite
                    CALL garratt_1992(z_t(i),z_q(i),ZNT(i),restar,XLAND(I))
                 ENDIF
              ELSE
-                !DEFAULT TO ZILITINKEVICH WITH CZIL = 0.1
+                !DEFAULT TO ZILITINKEVICH
                 CALL zilitinkevich_1995(ZNT(i),z_t(i),z_q(i),restar,&
                                         UST(I),KARMAN,XLAND(I),0)
              ENDIF
@@ -780,7 +718,6 @@ DO I=its,ite
 
        ENDIF
        zratio(i)=znt(i)/z_t(i)
-       Rreynolds(I)=restar
 
        !ADD RESISTANCE (SOMEWHAT FOLLOWING JIMENEZ ET AL. (2012)) TO PROTECT AGAINST
        !EXCESSIVE FLUXES WHEN USING A LOW FIRST MODEL LEVEL (ZA < 10 m).        
@@ -795,7 +732,7 @@ DO I=its,ite
      !--------------------------------------------------------------------      
      !--- DIAGNOSE BASIC PARAMETERS FOR THE APPROPRIATE STABILITY CLASS:
      !                                                                                
-     !    THE STABILITY CLASSES ARE DETERMINED BY BR (BULK RICHARDSON NO.).                              
+     !    THE STABILITY CLASSES ARE DETERMINED BY BR (BULK RICHARDSON NO.).
      !                                                                                
      !    CRITERIA FOR THE CLASSES ARE AS FOLLOWS:                                   
      !                                                                                
@@ -813,66 +750,23 @@ DO I=its,ite
      !               REPRESENTS FREE CONVECTION CONDITIONS (REGIME=4).                
      !                                                                                
      !--------------------------------------------------------------------
-     IF (BR(I) .GT. 0.2) THEN                                           
-        !===================================================
-        !---CLASS 1; STABLE (NIGHTTIME) CONDITIONS:                                    
-        !===================================================
-        REGIME(I)=1.
-
-        !COMPUTE z/L
-        !CALL Li_etal_2010(ZOL(I),BR(I),ZA(I)/ZNT(I),zratio(I))
-        IF (ITER .EQ. 1 .AND. itimestep .LE. 1) THEN
-           CALL Li_etal_2010(ZOL(I),BR(I),ZA(I)/ZNT(I),zratio(I))
+     IF (BR(I) .GT. 0.0) THEN
+        IF (BR(I) .GT. 0.2) THEN        
+            !---CLASS 1; STABLE (NIGHTTIME) CONDITIONS:                                    
+            REGIME(I)=1.
         ELSE
-           ZOL(I)=ZA(I)*KARMAN*9.81*MOL(I)/(THX(I)*MAX(UST(I),0.001)**2)
-           ZOL(I)=MAX(ZOL(I),0.0)
-           ZOL(I)=MIN(ZOL(I),20.0)
+            !---CLASS 2; DAMPED MECHANICAL TURBULENCE:
+            REGIME(I)=2.
         ENDIF
- 
-        !COMPUTE PSIM and PSIH
-        IF((XLAND(I)-1.5).GE.0)THEN                                            
-           ! WATER
-           !CALL PSI_Suselj_Sood_2010(PSIM(I),PSIH(I),ZOL(I)) !produces neg TKE
-           !CALL PSI_Beljaars_Holtslag_1991(PSIM(I),PSIH(I),ZOL(I))
-           !CALL PSI_Businger_1971(PSIM(I),PSIH(I),ZOL(I))
-           CALL PSI_DyerHicks(PSIM(I),PSIH(I),ZOL(I), z_t(I), ZNT(I), ZA(I))
-        ELSE           
-           ! LAND  
-           !CALL PSI_Beljaars_Holtslag_1991(PSIM(I),PSIH(I),ZOL(I))
-           !CALL PSI_Businger_1971(PSIM(I),PSIH(I),ZOL(I))
-           !CALL PSI_Zilitinkevich_Esau_2007(PSIM(I),PSIH(I),ZOL(I))
-           CALL PSI_DyerHicks(PSIM(I),PSIH(I),ZOL(I), z_t(I), ZNT(I), ZA(I))
-        ENDIF     
- 
-        !LOWER LIMIT ON PSI IN STABLE CONDITIONS 
-        psilim = -10.   !JOE: this limit will be hit for z/L > 2, but
-                        !     appears to be necessary to control "runaway cooling"
-                        !     in the polar regions..
 
-        PSIM(I)=MAX(PSIM(I),psilim)
-        PSIH(I)=MAX(PSIH(I),psilim)
-        PSIM10(I)=10./ZA(I)*PSIM(I)
-        PSIM10(I)=MAX(PSIM10(I),psilim)
-        PSIH10(I)=PSIM10(I)
-        PSIM2(I)=2./ZA(I)*PSIM(I)
-        PSIM2(I)=MAX(PSIM2(I),psilim)
-        PSIH2(I)=PSIM2(I)    
-        RMOL(I) = ZOL(I)/ZA(I) !1.0/L                                     
-
-     ELSEIF(BR(I) .GT. 0. .AND. BR(I) .LE. 0.2) THEN         
-        !========================================================
-        !---CLASS 2; DAMPED MECHANICAL TURBULENCE:                                     
-        !========================================================
-        REGIME(I)=2.    
-                                                       
         !COMPUTE z/L
         !CALL Li_etal_2010(ZOL(I),BR(I),ZA(I)/ZNT(I),zratio(I))
         IF (ITER .EQ. 1 .AND. itimestep .LE. 1) THEN
            CALL Li_etal_2010(ZOL(I),BR(I),ZA(I)/ZNT(I),zratio(I))
         ELSE
-           ZOL(I)=ZA(I)*KARMAN*9.81*MOL(I)/(THX(I)*MAX(UST(I),0.001)**2)
+           ZOL(I)=ZA(I)*KARMAN*G*MOL(I)/(TH1D(I)*MAX(UST(I),0.001)**2)
            ZOL(I)=MAX(ZOL(I),0.0)
-           ZOL(I)=MIN(ZOL(I),5.0)
+           ZOL(I)=MIN(ZOL(I),2.)
         ENDIF
  
         !COMPUTE PSIM and PSIH
@@ -881,27 +775,22 @@ DO I=its,ite
            !CALL PSI_Suselj_Sood_2010(PSIM(I),PSIH(I),ZOL(I))
            !CALL PSI_Beljaars_Holtslag_1991(PSIM(I),PSIH(I),ZOL(I))
            !CALL PSI_Businger_1971(PSIM(I),PSIH(I),ZOL(I))
-           CALL PSI_DyerHicks(PSIM(I),PSIH(I),ZOL(I), z_t(I), ZNT(I), ZA(I))
-        ELSE           
+           CALL PSI_DyerHicks(PSIM(I),PSIH(I),ZOL(I),z_t(I),ZNT(I),ZA(I))
+        ELSE
            ! LAND  
            !CALL PSI_Beljaars_Holtslag_1991(PSIM(I),PSIH(I),ZOL(I))
            !CALL PSI_Businger_1971(PSIM(I),PSIH(I),ZOL(I))
            !CALL PSI_Zilitinkevich_Esau_2007(PSIM(I),PSIH(I),ZOL(I))
-           CALL PSI_DyerHicks(PSIM(I),PSIH(I),ZOL(I), z_t(I), ZNT(I), ZA(I))
+           CALL PSI_DyerHicks(PSIM(I),PSIH(I),ZOL(I),z_t(I),ZNT(I),ZA(I))
         ENDIF              
 
-       !LOWER LIMIT ON PSI IN WEAKLY STABLE CONDITIONS
-        psilim = -10.   !JOE: this limit is never hit in this regime.
-  
-        ! LOWER LIMIT ON PSI IN STABLE CONDITIONS                                     
+        ! LOWER LIMIT ON PSI IN STABLE CONDITIONS
         PSIM(I)=MAX(PSIM(I),psilim)
-        PSIH(I)=MAX(PSIH(I),psilim)
-        PSIM10(I)=10./ZA(I)*PSIM(I)
-        PSIM10(I)=MAX(PSIM10(I),psilim)                               
-        PSIH10(I)=PSIM10(I)                                          
-        PSIM2(I)=2./ZA(I)*PSIM(I)
-        PSIM2(I)=MAX(PSIM2(I),psilim)                              
-        PSIH2(I)=PSIM2(I)
+        PSIH(I)=MAX(PSIH(I),psilim)                                     
+        PSIM10(I)=MAX(10./ZA(I)*PSIM(I), psilim)
+        PSIH10(I)=MAX(10./ZA(I)*PSIH(I), psilim)
+        PSIM2(I)=MAX(2./ZA(I)*PSIM(I), psilim)
+        PSIH2(I)=MAX(2./ZA(I)*PSIH(I), psilim)
         ! 1.0 over Monin-Obukhov length
         RMOL(I)= ZOL(I)/ZA(I)
 
@@ -937,8 +826,8 @@ DO I=its,ite
         IF (ITER .EQ. 1 .AND. itimestep .LE. 1) THEN
            CALL Li_etal_2010(ZOL(I),BR(I),ZA(I)/ZNT(I),zratio(I))
         ELSE
-           ZOL(I)=ZA(I)*KARMAN*9.81*MOL(I)/(THX(I)*MAX(UST(I),0.001)**2)
-           ZOL(I)=MAX(ZOL(I),-10.0)
+           ZOL(I)=ZA(I)*KARMAN*G*MOL(I)/(TH1D(I)*MAX(UST(I),0.001)**2)
+           ZOL(I)=MAX(ZOL(I),-9.999)
            ZOL(I)=MIN(ZOL(I),0.0)
         ENDIF
 
@@ -963,31 +852,39 @@ DO I=its,ite
            !CALL PSI_Suselj_Sood_2010(PSIM(I),PSIH(I),ZOL(I))
            !CALL PSI_Hogstrom_1996(PSIM(I),PSIH(I),ZOL(I), z_t(I), ZNT(I), ZA(I))
            !CALL PSI_Businger_1971(PSIM(I),PSIH(I),ZOL(I))
-           CALL PSI_DyerHicks(PSIM(I),PSIH(I),ZOL(I), z_t(I), ZNT(I), ZA(I))
+           CALL PSI_DyerHicks(PSIM(I),PSIH(I),ZOL(I),z_t(I),ZNT(I),ZA(I))
         ELSE           
            ! LAND  
            !CALL PSI_Hogstrom_1996(PSIM(I),PSIH(I),ZOL(I), z_t(I), ZNT(I), ZA(I))
            !CALL PSI_Businger_1971(PSIM(I),PSIH(I),ZOL(I))
-           CALL PSI_DyerHicks(PSIM(I),PSIH(I),ZOL(I), z_t(I), ZNT(I), ZA(I))
+           CALL PSI_DyerHicks(PSIM(I),PSIH(I),ZOL(I),z_t(I),ZNT(I),ZA(I))
         ENDIF              
 
-        PSIM10(I)=PSIMTB(NZOL10)+RZOL10*(PSIMTB(NZOL10+1)-PSIMTB(NZOL10))
-        PSIH10(I)=PSIHTB(NZOL10)+RZOL10*(PSIHTB(NZOL10+1)-PSIHTB(NZOL10))
-        PSIM2(I)=PSIMTB(NZOL2)+RZOL2*(PSIMTB(NZOL2+1)-PSIMTB(NZOL2))
-        PSIH2(I)=PSIHTB(NZOL2)+RZOL2*(PSIHTB(NZOL2+1)-PSIHTB(NZOL2))
+!!!!!JOE-test:avoid using psi tables in entirety
+!        PSIM10(I)=PSIMTB(NZOL10)+RZOL10*(PSIMTB(NZOL10+1)-PSIMTB(NZOL10))
+!        PSIH10(I)=PSIHTB(NZOL10)+RZOL10*(PSIHTB(NZOL10+1)-PSIHTB(NZOL10))
+!        PSIM2(I)=PSIMTB(NZOL2)+RZOL2*(PSIMTB(NZOL2+1)-PSIMTB(NZOL2))
+!        PSIH2(I)=PSIHTB(NZOL2)+RZOL2*(PSIHTB(NZOL2+1)-PSIHTB(NZOL2))
+        PSIM10(I)=10./ZA(I)*PSIM(I)
+        PSIH10(I)=10./ZA(I)*PSIH(I)
+        PSIM2(I)=2./ZA(I)*PSIM(I)
+        PSIH2(I)=2./ZA(I)*PSIH(I)
 
         !---LIMIT PSIH AND PSIM IN THE CASE OF THIN LAYERS AND
         !---HIGH ROUGHNESS.  THIS PREVENTS DENOMINATOR IN FLUXES
         !---FROM GETTING TOO SMALL
+        !PSIH(I)=MIN(PSIH(I),0.9*GZ1OZt(I))    !JOE: less restricitive over forest/urban.
         PSIH(I)=MIN(PSIH(I),0.9*GZ1OZ0(I))
         PSIM(I)=MIN(PSIM(I),0.9*GZ1OZ0(I))
+        !PSIH2(I)=MIN(PSIH2(I),0.9*GZ2OZt(I))  !JOE: less restricitive over forest/urban.
         PSIH2(I)=MIN(PSIH2(I),0.9*GZ2OZ0(I))
+        PSIM2(I)=MIN(PSIM2(I),0.9*GZ2OZ0(I))
         PSIM10(I)=MIN(PSIM10(I),0.9*GZ10OZ0(I))
+        PSIH10(I)=MIN(PSIH10(I),0.9*GZ10OZ0(I))
 
         RMOL(I) = ZOL(I)/ZA(I)  
 
      ENDIF
-
 
      !------------------------------------------------------------
      !-----COMPUTE THE FRICTIONAL VELOCITY:                                           
@@ -1003,16 +900,15 @@ DO I=its,ite
       !NON-AVERAGED: UST(I)=KARMAN*WSPD(I)/PSIX
      
       ! Compute u* without vconv for use in HFX calc when isftcflx > 0           
-      WSPDI(I)=SQRT(UX(I)*UX(I)+VX(I)*VX(I))
+      WSPDI(I)=MAX(SQRT(U1D(I)*U1D(I)+V1D(I)*V1D(I)), wmin)
       IF ( PRESENT(USTM) ) THEN
          USTM(I)=0.5*USTM(I)+0.5*KARMAN*WSPDI(I)/PSIX
       ENDIF
 
       IF ((XLAND(I)-1.5).LT.0.) THEN        !LAND
-          !JOE: UST(I)=MAX(UST(I),0.1)
-          UST(I)=MAX(UST(I),0.01)  !Relaxing this limit
-          !Keep ustm = ust over land.
-          USTM(I)=UST(I)
+         UST(I)=MAX(UST(I),0.01)  !JOE:Relaxing this limit
+         !Keep ustm = ust over land.
+         IF ( PRESENT(USTM) ) USTM(I)=UST(I)
       ENDIF
 
      !------------------------------------------------------------
@@ -1031,26 +927,25 @@ DO I=its,ite
 
       PSIQ=MAX(LOG((za(i)+z_q(i))/z_q(I))-PSIH(I) ,2.0)   
       PSIQ2=MAX(LOG((2.0+z_q(i))/z_q(I))-PSIH2(I) ,2.0) 
-      !CARLSON AND BOLAND (1978):
-      IF((XLAND(I)-1.5).GE.0)THEN                                            
-         ZL=ZNT(I)                                                            
-      ELSE           
-         ZL=0.01
-         !PSIQ =MAX(LOG(KARMAN*UST(I)*ZA(I)/XKA + ZA(I)/ZL)-PSIH(I),2.0)   
-         !PSIQ2=MAX(LOG(KARMAN*UST(I)*2./XKA + 2./ZL)-PSIH2(I)     ,2.0)                                  
-      ENDIF                                                                    
+
+      IF((XLAND(I)-1.5).LT.0)THEN    !Land only
+         IF ( IZ0TLND .EQ. 4 ) THEN
+            CALL Pan_etal_1994(PSIQ,PSIQ2,UST(I),PSIH(I),PSIH2(I),&
+                       & KARMAN,ZA(I))
+         ENDIF
+      ENDIF
 
       !----------------------------------------------------
       !COMPUTE THE TEMPERATURE SCALE (or FRICTION TEMPERATURE, T*)
       !----------------------------------------------------
-      DTG=THX(I)-THGB(I)                                                   
+      DTG=TH1D(I)-THGB(I)                                                   
       OLDTST=MOL(I)
       MOL(I)=KARMAN*DTG/PSIT/PRT
-      !t_star(I) = -HFX(I)/(UST(I)*CPM(I)*RHOX(I))
+      !t_star(I) = -HFX(I)/(UST(I)*CPM(I)*RHO1D(I))
       !t_star(I) = MOL(I)
       !----------------------------------------------------
       !COMPUTE THE MOISTURE SCALE (or q*)
-      DQG=(QX(i)-qsfc(i))*1000.   !(kg/kg -> g/kg)
+      DQG=(QVSH(i)-qsfc(i))*1000.   !(kg/kg -> g/kg)
       qstar(I)=KARMAN*DQG/PSIQ/PRT
 
       !-----------------------------------------------------
@@ -1061,14 +956,12 @@ DO I=its,ite
       ! If the lowest model level is close to 10-m, use it 
       ! instead of the flux-based diagnostic formula.
       if (ZA(i) .gt. 7.0 .and. ZA(i) .lt. 13.0) then
-         U10(I)=UX(I)                                   
-         V10(I)=VX(I)
+         U10(I)=U1D(I)
+         V10(I)=V1D(I)
       else                                 
-         U10(I)=UX(I)*PSIX10/PSIX                                    
-         V10(I)=VX(I)*PSIX10/PSIX     
-      endif                              
-      psixrat(I)=PSIX10/PSIX
-      psitrat(I)=PSIT2/PSIT
+         U10(I)=U1D(I)*PSIX10/PSIX                                    
+         V10(I)=V1D(I)*PSIX10/PSIX     
+      endif
 
       !-----------------------------------------------------
       !COMPUTE 2m T, TH, AND Q
@@ -1077,39 +970,46 @@ DO I=its,ite
       TH2(I)=THGB(I)+DTG*PSIT2/PSIT
       !***  BE CERTAIN THAT THE 2-M THETA IS BRACKETED BY
       !***  THE VALUES AT THE SURFACE AND LOWEST MODEL LEVEL.
-      !
-      !IF (THX(I)>THGB(I) .AND. (TH2(I)<THGB(I) .OR. TH2(I)>THX(I)) .OR. &
-      !    THX(I)<THGB(I) .AND. (TH2(I)>THGB(I) .OR. TH2(I)<THX(I))) THEN
-      !    TH2(I)=THGB(I)+2.*(THX(I)-THGB(I))/ZA(I)
-      !ENDIF
+      IF ((TH1D(I)>THGB(I) .AND. (TH2(I)<THGB(I) .OR. TH2(I)>TH1D(I))) .OR. &
+          (TH1D(I)<THGB(I) .AND. (TH2(I)>THGB(I) .OR. TH2(I)<TH1D(I)))) THEN
+          TH2(I)=THGB(I) + 2.*(TH1D(I)-THGB(I))/ZA(I)
+      ENDIF
+      T2(I)=TH2(I)*(PSFC(I)/100.)**ROVCP
+
       Q2(I)=QSFCMR(I)+(QV1D(I)-QSFCMR(I))*PSIQ2/PSIQ
-      T2(I) = TH2(I)*(PSFC(I)/100.)**ROVCP
+      !***  BE CERTAIN THAT THE 2-M MIXING RATIO IS BRACKETED BY
+      !***  THE VALUES AT THE SURFACE AND LOWEST MODEL LEVEL.
+      IF ((QV1D(I)>QSFCMR(I) .AND. (Q2(I)<QSFCMR(I) .OR. Q2(I)>QV1D(I))) .OR. &
+          (QV1D(I)<QSFCMR(I) .AND. (Q2(I)>QSFCMR(I) .OR. Q2(I)<QV1D(I)))) THEN
+          Q2(I)=QSFCMR(I) + 2.*(QV1D(I)-QSFCMR(I))/ZA(I)
+      ENDIF
 
       !CHECK FOR CONVERGENCE
       IF (ITER .GE. 2) THEN
          !IF (ABS(OLDUST-UST(I)) .lt. 0.01) THEN
          IF (ABS(OLDTST-MOL(I)) .lt. 0.01) THEN
-            ITER = ITMAX+1
-         END IF
+            ITER = ITER+ITMAX
+         ENDIF
 
          !IF (I .eq. 2) THEN
          !  print*,"ITER:",ITER
          !  write(*,1001)"REGIME:",REGIME(I)," z/L:",ZOL(I)," U*:",UST(I)," Tstar:",MOL(I)
-         !  write(*,1002)"PSIM:",PSIM(I)," PSIH:",PSIH(I)," W*:",WSTAR(I)," DTHV:",THVX(I)-THVGB(I)
-         !  write(*,1003)"CPM:",CPM(I)," RHOX:",RHOX(I)," L:",ZOL(I)/ZA(I)," DTH:",THX(I)-THGB(I)
+         !  write(*,1002)"PSIM:",PSIM(I)," PSIH:",PSIH(I)," W*:",WSTAR(I)," DTHV:",THV1D(I)-THVGB(I)
+         !  write(*,1003)"CPM:",CPM(I)," RHO1D:",RHO1D(I)," L:",ZOL(I)/ZA(I)," DTH:",TH1D(I)-THGB(I)
          !  write(*,1004)"Z0/Zt:",zratio(I)," Z0:",ZNT(I)," Zt:",z_t(I)," za:",za(I)
-         !  write(*,1005)"Re:",restar," MAVAIL:",MAVAIL(I)," QSFC(I):",QSFC(I)," QX(I):",QX(I)
+         !  write(*,1005)"Re:",restar," MAVAIL:",MAVAIL(I)," QSFC(I):",QSFC(I)," QVSH(I):",QVSH(I)
          !  print*,"VISC=",VISC," Z0:",ZNT(I)," T1D(i):",T1D(i)
          !  write(*,*)"============================================="
          !ENDIF
       ENDIF
 
       ITER = ITER + 1
-                         
+
    ENDDO  ! end ITERATION-loop
 
-ENDDO     ! end i-loop
-                                                   
+ ENDDO     ! end i-loop
+
+ 1000   format(A,F6.1, A,f6.1, A,f5.1, A,f7.1)
  1001   format(A,F2.0, A,f10.4,A,f5.3, A,f11.5)
  1002   format(A,f7.2, A,f7.2, A,f7.2, A,f10.3)
  1003   format(A,f7.2, A,f7.2, A,f10.3,A,f10.3)
@@ -1119,7 +1019,7 @@ ENDDO     ! end i-loop
       !----------------------------------------------------------
       !  COMPUTE SURFACE HEAT AND MOISTURE FLUXES
       !----------------------------------------------------------
-DO I=its,ite
+ DO I=its,ite
 
    IF (ISFFLX .LT. 1) THEN                                                
 
@@ -1132,44 +1032,42 @@ DO I=its,ite
        CH(I)   = 0.                                                             
        CHS2(i) = 0.                                                              
        CQS2(i) = 0.                                                              
-       IF(PRESENT(ck) .and. PRESENT(cd) .and. PRESENT(cka) .and. PRESENT(cda)) THEN                                                           
+       IF(PRESENT(ck)  .and. PRESENT(cd) .and. &
+         &PRESENT(cka) .and. PRESENT(cda)) THEN
            Ck(I) = 0.
            Cd(I) = 0.
            Cka(I)= 0.
            Cda(I)= 0.
        ENDIF
-
    ELSE
 
       PSIX=GZ1OZ0(I)-PSIM(I)
       PSIX10=GZ10OZ0(I)-PSIM10(I)
-                                                          
+
       PSIT=MAX(LOG((ZA(I)+z_t(i))/z_t(i))-PSIH(I) ,2.0)
-      PSIT2=MAX(LOG((2.0+z_t(i))/z_t(i))-PSIH2(I) ,2.0)                                    
-      PSIT10=MAX(LOG((10.0+z_t(i))/z_t(i))-PSIH10(I) ,2.0)                                                                                                                                                                      
+      PSIT2=MAX(LOG((2.0+z_t(i))/z_t(i))-PSIH2(I) ,2.0)        
+      PSIT10=MAX(LOG((10.0+z_t(i))/z_t(i))-PSIH10(I) ,2.0)
 
       PSIQ=MAX(LOG((za(i)+z_q(i))/z_q(I))-PSIH(I) ,2.0)   
       PSIQ2=MAX(LOG((2.0+z_q(i))/z_q(I))-PSIH2(I) ,2.0) 
       PSIQ10=MAX(LOG((10.0+z_q(i))/z_q(I))-PSIH10(I) ,2.0)
-      !OR USE CARLSON AND BOLLAND (NO LONGER USED):
-      IF((XLAND(I)-1.5).GE.0)THEN                                            
-         ZL=ZNT(I)                                                            
-      ELSE                          
-         ZL=0.01      !APPROX THERMAL/MOISTURE ROUGHNESS LENGTH
-         !PSIQ=MAX(LOG(KARMAN*UST(I)*ZA(I)/XKA + ZA(I)/ZL)-PSIH(I),2.0)   
-         !PSIQ2=MAX(LOG(KARMAN*UST(I)*2./XKA + 2./ZL)-PSIH2(I)    ,2.0)
-         !PSIQ10=MAX(LOG(KARMAN*UST(I)*10./XKA + 2./ZL)-PSIH10(I) ,2.0)
+
+      IF((XLAND(I)-1.5).LT.0)THEN !LAND Only  
+         IF ( IZ0TLND .EQ. 4 ) THEN
+            CALL Pan_etal_1994(PSIQ,PSIQ2,UST(I),PSIH(I),PSIH2(I),&
+                       & KARMAN,ZA(I))
+         ENDIF
       ENDIF
 
       !------------------------------------------
       ! CALCULATE THE EXCHANGE COEFFICIENTS FOR HEAT (FLHC)
       ! AND MOISTURE (FLQC)
       !------------------------------------------
-      FLQC(I)=RHOX(I)*MAVAIL(I)*UST(I)*KARMAN/PSIQ
+      FLQC(I)=RHO1D(I)*MAVAIL(I)*UST(I)*KARMAN/PSIQ
 
-      DTTHX=ABS(THX(I)-THGB(I))                                            
+      DTTHX=ABS(TH1D(I)-THGB(I))                                            
       IF(DTTHX.GT.1.E-5)THEN                                                   
-         FLHC(I)=CPM(I)*RHOX(I)*UST(I)*MOL(I)/(THX(I)-THGB(I))          
+         FLHC(I)=CPM(I)*RHO1D(I)*UST(I)*MOL(I)/(TH1D(I)-THGB(I))          
       ELSE                                                                     
          FLHC(I)=0.                                                             
       ENDIF   
@@ -1178,7 +1076,7 @@ DO I=its,ite
       ! COMPUTE SURFACE MOISTURE FLUX:
       !----------------------------------
 
-      QFX(I)=FLQC(I)*(QSFCMR(I)-QV1D(I))                                     
+      QFX(I)=FLQC(I)*(QSFCMR(I)-QV1D(I))          
       !JOE: QFX(I)=MAX(QFX(I),0.)   !originally did not allow neg QFX           
       QFX(I)=MAX(QFX(I),-0.02)      !allows small neg QFX, like MYJ  
       LH(I)=XLV*QFX(I)
@@ -1187,18 +1085,17 @@ DO I=its,ite
       ! COMPUTE SURFACE HEAT FLUX:
       !----------------------------------
       IF(XLAND(I)-1.5.GT.0.)THEN      !WATER                                           
-         HFX(I)=FLHC(I)*(THGB(I)-THX(I))                                
+         HFX(I)=FLHC(I)*(THGB(I)-TH1D(I))                                
          IF ( PRESENT(ISFTCFLX) ) THEN
             IF ( ISFTCFLX.NE.0 ) THEN
                ! AHW: add dissipative heating term
-               HFX(I)=HFX(I)+RHOX(I)*USTM(I)*USTM(I)*WSPDI(I)
+               HFX(I)=HFX(I)+RHO1D(I)*USTM(I)*USTM(I)*WSPDI(I)
             ENDIF
          ENDIF
       ELSEIF(XLAND(I)-1.5.LT.0.)THEN  !LAND                               
-         HFX(I)=FLHC(I)*(THGB(I)-THX(I))                                
+         HFX(I)=FLHC(I)*(THGB(I)-TH1D(I))                                
          HFX(I)=MAX(HFX(I),-250.)                                       
-      ENDIF                                                                  
-
+      ENDIF
 
       !CHS(I)=UST(I)*KARMAN/(ALOG(KARMAN*UST(I)*ZA(I) &
       !       /XKA+ZA(I)/ZL)-PSIH(I))
@@ -1209,30 +1106,55 @@ DO I=its,ite
       ! same as that for heat. CH is multiplied by WSPD.
 
       !ch(i)=chs(i)
-      ch(i)=flhc(i)/( cpm(i)*rhox(i) )
+      ch(i)=flhc(i)/( cpm(i)*RHO1D(i) )
 
       !THESE ARE USED FOR 2-M DIAGNOSTICS ONLY
-      !CQS2(I)=UST(I)*KARMAN/(ALOG(KARMAN*UST(I)*2.0  &
-      !      /XKA+2.0/ZL)-PSIH2(I))
-      !CHS2(I)=UST(I)*KARMAN/(GZ2OZ0(I)-PSIH2(I))
       CQS2(I)=UST(I)*KARMAN/PSIQ2
       CHS2(I)=UST(I)*KARMAN/PSIT2
 
-      IF(PRESENT(ck) .and. PRESENT(cd) .and. PRESENT(cka) .and. PRESENT(cda)) THEN                                                           
+      IF(PRESENT(ck)  .and. PRESENT(cd) .and. &
+        &PRESENT(cka) .and. PRESENT(cda)) THEN
          Ck(I)=(karman/psix10)*(karman/psiq10)
          Cd(I)=(karman/psix10)*(karman/psix10)
          Cka(I)=(karman/psix)*(karman/psiq)
          Cda(I)=(karman/psix)*(karman/psix)
       ENDIF
 
-   ENDIF
+   ENDIF !end ISFFLX option
 
-ENDDO !end i-loop
+!   IF ( wrf_at_debug_level(3000) ) THEN
+!   IF (HFX(I) > 1200. .OR. HFX(I) < -500. .OR. &
+!      &LH(I)  > 1200. .OR. LH(I)  < -500. .OR. &
+!      &UST(I) < 0.0 .OR. UST(I) > 4.0 .OR. &
+!      &WSTAR(I)<0.0 .OR. WSTAR(I) > 6.0 .OR. &
+!      &RHO1D(I)<0.0 .OR. RHO1D(I) > 1.6 .OR. &
+!      &QSFC(I)*1000. <0.0 .OR. QSFC(I)*1000. >38. .OR. &
+!      &PBLH(I)>6000.) THEN
+!      print*,"SUSPICIOUS VALUES IN MYNN SFCLAYER",&
+!            ITER-ITMAX," ITERATIONS",I,J
+!      write(*,1000)"HFX: ",HFX(I)," LH:",LH(I)," CH:",CH(I),&
+!            " PBLH:",PBLH(I)
+!      write(*,1001)"REGIME:",REGIME(I)," z/L:",ZOL(I)," U*:",UST(I),&
+!            " Tstar:",MOL(I)
+!      write(*,1002)"PSIM:",PSIM(I)," PSIH:",PSIH(I)," W*:",WSTAR(I),&
+!            " DTHV:",THV1D(I)-THVGB(I)
+!      write(*,1003)"CPM:",CPM(I)," RHO1D:",RHO1D(I)," L:",&
+!            ZOL(I)/ZA(I)," DTH:",TH1D(I)-THGB(I)
+!      write(*,1004)"Z0/Zt:",zratio(I)," Z0:",ZNT(I)," Zt:",z_t(I),&
+!            " za:",za(I)
+!      write(*,1005)"Re:",restar," MAVAIL:",MAVAIL(I)," QSFC(I):",&
+!            QSFC(I)," QVSH(I):",QVSH(I)
+!      print*,"PSIX=",PSIX," Z0:",ZNT(I)," T1D(i):",T1D(i)
+!      write(*,*)"============================================="
+!   ENDIF
+!   ENDIF
+
+ ENDDO !end i-loop
 
 END SUBROUTINE SFCLAY1D_mynn
-
 !-------------------------------------------------------------------          
-   SUBROUTINE zilitinkevich_1995(Z_0,Zt,Zq,restar,ustar,KARMAN,landsea,IZ0TLND)
+   SUBROUTINE zilitinkevich_1995(Z_0,Zt,Zq,restar,ustar,KARMAN,&
+       & landsea,IZ0TLND2)
 
        ! This subroutine returns the thermal and moisture roughness lengths
        ! from Zilitinkevich (1995) and Zilitinkevich et al. (2001) over
@@ -1245,7 +1167,7 @@ END SUBROUTINE SFCLAY1D_mynn
 
        IMPLICIT NONE
        REAL, INTENT(IN) :: Z_0,restar,ustar,KARMAN,landsea
-       INTEGER, OPTIONAL, INTENT(IN)::  IZ0TLND
+       INTEGER, OPTIONAL, INTENT(IN)::  IZ0TLND2
        REAL, INTENT(OUT) :: Zt,Zq
        REAL :: CZIL  !=0.100 in Chen et al. (1997)
                      !=0.075 in Zilitinkevich (1995)
@@ -1274,17 +1196,17 @@ END SUBROUTINE SFCLAY1D_mynn
        ELSE                             !LAND
 
           !Option to modify CZIL according to Chen & Zhang, 2009
-          IF ( IZ0TLND .EQ. 1 ) THEN
+          IF ( IZ0TLND2 .EQ. 1 ) THEN
              CZIL = 10.0 ** ( -0.40 * ( Z_0 / 0.07 ) )
           ELSE
              CZIL = 0.10
           END IF
 
           Zt = Z_0*EXP(-KARMAN*CZIL*SQRT(restar))
-          Zt = MIN( Zt, Z_0)
+          Zt = MIN( Zt, Z_0/2.)
 
           Zq = Z_0*EXP(-KARMAN*CZIL*SQRT(restar))
-          Zq = MIN( Zq, Z_0)
+          Zq = MIN( Zq, Z_0/2.)
 
           !Zq = Zt
        ENDIF
@@ -1293,6 +1215,41 @@ END SUBROUTINE SFCLAY1D_mynn
 
    END SUBROUTINE zilitinkevich_1995
 !--------------------------------------------------------------------
+   SUBROUTINE Pan_etal_1994(PSIQ,PSIQ2,ustar,psih,psih2,KARMAN,Z1)
+
+       ! This subroutine returns the resistance (PSIQ) for moisture
+       ! exchange. This is a modified form originating from Pan et al. 
+       ! (1994) but modified according to tests in both the RUC model 
+       ! and WRF-ARW. Note that it is very similar to Carlson and
+       ! Boland (1978) model (include below in comments) but has an
+       ! extra molecular layer (a third layer) instead of two layers. 
+
+       IMPLICIT NONE
+       REAL, INTENT(IN) :: Z1,ustar,KARMAN,psih,psih2
+       REAL, INTENT(OUT) :: psiq,psiq2
+       REAL, PARAMETER :: Cpan=1.0 !was 20.8 in Pan et al 1994
+       REAL, PARAMETER :: ZL=0.01  
+       REAL, PARAMETER :: ZMUs=0.2E-3
+       REAL, PARAMETER :: XKA = 2.4E-5
+
+         !PAN et al. (1994): 3-layer model, as in paper:
+         !ZMU = Cpan*XKA/(KARMAN*UST(I)) 
+         !PSIQ =MAX(KARMAN*ustar*ZMU/XKA + LOG((KARMAN*ustar*ZL + XKA)/XKA + &
+         !     & Z1/ZL) - PSIH,2.0)
+         !PSIQ2=MAX(KARMAN*ustar*ZMU/XKA + LOG((KARMAN*ustar*ZL + XKA)/XKA + &
+         !     & 2./ZL) - PSIH2,2.0)                                       
+         !MODIFIED FORM:
+         PSIQ =MAX(KARMAN*ustar*ZMUs/XKA + LOG((KARMAN*ustar*Z1)/XKA + &
+              & Z1/ZL) - PSIH,2.0)
+         PSIQ2=MAX(KARMAN*ustar*ZMUs/XKA + LOG((KARMAN*ustar*2.0)/XKA + &
+              & 2./ZL) - PSIH2,2.0)
+
+         !CARLSON AND BOLAND (1978): 2-layer model
+         !PSIQ =MAX(LOG(KARMAN*ustar*Z1/XKA + Z1/ZL)-PSIH  ,2.0)
+         !PSIQ2=MAX(LOG(KARMAN*ustar*2./XKA + 2./ZL)-PSIH2 ,2.0)
+
+    END SUBROUTINE Pan_etal_1994
+!--------------------------------------------------------------
    SUBROUTINE davis_etal_2008(Z_0,ustar)
 
     !This formulation for roughness length was designed to match 
@@ -1564,8 +1521,9 @@ END SUBROUTINE SFCLAY1D_mynn
           y = (1.-11.6*zL)**0.5
           y0= (1.-11.6*zhL)**0.5
 
-          psi_m = 2.*LOG((1.+x)/(1.+x0)) + LOG((1.+x**2.)/(1.+x0**2.)) - &
-                  2.*ATAN(x) + 2*ATAN(x0)
+          psi_m = 2.*LOG((1.+x)/(1.+x0)) + &
+                    &LOG((1.+x**2.)/(1.+x0**2.)) - &
+                    &2.0*ATAN(x) + 2.0*ATAN(x0)
           psi_h = 2.*LOG((1.+y)/(1.+y0))
 
        ENDIF
@@ -1602,8 +1560,9 @@ END SUBROUTINE SFCLAY1D_mynn
           y = (1.-16.*zL)**0.5
           y0= (1.-16.*zhL)**0.5
 
-          psi_m = 2.*LOG((1.+x)/(1.+x0)) + LOG((1.+x**2.)/(1.+x0**2.)) - & 
-                  2.*ATAN(x) + 2*ATAN(x0)
+          psi_m = 2.*LOG((1.+x)/(1.+x0)) + &
+                    &LOG((1.+x**2.)/(1.+x0**2.)) - & 
+                    &2.0*ATAN(x) + 2.0*ATAN(x0)
           psi_h = 2.*LOG((1.+y)/(1.+y0))
 
        ENDIF
@@ -1690,8 +1649,9 @@ END SUBROUTINE SFCLAY1D_mynn
           x = (1. - 15.0*zL)**0.25
           y = (1. - 9.0*zL)**0.5
 
-          psi_m = LOG(((1.+x)/2.)**2.) + LOG((1.+x**2.)/2.) - &
-                           2.*ATAN(x) + Pi180*90.
+          psi_m = LOG(((1.+x)/2.)**2.) + &
+                 &LOG((1.+x**2.)/2.) - &
+                 &2.0*ATAN(x) + Pi180*90.
           psi_h = 2.*LOG((1.+y)/2.)
 
        ELSE                 !STABLE
@@ -1749,13 +1709,13 @@ END SUBROUTINE SFCLAY1D_mynn
        REAL, INTENT(IN) :: Rib, zaz0, z0zt
        REAL :: alfa, beta, zaz02, z0zt2
        REAL, PARAMETER  :: au11=0.045, bu11=0.003, bu12=0.0059, &
-                           bu21=-0.0828, bu22=0.8845, bu31=0.1739, &
-                           bu32=-0.9213, bu33=-0.1057
+                          &bu21=-0.0828, bu22=0.8845, bu31=0.1739, &
+                          &bu32=-0.9213, bu33=-0.1057
        REAL, PARAMETER  :: aw11=0.5738, aw12=-0.4399, aw21=-4.901,&
-                           aw22=52.50, bw11=-0.0539, bw12=1.540, &
-                           bw21=-0.669, bw22=-3.282
+                          &aw22=52.50, bw11=-0.0539, bw12=1.540, &
+                          &bw21=-0.669, bw22=-3.282
        REAL, PARAMETER  :: as11=0.7529, as21=14.94, bs11=0.1569,&
-                           bs21=-0.3091, bs22=-1.303
+                          &bs21=-0.3091, bs22=-1.303
           
        !set limits according to Li et al (2010), p 157.
        zaz02=zaz0
@@ -1772,23 +1732,23 @@ END SUBROUTINE SFCLAY1D_mynn
 
        IF (Rib .le. 0.0) THEN
           zL = au11*alfa*Rib**2 + (                   &
-                  (bu11*beta + bu12)*alfa**2 +        &
-                  (bu21*beta + bu22)*alfa    +        &
-                  (bu31*beta**2 + bu32*beta + bu33))*Rib
+               &  (bu11*beta + bu12)*alfa**2 +        &
+               &  (bu21*beta + bu22)*alfa    +        &
+               &  (bu31*beta**2 + bu32*beta + bu33))*Rib
           !if(zL .LT. -15 .OR. zl .GT. 0.)print*,"VIOLATION Rib<0:",zL
           zL = MAX(zL,-15.) !LIMITS SET ACCORDING TO Li et al (2010)
           zL = MIN(zL,0.)   !Figure 1.
        ELSEIF (Rib .gt. 0.0 .AND. Rib .le. 0.2) THEN
           zL = ((aw11*beta + aw12)*alfa +             &
-                (aw21*beta + aw22))*Rib**2 +          &
-               ((bw11*beta + bw12)*alfa +             &
-                (bw21*beta + bw22))*Rib
+             &  (aw21*beta + aw22))*Rib**2 +          &
+             & ((bw11*beta + bw12)*alfa +             &
+             &  (bw21*beta + bw22))*Rib
           !if(zL .LT. 0 .OR. zl .GT. 4)print*,"VIOLATION 0<Rib<0.2:",zL
           zL = MIN(zL,4.) !LIMITS APPROX SET ACCORDING TO Li et al (2010)
           zL = MAX(zL,0.) !THEIR FIGURE 1B.
        ELSE
           zL = (as11*alfa + as21)*Rib + bs11*alfa +   &
-                bs21*beta + bs22
+             &  bs21*beta + bs22
           !if(zL .LE. 1 .OR. zl .GT. 23)print*,"VIOLATION Rib>0.2:",zL
           zL = MIN(zL,20.) !LIMITS ACCORDING TO Li et al (2010), THIER
                            !FIGUE 1C.
@@ -1799,6 +1759,5 @@ END SUBROUTINE SFCLAY1D_mynn
 
     END SUBROUTINE Li_etal_2010
 !--------------------------------------------------------------------
-
 
 END MODULE module_sf_mynn

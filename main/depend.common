@@ -193,7 +193,14 @@ module_bl_camuwpbl_driver.o: module_cam_shr_kind_mod.o \
 		module_cam_esinti.o 
 
 module_sf_mynn.o: module_sf_sfclay.o module_bl_mynn.o \
-                ../share/module_model_constants.o
+                ../share/module_model_constants.o \
+                ../frame/module_wrf_error.o
+
+module_sf_fogdes.o: ../share/module_model_constants.o \
+                module_bl_mynn.o
+
+module_bl_fogdes.o: ../share/module_model_constants.o \
+                module_bl_mynn.o
 
 module_sf_gfdl.o : \
 		module_gfs_machine.o \
@@ -459,7 +466,8 @@ module_physics_init.o : \
 		module_sf_slab.o		\
 		module_sf_myjsfc.o		\
 		module_sf_mynn.o                \
-		module_sf_urban.o                \
+		module_sf_fogdes.o              \
+		module_sf_urban.o               \
 		module_sf_qnsesfc.o		\
 		module_sf_pxsfclay.o		\
 		module_sf_noahlsm.o		\
@@ -585,6 +593,7 @@ module_pbl_driver.o:  \
 		module_bl_gfs.o \
 		module_bl_gfs2011.o \
 		module_bl_mynn.o \
+		module_bl_fogdes.o \
 		module_bl_gwdo.o \
 		module_wind_fitch.o \
 		module_bl_temf.o \
@@ -636,6 +645,7 @@ module_surface_driver.o: \
 		module_sf_ruclsm.o		\
 		module_sf_pxlsm.o		\
 		module_sf_mynn.o                \
+		module_sf_fogdes.o              \
 		module_sf_sfcdiags.o		\
 		module_sf_sfcdiags_ruclsm.o     \
 		module_sf_sstskin.o		\

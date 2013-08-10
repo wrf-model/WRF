@@ -65,7 +65,8 @@ CONTAINS
            ! Noah UA changes
      &          ,ua_phys,flx4,fvb,fbur,fgsn                                  &
 #if (EM_CORE==1)
-     &          ,ch,tsq,qsq,cov                                       & ! MYNN
+     &          ,ch,tsq,qsq,cov,Sh3d,el_pbl,bl_mynn_cloudpdf          & ! MYNN
+     &          ,fgdp,dfgdp,vdfg,grav_settling                        & ! Katata - fog dep
 #endif
             !  cyl ocean variable
                 ,OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH,OM_ML,OM_LON          &
@@ -288,6 +289,7 @@ CONTAINS
    USE module_sf_noah_seaice_drv
 #if ( EM_CORE==1)
    USE module_sf_mynn
+   USE module_sf_fogdes    ! Katata - fog deposition module
    USE module_sf_ocean_driver
    USE module_sf_idealscmsfclay
 #endif
@@ -815,9 +817,15 @@ CONTAINS
 #if ( EM_CORE==1)
    REAL, DIMENSION( ims:ime , jms:jme ), &
         &OPTIONAL, INTENT(INOUT   ):: ch
-   
+
+!Katata-added - extra in-output                                                                                                                                                              
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT):: fgdp,dfgdp,vdfg                                                                                                           
+   INTEGER, OPTIONAL, INTENT(IN)                                :: grav_settling                                                                                                             
+!Katata-end
+
    REAL, DIMENSION( ims:ime , kms:kme, jms:jme ), &
-        &OPTIONAL, INTENT(IN   ):: tsq,qsq,cov
+        &OPTIONAL, INTENT(IN   ):: tsq,qsq,cov,Sh3d,el_pbl
+   INTEGER, OPTIONAL, INTENT(IN)                                :: bl_mynn_cloudpdf
 #endif
 
 
@@ -1872,37 +1880,37 @@ CONTAINS
           CALL wrf_debug(100,'in MYNNSFC')          
 
          IF (FRACTIONAL_SEAICE == 1) THEN
-          CALL MYNN_SEAICE_WRAPPER(u_phytmp,v_phytmp,t_phy,qv_curr, &
+          CALL MYNN_SEAICE_WRAPPER(u_phytmp,v_phytmp,t_phy,qv_curr,&
                p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
-               znt,ust,pblh,mavail,zol,mol,regime,psim,psih, &
+               znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
                xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
-               u10,v10,th2,t2,q2,                                  &
+               u10,v10,th2,t2,q2,SNOWH,                            &
                gz1oz0,wspd,br,isfflx,dx,                           &
-               svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
-               &itimestep,ch,th_phy,pi_phy,qc_curr,&
-               &tsq,qsq,cov,qcg,&
+               svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
+               &itimestep,ch,th_phy,pi_phy,qc_curr,rho,            &
+               &tsq,qsq,cov,Sh3d,el_pbl,qcg,                       &
                XICE,SST,TSK_SEA,                                   &
-               CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA, &
+               CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,&
                HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,    &
                TICE2TSK_IF2COLD,XICE_THRESHOLD,                    &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, &   
-               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,bl_mynn_cloudpdf)
          ELSE
           CALL SFCLAY_mynn(u_phytmp,v_phytmp,t_phy,qv_curr,        &
                p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
                znt,ust,pblh,mavail,zol,mol,regime,psim,psih,       &
                xland,hfx,qfx,lh,tsk,flhc,flqc,qgh,qsfc,rmol,       &
-               u10,v10,th2,t2,q2,                                  &
+               u10,v10,th2,t2,q2,SNOWH,                            &
                gz1oz0,wspd,br,isfflx,dx,                           &
-               svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
-               &itimestep,ch,th_phy,pi_phy,qc_curr,                &
-               &tsq,qsq,cov,qcg,                                   &
+               svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,              &
+               &itimestep,ch,th_phy,pi_phy,qc_curr,rho,            &
+               &tsq,qsq,cov,Sh3D,el_pbl,qcg,                       &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte,&
-               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,bl_mynn_cloudpdf)
          ENDIF
        ELSE
           CALL wrf_error_fatal('Lacking arguments for SFCLAY_mynn in surface driver')
@@ -2027,6 +2035,47 @@ CONTAINS
         ENDDO
         ENDDO
      ENDIF
+
+#if ( EM_CORE==1)
+!Katata-added - fog (cloud) water deposition calculation
+     IF ( grav_settling .EQ. 0 ) THEN
+        !vdfg = 0.
+        DO j=j_start(ij),j_end(ij)
+        DO i=i_start(ij),i_end(ij)
+           vdfg(i,j)=0.
+        ENDDO
+        ENDDO
+     ELSE
+        IF ( PRESENT(dfgdp) .AND. PRESENT(fgdp) .AND. &
+           & PRESENT(rainbl) .AND. PRESENT(vdfg)) THEN
+           DO j=j_start(ij),j_end(ij)
+           DO i=i_start(ij),i_end(ij)
+              dfgdp(i,j)=0.
+           ENDDO
+           ENDDO
+
+           CALL sf_fogdes(                                  &
+                vdfg,fgdp,dfgdp,ivgtyp,lai,wspd,qc_curr,    &
+                dtbl,rho,dz8w,grav_settling,nlcat,          &
+                ids,ide, jds,jde, kds,kde,                  &
+                ims,ime, jms,jme, kms,kme,                  &
+                i_start(ij),i_end(ij),                      &
+                j_start(ij),j_end(ij),kts,kte               )
+
+           !Add fog dep to RAINBL in mm (Accumulation between PBL calls).
+           DO j=j_start(ij),j_end(ij)
+           DO i=i_start(ij),i_end(ij)
+              RAINBL(i,j) = RAINBL(i,j) + dfgdp(i,j)
+              RAINBL(i,j) = MAX(RAINBL(i,j), 0.0)
+           ENDDO
+           ENDDO
+
+        ELSE
+          CALL wrf_error_fatal('Missing args for FGDP in surface driver')
+        ENDIF
+     ENDIF
+!Katata/Joe-END
+#endif
 
      ENDDO
      !$OMP END PARALLEL DO
@@ -4036,12 +4085,11 @@ CONTAINS
                      CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,      &
                      ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH, &
                      XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QGH,QSFC,RMOL, &
-                     U10,V10,TH2,T2,Q2,                            &
+                     U10,V10,TH2,T2,Q2,SNOWH,                      &
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
-                     SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
-                     KARMAN,EOMEG,STBOLT,                          &
-               &itimestep,ch,th3d,pi3d,qc3d,                       &
-               &tsq,qsq,cov,qcg,                                   &
+                     SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,          &
+               &itimestep,ch,th3d,pi3d,qc3d,rho,                   &
+               &tsq,qsq,cov,Sh3d,el_pbl,qcg,                       &
 XICE,SST,TSK_SEA,                                                  &
 CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
 HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
@@ -4049,7 +4097,7 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
-               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,bl_mynn_cloudpdf)
 
      USE module_sf_mynn, ONLY: sfclay_mynn
      implicit none
@@ -4058,9 +4106,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                                        ims,ime, jms,jme, kms,kme,  &
                                        its,ite, jts,jte, kts,kte
 
-     INTEGER,  INTENT(IN )   ::        ISFFLX
+     INTEGER,  INTENT(IN )   ::        ISFFLX,bl_mynn_cloudpdf
      REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
-     REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN,EOMEG,STBOLT
+     REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN
 
      REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                INTENT(IN   )   ::                           dz8w
@@ -4068,7 +4116,7 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
      REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                INTENT(IN   )   ::                           QV3D, &
                                                              P3D, &
-                                                             T3D
+                                                             T3D,rho
 
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(IN   )               ::             MAVAIL, &
@@ -4081,7 +4129,7 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                                                              TH2, &
                                                               T2, &
                                                               Q2, &
-                                                            QSFC
+                                                            QSFC,SNOWH
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(INOUT)               ::             REGIME, &
                                                              HFX, &
@@ -4123,7 +4171,7 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
      REAL,     DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: ch
      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) ::     &
                                                              &QC3D,&
-                                              &th3d,pi3d,tsq,qsq,cov
+                            &th3d,pi3d,tsq,qsq,cov,Sh3d,el_pbl
 
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                INTENT(OUT)     ::              ck,cka,cd,cda,ustm
@@ -4289,15 +4337,15 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                CP,G,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2,CPM,            &
                ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH,       &
                XLAND,HFX,QFX,LH,TSK_LOCAL,FLHC,FLQC,QGH,QSFC,RMOL, &
-               U10,V10,TH2,T2,Q2,                                  &
+               U10,V10,TH2,T2,Q2,SNOWH,                            &
                GZ1OZ0,WSPD,BR,ISFFLX,DX,                           &
-               SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,EOMEG,STBOLT,   &
-               &itimestep,ch,th3d,pi3d,qc3d,                       &
-               &tsq,qsq,cov,qcg,                                   &
+               SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,                &
+               &itimestep,ch,th3d,pi3d,qc3d,rho,                   &
+               &tsq,qsq,cov,sh3d,el_pbl,qcg,                       &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                its,ite, jts,jte, kts,kte,                          &
-               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd                 )
+               ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,bl_mynn_cloudpdf)
 
      ! Set up for open-water call
      DO j = JTS , JTE
@@ -4374,16 +4422,17 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                HFX_SEA,QFX_SEA,LH_SEA,                             &
                TSK_SEA,                                            &
                FLHC_SEA,FLQC_SEA,QGH_SEA,QSFC_sea,RMOL_SEA,        &
-               U10_sea,V10_sea,TH2_sea,T2_sea,Q2_sea,              &
+               U10_sea,V10_sea,TH2_sea,T2_sea,Q2_sea,SNOWH,        &
                GZ1OZ0_SEA,WSPD_SEA,BR_SEA,                         &
                ISFFLX,DX,                                          &
-               SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,EOMEG,STBOLT,   &
-               &itimestep,CH_SEA,th3d,pi3d,qc3d,                   &
-               &tsq,qsq,cov,qcg,                                   &
+               SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,                &
+               &itimestep,CH_SEA,th3d,pi3d,qc3d,rho,               &
+               &tsq,qsq,cov,sh3d,el_pbl,qcg,                       &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                its,ite, jts,jte, kts,kte,                          &
-               ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd )
+               ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,    &
+               iz0tlnd,bl_mynn_cloudpdf )
 
      DO j = JTS , JTE
         DO i = ITS, ITE

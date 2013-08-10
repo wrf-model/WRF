@@ -370,24 +370,24 @@ CONTAINS
         if(p_ol2.gt.1)chem(i,kts,j,p_ol2)=chem(i,kts,j,p_ol2)+ &
                   ebio_ete(i,j)*conv_rho
 !
-! CRIMECH only
+! CRIMECH only --- DL 05/08/2013: not used at the moment
 !
-        if(p_c5h8.gt.1)chem(i,kts,j,p_c5h8)=chem(i,kts,j,p_c5h8)+ &
-                  e_bio(i,j,p_iso-1)*conv_rho
-        if(p_oxyl.gt.1)chem(i,kts,j,p_oxyl)=chem(i,kts,j,p_oxyl)+ &
-                  e_bio(i,j,p_xyl-1)*conv_rho
-        if(p_c3h8.gt.1)chem(i,kts,j,p_c3h8)=chem(i,kts,j,p_c3h8)+ &
-                  e_bio(i,j,p_hc3-1)*conv_rho
-        if(p_ket.gt.1)chem(i,kts,j,p_ket)=chem(i,kts,j,p_ket)+ &
-                  e_bio(i,j,p_ket-1)*conv_rho
-        if(p_ch3cho.gt.1)chem(i,kts,j,p_ch3cho)=chem(i,kts,j,p_ch3cho)+ &
-                  e_bio(i,j,p_ald-1)*conv_rho
-        if(p_c2h6.gt.1)chem(i,kts,j,p_c2h6)=chem(i,kts,j,p_c2h6)+ &
-                  e_bio(i,j,p_eth-1)*conv_rho
-        if(p_apinene.gt.1)chem(i,kts,j,p_apinene)=chem(i,kts,j,p_apinene)+ &
-                  e_bio(i,j,p_api-1)*conv_rho
-        if(p_bpinene.gt.1)chem(i,kts,j,p_bpinene)=chem(i,kts,j,p_bpinene)+ &
-                  e_bio(i,j,p_api-1)*conv_rho
+!        if(p_c5h8.gt.1)chem(i,kts,j,p_c5h8)=chem(i,kts,j,p_c5h8)+ &
+!                  e_bio(i,j,p_iso-1)*conv_rho
+!        if(p_oxyl.gt.1)chem(i,kts,j,p_oxyl)=chem(i,kts,j,p_oxyl)+ &
+!                  e_bio(i,j,p_xyl-1)*conv_rho
+!        if(p_c3h8.gt.1)chem(i,kts,j,p_c3h8)=chem(i,kts,j,p_c3h8)+ &
+!                  e_bio(i,j,p_hc3-1)*conv_rho
+!        if(p_ket.gt.1)chem(i,kts,j,p_ket)=chem(i,kts,j,p_ket)+ &
+!                  e_bio(i,j,p_ket-1)*conv_rho
+!        if(p_ch3cho.gt.1)chem(i,kts,j,p_ch3cho)=chem(i,kts,j,p_ch3cho)+ &
+!                  e_bio(i,j,p_ald-1)*conv_rho
+!        if(p_c2h6.gt.1)chem(i,kts,j,p_c2h6)=chem(i,kts,j,p_c2h6)+ &
+!                  e_bio(i,j,p_eth-1)*conv_rho
+!        if(p_apinene.gt.1)chem(i,kts,j,p_apinene)=chem(i,kts,j,p_apinene)+ &
+!                  e_bio(i,j,p_api-1)*conv_rho
+!        if(p_bpinene.gt.1)chem(i,kts,j,p_bpinene)=chem(i,kts,j,p_bpinene)+ &
+!                  e_bio(i,j,p_api-1)*conv_rho
 
 !
 ! RACM only

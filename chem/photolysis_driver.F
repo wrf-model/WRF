@@ -190,6 +190,9 @@
                               ivgtyp,                                  &
                               ph_radfld, ph_adjcoe, ph_prate,          &
                               wc,zref,                                 &
+                              tauaer1, tauaer2, tauaer3, tauaer4,      &    !rajesh
+                              waer1, waer2, waer3, waer4,              &    !rajesh
+                              gaer1, gaer2, gaer3, gaer4,              &    !rajesh
                               ids,ide, jds,jde, kds,kde,               &
                               ims,ime, jms,jme, kms,kme,               &
                               its,ite, jts,jte, kts,kte                )

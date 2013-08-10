@@ -309,24 +309,37 @@ call wrf_message("**************************************************************
         call wrf_error_fatal(" ERROR: CHEM_INIT: FOR CHEM_OPT = 0, AER_RA_FEEDBACK MUST = 0 ")
     ENDIF
 
-	if ( config_flags%n2o5_hetchem == 1 )then 
-		if( (config_flags%chem_opt >= 7   .AND. config_flags%chem_opt <= 10)  .OR. &
-			(config_flags%chem_opt >= 31  .AND. config_flags%chem_opt <= 34)  .OR. &
-			 config_flags%chem_opt == 170 .OR.  config_flags%chem_opt == 198  .OR. &
-			 config_flags%chem_opt == 199 .OR.  config_flags%chem_opt == 201  .OR. &
-			 config_flags%chem_opt == 601 .OR.  config_flags%chem_opt == 611 ) then
-			call wrf_debug( 15, 'using N2O5 heterogeneous chemistry without Cl- pathway')
-		else
-			call wrf_error_fatal("ERROR: N2O5 heterogenous chemistry (without Cl- pathway) must be run with MOSAIC aerosol")
-		endif
-	elseif ( config_flags%n2o5_hetchem == 2 ) then
-		if( config_flags%chem_opt == 601 .OR. config_flags%chem_opt == 611 ) then
-			call wrf_debug( 15, 'using full N2O5 heterogeneous chemistry')
-		else
-			call wrf_error_fatal("ERROR: full N2O5 heterogenous chemistry must be run with MOSAIC aerosol coupled with gas-phase scheme which deals with ClNO2")
-		endif
-	endif
-	
+    IF ( config_flags%aer_ra_feedback .EQ. 1   .AND.   &
+        ( config_flags%chem_opt == RADM2 .or. &
+          config_flags%chem_opt == CBMZ .or. &
+          config_flags%chem_opt == CBMZ_BB .or. &
+          config_flags%chem_opt == CO2_TRACER .or. &
+          config_flags%chem_opt == RADM2_KPP .or. &
+          config_flags%chem_opt == RACM_MIM_KPP .or. &
+          config_flags%chem_opt == RACM_KPP .or. &
+          config_flags%chem_opt == CBM4_KPP .or. &
+          config_flags%chem_opt == SAPRC99_KPP  .or. &
+          config_flags%chem_opt == NMHC9_KPP  ) ) then
+        call wrf_error_fatal(" ERROR: CHEM_INIT: MUST HAVE AEROSOLS TO INCLUDE AEROSOL RADIATION FEEDBACK. SET AER_RA_FEEDBACK = 0 ")
+    ENDIF
+
+    if ( config_flags%n2o5_hetchem == 1 )then 
+        if( (config_flags%chem_opt >= 7   .AND. config_flags%chem_opt <= 10)  .OR. &
+            (config_flags%chem_opt >= 31  .AND. config_flags%chem_opt <= 34)  .OR. &
+             config_flags%chem_opt == 170 .OR.  config_flags%chem_opt == 198  .OR. &
+             config_flags%chem_opt == 199 .OR.  config_flags%chem_opt == 201  .OR. &
+             config_flags%chem_opt == 601 .OR.  config_flags%chem_opt == 611 ) then
+            call wrf_debug( 15, 'using N2O5 heterogeneous chemistry without Cl- pathway')
+        else
+            call wrf_error_fatal("ERROR: N2O5 heterogenous chemistry (without Cl- pathway) must be run with MOSAIC aerosol")
+        endif
+    elseif ( config_flags%n2o5_hetchem == 2 ) then
+        if( config_flags%chem_opt == 601 .OR. config_flags%chem_opt == 611 ) then
+            call wrf_debug( 15, 'using full N2O5 heterogeneous chemistry')
+        else
+            call wrf_error_fatal("ERROR: full N2O5 heterogenous chemistry must be run with MOSAIC aerosol coupled with gas-phase scheme which deals with ClNO2")
+        endif
+    endif
 
 !   IF ( config_flags%chem_opt == 2 .AND. config_flags%dust_opt .NE. 2 ) THEN
 !       call wrf_error_fatal(" ERROR: USE dust_opt = 2 when using MADE/SORGAM aerosol option ")

@@ -45,6 +45,7 @@ $sw_gpfs_path = "";
 $sw_gpfs_lib  = "-lgpfs";
 $sw_curl_path = "";
 $sw_curl_lib  = "-lcurl";
+$sw_terrain_and_landuse = "";
 while ( substr( $ARGV[0], 0, 1 ) eq "-" )
  {
   if ( substr( $ARGV[0], 1, 5 ) eq "perl=" )
@@ -338,7 +339,11 @@ until ( $validresponse ) {
 printf "------------------------------------------------------------------------\n" ;
 
 $optchoice = $response ;
-
+if ( $response == 2 || $response == 3 ) {
+  if ( $ENV{'TERRAIN_AND_LANDUSE'} eq "1" && index($sw_wrf_core, "EM_CORE") > -1 ) { 
+    $sw_terrain_and_landuse =" -DTERRAIN_AND_LANDUSE" ;
+  }
+} 
 open CONFIGURE_DEFAULTS, "cat ./arch/configure_new.defaults |"  ;
 $latchon = 0 ;
 while ( <CONFIGURE_DEFAULTS> )
@@ -446,6 +451,14 @@ while ( <CONFIGURE_DEFAULTS> )
         $_ =~ s:CONFIGURE_GRIB2_LIB::g ;
       }
 
+   if ( $sw_terrain_and_landuse )
+     { 
+        $_ =~ s/CONFIGURE_TERRAIN_AND_LANDUSE/$sw_terrain_and_landuse/g;
+     }
+   else
+     {
+       $_  =~ s:CONFIGURE_TERRAIN_AND_LANDUSE::g;
+     }
 
     # ESMF substitutions in configure.defaults
     if ( $sw_esmflib_path && $sw_esmfinc_path )
@@ -585,8 +598,16 @@ while ( <CONFIGURE_DEFAULTS> )
         } 
         if ( $response == 2 ) {
           $sw_nest_opt = "-DMOVE_NESTS" ; 
+          if ( $ENV{'TERRAIN_AND_LANDUSE'} eq "1" ) {
+            $sw_terrain_and_landuse =" -DTERRAIN_AND_LANDUSE" ;
+            $sw_nest_opt = $sw_nest_opt . $sw_terrain_and_landuse; 
+          }  
         } elsif ( $response == 3 ) {
           $sw_nest_opt = "-DMOVE_NESTS -DVORTEX_CENTER" ; 
+          if ( $ENV{'TERRAIN_AND_LANDUSE'} eq "1" ) {
+            $sw_terrain_and_landuse =" -DTERRAIN_AND_LANDUSE" ;
+            $sw_nest_opt = $sw_nest_opt . $sw_terrain_and_landuse; 
+          }
         }
         if ( $paropt eq 'smpar' || $paropt eq 'dm+sm' ) { $sw_ompparallel = "OMP" ; }
         if ( $paropt eq 'dmpar' || $paropt eq 'dm+sm' ) { 

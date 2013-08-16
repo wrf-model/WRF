@@ -609,6 +609,10 @@
 
    END IF
 
+! set GMT outside of phy_init because phy_init may not be called on this
+! process if, for example, it is a moving nest and if this part of the domain is not
+! being initialized (not the leading edge).
+   CALL domain_setgmtetc( grid, start_of_simulation )
    IF ( first_trip_for_this_domain ) THEN
 
    CALL wrf_debug ( 100 , 'start_domain_em: Before call to phy_init' )
@@ -617,10 +621,6 @@
 ! MPDT is the call frequency for microphysics in minutes (0 means every step)
    MPDT = 0.
 
-! set GMT outside of phy_init because phy_init may not be called on this
-! process if, for example, it is a moving nest and if this part of the domain is not
-! being initialized (not the leading edge).
-   CALL domain_setgmtetc( grid, start_of_simulation )
 !tgs
    IF(config_flags%cycling) start_of_simulation = .true.
 !  print *,'cycling, start_of_simulation -->',config_flags%cycling, start_of_simulation

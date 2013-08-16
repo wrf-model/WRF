@@ -16,7 +16,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       # -fdefault-real-8  # uncomment manually
 ARCH_LOCAL      =       -DNEC -DNONSTANDARD_SYSTEM_SUBR -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -c -DLANDREAD_STUB 
+CFLAGS_LOCAL    =       -c  
 #-DNCARIBM_NOC99 -Xa -Kc99
 LDFLAGS_LOCAL   =	-Wl,-h nodefs
 CPLUSPLUSLIB    =       
@@ -59,7 +59,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       # -fdefault-real-8  # uncomment manually
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -c -DLANDREAD_STUB
+CFLAGS_LOCAL    =       -w -O3 -c 
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -822,7 +822,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       # -fdefault-real-8  # uncomment manually
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -c -DLANDREAD_STUB
+CFLAGS_LOCAL    =       -w -O3 -c 
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -1032,7 +1032,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       # -fdefault-real-8  # uncomment manually
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DMACOS -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -c -DLANDREAD_STUB -DMACOS
+CFLAGS_LOCAL    =       -w -O3 -c  -DMACOS
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -1290,8 +1290,8 @@ LD		=	$(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
 # If system has even more processors, set VERY_LARGE_MAXPROC to that number
-ARCH_LOCAL      =       -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM_SUBR -DLANDREAD_STUB -DVERY_LARGE_MAXPROC=36768 -DBLUEGENE -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -DNOUNDERSCORE -DNCARIBM_NOC99 $(MPI_INC)  -DLANDREAD_STUB
+ARCH_LOCAL      =       -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM_SUBR  -DVERY_LARGE_MAXPROC=36768 -DBLUEGENE -DWRF_USE_CLM
+CFLAGS_LOCAL    =       -DNOUNDERSCORE -DNCARIBM_NOC99 $(MPI_INC)  
 LIB_LOCAL       =       $(MPI_LIB)
 LDFLAGS_LOCAL   =       -Wl,--allow-multiple-definition -qstatic
 CPLUSPLUSLIB    =       
@@ -1337,8 +1337,8 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
 # If system has even more processors, set VERY_LARGE_MAXPROC to that number
-ARCH_LOCAL      =       -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM_SUBR -DLANDREAD_STUB -DVERY_LARGE_MAXPROC=36768 -DBLUEGENE -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -DNOUNDERSCORE -DLANDREAD_STUB
+ARCH_LOCAL      =       -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM_SUBR  -DVERY_LARGE_MAXPROC=36768 -DBLUEGENE -DWRF_USE_CLM
+CFLAGS_LOCAL    =       -DNOUNDERSCORE 
 LIB_LOCAL       =
 LDFLAGS_LOCAL   =       -Wl,--allow-multiple-definition,--relax -qstatic
 CPLUSPLUSLIB    =       
@@ -1381,8 +1381,8 @@ LD		=	$(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =        -qrealsize=$(RWORDSIZE) -qintsize=4
 # If system has even more processors, set VERY_LARGE_MAXPROC to that number
-ARCH_LOCAL      =       -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM_SUBR -DLANDREAD_STUB -DVERY_LARGE_MAXPROC=36768 -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -DNOUNDERSCORE -DLANDREAD_STUB
+ARCH_LOCAL      =       -DMOVE_NL_OUTSIDE_MODULE_CONFIGURE -DNONSTANDARD_SYSTEM_SUBR  -DVERY_LARGE_MAXPROC=36768 -DWRF_USE_CLM
+CFLAGS_LOCAL    =       -DNOUNDERSCORE 
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       -lC
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
@@ -1422,7 +1422,7 @@ LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       -r$(RWORDSIZE) -i4
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -D_WIN32 -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -w -O3 -DMEMCPY_FOR_BCOPY -DLANDREAD_STUB
+CFLAGS_LOCAL    =       -w -O3 -DMEMCPY_FOR_BCOPY 
 LDFLAGS_LOCAL   =       Ws2_32.lib # -lnetcdff
 CPLUSPLUSLIB    =
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)

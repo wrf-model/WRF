@@ -659,6 +659,13 @@ integer myproc
    ENDDO
    ENDDO
    ENDIF
+
+   DO j=jts,jtf
+   DO i=its,itf
+     IVGTYP(i,j) = NINT(LU_INDEX(i,j))
+   ENDDO
+   ENDDO
+
 !
    IF(PRESENT(TMN_UPDATE))THEN
    if(tmn_update.eq.1) then

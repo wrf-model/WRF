@@ -499,8 +499,11 @@
      CASE (RADM2SORG_AQCHEM)
        CALL wrf_debug(15,'calling radm2sorg_aqchem aerosols driver from chem_driver')
        haveaer = .true.
-     CASE (RACMSORG_AQCHEM)
-       CALL wrf_debug(15,'calling racmsorg_aqchem aerosols driver from chem_driver')
+     CASE (RACMSORG_AQCHEM_KPP)
+       CALL wrf_debug(15,'calling racmsorg_aqchem_kpp aerosols driver from chem_driver')
+       haveaer = .true.
+     CASE (RACM_ESRLSORG_AQCHEM_KPP)
+       CALL wrf_debug(15,'calling racm_esrlsorg_aqchem_kpp aerosols driver from chem_driver')
        haveaer = .true.
      CASE (RACM_KPP)
        CALL wrf_debug(15,'calling racm_kpp from chem_driver')
@@ -770,7 +773,7 @@
       enddo
       select case (config_flags%chem_opt)
       case (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
-            RACM_ESRLSORG_KPP,RACMSORG_AQ,RACMSORG_KPP, RACMSORG_AQCHEM, RACM_SOA_VBS_KPP)
+            RACM_ESRLSORG_KPP,RACMSORG_AQ,RACMSORG_KPP, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, RACM_SOA_VBS_KPP)
          do j=jps,jpe
             do k=kps,kpe
                do i=ips,ipe

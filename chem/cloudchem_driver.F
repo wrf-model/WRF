@@ -231,7 +231,7 @@
             ims,ime, jms,jme, kms,kme,                &
             its,ite, jts,jte, kts,kte                 )
 
-   CASE ( RADM2SORG_AQCHEM, RACMSORG_AQCHEM )
+   CASE ( RADM2SORG_AQCHEM, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP )
 
        call wrf_debug(15, &
        'cloudchem_driver calling sorgam_aqchem_driver')

@@ -338,8 +338,8 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
 
   select case(chem_opt)
   case (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
-        RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM,           &
-        RACM_ESRLSORG_KPP, RACMSORG_KPP, RACM_SOA_VBS_KPP,                          &
+        RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM_KPP,       &
+        RACM_ESRLSORG_AQCHEM_KPP, RACM_ESRLSORG_KPP, RACMSORG_KPP, RACM_SOA_VBS_KPP,&
         GOCARTRACM_KPP, GOCARTRADM2,GOCARTRADM2_KPP,CHEM_TRACER, CHEM_TRACE2)
      call setup_gasprofile_map_radm_racm
 
@@ -1574,7 +1574,9 @@ END SUBROUTINE bdy_chem_value_ghg
             config_flags%chem_opt == RACMSORG_KPP .or.      &
             config_flags%chem_opt == RACM_ESRLSORG_KPP .or.      &
             config_flags%chem_opt == RACM_SOA_VBS_KPP .or.      & 
-            config_flags%chem_opt == RACM_MIM_KPP ) then
+            config_flags%chem_opt == RACM_MIM_KPP .or.      & 
+            config_flags%chem_opt == RACMSORG_AQCHEM_KPP .or.      & 
+            config_flags%chem_opt == RACM_ESRLSORG_AQCHEM_KPP ) then
           i_bdy_method = 9
         end if
         if (config_flags%chem_opt == RACMPM_KPP ) then
@@ -1950,7 +1952,9 @@ END SUBROUTINE bdy_chem_value_ghg
             config_flags%chem_opt == RACMSORG_KPP .or.      &
             config_flags%chem_opt == RACM_SOA_VBS_KPP .or.      & 
             config_flags%chem_opt == RACM_ESRLSORG_KPP .or.      &
-            config_flags%chem_opt == RACM_MIM_KPP ) then
+            config_flags%chem_opt == RACM_MIM_KPP .or.      & 
+            config_flags%chem_opt == RACMSORG_AQCHEM_KPP .or.      & 
+            config_flags%chem_opt == RACM_ESRLSORG_AQCHEM_KPP ) then
           i_bdy_method = 9
         end if
         if (config_flags%chem_opt == RACMPM_KPP ) then
@@ -2560,9 +2564,9 @@ END SUBROUTINE bdy_chem_value_ghg
         get_last_gas = 0
 
      case (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
-           RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM,           &
-           RACM_ESRLSORG_KPP, RACMSORG_KPP, RACM_SOA_VBS_KPP, & 
-	   GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
+           RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM_KPP,       &
+           RACM_ESRLSORG_AQCHEM_KPP, RACM_ESRLSORG_KPP, RACMSORG_KPP, RACM_SOA_VBS_KPP,& 
+           GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
         get_last_gas = p_ho2
 
      case (CBMZ_MOSAIC_4BIN_VBS2_KPP, SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP)

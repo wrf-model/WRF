@@ -231,7 +231,7 @@
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
 
-   CASE (RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP,RACM_ESRLSORG_KPP)
+   CASE (RACMSORG_AQ,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP,RACMSORG_KPP,RACM_ESRLSORG_KPP)
 ! ???? are separate cases needed here for radm2sorg and racmsorg packages ????
        CALL wrf_debug(15,'aerosols_driver calling sorgam_driver')
        do ii=its,ite
@@ -389,8 +389,8 @@
             ims,ime, jms,jme, kms,kme,                                 &
             its,ite, jts,jte, kts,kte                                  )
 
-   CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RACMSORG_AQ,RACMSORG_AQCHEM,RADM2SORG_KPP,RACMSORG_KPP,RACM_ESRLSORG_KPP, &
-         CBMZSORG,CBMZSORG_AQ)
+   CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RACMSORG_AQ,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP,RADM2SORG_KPP, &
+         RACMSORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ)
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_sorgam')
        CALL sum_pm_sorgam (                                            &
             alt, chem, h2oaj, h2oai,                                   &

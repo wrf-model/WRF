@@ -2297,7 +2297,8 @@
                 IDS,IDE, JDS,JDE, KDS,KDE,                                  &
                 IMS,IME, JMS,JME, KMS,KME,                                  &
                 ITS,ITE, JTS,JTE, KTS,KTE-1                                 )
-        CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP)
+        CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM_KPP, &
+              RACM_ESRLSORG_AQCHEM_KPP,RACMSORG_KPP)
 !!!       write(0,*)'sum pm '
            CALL SUM_PM_SORGAM (                                             &
                 RRI, CHEM, H2OAJ, H2OAI,                              &

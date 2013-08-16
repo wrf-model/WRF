@@ -576,7 +576,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   F_QC=f_qc, F_QI=f_qi                          )
           END IF
        ELSE IF( progn==1 .AND. mp_physics/=LINSCHEME .AND. mp_physics/=MORR_TWO_MOMENT) THEN
-             call wrf_error_fatal("SETTINGS ERROR: Prognostic cloud droplet number can only be used with the mp_physics=LINSCHEME or MORRISON.")
+             call wrf_error_fatal( &
+             "SETTINGS ERROR: Prognostic cloud droplet number can only be used with the mp_physics=LINSCHEME or MORRISON.")
        END IF
        END IF
 

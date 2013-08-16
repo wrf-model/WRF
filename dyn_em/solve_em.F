@@ -1680,7 +1680,8 @@ BENCH_END(small_step_finish_tim)
 !-----------------------------------------------------------------------
 ! first moisture
 
-     IF ((config_flags%moist_adv_opt /= ORIGINAL .and. config_flags%moist_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order)) THEN
+     IF ((config_flags%moist_adv_opt /= ORIGINAL .and. config_flags%moist_adv_opt /= WENO_SCALAR) .and. &
+         (rk_step == rk_order)) THEN
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -1741,7 +1742,8 @@ BENCH_END(small_step_finish_tim)
 
 ! scalars
 
-     IF ((config_flags%scalar_adv_opt /= ORIGINAL .and. config_flags%scalar_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order)) THEN
+     IF ((config_flags%scalar_adv_opt /= ORIGINAL .and. config_flags%scalar_adv_opt /= WENO_SCALAR) .and. &
+         (rk_step == rk_order)) THEN
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -4035,7 +4037,8 @@ BENCH_END(bc_2d_tim)
 
    IF (config_flags%output_diagnostics == 1) THEN
      IF ((config_flags%auxhist3_interval == 0 ) ) THEN
-        WRITE (wrf_err_message , * )"CLWRF: ERROR -- error -- ERROR -- error : NO 'auxhist3_interval' has been defined in 'namelist.input'"
+        WRITE (wrf_err_message , * ) &
+        "CLWRF: ERROR -- error -- ERROR -- error : NO 'auxhist3_interval' has been defined in 'namelist.input'"
         CALL wrf_error_fatal ( TRIM(wrf_err_message) )
      END IF
      CALL wrf_debug ( 200 , ' CLWRF: call diagnostic_calc' )

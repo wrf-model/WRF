@@ -67,7 +67,7 @@ NETCDFPATH      =    CONFIGURE_NETCDF_PATH
 PNETCDFPATH     =    CONFIGURE_PNETCDF_PATH
 
 bundled:  io_only fftpack
-external: io_only $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a gen_comms_rsllite module_dm_rsllite $(ESMF_TARGET)
+external: io_only CONFIGURE_COMMS_EXTERNAL $(ESMF_TARGET)
 io_only:  esmf_time CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_PNF CONFIGURE_WRFIO_GRIB2 wrf_ioapi_includes wrfio_grib_share wrfio_grib1 wrfio_int
 
 

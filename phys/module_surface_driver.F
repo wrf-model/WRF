@@ -2537,7 +2537,7 @@ CONTAINS
          ENDIF
            DO j=j_start(ij),j_end(ij)
            DO i=i_start(ij),i_end(ij)
-!              CHKLOWQ(I,J)= 1.0
+              CHKLOWQ(I,J)= 1.0
                SFCEVP(I,J)= SFCEVP(I,J) + QFX(I,J)*DTBL
                SFCEXC(I,J)= CHS(I,J)
                IF(PRESENT(ACHFX))ACHFX(I,J)=ACHFX(I,J) + HFX(I,J)*DT

@@ -200,24 +200,21 @@ CONTAINS
 
       do 100 k=kts,kte
       do 100 i=its,ite
-         scale=max((1.-dtstepc*qlsink(i,k,j)),0.)
-	 if(scale.gt.1.)then
-	     print *,'qlsink,scale=',qlsink(i,k,j),scale,' i,k,j=',i,k,j
-	     scale=1.
-	 endif
+         scale=1.0-dtstepc*qlsink(i,k,j)
+         scale=max(0.0,min(1.0,scale)) ! make sure 0 <= scale <= 1
          if (qlsink(i,k,j) >  0.0) then
-            pdel_fac = pdel(i,k,j)/(g*mwdry)
+            pdel_fac = pdel(i,k,j)/g
             do n=1,ntype_aer
                do m=1,nsize_aer(n)
                   do l=1,ncomp_aer(n)
                      lmasscw=massptr_aer(l,m,n,cw_phase)
                      if (lmasscw < param_first_scalar) cycle
-                     qsrflx(i,j,lmasscw)=qsrflx(i,j,lmasscw)+chem(i,k,j,lmasscw)*(scale-1.)*pdel_fac
+                     qsrflx(i,j,lmasscw)=qsrflx(i,j,lmasscw)+chem(i,k,j,lmasscw)*(scale-1.)*pdel_fac ! aerosol mass (ug/m2)
                      chem(i,k,j,lmasscw)=chem(i,k,j,lmasscw)*scale
                   end do ! comp
                   lnumcw=numptr_aer(m,n,cw_phase)
                   if (lnumcw < param_first_scalar) cycle
-                  qsrflx(i,j,lnumcw)=qsrflx(i,j,lnumcw)+chem(i,k,j,lnumcw)*(scale-1.)*pdel_fac
+                  qsrflx(i,j,lnumcw)=qsrflx(i,j,lnumcw)+chem(i,k,j,lnumcw)*(scale-1.)*pdel_fac ! aerosol number (1/m2)
                   chem(i,k,j,lnumcw)=chem(i,k,j,lnumcw)*scale
                end do ! size
             end do ! type
@@ -232,11 +229,11 @@ CONTAINS
       do 270 k = kts,kte
       do 270 i = its,ite
          fracscav = dtstepc*qlsink(i,k,j)*gas_aqfrac(i,k,j,l)
-         if (fracscav > 0.0) then
-            fracscav = max( 0.0, min( 1.0, fracscav ) )
+         if (fracscav > 0.0) then ! make sure fracscav > 0
+            fracscav = min(1.0,fracscav) ! make sure fracscav <= 1
             scale = 1.0 - fracscav
             pdel_fac = pdel(i,k,j)/(g*mwdry)
-            qsrflx(i,j,l) = qsrflx(i,j,l)+chem(i,k,j,l)*(scale-1.)*pdel_fac
+            qsrflx(i,j,l) = qsrflx(i,j,l)+chem(i,k,j,l)*(scale-1.)*pdel_fac ! mmol/m2
             chem(i,k,j,l) = chem(i,k,j,l)*scale
          end if
 270   continue
@@ -461,7 +458,10 @@ subroutine aerimpactscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_ch
 
    real, intent(inout) :: dqdt(ims:ime,kms:kme,jms:jme,num_chem) ! TMR tendency array
    logical,  intent(inout) :: dotend(num_chem)     ! flag for doing scav
-   real, intent(inout) :: qsrflx(ims:ime,jms:jme,num_chem) ! column tracer tendencies
+   real, intent(inout) :: qsrflx(ims:ime,jms:jme,num_chem) 
+                        ! changes to column tracer burdens by wet scavenging over current timestep
+                        ! this routine adds on the contribution from aerosol impaction and brownian
+                        !    diffusion scavenging by precipitation
    integer, intent(in)  :: maxd_atype, maxd_asize, maxd_acomp, maxd_aphase
    integer, intent(in) :: ai_phase
    integer, intent(in) :: ntype_aer
@@ -500,7 +500,7 @@ subroutine aerimpactscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_ch
    real :: dumlogdens, dumlogptot, dumlogtemp
    real :: dumnumb
    real :: dumscavratenum, dumscavratevol
-   real :: pdel_fac
+   real :: pdel_dt_fac
    real :: pf_to_prmmh
    real :: scavimptbl1, scavimptbl2, scavimptbl3, scavimptbl4
    real :: xgrow
@@ -716,24 +716,25 @@ subroutine aerimpactscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_ch
 !
 !   compute tendencies
 !
-	pdel_fac = pdel(i,k,j)/(g*mwdry)
+	pdel_dt_fac = deltat*pdel(i,k,j)/g
 	dumrate = -dumimpactamt3/(deltat*(1.0 + 1.0e-8))
+	dumrate = min(0.0,max(-1.0/deltat,dumrate)) ! make sure -1 <= dumrate*deltat <= 0
 	do ll = 1, ncomp_aer(n)
 	    l = massptr_aer(ll,m,n,ai_phase)
 	    if (l < param_first_scalar) cycle
 	    dqdt(i,k,j,l) = chem(i,k,j,l)*dumrate
-	    qsrflx(i,j,l) = qsrflx(i,j,l) + dqdt(i,k,j,l)*pdel_fac
+	    qsrflx(i,j,l) = qsrflx(i,j,l) + dqdt(i,k,j,l)*pdel_dt_fac ! aerosol mass (ug/m2)
 	end do
 	l = waterptr_aer(m,n)
 	if (l >= param_first_scalar) then 
 	    dqdt(i,k,j,l) = chem(i,k,j,l)*dumrate
-	    qsrflx(i,j,l) = qsrflx(i,j,l) + dqdt(i,k,j,l)*pdel_fac
+	    qsrflx(i,j,l) = qsrflx(i,j,l) + dqdt(i,k,j,l)*pdel_dt_fac ! aerosol water mass (ug/m2)
 	end if
 	l = numptr_aer(m,n,ai_phase)
 	if (l >= param_first_scalar) then 
 	    dumrate = -dumimpactamt0/(deltat*(1.0 + 1.0e-8))
 	    dqdt(i,k,j,l) = chem(i,k,j,l)*dumrate
-	    qsrflx(i,j,l) = qsrflx(i,j,l) + dqdt(i,k,j,l)*pdel_fac
+	    qsrflx(i,j,l) = qsrflx(i,j,l) + dqdt(i,k,j,l)*pdel_dt_fac ! aerosol number (1/m2)
 	end if
 
 
@@ -1206,8 +1207,9 @@ subroutine gasrainscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_chem
    real, intent(out) :: dqdt(ims:ime,kms:kme,jms:jme,num_chem) ! TMR tendency array
    logical,  intent(inout) :: dotend(num_chem)     ! flag for doing scav
    real, intent(inout) :: qsrflx(ims:ime,jms:jme,num_chem)
-                              ! process-specific column tracer tendencies
-                              ! (1=all wet removal from this routine)
+                        ! changes to column tracer burdens by wet scavenging over current timestep
+                        ! this routine adds on the contribution from gas scavenging
+                        !    by mass transfer to rain
 
 !--------------------------Local Variables------------------------------
 
@@ -1231,7 +1233,7 @@ subroutine gasrainscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_chem
    real :: fracscav(ng), fracscav_sub(ng)
    real :: deltatinv
    real :: dum, dumamt, dumprecipmmh, dumpress, dumtemp
-   real :: pdel_dt_fac
+   real :: pdel_fac
    real :: r_gc(ng)
    real :: scavrate_hno3
    real :: scavrate(ng), scavrate_factor(ng)
@@ -1363,15 +1365,15 @@ subroutine gasrainscav (ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte,num_chem
 !
 !   compute tendencies
 !
-	pdel_dt_fac = (pdel(i,k,j)/(g*mwdry))*deltatinv
+	pdel_fac = (pdel(i,k,j)/(g*mwdry))
 
 	do ig = 1, ng
-	    fracscav(ig) = min( fracscav(ig), 1.0 )
+	    fracscav(ig) = max(0.0,min(1.0,fracscav(ig))) ! make sure 0 <= fracscav <= 1
 	    amtscav(ig)  = fracscav(ig)*r_gc(ig)
 	    lg = lg_ptr(ig)
 	    if (lg .ge. p1st) then
 		dqdt(i,k,j,lg) = -deltatinv*amtscav(ig)  
-		qsrflx(i,j,lg) = qsrflx(i,j,lg) + pdel_dt_fac*amtscav(ig)  
+		qsrflx(i,j,lg) = qsrflx(i,j,lg) - pdel_fac*amtscav(ig) ! mmol/m2
 	    end if
 	end do
 

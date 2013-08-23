@@ -28,6 +28,7 @@ C 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED HISTORY
 C                           DOCUMENTATION; OUTPUTS MORE COMPLETE
 C                           DIAGNOSTIC INFO WHEN ROUTINE TERMINATES
 C                           ABNORMALLY OR UNUSUAL THINGS HAPPEN
+C 2009-04-21  J. ATOR    -- USE ERRWRT
 C
 C USAGE:    CALL JSTNUM (STR, SIGN, IRET)
 C   INPUT ARGUMENT LIST:
@@ -43,11 +44,8 @@ C     IRET     - INTEGER: RETURN CODE:
 C                       0 = normal return
 C                      -1 = encoded value within STR was not an integer
 C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
-C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT     STRNUM
+C    THIS ROUTINE CALLS:        BORT     ERRWRT   STRNUM
 C    THIS ROUTINE IS CALLED BY: ELEMDX
 C                               Normally not called by any application
 C                               programs but it could be.
@@ -59,9 +57,14 @@ C
 C$$$
 
       CHARACTER*(*) STR
+
+      CHARACTER*128 ERRSTR
       CHARACTER*1  SIGN
 
       COMMON /QUIET / IPRT
+
+C-----------------------------------------------------------------------
+C-----------------------------------------------------------------------
 
       IRET = 0
 
@@ -85,13 +88,13 @@ C$$$
       CALL STRNUM(STR,NUM)
       IF(NUM.LT.0) THEN
          IF(IPRT.GE.0) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-         PRINT*, 'BUFRLIB: JSTNUM: ENCODED VALUE WITHIN RESULTANT ',
-     .    'CHARACTER STRING (',STR,') IS NOT AN INTEGER - RETURN WITH ',
-     .    'IRET = -1'
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      ERRSTR = 'BUFRLIB: JSTNUM: ENCODED VALUE WITHIN RESULTANT '//
+     .    'CHARACTER STRING (' // STR // ') IS NOT AN INTEGER - '//
+     .    'RETURN WITH IRET = -1'
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
          ENDIF
          IRET = -1
       ENDIF

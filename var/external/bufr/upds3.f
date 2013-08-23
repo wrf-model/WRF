@@ -1,4 +1,4 @@
-      SUBROUTINE UPDS3(MBAY,CDS3,NDS3)
+      SUBROUTINE UPDS3(MBAY,LCDS3,CDS3,NDS3)
 
 C$$$  SUBPROGRAM DOCUMENTATION BLOCK
 C
@@ -21,11 +21,15 @@ C 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF
 C 2004-08-18  J. ATOR    -- REMOVED IFIRST CHECK, SINCE WRDLEN NOW
 C                           KEEPS TRACK OF WHETHER IT HAS BEEN CALLED
 C 2005-11-29  J. ATOR    -- USE GETLENS
+C 2009-03-23  J. ATOR    -- ADDED LCDS3 ARGUMENT AND CHECK
 C
-C USAGE:    CALL UPDS3 (MBAY, CDS3, NDS3)
+C USAGE:    CALL UPDS3 (MBAY, LCDS3, CDS3, NDS3)
 C   INPUT ARGUMENT LIST:
 C     MBAY     - INTEGER: *-WORD PACKED BINARY ARRAY CONTAINING BUFR
 C                MESSAGE
+C     LCDS3    - INTEGER: DIMENSIONED SIZE (IN INTEGER WORDS) OF CDS3;
+C                USED BY THE SUBROUTINE TO ENSURE THAT IT DOES NOT
+C                OVERFLOW THE CDS3 ARRAY
 C
 C   OUTPUT ARGUMENT LIST:
 C     CDS3     - CHARACTER*6: *-WORD ARRAY CONTAINING UNPACKED LIST OF
@@ -33,10 +37,10 @@ C                DESCRIPTORS (FIRST NDS3 WORDS FILLED)
 C     NDS3     - INTEGER: NUMBER OF DESCRIPTORS RETURNED
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        ADN30    IUPB     GETLENS  WRDLEN
-C    THIS ROUTINE IS CALLED BY: None
-C                               Normally called only by application
-C                               programs.
+C    THIS ROUTINE CALLS:        ADN30    BORT     IUPB     GETLENS
+C                               WRDLEN
+C    THIS ROUTINE IS CALLED BY: READS3
+C                               Also called by application programs.
 C
 C ATTRIBUTES:
 C   LANGUAGE: FORTRAN 77
@@ -51,24 +55,27 @@ C$$$
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
 
-C     CALL SUBROUTINE WRDLEN TO INITIALIZE SOME IMPORTANT INFORMATION
-C     ABOUT THE LOCAL MACHINE, JUST IN CASE SUBROUTINE OPENBF HASN'T
-C     BEEN CALLED YET.
+C     Call subroutine WRDLEN to initialize some important information
+C     about the local machine, just in case subroutine OPENBF hasn't
+C     been called yet.
 
       CALL WRDLEN
 
-C     SKIP TO THE BEGINNING OF SECTION 3.
+C     Skip to the beginning of Section 3.
 
       CALL GETLENS(MBAY,3,LEN0,LEN1,LEN2,LEN3,L4,L5)
       IPT = LEN0 + LEN1 + LEN2
 
-C     UNPACK THE SECTION 3 DESCRIPTORS.
+C     Unpack the Section 3 descriptors.
 
       NDS3 = 0
       DO JJ = 8,(LEN3-1),2
          NDS3 = NDS3 + 1
+         IF(NDS3.GT.LCDS3) GOTO 900
          CDS3(NDS3) = ADN30(IUPB(MBAY,IPT+JJ,16),6)
       ENDDO
 
       RETURN
+900   CALL BORT('BUFRLIB: UPDS3 - OVERFLOW OF OUTPUT DESCRIPTOR '//
+     . 'ARRAY; TRY A LARGER DIMENSION FOR THIS ARRAY')
       END

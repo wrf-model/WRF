@@ -32,7 +32,7 @@ C                DEPENDING ON NATIVE MACHINE
 C
 C REMARKS:
 C    THIS ROUTINE CALLS:        IPKM     IUPM
-C    THIS ROUTINE IS CALLED BY: ICHKSTR  RDBFDX
+C    THIS ROUTINE IS CALLED BY: ICHKSTR  STBFDX
 C                               Normally not called by any application
 C                               programs.
 C

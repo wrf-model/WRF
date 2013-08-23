@@ -10,9 +10,8 @@ C   BIT WIDTH AND UNITS (I.E., THE "ELEMENTS") FROM A TABLE B MNEMONIC
 C   DEFINITION CARD THAT WAS PREVIOUSLY READ FROM A USER-SUPPLIED BUFR
 C   DICTIONARY TABLE FILE IN CHARACTER FORMAT BY BUFR ARCHIVE LIBRARY
 C   SUBROUTINE RDUSDX.  THESE DECODED VALUES ARE THEN ADDED TO THE
-C   ALREADY-EXISTING ENTRY FOR THAT MNEMONIC (BUILT IN RDUSDX) WITHIN
-C   THE INTERNAL BUFR TABLE B ARRAY TABB(*,LUN) IN COMMON BLOCK
-C   /TABABD/.
+C   ALREADY-EXISTING ENTRY FOR THAT MNEMONIC WITHIN THE INTERNAL BUFR
+C   TABLE B ARRAY TABB(*,LUN) IN COMMON BLOCK /TABABD/.
 C
 C PROGRAM HISTORY LOG:
 C 1994-01-06  J. WOOLLEN -- ORIGINAL AUTHOR
@@ -43,7 +42,7 @@ C
 C REMARKS:
 C    THIS ROUTINE CALLS:        BORT2    CAPIT    JSTCHR   JSTNUM
 C                               NEMTAB
-C    THIS ROUTINE IS CALLED BY: RDUSDX
+C    THIS ROUTINE IS CALLED BY: RDUSDX   STSEQ
 C                               Normally not called by any application
 C                               programs.
 C
@@ -91,14 +90,10 @@ C  FIND THE ELEMENT TAG IN TABLE B
 C  -------------------------------
 
 C     Note that an entry for this mnemonic should already exist within
-C     the internal BUFR Table B array TABB(*,LUN); this entry should
-C     have been created by subroutine RDUSDX when the mnemonic and its
-C     associated FXY value and description were initially defined within
-C     a card read from the "Descriptor Definition" section at the top of
-C     the user-supplied BUFR dictionary table in character format.  Now,
-C     we need to retrieve the positional index for that entry within
-C     TABB(*,LUN) so that we can access the entry and then add the scale
-C     factor, reference value, bit width, and units to it.
+C     the internal BUFR Table B array TABB(*,LUN).  We now need to
+C     retrieve the positional index for that entry within TABB(*,LUN)
+C     so that we can access the entry and then add the scale factor,
+C     reference value, bit width, and units to it.
 
       CALL NEMTAB(LUN,NEMO,IDSN,TAB,IELE)
       IF(TAB.NE.'B') GOTO 900

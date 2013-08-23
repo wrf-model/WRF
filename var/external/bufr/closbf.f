@@ -25,6 +25,8 @@ C 2003-11-04  S. BENDER  -- ADDED REMARKS/BUFRLIB ROUTINE
 C                           INTERDEPENDENCIES
 C 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED
 C                           DOCUMENTATION (INCLUDING HISTORY)
+C 2012-09-15  J. WOOLLEN -- MODIFIED FOR C/I/O/BUFR INTERFACE;
+C                        -- ADDED CALL TO CLOSFB TO CLOSE C FILES
 C
 C USAGE:    CALL CLOSBF (LUNIT)
 C   INPUT ARGUMENT LIST:
@@ -37,8 +39,9 @@ C   OUTPUT FILES:
 C     UNIT "LUNIT"  - BUFR FILE
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        CLOSMG   STATUS   WTSTAT
-C    THIS ROUTINE IS CALLED BY: UFBINX   UFBMEM   UFBTAB
+C    THIS ROUTINE CALLS:        CLOSFB   CLOSMG   STATUS   WTSTAT
+C    THIS ROUTINE IS CALLED BY: COPYBF   MESGBF   UFBINX   UFBMEM
+C                               UFBMEX   UFBTAB
 C                               Also called by application programs.
 C
 C ATTRIBUTES:
@@ -53,10 +56,11 @@ C$$$
 
       CALL STATUS(LUNIT,LUN,IL,IM)
       IF(IL.GT.0 .AND. IM.NE.0) CALL CLOSMG(LUNIT)
+      if(IL.NE.0 .AND. NULL(LUN).EQ.0) call closfb(lun)
       CALL WTSTAT(LUNIT,LUN,0,0)
 
-C  CLOSE LUNIT IF NULL(LUN) = 0
-C  ----------------------------
+C  CLOSE fortran UNIT IF NULL(LUN) = 0
+C  -----------------------------------
 
       IF(NULL(LUN).EQ.0) CLOSE(LUNIT)
 

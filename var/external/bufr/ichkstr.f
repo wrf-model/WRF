@@ -29,8 +29,7 @@ C                  1 = STR(1:N) AND (CHR(I),I=1,N) ARE NOT EQUIVALENT
 C
 C REMARKS:
 C    THIS ROUTINE CALLS:        CHRTRNA
-C    THIS ROUTINE IS CALLED BY: CRBMG    OPENBF   RDMSGB   RDMSGW
-C                               READERME
+C    THIS ROUTINE IS CALLED BY: CRBMG    RDMSGB   READERME
 C                               Normally not called by any application
 C                               programs. 
 C

@@ -3,7 +3,7 @@
 C$$$  SUBPROGRAM DOCUMENTATION BLOCK
 C
 C SUBPROGRAM:    COPYSB
-C   PRGMMR: WOOLLEN          ORG: NP20       DATE: 2005-09-16
+C   PRGMMR: WOOLLEN          ORG: NP20       DATE: 1994-01-06
 C
 C ABSTRACT: THIS SUBROUTINE COPIES A PACKED DATA SUBSET, INTACT, FROM
 C   LOGICAL UNIT LUNIN, OPENED FOR INPUT VIA A PREVIOUS CALL TO BUFR
@@ -47,6 +47,7 @@ C                           INPUT SUBSET/MESSAGE IS COMPRESSED (BEFORE
 C                           COULD ONLY WRITE OUT UNCOMPRESSED SUBSET/
 C                           MESSAGE REGARDLESS OF COMPRESSION STATUS OF
 C                           INPUT SUBSET/MESSAGE)
+C 2009-06-26  J. ATOR    -- USE IOK2CPY
 C
 C USAGE:    CALL COPYSB  ( LUNIN, LUNOT, IRET )
 C   INPUT ARGUMENT LIST:
@@ -62,9 +63,9 @@ C                      -1 = there are no more subsets in the input
 C                           BUFR message
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT     CMPMSG   CPYUPD   MESGBC
-C                               READSB   STATUS   UFBCPY   UPB
-C                               WRITSB
+C    THIS ROUTINE CALLS:        BORT     CMPMSG   CPYUPD   IOK2CPY
+C                               MESGBC   READSB   STATUS   UFBCPY
+C                               UPB      WRITSB
 C    THIS ROUTINE IS CALLED BY: ICOPYSB
 C                               Also called by application programs.
 C
@@ -80,6 +81,14 @@ C$$$
      .                INODE(NFILES),IDATE(NFILES)
       COMMON /BITBUF/ MAXBYT,IBIT,IBAY(MXMSGLD4),MBYT(NFILES),
      .                MBAY(MXMSGLD4,NFILES)
+      COMMON /TABLES/ MAXTAB,NTAB,TAG(MAXJL),TYP(MAXJL),KNT(MAXJL),
+     .                JUMP(MAXJL),LINK(MAXJL),JMPB(MAXJL),
+     .                IBT(MAXJL),IRF(MAXJL),ISC(MAXJL),
+     .                ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL),
+     .                ISEQ(MAXJL,2),JSEQ(MAXJL)
+
+      CHARACTER*10 TAG
+      CHARACTER*3  TYP
 
       CHARACTER*128 BORT_STR
 
@@ -101,7 +110,10 @@ C  -----------------------
          IF(IL.EQ.0) GOTO 903
          IF(IL.LT.0) GOTO 904
          IF(IM.EQ.0) GOTO 905
-         IF(INODE(LIN).NE.INODE(LOT)) GOTO 906
+         IF(INODE(LIN).NE.INODE(LOT)) THEN
+           IF( (TAG(INODE(LIN)).NE.TAG(INODE(LOT))) .OR.
+     .        (IOK2CPY(LIN,LOT).NE.1) ) GOTO 906
+         ENDIF
       ENDIF
 
 C  SEE IF THERE IS ANOTHER SUBSET IN THE MESSAGE
@@ -170,6 +182,6 @@ C  -----
      . 'HAVE THE SAME INTERNAL TABLES, THEY ARE DIFFERENT HERE')
 907   WRITE(BORT_STR,'("BUFRLIB: COPYSB - INVALID COMPRESSION '//
      . 'INDICATOR (ICMP=",I3," RETURNED FROM BUFR ARCHIVE LIBRARY '//
-     . 'ROUTINE MESGBF")') ICMP
+     . 'ROUTINE MESGBC")') ICMP
       CALL BORT(BORT_STR)
       END

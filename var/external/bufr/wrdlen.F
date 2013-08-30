@@ -438,23 +438,27 @@ C  -----------------
 #else
          CNDIAN = 'LITTLE'
 #endif
-      ERRSTR = '=============== ' //
-     . 'WELCOME TO THE BUFR ARCHIVE LIBRARY' // ' =============='
+      WRITE (  UNIT=ERRSTR, FMT='(2A)' )
+     & '=============== 
+     & WELCOME TO THE BUFR ARCHIVE LIBRARY', ' =============='
       CALL ERRWRT(ERRSTR)
       WRITE (  UNIT=ERRSTR, FMT='(A,I2)' )
-     . ' MACHINE CHARACTERISTICS: NUMBER OF BYTES PER WORD =', NBYTW
+     & ' MACHINE CHARACTERISTICS: NUMBER OF BYTES PER WORD =', NBYTW
       CALL ERRWRT(ERRSTR)
       WRITE (  UNIT=ERRSTR, FMT='(A,I3)' )
-     . '                          NUMBER OF BITS PER WORD =', NBITW
+     & '                          NUMBER OF BITS PER WORD =', NBITW
       CALL ERRWRT(ERRSTR)
-      ERRSTR = '                          BYTE ORDER IS ' // CNDIAN //
-     .  ' ENDIAN'
+      WRITE (  UNIT=ERRSTR, FMT='(3A)' )
+     & '                          BYTE ORDER IS ', CNDIAN,
+     & ' ENDIAN'
       CALL ERRWRT(ERRSTR)
-      ERRSTR = '                          ' // CLANG //
-     .  ' IS THE NATIVE LANGUAGE'
+      WRITE (  UNIT=ERRSTR, FMT='(3A)' )
+     & '                          ', CLANG,
+     & ' IS THE NATIVE LANGUAGE'
       CALL ERRWRT(ERRSTR)
-      ERRSTR = '====================== VERSION: ' // CVSTR //
-     .  '=========================='
+      WRITE (  UNIT=ERRSTR, FMT='(3A)' )
+     & '====================== VERSION: ', CVSTR,
+     & '=========================='
       CALL ERRWRT(ERRSTR)
       CALL ERRWRT(' ')
       ENDIF
@@ -463,20 +467,20 @@ C  EXITS
 C  -----
 
       RETURN
-  900 WRITE(BORT_STR,'("BUFRLIB: WRDLEN - MACHINE WORD LENGTH IS '//
-     . 'LIMITED TO 64 BITS (THIS MACHINE APPARENTLY HAS",I4," BIT '//
-     . 'WORDS!)")') I
+  900 WRITE(BORT_STR,'("BUFRLIB: WRDLEN - MACHINE WORD LENGTH IS
+     & LIMITED TO 64 BITS (THIS MACHINE APPARENTLY HAS",I4," BIT
+     & WORDS!)")') I
       CALL BORT(BORT_STR)
-  901 WRITE(BORT_STR,'("BUFRLIB: WRDLEN - MACHINE WORD LENGTH (",I4,"'//
-     . ') IS NOT A MULTIPLE OF 8 (THIS MACHINE HAS WORDS NOT ON WHOLE'//
-     . ' BYTE BOUNDARIES!)")') I
+  901 WRITE(BORT_STR,'("BUFRLIB: WRDLEN - MACHINE WORD LENGTH (",I4,"
+     & ) IS NOT A MULTIPLE OF 8 (THIS MACHINE HAS WORDS NOT ON WHOLE
+     &  BYTE BOUNDARIES!)")') I
       CALL BORT(BORT_STR)
-  902 WRITE(BORT_STR,'("BUFRLIB: WRDLEN - BYTE ORDER CHECKING MISTAKE'//
-     . ', LOOP INDEX J (HERE =",I3,") IS .GT. NO. OF BYTES PER WORD '//
-     . 'ON THIS MACHINE (",I3,")")') J,NBYTW
+  902 WRITE(BORT_STR,'("BUFRLIB: WRDLEN - BYTE ORDER CHECKING MISTAKE
+     & , LOOP INDEX J (HERE =",I3,") IS .GT. NO. OF BYTES PER WORD
+     & ON THIS MACHINE (",I3,")")') J,NBYTW
       CALL BORT(BORT_STR)
-  903 WRITE(BORT_STR,'("BUFRLIB: WRDLEN - CAN''T DETERMINE MACHINE '//
-     . 'NATIVE LANGUAGE (CHAR. A UNPACKS TO INT.",I4," NEITHER ASCII '//
-     . ' (65) NOR EBCDIC (193)")') IA
+  903 WRITE(BORT_STR,'("BUFRLIB: WRDLEN - CAN''T DETERMINE MACHINE
+     & NATIVE LANGUAGE (CHAR. A UNPACKS TO INT.",I4," NEITHER ASCII
+     &  (65) NOR EBCDIC (193)")') IA
       CALL BORT(BORT_STR)
       END

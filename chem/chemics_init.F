@@ -19,7 +19,7 @@
                last_chem_time_year, last_chem_time_month,            &
                last_chem_time_day, last_chem_time_hour,              &
                last_chem_time_minute, last_chem_time_second,         &
-               chem_in_opt, kemit,                                   &
+               chem_in_opt, kemit, num_vert_mix,                     &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
@@ -60,6 +60,7 @@
    real  , intent(in) :: bioemdt,photdt,chemdt,dt,gmt
    INTEGER,      INTENT(IN   ) :: plumerisefire_frq
    INTEGER,      INTENT(IN   ) :: chem_in_opt
+   INTEGER,      INTENT(INOUT) :: num_vert_mix
    INTEGER,      INTENT(IN   ) :: id,julday,kemit,                   &
                                   last_chem_time_year,               &
                                   last_chem_time_month,              &
@@ -470,6 +471,24 @@ end if
 !
 !   RETURN IF CHEMISTRY IS NOT RUNNING
     IF ( config_flags%chem_opt == 0 ) RETURN
+
+! Set the num_vert_mix variable if using ACM
+    num_vert_mix = 0
+    IF ( config_flags%bl_pbl_physics == ACMPBLSCHEME ) THEN
+         mix_select: SELECT CASE(config_flags%chem_opt)
+         CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZSORG_AQ, &
+              CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
+              CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
+            num_vert_mix = numgas
+         CASE DEFAULT
+            num_vert_mix = num_chem
+         END SELECT mix_select
+        if(num_vert_mix .gt. config_flags%ndepvel) then
+         write(message_txt,'(A30,2(I8,2x))') 'chem_init: num_vert_mix and ndepvel ',num_vert_mix,config_flags%ndepvel
+         call wrf_message( trim(message_txt) )
+        call wrf_error_fatal(" ERROR: CHEM_INIT: num_vert_mix > ndepvel ")
+        endif
+    ENDIF
 
     stepbioe=nint(bioemdt*60./dt)
     stepphot=nint(photdt*60./dt)

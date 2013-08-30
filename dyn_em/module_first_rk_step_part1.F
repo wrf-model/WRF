@@ -833,6 +833,12 @@ BENCH_START(pbl_driver_tim)
      &        ,FNP=grid%fnp, IS_CAMMGMP_USED = grid%is_CAMMGMP_used       &
 ! for grims shallow convection with ysupbl
      &        ,WSTAR=grid%wstar_ysu,DELTA=grid%delta_ysu               &
+#if (WRF_CHEM == 1)
+     &        ,CHEM=chem,VD=grid%dep_vel                                 &
+     &        ,NCHEM=num_chem,kdvel=config_flags%kdepvel                 &
+     &        ,ndvel=config_flags%ndepvel                                &
+     &        ,NUM_VERT_MIX=grid%num_vert_mix                     &
+#endif
      &        )
                                                          
 

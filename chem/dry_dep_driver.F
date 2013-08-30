@@ -23,6 +23,7 @@ CONTAINS
                emis_ant,ebu_in,                                           &
                sf_urban_physics,numgas,current_month,dvel,                &
                snowh,is_CAMMGMP_used,                                     & !BSINGH:01/31/2013: Added is_CAMMGMP_used for MAM drydep
+               dep_vel,num_vert_mix,                                      &
                ids,ide, jds,jde, kds,kde,                                 &
                ims,ime, jms,jme, kms,kme,                                 &
                its,ite, jts,jte, kts,kte                                  )
@@ -80,6 +81,9 @@ CONTAINS
    REAL, DIMENSION( ims:ime, 1, jms:jme, num_ebu_in ),                     &
          INTENT(INOUT ) ::                                   ebu_in
 
+   REAL, DIMENSION( ims:ime, config_flags%kdepvel, jms:jme, config_flags%ndepvel ), &
+         INTENT(INOUT ) ::                                   dep_vel
+
    REAL, DIMENSION( ims:ime, config_flags%kdvel, jms:jme, num_dvel ), &
          INTENT(INOUT ) ::                                   dvel
 
@@ -129,6 +133,7 @@ CONTAINS
       REAL,      INTENT(IN   ) ::                               &
                              dtstep,gmt,dx
 
+      INTEGER,  INTENT(INOUT) :: num_vert_mix
 !--- deposition and emissions stuff
 ! .. Parameters ..
 ! ..
@@ -151,8 +156,9 @@ CONTAINS
    REAL,  DIMENSION( kms:kme ) :: dryrho_1d
 
 ! turbulent transport
-      real :: pblst(kts:kte),ekmfull(kts:kte+1),zzfull(kts:kte+1),zz(kts:kte)
-      integer :: ii,jj,kk,i,j,k,nv
+   real :: pblst(kts:kte),ekmfull(kts:kte+1),zzfull(kts:kte+1),zz(kts:kte)
+   integer :: ii,jj,kk,i,j,k,nv
+   integer :: ll   
 !
 ! necessary for aerosols (module dependent)
 !
@@ -507,28 +513,24 @@ CONTAINS
                                                      
    END SELECT drydep_select                              
 
-! Add dvel here for all aerosol and gas species in the dvel array 
-!    l = max( 1, min( num_chem, numddvel ) )
-!       do i=its,ite
-!        do j=jts,jte
-!          do k=1,l
-!    dvel(i,j,k) = ddvel(i,j,k)
-!        enddo
-!         enddo
-!        enddo
-!
-!        do i=its,ite
-!        do j=jts,jte
-!         do k=l+1,numddvel
-!    if (l < numddvel) dvel(i,j,k) = 0.0
-!        enddo
-!        enddo
-!          enddo
+! Add dep_vel here for all aerosol and gas species in the dvel array 
+      ll = max( 1, min( config_flags%ndepvel, num_vert_mix ) )
+      dep_vel(:,:,:,:) = 0.
+      do l=1,ll
+      do j=jts,jte
+      do k=1,config_flags%kdepvel
+      do i=its,ite
+        dep_vel(i,k,j,l) = ddvel(i,j,l)
+      enddo
+      enddo
+      enddo
+      enddo
 
 !   This will be called later from subgrd_transport_driver.F !!!!!!!!
 !
 !
       dep_vel_o3=0.
+      if (num_vert_mix == 0) then
       do 100 j=jts,jte
       do 100 i=its,ite
       pblst=0.
@@ -642,6 +644,7 @@ CONTAINS
        END SELECT tracer_select
 
 100   continue
+      endif   ! num_vert_mix = 0
 !
 !  vertical mixing and activation of aerosol
 !

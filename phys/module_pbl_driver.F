@@ -100,6 +100,9 @@ CONTAINS
                ,IS_CAMMGMP_USED                                      &
 ! for grims shallow convection with ysupbl
                , wstar,delta                                       &
+#if (WRF_CHEM == 1)
+               ,chem,vd,nchem,kdvel,ndvel,num_vert_mix             &
+#endif
                                                                      )       
 !------------------------------------------------------------------
 #if (EM_CORE==1)
@@ -633,6 +636,13 @@ CONTAINS
                                      ,thl_up, thv_up, rt_up       &
                                      ,rv_up, rc_up, u_up, v_up    &
                                      ,frac_up,rc_mf  
+
+#if (WRF_CHEM == 1)
+!   ACM Chem
+    INTEGER, INTENT(IN) :: nchem, kdvel,ndvel,num_vert_mix
+    REAL, INTENT(INOUT),  DIMENSION( ims:ime, kms:kme, jms:jme,nchem ) :: CHEM
+    REAL, INTENT(IN)   ,  DIMENSION( ims:ime, kdvel, jms:jme, ndvel )  :: VD
+#endif
 
 !  LOCAL  VAR
 
@@ -1445,9 +1455,13 @@ CONTAINS
                XTIME=itimestep, DTPBL=dtbl, ZNW=znw, SIGMAH=znu               &
               ,U3D=u_phytmp, V3D=v_phytmp, PP3D=p_phy, DZ8W=dz8w, TH3D=th_phy, T3D=t_phy            &
               ,QV3D=qv_curr, QC3D=qc_curr, QI3D=qi_curr, RR3D=rho                &
+#if (WRF_CHEM == 1)
+              ,CHEM3D=CHEM,   VD3D=VD,  NCHEM=nchem, KDVEL=kdvel              &
+              ,NDVEL=ndvel, NUM_VERT_MIX=num_vert_mix                         &
+#endif
               ,UST=UST, HFX=HFX, QFX=QFX, TSK=tsk                               &
               ,PSFC=PSFC, EP1=EP_1, G=g, ROVCP=rcp,RD=r_D,CPD=cp                 &
-              ,PBLH=pblh, KPBL2D=kpbl, REGIME=regime                            &
+              ,PBLH=pblh, KPBL2D=kpbl, EXCH_H=exch_h, REGIME=regime              &
               ,GZ1OZ0=gz1oz0,WSPD=wspd,PSIM=psim, MUT=mut                        &
               ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten                 &
               ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten             &

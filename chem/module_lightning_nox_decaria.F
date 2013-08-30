@@ -92,6 +92,7 @@
  INTEGER :: i,k,j
  INTEGER :: ktop,kbtm,kupper,klower
  REAL :: ic_fr, cg_fr, delta ! reconsolidated flashrates
+ REAL :: reflmax, cellmax
  REAL :: term2, B
  CHARACTER (LEN=250) :: message
  REAL, DIMENSION( kps:kpe ) :: cellcount
@@ -123,6 +124,10 @@
     ic_fr = wrf_dm_sum_real(ic_fr)
     cg_fr = wrf_dm_sum_real(cg_fr)
  ENDIF
+ reflmax = maxval(refl(ips:ipe,kps:kpe,jps:jpe))
+ cellmax = maxval(cellcount(kps:kpe))
+ WRITE(message, * ) ' LNOx tracer: max_refl, max_cellcount, ic_fr = ',  reflmax, cellmax, ic_fr
+ CALL wrf_debug ( 100, message )
 
 !-----------------------------------------------------------------
 
@@ -158,7 +163,7 @@
         !*                       3) Divide by moles of air gives mixing ratio
         !*                       4) Multiply by 1E6 gives ppmv
         delta = (ic_fr * N_IC / cellcount(k)) * fd(k) / (molesofair(k)*dz(k)) * 1E6
-        WRITE(message, * ) ' lightning_driver: k, delta, cellcount, fd = ', k, delta, cellcount(k), fd(k)
+        WRITE(message, * ) ' LNOx_driver: k, delta, cellcount, fd = ', k, delta, cellcount(k), fd(k)
         CALL wrf_debug ( 100, message )
         where(refl(ips:ipe,k,jps:jpe) .gt. refl_threshold )
           lnox_ic_tend(ips:ipe,k,jps:jpe) = delta
@@ -218,6 +223,7 @@
  SUBROUTINE bellcurve ( k_min, k_max, k_mu, z, kps,kpe, f, dz )
 !-----------------------------------------------------------------
 
+ IMPLICIT NONE
  INTEGER,                      INTENT(IN   ) :: k_min, k_max, k_mu
  REAL,   DIMENSION( kps:kpe ), INTENT(IN   ) :: z       ! at phy
  INTEGER,                      INTENT(IN   ) :: kps,kpe
@@ -241,8 +247,11 @@
  ! Truncated Gaussian at 3 sigma
  f(k_min:k_max) = (1.0/(sqrt(two_pi)*sigma))*exp(-ex(k_min:k_max)*ex(k_min:k_max)/2.0)
 
- dz(kps) = 0. ! safe as long as k_min != kps
- dz(kpe) = 0. ! safe as long as k_max != kpe
+!++mcb   We do need dz at bottom and top of domain
+!   dz(kps) = 0. ! safe as long as k_min != kps
+!   dz(kpe) = 0. ! safe as long as k_max != kpe
+ dz(kps) = (z(kps+1) - z(kps))*.5             
+ dz(kpe) = (z(kpe) - z(kpe-1))*.5             
  DO k=kps+1,kpe-1
 !  dz(k) = (z(k+1)+z(k))/2. - (z(k)+z(k-1))/2.
    dz(k) = (z(k+1) - z(k-1))*.5
@@ -282,6 +291,7 @@
 
  USE module_dm, only: wrf_dm_max_real, wrf_dm_min_real, wrf_dm_sum_real
 
+ IMPLICIT NONE
 !-----------------------------------------------------------------
 
 ! Prognostics
@@ -318,11 +328,11 @@
 
  ! Look for kbtm
  k = kps
- DO WHILE( cellcount(k) .eq. 0 .and. k .lt. ktop )
+ DO WHILE( cellcount(k) .eq. 0 .and. k .le. ktop )
   k = k+1
  ENDDO
  kbtm = k
- if (kbtm .eq. kps) kbtm = kpe
+! if (kbtm .eq. kps) kbtm = kpe
 
  ! Look for kupper
  k = kps
@@ -336,7 +346,7 @@
  ENDDO
  kupper = k
 
- WRITE(message, * ) ' lightning_driver: kbtm, ktop, klower, kupper = ', kbtm, ktop, klower, kupper
+ WRITE(message, * ) ' LNOx_driver: kbtm, ktop, klower, kupper = ', kbtm, ktop, klower, kupper
  CALL wrf_debug ( 100, message )
  
  IF ( cellcount_method .eq. 2 ) THEN
@@ -360,6 +370,7 @@
 !************************************************************************
  SUBROUTINE horizontalAverage( array3D, ips, ipe, kps, kpe, jps, jpe, array1D )
 !-----------------------------------------------------------------
+ IMPLICIT NONE
  REAL, DIMENSION(ips:ipe,kps:kpe,jps:jpe), INTENT(IN) :: array3D
  INTEGER, INTENT(IN) :: ips,ipe,kps,kpe,jps,jpe
 

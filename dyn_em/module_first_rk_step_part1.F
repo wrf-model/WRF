@@ -268,7 +268,8 @@ BENCH_START(rad_driver_tim)
      &        ,JULYR=grid%julyr        ,LW_PHYSICS=config_flags%ra_lw_physics        &
      &        ,NCFRCV=grid%ncfrcv      ,NCFRST=grid%ncfrst      ,NPHS=1              &
      &        ,o3input=config_flags%o3input     ,O3rad=grid%o3rad                    &
-     &        ,aer_opt=config_flags%aer_opt   ,aerod=aerod(:,:,:,P_ocarbon:P_upperaer) &
+     &        ,aer_opt=config_flags%aer_opt ,aerod=aerod(:,:,:,P_ocarbon:P_upperaer) &
+     &        ,swint_opt=config_flags%swint_opt                                      &
      &        ,P8W=grid%p_hyd_w        ,P=grid%p_hyd            ,PI=pi_phy           &
      &        ,RADT=grid%radt          ,RA_CALL_OFFSET=grid%ra_call_offset           &
      &        ,RHO=rho                 ,RLWTOA=grid%rlwtoa                           &
@@ -286,6 +287,11 @@ BENCH_START(rad_driver_tim)
      &        ,SWVISDIR=grid%swvisdir ,SWVISDIF=grid%swvisdif              &  !ssib
      &        ,SWNIRDIR=grid%swnirdir ,SWNIRDIF=grid%swnirdif              &  !ssib
      &        ,SF_SURFACE_PHYSICS=config_flags%sf_surface_physics          &  !ssib
+! WRF-Solar variables
+     &       ,SWDDIR=grid%swddir,SWDDNI=grid%swddni,SWDDIF=grid%swddif     & ! jararias
+     &       ,Gx=grid%Gx,Bx=grid%Bx,gg=grid%gg,bb=grid%bb                  & ! for sza-interpolation
+     &       ,swdown_ref=grid%swdown_ref,swddir_ref=grid%swddir_ref        & !
+     &       ,coszen_ref=grid%coszen_ref                                   &
 !Optional solar variables
      &        ,DECLINX=grid%declin ,SOLCONX=grid%solcon ,COSZEN=grid%coszen ,HRANG=grid%hrang    &
      &        , CEN_LAT=grid%cen_lat                                      &

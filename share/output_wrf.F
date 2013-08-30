@@ -38,8 +38,8 @@
     REAL    gmt, cen_lat, cen_lon, bdyfrq , truelat1 , truelat2 , moad_cen_lat , stand_lon
     INTEGER km_opt, diff_opt, damp_opt,  &
             mp_physics, ra_lw_physics, ra_sw_physics, sf_sfclay_physics, &
-            sf_surface_physics, bl_pbl_physics, cu_physics, hypsometric_opt
-    REAL    khdif, kvdif, swrad_scat, dampcoef
+            sf_surface_physics, bl_pbl_physics, cu_physics, hypsometric_opt,swint_opt
+    REAL    khdif, kvdif, swrad_scat, dampcoef,radt
     INTEGER sf_urban_physics, w_damping, smooth_option, feedback, surface_input_source, sst_update
     INTEGER stoch_force_opt, stoch_vertstruc_opt, nens
     REAL    tot_backscat_psi, tot_backscat_t
@@ -129,6 +129,8 @@
     call nl_get_sf_surface_physics ( grid%id,  sf_surface_physics )
     call nl_get_bl_pbl_physics     ( grid%id,  bl_pbl_physics     )
     call nl_get_cu_physics         ( grid%id,  cu_physics         )
+    call nl_get_radt               ( grid%id,  radt               )
+    call nl_get_swint_opt          ( grid%id,  swint_opt          )
 
 ! add nml variables in 2.2
     call nl_get_surface_input_source ( 1      ,  surface_input_source )
@@ -522,6 +524,8 @@ endif
       CALL wrf_put_dom_ti_integer ( fid, 'SMOOTH_OPTION', smooth_option , 1 , ierr )
       CALL wrf_put_dom_ti_real    ( fid, 'SWRAD_SCAT', swrad_scat , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'W_DAMPING', w_damping , 1 , ierr )
+      call wrf_put_dom_ti_real    ( fid, 'RADT', radt, 1 , ierr)
+      call wrf_put_dom_ti_integer ( fid, 'SWINT_OPT', swint_opt, 1, ierr)
 
 #if (EM_CORE == 1)
       CALL wrf_put_dom_ti_integer ( fid, 'MOIST_ADV_OPT', moist_adv_opt , 1 , ierr )

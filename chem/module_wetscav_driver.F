@@ -248,6 +248,7 @@ REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
    integer :: ii,jj,kk
    REAL, DIMENSION( ims:ime, jms:jme, num_chem ) :: qsrflx ! column change due to scavening
    REAL ::  tmp_minval = 1.0e7
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ) :: rainrate, evaprate
 
 !
 ! Wet deposition over the current time step
@@ -303,9 +304,19 @@ REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
                its,ite, jts,jte, kts,kte                                   )
    CASE (MOZART_KPP,MOZCART_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP)
        CALL wrf_debug(15,'wetscav_driver calling wetscav_mozcart')
+       if( config_flags%mp_physics == THOMPSON ) then
+         rainrate(:,:,:) = rainprod(:,:,:)
+         evaprate(:,:,:) = evapprod(:,:,:)
+       elseif( config_flags%mp_physics == CAMMGMPSCHEME ) then
+         rainrate(:,:,:) = prain3d(:,:,:)
+         evaprate(:,:,:) = nevapr3d(:,:,:)
+       else
+         rainrate(:,:,:) = 0.
+         evaprate(:,:,:) = 0.
+       endif
        call wetscav_mozcart( id, ktau, dtstep, ktauc, config_flags,             &
                              dtstepc, t_phy, p8w, t8w, p_phy,                   &
-                             chem, rho_phy, cldfra2, rainprod, evapprod,        &
+                             chem, rho_phy, cldfra2, rainrate, evaprate,        &
                              qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp,                &
                              gas_aqfrac, numgas_aqfrac, dz8w, dx, dy,           &
                              moist(ims,kms,jms,p_qv), moist(ims,kms,jms,p_qc),  &

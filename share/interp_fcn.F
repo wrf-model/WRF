@@ -6606,7 +6606,6 @@ print *,'column of cg pres = ',cprs
       REAL :: avg, sum, dx , dy
       INTEGER :: icount_water(nkts:nkte), icount_land(nkts:nkte), idummy(nkts:nkte)
       REAL :: avg_water(nkts:nkte), avg_land(nkts:nkte), sum_water(nkts:nkte), sum_land(nkts:nkte), dummy(nkts:nkte)
-      INTEGER , PARAMETER :: max_search = 2
       CHARACTER (len=256) :: message
       CHARACTER (len=256) :: a_mess
 
@@ -6623,21 +6622,22 @@ print *,'column of cg pres = ',cprs
 
         IF ( enable ) THEN
           DO nj = njts, njte
+            ! first coarse position equal to or below nest point
             IF ( MOD ( nrj , 2 ) .EQ. 0 ) THEN
-               cj = ( nj + (nrj/2)-1 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
+               cj = ( nj + (nrj/2)-1 ) / nrj + jpos -1
             ELSE
-               cj = ( nj + (nrj-1)/2 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
+               cj = ( nj + (nrj-1)/2 ) / nrj + jpos -1
             END IF
             DO nk = nkts, nkte
                ck = nk
                DO ni = nits, nite
                   IF ( imask(ni, nj) .NE. 1 ) cycle
+                  ! first coarse position equal to or to the left of nest point
                   IF ( MOD ( nri , 2 ) .EQ. 0 ) THEN
-                     ci = ( ni + (nri/2)-1 ) / nri + ipos -1 ! first coarse position equal to or to the left of nest point
+                     ci = ( ni + (nri/2)-1 ) / nri + ipos -1
                   ELSE
-                     ci = ( ni + (nri-1)/2 ) / nri + ipos -1 ! first coarse position equal to or to the left of nest point
+                     ci = ( ni + (nri-1)/2 ) / nri + ipos -1
                   END IF
-
 
                   !
                   !                    (ci,cj+1)     (ci+1,cj+1)
@@ -6653,7 +6653,6 @@ print *,'column of cg pres = ',cprs
                   !                        |--|--------|
                   !                         dx  1-dx
 
-
                   !  For odd ratios, at (nri+1)/2, we are on the coarse grid point, so dx = 0
 
                   IF ( MOD ( nri , 2 ) .EQ. 0 ) THEN
@@ -6667,26 +6666,22 @@ print *,'column of cg pres = ',cprs
                      dy =   REAL ( MOD ( nj+(nrj-1)/2 , nrj ) )         / REAL ( nrj )
                   END IF
 
-                  IF ( ( NINT(nlu(ni, nj)) .EQ. iswater ) ) then
-                     ! If this is a nested water point, and the surrounding coarse values are all water points,
-                     ! then this is a simple 4-pt interpolation.
+                  ! Nested cell is a water cell.
+                  IF ( ( NINT(nlu(ni, nj)) .EQ. iswater ) ) THEN
 
-                     IF ( ( NINT(clu(ci  ,cj  )) .EQ. iswater ) .AND. &
-                          ( NINT(clu(ci+1,cj  )) .EQ. iswater ) .AND. &
-                          ( NINT(clu(ci  ,cj+1)) .EQ. iswater ) .AND. &
-                          ( NINT(clu(ci+1,cj+1)) .EQ. iswater ) ) THEN
+                     ! If the surrounding coarse values are all WATER points,
+                     ! i.e. open water, this is a simple 4-pt interpolation. 
+                     ! If the surrounding coarse values are all LAND points,
+                     ! i.e. this is a 1-cell lake, we have no better way to 
+                     ! come up with the value than to do a simple 4-pt interpolation.
+
+                     IF ( ALL( clu(ci:ci+1,cj:cj+1) == iswater ) .OR. &
+                          ALL( clu(ci:ci+1,cj:cj+1) /= iswater ) ) THEN
+
                        nfld(ni,nk,nj) = ( 1. - dx ) * ( ( 1. - dy ) * cfld(ci  ,ck,cj  )   + &
                                                                dy   * cfld(ci  ,ck,cj+1) ) + &
                                                dx   * ( ( 1. - dy ) * cfld(ci+1,ck,cj  )   + &
                                                                dy   * cfld(ci+1,ck,cj+1) )
-
-                     !  If this is a nested water point and there are NO coarse water values surrounding,
-                     !  we temporarily punt.
-                     ELSE IF ( ( NINT(clu(ci  ,cj  )) .NE. iswater ) .AND. &
-                               ( NINT(clu(ci+1,cj  )) .NE. iswater ) .AND. &
-                               ( NINT(clu(ci  ,cj+1)) .NE. iswater ) .AND. &
-                               ( NINT(clu(ci+1,cj+1)) .NE. iswater ) ) THEN
-                       nfld(ni,nk,nj) = -1
 
                      !  If there are some land points and some water points, take an average.
                      ELSE
@@ -6711,26 +6706,22 @@ print *,'column of cg pres = ',cprs
                        nfld(ni,nk,nj) = sum / REAL ( icount )
                      END IF
 
+                  ! Nested cell is a land cell.
                    ELSE IF ( ( NINT(nlu(ni, nj)) .NE. iswater ) ) THEN
 
-                    !  If this is a nested land point, and the surrounding coarse values are all land points,
-                    !  then this is a simple 4-pt interpolation.
-                    IF ( ( NINT(clu(ci  ,cj  )) .NE. iswater ) .AND. &
-                         ( NINT(clu(ci+1,cj  )) .NE. iswater ) .AND. &
-                         ( NINT(clu(ci  ,cj+1)) .NE. iswater ) .AND. &
-                         ( NINT(clu(ci+1,cj+1)) .NE. iswater ) ) THEN
-                      nfld(ni,nk,nj) = ( 1. - dx ) * ( ( 1. - dy ) * cfld(ci  ,ck,cj  )   + &
-                                                              dy   * cfld(ci  ,ck,cj+1) ) + &
-                                              dx   * ( ( 1. - dy ) * cfld(ci+1,ck,cj  )   + &
-                                                              dy   * cfld(ci+1,ck,cj+1) )
+                     ! If the surrounding coarse values are all LAND points,
+                     ! this is a simple 4-pt interpolation. 
+                     ! If the surrounding coarse values are all WATER points,
+                     ! i.e. this is a 1-cell island, we have no better way to 
+                     ! come up with the value than to do a simple 4-pt interpolation.
 
-                    !  If this is a nested land point and there are NO coarse land values surrounding,
-                    !  we temporarily punt.
-                    ELSE IF ( ( NINT(clu(ci  ,cj  )) .EQ. iswater ) .AND. &
-                              ( NINT(clu(ci+1,cj  )) .EQ. iswater ) .AND. &
-                              ( NINT(clu(ci  ,cj+1)) .EQ. iswater ) .AND. &
-                              ( NINT(clu(ci+1,cj+1)) .EQ. iswater ) ) THEN
-                       nfld(ni,nk,nj) = -1
+                     IF ( ALL( clu(ci:ci+1,cj:cj+1) == iswater ) .OR. &
+                          ALL( clu(ci:ci+1,cj:cj+1) /= iswater ) ) THEN
+
+                       nfld(ni,nk,nj) = ( 1. - dx ) * ( ( 1. - dy ) * cfld(ci  ,ck,cj  )   + &
+                                                               dy   * cfld(ci  ,ck,cj+1) ) + &
+                                               dx   * ( ( 1. - dy ) * cfld(ci+1,ck,cj  )   + &
+                                                               dy   * cfld(ci+1,ck,cj+1) )
 
                     !  If there are some water points and some land points, take an average.                  
                     ELSE
@@ -6753,130 +6744,14 @@ print *,'column of cg pres = ',cprs
                          sum = sum + cfld(ci+1,ck,cj+1)
                       END IF
                       nfld(ni,nk,nj) = sum / REAL ( icount )
+
                     END IF
                   END IF
+
                END DO
             END DO
           END DO
 
-          !  Get an average of the whole domain for problem locations.
-
-          sum_water    = 0
-          icount_water = 0
-          sum_land     = 0
-          icount_land  = 0
-          avg_water    = 0
-          avg_land     = 0
-
-          DO nj = njts, njte
-             DO nk = nkts, nkte
-                DO ni = nits, nite
-                   IF ( nfld(ni,nk,nj) .NE. -1 ) THEN
-                     IF ( NINT(nlu(ni,nj)) .EQ. iswater ) THEN 
-                       icount_water(nk) = icount_water(nk) + 1
-                       sum_water(nk) = sum_water(nk) + nfld(ni,nk,nj)
-                     ELSE
-                       icount_land(nk) = icount_land(nk) + 1
-                       sum_land(nk) = sum_land(nk) + nfld(ni,nk,nj)
-                     END IF
-                   END IF
-                END DO
-             END DO
-          END DO
-
-          call wrf_dm_sum_reals   (sum_water(nkts:nkte)    , dummy(nkts:nkte))
-          sum_water    = dummy
-          call wrf_dm_sum_reals   (sum_land(nkts:nkte)     , dummy(nkts:nkte))
-          sum_land     = dummy
-          call wrf_dm_sum_integers(icount_water(nkts:nkte), idummy(nkts:nkte))
-          icount_water = idummy
-          call wrf_dm_sum_integers(icount_land(nkts:nkte) , idummy(nkts:nkte))
-          icount_land  = idummy
-
-          DO nk = nkts, nkte
-             IF ( icount_water(nk) .GT. 0 )  &
-               avg_water(nk)  = sum_water(nk) / icount_water(nk)
-             IF ( icount_land(nk) .GT. 0 ) &
-               avg_land(nk)   = sum_land(nk) / icount_land(nk)
-          END DO
-
-          DO nj = njts, njte
-             DO nk = nkts, nkte
-                DO ni = nits, nite
-                   IF ( imask(ni, nj) .NE. 1 ) cycle
-                   IF ( nfld(ni,nk,nj) .EQ. -1 ) THEN
-                      IF ( MOD ( nrj , 2 ) .EQ. 0 ) THEN
-                        cj = ( nj + (nrj/2)-1 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
-                      ELSE
-                        cj = ( nj + (nrj-1)/2 ) / nrj + jpos -1 ! first coarse position equal to or below nest point
-                      END IF
-                      IF ( MOD ( nri , 2 ) .EQ. 0 ) THEN
-                        ci = ( ni + (nri/2)-1 ) / nri + ipos -1 ! first coarse position equal to or to the left of nest point
-                      ELSE
-                        ci = ( ni + (nri-1)/2 ) / nri + ipos -1 ! first coarse position equal to or to the left of nest point
-                      END IF
-                      !ist = MAX (ci-max_search,cits)
-                      !ien = MIN (ci+max_search,cite,cide-1)
-                      !jst = MAX (cj-max_search,cjts)
-                      !jen = MIN (cj+max_search,cjte,cjde-1)
-                      ist = ci-max_search
-                      ien = ci+max_search
-                      jst = cj-max_search
-                      jen = cj+max_search
-
-                      icount = 0
-                      sum = 0
-                      IF ( nlu(ni,nj) .EQ. iswater ) THEN
-                        DO jj = jst,jen
-                           DO ii = ist,ien
-                              IF ( NINT(clu(ii,jj)) .EQ. iswater ) THEN
-                                 icount = icount + 1
-                                 sum = sum + cfld(ii,nk,jj)
-                              END IF
-                           END DO
-                        END DO
-                        IF ( icount .GT. 0 ) then
-                          nfld(ni,nk,nj) = sum / REAL ( icount )
-                        ELSE IF ( icount_water(nk) .GT. 0 ) THEN
-                          Write(message,fmt='(a,i4,a,i4,a,f10.4)') &
-                            'horizontal interp error - lake (', ni, ',', nj,'), using average ', avg_water(nk)
-                          CALL wrf_message ( message )
-                          nfld(ni,nk,nj) = avg_water(nk)
-                        ELSE
-                           Write(message, fmt='(a,i4,a,i4,a)') &
-                              "Cannot find a valid water point for the nest (",ni, ",", nj, ")"
-                           CALL wrf_error_fatal ( message )
-                        END IF
-                      ELSE
-                        DO jj = jst,jen
-                           DO ii = ist,ien
-                              IF ( NINT(clu(ii,jj)) .NE. iswater ) THEN
-                                 icount = icount + 1
-                                 sum = sum + cfld(ii,nk,jj)
-                              END IF
-                           END DO
-                        END DO
-                        IF ( icount .GT. 0 ) then
-                          nfld(ni,nk,nj) = sum / REAL ( icount )
-                        ELSE IF ( icount_land(nk) .GT. 0 ) THEN
-                          Write(message,fmt='(a,i4,a,i4,a,f10.4)') &
-                            'horizontal interp error - island (', ni, ',', nj,'), using average ', avg_land(nk)
-                          CALL wrf_message ( message )
-                          nfld(ni,nk,nj) = avg_land(nk)
-                        ELSE
-                           Write(message, fmt='(a,i4,a,i4,a)') &
-                              "Cannot find a valid land point for the nest (",ni, ",", nj, ")"
-                           CALL wrf_error_fatal ( message )
-                        END IF
-                      END IF
-                   END IF
-                END DO
-             END DO
-          END DO
-
-          IF ( ANY(nfld .EQ. -1) ) THEN
-             CALL wrf_error_fatal ( "Cannot find a masked location for a nested field" )
-          END IF
         END IF
       ELSE
          CALL wrf_error_fatal ( "only unstaggered fields right now" )

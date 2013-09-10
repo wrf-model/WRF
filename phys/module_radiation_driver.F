@@ -488,10 +488,12 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)  ::   SWDOWN
 
    ! ------------------------------------------------------------------------------ jararias 2013/08/10 -----------
-   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT) :: swddir, & ! All-sky SW broadband surface direct irradiance
+!mchen   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT) :: swddir, & ! All-sky SW broadband surface direct irradiance
+   REAL, DIMENSION( ims:ime, jms:jme ),  INTENT(OUT) :: swddir, & ! All-sky SW broadband surface direct irradiance
                                                                  swddni, & ! All-sky SW broadband surface direct normal irradiance
                                                                  swddif    ! All-sky SW broadband surface diffuse irradiance
-   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT) :: Gx,Bx,gg,bb, & ! For SW sza-interpolation
+!mchen   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT) :: Gx,Bx,gg,bb, & ! For SW sza-interpolation
+   REAL, DIMENSION( ims:ime, jms:jme ),  INTENT(INOUT) :: Gx,Bx,gg,bb, & ! For SW sza-interpolation
                                                                    swdown_ref,  &
                                                                    swddir_ref,  &
                                                                    coszen_ref

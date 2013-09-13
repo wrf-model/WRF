@@ -92,8 +92,7 @@ subroutine da_read_obs_bufr (iv)
        type(datalink_BUFR), pointer :: next
    end type datalink_BUFR
 
-   type(datalink_BUFR),pointer  :: head, plink
-
+   type(datalink_BUFR),pointer  :: head=>null(), plink=>null()
 
    if (trace_use) call da_trace_entry("da_read_obs_bufr")
 

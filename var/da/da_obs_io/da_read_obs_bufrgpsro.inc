@@ -57,7 +57,7 @@ subroutine da_read_obs_bufrgpsro (iv)
        integer                  :: obs_global_index
        type(datalink_gpsro), pointer :: next
    end type datalink_gpsro
-   type(datalink_gpsro),pointer  :: head, plink
+   type(datalink_gpsro),pointer  :: head=>null(), plink=>null()
 
    if (trace_use) call da_trace_entry("da_read_obs_bufrgosro")
 

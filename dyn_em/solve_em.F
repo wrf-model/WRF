@@ -2066,7 +2066,8 @@ BENCH_END(rk_scalar_tend_tim)
 
 BENCH_START(rlx_bdy_scalar_tim)
                IF( ( config_flags%specified .or. config_flags%nested ) .and. rk_step == 1 ) THEN 
-                 IF ( im .EQ. P_QV .OR. config_flags%nested ) THEN
+                 IF ( im .EQ. P_QV .OR. config_flags%nested .OR. &
+                    ( config_flags%specified .AND. config_flags%have_bcs_moist ) ) THEN
                    CALL relax_bdy_scalar ( moist_tend(ims,kms,jms,im),            & 
                                      moist(ims,kms,jms,im),  grid%mut,         &
                                      moist_bxs(jms,kms,1,im),moist_bxe(jms,kms,1,im), &
@@ -2129,7 +2130,7 @@ BENCH_START(update_scal_tim)
 BENCH_END(update_scal_tim)
 
 BENCH_START(flow_depbdy_tim)
-               IF( config_flags%specified ) THEN
+               IF( config_flags%specified .AND. ( .NOT. config_flags%have_bcs_moist ) ) THEN
                  IF(im .ne. P_QV)THEN
                    CALL flow_dep_bdy  (  moist(ims,kms,jms,im),                 &
                                 grid%ru_m, grid%rv_m, config_flags,             &
@@ -2541,7 +2542,9 @@ BENCH_END(tracer_adv_tim)
                                  grid%j_start(ij), grid%j_end(ij), &
                                  k_start    , k_end               )
 
-           IF( config_flags%nested .and. (rk_step == 1) ) THEN
+           IF( rk_step == 1 ) THEN
+             IF ( config_flags%nested .OR. &
+                ( config_flags%specified .AND. config_flags%have_bcs_scalar ) ) THEN
 
                CALL relax_bdy_scalar ( scalar_tend(ims,kms,jms,is),                            &
                                        scalar(ims,kms,jms,is),  grid%mut,                      &
@@ -2573,7 +2576,8 @@ BENCH_END(tracer_adv_tim)
                                        grid%j_start(ij), grid%j_end(ij),                       &
                                        k_start, k_end                                          )
 
-           ENDIF ! b.c test for chem nested boundary condition
+             ENDIF
+           ENDIF ! b.c test for scalars
 
          ENDDO scalar_tile_loop_1
          !$OMP END PARALLEL DO
@@ -2602,7 +2606,7 @@ BENCH_END(tracer_adv_tim)
                                   jts=grid%j_start(ij), jte=grid%j_end(ij),               &
                                   kts=k_start    , kte=k_end                              )
 
-           IF( config_flags%specified ) THEN
+           IF ( config_flags%specified .AND. ( .NOT. config_flags%have_bcs_scalar ) ) THEN
 
              IF(is .ne. P_QNN)THEN
                CALL flow_dep_bdy  ( scalar(ims,kms,jms,is),     &

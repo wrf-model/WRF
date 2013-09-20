@@ -734,7 +734,8 @@ contains
                if (rUPD(i,k) > rstUPD(i,k)) then
                   rlUPD(i,k) = rUPD(i,k) - rstUPD(i,k)
                   qlUPD(i,k) = rlUPD(i,k) / (1. + rlUPD(i,k))
-                  thetavUPDmoist(i,k) = (thup_temfx(i,k) + ((xlv/cp)*qlUPD(i,k)/pi2d(i,k))) * (1. + 0.608*qstUPD(i,k) - qlUPD(i,k))
+                  thetavUPDmoist(i,k) = (thup_temfx(i,k) + ((xlv/cp)*qlUPD(i,k)/pi2d(i,k))) * &
+                                        (1. + 0.608*qstUPD(i,k) - qlUPD(i,k))
                else
                   rlUPD(i,k) = 0.
                   qlUPD(i,k) = qcx(i,k-1)   ! WA 4/6/10 allow environment liquid
@@ -844,7 +845,8 @@ contains
          deltmf(i,1) = Cepsmf
          do k = 2,kte-1
             if (hctidx(i) > hdidx(i)+1) then      ! Some cloud
-               deltmf(i,k) = 0.9 * Cepsmf + Cdelt * (atan((zm(i,k)-(lcl(i)+(hct(i)-lcl(i))/1.5))/((hct(i)-lcl(i))/8))+(3.1415926/2))/3.1415926
+               deltmf(i,k) = 0.9 * Cepsmf + Cdelt * (atan((zm(i,k)-(lcl(i)+(hct(i)-lcl(i))/1.5))/ &
+                                                          ((hct(i)-lcl(i))/8))+(3.1415926/2))/3.1415926
             else if (k < hdidx(i)) then   ! No cloud, below hd
                deltmf(i,k) = Cepsmf + 0.05 * 1. / (hd(i) - zm(i,k))
             else if (k >= hdidx(i)) then    ! No cloud, above hd
@@ -1024,7 +1026,8 @@ contains
       beta2(i,kte) = (100000. / p2di(i,kte))**0.286 * 2.45e-6 / 1004.67 - 1.61 * thetal(i,kte)
       if ( is_convective ) then ! Activate EDMF components
          do kt = 1,kte-1
-            MFCthv(i,kt) = (1. + 0.61 * (qtup_temfx(i,kt)+qtup_temfx(i,kt+1))) / 2. * MFCth(i,kt) + alpha2(i,kt) * MFCq(i,kt) + beta2(i,kt) * MFCql(i,kt)
+            MFCthv(i,kt) = (1. + 0.61 * (qtup_temfx(i,kt)+qtup_temfx(i,kt+1))) / 2. * MFCth(i,kt) + &
+                           alpha2(i,kt) * MFCq(i,kt) + beta2(i,kt) * MFCql(i,kt)
          end do
          MFCthv(i,kte) = 0.
       else    ! No MF components
@@ -1057,12 +1060,14 @@ contains
          v_new(i,k) = v_new(i,k) + dt * (-(MFCv(i,k)-MFCv(i,k-1))) / dzm(i,k)
       end do
 
-      call solve_implicit_temf(kh(i,kts:kte-1),thetal(i,kts+1:kte),Fz(i,1),dzm(i,kts:kte-1),dzt(i,kts:kte-1),kts,kte-1,dt,.FALSE.)
+      call solve_implicit_temf(kh(i,kts:kte-1),thetal(i,kts+1:kte),Fz(i,1),dzm(i,kts:kte-1),&
+                               dzt(i,kts:kte-1),kts,kte-1,dt,.FALSE.)
       do k = 2,kte-1
          thetal(i,k) = thetal(i,k) + dt * (-(MFCth(i,k)-MFCth(i,k-1))) / dzm(i,k)
       end do
 
-      call solve_implicit_temf(kh(i,kts:kte-1),qt(i,kts+1:kte),QFK(i,1),dzm(i,kts:kte-1),dzt(i,kts:kte-1),kts,kte-1,dt,.FALSE.)
+      call solve_implicit_temf(kh(i,kts:kte-1),qt(i,kts+1:kte),QFK(i,1),dzm(i,kts:kte-1),&
+                               dzt(i,kts:kte-1),kts,kte-1,dt,.FALSE.)
       do k = 2,kte-1
          qt(i,k) = qt(i,k) + dt * (-(MFCq(i,k)-MFCq(i,k-1))) / dzm(i,k)
       end do
@@ -1075,7 +1080,8 @@ contains
       else
          convection_TKE_surface_src(i) = 0.
       end if
-      te_temfx(i,1) = max(te_temfx(i,1), (leps(i,1) / Cgamma * (ust(i)**2. * S(i,1) + convection_TKE_surface_src(i)))**(2./3.))
+      te_temfx(i,1) = max(te_temfx(i,1), &
+                          (leps(i,1) / Cgamma * (ust(i)**2. * S(i,1) + convection_TKE_surface_src(i)))**(2./3.))
       if (te_temfx(i,1) > 20.0) then
          te_temfx(i,1) = 20.0    ! WA 9/28/11 limit max TE
       end if
@@ -1087,7 +1093,8 @@ contains
          else
             buoy_src(i,kt) = 0.  ! Cancel buoyancy term when locally stable
          end if
-         srcs(i,kt) = -uw_temfx(i,kt) * dudz(i,kt) - vw_temfx(i,kt) * dvdz(i,kt) - Cgamma * te_temfx(i,kt)**1.5 * linv(i,kt) + buoy_src(i,kt)
+         srcs(i,kt) = -uw_temfx(i,kt) * dudz(i,kt) - vw_temfx(i,kt) * dvdz(i,kt) - &
+                      Cgamma * te_temfx(i,kt)**1.5 * linv(i,kt) + buoy_src(i,kt)
       end do
       call solve_implicit_temf((km(i,kts:kte-1)+km(i,kts+1:kte))/2.0, &
          te_temfx(i,kts+1:kte),sfcFTE(i),dzt(i,kts+1:kte),dzt(i,kts:kte-1),kts,kte-1,dt,.false.)

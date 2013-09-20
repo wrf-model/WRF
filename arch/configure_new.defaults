@@ -1143,6 +1143,66 @@ RANLIB 		=       ranlib
 CC_TOOLS        =       cc
 
 ###########################################################
+#ARCH    Cray XT CLE/Linux x86_64, PGI compiler with gcc # serial dmpar smpar dm+sm
+#
+# Recommended CLE/Linux memory allocation settings at run time:
+# export MALLOC_MMAP_MAX_=0
+# export MALLOC_TRIM_THRESHOLD_=536870912
+#
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -mp -Mrecursive
+OMPCC           =       # -mp
+SFC             =       ftn
+SCC             =       gcc
+CCOMP           =       pgcc
+DM_FC           =       ftn
+DM_CC           =       gcc -I$(MPICH_DIR)/include
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -r$(RWORDSIZE) -i4
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR
+CFLAGS_LOCAL    =       -w -O3
+LDFLAGS_LOCAL   =
+# module load libfast to use Cray XT fast math library
+#LIB_LOCAL       =       -lfast_mv
+CPLUSPLUSLIB    =       
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+# PGI recommended
+FCOPTIM         =       -O3 #-fastsse -Mvect=noaltcode -Msmartalloc -Mprefetch=distance:8 -Mfprelaxed # -Minfo=all =Mneginfo=all
+# For Pathscale compiler
+#FCOPTIM        =       -O3 -OPT:Ofast
+FCREDUCEDOPT	=       $(FCOPTIM)
+FCNOOPT         =       -O0
+OPTERON_TYPE    =
+# Use this for AMD Opteron quad-core
+#OPTERON_TYPE    =      -tp barcelona-64
+#OPTERON_TYPE    =      -tp shanghai-64
+# Use this for AMD Opteron six-way Istanbul
+#OPTERON_TYPE    =      -tp istanbul
+FCDEBUG         =       # -g $(FCNOOPT)  # -C -Ktrap=fp -traceback
+FORMAT_FIXED    =       -Mfixed
+FORMAT_FREE     =       -Mfree
+# For Pathscale compiler
+#OPTERON_TYPE    =       -march=barcelona -msse4a
+#FORMAT_FIXED    =       -fixedform
+#FORMAT_FREE     =       -freeform
+FCSUFFIX        =
+BYTESWAPIO      =       -byteswapio
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(OPTERON_TYPE) $(OMP)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =    
+TRADFLAG        =      -traditional
+CPP             =      /lib/cpp -C -P $(TRADFLAG)
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4 -B 14000
+RANLIB          =      ranlib
+CC_TOOLS        =      $(SCC) 
+
+###########################################################
 #ARCH    Cray XE and XC30 CLE/Linux x86_64, Cray CCE compiler # serial dmpar smpar dm+sm
 # Use this for both XE6 systems with AMD Opteron and XC30 with Intel SB or IB
 

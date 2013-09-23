@@ -22,6 +22,24 @@ WRFDA, including infringement actions.
 This is the main directory for the WRFDA Version 3 source code release.
 ======================================
 
+V3.5.1 Release Notes :
+-------------------
+
+Version 3.5.1 is released on September 23, 2013.
+
+  For more information on WRFDA, visit the WRFDA Users home page
+  http://www.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+
+  The following bugs have been fixed:
+    -BUFR libraries have been updated to allow WRFDA to read and assimilate NCEP PREPBUFR files of any endianness.
+    -Compilation failure with some older Fortran95 compilers
+    -A problem with Variational Bias Correction (VARBC) on some platforms
+    -A problem with OBSPROC's built-in observation error file (obserr.txt) on some platforms
+    -A bug causing failures when "print_detail_outerloop=true"
+    -A few more miscellaneous fixes
+
+======================================
 V3.5 Release Notes :
 -------------------
 

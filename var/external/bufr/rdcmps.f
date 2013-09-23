@@ -27,13 +27,20 @@ C                           CORRECT LOGIC FOR WHEN A CHARACTER VALUE IS
 C                           THE SAME FOR ALL SUBSETS IN A MESSAGE;
 C                           MAXIMUM MESSAGE LENGTH INCREASED FROM
 C                           20,000 TO 50,000 BYTES
+C 2009-03-23  J. ATOR    -- PREVENT OVERFLOW OF CVAL AND CREF FOR
+C                           STRINGS LONGER THAN 8 CHARACTERS
+C 2012-03-02  J. ATOR    -- USE FUNCTION UPS
+C 2012-06-04  J. ATOR    -- SET DECODED REAL*8 VALUE TO "MISSING" WHEN
+C                           CORRESPONDING CHARACTER FIELD HAS ALL BITS
+C                           SET TO 1
 C
 C USAGE:    CALL RDCMPS (LUN)
 C   INPUT ARGUMENT LIST:
 C     LUN      - INTEGER: I/O STREAM INDEX INTO INTERNAL MEMORY ARRAYS
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        UPB      UPC      USRTPL
+C    THIS ROUTINE CALLS:        BORT     ICBFMS   UPB      UPC
+C                               UPS      USRTPL
 C    THIS ROUTINE IS CALLED BY: READSB
 C                               Normally not called by any application
 C                               programs.
@@ -55,27 +62,21 @@ C$$$
      .                IBT(MAXJL),IRF(MAXJL),ISC(MAXJL),
      .                ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL),
      .                ISEQ(MAXJL,2),JSEQ(MAXJL)
-      COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
+      COMMON /USRINT/ NVAL(NFILES),INV(MAXSS,NFILES),VAL(MAXSS,NFILES)
+      COMMON /RLCCMN/ NRST,IRNCH(MXRST),IRBIT(MXRST),CRTAG(MXRST)
 
-      CHARACTER*10 TAG
-      CHARACTER*8  CREF,CVAL
-      CHARACTER*3  TYP
-      EQUIVALENCE  (CVAL,RVAL)
-      REAL*8       VAL,RVAL,UPS,TEN
-
-      DATA TEN/10/
+      CHARACTER*128 BORT_STR
+      CHARACTER*10  TAG,CRTAG
+      CHARACTER*8   CREF,CVAL
+      CHARACTER*3   TYP
+      EQUIVALENCE   (CVAL,RVAL)
+      REAL*8        VAL,RVAL,UPS
 
 C-----------------------------------------------------------------------
 C     Statement function to compute BUFR "missing value" for field
 C     of length LBIT bits (all bits "on"):
 
       LPS(LBIT) = MAX(2**(LBIT)-1,1)
-
-C     Statement function to decode the encoded BUFR value IVAL according
-C     to the scale and reference values that are stored within index NODE
-C     of the internal arrays ISC(*) and IRF(*):
-
-      UPS(NODE) = (IVAL+IRF(NODE))*TEN**(-ISC(NODE))
 C-----------------------------------------------------------------------
 
 C  SETUP THE SUBSET TEMPLATE
@@ -92,6 +93,7 @@ C     Note that we are going to unpack the (NSBS)th subset from within
 C     the current BUFR message.
 
       IBIT = MBYT(LUN)
+      NRST = 0
 
 C     Loop through each element of the subset.
 
@@ -125,32 +127,71 @@ C        This is a numeric element.
          CALL UPB(LINC,   6,MBAY(1,LUN),IBIT)
          JBIT = IBIT + LINC*(NSBS-1)
          CALL UPB(NINC,LINC,MBAY(1,LUN),JBIT)
-         IF(NINC.EQ.LPS(LINC)) NINC = LPS(NBIT)
-         IVAL = LREF+NINC
+         IF(NINC.EQ.LPS(LINC)) THEN
+            IVAL = LPS(NBIT)
+         ELSE
+            IVAL = LREF+NINC
+         ENDIF
          IF(ITYP.EQ.1) THEN
             CALL USRTPL(LUN,N,IVAL)
             GOTO 1
          ENDIF
-         IF(IVAL.LT.LPS(NBIT)) VAL(N,LUN) = UPS(NODE)
+         IF(IVAL.LT.LPS(NBIT)) VAL(N,LUN) = UPS(IVAL,NODE)
          IBIT = IBIT + LINC*MSUB(LUN)
       ELSEIF(ITYP.EQ.3) THEN
 
-C        This is a character element.
+C        This is a character element.  If there are more than 8
+C        characters, then only the first 8 will be unpacked by this
+C        routine, and a separate subsequent call to BUFR archive library
+C        subroutine READLC will be required to unpack the remainder of
+C        the string.  In this case, pointers will be saved within
+C        COMMON /RLCCMN/ for later use within READLC.
 
+C        Unpack the local reference value.
+
+         LELM = NBIT/8
+         NCHR = MIN(8,LELM)
+         IBSV = IBIT
          CREF = ' '
-         CALL UPC(CREF,NBIT/8,MBAY(1,LUN),IBIT)
+         CALL UPC(CREF,NCHR,MBAY(1,LUN),IBIT)
+         IF(LELM.GT.8) THEN
+            IBIT = IBIT + (LELM-8)*8
+            NRST = NRST + 1
+            IF(NRST.GT.MXRST) GOTO 900
+            CRTAG(NRST) = TAG(NODE)
+         ENDIF
+
+C        Unpack the increment length indicator.  For character elements,
+C        this length is in bytes rather than bits.
+
          CALL UPB(LINC,   6,MBAY(1,LUN),IBIT)
          IF(LINC.EQ.0) THEN
+            IF(LELM.GT.8) THEN
+               IRNCH(NRST) = LELM
+               IRBIT(NRST) = IBSV
+            ENDIF
             CVAL = CREF
          ELSE
             JBIT = IBIT + LINC*(NSBS-1)*8
+            IF(LELM.GT.8) THEN
+               IRNCH(NRST) = LINC
+               IRBIT(NRST) = JBIT
+            ENDIF
+            NCHR = MIN(8,LINC)
             CVAL = ' '
-            CALL UPC(CVAL,LINC,MBAY(1,LUN),JBIT)
+            CALL UPC(CVAL,NCHR,MBAY(1,LUN),JBIT)
          ENDIF
-         VAL(N,LUN) = RVAL
+         IF (LELM.LE.8 .AND. ICBFMS(CVAL,NCHR).NE.0) THEN
+            VAL(N,LUN) = BMISS
+         ELSE
+            VAL(N,LUN) = RVAL
+         ENDIF
          IBIT = IBIT + 8*LINC*MSUB(LUN)
       ENDIF
       ENDDO
 
       RETURN
+900   WRITE(BORT_STR,'("BUFRLIB: RDCMPS - NUMBER OF LONG CHARACTER ' //
+     .   'STRINGS EXCEEDS THE LIMIT (",I4,")")') MXRST
+      CALL BORT(BORT_STR)
       END

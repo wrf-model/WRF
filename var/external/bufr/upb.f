@@ -22,6 +22,7 @@ C 2003-11-04  S. BENDER  -- ADDED REMARKS/BUFRLIB ROUTINE
 C                           INTERDEPENDENCIES
 C 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED HISTORY
 C                           DOCUMENTATION
+C 2009-03-23  J. ATOR    -- REWROTE TO CALL UPBB
 C
 C USAGE:    CALL UPB (NVAL, NBITS, IBAY, IBIT)
 C   INPUT ARGUMENT LIST:
@@ -41,7 +42,7 @@ C REMARKS:
 C    THIS SUBROUTINE IS THE INVERSE OF BUFR ARCHIVE LIBRARY ROUTINE
 C    PKB.
 C
-C    THIS ROUTINE CALLS:        IREV
+C    THIS ROUTINE CALLS:        UPBB
 C    THIS ROUTINE IS CALLED BY: COPYSB   IUPB     MVB      RDCMPS
 C                               RDMGSB   READSB   STNDRD   UFBINX
 C                               UFBPOS   UFBTAB   UFBTAM   UPC
@@ -55,35 +56,14 @@ C   MACHINE:  PORTABLE TO ALL PLATFORMS
 C
 C$$$
 
-      COMMON /HRDWRD/ NBYTW,NBITW,NREV,IORD(8)
-
       DIMENSION IBAY(*)
 
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------
 
-C  IF NBITS=0, THEN JUST SET NVAL=0 AND RETURN
-C  -------------------------------------------
+      CALL UPBB(NVAL,NBITS,IBIT,IBAY)
 
-      IF(NBITS.EQ.0)THEN
-        NVAL=0
-        GOTO 100
-      ENDIF
-
-      NWD = IBIT/NBITW + 1
-      NBT = MOD(IBIT,NBITW)
-      INT = ISHFT(IREV(IBAY(NWD)),NBT)
-      INT = ISHFT(INT,NBITS-NBITW)
-      LBT = NBT+NBITS
-      IF(LBT.GT.NBITW) THEN
-         JNT = IREV(IBAY(NWD+1))
-         INT = IOR(INT,ISHFT(JNT,LBT-2*NBITW))
-      ENDIF
       IBIT = IBIT+NBITS
-      NVAL = INT
 
-C  EXIT
-C  ----
-
-100   RETURN
+      RETURN
       END

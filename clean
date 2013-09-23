@@ -37,7 +37,7 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
   ( cd external ; make -i superclean )
   ( cd external/io_grib1/WGRIB ; make clean )
   ( cd external/atm_ocn ; make clean )
-  ( cd tools ; /bin/rm -f registry gen_comms.c fseeko_test fseeko64_test )
+  ( cd tools ; /bin/rm -f registry gen_comms.c fseeko_test fseeko64_test nc4_test.log )
   ( cd inc; /bin/rm -f dm_comm_cpp_flags wrf_io_flags.h wrf_status_codes.h )
   if ( -f configure.wrf ) then
     /bin/cp configure.wrf configure.wrf.backup

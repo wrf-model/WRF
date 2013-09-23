@@ -324,7 +324,8 @@ CONTAINS
              qv_y = interp_0(qv_upstream_y,z_force,z(ids,k,jds),num_force_layers)
 
              qv_adv_tend(k) = (qv_x-qv(ids,k,jds))/adv_timescale_x(k) + (qv_y-qv(ids,k,jds))/adv_timescale_y(k)
-             WRITE( message, * ) 'qv_adv_tend branch 1',k,adv_timescale_x(k), qv_upstream_x(k), adv_timescale_y(k), qv_x, qv_y, qv(ids,k,jds), qv_adv_tend(k)
+             WRITE( message, * ) 'qv_adv_tend branch 1',k,adv_timescale_x(k), qv_upstream_x(k), adv_timescale_y(k), &
+                                  qv_x, qv_y, qv(ids,k,jds), qv_adv_tend(k)
              CALL wrf_debug ( 100, message )
           enddo
        else ! WA if upstream is empty, use tendency only not value+tend
@@ -333,7 +334,8 @@ CONTAINS
              qv_y = interp_0(dt*qv_upstream_y_tend,z_force,z(ids,k,jds),num_force_layers)
 
              qv_adv_tend(k) = qv_x/adv_timescale_x(k) + qv_y/adv_timescale_y(k)
-             WRITE( message, * ) 'qv_adv_tend branch 2',k,adv_timescale_x(k), adv_timescale_y(k), qv_upstream_x(k), qv_x, qv_y, qv(ids,k,jds), qv_adv_tend(k)
+             WRITE( message, * ) 'qv_adv_tend branch 2',k,adv_timescale_x(k), adv_timescale_y(k), qv_upstream_x(k), &
+                                  qv_x, qv_y, qv(ids,k,jds), qv_adv_tend(k)
              CALL wrf_debug ( 100, message )
           enddo
        endif

@@ -2,13 +2,13 @@
 
 C$$$  SUBPROGRAM DOCUMENTATION BLOCK
 C
-C SUBPROGRAM:    USRTPL (docblock incomplete)
+C SUBPROGRAM:    USRTPL
 C   PRGMMR: WOOLLEN          ORG: NP20       DATE: 1994-01-06
 C
 C ABSTRACT: THIS SUBROUTINE STORES THE SUBSET TEMPLATE INTO INTERNAL
 C   SUBSET ARRAYS IN COMMON BLOCK /USRINT/ FOR CASES OF NODE EXPANSION
-C   (I.E., NODE IS EITHER A TABLE A MNEMONIC OR A DELAYED REPLICATION
-C   FACTOR).
+C   (I.E. WHEN THE NODE IS EITHER A TABLE A MNEMONIC OR A DELAYED
+C   REPLICATION FACTOR).
 C
 C PROGRAM HISTORY LOG:
 C 1994-01-06  J. WOOLLEN -- ORIGINAL AUTHOR
@@ -32,22 +32,22 @@ C                           TERMINATES ABNORMALLY OR UNUSUAL THINGS
 C                           HAPPEN; COMMENTED OUT HARDWIRE OF VTMP TO
 C                           "BMISS" (10E10) WHEN IT IS > 10E9 (CAUSED
 C                           PROBLEMS ON SOME FOREIGN MACHINES)
+C 2009-03-31  J. WOOLLEN -- ADD DOCUMENTATION
+C 2009-04-21  J. ATOR    -- USE ERRWRT
 C
 C USAGE:    CALL USRTPL (LUN, INVN, NBMP)
 C   INPUT ARGUMENT LIST:
 C     LUN      - INTEGER: I/O STREAM INDEX INTO INTERNAL MEMORY ARRAYS
-C     INVN     - INTEGER: INVENTORY INDEX FOR ELEMENTS
-C     NBMP     - INTEGER  ....
-C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
+C     INVN     - INTEGER: STARTING JUMP/LINK TABLE INDEX OF THE NODE
+C                TO BE EXPANDED WITHIN THE SUBSET TEMPLATE
+C     NBMP     - INTEGER: NUMBER OF TIMES BY WHICH INVN IS TO BE
+C                EXPANDED (I.E. NUMBER OF REPLICATIONS OF NODE)
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT
-C    THIS ROUTINE IS CALLED BY: CONWIN   DRFINI   DRSTPL   MSGUPD
-C                               OPENMB   OPENMG   RDCMPS   SUBUPD
-C                               TRYBUMP  UFBGET   UFBTAB   UFBTAM
-C                               WRCMPS   WRITLC
+C    THIS ROUTINE CALLS:        BORT     ERRWRT
+C    THIS ROUTINE IS CALLED BY: DRFINI   DRSTPL   MSGUPD   OPENMB
+C                               OPENMG   RDCMPS   TRYBUMP  UFBGET
+C                               UFBTAB   UFBTAM   WRCMPS   WRITLC
 C                               Normally not called by any application
 C                               programs.
 C
@@ -66,10 +66,10 @@ C$$$
      .                IBT(MAXJL),IRF(MAXJL),ISC(MAXJL),
      .                ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL),
      .                ISEQ(MAXJL,2),JSEQ(MAXJL)
-      COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
+      COMMON /USRINT/ NVAL(NFILES),INV(MAXSS,NFILES),VAL(MAXSS,NFILES)
       COMMON /QUIET / IPRT
 
-      CHARACTER*128 BORT_STR
+      CHARACTER*128 BORT_STR,ERRSTR
       CHARACTER*10  TAG
       CHARACTER*3   TYP
       DIMENSION     ITMP(MAXJL)
@@ -80,21 +80,21 @@ C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
 
       IF(IPRT.GE.2)  THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
-         PRINT*,'BUFRLIB: USRTPL - LUN:INVN:NBMP:TAG(INODE(LUN)) = ',
-     .    LUN,':',INVN,':',NBMP,':',TAG(INODE(LUN))
-      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('++++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++++')
+         WRITE ( UNIT=ERRSTR, FMT='(A,I3,A,I5,A,I5,A,A10)' )
+     .      'BUFRLIB: USRTPL - LUN:INVN:NBMP:TAG(INODE(LUN)) = ',
+     .      LUN, ':', INVN, ':', NBMP, ':', TAG(INODE(LUN))
+         CALL ERRWRT(ERRSTR)
+      CALL ERRWRT('++++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++++')
+      CALL ERRWRT(' ')
       ENDIF
 
       IF(NBMP.LE.0) THEN
          IF(IPRT.GE.1)  THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-            PRINT*,'BUFRLIB: USRTPL - NBMP .LE. 0 - IMMEDIATE RETURN'
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT('BUFRLIB: USRTPL - NBMP .LE. 0 - IMMEDIATE RETURN')
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
          ENDIF
          GOTO 100
       ENDIF
@@ -149,7 +149,7 @@ C  ---------------------------------------
 C  MOVE OLD NODES - STORE NEW ONES
 C  -------------------------------
 
-      IF(NVAL(LUN)+NEWN*NBMP.GT.MAXJL) GOTO 908
+      IF(NVAL(LUN)+NEWN*NBMP.GT.MAXSS) GOTO 908
 
       DO J=NVAL(LUN),INVN+1,-1
       INV(J+NEWN*NBMP,LUN) = INV(J,LUN)
@@ -173,17 +173,20 @@ C  ---------------------------
       NVAL(LUN) = NVAL(LUN) + NEWN*NBMP
 
       IF(IPRT.GE.2)  THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
-         PRINT*,'BUFRLIB: USRTPL - TAG(INV(INVN,LUN)):NEWN:NBMP:',
-     .    'NVAL(LUN) = ',TAG(INV(INVN,LUN)),':',NEWN,':',NBMP,':',
-     .    NVAL(LUN)
+      CALL ERRWRT('++++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++++')
+         WRITE ( UNIT=ERRSTR, FMT='(A,A,A10,3(A,I5))' )
+     .      'BUFRLIB: USRTPL - TAG(INV(INVN,LUN)):NEWN:NBMP:',
+     .      'NVAL(LUN) = ', TAG(INV(INVN,LUN)), ':', NEWN, ':',
+     .      NBMP, ':', NVAL(LUN)
+         CALL ERRWRT(ERRSTR)
          DO I=1,NEWN
-            PRINT*,'For I = ',I,', ITMP(I) = ',ITMP(I),
-     .       ', TAG(ITMP(I)) = ',TAG(ITMP(I))
+           WRITE ( UNIT=ERRSTR, FMT='(2(A,I5),A,A10)' )
+     .      'For I = ', I, ', ITMP(I) = ', ITMP(I),
+     .      ', TAG(ITMP(I)) = ', TAG(ITMP(I))
+           CALL ERRWRT(ERRSTR)
          ENDDO
-      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('++++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++++')
+      CALL ERRWRT(' ')
       ENDIF
 
       IF(DRX) THEN
@@ -239,7 +242,7 @@ C  -----
       CALL BORT(BORT_STR)
 908   WRITE(BORT_STR,'("BUFRLIB: USRTPL - INVENTORY OVERFLOW (",I6,")'//
      . ', EXCEEDS THE LIMIT (",I6,") (",A,")")')
-     . NVAL(LUN)+NEWN*NBMP,MAXJL,TAG(NODI)
+     . NVAL(LUN)+NEWN*NBMP,MAXSS,TAG(NODI)
       CALL BORT(BORT_STR)
 909   WRITE(BORT_STR,'("BUFRLIB: USRTPL - BAD BACKUP STRATEGY (",A,'//
      . '")")') TAG(NODI)

@@ -27,6 +27,9 @@ C                           WRF; ADDED HISTORY DOCUMENTATION; OUTPUTS
 C                           MORE COMPLETE DIAGNOSTIC INFO WHEN ROUTINE
 C                           TERMINATES ABNORMALLY
 C 2005-11-29  J. ATOR    -- ADDED SUPPORT FOR 207 AND 208 OPERATORS
+C 2012-03-02  J. ATOR    -- ADDED SUPPORT FOR 203 OPERATOR
+C 2012-04-19  J. ATOR    -- FIXED BUG FOR CASES WHERE A TABLE C OPERATOR
+C                           IMMEDIATELY FOLLOWS A TABLE D SEQUENCE
 C
 C USAGE:    CALL TABSUB (LUN, NEMO)
 C   INPUT ARGUMENT LIST:
@@ -34,8 +37,9 @@ C     LUN      - INTEGER: I/O STREAM INDEX INTO INTERNAL MEMORY ARRAYS
 C     NEMO     - CHARACTER*8: TABLE A MNEMONIC
 C
 C REMARKS:
+C   -----------------------------------------------------------------
 C    EXAMPLE SHOWING CONTENTS OF INTERNAL JUMP/LINK TABLE (WITHIN
-C    COMMON /TABLES/):
+C    COMMON /BTABLES/):
 C
 C      INTEGER MAXTAB = maximum number of jump/link table entries
 C
@@ -54,6 +58,8 @@ C               non-delayed) replication, or no replication at all
 C         "RPC" if TAG(I) is a Table D mnemonic using either medium
 C               (i.e. 8-bit) delayed replication or long (i.e. 16-bit)
 C               delayed replication
+C         "RPS" if TAG(I) is a Table D mnemonic using medium
+C               (i.e. 8-bit) delayed replication in a stack context
 C         "DRB" if TAG(I) denotes the short (i.e. 1-bit) delayed
 C               replication of a Table D mnemonic (which would then
 C               itself have its own separate entry in the jump/link
@@ -63,6 +69,11 @@ C               long (i.e. 16-bit) delayed replication of a Table D
 C               mnemonic (which would then itself have its own separate
 C               entry in the jump/link table with a corresponding TAG
 C               value of "RPC")
+C         "DRS" if TAG(I) denotes the medium (i.e. 8-bit) delayed
+C               replication, in a stack context, of a Table D mnemonic
+C               (which would then itself have its own separate entry
+C               in the jump/link table with a corresponding TAG value
+C               of "RPS")
 C         "REP" if TAG(I) denotes the F=1 regular (i.e. non-delayed)
 C               replication of a Table D mnemonic (which would then
 C               itself have its own separate entry in the jump/link
@@ -161,7 +172,44 @@ C       ELSE
 C          ISC(I) = 0
 C       END IF
 C
+C   -----------------------------------------------------------------
 C
+C    THE FOLLOWING VALUES ARE STORED WITHIN COMMON /NRV203/ BY THIS
+C    SUBROUTINE, FOR USE WITH ANY 2-03-YYY (CHANGE REFERENCE VALUE)
+C    OPERATORS PRESENT WITHIN THE ENTIRE JUMP/LINK TABLE:
+C
+C      NNRV = number of nodes in the jump/link table which contain new
+C             reference values (as defined using the 2-03 operator)
+C
+C      INODNRV(I=1,NNRV) = nodes within jump/link table which contain
+C                          new reference values
+C
+C      NRV(I=1,NNRV) = new reference value corresponding to INODNRV(I)
+C
+C      TAGNRV(I=1,NNRV) = Table B mnemonic to which the new reference
+C                         value in NRV(I) applies
+C
+C      ISNRV(I=1,NNRV) = start of node range in jump/link table,
+C                        within which the new reference value defined
+C                        by NRV(I) will be applied to all occurrences
+C                        of TAGNRV(I)
+C
+C      IENRV(I=1,NNRV) = end of node range in jump/link table,
+C                        within which the new reference value defined
+C                        by NRV(I) will be applied to all occurrences
+C                        of TAGNRV(I)
+C
+C      IBTNRV = number of bits in Section 4 occupied by each new
+C               reference value for the current 2-03 operator
+C               (if IBTNRV = 0, then no 2-03 operator is currently
+C               in scope)
+C
+C      IPFNRV = a number between 1 and NNRV, denoting the first entry
+C               within the above arrays which applies to the current
+C               Table A mnemonic NEMO (if IPFNRV = 0, then no 2-03
+C               operators have been applied to NEMO)
+C
+C   -----------------------------------------------------------------
 C
 C    THIS ROUTINE CALLS:        BORT     INCTAB   NEMTAB   NEMTBD
 C                               TABENT
@@ -183,10 +231,12 @@ C$$$
      .                ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL),
      .                ISEQ(MAXJL,2),JSEQ(MAXJL)
       COMMON /TABCCC/ ICDW,ICSC,ICRV,INCW
+      COMMON /NRV203/ NNRV,INODNRV(MXNRV),NRV(MXNRV),TAGNRV(MXNRV),
+     .                ISNRV(MXNRV),IENRV(MXNRV),IBTNRV,IPFNRV
 
       CHARACTER*128 BORT_STR
       CHARACTER*10  TAG
-      CHARACTER*8   NEMO,NEMS,NEM
+      CHARACTER*8   NEMO,NEMS,NEM,TAGNRV
       CHARACTER*3   TYP
       CHARACTER*1   TAB
       DIMENSION     NEM(MAXCD,10),IRP(MAXCD,10),KRP(MAXCD,10)
@@ -224,6 +274,7 @@ C  ------------------------------------------
       NTAG(1,1) = 1
       NTAG(1,2) = NSEQ
       JMP0(1)   = NODE
+      NODL(1)   = NODE
       LIMB      = 1
 
       ICDW = 0
@@ -231,13 +282,15 @@ C  ------------------------------------------
       ICRV = 1
       INCW = 0
 
+      IBTNRV = 0
+      IPFNRV = 0
+
 C  THIS LOOP RESOLVES ENTITIES IN A SUBSET BY EMULATING RECURSION
 C  --------------------------------------------------------------
 
 1     DO N=NTAG(LIMB,1),NTAG(LIMB,2)
 
       NTAG(LIMB,1) = N+1
-      NODL(LIMB)   = NTAB+1
       DROP(LIMB)   = N.EQ.NTAG(LIMB,2)
 
       CALL NEMTAB(LUN,NEM(N,LIMB),IDN,TAB,ITAB)
@@ -247,7 +300,6 @@ C  SPECIAL TREATMENT FOR CERTAIN OPERATOR DESCRIPTORS (TAB=C)
 C  ----------------------------------------------------------
 
       IF(TAB.EQ.'C') THEN
-         NODL(LIMB) = NTAB
          READ(NEMS,'(3X,I3)') IYYY
          IF(ITAB.EQ.1) THEN
             IF(IYYY.NE.0) THEN
@@ -262,6 +314,29 @@ C  ----------------------------------------------------------
               ICSC = IYYY-128
             ELSE
               ICSC = 0
+            ENDIF
+         ELSEIF(ITAB.EQ.3) THEN
+            IF(IYYY.EQ.0) THEN
+
+C             Stop applying new reference values to subset nodes.
+C             Instead, revert to the use of standard Table B values.
+
+              IF(IPFNRV.EQ.0) GOTO 911
+	      DO JJ=IPFNRV,NNRV
+                IENRV(JJ) = NTAB
+              ENDDO
+              IPFNRV = 0
+            ELSEIF(IYYY.EQ.255) THEN
+
+C             End the definition of new reference values.
+
+              IBTNRV = 0
+            ELSE
+
+C             Begin the definition of new reference values.
+
+              IF(IBTNRV.NE.0) GOTO 909
+              IBTNRV = IYYY
             ENDIF
          ELSEIF(ITAB.EQ.7) THEN
             IF(IYYY.GT.0) THEN
@@ -279,6 +354,7 @@ C  ----------------------------------------------------------
             INCW = IYYY
          ENDIF
       ELSE
+         NODL(LIMB) = NTAB+1
          IREP = IRP(N,LIMB)
          IKNT = KRP(N,LIMB)
          JUM0 = JMP0(LIMB)
@@ -306,6 +382,21 @@ C        contains another Table D mnemonic as one of its children.
             IF(ICDW.NE.0) GOTO 902
             IF(ICSC.NE.0) GOTO 903
             IF(INCW.NE.0) GOTO 905
+            IF(IBTNRV.NE.0) GOTO 910
+            IF(IPFNRV.NE.0) THEN
+
+C             One or more new reference values were defined for this
+C             subset, but there was no subsequent 2-03-000 operator,
+C             so set all IENRV(*) values for this subset to point to
+C             the last element of the subset within the jump/link table.
+C             Note that, if there had been a subsequent 2-03-000
+C             operator, then these IENRV(*) values would have already
+C             been properly set above.
+
+	      DO JJ=IPFNRV,NNRV
+                IENRV(JJ) = NTAB
+              ENDDO
+            ENDIF
             GOTO 100
          ENDIF
          IF(DROP(LIMB)) GOTO 2
@@ -353,5 +444,17 @@ C  -----
 908   WRITE(BORT_STR,'("BUFRLIB: TABSUB - THERE ARE TWO SIMULTANEOUS '//
      . 'CHANGE DATA SCALE OPERATIONS IN THE TREE BUILT FROM INPUT ' //
      . 'MNEMONIC ",A)') NEMO
+      CALL BORT(BORT_STR)
+909   WRITE(BORT_STR,'("BUFRLIB: TABSUB - THERE ARE TWO SIMULTANEOUS '//
+     . 'CHANGE REF VALUE OPERATIONS IN THE TREE BUILT FROM INPUT ' //
+     . 'MNEMONIC ",A)') NEMO
+      CALL BORT(BORT_STR)
+910   WRITE(BORT_STR,'("BUFRLIB: TABSUB - A 2-03-YYY OPERATOR WAS '//
+     . 'APPLIED WITHOUT ANY SUBSEQUENT 2-03-255 OPERATOR FOR '//
+     . 'INPUT MNEMONIC ",A)') NEMO
+      CALL BORT(BORT_STR)
+911   WRITE(BORT_STR,'("BUFRLIB: TABSUB - A 2-03-000 OPERATOR WAS '//
+     . 'ENCOUNTERED WITHOUT ANY PRIOR 2-03-YYY OPERATOR FOR '//
+     . 'INPUT MNEMONIC ",A)') NEMO
       CALL BORT(BORT_STR)
       END

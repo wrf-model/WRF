@@ -9,7 +9,7 @@ C ABSTRACT: THIS SUBROUTINE RETURNS A CHARACTER DATA ELEMENT ASSOCIATED
 C   WITH A PARTICULAR SUBSET MNEMONIC FROM THE INTERNAL MESSAGE BUFFER
 C   (ARRAY MBAY IN COMMON BLOCK /BITBUF/).  IT IS DESIGNED TO BE USED
 C   TO RETURN CHARACTER ELEMENTS GREATER THAN THE USUAL LENGTH OF EIGHT
-C   BYTES.  IT CURRENTLY WILL NOT WORK FOR COMPRESSED BUFR MESSAGES.
+C   BYTES.
 C
 C PROGRAM HISTORY LOG:
 C 2003-11-04  J. WOOLLEN -- ORIGINAL AUTHOR
@@ -20,6 +20,12 @@ C                           ABNORMALLY OR UNUSUAL THINGS HAPPEN
 C 2004-08-09  J. ATOR    -- MAXIMUM MESSAGE LENGTH INCREASED FROM
 C                           20,000 TO 50,000 BYTES
 C 2007-01-19  J. ATOR    -- REPLACED CALL TO PARSEQ WITH CALL TO PARSTR
+C 2009-03-23  J. ATOR    -- ADDED CAPABILITY FOR COMPRESSED MESSAGES;
+C                           ADDED CHECK FOR OVERFLOW OF CHR; ADDED '#'
+C                           OPTION FOR MORE THAN ONE OCCURRENCE OF STR
+C 2009-04-21  J. ATOR    -- USE ERRWRT
+C 2012-12-07  J. ATOR    -- ALLOW STR MNEMONIC LENGTH OF UP TO 14 CHARS
+C                           WHEN USED WITH '#' OCCURRENCE CODE
 C
 C USAGE:    CALL READLC (LUNIT, CHR, STR)
 C   INPUT ARGUMENT LIST:
@@ -30,14 +36,11 @@ C   OUTPUT ARGUMENT LIST:
 C     CHR      - CHARACTER*(*): UNPACKED CHARACTER STRING (I.E.,
 C                CHARACTER DATA ELEMENT GREATER THAN EIGHT BYTES)
 C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
-C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT     PARSTR   STATUS   UPC
-C    THIS ROUTINE IS CALLED BY: UFDUMP
-C                               Normally not called by any application
-C                               programs.
+C    THIS ROUTINE CALLS:        BORT     ERRWRT   PARSTR   PARUTG
+C                               STATUS   UPC
+C    THIS ROUTINE IS CALLED BY: UFBDMP   UFDUMP   WRTREE
+C                               Also called by application programs.
 C
 C ATTRIBUTES:
 C   LANGUAGE: FORTRAN 77
@@ -54,22 +57,25 @@ C$$$
      .                IBT(MAXJL),IRF(MAXJL),ISC(MAXJL),
      .                ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL),
      .                ISEQ(MAXJL,2),JSEQ(MAXJL)
-      COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
-      COMMON /USRBIT/ NBIT(MAXJL),MBIT(MAXJL)
+      COMMON /USRINT/ NVAL(NFILES),INV(MAXSS,NFILES),VAL(MAXSS,NFILES)
+      COMMON /RLCCMN/ NRST,IRNCH(MXRST),IRBIT(MXRST),CRTAG(MXRST)
+      COMMON /USRBIT/ NBIT(MAXSS),MBIT(MAXSS)
       COMMON /UNPTYP/ MSGUNP(NFILES)
       COMMON /QUIET / IPRT
 
       CHARACTER*(*) CHR,STR
-      CHARACTER*128 BORT_STR
-      CHARACTER*10  TAG,TGS(100)
-      CHARACTER*8   CTAG
+      CHARACTER*128 BORT_STR,ERRSTR
+      CHARACTER*10  TAG,CTAG,CRTAG
+      CHARACTER*14  TGS(10)
       CHARACTER*3   TYP
       REAL*8        VAL
 
-      DATA MAXTG /100/
+      DATA MAXTG /10/
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
+
+      CHR = ' '
 
 C  CHECK THE FILE STATUS
 C  ---------------------
@@ -84,40 +90,80 @@ C  ------------------------------------------------------------------
 
       CALL PARSTR(STR,TGS,MAXTG,NTG,' ',.TRUE.)
       IF(NTG.GT.1) GOTO 903
-      CTAG = TGS(1)
-      CHR = ' '
 
-C  FIND THE TAG IN THE SUBSET OR RETURN A BLANK STRING
-C  ---------------------------------------------------
+C     Check if a specific occurrence of the input string was requested;
+C     if not, then the default is to return the first occurrence.
 
-      DO N=1,NVAL(LUN)
-      NOD = INV(N,LUN)
-      IF(CTAG.EQ.TAG(NOD)) GOTO 1
-      ENDDO
-      IF(IPRT.GE.0) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
-      PRINT*, 'BUFRLIB: READLC - MNEMONIC ',CTAG,' NOT LOCATED IN ',
-     .        'REPORT SUBSET - RETURN WITH BLANK STRING FOR CHARACTER ',
-     .        'DATA ELEMENT'
-      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
-      PRINT*
+      CALL PARUTG(LUN,0,TGS(1),NNOD,KON,ROID)
+      IF(KON.EQ.6) THEN
+         IOID=NINT(ROID)
+         IF(IOID.LE.0) IOID = 1
+         CTAG = ' '
+         II = 1
+         DO WHILE((II.LE.10).AND.(TGS(1)(II:II).NE.'#'))
+            CTAG(II:II)=TGS(1)(II:II)
+            II = II + 1
+         ENDDO
+      ELSE
+         IOID = 1
+         CTAG = TGS(1)(1:10)
       ENDIF
-      GOTO 100
-1     IF(ITP(NOD).NE.3) GOTO 904
 
-C  DECIPHER THE LONG CHARACTER
-C  ---------------------------
+C  LOCATE AND DECODE THE LONG CHARACTER STRING
+C  -------------------------------------------
 
       IF(MSGUNP(LUN).EQ.0.OR.MSGUNP(LUN).EQ.1) THEN
-         NCHR = NBIT(N)/8
-         KBIT = MBIT(N)
-         CALL UPC(CHR,NCHR,MBAY(1,LUN),KBIT)
+
+C        The message is uncompressed
+
+         ITAGCT = 0
+         DO N=1,NVAL(LUN)
+           NOD = INV(N,LUN)
+           IF(CTAG.EQ.TAG(NOD)) THEN
+             ITAGCT = ITAGCT + 1
+             IF(ITAGCT.EQ.IOID) THEN
+               IF(ITP(NOD).NE.3) GOTO 904
+               NCHR = NBIT(N)/8
+               IF(NCHR.GT.LEN(CHR)) GOTO 905
+               KBIT = MBIT(N)
+               CALL UPC(CHR,NCHR,MBAY(1,LUN),KBIT)
+               GOTO 100
+             ENDIF
+           ENDIF
+         ENDDO
       ELSEIF(MSGUNP(LUN).EQ.2) THEN
-c  .... compressed message
-         GOTO 905
+
+C        The message is compressed
+
+         IF(NRST.GT.0) THEN
+           ITAGCT = 0
+           DO II=1,NRST
+             IF(CTAG.EQ.CRTAG(II)) THEN
+               ITAGCT = ITAGCT + 1
+               IF(ITAGCT.EQ.IOID) THEN
+                 NCHR = IRNCH(II)
+                 IF(NCHR.GT.LEN(CHR)) GOTO 905
+                 KBIT = IRBIT(II)
+                 CALL UPC(CHR,NCHR,MBAY(1,LUN),KBIT)
+                 GOTO 100
+               ENDIF
+             ENDIF
+           ENDDO
+         ENDIF
       ELSE
          GOTO 906
+      ENDIF
+
+C     If we made it here, then we couldn't find the requested string.
+
+      IF(IPRT.GE.0) THEN
+      CALL ERRWRT('++++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++++')
+      ERRSTR = 'BUFRLIB: READLC - MNEMONIC ' // TGS(1) //
+     .   ' NOT LOCATED IN REPORT SUBSET - RETURN WITH BLANK' //
+     .   ' STRING FOR CHARACTER DATA ELEMENT'
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT('++++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++++')
+      CALL ERRWRT(' ')
       ENDIF
 
 C  EXITS
@@ -135,10 +181,12 @@ C  -----
      . 'I3,")")') STR,NTG
       CALL BORT(BORT_STR)
 904   WRITE(BORT_STR,'("BUFRLIB: READLC - MNEMONIC ",A," DOES NOT '//
-     . 'REPRESENT A CHARACTER ELEMENT (ITP=",I2,")")') CTAG,ITP(NOD)
+     . 'REPRESENT A CHARACTER ELEMENT (ITP=",I2,")")') TGS(1),ITP(NOD)
       CALL BORT(BORT_STR)
-905   CALL BORT('BUFRLIB: READLC - NOT ENABLED FOR COMPRESSED BUFR '//
-     . 'MESSAGES')
+905   WRITE(BORT_STR,'("BUFRLIB: READLC - MNEMONIC ",A," IS A '//
+     . 'CHARACTER STRING OF LENGTH",I4," BUT SPACE WAS PROVIDED '//
+     . 'FOR ONLY",I4, " CHARACTERS")') TGS(1),NCHR,LEN(CHR)
+      CALL BORT(BORT_STR)
 906   WRITE(BORT_STR,'("BUFRLIB: READLC - MESSAGE UNPACK TYPE",I3,'//
      . '" IS NOT RECOGNIZED")') MSGUNP
       CALL BORT(BORT_STR)

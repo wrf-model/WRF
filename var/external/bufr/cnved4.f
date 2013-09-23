@@ -13,8 +13,10 @@ C   MSGOT ARRAY.  NOTE THAT MSGIN AND MSGOT MUST BE SEPARATE ARRAYS.
 C
 C PROGRAM HISTORY LOG:
 C 2005-11-29  J. ATOR    -- ORIGINAL AUTHOR
+C 2009-08-12  J. ATOR    -- ALLOW SILENT RETURN (INSTEAD OF BORT RETURN)
+C                           IF MSGIN IS ALREADY ENCODED USING EDITION 4
 C
-C USAGE:    CALL STNDRD (MSGIN, LMSGOT, MSGOT)
+C USAGE:    CALL CNVED4 (MSGIN, LMSGOT, MSGOT)
 C   INPUT ARGUMENT LIST:
 C     MSGIN    - INTEGER: *-WORD ARRAY CONTAINING BUFR MESSAGE ENCODED
 C                USING BUFR EDITION 3
@@ -30,7 +32,7 @@ C REMARKS:
 C    MSGIN AND MSGOT MUST BE SEPARATE ARRAYS.
 C
 C    THIS ROUTINE CALLS:        BORT     GETLENS  IUPBS01  MVB
-C                               PKB
+C                               NMWRD    PKB
 C    THIS ROUTINE IS CALLED BY: MSGWRT
 C                               Also called by application programs.
 C
@@ -42,15 +44,23 @@ C$$$
 
 	DIMENSION MSGIN(*), MSGOT(*)
 
-	COMMON /HRDWRD/ NBYTW,NBITW,NREV,IORD(8)
+	COMMON /HRDWRD/ NBYTW,NBITW,IORD(8)
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
 
-C	Verify that the input message is not already encoded in
-C	BUFR edition 4.
+	IF(IUPBS01(MSGIN,'BEN').EQ.4) THEN
 
-	IF(IUPBS01(MSGIN,'BEN').EQ.4) GOTO 900
+C	  The input message is already encoded using edition 4, so just
+C	  copy it from MSGIN to MSGOT and then return.
+
+	  NMW = NMWRD(MSGIN)
+	  IF(NMW.GT.LMSGOT) GOTO 900 
+	  DO I = 1, NMW
+	    MSGOT(I) = MSGIN(I)
+	  ENDDO
+	  RETURN
+	ENDIF
 
 C	Get some section lengths and addresses from the input message.
 
@@ -67,7 +77,7 @@ C	input message (i.e. 4 more bytes in Section 1, but 1 fewer
 C	byte in Section 3).
 
 	LENMOT = LENM + 3
-	IF(LENMOT.GT.((LMSGOT*NBYTW)-8)) GOTO 901 
+	IF(LENMOT.GT.(LMSGOT*NBYTW)) GOTO 900 
 
 	LEN1OT = LEN1 + 4
 	LEN3OT = LEN3 - 1
@@ -122,7 +132,6 @@ C	output array.
 	CALL MVB ( MSGIN, IAD4+1, MSGOT, (IBIT/8)+1, LENM-IAD4 )
 
 	RETURN
-900	CALL BORT('BUFRLIB: CNVED4 - INPUT MSG IS ALREADY EDITION 4')
-901	CALL BORT('BUFRLIB: CNVED4 - OVERFLOW OF OUTPUT (EDITION 4) '//
+900	CALL BORT('BUFRLIB: CNVED4 - OVERFLOW OF OUTPUT (EDITION 4) '//
      .    'MESSAGE ARRAY; TRY A LARGER DIMENSION FOR THIS ARRAY')
 	END

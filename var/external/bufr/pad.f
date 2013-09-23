@@ -69,10 +69,10 @@ C  PAD THE SUBSET TO AN IPADB BIT BOUNDARY
 C  ----------------------------------------
 
       IPAD = IPADB - MOD(IBIT+8,IPADB)
-c  .... First pack the # of bits being padded this is a delayed
-c       replication factor
+c  .... First pack the # of bits being padded (this is a delayed
+c  .... replication factor)
       CALL PKB(IPAD,8,IBAY,IBIT)
-c  .... Now pad with zeroes to the bit bdry
+c  .... Now pad with zeroes to the byte boundary
       CALL PKB(0,IPAD,IBAY,IBIT)
       IBYT = IBIT/8
 

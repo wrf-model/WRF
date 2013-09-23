@@ -24,6 +24,8 @@ C                           TERMINATES ABNORMALLY
 C 2004-08-09  J. ATOR    -- MAXIMUM MESSAGE LENGTH INCREASED FROM
 C                           20,000 TO 50,000 BYTES
 C 2005-11-29  J. ATOR    -- USE RDMSGW AND NMWRD
+C 2012-09-15  J. WOOLLEN -- CONVERT TO C LANGUAGE I/O INTERFACE
+C                           USE READMG AND COPYMG TO COPY FILE
 C
 C USAGE:    CALL COPYBF (LUNIN, LUNOT)
 C   INPUT ARGUMENT LIST:
@@ -39,8 +41,8 @@ C   OUTPUT FILES:
 C     UNIT "LUNOT" - BUFR FILE
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT     NMWRD    RDMSGW   STATUS
-C                               WRDLEN
+C    THIS ROUTINE CALLS:        BORT     CLOSBF   IUPBS01  MSGWRT
+C                               OPENBF   RDMSGW   STATUS   WRDLEN
 C    THIS ROUTINE IS CALLED BY: None
 C                               Normally called only by application
 C                               programs.
@@ -72,20 +74,26 @@ C  ------------------------
       CALL STATUS(LUNOT,LUN,IL,IM)
       IF(IL.NE.0) GOTO 901
 
-      REWIND(LUNIN)
-      REWIND(LUNOT)
+C  CONNECT THE FILES FOR READING/WRITING TO THE C-I-O INTERFACE 
+C  ------------------------------------------------------------
+
+      CALL OPENBF(LUNIN,'INX',LUNIN)
+      CALL OPENBF(LUNOT,'OUX',LUNIN)
 
 C  READ AND COPY A BUFR FILE ON UNIT LUNIN TO UNIT LUNOT
 C  -----------------------------------------------------
 
 1     CALL RDMSGW(LUNIN,MBAY,IER)
-      IF(IER.EQ.-1) GOTO 2
-      IF(IER.EQ.-2) GOTO 902
-      WRITE(LUNOT,ERR=903) (MBAY(I),I=1,NMWRD(MBAY))
-      GOTO 1
+      IF(IER.EQ.0) THEN      
+         CALL MSGWRT(LUNOT,MBAY,IUPBS01(MBAY,'LENM'))
+         GOTO 1
+      ENDIF
 
-2     CLOSE(LUNIN)
-      CLOSE(LUNOT)
+C  FREE UP THE FILE CONNECTIONS FOR THE TWO FILES
+C  ----------------------------------------------
+
+      CALL CLOSBF(LUNIN)
+      CALL CLOSBF(LUNOT) 
 
 C  EXITS
 C  -----
@@ -95,6 +103,4 @@ C  -----
      . ('BUFRLIB: COPYBF - INPUT BUFR FILE IS OPEN, IT MUST BE CLOSED')
 901   CALL BORT
      . ('BUFRLIB: COPYBF - OUTPUT BUFR FILE IS OPEN, IT MUST BE CLOSED')
-902   CALL BORT('BUFRLIB: COPYBF - ERROR READING BUFR FILE')
-903   CALL BORT('BUFRLIB: COPYBF - ERROR WRITING BUFR FILE')
       END

@@ -42,6 +42,8 @@ C                           (PREVIOUSLY WOULD STORE DATA WITH MESSAGE
 C                           TYPE "011" BUT SUCH MESSAGES WOULD BE
 C                           SKIPPED OVER WHEN READ)
 C 2007-01-19  J. ATOR    -- MODIFIED IN RESPONSE TO NUMBCK CHANGES
+C 2009-03-23  J. ATOR    -- INCREASE SIZE OF BORT_STR2; USE STNTBIA
+C 2013-01-08  J. WHITING -- ADD ERR= OPTION TO READ STATEMENT
 C
 C USAGE:    CALL RDUSDX (LUNDX, LUN)
 C   INPUT ARGUMENT LIST:
@@ -86,9 +88,9 @@ C        IDND(N,LUN)   - INTEGER: Bit-wise representation of the FXY
 C                        value corresponding to TABD(N,LUN)
 C
 C
-C    THIS ROUTINE CALLS:        BORT2    DIGIT    DXINIT   ELEMDX
-C                               IFXY     MAKESTAB NEMOCK   NENUAA
-C                               NENUBD   NUMBCK   SEQSDX
+C    THIS ROUTINE CALLS:        BORT2    DXINIT   ELEMDX   IGETNTBI
+C                               MAKESTAB NEMOCK   NUMBCK   SEQSDX
+C                               STNTBI   STNTBIA
 C    THIS ROUTINE IS CALLED BY: CKTABA   READDX
 C                               Normally not called by any application
 C                               programs.
@@ -108,19 +110,19 @@ C$$$
      .                TABD(MAXTBD,NFILES)
 
       CHARACTER*600 TABD
-      CHARACTER*128 BORT_STR1,BORT_STR2
+      CHARACTER*128 BORT_STR1
+      CHARACTER*156 BORT_STR2
       CHARACTER*128 TABB
       CHARACTER*128 TABA
       CHARACTER*80  CARD
       CHARACTER*8   NEMO
       CHARACTER*6   NUMB,NMB2
-      LOGICAL       DIGIT
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
 
 C  INITIALIZE THE DICTIONARY TABLE CONTROL WORD PARTITION ARRAYS
-C   WITH APRIORI TABLE B AND D ENTRIES
+C  WITH APRIORI TABLE B AND D ENTRIES
 C  --------------------------------------------------------------
 
       CALL DXINIT(LUN,1)
@@ -129,7 +131,7 @@ C  --------------------------------------------------------------
 C  READ USER CARDS UNTIL THERE ARE NO MORE
 C  ---------------------------------------
 
-1     READ(LUNDX,'(A80)',END=200) CARD
+1     READ(LUNDX,'(A80)',END=200,ERR=200) CARD
 
 C  REREAD IF NOT A DEFINITION CARD
 C  -------------------------------
@@ -158,7 +160,7 @@ c  .... NEMO is the 8-character mnemonic name
          IF(IRET.EQ.-1) GOTO 900
          IF(IRET.EQ.-2) GOTO 901
 
-c  .... NEMB is the 6-character FXY value corresponding to NEMO
+c  .... NUMB is the 6-character FXY value corresponding to NEMO
          NUMB = CARD(14:19)
          NMB2 = NUMB
          IF(NMB2(1:1).EQ.'A') NMB2(1:1) = '3'
@@ -172,77 +174,28 @@ C  TABLE A DESCRIPTOR FOUND
 C  ------------------------
 
          IF(NUMB(1:1).EQ.'A') THEN
-
-            N = NTBA(LUN)+1
-            IF(N.GT.NTBA(0)) GOTO 906
-            CALL NENUAA(NEMO,NUMB,LUN)
-c  .... Y value from descriptor
-            TABA(N,LUN)( 1: 3) = NUMB(4:6)
-c  .... Mnemonic
-            TABA(N,LUN)( 4:11) = NEMO
-c  .... Description
-            TABA(N,LUN)(13:67) = CARD(23:77)
-            NTBA(LUN) = N
-
-            IF(DIGIT(NEMO(3:8))) THEN
-c  .... Message type & subtype obtained directly from Table A mnemonic
-               READ(NEMO,'(2X,2I3)') MTYP,MSBT
-               IF(NEMO(3:5).EQ.'011')  GOTO 907
-               IDNA(N,LUN,1) = MTYP
-               IDNA(N,LUN,2) = MSBT
-            ELSE
-c  .... Message type obtained from Y value of Table A seq. descriptor
-               IF(NUMB(4:6).EQ.'011')  GOTO 907
-               READ(NUMB(4:6),'(I3)') IDNA(N,LUN,1)
-c  ........ Message subtype hardwired to ZERO
-               IDNA(N,LUN,2) = 0
-            ENDIF
+	   N = IGETNTBI ( LUN, 'A' )
+	   CALL STNTBIA ( N, LUN, NUMB, NEMO, CARD(23:) )
+	   IF ( IDNA(N,LUN,1) .EQ. 11 ) GOTO 906
 c  .... Replace "A" with "3" so Table D descriptor will be found in
-c  .... card as well (below)
-            NUMB(1:1) = '3'
-
+c  .... card as well (see below)
+	   NUMB(1:1) = '3'
          ENDIF
 
 C  TABLE B DESCRIPTOR FOUND
 C  ------------------------
 
          IF(NUMB(1:1).EQ.'0') THEN
-
-            N = NTBB(LUN)+1
-            IF(N.GT.NTBB(0)) GOTO 908
-            CALL NENUBD(NEMO,NUMB,LUN)
-c  .... Integer representation of FXY descriptor
-            IDNB(N,LUN) = IFXY(NUMB)
-c  .... Character representation of FXY descriptor
-            TABB(N,LUN)( 1: 6) = NUMB
-c  .... Mnemonic
-            TABB(N,LUN)( 7:14) = NEMO
-c  .... Description
-            TABB(N,LUN)(16:70) = CARD(23:77)
-            NTBB(LUN) = N
-            GOTO 1
-
+	   CALL STNTBI ( IGETNTBI(LUN,'B'), LUN, NUMB, NEMO, CARD(23:) )
+           GOTO 1
          ENDIF
 
 C  TABLE D DESCRIPTOR FOUND
 C  ------------------------
 
          IF(NUMB(1:1).EQ.'3') THEN
-
-            N = NTBD(LUN)+1
-            IF(N.GT.NTBD(0)) GOTO 909
-            CALL NENUBD(NEMO,NUMB,LUN)
-c  .... Integer representation of FXY descriptor
-            IDND(N,LUN) = IFXY(NUMB)
-c  .... Character representation of FXY descriptor
-            TABD(N,LUN)( 1: 6) = NUMB
-c  .... Mnemonic
-            TABD(N,LUN)( 7:14) = NEMO
-c  .... Description
-            TABD(N,LUN)(16:70) = CARD(23:77)
-            NTBD(LUN) = N
-            GOTO 1
-
+	   CALL STNTBI ( IGETNTBI(LUN,'D'), LUN, NUMB, NEMO, CARD(23:) )
+           GOTO 1
          ENDIF
 
 c  .... First character of NUMB is not 'A', '0' or '3'
@@ -269,7 +222,7 @@ C  --------------------------------
 C  CAN'T FIGURE OUT WHAT KIND OF CARD IT IS
 C  ----------------------------------------
 
-      GOTO 910
+      GOTO 907
 
 C  NORMAL ENDING
 C  -------------
@@ -309,23 +262,12 @@ C  -----
      . 'MUST BE BETWEEN 000 AND 255")') NUMB
       CALL BORT2(BORT_STR1,BORT_STR2)
 906   WRITE(BORT_STR1,'("BUFRLIB: RDUSDX - CARD READ IN IS: ",A)') CARD
-      WRITE(BORT_STR2,'(18X,"THE NUMBER OF TABLE A ENTRIES IN USER '//
-     . 'DICTIONARY EXCEEDS THE LIMIT (",I4,")")') NTBA(0)
-      CALL BORT2(BORT_STR1,BORT_STR2)
-907   WRITE(BORT_STR1,'("BUFRLIB: RDUSDX - CARD READ IN IS: ",A)') CARD
       WRITE(BORT_STR2,'(18X,"USER-DEFINED MESSAGE TYPE ""011"" IS '//
      . 'RESERVED FOR DICTIONARY MESSAGES")')
       CALL BORT2(BORT_STR1,BORT_STR2)
-908   WRITE(BORT_STR1,'("BUFRLIB: RDUSDX - CARD READ IN IS: ",A)') CARD
-      WRITE(BORT_STR2,'(18X,"THE NUMBER OF TABLE B ENTRIES IN USER '//
-     . 'DICTIONARY EXCEEDS THE LIMIT (",I4,")")') NTBB(0)
-      CALL BORT2(BORT_STR1,BORT_STR2)
-909   WRITE(BORT_STR1,'("BUFRLIB: RDUSDX - CARD READ IN IS: ",A)') CARD
-      WRITE(BORT_STR2,'(18X,"THE NUMBER OF TABLE D ENTRIES IN USER '//
-     . 'DICTIONARY EXCEEDS THE LIMIT (",I4,")")') NTBD(0)
-      CALL BORT2(BORT_STR1,BORT_STR2)
-910   WRITE(BORT_STR1,'("BUFRLIB: RDUSDX - CARD READ IN IS: ",A)') CARD
+907   WRITE(BORT_STR1,'("BUFRLIB: RDUSDX - CARD READ IN IS: ",A)') CARD
       WRITE(BORT_STR2,'(18X,"THIS CARD HAS A BAD FORMAT - IT IS NOT '//
      . 'RECOGNIZED BY THIS SUBROUTINE")')
       CALL BORT2(BORT_STR1,BORT_STR2)
+
       END

@@ -36,6 +36,7 @@ C                           INFO WHEN ROUTINE TERMINATES ABNORMALLY
 C 2004-08-09  J. ATOR    -- MAXIMUM MESSAGE LENGTH INCREASED FROM
 C                           20,000 TO 50,000 BYTES
 C 2005-11-29  J. ATOR    -- USE IUPBS01
+C 2009-06-26  J. ATOR    -- USE IOK2CPY
 C
 C USAGE:    CALL COPYMG (LUNIN, LUNOT)
 C   INPUT ARGUMENT LIST:
@@ -45,9 +46,9 @@ C     LUNOT    - INTEGER: FORTRAN LOGICAL UNIT NUMBER FOR OUTPUT BUFR
 C                FILE
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT     IUPBS01  MSGWRT   NEMTBA
-C                               STATUS
-C    THIS ROUTINE IS CALLED BY: None.
+C    THIS ROUTINE CALLS:        BORT     IOK2CPY  IUPBS01  MSGWRT
+C                               NEMTBA   STATUS
+C    THIS ROUTINE IS CALLED BY: None
 C                               Normally called only by application
 C                               programs.
 C
@@ -93,9 +94,11 @@ C  MAKE SURE BOTH FILES HAVE THE SAME TABLES
 C  -----------------------------------------
 
       SUBSET = TAG(INODE(LIN))
-c  .... Given SUBSET, returns MSGT,MSTB,INOD
-      CALL NEMTBA(LOT,SUBSET,MSGT,MSTB,INOD)
-      IF(INODE(LIN).NE.INOD) GOTO 906
+c  .... Given SUBSET, returns MTYP,MSBT,INOD
+      CALL NEMTBA(LOT,SUBSET,MTYP,MSBT,INOD)
+      IF(INODE(LIN).NE.INOD) THEN
+        IF(IOK2CPY(LIN,LOT).NE.1) GOTO 906
+      ENDIF
 
 C  EVERYTHING OKAY, COPY A MESSAGE
 C  -------------------------------
@@ -108,8 +111,9 @@ C  -----------------------------------------------------------------
 
       NMSG (LOT) = NMSG(LOT) + 1
       NSUB (LOT) = MSUB(LIN)
+      MSUB (LOT) = MSUB(LIN)
       IDATE(LOT) = IDATE(LIN)
-      INODE(LOT) = INODE(LIN)
+      INODE(LOT) = INOD
 
 C  EXITS
 C  -----

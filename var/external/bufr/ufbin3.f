@@ -56,6 +56,7 @@ C 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED
 C                           DOCUMENTATION; OUTPUTS MORE COMPLETE
 C                           DIAGNOSTIC INFO WHEN ROUTINE TERMINATES
 C                           ABNORMALLY OR UNUSUAL THINGS HAPPEN
+C 2009-04-21  J. ATOR    -- USE ERRWRT
 C
 C USAGE:    CALL UFBIN3 (LUNIT, USR, I1, I2, I3, IRET, JRET, STR)
 C   INPUT ARGUMENT LIST:
@@ -72,7 +73,7 @@ C                DIMENSION OF USR
 C                  - THERE ARE THREE "GENERIC" MNEMONICS NOT RELATED
 C                     TO TABLE B, THESE RETURN THE FOLLOWING
 C                     INFORMATION IN CORRESPONDING USR LOCATION:
-C                     'NUL'  WHICH ALWAYS RETURNS MISSING (10E10)
+C                     'NUL'  WHICH ALWAYS RETURNS BMISS ("MISSING")
 C                     'IREC' WHICH ALWAYS RETURNS THE CURRENT BUFR
 C                            MESSAGE (RECORD) NUMBER IN WHICH THIS
 C                            SUBSET RESIDES
@@ -89,9 +90,6 @@ C     JRET     - INTEGER: MAXIMUM NUMBER OF "EVENTS" FOUND FOR ALL DATA
 C                VALUES SPECIFIED AMONGST ALL LEVELS READ FROM DATA
 C                SUBSET (MUST BE NO LARGER THAN I3)
 C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
-C
 C REMARKS:
 C    IMPORTANT: THIS ROUTINE SHOULD ONLY BE CALLED BY THE VERIFICATION
 C               APPLICATION PROGRAM "GRIDTOBS", WHERE IT WAS PREVIOUSLY
@@ -100,8 +98,8 @@ C               WORK PROPERLY IN OTHER APPLICATION PROGRAMS (I.E, THOSE
 C               THAT ARE READING PREPBUFR FILES) AT THIS TIME.  ALWAYS
 C               USE UFBEVN INSTEAD!!
 C
-C    THIS ROUTINE CALLS:        BORT     CONWIN   GETWIN   NEVN
-C                               NXTWIN   STATUS   STRING
+C    THIS ROUTINE CALLS:        BORT     CONWIN   ERRWRT   GETWIN
+C                               NEVN     NXTWIN   STATUS   STRING
 C    THIS ROUTINE IS CALLED BY: None
 C                               SHOULD NOT BE CALLED BY ANY APPLICATION
 C                               PROGRAMS EXCEPT GRIDTOBS!!
@@ -116,11 +114,12 @@ C$$$
 
       COMMON /MSGCWD/ NMSG(NFILES),NSUB(NFILES),MSUB(NFILES),
      .                INODE(NFILES),IDATE(NFILES)
-      COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
+      COMMON /USRINT/ NVAL(NFILES),INV(MAXSS,NFILES),VAL(MAXSS,NFILES)
       COMMON /USRSTR/ NNOD,NCON,NODS(20),NODC(10),IVLS(10),KONS(10)
       COMMON /QUIET / IPRT
 
       CHARACTER*(*) STR
+      CHARACTER*128 ERRSTR
       REAL*8        VAL,USR(I1,I2,I3)
 
 C----------------------------------------------------------------------
@@ -140,35 +139,38 @@ C  --------------------------------
 
       IF(I1.LE.0) THEN
          IF(IPRT.GE.0) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-         PRINT*,'BUFRLIB: UFBIN3 - THIRD ARGUMENT (INPUT) IS .LE. 0',
-     .    ' -  RETURN WITH SIXTH AND SEVENTH ARGUMENTS (IRET, JRET) = 0'
-         PRINT*,'STR = ',STR
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      ERRSTR = 'BUFRLIB: UFBIN3 - 3rd ARG. (INPUT) IS .LE. 0, ' //
+     .   'SO RETURN WITH 6th AND 7th ARGS. (IRET, JRET) = 0; ' //
+     .   '8th ARG. (STR) ='
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT(STR)
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
          ENDIF
          GOTO 100
       ELSEIF(I2.LE.0) THEN
          IF(IPRT.GE.0) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-         PRINT*,'BUFRLIB: UFBIN3 - FOURTH ARGUMENT (INPUT) IS .LE. 0',
-     .    ' -  RETURN WITH SIXTH AND SEVENTH ARGUMENTS (IRET, JRET) = 0'
-         PRINT*,'STR = ',STR
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      ERRSTR = 'BUFRLIB: UFBIN3 - 4th ARG. (INPUT) IS .LE. 0, ' //
+     .   'SO RETURN WITH 6th AND 7th ARGS. (IRET, JRET) = 0; ' //
+     .   '8th ARG. (STR) ='
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT(STR)
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
          ENDIF
          GOTO 100
       ELSEIF(I3.LE.0) THEN
          IF(IPRT.GE.0) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-         PRINT*,'BUFRLIB: UFBIN3 - FIFTH ARGUMENT (INPUT) IS .LE. 0',
-     .    ' -  RETURN WITH SIXTH AND SEVENTH ARGUMENTS (IRET, JRET) = 0'
-         PRINT*,'STR = ',STR
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      ERRSTR = 'BUFRLIB: UFBIN3 - 5th ARG. (INPUT) IS .LE. 0, ' //
+     .   'SO RETURN WITH 6th AND 7th ARGS. (IRET, JRET) = 0; ' //
+     .   '8th ARG. (STR) ='
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT(STR)
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
          ENDIF
          GOTO 100
       ENDIF
@@ -195,7 +197,7 @@ C  ----------------------
       INC1 = 1
       INC2 = 1
 
-1     CALL CONWIN(LUN,INC1,INC2,I2)
+1     CALL CONWIN(LUN,INC1,INC2)
       IF(NNOD.EQ.0) THEN
         IRET = I2
         GOTO 100
@@ -234,14 +236,14 @@ C  ----------------------
 
       IF(IRET.EQ.0 .OR. JRET.EQ.0)  THEN
          IF(IPRT.GE.1)  THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-            PRINT*,'BUFRLIB: UFBIN3 - NO SPECIFIED VALUES READ IN - ',
-     .       'RETURN WITH SIXTH ARGUMENT (IRET) = 0 AND/OR SEVENTH ',
-     .       'ARGUMENT (JRET) = 0'
-            PRINT*,'STR = ',STR
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      ERRSTR = 'BUFRLIB: UFBIN3 - NO SPECIFIED VALUES READ IN, ' //
+     .   'SO RETURN WITH 6th AND/OR 7th ARGS. (IRET, JRET) = 0; ' //
+     .   '8th ARG. (STR) ='
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT(STR)
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
          ENDIF
       ENDIF
 

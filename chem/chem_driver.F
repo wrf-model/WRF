@@ -481,6 +481,9 @@
      CASE (RADM2_KPP)
        CALL wrf_debug(15,'calling radm2_kpp from chem_driver')
        haveaer = .false.
+     CASE (CRIMECH_KPP)
+       CALL wrf_debug(15,'calling crimech_kpp from chem_driver')
+       haveaer = .false.
      CASE (RADM2SORG)
        CALL wrf_debug(15,'calling radm2sorg aerosols driver from chem_driver')
        haveaer = .true.
@@ -496,8 +499,11 @@
      CASE (RADM2SORG_AQCHEM)
        CALL wrf_debug(15,'calling radm2sorg_aqchem aerosols driver from chem_driver')
        haveaer = .true.
-     CASE (RACMSORG_AQCHEM)
-       CALL wrf_debug(15,'calling racmsorg_aqchem aerosols driver from chem_driver')
+     CASE (RACMSORG_AQCHEM_KPP)
+       CALL wrf_debug(15,'calling racmsorg_aqchem_kpp aerosols driver from chem_driver')
+       haveaer = .true.
+     CASE (RACM_ESRLSORG_AQCHEM_KPP)
+       CALL wrf_debug(15,'calling racm_esrlsorg_aqchem_kpp aerosols driver from chem_driver')
        haveaer = .true.
      CASE (RACM_KPP)
        CALL wrf_debug(15,'calling racm_kpp from chem_driver')
@@ -582,6 +588,12 @@
        haveaer = .true.
      CASE (CBMZ_MOSAIC_DMS_8BIN_AQ)
        CALL wrf_debug(15,'calling cbmz_mosaic_dms_8bin_aq aerosols driver from chem_driver')
+       haveaer = .true.
+     CASE (CRI_MOSAIC_8BIN_AQ_KPP)
+       CALL wrf_debug(15,'calling cri_mosaic_8bin_aq_kpp aerosols driver from chem_driver')
+       haveaer = .true.
+     CASE (CRI_MOSAIC_4BIN_AQ_KPP)
+       CALL wrf_debug(15,'calling cri_mosaic_4bin_aq_kpp aerosols driver from chem_driver')
        haveaer = .true.
      CASE (MOZART_KPP)
        CALL wrf_debug(15,'calling mozart driver from chem_driver')
@@ -761,7 +773,7 @@
       enddo
       select case (config_flags%chem_opt)
       case (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
-            RACM_ESRLSORG_KPP,RACMSORG_AQ,RACMSORG_KPP, RACMSORG_AQCHEM, RACM_SOA_VBS_KPP)
+            RACM_ESRLSORG_KPP,RACMSORG_AQ,RACMSORG_KPP, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, RACM_SOA_VBS_KPP)
          do j=jps,jpe
             do k=kps,kpe
                do i=ips,ipe
@@ -943,6 +955,9 @@
               grid%ebio_cco_oh, grid%ebio_rco_oh,                                         &    
               grid%clayfrac,grid%sandfrac,grid%dust_alpha,grid%dust_gamma,grid%dust_smtune,&
               grid%snowh,grid%zs,                                                          &
+              grid%ebio_c5h8,grid%ebio_apinene,grid%ebio_bpinene,grid%ebio_toluene,        &
+              grid%ebio_ch3cho,grid%ebio_ch3co2h,grid%ebio_tbut2ene,                      &
+              grid%ebio_c2h5cho,grid%ebio_nc4h10,					                      &
 #if (NMM_CORE == 1)
               grid%T2,grid%RSWIN,                                                         &
 #endif
@@ -1137,6 +1152,7 @@
                  emis_ant,ebu_in,                                                     &
                  config_flags%sf_urban_physics,numgas,current_month,dvel,grid%snowh,  &
                  grid%is_CAMMGMP_used,                                                & !BSINGH:01/31/2013: Added is_CAMMGMP_used for MAM drydep
+                 grid%dep_vel,grid%num_vert_mix,                                                   &
                  ids,ide, jds,jde, kds,kde,                                           &
                  ims,ime, jms,jme, kms,kme,                                           &
                  its,ite,jts,jte,kts,kte)

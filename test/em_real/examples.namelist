@@ -390,8 +390,8 @@ Price, J. F., T. B. Sanford, and G. Z. Forristal, 1994: Forced stage response to
 
 ** Using U. Miami Forward Lagrangian trajectory calculation 
   (add it in namelist record &physics):
- trajcall                            = 1,
- num_traj                            = 50
+ traj_opt                            = 1,
+ num_traj                            = 50 (currently in &domains)
 
 
 

@@ -7,7 +7,7 @@ C   PRGMMR: WOOLLEN          ORG: NP20       DATE: 1994-01-06
 C
 C ABSTRACT: THIS SUBROUTINE INITIALIZES A BUFR TABLE (DICTIONARY)
 C   MESSAGE, WRITING ALL THE PRELIMINARY INFORMATION INTO SECTIONS 0,
-C   1, 3, 4.  BUFR ARCHIVE LIBRARY SUBROUTINE WRITDX WILL WRITE THE
+C   1, 3, 4.  BUFR ARCHIVE LIBRARY SUBROUTINE WRDXTB WILL WRITE THE
 C   ACTUAL TABLE INFORMATION INTO THE MESSAGE.
 C
 C PROGRAM HISTORY LOG:
@@ -28,6 +28,7 @@ C                           TERMINATES ABNORMALLY
 C 2004-08-09  J. ATOR    -- MAXIMUM MESSAGE LENGTH INCREASED FROM
 C                           20,000 TO 50,000 BYTES
 C 2005-11-29  J. ATOR    -- CHANGED DEFAULT MASTER TABLE VERSION TO 12
+C 2009-05-07  J. ATOR    -- CHANGED DEFAULT MASTER TABLE VERSION TO 13
 C
 C USAGE:    CALL DXMINI (LUN, MBAY, MBYT, MB4, MBA, MBB, MBD)
 C   INPUT ARGUMENT LIST:
@@ -51,7 +52,7 @@ C    ARGUMENT LUN IS NOT REFERENCED IN THIS SUBROUTINE.  IT IS LEFT
 C    HERE IN CASE AN APPLICATION PROGRAM CALLS THIS SUBROUTINE.
 C
 C    THIS ROUTINE CALLS:        BORT     IUPM     PKB      PKC
-C    THIS ROUTINE IS CALLED BY: WRITDX
+C    THIS ROUTINE IS CALLED BY: WRDXTB
 C                               Normally not called by any application
 C                               programs.
 C
@@ -85,15 +86,15 @@ C  ----------------------
       MBAY(I) = 0
       ENDDO
 
-C  Section 1 message date is simply zeroed out
-C  -------------------------------------------
+C  For dictionary messages, the Section 1 date is simply zeroed out.
+C  (Note that there is logic in function IDXMSG which relies on this!)
 
       IH   = 0
       ID   = 0
       IM   = 0
       IY   = 0
 
-c  .... Dictionary messages get type 11 (see WMO Table A)
+c  Dictionary messages get type 11 (see WMO Table A)
       MTYP = 11
       NSUB = 1
 
@@ -128,7 +129,7 @@ C  ---------
       CALL PKB(     0 ,  8 , MBAY,MBIT)
       CALL PKB(  MTYP ,  8 , MBAY,MBIT)
       CALL PKB(  MSBT ,  8 , MBAY,MBIT)
-      CALL PKB(    12 ,  8 , MBAY,MBIT)
+      CALL PKB(    13 ,  8 , MBAY,MBIT)
       CALL PKB(  IDXV ,  8 , MBAY,MBIT)
       CALL PKB(    IY ,  8 , MBAY,MBIT)
       CALL PKB(    IM ,  8 , MBAY,MBIT)

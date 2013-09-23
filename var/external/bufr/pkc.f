@@ -48,7 +48,7 @@ C    UPC.
 C
 C    THIS ROUTINE CALLS:        IPKM     IREV     IUPM
 C    THIS ROUTINE IS CALLED BY: CMSGINI  DXMINI   MSGINI   MSGWRT
-C                               STNDRD   WRCMPS   WRITDX   WRITLC
+C                               STNDRD   WRCMPS   WRDXTB   WRITLC
 C                               WRTREE
 C                               Normally not called by any application
 C                               programs.
@@ -60,7 +60,7 @@ C
 C$$$
 
       COMMON /CHARAC/ IASCII,IATOE(0:255),IETOA(0:255)
-      COMMON /HRDWRD/ NBYTW,NBITW,NREV,IORD(8)
+      COMMON /HRDWRD/ NBYTW,NBITW,IORD(8)
 
       CHARACTER*(*) CHR
       CHARACTER*1   CVAL(8)

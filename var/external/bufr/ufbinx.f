@@ -31,6 +31,11 @@ C                           DIAGNOSTIC INFO WHEN ROUTINE TERMINATES
 C                           ABNORMALLY
 C 2004-08-09  J. ATOR    -- MAXIMUM MESSAGE LENGTH INCREASED FROM
 C                           20,000 TO 50,000 BYTES
+C 2009-03-23  J. ATOR    -- MODIFY LOGIC TO HANDLE BUFR TABLE MESSAGES
+C                           ENCOUNTERED ANYWHERE IN THE FILE (AND NOT
+C                           JUST AT THE BEGINNING!)
+C 2012-09-15  J. WOOLLEN -- MODIFIED FOR C/I/O/BUFR INTERFACE
+C                           USE 'INX' ARGUMENT TO OPENBF
 C
 C USAGE:    CALL UFBINX (LUNIT, IMSG, ISUB, USR, I1, I2, IRET, STR)
 C   INPUT ARGUMENT LIST:
@@ -96,7 +101,7 @@ C-----------------------------------------------------------------------
 C  OPEN BUFR FILE CONNECTED TO UNIT LUNIT IF IT IS NOT ALREADY OPEN
 C  ----------------------------------------------------------------
 
-         CALL OPENBF(LUNIT,'IN',LUNIT)
+         CALL OPENBF(LUNIT,'INX',LUNIT)
       ELSE
 
 C  IF BUFR FILE ALREADY OPENED, SAVE POSITION & REWIND TO FIRST DATA MSG
@@ -108,22 +113,24 @@ C  ---------------------------------------------------------------------
 C  SKIP TO MESSAGE # IMSG
 C  ----------------------
 
-      DO I=1,IMSG-1
-      READ(LUNIT,ERR=900,END=901)
-      ENDDO
+C     Note that we need to use subroutine READMG to actually read in all
+C     of the messages (including the first (IMSG-1) messages!), just in
+C     case there are any embedded dictionary messages in the file.
 
-      CALL READMG(LUNIT,SUBSET,JDATE,JRET)
-      IF(JRET.NE.0) GOTO 901
+      DO I=1,IMSG
+         CALL READMG(LUNIT,SUBSET,JDATE,JRET)
+         IF(JRET.LT.0) GOTO 901
+      ENDDO
 
 C  POSITION AT SUBSET # ISUB
 C  -------------------------
 
       DO I=1,ISUB-1
-      IF(NSUB(LUN).GT.MSUB(LUN)) GOTO 902
-      IBIT = MBYT(LUN)*8
-      CALL UPB(NBYT,16,MBAY(1,LUN),IBIT)
-      MBYT(LUN) = MBYT(LUN) + NBYT
-      NSUB(LUN) = NSUB(LUN) + 1
+         IF(NSUB(LUN).GT.MSUB(LUN)) GOTO 902
+         IBIT = MBYT(LUN)*8
+         CALL UPB(NBYT,16,MBAY(1,LUN),IBIT)
+         MBYT(LUN) = MBYT(LUN) + NBYT
+         NSUB(LUN) = NSUB(LUN) + 1
       ENDDO
 
       CALL READSB(LUNIT,JRET)
@@ -150,10 +157,6 @@ C  EXITS
 C  -----
 
       RETURN
-900   WRITE(BORT_STR,'("BUFRLIB: UFBINX - ERROR READING MESSAGE '//
-     . '(RECORD) NUMBER",I5," IN INPUT BUFR FILE CONNECTED TO UNIT",'//
-     . 'I4)')  I,LUNIT
-      CALL BORT(BORT_STR)
 901   WRITE(BORT_STR,'("BUFRLIB: UFBINX - HIT END OF FILE BEFORE '//
      . 'READING REQUESTED MESSAGE NO.",I5," IN BUFR FILE CONNECTED TO'//
      . ' UNIT",I4)')  IMSG,LUNIT

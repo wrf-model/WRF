@@ -16,6 +16,7 @@ C                           INTERDEPENDENCIES
 C 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED HISTORY
 C                           DOCUMENTATION; ADDED MORE COMPLETE
 C                           DIAGNOSTIC INFO WHEN UNUSUAL THINGS HAPPEN
+C 2009-04-21  J. ATOR    -- USE ERRWRT
 C
 C USAGE:    CALL STRSUC (STR1, STR2, LENS)
 C   INPUT ARGUMENT LIST:
@@ -27,12 +28,10 @@ C                BLANKS REMOVED
 C     LENS     - INTEGER: LENGTH OF STR2:
 C                      -1 = STR1 contained embedded blanks
 C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
-C
 C REMARKS:
 C    THIS ROUTINE CALLS:        None
-C    THIS ROUTINE IS CALLED BY: DXDUMP   STRNUM
+C    THIS ROUTINE IS CALLED BY: DXDUMP   ERRWRT   MTINFO   STRNUM
+C                               UFDUMP
 C                               Normally not called by any application
 C                               programs but it could be.
 C
@@ -81,12 +80,12 @@ C     into the output string was an embedded blank.
       ENDDO
 
       IF(LENS.EQ.-1 .AND. IPRT.GE.0)  THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
-         PRINT*,'BUFRLIB: STRSUC - INPUT STRING ',STR1,' CONTAINS ',
-     .    '1 OR MORE EMBEDDED BLANKS -  RETURN WITH LENS = -1'
-      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('++++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++++')
+      CALL ERRWRT('BUFRLIB: STRSUC - INPUT STRING:')
+      CALL ERRWRT(STR1)
+      CALL ERRWRT('CONTAINS ONE OR MORE EMBEDDED BLANKS')
+      CALL ERRWRT('++++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++++')
+      CALL ERRWRT(' ')
       ENDIF
 
 C  EXIT

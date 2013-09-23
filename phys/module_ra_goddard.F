@@ -172,7 +172,9 @@ contains
                    ,its,ite, jts,jte, kts,kte                     & 
 !                   ,cosz_urb2d,omg_urb2d                          & !optional urban
                    ,ERBE_out                                      &  !optional sdsu
-                    )
+                   ,swddir,swddni,swddif                          & !jararias 14/08/2013
+                   ,coszen,julian                                 & !jararias 14/08/2013
+                                                                  )
    implicit none
 
 !------- I / O variables ----------------------------------------------
@@ -256,6 +258,16 @@ contains
 
    real, optional,dimension(ims:ime, jms:jme, 1:8),intent(out) :: ERBE_out  !extra output for SDSU
 
+   real, optional, dimension(ims:ime, jms:jme), intent(out) :: &              ! jararias, 14/08/2013
+         swddir, & ! All-sky broadband surface direct horizontal irradiance
+         swddni, & ! All-sky broadband surface direct normal irradiance
+         swddif    ! All-sky braodband surface diffuse irradiance
+   real, optional, dimension(ims:ime, jms:jme), intent(in) :: &               ! jararias, 14/08/2013
+         coszen    ! cosine of the solar zenith angle
+   real, optional, intent(in) :: &
+         julian    ! julian day (1-365) ! jararias, 14/08/2013
+                                                  
+
 !------- Local variables ----------------------------------------------
 
  integer :: i,j,k,nk,ib,is ! loop indice
@@ -315,6 +327,16 @@ contains
 
    real(Kind=fp_kind), dimension( its:ite , kts:kte+1 ) :: phyd    ! pressure (Pa)
    real(Kind=fp_kind), dimension( its:ite , kts:kte   ) :: phydmid ! pressure in middle (Pa)
+
+  ! jararias, 14/08/2013
+  real(Kind=fp_kind), dimension( its:ite ) :: &
+    fdiruv, & ! SW UV direct downwelling flux at surface (-)
+    fdifuv, & ! SW UV diffuse downwelling flux at surface (-)
+   fdirpar, & ! SW PAR direct downwelling flux at surface (-)
+   fdifpar, & ! SW PAR diffuse downwelling flux at surface (-)
+    fdirir, & ! SW IF direct downwelling flux at surface (-)
+    fdifir    ! SW IF diffuse downwelling flux at surface (-)
+  real(Kind=fp_kind) :: da,eot
 
 !
 ! ozone table
@@ -703,7 +725,7 @@ contains
 	       if ( (f_qi) ) then
                   cwc(i,k,1)=max(0.,qi3d(i,nk,j))
                   reff(i,k,1) = 125. + (t2d(i,k)-243.16)*5.  ! ice effective radius depends on temp
-                  reff(i,k,1) = min(125.,max(25.,reff(i,k,1)))
+                  reff(i,k,1) = min(125._fp_kind,max(25._fp_kind,reff(i,k,1)))
                   x=1.02*10000.*( p8w2d(i,k+1)-p8w2d(i,k) )
                   taucldi(i,nk,j) = x * cwc(i,k,1) * ( -6.59e-3 + 1.65/reff(i,k,1) ) ! output purpose
                else
@@ -723,7 +745,7 @@ contains
                   if ( cwc(i,k,1) > 0. ) then !ice exist
                     cwc(i,k,1)=cwc(i,k,1) + max(0.,qs3d(i,nk,j)) ! ice + snow
                     reff(i,k,1) = 125. + (t2d(i,k)-243.16)*5.    ! ice + snow (use ice definition) 
-                    reff(i,k,1) = min(125.,max(25.,reff(i,k,1)))
+                    reff(i,k,1) = min(125._fp_kind,max(25._fp_kind,reff(i,k,1)))
                   else
                     cwc(i,k,1)= max(0.,qs3d(i,nk,j))  ! snow only (define snow is large aggrefated ice)
                     reff(i,k,1) = 125.                ! snow only (use largest reff of ice)
@@ -832,18 +854,35 @@ contains
      
       case ('sw')
 
-
-
 !
 ! solar zenith angle and surface albedo
 !
+      if (present(coszen)) then ! jararias, 14/08/2013
+         call wrf_debug(100,'using coszen from radiation driver')
+         do i=its,ite
+            cosz(i)=coszen(i,j)
+         end do
+      else
+!        da=6.2831853071795862*(julian-1)/365.
+!        eot=(0.000075+0.001868*cos(da)-0.032077*sin(da) &
+!           -0.014615*cos(2*da)-0.04089*sin(2*da))*(229.18)
+         xt24 = mod(xtime + radfrq * 0.5, 1440.) + eot
+         do i = its,ite
+           tloctm = gmt + xt24 / 60. + xlong(i,j) / 15.
+           hrang = 15. * (tloctm - 12.) * degrad
+           xxlat = xlat(i,j) * degrad
+           cosz(i) = sin(xxlat) * sin(declin) + &
+                     cos(xxlat) * cos(declin) * cos(hrang)
+         end do
+      end if
+
       do i = its,ite
-        xt24 = mod(xtime + radfrq * 0.5, 1440.)
-        tloctm = gmt + xt24 / 60. + xlong(i,j) / 15.
-        hrang = 15. * (tloctm - 12.) * degrad
-        xxlat = xlat(i,j) * degrad
-        cosz(i) = sin(xxlat) * sin(declin) + &
-                  cos(xxlat) * cos(declin) * cos(hrang)
+!       xt24 = mod(xtime + radfrq * 0.5, 1440.)
+!       tloctm = gmt + xt24 / 60. + xlong(i,j) / 15.
+!       hrang = 15. * (tloctm - 12.) * degrad
+!       xxlat = xlat(i,j) * degrad
+!       cosz(i) = sin(xxlat) * sin(declin) + &
+!                 cos(xxlat) * cos(declin) * cos(hrang)
 
 !
 ! surface spectrum albedo for direct and diffuse radiation
@@ -878,11 +917,15 @@ contains
 !
      do i = its,ite
       if (cosz(i) .gt. cosz_min) then !for daytime only
-      call swrad ( m=1, np=mkx+1, pl=p8w2d(i,:), ta=t2d(i,:), wa=sh2d(i,:), oa=o3(i,:),         &
-                   cwc=cwc(i,:,:), reff=reff(i,:,:), fcld=fcld2d(i,:), ict=ict(i), icb=icb(i),      &
-                   taual=taual_sw(i,:,:), ssaal=ssaal_sw(i,:,:), asyal=asyal_sw(i,:,:), &
-                   cosz=cosz(i), rsuvbm=rsuvbm(i), rsuvdf=rsuvdf(i), rsirbm=rsirbm(i), rsirdf=rsirdf(i),  &
-                   flx=flx(i,:), flxd=flxd(i,:),flxu=flxu(i,:) )
+         call swrad ( m=1, np=mkx+1, pl=p8w2d(i,:), ta=t2d(i,:), wa=sh2d(i,:), oa=o3(i,:),                   &
+                      cwc=cwc(i,:,:), reff=reff(i,:,:), fcld=fcld2d(i,:), ict=ict(i), icb=icb(i),            &
+                      taual=taual_sw(i,:,:), ssaal=ssaal_sw(i,:,:), asyal=asyal_sw(i,:,:),                   &
+                      cosz=cosz(i), rsuvbm=rsuvbm(i), rsuvdf=rsuvdf(i), rsirbm=rsirbm(i), rsirdf=rsirdf(i),  &
+                      flx=flx(i,:), flxd=flxd(i,:),flxu=flxu(i,:),                                           &
+                      ! -- jararias, 14/08/2013
+                      fdiruv=fdiruv(i),fdifuv=fdifuv(i),                                                     &
+                      fdirpar=fdirpar(i),fdifpar=fdifpar(i),                                                 &
+                      fdirir=fdirir(i),fdifir=fdifir(i)                                                      )
       endif
      enddo
 !
@@ -892,8 +935,14 @@ contains
         do i = its, ite
           if (cosz(i) .le. cosz_min) then
             flx(i,k) = 0.
+            swddir(i,j) = 0. !jararias, 14/08/2013
+            swddif(i,j) = 0. !jararias, 14/08/2013
+            swddni(i,j) = 0. !jararias, 14/08/2013
           else
             flx(i,k) = flx(i,k) * solcon * cosz(i)
+            swddni(i,j) = ( fdiruv(i) + fdirpar(i) + fdirir(i) ) * solcon           !jararias, 14/08/2013
+            swddir(i,j) = swddni(i,j) * cosz(i)                                     !jararias, 14/08/2013
+            swddif(i,j) = ( fdifuv(i) + fdifpar(i) + fdifir(i) ) * solcon * cosz(i) !jararias, 14/08/2013
           endif
         end do
       end do
@@ -1033,9 +1082,10 @@ contains
 !GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 !GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
-  subroutine swrad (m,np,pl,ta,wa,oa, cwc,reff,fcld,ict,icb, &
+  subroutine swrad (m,np,pl,ta,wa,oa, cwc,reff,fcld,ict,icb,             &
                     taual,ssaal,asyal, cosz,rsuvbm,rsuvdf,rsirbm,rsirdf, &
-                    flx,flxd,flxu) 
+                    flx,flxd,flxu,                                       &
+                    fdiruv,fdifuv,fdirpar,fdifpar,fdirir,fdifir          ) !jararias, 14/08/2013
 
 !------------     corrections for bugs      ----------------------------
 !
@@ -1174,9 +1224,9 @@ contains
  real(Kind=fp_kind),intent(inout) :: flxu(m,np+1)   !upwelling flux fraction []
 !-----IO parameter used to be-----
  real(Kind=fp_kind) flc(m,np+1)
- real(Kind=fp_kind) fdiruv (m),fdifuv (m)
- real(Kind=fp_kind) fdirpar(m),fdifpar(m)
- real(Kind=fp_kind) fdirir (m),fdifir (m)
+ real(Kind=fp_kind),intent(inout) :: fdiruv (m),fdifuv (m)
+ real(Kind=fp_kind),intent(inout) :: fdirpar(m),fdifpar(m)
+ real(Kind=fp_kind),intent(inout) :: fdirir (m),fdifir (m)
 
 !-----temporary array
  integer i,j,k,ntop

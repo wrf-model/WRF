@@ -92,8 +92,7 @@ subroutine da_read_obs_bufr (iv)
        type(datalink_BUFR), pointer :: next
    end type datalink_BUFR
 
-   type(datalink_BUFR),pointer  :: head, plink
-
+   type(datalink_BUFR),pointer  :: head=>null(), plink=>null()
 
    if (trace_use) call da_trace_entry("da_read_obs_bufr")
 
@@ -731,6 +730,7 @@ bufrfile:  do ibufr=1,numbufr
             end if
          end if
          if ( tqm == 8 .or. tqm == 9 .or. tqm == 15 ) then
+            if ( obs(3,1) < r8bfms ) then
             platform%each(1)%t%inv = obs(3,1)
             platform%each(1)%t%qc  = 88
             if ( use_errtable ) then
@@ -738,8 +738,10 @@ bufrfile:  do ibufr=1,numbufr
             else
                platform%each(1)%t%error = 2.0
             end if
+            end if
          end if
          if ( qqm == 8 .or. qqm == 9 .or. qqm == 15 ) then
+            if ( obs(2,1) > 0.0 .and. obs(2,1) < r8bfms ) then
             platform%each(1)%q%inv = obs(2,1)
             platform%each(1)%q%qc  = 88
             if ( use_errtable ) then
@@ -747,17 +749,20 @@ bufrfile:  do ibufr=1,numbufr
             else
                platform%each(1)%q%error = 10   ! RH percent
             end if
+            end if
          end if
       end if
       ! assign tpw obs errors for gpspw
       if ( t29 == 74 ) then
          if ( pwq == 8 .or. pwq  == 9 .or. pwq  == 15) then
+            if ( obs(7,1) > 0.0 .and. obs(7,1) < r8bfms ) then
             platform%loc%pw%inv   = obs(7,1) * 0.1    ! convert to cm
             platform%loc%pw%qc    = 88
             if ( use_errtable ) then
                platform%loc%pw%error = pwe
             else
                platform%loc%pw%error = 0.2     ! hardwired to 0.2 cm
+            end if
             end if
          end if
       end if
@@ -996,7 +1001,7 @@ bufrfile:  do ibufr=1,numbufr
                end if
                fm = 88
                
-         case (582, 583)      ! QuikSCAT 582 and WindSat 583
+         case (581, 582, 583, 584)      ! ERS 581, QuikSCAT 582, WindSat 583, ASCAT 584
                if (.not.use_qscatobs) cycle reports
                
                if (n==1) iv%info(qscat)%ntotal = iv%info(qscat)%ntotal + 1
@@ -1381,7 +1386,7 @@ end do bufrfile
                end if
                fm = 88
                
-         case (582, 583)      ! QuikSCAT 582 and WindSat 583
+         case (581, 582, 583, 584)      ! ERS 581, QuikSCAT 582, WindSat 583, ASCAT 584
                if (.not.use_qscatobs) then
                       plink => plink%next
                       cycle reports2
@@ -1925,7 +1930,7 @@ end if
                
             end do
 
-          case (582, 583)
+          case (581, 582, 583, 584)      ! ERS 581, QuikSCAT 582, WindSat 583, ASCAT 584
           if (.not.use_qscatobs) then
                    plink => plink%next
                    cycle reports3

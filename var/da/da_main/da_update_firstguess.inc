@@ -65,6 +65,7 @@ subroutine da_update_firstguess(grid, out_filename)
   real, dimension(:), allocatable :: globbuf  
   real*4,allocatable :: field3(:,:,:),field2(:,:)
   real*4,allocatable :: field3u(:,:,:),field3v(:,:,:),field3ph(:,:,:)
+  character(len=4) ::  fgname
 
   wrf_real=104
   end_index1=0
@@ -79,14 +80,20 @@ subroutine da_update_firstguess(grid, out_filename)
 !
   if (present(out_filename)) then
      file_name = trim(out_filename)
+     if (file_name == 'ana02') then
+        fgname = 'fg02'
+     else
+        fgname = 'fg'
+     endif
   else
      file_name = 'wrfvar_output'
-  end if
+     fgname = 'fg'
+  endif
 
   if (rootproc) then
-     ierr = copyfile('fg'//C_NULL_CHAR, trim(file_name)//C_NULL_CHAR)
+     ierr = copyfile(trim(fgname)//C_NULL_CHAR, trim(file_name)//C_NULL_CHAR)
      if ( ierr /= 0 ) then
-        write(unit=message(1),fmt='(a)') "Failed to create "//trim(file_name)
+        write(unit=message(1),fmt='(a)') "Failed to create "//trim(file_name)//" from "//trim(fgname)
         call da_error(__FILE__,__LINE__,message(1:1))
      endif
 

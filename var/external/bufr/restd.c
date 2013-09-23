@@ -20,6 +20,7 @@ C   DESCRIPTOR THAT WAS INPUT.
 C
 C PROGRAM HISTORY LOG:
 C 2004-08-18  J. ATOR    -- ORIGINAL AUTHOR
+C 2012-04-30  J. ATOR    -- USE LONG CAST FOR IBIT IN SPRINTF STMT
 C
 C USAGE:    CALL RESTD( LUN, TDDESC, NCTDDESC, CTDDESC )
 C   INPUT ARGUMENT LIST:
@@ -35,7 +36,7 @@ C
 C REMARKS:
 C    THIS ROUTINE CALLS:        RESTD    NUMTBD   NEMTBB   IFXY
 C				CADN30   ISTDESC  WRDESC   UPTDD
-C    THIS ROUTINE IS CALLED BY: RESTD    STNDRD   CMSGINI
+C    THIS ROUTINE IS CALLED BY: RESTD    STNDRD 
 C                               Normally not called by application
 C                               programs but it could be.
 C
@@ -120,7 +121,7 @@ void restd( f77int *lun, f77int *tddesc, f77int *nctddesc, f77int ctddesc[] )
 **		a 206YYY operator in the output list.
 */ 
 		nemtbb( lun, &ictbd, cunit, &iscl, &iref, &ibit, 25 );
-		sprintf( adn, "%c%c%c%03d", '2', '0', '6', ibit );
+		sprintf( adn, "%c%c%c%03ld", '2', '0', '6', (long) ibit );
 		wrdesc( ifxy( adn, 7 ), ctddesc, nctddesc );
 	        wrdesc( desc, ctddesc, nctddesc );
 	    }

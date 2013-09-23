@@ -94,6 +94,7 @@ SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
           ash(1,1,kk,10)=chem(i,k,j,p_vash_10)*conver
           enddo
           if(config_flags%chem_opt == 400  .or. config_flags%chem_opt == 402 ) then
+          kk=0
           do k=kts,kte
           kk=kk+1
           ash(1,1,kk,1)=chem(i,k,j,p_vash_1)*conver
@@ -118,6 +119,7 @@ SUBROUTINE vash_settling_driver(dt,config_flags,t_phy,moist,               &
             chem(i,k,j,p_vash_10)=ash(1,1,kk,10)*converi
           enddo
           if(config_flags%chem_opt == 400  .or. config_flags%chem_opt == 402 ) then
+          kk=0
           do k=kts,kte
           kk=kk+1
             chem(i,k,j,p_vash_1)=ash(1,1,kk,1)*converi

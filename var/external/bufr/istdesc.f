@@ -24,7 +24,7 @@ C		   1 - IDN IS A WMO-STANDARD DESCRIPTOR
 C
 C REMARKS:
 C    THIS ROUTINE CALLS:        ADN30
-C    THIS ROUTINE IS CALLED BY: CMSGINI  RESTD       STNDRD
+C    THIS ROUTINE IS CALLED BY: READS3   RESTD    STNDRD
 C                               Normally not called by application
 C                               programs but it could be.
 C

@@ -2309,7 +2309,8 @@
                   lwp         = ql(i,kt-1) * ( pi(i,kt) - pi(i,kt-1) ) / g
                   opt_depth   = 156._r8 * lwp  ! Estimated LW optical depth in the CL top layer
                   radinvfrac  = opt_depth * ( 4._r8 + opt_depth ) / ( 6._r8 * ( 4._r8 + opt_depth) + opt_depth**2 )
-                  radf        = radf + max( radinvfrac * qrlw(i,kt-1) / ( pi(i,kt-1) - pi(i,kt) ) * ( zi(i,kt-1) - zi(i,kt) ), 0._r8 )
+                  radf        = radf + max( radinvfrac * qrlw(i,kt-1) / ( pi(i,kt-1) - pi(i,kt) ) * ( zi(i,kt-1) - zi(i,kt) ), &
+                                            0._r8 )
                   radf        = max( radf, 0._r8 ) * chs(i,kt) 
 
           endif

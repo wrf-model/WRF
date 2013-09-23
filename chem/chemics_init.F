@@ -19,7 +19,7 @@
                last_chem_time_year, last_chem_time_month,            &
                last_chem_time_day, last_chem_time_hour,              &
                last_chem_time_minute, last_chem_time_second,         &
-               chem_in_opt, kemit,                                   &
+               chem_in_opt, kemit, num_vert_mix,                     &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
@@ -60,6 +60,7 @@
    real  , intent(in) :: bioemdt,photdt,chemdt,dt,gmt
    INTEGER,      INTENT(IN   ) :: plumerisefire_frq
    INTEGER,      INTENT(IN   ) :: chem_in_opt
+   INTEGER,      INTENT(INOUT) :: num_vert_mix
    INTEGER,      INTENT(IN   ) :: id,julday,kemit,                   &
                                   last_chem_time_year,               &
                                   last_chem_time_month,              &
@@ -153,6 +154,10 @@ call wrf_message("**************************************************************
        CALL wrf_debug(15,'calling gocart and radm driver from chem_driver')
      CASE (GOCARTRACM_KPP)
        CALL wrf_debug(15,'calling gocart and racmkpp driver from chem_driver')
+     CASE (CRIMECH_KPP, CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
+       CALL wrf_debug(15,'calling crimech driver from chem_driver')
+       call wrf_message("WARNING: CRIMECH chemistry option is highly experimental and not recommended for use.")
+!       call wrf_error_fatal("ERROR: experimental option selected, please contact G.MCFIGGANS for assistance")
      CASE (CBM4_KPP )
        CALL wrf_debug(15,'calling CB4 from chem_driver')
        call wrf_message("WARNING: CB4 chemistry option is highly experimental and not recommended for use.")
@@ -185,13 +190,20 @@ call wrf_message("**************************************************************
        call wrf_message("WARNING: RACMSORG_AQ chemistry option is highly experimental and not recommended for use.")
        call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
      CASE (RADM2SORG_AQCHEM )
+       numgas_mam = numgas
        CALL wrf_debug(15,'calling RADM2/MADE/SORGAM with AQCHEM chemistry from chem_driver')
        call wrf_message("WARNING: RADM2SORG_AQCHEM chemistry option is experimental and not yet fully tested.")
        call wrf_message("         We recommend contacting wrfchemhelp for assistance.")
-     CASE (RACMSORG_AQCHEM )
+     CASE (RACMSORG_AQCHEM_KPP )
+       numgas_mam = numgas
        CALL wrf_debug(15,'calling RACM/MADE/SORGAM with AQCHEM chemistry from chem_driver')
-       call wrf_message("WARNING: RACMSORG_AQCHEM chemistry option is highly experimental and not recommended for use.")
-       call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+       call wrf_message("WARNING: RACMSORG_AQCHEM_KPP chemistry option is highly experimental and not recommended for use.")
+!      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+     CASE (RACM_ESRLSORG_AQCHEM_KPP )
+       numgas_mam = numgas
+       CALL wrf_debug(15,'calling RACM/MADE/SORGAM with AQCHEM chemistry from chem_driver')
+       call wrf_message("WARNING: RACM_ESRLSORG_AQCHEM_KPP chemistry option is highly experimental and not recommended for use.")
+!      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
      CASE (CO2_TRACER, GHG_TRACER )
        call wrf_message("WARNING: Users interested in the GHG options should check the comments/references in header of module_ghg_fluxes")
      CASE (CBMZ_CAM_MAM3_NOAQ)
@@ -245,11 +257,12 @@ call wrf_message("**************************************************************
          config_flags%chem_opt /= MOZART_MOSAIC_4BIN_VBS0_KPP ) then
        if(  ( config_flags%chem_opt >= 8 .AND. config_flags%chem_opt <= 13) .OR.  &
             ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36) .OR. &
-            ( config_flags%chem_opt >= 41 .AND. config_flags%chem_opt <= 42) .OR. &
-            ( config_flags%chem_opt == 503 .OR. config_flags%chem_opt == 504) ) then
+            ( config_flags%chem_opt >= 41 .AND. config_flags%chem_opt <= 43) .OR. &
+            ( config_flags%chem_opt == 503 .OR. config_flags%chem_opt == 504) .OR. &
+            ( config_flags%chem_opt == 601 .OR. config_flags%chem_opt == 611)  ) then
          call wrf_debug( 15, 'Chemics_init: Wet scavenging turned on' )
        else
-         call wrf_error_fatal("ERROR: wet scavenging option requires chem_opt = 8 through 13 or 31 to 36 or 41 to 42 or 503 or 504 to function.")
+         call wrf_error_fatal("ERROR: wet scavenging option requires chem_opt = 8 through 13 or 31 to 36 or 41 to 42 or 503 or 504 or 601 or 611 to function.")
        endif
        if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 11) then
          call wrf_error_fatal("ERROR: wet scavenging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 11 (CAMMGMP) to function.")
@@ -269,10 +282,11 @@ call wrf_message("**************************************************************
       if(  ( config_flags%chem_opt >= 8 .AND. config_flags%chem_opt <= 13)    .OR. &
            ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36)   .OR. &
            ( config_flags%chem_opt >= 501 .AND. config_flags%chem_opt <= 504) .OR. &
-           ( config_flags%chem_opt >= 41 .AND. config_flags%chem_opt <= 42) ) then
+           ( config_flags%chem_opt >= 41 .AND. config_flags%chem_opt <= 43)  .OR. &
+           ( config_flags%chem_opt >= 601 .AND. config_flags%chem_opt <= 611) ) then
            call wrf_debug( 15, 'Chemics_init: Cloud chemistry turned on' )
       else
-        call wrf_error_fatal("ERROR: cloud chemistry option requires chem_opt = 8 through 13 or 31 to 36 or 41 to 42 to function.")
+        call wrf_error_fatal("ERROR: cloud chemistry option requires chem_opt = 8 through 13 or 31 to 36 or 41 to 43 to function.")
       endif
       if ( config_flags%mp_physics /= 2 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 11 ) then
         call wrf_error_fatal("ERROR: cloud chemistry option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 11 (CAMMGMP)to function.")
@@ -301,6 +315,38 @@ call wrf_message("**************************************************************
         call wrf_error_fatal(" ERROR: CHEM_INIT: FOR CHEM_OPT = 0, AER_RA_FEEDBACK MUST = 0 ")
     ENDIF
 
+    IF ( config_flags%aer_ra_feedback .EQ. 1   .AND.   &
+        ( config_flags%chem_opt == RADM2 .or. &
+          config_flags%chem_opt == CBMZ .or. &
+          config_flags%chem_opt == CBMZ_BB .or. &
+          config_flags%chem_opt == CO2_TRACER .or. &
+          config_flags%chem_opt == RADM2_KPP .or. &
+          config_flags%chem_opt == RACM_MIM_KPP .or. &
+          config_flags%chem_opt == RACM_KPP .or. &
+          config_flags%chem_opt == CBM4_KPP .or. &
+          config_flags%chem_opt == SAPRC99_KPP  .or. &
+          config_flags%chem_opt == NMHC9_KPP  ) ) then
+        call wrf_error_fatal(" ERROR: CHEM_INIT: MUST HAVE AEROSOLS TO INCLUDE AEROSOL RADIATION FEEDBACK. SET AER_RA_FEEDBACK = 0 ")
+    ENDIF
+
+    if ( config_flags%n2o5_hetchem == 1 )then 
+        if( (config_flags%chem_opt >= 7   .AND. config_flags%chem_opt <= 10)  .OR. &
+            (config_flags%chem_opt >= 31  .AND. config_flags%chem_opt <= 34)  .OR. &
+             config_flags%chem_opt == 170 .OR.  config_flags%chem_opt == 198  .OR. &
+             config_flags%chem_opt == 199 .OR.  config_flags%chem_opt == 201  .OR. &
+             config_flags%chem_opt == 601 .OR.  config_flags%chem_opt == 611 ) then
+            call wrf_debug( 15, 'using N2O5 heterogeneous chemistry without Cl- pathway')
+        else
+            call wrf_error_fatal("ERROR: N2O5 heterogenous chemistry (without Cl- pathway) must be run with MOSAIC aerosol")
+        endif
+    elseif ( config_flags%n2o5_hetchem == 2 ) then
+        if( config_flags%chem_opt == 601 .OR. config_flags%chem_opt == 611 ) then
+            call wrf_debug( 15, 'using full N2O5 heterogeneous chemistry')
+        else
+            call wrf_error_fatal("ERROR: full N2O5 heterogenous chemistry must be run with MOSAIC aerosol coupled with gas-phase scheme which deals with ClNO2")
+        endif
+    endif
+
 !   IF ( config_flags%chem_opt == 2 .AND. config_flags%dust_opt .NE. 2 ) THEN
 !       call wrf_error_fatal(" ERROR: USE dust_opt = 2 when using MADE/SORGAM aerosol option ")
 !   ENDIF
@@ -312,11 +358,11 @@ call wrf_message("**************************************************************
       message_txt = " ERROR: CHEM_INIT: Chemistry routines require USGS or MODIS_NOAH land use maps. Need to change land use option."
       call wrf_error_fatal( trim(message_txt) )
     ELSE
-      IF (trim(mminlu_loc) == 'USGS' .and. grid%num_land_cat /= 24 ) THEN
-        message_txt = " ERROR: CHEM_INIT: USGS land use map should have 24 catagories."
+      IF (trim(mminlu_loc) == 'USGS' .and. grid%num_land_cat <= 23 ) THEN
+        message_txt = " ERROR: CHEM_INIT: USGS land use map should have 24 or more catagories."
         call wrf_error_fatal( trim(message_txt) )
-      ELSEIF (trim(mminlu_loc) == 'MODIFIED_IGBP_MODIS_NOAH' .and. grid%num_land_cat /= 20 ) THEN
-        message_txt = " ERROR: CHEM_INIT: MODIS_NOAH land use map should have 20 catagories."
+      ELSEIF (trim(mminlu_loc) == 'MODIFIED_IGBP_MODIS_NOAH' .and. grid%num_land_cat <= 19 ) THEN
+        message_txt = " ERROR: CHEM_INIT: MODIS_NOAH land use map should have 20 or more catagories."
         call wrf_error_fatal( trim(message_txt) )
       ENDIF
     ENDIF
@@ -426,6 +472,24 @@ end if
 !   RETURN IF CHEMISTRY IS NOT RUNNING
     IF ( config_flags%chem_opt == 0 ) RETURN
 
+! Set the num_vert_mix variable if using ACM
+    num_vert_mix = 0
+    IF ( config_flags%bl_pbl_physics == ACMPBLSCHEME ) THEN
+         mix_select: SELECT CASE(config_flags%chem_opt)
+         CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZSORG_AQ, &
+              CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
+              CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
+            num_vert_mix = numgas
+         CASE DEFAULT
+            num_vert_mix = num_chem
+         END SELECT mix_select
+        if(num_vert_mix .gt. config_flags%ndepvel) then
+         write(message_txt,'(A30,2(I8,2x))') 'chem_init: num_vert_mix and ndepvel ',num_vert_mix,config_flags%ndepvel
+         call wrf_message( trim(message_txt) )
+        call wrf_error_fatal(" ERROR: CHEM_INIT: num_vert_mix > ndepvel ")
+        endif
+    ENDIF
+
     stepbioe=nint(bioemdt*60./dt)
     stepphot=nint(photdt*60./dt)
     stepchem=nint(chemdt*60./dt)
@@ -491,12 +555,13 @@ end if
 
    if( .NOT. config_flags%restart ) then
    kpp_select: SELECT CASE(config_flags%chem_opt)
-     CASE (GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP, RACM_MIM_KPP,RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP)
+     CASE (GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_KPP, &
+           RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP,RACM_SOA_VBS_KPP)
         if(config_flags%chem_in_opt == 0 )then
           do j=jts,jte
              do k=kts,kte
                 do i=its,ite
-                   chem(i,k,j,p_co2)=370.
+                   chem(i,k,j,p_co2)=380.
                    chem(i,k,j,p_ch4)=1.7
                    chem(i,k,j,p_ete)=chem(i,k,j,p_olt)
                    chem(i,k,j,p_ete)=epsilc
@@ -515,7 +580,7 @@ end if
           do j=jts,jte
              do k=kts,kte
                 do i=its,ite
-                   chem(i,k,j,p_co2)=370.
+                   chem(i,k,j,p_co2)=380.
                    chem(i,k,j,p_ch4)=1.7
                 enddo
              enddo
@@ -560,7 +625,7 @@ end if
           do j=jts,jte
              do k=kts,kte
                 do i=its,ite
-          !         chem(i,k,j,p_co2)=370.
+          !         chem(i,k,j,p_co2)=380.
           !         chem(i,k,j,p_ch4)=1.7
          if (p_ant1_c.gt.1)    chem(i,k,j,p_ant1_c)=0.0
          if (p_ant2_c.gt.1)    chem(i,k,j,p_ant2_c)=0.0
@@ -598,7 +663,7 @@ end if
           do j=jts,jte
              do k=kts,kte
                 do i=its,ite
-                   chem(i,k,j,p_co2)=370.
+                   chem(i,k,j,p_co2)=380.
                    chem(i,k,j,p_ch4)=1.7
          if (p_pcg1_b_c.gt.1) chem(i,k,j,p_pcg1_b_c)=0.00
          if (p_pcg2_b_c.gt.1) chem(i,k,j,p_pcg2_b_c)=0.00
@@ -877,7 +942,7 @@ ENDIF ghg_block
         CALL wrf_debug(15,'MOZCART dust initialization')
         ch_dust(:,:) = 0.8D-9
 
-     CASE (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM, RADM2SORG_KPP, &
+     CASE (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, RADM2SORG_KPP, &
            RACMSORG_KPP, RACM_ESRLSORG_KPP, CBMZSORG, CBMZSORG_AQ)
        CALL wrf_debug(15,'call MADE/SORGAM aerosols initialization')
 
@@ -957,9 +1022,9 @@ ENDIF ghg_block
        endif
      CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
            CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
-           CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP )
+           CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP,CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP )
        call wrf_debug(15,'call MOSAIC aerosols initialization')
-       call init_data_mosaic_asect(is_aerosol)
+       call init_data_mosaic_asect(config_flags%n2o5_hetchem,is_aerosol)
        if(config_flags%chem_in_opt == 0 )then
        if( .NOT. config_flags%restart ) &
             call mosaic_init_wrf_mixrats(                            &
@@ -973,9 +1038,9 @@ ENDIF ghg_block
    END SELECT aer_select
 
    progn_sanity_check : SELECT CASE(config_flags%chem_opt)
-   CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM, &
+   CASE (RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, &
          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_DMS_4BIN_AQ, &
-         CBMZ_MOSAIC_DMS_8BIN_AQ, CBMZSORG_AQ)
+         CBMZ_MOSAIC_DMS_8BIN_AQ,CBMZSORG_AQ,CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
       if( config_flags%progn /= 1 ) &
            call wrf_error_fatal( &
            "ERROR: When using a ..._AQ chemistry package, progn must be 1")
@@ -1231,7 +1296,8 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_iso,"iso"
      print*,p_ho,"ho"
      print*,p_ho2,"ho2"
-  case (RACMSORG_AQ, RACMSORG_AQCHEM, RACM_KPP, RACMPM_KPP, RACMSORG_KPP,RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP)
+  case (RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, RACM_KPP, RACMPM_KPP, RACMSORG_KPP, &
+        RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP)
      print*,p_so2,"so2"
      print*,p_sulf,"sulf"
      print*,p_no2,"no2"
@@ -1590,8 +1656,8 @@ subroutine print_chem_species_index( chem_opt )
 ! Aerosol species...
 !
   select case (chem_opt)
-  case (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, RACMSORG_AQ, RACMSORG_AQCHEM, RACMSORG_KPP, RACM_ESRLSORG_KPP, &
-        CBMZSORG, CBMZSORG_AQ,RACMSORG)
+  case (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, &
+        RACM_ESRLSORG_AQCHEM_KPP, RACMSORG_KPP, RACM_ESRLSORG_KPP, CBMZSORG, CBMZSORG_AQ,RACMSORG)
      print*,p_so4aj,"so4aj"
      print*,p_so4ai,"so4ai"
      print*,p_nh4aj,"nh4aj"

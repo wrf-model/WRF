@@ -52,14 +52,15 @@ C                           BYTES REQUIRED TO STORE ALL MESSAGES
 C                           INTERNALLY) WAS INCREASED FROM 16 MBYTES TO
 C                           50 MBYTES
 C 2005-11-29  J. ATOR    -- USE IUPBS01
+C 2009-06-26  J. ATOR    -- USE IOK2CPY
 C
 C USAGE:    CALL CPYMEM (LUNOT)
 C   INPUT ARGUMENT LIST:
 C     LUNOT    - INTEGER: FORTRAN LOGICAL UNIT NUMBER FOR BUFR FILE
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT     IUPBS01  MSGWRT   NEMTBA
-C                               STATUS
+C    THIS ROUTINE CALLS:        BORT     IOK2CPY  IUPBS01  MSGWRT
+C                               NEMTBA   STATUS
 C    THIS ROUTINE IS CALLED BY: None
 C                               Normally called only by application
 C                               programs.
@@ -72,7 +73,9 @@ C$$$
 
       INCLUDE 'bufrlib.prm'
 
-      COMMON /MSGMEM/ MUNIT,MLAST,MSGP(0:MAXMSG),MSGS(MAXMEM)
+      COMMON /MSGMEM/ MUNIT,MLAST,MSGP(0:MAXMSG),MSGS(MAXMEM),
+     .                MDX(MXDXW),IPDXM(MXDXM),LDXM,NDXM,LDXTS,NDXTS,
+     .                IFDXTS(MXDXTS),ICDXTS(MXDXTS),IPMSGS(MXDXTS)
       COMMON /MSGCWD/ NMSG(NFILES),NSUB(NFILES),MSUB(NFILES),
      .                INODE(NFILES),IDATE(NFILES)
       COMMON /BITBUF/ MAXBYT,IBIT,IBAY(MXMSGLD4),MBYT(NFILES),
@@ -107,9 +110,11 @@ C  MAKE SURE BOTH FILES HAVE THE SAME TABLES
 C  -----------------------------------------
 
       SUBSET = TAG(INODE(LIN))
-c  .... Given SUBSET, returns MTYP,MSTB,INOD
+c  .... Given SUBSET, returns MTYP,MSBT,INOD
       CALL NEMTBA(LOT,SUBSET,MTYP,MSBT,INOD)
-      IF(INODE(LIN).NE.INOD) GOTO 906
+      IF(INODE(LIN).NE.INOD) THEN
+        IF(IOK2CPY(LIN,LOT).NE.1) GOTO 906
+      ENDIF
 
 C  EVERYTHING OKAY, COPY A MESSAGE
 C  -------------------------------
@@ -124,7 +129,7 @@ C  -----------------------------------------------------------------
       NSUB (LOT) = MSUB(LIN)
       MSUB (LOT) = MSUB(LIN)
       IDATE(LOT) = IDATE(LIN)
-      INODE(LOT) = INODE(LIN)
+      INODE(LOT) = INOD
 
 C  EXITS
 C  -----

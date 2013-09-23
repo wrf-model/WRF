@@ -140,13 +140,13 @@ subroutine da_wrfvar_init2
 #ifdef VAR4D
       if ( var4d_lbc ) then
          call da_med_initialdata_input (head_grid, config_flags, 'fg02')
-         inquire(file=trim('ana02'), exist=ex)
-         if ( .not. ex ) then
-            write(unit=message(1),fmt='(a)') 'A template of ana02 should be copied from fg02. '
-            call da_message(message(1:1))
-            write(unit=message(1),fmt='(a)') 'ana02 does not exist '
-            call da_error(__FILE__,__LINE__,message(1:1))
-         end if
+!        inquire(file=trim('ana02'), exist=ex)
+!        if ( .not. ex ) then
+!           write(unit=message(1),fmt='(a)') 'A template of ana02 should be copied from fg02. '
+!           call da_message(message(1:1))
+!           write(unit=message(1),fmt='(a)') 'ana02 does not exist '
+!           call da_error(__FILE__,__LINE__,message(1:1))
+!        end if
          ALLOCATE(u6_2(head_grid%sm31:head_grid%em31,head_grid%sm32:head_grid%em32,head_grid%sm33:head_grid%em33))
          ALLOCATE(v6_2(head_grid%sm31:head_grid%em31,head_grid%sm32:head_grid%em32,head_grid%sm33:head_grid%em33))
          ALLOCATE(w6_2(head_grid%sm31:head_grid%em31,head_grid%sm32:head_grid%em32,head_grid%sm33:head_grid%em33))

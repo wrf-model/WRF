@@ -183,7 +183,7 @@
      &                                  ,SWCF, LWCF                     &
      &                                  ,PDSL,REXNSFC,SWNETDN           &
      &                                  ,TOT,TOTLWDN,TOTSWDN,TOTSWDNC   &
-     &                                  ,TSFC,XLAND,XLAT,XLON
+     &                                  ,TSFC,XLAND,XLAT,XLON, HT
 !
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: CLFR,DZ                &   !<--- Used only with physics (IKJ)
@@ -236,6 +236,7 @@
         T8W(I,KTS,J)=TSFC(I,J)
         P8W(I,KTS,J)=ETA1(KTS)*PDTOP+ETA2(KTS)*PDSL(I,J)+PT
         Z_PHY(I,KTS,J)=Z(I,J,KTS)
+        HT(I,J)=Z(I,J,KTS)
       ENDDO
       ENDDO
 !
@@ -359,6 +360,15 @@
      &                 ,ITIMESTEP=NTSD,DT=DT                            &
      &                 ,CU_RAD_FEEDBACK=config_flags%cu_rad_feedback    &
      &                 ,QC_ADJUST=GD_CLOUD,QI_ADJUST=GD_CLOUD2          &
+! WRF-Solar variables
+                       ,swint_opt=config_flags%swint_opt                &   
+     &       ,SWDDIR=grid%swddir,SWDDNI=grid%swddni,SWDDIF=grid%swddif     & ! jararias
+     &       ,Gx=grid%Gx,Bx=grid%Bx,gg=grid%gg,bb=grid%bb                  & ! for sza-interpolation
+     &       ,swdown_ref=grid%swdown_ref,swddir_ref=grid%swddir_ref        & !
+     &       ,coszen_ref=grid%coszen_ref                                   & 
+     &       ,coszen=grid%coszen                                   & 
+     &       ,hrang=grid%hrang                                   & 
+     &       ,ht=ht                                   & 
 #ifdef WRF_CHEM
      &                 ,AER_RA_FEEDBACK=config_flags%aer_ra_feedback    &
      &                 ,PM2_5_DRY=pm2_5_dry,PM2_5_WATER=pm2_5_water     &

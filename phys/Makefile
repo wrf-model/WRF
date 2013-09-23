@@ -40,6 +40,7 @@ MODULES = \
 	module_bl_qnsepbl09.o \
 	module_bl_acm.o \
 	module_bl_mynn.o \
+        module_bl_fogdes.o \
 	module_bl_gwdo.o \
 	module_bl_myjurb.o \
 	module_bl_boulac.o \
@@ -126,6 +127,7 @@ MODULES = \
 	module_sf_myjsfc.o \
 	module_sf_qnsesfc.o \
 	module_sf_mynn.o \
+        module_sf_fogdes.o \
 	module_sf_pxsfclay.o \
 	module_sf_temfsfclay.o \
 	module_sf_idealscmsfclay.o \

@@ -1680,7 +1680,8 @@ BENCH_END(small_step_finish_tim)
 !-----------------------------------------------------------------------
 ! first moisture
 
-     IF ((config_flags%moist_adv_opt /= ORIGINAL .and. config_flags%moist_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order)) THEN
+     IF ((config_flags%moist_adv_opt /= ORIGINAL .and. config_flags%moist_adv_opt /= WENO_SCALAR) .and. &
+         (rk_step == rk_order)) THEN
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -1741,7 +1742,8 @@ BENCH_END(small_step_finish_tim)
 
 ! scalars
 
-     IF ((config_flags%scalar_adv_opt /= ORIGINAL .and. config_flags%scalar_adv_opt /= WENO_SCALAR) .and. (rk_step == rk_order)) THEN
+     IF ((config_flags%scalar_adv_opt /= ORIGINAL .and. config_flags%scalar_adv_opt /= WENO_SCALAR) .and. &
+         (rk_step == rk_order)) THEN
 
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij )
@@ -2064,7 +2066,8 @@ BENCH_END(rk_scalar_tend_tim)
 
 BENCH_START(rlx_bdy_scalar_tim)
                IF( ( config_flags%specified .or. config_flags%nested ) .and. rk_step == 1 ) THEN 
-                 IF ( im .EQ. P_QV .OR. config_flags%nested ) THEN
+                 IF ( im .EQ. P_QV .OR. config_flags%nested .OR. &
+                    ( config_flags%specified .AND. config_flags%have_bcs_moist ) ) THEN
                    CALL relax_bdy_scalar ( moist_tend(ims,kms,jms,im),            & 
                                      moist(ims,kms,jms,im),  grid%mut,         &
                                      moist_bxs(jms,kms,1,im),moist_bxe(jms,kms,1,im), &
@@ -2127,7 +2130,7 @@ BENCH_START(update_scal_tim)
 BENCH_END(update_scal_tim)
 
 BENCH_START(flow_depbdy_tim)
-               IF( config_flags%specified ) THEN
+               IF( config_flags%specified .AND. ( .NOT. config_flags%have_bcs_moist ) ) THEN
                  IF(im .ne. P_QV)THEN
                    CALL flow_dep_bdy  (  moist(ims,kms,jms,im),                 &
                                 grid%ru_m, grid%rv_m, config_flags,             &
@@ -2539,7 +2542,9 @@ BENCH_END(tracer_adv_tim)
                                  grid%j_start(ij), grid%j_end(ij), &
                                  k_start    , k_end               )
 
-           IF( config_flags%nested .and. (rk_step == 1) ) THEN
+           IF( rk_step == 1 ) THEN
+             IF ( config_flags%nested .OR. &
+                ( config_flags%specified .AND. config_flags%have_bcs_scalar ) ) THEN
 
                CALL relax_bdy_scalar ( scalar_tend(ims,kms,jms,is),                            &
                                        scalar(ims,kms,jms,is),  grid%mut,                      &
@@ -2571,7 +2576,8 @@ BENCH_END(tracer_adv_tim)
                                        grid%j_start(ij), grid%j_end(ij),                       &
                                        k_start, k_end                                          )
 
-           ENDIF ! b.c test for chem nested boundary condition
+             ENDIF
+           ENDIF ! b.c test for scalars
 
          ENDDO scalar_tile_loop_1
          !$OMP END PARALLEL DO
@@ -2600,7 +2606,7 @@ BENCH_END(tracer_adv_tim)
                                   jts=grid%j_start(ij), jte=grid%j_end(ij),               &
                                   kts=k_start    , kte=k_end                              )
 
-           IF( config_flags%specified ) THEN
+           IF ( config_flags%specified .AND. ( .NOT. config_flags%have_bcs_scalar ) ) THEN
 
              IF(is .ne. P_QNN)THEN
                CALL flow_dep_bdy  ( scalar(ims,kms,jms,is),     &
@@ -4035,7 +4041,8 @@ BENCH_END(bc_2d_tim)
 
    IF (config_flags%output_diagnostics == 1) THEN
      IF ((config_flags%auxhist3_interval == 0 ) ) THEN
-        WRITE (wrf_err_message , * )"CLWRF: ERROR -- error -- ERROR -- error : NO 'auxhist3_interval' has been defined in 'namelist.input'"
+        WRITE (wrf_err_message , * ) &
+        "CLWRF: ERROR -- error -- ERROR -- error : NO 'auxhist3_interval' has been defined in 'namelist.input'"
         CALL wrf_error_fatal ( TRIM(wrf_err_message) )
      END IF
      CALL wrf_debug ( 200 , ' CLWRF: call diagnostic_calc' )

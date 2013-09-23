@@ -576,7 +576,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   F_QC=f_qc, F_QI=f_qi                          )
           END IF
        ELSE IF( progn==1 .AND. mp_physics/=LINSCHEME .AND. mp_physics/=MORR_TWO_MOMENT) THEN
-             call wrf_error_fatal("SETTINGS ERROR: Prognostic cloud droplet number can only be used with the mp_physics=LINSCHEME or MORRISON.")
+             call wrf_error_fatal( &
+             "SETTINGS ERROR: Prognostic cloud droplet number can only be used with the mp_physics=LINSCHEME or MORRISON.")
        END IF
        END IF
 
@@ -697,6 +698,10 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      W=w                                 &  !*
                     ,RAINNC=RAINNC                       &  !*
                     ,RAINNCV=RAINNCV                     &  !*
+                    ,SNOWNC=SNOWNC                       &  !*
+                    ,SNOWNCV=SNOWNCV                     &  !*
+                    ,GRAUPELNC=GRAUPELNC                 &  !*
+                    ,GRAUPELNCV=GRAUPELNCV               &  !*
                     ,SR=SR                               &  !* !hm
                     ,REFL_10CM=refl_10cm                 &  ! added for radar reflectivity
                     ,diagflag=diagflag                   &  ! added for radar reflectivity
@@ -1431,6 +1436,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   PRESENT( dgnumwet4D ) .AND.                           &
 #endif
                   PRESENT( qni_curr   ) .AND. PRESENT( RAINNC      ) ) THEN
+#ifdef WRF_CHEM
+                qv_b4mp(its:ite,kts:kte,jts:jte) = qv_curr(its:ite,kts:kte,jts:jte)
+                qc_b4mp(its:ite,kts:kte,jts:jte) = qc_curr(its:ite,kts:kte,jts:jte)
+                qi_b4mp(its:ite,kts:kte,jts:jte) = qi_curr(its:ite,kts:kte,jts:jte)
+                qs_b4mp(its:ite,kts:kte,jts:jte) = qs_curr(its:ite,kts:kte,jts:jte)
+#endif
                   
                 CALL CAMMGMP(ITIMESTEP=itimestep,DT=dt,P8W=p8w_hyd,P_HYD=p_hyd    &
                      ,T_PHY=t_phy,PI_PHY=pi_phy,Z_AT_W=z_at_w,QFX=qfx             &

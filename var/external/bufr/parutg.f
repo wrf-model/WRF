@@ -9,12 +9,12 @@ C ABSTRACT: THIS SUBROUTINE PARSES A USER-SPECIFIED TAG (MNEMONIC)
 C   (UTG) THAT REPRESENTS A VALUE EITHER BEING DECODED FROM A BUFR FILE
 C   (IF IT IS BEING READ) OR ENCODED INTO A BUFR FILE (IF IT IS BEING
 C   WRITTEN).  THIS SUBROUTINE FIRST CHECKS TO SEE IF THE TAG CONTAINS
-C   A CONDITION CHARACTER ('=', '!', '<', '>' OR '^').  IF IT DOES NOT,
-C   NOTHING HAPPENS AT THIS POINT.  IF IT DOES, THEN THE TYPE OF
+C   A CONDITION CHARACTER ('=', '!', '<', '>', '^' OR '#').  IF IT DOES
+C   NOT, NOTHING HAPPENS AT THIS POINT.  IF IT DOES, THEN THE TYPE OF
 C   CONDITION CHARACTER IS NOTED AND THE TAG IS STRIPPED OF ALL
 C   CHARACTERS AT AND BEYOND THE CONDITION CHARACTER.  IN EITHER EVENT,
 C   THE RESULTANT TAG IS CHECKED AGAINST THOSE IN THE INTERNAL JUMP/
-C   LINK SUBSET TABLE (IN COMMON BLOCK /TABLES/).  IF FOUND, THE NODE
+C   LINK SUBSET TABLE (IN COMMON BLOCK /BTABLES/).  IF FOUND, THE NODE
 C   ASSOCIATED WITH THE TAG IS RETURNED (AND IT IS EITHER A "CONDITION"
 C   NODE OR A "STORE" NODE DEPENDING OF THE PRESENCE OR ABSENCE OF A
 C   CONDITION CHARACTER IN UTG).  OTHERWISE THE NODE IS RETURNED AS
@@ -35,11 +35,25 @@ C   THEN THE USR ARRAY NOW CONTAINS IRET LEVELS OF DATA (UP TO A MAXIMUM
 C   OF 50!) WHERE THE VALUE OF PRLC IS/WAS LESS THAN 50000, ALONG WITH
 C   THE CORRESPONDING VALUES FOR TMDB, WDIR AND WSPD AT THOSE LEVELS. 
 C
+C   AS ANOTHER EXAMPLE, CONSIDER THE FOLLOWING EXAMPLE OF A CALL TO
+C   READLC FOR A LONG CHARACTER STRING:
+C
+C      CHARACTER*200 LCHR
+C             ....
+C             ....
+C      CALL READLC(LUNIN,LCHR,'NUMID#3')
+C
+C   ASSUMING THAT LUNIN POINTS TO A BUFR FILE OPEN FOR INPUT (READING),
+C   THEN THE LCHR STRING NOW CONTAINS THE VALUE CORRESPONDING TO THE 
+C   THIRD OCCURRENCE OF NUMID WITHIN THE CURRENT SUBSET.
+C
 C   VALID CONDITION CODES INCLUDE:
 C	'<' - LESS THAN
 C       '>' - GREATER THAN
 C       '=' - EQUAL TO
 C       '!' - NOT EQUAL TO
+C       '#' - ORDINAL IDENTIFIER FOR A PARTICULAR OCCURRENCE OF A LONG
+C             CHARACTER STRING
 C
 C PROGRAM HISTORY LOG:
 C 1994-01-06  J. WOOLLEN -- ORIGINAL AUTHOR
@@ -68,6 +82,7 @@ C                           BORT
 C 2005-04-22  J. ATOR    -- HANDLED SITUATION WHERE INPUT TAG CONTAINS
 C                           1-BIT DELAYED REPLICATION, AND IMPROVED
 C                           DOCUMENTATION
+C 2009-03-23  J. ATOR    -- ADDED '#' CONDITION CODE
 C
 C USAGE:    CALL PARUTG (LUN, IO, UTG, NOD, KON, VAL)
 C   INPUT ARGUMENT LIST:
@@ -76,7 +91,7 @@ C     IO       - INTEGER: STATUS INDICATOR FOR BUFR FILE ASSOCIATED
 C                WITH LUN:
 C                       0 = input file
 C                       1 = output file
-C     UTG      CHARACTER*20: USER-SUPPLIED TAG REPRESENTING A VALUE TO
+C     UTG      CHARACTER*(*): USER-SUPPLIED TAG REPRESENTING A VALUE TO
 C              BE ENCODED/DECODED TO/FROM BUFR FILE
 C
 C   OUTPUT ARGUMENT LIST:
@@ -92,7 +107,8 @@ C                      2 = character '!' found
 C                      3 = character '<' found
 C                      4 = character '>' found
 C                      5 = character '^' found
-C                      (1-5 means NOD is a condition node, and
+C                      6 = character '#' found
+C                      (1-6 means NOD is a condition node, and
 C                       specifically 5 is a "bump" node)
 C     VAL      - REAL: CONDITION VALUE ASSOCIATED WITH CONDITION
 C                CHARACTER FOUND IN UTG
@@ -100,7 +116,7 @@ C                      0 = UTG does not have a condition character
 C
 C REMARKS:
 C    THIS ROUTINE CALLS:        BORT     BORT2    STRNUM
-C    THIS ROUTINE IS CALLED BY: PARUSR
+C    THIS ROUTINE IS CALLED BY: PARUSR   READLC   WRITLC
 C                               Normally not called by any application
 C                               programs.
 C
@@ -121,18 +137,18 @@ C$$$
      .                ISEQ(MAXJL,2),JSEQ(MAXJL)
       COMMON /UTGPRM/ PICKY
 
+      CHARACTER*(*) UTG
       CHARACTER*128 BORT_STR1,BORT_STR2
-      CHARACTER*20  UTG,ATAG
+      CHARACTER*20  ATAG
       CHARACTER*10  TAG
       CHARACTER*3   TYP,ATYP,BTYP
-      CHARACTER*1   COND(5)
+      CHARACTER*1   COND(6)
       DIMENSION     BTYP(8),IOK(8)
       LOGICAL       PICKY
 
       DATA NCHK   / 8/
       DATA BTYP   /'SUB','SEQ','REP','RPC','RPS','DRB','DRP','DRS'/
       DATA IOK    /  -1 ,  -1 ,  -1 ,  -1 ,  -1 ,   0 ,   0 ,   0 /
-      DATA LTG    /20/
 
 C----------------------------------------------------------------------
 C     For now, set PICKY (see below) to always be .FALSE.
@@ -142,7 +158,8 @@ C     For now, set PICKY (see below) to always be .FALSE.
       COND(3) = '<'
       COND(4) = '>'
       COND(5) = '^'
-      NCOND   = 5
+      COND(6) = '#'
+      NCOND   = 6
 C----------------------------------------------------------------------
 
       ATAG  = ' '
@@ -150,6 +167,7 @@ C----------------------------------------------------------------------
       KON   = 0
       NOD   = 0
       VAL   = 0
+      LTG   = MIN(20,LEN(UTG))
 
 C  PARSE UTG, SAVING INTO ATAG ONLY CHARACTERS PRIOR TO CONDITION CHAR.
 C  --------------------------------------------------------------------
@@ -219,7 +237,7 @@ c  .... Cond. char "^" must be assoc. with a delayed replication
 c       sequence (this is a "bump" node) (Note: This is obsolete but
 c       remains for "old" programs using the BUFR ARCHIVE LIBRARY)
          IF(TYP(NOD-1).NE.'DRP' .AND. TYP(NOD-1).NE.'DRS') GOTO 901
-      ELSE
+      ELSEIF(KON.NE.6) THEN
 C        Allow reading (but not writing) of delayed replication factors.
          ATYP = TYP(NOD)
          DO I=1,NCHK

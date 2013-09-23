@@ -429,6 +429,21 @@ state  integer  has_reqi   -    misc     1    -     -       "has_reqi"        "F
 state  integer  has_reqs   -    misc     1    -     -       "has_reqs"        "Flag for has effective radius of snow"           ""
 
 #
+# added WRF-Solar
+state   real    swddir       ij     misc         1         -     rhd    "SWDDIR"     "Shortwave surface downward direct irradiance" "W/m^2" ""
+state   real    swddni       ij     misc         1         -     rhd    "SWDDNI"     "Shortwave surface downward direct normal irradiance" "W/m^2" ""
+state   real    swddif       ij     misc         1         -     rhd    "SWDDIF"     "Shortwave surface downward diffuse irradiance" "W/m^2" ""
+state   real    Gx           ij     misc         1         -     rd     "Gx" "" ""
+state   real    Bx           ij     misc         1         -     rd     "Bx" "" ""
+state   real    gg           ij     misc         1         -     rd     "gg" "" ""
+state   real    bb           ij     misc         1         -     rd     "bb" "" ""
+state   real    coszen_ref   ij     misc         1         -     -      "coszen_ref" "" ""
+state   real    coszen       ij     misc         1         -     -      "coszen " "" ""
+state   real    hrang        ij     misc         1         -     -      "hrang" "" ""
+state   real    swdown_ref   ij     misc         1         -     -      "swdown_ref" "" ""
+state   real    swddir_ref   ij     misc         1         -     -      "swddir_ref" "" ""
+rconfig   integer swint_opt               namelist,physics      1             0       -      "swint_opt"    "interpolation option for sw radiation"      ""
+
 # module_CLDWTR.F
 #
 state  real   cwm       ijkb   dyn_nmm   1    -     rhu=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)  "CWM"       "Total condensate"                     "kg kg-1"
@@ -1216,7 +1231,7 @@ rconfig   integer num_soil_cat            namelist,physics	1            16      
 rconfig   integer topo_wind               namelist,physics      max_domains    0       -     "topo_wind"  "2: Use Mass sfc drag scheme, 1: improve effects topography over surface wind, 0:not" ""
 rconfig   integer mp_zero_out             namelist,physics	1             0       -      "mp_zero_out"  "microphysics fields set to zero  0=no action taken, 1=all fields but Qv, 2=all fields including Qv"      "flag"
 rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8      -      "mp_zero_out_thresh"  "minimum threshold for non-Qv moist fields, below are set to zero"  "kg/kg"
-rconfig   real    seaice_threshold        namelist,physics      1            271       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
+rconfig   real    seaice_threshold        namelist,physics      1            100       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
 rconfig   integer fractional_seaice       namelist,physics      1            0        -     "fractional_seiace" "Fractional sea-ice option"
 rconfig   integer seaice_albedo_opt       namelist,physics      1            0        -     "seaice_albedo_opt" "Method for setting albedo over sea ice"
 rconfig   real    seaice_albedo_default   namelist,physics      1           0.65      -     "seaice_albedo_default" "Default value for sea-ice over albedo with seaice_albeo_opt=0"

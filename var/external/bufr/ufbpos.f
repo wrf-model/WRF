@@ -25,6 +25,8 @@ C 2005-03-04  D. KEYSER  -- ADDED TO BUFR ARCHIVE LIBRARY; ADDED
 C                           DOCUMENTATION
 C 2005-11-29  J. ATOR    -- USE IUPBS01 AND RDMSGW
 C 2006-04-14  J. ATOR    -- REMOVE UNNECESSARY MOIN INITIALIZATION
+C 2009-03-23  J. ATOR    -- MODIFIED TO HANDLE EMBEDDED BUFR TABLE
+C                           (DICTIONARY) MESSAGES
 C
 C USAGE:    CALL UFBPOS( LUNIT, IREC, ISUB, SUBSET, JDATE )
 C   INPUT ARGUMENT LIST:
@@ -43,9 +45,8 @@ C                MESSAGE BEING READ, IN FORMAT OF EITHER YYMMDDHH OR
 C                YYYYMMDDHH, DEPENDING ON DATELEN() VALUE
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT     IUPBS01  NMSUB    RDMSGW
-C                               READMG   READSB   STATUS   UFBCNT
-C                               UPB
+C    THIS ROUTINE CALLS:        BORT     CEWIND   NMSUB    READMG
+C                               READSB   STATUS   UFBCNT   UPB
 C    THIS ROUTINE IS CALLED BY: None
 C                               Normally called only by application
 C                               programs.
@@ -65,7 +66,6 @@ C$$$
 
       CHARACTER*128 BORT_STR
       CHARACTER*8   SUBSET
-      DIMENSION     MOIN(MXMSGLD4)
  
 C-----------------------------------------------------------------------
 C----------------------------------------------------------------------
@@ -85,23 +85,11 @@ C  ----------------------------------------
 
       CALL UFBCNT(LUNIT,JREC,JSUB)
  
-C  POSSIBLY REWIND AND POSITION AFTER THE DICTIONARY
-C   (IF REQUESTED POINTERS ARE BEHIND CURRENT POINTERS)
-C  ----------------------------------------------------
+C  REWIND FILE IF REQUESTED POINTERS ARE BEHIND CURRENT POINTERS
+C  -------------------------------------------------------------
  
       IF(IREC.LT.JREC .OR. (IREC.EQ.JREC.AND.ISUB.LT.JSUB)) THEN
-         IDEX = 0
-         MSGT = 11
-         REWIND LUNIT
-         DO WHILE (MSGT.EQ.11)
-            CALL RDMSGW(LUNIT,MOIN,IER)
-            MSGT = IUPBS01(MOIN,'MTYP')
-            IDEX = IDEX+1
-         ENDDO
-         REWIND LUNIT
-         DO NDX=1,IDEX-1
-            CALL RDMSGW(LUNIT,MOIN,IER)
-         ENDDO
+         CALL CEWIND(LUN)
          NMSG(LUN) = 0
          NSUB(LUN) = 0
          CALL UFBCNT(LUNIT,JREC,JSUB)
@@ -112,7 +100,7 @@ C  ----------------------------------------------
 
       DO WHILE (IREC.GT.JREC)
          CALL READMG(LUNIT,SUBSET,JDATE,IRET)
-         IF(IRET.NE.0) GOTO 904
+         IF(IRET.LT.0) GOTO 904
          CALL UFBCNT(LUNIT,JREC,JSUB)
       ENDDO
 

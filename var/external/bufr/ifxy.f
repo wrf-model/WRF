@@ -43,8 +43,9 @@ C
 C
 C    THIS ROUTINE CALLS:        None
 C    THIS ROUTINE IS CALLED BY: BFRINI   DXINIT   GETNTBE  IDN30
-C                               NEMTAB   NEMTBB   NEMTBD   RDBFDX
-C                               RDUSDX   RESTD    SNTBDE   UFBQCP
+C                               NEMTAB   NEMTBB   NEMTBD   NUMTBD
+C                               RESTD    SNTBDE   STBFDX   STNTBI
+C                               STSEQ    UFBQCP
 C                               Normally not called by any application
 C                               programs but it could be.
 C

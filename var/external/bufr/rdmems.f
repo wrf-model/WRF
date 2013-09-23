@@ -43,6 +43,7 @@ C 2004-11-15  D. KEYSER  -- PARAMETER MAXMEM (THE MAXIMUM NUMBER OF
 C                           BYTES REQUIRED TO STORE ALL MESSAGES
 C                           INTERNALLY) WAS INCREASED FROM 16 MBYTES TO
 C                           50 MBYTES
+C 2009-04-21  J. ATOR    -- USE ERRWRT
 C
 C USAGE:    CALL RDMEMS (ISUB, IRET)
 C   INPUT ARGUMENT LIST:
@@ -55,11 +56,9 @@ C                       0 = normal return
 C                      -1 = ISUB is greater than the number of subsets
 C                           in memory
 C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
-C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT     IUPB     READSB   STATUS
+C    THIS ROUTINE CALLS:        BORT     ERRWRT   IUPB     READSB
+C                               STATUS
 C    THIS ROUTINE IS CALLED BY: UFBMMS   UFBMNS   UFBRMS
 C                               Normally not called by any application
 C                               programs.
@@ -72,9 +71,11 @@ C$$$
 
       INCLUDE 'bufrlib.prm'
 
-      CHARACTER*128 BORT_STR
+      CHARACTER*128 BORT_STR,ERRSTR
 
-      COMMON /MSGMEM/ MUNIT,MLAST,MSGP(0:MAXMSG),MSGS(MAXMEM)
+      COMMON /MSGMEM/ MUNIT,MLAST,MSGP(0:MAXMSG),MSGS(MAXMEM),
+     .                MDX(MXDXW),IPDXM(MXDXM),LDXM,NDXM,LDXTS,NDXTS,
+     .                IFDXTS(MXDXTS),ICDXTS(MXDXTS),IPMSGS(MXDXTS)
       COMMON /MSGCWD/ NMSG(NFILES),NSUB(NFILES),MSUB(NFILES),
      .                INODE(NFILES),IDATE(NFILES)
       COMMON /BITBUF/ MAXBYT,IBIT,IBAY(MXMSGLD4),MBYT(NFILES),
@@ -96,13 +97,14 @@ C  -----------------------------------------
 
       IF(ISUB.GT.MSUB(LUN)) THEN
          IF(IPRT.GE.0) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-         PRINT*, 'BUFRLIB: RDMEMS - REQ. SUBSET NO. {',ISUB,' - FIRST ',
-     .    '(INPUT) ARGUMENT} > NO. OF SUBSETS IN MEMORY MESSAGE (',
-     .    MSUB(LUN),'), RETURN WITH IRET = -1'
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+           WRITE ( UNIT=ERRSTR, FMT='(A,I5,A,A,I5,A)' )
+     .      'BUFRLIB: RDMEMS - REQ. SUBSET #', ISUB, ' (= 1st INPUT ',
+     .      'ARG.) > # OF SUBSETS IN MEMORY MESSAGE (', MSUB(LUN), ')'
+           CALL ERRWRT(ERRSTR)
+           CALL ERRWRT('RETURN WITH IRET = -1')
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
          ENDIF
          IRET = -1
          GOTO 100

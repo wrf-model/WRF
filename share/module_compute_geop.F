@@ -41,7 +41,7 @@ CONTAINS
    do j = jts, min(jde-1,jte)
    do i = its, min(ide-1,ite)
 
-      do k=kds,kde
+      do k=kds,kde-1
         pressure(k) = p(i,k,j) + pb(i,k,j)
         geopotential(k) = 0.5*( ph(i,k  ,j)+phb(i,k  ,j)  &
                                +ph(i,k+1,j)+phb(i,k+1,j) )

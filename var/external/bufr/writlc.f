@@ -9,7 +9,9 @@ C ABSTRACT: THIS SUBROUTINE PACKS A CHARACTER DATA ELEMENT ASSOCIATED
 C   WITH A PARTICULAR SUBSET MNEMONIC FROM THE INTERNAL MESSAGE BUFFER
 C   (ARRAY MBAY IN COMMON BLOCK /BITBUF/).  IT IS DESIGNED TO BE USED
 C   TO STORE CHARACTER ELEMENTS GREATER THAN THE USUAL LENGTH OF EIGHT
-C   BYTES.
+C   BYTES.  NOTE THAT SUBROUTINE WRITSB OR WRITSA MUST HAVE ALREADY
+C   BEEN CALLED TO STORE ALL OTHER ELEMENTS OF THE SUBSET BEFORE THIS
+C   SUBROUTINE CAN BE CALLED TO FILL IN ANY LONG CHARACTER STRINGS.
 C
 C PROGRAM HISTORY LOG:
 C 2003-11-04  J. WOOLLEN -- ORIGINAL AUTHOR
@@ -21,19 +23,26 @@ C 2004-08-09  J. ATOR    -- MAXIMUM MESSAGE LENGTH INCREASED FROM
 C                           20,000 TO 50,000 BYTES
 C 2005-11-29  J. ATOR    -- USE GETLENS
 C 2007-01-19  J. ATOR    -- REPLACED CALL TO PARSEQ WITH CALL TO PARSTR
+C 2009-03-23  J. ATOR    -- ADDED '#' OPTION FOR MORE THAN ONE
+C                           OCCURRENCE OF STR 
+c 2009-08-11  J. WOOLLEN -- ADDED COMMON COMPRS ALONG WITH LOGIC TO 
+c                           WRITE LONG STRINGS INTO COMPRESSED SUBSETS
+C 2012-12-07  J. ATOR    -- ALLOW STR MNEMONIC LENGTH OF UP TO 14 CHARS
+C                           WHEN USED WITH '#' OCCURRENCE CODE
 C
 C USAGE:    CALL WRITLC (LUNIT, CHR, STR)
 C   INPUT ARGUMENT LIST:
 C     LUNIT    - INTEGER: FORTRAN LOGICAL UNIT NUMBER FOR BUFR FILE
 C     CHR      - CHARACTER*(*): UNPACKED CHARACTER STRING (I.E.,
 C                CHARACTER DATA ELEMENT GREATER THAN EIGHT BYTES)
-C     STR      - CHARACTER*(*): STRING (I.E., MNEMONIC)
+C     STR      - CHARACTER*(*): MNEMONIC ASSOCIATED WITH STRING IN CHR
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT     GETLENS  PARSTR   PKC
-C                               STATUS   UPB      UPBB     USRTPL
-C    THIS ROUTINE IS CALLED BY: None (currently)
-C                               Normally not called by any application
+C    THIS ROUTINE CALLS:        BORT     GETLENS  IUPBS3   PARSTR
+C                               PARUTG   PKC      STATUS   UPB
+C                               UPBB     USRTPL
+C    THIS ROUTINE IS CALLED BY: None
+C                               Normally called only by application
 C                               programs.
 C
 C ATTRIBUTES:
@@ -53,16 +62,18 @@ C$$$
      .                ISEQ(MAXJL,2),JSEQ(MAXJL)
       COMMON /MSGCWD/ NMSG(NFILES),NSUB(NFILES),MSUB(NFILES),
      .                INODE(NFILES),IDATE(NFILES)
-      COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
+      COMMON /USRINT/ NVAL(NFILES),INV(MAXSS,NFILES),VAL(MAXSS,NFILES)
+      COMMON /COMPRS/ NCOL,MATX(MXCDV,MXCSB),CATX(MXCDV,MXCSB)
 
       CHARACTER*(*) CHR,STR
       CHARACTER*128 BORT_STR
-      CHARACTER*10  TAG,TGS(100)
-      CHARACTER*8   CTAG
+      CHARACTER*(MXLCC)  CATX        
+      CHARACTER*10  TAG,CTAG
+      CHARACTER*14  TGS(10)
       CHARACTER*3   TYP
       REAL*8        VAL
 
-      DATA MAXTG /100/
+      DATA MAXTG /10/
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
@@ -80,23 +91,62 @@ C  ------------------------------------------------------------------
 
       CALL PARSTR(STR,TGS,MAXTG,NTG,' ',.TRUE.)
       IF(NTG.GT.1) GOTO 903
-      CTAG = TGS(1)
 
-C  CHECK THAT THE INPUT TAG IS A CHARACTER STRING
-C  ----------------------------------------------
+C     Check if a specific occurrence of the input string was requested;
+C     if not, then the default is to write the first occurrence.
 
-      INOD = INODE(LUN)
-      DO NOD=INOD,ISC(INOD)
-      IF(CTAG.EQ.TAG(NOD)) GOTO 1
-      ENDDO
-      GOTO 904
-1     IF(TYP(NOD).NE.'CHR') GOTO 905
+      CALL PARUTG(LUN,1,TGS(1),NNOD,KON,ROID)
+      IF(KON.EQ.6) THEN
+         IOID=NINT(ROID)
+         IF(IOID.LE.0) IOID = 1
+         CTAG = ' '
+         II = 1
+         DO WHILE((II.LE.10).AND.(TGS(1)(II:II).NE.'#'))
+            CTAG(II:II)=TGS(1)(II:II)
+            II = II + 1
+         ENDDO
+      ELSE
+         IOID = 1
+         CTAG = TGS(1)(1:10)
+      ENDIF
 
-C  LOCATE THE BEGINNING OF THE DATA IN SECTION 4 (MBYTE)
-C  -----------------------------------------------------
+C  USE THIS LEG FOR STRINGING COMPRESSED DATA (UP TO MXLCC CHARACTERS)
+C  ----------------------------------------------------------------
+
+      IF(IUPBS3(MBAY(1,LUN),'ICMP').GT.0) THEN       
+         N = 1
+         ITAGCT = 0
+         CALL USRTPL(LUN,N,N)
+         DO WHILE (N+1.LE.NVAL(LUN))
+            N = N+1
+            NODE = INV(N,LUN)
+            IF(ITP(NODE).EQ.1) THEN
+               CALL USRTPL(LUN,N,MATX(N,NCOL))
+            ELSEIF(CTAG.EQ.TAG(NODE)) THEN
+               ITAGCT = ITAGCT + 1
+               IF(ITAGCT.EQ.IOID) THEN 
+                  IF(ITP(NODE).NE.3) GOTO 904
+                  CATX(N,NCOL)=' '
+C                 --------------------------------------------------
+C                 Note: the following stmt enforces a limit of MXLCC 
+C                 characters per long character string when writing
+C                 compressed messages.  This limit keeps the static
+C                 array CATX to a reasonable dimensioned size. 
+C                 --------------------------------------------------
+                  NCHR=MIN(MXLCC,IBT(NODE)/8)
+                  CATX(N,NCOL)=CHR(1:NCHR)
+                  CALL USRTPL(LUN,1,1)
+                  GOTO 100
+               ENDIF
+            ENDIF
+         ENDDO
+         GOTO 906
+      ENDIF
+
+C  OTHERWISE LOCATE THE BEGINNING OF THE DATA (SECTION 4) IN THE MESSAGE
+C  ---------------------------------------------------------------------
 
       CALL GETLENS(MBAY(1,LUN),3,LEN0,LEN1,LEN2,LEN3,L4,L5)
-
       MBYTE = LEN0 + LEN1 + LEN2 + LEN3 + 4
       NSUBS = 1
 
@@ -110,16 +160,17 @@ C  ----------------------------------------------------
          NSUBS = NSUBS + 1
       ENDDO
 
-      IF(NSUBS.NE.NSUB(LUN)) GOTO 906
+      IF(NSUBS.NE.NSUB(LUN)) GOTO 905
 
-C  LOCATE THE STRING ELEMENT TO WRITE
-C  ----------------------------------
+C  LOCATE AND WRITE THE LONG CHARACTER STRING WITHIN THIS SUBSET
+C  -------------------------------------------------------------
 
+      ITAGCT = 0
       MBIT = MBYTE*8 + 16
       NBIT = 0
       N = 1
       CALL USRTPL(LUN,N,N)
-20    IF(N+1.LE.NVAL(LUN)) THEN
+      DO WHILE (N+1.LE.NVAL(LUN))
          N = N+1
          NODE = INV(N,LUN)
          MBIT = MBIT+NBIT
@@ -127,23 +178,22 @@ C  ----------------------------------
          IF(ITP(NODE).EQ.1) THEN
             CALL UPBB(IVAL,NBIT,MBIT,MBAY(1,LUN))
             CALL USRTPL(LUN,N,IVAL)
-            GO TO 20
-         ENDIF
-         IF(NOD.EQ.NODE) THEN
-            IF(ITP(NODE).EQ.3) THEN
-               NCHR = NBIT/8
-               IBIT = MBIT
-               DO N=1,NCHR
-               CALL PKC(' ',1,MBAY(1,LUN),IBIT)
-               ENDDO
-               CALL PKC(CHR,NCHR,MBAY(1,LUN),MBIT)
-               CALL USRTPL(LUN,1,1)
-               GOTO 100
+         ELSEIF(CTAG.EQ.TAG(NODE)) THEN
+            ITAGCT = ITAGCT + 1
+            IF(ITAGCT.EQ.IOID) THEN 
+              IF(ITP(NODE).NE.3) GOTO 904
+              NCHR = NBIT/8
+              IBIT = MBIT
+              DO J=1,NCHR
+                CALL PKC(' ',1,MBAY(1,LUN),IBIT)
+              ENDDO
+              CALL PKC(CHR,NCHR,MBAY(1,LUN),MBIT)
+              CALL USRTPL(LUN,1,1)
+              GOTO 100
             ENDIF
          ENDIF
-         GOTO 20
-      ENDIF
-      GOTO 907
+      ENDDO
+      GOTO 906
 
 C  EXITS
 C  -----
@@ -159,17 +209,14 @@ C  -----
      . ' ONE MNEMONIC IN THE INPUT STRING (",A,") (HERE THERE ARE",I4'//
      . ',")")') STR,NTG
       CALL BORT(BORT_STR)
-904   WRITE(BORT_STR,'("BUFRLIB: WRITLC - MNEMONIC ",A," NOT LOCATED '//
-     . 'IN REPORT SUBSET")') CTAG
+904   WRITE(BORT_STR,'("BUFRLIB: WRITLC - MNEMONIC ",A," DOES NOT '//
+     . 'REPRESENT A CHARACTER ELEMENT (TYP=",A,")")') TGS(1),TYP(NODE)
       CALL BORT(BORT_STR)
-905   WRITE(BORT_STR,'("BUFRLIB: WRITLC - MNEMONIC ",A," DOES NOT '//
-     . 'REPRESENT A CHARACTER ELEMENT (TYP=",A,")")') CTAG,TYP(NOD)
-      CALL BORT(BORT_STR)
-906   WRITE(BORT_STR,'("BUFRLIB: WRITLC - THE MOST RECENTLY WRITTEN '//
+905   WRITE(BORT_STR,'("BUFRLIB: WRITLC - THE MOST RECENTLY WRITTEN '//
      . ' SUBSET NO. (",I3,") IN MSG .NE. THE STORED VALUE FOR THE NO.'//
      . ' OF SUBSETS (",I3,") IN MSG")') NSUBS,NSUB(LUN)
       CALL BORT(BORT_STR)
-907   WRITE(BORT_STR,'("BUFRLB: WRITLC - UNABLE TO FIND ",A," IN '//
-     . 'SUBSET")') CTAG
+906   WRITE(BORT_STR,'("BUFRLB: WRITLC - UNABLE TO FIND ",A," IN '//
+     . 'SUBSET")') TGS(1)
       CALL BORT(BORT_STR)
       END

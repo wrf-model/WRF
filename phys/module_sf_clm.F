@@ -4319,7 +4319,10 @@ CONTAINS
       forc_txy_buf   = forc_txy(i,1,j)
       forc_uxy_buf   = forc_uxy(i,1,j)
       forc_vxy_buf   = forc_vxy(i,1,j)
-      forc_qxy_buf   = forc_qxy(i,1,j)
+ 
+! convert mixing raitio to specific humdity -- Jiming Jin 7/10/2013
+      forc_qxy_buf   = forc_qxy(i,1,j)/(1.0+forc_qxy(i,1,j))
+
       zgcmxy_buf     = zgcmxy(i,1,j)
       prec_buf       = prec(i,j)/dtt ! mm/s
       flwdsxy_buf    = flwdsxy(i,j)
@@ -38701,7 +38704,8 @@ contains
 
     found = .false.
     do c = lbc, ubc
-       if (abs(errsoi_col(c)) > 1.0e-7_r8 ) then
+   !    if (abs(errsoi_col(c)) > 1.0e-7_r8 ) then
+       if (abs(errsoi_col(c)) > 1.0e-2_r8 ) then
           found = .true.
           indexc = c
        end if
@@ -39109,7 +39113,7 @@ contains
 
        ! Soil evaporation resistance
        www     = (h2osoi_liq(c,1)/denh2o+h2osoi_ice(c,1)/denice)/dz(c,1)/watsat(c,1)
-       www     = min(max(www,0.0_r8),1._r8)
+    !mchen???   www     = min(max(www,0.0_r8),1._r8)
 
        !changed by K.Sakaguchi. Soilbeta is used for evaporation
        if (dqh(p) .gt. 0._r8) then   !dew  (beta is not applied, just like rsoil used to be)
@@ -58504,7 +58508,7 @@ end module initializeMod
 
         
        alswvisdir = alswvisdir + clm3%g%l%c%p%pps%albd(p,1)*wtp(p)
-       alswnirdif = alswnirdif + clm3%g%l%c%p%pps%albi(p,1)*wtp(p)
+       alswvisdif = alswvisdif + clm3%g%l%c%p%pps%albi(p,1)*wtp(p)
        alswnirdir = alswnirdir + clm3%g%l%c%p%pps%albd(p,2)*wtp(p)  !1=visible, 2=nir
        alswnirdif = alswnirdif + clm3%g%l%c%p%pps%albi(p,2)*wtp(p) 
 

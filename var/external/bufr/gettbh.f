@@ -33,8 +33,7 @@ C
 C REMARKS:
 C    THIS ROUTINE CALLS:        BORT     IGETNTBL PARSTR   VALX
 C    THIS ROUTINE IS CALLED BY: RDMTBB   RDMTBD
-C                               Normally called only by application
-C                               programs.
+C                               Also called by application programs.
 C
 C ATTRIBUTES:
 C   LANGUAGE: FORTRAN 77

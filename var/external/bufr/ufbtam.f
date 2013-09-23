@@ -58,6 +58,12 @@ C                           BYTES REQUIRED TO STORE ALL MESSAGES
 C                           INTERNALLY) WAS INCREASED FROM 16 MBYTES TO
 C                           50 MBYTES
 C 2007-01-19  J. ATOR    -- REPLACED CALL TO PARSEQ WITH CALL TO PARSTR
+C 2009-04-21  J. ATOR    -- USE ERRWRT
+C 2009-10-21  D. KEYSER  -- ADDED OPTION TO INPUT NEW MNEMONIC "ITBL"
+C                           IN ARGUMENT STR, RETURNS THE BUFR
+C                           DICTIONARY TABLE NUMBER ASSOCIATED WITH
+C                           EACH SUBSET IN INTERNAL MEMORY
+C 2012-03-02  J. ATOR    -- USE FUNCTION UPS
 C
 C USAGE:    CALL UFBTAM (TAB, I1, I2, IRET, STR)
 C   INPUT ARGUMENT LIST:
@@ -71,30 +77,30 @@ C                DIMENSION OF TAB
 C                  - THERE ARE THREE "GENERIC" MNEMONICS NOT RELATED
 C                     TO TABLE B, THESE RETURN THE FOLLOWING
 C                     INFORMATION IN CORRESPONDING TAB LOCATION:
-C                     'NUL'  WHICH ALWAYS RETURNS MISSING (10E10)
-C                     'IREC' WHICH ALWAYS RETURNS THE CURRENT BUFR
-C                            MESSAGE (RECORD) NUMBER IN WHICH THIS
-C                            SUBSET RESIDES
-C                     'ISUB' WHICH ALWAYS RETURNS THE CURRENT SUBSET
-C                            NUMBER OF THIS SUBSET WITHIN THE BUFR
-C                            MESSAGE (RECORD) NUMBER 'IREC'
+C                     'NUL'  WHICH ALWAYS RETURNS BMISS ("MISSING")
+C                     'IREC' WHICH ALWAYS RETURNS THE BUFR MESSAGE
+C                            (RECORD) NUMBER IN WHICH EACH SUBSET IN
+C                            INTERNAL MEMORY RESIDES
+C                     'ISUB' WHICH ALWAYS RETURNS THE LOCATION WITHIN
+C                            MESSAGE "IREC" (I.E., THE SUBSET NUMBER)
+C                            FOR EACH SUBSET IN INTERNAL MEMORY
+C                     'ITBL' WHICH ALWAYS RETURNS THE BUFR DICTIONARY
+C                            TABLE NUMBER ASSOCIATED WITH EACH SUBSET
+C                            IN INTERNAL MEMORY
 C
 C   OUTPUT ARGUMENT LIST:
 C     TAB      - REAL*8: (I1,I2) STARTING ADDRESS OF DATA VALUES READ
-C                FROM BUFR FILE
-C     IRET     - INTEGER: NUMBER OF DATA SUBSETS IN BUFR FILE (MUST BE
-C                NO LARGER THAN I2)
-C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
+C                FROM INTERNAL MEMORY
+C     IRET     - INTEGER: NUMBER OF DATA SUBSETS IN INTERNAL MEMORY
+C                (MUST BE NO LARGER THAN I2)
 C
 C REMARKS:
 C    NOTE THAT UFBMEM IS CALLED PRIOR TO THIS TO STORE THE BUFR
 C    MESSAGES INTO INTERNAL MEMORY.
 C
-C    THIS ROUTINE CALLS:        BORT     NMSUB    PARSTR   RDMEMM
-C                               STATUS   STRING   UPB      UPBB
-C                               UPC      USRTPL
+C    THIS ROUTINE CALLS:        BORT     ERRWRT   NMSUB    PARSTR
+C                               RDMEMM   STATUS   STRING   UPB
+C                               UPBB     UPC      UPS      USRTPL
 C    THIS ROUTINE IS CALLED BY: None
 C                               Normally called only by application
 C                               programs.
@@ -107,12 +113,14 @@ C$$$
 
       INCLUDE 'bufrlib.prm'
 
-      COMMON /MSGMEM/ MUNIT,MLAST,MSGP(0:MAXMSG),MSGS(MAXMEM)
+      COMMON /MSGMEM/ MUNIT,MLAST,MSGP(0:MAXMSG),MSGS(MAXMEM),
+     .                MDX(MXDXW),IPDXM(MXDXM),LDXM,NDXM,LDXTS,NDXTS,
+     .                IFDXTS(MXDXTS),ICDXTS(MXDXTS),IPMSGS(MXDXTS)
       COMMON /MSGCWD/ NMSG(NFILES),NSUB(NFILES),MSUB(NFILES),
      .                INODE(NFILES),IDATE(NFILES)
       COMMON /BITBUF/ MAXBYT,IBIT,IBAY(MXMSGLD4),MBYT(NFILES),
      .                MBAY(MXMSGLD4,NFILES)
-      COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
+      COMMON /USRINT/ NVAL(NFILES),INV(MAXSS,NFILES),VAL(MAXSS,NFILES)
       COMMON /USRSTR/ NNOD,NCON,NODS(20),NODC(10),VALS(10),KONS(10)
       COMMON /BTABLES/ MAXTAB,NTAB,TAG(MAXJL),TYP(MAXJL),KNT(MAXJL),
      .                JUMP(MAXJL),LINK(MAXJL),JMPB(MAXJL),
@@ -122,19 +130,17 @@ C$$$
       COMMON /QUIET / IPRT
 
       CHARACTER*(*) STR
-      CHARACTER*128 BORT_STR
+      CHARACTER*128 BORT_STR,ERRSTR
       CHARACTER*10  TAG,TGS(100)
       CHARACTER*8   SUBSET,CVAL
       CHARACTER*3   TYP
       EQUIVALENCE   (CVAL,RVAL)
-      REAL*8        TAB(I1,I2),VAL,RVAL,UPS,TEN
+      REAL*8        TAB(I1,I2),VAL,RVAL,UPS
 
       DATA MAXTG /100/
-      DATA TEN   /10/
 
 C-----------------------------------------------------------------------
       MPS(NODE) = 2**(IBT(NODE))-1
-      UPS(NODE) = (IVAL+IRF(NODE))*TEN**(-ISC(NODE))
 C-----------------------------------------------------------------------
 
       IRET = 0
@@ -153,9 +159,11 @@ C  --------------------------------
       CALL PARSTR(STR,TGS,MAXTG,NTG,' ',.TRUE.)
       IREC = 0
       ISUB = 0
+      ITBL = 0
       DO I=1,NTG
       IF(TGS(I).EQ.'IREC') IREC = I
       IF(TGS(I).EQ.'ISUB') ISUB = I
+      IF(TGS(I).EQ.'ITBL') ITBL = I
       ENDDO
 
 C  READ A MESSAGE AND PARSE A STRING
@@ -165,11 +173,12 @@ C  ---------------------------------
 
       DO IMSG=1,MSGP(0)
       CALL RDMEMM(IMSG,SUBSET,JDATE,MRET)
-      IF(MRET.NE.0) GOTO 900
+      IF(MRET.LT.0) GOTO 900
 
       CALL STRING(STR,LUN,I1,0)
       IF(IREC.GT.0) NODS(IREC) = 0
       IF(ISUB.GT.0) NODS(ISUB) = 0
+      IF(ITBL.GT.0) NODS(ITBL) = 0
 
 C  PROCESS ALL THE SUBSETS IN THE MEMORY MESSAGE
 C  ---------------------------------------------
@@ -203,7 +212,7 @@ C  ---------------------------------------------
                   TAB(I,IRET) = IVAL
                ELSEIF(ITP(NODE).EQ.2) THEN
                   CALL UPBB(IVAL,NBIT,MBIT,MBAY(1,LUN))
-                  IF(IVAL.LT.MPS(NODE)) TAB(I,IRET) = UPS(NODE)
+                  IF(IVAL.LT.MPS(NODE)) TAB(I,IRET) = UPS(IVAL,NODE)
                ELSEIF(ITP(NODE).EQ.3) THEN
                   CVAL = ' '
                   KBIT = MBIT
@@ -228,6 +237,7 @@ C  -------------------------------------------
          NSUB(LUN) = NSUB(LUN) + 1
          IF(IREC.GT.0) TAB(IREC,IRET) = NMSG(LUN)
          IF(ISUB.GT.0) TAB(ISUB,IRET) = NSUB(LUN)
+         IF(ITBL.GT.0) TAB(ITBL,IRET) = LDXTS
       ENDDO
 
       ENDDO
@@ -241,17 +251,21 @@ C  -------------------------------------------
       NREP = 0
       DO IMSG=1,MSGP(0)
       CALL RDMEMM(IMSG,SUBSET,JDATE,MRET)
-      IF(MRET.NE.0) GOTO 900
+      IF(MRET.LT.0) GOTO 900
       NREP = NREP+NMSUB(MUNIT)
       ENDDO
       IF(IPRT.GE.0) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*,'BUFRLIB: UFBTAM - THE NO. OF DATA SUBSETS IN MEMORY IS ',
-     . '.GT. LIMIT OF ',I2,' IN THE 3-RD ARG. (INPUT) - INCOMPLETE READ'
-      PRINT*,'>>>UFBTAM STORED ',IRET,' REPORTS OUT OF ',NREP,'<<<'
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      WRITE ( UNIT=ERRSTR, FMT='(A,A,I8,A,A)' )
+     . 'BUFRLIB: UFBTAM - THE NO. OF DATA SUBSETS IN MEMORY ',
+     . 'IS .GT. LIMIT OF ', I2, ' IN THE 3RD ARG. (INPUT) - ',
+     . 'INCOMPLETE READ'
+      CALL ERRWRT(ERRSTR)
+      WRITE ( UNIT=ERRSTR, FMT='(A,I8,A,I8,A)' )
+     . '>>>UFBTAM STORED ', IRET, ' REPORTS OUT OF ', NREP, '<<<'
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
       ENDIF
 
 C  RESET THE MEMORY FILE

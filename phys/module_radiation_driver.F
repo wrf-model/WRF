@@ -19,6 +19,7 @@ CONTAINS
               ,NCFRCV ,NCFRST ,NPHS     &
               ,O3INPUT, O3RAD           &
               ,AER_OPT, aerod           &
+              ,swint_opt                &
               ,P8W    ,P ,PI            &
               ,RADT   ,RA_CALL_OFFSET   &
               ,RHO    ,RLWTOA           &
@@ -117,6 +118,8 @@ CONTAINS
               ,SWVISDIR, SWVISDIF, SWNIRDIR, SWNIRDIF                     & !fds ssib swr comp (06/2010)
               ,SF_SURFACE_PHYSICS, IS_CAMMGMP_USED                        & !fds
               ,EXPLICIT_CONVECTION                                        & ! .true.=no conv. scheme
+              ,swddir,swddni,swddif                                       & ! jararias, 2013/08/10
+              ,swdown_ref,swddir_ref,coszen_ref,Gx,gg,Bx,bb               & ! jararias, 2013/08/10
                                                                           )
 
 
@@ -333,6 +336,7 @@ CONTAINS
    INTEGER, INTENT(IN)            :: lw_physics, sw_physics
    INTEGER, OPTIONAL, INTENT(IN)  :: o3input, aer_opt
    INTEGER, INTENT(IN)            :: id
+   integer, intent(in)            :: swint_opt
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
                 i_start,i_end,j_start,j_end
@@ -482,6 +486,17 @@ CONTAINS
                                                              GLW
 
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)  ::   SWDOWN
+
+   ! ------------------------------------------------------------------------------ jararias 2013/08/10 -----------
+   REAL, DIMENSION( ims:ime, jms:jme ),  INTENT(OUT) :: swddir, & ! All-sky SW broadband surface direct irradiance
+                                                        swddni, & ! All-sky SW broadband surface direct normal irradiance
+                                                        swddif    ! All-sky SW broadband surface diffuse irradiance
+   REAL, DIMENSION( ims:ime, jms:jme ),  INTENT(INOUT) :: Gx,Bx,gg,bb, & ! For SW sza-interpolation
+                                                          swdown_ref,  &
+                                                          swddir_ref,  &
+                                                          coszen_ref
+   ! ------------------------------------------------------------------------------ jararias end snippet ----------
+
 !
    REAL, INTENT(IN  )   ::                                GMT,dt, &
                                                    julian, xtime
@@ -602,6 +617,11 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(OUT) :: COSZEN
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(OUT) :: HRANG
 !------------------------------------------------------------------
+
+   ! jararias, 2013/08/10
+   real :: swdown_0,swddir_0,coszen_0,ioh,kt,airmass,kd
+   real, dimension(ims:ime,jms:jme) :: coszen_loc,hrang_loc
+
 #ifdef HWRF
    CHARACTER(len=265) :: wrf_err_message
 #endif
@@ -682,6 +702,20 @@ CONTAINS
       radtacttime = curr_secs + radt*60
    END IF
 
+   if(swint_opt.eq.1) then
+      DO ij = 1 , num_tiles
+         its = i_start(ij)
+         ite = i_end(ij)
+         jts = j_start(ij)
+         jte = j_end(ij)
+         CALL radconst(XTIME,DECLIN,SOLCON,JULIAN,               &
+                       DEGRAD,DPD                                )
+         call calc_coszen(ims,ime,jms,jme,its,ite,jts,jte, &
+                          julian,xtime,gmt,declin,degrad,  &
+                          xlong,xlat,coszen_loc,hrang_loc)
+      end do
+   end if
+
    Radiation_step: IF ( run_param ) then
 
 ! CAM-specific additional radiation frequency - cam_abs_freq_s (=21600s by default)
@@ -725,17 +759,23 @@ CONTAINS
      ENDIF
 
      IF(PRESENT(coszen).AND.PRESENT(hrang))THEN
-! state arrays of hrang and coszen used in surface driver
-       XT24=MOD(XTIME+RADT*0.5,1440.)
-       DO j=jts,jte
-       DO i=its,ite
-          TLOCTM=GMT+XT24/60.+XLONG(I,J)/15.
-          HRANG(I,J)=15.*(TLOCTM-12.)*DEGRAD
-          XXLAT=XLAT(I,J)*DEGRAD
-          COSZEN(I,J)=SIN(XXLAT)*SIN(DECLIN)+COS(XXLAT)*COS(DECLIN)*COS(HRANG(I,J))
-       ENDDO
-       ENDDO
+       ! added coszen subroutine : jararias, 2013/08/10
+       !   outputs: coszen, hrang
+       call calc_coszen(ims,ime,jms,jme,its,ite,jts,jte,  &
+                        julian,xtime+radt*0.5,gmt, &
+                        declin,degrad,xlong,xlat,coszen,hrang)
+!! state arrays of hrang and coszen used in surface driver
+!       XT24=MOD(XTIME+RADT*0.5,1440.)
+!       DO j=jts,jte
+!       DO i=its,ite
+!          TLOCTM=GMT+XT24/60.+XLONG(I,J)/15.
+!          HRANG(I,J)=15.*(TLOCTM-12.)*DEGRAD
+!          XXLAT=XLAT(I,J)*DEGRAD
+!          COSZEN(I,J)=SIN(XXLAT)*SIN(DECLIN)+COS(XXLAT)*COS(DECLIN)*COS(HRANG(I,J))
+!       ENDDO
+!       ENDDO
      ENDIF
+
    ENDDO
 
 !---------------
@@ -750,11 +790,25 @@ CONTAINS
 
 ! initialize data
 
+     if ((itimestep.eq.1).and.(swint_opt.eq.1)) then
+        do j=jts,jte
+           do i=its,ite
+              Bx(i,j)=0.
+              bb(i,j)=0.
+              Gx(i,j)=0.
+              gg(i,j)=0.
+           end do
+        end do
+     end if
+
      DO j=jts,jte
      DO i=its,ite
         GSW(I,J)=0.
         GLW(I,J)=0.
         SWDOWN(I,J)=0.
+        swddir(i,j)=0.  ! jararias, 2013/08/10
+        swddni(i,j)=0.  ! jararias, 2013/08/10
+        swddif(i,j)=0.  ! jararias, 2013/08/10
         GLAT(I,J)=XLAT(I,J)*DEGRAD
         GLON(I,J)=XLONG(I,J)*DEGRAD
      ENDDO
@@ -1329,7 +1383,8 @@ CONTAINS
                     ,QS3D=qs                                           &
                     ,QG3D=qg                                           &
                     ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                     &
-                    ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     )
+                    ,F_QI=f_qi,F_QS=f_qs,F_QG=f_qg                     &
+                    ,coszen=coszen,julian=julian                       )
 
         CASE (GSFCSWSCHEME)
              CALL wrf_debug(100, 'CALL gsfcswrad')
@@ -1382,7 +1437,7 @@ CONTAINS
                     ,gmt=gmt,cp=cp,g=g,t8w=t8w                         &
                     ,julday=julday,xtime=xtime                         &
                     ,declin=declin,solcon=solcon                       &
-                    , center_lat = cen_lat                             &
+                    ,center_lat = cen_lat                              &
                     ,radfrq=radt,degrad=degrad                         &
                     ,taucldi=taucldi,taucldc=taucldc                   &
                     ,warm_rain=warm_rain                               &
@@ -1399,6 +1454,8 @@ CONTAINS
                     ,f_qv=f_qv,f_qc=f_qc,f_qr=f_qr                     &
                     ,f_qi=f_qi,f_qs=f_qs,f_qg=f_qg                     &
                     ,erbe_out=erbe_out                                 & !optional
+                    ,swddir=swddir,swddni=swddni,swddif=swddif         & ! jararias, 14/08/2013
+                    ,coszen=coszen,julian=julian                       & ! jararias, 14/08/2013
                                                                        )
 
         CASE (CAMSWSCHEME)
@@ -1510,8 +1567,10 @@ CONTAINS
                      IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                      ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
                      SWUPFLX=SWUPFLX,SWUPFLXC=SWUPFLXC,                &
-                     SWDNFLX=SWDNFLX,SWDNFLXC=SWDNFLXC                 &
-                                                                       )
+                     SWDNFLX=SWDNFLX,SWDNFLXC=SWDNFLXC,                &
+                     swddir=swddir,swddni=swddni,swddif=swddif,        & ! jararias 2013/08/10
+                     xcoszen=coszen,julian=julian                      ) ! jararias 14/08/2013
+
              DO j=jts,jte
              DO k=kts,kte
              DO i=its,ite
@@ -1634,8 +1693,27 @@ CONTAINS
            SWDOWN(I,J)=GSW(I,J)/(1.-ALBEDO(I,J))
         ENDDO
         ENDDO
-
      ENDIF
+
+     ! jararias, 14/08/2013
+     if ((sw_physics .ne. rrtmg_swscheme) .and. (sw_physics .ne. goddardswscheme)) then
+        do j=jts,jte
+           do i=its,ite
+              ioh=solcon*coszen(i,j) ! TOA irradiance
+              kt=swdown(i,j)/max(ioh,1e-3) ! clearness index
+              ! Optical air mass: Rigollier et al. (2000) doi: 10.1016/S0038-092X(99)00055-9
+              airmass=exp(-ht(i,j)/8434.5)/(coszen(i,j)+ &
+                     0.50572*((1.5707963267948966-acos(coszen(i,j)))*57.295779513082323+6.07995)**-1.6364)
+              ! kt correction for air-mass at large sza: Perez et al. (1990) doi: 10.1016/0038-092X(90)90036-C
+              kt=kt/(0.1+1.031*exp(-1.4/(0.9+(9.4/max(airmass,1e-3)))))
+              ! Diffuse fraction: Ruiz-Arias et al. (2010) (Eq 33) doi: 10.1016/j.enconman.2009.11.024
+              kd=0.952-1.041*exp(-exp(2.300-4.702*kt))
+              swddif(i,j)=kd*swdown(i,j)
+              swddir(i,j)=(1.-kd)*swdown(i,j)
+              swddni(i,j)=swddir(i,j)/max(coszen(i,j),1e-4)
+           end do
+        end do
+     end if
 
        IF ( PRESENT( qc  ) .AND. PRESENT( qc_adjust ) .AND. cu_rad_feedback ) THEN
            DO j=jts,jte
@@ -1656,10 +1734,129 @@ CONTAINS
            ENDDO
         ENDIF
 
+     ! jararias, aug 2013
+     if (swint_opt.eq.1) then
+        do j=jts,jte
+           do i=its,ite
+              if ((coszen(i,j).gt.1e-4) .and. (coszen_loc(i,j).gt.1e-4)) then
+                 ! parameters update for DIR
+                 if (Bx(i,j).le.0) then
+                    swddir_0 =(coszen_loc(i,j)/coszen(i,j))*swddir(i,j) ! linear first guess estimation
+                    coszen_0 =coszen_loc(i,j)
+                 else
+                    swddir_0 =swddir_ref(i,j)
+                    coszen_0 =coszen_ref(i,j)
+                 end if
+                 if ((coszen(i,j)/coszen_0).lt.1.) then
+                    bb(i,j) =log(max(1.,swddir(i,j))/max(1.,swddir_0)) / log(min(1.-1e-4,coszen(i,j)/coszen_0))
+                 elseif ((coszen(i,j)/coszen_0).gt.1) then
+                    bb(i,j) =log(max(1.,swddir(i,j))/max(1.,swddir_0)) / log(max(1.+1e-4,coszen(i,j)/coszen_0))
+                 else
+                    bb(i,j) =0.
+                 end if
+                 bb(i,j) =max(-.5,min(2.5,bb(i,j)))
+                 Bx(i,j) =swddir(i,j)/(coszen(i,j)**bb(i,j))
+
+                 !write(wrf_err_message,*) 'XXX I=',i,' J=',j,'  Bx=',Bx(i,j),'  bb=',bb(i,j),'  swddir=',swddir(i,j), &
+                 !                         '  swddir_0=',swddir_0,'  coszen=',coszen(i,j),'  coszen_0=',coszen_0
+                 !call wrf_debug(1,wrf_err_message)
+
+                 ! parameters update for GHI
+                 if (Gx(i,j).le.0) then
+                    swdown_0 =(coszen_loc(i,j)/coszen(i,j))*swdown(i,j) ! linear first guess estimation
+                    coszen_0 =coszen_loc(i,j)
+                 else
+                    swdown_0 =swdown_ref(i,j)
+                    coszen_0 =coszen_ref(i,j)
+                 end if
+                 if ((coszen(i,j)/coszen_0).lt.1.) then
+                    gg(i,j) =log(max(1.,swdown(i,j))/max(1.,swdown_0)) / log(min(1.-1e-4,coszen(i,j)/coszen_0))
+                 elseif ((coszen(i,j)/coszen_0).gt.1) then
+                    gg(i,j) =log(max(1.,swdown(i,j))/max(1.,swdown_0)) / log(max(1.+1e-4,coszen(i,j)/coszen_0))
+                 else
+                    gg(i,j) =0.
+                 end if
+                 gg(i,j) =max(-.5,min(2.5,gg(i,j)))
+                 Gx(i,j) =swdown(i,j)/(coszen(i,j)**gg(i,j))
+
+                 ! saving last SW run in state variables
+                 coszen_ref(i,j) =coszen(i,j)
+                 swdown_ref(i,j) =swdown(i,j)
+                 swddir_ref(i,j) =swddir(i,j)
+
+              else
+                 Bx(i,j) =0.
+                 bb(i,j) =0.
+                 Gx(i,j) =0.
+                 gg(i,j) =0.
+              end if
+
+              !if ((i.eq.20).and.(j.eq.20)) then
+              !   write(wrf_err_message,'("   RADSTEP : tn=",I4," csz_0=",F9.6," csz=",F9.6," csz_1=",F9.6," Gx=",F14.2," gg=",F9.5,  &
+              !                           " Bx=",F14.2," bb=",F9.5)') itimestep,coszen_0,coszen_loc(i,j),coszen(i,j),Gx(i,j),gg(i,j), &
+              !                           Bx(i,j),bb(i,j)
+              !   call wrf_debug(1,wrf_err_message)
+              !end if
+
+           end do
+        end do
+     end if
+    
    ENDDO
    !$OMP END PARALLEL DO
 
    ENDIF Radiation_step
+
+
+ ! jararias, aug 2013
+ if (swint_opt .eq. 1) then
+    call wrf_debug(100,'SW surface irradiance interpolation')
+
+    !---------------
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
+    do ij = 1,num_tiles
+      its = i_start(ij)
+      ite = i_end(ij)
+      jts = j_start(ij)
+      jte = j_end(ij)
+
+      do j=jts,jte
+         do i=its,ite
+            ! sza interpolation of surface fluxes
+            if ((coszen_ref(i,j).gt.1e-4) .and. (coszen_loc(i,j).gt.1e-4)) then
+               if ((bb(i,j).eq.-0.5).or.(bb(i,j).eq.2.5)) then
+                  swddir(i,j) =(coszen_loc(i,j)/coszen_ref(i,j))*swddir_ref(i,j)
+               else
+                  swddir(i,j) =Bx(i,j)*(coszen_loc(i,j)**bb(i,j))
+               end if
+               if ((gg(i,j).eq.-0.5).or.(gg(i,j).eq.2.5)) then
+                  swdown(i,j) =(coszen_loc(i,j)/coszen_ref(i,j))*swdown_ref(i,j)
+               else
+                  swdown(i,j) =Gx(i,j)*(coszen_loc(i,j)**gg(i,j))
+               end if
+               swddif(i,j) =swdown(i,j)-swddir(i,j)
+               swddni(i,j) =swddir(i,j)/coszen_loc(i,j)
+               gsw(i,j)    =swdown(i,j)*(1.-albedo(i,j))
+            else
+               swddir(i,j) =0.
+               swdown(i,j) =0.
+               swddif(i,j) =0.
+               swddni(i,j) =0.
+               gsw(i,j)    =0.
+            end if
+            !if ((i.eq.20).and.(j.eq.20)) then
+            !   write(wrf_err_message,'("NO-RADSTEP : tn=",I4," csz=",F9.6," Gx=",F14.2," gg=",F9.5," ghi=",F7.2,"(",F7.2,")",   &
+            !                           " Bx=",F14.2," bb=",F9.5," dir=",F7.2)') itimestep,coszen_loc(i,j),Gx(i,j), &
+            !                           gg(i,j),swdown(i,j),Gx(i,j)*(coszen_loc(i,j)**gg(i,j)),Bx(i,j),bb(i,j),swddir(i,j)
+            !   call wrf_debug(1,wrf_err_message)
+            !end if
+         end do
+      end do  
+    enddo
+    !$OMP END PARALLEL DO
+ end if
+
 
      accumulate_lw_select: SELECT CASE(lw_physics)
 
@@ -1950,6 +2147,37 @@ CONTAINS
    SOLCON=1370.*ECCFAC
    
    END SUBROUTINE radconst
+
+
+   SUBROUTINE calc_coszen(ims,ime,jms,jme,its,ite,jts,jte,  &
+                          julian,xtime,gmt, &
+                          declin,degrad,xlon,xlat,coszen,hrang)
+       ! Added Equation of Time correction : jararias, 2013/08/10
+       implicit none
+       integer, intent(in) :: ims,ime,jms,jme,its,ite,jts,jte
+       real, intent(in)    :: julian,declin,xtime,gmt,degrad
+       real, dimension(ims:ime,jms:jme), intent(in)    :: xlat,xlon
+       real, dimension(ims:ime,jms:jme), intent(inout) :: coszen,hrang
+
+       integer :: i,j
+       real    :: da,eot,xt24,tloctm,xxlat
+
+       da=6.2831853071795862*(julian-1)/365.
+       eot=(0.000075+0.001868*cos(da)-0.032077*sin(da) &
+            -0.014615*cos(2*da)-0.04089*sin(2*da))*(229.18)
+       xt24=mod(xtime,1440.)+eot
+       do j=jts,jte
+          do i=its,ite
+             tloctm=gmt+xt24/60.+xlon(i,j)/15.
+             hrang(i,j)=15.*(tloctm-12.)*degrad
+             xxlat=xlat(i,j)*degrad
+             coszen(i,j)=sin(xxlat)*sin(declin) &
+                        +cos(xxlat)*cos(declin) *cos(hrang(i,j))
+          enddo
+       enddo
+   END SUBROUTINE calc_coszen
+
+
 
 !---------------------------------------------------------------------
 !BOP

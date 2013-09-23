@@ -197,7 +197,7 @@
 
                 CALL WRFU_TimeIntervalSet(interval,S=seconds)
                 ringTime = curtime + interval
-                CALL WRFU_AlarmSet( grid%alarms(i), RingInterval=interval, RingTime=ringTime )
+                CALL WRFU_AlarmSet( grid%alarms(i), RingInterval=interval2, RingTime=ringTime )
 
               ENDIF
 
@@ -398,9 +398,16 @@
     END IF
 
 #if (EM_CORE == 1)
-    IF ( switch .EQ. auxinput2_only ) THEN
+    IF ( ( switch .EQ. input_only ) .OR. ( switch .EQ. auxinput2_only ) .OR. ( switch .EQ. auxinput1_only ) ) THEN
        ierr = 0
-       CALL wrf_get_dom_ti_integer ( fid , 'I_PARENT_START' ,    itmp , 1 , icnt , ierr3 )
+       IF      ( ( switch .EQ. input_only ) .OR. ( switch .EQ. auxinput2_only ) ) THEN
+          CALL wrf_get_dom_ti_integer ( fid , 'I_PARENT_START' ,    itmp , 1 , icnt , ierr3 )
+       ELSE IF ( ( switch .EQ. auxinput1_only ) .AND. ( grid%id .GE. 2 ) ) THEN
+          CALL wrf_get_dom_ti_integer ( fid , 'i_parent_start' ,    itmp , 1 , icnt , ierr3 )
+       ELSE IF ( ( switch .EQ. auxinput1_only ) .AND. ( grid%id .EQ. 1 ) ) THEN
+          itmp  = config_flags%i_parent_start
+          ierr3 = 0 
+       END IF
        ierr = max( ierr, ierr3 )
        IF ( itmp .NE. config_flags%i_parent_start ) THEN
           ierr = 1
@@ -409,7 +416,14 @@
           WRITE(wrf_err_message,*)'i_parent_start from gridded input file  = ',itmp
           CALL wrf_message(wrf_err_message)
        END IF
-       CALL wrf_get_dom_ti_integer ( fid , 'J_PARENT_START' ,    itmp , 1 , icnt , ierr3 )
+       IF      ( ( switch .EQ. input_only ) .OR. ( switch .EQ. auxinput2_only ) ) THEN
+          CALL wrf_get_dom_ti_integer ( fid , 'J_PARENT_START' ,    itmp , 1 , icnt , ierr3 )
+       ELSE IF ( ( switch .EQ. auxinput1_only ) .AND. ( grid%id .GE. 2 ) ) THEN
+          CALL wrf_get_dom_ti_integer ( fid , 'j_parent_start' ,    itmp , 1 , icnt , ierr3 )
+       ELSE IF ( ( switch .EQ. auxinput1_only ) .AND. ( grid%id .EQ. 1 ) ) THEN
+          itmp  = config_flags%j_parent_start
+          ierr3 = 0 
+       END IF
        ierr = max( ierr, ierr3 )
        IF ( itmp .NE. config_flags%j_parent_start ) THEN
           ierr = 1

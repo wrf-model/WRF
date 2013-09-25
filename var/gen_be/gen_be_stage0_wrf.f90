@@ -19,7 +19,7 @@ program gen_be_stage0_wrf
 
    use da_control, only : num_fft_factors, pi, stdout, stderr, &
       filename_len, base_pres, base_temp, base_lapse
-   use da_gen_be, only : da_get_field, da_get_height, da_get_trh, &
+   use da_gen_be, only : da_get_field, da_get_height, da_get_trh, da_get_tqv, &
       da_stage0_initialize
    use da_tools_serial, only : da_get_unit, da_free_unit,da_find_fft_factors, &
       da_find_fft_trig_funcs
@@ -40,7 +40,7 @@ program gen_be_stage0_wrf
    character (len=3)     :: cne                       ! Ensemble size.
    character (len=3)     :: ce                        ! Member index -> character.
 
-   integer, external     :: iargc
+   integer               :: iargc
    integer               :: numarg
    integer               :: ne                        ! Ensemble size.
    integer               :: i, j, k, member           ! Loop counters.
@@ -99,6 +99,10 @@ program gen_be_stage0_wrf
    real, allocatable     :: rh_mean(:,:,:)            ! Relative humidity.
    real, allocatable     :: psfc_mean(:,:)            ! Surface pressure.
 
+   logical               :: cv_uv_direct, cv_qv_direct
+
+   cv_uv_direct = .true.
+   cv_qv_direct = .false.
 
    stderr = 0
    stdout = 6
@@ -267,6 +271,18 @@ program gen_be_stage0_wrf
                                   u, v, psi2d, chi2d )
          end if
 
+         if( cv_uv_direct)then
+         ! Interpolate psi to mass pts ready for output:
+         do j = 1, dim2
+            do i = 1, dim1
+               psi(i,j,k) = 0.25 * ( u(i,j) + u(i+1,j) + &
+                                     u(i,j+1) + u(i+1,j+1) )
+               chi(i,j,k) = 0.25 * ( v(i,j) + v(i+1,j) + &
+                                     v(i,j+1) + v(i+1,j+1) )
+            end do
+         end do
+         else
+
 !        Interpolate psi to mass pts ready for output:
          do j = 1, dim2
             do i = 1, dim1
@@ -275,13 +291,19 @@ program gen_be_stage0_wrf
             end do
          end do
          chi(:,:,k) = chi2d(:,:)
+         end if 
 
 !        Read mass fields, and convert to T and rh:
-
+        if (cv_qv_direct) then
+         call da_get_tqv( input_file, dim1, dim2, dim3, k, temp2d, rh2d )
+         temp(:,:,k) = temp2d(:,:)
+!        g/kg
+         rh(:,:,k) =  rh2d(:,:)
+        else
          call da_get_trh( input_file, dim1, dim2, dim3, k, temp2d, rh2d )
          temp(:,:,k) = temp2d(:,:)
          rh(:,:,k) = 0.01 * rh2d(:,:) ! *0.01 to conform with WRF-Var units.
-
+        end if 
       end do
 
       call da_get_height( input_file, dim1, dim2, dim3, height )

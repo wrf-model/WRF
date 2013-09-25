@@ -17,12 +17,12 @@ module da_obs
       pseudo_x, fg_format, fg_format_kma_global, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
       missing_data, pseudo_var, pseudo_val,stdout, num_pseudo, pseudo_y, pseudo_z, &
       pseudo_err,obs_qc_pointer,myproc,rtm_option,rtm_option_rttov, &
-      rtm_option_crtm,use_rad, base_temp, base_lapse, base_pres, &
+      rtm_option_crtm,use_rad, use_3dvar_dyn, div_error, base_temp, base_lapse, base_pres, &
       ob_format,ob_format_ascii,filename_len, trace_use_dull, &
       sound, mtgirs, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, sonde_sfc,rain, &
       bogus, buoy, qscat, tamdar, pseudo, num_ob_indexes, its,ite,jds,jts,jte,ids, &
-      write_mod_filtered_obs   !cys_add
+      write_mod_filtered_obs, idxdiv, its,ite,jts,jte,kts,kte, ims, ime,jms, jme,kms, kme   !cys_add
    ! use_crtm_kmatrix,use_crtm_kmatrix_fast
 #ifdef CRTM
    use da_crtm, only : da_transform_xtoy_crtm, da_transform_xtoy_crtm_adj
@@ -39,6 +39,7 @@ module da_obs
    use da_polaramv,  only : da_transform_xtoy_polaramv, da_transform_xtoy_polaramv_adj
    use da_profiler,  only : da_transform_xtoy_profiler, da_transform_xtoy_profiler_adj
    use da_pseudo,    only : da_transform_xtoy_pseudo, da_transform_xtoy_pseudo_adj
+   use da_divergence, only : da_transform_xtoy_div, da_transform_xtoy_div_adj
    use da_qscat,     only : da_transform_xtoy_qscat,da_transform_xtoy_qscat_adj
    use da_radar,     only : da_transform_xtoy_radar,da_transform_xtoy_radar_adj
    use da_rain,      only : da_transform_xtoy_rain,da_transform_xtoy_rain_adj
@@ -60,7 +61,7 @@ module da_obs
    use da_synop,     only : da_transform_xtoy_synop,da_transform_xtoy_synop_adj
    use da_tools_serial,    only : da_free_unit, da_get_unit
    use da_tools,     only : da_add_noise, da_add_noise_new,da_random_omb, &
-                            da_geo2msl1, da_msl2geo1
+                            da_geo2msl1, da_msl2geo1, da_convert_zk
    use da_tracing,   only : da_trace_entry, da_trace_exit 
    use module_dm,    only : wrf_dm_sum_real, wrf_dm_sum_reals
 
@@ -82,5 +83,5 @@ contains
 #include "da_count_filtered_obs.inc"
 #include "da_obs_sensitivity.inc"
 #include "da_set_obs_missing.inc"
-
+#include "da_setup_div_obs.inc"
 end module da_obs

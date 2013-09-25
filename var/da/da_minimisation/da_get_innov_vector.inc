@@ -153,7 +153,8 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 #if defined(CRTM) || defined(RTTOV)
       if (use_rad                           ) call da_get_innov_vector_radiance (it, grid, ob, iv)
 #endif
-      if (iv%info(pseudo)%nlocal         > 0) call da_get_innov_vector_pseudo   (grid, ob, iv)
+      if (iv%info(pseudo)%nlocal         ==1) call da_get_innov_vector_pseudo   (grid, ob, iv)
+      if (use_3dvar_dyn) call da_get_innov_vector_div   (grid, ob, iv)
       if (iv%info(airsr)%nlocal     > 0) &
       call da_get_innov_vector_airsr    (it,num_qcstat_conv, grid, ob, iv)
 

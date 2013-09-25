@@ -94,7 +94,8 @@ subroutine da_read_obs_radar (iv, filename)
 
       read (unit=char_ned (8:19),fmt='(A12)', iostat = iost) platform % stn % name
 
-      if (print_detail_radar) write (unit=stdout,fmt='(A,A5,A,A12)')  &
+!      if (print_detail_radar) write (unit=stdout,fmt='(A,A5,A,A12)')  &
+       write (unit=stdout,fmt='(A,A5,A,A12)')  &
                            ' Expect: ',platform % stn % platform, &
                            'data at station:', platform % stn % name
 
@@ -190,6 +191,7 @@ subroutine da_read_obs_radar (iv, filename)
          read (platform%info%date_char,'(i4,4(1x,i2))') &
                iyear, imonth, iday, ihour, imin
          call da_get_julian_time (iyear,imonth,iday,ihour,imin,obs_time)
+         ! whl if skip this part, has to skip in da_scan_obs_radar.inc too!
          if ( obs_time < time_slots(0) .or. &
               obs_time >= time_slots(num_fgat_time) ) then
             if (print_detail_radar) then
@@ -260,18 +262,65 @@ subroutine da_read_obs_radar (iv, filename)
                allocate (iv % radar (nlocal(radar)) % model_p  (1:nlevels))
                allocate (iv % radar (nlocal(radar)) % model_rho(1:nlevels))
                allocate (iv % radar (nlocal(radar)) % model_qrn(1:nlevels))
+               allocate (iv % radar (nlocal(radar)) % model_qcl(1:nlevels))
+               allocate (iv % radar (nlocal(radar)) % model_qci(1:nlevels))
+               allocate (iv % radar (nlocal(radar)) % model_qsn(1:nlevels))
+               allocate (iv % radar (nlocal(radar)) % model_qgr(1:nlevels))
+
                allocate (iv % radar (nlocal(radar)) % height   (1:nlevels))
                allocate (iv % radar (nlocal(radar)) % height_qc(1:nlevels))
                allocate (iv % radar (nlocal(radar)) % rv       (1:nlevels))
                allocate (iv % radar (nlocal(radar)) % rf       (1:nlevels))
-               allocate (iv % radar (nlocal(radar)) % rr       (1:nlevels))
-               allocate (iv % radar (nlocal(radar)) % rro       (1:nlevels))
+!whl
+               allocate (iv % radar (nlocal(radar)) % rrn      (1:nlevels))
+               allocate (iv % radar (nlocal(radar)) % rcl      (1:nlevels))
+               allocate (iv % radar (nlocal(radar)) % rci      (1:nlevels))
+               allocate (iv % radar (nlocal(radar)) % rsn      (1:nlevels))
+               allocate (iv % radar (nlocal(radar)) % rgr      (1:nlevels))
+               allocate (iv % radar (nlocal(radar)) % rqv      (1:nlevels))
+
+               allocate (iv % radar (nlocal(radar)) % rrno     (1:nlevels))
+               allocate (iv % radar (nlocal(radar)) % rclo     (1:nlevels))
+               allocate (iv % radar (nlocal(radar)) % rcio     (1:nlevels))
+               allocate (iv % radar (nlocal(radar)) % rsno     (1:nlevels))
+               allocate (iv % radar (nlocal(radar)) % rgro     (1:nlevels))
+               allocate (iv % radar (nlocal(radar)) % rqvo     (1:nlevels))
 
                do i = 1, nlevels
                   iv % radar (nlocal(radar)) % height(i)    = platform % each(i) % height
                   iv % radar (nlocal(radar)) % height_qc(i) = platform % each(i) % height_qc
                   iv % radar (nlocal(radar)) % rv(i)        = platform % each(i) % rv
                   iv % radar (nlocal(radar)) % rf(i)        = platform % each(i) % rf
+!whl
+                  iv % radar (nlocal(radar)) % rrn(i) % inv  = missing_r
+                  iv % radar (nlocal(radar)) % rrn(i) % qc   = missing_data
+                  iv % radar (nlocal(radar)) % rrn(i) % error= missing_r
+                  iv % radar (nlocal(radar)) % rrno(i)       = missing_r
+
+                  iv % radar (nlocal(radar)) % rcl(i) % inv  = missing_r
+                  iv % radar (nlocal(radar)) % rcl(i) % qc   = missing_data
+                  iv % radar (nlocal(radar)) % rcl(i) % error= missing_r
+                  iv % radar (nlocal(radar)) % rclo(i)       = missing_r
+
+                  iv % radar (nlocal(radar)) % rci(i) % inv  = missing_r
+                  iv % radar (nlocal(radar)) % rci(i) % qc   = missing_data
+                  iv % radar (nlocal(radar)) % rci(i) % error= missing_r
+                  iv % radar (nlocal(radar)) % rcio(i)       = missing_r
+
+                  iv % radar (nlocal(radar)) % rsn(i) % inv  = missing_r
+                  iv % radar (nlocal(radar)) % rsn(i) % qc   = missing_data
+                  iv % radar (nlocal(radar)) % rsn(i) % error= missing_r
+                  iv % radar (nlocal(radar)) % rsno(i)       = missing_r
+
+                  iv % radar (nlocal(radar)) % rgr(i) % inv  = missing_r
+                  iv % radar (nlocal(radar)) % rgr(i) % qc   = missing_data
+                  iv % radar (nlocal(radar)) % rgr(i) % error= missing_r
+                  iv % radar (nlocal(radar)) % rgro(i)       = missing_r
+
+                  iv % radar (nlocal(radar)) % rqv(i) % inv  = missing_r
+                  iv % radar (nlocal(radar)) % rqv(i) % qc   = missing_data
+                  iv % radar (nlocal(radar)) % rqv(i) % error= missing_r
+                  iv % radar (nlocal(radar)) % rqvo(i)       = missing_r
                end do
 
             case default;

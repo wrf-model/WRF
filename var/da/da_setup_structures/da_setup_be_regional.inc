@@ -35,6 +35,8 @@ subroutine da_setup_be_regional(xb, be)
    real*8, allocatable           :: be7_eval_loc(:,:)     ! Temp arrays.
    real*8, allocatable           :: be8_eval_loc(:,:)     ! Temp arrays.
    real*8, allocatable           :: be9_eval_loc(:,:)     ! Temp arrays.
+   real*8, allocatable           :: be10_eval_loc(:,:)    ! Temp arrays.
+   real*8, allocatable           :: be11_eval_loc(:,:)    ! Temp arrays.
 #endif
    real*8, allocatable           :: be1_eval_glo(:)       ! Global Eigenvalues.
    real*8, allocatable           :: be2_eval_glo(:)       ! Global Eigenvalues.
@@ -46,6 +48,8 @@ subroutine da_setup_be_regional(xb, be)
    real*8, allocatable           :: be7_eval_glo(:)       ! Global Eigenvalues.
    real*8, allocatable           :: be8_eval_glo(:)       ! Global Eigenvalues.
    real*8, allocatable           :: be9_eval_glo(:)       ! Global Eigenvalues.
+   real*8, allocatable           :: be10_eval_glo(:)      ! Global Eigenvalues.
+   real*8, allocatable           :: be11_eval_glo(:)      ! Global Eigenvalues.
 #endif
    real*8, allocatable           :: alpha_val(:)          ! Global Eigenvalues.
 
@@ -59,6 +63,8 @@ subroutine da_setup_be_regional(xb, be)
    real*8, allocatable           :: be7_evec_loc(:,:,:)   ! Local Eigenvectors.
    real*8, allocatable           :: be8_evec_loc(:,:,:)   ! Local Eigenvectors.
    real*8, allocatable           :: be9_evec_loc(:,:,:)   ! Local Eigenvectors.
+   real*8, allocatable           :: be10_evec_loc(:,:,:)  ! Local Eigenvectors.
+   real*8, allocatable           :: be11_evec_loc(:,:,:)  ! Local Eigenvectors.
 #endif
 
    real*8, allocatable           :: be1_evec_glo(:,:)     ! Global Eigenvectors.
@@ -71,6 +77,8 @@ subroutine da_setup_be_regional(xb, be)
    real*8, allocatable           :: be7_evec_glo(:,:)     ! Global Eigenvectors.
    real*8, allocatable           :: be8_evec_glo(:,:)     ! Global Eigenvectors.
    real*8, allocatable           :: be9_evec_glo(:,:)     ! Global Eigenvectors.
+   real*8, allocatable           :: be10_evec_glo(:,:)    ! Global Eigenvectors.
+   real*8, allocatable           :: be11_evec_glo(:,:)    ! Global Eigenvectors.
 #endif
 
    real*8, allocatable           :: alpha_evec(:,:)       ! Global Eigenvectors.
@@ -85,6 +93,8 @@ subroutine da_setup_be_regional(xb, be)
    real*8, allocatable           :: be7_rf_lengthscale(:)
    real*8, allocatable           :: be8_rf_lengthscale(:)
    real*8, allocatable           :: be9_rf_lengthscale(:)
+   real*8, allocatable           :: be10_rf_lengthscale(:)
+   real*8, allocatable           :: be11_rf_lengthscale(:)
 #endif
    real*8, allocatable           :: alpha_rf_lengthscale(:)
    real*8, allocatable           :: alpha_rf_scale_factor(:)
@@ -117,7 +127,9 @@ subroutine da_setup_be_regional(xb, be)
    REAL, DIMENSION(:,:), ALLOCATABLE:: covm1_be, covm2_be, covm3_be, covm4_be,&
                                        covm1   , covm2   , covm3   , covm4
    REAL, DIMENSION(:),   ALLOCATABLE:: rfls1_be, rfls2_be, rfls3_be, rfls4_be
-   REAL, DIMENSION(:),   ALLOCATABLE:: rfls6_be, rfls7_be, rfls8_be, rfls9_be
+#ifdef CLOUD_CV
+   REAL, DIMENSION(:),   ALLOCATABLE:: rfls6_be, rfls7_be, rfls8_be, rfls9_be, rfls10_be, rfls11_be
+#endif
    REAL, DIMENSION(:),   ALLOCATABLE:: eta_be
 ! For write out the Interpolated CV5 BE (bin_type=5) file:
    integer              :: bin_type_out, num_bins_out, num_bins2d_out
@@ -205,12 +217,23 @@ subroutine da_setup_be_regional(xb, be)
    allocate (bin2d(1:ni,1:nj))
 
 #ifdef CLOUD_CV
+  if ( interpolate_stats ) then
+     print*,"!!!! interpolate_stats may not work with CV5 with CLOUD_CV options"
+  end if
+  if(cloud_cv_options.eq.2)then
    read (be_unit)num_bins, num_bins2d
    read (be_unit)lat_min, lat_max, binwidth_lat
    read (be_unit)hgt_min, hgt_max, binwidth_hgt
    read (be_unit)qrain_th_low, qrain_th_high
    read (be_unit)bin(1:ni,1:nj,1:nk)
    read (be_unit)bin2d(1:ni,1:nj)
+  else 
+   read (be_unit)lat_min, lat_max, binwidth_lat
+   read (be_unit)hgt_min, hgt_max, binwidth_hgt
+   read (be_unit)num_bins, num_bins2d
+   read (be_unit)bin(1:ni,1:nj,1:nk)
+   read (be_unit)bin2d(1:ni,1:nj)
+  end if
 #else
    read (be_unit)lat_min, lat_max, binwidth_lat
    read (be_unit)hgt_min, hgt_max, binwidth_hgt
@@ -218,7 +241,6 @@ subroutine da_setup_be_regional(xb, be)
    read (be_unit)bin(1:ni,1:nj,1:nk)
    read (be_unit)bin2d(1:ni,1:nj)
 #endif
-
 !
 !-----------for interpolating CV5--------------------------------------------------------------
 ! Write out the interpolated CV5 BE:
@@ -265,11 +287,11 @@ subroutine da_setup_be_regional(xb, be)
 
    if ( cv_options == 5 ) then
    read (be_unit) regcoeff_psi_chi
-   read (be_unit) regcoeff_psi_ps  
+   read (be_unit) regcoeff_psi_ps 
    read (be_unit) regcoeff_psi_t
    else
    do i = 1 , 9
-   read (be_unit) var80c   
+   read (be_unit) var80c  
    select case( trim(adjustl(var80c)) )
    case ('regcoeff_psi_chi')
    read (be_unit) regcoeff_psi_chi
@@ -296,7 +318,6 @@ subroutine da_setup_be_regional(xb, be)
    end select
    end do
    end if
-
    ! 1.2 Fill regression coeff. array for model BE, vertical dimension is kz:
 
    allocate (be%reg_psi_chi  (1:jy,1:kz))
@@ -398,7 +419,6 @@ subroutine da_setup_be_regional(xb, be)
       deallocate (regcoeff_t_u_rh)
       deallocate (regcoeff_ps_u_rh)
    end if
-
    ! 1.3 Domain_averaged regression coefficients
 
   if (.not.lat_stats_option) then
@@ -459,7 +479,6 @@ subroutine da_setup_be_regional(xb, be)
    end if
 
    call da_message(message(1:2))
-
    ! 2.0 Load the eigenvector and eigenvalue
 
    allocate (be1_eval_loc (1:nj,1:nk))
@@ -472,6 +491,8 @@ subroutine da_setup_be_regional(xb, be)
    allocate (be7_eval_loc (1:nj,1:nk))
    allocate (be8_eval_loc (1:nj,1:nk))
    allocate (be9_eval_loc (1:nj,1:nk))
+   allocate (be10_eval_loc (1:nj,1:nk))
+   allocate (be11_eval_loc (1:nj,1:nk))
 #endif
 
    if (vert_corr == vert_corr_2) then
@@ -486,6 +507,8 @@ subroutine da_setup_be_regional(xb, be)
       allocate (be7_eval_glo(1:nk))
       allocate (be8_eval_glo(1:nk))
       allocate (be9_eval_glo(1:nk))
+      allocate (be10_eval_glo(1:nk))
+      allocate (be11_eval_glo(1:nk))
 #endif
       allocate (be1_evec_loc(1:nj,1:nk,1:nk))
       allocate (be2_evec_loc(1:nj,1:nk,1:nk))
@@ -497,6 +520,8 @@ subroutine da_setup_be_regional(xb, be)
       allocate (be7_evec_loc(1:nj,1:nk,1:nk))
       allocate (be8_evec_loc(1:nj,1:nk,1:nk))
       allocate (be9_evec_loc(1:nj,1:nk,1:nk))
+      allocate (be10_evec_loc(1:nj,1:nk,1:nk))
+      allocate (be11_evec_loc(1:nj,1:nk,1:nk))
 #endif
       allocate (be1_evec_glo(1:nk,1:nk))
       allocate (be2_evec_glo(1:nk,1:nk))
@@ -508,17 +533,37 @@ subroutine da_setup_be_regional(xb, be)
       allocate (be7_evec_glo(1:nk,1:nk))
       allocate (be8_evec_glo(1:nk,1:nk))
       allocate (be9_evec_glo(1:nk,1:nk))
+      allocate (be10_evec_glo(1:nk,1:nk))
+      allocate (be11_evec_glo(1:nk,1:nk))
 #endif
    end if
-
    ! 2.2 Read in the eigenvector and eigenvalue 
 
 #ifdef CLOUD_CV
-   do i = 1 , 8
+   do i = 1 , 10 
+   if (cloud_cv_options.eq.2 )then
+      read (be_unit) variable
+   else
+      if (i.le.4) then
+         read (be_unit) variable
+      elseif (i.eq.5) then
+         variable = "qcloud"
+      elseif (i.eq.6) then
+         variable = "qrain"
+      elseif (i.eq.7) then
+         variable = "qice"
+      elseif (i.eq.8) then
+         variable = "qsnow"
+      elseif (i.eq.9) then
+         variable = "qgraupel"
+      elseif (i.eq.10) then
+         variable = "z-wind"
+      end if
+   end if
 #else
    do i = 1 , 4
-#endif
     read (be_unit) variable
+#endif
    select case( trim(adjustl(variable)) )
    case ('psi')
    be % v1 % name = trim(adjustl(variable))
@@ -585,71 +630,104 @@ subroutine da_setup_be_regional(xb, be)
 ! qcloud  
    case ('qcloud' )      
    be % v6 % name = trim(adjustl(variable))
+  if(cloud_cv_options.eq.2)then
    read (be_unit) nk, num_bins2d
    read (be_unit)  be6_evec_glo
    read (be_unit)  be6_eval_glo
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
-  if(cloud_cv_options.eq.2)then
    do j=1,nj
       b = bin2d(1,j)
       be6_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
       be6_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
    end do
-  else
+  elseif (cloud_cv_options.eq.3)then
    be6_eval_glo=1.0e-6
   end if 
 ! qrain   
    case ('qrain' )      
    be % v7 % name = trim(adjustl(variable))
+  if(cloud_cv_options.eq.2)then
    read (be_unit) nk, num_bins2d
    read (be_unit)  be7_evec_glo
    read (be_unit)  be7_eval_glo
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
-  if(cloud_cv_options.eq.2)then
    do j=1,nj
       b = bin2d(1,j)
       be7_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
       be7_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
    end do
-  else
+  elseif (cloud_cv_options.eq.3)then
    be7_eval_glo=1.0e-6
   end if 
 ! qice    
    case ('qice' )      
    be % v8 % name = trim(adjustl(variable))
+  if(cloud_cv_options.eq.2)then
    read (be_unit) nk, num_bins2d
    read (be_unit)  be8_evec_glo
    read (be_unit)  be8_eval_glo
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
-  if(cloud_cv_options.eq.2)then
    do j=1,nj
       b = bin2d(1,j)
       be8_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
       be8_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
    end do
-  else
+  elseif (cloud_cv_options.eq.3)then
    be8_eval_glo=1.0e-6
   end if 
 ! qsnow   
    case ('qsnow' )      
    be % v9 % name = trim(adjustl(variable))
+  if(cloud_cv_options.eq.2)then
    read (be_unit) nk, num_bins2d
    read (be_unit)  be9_evec_glo
    read (be_unit)  be9_eval_glo
    read (be_unit)  evec_loc
    read (be_unit)  eval_loc
-  if(cloud_cv_options.eq.2)then
    do j=1,nj
       b = bin2d(1,j)
       be9_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
       be9_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
    end do
-  else
+  elseif (cloud_cv_options.eq.3)then
    be9_eval_glo=1.0e-6
   end if 
+  ! qgraupel
+   case ('qgraupel' )
+   be % v10 % name = trim(adjustl(variable))
+  if(cloud_cv_options.eq.2)then
+   read (be_unit) nk, num_bins2d
+   read (be_unit)  be10_evec_glo
+   read (be_unit)  be10_eval_glo
+   read (be_unit)  evec_loc
+   read (be_unit)  eval_loc
+   do j=1,nj
+      b = bin2d(1,j)
+      be10_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+      be10_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
+   end do
+  elseif (cloud_cv_options.eq.3)then
+   be10_eval_glo=1.0e-6
+  end if
+   case ('z-wind' )
+   be % v11 % name = trim(adjustl(variable))
+  if(cloud_cv_options.eq.2)then
+   read (be_unit) nk, num_bins2d
+   read (be_unit)  be11_evec_glo
+   read (be_unit)  be11_eval_glo
+   read (be_unit)  evec_loc
+   read (be_unit)  eval_loc
+   do j=1,nj
+      b = bin2d(1,j)
+      be11_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+      be11_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
+   end do
+  elseif (cloud_cv_options.eq.3)then
+   be11_eval_glo=1.0
+  end if
 
 #endif
 
@@ -662,10 +740,11 @@ subroutine da_setup_be_regional(xb, be)
 
    deallocate (evec_loc)
    deallocate (eval_loc)
-
    ! 2.2.5 Control variable ps_u
    read (be_unit) variable
    read (be_unit) nk_2d, num_bins2d
+   print *, "nk_2d=", nk_2d
+   nk_2d=1       !wenxue
    allocate (evec_loc(1:nk_2d,1:nk_2d,1:num_bins2d))
    allocate (eval_loc(1:nk_2d,        1:num_bins2d))
    read (be_unit)  be5_evec_glo
@@ -696,9 +775,10 @@ subroutine da_setup_be_regional(xb, be)
       trim(be % v1 % name), ', ', trim(be % v2 % name), ', ', &
       trim(be % v3 % name), ' and ', trim(be % v5 % name)
 #ifdef CLOUD_CV
-   write (unit=message(1),fmt='(3x,A,7A)') 'WRF-Var wet control variables are: ', &
+   write (unit=message(1),fmt='(3x,A,11A)') 'WRF-Var hydrometeor control  variables are: ', &
       trim(be % v6 % name), ', ', trim(be % v7 % name), ', ', &
-      trim(be % v8 % name), ' and ', trim(be % v9 % name)
+      trim(be % v8 % name), ' and ', trim(be % v9 % name), ', ', &
+      trim(be % v10 % name), ' and ', trim(be % v11 % name) 
 #endif
    write (unit=message(2),fmt='(3x,A,A)') &
       'Humidity control variable is ', trim(be % v4 % name)
@@ -720,6 +800,8 @@ subroutine da_setup_be_regional(xb, be)
       allocate (rfls7_be(1:nk))
       allocate (rfls8_be(1:nk))
       allocate (rfls9_be(1:nk))
+      allocate (rfls10_be(1:nk))
+      allocate (rfls11_be(1:nk))
 #endif
    allocate (be1_rf_lengthscale(1:kz))
    allocate (be2_rf_lengthscale(1:kz))
@@ -731,6 +813,8 @@ subroutine da_setup_be_regional(xb, be)
       allocate (be7_rf_lengthscale(1:kz))
       allocate (be8_rf_lengthscale(1:kz))
       allocate (be9_rf_lengthscale(1:kz))
+      allocate (be10_rf_lengthscale(1:kz))
+      allocate (be11_rf_lengthscale(1:kz))
 #endif
 
 ! ===================================================================
@@ -744,14 +828,33 @@ subroutine da_setup_be_regional(xb, be)
       be%v1%mz=1; be%v2%mz=1;be%v3%mz=1;be%v4%mz=1;be%v5%mz=1; 
       mzs=(/be%v1%mz,be%v2%mz,be%v3%mz,be%v4%mz,be%v5%mz/)
 ! ====================================================================
-
    ! 3.2 read in the scale lengths
 #ifdef CLOUD_CV
-      do i = 1 , 9		! variables loop:
+      do i = 1 , 11		! variables loop:
+   if (cloud_cv_options.eq.2 )then
+      read (be_unit, IOSTAT=k) variable
+   else
+      if (i.le.5) then
+         read (be_unit, IOSTAT=k) variable
+      elseif (i.eq.6) then
+         variable = "qcloud"
+      elseif (i.eq.7) then
+         variable = "qrain"
+      elseif (i.eq.8) then
+         variable = "qice"
+      elseif (i.eq.9) then
+         variable = "qsnow"
+      elseif (i.eq.10) then
+         variable = "qgraupel"
+      elseif (i.eq.11) then
+         variable = "z-wind"
+      end if
+   end if
+
 #else
       do i = 1 , 5              ! variables loop:
+         read (be_unit, IOSTAT=k) variable
 #endif
-    read (be_unit, IOSTAT=k) variable
          if (print_detail_be)&
           write(unit=stdout,fmt='(2a)')' Reading lengthscale for: ',trim(adjustl(variable))
          if( k/=0 ) &
@@ -776,34 +879,57 @@ subroutine da_setup_be_regional(xb, be)
              if(cloud_cv_options.eq.2)then
                read(be_unit) rfls6_be
              else
-               read(be_unit) 
-              be6_rf_lengthscale = 5.0
+              ! read(be_unit) 
+              !be6_rf_lengthscale = 1.0
+              rfls6_be = 1.0
              end if
              if (.not.interpolate_stats) be6_rf_lengthscale = rfls6_be
             case ('qrain')
              if(cloud_cv_options.eq.2)then
                read(be_unit) rfls7_be
              else
-               read(be_unit) 
-              be7_rf_lengthscale = 5.0
+              ! read(be_unit) 
+              !be7_rf_lengthscale = 1.0
+              rfls7_be = 1.0
              end if
              if (.not.interpolate_stats) be7_rf_lengthscale = rfls7_be
             case ('qice')
              if(cloud_cv_options.eq.2)then
                read(be_unit) rfls8_be
              else
-               read(be_unit) 
-              be8_rf_lengthscale = 5.0
+              ! read(be_unit) 
+              !be8_rf_lengthscale = 1.0
+              rfls8_be = 1.0
              end if
              if (.not.interpolate_stats) be8_rf_lengthscale = rfls8_be
             case ('qsnow')
              if(cloud_cv_options.eq.2)then
                read(be_unit) rfls9_be
              else
-               read(be_unit) 
-              be9_rf_lengthscale = 5.0
+              ! read(be_unit) 
+              !be9_rf_lengthscale = 1.0
+              rfls9_be = 1.0
              end if
              if (.not.interpolate_stats) be9_rf_lengthscale = rfls9_be
+
+            case ('qgraupel')
+             if(cloud_cv_options.eq.2)then
+               read(be_unit) rfls10_be
+             else
+              ! read(be_unit)
+              rfls10_be = 1.0
+             end if
+             if (.not.interpolate_stats) be10_rf_lengthscale = rfls10_be
+
+            case ('z-wind')
+             if(cloud_cv_options.eq.2)then
+               read(be_unit) rfls11_be
+             else
+              ! read(be_unit)
+              rfls11_be = 1.0
+             end if
+             if (.not.interpolate_stats) be11_rf_lengthscale = rfls11_be
+
 #endif
             case ('ps_u')
               read(be_unit) be5_rf_lengthscale(1:1)
@@ -841,11 +967,12 @@ subroutine da_setup_be_regional(xb, be)
       print*,'be7= ',be7_rf_lengthscale
       print*,'be8= ',be8_rf_lengthscale
       print*,'be9= ',be9_rf_lengthscale
+      print*,'be10= ',be10_rf_lengthscale
+      print*,'be11= ',be11_rf_lengthscale
       end if
 #endif
 
   endif
-
 !================== for interpolating CV5 =======================================
    ! 3.3 Interpolate the CV5 BE to the model resolution
    if (Interpolate_Stats) then
@@ -920,10 +1047,12 @@ subroutine da_setup_be_regional(xb, be)
       deallocate ( rfls3_be )
       deallocate ( rfls4_be )
 #ifdef CLOUD_CV
-      deallocate (rfls6_be(1:nk))
-      deallocate (rfls7_be(1:nk))
-      deallocate (rfls8_be(1:nk))
-      deallocate (rfls9_be(1:nk))
+      deallocate ( rfls6_be )
+      deallocate ( rfls7_be )
+      deallocate ( rfls8_be )
+      deallocate ( rfls9_be )
+      deallocate ( rfls10_be )
+      deallocate ( rfls11_be )
 #endif
    ! 3.3.4 Assign the Regression coefficients for model BE:
  
@@ -1104,6 +1233,8 @@ subroutine da_setup_be_regional(xb, be)
          call da_check_eof_decomposition(be7_eval_glo(:), be7_evec_glo(:,:), be % v7 % name)
          call da_check_eof_decomposition(be8_eval_glo(:), be8_evec_glo(:,:), be % v8 % name)
          call da_check_eof_decomposition(be9_eval_glo(:), be9_evec_glo(:,:), be % v9 % name)
+         call da_check_eof_decomposition(be10_eval_glo(:), be10_evec_glo(:,:), be % v10 % name)
+         call da_check_eof_decomposition(be11_eval_glo(:), be11_evec_glo(:,:), be % v11 % name)
        end if
 #endif
       end if
@@ -1120,11 +1251,15 @@ subroutine da_setup_be_regional(xb, be)
          call da_get_vertical_truncation(max_vert_var7, be7_eval_glo(:), be % v7)
          call da_get_vertical_truncation(max_vert_var8, be8_eval_glo(:), be % v8)
          call da_get_vertical_truncation(max_vert_var9, be9_eval_glo(:), be % v9)
+         call da_get_vertical_truncation(max_vert_var10,be10_eval_glo(:),be % v10)
+         call da_get_vertical_truncation(max_vert_var11,be11_eval_glo(:),be % v11)
       else
          be % v6 % mz = xb % mkz
          be % v7 % mz = xb % mkz
          be % v8 % mz = xb % mkz
          be % v9 % mz = xb % mkz
+         be % v10% mz = xb % mkz
+         be % v11% mz = xb % mkz
       endif
 #endif
       if (max_vert_var5 == 0.0) then
@@ -1149,6 +1284,8 @@ subroutine da_setup_be_regional(xb, be)
       be % v7 % mz = xb % mkz
       be % v8 % mz = xb % mkz
       be % v9 % mz = xb % mkz
+      be % v10% mz = xb % mkz
+      be % v11% mz = xb % mkz
 #endif
    end if
 
@@ -1187,6 +1324,10 @@ subroutine da_setup_be_regional(xb, be)
                                        be8_evec_loc, be % v8)
    call da_allocate_background_errors(jy, kz, be9_eval_glo, be9_evec_glo, be9_eval_loc, &
                                        be9_evec_loc, be % v9)
+   call da_allocate_background_errors(jy, kz, be10_eval_glo, be10_evec_glo, be10_eval_loc, &
+                                       be10_evec_loc, be % v10)
+   call da_allocate_background_errors(jy, kz, be11_eval_glo, be11_evec_glo, be11_eval_loc, &
+                                       be11_evec_loc, be % v11)
 #endif
    if (print_detail_be) then
       write (unit=stdout,fmt='(3x,a,i10)') "b) Finished eigenvector processing!"
@@ -1206,6 +1347,8 @@ subroutine da_setup_be_regional(xb, be)
       be7_rf_lengthscale(1:kz) = be7_rf_lengthscale(1:kz) * xb%ds
       be8_rf_lengthscale(1:kz) = be8_rf_lengthscale(1:kz) * xb%ds
       be9_rf_lengthscale(1:kz) = be9_rf_lengthscale(1:kz) * xb%ds
+      be10_rf_lengthscale(1:kz)= be10_rf_lengthscale(1:kz) * xb%ds
+      be11_rf_lengthscale(1:kz)= be11_rf_lengthscale(1:kz) * xb%ds
 #endif
    else				! use wavelets:
       read(be_unit)k		! trimmed string length
@@ -1285,6 +1428,10 @@ subroutine da_setup_be_regional(xb, be)
                                      be%v8%name)
       call da_check_eof_decomposition(be%v9%val_g(:), be%v9%evec_g(:,:),&
                                      be%v9%name)
+      call da_check_eof_decomposition(be%v10%val_g(:), be%v10%evec_g(:,:),&
+                                     be%v10%name)
+      call da_check_eof_decomposition(be%v11%val_g(:), be%v11%evec_g(:,:),&
+                                     be%v11%name)
 #endif
    end if
 
@@ -1357,6 +1504,10 @@ subroutine da_setup_be_regional(xb, be)
                                          xb % ds, be8_rf_lengthscale, be % v8)
       call da_rescale_background_errors(var_scaling9(1), len_scaling9(1), &
                                          xb % ds, be9_rf_lengthscale, be % v9)
+      call da_rescale_background_errors(var_scaling10(1), len_scaling10(1), &
+                                         xb % ds, be10_rf_lengthscale, be % v10)
+      call da_rescale_background_errors(var_scaling11(1), len_scaling11(1), &
+                                         xb % ds, be11_rf_lengthscale, be % v11)
 #endif
    endif
 
@@ -1376,6 +1527,8 @@ subroutine da_setup_be_regional(xb, be)
        write(be_print_unit,'("mz=",i3,2x,"be%v7%val:"/(10e12.5))') be%v7%mz, be%v7%val(1,:)
        write(be_print_unit,'("mz=",i3,2x,"be%v8%val:"/(10e12.5))') be%v8%mz, be%v8%val(1,:)
        write(be_print_unit,'("mz=",i3,2x,"be%v9%val:"/(10e12.5))') be%v9%mz, be%v9%val(1,:)
+       write(be_print_unit,'("mz=",i3,2x,"be%v10%val:"/(10e12.5))') be%v10%mz, be%v10%val(1,:)
+       write(be_print_unit,'("mz=",i3,2x,"be%v11%val:"/(10e12.5))') be%v11%mz, be%v11%val(1,:)
 #endif
        write(be_print_unit,'(/"scale-length: kz=",i3)') kz
        do i = 1,kz 
@@ -1404,6 +1557,8 @@ subroutine da_setup_be_regional(xb, be)
    deallocate (be7_eval_loc)
    deallocate (be8_eval_loc)
    deallocate (be9_eval_loc)
+   deallocate (be10_eval_loc)
+   deallocate (be11_eval_loc)
 #endif
    if( use_rf )then
       deallocate (be1_rf_lengthscale)
@@ -1416,6 +1571,8 @@ subroutine da_setup_be_regional(xb, be)
       deallocate (be7_rf_lengthscale)
       deallocate (be8_rf_lengthscale)
       deallocate (be9_rf_lengthscale)
+      deallocate (be10_rf_lengthscale)
+      deallocate (be11_rf_lengthscale)
 #endif
    endif
    if (vert_corr == vert_corr_2) then
@@ -1429,6 +1586,8 @@ subroutine da_setup_be_regional(xb, be)
       deallocate (be7_eval_glo)
       deallocate (be8_eval_glo)
       deallocate (be9_eval_glo)
+      deallocate (be10_eval_glo)
+      deallocate (be11_eval_glo)
 #endif
       deallocate (be1_evec_loc)
       deallocate (be2_evec_loc)
@@ -1440,6 +1599,8 @@ subroutine da_setup_be_regional(xb, be)
       deallocate (be7_evec_loc)
       deallocate (be8_evec_loc)
       deallocate (be9_evec_loc)
+      deallocate (be10_evec_loc)
+      deallocate (be11_evec_loc)
 #endif
       deallocate (be1_evec_glo)
       deallocate (be2_evec_glo)
@@ -1451,6 +1612,8 @@ subroutine da_setup_be_regional(xb, be)
       deallocate (be7_evec_glo)
       deallocate (be8_evec_glo)
       deallocate (be9_evec_glo)
+      deallocate (be10_evec_glo)
+      deallocate (be11_evec_glo)
 #endif
    end if
 

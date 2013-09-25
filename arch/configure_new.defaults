@@ -1021,7 +1021,7 @@ DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -fopenmp
 OMPCC           =       # -fopenmp
-SFC             =       gfortran
+SFC             =       gfortran-4.4
 SCC             =       gcc
 CCOMP           =       gcc
 DM_FC           =       mpif90 -f90=$(SFC)
@@ -1036,7 +1036,7 @@ CFLAGS_LOCAL    =       -w -O3 -c  -DMACOS
 LDFLAGS_LOCAL   =
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       -O2 -ftree-vectorize -funroll-loops
+FCOPTIM         =       -O2
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT         =       -O0
 FCDEBUG         =       # -g $(FCNOOPT) # -fbacktrace -ggdb -fbounds-check -ffpe-trap=invalid,zero,overflow

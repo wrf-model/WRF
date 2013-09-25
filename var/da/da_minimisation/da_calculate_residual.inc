@@ -83,6 +83,9 @@ subroutine da_calculate_residual(iv, y, re)
    if (num_pseudo > 0) &
       call da_residual_pseudo(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
 
+   if (use_3dvar_dyn) &
+      call da_residual_div(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
+
    if (iv%info(qscat)%nlocal > 0) &
       call da_residual_qscat(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
 

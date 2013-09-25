@@ -11,7 +11,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
    type (domain),  intent(inout) :: grid  ! First guess structure
 
    character(len=filename_len)  :: filename
-   integer                      :: n, i, j, k
+   integer                      :: n, i, j, k, ndiv
    logical                      :: outside
    logical                      :: uvq_direct=.false.  !cys_add
 
@@ -20,6 +20,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
    !-------------------------------
    ! Find out if pseudo ob is local
    !-------------------------------
+
    if (num_pseudo > 0) then
       iv%time = 1
       outside = .false.
@@ -79,8 +80,8 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
             call da_scan_obs_radar(iv, filename)
             print*,'scan radar obs ',n,filename(1:10),iv%info(:)%ntotal, iv%info(:)%nlocal
          end if
-
-         iv%info(:)%plocal(n) = iv%info(:)%nlocal
+         
+		 iv%info(:)%plocal(n) = iv%info(:)%nlocal
          iv%info(:)%ptotal(n) = iv%info(:)%ntotal
       end do
    else
@@ -99,11 +100,15 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
       if (use_radarobs) then
          call da_scan_obs_radar(iv, 'ob.radar')
       end if
+	 
       do i=1,num_ob_indexes
          iv%info(i)%plocal(iv%time) = iv%info(i)%nlocal
          iv%info(i)%ptotal(iv%time) = iv%info(i)%ntotal
       end do
    end if
+
+
+
    !--------------------------------------------------------------------------
    ! Allocate the ob based on input number of obs:
    !--------------------------------------------------------------------------

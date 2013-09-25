@@ -27,7 +27,6 @@ subroutine da_interp_lin_3d_adj(fm3d, info, fo3d)
 #endif
 
    if (trace_use) call da_trace_entry("da_interp_lin_3d_adj")
-
    do n=info%n1,info%n2
       fmz = 0.0
       do k = 1, info%levels(n)

@@ -121,6 +121,7 @@ rconfig   logical   use_metarobs            namelist,wrfvar4  1  .true.   - "use
 rconfig   logical   use_soundobs            namelist,wrfvar4  1  .true.   - "use_soundobs"             ""  ""
 rconfig   logical   use_mtgirsobs           namelist,wrfvar4  1  .true.   - "use_mtgirsobs"            ""  ""
 rconfig   logical   use_tamdarobs           namelist,wrfvar4  1  .true.   - "use_tamdarobs"            ""  ""
+rconfig   logical   use_tamdarhgt           namelist,wrfvar4  1  .false.  - "use_tamdarhgt"            ""  ""
 rconfig   logical   use_pilotobs            namelist,wrfvar4  1  .true.   - "use_pilotobs"             ""  ""
 rconfig   logical   use_airepobs            namelist,wrfvar4  1  .true.   - "use_airepobs"             ""  ""
 rconfig   logical   use_geoamvobs           namelist,wrfvar4  1  .true.   - "use_geoamvobs"            ""  ""
@@ -142,8 +143,12 @@ rconfig   logical   use_qscatobs            namelist,wrfvar4  1  .true.   - "use
 rconfig   logical   use_radarobs            namelist,wrfvar4  1  .false.  - "use_radarobs"             ""  ""
 rconfig   logical   use_radar_rv            namelist,wrfvar4  1  .false.  - "use_radar_rv"             ""  ""
 rconfig   logical   use_radar_rf            namelist,wrfvar4  1  .false.  - "use_radar_rf"             ""  ""
-rconfig   logical   use_radar_rle           namelist,wrfvar4  1  .false.  - "use_radar_rle"            ""  ""
-rconfig   logical   use_radar_rr            namelist,wrfvar4  1  .false.  - "use_radar_rr"             ""  ""
+rconfig   logical   use_radar_rze           namelist,wrfvar4  1  .false.  - "use_radar_rze"             ""  ""
+rconfig   logical   use_radar_rqv           namelist,wrfvar4  1  .false.  - "use_radar_rqv"            ""  ""
+rconfig   logical   use_radar_rhv           namelist,wrfvar4  1  .false.  - "use_radar_rhv"            ""  ""
+rconfig   logical   use_3dvar_phy           namelist,wrfvar4  1  .true.   - "use_3dvar_phy"            ""  ""
+rconfig   logical   use_3dvar_dyn           namelist,wrfvar4  1  .false.  - "use_3dvar_dyn"            ""  ""
+rconfig   real      div_error               namelist,wrfvar4  1   0.001   - "div_error"                ""  ""
 rconfig   logical   use_rainobs             namelist,wrfvar4  1  .false.  - "use_rainobs"              ""  ""   
 rconfig   logical   use_hirs2obs            namelist,wrfvar4  1  .false.  - "use_hirs2obs"             ""  ""
 rconfig   logical   use_hirs3obs            namelist,wrfvar4  1  .false.  - "use_hirs3obs"             ""  ""
@@ -237,6 +242,7 @@ rconfig   logical   write_lanczos           namelist,wrfvar6  1  .false.  - "wri
 rconfig   logical   orthonorm_gradient      namelist,wrfvar6  1  .false.  - "orthonorm_gradient"       ""  ""
 rconfig   integer   cv_options              namelist,wrfvar7  1  5        - "cv_options"               ""  ""
 rconfig   integer   cloud_cv_options        namelist,wrfvar7  1  1        - "cloud_cv_options"         ""  ""
+rconfig   integer   uv_cv_options           namelist,wrfvar7  1  0        - "uv_cv_options"         ""  ""
 rconfig   real      as1                     namelist,wrfvar7  3*max_outer_iterations -1.0    - "as1"   ""  ""
 rconfig   real      as2                     namelist,wrfvar7  3*max_outer_iterations -1.0    - "as2"   ""  ""
 rconfig   real      as3                     namelist,wrfvar7  3*max_outer_iterations -1.0    - "as3"   ""  ""
@@ -254,6 +260,8 @@ rconfig   real      var_scaling6            namelist,wrfvar7  max_outer_iteratio
 rconfig   real      var_scaling7            namelist,wrfvar7  max_outer_iterations  1.0      - "var_scaling7"             ""  ""
 rconfig   real      var_scaling8            namelist,wrfvar7  max_outer_iterations  1.0      - "var_scaling8"             ""  ""
 rconfig   real      var_scaling9            namelist,wrfvar7  max_outer_iterations  1.0      - "var_scaling9"             ""  ""
+rconfig   real      var_scaling10           namelist,wrfvar7  max_outer_iterations  1.0      - "var_scaling10"            ""  ""
+rconfig   real      var_scaling11           namelist,wrfvar7  max_outer_iterations  1.0      - "var_scaling11"            ""  ""
 rconfig   real      len_scaling1            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling1"             ""  ""
 rconfig   real      len_scaling2            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling2"             ""  ""
 rconfig   real      len_scaling3            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling3"             ""  ""
@@ -263,6 +271,13 @@ rconfig   real      len_scaling6            namelist,wrfvar7  max_outer_iteratio
 rconfig   real      len_scaling7            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling7"             ""  ""
 rconfig   real      len_scaling8            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling8"             ""  ""
 rconfig   real      len_scaling9            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling9"             ""  ""
+rconfig   real      len_scaling10           namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling10"            ""  ""
+rconfig   real      len_scaling11           namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling11"            ""  ""
+rconfig   real      coe_scaling1            namelist,wrfvar7  1                     1.0      - "coe_scaling1"             ""  ""
+rconfig   real      coe_scaling2            namelist,wrfvar7  1                     1.0      - "coe_scaling2"             ""  ""
+rconfig   real      coe_scaling3            namelist,wrfvar7  1                     1.0      - "coe_scaling3"             ""  ""
+rconfig   real      coe_scaling4            namelist,wrfvar7  1                     1.0      - "coe_scaling4"             ""  ""
+rconfig   real      coe_scaling5            namelist,wrfvar7  1                     1.0      - "coe_scaling5"             ""  ""
 rconfig   real      je_factor               namelist,wrfvar7  1  1.0      - "je_factor"                ""  ""
 rconfig   real      power_truncation        namelist,wrfvar7  1  1.0      - "power_truncation"         ""  ""
 rconfig   logical   def_sub_domain          namelist,wrfvar8  1  .false.  - "def_sub_domain"           ""  ""
@@ -313,6 +328,8 @@ rconfig   real      max_vert_var6           namelist,wrfvar13  1  99.0     - "ma
 rconfig   real      max_vert_var7           namelist,wrfvar13  1  99.0     - "max_vert_var7"           ""  ""
 rconfig   real      max_vert_var8           namelist,wrfvar13  1  99.0     - "max_vert_var8"           ""  ""
 rconfig   real      max_vert_var9           namelist,wrfvar13  1  99.0     - "max_vert_var9"           ""  ""
+rconfig   real      max_vert_var10          namelist,wrfvar13  1  99.0     - "max_vert_var10"          ""  ""
+rconfig   real      max_vert_var11          namelist,wrfvar13  1  99.0     - "max_vert_var11"          ""  ""
 rconfig   real      max_vert_var_alpha      namelist,wrfvar13  1  99.0     - "max_vert_var_alpha"      ""  ""
 rconfig   real      psi_chi_factor          namelist,wrfvar13  1  1.0      - "psi_chi_factor"          ""  ""
 rconfig   real      psi_t_factor            namelist,wrfvar13  1  1.0      - "psi_t_factor"            ""  ""
@@ -489,6 +506,8 @@ typedef vp_type real    v6                      ijk      -         1        -   
 typedef vp_type real    v7                      ijk      -         1        -       -
 typedef vp_type real    v8                      ijk      -         1        -       -
 typedef vp_type real    v9                      ijk      -         1        -       -
+typedef vp_type real    v10                     ijk      -         1        -       -
+typedef vp_type real    v11                     ijk      -         1        -       -
 typedef vp_type real    alpha                   ijk9     -         1        -       -
 # END VP_TYPE DEFINITION
 # BEGIN EP_TYPE DEFINITION:
@@ -541,6 +560,7 @@ typedef xb_type real    w                      ijk      -         1        -    
 typedef xb_type real    t                      ijk      -         1        -       -
 typedef xb_type real    p                      ijk      -         1        -       -
 typedef xb_type real    q                      ijk      -         1        -       -
+typedef xb_type real    div                      ijk      -         1        -       -
 typedef xb_type real    qrn                    ijk      -         1        -       -
 typedef xb_type real    qcw                    ijk      -         1        -       -
 typedef xb_type real    qci                    ijk      -         1        -       -
@@ -614,6 +634,7 @@ typedef x_type real    w                      ijk      -         1        -     
 typedef x_type real    t                      ijk      -         1        -       -
 typedef x_type real    q                      ijk      -         1        -       -
 typedef x_type real    p                      ijk      -         1        -       -
+typedef x_type real    div                      ijk      -         1        -       -
 typedef x_type real    rh                     ijk      -         1        -       -
 typedef x_type real    rho                    ijk      -         1        -       -
 typedef x_type real    wh                     ijk      -         1        -       -

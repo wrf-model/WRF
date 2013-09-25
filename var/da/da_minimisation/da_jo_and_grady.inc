@@ -292,11 +292,14 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
 
    if (iv%info(radar)%nlocal > 0) then
       call da_jo_and_grady_radar(iv, re, jo, jo_grad_y)
-      jo_radar = jo%radar_rv + jo%radar_rf + jo%radar_rr
+         jo_radar = jo%radar_rv + jo%radar_rf + jo%radar_rrn +  jo%radar_rsn +  jo%radar_rgr + jo%radar_rqv
    else
       jo % radar_rv = 0.0
       jo % radar_rf = 0.0
-      jo % radar_rr = 0.0
+      jo % radar_rrn = 0.0
+      jo % radar_rsn = 0.0
+      jo % radar_rgr = 0.0
+      jo % radar_rqv = 0.0
       jo_radar = 0.0
    end if
 
@@ -318,6 +321,12 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
       jo % pseudo_p = 0.0
       jo % pseudo_q = 0.0
       jo_pseudo = 0.0
+   end if
+   
+   if (use_3dvar_dyn) then
+      call da_jo_and_grady_div(iv, re, jo, jo_grad_y)    
+   else
+      jo%div = 0.0
    end if
 
    if (iv%info(qscat)%nlocal > 0) then
@@ -408,7 +417,7 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
    jo%total = jo_sound + jo_sonde_sfc+jo_geoamv + jo_polaramv + jo_synop + jo_satem + &
       jo_pilot + jo_airep + jo_metar + jo_ships + &
       jo_gpspw + jo_ssmi_tb + jo_ssmi_rv + jo_ssmt1 + jo_ssmt2 + &
-      jo_pseudo + jo_qscat + jo_profiler + jo_buoy + &
+      jo_pseudo + jo%div + jo_qscat + jo_profiler + jo_buoy + &
       jo_radar + jo_gpsref + jo_bogus + jo_radiance + jo_airsr + jo_mtgirs + &
       jo_tamdar + jo_tamdar_sfc + jo_rain 
 
@@ -435,6 +444,7 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
          '   jo_ssmt1        ', jo_ssmt1, &
          '   jo_ssmt2        ', jo_ssmt2, &
          '   jo_pseudo       ', jo_pseudo, &
+         '   jo_div          ', jo%div, &
          '   jo_qscat        ', jo_qscat, &
          '   jo_profiler     ', jo_profiler, &
          '   jo_buoy         ', jo_buoy, &

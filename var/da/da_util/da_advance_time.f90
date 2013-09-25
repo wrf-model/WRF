@@ -31,7 +31,7 @@ program da_advance_time
 !     integer function iargc()
 !     end function iargc
 !  end interface
-   integer, external :: iargc
+   integer iargc
 
    integer :: ccyy, mm, dd, hh, nn, ss, dday, dh, dn, ds, gday, gsec
 

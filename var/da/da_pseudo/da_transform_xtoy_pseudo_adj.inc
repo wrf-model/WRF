@@ -41,7 +41,7 @@ subroutine da_transform_xtoy_pseudo_adj(iv, jo_grad_y, jo_grad_x)
    select case(pseudo_var(1:3))
    case ('qcw', 'QCW','qci', 'QCI','qrn', 'QRN', 'qsn', 'QSN')
         qw(1,n) = jo_grad_y%pseudo(n)%q
-        jo_grad_y%pseudo(n)%q = 0.0
+!        jo_grad_y%pseudo(n)%q = 0.0
    end select
 #endif
       q(1,n) = jo_grad_y%pseudo(n)%q

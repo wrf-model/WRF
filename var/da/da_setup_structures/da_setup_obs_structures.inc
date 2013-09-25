@@ -220,6 +220,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
 #endif
    end if
 
+
    ! Summarize observations 
 
    write(unit=stdout, fmt='(a)')  'Observation summary'

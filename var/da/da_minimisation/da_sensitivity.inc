@@ -30,7 +30,7 @@ subroutine da_sensitivity(grid, config_flags, it, cv_size, xbx, be, iv, xhat, qh
    
    type (y_type)                     :: ktr         
 #ifdef CLOUD_CV
-   integer                           :: i, j, mz(11)
+   integer                           :: i, j, mz(13)
 #else
    integer                           :: i, j, mz(7)
 #endif
@@ -39,7 +39,7 @@ subroutine da_sensitivity(grid, config_flags, it, cv_size, xbx, be, iv, xhat, qh
    real                              :: amat(1:cv_size)               ! cv copy.
    real                              :: ritz(ntmax(it), ntmax(it))
 #ifdef CLOUD_CV
-    mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz,  be%v6%mz, be%v7%mz, be%v8%mz,be%v9%mz, be%alpha%mz, be % ne /)
+    mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz,  be%v6%mz, be%v7%mz, be%v8%mz,be%v9%mz,be%v10%mz,be%v11%mz,be%alpha%mz, be % ne /)
 #else
     mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz,be%alpha%mz, be % ne /)
 #endif 

@@ -17,8 +17,8 @@ module da_define_structures
       put_rand_seed, seed_array1, seed_array2, missing_r, &
       sound, synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, &
-      mtgirs, tamdar, tamdar_sfc, pseudo, radar, radiance, airsr, sonde_sfc, rain, &
-      trace_use_dull,comm, num_pseudo
+      mtgirs, tamdar, tamdar_sfc, pseudo, idxdiv, radar, radiance, airsr, sonde_sfc, rain, &
+      trace_use_dull,comm, num_pseudo, use_3dvar_dyn
 
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_tools_serial, only : da_array_print
@@ -206,8 +206,13 @@ module da_define_structures
       type (stn_loc_type)     :: stn_loc
 
       real, pointer           :: model_p(:)
+      real, pointer           :: model_t(:)
       real, pointer           :: model_rho(:)
       real, pointer           :: model_qrn(:)
+      real, pointer           :: model_qcl(:)
+      real, pointer           :: model_qci(:)
+      real, pointer           :: model_qsn(:)
+      real, pointer           :: model_qgr(:)
       real                    :: model_ps
 
       real                  , pointer :: height   (:) ! Height in m
@@ -215,10 +220,18 @@ module da_define_structures
 
       type (field_type)     , pointer :: rv       (:) ! Radial Velocity
       type (field_type)     , pointer :: rf       (:) ! Reflectivity
-      type (field_type)     , pointer :: rr       (:) ! Reflectivity
-      real                  , pointer :: rro      (:)
-      real                  , pointer :: qso      (:)
-      real                  , pointer :: qco      (:)
+      type (field_type)     , pointer :: rrn      (:) ! Reflectivity
+      type (field_type)     , pointer :: rcl      (:) ! Reflectivity
+      type (field_type)     , pointer :: rci      (:) ! Reflectivity
+      type (field_type)     , pointer :: rsn      (:) ! Reflectivity
+      type (field_type)     , pointer :: rgr      (:) ! Reflectivity
+      type (field_type)     , pointer :: rqv      (:) !
+      real                  , pointer :: rrno     (:)
+      real                  , pointer :: rclo     (:)
+      real                  , pointer :: rcio     (:)
+      real                  , pointer :: rsno     (:)
+      real                  , pointer :: rgro     (:)
+      real                  , pointer :: rqvo     (:)
    end type radar_type
 
    type multi_level_type
@@ -623,6 +636,7 @@ module da_define_structures
       type (ssmt1_type)    , pointer :: ssmt1(:)
       type (ssmt2_type)    , pointer :: ssmt2(:)
       type (pseudo_type)   , pointer :: pseudo(:)
+      type (field_type)    , pointer :: div(:)
       type (qscat_type)    , pointer :: qscat(:)
       type (synop_type)    , pointer :: buoy(:)
       type (pilot_type)    , pointer :: profiler(:)
@@ -656,6 +670,7 @@ module da_define_structures
       type (bad_info_type)       :: t
       type (bad_info_type)       :: p
       type (bad_info_type)       :: q
+      type (bad_info_type)       :: div         
       type (bad_info_type)       :: tpw
       type (bad_info_type)       :: Speed
       type (bad_info_type)       :: gpsref
@@ -663,7 +678,12 @@ module da_define_structures
       type (bad_info_type)       :: rh
       type (bad_info_type)       :: rv
       type (bad_info_type)       :: rf
-      type (bad_info_type)       :: rr
+      type (bad_info_type)       :: rrn
+      type (bad_info_type)       :: rsn
+      type (bad_info_type)       :: rgr
+      type (bad_info_type)       :: rcl
+      type (bad_info_type)       :: rci
+      type (bad_info_type)       :: rqv
       type (bad_info_type)       :: slp
       type (bad_info_type)       :: rad
       type (bad_info_type)       :: rain
@@ -792,12 +812,18 @@ module da_define_structures
       real :: t                                   ! temperature.
       real :: p                                   ! pressure.
       real :: q                                   ! specific humidity.
+!      real :: div                                 ! divergence
    end type residual_pseudo_type
 
    type residual_radar_type
       real, pointer :: rv(:)                    ! rv
       real, pointer :: rf(:)                    ! rf
-      real, pointer :: rr(:)                    ! rr
+      real, pointer :: rrn(:)                   ! rr
+      real, pointer :: rcl(:)                   ! r
+      real, pointer :: rci(:)                   ! r
+      real, pointer :: rsn(:)                   ! r
+      real, pointer :: rgr(:)                   ! r
+      real, pointer :: rqv(:) 
    end type residual_radar_type
 
    type residual_instid_type
@@ -839,6 +865,7 @@ module da_define_structures
       type (residual_ssmt1_type),    pointer :: ssmt1(:)
       type (residual_ssmt2_type),    pointer :: ssmt2(:)
       type (residual_pseudo_type),   pointer :: pseudo(:)
+      real                      ,    pointer :: div(:)
       type (residual_qscat_type),    pointer :: qscat(:)
       type (residual_synop_type),    pointer :: buoy(:) ! Same as synop type
       type (residual_pilot_type),    pointer :: profiler(:) ! Same as pilot type
@@ -888,11 +915,11 @@ module da_define_structures
       real                :: ssmi_tb19v, ssmi_tb19h, ssmi_tb22v, ssmi_tb37v, &
                              ssmi_tb37h, ssmi_tb85v, ssmi_tb85h
       real                :: ssmt1_t, ssmt2_rh
-      real                :: pseudo_u, pseudo_v, pseudo_t, pseudo_p, pseudo_q
+      real                :: pseudo_u, pseudo_v, pseudo_t, pseudo_p, pseudo_q, div
       real                :: qscat_u, qscat_v
       real                :: profiler_u, profiler_v
       real                :: buoy_u, buoy_v, buoy_t, buoy_p, buoy_q
-      real                :: radar_rv, radar_rf, radar_rr
+      real                :: radar_rv, radar_rf, radar_rrn,radar_rsn,radar_rgr,radar_rcl,radar_rci,radar_rqv
       real                :: bogus_u, bogus_v, bogus_t, bogus_q, bogus_slp
       real                :: airsr_t, airsr_q
       real                :: rain_r
@@ -927,6 +954,8 @@ module da_define_structures
       integer :: size7c      ! Complex size of CV array of 7th variable error.
       integer :: size8c      ! Complex size of CV array of 8th variable error.
       integer :: size9c      ! Complex size of CV array of 9th variable error.
+      integer :: size10c     ! Complex size of CV array of 10th variable error.
+      integer :: size11c     ! Complex size of CV array of 11th variable error.
 #endif
       integer :: size_alphac ! Size of alpha control variable (complex).
       integer :: size1       ! Size of CV array of 1st variable error.
@@ -939,6 +968,8 @@ module da_define_structures
       integer :: size7       ! Size of CV array of 7th variable error.
       integer :: size8       ! Size of CV array of 8th variable error.
       integer :: size9       ! Size of CV array of 9th variable error.
+      integer :: size10      ! Size of CV array of 10th variable error.
+      integer :: size11i     ! Size of CV array of 11th variable error.
 #endif
       integer :: size1l      ! Size of CV array of 1st variable lbc error.
       integer :: size2l      ! Size of CV array of 2nd variable lbc error.
@@ -982,6 +1013,8 @@ module da_define_structures
       type (be_subtype) :: v7
       type (be_subtype) :: v8
       type (be_subtype) :: v9
+      type (be_subtype) :: v10
+      type (be_subtype) :: v11
 #endif
       type (be_subtype) :: alpha
       real*8, pointer     :: pb_vert_reg(:,:,:)

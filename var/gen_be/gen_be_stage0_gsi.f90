@@ -36,7 +36,7 @@ program gen_be_stage0_gsi
    character (len=3)     :: cne                       ! Ensemble size.
    character (len=3)     :: ce                        ! Member index -> character.
 
-   integer, external     :: iargc
+   integer               :: iargc
    integer               :: numarg
    integer               :: ne                        ! Ensemble size.
    integer               :: i, j, k, member           ! Loop counters.

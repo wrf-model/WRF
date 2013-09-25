@@ -36,6 +36,7 @@ subroutine da_transform_xtoxa_adj(grid)
 
    ! Compute w increments using Richardson's eqn.
    if ( Use_RadarObs)  then
+      !print*,"sum(grid%xa%wh)= ",sum(grid%xa%wh)
       do k=kts,kte
          do j=jts,jte
             do i=its,ite
@@ -45,12 +46,12 @@ subroutine da_transform_xtoxa_adj(grid)
             end do
          end do
       end do
-
-      if ( .not. var4d ) call da_uvprho_to_w_adj(grid)
+      !print*,"sum(grid%xa%w)= ",sum(grid%xa%w)
+      if ( .not. var4d .and. cloud_cv_options == 1 ) call da_uvprho_to_w_adj(grid)
    end if
 
    if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
-     if ( cloud_cv_options == 1) then
+     if ( cloud_cv_options == 1 .and. use_3dvar_phy) then
       ! Partition of hydrometeor increments via warm rain process
       call da_moist_phys_adj(grid)
      end if

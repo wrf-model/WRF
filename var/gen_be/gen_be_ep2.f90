@@ -31,7 +31,7 @@ program gen_be_ep2
    character (len=3)     :: cne                       ! Ensemble size.
    character (len=3)     :: ce                        ! Member index -> character.
 
-   integer, external     :: iargc
+   integer               :: iargc
    integer               :: numarg
    integer               :: ne                        ! Ensemble size.
    integer               :: i, j, k, member           ! Loop counters.

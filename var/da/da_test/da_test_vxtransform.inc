@@ -45,6 +45,8 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
    allocate (vp1 % v7(ims:ime,jms:jme,kms:kme))
    allocate (vp1 % v8(ims:ime,jms:jme,kms:kme))
    allocate (vp1 % v9(ims:ime,jms:jme,kms:kme))
+   allocate (vp1 % v10(ims:ime,jms:jme,kms:kme))
+   allocate (vp1 % v11(ims:ime,jms:jme,kms:kme))
 #endif
 
    allocate (vv1 % v1(ims:ime,jms:jme,1:kz_vv(1)))
@@ -57,6 +59,8 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
    allocate (vv1 % v7(ims:ime,jms:jme,1:kz_vv(7)))
    allocate (vv1 % v8(ims:ime,jms:jme,1:kz_vv(8)))
    allocate (vv1 % v9(ims:ime,jms:jme,1:kz_vv(9)))
+   allocate (vv1 % v10(ims:ime,jms:jme,1:kz_vv(10)))
+   allocate (vv1 % v11(ims:ime,jms:jme,1:kz_vv(11)))
 #endif 
    call da_zero_vp_type(vp1)
    call da_zero_vp_type(vv1)
@@ -113,6 +117,8 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
    vv1 % v7(its:ite,jts:jte,1:kz_vv(7)) = vv % v7(its:ite,jts:jte,1:kz_vv(7))
    vv1 % v8(its:ite,jts:jte,1:kz_vv(8)) = vv % v8(its:ite,jts:jte,1:kz_vv(8))
    vv1 % v9(its:ite,jts:jte,1:kz_vv(9)) = vv % v9(its:ite,jts:jte,1:kz_vv(9))
+   vv1 % v10(its:ite,jts:jte,1:kz_vv(10)) = vv % v10(its:ite,jts:jte,1:kz_vv(10))
+   vv1 % v11(its:ite,jts:jte,1:kz_vv(11)) = vv % v11(its:ite,jts:jte,1:kz_vv(11))
 #endif
 
    vp1 % v1(its:ite,jts:jte,1:kz_vp(1)) = vp % v1(its:ite,jts:jte,1:kz_vp(1))
@@ -125,6 +131,8 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
    vp1 % v7(its:ite,jts:jte,1:kz_vp(7)) = vp % v7(its:ite,jts:jte,1:kz_vp(7))
    vp1 % v8(its:ite,jts:jte,1:kz_vp(8)) = vp % v8(its:ite,jts:jte,1:kz_vp(8))
    vp1 % v9(its:ite,jts:jte,1:kz_vp(9)) = vp % v9(its:ite,jts:jte,1:kz_vp(9))
+   vp1 % v10(its:ite,jts:jte,1:kz_vp(10)) = vp % v10(its:ite,jts:jte,1:kz_vp(10))
+   vp1 % v11(its:ite,jts:jte,1:kz_vp(11)) = vp % v11(its:ite,jts:jte,1:kz_vp(11))
 #endif
    !----------------------------------------------------------------------
    ! [1.0]: Perform VvToVpToVv test:                        
@@ -140,11 +148,13 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
       vv % v3(its:ite,jts:jte,1:kz_vv(3)) = vp % v3(its:ite,jts:jte,1:kz_vp(3))
       vv % v4(its:ite,jts:jte,1:kz_vv(4)) = vp % v4(its:ite,jts:jte,1:kz_vp(4))
       vv % v5(its:ite,jts:jte,1:kz_vv(5)) = vp % v5(its:ite,jts:jte,1:kz_vp(5))
-#ifdef
+#ifdef CLOUD_CV 
       vv % v6(its:ite,jts:jte,1:kz_vv(6)) = vp % v6(its:ite,jts:jte,1:kz_vp(6))
       vv % v7(its:ite,jts:jte,1:kz_vv(7)) = vp % v7(its:ite,jts:jte,1:kz_vp(7))
       vv % v8(its:ite,jts:jte,1:kz_vv(8)) = vp % v8(its:ite,jts:jte,1:kz_vp(8))
       vv % v9(its:ite,jts:jte,1:kz_vv(9)) = vp % v9(its:ite,jts:jte,1:kz_vp(9))
+      vv % v10(its:ite,jts:jte,1:kz_vv(10)) = vp % v10(its:ite,jts:jte,1:kz_vp(10))
+      vv % v11(its:ite,jts:jte,1:kz_vv(11)) = vp % v11(its:ite,jts:jte,1:kz_vp(11))
 #endif
    end if
 
@@ -169,6 +179,8 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
       vp % v7(its:ite,jts:jte,1:kz_vv(7)) = vv % v7(its:ite,jts:jte,1:kz_vv(7))
       vp % v8(its:ite,jts:jte,1:kz_vv(8)) = vv % v8(its:ite,jts:jte,1:kz_vv(8))
       vp % v9(its:ite,jts:jte,1:kz_vv(9)) = vv % v9(its:ite,jts:jte,1:kz_vv(9))
+      vp % v10(its:ite,jts:jte,1:kz_vv(10)) = vv % v10(its:ite,jts:jte,1:kz_vv(10))
+      vp % v11(its:ite,jts:jte,1:kz_vv(11)) = vv % v11(its:ite,jts:jte,1:kz_vv(11))
 #endif
    end if
 
@@ -181,7 +193,7 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
    !----------------------------------------------------------------------
    ! [3.0] Check_CvToVv_Adjoint:
    !----------------------------------------------------------------------
-
+   
    call da_check_cvtovv_adjoint( grid, xbx, be, cv, vv)
   
    !----------------------------------------------------------------------
@@ -257,6 +269,8 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
    deallocate (vp1 % v7)
    deallocate (vp1 % v8)
    deallocate (vp1 % v9)
+   deallocate (vp1 % v10)
+   deallocate (vp1 % v11)
 #endif
 
    deallocate (vv1 % v1)
@@ -269,6 +283,8 @@ subroutine da_test_vxtransform( grid, xbx, be, vv, vp)
    deallocate (vv1 % v7)
    deallocate (vv1 % v8)
    deallocate (vv1 % v9)
+   deallocate (vv1 % v10)
+   deallocate (vv1 % v11)
 #endif
    if (trace_use) call da_trace_exit("da_test_vxtransform") 
 

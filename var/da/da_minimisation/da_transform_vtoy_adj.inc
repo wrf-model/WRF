@@ -136,6 +136,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
          grid%g_rainnc = 0.0
          grid%g_rainc = 0.0
          call da_transform_xtoy_adj(cv_size, cv, grid, iv, y, grid%xa)
+
          call da_transform_xtoxa_adj(grid)
          write(unit=filnam,fmt='(a2,i2.2)') 'af',nobwin
 

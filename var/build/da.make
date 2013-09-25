@@ -33,6 +33,7 @@ WRFVAR_OBJS = \
    da_satem.o \
    da_qscat.o \
    da_pseudo.o \
+   da_divergence.o \
    da_profiler.o \
    da_buoy.o \
    da_dynamics.o \

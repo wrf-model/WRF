@@ -867,7 +867,18 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
          end do
       end do
    end if
-
+   
+if (use_radar_rze) then   !wenxue
+   do k = kts, kte
+      do j = jts, jte
+	  do i = its, ite
+	  grid%xb%qrn(i,j,k) = max(grid%xb%qrn(i,j,k), 1.0E-5)
+	  grid%xb%qsn(i,j,k) = max(grid%xb%qsn(i,j,k), 1.0E-6)
+	  grid%xb%qgr(i,j,k) = max(grid%xb%qgr(i,j,k), 1.0E-6)
+	  end do
+	  end do
+   end do
+end if 	  !wenxue
    deallocate (xbx % latc_mean)
 
    if (trace_use) call da_trace_exit("da_transfer_wrftoxb")

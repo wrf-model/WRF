@@ -43,6 +43,9 @@ program gen_be_stage2a
 
    integer :: ounit,iunit,namelist_unit
 
+   logical               :: cv_uv_full
+   cv_uv_full = .true.
+
    stderr = 0
    stdout = 6
 
@@ -158,7 +161,9 @@ program gen_be_stage2a
             do j = 1, nj
                do i = 1, ni
                   b = bin(i,j,k)
+                  if (.not. cv_uv_full) then
                   chi(i,j,k) = chi(i,j,k) - regcoeff1(b) * psi(i,j,k)
+                  end if
                end do
             end do
          end do
@@ -184,7 +189,9 @@ program gen_be_stage2a
             do i = 1, ni
                b = bin2d(i,j)
                do k = 1, nk
+                  if (.not. cv_uv_full) then
                   temp(i,j,k) = temp(i,j,k) - SUM(regcoeff3(k,1:nk,b) * psi(i,j,1:nk))
+                  end if
                end do
             end do
          end do
@@ -209,7 +216,9 @@ program gen_be_stage2a
          do j = 1, nj
             do i = 1, ni
                b = bin2d(i,j)
+                  if (.not. cv_uv_full) then
                ps(i,j) = ps(i,j) - SUM(regcoeff2(1:nk,b) * psi(i,j,1:nk))
+                  end if
             end do
          end do
 

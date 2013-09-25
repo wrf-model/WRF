@@ -41,11 +41,12 @@ module da_minimisation
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, rain, &
       bogus, buoy, qscat,pseudo, radiance, monitor_on, max_ext_its, use_rttov_kmatrix,&
       use_crtm_kmatrix,precondition_cg, precondition_factor, use_varbc, varbc_factor, &
-      num_procs, myproc, use_gpspwobs, use_rainobs, use_gpsztdobs, pseudo_var, num_pseudo, &
+      num_procs, myproc, use_gpspwobs, use_rainobs, use_gpsztdobs, &
+      use_radar_rf, use_radar_rhv,use_radar_rqv,pseudo_var, num_pseudo, &
       num_ob_indexes, num_ob_vars, npres_print, pptop, ppbot, qcstat_conv_unit, gas_constant, &
       orthonorm_gradient, its, ite, jts, jte, kts, kte, ids, ide, jds, jde, cp, &
       use_satcv, sensitivity_option, print_detail_outerloop, adj_sens, filename_len, &
-      ims, ime, jms, jme, kms, kme, fgat_rain_flags, var4d_bin_rain, freeze_varbc
+      ims, ime, jms, jme, kms, kme, fgat_rain_flags, var4d_bin_rain, freeze_varbc, use_3dvar_dyn
    use da_define_structures, only : iv_type, y_type, j_type, be_type, &
       xbx_type, jo_type, da_allocate_y,da_zero_x,da_zero_y,da_deallocate_y, &
       da_zero_vp_type, qhat_type
@@ -80,6 +81,9 @@ module da_minimisation
    use da_pseudo, only : da_calculate_grady_pseudo, da_ao_stats_pseudo, &
       da_oi_stats_pseudo, da_get_innov_vector_pseudo, da_residual_pseudo, &
       da_jo_and_grady_pseudo
+   use da_divergence, only : da_calculate_grady_div, da_ao_stats_div, &
+      da_oi_stats_div, da_get_innov_vector_div, da_residual_div, &
+      da_jo_and_grady_div
    use da_qscat, only : da_calculate_grady_qscat, da_ao_stats_qscat, &
       da_oi_stats_qscat, da_get_innov_vector_qscat, da_residual_qscat, &
       da_jo_and_grady_qscat

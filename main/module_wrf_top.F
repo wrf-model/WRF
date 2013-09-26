@@ -1071,7 +1071,9 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
                   ENDIF
                END DO adextract
                !$OMP END PARALLEL DO
+#ifdef DM_PARALLEL
                ad_derivative(iter,nnumer,ndenom) = wrf_dm_sum_real ( ad_derivative(iter,nnumer,ndenom) )
+#endif
 
             ENDDO denom_vars_Loop1
          ENDDO      
@@ -1158,7 +1160,9 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
                         ENDIF
                      END DO numextract
                      !$OMP END PARALLEL DO
+#ifdef DM_PARALLEL
                      nl_num = wrf_dm_sum_real ( nl_num )
+#endif
 
                      !$OMP PARALLEL DO    &
                      !$OMP PRIVATE ( ij ) &
@@ -1175,7 +1179,9 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
                         ENDIF
                      END DO denextract
                      !$OMP END PARALLEL DO
+#ifdef DM_PARALLEL
                      nl_den = wrf_dm_sum_real ( nl_den )
+#endif
 
                      nl_derivative(iter,2+psign,nnumer,ndenom) = nl_num / nl_den
                   ENDDO numer_vars_Loop2
@@ -1269,7 +1275,9 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
                   ENDIF
                END DO tlextract
                !$OMP END PARALLEL DO
+#ifdef DM_PARALLEL
                tl_derivative(iter,nnumer,ndenom) = wrf_dm_sum_real ( tl_derivative(iter,nnumer,ndenom) )
+#endif
             ENDDO numer_vars_Loop3
          ENDDO denom_vars_Loop2
       ENDDO      

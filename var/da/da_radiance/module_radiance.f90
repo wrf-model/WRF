@@ -88,7 +88,7 @@ module module_radiance
 
 ! n=noaa; f=dmsp; g=goes; c=npoess/npp; eos-1/2=aqua/terra;
    character(len=8), parameter :: crtm_platform_name(1:23) = &
-       (/ 'n       ', 'f       ', 'meteosat', 'g       ', 'gms     ', &
+       (/ 'n       ', 'f       ', 'm       ', 'g       ', 'gms     ', &
           'fy2     ', 'trmm    ', 'ers     ', 'eos     ', 'metop   ', &
           'envisat ', 'msg     ', 'fy1     ', 'adeos   ', 'mtsat   ', &
           'coriolis', 'c       ', 'gifts   ', 'tiros   ', 'xxxxxxxx', &

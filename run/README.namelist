@@ -513,6 +513,10 @@ Namelist variables for controlling the adaptive time step option:
  alevsiz                             = 12 for Tegen aerosol input levels, set automatically
  no_src_types                        = 6 for Tegen aerosols: organic and black carbon, sea salt, sulfalte, dust,
                                        and stratospheric aerosol (volcanic ashes - currently 0), set automatically
+ swint_opt                           Interpolation of short-wave radiation based on the updated solar zenith angle 
+                                       between SW call
+                                     = 0, no interpolation
+                                     = 1, use interpolation
 
  sf_sfclay_physics (max_dom)         surface-layer option (old bl_sfclay_physics option)
                                      = 0, no surface-layer
@@ -565,7 +569,11 @@ Namelist variables for controlling the adaptive time step option:
 
  bldt (max_dom)                      = 0,       ; minutes between boundary-layer physics calls
 
- grav_settling                       = 0, ; MYNN PBL only; gravitational settling of fog/cloud droplets (1=yes)
+ grav_settling                       gravitational settling of fog/cloud droplets (Now works for any PBL scheme)
+ 				     = 0, No settling of cloud droplets
+				     = 1, Settling from Dyunkerke 1991 (in atmos and at surface)
+				     = 2, Fogdes at surface and Dyunkerke in the atmos.
+
  nphs (max_dom)                      = FOR NMM: number of fundamental timesteps between
                                                 calls to turbulence and microphysics;
                                                 the value is set in Registry.NMM but is
@@ -573,10 +581,11 @@ Namelist variables for controlling the adaptive time step option:
                                                 be computed from this.
  mfshconv (max_dom)                  = 1,; whether to turn on new day-time EDMF QNSE (0=no)
  topo_wind (max_dom)                 = 0, turn off, 
-                                     =1, turn on topographic surface wind correction from Jimenez 
+                                     = 1, turn on topographic surface wind correction from Jimenez 
                                        (YSU PBL only, and require extra input from geogrid)
-                                     =2, turn on topographic surface wind correction from Mass (YSU PBL only)
- bl_mynn_tkebudget                   = 0 default off, = 1 adds MYNN tke budget terms to output
+                                     = 2, turn on topographic surface wind correction from Mass (YSU PBL only)
+ bl_mynn_tkebudget                   = 0, default off; = 1 adds MYNN tke budget terms to output
+ bl_mynn_tkeadvect                   = .false., default off; = .true. do MYNN tke advection
 
  cu_physics (max_dom)                cumulus option
                                      = 0, no cumulus
@@ -720,6 +729,7 @@ Namelist variables for controlling the adaptive time step option:
                                                 ;             =2: z0 from Davis et al (2008), zt & zq from Garratt (1992)
  fractional_seaice                   = 0        ; treat sea-ice as fractional field (1) or ice/no-ice flag (0)
                                                   works for sf_sfclay_physics=1,2,5,or 7.
+                                                  If fractional_seaice = 1, also set seaice_threshold = 0.
  seaice_albedo_opt                   = 0        ; option to set albedo over sea ice
                                                 ; 0 = seaice albedo is a constant value from namelist option seaice_albedo_default
                                                 ; 1 = seaice albedo is f(Tair,Tskin,Snow) follwing Mills (2011) for Arctic Ocean
@@ -1117,9 +1127,13 @@ The following are for observation nudging:
  nested (max_dom)                    = .false., ; nested boundary conditions (must be used for nests)
  polar                               = .false., ; polar boundary condition
                                                   (v=0 at polarward-most v-point)
- perturb_bdy                        = 0         ; No boundary perturbations
-                                      1         ; Use SKEBS pattern for boundary perturbations
-                                      2         ; Use other user-provided pattern for boundary perturbations
+ perturb_bdy                         = 0        ; No boundary perturbations
+                                       1        ; Use SKEBS pattern for boundary perturbations
+                                       2        ; Use other user-provided pattern for boundary perturbations
+ have_bcs_moist                      = .false., ; model run after ndown only: do not use microphysics variables in bdy file
+                                     = .true. , ; use microphysics variables in bdy file
+ have_bcs_scalar                     = .false., ; model run after ndown only: do not use scalar variables in bdy file
+                                     = .true. , ; use scalar variables in bdy file
 
  euler_adv                           = .false., ; conservative Eulerian passive advection (NMM only)
  idtadt                              = 1,       ; fundamental timesteps between calls to Euler advection, dynamics (NMM only)

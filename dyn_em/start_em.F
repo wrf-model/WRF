@@ -609,6 +609,10 @@
 
    END IF
 
+! set GMT outside of phy_init because phy_init may not be called on this
+! process if, for example, it is a moving nest and if this part of the domain is not
+! being initialized (not the leading edge).
+   CALL domain_setgmtetc( grid, start_of_simulation )
    IF ( first_trip_for_this_domain ) THEN
 
    CALL wrf_debug ( 100 , 'start_domain_em: Before call to phy_init' )
@@ -617,10 +621,6 @@
 ! MPDT is the call frequency for microphysics in minutes (0 means every step)
    MPDT = 0.
 
-! set GMT outside of phy_init because phy_init may not be called on this
-! process if, for example, it is a moving nest and if this part of the domain is not
-! being initialized (not the leading edge).
-   CALL domain_setgmtetc( grid, start_of_simulation )
 !tgs
    IF(config_flags%cycling) start_of_simulation = .true.
 !  print *,'cycling, start_of_simulation -->',config_flags%cycling, start_of_simulation
@@ -1367,7 +1367,7 @@
                          grid%last_chem_time_year,grid%last_chem_time_month,               &
                          grid%last_chem_time_day,grid%last_chem_time_hour,                 &
                          grid%last_chem_time_minute,grid%last_chem_time_second,            &
-                         grid%chem_in_opt,grid%kemit,                       &
+                         grid%chem_in_opt,grid%kemit,grid%num_vert_mix,                       &
                          ids , ide , jds , jde , kds , kde ,                &
                          ims , ime , jms , jme , kms , kme ,                &
                          its , ite , jts , jte , kts , kte                  )
@@ -1383,7 +1383,8 @@
                 ids,ide, jds,jde, kds,kde,                                  &
                 ims,ime, jms,jme, kms,kme,                                  &
                 its,ite, jts,jte, kts,kte-1                                 )
-        case (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP)
+        case (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM_KPP, &
+              RACM_ESRLSORG_AQCHEM_KPP,RACMSORG_KPP)
            call sum_pm_sorgam (                                             &
                 grid%alt, chem, grid%h2oaj, grid%h2oai,                                    &
                 grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,                 &
@@ -1400,7 +1401,7 @@
 
         case (CBMZ_MOSAIC_4BIN,CBMZ_MOSAIC_8BIN,CBMZ_MOSAIC_4BIN_AQ,CBMZ_MOSAIC_8BIN_AQ, &
               CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ,       &
-              CBMZ_MOSAIC_DMS_8BIN_AQ)
+              CBMZ_MOSAIC_DMS_8BIN_AQ, CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
            call sum_pm_mosaic (                                             &
                 grid%alt, chem,                                                  &
                 grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,                 &

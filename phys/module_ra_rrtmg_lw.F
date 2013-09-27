@@ -2713,6 +2713,7 @@ contains
       real(kind=rb) :: radsno                         ! cloud snow effective size (microns)
       real(kind=rb), parameter :: eps = 1.e-6_rb      ! epsilon
       real(kind=rb), parameter :: cldmin = 1.e-20_rb  ! minimum value for cloud quantities
+      character*80 errmess
 
 ! ------- Definitions -------
 
@@ -2840,8 +2841,12 @@ contains
 ! For iceflag=3 option, ice particle generalized effective size is limited to 5.0 to 140.0 microns
 
                elseif (iceflag .ge. 3) then
-                  if (radice .lt. 5.0_rb .or. radice .gt. 140.0_rb) print*, ' STOPPING,  ', ig, lay, ciwpmc(ig,lay), radice
-                  if (radice .lt. 5.0_rb .or. radice .gt. 140.0_rb) stop 'ICE GENERALIZED EFFECTIVE SIZE OUT OF BOUNDS'
+                  if (radice .lt. 5.0_rb .or. radice .gt. 140.0_rb) then
+                         write(errmess,'(A,i5,i5,f8.2,f8.2)' )         &
+               'ERROR: ICE GENERALIZED EFFECTIVE SIZE OUT OF BOUNDS'   &
+               ,ig, lay, ciwpmc(ig,lay), radice
+                         call wrf_error_fatal(errmess)
+                     end if
                      ncbands = 16
                      factor = (radice - 2._rb)/3._rb
                      index = int(factor)
@@ -2858,8 +2863,12 @@ contains
 !..Incorporate additional effects due to snow.
                if (cswpmc(ig,lay).gt.0.0_rb .and. iceflag .eq. 5) then
                   radsno = resnmc(lay)
-                  if (radsno .lt. 5.0_rb .or. radsno .gt. 140.0_rb) print*, ' STOPPING,  ', ig, lay, cswpmc(ig,lay), radsno
-                  if (radsno .lt. 5.0_rb .or. radsno .gt. 140.0_rb) stop 'SNOW GENERALIZED EFFECTIVE SIZE OUT OF BOUNDS'
+                  if (radsno .lt. 5.0_rb .or. radsno .gt. 140.0_rb) then
+                         write(errmess,'(A,i5,i5,f8.2,f8.2)' )         &
+               'ERROR: SNOW GENERALIZED EFFECTIVE SIZE OUT OF BOUNDS'   &
+               ,ig, lay, cswpmc(ig,lay), radsno
+                         call wrf_error_fatal(errmess)
+                     end if
                      ncbands = 16
                      factor = (radsno - 2._rb)/3._rb
                      index = int(factor)

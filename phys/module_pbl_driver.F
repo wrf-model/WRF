@@ -36,12 +36,12 @@ CONTAINS
                  ,exch_temf,cf3d_temf,cfm_temf                    &
                  ,flhc,flqc                                        &
               ! MYNN
-                 ,qke                                              &
-!ACF for QKE advection
-                 ,qke_adv,bl_mynn_tkeadvect                        &
-!ACF-end
-                 ,tsq,qsq,cov,rmol,ch,qcg,grav_settling,el_mynn    &
-                 ,dqke,qWT,qSHEAR,qBUOY,qDISS,bl_mynn_tkebudget    &
+                 ,qke,Sh3d                                         &
+                 ,qke_adv,bl_mynn_tkeadvect                        & !ACF for QKE advection
+                 ,tsq,qsq,cov,rmol,ch,qcg,grav_settling            & 
+                 ,dqke,qWT,qSHEAR,qBUOY,qDISS,bl_mynn_tkebudget    & ! JOE - MYNN TKE budget
+                 ,bl_mynn_cloudpdf                                 & ! JOE - cloud PDF tests
+                 ,vdfg                                             & ! Katata- fog deposition
 #if (NMM_CORE==1)
                  ,DISHEAT                                          &
                  ,HPBL2D, EVAP2D, HEAT2D, RC2D                     &   !Kwon FOR SHAL. CON.
@@ -100,6 +100,9 @@ CONTAINS
                ,IS_CAMMGMP_USED                                      &
 ! for grims shallow convection with ysupbl
                , wstar,delta                                       &
+#if (WRF_CHEM == 1)
+               ,chem,vd,nchem,kdvel,ndvel,num_vert_mix             &
+#endif
                                                                      )       
 !------------------------------------------------------------------
 #if (EM_CORE==1)
@@ -140,6 +143,7 @@ CONTAINS
    USE module_bl_gbmpbl
 #if (EM_CORE==1)
    USE module_bl_mynn
+   USE module_bl_fogdes
    USE module_wind_fitch
 #endif
 
@@ -481,15 +485,20 @@ CONTAINS
 !MYNN
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),     &
           INTENT(INOUT) ::        tsq,qsq,cov, & !,k_m,k_h,k_q &
-                                  qke,el_mynn,                 &
+                                  qke,Sh3d,                    &
                                   dqke,qWT,qSHEAR,qBUOY,qDISS 
    INTEGER, OPTIONAL, INTENT(IN)  :: bl_mynn_tkebudget,        &
-                                     grav_settling
+                                     grav_settling,            &
+                                     bl_mynn_cloudpdf
 !ACF-QKE advection start
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), &
         & INTENT(INOUT) :: qke_adv
    LOGICAL, OPTIONAL, INTENT(IN) :: bl_mynn_tkeadvect
 !ACF-QKE advection end
+! Katata-added -                                                                                                                                                                             
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,              &
+        &    INTENT(INOUT)::                               vdfg
+! Katata-end
 
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), &
         & INTENT(INOUT) ::  exch_tke      ! for GBM PBL scheme
@@ -627,6 +636,13 @@ CONTAINS
                                      ,thl_up, thv_up, rt_up       &
                                      ,rv_up, rc_up, u_up, v_up    &
                                      ,frac_up,rc_mf  
+
+#if (WRF_CHEM == 1)
+!   ACM Chem
+    INTEGER, INTENT(IN) :: nchem, kdvel,ndvel,num_vert_mix
+    REAL, INTENT(INOUT),  DIMENSION( ims:ime, kms:kme, jms:jme,nchem ) :: CHEM
+    REAL, INTENT(IN)   ,  DIMENSION( ims:ime, kdvel, jms:jme, ndvel )  :: VD
+#endif
 
 !  LOCAL  VAR
 
@@ -1439,9 +1455,13 @@ CONTAINS
                XTIME=itimestep, DTPBL=dtbl, ZNW=znw, SIGMAH=znu               &
               ,U3D=u_phytmp, V3D=v_phytmp, PP3D=p_phy, DZ8W=dz8w, TH3D=th_phy, T3D=t_phy            &
               ,QV3D=qv_curr, QC3D=qc_curr, QI3D=qi_curr, RR3D=rho                &
+#if (WRF_CHEM == 1)
+              ,CHEM3D=CHEM,   VD3D=VD,  NCHEM=nchem, KDVEL=kdvel              &
+              ,NDVEL=ndvel, NUM_VERT_MIX=num_vert_mix                         &
+#endif
               ,UST=UST, HFX=HFX, QFX=QFX, TSK=tsk                               &
               ,PSFC=PSFC, EP1=EP_1, G=g, ROVCP=rcp,RD=r_D,CPD=cp                 &
-              ,PBLH=pblh, KPBL2D=kpbl, REGIME=regime                            &
+              ,PBLH=pblh, KPBL2D=kpbl, EXCH_H=exch_h, REGIME=regime              &
               ,GZ1OZ0=gz1oz0,WSPD=wspd,PSIM=psim, MUT=mut                        &
               ,RUBLTEN=rublten,RVBLTEN=rvblten,RTHBLTEN=rthblten                 &
               ,RQVBLTEN=rqvblten,RQCBLTEN=rqcblten,RQIBLTEN=rqiblten             &
@@ -1472,16 +1492,14 @@ CONTAINS
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
                 PRESENT(qke) .AND. PRESENT(tsq) .AND.               &
                 PRESENT(qsq) .AND. PRESENT(cov) .AND.               &
-                PRESENT(rmol) .AND. PRESENT(el_mynn).AND.           &
+                PRESENT(rmol) .AND.                                 &
                 PRESENT(qcg) .AND. PRESENT(ch) .AND.                &
-                PRESENT(grav_settling) .AND. PRESENT(dqke) .AND.    &
-                PRESENT(qWT) .AND. PRESENT(qSHEAR) .AND.            & 
-                PRESENT(qBUOY) .AND. PRESENT(qDISS) .AND.           &
+                PRESENT(grav_settling) .AND.                        &
                 PRESENT(bl_mynn_tkebudget) .AND.                    &
 !ACF,JOE-QKE advection
-                PRESENT(qke_adv) .AND. PRESENT(bl_mynn_tkeadvect) &
+                PRESENT(qke_adv) .AND. PRESENT(bl_mynn_tkeadvect) .AND.&
 !ACF,JOE-end
-                & ) THEN
+                PRESENT(vdfg) ) THEN
 
               CALL wrf_debug(100,'in MYNNPBL')
 
@@ -1500,7 +1518,8 @@ CONTAINS
                    &p=p_phy,exner=pi_phy,rho=rho,&
                    &xland=xland,ts=tsk,qsfc=qsfc,qcg=qcg,ps=psfc,&
                    &ust=ust,ch=ch,hfx=hfx,qfx=qfx,rmol=rmol,wspd=wspd,&
-                   &Qke=qke,&
+                   &vdfg=vdfg,&           !Katata -added 
+                   &Qke=qke,Sh3d=Sh3d,&
 !ACF for QKE advection
                    &qke_adv=qke_adv,bl_mynn_tkeadvect=bl_mynn_tkeadvect,&
 !ACF-end
@@ -1509,10 +1528,11 @@ CONTAINS
                    &Dqv=rqvblten,Dqc=rqcblten,&
                    &k_h=exch_h,k_m=exch_m,&
                    &pblh=pblh&
-                   &,el_mynn=el_mynn                                     &
+                   &,el_pbl=el_pbl                                       &
                    &,dqke=dqke                                           &
                    &,qWT=qWT,qSHEAR=qSHEAR,qBUOY=qBUOY,qDISS=qDISS       &
                    &,bl_mynn_tkebudget=bl_mynn_tkebudget                 &
+                   &,bl_mynn_cloudpdf=bl_mynn_cloudpdf                   &
                    ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
                    ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
                    ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
@@ -1561,7 +1581,7 @@ CONTAINS
                   ENDIF
                ENDIF
            ELSE
-               WRITE ( message , FMT = '(A,20(L1,1X))' )            &
+               WRITE ( message , FMT = '(A,16(L1,1X))' )            &
                  'present: '//                                      &
                  'qv_curr, '//                                      &
                  'qc_curr, '//                                      &
@@ -1575,14 +1595,10 @@ CONTAINS
                  'qcg, '//                                          &
                  'ch, '//                                           &
                  'grav_settling, '//                                &
-                 'dqke, '//                                         &
-                 'qWT, '//                                          &
-                 'qSHEAR, '//                                       &
-                 'qBUOY, '//                                        &
-                 'qDISS, '//                                        &
                  'bl_mynn_tkebudget, '//                            &
                  'qke_adv, '//                                      &
-                 'bl_mynn_tkeadvect = ' ,                           &
+                 'bl_mynn_tkeadvect, '//                            &
+                 'vdfg = ' ,                                        &
                   PRESENT( qv_curr ) ,                              &
                   PRESENT( qc_curr ) ,                              &
                   PRESENT( rqvblten ) ,                             &
@@ -1595,14 +1611,10 @@ CONTAINS
                   PRESENT( qcg      ) ,                             &
                   PRESENT( ch       ) ,                             &
                   PRESENT( grav_settling),                          &
-                  PRESENT( dqke     ) ,                             &
-                  PRESENT( qWT      ) ,                             &
-                  PRESENT( qSHEAR   ) ,                             &
-                  PRESENT( qBUOY    ) ,                             &
-                  PRESENT( qSHEAR   ) ,                             &
                   PRESENT( bl_mynn_tkebudget) ,                     &
                   PRESENT( qke_adv  ) ,                             &
-                  PRESENT( bl_mynn_tkeadvect)
+                  PRESENT( bl_mynn_tkeadvect) ,                     &
+                  PRESENT( vdfg )
                CALL wrf_debug(0,message)
               CALL wrf_error_fatal('Lack arguments to call MYNN pbl')
            ENDIF
@@ -1748,6 +1760,25 @@ CONTAINS
        ENDIF
    ENDIF
 
+#if (EM_CORE==1)                                                                                                                                                                             
+!JOE-added - fog (cloud) water deposition calculation
+   IF (grav_settling .GE. 1) THEN
+      IF ( PRESENT(vdfg) .AND. PRESENT(qc_curr)) THEN
+         !NOTE 1: vdfg is calculated in the surface driver.
+         !NOTE 2: as of now, only qc_curr settles, not # conc.
+
+          CALL bl_fogdes(                                        &
+               vdfg,qc_curr,dtbl,rho,dz8w,grav_settling,RQCBLTEN,&
+               ids,ide, jds,jde, kds,kde,                        &
+               ims,ime, jms,jme, kms,kme,                        &
+               i_start(ij),i_end(ij),                            &
+               j_start(ij),j_end(ij),kts,kte                     )
+      ELSE
+          CALL wrf_error_fatal('Missing args for bl_fogdes in pbl driver')
+      ENDIF
+   ENDIF
+!JOE-END
+#endif
 
 #if (NMM_CORE != 1)
 

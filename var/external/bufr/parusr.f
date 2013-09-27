@@ -31,6 +31,7 @@ C                           LONGER EXPECT AN ALTERNATE RETURN TO A
 C                           STATEMENT NUMBER IN THIS ROUTINE WHICH
 C                           CALLED BORT (BORT IS NOW CALLED IN PARUTG)
 C 2007-01-19  J. ATOR    -- REPLACED CALL TO PARSEQ WITH CALL TO PARSTR
+C 2009-05-07  J. ATOR    -- USE LSTJPB INSTEAD OF LSTRPC
 C
 C USAGE:    CALL PARUSR (STR, LUN, I1, IO)
 C   INPUT ARGUMENT LIST:
@@ -44,7 +45,7 @@ C                       0 = input file
 C                       1 = output file
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT2    LSTRPC   PARSTR   PARUTG
+C    THIS ROUTINE CALLS:        BORT2    LSTJPB   PARSTR   PARUTG
 C    THIS ROUTINE IS CALLED BY: STRING
 C                               Normally not called by any application
 C                               programs.
@@ -146,8 +147,8 @@ C  ------------------------------------
       IRPC = -1
       DO I=1,NNOD
       IF(NODS(I).GT.0) THEN
-         IF(IRPC.LT.0) IRPC = LSTRPC(NODS(I),LUN)
-         IF(IRPC.NE.LSTRPC(NODS(I),LUN).AND.IAC.EQ.0) GOTO 907
+         IF(IRPC.LT.0) IRPC = LSTJPB(NODS(I),LUN,'RPC')
+         IF(IRPC.NE.LSTJPB(NODS(I),LUN,'RPC').AND.IAC.EQ.0) GOTO 907
       ENDIF
       ENDDO
 

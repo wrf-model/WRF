@@ -259,7 +259,7 @@ module module_sorgam_aqchem
       return
     endif
     
-  	write(*,'(a,8(1x,i6))') 'entering module_sorgam_aqchem - ktau =', ktau
+!  	write(*,'(a,8(1x,i6))') 'entering module_sorgam_aqchem - ktau =', ktau
     
     ! We set the precipitation rate and aerosol scavenging rates to zero,
     ! in order to prevent wet scavenging in AQCHEM (it is treated elswhere):

@@ -27,7 +27,7 @@
 !.. Remaining values should probably be left alone.
 !..
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
-!..Last modified: 27 Jul 2012
+!..Last modified: 06 Sep 2013
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
 !+---+-----------------------------------------------------------------+
@@ -1009,14 +1009,14 @@
           do k = kts, kte
              re_qc1d(k) = 2.51E-6
              re_qi1d(k) = 5.01E-6
-             re_qs1d(k) = 10.01E-6
+             re_qs1d(k) = 25.01E-6
           enddo
           call calc_effectRad (t1d, p1d, qv1d, qc1d, nc1d, qi1d, ni1d, qs1d,  &
                       re_qc1d, re_qi1d, re_qs1d, kts, kte)
           do k = kts, kte
              re_cloud(i,k,j) = MAX(2.51E-6, MIN(re_qc1d(k), 50.E-6))
              re_ice(i,k,j)   = MAX(5.01E-6, MIN(re_qi1d(k), 125.E-6))
-             re_snow(i,k,j)  = MAX(10.E-6, MIN(re_qs1d(k), 999.E-6))
+             re_snow(i,k,j)  = MAX(25.E-6, MIN(re_qs1d(k), 999.E-6))
           enddo
          ENDIF
 
@@ -1141,7 +1141,7 @@
       REAL:: r_frac, g_frac
       REAL:: Ef_rw, Ef_sw, Ef_gw, Ef_rr
       REAL:: dtsave, odts, odt, odzq
-      REAL:: xslw1, ygra1, zans1
+      REAL:: xslw1, ygra1, zans1, eva_factor
       INTEGER:: i, k, k2, n, nn, nstep, k_0, kbot, IT, iexfrq
       INTEGER, DIMENSION(4):: ksed1
       INTEGER:: nir, nis, nig, nii, nic
@@ -1513,12 +1513,14 @@
 
 !..Rain self-collection follows Seifert, 1994 and drop break-up
 !.. follows Verlinde and Cotton, 1993.                                        RAIN2M
+!.. Reduced leading coeff because higher values overly force to singular
+!.. mean size of rain.
          if (L_qr(k) .and. mvd_r(k).gt. D0r) then
 !-GT      Ef_rr = 1.0
 !-GT      if (mvd_r(k) .gt. 1500.0E-6) then
              Ef_rr = 2.0 - EXP(2300.0*(mvd_r(k)-1600.0E-6))
 !-GT      endif
-          pnr_rcr(k) = Ef_rr * 4.*nr(k)*rr(k)
+          pnr_rcr(k) = Ef_rr * 0.5*nr(k)*rr(k)
          endif
 
          mvd_c(k) = D0c
@@ -2490,6 +2492,14 @@
               + t2_qr_ev*vsc2(k)*rhof2(k)*((lamr+0.5*fv_r)**(-cre(11))))
           rate_max = MIN((rr(k)/rho(k)*odts), (qvs(k)-qv(k))*odts)
           prv_rev(k) = MIN(DBLE(rate_max), prv_rev(k)/rho(k))
+!..REDUCE the rain evaporation in same places as melting graupel occurs. 
+!..Rationale: not much shedding of the water from the graupel so
+!..likely that the water-coated graupel evaporating much slower than
+!..if the water was immediately shed off.
+          IF (prr_gml(k).gt.0.0) THEN
+             eva_factor = MIN(1.0, 0.01+(0.99-0.01)*(tempc/20.0))
+             prv_rev(k) = prv_rev(k)*eva_factor
+          ENDIF
           endif
           pnr_rev(k) = MIN(DBLE(nr(k)*0.99/rho(k)*odts),                &   ! RAIN2M
                        prv_rev(k) * nr(k)/rr(k))
@@ -3769,7 +3779,7 @@
      &        + sb(7)*tc0*tc0*cse(1) + sb(8)*tc0*cse(1)*cse(1) &
      &        + sb(9)*tc0*tc0*tc0 + sb(10)*cse(1)*cse(1)*cse(1)
          smoc = a_ * smo2**b_
-         re_qs1d(k) = MAX(10.E-6, MIN((3./Lam0) * (smoc/smob), 999.E-6))
+         re_qs1d(k) = MAX(25.E-6, MIN(0.5*smoc/smob, 999.E-6))
       enddo
       endif
 

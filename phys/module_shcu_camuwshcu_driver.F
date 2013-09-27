@@ -325,19 +325,19 @@ SUBROUTINE camuwshcu_driver(                                  &
 
            moist8(1,kflip,1:ncnst) = 0.
 
-           moist8(1,kflip,1) = max(0.0_r8,qv(i,k,j)/(1. + qv(i,k,j)))
+           moist8(1,kflip,1) = max(0.0,qv(i,k,j)/(1. + qv(i,k,j)))
 
            call cnst_get_ind( 'CLDLIQ', m )
-           moist8(1,kflip,m) = max(0.0_r8,qc(i,k,j)/(1. + qv(i,k,j)))
+           moist8(1,kflip,m) = max(0.0,qc(i,k,j)/(1. + qv(i,k,j)))
 
            call cnst_get_ind( 'CLDICE', m )
-           moist8(1,kflip,m) = max(0.0_r8,qi(i,k,j)/(1. + qv(i,k,j)))
+           moist8(1,kflip,m) = max(0.0,qi(i,k,j)/(1. + qv(i,k,j)))
 
            call cnst_get_ind( 'NUMLIQ', m )
-           moist8(1,kflip,m) = max(0.0_r8,qnc(i,k,j)/(1. + qv(i,k,j)))
+           moist8(1,kflip,m) = max(0.0,qnc(i,k,j)/(1. + qv(i,k,j)))
 
            call cnst_get_ind( 'NUMICE', m )
-           moist8(1,kflip,m) = max(0.0_r8,qni(i,k,j)/(1. + qv(i,k,j)))
+           moist8(1,kflip,m) = max(0.0,qni(i,k,j)/(1. + qv(i,k,j)))
 
 #ifdef WRF_CHEM
            !Following Do-Loop is obtained from chem/module_cam_mam_aerchem_driver.F 

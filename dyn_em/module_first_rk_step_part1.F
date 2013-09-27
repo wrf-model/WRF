@@ -268,7 +268,8 @@ BENCH_START(rad_driver_tim)
      &        ,JULYR=grid%julyr        ,LW_PHYSICS=config_flags%ra_lw_physics        &
      &        ,NCFRCV=grid%ncfrcv      ,NCFRST=grid%ncfrst      ,NPHS=1              &
      &        ,o3input=config_flags%o3input     ,O3rad=grid%o3rad                    &
-     &        ,aer_opt=config_flags%aer_opt   ,aerod=aerod(:,:,:,P_ocarbon:P_upperaer) &
+     &        ,aer_opt=config_flags%aer_opt ,aerod=aerod(:,:,:,P_ocarbon:P_upperaer) &
+     &        ,swint_opt=config_flags%swint_opt                                      &
      &        ,P8W=grid%p_hyd_w        ,P=grid%p_hyd            ,PI=pi_phy           &
      &        ,RADT=grid%radt          ,RA_CALL_OFFSET=grid%ra_call_offset           &
      &        ,RHO=rho                 ,RLWTOA=grid%rlwtoa                           &
@@ -286,6 +287,11 @@ BENCH_START(rad_driver_tim)
      &        ,SWVISDIR=grid%swvisdir ,SWVISDIF=grid%swvisdif              &  !ssib
      &        ,SWNIRDIR=grid%swnirdir ,SWNIRDIF=grid%swnirdif              &  !ssib
      &        ,SF_SURFACE_PHYSICS=config_flags%sf_surface_physics          &  !ssib
+! WRF-Solar variables
+     &       ,SWDDIR=grid%swddir,SWDDNI=grid%swddni,SWDDIF=grid%swddif     & ! jararias
+     &       ,Gx=grid%Gx,Bx=grid%Bx,gg=grid%gg,bb=grid%bb                  & ! for sza-interpolation
+     &       ,swdown_ref=grid%swdown_ref,swddir_ref=grid%swddir_ref        & !
+     &       ,coszen_ref=grid%coszen_ref                                   &
 !Optional solar variables
      &        ,DECLINX=grid%declin ,SOLCONX=grid%solcon ,COSZEN=grid%coszen ,HRANG=grid%hrang    &
      &        , CEN_LAT=grid%cen_lat                                      &
@@ -686,8 +692,11 @@ BENCH_START(surf_driver_tim)
      &        ,usemonalb=config_flags%usemonalb                           &
      &        ,NOAHRES=grid%noahres                                       &
      &        ,TSK_SAVE=grid%tsk_save                                     &
-!mynn mp
-     &         ,ch=grid%ch,tsq=grid%tsq,qsq=grid%qsq,cov=grid%cov &
+     &        ,ch=grid%ch,tsq=grid%tsq,qsq=grid%qsq,cov=grid%cov          & !MYNN - MP
+     &        ,Sh3d=grid%sh3d,EL_PBL=grid%el_pbl                          & !JOE- MYNN cloudpdf
+     &        ,bl_mynn_cloudpdf=config_flags%bl_mynn_cloudpdf             & !JOE- MYNN cloudpdf
+     &        ,fgdp=grid%fgdp,dfgdp=grid%dfgdp,vdfg=grid%vdfg             & !Katata - fogdes                                                                                                 
+     &        ,grav_settling=config_flags%grav_settling                   & !Katata - fogdes
      &        ,OM_TMP=grid%om_tmp, OM_S=grid%om_s, OM_U=grid%om_u, OM_V=grid%om_v   & !cyl:3DPWP
      &        ,OM_DEPTH=grid%om_depth, OM_ML=grid%OM_ML, OM_LON=grid%om_lon         & !cyl:3DPWP
      &        ,OM_LAT=grid%om_lat                                                  & !cy:3DPWP
@@ -786,19 +795,18 @@ BENCH_START(pbl_driver_tim)
      &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
      &        ,HOL=HOL, MOL=grid%mol, REGIME=grid%REGIME                  &
 !mynn mp@
-     &        ,QKE=grid%qke                                               &                                                                                                                                     
-!ACF-QKE advection
-     &        ,QKE_ADV=scalar(ims,kms,jms,P_qke_adv)                      &                                                                                                                                     
-     &        ,bl_mynn_tkeadvect=config_flags%bl_mynn_tkeadvect           &                                                                                                                                     
-!ACF-end                                                                                                                                                                                                        
+     &        ,QKE=grid%qke, Sh3d=grid%sh3d                               &
+     &        ,QKE_ADV=scalar(ims,kms,jms,P_qke_adv)                      & !ACF-QKE advection
+     &        ,bl_mynn_tkeadvect=config_flags%bl_mynn_tkeadvect           & !ACF-QKE advection
      &        ,tsq=grid%tsq, qsq=grid%qsq, cov=grid%cov                   &
-     &        ,EL_MYNN=grid%el_mynn                                       &
      &        ,DQKE=grid%dqke,QWT=grid%qWT                                &
      &        ,QSHEAR=grid%qSHEAR,QBUOY=grid%qBUOY,QDISS=grid%qDISS       &
      &        ,bl_mynn_tkebudget=config_flags%bl_mynn_tkebudget           &
+     &        ,bl_mynn_cloudpdf=config_flags%bl_mynn_cloudpdf             &
      &        ,rmol=grid%rmol, ch=grid%ch                                 &
      &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling     &
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
+     &        ,vdfg=grid%vdfg                                             & ! Katata - fogdep
 !GWD for ARW
      &        ,GWD_OPT=config_flags%gwd_opt &
      &        ,DTAUX3D=grid%dtaux3d,DTAUY3D=grid%dtauy3d &
@@ -831,6 +839,12 @@ BENCH_START(pbl_driver_tim)
      &        ,FNP=grid%fnp, IS_CAMMGMP_USED = grid%is_CAMMGMP_used       &
 ! for grims shallow convection with ysupbl
      &        ,WSTAR=grid%wstar_ysu,DELTA=grid%delta_ysu               &
+#if (WRF_CHEM == 1)
+     &        ,CHEM=chem,VD=grid%dep_vel                                 &
+     &        ,NCHEM=num_chem,kdvel=config_flags%kdepvel                 &
+     &        ,ndvel=config_flags%ndepvel                                &
+     &        ,NUM_VERT_MIX=grid%num_vert_mix                     &
+#endif
      &        )
                                                          
 

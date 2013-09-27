@@ -6,7 +6,7 @@ C SUBPROGRAM:    VALX
 C   PRGMMR: WOOLLEN          ORG: NP20       DATE: 1994-01-06
 C
 C ABSTRACT: THIS FUNCTION DECODES A REAL NUMBER FROM A CHARACTER
-C   STRING.  IF THE DECODE FAILS, THEN THE VALUE BMISS (10E10) IS
+C   STRING.  IF THE DECODE FAILS, THEN THE VALUE BMISS IS
 C   RETURNED.  NOTE THAT, UNLIKE FOR SUBROUTINE STRNUM, THE INPUT
 C   STRING MAY CONTAIN A LEADING SIGN CHARACTER (E.G. '+', '-').
 C
@@ -25,6 +25,7 @@ C 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED HISTORY
 C                           DOCUMENTATION; OUTPUTS MORE COMPLETE
 C                           DIAGNOSTIC INFO WHEN ROUTINE TERMINATES
 C                           ABNORMALLY; CHANGED CALL FROM BORT TO BORT2
+C 2009-04-21  J. ATOR    -- USE ERRWRT
 C
 C USAGE:    VALX (STR)
 C   INPUT ARGUMENT LIST:
@@ -33,11 +34,8 @@ C
 C   OUTPUT ARGUMENT LIST:
 C     VALX     - REAL: DECODED VALUE
 C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
-C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT2    RJUST
+C    THIS ROUTINE CALLS:        BORT2    ERRWRT   RJUST
 C    THIS ROUTINE IS CALLED BY: GETTBH   NEMTBB   UPFTBV
 C                               Normally not called by any application
 C                               programs but it could be.
@@ -70,12 +68,12 @@ C----------------------------------------------------------------------
       VALX = VAL
       GOTO 100
 800   IF(IPRT.GE.0) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*,'BUFRLIB: VALX - ERROR READING STRING ',BSTR(1:LENS)
-      PRINT*,'                RETURN WITH VALX = MISSING (10E10)'
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT('BUFRLIB: VALX - ERROR READING STRING:')
+      CALL ERRWRT(BSTR(1:LENS))
+      CALL ERRWRT('RETURN WITH VALX = MISSING')
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
       ENDIF
 
 C  EXITS

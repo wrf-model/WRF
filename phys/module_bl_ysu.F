@@ -945,6 +945,7 @@ contains
          dk = rl2*sqrt(ss)
          if(ri.lt.0.)then
 ! unstable regime
+           ri = max(ri, rimin)
            sri = sqrt(-ri)
            xkzm(i,k) = dk*(1+8.*(-ri)/(1+1.746*sri))
            xkzh(i,k) = dk*(1+8.*(-ri)/(1+1.286*sri))

@@ -2045,6 +2045,8 @@
       real(kind=rb) :: extcosno(ngptsw), gsno(ngptsw)
       real(kind=rb) :: ssacosno(ngptsw), forwsno(ngptsw)
 
+      CHARACTER*80 errmess
+
 ! Initialize
 
       hvrclc = '$Revision: 1.3 $'
@@ -2159,8 +2161,12 @@
 ! For iceflag=3 option, ice particle generalized effective size is limited to 5.0 to 140.0 microns
 
                   elseif (iceflag .ge. 3) then
-                     if (radice .lt. 5.0_rb .or. radice .gt. 140.0_rb) print*, 'STOPPING,  ', ig, lay, ciwpmc(ig,lay), radice
-                     if (radice .lt. 5.0_rb .or. radice .gt. 140.0_rb) stop 'ICE GENERALIZED EFFECTIVE SIZE OUT OF BOUNDS'
+                     if (radice .lt. 5.0_rb .or. radice .gt. 140.0_rb) then
+                         write(errmess,'(A,i5,i5,f8.2,f8.2)' )         &
+               'ERROR: ICE GENERALIZED EFFECTIVE SIZE OUT OF BOUNDS'   &
+               ,ig, lay, ciwpmc(ig,lay), radice
+                         call wrf_error_fatal(errmess)
+                     end if
                      factor = (radice - 2._rb)/3._rb
                      index = int(factor)
                      if (index .eq. 46) index = 45
@@ -2174,8 +2180,14 @@
                                (asyice3(index+1,ib) - asyice3(index,ib))
                      fdelta(ig) = fdlice3(index,ib) + fint * &
                                  (fdlice3(index+1,ib) - fdlice3(index,ib))
-                     if (fdelta(ig) .lt. 0.0_rb) stop 'FDELTA LESS THAN 0.0'
-                     if (fdelta(ig) .gt. 1.0_rb) stop 'FDELTA GT THAN 1.0'
+                     if (fdelta(ig) .lt. 0.0_rb) then
+                      write(errmess, *) 'FDELTA LESS THAN 0.0'
+                      call wrf_error_fatal(errmess)
+                     end if
+                     if (fdelta(ig) .gt. 1.0_rb) then
+                      write(errmess, *) 'FDELTA GT THAN 1.0'
+                      call wrf_error_fatal(errmess)
+                     end if
                      forwice(ig) = fdelta(ig) + 0.5_rb / ssacoice(ig)
 ! See Fu 1996 p. 2067 
                      if (forwice(ig) .gt. gice(ig)) forwice(ig) = gice(ig)
@@ -2198,8 +2210,12 @@
 
                   if (cswpmc(ig,lay).gt.0.0_rb .and. iceflag .eq. 5) then
                      radsno = resnmc(lay)
-                     if (radsno .lt. 5.0_rb .or. radsno .gt. 140.0_rb) print*, 'STOPPING,  ', ig, lay, cswpmc(ig,lay), radsno
-                     if (radsno .lt. 5.0_rb .or. radsno .gt. 140.0_rb) stop 'SNOW GENERALIZED EFFECTIVE SIZE OUT OF BOUNDS'
+                     if (radsno .lt. 5.0_rb .or. radsno .gt. 140.0_rb) then
+                         write(errmess,'(A,i5,i5,f8.2,f8.2)' )         &
+               'ERROR: SNOW GENERALIZED EFFECTIVE SIZE OUT OF BOUNDS'   &
+               ,ig, lay, cswpmc(ig,lay), radsno
+                         call wrf_error_fatal(errmess)
+                     end if
                      factor = (radsno - 2._rb)/3._rb
                      index = int(factor)
                      if (index .eq. 46) index = 45
@@ -2213,18 +2229,38 @@
                                (asyice3(index+1,ib) - asyice3(index,ib))
                      fdelta(ig) = fdlice3(index,ib) + fint * &
                                  (fdlice3(index+1,ib) - fdlice3(index,ib))
-                     if (fdelta(ig) .lt. 0.0_rb) stop 'FDELTA LESS THAN 0.0'
-                     if (fdelta(ig) .gt. 1.0_rb) stop 'FDELTA GT THAN 1.0' 
+                     if (fdelta(ig) .lt. 0.0_rb) then
+                      write(errmess, *) 'FDELTA LESS THAN 0.0'
+                      call wrf_error_fatal(errmess)
+                     end if
+                     if (fdelta(ig) .gt. 1.0_rb) then
+                      write(errmess, *) 'FDELTA GT THAN 1.0'
+                      call wrf_error_fatal(errmess)
+                     end if
                      forwsno(ig) = fdelta(ig) + 0.5_rb / ssacosno(ig)
 ! See Fu 1996 p. 2067
                      if (forwsno(ig) .gt. gsno(ig)) forwsno(ig) = gsno(ig)
 ! Check to ensure all calculated quantities are within physical limits.  
-                     if (extcosno(ig) .lt. 0.0_rb) stop 'SNOW EXTINCTION LESS THAN 0.0'
-                     if (ssacosno(ig) .gt. 1.0_rb) stop 'SNOW SSA GRTR THAN 1.0'
-                     if (ssacosno(ig) .lt. 0.0_rb) stop 'SNOW SSA LESS THAN 0.0'
-                     if (gsno(ig) .gt. 1.0_rb) stop 'SNOW ASYM GRTR THAN 1.0'
-                     if (gsno(ig) .lt. 0.0_rb) stop 'SNOW ASYM LESS THAN 0.0'
-
+                     if (extcosno(ig) .lt. 0.0_rb) then
+                      write(errmess, *) 'SNOW EXTINCTION LESS THAN 0.0'
+                      call wrf_error_fatal(errmess)
+                     end if
+                     if (ssacosno(ig) .gt. 1.0_rb) then
+                      write(errmess, *) 'SNOW SSA GRTR THAN 1.0'
+                      call wrf_error_fatal(errmess)
+                     end if
+                     if (ssacosno(ig) .lt. 0.0_rb)  then
+                      write(errmess, *) 'SNOW SSA LESS THAN 0.0'
+                      call wrf_error_fatal(errmess)
+                     end if
+                     if (gsno(ig) .gt. 1.0_rb)  then
+                      write(errmess, *) 'SNOW ASYM GRTR THAN 1.0'
+                      call wrf_error_fatal(errmess)
+                     end if
+                     if (gsno(ig) .lt. 0.0_rb)  then
+                      write(errmess, *) 'SNOW ASYM LESS THAN 0.0'
+                      call wrf_error_fatal(errmess)
+                     end if
                   else
                      extcosno(ig) = 0.0_rb
                      ssacosno(ig) = 0.0_rb
@@ -2280,6 +2316,7 @@
                       tauice = (1._rb - forwice(ig) * ssacoice(ig)) * tauiceorig
                       scatliq = ssaliq * tauliq
                       scatice = ssaice * tauice
+                      scatsno = 0.0_rb 
                       taucmc(ig,lay) = tauliq + tauice
                   else
                       tauliqorig = clwpmc(ig,lay) * extcoliq(ig)
@@ -8655,9 +8692,10 @@
              swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, aer_opt,  &
 ! --------- Add the following four compenants for ssib shortwave down radiation ---!
 ! -------------------      by Zhenxin 2011-06-20      --------------------------------!
-             sibvisdir, sibvisdif, sibnirdir, sibnirdif          &
-                                                                )
+             sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
 ! ----------------------  End,  Zhenxin 2011-06-20    --------------------------------!
+             swdkdir,swdkdif                                & ! jararias, 2013/08/10
+                                                                )
 
 
 ! ------- Description -------
@@ -8877,7 +8915,15 @@
                                                       !    Dimensions: (ncol,nlay+1)
       real(kind=rb), intent(out) :: swhrc(:,:)        ! Clear sky shortwave radiative heating rate (K/d)
                                                       !    Dimensions: (ncol,nlay)
+
       integer, intent(in)        :: aer_opt
+      real(kind=rb), intent(out) :: &
+        swdkdir(:,:), & ! Total shortwave downward direct flux (W/m2),  Dimensions: (ncol,nlay) jararias, 2013/08/10
+        swdkdif(:,:)    ! Total shortwave downward diffuse flux (W/m2), Dimensions: (ncol,nlay) jararias, 2013/08/10
+
+
+
+
 
 ! ----- Local -----
 
@@ -9280,6 +9326,9 @@
 !  Direct/diffuse fluxes
             dirdflux(i) = zbbfddir(i)
             difdflux(i) = swdflx(iplon,i) - dirdflux(i)
+            swdkdir(iplon,i) = dirdflux(i) ! all-sky direct flux   jararias, 2013/08/10
+            swdkdif(iplon,i) = difdflux(i) ! all-sky diffuse flux  jararias, 2013/08/10
+
 !  UV/visible direct/diffuse fluxes
             dirdnuv(i) = zuvfddir(i)
             difdnuv(i) = zuvfd(i) - dirdnuv(i)
@@ -9757,7 +9806,9 @@ CONTAINS
                        ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
-                       swupflx, swupflxc, swdnflx, swdnflxc       &
+                       swupflx, swupflxc, swdnflx, swdnflxc,      &
+                       swddir, swddni, swddif,                    & ! jararias, 2013/08/10
+                       xcoszen,julian                             & ! jararias, 14/08/2013 
                                                                   )
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -9818,6 +9869,19 @@ CONTAINS
 
 !  ----------------------- end Zhenxin --------------------------
 !
+
+! ------------------------ jararias 2013/08/10 -----------------
+   real, dimension(ims:ime,jms:jme), intent(out) :: &
+            swddir,  &  ! All-sky broadband surface direct horiz irradiance
+            swddni,  &  ! All-sky broadband surface direct normal irradiance
+            swddif      ! All-sky broadband surface diffuse irradiance
+   real, optional, intent(in) :: &
+            julian      ! julian day (1-366)
+   real, dimension(ims:ime,jms:jme), optional, intent(in) :: &
+            xcoszen     ! cosine of the solar zenith angle
+! ------------------------ jararias end snippet -----------------
+
+
    REAL, INTENT(IN  )   ::                                   R,G
 !
 ! Optional
@@ -9979,6 +10043,10 @@ CONTAINS
                                                        sibvisdif, &
                                                        sibnirdir, &
                                                        sibnirdif     ! Zhenxin 2011-06-20
+
+    real, dimension( 1, kts:kte+2 ) ::                   swdkdir, &  ! jararias, 2013/08/10
+                                                         swdkdif     ! jararias, 2013/08/10
+
     real, dimension( 1, kts:kte+1 )  ::                     swhr, &
                                                            swhrc
 
@@ -10065,6 +10133,8 @@ CONTAINS
     INTEGER :: i,j,K, na
     LOGICAL :: predicate
 
+    REAL :: da, eot ! jararias, 14/08/2013
+
 !------------------------------------------------------------------
 #ifdef WRF_CHEM
       IF ( aer_ra_feedback == 1) then
@@ -10092,6 +10162,11 @@ CONTAINS
 ! All fields are ordered vertically from bottom to top
 ! Pressures are in mb
 
+     ! jararias, 14/08/2013
+     if (present(xcoszen)) then
+         call wrf_debug(100,'coszen from radiation driver')
+     end if
+
 ! latitude loop
   j_loop: do j = jts,jte
 
@@ -10107,13 +10182,22 @@ CONTAINS
 ! units of minutes
 ! julian is in days
 ! radt is in minutes
-         xt24 = mod(xtime+radt*0.5,1440.)
-         tloctm = gmt + xt24/60. + xlong(i,j)/15.
-         hrang = 15. * (tloctm-12.) * degrad
-         xxlat = xlat(i,j) * degrad
-!         clat(i) = xxlat
-         coszrs = sin(xxlat) * sin(declin) + cos(xxlat) * cos(declin) * cos(hrang)
-         coszr(i,j) = coszrs
+          ! jararias, 14/08/2013
+          if (present(xcoszen)) then
+             coszr(i,j)=xcoszen(i,j)
+             coszrs=xcoszen(i,j)
+          else
+!            da=6.2831853071795862*(julian-1)/365.
+!            eot=(0.000075+0.001868*cos(da)-0.032077*sin(da) &
+!               -0.014615*cos(2*da)-0.04089*sin(2*da))*(229.18)
+             xt24 = mod(xtime+radt*0.5,1440.)+eot
+             tloctm = gmt + xt24/60. + xlong(i,j)/15.
+             hrang = 15. * (tloctm-12.) * degrad
+             xxlat = xlat(i,j) * degrad
+             coszrs = sin(xxlat) * sin(declin) &
+                    + cos(xxlat) * cos(declin) * cos(hrang)
+             coszr(i,j) = coszrs
+          end if
 
 ! Set flag to prevent shortwave calculation when sun below horizon
          if (coszrs.le.0.0) dorrsw = .false.
@@ -10790,10 +10874,12 @@ CONTAINS
              ciwpmcl ,clwpmcl ,cswpmcl, reicmcl ,relqmcl ,resnmcl, &
              tauaer  ,ssaaer  ,asmaer  ,ecaer   , &
              swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, aer_opt, &
-! -----          Zhenxin added for ssib coupiling 2011-06-20 --------!
-             sibvisdir, sibvisdif, sibnirdir, sibnirdif          &
-                                                        )
+! -----      Zhenxin added for ssib coupiling 2011-06-20 --------!
+             sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
 ! --------------------   End of addiation by Zhenxin 2011-06-20 ------!
+             swdkdir, swdkdif                      &  ! jararias, 2012/08/10
+                                                   )
+
 
 ! Output net absorbed shortwave surface flux and shortwave cloud forcing
 ! at the top of atmosphere (W/m2)
@@ -10818,6 +10904,9 @@ CONTAINS
 !  Ended, Zhenxin (2011/06/20)
             swdnbc(i,j)    = swdflxc(1,1)
          endif
+            swddir(i,j)    = swdkdir(1,1)          ! jararias 2013/08/10
+            swddni(i,j)    = swddir(i,j) / coszrs  ! jararias 2013/08/10
+            swddif(i,j)    = swdkdif(1,1)          ! jararias 2013/08/10
 
 ! Output up and down layer fluxes for total and clear sky.
 ! Vertical ordering is from bottom to top in units of W m-2. 
@@ -10853,6 +10942,9 @@ CONTAINS
             swnirdir(i,j)  = 0.
             swnirdif(i,j)  = 0.  ! Add by Zhenxin (2011/06/20)
          endif
+            swddir(i,j)    = 0.  ! jararias 2013/08/10
+            swddni(i,j)    = 0.  ! jararias 2013/08/10
+            swddif(i,j)    = 0.  ! jararias 2013/08/10
 
       endif
 !

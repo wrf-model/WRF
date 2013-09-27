@@ -19,10 +19,10 @@ C   MNEMONICS HERE CAN USE EITHER DELAYED REPLICATION, REGULAR (I.E.,
 C   NON-DELAYED) REPLICATION OR THEY CAN HAVE NO REPLICATION AT ALL.
 C   HOWEVER, IN CASES WHERE THIS SUBROUTINE IS WRITING DATA VALUES TO
 C   SEQUENCES USING DELAYED-REPLICATION, THE APPLICATION PROGRAM MUST
-C   FIRST CALL BUFR ARCHIVE LIBRARY ROUTINE UFBINT TO PRE-ALLOCATE THE
+C   FIRST CALL BUFR ARCHIVE LIBRARY ROUTINE DRFINI TO PRE-ALLOCATE THE
 C   SPACE NEEDED TO EXPAND THE DELAYED-REPLICATION SEQUENCE (THE NUMBER
 C   OF REPLICATIONS IN DELAYED-REPLICATION IS SET TO ZERO BY DEFAULT).
-C   (SEE BUFR ARCHIVE LIBRARY UFBINT DOCBLOCK REMARKS FOR MORE
+C   (SEE BUFR ARCHIVE LIBRARY DRFINI DOCBLOCK REMARKS FOR MORE
 C   INFORMATION.) IF UFBSEQ IS READING VALUES, THEN EITHER BUFR ARCHIVE
 C   LIBRARY SUBROUTINE READSB OR READNS MUST HAVE BEEN PREVIOUSLY
 C   CALLED TO READ THE SUBSET FROM UNIT ABS(LUNIN) INTO INTERNAL
@@ -53,6 +53,7 @@ C                           INFO WHEN ROUTINE TERMINATES ABNORMALLY OR
 C                           UNUSUAL THINGS HAPPEN
 C 2004-08-18  J. ATOR    -- ADDED SAVE FOR IFIRST1 AND IFIRST2 FLAGS
 C 2007-01-19  J. ATOR    -- REPLACED CALL TO PARSEQ WITH CALL TO PARSTR
+C 2009-04-21  J. ATOR    -- USE ERRWRT
 C
 C USAGE:    CALL UFBSEQ (LUNIN, USR, I1, I2, IRET, STR)
 C   INPUT ARGUMENT LIST:
@@ -72,9 +73,9 @@ C     I2       - INTEGER:
 C                  - IF BUFR FILE OPEN FOR INPUT:  LENGTH OF SECOND
 C                    DIMENSION OF USR
 C                  - IF BUFR FILE OPEN FOR OUTPUT: NUMBER OF "LEVELS"
-C                    OF DATA VALUES TO BE WRITTEN TO DATA SUBSET
-C                    (MAXIMUM VALUE IS 255) {THIS CORRESPONDS TO THE
-C                    NUMBER OF REPLICATIONS OF THE MNEMONIC IN STR}
+C                    OF DATA VALUES TO BE WRITTEN TO DATA SUBSET; THIS
+C                    CORRESPONDS TO THE NUMBER OF REPLICATIONS OF THE
+C                    MNEMONIC IN STR
 C     STR      - CHARACTER*(*): STRING CONTAINING A SINGLE TABLE A OR
 C                TABLE D SEQUENCE MNEMONIC WHOSE SEQUENCE OF TABLE B
 C                MNEMONICS ARE IN ONE-TO-ONE CORRESPONDENCE WITH FIRST
@@ -83,7 +84,7 @@ C                  - IF BUFR FILE OPEN FOR INPUT: THERE ARE THREE
 C                     "GENERIC" MNEMONICS NOT RELATED TO TABLE A OR D,
 C                     THESE RETURN THE FOLLOWING INFORMATION IN
 C                     CORRESPONDING USR LOCATION:
-C                     'NUL'  WHICH ALWAYS RETURNS MISSING (10E10)
+C                     'NUL'  WHICH ALWAYS RETURNS BMISS ("MISSING")
 C                     'IREC' WHICH ALWAYS RETURNS THE CURRENT BUFR
 C                            MESSAGE (RECORD) NUMBER IN WHICH THIS
 C                            SUBSET RESIDES
@@ -103,12 +104,9 @@ C                  - IF BUFR FILE OPEN FOR OUTPUT: NUMBER OF "LEVELS"
 C                    OF DATA VALUES WRITTEN TO DATA SUBSET (SHOULD BE
 C                    SAME AS I2)
 C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
-C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT     INVTAG   INVWIN   PARSTR
-C                               STATUS
+C    THIS ROUTINE CALLS:        BORT     ERRWRT   INVTAG   INVWIN
+C                               PARSTR   STATUS
 C    THIS ROUTINE IS CALLED BY: None
 C                               Normally called only by application
 C                               programs.
@@ -130,11 +128,11 @@ C$$$
      .                IBT(MAXJL),IRF(MAXJL),ISC(MAXJL),
      .                ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL),
      .                ISEQ(MAXJL,2),JSEQ(MAXJL)
-      COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
+      COMMON /USRINT/ NVAL(NFILES),INV(MAXSS,NFILES),VAL(MAXSS,NFILES)
       COMMON /QUIET / IPRT
 
       CHARACTER*(*) STR
-      CHARACTER*128 BORT_STR
+      CHARACTER*128 BORT_STR,ERRSTR
       CHARACTER*10  TAG,TAGS(MTAG)
       CHARACTER*3   TYP
       REAL*8        USR(I1,I2),VAL
@@ -161,31 +159,35 @@ C  --------------------------------
 
       IF(I1.LE.0) THEN
          IF(IPRT.GE.0) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-         PRINT*,'BUFRLIB: UFBSEQ - THIRD ARGUMENT (INPUT) IS .LE. 0',
-     .    ' -  RETURN WITH FIFTH ARGUMENT (IRET) = 0'
-         PRINT*,'STR = ',STR
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      ERRSTR = 'BUFRLIB: UFBSEQ - 3rd ARG. (INPUT) IS .LE. 0, ' //
+     .   'SO RETURN WITH 5th ARG. (IRET) = 0; 6th ARG. (STR) ='
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT(STR)
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
          ENDIF
          GOTO 100
       ELSEIF(I2.LE.0) THEN
          IF(IPRT.EQ.-1)  IFIRST1 = 1
          IF(IO.EQ.0 .OR. IFIRST1.EQ.0 .OR. IPRT.GE.1)  THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-            PRINT*,'BUFRLIB: UFBSEQ - FOURTH ARGUMENT (INPUT) IS .LE.',
-     .       ' 0 -  RETURN WITH FIFTH ARGUMENT (IRET) = 0'
-            PRINT*,'STR = ',STR
-            IF(IPRT.EQ.0 .AND. IO.EQ.1)  PRINT 101
-101   FORMAT('Note: Only the first occurrence of this WARNING message ',
-     . 'is printed, there may be more.  To output'/6X,'ALL WARNING ',
-     . 'messages, modify your application program to add ',
-     . '"CALL OPENBF(0,''QUIET'',1)" prior'/6X,'to the first call to a',
-     . ' BUFRLIB routine.')
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      ERRSTR = 'BUFRLIB: UFBSEQ - 4th ARG. (INPUT) IS .LE. 0, ' //
+     .   'SO RETURN WITH 5th ARG. (IRET) = 0; 6th ARG. (STR) ='
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT(STR)
+            IF(IPRT.EQ.0 .AND. IO.EQ.1) THEN
+      ERRSTR = 'Note: Only the first occurrence of this WARNING ' //
+     .   'message is printed, there may be more.  To output all ' //
+     .   'such messages,'
+      CALL ERRWRT(ERRSTR)
+      ERRSTR = 'modify your application program to add ' //
+     .   '"CALL OPENBF(0,''QUIET'',1)" prior to the first call ' //
+     .   'to a BUFRLIB routine.'
+      CALL ERRWRT(ERRSTR)
+            ENDIF
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
             IFIRST1 = 1
          ENDIF
          GOTO 100
@@ -303,25 +305,35 @@ C  --------------------
       IF(IRET.EQ.0)  THEN
          IF(IO.EQ.0) THEN
             IF(IPRT.GE.1)  THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-               PRINT*,'BUFRLIB: UFBSEQ - NO SPECIFIED VALUES READ IN',
-     .          ' -  RETURN WITH FIFTH ARGUMENT (IRET) = 0'
-               PRINT*,'STR = ',STR
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      ERRSTR = 'BUFRLIB: UFBSEQ - NO SPECIFIED VALUES READ IN, ' //
+     .   'SO RETURN WITH 5th ARG. (IRET) = 0; 6th ARG. (STR) ='
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT(STR)
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
             ENDIF
          ELSE
             IF(IPRT.EQ.-1)  IFIRST2 = 1
             IF(IFIRST2.EQ.0 .OR. IPRT.GE.1)  THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-               PRINT*,'BUFRLIB: UFBSEQ - NO SPECIFIED VALUES WRITTEN ',
-     .          'OUT -  RETURN WITH FIFTH ARGUMENT (IRET) = 0'
-               PRINT*,'STR = ',STR,' MAY NOT BE IN THE BUFR TABLE(?)'
-               IF(IPRT.EQ.0)  PRINT 101
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      ERRSTR = 'BUFRLIB: UFBSEQ - NO SPECIFIED VALUES WRITTEN OUT, ' //
+     .   'SO RETURN WITH 5th ARG. (IRET) = 0; 6th ARG. (STR) ='
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT(STR)
+      CALL ERRWRT('MAY NOT BE IN THE BUFR TABLE(?)')
+               IF(IPRT.EQ.0) THEN
+      ERRSTR = 'Note: Only the first occurrence of this WARNING ' //
+     .   'message is printed, there may be more.  To output all ' //
+     .   'such messages,'
+      CALL ERRWRT(ERRSTR)
+      ERRSTR = 'modify your application program to add ' //
+     .   '"CALL OPENBF(0,''QUIET'',1)" prior to the first call ' //
+     .   'to a BUFRLIB routine.'
+      CALL ERRWRT(ERRSTR)
+               ENDIF
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
                IFIRST2 = 1
             ENDIF
          ENDIF

@@ -98,6 +98,35 @@ state    real  e_c10h16       i+jf     emis_ant     1         Z      i5h    "E_C
 state   real    e_voca          i+jf    emis_ant        1       Z       i5      "E_VOCA"        "VOCA emissions"        "mol km^-2 hr^-1"
 state   real    e_vocbb         i+jf    emis_ant        1       Z       i5      "E_VOCBB"       "VOCBB emissions"        "mol km^-2 hr^-1"
 
+# Additional crimech emission variables...
+state    real  e_c5h8         i+jf     emis_ant     1         Z      i5h     "E_C5H8"             "EMISSIONS C5H8"              "mol km^-2 hr^-1"
+state    real  e_tm123b       i+jf     emis_ant     1         Z      i5h     "E_TM123B"             "EMISSIONS TM123B"              "mol km^-2 hr^-1"
+state    real  e_tm124b       i+jf     emis_ant     1         Z      i5h     "E_TM124B"             "EMISSIONS TM124B"              "mol km^-2 hr^-1"
+state    real  e_tm135b       i+jf     emis_ant     1         Z      i5h     "E_TM135B"             "EMISSIONS TM124B"              "mol km^-2 hr^-1"
+state    real  e_oethtol      i+jf     emis_ant     1         Z      i5h     "E_OETHTOL"            "EMISSIONS OETHTOL"              "mol km^-2 hr^-1"
+state    real  e_methtol      i+jf     emis_ant     1         Z      i5h     "E_METHTOL"            "EMISSIONS METHTOL"              "mol km^-2 hr^-1"
+state    real  e_pethtol      i+jf     emis_ant     1         Z      i5h     "E_PETHTOL"            "EMISSIONS PETHTOL"              "mol km^-2 hr^-1"
+state    real  e_dime35eb     i+jf     emis_ant     1         Z      i5h     "E_DIME35EB"           "EMISSIONS DIME35EB"              "mol km^-2 hr^-1"
+state    real  e_c2h5cho      i+jf     emis_ant     1         Z      i5h     "E_C2H5CHO"            "EMISSIONS C2H5CHO"              "mol km^-2 hr^-1"
+state    real  e_benzene      i+jf     emis_ant     1         Z      i5h     "E_BENZENE"            "EMISSIONS BENZENE"              "mol km^-2 hr^-1"
+state    real  e_nc4h10       i+jf     emis_ant     1         Z      i5h     "E_NC4H10"             "EMISSIONS NC4H10"              "mol km^-2 hr^-1"
+state    real  e_oxyl         i+jf     emis_ant     1         Z      i5h     "E_OXYL"               "EMISSIONS OXYL"              "mol km^-2 hr^-1"
+state    real  e_tbut2ene     i+jf     emis_ant     1         Z      i5h     "E_TBUT2ENE"           "EMISSIONS TBUT2ENE"              "mol km^-2 hr^-1"
+state    real  e_ch3co2h      i+jf     emis_ant     1         Z      i5h     "E_CH3CO2H"            "EMISSIONS CH3CO2H"              "mol km^-2 hr^-1"
+
+# Additional TNO emission variables for the UK
+state    real  e_bc_1         i+jf     emis_ant     1         Z      i5h     "E_BC_1"               "EMISSION RATE OF BLACK CARBON 1UM MODE"  "ug/m3 m/s"
+state    real  e_ec_1_25      i+jf     emis_ant     1         Z      i5h     "E_EC_1_25"            "EMISSION RATE OF ELEMENTAL CARBON 1UM-2.5UM MODE"  "ug/m3 m/s"
+state    real  e_ec_25_10     i+jf     emis_ant     1         Z      i5h     "E_EC_25_10"           "EMISSION RATE OF ELEMENTAL CARBON 2.5UM-10UM MODE"  "ug/m3 m/s"
+state    real  e_oc_dom       i+jf     emis_ant     1         Z      i5h     "E_OC_DOM"             "EMISSION RATE OF ORGANIC CARBON 2.5UM MODE (Domestic combustion)"  "ug/m3 m/s"
+state    real  e_oc_tra       i+jf     emis_ant     1         Z      i5h     "E_OC_TRA"             "EMISSION RATE OF ORGANIC CARBON 2.5UM MODE (Traffic and other sources)"  "ug/m3 m/s"
+state    real  e_oc_25_10     i+jf     emis_ant     1         Z      i5h     "E_OC_25_10"           "EMISSION RATE OF ORGANIC CARBON 2.5UM-10UM MODE"  "ug/m3 m/s"
+state    real  e_pm25         i+jf     emis_ant     1         Z      i5h     "E_PM25"               "EMISSION RATE OF PARTICULATE MATTER 2.5UM MODE"  "ug/m3 m/s"
+state    real  e_pm10         i+jf     emis_ant     1         Z      i5h     "E_PM10"               "EMISSION RATE OF PARTICULATE MATTER 10UM MODE"  "ug/m3 m/s"
+state    real  e_oin_25       i+jf     emis_ant     1         Z      i5h     "E_OIN_25"               "EMISSION RATE OF PARTICULATE MATTER OTHER INORGANICS 2.5UM MODE"  "ug/m3 m/s"
+state    real  e_oin_10       i+jf     emis_ant     1         Z      i5h     "E_OIN_10"               "EMISSION RATE OF PARTICULATE MATTER OTHER INORGANICS 10UM MODE"  "ug/m3 m/s"
+
+
 # Additional CBMZ and MOSAIC emission variables...
 state    real  e_no2          i+jf     emis_ant     1         Z      i5     "E_NO2"                "EMISSIONS NO2"                 "mol km^-2 hr^-1"
 state    real  e_ch3oh        i+jf     emis_ant     1         Z      i5     "E_CH3OH"              "EMISSIONS CH3OH"               "mol km^-2 hr^-1"
@@ -221,8 +250,8 @@ state    real  ebu_hc8      ikjf     ebu           1         Z        -      "eb
 state    real  ebu_ete      ikjf     ebu           1         Z        -      "ebu_ete"       "biomass burning emiss"  "mol km^-2 hr^-1"
 state    real  ebu_olt      ikjf     ebu           1         Z        -      "ebu_olt"       "biomass burning emiss"  "mol km^-2 hr^-1"
 state    real  ebu_oli      ikjf     ebu           1         Z        -      "ebu_oli"       "biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_pm25     ikjf     ebu           1         Z        -      "ebu_pm25"      "biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_pm10     ikjf     ebu           1         Z        -      "ebu_pm10"      "biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_pm25     ikjf     ebu           1         Z        -      "ebu_pm25"      "biomass burning emiss"  "ug/m2/s"        
+state    real  ebu_pm10     ikjf     ebu           1         Z        -      "ebu_pm10"      "biomass burning emiss"  "ug/m2/s"        
 state    real  ebu_dien     ikjf     ebu           1         Z        -      "ebu_dien"      "biomass burning emiss"  "mol km^-2 hr^-1"
 state    real  ebu_iso      ikjf     ebu           1         Z        -      "ebu_iso"       "biomass burning emiss"  "mol km^-2 hr^-1"
 state    real  ebu_api      ikjf     ebu           1         Z        -      "ebu_api"       "biomass burning emiss"  "mol km^-2 hr^-1"
@@ -239,8 +268,8 @@ state    real  ebu_ora2     ikjf     ebu           1         Z        -      "eb
 state    real  ebu_nh3      ikjf     ebu           1         Z        -      "ebu_nh3"       "biomass burning emiss"  "mol km^-2 hr^-1"
 state    real  ebu_so2      ikjf     ebu           1         Z        -      "ebu_so2"       "biomass burning emiss"  "mol km^-2 hr^-1"
 state    real  ebu_dms      ikjf     ebu           1         Z        -      "ebu_dms"       "biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_oc       ikjf     ebu           1         Z        h      "ebu_oc"        "biomass burning emiss"  "mol km^-2 hr^-1"
-state    real  ebu_bc       ikjf     ebu           1         Z        -      "ebu_bc"        "biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_oc       ikjf     ebu           1         Z        h      "ebu_oc"        "biomass burning emiss"  "ug/m2/s"        
+state    real  ebu_bc       ikjf     ebu           1         Z        -      "ebu_bc"        "biomass burning emiss"  "ug/m2/s"        
 state    real  ebu_sulf     ikjf     ebu           1         Z        -      "ebu_sulf"      "biomass burning emiss"  "mol km^-2 hr^-1"
 # additional arrays for mozcart biomass burning
 state    real  ebu_bigalk   ikjf     ebu           1         Z        h      "ebu_bigalk"    "biomass burning emiss"  "mol km^-2 hr^-1"
@@ -283,8 +312,8 @@ state    real  ebu_in_hc8         i]jf      ebu_in      1         -        i07  
 state    real  ebu_in_ete         i]jf      ebu_in      1         -        i07        "ebu_in_ete"            "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  ebu_in_olt         i]jf      ebu_in      1         -        i07        "ebu_in_olt"            "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  ebu_in_oli         i]jf      ebu_in      1         -        i07        "ebu_in_oli"            "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  ebu_in_pm25        i]jf      ebu_in      1         -        i07        "ebu_in_pm25"           "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  ebu_in_pm10        i]jf      ebu_in      1         -        i07        "ebu_in_pm10"           "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_pm25        i]jf      ebu_in      1         -        i07        "ebu_in_pm25"           "EMISSIONS"          "ug/m2/s"        
+state    real  ebu_in_pm10        i]jf      ebu_in      1         -        i07        "ebu_in_pm10"           "EMISSIONS"          "ug/m2/s"        
 state    real  ebu_in_dien        i]jf      ebu_in      1         -        i07        "ebu_in_dien"           "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  ebu_in_iso         i]jf      ebu_in      1         -        i07        "ebu_in_iso"            "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  ebu_in_api         i]jf      ebu_in      1         -        i07        "ebu_in_api"            "EMISSIONS"          "mol km^-2 hr^-1"
@@ -301,10 +330,10 @@ state    real  ebu_in_ora2        i]jf      ebu_in      1         -        i07  
 state    real  ebu_in_nh3         i]jf      ebu_in      1         -        i07        "ebu_in_nh3"            "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  ebu_in_so2         i]jf      ebu_in      1         -        i07        "ebu_in_so2"            "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  ebu_in_dms         i]jf      ebu_in      1         -        i07        "ebu_in_dms"            "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  ebu_in_oc          i]jf      ebu_in      1         -        i07        "ebu_in_oc"             "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  ebu_in_bc          i]jf      ebu_in      1         -        i07        "ebu_in_bc"             "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_oc          i]jf      ebu_in      1         -        i07        "ebu_in_oc"             "EMISSIONS"          "ug/m2/s"        
+state    real  ebu_in_bc          i]jf      ebu_in      1         -        i07        "ebu_in_bc"             "EMISSIONS"          "ug/m2/s"        
 state    real  ebu_in_sulf        i]jf      ebu_in      1         -        i07        "ebu_in_sulf"           "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  ebu_in_ash         i]jf      ebu_in      1         -        i07        "ebu_in_ash"            "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_ash         i]jf      ebu_in      1         -        i07        "ebu_in_ash"            "EMISSIONS"          "ug/m2/s"        
 # additional arrays for mozcart biomass burning
 state    real  ebu_in_bigalk      i]jf      ebu_in      1         -        i07        "ebu_in_bigalk"     "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  ebu_in_bigene      i]jf      ebu_in      1         -        i07        "ebu_in_bigene"     "EMISSIONS"          "mol km^-2 hr^-1"
@@ -463,6 +492,16 @@ state    real  ebio_c3h6      ij      misc        1         -      -        "ebi
 state    real  ebio_c3h8      ij      misc        1         -      -        "ebio_c3h8"        "Actual biog emiss"  "mol km^-2 hr^-1"
 state    real  ebio_so2       ij      misc        1         -      -        "ebio_so2"         "Actual biog emiss"  "mol km^-2 hr^-1"
 state    real  ebio_dms       ij      misc        1         -      -        "ebio_dms"         "Actual biog emiss"  "mol km^-2 hr^-1"
+# crimech megan2 bio emission species
+state    real  ebio_c5h8      ij      misc        1         -      -        "ebio_c5h8"        "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_apinene   ij      misc        1         -      -        "ebio_apinene"     "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_bpinene   ij      misc        1         -      -        "ebio_bpinene"     "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_toluene   ij      misc        1         -      -        "ebio_toluene"     "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_ch3cho    ij      misc        1         -      -        "ebio_ch3cho"      "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_ch3co2h   ij      misc        1         -      -        "ebio_ch3co2h"     "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_tbut2ene  ij      misc        1         -      -        "ebio_tbut2ene"    "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_c2h5cho   ij      misc        1         -      -        "ebio_c2h5cho"     "Actual biog emiss"  "mol km^-2 hr^-1"
+state    real  ebio_nc4h10    ij      misc        1         -      -        "ebio_nc4h10"      "Actual biog emiss"  "mol km^-2 hr^-1"
 
 # Ocean CO2 fluxes for the GHG options
 state    real  ebio_co2oce    ij      misc        1         -      i06rh    "ebio_co2oce"      "Ocean  CO2 fluxes"  "mol km^-2 hr^-1"
@@ -613,6 +652,11 @@ state    real  dvel_xooh     i%jf      dvel           1         -      -      "d
 state    real  dvel_so2      i%jf      dvel           1         -      -      "dvel_so2"       "SO2 deposition velocity "  "cm/s"
 state    real  dvel_so4      i%jf      dvel           1         -      -      "dvel_so4"       "SO4 deposition velocity "  "cm/s"
 state    real  dvel_terpooh  i%jf      dvel           1         -      -      "dvel_terpooh"    "TERPOOH deposition velocity "  "cm/s"
+
+# deposition velocities for diagnostic package, feel free to add if you like!
+#
+state    real  dep_vel   i{kdv}j{ndv}  misc           1         Z      r      "DEP_VEL"        "deposition velocity"             "cm/s"
+state   integer num_vert_mix     -     misc           -         -      r      "num_vert_mix"   "Number of chemical species used in deposition; num_gas or num_chem"               ""
 
 #
 # Wet deposition
@@ -1137,6 +1181,207 @@ state   real   vash_7    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_in
 state   real   vash_8    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "vash_8"             "vash8  mixing ratio"        "ug/kg-dryair"
 state   real   vash_9    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "vash_9"             "vash9  mixing ratio"        "ug/kg-dryair"
 state   real   vash_10   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "vash_10"            "vash10 mixing ratio"        "ug/kg-dryair"
+
+#Additional crimech gas variables inside the chem array...
+state   real    hso3       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "hso3"          "HSO3 concentration"        "ppmv"
+state   real    so3        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "so3"           "SO3 concentration"        "ppmv"
+state   real    nc4h10     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nc4h10"        "NC4H10 concentration"        "ppmv"
+state   real    benzene    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "benzene"       "BENZENE concentration"        "ppmv"
+state   real    oxyl       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "oxyl"          "OXYL concentration"        "ppmv"
+state   real    npropol    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "npropol"       "NPROPOL concentration"        "ppmv"
+state   real    tbut2ene   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "tbut2ene"      "TBUT2ENE concentration"        "ppmv"
+state   real    c2h5cho    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "c2h5cho"       "C2H5CHO concentration"        "ppmv"
+state   real    ch3co2h    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ch3co2h"       "CH3CO2H concentration"        "ppmv"
+state   real    ic3h7no3   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ic3h7no3"      "IC3H7NO3 concentration"        "ppmv"
+state   real    ipropol    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ipropol"       "IPROPOL concentration"        "ppmv"
+state   real    ch3no3     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ch3no3"        "CH3NO3 concentration"        "ppmv"
+state   real    c2h5no3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "c2h5no3"       "C2H5NO3 concentration"        "ppmv"
+state   real    hoc2h4no3  ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "hoc2h4no3"     "HOC2H4NO3 concentration"        "ppmv"
+state   real    hoc2h4ooh  ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "hoc2h4ooh"     "HOC2H4OOH concentration"        "ppmv"
+state   real    carb14     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "carb14"        "CARB14 concentration"        "ppmv"
+state   real    carb17     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "carb17"        "CARB17 concentration"        "ppmv"
+state   real    rn10no3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn10no3"       "RN10NO3 concentration"        "ppmv"
+state   real    rn13no3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn13no3"       "RN13NO3 concentration"        "ppmv"
+state   real    rn19no3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn19no3"       "RN19NO3 concentration"        "ppmv"
+state   real    rn9no3     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn9no3"        "RN9NO3 concentration"        "ppmv"
+state   real    rn12no3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn12no3"       "RN12NO3 concentration"        "ppmv"
+state   real    rn15no3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn15no3"       "RN15NO3 concentration"        "ppmv"
+state   real    rn18no3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn18no3"       "RN18NO3 concentration"        "ppmv"
+state   real    rn16no3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn16no3"       "RN16NO3 concentration"        "ppmv"
+state   real    rn10ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn10ooh"       "RN10OOH concentration"        "ppmv"
+state   real    rn13ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn13ooh"       "RN13OOH concentration"        "ppmv"
+state   real    rn16ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn16ooh"       "RN16OOH concentration"        "ppmv"
+state   real    rn19ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn19ooh"       "RN19OOH concentration"        "ppmv"
+state   real    rn8ooh     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn8ooh"        "RN8OOH concentration"        "ppmv"
+state   real    rn11ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn11ooh"       "RN11OOH concentration"        "ppmv"
+state   real    rn14ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn14ooh"       "RN14OOH concentration"        "ppmv"
+state   real    rn17ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn17ooh"       "RN17OOH concentration"        "ppmv"
+state   real    rn9ooh     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn9ooh"        "RN9OOH concentration"        "ppmv"
+state   real    rn12ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn12ooh"       "RN12OOH concentration"        "ppmv"
+state   real    rn15ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn15ooh"       "RN15OOH concentration"        "ppmv"
+state   real    rn18ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn18ooh"       "RN18OOH concentration"        "ppmv"
+state   real    nrn6ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nrn6ooh"       "NRN6OOH concentration"        "ppmv"
+state   real    nrn9ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nrn9ooh"       "NRN9OOH concentration"        "ppmv"
+state   real    nrn12ooh   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nrn12ooh"      "NRN12OOH concentration"        "ppmv"
+state   real    apinene    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "apinene"       "APINENE concentration"        "ppmv"
+state   real    bpinene    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bpinene"       "BPINENE concentration"        "ppmv"
+state   real    carb7      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "carb7"         "CARB7 concentration"        "ppmv"
+state   real    carb10     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "carb10"        "CARB10 concentration"        "ppmv"
+state   real    carb13     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "carb13"        "CARB13 concentration"        "ppmv"
+state   real    carb16     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "carb16"        "CARB16 concentration"        "ppmv"
+state   real    carb3      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "carb3"         "CARB3 concentration"        "ppmv"
+state   real    carb6      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "carb6"         "CARB6 concentration"        "ppmv"
+state   real    carb9      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "carb9"         "CARB9 concentration"        "ppmv"
+state   real    carb12     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "carb12"        "CARB12 concentration"        "ppmv"
+state   real    carb15     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "carb15"        "CARB15 concentration"        "ppmv"
+state   real    c2h5co3h   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "c2h5co3h"      "C2H5CO3H concentration"        "ppmv"
+state   real    c2h5co3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "c2h5co3"       "C2H5CO3 concentration"        "ppmv"
+state   real    ppn        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ppn"           "PPN concentration"        "ppmv"
+state   real    hoch2cho   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "hoch2cho"      "HOCH2CHO concentration"        "ppmv"
+state   real    hoch2co3   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "hoch2co3"      "HOCH2CO3 concentration"        "ppmv"
+state   real    hoch2co3h  ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "hoch2co3h"     "HOCH2CO3H concentration"        "ppmv"
+state   real    phan       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "phan"          "PHAN concentration"        "ppmv"
+state   real    ccarb12    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ccarb12"       "CCARB12 concentration"        "ppmv"
+state   real    ch3cl      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ch3cl"         "CH3CL concentration"        "ppmv"
+state   real    ch2cl2     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ch2cl2"        "CH2CL2 concentration"        "ppmv"
+state   real    chcl3      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "chcl3"         "CHCL3 concentration"        "ppmv"
+state   real    ch3ccl3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ch3ccl3"       "CH3CCL3 concentration"        "ppmv"
+state   real    cdicleth   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "cdicleth"      "CDICLETH concentration"        "ppmv"
+state   real    tdicleth   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "tdicleth"      "TDICLETH concentration"        "ppmv"
+state   real    tricleth   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "tricleth"      "TRICLETH concentration"        "ppmv"
+state   real    tce        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "tce"           "TCE concentration"        "ppmv"
+state   real    ucarb12    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ucarb12"       "UCARB12 concentration"        "ppmv"
+state   real    ucarb10    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ucarb10"       "UCARB10 concentration"        "ppmv"
+state   real    ru14no3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ru14no3"       "RU14NO3 concentration"        "ppmv"
+state   real    ru14ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ru14ooh"       "RU14OOH concentration"        "ppmv"
+state   real    ru12ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ru12ooh"       "RU12OOH concentration"        "ppmv"
+state   real    ru10ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ru10ooh"       "RU10OOH concentration"        "ppmv"
+state   real    ru12pan    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ru12pan"       "RU12PAN concentration"        "ppmv"
+state   real    nucarb12   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nucarb12"      "NUCARB12 concentration"        "ppmv"
+state   real    nru14ooh   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nru14ooh"      "NRU14OOH concentration"        "ppmv"
+state   real    nru12ooh   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nru12ooh"      "NRU12OOH concentration"        "ppmv"
+state   real    noa        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "noa"           "NOA concentration"        "ppmv"
+state   real    ra13no3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ra13no3"       "RA13NO3 concentration"        "ppmv"
+state   real    ra13ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ra13ooh"       "RA13OOH concentration"        "ppmv"
+state   real    udcarb8    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "udcarb8"       "UDCARB8 concentration"        "ppmv"
+state   real    aroh14     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "aroh14"        "AROH14 concentration"        "ppmv"
+state   real    raroh14    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "raroh14"       "RAROH14 concentration"        "ppmv"
+state   real    arnoh14    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "arnoh14"       "ARNOH14 concentration"        "ppmv"
+state   real    ra16no3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ra16no3"       "RA16NO3 concentration"        "ppmv"
+state   real    ra16ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ra16ooh"       "RA16OOH concentration"        "ppmv"
+state   real    udcarb11   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "udcarb11"      "UDCARB11 concentration"        "ppmv"
+state   real    aroh17     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "aroh17"        "AROH17 concentration"        "ppmv"
+state   real    raroh17    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "raroh17"       "RAROH17 concentration"        "ppmv"
+state   real    arnoh17    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "arnoh17"       "ARNOH17 concentration"        "ppmv"
+state   real    udcarb14   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "udcarb14"      "UDCARB14 concentration"        "ppmv"
+state   real    ra19no3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ra19no3"       "RA19NO3 concentration"        "ppmv"
+state   real    ra19ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ra19ooh"       "RA19OOH concentration"        "ppmv"
+state   real    rtn28no3   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtn28no3"      "RTN28NO3 concentration"        "ppmv"
+state   real    rtn28ooh   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtn28ooh"      "RTN28OOH concentration"        "ppmv"
+state   real    tncarb26   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "tncarb26"      "TNCARB26 concentration"        "ppmv"
+state   real    rtn26ooh   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtn26ooh"      "RTN26OOH concentration"        "ppmv"
+state   real    nrtn28ooh  ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nrtn28ooh"     "NRTN28OOH concentration"        "ppmv"
+state   real    rtn26pan   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtn26pan"      "RTN26PAN concentration"        "ppmv"
+state   real    rtn25ooh   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtn25ooh"      "RTN25OOH concentration"        "ppmv"
+state   real    rtn24ooh   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtn24ooh"      "RTN24OOH concentration"        "ppmv"
+state   real    rtn23ooh   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtn23ooh"      "RTN23OOH concentration"        "ppmv"
+state   real    rtn14ooh   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtn14ooh"      "RTN14OOH concentration"        "ppmv"
+state   real    rtn10ooh   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtn10ooh"      "RTN10OOH concentration"        "ppmv"
+state   real    tncarb10   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "tncarb10"      "TNCARB10 concentration"        "ppmv"
+state   real    rtn25no3   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtn25no3"      "RTN25NO3 concentration"        "ppmv"
+state   real    tncarb15   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "tncarb15"      "TNCARB15 concentration"        "ppmv"
+state   real    rcooh25    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rcooh25"       "RCOOH25 concentration"        "ppmv"
+state   real    rtx28no3   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtx28no3"      "RTX28NO3 concentration"        "ppmv"
+state   real    rtx28ooh   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtx28ooh"      "RTX28OOH concentration"        "ppmv"
+state   real    txcarb24   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "txcarb24"      "TXCARB24 concentration"        "ppmv"
+state   real    rtx24no3   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtx24no3"      "RTX24NO3 concentration"        "ppmv"
+state   real    rtx24ooh   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtx24ooh"      "RTX24OOH concentration"        "ppmv"
+state   real    txcarb22   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "txcarb22"      "TXCARB22 concentration"        "ppmv"
+state   real    rtx22no3   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtx22no3"      "RTX22NO3 concentration"        "ppmv"
+state   real    rtx22ooh   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtx22ooh"      "RTX22OOH concentration"        "ppmv"
+state   real    nrtx28ooh  ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nrtx28ooh"     "NRTX28OOH concentration"        "ppmv"
+state   real    carb11a    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "carb11a"       "CARB11A concentration"        "ppmv"
+state   real    anhy       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "anhy"          "ANHY concentration"        "ppmv"
+state   real    ch3o2no2   ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ch3o2no2"      "CH3O2NO2 concentration"        "ppmv"
+state   real    c2h5ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "c2h5ooh"       "C2H5OOH concentration"        "ppmv"
+state   real    ch3cho     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ch3cho"        "CH3CHO concentration"        "ppmv"
+state   real    c5h8       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "c5h8"          "C5H8 concentration"        "ppmv"
+state   real    toluene    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "toluene"       "TOLUENE concentration"        "ppmv"
+
+
+state   real    rtn23no3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtn23no3"       "rtn23no3 concentration"        "ppmv"   
+
+state   real    tncarb12    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "tncarb12"       "tncarb12 concentration"        "ppmv"  
+state   real    tncarb11    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "tncarb11"       "tncarb11 concentration"        "ppmv"  
+state   real    tm123b      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "tm123b"       "tm123b concentration"        "ppmv"  
+state   real    tm124b      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "tm124b"       "tm124b concentration"        "ppmv"  
+state   real    tm135b      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "tm135b"       "tm135b concentration"        "ppmv"  
+state   real    oethtol    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "oethtol"       "oethtol concentration"        "ppmv"  
+
+state   real    methtol    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "methtol"       "methtol concentration"        "ppmv"  
+state   real    pethtol    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "pethtol"       "pethtol concentration"        "ppmv"  
+state   real    ra22no3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ra22no3"       "ra22no3 concentration"        "ppmv"  
+state   real    ra22ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ra22ooh"       "ra22ooh concentration"        "ppmv"  
+
+state   real    dime35eb    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "dime35eb"       "dime35eb concentration"        "ppmv"  
+state   real    ra25no3    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ra25no3"       "ra25no3 concentration"        "ppmv"  
+state   real    udcarb17    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "udcarb17"       "udcarb17 concentration"        "ppmv"  
+
+state   real    ra25ooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ra25ooh"       "ra25ooh concentration"        "ppmv" 
+
+state   real    ch3s       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ch3s"          "CH3S concentration"        "ppmv"
+state   real    ch3so      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ch3so"         "CH3SO concentration"       "ppmv"
+state   real    msia       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "msia"          "MSIA concentration"        "ppmv"
+
+state   real    clno2      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "clno2"         "ClNO2 concentration"        "ppmv"
+
+state    real  ch3oo        ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ch3oo"                "CH3OO concentration"       "ppmv"
+state    real  c2h5o2       ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "c2h5o2"               "C2H5O2 concentration"       "ppmv"
+state    real  hoch2ch2o2   ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "hoch2ch2o2"           "HOCH2CH2O2 concentration"       "ppmv"
+state    real  ic3h7o2      ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ic3h7o2"              "IC3H7O2 concentration"       "ppmv"
+state    real  rn10o2       ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn10o2"               "RN10O2 concentration"       "ppmv"
+state    real  rn13o2       ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn13o2"               "RN13O2 concentration"       "ppmv"
+state    real  rn16o2       ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn16o2"               "RN16O2 concentration"       "ppmv"
+state    real  rn19o2       ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn19o2"               "RN19O2 concentration"       "ppmv"
+state    real  rn9o2        ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn9o2"                "RN9O2 concentration"       "ppmv"
+state    real  rn12o2       ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn12o2"               "RN12O2 concentration"       "ppmv"
+state    real  rn15o2       ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn15o2"               "RN15O2 concentration"       "ppmv"
+state    real  rn18o2       ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn18o2"               "RN18O2 concentration"       "ppmv"
+state    real  nrn6o2       ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nrn6o2"               "NRN6O2 concentration"       "ppmv"
+state    real  nrn9o2       ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nrn9o2"               "NRN9O2 concentration"       "ppmv"
+state    real  nrn12o2      ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nrn12o2"              "NRN12O2 concentration"       "ppmv"
+state    real  rn11o2       ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn11o2"               "RN11O2 concentration"       "ppmv"
+state    real  rn14o2       ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn14o2"               "RN14O2 concentration"       "ppmv"
+state    real  rn8o2        ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn8o2"                "RN8O2 concentration"       "ppmv"
+state    real  rn17o2       ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn17o2"               "RN17O2 concentration"       "ppmv"
+state    real  rn13ao2      ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn13ao2"              "RN13AO2 concentration"       "ppmv"
+state    real  rn16ao2      ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn16ao2"              "RN16AO2 concentration"       "ppmv"
+state    real  rn15ao2     ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn15ao2"              "RN15AO2 concentration"       "ppmv"
+state    real  rn18ao2     ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rn18ao2"              "RN18AO2 concentration"       "ppmv"
+state    real  ru10o2      ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ru10o2"               "RU10O2 concentration"       "ppmv"
+state    real  nru14o2     ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nru14o2"              "NRU14O2 concentration"       "ppmv"
+state    real  nru12o2     ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nru12o2"              "NRU12O2 concentration"       "ppmv"
+state    real  ra13o2      ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ra13o2"               "RA13O2 concentration"       "ppmv"
+state    real  nrtx28o2    ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nrtx28o2"             "NRTX28O2 concentration"       "ppmv"
+state    real  rtx24o2     ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtx24o2"              "RTX24O2 concentration"       "ppmv"
+state    real  rtx28o2     ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtx28o2"              "RTX28O2 concentration"       "ppmv"
+state    real  rtn25o2     ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtn25o2"              "RTN25O2 concentration"       "ppmv"
+state    real  rtn24o2     ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtn24o2"              "RTN24O2 concentration"       "ppmv"
+state    real  rtn23o2     ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtn23o2"              "RTN23O2 concentration"       "ppmv"
+state    real  rtn14o2     ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtn14o2"              "RTN14O2 concentration"       "ppmv"
+state    real  rtn10o2     ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtn10o2"              "RTN10O2 concentration"       "ppmv"
+state    real  nrtn28o2    ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nrtn28o2"             "NRTN28O2 concentration"       "ppmv"
+state    real  rtn26o2     ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtn26o2"              "RTN26O2 concentration"       "ppmv"
+state    real  rtn28o2     ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtn28o2"              "RTN28O2 concentration"       "ppmv"
+state    real  ra19ao2     ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ra19ao2"              "RA19AO2 concentration"       "ppmv"
+state    real  ru14o2      ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ru14o2"               "RU14O2 concentration"        "ppmv"
+state    real  ru12o2      ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ru12o2"               "RU12O2 concentration"        "ppmv"
+state    real  ra16o2      ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ra16o2"               "RA16O2 concentration"        "ppmv"
+state    real  rtx22o2     ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "rtx22o2"              "RTX22O2 concentration"        "ppmv"
+state    real  ra22ao2     ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ra22ao2"              "RA22AO2 concentration"        "ppmv"
+state    real  ra22bo2     ikjftb      chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ra22bo2"              "RA22BO2 concentration"        "ppmv"
+state    real  ra25o2      ikjftb      chem        1         -    i0{12}rhusdf=(bdy_interp:dt)  "ra25o2"              "RA25O2 concentration"        "ppmv"
+state    real  ra19co2      ikjftb      chem        1         -    i0{12}rhusdf=(bdy_interp:dt)  "ra19co2"              "RA19CO2 concentration"        "ppmv"
 
 
 #tracer variables inside the chem array...for ensemble run or not
@@ -2451,6 +2696,8 @@ rconfig   integer kfuture                  namelist,chem        1              1
 rconfig   integer kfire                    namelist,chem        1              1       -       "kfire"                ""      ""
 rconfig   integer kemit_aircraft           namelist,chem        1              1       -       "kemit_aircraft"                ""      ""
 rconfig   integer kdvel                    namelist,chem        1              1       -       "kdvel"                ""      ""
+rconfig   integer ndepvel                  namelist,chem        1              140     -       "ndepvel"                ""      ""
+rconfig   integer kdepvel                  namelist,chem        1              1       -       "kdepvel"                ""      ""
 rconfig   integer erosion_dim              namelist,chem        1              3       -       "erosion_dim"          ""      ""
 rconfig   integer    biomass_emiss_opt     namelist,chem        max_domains    0       rh      "biomass_emiss_opt"                   ""    ""
 rconfig   integer cam_mam_mode             namelist,chem        1              3       irh     "cam_mam_mode"                   ""    ""
@@ -2552,6 +2799,9 @@ rconfig   integer    track_rad_num        namelist,chem       1               17
 rconfig   integer    track_tuv_num        namelist,chem       1               30      -    "tuv_jmax in module_wave_data"      ""    ""
 rconfig   integer    track_tuv_lev        namelist,chem       1               51      -    "nref in module_ftuv_driver"        ""    ""
 
+# control for N2O5 heterogenenous chemistry option in MOSAIC
+rconfig   integer    n2o5_hetchem         namelist,chem          1              0       rh    "n2o5_hetchem"      ""     ""           
+
 # CHEMISTRY PACKAGE DEFINITIONS
 #
 package   prescribe_aerosol     chem_opt==0         -             -
@@ -2585,7 +2835,8 @@ package   cbmz_mosaic_dms_8bin_aq  chem_opt==34      -             chem:so2,sulf
 package   cbmzsorg_aq chem_opt==35                   -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn,so4cwj,so4cwi,nh4cwj,nh4cwi,no3cwj,no3cwi,nacwj,nacwi,clcwj,clcwi,orgaro1cwj,orgaro1cwi,orgaro2cwj,orgaro2cwi,orgalk1cwj,orgalk1cwi,orgole1cwj,orgole1cwi,orgba1cwj,orgba1cwi,orgba2cwj,orgba2cwi,orgba3cwj,orgba3cwi,orgba4cwj,orgba4cwi,orgpacwj,orgpacwi,eccwj,eccwi,p25cwj,p25cwi,anthcw,seascw,soilcw,nu0cw,ac0cw,corncw
 
 package   radm2sorg_aqchem chem_opt==41              -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,hcl,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn,so4cwj,so4cwi,nh4cwj,nh4cwi,no3cwj,no3cwi,nacwj,nacwi,clcwj,clcwi,orgaro1cwj,orgaro1cwi,orgaro2cwj,orgaro2cwi,orgalk1cwj,orgalk1cwi,orgole1cwj,orgole1cwi,orgba1cwj,orgba1cwi,orgba2cwj,orgba2cwi,orgba3cwj,orgba3cwi,orgba4cwj,orgba4cwi,orgpacwj,orgpacwi,eccwj,eccwi,p25cwj,p25cwi,anthcw,seascw,soilcw,nu0cw,ac0cw,corncw
-package   racmsorg_aqchem  chem_opt==42              -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn,so4cwj,so4cwi,nh4cwj,nh4cwi,no3cwj,no3cwi,nacwj,nacwi,clcwj,clcwi,orgaro1cwj,orgaro1cwi,orgaro2cwj,orgaro2cwi,orgalk1cwj,orgalk1cwi,orgole1cwj,orgole1cwi,orgba1cwj,orgba1cwi,orgba2cwj,orgba2cwi,orgba3cwj,orgba3cwi,orgba4cwj,orgba4cwi,orgpacwj,orgpacwi,eccwj,eccwi,p25cwj,p25cwi,anthcw,seascw,soilcw,nu0cw,ac0cw,corncw
+package   racmsorg_aqchem_kpp chem_opt==42           -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn,so4cwj,so4cwi,nh4cwj,nh4cwi,no3cwj,no3cwi,nacwj,nacwi,clcwj,clcwi,orgaro1cwj,orgaro1cwi,orgaro2cwj,orgaro2cwi,orgalk1cwj,orgalk1cwi,orgole1cwj,orgole1cwi,orgba1cwj,orgba1cwi,orgba2cwj,orgba2cwi,orgba3cwj,orgba3cwi,orgba4cwj,orgba4cwi,orgpacwj,orgpacwi,eccwj,eccwi,p25cwj,p25cwi,anthcw,seascw,soilcw,nu0cw,ac0cw,corncw
+package   racm_esrlsorg_aqchem_kpp chem_opt==43      -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,hace,ishp,ison,mahp,mpan,nald,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,orgaro1j,orgaro1i,orgaro2j,orgaro2i,orgalk1j,orgalk1i,orgole1j,orgole1i,orgba1j,orgba1i,orgba2j,orgba2i,orgba3j,orgba3i,orgba4j,orgba4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn,so4cwj,so4cwi,nh4cwj,nh4cwi,no3cwj,no3cwi,nacwj,nacwi,clcwj,clcwi,orgaro1cwj,orgaro1cwi,orgaro2cwj,orgaro2cwi,orgalk1cwj,orgalk1cwi,orgole1cwj,orgole1cwi,orgba1cwj,orgba1cwi,orgba2cwj,orgba2cwi,orgba3cwj,orgba3cwi,orgba4cwj,orgba4cwi,orgpacwj,orgpacwi,eccwj,eccwi,p25cwj,p25cwi,anthcw,seascw,soilcw,nu0cw,ac0cw,corncw
 
 #cms++
 package   radm2_kpp        chem_opt==101                 -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,ho,ho2
@@ -2665,6 +2916,14 @@ package   cbmz_cam_mam7_aq chem_opt==504               -             chem:so2,su
 #package   radm2_cam_mam7     chem_opt==412                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,hcl,ho,ho2,soag,so4_a1,nh4_a1,pom_a1,soa_a1,bc_a1,ncl_a1,wtr_a1,num_a1,so4_a2,nh4_a2,soa_a2,ncl_a2,wtr_a2,num_a2,pom_a3,bc_a3,wtr_a3,num_a3,ncl_a4,so4_a4,nh4_a4,wtr_a4,num_a4,dst_a5,so4_a5,nh4_a5,wtr_a5,num_a5,ncl_a6,so4_a6,nh4_a6,wtr_a6,num_a6,dst_a7,so4_a7,nh4_a7,wtr_a7,num_a7
 #
 #
+
+# CRIMECH gas phase
+package   crimech_kpp     chem_opt==600                  -             chem:dms,dmso,dmso2,ch3sch2oo,ch3s,ch3so,ch3so2,ch3so3,msa,msia,nh3,hcl,so2,hso3,no2,o3,hno3,h2o2,ch3cho,hcho,ch3ooh,c2h5ooh,paa,hcooh,n2o5,no3,pan,c3h8,nc4h10,c2h6,co,c2h4,toluene,oxyl,aco3,hono,hno4,ket,c5h8,ho,ho2,so3,no,benzene,npropol,c2h2,c3h6,tbut2ene,c2h5cho,ch3co2h,mek,ch3oh,c2h5oh,ipropol,ch3no3,c2h5no3,hoc2h4no3,prooh,hoc2h4ooh,carb14,carb17,rn10no3,rn13no3,rn19no3,rn9no3,rn12no3,rn15no3,rn18no3,rn16no3,rn10ooh,rn13ooh,rn16ooh,rn19ooh,rn8ooh,rn11ooh,rn14ooh,rn17ooh,rn9ooh,rn12ooh,rn15ooh,rn18ooh,nrn6ooh,nrn9ooh,nrn12ooh,apinene,bpinene,carb7,carb10,carb13,carb16,carb3,carb6,carb9,carb12,carb15,c2h5co3h,c2h5co3,ppn,hoch2cho,hoch2co3,hoch2co3h,phan,ccarb12,ch3cl,ch2cl2,chcl3,ch3ccl3,cdicleth,tdicleth,tricleth,tce,ucarb12,ucarb10,ru14no3,ru14ooh,ru12ooh,ru10ooh,mpan,ru12pan,nucarb12,nru14ooh,nru12ooh,noa,ra13no3,ra13ooh,udcarb8,aroh14,raroh14,arnoh14,ra16no3,ra16ooh,udcarb11,aroh17,raroh17,arnoh17,udcarb14,ra19co2,ra19no3,ra19ooh,rtn28no3,rtn28ooh,tncarb26,rtn26ooh,nrtn28ooh,rtn26pan,rtn25ooh,rtn24ooh,rtn23ooh,rtn14ooh,rtn10ooh,tncarb10,rtn25no3,tncarb15,rcooh25,rtx28no3,rtx28ooh,txcarb24,rtx24no3,rtx24ooh,txcarb22,rtx22no3,rtx22ooh,nrtx28ooh,carb11a,anhy,ch3o2no2,ch4,sulf,rtn23no3,tncarb12,tncarb11,tm123b,tm124b,tm135b,oethtol,methtol,pethtol,ra22no3,ra22ooh,dime35eb,ra25no3,udcarb17,ra25ooh,ch3oo,c2h5o2,hoch2ch2o2,ic3h7o2,rn10o2,rn13o2,rn16o2,rn19o2,rn9o2,rn12o2,rn15o2,rn18o2,nrn6o2,nrn9o2,nrn12o2,rn11o2,rn14o2,rn8o2,rn17o2,rn13ao2,rn16ao2,rn15ao2,rn18ao2,ru10o2,nru14o2,nru12o2,ra13o2,nrtx28o2,rtx24o2,rtx28o2,rtn25o2,rtn24o2,rtn23o2,rtn14o2,rtn10o2,nrtn28o2,rtn26o2,rtn28o2,ra19ao2,ru14o2,ru12o2,ra16o2,rtx22o2,ra22ao2,ra22bo2,ra25o2,ic3h7no3
+# CRIMECH gas phase and original aqueous MOSAIC
+package   cri_mosaic_8bin_aq_kpp  chem_opt==601          -             chem:dms,dmso,dmso2,ch3sch2oo,ch3s,ch3so,ch3so2,ch3so3,msa,msia,nh3,hcl,so2,hso3,no2,o3,hno3,h2o2,ch3cho,hcho,ch3ooh,c2h5ooh,paa,hcooh,n2o5,no3,pan,c3h8,nc4h10,c2h6,co,c2h4,toluene,oxyl,aco3,hono,hno4,ket,c5h8,ho,ho2,so3,no,benzene,npropol,c2h2,c3h6,tbut2ene,c2h5cho,ch3co2h,mek,ch3oh,c2h5oh,ipropol,ch3no3,c2h5no3,hoc2h4no3,prooh,hoc2h4ooh,carb14,carb17,rn10no3,rn13no3,rn19no3,rn9no3,rn12no3,rn15no3,rn18no3,rn16no3,rn10ooh,rn13ooh,rn16ooh,rn19ooh,rn8ooh,rn11ooh,rn14ooh,rn17ooh,rn9ooh,rn12ooh,rn15ooh,rn18ooh,nrn6ooh,nrn9ooh,nrn12ooh,apinene,bpinene,carb7,carb10,carb13,carb16,carb3,carb6,carb9,carb12,carb15,c2h5co3h,c2h5co3,ppn,hoch2cho,hoch2co3,hoch2co3h,phan,ccarb12,ch3cl,ch2cl2,chcl3,ch3ccl3,cdicleth,tdicleth,tricleth,tce,ucarb12,ucarb10,ru14no3,ru14ooh,ru12ooh,ru10ooh,mpan,ru12pan,nucarb12,nru14ooh,nru12ooh,noa,ra13no3,ra13ooh,udcarb8,aroh14,raroh14,arnoh14,ra16no3,ra16ooh,udcarb11,aroh17,raroh17,arnoh17,udcarb14,ra19co2,ra19no3,ra19ooh,rtn28no3,rtn28ooh,tncarb26,rtn26ooh,nrtn28ooh,rtn26pan,rtn25ooh,rtn24ooh,rtn23ooh,rtn14ooh,rtn10ooh,tncarb10,rtn25no3,tncarb15,rcooh25,rtx28no3,rtx28ooh,txcarb24,rtx24no3,rtx24ooh,txcarb22,rtx22no3,rtx22ooh,nrtx28ooh,carb11a,anhy,ch3o2no2,ch4,sulf,rtn23no3,tncarb12,tncarb11,tm123b,tm124b,tm135b,oethtol,methtol,pethtol,ra22no3,ra22ooh,dime35eb,ra25no3,udcarb17,ra25ooh,clno2,ch3oo,c2h5o2,hoch2ch2o2,ic3h7o2,rn10o2,rn13o2,rn16o2,rn19o2,rn9o2,rn12o2,rn15o2,rn18o2,nrn6o2,nrn9o2,nrn12o2,rn11o2,rn14o2,rn8o2,rn17o2,rn13ao2,rn16ao2,rn15ao2,rn18ao2,ru10o2,nru14o2,nru12o2,ra13o2,nrtx28o2,rtx24o2,rtx28o2,rtn25o2,rtn24o2,rtn23o2,rtn14o2,rtn10o2,nrtn28o2,rtn26o2,rtn28o2,ra19ao2,ru14o2,ru12o2,ra16o2,rtx22o2,ra22ao2,ra22bo2,ra25o2,ic3h7no3,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,so4_a05,no3_a05,cl_a05,nh4_a05,na_a05,oin_a05,oc_a05,bc_a05,hysw_a05,water_a05,num_a05,so4_a06,no3_a06,cl_a06,nh4_a06,na_a06,oin_a06,oc_a06,bc_a06,hysw_a06,water_a06,num_a06,so4_a07,no3_a07,cl_a07,nh4_a07,na_a07,oin_a07,oc_a07,bc_a07,hysw_a07,water_a07,num_a07,so4_a08,no3_a08,cl_a08,nh4_a08,na_a08,oin_a08,oc_a08,bc_a08,hysw_a08,water_a08,num_a08,so4_cw01,no3_cw01,cl_cw01,nh4_cw01,na_cw01,oin_cw01,oc_cw01,bc_cw01,num_cw01,so4_cw02,no3_cw02,cl_cw02,nh4_cw02,na_cw02,oin_cw02,oc_cw02,bc_cw02,num_cw02,so4_cw03,no3_cw03,cl_cw03,nh4_cw03,na_cw03,oin_cw03,oc_cw03,bc_cw03,num_cw03,so4_cw04,no3_cw04,cl_cw04,nh4_cw04,na_cw04,oin_cw04,oc_cw04,bc_cw04,num_cw04,so4_cw05,no3_cw05,cl_cw05,nh4_cw05,na_cw05,oin_cw05,oc_cw05,bc_cw05,num_cw05,so4_cw06,no3_cw06,cl_cw06,nh4_cw06,na_cw06,oin_cw06,oc_cw06,bc_cw06,num_cw06,so4_cw07,no3_cw07,cl_cw07,nh4_cw07,na_cw07,oin_cw07,oc_cw07,bc_cw07,num_cw07,so4_cw08,no3_cw08,cl_cw08,nh4_cw08,na_cw08,oin_cw08,oc_cw08,bc_cw08,num_cw08
+package   cri_mosaic_4bin_aq_kpp  chem_opt==611          -             chem:dms,dmso,dmso2,ch3sch2oo,ch3s,ch3so,ch3so2,ch3so3,msa,msia,nh3,hcl,so2,hso3,no2,o3,hno3,h2o2,ch3cho,hcho,ch3ooh,c2h5ooh,paa,hcooh,n2o5,no3,pan,c3h8,nc4h10,c2h6,co,c2h4,toluene,oxyl,aco3,hono,hno4,ket,c5h8,ho,ho2,so3,no,benzene,npropol,c2h2,c3h6,tbut2ene,c2h5cho,ch3co2h,mek,ch3oh,c2h5oh,ipropol,ch3no3,c2h5no3,hoc2h4no3,prooh,hoc2h4ooh,carb14,carb17,rn10no3,rn13no3,rn19no3,rn9no3,rn12no3,rn15no3,rn18no3,rn16no3,rn10ooh,rn13ooh,rn16ooh,rn19ooh,rn8ooh,rn11ooh,rn14ooh,rn17ooh,rn9ooh,rn12ooh,rn15ooh,rn18ooh,nrn6ooh,nrn9ooh,nrn12ooh,apinene,bpinene,carb7,carb10,carb13,carb16,carb3,carb6,carb9,carb12,carb15,c2h5co3h,c2h5co3,ppn,hoch2cho,hoch2co3,hoch2co3h,phan,ccarb12,ch3cl,ch2cl2,chcl3,ch3ccl3,cdicleth,tdicleth,tricleth,tce,ucarb12,ucarb10,ru14no3,ru14ooh,ru12ooh,ru10ooh,mpan,ru12pan,nucarb12,nru14ooh,nru12ooh,noa,ra13no3,ra13ooh,udcarb8,aroh14,raroh14,arnoh14,ra16no3,ra16ooh,udcarb11,aroh17,raroh17,arnoh17,udcarb14,ra19co2,ra19no3,ra19ooh,rtn28no3,rtn28ooh,tncarb26,rtn26ooh,nrtn28ooh,rtn26pan,rtn25ooh,rtn24ooh,rtn23ooh,rtn14ooh,rtn10ooh,tncarb10,rtn25no3,tncarb15,rcooh25,rtx28no3,rtx28ooh,txcarb24,rtx24no3,rtx24ooh,txcarb22,rtx22no3,rtx22ooh,nrtx28ooh,carb11a,anhy,ch3o2no2,ch4,sulf,rtn23no3,tncarb12,tncarb11,tm123b,tm124b,tm135b,oethtol,methtol,pethtol,ra22no3,ra22ooh,dime35eb,ra25no3,udcarb17,ra25ooh,clno2,ch3oo,c2h5o2,hoch2ch2o2,ic3h7o2,rn10o2,rn13o2,rn16o2,rn19o2,rn9o2,rn12o2,rn15o2,rn18o2,nrn6o2,nrn9o2,nrn12o2,rn11o2,rn14o2,rn8o2,rn17o2,rn13ao2,rn16ao2,rn15ao2,rn18ao2,ru10o2,nru14o2,nru12o2,ra13o2,nrtx28o2,rtx24o2,rtx28o2,rtn25o2,rtn24o2,rtn23o2,rtn14o2,rtn10o2,nrtn28o2,rtn26o2,rtn28o2,ra19ao2,ru14o2,ru12o2,ra16o2,rtx22o2,ra22ao2,ra22bo2,ra25o2,ic3h7no3,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,so4_cw01,no3_cw01,cl_cw01,nh4_cw01,na_cw01,oin_cw01,oc_cw01,bc_cw01,num_cw01,so4_cw02,no3_cw02,cl_cw02,nh4_cw02,na_cw02,oin_cw02,oc_cw02,bc_cw02,num_cw02,so4_cw03,no3_cw03,cl_cw03,nh4_cw03,na_cw03,oin_cw03,oc_cw03,bc_cw03,num_cw03,so4_cw04,no3_cw04,cl_cw04,nh4_cw04,na_cw04,oin_cw04,oc_cw04,bc_cw04,num_cw04
+
+
 #emission package definitions
 #
 package   eradm           emiss_opt==2                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3
@@ -2680,6 +2939,8 @@ package   esaprcnov       emiss_opt==13                  -             emis_ant:
 # Anthropogenic CO2, CO and CH4 emissions:
 package   eco2            emiss_opt==16                  -             emis_ant:e_co2,e_co2tst,e_co
 package   eghg            emiss_opt==17                  -             emis_ant:e_co2,e_co2tst,e_co,e_cotst,e_ch4,e_ch4tst
+package   ecrimech        emiss_opt==19                   -             emis_ant:e_co,e_no,e_no2,e_so2,e_nh3,e_c2h6,e_c3h8,e_c2h4,e_c3h6,e_c5h8,e_tm123b,e_tm124b,e_tm135b,e_oethtol,e_methtol,e_pethtol,e_dime35eb,e_hcho,e_ch3cho,e_c2h5cho,e_ket,e_mek,e_ch3oh,e_c2h5oh,e_c2h2,e_benzene,e_nc4h10,e_toluene,e_oxyl,e_tbut2ene,e_ch3co2h
+package   ecrimechtno     emiss_opt==20                  -             emis_ant:e_co,e_no,e_no2,e_so2,e_nh3,e_c2h6,e_c3h8,e_c2h4,e_c3h6,e_c5h8,e_tm123b,e_tm124b,e_tm135b,e_oethtol,e_methtol,e_pethtol,e_dime35eb,e_hcho,e_ch3cho,e_c2h5cho,e_ket,e_mek,e_ch3oh,e_c2h5oh,e_c2h2,e_benzene,e_nc4h10,e_toluene,e_oxyl,e_tbut2ene,e_ch3co2h,e_bc_1,e_ec_1_25,e_ec_25_10,e_oc_dom,e_oc_tra,e_oc_25_10,e_pm25,e_oin_25,e_oin_10
 #
 package   vash    emiss_opt_vol==1                   -             emis_vol:e_vash1,e_vash2,e_vash3,e_vash4,e_vash5,e_vash6,e_vash7,e_vash8,e_vash9,e_vash10
 package   vashso2 emiss_opt_vol==2                   -             emis_vol:e_vash1,e_vash2,e_vash3,e_vash4,e_vash5,e_vash6,e_vash7,e_vash8,e_vash9,e_vash10,e_vso2
@@ -2742,6 +3003,8 @@ package   emiss_inpt_cb4              emiss_inpt_opt==103          -            
 package   emiss_inpt_pnnl_mam         emiss_inpt_opt==104          -             -
 package   emiss_inpt_mozcem           emiss_inpt_opt==111          -             -
 package   emiss_inpt_mozmem           emiss_inpt_opt==112          -             -
+package   emiss_inpt_tno              emiss_inpt_opt==121          -             -
+
 
 # gas/aer_bc/ic_default     = bc/ic in "standard(=grell)" wrf-chem for radm2-sorgam species,
 #                                   and first-cut implementation for cbmz-mosaic species
@@ -2790,3 +3053,4 @@ rconfig  real       ltng_temp_lower          namelist,physics   max_domains    -
 package  lnox_opt_none      lnox_opt==0    -   -
 package  lnox_opt_ott       lnox_opt==1    -   tracer:lnox_total
 package  lnox_opt_decaria   lnox_opt==2    -   tracer:lnox_ic,lnox_cg
+

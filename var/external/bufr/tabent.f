@@ -23,6 +23,8 @@ C                           WRF; ADDED HISTORY DOCUMENTATION; OUTPUTS
 C                           MORE COMPLETE DIAGNOSTIC INFO WHEN ROUTINE
 C                           TERMINATES ABNORMALLY
 C 2005-11-29  J. ATOR    -- ADDED SUPPORT FOR 207 AND 208 OPERATORS
+C 2010-03-19  J. ATOR    -- ADDED SUPPORT FOR 204 OPERATOR
+C 2012-03-02  J. ATOR    -- ADDED SUPPORT FOR 203 OPERATOR
 C
 C USAGE:    CALL TABENT (LUN, NEMO, TAB, ITAB, IREP, IKNT, JUM0)
 C   INPUT ARGUMENT LIST:
@@ -68,11 +70,13 @@ C     initialized within subroutine BFRINI.
      .                ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL),
      .                ISEQ(MAXJL,2),JSEQ(MAXJL)
       COMMON /TABCCC/ ICDW,ICSC,ICRV,INCW
+      COMMON /NRV203/ NNRV,INODNRV(MXNRV),NRV(MXNRV),TAGNRV(MXNRV),
+     .                ISNRV(MXNRV),IENRV(MXNRV),IBTNRV,IPFNRV
 
       CHARACTER*128 BORT_STR
       CHARACTER*24  UNIT
       CHARACTER*10  TAG,RTAG
-      CHARACTER*8   NEMO
+      CHARACTER*8   NEMO,TAGNRV
       CHARACTER*3   TYP,TYPS,TYPT
       CHARACTER*1   REPS,TAB
 
@@ -106,6 +110,7 @@ C  MAKE AN JUMP/LINK ENTRY FOR AN ELEMENT OR A SEQUENCE
 C  ----------------------------------------------------
 
 1     IF(TAB.EQ.'B') THEN
+
          CALL NEMTBB(LUN,ITAB,UNIT,ISCL,IREF,IBIT)
          IF(UNIT(1:5).EQ.'CCITT') THEN
             TYPT = 'CHR'
@@ -124,14 +129,28 @@ C  ----------------------------------------------------
          ELSEIF(UNIT(1:4).EQ.'FLAG') THEN
             TYPT = 'FLG'
          ENDIF
-         IF(TYPT.EQ.'NUM') THEN
+
+         IF( (TYPT.EQ.'NUM') .AND. (IBTNRV.NE.0) ) THEN
+
+C           This node contains a new (redefined) reference value.
+
+            IF(NNRV+1.GT.MXNRV) GOTO 902
+            NNRV = NNRV+1
+            TAGNRV(NNRV) = NEMO
+            INODNRV(NNRV) = NODE
+            ISNRV(NNRV) = NODE+1
+            IBT(NODE) = IBTNRV
+            IF(IPFNRV.EQ.0) IPFNRV = NNRV
+         ELSEIF( (TYPT.EQ.'NUM') .AND. (NEMO(1:3).NE.'204') ) THEN
             IBT(NODE) = IBT(NODE) + ICDW
             ISC(NODE) = ISC(NODE) + ICSC
             IRF(NODE) = IRF(NODE) * ICRV
          ELSEIF( (TYPT.EQ.'CHR') .AND. (INCW.GT.0) ) THEN
             IBT(NODE) = INCW * 8
          ENDIF
+
       ELSEIF(TAB.EQ.'D') THEN
+
          IF(IREP.EQ.0) THEN
             TYPT = 'SEQ'
          ELSE
@@ -144,8 +163,11 @@ C  ----------------------------------------------------
          IBT (NODE) = 0
          IRF (NODE) = 0
          ISC (NODE) = 0
+
       ELSE
+
          GOTO 901
+
       ENDIF
 
 C  EXITS
@@ -158,4 +180,5 @@ C  -----
 901   WRITE(BORT_STR,'("BUFRLIB: TABENT - UNDEFINED TAG (",A,") FOR '//
      . 'INPUT MNEMONIC ",A)') TAB,NEMO
       CALL BORT(BORT_STR)
+902   CALL BORT('BUFRLIB: TABENT - MXNRV OVERFLOW')
       END

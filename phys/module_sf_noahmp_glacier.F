@@ -251,6 +251,8 @@ contains
   REAL                                           :: BEG_WB !beginning water for error check
   REAL                                           :: ZBOT = -8.0 
 
+  CHARACTER*256 message
+
 ! --------------------------------------------------------------------------------------------------
 ! re-process atmospheric forcing
 
@@ -298,7 +300,8 @@ contains
                          RUNSRF ,RUNSUB ,QSNOW  ,PONDING1       ,PONDING2,QSNBOT,FPICE)  !out
 
      IF(MAXVAL(SICE) < 0.0001) &
-       WRITE(*,*) "GLACIER HAS MELTED AT:",ILOC,JLOC," ARE YOU SURE THIS SHOULD BE A GLACIER POINT?"
+       WRITE(message,*) "GLACIER HAS MELTED AT:",ILOC,JLOC," ARE YOU SURE THIS SHOULD BE A GLACIER POINT?"
+     CALL wrf_debug(10,TRIM(message))
 
 ! water and energy balance check
 

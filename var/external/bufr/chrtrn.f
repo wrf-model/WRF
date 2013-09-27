@@ -26,7 +26,7 @@ C     STR      - CHARACTER*(*): CHARACTER STRING
 C
 C REMARKS:
 C    THIS ROUTINE CALLS:        None
-C    THIS ROUTINE IS CALLED BY: RDBFDX
+C    THIS ROUTINE IS CALLED BY: STBFDX
 C                               Normally not called by any application
 C                               programs but it could be.
 C

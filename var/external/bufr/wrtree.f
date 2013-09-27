@@ -31,13 +31,20 @@ C 2004-08-09  J. ATOR    -- MAXIMUM MESSAGE LENGTH INCREASED FROM
 C                           20,000 TO 50,000 BYTES
 C 2007-01-19  J. ATOR    -- PREVENT OVERFLOW OF CVAL FOR STRINGS LONGER
 C                           THAN 8 CHARACTERS; USE FUNCTION IBFMS
+C 2009-08-03  J. WOOLLEN -- ADDED CAPABILITY TO COPY LONG STRINGS VIA
+C                           UFBCPY USING FILE POINTER STORED IN NEW
+C                           COMMON UFBCPL
+C 2012-03-02  J. ATOR    -- USE IPKS TO HANDLE 2-03 OPERATOR CASES
+C 2012-06-04  J. ATOR    -- ENSURE "MISSING" CHARACTER FIELDS ARE
+C                           PROPERLY ENCODED WITH ALL BITS SET TO 1 
 C
 C USAGE:    CALL WRTREE (LUN)
 C   INPUT ARGUMENT LIST:
 C     LUN      - INTEGER: I/O STREAM INDEX INTO INTERNAL MEMORY ARRAYS
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        IBFMS    PKB      PKC
+C    THIS ROUTINE CALLS:        IBFMS    IPKM     PKB      PKC
+C                               IPKS     READLC
 C    THIS ROUTINE IS CALLED BY: WRITSA   WRITSB
 C                               Normally not called by any application
 C                               programs.
@@ -57,19 +64,17 @@ C$$$
      .                IBT(MAXJL),IRF(MAXJL),ISC(MAXJL),
      .                ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL),
      .                ISEQ(MAXJL,2),JSEQ(MAXJL)
-      COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
+      COMMON /USRINT/ NVAL(NFILES),INV(MAXSS,NFILES),VAL(MAXSS,NFILES)
+      COMMON /UFBCPL/ LUNCPY(NFILES) 
 
-      CHARACTER*10 TAG
-      CHARACTER*8  CVAL
-      CHARACTER*3  TYP
-      DIMENSION    IVAL(MAXJL)
-      EQUIVALENCE  (CVAL,RVAL)
-      REAL*8       VAL,RVAL,PKS,TEN
+      CHARACTER*120 LSTR
+      CHARACTER*10  TAG
+      CHARACTER*8   CVAL
+      CHARACTER*3   TYP
+      DIMENSION     IVAL(MAXSS)
+      EQUIVALENCE   (CVAL,RVAL)
+      REAL*8        VAL,RVAL
 
-      DATA         TEN  /10./
-
-C-----------------------------------------------------------------------
-      PKS(NODE) = VAL(N,LUN)*TEN**ISC(NODE)-IRF(NODE)
 C-----------------------------------------------------------------------
 
 C  CONVERT USER NUMBERS INTO SCALED INTEGERS
@@ -81,7 +86,7 @@ C  -----------------------------------------
          IVAL(N) = VAL(N,LUN)
       ELSEIF(TYP(NODE).EQ.'NUM') THEN
          IF(IBFMS(VAL(N,LUN)).EQ.0) THEN
-            IVAL(N) = NINT(PKS(NODE))
+            IVAL(N) = IPKS(VAL(N,LUN),NODE)
          ELSE
             IVAL(N) = -1
          ENDIF
@@ -102,17 +107,49 @@ C	 The value to be packed is numeric.
          CALL PKB(IVAL(N),IBT(NODE),IBAY,IBIT)
       ELSE
 
-C	 The value to be packed is a character string.  If the string is
-C	 longer than 8 characters, then only the first 8 will be packed
-C	 by this routine, and a separate subsequent call to BUFR archive
-C	 library subroutine WRITLC will be required to pack the
-C	 remainder of the string.
+C	 The value to be packed is a character string.
 
-         RVAL = VAL(N,LUN)
-         NBT = MIN(8,IBT(NODE)/8)
-         CALL PKC(CVAL,NBT,IBAY,IBIT)
+         NCR=IBT(NODE)/8
+         IF ( NCR.GT.8 .AND. LUNCPY(LUN).NE.0 ) THEN
+
+C	    The string is longer than 8 characters and there was a
+C           preceeding call to UFBCPY involving this output unit, so
+C           read the long string with READLC and write it into the
+C           output buffer using PKC.
+
+            CALL READLC(LUNCPY(LUN),LSTR,TAG(NODE))
+            CALL PKC(LSTR,NCR,IBAY,IBIT)
+         ELSE
+            RVAL = VAL(N,LUN)
+            IF(IBFMS(RVAL).NE.0) THEN
+
+C              The value is "missing", so set all bits to 1 before
+C              packing the field as a character string.
+
+               NUMCHR = MIN(NCR,LEN(LSTR)) 
+               DO JJ = 1, NUMCHR 
+                  CALL IPKM(LSTR(JJ:JJ),1,255)
+               ENDDO
+               CALL PKC(LSTR,NUMCHR,IBAY,IBIT)
+            ELSE
+
+C              The value is not "missing", so pack the equivalenced
+C              character string.  Note that a maximum of 8 characters
+C              will be packed here, so a separate subsequent call to
+C              BUFR archive library subroutine WRITLC will be needed to
+C              fully encode any string longer than 8 characters.
+
+               CALL PKC(CVAL,NCR,IBAY,IBIT)
+            ENDIF
+         ENDIF
+
       ENDIF
       ENDDO
 
+C  RESET UFBCPY FILE POINTER
+C  -------------------------
+
+      LUNCPY(LUN)=0
+            
       RETURN
       END

@@ -176,6 +176,15 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
    end do
 
+#if defined(RTTOV) || defined(CRTM)
+   if (use_rad) then
+      if ( use_varbc .or. freeze_varbc ) then
+         if ( num_fgat_time > 1 ) call da_varbc_coldstart(iv)
+      end if
+      if ( use_varbc .and. it == 1 ) call da_varbc_precond(iv)
+   end if
+#endif
+
    if ( use_rainobs .and. num_fgat_time > 1 .and. var4d) then
       deallocate (hr_rainc )
       deallocate (hr_rainnc)

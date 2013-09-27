@@ -286,7 +286,7 @@ contains
 !
 ! maxium distance of a parcel to lcl (m)
 !
-   real,parameter :: zdiffcr1 = 1500., zdiffcr2 = 1500.
+   real,parameter :: zdiffcr1 = 1000., zdiffcr2 = 1000.
 !
 ! bounds of parcel origin
 !
@@ -535,7 +535,10 @@ contains
        if(k.ge.kbot(i).and.k.lt.ktop(i)) then
          height = z(i,k)-z(i,kbot(i))
          xkzfac = rh2(i)*wsfac*wstar(index2(i))*delta(index2(i))
-         xkzh = min(max(xkzfac*(1.-height/depth(i))**pfac,xkzmin),xkzmax)
+!        xkzh = min(max(xkzfac*(1.-height/depth(i))**pfac,xkzmin),xkzmax)
+! Hong, 20130703
+         xkzh = min(max(xkzfac*(1.-(height+hpbl(index2(i)))                    &
+                /(depth(i)+hpbl(index2(i))))**pfac,xkzmin),xkzmax)
        else
          xkzh = 0.
        endif

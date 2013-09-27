@@ -29,6 +29,7 @@ C                           MORE COMPLETE DIAGNOSTIC INFO WHEN ROUTINE
 C                           TERMINATES ABNORMALLY
 C 2004-08-09  J. ATOR    -- MAXIMUM MESSAGE LENGTH INCREASED FROM
 C                           20,000 TO 50,000 BYTES
+C 2009-03-23  J. ATOR    -- USE MSGFULL
 C
 C USAGE:    CALL CPYUPD (LUNIT, LIN, LUN, IBYT)
 C   INPUT ARGUMENT LIST:
@@ -40,8 +41,8 @@ C                FOR OUTPUT MESSAGE LOCATION
 C     IBYT     - INTEGER: NUMBER OF BYTES OCCUPIED BY THIS SUBSET
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT     IUPB     MSGINI   MSGWRT
-C                               MVB      PKB
+C    THIS ROUTINE CALLS:        BORT     IUPB     MSGFULL  MSGINI
+C                               MSGWRT   MVB      PKB
 C    THIS ROUTINE IS CALLED BY: COPYSB
 C                               Normally not called by any application
 C                               programs.
@@ -62,23 +63,30 @@ C$$$
 
       CHARACTER*128 BORT_STR
 
+      LOGICAL MSGFULL
+
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
 
 C  SEE IF THE NEW SUBSET FITS
 C  --------------------------
 
-      IF(MBYT(LUN)+IBYT+8.GT.MAXBYT) THEN
+      IF(MSGFULL(MBYT(LUN),IBYT,MAXBYT)) THEN
          CALL MSGWRT(LUNIT,MBAY(1,LUN),MBYT(LUN))
          CALL MSGINI(LUN)
       ENDIF
 
-      IF(MBYT(LUN)+IBYT+8.GT.MAXBYT) GOTO 900
+      IF(MSGFULL(MBYT(LUN),IBYT,MAXBYT)) GOTO 900
 
 C  TRANSFER SUBSET FROM ONE MESSAGE TO THE OTHER
 C  ---------------------------------------------
 
-c  .... DK: Why the -3 in "MBYT(LUN)-3" ??
+C     Note that we want to append the data for this subset to the end
+C     of Section 4, but the value in MBYT(LUN) already includes the
+C     length of Section 5 (i.e. 4 bytes).  Therefore, we need to begin
+C     writing at the point 3 bytes prior to the byte currently pointed
+C     to by MBYT(LUN).
+
       CALL MVB(MBAY(1,LIN),MBYT(LIN)+1,MBAY(1,LUN),MBYT(LUN)-3,IBYT)
 
 C  UPDATE THE SUBSET AND BYTE COUNTERS
@@ -100,7 +108,6 @@ C  -----
 
       RETURN
 900   WRITE(BORT_STR,'("BUFRLIB: CPYUPD - THE LENGTH OF THIS SUBSET '//
-     . '(",I6," EXCEEDS THE MAXIMUM MESSAGE LENGTH (",I6,")")')
-     .  MBYT(LUN)+IBYT+8,MAXBYT
+     . 'EXCEEDS THE MAXIMUM MESSAGE LENGTH (",I6,")")') MAXBYT
       CALL BORT(BORT_STR)
       END

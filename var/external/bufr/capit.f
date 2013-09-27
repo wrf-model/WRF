@@ -21,6 +21,8 @@ C 2003-11-04  S. BENDER  -- ADDED REMARKS/BUFRLIB ROUTINE
 C                           INTERDEPENDENCIES
 C 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED
 C                           DOCUMENTATION (INCLUDING HISTORY)
+C 2012-03-02  J. ATOR    -- CHANGED NAME OF UPS ARRAY TO UPCS TO AVOID
+C                           NAMESPACE CONTENTION WITH NEW FUNCTION UPS
 C
 C USAGE:    CALL CAPIT (STR)
 C   INPUT ARGUMENT LIST:
@@ -33,7 +35,8 @@ C                ALL UPPER-CASE CHARACTERS
 C
 C REMARKS:
 C    THIS ROUTINE CALLS:        None
-C    THIS ROUTINE IS CALLED BY: CMPMSG   ELEMDX   RDBFDX   STDMSG
+C    THIS ROUTINE IS CALLED BY: CMPMSG   ELEMDX   STBFDX   STDMSG
+C                               STRCPT
 C                               Normally not called by any application
 C                               programs but it could be.
 C
@@ -44,14 +47,14 @@ C
 C$$$
 
       CHARACTER*(*) STR
-      CHARACTER*26 UPS,LOS
-      DATA UPS/'ABCDEFGHIJKLMNOPQRSTUVWXYZ'/
-      DATA LOS/'abcdefghijklmnopqrstuvwxyz'/
+      CHARACTER*26 UPCS,LWCS
+      DATA UPCS/'ABCDEFGHIJKLMNOPQRSTUVWXYZ'/
+      DATA LWCS/'abcdefghijklmnopqrstuvwxyz'/
 
       DO 20 I=1,LEN(STR)
       DO 10 J=1,26
-      IF(STR(I:I).EQ.LOS(J:J)) THEN
-         STR(I:I) = UPS(J:J)
+      IF(STR(I:I).EQ.LWCS(J:J)) THEN
+         STR(I:I) = UPCS(J:J)
          GOTO 20
       ENDIF
 10    CONTINUE

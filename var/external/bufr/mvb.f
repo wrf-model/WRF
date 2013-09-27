@@ -37,8 +37,8 @@ C     IB2      - INTEGER: *-WORD PACKED OUTPUT BINARY ARRAY
 C
 C REMARKS:
 C    THIS ROUTINE CALLS:        BORT     PKB      UPB
-C    THIS ROUTINE IS CALLED BY: CNVED4   CPYUPD   MSGUPD   STNDRD
-C                               SUBUPD
+C    THIS ROUTINE IS CALLED BY: ATRCPT   CNVED4   CPYUPD   MSGUPD
+C                               STNDRD
 C                               Normally not called by any application
 C                               programs.
 C

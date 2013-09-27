@@ -66,11 +66,13 @@ CPPFLAGS        =    $(ARCHFLAGS) $(ENVCOMPDEFS) -I$(LIBINCLUDE) $(TRADFLAG) CON
 NETCDFPATH      =    CONFIGURE_NETCDF_PATH
 PNETCDFPATH     =    CONFIGURE_PNETCDF_PATH
 
-bundled:  wrf_ioapi_includes wrfio_grib_share wrfio_grib1 wrfio_int esmf_time fftpack CONFIGURE_ATMOCN
-external:  CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_PNF CONFIGURE_WRFIO_GRIB2 CONFIGURE_COMMS_EXTERNAL $(ESMF_TARGET)
+bundled:  io_only fftpack CONFIGURE_ATMOCN
+external: io_only CONFIGURE_COMMS_EXTERNAL $(ESMF_TARGET)
+io_only:  esmf_time CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_PNF CONFIGURE_WRFIO_GRIB2 wrf_ioapi_includes wrfio_grib_share wrfio_grib1 wrfio_int
+
 
 ######################
-externals: bundled external
+externals: io_only bundled external
 
 gen_comms_serial :
 	( /bin/rm -f $(WRF_SRC_ROOT_DIR)/tools/gen_comms.c )

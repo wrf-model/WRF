@@ -25,6 +25,7 @@ C 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED
 C                           DOCUMENTATION (INCLUDING HISTORY); ADDED
 C                           MORE COMPLETE DIAGNOSTIC INFO WHEN UNUSUAL
 C                           THINGS HAPPEN
+C 2009-04-21  J. ATOR    -- USE ERRWRT
 C
 C USAGE:    CALL OPENBT (LUNDX, MTYP)
 C   INPUT ARGUMENT LIST:
@@ -37,11 +38,8 @@ C                APPLICATION PROGRAM (IN-LINE) THIS WOULD BE THE
 C                FORTRAN LOGICAL UNIT NUMBER CONNECTED TO THE FILE
 C                CONTAINING THE EXTERNAL BUFR TABLE}
 C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
-C
 C REMARKS:
-C    THIS ROUTINE CALLS:        None
+C    THIS ROUTINE CALLS:        ERRWRT
 C    THIS ROUTINE (IN BUFR
 C    ARCHIVE LIBRARY):          Called by CKTABA only to allow the
 C                               BUFR ARCHIVE LIBRARY to compile, CKTABA
@@ -57,15 +55,19 @@ C$$$
 
       COMMON /QUIET / IPRT
 
+      CHARACTER*128 ERRSTR
+
       IF(IPRT.GE.0) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*, 'BUFRLIB: OPENBT - THIS IS A DUMMY BUFRLIB ROUTINE ',
-     . 'CALLED BY CKTABA OR APPL. PGM; OPENBT SHOULD BE INCL. IN-LINE ',
-     . 'IN APPL. PGM'
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      ERRSTR = 'BUFRLIB: OPENBT - THIS IS A DUMMY BUFRLIB ROUTINE'//
+     . ' CALLED BY CKTABA OR APPL. PGM; OPENBT SHOULD BE INCL.'//
+     . ' IN-LINE IN APPL. PGM'
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
       ENDIF
+
       LUNDX = 0
+
       RETURN
       END

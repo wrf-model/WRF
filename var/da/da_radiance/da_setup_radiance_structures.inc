@@ -185,6 +185,11 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
          filename = 'iasi'
          call da_read_obs_bufriasi ('iasi     ',iv, filename)
       end if
+      if (use_seviriobs) then
+         write(unit=stdout,fmt='(a)') 'Reading seviri data from seviri.bufr'
+         filename = 'seviri'
+         call da_read_obs_bufrseviri ('seviri   ',iv, filename)
+      end if
    end if
 
    if ( use_filtered_rad ) then

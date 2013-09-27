@@ -36,11 +36,16 @@ C                           MAXIMUM MESSAGE LENGTH INCREASED FROM
 C                           20,000 TO 50,000 BYTES
 C 2005-11-29  J. ATOR    -- ADDED INITIALIZATION OF COMMON /MSGCMP/
 C			    AND CALLS TO PKVS1 AND PKVS01
+C 2009-03-23  J. ATOR    -- ADDED INITIALIZATION OF COMMON /DSCACH/,
+C                           COMMON /MSTINF/ AND COMMON /TNKRCP/
+C 2012-09-15  J. WOOLLEN -- MODIFIED FOR C/I/O/BUFR INTERFACE
+C                        -- ADDED INITIALIZATION OF COMMON BLOCKS
+C                        -- /ENDORD/ AND /BUFRBMISS/
 C
 C USAGE:    CALL BFRINI
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        IFXY     IPKM     PKVS01   PKVS1
+C    THIS ROUTINE CALLS:        IFXY     IPKM     PKVS01
 C    THIS ROUTINE IS CALLED BY: OPENBF
 C                               Normally not called by any application
 C                               programs.
@@ -71,6 +76,8 @@ C$$$
      .                IBT(MAXJL),IRF(MAXJL),ISC(MAXJL),
      .                ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL),
      .                ISEQ(MAXJL,2),JSEQ(MAXJL)
+      COMMON /DSCACH/ NCNEM,CNEM(MXCNEM),NDC(MXCNEM),
+     .                IDCACH(MXCNEM,MAXNC)
       COMMON /BUFRMG/ MSGLEN,MSGTXT(MXMSGLD4)
       COMMON /MRGCOM/ NRPL,NMRG,NAMB,NTOT
       COMMON /DATELN/ LENDAT
@@ -79,18 +86,24 @@ C$$$
      .                JSR(NFILES),JBAY(MXMSGLD4)
       COMMON /MSGSTD/ CSMF
       COMMON /MSGCMP/ CCMF
+      COMMON /TNKRCP/ ITRYR,ITRMO,ITRDY,ITRHR,ITRMI,CTRT
+      COMMON /MSTINF/ LUN1,LUN2,LMTD,MTDIR
+      COMMON /ENDORD/ IBLOCK,IORDBE(4),IORDLE(4)
 
 
       CHARACTER*600 TABD
       CHARACTER*128 TABB
       CHARACTER*128 TABA
+      CHARACTER*100 MTDIR
       CHARACTER*56  DXSTR
       CHARACTER*10  TAG
+      CHARACTER*8   CNEM
       CHARACTER*6   ADSN(5,2),DNDX(25,10)
       CHARACTER*3   TYPX(5,2),TYPS,TYP
       CHARACTER*1   REPX(5,2),REPS
       CHARACTER*1   CSMF
       CHARACTER*1   CCMF
+      CHARACTER*1   CTRT
       DIMENSION     NDNDX(10),NLDXA(10),NLDXB(10),NLDXD(10),NLD30(10)
       DIMENSION     LENX(5)
 
@@ -122,6 +135,16 @@ C$$$
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
+
+C  INITIALIZE /ENDORD/ TO CONTROL OUTPUT BLOCKING -1=LE 0=NONE +1=BE
+C  -----------------------------------------------------------------
+
+      IBLOCK = 0
+
+C  INITIALIZE /BUFRBMISS/
+C  ----------------------
+
+      BMISS = 10E10
 
 C  INITIALIZE /BITBUF/
 C  -------------------
@@ -202,7 +225,7 @@ c  .... IDXV is the version number of the local tables
       ENDDO
       ENDDO
 
-C  INITIALIZE /TABLES/
+C  INITIALIZE /BTABLES/
 C  -------------------
 
       MAXTAB = MAXJL
@@ -238,6 +261,11 @@ C  -------------------
       JSR(I) = 0
       ENDDO
 
+C  INITIALIZE /DSCACH/
+C  -------------------
+
+      NCNEM = 0
+
 C  INITIALIZE /MSGSTD/
 C  -------------------
 
@@ -248,10 +276,19 @@ C  -------------------
 
       CCMF = 'N'
 
-C  INITIALIZE /SECT01/
+C  INITIALIZE /TNKRCP/
 C  -------------------
 
-      CALL PKVS1(-99,-99)
+      CTRT = 'N'
+
+C  INITIALIZE /MSTINF/
+C  -------------------
+
+      MTDIR = '/nwprod/fix'
+      LMTD = 11
+
+      LUN1 = 98
+      LUN2 = 99
 
 C  INITIALIZE /S01CM/
 C  -------------------

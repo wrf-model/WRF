@@ -111,8 +111,8 @@ C    ENTERS "q" FOLLOWED BY "<enter>" AFTER THE PROMPT, IN WHICH CASE
 C    THIS SUBROUTINE STOPS THE SCROLL AND RETURNS TO THE CALLING
 C    PROGRAM (PRESUMABLY TO READ IN THE NEXT SUBSET IN THE BUFR FILE).
 C
-C    THIS ROUTINE CALLS:        BORT     IBFMS    RJUST    STATUS
-C                               UPFTBV
+C    THIS ROUTINE CALLS:        BORT     IBFMS    ISIZE    READLC
+C                               RJUST    STATUS   UPFTBV
 C    THIS ROUTINE IS CALLED BY: None
 C                               Normally called only by application
 C                               programs.
@@ -132,7 +132,7 @@ C$$$
      .                IBT(MAXJL),IRF(MAXJL),ISC(MAXJL),
      .                ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL),
      .                ISEQ(MAXJL,2),JSEQ(MAXJL)
-      COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
+      COMMON /USRINT/ NVAL(NFILES),INV(MAXSS,NFILES),VAL(MAXSS,NFILES)
       COMMON /TABABD/ NTBA(0:NFILES),NTBB(0:NFILES),NTBD(0:NFILES),
      .                MTAB(MAXTBA,NFILES),IDNA(MAXTBA,NFILES,2),
      .                IDNB(MAXTBB,NFILES),IDND(MAXTBD,NFILES),
@@ -228,15 +228,14 @@ C              this value.
                   BITS(1:1) = '('
                   IPT = 2
                   DO II=1,NIFV
-                    IF(IFV(II).LT.10) THEN
-                       ISZ = 1
-                    ELSE
-                       ISZ = 2
-                    ENDIF
+                    ISZ = ISIZE(IFV(II))
                     WRITE(FMTF,'(A2,I1,A4)') '(I', ISZ, ',A1)'
                     IF((IPT+ISZ).LE.14) THEN
                        WRITE(BITS(IPT:IPT+ISZ),FMTF) IFV(II), ','
                        IPT = IPT + ISZ + 1
+                    ELSE
+                       BITS(2:13) = 'MANY BITS ON'
+                       IPT = 15
                     ENDIF
                   ENDDO
                   BITS(IPT-1:IPT-1) = ')'

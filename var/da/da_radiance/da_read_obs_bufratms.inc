@@ -279,11 +279,6 @@ bufrfile:  do ibufr=1,numbufr
          hour   = bfr1bhdr(bufr_hour)
          minute = bfr1bhdr(bufr_minute)
          second = bfr1bhdr(bufr_second)
-!Dongpm for test
-!         year  = 2008
-!         month = 7
-!         day   = 20
-!         hour  = 0
 
          write(unit=date_char_save(nnum), fmt='(i4,a,i2.2,a,i2.2,a,i2.2,a,i2.2,a,i2.2)')  &
             year, '-', month, '-', day, '_', hour, ':', minute, ':', second
@@ -334,8 +329,8 @@ bufrfile:  do ibufr=1,numbufr
                                 Scanline_save, Error_Status)
 !Dongpm      write(*,*) Time_save(20),Fov_save(20), Scanline_save(20),BT_InOut_save(:,20)
       if(Error_Status==1) then
-       print*,'Error! Check it!'
-       stop 121212
+         WRITE(UNIT=message(1), FMT='(A)')"Error reading ATMS data"
+         call da_error(__FILE__,__LINE__,message(1:1))
       endif         
 !
 !

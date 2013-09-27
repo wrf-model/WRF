@@ -477,7 +477,7 @@ CONTAINS
 
 ! Calculate the column integrated graupel
 
-       depth = ( ( ph(i,k+1,j) + phb(i,k+1,j) ) / g ) - \
+       depth = ( ( ph(i,k+1,j) + phb(i,k+1,j) ) / g ) - &
                ( ( ph(i,k  ,j) + phb(i,k  ,j) ) / g )
        grpl_colint(i,j) = grpl_colint(i,j) + qg_curr(i,k,j) * depth * rho(i,k,j)
      ENDDO

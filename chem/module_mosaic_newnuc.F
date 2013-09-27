@@ -987,7 +987,7 @@
 ! ch2so4 = (ug-h2so4/m3-air)
 ! ch2so4*1.0e-12/mwh2so4 = (mole-h2so4/cm3-air)
         qh2so4_crit = (ch2so4_crit*1.0e-12/98.0)/cair
-        qh2so4_avail = qh2so4_cur - qh2so4_crit
+        qh2so4_avail = (qh2so4_cur - qh2so4_crit)*dtnuc
 
 ! if "available" h2so4 vapor < 4.0e-18 mole/mole-air ~= 1.0e2 molecules/cm3, 
 ! exit with new particle formation = 0

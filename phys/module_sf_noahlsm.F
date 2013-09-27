@@ -197,7 +197,7 @@ CONTAINS
 !   ETA        ACTUAL LATENT HEAT FLUX (W m-2: NEGATIVE, IF UP FROM
 !              SURFACE)
 !  ETA_KINEMATIC atctual latent heat flux in Kg m-2 s-1
-!   SHEAT      SENSIBLE HEAT FLUX (W M-2: NEGATIVE, IF UPWARD FROM
+!   SHEAT      SENSIBLE HEAT FLUX (W M-2: POSITIVE, IF UPWARD FROM
 !              SURFACE)
 !   FDOWN      Radiation forcing at the surface (W m-2) = SOLDN*(1-alb)+LWDN
 ! ----------------------------------------------------------------------

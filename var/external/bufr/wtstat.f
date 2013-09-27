@@ -54,7 +54,7 @@ C REMARKS:
 C    THIS ROUTINE CALLS:        BORT
 C    THIS ROUTINE IS CALLED BY: CLOSBF   CLOSMG   OPENBF   OPENMB
 C                               OPENMG   RDMEMM   READERME REWNBF
-C                               READMG   READMM
+C                               READMG
 C                               Normally not called by any application
 C                               programs.
 C

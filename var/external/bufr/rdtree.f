@@ -33,13 +33,18 @@ C 2004-08-09  J. ATOR    -- MAXIMUM MESSAGE LENGTH INCREASED FROM
 C                           20,000 TO 50,000 BYTES
 C 2007-01-19  J. ATOR    -- PREVENT OVERFLOW OF CVAL FOR STRINGS LONGER
 C                           THAN 8 CHARACTERS
+C 2012-03-02  J. ATOR    -- USE FUNCTION UPS
+C 2012-06-04  J. ATOR    -- SET DECODED REAL*8 VALUE TO "MISSING" WHEN
+C                           CORRESPONDING CHARACTER FIELD HAS ALL BITS
+C                           SET TO 1
 C
 C USAGE:    CALL RDTREE (LUN)
 C   INPUT ARGUMENT LIST:
 C     LUN      - INTEGER: I/O STREAM INDEX INTO INTERNAL MEMORY ARRAYS
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        RCSTPL   UPBB     UPC
+C    THIS ROUTINE CALLS:        RCSTPL   ICBFMS   UPBB     UPC
+C                               UPS
 C    THIS ROUTINE IS CALLED BY: READSB
 C                               Normally not called by any application
 C                               programs.
@@ -59,29 +64,21 @@ C$$$
      .                IBT(MAXJL),IRF(MAXJL),ISC(MAXJL),
      .                ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL),
      .                ISEQ(MAXJL,2),JSEQ(MAXJL)
-      COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
-      COMMON /USRBIT/ NBIT(MAXJL),MBIT(MAXJL)
+      COMMON /USRINT/ NVAL(NFILES),INV(MAXSS,NFILES),VAL(MAXSS,NFILES)
+      COMMON /USRBIT/ NBIT(MAXSS),MBIT(MAXSS)
 
       CHARACTER*10 TAG
       CHARACTER*8  CVAL
       CHARACTER*3  TYP
-      DIMENSION    IVAL(MAXJL)
+      DIMENSION    IVAL(MAXSS)
       EQUIVALENCE  (CVAL,RVAL)
-      REAL*8       VAL,RVAL,UPS,TEN
-
-      DATA TEN/10./
+      REAL*8       VAL,RVAL,UPS
 
 C-----------------------------------------------------------------------
 C     Statement function to compute BUFR "missing value" for field
 C     of length IBT(NODE)) bits (all bits "on"):
 
       MPS(NODE) = 2**(IBT(NODE))-1
-
-C     Statement function to decode the unpacked BUFR value IVAL according
-C     to the scale and reference values that are stored within index NODE
-C     of the internal arrays ISC(*) and IRF(*):
-
-      UPS(NODE) = (IVAL(N)+IRF(NODE))*TEN**(-ISC(NODE))
 C-----------------------------------------------------------------------
 
 C  CYCLE THROUGH A SUBSET SETTING UP THE TEMPLATE
@@ -113,20 +110,24 @@ C	 The unpacked value is a delayed descriptor replication factor.
 
 C	 The unpacked value is a real.
 
-         IF(IVAL(N).LT.MPS(NODE)) VAL(N,LUN) = UPS(NODE)
+         IF(IVAL(N).LT.MPS(NODE)) VAL(N,LUN) = UPS(IVAL(N),NODE)
       ELSEIF(ITP(NODE).EQ.3) THEN
 
-C	 The unpacked value is a character string.  If the string is
-C	 longer than 8 characters, then only the first 8 will be
-C	 unpacked by this routine, and a separate subsequent call to
-C	 BUFR archive library subroutine READLC will be required to
-C	 unpack the remainder of the string.
+C        The value is a character string, so unpack it using an
+C        equivalenced REAL*8 value.  Note that a maximum of 8 characters
+C        will be unpacked here, so a separate subsequent call to BUFR
+C        archive library subroutine READLC will be needed to fully
+C        unpack any string longer than 8 characters.
 
          CVAL = ' '
          KBIT = MBIT(N)
          NBT = MIN(8,NBIT(N)/8)
          CALL UPC(CVAL,NBT,MBAY(1,LUN),KBIT)
-         VAL(N,LUN) = RVAL
+         IF (NBIT(N).LE.64 .AND. ICBFMS(CVAL,NBT).NE.0) THEN
+            VAL(N,LUN) = BMISS
+         ELSE
+            VAL(N,LUN) = RVAL
+         ENDIF
       ENDIF
       ENDDO
 

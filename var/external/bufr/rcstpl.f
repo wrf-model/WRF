@@ -70,8 +70,8 @@ C$$$
      .                IBT(MAXJL),IRF(MAXJL),ISC(MAXJL),
      .                ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL),
      .                ISEQ(MAXJL,2),JSEQ(MAXJL)
-      COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
-      COMMON /USRBIT/ NBIT(MAXJL),MBIT(MAXJL)
+      COMMON /USRINT/ NVAL(NFILES),INV(MAXSS,NFILES),VAL(MAXSS,NFILES)
+      COMMON /USRBIT/ NBIT(MAXSS),MBIT(MAXSS)
       COMMON /USRTMP/ ITMP(MAXJL,MAXRCR),VTMP(MAXJL,MAXRCR)
 
       CHARACTER*128 BORT_STR
@@ -137,8 +137,8 @@ C  -----------------------------------
 c  .... INV is positional index in internal jump/link table for packed
 c       subset element KNVN in MBAY
       INV(KNVN,LUN) = NODE
-c  .... Actual unpacked subset values (VAL) are init. here (numbers as
-c      10E10, msg)
+c  .... Actual unpacked subset values (VAL) are initialized here
+c       (numbers as BMISS)
       VAL(KNVN,LUN) = VTMP(J,NR)
 c  .... MBIT is the bit in MBAY pointing to where the packed subset
 c       element KNVN begins

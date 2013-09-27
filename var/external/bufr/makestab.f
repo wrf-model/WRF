@@ -6,7 +6,7 @@ C SUBPROGRAM:    MAKESTAB
 C   PRGMMR: WOOLLEN          ORG: NP20       DATE: 1994-01-06
 C
 C ABSTRACT: THIS SUBROUTINE CONSTRUCTS AN INTERNAL JUMP/LINK TABLE
-C  WITHIN COMMON BLOCK /TABLES/, USING THE INFORMATION WITHIN THE
+C  WITHIN COMMON BLOCK /BTABLES/, USING THE INFORMATION WITHIN THE
 C  INTERNAL BUFR TABLE ARRAYS (WITHIN COMMON BLOCK /TABABD/) FOR ALL OF
 C  THE LUN (I.E., I/O STREAM INDEX) VALUES THAT ARE CURRENTLY DEFINED TO
 C  THE BUFR ARCHIVE LIBRARY SOFTWARE.  NOTE THAT THE ENTIRE JUMP/LINK
@@ -46,15 +46,29 @@ C                           WHICH ARE NOT EMPTY WILL NO LONGER GET
 C                           TRIPPED UP BY THIS (THIS AVOIDS THE NEED
 C                           FOR AN APPLICATION PROGRAM TO DISCONNECT
 C                           ANY EMPTY FILES VIA A CALL TO CLOSBF)
+C 2009-03-18  J. WOOLLEN -- ADDED LOGIC TO RESPOND TO THE CASES WHERE  
+C                           AN INPUT FILE'S TABLES CHANGE IN MIDSTREAM.
+C                           THE NEW LOGIC MOSTLY ADDRESSES CASES WHERE
+C                           OTHER FILES ARE CONNECTED TO THE TABLES OF
+C                           THE FILE WHOSE TABLES HAVE CHANGED.
+C 2009-06-25  J. ATOR    -- TWEAK WOOLLEN LOGIC TO HANDLE SPECIAL CASE
+C                           WHERE TABLE WAS RE-READ FOR A PARTICULAR
+C                           LOGICAL UNIT BUT IS STILL THE SAME ACTUAL
+C                           TABLE AS BEFORE AND IS STILL SHARING THAT
+C                           TABLE WITH A DIFFERENT LOGICAL UNIT
+C 2009-11-17  J. ATOR    -- ADDED CHECK TO PREVENT WRITING OUT OF TABLE
+C                           INFORMATION WHEN A TABLE HAS BEEN RE-READ
+C                           WITHIN A SHARED LOGICAL UNIT BUT HASN'T
+C                           REALLY CHANGED
 C
 C USAGE:    CALL MAKESTAB
 C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
-C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT     CHEKSTAB STRCLN   TABSUB
-C    THIS ROUTINE IS CALLED BY: RDBFDX   RDUSDX
+C    THIS ROUTINE CALLS:        BORT     CHEKSTAB CLOSMG   CPBFDX
+C                               ERRWRT   ICMPDX   ISHRDX   STRCLN
+C                               TABSUB   WRDXTB
+C    THIS ROUTINE IS CALLED BY: RDBFDX   RDMEMM   RDUSDX   READDX
+C                               READERME READS3
 C                               Normally not called by any application
 C                               programs.
 C
@@ -68,7 +82,7 @@ C$$$
 
       COMMON /QUIET/  IPRT
       COMMON /STBFR/  IOLUN(NFILES),IOMSG(NFILES)
-      COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
+      COMMON /USRINT/ NVAL(NFILES),INV(MAXSS,NFILES),VAL(MAXSS,NFILES)
       COMMON /TABABD/ NTBA(0:NFILES),NTBB(0:NFILES),NTBD(0:NFILES),
      .                MTAB(MAXTBA,NFILES),IDNA(MAXTBA,NFILES,2),
      .                IDNB(MAXTBB,NFILES),IDND(MAXTBD,NFILES),
@@ -79,16 +93,18 @@ C$$$
      .                IBT(MAXJL),IRF(MAXJL),ISC(MAXJL),
      .                ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL),
      .                ISEQ(MAXJL,2),JSEQ(MAXJL)
+      COMMON /NRV203/ NNRV,INODNRV(MXNRV),NRV(MXNRV),TAGNRV(MXNRV),
+     .                ISNRV(MXNRV),IENRV(MXNRV),IBTNRV,IPFNRV
+      COMMON /LUSHR/  LUS(NFILES)
 
       CHARACTER*600 TABD
       CHARACTER*128 TABB
       CHARACTER*128 TABA
-      CHARACTER*128 BORT_STR
+      CHARACTER*128 BORT_STR,ERRSTR
       CHARACTER*10  TAG
-      CHARACTER*8   NEMO
+      CHARACTER*8   NEMO,TAGNRV
       CHARACTER*3   TYP
-      DIMENSION     LUS(NFILES)
-      LOGICAL       EXPAND
+      LOGICAL       EXPAND,XTAB(NFILES)
       REAL*8        VAL
 
 C-----------------------------------------------------------------------
@@ -98,35 +114,111 @@ C  RESET POINTER TABLE AND STRING CACHE
 C  ------------------------------------
 
       NTAB = 0
+      NNRV = 0
       CALL STRCLN
 
 C  FIGURE OUT WHICH UNITS SHARE TABLES
 C  -----------------------------------
 
-C     First, determine how many LUN values are currently being used and,
-C     for each such one, whether it uses the same dictionary table
-C     information as any other LUN values that we have examined so far.
-C     If so, then set LUS(LUN) to a nonzero value.
+C     The LUS array is static between calls to this subroutine, and it
+C     keeps track of which logical units share dictionary table
+C     information:
+C        if LUS(I) = 0, then IOLUN(I) does not share dictionary table
+C                       information with any other logical unit
+C        if LUS(I) > 0, then IOLUN(I) shares dictionary table
+C                       information with logical unit IOLUN(LUS(I))
+C        if LUS(I) < 0, then IOLUN(I) does not now, but at one point in
+C                       the past, shared dictionary table information
+C                       with logical unit IOLUN(ABS(LUS(I)))
 
-C     Note that, for each LUN value, the MTAB(*,LUN) array contains
-C     pointer indices into the internal jump/link table for each of the
-C     Table A mnemonics that is currently defined for that LUN value.
-C     Thus, the code within the following DO loop is simply checking
-C     whether the first Table A mnemonic is the same for two different
-C     LUN values as the determination of whether those LUN values indeed
-C     share the same dictionary tables.
+C     The XTAB array is non-static and is recomputed within the below
+C     loop during each call to this subroutine:
+C        if XTAB(I) = .TRUE., then the dictionary table information
+C                             has changed for IOLUN(I) since the last
+C                             call to this subroutine
+C        if XTAB(I) = .FALSE., then the dictionary table information
+C                              has not changed for IOLUN(I) since the
+C                              last call to this subroutine
 
       DO LUN=1,NFILES
-      LUS(LUN) = 0
-      IF(IOLUN(LUN).NE.0) THEN
-         IF(LUN.GT.1) THEN
-         DO LUM=1,LUN-1
-cccccccc IF(MTAB(1,LUN).EQ.MTAB(1,LUM)) LUS(LUN) = LUM
-         IF(MTAB(1,LUN).EQ.MTAB(1,LUM) .AND. MTAB(1,LUM).NE.0)
-     .    LUS(LUN) = LUM
-         ENDDO
-         ENDIF
-      ENDIF
+        XTAB(LUN) = .FALSE.
+        IF(IOLUN(LUN).EQ.0) THEN
+
+C          Logical unit IOLUN(LUN) is not defined to the BUFRLIB.
+
+           LUS(LUN) = 0
+        ELSE IF(MTAB(1,LUN).EQ.0) THEN
+
+C          New dictionary table information has been read for logical
+C          unit IOLUN(LUN) since the last call to this subroutine.
+
+           XTAB(LUN) = .TRUE.
+           IF(LUS(LUN).NE.0) THEN
+             IF(IOLUN(ABS(LUS(LUN))).EQ.0) THEN
+               LUS(LUN) = 0
+             ELSE IF(LUS(LUN).GT.0) THEN
+
+C              IOLUN(LUN) was sharing table information with logical
+C              unit IOLUN(LUS(LUN)), so check whether the table
+C              information has really changed.  If not, then IOLUN(LUN)
+C              just re-read a copy of the exact same table information
+C              as before, and therefore it can continue to share with
+C              logical unit IOLUN(LUS(LUN)).
+
+               IF(ICMPDX(LUS(LUN),LUN).EQ.1) THEN
+                 XTAB(LUN) = .FALSE. 
+                 CALL CPBFDX(LUS(LUN),LUN)
+               ELSE
+                 LUS(LUN) = (-1)*LUS(LUN)
+               ENDIF
+             ELSE IF(ICMPDX(ABS(LUS(LUN)),LUN).EQ.1) THEN
+
+C              IOLUN(LUN) was not sharing table information with logical
+C              unit IOLUN(LUS(LUN)), but it did at one point in the past
+C              and now once again has the same table information as that
+C              logical unit.  Since the two units shared table
+C              information at one point in the past, allow them to do
+C              so again.
+
+               XTAB(LUN) = .FALSE. 
+               LUS(LUN) = ABS(LUS(LUN))
+               CALL CPBFDX(LUS(LUN),LUN)
+             ENDIF
+           ENDIF
+        ELSE IF(LUS(LUN).GT.0) THEN
+
+C          Logical unit IOLUN(LUN) is sharing table information with
+C          logical unit IOLUN(LUS(LUN)), so make sure that the latter
+C          unit is still defined to the BUFRLIB.
+
+           IF(IOLUN(LUS(LUN)).EQ.0) THEN
+             LUS(LUN) = 0
+           ELSE IF( XTAB(LUS(LUN)) .AND.
+     +             (ICMPDX(LUS(LUN),LUN).EQ.0) ) THEN 
+
+C            The table information for logical unit IOLUN(LUS(LUN))
+C            just changed (in midstream).  If IOLUN(LUN) is an output
+C            file, then we will have to update it with the new table
+C            information later on in this subroutine.  Otherwise,
+C            IOLUN(LUN) is an input file and is no longer sharing
+C            tables with IOLUN(LUS(LUN)).
+
+             IF(IOLUN(LUN).LT.0) LUS(LUN) = (-1)*LUS(LUN)
+           ENDIF
+        ELSE
+
+C          Determine whether logical unit IOLUN(LUN) is sharing table
+C          information with any other logical units.
+
+           LUM = 1
+           DO WHILE ((LUM.LT.LUN).AND.(LUS(LUN).EQ.0))
+              IF(ISHRDX(LUM,LUN).EQ.1) THEN
+                 LUS(LUN) = LUM
+              ELSE
+                 LUM = LUM+1
+              ENDIF
+           ENDDO
+        ENDIF
       ENDDO
 
 C  INITIALIZE JUMP/LINK TABLES WITH SUBSETS/SEQUENCES/ELEMENTS
@@ -134,49 +226,55 @@ C  -----------------------------------------------------------
 
       DO LUN=1,NFILES
 
-ccccc IF(IOLUN(LUN).NE.0) THEN
-      IF(IOLUN(LUN).NE.0 .AND. NTBA(LUN).GT.0) THEN
+       IF(IOLUN(LUN).NE.0 .AND. NTBA(LUN).GT.0) THEN
 
-C  RESET ANY EXISTING INVENTORY POINTERS
-C  -------------------------------------
+C        Reset any existing inventory pointers.
 
          IF(IOMSG(LUN).NE.0) THEN
-            IF(LUS(LUN).EQ.0) INC = (NTAB+1)-MTAB(1,LUN)
-            IF(LUS(LUN).NE.0) INC = MTAB(1,LUS(LUN))-MTAB(1,LUN)
+            IF(LUS(LUN).EQ.0) THEN
+              INC = (NTAB+1)-MTAB(1,LUN)
+            ELSE
+              INC = MTAB(1,LUS(LUN))-MTAB(1,LUN)
+            ENDIF
             DO N=1,NVAL(LUN)
-            INV(N,LUN) = INV(N,LUN)+INC
+              INV(N,LUN) = INV(N,LUN)+INC
             ENDDO
          ENDIF
 
-C  CREATE NEW TABLE ENTRIES IF THIS UNIT DOESN'T SHARE EXISTING ONES
-C  -----------------------------------------------------------------
+         IF(LUS(LUN).LE.0) THEN   
 
-         IF(LUS(LUN).EQ.0) THEN
+C           The dictionary table information corresponding to logical
+C           unit IOLUN(LUN) has not yet been written into the internal
+C           jump/link table, so add it in now.
 
-C     The dictionary table information corresponding to this LUN
-C     has not yet been written into the internal jump/link table,
-C     so add it in now.
-
-            CALL CHEKSTAB(LUN)
-            DO ITBA=1,NTBA(LUN)
-            INOD = NTAB+1
-            NEMO = TABA(ITBA,LUN)(4:11)
-            CALL TABSUB(LUN,NEMO)
-            MTAB(ITBA,LUN) = INOD
-            ISC(INOD)      = NTAB
-
-C**** note that the following lines are commented out****
-cccc        DO N1=INOD,ISC(INOD)-1
-cccc        DO N2=N1+1,ISC(INOD)
-cccc        IF(TAG(N1).EQ.TAG(N2)) GOTO 900
-cccc        ENDDO
-cccc        ENDDO
-C********************************************************
-
+            CALL CHEKSTAB(LUN)  
+            DO ITBA=1,NTBA(LUN) 
+              INOD = NTAB+1
+              NEMO = TABA(ITBA,LUN)(4:11)
+              CALL TABSUB(LUN,NEMO)
+              MTAB(ITBA,LUN) = INOD
+              ISC(INOD)      = NTAB
             ENDDO
+         ELSE IF( XTAB(LUS(LUN)) .AND.
+     +           (ICMPDX(LUS(LUN),LUN).EQ.0) ) THEN 
+
+C           Logical unit IOLUN(LUN) is an output file that is sharing
+C           table information with logical unit IOLUN(LUS(LUN)) whose
+C           table just changed (in midstream).  Flush any existing data
+C           messages from IOLUN(LUN), then update the table information
+C           for this logical unit with the corresponding new table
+C           information from IOLUN(LUS(LUN)), then update IOLUN(LUN)
+C           itself with a copy of the new table information.
+
+            LUNIT = ABS(IOLUN(LUN))
+            IF(IOMSG(LUN).NE.0) CALL CLOSMG(LUNIT)    
+            CALL CPBFDX(LUS(LUN),LUN)
+            LUNDX = ABS(IOLUN(LUS(LUN)))
+            CALL WRDXTB(LUNDX,LUNIT) 
          ENDIF
 
-      ENDIF
+       ENDIF
+
       ENDDO
 
 C  STORE TYPES AND INITIAL VALUES AND COUNTS
@@ -273,17 +371,15 @@ C  PRINT THE SEQUENCE TABLES
 C  ------------------------
 
       IF(IPRT.GE.2) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
-         PRINT*
+      CALL ERRWRT('++++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++++')
          DO I=1,NTAB
-         PRINT99,I,
-     .   TAG(I),TYP(I),JMPB(I),JUMP(I),LINK(I),IBT(I),IRF(I),ISC(I)
+           WRITE ( UNIT=ERRSTR, FMT='(A,I5,2X,A10,A5,6I8)' )
+     .      'BUFRLIB: MAKESTAB ', I, TAG(I), TYP(I), JMPB(I), JUMP(I),
+     .      LINK(I), IBT(I), IRF(I), ISC(I)
+           CALL ERRWRT(ERRSTR)
          ENDDO
-         PRINT*
-99       FORMAT('BUFRLIB: MAKESTAB ',I5,2X,A10,A5,6I8)
-      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('++++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++++')
+      CALL ERRWRT(' ')
       ENDIF
 
 C  EXITS

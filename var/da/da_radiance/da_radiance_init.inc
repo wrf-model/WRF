@@ -123,6 +123,9 @@ subroutine da_radiance_init(iv,ob)
    else if ( trim( crtm_sensor_name(rtminit_sensor(n))) == 'iasi' ) then
      nchanl(n)  = 616
       nscan(n)   = 60	  
+   else if ( trim( crtm_sensor_name(rtminit_sensor(n))) == 'seviri' ) then
+     nchanl(n)  =  8 
+     nscan(n)   = 90 
    else
       call da_error(__FILE__,__LINE__, &
         (/"Unrecognized instrument"/))
@@ -222,14 +225,14 @@ subroutine da_radiance_init(iv,ob)
    satinfo(n) % bcoef(:,:) = 0.0
    satinfo(n) % bcoef0(:) = 0.0
 
-   if ( index(iv%instid(n)%rttovid_string,'eos')  > 0 ) cycle   ! not implemented
-   if ( index(iv%instid(n)%rttovid_string,'hirs') > 0 ) cycle   ! not implemented
-
-
   if (read_biascoef) then
   !  new bias coefs files
   !  use o-b standard deviation statistics from Harris and Kelly method as obs errors
   !----------------------------------
+ 
+    if ( index(iv%instid(n)%rttovid_string,'eos')  > 0 ) cycle   ! not implemented
+    if ( index(iv%instid(n)%rttovid_string,'hirs') > 0 ) cycle   ! not implemented
+
     call da_read_biascoef(iv%instid(n)%rttovid_string, &
                       nchanl(n),nscan(n),18,4,global, &
                       satinfo(n)%scanbias, &

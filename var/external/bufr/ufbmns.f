@@ -39,6 +39,8 @@ C 2004-11-15  D. KEYSER  -- PARAMETER MAXMEM (THE MAXIMUM NUMBER OF
 C                           BYTES REQUIRED TO STORE ALL MESSAGES
 C                           INTERNALLY) WAS INCREASED FROM 16 MBYTES TO
 C                           50 MBYTES
+C 2009-03-23  J. ATOR    -- USE IREADMM INSTEAD OF RDMEMM;
+C                           SIMPLIFY LOGIC
 C
 C USAGE:    CALL UFBMNS (IREP, SUBSET, IDATE)
 C   INPUT ARGUMENT LIST:
@@ -56,7 +58,7 @@ C REMARKS:
 C    NOTE THAT UFBMEM IS CALLED PRIOR TO THIS TO STORE THE BUFR
 C    MESSAGES INTO INTERNAL MEMORY.
 C
-C    THIS ROUTINE CALLS:        BORT     NMSUB    RDMEMM   RDMEMS
+C    THIS ROUTINE CALLS:        BORT     IREADMM  NMSUB    RDMEMS
 C    THIS ROUTINE IS CALLED BY: None
 C                               Normally called only by application
 C                               programs.
@@ -69,7 +71,9 @@ C$$$
 
       INCLUDE 'bufrlib.prm'
 
-      COMMON /MSGMEM/ MUNIT,MLAST,MSGP(0:MAXMSG),MSGS(MAXMEM)
+      COMMON /MSGMEM/ MUNIT,MLAST,MSGP(0:MAXMSG),MSGS(MAXMEM),
+     .                MDX(MXDXW),IPDXM(MXDXM),LDXM,NDXM,LDXTS,NDXTS,
+     .                IFDXTS(MXDXTS),ICDXTS(MXDXTS),IPMSGS(MXDXTS)
 
       CHARACTER*128 BORT_STR
       CHARACTER*8   SUBSET
@@ -77,27 +81,19 @@ C$$$
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
 
-      IRET = 0
       JREP = 0
       IMSG = 1
 
 C  READ SUBSET #ISUB FROM MEMORY MESSAGE #IMSG
 C  -------------------------------------------
 
-      DO WHILE(IRET.EQ.0)
-      CALL RDMEMM(IMSG,SUBSET,IDATE,IRET)
-      IF(IRET.NE.0) GOTO 900
-      IF(JREP+NMSUB(MUNIT).GE.IREP) THEN
-         CALL RDMEMS(IREP-JREP,IRET)
-c  .... DK: I don't think the below error could ever happen(??)
-         IF(IRET.NE.0) GOTO 900
-         GOTO 100
-      ELSE
-         JREP = JREP+NMSUB(MUNIT)
-         IMSG = IMSG+1
-      ENDIF
+      DO WHILE(IREADMM(IMSG,SUBSET,IDATE).EQ.0)
+        IF(JREP+NMSUB(MUNIT).GE.IREP) THEN
+           CALL RDMEMS(IREP-JREP,IRET)
+           GOTO 100
+        ENDIF
+        JREP = JREP+NMSUB(MUNIT)
       ENDDO
-c  .... DK: I don't think the below error could ever happen(??)
       GOTO 900
 
 C  EXITS

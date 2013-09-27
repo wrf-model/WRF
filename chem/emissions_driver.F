@@ -41,6 +41,9 @@ CONTAINS
          ebio_cco_oh, ebio_rco_oh,                                         &    
          clayfrac,sandfrac,dust_alpha,dust_gamma,dust_smtune,              &
          snowh,zs,                                                         &
+         ebio_c5h8,ebio_apinene,ebio_bpinene,ebio_toluene,                 &
+         ebio_ch3cho,ebio_ch3co2h,ebio_tbut2ene,ebio_c2h5cho,              &
+         ebio_nc4h10,												       &
          ! stuff for MEGAN v2.04                                                 
          T2,swdown,                                                        &
          nmegan,EFmegan,                                                   &
@@ -212,7 +215,10 @@ CONTAINS
                ebio_alk3, ebio_alk4, ebio_alk5, ebio_ole1, ebio_ole2,  &    
                ebio_aro1, ebio_aro2, ebio_ccho, ebio_meoh,             &    
                ebio_ethene, ebio_hcooh, ebio_terp, ebio_bald,          &    
-               ebio_cco_oh, ebio_rco_oh
+               ebio_cco_oh, ebio_rco_oh,                               &
+               ebio_c5h8,ebio_apinene,ebio_bpinene,ebio_toluene,       &
+               ebio_ch3cho,ebio_ch3co2h,ebio_tbut2ene,ebio_c2h5cho,    &
+               ebio_nc4h10
 
 
    ! stuff for MEGAN v2.04...most of these arrays are optional and package dependent 
@@ -306,7 +312,7 @@ CONTAINS
 ! for PNNL modules:   >0 = sea salt/dust emissions turned on
 ! As of NOV 2008 these only are used for MOSAIC and SORGAM
 ! gocart  dust and seasalt will only work for GOCART and SORGAM
-!
+! DL - 06/02/2013 - added option for MOSAIC-PDFiTE seasalt emissions (with organic fraction)
        percen_mass_umbrel=.75
        base_umbrel=.25    ! fraction
 
@@ -316,6 +322,9 @@ CONTAINS
       seasalt_emiss_active = 0
       if(config_flags%dust_opt >= 2 )dust_emiss_active    = 1
       if(config_flags%seas_opt == 2 )seasalt_emiss_active = 1
+      if(config_flags%seas_opt == 3 )seasalt_emiss_active = 3
+      if(config_flags%seas_opt == 4 )seasalt_emiss_active = 4
+
 !
 ! Setup the timing flags...
 ! (methodology is adapated from module_radiation_driver.F)
@@ -449,12 +458,12 @@ CONTAINS
                  ivolcano=0
             elseif(julday.eq.begday)then
                if(beghr.gt.int(gmtp))then
-                 write(message,'("before volcano stuff at gmtp = ",i8)') gmtp
+                 write(message,'("before volcano stuff at gmtp = ",i8)') int(gmtp)
                  call wrf_debug(15,message)
                  ivolcano=0
                elseif(beghr.eq.int(gmtp))then
                   if(begmin.gt.gmtm)then
-                     write(message,'("before volcano stuff at gmtp,begmin = ",2i8)') gmtp,begmin
+                     write(message,'("before volcano stuff at gmtp,begmin = ",2i8)') int(gmtp),int(begmin)
                      call wrf_debug(15,message)
                      ivolcano=0
                   endif
@@ -466,12 +475,12 @@ CONTAINS
                  ivolcano=0
             elseif(julday.eq.endday)then
                if(endhr.lt.int(gmtp))then
-                 write(message,'("after volcano stuff at gmtp = ",i8)') gmtp
+                 write(message,'("after volcano stuff at gmtp = ",i8)') int(gmtp)
                  call wrf_debug(15,message)
                  ivolcano=0
                elseif(endhr.eq.int(gmtp))then
                   if(endmin.lt.gmtm)then
-                     write(message,'("after volcano stuff at gmtm,endmin = ",2i8)') gmtm,endmin
+                     write(message,'("after volcano stuff at gmtm,endmin = ",2i8)') int(gmtm),int(endmin)
                      call wrf_debug(15,message)
                      ivolcano=0
                   endif
@@ -495,7 +504,8 @@ CONTAINS
                                  +emis_vol(i,k,j,p_e_vash9)*conv    &
                                  +.5*emis_vol(i,k,j,p_e_vash8)*conv
                enddo
-      CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACMSORG_KPP,RACMSORG_AQ,RACM_ESRLSORG_KPP)
+      CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_KPP,RACMSORG_KPP,RACMSORG_AQ,RACM_ESRLSORG_KPP, &
+            RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP)
 !       write(0,*)'do later'
                   do k=kts,kte
                     conv = float(ivolcano)*4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
@@ -653,6 +663,10 @@ CONTAINS
       CASE DEFAULT 
         if(seasalt_emiss_active.eq.1) then 
            CALL wrf_debug(15,'MOSAIC or SORGAM sea salt emissions')
+        elseif(seasalt_emiss_active.eq.3) then
+           CALL wrf_debug(15,'MOSAIC sea salt emissions (Fuentes et al) - low activity')
+        elseif(seasalt_emiss_active.eq.4) then
+           CALL wrf_debug(15,'MOSAIC sea salt emissions (Fuentes et al) - high activity')
         else
            CALL wrf_debug(15,'no sea salt emissions')
         end if
@@ -745,8 +759,8 @@ CONTAINS
        if( do_bioemiss ) then
          beis314_check_mechanism_ok: SELECT CASE(config_flags%chem_opt) 
             CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
-                  RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ,RACMSORG_AQCHEM,            &
-                  RACMSORG_KPP,RACM_ESRLSORG_KPP, RACM_SOA_VBS_KPP,                           &
+                  RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ,RACMSORG_AQCHEM_KPP,        &
+                  RACM_ESRLSORG_AQCHEM_KPP, RACMSORG_KPP,RACM_ESRLSORG_KPP, RACM_SOA_VBS_KPP, &
                   CBM4_KPP, NMHC9_KPP, GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
             CASE DEFAULT 
                CALL wrf_error_fatal( &
@@ -791,6 +805,9 @@ CONTAINS
                ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,            &
                ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,ebio_so2,   &
                ebio_dms,                                                       &
+               ebio_c5h8,ebio_apinene,ebio_bpinene,ebio_toluene,       &
+               ebio_ch3cho,ebio_ch3co2h,ebio_tbut2ene,ebio_c2h5cho,    &
+               ebio_nc4h10, &
                ebio_sesq, ebio_mbo,                                            &
                ebio_alk3, ebio_alk4, ebio_alk5, ebio_ole1, ebio_ole2,    &    
                ebio_aro1, ebio_aro2, ebio_ccho, ebio_meoh,               &    
@@ -814,8 +831,9 @@ CONTAINS
 !
     gas_addemiss_select: SELECT CASE(config_flags%chem_opt)
     CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
-          RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM, RACMSORG_KPP, RACM_SOA_VBS_KPP, & 
-          RACM_ESRLSORG_KPP, MOZART_KPP, MOZCART_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP )
+          RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, RACMSORG_KPP, &
+          RACM_SOA_VBS_KPP, RACM_ESRLSORG_KPP, MOZART_KPP, MOZCART_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP, CRIMECH_KPP, &
+          CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP )
        IF(config_flags%emiss_inpt_opt /= 3 ) then
        IF(config_flags%kemit .GT. kte-ksub) THEN
          k=config_flags%kemit
@@ -1088,7 +1106,7 @@ CONTAINS
                 chem(i,k,j,p_co)  = chem(i,k,j,p_co)                     &
                      +emis_ant(i,k,j,p_e_co)*conv
                 chem(i,k,j,p_no)  = chem(i,k,j,p_no)                     &
-                     +emis_ant(i,k,j,p_e_co)*conv
+                     +emis_ant(i,k,j,p_e_no)*conv
                 chem(i,k,j,p_hcho)  = chem(i,k,j,p_hcho)                 &
                      +emis_ant(i,k,j,p_e_hcho)*conv
              end do
@@ -1306,7 +1324,7 @@ CONTAINS
                 chem(i,k,j,p_co)  = chem(i,k,j,p_co)                     &
                      +emis_ant(i,k,j,p_e_co)*conv
                 chem(i,k,j,p_no)  = chem(i,k,j,p_no)                     &
-                     +emis_ant(i,k,j,p_e_co)*conv
+                     +emis_ant(i,k,j,p_e_no)*conv
                 chem(i,k,j,p_hcho)  = chem(i,k,j,p_hcho)                 &
                      +emis_ant(i,k,j,p_e_hcho)*conv
              end do
@@ -1453,7 +1471,7 @@ CONTAINS
     aer_addemiss_select: SELECT CASE(config_flags%chem_opt)
 
     CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP, &
-          RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ)
+          RACMSORG_AQ,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP,RACMSORG_KPP,RACM_ESRLSORG_KPP,CBMZSORG,CBMZSORG_AQ)
        call wrf_debug(15,'emissions_driver calling sorgam_addemiss')
        call sorgam_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,  &
             ebu,                                                        &
@@ -1491,7 +1509,8 @@ CONTAINS
           CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
           CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, & 
           CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,SAPRC99_MOSAIC_4BIN_VBS2_KPP,&
-          CBMZ_MOSAIC_4BIN_VBS2_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP   )
+          CBMZ_MOSAIC_4BIN_VBS2_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP, &
+          CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP   )
        call wrf_debug(15,'emissions_driver calling mosaic_addemiss')
        call mosaic_addemiss( id, dtstep, u10, v10, alt, dz8w, xland,     &
             config_flags, chem, slai, ust, smois, ivgtyp, isltyp,        &

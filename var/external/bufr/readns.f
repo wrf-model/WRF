@@ -79,7 +79,7 @@ C  ---------------------------------------
       CALL STATUS(LUNIT,LUN,IL,IM)
       IF(IL.EQ.0) GOTO 900
       IF(IL.GT.0) GOTO 901
-      IF (INODE(LUN).GE.1) SUBSET = TAG(INODE(LUN))
+      SUBSET = TAG(INODE(LUN))
       JDATE  = IDATE(LUN)
 
 C  READ THE NEXT SUBSET IN THE BUFR FILE

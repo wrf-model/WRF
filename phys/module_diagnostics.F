@@ -741,7 +741,7 @@ CONTAINS
                      ,raincv,rainncv,rainc,rainnc                     &
                      ,i_rainc,i_rainnc                                &
                      ,hfx,sfcevp,lh                                   &
-                     ,dt,xtime,sbw                                    &
+                     ,dt,xtime,curr_secs2,sbw                                    &
                      ,diag_print                                      &
                      ,bucket_mm, bucket_J                             &
                                                                       )
@@ -756,6 +756,7 @@ CONTAINS
 !-----------
 !-- DT            time step (second)
 !-- XTIME         forecast time
+!-- curr_secs2    current time in seconds since simulation restart
 !-- SBW           specified boundary width - used later
 !
 !-- P8W           3D pressure array at full eta levels
@@ -835,6 +836,7 @@ CONTAINS
                                      MU_2M, PK1M
  
    REAL,  INTENT(IN   )                            :: DT, XTIME
+   REAL,  INTENT(IN   )                            :: curr_secs2
    INTEGER,  INTENT(IN   )                         :: SBW
    INTEGER, DIMENSION( ims:ime , jms:jme ),                      & 
                                      INTENT(INOUT) :: I_RAINC,   &
@@ -894,7 +896,7 @@ CONTAINS
 !  !$OMP PRIVATE ( ij )
 
 !  IF ( MOD(NINT(XTIME), clwrfH) == 0 ) THEN
-  IF (( MOD(NINT(XTIME/dt*60.),NINT(clwrfH/dt*60.)) == 0) .AND. (.NOT.is_restart)) THEN
+  IF (( MOD(NINT(curr_secs2/dt),NINT(clwrfH*60./dt)) == 0) .AND. (.NOT.is_restart)) THEN
     DO ij = 1 , num_tiles
       IF  ( wrf_dm_on_monitor() ) THEN
         WRITE(message, *)'CLWRFdiag - T2; tile: ',ij,' T2clmin:',           & 
@@ -1042,7 +1044,7 @@ CONTAINS
 
 !          IF (MOD(NINT(XTIME),clwrfH) == 0) THEN
 !          IF (MOD(NINT(XTIME+dt/60.),clwrfH) == 0) THEN
-           IF ((MOD(NINT((XTIME+dt/60.)*60./dt),NINT(clwrfH*60./dt)) == 0)) THEN
+           IF (MOD(NINT((curr_secs2+dt)/dt),NINT(clwrfH*60./dt)) == 0) THEN
              IF  ( wrf_dm_on_monitor() ) PRINT *,'nsteps=',nsteps,' xtime:',  &
                xtime,' clwrfH:',clwrfH 
                t2clmean=t2clmean/nsteps

@@ -1,3 +1,12 @@
+#if defined ( NO_IEEE_MODULE )         /* stub out entire module */
+module module_io_int_read
+   private
+   contains
+      subroutine dummy
+      end subroutine dummy
+end module module_io_int_read
+
+#else
 !
 ! Public domain.
 !
@@ -1070,3 +1079,4 @@ contains
 #endif         /* __PATHSCALE__ */
 #endif         /* defined(DM_PARALLEL) && !defined(STUBMPI) */
 end module module_io_int_read
+#endif         /* stub out entire module */

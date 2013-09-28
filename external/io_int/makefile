@@ -9,7 +9,7 @@ WRF_MOD = ../../frame/pack_utils.o \
 	  ../../frame/module_wrf_error.o \
 	  ../../frame/wrf_debug.o
 
-CPP1    = $(CPP) $(TRADFLAG)
+CPP1    = $(CPP) $(TRADFLAG) $(ARCHFLAGS)
 M4      = m4 -Uinclude -Uindex -Ulen
 
 .SUFFIXES: .F90 .F .f .f90 .c .h .o .code
@@ -38,8 +38,11 @@ io_int_idx_tags.h: ../../inc/intio_tags.h
 io_int_idx.o: io_int_idx.c io_int_idx.h io_int_idx_tags.h
 	$(CC) -o $@ -c $*.c
 
-module_io_int_idx.o: module_io_int_idx.f90
-	$(FC) $(FCFLAGS) -o $@ -c $*.f90
+module_io_int_idx.o: module_io_int_idx.f
+	$(FC) $(FCFLAGS) -o $@ -c $*.f
+
+module_io_int_idx.f: module_io_int_idx.F90
+	$(CPP1) $*.F90 > $@
 
 module_io_int_read.o: module_io_int_read.f module_io_int_idx.o
 	$(FC) $(FCFLAGS) -I../../frame -o $@ -c $*.f
@@ -78,8 +81,11 @@ diffwrf: diffwrf.f $(WRF_MOD) $(ESMF_MOD_DEPENDENCE) $(LIB)
 $(WRF_MOD) $(ESMF_MOD_DEPENDENCE):
 	@echo "Diffwrf io_int will be built later on in this compile. No need to rerun compile. "
 
-test_io_idx: test_io_idx.f90 $(LIB)
-	$(FC) $(FCFLAGS) $(LDFLAGS) -o $@ $@.f90 -L. -lwrfio_int
+test_io_idx: test_io_idx.f $(LIB)
+	$(FC) $(FCFLAGS) $(LDFLAGS) -o $@ $@.f -L. -lwrfio_int
+
+test_io_idx.f: test_io_idx.F90
+	$(CPP1) $*.F90 > $@
 
 test_io_mpi: test_io_mpi.f90 $(LIB)
 	$(FC) $(FCFLAGS) $(LDFLAGS) -o $@ $@.f90 -L. -lwrfio_int

@@ -1,3 +1,12 @@
+#if defined ( NO_IEEE_MODULE ) 
+module module_io_int_idx
+   private
+   contains
+      subroutine dummy
+      end subroutine dummy
+end module module_io_int_idx
+
+#else
 !
 ! Public domain.
 !
@@ -185,3 +194,4 @@ module module_io_int_idx
     end function io_int_string
 
 end module module_io_int_idx
+#endif

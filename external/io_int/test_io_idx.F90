@@ -1,3 +1,12 @@
+#if defined ( NO_IEEE_MODULE )      /* stub out entire program */
+program test_io_idx
+   print *,'NO TEST PROGRAM MADE for test_io_idx'
+   print *,'NO TEST PROGRAM MADE for test_io_idx'
+   print *,'NO TEST PROGRAM MADE for test_io_idx'
+   print *,'NO TEST PROGRAM MADE for test_io_idx'
+end program test_io_idx
+
+#else
 !
 ! Public domain.
 !
@@ -76,3 +85,4 @@ subroutine wrf_message(message)
 
     write(0,*) trim(message)
 end subroutine wrf_message
+#endif      /* stub out entire program */

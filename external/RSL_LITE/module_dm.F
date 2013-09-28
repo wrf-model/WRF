@@ -4,6 +4,10 @@ MODULE module_dm
    USE module_wrf_error
    USE module_driver_constants
 !   USE module_comm_dm
+#if !defined( DA_CORE )
+   USE module_cpl, ONLY : coupler_on, cpl_init
+#endif
+
    IMPLICIT NONE
 
 #if ( NMM_CORE == 1 ) || defined( WRF_CHEM ) 
@@ -1438,10 +1442,19 @@ CONTAINS
         IF ( thread_support_provided .lt. thread_support_requested ) THEN
            CALL WRF_ERROR_FATAL( "failed to initialize MPI thread support")
         ENDIF
-#  else
-        CALL mpi_init ( ierr )
-#  endif
         mpi_comm_here = MPI_COMM_WORLD
+#  else
+#if !defined( DA_CORE )
+        IF ( coupler_on ) THEN
+           CALL cpl_init( mpi_comm_here )
+        ELSE
+#endif
+           CALL mpi_init ( ierr )
+           mpi_comm_here = MPI_COMM_WORLD
+#if !defined( DA_CORE )
+        ENDIF
+#endif
+#  endif
 #ifdef HWRF
         CALL atm_cmp_start( mpi_comm_here )   ! atmospheric side of HWRF coupler will split MPI_COMM_WORLD and return communicator as argument
 #endif
@@ -2067,11 +2080,24 @@ SUBROUTINE write_68( grid, v , s , &
 END
 
    SUBROUTINE wrf_abort
+
+#if !defined( DA_CORE )
+      USE module_cpl, ONLY : coupler_on, cpl_abort
+#endif
+
       IMPLICIT NONE
 #ifndef STUBMPI
       INCLUDE 'mpif.h'
       INTEGER ierr
-      CALL mpi_abort(MPI_COMM_WORLD,1,ierr)
+#if !defined( DA_CORE )
+      IF ( coupler_on ) THEN
+         CALL cpl_abort( 'wrf_abort', 'look for abort message in rsl* files' )
+      ELSE
+#endif
+         CALL mpi_abort(MPI_COMM_WORLD,1,ierr)
+#if !defined( DA_CORE )
+      END IF
+#endif
 #else
       STOP
 #endif

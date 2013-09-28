@@ -682,7 +682,7 @@
      &                ,SFCEXC,ACSNOW,ACSNOM,SNOPCX,SICE,TG,SOILTB       &
      &                ,ALBSI,ICEDEPTH,SNOWSI                            &
      &                ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR,EMBCK          &
-     &                ,U10,V10,TH10,Q10,TSHLTR,QSHLTR,PSHLTR            &
+     &                ,U10,V10,UOCE,VOCE,TH10,Q10,TSHLTR,QSHLTR,PSHLTR            &
      &                ,T2,QSG,QVG,QCG,SOILT1,TSNAV,SMFR3D,KEEPFR3DFLAG  &
      &                ,TWBS,QWBS,TAUX,TAUY,SFCSHX,SFCLHX,SFCEVP,RTHRATEN&
      &                ,POTEVP,POTFLX,SUBSHX                             &
@@ -704,6 +704,7 @@
      &                ,SFCHEADRT,INFXSRT,SOLDRAIN                       &  !Hydrology, no-op right now
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
+     &                ,IPS,IPE,JPS,JPE,KPS,KPE                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
 !***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
@@ -748,6 +749,7 @@
 #endif
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
+     &                     ,IPS,IPE,JPS,JPE,KPS,KPE                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
      &                     ,N_MOIST,NPHS,NSOIL,NTSD
 !
@@ -827,6 +829,7 @@
      &                                              ,PSHLTR,Q10,QSHLTR  &
      &                                              ,TH10,TSHLTR        &
      &                                              ,U10,V10            & ! GWD
+     &                                              ,UOCE,VOCE          &
      &                                              ,UGWDsfc,VGWDsfc      ! GWD
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: GRNFLX,QWBS,RADOT  &
@@ -1321,11 +1324,12 @@
      &          ,SMOIS=SMC,SMSTAV=SMSTAV,SMSTOT=SMSTOT,SNOALB=MXSNAL    &
      &          ,SNOW=SNOW,SNOWC=SNOWC,SNOWH=SNOWH,STEPBL=NPHS          &
      &          ,SMCREL=SMCREL                                          &
-     &          ,SST=SST,SST_UPDATE=SST_UPDATE                          &
+     &          ,SST=SST,SST_UPDATE=SST_UPDATE,MAX_EDOM=-1              &
      &          ,TH10=TH10,TH2=TH2X,T2=T2,THZ0=THZ0,TH_PHY=TH_PHY       &
      &          ,TMN=TG,TSHLTR=TSHLTR,TSK=TSFC,TSLB=STC,T_PHY=T_PHY     &
      &          ,U10=U10,UDRUNOFF=BGROFF,UST=USTAR,UZ0=UZ0H             &
      &          ,U_FRAME=U_FRAME,U_PHY=U_PHY,V10=V10,VEGFRA=VGFRCK      &
+     &          ,UOCE=UOCE,VOCE=VOCE                                    &
      &          ,VZ0=VZ0H,V_FRAME=V_FRAME,V_PHY=V_PHY                   &
      &          ,WARM_RAIN=WARM_RAIN,WSPD=WSPD,XICE=SICE,XICEM=SICE     &
      &          ,ALBSI=albsi,ICEDEPTH=icedepth,SNOWSI=snowsi            &
@@ -1350,6 +1354,7 @@
      &          ,NUM_URBAN_HI=config_flags%num_urban_hi                 & !multi-layer urban
      &          ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE        &
      &          ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME        &
+     &          ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe      & 
      &          ,I_START=GRID%I_START,I_END=GRID%I_END                  &
      &          ,J_START=GRID%J_START,J_END=GRID%J_END                  &
      &          ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES               &
@@ -1505,7 +1510,7 @@
      &               ,THZ0=THZ0,QZ0=QZ0,UZ0=UZ0H,VZ0=VZ0H             &
      &               ,QSFC=QS,LOWLYR=LOWLYR                           &
      &               ,PSIM=PSIM,PSIH=PSIH,GZ1OZ0=GZ1OZ0               &
-     &               ,U10=U10,V10=V10,T2=T2,WSPD=WSPD,BR=BR,CHKLOWQ=CHKLOWQ &   
+     &               ,U10=U10,V10=V10,UOCE=UOCE,VOCE=VOCE,T2=T2,WSPD=WSPD,BR=BR,CHKLOWQ=CHKLOWQ &   
      &               ,DX=DX,STEPBL=NPHS,WARM_RAIN=WARM_RAIN           &
      &               ,KPBL=KPBL,CT=CT,LH=ELFLX,SNOW=SNOW,XICE=SICE    &
      &               ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics      &

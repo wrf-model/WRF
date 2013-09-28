@@ -24,6 +24,7 @@ contains
                   exch_h,                                                      &
                   wstar,delta,                                                 &
                   u10,v10,                                                     &
+                  uoce,voce,                                                   &        
                   ctopo,ctopo2,                                                &
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
@@ -77,6 +78,8 @@ contains
 !-- wspd        wind speed at lowest model level (m/s)
 !-- u10         u-wind speed at 10 m (m/s)
 !-- v10         v-wind speed at 10 m (m/s)
+!-- uoce        sea surface zonal currents (m s-1)
+!-- voce        sea surface meridional currents (m s-1)
 !-- br          bulk richardson number in surface layer
 !-- dt          time step (s)
 !-- rvovrd      r_v divided by r_d (dimensionless)
@@ -142,6 +145,9 @@ contains
    real,     dimension( ims:ime, jms:jme )                                   , &
              intent(inout)   ::                                           u10, &
                                                                           v10
+   real,     dimension( ims:ime, jms:jme )                                   , &
+             intent(in   )   ::                                          uoce, &
+                                                                         voce
 !
    real,     dimension( ims:ime, jms:jme )                                   , &
              intent(in   )   ::                                         xland, &
@@ -256,6 +262,7 @@ contains
               ,wstar=wstar(ims,j)                                              &
               ,delta=delta(ims,j)                                              &
               ,u10=u10(ims,j),v10=v10(ims,j)                                   &
+              ,uox=uoce(ims,j),vox=voce(ims,j)                                 &
               ,ctopo=ctopo(ims,j),ctopo2=ctopo2(ims,j)                         &
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
@@ -287,6 +294,7 @@ contains
                   exch_hx,                                                     &
                   wstar,delta,                                                 &
                   u10,v10,                                                     &
+                  uox,vox,                                                     &
                   ctopo,ctopo2,                                                &
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
@@ -467,6 +475,9 @@ contains
    real,    dimension( ims:ime )                                             , &
             intent(inout)    ::                                           u10, &
                                                                           v10
+   real,    dimension( ims:ime )                                             , & 
+            intent(in  )    ::                                            uox, &
+                                                                          vox
    real,    dimension( its:ite )    ::                                         &
                                                                          brcr, &
                                                                         sflux, &
@@ -584,7 +595,7 @@ contains
    qtnp(its:ite,:) = 0.
 !
    do i = its,ite
-     wspd1(i) = sqrt(ux(i,1)*ux(i,1)+vx(i,1)*vx(i,1))+1.e-9
+     wspd1(i) = sqrt( (ux(i,1)-uox(i))*(ux(i,1)-uox(i)) + (vx(i,1)-vox(i))*(vx(i,1)-vox(i)) )+1.e-9
    enddo
 !
 !---- compute vertical diffusion
@@ -1179,8 +1190,8 @@ contains
        ad(i,1) = 1.+ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2                  &
         *(wspd1(i)/wspd(i))**2
      endif
-     f1(i,1) = ux(i,1)
-     f2(i,1) = vx(i,1)
+     f1(i,1) = ux(i,1)+uox(i)*ust(i)**2*g/del(i,1)*dt2/wspd1(i)
+     f2(i,1) = vx(i,1)+vox(i)*ust(i)**2*g/del(i,1)*dt2/wspd1(i)
    enddo
 !
    do k = kts,kte-1

@@ -792,8 +792,9 @@ state    real   ACSNOM           ij     misc        1         -     irh       "A
 state    real   RMOL             ij     misc        1         -     irh      "RMOL"               ""         ""
 state    real   SNOW             ij     misc        1         -     i01rh       "SNOW"                 "SNOW WATER EQUIVALENT"         "kg m-2"
 state    real   CANWAT           ij     misc        1         -     i01rh       "CANWAT"               "CANOPY WATER" ""
-state    real   SST              ij     misc        1         -     i014rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4       "SST"                  "SEA SURFACE TEM
-PERATURE" "K"
+state    real   SST              ij     misc        1         -     i014rhd=(interp_hnear_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4       "SST"                  "SEA SURFACE TEMPERATURE" "K"
+state    real   UOCE             ij     misc        1         -     i014rh    "UOCE"               "SEA SURFACE ZONAL CURRENTS" "m s-1"
+state    real   VOCE             ij     misc        1         -     i014rh    "VOCE"               "SEA SURFACE MERIDIONAL CURRENTS" "m s-1"
 state    real   WEASD            ij     misc        1         -     i01rh       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" "kg m-2"
 state    real  ZNT              ij      misc        1         -     irh        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"

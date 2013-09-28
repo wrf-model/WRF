@@ -850,6 +850,8 @@ state    real   SNOW             ij     misc        1         -     i01rh       
 state    real   CANWAT           ij     misc        1         -     i01rh       "CANWAT"               "CANOPY WATER" ""
 state  integer  FORCE_SST        k      misc        1         -     -        "FORCE_SST"          "IF FORCE_SST(1) IS 1, FEED SST FROM PARENT EVERY DT" ""
 state    real   SST              ij     misc        1         -     i014rhd=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)       "SST"                  "SEA SURFACE TEMPERATURE" "K"
+state    real   UOCE             ij     misc        1         -     i014rh    "UOCE"               "SEA SURFACE ZONAL CURRENTS" "m s-1"
+state    real   VOCE             ij     misc        1         -     i014rh    "VOCE"               "SEA SURFACE MERIDIONAL CURRENTS" "m s-1"
 state    real   WEASD            ij     misc        1         -     i01rhd=(DownNear)       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" "kg m-2"
 state    real  ZNT              ij      misc        1         -     irh        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"

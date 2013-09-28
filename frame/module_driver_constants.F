@@ -73,6 +73,14 @@ MODULE module_driver_constants
 
    INTEGER , PARAMETER :: max_bogus =  5
 
+   !  The maximum number of fields that can be send or received in coupled mode
+
+   INTEGER , PARAMETER :: max_cplfld = 20
+
+   !  The maximum number of domains used by the external model with which wrf is communicating in coupled mode
+
+   INTEGER , PARAMETER :: max_extdomains = 5
+
    !  2. Following related to driver leve data structures for DM_PARALLEL communications
 
 #ifdef DM_PARALLEL

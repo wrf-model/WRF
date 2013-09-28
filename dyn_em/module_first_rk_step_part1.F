@@ -20,9 +20,9 @@ CONTAINS
                              , tke_tend                         &
                              , adapt_step_flag , curr_secs      &
                              , psim , psih , wspd , gz1oz0 , br , chklowq &
-                             , cu_act_flag , hol , th_phy        &
-                             , pi_phy , p_phy , t_phy , u_phy , v_phy     &
-                             , dz8w , p8w , t8w , rho_phy , rho           &
+                             , cu_act_flag , hol , th_phy       &
+                             , pi_phy , p_phy , t_phy           &
+                             , dz8w , p8w , t8w                 &
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
@@ -96,13 +96,9 @@ use module_scalar_tables
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: pi_phy
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: p_phy
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t_phy
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: u_phy
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: v_phy
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: dz8w
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: p8w
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t8w
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho_phy
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho
 
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: ru_tendf
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rv_tendf
@@ -193,7 +189,7 @@ BENCH_END(init_zero_tend_tim)
                         grid%mut, grid%muu, grid%muv, grid%u_2,          &
                         grid%v_2, grid%p, grid%pb, grid%alt,             &
                         grid%ph_2, grid%phb, grid%t_2, grid%tsk, moist, num_moist,   &
-                        rho,th_phy, p_phy, pi_phy, u_phy, v_phy,         &
+                        grid%rho,th_phy, p_phy, pi_phy, grid%u_phy, grid%v_phy,      &
                         p8w, t_phy, t8w, grid%z, grid%z_at_w, dz8w,      &
                         grid%p_hyd, grid%p_hyd_w, grid%dnw,              &
                         grid%fnm, grid%fnp, grid%znw, grid%p_top,        &
@@ -272,7 +268,7 @@ BENCH_START(rad_driver_tim)
      &        ,swint_opt=config_flags%swint_opt                                      &
      &        ,P8W=grid%p_hyd_w        ,P=grid%p_hyd            ,PI=pi_phy           &
      &        ,RADT=grid%radt          ,RA_CALL_OFFSET=grid%ra_call_offset           &
-     &        ,RHO=rho                 ,RLWTOA=grid%rlwtoa                           &
+     &        ,RHO=grid%rho            ,RLWTOA=grid%rlwtoa                           &
      &        ,RSWTOA=grid%rswtoa      ,RTHRATEN=grid%rthraten                       &
      &        ,RTHRATENLW=grid%rthratenlw       ,RTHRATENSW=grid%rthratensw          &
      &        ,SNOW=grid%snow          ,STEPRA=grid%stepra      ,SWDOWN=grid%swdown  &
@@ -444,7 +440,7 @@ BENCH_START(surf_driver_tim)
      &        ,PSIM=psim          ,P_PHY=grid%p_hyd        ,Q10=grid%q10            &
      &        ,Q2=grid%q2              ,QFX=grid%qfx            ,QSFC=grid%qsfc          &
      &        ,QSHLTR=grid%qshltr      ,QZ0=grid%qz0            ,RAINCV=grid%raincv      &
-     &        ,RA_LW_PHYSICS=config_flags%ra_lw_physics            ,RHO=rho            &
+     &        ,RA_LW_PHYSICS=config_flags%ra_lw_physics         ,RHO=grid%rho            &
      &        ,RMOL=grid%rmol          ,SFCEVP=grid%sfcevp      ,SFCEXC=grid%sfcexc      &
      &        ,SFCRUNOFF=grid%sfcrunoff                                        &
      &        ,SF_SFCLAY_PHYSICS=config_flags%sf_sfclay_physics                        &
@@ -453,7 +449,7 @@ BENCH_START(surf_driver_tim)
      &        ,SMSTAV=grid%smstav      ,SMSTOT=grid%smstot      ,SNOALB=grid%snoalb      &
      &        ,SNOW=grid%snow          ,SNOWC=grid%snowc        ,SNOWH=grid%snowh        &
      &        ,SMCREL=grid%smcrel                                                        &
-     &        ,SST=grid%sst            ,SST_UPDATE=grid%sst_update                  &
+     &        ,SST=grid%sst            ,SST_INPUT=grid%sst_input,SST_UPDATE=grid%sst_update                  &
      &        ,SSTSK=grid%sstsk        ,DTW=grid%dtw            ,SST_SKIN=grid%sst_skin  &
      &        ,SCM_FORCE_SKINTEMP=grid%scm_force_skintemp                                &
      &        ,SCM_FORCE_FLUX=grid%scm_force_flux                                        &
@@ -466,10 +462,12 @@ BENCH_START(surf_driver_tim)
      &        ,TSLB=grid%tslb          ,T_PHY=t_phy        ,U10=grid%u10            &
      &        ,URATX=grid%uratx        ,VRATX=grid%vratx   ,TRATX=grid%tratx        &
      &        ,UDRUNOFF=grid%udrunoff  ,UST=grid%ust       ,UZ0=grid%uz0            &
-     &        ,U_FRAME=grid%u_frame    ,U_PHY=u_phy        ,V10=grid%v10            &
+     &        ,U_FRAME=grid%u_frame    ,U_PHY=grid%u_phy   ,V10=grid%v10            &
+     &        ,UOCE=grid%uoce          ,VOCE=grid%voce                              &
      &        ,VEGFRA=grid%vegfra      ,VZ0=grid%vz0       ,V_FRAME=grid%v_frame    &
-     &        ,V_PHY=v_phy             ,WARM_RAIN=grid%warm_rain                    &
+     &        ,V_PHY=grid%v_phy        ,WARM_RAIN=grid%warm_rain                    &
      &        ,WSPD=wspd               ,XICE=grid%xice     ,XLAND=grid%xland        &
+     &        ,MAX_EDOM=grid%num_ext_model_couple_dom      ,CPLMASK=grid%cplmask    &
      &        ,Z0=grid%z0              ,Z=grid%z        ,ZNT=grid%znt               &
      &        ,ZS=grid%zs              ,ALBSI=grid%albsi , ICEDEPTH=grid%icedepth   &
      &        ,SNOWSI=grid%snowsi                                                   &
@@ -657,6 +655,7 @@ BENCH_START(surf_driver_tim)
            ! Indexes
      &        ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde          &
      &        ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme          &
+     &        ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe          &
      &        , I_START=grid%i_start,I_END=min(grid%i_end, ide-1)         &
      &        , J_START=grid%j_start,J_END=min(grid%j_end, jde-1)         &
      &        , KTS=k_start, KTE=min(k_end,kde-1)                         &
@@ -735,13 +734,14 @@ BENCH_START(pbl_driver_tim)
      &        ,PSIM=psim          ,P_PHY=grid%p_hyd        ,QFX=grid%qfx            &
      &        ,QSFC=grid%qsfc          ,QZ0=grid%qz0  ,MIXHT=mixht                  &
      &        ,RA_LW_PHYSICS=config_flags%ra_lw_physics                   &
-     &        ,RHO=rho            ,RQCBLTEN=grid%rqcblten  ,RQIBLTEN=grid%rqiblten  &
+     &        ,RHO=grid%rho            ,RQCBLTEN=grid%rqcblten  ,RQIBLTEN=grid%rqiblten  &
      &        ,RQVBLTEN=grid%rqvblten  ,RTHBLTEN=grid%rthblten  ,RUBLTEN=grid%rublten    &
      &        ,RVBLTEN=grid%rvblten    ,SNOW=grid%snow          ,STEPBL=grid%stepbl      &
      &        ,THZ0=grid%thz0          ,TH_PHY=th_phy                               &
      &        ,TSK=grid%tsk            ,T_PHY=grid%t_phy        ,UST=grid%ust       &
-     &        ,U10=grid%u10 ,UZ0=grid%uz0      ,U_FRAME=grid%u_frame    ,U_PHY=u_phy        &
-     &        ,V10=grid%v10 ,VZ0=grid%vz0      ,V_FRAME=grid%v_frame    ,V_PHY=v_phy        &
+     &        ,U10=grid%u10 ,UZ0=grid%uz0      ,U_FRAME=grid%u_frame    ,U_PHY=grid%u_phy   &
+     &        ,V10=grid%v10 ,VZ0=grid%vz0      ,V_FRAME=grid%v_frame    ,V_PHY=grid%v_phy   &
+     &        ,UOCE=grid%uoce          ,VOCE=grid%voce                              &
               ,T2=grid%t2 &
      &        ,WARM_RAIN=grid%warm_rain                    ,WSPD=wspd          &
      &        ,XICE=grid%xice          ,XLAND=grid%xland        ,Z=grid%z                &
@@ -870,7 +870,7 @@ BENCH_START(fire_driver_tim)
             ,ids,ide, kds,kde, jds,jde                              &
             ,ims,ime, kms,kme, jms,jme                              &
             ,ips,ipe, kps,kpe, jps,jpe                              &
-            ,rho,grid%z_at_w,dz8w)
+            ,grid%rho,grid%z_at_w,dz8w)
         endif
 
 BENCH_END(fire_driver_tim)
@@ -890,8 +890,8 @@ BENCH_END(fire_driver_tim)
 BENCH_START(cu_driver_tim)
       CALL cumulus_driver(grid                                             &
                  ! Prognostic variables
-     &             ,U=u_phy   ,V=v_phy   ,TH=th_phy  ,T=grid%t_phy                  &
-     &             ,W=grid%w_2     ,P=grid%p_hyd   ,PI=pi_phy  ,RHO=rho             &
+     &             ,U=grid%u_phy   ,V=grid%v_phy   ,TH=th_phy  ,T=grid%t_phy                  &
+     &             ,W=grid%w_2     ,P=grid%p_hyd   ,PI=pi_phy  ,RHO=grid%rho             &
                  ! Other arguments
      &             ,ITIMESTEP=grid%itimestep ,DT=grid%dt      ,DX=grid%dx              &
      &             ,CUDT=grid%cudt,CURR_SECS=curr_secs,ADAPT_STEP_FLAG=adapt_step_flag &
@@ -1025,8 +1025,8 @@ BENCH_START(shcu_driver_tim)
      &             ,J_START=grid%j_start, J_END=min(grid%j_end, jde-1)    &
      &             ,KTS=k_start, KTE=min(k_end, kde-1)                    &
      &             ,NUM_TILES=grid%num_tiles                              &
-     &             ,U=u_phy, V=v_phy, TH=th_phy, T=t_phy                  &
-     &             ,P=grid%p_hyd, PI=pi_phy, RHO=rho, MOIST=moist         &
+     &             ,U=grid%u_phy, V=grid%v_phy, TH=th_phy, T=t_phy        &
+     &             ,P=grid%p_hyd, PI=pi_phy, RHO=grid%rho, MOIST=moist    &
      &             ,NUM_MOIST=num_moist                                   &
      &             ,ITIMESTEP=grid%itimestep, DT=grid%dt, DX=grid%dx      &
      &             ,CUDT=grid%cudt                                        &
@@ -1169,7 +1169,7 @@ BENCH_END(shcu_driver_tim)
      &             ,z=grid%z,z_at_w=grid%z_at_w                           &
      &             ,th=th_phy, qv=moist(ims,kms,jms,P_QV)                 &
      &             ,ql=moist(ims,kms,jms,P_QC)                            &
-     &             ,u=u_phy, v=v_phy                                      &
+     &             ,u=grid%u_phy, v=grid%v_phy                                      &
      &             ,thten=grid%rthblten, qvten=grid%rqvblten              &
      &             ,qlten=grid%rqcblten                                   &
      &             ,uten=grid%rublten, vten=grid%rvblten                  &
@@ -1203,7 +1203,7 @@ BENCH_START(fdda_driver_tim)
                   q_ndg_new=fdda3d(ims,kms,jms,P_q_ndg_new),                        &
                   mu_ndg_new=fdda2d(ims,1,jms,P_mu_ndg_new),                        &
                   u3d=grid%u_2,v3d=grid%v_2,th_phy=th_phy,                          &
-                  ph=grid%ph_2,rho=rho,moist=moist,                                 &
+                  ph=grid%ph_2,rho=grid%rho,moist=moist,                            &
                   p_phy=p_phy,pi_phy=pi_phy,p8w=p8w,t_phy=grid%t_phy,               &
                   dz8w=dz8w,z=grid%z,z_at_w=grid%z_at_w,                            &
                   grid=grid,config_flags=config_flags,dx=grid%DX,n_moist=num_moist, &

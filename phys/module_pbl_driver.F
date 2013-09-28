@@ -20,7 +20,7 @@ CONTAINS
                  ,p_phy,pi_phy,p8w,t_phy,dz8w,z                    &
                  ,exch_h,exch_m,akhs,akms                          &
                  ,thz0,qz0,uz0,vz0,qsfc,f                          &
-                 ,lowlyr,u10,v10,t2                                &
+                 ,lowlyr,u10,v10,uoce,voce,t2                      &
                  ,psim,psih,fm,fhh,gz1oz0, wspd,br,chklowq         &
                  ,bl_pbl_physics, ra_lw_physics, dx                &
                  ,stepbl,warm_rain                                 &
@@ -273,6 +273,8 @@ CONTAINS
 !-- uz0           u wind component at roughness length (m/s)
 !-- vz0           v wind component at roughness length (m/s)
 !-- qsfc          specific humidity at lower boundary (kg/kg)
+!-- UOCE          sea surface zonal currents (m s-1)
+!-- VOCE          sea surface meridional currents (m s-1)
 !-- th2           diagnostic 2-m theta from surface layer and lsm
 !-- t2            diagnostic 2-m temperature from surface layer and lsm
 !-- q2            diagnostic 2-m mixing ratio from surface layer and lsm
@@ -466,6 +468,8 @@ CONTAINS
                                                           GRDFLX, &
                                                              U10, &
                                                              V10, &
+                                                            UOCE, &
+                                                            VOCE, &
                                                               T2, &
                                                             WSPD
 
@@ -1082,6 +1086,7 @@ CONTAINS
               ,PSIM=fm,PSIH=fhh,XLAND=xland                         &
               ,HFX=hfx,QFX=qfx                                      &
               ,U10=u10,V10=v10                                      &
+              ,UOCE=uoce,VOCE=voce                                  &
 ! paj
               ,CTOPO=ctopo,CTOPO2=ctopo2                &
 !
@@ -1518,6 +1523,7 @@ CONTAINS
                    &p=p_phy,exner=pi_phy,rho=rho,&
                    &xland=xland,ts=tsk,qsfc=qsfc,qcg=qcg,ps=psfc,&
                    &ust=ust,ch=ch,hfx=hfx,qfx=qfx,rmol=rmol,wspd=wspd,&
+                   &uoce=uoce,voce=voce,&
                    &vdfg=vdfg,&           !Katata -added 
                    &Qke=qke,Sh3d=Sh3d,&
 !ACF for QKE advection

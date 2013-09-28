@@ -305,7 +305,7 @@ i1       real   alpha          ikj     dyn_em      1         -
 i1       real   a              ikj     dyn_em      1         -                                                  
 i1       real   gamma          ikj     dyn_em      1         -                                                  
 i1       real   c2a            ikj     dyn_em      1         -     -
-i1       real   rho            ikj     dyn_em      1         -     -
+state    real   rho            ikj      misc       1         -     r      "RHO"              "DENSITY"         "Kg m-3"
 i1       real   phm            ikj     dyn_em      1         -     -
 i1       real   cqu            ikj     dyn_em      1         -     -
 i1       real   cqv            ikj     dyn_em      1         -     -
@@ -677,6 +677,9 @@ state  integer  IFNDICEDEPTH     -      misc        1         -     i         "F
 # SKIN SST
 state    real   SSTSK            ij     misc        1         -     rhd=(interp_mask_field:lu_index,iswater)   "SSTSK"              "SKIN SEA SURFACE TEMPERATURE" "K"
 state    real   DTW              ij     misc        1         -     r   "DTW"              "WARM LAYER TEMP DIFF" "C"
+# Ocean surface currents
+state    real   UOCE            ij     misc        1         -     i0124rhd=(interp_mask_water_field:lu_index,iswater)  "UOCE"  "SEA SURFACE ZONAL CURRENTS" "m s-1"
+state    real   VOCE            ij     misc        1         -     i0124rhd=(interp_mask_water_field:lu_index,iswater)  "VOCE"  "SEA SURFACE MERIDIONAL CURRENTS" "m s-1"
 
 # DFI variables
 state   real   hcoeff         {ndfi} misc        1         -     -    "HCOEFF"               "initialization weights"
@@ -1048,6 +1051,7 @@ state   real    v_frame        -       misc         1         -     ir        "v
 # collision between a metadata name and a field record in the I/O data
 # resolve this how?  Have the real program throw a switch to tell the code to get it
 # from the metadata?  Otherwise it's a field?
+state logical just_read_auxinput4  -      misc         -         -     r    "we_just_read_sst"           "1=AUXINPUT4 ALARM RINGING, 0=NO AUXINPUT4 ALARM"  "-"
 state   real    p_top          -       misc         -         -     irh       "p_top"                 "PRESSURE TOP OF THE MODEL"  "Pa"
 state   real    t00            -       misc         -         -     i02rh     "t00"                   "BASE STATE TEMPERATURE   "  "K"
 state   real    p00            -       misc         -         -     i02rh     "p00"                   "BASE STATE PRESURE"         "Pa"
@@ -1165,9 +1169,9 @@ state    real  GSW              ij      misc        1         -      rd       "G
 state    real  GLW              ij      misc        1         -      rhd      "GLW"                   "DOWNWARD LONG WAVE FLUX AT GROUND SURFACE"            "W m-2"      
 state    real  SWNORM           ij      misc        1         -      rhd      "SWNORM"                "NORMAL SHORT WAVE FLUX AT GROUND SURFACE (SLOPE-DEPENDENT)"           "W m-2"
 # WRF-Solar
-state   real    swddir       ij     misc         1         -     rhd    "SWDDIR"     "Shortwave surface downward direct irradiance" "W/m^2" ""
-state   real    swddni       ij     misc         1         -     rhd    "SWDDNI"     "Shortwave surface downward direct normal irradiance" "W/m^2" ""
-state   real    swddif       ij     misc         1         -     rhd    "SWDDIF"     "Shortwave surface downward diffuse irradiance" "W/m^2" ""
+state   real    swddir       ij     misc         1         -     rd     "SWDDIR"     "Shortwave surface downward direct irradiance" "W/m^2" ""
+state   real    swddni       ij     misc         1         -     rd     "SWDDNI"     "Shortwave surface downward direct normal irradiance" "W/m^2" ""
+state   real    swddif       ij     misc         1         -     rd     "SWDDIF"     "Shortwave surface downward diffuse irradiance" "W/m^2" ""
 state   real    Gx           ij     misc         1         -     rd     "Gx" "" ""
 state   real    Bx           ij     misc         1         -     rd     "Bx" "" ""
 state   real    gg           ij     misc         1         -     rd     "gg" "" ""
@@ -1392,8 +1396,8 @@ i1       real  th_phy          ikj      misc        1         -
 i1       real  pi_phy          ikj      misc        1         -                                          
 i1       real  p_phy           ikj      misc        1         -                                          
 state    real  t_phy           ikj      misc        1         -      r      "T_PHY"                        "Temperature"         "K"
-i1       real  u_phy           ikj      misc        1         -                                          
-i1       real  v_phy           ikj      misc        1         -                                          
+state    real  u_phy           ikj      misc        1         -      r      "U_PHY"                        "x-wind component at mass point"         "m s-1"
+state    real  v_phy           ikj      misc        1         -      r      "V_PHY"                        "y-wind component at mass point"         "m s-1"
 i1       real  dz8w            ikj      misc        1         Z                                          
 i1       real  p8w             ikj      misc        1         Z                                          
 i1       real  t8w             ikj      misc        1         Z                                          
@@ -1409,6 +1413,7 @@ state    real  TLAG             i&j     misc        1         -     rd=(interp_m
 state    integer NYEAR          -       misc        1         -     r        "NYEAR"                  "ACCUM DAYS IN A YEAR"                         ""
 state    real    NDAY           -       misc        1         -     r        "NDAY"                  "ACCUM TIMESTEPS IN A DAY"                      ""
 state    real  XLAND            ij      misc        1         -     i02rhd=(interp_fcnm_imask)u=(copy_fcnm)       "XLAND"                 "LAND MASK (1 FOR LAND, 2 FOR WATER)"          ""      
+state    real  cplmask       i{ncpldom}j      misc        1       z        i0r     "CPLMASK"    "COUPLING MASK (1 FOR OBSERVATION, 0 FOR COUPLER), number of external domains"  ""
 state    real  ZNT              ij      misc        1         -      i3r      "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"                "m"      
 state    real  CK               ij      misc        1         -      r        "CK"                    "ENTHALPY EXCHANGE COEFF AT 10 m"                      ""
 state    real  CKA              ij      misc        1         -      r        "CKA"                   "ENTHALPY EXCHANGE COEFF AT LOWEST MODEL LVL"          ""
@@ -1770,6 +1775,9 @@ rconfig   integer   max_ts_level    namelist,domains    1              15       
 
 # track input
 rconfig   integer   track_loc_in    namelist,domains    1               0       -    "Number of track locations input"   ""    ""
+
+# number of external model domains for coupling
+rconfig   integer   num_ext_model_couple_dom    namelist,domains   1     1      -    "number of external models domains for coupling, used for the coupling mask"   ""    ""
 
 # TC (tropical cyclone bogusing)
 rconfig   logical insert_bogus_storm   namelist,tc     	1              .false. irh    "insert_bogus_storm"   "T/F for inserting a bogus typhoon"      "flag"

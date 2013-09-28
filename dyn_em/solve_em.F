@@ -11,7 +11,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
                   domain, get_ijk_from_grid, get_ijk_from_subgrid                          &
                  ,domain_get_current_time, domain_get_start_time                           &
                  ,domain_get_sim_start_time, domain_clock_get,is_alarm_tstep
-   USE module_domain_type, ONLY : history_alarm, restart_alarm
+   USE module_domain_type, ONLY : history_alarm, restart_alarm, auxinput4_alarm
    USE module_configure, ONLY : grid_config_rec_type
    USE module_driver_constants
    USE module_machine
@@ -72,6 +72,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    USE module_first_rk_step_part2
    USE module_llxy, ONLY : proj_cassini
    USE module_avgflx_em, ONLY : zero_avgflx, upd_avgflx
+   USE module_cpl, ONLY : coupler_on, cpl_settime, cpl_store_input
 
    IMPLICIT NONE
 
@@ -147,7 +148,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    LOGICAL :: leapfrog
    INTEGER :: l,kte,kk
    LOGICAL :: f_flux  ! flag for computing averaged fluxes in cu_gd
-   REAL    :: curr_secs
+   REAL    :: curr_secs, curr_secs2
    INTEGER :: num_sound_steps
    INTEGER :: idex, jdex
    REAL    :: max_msft
@@ -160,7 +161,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
 ! urban related variables
    INTEGER :: NUM_ROOF_LAYERS, NUM_WALL_LAYERS, NUM_ROAD_LAYERS   ! urban
 
-   TYPE(WRFU_TimeInterval)                    :: tmpTimeInterval
+   TYPE(WRFU_TimeInterval)                    :: tmpTimeInterval, tmpTimeInterval2
    REAL                                       :: real_time
    LOGICAL                                    :: adapt_step_flag
    LOGICAL                                    :: fill_w_flag
@@ -258,8 +259,10 @@ SUBROUTINE solve_em ( grid , config_flags  &
   !   floating point seconds based on a TimeInterval.  So, we will
   !   calculate it here--but, this is not clean!!
   !
-   tmpTimeInterval = domain_get_current_time ( grid ) - domain_get_sim_start_time ( grid )
-   curr_secs = real_time(tmpTimeInterval)
+   tmpTimeInterval  = domain_get_current_time ( grid ) - domain_get_sim_start_time ( grid )
+   tmpTimeInterval2 = domain_get_current_time ( grid ) - domain_get_start_time ( grid )
+   curr_secs  = real_time(tmpTimeInterval)
+   curr_secs2 = real_time(tmpTimeInterval2)
 
    old_dt = grid%dt   ! store old time step for flux averaging code at end of RK loop
 !-----------------------------------------------------------------------------
@@ -287,6 +290,8 @@ SUBROUTINE solve_em ( grid , config_flags  &
    endif
 
    grid%itimestep = grid%itimestep + 1
+
+   IF( coupler_on ) CALL cpl_store_input( grid, config_flags )
 
    IF (config_flags%polar) dclat = 90./REAL(jde-jds) !(0.5 * 180/ny)
 
@@ -671,6 +676,8 @@ BENCH_END(set_phys_bc_tim)
 !<pre>
 !</DESCRIPTION>
 
+       IF (coupler_on) CALL cpl_settime( curr_secs2 )
+
        CALL first_rk_step_part1 (    grid, config_flags         &
                              , moist , moist_tend               &
                              , chem  , chem_tend                &
@@ -688,8 +695,7 @@ BENCH_END(set_phys_bc_tim)
                              , br , chklowq                     &
                              , cu_act_flag , hol , th_phy       &
                              , pi_phy , p_phy , grid%t_phy      &
-                             , u_phy , v_phy                    &
-                             , dz8w , p8w , t8w , rho_phy , rho &
+                             , dz8w , p8w , t8w                 &
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
@@ -723,8 +729,7 @@ BENCH_END(set_phys_bc_tim)
                              , br , chklowq                     &
                              , cu_act_flag , hol , th_phy       &
                              , pi_phy , p_phy , grid%t_phy      &
-                             , u_phy , v_phy                    &
-                             , dz8w , p8w , t8w , rho_phy , rho &
+                             , dz8w , p8w , t8w                 &
                              , nba_mij, num_nba_mij             & !JDM 
                              , nba_rij, num_nba_rij             & !JDM  
                              , ids, ide, jds, jde, kds, kde     &
@@ -3254,7 +3259,7 @@ BENCH_END(advance_ppt_tim)
 
        CALL wrf_debug ( 200 , ' call moist_physics_prep' )
 BENCH_START(moist_physics_prep_tim)
-       CALL moist_physics_prep_em( grid%t_2, grid%t_1, t0, rho,                &
+       CALL moist_physics_prep_em( grid%t_2, grid%t_1, t0, grid%rho,           &
                                    grid%al, grid%alb, grid%p, p8w, p0, grid%pb,          &
                                    grid%ph_2, grid%phb, th_phy, pi_phy, p_phy, &
                                    grid%z, grid%z_at_w, dz8w,                  &
@@ -3300,7 +3305,7 @@ BENCH_START(micro_driver_tim)
       &        ,DZ8W=dz8w          ,F_ICE_PHY=grid%f_ice_phy              &
       &        ,ITIMESTEP=grid%itimestep                    ,LOWLYR=grid%lowlyr  &
       &        ,P8W=p8w            ,P=p_phy            ,PI_PHY=pi_phy     &
-      &        ,RHO=rho            ,SPEC_ZONE=grid%spec_zone              &
+      &        ,RHO=grid%rho       ,SPEC_ZONE=grid%spec_zone              &
       &        ,SR=grid%sr              ,TH=th_phy                        &
       &        ,refl_10cm=grid%refl_10cm                                  & ! hm, 9/22/09 for refl
       &        ,WARM_RAIN=grid%warm_rain                                  &
@@ -3570,7 +3575,7 @@ BENCH_START(moist_phys_end_tim)
           ! Frequently used prognostics
             grid%itimestep, grid%dt, grid%dx, grid%dy,         &
             grid%xlat, grid%xlong, grid%xland, grid%ht,        &
-            grid%t_phy, p_phy, rho, u_phy, v_phy, grid%w_2,    &
+            grid%t_phy, p_phy, grid%rho, grid%u_phy, grid%v_phy, grid%w_2,    &
             grid%z, moist,                                     &
           ! Scheme specific prognostics
             grid%ktop_deep, grid%refl_10cm,                    &
@@ -4028,7 +4033,7 @@ BENCH_END(bc_2d_tim)
       &             ,REFD_MAX=grid%refd_max                                &
       &             ,refl_10cm=grid%refl_10cm                              &
       &             ,QG_CURR=moist(ims,kms,jms,P_QG)                       &
-      &             ,RHO=rho,PH=grid%ph_2,PHB=grid%phb,G=g                 &
+      &             ,RHO=grid%rho,PH=grid%ph_2,PHB=grid%phb,G=g            &
                   ! Dimension arguments
       &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
       &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
@@ -4087,7 +4092,7 @@ BENCH_END(bc_2d_tim)
         &           ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc       &
         &           ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh     &
         &           ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width      &
-        &           ,XTIME=grid%xtime                                      &
+        &           ,XTIME=grid%xtime,CURR_SECS2=curr_secs2                &
                     ! Selection flag
         &           ,DIAG_PRINT=config_flags%diag_print                    &
         &           ,BUCKET_MM=config_flags%bucket_mm                      &
@@ -4240,6 +4245,10 @@ BENCH_END(bc_2d_tim)
    DEALLOCATE(max_horiz_cfl_tmp)
 
    CALL wrf_debug ( 200 , ' call end of solve_em' )
+
+!  Are we about to read SST input from the wrflowinput file?  That data is saved
+!  for use in fractional merging of external/coupled SST and input SST. 
+   IF ( coupler_on )   grid%just_read_auxinput4 = Is_alarm_tstep(grid%domain_clock, grid%alarms(AUXINPUT4_ALARM))
 
 ! Finish timers if compiled with -DBENCH.
 #include <bench_solve_em_end.h>

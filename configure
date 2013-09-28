@@ -897,7 +897,7 @@ if [ $retval -ne 0 ] ; then
   echo " "
   echo "************************** W A R N I N G ************************************"
   echo " "
-  echo "There are some Fortran 20003 features in WRF that your compiler does not recognize"
+  echo "There are some Fortran 2003 features in WRF that your compiler does not recognize"
   echo "The IEEE signaling call has been removed.  That may not be enough."
   echo " "
   echo "*****************************************************************************"

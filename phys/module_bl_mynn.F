@@ -1680,7 +1680,7 @@ CONTAINS
           dqw = 0.5*(qw(k+1) + qw(k)) - 0.5*(qw(k) + qw(MAX(k-1,kts)))
           sgm(k) = SQRT( MAX( (alp(k)**2 * MAX(el(k)**2,1.) * &
                              b2 * MAX(Sh(k),0.03))/4. * &
-                      (dqw/dzk - bet(k)*(dth/dzk ))**2 , 1.0d-10) )
+                      (dqw/dzk - bet(k)*(dth/dzk ))**2 , 1.0e-10) )
        ENDIF
     END DO
 !

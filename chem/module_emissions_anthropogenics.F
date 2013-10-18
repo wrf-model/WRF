@@ -313,8 +313,8 @@ CONTAINS
                   e_bio(i,j,lxyl)*conv_rho
         if(p_c3h8.gt.1)chem(i,kts,j,p_c3h8)=chem(i,kts,j,p_c3h8)+ &
                   e_bio(i,j,lhc3)*conv_rho
-        if(p_ket.gt.1)chem(i,kts,j,p_ket)=chem(i,kts,j,p_ket)+ &
-                  e_bio(i,j,lket)*conv_rho
+!       if(p_ket.gt.1)chem(i,kts,j,p_ket)=chem(i,kts,j,p_ket)+ &
+!                 e_bio(i,j,lket)*conv_rho
         if(p_ch3cho.gt.1)chem(i,kts,j,p_ch3cho)=chem(i,kts,j,p_ch3cho)+ &
                   e_bio(i,j,lald)*conv_rho
         if(p_apinene.gt.1)chem(i,kts,j,p_apinene)=chem(i,kts,j,p_apinene)+ &
@@ -378,8 +378,8 @@ CONTAINS
 !                  e_bio(i,j,p_xyl-1)*conv_rho
 !        if(p_c3h8.gt.1)chem(i,kts,j,p_c3h8)=chem(i,kts,j,p_c3h8)+ &
 !                  e_bio(i,j,p_hc3-1)*conv_rho
-!        if(p_ket.gt.1)chem(i,kts,j,p_ket)=chem(i,kts,j,p_ket)+ &
-!                  e_bio(i,j,p_ket-1)*conv_rho
+!!        if(p_ket.gt.1)chem(i,kts,j,p_ket)=chem(i,kts,j,p_ket)+ &
+!!                  e_bio(i,j,p_ket-1)*conv_rho
 !        if(p_ch3cho.gt.1)chem(i,kts,j,p_ch3cho)=chem(i,kts,j,p_ch3cho)+ &
 !                  e_bio(i,j,p_ald-1)*conv_rho
 !        if(p_c2h6.gt.1)chem(i,kts,j,p_c2h6)=chem(i,kts,j,p_c2h6)+ &

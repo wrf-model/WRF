@@ -279,7 +279,7 @@ if [ -n "$NETCDF" ] ; then
   echo "Will use NETCDF in dir: $NETCDF"
 # for 3.6.2 and greater there might be a second library, libnetcdff.a .  Check for this and use 
 # if available
-  if [ -f "$NETCDF/lib/libnetcdff.a" ] ; then
+  if [ -f "$NETCDF/lib/libnetcdff.a" -o -f "$NETCDF/lib/libnetcdff.so" ] ; then
     USENETCDFF="-lnetcdff"
   fi
 else

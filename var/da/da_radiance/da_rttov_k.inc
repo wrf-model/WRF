@@ -1,7 +1,7 @@
 #ifdef RTTOV
 subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
                       con_vars, aux_vars, &
-                      tb, rad_xb, rad_ovc, emissivity, emissivity_out)
+                      tb, rad_xb, rad_ovc, emissivity)
 
    !---------------------------------------------------------------------------
    !  PURPOSE: interface to the forward and k matrix subroutine of RTTOV
@@ -15,8 +15,7 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
    real                , intent (inout) :: tb(nchanl,nprofiles)
    real                , intent (inout) :: rad_xb(nchanl,nprofiles)
    real                , intent (inout) :: rad_ovc(nchanl,nlevels-1,nprofiles)
-   real                , intent (in)  :: emissivity(nchanl*nprofiles)
-   real                , intent (out) :: emissivity_out(nchanl*nprofiles)
+   type (rttov_emissivity), intent (inout) :: emissivity(nchanl*nprofiles)
 
    ! local variables
    integer             :: nchanprof, asw
@@ -32,7 +31,7 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
    integer             :: errorstatus
 
    ! RTTOV inout parameters
-   real,                  allocatable :: emissivity_k(:), emissivity_out_k(:)
+   type (rttov_emissivity), allocatable :: emissivity_k(:)
    type (radiance_type)               :: radiance, radiance_k
    type (transmission_type)           :: transmission, transmission_k
 
@@ -86,23 +85,23 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
       profiles(n) % p(:)       = coefs(inst)%coef%ref_prfl_p(:)
       profiles(n) % t(:)       = con_vars(n)%t(:)
       profiles(n) % q(:)       = con_vars(n)%q(:)
-      if ( opts(inst) % ozone_data ) profiles(n) % o3(:)      = 0.0 !con_vars(n)%o3(:)
-      if ( opts(inst) % co2_data )   profiles(n) % co2(:)     = 0.0 !con_vars(n)%co2(:)
-      if ( opts(inst) % clw_data )   profiles(n) % clw(:)     = 0.0 !con_vars(n)%clw(:)
-      if ( opts(inst) % n2o_data )   profiles(n) % n2o(:)     = 0.0
-      if ( opts(inst) % co_data )    profiles(n) % co(:)      = 0.0
-      if ( opts(inst) % co_data )    profiles(n) % ch4(:)     = 0.0
-      if ( opts(inst) % addaerosl )  profiles(n) % aerosols(:,:)   = 0.0
-      if ( opts(inst) % addclouds )  then
+      if ( opts(inst) % rt_mw % clw_data ) profiles(n) % clw(:)     = 0.0 !con_vars(n)%clw(:)
+      if ( opts_rt_ir(inst) % ozone_data ) profiles(n) % o3(:)      = 0.0 !con_vars(n)%o3(:)
+      if ( opts_rt_ir(inst) % co2_data )   profiles(n) % co2(:)     = 0.0 !con_vars(n)%co2(:)
+      if ( opts_rt_ir(inst) % n2o_data )   profiles(n) % n2o(:)     = 0.0
+      if ( opts_rt_ir(inst) % co_data )    profiles(n) % co(:)      = 0.0
+      if ( opts_rt_ir(inst) % co_data )    profiles(n) % ch4(:)     = 0.0
+      if ( opts_rt_ir(inst) % addaerosl )  profiles(n) % aerosols(:,:)   = 0.0
+      if ( opts_rt_ir(inst) % addclouds )  then
          profiles(n) % cloud(:,:)      = 0.0
-         profiles(n) % cfrac(:,:)      = 0.0
+         profiles(n) % cfrac(:)        = 0.0
          profiles(n) % idg             = 1
          profiles(n) % ish             = 1
       end if
 
       profiles(n)% skin % surftype   = aux_vars(n) % surftype
       if ( profiles(n)% skin % surftype == 1 ) then
-         if ( opts(inst) % addsolar ) then
+         if ( opts_rt_ir(inst) % addsolar ) then
             ! if refelcted solar radiation is to be included in the SWIR channels, then
             ! specification of fresh or salt water needs to be provided
             profiles(n) % skin % watertype = 1
@@ -141,7 +140,7 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
       profiles(n) % elevation = 0.001* aux_vars(n) % elevation   ! km
       profiles(n) % latitude  = aux_vars(n) % rlat
 
-      if ( opts(inst) % addsolar ) then
+      if ( opts_rt_ir(inst) % addsolar ) then
          profiles(n) % azangle     = aux_vars (n) % satazi
          profiles(n) % sunzenangle = aux_vars (n) % solzen     !50.0
          profiles(n) % sunazangle  = aux_vars (n) % solazi     !86.0
@@ -156,7 +155,6 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
    end do
 
    allocate (emissivity_k(nchanprof), stat=alloc_status(3))
-   allocate (emissivity_out_k(nchanprof), stat=alloc_status(4))
    allocate (calcemis(nchanprof), stat=alloc_status(5))
    if ( any( alloc_status /= 0 ) ) then
       call da_error(__FILE__,__LINE__, &
@@ -218,9 +216,9 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
    end if
 
    ! calculate emissivity where the input emissivity value is less than 0.01
-   calcemis(:) = emissivity(:) < 0.01
+   calcemis(:) = emissivity(:)%emis_in < 0.01
 
-   emissivity_k(:) = 0.0
+   emissivity_k(:)%emis_in= 0.0
    radiance_k % bt_clear(:)   = 1.0
    radiance_k % clear(:)      = 1.0
    radiance_k % overcast(:,:) = 1.0
@@ -229,23 +227,21 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
    !  calling RTTOV forward and K model
    !----------------------------------
 
-   call rttov_k(      &
+   call rttov_k(           &
       & errorstatus,       &   ! out
       & chanprof,          &   ! in     chanprof(nchanprof)
       & opts(inst),        &   ! in
       & profiles,          &   ! in     profiles(nprof)
       & profiles_k,        &   ! inout  profiles_k(nchanprof)
       & coefs(inst),       &   ! in
-      & calcemis,          &   ! in     calcemis(nchanprof)
-      & emissivity,        &   ! in     emissivity(nchanprof)
-      & emissivity_k,      &   ! inout  emissivity_k(nchanprof)
-      & emissivity_out,    &   ! out    emissivity_out(nchanprof)
-      & emissivity_out_k,  &   ! inout  emissivity_out_k(nchanprof)
       & transmission,      &   ! inout
       & transmission_k,    &   ! inout
       & radiance,          &   ! inout
-      & radiance_k )           ! inout
-   
+      & radiance_k,        &   ! inout
+      & calcemis,          &   ! in,    optional  calcemis(nchanprof)
+      & emissivity,        &   ! inout, optional  emissivity(nchanprof)
+      & emissivity_k)          ! inout, optional  emissivity_k(nchanprof)
+
    if ( print_detail_rad .or. errorstatus /= errorstatus_success ) then
       WRITE (UNIT=stderr,FMT=*) 'rttov_k error code = ', errorstatus
       WRITE (UNIT=stderr,FMT=*) 'nchanprof    = ', nchanprof
@@ -265,8 +261,8 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
       WRITE (UNIT=stderr,FMT=*) 'profiles%t   = ', profiles(1)%t
       WRITE (UNIT=stderr,FMT=*) 'profiles%q   = ', profiles(1)%q
       WRITE (UNIT=stderr,FMT=*) 'calcemis     = ', calcemis
-      WRITE (UNIT=stderr,FMT=*) 'emissivity   = ', emissivity
-      WRITE (UNIT=stderr,FMT=*) 'emissivity_out = ', emissivity_out
+      WRITE (UNIT=stderr,FMT=*) 'emissivity   = ', emissivity(:)%emis_in
+      WRITE (UNIT=stderr,FMT=*) 'emissivity_out = ', emissivity(:)%emis_out
       WRITE (UNIT=stderr,FMT=*) 'radiance = ', radiance%bt_clear
       if ( errorstatus /= errorstatus_success ) call da_error(__FILE__,__LINE__,(/"Problem in rttov_k"/))
    end if
@@ -291,7 +287,6 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
    deallocate (calcemis)
    deallocate (chanprof)
    deallocate (emissivity_k)
-   deallocate (emissivity_out_k)
 
    asw = 0 ! deallocation
    ! deallocate radiance arrays
@@ -333,6 +328,6 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
    end if
 
    call da_trace_exit("da_rttov_k")
-   
+
 end subroutine da_rttov_k
 #endif

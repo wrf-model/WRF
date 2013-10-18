@@ -15,7 +15,7 @@ module da_radiance
       rttov_platform_name, rttov_inst_name, crtm_sensor_name  ! names used by both RTTOV and CRTM
 #ifdef RTTOV
    use module_radiance, only : coefs, rttov_coefs, profile_type, radiance_type, &
-      transmission_type,errorstatus_success,gas_id_watervapour
+      transmission_type,errorstatus_success,gas_id_watervapour,rttov_emissivity
 #endif
 #ifdef CRTM
    use module_radiance, only : crtm_channelinfo_type, crtm_platform_name, crtm_init, &

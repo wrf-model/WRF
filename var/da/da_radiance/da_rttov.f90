@@ -11,11 +11,11 @@ module da_rttov
    use module_radiance, only : satinfo, &
        i_kind,r_kind, r_double, &
        one, zero, three,deg2rad, q2ppmv, &
-       coefs, opts, rttov_inst_name
-   use module_radiance, only : rttov_options, rttov_coefs, profile_type, &
+       coefs, opts,opts_rt_ir, rttov_inst_name
+   use module_radiance, only : rttov_options, rttov_opts_rt_ir, rttov_coefs, profile_type, &
        transmission_type, radiance_type, rttov_chanprof, &
        jpim, jprb, errorstatus_success, errorstatus_fatal, gas_id_watervapour, &
-       sensor_id_ir, sensor_id_mw, sensor_id_hi
+       sensor_id_ir, sensor_id_mw, sensor_id_hi,rttov_emissivity
 
    use da_control, only : max_ob_levels,missing_r, &
       v_interp_p, v_interp_h, tovs_batch, gravity, &
@@ -62,9 +62,9 @@ module da_rttov
 #include "rttov_errorreport.interface"
 #include "rttov_read_coefs.interface"
 #include "rttov_init_coefs.interface"
-#include "rttov_atlas_setup.interface"
+#include "rttov_setup_emis_atlas.interface"
 #include "rttov_get_emis.interface"
-#include "rttov_deallocate_atlas.interface"
+#include "rttov_deallocate_emis_atlas.interface"
    
 contains
 

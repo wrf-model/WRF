@@ -17,11 +17,13 @@ module module_radiance
             sensor_id_hi
    use rttov_types, only :  &
          rttov_options,     &
+         rttov_opts_rt_ir,  &
          rttov_coefs,       &
          profile_type,      &
          transmission_type, &
          radiance_type,     &
-         rttov_chanprof
+         rttov_chanprof,    &
+         rttov_emissivity
    use parkind1, only : jpim, jprb
 #endif
 
@@ -109,6 +111,7 @@ module module_radiance
 #ifdef RTTOV
    type (rttov_coefs), allocatable   :: coefs(:)     ! coefficients structure
    type (rttov_options), allocatable :: opts(:)      ! options structure
+   type (rttov_opts_rt_ir), allocatable :: opts_rt_ir(:) ! options structure
 #endif
 
    type satinfo_type

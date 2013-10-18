@@ -285,7 +285,7 @@ else
           setenv BUFR 1
        endif
        setenv RTTOV_CPP "-DRTTOV"
-       setenv RTTOV_LIB "-L${RTTOV}/lib -lrttov10.1.0_coef_io -lrttov10.1.0_emis_atlas -lrttov10.1.0_main"
+       setenv RTTOV_LIB "-L${RTTOV}/lib -lrttov11.1.0_coef_io -lrttov11.1.0_emis_atlas -lrttov11.1.0_main"
        setenv RTTOV_SRC "-I${RTTOV}/include -I${RTTOV}/mod"
     else
        setenv RTTOV_CPP " "

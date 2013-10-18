@@ -1,0 +1,261 @@
+JCSDA CRTM v2.1.3 Build Instructions
+====================================
+
+$Revision: 29405 $
+
+
+  CRTM SUPPORT EMAIL: ncep.list.emc.jcsda_crtm.support@noaa.gov
+
+
+0) PREAMBLE
+-----------
+   The CRTM tarball directory structure looks like:
+     ./
+     |-configure   .............. compiler environment shell source files
+     |-fix         .............. CRTM coefficient datafiles
+     |-libsrc      .............. CRTM Fortran95/2003 source files
+     `-test        .............. test/example programs and results
+        |-forward  .............. forward model tests/examples
+        |  |-Example1_Simple
+        |  |  |-coefficients ...... contains the coefficient data for the program
+        |  |  `-results      ...... contains the results of the program
+        |  |-Example2_SSU
+        |  |-Example3_Zeeman
+        |  |-Example5_ClearSky
+        |  |-Example6_ChannelSubset
+        |  |-Example7_AOD
+        |  |-Example9_Aircraft
+        |  |-Example10_ScatteringSwitch
+        |  `-Example11_SOI
+        `-k_matrix  ............. k-matrix model tests/examples
+           |-Example1_Simple
+           |  |-coefficients ...... contains the coefficient data for the program
+           |  `-results      ...... contains the results of the program
+           |-Example2_SSU
+           |-Example3_Zeeman
+           |-Example5_ClearSky
+           |-Example6_ChannelSubset
+           |-Example7_AOD
+           |-Example10_ScatteringSwitch
+           `-Example11_SOI
+
+   NOTE: The Aircaft capability only applies to the Forward model, so there is
+         no equivalent Example9_Aircraft for the K-matrix model.
+
+   The build makefiles now assumes that environment variables (envars) will
+   be defined that describe the compilation and link environment. The envars
+   that must be defined are:
+     FC:       the Fortran95/2003 compiler executable,
+     FC_FLAGS: the flags/switches provided to the Fortran compiler,
+     FL:       the linker used to create the executable test/example programs,
+     FL_FLAGS: the flags/switches provided to the linker.
+
+   Several shell source files are provided for the compilers to which we have
+   access and have tested here at the JCSDA. These shell source files are in
+   the "configure/" subdirectory of the tarball.
+
+   The build system for the CRTM is relatively unsophisticated and is constructed
+   for the Unix "sh" shell (or its derivative bsh, bash, or ksh shells). Currently
+   csh (or any of its variants) is not supported.
+
+   The current list of test compiler environments in the configure/ directory
+   are:
+
+     $ ls configure/
+     g95.setup             ifort.setup        xlf.setup
+     g95_debug.setup       ifort_debug.setup  xlf_debug.setup
+     gfortran.setup        pgi.setup
+     gfortran_debug.setup  pgi_debug.setup
+
+
+
+1) COMPILATION ENVIRONMENT SETUP
+--------------------------------
+   To set the compilation envars for your CRTM build, you need to source the
+   required "setup" file. For example, to use gfortran to build the CRTM you
+   would type
+
+     . configure/gfortran.setup
+
+   in the main directory. Note the "." and space preceding the filename.
+   This should print out something like the following:
+
+     =========================================
+      CRTM compilation environment variables:
+        FC:       gfortran
+        FC_FLAGS:  -c  -O3  -fimplicit-none  -fconvert=big-endian  -ffree-form
+                   -fno-second-underscore  -frecord-marker=4  -funroll-loops
+                   -ggdb  -Wall  -std=f2003
+        FL:       gfortran
+        FL_FLAGS:
+     =========================================
+
+   indicating the values to which the envars have been set.
+
+   Change the current setups to suit your needs. If you use a different compiler
+   please consider submitting your compilation setup to be included in future
+   releases.
+
+   NOTE: As of CRTM v2.0, the Fortran compiler needs to be compatible with the
+         ISO TR-15581 Allocatable Enhancements update to Fortran95. Most current
+         Fortran95 compilers do support TR-15581.
+
+
+
+2) LIBRARY BUILD
+----------------
+   Once the compilation environment has been set up, the CRTM library build is
+   performed by simply typing,
+
+     make
+
+   in the main directory. At this point you should see the source file compilation
+   output. Depending on the compiler used you may see various warning messages, for
+   example
+
+     warning: 'cchar[1]{lb: 1 sz: 1}' may be used uninitialized in this function}
+
+   or
+
+     PGF90-I-0035-Predefined intrinsic scale loses intrinsic property}
+
+   etc. The actual format of the warning message depends on the compiler. We are
+   working on eliminating these warning messages where appropriate or necessary.
+
+   NOTE: The current build process is set up to generate a static library not a
+         shared one.
+
+
+
+3) TEST CASE BUILDS AND RUNS
+----------------------------
+   Several test/example programs exercising the forward and K-matrix functions
+   have been supplied with the CRTM. To build and run all these tests, type,
+
+     make test
+
+   This process does generate a lot of output to screen so be prepared to scroll
+   through it. Currently there are nine forward model test, or example, programs:
+     test/forward/Example1_Simple
+     test/forward/Example2_SSU
+     test/forward/Example3_Zeeman
+     test/forward/Example5_ClearSky
+     test/forward/Example6_ChannelSubset
+     test/forward/Example7_AOD
+     test/forward/Example9_Aircraft
+     test/forward/Example10_ScatteringSwitch
+     test/forward/Example11_SOI
+   And there are eight cases for the K-matrix model:
+     test/k_matrix/Example1_Simple
+     test/k_matrix/Example2_SSU
+     test/k_matrix/Example3_Zeeman
+     test/k_matrix/Example5_ClearSky
+     test/k_matrix/Example6_ChannelSubset
+     test/k_matrix/Example7_AOD
+     test/k_matrix/Example10_ScatteringSwitch
+     test/k_matrix/Example11_SOI
+
+   Both the forward and K-matrix tests *should* end with output that looks like:
+
+     ======================
+     SUMMARY OF ALL RESULTS
+     ======================
+
+     Passed 34 of 34 tests.
+     Failed 0 of 34 tests.
+
+
+   If you encounter failures you might see something like:
+
+     ======================
+     SUMMARY OF ALL RESULTS
+     ======================
+
+     Passed 24 of 34 tests.
+     Failed 10 of 34 tests.  <----<<<  **WARNING**
+
+
+   Some important things to note about the tests:
+     - The supplied results were generated using the gfortran DEBUG build.
+     - Comparisons between DEBUG and PRODUCTION builds can be different due to
+       various compiler switches that modify floating point arithmetic
+       (e.g. optimisation levels), or different hardware.
+     - For test failures, you can view the differences between the generated and
+       supplied ASCII output files. For example, to view the K-matrix Example1_Simple
+       test case differences for the amsua_metop-a sensor you would do something like:
+
+         $ cd test/k_matrix/Example1_Simple
+         $ diff -u amsua_metop-a.output results/amsua_metop-a.output | more
+                   \__________________/ \__________________________/
+                             |                        |
+                       This file is         This file is supplied
+                     generated during       with the CRTM tarball
+                       the test run
+
+       where the amsua_metop-a.output file is generated during the test run, and the
+       results/amsua_metop-a.output file is supplied with the CRTM tarball.
+     - Any differences that typically result are quite small (of the order of microKelvin
+       or less when there is a noticable difference in the computed brightness temperatures),
+       although not always at the numerical precision limit.
+     - A graphical differencing tool such as tkdiff (http://tkdiff.sourceforge.net/), meld
+       (http://meldmerge.org/), or FileMerge/opendiff (on Mac OSX) is recommended for viewing
+       the file differences.
+
+
+
+4) LIBRARY INSTALLATION
+-----------------------
+   A very simple install target is specified in the supplied makefile to put all the necessary
+   include files (the generated *.mod files containing all the procedure interface information)
+   in an ./include subdirectory and the library itself (the generated libCRTM.a file) in a ./lib
+   subdirectory. The make command is
+
+     make install
+
+   The ./include and ./lib subdirectories can then be copied/moved/linked to a more suitable
+   location on your system, for example: $HOME/local/CRTM.
+
+   NOTE: Currently, running the tests also invokes this install target. That will change in
+         future releases so do not rely on the behaviour.
+
+
+
+5) CLEANUP
+----------
+   Two cleanup targets are provided in the makefile:
+
+     make clean
+
+   Removes all the compilation and link products from the /libsrc directory.
+
+     make distclean
+
+   This does the same as the "clean" target but also deletes the library
+   and include directories created by the "install" target.
+
+
+
+6) LINKING TO THE LIBRARY
+-------------------------
+   Let's assume you've built the CRTM library and placed the /include and /lib subdirectories
+   in your own local area, $HOME/local/CRTM. In the makefile for your application that uses
+   the CRTM, you will need to add
+
+     -I$HOME/local/CRTM/include
+
+   to your list of compilation switches, and the following to your list of link switches,
+
+     -L$HOME/local/CRTM/lib -lCRTM
+
+   NOTE: The "-I", "-L", and "-l" switches are ubiquitous and should work with  most compilers.
+         Consult your compiler documentation for more information.
+
+
+
+7) FEEDBACK AND CONTACT INFO
+----------------------------
+   That's really it. Any questions or bug reports can be sent to CRTM Support at
+
+     ncep.list.emc.jcsda_crtm.support@noaa.gov
+
+

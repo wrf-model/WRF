@@ -1,0 +1,32 @@
+#-------------------------------------------------------------------------------#
+# PRODUCTION build settings for Linux ifort compiler
+#-------------------------------------------------------------------------------#
+
+# The compiler and linker name
+export FC="ifort"
+
+export FL="ifort"
+
+# Compiler and linker settings for PRODUCTION builds
+F_COMMON_FLAGS=
+
+export FC_FLAGS="\
+ -c \
+ -O2 \
+ -convert big_endian \
+ -free \
+ -assume byterecl \
+ ${F_COMMON_FLAGS}"
+
+export FL_FLAGS="\
+ ${F_COMMON_FLAGS}"
+
+
+echo "========================================="
+echo " CRTM compilation environment variables:"
+echo "   FC:       ${FC}"
+echo "   FC_FLAGS: ${FC_FLAGS}"
+echo "   FL:       ${FL}"
+echo "   FL_FLAGS: ${FL_FLAGS}"
+echo "========================================="
+echo

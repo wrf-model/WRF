@@ -1394,6 +1394,24 @@ print *,'------------------> skipping ', var_info%name(1:8)
 ! ------------------------------------------------------------
 ! ------------------------------------------------------------
 
+#if defined ( NO_IEEE_MODULE )
+   SUBROUTINE read_wps ( grid, filename, file_date_string, num_metgrid_levels )
+
+      USE module_domain
+
+      IMPLICIT NONE
+
+#if defined(DM_PARALLEL) && !defined(STUBMPI)
+      INCLUDE "mpif.h"
+#endif
+
+      TYPE(domain) ,       INTENT(INOUT)  :: grid
+      CHARACTER (*) ,      INTENT(IN)     :: filename
+      CHARACTER (LEN=19) , INTENT(IN)     :: file_date_string !not used
+      INTEGER ,            INTENT(IN)     :: num_metgrid_levels
+      
+   END SUBROUTINE read_wps
+#else
    SUBROUTINE read_wps ( grid, filename, file_date_string, num_metgrid_levels )
 
       USE module_soil_pre
@@ -1866,5 +1884,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
         enddo
 
      end subroutine read_wps
+#endif
 
 END MODULE module_si_io_nmm

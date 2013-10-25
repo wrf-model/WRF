@@ -2,7 +2,7 @@ module da_wrfvar_io
 
    use module_configure, only : grid_config_rec_type, model_config_rec, &
       model_to_grid_config_rec
-   use module_date_time, only : geth_julgmt,current_date, start_date
+   use module_date_time, only : get_julgmt, geth_julgmt, current_date, start_date
    use module_domain, only : domain, get_ijk_from_grid
    use module_io_domain, only : open_r_dataset,close_dataset, &
       input_input, open_w_dataset,output_input, &

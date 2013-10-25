@@ -24,7 +24,7 @@ subroutine da_update_firstguess(grid, out_filename)
 !
 !---------------------------------------------------------------------------
 
-  use module_domain, only : get_ijk_from_grid
+  use module_domain, only : get_ijk_from_grid, program_name
   use da_control,    only : use_radarobs, use_radar_rf, use_rad, crtm_cloud 
   use module_state_description, only : p_qv, p_qc, p_qr, p_qi, &
                                        p_qs, p_qg
@@ -56,7 +56,6 @@ subroutine da_update_firstguess(grid, out_filename)
   integer            :: WrfType
   integer            :: it, ierr, Status, Status_next_time
   integer            :: wrf_real
-  integer            :: iyear,imonth,iday,ihour,iminute,isecond
   integer            :: nlon_regional,nlat_regional,nsig_regional
   integer            :: ids, ide, jds, jde, kds, kde,    &
                         ims, ime, jms, jme, kms, kme,    &
@@ -66,6 +65,8 @@ subroutine da_update_firstguess(grid, out_filename)
   real*4,allocatable :: field3(:,:,:),field2(:,:)
   real*4,allocatable :: field3u(:,:,:),field3v(:,:,:),field3ph(:,:,:)
   character(len=4) ::  fgname
+  integer :: julyr, julday
+  real    :: gmt
 
   wrf_real=104
   end_index1=0
@@ -102,12 +103,26 @@ subroutine da_update_firstguess(grid, out_filename)
         write(unit=message(1),fmt='(a)') "Failed to open "//trim(file_name)
         call da_error(__FILE__,__LINE__,message(1:1))
      endif
-    
+
 !-------------  get date info
 
      call ext_ncd_get_next_time(dh1, DateStr1, Status_next_time)
-     read(DateStr1,'(i4,1x,i2,1x,i2,1x,i2,1x,i2,1x,i2)') iyear,imonth,iday,ihour,iminute,isecond
-!    write(6,*)' iy,m,d,h,m,s=',iyear,imonth,iday,ihour,iminute,isecond
+     if ( DateStr1 /= start_date )then
+        ! impossible scenario
+        ! start_date is set to be equal to file date in da_med_initialdata_input.inc
+        write(unit=message(1),fmt='(a)') 'date info mismatch'
+        call da_error(__FILE__,__LINE__,message(1:1))
+     endif
+
+     ! update analysis time info in global attributes
+     ! needs to be done before the ext_ncd_write_field calls
+     call get_julgmt(start_date, julyr, julday, gmt)
+     CALL ext_ncd_put_dom_ti_char (dh1, 'TITLE', ' OUTPUT FROM '//trim(program_name), ierr)
+     CALL ext_ncd_put_dom_ti_char (dh1, 'START_DATE', trim(start_date), ierr)
+     CALL ext_ncd_put_dom_ti_char (dh1, 'SIMULATION_START_DATE', trim(start_date), ierr)
+     CALL ext_ncd_put_dom_ti_real    (dh1, 'GMT',    gmt,    1, ierr)
+     CALL ext_ncd_put_dom_ti_integer (dh1, 'JULYR',  julyr,  1, ierr)
+     CALL ext_ncd_put_dom_ti_integer (dh1, 'JULDAY', julday, 1, ierr)
 
 !-------------  get grid info
      rmse_var='T'
@@ -1078,15 +1093,6 @@ end if        ! end of radar or radiance
   if (rootproc) then
      deallocate(field2,field3,field3u,field3v,field3ph)
      call ext_ncd_ioclose(dh1, Status)
-!
-!  update START_TIME to analysis time
-!
-     ierr = NF_OPEN(trim(file_name), NF_WRITE, dh1)
-     IF (ierr .NE. NF_NOERR) print *, 'OPEN ',NF_STRERROR(ierr)
-     ierr = NF_PUT_ATT_TEXT (dh1,NF_GLOBAL,'START_DATE',len_trim(DateStr1),DateStr1)
-     IF (ierr .NE. NF_NOERR) print *,'PUT ', NF_STRERROR(ierr)
-     ierr = NF_CLOSE(dh1)
-     IF (ierr .NE. NF_NOERR) print *, 'CLOSE ',NF_STRERROR(ierr)
   end if   ! end of rootproc
   
 end subroutine da_update_firstguess 

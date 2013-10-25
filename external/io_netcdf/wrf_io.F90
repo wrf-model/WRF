@@ -1572,6 +1572,8 @@ subroutine ext_ncd_redef( DataHandle, Status)
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
     continue
+  elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_UPDATE) then
+    continue
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
     Status = WRF_WARN_FILE_OPEN_FOR_READ
     write(msg,*) 'Warning FILE OPEN FOR READ in ',__FILE__,', line', __LINE__

@@ -775,7 +775,7 @@ CONTAINS
   ! dellaq = change of q per unit mass flux of cloud ensemble
   ! dellaqc = change of qc per unit mass flux of cloud ensemble
 
-        cd,cdd,DELLAH,DELLAQ,DELLAT,DELLAQC,dsubt,dsubq
+        cd,cdd,DELLAH,DELLAQ,DELLAT,DELLAQC,dsubt,dsubh,dsubq
 
   ! aa0 cloud work function for downdraft
   ! edt = epsilon
@@ -1445,6 +1445,7 @@ CONTAINS
       do i=its,itf
         dellah(i,k)=0.
         dsubt(i,k)=0.
+        dsubh(i,k)=0.
         dellaq(i,k)=0.
         dsubq(i,k)=0.
       enddo
@@ -1607,7 +1608,7 @@ CONTAINS
       do i=its,itf
          dellat(i,k)=0.
          if(ierr(i).eq.0)then
-            trash=dsubt(i,k)
+            dsubh(i,k)=dsubt(i,k)
             XHE(I,K)=(dsubt(i,k)+DELLAH(I,K))*MBDT+HEO(I,K)
             XQ(I,K)=(dsubq(i,k)+DELLAQ(I,K))*MBDT+QO(I,K)
             DELLAT(I,K)=(1./cp)*(DELLAH(I,K)-xl*DELLAQ(I,K))
@@ -1619,7 +1620,7 @@ CONTAINS
       enddo
       do i=its,itf
       if(ierr(i).eq.0)then
-      xhkb(i)=hkbo(i)+(dsubt(i,k22(i))+DELLAH(I,K22(i)))*MBDT
+      xhkb(i)=hkbo(i)+(dsubh(i,k22(i))+DELLAH(I,K22(i)))*MBDT
       XHE(I,ktf)=HEO(I,ktf)
       XQ(I,ktf)=QO(I,ktf)
       XT(I,ktf)=TN(I,ktf)
@@ -2444,7 +2445,7 @@ CONTAINS
        pcrit,acrit,acritt
 
      integer :: nall2,ixxx,irandom
-     integer,  dimension (2) :: seed
+     integer,  dimension (8) :: seed
 
 
       DATA PCRIT/850.,800.,750.,700.,650.,600.,550.,500.,450.,400.,    &
@@ -2580,6 +2581,7 @@ CONTAINS
 !
                 xff_ens3(10)=AA0(i)/(60.*40.)
                 xff_ens3(11)=AA0(I)/(60.*40.)
+                xff_ens3(16)=AA0(I)/(60.*40.)
                 if(irandom.eq.1)then
                    call random_number (xxx)
                    ixxx=min(ens4,max(1,int(fens4*xxx+1.e-8)))
@@ -2599,6 +2601,7 @@ CONTAINS
                      xff_ens3(10)=0.
                      xff_ens3(11)=0.
                      xff_ens3(12)=0.
+                     xff_ens3(16)=0.
                 endif
                 endif
 
@@ -2645,6 +2648,7 @@ CONTAINS
                       xff_ens3(10) =0.
                       xff_ens3(11) =0.
                       xff_ens3(12) =0.
+                      xff_ens3(16) =0.
                       xff_ens3(7) =0.
                       xff_ens3(8) =0.
                       xff_ens3(9) =0.
@@ -2696,6 +2700,7 @@ CONTAINS
                             xf_ens(i,j,nall+10)=max(0.,-xff_ens3(10)/xk(ne))
                             xf_ens(i,j,nall+11)=max(0.,-xff_ens3(11)/xk(ne))
                             xf_ens(i,j,nall+12)=max(0.,-xff_ens3(12)/xk(ne))
+                            xf_ens(i,j,nall+16)=max(0.,-xff_ens3(16)/xk(ne))
                          endif
                       if(icoic.ge.1)then
                       closure_n(i)=0.
@@ -2723,8 +2728,8 @@ CONTAINS
                    call random_number (xxx)
                    ixxx=min(15,max(1,int(15.*xxx+1.e-8)))
                    xf_ens(i,j,nall+16)=xf_ens(i,j,nall+ixxx)
-                else
-                   xf_ens(i,j,nall+16)=xf_ens(i,j,nall+1)
+!               else
+!                  xf_ens(i,j,nall+16)=xf_ens(i,j,nall+1)
                 endif
 !
 !
@@ -2796,6 +2801,7 @@ CONTAINS
                       xf_ens(i,j,nall+10)=xf_ens(i,j,nall2+10)
                       xf_ens(i,j,nall+11)=xf_ens(i,j,nall2+11)
                       xf_ens(i,j,nall+12)=xf_ens(i,j,nall2+12)
+                      xf_ens(i,j,nall+16)=xf_ens(i,j,nall2+16)
                    endif
                 go to 100
              endif
@@ -4105,7 +4111,7 @@ CONTAINS
   ! dellaq = change of q per unit mass flux of cloud ensemble
   ! dellaqc = change of qc per unit mass flux of cloud ensemble
 
-        cd,cdd,DELLAH,DELLAQ,DELLAT,DELLAQC,dsubt,dsubq,subt,subq
+        cd,cdd,DELLAH,DELLAQ,DELLAT,DELLAQC,dsubt,dsubh,dsubq,subt,subq
 
   ! aa0 cloud work function for downdraft
   ! edt = epsilon
@@ -4478,6 +4484,7 @@ CONTAINS
       do i=its,itf
         dellah(i,k)=0.
         dsubt(i,k)=0.
+        dsubh(i,k)=0.
         dellaq(i,k)=0.
         dsubq(i,k)=0.
       enddo
@@ -4623,7 +4630,7 @@ CONTAINS
       do i=its,itf
          dellat(i,k)=0.
          if(ierr(i).eq.0)then
-            trash=dsubt(i,k)
+            dsubh(i,k)=dsubt(i,k)
             XHE(I,K)=(dsubt(i,k)+DELLAH(I,K))*MBDT+HEO(I,K)
             XQ(I,K)=(dsubq(i,k)+DELLAQ(I,K))*MBDT+QO(I,K)
             DELLAT(I,K)=(1./cp)*(DELLAH(I,K)-xl*DELLAQ(I,K))
@@ -4635,7 +4642,7 @@ CONTAINS
       enddo
       do i=its,itf
       if(ierr(i).eq.0)then
-      xhkb(i)=hkbo(i)+(dsubt(i,k22(i))+DELLAH(I,K22(i)))*MBDT
+      xhkb(i)=hkbo(i)+(dsubh(i,k22(i))+DELLAH(I,K22(i)))*MBDT
       XHE(I,ktf)=HEO(I,ktf)
       XQ(I,ktf)=QO(I,ktf)
       XT(I,ktf)=TN(I,ktf)

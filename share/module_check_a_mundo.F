@@ -345,7 +345,8 @@
 
       oops = 0
       DO i = 1, model_config_rec % max_dom
-         IF ( ( model_config_rec%bl_pbl_physics(i) .NE. YSUSCHEME ) .AND. &
+         IF ( ( model_config_rec%bl_pbl_physics(i) .NE. YSUSCHEME .AND. &
+                model_config_rec%bl_pbl_physics(i) .NE. SURFDRAGSCHEME ) .AND. &
               ( model_config_rec%gwd_opt .EQ. GWDOPT ) ) THEN
             model_config_rec%gwd_opt = 0
             oops = oops + 1

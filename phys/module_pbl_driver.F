@@ -1453,7 +1453,7 @@ CONTAINS
            CALL surface_drag(                                     &
              RUBLTEN=rublten,RVBLTEN=rvblten                      &  !
             ,U_PHY=u_phy, V_PHY=v_phy, Z=z                                &  !
-            ,XLAND=xland, HT=ht                                   &  !
+            ,XLAND=xland, HT=ht, KPBL2D=kpbl                      &  !
             ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
             ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
             ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
@@ -1740,7 +1740,6 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      )
        ENDIF
    ENDIF
-
 
 #if (NMM_CORE != 1)
 

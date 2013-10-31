@@ -345,23 +345,24 @@ BENCH_START(a_pbl_driver_tim)
      &        ,F=grid%f  ,GRDFLX=grid%grdflx      &
      &        ,GZ1OZ0=gz1oz0      ,HFX=grid%hfx  ,HT=grid%ht                        &
      &        ,ID=grid%id         ,ITIMESTEP=grid%itimestep     ,KPBL=grid%kpbl          &
-     &        ,LH=grid%lh              ,LOWLYR=grid%lowlyr      ,P8W=grid%p_hyd_w   &
-     &        ,PBLH=grid%pblh          ,PI_PHY=pi_phy      ,PSIH=psih          &
-     &        ,PSIM=psim          ,P_PHY=grid%p_hyd        ,QFX=grid%qfx            &
+     &        ,LH=grid%lh ,LOWLYR=grid%lowlyr ,P8W=grid%p_hyd_w, P8WB=grid%a_p_hyd_w   &
+     &        ,PBLH=grid%pblh ,PI_PHY=pi_phy,PI_PHYB=a_pi_phy, PSIH=psih          &
+     &        ,PSIM=psim ,P_PHY=grid%p_hyd, QFX=grid%qfx            &
      &        ,QSFC=grid%qsfc          ,QZ0=grid%qz0  ,MIXHT=mixht                  &
      &        ,RA_LW_PHYSICS=config_flags%ra_lw_physics                   &
      &        ,RHO=rho            ,RQCBLTEN=grid%rqcblten  ,RQIBLTEN=grid%rqiblten  &
-     &        ,RQVBLTEN=grid%rqvblten  ,a_RQVBLTEN=grid%a_rqvblten                  &
-     &        ,RTHBLTEN=grid%rthblten  ,a_RTHBLTEN=grid%a_rthblten                  &
-     &        ,RUBLTEN=grid%rublten, a_RUBLTEN=grid%a_rublten    &
-     &        ,RVBLTEN=grid%rvblten ,a_RVBLTEN=grid%a_rvblten   ,SNOW=grid%snow       ,STEPBL=grid%stepbl      &
+     &        ,RQCBLTENB=grid%a_rqcblten  ,RQIBLTENB=grid%a_rqiblten  &
+     &        ,RQVBLTEN=grid%rqvblten  ,RQVBLTENB=grid%a_rqvblten                  &
+     &        ,RTHBLTEN=grid%rthblten  ,RTHBLTENB=grid%a_rthblten                  &
+     &        ,RUBLTEN=grid%rublten, RUBLTENB=grid%a_rublten    &
+     &        ,RVBLTEN=grid%rvblten ,RVBLTENB=grid%a_rvblten   ,SNOW=grid%snow       ,STEPBL=grid%stepbl      &
      &        ,THZ0=grid%thz0          ,TH_PHY=th_phy                               &
-     &        ,TSK=grid%tsk            ,T_PHY=grid%t_phy        ,UST=grid%ust       &
-     &        ,U10=grid%u10 ,UZ0=grid%uz0 ,U_FRAME=grid%u_frame ,U_PHY=u_phy ,a_U_PHY=a_u_phy &
-     &        ,V10=grid%v10 ,VZ0=grid%vz0 ,V_FRAME=grid%v_frame ,V_PHY=v_phy ,a_V_PHY=a_v_phy &
+     &        ,TSK=grid%tsk ,T_PHY=grid%t_phy, T_PHYB=grid%a_t_phy ,UST=grid%ust       &
+     &        ,U10=grid%u10 ,UZ0=grid%uz0 ,U_FRAME=grid%u_frame ,U_PHY=u_phy ,U_PHYB=a_u_phy &
+     &        ,V10=grid%v10 ,VZ0=grid%vz0 ,V_FRAME=grid%v_frame ,V_PHY=v_phy ,V_PHYB=a_v_phy &
               ,T2=grid%t2 &
      &        ,WARM_RAIN=grid%warm_rain                    ,WSPD=wspd          &
-     &        ,XICE=grid%xice   ,XLAND=grid%xland  ,Z=grid%z ,a_Z=grid%a_z      &
+     &        ,XICE=grid%xice   ,XLAND=grid%xland  ,Z=grid%z ,ZB=grid%a_z      &
      &        ,ZNT=grid%znt                                                    &
 ! paj: topo_wind
      &        ,CTOPO=grid%ctopo,CTOPO2=grid%ctopo2                                   &
@@ -387,7 +388,7 @@ BENCH_START(a_pbl_driver_tim)
      &        ,KTS=k_start, KTE=min(k_end,kde-1)                          &
      &        ,NUM_TILES=grid%num_tiles                                   &
           ! Variables Required by ACM PBL  - jp
-     &        ,ZNU=grid%znu,ZNW=grid%znw,MUT=grid%mut,P_TOP=grid%p_top    &
+     &        ,ZNU=grid%znu,ZNW=grid%znw,MUT=grid%mut,MUTB=grid%a_mut, P_TOP=grid%p_top    &
           ! Variables required by TEMF PBL - WA 9/9/08
               ,te_temf=grid%te_temf                                 &
               ,kh_temf=grid%kh_temf,km_temf=grid%km_temf            &
@@ -403,6 +404,7 @@ BENCH_START(a_pbl_driver_tim)
               ,exch_temf=exch_temf                      &
           ! optional
      &        ,QV_CURR=moist(ims,kms,jms,P_QV), F_QV=F_QV                 &
+     &        ,QV_CURRB=a_moist(ims,kms,jms,P_QV)                        &
      &        ,QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC                 &
      &        ,QR_CURR=moist(ims,kms,jms,P_QR), F_QR=F_QR                 &
      &        ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI                 &
@@ -421,7 +423,9 @@ BENCH_START(a_pbl_driver_tim)
 !GWD for ARW
      &        ,GWD_OPT=config_flags%gwd_opt &
      &        ,DTAUX3D=grid%dtaux3d,DTAUY3D=grid%dtauy3d &
+     &        ,DTAUX3DB=grid%a_dtaux3d,DTAUY3DB=grid%a_dtauy3d &
      &        ,DUSFCG=grid%dusfcg,DVSFCG=grid%dvsfcg &
+     &        ,DUSFCGB=grid%a_dusfcg,DVSFCGB=grid%a_dvsfcg &
      &        ,VAR2D=grid%var2d,OC12D=grid%oc12d     &
      &        ,OA1=grid%oa1,OA2=grid%oa2,OA3=grid%oa3,OA4=grid%oa4        &
      &        ,OL1=grid%ol1,OL2=grid%ol2,OL3=grid%ol3,OL4=grid%ol4        &

@@ -41,6 +41,8 @@ MODULES = \
 	module_bl_acm.o \
 	module_bl_mynn.o \
 	module_bl_gwdo.o \
+	module_bl_gwdo_tl.o \
+	module_bl_gwdo_ad.o \
 	module_bl_myjurb.o \
 	module_bl_boulac.o \
 	module_bl_surface_drag.o \

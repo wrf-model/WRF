@@ -43,6 +43,9 @@ REAL, ALLOCATABLE :: b_tke_2(:,:,:)
 REAL, ALLOCATABLE :: b_p(:,:,:), b_al(:,:,:), b_h_diabatic(:,:,:)
 REAL, ALLOCATABLE :: b_ustm(:,:), b_hfx(:,:), b_qfx(:,:)
 
+REAL, ALLOCATABLE :: b_dtaux3d(:,:,:), b_dtauy3d(:,:,:)
+REAL, ALLOCATABLE :: b_dusfcg(:,:), b_dvsfcg(:,:)
+
 REAL, ALLOCATABLE :: b_u_bxs(:,:,:), b_u_bxe(:,:,:), b_u_bys(:,:,:), b_u_bye(:,:,:)
 REAL, ALLOCATABLE :: b_u_btxs(:,:,:), b_u_btxe(:,:,:), b_u_btys(:,:,:), b_u_btye(:,:,:)
 REAL, ALLOCATABLE :: b_v_bxs(:,:,:), b_v_bxe(:,:,:), b_v_bys(:,:,:), b_v_bye(:,:,:)
@@ -66,6 +69,7 @@ REAL, ALLOCATABLE :: b_rainnc(:,:), b_rainncv(:,:)
 REAL, ALLOCATABLE :: b_rainc(:,:), b_raincv(:,:)
 
 INTEGER :: sm31, em31, sm32, em32, sm33, em33, spec_bdy_width, kts, kte
+INTEGER :: gwd_opt
 
 INTEGER                         :: ids , ide , jds , jde , kds , kde , &
                                    ims , ime , jms , jme , kms , kme , &
@@ -101,6 +105,7 @@ CONTAINS
    kte = kpe
 
    CALL nl_get_spec_bdy_width( 1, spec_bdy_width )
+   CALL nl_get_gwd_opt( 1, gwd_opt )
 
   END SUBROUTINE init_domain_size
 
@@ -608,6 +613,31 @@ CONTAINS
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate b_qfx(sm31:em31, sm33:em33). ')
+   ENDIF
+
+   IF (gwd_opt .EQ. 1) THEN
+
+   ALLOCATE ( b_dtaux3d(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_dtaux3d(sm31:em31, sm32:em32, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( b_dtauy3d(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_dtauy3d(sm31:em31, sm32:em32, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( b_dusfcg(sm31:em31, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_dusfcg(sm31:em31, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( b_dvsfcg(sm31:em31, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate b_dvsfcg(sm31:em31, sm33:em33). ')
+   ENDIF
+
    ENDIF
 
    !  Scalar Boundary
@@ -1186,6 +1216,14 @@ CONTAINS
    b_raincv = grid%raincv
 
    b_scalar = grid%scalar
+
+   IF ( gwd_opt .EQ. 1 ) THEN
+      b_dtaux3d = grid%dtaux3d
+      b_dtauy3d = grid%dtauy3d
+      b_dusfcg = grid%dusfcg
+      b_dvsfcg = grid%dvsfcg
+   ENDIF
+
 !   b_tke_2 = grid%tke_2
 
 !   b_al = grid%al
@@ -1539,6 +1577,24 @@ CONTAINS
    ENDDO
    ENDDO
 
+   IF ( gwd_opt .EQ. 1 ) THEN
+      DO j = jts,MIN(jte,jde-1)
+      DO k = kts,kte-1
+      DO i = its,MIN(ite,ide-1)
+        save  = save + grid%g_dtaux3d(i,k,j) * grid%g_dtaux3d(i,k,j) &
+                     + grid%g_dtauy3d(i,k,j) * grid%g_dtauy3d(i,k,j)
+      ENDDO
+      ENDDO
+      ENDDO
+
+      DO j = jts,MIN(jte,jde-1)
+      DO i = its,MIN(ite,ide-1)
+        save  = save + grid%g_dusfcg(i,j) * grid%g_dusfcg(i,j) &
+                     + grid%g_dvsfcg(i,j) * grid%g_dvsfcg(i,j)
+      ENDDO
+      ENDDO
+   ENDIF
+
    RETURN
   END SUBROUTINE inner_dot_g
 
@@ -1644,7 +1700,26 @@ CONTAINS
    ENDDO
    ENDDO
 
+   IF ( gwd_opt .EQ. 1 ) THEN
+      DO j = jts,MIN(jte,jde-1)
+      DO k = kts,kte-1
+      DO i = its,MIN(ite,ide-1)
+        save  = save + grid%g_dtaux3d(i,k,j) * grid%g_dtaux3d(i,k,j) &
+                     + grid%g_dtauy3d(i,k,j) * grid%g_dtauy3d(i,k,j)
+      ENDDO
+      ENDDO
+      ENDDO
+
+      DO j = jts,MIN(jte,jde-1)
+      DO i = its,MIN(ite,ide-1)
+        save  = save + grid%g_dusfcg(i,j) * grid%g_dusfcg(i,j) &
+                     + grid%g_dvsfcg(i,j) * grid%g_dvsfcg(i,j)
+      ENDDO
+      ENDDO
+   ENDIF
+
    RETURN
+
   END SUBROUTINE inner_dot_g_adjtest
 
   SUBROUTINE add_grid ( grid, factor )
@@ -1843,6 +1918,24 @@ CONTAINS
                   + (grid%raincv(i,j)-b_raincv(i,j)) * (grid%raincv(i,j)-b_raincv(i,j))
    ENDDO
    ENDDO
+
+   IF ( gwd_opt .EQ. 1 ) THEN
+      DO j = jts,MIN(jte,jde-1)
+      DO k = kts,kte-1
+      DO i = its,MIN(ite,ide-1)
+        save  = save + (grid%dtaux3d(i,k,j)-b_dtaux3d(i,k,j)) * (grid%dtaux3d(i,k,j)-b_dtaux3d(i,k,j)) &
+                     + (grid%dtauy3d(i,k,j)-b_dtauy3d(i,k,j)) * (grid%dtauy3d(i,k,j)-b_dtauy3d(i,k,j))
+      ENDDO
+      ENDDO
+      ENDDO
+
+      DO j = jts,MIN(jte,jde-1)
+      DO i = its,MIN(ite,ide-1)
+        save  = save + (grid%dusfcg(i,j)-b_dusfcg(i,j)) * (grid%dusfcg(i,j)-b_dusfcg(i,j)) &
+                     + (grid%dvsfcg(i,j)-b_dvsfcg(i,j)) * (grid%dvsfcg(i,j)-b_dvsfcg(i,j))
+      ENDDO
+      ENDDO
+   ENDIF
 
    RETURN
   END SUBROUTINE inner_dot
@@ -2044,10 +2137,20 @@ CONTAINS
    grid%a_rv_m = 0.0
    grid%a_ww_m = 0.0
 
+   grid%a_rublten = 0.0
+   grid%a_rvblten = 0.0
+   grid%a_rqvblten = 0.0
 ! I variables
    grid%a_ustm=0.0
    grid%a_hfx=0.0
    grid%a_qfx=0.0
+
+   IF ( gwd_opt .EQ. 1 ) THEN
+      grid%a_dtaux3d = 0.0
+      grid%a_dtauy3d = 0.0
+      grid%a_dusfcg = 0.0
+      grid%a_dvsfcg = 0.0
+   ENDIF
 
    grid%a_u_bxs = 0.0; grid%a_u_bxe = 0.0; grid%a_u_bys = 0.0; grid%a_u_bye = 0.0
    grid%a_v_bxs = 0.0; grid%a_v_bxe = 0.0; grid%a_v_bys = 0.0; grid%a_v_bye = 0.0
@@ -2158,10 +2261,21 @@ CONTAINS
    grid%g_rv_m = 0.0
    grid%g_ww_m = 0.0
 
+   grid%g_rublten = 0.0
+   grid%g_rvblten = 0.0
+   grid%g_rqvblten = 0.0
+
 ! I variables
    grid%g_ustm=0.0
    grid%g_hfx=0.0
    grid%g_qfx=0.0
+
+   IF ( gwd_opt .EQ. 1 ) THEN
+      grid%g_dtaux3d = 0.0
+      grid%g_dtauy3d = 0.0
+      grid%g_dusfcg = 0.0
+      grid%g_dvsfcg = 0.0
+   ENDIF
 
    grid%g_u_bxs = 0.0; grid%g_u_bxe = 0.0; grid%g_u_bys = 0.0; grid%g_u_bye = 0.0
    grid%g_v_bxs = 0.0; grid%g_v_bxe = 0.0; grid%g_v_bys = 0.0; grid%g_v_bye = 0.0
@@ -3317,6 +3431,31 @@ CONTAINS
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate b_qfx. ')
+   ENDIF
+
+   IF ( gwd_opt .EQ. 1 ) THEN
+
+   DEALLOCATE ( b_dtaux3d, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_dtaux3d. ')
+   ENDIF
+   DEALLOCATE ( b_dtauy3d, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_dtauy3d. ')
+   ENDIF
+   DEALLOCATE ( b_dusfcg, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_dusfcg. ')
+   ENDIF
+   DEALLOCATE ( b_dvsfcg, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate b_dvsfcg. ')
+   ENDIF
+
    ENDIF
 
    !  Scalar Boundary

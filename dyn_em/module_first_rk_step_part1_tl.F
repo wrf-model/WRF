@@ -283,23 +283,24 @@ BENCH_START(g_pbl_driver_tim)
      &        ,F=grid%f  ,GRDFLX=grid%grdflx      &
      &        ,GZ1OZ0=gz1oz0      ,HFX=grid%hfx  ,HT=grid%ht                        &
      &        ,ID=grid%id         ,ITIMESTEP=grid%itimestep     ,KPBL=grid%kpbl          &
-     &        ,LH=grid%lh              ,LOWLYR=grid%lowlyr      ,P8W=grid%p_hyd_w   &
-     &        ,PBLH=grid%pblh          ,PI_PHY=pi_phy      ,PSIH=psih          &
-     &        ,PSIM=psim          ,P_PHY=grid%p_hyd        ,QFX=grid%qfx            &
+     &        ,LH=grid%lh ,LOWLYR=grid%lowlyr ,P8W=grid%p_hyd_w, P8WD=grid%g_p_hyd_w   &
+     &        ,PBLH=grid%pblh, PI_PHY=pi_phy, PI_PHYD=g_pi_phy ,PSIH=psih          &
+     &        ,PSIM=psim   ,P_PHY=grid%p_hyd, QFX=grid%qfx            &
      &        ,QSFC=grid%qsfc          ,QZ0=grid%qz0  ,MIXHT=mixht                  &
      &        ,RA_LW_PHYSICS=config_flags%ra_lw_physics                   &
      &        ,RHO=rho            ,RQCBLTEN=grid%rqcblten  ,RQIBLTEN=grid%rqiblten  &
-     &        ,RQVBLTEN=grid%rqvblten  ,g_RQVBLTEN=grid%g_rqvblten                  &
-     &        ,RTHBLTEN=grid%rthblten ,g_RTHBLTEN=grid%g_rthblten                   &
-     &        ,RUBLTEN=grid%rublten, g_RUBLTEN=grid%g_rublten                 &
-     &        ,RVBLTEN=grid%rvblten ,g_RVBLTEN=grid%g_rvblten   ,SNOW=grid%snow       ,STEPBL=grid%stepbl      &
+     &        ,RQCBLTEND=grid%g_rqcblten  ,RQIBLTEND=grid%g_rqiblten  &
+     &        ,RQVBLTEN=grid%rqvblten  ,RQVBLTEND=grid%g_rqvblten                  &
+     &        ,RTHBLTEN=grid%rthblten ,RTHBLTEND=grid%g_rthblten                   &
+     &        ,RUBLTEN=grid%rublten, RUBLTEND=grid%g_rublten                 &
+     &        ,RVBLTEN=grid%rvblten ,RVBLTEND=grid%g_rvblten   ,SNOW=grid%snow       ,STEPBL=grid%stepbl      &
      &        ,THZ0=grid%thz0          ,TH_PHY=th_phy                               &
-     &        ,TSK=grid%tsk            ,T_PHY=grid%t_phy        ,UST=grid%ust       &
-     &        ,U10=grid%u10 ,UZ0=grid%uz0 ,U_FRAME=grid%u_frame ,U_PHY=u_phy ,g_U_PHY=g_u_phy &
-     &        ,V10=grid%v10 ,VZ0=grid%vz0 ,V_FRAME=grid%v_frame ,V_PHY=v_phy ,g_V_PHY=g_v_phy &
+     &        ,TSK=grid%tsk ,T_PHY=grid%t_phy, T_PHYD=grid%g_t_phy  ,UST=grid%ust       &
+     &        ,U10=grid%u10 ,UZ0=grid%uz0 ,U_FRAME=grid%u_frame ,U_PHY=u_phy ,U_PHYD=g_u_phy &
+     &        ,V10=grid%v10 ,VZ0=grid%vz0 ,V_FRAME=grid%v_frame ,V_PHY=v_phy ,V_PHYD=g_v_phy &
               ,T2=grid%t2 &
      &        ,WARM_RAIN=grid%warm_rain                    ,WSPD=wspd          &
-     &        ,XICE=grid%xice   ,XLAND=grid%xland  ,Z=grid%z ,g_Z=grid%g_z      &
+     &        ,XICE=grid%xice   ,XLAND=grid%xland  ,Z=grid%z ,ZD=grid%g_z      &
      &        ,ZNT=grid%znt                                                    &
 ! paj: topo_wind
      &        ,CTOPO=grid%ctopo,CTOPO2=grid%ctopo2                                   &
@@ -326,6 +327,7 @@ BENCH_START(g_pbl_driver_tim)
      &        ,NUM_TILES=grid%num_tiles                                   &
           ! Variables Required by ACM PBL  - jp
      &        ,ZNU=grid%znu,ZNW=grid%znw,MUT=grid%mut,P_TOP=grid%p_top    &
+     &        ,MUTD=grid%g_mut                                           &
           ! Variables required by TEMF PBL - WA 9/9/08
               ,te_temf=grid%te_temf                                 &
               ,kh_temf=grid%kh_temf,km_temf=grid%km_temf            &
@@ -341,6 +343,7 @@ BENCH_START(g_pbl_driver_tim)
               ,exch_temf=exch_temf                      &
           ! optional
      &        ,QV_CURR=moist(ims,kms,jms,P_QV), F_QV=F_QV                 &
+     &        ,QV_CURRD=g_moist(ims,kms,jms,P_QV)                        &
      &        ,QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC                 &
      &        ,QR_CURR=moist(ims,kms,jms,P_QR), F_QR=F_QR                 &
      &        ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI                 &
@@ -359,7 +362,9 @@ BENCH_START(g_pbl_driver_tim)
 !GWD for ARW
      &        ,GWD_OPT=config_flags%gwd_opt &
      &        ,DTAUX3D=grid%dtaux3d,DTAUY3D=grid%dtauy3d &
+     &        ,DTAUX3DD=grid%g_dtaux3d,DTAUY3DD=grid%g_dtauy3d &
      &        ,DUSFCG=grid%dusfcg,DVSFCG=grid%dvsfcg &
+     &        ,DUSFCGD=grid%g_dusfcg,DVSFCGD=grid%g_dvsfcg &
      &        ,VAR2D=grid%var2d,OC12D=grid%oc12d     &
      &        ,OA1=grid%oa1,OA2=grid%oa2,OA3=grid%oa3,OA4=grid%oa4        &
      &        ,OL1=grid%ol1,OL2=grid%ol2,OL3=grid%ol3,OL4=grid%ol4        &

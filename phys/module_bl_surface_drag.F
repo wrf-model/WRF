@@ -6,7 +6,7 @@ MODULE module_bl_surface_drag
 CONTAINS
 
    SUBROUTINE surface_drag (rublten, rvblten, u_phy, v_phy, xland,  &
-                         z,    ht,                                   &
+                         z,    ht, kpbl2d,                           &
                          ids, ide, jds, jde, kds, kde,               &
                          ims, ime, jms, jme, kms, kme,               &
                          its, ite, jts, jte, kts, kte   )
@@ -16,6 +16,9 @@ CONTAINS
    INTEGER ,          INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                         ims, ime, jms, jme, kms, kme, &
                                         its, ite, jts, jte, kts, kte
+
+   INTEGER,  DIMENSION( ims:ime, jms:jme )                       , &
+             INTENT(  OUT)   ::                          kpbl2d
 
    REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) ,               &
                                         INTENT(INOUT) :: rublten,  &
@@ -70,6 +73,7 @@ CONTAINS
              zwt = 2. * (1000.-zh) / 1000.
              rublten(i,k,j)=rublten(i,k,j)            &
                             -zwt*0.5*tao_xz/1000.
+             kpbl2d(i,j) = k
           ENDIF
        ENDDO
 

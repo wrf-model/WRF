@@ -694,12 +694,16 @@ module_pbl_driver.o:  \
 
 module_pbl_driver_tl.o:  \
 		module_bl_surface_drag_tl.o \
+		module_bl_gwdo_tl.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o 
 
 module_pbl_driver_ad.o:  \
+		module_bl_surface_drag.o \
+		module_bl_gwdo.o \
 		module_bl_surface_drag_ad.o \
+		module_bl_gwdo_ad.o \
 		../frame/module_state_description.o \
 		../share/module_model_constants.o 
 

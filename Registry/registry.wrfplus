@@ -399,6 +399,17 @@ i1       real  g_p8w             ikj      misc        1         Z
 i1       real  g_t8w             ikj      misc        1         Z
 i1       real  g_rho_phy         ikj      misc        1         -
 
+# Additional for gravity wave drag
+state   real   g_DTAUX3D         ikj     misc        1         -     rh        "g_DTAUX3D"               "LOCAL U GWDO STRESS"   "m s-1"
+state   real   g_DTAUY3D         ikj     misc        1         -     rh        "g_DTAUY3D"               "LOCAL V GWDO STRESS"   "m s-1"
+state   real   g_DUSFCG           ij     misc        1         -     rh        "g_DUSFCG"                "COLUMN-INTEGRATED U GWDO STRESS"   "Pa m s-1"
+state   real   g_DVSFCG           ij     misc        1         -     rh        "g_DVSFCG"                "COLUMN-INTEGRATED V GWDO STRESS"   "Pa m s-1"
+
+state   real   a_DTAUX3D         ikj     misc        1         -     rh        "a_DTAUX3D"               "LOCAL U GWDO STRESS"   "m s-1"
+state   real   a_DTAUY3D         ikj     misc        1         -     rh        "a_DTAUY3D"               "LOCAL V GWDO STRESS"   "m s-1"
+state   real   a_DUSFCG           ij     misc        1         -     rh        "a_DUSFCG"                "COLUMN-INTEGRATED U GWDO STRESS"   "Pa m s-1"
+state   real   a_DVSFCG           ij     misc        1         -     rh        "a_DVSFCG"                "COLUMN-INTEGRATED V GWDO STRESS"   "Pa m s-1"
+
 # g_h_diabatic and a_h_diabatic (Added by Ning Pan, 2010-07-10) 
 state   real    g_h_diabatic     ikj     misc         1         -      rdu      "g_h_diabatic"            "PREVIOUS TIMESTEP CONDENSATIONAL HEATING"         "K s-1"      
 state   real    a_h_diabatic     ikj     misc         1         -      rdu      "a_h_diabatic"            "PREVIOUS TIMESTEP CONDENSATIONAL HEATING"         "K s-1"      

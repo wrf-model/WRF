@@ -440,12 +440,12 @@ state   real    dfi_qg         ikjftb   dfi_moist       1         -     \
 state   real    dfi_qh         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QHAIL"        "Hail mixing ratio"             "kg kg-1"
 state    real   rimi             ikj    misc        1         -     irh         "RIMI"           "riming intensity"  "fraction"
-state    real   re_cloud         ikj    misc        1         -     -         "RE_CLOUD"       "Effective radius cloud water"  "m"
-state    real   re_ice           ikj    misc        1         -     -         "RE_ICE"         "Effective radius cloud ice"    "m"
-state    real   re_snow          ikj    misc        1         -     -         "RE_SNOW"        "Effective radius snow"         "m"
-state  integer  has_reqc          -     misc        1         -     -         "has_reqc"       "Flag for having effective radius cloud water"  ""
-state  integer  has_reqi          -     misc        1         -     -         "has_reqi"       "Flag for having effective radius cloud ice"  ""
-state  integer  has_reqs          -     misc        1         -     -         "has_reqs"       "Flag for having effective radius snow"  ""
+state    real   re_cloud         ikj    misc        1         -     r         "RE_CLOUD"       "Effective radius cloud water"  "m"
+state    real   re_ice           ikj    misc        1         -     r         "RE_ICE"         "Effective radius cloud ice"    "m"
+state    real   re_snow          ikj    misc        1         -     r         "RE_SNOW"        "Effective radius snow"         "m"
+state  integer  has_reqc          -     misc        1         -     r         "has_reqc"       "Flag for having effective radius cloud water"  ""
+state  integer  has_reqi          -     misc        1         -     r         "has_reqi"       "Flag for having effective radius cloud ice"  ""
+state  integer  has_reqs          -     misc        1         -     r         "has_reqs"       "Flag for having effective radius snow"  ""
 
 
 # Other Scalars

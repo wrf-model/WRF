@@ -357,12 +357,12 @@ state  real  GD_CLOUD2_A   ikj  misc     1   -      r      "GD_CLOUD2_A"  "taver
 state  real  GD_CLOUD_B    ikj  misc     1   -      r       "GD_CLOUD_B"   "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
 state  real  GD_CLOUD2_B   ikj  misc     1   -      r       "GD_CLOUD2_B"  "taveragd cloud ice mix ratio in GD"         "kg kg-1"
 state    real  GD_CLDFR         ikj      misc        1         -      r     "GD_CLDFR"              "GD CLOUD Fraction"         " ? "
-state  real  re_cloud   ikj     misc     1    -     -       "re_cloud"        "Effective radius, cloud drops"      "m"
-state  real  re_ice     ikj     misc     1    -     -       "re_ice"          "Effective radius, cloud ice"        "m"
-state  real  re_snow    ikj     misc     1    -     -       "re_snow"         "Effective radius, snow"             "m"
-state  integer  has_reqc   -    misc     1    -     -       "has_reqc"        "Flag for has effective radius of cloud water"    ""
-state  integer  has_reqi   -    misc     1    -     -       "has_reqi"        "Flag for has effective radius of cloud ice"      ""
-state  integer  has_reqs   -    misc     1    -     -       "has_reqs"        "Flag for has effective radius of snow"           ""
+state  real  re_cloud   ikj     misc     1    -     r       "re_cloud"        "Effective radius, cloud drops"      "m"
+state  real  re_ice     ikj     misc     1    -     r       "re_ice"          "Effective radius, cloud ice"        "m"
+state  real  re_snow    ikj     misc     1    -     r       "re_snow"         "Effective radius, snow"             "m"
+state  integer  has_reqc   -    misc     1    -     r       "has_reqc"        "Flag for has effective radius of cloud water"    ""
+state  integer  has_reqi   -    misc     1    -     r       "has_reqi"        "Flag for has effective radius of cloud ice"      ""
+state  integer  has_reqs   -    misc     1    -     r       "has_reqs"        "Flag for has effective radius of snow"           ""
 
 #
 # module_CLDWTR.F

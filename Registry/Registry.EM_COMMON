@@ -671,9 +671,9 @@ state    real   SNOWH            ij     misc        1         -     i012rhd=(int
 state    real   CANWAT           ij     misc        1         -     i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "CANWAT"           "CANOPY WATER"             "kg m-2"
 state  integer  IFNDSNOWH        -      misc        1         -     i         "FNDSNOWH" "SNOWH_LOGICAL"
 state  integer  IFNDSOILW        -      misc        1         -     i         "FNDSOILW" "SOILW_LOGICAL"
-state  integer  IFNDALBSI        -      misc        1         -     i         "FNDALBSI" "ALBSI_LOGICAL"
-state  integer  IFNDSNOWSI       -      misc        1         -     i         "FNDSNOWSI" "SNOWSI_LOGICAL"
-state  integer  IFNDICEDEPTH     -      misc        1         -     i         "FNDICEDEPTH" "ICEDEPTH_LOGICAL"
+state  integer  IFNDALBSI        -      misc        1         -     ir        "FNDALBSI" "ALBSI_LOGICAL"
+state  integer  IFNDSNOWSI       -      misc        1         -     ir        "FNDSNOWSI" "SNOWSI_LOGICAL"
+state  integer  IFNDICEDEPTH     -      misc        1         -     ir        "FNDICEDEPTH" "ICEDEPTH_LOGICAL"
 # SKIN SST
 state    real   SSTSK            ij     misc        1         -     rhd=(interp_mask_field:lu_index,iswater)   "SSTSK"              "SKIN SEA SURFACE TEMPERATURE" "K"
 state    real   DTW              ij     misc        1         -     r   "DTW"              "WARM LAYER TEMP DIFF" "C"

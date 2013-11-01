@@ -1185,7 +1185,7 @@ CONTAINS
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                                                                    )
+                 ,coszen=coszen                                     )
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling cam radiation' )
              ENDIF
@@ -1508,7 +1508,7 @@ CONTAINS
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                                                                    )
+                 ,coszen=coszen                                     )
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling cam radiation' )
              ENDIF
@@ -1699,18 +1699,20 @@ CONTAINS
      if ((sw_physics .ne. rrtmg_swscheme) .and. (sw_physics .ne. goddardswscheme)) then
         do j=jts,jte
            do i=its,ite
-              ioh=solcon*coszen(i,j) ! TOA irradiance
-              kt=swdown(i,j)/max(ioh,1e-3) ! clearness index
-              ! Optical air mass: Rigollier et al. (2000) doi: 10.1016/S0038-092X(99)00055-9
-              airmass=exp(-ht(i,j)/8434.5)/(coszen(i,j)+ &
-                     0.50572*((1.5707963267948966-acos(coszen(i,j)))*57.295779513082323+6.07995)**(-1.6364))
-              ! kt correction for air-mass at large sza: Perez et al. (1990) doi: 10.1016/0038-092X(90)90036-C
-              kt=kt/(0.1+1.031*exp(-1.4/(0.9+(9.4/max(airmass,1e-3)))))
-              ! Diffuse fraction: Ruiz-Arias et al. (2010) (Eq 33) doi: 10.1016/j.enconman.2009.11.024
-              kd=0.952-1.041*exp(-exp(2.300-4.702*kt))
-              swddif(i,j)=kd*swdown(i,j)
-              swddir(i,j)=(1.-kd)*swdown(i,j)
-              swddni(i,j)=swddir(i,j)/max(coszen(i,j),1e-4)
+              if (coszen(i,j).gt.1e-3) then
+                 ioh=solcon*coszen(i,j) ! TOA irradiance
+                 kt=swdown(i,j)/max(ioh,1e-3) ! clearness index
+                 ! Optical air mass: Rigollier et al. (2000) doi: 10.1016/S0038-092X(99)00055-9
+                 airmass=exp(-ht(i,j)/8434.5)/(coszen(i,j)+ &
+                        0.50572*((1.5707963267948966-acos(coszen(i,j)))*57.295779513082323+6.07995)**-1.6364)
+                 ! kt correction for air-mass at large sza: Perez et al. (1990) doi: 10.1016/0038-092X(90)90036-C
+                 kt=kt/(0.1+1.031*exp(-1.4/(0.9+(9.4/max(airmass,1e-3)))))
+                 ! Diffuse fraction: Ruiz-Arias et al. (2010) (Eq 33) doi: 10.1016/j.enconman.2009.11.024
+                 kd=0.952-1.041*exp(-exp(2.300-4.702*kt))
+                 swddif(i,j)=kd*swdown(i,j)
+                 swddir(i,j)=(1.-kd)*swdown(i,j)
+                 swddni(i,j)=swddir(i,j)/max(coszen(i,j),1e-4)
+              end if
            end do
         end do
      end if
@@ -1856,7 +1858,6 @@ CONTAINS
     enddo
     !$OMP END PARALLEL DO
  end if
-
 
      accumulate_lw_select: SELECT CASE(lw_physics)
 

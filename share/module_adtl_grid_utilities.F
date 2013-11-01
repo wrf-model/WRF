@@ -16,6 +16,9 @@ REAL, ALLOCATABLE :: s_tke_2(:,:,:)
 REAL, ALLOCATABLE :: s_p(:,:,:), s_al(:,:,:), s_h_diabatic(:,:,:)
 REAL, ALLOCATABLE :: s_ustm(:,:), s_hfx(:,:), s_qfx(:,:)
 
+REAL, ALLOCATABLE :: s_dtaux3d(:,:,:), s_dtauy3d(:,:,:)
+REAL, ALLOCATABLE :: s_dusfcg(:,:), s_dvsfcg(:,:)
+
 REAL, ALLOCATABLE :: s_u_bxs(:,:,:), s_u_bxe(:,:,:), s_u_bys(:,:,:), s_u_bye(:,:,:)
 REAL, ALLOCATABLE :: s_u_btxs(:,:,:), s_u_btxe(:,:,:), s_u_btys(:,:,:), s_u_btye(:,:,:)
 REAL, ALLOCATABLE :: s_v_bxs(:,:,:), s_v_bxe(:,:,:), s_v_bys(:,:,:), s_v_bye(:,:,:)
@@ -152,6 +155,31 @@ CONTAINS
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to allocate s_qfx(sm31:em31, sm33:em33). ')
+   ENDIF
+
+   IF (gwd_opt .EQ. 1) THEN
+
+   ALLOCATE ( s_dtaux3d(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_dtaux3d(sm31:em31, sm32:em32, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( s_dtauy3d(sm31:em31, sm32:em32, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_dtauy3d(sm31:em31, sm32:em32, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( s_dusfcg(sm31:em31, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_dusfcg(sm31:em31, sm33:em33). ')
+   ENDIF
+   ALLOCATE ( s_dvsfcg(sm31:em31, sm33:em33), STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to allocate s_dvsfcg(sm31:em31, sm33:em33). ')
+   ENDIF
+
    ENDIF
 
    !  Scalar Boundary
@@ -1143,6 +1171,27 @@ CONTAINS
    ENDDO
    ENDDO
 
+   IF ( gwd_opt .EQ. 1 ) THEN
+      s_dtaux3d = 0.0_8
+      s_dtauy3d = 0.0_8
+      s_dusfcg = 0.0_8
+      s_dvsfcg = 0.0_8
+      DO j = jts,MIN(jte,jde-1)
+      DO k = kts,kte-1
+      DO i = its,MIN(ite,ide-1)
+         s_dtaux3d(i,k,j) = grid%dtaux3d(i,k,j)
+         s_dtauy3d(i,k,j) = grid%dtauy3d(i,k,j)
+      ENDDO
+      ENDDO
+      ENDDO
+      DO j = jts,MIN(jte,jde-1)
+      DO i = its,MIN(ite,ide-1)
+         s_dusfcg(i,j) = grid%dusfcg(i,j)
+         s_dvsfcg(i,j) = grid%dvsfcg(i,j)
+      ENDDO
+      ENDDO
+   ENDIF
+
    s_tracer = 0.0
    DO mm = PARAM_FIRST_SCALAR, num_tracer
    DO j = jts,MIN(jte,jde-1)
@@ -1252,6 +1301,13 @@ CONTAINS
    grid%hfx = s_hfx
    grid%qfx = s_qfx
 
+   IF ( gwd_opt .EQ. 1 ) THEN
+      grid%dtaux3d = s_dtaux3d
+      grid%dtauy3d = s_dtauy3d
+      grid%dusfcg = s_dusfcg
+      grid%dvsfcg = s_dvsfcg
+   ENDIF
+
    grid%u_bxs = s_u_bxs; grid%u_bxe = s_u_bxe; grid%u_bys = s_u_bys; grid%u_bye = s_u_bye
    grid%u_btxs = s_u_btxs; grid%u_btxe = s_u_btxe; grid%u_btys = s_u_btys; grid%u_btye = s_u_btye
    grid%v_bxs = s_v_bxs; grid%v_bxe = s_v_bxe; grid%v_bys = s_v_bys; grid%v_bye = s_v_bye
@@ -1340,6 +1396,13 @@ CONTAINS
    grid%g_ustm = 0.0*s_ustm
    grid%g_hfx = 0.0*s_hfx
    grid%g_qfx = 0.0*s_qfx
+ 
+   IF ( gwd_opt .EQ. 1 ) THEN
+      grid%g_dtaux3d = factor_u*s_dtaux3d
+      grid%g_dtauy3d = factor_u*s_dtauy3d
+      grid%g_dusfcg = factor_u*s_dusfcg
+      grid%g_dvsfcg = factor_u*s_dvsfcg
+   ENDIF
 
    grid%g_u_bxs = factor_u*s_u_bxs; grid%g_u_bxe = factor_u*s_u_bxe; grid%g_u_bys = factor_u*s_u_bys; grid%g_u_bye = factor_u*s_u_bye
    grid%g_u_btxs = factor_u*s_u_btxs; grid%g_u_btxe = factor_u*s_u_btxe; grid%g_u_btys = factor_u*s_u_btys; grid%g_u_btye = factor_u*s_u_btye
@@ -1445,6 +1508,13 @@ CONTAINS
    b_qfx = grid%g_qfx
    b_h_diabatic = grid%g_h_diabatic
    
+   IF ( gwd_opt .EQ. 1 ) THEN
+      b_dtaux3d = grid%g_dtaux3d
+      b_dtauy3d = grid%g_dtauy3d
+      b_dusfcg = grid%g_dusfcg
+      b_dvsfcg = grid%g_dvsfcg
+   ENDIF
+
    b_u_bxs = grid%g_u_bxs; b_u_bxe = grid%g_u_bxe; b_u_bys = grid%g_u_bys; b_u_bye = grid%g_u_bye
    b_v_bxs = grid%g_v_bxs; b_v_bxe = grid%g_v_bxe; b_v_bys = grid%g_v_bys; b_v_bye = grid%g_v_bye
    b_w_bxs = grid%g_w_bxs; b_w_bxe = grid%g_w_bxe; b_w_bys = grid%g_w_bys; b_w_bye = grid%g_w_bye
@@ -1786,6 +1856,13 @@ CONTAINS
    grid%hfx = s_hfx
    grid%qfx = s_qfx
    
+   IF ( gwd_opt .EQ. 1 ) THEN
+      grid%dtaux3d = factor_u*s_dtaux3d
+      grid%dtauy3d = factor_u*s_dtauy3d
+      grid%dusfcg = factor_u*s_dusfcg
+      grid%dvsfcg = factor_u*s_dvsfcg
+   ENDIF
+
    grid%u_bxs = factor_u*s_u_bxs; grid%u_bxe = factor_u*s_u_bxe; grid%u_bys = factor_u*s_u_bys; grid%u_bye = factor_u*s_u_bye
    grid%u_btxs = factor_u*s_u_btxs; grid%u_btxe = factor_u*s_u_btxe; grid%u_btys = factor_u*s_u_btys; grid%u_btye = factor_u*s_u_btye
    grid%v_bxs = factor_v*s_v_bxs; grid%v_bxe = factor_v*s_v_bxe; grid%v_bys = factor_v*s_v_bys; grid%v_bye = factor_v*s_v_bye
@@ -2048,6 +2125,23 @@ CONTAINS
    ENDDO
    ENDDO
    ENDDO
+
+   IF ( gwd_opt .EQ. 1 ) THEN
+      DO j = jts,MIN(jte,jde-1)
+      DO k = kts,kte-1
+      DO i = its,MIN(ite,ide-1)
+         grid%a_dtaux3d(i,k,j) = grid%g_dtaux3d(i,k,j)
+         grid%a_dtauy3d(i,k,j) = grid%g_dtauy3d(i,k,j) 
+      ENDDO
+      ENDDO
+      ENDDO
+      DO j = jts,MIN(jte,jde-1)
+      DO i = its,MIN(ite,ide-1)
+         grid%a_dusfcg(i,j) = grid%g_dusfcg(i,j)
+         grid%a_dvsfcg(i,j) = grid%g_dvsfcg(i,j)
+      ENDDO
+      ENDDO
+   ENDIF
 
    RETURN
   END SUBROUTINE copy_g_to_a_adjtest
@@ -2435,6 +2529,23 @@ CONTAINS
    ENDDO
    ENDDO
    ENDDO
+
+   IF ( gwd_opt .EQ. 1 ) THEN
+      DO j = jts,MIN(jte,jde-1)
+      DO k = kts,kte-1
+      DO i = its,MIN(ite,ide-1)
+         save = save + grid%a_dtaux3d(i,k,j) * b_dtaux3d(i,k,j)
+         save = save + grid%a_dtauy3d(i,k,j) * b_dtauy3d(i,k,j)
+      ENDDO
+      ENDDO
+      ENDDO
+      DO j = jts,MIN(jte,jde-1)
+      DO i = its,MIN(ite,ide-1)
+         save = save + grid%a_dusfcg(i,j) * b_dusfcg(i,j)
+         save = save + grid%a_dvsfcg(i,j) * b_dvsfcg(i,j)
+      ENDDO
+      ENDDO
+   ENDIF
   
    DO j=1,spec_bdy_width
    DO k=kts,kte-1
@@ -2969,6 +3080,31 @@ CONTAINS
    IF (ierr.NE.0) THEN
      CALL wrf_error_fatal ( &
      'share/module_adtl_grid_utilities.f: Failed to deallocate s_qfx. ')
+   ENDIF
+
+   IF ( gwd_opt .EQ. 1 ) THEN
+
+   DEALLOCATE ( s_dtaux3d, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_dtaux3d. ')
+   ENDIF
+   DEALLOCATE ( s_dtauy3d, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_dtauy3d. ')
+   ENDIF
+   DEALLOCATE ( s_dusfcg, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_dusfcg. ')
+   ENDIF
+   DEALLOCATE ( s_dvsfcg, STAT=ierr )
+   IF (ierr.NE.0) THEN
+     CALL wrf_error_fatal ( &
+     'share/module_adtl_grid_utilities.f: Failed to deallocate s_dvsfcg. ')
+   ENDIF
+
    ENDIF
 
    !  Scalar Boundary

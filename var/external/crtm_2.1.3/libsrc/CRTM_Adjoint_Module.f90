@@ -828,6 +828,13 @@ CONTAINS
           ! ...Indicate SfcOptics ARE to be computed
           SfcOptics%Compute = .TRUE.
           ! ...Change SfcOptics emissivity/reflectivity contents/computation status
+          if ( options_present ) then
+             User_Emissivity = Options(m)%use_emissivity
+             IF ( User_Emissivity .and.  &
+                  (Options(m)%Emissivity(ln) < ZERO .or. Options(m)%Emissivity(ln) > ONE) ) THEN
+                User_Emissivity = .FALSE.
+             END IF
+          end if
           IF ( User_Emissivity ) THEN
             SfcOptics%Compute = .FALSE.
             SfcOptics%Emissivity(1,1)       = Options(m)%Emissivity(ln)
@@ -1100,6 +1107,11 @@ CONTAINS
                                               AtmOptics_AD    , &  ! AD  Input
                                               Predictor_AD    , &  ! AD  Output
                                               AAVar             )  ! Internal variable input
+
+          ! Gamma correction to optical depth
+          RTSolution_AD(ln,m)%Gamma  = SUM(AtmOptics%Optical_Depth * AtmOptics_AD%Optical_Depth)
+          AtmOptics_AD%Optical_Depth = AtmOptics_AD%Optical_Depth * (RTSolution(ln,m)%Gamma + ONE)
+
         END DO Channel_Loop
 
 

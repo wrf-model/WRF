@@ -137,6 +137,8 @@ MODULE RTV_Define
     REAL(fp), DIMENSION( 0:MAX_N_LAYERS ) :: e_Level_Rad_UP     = ZERO
     REAL(fp), DIMENSION( 0:MAX_N_LAYERS ) :: e_Level_Rad_DOWN   = ZERO
 
+    REAL(fp), DIMENSION(   MAX_N_LAYERS ) :: Overcast           = ZERO
+
     ! Planck radiances
     REAL(fp)                               :: Planck_Surface    = ZERO
     REAL(fp), DIMENSION(  0:MAX_N_LAYERS ) :: Planck_Atmosphere = ZERO

@@ -746,6 +746,10 @@ CONTAINS
                                            AAvar           )  ! Internal variable output
 
 
+          ! Gamma correction to optical depth
+          AtmOptics%Optical_Depth = AtmOptics%Optical_Depth * (RTSolution(ln,m)%Gamma + ONE)
+
+
           ! Compute and save the total atmospheric transmittance
           ! for use in surface optics reflection corrections
           CALL CRTM_Compute_Transmittance(AtmOptics,transmittance)
@@ -840,6 +844,13 @@ CONTAINS
           ! ...Indicate SfcOptics ARE to be computed
           SfcOptics%Compute = .TRUE.
           ! Change SfcOptics emissivity/reflectivity contents/computation status
+          if ( options_present ) then
+             User_Emissivity = Options(m)%use_emissivity
+             IF ( User_Emissivity .and.  &
+                  (Options(m)%Emissivity(ln) < ZERO .or. Options(m)%Emissivity(ln) > ONE) ) THEN
+                User_Emissivity = .FALSE.
+             END IF
+          end if
           IF ( User_Emissivity ) THEN
             SfcOptics%Compute = .FALSE.
             SfcOptics%Emissivity(1,1)       = Options(m)%Emissivity(ln)
@@ -1113,6 +1124,12 @@ CONTAINS
                                               AtmOptics_K , &  ! K   Input
                                               Predictor_K , &  ! K   Output
                                               AAvar         )  ! Internal variable input
+
+
+          ! Gamma correction to optical depth
+          RTSolution_K(ln,m)%Gamma      = RTSolution_K(ln,m)%Gamma + &
+                                          SUM(AtmOptics%Optical_Depth * AtmOptics_K%Optical_Depth)
+          AtmOptics_K%Optical_Depth = AtmOptics_K%Optical_Depth * (RTSolution(ln,m)%Gamma + ONE)
 
 
           ! K-matrix of the NLTE correction predictor calculations

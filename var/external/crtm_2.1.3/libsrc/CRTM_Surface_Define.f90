@@ -321,6 +321,8 @@ CONTAINS
 
   ELEMENTAL SUBROUTINE CRTM_Surface_Destroy( Sfc )
     TYPE(CRTM_Surface_type), INTENT(OUT) :: Sfc
+    TYPE(CRTM_Surface_type) :: Dummy
+    Sfc = Dummy
     Sfc%Is_Allocated = .TRUE.  ! Placeholder for future expansion
   END SUBROUTINE CRTM_Surface_Destroy
 

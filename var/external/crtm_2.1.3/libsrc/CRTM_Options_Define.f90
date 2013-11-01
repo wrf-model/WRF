@@ -355,14 +355,14 @@ CONTAINS
         IF ( ANY(self%Emissivity < ZERO) .OR. ANY(self%Emissivity > ONE) ) THEN
           msg = 'Invalid emissivity'
           CALL Display_Message( ROUTINE_NAME, TRIM(msg), INFORMATION )
-          IsValid = .FALSE.
+          !hcl IsValid = .FALSE.
         END IF
       END IF
       IF ( self%Use_Direct_Reflectivity ) THEN
         IF ( ANY(self%Direct_Reflectivity < ZERO) .OR. ANY(self%Direct_Reflectivity > ONE) ) THEN
           msg = 'Invalid direct reflectivity'
           CALL Display_Message( ROUTINE_NAME, TRIM(msg), INFORMATION )
-          IsValid = .FALSE.
+          !hcl IsValid = .FALSE.
         END IF
       END IF
     END IF

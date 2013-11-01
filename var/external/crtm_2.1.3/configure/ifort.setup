@@ -8,7 +8,7 @@ export FC="ifort"
 export FL="ifort"
 
 # Compiler and linker settings for PRODUCTION builds
-F_COMMON_FLAGS=
+F_COMMON_FLAGS=${ABI_CRTM}
 
 export FC_FLAGS="\
  -c \

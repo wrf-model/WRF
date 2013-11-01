@@ -1148,6 +1148,10 @@ CONTAINS
         RTSolution%Upwelling_Radiance(1:no) = RTV%e_Level_Rad_UP(na+1:nt)
       END IF
     END IF
+
+    ! Fill the RTSolution optional structure with overcast radiances
+    IF ( ALLOCATED( RTSolution%Overcast ) ) &
+       RTSolution%Overcast(:) = RTV%Overcast(RTV%n_Added_Layers+1:RTV%n_Layers)
     
     ! accumulate Fourier component
     RTSolution%Radiance = RTSolution%Radiance + Radiance*  &

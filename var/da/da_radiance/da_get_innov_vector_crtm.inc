@@ -78,6 +78,9 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
    real :: t(1), a(1), p(1)
 
+   integer, allocatable :: wrf_to_crtm_mw(:)
+   integer :: n_vegtype
+
 !! for crtm cloud
    real :: qcw(1),qrn(1), qci(1),qsn(1),qgr(1)
    
@@ -176,6 +179,21 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
       Atmosphere(1)%Cloud(6)%Type=HAIL_CLOUD
    end if
 
+   select case (trim(grid%mminlu))
+      case ('USGS')
+         n_vegtype = USGS_n_type
+      case ('MODIFIED_IGBP_MODIS_NOAH')
+         n_vegtype = IGBP_n_type
+      case default
+         call da_error(__FILE__,__LINE__,(/"Unknown land use type"/))
+   end select
+   allocate(wrf_to_crtm_mw(n_vegtype))
+   if ( n_vegtype == USGS_n_type ) then
+         wrf_to_crtm_mw = usgs_to_crtm_mw
+   else if ( n_vegtype == IGBP_n_type ) then
+         wrf_to_crtm_mw = igbp_to_crtm_mw
+   end if
+
    !------------------------------------------------------
    ! [1.0] calculate the background bright temperature
    !-------------------------------------------------------
@@ -184,6 +202,13 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
       if (iv%instid(inst)%info%n2 < iv%instid(inst)%info%n1) cycle
       num_levs  = kte-kts+1 
       nchanl    = ChannelInfo(inst)%n_channels
+
+      if ( ChannelInfo(inst)%Sensor_Type == 2 ) then  ! INFRARED_SENSOR=2
+         if ( index(grid%mminlu, trim(CRTM_IRlandCoeff_Classification())) <= 0 ) then
+            call da_error(__FILE__,__LINE__, &
+              (/"modify crtm_irland_coef to use the coef file that is consistent with your model land use type"/))
+         end if
+      end if
 
       ! Allocate forward model solution RTSolution array to number of channels
       allocate (RTSolution(ChannelInfo(inst)%n_Channels,1), STAT = Allocate_Status )
@@ -287,7 +312,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 !#endif
 
       if ( use_mspps_emis(inst) ) allocate(em_mspps(nchanl))
-	
+
       pixel_loop: do n=n1,n2
          ! if ( n > iv%instid(inst)%num_rad ) exit
 
@@ -475,7 +500,14 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          end if
 
          if (Surface(1)%Land_Coverage > 0.0) then
-            Surface(1)%Land_Type=GRASS_SOIL           ! land type (User guide appendix 3)
+            Surface(1)%Land_Type       = nint(model_ivgtyp)
+            Surface(1)%Vegetation_Type = max(1,wrf_to_crtm_mw(nint(model_ivgtyp)))
+            Surface(1)%Soil_Type       = max(1,wrf_to_crtm_soil(nint(model_isltyp)))
+            ! glacial land ice soil type and glacial vegetation type are not valid land types
+            if ( surface(1)%Soil_Type == 9 .or. surface(1)%Vegetation_Type == 13 ) then
+               surface(1)%ice_coverage = min(surface(1)%ice_coverage + surface(1)%land_coverage, 1.0)
+               surface(1)%land_coverage = 0
+            end if
             Surface(1)%Land_Temperature=model_ts(n)      ! K
             Surface(1)%Soil_Moisture_Content= model_smois(n) !0.05    ! volumetric water content (g/cm**3)
             ! Surface(1)%Canopy_Water_Content=0.05      ! gravimetric water content
@@ -491,7 +523,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          end if
 
          if (Surface(1)%Snow_Coverage > 0.0) then
-            Surface(1)%Snow_Type=NEW_SNOW             ! User guide appendix 3
+            Surface(1)%Snow_Type=2 !NEW_SNOW
             Surface(1)%Snow_Temperature=model_ts(n)      ! K
             Surface(1)%Snow_Depth=model_snowh(n)         ! mm
             ! Surface(1)%Snow_Density=0.2               ! g/cm**3
@@ -847,6 +879,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
       endif
 
    end do        ! end loop for sensor
+
+   deallocate (wrf_to_crtm_mw)
 
    call CRTM_Atmosphere_Destroy (Atmosphere)
    IF ( CRTM_Atmosphere_Associated( Atmosphere(1) ) ) &

@@ -118,9 +118,11 @@ MODULE CRTM_RTSolution_Define
     REAL(fp) :: Surface_Planck_Radiance = ZERO
     REAL(fp), ALLOCATABLE :: Upwelling_Radiance(:)   ! K
     REAL(fp), ALLOCATABLE :: Layer_Optical_Depth(:)  ! K
+    REAL(fp), ALLOCATABLE :: Overcast(:)             ! Overcast radiances
     ! Radiative transfer results for a single channel/node
     REAL(fp) :: Radiance               = ZERO
     REAL(fp) :: Brightness_Temperature = ZERO
+    REAL(fp) :: Gamma                  = ZERO
   END TYPE CRTM_RTSolution_type
   !:tdoc-:
 
@@ -248,6 +250,7 @@ CONTAINS
     ! Perform the allocation
     ALLOCATE( RTSolution%Upwelling_Radiance(n_Layers), &
               RTSolution%Layer_Optical_Depth(n_Layers), &
+              RTSolution%Overcast(n_Layers), &
               STAT = alloc_stat )
     IF ( alloc_stat /= 0 ) RETURN
 
@@ -257,6 +260,7 @@ CONTAINS
     ! ...Arrays
     RTSolution%Upwelling_Radiance  = ZERO
     RTSolution%Layer_Optical_Depth = ZERO
+    RTSolution%Overcast            = ZERO
 
     ! Set allocation indicator
     RTSolution%Is_Allocated = .TRUE.
@@ -305,11 +309,13 @@ CONTAINS
     RTSolution%Surface_Planck_Radiance = ZERO
     RTSolution%Radiance                = ZERO
     RTSolution%Brightness_Temperature  = ZERO
+    RTSolution%Gamma                   = ZERO
 
     ! Zero out the array data components
     IF ( CRTM_RTSolution_Associated(RTSolution) ) THEN
       RTSolution%Upwelling_Radiance  = ZERO
       RTSolution%Layer_Optical_Depth = ZERO
+      RTSolution%overcast            = ZERO
     END IF
 
   END SUBROUTINE CRTM_RTSolution_Zero
@@ -358,9 +364,12 @@ CONTAINS
       WRITE(*,'(5(1x,es13.6,:))') RTSolution%Upwelling_Radiance
       WRITE(*,'(3x,"Layer Optical Depth      :")')
       WRITE(*,'(5(1x,es13.6,:))') RTSolution%Layer_Optical_Depth
+      WRITE(*,'(3x,"Overcast                 :")')
+      WRITE(*,'(5(1x,es13.6,:))') RTSolution%Overcast
     END IF
     WRITE(*,'(3x,"Radiance                 : ",es13.6)') RTSolution%Radiance
     WRITE(*,'(3x,"Brightness Temperature   : ",es13.6)') RTSolution%Brightness_Temperature
+    WRITE(*,'(3x,"Gamma                    : ",es13.6)') RTSolution%Gamma
   END SUBROUTINE Scalar_Inspect
 
 

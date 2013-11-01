@@ -311,7 +311,7 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
          Surface(n)%Ice_Coverage=iv%instid(inst)%ice_coverage(n)
 
          if (Surface(n)%Land_Coverage > 0.0) then
-            Surface(n)%Land_Type=GRASS_SOIL           ! land type (User guide appendix 3)
+            Surface(n)%Land_Type=11 !GRASS_SOIL
             Surface(n)%Land_Temperature=iv%instid(inst)%ts(n)      ! K
             Surface(n)%Soil_Moisture_Content=iv%instid(inst)%smois(n)  !0.05    ! volumetric water content (g/cm**3)
             !Surface(n)%Canopy_Water_Content=0.05      ! gravimetric water content
@@ -327,7 +327,7 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
             Surface(n)%Salinity=33.0                  ! ppmv
          end if
          if (Surface(n)%Snow_Coverage > 0.0) then
-            Surface(n)%Snow_Type=NEW_SNOW             ! User guide appendix 3
+            Surface(n)%Snow_Type=2 !NEW_SNOW
             Surface(n)%Snow_Temperature=iv%instid(inst)%ts(n)      ! K
             Surface(n)%Snow_Depth=iv%instid(inst)%snowh(n)         ! mm
             !Surface(n)%Snow_Density=0.2               ! g/cm**3

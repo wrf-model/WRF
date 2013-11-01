@@ -52,6 +52,7 @@ LINK = ln -sf
 COPY = cp 
 MOVE = mv -f
 REMOVE = rm -f
+MAKE = make -i -r
 
 
 # Define tarballer commands

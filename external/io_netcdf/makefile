@@ -6,7 +6,7 @@ CODE    = ext_ncd_get_dom_ti.code ext_ncd_get_var_td.code ext_ncd_get_var_ti.cod
 FFLAGS  =  $(FCFLAGS) -I$(NETCDFPATH)/include -I../ioapi_share
 LIBS    = $(LIB_LOCAL) -L$(NETCDFPATH)/lib -lnetcdf
 LIBFFS  = $(LIB_LOCAL) -L$(NETCDFPATH)/lib -lnetcdff -lnetcdf
-CPP1    = $(CPP) -C -P $(TRADFLAG)
+CPP1    = $(CPP) -P $(TRADFLAG)
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
 

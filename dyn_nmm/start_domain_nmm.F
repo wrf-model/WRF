@@ -2030,7 +2030,6 @@
 !-----------------------------------------------------------------------
 !---- Initialization for gravity wave drag (GWD) & mountain blocking (MB)
 !
-      IF(grid%gwd_opt .eq. 2 .AND. grid%id .eq. 1) THEN  !Added by Thiago:
       CALL nl_get_cen_lat(GRID%ID, CEN_LAT)    !-- CEN_LAT in deg
       CALL nl_get_cen_lon(GRID%ID, CEN_LON)    !-- CEN_LON in deg
       DTPHS=grid%dt*grid%nphs
@@ -2039,7 +2038,6 @@
      &              ,IDS,IDE,JDS,JDE,KDS,KDE                            &
      &              ,IMS,IME,JMS,JME,KMS,KME                            &
      &              ,ITS,ITE,JTS,JTE,KTS,KTE )
-      ENDIF
       IF(.NOT.RESTRT)THEN
         DO J=MYJS,MYJE
         DO I=MYIS,MYIE

@@ -3400,22 +3400,17 @@ BENCH_START(g_micro_driver_tim)
 
      CALL g_microphysics_driver(                                            &
       &         DT=dtm             ,DX=grid%dx              ,DY=grid%dy     &
-      &        ,DZ8W=dz8w          ,G_DZ8W=g_dz8w, F_ICE_PHY=grid%f_ice_phy &
+      &        ,DZ8W=dz8w          ,DZ8WD=g_dz8w, F_ICE_PHY=grid%f_ice_phy &
       &        ,ITIMESTEP=grid%itimestep                    ,LOWLYR=grid%lowlyr  &
-      &        ,P8W=p8w            ,G_P8W=g_p8w, P=p_phy            ,G_P=g_p_phy &
-      &        ,PI_PHY=pi_phy,G_PI_PHY=g_pi_phy                          &
-      &        ,RHO=rho            ,G_RHO=g_rho, SPEC_ZONE=grid%spec_zone              &
-      &        ,SR=grid%sr              ,TH=th_phy,G_TH=g_th_phy                        &
+      &        ,P8W=p8w            ,P=p_phy            ,PD=g_p_phy &
+      &        ,PI_PHY=pi_phy,PI_PHYD=g_pi_phy                          &
+      &        ,RHO=rho            ,RHOD=g_rho, SPEC_ZONE=grid%spec_zone              &
+      &        ,SR=grid%sr              ,TH=th_phy,THD=g_th_phy                        &
       &        ,refl_10cm=grid%refl_10cm                                  & ! hm, 9/22/09 for refl
       &        ,WARM_RAIN=grid%warm_rain                                  &
       &        ,T8W=t8w                                                   &
       &        ,CLDFRA=grid%cldfra, EXCH_H=grid%exch_h &
       &        ,NSOURCE=grid%qndropsource                                 &
-#ifdef WRF_CHEM
-      &        ,QLSINK=grid%qlsink,CLDFRA_OLD=grid%cldfra_old             &
-      &        ,PRECR=grid%precr, PRECI=grid%preci, PRECS=grid%precs, PRECG=grid%precg &
-      &        ,CHEM_OPT=config_flags%chem_opt, PROGN=config_flags%progn  &
-#endif
       &        ,XLAND=grid%xland                                          &
       &        ,SPECIFIED=specified_bdy, CHANNEL_SWITCH=channel_bdy       &
       &        ,F_RAIN_PHY=grid%f_rain_phy                                &
@@ -3432,22 +3427,21 @@ BENCH_START(g_micro_driver_tim)
       &        ,NAER=grid%naer                                            &
                  ! Optional
       &        , RAINNC=grid%rainnc, RAINNCV=grid%rainncv                 &
-      &        , G_RAINNC=grid%g_rainnc, G_RAINNCV=grid%g_rainncv         &
+      &        , RAINNCD=grid%g_rainnc, RAINNCVD=grid%g_rainncv         &
       &        , SNOWNC=grid%snownc, SNOWNCV=grid%snowncv                 &
       &        , GRAUPELNC=grid%graupelnc, GRAUPELNCV=grid%graupelncv     & ! for milbrandt2mom
       &        , HAILNC=grid%hailnc, HAILNCV=grid%hailncv                 &
       &        , W=grid%w_2, Z=grid%z, HT=grid%ht                         &
-      &        , g_W=grid%g_w_2, g_Z=grid%g_z                             &
       &        , MP_RESTART_STATE=grid%mp_restart_state                   &
       &        , TBPVS_STATE=grid%tbpvs_state                             & ! etampnew
       &        , TBPVS0_STATE=grid%tbpvs0_state                           & ! etampnew
-      &        , QV_CURR=moist(ims,kms,jms,P_QV),G_QV_CURR=g_moist(ims,kms,jms,P_QV), F_QV=F_QV               &
-      &        , QC_CURR=moist(ims,kms,jms,P_QC),G_QC_CURR=g_moist(ims,kms,jms,P_QC), F_QC=F_QC               &
-      &        , QR_CURR=moist(ims,kms,jms,P_QR),G_QR_CURR=g_moist(ims,kms,jms,P_QR), F_QR=F_QR               &
-      &        , QI_CURR=moist(ims,kms,jms,P_QI),G_QI_CURR=g_moist(ims,kms,jms,P_QI), F_QI=F_QI               &
-      &        , QS_CURR=moist(ims,kms,jms,P_QS),G_QS_CURR=g_moist(ims,kms,jms,P_QS), F_QS=F_QS               &
-      &        , QG_CURR=moist(ims,kms,jms,P_QG),G_QG_CURR=g_moist(ims,kms,jms,P_QG), F_QG=F_QG               &
-      &        , QH_CURR=moist(ims,kms,jms,P_QH),G_QH_CURR=g_moist(ims,kms,jms,P_QH), F_QH=F_QH               & ! for milbrandt2mom
+      &        , QV_CURR=moist(ims,kms,jms,P_QV),QV_CURRD=g_moist(ims,kms,jms,P_QV), F_QV=F_QV               &
+      &        , QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC               &
+      &        , QR_CURR=moist(ims,kms,jms,P_QR), F_QR=F_QR               &
+      &        , QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI               &
+      &        , QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS               &
+      &        , QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG               &
+      &        , QH_CURR=moist(ims,kms,jms,P_QH), F_QH=F_QH               & ! for milbrandt2mom
       &        , QNDROP_CURR=scalar(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP &
 #ifdef WRF_CHEM
       &        , RAINPROD=grid%rainprod, EVAPPROD=grid%evapprod           &

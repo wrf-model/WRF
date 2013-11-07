@@ -234,20 +234,19 @@ BENCH_END(phy_prep_tim)
 BENCH_START(a_cu_driver_tim)
       CALL a_cumulus_driver(grid                                             &
                  ! Prognostic variables
-     &             ,U=u_phy, V=v_phy, TH=th_phy, a_TH=a_th_phy, T=grid%t_phy, a_T=grid%a_t_phy  &
-     &             ,W=grid%w_2, P=grid%p_hyd, a_P=grid%a_p_hyd, PI=pi_phy, RHO=rho, a_RHO=a_rho &
+     &             ,U=u_phy, V=v_phy, TH=th_phy, THB=a_th_phy, T=grid%t_phy, TB=grid%a_t_phy  &
+     &             ,W=grid%w_2, P=grid%p_hyd, PB=grid%a_p_hyd, PI=pi_phy, RHO=rho, RHOB=a_rho &
                  ! Other arguments
      &             ,ITIMESTEP=grid%itimestep ,DT=grid%dt      ,DX=grid%dx              &
      &             ,CUDT=grid%cudt,CURR_SECS=curr_secs,ADAPT_STEP_FLAG=adapt_step_flag &
      &             ,CUDTACTTIME=grid%cudtacttime                                       &
      &             ,RAINC=grid%rainc   ,RAINCV=grid%raincv   ,PRATEC=grid%pratec       &
-     &                         ,a_RAINCV=grid%a_raincv   ,a_PRATEC=grid%a_pratec       &
+     &                         ,RAINCVB=grid%a_raincv                                  &
      &             ,NCA=grid%nca                                                       &
      &             ,HTOP=grid%cutop     ,HBOT=grid%cubot       ,KPBL=grid%kpbl         &
-     &             ,a_HTOP=grid%a_cutop     ,a_HBOT=grid%a_cubot                       &
      &             ,Z=grid%z ,Z_AT_W=grid%z_at_w ,MAVAIL=grid%mavail ,PBLH=grid%pblh   &
      &             ,DZ8W=dz8w     ,P8W=grid%p_hyd_w, PSFC=grid%psfc, TSK=grid%tsk      &
-     &             ,a_Z=grid%a_z, a_DZ8W=a_dz8w                                        &
+     &             ,ZB=grid%a_z, DZ8WB=a_dz8w                                        &
      &             ,TKE_PBL=grid%tke_pbl, UST=grid%ust                                 &
      &             ,W0AVG=grid%w0avg   ,STEPCU=grid%stepcu                             &
      &             ,CLDEFI=grid%cldefi ,LOWLYR=grid%lowlyr ,XLAND=grid%xland           &
@@ -303,7 +302,7 @@ BENCH_START(a_cu_driver_tim)
      &             ,NUM_TILES=grid%num_tiles                              &
                  ! Moisture tendency arguments
      &             ,RQVCUTEN=grid%rqvcuten , RQCCUTEN=grid%rqccuten       &
-     &             ,a_RQVCUTEN=grid%a_rqvcuten                            &
+     &             ,RQVCUTENB=grid%a_rqvcuten                            &
      &             ,RQSCUTEN=grid%rqscuten , RQICUTEN=grid%rqicuten       &
      &             ,RQRCUTEN=grid%rqrcuten                                &
      &             ,RQVBLTEN=grid%rqvblten , RQVFTEN=grid%rqvften         &
@@ -311,10 +310,10 @@ BENCH_START(a_cu_driver_tim)
      &             ,RTHRATEN=grid%rthraten , RTHBLTEN=grid%rthblten       &
      &             ,RUCUTEN=grid%rucuten   , RVCUTEN=grid%rvcuten         &
      &             ,RTHCUTEN=grid%rthcuten , RTHFTEN=grid%rthften         &
-     &             ,a_RTHCUTEN=grid%a_rthcuten                            &
+     &             ,RTHCUTENB=grid%a_rthcuten                            &
                  ! Moisture tracer arguments
      &             ,QV_CURR=moist(ims,kms,jms,P_QV), F_QV=F_QV            &
-     &             ,a_QV_CURR=a_moist(ims,kms,jms,P_QV)                   &
+     &             ,QV_CURRB=a_moist(ims,kms,jms,P_QV)                   &
      &             ,QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC            &
      &             ,QR_CURR=moist(ims,kms,jms,P_QR), F_QR=F_QR            &
      &             ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI            &

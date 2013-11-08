@@ -373,7 +373,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                   iprt_nudob,                                        &
                   ids,ide, jds,jde, kds,kde,                         & ! domain dims
                   ims,ime, jms,jme, kms,kme,                         & ! memory dims
-                  its,ite, jts,jte, kts,kte         )                  ! tile   dims
+                  its,ite, jts,jte, kts,kte,                         & ! tile   dims
+                  qvb, config_flags%obs_scl_neg_qv_innov ) ! Water vapor mixing ratio / scale negative qv innovations
 !         write(6,*) 'return from nudob: IVAR=3, J = ',j
        ENDIF
 
@@ -405,7 +406,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                   iprt_nudob,                                        &
                   ids,ide, jds,jde, kds,kde,                         & ! domain dims
                   ims,ime, jms,jme, kms,kme,                         & ! memory dims
-                  its,ite, jts,jte, kts,kte         )                  ! tile   dims
+                  its,ite, jts,jte, kts,kte,                         & ! tile   dims
+                  qvb, config_flags%obs_scl_neg_qv_innov ) ! Water vapor mixing ratio / scale negative qv innovations
 !         write(6,*) 'return from nudob: IVAR=4, J = ',j
        ENDIF
      ENDIF
@@ -438,7 +440,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                 iprt_nudob,                                          &
                 ids,ide, jds,jde, kds,kde,                           & ! domain dims
                 ims,ime, jms,jme, kms,kme,                           & ! memory dims
-                its,ite, jts,jte, kts,kte         )                    ! tile   dims
+                its,ite, jts,jte, kts,kte,                           & ! tile   dims
+                qvb, config_flags%obs_scl_neg_qv_innov ) ! Water vapor mixing ratio / scale negative qv innovations
 !       write(6,*) 'return from nudob: IVAR=1, J = ',j
 
 !       write(6,*) 'calling nudob: IVAR=2, J = ',j
@@ -467,7 +470,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                 iprt_nudob,                                          &
                 ids,ide, jds,jde, kds,kde,                           & ! domain dims
                 ims,ime, jms,jme, kms,kme,                           & ! memory dims
-                its,ite, jts,jte, kts,kte         )                    ! tile   dims
+                its,ite, jts,jte, kts,kte,                           & ! tile   dims
+                qvb, config_flags%obs_scl_neg_qv_innov ) ! Water vapor mixing ratio / scale negative qv innovations
 !       write(6,*) 'return from nudob: IVAR=2, J = ',j
      ENDIF
   ENDDO

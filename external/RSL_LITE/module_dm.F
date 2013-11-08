@@ -1559,6 +1559,7 @@ CONTAINS
     REAL QRK_BUFFER(NIOBF)    ! Buffer for holding Q or RKO
     REAL SFP_BUFFER(NIOBF)    ! Buffer for holding Surface pressure
     REAL PBL_BUFFER(NIOBF)    ! Buffer for holding (real) KPBL index
+    REAL QATOB_BUFFER(NIOBF)  ! Buffer for holding QV at the ob location
     INTEGER N_BUFFER(NIOBF)
     REAL FULL_BUFFER(NIOBF)
     INTEGER IFULL_BUFFER(NIOBF)
@@ -1666,6 +1667,7 @@ CONTAINS
        QRK_BUFFER(NLOCAL_CRS) = ERRF(4,N)     ! MOISTURE
        PBL_BUFFER(NLOCAL_CRS) = ERRF(5,N)     ! KPBL
        SFP_BUFFER(NLOCAL_CRS) = ERRF(6,N)     ! SURFACE PRESSURE
+       QATOB_BUFFER(NLOCAL_CRS) = ERRF(10,N)     ! Model Mixing ratio itself (NOT ERROR)
        N_BUFFER(NLOCAL_CRS) = N
      ENDIF
    ENDDO
@@ -1708,6 +1710,15 @@ CONTAINS
    DO N = 1, NSTA
      ERRF(6,IFULL_BUFFER(N)) = FULL_BUFFER(N)
    ENDDO
+
+! Water vapor mixing ratio at the mass points (NOT THE ERROR)
+   CALL MPI_ALLGATHERV( QATOB_BUFFER, NLOCAL_CRS, MPI_REAL,     &
+                        FULL_BUFFER, ICOUNT, IDISPLACEMENT,   &
+                        MPI_REAL, MPI_COMM_COMP, IERR)
+   DO N = 1, NSTA
+     ERRF(10,IFULL_BUFFER(N)) = FULL_BUFFER(N)
+   ENDDO
+
 #endif
    END SUBROUTINE get_full_obs_vector
 

@@ -2025,6 +2025,7 @@ rconfig   logical     obs_ipf_in4dob      namelist,fdda            1            
 rconfig   logical     obs_ipf_errob       namelist,fdda            1              .false. h        "obs_ipf_errob"     "Print obs error diagnostics"   ""
 rconfig   logical     obs_ipf_nudob       namelist,fdda            1              .false. h        "obs_ipf_nudob"     "Print obs nudge diagnostics"   ""
 rconfig   logical     obs_ipf_init        namelist,fdda            1              .true.  h        "obs_ipf_init"      "Enable obs init warning messages"   ""
+rconfig   integer     obs_scl_neg_qv_innov namelist,fdda           1              0       h        "obs_scl_neg_qv_innov" "Scale certain negative QV innovations"   ""
 
 # Single-column model (SCM)
 rconfig   integer scm_force               namelist,scm  1       0           rh   "scm_force"            "SCM forcing switch" ""
@@ -2147,7 +2148,7 @@ rconfig   integer compression             namelist,grib2 	        1      40    r
 
 # NAMELIST DERIVED
 rconfig   integer nobs_ndg_vars           derived                       1         6       -        "num_ndg_vars"         "Number of nudging variables"          ""
-rconfig   integer nobs_err_flds           derived                       1         9       -        "num_err_flds"         "Number of error fields"               ""
+rconfig   integer nobs_err_flds           derived                       1         10      -        "num_err_flds"         "Number of error fields"               ""
 rconfig   real    cen_lat                 derived                  max_domains    0       -        "cen_lat"              "center latitude"      "degrees, negative is south"
 rconfig   real    cen_lon                 derived                  max_domains    0       -        "cen_lon"              "central longitude"      "degrees, negative is west"
 rconfig   real    truelat1                derived                  max_domains    0       -        "true_lat1"             "first standard parallel"      "degrees, negative is south"

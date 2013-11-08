@@ -99,6 +99,7 @@ module da_control
 
    integer, parameter ::  missing       = -888888
    real   , parameter ::  missing_r     = -888888.0
+   real   , parameter ::  xmiss         = -88.0
    real   , parameter ::  Max_StHeight_Diff = 100.0
 
    integer, parameter :: cv_options_hum_specific_humidity = 1

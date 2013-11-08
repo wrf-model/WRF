@@ -24,7 +24,6 @@ subroutine da_read_obs_bufrgpsro (iv)
 
    real,    parameter   :: r8bfms = 9.0D08  ! BUFR missing value threshold
    integer, parameter   :: maxlevs = 500
-   real,    parameter   :: xmiss = -888.0
    integer              :: iunit, iost, idate, iret, nlev1, nlev2,k,i,ii
    integer              :: num_report, num_outside_all, num_outside_time
    integer              :: iyear,imonth,iday,ihour,imin

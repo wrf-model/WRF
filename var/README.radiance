@@ -7,11 +7,8 @@ required for radiance data assimilation.
 Please see also Chapter 6 of WRF ARW User's Guide for more details.
 
 RTM (Radiative Transfer Model) that can be used in WRFDA:
-  CRTM REL-2.0.2
-  RTTOV v10
-
-DISCLAIMER: No support is to be expected on radiance data assimilation 
-            due to a lack of funding allocated to this task.
+  CRTM REL-2.1.3
+  RTTOV v11
 =============================================================================
 
 Setup and Run - with radiance data
@@ -20,14 +17,17 @@ Setup and Run - with radiance data
 
 In addition to the basic input files (LANDUSE.TBL, fg, ob.ascii, be.dat) mentioned
 in README.basics, the following extra files are required for radiance:
-  radiance data in NCEP BUFR format, radiance_info files, VARBC.in, 
+  radiance data in NCEP BUFR format, radiance_info files, VARBC.in,
   RTM (CRTM or RTTOV) coefficient files (see "Notes on coefficients" below).
 
   ln -sf ${DAT_DIR}/gdas1.t00z.1bamua.tm00.bufr_d  ./amsua.bufr
   ln -sf ${DAT_DIR}/gdas1.t00z.1bamub.tm00.bufr_d  ./amsub.bufr
   ln -sf WRFDA/var/run/radiance_info    ./radiance_info  # radiance_info is a directory
   ln -sf WRFDA/var/run/VARBC.in         ./VARBC.in
-  (CRTM only)  ln -sf REL-2.0.2.JCSDA_CRTM/crtm_coeffs ./crtm_coeffs  # crtm_coeffs is a directory
+  (CRTM only)
+     Either ln -sf WRFDA/var/run/crtm_coeffs_2.1.3 ./crtm_coeffs  # crtm_coeffs is a directory
+     or set namelist variable crtm_coef_path to the location of coef files
+        crtm_coef_path='/user/WRFDA/var/run/crtm_coeffs_2.1.3'
   (RTTOV only) ln -sf rttov10/rtcoef_rttov10/rttov7pred51L ./rttov_coeffs  # rttov_coeffs is a directory
 
 2. namelist.input
@@ -54,6 +54,10 @@ See WRFDA/var/README.namelist for namelist descriptions.
  use_varbc=true,
  use_crtm_kmatrix=true,
  use_rttov_kmatrix=true,
+ crtm_coef_path='./crtm_coeffs'
+ crtm_mwwater_coef='FASTEM5.MWwater.EmisCoeff.bin'
+ crtm_irwater_coef='Nalli.IRwater.EmisCoeff.bin'
+ crtm_irland_coef='USGS.IRland.EmisCoeff.bin'
  rttov_emis_atlas_ir=0,
  rttov_emis_atlas_mw=0,
 /
@@ -69,24 +73,14 @@ time_window_max="2008-02-05_13:30:00.0000",
 (1) for CRTM
 
 Some CRTM coefficient files are included in the WRFDA tar file under
-WRFDA/var/run/crtm_coeffs directory (please see also WRFDA/var/run/README).
+WRFDA/var/run/crtm_coeffs_2.1.3 directory (please see also WRFDA/var/run/README).
 The full set of CRTM coefficients can be downloaded from:
-ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/REL-2.0.2/REL-2.0.2.Coeffs.JCSDA_CRTM.tar.gz
-After unzip/untar REL-2.0.2.Coeffs.JCSDA_CRTM.tar.gz, you will find all
-the coefficient files under the directory CRTM_Coefficients
-You will need to create another directory to copy or link the files
-that will be used in WRFDA. Please see also the CRTM user guide
-ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/REL-2.0.2/REL-2.0.2.CRTM_User_Guide.pdf
-for the options of EmisCoeff and TauCoeff.
-
-   mkdir crtm_coeffs
-   cd crtm_coeffs
-   ln -sf ../CRTM_Coefficients/AerosolCoeff/Big_Endian/AerosolCoeff.bin .
-   ln -sf ../CRTM_Coefficients/CloudCoeff/Big_Endian/CloudCoeff.bin .
-   ln -sf ../CRTM_Coefficients/EmisCoeff/Big_Endian/Wu-Smith.CM-PDF.HQS_HQS-RefInd.EmisCoeff.bin
-                (or Nalli.EK-PDF.W_W-RefInd.EmisCoeff.bin) ./EmisCoeff.bin
-   ln -sf ../CRTM_Coefficients/SpcCoeff/Big_Endian/*.bin .
-   ln -sf ../CRTM_Coefficients/TauCoeff/ODAS(or ODPS)/Big_Endian/*.bin .
+ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/REL-2.1.3/REL-2.1.3.CRTM.tar.gz
+After unzip/untar REL-2.1.3.CRTM.tar.gz, you will find all the coefficient files
+under the directory fix. You will need to create another directory to copy or link 
+the files that will be used in WRFDA. Please see also the CRTM user guide
+ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/REL-2.1.3/REL-2.1.3.CRTM_User_Guide.pdf
+for the options of proper coefficient files for your applications.
 
 (2) for RTTOV
 
@@ -97,5 +91,5 @@ downloaded separately are placed in different sub-directories.
 To run WRFDA, the coefficient files to be used should all be under the 
 rttov_coeffs sub-directory in the WRFDA working directory.
 For most basic applications, the coefficient files available in the RTTOV source 
-code rttov10/rtcoef_rttov10/rttov7pred51L would be sufficient.
+code rttov11/rtcoef_rttov11/rttov7pred51L would be sufficient.
 

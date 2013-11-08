@@ -806,6 +806,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
 
          case (116) ;
             if (.not. use_gpsrefobs) cycle reports
+            if ( ob_format_gpsro /= ob_format_ascii ) cycle reports
             if (n==1) ntotal(gpsref) = ntotal(gpsref) + 1 
             if (outside) cycle reports
             nlocal(gpsref) = nlocal(gpsref) + 1

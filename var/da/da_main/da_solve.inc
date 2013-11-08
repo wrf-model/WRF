@@ -183,7 +183,7 @@
       num_qcstat_conv=0
 
 #if defined(RTTOV) || defined(CRTM)
-      if (use_varbc.or.freeze_varbc) call da_varbc_init(iv, be)
+      if (use_rad .and. (use_varbc.or.freeze_varbc)) call da_varbc_init(iv, be)
 #endif
 
       call da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid , config_flags)
@@ -243,7 +243,7 @@
    ! [5.2] Set up observation bias correction (VarBC):
    !---------------------------------------------------------------------------
 #if defined(RTTOV) || defined(CRTM)
-   if (use_varbc.or.freeze_varbc) call da_varbc_init(iv, be)
+   if (use_rad .and. (use_varbc.or.freeze_varbc)) call da_varbc_init(iv, be)
 #endif
 
    !---------------------------------------------------------------------------
@@ -576,8 +576,6 @@
       ! [8.7.1] Write Ascii radar OMB and OMA file
 
       if (use_radarobs) then
-         write(unit=stdout,fmt='(A)')  'Writing radar OMB and OMA ascii file'
-         write(unit=stdout,fmt=*)  " "
          call da_write_oa_radar_ascii (ob,iv,re)
       end if
 
@@ -586,16 +584,14 @@
       ! [8.8] Write Ascii radiance OMB and OMA file
 
 #if defined(CRTM) || defined(RTTOV)
-      if (write_oa_rad_ascii) then
-         write(unit=stdout,fmt='(A)')  'Writing radiance OMB and OMA ascii file'
-         write(unit=stdout,fmt=*)  " "
+      if (use_rad .and. write_oa_rad_ascii) then
          call da_write_oa_rad_ascii (it,ob,iv,re)
       end if
 #endif
 
       ! [8.9] Update VarBC parameters and write output file
 #if defined(CRTM) || defined(RTTOV)      
-      if ( (use_varbc).or.(freeze_varbc) ) &
+      if ( use_rad .and. (use_varbc.or.freeze_varbc) ) &
                 call da_varbc_update(it, cv_size, xhat, iv)
 #endif
 
@@ -823,7 +819,7 @@
 
          end if
 
-	  if ( (use_varbc).or.(freeze_varbc) ) then
+	  if ( use_rad .and. (use_varbc.or.freeze_varbc) ) then
 	     if (iv%instid(i)%varbc_info%npredmax > 0) then
                 deallocate (iv%instid(i)%varbc_info%pred)
                 deallocate (iv%instid(i)%varbc_info%pred_mean)

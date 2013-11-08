@@ -286,6 +286,7 @@ subroutine da_scan_obs_ascii (iv, filename)
 
          case (116) ;
             if (.not.use_gpsrefobs .or. iv%info(gpsref)%ntotal == max_gpsref_input) cycle reports
+            if ( ob_format_gpsro /= ob_format_ascii ) cycle reports
             if (n==1) iv%info(gpsref)%ntotal = iv%info(gpsref)%ntotal + 1
             if (outside) cycle reports
             iv%info(gpsref)%nlocal = iv%info(gpsref)%nlocal + 1

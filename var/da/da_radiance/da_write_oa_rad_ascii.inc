@@ -22,6 +22,9 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
 
    if (trace_use) call da_trace_entry("da_write_oa_rad_ascii")
 
+   write(unit=message(1),fmt='(A)') 'Writing radiance OMA ascii file'
+   call da_message(message(1:1))
+
    do i = 1, iv%num_inst
       if (iv%instid(i)%num_rad < 1) cycle
 

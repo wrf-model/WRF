@@ -242,8 +242,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
    !----------------------------------------------
    ! [5]  write out radiance iv in ascii format
    !-----------------------------------------------
-   if (write_iv_rad_ascii) then
-      write(unit=stdout,fmt='(A)')  'Writing radiance iv ascii'
+   if (use_rad .and. write_iv_rad_ascii) then
       call da_write_iv_rad_ascii(it,ob,iv)
    end if
 #endif

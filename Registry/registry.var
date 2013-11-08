@@ -111,6 +111,7 @@ rconfig   logical   var_wind                namelist,wrfvar2  1  .false.  -  "va
 rconfig   logical   qc_rej_both             namelist,wrfvar2  1  .false.  -  "qc_rej_both"             ""  ""
 rconfig   integer   fg_format               namelist,wrfvar3  1  1        - "fg_format"                ""  "1=WRF-ARW, 2=WRF-NMM, 3=WRF-GLOBAL, 4=KMA"
 rconfig   integer   ob_format               namelist,wrfvar3  1  2        - "ob_format"                ""  "1=BUFR,2=ASCII"
+rconfig   integer   ob_format_gpsro         namelist,wrfvar3  1  2        - "ob_format_gpsro"          ""  "1=BUFR,2=ASCII"
 rconfig   integer   num_fgat_time           namelist,wrfvar3  1  1        - "num_fgat_time"            ""  ""
 rconfig   logical   thin_conv               namelist,wrfvar4  1  .true.   - "thin_conv"                ""  ""
 rconfig   real      thin_mesh_conv          namelist,wrfvar4  max_instruments  20.0   - "thin_mesh_conv"            ""  ""

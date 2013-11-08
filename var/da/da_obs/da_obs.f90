@@ -12,7 +12,7 @@ module da_obs
       use_soundobs,use_mtgirsobs,use_satemobs, use_profilerobs, use_pilotobs, &
       use_qscatobs,use_metarobs, use_polaramvobs, use_geoamvobs, &
       use_bogusobs,use_buoyobs, use_airsretobs, use_tamdarobs, trace_use, num_procs, &
-      missing_r, missing, use_airepobs,use_gpspwobs,use_gpsztdobs,use_gpsrefobs, &
+      xmiss, missing_r, missing, use_airepobs,use_gpspwobs,use_gpsztdobs,use_gpsrefobs, &
       use_ssmt1obs,filtered_obs_unit,fmt_each,fmt_info,fmt_srfc, ide, jde, &
       pseudo_x, fg_format, fg_format_kma_global, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
       missing_data, pseudo_var, pseudo_val,stdout, num_pseudo, pseudo_y, pseudo_z, &

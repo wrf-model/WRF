@@ -25,6 +25,10 @@ subroutine da_write_oa_radar_ascii ( ob, iv, re )
    CHARACTER(len=5) :: stn_id 
 
     if (trace_use) call da_trace_entry("da_write_oa_radar_ascii")
+
+    write(unit=message(1),fmt='(A)') 'Writing radar OMA ascii file'
+    call da_message(message(1:1))
+
 #ifdef DM_PARALLEL
       write(unit=filename, fmt='(a,i4.4)') 'radar_omb_oma.', myproc
 #else

@@ -2,29 +2,26 @@
 !  Tapenade 3.7 (r4786) - 21 Feb 2013 15:53
 !
 !  Differentiation of ducu in forward (tangent) mode (with options r8):
-!   variations   of useful results: raincv rthcuten rqvcuten
+!   variations   of useful results: raincv rthcuten pratec rqvcuten
 !   with respect to varying inputs: th raincv t rthcuten pcps qv
-!                z rqvcuten rho dz8w
+!                z pratec rqvcuten rho dz8w
 MODULE g_module_cu_du
    USE module_wrf_error
   REAL    , PARAMETER :: cincap = -10.
   REAL    , PARAMETER :: capemin = 10.
   REAL    , PARAMETER :: dpthmin = 1000.
-  REAL    , PARAMETER :: alpha = 0.0001
+  REAL    , PARAMETER :: alpha = 0.00002
   REAL    , PARAMETER :: eps = 0.5
   REAL    , PARAMETER :: Vfall = 5.
 !--------------------------------------------------------------------
 CONTAINS
-! add PRATEC by zhuxiao
-! constant variable
-! constant variable
-! optionals
+
 SUBROUTINE DUCU_D(ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms&
 &  , kme, its, ite, jts, jte, kts, kte, dt, ktau, dx, rho, rhod, raincv, &
-&  raincvd, nca, pratec, u, v, th, thd, t, td, w, dz8w, dz8wd, z, zd, &
-&  pcps, pcpsd, pi, w0avg, cp, rd, rv, g, xlv, ep2, svp1, svp2, svp3, &
-&  svpt0, stepcu, cu_act_flag, warm_rain, cutop, cubot, qv, qvd, rthcuten&
-&  , rthcutend, rqvcuten, rqvcutend)
+&  raincvd, nca, pratec, pratecd, u, v, th, thd, t, td, w, dz8w, dz8wd, z&
+&  , zd, pcps, pcpsd, pi, w0avg, cp, rd, rv, g, xlv, ep2, svp1, svp2, &
+&  svp3, svpt0, stepcu, cu_act_flag, warm_rain, cutop, cubot, qv, qvd, &
+&  rthcuten, rthcutend, rqvcuten, rqvcutend)
   IMPLICIT NONE
 !
 !-------------------------------------------------------------
@@ -45,7 +42,7 @@ SUBROUTINE DUCU_D(ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms&
   REAL, INTENT(IN) :: dt, dx
 !
   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: raincv, pratec
-  REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: raincvd
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: raincvd, pratecd
   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: nca
   REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) :: cubot, cutop
   LOGICAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: cu_act_flag
@@ -116,6 +113,7 @@ SUBROUTINE DUCU_D(ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms&
         END DO
         raincvd(i, j) = 0.0_8
         raincv(i, j) = 0.
+        pratecd(i, j) = 0.0_8
         pratec(i, j) = 0.
         cutop(i, j) = kts
         cubot(i, j) = kte + 1
@@ -158,6 +156,7 @@ SUBROUTINE DUCU_D(ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms&
             rqvcutend(i, k, j) = dqvdtd(k)
             rqvcuten(i, k, j) = dqvdt(k)
           END DO
+          pratecd(i, j) = pprated
           pratec(i, j) = pprate
           raincvd(i, j) = dt*pprated
           raincv(i, j) = pprate*dt

@@ -1442,6 +1442,7 @@ ENDIF
       head_grid%rqvcuten = 0.0
       head_grid%rainc = 0.0
       head_grid%raincv = 0.0
+      head_grid%pratec = 0.0
    ENDIF
 
    IF ( .NOT. config_flags%trajectory_io ) THEN

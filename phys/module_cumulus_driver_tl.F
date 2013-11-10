@@ -2,12 +2,12 @@
 !  Tapenade 3.7 (r4786) - 21 Feb 2013 15:53
 !
 !  Differentiation of cumulus_driver in forward (tangent) mode (with options r8):
-!   variations   of useful results: raincv rthcuten rqvcuten
-!   with respect to varying inputs: th raincv p t rthcuten z qv_curr
-!                rqvcuten rho dz8w
+!   variations   of useful results: raincv rthcuten pratec rqvcuten
+!   with respect to varying inputs: th raincv p t rthcuten z pratec
+!                qv_curr rqvcuten rho dz8w
 !   RW status of diff variables: th:in raincv:in-out p:in t:in
-!                rthcuten:in-out z:in qv_curr:in rqvcuten:in-out
-!                rho:in dz8w:in
+!                rthcuten:in-out z:in pratec:in-out qv_curr:in
+!                rqvcuten:in-out rho:in dz8w:in
 !WRF:MEDIATION_LAYER:PHYSICS
 !
 MODULE g_module_cumulus_driver
@@ -32,25 +32,25 @@ SUBROUTINE G_CUMULUS_DRIVER(grid, ids, ide, jds, jde, kds, kde, ims, ime&
 &  , jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe, i_start, i_end, &
 &  j_start, j_end, kts, kte, num_tiles, u, v, th, thd, t, td, w, p, pd, &
 &  pi, rho, rhod, itimestep, dt, dx, cudt, curr_secs, adapt_step_flag, &
-&  cudtacttime, rainc, raincv, raincvd, pratec, nca, z, zd, z_at_w, dz8w&
-&  , dz8wd, mavail, pblh, p8w, psfc, tsk, tke_pbl, ust, forcet, forceq, &
-&  w0avg, stepcu, gsw, cldefi, lowlyr, xland, cu_act_flag, warm_rain, hfx&
-&  , qfx, cldfra, cldfra_mp_all, tpert2d, htop, hbot, kpbl, ht, ensdim, &
-&  maxiens, maxens, maxens2, maxens3, periodic_x, periodic_y, &
-&  evapcdp3d, icwmrdp3d, rprddp3d, cu_physics, &
-&  bl_pbl_physics, sf_sfclay_physics, qv_curr, qv_currd, qc_curr, qr_curr&
-&  , qi_curr, qs_curr, qg_curr, qv_prev, qc_prev, qr_prev, qi_prev, &
-&  qs_prev, qg_prev, apr_gr, apr_w, apr_mc, apr_st, apr_as, apr_capma, &
-&  apr_capme, apr_capmi, edt_out, clos_choice, mass_flux, xf_ens, pr_ens&
-&  , cugd_avedx, imomentum, ishallow, cugd_tten, cugd_qvten, cugd_qcten, &
-&  cugd_ttens, cugd_qvtens, gd_cloud, gd_cloud2, cape, zmmu, zmmd, zmdt, &
-&  zmdq, dlf, rliq, pconvb, pconvt, evaptzm, fzsntzm, evsntzm, evapqzm, &
-&  zmflxprc, zmflxsnw, zmntprpd, zmntsnpd, zmeiheat, cmfmc, cmfmcdzm, &
-&  preccdzm, precz, zmmtu, zmmtv, zmupgu, zmupgd, zmvpgu, zmvpgd, zmicuu&
-&  , zmicud, zmicvu, zmicvd, zmdice, zmdliq, dp3d, du3d, ed3d, eu3d, md3d&
-&  , mu3d, dsubcld2d, ideep2d, jt2d, maxg2d, lengath2d, k22_shallow, &
-&  kbcon_shallow, ktop_shallow, xmb_shallow, ktop_deep, pgcon, &
-&  sas_mass_flux, shalconv, shal_pgcon, hpbl2d, evap2d, heat2d, &
+&  cudtacttime, rainc, raincv, raincvd, pratec, pratecd, nca, z, zd, &
+&  z_at_w, dz8w, dz8wd, mavail, pblh, p8w, psfc, tsk, tke_pbl, ust, &
+&  forcet, forceq, w0avg, stepcu, gsw, cldefi, lowlyr, xland, cu_act_flag&
+&  , warm_rain, hfx, qfx, cldfra, cldfra_mp_all, tpert2d, htop, hbot, &
+&  kpbl, ht, ensdim, maxiens, maxens, maxens2, maxens3, periodic_x, &
+&  periodic_y, evapcdp3d, icwmrdp3d, rprddp3d, &
+&  cu_physics, bl_pbl_physics, sf_sfclay_physics, qv_curr, qv_currd, &
+&  qc_curr, qr_curr, qi_curr, qs_curr, qg_curr, qv_prev, qc_prev, qr_prev&
+&  , qi_prev, qs_prev, qg_prev, apr_gr, apr_w, apr_mc, apr_st, apr_as, &
+&  apr_capma, apr_capme, apr_capmi, edt_out, clos_choice, mass_flux, &
+&  xf_ens, pr_ens, cugd_avedx, imomentum, ishallow, cugd_tten, cugd_qvten&
+&  , cugd_qcten, cugd_ttens, cugd_qvtens, gd_cloud, gd_cloud2, cape, zmmu&
+&  , zmmd, zmdt, zmdq, dlf, rliq, pconvb, pconvt, evaptzm, fzsntzm, &
+&  evsntzm, evapqzm, zmflxprc, zmflxsnw, zmntprpd, zmntsnpd, zmeiheat, &
+&  cmfmc, cmfmcdzm, preccdzm, precz, zmmtu, zmmtv, zmupgu, zmupgd, zmvpgu&
+&  , zmvpgd, zmicuu, zmicud, zmicvu, zmicvd, zmdice, zmdliq, dp3d, du3d, &
+&  ed3d, eu3d, md3d, mu3d, dsubcld2d, ideep2d, jt2d, maxg2d, lengath2d, &
+&  k22_shallow, kbcon_shallow, ktop_shallow, xmb_shallow, ktop_deep, &
+&  pgcon, sas_mass_flux, shalconv, shal_pgcon, hpbl2d, evap2d, heat2d, &
 &  mp_physics, rqvcuten, rqvcutend, rqccuten, rqrcuten, rqicuten, &
 &  rqscuten, rqgcuten, rqcncuten, rqincuten, rqvblten, rqvften, rucuten, &
 &  rvcuten, rthcuten, rthcutend, rthraten, rthblten, rthften, mommix, &
@@ -78,7 +78,7 @@ SUBROUTINE G_CUMULUS_DRIVER(grid, ids, ide, jds, jde, kds, kde, ims, ime&
    USE module_wrf_error , ONLY : wrf_err_message
 
   IMPLICIT NONE
-!----------------------------------------------------------------------
+!======================================================================
 ! Grid structure in physics part of WRF
 !----------------------------------------------------------------------
 ! The horizontal velocities used in the physics are unstaggered
@@ -264,7 +264,9 @@ SUBROUTINE G_CUMULUS_DRIVER(grid, ids, ide, jds, jde, kds, kde, ims, ime&
   REAL, DIMENSION(kms:kme), OPTIONAL, INTENT(IN) :: znu
   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT), OPTIONAL :: pratec, &
 &  mavail, pblh, psfc, tsk, tpert2d, ust, hfx, qfx
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT), OPTIONAL :: pratecd
   REAL, DIMENSION(ims:ime, jms:jme) :: tmppratec
+  REAL, DIMENSION(ims:ime, jms:jme) :: tmppratecd
   INTEGER, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: kpbl
   LOGICAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: cu_act_flag
   INTEGER, INTENT(IN), OPTIONAL :: kfeta_trigger
@@ -355,9 +357,11 @@ SUBROUTINE G_CUMULUS_DRIVER(grid, ids, ide, jds, jde, kds, kde, ims, ime&
   END IF
 ! Initialize tmppratec to pratec
   IF (PRESENT(pratec)) THEN
+    tmppratecd(:, :) = pratecd(:, :)
     tmppratec(:, :) = pratec(:, :)
   ELSE
     tmppratec(:, :) = 0.
+    tmppratecd = 0.0_8
   END IF
   IF (.NOT.PRESENT(kfeta_trigger)) THEN
     trigger_kf = 1
@@ -449,14 +453,14 @@ SUBROUTINE G_CUMULUS_DRIVER(grid, ids, ide, jds, jde, kds, kde, ims, ime&
 &                kme, its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=&
 &                kte, dt=dt, ktau=itimestep, dx=dx, rho=rho, rhod=rhod, &
 &                raincv=raincv, raincvd=raincvd, nca=nca, pratec=&
-&                tmppratec, u=u, v=v, th=th, thd=thd, t=t, td=td, w=w, &
-&                dz8w=dz8w, dz8wd=dz8wd, z=z, zd=zd, pcps=p, pcpsd=pd, pi&
-&                =pi, w0avg=w0avg, cp=cp, rd=r_d, rv=r_v, g=g, xlv=xlv0, &
-&                ep2=ep_2, svp1=svp1, svp2=svp2, svp3=svp3, svpt0=svpt0, &
-&                stepcu=stepcu, cu_act_flag=cu_act_flag, warm_rain=&
-&                warm_rain, cutop=htop, cubot=hbot, qv=qv_curr, qvd=&
-&                qv_currd, rthcuten=rthcuten, rthcutend=rthcutend, &
-&                rqvcuten=rqvcuten, rqvcutend=rqvcutend)
+&                tmppratec, pratecd=tmppratecd, u=u, v=v, th=th, thd=thd&
+&                , t=t, td=td, w=w, dz8w=dz8w, dz8wd=dz8wd, z=z, zd=zd, &
+&                pcps=p, pcpsd=pd, pi=pi, w0avg=w0avg, cp=cp, rd=r_d, rv=&
+&                r_v, g=g, xlv=xlv0, ep2=ep_2, svp1=svp1, svp2=svp2, svp3&
+&                =svp3, svpt0=svpt0, stepcu=stepcu, cu_act_flag=&
+&                cu_act_flag, warm_rain=warm_rain, cutop=htop, cubot=hbot&
+&                , qv=qv_curr, qvd=qv_currd, rthcuten=rthcuten, rthcutend&
+&                =rthcutend, rqvcuten=rqvcuten, rqvcutend=rqvcutend)
         CASE DEFAULT
 !
           WRITE(wrf_err_message, *) &
@@ -466,7 +470,10 @@ SUBROUTINE G_CUMULUS_DRIVER(grid, ids, ide, jds, jde, kds, kde, ims, ime&
       END DO
 !$OMP END PARALLEL DO
 ! Copy pratec back to output array, if necessary.
-      IF (PRESENT(pratec)) pratec(:, :) = tmppratec(:, :)
+      IF (PRESENT(pratec)) THEN
+        pratecd(:, :) = tmppratecd(:, :)
+        pratec(:, :) = tmppratec(:, :)
+      END IF
 ! Copy cudtacttime back if necessary
       IF (PRESENT(cudtacttime)) cudtacttime = cudtacttime_pass
       CALL WRF_DEBUG(200, 'returning from cumulus_driver')

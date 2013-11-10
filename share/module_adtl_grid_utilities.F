@@ -2178,6 +2178,7 @@ CONTAINS
    grid%a_rainncv = 0.0
    grid%a_rainc = 0.0
    grid%a_raincv = 0.0
+   grid%a_pratec = 0.0
 
    grid%a_p = 0.0
 
@@ -2302,6 +2303,7 @@ CONTAINS
    grid%g_rainncv = 0.0
    grid%g_rainc = 0.0
    grid%g_raincv = 0.0
+   grid%g_pratec = 0.0
 
    grid%g_p = 0.0
 

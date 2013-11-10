@@ -2,56 +2,41 @@
 !  Tapenade 3.7 (r4786) - 21 Feb 2013 15:53
 !
 !  Differentiation of cumulus_driver in reverse (adjoint) mode (with options r8):
-!   gradient     of useful results: th raincv p t rthcuten z qv_curr
-!                rqvcuten rho dz8w
-!   with respect to varying inputs: th raincv p t rthcuten z qv_curr
-!                rqvcuten rho dz8w
+!   gradient     of useful results: th raincv p t rthcuten z pratec
+!                qv_curr rqvcuten rho dz8w
+!   with respect to varying inputs: th raincv p t rthcuten z pratec
+!                qv_curr rqvcuten rho dz8w
 !   RW status of diff variables: th:incr raincv:in-out p:incr t:incr
-!                rthcuten:in-out z:incr qv_curr:incr rqvcuten:in-out
-!                rho:incr dz8w:incr
+!                rthcuten:in-out z:incr pratec:in-out qv_curr:incr
+!                rqvcuten:in-out rho:incr dz8w:incr
 !WRF:MEDIATION_LAYER:PHYSICS
 !
 MODULE a_module_cumulus_driver
 CONTAINS
-! Order dependent args for domain, mem, and tile dims
-! Order independent args (use VAR= in call)
-! --Prognostic
-! --Other arguments
-!Balwinder.Singh@pnnl.gov: Used for CAM's wet scavenging
-! Package selection variables
-! Optional moisture tracers 
-! Optional arguments for GD scheme
-! Optional output arguments for CAMZM scheme
-! Optional arguments for SAS scheme
-!Kwon for SAS2010 shallow convection
-! Optional arguments for NSAS scheme
-! Optional moisture and other tendencies
-! Optional variables for tiedtke scheme - add by ZCX&YQW 
-! Optional moisture tracer flags 
-! Optional trigger function activation variable
+
 SUBROUTINE A_CUMULUS_DRIVER(grid, ids, ide, jds, jde, kds, kde, ims, ime&
 &  , jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe, i_start, i_end, &
 &  j_start, j_end, kts, kte, num_tiles, u, v, th, thb, t, tb, w, p, pb, &
 &  pi, rho, rhob, itimestep, dt, dx, cudt, curr_secs, adapt_step_flag, &
-&  cudtacttime, rainc, raincv, raincvb, pratec, nca, z, zb, z_at_w, dz8w&
-&  , dz8wb, mavail, pblh, p8w, psfc, tsk, tke_pbl, ust, forcet, forceq, &
-&  w0avg, stepcu, gsw, cldefi, lowlyr, xland, cu_act_flag, warm_rain, hfx&
-&  , qfx, cldfra, cldfra_mp_all, tpert2d, htop, hbot, kpbl, ht, ensdim, &
-&  maxiens, maxens, maxens2, maxens3, periodic_x, periodic_y, &
-&  evapcdp3d, icwmrdp3d, rprddp3d, cu_physics, &
-&  bl_pbl_physics, sf_sfclay_physics, qv_curr, qv_currb, qc_curr, qr_curr&
-&  , qi_curr, qs_curr, qg_curr, qv_prev, qc_prev, qr_prev, qi_prev, &
-&  qs_prev, qg_prev, apr_gr, apr_w, apr_mc, apr_st, apr_as, apr_capma, &
-&  apr_capme, apr_capmi, edt_out, clos_choice, mass_flux, xf_ens, pr_ens&
-&  , cugd_avedx, imomentum, ishallow, cugd_tten, cugd_qvten, cugd_qcten, &
-&  cugd_ttens, cugd_qvtens, gd_cloud, gd_cloud2, cape, zmmu, zmmd, zmdt, &
-&  zmdq, dlf, rliq, pconvb, pconvt, evaptzm, fzsntzm, evsntzm, evapqzm, &
-&  zmflxprc, zmflxsnw, zmntprpd, zmntsnpd, zmeiheat, cmfmc, cmfmcdzm, &
-&  preccdzm, precz, zmmtu, zmmtv, zmupgu, zmupgd, zmvpgu, zmvpgd, zmicuu&
-&  , zmicud, zmicvu, zmicvd, zmdice, zmdliq, dp3d, du3d, ed3d, eu3d, md3d&
-&  , mu3d, dsubcld2d, ideep2d, jt2d, maxg2d, lengath2d, k22_shallow, &
-&  kbcon_shallow, ktop_shallow, xmb_shallow, ktop_deep, pgcon, &
-&  sas_mass_flux, shalconv, shal_pgcon, hpbl2d, evap2d, heat2d, &
+&  cudtacttime, rainc, raincv, raincvb, pratec, pratecb, nca, z, zb, &
+&  z_at_w, dz8w, dz8wb, mavail, pblh, p8w, psfc, tsk, tke_pbl, ust, &
+&  forcet, forceq, w0avg, stepcu, gsw, cldefi, lowlyr, xland, cu_act_flag&
+&  , warm_rain, hfx, qfx, cldfra, cldfra_mp_all, tpert2d, htop, hbot, &
+&  kpbl, ht, ensdim, maxiens, maxens, maxens2, maxens3, periodic_x, &
+&  periodic_y, evapcdp3d, icwmrdp3d, rprddp3d, &
+&  cu_physics, bl_pbl_physics, sf_sfclay_physics, qv_curr, qv_currb, &
+&  qc_curr, qr_curr, qi_curr, qs_curr, qg_curr, qv_prev, qc_prev, qr_prev&
+&  , qi_prev, qs_prev, qg_prev, apr_gr, apr_w, apr_mc, apr_st, apr_as, &
+&  apr_capma, apr_capme, apr_capmi, edt_out, clos_choice, mass_flux, &
+&  xf_ens, pr_ens, cugd_avedx, imomentum, ishallow, cugd_tten, cugd_qvten&
+&  , cugd_qcten, cugd_ttens, cugd_qvtens, gd_cloud, gd_cloud2, cape, zmmu&
+&  , zmmd, zmdt, zmdq, dlf, rliq, pconvb, pconvt, evaptzm, fzsntzm, &
+&  evsntzm, evapqzm, zmflxprc, zmflxsnw, zmntprpd, zmntsnpd, zmeiheat, &
+&  cmfmc, cmfmcdzm, preccdzm, precz, zmmtu, zmmtv, zmupgu, zmupgd, zmvpgu&
+&  , zmvpgd, zmicuu, zmicud, zmicvu, zmicvd, zmdice, zmdliq, dp3d, du3d, &
+&  ed3d, eu3d, md3d, mu3d, dsubcld2d, ideep2d, jt2d, maxg2d, lengath2d, &
+&  k22_shallow, kbcon_shallow, ktop_shallow, xmb_shallow, ktop_deep, &
+&  pgcon, sas_mass_flux, shalconv, shal_pgcon, hpbl2d, evap2d, heat2d, &
 &  mp_physics, rqvcuten, rqvcutenb, rqccuten, rqrcuten, rqicuten, &
 &  rqscuten, rqgcuten, rqcncuten, rqincuten, rqvblten, rqvften, rucuten, &
 &  rvcuten, rthcuten, rthcutenb, rthraten, rthblten, rthften, mommix, &
@@ -265,7 +250,9 @@ SUBROUTINE A_CUMULUS_DRIVER(grid, ids, ide, jds, jde, kds, kde, ims, ime&
   REAL, DIMENSION(kms:kme), OPTIONAL, INTENT(IN) :: znu
   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT), OPTIONAL :: pratec, &
 &  mavail, pblh, psfc, tsk, tpert2d, ust, hfx, qfx
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT), OPTIONAL :: pratecb
   REAL, DIMENSION(ims:ime, jms:jme) :: tmppratec
+  REAL, DIMENSION(ims:ime, jms:jme) :: tmppratecb
   INTEGER, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: kpbl
   LOGICAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: cu_act_flag
   INTEGER, INTENT(IN), OPTIONAL :: kfeta_trigger
@@ -334,6 +321,8 @@ SUBROUTINE A_CUMULUS_DRIVER(grid, ids, ide, jds, jde, kds, kde, ims, ime&
   INTEGER :: i, j, k, its, ite, jts, jte, ij, trigger_kf
   LOGICAL :: l_flux
   LOGICAL :: decided, run_param, doing_adapt_dt
+  EXTERNAL WRF_DEBUG
+  EXTERNAL WRF_ERROR_FATAL
 !-----------------------------------------------------------------
   INTEGER :: branch
   IF (.NOT.PRESENT(curr_secs)) THEN
@@ -353,7 +342,15 @@ SUBROUTINE A_CUMULUS_DRIVER(grid, ids, ide, jds, jde, kds, kde, ims, ime&
   ELSE
     adapt_step_flag_pass = adapt_step_flag
   END IF
-  IF (cu_physics .NE. 0) THEN
+! Initialize tmppratec to pratec
+  IF (PRESENT(pratec)) THEN
+    CALL PUSHCONTROL1B(0)
+  ELSE
+    CALL PUSHCONTROL1B(1)
+  END IF
+  IF (cu_physics .EQ. 0) THEN
+    tmppratecb = 0.0_8
+  ELSE
 !  Initialization for adaptive time step.
     IF (adapt_step_flag_pass) THEN
       doing_adapt_dt = .true.
@@ -411,6 +408,15 @@ SUBROUTINE A_CUMULUS_DRIVER(grid, ids, ide, jds, jde, kds, kde, ims, ime&
           CALL PUSHCONTROL1B(0)
         END SELECT
       END DO
+!$OMP END PARALLEL DO
+! Copy pratec back to output array, if necessary.
+      IF (PRESENT(pratec)) THEN
+        tmppratecb = 0.0_8
+        tmppratecb(:, :) = pratecb(:, :)
+        pratecb = 0.0_8
+      ELSE
+        tmppratecb = 0.0_8
+      END IF
       DO ij=num_tiles,1,-1
         CALL POPCONTROL1B(branch)
         IF (branch .NE. 0) THEN
@@ -423,17 +429,21 @@ SUBROUTINE A_CUMULUS_DRIVER(grid, ids, ide, jds, jde, kds, kde, ims, ime&
 &                kme, its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=&
 &                kte, dt=dt, ktau=itimestep, dx=dx, rho=rho, rhob=rhob, &
 &                raincv=raincv, raincvb=raincvb, nca=nca, pratec=&
-&                tmppratec, u=u, v=v, th=th, thb=thb, t=t, tb=tb, w=w, &
-&                dz8w=dz8w, dz8wb=dz8wb, z=z, zb=zb, pcps=p, pcpsb=pb, pi&
-&                =pi, w0avg=w0avg, cp=cp, rd=r_d, rv=r_v, g=g, xlv=xlv0, &
-&                ep2=ep_2, svp1=svp1, svp2=svp2, svp3=svp3, svpt0=svpt0, &
-&                stepcu=stepcu, cu_act_flag=cu_act_flag, warm_rain=&
-&                warm_rain, cutop=htop, cubot=hbot, qv=qv_curr, qvb=&
-&                qv_currb, rthcuten=rthcuten, rthcutenb=rthcutenb, &
-&                rqvcuten=rqvcuten, rqvcutenb=rqvcutenb)
+&                tmppratec, pratecb=tmppratecb, u=u, v=v, th=th, thb=thb&
+&                , t=t, tb=tb, w=w, dz8w=dz8w, dz8wb=dz8wb, z=z, zb=zb, &
+&                pcps=p, pcpsb=pb, pi=pi, w0avg=w0avg, cp=cp, rd=r_d, rv=&
+&                r_v, g=g, xlv=xlv0, ep2=ep_2, svp1=svp1, svp2=svp2, svp3&
+&                =svp3, svpt0=svpt0, stepcu=stepcu, cu_act_flag=&
+&                cu_act_flag, warm_rain=warm_rain, cutop=htop, cubot=hbot&
+&                , qv=qv_curr, qvb=qv_currb, rthcuten=rthcuten, rthcutenb&
+&                =rthcutenb, rqvcuten=rqvcuten, rqvcutenb=rqvcutenb)
         END IF
       END DO
+    ELSE
+      tmppratecb = 0.0_8
     END IF
   END IF
+  CALL POPCONTROL1B(branch)
+  IF (branch .EQ. 0) pratecb = pratecb + tmppratecb
 END SUBROUTINE A_CUMULUS_DRIVER
 END MODULE a_module_cumulus_driver

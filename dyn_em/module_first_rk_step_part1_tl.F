@@ -405,7 +405,7 @@ BENCH_START(g_cu_driver_tim)
      &             ,CUDT=grid%cudt,CURR_SECS=curr_secs,ADAPT_STEP_FLAG=adapt_step_flag &
      &             ,CUDTACTTIME=grid%cudtacttime                                       &
      &             ,RAINC=grid%rainc   ,RAINCV=grid%raincv   ,PRATEC=grid%pratec       &
-     &                         ,RAINCVD=grid%g_raincv                                  &
+     &             ,RAINCVD=grid%g_raincv, PRATECD=grid%g_pratec                       &
      &             ,NCA=grid%nca                                                       &
      &             ,HTOP=grid%cutop     ,HBOT=grid%cubot       ,KPBL=grid%kpbl         &
      &             ,Z=grid%z ,Z_AT_W=grid%z_at_w ,MAVAIL=grid%mavail ,PBLH=grid%pblh   &

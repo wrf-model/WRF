@@ -68,8 +68,8 @@ PNETCDFPATH     =    CONFIGURE_PNETCDF_PATH
 
 bundled:  io_only CONFIGURE_ATMOCN
 external: io_only CONFIGURE_COMMS_EXTERNAL $(ESMF_TARGET)
-io_only:  esmf_time CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_PNF CONFIGURE_WRFIO_GRIB2 wrf_ioapi_includes wrfio_grib_share wrfio_grib1 wrfio_int fftpack
-	$(AR) $(ARFLAGS) main/libwrflib.a frame/module_driver_constants.o frame/module_internal_header_util.o frame/pack_utils.o frame/module_machine.o
+io_only:  esmf_time CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_PNF CONFIGURE_WRFIO_GRIB2 \
+	  wrf_ioapi_includes wrfio_grib_share wrfio_grib1 wrfio_int fftpack
 
 
 ######################

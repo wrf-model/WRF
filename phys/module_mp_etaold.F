@@ -12,8 +12,8 @@ MODULE module_mp_etaold
       REAL,PRIVATE,DIMENSION(MY_T1:MY_T2),SAVE :: MY_GROWTH
 !
       REAL, PRIVATE,PARAMETER :: DMImin=.05e-3, DMImax=1.e-3,           &
-     &      DelDMI=1.e-6,XMImin=1.e6*DMImin
-      INTEGER, PUBLIC,PARAMETER :: XMImax=1.e6*DMImax, XMIexp=.0536,    &
+     &      DelDMI=1.e-6,XMImin=1.e6*DMImin, XMIexp=.0536
+      INTEGER, PUBLIC,PARAMETER :: XMImax=1.e6*DMImax,                  &
      &                             MDImin=XMImin, MDImax=XMImax
       REAL, PRIVATE,DIMENSION(MDImin:MDImax) ::                         &
      &      ACCRI,SDENS,VSNOWI,VENTI1,VENTI2

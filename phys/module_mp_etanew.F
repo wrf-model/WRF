@@ -13,13 +13,13 @@ MODULE module_mp_etanew
       REAL,PRIVATE,DIMENSION(MY_T1:MY_T2),SAVE :: MY_GROWTH
 !
       REAL, PRIVATE,PARAMETER :: DMImin=.05e-3, DMImax=1.e-3,           &
-     &      DelDMI=1.e-6,XMImin=1.e6*DMImin
-      INTEGER, PUBLIC,PARAMETER :: XMImax=1.e6*DMImax, XMIexp=.0536,    &
+     &      DelDMI=1.e-6,XMImin=1.e6*DMImin, XMIexp=.0536
+      INTEGER, PUBLIC,PARAMETER :: XMImax=1.e6*DMImax,                  &
      &                             MDImin=XMImin, MDImax=XMImax
       REAL, PRIVATE,DIMENSION(MDImin:MDImax) ::                         &
      &      ACCRI,SDENS,VSNOWI,VENTI1,VENTI2
 !
-      REAL, PRIVATE,PARAMETER :: DMRmin=.05e-3, DMRmax=1.e-3,          &
+      REAL, PRIVATE,PARAMETER :: DMRmin=.05e-3, DMRmax=1.e-3,           &
      &      DelDMR=1.e-6,XMRmin=1.e6*DMRmin, XMRmax=1.e6*DMRmax
       INTEGER, PRIVATE,PARAMETER :: MDRmin=XMRmin, MDRmax=XMRmax                   
       REAL, PRIVATE,DIMENSION(MDRmin:MDRmax)::                          &

@@ -151,11 +151,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
    end if
 
    if ( use_gpsrefobs .and. (ob_format_gpsro == ob_format_bufr) ) then
-#ifdef BUFR
       call da_read_obs_bufrgpsro(iv)
-#else
-      call da_warning(__FILE__,__LINE__,(/"not compiled with BUFR library", can not read GPSRO BUFR file/))
-#endif
    end if
 
    ! Calculate DT for RF DA

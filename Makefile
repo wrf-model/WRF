@@ -605,7 +605,7 @@ shared :
 
 wrf_hydro :
 	@ echo '----------wrf_hydro-----------------------'
-	if [ $(WRF_HYDRO) -eq 1 ]   ; then (cd hydro/WRF_cpl; make -f Makefile.cpl) ; fi
+	if [ $(WRF_HYDRO) -eq 1 ]   ; then (cd hydro/CPL/WRF_cpl; make -f Makefile.cpl) ; fi
 
 chemics :
 	@ echo '--------------------------------------'

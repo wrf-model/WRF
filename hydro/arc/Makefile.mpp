@@ -14,4 +14,4 @@ clean:
 	(cd HYDRO_drv; make -f Makefile clean)
 	(cd MPP; make -f Makefile clean)
 	(cd Routing;    make -f Makefile clean)
-	(rm -f lib/*.a */*.mod */*.o)
+	(rm -f lib/*.a */*.mod */*.o CPL/*/*.o CPL/*/*.mod)

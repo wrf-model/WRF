@@ -40,6 +40,10 @@
 #ifdef MPP_LAND
        if(left_id.ge.0) IXXRT=IXXRT+1
        if(down_id.ge.0) JYYRT=JYYRT+1
+#else
+!yw ????
+!       IXXRT=IXXRT+1
+!       JYYRT=JYYRT+1
 #endif
 
 
@@ -495,13 +499,6 @@
         INTEGER :: i,j
 !!! Initialize variables
         REAL, PARAMETER :: nexp=1.0      ! local power law exponent
-!#ifdef MPP_LAND
-!      call MPP_LAND_COM_REAL(Z,XX,YY,99)
-!      call MPP_LAND_COM_REAL(sox,XX,YY,99)
-!      call MPP_LAND_COM_REAL(soy,XX,YY,99)
-!      call MPP_LAND_COM_REAL(latksat,XX,YY,99)
-!      call MPP_LAND_COM_REAL(QSUBDRY,XX,YY,99)
-!#endif
 
 !yw        soldep = 2.
         
@@ -859,8 +856,8 @@
 
 !! Declare Passed variables
 
-        REAL, INTENT(IN) :: dt, gsize(xx,yy,9)
         INTEGER, INTENT(IN) :: XX,YY
+        REAL, INTENT(IN) :: dt, gsize(xx,yy,9)
 
 !! Declare passed arrays
 
@@ -1223,6 +1220,8 @@
                        "gamma=",gamma,"hh=",hh,"beta=",beta,"dzdx=",dzdx,&
                        "so8RT=",so8RT(i,j,index),"latksat=",ksat, &
                        "tan(beta)=",tan(beta),i,j,z(i,j),z(IXX0,JYY0)
+                    print*, "ixx0=",ixx0, "jyy0=",jyy0
+                    print*, "soldep =", soldep(i,j), "nexp=",nexp
                  call hydro_stop() 
 #endif
               end if
@@ -1737,6 +1736,10 @@
 #ifdef MPP_LAND
        if(left_id.ge.0) IXXRT=IXXRT+1
        if(down_id.ge.0) JYYRT=JYYRT+1
+#else
+!yw ????
+!       IXXRT=IXXRT+1
+!       JYYRT=JYYRT+1
 #endif
 
 
@@ -1814,6 +1817,8 @@
 #ifdef HYDRO_D
                       print *, "Err. SMCRT fully depleted upon disaggregation...", ixxrt,jyyrt,krt,&
                               SMCRT(IXXRT,JYYRT,KRT),SH2OWGT(IXXRT,JYYRT,KRT),SH2OX(I,J,KRT)
+                      print *, "VEGTYP = ", VEGTYP(I,J)
+                      print *, "i,j,krt, nsoil",i,j,krt,nsoil
                       call hydro_stop()
 #endif
                   END IF
@@ -2050,6 +2055,10 @@
 #ifdef MPP_LAND
        if(left_id.ge.0) IXXRT=IXXRT+1
        if(down_id.ge.0) JYYRT=JYYRT+1
+#else
+!yw ????
+!       IXXRT=IXXRT+1
+!       JYYRT=JYYRT+1
 #endif
 
 !State Variables
@@ -2086,6 +2095,10 @@
 #ifdef MPP_LAND
        if(left_id.ge.0) IXXRT=IXXRT+1
        if(down_id.ge.0) JYYRT=JYYRT+1
+#else
+!yw ???
+!       IXXRT=IXXRT+1
+!       JYYRT=JYYRT+1
 #endif
                   if (lsmvol.gt.0.) then
                     INFXSWGT(IXXRT,JYYRT)=SFCHEADSUBRT(IXXRT,JYYRT)*  &

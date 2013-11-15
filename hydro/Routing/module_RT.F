@@ -4,14 +4,12 @@ MODULE module_Routing
    use module_HYDRO_io, only: mpp_read_routedim, mpp_read_routing, mpp_read_chrouting, &
                               mpp_chrouting_conf, mpp_read_simp_gw
 #else
-   use module_HYDRO_io, only: read_routedim, read_routing_old, read_chrouting,read_simp_gw
+   !yw use module_HYDRO_io, only: read_routedim, read_routing_old, read_chrouting,read_simp_gw
+   use module_HYDRO_io, only: read_routedim, read_routing_seq, read_chrouting,read_simp_gw
 #endif
    use module_HYDRO_io, only: readgw2d
    use module_HYDRO_utils 
    IMPLICIT NONE
-
-#include "rt_include.inc"
-#include "namelist.inc"
 
 
 CONTAINS
@@ -377,29 +375,29 @@ CONTAINS
 #endif
 
 #ifdef MPP_LAND
-    CALL MPP_READ_ROUTING(rt_domain(did)%IXRT,rt_domain(did)%JXRT,rt_domain(did)%ELRT,rt_domain(did)%CH_NETRT, &
-          rt_domain(did)%LKSATFAC,trim(nlst_rt(did)%route_topo_f),&
-          nlst_rt(did)%route_chan_f,nlst_rt(did)%geo_finegrid_flnm,rt_domain(did)%g_IXRT,rt_domain(did)%g_JXRT, &
-           rt_domain(did)%OVROUGHRTFAC,rt_domain(did)%RETDEPRTFAC)
-
+    CALL MPP_READ_ROUTING( &
 #else
-#ifdef HYDRO_D
-    write(6,*) "ixrt, jxrt=",rt_domain(did)%ixrt, rt_domain(did)%jxrt
-    write(6,*) "route_topo_f", nlst_rt(did)%route_topo_f
-    write(6,*) "route_chan_f", nlst_rt(did)%route_chan_f
-    write(6,*) "geo_finegrid_flnm", nlst_rt(did)%geo_finegrid_flnm
+     CALL READ_ROUTING_seq  (  &
 #endif
-    
-    CALL READ_ROUTING_old(rt_domain(did)%IXRT,rt_domain(did)%JXRT,rt_domain(did)%ELRT,rt_domain(did)%CH_NETRT, &
-          rt_domain(did)%LKSATFAC,nlst_rt(did)%route_topo_f,nlst_rt(did)%route_chan_f, &
-          nlst_rt(did)%geo_finegrid_flnm, rt_domain(did)%OVROUGHRTFAC,rt_domain(did)%RETDEPRTFAC )
+          rt_domain(did)%IXRT,rt_domain(did)%JXRT,rt_domain(did)%ELRT,rt_domain(did)%CH_NETRT, &
+          rt_domain(did)%LKSATFAC,trim(nlst_rt(did)%route_topo_f),&
+          nlst_rt(did)%route_chan_f,nlst_rt(did)%geo_finegrid_flnm  ,  &
+#ifdef MPP_LAND
+           rt_domain(did)%g_IXRT,rt_domain(did)%g_JXRT, &
 #endif
+          rt_domain(did)%OVROUGHRTFAC,rt_domain(did)%RETDEPRTFAC)
+
+    !yw CALL READ_ROUTING_old(rt_domain(did)%IXRT,rt_domain(did)%JXRT,rt_domain(did)%ELRT,rt_domain(did)%CH_NETRT, &
+
 
 
     IF (nlst_rt(did)%CHANRTSWCRT.EQ.1 .or. nlst_rt(did)%CHANRTSWCRT .eq. 2) THEN  !IF/then for channel routing
 #ifdef MPP_LAND
-
-          CALL MPP_READ_CHROUTING(rt_domain(did)%IXRT,rt_domain(did)%JXRT,rt_domain(did)%ELRT,rt_domain(did)%CH_NETRT, & 
+          CALL MPP_READ_CHROUTING(    &
+#else
+          CALL READ_CHROUTING(    &
+#endif
+               rt_domain(did)%IXRT,rt_domain(did)%JXRT,rt_domain(did)%ELRT,rt_domain(did)%CH_NETRT, & 
                rt_domain(did)%LAKE_MSKRT, &
                rt_domain(did)%FROM_NODE, rt_domain(did)%TO_NODE, rt_domain(did)%TYPEL, rt_domain(did)%ORDER, &
                rt_domain(did)%MAXORDER,rt_domain(did)%NLINKS, &
@@ -413,8 +411,13 @@ CONTAINS
                rt_domain(did)%CHANXI, rt_domain(did)%CHANYJ, &
                rt_domain(did)%CHLAT, rt_domain(did)%CHLON, nlst_rt(did)%channel_option,&
                rt_domain(did)%latval, rt_domain(did)%lonval,&
-               rt_domain(did)%STRMFRXSTPTS,nlst_rt(did)%geo_finegrid_flnm, rt_domain(did)%g_IXRT,rt_domain(did)%g_JXRT)
+               rt_domain(did)%STRMFRXSTPTS,nlst_rt(did)%geo_finegrid_flnm        &
+#ifdef MPP_LAND
+               ,rt_domain(did)%g_IXRT,rt_domain(did)%g_JXRT   &
+#endif
+               )
 
+#ifdef MPP_LAND
           call MPP_CHROUTING_CONF(rt_domain(did)%g_ixrt,rt_domain(did)%g_jxrt,rt_domain(did)%ixrt,rt_domain(did)%jxrt, rt_domain(did)%NLAKES,rt_domain(did)%NLINKS,&
                rt_domain(did)%lake_mskrt, rt_domain(did)%lake_index,rt_domain(did)%link_location,rt_domain(did)%HRZAREA,rt_domain(did)%LAKEMAXH,&
                rt_domain(did)%WEIRC,rt_domain(did)%WEIRL,&
@@ -424,22 +427,6 @@ CONTAINS
                rt_domain(did)%CHANXI,rt_domain(did)%CHANYJ, rt_domain(did)%lakenode,rt_domain(did)%mpp_nlinks, rt_domain(did)%nlinks_index, rt_domain(did)%maxorder, &
                rt_domain(did)%yw_mpp_nlinks)
 !!!!!   lake_index,Link_Location)
-#else
-          CALL READ_CHROUTING(rt_domain(did)%IXRT,rt_domain(did)%JXRT,rt_domain(did)%ELRT,rt_domain(did)%CH_NETRT, &
-               rt_domain(did)%LAKE_MSKRT, &
-               rt_domain(did)%FROM_NODE, rt_domain(did)%TO_NODE, rt_domain(did)%TYPEL, rt_domain(did)%ORDER, &
-               rt_domain(did)%MAXORDER, rt_domain(did)%NLINKS, &
-               rt_domain(did)%NLAKES, rt_domain(did)%MUSK, rt_domain(did)%MUSX, rt_domain(did)%QLINK,rt_domain(did)%CHANLEN, &
-               rt_domain(did)%MannN, rt_domain(did)%So, rt_domain(did)%ChSSlp, rt_domain(did)%Bw, &
-               rt_domain(did)%HRZAREA, rt_domain(did)%LAKEMAXH, rt_domain(did)%WEIRC, rt_domain(did)%WEIRL, rt_domain(did)%ORIFICEC, &
-               rt_domain(did)%ORIFICEA, rt_domain(did)%ORIFICEE, rt_domain(did)%LATLAKE, rt_domain(did)%LONLAKE, rt_domain(did)%ELEVLAKE, &
-               nlst_rt(did)%route_link_f,nlst_rt(did)%route_lake_f, &
-               nlst_rt(did)%route_direction_f, nlst_rt(did)%route_order_f, &
-               nlst_rt(did)%CHANRTSWCRT,rt_domain(did)%dist, rt_domain(did)%ZELEV, rt_domain(did)%LAKENODE, rt_domain(did)%CH_NETLNK, &
-               rt_domain(did)%CHANXI, rt_domain(did)%CHANYJ, &
-               rt_domain(did)%CHLAT, rt_domain(did)%CHLON, nlst_rt(did)%channel_option, &
-               rt_domain(did)%LATVAL,rt_domain(did)%LONVAL, &
-               rt_domain(did)%STRMFRXSTPTS,nlst_rt(did)%geo_finegrid_flnm)
 #endif
     endif
   END IF
@@ -456,6 +443,7 @@ CONTAINS
 !DJG Need to insert call for acquiring routing fields here...
 !DJG     include as a subroutine in module module_Noahlsm_wrfcode_input.F
 !DJG  Calculate terrain slopes 'SOXRT,SOYRT' from subgrid elevation 'ELRT'
+
 
         rt_domain(did)%so8rt = -999
         Vmax = 0.0
@@ -600,14 +588,13 @@ CONTAINS
            print *, "new Simple GW-Bucket Scheme selected, retrieving files..."
 #endif
 #ifdef MPP_LAND
-           CALL MPP_READ_SIMP_GW(rt_domain(did)%IX,rt_domain(did)%JX,rt_domain(did)%IXRT,&
+           CALL MPP_READ_SIMP_GW(              &
+#else
+           CALL READ_SIMP_GW(                  &
+#endif
+              rt_domain(did)%IX,rt_domain(did)%JX,rt_domain(did)%IXRT,&
               rt_domain(did)%JXRT,rt_domain(did)%GWSUBBASMSK,nlst_rt(did)%gwbasmskfil,&
               rt_domain(did)%gw_strm_msk,rt_domain(did)%numbasns,rt_domain(did)%ch_netrt,nlst_rt(did)%AGGFACTRT)
-#else
-           CALL READ_SIMP_GW(rt_domain(did)%IX,rt_domain(did)%JX,rt_domain(did)%IXRT,rt_domain(did)%JXRT, &
-              rt_domain(did)%GWSUBBASMSK,nlst_rt(did)%gwbasmskfil,&
-              rt_domain(did)%gw_strm_msk,rt_domain(did)%numbasns,rt_domain(did)%ch_netrt,nlst_rt(did)%AGGFACTRT)
-#endif
             allocate (rt_domain(did)%qout_gwsubbas (rt_domain(did)%numbasns))
             allocate (rt_domain(did)%qin_gwsubbas (rt_domain(did)%numbasns))
             allocate (rt_domain(did)%z_gwsubbas (rt_domain(did)%numbasns))

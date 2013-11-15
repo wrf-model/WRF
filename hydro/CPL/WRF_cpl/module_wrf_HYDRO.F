@@ -1,17 +1,24 @@
 module module_WRF_HYDRO
 
+#ifdef MPP_LAND
     use module_mpp_land, only: global_nx, global_ny, decompose_data_real, &
                  write_io_real, my_id, mpp_land_bcast_real1, IO_id, &
-                mpp_land_bcast_real
+                mpp_land_bcast_real, mpp_land_bcast_int1
+#endif
     use module_HYDRO_drv, only: HYDRO_ini, HYDRO_exe
 
     use module_rt_data, only:  rt_domain
     use module_CPL_LAND, only: CPL_LAND_INIT, cpl_outdate
     use module_namelist, only: nlst_rt
     USE module_domain, ONLY : domain, domain_clock_get
+    !yw USE module_configure, only : config_flags
+    USE module_configure, only: model_config_rec
+ 
 
     implicit none
      
+    !yw   added for check soil moisture and soiltype
+    integer ::  checkSOIL_flag
 
 
 
@@ -34,6 +41,7 @@ CONTAINS
         integer ntime
 
         integer :: i,j
+        
 
 !output flux and state variable
 
@@ -41,6 +49,10 @@ CONTAINS
         ix = ite - its + 1
         jx = jte - jts + 1
 
+        if(HYDRO_dt .le. 0) then
+             write(6,*) "Warning: HYDRO_dt <= 0 from land input. set it to be 1 seconds."
+             HYDRO_dt = 1
+        endif
 
         ntime = 1
 
@@ -51,14 +63,40 @@ CONTAINS
         if(.not. RT_DOMAIN(did)%initialized) then
 
 
+           !yw nlst_rt(did)%nsoil = config_flags%num_soil_layers
+           !nlst_rt(did)%nsoil = model_config_rec%num_metgrid_soil_levels
+           nlst_rt(did)%nsoil = grid%num_soil_layers
+
+         
+#ifdef MPP_LAND
+           call mpp_land_bcast_int1 (nlst_rt(did)%nsoil)
+#endif
+           allocate(nlst_rt(did)%zsoil8(nlst_rt(did)%nsoil))
+           if(grid%zs(1) <  0) then
+              nlst_rt(did)%zsoil8(1:nlst_rt(did)%nsoil) = grid%zs(1:nlst_rt(did)%nsoil)
+           else
+              nlst_rt(did)%zsoil8(1:nlst_rt(did)%nsoil) = -1*grid%zs(1:nlst_rt(did)%nsoil)
+           endif
 
             CALL domain_clock_get( grid, current_timestr=cpl_outdate)
             nlst_rt(did)%startdate(1:19) = cpl_outdate(1:19)
             nlst_rt(did)%olddate(1:19) = cpl_outdate(1:19)
 
+
             call CPL_LAND_INIT(its,ite,jts,jte)
 
-            call HYDRO_ini(ntime,did,ix0=ix,jx0=jx,vegtyp=grid%IVGTYP(its:ite,jts:jte),soltyp=grid%isltyp(its:ite,jts:jte))
+#ifdef HYDRO_D
+               write(6,*) "sf_surface_physics is ", grid%sf_surface_physics
+#endif
+
+           if(grid%sf_surface_physics .eq. 5) then    
+                ! clm4 
+               call HYDRO_ini(ntime,did=did,ix0=1,jx0=1)
+           else
+               call HYDRO_ini(ntime,did,ix0=ix,jx0=jx,vegtyp=grid%IVGTYP(its:ite,jts:jte),soltyp=grid%isltyp(its:ite,jts:jte))
+           endif
+
+
 
             if(nlst_rt(did)%sys_cpl .ne. 2) then
                write(6,*) "Error: sys_cpl should be 2."
@@ -70,9 +108,17 @@ CONTAINS
             nlst_rt(did)%olddate(1:19) = cpl_outdate(1:19)
 
         endif
+
             nlst_rt(did)%dt = HYDRO_dt
+
+
+
             mm = HYDRO_dt/nlst_rt(did)%dtrt
             if(mm*nlst_rt(did)%dtrt .lt. HYDRO_dt) nlst_rt(did)%dtrt = HYDRO_dt/mm
+
+#ifdef HYDRO_D 
+        write(6,*) "mm, nlst_rt(did)%dt = ",mm, nlst_rt(did)%dt
+#endif
 
         if(nlst_rt(did)%SUBRTSWCRT .eq.0  &
                .and. nlst_rt(did)%OVRTSWCRT .eq. 0 .and. nlst_rt(did)%GWBASESWCRT .eq. 0) return
@@ -81,7 +127,12 @@ CONTAINS
 
         ! get the data from WRF 
 
-        if(RT_DOMAIN(did)%initialized .or. (nlst_rt(did)%rst_typ .eq. 0) ) then
+
+       if((.not. RT_DOMAIN(did)%initialized) .and. (nlst_rt(did)%rst_typ .eq. 1) ) then
+#ifdef HYDRO_D
+           write(6,*) "restart initial data from offline file"
+#endif
+       else
             do k = 1, nlst_rt(did)%nsoil
                 RT_DOMAIN(did)%STC(:,:,k) = grid%TSLB(its:ite,k,jts:jte) 
                 RT_DOMAIN(did)%smc(:,:,k) = grid%smois(its:ite,k,jts:jte) 
@@ -89,9 +140,16 @@ CONTAINS
             end do 
             rt_domain(did)%infxsrt = grid%infxsrt(its:ite,jts:jte)
             rt_domain(did)%soldrain = grid%soldrain(its:ite,jts:jte)
-        endif  
+       endif  
+
+
+!yw       if(checkSOIL_flag .ne. 99) then
+!yw           call checkSoil(did) 
+!yw           checkSOIL_flag = 99
+!yw       endif
 
             call HYDRO_exe(did)
+
 
 ! add for update the WRF state variable.
             do k = 1, nlst_rt(did)%nsoil
@@ -107,7 +165,6 @@ CONTAINS
 !           grid%xice(its:ite,jts:jte) = rt_domain(did)%sice
 
             RT_DOMAIN(did)%initialized = .true.
-     return 
      end subroutine wrf_cpl_HYDRO
 
 
@@ -251,5 +308,14 @@ CONTAINS
 
 
       end subroutine lsm_wrf_input
+
+      subroutine  checkSoil(did) 
+          implicit none
+          integer :: did
+          where(rt_domain(did)%smc(:,:,1) <=0) RT_DOMAIN(did)%VEGTYP = 16
+          where(rt_domain(did)%sh2ox(:,:,1) <=0) RT_DOMAIN(did)%VEGTYP = 16
+          where(rt_domain(did)%smc(:,:,1) >=100) RT_DOMAIN(did)%VEGTYP = 16
+          where(rt_domain(did)%sh2ox(:,:,1) >=100) RT_DOMAIN(did)%VEGTYP = 16
+      end subroutine checkSoil
 
 end module module_wrf_HYDRO

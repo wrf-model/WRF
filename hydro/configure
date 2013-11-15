@@ -19,6 +19,9 @@
   }
 
   if(-e macros) {system (rm -f macros);}
+#  if(-e Makefile) {system "rm -f Makefile" ;}
+
+#  system("cp arc/Makefile ."); 
 
   if($#ARGV == 0) {
      $response = shift(@ARGV) ;
@@ -95,4 +98,4 @@
   if(! (-e lib)) {mkdir lib;}
   if(! (-e mod)) {mkdir mod;}
   if(-e "macros.tmp")  { system("cat macros.tmp macros > macros.a; rm -f macros.tmp; mv macros.a macros");}
-  if((-d "HRLDAS") ) {system "cat macros HRLDAS/user_build_options.bak  > HRLDAS/user_build_options";}
+  if((-d "LandModel") ) {system "cat macros LandModel/user_build_options.bak  > LandModel/user_build_options";}

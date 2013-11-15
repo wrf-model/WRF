@@ -31,8 +31,8 @@ Contains
     if (ierr /= 0) then
 #ifdef HYDRO_D
        write(*,'("READFORC_WRF Problem opening netcdf file: ''", A, "''")') trim(flnm)
-       call hydro_stop()
 #endif
+       call hydro_stop()
     endif
 
     call get_2d_netcdf_ruc("T2",     ncid, t,     ix, jx,tlevel, .true., ierr)
@@ -71,8 +71,8 @@ Contains
 #ifdef HYDRO_D
        write(*,'("Problem opening geo_static file: ''", A, "''")') &
             trim(geo_static_flnm)
-       call hydro_stop()
 #endif
+       call hydro_stop()
     endif
 
     iret = nf_inq_dimid(ncid, "west_east", dimid)
@@ -80,64 +80,64 @@ Contains
     if (iret /= 0) then
 #ifdef HYDRO_D
        print*, "nf_inq_dimid:  west_east"
-       call hydro_stop()
 #endif
+       call hydro_stop()
     endif
 
     iret = nf_inq_dimlen(ncid, dimid, ix)
     if (iret /= 0) then
 #ifdef HYDRO_D
        print*, "nf_inq_dimlen:  west_east"
-       call hydro_stop()
 #endif
+       call hydro_stop()
     endif
 
     iret = nf_inq_dimid(ncid, "south_north", dimid)
     if (iret /= 0) then
 #ifdef HYDRO_D
        print*, "nf_inq_dimid:  south_north"
-       call hydro_stop()
 #endif
+       call hydro_stop()
     endif
 
     iret = nf_inq_dimlen(ncid, dimid, jx)
     if (iret /= 0) then
 #ifdef HYDRO_D
        print*, "nf_inq_dimlen:  south_north"
-       call hydro_stop()
 #endif
+       call hydro_stop()
     endif
 
     iret = nf_inq_dimid(ncid, "land_cat", dimid)
     if (iret /= 0) then
 #ifdef HYDRO_D
        print*, "nf_inq_dimid:  land_cat"
-       call hydro_stop()
 #endif
+       call hydro_stop()
     endif
 
     iret = nf_inq_dimlen(ncid, dimid, land_cat)
     if (iret /= 0) then
 #ifdef HYDRO_D
        print*, "nf_inq_dimlen:  land_cat"
-       call hydro_stop()
 #endif
+       call hydro_stop()
     endif
 
     iret = nf_inq_dimid(ncid, "soil_cat", dimid)
     if (iret /= 0) then
 #ifdef HYDRO_D
        print*, "nf_inq_dimid:  soil_cat"
-       call hydro_stop()
 #endif
+       call hydro_stop()
     endif
 
     iret = nf_inq_dimlen(ncid, dimid, soil_cat)
     if (iret /= 0) then
 #ifdef HYDRO_D
        print*, "nf_inq_dimlen:  soil_cat"
-       call hydro_stop()
 #endif
+       call hydro_stop()
     endif
 
     iret = nf_close(ncid)
@@ -169,8 +169,8 @@ Contains
     if (ierr /= 0) then
 #ifdef HYDRO_D
        write(*,'("Problem opening geo_static file: ''", A, "''")') trim(geo_static_flnm)
-       call hydro_stop() 
 #endif
+       call hydro_stop() 
     endif
 
     flag = -99 
@@ -181,8 +181,8 @@ Contains
         if(ierr .ne. 0) then
 #ifdef HYDRO_D
             write(6,*) "XLAT not found from wrfstatic file. "
-            call hydro_stop() 
 #endif
+            call hydro_stop() 
         endif
         flag = 2
     endif
@@ -246,12 +246,12 @@ Contains
 
     ! Close the NetCDF file
     ierr = nf_close(ncid)
-#ifdef HYDRO_D
     if (ierr /= 0) then
+#ifdef HYDRO_D
        print*, "MODULE_NOAHLSM_HRLDAS_INPUT:  READLAND_HRLDAS:  NF_CLOSE"
+#endif
        call hydro_stop()
     endif
-#endif
 
     ! Make sure vegtyp and soltyp are consistent when it comes to water points,
     ! by setting soil category to water when vegetation category is water, and
@@ -286,8 +286,8 @@ Contains
         if (fatal_IF_ERROR) then
 #ifdef HYDRO_D
            print*, "MODULE_NOAHLSM_HRLDAS_INPUT: get_2d_netcdf_ruc:nf_inq_varid"
-           call hydro_stop()
 #endif
+           call hydro_stop()
         else
           ierr = iret
           return
@@ -320,8 +320,8 @@ Contains
         if (fatal_IF_ERROR) then
 #ifdef HYDRO_D
            print*, "MODULE_NOAHLSM_HRLDAS_INPUT: get_2d_netcdf_cows:nf_inq_varid"
-           call hydro_stop()
 #endif
+           call hydro_stop()
         else
           ierr = iret
           return
@@ -367,8 +367,8 @@ Contains
 #ifdef HYDRO_D
        write(*,'("READINIT Problem opening netcdf file: ''", A, "''")') &
             trim(netcdf_flnm)
-       call hydro_stop()
 #endif
+       call hydro_stop()
     endif
 
     call get_2d_netcdf("CANWAT",     ncid, cmc,     units, ix, jx, .TRUE., ierr)
@@ -384,8 +384,8 @@ Contains
 #ifdef HYDRO_D
        print*, 'units = "'//trim(units)//'"'
        print*, "Unrecognized units on WEASD"
-       call hydro_stop()
 #endif
+       call hydro_stop()
     endif
 
     call get_2d_netcdf("SNODEP",     ncid, snodep,   units, ix, jx, .FALSE., ierr_snodep)
@@ -445,12 +445,12 @@ Contains
     integer :: ncid
 
     ! Open the NetCDF file.
-    ierr = nf_open(flnm, NF_NOWRITE, ncid)
+    ierr = nf_open(trim(flnm), NF_NOWRITE, ncid)
     if (ierr /= 0) then
 #ifdef HYDRO_D
        write(*,'("READFORC Problem opening netcdf file: ''", A, "''")') trim(flnm)
-       call hydro_stop()
 #endif
+       call hydro_stop()
     endif
 
     call get_2d_netcdf("T2D",     ncid, t,     units, ix, jx, .TRUE., ierr)
@@ -542,14 +542,16 @@ Contains
         end if
 
         ierr = nf_inq_varid(ncid,  "precip",  varid)
+        if(ierr /= 0) ierr_flg = ierr
         if (ierr /= 0) then
-          ierr = nf_inq_varid(ncid,  "pcp_daily",  varid)   !recheck variable name...
+          ierr = nf_inq_varid(ncid,  "precip_rate",  varid)   !recheck variable name...
           if (ierr /= 0) then
 #ifdef HYDRO_D
             write(*,'("READFORC_MDV Problem reading precip netcdf file: ''", A,"''")') &
                  trim(flnm)
 #endif
           end if
+          ierr_flg = ierr
           mmflag = 1
         end if
         ierr = nf_get_var_real(ncid, varid, pcp)
@@ -593,8 +595,8 @@ Contains
 #ifdef HYDRO_D
           write(*,'("READFORC_NAMPCP1 Problem opening netcdf file: ''",A, "''")') &
               trim(flnm)
-          call hydro_stop()
 #endif
+          call hydro_stop()
         end if
 
         ierr = nf_inq_varid(ncid,  trim(product),  varid)
@@ -605,8 +607,8 @@ Contains
 #ifdef HYDRO_D
           write(*,'("READFORC_NAMPCP2 Problem reading netcdf file: ''", A,"''")') &
              trim(flnm)
-          call hydro_stop()
 #endif
+          call hydro_stop()
         end if
       endif
 #ifdef HYDRO_D
@@ -654,8 +656,8 @@ Contains
     if (ierr /= 0) then
 #ifdef HYDRO_D
        write(*,'("READFORC_COWS Problem opening netcdf file: ''", A, "''")') trim(flnm)
-       call hydro_stop()
 #endif
+       call hydro_stop()
     endif
 
     call get_2d_netcdf_cows("TA2",     ncid, t,     ix, jx,tlevel, .TRUE., ierr)
@@ -696,8 +698,8 @@ Contains
     if (ierr /= 0) then
 #ifdef HYDRO_D
        write(*,'("READFORC_RUC Problem opening netcdf file: ''", A, "''")') trim(flnm)
-       call hydro_stop()
 #endif
+       call hydro_stop()
     endif
 
     call get_2d_netcdf_ruc("T2",     ncid, t,     ix, jx,tlevel, .true., ierr)
@@ -725,15 +727,15 @@ Contains
 
 
 
-  subroutine READSNOW_HRLDAS(flnm,ix,jx,target_date,weasd,snodep)
+  subroutine READSNOW_FORC(flnm,ix,jx,weasd,snodep)
     implicit none
 
     character(len=*),                   intent(in)  :: flnm
     integer,                            intent(in)  :: ix
     integer,                            intent(in)  :: jx
-    character(len=*),                   intent(in)  :: target_date
     real,             dimension(ix,jx), intent(out) :: weasd
     real,             dimension(ix,jx), intent(out) :: snodep
+    real, dimension(ix,jx) :: tmp
 
     character(len=256) :: units
     integer :: ierr
@@ -745,51 +747,67 @@ Contains
     if (ierr /= 0) then
 #ifdef HYDRO_D
        write(*,'("READSNOW Problem opening netcdf file: ''", A, "''")') trim(flnm)
-       call hydro_stop()
 #endif
+       call hydro_stop()
     endif
 
-    call get_2d_netcdf("WEASD",  ncid, weasd,   units, ix, jx, .FALSE., ierr)
+    call get_2d_netcdf("WEASD",  ncid, tmp,   units, ix, jx, .FALSE., ierr)
+    if (ierr /= 0) then
+         call get_2d_netcdf("SNOW",  ncid, tmp,   units, ix, jx, .FALSE., ierr)
+         if (ierr == 0) then
+            units = "mm"
+            print *, "read WEASD from wrfoutput ...... "
+            weasd = tmp * 1.E-3
+         endif
+    else
+         weasd = tmp
+         if (trim(units) == "m") then
+            ! No conversion necessary
+         else if (trim(units) == "mm") then
+            ! convert WEASD from mm to m
+            weasd = weasd * 1.E-3
+         endif
+    endif
 
     if (ierr /= 0) then
 #ifdef HYDRO_D
        print *, "!!!!! NO WEASD present in input file...initialize to 0."
 #endif
-       weasd = 0.
-       units = "mm"
     endif
 
-    if (trim(units) == "m") then
-       ! No conversion necessary
-    else if (trim(units) == "mm") then
-       ! convert WEASD from mm to m
-       weasd = weasd * 1.E-3
+
+    call get_2d_netcdf("SNODEP",     ncid, tmp,   units, ix, jx, .FALSE., ierr)
+    if (ierr /= 0) then
+       ! Quick assumption regarding snow depth.
+       call get_2d_netcdf("SNOWH",     ncid, tmp,   units, ix, jx, .FALSE., ierr)
+       if(ierr .eq. 0) then
+            print *, "read snow depth from wrfoutput ... " 
+            snodep = tmp
+       endif
     else
-#ifdef HYDRO_D
-       print*, 'units = "'//trim(units)//'"'
-       print*, "Unrecognized units on WEASD"
-       call hydro_stop()
-#endif
+       snodep = tmp
     endif
-
-    call get_2d_netcdf("SNODEP",     ncid, snodep,   units, ix, jx, .FALSE., ierr)
 
     if (ierr /= 0) then
        ! Quick assumption regarding snow depth.
-       snodep = weasd * 10.
+!yw       snodep = weasd * 10.
+       where(snodep .lt. weasd) snodep = weasd*10  !set lower bound to correct bi-lin interp err...
     endif
 
 !DJG check for erroneous neg WEASD or SNOWD due to offline interpolation...
-       do i=1,ix
-         do j=1,jx
-           if (WEASD(i,j).lt.0.) WEASD(i,j)=0.0  !set lower bound to correct bi-lin interp err...
-           if (snodep(i,j).lt.0.) snodep(i,j)=0.0  !set lower bound to correct bi-lin interp err...
-         end do
-       end do
+       where(snodep .lt. 0) snodep = 0
+       where(weasd .lt. 0) weasd = 0
+
+!yw      do i=1,ix
+!yw        do j=1,jx
+!yw           if (WEASD(i,j).lt.0.) WEASD(i,j)=0.0  !set lower bound to correct bi-lin interp err...
+!yw           if (snodep(i,j).lt.0.) snodep(i,j)=0.0  !set lower bound to correct bi-lin interp err...
+!yw         end do
+!yw       end do
 
     ierr = nf_close(ncid)
 
-  end subroutine READSNOW_HRLDAS
+  end subroutine READSNOW_FORC
 
     subroutine get2d_hrldas(inflnm,ix,jx,nsoil,smc,stc,sh2ox,cmc,t1,weasd,snodep)
           implicit none
@@ -802,8 +820,8 @@ Contains
           if(iret .ne. 0 )then
 #ifdef HYDRO_D
               write(6,*) "Error: failed to open file :",trim(inflnm)
-             call hydro_stop()
 #endif
+             call hydro_stop()
           endif
 
           call get2d_hrldas_real("CMC",     ncid, cmc,     ix, jx)
@@ -859,11 +877,11 @@ Contains
         character(len=256) :: units
 
         ierr = nf_open(flnm, NF_NOWRITE, ncid)
-#ifdef HYDRO_D
+
         if(ierr .ne. 0) then
             call hydro_stop()
         endif
-#endif
+
         call get_2d_netcdf("RAINRATE",ncid, buf,   units, ix, jx, .TRUE., ierr)
         ierr = nf_close(ncid)
         do j = 1, jx
@@ -917,8 +935,8 @@ Contains
         if ( .not. fexist ) then
 #ifdef HYDRO_D
            print*, "no forcing data found", inflnm
-           call hydro_stop()
 #endif
+           call hydro_stop()
         endif
 
       CALL READFORC_HRLDAS(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
@@ -938,8 +956,8 @@ Contains
         if ( .not. fexist ) then
 #ifdef HYDRO_D
            print*, "no forcing data found", inflnm
-           call hydro_stop()
 #endif
+           call hydro_stop()
         endif
       CALL READFORC_HRLDAS(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
           PRES,XLONG,SHORT,PRCP1,LAI,FPAR)
@@ -958,12 +976,12 @@ Contains
              "_"//olddate(12:13)//":00:00"
 
         inquire (file=trim(inflnm), exist=fexist)
-#ifdef HYDRO_D
         if ( .not. fexist ) then
+#ifdef HYDRO_D
            print*, "no forcing data found", inflnm
+#endif
            call hydro_stop()
         endif
-#endif
 
        CALL READFORC_WRF(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
           PRES,XLONG,SHORT,PRCPnew)
@@ -1037,10 +1055,28 @@ Contains
              olddate(15:16)//".LDASIN_PRECIP_DOMAIN"//hgrid
         inquire (file=trim(inflnm), exist=fexist)
         if ( .not. fexist ) then
+           inflnm = trim(indir)//"/"//&
+                olddate(1:4)//olddate(6:7)//olddate(9:10)//olddate(12:13)//&
+                olddate(15:16)//".PRECIP_FORCING.nc"
+           inquire (file=trim(inflnm), exist=fexist)
+        endif
+        if ( .not. fexist ) then
+           inflnm = trim(indir)//"/"//&
+                olddate(1:4)//olddate(6:7)//olddate(9:10)//olddate(12:13)//&
+                olddate(15:16)//"00.PRECIP_FORCING.nc"
+           inquire (file=trim(inflnm), exist=fexist)
+        endif
+        if ( .not. fexist ) then
+           inflnm = trim(indir)//"/"//&
+                olddate(1:4)//olddate(6:7)//olddate(9:10)//olddate(12:13)//&
+                ".PRECIP_FORCING.nc"
+           inquire (file=trim(inflnm), exist=fexist)
+        endif
+        if ( .not. fexist ) then
 #ifdef HYDRO_D
            print*, "no forcing data found", inflnm
-           call hydro_stop()
 #endif
+           call hydro_stop()
         endif
 
        PRCP1 = 0.
@@ -1054,10 +1090,17 @@ Contains
 
 !If radar or spec. data is ok use if not, skip to original NARR data...
       IF (ierr_flg.eq.0) then   ! use spec. precip
-         PRCP1=PRCP2   !assumes PRCP2 is in mm/s
 !Convert units if necessary
         IF (mmflag.eq.0) then    !Convert pcp grid to units of mm/s...
-          PRCP1=PRCP2/DT     !convert from mm to mm/s
+           PRCP1=PRCP2/DT     !convert from mm to mm/s
+#ifdef HYDRO_D
+           print*, "Supplemental pcp is accumulated pcp/dt. "  
+#endif
+        else
+           PRCP1=PRCP2   !assumes PRCP2 is in mm/s 
+#ifdef HYDRO_D
+           print*, "Supplemental pcp is rate. "  
+#endif
         END IF  ! Endif mmflag
       ELSE   ! either stop or default to original forcing data...
 #ifdef HYDRO_D
@@ -1069,7 +1112,7 @@ Contains
 ! Loop through data to screen for plausible values
        do i=1,ix
          do j=1,jx
-           if (PRCP1(i,j).lt.0.) PRCP1(i,j)=0.0
+           if (PRCP1(i,j).lt.0.) PRCP1(i,j)= PRCP_old(i,j)
            if (PRCP1(i,j).gt.0.138889) PRCP1(i,j)=0.138889  !set max pcp intens = 500 mm/h
          end do
        end do
@@ -1086,62 +1129,86 @@ Contains
 
    if(FORC_TYP.eq.6) then
 
-!       if(K.eq.1.OR.(MOD((K-1)*INT(DT),3600)).eq.0) then   !if/then 1 hr check
 !!Create forcing data filename...
-           inflnm = trim(indir)//"/"//&
+        inflnm = trim(indir)//"/"//&
              olddate(1:4)//olddate(6:7)//olddate(9:10)//olddate(12:13)//&
              ".LDASIN_DOMAIN"//hgrid
+
         inquire (file=trim(inflnm), exist=fexist)
+
+        if ( .not. fexist ) then
+           inflnm = trim(indir)//"/"//&
+              olddate(1:4)//olddate(6:7)//olddate(9:10)//olddate(12:13)//&
+              olddate(15:16)//".LDASIN_DOMAIN"//hgrid
+           inquire (file=trim(inflnm), exist=fexist)
+        endif
+
+
         if ( .not. fexist ) then
 #ifdef HYDRO_D
-           print*, "no forcing data found", inflnm
-           call hydro_stop()
+           print*, "no ATM forcing data found at this time", inflnm
 #endif
+        else
+           CALL READFORC_HRLDAS(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
+                PRES,XLONG,SHORT,PRCP1,LAI,FPAR)
+           PRCP_old = PRCP1  ! This assigns new precip to last precip as a fallback for missing data...
         endif
-         CALL READFORC_HRLDAS(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
-             PRES,XLONG,SHORT,PRCP1,LAI,FPAR)
-!       endif
 
 
 !Get specified precip....
 !!!VIP, dimensions of grid are currently hardwired in input subroutine!!!
-!       product = "trmm"
-!       inflnm = trim(indir)//"/"//"sat_domain1.nc"
 !!Create forcing data filename...
         inflnm = trim(indir)//"/"//&
              olddate(1:4)//olddate(6:7)//olddate(9:10)//olddate(12:13)//&
-             olddate(15:16)//".LDASIN_PRECIP_DOMAIN"//hgrid
+             olddate(15:16)//"00.PRECIP_FORCING.nc"
         inquire (file=trim(inflnm), exist=fexist)
-        if ( .not. fexist ) then
 #ifdef HYDRO_D
-           print*, "no forcing data found", inflnm
-           call hydro_stop()
+       if(fexist) print*, "using pcp forcing: ",trim(inflnm)
+#endif
+        if ( .not. fexist ) then
+            inflnm = trim(indir)//"/"//&
+                 olddate(1:4)//olddate(6:7)//olddate(9:10)//olddate(12:13)//&
+                 olddate(15:16)//".PRECIP_FORCING.nc"
+            inquire (file=trim(inflnm), exist=fexist)
+#ifdef HYDRO_D
+            if(fexist) print*, "using pcp forcing: ",trim(inflnm)
 #endif
         endif
-
-      PRCP_old = PRCP1  ! This assigns new precip to last precip as a fallback for missing data...
-
+        if ( .not. fexist ) then
+           inflnm = trim(indir)//"/"//&
+                olddate(1:4)//olddate(6:7)//olddate(9:10)//olddate(12:13)//&
+                olddate(15:16)//".LDASIN_PRECIP_DOMAIN"//hgrid
+           inquire (file=trim(inflnm), exist=fexist)
 #ifdef HYDRO_D
-      print *, "Opening supplemental precipitation forcing file...",inflnm
+           if(fexist) print*, "using pcp forcing: ",trim(inflnm)
 #endif
-       CALL READFORC_MDV(inflnm,IX,JX,   &
-          PRCP2,mmflag,ierr_flg)
-
+        endif
+        if ( .not. fexist ) then
+#ifdef HYDRO_D
+           print*, "no supplemental forcing data found ", trim(inflnm)
+#endif
+           prcp1 = PRCP_old ! for missing pcp data use analysis/model input 
+        else
+           CALL READFORC_MDV(inflnm,IX,JX,   &
+              PRCP2,mmflag,ierr_flg)
 !If radar or spec. data is ok use if not, skip to original NARR data...
-      IF (ierr_flg.eq.0) then   ! use spec. precip
-         PRCP1=PRCP2   !assumes PRCP2 is in mm/s
-!Convert units if necessary
-        IF (mmflag.eq.0) then    !Convert pcp grid to units of mm/s...
-          PRCP1=PRCP2/DT     !convert from mm to mm/s
-        END IF  ! Endif mmflag
-      ELSE   ! either stop or default to original forcing data...
+           if(ierr_flg .ne. 0) then
 #ifdef HYDRO_D
-        print *,"Current RADAR precip data not found !!! Using previous available file..."
+               print*, "Warning: pcp reading problem: ", trim(inflnm)
 #endif
-        PRCP1 = PRCP_old
-      END IF  ! Endif ierr_flg
+               PRCP1=PRCP_old
+           else
+               PRCP1=PRCP2   !assumes PRCP2 is in mm/s
+               IF (mmflag.eq.0) then    !Convert pcp grid to units of mm/s...
+                PRCP1=PRCP2/DT     !convert from mm to mm/s
+               END IF  ! Endif mmflag
+               print*, "replace pcp successfully! ",trim(inflnm)
+           endif
+        endif
+
 
 ! Loop through data to screen for plausible values
+       where(PRCP1 .lt. 0) PRCP1=PRCP_old
        do i=1,ix
          do j=1,jx
            if (PRCP1(i,j).lt.0.) PRCP1(i,j)=0.0
@@ -1455,12 +1522,18 @@ Contains
 !
 !
 !!!!DJG Check for snow data assimilation...
-    if (SNOW_ASSIM.eq.1) then
+
+   if (SNOW_ASSIM .eq. 1) then
+
 ! Every 24 hours, update the snow field from analyses.
-     if ( OLDDATE(12:13) == "00") then
-        CALL READSNOW_HRLDAS(inflnm,IX,JX,OLDDATE,WEASD,SNODEP)
+     if(forc_typ .ne. 3 .or. forc_typ .ne. 6) then
+         if ( OLDDATE(12:13) == "00") then
+            CALL READSNOW_FORC(inflnm,IX,JX,WEASD,SNODEP)
+         endif
+     else
+        CALL READSNOW_FORC(inflnm,IX,JX,WEASD,SNODEP)
      endif
-!     close(iunit)
+
    end if
 
 
@@ -1503,7 +1576,7 @@ Contains
       end subroutine mpp_readland_hrldas
 
 
-      subroutine MPP_READSNOW_HRLDAS(flnm,ix,jx,OLDDATE,weasd,snodep,&
+      subroutine MPP_READSNOW_FORC(flnm,ix,jx,OLDDATE,weasd,snodep,&
                  global_nX, global_ny)
         implicit none
 
@@ -1520,13 +1593,13 @@ Contains
         integer :: ncid,i,j
 
         if(my_id .eq. IO_id) then
-          CALL READSNOW_HRLDAS(trim(flnm),global_nX, global_ny,OLDDATE,g_WEASD,g_SNODEP)
+          CALL READSNOW_FORC(trim(flnm),global_nX, global_ny,g_WEASD,g_SNODEP)
        endif
        call decompose_data_real(g_WEASD,WEASD)
        call decompose_data_real(g_SNODEP,SNODEP)
 
         return 
-        end  subroutine MPP_READSNOW_HRLDAS
+        end  subroutine MPP_READSNOW_FORC
 
       subroutine MPP_DEEPGW_HRLDAS(ix,jx,in_SMCMAX,&
                  global_nX, global_ny,nsoil,out_SMC,out_SH2OX)
@@ -1627,14 +1700,19 @@ Contains
      call decompose_data_real(g_PRCP1,PRCP1)
      call decompose_data_real(g_PRES,PRES)
 
-     flag = -1
-     if( my_id.eq.IO_id) then
-       if(OLDDATE(12:16) == "00:00") flag = 99
-     end if
-     call mpp_land_bcast_int1(flag)
-     if(flag .eq. 99 .and. snow_assim .eq. 1) then
-        call decompose_data_real(g_weasd,weasd)
-        call decompose_data_real(g_snodep,snodep)
+     if(forc_typ .eq. 3 .or. forc_typ .eq. 6 .and. snow_assim .eq. 1) then
+         call decompose_data_real(g_weasd,weasd)
+         call decompose_data_real(g_snodep,snodep)
+     else
+        flag = -1
+        if( my_id.eq.IO_id) then
+          if(OLDDATE(12:16) == "00:00") flag = 99
+        end if
+        call mpp_land_bcast_int1(flag)
+        if(flag .eq. 99 .and. snow_assim .eq. 1) then
+           call decompose_data_real(g_weasd,weasd)
+           call decompose_data_real(g_snodep,snodep)
+        endif
      endif
    return
    end subroutine mpp_read_forcing

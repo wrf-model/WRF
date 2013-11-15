@@ -2487,6 +2487,10 @@ CONTAINS
             ENDIF
          ENDIF
 
+!added for WRF_HYDRO
+#ifdef WRF_HYDRO
+         if(HYDRO_dt .ge. 0) HYDRO_dt = dtbl
+#endif
          CALL wrf_debug(100,'in NOAHMP DRV')
          CALL noahmplsm(ITIMESTEP,       YR, JULIAN_IN,   COSZEN, XLAT_URB2D, &
 	           DZ8W,     DTBL,      DZS,     NUM_SOIL_LAYERS,         DX, &
@@ -2514,6 +2518,9 @@ CONTAINS
 		  SHGXY,    SHCXY,    SHBXY,    EVGXY,     EVBXY,      GHVXY, &
 		  GHBXY,    IRGXY,    IRCXY,    IRBXY,      TRXY,      EVCXY, &
 	       CHLEAFXY,   CHUCXY,   CHV2XY,   CHB2XY,                        &                          
+#ifdef WRF_HYDRO
+                 sfcheadrt,INFXSRT,soldrain,                          &    !O
+#endif
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )

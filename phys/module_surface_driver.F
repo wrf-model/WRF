@@ -2948,7 +2948,7 @@ CONTAINS
                 sfcrunoff,udrunoff,ivgtyp,isltyp,vegfra,        &
                 albedo,znt,z0, tmn,xland,xice, emiss,           &
                 snowc,qsfc,rainbl,maxpatch,                     &
-                num_soil_layers,dtbl,dzs,itimestep,             &
+                num_soil_layers,dtbl,xtime, dt,dzs,             &
                 smois,tslb,snow,canwat,                         &
                 chs,chs2,sh2o,snowh,                            &
                 u_phy,v_phy,                                    &

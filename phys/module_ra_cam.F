@@ -536,6 +536,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       if (present(coszen)) then
          do i=its,ite
             ii=i-its+1
+            clat(ii)=XLAT(I,J)*DEGRAD
             coszrs(ii)=coszen(i,j)
          enddo
       else

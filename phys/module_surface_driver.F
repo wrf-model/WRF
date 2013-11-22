@@ -1146,8 +1146,12 @@ CONTAINS
 !
 !
 !------------------------------------------------------------------
+! Initialize local variables
+  q_ref2m = 0.0
+!------------------------------------------------------------------
 !
 ! stop run if using ssib and fractional seaice=0  (fds 12/2010)
+
   if(sf_surface_physics .eq. SSIBSCHEME .and. fractional_seaice .eq. 0) then
     WRITE( message,* ) 'Please activate fractional seaice option when using SSiB model'
     CALL wrf_error_fatal ( message )

@@ -156,6 +156,7 @@
       CALL nl_set_sf_urban_physics( grid%id, 0 )
       CALL nl_set_bl_pbl_physics( grid%id, 0 )
       CALL nl_set_cu_physics( grid%id, 0 )
+      CALL nl_set_cu_diag( grid%id, 0 )
       CALL nl_set_damp_opt( grid%id, 0 )
       CALL nl_set_sst_update( grid%id, 0 )
       CALL nl_set_fractional_seaice( grid%id, 0 )
@@ -173,8 +174,12 @@
       CALL nl_set_chem_opt (grid%id, 0)
       CALL nl_set_aer_ra_feedback (grid%id, 0)
       CALL nl_set_io_form_auxinput5 (grid%id, 0)
+      CALL nl_set_io_form_auxinput6 (grid%id, 0)
       CALL nl_set_io_form_auxinput7 (grid%id, 0)
       CALL nl_set_io_form_auxinput8 (grid%id, 0)
+      CALL nl_set_io_form_auxinput13 (grid%id, 0)
+      CALL nl_set_io_form_auxinput14 (grid%id, 0)
+      CALL nl_set_io_form_auxinput15 (grid%id, 0)
 #endif
 
       ! set diffusion to zero for backward integration
@@ -327,6 +332,7 @@
       CALL nl_set_sf_urban_physics( grid%id, grid%sf_urban_physics)
       CALL nl_set_bl_pbl_physics( grid%id, grid%bl_pbl_physics)
       CALL nl_set_cu_physics( grid%id, grid%cu_physics)
+      CALL nl_set_cu_diag( grid%id, grid%cu_diag )
       CALL nl_set_damp_opt( grid%id, grid%damp_opt)
       CALL nl_set_sst_update( grid%id, 0)
       CALL nl_set_fractional_seaice( grid%id, grid%fractional_seaice)
@@ -470,8 +476,26 @@
       CALL nl_set_chem_opt( grid%id, grid%chem_opt)
       CALL nl_set_aer_ra_feedback (grid%id, grid%aer_ra_feedback)
       CALL nl_set_io_form_auxinput5 (grid%id, grid%io_form_auxinput5)
+      CALL nl_set_io_form_auxinput6 (grid%id, grid%io_form_auxinput6)
       CALL nl_set_io_form_auxinput7 (grid%id, grid%io_form_auxinput7)
       CALL nl_set_io_form_auxinput8 (grid%id, grid%io_form_auxinput8)
+      CALL nl_set_io_form_auxinput13(grid%id, grid%io_form_auxinput13)
+      CALL nl_set_io_form_auxinput14(grid%id, grid%io_form_auxinput14)
+      CALL nl_set_io_form_auxinput15(grid%id, grid%io_form_auxinput15)
+
+      ! This resets the open file handles associated with the chemistry
+      ! auxinputs.  It may be a good idea to do this with other auxinputs as well.
+      ! A better fix than the below may be to never assign the file handles to begin
+      ! with when running DFI.
+
+      grid%auxinput5_oid = 0
+      grid%auxinput6_oid = 0
+      grid%auxinput7_oid = 0
+      grid%auxinput8_oid = 0
+      grid%auxinput12_oid = 0
+      grid%auxinput13_oid = 0
+      grid%auxinput14_oid = 0
+      grid%auxinput15_oid = 0
 #endif
     
 #if (EM_CORE == 1)
@@ -2785,6 +2809,7 @@ call wrf_message(mess)
       CALL nl_set_sf_urban_physics( grid%id, 0 )
       CALL nl_set_bl_pbl_physics( grid%id, 0 )
       CALL nl_set_cu_physics( grid%id, 0 )
+      CALL nl_set_cu_diag( grid%id, 0 )
       CALL nl_set_damp_opt( grid%id, 0 )
       CALL nl_set_sst_update( grid%id, 0 )
       CALL nl_set_gwd_opt( grid%id, 0 )
@@ -2803,8 +2828,12 @@ call wrf_message(mess)
       CALL nl_set_chem_opt (grid%id, 0)
       CALL nl_set_aer_ra_feedback (grid%id, 0)
       CALL nl_set_io_form_auxinput5 (grid%id, 0)
+      CALL nl_set_io_form_auxinput6 (grid%id, 0)
       CALL nl_set_io_form_auxinput7 (grid%id, 0)
       CALL nl_set_io_form_auxinput8 (grid%id, 0)
+      CALL nl_set_io_form_auxinput13 (grid%id, 0)
+      CALL nl_set_io_form_auxinput14 (grid%id, 0)
+      CALL nl_set_io_form_auxinput15 (grid%id, 0)
 #endif
 
 #if (EM_CORE == 1)

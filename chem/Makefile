@@ -53,6 +53,10 @@ MODULES =                                 \
         module_gocart_dust.o              \
         module_gocart_dust_afwa.o         \
         module_gocart_seasalt.o           \
+        module_uoc_dust.o                 \
+        module_qf03.o                     \
+        module_soilpsd.o                  \
+        module_dust_load.o                \
         module_mosaic_addemiss.o          \
         module_mosaic_initmixrats.o       \
         module_mosaic_movesect.o          \

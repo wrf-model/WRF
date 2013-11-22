@@ -31,6 +31,9 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
     /bin/cp Registry/Registry Registry/Registry.backup
     /bin/rm -f Registry/Registry
     /bin/rm -f Registry/io_boilerplate_temporary.inc
+    if ( -f Registry/Registry.rconfig ) then
+      /bin/rm -f Registry/Registry.rconfig
+    endif
   endif
   /bin/rm -fr ./netcdf_links
   /bin/rm -fr tools/code_dbase

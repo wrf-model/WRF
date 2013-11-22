@@ -14,7 +14,7 @@ superclean :
           depend inc/*.inc inc/*.h preproc.sh )
 	( cd da; /bin/rm -f *.exe )
 	( cd external/bufr; make clean )
-	( cd external/crtm; make clean )
+	( cd external/crtm_2.1.3; make clean )
 	( cd external/wavelet ; make superclean )
 	( cd da/makedepf90-2.8.8; /bin/rm -f makedepf90 config.log Makefile config.status )
 	( cd gen_be; /bin/rm -f *.exe )

@@ -116,6 +116,13 @@ CONTAINS
                          B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,        & !Optional multi-layer urban
                          DL_U_BEP,SF_BEP,VL_BEP,                 & !Optional multi-layer urban
                          TML,T0ML,HML,H0ML,HUML,HVML,TMOML,      & !Optional oml
+                         lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d,       & !lake
+                         snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d, & !lake
+                         z_lake3d,     dz_lake3d,    t_soisno3d, h2osoi_ice3d,   & !lake
+                         h2osoi_liq3d, h2osoi_vol3d, z3d,        dz3d,           & !lake
+                         zi3d,         watsat3d,     csol3d,     tkmg3d,         & !lake
+                         tkdry3d,      tksatu3d,     lake2d,       domainlakedepth,& !lake
+                         lakeminalt,   lake_depth,                                 & !lake
                          TSK_SAVE,                               & !Optional for fractional seaice
 !CLM variables
                          numc,nump,snl,                                      &
@@ -177,6 +184,7 @@ CONTAINS
    USE module_wrf_error
    USE module_wind_generic
    USE module_wind_fitch
+   use module_sf_lake, only : nlevsoil,nlevsnow,nlevlake
 #ifdef WRF_CHEM
    USE module_cam_support,         ONLY : cam_mam_aerosols
 #endif
@@ -482,6 +490,35 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DLG_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme,jms:jme), INTENT(INOUT) :: SF_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DL_U_BEP
+! lake varibles:
+  real,    dimension(ims:ime,jms:jme ),intent(out)                        :: lakedepth2d,    &
+                                                                             savedtke12d
+  real,    dimension(ims:ime,jms:jme ),intent(inout)                      :: snowdp2d,       &
+                                                                             h2osno2d,       &
+                                                                             snl2d,          &
+                                                                             t_grnd2d
+ 
+  real,    dimension( ims:ime,1:nlevlake, jms:jme ),INTENT(out)            :: t_lake3d,       &
+                                                                             lake_icefrac3d, &
+                                                                             z_lake3d,       &
+                                                                             dz_lake3d
+  real,    dimension( ims:ime,-nlevsnow+1:nlevsoil, jms:jme ),INTENT(inout) :: t_soisno3d,     &
+                                                                             h2osoi_ice3d,   &
+                                                                             h2osoi_liq3d,   &
+                                                                             h2osoi_vol3d,   &
+                                                                             z3d,            &
+                                                                             dz3d
+  real,    dimension( ims:ime,1:nlevsoil, jms:jme ),INTENT(out)            :: watsat3d,       &
+                                                                             csol3d,         &
+                                                                             tkmg3d,         &
+                                                                             tkdry3d,        &
+                                                                             tksatu3d
+  real,    dimension( ims:ime,-nlevsnow+0:nlevsoil, jms:jme ),INTENT(inout) :: zi3d
+  LOGICAL, DIMENSION( ims:ime, jms:jme ),intent(out)                      :: lake2d
+!  REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)                      ::  HT
+  REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)    ::  lake_depth
+  real, intent(in)      ::      domainlakedepth, lakeminalt
+ 
 
 !CLM
    INTEGER, INTENT(IN) ::       maxpatch
@@ -550,6 +587,7 @@ CONTAINS
    INTEGER :: sf_urban_physics
    INTEGER :: sf_ocean_physics
    REAL    :: oml_hml0
+   INTEGER :: LakeModel
    LOGICAL :: usemonalb
    LOGICAL :: rdmaxalb
    INTEGER :: mfshconv
@@ -562,6 +600,7 @@ integer myproc
    sf_urban_physics=config_flags%sf_urban_physics
    usemonalb=config_flags%usemonalb
    rdmaxalb=config_flags%rdmaxalb
+   LakeModel = config_flags%LakeModel
    mfshconv=config_flags%mfshconv
 #if ( EM_CORE == 1 )
    obs_twindo_cg=model_config_rec%obs_twindo(1)
@@ -880,6 +919,13 @@ integer myproc
                 T2MVXY,T2MBXY,CHSTARXY ,                        &
                 allowed_to_read ,                               &
                 start_of_simulation ,                           &
+                lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d,       & !lake
+                snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d, & !lake
+                z_lake3d,     dz_lake3d,    t_soisno3d, h2osoi_ice3d,   & !lake
+                h2osoi_liq3d, h2osoi_vol3d, z3d,        dz3d,           & !lake
+                zi3d,         watsat3d,     csol3d,     tkmg3d,         & !lake
+                tkdry3d,      tksatu3d,     LakeModel,  lake2d,           & !lake
+                domainlakedepth,            lakeminalt, lake_depth,       & !lake
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
                 DZR, DZB, DZG,                                  & !Optional urban
                 TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,   & !Optional urban
@@ -1697,6 +1743,13 @@ integer myproc
                 T2MVXY, T2MBXY ,CHSTARXY,                       &
                 allowed_to_read,                                &
                 start_of_simulation,                            &
+                lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d,       & !lake
+                snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d, & !lake
+                z_lake3d,     dz_lake3d,    t_soisno3d, h2osoi_ice3d,   & !lake
+                h2osoi_liq3d, h2osoi_vol3d, z3d,        dz3d,           & !lake
+                zi3d,         watsat3d,     csol3d,     tkmg3d,         & !lake
+                tkdry3d,      tksatu3d,     LakeModel,  lake2d,           & !lake
+                domainlakedepth,            lakeminalt, lake_depth,       & !lake
                 te_temf,cf3d_temf,wm_temf,                      & ! WA
 !                num_roof_layers,num_wall_layers,num_road_layers,& !Optional urban
                 DZR, DZB, DZG,                                  & !Optional urban
@@ -1792,6 +1845,7 @@ integer myproc
    USE module_bl_boulac
    USE module_bl_camuwpbl_driver, ONLY :  camuwpblinit
    USE module_bl_qnsepbl
+   USE module_sf_lake
    USE module_bl_qnsepbl09
    USE module_bl_mfshconvpbl
    USE module_bl_gbmpbl
@@ -1820,6 +1874,9 @@ integer myproc
    INTEGER , INTENT(IN)        ::     num_soil_layers
    INTEGER , INTENT(IN)        ::     SF_URBAN_PHYSICS 
 
+!   INTEGER , INTENT(IN)        ::     LakeModel
+   INTEGER         ::     LakeModel
+   real, intent(in)            ::      domainlakedepth,lakeminalt
    REAL ,    INTENT(IN)        ::     DT, BLDT
    INTEGER , INTENT(INOUT)     ::     STEPBL
 
@@ -2000,6 +2057,34 @@ integer myproc
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DLG_BEP 
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme,jms:jme),INTENT(INOUT) :: SF_BEP
    REAL, OPTIONAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: DL_U_BEP
+! lake varibles:
+  real,    dimension(ims:ime,jms:jme ),intent(out)                        :: lakedepth2d,    &
+                                                                             savedtke12d
+  real,    dimension(ims:ime,jms:jme ),intent(inout)                      :: snowdp2d,       &
+                                                                             h2osno2d,       &
+                                                                             snl2d,          &
+                                                                             t_grnd2d
+ 
+  real,    dimension( ims:ime,1:nlevlake, jms:jme ),INTENT(out)            :: t_lake3d,       &
+                                                                             lake_icefrac3d, &
+                                                                             z_lake3d,       &
+                                                                             dz_lake3d
+  real,    dimension( ims:ime,-nlevsnow+1:nlevsoil, jms:jme ),INTENT(inout) :: t_soisno3d,     &
+                                                                             h2osoi_ice3d,   &
+                                                                             h2osoi_liq3d,   &
+                                                                             h2osoi_vol3d,   &
+                                                                             z3d,            &
+                                                                             dz3d
+  real,    dimension( ims:ime,1:nlevsoil, jms:jme ),INTENT(out)            :: watsat3d,       &
+                                                                             csol3d,         &
+                                                                             tkmg3d,         &
+                                                                             tkdry3d,        &
+                                                                             tksatu3d
+  real,    dimension( ims:ime,-nlevsnow+0:nlevsoil, jms:jme ),INTENT(inout) :: zi3d
+ 
+  logical,    dimension(ims:ime,jms:jme ),intent(out)                        :: lake2d
+  REAL, OPTIONAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)    ::  lake_depth
+!  REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(IN)                         ::  HT
 
    REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
                                         ACHFX,ACLHF,ACGRDFLX
@@ -2389,6 +2474,18 @@ integer myproc
    ENDIF
 #endif
 
+     IF ( LakeModel == 1 ) THEN
+ 
+             call  lakeini(IVGTYP,         ISLTYP,          HT,              SNOW,           & !i
+                           lakeminalt,     restart,         domainlakedepth, lake_depth,     &
+                           lakedepth2d,    savedtke12d,     snowdp2d,        h2osno2d,       & !o
+                           snl2d,          t_grnd2d,        t_lake3d,        lake_icefrac3d, &
+                           z_lake3d,       dz_lake3d,       t_soisno3d,      h2osoi_ice3d,   &
+                           h2osoi_liq3d,   h2osoi_vol3d,    z3d,             dz3d,           &
+                           zi3d,           watsat3d,        csol3d,          tkmg3d,         &
+                           tkdry3d,        tksatu3d,        lake2d,            ims,ime, jms,jme)
+     ENDIF
+ 
 !-- initialize pbl scheme
 
    pbl_select: SELECT CASE(config_flags%bl_pbl_physics)

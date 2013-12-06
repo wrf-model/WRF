@@ -159,7 +159,8 @@ MODULES = \
         module_fddaobs_rtfdda.o \
 	module_fddaobs_driver.o \
 	module_wind_generic.o \
-	module_wind_fitch.o
+	module_wind_fitch.o  \
+        module_sf_lake.o
 
 FIRE_MODULES = \
         module_fr_fire_driver.o \

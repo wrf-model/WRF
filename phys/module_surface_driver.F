@@ -70,6 +70,12 @@ CONTAINS
      &          ,ch,tsq,qsq,cov,Sh3d,el_pbl,bl_mynn_cloudpdf          & ! MYNN
      &          ,fgdp,dfgdp,vdfg,grav_settling                        & ! Katata - fog dep
 #endif
+     &          ,lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d       & !lake
+     &          ,snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d & !lake
+     &          ,z_lake3d,     dz_lake3d,    t_soisno3d, h2osoi_ice3d   & !lake
+     &          ,h2osoi_liq3d, h2osoi_vol3d, z3d,        dz3d           & !lake
+     &          ,zi3d,         watsat3d,     csol3d,     tkmg3d         & !lake
+     &          ,tkdry3d,      tksatu3d,     LakeModel,  lakeminalt     & !lake
             !  cyl ocean variable
                 ,OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH,OM_ML,OM_LON          &
      &          ,OM_LAT,okms,okme,rdx,rdy,msfu,msfv,msft              &
@@ -309,6 +315,7 @@ CONTAINS
    USE module_sf_sfcdiags_ruclsm
    USE module_sf_sstskin
    USE module_sf_tmnupdate
+   USE module_sf_lake
    USE module_cpl, ONLY : coupler_on, cpl_rcv
 !
 !  This driver calls subroutines for the surface parameterizations.
@@ -513,6 +520,8 @@ CONTAINS
 
    INTEGER, INTENT(IN)::   NLCAT, mosaic_lu, mosaic_soil
    INTEGER, INTENT(IN)::   NSCAT
+   INTEGER,  INTENT(IN )  :: LakeModel
+   REAL,     INTENT(IN)   :: lakeminalt
 
    INTEGER, INTENT(IN)::   history_interval
 
@@ -1123,6 +1132,33 @@ CONTAINS
      REAL, DIMENSION( ims:ime, jms:jme ) :: UST_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: QZ0_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: TSK_LOCAL
+    ! lake varibles ,inout(14)
+    real,    dimension(ims:ime,jms:jme ),intent(inout)                      :: savedtke12d
+    real,    dimension(ims:ime,jms:jme ),intent(inout)                      :: snowdp2d,       &
+                                                                               h2osno2d,       &
+                                                                               snl2d,          &
+                                                                               t_grnd2d
+ 
+    real,    dimension( ims:ime,1:nlevlake, jms:jme ),INTENT(inout)          :: t_lake3d,       &
+                                                                               lake_icefrac3d
+    real,    dimension( ims:ime,-nlevsnow+1:nlevsoil, jms:jme ),INTENT(inout) :: t_soisno3d,     &
+                                                                               h2osoi_ice3d,   &
+                                                                               h2osoi_liq3d,   &
+                                                                               h2osoi_vol3d,   &
+                                                                               z3d,            &
+                                                                               dz3d
+    real,    dimension( ims:ime,-nlevsnow+0:nlevsoil, jms:jme ),INTENT(inout) :: zi3d
+    ! in(8)
+    real,    dimension( ims:ime,1:nlevlake, jms:jme ),INTENT(in)             :: z_lake3d,       &
+                                                                               dz_lake3d
+    real,    dimension( ims:ime,1:nlevsoil, jms:jme ),INTENT(in)             :: watsat3d,       &
+                                                                               csol3d,         &
+                                                                               tkmg3d,         &
+                                                                               tkdry3d,        &
+                                                                               tksatu3d
+    real,    dimension(ims:ime,jms:jme ),intent(in)                         :: lakedepth2d
+!    logical, dimension(ims:ime,jms:jme ),intent(in)                         :: lake 
+ 
 !
    REAL   :: xice_threshold
 
@@ -3366,6 +3402,36 @@ CONTAINS
      !$OMP END PARALLEL DO
    ENDIF
 #endif
+! adding a lake model -- 07/02/2010
+   IF ( LakeModel == 1 ) THEN
+ 
+      CALL wrf_debug( 100, 'Call LakeModel' )
+ 
+      DO ij = 1 , num_tiles
+ 
+         CALL Lake(  t_phy        ,p8w            ,dz8w         ,qv_curr         ,&  !i
+                     u_phy        ,v_phy          , glw         ,emiss           ,&
+                     rainbl       ,dtbl           ,swdown       ,albedo          ,&
+                     xlat_urb2d   ,z_lake3d       ,dz_lake3d    ,lakedepth2d     ,&
+                     watsat3d     ,csol3d         ,tkmg3d       ,tkdry3d         ,&
+                     tksatu3d     ,ivgtyp         ,ht           ,xland           ,&
+                     lakeminalt                                                  ,&
+                     ids          ,ide            ,jds          ,jde             ,&
+                     kds          ,kde            ,ims          ,ime             ,&
+                     jms          ,jme            ,kms          ,kme             ,&
+                     i_start(ij)  ,i_end(ij)      ,j_start(ij)  ,j_end(ij)       ,&
+                     kts          ,kte                                           ,&
+                     h2osno2d     ,snowdp2d       ,snl2d        ,z3d             ,&  !h
+                     dz3d         ,zi3d           ,h2osoi_vol3d ,h2osoi_liq3d    ,&
+                     h2osoi_ice3d ,t_grnd2d       ,t_soisno3d   ,t_lake3d        ,&
+                     savedtke12d  ,lake_icefrac3d                                ,&
+                     hfx          ,lh             ,grdflx       ,tsk             ,&  !o
+                     qfx          ,t2             ,th2          ,q2 )
+ 
+ 
+      ENDDO
+ 
+   ENDIF
 
 ! Reset RAINBL in mm (Accumulation between PBL calls)
 

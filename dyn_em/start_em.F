@@ -797,6 +797,13 @@
                       grid%B_Q_BEP,grid%B_E_BEP,grid%DLG_BEP,                          & !multi-layer urban
                       grid%DL_U_BEP,grid%SF_BEP,grid%VL_BEP,                           & !multi-layer urban
                       grid%TML,grid%T0ML,grid%HML,grid%H0ML,grid%HUML,grid%HVML,grid%TMOML,     & !Optional oml
+                      grid%lakedepth2d,  grid%savedtke12d,  grid%snowdp2d,   grid%h2osno2d,       & !lake
+                      grid%snl2d,        grid%t_grnd2d,     grid%t_lake3d,   grid%lake_icefrac3d, & !lake
+                      grid%z_lake3d,     grid%dz_lake3d,    grid%t_soisno3d, grid%h2osoi_ice3d,   & !lake
+                      grid%h2osoi_liq3d, grid%h2osoi_vol3d, grid%z3d,        grid%dz3d,           & !lake
+                      grid%zi3d,         grid%watsat3d,     grid%csol3d,     grid%tkmg3d,         & !lake
+                      grid%tkdry3d,      grid%tksatu3d,     grid%lake2d,                            & !lake
+                      config_flags%domain_lakedepth,        config_flags%lakeminalt, grid%lake_depth,     & !lake
                       grid%TSK_SAVE,                                                   & !Optional fractional seaice
               grid%numc,grid%nump,grid%snl,grid%snowdp,&   ! start of CLM variables
               grid%wtc,grid%wtp,&

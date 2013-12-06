@@ -761,7 +761,11 @@ Namelist variables for controlling the adaptive time step option:
  						  parameters.  Currently works for mp_physics = 2,4,6,7,8,10,14,16
 				
 
-Options for lightning parameterization:
+Namelist variables for lake module: 
+
+ domain_lakedepth(max_dom)                    = 200,     ; lake depth   
+ lakemodel(max_dom)                           = 1,       ; lake model on/off 
+ lakeminalt(max_dom)                          = 50,      ; minimum elevation of lake   
 
  lightning_option (max_dom)                     ; Lightning parameterization option to allow flash rate prediction without chemistry
                                      = 0        ; off

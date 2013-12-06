@@ -2007,8 +2007,15 @@
      &                STMASSXY=grid%STMASSXY, WOODXY=grid%WOODXY,                        & ! Optional Noah-MP
      &                STBLCPXY=grid%STBLCPXY, FASTCPXY=grid%FASTCPXY,                    & ! Optional Noah-MP
      &                XSAIXY=grid%XSAIXY,                                                & ! Optional Noah-MP
-     &                T2MVXY=grid%T2MVXY, T2MBXY=grid%T2MBXY, CHSTARXY=grid%CHSTARXY     & ! Optional Noah-MP
-     &                ,MAXPATCH=1 & ! CLM
+     &                T2MVXY=grid%T2MVXY, T2MBXY=grid%T2MBXY, CHSTARXY=grid%CHSTARXY,    & ! Optional Noah-MP
+     &                lakedepth2d=grid%lakedepth2d,  savedtke12d=grid%savedtke12d,  snowdp2d=grid%snowdp2d,   h2osno2d=grid%h2osno2d,               & !lake
+     &                snl2d= grid%snl2d, t_grnd2d=grid%t_grnd2d, t_lake3d=grid%t_lake3d, lake_icefrac3d=grid%lake_icefrac3d,                        & !lake
+     &                z_lake3d=grid%z_lake3d, dz_lake3d=grid%dz_lake3d, t_soisno3d=grid%t_soisno3d, h2osoi_ice3d=grid%h2osoi_ice3d,                 & !lake
+     &                h2osoi_liq3d=grid%h2osoi_liq3d, h2osoi_vol3d=grid%h2osoi_vol3d, z3d=grid%z3d, dz3d=grid%dz3d,                                 & !lake
+     &                zi3d=grid%zi3d, watsat3d=grid%watsat3d, csol3d=grid%csol3d, tkmg3d=grid%tkmg3d,                                               & !lake
+     &                tkdry3d=grid%tkdry3d, tksatu3d=grid%tksatu3d, lake2d=grid%lake2d,                                                             & !lake
+     &                domainlakedepth=config_flags%domain_lakedepth, lakeminalt=config_flags%lakeminalt, lake_depth=grid%lake_depth,               & !lake
+     &                MAXPATCH=1 & ! CLM
      &                )
 
 #ifdef HWRF

@@ -478,6 +478,18 @@ BENCH_START(surf_driver_tim)
      &        ,SF_OCEAN_PHYSICS=config_flags%sf_ocean_physics ,OML_HML0=config_flags%oml_hml0 ,OML_GAMMA=config_flags%oml_gamma &
      &        ,TML=grid%tml, T0ML=grid%t0ml, HML=grid%hml, H0ML=grid%h0ml, HUML=grid%huml, HVML=grid%hvml, F=grid%f &
      &        ,TMOML=grid%TMOML,ISWATER=iswater &
+     &        ,lakedepth2d=grid%lakedepth2d,    savedtke12d=grid%savedtke12d        &   
+     &        ,snowdp2d=grid%snowdp2d,          h2osno2d=grid%h2osno2d              & !lake
+     &        ,snl2d=grid%snl2d,                t_grnd2d=grid%t_grnd2d              &   
+     &        ,t_lake3d=grid%t_lake3d,          lake_icefrac3d=grid%lake_icefrac3d  & !lake  
+     &        ,z_lake3d=grid%z_lake3d,          dz_lake3d=grid%dz_lake3d            &   
+     &        ,t_soisno3d=grid%t_soisno3d,      h2osoi_ice3d=grid%h2osoi_ice3d      & !lake
+     &        ,h2osoi_liq3d=grid%h2osoi_liq3d,  h2osoi_vol3d=grid%h2osoi_vol3d      &   
+     &        ,z3d=grid%z3d,                    dz3d=grid%dz3d                      & !lake
+     &        ,zi3d=grid%zi3d,                  watsat3d=grid%watsat3d              &   
+     &        ,csol3d=grid%csol3d,              tkmg3d=grid%tkmg3d                  & !lake     
+     &        ,tkdry3d=grid%tkdry3d,            tksatu3d=grid%tksatu3d              &   
+     &        ,LakeModel=grid%LakeModel,        lakeminalt=grid%lakeminalt          & !lake  
 ! CLM Varaibles
      &        ,NUMC=grid%numc,NUMP=grid%nump,SABV=grid%sabv,SABG=grid%sabg,LWUP=grid%lwup,SNL=grid%snl, &
      &         HISTORY_INTERVAL=config_flags%history_interval ,        &!ylu add hist inverval for accumulation T max/min

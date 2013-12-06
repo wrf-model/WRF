@@ -838,7 +838,12 @@ BENCH_START(pbl_driver_tim)
      &        ,XLAT_V=grid%xlat_v,XLONG_V=grid%xlong_v,FNM=grid%fnm       &
      &        ,FNP=grid%fnp, IS_CAMMGMP_USED = grid%is_CAMMGMP_used       &
 ! for grims shallow convection with ysupbl
-     &        ,WSTAR=grid%wstar_ysu,DELTA=grid%delta_ysu               &
+     &        ,WSTAR=grid%wstar_ysu,DELTA=grid%delta_ysu                  &
+! for pbl mixing of scalars and tracers
+     &        ,SCALAR=scalar,SCALAR_TEND=scalar_tend,NUM_SCALAR=num_scalar&
+     &        ,TRACER=tracer,TRACER_TEND=tracer_tend,NUM_TRACER=num_tracer&
+     &        ,SCALAR_PBLMIX=config_flags%scalar_pblmix                  &
+     &        ,TRACER_PBLMIX=config_flags%tracer_pblmix                  &
 #if (WRF_CHEM == 1)
      &        ,CHEM=chem,VD=grid%dep_vel                                 &
      &        ,NCHEM=num_chem,kdvel=config_flags%kdepvel                 &

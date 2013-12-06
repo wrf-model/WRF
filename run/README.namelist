@@ -586,6 +586,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 2, turn on topographic surface wind correction from Mass (YSU PBL only)
  bl_mynn_tkebudget                   = 0, default off; = 1 adds MYNN tke budget terms to output
  bl_mynn_tkeadvect                   = .false., default off; = .true. do MYNN tke advection
+ scalar_pblmix                       = 1 ; mix scalar fields consistent with PBL option (exch_h)
+ tracer_pblmix                       = 1 ; mix tracer fields consistent with PBL option (exch_h)
 
  cu_physics (max_dom)                cumulus option
                                      = 0, no cumulus

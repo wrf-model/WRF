@@ -99,7 +99,11 @@ CONTAINS
                ,qnc_curr,f_qnc,qni_curr,f_qni,rqniblten              &
                ,IS_CAMMGMP_USED                                      &
 ! for grims shallow convection with ysupbl
-               , wstar,delta                                       &
+               , wstar,delta                                         &
+! for pbl mixing of scalars and tracers
+     &        ,scalar,scalar_tend,num_scalar                         &
+     &        ,tracer,tracer_tend,num_tracer                         &
+     &        ,scalar_pblmix,tracer_pblmix                           &
 #if (WRF_CHEM == 1)
                ,chem,vd,nchem,kdvel,ndvel,num_vert_mix             &
 #endif
@@ -342,10 +346,12 @@ CONTAINS
 
 
    INTEGER,    INTENT(IN   )    ::     bl_pbl_physics, ra_lw_physics,sf_sfclay_physics,sf_urban_physics
+   INTEGER,    OPTIONAL,  INTENT(IN   )    ::     scalar_pblmix, tracer_pblmix
 
    INTEGER,    INTENT(IN   )    ::     ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
                                        kts,kte, num_tiles
+   INTEGER,    INTENT(IN   )    ::     num_scalar, num_tracer
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                   &
   &                                    i_start,i_end,j_start,j_end
@@ -640,6 +646,11 @@ CONTAINS
                                      ,thl_up, thv_up, rt_up       &
                                      ,rv_up, rc_up, u_up, v_up    &
                                      ,frac_up,rc_mf  
+
+    REAL , OPTIONAL   ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer
+    REAL , OPTIONAL   ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer_tend
+    REAL , OPTIONAL   ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar
+    REAL , OPTIONAL   ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar_tend
 
 #if (WRF_CHEM == 1)
 !   ACM Chem
@@ -1824,8 +1835,29 @@ CONTAINS
           DEALLOCATE (b_q)       ! Explicit component for the water vapor
           DEALLOCATE (sf )       ! surfaces
           DEALLOCATE (vl )       ! volumes
-      
      ENDIF       !idiff
+      
+          IF(scalar_pblmix .GT. 0)THEN
+            CALL diff4d  (DT=dtbl,DZ=dz8w, SCALAR=scalar, is_scalar=.true.  &
+              ,RHO=rho,EXCH_H=exch_h        &
+              ,EXCH_M=exch_m                &
+              ,SCALAR_TEND=scalar_tend      &
+              ,NUM_SCALAR=num_scalar, PARAM_FIRST_SCALAR=param_first_scalar &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde        &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme        &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte)
+          ENDIF
+          IF(tracer_pblmix .GT. 0)THEN
+            CALL diff4d  (DT=dtbl,DZ=dz8w, SCALAR=tracer, is_scalar=.false.  &
+              ,RHO=rho,EXCH_H=exch_h        &
+              ,EXCH_M=exch_m                &
+              ,SCALAR_TEND=tracer_tend      &
+              ,NUM_SCALAR=num_tracer, PARAM_FIRST_SCALAR=param_first_scalar &
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde        &
+              ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme        &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte)
+          ENDIF
+
 #endif
       
    ENDDO
@@ -2039,6 +2071,133 @@ CONTAINS
         
       END SUBROUTINE diff3d
 ! ===6=8===============================================================72
+          SUBROUTINE diff4d(DT,DZ,SCALAR,IS_SCALAR,RHO              &
+              ,EXCH_H,EXCH_M  &  
+              ,SCALAR_TEND    &
+              ,NUM_SCALAR, PARAM_FIRST_SCALAR     &
+              ,IDS,IDE,JDS,JDE,KDS,KDE      &
+              ,IMS,IME,JMS,JME,KMS,KME      &
+              ,ITS,ITE,JTS,JTE,KTS,KTE      &
+                                                                    )
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!    Based on subroutine written by Alberto Martilli, CIEMAT, Spain,
+!    e-mail:alberto_martilli@ciemat.es
+!    August 2008.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! ALberto
+! This routine solves the vertical diffusion 
+! + other source/sink terms (surface fluxes, building drag, non local terms, etc.)
+! for U,V, potential temperature and moisture. The equation should be written 
+! as follow, for a generic variable M:
+! 
+!      dM      1     d      dM
+!     ---- =----  ---(rho*K----)+AM+B
+!      dt     rho    dz     dz  
+! where A and B are the implict and explcit coefficients of the source/sink terms
+! (at the lowest level the surface fluxes should go in these terms)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!-----------------------------------------------------------------------
+      USE module_state_description, ONLY: P_QNS, P_QNR, P_QNG, P_QT, P_QNH, P_QVOLG
+
+      IMPLICIT NONE
+!
+!----------------------------------------------------------------------
+      INTEGER,INTENT(IN) :: NUM_SCALAR, PARAM_FIRST_SCALAR
+      INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                    &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                    &
+     &                     ,ITS,ITE,JTS,JTE,KTS,KTE
+
+! inputs
+      REAL, INTENT(IN)   :: DT
+      LOGICAL,INTENT(IN) :: IS_SCALAR
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: DZ ! Depth of vertical levels
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,NUM_SCALAR),INTENT(IN) :: SCALAR ! 4d scalar mixing ratio
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: RHO ! Air Density
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: EXCH_H ! Turbulent coefficient for heat
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: EXCH_M ! Turbulent coefficient for momentum 
+      
+! outputs
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME,NUM_SCALAR),INTENT(INOUT) :: SCALAR_TEND ! 4d scalar mixing ratio tendency
+! locals (same meaning as above, but 1D)
+
+      real s1d(kms:kme),exch_h1d(kms:kme)
+      real exch_m1d(kms:kme)
+      real dz1d(kms:kme),rho1d(kms:kme),rhoz1d(kms:kme)
+      real sf1d(kms:kme),vl1d(kms:kme)   
+      real a_s1d(kms:kme),b_s1d(kms:kme)
+      real ws1d(kms:kme)
+!
+      integer i,k,j,im  
+!----------------------------------------------------------------------
+      s1d=0.
+      exch_h1d=0.
+      exch_m1d=0.
+      rho1d=0.
+      rhoz1d=0.
+      sf1d=0.
+      vl1d=0.
+      a_s1d=0.
+      b_s1d=0.
+       
+      DO im=PARAM_FIRST_SCALAR,NUM_SCALAR
+! need to avoid mixing scalars associated with precipitating species (e.g. Nr)
+        IF((IS_SCALAR .AND. im.NE.P_QNS .AND. im.NE.P_QNR .AND. im.NE.P_QNG &
+          .AND. im.NE.P_QNH .AND. im.NE.P_QT .AND. im.NE.P_QVOLG) &
+          .OR. (.not. IS_SCALAR)) THEN
+        do j=jts,jte
+        do i=its,ite
+
+! put three D variables in temporary 1D variables
+
+       do k=kts,kte
+        s1d(k)=SCALAR(i,k,j,im)
+        dz1d(k)=dz(i,k,j)
+        rho1d(k)=rho(i,k,j) 
+!        a_s1d(k)=a_s(i,k,j)   ! implicit source
+!        b_s1d(k)=b_s(i,k,j)   ! explicit source
+        vl1d(k)=1.
+        sf1d(k)=1.
+       enddo
+       sf1d(kte+1)=1. 
+       do k=kts,kte    
+        exch_h1d(k)=exch_h(i,k,j)
+        exch_m1d(k)=exch_m(i,k,j)
+       enddo
+       exch_h1d(kts)=0.
+!       exch_h1d(kte+1)=0  
+       exch_m1d(kts)=0.
+!       exch_m1d(kte+1)=0
+        rhoz1d(kts)=rho1d(kts)
+        do k=kts+1,kte
+         rhoz1d(k)=(rho1d(k)*dz1d(k-1)+rho1d(k-1)*dz1d(k))/       &
+     &                      (dz1d(k-1)+dz1d(k))
+        enddo
+        rhoz1d(kte+1)=rho1d(kte)
+
+
+! solve the diffusion for scalar
+          
+       call diff(kms,kme,kts,kte,dt,s1d,rho1d,rhoz1d,exch_h1d,a_s1d,b_s1d,sf1d, &
+     &            vl1d,dz1d,ws1d) 
+
+!     
+! compute the tendencies
+
+        do k=kts,kte
+          scalar_tend(i,k,j,im)=(s1d(k)-scalar(i,k,j,im))/dt
+!          ws(i,k,j)=ws1d(k)   ! output fluxes
+        enddo
+        enddo
+        enddo 
+      ELSE
+!      print *,'scalar skipped im=',im, is_scalar
+      ENDIF
+      
+      ENDDO ! im loop
+!!!!!!!!!!!!
+
+        
+      END SUBROUTINE diff4d
 ! ===6=8===============================================================72
 
        subroutine diff(kms,kme,kts,kte,dt,co,da,daz,cd,aa,bb,sf,vl,dz,fc)

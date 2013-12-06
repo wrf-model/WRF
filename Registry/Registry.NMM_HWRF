@@ -828,12 +828,14 @@ state   real    dfi_qnh        ijkfbt   dfi_moist       1         m     r      "
 # Other Scalars
 state   real    -              ijkftb  scalar      1         m     -    -
 state   real    qni            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNICE"              "Ice Number concentration" "# kg(-1)"
+state   real    qt             ikjftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QT"               "Total condensate mixing ratio"   "kg kg-1"
 state   real    qns            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNSNOW"              "Snow Number concentration" "# kg(-1)"
 state   real    qnr            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNRAIN"              "Rain Number concentration" "# kg(-1)"
 state   real    qng            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNGRAUP"              "Graupel Number concentration" "# kg(-1)"
 state   real    qnh            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNHAIL"            "Hail Number concentration" "# kg(-1)"
 state   real    qnn            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNCCN"            "CCN Number concentration" "# kg(-1)"
 state   real    qnc            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNCLOUD"          "cloud water Number concentration" "# kg(-1)"
+state   real    qvolg          ikjftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QVGRAUPEL"        "Graupel Particle Volume" "m(3) kg(-1)"
 
 
 state   real    -              ijkftb  dfi_scalar      1         m     -   -

@@ -338,6 +338,8 @@ BENCH_START(cal_phy_tend)
                      grid%rqishten,grid%rqsshten,grid%rqgshten,        &
                      grid%RUNDGDTEN,grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN, &
                      grid%RMUNDGDTEN,                                  &
+                     scalar, scalar_tend, num_scalar,                  &
+                     tracer, tracer_tend, num_tracer,                  &
                      ids,ide, jds,jde, kds,kde,                        &
                      ims,ime, jms,jme, kms,kme,                        &
                      grid%i_start(ij), min(grid%i_end(ij),ide-1),      &

@@ -40,6 +40,7 @@
 #
 
 include registry.dimspec
+include registry.lake
 
 #############
 rconfig   integer ntracers                namelist,physics     1              4       -
@@ -813,6 +814,7 @@ state   real    -              ikjft   chem        1         -     -    -
 
 state    real   SMOIS            ilj     -          1         Z     rh       "SMOIS"                "SOIL MOISTURE" ""
 state    real   TSLB             ilj     -          1         Z     r       "TSLB" "SOIL TEMPERATURE" ""
+state    real   lake_depth            ij     misc        1         -     rhd=(interp_mask_water_field:lu_index,iswater)   "lake_depth"              "lake depth" "m"
 
 
 # MYJ PBL variables
@@ -1299,6 +1301,9 @@ rconfig   real    sas_shal_pgcon          namelist,physics      max_domains  -1 
 rconfig   integer sas_shal_conv           namelist,physics     max_domains    0        -     "sas_shal_conv"   "1=enable shallow convection in SAS (must use bl_pbl_physics=83)"
 rconfig   real    sas_mass_flux           namelist,physics      max_domains  9e9       -     "sas_mass_flux"   "mass flux limit (SAS scheme)" ""
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
+rconfig   integer LakeModel               namelist,physics      max_domains  0         h    "LakeModel"     "activate lake model  0=no, 1=yes"   ""
+rconfig   real    domain_lakedepth        namelist,physics      max_domains  50       rh     "domain_lakedepth"                     ""      ""
+rconfig   real    lakeminalt              namelist,physics      max_domains   5       rh     "lakeminalt"                    ""      ""
 
 # nmm variables
 rconfig   integer idtad                   namelist,physics     max_domains    2       irh    "idtad"  "fundamental timesteps between calls to NMM passive advection scheme"

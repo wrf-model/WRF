@@ -40,6 +40,7 @@
 #
 
 include registry.dimspec
+include registry.lake
 
 #############
 rconfig   integer ntracers                namelist,physics     1              4       -
@@ -884,6 +885,7 @@ state   real    -              ikjft   chem        1         -     -    -
 
 state    real   SMOIS            ilj     -          1         Z     rh       "SMOIS"                "SOIL MOISTURE" ""
 state    real   TSLB             ilj     -          1         Z     r       "TSLB" "SOIL TEMPERATURE" ""
+state    real   lake_depth            ij     misc        1         -     rhd=(interp_mask_water_field:lu_index,iswater)   "lake_depth"              "lake depth" "m"
 
 
 # MYJ PBL variables
@@ -1387,6 +1389,10 @@ rconfig   real    var_ric                 namelist,physics      1             1.
 rconfig   real    coef_ric_l              namelist,physics      1             0.16     -     "Regression coeff for Ric 0.16:origianl value over land"
 rconfig   real    coef_ric_s              namelist,physics      1             0.16     -     "Regression coeff for Ric 0.16:origianl value OVER SEA"
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
+rconfig   integer LakeModel               namelist,physics      max_domains  0         h    "LakeModel"     "activate lake model  0=no, 1=yes"   ""
+rconfig   real    domain_lakedepth        namelist,physics      max_domains  50       rh     "domain_lakedepth"                     ""      ""
+rconfig   real    lakeminalt              namelist,physics      max_domains   5       rh     "lakeminalt"                    ""      ""
+
 
 # Vortex Tracking (physics namelist)
 rconfig   integer vortex_tracker          namelist,physics      max_domains    1      -      "vortex_tracker" "Vortex Tracking Algorithm" ""

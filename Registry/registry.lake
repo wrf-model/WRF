@@ -1,0 +1,28 @@
+# lake variables
+state    logical lake2d             ij     misc        1         -      -       "lake2d"           "whether grid is lake"
+state    real    lakedepth2d      ij     misc        1         -     irh      "lakedepth2d"    "lake depth"       "m"  
+state    real    savedtke12d      ij     misc        1         -     irh      "savedtke12d"    "top level eddy conductivity from previous timestep"       "W/m.K"
+state    real    snowdp2d         ij     misc        1         -     irh      "snowdp2d"       "snow depth"       "m"  
+state    real    h2osno2d         ij     misc        1         -     irh      "h2osno2d"       "snow water"       "mm" 
+state    real    snl2d            ij     misc        1         -     irh      "snl2d"          "number of snow layers"
+state    real    t_grnd2d         ij     misc        1         -     irh      "t_grnd2d"       "ground temperature"     "k"  
+state    real    t_lake3d         i7j    misc        1         z     irh      "t_lake3d"       "lake temperature"       "k"  
+state    real    lake_icefrac3d   i7j    misc        1         z     irh      "lake_icefrac3d" "mass fraction of lake layer that is frozen"
+state    real    z_lake3d         i7j    misc        1         z     irh      "z_lake3d"       "layer depth for lake"   "m"  
+state    real    dz_lake3d        i7j    misc        1         z     irh      "dz_lake3d"      "layer thickness for lake"  "m"  
+state    real    t_soisno3d       i5j    misc        1         z     irh      "t_soisno3d"     "soil (or snow) temperature"  "m"  
+state    real    h2osoi_ice3d     i5j    misc        1         z     irh      "h2osoi_ice3d"   "ice lens"     "kg/m2"
+state    real    h2osoi_liq3d     i5j    misc        1         z     irh      "h2osoi_liq3d"   "liquid water"  "kg/m2"
+state    real    h2osoi_vol3d     i5j    misc        1         z     irh      "h2osoi_vol3d"   "volumetric soil water (0<=h2osoi_vol<=watsat)"   "m3/m3"
+state    real    z3d              i5j    misc        1         z     irh      "z3d"            " layer depth for snow & soil"   "m"  
+state    real    dz3d             i5j    misc        1         z     irh      "dz3d"           "layer thickness for soil or snow"    "m"  
+state    real    zi3d             i6j    misc        1         z     irh      "zi3d"           "interface level below a "z" level"   "m"  
+state    real    watsat3d         i7j    misc        1         z     irh      "watsat3d"       "volumetric soil water at saturation (porosity)"
+state    real    csol3d           i7j    misc        1         z     irh      "csol3d"         " heat capacity, soil solids"    "J/m**3/Kelvin"
+state    real    tkmg3d           i7j    misc        1         z     irh      "tkmg3d"         "thermal conductivity, soil minerals"     "W/m-K"
+state    real    tkdry3d          i7j    misc        1         z     irh      "tkdry3d"        "thermal conductivity, dry soil"         "W/m/Kelvin"
+state    real    tksatu3d         i7j    misc        1         z     irh      "tksatu3d"       "thermal conductivity, saturated soil"    "W/m-K"
+package   simpe_lake   LakeModel==1                     -             scalar:lakedepth,lake2d,lakedepth2d,savedtke12d,snowdp2d,h2osno2d,snl2d,t_grnd2d,t_lake3d,lake_icefrac3d,z_lake3d,dz_lake3d,t_soisno3d,h2osoi_ice3d,h2osoi_liq3d,h2osoi_vol3d,z3d,dz3d,zi3d,watsat3d,csol3d,tkmg3d,tkdry3d,tksatu3d
+package   nolake       LakeModel==0                     -             -
+
+

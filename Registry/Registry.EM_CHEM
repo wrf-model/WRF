@@ -11,6 +11,7 @@ include registry.stoch
 include registry.les
 include registry.cam
 include registry.clm
+include registry.lake
 include registry.ssib
 include registry.diags
 include registry.bdy_perturb

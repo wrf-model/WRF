@@ -12,6 +12,7 @@ include registry.les
 include registry.cam
 include registry.clm
 include registry.ssib
+include registry.lake
 include registry.diags
 include registry.bdy_perturb
 

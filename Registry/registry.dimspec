@@ -67,6 +67,9 @@ dimspec    ?       -     namelist=ts_buf_size              c     ts_buf_size
 dimspec    !       -     namelist=max_ts_locs              c     max_ts_locs
 dimspec    v       -     constant=1                        z     one
 dimspec    =       -     constant=4                        c     num_bands
+dimspec    5       2     constant=15                       z          snow and soil levels
+dimspec    6       2     constant=16                       z          interface levels
+dimspec    7       2     constant=10                       z          soil levels or lake levels
 
 # Dimensions required only for Chemistry
 

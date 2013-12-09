@@ -492,6 +492,7 @@ module_physics_init.o : \
                 module_sf_bep_bem.o             \
 		module_sf_ruclsm.o		\
 		module_sf_pxlsm.o		\
+		module_sf_lake.o		\
 		module_bl_ysu.o		        \
 		module_bl_mrf.o			\
 		module_bl_gfs.o			\

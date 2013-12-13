@@ -1489,7 +1489,8 @@ CONTAINS
     emiss_select: SELECT CASE(config_flags%emiss_inpt_opt)
     CASE (EMISS_INPT_CPTEC)
        call wrf_debug(15,'emissions_driver calling add_emiss_cptec')
-       call add_emis_cptec(id,dtstep,ktau,dz8w,config_flags,rho_phy,chem,&
+       call add_emis_cptec(id,dtstep,ktau,dz8w,config_flags,curr_secs,   &
+            rho_phy,chem,                                                &
             julday,gmt,xlat,xlong,t_phy,p_phy,                           &
             emis_ant,                                                    &
             ids,ide, jds,jde, kds,kde,                                   &

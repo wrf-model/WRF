@@ -30,7 +30,12 @@ module da_par_util
       kps, kpe, grid_stagger, grid_ordering, trace_use_dull, &
       sound, synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, &
-      pseudo, radar, radiance, airsr, sonde_sfc, trace_use_frequent
+      pseudo, radar, radiance, airsr, sonde_sfc, trace_use_frequent, &
+      its_int,ite_int,jts_int,jte_int,kts_int,kte_int, &
+      ims_int,ime_int,jms_int,jme_int,kms_int,kme_int, &
+      ids_int,ide_int,jds_int,jde_int,kds_int,kde_int, &
+      ips_int,ipe_int,jps_int,jpe_int,kps_int,kpe_int, &
+      anal_type_hybrid_dual_res
    use da_reporting, only : da_error
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_wrf_interfaces, only : &
@@ -78,6 +83,8 @@ module da_par_util
 #include "da_generic_boilerplate.inc"
 #include "da_y_facade_to_global.inc"
 #include "da_system.inc"
+
+#include "da_patch_to_global_dual_res.inc"
 
 #ifdef DM_PARALLEL
 #include "da_proc_stats_combine.inc"

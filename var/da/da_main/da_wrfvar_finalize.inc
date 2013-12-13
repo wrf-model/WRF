@@ -25,7 +25,8 @@ subroutine da_wrfvar_finalize
    endif
 #endif
 
-   grid => head_grid
+!  grid => head_grid
+   grid => input_grid
 
    call dealloc_space_domain(grid%id)
 

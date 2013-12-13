@@ -1,5 +1,4 @@
-subroutine da_setup_flow_predictors( ix, jy, kz, ne, ep, &
-                                     its, ite, jts, jte, kts, kte )
+subroutine da_setup_flow_predictors( ix, jy, kz, ne, ep, its, ite, jts, jte, kts, kte )
 
    !------------------------------------------------------------------------------
    ! Purpose: Setup structures for flow-dependent information and read it in.

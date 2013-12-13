@@ -8,6 +8,8 @@
 
    implicit none
 
+
+
    type (domain),               intent(inout) :: grid
    type (grid_config_rec_type), intent(inout) :: config_flags
 
@@ -41,6 +43,14 @@
    integer   :: jl_start, jl_end
    character(len=256) :: timestr1
    type(x_type) :: shuffle
+
+   real, allocatable :: grid_box_area(:,:), mapfac(:,:)
+   character (len=10)    :: variable_name
+
+   integer :: xx, yy, ii, jj,  xy, kk, jjj
+   real    :: lat, lon, x_pos, y_pos, dx, dy, dxm, dym
+   logical :: outside
+
    integer   :: cvt_unit, iost
    character(len=8) :: cvtfile
    logical :: ex
@@ -140,6 +150,12 @@
       write(stdout,'("da_solve: using wavelet transform")')
    endif
 
+   if ( anal_type_hybrid_dual_res .and. alphacv_method .ne. alphacv_method_xa ) then
+      write (unit=message(1),fmt='(A)') &
+        'Dual-res hybrid only with alphacv_method = 2'
+      call da_error(__FILE__,__LINE__,message(1:1))
+   endif
+
    if (anal_type_randomcv) then
       ntmax = 0
       write(unit=stdout,fmt='(a)') &
@@ -150,15 +166,187 @@
    ! [2.0] Initialise wrfvar parameters:
    !---------------------------------------------------------------------------
 
+   if ( anal_type_hybrid_dual_res ) then
+
+      !---------------------------------
+      ! Get full ensemble grid dimensions
+      !---------------------------------
+      call da_solve_init(ensemble_grid &
+#include "actual_new_args.inc"
+)
+      ide_ens = ide ! these are unstaggered dimensions of the full ensemble domain
+      jde_ens = jde
+      kde_ens = kde
+
+      write(*,*) ' '
+      print *,'CSS ide_ens, jde_ens, kde_ens = ',ide_ens,jde_ens,kde_ens
+      write(*,*) ' '
+
+      !---------------------------------------
+      ! Get "intermediate" grid sizes and tiles
+      !---------------------------------------
+      call da_solve_init(grid%intermediate_grid &
+#include "actual_new_args.inc"
+)
+
+      ! these are unstaggered dimensions of the "intermediate" ensemble domain
+      !  The intermediate grid is the coarse (ensemble) domain that is co-located with the
+      !  hi-resolution (analysis) grid
+
+      ids_int = ids ; jds_int = jds ; kds_int = kds
+      ide_int = ide ; jde_int = jde ; kde_int = kde
+      
+      its_int = its ; ite_int = ite
+      jts_int = jts ; jte_int = jte
+      kts_int = kts ; kte_int = kte
+
+      ims_int = ims ; ime_int = ime
+      jms_int = jms ; jme_int = jme
+      kms_int = kms ; kme_int = kme
+
+      ips_int = ips ; ipe_int = ipe
+      jps_int = jps ; jpe_int = jpe
+      kps_int = kps ; kpe_int = kpe
+
+      print *,'CSS ids_int, ide_int  = ',ids_int, ide_int
+      print *,'CSS jds_int, jde_int  = ',jds_int, jde_int
+      print *,'CSS kds_int, kde_int  = ',kds_int, kde_int
+      print *,'CSS its_int, ite_int  = ',its_int, ite_int
+      print *,'CSS jts_int, jte_int  = ',jts_int, jte_int
+      print *,'CSS kts_int, kte_int  = ',kts_int, kte_int
+      print *,'CSS ims_int, ime_int  = ',ims_int, ime_int
+      print *,'CSS jms_int, jme_int  = ',jms_int, jme_int
+      print *,'CSS kms_int, kme_int  = ',kms_int, kme_int
+
+      grid%imask_xstag = 1   ; grid%imask_ystag = 1
+      grid%imask_nostag = 1  ; grid%imask_xystag = 1
+
+      !---------------------------------------------------------------------------
+      ! De-allocate parts of grid and replace with grid%intermediate_grid dimensions
+      !---------------------------------------------------------------------------
+      call reallocate_analysis_grid(grid)
+
+      !----------------------------------------------------------
+      ! Allocate and initialize some of grid%intermediate_grid
+      !----------------------------------------------------------
+      call allocate_intermediate_grid(grid%intermediate_grid)
+
+      print *, 'CSS ensemble grid dx = ',ensemble_grid%dx
+      print *,'CSS intermediate_grid dx = ',grid%intermediate_grid%dx
+
+      !---------------------------------------
+      ! Get map projection information for the ensemble
+      !---------------------------------------
+
+       call da_setup_firstguess(xbx, ensemble_grid, config_flags, .true. )
+       map_info_ens = map_info ! map_info is read in from da_tools.f90, call it something else
+
+   endif
+
    call da_solve_init(grid &
 #include "actual_new_args.inc"
 )
+
+   if ( .not. anal_type_hybrid_dual_res ) then
+      ide_ens = ide ; jde_ens = jde ; kde_ens = kde
+
+      ids_int = ids ; ide_int = ide 
+      jds_int = jds ; jde_int = jde 
+      kds_int = kds ; kde_int = kde
+
+      its_int = its ; ite_int = ite 
+      jts_int = jts ; jte_int = jte
+      kts_int = kts ; kte_int = kte
+
+      ims_int = ims ; ime_int = ime
+      jms_int = jms ; jme_int = jme
+      kms_int = kms ; kme_int = kme
+
+      ips_int = ips ; ipe_int = ipe
+      jps_int = jps ; jpe_int = jpe
+      kps_int = kps ; kpe_int = kpe
+   endif
 
    !---------------------------------------------------------------------------
    ! [3.0] Set up first guess field (grid%xb):
    !---------------------------------------------------------------------------
 
-   call da_setup_firstguess(xbx, grid, config_flags)
+   call da_setup_firstguess(xbx, grid, config_flags, .false.)
+
+   if ( anal_type_hybrid_dual_res ) then
+
+      ! 
+      ! Get ensemble grid mapfactor on entire coarse grid
+      ! 
+      variable_name = 'MAPFAC_M'
+
+      allocate( grid_box_area(1:ide_ens,1:jde_ens), mapfac(1:ide_ens,1:jde_ens) )  
+      call da_get_var_2d_real_cdf( input_file_ens, variable_name, mapfac, ide_ens, jde_ens, 1, .false. )
+      grid_box_area(:,:) = ( (ensemble_grid%dx)/mapfac(:,:) )**2 
+      grid%intermediate_grid%xb%grid_box_area(its_int:ite_int,jts_int:jte_int) = grid_box_area(its_int:ite_int,jts_int:jte_int)
+      deallocate(mapfac,grid_box_area)
+
+      !
+      ! Make a list of "observations" from the the fine grid lat/lon
+      !
+
+      xy = ( ime - ims + 1 ) * ( jme - jms + 1 )
+
+      allocate(ob_locs(1:xy)) ! From da_control
+
+      kk = 0 ; jjj = 0
+      do xx = ims, ime !ids, ide 
+         do yy = jms, jme !jds, jde 
+
+          outside = .false.
+
+          lat = grid%xb%lat(xx,yy)
+          lon = grid%xb%lon(xx,yy)
+
+          x_pos = -1.0 ; y_pos = -1.0
+          call da_llxy_wrf(map_info_ens,lat,lon,x_pos,y_pos)
+          call da_togrid(x_pos,its_int-2, ite_int+2, ii, dx, dxm )
+          call da_togrid(y_pos,jts_int-2, jte_int+2, jj, dy, dym )
+
+          if ((int(x_pos) < ids_int) .or. (int(x_pos) >= ide_int) .or. &
+             (int(y_pos) < jds_int) .or. (int(y_pos) >= jde_int)) then
+             outside = .true.
+          endif
+
+	  if ((ii < ids_int) .or. (ii >= ide_int) .or. &
+	     (jj < jds_int) .or. (jj >= jde_int)) then
+	     outside     = .true.
+	  endif
+
+         if ((ii < its_int-1) .or. (ii > ite_int) .or. &
+            (jj < jts_int-1) .or. (jj > jte_int)) then
+            outside = .true.
+         endif
+
+         if ( .not. outside ) then
+              kk = kk + 1
+              ob_locs(kk)%x = x_pos
+              ob_locs(kk)%y = y_pos
+              ob_locs(kk)%i = ii
+              ob_locs(kk)%j = jj
+              ob_locs(kk)%dx = dx
+              ob_locs(kk)%dy = dy
+              ob_locs(kk)%dxm = dxm
+              ob_locs(kk)%dym = dym
+              ob_locs(kk)%xx = xx
+              ob_locs(kk)%yy = yy
+           !  write(*,*)' CSS lat, lon, i, j, dx, dxm, dy, dym = ',lat, lon, ii, jj, dx, dxm, dy, dym
+          else
+             jjj = jjj + 1
+          endif
+
+        enddo
+     enddo
+
+      total_here = kk ! from da_control
+      print *,'CSS total_here, total_missing = ',total_here,jjj
+
+   endif 
 
    !---------------------------------------------------------------------------
    ! [4.0] Set up observations (ob):
@@ -239,6 +427,15 @@
       be % v5 % mz = 0
    end if
 
+    ! overwrite variables defined in da_setup_cv.inc set in the call to da_setup_background_errors
+    if ( anal_type_hybrid_dual_res ) then
+       be % cv % size_alphac = (ite_int - its_int + 1) * (jte_int - jts_int + 1) * be % alpha % mz * be % ne
+       be % cv % size_je = be % cv % size_alphac
+       cv_size_domain_je = (ide_int - ids_int + 1) * (jde_int - jds_int + 1) * be % alpha % mz * be % ne
+    endif
+   
+
+
    !---------------------------------------------------------------------------
    ! [5.2] Set up observation bias correction (VarBC):
    !---------------------------------------------------------------------------
@@ -265,8 +462,10 @@
 
       grid % ep % ne = be % ne
       if (use_background_errors .and. be % ne > 0) then
-         call da_setup_flow_predictors ( ide, jde, kde, be % ne, grid%ep, &
-                                         its, ite, jts, jte, kts, kte )
+!        call da_setup_flow_predictors ( ide, jde, kde, be % ne, grid%ep, &
+!                                        its, ite, jts, jte, kts, kte )
+         call da_setup_flow_predictors ( ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                                         its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
       end if
 
    !---------------------------------------------------------------------------
@@ -312,6 +511,7 @@
 
       call da_zero_vp_type (grid%vv)
       call da_zero_vp_type (grid%vp)
+  
       if ( var4d ) then
          call da_zero_vp_type (grid%vv6)
          call da_zero_vp_type (grid%vp6)
@@ -458,7 +658,7 @@
             call da_allocate_y (iv, re)
             call da_allocate_y (iv, y)
             call da_check_gradient (grid, config_flags, cv_size, xhat, cvt, 1.0e-10, 8, &
-                         xbx, be, iv, y, re, j)
+                         xbx, be, iv, y, re, j) 
             call da_deallocate_y (re)
             call da_deallocate_y (y)
          endif
@@ -496,22 +696,24 @@
                              be,iv,xhat,qhat,cvt,re,y,j,eignvec,eignval,neign)
           ! Output Cost Function
             call da_calculate_j(it, 1, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-                             be%cv%size_jl, xbx, be, iv, xhat, cvt, re, y, j, xhat, grid, config_flags)
+                             be%cv%size_jl, xbx, be, iv, xhat, cvt, re, y, j, xhat, grid, config_flags )
+
          else
             call da_minimise_lz(grid, config_flags, it, cv_size, xbx,& 
-                             be, iv, j_grad_norm_target, xhat, qhat, cvt, re, y, j, eignvec, eignval, neign)  
+                             be, iv, j_grad_norm_target, xhat, qhat, cvt, re, y, j, eignvec, eignval, neign )
+
 
          end if
 
          if (write_lanczos) call da_lanczos_io('w',cv_size,ntmax(it),neign,eignvec,eignval,qhat)
 
          if (adj_sens) call da_sensitivity(grid,config_flags,it,cv_size,xbx, &
-                                           be,iv,xhat,qhat,cvt,y,eignvec,eignval,neign)
+                                           be,iv,xhat,qhat,cvt,y,eignvec,eignval,neign )
 
 	 
       else
          call da_minimise_cg( grid, config_flags, it, be % cv % size, & 
-            xbx, be, iv, j_grad_norm_target, xhat, cvt, re, y, j)
+            xbx, be, iv, j_grad_norm_target, xhat, cvt, re, y, j )
       end if
  
       ! Update outer-loop control variable
@@ -628,14 +830,14 @@
 
    if ((config_flags%real_data_init_type == 1) .or. &
        (config_flags%real_data_init_type == 3)) then
-      call da_update_firstguess(grid)
+      call da_update_firstguess(input_grid)
 #ifdef VAR4D
       !if (var4d) call da_med_initialdata_output_lbc (head_grid , config_flags)
       if ( var4d_lbc ) then
          call domain_clock_get (grid, stop_timestr=timestr1)
          call domain_clock_set( grid, current_timestr=timestr1 )
          call da_med_initialdata_input (grid, config_flags, 'fg02')
-         call da_setup_firstguess(xbx, grid, config_flags)
+         call da_setup_firstguess(xbx, grid, config_flags, .false. )
          shuffle = grid%xa
          jl_start    = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + 1
          jl_end      = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_jl
@@ -649,7 +851,7 @@
          call domain_clock_set( grid, current_timestr=timestr1 )
       endif
 #endif
-      call med_shutdown_io (grid, config_flags)
+      call med_shutdown_io (input_grid, config_flags)
    end if
 
    !---------------------------------------------------------------------------
@@ -672,7 +874,7 @@
          deallocate (satinfo(i) % error)
          deallocate (satinfo(i) % polar)
 
-         deallocate (satinfo(i) % scanbias)
+         deallocate (satinfo(i) % scanbias) 
          deallocate (satinfo(i) % scanbias_b)
          deallocate (satinfo(i) % bcoef)
          deallocate (satinfo(i) % bcoef0)
@@ -894,6 +1096,10 @@
       end if
    end if
 
+   if ( anal_type_hybrid_dual_res ) deallocate(ob_locs)
+
+
+
 #ifdef DM_PARALLEL
    call mpi_barrier (comm,ierr)
 #endif
@@ -904,6 +1110,7 @@
 contains
 
 #include "da_solve_init.inc"
+#include "da_solve_dual_res_init.inc"
 
 end subroutine da_solve
 

@@ -19,11 +19,14 @@ subroutine da_check_vp_errors(vp1, vp2, ne, &
    real                           :: rms_diff    ! RMS of differnce.
 
    real, dimension(its:ite, jts:jte, kts:kte) :: diff ! Difference
-   real                           :: diff_alpha(its:ite,jts:jte,kts:kte,1:ne)
+!  real                           :: diff_alpha(its:ite,jts:jte,kts:kte,1:ne)
+   real                           :: diff_alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:ne)
+   real                           :: inv_size_ens    ! 1/size of ensemble array.
 
    if (trace_use) call da_trace_entry("da_check_vp_errors")
 
    inv_size = 1.0 / real((ite-its+1) * (jte-jts+1) * (kte-kts+1))
+   inv_size_ens = 1.0 / real((ite_int-its_int+1) * (jte_int-jts_int+1) * (kte_int-kts_int+1)*ne)
 
    !-------------------------------------------------------------------------
    ! [1.0]: Check v1 differences:
@@ -126,14 +129,15 @@ subroutine da_check_vp_errors(vp1, vp2, ne, &
    ! [6.0]: Check alpha differences:
    !-------------------------------------------------------------------------
  
+   ! changed all dimensions below to reflect ensemble tiles
    if (ne > 0) then
-      inv_size = 1.0 / real((ite-its+1) * (jte-jts+1) * ne)
-      diff_alpha(its:ite,jts:jte,kts:kte,1:ne) = vp2 % alpha(its:ite,jts:jte,kts:kte,1:ne) - &
-                                         vp1 % alpha(its:ite,jts:jte,kts:kte,1:ne)
-      rms_fild = sqrt(sum(vp1 % alpha(its:ite,jts:jte,kts:kte,1:ne) &
-                          * vp1 % alpha(its:ite,jts:jte,kts:kte,1:ne)) * inv_size)
-      rms_diff = sqrt(sum(diff_alpha(its:ite,jts:jte,kts:kte,1:ne) &
-                          * diff_alpha(its:ite,jts:jte,kts:kte,1:ne)) * inv_size)
+!     inv_size = 1.0 / real((ite-its+1) * (jte-jts+1) * ne)
+      diff_alpha(its:ite,jts:jte,kts:kte,1:ne) = vp2 % alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:ne) - &
+                                         vp1 % alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:ne)
+      rms_fild = sqrt(sum(vp1 % alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:ne) &
+                          * vp1 % alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:ne)) * inv_size_ens)
+      rms_diff = sqrt(sum(diff_alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:ne) &
+                          * diff_alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:ne)) * inv_size_ens)
      
       if (rms_fild /= 0.0) then
          write(unit=stdout, fmt='(a,1pe10.4)') ' alpha RMS error/RMS field = ',&

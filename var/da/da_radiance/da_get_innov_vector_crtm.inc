@@ -508,6 +508,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                surface(1)%ice_coverage = min(surface(1)%ice_coverage + surface(1)%land_coverage, 1.0)
                surface(1)%land_coverage = 0
             end if
+            ! reset water-dominated land type
+            if ( Surface(1)%Land_Type == grid%iswater ) Surface(1)%Land_Type = 1
             Surface(1)%Land_Temperature=model_ts(n)      ! K
             Surface(1)%Soil_Moisture_Content= model_smois(n) !0.05    ! volumetric water content (g/cm**3)
             ! Surface(1)%Canopy_Water_Content=0.05      ! gravimetric water content

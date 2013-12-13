@@ -67,6 +67,7 @@ program gen_be_etkf
    integer               :: one(1:max_num_dims)       ! Array of dimension starts.
    integer               :: dims(1:max_num_vars,1:max_num_dims)      ! Array of dimensions.
    integer               :: dim_prod(1:max_num_dims)  ! Product of array dimensions.
+   character (len=NF_MAX_NAME) :: var_name            ! Returned variable name from NF_INQ_VAR
 
    real (kind=4), allocatable     :: data_r_3d(:,:,:)               ! 3-D Data array.
    real (kind=4), allocatable     :: data_r_4d(:,:,:,:)             ! 4-D Data array.
@@ -505,56 +506,64 @@ program gen_be_etkf
 !
 ! GET DIMENSIONS
       dimids(:)=0
-      rcode=nf_inq_var(cdfid,id_lon_T,'XLONG',ityp,ndim_lon_T,dimids,natts)
+      var_name='XLONG'
+      rcode=nf_inq_var(cdfid,id_lon_T,var_name,ityp,ndim_lon_T,dimids,natts)
       allocate(dim_lon_T(ndim_lon_T))
       do idim=1,ndim_lon_T
          rcode=nf_inq_dimlen(cdfid,dimids(idim),dim_lon_T(idim))
       enddo
 !      print *,"dim_lon_T ",dim_lon_T
       dimids(:)=0
-      rcode=nf_inq_var(cdfid,id_lon_u,'XLONG_U',ityp,ndim_lon_u,dimids,natts)
+      var_name='XLONG_U'
+      rcode=nf_inq_var(cdfid,id_lon_u,var_name,ityp,ndim_lon_u,dimids,natts)
       allocate(dim_lon_u(ndim_lon_u))
       do idim=1,ndim_lon_u
          rcode=nf_inq_dimlen(cdfid,dimids(idim),dim_lon_u(idim))
       enddo
 !      print *,"dim_lon_u ",dim_lon_u
       dimids(:)=0
-      rcode=nf_inq_var(cdfid,id_lon_v,'XLONG_V',ityp,ndim_lon_v,dimids,natts)
+      var_name='XLONG_V'
+      rcode=nf_inq_var(cdfid,id_lon_v,var_name,ityp,ndim_lon_v,dimids,natts)
       allocate(dim_lon_v(ndim_lon_v))
       do idim=1,ndim_lon_v
          rcode=nf_inq_dimlen(cdfid,dimids(idim),dim_lon_v(idim))
       enddo
 !      print *,"dim_lon_v ",dim_lon_v
       dimids(:)=0
-      rcode=nf_inq_var(cdfid,id_lat_T,'XLAT',ityp,ndim_lat_T,dimids,natts)
+      var_name='XLAT'
+      rcode=nf_inq_var(cdfid,id_lat_T,var_name,ityp,ndim_lat_T,dimids,natts)
       allocate(dim_lat_T(ndim_lat_T))
       do idim=1,ndim_lat_T
          rcode=nf_inq_dimlen(cdfid,dimids(idim),dim_lat_T(idim))
       enddo
 !      print *,"dim_lat_T ",dim_lat_T
       dimids(:)=0
-      rcode=nf_inq_var(cdfid,id_lat_u,'XLAT_U',ityp,ndim_lat_u,dimids,natts)
+      var_name='XLAT_U'
+      rcode=nf_inq_var(cdfid,id_lat_u,var_name,ityp,ndim_lat_u,dimids,natts)
       allocate(dim_lat_u(ndim_lat_u))
       do idim=1,ndim_lat_u
          rcode=nf_inq_dimlen(cdfid,dimids(idim),dim_lat_u(idim))
       enddo
 !      print *,"dim_lat_u ",dim_lat_u
       dimids(:)=0
-      rcode=nf_inq_var(cdfid,id_lat_v,'XLAT_V',ityp,ndim_lat_v,dimids,natts)
+      var_name='XLAT_V'
+      rcode=nf_inq_var(cdfid,id_lat_v,var_name,ityp,ndim_lat_v,dimids,natts)
       allocate(dim_lat_v(ndim_lat_v))
       do idim=1,ndim_lat_v
          rcode=nf_inq_dimlen(cdfid,dimids(idim),dim_lat_v(idim))
       enddo
 !      print *,"dim_lat_v ",dim_lat_v
       dimids(:)=0
-      rcode=nf_inq_var(cdfid,id_prs_T,'P',ityp,ndim_prs_T,dimids,natts)
+      var_name='P'
+      rcode=nf_inq_var(cdfid,id_prs_T,var_name,ityp,ndim_prs_T,dimids,natts)
       allocate(dim_prs_T(ndim_prs_T))
       do idim=1,ndim_prs_T
          rcode=nf_inq_dimlen(cdfid,dimids(idim),dim_prs_T(idim))
       enddo
 !      print *,"dim_prs_T ",dim_prs_T
       dimids(:)=0
-      rcode=nf_inq_var(cdfid,id_pbs_T,'PB',ityp,ndim_pbs_T,dimids,natts)
+      var_name='PB'
+      rcode=nf_inq_var(cdfid,id_pbs_T,var_name,ityp,ndim_pbs_T,dimids,natts)
       allocate(dim_pbs_T(ndim_pbs_T))
       do idim=1,ndim_pbs_T
          rcode=nf_inq_dimlen(cdfid,dimids(idim),dim_pbs_T(idim))

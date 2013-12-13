@@ -46,7 +46,7 @@
 !logical first
 
      INTEGER ci, cj, ck, ni, nj, nk, ip, jp, ioff, joff, nioff, njoff
-#ifdef MM5_SINT
+#if (( DA_CORE == 1 ) || ( defined( MM5_SINT ) ) )
      INTEGER nfx, ior
      PARAMETER (ior=2)
      INTEGER nf
@@ -59,7 +59,7 @@
      ! Iterate over the ND tile and compute the values
      ! from the CD tile. 
 
-#ifdef MM5_SINT
+#if ( ( DA_CORE == 1 ) || ( defined( MM5_SINT ) ) )
 
      ioff  = 0 ; joff  = 0
      nioff = 0 ; njoff = 0

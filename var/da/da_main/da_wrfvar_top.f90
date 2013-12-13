@@ -31,6 +31,7 @@ module da_wrfvar_top
       num_chem, PARAM_FIRST_SCALAR, num_tracer 
    use module_tiles, only : set_tiles
 
+
 #ifdef DM_PARALLEL
    use module_dm, only : local_communicator, local_communicator_x, &
       local_communicator_y, ntasks_x, ntasks_y, data_order_xyz, mytask, &
@@ -75,6 +76,10 @@ module da_wrfvar_top
    use da_wrfvar_io, only : da_med_initialdata_input, da_update_firstguess
    use da_tools, only : da_set_randomcv, da_get_julian_time
 
+   use da_tools, only : map_info,map_info_ens,proj_merc, proj_ps,proj_lc,proj_latlon, &
+      da_llxy_default,da_llxy_wrf,da_xyll,da_diff_seconds,da_map_set, &
+      da_set_boundary_xb,da_togrid
+
 #ifdef CRTM
    use module_radiance, only : crtm_destroy
    use da_crtm, only : channelinfo, sensor_descriptor
@@ -103,11 +108,14 @@ module da_wrfvar_top
 
    use da_wrf_interfaces
 
+   use da_netcdf_interface, only : da_get_var_2d_real_cdf
+
    implicit none
 
    integer :: loop, levels_to_process
 
    type (domain) , pointer :: keep_grid, grid_ptr, null_domain
+   type (domain) , pointer :: another_grid, parent_grid, ensemble_grid, input_grid
    type (grid_config_rec_type), save :: config_flags
    integer                 :: number_at_same_level
    integer                 :: time_step_begin_restart

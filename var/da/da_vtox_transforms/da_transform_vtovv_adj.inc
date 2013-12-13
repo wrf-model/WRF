@@ -23,6 +23,7 @@ subroutine da_transform_vtovv_adj(grid, cv_size, be, cv, vv)
 
    if( .not. use_rf .or. do_normalize ) s(1:2)=1
 
+
    !-------------------------------------------------------------------------
    ! [2.0] Perform VToVV Transform:
    !-------------------------------------------------------------------------
@@ -187,7 +188,12 @@ subroutine da_transform_vtovv_adj(grid, cv_size, be, cv, vv)
       endif
       if( use_rf )then
          do n = 1, ne
-            call da_transform_through_rf_adj(grid, mz, be % alpha % rf_alpha, be % alpha % val, vv % alpha(:,:,:,n))
+            if ( anal_type_hybrid_dual_res ) then
+               call da_transform_through_rf_adj_dual_res(grid % intermediate_grid, mz, be % alpha % rf_alpha, &
+                                                         be % alpha % val, vv % alpha(:,:,:,n))
+            else
+               call da_transform_through_rf_adj(grid, mz, be % alpha % rf_alpha, be % alpha % val, vv % alpha(:,:,:,n))
+            endif
          end do
       else
          do n = 1, ne

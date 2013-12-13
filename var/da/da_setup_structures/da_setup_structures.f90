@@ -59,7 +59,7 @@ module da_setup_structures
       psi_chi_factor, psi_t_factor, psi_ps_factor, psi_rh_factor, &
       chi_u_t_factor, chi_u_ps_factor,chi_u_rh_factor, t_u_rh_factor, ps_u_rh_factor, &
       interpolate_stats, be_eta, thin_rainobs, fgat_rain_flags, use_iasiobs, &
-      use_seviriobs 
+      use_seviriobs,jds_int,jde_int,anal_type_hybrid_dual_res 
 
    use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info, da_store_obs_grid_info_bufr, &
                       da_fill_obs_structures_rain

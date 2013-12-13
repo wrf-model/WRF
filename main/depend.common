@@ -632,6 +632,7 @@ module_radiation_driver.o: \
 		module_ra_hs.o \
 		module_ra_goddard.o \
                 module_ra_flg.o \
+                module_ra_aerosol.o \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
 		../frame/module_dm.o \
@@ -780,6 +781,9 @@ module_ltng_cpmpr92z.o :
 module_ltng_crmpr92.o :
 
 module_ltng_iccg.o :
+
+module_ra_aerosol.o :\
+	../frame/module_wrf_error.o
 
 # End of DEPENDENCIES for phys
 

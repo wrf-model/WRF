@@ -401,4 +401,16 @@ Price, J. F., T. B. Sanford, and G. Z. Forristal, 1994: Forced stage response to
  num_traj                            = 50 (currently in &domains)
 
 
+** Using aerosol option aer_opt = 2:
 
+&physics
+ aer_opt            = 2,
+ aer_type           = 1,
+ aer_aod550_opt     = 1,
+ aer_aod550_val     = 0.12,
+ aer_angexp_opt     = 1,
+ aer_angexp_val     = 1.3,
+ aer_ssa_opt        = 1,
+ aer_ssa_val        = 0.85,
+ aer_asy_opt        = 1,
+ aer_asy_val        = 0.90,

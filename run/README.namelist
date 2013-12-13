@@ -510,6 +510,7 @@ Namelist variables for controlling the adaptive time step option:
  aer_opt                             = aerosol input option for radiation (currently rrtmg only)
                                      = 0, none
                                      = 1, using Tegen (1997) data, 
+                                     = 2, using Jararuas method (see other aer_* options) 
  alevsiz                             = 12 for Tegen aerosol input levels, set automatically
  no_src_types                        = 6 for Tegen aerosols: organic and black carbon, sea salt, sulfalte, dust,
                                        and stratospheric aerosol (volcanic ashes - currently 0), set automatically
@@ -517,6 +518,25 @@ Namelist variables for controlling the adaptive time step option:
                                        between SW call
                                      = 0, no interpolation
                                      = 1, use interpolation
+ aer_aod550_opt                      = [1,2] :
+                                       1 = input constant value for AOD at 550 nm from namelist.
+                                           In this case, the value is read from aer_aod550_val;
+                                       2 = input value from auxiliary input 5. It is a time-varying 2D grid in netcdf 
+                                           wrf-compatible format. The default is aer_aod550_opt=1 and aer_aod550_val=0.12
+ aer_aod550_opt                      = 0.12
+ aer_angexp_opt                      = [1,2,3] :
+                                       1 = input constant value for Angstrom exponent from namelist. In this case, 
+                                           the value is read from aer_angexp_val;
+                                       2 = input value from auxiliary input 5, as in aer_aod550_opt;
+                                       3 = Angstrom exponent value estimated from the aerosol type defined in aer_type, and modulated
+                                           with the RH in WRF. Default operation is aer_angexp_opt = 1, and aer_angexp_val=1.3.
+ aer_angexp_val                      = 1.3   
+ aer_ssa_opt                         = [1,2,3] similar to aer_angexp_opt.
+ aer_ssa_val                         = 0.85
+ aer_asy_opt                         = [1,2,3] similar to aer_angexp_opt.
+ aer_asy_val                         = 0.9
+ aer_type                            = [1,2,3] : 1 for rural, 2 is urban and 3 is maritime.
+
 
  sf_sfclay_physics (max_dom)         surface-layer option (old bl_sfclay_physics option)
                                      = 0, no surface-layer

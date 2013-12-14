@@ -170,10 +170,11 @@ CONTAINS
                          nssl_rho_qs,                             &
    ! OPTIONAL 
                          RQCNCUTEN, RQINCUTEN,                   &
-                         rliq                                    &  !BSINGH:01/31/2013 - Added rliq and is_CAMMGMP_used for CAM5 physics
-                         ,te_temf          & ! WA 12/21/09
-                         ,cf3d_temf        & ! WA 9/27/10
-                         ,wm_temf          & ! WA 2/22/11
+                         rliq,                                   &  !BSINGH:01/31/2013 - Added rliq and is_CAMMGMP_used for CAM5 physics
+                         cldfra_dp,cldfra_sh                     & !ckay for subgrid cloud
+                         ,te_temf                                & ! WA 12/21/09
+                         ,cf3d_temf                              & ! WA 9/27/10
+                         ,wm_temf                                & ! WA 2/22/11
                          ,massflux_EDKF, entr_EDKF, detr_EDKF  & ! Optional for qnse
                          ,thl_up, thv_up, rt_up                & ! Optional for qnse
                          ,rv_up, rc_up, u_up, v_up, frac_up    & ! Optional for qnse
@@ -276,6 +277,9 @@ CONTAINS
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) :: &!BSINGH(PNNL)- should be declared inout
              CLDFRA_OLD
+
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) :: & ! ckay for subgrid cloud
+             cldfra_dp, cldfra_sh
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::         &
              GSW,ALBEDO,ALBBCK,GLW,EMISS,EMBCK                          !EMBCK new
@@ -876,6 +880,7 @@ integer myproc
                 RTHRATENSW=RTHRATENSW,CLDFRA=CLDFRA,EMISS=EMISS,cen_lat=cen_lat,JULYR=JULYR,JULDAY=JULDAY,GMT=GMT,    &
                 levsiz=levsiz,XLAT=XLAT,XLONG=XLONG,n_ozmixm=n_ozmixm,     &
                 alevsiz=alevsiz,no_src_types=no_src_types,                 &
+                cldfra_dp=cldfra_dp,cldfra_sh=cldfra_sh,                   & ! optional for subgrid cloud by ckay
                 cldfra_old=cldfra_old,                                     & ! Optional
                 ozmixm=ozmixm,pin=pin,                                     & ! Optional
                 aerodm=aerodm,pina=pina,                                   & ! Optional
@@ -1398,6 +1403,7 @@ integer myproc
                       RTHRATENSW,CLDFRA,EMISS,cen_lat,JULYR,JULDAY,GMT,    &
                       levsiz,XLAT,XLONG,n_ozmixm,                     &
                       alevsiz,no_src_types,                           &
+                      cldfra_dp,cldfra_sh,                            & ! Optional for subgrid cloud by ckay
                       cldfra_old,                                     & ! Optional
                       ozmixm,pin,                                     & ! Optional
                       aerodm,pina,                                    & ! Optional
@@ -1469,6 +1475,11 @@ integer myproc
                                                          RTHRATENSW, &
                                                              CLDFRA
 
+   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) , & ! ckay for subgrid cloud
+                                                         OPTIONAL :: &
+                                                          cldfra_dp, &
+                                                          cldfra_sh
+
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) :: &!BSINGH(PNNL)- should be declared inout
                                                          CLDFRA_OLD
 
@@ -1507,6 +1518,17 @@ integer myproc
      ENDDO
      ENDDO
      ENDDO
+
+     IF( PRESENT(cldfra_dp) ) THEN
+        DO j=jts,jtf
+        DO k=kts,ktf
+        DO i=its,itf
+           cldfra_dp(i,k,j)=0.
+           cldfra_sh(i,k,j)=0.
+        ENDDO
+        ENDDO
+        ENDDO
+     ENDIF
 
      if( present(cldfra_old) ) then
         DO j=jts,jtf

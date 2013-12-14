@@ -17,6 +17,8 @@ CONTAINS
                      ,itimestep,dt,dx,cudt,curr_secs,adapt_step_flag  &
                      ,cudtacttime                                     & 
                      ,rainc,raincv,pratec,nca                         &
+                     ,cldfra_dp,cldfra_sh                             & !ckay for subgrid cloud
+                     ,gd_cloud_b,gd_cloud2_b                          &
                      ,z,z_at_w,dz8w,mavail,pblh,p8w,psfc,tsk          &
                      ,tke_pbl, ust                                    &
                      ,forcet,forceq,w0avg,stepcu,gsw                  &
@@ -335,8 +337,11 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(INOUT)  ::                                       &
-                                                          W0AVG
-
+                                                          W0AVG 
+!ckay
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
+         INTENT(INOUT)  ::                            cldfra_dp  &
+                                                    , cldfra_sh
 
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) ::           &
           GSW,HT,XLAND
@@ -431,6 +436,10 @@ CONTAINS
                   zmmtu, zmmtv, zmupgu, zmupgd, zmvpgu, zmvpgd,  &
                   zmicuu, zmicud, zmicvu, zmicvd, zmdice, zmdliq,&
                   dp3d, du3d, ed3d, eu3d, md3d, mu3d
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
+         OPTIONAL, INTENT(INOUT) ::                              &
+                  GD_CLOUD_B,GD_CLOUD2_B
                   
    REAL, DIMENSION( ims:ime , jms:jme , 1:ensdim ),              &
           OPTIONAL,                                              &
@@ -710,6 +719,9 @@ CONTAINS
                ,RQSCUTEN=rqscuten, RQVFTEN=RQVFTEN              &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
+               ,CLDFRA_DP_KF=cldfra_dp                          & ! ckay for sub-grid cloud
+               ,CLDFRA_SH_KF=cldfra_sh                          &
+               ,QC_KF=gd_cloud_b,QI_KF=gd_cloud2_b              &
                                                                 )
 
      CASE (GDSCHEME)

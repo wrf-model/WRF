@@ -14,6 +14,7 @@ CONTAINS
               ,GMT    ,GSW    ,HBOT    &
               ,HTOP   ,HBOTR  ,HTOPR   &
               ,ICLOUD                  &
+              ,icloud_cu               &
               ,ITIMESTEP,JULDAY, JULIAN &
               ,JULYR  ,LW_PHYSICS       &
               ,NCFRCV ,NCFRST ,NPHS     &
@@ -55,7 +56,8 @@ CONTAINS
               , SLWDN, SLWUP                        & ! goddard schemes
               , TSWDN, TSWUP                        & ! goddard schemes
               , SSWDN, SSWUP                        & ! goddard schemes
-              , CLDFRA,CLDFRA_MP_ALL                              &
+              , CLDFRA,CLDFRA_MP_ALL                &
+              , cldfra_dp, cldfra_sh                & ! ckay for sub-grid cloud fraction
               , re_cloud, re_ice, re_snow           & ! G. Thompson
               , has_reqc, has_reqi, has_reqs        & ! G. Thompson
               , PB                                                &
@@ -283,8 +285,10 @@ CONTAINS
 !-- RSWTOA        upward short wave at top of atmosphere (w/m2)
 !-- XLAT          latitude, south is negative (degree)
 !-- XLONG         longitude, west is negative (degree)
-!-- ALBEDO                albedo (between 0 and 1)
+!-- ALBEDO        albedo (between 0 and 1)
 !-- CLDFRA        cloud fraction (between 0 and 1)
+!-- CLDFRA_DP     cloud fraction from deep cloud in a cumulus scheme
+!-- CLDFRA_SH     cloud fraction from shallow cloud in a cumulus scheme
 !-- CLDFRA_MP_ALL cloud fraction from CAMMGMP microphysics scheme
 !-- EMISS         surface emissivity (between 0 and 1)
 !-- rho_phy       density (kg/m^3)
@@ -351,7 +355,7 @@ CONTAINS
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
                 i_start,i_end,j_start,j_end
 
-   INTEGER,      INTENT(IN   )    ::   STEPRA,ICLOUD,ra_call_offset
+   INTEGER,      INTENT(IN   )    ::   STEPRA,ICLOUD,ra_call_offset,ICLOUD_CU
    INTEGER,      INTENT(IN   )    ::   alevsiz, no_src_types
    INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
    INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc, cam_abs_dim1, cam_abs_dim2
@@ -410,8 +414,10 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
          INTENT(IN ) ::  tauaer300,tauaer400,tauaer600,tauaer999, & ! jcb
                                  gaer300,gaer400,gaer600,gaer999, & ! jcb
-                                 waer300,waer400,waer600,waer999, & ! jcb
-                                 qc_adjust, qi_adjust
+                                 waer300,waer400,waer600,waer999
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
+         INTENT(IN ) ::          qc_adjust, qi_adjust
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
          INTENT(IN ) ::  tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4, & ! czhao 
@@ -570,7 +576,12 @@ CONTAINS
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
-         INTENT(INOUT) ::                                 CLDFRA
+         INTENT(INOUT) ::                                 CLDFRA   
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  & ! ckay for sub-grid cloud fraction
+         OPTIONAL,                                                &
+         INTENT(INOUT) ::                              cldfra_dp, &
+                                                       cldfra_sh
 
 !..G. Thompson
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN):: re_cloud, re_ice, re_snow
@@ -635,6 +646,8 @@ CONTAINS
    REAL    ::    next_rad_time
    LOGICAL ::    run_param , doing_adapt_dt , decided
    LOGICAL ::    flg_lw, flg_sw
+!ckay
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) ::    cldfra_cu
 !------------------------------------------------------------------
 ! solar related variables are added to declaration
 !-------------------------------------------------
@@ -767,6 +780,7 @@ CONTAINS
    gfdl_lw = .false.
    gfdl_sw = .false.
 
+! Allocate aerosol arrays used by aer_opt = 2 option
    IF ( PRESENT( AOD5502D ) ) THEN
      ! jararias, 2013/11
      IF ( aer_opt .EQ. 2 ) THEN
@@ -788,6 +802,8 @@ CONTAINS
      ENDIF
    ENDIF
 
+!---------------
+! Calculate constant for short wave radiation
 ! moved up and out of OMP loop because it only needs to be computed once
 ! and because it is not entirely thread-safe (XT24, TOLOCTM and XXLAT need
 ! their thread-privacy)  JM 20100217
@@ -812,7 +828,6 @@ CONTAINS
                       declin,degrad,xlong,xlat,coszen,hrang)
    ENDDO
 
-!---------------
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij ,i,j,k,its,ite,jts,jte)
 
@@ -936,10 +951,6 @@ CONTAINS
 !        ENDDO
 !     endif
 
-
-!---------------
-! Calculate constant for short wave radiation
-
      lwrad_cldfra_select: SELECT CASE(lw_physics)
 
         CASE (GFDLLWSCHEME)
@@ -974,6 +985,26 @@ CONTAINS
                    ids,ide, jds,jde, kds,kde,              &
                    ims,ime, jms,jme, kms,kme,              &
                    its,ite, jts,jte, kts,kte               )
+
+        IF ( PRESENT ( CLDFRA_DP ) ) THEN
+          IF ( icloud_cu .EQ. 2 ) THEN
+             DO j = jts,jte
+             DO k = kts,kte
+             DO i = its,ite
+                cldfra_cu(i,k,j)=cldfra_dp(i,k,j)+cldfra_sh(i,k,j)  ! Cu cloud fraction
+                CLDFRA(i,k,j)=(1.-cldfra_cu(i,k,j))*CLDFRA(i,k,j)  ! Update resolved cloud fraction for Cu punch-through
+                CLDFRA(i,k,j)=CLDFRA(i,k,j)+cldfra_cu(i,k,j)       ! New total cloud fraction
+                CLDFRA(i,k,j)=AMIN1(1.0,CLDFRA(i,k,j))
+!wrf-team
+                qc_save(i,k,j)=qc(i,k,j)
+                qc(i,k,j) = qc(i,k,j)+qc_adjust(i,k,j)*cldfra_cu(i,k,j)
+                qi_save(i,k,j)=qi(i,k,j)
+                qi(i,k,j) = qi(i,k,j)+qi_adjust(i,k,j)*cldfra_cu(i,k,j)
+             ENDDO
+             ENDDO
+             ENDDO
+          ENDIF
+        ENDIF
 
         IF ( PRESENT (cldfra_mp_all) ) THEN
           IF (is_CAMMGMP_used) THEN
@@ -1239,6 +1270,8 @@ CONTAINS
                   P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t,    &
                   T8W=t8w,RHO3D=rho,R=R_d,G=G,                      &
                   ICLOUD=icloud,WARM_RAIN=warm_rain,CLDFRA3D=CLDFRA,&
+!ckay
+!                 CLDFRA_KF3D=cldfra_KF,QC_KF3D=qc_KF,QI_KF3D=qi_KF,&
                   F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &
                   XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                   QV3D=QV,QC3D=QC,QR3D=QR,                          &
@@ -1323,7 +1356,6 @@ CONTAINS
           CALL wrf_debug(100, 'a4 Fu_Liou-Gu')
 ! -- end 
 
-
         CASE DEFAULT
   
              WRITE( wrf_err_message , * ) 'The longwave option does not exist: lw_physics = ', lw_physics
@@ -1385,6 +1417,26 @@ CONTAINS
                    ids,ide, jds,jde, kds,kde,              &
                    ims,ime, jms,jme, kms,kme,              &
                    its,ite, jts,jte, kts,kte               )
+
+        IF ( PRESENT ( CLDFRA_DP ) ) THEN
+          IF ( icloud_cu .EQ. 2 ) THEN
+        DO j = jts,jte
+        DO k = kts,kte
+        DO i = its,ite
+           cldfra_cu(i,k,j)=cldfra_dp(i,k,j)+cldfra_sh(i,k,j)  ! Cu cloud fraction
+           CLDFRA(i,k,j)=(1.-cldfra_cu(i,k,j))*CLDFRA(i,k,j)  ! Update resolved cloud fraction for Cu punch-through
+           CLDFRA(i,k,j)=CLDFRA(i,k,j)+cldfra_cu(i,k,j)       ! New total cloud fraction
+           CLDFRA(i,k,j)=AMIN1(1.0,CLDFRA(i,k,j))
+!wrf-team
+!               qc_save(i,k,j)=qc(i,k,j)
+!               qc(i,k,j) = qc(i,k,j)+qc_adjust(i,k,j)*cldfra_cu(i,k,j)
+!               qi_save(i,k,j)=qi(i,k,j)
+!               qi(i,k,j) = qi(i,k,j)+qi_adjust(i,k,j)*cldfra_cu(i,k,j)
+        ENDDO
+        ENDDO
+        ENDDO
+          ENDIF
+        ENDIF
      ENDIF
 
         CASE DEFAULT
@@ -1613,6 +1665,8 @@ CONTAINS
                      ALBEDO=ALBEDO,t3d=t,t8w=t8w,TSK=TSK,              &
                      p3d=p,p8w=p8w,pi3d=pi,rho3d=rho,                  &
                      dz8w=dz8w,CLDFRA3D=CLDFRA,R=R_D,G=G,              &
+!ckay
+!                    CLDFRA_KF3D=cldfra_KF,QC_KF3D=qc_KF,QI_KF3D=qi_KF,&
                      ICLOUD=icloud,WARM_RAIN=warm_rain,                &
                      F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &
                      XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
@@ -1800,7 +1854,8 @@ CONTAINS
         end do
      end if
 
-       IF ( PRESENT( qc  ) .AND. PRESENT( qc_adjust ) .AND. cu_rad_feedback ) THEN
+       IF ( PRESENT( qc  ) .AND. PRESENT( qc_adjust ) ) THEN 
+           IF ( cu_rad_feedback .OR. icloud_cu .EQ. 2 ) THEN
            DO j=jts,jte
            DO k=kts,kte
            DO i=its,ite
@@ -1808,8 +1863,10 @@ CONTAINS
            ENDDO
            ENDDO
            ENDDO
+           ENDIF
         ENDIF
-        IF ( PRESENT( qi  ) .AND. PRESENT( qi_adjust ) .AND. cu_rad_feedback ) THEN
+        IF ( PRESENT( qi  ) .AND. PRESENT( qi_adjust ) ) THEN
+           IF ( cu_rad_feedback .OR. icloud_cu .EQ. 2 ) THEN
            DO j=jts,jte
            DO k=kts,kte
            DO i=its,ite
@@ -1817,6 +1874,7 @@ CONTAINS
            ENDDO
            ENDDO
            ENDDO
+           ENDIF
         ENDIF
 
      ! jararias, aug 2013, updated 2013/11

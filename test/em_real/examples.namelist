@@ -401,6 +401,9 @@ Price, J. F., T. B. Sanford, and G. Z. Forristal, 1994: Forced stage response to
  num_traj                            = 50 (currently in &domains)
 
 
+
+
+
 ** Using aerosol option aer_opt = 2:
 
 &physics
@@ -414,3 +417,18 @@ Price, J. F., T. B. Sanford, and G. Z. Forristal, 1994: Forced stage response to
  aer_ssa_val        = 0.85,
  aer_asy_opt        = 1,
  aer_asy_val        = 0.90,
+
+
+
+
+
+** Using Jimenez wind-farm scheme
+
+In the &physics namelist record, set the MAX_DOM value:
+ windfarm                            = 1,    1,    1
+
+Also in the directory with namelist.input, is the file defining the
+specifics of the wind turbine type: wind-turbine-1.tbl
+
+The location of wind turbines are specified as lat lon, and 
+the turbine type: windturbines.txt

@@ -1090,6 +1090,7 @@ state    real     lu_state        p      misc       -          -     -
 #                                               
                                                 
 state   integer number_at_same_level    -        -          -         -     -        "number_at_same_level"  ""         ""      
+state   real    power          ij       misc      1         -     irh       "Power"                   "Power production"         "W"
 
 # State for derived time quantities.  
 #for HWRF: add to restart
@@ -1260,6 +1261,7 @@ rconfig   real    radt                    namelist,physics	max_domains    0     
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0       rh       "sf_sfclay_physics"             ""      ""
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0       rh       "sf_surface_physics"            ""      ""
 rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    0       rh       "bl_pbl_physics"                ""      ""
+rconfig   integer     windfarm_opt        namelist,physics      max_domains    0       rh       "windfarm_opt"                ""      ""
 rconfig   integer     mfshconv            namelist,physics      max_domains    1        rh       "mfshconv"         "To activate mass flux scheme with qnse, 1=true; 0=false"      ""
 rconfig   real    BLDT                    namelist,physics	max_domains    0       h    "BLDT"          ""      ""
 rconfig   integer     cu_physics          namelist,physics	max_domains    0       rh       "cu_physics"            ""      ""
@@ -1578,6 +1580,7 @@ package   camuwpblscheme bl_pbl_physics==9           -             -
 package   mrfscheme      bl_pbl_physics==99          -             -
 package   temfpblscheme  bl_pbl_physics==10          -             -
 package   gbmpblscheme  bl_pbl_physics==12          -             -
+package   turbdragforce  windfarm_opt==1             -             -
 
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -

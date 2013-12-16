@@ -734,7 +734,7 @@
                       grid%landuse_ISICE, grid%landuse_LUCATS,            &
                       grid%landuse_LUSEAS, grid%landuse_ISN,              &
                       grid%lu_state,                                      &
-                      grid%xlat,grid%xlong,grid%albedo,grid%albbck,grid%GMT,grid%JULYR,grid%JULDAY,     &
+                      grid%xlat,grid%xlong,grid%xlong_u,grid%xlat_v,grid%albedo,grid%albbck,grid%GMT,grid%JULYR,grid%JULDAY,     &
                       grid%levsiz, num_ozmixm, num_aerosolc, grid%paerlev,  &
                       grid%alevsiz, grid%no_src_types,                      &
                       grid%tmn,grid%xland,grid%znt,grid%z0,grid%ust,grid%mol,grid%pblh,grid%tke_pbl,    &

@@ -1971,7 +1971,8 @@
      &             ,GRID%LANDUSE_ISICE, GRID%LANDUSE_LUCATS             &
      &             ,GRID%LANDUSE_LUSEAS, GRID%LANDUSE_ISN               &
      &             ,GRID%LU_STATE                                       &
-     &             ,grid%xlat,grid%xlong,grid%albedo,grid%albbck                            &
+     &             ,grid%xlat,grid%xlong,grid%glat,grid%glon&
+     &             ,grid%albedo,grid%albbck                             &
      &             ,GRID%GMT,GRID%JULYR,GRID%JULDAY                     &
      &             ,GRID%LEVSIZ, NUM_OZMIXM, NUM_AEROSOLC, GRID%PAERLEV &
      &             ,grid%alevsiz, grid%no_src_types                     &

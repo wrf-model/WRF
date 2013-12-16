@@ -542,6 +542,7 @@ module_physics_init.o : \
 		module_cam_constituents.o       \
 		module_cam_mp_modal_aero_initialize_data_phys.o \
 		module_cam_support.o \
+		module_wind_turbdragforce.o \
 		module_wind_fitch.o		\
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
@@ -611,6 +612,7 @@ module_pbl_driver.o:  \
 		module_wind_fitch.o \
 		module_bl_temf.o \
 		module_bl_mfshconvpbl.o \
+		module_wind_turbdragforce.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o 

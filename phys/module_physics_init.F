@@ -17,6 +17,8 @@ MODULE module_physics_init
    !Local data for CAM's MG MP scheme
    integer  :: ixcldliq, ixcldice, ixnumliq, ixnumice
    LOGICAL  :: CAM_INITIALIZED = .FALSE.
+   LOGICAL  :: WINDFARM_INITIALIZED = .FALSE.
+
 
 CONTAINS
 
@@ -47,7 +49,7 @@ CONTAINS
                          landuse_ISICE, landuse_LUCATS,          &
                          landuse_LUSEAS, landuse_ISN,            &
                          lu_state,                               &
-                         XLAT,XLONG,ALBEDO,ALBBCK,GMT,JULYR,JULDAY,&
+                         XLAT,XLONG,xlong_u,xlat_v,ALBEDO,ALBBCK,GMT,JULYR,JULDAY,&
                          levsiz, n_ozmixm, n_aerosolc, paerlev,  &
                          alevsiz, no_src_types,                  &
                          TMN,XLAND,ZNT,Z0,UST,MOL,PBLH,TKE_PBL,  &
@@ -189,6 +191,7 @@ CONTAINS
 #ifdef WRF_CHEM
    USE module_cam_support,         ONLY : cam_mam_aerosols
 #endif
+   USE module_wind_turbdragforce
    IMPLICIT NONE
 !-----------------------------------------------------------------
    TYPE (grid_config_rec_type)              :: config_flags
@@ -215,7 +218,7 @@ CONTAINS
    REAL,     INTENT(IN)        :: swrad_scat
 
    REAL,     DIMENSION( kms:kme ) , INTENT(IN) :: zfull, zhalf
-   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN) :: TSK, XLAT, XLONG
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN) :: TSK, XLAT, XLONG,xlong_u,xlat_v
 
    INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
    INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc
@@ -873,6 +876,14 @@ integer myproc
 !-- bl: pbl
 !-- cu: cumulus
 !-- mp: microphysics
+
+!
+! .... paj ... initialize wind farm ...
+!
+  IF ( config_flags%windfarm_opt .EQ. 1 ) THEN
+    CALL init_module_wind_turbdragforce(id,config_flags,xlong,xlat,windfarm_initialized,ims,ime,jms,jme,its,ite,jts,jte,ids,ide,jds,jde)
+  ENDIF
+
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to ra_init' )
 

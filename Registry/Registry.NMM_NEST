@@ -460,14 +460,18 @@ state    real   SWVISDIF          ij    misc        1         Z      r        "S
 state    real   SWNIRDIR          ij    misc        1         Z      r        "SWNIRDIR"              "SWR NIR DIR component"  ""
 state    real   SWNIRDIF          ij    misc        1         Z      r        "SWNIRDIF"              "SWR NIR DIF component"  ""
 
-state    real    refl_10cm      ikj     dyn_nmm     1         -     h       "refl_10cm"      "Radar reflectivity (lamda = 10 cm)"  "dBZ"
-state    real    REFD_MAX        ij     misc        1         -     h       "REFD_MAX"       "MAX DERIVED RADAR REFL"  "dbZ"
-state  real  re_cloud   ikj     misc     1    -     r       "re_cloud"        "Effective radius, cloud drops"      "m"
-state  real  re_ice     ikj     misc     1    -     r       "re_ice"          "Effective radius, cloud ice"        "m"
-state  real  re_snow    ikj     misc     1    -     r       "re_snow"         "Effective radius, snow"             "m"
-state  integer  has_reqc   -    misc     1    -     r       "has_reqc"        "Flag for has effective radius of cloud water"    ""
-state  integer  has_reqi   -    misc     1    -     r       "has_reqi"        "Flag for has effective radius of cloud ice"      ""
-state  integer  has_reqs   -    misc     1    -     r       "has_reqs"        "Flag for has effective radius of snow"           ""
+state  real  refl_10cm     ikj    dyn_nmm     1    -     h       "refl_10cm"      "Radar reflectivity (lamda = 10 cm)"  "dBZ"
+state  real  REFD_MAX      ij     misc        1    -     h       "REFD_MAX"       "MAX DERIVED RADAR REFL"  "dbZ"
+state  real  qnwfa2d       ij     misc        1    -     rhdu    "QNWFA2D"        "Surface aerosol number conc emission"  "kg-1 s-1"
+state  real  re_cloud      ikj    misc        1    -     r       "re_cloud"       "Effective radius, cloud drops"      "m"
+state  real  re_ice        ikj    misc        1    -     r       "re_ice"         "Effective radius, cloud ice"        "m"
+state  real  re_snow       ikj    misc        1    -     r       "re_snow"        "Effective radius, snow"             "m"
+state  real  dfi_re_cloud  ikj    misc        1    -     -       "DFI_RE_CLOUD"   "DFI Effective radius cloud water"  "m"
+state  real  dfi_re_ice    ikj    misc        1    -     -       "DFI_RE_ICE"     "DFI Effective radius cloud ice"    "m"
+state  real  dfi_re_snow   ikj    misc        1    -     -       "DFI_RE_SNOW"    "DFI Effective radius snow"         "m"
+state  integer  has_reqc   -      misc        1    -     r       "has_reqc"       "Flag for has effective radius of cloud water"    ""
+state  integer  has_reqi   -      misc        1    -     r       "has_reqi"       "Flag for has effective radius of cloud ice"      ""
+state  integer  has_reqs   -      misc        1    -     r       "has_reqs"       "Flag for has effective radius of snow"           ""
 
 #
 # added WRF-Solar
@@ -775,26 +779,32 @@ state   real    qng            ijkftb  scalar      1         m     i01hru=(UpMas
 state   real    qnh            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNHAIL"            "Hail Number concentration" "# kg(-1)"
 state   real    qnn            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNCCN"            "CCN Number concentration" "# kg(-1)"
 state   real    qnc            ijkftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNCLOUD"          "cloud water Number concentration" "# kg(-1)"
+state   real    qnwfa          ikjftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNWFA"            "water-friendly aerosol number con" "# kg(-1)"
+state   real    qnifa          ikjftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QNIFA"            "ice-friendly aerosol number con"   "# kg(-1)"
 state   real    qvolg          ikjftb  scalar      1         m     i01hru=(UpMass:@ECopy,0.0)d=(DownMass:@ECopy,0.0)f=(BdyMass:@ECopy,0.0)       "QVGRAUPEL"        "Graupel Particle Volume" "m(3) kg(-1)"
 
 
 state   real    -              ijkftb  dfi_scalar      1         m     -   -
 state   real    dfi_qndrop     ijkftb  dfi_scalar      1         m     \
-   rusdf=(BdyMass:@ECopy,0.0)    "DFI_QNDROP"    "Droplet number mixing ratio"        "# kg-1"
+   rusdf=(BdyMass:@ECopy,0.0)    "DFI_QNDROP"    "DFI Droplet number mixing ratio"        "# kg-1"
 state   real    dfi_qni        ijkftb  dfi_scalar      1         m     \
-   rusdf=(BdyMass:@ECopy,0.0)    "DFI_QNICE"     "Ice Number concentration" "# kg-1"
+   rusdf=(BdyMass:@ECopy,0.0)    "DFI_QNICE"     "DFI Ice Number concentration" "# kg-1"
 state   real    dfi_qt         ijkftb  dfi_scalar      1         m     \
-   rusdf=(BdyMass:@ECopy,0.0)    "DFI_CWM"       "Total condensate mixing ratio"      "kg kg-1"
+   rusdf=(BdyMass:@ECopy,0.0)    "DFI_CWM"       "DFI Total condensate mixing ratio"      "kg kg-1"
 state   real    dfi_qns        ijkftb  dfi_scalar      1         m     \
-   rusdf=(BdyMass:@ECopy,0.0)    "DFI_QNSNOW"    "Snow Number concentration"   "# kg(-1)"
+   rusdf=(BdyMass:@ECopy,0.0)    "DFI_QNSNOW"    "DFI Snow Number concentration"   "# kg(-1)"
 state   real    dfi_qnr        ijkftb  dfi_scalar      1         m     \
-   rusdf=(BdyMass:@ECopy,0.0)    "DFI_QNRAIN"    "Rain Number concentration"   "# kg(-1)"
+   rusdf=(BdyMass:@ECopy,0.0)    "DFI_QNRAIN"    "DFI Rain Number concentration"   "# kg(-1)"
 state   real    dfi_qng        ijkftb  dfi_scalar      1         m     \
-   rusdf=(BdyMass:@ECopy,0.0)    "DFI_QNGRAUPEL" "Graupel Number concentration" "# kg(-1)"
+   rusdf=(BdyMass:@ECopy,0.0)    "DFI_QNGRAUPEL" "DFI Graupel Number concentration" "# kg(-1)"
 state   real    dfi_qnn        ijkftb  dfi_scalar      1         m     \
-   rusdf=(BdyMass:@ECopy,0.0)    "DFI_QNCC"      "CNN Number concentration"   "# kg(-1)"
+   rusdf=(BdyMass:@ECopy,0.0)    "DFI_QNCC"      "DFI CNN Number concentration"   "# kg(-1)"
 state   real    dfi_qnc        ijkftb  dfi_scalar      1         m     \
-   rusdf=(BdyMass:@ECopy,0.0)    "DFI_QNCLOUD"   "Cloud Number concentration" "# kg(-1)"
+   rusdf=(BdyMass:@ECopy,0.0)    "DFI_QNCLOUD"   "DFI Cloud Number concentration" "# kg(-1)"
+state   real    dfi_qnwfa      ikjftb  dfi_scalar      1         m     \
+   rusdf=(BdyMass:@ECopy,0.0)    "DFI_QNWFA"     "DFI water-friendly aerosol number con" "# kg(-1)"
+state   real    dfi_qnifa      ikjftb  dfi_scalar      1         m     \
+   rusdf=(BdyMass:@ECopy,0.0)    "DFI_QNIFA"     "DFI ice-friendly aerosol number con"   "# kg(-1)"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1351,6 +1361,7 @@ rconfig   real h_diff                     namelist,physics      max_domains  0.1
 rconfig   integer movemin                 namelist,physics      max_domains   0       irh    "nmm input 12"
 rconfig   integer num_snso_layers         namelist,physics      1             7       irh    "num_snso_layers"               ""      ""
 rconfig   integer num_snow_layers         namelist,physics   1             3       irh    "num_snow_layers"               ""      ""
+rconfig   logical use_aero_icbc           namelist,physics      1             .false. rh     "use_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero"  "logical flag"
 
 
 # Dynamics
@@ -1502,6 +1513,7 @@ package   etampnew      mp_physics==5                -             moist:qv,qc,q
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
 package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
+package   thompsonaero  mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow
 package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
 package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs
@@ -1519,7 +1531,8 @@ package   wsm5scheme_dfi    mp_physics_dfi==4        -             dfi_moist:dfi
 package   etampnew_dfi      mp_physics_dfi==5        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs
 package   wsm6scheme_dfi    mp_physics_dfi==6        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 package   gsfcgcescheme_dfi mp_physics_dfi==7        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
-package   thompson_dfi      mp_physics_dfi==8        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr
+package   thompson_dfi      mp_physics_dfi==8        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
+package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   milbrandt2mom_dfi mp_physics_dfi==9        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh
 package   morr_two_moment_dfi  mp_physics_dfi==10    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qns,dfi_qnr,dfi_qng
 package   sbu_ylinscheme_dfi    mp_physics==13           -         dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs

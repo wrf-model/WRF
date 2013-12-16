@@ -38,6 +38,7 @@ CONTAINS
                          STEPBL,STEPRA,STEPCU,                   &
                          W0AVG, RAINNC, RAINC, RAINCV, RAINNCV,  &
                          SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV, &
+                         z_at_q, qnwfa2d, scalar, num_sc,    & ! G. Thompson
                          re_cloud, re_ice, re_snow,              & ! G. Thompson
                          has_reqc, has_reqi, has_reqs,           & ! G. Thompson
                          NCA,swrad_scat,                         &
@@ -320,6 +321,10 @@ CONTAINS
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) ::           &
              RAINNC, RAINC, RAINCV, RAINNCV,  &
              SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV
+   REAL,     DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: z_at_q                          !  G. Thompson
+   REAL,     DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: qnwfa2d                    !  G. Thompson
+   INTEGER,  INTENT(IN) :: num_sc                                                !  G. Thompson
+   REAL,     DIMENSION(ims:ime,kms:kme,jms:jme,num_sc), INTENT(INOUT) :: scalar  !  G. Thompson
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) :: CLDEFI, NCA
 
@@ -1085,6 +1090,7 @@ integer myproc
                          nssl_cnor, nssl_cnos,                   &
                          nssl_rho_qh, nssl_rho_qhl,              &
                          nssl_rho_qs,                            &
+                z_at_q, qnwfa2d, scalar, num_sc,            &  ! G. Thompson
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -3121,6 +3127,7 @@ integer myproc
                          nssl_cnor, nssl_cnos,                   &
                          nssl_rho_qh, nssl_rho_qhl,              &
                          nssl_rho_qs,                            &
+                      z_at_q, qnwfa2d, scalar, num_sc,        &  ! G. Thompson
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
@@ -3170,6 +3177,10 @@ integer myproc
                                   F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
    REAL , DIMENSION(:) ,INTENT(INOUT)  :: mp_restart_state,tbpvs_state,tbpvs0_state
    LOGICAL , INTENT(IN)  :: allowed_to_read
+   REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT):: qnwfa2d                       !  G. Thompson
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN):: z_at_q                   !  G. Thompson
+   INTEGER, INTENT(IN) :: num_sc                                               !  G. Thompson
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme, num_sc), INTENT(INOUT):: scalar    !  G. Thompson
 
 ! Local
    INTEGER :: i, j, itf, jtf
@@ -3232,9 +3243,23 @@ integer myproc
                           its, ite, jts, jte, kts, kte            )
 #endif 
      CASE (THOMPSON)
+         IF(start_of_simulation.or.restart.or.config_flags%cycling)     &
+            CALL thompson_init(HGT=z_at_q,                              &
+                          IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde,   &
+                          IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme,   &
+                          ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
+
+     CASE (THOMPSONAERO)
 ! Cycling the WRF forecast with moving nests will cause this initialization to be
 ! called for each nest move. This is potentially very computationally expensive.
-         IF(start_of_simulation.or.restart.or.config_flags%cycling)CALL thompson_init
+         IF(start_of_simulation.or.restart.or.config_flags%cycling)     &
+            CALL thompson_init(HGT=z_at_q,                              &
+                          NWFA2D=qnwfa2d,                               &
+                          NWFA=scalar(ims,kms,jms,P_QNWFA),             &
+                          NIFA=scalar(ims,kms,jms,P_QNIFA),             &
+                          IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde,   &
+                          IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme,   &
+                          ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
 
      CASE (MORR_TWO_MOMENT)
          CALL morr_two_moment_init

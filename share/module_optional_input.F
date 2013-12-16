@@ -4,7 +4,7 @@ MODULE module_optional_input
               flag_snow     , flag_snowh    , flag_tsk      , flag_pinterp
 
    INTEGER :: flag_qv       , flag_qc       , flag_qr       , flag_qi       , flag_qs       , &
-              flag_qg       , flag_qh       , flag_qni      , flag_qnr      , flag_sh
+              flag_qg       , flag_qh       , flag_qni      , flag_qnr      , flag_qnwfa    , flag_qnifa    , flag_sh
 
    INTEGER :: flag_soil_levels, flag_soil_layers
 
@@ -294,6 +294,8 @@ USE module_io_domain
       flag_qh       = 0
       flag_qni      = 0
       flag_qnr      = 0
+      flag_qnwfa    = 0
+      flag_qnifa    = 0
       flag_sh       = 0
 
       flag_name(1:8) = 'QV      '
@@ -340,6 +342,16 @@ USE module_io_domain
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_qnr       = itmp
+      END IF
+      flag_name(1:8) = 'QNWFA    '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnwfa     = itmp
+      END IF
+      flag_name(1:8) = 'QNIFA    '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnifa     = itmp
       END IF
       flag_name(1:8) = 'SH      '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 

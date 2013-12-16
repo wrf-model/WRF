@@ -107,6 +107,9 @@
 ! Define variables local (topo_wind local vars)
    REAL    :: alpha, vfac
 
+!..Need to fill special height var for setting up initial condition.  G. Thompson
+   REAL, ALLOCATABLE, DIMENSION(:,:,:) :: z_at_q
+
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
@@ -122,6 +125,7 @@
 #ifndef WRF_CHEM
          ALLOCATE(CLDFRA_OLD(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CLDFRA_OLD = 0.
 #endif
+   ALLOCATE(z_at_q(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; z_at_q = 0.
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
    IF ( ( MOD (ide-ids,config_flags%parent_grid_ratio) .NE. 0 ) .OR. &
@@ -593,6 +597,14 @@
 
    ENDIF
 
+   DO j=jts,min(jte,jde-1)
+      DO k = kts,kte
+         DO i = its, min(ite,ide-1)
+            z_at_q(i,k,j)=(grid%ph_2(i,k,j)+grid%phb(i,k,j))/g
+         ENDDO
+      ENDDO
+   ENDDO
+
    IF ( grid%press_adj .and. ( grid%id .NE. 1 ) .AND. .NOT. ( config_flags%restart ) .AND. &
        ( ( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ) ) ) THEN
       DO j = jts, MIN(jte,jde-1)
@@ -713,7 +725,7 @@ endif
                       grid%p_top, grid%tsk, grid%RADT,grid%BLDT,grid%CUDT, MPDT, &
                       grid%rucuten, grid%rvcuten, grid%rthcuten,             &
                       grid%rqvcuten, grid%rqrcuten, grid%rqccuten,           &
-                      grid%rqscuten, grid%rqicuten,  &
+                      grid%rqscuten, grid%rqicuten,                          &
                       grid%rushten, grid%rvshten, grid%rthshten,             &
                       grid%rqvshten, grid%rqrshten, grid%rqcshten,           &
                       grid%rqsshten, grid%rqishten, grid%rqgshten,           &
@@ -723,6 +735,7 @@ endif
                       grid%stepbl,grid%stepra,grid%stepcu,                   &
                       grid%w0avg, grid%rainnc, grid%rainc, grid%raincv, grid%rainncv,  &
                       grid%snownc, grid%snowncv, grid%graupelnc, grid%graupelncv,  &
+                      z_at_q, grid%qnwfa2d, scalar(ims,kms,jms,1), num_scalar,         & ! G. Thompson
                       grid%re_cloud, grid%re_ice, grid%re_snow,         & ! G. Thompson
                       grid%has_reqc, grid%has_reqi, grid%has_reqs,      & ! G. Thompson
                       grid%nca,grid%swrad_scat,                    &
@@ -1536,6 +1549,8 @@ endif
 #  include "PERIOD_BDY_EM_SCALAR.inc"
 #  include "PERIOD_BDY_EM_CHEM.inc"
 #endif
+
+DEALLOCATE(z_at_q)
 
    IF (config_flags%p_lev_diags == PRESS_DIAGS ) THEN
     CALL wrf_debug ( 200 , ' PLD: pressure level diags' )

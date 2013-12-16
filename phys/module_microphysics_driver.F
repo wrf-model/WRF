@@ -41,6 +41,8 @@ SUBROUTINE microphysics_driver(                                          &
                       ,qndrop_curr,qni_curr,qh_curr,qnh_curr             &
                       ,qzr_curr,qzi_curr,qzs_curr,qzg_curr,qzh_curr      &
                       ,qns_curr,qnr_curr,qng_curr,qnn_curr,qnc_curr      &
+                      ,qnwfa_curr,qnifa_curr                             & ! for water/ice-friendly aerosols
+                      ,f_qnwfa,f_qnifa                                   & ! for water/ice-friendly aerosols
                       ,qvolg_curr                                        &
                       ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni      &
                       ,f_qns,f_qnr,f_qng,f_qnc,f_qnn,f_qh,f_qnh          &
@@ -60,6 +62,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,rainprod, evapprod                                &
                       ,qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp                &
 #endif
+                      ,qnwfa2d                                           & ! for water/ice-friendly aerosols
                       ,refl_10cm                                         & ! HM, 9/22/09, add for refl
 ! YLIN
 ! Added the RI_CURR array to the call
@@ -72,13 +75,13 @@ SUBROUTINE microphysics_driver(                                          &
 #if(NMM_CORE==1)
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, ETAMPNEW, ETAMPOLD, etamp_HWRF,THOMPSON, MORR_TWO_MOMENT     &
+                    ,WSM6SCHEME, ETAMPNEW, ETAMPOLD, etamp_HWRF,THOMPSON, THOMPSONAERO, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME &
                     ,MILBRANDT2MOM !,MILBRANDT3MOM 
 #else
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, ETAMPNEW, ETAMPOLD, THOMPSON, MORR_TWO_MOMENT     &
+                    ,WSM6SCHEME, ETAMPNEW, ETAMPOLD, THOMPSON, THOMPSONAERO, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN  &
                     ,NSSL_1MOM,NSSL_1MOMLFO & ! ,NSSL_3MOM       &
                     ,MILBRANDT2MOM , CAMMGMPSCHEME  !,MILBRANDT3MOM
@@ -409,6 +412,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
    LOGICAL,  OPTIONAL,   INTENT(IN   )    :: channel_switch
    REAL, OPTIONAL,  INTENT(INOUT   ) :: naer  ! aerosol number concentration (/kg)
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) , OPTIONAL :: qnwfa2d      ! Added by G. Thompson
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(INOUT ) ::                                        &
@@ -418,6 +422,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,qt_curr,qndrop_curr,qni_curr,qh_curr,qnh_curr   &
                  ,qns_curr,qnr_curr,qng_curr,qnn_curr,qnc_curr    &
                  ,qzr_curr,qzi_curr,qzs_curr,qzg_curr,qzh_curr    &
+                 ,qnwfa_curr,qnifa_curr                           & ! Added by G. Thompson
                  ,qvolg_curr
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
@@ -467,7 +472,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
    LOGICAL, OPTIONAL :: f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni,f_qt    &
                        ,f_qns,f_qnr,f_qng,f_qnn,f_qnc,f_qh,f_qnh,f_qzr       &
-                       ,f_qzi,f_qzs,f_qzg,f_qzh,f_qvolg
+                       ,f_qzi,f_qzs,f_qzg,f_qzh,f_qvolg                      &
+                       ,f_qnwfa, f_qnifa                         ! Added by G. Thompson
 
    LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
    INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
@@ -608,12 +614,78 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              ENDIF
 
 !
+        CASE (THOMPSONAERO)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling thompson' )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR )   .AND.  &
+                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR )   .AND.  &
+                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR )   .AND.  &
+                  PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR)   .AND.  &
+                  PRESENT( QNC_CURR) .AND. PRESENT ( QNWFA_CURR) .AND.  &
+                  PRESENT( QNIFA_CURR).AND.PRESENT ( QNWFA2D)    .AND.  &
+                  PRESENT( SNOWNC)   .AND. PRESENT ( SNOWNCV)    .AND.  &
+                  PRESENT( GRAUPELNC).AND. PRESENT ( GRAUPELNCV) .AND.  &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) ) THEN
+#ifdef WRF_CHEM
+                 qv_b4mp(its:ite,kts:kte,jts:jte) = qv_curr(its:ite,kts:kte,jts:jte)
+                 qc_b4mp(its:ite,kts:kte,jts:jte) = qc_curr(its:ite,kts:kte,jts:jte)
+                 qi_b4mp(its:ite,kts:kte,jts:jte) = qi_curr(its:ite,kts:kte,jts:jte)
+                 qs_b4mp(its:ite,kts:kte,jts:jte) = qs_curr(its:ite,kts:kte,jts:jte)
+#endif
+             CALL mp_gt_driver(                          &
+                     QV=qv_curr,                         &
+                     QC=qc_curr,                         &
+                     QR=qr_curr,                         &
+                     QI=qi_curr,                         &
+                     QS=qs_curr,                         &
+                     QG=qg_curr,                         &
+                     NI=qni_curr,                        &
+                     NR=qnr_curr,                        &
+                     NC=qnc_curr,                        &
+                     NWFA=qnwfa_curr,                    &
+                     NIFA=qnifa_curr,                    &
+                     NWFA2D=qnwfa2d,                     &
+                     TH=th,                              &
+                     PII=pi_phy,                         &
+                     P=p,                                &
+                     W=w,                                &
+                     DZ=dz8w,                            &
+                     DT_IN=dt,                           &
+                     ITIMESTEP=itimestep,                &
+                     RAINNC=RAINNC,                      &
+                     RAINNCV=RAINNCV,                    &
+                     SNOWNC=SNOWNC,                      &
+                     SNOWNCV=SNOWNCV,                    &
+                     GRAUPELNC=GRAUPELNC,                &
+                     GRAUPELNCV=GRAUPELNCV,              &
+                     SR=SR,                              &
+#ifdef WRF_CHEM
+                     RAINPROD=rainprod,                  &
+                     EVAPPROD=evapprod,                  &
+#endif
+                     REFL_10CM=refl_10cm,                &
+                     diagflag=diagflag,                  &
+                     do_radar_ref=do_radar_ref,          &
+                     re_cloud=re_cloud,                  &
+                     re_ice=re_ice,                      &
+                     re_snow=re_snow,                    &
+                     has_reqc=has_reqc,                  & ! G. Thompson
+                     has_reqi=has_reqi,                  & ! G. Thompson
+                     has_reqs=has_reqs,                  & ! G. Thompson
+                 IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
+                 IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
+                 ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
+             ENDIF
+!
         CASE (THOMPSON)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling thompson' )
              IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
                   PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
                   PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
                   PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR) .AND.  &
+                  PRESENT( SNOWNC) .AND. PRESENT ( SNOWNCV) .AND.        &
+                  PRESENT( GRAUPELNC) .AND. PRESENT ( GRAUPELNCV) .AND.  &
                   PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) ) THEN
 #ifdef WRF_CHEM
                  qv_b4mp(its:ite,kts:kte,jts:jte) = qv_curr(its:ite,kts:kte,jts:jte)
@@ -633,6 +705,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      TH=th,                              &
                      PII=pi_phy,                         &
                      P=p,                                &
+                     W=w,                                &
                      DZ=dz8w,                            &
                      DT_IN=dt,                           &
                      ITIMESTEP=itimestep,                &

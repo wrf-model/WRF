@@ -976,6 +976,81 @@ integer::oops1,oops2
             END DO
          END DO
 
+         !  Added by G. Thompson 2013Sep10
+         !  Interpolate monthly aerosol climatology data to specific date/time.
+         !  Since data are 3D, do over a loop of vertical levels using temporary array space.
+
+         IF (config_flags%mp_physics.eq.THOMPSONAERO .and. P_QNWFA.gt.1 .and. config_flags%use_aero_icbc) then
+         CALL wrf_debug ( 0 , 'Using Thompson_aerosol_aware so using QNWFA monthly climo arrays to create QNWFA_now')
+         DO k = 1, num_metgrid_levels
+         WRITE(a_message,*) '  transferring each K-level ', k, ' to qntemp, sample Jan data, ', grid%QNWFA_jan(10,k,10)
+         CALL wrf_debug ( 0 , a_message)
+            DO j = jts, MIN(jte,jde-1)
+               DO i = its, MIN(ite,ide-1)
+                  grid%qntemp(i, 1, j) = grid%QNWFA_jan(i,k,j)
+                  grid%qntemp(i, 2, j) = grid%QNWFA_feb(i,k,j)
+                  grid%qntemp(i, 3, j) = grid%QNWFA_mar(i,k,j)
+                  grid%qntemp(i, 4, j) = grid%QNWFA_apr(i,k,j)
+                  grid%qntemp(i, 5, j) = grid%QNWFA_may(i,k,j)
+                  grid%qntemp(i, 6, j) = grid%QNWFA_jun(i,k,j)
+                  grid%qntemp(i, 7, j) = grid%QNWFA_jul(i,k,j)
+                  grid%qntemp(i, 8, j) = grid%QNWFA_aug(i,k,j)
+                  grid%qntemp(i, 9, j) = grid%QNWFA_sep(i,k,j)
+                  grid%qntemp(i,10, j) = grid%QNWFA_oct(i,k,j)
+                  grid%qntemp(i,11, j) = grid%QNWFA_nov(i,k,j)
+                  grid%qntemp(i,12, j) = grid%QNWFA_dec(i,k,j)
+               ENDDO
+            ENDDO
+         if (k.eq.1) then
+         write(a_message,*) ' DEBUG-GT qntemp(10,jan-feb,10) ', grid%qntemp(10, 1, 10),grid%qntemp(10, 2, 10)
+         CALL wrf_debug ( 0 , a_message)
+         endif
+            CALL monthly_interp_to_date ( grid%qntemp , current_date , grid%qntemp2 , &
+                                          ids , ide , jds , jde , kds , kde , &
+                                          ims , ime , jms , jme , kms , kme , &
+                                          its , ite , jts , jte , kts , kte )
+         if (k.eq.1) then
+         write(a_message,*) ' DEBUG-GT qntemp2(10,10) ', grid%qntemp2(10,10)
+         CALL wrf_debug ( 0 , a_message)
+         endif
+            DO j = jts, MIN(jte,jde-1)
+               DO i = its, MIN(ite,ide-1)
+                  grid%QNWFA_now(i,k,j) = grid%qntemp2(i,j)
+               ENDDO
+            ENDDO
+         ENDDO
+         ENDIF
+
+         IF (config_flags%mp_physics.eq.THOMPSONAERO .and. P_QNIFA.gt.1 .and. config_flags%use_aero_icbc) then
+         DO k = 1, num_metgrid_levels
+            DO j = jts, MIN(jte,jde-1)
+               DO i = its, MIN(ite,ide-1)
+                  grid%qntemp(i, 1, j) = grid%QNIFA_jan(i,k,j)
+                  grid%qntemp(i, 2, j) = grid%QNIFA_feb(i,k,j)
+                  grid%qntemp(i, 3, j) = grid%QNIFA_mar(i,k,j)
+                  grid%qntemp(i, 4, j) = grid%QNIFA_apr(i,k,j)
+                  grid%qntemp(i, 5, j) = grid%QNIFA_may(i,k,j)
+                  grid%qntemp(i, 6, j) = grid%QNIFA_jun(i,k,j)
+                  grid%qntemp(i, 7, j) = grid%QNIFA_jul(i,k,j)
+                  grid%qntemp(i, 8, j) = grid%QNIFA_aug(i,k,j)
+                  grid%qntemp(i, 9, j) = grid%QNIFA_sep(i,k,j)
+                  grid%qntemp(i,10, j) = grid%QNIFA_oct(i,k,j)
+                  grid%qntemp(i,11, j) = grid%QNIFA_nov(i,k,j)
+                  grid%qntemp(i,12, j) = grid%QNIFA_dec(i,k,j)
+               ENDDO
+            ENDDO
+            CALL monthly_interp_to_date ( grid%qntemp , current_date , grid%qntemp2 , &
+                                          ids , ide , jds , jde , kds , kde , &
+                                          ims , ime , jms , jme , kms , kme , &
+                                          its , ite , jts , jte , kts , kte )
+            DO j = jts, MIN(jte,jde-1)
+               DO i = its, MIN(ite,ide-1)
+                  grid%QNIFA_now(i,k,j) = grid%qntemp2(i,j)
+               ENDDO
+            ENDDO
+         ENDDO
+         ENDIF
+
          !  Two ways to get the surface pressure.  1) If we have the low-res input surface
          !  pressure and the low-res topography, then we can do a simple hydrostatic
          !  relation.  2) Otherwise we compute the surface pressure from the sea-level
@@ -1378,6 +1453,65 @@ integer::oops1,oops2
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte )
+               END IF
+            END DO
+         END IF
+
+!..If we have number of water-friendly aerosols from monthly climo data, interpolate to WRF model levels.
+         WRITE(a_message,*) ' flag value of flag_qnwfa is ', flag_qnwfa
+         CALL wrf_debug ( 0 , a_message)
+         IF ( flag_qnwfa .EQ. 1 .and. config_flags%use_aero_icbc) THEN
+            DO im = PARAM_FIRST_SCALAR, num_3d_s
+               IF ( im .EQ. P_QNWFA ) THEN
+                  CALL wrf_debug ( 0 , 'Using Thompson_aerosol_aware so vertically-interpolating QNWFA monthly climo arrays to fill scalar')
+                  CALL vert_interp ( grid%QNWFA_now , grid%pd_gc , scalar(:,:,:,P_QNWFA) , grid%pb , &
+                                     num_metgrid_levels , 'Q' , &
+                                     interp_type , lagrange_order , extrap_type , &
+                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     ids , ide , jds , jde , kds , kde , &
+                                     ims , ime , jms , jme , kms , kme , &
+                                     its , ite , jts , jte , kts , kte )
+               END IF
+            END DO
+         ELSEIF ( flag_qnwfa .EQ. 1 .and. (.NOT. config_flags%use_aero_icbc)) THEN
+            DO im = PARAM_FIRST_SCALAR, num_3d_s
+               IF ( im .EQ. P_QNWFA ) THEN
+                  DO j = jts, MIN(jte,jde-1)
+                     DO k = kts, kte
+                        DO i = its, MIN(ite,ide-1)
+                           scalar(i,k,j,P_QNWFA) = 0.
+                        END DO
+                     END DO
+                  END DO
+               END IF
+            END DO
+         END IF
+
+!..If we have number of ice-friendly aerosols from monthly climo data, interpolate to WRF model levels.
+         IF ( flag_qnifa .EQ. 1 .and. config_flags%use_aero_icbc) THEN
+            DO im = PARAM_FIRST_SCALAR, num_3d_s
+               IF ( im .EQ. P_QNIFA ) THEN
+                  CALL vert_interp ( grid%QNIFA_now , grid%pd_gc , scalar(:,:,:,P_QNIFA) , grid%pb , &
+                                     num_metgrid_levels , 'Q' , &
+                                     interp_type , lagrange_order , extrap_type , &
+                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     zap_close_levels , force_sfc_in_vinterp , &
+                                     ids , ide , jds , jde , kds , kde , &
+                                     ims , ime , jms , jme , kms , kme , &
+                                     its , ite , jts , jte , kts , kte )
+               END IF
+            END DO
+         ELSEIF ( flag_qnifa .EQ. 1 .and. (.NOT. config_flags%use_aero_icbc)) THEN
+            DO im = PARAM_FIRST_SCALAR, num_3d_s
+               IF ( im .EQ. P_QNIFA ) THEN
+                  DO j = jts, MIN(jte,jde-1)
+                     DO k = kts, kte
+                        DO i = its, MIN(ite,ide-1)
+                           scalar(i,k,j,P_QNIFA) = 0.
+                        END DO
+                     END DO
+                  END DO
                END IF
             END DO
          END IF
@@ -1950,7 +2084,20 @@ integer::oops1,oops2
                              ( grid%tslb(i,1,j) .lt. 400 ) .and. ( grid%smois(i,1,j) .lt. 0.005 ) ) then
                            print *,'Noah -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
                            iicount = iicount + 1
-                           grid%smois(i,:,j) = 0.005
+!                          grid%smois(i,:,j) = 0.005
+!+---+-----------------------------------------------------------------+
+!  Some bad values of soil moisture are possible (huge negative and positive), but they
+!  appear to occur only along coastlines, so instead of overwriting with small moisture
+!  values, use relatively large moisture val.  Orig code checked for large negative but
+!  not positive values, mods here reset either.  G. Thompson (28 Feb 2008).
+
+                           grid%smois(i,:,j) = 0.499
+                        ELSEIF ( (grid%landmask(i,j).gt.0.5) .and. (grid%tslb(i,1,j) .gt. 170 ) .and. &
+                             ( grid%tslb(i,1,j) .lt. 400 ) .and. (grid%smois(i,1,j) .gt. 1.005 ) ) then
+                           print *,'Noah -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
+                           iicount = iicount + 1
+                           grid%smois(i,:,j) = 0.499
+!+---+-----------------------------------------------------------------+
                         END IF
                      END DO
                   END DO
@@ -1972,7 +2119,16 @@ integer::oops1,oops2
                              ( grid%tslb(i,1,j) .lt. 400 ) .and. ( grid%smois(i,1,j) .lt. 0.005 ) ) then
                            print *,'RUC -> Noah: bad soil moisture at i,j = ',i,j,grid%smois(i,:,j)
                            iicount = iicount + 1
-                           grid%smois(i,:,j) = 0.005
+!                          grid%smois(i,:,j) = 0.005
+!+---+-----------------------------------------------------------------+
+!  Same comment as above.
+                           grid%smois(i,:,j) = 0.499
+                        ELSEIF ( (grid%landmask(i,j).gt.0.5) .and. (grid%tslb(i,1,j) .gt. 170 ) .and. &
+                             ( grid%tslb(i,1,j) .lt. 400 ) .and. (grid%smois(i,1,j) .gt. 1.005 ) ) then
+                           print *,'Noah -> Noah: bad soil moisture at i,j =',i,j,grid%smois(i,:,j)
+                           iicount = iicount + 1
+                           grid%smois(i,:,j) = 0.499
+!+---+-----------------------------------------------------------------+
                         END IF
                      END DO
                   END DO
@@ -1980,6 +2136,25 @@ integer::oops1,oops2
                      print *,'RUC -> Noah: total number of small soil moisture locations = ',iicount
                   END IF
                END IF
+
+!+---+-----------------------------------------------------------------+
+               !  Fudge soil moisture higher where canopy water is non-zero.
+               !  G. Thompson (12 Jun 2008)
+
+               DO j = jts, MIN(jte,jde-1)
+                 DO i = its, MIN(ite,ide-1)
+                    IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                    if (grid%canwat(i,j) .GT. 1.01 .AND. grid%landmask(i,j) .GT. 0.5 ) THEN
+                       print *,'  CANWAT: moisten soil a bit more at i,j =',i,j,grid%canwat(i,j)
+                       grid%smois(i,1,j) = grid%smois(i,1,j) + (grid%canwat(i,j)**0.33333)*0.04
+                       grid%smois(i,1,j) = MIN(0.499, grid%smois(i,1,j))
+                       grid%smois(i,2,j) = grid%smois(i,2,j) + (grid%canwat(i,j)**0.33333)*0.01
+                       grid%smois(i,2,j) = MIN(0.499, grid%smois(i,2,j))
+                    end if
+                 END DO
+               END DO
+!+---+-----------------------------------------------------------------+
+
 
             CASE ( RUCLSMSCHEME )
                iicount = 0
@@ -2362,6 +2537,15 @@ endif
 
          END DO
       END DO
+
+!+---+-----------------------------------------------------------------+
+      ! New addition by Greg Thompson to dry out the stratosphere.
+!     CALL wrf_debug ( 0 , ' calling routine to dry stratosphere')
+!     CALL dry_stratos ( grid%t_2, moist(:,:,:,P_QV), grid%phb, &
+!                        ids , ide , jds , jde , kds , kde , &
+!                        ims , ime , jms , jme , kms , kme , &
+!                        its , ite , jts , jte , kts , kte )
+!+---+-----------------------------------------------------------------+
 
       !  Fill in the outer rows and columns to allow us to be sloppy.
 
@@ -2778,6 +2962,23 @@ endif
       grid%save_topo_from_real=1
 
       ips = its ; ipe = ite ; jps = jts ; jpe = jte ; kps = kts ; kpe = kte
+
+
+!+---+-----------------------------------------------------------------+
+      !  Added by Greg Thompson.  Pre-set snow depth by latitude, elevation, and day-of-year.
+
+!     CALL wrf_debug ( 0 , ' calling routine to add snow in high mountain peaks')
+!     DO j = jts, min(jde-1,jte)
+!        DO i = its, min(ide-1,ite)
+!           IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+!           grid%snowh(i,j) = snowHires (grid%snowh(i,j), grid%xlat(i,j), grid%ht(i,j), current_date, i,j)
+!           grid%snow(i,j) = grid%snowh(i,j) * 1000. / 5.
+!        END DO
+!     END DO
+!     CALL wrf_debug ( 0 , '   DONE routine to add snow in high mountain peaks')
+!+---+-----------------------------------------------------------------+
+
+
 #ifdef DM_PARALLEL
 #   include "HALO_EM_INIT_1.inc"
 #   include "HALO_EM_INIT_2.inc"
@@ -6433,6 +6634,123 @@ end do
    END SUBROUTINE filter_topo
 
 !---------------------------------------------------------------------
+
+
+!+---+-----------------------------------------------------------------+
+! Begin addition by Greg Thompson to dry out the stratosphere.
+! Starting 3 levels below model top, go downward and search for where
+! Theta gradient over three K-levels is less steep than +10 K per 1500 m.
+! This threshold approximates a vertical line on a skew-T chart from
+! approximately 300 to 240 mb, anything more unstable than this reference
+! is probably in the troposphere so pick the K plus 1 point as the
+! tropopause and set mixing ratio to a really small values above.
+!..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
+!..Last modified: 30 Dec 2004
+!+---+-----------------------------------------------------------------+
+
+   subroutine dry_stratos ( theta, qv, phb, &
+                            ids , ide , jds , jde , kds , kde , &
+                            ims , ime , jms , jme , kms , kme , &
+                            its , ite , jts , jte , kts , kte )
+
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN)        :: ids , ide , jds , jde , kds , kde , &
+                                     ims , ime , jms , jme , kms , kme , &
+                                     its , ite , jts , jte , kts , kte
+
+      REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(IN)     :: theta, phb
+      REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(INOUT)  :: qv
+
+      !  Local vars
+
+      INTEGER :: i, j, k, kk, istart, iend, jstart, jend, kstart, kend
+      REAL    :: ht1, ht2, theta1, theta2, htz, sat85, p_std_atmos
+      CHARACTER*256:: str_debug
+      ! Saturation vapor pressure at T = -85C.
+      DATA sat85 /0.0235755574/
+
+      do i = 1, 256
+         str_debug(i:i) = char(0)
+      enddo
+
+      istart = its
+      iend   = MIN(ide-1,ite)
+      jstart = jts
+      jend   = MIN(jde-1,jte)
+      kstart = kts
+      kend   = kte-1
+      DO j = jstart, jend
+         DO i = istart, iend
+            DO k = kend-3, kstart, -1
+               ht1 = phb(i,k,j)/9.8
+               ht2 = phb(i,k+2,j)/9.8
+               theta1 = theta(i,k,j)
+               theta2 = theta(i,k+2,j)
+               if ( (((theta2-theta1)/(ht2-ht1)) .lt. 10./1500. ) .AND. (ht1.gt.4000.) ) then
+                  DO kk = k+3, kend
+                     htz = phb(i,kk,j)/9.8
+                     p_std_atmos = exp(log(1.0-htz/44307.692)/0.19)*101325.0
+                     qv(i,kk,j) = 0.622*sat85/(p_std_atmos-sat85)
+                  END DO
+                  goto 79
+               end if
+            END DO
+ 79         continue
+         END DO
+      END DO
+
+   END SUBROUTINE dry_stratos
+
+!+---+-----------------------------------------------------------------+
+!..Hardwire snow cover above a pre-specified altitude.
+!.. Starting altitude for snow (snow_startz) depends on latitude
+!.. and is 3900 m at 35-deg lowering to 250km (linearly) by 65-deg lat.
+!.. Alter WEASD linear function from 0 at snow_startz to 999 mm at 4 km.
+!.. Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
+!.. Last modified: 27 Dec 2008
+!+---+-----------------------------------------------------------------+
+
+      real function snowHires (snow_in, latitude, elev, date_str, i,j)
+      IMPLICIT NONE
+
+      REAL, INTENT(IN):: latitude, elev, snow_in
+      INTEGER, INTENT(IN):: i, j
+      CHARACTER (LEN=24), INTENT(IN) :: date_str
+
+      REAL :: snow_startz, del_lat, season_factor, snow_out
+      REAL :: gmt
+      INTEGER :: day_peak, day_of_year, julyr
+      CHARACTER (LEN=256) :: dbg_msg
+
+      CALL get_julgmt ( date_str , julyr , day_of_year , gmt )
+
+      if (latitude .gt. 0.0) then
+         del_lat = (65.-latitude)/(65.-35.)
+         day_peak = 80
+      else
+         del_lat = (-65.-latitude)/(-65.+35.)
+         day_peak = 264
+      endif
+
+      snow_startz = (3900.-250.)*del_lat + 250.
+      snow_startz = max(250., min(3900., snow_startz))
+
+      season_factor = 1.
+      snow_out = 0.
+      IF (elev .GT. snow_startz) THEN
+         season_factor = ABS(COS((day_of_year - day_peak)*0.5*0.0174533))
+         snow_out = 0.999*(elev-snow_startz)/(4000.-snow_startz)
+         write(dbg_msg,*) 'DEBUG_GT_SNOW ', day_of_year, latitude, elev, snow_in, snow_startz, season_factor, snow_out,i, j
+         CALL wrf_debug (150, dbg_msg)
+      ENDIF
+
+      snowHires = MAX(snow_in, season_factor * snow_out)
+
+      END FUNCTION snowHires
+
+!+---+-----------------------------------------------------------------+
+
 
    SUBROUTINE init_module_initialize
    END SUBROUTINE init_module_initialize

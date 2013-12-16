@@ -77,6 +77,36 @@ use module_io
           WRITE ( message , FMT = '("processing wrfinput file (stream 0) for domain ",I8)' ) grid%id
           CALL end_timing ( TRIM(message) )
         ENDIF
+
+!gmm add input for noamp hydro model here
+     IF ( config_flags%opt_run.eq.5 ) THEN
+
+        CALL construct_filename2a ( inpname , config_flags%auxinput7_inname &
+                                 ,grid%id , 2 , timestr)
+
+     if( grid%auxinput7_oid .NE. 0 ) then
+       CALL close_dataset ( grid%auxinput7_oid , config_flags , "DATASET=AUXINPUT7" )
+     endif
+        
+        CALL open_r_dataset ( grid%auxinput7_oid, TRIM(inpname) , grid , config_flags , "DATASET=AUXINPUT7", ierr )
+
+!        call set_first_operation(grid%auxinput6_oid)
+
+        
+        IF ( ierr .NE. 0 ) THEN
+          WRITE( wrf_err_message , * ) 'program wrf: error opening ',TRIM(inpname),' for reading ierr=',ierr
+          CALL WRF_ERROR_FATAL ( wrf_err_message )
+        ENDIF
+           
+           CALL wrf_debug              (   0 , 'med_initialdata_input: calling input_aux_model_input7' )
+           CALL input_auxinput7 ( grid%auxinput7_oid ,   grid , config_flags , ierr )
+           CALL wrf_debug              ( 100 , 'med_initialdata_input: back from input_aux_model_input7' )
+        
+        CALL close_dataset ( grid%auxinput7_oid , config_flags , "DATASET=AUXINPUT7" )
+       
+       ENDIF
+!gmm
+
 #ifdef MOVE_NESTS
 #if ( EM_CORE == 1 )
         grid%nest_pos = grid%ht

@@ -64,6 +64,10 @@ CONTAINS
      &          ,shgxy    ,shcxy     ,shbxy     ,evgxy     ,evbxy     ,ghvxy        &
      &          ,ghbxy    ,irgxy     ,ircxy     ,irbxy     ,trxy      ,evcxy        &
      &          ,chleafxy ,chucxy    ,chv2xy    ,chb2xy    ,chstarxy                &                      
+           ! Noah-MP ground water
+     &          ,smcwtdxy ,rechxy   ,deeprechxy,fdepthxy,areaxy   ,rivercondxy, riverbedxy &
+     &          ,eqzwt    ,pexpxy   ,qrfxy    ,qspringxy,qslatxy  ,qrfsxy   ,qspringsxy &
+     &          ,smoiseq  ,wtddt    ,stepwtd                                            &
            ! Noah UA changes
      &          ,ua_phys,flx4,fvb,fbur,fgsn                                  &
 #if (EM_CORE==1)
@@ -285,6 +289,7 @@ CONTAINS
    USE module_sf_gfs
    USE module_sf_noahdrv, only : lsm
    USE module_sf_noahmpdrv, only : noahmplsm
+   USE module_sf_noahmp_groundwater
    USE module_sf_noah_seaice_drv
 #ifdef WRF_USE_CLM
    USE module_sf_clm
@@ -783,6 +788,12 @@ CONTAINS
         aparxy, psnxy, savxy, sagxy
    REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) ::  rssunxy, rsshaxy, bgapxy,wgapxy, &
         tgvxy ,tgbxy, chvxy, chbxy,SHGXY,SHCXY,SHBXY,EVGXY,EVBXY,GHVXY,GHBXY,IRGXY,IRCXY,IRBXY,TRXY,EVCXY,CHLEAFXY,CHUCXY,CHV2XY,CHB2XY,chstarxy                         
+
+   REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) ::  smcwtdxy   ,rechxy   ,deeprechxy,  fdepthxy, areaxy,  &
+       rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qspringxy,qslatxy,qrfsxy,qspringsxy                         
+   REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::  smoiseq
+   REAL, OPTIONAL, INTENT(IN) :: wtddt
+   INTEGER, OPTIONAL, INTENT(IN )  :: stepwtd
 
 ! Noah UA changes
    LOGICAL, INTENT(IN) :: ua_phys
@@ -2485,6 +2496,23 @@ CONTAINS
 !          PRESENT(g_urb2d)   .AND. PRESENT(rn_urb2d) .AND.           &
 !          PRESENT(ts_urb2d)                          .AND.           &
 !          PRESENT(frc_urb2d) .AND. PRESENT(utype_urb2d)   .AND.      &
+           PRESENT(smcwtdxy)       .AND.                              &
+           PRESENT(rechxy)         .AND.                              &   
+           PRESENT(deeprechxy)     .AND.                              &
+           PRESENT(fdepthxy)       .AND.                              &
+           PRESENT(areaxy)         .AND.                              &   
+           PRESENT(rivercondxy)    .AND.                              &
+           PRESENT(riverbedxy)     .AND.                              & 
+           PRESENT(eqzwt)          .AND.                              &    
+           PRESENT(pexpxy)         .AND.                              &   
+           PRESENT(qrfxy)          .AND.                              &    
+           PRESENT(qspringxy)      .AND.                              &
+           PRESENT(qslatxy)        .AND.                              &  
+           PRESENT(qrfsxy)         .AND.                              &   
+           PRESENT(qspringsxy)     .AND.                              & 
+           PRESENT(smoiseq)        .AND.                              &  
+           PRESENT(wtddt)          .AND.                              &    
+           PRESENT(stepwtd)        .AND.                              &
                                                       .TRUE. ) THEN
 !------------------------------------------------------------------
          IF( PRESENT(sr) ) THEN
@@ -2550,6 +2578,7 @@ CONTAINS
 		QSNOWXY, WSLAKEXY,    ZWTXY,     WAXY,      WTXY,     TSNOXY, &
 		ZSNSOXY,  SNICEXY,  SNLIQXY, LFMASSXY,  RTMASSXY,   STMASSXY, &
 		 WOODXY, STBLCPXY, FASTCPXY,      LAI,    XSAIXY,    TAUSSXY, &
+	        SMOISEQ, SMCWTDXY,DEEPRECHXY,  RECHXY,                        & ! IN/OUT Noah MP only
 	         T2MVXY,   T2MBXY,   Q2MVXY,   Q2MBXY,                        &
                  TRADXY,    NEEXY,    GPPXY,    NPPXY,    FVEGXY,    RUNSFXY, &
 	        RUNSBXY,   ECANXY,   EDIRXY,  ETRANXY,     FSAXY,     FIRAXY, &
@@ -2564,6 +2593,23 @@ CONTAINS
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
+
+  if(iopt_run.eq.5.and.mod(itimestep,STEPWTD).eq.0)then
+           CALL wrf_debug( 100, 'calling WTABLE' )
+
+!gmm update wtable from lateral flow and shed water to rivers
+
+           CALL WTABLE_mmf_noahmp(num_soil_layers,xland,xice, xice_threshold, isice,        &
+                                  isltyp,smoiseq,dzs,wtddt,                                 &
+                                  fdepthxy,areaxy,ht,isurban,ivgtyp,                         &
+                                  rivercondxy,riverbedxy,eqzwt,pexpxy,                      &
+                                  smois,sh2o,smcwtdxy,zwtxy,qrfxy,deeprechxy,qspringxy,     &
+                                  qslatxy,qrfsxy,qspringsxy,rechxy,                        &
+                                  ids,ide, jds,jde, kds,kde,                             &
+                                  ims,ime, jms,jme, kms,kme,                             &
+                                  i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
+
+  endif
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
               &            SEAICE_THICKNESS_DEFAULT, SEAICE_SNOWDEPTH_OPT,             &

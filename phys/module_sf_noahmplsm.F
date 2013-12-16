@@ -152,6 +152,7 @@ module noahmp_globals
 ! 2 -> TOPMODEL with an equilibrium water table (Niu et al. 2005 JGR) ;
 ! 3 -> original surface and subsurface runoff (free drainage)
 ! 4 -> BATS surface and subsurface runoff (free drainage)
+! 5 -> Miguez-Macho&Fan groundwater scheme (Miguez-Macho et al. 2007 JGR, lateral flow: Fan et al. 2007 JGR)
 
   INTEGER :: OPT_RUN != 1    !(suggested 1)
 
@@ -525,6 +526,7 @@ MODULE NOAHMP_ROUTINES
 !  private ::                         INFIL       
   private ::               SSTEP
   private ::       GROUNDWATER
+  private ::       SHALLOWWATERTABLE
 
   private :: CARBON
   private ::       CO2FLUX
@@ -541,7 +543,7 @@ contains
                    ILOC    , JLOC    , LAT     , YEARLEN , JULIAN  , COSZ    , & ! IN : Time/Space-related
                    DT      , DX      , DZ8W    , NSOIL   , ZSOIL   , NSNOW   , & ! IN : Model configuration 
                    SHDFAC  , SHDMAX  , VEGTYP  , ISURBAN , ICE     , IST     , & ! IN : Vegetation/Soil characteristics
-                   ISC     ,                                                   & ! IN : Vegetation/Soil characteristics
+                   ISC     , SMCEQ   ,                                         & ! IN : Vegetation/Soil characteristics
                    IZ0TLND ,                                                   & ! IN : User options
                    SFCTMP  , SFCPRS  , PSFC    , UU      , VV      , Q2      , & ! IN : Forcing
                    QC      , SOLDN   , LWDN    , PRCP    , TBOT    , CO2AIR  , & ! IN : Forcing
@@ -553,6 +555,7 @@ contains
                    ZWT     , WA      , WT      , WSLAKE  , LFMASS  , RTMASS  , & ! IN/OUT : 
                    STMASS  , WOOD    , STBLCP  , FASTCP  , LAI     , SAI     , & ! IN/OUT : 
                    CM      , CH      , TAUSS   ,                               & ! IN/OUT : 
+                   SMCWTD  ,DEEPRECH , RECH    ,                               & ! IN/OUT :
                    FSA     , FSR     , FIRA    , FSH     , SSOIL   , FCEV    , & ! OUT : 
                    FGEV    , FCTR    , ECAN    , ETRAN   , EDIR    , TRAD    , & ! OUT :
                    TGB     , TGV     , T2MV    , T2MB    , Q2V     , Q2B     , & ! OUT :
@@ -562,11 +565,7 @@ contains
                    BGAP    , WGAP    , CHV     , CHB     , EMISSI  ,           & ! OUT :
 		   SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 		   GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
-		   CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE               &
-#ifdef WRF_HYDRO
-                   ,sfcheadrt                                          &
-#endif
-                   )            ! OUT :
+		   CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE    )            ! OUT :
 
 ! --------------------------------------------------------------------------------------------------
 ! Initial code: Guo-Yue Niu, Oct. 2007
@@ -604,6 +603,7 @@ contains
   REAL                           , INTENT(IN)    :: JULIAN !Julian day of year (floating point)
   REAL                           , INTENT(IN)    :: LAT    !latitude (radians)
   REAL, DIMENSION(-NSNOW+1:    0), INTENT(IN)    :: FICEOLD!ice fraction at last timestep
+  REAL, DIMENSION(       1:NSOIL), INTENT(IN)    :: SMCEQ  !equilibrium soil water  content [m3/m3]
 
 !jref:start; in 
   INTEGER                        , INTENT(IN)    :: ISURBAN
@@ -650,6 +650,9 @@ contains
   REAL                           , INTENT(INOUT) :: WA     !water storage in aquifer [mm]
   REAL                           , INTENT(INOUT) :: WT     !water in aquifer&saturated soil [mm]
   REAL                           , INTENT(INOUT) :: WSLAKE !lake water storage (can be neg.) (mm)
+  REAL,                            INTENT(INOUT) :: SMCWTD !soil water content between bottom of the soil and water table [m3/m3]
+  REAL,                            INTENT(INOUT) :: DEEPRECH !recharge to or from the water table when deep [m]
+  REAL,                            INTENT(INOUT) :: RECH !recharge to or from the water table when shallow [m] (diagnostic)
 
 ! output
   REAL                           , INTENT(OUT)   :: FSA    !total absorbed solar radiation (w/m2)
@@ -901,10 +904,11 @@ contains
      CALL WATER (VEGTYP ,NSNOW  ,NSOIL  ,IMELT  ,DT     ,UU     , & !in
                  VV     ,FCEV   ,FCTR   ,QPRECC ,QPRECL ,ELAI   , & !in
                  ESAI   ,SFCTMP ,QVAP   ,QDEW   ,ZSOIL  ,BTRANI , & !in
-                 FICEOLD,PONDING,TG     ,IST    ,FVEG   ,iloc,jloc , & !in
+                 FICEOLD,PONDING,TG     ,IST    ,FVEG   ,iloc,jloc , SMCEQ , & !in
                  ISNOW  ,CANLIQ ,CANICE ,TV     ,SNOWH  ,SNEQV  , & !inout
                  SNICE  ,SNLIQ  ,STC    ,ZSNSO  ,SH2O   ,SMC    , & !inout
                  SICE   ,ZWT    ,WA     ,WT     ,DZSNSO ,WSLAKE , & !inout
+                 SMCWTD ,DEEPRECH,RECH                          , & !inout
                  CMC    ,ECAN   ,ETRAN  ,FWET   ,RUNSRF ,RUNSUB , & !out
                  QIN    ,QDIS   ,QSNOW  ,PONDING1       ,PONDING2,&
                  ISURBAN,QSNBOT,FPICE                             &
@@ -934,7 +938,7 @@ contains
                  SNEQV  ,WA     ,SMC    ,DZSNSO ,PRCP   ,ECAN   , & !in
                  ETRAN  ,EDIR   ,RUNSRF ,RUNSUB ,DT     ,NSOIL  , & !in
                  NSNOW  ,IST    ,ERRWAT ,ILOC   , JLOC  ,FVEG   , &
-                 SAV    ,SAG    ,FSRV   ,FSRG)   !in ( Except ERRWAT, which is out )
+                 SAV    ,SAG    ,FSRV   ,FSRG   ,ZWT  )   !in ( Except ERRWAT, which is out )
 
 ! urban - jref
     QFX = ETRAN + ECAN + EDIR
@@ -1114,7 +1118,7 @@ contains
                     SNEQV  ,WA     ,SMC    ,DZSNSO ,PRCP   ,ECAN   , &
                     ETRAN  ,EDIR   ,RUNSRF ,RUNSUB ,DT     ,NSOIL  , &
                     NSNOW  ,IST    ,ERRWAT, ILOC   ,JLOC   ,FVEG   , &
-                    SAV    ,SAG    ,FSRV   ,FSRG)
+                    SAV    ,SAG    ,FSRV   ,FSRG   ,ZWT)
 ! --------------------------------------------------------------------------------------------------
 ! check surface energy balance and water balance
 ! --------------------------------------------------------------------------------------------------
@@ -1140,6 +1144,7 @@ contains
   REAL                           , INTENT(IN) :: SAG
   REAL                           , INTENT(IN) :: FSRV
   REAL                           , INTENT(IN) :: FSRG
+  REAL                           , INTENT(IN) :: ZWT
 
   REAL                           , INTENT(IN) :: PRCP   !precipitation rate (kg m-2 s-1)
   REAL                           , INTENT(IN) :: ECAN   !evaporation of intercepted water (mm/s)
@@ -1220,8 +1225,8 @@ contains
            WRITE(message, &
            '("    I      J     END_WB     BEG_WB       PRCP       ECAN       EDIR      ETRAN      RUNSRF     RUNSUB")')
            call wrf_message(trim(message))
-           WRITE(message,'(i6,1x,i6,1x,2f15.3,8f11.5)')ILOC,JLOC,END_WB,BEG_WB,PRCP*DT,ECAN*DT,&
-                EDIR*DT,ETRAN*DT,RUNSRF*DT,RUNSUB*DT
+           WRITE(message,'(i6,1x,i6,1x,2f15.3,9f11.5)')ILOC,JLOC,END_WB,BEG_WB,PRCP*DT,ECAN*DT,&
+                EDIR*DT,ETRAN*DT,RUNSRF*DT,RUNSUB*DT,ZWT
            call wrf_message(trim(message))
            call wrf_error_fatal("Water budget problem in NOAHMP LSM")
         END IF
@@ -6215,10 +6220,11 @@ contains
   SUBROUTINE WATER (VEGTYP ,NSNOW  ,NSOIL  ,IMELT  ,DT     ,UU     , & !in
                     VV     ,FCEV   ,FCTR   ,QPRECC ,QPRECL ,ELAI   , & !in
                     ESAI   ,SFCTMP ,QVAP   ,QDEW   ,ZSOIL  ,BTRANI , & !in
-                    FICEOLD,PONDING,TG     ,IST    ,FVEG   ,ILOC   ,JLOC , & !in
+                    FICEOLD,PONDING,TG     ,IST    ,FVEG   ,ILOC   ,JLOC ,SMCEQ , & !in
                     ISNOW  ,CANLIQ ,CANICE ,TV     ,SNOWH  ,SNEQV  , & !inout
                     SNICE  ,SNLIQ  ,STC    ,ZSNSO  ,SH2O   ,SMC    , & !inout
                     SICE   ,ZWT    ,WA     ,WT     ,DZSNSO ,WSLAKE , & !inout
+                    SMCWTD ,DEEPRECH,RECH                          , & !inout
                     CMC    ,ECAN   ,ETRAN  ,FWET   ,RUNSRF ,RUNSUB , & !out
                     QIN    ,QDIS   ,QSNOW  ,PONDING1       ,PONDING2,&
                     ISURBAN,QSNBOT,FPICE                             &
@@ -6258,6 +6264,7 @@ contains
 !  REAL                           , INTENT(IN)    :: PONDING ![mm]
   REAL                           , INTENT(IN)    :: TG      !ground temperature (k)
   REAL                           , INTENT(IN)    :: FVEG    !greeness vegetation fraction (-)
+  REAL, DIMENSION(       1:NSOIL), INTENT(IN)    :: SMCEQ   !equilibrium soil water content [m3/m3] (used in m-m&f groundwater dynamics)
 
 ! input/output
   INTEGER,                         INTENT(INOUT) :: ISNOW   !actual no. of snow layers
@@ -6280,6 +6287,9 @@ contains
                                                             !+ stuarated soil [mm]
   REAL,                            INTENT(INOUT) :: WSLAKE  !water storage in lake (can be -) (mm)
   REAL                           , INTENT(INOUT) :: PONDING ![mm]
+  REAL,                            INTENT(INOUT) :: SMCWTD !soil water content between bottom of the soil and water table [m3/m3]
+  REAL,                            INTENT(INOUT) :: DEEPRECH !recharge to or from the water table when deep [m]
+  REAL,                            INTENT(INOUT) :: RECH !recharge to or from the water table when shallow [m] (diagnostic)
 
 ! output
   REAL,                            INTENT(OUT)   :: CMC     !intercepted water per ground area (mm)
@@ -6389,6 +6399,7 @@ contains
        CALL      SOILWATER (NSOIL  ,NSNOW  ,DT     ,ZSOIL  ,DZSNSO , & !in
                             QINSUR ,QSEVA  ,ETRANI ,SICE   ,ILOC   , JLOC , & !in
                             SH2O   ,SMC    ,ZWT    ,VEGTYP ,ISURBAN, & !inout
+                           SMCWTD, DEEPRECH                       , & !inout
                             RUNSRF ,QDRAIN ,RUNSUB ,WCND   ,FCRMAX )   !out
  
        IF(OPT_RUN == 1) THEN 
@@ -6406,6 +6417,17 @@ contains
        DO IZ = 1,NSOIL
            SMC(IZ) = SH2O(IZ) + SICE(IZ)
        ENDDO
+ 
+       IF(OPT_RUN == 5) THEN
+          CALL SHALLOWWATERTABLE (NSNOW  ,NSOIL, ZSOIL, DT       , & !in
+                         DZSNSO ,SMCEQ   ,ILOC , JLOC        , & !in
+                         SMC    ,ZWT    ,SMCWTD ,RECH, QDRAIN  ) !inout
+
+          SH2O(NSOIL) = SMC(NSOIL) - SICE(NSOIL)
+          RUNSUB = RUNSUB + QDRAIN !it really comes from subroutine watertable, which is not called with the same frequency as the soil routines here
+          WA = 0.
+       ENDIF
+
     ENDIF
 
     RUNSUB       = RUNSUB + SNOFLOW         !mm/s
@@ -6914,12 +6936,22 @@ contains
                 SNLIQ(J-1) = SNLIQ(J-1) + SNLIQ(J)
                 SNICE(J-1) = SNICE(J-1) + SNICE(J)
                ELSE
-                PONDING1 = SNLIQ(J)       ! ISNOW WILL GET SET TO ZERO BELOW
-                SNEQV = SNICE(J)          ! PONDING1 WILL GET ADDED TO PONDING FROM
-                SNOWH = DZSNSO(J)         ! PHASECHANGE WHICH SHOULD BE ZERO HERE
-                SNLIQ(J) = 0.0            ! BECAUSE THERE IT WAS ONLY CALCULATED
-                SNICE(J) = 0.0            ! FOR THIN SNOW
-                DZSNSO(J) = 0.0
+	         IF(SNICE(J) >= 0.) THEN
+                  PONDING1 = SNLIQ(J)    ! ISNOW WILL GET SET TO ZERO BELOW; PONDING1 WILL GET 
+                  SNEQV = SNICE(J)       ! ADDED TO PONDING FROM PHASECHANGE PONDING SHOULD BE
+                  SNOWH = DZSNSO(J)      ! ZERO HERE BECAUSE IT WAS CALCULATED FOR THIN SNOW
+		 ELSE   ! SNICE OVER-SUBLIMATED EARLIER
+		  PONDING1 = SNLIQ(J) + SNICE(J)
+		  IF(PONDING1 < 0.) THEN  ! IF SNICE AND SNLIQ SUBLIMATES REMOVE FROM SOIL
+		   SICE(1) = MAX(0.0,SICE(1)+PONDING1/(DZSNSO(1)*1000.))
+                   PONDING1 = 0.0
+		  END IF
+                  SNEQV = 0.0
+                  SNOWH = 0.0
+		 END IF
+                 SNLIQ(J) = 0.0
+                 SNICE(J) = 0.0
+                 DZSNSO(J) = 0.0
                ENDIF
 !                SH2O(1) = SH2O(1)+SNLIQ(J)/(DZSNSO(1)*1000.)
 !                SICE(1) = SICE(1)+SNICE(J)/(DZSNSO(1)*1000.)
@@ -7461,6 +7493,7 @@ contains
   SUBROUTINE SOILWATER (NSOIL  ,NSNOW  ,DT     ,ZSOIL  ,DZSNSO , & !in
                         QINSUR ,QSEVA  ,ETRANI ,SICE   ,ILOC   , JLOC, & !in
                         SH2O   ,SMC    ,ZWT    ,ISURBAN,VEGTYP ,& !inout
+                        SMCWTD, DEEPRECH                       ,& !inout
                         RUNSRF ,QDRAIN ,RUNSUB ,WCND   ,FCRMAX )   !out
 
 ! ----------------------------------------------------------------------
@@ -7489,6 +7522,8 @@ contains
   REAL, DIMENSION(1:NSOIL), INTENT(INOUT) :: SH2O   !soil liquid water content [m3/m3]
   REAL, DIMENSION(1:NSOIL), INTENT(INOUT) :: SMC    !total soil water content [m3/m3]
   REAL, INTENT(INOUT)                     :: ZWT    !water table depth [m]
+  REAL,                     INTENT(INOUT) :: SMCWTD !soil moisture between bottom of the soil and the water table [m3/m3]
+  REAL                    , INTENT(INOUT) :: DEEPRECH
 
 ! output
   REAL, INTENT(OUT)                       :: QDRAIN !soil-bottom free drainage [mm/s] 
@@ -7520,6 +7555,7 @@ contains
   REAL, DIMENSION(1:NSOIL)                :: MLIQ   !
   REAL                                    :: XS     !
   REAL                                    :: WATMIN !
+  REAL                                    :: QDRAIN_SAVE !
   REAL                                    :: EPORE  !effective porosity [m3/m3]
   REAL, DIMENSION(1:NSOIL)                :: FCR    !impermeable fraction due to frozen soil
   INTEGER                                 :: NITER  !iteration times soil moisture (-)
@@ -7581,6 +7617,15 @@ contains
        END IF
     END IF
 
+    IF(OPT_RUN == 5) THEN
+       FFF = 6.0
+       FSAT   = FSATMX*EXP(-0.5*FFF*MAX(-2.0-ZWT,0.))
+       IF(QINSUR > 0.) THEN
+         RUNSRF = QINSUR * ( (1.0-FCR(1))*FSAT + FCR(1) )
+         PDDUM  = QINSUR - RUNSRF                          ! m/s
+       END IF
+    END IF
+
     IF(OPT_RUN == 2) THEN
        FFF   = 2.0
        FSAT   = FSATMX*EXP(-0.5*FFF*ZWT)
@@ -7628,20 +7673,24 @@ contains
 
 ! solve soil moisture
 
+    QDRAIN_SAVE = 0.0
     DO ITER = 1, NITER
        CALL SRT   (NSOIL  ,ZSOIL  ,DTFINE ,PDDUM  ,ETRANI , & !in
                    QSEVA  ,SH2O   ,SMC    ,ZWT    ,FCR    , & !in
-                   SICEMAX,FCRMAX ,ILOC   ,JLOC   ,         & !in
+                   SICEMAX,FCRMAX ,ILOC   ,JLOC   ,SMCWTD ,         & !in
                    RHSTT  ,AI     ,BI     ,CI     ,QDRAIN , & !out
                    WCND   )                                   !out
   
        CALL SSTEP (NSOIL  ,NSNOW  ,DTFINE ,ZSOIL  ,DZSNSO , & !in
-                   SICE   ,ILOC   ,JLOC   ,                 & !in
+                   SICE   ,ILOC   ,JLOC   ,ZWT            ,                 & !in
                    SH2O   ,SMC    ,AI     ,BI     ,CI     , & !inout
-                   RHSTT  ,                                 & !inout
+                   RHSTT  ,SMCWTD ,QDRAIN ,DEEPRECH,                                 & !inout
                    WPLUS)                                     !out
        RSAT =  RSAT + WPLUS
+       QDRAIN_SAVE = QDRAIN_SAVE + QDRAIN
     END DO
+
+    QDRAIN = QDRAIN_SAVE/NITER
 
     RUNSRF = RUNSRF * 1000. + RSAT * 1000./DT  ! m/s -> mm/s
     QDRAIN = QDRAIN * 1000.
@@ -7690,6 +7739,7 @@ contains
         END IF
         MLIQ(IZ) = MLIQ(IZ) + XS
         RUNSUB   = RUNSUB - XS/DT
+        IF(OPT_RUN == 5)DEEPRECH = DEEPRECH - XS*1.E-3
 
       DO IZ = 1, NSOIL
         SH2O(IZ)     = MLIQ(IZ) / (DZSNSO(IZ)*1000.)
@@ -7851,7 +7901,7 @@ contains
 ! ==================================================================================================
   SUBROUTINE SRT (NSOIL  ,ZSOIL  ,DT     ,PDDUM  ,ETRANI , & !in
                   QSEVA  ,SH2O   ,SMC    ,ZWT    ,FCR    , & !in
-                  SICEMAX,FCRMAX ,ILOC   ,JLOC   ,         & !in
+                  SICEMAX,FCRMAX ,ILOC   ,JLOC   ,SMCWTD ,         & !in
                   RHSTT  ,AI     ,BI     ,CI     ,QDRAIN , & !out
                   WCND   )                                   !out
 ! ----------------------------------------------------------------------
@@ -7877,6 +7927,7 @@ contains
     REAL, DIMENSION(1:NSOIL), INTENT(IN)  :: FCR
     REAL, INTENT(IN)                      :: FCRMAX !maximum of FCR (-)
     REAL,                     INTENT(IN)  :: SICEMAX!maximum soil ice content (m3/m3)
+    REAL,                     INTENT(IN)  :: SMCWTD !soil moisture between bottom of the soil and the water table
 
 ! output
 
@@ -7896,6 +7947,8 @@ contains
     REAL, DIMENSION(1:NSOIL)              :: WDF
     REAL, DIMENSION(1:NSOIL)              :: SMX
     REAL                                  :: TEMP1
+    REAL                                  :: SMXWTD !soil moisture between bottom of the soil and water table
+    REAL                                  :: SMXBOT  !soil moisture below bottom to calculate flux
 
 ! Niu and Yang (2006), J. of Hydrometeorology
 ! ----------------------------------------------------------------------
@@ -7905,6 +7958,7 @@ contains
         CALL WDFCND1 (WDF(K),WCND(K),SMC(K),FCR(K))
         SMX(K) = SMC(K)
       END DO
+        IF(OPT_RUN == 5)SMXWTD=SMCWTD
     END IF
 
     IF(OPT_INF == 2) THEN
@@ -7912,6 +7966,7 @@ contains
         CALL WDFCND2 (WDF(K),WCND(K),SH2O(K),SICEMAX)
         SMX(K) = SH2O(K)
       END DO
+          IF(OPT_RUN == 5)SMXWTD=SMCWTD*SH2O(NSOIL)/SMC(NSOIL)  !same liquid fraction as in the bottom layer
     END IF
 
     DO K = 1, NSOIL
@@ -7939,6 +7994,17 @@ contains
           IF(OPT_RUN == 4) THEN
              QDRAIN   = (1.0-FCRMAX)*WCND(K)
           END IF
+          IF(OPT_RUN == 5) THEN   !gmm new m-m&f water table dynamics formulation
+             TEMP1    = 2.0 * DENOM(K)
+             IF(ZWT < ZSOIL(NSOIL)-DENOM(NSOIL))THEN
+!gmm interpolate from below, midway to the water table, to the middle of the auxiliary layer below the soil bottom
+                SMXBOT = SMX(K) - (SMX(K)-SMXWTD) *  DENOM(K) * 2./ (DENOM(K) + ZSOIL(K) - ZWT)
+             ELSE
+                SMXBOT = SMXWTD
+             ENDIF
+             DSMDZ(K) = 2.0 * (SMX(K) - SMXBOT) / TEMP1
+             QDRAIN   = WDF(K  ) * DSMDZ(K  ) + WCND(K  )
+          END IF   
           WFLUX(K) = -(WDF(K-1)*DSMDZ(K-1))-WCND(K-1)+ETRANI(K) + QDRAIN
        END IF
     END DO
@@ -7965,9 +8031,9 @@ contains
 ! ----------------------------------------------------------------------
 ! ==================================================================================================
   SUBROUTINE SSTEP (NSOIL  ,NSNOW  ,DT     ,ZSOIL  ,DZSNSO , & !in
-                    SICE   ,ILOC   ,JLOC   ,                 & !in
+                    SICE   ,ILOC   ,JLOC   ,ZWT            ,                 & !in
                     SH2O   ,SMC    ,AI     ,BI     ,CI     , & !inout
-                    RHSTT  ,                                 & !inout
+                    RHSTT  ,SMCWTD ,QDRAIN ,DEEPRECH,                                 & !inout
                     WPLUS  )                                   !out
 
 ! ----------------------------------------------------------------------
@@ -7982,6 +8048,7 @@ contains
     INTEGER,                         INTENT(IN) :: NSOIL  !
     INTEGER,                         INTENT(IN) :: NSNOW  !
     REAL, INTENT(IN)                            :: DT
+    REAL, INTENT(IN)                            :: ZWT
     REAL, DIMENSION(       1:NSOIL), INTENT(IN) :: ZSOIL
     REAL, DIMENSION(       1:NSOIL), INTENT(IN) :: SICE
     REAL, DIMENSION(-NSNOW+1:NSOIL), INTENT(IN) :: DZSNSO ! snow/soil layer thickness [m]
@@ -7993,6 +8060,9 @@ contains
     REAL, DIMENSION(1:NSOIL), INTENT(INOUT) :: BI
     REAL, DIMENSION(1:NSOIL), INTENT(INOUT) :: CI
     REAL, DIMENSION(1:NSOIL), INTENT(INOUT) :: RHSTT
+    REAL                    , INTENT(INOUT) :: SMCWTD
+    REAL                    , INTENT(INOUT) :: QDRAIN
+    REAL                    , INTENT(INOUT) :: DEEPRECH
 
 !output
     REAL, INTENT(OUT)                       :: WPLUS     !saturation excess water (m)
@@ -8003,6 +8073,7 @@ contains
     REAL, DIMENSION(1:NSOIL)                :: CIIN
     REAL                                    :: STOT
     REAL                                    :: EPORE
+    REAL                                    :: WMINUS
 ! ----------------------------------------------------------------------
     WPLUS = 0.0
 
@@ -8030,6 +8101,29 @@ contains
 
 !  excessive water above saturation in a layer is moved to
 !  its unsaturated layer like in a bucket
+
+!gmmwith opt_run=5 there is soil moisture below nsoil, to the water table
+  IF(OPT_RUN == 5) THEN
+
+!update smcwtd
+
+     IF(ZWT < ZSOIL(NSOIL)-DZSNSO(NSOIL))THEN
+!accumulate qdrain to update deep water table and soil moisture later
+        DEEPRECH =  DEEPRECH + DT * QDRAIN
+     ELSE
+        SMCWTD = SMCWTD + DT * QDRAIN  / DZSNSO(NSOIL)
+        WPLUS        = MAX((SMCWTD-SMCMAX), 0.0) * DZSNSO(NSOIL)
+        WMINUS       = MAX((1.E-4-SMCWTD), 0.0) * DZSNSO(NSOIL)
+
+        SMCWTD = MAX( MIN(SMCWTD,SMCMAX) , 1.E-4)
+        SH2O(NSOIL)    = SH2O(NSOIL) + WPLUS/DZSNSO(NSOIL)
+
+!reduce fluxes at the bottom boundaries accordingly
+        QDRAIN = QDRAIN - WPLUS/DT
+        DEEPRECH = DEEPRECH - WMINUS
+     ENDIF
+
+  ENDIF
 
     DO K = NSOIL,2,-1
       EPORE        = MAX ( 1.E-4 , ( SMCMAX - SICE(K) ) )
@@ -8301,6 +8395,140 @@ contains
       END DO
 
   END SUBROUTINE GROUNDWATER
+! ==================================================================================================
+! ----------------------------------------------------------------------
+  SUBROUTINE SHALLOWWATERTABLE (NSNOW  ,NSOIL  ,ZSOIL, DT    , & !in
+                         DZSNSO ,SMCEQ ,ILOC   ,JLOC         , & !in
+                         SMC    ,WTD   ,SMCWTD ,RECH, QDRAIN  )  !inout
+! ----------------------------------------------------------------------
+!Diagnoses water table depth and computes recharge when the water table is within the resolved soil layers,
+!according to the Miguez-Macho&Fan scheme
+! ----------------------------------------------------------------------
+  IMPLICIT NONE
+! ----------------------------------------------------------------------
+! input
+  INTEGER,                         INTENT(IN) :: NSNOW !maximum no. of snow layers
+  INTEGER,                         INTENT(IN) :: NSOIL !no. of soil layers
+  INTEGER,                         INTENT(IN) :: ILOC,JLOC
+  REAL,                            INTENT(IN) :: DT
+  REAL, DIMENSION(       1:NSOIL), INTENT(IN) :: ZSOIL !depth of soil layer-bottom [m]
+  REAL, DIMENSION(-NSNOW+1:NSOIL), INTENT(IN) :: DZSNSO ! snow/soil layer thickness [m]
+  REAL,  DIMENSION(      1:NSOIL), INTENT(IN) :: SMCEQ  !equilibrium soil water  content [m3/m3]
+
+! input and output
+  REAL,  DIMENSION(      1:NSOIL), INTENT(INOUT) :: SMC   !total soil water  content [m3/m3]
+  REAL,                         INTENT(INOUT) :: WTD   !the depth to water table [m]
+  REAL,                         INTENT(INOUT) :: SMCWTD   !soil moisture between bottom of the soil and the water table [m3/m3]
+  REAL,                         INTENT(OUT) :: RECH ! groundwater recharge (net vertical flux across the water table), positive up
+  REAL,                         INTENT(INOUT) :: QDRAIN
+    
+! local
+  INTEGER                                     :: IZ    !do-loop index
+  INTEGER                                     :: IWTD   !layer index above water table layer
+  INTEGER                                     :: KWTD   !layer index where the water table layer is
+  REAL                                        :: WTDOLD
+  REAL                                        :: DZUP
+  REAL                                        :: SMCEQDEEP
+  REAL,  DIMENSION(       0:NSOIL)            :: ZSOIL0
+! -------------------------------------------------------------
+
+
+ZSOIL0(1:NSOIL) = ZSOIL(1:NSOIL)
+ZSOIL0(0) = 0.         
+ 
+!find the layer where the water table is
+     DO IZ=NSOIL,1,-1
+        IF(WTD + 1.E-6 < ZSOIL0(IZ)) EXIT
+     ENDDO
+        IWTD=IZ
+
+        
+        KWTD=IWTD+1  !layer where the water table is
+        IF(KWTD.LE.NSOIL)THEN    !wtd in the resolved layers
+           WTDOLD=WTD
+           IF(SMC(KWTD).GT.SMCEQ(KWTD))THEN
+        
+               IF(SMC(KWTD).EQ.SMCMAX)THEN !wtd went to the layer above
+                      WTD=ZSOIL0(IWTD)
+                      RECH=-(WTDOLD-WTD) * (SMCMAX-SMCEQ(KWTD))
+                      IWTD=IWTD-1
+                      KWTD=KWTD-1
+                   IF(KWTD.GE.1)THEN
+                      IF(SMC(KWTD).GT.SMCEQ(KWTD))THEN
+                      WTDOLD=WTD
+                      WTD = MIN( ( SMC(KWTD)*DZSNSO(KWTD) &
+                        - SMCEQ(KWTD)*ZSOIL0(IWTD) + SMCMAX*ZSOIL0(KWTD) ) / &
+                        ( SMCMAX-SMCEQ(KWTD) ), ZSOIL0(IWTD))
+                      RECH=RECH-(WTDOLD-WTD) * (SMCMAX-SMCEQ(KWTD))
+                      ENDIF
+                   ENDIF
+               ELSE  !wtd stays in the layer
+                      WTD = MIN( ( SMC(KWTD)*DZSNSO(KWTD) &
+                        - SMCEQ(KWTD)*ZSOIL0(IWTD) + SMCMAX*ZSOIL0(KWTD) ) / &
+                        ( SMCMAX-SMCEQ(KWTD) ), ZSOIL0(IWTD))
+                      RECH=-(WTDOLD-WTD) * (SMCMAX-SMCEQ(KWTD))
+               ENDIF
+           
+           ELSE    !wtd has gone down to the layer below
+               WTD=ZSOIL0(KWTD)
+               RECH=-(WTDOLD-WTD) * (SMCMAX-SMCEQ(KWTD))
+               KWTD=KWTD+1
+               IWTD=IWTD+1
+!wtd crossed to the layer below. Now adjust it there
+               IF(KWTD.LE.NSOIL)THEN
+                   WTDOLD=WTD
+                   IF(SMC(KWTD).GT.SMCEQ(KWTD))THEN
+                   WTD = MIN( ( SMC(KWTD)*DZSNSO(KWTD) &
+                   - SMCEQ(KWTD)*ZSOIL0(IWTD) + SMCMAX*ZSOIL0(KWTD) ) / &
+                       ( SMCMAX-SMCEQ(KWTD) ) , ZSOIL0(IWTD) )
+                   ELSE
+                   WTD=ZSOIL0(KWTD)
+                   ENDIF
+                   RECH = RECH - (WTDOLD-WTD) * &
+                                 (SMCMAX-SMCEQ(KWTD))
+
+                ELSE
+                   WTDOLD=WTD
+!restore smoi to equilibrium value with water from the ficticious layer below
+!                   SMCWTD=SMCWTD-(SMCEQ(NSOIL)-SMC(NSOIL))
+!                   QDRAIN = QDRAIN - 1000 * (SMCEQ(NSOIL)-SMC(NSOIL)) * DZSNSO(NSOIL) / DT
+!                   SMC(NSOIL)=SMCEQ(NSOIL)
+!adjust wtd in the ficticious layer below
+                   SMCEQDEEP = SMCMAX * ( -PSISAT / ( -PSISAT - DZSNSO(NSOIL) ) ) ** (1./BEXP)
+                   WTD = MIN( ( SMCWTD*DZSNSO(NSOIL) &
+                   - SMCEQDEEP*ZSOIL0(NSOIL) + SMCMAX*(ZSOIL0(NSOIL)-DZSNSO(NSOIL)) ) / &
+                       ( SMCMAX-SMCEQDEEP ) , ZSOIL0(NSOIL) )
+                   RECH = RECH - (WTDOLD-WTD) * &
+                                 (SMCMAX-SMCEQDEEP)
+                ENDIF
+            
+            ENDIF
+        ELSEIF(WTD.GE.ZSOIL0(NSOIL)-DZSNSO(NSOIL))THEN
+!if wtd was already below the bottom of the resolved soil crust
+           WTDOLD=WTD
+           SMCEQDEEP = SMCMAX * ( -PSISAT / ( -PSISAT - DZSNSO(NSOIL) ) ) ** (1./BEXP)
+           IF(SMCWTD.GT.SMCEQDEEP)THEN
+               WTD = MIN( ( SMCWTD*DZSNSO(NSOIL) &
+                 - SMCEQDEEP*ZSOIL0(NSOIL) + SMCMAX*(ZSOIL0(NSOIL)-DZSNSO(NSOIL)) ) / &
+                     ( SMCMAX-SMCEQDEEP ) , ZSOIL0(NSOIL) )
+               RECH = -(WTDOLD-WTD) * (SMCMAX-SMCEQDEEP)
+           ELSE
+               RECH = -(WTDOLD-(ZSOIL0(NSOIL)-DZSNSO(NSOIL))) * (SMCMAX-SMCEQDEEP)
+               WTDOLD=ZSOIL0(NSOIL)-DZSNSO(NSOIL)
+!and now even further down
+               DZUP=(SMCEQDEEP-SMCWTD)*DZSNSO(NSOIL)/(SMCMAX-SMCEQDEEP)
+               WTD=WTDOLD-DZUP
+               RECH = RECH - (SMCMAX-SMCEQDEEP)*DZUP
+               SMCWTD=SMCEQDEEP
+           ENDIF
+
+         
+         ENDIF
+
+IF(IWTD.LT.NSOIL)SMCWTD=SMCMAX
+
+END  SUBROUTINE SHALLOWWATERTABLE
+
 ! ==================================================================================================
 ! ********************* end of water subroutines ******************************************
 ! ==================================================================================================

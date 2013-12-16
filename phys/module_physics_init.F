@@ -92,6 +92,10 @@ CONTAINS
                          STMASSXY, WOODXY, STBLCPXY, FASTCPXY,            & ! Optional Noah-MP
                          XSAIXY,                                          & ! Optional Noah-MP
                          T2MVXY, T2MBXY, CHSTARXY ,                       & ! Optional Noah-MP
+                         SMOISEQ  ,SMCWTDXY ,RECHXY, DEEPRECHXY, AREAXY,  & ! Optional Noah-MP 
+                         WTDDT , STEPWTD ,QRFSXY ,QSPRINGSXY ,QSLATXY,    & ! Optional Noah-MP
+                         FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & ! Optional Noah-MP
+                         msftx, msfty,                           &           ! Optional Noah-MP
 !                        num_roof_layers,num_wall_layers,        & !Optional urban
 !                        num_road_layers,                        & !Optional urban
                          DZR, DZB, DZG,                          & !Optional urban
@@ -219,6 +223,7 @@ CONTAINS
 
    REAL,     DIMENSION( kms:kme ) , INTENT(IN) :: zfull, zhalf
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN) :: TSK, XLAT, XLONG,xlong_u,xlat_v
+   REAL,  DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: msftx,msfty
 
    INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
    INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc
@@ -399,6 +404,22 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MVXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MBXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CHSTARXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,1:num_soil_layers,jms:jme) :: SMOISEQ 
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: SMCWTDXY   
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: DEEPRECHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: RECHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QRFSXY       
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QSPRINGSXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QSLATXY 
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: AREAXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: FDEPTHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: RIVERBEDXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: EQZWT
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: RIVERCONDXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: PEXPXY
+
+   INTEGER , OPTIONAL,  INTENT(OUT) :: STEPWTD
+   REAL , OPTIONAL, INTENT(IN) :: WTDDT
 
 !mp
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::   &
@@ -598,6 +619,7 @@ CONTAINS
    LOGICAL :: usemonalb
    LOGICAL :: rdmaxalb
    INTEGER :: mfshconv
+   INTEGER :: iopt_run
 
    INTEGER :: i, j, k, itf, jtf, ktf, n
 integer myproc
@@ -609,6 +631,11 @@ integer myproc
    rdmaxalb=config_flags%rdmaxalb
    LakeModel = config_flags%LakeModel
    mfshconv=config_flags%mfshconv
+   IF(PRESENT(SMOISEQ)) THEN
+      iopt_run=config_flags%opt_run
+   ELSE
+      iopt_run=-1
+   END IF
 #if ( EM_CORE == 1 )
    obs_twindo_cg=model_config_rec%obs_twindo(1)
    obs_twindo=config_flags%obs_twindo
@@ -920,8 +947,10 @@ integer myproc
                 SNOWH,SH2O,SNOALB,FNDSOILW,FNDSNOWH,RDMAXALB,   &
 #if (NMM_CORE == 1)
                 Z0,XLAND,XICE,                                  &
+                DX,DY,                                          &
 #else
                 ZNT,XLAND,XICE,                                 &
+                DX, DY, MSFTX, MSFTY,                           &
 #endif
                 SFCEVP,GRDFLX,                                  &
                 TRIM (MMINLU_LOC),                              &
@@ -932,8 +961,12 @@ integer myproc
                 WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY,&
                 STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
                 XSAIXY,                                         &
+                SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
+                WTDDT, STEPWTD, QRFSXY ,QSPRINGSXY ,QSLATXY,   &
+                FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & 
+                ISICE,                                 &
                 T2MVXY,T2MBXY,CHSTARXY ,                        &
-                allowed_to_read ,                               &
+                allowed_to_read , iopt_run ,                    &
                 start_of_simulation ,                           &
                 lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d,       & !lake
                 snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d, & !lake
@@ -1760,9 +1793,9 @@ integer myproc
                 IVGTYP,ISLTYP,ISURBAN,SMOIS,SMFR3D,mavail,      &
                 SNOWH,SH2O,SNOALB,FNDSOILW,FNDSNOWH,RDMAXALB,   &
 #if  ( NMM_CORE == 1 )
-                Z0,XLAND,XICE,                                  &
+                Z0,XLAND,XICE,DX,DY,                            &
 #else
-                ZNT,XLAND,XICE,                                 &
+                ZNT,XLAND,XICE,DX, DY, MSFTX, MSFTY,            &
 #endif
                 SFCEVP,GRDFLX,                                  &
                 MMINLU,                                         &
@@ -1773,8 +1806,12 @@ integer myproc
                 WSLAKEXY, ZWTXY, WAXY, WTXY, LFMASSXY, RTMASSXY,&
                 STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
                 XSAIXY,                                         &
+                SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
+                WTDDT, STEPWTD,QRFSXY ,QSPRINGSXY ,QSLATXY,     &
+                FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & 
+                ISICE,                                 &
                 T2MVXY, T2MBXY ,CHSTARXY,                       &
-                allowed_to_read,                                &
+                allowed_to_read, iopt_run ,                     &
                 start_of_simulation,                            &
                 lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d,       & !lake
                 snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d, & !lake
@@ -1906,11 +1943,16 @@ integer myproc
                                       its, ite, jts, jte, kts, kte
    INTEGER , INTENT(IN)        ::     num_soil_layers
    INTEGER , INTENT(IN)        ::     SF_URBAN_PHYSICS 
+   INTEGER , INTENT(IN)        ::     IOPT_RUN
 
 !   INTEGER , INTENT(IN)        ::     LakeModel
    INTEGER         ::     LakeModel
    real, intent(in)            ::      domainlakedepth,lakeminalt
    REAL ,    INTENT(IN)        ::     DT, BLDT
+   REAL ,    INTENT(IN)        ::     DX, DY
+#if (EM_CORE == 1)
+   REAL,    DIMENSION( ims:ime, jms:jme ) ,  INTENT(IN) :: MSFTX,MSFTY
+#endif
    INTEGER , INTENT(INOUT)     ::     STEPBL
 
    REAL,     DIMENSION( ims:ime , 1:num_soil_layers , jms:jme ),    &
@@ -2015,6 +2057,22 @@ integer myproc
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MVXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: T2MBXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: CHSTARXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,1:num_soil_layers,jms:jme) :: SMOISEQ
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: SMCWTDXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: DEEPRECHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: RECHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QRFSXY  
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QSPRINGSXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: QSLATXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: AREAXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: FDEPTHXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: RIVERBEDXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: EQZWT
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: RIVERCONDXY
+   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: PEXPXY
+   INTEGER, OPTIONAL, INTENT(IN)  ::  ISICE
+   INTEGER , OPTIONAL,  INTENT(OUT) :: STEPWTD
+   REAL , OPTIONAL, INTENT(IN) :: WTDDT
 
 !URBAN
 !   REAL, DIMENSION(1:num_roof_layers), INTENT(INOUT) :: DZR  !Optional urban
@@ -2372,9 +2430,10 @@ integer myproc
              ENDIF
           ENDIF
 !
+
       CASE (NOAHMPSCHEME)
-          CALL NOAHMP_INIT(MMINLU, SNOW,SNOWH,CANWAT,ISLTYP,IVGTYP,                         &
-                     TSLB,SMOIS,SH2O,DZS, FNDSOILW, FNDSNOWH, config_flags%isice,           &
+          CALL NOAHMP_INIT(MMINLU, SNOW,SNOWH,CANWAT,ISLTYP,IVGTYP,ISURBAN,                 &
+                     TSLB,SMOIS,SH2O,DZS, FNDSOILW, FNDSNOWH, config_flags%isice, config_flags%iswater  ,         &
                      TSK,isnowxy  ,tvxy     ,tgxy     ,canicexy ,TMN,XICE,                  &
                      canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy     ,                     &
                      fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,wslakexy ,zwtxy    ,waxy     , &
@@ -2382,10 +2441,16 @@ integer myproc
                      stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy   ,                     &
                      t2mvxy   ,t2mbxy   ,chstarxy ,            &
                      num_soil_layers, restart,                 &
-                     allowed_to_read ,                         &
+                     allowed_to_read, iopt_run ,               &
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
-                     its,ite, jts,jte, kts,kte                 )
+                     its,ite, jts,jte, kts,kte                 &
+#if (EM_CORE == 1)
+                     ,smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, areaxy ,dx, dy, msftx, msfty,&
+                     wtddt    ,stepwtd  ,dt  ,qrfsxy ,qspringsxy  ,qslatxy,                  &
+                     fdepthxy ,ht       ,riverbedxy ,eqzwt ,rivercondxy ,pexpxy              &
+#endif
+                     )
 
       CASE (RUCLSMSCHEME)
 !          if(isfc .ne. 2)CALL wrf_error_fatal &

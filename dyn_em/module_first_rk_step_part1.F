@@ -51,7 +51,8 @@ CONTAINS
 use module_scalar_tables
 #ifdef DM_PARALLEL
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
-    USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub,halo_pwp_sub,halo_em_chem_e_3_sub,halo_em_chem_e_5_sub
+    USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub,halo_pwp_sub,halo_em_chem_e_3_sub, &
+    halo_em_chem_e_5_sub, halo_em_hydro_noahmp_sub
 #endif
     USE module_utility
     IMPLICIT NONE
@@ -392,6 +393,15 @@ BENCH_END(rad_driver_tim)
 
 BENCH_START(surf_driver_tim)
 
+!gmm halo of wtd and riverflow for leafhydro
+#ifdef DM_PARALLEL
+  IF ( config_flags%sf_surface_physics.eq.NOAHMPSCHEME ) THEN
+       IF ( config_flags%opt_run.eq.5.and.mod(grid%itimestep,grid%STEPWTD).eq.0 )  THEN
+#     include "HALO_EM_HYDRO_NOAHMP.inc"
+       ENDIF
+  ENDIF
+#endif
+
 !-----------------------------------------------------------------
 ! urban related variable are added to arguments of surface_driver
 !-----------------------------------------------------------------
@@ -670,6 +680,12 @@ BENCH_START(surf_driver_tim)
      &        ,   irbxy=grid%irbxy    ,    trxy=grid%trxy    ,   evcxy=grid%evcxy    &
      &        ,chleafxy=grid%chleafxy ,  chucxy=grid%chucxy                          &                       
      &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &                       
+           !Optional hydro variables in NOAHMP
+     &        ,smcwtdxy=grid%smcwtdxy ,rechxy=grid%rechxy ,deeprechxy=grid%deeprechxy &
+     &        ,fdepthxy=grid%fdepthxy, areaxy=grid%areaxy, rivercondxy=grid%rivercondxy  &
+     &        ,riverbedxy=grid%riverbedxy, eqzwt=grid%eqzwt, pexpxy=grid%pexpxy &
+     &        ,qrfxy=grid%qrfxy, qspringxy=grid%qspringxy, qslatxy=grid%qslatxy, qrfsxy=grid%qrfsxy &
+     &        ,qspringsxy=grid%qspringsxy, smoiseq=grid%smoiseq, wtddt=config_flags%wtddt, stepwtd=grid%stepwtd &
            ! Noah UA changes
      &        ,ua_phys=config_flags%ua_phys,flx4=grid%flx4,fvb=grid%fvb       &
      &        ,fbur=grid%fbur,fgsn=grid%fgsn                                  &

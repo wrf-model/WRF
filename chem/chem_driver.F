@@ -47,7 +47,7 @@
   USE module_ctrans_grell
 ! USE module_aerosols_soa_vbs, only:
   USE module_data_soa_vbs, only: ldrog_vbs
-!
+  USE module_dust_load
   USE module_dry_dep_driver
   USE module_emissions_driver
   USE module_input_tracer, only: set_tracer
@@ -164,6 +164,8 @@
 ! .. Local Scalars ..
    INTEGER :: stepave,i,j,k,l,numgas,nv,n, nr,ktau,k_start,k_end,idf,jdf,kdf
    INTEGER :: ijulian
+! UoC dust scheme option
+   INTEGER :: imod   
 !  REAL    :: convtrans_avglen_m
 
 ! ................................................................
@@ -955,6 +957,7 @@
               grid%ebio_cco_oh, grid%ebio_rco_oh,                                         &    
               grid%clayfrac,grid%sandfrac,grid%dust_alpha,grid%dust_gamma,grid%dust_smtune,&
               grid%snowh,grid%zs,                                                          &
+              grid%soilctop, grid%ust_t, grid%rough_cor, grid%smois_cor,                  &              
               grid%ebio_c5h8,grid%ebio_apinene,grid%ebio_bpinene,grid%ebio_toluene,        &
               grid%ebio_ch3cho,grid%ebio_ch3co2h,grid%ebio_tbut2ene,                      &
               grid%ebio_c2h5cho,grid%ebio_nc4h10,					                      &
@@ -1130,6 +1133,18 @@
    ENDDO
 #endif
 
+! UoC dust scheme option
+   scheme_select: SELECT CASE(config_flags%dust_schme)
+   CASE (SHAO_2001)
+     imod = 1
+   CASE (SHAO_2004)
+     imod = 2
+   CASE (SHAO_2011)
+     imod = 3
+   CASE DEFAULT
+     imod = 2
+   END SELECT scheme_select
+
       if (config_flags%vertmix_onoff>0) then
          if (ktau.gt.2) then
             call wrf_debug(15,'calling dry_deposition_driver')
@@ -1151,6 +1166,13 @@
                  grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,grid%dep_vel_o3,     &
                  emis_ant,ebu_in,                                                     &
                  config_flags%sf_urban_physics,numgas,current_month,dvel,grid%snowh,  &
+                 grid%dustdrydep_1,grid%dustdrydep_2,grid%dustdrydep_3,               &
+                 grid%dustdrydep_4,grid%dustdrydep_5,                                 &      
+                 grid%depvelocity,                                                    &      
+                 grid%dustgraset_1,grid%dustgraset_2,grid%dustgraset_3,               &
+                 grid%dustgraset_4,grid%dustgraset_5,                                 &
+                 grid%setvel_1,grid%setvel_2,grid%setvel_3,grid%setvel_4,             &
+                 grid%setvel_5, imod,                                                 &                  
                  grid%is_CAMMGMP_used,                                                & !BSINGH:01/31/2013: Added is_CAMMGMP_used for MAM drydep
                  grid%dep_vel,grid%num_vert_mix,                                                   &
                  ids,ide, jds,jde, kds,kde,                                           &
@@ -1656,6 +1678,13 @@ end if !Chemistry time step check
              ids,ide, jds,jde, kds,kde,                                               &
              ims,ime, jms,jme, kms,kme,                                               &
              its,ite, jts,jte, kts,kte             )
+             
+     call dust_load_driver ( config_flags,                                            &
+           rri, chem, dz8w, grid%dustload_1, grid%dustload_2, grid%dustload_3,        &
+           grid%dustload_4, grid%dustload_5,                                          &
+           ids,ide, jds,jde, kds,kde,                                                 &
+           ims,ime, jms,jme, kms,kme,                                                 &
+           its,ite, jts,jte, kts, kte                                                 )
 
 
 ! Fill top level to prevent spurious interpolation results (no extrapolation)

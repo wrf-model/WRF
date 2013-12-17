@@ -14,7 +14,9 @@
      &           )
 !-----------------------------------------------------------------------
         use module_timing
-      USE MODULE_DOMAIN,                ONLY : DOMAIN, GET_IJK_FROM_GRID
+      USE MODULE_DOMAIN,                ONLY : DOMAIN, GET_IJK_FROM_GRID &
+                                              ,domain_clock_get,is_alarm_tstep_nphs
+
       USE MODULE_CONFIGURE,             ONLY : GRID_CONFIG_REC_TYPE
       USE MODULE_MODEL_CONSTANTS
       USE MODULE_STATE_DESCRIPTION
@@ -47,6 +49,7 @@
 #ifdef WRF_CHEM
       USE MODULE_INPUT_CHEM_DATA,       ONLY: GET_LAST_GAS
 #endif
+      USE MODULE_DIAGNOSTICS
 
 
 !-----------------------------------------------------------------------
@@ -141,6 +144,10 @@
 #else
      &,            adjppt_tim
 #endif
+
+! Flag for producing diagnostic fields (e.g., radar reflectivity) 
+      LOGICAL                        :: diag_flag
+
 #ifdef NMM_FIND_LOAD_IMBALANCE
       real,save :: loadimbal_tim,previmbal_tim
 #endif
@@ -262,6 +269,15 @@
       grid%ntsd=NTSD_restart+NTSD_current
 #endif
       LAST_TIME=domain_last_time_step(GRID)
+!-----------------------------------------------------------------------------
+!
+! Set diagnostic flag value at history output time
+!-----------------------------------------------------------------------------
+    diag_flag = .false.
+    if ( Is_alarm_tstep_nphs(grid%domain_clock, grid%alarms(HISTORY_ALARM), grid%nphs) ) then
+       diag_flag = .true.
+    endif
+
 !
 !-----------------------------------------------------------------------
 !
@@ -1554,6 +1570,16 @@
      &                ,RTHRATEN                                        &  
      &                ,grid%re_cloud,grid%re_ice,grid%re_snow          &  ! G. Thompson
      &                ,grid%has_reqc,grid%has_reqi,grid%has_reqs       &  ! G. Thompson
+     &                ,grid%SWUPT,grid%SWUPTC,grid%SWDNT,grid%SWDNTC   &
+     &                ,grid%SWUPB,grid%SWUPBC,grid%SWDNB,grid%SWDNBC   &
+     &                ,grid%LWUPT,grid%LWUPTC,grid%LWDNT,grid%LWDNTC   &
+     &                ,grid%LWUPB,grid%LWUPBC,grid%LWDNB,grid%LWDNBC   &
+     &                ,grid%ACSWUPT,grid%ACSWUPTC,grid%ACSWDNT,grid%ACSWDNTC   &
+     &                ,grid%ACSWUPB,grid%ACSWUPBC,grid%ACSWDNB,grid%ACSWDNBC   &
+     &                ,grid%ACLWUPT,grid%ACLWUPTC,grid%ACLWDNT,grid%ACLWDNTC   &
+     &                ,grid%ACLWUPB,grid%ACLWUPBC,grid%ACLWDNB,grid%ACLWDNBC   &
+     &                 ,grid%swvisdir ,grid%swvisdif &  !ssib
+     &                 ,grid%swnirdir ,grid%swnirdif &  !ssib
 #ifdef WRF_CHEM
      &                ,PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC            &
      &                ,TAUAER1, TAUAER2, TAUAER3, TAUAER4              & 
@@ -1646,7 +1672,7 @@
      &            ,grid%sfcexc,grid%acsnow,grid%acsnom,grid%snopcx,grid%sice,grid%tg,grid%soiltb          &
      &            ,grid%albsi,grid%icedepth,grid%snowsi                                                   &
      &            ,grid%albase,grid%mxsnal,grid%albedo,grid%sh2o,grid%si,grid%epsr,grid%embck             &
-     &            ,grid%u10,grid%v10,grid%th10,grid%q10,grid%tshltr,grid%qshltr,grid%pshltr               &
+     &            ,grid%u10,grid%v10,grid%uoce,grid%voce,grid%th10,grid%q10,grid%tshltr,grid%qshltr,grid%pshltr               &
      &            ,grid%t2,grid%qsg,grid%qvg,grid%qcg,grid%soilt1,grid%tsnav,grid%smfr3d,grid%keepfr3dflag     &
 #if (NMM_CORE==1)
      &            ,grid%twbs,grid%qwbs,grid%taux,grid%tauy,grid%sfcshx,grid%sfclhx,grid%sfcevp,RTHRATEN                      &
@@ -1675,6 +1701,7 @@
      &            ,GRID%SFCHEADRT,GRID%INFXSRT,GRID%SOLDRAIN           &  !Hydrology, no-op right now
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
+     &            ,IPS,IPE,JPS,JPE,KPS,KPE                             &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
 !                     ***  NOTE  ***
@@ -1959,6 +1986,7 @@
      &               ,GRID,CONFIG_FLAGS                                &
      &               ,grid%re_cloud,grid%re_ice,grid%re_snow           &  ! G. Thompson
      &               ,grid%has_reqc,grid%has_reqi,grid%has_reqs        &  ! G. Thompson
+     &               ,diag_flag                                        &  
      &               ,IDS,IDF,JDS,JDF,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -2304,6 +2332,19 @@
       ENDDO
       ENDDO
       ENDDO
+! calculate some model diagnostics.
+
+   CALL wrf_debug ( 200 , ' call diagnostic_driver' )
+
+   CALL diagnostic_output_calc_refl(                                   &
+      &              DIAGFLAG=diag_flag                                &
+      &             ,REFD_MAX=grid%refd_max                            &
+      &             ,refl_10cm=grid%refl_10cm                          &
+      &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+      &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+      &             ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+      &                                                          )
+
 !
 !----------------------------------------------------------------------
 !

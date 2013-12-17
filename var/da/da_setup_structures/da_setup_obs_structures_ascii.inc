@@ -150,6 +150,10 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
       end if
    end if
 
+   if ( use_gpsrefobs .and. (ob_format_gpsro == ob_format_bufr) ) then
+      call da_read_obs_bufrgpsro(iv)
+   end if
+
    ! Calculate DT for RF DA
 
    if (use_radarobs .and. use_radar_rf) then

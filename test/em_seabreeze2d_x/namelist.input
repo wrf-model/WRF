@@ -40,10 +40,18 @@
  dx                                  = 2000,
  dy                                  = 2000,
  ztop                                = 20000.,
+ eta_levels                          = 1.000, 0.993, 0.983, 0.970, 0.954,
+                                       0.934, 0.909, 0.880, 0.845, 0.807,
+                                       0.765, 0.719, 0.672, 0.622, 0.571,
+                                       0.520, 0.468, 0.420, 0.376, 0.335,
+                                       0.298, 0.263, 0.231, 0.202, 0.175,
+                                       0.150, 0.127, 0.106, 0.088, 0.070,
+                                       0.055, 0.040, 0.026, 0.013, 0.000
+
  /
 
  &physics
- mp_physics                          = 2,
+ mp_physics                          = 14,
  ra_lw_physics                       = 1,
  ra_sw_physics                       = 1,
  radt                                = 5,
@@ -51,6 +59,7 @@
  sf_surface_physics                  = 1,
  bl_pbl_physics                      = 1,
  bldt                                = 0,
+ tracer_pblmix                       = 1
  cu_physics                          = 0,
  cudt                                = 0,
  num_soil_layers                     = 5,
@@ -76,6 +85,7 @@
  v_mom_adv_order                     = 3,
  h_sca_adv_order                     = 5,
  v_sca_adv_order                     = 3,
+ tracer_opt                          = 2,
  mix_full_fields                     = .true.,
  non_hydrostatic                     = .true.,
  /

@@ -33,7 +33,7 @@ module da_define_structures
    !--------------------------------------------------------------------------
 
    type xbx_type
-      character (len=4):: mminlu
+      character (len=256) :: mminlu
 
       integer          :: fft_pad_i          ! Padding to get 2**p 3**q 5**r. (p>=1)
       integer          :: fft_pad_j          ! Padding to get 2**p 3**q 5**r.

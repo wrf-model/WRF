@@ -1,9 +1,0 @@
-# Makefile 
-
-all:
-	(cd ../; make -f Makefile.comm BASIC)
-	(make)
-
-clean:
-	(make clean)
-	(cd ../; make -f Makefile.comm clean)

@@ -2592,6 +2592,62 @@ CONTAINS
       END FUNCTION Is_alarm_tstep
 
 
+#if (NMM_CORE==1)
+!******************************************************************************
+! Function to determine if the next NPHS time step is an alarm-timestep for
+! a certain grid:
+! NMM-only -- modify to check whether the next alarm coincides with the next
+! NPHS time step!
+!******************************************************************************
+
+      LOGICAL FUNCTION Is_alarm_tstep_nphs( grid_clock, alarm, nphs )
+
+        IMPLICIT NONE
+
+        TYPE (WRFU_Clock), INTENT(in)  :: grid_clock
+        TYPE (WRFU_Alarm), INTENT(in)  :: alarm
+
+        LOGICAL :: pred1, pred2, pred3
+        INTEGER :: nphs
+
+        Is_alarm_tstep_nphs = .FALSE.
+
+        IF ( ASSOCIATED( alarm%alarmint ) ) THEN
+          IF ( alarm%alarmint%Enabled ) THEN
+            IF ( alarm%alarmint%RingIntervalSet ) THEN
+              pred1 = .FALSE. ; pred2 = .FALSE. ; pred3 = .FALSE.
+              IF ( alarm%alarmint%StopTimeSet ) THEN
+                 PRED1 = ( grid_clock%clockint%CurrTime + grid_clock%clockint%TimeStep*nphs > &
+                      alarm%alarmint%StopTime )
+              ENDIF
+              IF ( alarm%alarmint%RingTimeSet ) THEN
+                 PRED2 = ( ( alarm%alarmint%RingTime - &
+                      grid_clock%clockint%TimeStep <= &
+                      grid_clock%clockint%CurrTime )     &
+                      .AND. ( grid_clock%clockint%CurrTime < alarm%alarmint%RingTime ) )
+              ENDIF
+              IF ( alarm%alarmint%RingIntervalSet ) THEN
+                 PRED3 = ( alarm%alarmint%PrevRingTime + &
+                      alarm%alarmint%RingInterval <= &
+                      grid_clock%clockint%CurrTime + grid_clock%clockint%TimeStep*nphs )
+              ENDIF
+              IF ( ( .NOT. ( pred1 ) ) .AND. &
+                   ( ( pred2 ) .OR. ( pred3 ) ) ) THEN
+                 Is_alarm_tstep_nphs = .TRUE.
+              ENDIF
+            ELSE IF ( alarm%alarmint%RingTimeSet ) THEN
+              IF ( alarm%alarmint%RingTime -&
+                   grid_clock%clockint%TimeStep*nphs <= &
+                   grid_clock%clockint%CurrTime ) THEN
+                 Is_alarm_tstep_nphs = .TRUE.
+              ENDIF
+            ENDIF
+          ENDIF
+        ENDIF
+
+      END FUNCTION Is_alarm_tstep_nphs
+#endif
+
 
 !******************************************************************************
 ! BEGIN TEST SECTION

@@ -41,7 +41,9 @@ module da_test
       use_gpsztdobs, Use_Radar_rf, use_rad, crtm_cloud, cloud_cv_options, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, fgat_rain_flags, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, cv_options, cv_size, &
-      cloud_cv_options, cp, gas_constant, test_dm_exact, cv_size_domain
+      cloud_cv_options, cp, gas_constant, test_dm_exact, cv_size_domain, &
+      its_int, ite_int, jts_int, jte_int, kts_int, kte_int, &
+      ims_int, ime_int, jms_int, jme_int, kms_int, kme_int
 
    use da_define_structures, only : da_zero_x,da_zero_vp_type,da_allocate_y, &
       da_deallocate_y,be_type, xbx_type, iv_type, y_type, j_type, da_initialize_cv

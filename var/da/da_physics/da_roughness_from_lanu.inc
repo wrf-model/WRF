@@ -7,7 +7,7 @@ subroutine da_roughness_from_lanu(ltbl, mminlu, date, lanu, rough)
    implicit none
 
    integer             ,   intent(in)    :: ltbl
-   character (len=4)   ,   intent(in)    :: mminlu
+   character (len=*)   ,   intent(in)    :: mminlu
    character (len=19)  ,   intent(in)    :: date
    real, dimension(ims:ime,jms:jme),   intent(in)    :: lanu 
    real, dimension(ims:ime,jms:jme),   intent(out)   :: rough 
@@ -18,7 +18,7 @@ subroutine da_roughness_from_lanu(ltbl, mminlu, date, lanu, rough)
                                            m1, m2, n1, n2 
    real                                  :: albd, slmo, sfem
    real(kind=4), dimension(50,2)         :: sfz0
-   character (len=4)                     :: LUtype
+   character (len=256)                   :: LUtype
    logical                               :: exist
 
    if (trace_use) call da_trace_entry("da_roughness_from_lanu")
@@ -41,16 +41,16 @@ subroutine da_roughness_from_lanu(ltbl, mminlu, date, lanu, rough)
    lumatch=0  
 
    do
-      read (unit=ltbl,fmt='(A4)', iostat=io_error) lutype
+      read (unit=ltbl,fmt='(A)', iostat=io_error) lutype
       if (io_error /= 0) exit
       read (unit=ltbl,fmt=*, iostat=io_error) lucats,luseas
 
-      if (lutype == mminlu) lumatch=1 
+      if (trim(lutype) == trim(mminlu)) lumatch=1 
 
       do LS=1,LuseAS 
          read (unit=ltbl,fmt=*)  
          do lc=1,lucats 
-            if (lutype == mminlu) then 
+            if (trim(lutype) == trim(mminlu)) then 
                read (unit=ltbl,fmt=*) li, albd, slmo, sfem, sfz0(lc,ls)
                ! prevent compiler whinge
                if (albd == 0.0 .or. sfem == 0.0 .or. slmo == 0.0) then

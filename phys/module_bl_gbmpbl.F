@@ -896,7 +896,7 @@ CONTAINS
     iconv = 0
     istabl = 1
     do k=2,kte+1   !nt nscquar is defined at kte+1 after the call to n2
-       if(nsquar(k).lt.0)then   
+       if(nsquar(k).le.0)then   
           if(istabl.eq.1)then
              iconv = iconv + 1
              ktop(iconv)=k
@@ -947,20 +947,22 @@ CONTAINS
                                            ! then average rnnll is very small and a very weak 
                                            ! pos n2 is enough to be 'inversion' top. This makes
                                            ! sure that we go up at least one more.
-          if(ilay.gt.1.and.ktop(ilay).eq.kbot(ilay-1))then ! did we merge with layer above?
-             ibeg = ilay - 1
-!NT orig     ktop(ibeg)=ktop(ibeg)+1 !NT not correct if one up was not inversion, the new thicker
-                                     !NT layer might have different average properties, should
-                                     !NT reset to original ktop
-             ktop(ibeg)=ktop_save(ibeg) !NT new
-             kbot(ibeg)=kbot(ibeg+1)
-             iconv = iconv - 1
-             do itemp = ibeg+1,iconv !NT if there's a layer below decrease layer index
-                ktop(itemp)=ktop(itemp+1)
-                kbot(itemp)=kbot(itemp+1)
-                ktop_save(itemp)=ktop_save(itemp+1) !NT new
-             enddo
-             goto 2745        ! recompute for the new, deeper layer
+          if(ilay.gt.1) then
+             if(ktop(ilay).eq.kbot(ilay-1))then ! did we merge with layer above?
+                ibeg = ilay - 1
+   !NT orig     ktop(ibeg)=ktop(ibeg)+1 !NT not correct if one up was not inversion, the new thicker
+                                        !NT layer might have different average properties, should
+                                        !NT reset to original ktop
+                ktop(ibeg)=ktop_save(ibeg) !NT new
+                kbot(ibeg)=kbot(ibeg+1)
+                iconv = iconv - 1
+                do itemp = ibeg+1,iconv !NT if there's a layer below decrease layer index
+                   ktop(itemp)=ktop(itemp+1)
+                   kbot(itemp)=kbot(itemp+1)
+                   ktop_save(itemp)=ktop_save(itemp+1) !NT new
+                enddo
+                goto 2745        ! recompute for the new, deeper layer
+             endif
           endif
           rnnll = rnnll + trnnll
           nlev = nlev + 1 !NT moved up

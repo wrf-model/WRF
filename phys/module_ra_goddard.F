@@ -172,8 +172,10 @@ contains
                    ,its,ite, jts,jte, kts,kte                     & 
 !                   ,cosz_urb2d,omg_urb2d                          & !optional urban
                    ,ERBE_out                                      &  !optional sdsu
-                   ,swddir,swddni,swddif                          & !jararias 14/08/2013
-                   ,coszen,julian                                 & !jararias 14/08/2013
+                   ,tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw           & ! jararias 2013/11
+                   ,swddir,swddni,swddif                          & ! jararias 2013/08
+                   ,coszen,julian                                 & ! jararias 2013/08
+                   ,aer_opt                                       &
                                                                   )
    implicit none
 
@@ -250,23 +252,28 @@ contains
  real, dimension( ims:ime, jms:jme ), intent(inout)  ::  &
          gsf    ! (for SW) : net short wave flux at ground surface (W/m^2) 
                 ! (for LW) : downward long wave flux at ground surface (W/m^2)
-
-!
 ! 
 ! Extra 3D variables (last dimension 1-TOA LW down, 2-TOA LW up, 3-surface LW down, 4-surface LW up)
 !                                    5-TOA SW down, 6-TOA SW up, 7-surface SW down, 8-surface SW up)
 
    real, optional,dimension(ims:ime, jms:jme, 1:8),intent(out) :: ERBE_out  !extra output for SDSU
 
-   real, optional, dimension(ims:ime, jms:jme), intent(out) :: &              ! jararias, 14/08/2013
+! jararias, 14/08/2013
+   real, optional, dimension(ims:ime, jms:jme), intent(out) :: &
          swddir, & ! All-sky broadband surface direct horizontal irradiance
          swddni, & ! All-sky broadband surface direct normal irradiance
          swddif    ! All-sky braodband surface diffuse irradiance
-   real, optional, dimension(ims:ime, jms:jme), intent(in) :: &               ! jararias, 14/08/2013
+   real, optional, dimension(ims:ime, jms:jme), intent(in) :: &
          coszen    ! cosine of the solar zenith angle
    real, optional, intent(in) :: &
          julian    ! julian day (1-365) ! jararias, 14/08/2013
-                                                  
+
+! jararias, 2013/11
+   real, dimension( ims:ime, kms:kme, jms:jme, ib_sw ), optional, intent(in) :: &
+         tauaer3d_sw, & ! 3D aerosol optical depth for SW bands
+         ssaaer3d_sw, & ! 3D single scattering albedo for SW bands
+         asyaer3d_sw    ! 3D asymmetry factor for SW bands
+   integer, intent(in) :: aer_opt
 
 !------- Local variables ----------------------------------------------
 
@@ -912,6 +919,24 @@ contains
       end do
    end do
 
+   ! jararias 2013/11
+   if ( present (tauaer3d_sw) ) then
+      if ( aer_opt .eq. 2 ) then
+         do ib=1,ib_sw
+            do i=its,ite
+               taual_sw(i,kts-1,ib)=0.
+               ssaal_sw(i,kts-1,ib)=0.
+               asyal_sw(i,kts-1,ib)=0.
+               do k=kts,kte
+                  nk=kte+kts-k
+                  taual_sw(i,nk,ib)=tauaer3d_sw(i,k,j,ib)
+                  ssaal_sw(i,nk,ib)=ssaaer3d_sw(i,k,j,ib)
+                  asyal_sw(i,nk,ib)=asyaer3d_sw(i,k,j,ib)
+               end do
+            end do
+         end do
+      end if
+   end if
 !
 ! 1-dimension driver of shortwave radiative transfer scheme
 !

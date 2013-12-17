@@ -18,7 +18,7 @@ module da_setup_structures
       use_radar_rf, num_ob_indexes,kts, kte, time_window_max, time_window_min, &
       max_fgat_time, num_fgat_time, dt_cloud_model, &
       use_ssmiretrievalobs,use_radarobs,use_ssmitbobs,use_qscatobs, num_procs, use_rainobs, &
-      num_pseudo, missing, ob_format, ob_format_bufr,ob_format_ascii, ob_format_madis, &
+      num_pseudo, missing, ob_format, ob_format_bufr,ob_format_ascii, ob_format_madis, ob_format_gpsro, &
       use_airepobs, use_tamdarobs, test_dm_exact, use_amsuaobs, use_amsubobs, &
       use_airsobs, use_bogusobs, sfc_assi_options, use_eos_amsuaobs, &
       use_filtered_rad, use_gpsrefobs, use_hirs2obs, &
@@ -59,7 +59,7 @@ module da_setup_structures
       psi_chi_factor, psi_t_factor, psi_ps_factor, psi_rh_factor, &
       chi_u_t_factor, chi_u_ps_factor,chi_u_rh_factor, t_u_rh_factor, ps_u_rh_factor, &
       interpolate_stats, be_eta, thin_rainobs, fgat_rain_flags, use_iasiobs, &
-      use_seviriobs 
+      use_seviriobs,jds_int,jde_int,anal_type_hybrid_dual_res 
 
    use da_obs, only : da_fill_obs_structures, da_store_obs_grid_info, da_store_obs_grid_info_bufr, &
                       da_fill_obs_structures_rain

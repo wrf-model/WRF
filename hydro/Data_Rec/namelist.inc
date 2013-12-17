@@ -1,7 +1,7 @@
    TYPE namelist_rt_field  
       
        integer :: nsoil, SOLVEG_INITSWC
-       real ZSOIL8(8)
+       real,allocatable,dimension(:) :: ZSOIL8
        real out_dt, rst_dt, dt
        integer :: START_YEAR, START_MONTH, START_DAY, START_HOUR, START_MIN
        character(len=256)  :: restart_file = ""

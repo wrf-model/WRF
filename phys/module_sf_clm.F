@@ -3752,7 +3752,7 @@ CONTAINS
                    ,qdnxy      ,ivgtyp     ,isltyp      ,vegfra      ,albxy     &
                    ,znt        ,z0         ,tmn         ,xland       ,xice      &
                    ,emiss      ,snowc      ,qsfc        ,prec        ,maxpatch  &
-                   ,num_soil_layers        ,dt          ,dzs         ,nstep     &
+                   ,num_soil_layers        ,dt          ,xtime      ,dtwrf ,dzs &
                    ,smois      ,tslb       ,snow        ,canwat      ,chs       &
                    ,chs2                                                        &
                    ,sh2o       ,snowh      ,forc_uxy    ,forc_vxy    ,shdmin    &
@@ -3855,7 +3855,7 @@ CONTAINS
                                     ims,ime, jms,jme, kms,kme,  &
                                     its,ite, jts,jte, kts,kte
 
-  integer,intent(in)  :: num_soil_layers,maxpatch,nstep,sf_urban_physics,&
+  integer,intent(in)  :: num_soil_layers,maxpatch,sf_urban_physics,&
                          ra_sw_physics,history_interval
   real,dimension(ims:ime,1:num_soil_layers,jms:jme ),intent(inout) ::&
                                                          smois, & ! total soil moisture
@@ -3863,6 +3863,7 @@ CONTAINS
                                                          tslb     ! TSLB     STEMP
 
   real,intent(in) :: dt,dx
+  real,intent(in) :: xtime, dtwrf   !fchen
   real(r8) :: dtt
   real, dimension(1:num_soil_layers), intent(in)::dzs
 
@@ -3953,6 +3954,7 @@ CONTAINS
 #endif
 !!!
 
+  integer  :: nstep   !fchen
   integer  :: i,j,m,inest,k
   real, dimension(ims:ime, kms:kme,jms:jme),intent(in) ::&
             forc_txy,forc_uxy,forc_vxy,forc_qxy,zgcmxy,ps
@@ -4231,6 +4233,8 @@ CONTAINS
 !    print*,'nlevsoi and nlevlak must be equal to num_soil_layers in CLM; Stop in module_sf_clm.F'
 !    call endrun() 
 !  end if
+  nstep = nint( (xtime*60. + dtwrf) / dt)
+  if( nstep .le. 1 ) nstep = 1
 
   dtt = dt
   

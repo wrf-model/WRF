@@ -161,6 +161,13 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       call da_error(__FILE__,__LINE__,message(1:1))
    end if
 
+   if ( use_gpsrefobs ) then
+      if ( ob_format_gpsro == ob_format_bufr .and.  &
+           ob_format       == ob_format_ascii ) then
+         call da_message((/'ob_format=2 while ob_format_gpsro=1, will be reading GPSRO data from gpsro.bufr'/))
+      end if
+   end if
+
    !---------------------------------------------------------------------------      
    ! [1.0] Setup and read in fields from first guess:
    !----------------------------------------------------------------------------     

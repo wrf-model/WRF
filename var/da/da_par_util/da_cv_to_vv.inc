@@ -128,10 +128,13 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, vv)
    ne = mzs(7)
 #endif
    if ( ne > 0 ) then
+      ix = ite_int - its_int + 1
+      jy = jte_int - jts_int + 1
       ijmn = ix * jy * mz * ne
       cv_s = cv_e + 1
       cv_e = cv_s + ijmn - 1
-      vv % alpha(is:ie,js:je,1:mz,1:ne) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz, ne/))
+!     vv % alpha(is:ie,js:je,1:mz,1:ne) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz, ne/))
+      vv % alpha(its_int:ite_int,jts_int:jte_int,1:mz,1:ne) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz, ne/))
    end if
 
    if (trace_use) call da_trace_exit("da_cv_to_vv")

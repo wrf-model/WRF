@@ -250,6 +250,7 @@ solve_em.o:     module_small_step_em.o \
 		../frame/module_tiles.o \
 		../frame/module_dm.o \
 		../frame/module_comm_dm.o \
+		../frame/module_cpl.o \
 		../share/module_llxy.o	\
 		../share/module_model_constants.o \
 		../share/module_bc.o \

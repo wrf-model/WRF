@@ -41,9 +41,10 @@ CONTAINS
          ebio_cco_oh, ebio_rco_oh,                                         &    
          clayfrac,sandfrac,dust_alpha,dust_gamma,dust_smtune,              &
          snowh,zs,                                                         &
+         soil_top_cat, ust_t, rough_cor, smois_cor,                        & 
          ebio_c5h8,ebio_apinene,ebio_bpinene,ebio_toluene,                 &
          ebio_ch3cho,ebio_ch3co2h,ebio_tbut2ene,ebio_c2h5cho,              &
-         ebio_nc4h10,												       &
+         ebio_nc4h10,							   &
          ! stuff for MEGAN v2.04                                                 
          T2,swdown,                                                        &
          nmegan,EFmegan,                                                   &
@@ -85,6 +86,7 @@ CONTAINS
   USE gocart_dust
   USE gocart_dust_afwa
   USE gocart_seasalt
+  USE uoc_dust  
   USE module_dms_emis
   USE module_mosaic_addemiss
   USE module_add_emis_cptec
@@ -219,7 +221,14 @@ CONTAINS
                ebio_c5h8,ebio_apinene,ebio_bpinene,ebio_toluene,       &
                ebio_ch3cho,ebio_ch3co2h,ebio_tbut2ene,ebio_c2h5cho,    &
                ebio_nc4h10
-
+               
+   REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL  ,                 &
+          INTENT(INOUT) ::                                    ust_t,   & 
+                                                          rough_cor,   &
+                                                          smois_cor          
+! dust source area information from WPS        
+   REAL, DIMENSION(ims:ime,1:config_flags%num_soil_cat,jms:jme) ,      & 
+          INTENT(IN)::                                 soil_top_cat 
 
    ! stuff for MEGAN v2.04...most of these arrays are optional and package dependent 
    !  as declared in registry.chem
@@ -302,6 +311,9 @@ CONTAINS
       CHARACTER (LEN=80) :: message
       LOGICAL :: do_bioemiss, do_plumerisefire,do_ex_volcanoe
 
+      INTEGER :: imod  ! dust scheme option from namelist
+
+            
 ! ..
 ! ..
 ! .. Intrinsic Functions ..
@@ -690,6 +702,25 @@ CONTAINS
          ids,ide, jds,jde, kds,kde,                                        &
          ims,ime, jms,jme, kms,kme,                                        &
          its,ite, jts,jte, kts,kte                                         )
+      CASE (DUSTUOC)
+       CALL wrf_debug(15,'UoC dust emission schemes')
+! kang [2008/12/14] modify for namelist selection
+       scheme_select:  SELECT CASE(config_flags%dust_schme)
+       CASE (SHAO_2001)
+        imod = 1
+       CASE (SHAO_2004)
+        imod = 2
+       CASE (SHAO_2011)
+        imod = 3
+       CASE DEFAULT
+        imod = 2
+       END SELECT scheme_select
+       call uoc_dust_driver (ktau,dtstep,config_flags,                     &
+         chem,rho_phy,dz8w,smois,ust, isltyp,vegfra,g,emis_dust,           &
+         ust_t, imod, rough_cor, smois_cor, soil_top_cat, erod,            &
+         ids,ide, jds,jde, kds,kde,                                        &
+         ims,ime, jms,jme, kms,kme,                                        &
+         its,ite, jts,jte, kts,kte                                         )             
       CASE DEFAULT 
         if(dust_emiss_active.eq.1) then
             CALL wrf_debug(15,'MOSAIC or SORGAM dust emissions')
@@ -1458,7 +1489,8 @@ CONTAINS
     emiss_select: SELECT CASE(config_flags%emiss_inpt_opt)
     CASE (EMISS_INPT_CPTEC)
        call wrf_debug(15,'emissions_driver calling add_emiss_cptec')
-       call add_emis_cptec(id,dtstep,ktau,dz8w,config_flags,rho_phy,chem,&
+       call add_emis_cptec(id,dtstep,ktau,dz8w,config_flags,curr_secs,   &
+            rho_phy,chem,                                                &
             julday,gmt,xlat,xlong,t_phy,p_phy,                           &
             emis_ant,                                                    &
             ids,ide, jds,jde, kds,kde,                                   &

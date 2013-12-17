@@ -1043,6 +1043,12 @@ MODULE MODULE_MPP_LAND
       call MPI_COMM_RANK( MPI_COMM_WORLD, my_id, ierr ) 
       call MPI_COMM_SIZE( MPI_COMM_WORLD, numprocs, ierr ) 
 
+      if(numprocs .ne. total_pe) then
+         write(6,*) "Error: numprocs .ne. total_pe ",numprocs, total_pe 
+         call hydro_stop()
+      endif
+
+
 !   ### get the neighbors.  -1 means no neighbor.
       left_id = info(2,my_id+1)
       right_id = info(3,my_id+1)
@@ -1455,24 +1461,24 @@ MODULE MODULE_MPP_LAND
        return
     end subroutine sum_real8
 
-  subroutine get_globalDim(ix,g_ix)
-     implicit none
-     integer ix,g_ix, ierr
-     include "mpif.h"
-
-     if ( my_id .eq. IO_id ) then
-           g_ix = ix
-        call mpi_reduce( MPI_IN_PLACE, g_ix, 4, MPI_INTEGER, &
-             MPI_SUM, 0, MPI_COMM_WORLD, ierr )
-     else
-        call mpi_reduce( ix,       0,      4, MPI_INTEGER, &
-             MPI_SUM,  0, MPI_COMM_WORLD, ierr )
-     endif
-     call mpp_land_bcast_int1(g_ix)
-
-     return
-
-  end subroutine get_globalDim
+!  subroutine get_globalDim(ix,g_ix)
+!     implicit none
+!     integer ix,g_ix, ierr
+!     include "mpif.h"
+!
+!     if ( my_id .eq. IO_id ) then
+!           g_ix = ix
+!        call mpi_reduce( MPI_IN_PLACE, g_ix, 4, MPI_INTEGER, &
+!             MPI_SUM, 0, MPI_COMM_WORLD, ierr )
+!     else
+!        call mpi_reduce( ix,       0,      4, MPI_INTEGER, &
+!             MPI_SUM,  0, MPI_COMM_WORLD, ierr )
+!     endif
+!      call mpp_land_bcast_int1(g_ix)
+!
+!     return
+!
+!  end subroutine get_globalDim
 
   subroutine gather_1d_real_tmp(vl,s_in,e_in,vg,sg)
     integer sg, s,e, size, s_in, e_in
@@ -1525,7 +1531,8 @@ MODULE MODULE_MPP_LAND
       real*8:: inout, send
       integer :: ierr
       send = inout
-      CALL MPI_ALLREDUCE(send,inout,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD,ierr)
+      !yw CALL MPI_ALLREDUCE(send,inout,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD,ierr)
+      CALL MPI_ALLREDUCE(send,inout,1,MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr)
   end subroutine sum_double
 
 
@@ -1537,23 +1544,6 @@ END MODULE MODULE_MPP_LAND
             integer ierr
             CALL MPI_ABORT(MPI_COMM_WORLD,1,IERR)
         end ! mpp_land_abort
-
-  subroutine mpp_land_finish()
-      implicit none
-      include "mpif.h"
-      integer ierr
-#ifdef HYDRO_D
-      write(6,*) "mpp_land_finish called "
-#endif
-      call MPI_barrier( MPI_COMM_WORLD ,ierr)
-      if(ierr .ne. 0) call mpp_land_abort()
-      call MPI_finalize(ierr)
-      if(ierr .ne. 0) call mpp_land_abort()
-#ifdef HYDRO_D
-      stop 999
-#endif
-      return
-  end ! mpp_land_finish 
 
   subroutine mpp_land_sync()
       implicit none

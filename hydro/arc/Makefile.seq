@@ -27,4 +27,4 @@ clean:
 	(cd Data_Rec; make -f Makefile clean)
 	(cd HYDRO_drv; make -f Makefile clean)
 	(cd Routing;    make -f Makefile clean)
-	(rm -f lib/*.a */*.mod)
+	(rm -f lib/*.a */*.mod CPL/*/*.o CPL/*/*.mod)

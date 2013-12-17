@@ -288,8 +288,10 @@ CONTAINS
 
    IF (stretch_grid) THEN ! exponential stretch for eta (nearly constant dz)
      DO k=1, kde
-      grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
-                                (1.-exp(-1./z_scale))
+!     grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
+!                               (1.-exp(-1./z_scale))
+! read eta_levels from namelist (replace with commented code above if not)
+      grid%znw(k) = model_config_rec%eta_levels(k)
      ENDDO
    ELSE
      DO k=1, kde
@@ -594,6 +596,14 @@ CONTAINS
   DO K = kts, kte-1
   DO I = its, min(ide-1,ite)
     grid%h_diabatic(i,k,j) = 0.
+    if(k.eq.kts)tracer(i,k,j,p_tr17_1)=1.
+    if(k.eq.kts.and.grid%xland(i,j).lt.1.5)tracer(i,k,j,p_tr17_2)=1.
+    if(k.eq.kts.and.grid%xland(i,j).gt.1.5)tracer(i,k,j,p_tr17_3)=1.
+    if(k.le.5)tracer(i,k,j,p_tr17_4)=1.
+    if(k.le.5.and.grid%xland(i,j).lt.1.5)tracer(i,k,j,p_tr17_5)=1.
+    if(k.le.5.and.grid%xland(i,j).gt.1.5)tracer(i,k,j,p_tr17_6)=1.
+    if(k.le.10)tracer(i,k,j,p_tr17_7)=1.
+    if(k.le.10.and.k.gt.5)tracer(i,k,j,p_tr17_8)=1.
   ENDDO
   ENDDO
   ENDDO

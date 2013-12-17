@@ -547,6 +547,18 @@
       ENDDO      ! Loop over domains
 
 !-----------------------------------------------------------------------
+!  Do not allow digital filtering to be run with TEMF.
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%bl_pbl_physics(i) .EQ. TEMFPBLSCHEME ) .AND. &
+              (model_config_rec%dfi_opt .NE. DFI_NODFI) )  THEN
+            wrf_err_message = '--- ERROR: DFI not available for bl_pbl_physics=10 '
+            CALL wrf_error_fatal ( TRIM(wrf_err_message) )
+         END IF
+      ENDDO      ! Loop over domains
+
+!-----------------------------------------------------------------------
 !  The CLM scheme may not even be compiled, so make sure it is not allowed
 !  to be run if the code is not available.
 !-----------------------------------------------------------------------

@@ -20,8 +20,8 @@ CONTAINS
                              , adapt_step_flag , curr_secs      &
                              , psim , psih , wspd , gz1oz0 , br , chklowq &
                              , cu_act_flag , hol , th_phy        &
-                             , pi_phy , p_phy , t_phy , u_phy , v_phy     &
-                             , dz8w , p8w , t8w , rho_phy , rho           &
+                             , pi_phy , p_phy , t_phy     &
+                             , dz8w , p8w , t8w           &
                              , nba_mij, n_nba_mij         & !JDM
                              , nba_rij, n_nba_rij         & !JDM
                              , ids, ide, jds, jde, kds, kde     &
@@ -102,13 +102,9 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: pi_phy
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: p_phy
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t_phy
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: u_phy
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: v_phy
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: dz8w
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: p8w
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t8w
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho_phy
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho
 
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: ru_tendf
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rv_tendf
@@ -342,6 +338,8 @@ BENCH_START(cal_phy_tend)
                      grid%rqishten,grid%rqsshten,grid%rqgshten,        &
                      grid%RUNDGDTEN,grid%RVNDGDTEN,grid%RTHNDGDTEN,grid%RQVNDGDTEN, &
                      grid%RMUNDGDTEN,                                  &
+                     scalar, scalar_tend, num_scalar,                  &
+                     tracer, tracer_tend, num_tracer,                  &
                      ids,ide, jds,jde, kds,kde,                        &
                      ims,ime, jms,jme, kms,kme,                        &
                      grid%i_start(ij), min(grid%i_end(ij),ide-1),      &
@@ -515,6 +513,7 @@ BENCH_START(calc_tke_tim)
                                  grid%cf1, grid%cf2, grid%cf3, grid%warm_rain,          &
                                  grid%mix_upper_bound,                                  &
                                  grid%msftx, grid%msfty,                                &
+                                 grid%zx, grid%zy,                                      &
                                  ids,ide, jds,jde, kds,kde,                             &
                                  ims,ime, jms,jme, kms,kme,                             &
                                  grid%i_start(ij), grid%i_end(ij),                      &
@@ -751,7 +750,7 @@ BENCH_START(tke_rhs_tim)
                          grid%rdz,grid%rdzw,grid%dn,                  &
                          grid%dnw,config_flags%mix_isotropic,         &
                          grid%hfx, grid%qfx, moist(ims,kms,jms,P_QV), &
-                         grid%ustm, rho,                              &
+                         grid%ustm, grid%rho,                         &
                          ids, ide, jds, jde, kds, kde,                &
                          ims, ime, jms, jme, kms, kme,                &
                          grid%i_start(ij), grid%i_end(ij),            &
@@ -789,9 +788,9 @@ BENCH_START(vert_diff_tim)
                                       grid%defor13,grid%defor23,grid%defor33,                   &
                                       nba_mij, num_nba_mij,          & !JDM
                                       grid%div, moist, chem, scalar,tracer,         &
-                                      grid%xkmv, grid%xkhv, config_flags%km_opt,                        &
+                                      grid%xkmv, grid%xkhv, grid%xkmh, config_flags%km_opt,       & ! xkmh added Oct2013
                                       grid%fnm, grid%fnp, grid%dn, grid%dnw, grid%rdz, grid%rdzw, &
-                                      grid%hfx, grid%qfx, grid%ustm, rho,        &
+                                      grid%hfx, grid%qfx, grid%ustm, grid%rho,   &
                                       ids, ide, jds, jde, kds, kde,              &
                                       ims, ime, jms, jme, kms, kme,              &
                                       grid%i_start(ij), grid%i_end(ij),          &

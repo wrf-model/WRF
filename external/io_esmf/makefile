@@ -24,7 +24,7 @@ $(TARGET) : $(OBJS)
 	$(RANLIB) $(TARGET)
 
 .F90.o :
-	$(CPP) -I../ioapi_share -C -P -DESMF_COUPLING $*.F90 > $*.f
+	$(CPP) -I../ioapi_share -P -traditional -DESMF_COUPLING $*.F90 > $*.f
 	$(FC) -c -g -I../ioapi_share $*.f
 
 superclean: 

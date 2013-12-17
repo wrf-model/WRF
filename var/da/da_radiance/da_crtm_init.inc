@@ -28,7 +28,6 @@ subroutine da_crtm_init(iv,ob, nsensor)
 !  character( 256 ) :: TauCoeff_File
   character( 256 ) :: AerosolCoeff_File
   character( 256 ) :: CloudCoeff_File
-  character( 256 ) :: EmisCoeff_File 
   character( 256 ) :: File_Path
 !  character( 80 ), pointer :: Sensor_Descriptor(:)
 !
@@ -48,12 +47,9 @@ subroutine da_crtm_init(iv,ob, nsensor)
 ! 1.1 call CRTM_Init to load coefficients and fill ChannelInfo structure
 !-----------------------------------------------------------
   ! input: 
-     !SpcCoeff_File     = 'amsua_n15-n16.SpcCoeff.bin'
-     !TauCoeff_File     = 'amsua_n15-n16.TauCoeff.bin'
      AerosolCoeff_File = 'AerosolCoeff.bin'
      CloudCoeff_File   = 'CloudCoeff.bin'
-     EmisCoeff_File    = 'EmisCoeff.bin'
-     File_Path         = 'crtm_coeffs/'
+     File_Path         = trim(crtm_coef_path)//'/'
   !----------------------------------------------------------------
   ! ChannelInfo structure contains on output: 
   !
@@ -70,8 +66,11 @@ subroutine da_crtm_init(iv,ob, nsensor)
      Error_Status = CRTM_Init(Sensor_Descriptor, &
                               ChannelInfo, &
                               AerosolCoeff_File = AerosolCoeff_File, &
-                              EmisCoeff_File = EmisCoeff_File , &
                               CloudCoeff_File = CloudCoeff_File, &
+                              IRwaterCoeff_File = crtm_irwater_coef, &
+                              MWwaterCoeff_File = crtm_mwwater_coef, &
+                              IRlandCoeff_File  = crtm_irland_coef,  &
+                              VISlandCoeff_File = crtm_visland_coef, &
                               File_Path = File_Path) 
 
      if ( Error_Status /= 0 ) then 

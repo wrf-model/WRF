@@ -102,7 +102,7 @@ IF ( ncd_ok_to_put_dom_ti( DataHandle ) ) THEN
       call wrf_debug ( WARN , msg)
       return
     endif
-  elseif (DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE) then
+  elseif (DH%FileStatus == WRF_FILE_OPENED_FOR_WRITE .OR. DH%FileStatus == WRF_FILE_OPENED_FOR_UPDATE) then
     stat = NF_REDEF(DH%NCID)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then

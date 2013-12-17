@@ -279,7 +279,7 @@ if [ -n "$NETCDF" ] ; then
   echo "Will use NETCDF in dir: $NETCDF"
 # for 3.6.2 and greater there might be a second library, libnetcdff.a .  Check for this and use 
 # if available
-  if [ -f "$NETCDF/lib/libnetcdff.a" ] ; then
+  if [ -f "$NETCDF/lib/libnetcdff.a" -o -f "$NETCDF/lib/libnetcdff.so" ] ; then
     USENETCDFF="-lnetcdff"
   fi
 else
@@ -532,6 +532,14 @@ if [ -n "$WRF_CHEM" ] ; then
   fi
 else
   compileflags="${compileflags} "
+fi
+
+if [ -n "$WRF_NMM_CORE" -a -n "$WRF_CHEM" ]; then
+  echo
+  echo "NMM is no longer compatible with the Chemistry option."
+  echo
+# alphabetically: c=3, o=15, so co2 = 3+15+2 = 20
+  exit 20
 fi
 
 if [ `which timex` ] ; then
@@ -897,7 +905,7 @@ if [ $retval -ne 0 ] ; then
   echo " "
   echo "************************** W A R N I N G ************************************"
   echo " "
-  echo "There are some Fortran 20003 features in WRF that your compiler does not recognize"
+  echo "There are some Fortran 2003 features in WRF that your compiler does not recognize"
   echo "The IEEE signaling call has been removed.  That may not be enough."
   echo " "
   echo "*****************************************************************************"

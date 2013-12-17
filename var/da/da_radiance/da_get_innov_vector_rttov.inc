@@ -36,7 +36,7 @@ subroutine da_get_innov_vector_rttov (it, grid, ob, iv)
 ! FIX?
 real,allocatable :: temp(:), temp2(:), temp3(:,:)
 
-   real, allocatable :: emissivity(:)
+   type(rttov_emissivity), allocatable :: emissivity(:)
 
    type(con_vars_type),  allocatable :: con_vars(:)
    type(aux_vars_type),  allocatable :: aux_vars(:)
@@ -198,7 +198,7 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
 
       nchanprof = nchan*n1n2
       allocate(emissivity(nchanprof))
-      emissivity(:) = 0.0
+      emissivity(:)%emis_in = 0.0
 
       if ( rttov_emis_atlas_ir > 0 .or. rttov_emis_atlas_mw > 0 ) then
          ! set up emissivity atlas
@@ -209,13 +209,14 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          write(unit=message(1),fmt='(A,A)')  &
             'Setting up emissivity atlas for instrument ', trim(iv%instid(inst)%rttovid_string)
          call da_message(message(1:1))
-         call rttov_atlas_setup(              &
-            errorstatus,                      &
-            grid%start_month,                 &
-            coefs(inst)%coef,                 &
-            path = trim(atlas_path),          &
-            ir_atlas_ver = ir_atlas_version,  &
-            mw_atlas_ver = mw_atlas_version )
+         call rttov_setup_emis_atlas(                      &
+            errorstatus,                                   & ! out
+            opts(inst),                                    & ! in
+            grid%start_month,                              & ! in
+            coefs(inst),                                   & ! in
+            path = trim(atlas_path),                       & ! in, optional
+            ir_atlas_ver = ir_atlas_version,               & ! in, optional
+            mw_atlas_ver = mw_atlas_version)                 ! in, optional
          if ( errorstatus /= errorstatus_success ) then
             call da_error(__FILE__,__LINE__, &
                (/"failure in setting up emissivity atlas"/))
@@ -239,14 +240,15 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
             profiles(n)%skin%surftype = iv%instid(inst)%surftype(n)
             profiles(n)%snow_frac     = iv%instid(inst)%snow_frac(n)
          end do
-         
+
          ! Retrieve values from atlas
-         call rttov_get_emis(  &
-            errorstatus,       &
-            chanprof,          &
-            profiles,          &
-            coefs(inst)%coef,  &
-            emissivity = emissivity )
+         call rttov_get_emis(                   &
+            errorstatus,                        & ! out
+            opts(inst),                         & ! in
+            chanprof,                           & ! in
+            profiles,                           & ! in
+            coefs(inst),                        & ! in
+            emissivity=emissivity(:)%emis_in )    ! out
          if ( errorstatus /= errorstatus_success ) then
             call da_error(__FILE__,__LINE__, &
                (/"failure in retrieving emissivity values"/))
@@ -263,8 +265,8 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
                if ( iv%instid(inst)%surftype(n) == 0 ) then
                   call da_mspps_emis(ob%instid(inst)%tb(1:nchan,n), nchan, em_mspps)
                   do k = 1, nchan
-                     if ( emissivity((n-1)*nchan+k) < 0.01 ) then
-                        emissivity((n-1)*nchan+k) = em_mspps(k)
+                     if ( emissivity((n-1)*nchan+k)%emis_in  < 0.01 ) then
+                        emissivity((n-1)*nchan+k)%emis_in  = em_mspps(k)
                      end if
                   end do
                end if
@@ -313,13 +315,13 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
          if ( use_rttov_kmatrix ) then
             call da_rttov_k (inst, nchan, 1, nlevels, &
                con_vars(n:n), aux_vars(n:n), &
-               temp,temp2,temp3, emissivity((n-1)*nchan+1:n*nchan),&
-               iv%instid(inst)%emiss(:,n))
+               temp, temp2, temp3, emissivity((n-1)*nchan+1:n*nchan))
+            iv%instid(inst)%emiss(:,n) = emissivity((n-1)*nchan+1:n*nchan)%emis_out
          else
             call da_rttov_direct (inst, nchan, 1, nlevels, &
                con_vars(n:n), aux_vars(n:n), &
-               temp, temp2, temp3, emissivity((n-1)*nchan+1:n*nchan), &
-               iv%instid(inst)%emiss(:,n))
+               temp, temp2, temp3, emissivity((n-1)*nchan+1:n*nchan))
+            iv%instid(inst)%emiss(:,n) = emissivity((n-1)*nchan+1:n*nchan)%emis_out 
          end if
          iv%instid(inst)%tb_xb(:,n)=temp(:)
          iv%instid(inst)%rad_xb(:,n)=temp2(:)
@@ -375,16 +377,16 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
       deallocate (emissivity)
 
       if ( rttov_emis_atlas_ir > 0 .or. rttov_emis_atlas_mw > 0 ) then
-         call rttov_deallocate_atlas(coefs(inst)%coef)
+         call rttov_deallocate_emis_atlas(coefs(inst))
       end if
 
    end do        ! end loop for sensor
-   
+
    if (trace_use) call da_trace_exit("da_get_innov_vector_rttov")
 #else
     call da_error(__FILE__,__LINE__, &
        (/"Must compile with $RTTOV option for radiances"/))
 #endif
- 
+
 end subroutine da_get_innov_vector_rttov
 

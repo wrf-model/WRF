@@ -567,6 +567,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !         7                    Model surface press at obs loc (U-points)
 !         8                    Model surface press at obs loc (V-points)
 !         9                    RKO at U-points
+!         10                   Model Q at obs loc (T-points)
 
 !-----------------------------------------------------------------------
 !
@@ -1293,6 +1294,19 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                       )*QVB(IOB,KOBP,JOB+1)+DxOB*                       &
                       QVB(IOB+1,KOBP,JOB+1))))
 
+!           Store model moisture value (not the error!) at the location
+!           that the error was calculated
+            ERRF(10,N)=ERRF(10,N)+((1.-DZOB)*((1.-DyOB)*((1.- &
+                      DxOB)*QVB(IOB,KOB,JOB)+DxOB*                      &
+                      QVB(IOB+1,KOB,JOB))+DyOB*((1.-DxOB)*              &
+                      QVB(IOB,KOB,JOB+1)+DxOB*                          &
+                      QVB(IOB+1,KOB,JOB+1)))+DZOB*((1.-                 &
+                      DyOB)*((1.-DxOB)*QVB(IOB,KOBP,JOB)+DxOB           &
+                      *QVB(IOB+1,KOBP,JOB))+DyOB*((1.-DxOB              &
+                      )*QVB(IOB,KOBP,JOB+1)+DxOB*                       &
+                      QVB(IOB+1,KOBP,JOB+1))))
+
+
 !           Store model surface pressure (not the error!) at T-point
             ERRF(6,N)= .001*                                            &
                       ((1.-DyOB)*((1.-DxOB)*pbase(IOB,1,JOB)+DxOB*      &
@@ -1522,7 +1536,8 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                        iprt,                                          &
                        ids,ide, jds,jde, kds,kde,                     &  ! domain dims
                        ims,ime, jms,jme, kms,kme,                     &  ! memory dims
-                       its,ite, jts,jte, kts,kte )                       ! tile   dims
+                       its,ite, jts,jte, kts,kte,                     &  ! tile   dims
+                       qvb, obs_scl_neg_qv_innov ) ! Water vapor mixing ratio / scale negative qv innovations
 
 !-----------------------------------------------------------------------
   USE module_model_constants
@@ -1650,6 +1665,11 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 ! INTEGER, INTENT(IN)  :: vik2(its:ite) ! Vertical infl k-level for ramp
   REAL, INTENT(IN)     :: zslab(ims:ime, kms:kme)    ! model ht above sea level (m)
   LOGICAL, INTENT(IN)  :: iprt                       ! print flag
+  REAL,   INTENT(IN)   :: qvb( ims:ime, kms:kme, jms:jme ) ! Water vapor mixing ratio (QV)
+  INTEGER, INTENT(IN)  :: obs_scl_neg_qv_innov ! User choice on whether negative qv innovations should be scaled
+  REAL                 :: qvb_at_cur_loc, qvb_at_ob_loc ! QV at the current model or the observation location
+  REAL                 :: SCALE_FACTOR_NEG_QV_INNOV ! Multiply QV innovation by this factor to avoid nudging toward negative QV
+  REAL                 :: QVB_CUR_LOC_OVER_OB_LOC ! Ratio of QV at current model location compared to ob location
 
 ! Local variables
   integer :: mm(maxdom)
@@ -1926,6 +1946,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
           RX=RJ-RB(N)
 ! WEIGHTS FOR THE 3-D VARIABLES
           ERFIVR=ERRF(IVAR,N)
+          QVB_AT_OB_LOC=ERRF(10,N)
  
 !ajb Compute and add weights to sum only if nudge_pbl switch is on.
           if(nudge_pbl) then
@@ -1981,8 +2002,42 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                   wtsig(k)=float(komax-k+1)/dk
                   WT(I,K)=WT(I,K)+TIMEWT*WTSIG(K)*WTIJ(i)
 
+                  !See Reen et al. poster/extended abstract (P13) from 2013 WRF
+                  !User's Workshop regarding the following moisture innovation 
+                  !scaling code.
+                  !If dealing with moisture and user chose to scale certain
+                  !negative QV innovations
+                  IF((IVAR.EQ.4).AND.(obs_scl_neg_qv_innov.gt.0)) THEN
+                   QVB_AT_CUR_LOC = MAX(QVB(I,K,J),0.0)
+                   !If the moisture innovation is negative and the model moisture
+                   ! is less at the current location where we are about to apply 
+                   ! the innovation than at the location where the ob was taken
+                   IF((ERFIVR.LT.0).AND.(QVB_AT_CUR_LOC.LT.QVB_AT_OB_LOC)) THEN
+                    !The ratio of the model moisture at the current location 
+                    ! compared to the ob location will be used to scale the
+                    !  innovation.
+                    QVB_CUR_LOC_OVER_OB_LOC = QVB_AT_CUR_LOC/QVB_AT_OB_LOC
+                    IF(obs_scl_neg_qv_innov.eq.1) THEN
+                     !Limit the innovation such that it cannot nudge towards a
+                     !negative value
+                     SCALE_FACTOR_NEG_QV_INNOV = MIN(1.0,ABS(QVB_AT_CUR_LOC/ERFIVR))
+                    ELSE
+                     !If the user chose a value for obs_scl_neg_qv_innov that
+                     !this code is unaware of, stop WRF
+                     IF (iprt) then
+                      write(msg,*) 'Unknown value of obs_scl_neg_qv_innov = ',obs_scl_neg_qv_innov
+                      call wrf_message(msg)
+                     ENDIF
+                     call wrf_error_fatal ( 'module_fddaobs_rtfdda: nudob: Unknown value of obs_scl_neg_qv_innov' )
+                    ENDIF
+                    !Scale the innovation
+                    ERFIVR = ERFIVR*SCALE_FACTOR_NEG_QV_INNOV
+                   ENDIF
+
+                  ENDIF
                   WT2ERR(I,K)=WT2ERR(I,K)+TIMEWT*TIMEWT*WTIJ(i)*WTIJ(i)*WTSIG(K)    &
                               *WTSIG(K)*ERFIVR
+
                 enddo
               ENDDO
 
@@ -2024,7 +2079,43 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
                   if(wtsig(k).le.0.0) EXIT LML
                     WT(I,K)=WT(I,K)+TIMEWT*WTSIG(K)*WTIJ(i)
-                    WT2ERR(I,K)=WT2ERR(I,K)+TIMEWT*TIMEWT*WTIJ(i)*WTIJ(i)*WTSIG(K)    &
+
+                   !See Reen et al. poster/extended abstract (P13) from 2013 WRF
+                   !User's Workshop regarding the following moisture innovation
+                   !If dealing with moisture and user chose to scale certain
+                   !negative QV innovations
+                   IF((IVAR.EQ.4).AND.(obs_scl_neg_qv_innov.gt.0)) THEN
+                    QVB_AT_CUR_LOC = MAX(QVB(I,K,J),0.0)
+                    !If the moisture innovation is negative and the model
+                    !moisture
+                    ! is less at the current location where we are about to apply
+                    ! the innovation than at the location where the ob was taken
+                    IF((ERFIVR.LT.0).AND.(QVB_AT_CUR_LOC.LT.QVB_AT_OB_LOC)) THEN
+                     !The ratio of the model moisture at the current location
+                     ! compared to the ob location will be used to scale the
+                     !  innovation.
+                     QVB_CUR_LOC_OVER_OB_LOC = QVB_AT_CUR_LOC/QVB_AT_OB_LOC
+                     IF(obs_scl_neg_qv_innov.eq.1) THEN
+                      !Limit the innovation such that it cannot nudge towards a
+                      !negative value
+                      SCALE_FACTOR_NEG_QV_INNOV = MIN(1.0,ABS(QVB_AT_CUR_LOC/ERFIVR))
+                     ELSE
+                      !If the user chose a value for obs_scl_neg_qv_innov that
+                      !this code is unaware of, stop WRF
+                      IF (iprt) then
+                       write(msg,*) 'Unknown value of obs_scl_neg_qv_innov = ',obs_scl_neg_qv_innov
+                       call wrf_message(msg)
+                      ENDIF
+                      call wrf_error_fatal ( 'module_fddaobs_rtfdda: nudob: Unknown value of obs_scl_neg_qv_innov' )
+                     ENDIF
+                     !Scale the innovation
+                     ERFIVR = ERFIVR*SCALE_FACTOR_NEG_QV_INNOV
+
+                    ENDIF
+                   ENDIF
+
+
+                   WT2ERR(I,K)=WT2ERR(I,K)+TIMEWT*TIMEWT*WTIJ(i)*WTIJ(i)*WTSIG(K)    &
                                 *WTSIG(K)*ERFIVR
                   enddo LML
               ENDDO
@@ -2102,6 +2193,8 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 ! WEIGHTS FOR THE 3-D VARIABLES
 !
           ERFIVR=ERRF(IVAR,N)
+! Model QV at the observation location
+          QVB_AT_OB_LOC=ERRF(10,N)
 ! jc
           nsndlev=int(nlevs_ob(n)-lev_in_ob(n))+1
 ! yliu start
@@ -2208,6 +2301,39 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !             print *,'k,pijk,pob,rinprs,wtsig=',k,pijk,pob,rinprs,wtsig(k)
 ! Now calculate WT and WT2ERR for each i,j,k point                      cajb
                   WT(I,K)=WT(I,K)+TIMEWT*WTIJ(i)*wtsig(k)
+
+
+                  !See Reen et al. poster/extended abstract (P13) from 2013 WRF
+                  !User's Workshop regarding the following moisture innovation
+                  !scaling code.
+                  !If dealing with moisture and user chose to scale certain
+                  !negative QV innovations
+                  IF((IVAR.EQ.4).AND.(obs_scl_neg_qv_innov.GT.0)) THEN
+                   QVB_AT_CUR_LOC = MAX(QVB(I,K,J),0.0)
+                   !If the moisture innovation is negative and the model moisture
+                   ! is less at the current location where we are about to apply
+                   ! the innovation than at the location where the ob was taken
+                   IF((ERFIVR.LT.0).AND.(QVB_AT_CUR_LOC.LT.QVB_AT_OB_LOC)) THEN
+                    !The ratio of the model moisture at the current location
+                    ! compared to the ob location will be used to scale the
+                    !  innovation.
+                    QVB_CUR_LOC_OVER_OB_LOC = QVB_AT_CUR_LOC/QVB_AT_OB_LOC
+                    IF(obs_scl_neg_qv_innov.eq.1) THEN
+                     !Limit the innovation such that it cannot nudge towards a
+                     !negative value
+                     SCALE_FACTOR_NEG_QV_INNOV = MIN(1.0,ABS(QVB_AT_CUR_LOC/ERFIVR))
+                    ELSE
+                     !If the user chose an value for obs_scl_neg_qv_innov that
+                     !this code is unaware of, stop WRF
+                     IF (iprt) then
+                      write(msg,*) 'Unknown value of obs_scl_neg_qv_innov = ',obs_scl_neg_qv_innov
+                      call wrf_message(msg)
+                     ENDIF
+                     call wrf_error_fatal ( 'module_fddaobs_rtfdda: nudob: Unknown value of obs_scl_neg_qv_innov' )
+                    ENDIF
+                    reserf(k) = reserf(k)*SCALE_FACTOR_NEG_QV_INNOV
+                   ENDIF
+                  ENDIF
 
                   WT2ERR(I,K)=WT2ERR(I,K)+TIMEWT*TIMEWT*WTIJ(i)*WTIJ(i)*        &
                               reserf(k)*wtsig(k)*wtsig(k)
@@ -2323,6 +2449,44 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                 pdiffj=alog(pijk/poblo)/alog(pobhi/poblo)
                 reserf(k)=errf(ivar,nlo)+                               &
                             (errf(ivar,nhi)-errf(ivar,nlo))*pdiffj
+
+                !See Reen et al. poster/extended abstract (P13) from 2013 WRF
+                !User's Workshop regarding the following moisture innovation
+                !scaling code.
+                !If dealing with moisture and user chose to scale certain
+                !negative QV innovations
+                IF((IVAR.EQ.4).AND.(obs_scl_neg_qv_innov.GT.0)) THEN
+                 QVB_AT_CUR_LOC = QVB(I,K,J)
+                 !Vertically intepolate observed moisture
+                 QVB_AT_OB_LOC=errf(10,nlo)+                               &
+                              (errf(10,nhi)-errf(10,nlo))*pdiffj
+                 !If the moisture innovation is negative and the model
+                 !moisture
+                 ! is less at the current location where we are about to apply
+                 ! the innovation than at the location where the ob was taken
+                 IF((reserf(k).LT.0).AND.(QVB_AT_CUR_LOC.LT.QVB_AT_OB_LOC)) THEN
+                  !The ratio of the model moisture at the current location
+                  ! compared to the ob location will be used to scale the
+                  !  innovation.
+                  QVB_CUR_LOC_OVER_OB_LOC = QVB_AT_CUR_LOC/QVB_AT_OB_LOC
+                  IF(obs_scl_neg_qv_innov.eq.1) THEN
+                   !Limit the innovation such that it cannot nudge towards a
+                   !negative value
+                   SCALE_FACTOR_NEG_QV_INNOV = MIN(1.0,ABS(QVB_AT_CUR_LOC/reserf(k)))
+                  ELSE
+                   !If the user chose a value for obs_scl_neg_qv_innov that
+                   !this code is unaware of, stop WRF
+                   IF (iprt) then
+                    write(msg,*) 'Unknown value of obs_scl_neg_qv_innov = ',obs_scl_neg_qv_innov
+                    call wrf_message(msg)
+                   ENDIF
+                   call wrf_error_fatal ( 'module_fddaobs_rtfdda: nudob: Unknown value of obs_scl_neg_qv_innov' )
+                  ENDIF
+                  reserf(k) = reserf(k)*SCALE_FACTOR_NEG_QV_INNOV
+                 ENDIF
+
+                ENDIF
+
                 wtsig(k)=1.
   
  1501           continue

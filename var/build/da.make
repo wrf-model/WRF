@@ -144,7 +144,10 @@ WRFVAR_OBJS = \
    nl_set_4_routines.o \
    nl_set_5_routines.o \
    nl_set_6_routines.o \
-   nl_set_7_routines.o 
+   nl_set_7_routines.o \
+   interp_fcn.o  \
+   sint.o        \
+   da_netcdf_interface.o
 
 # Aliases
 var : wrfvar

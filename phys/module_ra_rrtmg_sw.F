@@ -9126,7 +9126,7 @@
 !           input aerosol optical depth at 0.55 microns for each aerosol type (ecaer)
 ! iaer = 10, input total aerosol optical depth, single scattering albedo 
 !            and asymmetry parameter (tauaer, ssaaer, asmaer) directly
-      if ( aer_opt .eq. 0 ) then
+      if ( aer_opt .eq. 0 .or. aer_opt .eq. 2 ) then
       iaer = 10
       else if ( aer_opt .eq. 1 ) then
       iaer = 6
@@ -9807,8 +9807,9 @@ CONTAINS
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
                        swupflx, swupflxc, swdnflx, swdnflxc,      &
-                       swddir, swddni, swddif,                    & ! jararias, 2013/08/10
-                       xcoszen,julian                             & ! jararias, 14/08/2013 
+                       tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
+                       swddir, swddni, swddif,                    & ! jararias 2013/08
+                       xcoszen,julian                             & ! jararias 2013/08
                                                                   )
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -9879,8 +9880,11 @@ CONTAINS
             julian      ! julian day (1-366)
    real, dimension(ims:ime,jms:jme), optional, intent(in) :: &
             xcoszen     ! cosine of the solar zenith angle
+  real, dimension(ims:ime,kms:kme,jms:jme,nbndsw), optional,      &
+        intent(in)                                :: tauaer3d_sw, &
+                                                     ssaaer3d_sw, &
+                                                     asyaer3d_sw
 ! ------------------------ jararias end snippet -----------------
-
 
    REAL, INTENT(IN  )   ::                                   R,G
 !
@@ -10751,6 +10755,19 @@ CONTAINS
          asmaer(ncol,k,nb) = 0.
       end do
       end do
+
+      if ( present (tauaer3d_sw) ) then
+! ---- jararias 11/2012
+         if ( aer_opt .eq. 2) then
+            do nb=1,nbndsw
+               do k=kts,kte
+                  tauaer(ncol,k,nb)=tauaer3d_sw(i,k,j,nb)
+                  ssaaer(ncol,k,nb)=ssaaer3d_sw(i,k,j,nb)
+                  asmaer(ncol,k,nb)=asyaer3d_sw(i,k,j,nb)
+               end do
+            end do
+         end if
+      end if
 
 #ifdef WRF_CHEM
    IF ( AER_RA_FEEDBACK == 1) then

@@ -45,6 +45,7 @@ MODULE MODULE_CPL_LAND
       node_info(8,my_global_id+1) = jstart
       node_info(9,my_global_id+1) = jend
 
+
       call send_info()
       call find_left()
       call find_right()

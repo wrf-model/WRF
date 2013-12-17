@@ -30,6 +30,9 @@
 #endif
 
 
+
+!          write(6,*) "yyww RT_DOMAIN(did)%SH2OX(15,1,7)= ", RT_DOMAIN(did)%SH2OX(15,1,7)
+
          call drive_RT( RT_DOMAIN(did)%IX,RT_DOMAIN(did)%JX,nlst_rt(did)%NSOIL,&
              RT_DOMAIN(did)%IXRT,RT_DOMAIN(did)%JXRT,  &
              RT_DOMAIN(did)%SMC,RT_DOMAIN(did)%STC,RT_DOMAIN(did)%SH2OX, &

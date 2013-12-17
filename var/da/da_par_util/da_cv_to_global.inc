@@ -1,4 +1,4 @@
-subroutine da_cv_to_global(cv_size, cv_size_global, x, grid, mzs, xg)
+subroutine da_cv_to_global(cv_size, cv_size_global, x, grid, mzs, xg )
 
 
    !-----------------------------------------------------------------------
@@ -53,12 +53,14 @@ subroutine da_cv_to_global(cv_size, cv_size_global, x, grid, mzs, xg)
    allocate(vv_x%v7(ims:ime,jms:jme,mzs(7)))
    allocate(vv_x%v8(ims:ime,jms:jme,mzs(8)))
    allocate(vv_x%v9(ims:ime,jms:jme,mzs(9)))
-   allocate(vv_x%alpha(ims:ime,jms:jme,kms:kme,mzs(11)))
+!  allocate(vv_x%alpha(ims:ime,jms:jme,kms:kme,mzs(11)))
+   allocate(vv_x%alpha(ims_int:ime_int,jms_int:jme_int,kms_int:kme_int,mzs(11)))
 #else
-   allocate(vv_x%alpha(ims:ime,jms:jme,kms:kme,mzs(7)))
+!  allocate(vv_x%alpha(ims:ime,jms:jme,kms:kme,mzs(7)))
+   allocate(vv_x%alpha(ims_int:ime_int,jms_int:jme_int,kms_int:kme_int,mzs(7)))
 #endif
 
-   call da_cv_to_vv (cv_size, x, mzs, vv_x)
+   call da_cv_to_vv (cv_size, x, mzs, vv_x )
 
    if (rootproc) then
       ! allocate vv_xg
@@ -72,9 +74,11 @@ subroutine da_cv_to_global(cv_size, cv_size_global, x, grid, mzs, xg)
       allocate(vv_xg%v7(ids:ide,jds:jde,mzs(7)))
       allocate(vv_xg%v8(ids:ide,jds:jde,mzs(8)))
       allocate(vv_xg%v9(ids:ide,jds:jde,mzs(9)))
-      allocate(vv_xg%alpha(ids:ide,jds:jde,kds:kde,mzs(11)))
+!     allocate(vv_xg%alpha(ids:ide,jds:jde,kds:kde,mzs(11)))
+      allocate(vv_xg%alpha(ids_int:ide_int,jds_int:jde_int,kds_int:kde_int,mzs(11)))
 #else
-      allocate(vv_xg%alpha(ids:ide,jds:jde,kds:kde,mzs(7)))
+!     allocate(vv_xg%alpha(ids:ide,jds:jde,kds:kde,mzs(7)))
+      allocate(vv_xg%alpha(ids_int:ide_int,jds_int:jde_int,kds_int:kde_int,mzs(7)))
 #endif
    else
       ! Allocate dummy array for non-monitor process to keep Fortran
@@ -111,13 +115,21 @@ subroutine da_cv_to_global(cv_size, cv_size_global, x, grid, mzs, xg)
 #ifdef CLOUD_CV
    if ( mzs(11) > 0 ) then
       do n = 1, mzs(11) ! Ensemble size
-         call da_patch_to_global(grid, vv_x%alpha(:,:,:,n), vv_xg%alpha(:,:,:,n), mzs(10))
+         if ( anal_type_hybrid_dual_res ) then
+            call da_patch_to_global_dual_res(grid%intermediate_grid, vv_x%alpha(:,:,:,n), vv_xg%alpha(:,:,:,n), mzs(10))
+         else
+            call da_patch_to_global(grid, vv_x%alpha(:,:,:,n), vv_xg%alpha(:,:,:,n), mzs(10))
+         endif
       end do
    end if
 #else
    if ( mzs(7) > 0 ) then
       do n = 1, mzs(7) ! Ensemble size
-         call da_patch_to_global(grid, vv_x%alpha(:,:,:,n), vv_xg%alpha(:,:,:,n), mzs(6))
+         if ( anal_type_hybrid_dual_res ) then
+            call da_patch_to_global_dual_res(grid%intermediate_grid, vv_x%alpha(:,:,:,n), vv_xg%alpha(:,:,:,n), mzs(10))
+         else
+            call da_patch_to_global(grid, vv_x%alpha(:,:,:,n), vv_xg%alpha(:,:,:,n), mzs(6))
+         endif
       end do
    end if
 #endif

@@ -70,7 +70,7 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
   real(r_kind),dimension(10) :: sscale
   real(r_kind),dimension(n_totchan) :: temperature
   real(r_kind),allocatable,dimension(:):: data_all
-  real(r_kind) disterr,disterrmax,rlon00,rlat00
+  real(r_kind) disterr,disterrmax,rlon00,rlat00,Effective_Temperature
 
   logical          :: assim,valid
   logical          :: iasi
@@ -371,7 +371,18 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
                     exit scaleloop
                  end if
               end do scaleloop
-              call crtm_planck_temperature(inst,i,radi,temperature(i))			  
+              if (rtm_option == rtm_option_crtm) then
+#ifdef CRTM
+                 call CRTM_Planck_Temperature(inst,i,radi,temperature(i))
+#endif
+              else if (rtm_option == rtm_option_rttov) then
+#ifdef RTTOV
+                 Effective_Temperature = LOG( ( coefs(inst)%coef%planck1(i) / radi ) + 1 )
+                 Effective_Temperature = coefs(inst)%coef%planck2(i)/Effective_Temperature
+                 temperature(i) = ( Effective_Temperature - coefs(inst)%coef%ff_bco(i) ) / &
+                                  coefs(inst)%coef%ff_bcs(i)
+#endif
+              end if
               if(temperature(i) < tbmin .or. temperature(i) > tbmax ) then
                  temperature(i) = min(tbmax,max(zero,temperature(i)))
 
@@ -384,7 +395,7 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
          end do
          if(iskip > 0)write(6,*) ' READ_IASI : iskip > 0 ',iskip
 !         if( iskip >= 10 )cycle read_loop 		
-         data_all(5) = sat_zenang*deg2rad     ! satellite zenith angle (rad)
+         data_all(5) = sat_zenang             ! satellite zenith angle (deg)
          data_all(6) = allspot(11)            ! satellite azimuth angle (deg)
          data_all(9) = allspot(12)            ! solar zenith angle (deg)
          data_all(10)= allspot(13)            ! solar azimuth angle (deg)

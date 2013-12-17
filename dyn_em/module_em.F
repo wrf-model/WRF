@@ -1631,6 +1631,8 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
                      RQISHTEN,RQSSHTEN,RQGSHTEN,                       &
                      RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RQVNDGDTEN,        &
                      RMUNDGDTEN,                                       &
+                     scalar, scalar_tend, num_scalar,                  &
+                     tracer, tracer_tend, num_tracer,                  &
                      ids,ide, jds,jde, kds,kde,                        &
                      ims,ime, jms,jme, kms,kme,                        &
                      its,ite, jts,jte, kts,kte                         )
@@ -1639,6 +1641,7 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
 
       TYPE(grid_config_rec_type), INTENT(IN)     ::      config_flags
 
+      INTEGER,  INTENT(IN   )   ::          num_scalar, num_tracer
       INTEGER,  INTENT(IN   )   ::          ids,ide, jds,jde, kds,kde, &
                                             ims,ime, jms,jme, kms,kme, &
                                             its,ite, jts,jte, kts,kte
@@ -1699,7 +1702,14 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
       REAL,     DIMENSION( ims:ime, jms:jme )               , &
                 INTENT(INOUT)   ::                           RMUNDGDTEN
 
-      INTEGER :: i,k,j
+! 4d arrays
+
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer),INTENT(INOUT)   :: tracer_tend
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT)   :: scalar_tend
+
+      INTEGER :: i,k,j, im
       INTEGER :: itf,ktf,jtf,itsu,jtsv
 
 !-----------------------------------------------------------------------
@@ -1954,6 +1964,29 @@ SUBROUTINE calculate_phy_tend (config_flags,mu,muu,muv,pi3d,           &
       ENDIF
 
     ENDIF
+
+! 4d couple scalar tendencies that have only uncoupled physics tendencies at this point
+
+   DO im = PARAM_FIRST_SCALAR,num_scalar
+         DO J=jts,jtf
+         DO K=kts,ktf
+         DO I=its,itf
+            scalar_tend(I,K,J,im)=mu(I,J)*scalar_tend(I,K,J,im)
+         ENDDO
+         ENDDO
+         ENDDO
+   ENDDO
+
+   DO im = PARAM_FIRST_SCALAR,num_tracer
+         DO J=jts,jtf
+         DO K=kts,ktf
+         DO I=its,itf
+            tracer_tend(I,K,J,im)=mu(I,J)*tracer_tend(I,K,J,im)
+         ENDDO
+         ENDDO
+         ENDDO
+   ENDDO
+
 
 END SUBROUTINE calculate_phy_tend
 

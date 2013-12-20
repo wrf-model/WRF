@@ -646,6 +646,11 @@ integer myproc
    obs_twindo=config_flags%obs_twindo
    oml_hml0=config_flags%oml_hml0
    sf_ocean_physics=config_flags%sf_ocean_physics
+#else
+   obs_twindo_cg=0
+   obs_twindo=0
+   oml_hml0=0
+   omlcall=0
 #endif
 
 !..Added G. Thompson to determine if we will compute and pass radiative

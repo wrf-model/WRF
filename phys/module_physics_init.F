@@ -650,7 +650,6 @@ integer myproc
    obs_twindo_cg=0
    obs_twindo=0
    oml_hml0=0
-   omlcall=0
 #endif
 
 !..Added G. Thompson to determine if we will compute and pass radiative

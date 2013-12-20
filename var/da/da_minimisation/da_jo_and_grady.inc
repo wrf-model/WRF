@@ -41,6 +41,15 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
             '   jo%sound_q      ', jo%sound_q
       end if
 
+   else
+      jo % sound_u = 0.0
+      jo % sound_v = 0.0
+      jo % sound_t = 0.0
+      jo % sound_q = 0.0
+      jo_sound     = 0.0
+   end if
+
+   if (iv%info(sonde_sfc)%nlocal > 0) then
       call da_jo_and_grady_sonde_sfc(iv, re, jo, jo_grad_y)
       jo_sonde_sfc = jo%sonde_sfc_u + jo%sonde_sfc_v + jo%sonde_sfc_t + &
          jo%sonde_sfc_q + jo%sonde_sfc_p
@@ -55,18 +64,15 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
             '   jo%sonde_sfc_q  ', jo%sonde_sfc_q
       end if
    else
-      jo % sound_u = 0.0
-      jo % sound_v = 0.0
-      jo % sound_t = 0.0
-      jo % sound_q = 0.0
       jo % sonde_sfc_u = 0.0
       jo % sonde_sfc_v = 0.0
       jo % sonde_sfc_t = 0.0
       jo % sonde_sfc_p = 0.0
       jo % sonde_sfc_q = 0.0
-      jo_sound     = 0.0
       jo_sonde_sfc = 0.0
    end if
+
+
 
    if (iv%info(mtgirs)%nlocal > 0) then
       call da_jo_and_grady_mtgirs(iv, re, jo, jo_grad_y)
@@ -101,6 +107,15 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
             '   jo%tamdar_t      ', jo%tamdar_t, &
             '   jo%tamdar_q      ', jo%tamdar_q
       end if
+   else
+      jo % tamdar_u = 0.0
+      jo % tamdar_v = 0.0
+      jo % tamdar_t = 0.0
+      jo % tamdar_q = 0.0
+      jo_tamdar     = 0.0
+   end if
+
+   if (iv%info(tamdar_sfc)%nlocal > 0) then
       call da_jo_and_grady_tamdar_sfc(iv, re, jo, jo_grad_y)
       jo_tamdar_sfc = jo%tamdar_sfc_u + jo%tamdar_sfc_v + jo%tamdar_sfc_t + &
          jo%tamdar_sfc_q + jo%tamdar_sfc_p
@@ -116,17 +131,12 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
       end if
 
    else
-      jo % tamdar_u = 0.0
-      jo % tamdar_v = 0.0
-      jo % tamdar_t = 0.0
-      jo % tamdar_q = 0.0
       jo % tamdar_sfc_u = 0.0
       jo % tamdar_sfc_v = 0.0
       jo % tamdar_sfc_t = 0.0
       jo % tamdar_sfc_p = 0.0
       jo % tamdar_sfc_q = 0.0
-      jo_tamdar     = 0.0
-      jo_tamdar_sfc = 0.0
+      jo_tamdar_sfc     = 0.0
 
    end if
 

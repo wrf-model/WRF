@@ -123,7 +123,11 @@ subroutine da_random_omb_all(iv, ob)
             call da_random_omb(iv % sound(n) % q(k) % error, ob % sound(n) % q(k), &
                               iv % sound(n) % q(k) % qc, iv % sound(n) % q(k) % inv)
          end do
+      end do
+   end if
 
+   if (iv%info(sonde_sfc)%nlocal > 0) then
+      do n = 1, iv%info(sonde_sfc)%nlocal
          call da_random_omb(iv % sonde_sfc(n) % u % error, ob % sonde_sfc(n) % u, &
                              iv % sonde_sfc(n) % u % qc, iv % sonde_sfc(n) % u % inv)
          call da_random_omb(iv % sonde_sfc(n) % v % error, ob % sonde_sfc(n) % v, &
@@ -361,6 +365,11 @@ subroutine da_random_omb_all(iv, ob)
             call da_random_omb(iv %  tamdar(n) % q(k) % error, ob %  tamdar(n) % q(k), &
                               iv %  tamdar(n) % q(k) % qc, iv %  tamdar(n) % q(k) % inv)
          end do
+      end do
+   end if
+
+   if (iv%info(tamdar_sfc)%nlocal > 0) then
+      do n = 1, iv%info(tamdar_sfc)%nlocal
          call da_random_omb(iv % tamdar_sfc(n) % u % error, ob % tamdar_sfc(n) % u, &
                              iv % tamdar_sfc(n) % u % qc, iv % tamdar_sfc(n) % u % inv)
          call da_random_omb(iv % tamdar_sfc(n) % v % error, ob % tamdar_sfc(n) % v, &

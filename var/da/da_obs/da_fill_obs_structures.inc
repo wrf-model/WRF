@@ -295,6 +295,11 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
             iv%sound(n)% q(k) % qc = missing_data
          end if   !cys_add
          end do
+      end do
+   end if
+
+   if (iv%info(sonde_sfc)%nlocal > 0) then
+      do n = 1, iv%info(sonde_sfc)%nlocal
          ob % sonde_sfc(n) % u = iv % sonde_sfc(n) % u % inv
          ob % sonde_sfc(n) % v = iv % sonde_sfc(n) % v % inv
          ob % sonde_sfc(n) % t = iv % sonde_sfc(n) % t % inv
@@ -563,6 +568,12 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
          if (iv%tamdar(n)% q(k) % error == missing_r) &
             iv%tamdar(n)% q(k) % qc = missing_data
          end do
+      end do
+   end if
+
+   if (iv%info(tamdar_sfc)%nlocal > 0) then
+      do n = 1, iv%info(tamdar_sfc)%nlocal
+
          ob % tamdar_sfc(n) % u = iv % tamdar_sfc(n) % u % inv
          ob % tamdar_sfc(n) % v = iv % tamdar_sfc(n) % v % inv
          ob % tamdar_sfc(n) % t = iv % tamdar_sfc(n) % t % inv

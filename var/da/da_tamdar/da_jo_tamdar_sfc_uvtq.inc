@@ -16,7 +16,7 @@ subroutine da_jo_tamdar_sfc_uvtq(iv, re, jo_grad_y, jo)
 
    if (trace_use_dull) call da_trace_entry("da_jo_tamdar_sfc_uvtq")
 
-   do n=1, iv%info(tamdar)%nlocal
+   do n=1, iv%info(tamdar_sfc)%nlocal
       if (iv%info(tamdar_sfc)%proc_domain(1,n)) then
         jo % tamdar_sfc_u = jo % tamdar_sfc_u - re%tamdar_sfc(n)%u * jo_grad_y%tamdar_sfc(n)%u
         jo % tamdar_sfc_v = jo % tamdar_sfc_v - re%tamdar_sfc(n)%v * jo_grad_y%tamdar_sfc(n)%v

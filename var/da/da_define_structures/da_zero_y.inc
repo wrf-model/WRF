@@ -104,9 +104,12 @@ subroutine da_zero_y( iv, y, value )
          y % sound(n) % v(1:nlevels) = value
          y % sound(n) % t(1:nlevels) = value
          y % sound(n) % q(1:nlevels) = value
+      end do
+   end if
 
-         ! Initialize sonde_sfc
-
+   ! Initialize sonde_sfc
+   if ( y % nlocal(sonde_sfc) > 0 ) then
+      do n = 1, y % nlocal(sonde_sfc)
          y % sonde_sfc(n) % u = value
          y % sonde_sfc(n) % v = value
          y % sonde_sfc(n) % t = value
@@ -135,17 +138,19 @@ subroutine da_zero_y( iv, y, value )
          y % tamdar(n) % v(1:nlevels) = 0.0
          y % tamdar(n) % t(1:nlevels) = 0.0
          y % tamdar(n) % q(1:nlevels) = 0.0
-         ! Initialize tamdar_sfc
+
+      end do
+   end if
+
+! Initialize tamdar_sfc
+   if ( y % nlocal(tamdar_sfc) > 0 ) then
 
          y % tamdar_sfc(n) % u = 0.0
          y % tamdar_sfc(n) % v = 0.0
          y % tamdar_sfc(n) % t = 0.0
          y % tamdar_sfc(n) % p = 0.0
          y % tamdar_sfc(n) % q = 0.0
-
-      end do
    end if
-
 
    if ( y % nlocal(bogus) > 0 ) then
       do n = 1, y % nlocal(bogus)

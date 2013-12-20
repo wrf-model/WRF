@@ -33,11 +33,10 @@ subroutine da_deallocate_y(y)
          deallocate (y % sound(n)%t)
          deallocate (y % sound(n)%q)
       end do
-
       deallocate (y % sound)
-
-      deallocate (y % sonde_sfc)
    end if
+
+   if (y % nlocal(sonde_sfc) > 0) deallocate (y % sonde_sfc)
       
    if (y % nlocal(mtgirs) > 0) then
       do n = 1, y % nlocal(mtgirs)
@@ -60,9 +59,9 @@ subroutine da_deallocate_y(y)
       end do
 
       deallocate (y % tamdar)
-      deallocate (y % tamdar_sfc)
    end if
 
+   if (y % nlocal(tamdar_sfc) > 0) deallocate (y % tamdar_sfc)
 
    if (y % nlocal(pilot) > 0) then
       do n = 1, y % nlocal(pilot)

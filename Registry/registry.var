@@ -114,7 +114,7 @@ rconfig   integer   ob_format               namelist,wrfvar3  1  2        - "ob_
 rconfig   integer   ob_format_gpsro         namelist,wrfvar3  1  2        - "ob_format_gpsro"          ""  "1=BUFR,2=ASCII"
 rconfig   integer   num_fgat_time           namelist,wrfvar3  1  1        - "num_fgat_time"            ""  ""
 rconfig   logical   thin_conv               namelist,wrfvar4  1  .true.   - "thin_conv"                ""  ""
-rconfig   real      thin_mesh_conv          namelist,wrfvar4  max_instruments  20.0   - "thin_mesh_conv"            ""  ""
+rconfig   real      thin_mesh_conv          namelist,wrfvar4  num_ob_indexes 20.0   - "thin_mesh_conv"            ""  ""
 rconfig   logical   thin_rainobs            namelist,wrfvar4  1  .true.   - "thin_rainobs"             ""  ""
 rconfig   logical   use_synopobs            namelist,wrfvar4  1  .true.   - "use_synopobs"             ""  ""
 rconfig   logical   use_shipsobs            namelist,wrfvar4  1  .true.   - "use_shipsobs"             ""  ""

@@ -154,8 +154,12 @@ module da_define_structures
       integer                             :: max_lev
       integer                             :: nlocal
       integer                             :: ntotal
+      integer                             :: thin_nlocal
+      integer                             :: thin_ntotal
       integer                             :: plocal(0:max_fgat_time)
       integer                             :: ptotal(0:max_fgat_time)
+      integer                             :: thin_plocal(0:max_fgat_time)
+      integer                             :: thin_ptotal(0:max_fgat_time)
       integer                             :: n1
       integer                             :: n2
       character (len = 40) , allocatable  :: name(:)       ! Station name

@@ -28,9 +28,9 @@ subroutine da_deallocate_observations (iv)
       end do
 
       deallocate (iv%sound)
-
-      deallocate (iv%sonde_sfc)
    end if
+
+   if (iv%info(sonde_sfc)%nlocal > 0) deallocate (iv%sonde_sfc)
       
    if (iv%info(mtgirs)%nlocal > 0) then
       do n = 1, iv%info(mtgirs)%nlocal
@@ -61,8 +61,8 @@ subroutine da_deallocate_observations (iv)
       end do
 
       deallocate (iv%tamdar)
-      deallocate (iv%tamdar_sfc)
    end if
+   if (iv%info(tamdar_sfc)%nlocal > 0) deallocate (iv%tamdar_sfc)
    if (iv%info(synop)%nlocal > 0) deallocate (iv%synop)
 
    if (iv%info(airep)%nlocal > 0) then

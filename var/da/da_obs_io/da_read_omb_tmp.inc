@@ -30,7 +30,7 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in, nc)
                    dir_obs, dir_inv, dir_inc, &
                    u_ana, v_ana, u_fg, v_fg, sp_fg, dir_fg, sp_ana, dir_ana, &
                    uobs, uinv, uinc, vobs, vinv, vinc, spobs, spinv, spinc, dirobs, dirinv, dirinc, &
-		   rain_obs, rain_inv, rain_error, rain_inc
+		   rain_obs, rain_inv, rain_error, rain_inc, zk
    integer     :: u_qc, v_qc, t_qc, p_qc, q_qc, tpw_qc, spd_qc, ref_qc, rain_qc
 
    if (trace_use_dull) call da_trace_entry("da_read_omb_tmp")
@@ -248,13 +248,13 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in, nc)
                    num = num + 1 
                end if
                do k = 1, levels
-                  read(unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
+                  read(unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7),f9.2)', err= 1000)&
                      kk,l, stn_id, &          ! Station
                      lat, lon, press, &       ! Lat/lon, dummy    
                      u_obs, u_inv, u_qc, u_error, u_inc, & 
                      v_obs, v_inv, v_qc, v_error, v_inc, &
                      t_obs, t_inv, t_qc, t_error, t_inc, &
-                     q_obs, q_inv, q_qc, q_error, q_inc
+                     q_obs, q_inv, q_qc, q_error, q_inc, zk
                    
                   if (var_wind) then
                      sp_obs = u_obs
@@ -267,13 +267,13 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in, nc)
                   end if
 
                   if (if_write) then
-                     write(omb_unit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
+                     write(omb_unit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7),f9.2)', err= 1000)&
                         num, k, stn_id, &          ! Station
                         lat, lon, press, &       ! Lat/lon, pressure
                         u_obs, u_inv, u_qc, u_error, u_inc, &
                         v_obs, v_inv, v_qc, v_error, v_inc, &
                         t_obs, t_inv, t_qc, t_error, t_inc, &
-                        q_obs, q_inv, q_qc, q_error, q_inc
+                        q_obs, q_inv, q_qc, q_error, q_inc,zk
                   end if
 
                end do 
@@ -282,6 +282,48 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in, nc)
       if (if_write) exit reports
       cycle reports
 
+      case ('tamdar_sfc' )
+         if (num_obs > 0) then
+            do n = 1, num_obs
+               read(unit_in,'(i8)')levels
+               if (if_write) then
+                  write(omb_unit,'(i8)')levels
+                  num = num + 1
+               end if
+               do k = 1, levels
+                  read(unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7),f9.2)', err= 1000)&
+                     kk,l, stn_id, &          ! Station
+                     lat, lon, height, &       ! Lat/lon, pressure
+                     u_obs, u_inv, u_qc, u_error, u_inc, &
+                     v_obs, v_inv, v_qc, v_error, v_inc, &
+                     t_obs, t_inv, t_qc, t_error, t_inc, &
+                     p_obs, p_inv, p_qc, p_error, p_inc, &
+                     q_obs, q_inv, q_qc, q_error, q_inc, zk
+
+                     if (var_wind) then
+                        sp_obs = u_obs
+                        sp_inv = u_inv
+                        sp_inc = u_inc
+                        dir_obs = v_obs
+                        dir_inv = v_inv
+                        dir_inc = v_inc
+                        call da_sd2uv(sp_obs, sp_inv, sp_inc, dir_obs, dir_inv, dir_inc, v_qc, u_obs, u_inv, u_inc, v_obs, v_inv, v_inc)
+                     end if
+
+                  if (if_write) &
+                     write(omb_unit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7),f9.2)', err= 1000)&
+                        num, k, stn_id,  &       ! Station
+                        lat, lon, press,&       ! Lat/lon, pressure
+                        u_obs, u_inv, u_qc, u_error, u_inc, &
+                        v_obs, v_inv, v_qc, v_error, v_inc, &
+                        t_obs, t_inv, t_qc, t_error, t_inc, &
+                        p_obs, p_inv, p_qc, p_error, p_inc, &
+                        q_obs, q_inv, q_qc, q_error, q_inc, zk
+               end do
+            end do
+         end if
+
+         if (if_write) exit reports
 
       case ('airep' )
          if (num_obs > 0) then
@@ -292,12 +334,12 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in, nc)
                   num = num + 1 
                end if
                do k = 1, levels
-                  read(unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
+                  read(unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7),f9.2)', err= 1000)&
                      kk,l, stn_id, &          ! Station
                      lat, lon, press, &       ! Lat/lon, dummy    
                      u_obs, u_inv, u_qc, u_error, u_inc, & 
                      v_obs, v_inv, v_qc, v_error, v_inc, &
-                     t_obs, t_inv, t_qc, t_error, t_inc    
+                     t_obs, t_inv, t_qc, t_error, t_inc, zk    
 
                   if (var_wind) then
                      sp_obs = u_obs
@@ -310,12 +352,12 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in, nc)
                   end if
 
                   if (if_write) &
-                     write(omb_unit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
+                     write(omb_unit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7), f9.2)', err= 1000)&
                         num, k, stn_id,  &       ! Station
                         lat, lon, press, &       ! Lat/lon, dummy    
                         u_obs, u_inv, u_qc, u_error, u_inc, & 
                         v_obs, v_inv, v_qc, v_error, v_inc, &
-                        t_obs, t_inv, t_qc, t_error, t_inc    
+                        t_obs, t_inv, t_qc, t_error, t_inc,zk    
                end do  
             end do
          end if

@@ -1,41 +1,42 @@
-subroutine da_read_obs_ascii (iv, filename, uvq_direct)
+subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
 
    !---------------------------------------------------------------------------
    ! Purpose: Read a GTS observation file
    !
-   ! Modifications:      10/26/2004            Syed RH Rizvi
+   ! Modifications:      
+   !      10/26/2004 - Syed RH Rizvi
+   !      Fix Obs-Long as -180 if it is +180
    !
-   !              Fix Obs-Long as -180 if it is +180
-   !
-   !      Date:  03/04/2005 -       Syed  RH  Rizvi
-   !
+   !      03/04/2005 - Syed RH Rizvi
    !      (a)  AMVs from Geostationary and Polar orbiting satellite are
    !           seperated & used as profile. Currently there is a provision
    !           to use MODIS winds only.
    !      (b)  MODIS obs error are currently assigned through namelist
    !           parameter (modis_cmv_error)
    !
-   !                     03/30/2005           Syed RH Rizvi
-   !              For global option duplicate obs at East/West boundary
+   !      03/30/2005 - Syed RH Rizvi
+   !      For global option duplicate obs at East/West boundary
    !                        
-   !                     08/30/2005           Syed RH Rizvi
-   !           Writing original errors & thicknesses
-   !           desired for outputting QC obs with NTMAX = 0
+   !      08/30/2005 - Syed RH Rizvi
+   !      Writing original errors & thicknesses desired for 
+   !      outputting QC obs with NTMAX = 0
    !
-   !       Date: 02/28/2008 -        Y.-R. Guo
+   !      02/28/2008 - Y.-R. Guo
+   !      Satem thickness error should not be divided by gravity because
+   !      the unit from obsproc is already meter, not geopotential meter.
    !
-   !           Satem thickness error should not be divided by gravity because
-   !           the unit from obsproc is already meter, not geopotential meter.
+   !      03/19/2009 - Y.-R. Guo
+   !      Added the time range check when reading in observations.
    !
-   !       Date: 03/19/2009 -        Y.-R. Guo
-   !
-   !           Added the time range check when reading in observations.
+   !      02/21/2013 - Syed RH Rizvi
+   !      Updated with observation-thinning option
    !---------------------------------------------------------------------------
 
    implicit none
 
    type (iv_type),    intent(inout) :: iv
    character(len=*),  intent(in)    :: filename
+   type(domain),     intent(in)     :: grid     ! first guess state.
 
    character (len =  10)        :: fmt_name
 
@@ -46,27 +47,38 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
    integer                      :: i, j, iost, nlevels, old_nlevels, fm,iunit
 
    type (multi_level_type)      :: platform
-
    logical                      :: outside
    logical                      :: outside_all
    logical                      :: uvq_direct               ![cys_add]
    integer                      :: surface_level
    real                         :: height_error, u_comp, v_comp, sp, dir
    integer                      :: nlocal(num_ob_indexes)
+   integer                      :: ilocal(num_ob_indexes)
    integer                      :: ntotal(num_ob_indexes)
 
    integer                      :: ndup, n, report, obs_index
 
-   real*8                :: obs_time
-   integer               :: iyear, imonth, iday, ihour, imin
+   real*8                       :: obs_time, analysis_time
+   integer                      :: iyear, imonth, iday, ihour, imin
+   real                         :: tdiff, dlat_earth,dlon_earth,crit
+   integer                      :: itt,itx,iout
+   real, allocatable            :: in(:), out(:)
+   logical                      :: found, iuse, thin_3d, is_surface
+   integer                      :: i1,j1,k, levs
+   real                         :: dx,dy,dxm,dym,zk
+   real                         :: v_p(kms:kme),v_h(kms:kme)
+
 
    if (trace_use) call da_trace_entry("da_read_obs_ascii")
-
-   ! Local counts of obs, initialise from end of last file
-
-   nlocal(:) = iv%info(:)%plocal(iv%time-1)
+ ! Initialize counts
    ntotal(:) = iv%info(:)%ptotal(iv%time-1)
-
+   nlocal(:) = iv%info(:)%plocal(iv%time-1)
+   ilocal    = nlocal
+   if ( thin_conv ) then
+       do n = 1, num_ob_indexes
+          call cleangrids_conv(n)
+       end do
+   end if
    ! open file
    ! =========
 
@@ -342,6 +354,17 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
          end if
       end if
 
+      read (analysis_date,'(i4,4(1x,i2))') &
+                                    iyear, imonth, iday, ihour, imin
+      call da_get_julian_time (iyear,imonth,iday,ihour,imin,analysis_time)
+      tdiff = abs((obs_time - analysis_time)-0.02)
+      dlat_earth = platform%info%lat
+      dlon_earth = platform%info%lon
+      if (dlon_earth < 0.0) dlon_earth = dlon_earth + 360.0
+      if (dlon_earth >= 360.0) dlon_earth = dlon_earth - 360.0
+      dlat_earth = dlat_earth * deg2rad
+      dlon_earth = dlon_earth * deg2rad
+
       nlevels = platform%info%levels
       if (nlevels > max_ob_levels) then
          nlevels = max_ob_levels
@@ -375,9 +398,10 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
          end if
       end if
 
+      levs = nlevels
+
       if (fm /= 86) call da_obs_proc_station(platform,fm,uvq_direct)  !cys_change
 
-      nlevels = platform%info%levels
       ! Loop over duplicating obs for global
       ndup = 1
       if (global .and. (platform%loc%i < ids .or. platform%loc%i >= ide)) ndup= 2
@@ -407,79 +431,131 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
       end if
       
       obs_index = fm_index(fm)
+      iv%info(obs_index)%max_lev = max(iv%info(obs_index)%max_lev, nlevels)
 
       dup_loop: do n = 1, ndup
          select case(fm)
 
          case (12) ;
-            if (.not. use_synopobs) cycle reports
+            if (.not. use_synopobs .or. ntotal(synop) == max_synop_input  ) cycle reports
             if (n==1) ntotal(synop) = ntotal(synop)+1
             if (outside) cycle reports
-            nlocal(synop) = nlocal(synop) + 1
-            if (nlocal(synop) > iv%info(synop)%nlocal) cycle reports
+            if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(synop,dlat_earth,dlon_earth,crit,nlocal(synop),itx,1,itt,ilocal(synop),iuse)
+                if ( .not. iuse ) cycle reports
+             else
+                nlocal(synop) = nlocal(synop) + 1
+                ilocal(synop) = ilocal(synop) + 1
+             end if
 
-            iv%synop(nlocal(synop))%h = platform%each(1)%height
-            iv%synop(nlocal(synop))%u = platform%each(1)%u
-            iv%synop(nlocal(synop))%v = platform%each(1)%v
-            iv%synop(nlocal(synop))%t = platform%each(1)%t
-            iv%synop(nlocal(synop))%q = platform%each(1)%q
-            iv%synop(nlocal(synop))%p = platform%each(1)%p
+            iv%synop(ilocal(synop))%h = platform%each(1)%height
+            iv%synop(ilocal(synop))%u = platform%each(1)%u
+            iv%synop(ilocal(synop))%v = platform%each(1)%v
+            iv%synop(ilocal(synop))%t = platform%each(1)%t
+            iv%synop(ilocal(synop))%q = platform%each(1)%q
+            iv%synop(ilocal(synop))%p = platform%each(1)%p
 
          case (13, 17) ;                  ! ships 
-            if (.not. use_shipsobs) cycle reports
+            if (.not. use_shipsobs .or. ntotal(ships) == max_ships_input  ) cycle reports
             if (n==1) ntotal(ships) = ntotal(ships) + 1 
             if (outside) cycle reports
-            nlocal(ships) = nlocal(ships) + 1
-            if (nlocal(ships) > iv%info(ships)%nlocal) cycle reports
+             if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(ships,dlat_earth,dlon_earth,crit,nlocal(ships),itx,1,itt,ilocal(ships),iuse)
+                if ( .not. iuse ) cycle reports
+             else
+                nlocal(ships) = nlocal(ships) + 1
+                ilocal(ships) = ilocal(ships) + 1
+             end if
 
-            iv%ships(nlocal(ships))%h = platform%each(1)%height
-            iv%ships(nlocal(ships))%u = platform%each(1)%u
-            iv%ships(nlocal(ships))%v = platform%each(1)%v
-            iv%ships(nlocal(ships))%t = platform%each(1)%t
-            iv%ships(nlocal(ships))%p = platform%each(1)%p
-            iv%ships(nlocal(ships))%q = platform%each(1)%q
+            iv%ships(ilocal(ships))%h = platform%each(1)%height
+            iv%ships(ilocal(ships))%u = platform%each(1)%u
+            iv%ships(ilocal(ships))%v = platform%each(1)%v
+            iv%ships(ilocal(ships))%t = platform%each(1)%t
+            iv%ships(ilocal(ships))%p = platform%each(1)%p
+            iv%ships(ilocal(ships))%q = platform%each(1)%q
 
          case (15:16) ;
-            if (.not. use_metarobs) cycle reports
+            if (.not. use_metarobs .or. ntotal(metar) == max_metar_input  ) cycle reports
             if (n==1) ntotal(metar) = ntotal(metar) + 1 
             if (outside) cycle reports
-            nlocal(metar) = nlocal(metar) + 1
-            if (nlocal(metar) > iv%info(metar)%nlocal) cycle reports
+             if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(metar,dlat_earth,dlon_earth,crit,nlocal(metar),itx,1,itt,ilocal(metar),iuse)
+                if ( .not. iuse ) cycle reports
+             else
+                nlocal(metar) = nlocal(metar) + 1
+                ilocal(metar) = ilocal(metar) + 1
+             end if
 
-            iv%metar(nlocal(metar))%h = platform%each(1)%height
-            iv%metar(nlocal(metar))%u = platform%each(1)%u
-            iv%metar(nlocal(metar))%v = platform%each(1)%v
-            iv%metar(nlocal(metar))%t = platform%each(1)%t
-            iv%metar(nlocal(metar))%p = platform%each(1)%p
-            iv%metar(nlocal(metar))%q = platform%each(1)%q
+            iv%metar(ilocal(metar))%h = platform%each(1)%height
+            iv%metar(ilocal(metar))%u = platform%each(1)%u
+            iv%metar(ilocal(metar))%v = platform%each(1)%v
+            iv%metar(ilocal(metar))%t = platform%each(1)%t
+            iv%metar(ilocal(metar))%p = platform%each(1)%p
+            iv%metar(ilocal(metar))%q = platform%each(1)%q
 
          case (32:34) ;
-            if (.not. use_pilotobs) cycle reports
+            if (.not. use_pilotobs .or. ntotal(pilot) == max_pilot_input  ) cycle reports
             if (n==1) ntotal(pilot) = ntotal(pilot) + 1 
             if (outside) cycle reports
-            nlocal(pilot) = nlocal(pilot) + 1
-            if (nlocal(pilot) > iv%info(pilot)%nlocal) cycle reports
+            if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(pilot,dlat_earth,dlon_earth,crit,nlocal(pilot),itx,1,itt,ilocal(pilot),iuse)
+               if ( .not. iuse ) cycle reports
+            else
+               nlocal(pilot) = nlocal(pilot) + 1
+               ilocal(pilot) = ilocal(pilot) + 1
+            end if
 
-            allocate (iv%pilot(nlocal(pilot))%h (1:nlevels))
-            allocate (iv%pilot(nlocal(pilot))%p (1:nlevels))
-            allocate (iv%pilot(nlocal(pilot))%u (1:nlevels))
-            allocate (iv%pilot(nlocal(pilot))%v (1:nlevels))
-
+            if (nlocal(pilot) == ilocal(pilot)) then
+               allocate (iv%pilot(ilocal(pilot))%h(1:iv%info(pilot)%max_lev))
+               allocate (iv%pilot(ilocal(pilot))%p(1:iv%info(pilot)%max_lev))
+               allocate (iv%pilot(ilocal(pilot))%u(1:iv%info(pilot)%max_lev))
+               allocate (iv%pilot(ilocal(pilot))%v(1:iv%info(pilot)%max_lev))
+            end if
             do i = 1, nlevels
-              iv%pilot(nlocal(pilot))%h(i) = platform%each(i)%height
-              iv%pilot(nlocal(pilot))%p(i) = platform%each(i)%p%inv
-              iv%pilot(nlocal(pilot))%u(i) = platform%each(i)%u
-              iv%pilot(nlocal(pilot))%v(i) = platform%each(i)%v
+               iv%pilot(ilocal(pilot))%h(i) = platform%each(i)%height
+               iv%pilot(ilocal(pilot))%p(i) = platform%each(i)%p%inv
+               iv%pilot(ilocal(pilot))%u(i) = platform%each(i)%u
+               iv%pilot(ilocal(pilot))%v(i) = platform%each(i)%v
             end do
 
          case (35:38) ;
-            if (.not. use_soundobs) cycle reports
+            if (.not. use_soundobs .or. ntotal(sound) == max_sound_input  ) cycle reports
             if (n==1) ntotal(sound) = ntotal(sound) + 1 
             if (n==1) ntotal(sonde_sfc) = ntotal(sonde_sfc) + 1 
             if (outside) cycle reports
-            nlocal(sound) = nlocal(sound) + 1
-            nlocal(sonde_sfc) = nlocal(sonde_sfc) + 1
-            if (nlocal(sound) > iv%info(sound)%nlocal) cycle reports
+
+! determine if level corresponds to surface
+            is_surface=.false.
+            levs = nlevels
+            surface_level = 0
+            do i = 1, nlevels
+               ! if (elevation and height are the same, it is surface.)
+               if (platform%info%elv.ne.missing_r.and.platform%each(i)%height.ne.missing_r)then
+                  if (abs(platform%info%elv - platform%each(i)%height) < 0.1) then
+                     is_surface = .true.
+                     surface_level = i
+                     levs = nlevels - 1
+                     exit
+                  end if
+               end if
+            end do
+
+            if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(sound,dlat_earth,dlon_earth,crit,nlocal(sound),itx,1,itt,ilocal(sound),iuse)
+               crit = tdiff
+               call map2grids_conv(sonde_sfc,dlat_earth,dlon_earth,crit,nlocal(sonde_sfc),itx,1,itt,ilocal(sonde_sfc),iuse)
+               if ( .not. iuse ) cycle reports
+            else
+               nlocal(sound) = nlocal(sound) + 1
+               ilocal(sound) = ilocal(sound) + 1
+               nlocal(sonde_sfc) = nlocal(sonde_sfc) + 1
+               ilocal(sonde_sfc) = ilocal(sonde_sfc) + 1
+            end if
 
             ! Search to see if we have surface obs.
 
@@ -492,12 +568,12 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
                      surface_level = i
 
                      ! Save surface pressure.
-                     iv%sonde_sfc(nlocal(sonde_sfc))%h = platform%each(i)%height
-                     iv%sonde_sfc(nlocal(sonde_sfc))%u = platform%each(i)%u
-                     iv%sonde_sfc(nlocal(sonde_sfc))%v = platform%each(i)%v
-                     iv%sonde_sfc(nlocal(sonde_sfc))%t = platform%each(i)%t
-                     iv%sonde_sfc(nlocal(sonde_sfc))%q = platform%each(i)%q
-                     iv%sonde_sfc(nlocal(sonde_sfc))%p = platform%each(i)%p
+                     iv%sonde_sfc(ilocal(sonde_sfc))%h = platform%each(i)%height
+                     iv%sonde_sfc(ilocal(sonde_sfc))%u = platform%each(i)%u
+                     iv%sonde_sfc(ilocal(sonde_sfc))%v = platform%each(i)%v
+                     iv%sonde_sfc(ilocal(sonde_sfc))%t = platform%each(i)%t
+                     iv%sonde_sfc(ilocal(sonde_sfc))%q = platform%each(i)%q
+                     iv%sonde_sfc(ilocal(sonde_sfc))%p = platform%each(i)%p
 
                      exit
                   end if
@@ -509,310 +585,478 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
             old_nlevels = nlevels
 
             if (surface_level > 0) then
-               nlevels = nlevels - 1
+                nlevels = nlevels - 1
             else
-               iv%sonde_sfc(nlocal(sonde_sfc))%h = missing_r
-               iv%sonde_sfc(nlocal(sonde_sfc))%u%inv   = missing_r
-               iv%sonde_sfc(nlocal(sonde_sfc))%u%qc    = missing
-               iv%sonde_sfc(nlocal(sonde_sfc))%u%error = abs(missing_r)
-               iv%sonde_sfc(nlocal(sonde_sfc))%v = iv%sonde_sfc(nlocal(sonde_sfc))%u
-               iv%sonde_sfc(nlocal(sonde_sfc))%t = iv%sonde_sfc(nlocal(sonde_sfc))%u
-               iv%sonde_sfc(nlocal(sonde_sfc))%p = iv%sonde_sfc(nlocal(sonde_sfc))%u
-               iv%sonde_sfc(nlocal(sonde_sfc))%q = iv%sonde_sfc(nlocal(sonde_sfc))%u
+               iv%sonde_sfc(ilocal(sonde_sfc))%h = missing_r
+               iv%sonde_sfc(ilocal(sonde_sfc))%u%inv   = missing_r
+               iv%sonde_sfc(ilocal(sonde_sfc))%u%qc    = missing
+               iv%sonde_sfc(ilocal(sonde_sfc))%u%error = abs(missing_r)
+               iv%sonde_sfc(ilocal(sonde_sfc))%v = iv%sonde_sfc(ilocal(sonde_sfc))%u
+               iv%sonde_sfc(ilocal(sonde_sfc))%t = iv%sonde_sfc(ilocal(sonde_sfc))%u
+               iv%sonde_sfc(ilocal(sonde_sfc))%p = iv%sonde_sfc(ilocal(sonde_sfc))%u
+               iv%sonde_sfc(ilocal(sonde_sfc))%q = iv%sonde_sfc(ilocal(sonde_sfc))%u
             end if
 
             if (nlevels > 0) then
-
-               allocate (iv%sound(nlocal(sound))%h (1:nlevels))
-               allocate (iv%sound(nlocal(sound))%p (1:nlevels))
-               allocate (iv%sound(nlocal(sound))%u (1:nlevels))
-               allocate (iv%sound(nlocal(sound))%v (1:nlevels))
-               allocate (iv%sound(nlocal(sound))%t (1:nlevels))
-               allocate (iv%sound(nlocal(sound))%q (1:nlevels))
+               if( nlocal(sound) == ilocal(sound)) then
+                  allocate (iv%sound(ilocal(sound))%h (1:iv%info(sound)%max_lev))   
+                  allocate (iv%sound(ilocal(sound))%p (1:iv%info(sound)%max_lev))   
+                  allocate (iv%sound(ilocal(sound))%u (1:iv%info(sound)%max_lev))   
+                  allocate (iv%sound(ilocal(sound))%v (1:iv%info(sound)%max_lev))   
+                  allocate (iv%sound(ilocal(sound))%t (1:iv%info(sound)%max_lev))   
+                  allocate (iv%sound(ilocal(sound))%q (1:iv%info(sound)%max_lev))   
+               end if
 
                j = 0
-!               do i = 1, iv%sound(nlocal(sound))%info%levels
                do i = 1, old_nlevels
                   if (i == surface_level) cycle
 
                   j=j+1
 
-                  iv%sound(nlocal(sound))%h(j) = platform%each(i)%height
-                  iv%sound(nlocal(sound))%p(j) = platform%each(i)%p%inv
-                  iv%sound(nlocal(sound))%u(j) = platform%each(i)%u
-                  iv%sound(nlocal(sound))%v(j) = platform%each(i)%v
-                  iv%sound(nlocal(sound))%t(j) = platform%each(i)%t
-                  iv%sound(nlocal(sound))%q(j) = platform%each(i)%q
+                  iv%sound(ilocal(sound))%h(j) = platform%each(i)%height
+                  iv%sound(ilocal(sound))%p(j) = platform%each(i)%p%inv
+                  iv%sound(ilocal(sound))%u(j) = platform%each(i)%u
+                  iv%sound(ilocal(sound))%v(j) = platform%each(i)%v
+                  iv%sound(ilocal(sound))%t(j) = platform%each(i)%t
+                  iv%sound(ilocal(sound))%q(j) = platform%each(i)%q
                end do
-            end if
+           end if
 
-!            iv%sound(nlocal(sound))%info%levels = nlevels
          case (101) ;
-            if (.not. use_tamdarobs) cycle reports
-            if (n==1) ntotal(tamdar) = ntotal(tamdar) + 1
-            if (n==1) ntotal(tamdar_sfc) = ntotal(tamdar_sfc) + 1
-            if (outside) cycle reports
-            nlocal(tamdar) = nlocal(tamdar) + 1
-            nlocal(tamdar_sfc) = nlocal(tamdar_sfc) + 1
-            if (nlocal(tamdar) > iv%info(tamdar)%nlocal) cycle reports
-            ! Search to see if we have surface obs.
+            if (.not. use_tamdarobs .or. ntotal(tamdar) == max_tamdar_input  ) cycle reports
 
+! determine if level corresponds to surface
+            is_surface=.false.
+            levs = nlevels
             surface_level = 0
-
             do i = 1, nlevels
                ! if (elevation and height are the same, it is surface.)
                if (platform%info%elv.ne.missing_r.and.platform%each(i)%height.ne.missing_r)then
                   if (abs(platform%info%elv - platform%each(i)%height) < 0.1) then
+                     is_surface = .true.
                      surface_level = i
-
-                     ! Save surface pressure.
-                     iv%tamdar_sfc(nlocal(tamdar_sfc))%h = platform%each(i)%height
-                     iv%tamdar_sfc(nlocal(tamdar_sfc))%u = platform%each(i)%u
-                     iv%tamdar_sfc(nlocal(tamdar_sfc))%v = platform%each(i)%v
-                     iv%tamdar_sfc(nlocal(tamdar_sfc))%t = platform%each(i)%t
-                     iv%tamdar_sfc(nlocal(tamdar_sfc))%q = platform%each(i)%q
-                     iv%tamdar_sfc(nlocal(tamdar_sfc))%p = platform%each(i)%p
-                     exit
+                     levs = nlevels - 1
+                    exit
                   end if
                end if
             end do
-            ! processing the tamdar_sfc data:
 
-            old_nlevels = nlevels
+          if( is_surface) then
+            if (n==1) ntotal(tamdar_sfc) = ntotal(tamdar_sfc) + 1
+            if (outside) cycle reports
+            if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(tamdar_sfc,dlat_earth,dlon_earth,crit,nlocal(tamdar_sfc),itx,1,itt,ilocal(tamdar_sfc),iuse)
+                if ( .not. iuse ) cycle reports
+             else
+                nlocal(tamdar_sfc) = nlocal(tamdar_sfc) + 1
+                ilocal(tamdar_sfc) = ilocal(tamdar_sfc) + 1
+             end if
 
-           if (surface_level > 0) then
-               nlevels = nlevels - 1
-            else
-               iv%tamdar_sfc(nlocal(tamdar_sfc))%h = missing_r
-               iv%tamdar_sfc(nlocal(tamdar_sfc))%u%inv   = missing_r
-               iv%tamdar_sfc(nlocal(tamdar_sfc))%u%qc    = missing
-               iv%tamdar_sfc(nlocal(tamdar_sfc))%u%error = abs(missing_r)
-               iv%tamdar_sfc(nlocal(tamdar_sfc))%v = iv%tamdar_sfc(nlocal(tamdar_sfc))%u
-               iv%tamdar_sfc(nlocal(tamdar_sfc))%t = iv%tamdar_sfc(nlocal(tamdar_sfc))%u
-               iv%tamdar_sfc(nlocal(tamdar_sfc))%p = iv%tamdar_sfc(nlocal(tamdar_sfc))%u
-               iv%tamdar_sfc(nlocal(tamdar_sfc))%q = iv%tamdar_sfc(nlocal(tamdar_sfc))%u
-            end if
+            iv%tamdar_sfc(ilocal(tamdar_sfc))%h = platform%each(surface_level)%height
+            iv%tamdar_sfc(ilocal(tamdar_sfc))%u = platform%each(surface_level)%u
+            iv%tamdar_sfc(ilocal(tamdar_sfc))%v = platform%each(surface_level)%v
+            iv%tamdar_sfc(ilocal(tamdar_sfc))%t = platform%each(surface_level)%t
+            iv%tamdar_sfc(ilocal(tamdar_sfc))%q = platform%each(surface_level)%q
+            iv%tamdar_sfc(ilocal(tamdar_sfc))%p = platform%each(surface_level)%p
+
+           else ! not is_surface
+
+            if ( levs > 0 .and. n==1) ntotal(tamdar) = ntotal(tamdar) + 1
+            if (outside) cycle reports
+            if( .not. thin_conv) then
+                   nlocal(tamdar) = nlocal(tamdar) + 1
+                   ilocal(tamdar) = ilocal(tamdar) + 1
+              if( nlocal(tamdar) == ilocal(tamdar)) then
+              allocate (iv%tamdar(ilocal(tamdar))%h        (1:iv%info(tamdar)%max_lev))
+              allocate (iv%tamdar(ilocal(tamdar))%p        (1:iv%info(tamdar)%max_lev))
+              allocate (iv%tamdar(ilocal(tamdar))%u        (1:iv%info(tamdar)%max_lev))
+              allocate (iv%tamdar(ilocal(tamdar))%v        (1:iv%info(tamdar)%max_lev))
+              allocate (iv%tamdar(ilocal(tamdar))%t        (1:iv%info(tamdar)%max_lev))
+              allocate (iv%tamdar(ilocal(tamdar))%q        (1:iv%info(tamdar)%max_lev))
+             end if
+
+             do i = 1, nlevels
+                iv%tamdar(ilocal(tamdar))%h(i) = platform%each(i)%height
+                iv%tamdar(ilocal(tamdar))%p(i) = platform%each(i)%p%inv
+                iv%tamdar(ilocal(tamdar))%u(i) = platform%each(i)%u
+                iv%tamdar(ilocal(tamdar))%v(i) = platform%each(i)%v
+                iv%tamdar(ilocal(tamdar))%t(i) = platform%each(i)%t
+                iv%tamdar(ilocal(tamdar))%q(i) = platform%each(i)%q
+             end do
+
+            else ! if thin_conv==true
+              thin_3d=.true.
+              i1   = platform%loc%i
+              j1   = platform%loc%j
+              dx   = platform%loc%dx
+              dy   = platform%loc%dy
+              dxm  = platform%loc%dxm
+              dym  = platform%loc%dym
+
+                 do k=kms,kme
+                  v_p(k) = dym*(dxm*grid%xb%p(i1,j1,k)+dx*grid%xb%p(i1+1,j1,k)) + &
+                            dy*(dxm*grid%xb%p(i1,j1+1,k)+dx*grid%xb%p(i1+1,j1+1,k))
+                 end do
+                 do k=kms,kme
+                  v_h(k) = dym*(dxm*grid%xb%h(i1,j1,k)+dx*grid%xb%h(i1+1,j1,k)) + &
+                            dy*(dxm*grid%xb%h(i1,j1+1,k)+dx*grid%xb%h(i1+1,j1+1,k))
+                 end do
+              do k= 1, nlevels
+               zk = missing_r
+               if( platform%each(k)%p%qc  >= 0 ) then
+                 call da_to_zk(platform%each(k)%p%inv, v_p, v_interp_p, zk)
+               else if( platform%each(k)%height_qc  >= 0 ) then
+                 call da_to_zk(platform%each(k)%height , v_h, v_interp_h, zk)
+               else
+                 write(unit=message(1),fmt='(A)')' For tamdar: neither height nor pressure qc is good'
+                 call da_error(__FILE__,__LINE__,message(1:1))
+               end if
+               if ( zk == missing_r ) cycle
+               crit = tdiff
+               call map2grids_conv(tamdar,dlat_earth,dlon_earth,crit,nlocal(tamdar),itx,1,itt,ilocal(tamdar),iuse,zk,thin_3d)
+               if ( .not. iuse ) cycle
+               iv%info(tamdar)%levels(ilocal(tamdar))    = 1
+               iv%info(tamdar)%name(ilocal(tamdar))      = platform%info%name
+               iv%info(tamdar)%platform(ilocal(tamdar))  = platform%info%platform
+               iv%info(tamdar)%id(ilocal(tamdar))        = platform%info%id
+               iv%info(tamdar)%date_char(ilocal(tamdar)) = platform%info%date_char
+               iv%info(tamdar)%lat(:,ilocal(tamdar))     = platform%info%lat
+               iv%info(tamdar)%lon(:,ilocal(tamdar))     = platform%info%lon
+               iv%info(tamdar)%elv(ilocal(tamdar))       = platform%info%elv
+               iv%info(tamdar)%pstar(ilocal(tamdar))     = platform%info%pstar
+
+               iv%info(tamdar)%slp(ilocal(tamdar))           = platform%loc%slp
+               iv%info(tamdar)%pw(ilocal(tamdar))            = platform%loc%pw
+               iv%info(tamdar)%x(:,ilocal(tamdar))           = platform%loc%x
+               iv%info(tamdar)%y(:,ilocal(tamdar))           = platform%loc%y
+               iv%info(tamdar)%i(:,ilocal(tamdar))           = platform%loc%i
+               iv%info(tamdar)%j(:,ilocal(tamdar))           = platform%loc%j
+               iv%info(tamdar)%dx(:,ilocal(tamdar))          = platform%loc%dx
+               iv%info(tamdar)%dxm(:,ilocal(tamdar))         = platform%loc%dxm
+               iv%info(tamdar)%dy(:,ilocal(tamdar))          = platform%loc%dy
+               iv%info(tamdar)%dym(:,ilocal(tamdar))         = platform%loc%dym
+               iv%info(tamdar)%proc_domain(:,ilocal(tamdar)) = platform%loc%proc_domain
+
+               iv%info(tamdar)%obs_global_index(ilocal(tamdar)) = ntotal(tamdar)
+               if( nlocal(tamdar) == ilocal(tamdar)) then
+                allocate (iv%tamdar(ilocal(tamdar))%h(1:iv%info(tamdar)%max_lev))
+                allocate (iv%tamdar(ilocal(tamdar))%p(1:iv%info(tamdar)%max_lev))
+                allocate (iv%tamdar(ilocal(tamdar))%u(1:iv%info(tamdar)%max_lev))
+                allocate (iv%tamdar(ilocal(tamdar))%v(1:iv%info(tamdar)%max_lev))
+                allocate (iv%tamdar(ilocal(tamdar))%t(1:iv%info(tamdar)%max_lev))
+                allocate (iv%tamdar(ilocal(tamdar))%q(1:iv%info(tamdar)%max_lev))
+               end if
+
+               do i = 1, 1
+                  iv%tamdar(ilocal(tamdar))%h(i) = platform%each(k)%height
+                  iv%tamdar(ilocal(tamdar))%p(i) = platform%each(k)%p%inv
+                  iv%tamdar(ilocal(tamdar))%u(i) = platform%each(k)%u
+                  iv%tamdar(ilocal(tamdar))%v(i) = platform%each(k)%v
+                  iv%tamdar(ilocal(tamdar))%t(i) = platform%each(k)%t
+                  iv%tamdar(ilocal(tamdar))%q(i) = platform%each(k)%q
+               end do
+              end do ! loop over k levels
+
+            end if ! if over thin_conv
+
+           end if ! if  is_surface
+
+         case (161) ;
+            if (.not. use_mtgirsobs .or. ntotal(mtgirs) == max_mtgirs_input ) cycle reports
+            if (n==1) ntotal(mtgirs) = ntotal(mtgirs) + 1
+            if (outside) cycle reports
+            if (outside) cycle reports
+             if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(mtgirs,dlat_earth,dlon_earth,crit,nlocal(mtgirs),itx,1,itt,ilocal(mtgirs),iuse)
+                if ( .not. iuse ) cycle reports
+             else
+                nlocal(mtgirs) = nlocal(mtgirs) + 1
+                ilocal(mtgirs) = ilocal(mtgirs) + 1
+             end if
 
             if (nlevels > 0) then
 
-               allocate (iv%tamdar(nlocal(tamdar))%h (1:nlevels))
-               allocate (iv%tamdar(nlocal(tamdar))%p (1:nlevels))
-               allocate (iv%tamdar(nlocal(tamdar))%u (1:nlevels))
-               allocate (iv%tamdar(nlocal(tamdar))%v (1:nlevels))
-               allocate (iv%tamdar(nlocal(tamdar))%t (1:nlevels))
-               allocate (iv%tamdar(nlocal(tamdar))%q (1:nlevels))
+               if( nlocal(mtgirs) == ilocal(mtgirs)) then
+                allocate (iv%mtgirs(ilocal(mtgirs))%h (1:iv%info(mtgirs)%max_lev))
+                allocate (iv%mtgirs(ilocal(mtgirs))%p (1:iv%info(mtgirs)%max_lev))
+                allocate (iv%mtgirs(ilocal(mtgirs))%u (1:iv%info(mtgirs)%max_lev))
+                allocate (iv%mtgirs(ilocal(mtgirs))%v (1:iv%info(mtgirs)%max_lev))
+                allocate (iv%mtgirs(ilocal(mtgirs))%t (1:iv%info(mtgirs)%max_lev))
+                allocate (iv%mtgirs(ilocal(mtgirs))%q (1:iv%info(mtgirs)%max_lev))
+              end if
 
                j = 0
                do i = 1, nlevels
 
                   j=j+1
 
-                  iv%tamdar(nlocal(tamdar))%h(j) = platform%each(i)%height
-                  iv%tamdar(nlocal(tamdar))%p(j) = platform%each(i)%p%inv
-                  iv%tamdar(nlocal(tamdar))%u(j) = platform%each(i)%u
-                  iv%tamdar(nlocal(tamdar))%v(j) = platform%each(i)%v
-                  iv%tamdar(nlocal(tamdar))%t(j) = platform%each(i)%t
-                  iv%tamdar(nlocal(tamdar))%q(j) = platform%each(i)%q
-                 if(iv%tamdar(nlocal(tamdar))%q(j)%inv.ne.missing_r)then
-                 iv%tamdar(nlocal(tamdar))%q(j)%inv = iv%tamdar(nlocal(tamdar))%q(j)%inv
+                  iv%mtgirs(ilocal(mtgirs))%h(j) = platform%each(i)%height
+                  iv%mtgirs(ilocal(mtgirs))%p(j) = platform%each(i)%p%inv
+                  iv%mtgirs(ilocal(mtgirs))%u(j) = platform%each(i)%u
+                  iv%mtgirs(ilocal(mtgirs))%v(j) = platform%each(i)%v
+                  iv%mtgirs(ilocal(mtgirs))%t(j) = platform%each(i)%t
+                  iv%mtgirs(ilocal(mtgirs))%q(j) = platform%each(i)%q
+                 if(iv%mtgirs(ilocal(mtgirs))%q(j)%inv.ne.missing_r)then
+                 iv%mtgirs(ilocal(mtgirs))%q(j)%inv = iv%mtgirs(ilocal(mtgirs))%q(j)%inv/1000.0
                  endif
-                 if(iv%tamdar(nlocal(tamdar))%q(j)%error.ne.missing_r)then
-                 iv%tamdar(nlocal(tamdar))%q(j)%error = iv%tamdar(nlocal(tamdar))%q(j)%error
-                 endif
-
-               end do
-            else
-               nlevels = 1
-               allocate (iv%tamdar(nlocal(tamdar))%h (1:nlevels))
-               allocate (iv%tamdar(nlocal(tamdar))%p (1:nlevels))
-               allocate (iv%tamdar(nlocal(tamdar))%u (1:nlevels))
-               allocate (iv%tamdar(nlocal(tamdar))%v (1:nlevels))
-               allocate (iv%tamdar(nlocal(tamdar))%t (1:nlevels))
-               allocate (iv%tamdar(nlocal(tamdar))%q (1:nlevels))
-               j=1
-               iv%tamdar(nlocal(tamdar))%h = missing_r
-               iv%tamdar(nlocal(tamdar))%p = missing_r
-               iv%tamdar(nlocal(tamdar))%u%inv   = missing_r
-               iv%tamdar(nlocal(tamdar))%u%qc    = missing
-               iv%tamdar(nlocal(tamdar))%u%error = abs(missing_r)
-               iv%tamdar(nlocal(tamdar))%v = iv%tamdar(nlocal(tamdar))%u
-               iv%tamdar(nlocal(tamdar))%t = iv%tamdar(nlocal(tamdar))%u
-               iv%tamdar(nlocal(tamdar))%q = iv%tamdar(nlocal(tamdar))%u
-
-            end if
-      
-         case (161) ;
-            if (.not. use_mtgirsobs) cycle reports
-            if (n==1) ntotal(mtgirs) = ntotal(mtgirs) + 1
-            if (outside) cycle reports
-            nlocal(mtgirs) = nlocal(mtgirs) + 1
-            if (nlocal(mtgirs) > iv%info(mtgirs)%nlocal) cycle reports
-
-            if (nlevels > 0) then
-
-               allocate (iv%mtgirs(nlocal(mtgirs))%h (1:nlevels))
-               allocate (iv%mtgirs(nlocal(mtgirs))%p (1:nlevels))
-               allocate (iv%mtgirs(nlocal(mtgirs))%u (1:nlevels))
-               allocate (iv%mtgirs(nlocal(mtgirs))%v (1:nlevels))
-               allocate (iv%mtgirs(nlocal(mtgirs))%t (1:nlevels))
-               allocate (iv%mtgirs(nlocal(mtgirs))%q (1:nlevels))
-
-               j = 0
-               do i = 1, nlevels 
-
-                  j=j+1
-
-                  iv%mtgirs(nlocal(mtgirs))%h(j) = platform%each(i)%height
-                  iv%mtgirs(nlocal(mtgirs))%p(j) = platform%each(i)%p%inv
-                  iv%mtgirs(nlocal(mtgirs))%u(j) = platform%each(i)%u
-                  iv%mtgirs(nlocal(mtgirs))%v(j) = platform%each(i)%v
-                  iv%mtgirs(nlocal(mtgirs))%t(j) = platform%each(i)%t
-                  iv%mtgirs(nlocal(mtgirs))%q(j) = platform%each(i)%q
-                 if(iv%mtgirs(nlocal(mtgirs))%q(j)%inv.ne.missing_r)then
-                 iv%mtgirs(nlocal(mtgirs))%q(j)%inv = iv%mtgirs(nlocal(mtgirs))%q(j)%inv/1000.0
-                 endif
-                 if(iv%mtgirs(nlocal(mtgirs))%q(j)%error.ne.missing_r)then
-                 iv%mtgirs(nlocal(mtgirs))%q(j)%error = iv%mtgirs(nlocal(mtgirs))%q(j)%error/1000.0/100.0
+                 if(iv%mtgirs(ilocal(mtgirs))%q(j)%error.ne.missing_r)then
+                 iv%mtgirs(ilocal(mtgirs))%q(j)%error = iv%mtgirs(ilocal(mtgirs))%q(j)%error/1000.0/100.0
                  endif
 
                end do
             end if
-
 
          case (86)    ;
             ! Reject cloudy satem obs.
-            if (.not. use_satemobs .or. platform%loc%pw%inv > 10.0) cycle reports
-            if (n==1) ntotal(satem) = ntotal(satem) + 1 
+            if (.not.use_satemobs .or. ntotal(satem) == max_satem_input) cycle reports
+            if (platform%loc%pw%inv > 10.0) cycle reports
+            if (n==1) ntotal(satem) = ntotal(satem) + 1
             if (outside) cycle reports
-            nlocal(satem) = nlocal(satem) + 1
-            if (nlocal(satem) > iv%info(satem)%nlocal) cycle reports
+             if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(satem,dlat_earth,dlon_earth,crit,nlocal(satem),itx,1,itt,ilocal(satem),iuse)
+                if ( .not. iuse ) cycle reports
+             else
+                nlocal(satem) = nlocal(satem) + 1
+                ilocal(satem) = ilocal(satem) + 1
+             end if
+
 
             ! The satem ref_p is put in the SLP position in OBSPROC data stream.
 
             iv%satem(nlocal(satem))%ref_p= platform%loc%slp%inv
 
-            allocate (iv%satem(nlocal(satem))%p        (1:nlevels))
-            allocate (iv%satem(nlocal(satem))%thickness(1:nlevels))
-            allocate (iv%satem(nlocal(satem))%org_thickness(1:nlevels))
+            if( nlocal(satem) == ilocal(satem)) then
+             allocate (iv%satem(ilocal(satem))%p        (1:iv%info(satem)%max_lev))
+             allocate (iv%satem(ilocal(satem))%thickness(1:iv%info(satem)%max_lev))
+             allocate (iv%satem(ilocal(satem))%org_thickness(1:iv%info(satem)%max_lev))
+            end if
 
-            iv%satem(nlocal(satem))%p(1) = platform%each(1)%p%inv
-            iv%satem(nlocal(satem))%thickness(1) = platform%each(1)%t
+            iv%satem(ilocal(satem))%p(1) = platform%each(1)%p%inv
+            iv%satem(ilocal(satem))%thickness(1) = platform%each(1)%t
             !  write original thickness errors for filtered obs
             if (anal_type_qcobs) then
                do i = 1, nlevels
-                  iv%satem(nlocal(satem))%org_thickness(i) = platform%each(i)%t
-               end do 
+                  iv%satem(ilocal(satem))%org_thickness(i) = platform%each(i)%t
+               end do
             end if
 
             ! Splitting the reported satem data into smaller layers.
 
             do i = 2, nlevels
-               iv%satem(nlocal(satem))%p(i) = platform%each(i)%p%inv
-               iv%satem(nlocal(satem))%thickness(i) = platform%each(i)%t
+               iv%satem(ilocal(satem))%p(i) = platform%each(i)%p%inv
+               iv%satem(ilocal(satem))%thickness(i) = platform%each(i)%t
                if (platform%each(i)%t%qc /= missing_data   .and. &
                   platform%each(i-1)%t%qc /= missing_data) then
-                  iv%satem(nlocal(satem))%thickness(i)%inv =            &
+                  iv%satem(ilocal(satem))%thickness(i)%inv =            &
                   platform%each(i)%t%inv - platform%each(i-1)%t%inv
                else
-                  iv%satem(nlocal(satem))%thickness(i)%inv = missing_r
-                  iv%satem(nlocal(satem))%thickness(i)%qc  = missing_data
+                  iv%satem(ilocal(satem))%thickness(i)%inv = missing_r
+                  iv%satem(ilocal(satem))%thickness(i)%qc  = missing_data
                end if
             end do
 
             ! Thickness error (m):
 
             do i = nlevels, 2, -1
-               iv%satem(nlocal(satem))%thickness(i)%error = &
-               sqrt(iv%satem(nlocal(satem))%thickness(i )%error ** 2 + &
-                  iv%satem(nlocal(satem))%thickness(i-1)%error ** 2) 
-!                  iv%satem(nlocal(satem))%thickness(i-1)%error ** 2) / gravity
+               iv%satem(ilocal(satem))%thickness(i)%error = &
+               sqrt(iv%satem(ilocal(satem))%thickness(i )%error ** 2 + &
+                  iv%satem(ilocal(satem))%thickness(i-1)%error ** 2)
+!                  iv%satem(ilocal(satem))%thickness(i-1)%error ** 2) / gravity
             end do
 
-            iv%satem(nlocal(satem))%thickness(1)%error = &
-                           sqrt(iv%satem(nlocal(satem))%thickness(1)%error ** 2 + &
-                           platform%loc%pw%error ** 2) 
+            iv%satem(ilocal(satem))%thickness(1)%error = &
+                           sqrt(iv%satem(ilocal(satem))%thickness(1)%error ** 2 + &
+                           platform%loc%pw%error ** 2)
 !                           platform%loc%pw%error ** 2) / gravity
 
             ! Geostationary ot Polar orbitting Satellite AMVs:
-
          case (88)    ;
             if (index(platform%info%name, 'MODIS') > 0 .or. &
                index(platform%info%name, 'modis') > 0)  then
-               if (.not. use_polaramvobs) cycle reports
-               if (n==1) ntotal(polaramv) = ntotal(polaramv) + 1 
+               if (.not.use_polaramvobs .or. ntotal(polaramv) == max_polaramv_input) cycle reports
+               if (n==1) ntotal(polaramv) = ntotal(polaramv) + 1
                if (outside) cycle reports
-               nlocal(polaramv) = nlocal(polaramv) + 1
-               if (nlocal(polaramv) > iv%info(polaramv)%nlocal) cycle reports
+               if (n==1) ntotal(polaramv) = ntotal(polaramv) + 1
+                if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(polaramv,dlat_earth,dlon_earth,crit,nlocal(polaramv),itx,1,itt,ilocal(polaramv),iuse)
+                   if ( .not. iuse ) cycle reports
+                else
+                   nlocal(polaramv) = nlocal(polaramv) + 1
+                   ilocal(polaramv) = ilocal(polaramv) + 1
+                end if
 
-               allocate (iv%polaramv(nlocal(polaramv))%p (1:nlevels))
-               allocate (iv%polaramv(nlocal(polaramv))%u (1:nlevels))
-               allocate (iv%polaramv(nlocal(polaramv))%v (1:nlevels))
+               if (nlocal(polaramv) == ilocal(polaramv) ) then
+                allocate (iv%polaramv(ilocal(polaramv))%p (1:iv%info(polaramv)%max_lev))
+                allocate (iv%polaramv(ilocal(polaramv))%u (1:iv%info(polaramv)%max_lev))
+                allocate (iv%polaramv(ilocal(polaramv))%v (1:iv%info(polaramv)%max_lev))
+               end if
 
                do i = 1, nlevels
-                  iv%polaramv(nlocal(polaramv))%p(i) = platform%each(i)%p%inv
-                  iv%polaramv(nlocal(polaramv))%u(i) = platform%each(i)%u
-                  iv%polaramv(nlocal(polaramv))%v(i) = platform%each(i)%v
+                  iv%polaramv(ilocal(polaramv))%p(i) = platform%each(i)%p%inv
+                  iv%polaramv(ilocal(polaramv))%u(i) = platform%each(i)%u
+                  iv%polaramv(ilocal(polaramv))%v(i) = platform%each(i)%v
                end do
-	       obs_index = polaramv ! geoamv is the fm_index value for 88
+               obs_index = polaramv ! geoamv is the fm_index value for 88
             else
-               if (.not. use_geoamvobs) cycle reports
-               if (n==1) ntotal(geoamv) = ntotal(geoamv) + 1 
+               if (.not.use_geoamvobs .or. ntotal(geoamv) == max_geoamv_input) cycle reports
+               if (n==1) ntotal(geoamv) = ntotal(geoamv) + 1
                if (outside) cycle reports
-               nlocal(geoamv) = nlocal(geoamv) + 1
-               if (nlocal(geoamv) > iv%info(geoamv)%nlocal) cycle reports
+                if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(geoamv,dlat_earth,dlon_earth,crit,nlocal(geoamv),itx,1,itt,ilocal(geoamv),iuse)
+                   if ( .not. iuse ) cycle reports
+                else
+                   nlocal(geoamv) = nlocal(geoamv) + 1
+                   ilocal(geoamv) = ilocal(geoamv) + 1
+                end if
 
-               allocate (iv%geoamv(nlocal(geoamv))%p (1:nlevels))
-               allocate (iv%geoamv(nlocal(geoamv))%u (1:nlevels))
-               allocate (iv%geoamv(nlocal(geoamv))%v (1:nlevels))
+               if( nlocal(geoamv) == ilocal(geoamv) )then
+                allocate (iv%geoamv(ilocal(geoamv))%p (1:iv%info(geoamv)%max_lev))
+                allocate (iv%geoamv(ilocal(geoamv))%u (1:iv%info(geoamv)%max_lev))
+                allocate (iv%geoamv(ilocal(geoamv))%v (1:iv%info(geoamv)%max_lev))
+               end if
 
                do i = 1, nlevels
-                  iv%geoamv(nlocal(geoamv))%p(i) = platform%each(i)%p%inv
-                  iv%geoamv(nlocal(geoamv))%u(i) = platform%each(i)%u
-                  iv%geoamv(nlocal(geoamv))%v(i) = platform%each(i)%v
+                  iv%geoamv(ilocal(geoamv))%p(i) = platform%each(i)%p%inv
+                  iv%geoamv(ilocal(geoamv))%u(i) = platform%each(i)%u
+                  iv%geoamv(ilocal(geoamv))%v(i) = platform%each(i)%v
                end do
+
             end if
 
          case (42,96:97) ;
-            if (.not. use_airepobs) cycle reports
-            if (n==1) ntotal(airep) = ntotal(airep) + 1 
+
+            if (.not.use_airepobs .or. ntotal(airep) == max_airep_input) cycle reports
+            if (n==1) ntotal(airep) = ntotal(airep) + 1
             if (outside) cycle reports
-            nlocal(airep) = nlocal(airep) + 1
-            if (nlocal(airep) > iv%info(airep)%nlocal) cycle reports
 
-            allocate (iv%airep(nlocal(airep))%h        (1:nlevels))
-            allocate (iv%airep(nlocal(airep))%p        (1:nlevels))
-            allocate (iv%airep(nlocal(airep))%u        (1:nlevels))
-            allocate (iv%airep(nlocal(airep))%v        (1:nlevels))
-            allocate (iv%airep(nlocal(airep))%t        (1:nlevels))
+            if( .not. thin_conv) then
+                   nlocal(airep) = nlocal(airep) + 1
+                   ilocal(airep) = ilocal(airep) + 1
+              if( nlocal(airep) == ilocal(airep)) then
+              allocate (iv%airep(ilocal(airep))%h        (1:iv%info(airep)%max_lev))
+              allocate (iv%airep(ilocal(airep))%p        (1:iv%info(airep)%max_lev))
+              allocate (iv%airep(ilocal(airep))%u        (1:iv%info(airep)%max_lev))
+              allocate (iv%airep(ilocal(airep))%v        (1:iv%info(airep)%max_lev))
+              allocate (iv%airep(ilocal(airep))%t        (1:iv%info(airep)%max_lev))
+             end if
 
-            do i = 1, nlevels
-               iv%airep(nlocal(airep))%h(i) = platform%each(i)%height
-               iv%airep(nlocal(airep))%p(i) = platform%each(i)%p%inv
-               iv%airep(nlocal(airep))%u(i) = platform%each(i)%u
-               iv%airep(nlocal(airep))%v(i) = platform%each(i)%v
-               iv%airep(nlocal(airep))%t(i) = platform%each(i)%t
-            end do
+             do i = 1, nlevels
+                iv%airep(ilocal(airep))%h(i) = platform%each(i)%height
+                iv%airep(ilocal(airep))%p(i) = platform%each(i)%p%inv
+                iv%airep(ilocal(airep))%u(i) = platform%each(i)%u
+                iv%airep(ilocal(airep))%v(i) = platform%each(i)%v
+                iv%airep(ilocal(airep))%t(i) = platform%each(i)%t
+             end do
+
+            else ! if thin_conv==true
+              thin_3d=.true.
+              i1   = platform%loc%i
+              j1   = platform%loc%j
+              dx   = platform%loc%dx
+              dy   = platform%loc%dy
+              dxm  = platform%loc%dxm
+              dym  = platform%loc%dym
+
+                 do k=kms,kme
+                  v_p(k) = dym*(dxm*grid%xb%p(i1,j1,k)+dx*grid%xb%p(i1+1,j1,k)) + &
+                            dy*(dxm*grid%xb%p(i1,j1+1,k)+dx*grid%xb%p(i1+1,j1+1,k))
+                 end do
+                 do k=kms,kme
+                  v_h(k) = dym*(dxm*grid%xb%h(i1,j1,k)+dx*grid%xb%h(i1+1,j1,k)) + &
+                            dy*(dxm*grid%xb%h(i1,j1+1,k)+dx*grid%xb%h(i1+1,j1+1,k))
+                 end do
+              do k= 1, nlevels
+               zk = missing_r
+               if( platform%each(k)%p%qc  >= 0 ) then
+                 call da_to_zk(platform%each(k)%p%inv, v_p, v_interp_p, zk)
+               else if( platform%each(k)%height_qc  >= 0 ) then
+                 call da_to_zk(platform%each(k)%height , v_h, v_interp_h, zk)
+               else
+                 write(unit=message(1),fmt='(A)')' For airep: neither height nor pressure qc is good'
+                 call da_error(__FILE__,__LINE__,message(1:1))
+               end if
+               if ( zk == missing_r ) cycle
+               crit = tdiff
+               call map2grids_conv(airep,dlat_earth,dlon_earth,crit,nlocal(airep),itx,1,itt,ilocal(airep),iuse,zk,thin_3d)
+               if ( .not. iuse ) cycle
+               iv%info(airep)%levels(ilocal(airep))    = 1
+               iv%info(airep)%name(ilocal(airep))      = platform%info%name
+               iv%info(airep)%platform(ilocal(airep))  = platform%info%platform
+               iv%info(airep)%id(ilocal(airep))        = platform%info%id
+               iv%info(airep)%date_char(ilocal(airep)) = platform%info%date_char
+               iv%info(airep)%lat(:,ilocal(airep))     = platform%info%lat
+               iv%info(airep)%lon(:,ilocal(airep))     = platform%info%lon
+               iv%info(airep)%elv(ilocal(airep))       = platform%info%elv
+               iv%info(airep)%pstar(ilocal(airep))     = platform%info%pstar
+
+               iv%info(airep)%slp(ilocal(airep))           = platform%loc%slp
+               iv%info(airep)%pw(ilocal(airep))            = platform%loc%pw
+               iv%info(airep)%x(:,ilocal(airep))           = platform%loc%x
+               iv%info(airep)%y(:,ilocal(airep))           = platform%loc%y
+               iv%info(airep)%i(:,ilocal(airep))           = platform%loc%i
+               iv%info(airep)%j(:,ilocal(airep))           = platform%loc%j
+               iv%info(airep)%dx(:,ilocal(airep))          = platform%loc%dx
+               iv%info(airep)%dxm(:,ilocal(airep))         = platform%loc%dxm
+               iv%info(airep)%dy(:,ilocal(airep))          = platform%loc%dy
+               iv%info(airep)%dym(:,ilocal(airep))         = platform%loc%dym
+               iv%info(airep)%proc_domain(:,ilocal(airep)) = platform%loc%proc_domain
+
+               iv%info(airep)%obs_global_index(ilocal(airep)) = ntotal(airep)
+               if( nlocal(airep) == ilocal(airep)) then
+                allocate (iv%airep(ilocal(airep))%h        (1:iv%info(airep)%max_lev))
+                allocate (iv%airep(ilocal(airep))%p        (1:iv%info(airep)%max_lev))
+                allocate (iv%airep(ilocal(airep))%u        (1:iv%info(airep)%max_lev))
+                allocate (iv%airep(ilocal(airep))%v        (1:iv%info(airep)%max_lev))
+                allocate (iv%airep(ilocal(airep))%t        (1:iv%info(airep)%max_lev))
+               end if
+
+               do i = 1, 1
+                  iv%airep(ilocal(airep))%h(i) = platform%each(k)%height
+                  iv%airep(ilocal(airep))%p(i) = platform%each(k)%p%inv
+                  iv%airep(ilocal(airep))%u(i) = platform%each(k)%u
+                  iv%airep(ilocal(airep))%v(i) = platform%each(k)%v
+                  iv%airep(ilocal(airep))%t(i) = platform%each(k)%t
+               end do
+              end do ! loop over k levels
+
+            end if ! if over thin_conv
 
          case (111, 114) ;
-            if(.not.use_GpspwObs  .and. fm == 111) cycle reports
-            if(.not.use_GpsztdObs .and. fm == 114) cycle reports
-
-            if (n==1) ntotal(gpspw) = ntotal(gpspw) + 1 
+            if((.not.use_gpspwobs  .and. fm == 111) .or. ntotal(gpspw) == max_gpspw_input ) cycle reports
+            if((.not.use_gpsztdobs .and. fm == 114) .or. ntotal(gpspw) == max_gpspw_input ) cycle reports
+            if (n==1) ntotal(gpspw) = ntotal(gpspw) + 1
             if (outside) cycle reports
-            nlocal(gpspw) = nlocal(gpspw) + 1
-            if (nlocal(gpspw) > iv%info(gpspw)%nlocal) cycle reports
+                if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(gpspw,dlat_earth,dlon_earth,crit,nlocal(gpspw),itx,1,itt,ilocal(gpspw),iuse)
+                   if ( .not. iuse ) cycle reports
+                else
+                   nlocal(gpspw) = nlocal(gpspw) + 1
+                   ilocal(gpspw) = ilocal(gpspw) + 1
+                end if
 
-            iv%gpspw(nlocal(gpspw))%tpw  = platform%loc%pw
+            iv%gpspw(ilocal(gpspw))%tpw  = platform%loc%pw
 
          case (116) ;
-            if (.not. use_gpsrefobs) cycle reports
+            if(.not.use_gpsrefobs  .or. ntotal(gpsref) == max_gpsref_input ) cycle reports
             if ( ob_format_gpsro /= ob_format_ascii ) cycle reports
-            if (n==1) ntotal(gpsref) = ntotal(gpsref) + 1 
+            if (n==1) ntotal(gpsref) = ntotal(gpsref) + 1
             if (outside) cycle reports
-            nlocal(gpsref) = nlocal(gpsref) + 1
-            if (nlocal(gpsref) > iv%info(gpsref)%nlocal) cycle reports
+                if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(gpsref,dlat_earth,dlon_earth,crit,nlocal(gpsref),itx,1,itt,ilocal(gpsref),iuse)
+                   if ( .not. iuse ) cycle reports
+                else
+                   nlocal(gpsref) = nlocal(gpsref) + 1
+                   ilocal(gpsref) = ilocal(gpsref) + 1
+                end if
 !
-! discarded the GPSRO data above 30-km (refere to GSI, Lidia Cucurull, Nov. 2009). 
+! discarded the GPSRO data above 30-km (refer to GSI, Lidia Cucurull, Nov. 2009).
 ! YRG, 02/01/2010.
             do i = 1, nlevels
                if ( platform%each(i)%height> 30000.0 ) then
@@ -820,175 +1064,233 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
                   exit
                endif
             enddo
-!           
-            allocate (iv%gpsref(nlocal(gpsref))%h (1:nlevels))
-            allocate (iv%gpsref(nlocal(gpsref))%ref(1:nlevels))
-            allocate (iv%gpsref(nlocal(gpsref))%  p(1:nlevels))
-            allocate (iv%gpsref(nlocal(gpsref))%  t(1:nlevels))
-            allocate (iv%gpsref(nlocal(gpsref))%  q(1:nlevels))
+            levs = nlevels
+!
+            if( nlocal(gpsref) == ilocal(gpsref)) then
+               allocate (iv%gpsref(ilocal(gpsref))%h (1:iv%info(gpsref)%max_lev))
+               allocate (iv%gpsref(ilocal(gpsref))%ref(1:iv%info(gpsref)%max_lev))
+               allocate (iv%gpsref(ilocal(gpsref))%  p(1:iv%info(gpsref)%max_lev))
+               allocate (iv%gpsref(ilocal(gpsref))%  t(1:iv%info(gpsref)%max_lev))
+               allocate (iv%gpsref(ilocal(gpsref))%  q(1:iv%info(gpsref)%max_lev))
+            end if
 
             do i = 1, nlevels
-               iv%gpsref(nlocal(gpsref))%h(i)   = platform%each(i)%height
+               iv%gpsref(ilocal(gpsref))%h(i)   = platform%each(i)%height
 
                ! In OBSPROC, use "td" field to store "gpsref"
-               iv%gpsref(nlocal(gpsref))%ref(i) = platform%each(i)%td
+               iv%gpsref(ilocal(gpsref))%ref(i) = platform%each(i)%td
 
                ! check height, only keep data below and above certain height
-               if ( iv%gpsref(nlocal(gpsref))%h(i) > top_km_gpsro*1000.0 .or. &
-                    iv%gpsref(nlocal(gpsref))%h(i) < bot_km_gpsro*1000.0 ) then
-                  iv%gpsref(nlocal(gpsref))%ref(i)%qc = -77
+               if ( iv%gpsref(ilocal(gpsref))%h(i) > top_km_gpsro*1000.0 .or. &
+                    iv%gpsref(ilocal(gpsref))%h(i) < bot_km_gpsro*1000.0 ) then
+                  iv%gpsref(ilocal(gpsref))%ref(i)%qc = -77
                end if
 
-               ! Keep the retrieved p and t (and q) as "field_type":   
-               iv%gpsref(nlocal(gpsref))%p(i)   = platform%each(i)%p
-               iv%gpsref(nlocal(gpsref))%t(i)   = platform%each(i)%t
-               iv%gpsref(nlocal(gpsref))%q(i)   = platform%each(i)%q
+               ! Keep the retrieved p and t (and q) as "field_type":
+               iv%gpsref(ilocal(gpsref))%p(i)   = platform%each(i)%p
+               iv%gpsref(ilocal(gpsref))%t(i)   = platform%each(i)%t
+               iv%gpsref(ilocal(gpsref))%q(i)   = platform%each(i)%q
             end do
 
          case (121) ;
-            if (.not. use_ssmt1obs) cycle reports
-            if (n==1) ntotal(ssmt1) = ntotal(ssmt1) + 1 
+            if(.not.use_ssmt1obs  .or. ntotal(ssmt1) == max_ssmt1_input ) cycle reports
+            if (n==1) ntotal(ssmt1) = ntotal(ssmt1) + 1
             if (outside) cycle reports
-            nlocal(ssmt1) = nlocal(ssmt1) + 1
-            if (nlocal(ssmt1) > iv%info(ssmt2)%nlocal) cycle reports
+            if (n==1) ntotal(ssmt1) = ntotal(ssmt1) + 1
+                if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(ssmt1,dlat_earth,dlon_earth,crit,nlocal(ssmt1),itx,1,itt,ilocal(ssmt1),iuse)
+                   if ( .not. iuse ) cycle reports
+                else
+                   nlocal(ssmt1) = nlocal(ssmt1) + 1
+                   ilocal(ssmt1) = ilocal(ssmt1) + 1
+                end if
 
-            allocate (iv%ssmt1(nlocal(ssmt1))%h (1:nlevels))
-            allocate (iv%ssmt1(nlocal(ssmt1))%p (1:nlevels))
-            allocate (iv%ssmt1(nlocal(ssmt1))%t (1:nlevels))
+            if ( nlocal(ssmt1) == ilocal(ssmt1)) then
+             allocate (iv%ssmt1(ilocal(ssmt1))%h (1:iv%info(ssmt1)%max_lev))
+             allocate (iv%ssmt1(ilocal(ssmt1))%p (1:iv%info(ssmt1)%max_lev))
+             allocate (iv%ssmt1(ilocal(ssmt1))%t (1:iv%info(ssmt1)%max_lev))
+            end if
 
             do i = 1, nlevels
-              iv%ssmt1(nlocal(ssmt1))%h(i) = platform%each(i)%height
-              iv%ssmt1(nlocal(ssmt1))%p(i) = platform%each(i)%p%inv
-              iv%ssmt1(nlocal(ssmt1))%t(i) = platform%each(i)%t
+              iv%ssmt1(ilocal(ssmt1))%h(i) = platform%each(i)%height
+              iv%ssmt1(ilocal(ssmt1))%p(i) = platform%each(i)%p%inv
+              iv%ssmt1(ilocal(ssmt1))%t(i) = platform%each(i)%t
             end do
-         
+
          case (122) ;
-            if (.not. use_ssmt2obs) cycle reports
+            if(.not.use_ssmt2obs  .or. ntotal(ssmt2) == max_ssmt2_input ) cycle reports
             if (n==1) ntotal(ssmt2) = ntotal(ssmt2) + 1
             if (outside) cycle reports
-            nlocal(ssmt2) = nlocal(ssmt2) + 1
-            if (nlocal(ssmt2) > iv%info(ssmt2)%nlocal) cycle reports
-
-            allocate (iv%ssmt2(nlocal(ssmt2))%h (1:nlevels))
-            allocate (iv%ssmt2(nlocal(ssmt2))%p (1:nlevels))
-            allocate (iv%ssmt2(nlocal(ssmt2))%rh(1:nlevels))
+                if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(ssmt2,dlat_earth,dlon_earth,crit,nlocal(ssmt2),itx,1,itt,ilocal(ssmt2),iuse)
+                   if ( .not. iuse ) cycle reports
+                else
+                   nlocal(ssmt2) = nlocal(ssmt2) + 1
+                   ilocal(ssmt2) = ilocal(ssmt2) + 1
+                end if
+            if ( nlocal(ssmt2) == ilocal(ssmt2)) then
+             allocate (iv%ssmt2(ilocal(ssmt2))%h (1:iv%info(ssmt2)%max_lev))
+             allocate (iv%ssmt2(ilocal(ssmt2))%p (1:iv%info(ssmt2)%max_lev))
+             allocate (iv%ssmt2(ilocal(ssmt2))%rh(1:iv%info(ssmt2)%max_lev))
+            end if
 
             do i = 1, nlevels
-               iv%ssmt2(nlocal(ssmt2))% h(i) = platform%each(i)%height
-               iv%ssmt2(nlocal(ssmt2))% p(i) = platform%each(i)%p%inv
-               iv%ssmt2(nlocal(ssmt2))%rh(i) = platform%each(i)%rh
+               iv%ssmt2(ilocal(ssmt2))% h(i) = platform%each(i)%height
+               iv%ssmt2(ilocal(ssmt2))% p(i) = platform%each(i)%p%inv
+               iv%ssmt2(ilocal(ssmt2))%rh(i) = platform%each(i)%rh
             end do
-
          case (281)    ;
-            if (.not. use_qscatobs) cycle reports
+            if(.not.use_qscatobs  .or. ntotal(qscat) == max_qscat_input ) cycle reports
             if (n==1) ntotal(qscat) = ntotal(qscat) + 1
             if (outside) cycle reports
-            nlocal(qscat) = nlocal(qscat)  + 1
-            if (nlocal(qscat) > iv%info(qscat)%nlocal) cycle reports
+                if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(qscat,dlat_earth,dlon_earth,crit,nlocal(qscat),itx,1,itt,ilocal(qscat),iuse)
+                   if ( .not. iuse ) cycle reports
+                else
+                   nlocal(qscat) = nlocal(qscat) + 1
+                   ilocal(qscat) = ilocal(qscat) + 1
+                end if
 
-            iv%qscat(nlocal(qscat))%h = platform%each(1)%height
-            iv%qscat(nlocal(qscat))%u = platform%each(1)%u
-            iv%qscat(nlocal(qscat))%v = platform%each(1)%v
+!            if (nlocal(qscat) == ilocal(qscat)) then
+                iv%qscat(ilocal(qscat))%h = platform%each(1)%height
+                iv%qscat(ilocal(qscat))%u = platform%each(1)%u
+                iv%qscat(ilocal(qscat))%v = platform%each(1)%v
+!            end if
 
             ! Impose minimum observation error = 1.0m/s for Quikscat data:
-            iv%qscat(nlocal(qscat))%u%error = max(platform%each(1)%u%error,1.0)
-            iv%qscat(nlocal(qscat))%v%error = max(platform%each(1)%v%error,1.0)
+            iv%qscat(ilocal(qscat))%u%error = max(platform%each(1)%u%error,1.0)
+            iv%qscat(ilocal(qscat))%v%error = max(platform%each(1)%v%error,1.0)
 
          case (132) ; ! profiler
-            if (.not. use_profilerobs) cycle reports
+            if (.not. use_profilerobs .or. ntotal(profiler) == max_profiler_input ) cycle reports
             if (n==1) ntotal(profiler) = ntotal(profiler) + 1
             if (outside) cycle reports
-            nlocal(profiler) = nlocal(profiler) + 1
-            if (nlocal(profiler) > iv%info(profiler)%nlocal) cycle reports
+                if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(profiler,dlat_earth,dlon_earth,crit,nlocal(profiler),itx,1,itt,ilocal(profiler),iuse)
+                   if ( .not. iuse ) cycle reports
+                else
+                   nlocal(profiler) = nlocal(profiler) + 1
+                   ilocal(profiler) = ilocal(profiler) + 1
+                end if
 
-            allocate (iv%profiler(nlocal(profiler))%h (1:nlevels))
-            allocate (iv%profiler(nlocal(profiler))%p (1:nlevels))
-            allocate (iv%profiler(nlocal(profiler))%u (1:nlevels))
-            allocate (iv%profiler(nlocal(profiler))%v (1:nlevels))
+            if (nlocal(profiler) == ilocal(profiler) ) then
+               allocate (iv%profiler(ilocal(profiler))%h (1:iv%info(profiler)%max_lev))
+               allocate (iv%profiler(ilocal(profiler))%p (1:iv%info(profiler)%max_lev))
+               allocate (iv%profiler(ilocal(profiler))%u (1:iv%info(profiler)%max_lev))
+               allocate (iv%profiler(ilocal(profiler))%v (1:iv%info(profiler)%max_lev))
+            end if
 
             do i = 1, nlevels
-               iv%profiler(nlocal(profiler))%h(i) = platform%each(i)%height
-               iv%profiler(nlocal(profiler))%p(i) = platform%each(i)%p%inv
-               iv%profiler(nlocal(profiler))%u(i) = platform%each(i)%u
-               iv%profiler(nlocal(profiler))%v(i) = platform%each(i)%v
+               iv%profiler(ilocal(profiler))%h(i) = platform%each(i)%height
+               iv%profiler(ilocal(profiler))%p(i) = platform%each(i)%p%inv
+               iv%profiler(ilocal(profiler))%u(i) = platform%each(i)%u
+               iv%profiler(ilocal(profiler))%v(i) = platform%each(i)%v
             end do
 
          case (135) ; ! Bogus
-            if (.not. use_bogusobs) cycle reports
+            if (.not. use_bogusobs .or. ntotal(bogus) == max_bogus_input ) cycle reports
             if (n==1) ntotal(bogus) = ntotal(bogus) + 1
             if (outside) cycle reports
-            nlocal(bogus) = nlocal(bogus) + 1
-            if (nlocal(bogus) > iv%info(bogus)%nlocal) cycle reports
+            if (n==1) ntotal(bogus) = ntotal(bogus) + 1
+                if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(bogus,dlat_earth,dlon_earth,crit,nlocal(bogus),itx,1,itt,ilocal(bogus),iuse)
+                   if ( .not. iuse ) cycle reports
+                else
+                   nlocal(bogus) = nlocal(bogus) + 1
+                   ilocal(bogus) = ilocal(bogus) + 1
+                end if
 
-            if (nlocal(bogus) > max_bogus_input) then
+            if (ilocal(bogus) > max_bogus_input) then
                write(unit=message(1),fmt='(A,I6,A,I6)') &
-                  'Bogus #=', nlocal(bogus), ' > max_bogus_input=', max_bogus_input
+                  'Bogus #=', ilocal(bogus), ' > max_bogus_input=', max_bogus_input
                call da_error(__FILE__,__LINE__,message(1:1))
             end if
 
-            allocate (iv%bogus(nlocal(bogus))%h (1:nlevels))
-            allocate (iv%bogus(nlocal(bogus))%p (1:nlevels))
-            allocate (iv%bogus(nlocal(bogus))%u (1:nlevels))
-            allocate (iv%bogus(nlocal(bogus))%v (1:nlevels))
-            allocate (iv%bogus(nlocal(bogus))%t (1:nlevels))
-            allocate (iv%bogus(nlocal(bogus))%q (1:nlevels))
+            if (nlocal(bogus) == ilocal(bogus)) then
+               allocate (iv%bogus(ilocal(bogus))%h (1:iv%info(bogus)%max_lev))
+               allocate (iv%bogus(ilocal(bogus))%p (1:iv%info(bogus)%max_lev))
+               allocate (iv%bogus(ilocal(bogus))%u (1:iv%info(bogus)%max_lev))
+               allocate (iv%bogus(ilocal(bogus))%v (1:iv%info(bogus)%max_lev))
+               allocate (iv%bogus(ilocal(bogus))%t (1:iv%info(bogus)%max_lev))
+               allocate (iv%bogus(ilocal(bogus))%q (1:iv%info(bogus)%max_lev))
+            end if
 
             do i = 1, nlevels
-               iv%bogus(nlocal(bogus))%h(i) = platform%each(i)%height
-               iv%bogus(nlocal(bogus))%p(i) = platform%each(i)%p%inv
-               iv%bogus(nlocal(bogus))%u(i) = platform%each(i)%u
-               iv%bogus(nlocal(bogus))%v(i) = platform%each(i)%v
-               iv%bogus(nlocal(bogus))%t(i) = platform%each(i)%t
-               iv%bogus(nlocal(bogus))%q(i) = platform%each(i)%q
+               iv%bogus(ilocal(bogus))%h(i) = platform%each(i)%height
+               iv%bogus(ilocal(bogus))%p(i) = platform%each(i)%p%inv
+               iv%bogus(ilocal(bogus))%u(i) = platform%each(i)%u
+               iv%bogus(ilocal(bogus))%v(i) = platform%each(i)%v
+               iv%bogus(ilocal(bogus))%t(i) = platform%each(i)%t
+               iv%bogus(ilocal(bogus))%q(i) = platform%each(i)%q
             end do
 
-            iv%bogus(nlocal(bogus))%slp    = platform%loc%slp
+            iv%bogus(ilocal(bogus))%slp    = platform%loc%slp
 
             if (print_detail_obs) then
                write(unit=stdout,fmt=*) 'nlevels=', nlevels
-               write(unit=stdout,fmt=*) 'iv%info(bogus)%nlocal,slp', iv%info(bogus)%nlocal,  &
-                  iv % bogus (nlocal(bogus)) % slp
+               write(unit=stdout,fmt=*) 'iv%info(bogus)%nlocal,slp', ilocal(bogus),  &
+                  iv % bogus (ilocal(bogus)) % slp
                do i=1,nlevels
                   write(unit=stdout,fmt=*) 'nlocal(bogus), i ', nlocal(bogus),i
                   write(unit=stdout,fmt=*) 'iv%bogus(nlocal(bogus))%u,v=',  &
-                     iv%bogus(nlocal(bogus))%u(i),iv%bogus(nlocal(bogus))%v(i)
+                     iv%bogus(ilocal(bogus))%u(i),iv%bogus(ilocal(bogus))%v(i)
                   write(unit=stdout,fmt=*) 'iv%bogus(nlocal(bogus))%t,q=',  &
-                     iv%bogus(nlocal(bogus))%t(i),iv%bogus(nlocal(bogus))%q(i)
+                     iv%bogus(ilocal(bogus))%t(i),iv%bogus(ilocal(bogus))%q(i)
                end do
-               write(unit=stdout,fmt='(2(a,i4))') 'nlocal(bogus)=',nlocal(bogus), &
+               write(unit=stdout,fmt='(2(a,i4))') 'nlocal(bogus)=',ilocal(bogus), &
                   'nlevels=',nlevels
             end if
 
          case (18,19) ;             ! buoy
-            if (.not. use_buoyobs) cycle reports
+            if (.not. use_buoyobs .or. ntotal(buoy) == max_buoy_input ) cycle reports
             if (n==1) ntotal(buoy) = ntotal(buoy) + 1
             if (outside) cycle reports
-            nlocal(buoy) = nlocal(buoy)  + 1
-            if (nlocal(buoy) > iv%info(buoy)%nlocal) cycle reports
+                if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(buoy,dlat_earth,dlon_earth,crit,nlocal(buoy),itx,1,itt,ilocal(buoy),iuse)
+                   if ( .not. iuse ) cycle reports
+                else
+                   nlocal(buoy) = nlocal(buoy)  + 1
+                   ilocal(buoy) = ilocal(buoy)  + 1
+                end if
 
-            iv%buoy(nlocal(buoy))%h = platform%each(1)%height
-            iv%buoy(nlocal(buoy))%u = platform%each(1)%u
-            iv%buoy(nlocal(buoy))%v = platform%each(1)%v
-            iv%buoy(nlocal(buoy))%t = platform%each(1)%t
-            iv%buoy(nlocal(buoy))%p = platform%each(1)%p
-            iv%buoy(nlocal(buoy))%q = platform%each(1)%q
-   
+            iv%buoy(ilocal(buoy))%h = platform%each(1)%height
+            iv%buoy(ilocal(buoy))%u = platform%each(1)%u
+            iv%buoy(ilocal(buoy))%v = platform%each(1)%v
+            iv%buoy(ilocal(buoy))%t = platform%each(1)%t
+            iv%buoy(ilocal(buoy))%p = platform%each(1)%p
+            iv%buoy(ilocal(buoy))%q = platform%each(1)%q
+
+
          case (133)    ;         ! AIRS retrievals  
-            if (.not. use_airsretobs) cycle reports
+            if (.not. use_airsretobs .or. ntotal(airsr) == max_airsr_input ) cycle reports
             if (n==1) ntotal(airsr) = ntotal(airsr) + 1
             if (outside) cycle reports
-            nlocal(airsr) = nlocal(airsr) + 1
-            if (nlocal(airsr) > iv%info(airsr)%nlocal) cycle reports
+                if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(airsr,dlat_earth,dlon_earth,crit,nlocal(airsr),itx,1,itt,ilocal(airsr),iuse)
+                   if ( .not. iuse ) cycle reports
+                else
+                   nlocal(airsr) = nlocal(airsr)  + 1
+                   ilocal(airsr) = ilocal(airsr)  + 1
+                end if
 
-            allocate (iv%airsr(nlocal(airsr))%h (1:nlevels))
-            allocate (iv%airsr(nlocal(airsr))%p (1:nlevels))
-            allocate (iv%airsr(nlocal(airsr))%t (1:nlevels))
-            allocate (iv%airsr(nlocal(airsr))%q (1:nlevels))
+            if (nlocal(airsr) == ilocal(airsr)) then
+               allocate (iv%airsr(ilocal(airsr))%h (1:iv%info(airsr)%max_lev))
+               allocate (iv%airsr(ilocal(airsr))%p (1:iv%info(airsr)%max_lev))
+               allocate (iv%airsr(ilocal(airsr))%t (1:iv%info(airsr)%max_lev))
+               allocate (iv%airsr(ilocal(airsr))%q (1:iv%info(airsr)%max_lev))
+            end if
             do i = 1, nlevels
-               iv%airsr(nlocal(airsr))%h(i) = platform%each(i)%height
-               iv%airsr(nlocal(airsr))%p(i) = platform%each(i)%p%inv
-               iv%airsr(nlocal(airsr))%t(i) = platform%each(i)%t
-               iv%airsr(nlocal(airsr))%q(i) = platform%each(i)%q
+               iv%airsr(ilocal(airsr))%h(i) = platform%each(i)%height
+               iv%airsr(ilocal(airsr))%p(i) = platform%each(i)%p%inv
+               iv%airsr(ilocal(airsr))%t(i) = platform%each(i)%t
+               iv%airsr(ilocal(airsr))%q(i) = platform%each(i)%q
             end do
 
          case default;
@@ -1001,84 +1303,86 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
             call da_warning(__FILE__,__LINE__,message(1:3))
             cycle
          end select
-	   
-         iv%info(obs_index)%name(nlocal(obs_index))      = platform%info%name
-         iv%info(obs_index)%platform(nlocal(obs_index))  = platform%info%platform
-         iv%info(obs_index)%id(nlocal(obs_index))        = platform%info%id
-         iv%info(obs_index)%date_char(nlocal(obs_index)) = platform%info%date_char
-         ! nlevels adjusted for some obs types so use that
-         iv%info(obs_index)%levels(nlocal(obs_index))    = nlevels
-         iv%info(obs_index)%lat(:,nlocal(obs_index))     = platform%info%lat
-         iv%info(obs_index)%lon(:,nlocal(obs_index))     = platform%info%lon
-         iv%info(obs_index)%elv(nlocal(obs_index))       = platform%info%elv
-         iv%info(obs_index)%pstar(nlocal(obs_index))     = platform%info%pstar
+         if( is_surface .or. (levs > 0 .and. .not. thin_conv) .or. &
+            (levs > 0 .and. (thin_conv .and. (obs_index /=  airep .and. obs_index /= tamdar))) ) then
+            iv%info(obs_index)%name(ilocal(obs_index))      = platform%info%name
+            iv%info(obs_index)%platform(ilocal(obs_index))  = platform%info%platform
+            iv%info(obs_index)%id(ilocal(obs_index))        = platform%info%id
+            iv%info(obs_index)%date_char(ilocal(obs_index)) = platform%info%date_char
+            ! nlevels adjusted for some obs types so use that
+            iv%info(obs_index)%levels(ilocal(obs_index))    = min(iv%info(obs_index)%max_lev, levs)
+            iv%info(obs_index)%lat(:,ilocal(obs_index))     = platform%info%lat
+            iv%info(obs_index)%lon(:,ilocal(obs_index))     = platform%info%lon
+            iv%info(obs_index)%elv(ilocal(obs_index))       = platform%info%elv
+            iv%info(obs_index)%pstar(ilocal(obs_index))     = platform%info%pstar
 
-         iv%info(obs_index)%slp(nlocal(obs_index))           = platform%loc%slp
-         iv%info(obs_index)%pw(nlocal(obs_index))            = platform%loc%pw
-         iv%info(obs_index)%x(:,nlocal(obs_index))           = platform%loc%x
-         iv%info(obs_index)%y(:,nlocal(obs_index))           = platform%loc%y 
-         iv%info(obs_index)%i(:,nlocal(obs_index))           = platform%loc%i 
-         iv%info(obs_index)%j(:,nlocal(obs_index))           = platform%loc%j 
-         iv%info(obs_index)%dx(:,nlocal(obs_index))          = platform%loc%dx
-         iv%info(obs_index)%dxm(:,nlocal(obs_index))         = platform%loc%dxm
-         iv%info(obs_index)%dy(:,nlocal(obs_index))          = platform%loc%dy
-         iv%info(obs_index)%dym(:,nlocal(obs_index))         = platform%loc%dym
-         iv%info(obs_index)%proc_domain(:,nlocal(obs_index)) = platform%loc%proc_domain
+            iv%info(obs_index)%slp(ilocal(obs_index))           = platform%loc%slp
+            iv%info(obs_index)%pw(ilocal(obs_index))            = platform%loc%pw
+            iv%info(obs_index)%x(:,ilocal(obs_index))           = platform%loc%x
+            iv%info(obs_index)%y(:,ilocal(obs_index))           = platform%loc%y
+            iv%info(obs_index)%i(:,ilocal(obs_index))           = platform%loc%i
+            iv%info(obs_index)%j(:,ilocal(obs_index))           = platform%loc%j
+            iv%info(obs_index)%dx(:,ilocal(obs_index))          = platform%loc%dx
+            iv%info(obs_index)%dxm(:,ilocal(obs_index))         = platform%loc%dxm
+            iv%info(obs_index)%dy(:,ilocal(obs_index))          = platform%loc%dy
+            iv%info(obs_index)%dym(:,ilocal(obs_index))         = platform%loc%dym
+            iv%info(obs_index)%proc_domain(:,ilocal(obs_index)) = platform%loc%proc_domain
 
-         iv%info(obs_index)%obs_global_index(nlocal(obs_index)) = ntotal(obs_index)
+            iv%info(obs_index)%obs_global_index(nlocal(obs_index)) = ntotal(obs_index)
 
-         ! special case for sonde_sfc, duplicate sound info
-         if (obs_index == sound) then
-            iv%info(sonde_sfc)%name(nlocal(sonde_sfc))      = platform%info%name
-            iv%info(sonde_sfc)%platform(nlocal(sonde_sfc))  = platform%info%platform
-            iv%info(sonde_sfc)%id(nlocal(sonde_sfc))        = platform%info%id
-            iv%info(sonde_sfc)%date_char(nlocal(sonde_sfc)) = platform%info%date_char
-            iv%info(sonde_sfc)%levels(nlocal(sonde_sfc))    = 1
-            iv%info(sonde_sfc)%lat(:,nlocal(sonde_sfc))     = platform%info%lat
-            iv%info(sonde_sfc)%lon(:,nlocal(sonde_sfc))     = platform%info%lon
-            iv%info(sonde_sfc)%elv(nlocal(sonde_sfc))       = platform%info%elv
-            iv%info(sonde_sfc)%pstar(nlocal(sonde_sfc))     = platform%info%pstar
+            ! special case for sonde_sfc, duplicate sound info
+            if (obs_index == sound) then
+               iv%info(sonde_sfc)%name(ilocal(sonde_sfc))      = platform%info%name
+               iv%info(sonde_sfc)%platform(ilocal(sonde_sfc))  = platform%info%platform
+               iv%info(sonde_sfc)%id(ilocal(sonde_sfc))        = platform%info%id
+               iv%info(sonde_sfc)%date_char(ilocal(sonde_sfc)) = platform%info%date_char
+               iv%info(sonde_sfc)%levels(ilocal(sonde_sfc))    = 1
+               iv%info(sonde_sfc)%lat(:,ilocal(sonde_sfc))     = platform%info%lat
+               iv%info(sonde_sfc)%lon(:,ilocal(sonde_sfc))     = platform%info%lon
+               iv%info(sonde_sfc)%elv(ilocal(sonde_sfc))       = platform%info%elv
+               iv%info(sonde_sfc)%pstar(ilocal(sonde_sfc))     = platform%info%pstar
 
-            iv%info(sonde_sfc)%slp(nlocal(sonde_sfc))           = platform%loc%slp
-            iv%info(sonde_sfc)%pw(nlocal(sonde_sfc))            = platform%loc%pw
-            iv%info(sonde_sfc)%x(:,nlocal(sonde_sfc))           = platform%loc%x
-            iv%info(sonde_sfc)%y(:,nlocal(sonde_sfc))           = platform%loc%y 
-            iv%info(sonde_sfc)%i(:,nlocal(sonde_sfc))           = platform%loc%i 
-            iv%info(sonde_sfc)%j(:,nlocal(sonde_sfc))           = platform%loc%j 
-            iv%info(sonde_sfc)%dx(:,nlocal(sonde_sfc))          = platform%loc%dx
-            iv%info(sonde_sfc)%dxm(:,nlocal(sonde_sfc))         = platform%loc%dxm
-            iv%info(sonde_sfc)%dy(:,nlocal(sonde_sfc))          = platform%loc%dy
-            iv%info(sonde_sfc)%dym(:,nlocal(sonde_sfc))         = platform%loc%dym
-            iv%info(sonde_sfc)%proc_domain(:,nlocal(sonde_sfc)) = platform%loc%proc_domain
+               iv%info(sonde_sfc)%slp(ilocal(sonde_sfc))           = platform%loc%slp
+               iv%info(sonde_sfc)%pw(ilocal(sonde_sfc))            = platform%loc%pw
+               iv%info(sonde_sfc)%x(:,ilocal(sonde_sfc))           = platform%loc%x
+               iv%info(sonde_sfc)%y(:,ilocal(sonde_sfc))           = platform%loc%y
+               iv%info(sonde_sfc)%i(:,ilocal(sonde_sfc))           = platform%loc%i
+               iv%info(sonde_sfc)%j(:,ilocal(sonde_sfc))           = platform%loc%j
+               iv%info(sonde_sfc)%dx(:,ilocal(sonde_sfc))          = platform%loc%dx
+               iv%info(sonde_sfc)%dxm(:,ilocal(sonde_sfc))         = platform%loc%dxm
+               iv%info(sonde_sfc)%dy(:,ilocal(sonde_sfc))          = platform%loc%dy
+               iv%info(sonde_sfc)%dym(:,ilocal(sonde_sfc))         = platform%loc%dym
+               iv%info(sonde_sfc)%proc_domain(:,ilocal(sonde_sfc)) = platform%loc%proc_domain
+               iv%info(sonde_sfc)%obs_global_index(ilocal(sonde_sfc)) = ntotal(obs_index)
+            end if
 
-            iv%info(sonde_sfc)%obs_global_index(nlocal(sonde_sfc)) = ntotal(sonde_sfc)
-         end if
+            if (is_surface .and. obs_index == tamdar) then
+               iv%info(tamdar_sfc)%name(ilocal(tamdar_sfc))      = platform%info%name
+               iv%info(tamdar_sfc)%platform(ilocal(tamdar_sfc))  = platform%info%platform
+               iv%info(tamdar_sfc)%id(ilocal(tamdar_sfc))        = platform%info%id
+               iv%info(tamdar_sfc)%date_char(ilocal(tamdar_sfc)) = platform%info%date_char
+               iv%info(tamdar_sfc)%levels(ilocal(tamdar_sfc))    = 1
+               iv%info(tamdar_sfc)%lat(:,ilocal(tamdar_sfc))     = platform%info%lat
+               iv%info(tamdar_sfc)%lon(:,ilocal(tamdar_sfc))     = platform%info%lon
+               iv%info(tamdar_sfc)%elv(ilocal(tamdar_sfc))       = platform%info%elv
+               iv%info(tamdar_sfc)%pstar(ilocal(tamdar_sfc))     = platform%info%pstar
 
-         if (obs_index == tamdar) then
-            iv%info(tamdar_sfc)%name(nlocal(tamdar_sfc))      = platform%info%name
-            iv%info(tamdar_sfc)%platform(nlocal(tamdar_sfc))  = platform%info%platform
-            iv%info(tamdar_sfc)%id(nlocal(tamdar_sfc))        = platform%info%id
-            iv%info(tamdar_sfc)%date_char(nlocal(tamdar_sfc)) = platform%info%date_char
-            iv%info(tamdar_sfc)%levels(nlocal(tamdar_sfc))    = 1
-            iv%info(tamdar_sfc)%lat(:,nlocal(tamdar_sfc))     = platform%info%lat
-            iv%info(tamdar_sfc)%lon(:,nlocal(tamdar_sfc))     = platform%info%lon
-            iv%info(tamdar_sfc)%elv(nlocal(tamdar_sfc))       = platform%info%elv
-            iv%info(tamdar_sfc)%pstar(nlocal(tamdar_sfc))     = platform%info%pstar
+               iv%info(tamdar_sfc)%slp(ilocal(tamdar_sfc))           = platform%loc%slp
+               iv%info(tamdar_sfc)%pw(ilocal(tamdar_sfc))            = platform%loc%pw
+               iv%info(tamdar_sfc)%x(:,ilocal(tamdar_sfc))           = platform%loc%x
+               iv%info(tamdar_sfc)%y(:,ilocal(tamdar_sfc))           = platform%loc%y
+               iv%info(tamdar_sfc)%i(:,ilocal(tamdar_sfc))           = platform%loc%i
+               iv%info(tamdar_sfc)%j(:,ilocal(tamdar_sfc))           = platform%loc%j
+               iv%info(tamdar_sfc)%dx(:,ilocal(tamdar_sfc))          = platform%loc%dx
+               iv%info(tamdar_sfc)%dxm(:,ilocal(tamdar_sfc))         = platform%loc%dxm
+               iv%info(tamdar_sfc)%dy(:,ilocal(tamdar_sfc))          = platform%loc%dy
+               iv%info(tamdar_sfc)%dym(:,ilocal(tamdar_sfc))         = platform%loc%dym
+               iv%info(tamdar_sfc)%proc_domain(:,ilocal(tamdar_sfc)) = platform%loc%proc_domain
 
-            iv%info(tamdar_sfc)%slp(nlocal(tamdar_sfc))           = platform%loc%slp
-            iv%info(tamdar_sfc)%pw(nlocal(tamdar_sfc))            = platform%loc%pw
-            iv%info(tamdar_sfc)%x(:,nlocal(tamdar_sfc))           = platform%loc%x
-            iv%info(tamdar_sfc)%y(:,nlocal(tamdar_sfc))           = platform%loc%y
-            iv%info(tamdar_sfc)%i(:,nlocal(tamdar_sfc))           = platform%loc%i
-            iv%info(tamdar_sfc)%j(:,nlocal(tamdar_sfc))           = platform%loc%j
-            iv%info(tamdar_sfc)%dx(:,nlocal(tamdar_sfc))          = platform%loc%dx
-            iv%info(tamdar_sfc)%dxm(:,nlocal(tamdar_sfc))         = platform%loc%dxm
-            iv%info(tamdar_sfc)%dy(:,nlocal(tamdar_sfc))          = platform%loc%dy
-            iv%info(tamdar_sfc)%dym(:,nlocal(tamdar_sfc))         = platform%loc%dym
-            iv%info(tamdar_sfc)%proc_domain(:,nlocal(tamdar_sfc)) = platform%loc%proc_domain
+               iv%info(tamdar_sfc)%obs_global_index(ilocal(tamdar_sfc)) = ntotal(tamdar_sfc)
+            end if
+         end if  ! for thin_conv skipping obs_index for which thin_3d is true like airep and tamdir
 
-            iv%info(tamdar_sfc)%obs_global_index(nlocal(tamdar_sfc)) = ntotal(tamdar_sfc)
-         end if
 
          if (global .and. n < 2) then
             if (test_transforms) exit dup_loop
@@ -1094,8 +1398,50 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct)
    end do reports
 
    close(iunit)
+
    call da_free_unit(iunit)
 
+   ! thinning check
+   if ( thin_conv ) then
+      do n = 1, num_ob_indexes
+          allocate ( in(thinning_grid_conv(n)%itxmax) )
+          allocate (out(thinning_grid_conv(n)%itxmax) )
+            do i = 1, thinning_grid_conv(n)%itxmax
+               in(i) = thinning_grid_conv(n)%score_crit(i)
+            end do
+#ifdef DM_PARALLEL
+            ! Get minimum crit and associated processor index.
+            call mpi_reduce(in, out, thinning_grid_conv(n)%itxmax, true_mpi_real, mpi_min, root, comm, ierr)
+            call wrf_dm_bcast_real (out, thinning_grid_conv(n)%itxmax)
+#else
+            out = in
+#endif
+            do i = 1, thinning_grid_conv(n)%itxmax
+              if( out(i) < 9.99e6) iv%info(n)%thin_ntotal=  iv%info(n)%thin_ntotal + 1
+               if ( abs(out(i)-thinning_grid_conv(n)%score_crit(i)) > 1.0E-10 ) then
+                  thinning_grid_conv(n)%ibest_obs(i) = 0
+               end if
+            end do
+!            do j = iv%info(n)%plocal(iv%time -1)+1 , iv%info(n)%plocal(iv%time -1)+nlocal(n)
+            do j = iv%info(n)%plocal(iv%time -1)+1 , nlocal(n)
+               found = .false.
+               do i = 1, thinning_grid_conv(n)%itxmax
+                  if ( thinning_grid_conv(n)%ibest_obs(i) == j .and.         &
+                       thinning_grid_conv(n)%score_crit(i) < 9.99e6 ) then
+                   iv%info(n)%thin_nlocal =  iv%info(n)%thin_nlocal + 1
+                     found = .true.
+
+                     exit
+                  end if
+               end do
+               if ( .not. found ) then
+                  iv%info(n)%thinned(:,j) = .true.
+               end if
+            end do
+         deallocate( in  )
+         deallocate( out )
+      end do ! loop over num_ob_indexes
+   end if  ! thin_conv
    if (trace_use) call da_trace_exit("da_read_obs_ascii")
 
 end subroutine da_read_obs_ascii

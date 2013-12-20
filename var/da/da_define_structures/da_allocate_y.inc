@@ -110,7 +110,9 @@ subroutine da_allocate_y (iv, y)
          y % sound(n) % t(1:nlevels) = 0.0
          y % sound(n) % q(1:nlevels) = 0.0
       end do
+   end if
 
+   if (y % nlocal(sonde_sfc) > 0) then
       allocate (y % sonde_sfc(1:y % nlocal(sonde_sfc)))
 
       y % sonde_sfc(1:y % nlocal(sonde_sfc)) % u = 0.0
@@ -148,6 +150,8 @@ subroutine da_allocate_y (iv, y)
          y % tamdar(n) % t(1:nlevels) = 0.0
          y % tamdar(n) % q(1:nlevels) = 0.0
       end do
+   end if
+   if (y % nlocal(tamdar_sfc) > 0) then
       allocate (y % tamdar_sfc(1:y % nlocal(tamdar_sfc)))
 
       y % tamdar_sfc(1:y % nlocal(tamdar_sfc)) % u = 0.0

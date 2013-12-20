@@ -10,7 +10,7 @@ program gen_be_diags_read
 !------------------------------------------------------------------------
 
 
-   use da_control, only : stderr, stdout, filename_len
+   use da_control, only : do_normalize,filename_len,stderr,stdout,use_rf
    use da_tools_serial, only : da_get_unit
    use da_gen_be, only : da_print_be_stats_h_regional, &
       da_print_be_stats_h_global, da_print_be_stats_p, da_print_be_stats_v
@@ -59,7 +59,8 @@ program gen_be_diags_read
    real, allocatable   :: scale_length(:)   ! Scale length for regional application.
 
 
-   namelist / gen_be_diags_nl / cv_options, uh_method, n_smth_sl
+   namelist / gen_be_diags_nl / cv_options, do_normalize, n_smth_sl, uh_method, use_rf
+
 
    integer :: iunit,namelist_unit
 

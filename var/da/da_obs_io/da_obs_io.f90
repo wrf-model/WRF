@@ -7,7 +7,8 @@ module da_obs_io
       obs_qc_pointer, rootproc, omb_unit,omb_add_noise,use_airepobs, &
       use_airepobs,use_bogusobs,use_gpspwobs,use_gpsztdobs,use_gpsrefobs,use_geoamvobs, &
       use_metarobs,use_profilerobs,use_pilotobs,use_buoyobs,use_shipsobs,use_rainobs, &
-      use_synopobs,use_soundobs,use_mtgirsobs,use_tamdarobs,use_qscatobs,test_transforms, use_ssmiretrievalobs, report_start, &
+      use_synopobs,use_soundobs,use_mtgirsobs,use_tamdarobs,use_qscatobs,use_radarobs, &
+      test_transforms, use_ssmiretrievalobs, report_start, &
       report_end, global, print_detail_obs, stdout, t_kelvin, stderr, &
       max_ob_levels, missing_data, max_bogus_input, myproc, convert_uv2fd, convert_fd2uv, &
       fails_error_max,standard_atmosphere,zero_t_td,print_detail_f_obs, &
@@ -25,13 +26,13 @@ module da_obs_io
       radar, radiance, airsr, sonde_sfc, trace_use_dull, num_fgat_time, time_slots, myproc, &
       qmarker_retain, anal_type_verify, top_km_gpsro, bot_km_gpsro, thin_rainobs, &
       sfc_assi_options, sfc_assi_options_1, sfc_assi_options_2,print_detail_rain,max_rain_input,rain, &
-      var_wind, pi, ob_format_gpsro, ob_format_ascii
+      var_wind, pi, ob_format_gpsro, ob_format_ascii, analysis_date, kms,kme, v_interp_h, v_interp_p
 
    use da_define_structures, only : iv_type, multi_level_type, multi_level_type_BUFR, &
       radar_multi_level_type, y_type, field_type, each_level_type, &
       radar_each_level_type, info_type, model_loc_type,gpsref_type, rain_single_level_type, rain_each_type
    use da_grid_definitions, only : da_ffdduv,da_ffdduv2
-   use da_obs, only : da_count_filtered_obs,da_check_missing,da_obs_proc_station
+   use da_obs, only : da_count_filtered_obs,da_check_missing,da_obs_proc_station, da_set_obs_missing, da_set_3d_obs_missing
    use da_par_util1, only : da_proc_sum_int
    use da_physics, only : da_tp_to_qs
    use da_reporting, only : da_warning, message, da_error
@@ -53,6 +54,7 @@ module da_obs_io
    use da_obs, only : da_set_obs_missing
 #endif
    use da_reporting, only : message, da_message
+   use da_interpolation, only : da_to_zk
 
    implicit none
 

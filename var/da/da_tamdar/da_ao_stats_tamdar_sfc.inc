@@ -37,7 +37,7 @@ subroutine da_ao_stats_tamdar_sfc (stats_unit, iv, re, ob)
    stats%average = residual_tamdar_sfc1_type(0.0, 0.0, 0.0, 0.0, 0.0)
    stats%rms_err = stats%average
 
-   do n=1, iv%info(tamdar)%nlocal
+   do n=1, iv%info(tamdar_sfc)%nlocal
       if (iv%info(tamdar_sfc)%proc_domain(1,n)) then
          u_inv = re%tamdar_sfc(n)%u
          v_inv = re%tamdar_sfc(n)%v
@@ -76,7 +76,7 @@ subroutine da_ao_stats_tamdar_sfc (stats_unit, iv, re, ob)
    call da_proc_sum_int (nt)
    call da_proc_sum_int (np)
    call da_proc_sum_int (nq)
-   iv%nstats(tamdar) = iv%nstats(tamdar) + nu + nv + nt + np + nq
+   iv%nstats(tamdar_sfc) =  nu + nv + nt + np + nq
 
    call da_proc_stats_combine(stats%average%u, stats%rms_err%u, &
       stats%minimum%u%value, stats%maximum%u%value, &

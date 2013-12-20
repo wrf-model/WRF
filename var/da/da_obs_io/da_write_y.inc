@@ -638,15 +638,19 @@ subroutine da_write_y (iv, y)
             end if
          end do
       end if
+   end if
+
+! Now tamdar_sfc
+   if (iv%info(tamdar_sfc)%nlocal > 0) then
       num_obs = 0
-      do n = 1, iv%info(tamdar)%nlocal
-         if (iv%info(tamdar)%proc_domain(1,n)) num_obs = num_obs + 1
+      do n = 1, iv%info(tamdar_sfc)%nlocal
+         if (iv%info(tamdar_sfc)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
       if (num_obs > 0) then
          write(ounit,'(a20,i8)')'sonde_sfc', num_obs
          num_obs = 0
-         do n = 1, iv%info(tamdar)%nlocal
-            if (iv%info(tamdar)%proc_domain(1,n)) then
+         do n = 1, iv%info(tamdar_sfc)%nlocal
+            if (iv%info(tamdar_sfc)%proc_domain(1,n)) then
                num_obs = num_obs + 1
                write(ounit,'(i8)')  1
                call da_check_missing(iv%tamdar_sfc(n)%u%qc, y%tamdar_sfc(n)%u, f1)

@@ -341,7 +341,7 @@
       END IF
 
 !-----------------------------------------------------------------------
-!  shcu_physics = 3 (grimsshcuscheme) only works with YSU PBL.
+!  gwd_opt = 1 only works with YSU PBL.
 !-----------------------------------------------------------------------
 
       oops = 0
@@ -353,7 +353,7 @@
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = 'bl_pbl_physics /= 1, implies shcu_physics cannot be 3, resetting'
+         wrf_err_message = 'bl_pbl_physics /= 1, implies gwd_opt cannot be 1, resetting'
          CALL wrf_message ( wrf_err_message )
       END IF
 

@@ -27,6 +27,7 @@ subroutine da_get_innov_vector_airep( it,num_qcstat_conv, grid, ob, iv)
    real, allocatable :: model_u(:,:)  ! Model value u at ob location.
    real, allocatable :: model_v(:,:)  ! Model value v at ob location.
    real, allocatable :: model_t(:,:)  ! Model value t at ob location.
+   real, allocatable :: model_q(:,:)  ! Model value q at ob location.
 
    real    :: v_h(kms:kme)      ! Model value h at ob hor. location.
    real    :: v_p(kms:kme)      ! Model value p at ob hor. location.
@@ -36,10 +37,12 @@ subroutine da_get_innov_vector_airep( it,num_qcstat_conv, grid, ob, iv)
    allocate (model_u(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
    allocate (model_v(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
    allocate (model_t(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
+   allocate (model_q(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
 
    model_u(:,:) = 0.0
    model_v(:,:) = 0.0
    model_t(:,:) = 0.0
+   model_q(:,:) = 0.0
 
    if ( it > 1) then
       do n=iv%info(airep)%n1, iv%info(airep)%n2
@@ -47,6 +50,7 @@ subroutine da_get_innov_vector_airep( it,num_qcstat_conv, grid, ob, iv)
             if (iv%airep(n)%u(k)%qc == fails_error_max) iv%airep(n)%u(k)%qc = 0               
             if (iv%airep(n)%v(k)%qc == fails_error_max) iv%airep(n)%v(k)%qc = 0               
             if (iv%airep(n)%t(k)%qc == fails_error_max) iv%airep(n)%t(k)%qc = 0               
+            if (iv%airep(n)%q(k)%qc == fails_error_max) iv%airep(n)%q(k)%qc = 0               
          end do
       end do
    end if
@@ -101,6 +105,7 @@ subroutine da_get_innov_vector_airep( it,num_qcstat_conv, grid, ob, iv)
                iv%airep(n)%u(k)%qc = missing_data
                iv%airep(n)%v(k)%qc = missing_data
                iv%airep(n)%t(k)%qc = missing_data
+               iv%airep(n)%q(k)%qc = missing_data
             end if
          end do
       end do
@@ -114,6 +119,7 @@ subroutine da_get_innov_vector_airep( it,num_qcstat_conv, grid, ob, iv)
    call da_interp_lin_3d (grid%xb%v, iv%info(airep), model_v)
 #endif
    call da_interp_lin_3d (grid%xb%t, iv%info(airep), model_t)
+   call da_interp_lin_3d (grid%xb%q, iv%info(airep), model_q)
 
    do n=iv%info(airep)%n1, iv%info(airep)%n2
 
@@ -125,6 +131,7 @@ subroutine da_get_innov_vector_airep( it,num_qcstat_conv, grid, ob, iv)
          iv % airep(n) % u(k) % inv = 0.0
          iv % airep(n) % v(k) % inv = 0.0
          iv % airep(n) % t(k) % inv = 0.0
+         iv % airep(n) % q(k) % inv = 0.0
 
          !----------------------------------------------------------------
          ! [3.0] Fast interpolation:
@@ -154,6 +161,10 @@ subroutine da_get_innov_vector_airep( it,num_qcstat_conv, grid, ob, iv)
          if (ob % airep(n) % t(k) > missing_r .AND. iv % airep(n) % t(k) % qc >= obs_qc_pointer) then
             iv % airep(n) % t(k) % inv = ob % airep(n) % t(k) - model_t(k,n)
          end if
+
+         if (ob % airep(n) % q(k) > missing_r .AND. iv % airep(n) % q(k) % qc >= obs_qc_pointer) then
+            iv % airep(n) % q(k) % inv = ob % airep(n) % q(k) - model_q(k,n)
+         end if
       end do
    end do
 
@@ -167,6 +178,7 @@ subroutine da_get_innov_vector_airep( it,num_qcstat_conv, grid, ob, iv)
    deallocate (model_u)
    deallocate (model_v)
    deallocate (model_t)
+   deallocate (model_q)
    
    if (trace_use_dull) call da_trace_exit("da_get_innov_vector_airep")
 

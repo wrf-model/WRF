@@ -157,7 +157,7 @@ subroutine da_use_obs_errfac(iv)
 
    
    call da_read_errfac('airep', iv % airep_ef_u, iv % airep_ef_v, &
-                        iv % airep_ef_t, d1, d2)
+                        iv % airep_ef_t, iv % airep_ef_q, d1)
 
    if (iv%info(airep)%nlocal > 0) then
       do n = 1, iv%info(airep)%nlocal
@@ -168,6 +168,8 @@ subroutine da_use_obs_errfac(iv)
                                            iv % airep_ef_v
             iv % airep(n) % t(k) % error = iv % airep(n) % t(k) % error * &
                                            iv % airep_ef_t
+            iv % airep(n) % q(k) % error = iv % airep(n) % q(k) % error * &
+                                           iv % airep_ef_q
          end do
       end do
    end if

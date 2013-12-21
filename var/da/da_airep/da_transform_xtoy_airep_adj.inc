@@ -17,6 +17,7 @@ subroutine da_transform_xtoy_airep_adj(grid, iv, jo_grad_y, jo_grad_x)
    real, allocatable :: u(:,:)
    real, allocatable :: v(:,:)
    real, allocatable :: t(:,:)
+   real, allocatable :: q(:,:)
 
    real, allocatable :: ub(:,:)
    real, allocatable :: vb(:,:)
@@ -26,6 +27,7 @@ subroutine da_transform_xtoy_airep_adj(grid, iv, jo_grad_y, jo_grad_x)
    allocate (u(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
    allocate (v(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
    allocate (t(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
+   allocate (q(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
 
    allocate (ub(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
    allocate (vb(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
@@ -44,6 +46,7 @@ subroutine da_transform_xtoy_airep_adj(grid, iv, jo_grad_y, jo_grad_x)
          end if
       end do
       t(1:size(jo_grad_y%airep(n)%t),n) = jo_grad_y%airep(n)%t(:)
+      q(1:size(jo_grad_y%airep(n)%q),n) = jo_grad_y%airep(n)%q(:)
    end do
 
 #ifdef A2C
@@ -54,10 +57,12 @@ subroutine da_transform_xtoy_airep_adj(grid, iv, jo_grad_y, jo_grad_x)
    call da_interp_lin_3d_adj(jo_grad_x%v, iv%info(airep), v)
 #endif
    call da_interp_lin_3d_adj(jo_grad_x%t, iv%info(airep), t)
+   call da_interp_lin_3d_adj(jo_grad_x%q, iv%info(airep), q)
 
    deallocate (u)
    deallocate (v)
    deallocate (t)
+   deallocate (q)
    deallocate (ub)
    deallocate (vb)
 

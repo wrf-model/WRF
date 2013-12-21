@@ -943,6 +943,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
               allocate (iv%airep(ilocal(airep))%u        (1:iv%info(airep)%max_lev))
               allocate (iv%airep(ilocal(airep))%v        (1:iv%info(airep)%max_lev))
               allocate (iv%airep(ilocal(airep))%t        (1:iv%info(airep)%max_lev))
+              allocate (iv%airep(ilocal(airep))%q        (1:iv%info(airep)%max_lev))
              end if
 
              do i = 1, nlevels
@@ -951,6 +952,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                 iv%airep(ilocal(airep))%u(i) = platform%each(i)%u
                 iv%airep(ilocal(airep))%v(i) = platform%each(i)%v
                 iv%airep(ilocal(airep))%t(i) = platform%each(i)%t
+                iv%airep(ilocal(airep))%q(i) = platform%each(i)%q
              end do
 
             else ! if thin_conv==true

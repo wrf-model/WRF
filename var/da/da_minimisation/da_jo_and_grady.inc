@@ -194,11 +194,21 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
 
    if (iv%info(airep)%nlocal > 0) then
       call da_jo_and_grady_airep(iv, re, jo, jo_grad_y)
-      jo_airep = jo%airep_u + jo%airep_v + jo%airep_t
+      jo_airep = jo%airep_u + jo%airep_v + jo%airep_t + jo%airep_q
+
+      if (print_detail_grad) then
+          write(unit=stdout, fmt='(a, e24.12)') &
+               '   jo_airep        ', jo_airep, &
+               '   jo%airep_u      ', jo%airep_u, &
+               '   jo%airep_v      ', jo%airep_v, &
+               '   jo%airep_t      ', jo%airep_t, &
+               '   jo%airep_q      ', jo%airep_q
+      end if
    else
       jo % airep_u = 0.0
       jo % airep_v = 0.0
       jo % airep_t = 0.0
+      jo % airep_q = 0.0
       jo_airep = 0.0
    end if
 

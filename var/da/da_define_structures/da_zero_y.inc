@@ -184,6 +184,7 @@ subroutine da_zero_y( iv, y, value )
          y % airep(n) % u(1:nlevels) = value
          y % airep(n) % v(1:nlevels) = value
          y % airep(n) % t(1:nlevels) = value
+         y % airep(n) % q(1:nlevels) = value
       end do
    end if
 

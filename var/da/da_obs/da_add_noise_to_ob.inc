@@ -303,13 +303,15 @@ subroutine da_add_noise_to_ob( iv, ob )
             call da_add_noise( iv % airep(n) % u(k), ob % airep(n) % u(k), z1)
             call da_add_noise( iv % airep(n) % v(k), ob % airep(n) % v(k), z2)
             call da_add_noise( iv % airep(n) % t(k), ob % airep(n) % t(k), z3)
+            call da_add_noise( iv % airep(n) % q(k), ob % airep(n) % q(k), z4)
 
 !           Write out data:
             write(ounit,'(2i8,10e15.7)')num_obs, k, &
                                iv % airep(n) % u(k) % error, z1, &
                                iv % airep(n) % v(k) % error, z2, &
                                iv % airep(n) % t(k) % error, z3, &
-                               dum, dum, dum, dum
+                               iv % airep(n) % q(k) % error, z4, &
+                               dum, dum
          end do
        end if
       end do

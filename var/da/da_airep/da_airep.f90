@@ -4,7 +4,7 @@ module da_airep
    
    use da_control, only : obs_qc_pointer,max_ob_levels,missing_r, missing_data, &
       check_max_iv_print, check_max_iv_unit, v_interp_p, v_interp_h, &
-      check_max_iv, missing, max_error_uv, max_error_t, rootproc, &
+      check_max_iv, missing, max_error_uv, max_error_t, max_error_q, rootproc, &
       airep, anal_type_verify, kms,kme,kts,kte, trace_use_dull, &
       position_lev_dependant,qcstat_conv_unit,ob_vars, fails_error_max, &
       convert_fd2uv, convert_uv2fd, max_error_sp, max_error_dir, var_wind, max_omb_sp, max_omb_dir, pi, qc_rej_both
@@ -27,10 +27,11 @@ module da_airep
       real          :: u                        ! u-wind.
       real          :: v                        ! v-wind.
       real          :: t                        ! temperature
+      real          :: q                        ! q
    end type residual_airep1_type
 
    type maxmin_airep_stats_type
-      type (maxmin_type)         :: u, v, t 
+      type (maxmin_type)         :: u, v, t, q 
    end type maxmin_airep_stats_type
 
    type stats_airep_type

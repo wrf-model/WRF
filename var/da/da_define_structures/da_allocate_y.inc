@@ -192,9 +192,11 @@ subroutine da_allocate_y (iv, y)
          allocate (y % airep(n)%u(1:nlevels))
          allocate (y % airep(n)%v(1:nlevels))
          allocate (y % airep(n)%t(1:nlevels))
+         allocate (y % airep(n)%q(1:nlevels))
          y % airep(n) % u(1:nlevels) = 0.0
          y % airep(n) % v(1:nlevels) = 0.0
          y % airep(n) % t(1:nlevels) = 0.0
+         y % airep(n) % q(1:nlevels) = 0.0
       end do
    end if
 

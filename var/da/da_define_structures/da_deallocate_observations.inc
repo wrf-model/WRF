@@ -72,6 +72,7 @@ subroutine da_deallocate_observations (iv)
          deallocate (iv%airep (n) % u)
          deallocate (iv%airep (n) % v)
          deallocate (iv%airep (n) % t)
+         deallocate (iv%airep (n) % q)
       end do
 
       deallocate (iv%airep)

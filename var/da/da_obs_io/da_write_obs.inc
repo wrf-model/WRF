@@ -297,7 +297,7 @@ subroutine da_write_obs(it,ob, iv, re)
             num_obs = num_obs + 1
             write(ounit,'(i8)')iv%info(airep)%levels(n)
             do k = 1, iv%info(airep)%levels(n)
-               write(ounit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7),f9.2)')&
+               write(ounit,'(2i8,a5,2f9.2,f17.7,4(2f17.7,i8,2f17.7),f9.2)')&
                   num_obs, k, iv%info(airep)%id(n), &  ! Station
                   iv%info(airep)%lat(k,n), &       ! Latitude
                   iv%info(airep)%lon(k,n), &       ! Longitude
@@ -310,7 +310,10 @@ subroutine da_write_obs(it,ob, iv, re)
                   re%airep(n)%v(k),        &
                   ob%airep(n)%t(k),        &
                   iv%airep(n)%t(k)%inv, iv%airep(n)%t(k)%qc, iv%airep(n)%t(k)%error, & 
-                  re%airep(n)%t(k), iv%info(airep)%zk(k,n)
+                  re%airep(n)%t(k),        &
+                  ob%airep(n)%q(k),        &
+                  iv%airep(n)%q(k)%inv, iv%airep(n)%q(k)%qc, iv%airep(n)%q(k)%error, &
+                  re%airep(n)%q(k), iv%info(airep)%zk(k,n)
             end do
          end if
       end do
@@ -690,7 +693,7 @@ subroutine da_write_obs(it,ob, iv, re)
             num_obs = num_obs + 1
             write(ounit,'(i8)')iv%info(tamdar)%levels(n)
             do k = 1, iv%info(tamdar)%levels(n)
-               write(ounit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7),f9.2)')&
+               write(ounit,'(2i8,a5,2f9.2,f17.7,4(2f17.7,i8,2f17.7),f9.2)')&
                   num_obs,k, iv%info(tamdar)%id(n), &  ! Station
                   iv%info(tamdar)%lat(k,n), &       ! Latitude
                   iv%info(tamdar)%lon(k,n), &       ! Longitude

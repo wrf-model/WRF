@@ -17,6 +17,7 @@ subroutine da_transform_xtoy_airep (grid, iv, y)
    real, allocatable :: u(:,:)
    real, allocatable :: v(:,:)
    real, allocatable :: t(:,:)
+   real, allocatable :: q(:,:)
 
    real, allocatable :: ub(:,:)
    real, allocatable :: vb(:,:)
@@ -26,6 +27,7 @@ subroutine da_transform_xtoy_airep (grid, iv, y)
    allocate (u(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
    allocate (v(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
    allocate (t(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
+   allocate (q(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
   
    allocate (ub(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
    allocate (vb(iv%info(airep)%max_lev,iv%info(airep)%n1:iv%info(airep)%n2))
@@ -38,6 +40,7 @@ subroutine da_transform_xtoy_airep (grid, iv, y)
    call da_interp_lin_3d (grid%xa%v, iv%info(airep), v)
 #endif
    call da_interp_lin_3d (grid%xa%t, iv%info(airep), t)
+   call da_interp_lin_3d (grid%xa%q, iv%info(airep), q)
 
    call da_interp_lin_3d (grid%xb%u, iv%info(airep), ub)
    call da_interp_lin_3d (grid%xb%v, iv%info(airep), vb)
@@ -51,12 +54,14 @@ subroutine da_transform_xtoy_airep (grid, iv, y)
              call da_uv_wind_tgl(y%airep(n)%u(k),y%airep(n)%v(k),u(k,n),v(k,n),ub(k,n),vb(k,n))
          endif
          y%airep(n)%t(:) = t(1:size(y%airep(n)%t),n)
+         y%airep(n)%q(:) = q(1:size(y%airep(n)%q),n)
       end do
    end do
   
    deallocate (u)
    deallocate (v)
    deallocate (t)
+   deallocate (q)
    deallocate (ub)
    deallocate (vb)
 

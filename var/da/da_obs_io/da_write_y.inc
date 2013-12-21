@@ -263,7 +263,8 @@ subroutine da_write_y (iv, y)
                   call da_check_missing(iv%airep(n)%u(k)%qc, y%airep(n)%u(k), f1)
                   call da_check_missing(iv%airep(n)%v(k)%qc, y%airep(n)%v(k), f2)
                   call da_check_missing(iv%airep(n)%t(k)%qc, y%airep(n)%t(k), f3)
-                  write(ounit,'(2i8,7e15.7)')num_obs, k, f1, f2, f3, dum,dum, &
+                  call da_check_missing(iv%airep(n)%q(k)%qc, y%airep(n)%q(k), f4)
+                  write(ounit,'(2i8,7e15.7)')num_obs, k, f1, f2, f3, f4, dum, &
                      dum,dum
                end do
             end if

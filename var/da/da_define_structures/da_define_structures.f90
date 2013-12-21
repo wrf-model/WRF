@@ -297,6 +297,7 @@ module da_define_structures
       type (field_type)     , pointer :: u        (:) ! u-wind.
       type (field_type)     , pointer :: v        (:) ! v-wind.
       type (field_type)     , pointer :: t        (:) ! temperature.
+      type (field_type)     , pointer :: q        (:) ! specific humidity.
    end type airep_type
 
    type pilot_type
@@ -594,7 +595,7 @@ module da_define_structures
       real    :: mtgirs_ef_u, mtgirs_ef_v, mtgirs_ef_t, mtgirs_ef_q
       real    :: tamdar_ef_u, tamdar_ef_v, tamdar_ef_t, tamdar_ef_q
       real    :: tamdar_sfc_ef_u, tamdar_sfc_ef_v, tamdar_sfc_ef_t, tamdar_sfc_ef_p, tamdar_sfc_ef_q
-      real    :: airep_ef_u, airep_ef_v, airep_ef_t
+      real    :: airep_ef_u, airep_ef_v, airep_ef_t, airep_ef_q
       real    :: pilot_ef_u, pilot_ef_v
       real    :: ssmir_ef_speed, ssmir_ef_tpw
       real    :: satem_ef_thickness, ssmt1_ef_t, ssmt2_ef_rh
@@ -741,6 +742,7 @@ module da_define_structures
       real, pointer :: u(:)                     ! u-wind.
       real, pointer :: v(:)                     ! v-wind.
       real, pointer :: t(:)                     ! temperature.
+      real, pointer :: q(:)                     ! specific humidity.
    end type residual_airep_type
 
    type residual_pilot_type
@@ -886,7 +888,7 @@ module da_define_structures
       real                :: tamdar_u, tamdar_v, tamdar_t, tamdar_q
       real                :: tamdar_sfc_u, tamdar_sfc_v, tamdar_sfc_t, &
                              tamdar_sfc_p, tamdar_sfc_q
-      real                :: airep_u, airep_v, airep_t
+      real                :: airep_u, airep_v, airep_t, airep_q
       real                :: pilot_u, pilot_v
       real                :: ssmir_speed, ssmir_tpw
       real                :: ssmi_tb19v, ssmi_tb19h, ssmi_tb22v, ssmi_tb37v, &

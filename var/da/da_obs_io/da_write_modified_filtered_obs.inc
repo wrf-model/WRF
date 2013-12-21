@@ -1023,6 +1023,27 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
                vv        = missing_r			!cys_add
             end if
 
+          ! get RH from Q & T
+            if (iv%airep(n)%q(k)%qc >= obs_qc_pointer .and.  &
+                abs(iv%airep(n)%q(k)%error - missing_r) > 1. .and.  &
+                abs(ob%airep(n)%t(k)       - missing_r) > 1. .and.  &
+                abs(iv%airep(n)%p(k)       - missing_r) > 1.   ) then
+                call da_tp_to_qs(ob%airep(n)%t(k), iv%airep(n)%p(k), es, qs)
+                rh = (ob%airep(n)%q(k)/qs) * 100.
+                rh_qc = iv%airep(n)%q(k)%qc
+                q = ob%airep(n)%q(k) * 1e3    !g/kg           !cys_add
+                q_qc = iv%airep(n)%q(k)%qc                    !cys_add
+                q_err = max(0.01, iv%airep(n)%q(k)%error * 1e3) !g/kg !cys_add
+            else
+                rh    = missing_r
+                rh_qc = missing_data
+                q     = missing_r                             !cys_add
+                q_qc  = missing_data                          !cys_add
+                q_err = xmiss                                 !cys_add
+            end if
+            if (rh_qc < 0) rh_qc = missing_data
+            if ( q_qc < 0)  q_qc = missing_data              !cys_add
+
             t    =  ob%airep(n)%t(k)
             t_qc =  iv%airep(n)%t(k)%qc
             t_err= iv%airep(n)%t(k)%error
@@ -1041,15 +1062,15 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
 !cys           missing_r, missing_data, xmiss,        & 
 !cys           missing_r, missing_data, xmiss
             write(ounit, fmt = trim (fmt_each_inv))       &
-               iv%airep(n)%p(k),zero , pr_error,      &
+               iv%airep(n)%p(k),zero , pr_error,          &
                uu, speed_qc, speed_err ,                  &
                vv, speed_qc, speed_err ,                  &
-               missing_r, standard_atmosphere, xmiss, &
+               iv%airep(n)%h(k), zero, elv_error,         &
                t, t_qc, t_err,                            &
-               missing_r, missing_data, xmiss,        & 
-               missing_r, missing_data, xmiss,        &
+               td, td_qc, td_error,                       &
+               q, q_qc, q_err,                            &
                iv%airep(n)%u(k)%inv, iv%airep(n)%v(k)%inv, &
-               iv%airep(n)%t(k)%inv, xmiss
+               iv%airep(n)%t(k)%inv, iv%airep(n)%q(k)%inv*1e3
          end do 
       end do     
    end if

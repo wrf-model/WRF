@@ -152,6 +152,8 @@ subroutine da_random_omb_all(iv, ob)
                               iv % airep(n) % v(k) % qc, iv % airep(n) % v(k) % inv)
             call da_random_omb(iv % airep(n) % t(k) % error, ob % airep(n) % t(k), &
                               iv % airep(n) % t(k) % qc, iv % airep(n) % t(k) % inv)
+            call da_random_omb(iv % airep(n) % q(k) % error, ob % airep(n) % q(k), &
+                              iv % airep(n) % q(k) % qc, iv % airep(n) % q(k) % inv)
          end do
       end do
    end if

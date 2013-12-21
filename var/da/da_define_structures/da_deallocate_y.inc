@@ -95,6 +95,7 @@ subroutine da_deallocate_y(y)
          deallocate (y % airep(n)%u)
          deallocate (y % airep(n)%v)
          deallocate (y % airep(n)%t)
+         deallocate (y % airep(n)%q)
       end do
       deallocate (y % airep)
    end if

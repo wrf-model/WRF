@@ -875,6 +875,20 @@ subroutine da_write_filtered_obs(it, grid, ob, iv, &
                speed_err = xmiss
             end if
 
+          ! get RH from Q & T
+            if (iv%airep(n)%q(k)%qc >= obs_qc_pointer .and.  &
+                abs(iv%airep(n)%q(k)%error - missing_r) > 1. .and.  &
+                abs(ob%airep(n)%t(k)       - missing_r) > 1. .and.  &
+                abs(iv%airep(n)%p(k)       - missing_r) > 1.   ) then
+                call da_tp_to_qs(ob%airep(n)%t(k), iv%airep(n)%p(k), es, qs)
+                rh = (ob%airep(n)%q(k)/qs) * 100.
+                rh_qc = iv%airep(n)%q(k)%qc
+            else
+                rh    = missing_r
+                rh_qc = missing_data
+            end if
+            if (rh_qc < 0) rh_qc = missing_data
+
             t    =  ob%airep(n)%t(k)
             t_qc =  iv%airep(n)%t(k)%qc
             t_err= iv%airep(n)%t(k)%error
@@ -886,11 +900,11 @@ subroutine da_write_filtered_obs(it, grid, ob, iv, &
             write(ounit, fmt = trim (fmt_each))       &
                iv%airep(n)%p(k),zero , pr_error,      &
                speed, speed_qc, speed_err,            &
-               dir  , dir_qc, dir_error,              &
-               missing_r, standard_atmosphere, xmiss, &
+               dir  , dir_qc, dir_err,                &
+               iv%airep(n)%h(k), zero, elv_error,     &
                t,  t_qc,   t_err,                     &
-               missing_r, missing_data, xmiss,        & 
-               missing_r, missing_data, xmiss
+               td, td_qc, td_error,                   &
+               rh, rh_qc,  rh_error
          end do 
       end do     
    end if

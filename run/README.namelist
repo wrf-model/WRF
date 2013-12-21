@@ -673,8 +673,10 @@ Namelist variables for controlling the adaptive time step option:
                                                   0 = without snow-cover effect
  icloud                              = 1,	; cloud effect to the optical depth in radiation
                                                   (only works for ra_sw_physics = 1,4 and ra_lw_physics = 1,4)
-                                                  1 = with cloud effect
+                                                  Since 3.6, this also controls the cloud fraction options
+                                                  1 = with cloud effect, and use cloud fraction option 2
                                                   0 = without cloud effect
+                                                  2 = with cloud effect, and use cloud fraction option 1
  swrad_scat                          = 1.       ; scattering tuning parameter (default 1. is 1.e-5 m2/kg)
                                                   (works for ra_sw_physics = 1 option only)
  surface_input_source                = 1,	; where landuse and soil category data come from:

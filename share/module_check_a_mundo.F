@@ -608,6 +608,24 @@
       IMPLICIT NONE
 
 !-----------------------------------------------------------------------
+! Set the namelist mosaic_cat_soil parameter for the Noah-mosaic  scheme if sf_surface_mosaic == 1.  
+!-----------------------------------------------------------------------
+      INTEGER :: numsoiltemp , nummosaictemp
+
+      IF ( model_config_rec % sf_surface_mosaic .EQ. 1 ) THEN
+      
+      numsoiltemp = model_config_rec % num_soil_layers
+      nummosaictemp = model_config_rec % mosaic_cat
+      
+         model_config_rec % mosaic_cat_soil = numsoiltemp * nummosaictemp
+
+         wrf_err_message = '--- NOTE: Noah-mosaic is in use, setting:  ' // &
+                           'mosaic_cat_soil = mosaic_cat * num_soil_layers'
+         CALL wrf_message ( wrf_err_message )
+
+      END IF     
+      
+!-----------------------------------------------------------------------
 ! Set the namelist parameters for the CAM radiation scheme if either 
 ! ra_lw_physics = CAMLWSCHEME or ra_sw_physics = CAMSWSCHEME.  
 !-----------------------------------------------------------------------

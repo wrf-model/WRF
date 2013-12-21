@@ -339,7 +339,7 @@ CONTAINS
 !... Integer
       INTEGER :: KL, jtf, ktf, itf, KMIX, KSRC
 !...
-        character*256 :: message
+        character*512 :: message
 !-----initialize vertical tendencies and
 
       DO i = its,ite

@@ -3131,6 +3131,7 @@
      &                 ,DO_RADAR_REF=config_flags%do_radar_ref          &
      &                 ,DIAGFLAG=diag_flag                              &
      &                 ,ID=grid%id                                      &
+     &                 ,num_scalar=1                                      &  !mchen temporary
      &                 ,refl_10cm=grid%refl_10cm & ! to calc. radar reflectivity
      &                 ,re_cloud=grid%re_cloud                          & ! G. Thompson
      &                 ,re_ice=grid%re_ice                              & ! G. Thompson

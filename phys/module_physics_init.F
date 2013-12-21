@@ -3145,6 +3145,8 @@ integer myproc
    USE module_mp_HWRF
 #endif
    USE module_mp_thompson
+   USE module_mp_full_sbm
+   USE module_mp_fast_sbm
    USE module_mp_morr_two_moment
    USE module_mp_milbrandt2mom
 !  USE module_mp_milbrandt3mom
@@ -3276,6 +3278,14 @@ integer myproc
      CASE (WDM6SCHEME)
           CALL wdm6init(rhoair0,rhowater,rhosnow,cliq,cpv,n_ccn0,allowed_to_read )
 #if (EM_CORE==1)
+    CASE (FULL_KHAIN_LYNN)
+     IF(start_of_simulation.or.restart)THEN
+          CALL full_hucminit(dt)
+     END IF
+    CASE (FAST_KHAIN_LYNN)
+     IF(start_of_simulation.or.restart)THEN
+          CALL fast_hucminit(dt)
+     END IF
      CASE (NSSL_1MOMLFO)
          CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=0,mixphase=0,ihvol=-1) ! no separate hail
      CASE (NSSL_1MOM)

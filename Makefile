@@ -136,6 +136,16 @@ em_quarter_ss : wrf
 	( cd test/em_quarter_ss ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_quarter_ss ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . )
 	( cd test/em_quarter_ss ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . )
+	( cd test/em_quarter_ss ; /bin/rm -f bulkdens.asc_s_0_03_0_9 ; ln -s ../../run/bulkdens.asc_s_0_03_0_9 . )
+	( cd test/em_quarter_ss ; /bin/rm -f bulkradii.asc_s_0_03_0_9 ; ln -s ../../run/bulkradii.asc_s_0_03_0_9 . )
+	( cd test/em_quarter_ss ; /bin/rm -f capacity.asc ; ln -s ../../run/capacity.asc . )
+	( cd test/em_quarter_ss ; /bin/rm -f coeff_p.asc ; ln -s ../../run/coeff_p.asc . )
+	( cd test/em_quarter_ss ; /bin/rm -f coeff_q.asc ; ln -s ../../run/coeff_q.asc . )
+	( cd test/em_quarter_ss ; /bin/rm -f constants.asc ; ln -s ../../run/constants.asc . )
+	( cd test/em_quarter_ss ; /bin/rm -f kernels.asc_s_0_03_0_9 ; ln -s ../../run/kernels.asc_s_0_03_0_9 . )
+	( cd test/em_quarter_ss ; /bin/rm -f kernels_z.asc ; ln -s ../../run/kernels_z.asc . )
+	( cd test/em_quarter_ss ; /bin/rm -f masses.asc ; ln -s ../../run/masses.asc . )
+	( cd test/em_quarter_ss ; /bin/rm -f termvels.asc ; ln -s ../../run/termvels.asc . )
 	( cd run ; /bin/rm -f ideal.exe ; ln -s ../main/ideal.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup ; fi ; \
@@ -356,6 +366,16 @@ em_real : wrf
              ln -sf ../../run/aerosol_lat.formatted . ;             \
              ln -sf ../../run/aerosol_lon.formatted . ;             \
              ln -sf ../../run/aerosol_plev.formatted . ;            \
+             ln -sf ../../run/capacity.asc . ;            \
+             ln -sf ../../run/coeff_p.asc . ;            \
+             ln -sf ../../run/coeff_q.asc . ;            \
+             ln -sf ../../run/constants.asc . ;            \
+             ln -sf ../../run/masses.asc . ;            \
+             ln -sf ../../run/termvels.asc . ;            \
+             ln -sf ../../run/kernels.asc_s_0_03_0_9 . ;            \
+             ln -sf ../../run/kernels_z.asc . ;            \
+             ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;            \
+             ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;            \
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
                 ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \

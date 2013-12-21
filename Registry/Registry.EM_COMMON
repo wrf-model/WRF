@@ -481,7 +481,6 @@ state  integer  has_reqc          -     misc        1         -     r        "ha
 state  integer  has_reqi          -     misc        1         -     r        "has_reqi"       "Flag for having effective radius cloud ice"  ""
 state  integer  has_reqs          -     misc        1         -     r        "has_reqs"       "Flag for having effective radius snow"  ""
 
-
 # Other Scalars
 state   real    -              ikjftb  scalar      1         -     -   -
 state   real    qndrop         ikjftb  scalar      1         -     \
@@ -510,6 +509,7 @@ state   real    qvolg          ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QVGRAUPEL"     "Graupel Particle Volume" "m(3) kg(-1)"
 #state   real    qvolh          ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QVHAIL"        "Hail Particle Volume" "m(3) kg(-1)""
+
 
 state   real    -              ikjftb  dfi_scalar      1         -     -   -
 state   real    dfi_qndrop     ikjftb  dfi_scalar      1         -     \
@@ -1463,16 +1463,16 @@ state    integer  landuse_luseas  -      misc       -          -     r
 state    integer  landuse_isn     -      misc       -          -     r
 state    real     lu_state        p      misc       -          -     r
 
-i1       real  th_phy          ikj      misc        1         -                                          
-i1       real  pi_phy          ikj      misc        1         -                                          
-i1       real  p_phy           ikj      misc        1         -                                          
+i1       real  th_phy          ikj      misc        1         -
+i1       real  pi_phy          ikj      misc        1         -
+i1       real  p_phy           ikj      misc        1         -
 state    real  t_phy           ikj      misc        1         -      r      "T_PHY"                        "Temperature"         "K"
 state    real  u_phy           ikj      misc        1         -      r      "U_PHY"                        "x-wind component at mass point"         "m s-1"
 state    real  v_phy           ikj      misc        1         -      r      "V_PHY"                        "y-wind component at mass point"         "m s-1"
-i1       real  dz8w            ikj      misc        1         Z                                          
-i1       real  p8w             ikj      misc        1         Z                                          
-i1       real  t8w             ikj      misc        1         Z                                          
-i1       real  rho_phy         ikj      misc        1         -                                          
+i1       real  dz8w            ikj      misc        1         Z
+i1       real  p8w             ikj      misc        1         Z
+i1       real  t8w             ikj      misc        1         Z
+i1       real  rho_phy         ikj      misc        1         -
 i1    logical  CU_ACT_FLAG     ij       misc        1         -
 
                                                 
@@ -1528,7 +1528,6 @@ state    real   soiltb         ij      dyn_em      1         -       r        "s
 state integer  STEPBL          -        misc        1         -      r        "STEPBL"                "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN PBL CALLS" ""      
 state    real  taucldi         ikj      misc        1         -      r        "TAUCLDI"               "CLOUD OPTICAL THICKNESS FOR ICE"              ""
 state    real  taucldc         ikj      misc        1         -      r        "TAUCLDC"               "CLOUD OPTICAL THICKNESS FOR WATER"            ""
-                                                
 state   real  defor11          ikj      misc        1         -     r         "defor11"               "DEFORMATION 11"              "s-1"      
 state   real  defor22          ikj      misc        1         -     r         "defor22"               "DEFORMATION 22"              "s-1"      
 state   real  defor12          ikj      misc        1         -     r         "defor12"               "DEFORMATION 12"              "s-1"      
@@ -2567,6 +2566,7 @@ halo      HALO_EM_PHYS_SHCU dyn_em       4:rushten,rvshten
 halo      HALO_EM_FDDA dyn_em            4:rundgdten,rvndgdten
 halo      HALO_EM_FDDA_SFC dyn_em 48:z,z_at_w,pblh,regime,znt,odis_ndg_old,odis_ndg_new
 halo      HALO_EM_PHYS_DIFFUSION dyn_em  4:defor11,defor22,defor12,defor13,defor23,div,xkmv,xkmh,xkhv,xkhh,tke_1,tke_2
+halo      HALO_EM_SBM dyn_em 8:p_phy,pi_phy,dz8w,th_phy,rho,qv_old,th_old,u_phy,v_phy
 halo      HALO_EM_TKE_ADVECT_3 dyn_em 24:tke_2
 halo      HALO_EM_TKE_ADVECT_5 dyn_em 48:tke_2
 halo      HALO_EM_TKE_A dyn_em 4:ph_2,phb

@@ -34,7 +34,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
                  ,halo_em_tke_advect_5_sub,halo_em_tke_old_e_5_sub                         &
                  ,halo_em_tke_old_e_7_sub,halo_em_tracer_e_3_sub,halo_em_tracer_e_5_sub    &
                  ,halo_em_tracer_e_7_sub,halo_em_tracer_old_e_5_sub                        &
-                 ,halo_em_tracer_old_e_7_sub,period_bdy_em_a_sub                           &
+                 ,halo_em_tracer_old_e_7_sub,halo_em_sbm_sub,period_bdy_em_a_sub                           &
                  ,period_bdy_em_b3_sub,period_bdy_em_b_sub,period_bdy_em_chem2_sub         &
                  ,period_bdy_em_chem_old_sub,period_bdy_em_chem_sub,period_bdy_em_d3_sub   &
                  ,period_bdy_em_d_sub,period_bdy_em_e_sub,period_bdy_em_moist2_sub         &
@@ -3289,8 +3289,8 @@ BENCH_END(advance_ppt_tim)
 BENCH_START(moist_physics_prep_tim)
        CALL moist_physics_prep_em( grid%t_2, grid%t_1, t0, grid%rho,           &
                                    grid%al, grid%alb, grid%p, p8w, p0, grid%pb,          &
-                                   grid%ph_2, grid%phb, th_phy, pi_phy, p_phy, &
-                                   grid%z, grid%z_at_w, dz8w,                  &
+                                   grid%ph_2, grid%phb, th_phy, pi_phy , p_phy, &
+                                   grid%z, grid%z_at_w, dz8w,        &
                                    dtm, grid%h_diabatic,                  &
                                    config_flags,grid%fnm, grid%fnp,            &
                                    ids, ide, jds, jde, kds, kde,     &
@@ -3327,6 +3327,10 @@ BENCH_START(micro_driver_tim)
 !     ENDIF
 !     WRITE(wrf_err_message,*)'diag_flag=',diag_flag
 !     CALL wrf_debug ( 0 , wrf_err_message )
+#ifdef DM_PARALLEL
+#      include "HALO_EM_SBM.inc"
+#endif
+
 
      CALL microphysics_driver(                                            &
       &         DT=dtm             ,DX=grid%dx              ,DY=grid%dy   &
@@ -3403,6 +3407,9 @@ BENCH_START(micro_driver_tim)
       &        , QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS               &
       &        , QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG               &
       &        , QH_CURR=moist(ims,kms,jms,P_QH), F_QH=F_QH               & ! for milbrandt2mom
+      &        , QIC_CURR=moist(ims,kms,jms,P_QIC), F_QIC=F_QIC               &
+      &        , QIP_CURR=moist(ims,kms,jms,P_QIP), F_QIP=F_QIP               &
+      &        , QID_CURR=moist(ims,kms,jms,P_QID), F_QID=F_QID               &
       &        , QNDROP_CURR=scalar(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP &
 #ifdef WRF_CHEM
       &        , RAINPROD=grid%rainprod, EVAPPROD=grid%evapprod           &
@@ -3419,6 +3426,10 @@ BENCH_START(micro_driver_tim)
       &        , QNWFA_CURR=scalar(ims,kms,jms,P_QNWFA), F_QNWFA=F_QNWFA  & ! for Thompson water-friendly aerosol
       &        , QNIFA_CURR=scalar(ims,kms,jms,P_QNIFA), F_QNIFA=F_QNIFA  & ! for Thompson ice-friendly aerosol
       &        , QNH_CURR=scalar(ims,kms,jms,P_QNH), F_QNH=F_QNH          & ! for milbrandt2mom and nssl_2mom
+      &        , QNIC_CURR=scalar(ims,kms,jms,P_QNIC), F_QNIC=F_QNIC          &
+      &        , QNIP_CURR=scalar(ims,kms,jms,P_QNIP), F_QNIP=F_QNIP          &
+      &        , QNID_CURR=scalar(ims,kms,jms,P_QNID), F_QNID=F_QNID          &
+
 !       &        , QZR_CURR=scalar(ims,kms,jms,P_QZR), F_QZR=F_QZR          & ! for milbrandt3mom
 !       &        , QZI_CURR=scalar(ims,kms,jms,P_QZI), F_QZI=F_QZI          & ! "
 !       &        , QZS_CURR=scalar(ims,kms,jms,P_QZS), F_QZS=F_QZS          & ! "
@@ -3437,6 +3448,33 @@ BENCH_START(micro_driver_tim)
       &        , has_reqc=grid%has_reqc, has_reqi=grid%has_reqi, has_reqs=grid%has_reqs & ! G. Thompson
       &        , qnwfa2d=grid%qnwfa2d                                                   & ! G. Thompson
       &        , diagflag=diag_flag, do_radar_ref=config_flags%do_radar_ref &
+      &        ,u=grid%u_phy,v=grid%v_phy &
+      &        ,scalar=scalar,num_scalar=num_scalar                             &
+      &        ,TH_OLD=grid%th_old                                        &
+      &        ,QV_OLD=grid%qv_old                                        &
+      &        ,xlat=grid%xlat,xlong=grid%xlong,IVGTYP=grid%ivgtyp  &
+      &        , EFFR_CURR=scalar(ims,kms,jms,P_EFFR), F_EFFR=F_EFFR          & ! for SBM
+      &        , ICE_EFFR_CURR=scalar(ims,kms,jms,P_ICE_EFFR), F_ICE_EFFR=F_ICE_EFFR          & ! for SBM
+      &        , TOT_EFFR_CURR=scalar(ims,kms,jms,P_TOT_EFFR), F_TOT_EFFR=F_TOT_EFFR          & ! for SBM
+      &        , QIC_EFFR_CURR=scalar(ims,kms,jms,P_QIC_EFFR), F_QIC_EFFR=F_QIC_EFFR          & ! for SBM
+      &        , QIP_EFFR_CURR=scalar(ims,kms,jms,P_QIP_EFFR), F_QIP_EFFR=F_QIP_EFFR          & ! for SBM
+      &        , QID_EFFR_CURR=scalar(ims,kms,jms,P_QID_EFFR), F_QID_EFFR=F_QID_EFFR          & ! for SBM
+      &        ,kext_ql=grid%kext_ql                                       &
+      &        ,kext_qs=grid%kext_qs                                       &
+      &        ,kext_qg=grid%kext_qg                                       &
+      &        ,kext_qh=grid%kext_qh                                       &
+      &        ,kext_qa=grid%kext_qa                                       &
+      &        ,kext_qic=grid%kext_qic                                       &
+      &        ,kext_qip=grid%kext_qip                                       &
+      &        ,kext_qid=grid%kext_qid                                       &
+      &        ,kext_ft_qic=grid%kext_ft_qic                                       &
+      &        ,kext_ft_qip=grid%kext_ft_qip                                       &
+      &        ,kext_ft_qid=grid%kext_ft_qid                                       &
+      &        ,kext_ft_qs=grid%kext_ft_qs                                       &
+      &        ,kext_ft_qg=grid%kext_ft_qg         &
+      &        ,height=grid%height                                         &
+      &        ,tempc=grid%tempc                                         &
+
                                                                           )
 BENCH_END(micro_driver_tim)
 

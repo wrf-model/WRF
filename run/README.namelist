@@ -708,10 +708,11 @@ Namelist variables for controlling the adaptive time step option:
  ensdim                              = 144      ; G-D only
                                                   These are recommended numbers. If you would like to use
                                                   any other number, consult the code, know what you are doing.
- seaice_threshold                    = 271      ; tsk < seaice_threshold, if water point and 5-layer slab
+ seaice_threshold                    = 100.     ; tsk < seaice_threshold, if water point and 5-layer slab
                                                 ; scheme, set to land point and permanent ice; if water point
                                                 ; and Noah scheme, set to land point, permanent ice, set temps
-                                                ; from 3 m to surface, and set smois and sh2o
+                                                ; from 2 m to surface, and set smois and sh2o. The default value has changed
+                                                ; from 271 to 100 K in v3.5.1 to avoid mixed-up use with fractional seaice input
  sst_update                          = 0        ; time-varying sea-surface temp (0=no, 1=yes). If selected real 
                                                 ; puts SST, XICE, ALBEDO and VEGFRA in wrflowinp_d01 file, and wrf updates 
                                                 ; these from it at same interval as boundary file. Also requires

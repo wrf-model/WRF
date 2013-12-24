@@ -4441,10 +4441,10 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
               CALL wrf_message("xland < 1.5 but the dominant land use category based on our calculation is water."//&
                    "this is fine as long as we change our calculation so that the dominant land use category is"//&
                    "stwiched back to not water.")
-              WRITE(message_text,fmt='(a,2F8.2)') 'land use category has been switched, before and after values are ', &
+              WRITE(message_text,fmt='(a,2I6)') 'land use category has been switched, before and after values are ', &
                    temp5,mosaic_cat_index(i,1,j)
               CALL wrf_message(message_text)
-              WRITE(message_text,fmt='(a,2F8.2)') 'new dominant and second dominant cat are ', mosaic_cat_index(i,1,j),mosaic_cat_index(i,2,j)
+              WRITE(message_text,fmt='(a,2I6)') 'new dominant and second dominant cat are ', mosaic_cat_index(i,1,j),mosaic_cat_index(i,2,j)
               CALL wrf_message(message_text)
 	             
            ENDIF  ! for (IVGTYP(i,j) .NE. ISWATER)
@@ -4536,7 +4536,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
             WRITE (message_text,fmt='(a,2I6,4F8.2)') 'some landusef values at i,j are ', &
                  i,j,landusef2(i,1,j),landusef2(i,2,j),landusef2(i,3,j),landusef2(i,4,j)
             CALL wrf_message(message_text)
-            WRITE (message_text,fmt='(a,2I6,3F8.2)') 'some mosaic cat values at i,j are ', &
+            WRITE (message_text,fmt='(a,2I6,3I6)') 'some mosaic cat values at i,j are ', &
                  i,j,mosaic_cat_index(i,1,j),mosaic_cat_index(i,2,j),mosaic_cat_index(i,3,j) 
             CALL wrf_message(message_text)
             

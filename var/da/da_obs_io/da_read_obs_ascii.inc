@@ -1015,6 +1015,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                 allocate (iv%airep(ilocal(airep))%u        (1:iv%info(airep)%max_lev))
                 allocate (iv%airep(ilocal(airep))%v        (1:iv%info(airep)%max_lev))
                 allocate (iv%airep(ilocal(airep))%t        (1:iv%info(airep)%max_lev))
+                allocate (iv%airep(ilocal(airep))%q        (1:iv%info(airep)%max_lev))
                end if
 
                do i = 1, 1
@@ -1023,6 +1024,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                   iv%airep(ilocal(airep))%u(i) = platform%each(k)%u
                   iv%airep(ilocal(airep))%v(i) = platform%each(k)%v
                   iv%airep(ilocal(airep))%t(i) = platform%each(k)%t
+                  iv%airep(ilocal(airep))%q(i) = platform%each(k)%q
                end do
               end do ! loop over k levels
 

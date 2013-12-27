@@ -297,7 +297,7 @@ subroutine da_write_obs(it,ob, iv, re)
             num_obs = num_obs + 1
             write(ounit,'(i8)')iv%info(airep)%levels(n)
             do k = 1, iv%info(airep)%levels(n)
-               write(ounit,'(2i8,a5,2f9.2,f17.7,4(2f17.7,i8,2f17.7),f9.2)')&
+               write(ounit,'(2i8,a5,2f9.2,f17.7,4(2f17.7,i8,2f17.7),f12.2)')&
                   num_obs, k, iv%info(airep)%id(n), &  ! Station
                   iv%info(airep)%lat(k,n), &       ! Latitude
                   iv%info(airep)%lon(k,n), &       ! Longitude
@@ -693,7 +693,7 @@ subroutine da_write_obs(it,ob, iv, re)
             num_obs = num_obs + 1
             write(ounit,'(i8)')iv%info(tamdar)%levels(n)
             do k = 1, iv%info(tamdar)%levels(n)
-               write(ounit,'(2i8,a5,2f9.2,f17.7,4(2f17.7,i8,2f17.7),f9.2)')&
+               write(ounit,'(2i8,a5,2f9.2,f17.7,4(2f17.7,i8,2f17.7),f12.2)')&
                   num_obs,k, iv%info(tamdar)%id(n), &  ! Station
                   iv%info(tamdar)%lat(k,n), &       ! Latitude
                   iv%info(tamdar)%lon(k,n), &       ! Longitude
@@ -728,7 +728,7 @@ subroutine da_write_obs(it,ob, iv, re)
          if (iv%info(tamdar_sfc)%proc_domain(1,n)) then
             num_obs = num_obs + 1
             write(ounit,'(i8)') 1                                 
-            write(ounit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7),f9.2)')&
+            write(ounit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7),f12.2)')&
                num_obs , 1, iv%info(tamdar_sfc)%id(n), &  ! Station
                iv%info(tamdar_sfc)%lat(1,n), &       ! Latitude
                iv%info(tamdar_sfc)%lon(1,n), &       ! Longitude

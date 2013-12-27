@@ -37,6 +37,7 @@ subroutine da_set_3d_obs_missing (iv, n)
             iv%airep(i)%u(k) = field_type(missing_r, missing_data, xmiss, missing_r, missing_r)
             iv%airep(i)%v(k) = field_type(missing_r, missing_data, xmiss, missing_r, missing_r)
             iv%airep(i)%t(k) = field_type(missing_r, missing_data, xmiss, missing_r, missing_r)
+            iv%airep(i)%q(k) = field_type(missing_r, missing_data, xmiss, missing_r, missing_r)
          end if
         end do
       end do

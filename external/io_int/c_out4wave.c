@@ -27,7 +27,7 @@
 /* OUT4WAVE_DEBUG - define to enable extra diagnostic messages.
    Without this, all you will see are error messages and file locking
    messages. */
-#define OUT4WAVE_DEBUG 1
+/* #define OUT4WAVE_DEBUG 1 */
 
 typedef struct {
   int DataHandle;
@@ -239,9 +239,11 @@ static void out4wave_recordsize(data *d) {
 
 static void out4wave_close(data *d,int *status) {
   *status=0;
+#ifdef OUT4WAVE_DEBUG
   fprintf(stderr,"out4wave: %s: closing...\n",d->fn);
 
   fprintf(stderr,"out4wave: %s: final write...\n",d->fn);
+#endif
   out4wave_write(d,status);
 
   fprintf(stderr,"out4wave: %s: unlock...\n",d->fn);
@@ -253,7 +255,9 @@ static void out4wave_close(data *d,int *status) {
     fprintf(stderr,"out4wave: %s: unlocked.\n",d->fn);
 #endif
 
+#ifdef OUT4WAVE_DEBUG
   fprintf(stderr,"out4wave: %s: free resources...\n",d->fn);
+#endif
   if(fclose(d->fp)) {
     fprintf(stderr,"out4wave: %s: warning: error on close: %s\n",
             d->fn,strerror(errno));

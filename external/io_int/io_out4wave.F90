@@ -169,6 +169,5 @@ subroutine ext_out4wave_open_for_write_commit( DataHandle , Status )
   integer ,       intent(out) :: Status
   Status=0
   call c_out4wave_commit(DataHandle,Status)
-  !call c_out4wave_write(DataHandle,Status)
   if(Status/=0) call ext_out4wave_fail(Status)
 end subroutine ext_out4wave_open_for_write_commit

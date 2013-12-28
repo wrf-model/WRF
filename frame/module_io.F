@@ -57,7 +57,6 @@ MODULE module_io
     INTEGER                    :: io_form 
 #include "io_form_for_dataset.inc"
     io_form_for_dataset = io_form
-    write(0,*) 'io form for ',trim(DataSet),' is ',io_form_for_dataset
     RETURN
   END FUNCTION io_form_for_dataset
 
@@ -68,7 +67,6 @@ MODULE module_io
     INTEGER                    :: io_form 
 #include "io_form_for_stream.inc"
     io_form_for_stream = io_form
-    write(0,*) 'io form for ',stream,' is ',io_form_for_stream
     RETURN
   END FUNCTION io_form_for_stream
 
@@ -246,12 +244,9 @@ SUBROUTINE wrf_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDepInf
 
   io_form = io_form_for_dataset( DataSet )
 
-  write(0,"('SysDepInfo=(',A,') DataSet=(',A,') io_form=',I0)") trim(SysDepInfo),trim(DataSet),io_form
-
   Status = 0
   Hndl = -1
   IF ( multi_files( io_form ) .OR. .NOT. use_output_servers() ) THEN
-    write(0,"(A,A,A,I0,A,I0,A,A)") 'io form for ',trim(Filename),' is ',use_package(io_form),' (from ',io_form,') from dataset',trim(DataSet)
     SELECT CASE ( use_package(io_form) )
 #ifdef NETCDF
       CASE ( IO_NETCDF   )
@@ -1213,7 +1208,6 @@ SUBROUTINE wrf_ioclose ( DataHandle, Status )
   Status = 0
   CALL get_handle ( Hndl, io_form , for_out, DataHandle )
   CALL free_handle( DataHandle )
-  write(0,*) 'wrf_ioclose top'
   IF ( Hndl .GT. -1 ) THEN
     IF ( multi_files( io_form ) .OR. .NOT. (for_out .AND. use_output_servers()) ) THEN
       SELECT CASE ( use_package(io_form) )
@@ -1268,13 +1262,7 @@ SUBROUTINE wrf_ioclose ( DataHandle, Status )
 #endif
 #ifdef OUT4WAVE
         CASE ( IO_OUT4WAVE   )
-          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) then
-             CALL ext_out4wave_ioclose( Hndl, Status )
-             write(0,*) 'wrf_ioclose has closed out4wave'
-          else
-             write(0,*) 'wrf_ioclose will not close out4wave'
-          endif
-
+          IF ( multi_files(io_form) .OR.  wrf_dm_on_monitor() ) CALL ext_out4wave_ioclose( Hndl, Status )
           CALL wrf_dm_bcast_bytes( Status, IWORDSIZE )
 #endif
         CASE DEFAULT
@@ -1282,16 +1270,12 @@ SUBROUTINE wrf_ioclose ( DataHandle, Status )
       END SELECT
     ELSE IF ( io_form .GT. 0 .AND. for_out .AND. use_output_servers() ) THEN
       CALL wrf_quilt_ioclose( Hndl, Status )
-  write(0,*) 'wrf_ioclose quilt'
     ELSE
       Status = 0
-  write(0,*) 'wrf_ioclose nope'
     ENDIF
   ELSE
     Status = WRF_ERR_FATAL_BAD_FILE_STATUS
-  write(0,*) 'wrf_ioclose bad status'
   ENDIF
-  write(0,*) 'wrf_ioclose bottom'
   RETURN
 END SUBROUTINE wrf_ioclose
 

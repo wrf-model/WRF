@@ -1607,6 +1607,8 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
    CALL wrf_debug( 1, message )
 
    grid%nframes(stream) = grid%nframes(stream) + 1
+   WRITE(message,*)'med_hist_out: have ',grid%nframes(stream),' frames in ',TRIM(fname)
+   CALL wrf_debug( 1, message )
 
    SELECT CASE( stream )
      CASE ( HISTORY_ALARM )
@@ -2040,13 +2042,14 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    ENDIF
    CALL construct_filename2a ( fname , hist_outname, &
                                grid%id , 2 , timestr )
-   IF ( stream-first_history .EQ. history_only ) THEN
+   IF ( stream .EQ. history_only ) THEN
      WRITE(n2,'("DATASET=HISTORY")')
    ELSE IF ( stream-first_history .GE. 10 ) THEN
      WRITE(n2,'("DATASET=AUXHIST",I2)')stream-first_history
    ELSE
      WRITE(n2,'("DATASET=AUXHIST",I1)')stream-first_history
    ENDIF
+   write(0,"(A,I0,A,I0,A,A,A,A)") 'stream=',stream,' first_history=',first_history,' for fname=',trim(fname),' with ',trim(n2)
    IF ( oid .eq. 0 ) THEN
      WRITE ( message , '("open_hist_w : opening ",A," for writing. ")') TRIM ( fname )
      CALL wrf_debug( 1, message )

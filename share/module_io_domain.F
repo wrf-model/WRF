@@ -100,6 +100,7 @@ CONTAINS
    CHARACTER*(*) :: sysdepinfo
    CHARACTER*128             :: DataSet
    LOGICAL                   :: anyway
+   write(0,'(A,A)') 'Close dataset ',trim(sysdepinfo)
    CALL wrf_ioclose( id , ierr )
   END SUBROUTINE close_dataset
 

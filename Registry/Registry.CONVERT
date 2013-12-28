@@ -516,4 +516,5 @@ package   io_yyy      io_form_restart==8                     -             -
 package   io_zzz      io_form_restart==9                     -             -
 package   io_grib2    io_form_restart==10                    -             -
 package   io_pnetcdf  io_form_restart==11                     -             -
+package   io_out4wave io_form_restart==40                    -             -
                                                 

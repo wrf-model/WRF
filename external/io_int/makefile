@@ -1,6 +1,6 @@
 #makefile to build io_int that does binary i/o
 
-OBJS    = io_int.o io_int_idx.o module_io_int_idx.o module_io_int_read.o
+OBJS    = io_int.o io_int_idx.o module_io_int_idx.o module_io_int_read.o io_out4wave.o c_out4wave.o
 LIB     = libwrfio_int.a
 WRF_MOD = ../../frame/pack_utils.o \
 	  ../../frame/module_internal_header_util.o \
@@ -30,6 +30,20 @@ io_int.f: io_int.F90 module_internal_header_util.o
 	fi
 
 io_int.o: io_int.f ../../inc/intio_tags.h
+	$(FC) $(FCFLAGS) -I../../inc -I../ioapi_share -o $@ -c $*.f
+
+c_out4wave.o: c_out4wave.c
+	$(CC) $(CFLAGS) -c -o c_out4wave.o c_out4wave.c
+
+io_out4wave.f: io_out4wave.F90 module_internal_header_util.o
+	$(CPP1)  -I../../inc -I../ioapi_share $*.F90 | $(M4) - > $@
+	@if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+           echo COMPILING $*.F90 for 4DVAR ; \
+           $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $@ > io_out4wave.tmp; \
+           mv io_out4wave.tmp $@ ; \
+	fi
+
+io_out4wave.o: io_out4wave.f ../../inc/intio_tags.h
 	$(FC) $(FCFLAGS) -I../../inc -I../ioapi_share -o $@ -c $*.f
 
 io_int_idx_tags.h: ../../inc/intio_tags.h

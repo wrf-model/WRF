@@ -496,7 +496,7 @@ if [ -n "$WRF_NMM_CORE" ]; then
     if [ -n "$HWRF" ]; then
       if [ $HWRF = 1 ]; then
         echo building WRF with HWRF option
-        compileflags="${compileflags}!-DHWRF=1"
+        compileflags="${compileflags}!-DHWRF=1!-DOUT4WAVE"
         if [ -n "$IDEAL_NMM_TC" ]; then
           echo building WRF with NMM Idealized Tropical Cyclone option
           compileflags="${compileflags}!-DIDEAL_NMM_TC=1"

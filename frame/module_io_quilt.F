@@ -491,6 +491,10 @@ MODULE module_wrf_quilt
       CASE ( IO_GRIB2 )
          RETURN
 #endif
+#ifdef OUT4WAVE
+      CASE ( IO_OUT4WAVE )
+         RETURN
+#endif
       CASE (0)
          RETURN
       CASE DEFAULT
@@ -584,6 +588,9 @@ character*120 sysline
 #endif
 #ifdef GRIB2
       CALL ext_gr2_ioinit( SysDepInfo, ierr)
+#endif
+#ifdef OUT4WAVE
+      call ext_out4wave_ioinit( SysDepInfo, ierr )
 #endif
 
       call_server_ready = .true. ! = true when the server is ready for a new file
@@ -679,6 +686,9 @@ okay_to_w = .false.
 #endif
 #ifdef GRIB2
             CALL ext_gr2_ioexit( Status )
+#endif
+#ifdef OUT4WAVE
+            CALL ext_out4wave_ioexit( Status )
 #endif
             CALL wrf_message ( 'I/O QUILT SERVERS DONE' )
             CALL mpi_finalize(ierr)
@@ -1249,6 +1259,14 @@ okay_to_w = .false.
                       CALL ext_gr2_ioclose(handle(DataHandle),Status)
                     ENDIF
 #endif
+#ifdef OUT4WAVE
+                 CASE ( IO_OUT4WAVE )
+                    CALL ext_out4wave_inquire_filename( handle(DataHandle), fname, fstat, Status )
+                    IF ( fstat .EQ. WRF_FILE_OPENED_FOR_WRITE .OR. fstat .EQ. WRF_FILE_OPENED_NOT_COMMITTED ) THEN
+                      CALL ext_out4wave_ioclose(handle(DataHandle),Status)
+                    ENDIF
+
+#endif
                     CASE DEFAULT
                       Status = 0
                   END SELECT
@@ -1290,6 +1308,10 @@ okay_to_w = .false.
 #ifdef GRIB2
                     CASE ( IO_GRIB2 )
                        CALL ext_gr2_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,handle(DataHandle),Status)
+#endif
+#ifdef OUT4WAVE
+                    CASE ( IO_OUT4WAVE )
+                      CALL ext_out4wave_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,handle(DataHandle),Status)
 #endif
                     CASE DEFAULT
                       Status = 0
@@ -1388,6 +1410,16 @@ okay_to_w = .false.
                                  Status )
 #endif
 #endif
+#ifdef OUT4WAVE
+                      CASE ( IO_OUT4WAVE )
+                        CALL ext_out4wave_write_field ( handle(DataHandle) , TRIM(DateStr) ,    &
+                                   TRIM(VarName) , dummy , FieldType , Comm , IOComm,           &
+                                   DomainDesc , TRIM(MemoryOrder) , TRIM(Stagger) , DimNames ,  &
+                                   DomainStart , DomainEnd ,                                    &
+                                   DomainStart , DomainEnd ,                                    &
+                                   DomainStart , DomainEnd ,                                    &
+                                   Status )
+#endif
                       CASE DEFAULT
                         Status = 0
                     END SELECT
@@ -1463,6 +1495,14 @@ okay_to_w = .false.
                        okay_to_write(DataHandle) = .true.
                     ENDIF
 #endif
+#ifdef OUT4WAVE
+                CASE ( IO_OUT4WAVE   )
+                  CALL ext_out4wave_inquire_filename( handle(DataHandle), fname, fstat, Status )
+                  IF ( fstat .EQ. WRF_FILE_OPENED_NOT_COMMITTED ) THEN
+                    CALL ext_out4wave_open_for_write_commit(handle(DataHandle),Status)
+                    okay_to_write(DataHandle) = .true.
+                  ENDIF
+#endif
 
                 CASE DEFAULT
                   Status = 0
@@ -1518,6 +1558,10 @@ okay_to_w = .false.
 #ifdef INTIO
           CASE ( IO_INTIO   )
             CALL ext_int_iosync( handle(DataHandle), Status )
+#endif
+#ifdef OUT4WAVE
+          CASE ( IO_OUT4WAVE )
+            CALL ext_out4wave_iosync( handle(DataHandle), Status )
 #endif
           CASE DEFAULT
             Status = 0
@@ -1675,6 +1719,9 @@ okay_to_w = .false.
 #endif
 #ifdef GRIB2
             CALL ext_gr2_ioexit( Status )
+#endif
+#ifdef OUT4WAVE
+            CALL ext_out4wave_ioexit( Status )
 #endif
             CALL wrf_message ( 'I/O QUILT SERVERS DONE' )
             CALL mpi_finalize(ierr)

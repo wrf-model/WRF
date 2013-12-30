@@ -4607,6 +4607,12 @@ print *,'VERT EXTRAP = ', vert_extrap
       REAL , DIMENSION(target_dim) , INTENT(IN) :: target_x
       REAL , DIMENSION(target_dim) , INTENT(OUT) :: target_y
 
+!  cubic spline defs
+      INTEGER :: K
+      REAL :: DX, ALPHA, BETA, GAMMA, ETA
+      REAL , DIMENSION(all_dim) :: P2
+!  cubic spline defs
+
       !  Brought in for debug purposes, all of the computations are in a single column.
 
       INTEGER , INTENT(IN) :: i,j
@@ -4739,7 +4745,28 @@ print *,'p target= ',target_x
          !  an odd order interpolator.  For the even guys, we'll do it twice
          !  and shift the range one index, then get an average.
 
-         IF      ( MOD(n,2) .NE. 0 ) THEN
+! cubic spline
+         IF ( n .EQ. 9 ) THEN
+            CALL cubic_spline (all_dim-1, all_x, all_y, P2)
+!
+! Find the value of function f(x)
+!
+          DX = all_x(loc_center_right) - all_x(loc_center_left)
+          ALPHA = P2(loc_center_right)/(6*DX)
+          BETA = -P2(loc_center_left)/(6*DX)
+          GAMMA = all_y(loc_center_right)/DX - DX*P2(loc_center_right)/6
+          ETA = DX*P2(loc_center_left)/6 - all_y(loc_center_left)/DX
+          target_y(target_loop) = ALPHA*(target_x(target_loop)-all_x(loc_center_left))*(target_x(target_loop)-all_x(loc_center_left)) &
+                                  *(target_x(target_loop)-all_x(loc_center_left)) &
+                     +BETA*(target_x(target_loop)-all_x(loc_center_right))*(target_x(target_loop)-all_x(loc_center_right)) &
+                                  *(target_x(target_loop)-all_x(loc_center_right)) &
+                     +GAMMA*(target_x(target_loop)-all_x(loc_center_left)) &
+                     +ETA*(target_x(target_loop)-all_x(loc_center_right))
+
+!        IF      ( MOD(n,2) .NE. 0 ) THEN
+!  end cubic spline block
+
+         ELSE IF ( MOD(n,2) .NE. 0 ) THEN
             IF ( ( loc_center_left -(((n+1)/2)-1) .GE.       1 ) .AND. &
                  ( loc_center_right+(((n+1)/2)-1) .LE. all_dim ) ) THEN
                ist  = loc_center_left -(((n+1)/2)-1)
@@ -4789,6 +4816,89 @@ print *,'p target= ',target_x
       END DO
 
    END SUBROUTINE lagrange_setup
+
+!---------------------------------------------------------------------
+
+! cubic spline routines
+
+      SUBROUTINE cubic_spline (N, XI, FI, P2)
+      !
+      ! Function to carry out the cubic-spline approximation
+      ! with the second-order derivatives returned.
+      !
+      INTEGER :: I
+      INTEGER, INTENT (IN) :: N
+      REAL, INTENT (IN), DIMENSION (N):: XI, FI
+      REAL, INTENT (OUT), DIMENSION (N):: P2
+      REAL, DIMENSION (N):: G, H
+      REAL, DIMENSION (N-1):: D, B, C
+!
+! Assign the intervals and function differences
+!
+  DO I = 1, N
+    H(I) = XI(I+1) - XI(I)
+    G(I) = FI(I+1) - FI(I)
+  END DO
+!
+! Evaluate the coefficient matrix elements
+  DO I = 1, N-1
+    D(I) = 2*(H(I+1)+H(I))
+    B(I) = 6*(G(I+1)/H(I+1)-G(I)/H(I))
+    C(I) = H(I+1)
+  END DO
+!
+! Obtain the second-order derivatives
+!
+  CALL TRIDIAGONAL_LINEAR_EQ (N-1, D, C, C, B, G)
+  P2(1) = 0
+  P2(N+1) = 0
+  DO I = 2, N
+    P2(I) = G(I-1)
+  END DO
+
+END SUBROUTINE cubic_spline
+ 
+!---------------------------------------------------------------------
+
+    SUBROUTINE TRIDIAGONAL_LINEAR_EQ (L, D, E, C, B, Z)
+!
+! Function to solve the tridiagonal linear equation set.
+!
+  INTEGER, INTENT (IN) :: L
+  INTEGER :: I
+  REAL, INTENT (IN), DIMENSION (L):: D, E, C, B
+  REAL, INTENT (OUT), DIMENSION (L):: Z
+  REAL, DIMENSION (L):: Y, W
+  REAL, DIMENSION (L-1):: V, T
+!
+! Evaluate the elements in the LU decomposition
+!
+  W(1) = D(1)
+  V(1)  = C(1)
+  T(1)  = E(1)/W(1)
+  DO I = 2, L - 1
+    W(I) = D(I)-V(I-1)*T(I-1)
+    V(I) = C(I)
+    T(I) = E(I)/W(I)
+  END DO
+  W(L) = D(L)-V(L-1)*T(L-1)
+!
+! Forward substitution to obtain y
+!
+  Y(1) = B(1)/W(1)
+  DO I = 2, L
+    Y(I) = (B(I)-V(I-1)*Y(I-1))/W(I)
+  END DO
+!
+! Backward substitution to obtain z
+  Z(L) = Y(L)
+  DO I = L-1, 1, -1
+    Z(I) = Y(I) - T(I)*Z(I+1)
+  END DO
+
+END SUBROUTINE TRIDIAGONAL_LINEAR_EQ
+
+! end cubic spline routines
 
 !---------------------------------------------------------------------
 

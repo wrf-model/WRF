@@ -24,7 +24,8 @@ MODULES =                 		\
 	module_sfs_nba.o		\
         module_convtrans_prep.o         \
 	module_sfs_driver.o		\
-	module_stoch.o		\
+	module_stoch.o			\
+	module_after_all_rk_steps.o	\
 	$(CASE_MODULE)
 
 # possible CASE_MODULE settings

@@ -49,7 +49,7 @@
 #ifdef WRF_CHEM
       USE MODULE_INPUT_CHEM_DATA,       ONLY: GET_LAST_GAS
 #endif
-      USE MODULE_DIAGNOSTICS
+      USE MODULE_DIAG_REFL
 
 
 !-----------------------------------------------------------------------

@@ -686,9 +686,38 @@ module_sf_ocean_driver.o : \
 		module_sf_3dpwp.o \
 		../frame/module_state_description.o 
 
-module_diagnostics.o: ../frame/module_dm.o \
+module_diagnostics_driver.o: \
+		module_lightning_driver.o 		\
+		module_diag_misc.o 			\
+		module_diag_cl.o			\
+		module_diag_pld.o 			\
+		module_diag_afwa.o 			\
+		../frame/module_state_description.o 	\
+		../frame/module_domain.o 		\
+		../frame/module_configure.o 		\
+		../frame/module_driver_constants.o 	\
 		../share/module_model_constants.o
 
+module_diag_misc.o: \
+		../frame/module_dm.o
+
+module_diag_cl.o: \
+		../frame/module_dm.o 			\
+		../frame/module_configure.o
+
+module_diag_pld.o: \
+		../share/module_model_constants.o
+
+module_diag_afwa.o: \
+		../frame/module_domain.o 		\
+		../frame/module_dm.o 			\
+		../frame/module_state_description.o 	\
+		../frame/module_configure.o 		\
+		../share/module_model_constants.o
+
+module_diag_refl.o: \
+		../frame/module_dm.o			\
+		../share/module_model_constants.o
 
 module_mixactivate.o: \
 		module_radiation_driver.o

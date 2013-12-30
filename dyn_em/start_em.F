@@ -34,7 +34,7 @@
    USE module_input_tracer, ONLY: initialize_tracer
    USE module_aerosols_soa_vbs, only: sum_pm_soa_vbs
 #endif
-   USE module_diagnostics, ONLY : pld
+   USE module_dg_pld, ONLY : pld
 
 !!debug
 !USE module_compute_geop

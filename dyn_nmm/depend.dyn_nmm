@@ -5,6 +5,7 @@ solve_nmm.o:   module_BC_NMM.o module_STATS_FOR_MOVE.o \
                module_NONHY_DYNAM.o module_DIFFUSION_NMM.o    \
                module_BNDRY_COND.o module_PHYSICS_CALLS.o \
                module_CTLBLK.o module_HIFREQ.o \
+               ../phys/module_diag_refl.o \
                ../share/module_random.o ../frame/hires_timer.o
 
 module_membrane_mslp.o: module_relax.o ../frame/module_dm.o ../frame/module_domain.o

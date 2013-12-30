@@ -152,7 +152,6 @@ MODULES = \
 	module_mixactivate.o \
 	module_radiation_driver.o \
 	module_surface_driver.o \
-	module_diagnostics.o \
 	module_lightning_driver.o \
 	module_ltng_cpmpr92z.o \
 	module_ltng_crmpr92.o \
@@ -165,7 +164,8 @@ MODULES = \
 	module_wind_turbdragforce.o \
 	module_wind_generic.o \
 	module_wind_fitch.o  \
-        module_sf_lake.o
+        module_sf_lake.o \
+	module_diagnostics_driver.o
 
 FIRE_MODULES = \
         module_fr_fire_driver.o \
@@ -176,6 +176,15 @@ FIRE_MODULES = \
         module_fr_fire_phys.o \
         module_fr_fire_util.o
   
+DIAGNOSTIC_MODULES_EM = \
+	module_diag_afwa.o \
+	module_diag_cl.o \
+	module_diag_misc.o \
+	module_diag_pld.o
+  
+DIAGNOSTIC_MODULES_NMM = \
+	module_diag_refl.o
+
 OBJS    =
 
 NMM_MODULES =  
@@ -185,18 +194,22 @@ TARGETDIR    =  ./
 
 $(LIBTARGET) :
 		if [ $(WRF_NMM_CORE) -eq 1 ] ; then \
-                  $(MAKE) $(J) nmm_contrib                                      ; \
-                  $(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS) $(NMM_OBJS) $(NMM_MODULES) ; \
+                  $(MAKE) $(J) nmm_contrib  ; \
+                  $(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS) \
+                                   $(NMM_OBJS) $(NMM_MODULES) \
+                                   $(DIAGNOSTIC_MODULES_NMM) ; \
                 else                                                         \
-                  $(MAKE) $(J) non_nmm                                          ; \
-                  $(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(FIRE_MODULES) $(OBJS)             ; \
+                  $(MAKE) $(J) non_nmm      ; \
+                  $(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS) \
+                                   $(FIRE_MODULES) \
+                                   $(DIAGNOSTIC_MODULES_EM)  ; \
                 fi
 
 include ../configure.wrf
 
-nmm_contrib : $(NMM_OBJS) $(NMM_MODULES) $(MODULES) $(OBJS)
+nmm_contrib : $(NMM_OBJS) $(NMM_MODULES) $(MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_NMM)
 
-non_nmm : $(MODULES) $(FIRE_MODULES) $(WIND_MODULES) $(OBJS)
+non_nmm : $(MODULES) $(FIRE_MODULES) $(WIND_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM)
 
 clean:
 	@ echo 'use the clean script'

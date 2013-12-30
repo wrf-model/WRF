@@ -60,9 +60,9 @@ SUBROUTINE solve_em ( grid , config_flags  &
    USE module_polarfft
    USE module_microphysics_driver
    USE module_microphysics_zero_out
-   USE module_lightning_driver, ONLY : lightning_driver
+!   USE module_lightning_driver, ONLY : lightning_driver
    USE module_fddaobs_driver
-   USE module_diagnostics
+!   USE module_diagnostics
 #ifdef WRF_CHEM
    USE module_input_chem_data
    USE module_input_tracer
@@ -70,6 +70,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
 #endif
    USE module_first_rk_step_part1
    USE module_first_rk_step_part2
+   USE module_after_all_rk_steps
    USE module_llxy, ONLY : proj_cassini
    USE module_avgflx_em, ONLY : zero_avgflx, upd_avgflx
    USE module_cpl, ONLY : coupler_on, cpl_settime, cpl_store_input
@@ -284,7 +285,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
 ! Set diagnostic flag value history output time
 !-----------------------------------------------------------------------------
 !  if ( Is_alarm_tstep(grid_clock, grid_alarms(HISTORY_ALARM)) ) then
-   diag_flag = .false.
+      diag_flag = .false.
    if ( Is_alarm_tstep(grid%domain_clock, grid%alarms(HISTORY_ALARM)) ) then
       diag_flag = .true.
    endif
@@ -3636,42 +3637,6 @@ BENCH_START(moist_phys_end_tim)
 !  end filter for moist variables post-microphysics and end of timestep
 !-----------------------------------------------------------
 
-!-----------------------------------------------------------
-!  Lightning flash rate diagnostic production
-!-----------------------------------------------------------
-  IF ( config_flags%lightning_option /= 0 ) THEN
-    CALL lightning_driver ( &
-          ! Frequently used prognostics
-            grid%itimestep, grid%dt, grid%dx, grid%dy,         &
-            grid%xlat, grid%xlong, grid%xland, grid%ht,        &
-            grid%t_phy, p_phy, grid%rho, grid%u_phy, grid%v_phy, grid%w_2,    &
-            grid%z, moist,                                     &
-          ! Scheme specific prognostics
-            grid%ktop_deep, grid%refl_10cm,                    &
-            domain_get_current_time( grid ),                   &
-          ! Flashrate namelist inputs
-            config_flags%lightning_option,                     &
-            config_flags%lightning_dt,                         &
-            config_flags%lightning_start_seconds,              &
-            config_flags%flashrate_factor,                     &
-          ! IC:CG namelist settings
-            config_flags%iccg_method,                          &
-            config_flags%iccg_prescribed_num,                  &
-            config_flags%iccg_prescribed_den,                  &
-          ! IC:CG inputs
-            grid%iccg_in_num, grid%iccg_in_den,                &
-          ! Scheme specific namelist inputs
-            config_flags%cellcount_method,                     &
-            config_flags%cldtop_adjustment,                    &
-          ! Order dependent args for domain, mem, and tile dims
-            ids, ide, jds, jde, kds, kde,         &
-            ims, ime, jms, jme, kms, kme,         &
-            ips, ipe, jps, jpe, kps, kpe,         &
-          ! Mandatory outputs for all quantitative schemes
-            grid%ic_flashcount, grid%ic_flashrate,          &
-            grid%cg_flashcount, grid%cg_flashrate           &
-      )
-   ENDIF
 
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij, its, ite, jts, jte, im, ii, jj, kk )
@@ -4048,191 +4013,26 @@ BENCH_END(bc_2d_tim)
    END DO
    !$OMP END PARALLEL DO
 
-! calculate some model diagnostics.
+!-----------------------------------------------------------
+!  After all of the RK steps, after the microphysics, after p-rho-phi,
+!  after w, after filtering, we have data ready to use.
+!-----------------------------------------------------------
 
-   CALL wrf_debug ( 200 , ' call diagnostic_driver' )
-   
-   CALL diagnostic_output_calc(                                            &
-      &              DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                  &
-      &             ,P8W=p8w   ,PK1M=grid%pk1m                             &
-      &             ,MU_2=grid%mu_2  ,MU_2M=grid%mu_2m                     &
-      &             ,U=grid%u_2    ,V=grid%v_2                             &
-      &             ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv           &
-      &             ,RAINC=grid%rainc    ,RAINNC=grid%rainnc               &
-      &             ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc       &
-      &             ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh     &
-      &             ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width      &
-      &             ,XTIME=grid%xtime   ,T2=grid%t2                        &
-      &        ,ACSWUPT=grid%acswupt    ,ACSWUPTC=grid%acswuptc            &
-      &        ,ACSWDNT=grid%acswdnt    ,ACSWDNTC=grid%acswdntc            &
-      &        ,ACSWUPB=grid%acswupb    ,ACSWUPBC=grid%acswupbc            &
-      &        ,ACSWDNB=grid%acswdnb    ,ACSWDNBC=grid%acswdnbc            &
-      &        ,ACLWUPT=grid%aclwupt    ,ACLWUPTC=grid%aclwuptc            &
-      &        ,ACLWDNT=grid%aclwdnt    ,ACLWDNTC=grid%aclwdntc            &
-      &        ,ACLWUPB=grid%aclwupb    ,ACLWUPBC=grid%aclwupbc            &
-      &        ,ACLWDNB=grid%aclwdnb    ,ACLWDNBC=grid%aclwdnbc            &
-      &      ,I_ACSWUPT=grid%i_acswupt  ,I_ACSWUPTC=grid%i_acswuptc        &
-      &      ,I_ACSWDNT=grid%i_acswdnt  ,I_ACSWDNTC=grid%i_acswdntc        &
-      &      ,I_ACSWUPB=grid%i_acswupb  ,I_ACSWUPBC=grid%i_acswupbc        &
-      &      ,I_ACSWDNB=grid%i_acswdnb  ,I_ACSWDNBC=grid%i_acswdnbc        &
-      &      ,I_ACLWUPT=grid%i_aclwupt  ,I_ACLWUPTC=grid%i_aclwuptc        &
-      &      ,I_ACLWDNT=grid%i_aclwdnt  ,I_ACLWDNTC=grid%i_aclwdntc        &
-      &      ,I_ACLWUPB=grid%i_aclwupb  ,I_ACLWUPBC=grid%i_aclwupbc        &
-      &      ,I_ACLWDNB=grid%i_aclwdnb  ,I_ACLWDNBC=grid%i_aclwdnbc        &
-                  ! Selection flag
-      &             ,DIAG_PRINT=config_flags%diag_print                    &
-      &             ,BUCKET_MM=config_flags%bucket_mm                      &
-      &             ,BUCKET_J =config_flags%bucket_J                       &
-      &             ,SNOWNCV=grid%snowncv, SNOW_ACC_NC=grid%snow_acc_nc    &
-      &             ,PREC_ACC_C=grid%prec_acc_c                            &
-      &             ,PREC_ACC_NC=grid%prec_acc_nc                          &
-      &             ,PREC_ACC_DT=config_flags%prec_acc_dt                  &
-      &             ,CURR_SECS=curr_secs                                   &
-      &             ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics          &
-      &             ,DIAGFLAG=diag_flag                                    &
-      &             ,HISTORY_INTERVAL=grid%history_interval                &
-      &             ,ITIMESTEP=grid%itimestep                              &
-      &             ,U10=grid%u10,V10=grid%v10,W=grid%w_2                  &
-      &             ,WSPD10MAX=grid%wspd10max                              &
-      &             ,UP_HELI_MAX=grid%up_heli_max                          &
-      &             ,W_UP_MAX=grid%w_up_max,W_DN_MAX=grid%w_dn_max         &
-      &             ,ZNW=grid%znw,W_COLMEAN=w_colmean                      &
-      &             ,NUMCOLPTS=numcolpts,W_MEAN=grid%w_mean                &
-      &             ,GRPL_MAX=grid%grpl_max,GRPL_COLINT=grpl_colint        &
-      &             ,REFD_MAX=grid%refd_max                                &
-      &             ,refl_10cm=grid%refl_10cm                              &
-      &             ,QG_CURR=moist(ims,kms,jms,P_QG)                       &
-      &             ,RHO=grid%rho,PH=grid%ph_2,PHB=grid%phb,G=g            &
-                  ! Dimension arguments
-      &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
-      &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
-      &             ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe     &
-      &             ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)     &
-      &             ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)     &
-      &             ,KTS=k_start, KTE=min(k_end,kde-1)                     &
-      &             ,NUM_TILES=grid%num_tiles                              &
-      &                                                          )
+  CALL after_all_rk_steps ( grid, config_flags,                  &
+                            moist, chem, tracer, scalar,         &
+                            th_phy, pi_phy, p_phy, rho_phy,      &   
+                            p8w, t8w, dz8w,                      &
+                            curr_secs, curr_secs2,               &
+                            diag_flag,                           &
+                            ids,  ide,  jds,  jde,  kds,  kde,   &
+                            ims,  ime,  jms,  jme,  kms,  kme,   &
+                            ips,  ipe,  jps,  jpe,  kps,  kpe,   &
+                            imsx, imex, jmsx, jmex, kmsx, kmex,  &
+                            ipsx, ipex, jpsx, jpex, kpsx, kpex,  &
+                            imsy, imey, jmsy, jmey, kmsy, kmey,  &
+                            ipsy, ipey, jpsy, jpey, kpsy, kpey   )
 
-   IF (config_flags%output_diagnostics == 1) THEN
-     IF ((config_flags%auxhist3_interval == 0 ) ) THEN
-        WRITE (wrf_err_message , * ) &
-        "CLWRF: ERROR -- error -- ERROR -- error : NO 'auxhist3_interval' has been defined in 'namelist.input'"
-        CALL wrf_error_fatal ( TRIM(wrf_err_message) )
-     END IF
-     CALL wrf_debug ( 200 , ' CLWRF: call diagnostic_calc' )
-     CALL clwrf_output_calc(                                               &
-        &            DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                  &
-        &           ,P8W=p8w   ,PK1M=grid%pk1m                             &
-        &           ,MU_2=grid%mu_2  ,MU_2M=grid%mu_2m                     &
-        &           ,U=grid%u_2    ,V=grid%v_2                             &
-        &           ,is_restart=config_flags%restart                       &
-        &           ,clwrfH=config_flags%auxhist3_interval                 &
-        &           ,T2=grid%t2, Q2=grid%q2, U10=grid%u10, V10=grid%v10    &
-        &           ,SKINTEMP=grid%tsk                                     &
-        &           ,T2CLMIN=grid%t2min, T2CLMAX=grid%t2max                &
-        &           ,TT2CLMIN=grid%tt2min, TT2CLMAX=grid%tt2max            &
-        &           ,T2CLMEAN=grid%t2mean, T2CLSTD=grid%t2std              &
-        &           ,Q2CLMIN=grid%q2min, Q2CLMAX=grid%q2max                &
-        &           ,TQ2CLMIN=grid%tq2min, TQ2CLMAX=grid%tq2max            &
-        &           ,Q2CLMEAN=grid%q2mean, Q2CLSTD=grid%q2std              &
-        &           ,U10CLMAX=grid%u10max, V10CLMAX=grid%v10max            &
-        &           ,SPDUV10CLMAX=grid%spduv10max                          &
-        &           ,TSPDUV10CLMAX=grid%tspduv10max                        &
-        &           ,U10CLMEAN=grid%u10mean, V10CLMEAN=grid%v10mean        &
-        &           ,SPDUV10CLMEAN=grid%spduv10mean                        &
-        &           ,U10CLSTD=grid%u10std, V10CLSTD=grid%v10std            &
-        &           ,SPDUV10CLSTD=grid%spduv10std                          &
-        &           ,RAINCCLMAX=grid%raincvmax                             &
-        &           ,RAINNCCLMAX=grid%rainncvmax                           &
-        &           ,TRAINCCLMAX=grid%traincvmax                           &
-        &           ,TRAINNCCLMAX=grid%trainncvmax                         &
-        &           ,RAINCCLMEAN=grid%raincvmean                           &
-        &           ,RAINNCCLMEAN=grid%rainncvmean                         &
-        &           ,RAINCCLSTD=grid%raincvstd                             &
-        &           ,RAINNCCLSTD=grid%rainncvstd                           &
-        &           ,SKINTEMPCLMIN=grid%skintempmin                        &
-        &           ,SKINTEMPCLMAX=grid%skintempmax                        &
-        &           ,TSKINTEMPCLMIN=grid%tskintempmin                      &
-        &           ,TSKINTEMPCLMAX=grid%tskintempmax                      &
-        &           ,SKINTEMPCLMEAN=grid%skintempmean                      &
-        &           ,SKINTEMPCLSTD=grid%skintempstd                        &
-        &           ,RAINCV=grid%raincv    ,RAINNCV=grid%rainncv           &
-        &           ,RAINC=grid%rainc    ,RAINNC=grid%rainnc               &
-        &           ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc       &
-        &           ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh     &
-        &           ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width      &
-        &           ,XTIME=grid%xtime,CURR_SECS2=curr_secs2                &
-                    ! Selection flag
-        &           ,DIAG_PRINT=config_flags%diag_print                    &
-        &           ,BUCKET_MM=config_flags%bucket_mm                      &
-        &           ,BUCKET_J =config_flags%bucket_J                       &
-                    ! Dimension arguments
-        &           ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
-        &           ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
-        &           ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe     &
-        &           ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)     &
-        &           ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)     &
-        &           ,KTS=k_start, KTE=min(k_end,kde-1)                     &
-        &           ,NUM_TILES=grid%num_tiles                              &
-        &                                                          )
-   ENDIF
 
-   IF ( config_flags%p_lev_diags .NE. SKIP_PRESS_DIAGS ) THEN
-     !  Process the diags if this is the correct time step OR
-     !  if this is an adaptive timestep forecast.
-     IF ( ( ( MOD(NINT(curr_secs+grid%dt),NINT(config_flags%p_lev_interval)) .EQ. 0 ) ) .OR. &
-            ( config_flags%use_adaptive_time_step ) ) THEN
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
-       DO ij = 1 , grid%num_tiles
-         CALL wrf_debug ( 200 , ' PLD: pressure level diags' )
-         CALL pld (                                  &
-                      !  Input data for computing
-                       U=grid%u_2                    &
-                      ,V=grid%v_2                    &
-                      ,W=grid%w_2                    &
-                      ,t=grid%t_2                    &
-                      ,qv=moist(:,:,:,P_QV)          &
-                      ,zp=grid%ph_2                  &
-                      ,zb=grid%phb                   &
-                      ,pp=grid%p                     &
-                      ,pb=grid%pb                    &
-                      ,p=grid%p_hyd                  &
-                      ,pw=grid%p_hyd_w               &
-                      !  Map factors, coriolis for diags
-                      ,msfux=grid%msfux              &
-                      ,msfuy=grid%msfuy              &
-                      ,msfvx=grid%msfvx              &
-                      ,msfvy=grid%msfvy              &
-                      ,msftx=grid%msftx              &
-                      ,msfty=grid%msfty              &
-                      ,f=grid%f                      &
-                      ,e=grid%e                      &
-                      !  Namelist info
-                      ,use_tot_or_hyd_p=config_flags%use_tot_or_hyd_p &
-                      ,missing=config_flags%p_lev_missing &
-                      !  The diagnostics, mostly output variables
-                      ,num_press_levels=config_flags%num_press_levels &
-                      ,max_press_levels=max_plevs    &
-                      ,press_levels=model_config_rec%press_levels &
-                      ,p_pl  = grid%p_pl             &
-                      ,u_pl  = grid%u_pl             &
-                      ,v_pl  = grid%v_pl             &
-                      ,t_pl  = grid%t_pl             &
-                      ,rh_pl = grid%rh_pl            &
-                      ,ght_pl= grid%ght_pl           &
-                      ,s_pl  = grid%s_pl             &
-                      ,td_pl = grid%td_pl            &
-                      !  Dimension arguments
-                      ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
-                      ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
-                      ,ITS=grid%i_start(ij),ITE=grid%i_end(ij)              &
-                      ,JTS=grid%j_start(ij),JTE=grid%j_end(ij)              &
-                      ,KTS=kps,KTE=kpe                                      )
-       END DO
-       !$OMP END PARALLEL DO
-     ENDIF
-   ENDIF
 
 #ifdef DM_PARALLEL
 !-----------------------------------------------------------------------

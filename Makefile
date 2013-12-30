@@ -312,6 +312,7 @@ em_real : wrf
                ln -sf ../../run/aerosol_lat.formatted . ;              \
                ln -sf ../../run/aerosol_lon.formatted . ;              \
                ln -sf ../../run/aerosol_plev.formatted . ;             \
+               ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
                if [ $(RWORDSIZE) -eq 8 ] ; then                        \
                   ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
                   ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
@@ -376,6 +377,7 @@ em_real : wrf
              ln -sf ../../run/kernels_z.asc . ;            \
              ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;            \
              ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;            \
+             ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
                 ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
@@ -672,8 +674,12 @@ nc4_test:
 	@cd tools ; /bin/rm -f nc4_test.{exe,nc,o} ; $(SCC) -o nc4_test.exe nc4_test.c -I$(NETCDF)/include -L$(NETCDF)/lib -lnetcdf $(NETCDF4_DEP_LIB) ; cd ..
 
 # rule used by configure to test if Fortran 2003 IEEE signaling is available
-fortran_2003_test:
-	@cd tools ; /bin/rm -f fortran_2003_test.{exe,o} ; $(SFC) -o fortran_2003_test.exe fortran_2003_test.F ; cd ..
+fortran_2003_ieee_test:
+	@cd tools ; /bin/rm -f fortran_2003_ieee_test.{exe,o} ; $(SFC) -o fortran_2003_ieee_test.exe fortran_2003_ieee_test.F ; cd ..
+
+# rule used by configure to test if Fortran 2003 ISO_C support is available
+fortran_2003_iso_c_test:
+	@cd tools ; /bin/rm -f fortran_2003_iso_c_test.{exe,o} ; $(SFC) -o fortran_2003_iso_c_test.exe fortran_2003_iso_c_test.F ; cd ..
 
 ### 3.b.  sub-rule to build the expimental core
 

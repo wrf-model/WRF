@@ -535,11 +535,13 @@ else
 fi
 
 if [ -n "$WRF_NMM_CORE" -a -n "$WRF_CHEM" ]; then
-  echo
-  echo "NMM is no longer compatible with the Chemistry option."
-  echo
-# alphabetically: c=3, o=15, so co2 = 3+15+2 = 20
-  exit 20
+  if [ $WRF_NMM_CORE = 1  -a  $WRF_CHEM = 1 ]; then
+    echo
+    echo "NMM is no longer compatible with the Chemistry option."
+    echo
+    # alphabetically: c=3, o=15, so co2 = 3+15+2 = 20
+    exit 20
+  fi
 fi
 
 if [ `which timex` ] ; then
@@ -892,10 +894,10 @@ EOF
 fi
 
 # testing for Fortran 2003 IEEE signaling features
-make fortran_2003_test > tools/fortran_2003_test.log 2>&1
-rm -f tools/fortran_2003_test.log
+make fortran_2003_ieee_test > tools/fortran_2003_ieee_test.log 2>&1
+rm -f tools/fortran_2003_ieee_test.log
 retval=-1
-if [ -f tools/fortran_2003_test.exe ] ; then
+if [ -f tools/fortran_2003_ieee_test.exe ] ; then
   retval=0
 fi
 if [ $retval -ne 0 ] ; then
@@ -907,6 +909,27 @@ if [ $retval -ne 0 ] ; then
   echo " "
   echo "There are some Fortran 2003 features in WRF that your compiler does not recognize"
   echo "The IEEE signaling call has been removed.  That may not be enough."
+  echo " "
+  echo "*****************************************************************************"
+fi
+
+# testing for Fortran 2003 ISO_C features
+make fortran_2003_iso_c_test > tools/fortran_2003_iso_c_test.log 2>&1
+rm -f tools/fortran_2003_iso_c_test.log
+retval=-1
+if [ -f tools/fortran_2003_iso_c_test.exe ] ; then
+  retval=0
+fi
+if [ $retval -ne 0 ] ; then
+  sed -e '/^ARCH_LOCAL/s/$/ -DNO_ISO_C_SUPPORT/' configure.wrf > configure.wrf.edit
+  mv configure.wrf.edit configure.wrf
+  echo " "
+  echo " "
+  echo "************************** W A R N I N G ************************************"
+  echo " "
+  echo "There are some Fortran 2003 features in WRF that your compiler does not recognize"
+  echo "The routines that utilize ISO_C support have been stubbed out. "
+  echo "That may not be enough."
   echo " "
   echo "*****************************************************************************"
 fi

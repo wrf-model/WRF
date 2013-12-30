@@ -1,4 +1,4 @@
-#if defined ( NO_IEEE_MODULE ) 
+#if defined ( NO_ISO_C_SUPPORT ) 
 module module_io_int_idx
    private
    contains

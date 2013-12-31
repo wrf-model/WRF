@@ -63,13 +63,15 @@ module_alloc_space_7.o : module_domain_type.o module_configure.o
 module_alloc_space_8.o : module_domain_type.o module_configure.o
 module_alloc_space_9.o : module_domain_type.o module_configure.o
 
-module_streams.o : module_state_description.o 
+module_streams.o : \
+		module_state_description.o 
 
 module_driver_constants.o: \
 		module_state_description.o \
                 module_wrf_error.o
 
-module_integrate.o: module_domain.o \
+module_integrate.o: \
+		module_domain.o \
 		module_timing.o \
 		module_driver_constants.o \
 		module_state_description.o \
@@ -86,14 +88,15 @@ module_intermediate_nmm.o: \
 		module_comm_dm.o \
                 module_timing.o
 
-module_io.o : md_calls.inc \
+module_io.o :	md_calls.inc \
                 module_dm.o \
 		module_state_description.o \
 		module_configure.o  \
                 module_streams.o \
 		module_driver_constants.o 
 
-module_io_quilt.o: module_state_description.o \
+module_io_quilt.o: \
+		module_state_description.o \
                 module_dm.o \
                 module_configure.o \
 		module_internal_header_util.o \
@@ -101,15 +104,18 @@ module_io_quilt.o: module_state_description.o \
 		module_wrf_error.o  \
                 module_cpl.o 
 
-module_machine.o: module_driver_constants.o
+module_machine.o: \
+		module_driver_constants.o
 
-module_nesting.o: module_machine.o \
+module_nesting.o: \
+		module_machine.o \
 		module_driver_constants.o \
 		module_configure.o \
 		$(ESMF_MOD_DEPENDENCE) \
 		module_domain.o 
 
-module_quilt_outbuf_ops.o: module_state_description.o module_timing.o
+module_quilt_outbuf_ops.o: \
+		module_state_description.o module_timing.o
 
 module_tiles.o: module_domain.o \
 		module_driver_constants.o \
@@ -129,7 +135,10 @@ module_wrf_error.o: \
 wrf_debug.o: \
 		module_wrf_error.o
 
-module_cpl.o: ../share/module_model_constants.o \
+module_sm.o:	module_wrf_error.o
+
+module_cpl.o: \
+		../share/module_model_constants.o \
 		module_driver_constants.o \
 		module_domain.o \
 		module_configure.o \

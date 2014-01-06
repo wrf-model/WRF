@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <stdint.h>
 #include <sys/file.h>
 #include <stdlib.h>
@@ -48,6 +49,9 @@ static void out4wave_close(data *d,int *status);
 static void out4wave_write(data *d,int *status);
 static void out4wave_recordsize(data *d);
 static int out4wave_field(data *d,const char *fieldname,float **ofield);
+#ifdef OUT4WAVE_LOCK
+static int out4wave_lock(data *d,int *status);
+#endif
 
 /* Fortran-called functions */
 void c_out4wave_inquire(int *dh,char *filename,int *len,int *opened,int *dryrun);
@@ -236,6 +240,38 @@ static void out4wave_recordsize(data *d) {
     }
   }
 }
+
+#ifdef OUT4WAVE_LOCK
+static int out4wave_lock(data *d,int *status) {
+  const int maxsleep=3000000, sleepper=500000, minsleep=50000;
+  int bad=0;
+  int slept=0,val,tries=0;
+  while(slept<3000000) {
+    tries++;
+    if(!flock(d->fd,LOCK_EX|LOCK_NB)) {
+      fprintf(stderr,"out4wave: %s: have lock.\n",d->fn);
+      return 0;
+    } else if(errno!=EWOULDBLOCK && !bad)
+      bad=errno;
+    val=(unsigned long long)rand() * sleepper / RAND_MAX;
+    if(val+slept>maxsleep) val=maxsleep-slept;
+    if(val<minsleep) val=minsleep;
+#ifdef OUT4WAVE_DEBUG
+    fprintf(stderr,"out4wave: %s: cannot lock after %d seconds and %d %s.  Will sleep %d microseconds and retry.\n",
+            d->fn, slept, tries, (tries>1)?"tries":"try", val);
+#endif
+    usleep(val);
+    slept+=val;
+  }
+  if(bad) {
+    *status=OUT4WAVE_CANNOT_LOCK;
+    fprintf(stderr,"out4wave: %s: cannot lock after %d microseconds and %d tries.  First error: %s\n",d->fn,slept,tries,strerror(errno));
+    return 2;
+  }
+  fprintf(stderr,"out4wave: %s: warning: cannot lock file after %d microseconds and %d tries.  Will continue without locking.\n",d->fn,slept,tries);
+  return 0;
+}
+#endif
 
 static void out4wave_close(data *d,int *status) {
   *status=0;
@@ -547,13 +583,12 @@ void c_out4wave_open(char *filename, int *len, int *dh, int*status) {
   }
 #ifdef OUT4WAVE_LOCK
   fprintf(stderr,"out4wave: %s: opened file; trying to lock...\n",d->fn);
-  if(flock(d->fd,LOCK_EX)) {
+  if(out4wave_lock(d,status)) {
     fprintf(stderr,"out4wave: %s: trouble locking: %s\n",
             d->fn,strerror(errno));
     *status=OUT4WAVE_CANNOT_LOCK;
     goto bad;
   }
-  fprintf(stderr,"out4wave: %s: have lock.\n",d->fn);
 #endif
 
   if(1==fread(sizedat,16,1,d->fp)) {

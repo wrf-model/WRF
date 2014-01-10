@@ -796,7 +796,19 @@ CONTAINS
               allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
               allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
 
-           case default
+        end select swrad_aerosol_select
+     ELSE
+        swrad_aerosol_select: select case(sw_physics)
+
+           case(GODDARDSWSCHEME)
+              allocate(tauaer_sw(1, 1, 1, 1))
+              allocate(ssaaer_sw(1, 1, 1, 1))
+              allocate(asyaer_sw(1, 1, 1, 1))
+
+           case(RRTMG_SWSCHEME)
+              allocate(tauaer_sw(1, 1, 1, 1))
+              allocate(ssaaer_sw(1, 1, 1, 1))
+              allocate(asyaer_sw(1, 1, 1, 1))
 
         end select swrad_aerosol_select
      ENDIF
@@ -969,7 +981,7 @@ CONTAINS
 
         IF ( PRESENT ( CLDFRA_DP ) ) THEN
           IF ( icloud_cu .EQ. 2 ) THEN
-        CALL wrf_debug (1, 'use kf cldfra')
+             CALL wrf_debug (1, 'use kf cldfra')
              DO j = jts,jte
              DO k = kts,kte
              DO i = its,ite

@@ -798,7 +798,7 @@ CONTAINS
 
         end select swrad_aerosol_select
      ELSE
-        swrad_aerosol_select: select case(sw_physics)
+        swrad_aerosol_select_stub: select case(sw_physics)
 
            case(GODDARDSWSCHEME)
               allocate(tauaer_sw(1, 1, 1, 1))
@@ -810,7 +810,7 @@ CONTAINS
               allocate(ssaaer_sw(1, 1, 1, 1))
               allocate(asyaer_sw(1, 1, 1, 1))
 
-        end select swrad_aerosol_select
+        end select swrad_aerosol_select_stub
      ENDIF
    ENDIF
 

@@ -1744,7 +1744,7 @@ end if
                allocate (iv%airep(ilocal(airep))%u(1:iv%info(airep)%max_lev))
                allocate (iv%airep(ilocal(airep))%v(1:iv%info(airep)%max_lev))
                allocate (iv%airep(ilocal(airep))%t(1:iv%info(airep)%max_lev))
-               
+               allocate (iv%airep(ilocal(airep))%q(1:iv%info(airep)%max_lev))
             end if
             do i = 1, plink%nlevels_BUFR
                iv % airep (ilocal(airep)) % h(i) = plink%platform_BUFR % each(i) % height
@@ -1752,7 +1752,7 @@ end if
                iv % airep (ilocal(airep)) % u(i) = plink%platform_BUFR % each(i) % u
                iv % airep (ilocal(airep)) % v(i) = plink%platform_BUFR % each(i) % v
                iv % airep (ilocal(airep)) % t(i) = plink%platform_BUFR % each(i) % t
-               
+               iv % airep (ilocal(airep)) % q(i) = plink%platform_BUFR % each(i) % q
             end do
 
          case (522,523);        ! Ships

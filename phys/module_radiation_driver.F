@@ -1030,6 +1030,20 @@ CONTAINS
 
      END IF
 
+#ifdef HWRF
+! For HWRF, this variable is not used.
+     IF ( ( lw_physics .EQ. HWRFLWSCHEME ) .OR. &
+          ( sw_physics .EQ. HWRFSWSCHEME ) ) THEN
+        DO j=jts,jte
+        DO k=kts,kte
+        DO i=its,ite
+           CLDFRA(i,k,j) = 0.
+        END DO
+        END DO
+        END DO
+     END IF
+#endif
+
 ! ww: Interpolating climatological ozone and aerosol to model time and levels
 !     Adapted from camrad code
      IF ( PRESENT( O3RAD ) ) THEN

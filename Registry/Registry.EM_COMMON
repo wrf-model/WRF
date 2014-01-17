@@ -721,8 +721,8 @@ state    real   SSTSK            ij     misc        1         -     rhd=(interp_
 state    real   lake_depth            ij     misc        1         -     rhd=(interp_mask_water_field:lu_index,iswater)   "lake_depth"              "lake depth" "m"
 state    real   DTW              ij     misc        1         -     r   "DTW"              "WARM LAYER TEMP DIFF" "C"
 # Ocean surface currents
-state    real   UOCE            ij     misc        1         -     i0124rhd=(interp_mask_water_field:lu_index,iswater)  "UOCE"  "SEA SURFACE ZONAL CURRENTS" "m s-1"
-state    real   VOCE            ij     misc        1         -     i0124rhd=(interp_mask_water_field:lu_index,iswater)  "VOCE"  "SEA SURFACE MERIDIONAL CURRENTS" "m s-1"
+state    real   UOCE            ij     misc        1         -     i0124rd=(interp_mask_water_field:lu_index,iswater)  "UOCE"  "SEA SURFACE ZONAL CURRENTS" "m s-1"
+state    real   VOCE            ij     misc        1         -     i0124rd=(interp_mask_water_field:lu_index,iswater)  "VOCE"  "SEA SURFACE MERIDIONAL CURRENTS" "m s-1"
 
 # DFI variables
 state   real   hcoeff         {ndfi} misc        1         -     -    "HCOEFF"               "initialization weights"
@@ -1349,10 +1349,10 @@ state    real  RQIBLTEN        ikj      misc        1         -      r        "R
 state    real  RQNIBLTEN       ikj      misc        1         -      r        "RQNIBLTEN"             "COUPLED Q_NI TENDENCY DUE TO PBL PARAMETERIZATION"    "Pa #  kg-1 s-1"
 
 # For Noah UA changes
-state    real   flx4            ij         -        1         -      h        "FLX4"         "sensible heat from canopy"              "W m{-2}"
-state    real   fvb             ij         -        1         -      h        "FVB"          "fraction of vegetation with snow below" ""
-state    real   fbur            ij         -        1         -      h        "FBUR"         "fraction of vegetation covered by snow" ""
-state    real   fgsn            ij         -        1         -      h        "FGSN"         "fraction of ground covered by snow"     ""
+state    real   flx4            ij         -        1         -      -        "FLX4"         "sensible heat from canopy"              "W m{-2}"
+state    real   fvb             ij         -        1         -      -        "FVB"          "fraction of vegetation with snow below" ""
+state    real   fbur            ij         -        1         -      -        "FBUR"         "fraction of vegetation covered by snow" ""
+state    real   fgsn            ij         -        1         -      -        "FGSN"         "fraction of ground covered by snow"     ""
 
 # For Noah-MP
 state   integer isnowxy    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "isnow"      "no. of snow layer"                   "m3 m-3"

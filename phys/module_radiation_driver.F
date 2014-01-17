@@ -3480,7 +3480,12 @@ SUBROUTINE aer_p_int(p ,pin, levsiz, aerodt, aerod, no_src, pf, totaod,   &
    end do
    end do
 
-!  totaod = 0.
+   do j=jts,jte
+   do i=its,ite
+      totaod(i,j) = 0.
+   end do
+   end do
+
    do s=1,no_src
    do j=jts,jte
    do k=1,pver

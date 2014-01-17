@@ -4042,7 +4042,7 @@ subroutine aerosol_in(aerodm,pina,alevsiz,no_months,no_src_types,XLAT,XLONG,   &
         end do
       close(28)
 
-!-- read in aerosol optical depth lat data
+!-- read in aerosol optical depth lon data
 
       lon_unit = 29
         OPEN(lon_unit, FILE='aerosol_lon.formatted',FORM='FORMATTED',STATUS='OLD')

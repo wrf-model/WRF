@@ -407,7 +407,7 @@ CONTAINS
 !-- TDLY          accumulated daily mean surface temperature of the current day (K)
 !-- XLAND         land mask (1 for land, 2 for water)
 !-- MAX_EDOM      number of external model domains
-!-- CPLMASK       coupling mask (1 for data read in wrflowinput, 0 data received from the coupler)
+!-- CPLMASK       coupling mask (0 for data read in wrflowinput, 1 data received from the coupler)
 !-- ZNT           thermal time-varying roughness length (m)
 !-- MZNT          momentum time-varying roughness length (m)
 !-- Z0            background roughness length (m)

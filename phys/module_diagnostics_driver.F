@@ -18,7 +18,7 @@ CONTAINS
                                    moist, chem, tracer, scalar,         &
                                    th_phy, pi_phy, p_phy, rho_phy,      & 
                                    p8w, t8w, dz8w,                      &
-                                   curr_secs, curr_secs2,               &
+                                   curr_secs2,                          &
                                    diag_flag,                           &
                                    ids,  ide,  jds,  jde,  kds,  kde,   &
                                    ims,  ime,  jms,  jme,  kms,  kme,   &
@@ -103,10 +103,6 @@ CONTAINS
                                                                            dz8w    , &
                                                                            p8w     , &
                                                                            t8w
-
-      !  Time (s) since the beginning of the simulation, including restarts.
-
-      REAL :: curr_secs
 
       !  Time (s) since the beginning of the restart.
 
@@ -255,7 +251,7 @@ CONTAINS
                 ,PREC_ACC_C=grid%prec_acc_c                          &
                 ,PREC_ACC_NC=grid%prec_acc_nc                        &
                 ,PREC_ACC_DT=config_flags%prec_acc_dt                &
-                ,CURR_SECS=curr_secs                                 &
+                ,CURR_SECS2=curr_secs2                               &
                 ,NWP_DIAGNOSTICS=config_flags%nwp_diagnostics        &
                 ,DIAGFLAG=diag_flag                                  &
                 ,HISTORY_INTERVAL=grid%history_interval              &
@@ -364,7 +360,7 @@ CONTAINS
       !  Process the diags if this is the correct time step OR
       !  if this is an adaptive timestep forecast.
 
-         TIME_TO_DO_PL_DIAGS : IF ( ( ( MOD(NINT(curr_secs+grid%dt),NINT(config_flags%p_lev_interval)) .EQ. 0 ) ) .OR. &
+         TIME_TO_DO_PL_DIAGS : IF ( ( ( MOD(NINT(curr_secs2+grid%dt),NINT(config_flags%p_lev_interval)) .EQ. 0 ) ) .OR. &
                ( config_flags%use_adaptive_time_step ) ) THEN
 
             !$OMP PARALLEL DO   &

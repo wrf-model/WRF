@@ -42,6 +42,8 @@ subroutine plumerise(m1,m2,m3,ia,iz,ja,jz,firesize,mean_fct   &
   integer, parameter :: grassland       = 4
   real, dimension(nveg_agreg) :: firesize,mean_fct
 
+  INTEGER, PARAMETER :: wind_eff = 1
+
 
   !Fator de conversao de unidades
   !!fcu=1.	  !=> kg [gas/part] /kg [ar]
@@ -86,8 +88,8 @@ subroutine plumerise(m1,m2,m3,ia,iz,ja,jz,firesize,mean_fct   &
      !- plume rise => cycle
 
  	 do k = 1,m1
- 	   !ucon  (k)=up(k,i,j) 	      ! u wind
- 	   !vcon  (k)=vp(k,i,j) 	      ! v wind
+ 	   ucon  (k)=up(k,i,j) 	      ! u wind
+ 	   vcon  (k)=vp(k,i,j) 	      ! v wind
  	   !wcon  (k)=wp(k,i,j) 	      ! w wind
  	   thtcon(k)=theta(k,i,j)	      ! pot temperature
  	   picon (k)=pp(k,i,j)                ! exner function
@@ -104,7 +106,7 @@ subroutine plumerise(m1,m2,m3,ia,iz,ja,jz,firesize,mean_fct   &
          enddo
  	
          !- get envinronmental state (temp, water vapor mix ratio, ...)
- 	 call get_env_condition(1,m1,kmt)
+ 	 call get_env_condition(1,m1,kmt,wind_eff)
  	    
          !- loop nos 4 biomas agregados com possivel queimada 
  	 do iveg_ag=1,nveg_agreg
@@ -144,12 +146,12 @@ subroutine plumerise(m1,m2,m3,ia,iz,ja,jz,firesize,mean_fct   &
                 cycle
 	     endif
 	     
-	     call makeplume (kmt,ztopmax(imm),ixx)	      	      
+	     call makeplume (kmt,ztopmax(imm),ixx,imm)	      	      
 	     	   
 	   enddo ! enddo do loop em imm
 	   
 	   !- define o dominio vertical onde a emissao flaming ira ser colocada
-	   call set_flam_vert(ztopmax,k1,k2)
+	   call set_flam_vert(ztopmax,k1,k2,nkp,zzcon,W_VMD,VMD)
 	   
 	   !- espessura da camada vertical 
 	   dz_flam=zzcon(k2)-zzcon(k1-1)
@@ -203,7 +205,7 @@ subroutine plumerise(m1,m2,m3,ia,iz,ja,jz,firesize,mean_fct   &
 end subroutine plumerise
 !-------------------------------------------------------------------------
 
-subroutine get_env_condition(k1,k2,kmt)
+subroutine get_env_condition(k1,k2,kmt,wind_eff)
 
 !se module_zero_plumegen_coms
 !use rconstants
@@ -211,6 +213,8 @@ implicit none
 integer :: k1,k2,k,kcon,klcl,kmt,nk,nkmid,i
 real :: znz,themax,tlll,plll,rlll,zlll,dzdd,dzlll,tlcl,plcl,dzlcl,dummy
 integer :: n_setgrid = 0 
+integer :: wind_eff
+
 
 if( n_setgrid == 0) then
   n_setgrid = 1
@@ -225,14 +229,15 @@ do k=nkp,1,-1
 enddo
 stop ' envir stop 12'
 13 continue
-kmt=k
+!-srf-mb
+kmt=min(k,nkp-1)
 
 nk=k2-k1+1
-!call htint(nk, wcon,zzcon(k1),kmt,wpe,zt)
-!call htint(nk,  ucon,zcon(k1),kmt,upe,zt)
-!call htint(nk,  vcon,zcon(k1),kmt,vpe,zt)
- call htint(nk,thtcon,zcon(k1),kmt,the  ,zt)
- call htint(nk, rvcon,zcon(k1),kmt,qvenv,zt)
+!call htint(nk, wcon,zzcon,kmt,wpe,zt)
+ call htint(nk,  ucon,zcon,kmt,upe,zt)
+ call htint(nk,  vcon,zcon,kmt,vpe,zt)
+ call htint(nk,thtcon,zcon,kmt,the  ,zt)
+ call htint(nk, rvcon,zcon,kmt,qvenv,zt)
 do k=1,kmt
   qvenv(k)=max(qvenv(k),1e-8)
 enddo
@@ -250,7 +255,13 @@ do k=1,kmt
   pe(k)  = (pke(k)/cp)**cpor*p00    ! pressure (Pa)
   dne(k)= pe(k)/(rgas*te(k)*(1.+.61*qvenv(k))) !  dry air density (kg/m3)
 !  print*,'ENV=',qvenv(k)*1000., te(k)-273.15,zt(k)
+!-srf-mb
+  vel_e(k) = sqrt(upe(k)**2+vpe(k)**2)         !-env wind (m/s)
+  !print*,'k,vel_e(k),te(k)=',vel_e(k),te(k)
 enddo
+
+!-ewe - env wind effect
+if(wind_eff < 1)  vel_e(1:kmt) = 0.
 
 !-use este para gerar o RAMS.out
 ! ------- print environment state
@@ -312,33 +323,93 @@ return
 end subroutine set_grid
 !-------------------------------------------------------------------------
 
-subroutine set_flam_vert(ztopmax,k1,k2)
-!  use module_zero_plumegen_coms, only : nkp,zzcon
-  implicit none
-  integer imm,k,k1,k2
-  real,    dimension(2)  :: ztopmax
-  integer, dimension(2)  :: k_lim
+  SUBROUTINE set_flam_vert(ztopmax,k1,k2,nkp,zzcon,W_VMD,VMD)
 
+    REAL    , INTENT(IN)  :: ztopmax(2)
+    INTEGER , INTENT(OUT) :: k1
+    INTEGER , INTENT(OUT) :: k2
 
-  do imm=1,2
-! checar 
-!    do k=1,m1-1
-    do k=1,nkp-1
-              if(zzcon(k) > ztopmax(imm) ) exit
-    enddo
-    k_lim(imm) = k
-  enddo           
-  k1=max(3,k_lim(1))
-  k2=max(3,k_lim(2))
-  
-  if(k2 < k1) then
-    !print*,'1: ztopmax k=',ztopmax(1), k1
-    !print*,'2: ztopmax k=',ztopmax(2), k2
-    k2=k1
-    !stop 1234
-  endif
+    ! plumegen_coms
+    INTEGER , INTENT(IN)  :: nkp
+    REAL    , INTENT(IN)  :: zzcon(nkp)
+
+    INTEGER imm,k
+    INTEGER, DIMENSION(2)  :: k_lim
+
+    !- version 2
+    REAL    , INTENT(IN)  :: W_VMD(nkp,2)
+    REAL    , INTENT(OUT) ::   VMD(nkp,2)
+    real   w_thresold,xxx
+    integer k_initial,k_final,ko,kk4,kl
+
+    !- version 1
+    DO imm=1,2
+       ! checar 
+       !    do k=1,m1-1
+       DO k=1,nkp-1
+          IF(zzcon(k) > ztopmax(imm) ) EXIT
+       ENDDO
+       k_lim(imm) = k
+    ENDDO
+    k1=MAX(3,k_lim(1))
+    k2=MAX(3,k_lim(2))
+
+    IF(k2 < k1) THEN
+       !print*,'1: ztopmax k=',ztopmax(1), k1
+       !print*,'2: ztopmax k=',ztopmax(2), k2
+       k2=k1
+       !stop 1234
+    ENDIF
     
-end subroutine set_flam_vert
+    !- version 2    
+    !- vertical mass distribution
+    !- 
+    w_thresold = 1.
+    DO imm=1,2
+
+    
+       VMD(1:nkp,imm)= 0.
+       xxx=0.
+       k_initial= 0
+       k_final  = 0
+    
+       !- define range of the upper detrainemnt layer
+       do ko=nkp-10,2,-1
+     
+        if(w_vmd(ko,imm) < w_thresold) cycle
+     
+        if(k_final==0) k_final=ko
+     
+        if(w_vmd(ko,imm)-1. > w_vmd(ko-1,imm)) then
+          k_initial=ko
+          exit
+        endif
+      
+       enddo
+       !- if there is a non zero depth layer, make the mass vertical distribution 
+       if(k_final > 0 .and. k_initial > 0) then 
+       
+           k_initial=int((k_final+k_initial)*0.5)
+       
+           !- parabolic vertical distribution between k_initial and k_final
+           kk4 = k_final-k_initial+2
+           do ko=1,kk4-1
+               kl=ko+k_initial-1
+               VMD(kl,imm) = 6.* float(ko)/float(kk4)**2 * (1. - float(ko)/float(kk4))
+           enddo
+	   if(sum(VMD(1:NKP,imm)) .ne. 1.) then
+ 	       xxx= ( 1.- sum(VMD(1:NKP,imm)) )/float(k_final-k_initial+1)
+ 	       do ko=k_initial,k_final
+ 	         VMD(ko,imm) = VMD(ko,imm)+ xxx !- values between 0 and 1.
+ 	       enddo
+               ! print*,'new mass=',sum(mass)*100.,xxx
+               !pause
+           endif
+        endif !k_final > 0 .and. k_initial > 
+
+    ENDDO
+    
+  END SUBROUTINE set_flam_vert
 !-------------------------------------------------------------------------
 
 subroutine get_fire_properties(imm,iveg_ag,burnt_area,STD_burnt_area)
@@ -347,6 +418,7 @@ implicit none
 integer ::  moist,  i,  icount,imm,iveg_ag
 real::   bfract,  effload,  heat,  hinc ,burnt_area,STD_burnt_area,heat_fluxW
 real,    dimension(2,4) :: heat_flux
+INTEGER, parameter :: use_last = 0
 
 
 data heat_flux/  &
@@ -377,7 +449,8 @@ maxtime =mdur+2  ! model time, min
 !heat = 21.e6    !- joules per kg of fuel consumed                   
 !heat = 15.5e6   !joules/kg - cerrado
 heat = 19.3e6    !joules/kg - floresta em alta floresta (mt)
-alpha = 0.1      !- entrainment constant
+!alpha = 0.1      !- entrainment constant
+alpha = 0.05      !- entrainment constant
 
 !-------------------- printout ----------------------------------------
 
@@ -436,19 +509,34 @@ FMOIST   = MOIST / 100.       !- fuel moisture fraction
    ICOUNT = ICOUNT + 1  
   ENDDO  
 !     ramp for 5 minutes
-  
-  HINC = HEATING (1) / 4.  
-  HEATING (1) = 0.1  
-  HEATING (2) = HINC  
-  HEATING (3) = 2. * HINC  
-  HEATING (4) = 3. * HINC  
-!
+ IF(use_last /= 1) THEN
+
+    HINC = HEATING (1) / 4.  
+    HEATING (1) = 0.1  
+    HEATING (2) = HINC  
+    HEATING (3) = 2. * HINC  
+    HEATING (4) = 3. * HINC  
+ ELSE
+    IF(imm==1) THEN
+       HINC = HEATING (1) / 4.  
+       HEATING (1) = 0.1  
+       HEATING (2) = HINC  
+       HEATING (3) = 2. * HINC  
+       HEATING (4) = 3. * HINC 
+    ELSE 
+       HINC = (HEATING (1) - heat_flux(imm-1,iveg_ag) * 1000. *0.55)/ 4.
+       HEATING (1) = heat_flux(imm-1,iveg_ag) * 1000. *0.55 + 0.1  
+       HEATING (2) = HEATING (1)+ HINC  
+       HEATING (3) = HEATING (2)+ HINC  
+       HEATING (4) = HEATING (3)+ HINC 
+    ENDIF
+ ENDIF
 
 return
 end subroutine get_fire_properties
 !-------------------------------------------------------------------------------
 !
-SUBROUTINE MAKEPLUME ( kmt,ztopmax,ixx)  
+SUBROUTINE MAKEPLUME ( kmt,ztopmax,ixx,imm)  
 !
 ! *********************************************************************
 !
@@ -518,6 +606,9 @@ real ::  vc, g,  r,  cp,  eps,  &
          tmelt,  heatsubl,  heatfus,  heatcond, tfreeze, &
          ztopmax, wmax, rmaxtime, es, esat, heat,dt_save !ESAT_PR,
 character (len=2) :: cixx	 
+
+    REAL :: DELZ_THRESOLD
+    INTEGER     :: imm
 
 !  real, external:: esat_pr!
 !
@@ -607,6 +698,10 @@ rmaxtime = float(maxtime)
 
 !-- scalars entrainment, adiabatic
     call scl_misc(NM1)
+    
+!-- scalars dinamic entrainment
+     call  scl_dyn_entrain(NM1,nkp,wbar,w,adiabat,alpha,radius,tt,t,te,qvt,qv,qvenv,qct,qc,qht,qh,qit,qi,&
+                    vel_e,vel_p,vel_t,rad_p,rad_t)
 
 !-- gravity wave damping using Rayleigh friction layer fot T
     call damp_grav_wave(1,nm1,deltak,dt,zt,zm,w,t,tt,qv,qh,qi,qc,te,pe,qvenv)
@@ -681,26 +776,38 @@ rmaxtime = float(maxtime)
 ! Gravity wave damping using Rayleigh friction layer for W
     call damp_grav_wave(2,nm1,deltak,dt,zt,zm,w,t,tt,qv,qh,qi,qc,te,pe,qvenv)
 !---
+       !- update radius
+       do k=2,nm1
+        radius(k) = rad_p(k)
+       enddo
+      !-- try to find the plume top (above surface height)
+       kk = 1
+       DO WHILE (w (kk) .GT. 1.)  
+          kk = kk + 1  
+          ztop =  zm(kk) 
+          !print*,'W=',w (kk)
+       ENDDO
+       !
+       ztop_(mintime) = ztop
+       ztopmax = MAX (ztop, ztopmax) 
+       kkmax   = MAX (kk  , kkmax  ) 
+       !print * ,'ztopmax=', mintime,'mn ',ztop_(mintime), ztopmax
 
-!-- try to find the plume top (above surface height)
-    kk = 1
-    do while (w (kk) .gt. 1.)  
-     kk = kk + 1  
-     ztop =  zm(kk) 
-     !print*,'W=',w (kk)
-    enddo  
-!
-    ztop_(mintime) = ztop
-    ztopmax = max (ztop, ztopmax) 
-    kkmax   = max (kk  , kkmax  ) 
-    !print * ,'ztopmax=', mintime,'mn ',ztop_(mintime), ztopmax
+       !
+       ! if the solution is going to a stationary phase, exit
+       IF(mintime > 10) THEN                 
+          !   if(mintime > 20) then                     
+          !    if( abs(ztop_(mintime)-ztop_(mintime-10)) < DZ ) exit   
+          IF( ABS(ztop_(mintime)-ztop_(mintime-10)) < DELZ_THRESOLD) then 
+	   	  
+	   	  !- determine W parameter to determine the VMD
+           	  do k=2,nm1
+	   	   W_VMD(k,imm) = w(k)
+           	  enddo
+	   	  EXIT ! finish the integration
+	   ENDIF  
+       ENDIF
 
-!
-!srf-27082005
-! if the solution is going to a stationary phase, exit
-   if(mintime > 10) then
-    if( abs(ztop_(mintime)-ztop_(mintime-10)) < DZ ) exit
-   endif
 
     if(ilastprint == mintime) then
       call printout (izprint,nrectotal)  
@@ -810,6 +917,8 @@ QC (1) = 0.       !no cloud here
    
 !
    WC(1) = W(1)
+    VEL_P(1) = 0.
+    rad_p(1) = rsurf
 
    !SC(1) = SCE(1)+F/1000.*dt  ! gas/particle (g/g)
 
@@ -885,6 +994,8 @@ N=kmt
    EST  (k) = ES  
    QSAT (k) = (.622 * ES) / (PE (k) - ES) !saturation lwc g/g
    RHO  (k) = 3483.8 * PE (k) / T (k) 	!dry air density g/m**3    
+       VEL_P(k) = 0.
+       rad_p(k) = 0.
   enddo  
 
 ! Initialize the entrainment radius, Turner-style plume
@@ -892,11 +1003,19 @@ N=kmt
   do k=2,N
      radius(k) = radius(k-1)+(6./5.)*alpha*(zt(k)-zt(k-1))
   enddo
+! Initialize the entrainment radius, Turner-style plume
+    radius(1) = rsurf
+    rad_p(1)  = rsurf
+    DO k=2,N
+       radius(k) = radius(k-1)+(6./5.)*alpha*(zt(k)-zt(k-1))
+       rad_p(k)  = radius(k)
+   ENDDO
     
 !  Initialize the viscosity
    VISC (1) = VISCOSITY
    do k=2,N
-     VISC (k) = VISCOSITY!max(1.e-3,visc(k-1) - 1.* VISCOSITY/float(nkp))
+     !VISC (k) = VISCOSITY!max(1.e-3,visc(k-1) - 1.* VISCOSITY/float(nkp))
+     VISC (k) = max(1.e-3,visc(k-1) - 1.* VISCOSITY/float(nkp))
    enddo
 !--   Initialize gas/concentration
   !DO k =10,20
@@ -939,12 +1058,14 @@ real zmkf,ztop,distim,c1,c2,dt
 
 !nfpt=50
 !kf = nm1 - nfpt
-kf = nm1 - int(deltak/2)
+!kf = nm1 - int(deltak/2)
+ kf = nm1 - int(deltak)
 
 zmkf = zm(kf) !old: float(kf )*dz
 ztop = zm(nm1)
 !distim = min(4.*dt,200.)
-distim = 60.
+!distim = 60.
+ distim = min(3.*dt,60.)
 
 c1 = 1. / (distim * (ztop - zmkf))
 c2 = dt * c1
@@ -1112,7 +1233,7 @@ subroutine ENTRAINMENT(m1,w,wt,radius,ALPHA)
 implicit none
 integer :: k,m1
 real, dimension(m1) :: w,wt,radius
-real DMDTM,ALPHA,WBAR,RADIUS_BAR,umgamai
+REAL DMDTM,WBAR,RADIUS_BAR,umgamai,DYN_ENTR,ALPHA
 real, parameter :: mu = 0.15 ,gama = 0.5 ! mass virtual coeff.
 
 !- new - Siesbema et al, 2004
@@ -1130,7 +1251,7 @@ umgamai = 1./(1.+gama) ! compensa a falta do termo de aceleracao associado `as
 !-- for W: WBAR is only W(k)
 !     WBAR=0.5*(W(k)+W(k-1))           
       WBAR=W(k)          
-      RADIUS_BAR = 0.5*(RADIUS(k) + RADIUS(k+1))
+      RADIUS_BAR = 0.5*(RADIUS(k) + RADIUS(k-1))
 ! orig
      !DMDTM =           2. * ALPHA * ABS (WBAR) / RADIUS_BAR  != (1/M)DM/DT
       DMDTM = umgamai * 2. * ALPHA * ABS (WBAR) / RADIUS_BAR  != (1/M)DM/DT
@@ -1138,6 +1259,16 @@ umgamai = 1./(1.+gama) ! compensa a falta do termo de aceleracao associado `as
 !--  DMDTM*W(L) entrainment,
       wt(k) = wt(k)  - DMDTM*ABS (WBAR)
       !print*,'W-ENTR=',k,w(k),- DMDTM*ABS (WBAR)
+      
+      !if(VEL_P (k) - VEL_E (k) > 0.) cycle
+
+       !-   dynamic entrainment
+       DYN_ENTR =  (2./3.1416)*0.5*ABS (VEL_P(k)-VEL_E(k)+VEL_P(k-1)-VEL_E(k-1)) /RADIUS_BAR
+
+       wt(k) = wt(k)  - DYN_ENTR*ABS (WBAR)
+       
+       !- entraiment acceleration for output only
+       !dwdt_entr(k) =  - DMDTM*ABS (WBAR)- DYN_ENTR*ABS (WBAR)
   enddo
 end subroutine  ENTRAINMENT
 !-------------------------------------------------------------------------------
@@ -1230,9 +1361,30 @@ integer :: k
 
       call advtndc_plumerise(mzp,QH,scr1(1),QHT,dt)
 !   endif
+    !- horizontal wind advection tendency (VEL_T)
+    scr1=VEL_P
+    call fa_zc_plumerise(mzp		      &
+    			,VEL_P     ,scr1  (1)  &
+    			,vt3dc (1) ,vt3df (1)  &
+    			,vt3dg (1) ,vt3dk (1)  &
+    			,vctr1,vctr2	     )
+
+    call advtndc_plumerise(mzp,VEL_P,scr1(1),VEL_T,dt)
+
+    !- vertical radius transport
+
+    scr1=rad_p
+    call fa_zc_plumerise(mzp                  &
+             	        ,rad_p     ,scr1  (1)  &
+             	        ,vt3dc (1) ,vt3df (1)  &
+             	        ,vt3dg (1) ,vt3dk (1)  &
+             	        ,vctr1,vctr2	     )
+
+    call advtndc_plumerise(mzp,rad_p,scr1(1),rad_t,dt)
+
 
    return
-
+!
 !- gas/particle advection tendency (SCT)
 !    if(varn == 'SC')return
    scr1=SC
@@ -1319,6 +1471,8 @@ qvt(1:nm1)  = 0.
 qct(1:nm1)  = 0.
 qht(1:nm1)  = 0.
 qit(1:nm1)  = 0.
+vel_t(1:nm1)  = 0.
+rad_t(1:nm1)  = 0.
 !sct(1:nm1)  = 0.
 end subroutine tend0_plumerise
 
@@ -1349,11 +1503,85 @@ real dmdtm
       QHT(K) = QHT(K)	      - DMDTM * ( QH (k)  )
       QIT(K) = QIT(K)	      - DMDTM * ( QI (k)  )
 
+      !-- tendency horizontal speed = adv  + entrainment
+      VEL_T(K) = VEL_T(K)     - DMDTM * ( VEL_P (k) - VEL_E (k) )
+
+      !-- tendency horizontal speed = adv  + entrainment
+      rad_t(K) = rad_t(K)     + 0.5*DMDTM*(6./5.)*RADIUS (k)
 !-- tendency gas/particle = adv  + entrainment
 !      SCT(K) = SCT(K)         - DMDTM * ( SC (k) -   SCE (k) )
 
 enddo
 end subroutine scl_misc
+!     ****************************************************************
+
+  SUBROUTINE scl_dyn_entrain(m1,nkp,wbar,w,adiabat,alpha,radius,tt,t,te,qvt,qv,qvenv,qct,qc,qht,qh,qit,qi,&
+                    vel_e,vel_p,vel_t,rad_p,rad_t)
+    implicit none
+
+    INTEGER , INTENT(IN)    :: m1
+
+    ! plumegen_coms
+    INTEGER , INTENT(IN)    :: nkp
+    REAL    , INTENT(INOUT) :: wbar 
+    REAL    , INTENT(IN)    :: w(nkp)
+    REAL    , INTENT(INOUT) :: adiabat 
+    REAL    , INTENT(IN)    :: alpha
+    REAL    , INTENT(IN)    :: radius(nkp)
+    REAL    , INTENT(INOUT) :: tt(nkp)
+    REAL    , INTENT(IN)    :: t(nkp)
+    REAL    , INTENT(IN)    :: te(nkp)
+    REAL    , INTENT(INOUT) :: qvt(nkp)
+    REAL    , INTENT(IN)    :: qv(nkp)
+    REAL    , INTENT(IN)    :: qvenv(nkp)
+    REAL    , INTENT(INOUT) :: qct(nkp)
+    REAL    , INTENT(IN)    :: qc(nkp)
+    REAL    , INTENT(INOUT) :: qht(nkp)
+    REAL    , INTENT(IN)    :: qh(nkp)
+    REAL    , INTENT(INOUT) :: qit(nkp)
+    REAL    , INTENT(IN)    :: qi(nkp)
+
+    REAL    , INTENT(IN)    :: vel_e(nkp)
+    REAL    , INTENT(IN)    :: vel_p(nkp)
+    REAL    , INTENT(INOUT) :: vel_t(nkp)
+    REAL    , INTENT(INOUT) :: rad_T(nkp)
+    REAL    , INTENT(IN)    :: rad_p(nkp)
+
+    real, parameter :: g = 9.81, cp=1004., pi=3.1416
+
+    integer k
+    real dmdtm
+
+    DO k=2,m1-1
+      !      
+      !-- tendency horizontal radius from dyn entrainment
+     	   !rad_t(K) = rad_t(K)   +	(vel_e(k)-vel_p(k)) /pi
+     	    rad_t(K) = rad_t(K)   + ABS((vel_e(k)-vel_p(k)))/pi
+      
+      !-- entrainment	  
+     	   !DMDTM = (2./3.1416)  *     (VEL_E (k) - VEL_P (k)) / RADIUS (k)  
+     	    DMDTM = (2./3.1416)  *  ABS(VEL_E (k) - VEL_P (k)) / RADIUS (k)  
+      
+      !-- tendency horizontal speed  from dyn entrainment
+     	    VEL_T(K) = VEL_T(K)     - DMDTM * ( VEL_P (k) - VEL_E (k) )
+      
+      !     if(VEL_P (k) - VEL_E (k) > 0.) cycle
+      
+      !-- tendency temperature  from dyn entrainment
+     	    TT(k) = TT(K)	    - DMDTM * ( T (k) - TE  (k) ) 
+      
+      !-- tendency water vapor  from dyn entrainment
+   	    QVT(K) = QVT(K)	    - DMDTM * ( QV (k) - QVENV (k) )
+      
+     	    QCT(K) = QCT(K)	    - DMDTM * ( QC (k)  )
+     	    QHT(K) = QHT(K)	    - DMDTM * ( QH (k)  )
+     	    QIT(K) = QIT(K)	    - DMDTM * ( QI (k)  )
+      
+      !-- tendency gas/particle  from dyn entrainment
+      !	 SCT(K) = SCT(K)	 - DMDTM * ( SC (k) - SCE (k) )
+    
+    ENDDO
+   END SUBROUTINE scl_dyn_entrain
 
 !     ****************************************************************
 
@@ -1361,7 +1589,9 @@ subroutine visc_W(m1,deltak,kmt)
 !use module_zero_plumegen_coms
 implicit none
 integer m1,k,deltak,kmt,m2
-real dz1t,dz1m,dz2t,dz2m,d2wdz,d2tdz  ,d2qvdz ,d2qhdz ,d2qcdz ,d2qidz ,d2scdz
+real dz1t,dz1m,dz2t,dz2m,d2wdz,d2tdz  ,d2qvdz ,d2qhdz ,d2qcdz ,d2qidz ,d2scdz, &
+ d2vel_pdz,d2rad_dz
+
 
 !srf--- 17/08/2005
 !m2=min(m1+deltak,kmt)
@@ -1380,6 +1610,8 @@ do k=2,m2-1
  D2QCDZ = (QC (k + 1) - 2 * QC (k) + QC (k - 1) ) * DZ2T  
  D2QIDZ = (QI (k + 1) - 2 * QI (k) + QI (k - 1) ) * DZ2T  
  !D2SCDZ = (SC (k + 1) - 2 * SC (k) + SC (k - 1) ) * DZ2T 
+ d2vel_pdz=(vel_P  (k + 1) - 2 * vel_P  (k) + vel_P  (k - 1) ) * DZ2T
+ d2rad_dz =(rad_p  (k + 1) - 2 * rad_p  (k) + rad_p  (k - 1) ) * DZ2T
  
   WT(k) =   WT(k) + D2WDZ 
   TT(k) =   TT(k) + D2TDZ                          
@@ -1387,6 +1619,8 @@ do k=2,m2-1
  QCT(k) =  QCT(k) + D2QCDZ 
  QHT(k) =  QHT(k) + D2QHDZ 
  QIT(k) =  QIT(k) + D2QIDZ     
+ vel_t(k) =   vel_t(k) + d2vel_pdz
+ rad_t(k) =   rad_t(k) + d2rad_dz
  !SCT(k) =  SCT(k) + D2SCDZ
  !print*,'W-VISC=',k,D2WDZ
 enddo  
@@ -1423,6 +1657,9 @@ do k=2,m1-1
   QC(k) = max(0., QC(k))
   QH(k) = max(0., QH(k))
   QI(k) = max(0., QI(k))
+  
+  VEL_P(k) =  VEL_P(k) + VEL_T(k) * DT  
+  rad_p(k) =  rad_p(k) + rad_t(k) * DT  
 ! SC(k) = max(0., SC(k))
 
  enddo

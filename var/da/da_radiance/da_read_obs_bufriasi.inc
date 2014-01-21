@@ -159,7 +159,7 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
          write(filename,fmt='(A,2I1,A)') trim(infile),0,num_bufr(ibufr),'.bufr'
       end if
    end if 
-   lnbufr = 10
+   lnbufr = 95
    open(unit=lnbufr,file=trim(filename),form='unformatted', &
       iostat = iost, status = 'old')
    if (iost /= 0) then

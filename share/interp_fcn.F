@@ -2543,6 +2543,7 @@ print *,'column of cg pres = ',cprs
    REAL                                                       :: dlnpdz,tvout,pmo
    REAL,DIMENSION(nims:nime,njms:njme)                        :: ZS,DUM2d
    REAL,DIMENSION(JTB)                                        :: PIN,ZIN,Y2,PIO,ZOUT,DUM1,DUM2
+   CHARACTER (LEN=256) :: a_message
 !-----------------------------------------------------------------------------------------------------
 !
 !*** CHECK DOMAIN BOUNDS BEFORE INTERPOLATION
@@ -2637,7 +2638,8 @@ print *,'column of cg pres = ',cprs
             ENDDO
           ENDIF
           IF(ZS(I,J) .GE. Z3d(I,J,KZMAX))THEN
-             WRITE(0,*)'I=',I,'J=',J,'K=',KZMAX,'TERRAIN HEIGHT',ZS(I,J),'Z3d',Z3d(I,J,KZMAX)
+             WRITE(a_message,*)'I=',I,'J=',J,'K=',KZMAX,'TERRAIN HEIGHT',ZS(I,J),'Z3d',Z3d(I,J,KZMAX)
+             CALL wrf_message ( a_message )                
              CALL wrf_error_fatal3 ( "interp_fcn.b" , 176 , "MOUNTAIN TOO HIGH TO FIT THE MODEL DEPTH")
           ENDIF
 !       
@@ -2750,6 +2752,7 @@ print *,'column of cg pres = ',cprs
   INTEGER,PARAMETER                                                :: JTB=134
   INTEGER                                                          :: ii,jj
   REAL, DIMENSION (nims:nime,njms:njme)                            :: CWK1,CWK2,CWK3,CWK4
+  CHARACTER (LEN=256) :: a_message
 
      nijds = min(nids, njds)
      nijde = max(nide, njde)
@@ -2803,7 +2806,8 @@ print *,'column of cg pres = ',cprs
               ENDDO
             ENDIF
             IF(ZS(I,J) .GE. Z3d(I,J,KZMAX))THEN
-               WRITE(0,*)'I=',I,'J=',J,'K=',K,'TERRAIN HEIGHT',ZS(I,J),'Z3d',Z3d(I,J,KZMAX)
+               WRITE(a_message,*)'I=',I,'J=',J,'K=',K,'TERRAIN HEIGHT',ZS(I,J),'Z3d',Z3d(I,J,KZMAX)
+               CALL wrf_message ( a_message )              
                CALL wrf_error_fatal("BC:MOUNTAIN TOO HIGH TO FIT THE MODEL DEPTH")
             ENDIF
           ELSE
@@ -2858,7 +2862,8 @@ print *,'column of cg pres = ',cprs
               ENDDO
             ENDIF
             IF(ZS(I,J) .GE. Z3d(I,J,KZMAX))THEN
-               WRITE(0,*)'I=',I,'J=',J,'K=',K,'TERRAIN HEIGHT',ZS(I,J),'Z3d',Z3d(I,J,KZMAX)
+               WRITE(a_message,*)'I=',I,'J=',J,'K=',K,'TERRAIN HEIGHT',ZS(I,J),'Z3d',Z3d(I,J,KZMAX)
+               CALL wrf_message ( a_message )              
                CALL wrf_error_fatal("BC:MOUNTAIN TOO HIGH TO FIT THE MODEL DEPTH")
             ENDIF
           ELSE
@@ -2910,7 +2915,8 @@ print *,'column of cg pres = ',cprs
               ENDDO
           ENDIF
           IF(ZS(I,J) .GE. Z3d(I,J,KZMAX))THEN
-             WRITE(0,*)'I=',I,'J=',J,'K=',K,'TERRAIN HEIGHT',ZS(I,J),'Z3d',Z3d(I,J,KZMAX)
+             WRITE(a_message,*)'I=',I,'J=',J,'K=',K,'TERRAIN HEIGHT',ZS(I,J),'Z3d',Z3d(I,J,KZMAX)
+             CALL wrf_message ( a_message )                
              CALL wrf_error_fatal("BC:MOUNTAIN TOO HIGH TO FIT THE MODEL DEPTH")
           ENDIF
         ENDDO
@@ -2960,7 +2966,8 @@ print *,'column of cg pres = ',cprs
               ENDDO
           ENDIF
           IF(ZS(I,J) .GE. Z3d(I,J,KZMAX))THEN
-             WRITE(0,*)'I=',I,'J=',J,'K=',K,'TERRAIN HEIGHT',ZS(I,J),'Z3d',Z3d(I,J,KZMAX)
+             WRITE(a_message,*)'I=',I,'J=',J,'K=',K,'TERRAIN HEIGHT',ZS(I,J),'Z3d',Z3d(I,J,KZMAX)
+             CALL wrf_message ( a_message )                
              CALL wrf_error_fatal("BC:MOUNTAIN TOO HIGH TO FIT THE MODEL DEPTH")
           ENDIF
         ENDDO
@@ -3052,6 +3059,7 @@ print *,'column of cg pres = ',cprs
    INTEGER,PARAMETER                                         :: JTB=134
    INTEGER                                                   :: I,J,K
    REAL,DIMENSION(JTB)                                       :: PIN,CIN,Y2,PIO,PTMP,COUT,DUM1,DUM2
+   CHARACTER (LEN=256) :: a_message
 
 !-----------------------------------------------------------------------------------------------------
 !
@@ -3131,8 +3139,10 @@ print *,'column of cg pres = ',cprs
 
          IF(PTMP(1) .GE. PSTD(1))THEN           ! if lower boundary is higher than PMSL(1) re-set lower boundary
            PIN(NKDE-1) = PIO(1)                 ! be consistent with target. This may not happen at all
-           WRITE(0,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
-           WRITE(0,*)'I,J,PIO(1),PSTD(1)',I,J,PIO(1),PSTD(1)
+           WRITE(a_message,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
+           CALL wrf_message ( a_message )                  
+           WRITE(a_message,*)'I,J,PIO(1),PSTD(1)',I,J,PIO(1),PSTD(1)
+           CALL wrf_message ( a_message )                  
          ENDIF
 
          CALL SPLINE2(I,J,JTB,NKDE-1,PIN,CIN,Y2,NKDE-1,PIO,COUT,DUM1,DUM2)  ! interpolate
@@ -3233,6 +3243,7 @@ print *,'column of cg pres = ',cprs
    INTEGER                                                 :: I,J,K,II,JJ
    REAL,DIMENSION(JTB)                                     :: PIN,CIN,Y2,PIO,PTMP,COUT,DUM1,DUM2
    REAL, DIMENSION (nims:nime,njms:njme,nkms:nkme)         :: CWK1,CWK2,CWK3,CWK4
+   CHARACTER (LEN=256) :: a_message
 !-----------------------------------------------------------------------------------------------------
 !
 !
@@ -3279,8 +3290,10 @@ print *,'column of cg pres = ',cprs
          ENDDO
          IF(PTMP(1) .GE. PSTD(1))THEN           ! if lower boundary is higher than PMSL(1) re-set lower boundary
            PIN(NKDE-1) = PIO(1)                 ! be consistent with target. This may not happen at all
-           WRITE(0,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
-           WRITE(0,*)'I,J,PIO(1),PSTD(1)',I,J,PIO(1),PSTD(1)
+           WRITE(a_message,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
+           CALL wrf_message ( a_message )                  
+           WRITE(a_message,*)'I,J,PIO(1),PSTD(1)',I,J,PIO(1),PSTD(1)
+           CALL wrf_message ( a_message )                  
          ENDIF
 
          CALL SPLINE2(I,J,JTB,NKDE-1,PIN,CIN,Y2,NKDE-1,PIO,COUT,DUM1,DUM2)  ! interpolate
@@ -3343,8 +3356,10 @@ print *,'column of cg pres = ',cprs
          ENDDO
          IF(PTMP(1) .GE. PSTD(1))THEN           ! if lower boundary is higher than PMSL(1) re-set lower boundary
            PIN(NKDE-1) = PIO(1)                 ! be consistent with target. This may not happen at all
-           WRITE(0,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
-           WRITE(0,*)'I,J,PIO(1),PSTD(1)',I,J,PIO(1),PSTD(1)
+           WRITE(a_message,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
+           CALL wrf_message ( a_message )                  
+           WRITE(a_message,*)'I,J,PIO(1),PSTD(1)',I,J,PIO(1),PSTD(1)
+           CALL wrf_message ( a_message )                  
          ENDIF
 
          CALL SPLINE2(I,J,JTB,NKDE-1,PIN,CIN,Y2,NKDE-1,PIO,COUT,DUM1,DUM2)  ! interpolate
@@ -3406,8 +3421,10 @@ print *,'column of cg pres = ',cprs
          ENDDO
          IF(PTMP(1) .GE. PSTD(1))THEN           ! if lower boundary is higher than PMSL(1) re-set lower boundary
            PIN(NKDE-1) = PIO(1)                 ! be consistent with target. This may not happen at all
-           WRITE(0,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
-           WRITE(0,*)'I,J,PIO(1),PSTD(1)',I,J,PIO(1),PSTD(1)
+           WRITE(a_message,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
+           CALL wrf_message ( a_message )                  
+           WRITE(a_message,*)'I,J,PIO(1),PSTD(1)',I,J,PIO(1),PSTD(1)
+           CALL wrf_message ( a_message )                  
          ENDIF
 
          CALL SPLINE2(I,J,JTB,NKDE-1,PIN,CIN,Y2,NKDE-1,PIO,COUT,DUM1,DUM2)  ! interpolate
@@ -3464,8 +3481,10 @@ print *,'column of cg pres = ',cprs
          ENDDO
          IF(PTMP(1) .GE. PSTD(1))THEN           ! if lower boundary is higher than PMSL(1) re-set lower boundary
            PIN(NKDE-1) = PIO(1)                 ! be consistent with target. This may not happen at all
-           WRITE(0,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
-           WRITE(0,*)'I,J,PIO(1),PSTD(1)',I,J,PIO(1),PSTD(1)
+           WRITE(a_message,*)'WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD'
+           CALL wrf_message ( a_message )                  
+           WRITE(a_message,*)'I,J,PIO(1),PSTD(1)',I,J,PIO(1),PSTD(1)
+           CALL wrf_message ( a_message )                  
          ENDIF
 
          CALL SPLINE2(I,J,JTB,NKDE-1,PIN,CIN,Y2,NKDE-1,PIO,COUT,DUM1,DUM2)  ! interpolate
@@ -3523,6 +3542,7 @@ print *,'column of cg pres = ',cprs
       INTEGER :: II,JJ,K,K1,K2,KOLD,NOLDM1
       REAL :: AK,BK,CK,DEN,DX,DXC,DXL,DXR,DYDXL,DYDXR                 &
              ,RDX,RTDXC,X,XK,XSQ,Y2K,Y2KP1
+      CHARACTER (LEN=256) :: a_message
 !---------------------------------------------------------------------
 
 !     debug
@@ -3530,11 +3550,13 @@ print *,'column of cg pres = ',cprs
       II=9999
       JJ=9999
       IF(I.eq.II.and.J.eq.JJ)THEN
-        WRITE(0,*)'DEBUG in SPLINE2: I,J',I,J
-        WRITE(0,*)'DEBUG in SPLINE2:HSO= ',xnew(1:nold)
+        WRITE(a_message,*)'DEBUG in SPLINE2: I,J',I,J
+        CALL wrf_message ( a_message )                     
+        WRITE(a_message,*)'DEBUG in SPLINE2:HSO= ',xnew(1:nold)
+        CALL wrf_message ( a_message )                     
         DO K=1,NOLD
-         WRITE(0,*)'DEBUG in SPLINE2:L,ZETAI,PINTI= ' &
-                        ,K,YOLD(K),XOLD(K)
+         WRITE(a_message,*)'DEBUG in SPLINE2:L,ZETAI,PINTI= ',K,YOLD(K),XOLD(K)
+         CALL wrf_message ( a_message )                    
         ENDDO
       ENDIF
 !
@@ -3611,7 +3633,8 @@ print *,'column of cg pres = ',cprs
 !  debug
 
       IF(I.eq.II.and.J.eq.JJ)THEN
-        WRITE(0,*) 'DEBUG:: k1,xnew(k1),ynew(k1): ', K1,XNEW(k1),YNEW(k1)
+        WRITE(a_message,*) 'DEBUG:: k1,xnew(k1),ynew(k1): ', K1,XNEW(k1),YNEW(k1)
+        CALL wrf_message ( a_message )                     
       ENDIF 
 
 !
@@ -4743,6 +4766,7 @@ print *,'column of cg pres = ',cprs
      INTEGER i,j,k
      REAL,PARAMETER                                :: error=0.0001,error1=1.0
      REAL                                          :: diff
+     CHARACTER (LEN=256) :: a_message
 !
 !*** CHECK DOMAIN BOUNDS BEFORE INTERPOLATION
 !
@@ -4779,10 +4803,12 @@ print *,'column of cg pres = ',cprs
              DIFF=ABS(NFLD(I,J,K)-CFLD(IIH(I,J),JJH(I,J),K))
              IF(DIFF .GT. ERROR)THEN
               CALL wrf_debug(1,"dyn_nmm: NON-COINCIDENT, NESTED MASS POINT") 
-              WRITE(0,*)I,IIH(I,J),J,JJH(I,J),HBWGT1(I,J),NFLD(I,J,K),CFLD(IIH(I,J),JJH(I,J),K),DIFF 
+              WRITE(a_message,*)I,IIH(I,J),J,JJH(I,J),HBWGT1(I,J),NFLD(I,J,K),CFLD(IIH(I,J),JJH(I,J),K),DIFF 
+              CALL wrf_message ( a_message )               
              ENDIF
              IF(DIFF .GT. ERROR1)THEN
-              WRITE(0,*)I,IIH(I,J),J,JJH(I,J),HBWGT1(I,J),NFLD(I,J,K),CFLD(IIH(I,J),JJH(I,J),K),DIFF
+              WRITE(a_message,*)I,IIH(I,J),J,JJH(I,J),HBWGT1(I,J),NFLD(I,J,K),CFLD(IIH(I,J),JJH(I,J),K),DIFF
+              CALL wrf_message ( a_message )               
               CALL wrf_error_fatal ('dyn_nmm: NON-COINCIDENT, NESTED MASS POINT')
              ENDIF
           ENDIF
@@ -5034,6 +5060,7 @@ print *,'column of cg pres = ',cprs
       INTEGER :: ci, cj, ck
       INTEGER :: is, npass
       REAL    :: AVGH
+      CHARACTER (LEN=256) :: a_message
 
       RETURN
       !  If there is no feedback, there can be no smoothing.
@@ -5041,7 +5068,8 @@ print *,'column of cg pres = ',cprs
       CALL nl_get_feedback       ( 1, feedback  )
       IF ( feedback == 0 ) RETURN
 
-      WRITE(0,*)'SIMPLE SMOOTHER IS SWITCHED ON FOR HEIGHT'
+      WRITE(a_message,*)'SIMPLE SMOOTHER IS SWITCHED ON FOR HEIGHT'
+      CALL wrf_message ( a_message )                       
 
       DO npass = 1, smooth_passes
 
@@ -5117,6 +5145,7 @@ print *,'column of cg pres = ',cprs
       INTEGER :: ci, cj, ck
       INTEGER :: is, npass
       REAL    :: AVGV
+      CHARACTER (LEN=256) :: a_message
 
       RETURN
       !  If there is no feedback, there can be no smoothing.
@@ -5124,7 +5153,8 @@ print *,'column of cg pres = ',cprs
       CALL nl_get_feedback       ( 1, feedback  )
       IF ( feedback == 0 ) RETURN
 
-      WRITE(0,*)'SIMPLE SMOOTHER IS SWITCHED ON FOR VELOCITY'
+      WRITE(a_message,*)'SIMPLE SMOOTHER IS SWITCHED ON FOR VELOCITY'
+      CALL wrf_message ( a_message )                       
 
       DO npass = 1, smooth_passes
 

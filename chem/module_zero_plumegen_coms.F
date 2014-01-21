@@ -33,6 +33,15 @@ real :: HEATING(ntime),FMOIST,BLOAD   ! heating
 real :: DT,TIME,TDUR
 integer :: MINTIME,MDUR,MAXTIME
 !
+REAL,    DIMENSION(nkp,2)    :: W_VMD,VMD
+REAL	:: upe   (nkp)
+REAL	:: vpe   (nkp)
+REAL	:: vel_e (nkp)
+
+REAL	:: vel_p (nkp)
+REAL	:: rad_p (nkp)
+REAL	:: vel_t (nkp)
+REAL	:: rad_t (nkp)
 
 real :: ztop_(ntime)
 
@@ -54,7 +63,15 @@ wbar=0.0;alast=0.0;vhrel=0.0;virel=0.0
 zsurf=0.0;zbase=0.0;ztop=0.0;area=0.0;rsurf=0.0;alpha=0.0;radius=0.0;heating=0.0
 fmoist=0.0;bload=0.0;dt=0.0;time=0.0;tdur=0.0
 ztop_=0.0
-
+upe =0.0  
+vpe =0.0  
+vel_e =0.0
+vel_p =0.0
+rad_p =0.0
+vel_t =0.0
+rad_t =0.0
+ W_VMD=0.0
+ VMD=0.0
 n=0;nm1=0;l=0;lbase=0;mintime=0;mdur=0;maxtime=0
 end subroutine zero_plumegen_coms
 End Module

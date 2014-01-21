@@ -1553,7 +1553,7 @@ include 'netcdf.inc'
 
         if( id == 1 .or. id == 2 ) then
 !       print*,"modis: num_land ",id,config_flags%num_land_cat
-
+        if( allocated (luse2usgs) ) deallocate (luse2usgs)
         allocate( luse2usgs(config_flags%num_land_cat),stat=astat )
         if( astat /= 0 ) then
            CALL wrf_message( 'ftuv_init: failed to allocate luse2usgs array' )

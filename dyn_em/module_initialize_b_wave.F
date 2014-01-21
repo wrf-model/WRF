@@ -18,6 +18,7 @@ MODULE module_initialize_ideal
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
+   CHARACTER (LEN=256) , PRIVATE :: a_message
 
 
 CONTAINS
@@ -155,7 +156,8 @@ CONTAINS
    delt = 0.
    z_scale = .50
    pi = 2.*asin(1.0)
-   write(6,*) ' pi is ',pi
+   write(a_message,*) ' pi is ',pi
+   call wrf_message(a_message)
    nxc = (ide-ids)/4
    nyc = (jde-jds)/2
 
@@ -905,9 +907,12 @@ CONTAINS
    REWIND(10) 
    read(10) ny_in,nz_in
    if((ny_in /= ny ) .or. (nz_in /= nz)) then
-     write(0,*) ' error in input jet dimensions '
-     write(0,*) ' ny, ny_input, nz, nz_input ', ny, ny_in, nz,nz_in
-     write(0,*) ' error exit '
+     write(a_message,*) ' error in input jet dimensions '
+     CALL wrf_message (a_message)
+     write(a_message,*) ' ny, ny_input, nz, nz_input ', ny, ny_in, nz,nz_in
+     CALL wrf_message (a_message)
+     write(a_message,*) ' error exit '
+     CALL wrf_message (a_message)
      call wrf_error_fatal ( ' error in input jet dimensions ' )
    end if
    read(10) field_in

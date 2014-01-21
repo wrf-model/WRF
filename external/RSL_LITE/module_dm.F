@@ -61,7 +61,6 @@ CONTAINS
       IF ( MINM .LT. PROCMIN_M .OR. MINN .LT. PROCMIN_N ) THEN
         WRITE( wrf_err_message , * )'MPASPECT: UNABLE TO GENERATE PROCESSOR MESH.  STOPPING.'
         CALL wrf_message ( TRIM ( wrf_err_message ) )
-        WRITE(0,*)' PROCMIN_M ', PROCMIN_M
         WRITE( wrf_err_message , * )' PROCMIN_M ', PROCMIN_M
         CALL wrf_message ( TRIM ( wrf_err_message ) )
         WRITE( wrf_err_message , * )' PROCMIN_N ', PROCMIN_N

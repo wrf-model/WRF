@@ -375,7 +375,7 @@ level_loop : &
              asal(kp1) = chem(i,k,j,p_seas)
           elseif( config_flags%chem_opt == MOZART_KPP .or. &
                   config_flags%chem_opt == MOZCART_KPP ) then
-             aso4(kp1) = chem(i,k,j,p_sulf)*air(kp1)*real(mw_so4_aer,kind=dp)*kg_per_amu*1.e-9_dp
+             aso4(kp1) = chem(i,k,j,p_sulf)*air(kp1)*real(mw_so4_aer,kind=dp)*kg_per_amu*1.e9_dp
             if( config_flags%chem_opt == MOZCART_KPP ) then
              atm_mass_den = rho_phy(i,k,j)
              acb1(kp1) = chem(i,k,j,p_bc1)*atm_mass_den

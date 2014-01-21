@@ -405,8 +405,8 @@ real      ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,1:grid%num_soil_cat
       !  Pull in the info in the namelist to compare it to the input data.
 
       grid%real_data_init_type = model_config_rec%real_data_init_type
-      write(message,*) 'what is flag_metgrid: ', flag_metgrid
-      CALL wrf_message(message)
+!      write(message,*) 'what is flag_metgrid: ', flag_metgrid
+!      CALL wrf_message(message)
 
      IF ( flag_metgrid .EQ. 1 ) THEN  !   <----- START OF VERTICAL INTERPOLATION PART ---->
 
@@ -426,6 +426,10 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
 !JWB # include "HALO_NMM_IDEAL_1.inc"
 #endif
 !
+ WRITE(message,*)'--------------- ght_gc before calling vortex --------------------------'
+! call wrf_debug(1,message)
+! WRITE(message,*)grid%ght_gc(100,100,:)
+
   CALL vortex ( grid%ght_gc,grid%rh_gc,grid%t_gc,grid%u_gc,grid%v_gc,grid%p_gc &
      &,         ght_out,rh_out,t_out,u_out,v_out      &
      &,         grid%ht_gc,grid%tsk_gc,grid%xice_gc                          &
@@ -4696,7 +4700,7 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
 !         This is gopal's doing
 !----------------------------------------------------------------------------
 
- WRITE(0,*)'---------------- message CASE -------------------------'
+ WRITE(0,*)'---------------- IDEAL CASE -------------------------'
  call wrf_debug(1,message)
  WRITE(message,*)'number of pressure levels',end_z
  call wrf_debug(1,message)
@@ -4707,25 +4711,25 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
  WRITE(message,*)'number of soilbot  levels',num_soil_bot_cat
  call wrf_debug(1,message)
  WRITE(message,*)'--------------- ght_gc --------------------------'
- call wrf_debug(1,message)
- WRITE(message,*)ght_gc(100,100,:)
- call wrf_debug(1,message)
+! call wrf_debug(1,message)
+! WRITE(message,*)ght_gc(100,100,:)
+! call wrf_debug(1,message)
  WRITE(message,*)'--------------- p_gc --------------------------'
- call wrf_debug(1,message)
- WRITE(message,*)p_gc(100,100,:)
- call wrf_debug(1,message)
+! call wrf_debug(1,message)
+! WRITE(message,*)p_gc(100,100,:)
+! call wrf_debug(1,message)
  WRITE(message,*)'--------------- rh_gc ---------------------------'
- call wrf_debug(1,message)
- WRITE(message,*)rh_gc(100,100,:)
- call wrf_debug(1,message)
+! call wrf_debug(1,message)
+! WRITE(message,*)rh_gc(100,100,:)
+! call wrf_debug(1,message)
  WRITE(message,*)'--------------- t_gc --------------------------'
- call wrf_debug(1,message)
- WRITE(message,*)t_gc(100,100,:)
- call wrf_debug(1,message)
+! call wrf_debug(1,message)
+! WRITE(message,*)t_gc(100,100,:)
+! call wrf_debug(1,message)
  WRITE(message,*)'------------------------------------------------'
- call wrf_debug(1,message)
- WRITE(message,*)'------------------------------------------------'
- call wrf_debug(1,message)
+! call wrf_debug(1,message)
+! WRITE(message,*)'------------------------------------------------'
+! call wrf_debug(1,message)
 
 !
 !   SET UP IDEAL CONDITIONS
@@ -4796,7 +4800,7 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
   IF (WRF_DM_ON_MONITOR()) THEN
 !orig   OPEN(21,file='../MESSAGES/storm.center',status='old')
 !repository messages
-   OPEN(21,file='../messages/storm.center',status='old')
+   OPEN(21,file='storm.center',status='old')
    read(21,*)glat0
    read(21,*)glon0
    close(21)
@@ -4847,6 +4851,11 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
       endif
     enddo
   enddo
+! jbao-put storm in center
+        id1=ide/2
+        jd1=jde/2
+! end jbao-put storm in center
+
 
   IF(abs(ID0-ID1) .GE. 5 .OR. abs(JD0-JD1) .GE. 5)THEN
 !   call wrf_error_fatal("LAT LON INFO IN STROM MESSAGE FILE IN INCORRECT")
@@ -5051,24 +5060,25 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
      enddo
 
       WRITE(message,*)'--------------- new ght_gc --------------------------'
-      call wrf_debug(1,message)
-      WRITE(message,*)ght_gc(100,100,:)
-      call wrf_debug(1,message)
+!      call wrf_debug(1,message)
+!      WRITE(message,*)ght_gc(100,100,:)
+!      call wrf_debug(1,message)
       WRITE(message,*)'--------------- new p_gc --------------------------'
-      call wrf_debug(1,message)
-      WRITE(message,*)p_gc(100,100,:)
-      call wrf_debug(1,message)
+!      call wrf_debug(1,message)
+!      WRITE(message,*)p_gc(100,100,:)
+!      call wrf_debug(1,message)
       WRITE(message,*)'--------------- new rh_gc ---------------------------'
-      call wrf_debug(1,message)
-      WRITE(message,*)rh_gc(100,100,:)
-      call wrf_debug(1,message)
+!      call wrf_debug(1,message)
+!      WRITE(message,*)rh_gc(100,100,:)
+!      call wrf_debug(1,message)
       WRITE(message,*)'--------------- new t_gc --------------------------'
-      call wrf_debug(1,message)
-      WRITE(message,*)t_gc(100,100,:)
-      call wrf_debug(1,message)
-      WRITE(message,*)'---------------------------------------------------'
-      call wrf_debug(1,message)
+!      call wrf_debug(1,message)
+!      WRITE(message,*)t_gc(100,100,:)
+!      call wrf_debug(1,message)
+!      WRITE(message,*)'---------------------------------------------------'
+!      call wrf_debug(1,message)
 
+      WRITE(0,*)'tcbogus completed'
       WRITE(message,*)'tcbogus completed'
       call wrf_debug(1,message)
 

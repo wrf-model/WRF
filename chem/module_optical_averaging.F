@@ -659,6 +659,28 @@
       dens_lim1  = 1.0
       dens_lim2  = 1.0
       dens_h2o   = 1.0
+
+      vol_so4    = 0.
+      vol_no3    = 0.
+      vol_cl     = 0.
+      vol_msa    = 0.
+      vol_co3    = 0.
+      vol_nh4    = 0.
+      vol_na     = 0.
+      vol_ca     = 0.
+      vol_oin    = 0.
+      vol_oc     = 0.
+      vol_bc     = 0.
+      vol_aro1   = 0.
+      vol_aro2   = 0.
+      vol_alk1   = 0.
+      vol_ole1   = 0.
+      vol_api1   = 0.
+      vol_api2   = 0.
+      vol_lim1   = 0.
+      vol_lim2   = 0.
+      vol_h2o    = 0.
+      vol_dust   = 0.
 !
       p1st = param_first_scalar
 !
@@ -2462,7 +2484,7 @@
         mass_bc1j= (1.-FRAC2Aitken)*chem(i,k,j,p_bc1)*conv1a
         mass_bc2j= (1.-FRAC2Aitken)*chem(i,k,j,p_bc2)*conv1a
         mass_bcj= mass_bc1j + mass_bc2j
-        mass_msaj= (1.-FRAC2Aitken)*chem(i,k,j,p_msa)*conv1sulf
+        if( p_msa .gt. 1) mass_msaj= (1.-FRAC2Aitken)*chem(i,k,j,p_msa)*conv1sulf
 
 ! Aitken mode...
 ! SAM 7/18/09 - Put fraction of GOCART sulfate, organic, black carbon masses into modal Aitken mode
@@ -2474,7 +2496,7 @@
         mass_bc1i= FRAC2Aitken*chem(i,k,j,p_bc1)*conv1a
         mass_bc2i= FRAC2Aitken*chem(i,k,j,p_bc2)*conv1a
         mass_bci= mass_bc1i + mass_bc2i
-        mass_msai= FRAC2Aitken*chem(i,k,j,p_msa)*conv1sulf
+        if( p_msa .gt. 1) mass_msai= FRAC2Aitken*chem(i,k,j,p_msa)*conv1sulf
 
 !
 ! Now divide mass into sections which is done by sect02:
@@ -2512,6 +2534,7 @@
           mass_nh4 = mass_nh4i*xmas_secti(isize) + mass_nh4j*xmas_sectj(isize)
           mass_oin = mass_oini*xmas_secti(isize) + mass_oinj*xmas_sectj(isize) + &
                      mass_soil*xmas_sectc(isize) + mass_antha*xmas_sectc(isize)
+          mass_msa = mass_msai*xmas_secti(isize) + mass_msaj*xmas_sectj(isize)
 ! GOCART OC mass_aero1 is hydrophobic, mass_aero2 is hydrophylic
           mass_aro1 = mass_aro1j*xmas_sectj(isize) + mass_aro1i*xmas_secti(isize)
           mass_aro2 = mass_aro2j*xmas_sectj(isize) + mass_aro2i*xmas_secti(isize)
@@ -2548,6 +2571,7 @@
           vol_na  = mass_na  / dens_na
           vol_cl  = mass_cl  / dens_cl
           vol_soil  = mass_soil  / dens_dust
+          vol_msa  = mass_msa  / dens_msa
 !         vol_h2o = mass_h2o / dens_h2o
 ! 7/23/09 SAM calculate vol_h2o from kappas in Petters and Kreidenweis ACP, 2007, vol. 7, 1961-1971.
 !  Their kappas are the hygroscopicities used in Abdul-Razzak and Ghan, 2004, JGR, V105, p. 6837-6844. 

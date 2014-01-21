@@ -361,7 +361,7 @@ CONTAINS
       REAL    ::  PL,THCON,TVCON,E1
       REAL    ::  ZL,TSKV,DTHVDZ,DTHVM,VCONV,RZOL,RZOL2,RZOL10,ZOL2,ZOL10
       REAL    ::  DTG,PSIX,DTTHX,PSIX10,PSIT,PSIT2,PSIQ,PSIQ2,PSIQ10
-      REAL    ::  FLUXC,VSGD,Z0Q,VISC,RESTAR,CZIL,RESTAR2
+      REAL    ::  FLUXC,VSGD,Z0Q,VISC,RESTAR,CZIL,GZ0OZQ,GZ0OZT
       REAL    ::  ZW, ZN1, ZN2
 !-------------------------------------------------------------------
       KL=kte
@@ -703,16 +703,19 @@ CONTAINS
            IF ( ISFTCFLX.EQ.2 .AND. (XLAND(I)-1.5).GE.0. ) THEN
 ! AHW: Garratt formula: Calculate roughness Reynolds number
 !        Kinematic viscosity of air (linear approc to
-!                 temp dependence at sea levle)
+!                 temp dependence at sea level)
+! GZ0OZT and GZ0OZQ are based off formulas from Brutsaert (1975), which
+! Garratt (1992) used with values of k = 0.40, Pr = 0.71, and Sc = 0.60
               VISC=(1.32+0.009*(SCR3(I)-273.15))*1.E-5
 !!            VISC=1.5E-5
               RESTAR=UST(I)*ZNT(I)/VISC
-              RESTAR2=2.48*SQRT(SQRT(RESTAR))-2.
-              PSIT=GZ1OZ0(I)-PSIH(I)+RESTAR2
-              PSIQ=GZ1OZ0(I)-PSIH(I)+2.28*SQRT(SQRT(RESTAR))-2.
-              PSIT2=GZ2OZ0(I)-PSIH2(I)+RESTAR2
-              PSIQ2=GZ2OZ0(I)-PSIH2(I)+2.28*SQRT(SQRT(RESTAR))-2.
-              PSIQ10=GZ10OZ0(I)-PSIH(I)+2.28*SQRT(SQRT(RESTAR))-2.
+              GZ0OZT=0.40*(7.3*SQRT(SQRT(RESTAR))*SQRT(0.71)-5.)
+              GZ0OZQ=0.40*(7.3*SQRT(SQRT(RESTAR))*SQRT(0.60)-5.)
+              PSIT=GZ1OZ0(I)-PSIH(I)+GZ0OZT
+              PSIQ=GZ1OZ0(I)-PSIH(I)+GZ0OZQ
+              PSIT2=GZ2OZ0(I)-PSIH2(I)+GZ0OZT
+              PSIQ2=GZ2OZ0(I)-PSIH2(I)+GZ0OZQ
+              PSIQ10=GZ10OZ0(I)-PSIH(I)+GZ0OZQ
            ENDIF
         ENDIF
         IF(PRESENT(ck) .and. PRESENT(cd) .and. PRESENT(cka) .and. PRESENT(cda)) THEN

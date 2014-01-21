@@ -48,8 +48,8 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
                            ' channel-number-of-each-pixel : ', iv%instid(i)%nchan, &
                            ' index-of-channels : '
       write(unit=oma_rad_unit,fmt='(10i5)') iv%instid(i)%ichan
-      write(unit=oma_rad_unit,fmt= *) ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi '
-      write(unit=oma_rad_unit,fmt= *) ' xb-surf-info : i t2m mr2m(ppmv) u10 v10 ps ts smois tslb snowh isflg &
+      write(unit=oma_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi '
+      write(unit=oma_rad_unit,fmt='(a)') ' xb-surf-info : i t2m mr2m(ppmv) u10 v10 ps ts smois tslb snowh isflg &
                        & soiltyp vegtyp vegfra elev clwp'
       ndomain = 0
       do n=1,iv%instid(i)%num_rad
@@ -119,7 +119,7 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
                if ( rtm_option == rtm_option_rttov ) then
 #ifdef RTTOV
                   ! first, write RTTOV levels
-                  write(unit=oma_rad_unit,fmt=*) 'RTM_level pres(mb) T(k) Q(ppmv)'
+                  write(unit=oma_rad_unit,fmt='(a)') 'RTM_level pres(mb) T(k) Q(ppmv)'
                   do k = 1, nlevelss
                      write(unit=oma_rad_unit,fmt='(i3,f10.2,f8.2,e11.4)') &
                         k, &                             ! RTTOV levels
@@ -128,7 +128,7 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
                         iv%instid(i)%mr(k,n)
                   end do  ! end loop RTTOV levels
                   ! second, write WRF model levels
-                  write(unit=oma_rad_unit,fmt=*) &
+                  write(unit=oma_rad_unit,fmt='(a)') &
                      'WRF_level pres(mb) T(k) q(g/kg) clw(g/kg) rain(g/kg)'
                   do k=kts,kte
                      write(unit=oma_rad_unit,fmt='(i3,f10.2,f8.2,3e11.4)') &
@@ -144,7 +144,7 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
 
                if ( rtm_option == rtm_option_crtm ) then
 #ifdef CRTM
-                  write(unit=oma_rad_unit,fmt=*) &
+                  write(unit=oma_rad_unit,fmt='(a)') &
                      'level fullp(mb) halfp(mb) t(k) q(g/kg) water(mm) ice(mm) rain(mm) snow(mm) graupel(mm) hail(mm)'
                   if (crtm_cloud) then
                      do k=1,iv%instid(i)%nlevels-1

@@ -1088,7 +1088,7 @@ CONTAINS
                 chem(i,k,j,p_co)  = chem(i,k,j,p_co)                     &
                      +emis_ant(i,k,j,p_e_co)*conv
                 chem(i,k,j,p_no)  = chem(i,k,j,p_no)                     &
-                     +emis_ant(i,k,j,p_e_co)*conv
+                     +emis_ant(i,k,j,p_e_no)*conv
                 chem(i,k,j,p_hcho)  = chem(i,k,j,p_hcho)                 &
                      +emis_ant(i,k,j,p_e_hcho)*conv
              end do
@@ -1306,7 +1306,7 @@ CONTAINS
                 chem(i,k,j,p_co)  = chem(i,k,j,p_co)                     &
                      +emis_ant(i,k,j,p_e_co)*conv
                 chem(i,k,j,p_no)  = chem(i,k,j,p_no)                     &
-                     +emis_ant(i,k,j,p_e_co)*conv
+                     +emis_ant(i,k,j,p_e_no)*conv
                 chem(i,k,j,p_hcho)  = chem(i,k,j,p_hcho)                 &
                      +emis_ant(i,k,j,p_e_hcho)*conv
              end do

@@ -302,7 +302,7 @@ integer :: ii
    CALL       nl_set_e_we( 1, e_we-2 )
    CALL       nl_set_e_sn( 1, e_sn-2 )
 
-write(0,*)'after alloc_and_configure_domain ',associated(nested_grid%intermediate_grid)
+!write(0,*)'after alloc_and_configure_domain ',associated(nested_grid%intermediate_grid)
 
    CALL model_to_grid_config_rec ( nested_grid%id , model_config_rec , config_flags )
    CALL set_scalar_indices_from_config ( nested_grid%id , idum1, idum2 )

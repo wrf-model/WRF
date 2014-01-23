@@ -1500,6 +1500,8 @@
      &        ,   irbxy=grid%irbxy    ,    trxy=grid%trxy    ,   evcxy=grid%evcxy    &
      &        ,chleafxy=grid%chleafxy ,  chucxy=grid%chucxy                          &                       
      &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &                       
+     &        ,  smoiseq=grid%smoiseq, smcwtdxy=grid%smcwtdxy, rechxy=grid%rechxy    &                       
+     &        ,  deeprechxy=grid%deeprechxy                                          &                       
      &        ,coszen=grid%czen,xlat_urb2d=grid%xlat                                 &
 ! mosaic tiling for Noah
      &        ,sf_surface_mosaic=config_flags%sf_surface_mosaic,  mosaic_cat=config_flags%mosaic_cat      &

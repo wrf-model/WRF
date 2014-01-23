@@ -2634,6 +2634,7 @@ CONTAINS
 !          PRESENT(g_urb2d)   .AND. PRESENT(rn_urb2d) .AND.           &
 !          PRESENT(ts_urb2d)                          .AND.           &
 !          PRESENT(frc_urb2d) .AND. PRESENT(utype_urb2d)   .AND.      &
+#if (EM_CORE==1)
            PRESENT(smcwtdxy)       .AND.                              &
            PRESENT(rechxy)         .AND.                              &   
            PRESENT(deeprechxy)     .AND.                              &
@@ -2651,6 +2652,7 @@ CONTAINS
            PRESENT(smoiseq)        .AND.                              &  
            PRESENT(wtddt)          .AND.                              &    
            PRESENT(stepwtd)        .AND.                              &
+#endif
                                                       .TRUE. ) THEN
 !------------------------------------------------------------------
          IF( PRESENT(sr) ) THEN

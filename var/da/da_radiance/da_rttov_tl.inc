@@ -23,13 +23,12 @@ subroutine da_rttov_tl(inst, nchanl, nprofiles, con_vars, aux_vars, &
    type (rttov_chanprof), allocatable :: chanprof(:)
    type (profile_type),   allocatable :: profiles(:), profiles_tl(:) 
    logical,               allocatable :: calcemis(:)
-   real,                  allocatable :: emissivity(:), emissivity_tl(:)
+   type (rttov_emissivity), allocatable :: emissivity(:), emissivity_tl(:)
 
    ! RTTOV out parameters
    integer                            :: errorstatus
 
    ! RTTOV inout parameters
-   real,                  allocatable :: emissivity_out(:), emissivity_out_tl(:)
    type (radiance_type)               :: radiance, radiance_tl
    type (transmission_type)           :: transmission, transmission_tl
 
@@ -85,23 +84,23 @@ subroutine da_rttov_tl(inst, nchanl, nprofiles, con_vars, aux_vars, &
       profiles(n) % p(:)       = coefs(inst)%coef%ref_prfl_p(:)
       profiles(n) % t(:)       = con_vars(n)%t(:)
       profiles(n) % q(:)       = con_vars(n)%q(:)
-      if ( opts(inst) % ozone_data ) profiles(n) % o3(:)      = 0.0 !con_vars(n)%o3(:)
-      if ( opts(inst) % co2_data )   profiles(n) % co2(:)     = 0.0 !con_vars(n)%co2(:)
-      if ( opts(inst) % clw_data )   profiles(n) % clw(:)     = 0.0 !con_vars(n)%clw(:)
-      if ( opts(inst) % n2o_data )   profiles(n) % n2o(:)     = 0.0
-      if ( opts(inst) % co_data )    profiles(n) % co(:)      = 0.0
-      if ( opts(inst) % co_data )    profiles(n) % ch4(:)     = 0.0
-      if ( opts(inst) % addaerosl )  profiles(n) % aerosols(:,:)   = 0.0
-      if ( opts(inst) % addclouds )  then
+      if ( opts(inst) % rt_mw % clw_data)  profiles(n) % clw(:)     = 0.0 !con_vars(n)%clw(:)
+      if ( opts_rt_ir(inst) % ozone_data ) profiles(n) % o3(:)      = 0.0 !con_vars(n)%o3(:)
+      if ( opts_rt_ir(inst) % co2_data )   profiles(n) % co2(:)     = 0.0 !con_vars(n)%co2(:)
+      if ( opts_rt_ir(inst) % n2o_data )   profiles(n) % n2o(:)     = 0.0
+      if ( opts_rt_ir(inst) % co_data )    profiles(n) % co(:)      = 0.0
+      if ( opts_rt_ir(inst) % co_data )    profiles(n) % ch4(:)     = 0.0
+      if ( opts_rt_ir(inst) % addaerosl )  profiles(n) % aerosols(:,:)   = 0.0
+      if ( opts_rt_ir(inst) % addclouds )  then
          profiles(n) % cloud(:,:)      = 0.0
-         profiles(n) % cfrac(:,:)      = 0.0
+         profiles(n) % cfrac(:)        = 0.0
          profiles(n) % idg             = 1
          profiles(n) % ish             = 1
       end if
 
       profiles(n)% skin % surftype   = aux_vars(n) % surftype
       if ( profiles(n)% skin % surftype == 1 ) then
-         if ( opts(inst) % addsolar ) then
+         if ( opts_rt_ir(inst) % addsolar ) then
             ! if refelcted solar radiation is to be included in the SWIR channels, then
             ! specification of fresh or salt water needs to be provided
             profiles(n) % skin % watertype = 1
@@ -138,7 +137,7 @@ subroutine da_rttov_tl(inst, nchanl, nprofiles, con_vars, aux_vars, &
       profiles(n) % elevation = 0.001* aux_vars(n) % elevation   ! km
       profiles(n) % latitude  = aux_vars(n) % rlat
 
-      if ( opts(inst) % addsolar ) then
+      if ( opts_rt_ir(inst) % addsolar ) then
          profiles(n) % azangle     = aux_vars (n) % satazi
          profiles(n) % sunzenangle = aux_vars (n) % solzen     !50.0
          profiles(n) % sunazangle  = aux_vars (n) % solazi     !86.0
@@ -159,8 +158,6 @@ subroutine da_rttov_tl(inst, nchanl, nprofiles, con_vars, aux_vars, &
 
    allocate (emissivity(nchanprof), stat=alloc_status(3))
    allocate (emissivity_tl(nchanprof), stat=alloc_status(4))
-   allocate (emissivity_out(nchanprof), stat=alloc_status(5))
-   allocate (emissivity_out_tl(nchanprof), stat=alloc_status(6))
    allocate (calcemis(nchanprof), stat=alloc_status(7))
    if ( any( alloc_status /= 0 ) ) then
       call da_error(__FILE__,__LINE__, &
@@ -223,38 +220,36 @@ subroutine da_rttov_tl(inst, nchanl, nprofiles, con_vars, aux_vars, &
 
    if ( coefs(inst)%coef%id_sensor == 1 .or. coefs(inst)%coef%id_sensor == 3 ) then  ! infrared sensor 
       calcemis(1:nchanprof)   = .true.
-      emissivity(1:nchanprof) = 0.0
-      emissivity_tl(1:nchanprof) = 0.0
+      emissivity(1:nchanprof)%emis_in = 0.0
+      emissivity_tl(1:nchanprof)%emis_in = 0.0
    else if ( coefs(inst)%coef%id_sensor == 2 ) then   ! microwave sensor
       do n = 1, nprofiles
          if ( profiles(n) % skin % surftype == 1 ) then  ! sea  
             calcemis((n-1)*nchanl+1:n*nchanl) = .true.
-            emissivity((n-1)*nchanl+1:n*nchanl) = 0.0
-            emissivity_tl((n-1)*nchanl+1:n*nchanl) = 0.0
+            emissivity((n-1)*nchanl+1:n*nchanl)%emis_in = 0.0
+            emissivity_tl((n-1)*nchanl+1:n*nchanl)%emis_in = 0.0
          else                                            ! 0:land ; 2:sea-ice
             calcemis((n-1)*nchanl+1:n*nchanl) = .false.
-            emissivity((n-1)*nchanl+1:n*nchanl) = 0.9
-            emissivity_tl((n-1)*nchanl+1:n*nchanl) = 0.0
+            emissivity((n-1)*nchanl+1:n*nchanl)%emis_in = 0.9
+            emissivity_tl((n-1)*nchanl+1:n*nchanl)%emis_in = 0.0
          end if
       end do
    end if
 
-   call rttov_tl(           &
+   call  rttov_tl(          &
       & errorstatus,        & ! out
       & chanprof,           & ! in      chanprof(nchanprof)
       & opts(inst),         & ! in
       & profiles,           & ! in      profiles(nprof)
       & profiles_tl,        & ! inout   profiles_tl(nprof)
       & coefs(inst),        & ! in
-      & calcemis,           & ! in      calcemis(nchanprof)
-      & emissivity,         & ! in      emissivity(nchanprof)
-      & emissivity_tl,      & ! in      emissivity_tl(nchanprof)
-      & emissivity_out,     & ! out     emissivity_out(nchanprof)
-      & emissivity_out_tl,  & ! out     emissivity_out_tl(nchanprof)
       & transmission,       & ! inout
       & transmission_tl,    & ! inout
       & radiance,           & ! inout
-      & radiance_tl)          ! inout
+      & radiance_tl,        & ! inout
+      & calcemis,           & ! in,    optional   calcemis(nchanprof)
+      & emissivity,         & ! inout, optional   emissivity(nchanprof)
+      & emissivity_tl)        ! inout, optional   emissivity_tl(nchanprof)
 
    if ( print_detail_rad .or. errorstatus /= errorstatus_success ) then
        write (message(1),*)  'rttov_tl error code     = ', errorstatus
@@ -268,7 +263,7 @@ subroutine da_rttov_tl(inst, nchanl, nprofiles, con_vars, aux_vars, &
        write (message(9),*)  'profiles%p              = ', profiles(1)%p
        write (message(10),*) 'profiles%t              = ', profiles(1)%t
        write (message(11),*) 'profiles%q              = ', profiles(1)%q
-       write (message(12),*) 'emissivity_out          = ', emissivity_out
+       write (message(12),*) 'emissivity_out          = ', emissivity(:)%emis_out
        write (message(13),*) 'radiance                = ', radiance%bt_clear
        write (message(14),*) 'profiles_tl%s2m         = ', profiles_tl(1)%s2m
        write (message(15),*) 'profiles_tl%skin        = ', profiles_tl(1)%skin
@@ -277,7 +272,7 @@ subroutine da_rttov_tl(inst, nchanl, nprofiles, con_vars, aux_vars, &
        write (message(18),*) 'profiles_tl%p           = ', profiles_tl(1)%p 
        write (message(19),*) 'profiles_tl%t           = ', profiles_tl(1)%t 
        write (message(20),*) 'profiles_tl%q           = ', profiles_tl(1)%q 
-       write (message(21),*) 'emissivity_out_tl       = ', emissivity_out_tl    
+       write (message(21),*) 'emissivity_out_tl       = ', emissivity_tl(:)%emis_out    
        write (message(22),*) 'radiance_tl             = ', radiance_tl%bt_clear
        if ( errorstatus /= errorstatus_success ) call da_error(__FILE__,__LINE__,message(1:22))
    end if
@@ -288,8 +283,6 @@ subroutine da_rttov_tl(inst, nchanl, nprofiles, con_vars, aux_vars, &
 
    deallocate (emissivity)
    deallocate (emissivity_tl)
-   deallocate (emissivity_out)
-   deallocate (emissivity_out_tl)
    deallocate (calcemis)
    deallocate (chanprof)
 

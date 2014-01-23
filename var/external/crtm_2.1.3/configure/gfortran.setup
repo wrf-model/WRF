@@ -1,0 +1,38 @@
+#-------------------------------------------------------------------------------#
+# PRODUCTION build settings for Linux gfortran compiler
+#-------------------------------------------------------------------------------#
+
+# The compiler and linker name
+export FC="gfortran"
+
+export FL="gfortran"
+
+# Compiler and linker settings for PRODUCTION builds
+F_COMMON_FLAGS=${ABI_CRTM}
+
+export FC_FLAGS="\
+ -c \
+ -O3 \
+ -fimplicit-none \
+ -fconvert=big-endian \
+ -ffree-form \
+ -fno-second-underscore \
+ -frecord-marker=4 \
+ -funroll-loops \
+ -ggdb \
+ -Wall \
+ -std=f2003 \
+ ${F_COMMON_FLAGS}"
+
+export FL_FLAGS="\
+ ${F_COMMON_FLAGS}"
+
+
+echo "========================================="
+echo " CRTM compilation environment variables:"
+echo "   FC:       ${FC}"
+echo "   FC_FLAGS: ${FC_FLAGS}"
+echo "   FL:       ${FL}"
+echo "   FL_FLAGS: ${FL_FLAGS}"
+echo "========================================="
+echo

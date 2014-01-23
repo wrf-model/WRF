@@ -8527,7 +8527,7 @@ MODULE module_ra_FLG
 !C******************************************************************
 !C--- NPDE=1, papa. in terms of IWC & T (Gu & Liou, 2006)
 !C***********************************************************************
-          if (NPDE.eq.1.and.piwc(k).gt.0.) then
+          if (NPDE.eq.1.and.piwc(k) .gt. 1.e-7) then
 !C--- for temperature between 213K and 253K
 		    if (degrees(i,NK,j).lt.253.         &
                     .and.degrees(i,NK,j).gt.213.) then  !mchen
@@ -8554,7 +8554,7 @@ MODULE module_ra_FLG
 !C***********************************************************************
 !C---- NPDE=2, new de para. in terms of iwc (Liou et al. 2008)
 !C***********************************************************************
-          else if (NPDE.eq.2.and.piwc(k).gt.0.) then
+          else if (NPDE.eq.2.and.piwc(k) .gt. 1.e-7) then
 !C--- for tropics
 !	        if (j.ge.17.and.j.le.28) ncoef = 1
 	    if (abs(xlat(i,j)).lt.30.) ncoef = 1
@@ -8581,6 +8581,7 @@ MODULE module_ra_FLG
                            +cmin(ncoef)*temp_i**2.
 
 !C--- calculate de
+
             pde_mean = exp(pde_mean)
             pde_max = exp(pde_max)
             pde_min = exp(pde_min)

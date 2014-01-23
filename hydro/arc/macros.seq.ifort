@@ -1,8 +1,20 @@
 .IGNORE:
-ifeq ($(HYDRO_D),1)
-HYDRO_D = -DHYDRO_D
+ifeq ($(WRF_HYDRO),1)
+WRF_HYDRO = -DWRF_HYDRO
 else
-HYDRO_D =   
+WRF_HYDRO = 
+endif
+
+ifeq ($(HYDRO_D),1)
+HYDRO_D = -DHYDRO_D $(WRF_HYDRO)
+else
+HYDRO_D =  $(WRF_HYDRO) 
+endif
+
+ifeq ($(WRFIO_NCD_LARGE_FILE_SUPPORT),1)
+WRFIO_NCD_LARGE_FILE_SUPPORT = -DWRFIO_NCD_LARGE_FILE_SUPPORT
+else
+WRFIO_NCD_LARGE_FILE_SUPPORT = 
 endif
 
 
@@ -14,7 +26,7 @@ F90FLAGS  =       -w -c -ftz -align all -fno-alias -fp-model precise -FR -conver
 MODFLAG	=	-I./  -I ../mod
 LDFLAGS	=	
 CPP	=       cpp
-CPPFLAGS	=       -C -P -traditional -I ../Data_Rec $(HYDRO_D)
+CPPFLAGS	=       -C -P -traditional -I ../Data_Rec $(HYDRO_D) $(WRFIO_NCD_LARGE_FILE_SUPPORT)
 LIBS 	=	
 NETCDFINC       =       $(NETCDF_INC)
 NETCDFLIB       =       -L$(NETCDF_LIB) -lnetcdff -lnetcdf

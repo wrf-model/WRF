@@ -93,6 +93,75 @@ END FUNCTION k48
 
 	end function iupac_ch3sch3
     
+!---------------------------------------------------------------------
+
+!- SAN: adding standard 3-body reaction using convention of MCM & IUPAC recommendations
+! - Explicit form of TROE reactions
+!	Based on Atkinson et. al. 2004
+
+REAL(KIND=dp) FUNCTION KMT_IUPAC(k0_300K,n,kinf_300K,m,Fc,temp,cair)
+
+    INTRINSIC LOG10
+
+   	REAL(KIND=dp), INTENT(IN) :: temp      ! temperature [K]
+    REAL(KIND=dp), INTENT(IN) :: cair      ! air concentration [molecules/cm3]
+    REAL(KIND=dp), INTENT(IN) :: k0_300K   ! low pressure limit at 300 K
+    REAL(KIND=dp), INTENT(IN) :: n         ! exponent for low pressure limit
+    	!!! n.b. - remember to flip sign of exponents from IUPAC data sheets !!!
+    REAL(KIND=dp), INTENT(IN) :: kinf_300K ! high pressure limit at 300 K
+    REAL(KIND=dp), INTENT(IN) :: m         ! exponent for high pressure limit
+    REAL(KIND=dp), INTENT(IN) :: Fc        ! Approximate broadening factor
+    
+    REAL(KIND=dp) :: zt_help, k0_T, kinf_T, k_ratio, Nint, F_exp
+
+    zt_help = 300._dp/temp
+    k0_T    = k0_300K   * zt_help**(n) * cair ! k_0   at current T
+    kinf_T  = kinf_300K * zt_help**(m)        ! k_inf at current T
+    k_ratio = k0_T/kinf_T
+    Nint = 0.75_dp - 1.27_dp*LOG10(Fc)
+    ! Calculate explicit broadening factor:
+    F_exp = Fc ** (1._dp / (1._dp + ( LOG10(k_ratio) / Nint )**2._dp ) )
+        
+    KMT_IUPAC   = k0_T/(1._dp+k_ratio) * F_exp
+
+END FUNCTION KMT_IUPAC
+
+!---------------------------------------------------------------------
+
+!- SAN: Function for calculating NO + OH [+ M] 3-body reaction 
+!- Explicit form of TROE reaction with temperature dependent Fc
+
+REAL(KIND=dp) FUNCTION KMT_OH_NO(temp,cair)
+
+    INTRINSIC LOG10
+
+   	REAL(KIND=dp), INTENT(IN) :: temp      ! temperature [K]
+    REAL(KIND=dp), INTENT(IN) :: cair      ! air concentration [molecules/cm3]
+    
+    REAL(KIND=dp) :: k0_300K, n, kinf_300K, m, zt_help 
+    REAL(KIND=dp) :: k0_T, kinf_T, k_ratio, Nint, Fc, F_exp
+    
+    k0_300K = 7.4D-31						! low pressure limit at 300 K
+    n		= 2.4_dp						! exponent for low pressure limit
+    kinf_300K = 3.3D-11						! high pressure limit at 300 K
+    m		= 0.3_dp						! exponent for high pressure limit
+
+    zt_help = 300._dp/temp
+    k0_T    = k0_300K   * zt_help**(n) * cair ! k_0   at current T
+    kinf_T  = kinf_300K * zt_help**(m)        ! k_inf at current T
+    k_ratio = k0_T/kinf_T
+    
+    ! OH + NO [+ M] uses temperature dependent Fc:
+    Fc = exp(-temp / 1420._dp)
+    
+    Nint = 0.75_dp - 1.27_dp*LOG10(Fc)
+    
+    ! Calculate explicit broadening factor:
+    F_exp = Fc ** (1._dp / (1._dp + ( LOG10(k_ratio) / Nint )**2._dp ) )
+    
+    KMT_OH_NO = k0_T/(1._dp+k_ratio) * F_exp
+
+END FUNCTION KMT_OH_NO
 
 
 

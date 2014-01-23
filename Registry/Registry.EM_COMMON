@@ -440,12 +440,12 @@ state   real    dfi_qg         ikjftb   dfi_moist       1         -     \
 state   real    dfi_qh         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QHAIL"        "Hail mixing ratio"             "kg kg-1"
 state    real   rimi             ikj    misc        1         -     irh         "RIMI"           "riming intensity"  "fraction"
-state    real   re_cloud         ikj    misc        1         -     -         "RE_CLOUD"       "Effective radius cloud water"  "m"
-state    real   re_ice           ikj    misc        1         -     -         "RE_ICE"         "Effective radius cloud ice"    "m"
-state    real   re_snow          ikj    misc        1         -     -         "RE_SNOW"        "Effective radius snow"         "m"
-state  integer  has_reqc          -     misc        1         -     -         "has_reqc"       "Flag for having effective radius cloud water"  ""
-state  integer  has_reqi          -     misc        1         -     -         "has_reqi"       "Flag for having effective radius cloud ice"  ""
-state  integer  has_reqs          -     misc        1         -     -         "has_reqs"       "Flag for having effective radius snow"  ""
+state    real   re_cloud         ikj    misc        1         -     r         "RE_CLOUD"       "Effective radius cloud water"  "m"
+state    real   re_ice           ikj    misc        1         -     r         "RE_ICE"         "Effective radius cloud ice"    "m"
+state    real   re_snow          ikj    misc        1         -     r         "RE_SNOW"        "Effective radius snow"         "m"
+state  integer  has_reqc          -     misc        1         -     r         "has_reqc"       "Flag for having effective radius cloud water"  ""
+state  integer  has_reqi          -     misc        1         -     r         "has_reqi"       "Flag for having effective radius cloud ice"  ""
+state  integer  has_reqs          -     misc        1         -     r         "has_reqs"       "Flag for having effective radius snow"  ""
 
 
 # Other Scalars
@@ -671,9 +671,9 @@ state    real   SNOWH            ij     misc        1         -     i012rhd=(int
 state    real   CANWAT           ij     misc        1         -     i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "CANWAT"           "CANOPY WATER"             "kg m-2"
 state  integer  IFNDSNOWH        -      misc        1         -     i         "FNDSNOWH" "SNOWH_LOGICAL"
 state  integer  IFNDSOILW        -      misc        1         -     i         "FNDSOILW" "SOILW_LOGICAL"
-state  integer  IFNDALBSI        -      misc        1         -     i         "FNDALBSI" "ALBSI_LOGICAL"
-state  integer  IFNDSNOWSI       -      misc        1         -     i         "FNDSNOWSI" "SNOWSI_LOGICAL"
-state  integer  IFNDICEDEPTH     -      misc        1         -     i         "FNDICEDEPTH" "ICEDEPTH_LOGICAL"
+state  integer  IFNDALBSI        -      misc        1         -     ir        "FNDALBSI" "ALBSI_LOGICAL"
+state  integer  IFNDSNOWSI       -      misc        1         -     ir        "FNDSNOWSI" "SNOWSI_LOGICAL"
+state  integer  IFNDICEDEPTH     -      misc        1         -     ir        "FNDICEDEPTH" "ICEDEPTH_LOGICAL"
 # SKIN SST
 state    real   SSTSK            ij     misc        1         -     rhd=(interp_mask_field:lu_index,iswater)   "SSTSK"              "SKIN SEA SURFACE TEMPERATURE" "K"
 state    real   DTW              ij     misc        1         -     r   "DTW"              "WARM LAYER TEMP DIFF" "C"
@@ -1670,11 +1670,14 @@ rconfig   integer time_step_fract_den     namelist,domains	1             1      
 rconfig   integer time_step_dfi           namelist,domains      1             -       ih   "time_step_dfi"
 
 rconfig   integer min_time_step           namelist,domains      max_domains   -1      h    "min_time_step"
+rconfig   integer min_time_step_den       namelist,domains      max_domains    0      h    "min_time_step denominator"
 rconfig   integer max_time_step           namelist,domains      max_domains   -1      h    "max_time_step"
+rconfig   integer max_time_step_den       namelist,domains      max_domains    0      h    "max_time_step denominator"
 rconfig   real    target_cfl              namelist,domains      max_domains  1.2      h    "target_cfl"
 rconfig   real    target_hcfl             namelist,domains      max_domains  0.84     h    "target_hcfl"
 rconfig   integer max_step_increase_pct   namelist,domains      max_domains    5      h    "max_step_increase_pct"
 rconfig   integer starting_time_step      namelist,domains      max_domains   -1      h    "starting_time_step"
+rconfig   integer starting_time_step_den  namelist,domains      max_domains    0      h    "starting_time_step denominator"
 rconfig   logical step_to_output_time     namelist,domains      1         .true.      h    "step_to_output_time"
 rconfig   integer adaptation_domain       namelist,domains      1              1      h    "adaptation_domain"
 rconfig   logical use_adaptive_time_step  namelist,domains      1         .false.     h    "use_adaptive_time_step"
@@ -1913,6 +1916,9 @@ rconfig   integer bucketr_opt             derived               1              0
 rconfig   integer process_time_series     derived               1              0       -     "process_time_series" "0=no, 1=yes"  ""
 
 rconfig   integer grav_settling           namelist,physics      max_domains  0         h    "grav_settling"     "activate gravitationalsettling of fog  0=no, 1=yes"
+rconfig   real    sas_pgcon               namelist,physics      max_domains  0.55      irh   "sas_pgcon"   "convectively forced pressure gradient factor (SAS scheme)" ""
+rconfig   integer scalar_pblmix           namelist,physics      max_domains  0         h    "mix 4d scalar variables with pbl scheme 0=no 1=yes" ""
+rconfig   integer tracer_pblmix           namelist,physics      max_domains  1         h    "mix 4d tracer variables with pbl scheme 0=no 1=yes" ""
 
 # For Noah-MP
 rconfig   integer dveg        namelist,noah_mp      1           4         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
@@ -2022,6 +2028,7 @@ rconfig   logical     obs_ipf_in4dob      namelist,fdda            1            
 rconfig   logical     obs_ipf_errob       namelist,fdda            1              .false. h        "obs_ipf_errob"     "Print obs error diagnostics"   ""
 rconfig   logical     obs_ipf_nudob       namelist,fdda            1              .false. h        "obs_ipf_nudob"     "Print obs nudge diagnostics"   ""
 rconfig   logical     obs_ipf_init        namelist,fdda            1              .true.  h        "obs_ipf_init"      "Enable obs init warning messages"   ""
+rconfig   integer     obs_scl_neg_qv_innov namelist,fdda           1              0       h        "obs_scl_neg_qv_innov" "Scale certain negative QV innovations"   ""
 
 # Single-column model (SCM)
 rconfig   integer scm_force               namelist,scm  1       0           rh   "scm_force"            "SCM forcing switch" ""
@@ -2064,7 +2071,6 @@ rconfig   integer km_opt_dfi              namelist,dynamics	1             1     
 rconfig   integer damp_opt                namelist,dynamics	1             0       irh    "damp_opt"              ""      ""
 rconfig   integer rad_nudge               namelist,dynamics	1             0       irh    "rad_nudge"             ""      ""
 rconfig   integer gwd_opt                 namelist,dynamics     1             0       irh    "gwd_opt"              ""      ""
-rconfig   real    sas_pgcon               namelist,physics      max_domains  0.55      irh   "sas_pgcon"   "convectively forced pressure gradient factor (SAS scheme)" ""
 rconfig   real    zdamp                   namelist,dynamics	max_domains    5000.   h    "zdamp"         ""      ""
 rconfig   real    dampcoef                namelist,dynamics     max_domains    0.      h    "dampcoef"              ""      ""
 rconfig   real    khdif                   namelist,dynamics	max_domains    0       h    "khdif"         ""      ""
@@ -2144,7 +2150,7 @@ rconfig   integer compression             namelist,grib2 	        1      40    r
 
 # NAMELIST DERIVED
 rconfig   integer nobs_ndg_vars           derived                       1         6       -        "num_ndg_vars"         "Number of nudging variables"          ""
-rconfig   integer nobs_err_flds           derived                       1         9       -        "num_err_flds"         "Number of error fields"               ""
+rconfig   integer nobs_err_flds           derived                       1         10      -        "num_err_flds"         "Number of error fields"               ""
 rconfig   real    cen_lat                 derived                  max_domains    0       -        "cen_lat"              "center latitude"      "degrees, negative is south"
 rconfig   real    cen_lon                 derived                  max_domains    0       -        "cen_lon"              "central longitude"      "degrees, negative is west"
 rconfig   real    truelat1                derived                  max_domains    0       -        "true_lat1"             "first standard parallel"      "degrees, negative is south"

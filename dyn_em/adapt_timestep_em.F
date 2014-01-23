@@ -118,14 +118,17 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   max_increase_factor = 1. + grid%max_step_increase_pct / 100.
 
   !
-  ! If this is the first time step of the model run (indicated by current_time 
-  !    eq start_time), then set the time step to the input starting_time_step.
+  ! If this is the first time step of the model run (indicated by time step #1),
+  !    then set the time step to the input starting_time_step.
   !
   ! Else, calculate the time step based on cfl.
   !
-  if ( (domain_get_current_time ( grid ) .eq. domain_get_start_time ( grid )) .AND. &
-       .NOT. config_flags%restart ) then
-     CALL WRFU_TimeIntervalSet(dtInterval, Sn=grid%starting_time_step, Sd=1)
+  if ( ( domain_get_advanceCount ( grid ) .EQ. 1 ) .AND. ( .NOT. config_flags%restart ) ) then
+     if ( grid%starting_time_step_den .EQ. 0 ) then
+        CALL WRFU_TimeIntervalSet(dtInterval, Sn=grid%starting_time_step, Sd=1)
+     else
+        CALL WRFU_TimeIntervalSet(dtInterval, Sn=grid%starting_time_step, Sd=grid%starting_time_step_den)
+     end if
      curr_secs = 0
      CALL WRFU_TimeIntervalSet(last_dtInterval, Sn=0, Sd=1)
 
@@ -174,14 +177,22 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
 
   ! Limit the maximum dtInterval based on user input
 
-  CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=grid%max_time_step, Sd=1)
+  if ( grid%max_time_step_den .EQ. 0 ) then
+     CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=grid%max_time_step, Sd=1)
+  else
+     CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=grid%max_time_step, Sd=grid%max_time_step_den)
+  end if
   if (dtInterval .gt. tmpTimeInterval ) then
      dtInterval = tmpTimeInterval
   endif
 
   ! Limit the minimum dtInterval based on user input.
 
-  CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=grid%min_time_step, Sd=1)
+  if ( grid%min_time_step_den .EQ. 0 ) then
+     CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=grid%min_time_step, Sd=1)
+  else
+     CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=grid%min_time_step, Sd=grid%min_time_step_den)
+  end if
   if (dtInterval .lt. tmpTimeInterval ) then
      dtInterval = tmpTimeInterval
   endif

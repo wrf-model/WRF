@@ -3387,7 +3387,8 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                     config_flags,defor13,defor23,defor33,     &
                                     nba_mij, n_nba_mij,                       & !JDM
                                     div,                                      &
-                                    moist,chem,scalar,tracer,xkmv,xkhv,km_opt,&
+                                    moist,chem,scalar,tracer,                 &
+                                    xkmv,xkhv,xkmh,km_opt,                    & ! xkmh added
                                     fnm, fnp, dn, dnw, rdz, rdzw,             &
                                     hfx, qfx, ust, rho,                       &
                                     ids, ide, jds, jde, kds, kde,             &
@@ -3452,6 +3453,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                                                      div, &
                                                                     xkmv, &
                                                                     xkhv, &
+                                                                    xkmh, &
                                                                      tke, &
                                                                      rdz, &
                                                                      u_2, &
@@ -3521,7 +3523,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
       CALL vertical_diffusion_w_2( rw_tendf, config_flags, mu,    &
                                    defor33, tke(ims,kms,jms),     &
                                    nba_mij, n_nba_mij,            & !JDM
-                                   div, xkmv,                     &
+                                   div, xkmh,                     & !Mod from RR Oct2013 was xkmv
                                    dn, rdz,                       &  
                                    ids, ide, jds, jde, kds, kde,  &
                                    ims, ime, jms, jme, kms, kme,  &
@@ -4040,7 +4042,7 @@ END SUBROUTINE vertical_diffusion_v_2
 SUBROUTINE vertical_diffusion_w_2(tendency, config_flags, mu,             &
                                 defor33, tke,                             &
                                 nba_mij, n_nba_mij,                       & !JDM
-                                div, xkmv,                                &
+                                div, xkmh,                                &
                                 dn, rdz,                                  &
                                 ids, ide, jds, jde, kds, kde,             &
                                 ims, ime, jms, jme, kms, kme,             &
@@ -4065,7 +4067,7 @@ SUBROUTINE vertical_diffusion_w_2(tendency, config_flags, mu,             &
                                             INTENT(IN   )      ::defor33, &
                                                                      tke, &
                                                                      div, &
-                                                                    xkmv, &
+                                                                    xkmh, &
                                                                      rdz
 
    INTEGER, INTENT(  IN ) :: n_nba_mij !JDM  
@@ -4111,7 +4113,7 @@ SUBROUTINE vertical_diffusion_w_2(tendency, config_flags, mu,             &
    js_ext=0
    je_ext=0
    CALL cal_titau_11_22_33( config_flags, titau3,            &
-                            mu, tke, xkmv, defor33,          &
+                            mu, tke, xkmh, defor33,          & ! from RR 20131023 was xkmv
                             nba_mij(ims,kms,jms,P_m33),      & !JDM
                             is_ext, ie_ext, js_ext, je_ext,  &
                             ids, ide, jds, jde, kds, kde,    &

@@ -1159,6 +1159,25 @@ is_mozcart_species : &
                           e_bio(i,j,p_ol2-1)  = e_bio(i,j,p_ol2-1)  + gas_emis*convert2
                       ELSE IF ( p_in_chem .EQ. p_ora1) THEN
                           e_bio(i,j,p_ora1-1) = e_bio(i,j,p_ora1-1) + gas_emis*convert2
+                      
+                      ! SAN, 08/11/13 - adding missing CBMZ species to be mapped: 
+                      ! missing: p_par, p_ch3oh, p_c2h5oh, p_nh3, p_tol
+                      ELSE IF ( p_in_chem .EQ. p_par) THEN 
+                         !ebio_par(i,j)        = ebio_par(i,j)       + gas_emis
+                         e_bio(i,j,p_par-1)   = e_bio(i,j,p_par-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem .EQ. p_ch3oh) THEN	
+                         ebio_ch3oh(i,j)      = ebio_ch3oh(i,j)     + gas_emis
+                         e_bio(i,j,p_ch3oh-1) = e_bio(i,j,p_ch3oh-1)+ gas_emis*convert2
+                      ELSE IF ( p_in_chem .EQ. p_c2h5oh) THEN	
+                         ebio_c2h5oh(i,j)     = ebio_c2h5oh(i,j)      + gas_emis
+                         e_bio(i,j,p_c2h5oh-1)= e_bio(i,j,p_c2h5oh-1) + gas_emis*convert2
+                      ELSE IF ( p_in_chem .EQ. p_nh3) THEN	
+                         ebio_nh3(i,j)        = ebio_nh3(i,j)       + gas_emis
+                         e_bio(i,j,p_nh3-1)   = e_bio(i,j,p_nh3-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem .EQ. p_tol) THEN	
+                         ebio_tol(i,j)       = ebio_tol(i,j)        + gas_emis
+                         e_bio(i,j,p_tol-1)  = e_bio(i,j,p_tol-1)   + gas_emis*convert2
+
                       END IF
 
 

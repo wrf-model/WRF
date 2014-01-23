@@ -34,7 +34,7 @@
  PAR         = IGNORE ; {paraffin carbon -C-}
  AONE        = IGNORE ; {acetone}
  MGLY        = IGNORE ; {methylglyoxal}
- ETH         = IGNORE ; {ethene}
+ C2H4        = IGNORE ; {ethene - is called ETH in the CBMZ docs}
  OLET        = IGNORE ; {terminal olefin carbons C=C}
  OLEI        = IGNORE ; {internal olefin carbons C=C}
  TOL         = IGNORE ; {toluene}

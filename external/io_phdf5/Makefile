@@ -7,7 +7,7 @@ FFLAGS  =  $(OPTS) -I$(PHDF5PATH)/lib -I../ioapi_share
 FORTRANLIB=-I$(PHDF5PATH)/lib $(PHDF5PATH)/lib/libhdf5_fortran.a
 LIBSHDF = $(FORTRANLIB) $(PHDF5PATH)/lib/libhdf5.a
 LIB     =-lm -lz
-CPP     = /lib/cpp -C -P $(TRADFLAG)
+CPP     = /lib/cpp -P $(TRADFLAG)
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
 

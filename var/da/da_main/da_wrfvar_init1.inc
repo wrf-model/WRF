@@ -22,8 +22,9 @@ subroutine da_wrfvar_init1(no_init1)
    !</DESCRIPTION>
 
    ! FIX? keep this version so netcdf files are the same until near release
-   program_name = "WRFVAR V3.4 (COMPATIBLE WITH WRF V3.4) MODEL"
-   ! program_name = "WRFVAR "//release_version
+   ! program_name = "WRFVAR "//trim(release_version)//" (COMPATIBLE WITH WRF "//trim(release_version)//") MODEL"
+   ! the above program_name is too long for the update_firstguess TITLE to work
+   program_name = "WRFVAR "//release_version
 
    ! Initialize WRF modules:  
    ! Phase 1 returns after mpi_init() (if it is called)

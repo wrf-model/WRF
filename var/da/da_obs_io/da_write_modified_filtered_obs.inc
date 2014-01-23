@@ -50,7 +50,7 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
 
    integer            :: n, zero
    real               :: es, qs, speed, dir, rh, rh_error, uu, vv, zz, hh
-   real               :: xmiss, height, height_error, pr_error, slp_error
+   real               :: height, height_error, pr_error, slp_error
    real               :: thick, thick_error,dir_error,speed_error
    real               :: td, td_error , elv_error, ships_pr_error
 
@@ -89,7 +89,6 @@ subroutine da_write_modified_filtered_obs(grid, ob, iv, &
    ! Note: Currently in WRFVAR there is no active role of  
    !       "height" and "TD"        
 
-   xmiss  = -888.0
    height       = missing_r
    height_qc    = missing_data
    height_error = xmiss    

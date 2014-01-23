@@ -41,6 +41,9 @@ CONTAINS
 		 SHGXY,    SHCXY,    SHBXY,     EVGXY,    EVBXY,     GHVXY, & ! OUT Noah MP only
 		 GHBXY,    IRGXY,    IRCXY,     IRBXY,     TRXY,     EVCXY, & ! OUT Noah MP only
               CHLEAFXY,   CHUCXY,   CHV2XY,    CHB2XY,                      & ! OUT Noah MP only
+#ifdef WRF_HYDRO
+               sfcheadrt,INFXSRT,soldrain,                                  &
+#endif
                ids,ide,  jds,jde,  kds,kde,                    &
                ims,ime,  jms,jme,  kms,kme,                    &
                its,ite,  jts,jte,  kts,kte                     )
@@ -91,6 +94,9 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  GLW       ! longwave down at surface [W m-2]
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::  P8W3D     ! 3D pressure, valid at interface [Pa]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  RAINBL    ! precipitation entering land model [mm]
+#ifdef WRF_HYDRO
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  sfcheadrt,INFXSRT,soldrain   ! for WRF-Hydro
+#endif
 
 ! INOUT (with generic LSM equivalent)
 
@@ -679,9 +685,18 @@ end if
             BGAP    , WGAP    , CHV     , CHB     , EMISSI  ,           & ! OUT : 
             SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 	    GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
-	    CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE    )            ! OUT :
+	    CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE               &
+#ifdef WRF_HYDRO
+            , sfcheadrt(i,j)                               &
+#endif
+            )            ! OUT :
                   
             QFX(I,J) = ECAN + ESOIL + ETRAN
+
+#ifdef WRF_HYDRO
+            soldrain(i,j) = RUNSB*dt        !mm , underground runoff
+            INFXSRT(i,j) = RUNSF*dt        !mm , surface runoff
+#endif
 
    ENDIF ! glacial split ends 
 

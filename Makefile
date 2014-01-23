@@ -77,7 +77,7 @@ all_wrfvar :
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
 	if [ $(CRTM) ] ; then \
-	  (cd var/external/crtm; \
+	  (cd var/external/crtm_2.1.3; \
 	   export ABI_CRTM="${ABI_CRTM}"; . configure/$(SFC_CRTM).setup; $(MAKE) $(J) ) ; \
 	fi
 	if [ $(BUFR) ] ; then \
@@ -563,8 +563,10 @@ nmm_real : nmm_wrf
 
 io :
 	@ echo '--------------------------------------'
+	( cd tools ; $(MAKE) standard.exe )
 	( cd frame ; $(MAKE) io_only )
 	( cd frame ; $(MAKE) module_driver_constants.o pack_utils.o module_machine.o module_internal_header_util.o )
+	( cd frame ; $(AR) $(ARFLAGS) ../main/libwrflib.a module_driver_constants.o pack_utils.o module_machine.o module_internal_header_util.o )
 
 ext :
 	@ echo '--------------------------------------'
@@ -603,7 +605,7 @@ shared :
 
 wrf_hydro :
 	@ echo '----------wrf_hydro-----------------------'
-	if [ $(WRF_HYDRO) -eq 1 ]   ; then (cd hydro/WRF_cpl; make -f Makefile.cpl) ; fi
+	if [ $(WRF_HYDRO) -eq 1 ]   ; then (cd hydro/CPL/WRF_cpl; make -f Makefile.cpl) ; fi
 
 chemics :
 	@ echo '--------------------------------------'

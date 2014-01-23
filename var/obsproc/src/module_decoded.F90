@@ -1247,6 +1247,9 @@ subroutine print_extra_obs
 !   airep    96,97       'AIREP'
   if (fm == 96 .or. fm == 97) return
 
+!   tamdar   101         'TAMDAR'
+  if (fm == 101) return
+
 !   gpspw    111         'GPSPW'
   if (fm == 111) return
 

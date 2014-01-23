@@ -39,7 +39,7 @@ libesmf_time.a : $(OBJS)
 Test1_ESMF.f : Test1.F90
 	$(RM) Test1_ESMF.b Test1_ESMF.f
 	cp Test1.F90 Test1_ESMF.b
-	$(CPP) -C -P -I. Test1_ESMF.b > Test1_ESMF.f
+	$(CPP) -P -traditional -I. Test1_ESMF.b > Test1_ESMF.f
 
 Test1_ESMF.exe : libesmf_time.a Test1_ESMF.o
 	$(FC) -o Test1_ESMF.exe Test1_ESMF.o libesmf_time.a
@@ -47,7 +47,7 @@ Test1_ESMF.exe : libesmf_time.a Test1_ESMF.o
 Test1_WRFU.f : Test1.F90
 	$(RM) Test1_WRFU.b Test1_WRFU.f
 	sed -e "s/ESMF_Mod/module_utility/g" -e "s/ESMF_/WRFU_/g" Test1.F90 > Test1_WRFU.b
-	$(CPP) -C -P -I. Test1_WRFU.b > Test1_WRFU.f
+	$(CPP) -P -traditional -I. Test1_WRFU.b > Test1_WRFU.f
 
 Test1_WRFU.exe : libesmf_time.a Test1_WRFU.o
 	$(FC) -o Test1_WRFU.exe Test1_WRFU.o libesmf_time.a
@@ -55,7 +55,7 @@ Test1_WRFU.exe : libesmf_time.a Test1_WRFU.o
 .F90.o :
 	$(RM) $@
 	$(SED_FTN) $*.F90 > $*.b
-	$(CPP) -C -P -I. $*.b > $*.f
+	$(CPP) -P -traditional -I. $*.b > $*.f
 	$(RM) $*.b
 	@ if echo $(CPP) | $(FGREP) 'DVAR4D'; then \
           echo COMPILING $*.F90 for 4DVAR ; \
@@ -67,7 +67,7 @@ Test1_WRFU.exe : libesmf_time.a Test1_WRFU.o
 .F90.f :
 	$(RM) $@
 	$(SED_FTN) $*.F90 > $*.b
-	$(CPP) -C -P -I. $*.b > $*.f
+	$(CPP) -P -traditional -I. $*.b > $*.f
 	$(RM) $*.b
 	@ if echo $(CPP) | $(FGREP) 'DVAR4D'; then \
           echo COMPILING $*.F90 for 4DVAR ; \

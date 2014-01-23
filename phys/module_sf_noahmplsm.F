@@ -562,7 +562,11 @@ contains
                    BGAP    , WGAP    , CHV     , CHB     , EMISSI  ,           & ! OUT :
 		   SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 		   GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
-		   CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE    )            ! OUT :
+		   CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE               &
+#ifdef WRF_HYDRO
+                   ,sfcheadrt                                          &
+#endif
+                   )            ! OUT :
 
 ! --------------------------------------------------------------------------------------------------
 ! Initial code: Guo-Yue Niu, Oct. 2007
@@ -612,6 +616,10 @@ contains
   REAL                           , INTENT(IN)    :: DX
   REAL                           , INTENT(IN)    :: SHDMAX  !yearly max vegetation fraction
 !jref:end
+
+#ifdef WRF_HYDRO
+  REAL                           , INTENT(INOUT)    :: sfcheadrt
+#endif
 
 ! input/output : need arbitary intial values
   REAL                           , INTENT(INOUT) :: QSNOW  !snowfall [mm/s]
@@ -899,7 +907,11 @@ contains
                  SICE   ,ZWT    ,WA     ,WT     ,DZSNSO ,WSLAKE , & !inout
                  CMC    ,ECAN   ,ETRAN  ,FWET   ,RUNSRF ,RUNSUB , & !out
                  QIN    ,QDIS   ,QSNOW  ,PONDING1       ,PONDING2,&
-                 ISURBAN,QSNBOT,FPICE)  !out
+                 ISURBAN,QSNBOT,FPICE                             &
+#ifdef WRF_HYDRO
+                        ,sfcheadrt                     &
+#endif
+                 )  !out
 
 !     write(*,'(a20,10F15.5)') 'SFLX:RUNOFF=',RUNSRF*DT,RUNSUB*DT,EDIR*DT
 
@@ -1196,6 +1208,7 @@ contains
         END DO
         ERRWAT = END_WB-BEG_WB-(PRCP-ECAN-ETRAN-EDIR-RUNSRF-RUNSUB)*DT
 
+#ifndef WRF_HYDRO
         IF(ABS(ERRWAT) > 0.1) THEN
            if (ERRWAT > 0) then
               call wrf_message ('The model is gaining water (ERRWAT is positive)')
@@ -1212,6 +1225,7 @@ contains
            call wrf_message(trim(message))
            call wrf_error_fatal("Water budget problem in NOAHMP LSM")
         END IF
+#endif
    ELSE                 !KWM
       ERRWAT = 0.0      !KWM
    ENDIF
@@ -6207,7 +6221,11 @@ contains
                     SICE   ,ZWT    ,WA     ,WT     ,DZSNSO ,WSLAKE , & !inout
                     CMC    ,ECAN   ,ETRAN  ,FWET   ,RUNSRF ,RUNSUB , & !out
                     QIN    ,QDIS   ,QSNOW  ,PONDING1       ,PONDING2,&
-                    ISURBAN,QSNBOT,FPICE)  !out
+                    ISURBAN,QSNBOT,FPICE                             &
+#ifdef WRF_HYDRO
+                        ,sfcheadrt                     &
+#endif
+                    )  !out
 ! ----------------------------------------------------------------------  
 ! Code history:
 ! Initial code: Guo-Yue Niu, Oct. 2007
@@ -6296,6 +6314,11 @@ contains
   REAL                                           :: FCRMAX !maximum of FCR (-)
 
   REAL, PARAMETER ::  WSLMAX = 5000.      !maximum lake water storage (mm)
+
+#ifdef WRF_HYDRO
+  REAL                           , INTENT(INOUT)    :: sfcheadrt
+#endif
+
 ! ----------------------------------------------------------------------
 ! initialize
 
@@ -6351,6 +6374,10 @@ contains
     DO IZ = 1, NROOT
        ETRANI(IZ) = ETRAN * BTRANI(IZ) * 0.001
     ENDDO
+
+#ifdef WRF_HYDRO
+       QINSUR = QINSUR+sfcheadrt/DT*0.001  !sfcheadrt units (m)
+#endif
 
 ! lake/soil water balances
 
@@ -7618,6 +7645,9 @@ contains
 
     RUNSRF = RUNSRF * 1000. + RSAT * 1000./DT  ! m/s -> mm/s
     QDRAIN = QDRAIN * 1000.
+
+!WRF_HYDRO_DJG...
+!yw    INFXSRT = RUNSRF * DT   !mm/s -> mm
 
 ! removal of soil water due to groundwater flow (option 2)
 

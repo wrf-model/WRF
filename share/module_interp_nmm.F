@@ -38,49 +38,49 @@
   + W4(i,j)*C(II(i,j)+a,JJ(i,j)+1))
 
 ! Copying from N array to C array:
-#define UPCOPY(C,N,i,j,k,ni,nj) \
-  C(k,i-istart+1)=(            N(ni,nj+2,k)                               \
-    +             N(ni-a  ,nj+1,k)         + N(ni+1-a,nj+1,k)             \
-    + N(ni-1,nj  ,k)         + N(ni,nj  ,k)           + N(ni+1,nj  ,k)    \
-    +             N(ni-a  ,nj-1,k)         + N(ni+1-a,nj-1,k)             \
-    +                          N(ni,nj-2,k)                               \
-  ) / 9
+#define UPCOPY(C,N,i,j,k,ni,nj)\
+  C(k,i-istart+1)=(N(ni,nj+2,k)\
+  +N(ni-a,nj+1,k)+N(ni+1-a,nj+1,k)\
+  +N(ni-1,nj,k)+N(ni,nj,k)+N(ni+1,nj,k)\
+  +N(ni-a,nj-1,k)+N(ni+1-a,nj-1,k)\
+  +N(ni,nj-2,k)\
+  )/9
 
-! Average to C points from N points without assignment:
-#define NGRAB(N,ni,nj,nk) \
-                  (            N(ni,nj+2,nk)                               \
-    +             N(ni-a  ,nj+1,nk)         + N(ni+1-a,nj+1,nk)            \
-    + N(ni-1,nj  ,nk)        + N(ni,nj  ,nk)           + N(ni+1,nj  ,nk)   \
-    +             N(ni-a  ,nj-1,nk)         + N(ni+1-a,nj-1,nk)            \
-    +                          N(ni,nj-2,nk)                               \
-  ) / 9
+!AveragetoCpointsfromNpointswithoutassignment:
+#define NGRAB(N,ni,nj,nk)\
+  (N(ni,nj+2,nk)\
+  +N(ni-a,nj+1,nk)+N(ni+1-a,nj+1,nk)\
+  +N(ni-1,nj,nk)+N(ni,nj,nk)+N(ni+1,nj,nk)\
+  +N(ni-a,nj-1,nk)+N(ni+1-a,nj-1,nk)\
+  +N(ni,nj-2,nk)\
+  )/9
 
-! Average to C points from N points without assignment on an IKJ grid:
-#define NGRABIKJ(N,ni,nk,nj) \
-                  (            N(ni,nk,nj+2)                               \
-    +             N(ni-a  ,nk,nj+1)         + N(ni+1-a,nk,nj+1)            \
-    + N(ni-1,nk,nj  )        + N(ni,nk,nj  )           + N(ni+1,nk,nj  )   \
-    +             N(ni-a  ,nk,nj-1)         + N(ni+1-a,nk,nj-1)            \
-    +                          N(ni,nk,nj-2)                               \
-  ) / 9
+!AveragetoCpointsfromNpointswithoutassignmentonanIKJgrid:
+#define NGRABIKJ(N,ni,nk,nj)\
+  (N(ni,nk,nj+2)\
+  +N(ni-a,nk,nj+1)+N(ni+1-a,nk,nj+1)\
+  +N(ni-1,nk,nj)+N(ni,nk,nj)+N(ni+1,nk,nj)\
+  +N(ni-a,nk,nj-1)+N(ni+1-a,nk,nj-1)\
+  +N(ni,nk,nj-2)\
+  )/9
 
-! Average to C points from N points without assignment, no vertical levels:
-#define NGRAB2D(N,ni,nj) \
-                  (            N(ni,nj+2)                            \
-    +             N(ni-a  ,nj+1)         + N(ni+1-a,nj+1)            \
-    + N(ni-1,nj  )           + N(ni,nj  )           + N(ni+1,nj  )   \
-    +             N(ni-a  ,nj-1)         + N(ni+1-a,nj-1)            \
-    +                          N(ni,nj-2)                            \
-  ) / 9
+!AveragetoCpointsfromNpointswithoutassignment,noverticallevels:
+#define NGRAB2D(N,ni,nj)\
+  (N(ni,nj+2)\
+  +N(ni-a,nj+1)+N(ni+1-a,nj+1)\
+  +N(ni-1,nj)+N(ni,nj)+N(ni+1,nj)\
+  +N(ni-a,nj-1)+N(ni+1-a,nj-1)\
+  +N(ni,nj-2)\
+  )/9
 
-! Copying from N array to I array:
-#define N2ICOPY(C,N,i,j,k,ni,nj) \
-  C(i,j,k)=(                   N(ni,nj+2,k)                               \
-    +             N(ni-a  ,nj+1,k)         + N(ni+1-a,nj+1,k)             \
-    + N(ni-1,nj  ,k)         + N(ni,nj  ,k)           + N(ni+1,nj  ,k)    \
-    +             N(ni-a  ,nj-1,k)         + N(ni+1-a,nj-1,k)             \
-    +                          N(ni,nj-2,k)                               \
-  ) / 9
+!CopyingfromNarraytoIarray:
+#define N2ICOPY(C,N,i,j,k,ni,nj)\
+  C(i,j,k)=(N(ni,nj+2,k)\
+  +N(ni-a,nj+1,k)+N(ni+1-a,nj+1,k)\
+  +N(ni-1,nj,k)+N(ni,nj,k)+N(ni+1,nj,k)\
+  +N(ni-a,nj-1,k)+N(ni+1-a,nj-1,k)\
+  +N(ni,nj-2,k)\
+  )/9
 
 module module_interp_nmm
   use module_model_constants, only: g, R_D, p608

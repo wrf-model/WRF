@@ -31,7 +31,8 @@ module module_HYDRO_io
             ivar = nf_inq_varid(ncid,trim(var_name//"_M"),  varid)
             if(ivar .ne. 0) then
 #ifdef HYDRO_D
-               write(6,*) "Read Error: could not find ",var_name
+               write(6,*) "Read Variable Error file: ",trim(fileName)
+               write(6,*) "Read Error: could not find ",trim(var_name)
 #endif
                  return 
             endif
@@ -1488,9 +1489,8 @@ end subroutine get_albedo12m_netcdf
              ORIFICEC,ORIFICEA,ORIFICEE,LATLAKE,LONLAKE,ELEVLAKE, &
          FROM_NODE,TO_NODE,ZELEV,CHLAT,CHLON,TYPEL, ORDER,CHANLEN, &
          CHANXI,CHANYJ, lakenode,mpp_nlinks, nlinks_index,MAXORDER,yw_mpp_nlinks)
-#ifdef MPP_LAND
+
    USE module_mpp_land
-#endif
    implicit none 
 #include <netcdf.inc>
    integer :: i,j,ixrt,g_ixrt,jxrt,g_jxrt, nlakes, nlinks
@@ -1635,9 +1635,8 @@ end subroutine get_albedo12m_netcdf
 #ifdef MPP_LAND
   subroutine MPP_READ_SIMP_GW(IX,JX,IXRT,JXRT,GWSUBBASMSK,gwbasmskfil,&
           gw_strm_msk,numbasns,ch_netrt,AGGFACTRT)
-#ifdef MPP_LAND
+
    USE module_mpp_land
-#endif
     
     integer, intent(in)                     :: IX,JX,IXRT,JXRT,AGGFACTRT
     integer, intent(out)                    :: numbasns
@@ -1970,8 +1969,11 @@ end subroutine get_albedo12m_netcdf
 #ifdef HYDRO_D
        print*, 'output_flnm = "'//trim(output_flnm)//'"'
 #endif
-
-       iret = nf_create(trim(output_flnm), 0, ncid)
+#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
+       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
+#else
+       iret = nf_create(trim(output_flnm), NF_CLOBBER, ncid)
+#endif
 #ifdef HYDRO_D
        if (iret /= 0) then
          print*, "Problem nf_create"
@@ -2514,7 +2516,13 @@ end subroutine get_albedo12m_netcdf
        print*, 'output_flnm = "'//trim(output_flnm)//'"'
 #endif
 
-       iret = nf_create(trim(output_flnm), 0, ncid)
+
+#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
+       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
+#else
+       iret = nf_create(trim(output_flnm), NF_CLOBBER, ncid)
+#endif
+
 #ifdef HYDRO_D
        if (iret /= 0) then
          print*, "Problem nf_create"
@@ -2865,7 +2873,11 @@ end subroutine get_albedo12m_netcdf
         print*, 'output_flnm = "'//trim(output_flnm)//'"'
 #endif
 
-        iret = nf_create(trim(output_flnm), 0, ncid)
+#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
+       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
+#else
+       iret = nf_create(trim(output_flnm), NF_CLOBBER, ncid)
+#endif
 #ifdef HYDRO_D
         if (iret /= 0) then
            print*,  "Problem nf_create points"
@@ -2873,7 +2885,11 @@ end subroutine get_albedo12m_netcdf
         endif
 #endif
 
-        iret = nf_create(trim(output_flnm2), 0, ncid2)
+#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
+       iret = nf_create(trim(output_flnm2), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid2)
+#else
+       iret = nf_create(trim(output_flnm2), NF_CLOBBER, ncid2)
+#endif
 #ifdef HYDRO_D
         if (iret /= 0) then
             print*, "Problem nf_create observation"
@@ -3195,6 +3211,7 @@ end subroutine get_albedo12m_netcdf
       if(STRMFRXSTPTS(i) .ne. -9999) then 
 #ifdef HYDRO_D
          print *, "Outputting frxst pt. :",STRMFRXSTPTS(i)
+         call flush(6)
 #endif
          start_posO = (cnt+1)+(nobs * (output_count-1))
 
@@ -3203,7 +3220,8 @@ end subroutine get_albedo12m_netcdf
            write(999,117) seconds_since,date(1:10),date(12:19),cnt,chlon(i),chlat(i), &
                     abs(qlink(i,1)), abs(qlink(i,1))*35.315,hlink(i)
 !yw 117 FORMAT(I8,1X,A25,1X,I7,1X,F10.5,1X,F8.5,1X,F9.3,1x,F12.3,1X,F6.3)
-117 FORMAT(I8,1X,A10,1X,A8,1x,I7,1X,F10.5,1X,F8.5,1X,F9.3,1x,F12.3,1X,F6.3)
+!yw 117 FORMAT(I8,1X,A10,1X,A8,1x,I7,1X,F10.5,1X,F8.5,1X,F9.3,1x,F12.3,1X,F6.3)
+  117 FORMAT(I8,",",A10,1X,A8,",",I7,",",F10.5,",",F8.5,",",F9.3,",",F12.3,",",F6.3)
 
          !!--time in seconds since startdate
          iret = nf_inq_varid(ncid2,"time_observation", varid)
@@ -3349,9 +3367,8 @@ end subroutine mpp_output_chrt
    subroutine mpp_output_lakes(lake_index,igrid, split_output_count, NLAKES, &
         startdate, date, latlake, lonlake, elevlake, &
         qlakei,qlakeo, resht,dtrt,K)
-#ifdef MPP_LAND
+
    USE module_mpp_land
-#endif
 
 !!output the routing variables over just channel
      integer,                                  intent(in) :: igrid, K
@@ -3445,7 +3462,12 @@ end subroutine mpp_output_chrt
       print*, 'output_flnm = "'//trim(output_flnm)//'"'
 #endif
 
-      iret = nf_create(trim(output_flnm), 0, ncid)
+#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
+       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
+#else
+       iret = nf_create(trim(output_flnm), NF_CLOBBER, ncid)
+#endif
+
 #ifdef HYDRO_D
       if (iret /= 0) then
           print*, "Problem nf_create"
@@ -3635,9 +3657,9 @@ end subroutine mpp_output_chrt
    subroutine mpp_output_chrtgrd(igrid, split_output_count, ixrt,jxrt, &
         NLINKS,CH_NETRT_in, CH_NETLNK_in, ORDER, startdate, date, &
         qlink, dt, geo_finegrid_flnm, mpp_nlinks,nlinks_index,g_ixrt,g_jxrt )
-#ifdef MPP_LAND
+
    USE module_mpp_land
-#endif
+
      implicit none
 #include <netcdf.inc>
      integer g_ixrt,g_jxrt
@@ -3660,9 +3682,11 @@ end subroutine mpp_output_chrt
      call write_IO_rt_int(CH_NETRT_in, CH_NETRT)
      call write_IO_rt_int(CH_NETLNK_in, CH_NETLNK)
 
-     call  output_chrtgrd(igrid, split_output_count, ixrt,jxrt, &
-        NLINKS,CH_NETRT, CH_NETLNK, ORDER, startdate, date, &
-        qlink, dt, geo_finegrid_flnm)
+    if(my_id.eq.IO_id) then
+        call  output_chrtgrd(igrid, split_output_count, g_ixrt,g_jxrt, &
+           NLINKS,CH_NETRT, CH_NETLNK, ORDER, startdate, date, &
+           qlink, dt, geo_finegrid_flnm)
+    endif
   
      return
      end subroutine mpp_output_chrtgrd
@@ -3702,55 +3726,33 @@ end subroutine mpp_output_chrt
  
 
     integer :: seconds_since
-    sec_since_date = 'seconds since '//date(1:4)//'-'//date(6:7)//'-'//date(9:10)//' '//date(12:13)//':'//date(15:16)//' UTC'
-    seconds_since = dt*output_count
 
-    !-- Open the  finemesh static files to obtain projection information
-#ifdef HYDRO_D
-      write(*,'("geo_finegrid_flnm: ''", A, "''")') trim(geo_finegrid_flnm)
-#endif
-      iret = nf_open(geo_finegrid_flnm, NF_NOWRITE, ncstatic)
 
-      if (iret /= 0) then
-#ifdef HYDRO_D
-         write(*,'("Problem opening geo_finegrid file: ''", A, "''")') &
-         trim(geo_finegrid_flnm)
-         call hydro_stop()
-#endif
-      endif
 
-      ! Get Latitude (X)
-      iret = NF_INQ_VARID(ncstatic,'x',varid)
-      iret = NF_GET_VAR_DOUBLE(ncstatic, varid, xcoord) 
-      ! Get Longitude (Y)
-      iret = NF_INQ_VARID(ncstatic,'y',varid)
-      iret = NF_GET_VAR_DOUBLE(ncstatic, varid, ycoord) 
-
-      ! Get projection information from finegrid netcdf file
-      iret = NF_INQ_VARID(ncstatic,'lambert_conformal_conic',varid)  
-      iret = NF_GET_ATT_REAL(ncstatic, varid, 'longitude_of_central_meridian', long_cm)  !-- read it from the static file
-      iret = NF_GET_ATT_REAL(ncstatic, varid, 'latitude_of_projection_origin', lat_po)  !-- read it from the static file
-      iret = NF_GET_ATT_REAL(ncstatic, varid, 'false_easting', fe)  !-- read it from the static file
-      iret = NF_GET_ATT_REAL(ncstatic, varid, 'false_northing', fn)  !-- read it from the static file
-      iret = NF_GET_ATT_REAL(ncstatic, varid, 'standard_parallel', sp)  !-- read it from the static file
 
       tmpflow = -9E15
 
-      if (output_count == 0) then
  
         write(output_flnm, '(A12,".CHRTOUT_GRID",I1)') date(1:4)//date(6:7)//date(9:10)//date(12:13)//date(15:16), igrid
 #ifdef HYDRO_D
         print*, 'output_flnm = "'//trim(output_flnm)//'"'
 #endif
  
+
 !--- define dimension
-        iret = nf_create(trim(output_flnm), 0, ncid)
+#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
+       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
+#else
+       iret = nf_create(trim(output_flnm), NF_CLOBBER, ncid)
+#endif
+
 #ifdef HYDRO_D
         if (iret /= 0) then
             print*, "Problem nf_create"
             call hydro_stop()
         endif
 #endif
+
 
         iret = nf_def_dim(ncid, "time", NF_UNLIMITED, timedim)
         iret = nf_def_dim(ncid, "x", ixrt, ixlondim)
@@ -3759,19 +3761,18 @@ end subroutine mpp_output_chrt
 !--- define variables
 !     !- time definition, timeObs
          iret = nf_def_var(ncid,"time",NF_INT, 1, (/timedim/), varid)
-         iret = nf_put_att_text(ncid,varid,'units',34,sec_since_date)
 
        !- x-coordinate in cartesian system
-          iret = nf_def_var(ncid,"x",NF_DOUBLE, 1, (/ixlondim/), varid)
-          iret = nf_put_att_text(ncid,varid,'long_name',26,'x coordinate of projection')
-          iret = nf_put_att_text(ncid,varid,'standard_name',23,'projection_x_coordinate')
-          iret = nf_put_att_text(ncid,varid,'units',5,'Meter')
+!yw         iret = nf_def_var(ncid,"x",NF_DOUBLE, 1, (/ixlondim/), varid)
+!yw         iret = nf_put_att_text(ncid,varid,'long_name',26,'x coordinate of projection')
+!yw         iret = nf_put_att_text(ncid,varid,'standard_name',23,'projection_x_coordinate')
+!yw         iret = nf_put_att_text(ncid,varid,'units',5,'Meter')
 
        !- y-coordinate in cartesian ssystem
-          iret = nf_def_var(ncid,"y",NF_DOUBLE, 1, (/jxlatdim/), varid)
-          iret = nf_put_att_text(ncid,varid,'long_name',26,'y coordinate of projection')
-          iret = nf_put_att_text(ncid,varid,'standard_name',23,'projection_y_coordinate')
-          iret = nf_put_att_text(ncid,varid,'units',5,'Meter')
+!yw         iret = nf_def_var(ncid,"y",NF_DOUBLE, 1, (/jxlatdim/), varid)
+!yw         iret = nf_put_att_text(ncid,varid,'long_name',26,'y coordinate of projection')
+!yw         iret = nf_put_att_text(ncid,varid,'standard_name',23,'projection_y_coordinate')
+!yw         iret = nf_put_att_text(ncid,varid,'units',5,'Meter')
 
 !     !- flow definition, var
         iret = nf_def_var(ncid,"flow",NF_REAL, 3, (/ixlondim,jxlatdim,timedim/), varid)
@@ -3783,13 +3784,6 @@ end subroutine mpp_output_chrt
 
 
 !-- place prjection information
-      iret = nf_def_var(ncid,"lambert_conformal_conic",NF_INT,0, 0,varid)
-      iret = nf_put_att_text(ncid,varid,'grid_mapping_name',23,'lambert_conformal_conic')
-      iret = nf_put_att_real(ncid,varid,'longitude_of_central_meridian',NF_DOUBLE,1,long_cm)
-      iret = nf_put_att_real(ncid,varid,'latitude_of_projection_origin',NF_DOUBLE,1,lat_po)
-      iret = nf_put_att_real(ncid,varid,'false_easting',NF_DOUBLE,1,fe)
-      iret = nf_put_att_real(ncid,varid,'false_northing',NF_DOUBLE,1,fn)
-      iret = nf_put_att_real(ncid,varid,'standard_parallel',NF_DOUBLE,2,sp)
 
 
       date19(1:19) = "0000-00-00_00:00:00"
@@ -3802,19 +3796,6 @@ end subroutine mpp_output_chrt
       iret = nf_enddef(ncid)
 
 !!-- write latitude and longitude locations
-        iret = nf_inq_varid(ncid,"y", varid)
-        iret = nf_put_vara_double(ncid, varid, (/1/), (/jxrt/), ycoord) !-- 1-d array
-
-        iret = nf_inq_varid(ncid,"x", varid)
-        iret = nf_put_vara_double(ncid, varid, (/1/), (/ixrt/), xcoord) !-- 1-d array
-
-      iret = nf_close(ncstatic)
-
-     endif
-
-    output_count = output_count + 1
-
-!going to output a group at a given time
 
 !DJG inv    do j=jxrt,1,-1
     do j=1,jxrt
@@ -3828,24 +3809,13 @@ end subroutine mpp_output_chrt
     enddo
 
 !!time in seconds since startdate
-    iret = nf_inq_varid(ncid,"time", varid)
-    iret = nf_put_vara_int(ncid, varid, (/output_count/), (/1/), seconds_since)
 
     iret = nf_inq_varid(ncid,"flow", varid)
-    iret = nf_put_vara_real(ncid, varid, (/1,1,output_count/), (/ixrt,jxrt,1/),tmpflow)
+    iret = nf_put_vara_real(ncid, varid, (/1,1,1/), (/ixrt,jxrt,1/),tmpflow)
 
-     iret = nf_redef(ncid)
-     date19(1:19) = "0000-00-00_00:00:00"
-     date19(1:len_trim(date)) = date
-     iret = nf_put_att_text(ncid, NF_GLOBAL, "time_coverage_end", 19, date19)
-     iret = nf_enddef(ncid)
-
-     iret = nf_sync(ncid)
-
-     if (output_count == split_output_count) then
-        output_count = 0
         iret = nf_close(ncid)
-     endif
+
+
 
  end subroutine output_chrtgrd
 
@@ -3861,9 +3831,8 @@ end subroutine mpp_output_chrt
        QBDRYRT_in)
 
 !output the routing variables over routing grid.
-#ifdef MPP_LAND
    USE module_mpp_land
-#endif
+
     implicit none
 #include <netcdf.inc>
 
@@ -4288,9 +4257,14 @@ end subroutine mpp_output_chrt
         CHARACTER(len=256)       :: geo_finegrid_flnm
 
         var_name = "TOPOGRAPHY"
+
         iret = get2d_real(var_name,ELRT_inv,ixrt,jxrt,&
                      trim(geo_finegrid_flnm))
 #ifdef HYDRO_D
+        if(iret .ne. 0) then
+            write(6,*) "Error reading TOPOGRAPHY failed" 
+            call hydro_stop()
+        endif
         write(6,*) "read ",var_name
 #endif
 
@@ -4374,7 +4348,13 @@ end subroutine mpp_output_chrt
 #ifdef MPP_LAND
      if(IO_id.eq.my_id) &
 #endif
-       iret = nf_create(trim(outFile), 0, ncid)
+
+#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
+       iret = nf_create(trim(outFile), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
+#else
+       iret = nf_create(trim(outFile), NF_CLOBBER, ncid)
+#endif
+
 #ifdef MPP_LAND
        call mpp_land_bcast_int1(iret)
 #endif
@@ -4463,7 +4443,14 @@ end subroutine mpp_output_chrt
 #ifdef MPP_LAND
      if(IO_id.eq.my_id) &
 #endif
-       iret = nf_create(trim(outFile), 0, ncid)
+
+#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
+       iret = nf_create(trim(outFile), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
+#else
+       iret = nf_create(trim(outFile), NF_CLOBBER, ncid)
+#endif
+
+
 #ifdef MPP_LAND
        call mpp_land_bcast_int1(iret)
 #endif

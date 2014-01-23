@@ -1,0 +1,41 @@
+#-------------------------------------------------------------------------------#
+# DEBUG build settings for IBM AIX xlf compiler
+#-------------------------------------------------------------------------------#
+
+# The compiler and linker name
+export FC="xlf2003"
+
+export FL="xlf2003"
+
+
+# Compiler and linker settings
+F_COMMON_FLAGS=
+
+export FC_FLAGS="\
+ -c \
+ -qcheck \
+ -qdbg \
+ -qextchk \
+ -qfloat=nomaf:rndsngl \
+ -qflttrap=ov:zero:en \
+ -qinitauto \
+ -qhalt=W \
+ -qlanglvl=2003pure \
+ -qmaxmem=-1 \
+ -qsuffix=f=f90:cpp=F90 \
+ ${F_COMMON_FLAGS} \
+ ${INCLUDES}"
+ 
+export FL_FLAGS="\
+ ${F_COMMON_FLAGS} \
+ ${LIBRARIES}"
+
+
+echo "========================================="
+echo " CRTM compilation environment variables:"
+echo "   FC:       ${FC}"
+echo "   FC_FLAGS: ${FC_FLAGS}"
+echo "   FL:       ${FL}"
+echo "   FL_FLAGS: ${FL_FLAGS}"
+echo "========================================="
+echo

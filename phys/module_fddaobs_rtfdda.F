@@ -1648,7 +1648,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   REAL, INTENT(IN)     :: terrh(ims:ime) ! Terrain height (m)
 ! INTEGER, INTENT(IN)  :: vik1(its:ite) ! Vertical infl k-level for full wts
 ! INTEGER, INTENT(IN)  :: vik2(its:ite) ! Vertical infl k-level for ramp
-  REAL, INTENT(IN)     :: zslab(ims:ime, kms:kme)    ! model ht above ground (m)
+  REAL, INTENT(IN)     :: zslab(ims:ime, kms:kme)    ! model ht above sea level (m)
   LOGICAL, INTENT(IN)  :: iprt                       ! print flag
 
 ! Local variables

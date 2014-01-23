@@ -2,9 +2,19 @@
 
 MODULE module_wind_fitch
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! NOTICE
+!! The following paper should be cited whenever presenting results using this scheme
+!! (using either the original version or any modified versions of the scheme):
+!! Fitch, A. C. et al. 2012: Local and Mesoscale Impacts of Wind Farms as Parameterized in a
+!! Mesoscale NWP Model. Monthly Weather Review, doi:http://dx.doi.org/10.1175/MWR-D-11-00352.1
+!!
+!! Anna C. Fitch, National Center for Atmospheric Research (formerly University of Bergen)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 ! Represents kinetic energy extracted by wind turbines and turbulence
 ! (TKE) they produce at model levels within the rotor area. The thrust and
-! power coefficient curves included to calculate momentum sink and source of TKE are 
+! power coefficient curves included to calculate the momentum sink and source of TKE are 
 ! generic and an approximation to a real turbine. These coefficients should be
 ! obtained from the turbine manufacturer for the turbines of interest and incorporated
 ! into the code in subroutine dragcof (we could not include real curves since they
@@ -12,9 +22,11 @@ MODULE module_wind_fitch
 !
 ! References:
 ! Fitch, A. C. et al. 2012: Local and Mesoscale Impacts of Wind Farms as Parameterized in a
-! Mesoscale NWP Model. Monthly Weather Review, doi:10.1175/MWR-D-11-00352.1
-! Fitch, A. C. et al. 2012: Mesoscale Influences of Wind Farms Throughout a Diurnal Cycle.
-! Monthly Weather Review, submitted.
+! Mesoscale NWP Model. Monthly Weather Review, doi:http://dx.doi.org/10.1175/MWR-D-11-00352.1
+! Fitch, A. C. et al. 2013: Mesoscale Influences of Wind Farms Throughout a Diurnal Cycle.
+! Monthly Weather Review, doi:http://dx.doi.org/10.1175/MWR-D-12-00185.1
+! Fitch, A. C. et al. 2013: Parameterization of Wind Farms in Climate Models.
+! Journal of Climate, doi:http://dx.doi.org/10.1175/JCLI-D-12-00376.1
 !
 ! Output:
 !   du, dv: horizontal velocity tendencies

@@ -80,16 +80,20 @@ subroutine da_update_firstguess(grid, out_filename)
 !
   if (present(out_filename)) then
      file_name = trim(out_filename)
-     fgname = 'fg02'
+     if (file_name == 'ana02') then
+        fgname = 'fg02'
+     else
+        fgname = 'fg'
+     endif
   else
      file_name = 'wrfvar_output'
      fgname = 'fg'
-  end if
+  endif
 
   if (rootproc) then
      ierr = copyfile(trim(fgname)//C_NULL_CHAR, trim(file_name)//C_NULL_CHAR)
      if ( ierr /= 0 ) then
-        write(unit=message(1),fmt='(a)') "Failed to create "//trim(file_name)
+        write(unit=message(1),fmt='(a)') "Failed to create "//trim(file_name)//" from "//trim(fgname)
         call da_error(__FILE__,__LINE__,message(1:1))
      endif
 

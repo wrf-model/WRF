@@ -28,7 +28,9 @@ CONTAINS
      &          ,th10,th2,thz0,th_phy,tmn,tshltr,tsk,tslb             &
      &          ,tyr,tyra,tdly,tlag,lagday,nyear,nday,tmn_update,yr   &
      &          ,t_phy,u10,udrunoff,ust,uz0,u_frame,u_phy,v10,vegfra  &
+     &          ,uoce,voce                                            &
      &          ,vz0,v_frame,v_phy,warm_rain,wspd,xice,xland,z,znt    &
+     &          ,max_edom,cplmask                                     &
 #if (HWRF==1)
      &          ,mznt                                                 &
 #endif
@@ -40,7 +42,7 @@ CONTAINS
      &          ,xicem,isice,iswater,ct,tke_pbl                       &
 #endif
      &          ,albbck,embck,lh,sh2o,shdmax,shdmin,z0                &
-     &          ,flqc,flhc,psfc,sst,sstsk,dtw,sst_update,sst_skin     &
+     &          ,flqc,flhc,psfc,sst,sst_input,sstsk,dtw,sst_update,sst_skin     &
      &          ,scm_force_skintemp,scm_force_flux,t2,emiss           &
      &          ,sf_sfclay_physics,sf_surface_physics,ra_lw_physics   & 
      &          ,mosaic_lu,mosaic_soil                                &
@@ -169,6 +171,7 @@ CONTAINS
 !------------------------------------------------------------------------------
      &          , ids,ide,jds,jde,kds,kde                             &
      &          , ims,ime,jms,jme,kms,kme                             &
+     &          , ips,ipe,jps,jpe,kps,kpe                             &
      &          , i_start,i_end,j_start,j_end,kts,kte,num_tiles       &
              !  Optional moisture tracers
      &           ,qv_curr, qc_curr, qr_curr                           &
@@ -306,6 +309,7 @@ CONTAINS
    USE module_sf_sfcdiags_ruclsm
    USE module_sf_sstskin
    USE module_sf_tmnupdate
+   USE module_cpl, ONLY : coupler_on, cpl_rcv
 !
 !  This driver calls subroutines for the surface parameterizations.
 !
@@ -376,6 +380,8 @@ CONTAINS
 !-- TLAG          mean surface temperature of previous 140 days (K)
 !-- TDLY          accumulated daily mean surface temperature of the current day (K)
 !-- XLAND         land mask (1 for land, 2 for water)
+!-- MAX_EDOM      number of external model domains
+!-- CPLMASK       coupling mask (1 for data read in wrflowinput, 0 data received from the coupler)
 !-- ZNT           thermal time-varying roughness length (m)
 !-- MZNT          momentum time-varying roughness length (m)
 !-- Z0            background roughness length (m)
@@ -405,6 +411,8 @@ CONTAINS
 !-- tratx         ratio of t over th2 (Added for obs-nudging)
 !-- u10           diagnostic 10-m u component from surface layer
 !-- v10           diagnostic 10-m v component from surface layer
+!-- UOCE          sea surface zonal currents (m s-1)
+!-- VOCE          sea surface meridional currents (m s-1)
 !-- th2           diagnostic 2-m theta from surface layer and lsm
 !-- t2            diagnostic 2-m temperature from surface layer and lsm
 !-- q2            diagnostic 2-m mixing ratio from surface layer and lsm
@@ -429,6 +437,7 @@ CONTAINS
 !-- DT            time step (second)
 !-- PSFC          pressure at the surface (Pa)
 !-- SST           sea-surface temperature (K)
+!-- SST_INPUT     sea-surface temperature read in wrflowinput (K) (= SST if no coupling)
 !-- SSTSK         skin sea-surface temperature (K)
 !-- DTW           warm layer temp diff (K)
 !-- TSLB
@@ -468,6 +477,12 @@ CONTAINS
 !-- jme           end index for j in memory
 !-- kms           start index for k in memory
 !-- kme           end index for k in memory
+!-- ips           start index for i in patch
+!-- ipe           end index for i in patch
+!-- jps           start index for j in patch
+!-- jpe           end index for j in patch
+!-- kps           start index for k in patch
+!-- kpe           end index for k in patch
 !-- its           start index for i in tile
 !-- ite           end index for i in tile
 !-- jts           start index for j in tile
@@ -481,6 +496,7 @@ CONTAINS
    INTEGER, INTENT(IN) ::                                             &
      &           ids,ide,jds,jde,kds,kde                              &
      &          ,ims,ime,jms,jme,kms,kme                              &
+     &          ,ips,ipe,jps,jpe,kps,kpe                              &
      &          ,kts,kte,num_tiles
 
    INTEGER, INTENT(IN)::   FRACTIONAL_SEAICE
@@ -547,6 +563,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   RAINCV
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   SST
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT ),OPTIONAL ::   SSTSK
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN    ),OPTIONAL ::   SST_INPUT
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT ),OPTIONAL ::   DTW
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   TMN
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT ),OPTIONAL ::   TYR
@@ -561,6 +578,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   ICEDEPTH
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   SNOWSI
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XLAND
+   INTEGER,                                          INTENT(IN   ) ::   MAX_EDOM
+   REAL, DIMENSION( ims:ime , 1:max_edom, jms:jme ), INTENT(IN   ), OPTIONAL ::   CPLMASK
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   XICEM
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   MAVAIL
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT)::   SNOALB
@@ -702,6 +721,8 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   TSHLTR
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   U10
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   V10
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   UOCE
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   VOCE
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   PSFC
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)::   ACSNOM
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)::   SFCEVP
@@ -1152,6 +1173,28 @@ CONTAINS
       call wrf_error_fatal("Field SNOWSI not found in input.  Field SNOWSI is required if SEAICE_SNOWDEPTH_OPT=1")
   endif
 
+  IF ( coupler_on .and. present(cplmask) .and. present(sst_input) ) THEN
+     
+     CALL cpl_rcv( id, 'SST',            &
+        &              ids, ide, jds, jde, kds, kde, &
+        &              ims, ime, jms, jme, kms, kme, &
+        &              ips, ipe, jps, jpe, kps, kpe, &
+        &              max_edom, cplmask, SST, SST_INPUT )
+     
+     CALL cpl_rcv( id, 'UOCE',            &
+        &              ids, ide, jds, jde, kds, kde, &
+        &              ims, ime, jms, jme, kms, kme, &
+        &              ips, ipe, jps, jpe, kps, kpe, &
+        &              max_edom, cplmask, UOCE )
+     
+     CALL cpl_rcv( id, 'VOCE',            &
+        &              ids, ide, jds, jde, kds, kde, &
+        &              ims, ime, jms, jme, kms, kme, &
+        &              ips, ipe, jps, jpe, kps, kpe, &
+        &              max_edom, cplmask, VOCE )
+     
+  END IF
+  
 !$OMP PARALLEL DO &
 !$OMP PRIVATE (ij, i, j, k)
   DO ij = 1,num_tiles
@@ -1503,6 +1546,9 @@ CONTAINS
             v_phytmp(i,k,j)=v_phy(i,k,j)+v_frame
             u_phytmp(i,k,j)=u_phy(i,k,j)+u_frame
           ENDDO
+! remove surface currents for atmospheric low-level winds
+          u_phytmp(i,kts,j)=u_phytmp(i,kts,j)-uoce(i,j)
+          v_phytmp(i,kts,j)=v_phytmp(i,kts,j)-voce(i,j)
        ENDDO
        ENDDO
      ENDDO

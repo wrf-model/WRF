@@ -22,10 +22,8 @@ CONTAINS
                , psim ,a_psim , psih ,a_psih , wspd ,a_wspd ,        &
                  gz1oz0 ,a_gz1oz0 , br ,a_br , chklowq,a_chklowq     &
                , cu_act_flag , hol ,a_hol, th_phy,a_th_phy             &
-               , pi_phy ,a_pi_phy, p_phy ,a_p_phy , t_phy ,a_t_phy , &
-                 u_phy ,a_u_phy , v_phy,a_v_phy                        &
-               , dz8w ,a_dz8w , p8w ,a_p8w , t8w ,a_t8w,             &
-                 rho_phy , rho,a_rho                        &
+               , pi_phy ,a_pi_phy, p_phy ,a_p_phy , t_phy ,a_t_phy   &
+               , dz8w ,a_dz8w , p8w ,a_p8w , t8w ,a_t8w              &
                , nba_mij,a_nba_mij, n_nba_mij                            &
                , nba_rij,a_nba_rij, n_nba_rij                            &
                , ids, ide, jds, jde, kds, kde     &
@@ -108,13 +106,9 @@ CONTAINS
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: pi_phy,a_pi_phy
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: p_phy,a_p_phy
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t_phy,a_t_phy
-    REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: u_phy,a_u_phy
-    REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: v_phy,a_v_phy
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: dz8w,a_dz8w
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: p8w,a_p8w
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t8w,a_t8w
-    REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho_phy
-    REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rho,a_rho
 
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: ru_tendf,a_ru_tendf
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rv_tendf,a_rv_tendf
@@ -221,7 +215,7 @@ BENCH_START(adj_vert_diff_tim)
                   grid%div,grid%a_div, moist,a_moist, chem,a_chem, scalar,a_scalar, tracer,a_tracer, &
                   grid%xkmv,grid%a_xkmv, grid%xkhv,grid%a_xkhv, config_flags%km_opt,                 &
                   grid%fnm, grid%fnp, grid%dn, grid%dnw, grid%rdz,grid%a_rdz, grid%rdzw,grid%a_rdzw, &
-                  grid%hfx,grid%a_hfx, grid%qfx,grid%a_qfx, grid%ustm,grid%a_ustm, rho,a_rho,     &
+                  grid%hfx,grid%a_hfx, grid%qfx,grid%a_qfx, grid%ustm,grid%a_ustm, grid%rho,grid%a_rho,     &
                   ids, ide, jds, jde, kds, kde,              &
                   ims, ime, jms, jme, kms, kme,              &
                   grid%i_start(ij), grid%i_end(ij),          &
@@ -259,7 +253,7 @@ BENCH_START(adj_tke_rhs_tim)
                 grid%dnw,config_flags%mix_isotropic,         &
                 grid%hfx,grid%a_hfx, grid%qfx,grid%a_qfx,    &
                 moist(ims,kms,jms,P_QV),a_moist(ims,kms,jms,P_QV), &
-                grid%ustm,grid%a_ustm, rho,a_rho,                  &
+                grid%ustm,grid%a_ustm, grid%rho,grid%a_rho,                  &
                 ids, ide, jds, jde, kds, kde,                &
                 ims, ime, jms, jme, kms, kme,                &
                 grid%i_start(ij), grid%i_end(ij),            &

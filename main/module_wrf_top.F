@@ -38,6 +38,7 @@ MODULE module_wrf_top
 
    USE module_date_time, ONLY : current_date, start_date
    USE module_io_domain, ONLY : open_w_dataset, output_boundary
+   USE module_cpl, ONLY : coupler_on, cpl_finalize, cpl_defdomain
 
    IMPLICIT NONE
 
@@ -410,6 +411,7 @@ CONTAINS
    END IF
 #endif
 
+   IF (coupler_on) CALL cpl_defdomain( head_grid ) 
 
    END SUBROUTINE wrf_init
 
@@ -2040,8 +2042,12 @@ ENDIF
    ! for DM parallel runs).  
    IF ( .NOT. PRESENT( no_shutdown ) ) THEN
      ! Finalize time manager
-     CALL WRFU_Finalize
-     CALL wrf_shutdown
+      IF (coupler_on) THEN 
+         CALL cpl_finalize() 
+      ELSE
+         CALL WRFU_Finalize
+         CALL wrf_shutdown
+      ENDIF
    ENDIF
 
    END SUBROUTINE wrf_finalize

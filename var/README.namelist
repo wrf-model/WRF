@@ -2,7 +2,7 @@ Description of WRFDA namelist variables
 -----------------------------------------
 
  Note: variables followed by (...) indicate that this variable can or needs to
-       be defined for more than 1 values.
+       be defined for more than 1 value.
 
 &wrfvar1
   write_increments        = .false. ; .true.: write out a binary analysis_increment file
@@ -32,6 +32,10 @@ Description of WRFDA namelist variables
                                     ;         diagnosed based on the increments of other fields.
                                     ;         If use_radarobs=.true., the w increments are always
                                     ;         calculated.
+var_wind                  = .false. ; .true.: wind values which are reported as speed/direction will be assimilated as such
+                                    ; .false.: default behavior: all wind obs are converted to u/v prior to assimilation
+qc_rej_both               = .false  ; .true.: if either u or v (spd or dir) do not pass quality control, both obs are rejected
+                                    ; .false.: default behavior: qc on wind obs is handled individually
 /
 &wrfvar3
   fg_format               = 1       ; 1: fg_format_wrf_arw_regional (default)
@@ -116,22 +120,29 @@ Description of WRFDA namelist variables
   max_error_rv            = 5.0      ; maximum check_max_iv error check factor for radar radial velocity
   max_error_rf            = 5.0      ; maximum check_max_iv error check factor for radar reflectivity
   max_error_rain          = 5.0      ; maximum check_max_iv error check factor for precipitation 
+  max_omb_sp              = 14.0     ; Max absolute value of innovation for wind speed obs in m/s; if 
+                                     ; innov. is greater than this value it will be set to zero
+  max_omb_dir             = 135.0    ; Max absolute value of innovation for wind direction obs in degrees; 
+                                     ; if innov. is greater than this value it will be set to zero
+  max_error_sp            = 5.0      ; maximum check_max_iv error check factor for wind speed
+  max_error_dir           = 5.0      ; maximum check_max_iv error check factor for wind direction
+
 /
 &wrfvar6   ; for minimization options
-  max_ext_its                = 1         ; number of outer loops
-  ntmax                      = 200       ; maximum number of iterations in an inner loop
-  eps (max_outer_iterations) = 0.01      ; minimization convergence criterion (used dimension: max_ext_its)
-                                         ; minimization stops when the norm of the gradient of the cost 
-                                         ; function gradient is reduced by a factor of eps.
-                                         ; inner minimization stops either when the criterion is met or 
-                                         ; when inner iterations reach ntmax.
-  orthonorm_gradient         = .false.   ; .true.: the gradient vectors are stored during 
-                                         ;         the Conjugate Gradient for each iteration and 
-                                         ;         used to re-orthogonalize the new gradient. 
-                                         ;         This requires extra storage of large vectors 
-                                         ;         (each one being the size of the control variable)
-                                         ;         but results in a better convergence of the 
-                                         ;         Conjugate Gradient after around 20 iterations.
+  max_ext_its                  = 1         ; number of outer loops
+  ntmax (max_outer_iterations) = 200 ...   ; maximum number of iterations in an inner loop
+  eps (max_outer_iterations)   = 0.01 ...  ; minimization convergence criterion (used dimension: max_ext_its)
+                                           ; minimization stops when the norm of the gradient of the cost 
+                                           ; function gradient is reduced by a factor of eps.
+                                           ; inner minimization stops either when the criterion is met or 
+                                           ; when inner iterations reach ntmax.
+  orthonorm_gradient           = .false.   ; .true.: the gradient vectors are stored during 
+                                           ;         the Conjugate Gradient for each iteration and 
+                                           ;         used to re-orthogonalize the new gradient. 
+                                           ;         This requires extra storage of large vectors 
+                                           ;         (each one being the size of the control variable)
+                                           ;         but results in a better convergence of the 
+                                           ;         Conjugate Gradient after around 20 iterations.
 /
 &wrfvar7
   cv_options              = 5         ; 3: NCEP Background Error model

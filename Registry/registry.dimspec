@@ -19,6 +19,7 @@ dimspec    k       3     standard_domain                   z     bottom_top
 dimspec    9       4     namelist=ensdim_alpha             c     alpha ensemble dimension
 endif
 
+dimspec    ncpldom 2     namelist=num_ext_model_couple_dom z     num_ext_model_couple_dom
 dimspec    lin     2     namelist=num_metgrid_soil_levels  z     num_metgrid_soil_levels
 dimspec    |       2     namelist=num_force_layers         z     force_layers
 dimspec    ndfi    1     namelist=dfi_time_dim             c     dfi time dimension

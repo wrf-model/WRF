@@ -64,7 +64,7 @@ C     initialized within subroutine BFRINI.
 
       COMMON /REPTAB/ IDNR(5,2),TYPS(5,2),REPS(5,2),LENS(5)
 
-      COMMON /TABLES/ MAXTAB,NTAB,TAG(MAXJL),TYP(MAXJL),KNT(MAXJL),
+      COMMON /BTABLES/ MAXTAB,NTAB,TAG(MAXJL),TYP(MAXJL),KNT(MAXJL),
      .                JUMP(MAXJL),LINK(MAXJL),JMPB(MAXJL),
      .                IBT(MAXJL),IRF(MAXJL),ISC(MAXJL),
      .                ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL),

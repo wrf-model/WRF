@@ -40,7 +40,18 @@ RSL_LITE_ERROR_DUP1 ( int *me )
     gethostname( hostname, 256 ) ;
 
 /* redirect standard out*/
+# ifndef RSL0_ONLY
     sprintf(filename,"rsl.out.%04d",*me) ;
+# else
+    if (*me == 0)
+     {
+     sprintf(filename,"rsl.out.%04d",*me) ;
+     }
+    else
+     {
+     sprintf(filename,"/dev/null") ;
+     }
+# endif
     if ((newfd = open( filename, O_CREAT | O_WRONLY | O_TRUNC, 0666 )) < 0 )
     {
         perror("error_dup: cannot open rsl.out.nnnn") ;
@@ -59,7 +70,18 @@ RSL_LITE_ERROR_DUP1 ( int *me )
 # if defined( _WIN32 ) 
     if ( *me != 0 ) {   /* stderr from task 0 should come to screen on windows because it is buffered if redirected */
 #endif
+# ifndef RSL0_ONLY
     sprintf(filename,"rsl.error.%04d",*me) ;
+# else
+    if (*me == 0)
+     {
+     sprintf(filename,"rsl.error.%04d",*me) ;
+     }
+    else
+     {
+     sprintf(filename,"/dev/null") ;
+     }
+# endif
     if ((newfd = open( filename, O_CREAT | O_WRONLY | O_TRUNC, 0666 )) < 0 )
     {
         perror("error_dup: cannot open rsl.error.log") ;

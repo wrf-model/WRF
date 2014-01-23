@@ -66,6 +66,9 @@ MODULE module_wrf_quilt
 !</DESCRIPTION>
   USE module_internal_header_util
   USE module_timing
+#if !defined( DA_CORE )
+  USE module_cpl, ONLY : coupler_on, cpl_set_dm_communicator, cpl_finalize
+#endif
 
   INTEGER, PARAMETER :: int_num_handles = 99
   INTEGER, PARAMETER :: max_servers = int_num_handles+1  ! why +1?
@@ -681,7 +684,15 @@ okay_to_w = .false.
             CALL ext_gr2_ioexit( Status )
 #endif
             CALL wrf_message ( 'I/O QUILT SERVERS DONE' )
-            CALL mpi_finalize(ierr)
+#if !defined( DA_CORE )
+            IF (coupler_on) THEN 
+               CALL cpl_finalize() 
+            ELSE
+#endif
+               CALL mpi_finalize(ierr)
+#if !defined( DA_CORE )
+            END IF
+#endif
             STOP
           ELSE
             WRITE(mess,*)'Possible 32-bit overflow on output server. Try larger nio_tasks_per_group in namelist.'
@@ -2647,12 +2658,18 @@ okay_to_w = .false.
        ! provide the communicator for the integration tasks to RSL
        IF ( compute_node ) THEN
           CALL wrf_set_dm_communicator( mpi_comm_local )
+#if !defined( DA_CORE )
+          IF (coupler_on) CALL cpl_set_dm_communicator( mpi_comm_local )
+#endif
 #ifdef HWRF
           call ATM_SET_COMM(mpi_comm_local)
 #endif
        ELSE
 #ifdef HWRF
           call ATM_LEAVE_COUPLING()
+#endif
+#if !defined( DA_CORE )
+          IF (coupler_on) CALL cpl_set_dm_communicator( MPI_COMM_NULL )
 #endif
           CALL quilt    ! will not return on io server tasks
        ENDIF

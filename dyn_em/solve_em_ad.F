@@ -665,8 +665,7 @@ BENCH_END(set_phys_bc_tim)
                              , br , chklowq                     &
                              , cu_act_flag , hol , th_phy       &
                              , pi_phy , p_phy , grid%t_phy      &
-                             , u_phy , v_phy                    &
-                             , dz8w , p8w , t8w , rho_phy , rho &
+                             , dz8w , p8w , t8w                 &
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
@@ -709,8 +708,7 @@ BENCH_END(set_phys_bc_tim)
                              , br , chklowq                     &
                              , cu_act_flag , hol , th_phy       &
                              , pi_phy , p_phy , grid%t_phy      &
-                             , u_phy , v_phy                    &
-                             , dz8w , p8w , t8w , rho_phy , rho &
+                             , dz8w , p8w , t8w                 &
                              , nba_mij, num_nba_mij             & !JDM
                              , nba_rij, num_nba_rij             & !JDM
                              , ids, ide, jds, jde, kds, kde     &
@@ -3521,7 +3519,7 @@ BENCH_END(advance_ppt_tim)
      !CALL push4backup (grid%p,"p")
      !CALL push4backup (grid%al,"al")
      !CALL push4backup (grid%t_2,"t")
-     !CALL push4backup (rho,"rho")
+     !CALL push4backup (grid%rho,"rho")
      CALL PUSHREAL8ARRAY ( grid%p, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
      CALL PUSHREAL8ARRAY ( grid%t_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
 
@@ -3543,7 +3541,7 @@ BENCH_END(advance_ppt_tim)
        CALL wrf_debug ( 200 , ' call moist_physics_prep' )
 BENCH_START(moist_physics_prep_tim)
 
-       CALL moist_physics_prep_em( grid%t_2, grid%t_1, t0, rho,                &
+       CALL moist_physics_prep_em( grid%t_2, grid%t_1, t0, grid%rho,                &
                                    grid%al, grid%alb, grid%p, p8w, p0, grid%pb,          &
                                    grid%ph_2, grid%phb, th_phy, pi_phy, p_phy, &
                                    grid%z, grid%z_at_w, dz8w,                  &
@@ -3591,7 +3589,7 @@ BENCH_START(micro_driver_tim)
      !CALL push4backup (pi_phy,"pi_phy")
      !CALL push4backup (dz8w,"dz8w")
      !CALL push4backup (p8w,"p8w")
-     !CALL push4backup (rho,"rho")
+     !CALL push4backup (grid%rho,"rho")
      !CALL push4backup (th_phy,"th_phy")
      !CALL push4backup (p_phy,"p_phy")
      CALL PUSHREAL8ARRAY ( moist, (ime-ims+1)*(kme-kms+1)*(jme-jms+1)*num_moist )
@@ -3602,7 +3600,7 @@ BENCH_START(micro_driver_tim)
       &        ,DZ8W=dz8w          ,F_ICE_PHY=grid%f_ice_phy              &
       &        ,ITIMESTEP=grid%itimestep                    ,LOWLYR=grid%lowlyr  &
       &        ,P8W=p8w            ,P=p_phy            ,PI_PHY=pi_phy     &
-      &        ,RHO=rho            ,SPEC_ZONE=grid%spec_zone              &
+      &        ,RHO=grid%rho            ,SPEC_ZONE=grid%spec_zone              &
       &        ,SR=grid%sr              ,TH=th_phy                        &
       &        ,refl_10cm=grid%refl_10cm                                  & ! hm, 9/22/09 for refl
       &        ,WARM_RAIN=grid%warm_rain                                  &
@@ -4462,9 +4460,9 @@ BENCH_END(bc_2d_tim)
   a_p_phy = 0. 
   a_pi_phy = 0. 
   grid%a_t_phy = 0. 
-  a_u_phy = 0. 
-  a_v_phy = 0. 
-  a_rho = 0. 
+  grid%a_u_phy = 0. 
+  grid%a_v_phy = 0. 
+  grid%a_rho = 0. 
   a_dz8w = 0. 
   a_p8w = 0. 
   a_t8w = 0. 
@@ -4839,7 +4837,7 @@ BENCH_START(adj_micro_driver_tim)
      CALL POPREAL8ARRAY ( moist, (ime-ims+1)*(kme-kms+1)*(jme-jms+1)*num_moist )
      !CALL pop2restore (p_phy,"p_phy")
      !CALL pop2restore (th_phy,"th_phy")
-     !CALL pop2restore (rho,"rho")
+     !CALL pop2restore (grid%rho,"rho")
      !CALL pop2restore (p8w,"p8w")
      !CALL pop2restore (dz8w,"dz8w")
      !CALL pop2restore (pi_phy,"pi_phy")
@@ -4850,7 +4848,7 @@ BENCH_START(adj_micro_driver_tim)
       &        ,ITIMESTEP=grid%itimestep                    ,LOWLYR=grid%lowlyr  &
       &        ,P8W=p8w            ,P=p_phy            ,PB=a_p_phy   &
       &         ,PI_PHY=pi_phy,PI_PHYB=a_pi_phy                            &
-      &        ,RHO=rho            ,RHOB=a_rho, SPEC_ZONE=grid%spec_zone   &
+      &        ,RHO=grid%rho            ,RHOB=grid%a_rho, SPEC_ZONE=grid%spec_zone   &
       &        ,SR=grid%sr              ,TH=th_phy,THB=a_th_phy            &
       &        ,refl_10cm=grid%refl_10cm                                  & ! hm, 9/22/09 for refl
       &        ,WARM_RAIN=grid%warm_rain                                  &
@@ -4927,7 +4925,7 @@ BENCH_END(adj_micro_driver_tim)
 
      grid%a_sr = 0.
 
-     !CALL pop2restore (rho,"rho")
+     !CALL pop2restore (grid%rho,"rho")
      !CALL pop2restore (grid%t_2,"t")
      !CALL pop2restore (grid%al,"al")
      !CALL pop2restore (grid%p,"p")
@@ -4961,7 +4959,7 @@ BENCH_END(adj_micro_driver_tim)
 BENCH_START(adj_moist_physics_prep_tim)
 
        CALL a_moist_physics_prep_em( grid%t_2,grid%a_t_2, grid%t_1,            &
-                                   t0, rho,a_rho,                              &
+                                   t0, grid%rho,grid%a_rho,                              &
                                    grid%al,grid%a_al, grid%alb,                &
                                    grid%p,grid%a_p, p8w,a_p8w,                 &
                                    p0, grid%pb,                                &
@@ -6995,10 +6993,8 @@ BENCH_END(adj_rk_tend_tim)
               , psim ,  psim , psih ,  psih , wspd ,  wspd ,        &
                 gz1oz0 ,  gz1oz0 , br ,  br , chklowq,  chklowq     &
               , cu_act_flag , hol ,  hol, th_phy,a_th_phy           &
-              , pi_phy ,a_pi_phy, p_phy ,a_p_phy , grid%t_phy ,grid%a_t_phy , &
-                u_phy ,a_u_phy , v_phy,a_v_phy                      &
-              , dz8w ,a_dz8w , p8w ,a_p8w , t8w ,a_t8w,             &
-                rho_phy , rho,a_rho   &
+              , pi_phy ,a_pi_phy, p_phy ,a_p_phy , grid%t_phy ,grid%a_t_phy   &
+              , dz8w ,a_dz8w , p8w ,a_p8w , t8w ,a_t8w             &
               , nba_mij,a_nba_mij, num_nba_mij   &
               , nba_rij,a_nba_rij, num_nba_rij   &
               , ids, ide, jds, jde, kds, kde     &
@@ -7028,8 +7024,7 @@ BENCH_END(adj_rk_tend_tim)
                              , br , chklowq                     &
                              , cu_act_flag , hol , th_phy , a_th_phy      &
                              , pi_phy , a_pi_phy, p_phy , a_p_phy, grid%t_phy , grid%a_t_phy     &
-                             , u_phy , a_u_phy , v_phy , a_v_phy     &
-                             , dz8w , a_dz8w, p8w , a_p8w, t8w , a_t8w, rho_phy , rho , a_rho &
+                             , dz8w , a_dz8w, p8w , a_p8w, t8w , a_t8w &
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &

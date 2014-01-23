@@ -78,7 +78,7 @@ CONTAINS
    ! Local data
 
    INTEGER, PARAMETER :: nl_max = 1000
-   REAL, DIMENSION(nl_max) :: zk, p_in, theta, rho, u, v, qv, pd_in
+   REAL, DIMENSION(nl_max) :: zk, p_in, theta, rho_local, u, v, qv, pd_in
    INTEGER :: nl_in
 
    INTEGER :: icm,jcm, ii, im1, jj, jm1, loop, error, fid, nxc, nyc
@@ -269,7 +269,7 @@ CONTAINS
 
   dry_sounding   = .true.
   debug = .true.  !  this will produce print of the sounding
-  CALL get_sounding( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, &
+  CALL get_sounding( zk, p_in, pd_in, theta, rho_local, u, v, qv, dry_sounding, &
                       nl_max, nl_in, u_jet, rho_jet, th_jet, z_jet,      &
                       nz_jet, ny_jet, ny_jet/2, debug                   )
 
@@ -335,7 +335,7 @@ CONTAINS
 !  get sounding for this point
 
   debug = .false.  !  this will turn off print of the sounding
-  CALL get_sounding( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, &
+  CALL get_sounding( zk, p_in, pd_in, theta, rho_local, u, v, qv, dry_sounding, &
                       nl_max, nl_in, u_jet, rho_jet, th_jet, z_jet,      &
                       nz_jet, ny_jet, j, debug                          )
 
@@ -594,7 +594,7 @@ CONTAINS
   real, dimension(nz_jet,ny_jet) :: u_jet, rho_jet, &
                                     th_jet, z_jet
 
-  real, dimension(nz_jet,ny_jet) :: zk,p,p_dry,theta,rho,u,v,qv
+  real, dimension(nz_jet,ny_jet) :: zk,p,p_dry,theta,rho_local,u,v,qv
   logical :: dry, debug
   integer :: j, nl
 
@@ -613,7 +613,7 @@ CONTAINS
   do j=1,ny_jet
 
     call get_sounding( zk(:,j),p(:,j),p_dry(:,j),theta(:,j),      &
-                       rho(:,j),u(:,j), v(:,j),  qv(:,j),        &
+                       rho_local(:,j),u(:,j), v(:,j),  qv(:,j),        &
                        dry, nz_jet, nl, u_jet, rho_jet, th_jet,  &
                        z_jet, nz_jet, ny_jet, j, debug          )
     debug = .false.
@@ -623,8 +623,8 @@ CONTAINS
   write(6,*) ' lowest level p, th, and rho, highest level p '
 
   do j=1,ny_jet
-    write(6,*) j, p(1,j),theta(1,j),rho(1,j), p(nz_jet,j)
-!    write(6,*) j, p(1,j),theta(1,j)-th_jet(1,j),rho(1,j)-rho_jet(1,j)
+    write(6,*) j, p(1,j),theta(1,j),rho_local(1,j), p(nz_jet,j)
+!    write(6,*) j, p(1,j),theta(1,j)-th_jet(1,j),rho_local(1,j)-rho_jet(1,j)
   enddo
 
   call parray( p, nz_jet, ny_jet)

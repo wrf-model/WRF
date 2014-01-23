@@ -1,5 +1,31 @@
 README for wind turbine drag parameterization schemes, added 20101220.  JM
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! NOTICE
+!! The following paper should be cited whenever presenting results using this scheme
+!! (using either the original version or any modified versions of the scheme):
+!! Fitch, A. C. et al. 2012: Local and Mesoscale Impacts of Wind Farms as Parameterized in a
+!! Mesoscale NWP Model. Monthly Weather Review, doi:http://dx.doi.org/10.1175/MWR-D-11-00352.1
+!!
+!! Anna C. Fitch, National Center for Atmospheric Research (formerly University of Bergen)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Represents kinetic energy extracted by wind turbines and turbulence
+(TKE) they produce at model levels within the rotor area. The thrust and
+power coefficient curves included to calculate the momentum sink and source of TKE are 
+generic and an approximation to a real turbine. These coefficients should be
+obtained from the turbine manufacturer for the turbines of interest and incorporated
+into the code in subroutine dragcof (we could not include real curves since they
+are proprietary).
+
+References:
+Fitch, A. C. et al. 2012: Local and Mesoscale Impacts of Wind Farms as Parameterized in a
+Mesoscale NWP Model. Monthly Weather Review, doi:http://dx.doi.org/10.1175/MWR-D-11-00352.1
+Fitch, A. C. et al. 2013: Mesoscale Influences of Wind Farms Throughout a Diurnal Cycle.
+Monthly Weather Review, doi:http://dx.doi.org/10.1175/MWR-D-12-00185.1
+Fitch, A. C. et al. 2013: Parameterization of Wind Farms in Climate Models.
+Journal of Climate, doi:http://dx.doi.org/10.1175/JCLI-D-12-00376.1
+
 *Compiling the code.* no different from normal
 
 *Running the code.*  There are new variables added to the phys block of
@@ -74,23 +100,14 @@ coordinates are used.  A sample windspec file for a pseudo-real run is
 in test/em_seabreeze2d_x/windspec.in).
 
 *Specific note for the Fitch scheme.*  The Fitch scheme is based on
-Blahak et al, 2010, of Wetter Jetzt GbR.  The specific implementation
+Blahak et al, 2010, of Wetter Jetzt GbR.  It differs in that the kinetic
+energy (KE) extracted is based on the thrust coefficient of the turbine (representing
+the total fraction of KE extracted from the atmosphere due to the turbine), rather
+than the power coefficient plus an estimated loss factor.  In addition the TKE
+generated is a function of wind speed.  The specific implementation
 comes from Anna Fitch, Alok Gupta, and Idar Barstad at Uni Bergen,
 Norway.  It was added to this release of WRF by Jimy Dudhia, Joe Olson
 (NOAA), Julie Lundquist (U. Colorado/NREL), and John Michalakes (NREL).
 It works with the MYNN PBL and modifies the QKE field representing 2xTKE
 to include the TKE produced by wind turbines. QKE is advected as a part
 of the scalar 4D tracer array in WRF.
-
-References: 
-
-Fitch, A. C., J. B. Olson, J. K. Lundquist, J. Dudhia, A. K. Gupta, 
-J. Michalakes, and I. Barstad, 2012: Local and Mesoscale Impacts 
-of Wind Farms as Parameterized in a Mesoscale NWP Model. 
-Monthly Weather Review, doi:10.1175/MWR-D-11-00352.1.
-
-Fitch, A. C., J. K. Lundquist, and J. B. Olson, 2012: Mesoscale 
-Influences of Wind Farms Throughout a Diurnal Cycle. 
-Monthly Weather Review, in press. 
-doi: http://journals.ametsoc.org/doi/abs/10.1175/MWR-D-12-00185.1
-

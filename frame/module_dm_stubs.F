@@ -45,6 +45,13 @@ MODULE module_dm
       wrf_dm_sum_integer = inval
    END FUNCTION wrf_dm_sum_integer
 
+   SUBROUTINE wrf_dm_sum_integers ( inval, retval )
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: inval(:)
+      INTEGER, INTENT(OUT) :: retval(:)
+      retval(:) = inval(:)
+   END SUBROUTINE wrf_dm_sum_integers
+
    INTEGER FUNCTION wrf_dm_bxor_integer ( inval )
       IMPLICIT NONE
       INTEGER inval

@@ -359,6 +359,7 @@ CONTAINS
       REAL    ::  ZL,TSKV,DTHVDZ,DTHVM,VCONV,RZOL,RZOL2,RZOL10,ZOL2,ZOL10
       REAL    ::  DTG,PSIX,DTTHX,PSIX10,PSIT,PSIT2,PSIQ,PSIQ2,PSIQ10
       REAL    ::  FLUXC,VSGD,Z0Q,VISC,RESTAR,CZIL,GZ0OZQ,GZ0OZT
+      REAL    ::  ZW, ZN1, ZN2
 !
 ! .... paj ...
 !
@@ -890,8 +891,16 @@ CONTAINS
           IF ( PRESENT(ISFTCFLX) ) THEN
              IF ( ISFTCFLX.NE.0 ) THEN
 !               ZNT(I)=10.*exp(-9.*UST(I)**(-.3333))
-                ZNT(I)=10.*exp(-9.5*UST(I)**(-.3333))
-                ZNT(I)=ZNT(I) + 0.11*1.5E-5/AMAX1(UST(I),0.01)
+!               ZNT(I)=10.*exp(-9.5*UST(I)**(-.3333))
+!               ZNT(I)=ZNT(I) + 0.11*1.5E-5/AMAX1(UST(I),0.01)
+!               ZNT(I)=0.011*UST(I)*UST(I)/G+OZO
+!               ZNT(I)=MAX(ZNT(I),3.50e-5)
+! AHW 2012:
+                ZW  = MIN((UST(I)/1.06)**(0.3),1.0)
+                ZN1 = 0.011*UST(I)*UST(I)/G + OZO
+                ZN2 = 10.*exp(-9.5*UST(I)**(-.3333)) + &
+                       0.11*1.5E-5/AMAX1(UST(I),0.01)
+                ZNT(I)=(1.0-ZW) * ZN1 + ZW * ZN2
                 ZNT(I)=MIN(ZNT(I),2.85e-3)
                 ZNT(I)=MAX(ZNT(I),1.27e-7)
              ENDIF

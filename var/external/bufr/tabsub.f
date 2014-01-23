@@ -39,7 +39,7 @@ C
 C REMARKS:
 C   -----------------------------------------------------------------
 C    EXAMPLE SHOWING CONTENTS OF INTERNAL JUMP/LINK TABLE (WITHIN
-C    COMMON /TABLES/):
+C    COMMON /BTABLES/):
 C
 C      INTEGER MAXTAB = maximum number of jump/link table entries
 C
@@ -225,7 +225,7 @@ C$$$
 
       INCLUDE 'bufrlib.prm'
 
-      COMMON /TABLES/ MAXTAB,NTAB,TAG(MAXJL),TYP(MAXJL),KNT(MAXJL),
+      COMMON /BTABLES/ MAXTAB,NTAB,TAG(MAXJL),TYP(MAXJL),KNT(MAXJL),
      .                JUMP(MAXJL),LINK(MAXJL),JMPB(MAXJL),
      .                IBT(MAXJL),IRF(MAXJL),ISC(MAXJL),
      .                ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL),

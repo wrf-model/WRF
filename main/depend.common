@@ -13,7 +13,8 @@ module_dm.o: module_machine.o module_state_description.o module_wrf_error.o \
 		module_driver_constants.o \
 		module_timing.o \
 		module_comm_nesting_dm.o \
-		module_configure.o module_comm_dm.o
+		module_configure.o module_comm_dm.o \
+                module_cpl.o
 
 module_timing.o: hires_timer.o clog.o
 
@@ -75,6 +76,7 @@ module_integrate.o: module_domain.o \
 		module_nesting.o \
 		module_configure.o \
 		../share/module_linked_lisk2.o \
+		module_cpl.o \
 		$(ESMF_MOD_DEPENDENCE)
 
 module_intermediate_nmm.o: \
@@ -97,7 +99,8 @@ module_io_quilt.o: module_state_description.o \
                 module_configure.o \
 		module_internal_header_util.o \
 		module_quilt_outbuf_ops.o \
-		module_wrf_error.o
+		module_wrf_error.o  \
+                module_cpl.o 
 
 module_machine.o: module_driver_constants.o
 
@@ -126,6 +129,15 @@ module_wrf_error.o: \
 
 wrf_debug.o: \
 		module_wrf_error.o
+
+module_cpl.o: ../share/module_model_constants.o \
+		module_driver_constants.o \
+		module_domain.o \
+		module_configure.o \
+		module_cpl_oasis3.o
+
+module_cpl_oasis3.o: module_driver_constants.o \
+                     module_domain.o
 
 # End of DEPENDENCIES for frame
 
@@ -753,6 +765,7 @@ module_surface_driver.o: \
 		module_sf_ocean_driver.o	\
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
+		../frame/module_cpl.o \
 		../share/module_model_constants.o  
 
 module_sf_ocean_driver.o : \
@@ -1243,6 +1256,7 @@ module_wrf_top.o: ../frame/module_machine.o \
                   ../share/module_io_domain.o \
                   ../share/module_date_time.o \
                   ../share/mediation_pertmod_io.o \
+                  ../frame/module_cpl.o \
                   $(ESMF_MOD_DEPENDENCE)
 
 # End of DEPENDENCIES for main

@@ -151,7 +151,7 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
    LOGICAL :: leapfrog
    INTEGER :: l,kte,kk
    LOGICAL :: f_flux  ! flag for computing averaged fluxes in cu_gd
-   REAL    :: curr_secs
+   REAL    :: curr_secs, curr_secs2
    INTEGER :: num_sound_steps
    INTEGER :: idex, jdex
    REAL    :: max_msft
@@ -164,7 +164,7 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
 ! urban related variables
    INTEGER :: NUM_ROOF_LAYERS, NUM_WALL_LAYERS, NUM_ROAD_LAYERS   ! urban
 
-   TYPE(WRFU_TimeInterval)                    :: tmpTimeInterval
+   TYPE(WRFU_TimeInterval)                    :: tmpTimeInterval, tmpTimeInterval2
    REAL                                       :: real_time
    LOGICAL                                    :: adapt_step_flag
    LOGICAL                                    :: fill_w_flag
@@ -262,8 +262,10 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
   !   floating point seconds based on a TimeInterval.  So, we will
   !   calculate it here--but, this is not clean!!
   !
-   tmpTimeInterval = domain_get_current_time ( grid ) - domain_get_sim_start_time ( grid )
-   curr_secs = real_time(tmpTimeInterval)
+   tmpTimeInterval  = domain_get_current_time ( grid ) - domain_get_sim_start_time ( grid )
+   tmpTimeInterval2 = domain_get_current_time ( grid ) - domain_get_start_time ( grid )
+   curr_secs  = real_time(tmpTimeInterval)
+   curr_secs2 = real_time(tmpTimeInterval2)
 
    old_dt = grid%dt   ! store old time step for flux averaging code at end of RK loop
 !-----------------------------------------------------------------------------
@@ -649,9 +651,7 @@ BENCH_END(g_set_phys_bc_tim)
                              , gz1oz0 ,br, chklowq           &
                              , cu_act_flag , hol , th_phy ,g_th_phy                 &
                              , pi_phy ,g_pi_phy, p_phy ,g_p_phy, grid%t_phy ,grid%g_t_phy         &
-                             , u_phy ,g_u_phy , v_phy,g_v_phy                            &
                              , dz8w ,g_dz8w , p8w ,g_p8w , t8w ,g_t8w                   &
-                             , rho_phy ,rho ,g_rho                           &
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
@@ -694,10 +694,8 @@ BENCH_END(g_set_phys_bc_tim)
                , psim ,  psim , psih ,  psih , wspd ,  wspd ,         &
                  gz1oz0 ,  gz1oz0 , br ,  br , chklowq,  chklowq      &
                , cu_act_flag , hol ,  hol, th_phy,g_th_phy           &
-               , pi_phy ,g_pi_phy, p_phy ,g_p_phy , grid%t_phy ,grid%g_t_phy , &
-                 u_phy ,g_u_phy , v_phy,g_v_phy                      &
-               , dz8w ,g_dz8w , p8w ,g_p8w , t8w ,g_t8w,             &
-                 rho_phy , rho,g_rho   &
+               , pi_phy ,g_pi_phy, p_phy ,g_p_phy , grid%t_phy ,grid%g_t_phy   &
+               , dz8w ,g_dz8w , p8w ,g_p8w , t8w ,g_t8w              &
                , nba_mij,g_nba_mij, num_nba_mij   &
                , nba_rij,g_nba_rij, num_nba_rij   &
                , ids, ide, jds, jde, kds, kde     &
@@ -3349,7 +3347,7 @@ BENCH_END(g_advance_ppt_tim)
        CALL wrf_debug ( 200 , ' call g_moist_physics_prep' )
 BENCH_START(g_moist_physics_prep_tim)
        CALL g_moist_physics_prep_em( grid%t_2,grid%g_t_2, grid%t_1,            &
-                                   t0, rho,g_rho,                              &
+                                   t0, grid%rho,grid%g_rho,                    &
                                    grid%al,grid%g_al, grid%alb,                &
                                    grid%p,grid%g_p, p8w,g_p8w,                 &
                                    p0, grid%pb,                                &
@@ -3404,7 +3402,7 @@ BENCH_START(g_micro_driver_tim)
       &        ,ITIMESTEP=grid%itimestep                    ,LOWLYR=grid%lowlyr  &
       &        ,P8W=p8w            ,P=p_phy            ,PD=g_p_phy &
       &        ,PI_PHY=pi_phy,PI_PHYD=g_pi_phy                          &
-      &        ,RHO=rho            ,RHOD=g_rho, SPEC_ZONE=grid%spec_zone              &
+      &        ,RHO=grid%rho    ,RHOD=grid%g_rho, SPEC_ZONE=grid%spec_zone              &
       &        ,SR=grid%sr              ,TH=th_phy,THD=g_th_phy                        &
       &        ,refl_10cm=grid%refl_10cm                                  & ! hm, 9/22/09 for refl
       &        ,WARM_RAIN=grid%warm_rain                                  &
@@ -4076,7 +4074,7 @@ BENCH_END(g_bc_2d_tim)
       &             ,REFD_MAX=grid%refd_max                                &
       &             ,refl_10cm=grid%refl_10cm                              &
       &             ,QG_CURR=moist(ims,kms,jms,P_QG)                       &
-      &             ,RHO=rho,PH=grid%ph_2,PHB=grid%phb,G=g                 &
+      &             ,RHO=grid%rho,PH=grid%ph_2,PHB=grid%phb,G=g            &
                   ! Dimension arguments
       &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
       &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
@@ -4134,7 +4132,7 @@ BENCH_END(g_bc_2d_tim)
         &           ,I_RAINC=grid%i_rainc    ,I_RAINNC=grid%i_rainnc       &
         &           ,HFX=grid%hfx   ,SFCEVP=grid%sfcevp    ,LH=grid%lh     &
         &           ,DT=grid%dt      ,SBW=config_flags%spec_bdy_width      &
-        &           ,XTIME=grid%xtime                                      &
+        &           ,XTIME=grid%xtime, CURR_SECS2=curr_secs2               &
                     ! Selection flag
         &           ,DIAG_PRINT=config_flags%diag_print                    &
         &           ,BUCKET_MM=config_flags%bucket_mm                      &

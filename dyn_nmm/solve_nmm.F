@@ -1646,7 +1646,7 @@
      &            ,grid%sfcexc,grid%acsnow,grid%acsnom,grid%snopcx,grid%sice,grid%tg,grid%soiltb          &
      &            ,grid%albsi,grid%icedepth,grid%snowsi                                                   &
      &            ,grid%albase,grid%mxsnal,grid%albedo,grid%sh2o,grid%si,grid%epsr,grid%embck             &
-     &            ,grid%u10,grid%v10,grid%th10,grid%q10,grid%tshltr,grid%qshltr,grid%pshltr               &
+     &            ,grid%u10,grid%v10,grid%uoce,grid%voce,grid%th10,grid%q10,grid%tshltr,grid%qshltr,grid%pshltr               &
      &            ,grid%t2,grid%qsg,grid%qvg,grid%qcg,grid%soilt1,grid%tsnav,grid%smfr3d,grid%keepfr3dflag     &
 #if (NMM_CORE==1)
      &            ,grid%twbs,grid%qwbs,grid%taux,grid%tauy,grid%sfcshx,grid%sfclhx,grid%sfcevp,RTHRATEN                      &
@@ -1675,6 +1675,7 @@
      &            ,GRID%SFCHEADRT,GRID%INFXSRT,GRID%SOLDRAIN           &  !Hydrology, no-op right now
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
+     &            ,IPS,IPE,JPS,JPE,KPS,KPE                             &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
 !                     ***  NOTE  ***

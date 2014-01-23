@@ -716,9 +716,9 @@ CONTAINS
               keepfr  (k) = keepfr3dflag(i,k,j)
            enddo
 
-!              LMAVAIL(I,J)=max(0.00001,min(1.,soilmois(i,1,j)/(REF-QMIN)))
+              LMAVAIL(I,J)=max(0.00001,min(1.,soilm1d(1)/(REF-QMIN)))
 !              LMAVAIL(I,J)=max(0.00001,min(1.,soilmois(i,1,j)/dqm))
-              LMAVAIL(I,J)=max(0.00001,min(1.,soilm1d(1)/dqm))
+!              LMAVAIL(I,J)=max(0.00001,min(1.,soilm1d(1)/dqm))
 
 #if ( NMM_CORE == 1 )
      if(ktau+1.gt.1) then
@@ -727,7 +727,7 @@ CONTAINS
 #endif
 
 ! extract dew from the cloud water at the surface
-              QCG(I,J)=QCG(I,J)-DEW(I,J)/QKMS
+!30july13              QCG(I,J)=QCG(I,J)-DEW(I,J)/QKMS
      endif
 
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
@@ -810,7 +810,7 @@ CONTAINS
         enddo
 
 !tgs add together dew and cloud at the ground surface
-        qcg(i,j)=qcg(i,j)+dew(i,j)/qkms
+!30july13        qcg(i,j)=qcg(i,j)+dew(i,j)/qkms
 
         Z0       (I,J) = ZNT (I,J)
         SFCEXC   (I,J) = TKMS
@@ -1044,7 +1044,7 @@ CONTAINS
    REAL    ::  BSN, XSN                                        , &
                RAINF, SNTH, NEWSN, PRCPMS, NEWSNMS             , &
                T3, UPFLUX, XINET
-   REAL    ::  snhei_crit, keep_snow_albedo
+   REAL    ::  snhei_crit, snhei_crit_newsn, keep_snow_albedo, SNOWFRACnewsn
 
    REAL    ::  RNET,GSWNEW,EMISSN,ZNTSN
    REAL    ::  VEGFRAC
@@ -1075,7 +1075,6 @@ CONTAINS
           enddo
 
         GSWnew=GSW
-
         ALBice=ALB_SNOW_FREE
 !--- sea ice properties
 !--- N.N Zubov "Arctic Ice"
@@ -1182,19 +1181,24 @@ CONTAINS
          ILAND=ISICE
 
          SNHEI_CRIT=0.01601*1.e3/rhosn
+         SNHEI_CRIT_newsn=0.0005*1.e3/rhosn
 !         SNOWFRAC=MIN(1.,SNHEI/SNHEI_CRIT)
          SNOWFRAC=MIN(1.,SNHEI/(2.*SNHEI_CRIT))
-!--- low limit on snow fraction
-!       if(SNOWFRAC.lt.0.01) snowfrac=0.
+         SNOWFRACnewsn=MIN(1.,SNHEI/SNHEI_CRIT_newsn)
 !---        EMISS = 0.98 for snow
+        if(newsn > 0. .and. SNOWFRACnewsn > 0.99) then
+         EMISS = 0.98
+        else
          EMISS = EMISS*(1.-snowfrac)+0.98*snowfrac
+        endif
 
 !-- Set znt for snow from VEGPARM table (snow/ice landuse), except for
 !-- land-use types with higher roughness (forests, urban).
 !5mar12      IF(znt.lt.0.2 .and. snowfrac.gt.0.99) znt=z0tbl(iland)
+       IF(znt.lt.0.2 .and. snowfrac.gt.0.99) znt=z0tbl(iland)
 
          KEEP_SNOW_ALBEDO = 0.
-      IF (NEWSN.GT.0. .and. snowfrac.gt.0.05) KEEP_SNOW_ALBEDO = 1.
+      IF (NEWSN > 0. .and. snowfracnewsn > 0.99) KEEP_SNOW_ALBEDO = 1.
 
 !---  GSWNEW in-coming solar for snow on land or on ice
          GSWNEW=GSWnew/(1.-ALB)
@@ -1221,7 +1225,6 @@ CONTAINS
         ALB = MIN(ALBSN,MAX(ALBSN - 0.1*(soilt - 263.15)/       &
                 (273.15-263.15)*ALBSN, ALBSN - 0.05))
       endif
-
     ELSE
 !----- SNOW on ice
        ALBsn   = MAX(keep_snow_albedo*alb_snow,                 &
@@ -1922,8 +1925,8 @@ CONTAINS
                   (QVATM-QVG)
           EC1 = Q1 * WETCAN
           CMC2MS=CST/DELT
-         if(EC1.gt.CMC2MS) cst=0.
-          EC1=MIN(CMC2MS,EC1)
+         if(EC1.gt.CMC2MS*RAS) cst=0.
+          EC1=MIN(CMC2MS*RAS,EC1)
 !-- moisture flux for coupling with MYJ PBL
           EETA=-QKMS*RAS*(QVATM/(1.+QVATM) - QVG/(1.+QVG))*1.E3
 ! to convert from kg m-2 s-1 to m s-1: 1/rho water=1.e-3************
@@ -1931,6 +1934,7 @@ CONTAINS
 !-- actual moisture flux from RUC LSM
           EETA = (EDIR1 + EC1 + ETT1)*1.E3
         ENDIF
+
           EVAPL=EETA
           S=THDIF(1)*CAP(1)*DZSTOP*(TSO(1)-TSO(2))
           HFX=HFT
@@ -2165,7 +2169,7 @@ CONTAINS
 ! to convert from kg m-2 s-1 to m s-1: 1/rho water=1.e-3************
           QFX= XLS * EETA
 !-- actual moisture flux from RUC LSM
-          EETA = Q1*1.E3
+!          EETA = Q1*1.E3
         ENDIF
           EVAPL=EETA
           S=THDIFICE(1)*CAPICE(1)*DZSTOP*(TSO(1)-TSO(2))
@@ -2811,8 +2815,8 @@ print *, 'TSO before calling SNOWTEMP: ', tso
         EDIR1 = Q1*UMVEG *BETA
         EC1 = Q1 * WETCAN
         CMC2MS=CST/DELT
-       if(EC1.gt.CMC2MS) cst=0.
-        EC1=MIN(CMC2MS,EC1)
+       if(EC1.gt.CMC2MS*RAS) cst=0.
+        EC1=MIN(CMC2MS*RAS,EC1)
 !-- moisture flux for coupling with MYJ PBL
         EETA=-QKMS*RAS*(QVATM/(1.+QVATM) - QVG/(1.+QVG))*1.E3
 !        EETA=-QKMS*RAS*(QVATM/(1.+QVATM) - QSG/(1.+QSG))*1.E3
@@ -3475,7 +3479,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 ! to convert from kg m-2 s-1 to m s-1: 1/rho water=1.e-3************
           QFX= XLVm * EETA
 !-- actual moisture flux from RUC LSM
-          EETA = Q1*1.E3
+!          EETA = Q1*1.E3
           sublim = EETA
         ENDIF
 
@@ -4102,7 +4106,7 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
         ETT1=0.
         EPOT=-QKMS*(QVATM-QSG)
         RHCS=CAP(1)
-        H=MAVAIL
+        H=1.
         IF(DEW.NE.0.)THEN
           DRYCAN=0.
           WETCAN=1.
@@ -4604,8 +4608,8 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 
   191   format (f23.19)
 
-!        TOTLIQ=UMVEG*PRCP-DRIP/DELT-UMVEG*DEW*RAS-SMELT
-        TOTLIQ=UMVEG*PRCP-DRIP/DELT-SMELT
+        TOTLIQ=UMVEG*PRCP-DRIP/DELT-UMVEG*DEW*RAS-SMELT
+!30july13        TOTLIQ=UMVEG*PRCP-DRIP/DELT-SMELT
 
         FLX=TOTLIQ
         INFILTRP=TOTLIQ
@@ -4734,8 +4738,8 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
             SOILMOIS(K)=min(dqm,max(1.e-8,QQ))
            END IF
           END DO
-!           MAVAIL=min(1.,SOILMOIS(1)/(REF-QMIN))
-           MAVAIL=max(.00001,min(1.,SOILMOIS(1)/DQM))
+           MAVAIL=max(.00001,min(1.,SOILMOIS(1)/(REF-QMIN)))
+!           MAVAIL=max(.00001,min(1.,SOILMOIS(1)/DQM))
 
 !        RETURN
 !        END
@@ -5112,10 +5116,11 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
        TS=T1-.05*RN
        QS=(TT(I)+(TT(I)-TT(I+1))*RN)/PP
        GOTO 20
+!   1   PRINT *,'Crash in surface energy budget - STOP'
    1   PRINT *,'     AVOST IN VILKA      '
-!       WRITE(12,*)'AVOST',TN,D1,D2,PP,NSTEP
-       PRINT *,TN,D1,D2,PP,NSTEP,I,TT(i),ii,j,iland,isoil
-       CALL wrf_error_fatal ('     AVOST IN VILKA      ' )
+!       PRINT *,TN,D1,D2,PP,NSTEP,I,TT(i),ii,j,iland,isoil
+       print *,'I,J=',ii,j,'LU_index = ',iland, 'Psfc[hPa] = ',pp, 'Tsfc = ',tn
+       CALL wrf_error_fatal ('  Crash in surface energy budget  ' )
    20  CONTINUE
 !       RETURN
 !       END
@@ -5724,8 +5729,8 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
     ELSE
        if(isltyp(i,j).ne.14 ) then
 !-- land
-           mavail(i,j) = max(0.00001,min(1.,(smois(i,1,j)-qmin)/dqm))
-!           mavail(i,j) = max(0.00001,min(1.,smois(i,1,j)/(ref-qmin)))
+!           mavail(i,j) = max(0.00001,min(1.,(smois(i,1,j)-qmin)/dqm))
+           mavail(i,j) = max(0.00001,min(1.,smois(i,1,j)/(ref-qmin)))
          DO L=1,NZS
 !-- for land points initialize soil ice
          tln=log(TSLB(i,l,j)/273.15)

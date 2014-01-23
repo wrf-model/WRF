@@ -52,6 +52,15 @@ subroutine da_read_pseudo_rad (iv)
       nchan=nchan_ssmis
    else if (sensor_id == 11)  then
       nchan=nchan_airs
+   else if (sensor_id == 16)  then
+   !iasi
+      nchan= 616
+   else if (sensor_id == 21)  then
+   !seviri
+      nchan = 8 
+   else
+      call da_error(__FILE__,__LINE__, &
+           (/"Error in setting up pseudo radiance, unknown sensor_id."/))
    end if
 
    inst = 1    ! single instrument

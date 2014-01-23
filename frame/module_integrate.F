@@ -16,6 +16,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
    USE module_timing
    USE module_utility
    USE module_linked_list2, only : linkedlist_initialize
+   USE module_cpl, ONLY : coupler_on, cpl_snd, cpl_defdomain
 
    IMPLICIT NONE
 
@@ -326,6 +327,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
                IF ( grid%dfi_stage == DFI_STARTFWD ) THEN
                   CALL wrf_dfi_startfwd_init(new_nest)
                ENDIF
+               IF (coupler_on) CALL cpl_defdomain( new_nest ) 
             END DO
             IF ( a_nest_was_opened ) THEN
                CALL set_overlaps ( grid )   ! find overlapping and set pointers
@@ -396,6 +398,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
 #endif
                  END IF
                END DO
+               IF (coupler_on) CALL cpl_snd( grid_ptr ) 
                grid_ptr => grid_ptr%sibling
             END DO
             CALL set_current_grid_ptr( grid )

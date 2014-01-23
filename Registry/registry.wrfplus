@@ -212,7 +212,7 @@ i1       real   a_alpha          ikj     dyn_em      1         -
 i1       real   a_a              ikj     dyn_em      1         -
 i1       real   a_gamma          ikj     dyn_em      1         -
 i1       real   a_c2a            ikj     dyn_em      1         -     -
-i1       real   a_rho            ikj     dyn_em      1         -     -
+state    real   a_rho            ikj     dyn_em      1         -     r      "a_RHO"              "DENSITY"         "Kg m-3"
 i1       real   a_phm            ikj     dyn_em      1         -     -
 i1       real   a_cqu            ikj     dyn_em      1         -     -
 i1       real   a_cqv            ikj     dyn_em      1         -     -
@@ -226,7 +226,7 @@ i1       real   g_alpha          ikj     dyn_em      1         -
 i1       real   g_a              ikj     dyn_em      1         -
 i1       real   g_gamma          ikj     dyn_em      1         -
 i1       real   g_c2a            ikj     dyn_em      1         -     -
-i1       real   g_rho            ikj     dyn_em      1         -     -
+state    real   g_rho            ikj     dyn_em      1         -     r      "g_RHO"              "DENSITY"         "Kg m-3"
 i1       real   g_phm            ikj     dyn_em      1         -     -
 i1       real   g_cqu            ikj     dyn_em      1         -     -
 i1       real   g_cqv            ikj     dyn_em      1         -     -
@@ -380,9 +380,9 @@ state   real    a_smnsmn  ikjf    a_nba_rij		1       -       -       "a_smnsmn" 
 i1       real  a_th_phy          ikj      misc        1         -
 i1       real  a_pi_phy          ikj      misc        1         -
 i1       real  a_p_phy           ikj      misc        1         -
-state    real  a_t_phy           ikj      misc        1         -       r      "g_T_PHY"                        "Temperature"         "K"           
-i1       real  a_u_phy           ikj      misc        1         -
-i1       real  a_v_phy           ikj      misc        1         -
+state    real  a_t_phy           ikj      misc        1         -       r      "a_T_PHY"                        "Temperature"         "K"           
+state    real  a_u_phy           ikj      misc        1         -       r      "a_U_PHY"                        "x-wind component at mass point"         "m s-1"
+state    real  a_v_phy           ikj      misc        1         -       r      "a_V_PHY"                        "y-wind component at mass point"         "m s-1"
 i1       real  a_dz8w            ikj      misc        1         Z
 i1       real  a_p8w             ikj      misc        1         Z
 i1       real  a_t8w             ikj      misc        1         Z
@@ -391,9 +391,9 @@ i1       real  a_rho_phy         ikj      misc        1         -
 i1       real  g_th_phy          ikj      misc        1         -
 i1       real  g_pi_phy          ikj      misc        1         -
 i1       real  g_p_phy           ikj      misc        1         -
-state    real  g_t_phy           ikj      misc        1         -       r      "a_T_PHY"                        "Temperature"         "K"           
-i1       real  g_u_phy           ikj      misc        1         -
-i1       real  g_v_phy           ikj      misc        1         -
+state    real  g_t_phy           ikj      misc        1         -       r      "g_T_PHY"                        "Temperature"         "K"           
+state    real  g_u_phy           ikj      misc        1         -       r      "g_U_PHY"                        "x-wind component at mass point"         "m s-1"
+state    real  g_v_phy           ikj      misc        1         -       r      "g_V_PHY"                        "y-wind component at mass point"         "m s-1"
 i1       real  g_dz8w            ikj      misc        1         Z
 i1       real  g_p8w             ikj      misc        1         Z
 i1       real  g_t8w             ikj      misc        1         Z

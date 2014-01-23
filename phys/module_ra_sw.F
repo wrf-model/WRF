@@ -17,7 +17,8 @@ CONTAINS
                     RADFRQ,ICLOUD,DEGRAD,warm_rain,               &
                     ids,ide, jds,jde, kds,kde,                    & 
                     ims,ime, jms,jme, kms,kme,                    &
-                    its,ite, jts,jte, kts,kte                     &
+                    its,ite, jts,jte, kts,kte,                    &
+                    coszen,julian                                 & ! jararias, 14/08/2013
                     )
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -59,7 +60,9 @@ CONTAINS
 !
    INTEGER, INTENT(IN  ) ::                               JULDAY  
 
-
+   ! --- jararias 14/08/2013
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN) :: COSZEN
+   REAL, OPTIONAL, INTENT(IN) :: JULIAN
 
 !
 ! Optional
@@ -221,7 +224,8 @@ CONTAINS
                        XTIME,GMT,RHO01D,DZ,                        &
                        R,CP,G,DECLIN,SOLCON,                       &
                        RADFRQ,ICLOUD,DEGRAD,aer_dry1,aer_water1,   &
-                       kts,kte      )
+                       kts,kte,                                    &
+                       coszen(i,j),julian                          ) ! jararias, 14/08/2013
          GSW(I,J)=GSW0
          DO K=kts,kte          
             NK=kme-1-K+kms
@@ -234,12 +238,13 @@ CONTAINS
    END SUBROUTINE SWRAD
 
 !------------------------------------------------------------------
-   SUBROUTINE SWPARA(TTEN,GSW,XLAT,XLONG,ALBEDO,                  &
-                     T,QV,QC,QR,QI,QS,QG,P,            		  &
-                     XTIME, GMT, RHO0, DZ,             		  &
-                     R,CP,G,DECLIN,SOLCON,             		  &
-                     RADFRQ,ICLOUD,DEGRAD,aer_dry1,aer_water1,    &
-                     kts,kte,slope_rad,shadow,slp_azi,slope       )
+   SUBROUTINE SWPARA(TTEN,GSW,XLAT,XLONG,ALBEDO,               &
+                     T,QV,QC,QR,QI,QS,QG,P,                    &
+                     XTIME, GMT, RHO0, DZ,                     &
+                     R,CP,G,DECLIN,SOLCON,                     &
+                     RADFRQ,ICLOUD,DEGRAD,aer_dry1,aer_water1, &
+                     kts,kte,coszen,julian,                    &
+                     slope_rad,shadow,slp_azi,slope            )
 !------------------------------------------------------------------
 !     TO CALCULATE SHORT-WAVE ABSORPTION AND SCATTERING IN CLEAR
 !     AIR AND REFLECTION AND ABSORPTION IN CLOUD LAYERS (STEPHENS,
@@ -270,6 +275,9 @@ CONTAINS
    REAL, INTENT(IN  )   ::               XTIME,GMT,R,CP,G,DECLIN, &
                                         SOLCON,XLAT,XLONG,ALBEDO, &
                                                   RADFRQ, DEGRAD
+
+   REAL, OPTIONAL, INTENT(IN) :: COSZEN, JULIAN ! jararias, 14/08/2013
+
 !
    INTEGER, INTENT(IN) :: icloud
    REAL, INTENT(INOUT)  ::                                   GSW
@@ -317,21 +325,30 @@ CONTAINS
       REAL :: wgm, xalb, xi, xsca, xt24,xmu,xabsc,trans0,yj
       REAL :: xxlat,ww
       INTEGER :: iil,ii,jjl,ju,k,iu
+      REAL :: da,eot ! jararias 14/08/2013
 
 ! For slope-dependent radiation
 
    REAL :: diffuse_frac, corr_fac, csza_slp
 
-
-      GSW=0.0
-      bext340=5.E-6
-      bexth2o=5.E-6
-      SOLTOP=SOLCON
-      XT24=MOD(XTIME+RADFRQ*0.5,1440.)
-      TLOCTM=GMT+XT24/60.+XLONG/15.
-      HRANG=15.*(TLOCTM-12.)*DEGRAD
-      XXLAT=XLAT*DEGRAD
-      CSZA=SIN(XXLAT)*SIN(DECLIN)+COS(XXLAT)*COS(DECLIN)*COS(HRANG)
+       GSW=0.0
+       bext340=5.E-6
+       bexth2o=5.E-6
+       SOLTOP=SOLCON
+       ! jararias, 14/08/2013
+       if (present(coszen)) then
+          csza=coszen
+       else
+!         da=6.2831853071795862*(julian-1)/365.
+!         eot=(0.000075+0.001868*cos(da)-0.032077*sin(da) &
+!            -0.014615*cos(2*da)-0.04089*sin(2*da))*(229.18)
+          xt24 = mod(xtime+radfrq*0.5,1440.)+eot
+          tloctm = gmt + xt24/60. + xlong/15.
+          hrang = 15. * (tloctm-12.) * degrad
+          xxlat = xlat * degrad
+          csza = sin(xxlat) * sin(declin) &
+               + cos(xxlat) * cos(declin) * cos(hrang)
+       end if
 
 !     RETURN IF NIGHT        
       IF(CSZA.LE.1.E-9)GOTO 7

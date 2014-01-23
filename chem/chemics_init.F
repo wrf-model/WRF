@@ -358,11 +358,11 @@ call wrf_message("**************************************************************
       message_txt = " ERROR: CHEM_INIT: Chemistry routines require USGS or MODIS_NOAH land use maps. Need to change land use option."
       call wrf_error_fatal( trim(message_txt) )
     ELSE
-      IF (trim(mminlu_loc) == 'USGS' .and. grid%num_land_cat /= 24 ) THEN
-        message_txt = " ERROR: CHEM_INIT: USGS land use map should have 24 catagories."
+      IF (trim(mminlu_loc) == 'USGS' .and. grid%num_land_cat <= 23 ) THEN
+        message_txt = " ERROR: CHEM_INIT: USGS land use map should have 24 or more catagories."
         call wrf_error_fatal( trim(message_txt) )
-      ELSEIF (trim(mminlu_loc) == 'MODIFIED_IGBP_MODIS_NOAH' .and. grid%num_land_cat /= 20 ) THEN
-        message_txt = " ERROR: CHEM_INIT: MODIS_NOAH land use map should have 20 catagories."
+      ELSEIF (trim(mminlu_loc) == 'MODIFIED_IGBP_MODIS_NOAH' .and. grid%num_land_cat <= 19 ) THEN
+        message_txt = " ERROR: CHEM_INIT: MODIS_NOAH land use map should have 20 or more catagories."
         call wrf_error_fatal( trim(message_txt) )
       ENDIF
     ENDIF

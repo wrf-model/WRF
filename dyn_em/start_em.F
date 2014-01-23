@@ -107,6 +107,9 @@
 ! Define variables local (topo_wind local vars)
    REAL    :: alpha, vfac
 
+!..Need to fill special height var for setting up initial condition.  G. Thompson
+   REAL, ALLOCATABLE, DIMENSION(:,:,:) :: z_at_q
+
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
@@ -122,6 +125,7 @@
 #ifndef WRF_CHEM
          ALLOCATE(CLDFRA_OLD(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CLDFRA_OLD = 0.
 #endif
+   ALLOCATE(z_at_q(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; z_at_q = 0.
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
    IF ( ( MOD (ide-ids,config_flags%parent_grid_ratio) .NE. 0 ) .OR. &
@@ -593,6 +597,14 @@
 
    ENDIF
 
+   DO j=jts,min(jte,jde-1)
+      DO k = kts,kte
+         DO i = its, min(ite,ide-1)
+            z_at_q(i,k,j)=(grid%ph_2(i,k,j)+grid%phb(i,k,j))/g
+         ENDDO
+      ENDDO
+   ENDDO
+
    IF ( grid%press_adj .and. ( grid%id .NE. 1 ) .AND. .NOT. ( config_flags%restart ) .AND. &
        ( ( config_flags%input_from_hires ) .OR. ( config_flags%input_from_file ) ) ) THEN
       DO j = jts, MIN(jte,jde-1)
@@ -695,6 +707,13 @@
 ! Phy_init is not necessarily thread-safe; do not multi-thread this loop.
 ! The tiling is to handle the fact that we may be masking off part of the computation.
 !
+
+#ifdef DM_PARALLEL
+if(config_flags%sf_surface_physics.eq.NOAHMPSCHEME.and.config_flags%opt_run.eq.5)then
+#  include "HALO_EM_HYDRO_NOAHMP_INIT.inc"
+endif
+#endif
+
    DO ij = 1, grid%num_tiles
 
 !tgs do not need physics initialization for backward DFI integration
@@ -706,7 +725,7 @@
                       grid%p_top, grid%tsk, grid%RADT,grid%BLDT,grid%CUDT, MPDT, &
                       grid%rucuten, grid%rvcuten, grid%rthcuten,             &
                       grid%rqvcuten, grid%rqrcuten, grid%rqccuten,           &
-                      grid%rqscuten, grid%rqicuten,  &
+                      grid%rqscuten, grid%rqicuten,                          &
                       grid%rushten, grid%rvshten, grid%rthshten,             &
                       grid%rqvshten, grid%rqrshten, grid%rqcshten,           &
                       grid%rqsshten, grid%rqishten, grid%rqgshten,           &
@@ -716,6 +735,7 @@
                       grid%stepbl,grid%stepra,grid%stepcu,                   &
                       grid%w0avg, grid%rainnc, grid%rainc, grid%raincv, grid%rainncv,  &
                       grid%snownc, grid%snowncv, grid%graupelnc, grid%graupelncv,  &
+                      z_at_q, grid%qnwfa2d, scalar(ims,kms,jms,1), num_scalar,         & ! G. Thompson
                       grid%re_cloud, grid%re_ice, grid%re_snow,         & ! G. Thompson
                       grid%has_reqc, grid%has_reqi, grid%has_reqs,      & ! G. Thompson
                       grid%nca,grid%swrad_scat,                    &
@@ -734,7 +754,7 @@
                       grid%landuse_ISICE, grid%landuse_LUCATS,            &
                       grid%landuse_LUSEAS, grid%landuse_ISN,              &
                       grid%lu_state,                                      &
-                      grid%xlat,grid%xlong,grid%albedo,grid%albbck,grid%GMT,grid%JULYR,grid%JULDAY,     &
+                      grid%xlat,grid%xlong,grid%xlong_u,grid%xlat_v,grid%albedo,grid%albbck,grid%GMT,grid%JULYR,grid%JULDAY,     &
                       grid%levsiz, num_ozmixm, num_aerosolc, grid%paerlev,  &
                       grid%alevsiz, grid%no_src_types,                      &
                       grid%tmn,grid%xland,grid%znt,grid%z0,grid%ust,grid%mol,grid%pblh,grid%tke_pbl,    &
@@ -777,6 +797,10 @@
                       grid%STMASSXY, grid%WOODXY, grid%STBLCPXY, grid%FASTCPXY,                 &   ! Optional Noah-MP
                       grid%XSAIXY,                                                              &   ! Optional Noah-MP
                       grid%T2MVXY, grid%T2MBXY, grid%CHSTARXY,                                  &   ! Optional Noah-MP
+                      grid%SMOISEQ  ,grid%SMCWTDXY ,grid%RECHXY, grid%DEEPRECHXY, grid%AREAXY,  & ! Optional Noah-MP
+                      config_flags%wtddt ,grid%stepwtd ,grid%QRFSXY ,grid%QSPRINGSXY ,grid%QSLATXY, & ! Optional Noah-MP
+                      grid%FDEPTHXY, grid%RIVERBEDXY, grid%EQZWT, grid%RIVERCONDXY, grid%PEXPXY, & ! Optional Noah-MP
+                      grid%msftx, grid%msfty,                              &
                       grid%DZR, grid%DZB, grid%DZG,                          & !Optional urban
                       grid%TR_URB2D,grid%TB_URB2D,grid%TG_URB2D,grid%TC_URB2D,    & !Optional urban
                       grid%QC_URB2D, grid%XXXR_URB2D,grid%XXXB_URB2D,        & !Optional urban
@@ -797,6 +821,13 @@
                       grid%B_Q_BEP,grid%B_E_BEP,grid%DLG_BEP,                          & !multi-layer urban
                       grid%DL_U_BEP,grid%SF_BEP,grid%VL_BEP,                           & !multi-layer urban
                       grid%TML,grid%T0ML,grid%HML,grid%H0ML,grid%HUML,grid%HVML,grid%TMOML,     & !Optional oml
+                      grid%lakedepth2d,  grid%savedtke12d,  grid%snowdp2d,   grid%h2osno2d,       & !lake
+                      grid%snl2d,        grid%t_grnd2d,     grid%t_lake3d,   grid%lake_icefrac3d, & !lake
+                      grid%z_lake3d,     grid%dz_lake3d,    grid%t_soisno3d, grid%h2osoi_ice3d,   & !lake
+                      grid%h2osoi_liq3d, grid%h2osoi_vol3d, grid%z3d,        grid%dz3d,           & !lake
+                      grid%zi3d,         grid%watsat3d,     grid%csol3d,     grid%tkmg3d,         & !lake
+                      grid%tkdry3d,      grid%tksatu3d,     grid%lake2d,                            & !lake
+                      config_flags%domain_lakedepth,        config_flags%lakeminalt, grid%lake_depth,     & !lake
                       grid%TSK_SAVE,                                                   & !Optional fractional seaice
               grid%numc,grid%nump,grid%snl,grid%snowdp,&   ! start of CLM variables
               grid%wtc,grid%wtp,&
@@ -862,6 +893,7 @@
                       config_flags%nssl_rho_qh, config_flags%nssl_rho_qhl,    &
                       config_flags%nssl_rho_qs                                &
                       ,grid%RQCNCUTEN, grid%RQINCUTEN,grid%rliq             &      !mchen add for cammpmg
+                      ,grid%cldfra_dp,grid%cldfra_sh                        & ! ckay for subgrid cloud
                       ,grid%te_temf,grid%cf3d_temf,grid%wm_temf        & ! WA
                       ,grid%massflux_EDKF, grid%entr_EDKF, grid%detr_EDKF                & 
                       ,grid%thl_up,grid%thv_up,grid%rt_up                                &
@@ -1011,6 +1043,9 @@
 #  include "PERIOD_BDY_EM_TKE.inc"
 #  include "PERIOD_BDY_EM_SCALAR.inc"
 #  include "PERIOD_BDY_EM_CHEM.inc"
+if(config_flags%sf_surface_physics.eq.NOAHMPSCHEME.and.config_flags%opt_run.eq.5)then
+#  include "HALO_EM_HYDRO_NOAHMP_INIT.inc"
+endif
 #endif
 
 
@@ -1519,6 +1554,8 @@
 #  include "PERIOD_BDY_EM_SCALAR.inc"
 #  include "PERIOD_BDY_EM_CHEM.inc"
 #endif
+
+DEALLOCATE(z_at_q)
 
    IF (config_flags%p_lev_diags == PRESS_DIAGS ) THEN
     CALL wrf_debug ( 200 , ' PLD: pressure level diags' )

@@ -64,12 +64,22 @@ CONTAINS
      &          ,shgxy    ,shcxy     ,shbxy     ,evgxy     ,evbxy     ,ghvxy        &
      &          ,ghbxy    ,irgxy     ,ircxy     ,irbxy     ,trxy      ,evcxy        &
      &          ,chleafxy ,chucxy    ,chv2xy    ,chb2xy    ,chstarxy                &                      
+           ! Noah-MP ground water
+     &          ,smcwtdxy ,rechxy   ,deeprechxy,fdepthxy,areaxy   ,rivercondxy, riverbedxy &
+     &          ,eqzwt    ,pexpxy   ,qrfxy    ,qspringxy,qslatxy  ,qrfsxy   ,qspringsxy &
+     &          ,smoiseq  ,wtddt    ,stepwtd                                            &
            ! Noah UA changes
      &          ,ua_phys,flx4,fvb,fbur,fgsn                                  &
 #if (EM_CORE==1)
      &          ,ch,tsq,qsq,cov,Sh3d,el_pbl,bl_mynn_cloudpdf          & ! MYNN
      &          ,fgdp,dfgdp,vdfg,grav_settling                        & ! Katata - fog dep
 #endif
+     &          ,lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d       & !lake
+     &          ,snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d & !lake
+     &          ,z_lake3d,     dz_lake3d,    t_soisno3d, h2osoi_ice3d   & !lake
+     &          ,h2osoi_liq3d, h2osoi_vol3d, z3d,        dz3d           & !lake
+     &          ,zi3d,         watsat3d,     csol3d,     tkmg3d         & !lake
+     &          ,tkdry3d,      tksatu3d,     LakeModel,  lakeminalt     & !lake
             !  cyl ocean variable
                 ,OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH,OM_ML,OM_LON          &
      &          ,OM_LAT,okms,okme,rdx,rdy,msfu,msfv,msft              &
@@ -279,6 +289,7 @@ CONTAINS
    USE module_sf_gfs
    USE module_sf_noahdrv, only : lsm
    USE module_sf_noahmpdrv, only : noahmplsm
+   USE module_sf_noahmp_groundwater
    USE module_sf_noah_seaice_drv
 #ifdef WRF_USE_CLM
    USE module_sf_clm
@@ -309,6 +320,7 @@ CONTAINS
    USE module_sf_sfcdiags_ruclsm
    USE module_sf_sstskin
    USE module_sf_tmnupdate
+   USE module_sf_lake
    USE module_cpl, ONLY : coupler_on, cpl_rcv
 !
 !  This driver calls subroutines for the surface parameterizations.
@@ -513,6 +525,8 @@ CONTAINS
 
    INTEGER, INTENT(IN)::   NLCAT, mosaic_lu, mosaic_soil
    INTEGER, INTENT(IN)::   NSCAT
+   INTEGER,  INTENT(IN )  :: LakeModel
+   REAL,     INTENT(IN)   :: lakeminalt
 
    INTEGER, INTENT(IN)::   history_interval
 
@@ -774,6 +788,12 @@ CONTAINS
         aparxy, psnxy, savxy, sagxy
    REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) ::  rssunxy, rsshaxy, bgapxy,wgapxy, &
         tgvxy ,tgbxy, chvxy, chbxy,SHGXY,SHCXY,SHBXY,EVGXY,EVBXY,GHVXY,GHBXY,IRGXY,IRCXY,IRBXY,TRXY,EVCXY,CHLEAFXY,CHUCXY,CHV2XY,CHB2XY,chstarxy                         
+
+   REAL, OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(INOUT) ::  smcwtdxy   ,rechxy   ,deeprechxy,  fdepthxy, areaxy,  &
+       rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qspringxy,qslatxy,qrfsxy,qspringsxy                         
+   REAL, OPTIONAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::  smoiseq
+   REAL, OPTIONAL, INTENT(IN) :: wtddt
+   INTEGER, OPTIONAL, INTENT(IN )  :: stepwtd
 
 ! Noah UA changes
    LOGICAL, INTENT(IN) :: ua_phys
@@ -1123,6 +1143,33 @@ CONTAINS
      REAL, DIMENSION( ims:ime, jms:jme ) :: UST_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: QZ0_SEA
      REAL, DIMENSION( ims:ime, jms:jme ) :: TSK_LOCAL
+    ! lake varibles ,inout(14)
+    real,    dimension(ims:ime,jms:jme ),intent(inout)                      :: savedtke12d
+    real,    dimension(ims:ime,jms:jme ),intent(inout)                      :: snowdp2d,       &
+                                                                               h2osno2d,       &
+                                                                               snl2d,          &
+                                                                               t_grnd2d
+ 
+    real,    dimension( ims:ime,1:nlevlake, jms:jme ),INTENT(inout)          :: t_lake3d,       &
+                                                                               lake_icefrac3d
+    real,    dimension( ims:ime,-nlevsnow+1:nlevsoil, jms:jme ),INTENT(inout) :: t_soisno3d,     &
+                                                                               h2osoi_ice3d,   &
+                                                                               h2osoi_liq3d,   &
+                                                                               h2osoi_vol3d,   &
+                                                                               z3d,            &
+                                                                               dz3d
+    real,    dimension( ims:ime,-nlevsnow+0:nlevsoil, jms:jme ),INTENT(inout) :: zi3d
+    ! in(8)
+    real,    dimension( ims:ime,1:nlevlake, jms:jme ),INTENT(in)             :: z_lake3d,       &
+                                                                               dz_lake3d
+    real,    dimension( ims:ime,1:nlevsoil, jms:jme ),INTENT(in)             :: watsat3d,       &
+                                                                               csol3d,         &
+                                                                               tkmg3d,         &
+                                                                               tkdry3d,        &
+                                                                               tksatu3d
+    real,    dimension(ims:ime,jms:jme ),intent(in)                         :: lakedepth2d
+!    logical, dimension(ims:ime,jms:jme ),intent(in)                         :: lake 
+ 
 !
    REAL   :: xice_threshold
 
@@ -2449,6 +2496,23 @@ CONTAINS
 !          PRESENT(g_urb2d)   .AND. PRESENT(rn_urb2d) .AND.           &
 !          PRESENT(ts_urb2d)                          .AND.           &
 !          PRESENT(frc_urb2d) .AND. PRESENT(utype_urb2d)   .AND.      &
+           PRESENT(smcwtdxy)       .AND.                              &
+           PRESENT(rechxy)         .AND.                              &   
+           PRESENT(deeprechxy)     .AND.                              &
+           PRESENT(fdepthxy)       .AND.                              &
+           PRESENT(areaxy)         .AND.                              &   
+           PRESENT(rivercondxy)    .AND.                              &
+           PRESENT(riverbedxy)     .AND.                              & 
+           PRESENT(eqzwt)          .AND.                              &    
+           PRESENT(pexpxy)         .AND.                              &   
+           PRESENT(qrfxy)          .AND.                              &    
+           PRESENT(qspringxy)      .AND.                              &
+           PRESENT(qslatxy)        .AND.                              &  
+           PRESENT(qrfsxy)         .AND.                              &   
+           PRESENT(qspringsxy)     .AND.                              & 
+           PRESENT(smoiseq)        .AND.                              &  
+           PRESENT(wtddt)          .AND.                              &    
+           PRESENT(stepwtd)        .AND.                              &
                                                       .TRUE. ) THEN
 !------------------------------------------------------------------
          IF( PRESENT(sr) ) THEN
@@ -2514,6 +2578,7 @@ CONTAINS
 		QSNOWXY, WSLAKEXY,    ZWTXY,     WAXY,      WTXY,     TSNOXY, &
 		ZSNSOXY,  SNICEXY,  SNLIQXY, LFMASSXY,  RTMASSXY,   STMASSXY, &
 		 WOODXY, STBLCPXY, FASTCPXY,      LAI,    XSAIXY,    TAUSSXY, &
+	        SMOISEQ, SMCWTDXY,DEEPRECHXY,  RECHXY,                        & ! IN/OUT Noah MP only
 	         T2MVXY,   T2MBXY,   Q2MVXY,   Q2MBXY,                        &
                  TRADXY,    NEEXY,    GPPXY,    NPPXY,    FVEGXY,    RUNSFXY, &
 	        RUNSBXY,   ECANXY,   EDIRXY,  ETRANXY,     FSAXY,     FIRAXY, &
@@ -2528,6 +2593,23 @@ CONTAINS
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
+
+  if(iopt_run.eq.5.and.mod(itimestep,STEPWTD).eq.0)then
+           CALL wrf_debug( 100, 'calling WTABLE' )
+
+!gmm update wtable from lateral flow and shed water to rivers
+
+           CALL WTABLE_mmf_noahmp(num_soil_layers,xland,xice, xice_threshold, isice,        &
+                                  isltyp,smoiseq,dzs,wtddt,                                 &
+                                  fdepthxy,areaxy,ht,isurban,ivgtyp,                         &
+                                  rivercondxy,riverbedxy,eqzwt,pexpxy,                      &
+                                  smois,sh2o,smcwtdxy,zwtxy,qrfxy,deeprechxy,qspringxy,     &
+                                  qslatxy,qrfsxy,qspringsxy,rechxy,                        &
+                                  ids,ide, jds,jde, kds,kde,                             &
+                                  ims,ime, jms,jme, kms,kme,                             &
+                                  i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte )
+
+  endif
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
               &            SEAICE_THICKNESS_DEFAULT, SEAICE_SNOWDEPTH_OPT,             &
@@ -3366,6 +3448,36 @@ CONTAINS
      !$OMP END PARALLEL DO
    ENDIF
 #endif
+! adding a lake model -- 07/02/2010
+   IF ( LakeModel == 1 ) THEN
+ 
+      CALL wrf_debug( 100, 'Call LakeModel' )
+ 
+      DO ij = 1 , num_tiles
+ 
+         CALL Lake(  t_phy        ,p8w            ,dz8w         ,qv_curr         ,&  !i
+                     u_phy        ,v_phy          , glw         ,emiss           ,&
+                     rainbl       ,dtbl           ,swdown       ,albedo          ,&
+                     xlat_urb2d   ,z_lake3d       ,dz_lake3d    ,lakedepth2d     ,&
+                     watsat3d     ,csol3d         ,tkmg3d       ,tkdry3d         ,&
+                     tksatu3d     ,ivgtyp         ,ht           ,xland           ,&
+                     lakeminalt                                                  ,&
+                     ids          ,ide            ,jds          ,jde             ,&
+                     kds          ,kde            ,ims          ,ime             ,&
+                     jms          ,jme            ,kms          ,kme             ,&
+                     i_start(ij)  ,i_end(ij)      ,j_start(ij)  ,j_end(ij)       ,&
+                     kts          ,kte                                           ,&
+                     h2osno2d     ,snowdp2d       ,snl2d        ,z3d             ,&  !h
+                     dz3d         ,zi3d           ,h2osoi_vol3d ,h2osoi_liq3d    ,&
+                     h2osoi_ice3d ,t_grnd2d       ,t_soisno3d   ,t_lake3d        ,&
+                     savedtke12d  ,lake_icefrac3d                                ,&
+                     hfx          ,lh             ,grdflx       ,tsk             ,&  !o
+                     qfx          ,t2             ,th2          ,q2 )
+ 
+ 
+      ENDDO
+ 
+   ENDIF
 
 ! Reset RAINBL in mm (Accumulation between PBL calls)
 

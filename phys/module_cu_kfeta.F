@@ -8,6 +8,11 @@ MODULE module_cu_kfeta
 !   the cumulus parameterization for tropical cyclone prediction: 
 !   Convection trigger. Atmospheric Research, 92, 190 - 211.
 !
+!ckay
+!  WRF v3.5 with diagnosed deep and shallow KF cloud fraction using 
+!  CAM3-CAM5 methodology, along with captured liquid and ice condensates.
+!    JAH & KA (U.S. EPA) -- May 2013
+!
 !--------------------------------------------------------------------
 ! Lookup table variables:
       INTEGER, PARAMETER :: KFNT=250,KFNP=220
@@ -37,6 +42,9 @@ CONTAINS
              ,F_QV    ,F_QC    ,F_QR    ,F_QI    ,F_QS       &
              ,RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN            &
              ,RQICUTEN,RQSCUTEN, RQVFTEN                     &
+!ckay
+             ,cldfra_dp_KF,cldfra_sh_KF                      &
+             ,qc_KF,qi_KF                                    &
                                                              )
 !
 !-------------------------------------------------------------
@@ -72,7 +80,7 @@ CONTAINS
 !
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         , &
           INTENT(INOUT) ::                                   &
-                                                      W0AVG
+                                                      W0AVG   
 
    REAL,  INTENT(IN   ) :: DT, DX
    REAL,  INTENT(IN   ) :: CUDT
@@ -122,6 +130,13 @@ CONTAINS
                                                   ,F_QI      &
                                                   ,F_QS
 
+!ckay
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         , &
+          INTENT(INOUT) ::                                   &
+                                               cldfra_dp_KF, &
+                                               cldfra_sh_KF, &
+                                                      qc_KF, &
+                                                      qi_KF
 
 ! LOCAL VARS
 
@@ -380,6 +395,11 @@ CONTAINS
                DQRDT(k)=0.
                DQSDT(k)=0.
                DTDT(k)=0.
+!ckay
+               cldfra_dp_KF(I,k,J)=0.
+               cldfra_sh_KF(I,k,J)=0.
+               qc_KF(I,k,J)=0.
+               qi_KF(I,k,J)=0.
             ENDDO
             RAINCV(I,J)=0.
             CUTOP(I,J)=KTS
@@ -418,7 +438,10 @@ CONTAINS
                  CUTOP,CUBOT,CUDT,                  &
                  ids,ide, jds,jde, kds,kde,         &
                  ims,ime, jms,jme, kms,kme,         &
-                 its,ite, jts,jte, kts,kte)
+                 its,ite, jts,jte, kts,kte,         &
+!ckay
+                 cldfra_dp_KF,cldfra_sh_KF,         &
+                 qc_KF,qi_KF                        )
             IF(PRESENT(rthcuten).AND.PRESENT(rqvcuten)) THEN
               DO K=kts,kte
                  RTHCUTEN(I,K,J)=DTDT(K)/pi(I,K,J)
@@ -480,7 +503,10 @@ CONTAINS
                       CUTOP,CUBOT,CUDT,                    &
                       ids,ide, jds,jde, kds,kde,           &
                       ims,ime, jms,jme, kms,kme,           &
-                      its,ite, jts,jte, kts,kte)
+                      its,ite, jts,jte, kts,kte,           &
+!ckay
+                      cldfra_dp_KF,cldfra_sh_KF,           &
+                      qc_KF,qi_KF                          )
 !-----------------------------------------------------------
 !***** The KF scheme that is currently used in experimental runs of EMCs 
 !***** Eta model....jsk 8/00
@@ -527,6 +553,13 @@ CONTAINS
 
       REAL,    DIMENSION( ims:ime , jms:jme ),             &
             INTENT(INOUT) ::                          NCA
+
+!ckay
+      REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),      &
+            INTENT(INOUT) ::                 cldfra_dp_KF, &
+                                             cldfra_sh_KF, &
+                                                    qc_KF, &
+                                                    qi_KF
 
       REAL, DIMENSION( ims:ime , jms:jme ),                &
             INTENT(INOUT) ::                       RAINCV
@@ -599,6 +632,8 @@ CONTAINS
       INTEGER :: INDLU,NU,NUCHM,NNN,KLFS
    REAL    :: CHMIN,PM15,CHMAX,DTRH,RAD,DPPP
    REAL    :: TVDIFF,DTTOT,ABSOMG,ABSOMGTC,FRDP
+!ckay
+   REAL    :: xcldfra,UMF_new
 
       INTEGER :: KX,K,KL
 !
@@ -1234,6 +1269,11 @@ updraft:    DO NK=K,KL-1
             ELSEIF(TLCL.LT.273.)THEN
               CHMIN = 2.E3
             ENDIF
+!ckay
+            DO NK=K,LTOP
+              qc_KF(I,NK,J)=QLIQ(NK)
+              qi_KF(I,NK,J)=QICE(NK)
+            END DO
 
 !     
 !...If cloud top height is less than the specified minimum for deep 
@@ -1261,15 +1301,28 @@ updraft:    DO NK=K,KL-1
                 DETIC(NK)=0.
                 PPTLIQ(NK)=0.
                 PPTICE(NK)=0.
+!ckay
+                cldfra_dp_KF(I,NK,J)=0.
+                cldfra_sh_KF(I,NK,J)=0.
+                qc_KF(I,NK,J)=0.
+                qi_KF(I,NK,J)=0.
               ENDDO
 !        
             ELSEIF(CLDHGT(LC).GT.CHMIN .and. ABE.GT.1)THEN      ! Deep Convection allowed
               ISHALL=0
+!ckay
+              DO NK=K,LTOP
+                cldfra_sh_KF(I,NK,J)=0.
+              ENDDO
               EXIT usl
             ELSE
 !
 !...TO DISALLOW SHALLOW CONVECTION, COMMENT OUT NEXT LINE !!!!!!!!
               ISHALL = 1
+!ckay
+              DO NK=K,LTOP
+                cldfra_dp_KF(I,NK,J)=0.
+              ENDDO
               IF(NU.EQ.NUCHM)THEN
                 EXIT usl               ! Shallow Convection from this layer
               ELSE
@@ -1282,6 +1335,11 @@ updraft:    DO NK=K,KL-1
                   DETIC(NK)=0.
                   PPTLIQ(NK)=0.
                   PPTICE(NK)=0.
+!ckay
+                  cldfra_dp_KF(I,NK,J)=0.
+                  cldfra_sh_KF(I,NK,J)=0.
+                  qc_KF(I,NK,J)=0.
+                  qi_KF(I,NK,J)=0.
                 ENDDO
               ENDIF
             ENDIF
@@ -1369,6 +1427,11 @@ updraft:    DO NK=K,KL-1
         UMF(NK)=0.
         WU(NK)=0.
         UER(NK)=0.
+!ckay
+        cldfra_dp_KF(I,NK,J)=0.
+        cldfra_sh_KF(I,NK,J)=0.
+        qc_KF(I,NK,J)=0.
+        qi_KF(I,NK,J)=0.
       ENDIF
       UDR(NK)=0.
       QDT(NK)=0.
@@ -1407,6 +1470,11 @@ updraft:    DO NK=K,KL-1
           TU(NK)=0.
           QU(NK)=0.
           WU(NK)=0.
+!ckay
+          cldfra_dp_KF(I,NK,J)=0.
+          cldfra_sh_KF(I,NK,J)=0.
+          qc_KF(I,NK,J)=0.
+          qi_KF(I,NK,J)=0.
         ENDIF
         THTA0(NK)=0.
         THTAU(NK)=0.
@@ -2125,6 +2193,23 @@ iter:     DO NCOUNT=1,10
 !     
           ENDIF
         ENDDO iter
+!ckay
+! get the cloud fraction for layer NK+1=NK1
+        IF(ISHALL.EQ.1) THEN
+          DO NK=KLCL-1, LTOP1
+            UMF_new = UMF(NK)/DXSQ
+            xcldfra = 0.07*alog(1.+(500.*UMF_new))
+            xcldfra = amax1(0.01,xcldfra)
+            cldfra_sh_KF(I,NK,J) = amin1(0.2,xcldfra)
+          ENDDO
+        ELSE 
+          DO NK=KLCL-1, LTOP1
+            UMF_new = UMF(NK)/DXSQ
+            xcldfra = 0.14*alog(1.+(500.*UMF_new))
+            xcldfra = amax1(0.01,xcldfra)
+            cldfra_dp_KF(I,NK,J) = amin1(0.6,xcldfra)
+          ENDDO
+        ENDIF
 !     
 !...COMPUTE HYDROMETEOR TENDENCIES AS IS DONE FOR T, QV...
 !     

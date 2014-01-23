@@ -439,12 +439,15 @@ module_sf_noahmpdrv.o: module_sf_noahmplsm.o \
 			module_sf_noahlsm_glacial_only.o \
 			module_sf_noahmp_glacier.o \
 			module_sf_myjsfc.o \
+			module_sf_noahmp_groundwater.o \
 			../share/module_model_constants.o
 
 module_sf_noahlsm_glacial_only.o: module_sf_noahlsm.o module_sf_noahmplsm.o
 
 module_sf_noahmplsm.o:	../share/module_model_constants.o \
 			module_sf_myjsfc.o
+
+module_sf_noahmp_groundwater.o:
 
 module_sf_bep.o: ../share/module_model_constants.o module_sf_urban.o
 
@@ -509,6 +512,7 @@ module_physics_init.o : \
                 module_sf_bep_bem.o             \
 		module_sf_ruclsm.o		\
 		module_sf_pxlsm.o		\
+		module_sf_lake.o		\
 		module_bl_ysu.o		        \
 		module_bl_mrf.o			\
 		module_bl_gfs.o			\
@@ -558,6 +562,7 @@ module_physics_init.o : \
 		module_cam_constituents.o       \
 		module_cam_mp_modal_aero_initialize_data_phys.o \
 		module_cam_support.o \
+		module_wind_turbdragforce.o \
 		module_wind_fitch.o		\
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
@@ -691,6 +696,7 @@ module_pbl_driver.o:  \
 		module_wind_fitch.o \
 		module_bl_temf.o \
 		module_bl_mfshconvpbl.o \
+		module_wind_turbdragforce.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../share/module_model_constants.o 
@@ -727,6 +733,7 @@ module_radiation_driver.o: \
 		module_ra_hs.o \
 		module_ra_goddard.o \
                 module_ra_flg.o \
+                module_ra_aerosol.o \
 		../frame/module_driver_constants.o \
 		../frame/module_state_description.o \
 		../frame/module_dm.o \
@@ -746,6 +753,7 @@ module_surface_driver.o: \
 		module_sf_pxsfclay.o		\
 		module_sf_gfs.o  		\
 		module_sf_noah_seaice_drv.o	\
+                module_sf_noahmp_groundwater.o  \
 		module_sf_noahdrv.o		\
 		module_sf_clm.o			\
                 module_sf_ssib.o                \
@@ -757,6 +765,7 @@ module_surface_driver.o: \
 		module_sf_sfcdiags.o		\
 		module_sf_sfcdiags_ruclsm.o     \
 		module_sf_sstskin.o		\
+                module_sf_lake.o                \
 		module_sf_tmnupdate.o		\
 		module_sf_temfsfclay.o		\
 		module_sf_idealscmsfclay.o	\
@@ -792,6 +801,10 @@ module_fddaobs_driver.o: \
 		../share/module_bc.o  \
 		../share/module_model_constants.o  \
 		module_fddaobs_rtfdda.o
+
+module_sf_lake.o : \
+             ../share/module_model_constants.o
+ 
 
 module_fr_fire_driver.o: \
 		../share/module_model_constants.o  \
@@ -870,6 +883,9 @@ module_ltng_cpmpr92z.o :
 module_ltng_crmpr92.o :
 
 module_ltng_iccg.o :
+
+module_ra_aerosol.o :\
+	../frame/module_wrf_error.o
 
 # End of DEPENDENCIES for phys
 

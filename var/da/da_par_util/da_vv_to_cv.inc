@@ -227,14 +227,16 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
    ne = mzs(7)
 #endif
    if ( ne > 0 ) then
+      ix = ite_int - its_int + 1
+      jy = jte_int - jts_int + 1
       ijmn = ix * jy * mz * ne
       cv_s = cv_e + 1
       cv_e = cv_s + ijmn - 1
 #ifdef NORESHAPE
       do n = 1, ne
          do m = 1, mz
-            do j = js, je
-               do i = is, ie
+            do j = jts_int, jte_int !js, je
+               do i = its_int, ite_int ! is, ie
                   ijk = ijk + 1
                   rcv(ijk) = vv%alpha(i,j,m,n)
                end do
@@ -242,7 +244,8 @@ subroutine da_vv_to_cv(vv, xp, mzs, cv_size, rcv)
          end do
       end do
 #else
-      rcv(cv_s:cv_e) = RESHAPE(vv % alpha(is:ie,js:je,1:mz,1:ne), (/ijmn/))
+!     rcv(cv_s:cv_e) = RESHAPE(vv % alpha(is:ie,js:je,1:mz,1:ne), (/ijmn/))
+      rcv(cv_s:cv_e) = RESHAPE(vv % alpha(its_int:ite_int,jts_int:jte_int,1:mz,1:ne), (/ijmn/))
 #endif
    end if
 

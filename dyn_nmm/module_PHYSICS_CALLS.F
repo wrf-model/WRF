@@ -199,6 +199,7 @@
 !***
 !-----------------------------------------------------------------------
       INTEGER :: I,ICLOUD,IENDX,II,ISTAT,J,JDAY,JMONTH,K,KMNTH,N,NRAD
+      INTEGER :: ICLOUD_CU
 !
       INTEGER,DIMENSION(3) :: IDAT
       INTEGER,DIMENSION(12) :: MONTH=(/31,28,31,30,31,30,31,31          &
@@ -313,6 +314,7 @@
       ENDDO
 !
       ICLOUD=999
+      ICLOUD_CU=999
 !
       GMT=REAL(IHRST)
 !
@@ -399,6 +401,11 @@
      &       ,coszen=grid%coszen                                   & 
      &       ,hrang=grid%hrang                                   & 
      &       ,ht=ht                                   & 
+     &       ,aer_type=config_flags%aer_type                                                        &
+     &       ,aer_aod550_opt=config_flags%aer_aod550_opt,aer_aod550_val=config_flags%aer_aod550_val &
+     &       ,aer_angexp_opt=config_flags%aer_angexp_opt,aer_angexp_val=config_flags%aer_angexp_val &
+     &       ,aer_ssa_opt=config_flags%aer_ssa_opt,aer_ssa_val=config_flags%aer_ssa_val             &
+     &       ,aer_asy_opt=config_flags%aer_asy_opt,aer_asy_val=config_flags%aer_asy_val             &
 #ifdef WRF_CHEM
      &                 ,AER_RA_FEEDBACK=config_flags%aer_ra_feedback    &
      &                 ,PM2_5_DRY=pm2_5_dry,PM2_5_WATER=pm2_5_water     &
@@ -432,6 +439,7 @@
      &                 ,SW_PHYSICS=CONFIG_FLAGS%RA_SW_PHYSICS           &
      &                 ,RADT=RADT,RA_CALL_OFFSET=GRID%RA_CALL_OFFSET    &
      &                 ,STEPRA=NRAD,ICLOUD=ICLOUD                       &
+     &                 ,ICLOUD_CU=ICLOUD_CU                             &
      &                 ,WARM_RAIN=WARM_RAIN                             &
      &                 ,SWDOWNC=TOTSWDNC,CLDFRA=CLFR                    &
      &                 ,SWUPT=SWUPT                                     &
@@ -1493,6 +1501,14 @@
      &        ,chleafxy=grid%chleafxy ,  chucxy=grid%chucxy                          &                       
      &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &                       
      &        ,coszen=grid%czen,xlat_urb2d=grid%xlat                                 &
+! lake module
+     &          ,lakedepth2d=grid%lakedepth2d, savedtke12d=grid%savedtke12d, snowdp2d=grid%snowdp2d, h2osno2d=grid%h2osno2d       & !lake
+     &          ,snl2d=grid%snl2d, t_grnd2d=grid%t_grnd2d, t_lake3d=grid%t_lake3d,   lake_icefrac3d=grid%lake_icefrac3d           & !lake
+     &          ,z_lake3d=grid%z_lake3d, dz_lake3d=grid%dz_lake3d, t_soisno3d=grid%t_soisno3d, h2osoi_ice3d=grid%h2osoi_ice3d     & !lake
+     &          ,h2osoi_liq3d=grid%h2osoi_liq3d, h2osoi_vol3d=grid%h2osoi_vol3d, z3d=grid%z3d, dz3d=grid%dz3d                     & !lake
+     &          ,zi3d=grid%zi3d, watsat3d=grid%watsat3d, csol3d=grid%csol3d, tkmg3d=grid%tkmg3d                                   & !lake
+     &          ,tkdry3d=grid%tkdry3d,tksatu3d=grid%tksatu3d, LakeModel=grid%LakeModel,  lakeminalt=grid%lakeminalt               & !lake
+! end lake module
      &        ,maxpatch=1,inest=1,history_interval=config_flags%history_interval  & !clm
 
      &                                                          )
@@ -1587,6 +1603,8 @@
      &               ,J_START=GRID%J_START,J_END=GRID%J_END           &
      &               ,KTS=KTS,KTE=KTE,NUM_TILES=GRID%NUM_TILES        &
      &               ,CTOPO=grid%ctopo,CTOPO2=grid%ctopo2             &
+     &               ,WINDFARM_OPT=config_flags%windfarm_opt          &
+     &               ,POWER=grid%POWER                                &
      &               ,NUM_SCALAR=1, NUM_TRACER=1                      &  ! parameters not used by NMM
 #if (NMM_CORE==1)
      &               ,DISHEAT=DISHEAT                                 &
@@ -2318,6 +2336,8 @@
 !
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS
 !
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: CLDFRA_DP, CLDFRA_SH
+!
       LOGICAL :: RESTART,WARM_RAIN,ETAMP_Regional
       LOGICAL,DIMENSION(IMS:IME,JMS:JME) :: CU_ACT_FLAG
 !
@@ -2635,6 +2655,7 @@
                   ! Others
      &                 ,ITIMESTEP=NTSD,DT=DT,DX=GPS                     &
      &                 ,RAINC=RAINC,RAINCV=RAINCV,NCA=NCA               &
+     &                 ,CLDFRA_DP=CLDFRA_DP,CLDFRA_SH=CLDFRA_SH         &
      &                 ,DZ8W=DZ,P8W=P8W,FORCET=TTEN,FORCEQ=QTEN         &
      &                 ,CLDEFI=CLDEFI,LOWLYR=LOWLYR,XLAND=XLAND         &
      &                 ,CU_ACT_FLAG=CU_ACT_FLAG,WARM_RAIN=WARM_RAIN     &

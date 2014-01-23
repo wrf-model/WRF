@@ -214,6 +214,6 @@
                                  ! ready for use
    end type proj_info
 
-   type(proj_info) :: map_info
+   type(proj_info) :: map_info, map_info_ens
 
 

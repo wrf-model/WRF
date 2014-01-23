@@ -1,7 +1,8 @@
 Module module_add_emis_cptec
 CONTAINS
-       subroutine add_emis_cptec(id,dtstep,ktau,dz8w,config_flags,rho_phy,chem,    &
-            julday,gmt,xlat,xlong,t_phy,p_phy,emis_ant,                                       &
+       subroutine add_emis_cptec(id,dtstep,ktau,dz8w,config_flags,      &
+            curr_secs,rho_phy,chem,                                     &
+            julday,gmt,xlat,xlong,t_phy,p_phy,emis_ant,                 &
 !         ebu_no,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,          &
 !          ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,     &
 !          ebu_api,ebu_lim,ebu_tol,ebu_xyl,ebu_csl,ebu_hcho,ebu_ald,       &
@@ -11,6 +12,8 @@ CONTAINS
             its,ite, jts,jte, kts,kte                                   )
   USE module_configure
   USE module_state_description
+  USE module_date_time
+
   IMPLICIT NONE
 
 
@@ -48,12 +51,17 @@ CONTAINS
 
       REAL,      INTENT(IN   ) ::                                          &
                              dtstep,gmt
+
+      REAL(KIND=8), INTENT(IN   ) :: curr_secs
+
     integer ::imonth1,idate1,iyear1,itime1
     integer :: i,j,k
     real :: time,conv_rho
     integer :: iweek,idays
     real :: tign,timeq,r_q,r_antro
     real, dimension(7) :: week_CYCLE
+    integer :: century_year,month,day,hour,minute,second,ten_thousandth 
+
     !                     dia da semana:  DOM   SEG   TER   QUA   QUI   SEX   SAB
     !                            iweek=   1     2     3     4     5     6     7
     !- dados cetesb/campinas/2005
@@ -69,7 +77,11 @@ CONTAINS
 
     !-------------biomass burning diurnal cycle --------------------
     !number of days of simulation
-    idays = int(( float(itime1)/100. + time/3600.)/24.+.00001)
+    call split_date_char(start_date,century_year,month,day,hour,minute, &
+         second,ten_thousandth)
+    itime1 = hour
+
+    idays = int(( float(itime1) + time/3600.)/24.+.00001)
     tign  = real(idays)*24.*3600.
     ! Modulacao da queimada media durante o ciclo diurno(unidade: 1/s)
     ! com a int( r_q dt) (0 - 24h)= 1.

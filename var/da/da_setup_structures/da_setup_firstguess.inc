@@ -1,4 +1,4 @@
-subroutine da_setup_firstguess(xbx, grid, config_flags)
+subroutine da_setup_firstguess(xbx, grid, config_flags, ens )
 
    !---------------------------------------------------------------------------
    ! Purpose: Allocate and read in components of first guess state.
@@ -12,6 +12,7 @@ subroutine da_setup_firstguess(xbx, grid, config_flags)
 
    type(domain),intent(inout)   :: grid
    type(grid_config_rec_type), intent(in) :: config_flags
+   logical, intent(in) :: ens
 
    integer :: is, ie, js, je, ij, i, j
    real    :: ddx , ddy    
@@ -52,7 +53,7 @@ subroutine da_setup_firstguess(xbx, grid, config_flags)
 
    if ((fg_format==fg_format_wrf_arw_regional) .or. &
       (fg_format==fg_format_wrf_arw_global  ) ) then
-      call da_setup_firstguess_wrf(xbx, grid, config_flags)
+      call da_setup_firstguess_wrf(xbx, grid, config_flags,ens)
    else if (fg_format == fg_format_wrf_nmm_regional ) then
       call da_setup_firstguess_wrf_nmm_regional(xbx, grid)
    else if (fg_format == fg_format_kma_global) then

@@ -56,7 +56,7 @@ subroutine da_setup_background_errors(grid, be)
       call da_setup_be_global(be)
    else if(fg_format == fg_format_wrf_arw_regional) then    
       if (cv_options == 5 .or. cv_options == 6) then
-            call da_setup_be_regional (grid%xb, be)
+            call da_setup_be_regional (grid%xb, be, grid)
       else if(cv_options == 3 ) then
             call da_setup_be_ncep_gfs (grid, be)
       endif

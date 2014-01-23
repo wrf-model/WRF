@@ -69,7 +69,8 @@ subroutine da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cv, vv)
 
 #endif
    if (be % ne > 0) then
-      adj_par_lhs = adj_par_lhs + sum(vv % alpha(its:ite,jts:jte,1:be%alpha%mz,1:be%ne)**2)
+!     adj_par_lhs = adj_par_lhs + sum(vv % alpha(its:ite,jts:jte,1:be%alpha%mz,1:be%ne)**2)
+      adj_par_lhs = adj_par_lhs + sum(vv % alpha(its_int:ite_int,jts_int:jte_int,1:be%alpha%mz,1:be%ne)**2)
    end if
 
    !----------------------------------------------------------------------

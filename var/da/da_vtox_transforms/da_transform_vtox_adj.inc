@@ -34,6 +34,7 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
    call da_zero_vp_type (vp)
    call da_transform_vptox_adj(grid, vp, be, ep)
 
+
    !-------------------------------------------------------------------------
    ! [2.0]: Perform vp = u_v vv transform:
    !-------------------------------------------------------------------------
@@ -56,8 +57,10 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
 #endif
    !  Uv for alpha is an identity transform:
       if (be % ne > 0) then
-         vv % alpha(its:ite,jts:jte,kts:kte,1:be%ne) = &
-         vp % alpha(its:ite,jts:jte,kts:kte,1:be%ne) 
+!        vv % alpha(its:ite,jts:jte,kts:kte,1:be%ne) = &
+!        vp % alpha(its:ite,jts:jte,kts:kte,1:be%ne) 
+         vv % alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:be%ne) = & 
+         vp % alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:be%ne)
       end if
    end if
    

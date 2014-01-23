@@ -489,6 +489,7 @@ BENCH_START(tl_calc_tke_tim)
                 grid%cf1, grid%cf2, grid%cf3, grid%warm_rain,          &
                 grid%mix_upper_bound,                                  &
                 grid%msftx, grid%msfty,                                &
+                grid%zx, grid%g_zx, grid%zy, grid%g_zy,                &
                 ids,ide, jds,jde, kds,kde,                             &
                 ims,ime, jms,jme, kms,kme,                             &
                 grid%i_start(ij), grid%i_end(ij),                      &

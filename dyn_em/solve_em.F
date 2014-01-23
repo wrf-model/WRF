@@ -2549,7 +2549,8 @@ BENCH_END(tracer_adv_tim)
 
            IF( rk_step == 1 ) THEN
              IF ( config_flags%nested .OR. &
-                ( config_flags%specified .AND. config_flags%have_bcs_scalar ) ) THEN
+                ( config_flags%specified .AND. config_flags%have_bcs_scalar ) .OR. &
+                ( ( is .EQ. P_QNWFA .OR. is .EQ. P_QNIFA) .AND. config_flags%use_aero_icbc ) ) THEN
 
                CALL relax_bdy_scalar ( scalar_tend(ims,kms,jms,is),                            &
                                        scalar(ims,kms,jms,is),  grid%mut,                      &
@@ -2611,10 +2612,10 @@ BENCH_END(tracer_adv_tim)
                                   jts=grid%j_start(ij), jte=grid%j_end(ij),               &
                                   kts=k_start    , kte=k_end                              )
 
-           IF ( config_flags%specified .AND. ( .NOT. config_flags%have_bcs_scalar ) ) THEN
+           IF ( config_flags%specified ) THEN
 
-             IF(is .ne. P_QNN)THEN
-               CALL flow_dep_bdy  ( scalar(ims,kms,jms,is),     &
+             IF ( is .EQ. P_QNN ) THEN
+               CALL flow_dep_bdy_qnn  ( scalar(ims,kms,jms,is),     &
                                   grid%ru_m, grid%rv_m, config_flags,   &
                                   grid%spec_zone,                  &
                                   ids,ide, jds,jde, kds,kde,  & ! domain dims
@@ -2623,8 +2624,35 @@ BENCH_END(tracer_adv_tim)
                                   grid%i_start(ij), grid%i_end(ij),  &
                                   grid%j_start(ij), grid%j_end(ij),  &
                                   k_start, k_end                    )
-             ELSE
-               CALL flow_dep_bdy_qnn  ( scalar(ims,kms,jms,is),     &
+             ELSE IF ( ( ( ( is .EQ. P_QNWFA ) .OR. ( is .EQ. P_QNIFA ) ) .AND. &
+                         ( .NOT. config_flags%use_aero_icbc ) ) &
+                         .OR. &
+                       ( ( .NOT. ( ( is .EQ. P_QNWFA ) .OR. ( is .EQ. P_QNIFA ) ) ) .AND. &
+                         ( .NOT. config_flags%have_bcs_scalar ) ) ) THEN
+
+!     A = ( is .EQ. P_QNWFA ) .OR. ( is .EQ. P_QNIFA )
+!     B = config_flags%use_aero_icbc
+!     C = config_glags%have_bcs_scalar
+
+! Test| A  | B  | C | ( A AND NOT B ) OR ( NOT A AND NOT C ) 
+! ----+----+----+---+-----------------------------------------------
+!  1  | T  | T  | T |                 F = DO NOT CALL flow_dep_bdy
+!  2  | T  | T  | F |                 F = DO NOT CALL flow_dep_bdy
+!  3  | T  | F  | T |                 T =        CALL flow_dep_bdy
+!  4  | T  | F  | F |                 T =        CALL flow_dep_bdy
+!  5  | F  | T  | T |                 F = DO NOT CALL flow_dep_bdy
+!  6  | F  | T  | F |                 T =        CALL flow_dep_bdy
+!  7  | F  | F  | T |                 F = DO NOT CALL flow_dep_bdy
+!  8  | F  | F  | F |                 T =        CALL flow_dep_bdy
+! ----+----+----+---+-----------------------------------------------
+
+!  If this is     the special friendly fields AND are to use the aero icbc, then NO calls to flow dep: tests 1 and 2
+!  If this is     the special friendly fields AND do not use the aero icbc, then    call     flow dep: tests 3 and 4
+!  If this is not the special friendly fields AND: 
+!           If we        have bcs for scalars, do not call flow dep: tests 5 and 7
+!           If we do not have bcs for scalars,        call flow dep: tests 6 and 8
+
+               CALL flow_dep_bdy  ( scalar(ims,kms,jms,is),     &
                                   grid%ru_m, grid%rv_m, config_flags,   &
                                   grid%spec_zone,                  &
                                   ids,ide, jds,jde, kds,kde,  & ! domain dims
@@ -3388,6 +3416,8 @@ BENCH_START(micro_driver_tim)
       &        , QNR_CURR=scalar(ims,kms,jms,P_QNR), F_QNR=F_QNR          &
       &        , QNS_CURR=scalar(ims,kms,jms,P_QNS), F_QNS=F_QNS          &
       &        , QNG_CURR=scalar(ims,kms,jms,P_QNG), F_QNG=F_QNG          &
+      &        , QNWFA_CURR=scalar(ims,kms,jms,P_QNWFA), F_QNWFA=F_QNWFA  & ! for Thompson water-friendly aerosol
+      &        , QNIFA_CURR=scalar(ims,kms,jms,P_QNIFA), F_QNIFA=F_QNIFA  & ! for Thompson ice-friendly aerosol
       &        , QNH_CURR=scalar(ims,kms,jms,P_QNH), F_QNH=F_QNH          & ! for milbrandt2mom and nssl_2mom
 !       &        , QZR_CURR=scalar(ims,kms,jms,P_QZR), F_QZR=F_QZR          & ! for milbrandt3mom
 !       &        , QZI_CURR=scalar(ims,kms,jms,P_QZI), F_QZI=F_QZI          & ! "
@@ -3405,6 +3435,7 @@ BENCH_START(micro_driver_tim)
       &        , RI_CURR=grid%rimi                                          &
       &        , re_cloud=grid%re_cloud, re_ice=grid%re_ice, re_snow=grid%re_snow & ! G. Thompson
       &        , has_reqc=grid%has_reqc, has_reqi=grid%has_reqi, has_reqs=grid%has_reqs & ! G. Thompson
+      &        , qnwfa2d=grid%qnwfa2d                                                   & ! G. Thompson
       &        , diagflag=diag_flag, do_radar_ref=config_flags%do_radar_ref &
                                                                           )
 BENCH_END(micro_driver_tim)

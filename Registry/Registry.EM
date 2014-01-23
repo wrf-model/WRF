@@ -20,6 +20,7 @@ halo      HALO_EM_PHYS_A_BL_SURF  dyn_em 4:xland
 #ifdef WRFPLUS=1
 include registry.wrfplus
 #endif
+include registry.lake
 include registry.diags
 include registry.bdy_perturb
 

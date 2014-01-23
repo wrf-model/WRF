@@ -7,6 +7,7 @@ MODULE module_sf_noahmpdrv
   USE module_sf_noah_seaice
   USE module_sf_noahmp_glacier
   USE MODULE_RA_GFDLETA, ONLY: CAL_MON_DAY
+  USE module_sf_noahmp_groundwater, ONLY : LATERALFLOW
 #ifdef WRF_CHEM
   USE module_data_gocart_dust
 #endif
@@ -33,6 +34,7 @@ CONTAINS
                QSNOWXY, WSLAKEXY,    ZWTXY,      WAXY,     WTXY,    TSNOXY, & ! IN/OUT Noah MP only
 	       ZSNSOXY,  SNICEXY,  SNLIQXY,  LFMASSXY, RTMASSXY,  STMASSXY, & ! IN/OUT Noah MP only
 	        WOODXY, STBLCPXY, FASTCPXY,    XLAIXY,   XSAIXY,   TAUSSXY, & ! IN/OUT Noah MP only
+	       SMOISEQ, SMCWTDXY,DEEPRECHXY,   RECHXY,                      & ! IN/OUT Noah MP only
 	        T2MVXY,   T2MBXY,    Q2MVXY,   Q2MBXY,                      & ! OUT Noah MP only
 	        TRADXY,    NEEXY,    GPPXY,     NPPXY,   FVEGXY,   RUNSFXY, & ! OUT Noah MP only
 	       RUNSBXY,   ECANXY,   EDIRXY,   ETRANXY,    FSAXY,    FIRAXY, & ! OUT Noah MP only
@@ -154,6 +156,10 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  XLAIXY    ! leaf area index
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  XSAIXY    ! stem area index
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  TAUSSXY   ! snow age factor
+    REAL,    DIMENSION( ims:ime, 1:nsoil, jms:jme ), INTENT(INOUT) ::  SMOISEQ   ! eq volumetric soil moisture [m3/m3]
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  SMCWTDXY  ! soil moisture content in the layer to the water table when deep
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  DEEPRECHXY ! recharge to the water table when deep
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  RECHXY    ! recharge to the water table (diagnostic) 
 
 ! OUT (with no Noah LSM equivalent)
 
@@ -234,6 +240,7 @@ CONTAINS
     REAL                                :: SSOIL        ! soil heat heat (w/m2) 
     REAL                                :: SALB         ! surface albedo (-)
     REAL                                :: FSNO         ! snow cover fraction (-)
+    REAL,   DIMENSION( 1:NSOIL)         :: SMCEQ        ! eq vol. soil moisture (m3/m3)
     REAL,   DIMENSION( 1:NSOIL)         :: SMC          ! vol. soil moisture (m3/m3)
     REAL,   DIMENSION( 1:NSOIL)         :: SMH2O        ! vol. soil liquid water (m3/m3)
     REAL,   DIMENSION(-2:NSOIL)         :: STC          ! snow/soil tmperatures
@@ -261,6 +268,9 @@ CONTAINS
     REAL                                :: ZWT          ! water table depth [m]
     REAL                                :: WA           ! water in the "aquifer" [mm]
     REAL                                :: WT           ! groundwater storage [mm]
+    REAL                                :: SMCWTD       ! soil moisture content in the layer to the water table when deep
+    REAL                                :: DEEPRECH     ! recharge to the water table when deep
+    REAL                                :: RECH         ! recharge to the water table (diagnostic)  
     REAL, DIMENSION(-2:NSOIL)           :: ZSNSO        ! snow layer depth [m]
     REAL, DIMENSION(-2:              0) :: SNICE        ! snow layer ice [mm]
     REAL, DIMENSION(-2:              0) :: SNLIQ        ! snow layer liquid water [mm]
@@ -497,6 +507,10 @@ CONTAINS
        PLAI                  = XLAIXY  (I,J)                ! leaf area index [-] (no snow effects)
        PSAI                  = XSAIXY  (I,J)                ! stem area index [-] (no snow effects)
        TAUSS                 = TAUSSXY (I,J)                ! non-dimensional snow age
+       SMCEQ(       1:NSOIL) = SMOISEQ (I,       1:NSOIL,J)
+       SMCWTD                = SMCWTDXY(I,J)
+       RECH                  = 0.
+       DEEPRECH              = 0.
 
 ! Initialized local
 
@@ -608,6 +622,7 @@ CONTAINS
        FCTR   = undefined_value        
        
        QFX(I,J) = ESOIL
+       LH (I,J) = FGEV
 
 
     ELSE
@@ -664,7 +679,7 @@ end if
             I       , J       , LAT     , YEARLEN , JULIAN  , COSZ    , & ! IN : Time/Space-related
             DT      , DX      , DZ8W1D  , NSOIL   , ZSOIL   , NSNOW   , & ! IN : Model configuration 
             FVEG    , FVGMAX  , VEGTYP  , ISURBAN , ICE     , IST     , & ! IN : Vegetation/Soil characteristics
-            ISC     ,                                                   & ! IN : Vegetation/Soil characteristics
+            ISC     , SMCEQ   ,                                         & ! IN : Vegetation/Soil characteristics
             IZ0TLND ,                                                   & ! IN : User options
             T_ML    , P_ML    , PSFC    , U_ML    , V_ML    , Q_ML    , & ! IN : Forcing
             QC      , SWDN    , LWDN    , PRCP    , TBOT    , CO2PP   , & ! IN : Forcing
@@ -676,6 +691,7 @@ end if
             ZWT     , WA      , WT      , WSLAKE  , LFMASS  , RTMASS  , & ! IN/OUT : 
             STMASS  , WOOD    , STBLCP  , FASTCP  , PLAI    , PSAI    , & ! IN/OUT : 
             CM      , CH      , TAUSS   ,                               & ! IN/OUT : 
+            SMCWTD  ,DEEPRECH , RECH    ,                               & ! IN/OUT :
             FSA     , FSR     , FIRA    , FSH     , SSOIL   , FCEV    , & ! OUT : 
             FGEV    , FCTR    , ECAN    , ETRAN   , ESOIL   , TRAD    , & ! OUT : 
             TGB     , TGV     , T2MV    , T2MB    , Q2MV    , Q2MB    , & ! OUT : 
@@ -692,6 +708,7 @@ end if
             )            ! OUT :
                   
             QFX(I,J) = ECAN + ESOIL + ETRAN
+            LH       (I,J)                = FCEV + FGEV + FCTR
 
 #ifdef WRF_HYDRO
             soldrain(i,j) = RUNSB*dt        !mm , underground runoff
@@ -704,7 +721,6 @@ end if
 
              TSK      (I,J)                = TRAD
              HFX      (I,J)                = FSH
-             LH       (I,J)                = FCEV + FGEV + FCTR
              GRDFLX   (I,J)                = SSOIL
 	     SMSTAV   (I,J)                = 0.0  ! [maintained as Noah consistency]
              SMSTOT   (I,J)                = 0.0  ! [maintained as Noah consistency]
@@ -802,6 +818,9 @@ end if
              CHUCXY   (I,J)                = CHUC
              CHV2XY   (I,J)                = CHV2
              CHB2XY   (I,J)                = CHB2
+             RECHXY   (I,J)                = RECHXY(I,J) + RECH*1.E3 !RECHARGE TO THE WATER TABLE
+             DEEPRECHXY(I,J)               = DEEPRECHXY(I,J) + DEEPRECH
+             SMCWTDXY(I,J)                 = SMCWTD
 
           ENDIF                                                         ! endif of land-sea test
 
@@ -812,8 +831,8 @@ end if
   END SUBROUTINE noahmplsm
 !------------------------------------------------------
 
-  SUBROUTINE NOAHMP_INIT ( MMINLU, SNOW , SNOWH , CANWAT , ISLTYP ,   IVGTYP, &
-       TSLB , SMOIS , SH2O , DZS , FNDSOILW , FNDSNOWH ,   ISICE,             &
+  SUBROUTINE NOAHMP_INIT ( MMINLU, SNOW , SNOWH , CANWAT , ISLTYP ,   IVGTYP, ISURBAN, &
+       TSLB , SMOIS , SH2O , DZS , FNDSOILW , FNDSNOWH ,   ISICE,iswater  ,             &
        TSK, isnowxy , tvxy     ,tgxy     ,canicexy ,         TMN,     XICE,   &
        canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy     ,                     &
        fwetxy   ,sneqvoxy ,alboldxy ,qsnowxy  ,wslakexy ,zwtxy    ,waxy     , &
@@ -823,10 +842,13 @@ end if
        t2mvxy   ,t2mbxy   ,chstarxy,            &
 !jref:end       
        NSOIL, restart,                 &
-       allowed_to_read ,                         &
+       allowed_to_read , iopt_run,                         &
        ids,ide, jds,jde, kds,kde,                &
        ims,ime, jms,jme, kms,kme,                &
-       its,ite, jts,jte, kts,kte                 )
+       its,ite, jts,jte, kts,kte,                &
+       smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, areaxy, dx, dy, msftx, msfty,&     ! Optional groundwater
+       wtddt    ,stepwtd  ,dt       ,qrfsxy     ,qspringsxy  , qslatxy    ,  &      ! Optional groundwater
+       fdepthxy ,ht     ,riverbedxy ,eqzwt     ,rivercondxy ,pexpxy            )    ! Optional groundwater
 
 ! Initializing Canopy air temperature to 287 K seems dangerous to me [KWM].
 
@@ -834,12 +856,14 @@ end if
          &                           ims,ime, jms,jme, kms,kme,  &
          &                           its,ite, jts,jte, kts,kte
 
-    INTEGER, INTENT(IN)       ::     NSOIL, ISICE
+    INTEGER, INTENT(IN)       ::     NSOIL, ISICE, ISWATER, ISURBAN,iopt_run
 
     LOGICAL, INTENT(IN)       ::     restart,                    &
          &                           allowed_to_read
 
     REAL,    DIMENSION( NSOIL), INTENT(IN)    ::     DZS  ! Thickness of the soil layers [m]
+    REAL,    INTENT(IN) , OPTIONAL ::     DX, DY
+    REAL,    DIMENSION( ims:ime, jms:jme ) ,  INTENT(IN) , OPTIONAL :: MSFTX,MSFTY
 
     REAL,    DIMENSION( ims:ime, NSOIL, jms:jme ) ,    &
          &   INTENT(INOUT)    ::     SMOIS,                      &
@@ -890,6 +914,26 @@ end if
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: fastcpxy    !short-lived carbon, shallow soil [g/m2]
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: xsaixy      !stem area index
 
+! IOPT_RUN = 5 option
+
+    REAL, DIMENSION(ims:ime,1:nsoil,jms:jme), INTENT(INOUT) , OPTIONAL :: smoiseq !equilibrium soil moisture content [m3m-3]
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) , OPTIONAL :: smcwtdxy    !deep soil moisture content [m3m-3]
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) , OPTIONAL :: deeprechxy  !deep recharge [m]
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) , OPTIONAL :: rechxy      !accumulated recharge [mm]
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) , OPTIONAL :: qrfsxy      !accumulated flux from groundwater to rivers [mm]
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) , OPTIONAL :: qspringsxy  !accumulated seeping water [mm]
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) , OPTIONAL :: qslatxy     !accumulated lateral flow [mm]
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) , OPTIONAL :: areaxy      !grid cell area [m2]
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: FDEPTHXY    !efolding depth for transmissivity (m)
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: HT          !terrain height (m)
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: RIVERBEDXY  !riverbed depth (m)
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: EQZWT       !equilibrium water table depth (m)
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: RIVERCONDXY !river conductance
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: PEXPXY      !factor for river conductance
+
+    INTEGER,  INTENT(OUT) , OPTIONAL :: STEPWTD
+    REAL, INTENT(IN) , OPTIONAL :: DT, WTDDT
+
 !jref:start
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: t2mvxy        !2m temperature vegetation part (k)
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: t2mbxy        !2m temperature bare ground part (k)
@@ -901,13 +945,14 @@ end if
     !                                                   the surface (negative)
 
     REAL                      :: BX, SMCMAX, PSISAT
+    REAL                      :: FK
 
     REAL, PARAMETER           :: BLIM  = 5.5
     REAL, PARAMETER           :: HLICE = 3.335E5
     REAL, PARAMETER           :: GRAV = 9.81
     REAL, PARAMETER           :: T0 = 273.15
 
-    INTEGER                   :: errflag
+    INTEGER                   :: errflag, i,j,itf,jtf,ns
 
     character(len=80) :: err_message
     character(len=4)  :: MMINSL
@@ -966,10 +1011,13 @@ end if
 		SNOW(I,J) = MAX(SNOW(I,J), 10.0)        ! set SWE to at least 10mm
 	    ELSE
 	      
-             BX = BB(ISLTYP(I,J))
-             SMCMAX = MAXSMC(ISLTYP(I,J))
-             PSISAT = SATPSI(ISLTYP(I,J))
-             IF ( ( BX > 0.0 ) .AND. ( SMCMAX > 0.0 ) .AND. ( PSISAT > 0.0 ) ) THEN
+              BX = BB(ISLTYP(I,J))
+              SMCMAX = MAXSMC(ISLTYP(I,J))
+              DO NS=1, NSOIL
+	        IF ( SMOIS(I,NS,J) > SMCMAX )  SMOIS(I,NS,J) = SMCMAX
+              END DO
+              PSISAT = SATPSI(ISLTYP(I,J))
+              IF ( ( BX > 0.0 ) .AND. ( SMCMAX > 0.0 ) .AND. ( PSISAT > 0.0 ) ) THEN
                 DO NS=1, NSOIL
                    IF ( TSLB(I,NS,J) < 273.149 ) THEN    ! Use explicit as initial soil ice
                       FK=(( (HLICE/(GRAV*(-PSISAT))) *                              &
@@ -980,11 +1028,11 @@ end if
                       SH2O(I,NS,J)=SMOIS(I,NS,J)
                    ENDIF
                 END DO
-             ELSE
+              ELSE
                 DO NS=1, NSOIL
                    SH2O(I,NS,J)=SMOIS(I,NS,J)
                 END DO
-             ENDIF
+              ENDIF
             ENDIF
           ENDDO
        ENDDO
@@ -1028,9 +1076,14 @@ end if
              qsnowxy    (I,J) = 0.0
              wslakexy   (I,J) = 0.0
 
-             waxy       (I,J) = 4900.                                       !???
-             wtxy       (I,J) = waxy(i,j)                                   !???
-             zwtxy      (I,J) = (25. + 2.0) - waxy(i,j)/1000/0.2            !???
+             if(iopt_run.ne.5) then 
+                   waxy       (I,J) = 4900.                                       !???
+                   wtxy       (I,J) = waxy(i,j)                                   !???
+                   zwtxy      (I,J) = (25. + 2.0) - waxy(i,j)/1000/0.2            !???
+             else
+                   waxy       (I,J) = 0.
+                   wtxy       (I,J) = 0.
+             endif
 
              lfmassxy   (I,J) = 50.         !
              stmassxy   (I,J) = 50.0        !
@@ -1040,6 +1093,7 @@ end if
              fastcpxy   (I,J) = 1000.0      !
              xsaixy     (I,J) = 0.1         !
 
+             areaxy     (I,J) = (DX * DY) / ( MSFTX(I,J) * MSFTY(I,J) )
           enddo
        enddo
 
@@ -1055,6 +1109,49 @@ end if
        CALL snow_init ( ims , ime , jms , jme , its , itf , jts , jtf , 3 , &
             &           NSOIL , zsoil , snow , tgxy , snowh ,     &
             &           zsnsoxy , tsnoxy , snicexy , snliqxy , isnowxy )
+
+       !initialize arrays for groundwater dynamics iopt_run=5
+
+       IF ( PRESENT(smoiseq)     .AND. &
+            PRESENT(smcwtdxy)    .AND. &
+            PRESENT(rechxy)      .AND. &
+            PRESENT(deeprechxy)  .AND. &
+            PRESENT(areaxy)      .AND. &
+            PRESENT(dx)          .AND. &
+            PRESENT(dy)          .AND. &
+            PRESENT(msftx)       .AND. &
+            PRESENT(msfty)       .AND. &
+            PRESENT(wtddt)       .AND. &
+            PRESENT(stepwtd)     .AND. &
+            PRESENT(dt)          .AND. &
+            PRESENT(qrfsxy)      .AND. &
+            PRESENT(qspringsxy)  .AND. &
+            PRESENT(qslatxy)     .AND. &
+            PRESENT(fdepthxy)    .AND. &
+            PRESENT(ht)          .AND. &
+            PRESENT(riverbedxy)  .AND. &
+            PRESENT(eqzwt)       .AND. &
+            PRESENT(rivercondxy) .AND. &
+            PRESENT(pexpxy)            ) THEN
+
+          if(iopt_run.eq.5) then
+
+             STEPWTD = nint(WTDDT*60./DT)
+             STEPWTD = max(STEPWTD,1)
+
+              CALL groundwater_init ( & 
+      &       nsoil, zsoil , dzs  ,isltyp, ivgtyp, isurban, isice ,iswater ,wtddt , &
+      &       fdepthxy, ht, riverbedxy, eqzwt, rivercondxy, pexpxy , areaxy, zwtxy,   &
+      &       smois,sh2o, smoiseq, smcwtdxy, deeprechxy, rechxy, qslatxy, qrfsxy, qspringsxy, &
+      &       ids,ide, jds,jde, kds,kde,                    &
+      &       ims,ime, jms,jme, kms,kme,                    &
+      &       its,ite, jts,jte, kts,kte                     )
+
+          endif
+
+       ELSE
+          CALL wrf_error_fatal ('Not enough fields to use groundwater option in Noah-MP')
+       END IF
 
     ENDIF
   END SUBROUTINE NOAHMP_INIT
@@ -1163,6 +1260,242 @@ end if
     END DO
 
   END SUBROUTINE SNOW_INIT
+! ==================================================================================================
+! ----------------------------------------------------------------------
+    SUBROUTINE GROUNDWATER_INIT (   &
+            &            NSOIL , ZSOIL , DZS, ISLTYP, IVGTYP, ISURBAN, ISICE ,ISWATER , WTDDT , &
+            &            FDEPTH, TOPO, RIVERBED, EQWTD, RIVERCOND, PEXP , AREA ,WTD ,  &
+            &            SMOIS,SH2O, SMOISEQ, SMCWTDXY, DEEPRECHXY, RECHXY ,  &
+            &            QSLATXY, QRFSXY, QSPRINGSXY,                  &
+            &            ids,ide, jds,jde, kds,kde,                    &
+            &            ims,ime, jms,jme, kms,kme,                    &
+            &            its,ite, jts,jte, kts,kte                     )
+
+
+! ----------------------------------------------------------------------
+  IMPLICIT NONE
+! ----------------------------------------------------------------------
+
+    INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &
+         &                           ims,ime, jms,jme, kms,kme,  &
+         &                           its,ite, jts,jte, kts,kte
+    INTEGER, INTENT(IN)                              :: NSOIL, ISURBAN, ISWATER ,ISICE
+    REAL,   INTENT(IN)                               ::     WTDDT
+    REAL,    INTENT(IN), DIMENSION(1:NSOIL)          :: ZSOIL,DZS
+    INTEGER, INTENT(IN), DIMENSION(ims:ime, jms:jme) :: ISLTYP, IVGTYP
+    REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: FDEPTH, TOPO, RIVERBED, EQWTD, RIVERCOND, PEXP , AREA
+    REAL,    INTENT(INOUT), DIMENSION(ims:ime, jms:jme) :: WTD
+    REAL,     DIMENSION( ims:ime , 1:nsoil, jms:jme ), &
+         &    INTENT(INOUT)   ::                          SMOIS, &
+         &                                                 SH2O, &
+         &                                                 SMOISEQ
+    REAL,    INTENT(INOUT), DIMENSION(ims:ime, jms:jme) ::  &
+                                                           SMCWTDXY, &
+                                                           DEEPRECHXY, &
+                                                           RECHXY, &
+                                                           QSLATXY, &
+                                                           QRFSXY, &
+                                                           QSPRINGSXY  
+! local
+    INTEGER  :: I,J,K,ITER,itf,jtf
+    REAL :: BX,SMCMAX,PSISAT,SMCWLT,DWSAT,DKSAT
+    REAL :: FRLIQ,SMCEQDEEP
+    REAL :: DELTAT,RCOND
+    REAL :: AA,BBB,CC,DD,DX,FUNC,DFUNC,DDZ,EXPON,SMC,FLUX
+    REAL, DIMENSION(1:NSOIL) :: SMCEQ
+    REAL,      DIMENSION( ims:ime, jms:jme )    :: QLAT, QRF
+    INTEGER,   DIMENSION( ims:ime, jms:jme )    :: LANDMASK !-1 for water (ice or no ice) and glacial areas, 1 for land where the LSM does its soil moisture calculations
+
+
+       itf=min0(ite,ide-1)
+       jtf=min0(jte,jde-1)
+
+!first compute lateral flow and flow to rivers to initialize deep soil moisture
+
+    DELTAT = WTDDT * 60. !timestep in seconds for this calculation
+
+    WHERE(IVGTYP.NE.ISWATER.AND.IVGTYP.NE.ISICE)
+         LANDMASK=1
+    ELSEWHERE
+         LANDMASK=-1
+    ENDWHERE
+    
+!Calculate lateral flow
+
+    QLAT = 0.
+CALL LATERALFLOW(ISLTYP,WTD,QLAT,FDEPTH,TOPO,LANDMASK,DELTAT,AREA       &
+                        ,ids,ide,jds,jde,kds,kde                      & 
+                        ,ims,ime,jms,jme,kms,kme                      &
+                        ,its,ite,jts,jte,kts,kte                      )
+                        
+
+!compute flux from grounwater to rivers in the cell
+
+    DO J=jts,jtf
+       DO I=its,itf
+          IF(LANDMASK(I,J).GT.0)THEN
+             IF(WTD(I,J) .GT. RIVERBED(I,J) .AND.  EQWTD(I,J) .GT. RIVERBED(I,J)) THEN
+               RCOND = RIVERCOND(I,J) * EXP(PEXP(I,J)*(WTD(I,J)-EQWTD(I,J)))
+             ELSE    
+               RCOND = RIVERCOND(I,J)
+             ENDIF
+             QRF(I,J) = RCOND * (WTD(I,J)-RIVERBED(I,J)) * DELTAT/AREA(I,J)
+!for now, dont allow it to go from river to groundwater
+             QRF(I,J) = MAX(QRF(I,J),0.) 
+          ELSE
+             QRF(I,J) = 0.
+          ENDIF
+       ENDDO
+    ENDDO
+
+!now compute eq. soil moisture, change soil moisture to be compatible with the water table and compute deep soil moisture
+
+       DO J = jts,jtf
+          DO I = its,itf
+             BX = BB(ISLTYP(I,J))
+             SMCMAX = MAXSMC(ISLTYP(I,J))
+             SMCWLT = WLTSMC (ISLTYP(I,J))
+             IF(IVGTYP(I,J)==ISURBAN)THEN
+                 SMCMAX = 0.45         
+                 SMCWLT = 0.40         
+             ENDIF 
+             DWSAT  = SATDW (ISLTYP(I,J))
+             DKSAT  = SATDK (ISLTYP(I,J))
+             PSISAT = -SATPSI(ISLTYP(I,J))
+           IF ( ( bx > 0.0 ) .AND. ( smcmax > 0.0 ) .AND. ( -psisat > 0.0 ) ) THEN
+             !initialize equilibrium soil moisture for water table diagnostic
+                    CALL EQSMOISTURE(NSOIL ,  ZSOIL , SMCMAX , SMCWLT ,DWSAT, DKSAT  ,BX  , & !in
+                                     SMCEQ                          )  !out
+
+             SMOISEQ (I,1:NSOIL,J) = SMCEQ (1:NSOIL)
+
+
+              !make sure that below the water table the layers are saturated and initialize the deep soil moisture
+             IF(WTD(I,J) < ZSOIL(NSOIL)-DZS(NSOIL)) THEN
+
+!initialize deep soil moisture so that the flux compensates qlat+qrf
+!use Newton-Raphson method to find soil moisture
+
+                         EXPON = 2. * BX + 3.
+                         DDZ = ZSOIL(NSOIL) - WTD(I,J)
+                         CC = PSISAT/DDZ
+                         FLUX = (QLAT(I,J)-QRF(I,J))/DELTAT
+
+                         SMC = 0.5 * SMCMAX
+
+                         DO ITER = 1, 100
+                           DD = (SMC+SMCMAX)/(2.*SMCMAX)
+                           AA = -DKSAT * DD  ** EXPON
+                           BBB = CC * ( (SMCMAX/SMC)**BX - 1. ) + 1. 
+                           FUNC =  AA * BBB - FLUX
+                           DFUNC = -DKSAT * (EXPON/(2.*SMCMAX)) * DD ** (EXPON - 1.) * BBB &
+                                   + AA * CC * (-BX) * SMCMAX ** BX * SMC ** (-BX-1.)
+
+                           DX = FUNC/DFUNC
+                           SMC = SMC - DX
+                           IF ( ABS (DX) < 1.E-6)EXIT
+                         ENDDO
+
+                  SMCWTDXY(I,J) = MAX(SMC,1.E-4)
+
+             ELSEIF(WTD(I,J) < ZSOIL(NSOIL))THEN
+                  SMCEQDEEP = SMCMAX * ( PSISAT / ( PSISAT - DZS(NSOIL) ) ) ** (1./BX)
+!                  SMCEQDEEP = MAX(SMCEQDEEP,SMCWLT)
+                  SMCEQDEEP = MAX(SMCEQDEEP,1.E-4)
+                  SMCWTDXY(I,J) = SMCMAX * ( WTD(I,J) -  (ZSOIL(NSOIL)-DZS(NSOIL))) + &
+                                  SMCEQDEEP * (ZSOIL(NSOIL) - WTD(I,J))
+
+             ELSE !water table within the resolved layers
+                  SMCWTDXY(I,J) = SMCMAX
+                  DO K=NSOIL,2,-1
+                     IF(WTD(I,J) .GE. ZSOIL(K-1))THEN
+                          FRLIQ = SH2O(I,K,J) / SMOIS(I,K,J)
+                          SMOIS(I,K,J) = SMCMAX
+                          SH2O(I,K,J) = SMCMAX * FRLIQ
+                     ELSE
+                          IF(SMOIS(I,K,J).LT.SMCEQ(K))THEN
+                              WTD(I,J) = ZSOIL(K)
+                          ELSE
+                              WTD(I,J) = ( SMOIS(I,K,J)*DZS(K) - SMCEQ(K)*ZSOIL(K-1) + SMCMAX*ZSOIL(K) ) / &
+                                         (SMCMAX - SMCEQ(K))   
+                          ENDIF
+                          EXIT
+                     ENDIF
+                  ENDDO
+             ENDIF
+            ELSE
+              SMOISEQ (I,1:NSOIL,J) = SMCMAX
+              SMCWTDXY(I,J) = SMCMAX
+              WTD(I,J) = 0.
+            ENDIF
+
+!zero out some arrays
+
+             DEEPRECHXY(I,J) = 0.
+             RECHXY(I,J) = 0.
+             QSLATXY(I,J) = 0.
+             QRFSXY(I,J) = 0.
+             QSPRINGSXY(I,J) = 0.
+
+          ENDDO
+       ENDDO
+
+
+
+
+    END  SUBROUTINE GROUNDWATER_INIT
+! ==================================================================================================
+! ----------------------------------------------------------------------
+  SUBROUTINE EQSMOISTURE(NSOIL  ,  ZSOIL , SMCMAX , SMCWLT, DWSAT , DKSAT ,BEXP , & !in
+                         SMCEQ                          )  !out
+! ----------------------------------------------------------------------
+  IMPLICIT NONE
+! ----------------------------------------------------------------------
+! input
+  INTEGER,                         INTENT(IN) :: NSOIL !no. of soil layers
+  REAL, DIMENSION(       1:NSOIL), INTENT(IN) :: ZSOIL !depth of soil layer-bottom [m]
+  REAL,                            INTENT(IN) :: SMCMAX , SMCWLT, BEXP , DWSAT, DKSAT
+!output
+  REAL,  DIMENSION(      1:NSOIL), INTENT(OUT) :: SMCEQ  !equilibrium soil water  content [m3/m3]
+!local
+  INTEGER                                     :: K , ITER
+  REAL                                        :: DDZ , SMC, FUNC, DFUNC , AA, BB , EXPON, DX
+
+!gmmcompute equilibrium soil moisture content for the layer when wtd=zsoil(k)
+
+
+   DO K=1,NSOIL
+
+            IF ( K == 1 )THEN
+                DDZ = -ZSOIL(K+1) * 0.5
+            ELSEIF ( K < NSOIL ) THEN
+                DDZ = ( ZSOIL(K-1) - ZSOIL(K+1) ) * 0.5
+            ELSE
+                DDZ = ZSOIL(K-1) - ZSOIL(K)
+            ENDIF
+
+!use Newton-Raphson method to find eq soil moisture
+
+            EXPON = BEXP +1.
+            AA = DWSAT/DDZ
+            BB = DKSAT / SMCMAX ** EXPON
+
+            SMC = 0.5 * SMCMAX
+
+         DO ITER = 1, 100
+            FUNC = (SMC - SMCMAX) * AA +  BB * SMC ** EXPON
+            DFUNC = AA + BB * EXPON * SMC ** BEXP 
+
+            DX = FUNC/DFUNC
+            SMC = SMC - DX
+            IF ( ABS (DX) < 1.E-6)EXIT
+         ENDDO
+
+!             SMCEQ(K) = MIN(MAX(SMC,SMCWLT),SMCMAX*0.99)
+             SMCEQ(K) = MIN(MAX(SMC,1.E-4),SMCMAX*0.99)
+   ENDDO
+
+END  SUBROUTINE EQSMOISTURE
 !
 !------------------------------------------------------------------------------------------
 !------------------------------------------------------------------------------------------

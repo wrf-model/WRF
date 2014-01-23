@@ -400,6 +400,8 @@ rconfig   real      alpha_corr_scale        namelist,wrfvar16  1  1500.0   - "al
 rconfig   real      alpha_std_dev           namelist,wrfvar16  1  1.0      - "alpha_std_dev"           ""  ""
 rconfig   logical   alpha_vertloc           namelist,wrfvar16  1  .false.  - "alpha_vertloc"           ""  ""
 rconfig   logical   alpha_hydrometeors      namelist,wrfvar16  1  .false.  - "alpha_hydrometeors"      ""  ""
+rconfig   logical   hybrid_dual_res         namelist,wrfvar16  1  .false.  - "hybrid_dual_res"         ""  ""
+rconfig   integer   dual_res_upscale_opt    namelist,wrfvar16  1  1        - "dual_res_upscale_opt"    ""  ""
 rconfig   character analysis_type           namelist,wrfvar17  1  "3D-VAR" - "analysis_type"           ""  ""
 rconfig   integer   sensitivity_option      namelist,wrfvar17  1  -1       - "sensitivity_option"      ""  ""
 rconfig   logical   adj_sens                namelist,wrfvar17  1  .false.  - "adj_sens"                ""  ""

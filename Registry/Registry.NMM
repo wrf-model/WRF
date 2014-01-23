@@ -40,6 +40,7 @@
 #
 
 include registry.dimspec
+include registry.lake
 
 #### 7. Edit the Registry file and create the state data assocaited with this
 ####    solver.  Single entry:
@@ -395,14 +396,18 @@ state    real   SWVISDIF          ij    misc        1         Z      r        "S
 state    real   SWNIRDIR          ij    misc        1         Z      r        "SWNIRDIR"              "SWR NIR DIR component"  ""
 state    real   SWNIRDIF          ij    misc        1         Z      r        "SWNIRDIF"              "SWR NIR DIF component"  ""
 
-state    real    refl_10cm      ikj     dyn_nmm     1         -     h       "refl_10cm"      "Radar reflectivity (lamda = 10 cm)"  "dBZ"
-state    real    REFD_MAX        ij     misc        1         -     h       "REFD_MAX"       "MAX DERIVED RADAR REFL"  "dbZ"
-state  real  re_cloud   ikj     misc     1    -     r       "re_cloud"        "Effective radius, cloud drops"      "m"
-state  real  re_ice     ikj     misc     1    -     r       "re_ice"          "Effective radius, cloud ice"        "m"
-state  real  re_snow    ikj     misc     1    -     r       "re_snow"         "Effective radius, snow"             "m"
-state  integer  has_reqc   -    misc     1    -     r       "has_reqc"        "Flag for has effective radius of cloud water"    ""
-state  integer  has_reqi   -    misc     1    -     r       "has_reqi"        "Flag for has effective radius of cloud ice"      ""
-state  integer  has_reqs   -    misc     1    -     r       "has_reqs"        "Flag for has effective radius of snow"           ""
+state  real  refl_10cm     ikj    dyn_nmm     1    -     h       "refl_10cm"      "Radar reflectivity (lamda = 10 cm)"  "dBZ"
+state  real  REFD_MAX      ij     misc        1    -     h       "REFD_MAX"       "MAX DERIVED RADAR REFL"  "dbZ"
+state  real  qnwfa2d       ij     misc        1    -     rhdu    "QNWFA2D"        "Surface aerosol number conc emission"  "kg-1 s-1"
+state  real  re_cloud      ikj    misc        1    -     r       "re_cloud"       "Effective radius, cloud drops"      "m"
+state  real  re_ice        ikj    misc        1    -     r       "re_ice"         "Effective radius, cloud ice"        "m"
+state  real  re_snow       ikj    misc        1    -     r       "re_snow"        "Effective radius, snow"             "m"
+state  real  dfi_re_cloud  ikj    misc        1    -     -       "DFI_RE_CLOUD"   "DFI Effective radius cloud water"  "m"
+state  real  dfi_re_ice    ikj    misc        1    -     -       "DFI_RE_ICE"     "DFI Effective radius cloud ice"    "m"
+state  real  dfi_re_snow   ikj    misc        1    -     -       "DFI_RE_SNOW"    "DFI Effective radius snow"         "m"
+state  integer  has_reqc   -      misc        1    -     r       "has_reqc"       "Flag for has effective radius of cloud water"    ""
+state  integer  has_reqi   -      misc        1    -     r       "has_reqi"       "Flag for has effective radius of cloud ice"      ""
+state  integer  has_reqs   -      misc        1    -     r       "has_reqs"       "Flag for has effective radius of snow"           ""
 
 #
 # module_CLDWTR.F
@@ -675,25 +680,33 @@ state   real    qnh            ijkftb  scalar      1         -     i01rusdf=(bdy
 
 state   real    qnn            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNCCN"            "CCN Number concentration" "# kg(-1)"
 state   real    qnc            ijkftb  scalar      1         -     i01rusdf=(bdy_interp:dt)       "QNCLOUD"          "cloud water Number concentration" "# kg(-1)"
+state   real    qnwfa          ikjftb  scalar      1         -     i0rhusdf=(bdy_interp:dt)       "QNWFA"            "water-friendly aerosol number con" "# kg(-1)"
+state   real    qnifa          ikjftb  scalar      1         -     i0rhusdf=(bdy_interp:dt)       "QNIFA"            "ice-friendly aerosol number con"   "# kg(-1)"
+
 state   real    qvolg          ikjftb  scalar      1         -     i0rhusdf=(bdy_interp:dt)       "QVGRAUPEL"        "Graupel Particle Volume" "m(3) kg(-1)"
 
 state   real    -              ijkftb  dfi_scalar      1         -     -   -
 state   real    dfi_qndrop     ijkftb  dfi_scalar      1         -     \
-   rusdf=(bdy_interp:dt)    "DFI_QNDROP"    "Droplet number mixing ratio"        "# kg-1"
+   rusdf=(bdy_interp:dt)    "DFI_QNDROP"    "DFI Droplet number mixing ratio"        "# kg-1"
 state   real    dfi_qni        ijkftb  dfi_scalar      1         -     \
-   rusdf=(bdy_interp:dt)    "DFI_QNICE"     "Ice Number concentration" "# kg-1"
+   rusdf=(bdy_interp:dt)    "DFI_QNICE"     "DFI Ice Number concentration" "# kg-1"
 state   real    dfi_qt         ijkftb  dfi_scalar      1         -     \
-   rusdf=(bdy_interp:dt)    "DFI_CWM"       "Total condensate mixing ratio"      "kg kg-1"
+   rusdf=(bdy_interp:dt)    "DFI_CWM"       "DFI Total condensate mixing ratio"      "kg kg-1"
 state   real    dfi_qns        ijkftb  dfi_scalar      1         -     \
-   rusdf=(bdy_interp:dt)    "DFI_QNSNOW"    "Snow Number concentration"   "# kg(-1)"
+   rusdf=(bdy_interp:dt)    "DFI_QNSNOW"    "DFI Snow Number concentration"   "# kg(-1)"
 state   real    dfi_qnr        ijkftb  dfi_scalar      1         -     \
-   rusdf=(bdy_interp:dt)    "DFI_QNRAIN"    "Rain Number concentration"   "# kg(-1)"
+   rusdf=(bdy_interp:dt)    "DFI_QNRAIN"    "DFI Rain Number concentration"   "# kg(-1)"
 state   real    dfi_qng        ijkftb  dfi_scalar      1         -     \
-   rusdf=(bdy_interp:dt)    "DFI_QNGRAUPEL" "Graupel Number concentration" "# kg(-1)"
+   rusdf=(bdy_interp:dt)    "DFI_QNGRAUPEL" "DFI Graupel Number concentration" "# kg(-1)"
 state   real    dfi_qnn        ijkftb  dfi_scalar      1         -     \
-   rusdf=(bdy_interp:dt)    "DFI_QNCC"      "CNN Number concentration"   "# kg(-1)"
+   rusdf=(bdy_interp:dt)    "DFI_QNCC"      "DFI CNN Number concentration"   "# kg(-1)"
 state   real    dfi_qnc        ijkftb  dfi_scalar      1         -     \
-   rusdf=(bdy_interp:dt)    "DFI_QNCLOUD"   "Cloud Number concentration" "# kg(-1)"
+   rusdf=(bdy_interp:dt)    "DFI_QNCLOUD"   "DFI Cloud Number concentration" "# kg(-1)"
+state   real    dfi_qnwfa      ikjftb  dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)    "DFI_QNWFA"     "DFI water-friendly aerosol number con" "# kg(-1)"
+state   real    dfi_qnifa      ikjftb  dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)    "DFI_QNIFA"     "DFI ice-friendly aerosol number con"   "# kg(-1)"
+
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -724,6 +737,7 @@ state   real    -              ikjft   chem        1         -     -    -
 state    real   SMOIS            ilj     -          1         Z     rh       "SMOIS"                "SOIL MOISTURE" ""
 state    real   SMCREL           ilj     -          1         Z     r        "SMCREL"               "RELATIVE SOIL MOISTURE" ""
 state    real   TSLB             ilj     -          1         Z     r       "TSLB" "SOIL TEMPERATURE" ""
+state    real   lake_depth            ij     misc        1         -     rhd=(interp_mask_water_field:lu_index,iswater)   "lake_depth"              "lake depth" "m"
 
 
 # MYJ PBL variables
@@ -783,6 +797,16 @@ state   real    hrang        ij     misc         1         -     -      "hrang" 
 state   real    swdown_ref   ij     misc         1         -     -      "swdown_ref" "" ""
 state   real    swddir_ref   ij     misc         1         -     -      "swddir_ref" "" ""
 rconfig   integer swint_opt               namelist,physics      1             0       -      "swint_opt"    "interpolation option for sw radiation"      ""
+# add aerosol namelist
+rconfig   integer aer_type                namelist,physics      max_domains   1       irh    "aer_type"       "aerosol type: 1 is SF79 rural, 2 is SF79 urban" ""
+rconfig   integer aer_aod550_opt          namelist,physics      max_domains   1       irh    "aer_aod550_opt" "input option for aerosol optical depth at 550 nm" ""
+rconfig   integer aer_angexp_opt          namelist,physics      max_domains   1       irh    "aer_angexp_opt" "input option for aerosol Angstrom exponent" ""
+rconfig   integer aer_ssa_opt             namelist,physics      max_domains   1       irh    "aer_ssa_opt"    "input option for aerosol single-scattering albedo" ""
+rconfig   integer aer_asy_opt             namelist,physics      max_domains   1       irh    "aer_asy_opt"    "input option for aerosol asymmetry parameter" ""
+rconfig   real    aer_aod550_val          namelist,physics      max_domains   0.12    irh    "aer_aod550_val" "fixed value for aerosol optical depth at 550 nm. Valid when aer_aod550_opt=1" ""
+rconfig   real    aer_angexp_val          namelist,physics      max_domains   1.3     irh    "aer_angexp_val" "fixed value for aerosol Angstrom exponent. Valid when aer_angexp_opt=1" ""
+rconfig   real    aer_ssa_val             namelist,physics      max_domains   0.85    irh    "aer_ssa_val"    "fixed value for aerosol single-scattering albedo. Valid when aer_ssa_opt=1" ""
+rconfig   real    aer_asy_val             namelist,physics      max_domains   0.90    irh    "aer_asy_val"    "fixed value for aerosol asymmetry parameter. Valid when aer_asy_opt=1" ""
 
 # added for surface_driver
 state    real   PSFC             ij     misc        1         -     i1rh      "PSFC"                 "SFC PRESSURE"
@@ -885,7 +909,6 @@ state    real   SMFR3D           ilj    misc        1         Z      rh       "S
 state    real   KEEPFR3DFLAG     ilj    misc        1         Z      r         "KEEPFR3DFLAG"          "FLAG - 1. FROZEN SOIL YES, 0 - NO"             ""
 state    real   rc_mf           ikj     misc        1         -      r        "RC_MF"                "RC IN THE GRID COMPUTED BY EDKF"  "kg/kg"
 
-# For Noah-MP
 rconfig   integer dveg        namelist,noah_mp      1            4         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
 rconfig   integer opt_crs     namelist,noah_mp      1            1         h    "opt_crs"  "canopy stomatal resistance (1-> Ball-Berry; 2->Jarvis)"   ""
 rconfig   integer opt_btr     namelist,noah_mp      1            1         h    "opt_btr"  "soil moisture factor for stomatal resistance (1-> Noah; 2-> CLM; 3-> SSiB)"   ""
@@ -1003,6 +1026,7 @@ state    real     lu_state        p      misc       -          -     -
 #                                               
                                                 
 state   integer number_at_same_level    -        -          -         -     -        "number_at_same_level"  ""         ""      
+state   real    power          ij       misc      1         -     irh       "Power"                   "Power production"         "W"
 
 # State for derived time quantities.  
 state   integer itimestep      -        -          -         -     h         "itimestep"             ""         ""      
@@ -1162,6 +1186,7 @@ rconfig   real    radt                    namelist,physics	max_domains    0     
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0       rh       "sf_sfclay_physics"             ""      ""
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0       rh       "sf_surface_physics"            ""      ""
 rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    0       rh       "bl_pbl_physics"                ""      ""
+rconfig   integer     windfarm_opt        namelist,physics      max_domains    0       rh       "windfarm_opt"                ""      ""
 rconfig   integer     mfshconv            namelist,physics      max_domains    1        rh       "mfshconv"         "To activate mass flux scheme with qnse, 1=true; 0=false"      ""
 rconfig   integer     sf_urban_physics    namelist,physics      max_domains    0       rh       "sf_urban_physics"     ""       ""
 rconfig   real    BLDT                    namelist,physics	max_domains    0       h    "BLDT"          ""      ""
@@ -1173,6 +1198,7 @@ rconfig   real    GSMDT                   namelist,physics	max_domains    0     
 rconfig   integer ISFFLX                  namelist,physics 	1             1       irh    "ISFFLX"                        ""      ""
 rconfig   integer IFSNOW                  namelist,physics	1             1       irh    "IFSNOW"                        ""      ""
 rconfig   integer ICLOUD                  namelist,physics	1             1       irh    "ICLOUD"                        ""      ""
+rconfig   integer ICLOUD_CU               namelist,physics      max_domains   0       irh    "ICLOUD_CU"                     ""      ""
 rconfig   real    swrad_scat              namelist,physics      1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
 rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=hybrid (not yet implemented)"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""
@@ -1213,6 +1239,11 @@ rconfig   real    sas_shal_pgcon          namelist,physics      max_domains  -1 
 rconfig   integer sas_shal_conv           namelist,physics     max_domains    0        -     "sas_shal_conv"   "1=enable shallow convection in SAS (must use bl_pbl_physics=83)"
 rconfig   real    sas_mass_flux           namelist,physics      max_domains  9e9       -     "sas_mass_flux"   "mass flux limit (SAS scheme)" ""
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
+rconfig   integer LakeModel               namelist,physics      max_domains  0         h    "LakeModel"     "activate lake model  0=no, 1=yes"   ""   
+rconfig   real    domain_lakedepth        namelist,physics      max_domains  50       rh     "domain_lakedepth"                     ""      ""
+rconfig   real    lakeminalt              namelist,physics      max_domains   5       rh     "lakeminalt"                    ""      ""
+
+
 
 # nmm variables
 rconfig   integer idtad                   namelist,physics     max_domains    2       irh    "idtad"  "fundamental timesteps between calls to NMM passive advection scheme"
@@ -1245,6 +1276,8 @@ rconfig   integer aer_opt                 namelist,physics      1             0 
 rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .false.  -     "feedback cumulus to radiation"
 rconfig   integer num_snso_layers         namelist,physics      1             7       irh    "num_snso_layers"               ""      ""
 rconfig   integer num_snow_layers         namelist,physics   1             3       irh    "num_snow_layers"               ""      ""
+rconfig   logical use_aero_icbc           namelist,physics      1             .false. rh     "use_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero"  "logical flag"
+# For Noah-MP
 
 # Dynamics
 # dynamics option (see package definitions, below)
@@ -1381,6 +1414,7 @@ package   etampnew      mp_physics==5                -             moist:qv,qc,q
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
 package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
+package   thompsonaero  mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow
 package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
 package   morr_two_moment  mp_physics==10            -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng
 package   sbu_ylinscheme    mp_physics==13           -             moist:qv,qc,qr,qi,qs
@@ -1398,7 +1432,9 @@ package   wsm5scheme_dfi    mp_physics_dfi==4        -             dfi_moist:dfi
 package   etampnew_dfi      mp_physics_dfi==5        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs
 package   wsm6scheme_dfi    mp_physics_dfi==6        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 package   gsfcgcescheme_dfi mp_physics_dfi==7        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
-package   thompson_dfi      mp_physics_dfi==8        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr
+package   thompson_dfi      mp_physics_dfi==8        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
+package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
+
 package   milbrandt2mom_dfi mp_physics_dfi==9        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh
 package   morr_two_moment_dfi  mp_physics_dfi==10    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qns,dfi_qnr,dfi_qng
 #package   milbrandt3mom_dfi mp_physics_dfi==12       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qni,dfi_qns,dfi_qng,dfi_qnh,dfi_q_qzr,dfi_qzi,dfi_qzs,dfi_qzg,dfi_qzh
@@ -1461,6 +1497,7 @@ package   camuwpblscheme bl_pbl_physics==9           -             -
 package   mrfscheme      bl_pbl_physics==99          -             -
 package   temfpblscheme  bl_pbl_physics==10          -             -
 package   gbmpblscheme   bl_pbl_physics==12          -             -
+package   turbdragforce  windfarm_opt==1             -             -
 
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -

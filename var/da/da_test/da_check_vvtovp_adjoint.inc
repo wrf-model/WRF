@@ -25,7 +25,8 @@ subroutine da_check_vvtovp_adjoint(grid, ne, xb, be, vv, vp)
    real                              :: vv2_v3(ims:ime,jms:jme,kms:kme)
    real                              :: vv2_v4(ims:ime,jms:jme,kms:kme)
    real                              :: vv2_v5(ims:ime,jms:jme,kms:kme)
-   real                              :: vv2_alpha(ims:ime,jms:jme,kts:kte,1:ne)
+!  real                              :: vv2_alpha(ims:ime,jms:jme,kts:kte,1:ne)
+   real                              :: vv2_alpha(ims_int:ime_int,jms_int:jme_int,kts_int:kte_int,1:ne)
 
    if (trace_use) call da_trace_entry("da_check_vvtovp_adjoint")
 
@@ -61,7 +62,8 @@ subroutine da_check_vvtovp_adjoint(grid, ne, xb, be, vv, vp)
 
    if (be % ne > 0) then
       adj_par_lhs = adj_par_lhs + &
-         sum(vp % alpha(its:ite,jts:jte,kts:kte,1:be%ne)**2) * inv_typ_vpalpha_sumsq
+!        sum(vp % alpha(its:ite,jts:jte,kts:kte,1:be%ne)**2) * inv_typ_vpalpha_sumsq
+         sum(vp % alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:be%ne)**2) * inv_typ_vpalpha_sumsq
    end if
 
    !----------------------------------------------------------------------
@@ -80,8 +82,10 @@ subroutine da_check_vvtovp_adjoint(grid, ne, xb, be, vv, vp)
       inv_typ_vp5_sumsq
 
    if (be % ne > 0) then
-      vp % alpha(its:ite,jts:jte,kts:kte,1:be%ne) = &
-         vp % alpha(its:ite,jts:jte,kts:kte,1:be%ne) * inv_typ_vpalpha_sumsq
+!     vp % alpha(its:ite,jts:jte,kts:kte,1:be%ne) = &
+!        vp % alpha(its:ite,jts:jte,kts:kte,1:be%ne) * inv_typ_vpalpha_sumsq
+      vp % alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:be%ne) = &
+         vp % alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:be%ne) * inv_typ_vpalpha_sumsq
    end if
 
    !----------------------------------------------------------------------
@@ -95,7 +99,9 @@ subroutine da_check_vvtovp_adjoint(grid, ne, xb, be, vv, vp)
    vv2_v5(its:ite,jts:jte,1:be%v5%mz) = vv % v5(its:ite,jts:jte,1:be%v5%mz)
 
    if (be % ne > 0) then
-      vv2_alpha(its:ite,jts:jte,kts:kte,1:be%ne) = vv % alpha(its:ite,jts:jte,kts:kte,1:be%ne)
+!     vv2_alpha(its:ite,jts:jte,kts:kte,1:be%ne) = vv % alpha(its:ite,jts:jte,kts:kte,1:be%ne)
+      vv2_alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:be%ne) = &
+           vv % alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:be%ne)
    end if      
 
    call da_vertical_transform(grid, 'u_adj', be, &
@@ -122,9 +128,12 @@ subroutine da_check_vvtovp_adjoint(grid, ne, xb, be, vv, vp)
    if (be % v5 % mz == 1) &
       adj_par_rhs = sum(vv % v5(its:ite,jts:jte,1:be%v5%mz) * &
          vv2_v5(its:ite,jts:jte,1:be%v5%mz)) + adj_par_rhs
+!  if (be % ne > 0) &
+!     adj_par_rhs = sum(vv % alpha(its:ite,jts:jte,kts:kte,1:be%ne) * &
+!        vv2_alpha(its:ite,jts:jte,kts:kte,1:be%ne)) + adj_par_rhs
    if (be % ne > 0) &
-      adj_par_rhs = sum(vv % alpha(its:ite,jts:jte,kts:kte,1:be%ne) * &
-         vv2_alpha(its:ite,jts:jte,kts:kte,1:be%ne)) + adj_par_rhs
+      adj_par_rhs = sum(vv % alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:be%ne) * &
+         vv2_alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:be%ne)) + adj_par_rhs
 
    !----------------------------------------------------------------------
    ! [7.0] Print output:
@@ -152,7 +161,9 @@ subroutine da_check_vvtovp_adjoint(grid, ne, xb, be, vv, vp)
    vv % v5(its:ite,jts:jte,1:be%v5%mz) = vv2_v5(its:ite,jts:jte,1:be%v5%mz)
 
    if (be % ne > 0) then
-      vv % alpha(its:ite,jts:jte,kts:kte,1:be%ne) = vv2_alpha(its:ite,jts:jte,kts:kte,1:be%ne)
+!     vv % alpha(its:ite,jts:jte,kts:kte,1:be%ne) = vv2_alpha(its:ite,jts:jte,kts:kte,1:be%ne)
+      vv % alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:be%ne) = &
+                 vv2_alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:be%ne)
    end if
 
    write(unit=stdout, fmt='(/a/)') 'da_check_vvtovp_adjoint: Test Finished.'

@@ -128,6 +128,7 @@ module da_control
    logical :: anal_type_verify=.false.
    logical :: anal_type_randomcv=.false.
    logical :: anal_type_qcobs=.false.
+   logical :: anal_type_hybrid_dual_res=.false.
 
    integer,parameter :: monitor_on  = 1
    integer,parameter :: monitor_off = 0
@@ -606,6 +607,33 @@ module da_control
    integer :: ips,ipe,jps,jpe,kps,kpe
    integer :: itsy,itey,jtsy,jtey,ktsy,ktey
    integer :: itsx,itex,jtsx,jtex,ktsx,ktex
+
+   integer :: ide_ens,jde_ens,kde_ens
+
+   integer :: its_int,ite_int,jts_int,jte_int,kts_int,kte_int
+   integer :: ids_int,ide_int,jds_int,jde_int,kds_int,kde_int
+   integer :: ims_int,ime_int,jms_int,jme_int,kms_int,kme_int
+   integer :: ips_int,ipe_int,jps_int,jpe_int,kps_int,kpe_int
+
+   character (len=filename_len) :: input_file_ens = 'fg_ens'
+
+
+   TYPE dual_res_type
+         real :: x
+         real :: y
+         integer :: i
+         integer :: j
+         real    :: dx
+         real    :: dy
+         real    :: dxm
+         real    :: dym
+         integer :: xx
+         integer :: yy
+   END TYPE dual_res_type
+
+   TYPE(dual_res_type), allocatable :: ob_locs(:)
+   integer :: total_here
+   
 
    integer :: num_qcstat_conv(2,num_ob_indexes,num_ob_vars,npres_print+1)
    character*4, parameter :: ob_vars(num_ob_vars) = (/'U   ','V   ','T   ',&

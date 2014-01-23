@@ -109,6 +109,7 @@ MODULES = \
         module_ra_flg.o \
 	module_ra_HWRF.o \
 	module_ra_hs.o  \
+	module_ra_aerosol.o  \
 	module_sf_sfclay.o \
 	module_sf_sfclayrev.o \
 	module_sf_gfs.o \
@@ -121,6 +122,7 @@ MODULES = \
 	module_sf_noah_seaice.o \
 	module_sf_noah_seaice_drv.o \
 	module_sf_noahlsm_glacial_only.o \
+        module_sf_noahmp_groundwater.o \
 	module_sf_noahmpdrv.o \
 	module_sf_noahmplsm.o \
 	module_sf_noahmp_glacier.o \
@@ -184,8 +186,10 @@ MODULES = \
 	module_fddagd_driver.o  \
         module_fddaobs_rtfdda.o \
 	module_fddaobs_driver.o \
+	module_wind_turbdragforce.o \
 	module_wind_generic.o \
-	module_wind_fitch.o
+	module_wind_fitch.o  \
+        module_sf_lake.o
 
 FIRE_MODULES = \
         module_fr_fire_driver.o \

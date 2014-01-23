@@ -27,7 +27,7 @@ CONTAINS
                  ,kpbl,mixht,ct,lh,snow,xice                       &
                  ,znu, znw, mut, p_top                             &
 ! paj
-                 ,ctopo,ctopo2                                   &
+                 ,ctopo,ctopo2,windfarm_opt,power                  &
               ! OPTIONAL for TEMF scheme
                  ,te_temf,km_temf,kh_temf                     &
                  ,shf_temf,qf_temf,uw_temf,vw_temf                &
@@ -115,6 +115,7 @@ CONTAINS
                    QNSEPBLSCHEME,MYNNPBLSCHEME2,MYNNPBLSCHEME3,BOULACSCHEME,&
                    CAMUWPBLSCHEME,BEPSCHEME,BEP_BEMSCHEME,MYJSFCSCHEME, &
                    SURFDRAGSCHEME, TEMFPBLSCHEME,QNSEPBL09SCHEME,GBMPBLSCHEME,  &
+                   TURBDRAGFORCE,                                      &
                    CAMMGMPSCHEME,p_qi,p_qni,p_qnc,param_first_scalar  !CAMMGMPSCHEME, p_qni,p_qnc is used for camuwpbl scheme
    USE module_wind_generic, ONLY : windspec
 #else
@@ -123,6 +124,7 @@ CONTAINS
                    , QNSEPBLSCHEME, p_qi,param_first_scalar &
                    , TEMFPBLSCHEME, GFS2011SCHEME,QNSEPBL09SCHEME         &
                    , CAMUWPBLSCHEME                                       &
+                   , TURBDRAGFORCE                                       &
                    , GBMPBLSCHEME, MYJSFCSCHEME
 #endif
 
@@ -150,6 +152,7 @@ CONTAINS
    USE module_bl_mynn
    USE module_bl_fogdes
    USE module_wind_fitch
+   USE module_wind_turbdragforce
 #endif
 
    !  This driver calls subroutines for the PBL parameterizations.
@@ -347,7 +350,7 @@ CONTAINS
 !
 
 
-   INTEGER,    INTENT(IN   )    ::     bl_pbl_physics, ra_lw_physics,sf_sfclay_physics,sf_urban_physics
+   INTEGER,    INTENT(IN   )    ::     bl_pbl_physics, ra_lw_physics,sf_sfclay_physics,sf_urban_physics,windfarm_opt
    INTEGER,    OPTIONAL,  INTENT(IN   )    ::     scalar_pblmix, tracer_pblmix
 
    INTEGER,    INTENT(IN   )    ::     ids,ide, jds,jde, kds,kde, &
@@ -479,6 +482,7 @@ CONTAINS
                                                             UOCE, &
                                                             VOCE, &
                                                               T2, &
+                                                           POWER, &
                                                             WSPD
 
 !
@@ -1769,6 +1773,49 @@ CONTAINS
        CALL wrf_error_fatal ( message )
 
    END SELECT pbl_select
+
+#if (EM_CORE==1)
+!
+! ... paj: wind farm ...
+!
+    windfarm_select: SELECT CASE(windfarm_opt)
+
+      CASE (turbdragforce)
+
+                  IF (PRESENT(id) .AND.                                  &
+                     PRESENT(z_at_w) ) THEN
+!
+                     CALL wrf_debug(100,'in phys/module_wind_turbdragforce.F')
+                     CALL dragforce(                                  &
+                     & ID=id                                             &
+                     &,Z_AT_W=z_at_w,u=u_phy,v=v_phy                     &
+                     &,DX=dx,DZ=dz8w,DT=dt                               &
+                     &,QKE=qke                                           &
+                     &,DU=rublten,DV=rvblten                             &
+                     &,WINDFARM_OPT=windfarm_opt,POWER=power             &
+                     &,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde   &
+                     &,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme   &
+                     &,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte   &
+                     &)
+                  ELSE
+                     WRITE ( message , FMT = '(A,6(L1,1X))' )           &
+                     'present: '//                                      &
+                     'ID, '//                                           &
+                     'z_at_w, '//                                       &
+                     'xlat_u, '//                                       &
+                     'xlong_u, '//                                      &
+                     'xlat_v, '//                                       &
+                     'xlong_v = ' ,                                     &
+                      PRESENT( id ) ,                                   &
+                      PRESENT( z_at_w ) 
+                     CALL wrf_debug(0,message)
+                     CALL wrf_error_fatal('Lack arguments to call turbine_drag')
+                  ENDIF
+
+   END SELECT windfarm_select
+#endif
+
+
    
    IF (PRESENT(dtaux3d)) THEN
        IF(gwd_opt .EQ. 1)THEN

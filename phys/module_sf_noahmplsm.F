@@ -206,7 +206,7 @@ module noahmp_globals
 
 ! adjustable parameters for snow processes
 
-  REAL, PARAMETER :: M      = 1.0 ! 2.50   !melting factor (-) 
+  REAL, PARAMETER :: M      = 2.50   !melting factor (-) 
   REAL, PARAMETER :: Z0SNO  = 0.002  !snow surface roughness length (m) (0.002)
   REAL, PARAMETER :: SSI    = 0.03   !liquid water holding capacity for snowpack (m3/m3) (0.03)
   REAL, PARAMETER :: SWEMX  = 1.00   !new snow mass to fully cover old snow (mm)
@@ -565,12 +565,11 @@ contains
                    BGAP    , WGAP    , CHV     , CHB     , EMISSI  ,           & ! OUT :
 		   SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 		   GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
-		   CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE               & ! OUT :
+ 		   CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE               & ! OUT :
 #ifdef WRF_HYDRO
-                  ,SFCHEADRT                                                   & ! OUT :
+                  ,SFCHEADRT                                                   & ! IN/OUT :
 #endif
-                   )            ! OUT :
-
+                   )
 
 ! --------------------------------------------------------------------------------------------------
 ! Initial code: Guo-Yue Niu, Oct. 2007
@@ -790,6 +789,10 @@ contains
   REAL                                           :: AUTORS !net ecosystem respiration (g/m2/s C)
   REAL                                           :: HETERS !organic respiration (g/m2/s C)
   REAL                                           :: TROOT  !root-zone averaged temperature (k)
+  REAL                                 :: LATHEAV !latent heat vap./sublimation (j/kg)
+  REAL                                 :: LATHEAG !latent heat vap./sublimation (j/kg)
+  LOGICAL                             :: FROZEN_GROUND ! used to define latent heat pathway
+  LOGICAL                             :: FROZEN_CANOPY ! used to define latent heat pathway
 
   ! INTENT (OUT) variables need to be assigned a value.  These normally get assigned values
   ! only if DVEG == 2.
@@ -883,7 +886,7 @@ contains
                  SAV    ,SAG    ,QMELT  ,FSA    ,FSR    ,TAUX   , & !out
                  TAUY   ,FIRA   ,FSH    ,FCEV   ,FGEV   ,FCTR   , & !out
                  TRAD   ,PSN    ,APAR   ,SSOIL  ,BTRANI ,BTRAN  , & !out
-                 PONDING,TS     ,LATHEA ,                         & !out
+                 PONDING,TS     ,LATHEAV , LATHEAG , frozen_canopy,frozen_ground,                         & !out
                  TV     ,TG     ,STC    ,SNOWH  ,EAH    ,TAH    , & !inout
                  SNEQVO ,SNEQV  ,SH2O   ,SMC    ,SNICE  ,SNLIQ  , & !inout
                  ALBOLD ,CM     ,CH     ,DX     ,DZ8W   ,Q2     , & !inout
@@ -895,13 +898,13 @@ contains
                  Q1     ,Q2V    ,Q2B    ,Q2E    ,CHV   ,CHB     , & !out
                  EMISSI,&
 		     SHG,SHC,SHB,EVG,EVB,GHV,GHB,IRG,IRC,IRB,TR,EVC,CHLEAF,CHUC,CHV2,CHB2 )                                            !out
-!jref:end                            
+!jref:end
 
     SICE(:) = MAX(0.0, SMC(:) - SH2O(:))   
     SNEQVO  = SNEQV
 
-    QVAP = MAX( FGEV/LATHEA, 0.)       ! positive part of fgev
-    QDEW = ABS( MIN(FGEV/LATHEA, 0.))  ! negative part of fgev
+    QVAP = MAX( FGEV/LATHEAG, 0.)       ! positive part of fgev; Barlage change to ground v3.6
+    QDEW = ABS( MIN(FGEV/LATHEAG, 0.))  ! negative part of fgev
     EDIR = QVAP - QDEW
 
 ! compute water budgets (water storages, ET components, and runoff)
@@ -910,6 +913,7 @@ contains
                  VV     ,FCEV   ,FCTR   ,QPRECC ,QPRECL ,ELAI   , & !in
                  ESAI   ,SFCTMP ,QVAP   ,QDEW   ,ZSOIL  ,BTRANI , & !in
                  FICEOLD,PONDING,TG     ,IST    ,FVEG   ,iloc,jloc , SMCEQ , & !in
+		 LATHEAV , LATHEAG , frozen_canopy,frozen_ground,                        & !in  MB
                  ISNOW  ,CANLIQ ,CANICE ,TV     ,SNOWH  ,SNEQV  , & !inout
                  SNICE  ,SNLIQ  ,STC    ,ZSNSO  ,SH2O   ,SMC    , & !inout
                  SICE   ,ZWT    ,WA     ,WT     ,DZSNSO ,WSLAKE , & !inout
@@ -1085,8 +1089,8 @@ contains
      LAI = WT1*LAIM(VEGTYP,IT1) + WT2*LAIM(VEGTYP,IT2)
      SAI = WT1*SAIM(VEGTYP,IT1) + WT2*SAIM(VEGTYP,IT2)
   ENDIF
-  IF (SAI < 0.1) SAI = 0.0  ! MB: SAI CHECK
-  IF (LAI < 0.1 .OR. SAI == 0.0) LAI = 0.0  ! MB: LAI CHECK
+  IF (SAI < 0.05) SAI = 0.0                  ! MB: SAI CHECK, change to 0.05 v3.6
+  IF (LAI < 0.05 .OR. SAI == 0.0) LAI = 0.0  ! MB: LAI CHECK
 
   IF ( ( VEGTYP == ISWATER ) .OR. ( VEGTYP == ISBARREN ) .OR. ( VEGTYP == ISSNOW ) .or. ( VEGTYP == ISURBAN) ) THEN
      LAI  = 0.
@@ -1105,8 +1109,8 @@ contains
 
      ELAI =  LAI*(1.-FB)
      ESAI =  SAI*(1.-FB)
-     IF (ESAI < 0.1) ESAI = 0.0  ! MB: ESAI CHECK
-     IF (ELAI < 0.1 .OR. ESAI == 0.0) ELAI = 0.0  ! MB: LAI CHECK
+     IF (ESAI < 0.05) ESAI = 0.0                   ! MB: ESAI CHECK, change to 0.05 v3.6
+     IF (ELAI < 0.05 .OR. ESAI == 0.0) ELAI = 0.0  ! MB: LAI CHECK
 
      IF (TV .GT. TMIN(VEGTYP)) THEN
          IGS = 1.
@@ -1255,7 +1259,7 @@ contains
                      SAV    ,SAG    ,QMELT  ,FSA    ,FSR    ,TAUX   , & !out
                      TAUY   ,FIRA   ,FSH    ,FCEV   ,FGEV   ,FCTR   , & !out
                      TRAD   ,PSN    ,APAR   ,SSOIL  ,BTRANI ,BTRAN  , & !out
-                     PONDING,TS     ,LATHEA ,                         & !out
+                     PONDING,TS     ,LATHEAV , LATHEAG , frozen_canopy,frozen_ground,                       & !out
                      TV     ,TG     ,STC    ,SNOWH  ,EAH    ,TAH    , & !inout
                      SNEQVO ,SNEQV  ,SH2O   ,SMC    ,SNICE  ,SNLIQ  , & !inout
                      ALBOLD ,CM     ,CH     ,DX     ,DZ8W   ,Q2     , &   !inout
@@ -1391,7 +1395,11 @@ contains
   REAL                              , INTENT(OUT)   :: SSOIL  !ground heat flux (w/m2)   [+ to soil]
   REAL   , DIMENSION(       1:NSOIL), INTENT(OUT)   :: BTRANI !soil water transpiration factor (0-1)
   REAL                              , INTENT(OUT)   :: BTRAN  !soil water transpiration factor (0-1)
-  REAL                              , INTENT(OUT)   :: LATHEA !latent heat vap./sublimation (j/kg)
+!  REAL                              , INTENT(OUT)   :: LATHEA !latent heat vap./sublimation (j/kg)
+  REAL                              , INTENT(OUT)   :: LATHEAV !latent heat vap./sublimation (j/kg)
+  REAL                              , INTENT(OUT)   :: LATHEAG !latent heat vap./sublimation (j/kg)
+  LOGICAL                           , INTENT(OUT)   :: FROZEN_GROUND ! used to define latent heat pathway
+  LOGICAL                           , INTENT(OUT)   :: FROZEN_CANOPY ! used to define latent heat pathway
 
 !jref:start  
   REAL                              , INTENT(OUT)   :: FSRV    !veg. reflected solar radiation (w/m2)
@@ -1469,7 +1477,9 @@ contains
   REAL                                              :: FMELT  !melting factor for snow cover frac
   REAL                                              :: GX     !temporary variable
   REAL, DIMENSION(-NSNOW+1:NSOIL)                   :: PHI    !light through water (w/m2)
-  REAL                                              :: GAMMA  !psychrometric constant (pa/k)
+!  REAL                                              :: GAMMA  !psychrometric constant (pa/k)
+  REAL                                              :: GAMMAV  !psychrometric constant (pa/k)
+  REAL                                              :: GAMMAG  !psychrometric constant (pa/k)
   REAL                                              :: PSI    !surface layer soil matrix potential (m)
   REAL                                              :: RHSUR  !raltive humidity in surface soil/snow air space (-)
 
@@ -1679,12 +1689,30 @@ contains
 
 ! set psychrometric constant
 
-     IF (SFCTMP .GT. TFRZ) THEN
-        LATHEA = HVAP
+     IF (TV .GT. TFRZ) THEN           ! Barlage: add distinction between ground and 
+        LATHEAV = HVAP                ! vegetation in v3.6
+	frozen_canopy = .false.
      ELSE
-        LATHEA = HSUB
+        LATHEAV = HSUB
+	frozen_canopy = .true.
      END IF
-     GAMMA = CPAIR*SFCPRS/(0.622*LATHEA)
+     GAMMAV = CPAIR*SFCPRS/(0.622*LATHEAV)
+
+     IF (TG .GT. TFRZ) THEN
+        LATHEAG = HVAP
+	frozen_ground = .false.
+     ELSE
+        LATHEAG = HSUB
+	frozen_ground = .true.
+     END IF
+     GAMMAG = CPAIR*SFCPRS/(0.622*LATHEAG)
+
+!     IF (SFCTMP .GT. TFRZ) THEN
+!        LATHEA = HVAP
+!     ELSE
+!        LATHEA = HSUB
+!     END IF
+!     GAMMA = CPAIR*SFCPRS/(0.622*LATHEA)
 
 ! Surface temperatures of the ground and canopy and energy fluxes
 
@@ -1695,12 +1723,12 @@ contains
     CALL VEGE_FLUX (NSNOW   ,NSOIL   ,ISNOW   ,VEGTYP  ,VEG     , & !in
                     DT      ,SAV     ,SAG     ,LWDN    ,UR      , & !in
                     UU      ,VV      ,SFCTMP  ,THAIR   ,QAIR    , & !in
-                    EAIR    ,RHOAIR  ,SNOWH   ,VAI     ,GAMMA   , & !in
+                    EAIR    ,RHOAIR  ,SNOWH   ,VAI     ,GAMMAV   ,GAMMAG   , & !in
                     FWET    ,LAISUN  ,LAISHA  ,CWP     ,DZSNSO  , & !in
                     HTOP    ,ZLVL    ,ZPD     ,Z0M     ,FVEG    , & !in
                     Z0MG    ,EMV     ,EMG     ,CANLIQ           , & !in
                     CANICE  ,STC     ,DF      ,RSSUN   ,RSSHA   , & !in
-                    RSURF   ,LATHEA  ,PARSUN  ,PARSHA  ,IGS     , & !in
+                    RSURF   ,LATHEAV ,LATHEAG ,PARSUN  ,PARSHA  ,IGS     , & !in
                     FOLN    ,CO2AIR  ,O2AIR   ,BTRAN   ,SFCPRS  , & !in
                     RHSUR   ,ILOC    ,JLOC    ,Q2      , & !in
                     EAH     ,TAH     ,TV      ,TGV     ,CMV     , & !inout
@@ -1721,8 +1749,8 @@ contains
                     LWDN    ,UR      ,UU      ,VV      ,SFCTMP  , & !in
                     THAIR   ,QAIR    ,EAIR    ,RHOAIR  ,SNOWH   , & !in
                     DZSNSO  ,ZLVL    ,ZPDG    ,Z0MG    ,          & !in
-                    EMG     ,STC     ,DF      ,RSURF   ,LATHEA  , & !in
-                    GAMMA   ,RHSUR   ,ILOC    ,JLOC    ,Q2      , & !in
+                    EMG     ,STC     ,DF      ,RSURF   ,LATHEAG  , & !in
+                    GAMMAG   ,RHSUR   ,ILOC    ,JLOC    ,Q2      , & !in
                     TGB     ,CMB     ,CHB     ,                   & !inout
                     TAUXB   ,TAUYB   ,IRB     ,SHB     ,EVB     , & !out
                     GHB     ,T2MB    ,DX      ,DZ8W    ,VEGTYP  , & !out
@@ -3011,12 +3039,12 @@ contains
   SUBROUTINE VEGE_FLUX(NSNOW   ,NSOIL   ,ISNOW   ,VEGTYP  ,VEG     , & !in
                        DT      ,SAV     ,SAG     ,LWDN    ,UR      , & !in
                        UU      ,VV      ,SFCTMP  ,THAIR   ,QAIR    , & !in
-                       EAIR    ,RHOAIR  ,SNOWH   ,VAI     ,GAMMA   , & !in
+                       EAIR    ,RHOAIR  ,SNOWH   ,VAI     ,GAMMAV   ,GAMMAG,  & !in
                        FWET    ,LAISUN  ,LAISHA  ,CWP     ,DZSNSO  , & !in
                        HTOP    ,ZLVL    ,ZPD     ,Z0M     ,FVEG    , & !in
                        Z0MG    ,EMV     ,EMG     ,CANLIQ  ,          & !in
                        CANICE  ,STC     ,DF      ,RSSUN   ,RSSHA   , & !in
-                       RSURF   ,LATHEA  ,PARSUN  ,PARSHA  ,IGS     , & !in
+                       RSURF   ,LATHEAV ,LATHEAG  ,PARSUN  ,PARSHA  ,IGS     , & !in
                        FOLN    ,CO2AIR  ,O2AIR   ,BTRAN   ,SFCPRS  , & !in
                        RHSUR   ,ILOC    ,JLOC    ,Q2      , & !in
                        EAH     ,TAH     ,TV      ,TG      ,CM      , & !inout
@@ -3083,8 +3111,12 @@ contains
   REAL,                            INTENT(IN) :: CANLIQ !intercepted liquid water (mm)
   REAL,                            INTENT(IN) :: CANICE !intercepted ice mass (mm)
   REAL,                            INTENT(IN) :: RSURF  !ground surface resistance (s/m)
-  REAL,                            INTENT(IN) :: GAMMA  !psychrometric constant (pa/K)
-  REAL,                            INTENT(IN) :: LATHEA !latent heat of vaporization/subli (j/kg)
+!  REAL,                            INTENT(IN) :: GAMMA  !psychrometric constant (pa/K)
+!  REAL,                            INTENT(IN) :: LATHEA !latent heat of vaporization/subli (j/kg)
+  REAL,                            INTENT(IN) :: GAMMAV  !psychrometric constant (pa/K)
+  REAL,                            INTENT(IN) :: LATHEAV !latent heat of vaporization/subli (j/kg)
+  REAL,                            INTENT(IN) :: GAMMAG  !psychrometric constant (pa/K)
+  REAL,                            INTENT(IN) :: LATHEAG !latent heat of vaporization/subli (j/kg)
   REAL,                            INTENT(IN) :: PARSUN !par absorbed per unit sunlit lai (w/m2)
   REAL,                            INTENT(IN) :: PARSHA !par absorbed per unit shaded lai (w/m2)
   REAL,                            INTENT(IN) :: FOLN   !foliage nitrogen (%)
@@ -3427,8 +3459,8 @@ contains
         COND = CAW + CEW + CTW + CGW
         AEA  = (EAIR*CAW + ESTG*CGW) / COND
         BEA  = (CEW+CTW)/COND
-        CEV  = (1.-BEA)*CEW*RHOAIR*CPAIR/GAMMA
-        CTR  = (1.-BEA)*CTW*RHOAIR*CPAIR/GAMMA
+        CEV  = (1.-BEA)*CEW*RHOAIR*CPAIR/GAMMAV   ! Barlage: change to vegetation v3.6
+        CTR  = (1.-BEA)*CTW*RHOAIR*CPAIR/GAMMAV
 
 ! evaluate surface fluxes with current temperature and solve for dts
 
@@ -3437,9 +3469,13 @@ contains
 
         IRC = FVEG*(AIR + CIR*TV**4)
         SHC = FVEG*RHOAIR*CPAIR*CVH * (  TV-TAH)
-        EVC = FVEG*RHOAIR*CPAIR*CEW * (ESTV-EAH) / GAMMA
-        TR  = FVEG*RHOAIR*CPAIR*CTW * (ESTV-EAH) / GAMMA
-        EVC = MIN(CANLIQ*LATHEA/DT,EVC)
+        EVC = FVEG*RHOAIR*CPAIR*CEW * (ESTV-EAH) / GAMMAV ! Barlage: change to v in v3.6
+        TR  = FVEG*RHOAIR*CPAIR*CTW * (ESTV-EAH) / GAMMAV
+	IF (TV > TFRZ) THEN
+          EVC = MIN(CANLIQ*LATHEAV/DT,EVC)    ! Barlage: add if block for canice in v3.6
+	ELSE
+          EVC = MIN(CANICE*LATHEAV/DT,EVC)
+	END IF
 
         B   = SAV-IRC-SHC-EVC-TR                          !additional w/m2
         A   = FVEG*(4.*CIR*TV**3 + CSH + (CEV+CTR)*DESTV) !volumetric heat capacity
@@ -3463,7 +3499,7 @@ contains
 
 ! added moisture flux for sfcdif4
         IF ( OPT_SFC == 4 ) THEN
-           QFX = (QSFC-QAIR)*RHOAIR*CAW !*CPAIR/GAMMA
+           QFX = (QSFC-QAIR)*RHOAIR*CAW !*CPAIR/GAMMAV
         ENDIF
 
         IF (LITER == 1) THEN
@@ -3480,7 +3516,7 @@ contains
         AIR = - EMG*(1.-EMV)*LWDN - EMG*EMV*SB*TV**4
         CIR = EMG*SB
         CSH = RHOAIR*CPAIR/RAHG
-        CEV = RHOAIR*CPAIR / (GAMMA*(RAWG+RSURF))
+        CEV = RHOAIR*CPAIR / (GAMMAG*(RAWG+RSURF))  ! Barlage: change to ground v3.6
         CGH = 2.*DF(ISNOW+1)/DZSNSO(ISNOW+1)
 
      loop2: DO ITER = 1, NITERG
@@ -3535,8 +3571,8 @@ contains
 ! calculation.
 !     TAH = SFCTMP + (SHG+SHC)/(RHOAIR*CPAIR*CAH) 
 !     TAH = SFCTMP + (SHG*FVEG+SHC)/(RHOAIR*CPAIR*CAH) ! ground flux need fveg
-!     EAH = EAIR + (EVC+FVEG*(TR+EVG))/(RHOAIR*CAW*CPAIR/GAMMA )
-!     QFX = (QSFC-QAIR)*RHOAIR*CAW !*CPAIR/GAMMA
+!     EAH = EAIR + (EVC+FVEG*(TR+EVG))/(RHOAIR*CAW*CPAIR/GAMMAG )
+!     QFX = (QSFC-QAIR)*RHOAIR*CAW !*CPAIR/GAMMAG
 
 ! 2m temperature over vegetation ( corrected for low CQ2V values )
    IF (OPT_SFC == 1 .OR. OPT_SFC == 2) THEN
@@ -3551,7 +3587,7 @@ contains
       ELSE
          T2MV = TAH - (SHG+SHC/FVEG)/(RHOAIR*CPAIR) * 1./CAH2
 !         Q2V = (EAH*0.622/(SFCPRS - 0.378*EAH))- QFX/(RHOAIR*FV)* 1./VKC * LOG((2.+Z0H)/Z0H)
-         Q2V = QSFC - ((EVC+TR)/FVEG+EVG)/(LATHEA*RHOAIR) * 1./CQ2V
+         Q2V = QSFC - ((EVC+TR)/FVEG+EVG)/(LATHEAV*RHOAIR) * 1./CQ2V
       ENDIF
    ENDIF
 
@@ -6226,6 +6262,7 @@ contains
                     VV     ,FCEV   ,FCTR   ,QPRECC ,QPRECL ,ELAI   , & !in
                     ESAI   ,SFCTMP ,QVAP   ,QDEW   ,ZSOIL  ,BTRANI , & !in
                     FICEOLD,PONDING,TG     ,IST    ,FVEG   ,ILOC   ,JLOC ,SMCEQ , & !in
+		    LATHEAV , LATHEAG , frozen_canopy,frozen_ground,                       & !in  MB
                     ISNOW  ,CANLIQ ,CANICE ,TV     ,SNOWH  ,SNEQV  , & !inout
                     SNICE  ,SNLIQ  ,STC    ,ZSNSO  ,SH2O   ,SMC    , & !inout
                     SICE   ,ZWT    ,WA     ,WT     ,DZSNSO ,WSLAKE , & !inout
@@ -6310,6 +6347,10 @@ contains
   REAL,                            INTENT(OUT)   :: PONDING2
   REAL,                            INTENT(OUT)   :: QSNBOT  !melting water out of snow bottom [mm/s]
   REAL,                            INTENT(OUT)   :: FPICE   !snow fraction in precipitation
+  REAL                              , INTENT(IN)   :: LATHEAV !latent heat vap./sublimation (j/kg)
+  REAL                              , INTENT(IN)   :: LATHEAG !latent heat vap./sublimation (j/kg)
+  LOGICAL                           , INTENT(IN)   :: FROZEN_GROUND ! used to define latent heat pathway
+  LOGICAL                           , INTENT(IN)   :: FROZEN_CANOPY ! used to define latent heat pathway
 
   INTEGER,                         INTENT(IN)    :: ISURBAN
 
@@ -6347,6 +6388,7 @@ contains
    CALL CANWATER (VEGTYP ,DT     ,SFCTMP ,UU     ,VV     , & !in
                   FCEV   ,FCTR   ,QPRECC ,QPRECL ,ELAI   , & !in
                   ESAI   ,IST    ,TG     ,FVEG   ,ILOC   , JLOC, & !in
+                  FROZEN_CANOPY,                                 & !in     
                   CANLIQ ,CANICE ,TV     ,                 & !inout
                   CMC    ,ECAN   ,ETRAN  ,QRAIN  ,QSNOW  , & !out
                   SNOWHIN,FWET   ,FPICE   )                           !out
@@ -6371,6 +6413,16 @@ contains
           &          ISNOW  ,SNOWH  ,SNEQV  ,SNICE  ,SNLIQ  , & !inout
           &          SH2O   ,SICE   ,STC    ,ZSNSO  ,DZSNSO , & !inout
           &          QSNBOT ,SNOFLOW,PONDING1       ,PONDING2)  !out
+
+   IF(FROZEN_GROUND) THEN
+      SICE(1) =  SICE(1) + (QSDEW-QSEVA)*DT/(DZSNSO(1)*1000.)
+      QSDEW = 0.0
+      QSEVA = 0.0
+      IF(SICE(1) < 0.) THEN
+         SH2O(1) = SH2O(1) + SICE(1)
+         SICE(1) = 0.
+      END IF
+   END IF
 
 ! convert units (mm/s -> m/s)
 
@@ -6442,6 +6494,7 @@ contains
   SUBROUTINE CANWATER (VEGTYP ,DT     ,SFCTMP ,UU     ,VV     , & !in
                        FCEV   ,FCTR   ,QPRECC ,QPRECL ,ELAI   , & !in
                        ESAI   ,IST    ,TG     ,FVEG   ,ILOC   , JLOC , & !in
+                       FROZEN_CANOPY,                                 & !in      
                        CANLIQ ,CANICE ,TV     ,                 & !inout
                        CMC    ,ECAN   ,ETRAN  ,QRAIN  ,QSNOW  , & !out
                        SNOWHIN,FWET   ,FPICE   )                           !out
@@ -6470,6 +6523,7 @@ contains
   INTEGER,INTENT(IN)  :: IST     !surface type 1-soil; 2-lake
   REAL,   INTENT(IN)  :: TG      !ground temperature (k)
   REAL,   INTENT(IN)  :: FVEG    !greeness vegetation fraction (-)
+  LOGICAL                           , INTENT(IN)   :: FROZEN_CANOPY ! used to define latent heat pathway
 
 ! input & output
   REAL, INTENT(INOUT) :: CANLIQ  !intercepted liquid water (mm)
@@ -6564,7 +6618,7 @@ contains
 ! Hedstrom NR and JW Pomeroy (1998), Hydrol. Processes, 12, 1611-1625
 ! fresh snow density
 
-     BDFALL = MAX(120.,67.92+51.25*EXP((SFCTMP-TFRZ)/2.59))
+     BDFALL = MIN(120.,67.92+51.25*EXP((SFCTMP-TFRZ)/2.59))   ! Barlage: change to MIN in v3.6
 
      RAIN   = (QPRECC + QPRECL) * (1.-FPICE)
      SNOW   = (QPRECC + QPRECL) * FPICE
@@ -6595,7 +6649,7 @@ contains
 
 ! evaporation, transpiration, and dew
 
-      IF (TV .GT. TFRZ) THEN
+      IF (.NOT.FROZEN_CANOPY) THEN             ! Barlage: change to frozen_canopy
         ETRAN = MAX( FCTR/HVAP, 0. )
         QEVAC = MAX( FCEV/HVAP, 0. )
         QDEWC = ABS( MIN( FCEV/HVAP, 0. ) )
@@ -7406,7 +7460,11 @@ contains
 !for the case when SNEQV becomes '0' after 'COMBINE'
 
    IF(SNEQV == 0.) THEN
-      SH2O(1) =  SH2O(1) + (QSNFRO-QSNSUB)*DT/(DZSNSO(1)*1000.)
+      SICE(1) =  SICE(1) + (QSNFRO-QSNSUB)*DT/(DZSNSO(1)*1000.)  ! Barlage: SH2O->SICE v3.6
+      IF(SICE(1) < 0.) THEN
+         SH2O(1) = SH2O(1) + SICE(1)
+         SICE(1) = 0.
+      END IF
    END IF
 
 ! for shallow snow without a layer

@@ -12300,7 +12300,7 @@ CONTAINS
       end do
 !jdfcz     else ! prescribe 
 ! following Kiehl
-      call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
+!     call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
 !     write(0,*) 'lw prescribe aerosol',maxval(qndrop3d)
 !jdfcz     endif
     else  ! progn   

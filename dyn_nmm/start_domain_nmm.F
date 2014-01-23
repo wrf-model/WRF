@@ -216,6 +216,7 @@
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: ZINT,RRI,CONVFAC,ZMID
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: T_TRANS,PINT_TRANS
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: CLDFRA_TRANS
+      REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: SCALAR_TRANS
 #ifndef WRF_CHEM
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: CLDFRA_OLD
 #endif
@@ -1797,6 +1798,7 @@
       ALLOCATE(T_TRANS(IMS:IME,KMS:KME,JMS:JME),STAT=I)     ;  T_TRANS = 0.
       ALLOCATE(RRI(IMS:IME,KMS:KME,JMS:JME),STAT=I)         ;  RRI = 0.
       ALLOCATE(CLDFRA_TRANS(IMS:IME,KMS:KME,JMS:JME),STAT=I); CLDFRA_TRANS = 0.
+      ALLOCATE(SCALAR_TRANS(IMS:IME,KMS:KME,JMS:JME,NUM_SCALAR),STAT=I)
 #ifndef WRF_CHEM      
       ALLOCATE(CLDFRA_OLD(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CLDFRA_OLD = 0.
 #endif
@@ -1812,6 +1814,19 @@
       GRID%BLDT=GRID%NPHS*GRID%DT/60.
       GRID%CUDT=GRID%NCNVC*GRID%DT/60.
       GRID%GSMDT=GRID%NPHS*GRID%DT/60.
+!
+! translate scalar(i,j,k,n) to scalar_trans(i,k,j,n)
+        DO N=1,NUM_SCALAR
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+          DO K=KMS,KME
+          DO J=JMS,JME
+          DO I=IMS,IME
+            SCALAR_TRANS(I,K,J,N)=SCALAR(I,J,K,N)
+          ENDDO
+          ENDDO
+          ENDDO
+        ENDDO
 !
       DO J=MYJS,MYJE
       DO I=MYIS,MYIE
@@ -1967,7 +1982,7 @@
      &             ,grid%w0avg, RAINNC, RAINC, grid%raincv, RAINNCV               &
      &             ,SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV              &
      &             ,z_at_q, grid%qnwfa2d                                &
-     &             ,scalar(ims,kms,jms,1),num_scalar                    &
+     &             ,scalar_trans(ims,kms,jms,1),num_scalar              &
      &             ,grid%re_cloud, grid%re_ice, grid%re_snow            & ! G. Thompson
      &             ,grid%has_reqc,grid%has_reqi,grid%has_reqs           & ! G. Thompson
      &             ,NCA,GRID%SWRAD_SCAT                                 &

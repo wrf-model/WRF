@@ -1419,9 +1419,6 @@ rconfig   real    var_ric                 namelist,physics      1             1.
 rconfig   real    coef_ric_l              namelist,physics      1             0.16     -     "Regression coeff for Ric 0.16:origianl value over land"
 rconfig   real    coef_ric_s              namelist,physics      1             0.16     -     "Regression coeff for Ric 0.16:origianl value OVER SEA"
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
-rconfig   integer LakeModel               namelist,physics      max_domains  0         h    "LakeModel"     "activate lake model  0=no, 1=yes"   ""
-rconfig   real    domain_lakedepth        namelist,physics      max_domains  50       rh     "domain_lakedepth"                     ""      ""
-rconfig   real    lakeminalt              namelist,physics      max_domains   5       rh     "lakeminalt"                    ""      ""
 
 
 # Vortex Tracking (physics namelist)

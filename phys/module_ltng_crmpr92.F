@@ -183,7 +183,7 @@
  count = 0
  DO i=ips,ipe
    DO j=jps,jpe
-     IF ( (refl(i,k,j) .gt. reflthreshold) .and. (t(i,k,j) .gt. 273.15) ) THEN
+     IF ( (refl(i,k,j) .gt. reflthreshold) .and. (t(i,k,j) .lt. 273.15) ) THEN
        IF (z(i,k,j)-ht(i,j) .gt. zmax) THEN
          zmax = z(i,k,j)-ht(i,j)
        ENDIF
@@ -194,7 +194,9 @@
  ENDDO
  mostlyland = mostlyland/count
 
- zmax = zmax * 1E3
+ zmax = zmax * 1.e-3
+ WRITE(message, * ) ' ltng_crmpr92z: reflectivity cloud top height: ', zmax
+ CALL wrf_debug ( 15, message )
 
  if ( cellcount_method .eq. 2 ) THEN
    zmax = wrf_dm_max_real(zmax)

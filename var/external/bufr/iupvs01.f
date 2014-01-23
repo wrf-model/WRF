@@ -36,8 +36,9 @@ C                  -1 = THE INPUT S01MNEM MNEMONIC WAS INVALID
 C
 C REMARKS:
 C    THIS ROUTINE CALLS:        BORT     IUPBS01  STATUS
-C    THIS ROUTINE IS CALLED BY: NMBYT
-C                               Also called by application programs.
+C    THIS ROUTINE IS CALLED BY: None
+C                               Normally called only by application
+C                               programs.
 C
 C ATTRIBUTES:
 C   LANGUAGE: FORTRAN 77

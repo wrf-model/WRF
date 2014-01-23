@@ -248,6 +248,7 @@ REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
    integer :: ii,jj,kk
    REAL, DIMENSION( ims:ime, jms:jme, num_chem ) :: qsrflx ! column change due to scavening
    REAL ::  tmp_minval = 1.0e7
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ) :: rainrate, evaprate
 
 !
 ! Wet deposition over the current time step
@@ -267,7 +268,7 @@ REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
 !
    cps_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE ( RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM , CBMZSORG_AQ )
+   CASE ( RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, CBMZSORG_AQ )
        CALL wrf_debug(15,'wetscav_driver calling sorgam_wetscav_driver' )
        call wetscav_sorgam_driver (id,ktau,dtstep,ktauc,config_flags,      &
                dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,        &
@@ -291,7 +292,8 @@ REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
    CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN)
        CALL wrf_error_fatal('Wet scavenging is currently not possible with MOSAIC unless aqueous aerosols are turned on.')
 
-   CASE (CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
+   CASE (CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
+   			CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP )
        CALL wrf_debug(15,'wetscav_driver calling mosaic_wetscav_driver')
        call wetscav_cbmz_mosaic (id,ktau,dtstep,ktauc,config_flags,        &
                dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,        &
@@ -302,9 +304,19 @@ REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
                its,ite, jts,jte, kts,kte                                   )
    CASE (MOZART_KPP,MOZCART_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP)
        CALL wrf_debug(15,'wetscav_driver calling wetscav_mozcart')
+       if( config_flags%mp_physics == THOMPSON ) then
+         rainrate(:,:,:) = rainprod(:,:,:)
+         evaprate(:,:,:) = evapprod(:,:,:)
+       elseif( config_flags%mp_physics == CAMMGMPSCHEME ) then
+         rainrate(:,:,:) = prain3d(:,:,:)
+         evaprate(:,:,:) = nevapr3d(:,:,:)
+       else
+         rainrate(:,:,:) = 0.
+         evaprate(:,:,:) = 0.
+       endif
        call wetscav_mozcart( id, ktau, dtstep, ktauc, config_flags,             &
                              dtstepc, t_phy, p8w, t8w, p_phy,                   &
-                             chem, rho_phy, cldfra2, rainprod, evapprod,        &
+                             chem, rho_phy, cldfra2, rainrate, evaprate,        &
                              qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp,                &
                              gas_aqfrac, numgas_aqfrac, dz8w, dx, dy,           &
                              moist(ims,kms,jms,p_qv), moist(ims,kms,jms,p_qc),  &
@@ -340,7 +352,7 @@ CASE (CBMZ_CAM_MAM3_NOAQ,CBMZ_CAM_MAM3_AQ,CBMZ_CAM_MAM7_NOAQ,CBMZ_CAM_MAM7_AQ)
    
     SELECT CASE(config_flags%chem_opt)
       
-      CASE ( RADM2SORG_AQCHEM,RACMSORG_AQCHEM )
+      CASE ( RADM2SORG_AQCHEM,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP )
       
       do jj=jts,jte
         do ii=its,ite

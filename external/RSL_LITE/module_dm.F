@@ -1133,6 +1133,19 @@ CONTAINS
 #endif
    END FUNCTION wrf_dm_sum_integer
 
+   SUBROUTINE wrf_dm_sum_integers (inval, retval)
+      IMPLICIT NONE
+      INTEGER, INTENT(IN)  :: inval(:)
+      INTEGER, INTENT(OUT) :: retval(:)
+#ifndef STUBMPI
+      INCLUDE 'mpif.h'
+      INTEGER ierr
+      CALL mpi_allreduce ( inval, retval, SIZE(inval), MPI_INTEGER, MPI_SUM, local_communicator, ierr )
+#else
+      retval = inval
+#endif
+   END SUBROUTINE wrf_dm_sum_integers
+
 #ifdef HWRF
    SUBROUTINE wrf_dm_minloc_real ( val, lat, lon, z, idex, jdex )
       IMPLICIT NONE

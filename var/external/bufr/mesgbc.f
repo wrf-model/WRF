@@ -3,7 +3,7 @@
 C$$$  SUBPROGRAM DOCUMENTATION BLOCK
 C
 C SUBPROGRAM:    MESGBC
-C   PRGMMR: KEYSER           ORG: NP22       DATE: 2004-06-29
+C   PRGMMR: KEYSER           ORG: NP22       DATE: 2003-11-04
 C
 C ABSTRACT: THIS SUBROUTINE EXAMINES A BUFR MESSAGE AND RETURNS BOTH
 C  THE MESSAGE TYPE FROM SECTION 1 AND A MESSAGE COMPRESSION INDICATOR
@@ -43,6 +43,10 @@ C                           INPUT ARGUMENT LUNIN LESS THAN ZERO)
 C 2004-08-09  J. ATOR    -- MAXIMUM MESSAGE LENGTH INCREASED FROM
 C                           20,000 TO 50,000 BYTES
 C 2005-11-29  J. ATOR    -- USE IUPBS01, GETLENS AND RDMSGW
+C 2009-03-23  J. ATOR    -- USE IUPBS3 AND IDXMSG
+C 2012-09-15  J. WOOLLEN -- CONVERT TO C LANGUAGE I/O INTERFACE
+C                           ADD OPENBF AND CLOSBF FOR THE CASE
+C                           WHEN LUNIN GT 0
 C
 C USAGE:    CALL MESGBC (LUNIN, MESGTYP, ICOMP)
 C   INPUT ARGUMENT LIST:
@@ -87,8 +91,8 @@ C   INPUT FILES:
 C     UNIT ABS(LUNIN) - BUFR FILE
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        GETLENS  IUPB     IUPBS01  RDMSGW
-C                               STATUS   WRDLEN
+C    THIS ROUTINE CALLS:        CLOSBF   IDXMSG   IUPBS01  IUPBS3
+C                               OPENBF   RDMSGW   STATUS
 C    THIS ROUTINE IS CALLED BY: COPYSB   UFBTAB
 C                               Also called by application programs.
 C
@@ -124,18 +128,14 @@ C  ---------------------------------------------------------------
       IF(ITYPE.EQ.0) THEN
 
          IREC    =    0
-         NSUB    =    0
 
-C  SINCE OPENBF HAS NOT YET BEEN CALLED, MUST CALL WRDLEN TO GET
-C  MACHINE INFO NEEDED LATER
-C  -------------------------------------------------------------
+C  CALL OPENBF SINCE FILE IS NOT OPEN TO THE C INTERFACE YET 
+C  ---------------------------------------------------------
 
-         CALL WRDLEN
+         CALL OPENBF(LUNIT,'INX',LUNIT)
 
 C  READ PAST ANY BUFR TABLES AND RETURN THE FIRST MESSAGE TYPE FOUND
 C  -----------------------------------------------------------------
-
-         REWIND LUNIT
 
 1        CALL RDMSGW(LUNIT,MSGS,IER)
          IF(IER.EQ.-1) GOTO 900
@@ -145,12 +145,7 @@ C  -----------------------------------------------------------------
 
          MESGTYP = IUPBS01(MSGS,'MTYP') 
 
-         CALL GETLENS(MSGS,2,LEN0,LEN1,LEN2,L3,L4,L5)
-         IPT = LEN0+LEN1+LEN2
-
-         NSUB = IUPB(MSGS,IPT+5,16)
-
-         IF(MESGTYP.EQ.11 .OR. NSUB.EQ.0) GO TO 1
+         IF((IDXMSG(MSGS).EQ.1).OR.(IUPBS3(MSGS,'NSUB').EQ.0)) GOTO 1
 
       ELSE
 
@@ -165,19 +160,13 @@ C  ----------------------------------------------------------
 
          MESGTYP = IUPBS01(MSGS,'MTYP') 
 
-         CALL GETLENS(MSGS,2,LEN0,LEN1,LEN2,L3,L4,L5)
-         IPT = LEN0+LEN1+LEN2
-
       END IF
 
-      ICOMP = 0
-      NCMP = IUPB(MSGS,IPT+7,8)
+C  SET THE COMPRESSION SWITCH
+C  --------------------------
 
-C  BUFR MESSAGES ARE COMPRESSED IF BELOW IS TRUE
-C  ---------------------------------------------
+      ICOMP = IUPBS3(MSGS,'ICMP')
 
-      IF(IAND(NCMP,64).GT.0) ICOMP = 1
-      if(itype.eq.0)  REWIND LUNIT
       GOTO 100
 
 C  CAN ONLY GET TO STATEMENTS 900 OR 901 WHEN ITYPE = 0
@@ -189,16 +178,15 @@ C  ----------------------------------------------------
       ELSE
          IF(MESGTYP.GE.0) MESGTYP = -MESGTYP
          ICOMP  = -2
-         REWIND LUNIT
       ENDIF
       GOTO 100
 
 901   MESGTYP = -256
       ICOMP =     -1
-      REWIND LUNIT
 
 C  EXIT
 C  ----
 
-100   RETURN
+100   IF(ITYPE.EQ.0) CALL CLOSBF(LUNIT)
+      RETURN
       END

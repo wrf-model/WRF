@@ -269,7 +269,6 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
 #include "deref_kludge.h"
 
-
    grid%input_from_file = .true.
    grid%input_from_file = .false.
 
@@ -380,8 +379,6 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       CALL wrf_debug ( 100 , 'med_sidata_input: calling optional_input' )
 !
       CALL optional_input ( grid , idsi , config_flags )
-	write(mess,*) 'maxval st_input(1) within real_nmm: ', maxval(st_input(:,1,:))
-        call wrf_message(mess)
       END IF
 !
       CALL close_dataset ( idsi , config_flags , "DATASET=AUXINPUT1" )

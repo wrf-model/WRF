@@ -2043,7 +2043,7 @@ CONTAINS
 ! New scheme
 ! Let's define the fscale
         else if(orgen .eq. 2 ) then
-        tt(jl) = ptenh(jl,ikb)
+        tt(jl) = ptenh(jl,ikb-1)
         zqsat(jl) = TLUCUA(tt(jl))/paph(jl,ikb-1)
         zqsat(jl) = zqsat(jl)/(1.-VTMPC1*zqsat(jl))
         ttb(jl) = ptenh(jl,ikb)

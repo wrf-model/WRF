@@ -19,6 +19,9 @@ CONTAINS
 #if (HWRF==1)
                   ALPHA,                                           &
                   HPBL2D, EVAP2D, HEAT2D,                          &    !Kwon add FOR SHAL. CON.
+                  VAR_RIC,                                         &    !Kwon for variable Ric
+                  U10,V10,ZNT,MZNT,rc2d,                           &    !Kwon for variable Ric
+                  DKU3D,DKT3D,coef_ric_l,coef_ric_s,xland,         &    !Kwon for variable Ric
 #endif
                   ids,ide, jds,jde, kds,kde,                       &
                   ims,ime, jms,jme, kms,kme,                       &
@@ -74,6 +77,8 @@ CONTAINS
 !-- EP1         constant for virtual temperature (R_v/R_d - 1) (dimensionless)
 !-- KARMAN      Von Karman constant
 !-- ALPHA       boundary depth scaling factor
+!-- VAR_RIC     Flag for using variable Ric or not (=1: variable Ric, =0: constant Ric)
+!-- RO          Surface Rossby number
 !-- ids         start index for i in domain
 !-- ide         end index for i in domain
 !-- jds         start index for j in domain
@@ -102,8 +107,15 @@ CONTAINS
       REAL,  DIMENSION(ims:ime, jms:jme), INTENT(OUT) ::              &
                                         HPBL2D,                         &    !ADDED BY KWON FOR SHALLOW CONV.
                                         EVAP2D,                         &    !ADDED BY KWON FOR SHALLOW CONV.
-                                        HEAT2D                               !ADDED BY KWON FOR SHALLOW CONV.
+                                        HEAT2D,RC2D,MZNT                     !ADDED BY KWON FOR SHALLOW CONV.
+      REAL,  DIMENSION(ims:ime, jms:jme), INTENT(IN) ::              &
+                                        U10,                         &    !ADDED BY KWON FOR VARIABLE Ric
+                                        V10,XLAND,                   &    !ADDED BY KWON FOR VARIABLE Ric
+                                        ZNT                               !ADDED BY KWON FOR VARIABLE Ric
+      REAL,  DIMENSION(ims:ime, jms:jme, kms:kme), INTENT(OUT) :: DKU3D,DKT3D  
+      REAL,    INTENT(IN) :: VAR_RIC,coef_ric_l,coef_ric_s                   !ADDED BY KWON
 #endif
+
 
 
       INTEGER, INTENT(IN) ::            ids,ide, jds,jde, kds,kde,      &
@@ -175,6 +187,9 @@ CONTAINS
                                         T1,                             &
                                         TAU,                            &
                                         dishx,                          &
+#if (HWRF==1)
+                                        dku,dkt,   &       !Kwon for diffusivity
+#endif
                                         U1,                             &
                                         V1
 
@@ -202,8 +217,10 @@ CONTAINS
                                         QSS,                            &
                                         RBSOIL,                         &
                                         RCL,                            &
+                                        XLAND1,                         &
                                         SPD1,                           &
                                         STRESS,                         &
+                                        RO,rbcr,                        &  !Kwon for variablr Ric(surface Rossby number)
                                         TSEA
 
       REAL     (kind=kind_phys) ::                                      &
@@ -256,10 +273,12 @@ CONTAINS
         QSS(i)=QV3D(i,kts,j)               ! not used in moninp so set to qv3d for now
         HEAT(i)=HFX(i,j)/CPM*RRHOX
         EVAP(i)=QFX(i,j)*RRHOX
+        XLAND1(i) = 0.0        
 #if (HWRF==1)
 ! Kwon FOR NEW SHALLOW CONVECTION 
         HEAT2D(i,j)=HFX(i,j)/CPM*RRHOX
         EVAP2D(i,j)=QFX(i,j)*RRHOX
+        XLAND1(i) = XLAND(I,J)
 #endif
 !
         STRESS(i)=KARMAN*KARMAN*WSPD(i,j)*WSPD(i,j)/(FMTMP*FMTMP)
@@ -268,6 +287,10 @@ CONTAINS
         PHII(I,kts)=0.
         RCL(i)=1.
         RBSOIL(I)=BR(i,j)
+#if (HWRF==1)
+! Kwon for variable Ric   : Ro=W10/(f*zo): surface Rossby number
+       Ro(I)=SQRT(U10(I,J)**2 + V10(I,J)**2) / (1.E-4 * MZNT(I,J))
+#endif
       ENDDO
 
       DO k=kts,kte
@@ -323,12 +346,15 @@ CONTAINS
           ENDDO
         ENDDO
       ENDDO
-
+!
       CALL MONINP(IM,IM,KX,NTRAC,DV,DU,TAU,RTG,U1,V1,T1,Q1,             &
                   PSK,RBSOIL,FM,FH,TSEA,QSS,HEAT,EVAP,STRESS,           &
                   SPD1,KPBL,PRSI,DEL,PRSL,PRSLK,PHII,PHIL,RCL,          &
-                  DELTIM,DUSFC,DVSFC,DTSFC,DQSFC,HPBL,HGAMT,HGAMQ,      &
-                  ALPHA)
+                  DELTIM,DUSFC,DVSFC,DTSFC,DQSFC,HPBL,HGAMT,            &
+#if (HWRF==1)
+               VAR_RIC,Ro,DKU,DKT,coef_ric_l,coef_ric_s,xland1,  &
+#endif
+                RBCR,HGAMQ,ALPHA)
 
 !============================================================================
 !    ADD  IN  DISSIPATIVE HEATING .... v*dv. This is Bob's doing
@@ -378,10 +404,29 @@ CONTAINS
 #if (HWRF==1)
 !Kwon For new shallow convection
         HPBL2D(i,j)=HPBL(i)
+        rc2D(i,j)=rbcr(i)
 #endif
 !
         KPBL2D(i,j)=kpbl(i)
       ENDDO
+! INITIALIZE DKU3D and DKT3D  (3D momentum and thermal diffusivity for
+! diagnostics)
+!
+#if (HWRF==1)
+     DO i=its,ite
+     DO k=kts,kte
+      DKU3D(I,J,K) = 0.
+      DKT3D(I,J,K) = 0.
+     ENDDO
+     ENDDO
+
+     DO i=its,ite
+     DO k=kts,kte-1
+      DKU3D(I,J,K) = DKU(I,K)
+      DKT3D(I,J,K) = DKT(I,K)
+     ENDDO
+     ENDDO
+#endif
 
     ENDDO
 
@@ -460,9 +505,12 @@ CONTAINS
       SUBROUTINE MONINP(IX,IM,KM,ntrac,DV,DU,TAU,RTG,                   &
      &     U1,V1,T1,Q1,                                                 &
      &     PSK,RBSOIL,FM,FH,TSEA,QSS,HEAT,EVAP,STRESS,SPD1,KPBL,        &
-!    &     PSK,RBSOIL,CD,CH,FM,FH,TSEA,QSS,DPHI,SPD1,KPBL,              &
      &     PRSI,DEL,PRSL,PRSLK,PHII,PHIL,RCL,DELTIM,                    &
-     &     DUSFC,DVSFC,DTSFC,DQSFC,HPBL,HGAMT,HGAMQ,ALPHA)
+     &     DUSFC,DVSFC,DTSFC,DQSFC,HPBL,HGAMT,                     &
+#if (HWRF==1)
+           VAR_RIC,Ro,DKU,DKT,coef_ric_l,coef_ric_s,xland1,   &
+#endif
+           RBCR,HGAMQ,ALPHA)
 !
       USE MODULE_GFS_MACHINE, ONLY : kind_phys
       USE MODULE_GFS_PHYSCONS, grav => con_g, RD => con_RD, CP => con_CP &
@@ -479,6 +527,10 @@ CONTAINS
 !
       real(kind=kind_phys) DELTIM
       real :: ALPHA
+
+#if (HWRF==1)
+      real :: VAR_RIC,coef_ric_l,coef_ric_s
+#endif
       real(kind=kind_phys) DV(IM,KM),     DU(IM,KM),                    &
      &                     TAU(IM,KM),    RTG(IM,KM,ntrac),             &
      &                     U1(IX,KM),     V1(IX,KM),                    &
@@ -495,7 +547,10 @@ CONTAINS
      &                     RCL(IM),       DUSFC(IM),                    &
      &                     dvsfc(IM),     dtsfc(IM),                    & 
      &                     DQSFC(IM),     HPBL(IM),                     &
-     &                     HGAMT(IM),     hgamq(IM)
+     &                     HGAMT(IM),     hgamq(IM), RBCR(IM)
+#if (HWRF==1)
+real(kind=kind_phys) RO(IM),xland1(IM)
+#endif
 !
 !    Locals
 !
@@ -510,11 +565,11 @@ CONTAINS
 !
       real(kind=kind_phys) RDZT(IM,KM-1),                               &
      &                     ZI(IM,KM+1),     ZL(IM,KM),                  &
-     &                     DKU(IM,KM-1),    DKT(IM,KM-1), DKO(IM,KM-1), &
+     &                     DKO(IM,KM-1),                                &
      &                     AL(IM,KM-1),     AD(IM,KM),                  &
      &                     AU(IM,KM-1),     A1(IM,KM),                  &
      &                     A2(IM,KM),       THETA(IM,KM),               &
-     &                     AT(IM,KM*(ntrac-1))
+     &                     AT(IM,KM*(ntrac-1)),DKU(IM,KM-1),DKT(IM,KM-1)
       logical              pblflg(IM),   sfcflg(IM), stable(IM)
 !
       real(kind=kind_phys) aphi16,  aphi5,  bet1,   bvf2,               &
@@ -525,7 +580,7 @@ CONTAINS
      &                     dtodsu,  dw2,    dw2min, g,                  &
      &                     gamcrq,  gamcrt, gocp,   gor, gravi,         &
      &                     hol,     pfac,   prmax,  prmin, prinv,       &
-     &                     prnum,   qmin,   qtend,  rbcr,               & 
+     &                     prnum,   qmin,   qtend,                      & 
      &                     rbint,   rdt,    rdz,    rdzt1,              &
      &                     ri,      rimin,  rl2,    rlam,               &
      &                     rone,   rzero,  sfcfrac,                     &
@@ -540,7 +595,7 @@ CONTAINS
       PARAMETER(CONT=1000.*CP/G,CONQ=1000.*HVAP/G,CONW=1000./G)
       PARAMETER(RLAM=150.,VK=0.4,VK2=VK*VK,PRMIN=1.0,PRMAX=4.)
       PARAMETER(DW2MIN=0.0001,DKMIN=1.0,DKMAX=1000.,RIMIN=-100.)
-      PARAMETER(RBCR=0.25,CFAC=7.8,PFAC=2.0,SFCFRAC=0.1)
+      PARAMETER(CFAC=7.8,PFAC=2.0,SFCFRAC=0.1)
       PARAMETER(QMIN=1.E-8,XKZO=1.0,ZFMIN=1.E-8,APHI5=5.,APHI16=16.)
 !     PARAMETER(GAMCRT=3.,GAMCRQ=2.E-3)
       PARAMETER(GAMCRT=3.,GAMCRQ=0.)
@@ -579,6 +634,23 @@ CONTAINS
 !!!   LATD = 0
       LOND = 0
       ENDIF
+!
+! define critical Richardson number    by KWON: Vickers and Mahart(2004) J. Appl. Meteo.
+!  coef_ric=0.16 originally but it may too small: controled by namelist=0.25
+!  Land and Ocean points are treated differently
+!  by Kwon
+!
+     do i=1,im
+     RBCR(I) = 0.25
+#if (HWRF==1)
+     IF(var_ric.eq.1.) THEN             
+      IF(xland1(i).eq.1)  RBCR(I) = coef_ric_l*(1.E-7*Ro(I))**(-0.18)
+      IF(xland1(i).eq.2)  RBCR(I) = coef_ric_s*(1.E-7*Ro(I))**(-0.18)
+!      write(0,*) 'xland1 coef_ric_l coef_ric_s ',xland1(i),coef_ric_l,coef_ric_s
+     ENDIF
+     IF(RBCR(I).GT.0.5) RBCR(I)=0.5    !set upper limit Suggsted by Han
+#endif
+     enddo
 !
       gravi = 1.0 / grav
       DT    = 2. * DELTIM
@@ -663,19 +735,19 @@ CONTAINS
              SPDK2 = MAX(RCL(i)*(U1(i,k)*U1(i,k)+V1(i,k)*V1(i,k)),RONE)
              RBUP(I)   = (THEKV(I)-THE1V(I))*(G*ZL(I,k)/THE1V(I))/SPDK2
              KPBL(I)   = K
-             STABLE(I) = RBUP(I).GT.RBCR
+             STABLE(I) = RBUP(I).GT.RBCR(I)
           ENDIF
         ENDDO
       ENDDO
 !
       DO I = 1,IM
          K = KPBL(I)
-         IF(RBDN(I).GE.RBCR) THEN
+         IF(RBDN(I).GE.RBCR(I)) THEN
             RBINT = 0.
-         ELSEIF(RBUP(I).LE.RBCR) THEN
+         ELSEIF(RBUP(I).LE.RBCR(I)) THEN
             RBINT = 1.
          ELSE
-            RBINT = (RBCR-RBDN(I))/(RBUP(I)-RBDN(I))
+            RBINT = (RBCR(I)-RBDN(I))/(RBUP(I)-RBDN(I))
          ENDIF
          HPBL(I) = ZL(I,K-1) + RBINT*(ZL(I,K)-ZL(I,K-1))
          IF(HPBL(I).LT.ZI(I,KPBL(I))) KPBL(I) = KPBL(I) - 1
@@ -749,7 +821,7 @@ CONTAINS
             SPDK2   = MAX(RCL(i)*(U1(i,k)*U1(i,k)+V1(i,k)*V1(i,k)),RONE)
             RBUP(I)   = (THEKV(I)-THERMAL(I))*(G*ZL(I,k)/THE1V(I))/SPDK2
             KPBL(I)   = K
-            STABLE(I) = RBUP(I).GT.RBCR
+            STABLE(I) = RBUP(I).GT.RBCR(I)
           ENDIF
         ENDDO
       ENDDO
@@ -757,12 +829,12 @@ CONTAINS
       DO I = 1,IM
          IF(PBLFLG(I)) THEN
             K = KPBL(I)
-            IF(RBDN(I).GE.RBCR) THEN
+            IF(RBDN(I).GE.RBCR(I)) THEN
                RBINT = 0.
-            ELSEIF(RBUP(I).LE.RBCR) THEN
+            ELSEIF(RBUP(I).LE.RBCR(I)) THEN
                RBINT = 1.
             ELSE
-               RBINT = (RBCR-RBDN(I))/(RBUP(I)-RBDN(I))
+               RBINT = (RBCR(I)-RBDN(I))/(RBUP(I)-RBDN(I))
             ENDIF
             HPBL(I) = ZL(I,K-1) + RBINT*(ZL(I,k)-ZL(I,K-1))
             IF(HPBL(I).LT.ZI(I,KPBL(I))) KPBL(I) = KPBL(I) - 1
@@ -855,6 +927,7 @@ CONTAINS
             ENDIF
          ENDDO
       ENDDO
+
 !
 !     COMPUTE TRIDIAGONAL MATRIX ELEMENTS FOR HEAT AND MOISTURE
 !

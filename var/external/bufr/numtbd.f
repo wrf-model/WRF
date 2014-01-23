@@ -7,12 +7,10 @@ C   PRGMMR: WOOLLEN          ORG: NP20       DATE: 2002-05-14
 C
 C ABSTRACT: THIS SUBROUTINE SEARCHES FOR AN INTEGER IDN, CONTAINING THE
 C   BIT-WISE REPRESENTATION OF A DESCRIPTOR (FXY) VALUE, WITHIN THE
-C   INTERNAL BUFR TABLE D AND B ARRAYS IN COMMON BLOCK /TABABD/.  IF
+C   INTERNAL BUFR TABLE B AND D ARRAYS IN COMMON BLOCK /TABABD/.  IF
 C   FOUND, IT RETURNS THE CORRESPONDING MNEMONIC AND OTHER INFORMATION
 C   FROM WITHIN THESE ARRAYS.  IF IDN IS NOT FOUND, IT RETURNS WITH
-C   IRET=0.  THIS SUBROUTINE IS IDENTICAL TO BUFR ARCHIVE LIBRARY
-C   SUBROUTINE NUMTAB EXCEPT NUMTAB ALSO SEARCHS FOR IDN WITHIN
-C   INTERNAL BUFR REPLICATION ARRAYS AND BUFR TABLE C.
+C   IRET=0.
 C
 C PROGRAM HISTORY LOG:
 C 2002-05-14  J. WOOLLEN -- ORIGINAL AUTHOR
@@ -20,6 +18,7 @@ C 2003-11-04  S. BENDER  -- ADDED REMARKS/BUFRLIB ROUTINE
 C                           INTERDEPENDENCIES
 C 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED
 C                           DOCUMENTATION (INCLUDING HISTORY)
+C 2009-04-21  J. ATOR    -- USE IFXY FOR MORE EFFICIENT SEARCHING
 C
 C USAGE:    CALL NUMTBD (LUN, IDN, NEMO, TAB, IRET)
 C   INPUT ARGUMENT LIST:
@@ -50,8 +49,8 @@ C       IDN was not found in internal BUFR Table B or D
 C    END IF
 C
 C
-C    THIS ROUTINE CALLS:        None
-C    THIS ROUTINE IS CALLED BY: RESTD
+C    THIS ROUTINE CALLS:        IFXY
+C    THIS ROUTINE IS CALLED BY: NUMTAB   RESTD    STSEQ
 C                               Normally not called by any application
 C                               programs.
 C
@@ -82,29 +81,35 @@ C-----------------------------------------------------------------------
       IRET = 0
       TAB = ' '
 
-C  LOOK FOR IDN IN TABLE D
-C  -----------------------
+      IF(IDN.GE.IFXY('300000')) THEN
 
-      DO I=1,NTBD(LUN)
-      IF(IDN.EQ.IDND(I,LUN)) THEN
-         NEMO = TABD(I,LUN)(7:14)
-         TAB  = 'D'
-         IRET = I
-         GOTO 100
+C        LOOK FOR IDN IN TABLE D
+C        -----------------------
+
+         DO I=1,NTBD(LUN)
+            IF(IDN.EQ.IDND(I,LUN)) THEN
+               NEMO = TABD(I,LUN)(7:14)
+               TAB  = 'D'
+               IRET = I
+               GOTO 100
+            ENDIF
+         ENDDO
+
+      ELSE
+
+C        LOOK FOR IDN IN TABLE B
+C        -----------------------
+
+         DO I=1,NTBB(LUN)
+            IF(IDN.EQ.IDNB(I,LUN)) THEN
+               NEMO = TABB(I,LUN)(7:14)
+               TAB  = 'B'
+               IRET = I
+               GOTO 100
+            ENDIF
+         ENDDO
+
       ENDIF
-      ENDDO
-
-C  LOOK FOR IDN IN TABLE B
-C  -----------------------
-
-      DO I=1,NTBB(LUN)
-      IF(IDN.EQ.IDNB(I,LUN)) THEN
-         NEMO = TABB(I,LUN)(7:14)
-         TAB  = 'B'
-         IRET = I
-         GOTO 100
-      ENDIF
-      ENDDO
 
 C  EXIT
 C  ----

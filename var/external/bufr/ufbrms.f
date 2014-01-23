@@ -41,6 +41,7 @@ C 2004-11-15  D. KEYSER  -- PARAMETER MAXMEM (THE MAXIMUM NUMBER OF
 C                           BYTES REQUIRED TO STORE ALL MESSAGES
 C                           INTERNALLY) WAS INCREASED FROM 16 MBYTES TO
 C                           50 MBYTES
+C 2009-04-21  J. ATOR    -- USE ERRWRT
 C
 C USAGE:    CALL UFBRMS (IMSG, ISUB, USR, I1, I2, IRET, STR)
 C   INPUT ARGUMENT LIST:
@@ -64,15 +65,12 @@ C                FROM DATA SUBSET
 C     IRET     - INTEGER: NUMBER OF "LEVELS" OF DATA VALUES READ FROM
 C                DATA SUBSET (MUST BE NO LARGER THAN I2)
 C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
-C
 C REMARKS:
 C    NOTE THAT UFBMEM IS CALLED PRIOR TO THIS TO STORE THE BUFR
 C    MESSAGES INTO INTERNAL MEMORY.
 C
-C    THIS ROUTINE CALLS:        BORT     RDMEMM   RDMEMS   STATUS
-C                               UFBINT
+C    THIS ROUTINE CALLS:        BORT     ERRWRT   RDMEMM   RDMEMS
+C                               STATUS   UFBINT
 C    THIS ROUTINE IS CALLED BY: None
 C                               Normally called only by application
 C                               programs.
@@ -85,13 +83,15 @@ C$$$
 
       INCLUDE 'bufrlib.prm'
 
-      COMMON /MSGMEM/ MUNIT,MLAST,MSGP(0:MAXMSG),MSGS(MAXMEM)
+      COMMON /MSGMEM/ MUNIT,MLAST,MSGP(0:MAXMSG),MSGS(MAXMEM),
+     .                MDX(MXDXW),IPDXM(MXDXM),LDXM,NDXM,LDXTS,NDXTS,
+     .                IFDXTS(MXDXTS),ICDXTS(MXDXTS),IPMSGS(MXDXTS)
       COMMON /MSGCWD/ NMSG(NFILES),NSUB(NFILES),MSUB(NFILES),
      .                INODE(NFILES),IDATE(NFILES)
       COMMON /QUIET / IPRT
 
       CHARACTER*(*) STR
-      CHARACTER*128 BORT_STR
+      CHARACTER*128 BORT_STR,ERRSTR
       CHARACTER*8   SUBSET
       REAL*8        USR(I1,I2)
 
@@ -101,24 +101,24 @@ C-----------------------------------------------------------------------
       IRET = 0
       IF(I1.LE.0) THEN
          IF(IPRT.GE.0) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-         PRINT*,'BUFRLIB: UFBRMS - FOURTH ARGUMENT (INPUT) IS .LE. 0',
-     .    ' -  RETURN WITH SIXTH ARGUMENT (IRET) = 0'
-         PRINT*,'STR = ',STR
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      ERRSTR = 'BUFRLIB: UFBRMS - 4th ARG. (INPUT) IS .LE. 0, ' //
+     .   'SO RETURN WITH 6th ARG. (IRET) = 0; 7th ARG. (STR) ='
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT(STR)
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
          ENDIF
          GOTO 100
       ELSEIF(I2.LE.0) THEN
          IF(IPRT.GE.0) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-         PRINT*,'BUFRLIB: UFBRMS - FIFTH ARGUMENT (INPUT) IS .LE. 0',
-     .    ' -  RETURN WITH SIXTH ARGUMENT (IRET) = 0'
-         PRINT*,'STR = ',STR
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      ERRSTR = 'BUFRLIB: UFBRMS - 5th ARG. (INPUT) IS .LE. 0, ' //
+     .   'SO RETURN WITH 6th ARG. (IRET) = 0; 7th ARG. (STR) ='
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT(STR)
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
          ENDIF
          GOTO 100
       ENDIF
@@ -127,7 +127,7 @@ C  UFBINT SUBSET #ISUB FROM MEMORY MESSAGE #IMSG
 C  ---------------------------------------------
 
       CALL RDMEMM(IMSG,SUBSET,JDATE,IRET)
-      IF(IRET.NE.0) GOTO 900
+      IF(IRET.LT.0) GOTO 900
       CALL RDMEMS(ISUB,IRET)
       IF(IRET.NE.0) GOTO 901
 

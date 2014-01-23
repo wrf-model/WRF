@@ -110,8 +110,8 @@
 !  ENDIF
    select case (config_flags%chem_opt)
    case ( RADM2SORG,           RADM2SORG_KPP,      RADM2SORG_AQ, RADM2SORG_AQCHEM, &
-          GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ,  RACMSORG_AQCHEM, &
-          RACM_SOA_VBS_KPP,                                      &
+          GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ,  RACMSORG_AQCHEM_KPP, &
+          RACM_ESRLSORG_AQCHEM_KPP, RACM_SOA_VBS_KPP,                                      &
           GOCARTRACM_KPP,      GOCARTRADM2_KPP,    GOCARTRADM2,  &
           RACM_ESRLSORG_KPP,   MOZCART_KPP,                      &
           CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_KPP,   &
@@ -120,7 +120,7 @@
           CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &    
           CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP,MOZART_MOSAIC_4BIN_VBS0_KPP , &
           CBMZ_CAM_MAM3_NOAQ,CBMZ_CAM_MAM7_NOAQ,  CBMZ_CAM_MAM3_AQ,  &
-          CBMZ_CAM_MAM7_AQ)
+          CBMZ_CAM_MAM7_AQ, CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP )
       processingAerosols = .true.
       call wrf_debug(15,'optical driver: process aerosols true')
    case default
@@ -138,8 +138,8 @@
    select case (config_flags%chem_opt)
    case ( RADM2SORG, RACM_ESRLSORG_KPP, RADM2SORG_KPP, RADM2SORG_AQ, RADM2SORG_AQCHEM, &
           GOCARTRACM_KPP,      GOCARTRADM2_KPP,    GOCARTRADM2,      &
-          GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ,      RACMSORG_AQCHEM, &
-          RACM_SOA_VBS_KPP,                                          &
+          GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ,      RACMSORG_AQCHEM_KPP, &
+          RACM_ESRLSORG_AQCHEM_KPP, RACM_SOA_VBS_KPP,                                          &
           CBMZSORG,            CBMZSORG_AQ,        MOZCART_KPP,       &
           CBMZ_CAM_MAM3_NOAQ,  CBMZ_CAM_MAM7_NOAQ,  CBMZ_CAM_MAM3_AQ,  CBMZ_CAM_MAM7_AQ)
      nbin_o = 8
@@ -147,7 +147,8 @@
          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
          CBMZ_MOSAIC_DMS_4BIN,    CBMZ_MOSAIC_DMS_8BIN,   &
          CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &    
-         CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, MOZART_MOSAIC_4BIN_VBS0_KPP )
+         CBMZ_MOSAIC_4BIN_VBS2_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
+         MOZART_MOSAIC_4BIN_VBS0_KPP, CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP )
      nbin_o = nbin_a
    end select
 !

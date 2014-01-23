@@ -65,6 +65,8 @@ SUBROUTINE microphysics_driver(                                          &
 ! Added the RI_CURR array to the call
                       ,ri_curr                                           &
                       ,diagflag,   do_radar_ref                          &
+                      ,re_cloud, re_ice, re_snow                         & ! G. Thompson
+                      ,has_reqc, has_reqi, has_reqs                      & ! G. Thompson
                                                    )
 ! Framework
 #if(NMM_CORE==1)
@@ -472,6 +474,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
    LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
    INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) ::  & ! G. Thompson
+                 re_cloud, re_ice, re_snow
+   INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
 
 ! LOCAL  VAR
 
@@ -574,7 +579,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   F_QC=f_qc, F_QI=f_qi                          )
           END IF
        ELSE IF( progn==1 .AND. mp_physics/=LINSCHEME .AND. mp_physics/=MORR_TWO_MOMENT) THEN
-             call wrf_error_fatal("SETTINGS ERROR: Prognostic cloud droplet number can only be used with the mp_physics=LINSCHEME or MORRISON.")
+             call wrf_error_fatal( &
+             "SETTINGS ERROR: Prognostic cloud droplet number can only be used with the mp_physics=LINSCHEME or MORRISON.")
        END IF
        END IF
 
@@ -674,6 +680,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      REFL_10CM=refl_10cm,                &
                      diagflag=diagflag,                  &
                      do_radar_ref=do_radar_ref,          &
+                     re_cloud=re_cloud,                  & ! G. Thompson
+                     re_ice=re_ice,                      & ! G. Thompson
+                     re_snow=re_snow,                    & ! G. Thompson
+                     has_reqc=has_reqc,                  & ! G. Thompson
+                     has_reqi=has_reqi,                  & ! G. Thompson
+                     has_reqs=has_reqs,                  & ! G. Thompson
                  IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
                  IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
                  ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
@@ -716,6 +728,10 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      W=w                                 &  !*
                     ,RAINNC=RAINNC                       &  !*
                     ,RAINNCV=RAINNCV                     &  !*
+                    ,SNOWNC=SNOWNC                       &  !*
+                    ,SNOWNCV=SNOWNCV                     &  !*
+                    ,GRAUPELNC=GRAUPELNC                 &  !*
+                    ,GRAUPELNCV=GRAUPELNCV               &  !*
                     ,SR=SR                               &  !* !hm
                     ,REFL_10CM=refl_10cm                 &  ! added for radar reflectivity
                     ,diagflag=diagflag                   &  ! added for radar reflectivity
@@ -1450,6 +1466,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   PRESENT( dgnumwet4D ) .AND.                           &
 #endif
                   PRESENT( qni_curr   ) .AND. PRESENT( RAINNC      ) ) THEN
+#ifdef WRF_CHEM
+                qv_b4mp(its:ite,kts:kte,jts:jte) = qv_curr(its:ite,kts:kte,jts:jte)
+                qc_b4mp(its:ite,kts:kte,jts:jte) = qc_curr(its:ite,kts:kte,jts:jte)
+                qi_b4mp(its:ite,kts:kte,jts:jte) = qi_curr(its:ite,kts:kte,jts:jte)
+                qs_b4mp(its:ite,kts:kte,jts:jte) = qs_curr(its:ite,kts:kte,jts:jte)
+#endif
                   
                 CALL CAMMGMP(ITIMESTEP=itimestep,DT=dt,P8W=p8w_hyd,P_HYD=p_hyd    &
                      ,T_PHY=t_phy,PI_PHY=pi_phy,Z_AT_W=z_at_w,QFX=qfx             &

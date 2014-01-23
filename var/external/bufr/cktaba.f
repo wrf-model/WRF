@@ -46,6 +46,8 @@ C 2005-11-29  J. ATOR    -- USE IUPBS01, IGETDATE AND GETLENS
 C 2006-04-14  J. ATOR    -- ALLOW "FRtttsss" AND "FNtttsss" AS POSSIBLE
 C                           TABLE A MNEMONICS, WHERE ttt IS THE BUFR
 C                           TYPE AND sss IS THE BUFR SUBTYPE
+C 2009-03-23  J. ATOR    -- ADD LOGIC TO ALLOW SECTION 3 DECODING;
+C                           USE IUPBS3 AND ERRWRT
 C
 C USAGE:    CALL CKTABA (LUN, SUBSET, JDATE, IRET)
 C   INPUT ARGUMENT LIST:
@@ -53,8 +55,9 @@ C     LUN      - INTEGER: I/O STREAM INDEX INTO INTERNAL MEMORY ARRAYS
 C
 C   OUTPUT ARGUMENT LIST:
 C     SUBSET   - CHARACTER*8: TABLE A MNEMONIC FOR TYPE OF BUFR MESSAGE
-C                BEING CHECKED
-C              "        " = IRET equal to 11 (see IRET below)
+C                BEING CHECKED:
+C                       "        " = IRET equal to 11 (see IRET below)
+C                                    and not using Section 3 decoding
 C     JDATE    - INTEGER: DATE-TIME STORED WITHIN SECTION 1 OF BUFR
 C                MESSAGE BEING CHECKED, IN FORMAT OF EITHER YYMMDDHH OR
 C                YYYYMMDDHH, DEPENDING ON DATELEN() VALUE 
@@ -63,14 +66,12 @@ C                       0 = normal return
 C                      -1 = unrecognized Table A (message type) value
 C                      11 = this is a BUFR table (dictionary) message
 C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
-C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT     DIGIT    GETLENS  I4DY
-C                               IGETDATE IUPB     IUPBS01  NEMTBAX
-C                               NUMTAB   OPENBT   RDUSDX
-C    THIS ROUTINE IS CALLED BY: RDMEMM   READERME READMG   READMM
+C    THIS ROUTINE CALLS:        BORT     DIGIT    ERRWRT   GETLENS
+C                               I4DY     IGETDATE IUPB     IUPBS01
+C                               IUPBS3   NEMTBAX  NUMTAB   OPENBT
+C                               RDUSDX
+C    THIS ROUTINE IS CALLED BY: RDMEMM   READERME READMG
 C                               Normally not called by any application
 C                               programs.
 C
@@ -82,6 +83,7 @@ C$$$
 
       INCLUDE 'bufrlib.prm'
 
+      COMMON /SC3BFR/ ISC3(NFILES),TAMNEM(NFILES)
       COMMON /MSGCWD/ NMSG(NFILES),NSUB(NFILES),MSUB(NFILES),
      .                INODE(NFILES),IDATE(NFILES)
       COMMON /BITBUF/ MAXBYT,IBIT,IBAY(MXMSGLD4),MBYT(NFILES),
@@ -90,8 +92,8 @@ C$$$
       COMMON /UNPTYP/ MSGUNP(NFILES)
       COMMON /QUIET / IPRT
 
-      CHARACTER*128 BORT_STR
-      CHARACTER*8   SUBSET
+      CHARACTER*128 BORT_STR,ERRSTR
+      CHARACTER*8   SUBSET,TAMNEM
       CHARACTER*2   CPFX(3)
       CHARACTER*1   TAB
       LOGICAL       TRYBT, DIGIT
@@ -102,6 +104,8 @@ C$$$
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
 
+      IRET = 0
+
       TRYBT = .TRUE.
 
       JDATE = IGETDATE(MBAY(1,LUN),IYR,IMO,IDY,IHR)
@@ -111,25 +115,15 @@ c  .... Message type
 c  .... Message subtype
       MSBT = IUPBS01(MBAY(1,LUN),'MSBT')
 
-C  DON'T PARSE BUFR TABLE (DICTIONARY) MESSAGES
-C  --------------------------------------------
-
       IF(MTYP.EQ.11) THEN
-         IF(IPRT.GE.2)  THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
-            PRINT*,'BUFRLIB: CKTABA - TABLE A VALUE IS 11 (THIS IS A ',
-     .       'BUFR TABLE DICTIONARY MESSAGE) - RETURN WITH IRET = 11'
-      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
-      PRINT*
-         ENDIF
-
-C  Return with IRET=1 and SUBSET all blanks
-C  ----------------------------------------
-
+c  .... This is a BUFR table (dictionary) message.
          IRET = 11
-         SUBSET = "        "
-         GOTO 100
+c  .... There's no need to proceed any further unless Section 3 is being
+c  .... used for decoding.
+         IF(ISC3(LUN).EQ.0) THEN
+            SUBSET = "        "
+            GOTO 100
+         ENDIF
       ENDIF
 
 C  PARSE SECTION 3
@@ -139,10 +133,6 @@ C  ---------------
 
       IAD3 = LEN0+LEN1+LEN2
 
-c  .... Number of subsets in msg
-      JSUB = IUPB(MBAY(1,LUN),IAD3+5 ,16)
-c  .... Compression indicator
-      NCMP = IUPB(MBAY(1,LUN),IAD3+7 ,8 )
 c  .... First descriptor (integer)
       KSUB = IUPB(MBAY(1,LUN),IAD3+8 ,16)
 c  .... Second descriptor (integer)
@@ -156,12 +146,27 @@ C  ----------------
 C  NOW, TRY TO GET "SUBSET" (MNEMONIC ASSOCIATED WITH TABLE A) FROM MSG
 C  --------------------------------------------------------------------
 
+C  FIRST CHECK WHETHER SECTION 3 IS BEING USED FOR DECODING
+C  --------------------------------------------------------
+
+      IF(ISC3(LUN).NE.0) THEN
+	SUBSET = TAMNEM(LUN)
+c  .... is SUBSET from Table A?
+	CALL NEMTBAX(LUN,SUBSET,MTY1,MSB1,INOD)
+	IF(INOD.GT.0) THEN
+c  ....	  yes it is
+	  MBYT(LUN) = 8*(IAD4+4)
+	  MSGUNP(LUN) = 1
+	  GOTO 10
+	ENDIF
+      ENDIF
+
 C  IF ISUB FROM SECTION 3 DEFINES TABLE A THEN MSGUNP=0
 C  ----------------------------------------------------
 
 c  .... get SUBSET from ISUB
 5     CALL NUMTAB(LUN,ISUB,SUBSET,TAB,ITAB)
-c  .... is SUBSET from Tbl A?
+c  .... is SUBSET from Table A?
       CALL NEMTBAX(LUN,SUBSET,MTY1,MSB1,INOD)
       IF(INOD.GT.0) THEN
 c  .... yes it is
@@ -175,7 +180,7 @@ C  ---------------------------------------------------------------
 
 c  .... get SUBSET from KSUB
       CALL NUMTAB(LUN,KSUB,SUBSET,TAB,ITAB)
-c  .... is SUBSET from Tbl A?
+c  .... is SUBSET from Table A?
       CALL NEMTBAX(LUN,SUBSET,MTY1,MSB1,INOD)
       IF(INOD.GT.0) THEN
 c  .... yes it is
@@ -192,7 +197,7 @@ C  ----------------------------------------------------------------
       II=1
       DO WHILE(II.LE.NCPFX)
          WRITE(SUBSET,'(A2,2I3.3)') CPFX(II),MTYP,MSBT
-c  ....    is SUBSET from Tbl A?
+c  ....    is SUBSET from Table A?
          CALL NEMTBAX(LUN,SUBSET,MTY1,MSB1,INOD)
          IF(INOD.GT.0) THEN
 c  ....     yes it is
@@ -218,12 +223,12 @@ C  ------------------------------------------------------------------
       IF(TRYBT) THEN
          TRYBT = .FALSE.
          IF(IPRT.GE.1) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
-            PRINT*, 'BUFRLIB: CKTABA - LAST RESORT, CHECK FOR EXTERNAL',
-     .       ' BUFR TABLE VIA CALL TO IN-LINE OPENBT'
-      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('++++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++++')
+      ERRSTR = 'BUFRLIB: CKTABA - LAST RESORT, CHECK FOR EXTERNAL'//
+     .  ' BUFR TABLE VIA CALL TO IN-LINE OPENBT'
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT('++++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++++')
+      CALL ERRWRT(' ')
          ENDIF
          CALL OPENBT(LUNDX,MTYP)
          IF(LUNDX.GT.0) THEN
@@ -238,12 +243,12 @@ C  IF ALL ATTEMPTS TO DEFINE TABLE A FAIL SKIP GIVE UP
 C  ---------------------------------------------------
 
       IF(IPRT.GE.0)  THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*,'BUFRLIB: CKTABA - UNRECOGNIZED TABLE A MESSAGE TYPE (',
-     . SUBSET, ') - RETURN WITH IRET = -1'
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      ERRSTR = 'BUFRLIB: CKTABA - UNRECOGNIZED TABLE A MESSAGE TYPE ('//
+     . SUBSET // ') - RETURN WITH IRET = -1'
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
       ENDIF
       IRET = -1
       GOTO 100
@@ -251,27 +256,28 @@ C  ---------------------------------------------------
 C  CHECK THE VALIDITY OF THE MTYP/MSBT AND FOR COMPRESSION (MSGUNP=2)
 C  ------------------------------------------------------------------
 
-10    CONTINUE
-      IF(MTYP.NE.MTY1) GOTO 900
-      IF(MSBT.NE.MSB1.AND.DIGIT(SUBSET(3:8))) GOTO 901
-      IF(IAND(NCMP,64).GT.0) MSGUNP(LUN) = 2
+10    IF(ISC3(LUN).EQ.0) THEN
+        IF(MTYP.NE.MTY1) GOTO 900
+        IF(MSBT.NE.MSB1.AND.DIGIT(SUBSET(3:8))) GOTO 901
+      ENDIF
+      IF(IUPBS3(MBAY(1,LUN),'ICMP').GT.0) MSGUNP(LUN) = 2
 
 C  SET THE OTHER REQUIRED PARAMETERS IN MESSAGE CONTROL WORD PARTITION
 C  -------------------------------------------------------------------
 
 c  .... Date for this message
       IDATE(LUN) = I4DY(JDATE)
-c  .... Number of messages so far in file
-      NMSG (LUN) = NMSG(LUN)+1
 c  .... Positional index of Table A mnem.
       INODE(LUN) = INOD
 c  .... Number of subsets in this message
-      MSUB (LUN) = JSUB
-c  .... Number of subsets actually read so far
-      NSUB (LUN) = 0
+      MSUB(LUN) = IUPBS3(MBAY(1,LUN),'NSUB')
+c  .... Number of subsets read so far from this message
+      NSUB(LUN) = 0
 
-c  .... Return successfully
-      IRET = 0
+      IF(IRET.NE.11) THEN
+c   .... Number of non-dictionary messages read so far from this file
+         NMSG(LUN) = NMSG(LUN)+1
+      ENDIF
 
 C  EXITS
 C  -----

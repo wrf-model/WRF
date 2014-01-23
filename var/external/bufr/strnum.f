@@ -17,6 +17,7 @@ C 2003-11-04  S. BENDER  -- ADDED REMARKS/BUFRLIB ROUTINE
 C                           INTERDEPENDENCIES
 C 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED HISTORY
 C                           DOCUMENTATION
+C 2009-04-21  J. ATOR    -- USE ERRWRT
 C
 C USAGE:    CALL STRNUM (STR, NUM)
 C   INPUT ARGUMENT LIST:
@@ -26,12 +27,9 @@ C   OUTPUT ARGUMENT LIST:
 C     NUM      - INTEGER: DECODED VALUE
 C                      -1 = decode was unsuccessful
 C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
-C
 C REMARKS:
-C    THIS ROUTINE CALLS:        STRSUC
-C    THIS ROUTINE IS CALLED BY: JSTNUM   PARUTG   SEQSDX
+C    THIS ROUTINE CALLS:        ERRWRT   STRSUC
+C    THIS ROUTINE IS CALLED BY: JSTNUM   PARUTG   SEQSDX   STSEQ
 C                               Normally not called by any application
 C                               programs but it could be.
 C
@@ -58,10 +56,9 @@ C     the only reason that subroutine STRSUC is being called here is to
 C     determine NUM, which, owing to the fact that the input string STR
 C     cannot contain any leading blanks, is equal to the number of
 C     digits to be decoded from the beginning of STR.
-c  .... DK: Should we have a contingency for NUM returned as -1? (guess
-c           it can't ever happen, right)
 
       CALL STRSUC(STR,STR2,NUM)
+      IF(NUM.EQ.-1) GOTO 100
 
       DO I=1,NUM
       READ(STR(I:I),'(I1)',ERR=99) J
@@ -78,11 +75,10 @@ C     always positive if the decode is successful.
 
 99    NUM = -1
       IF(IPRT.GE.0) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
-      PRINT*,'BUFRLIB: STRNUM - BAD DECODE -  RETURN WITH NUM = -1'
-      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('++++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++++')
+      CALL ERRWRT('BUFRLIB: STRNUM - BAD DECODE; RETURN WITH NUM = -1')
+      CALL ERRWRT('++++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++++')
+      CALL ERRWRT(' ')
       ENDIF
 
 C  EXIT

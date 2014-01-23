@@ -46,6 +46,12 @@ C                           NUMBER OF BYTES REQUIRED TO STORE ALL
 C                           MESSAGES INTERNALLY) WAS INCREASED FROM 16
 C                           MBYTES TO 50 MBYTES
 C 2005-11-29  J. ATOR    -- USE RDMSGW AND NMWRD
+C 2009-03-23  J. ATOR    -- MODIFIED TO HANDLE EMBEDDED BUFR TABLE
+C                           (DICTIONARY) MESSAGES
+C 2012-09-15  J. WOOLLEN -- MODIFIED FOR C/I/O/BUFR INTERFACE;
+C                           CALL STATUS TO GET LUN; REPLACE FORTRAN
+C                           REWIND AND BACKSPACE WITH C ROUTINES CEWIND
+C                           AND BACKBUFR
 C
 C USAGE:    CALL UFBMEM (LUNIT, INEW, IRET, IUNIT)
 C   INPUT ARGUMENT LIST:
@@ -74,8 +80,9 @@ C    NOTE THAT IREADMM, RDMEMM, READMM, UFBMMS, UFBMNS, UFBRMS, UFBTAB
 C    OR UFBTAM CAN BE CALLED AFTER THIS TO READ SPECIFIC BUFR MESSAGES
 C    FROM INTERNAL MEMORY.
 C
-C    THIS ROUTINE CALLS:        BORT     CLOSBF   NMWRD    OPENBF
-C                               RDMSGW
+C    THIS ROUTINE CALLS:        BORT     CLOSBF   CPDXMM   ERRWRT
+C                               IDXMSG   NMWRD    OPENBF   RDMSGW
+C                               STATUS   CEWIND   BACKBUFR 
 C    THIS ROUTINE IS CALLED BY: None
 C                               Normally called only by application
 C                               programs.
@@ -88,9 +95,11 @@ C$$$
 
       INCLUDE 'bufrlib.prm'
 
-      COMMON /MSGMEM/ MUNIT,MLAST,MSGP(0:MAXMSG),MSGS(MAXMEM)
+      COMMON /MSGMEM/ MUNIT,MLAST,MSGP(0:MAXMSG),MSGS(MAXMEM),
+     .                MDX(MXDXW),IPDXM(MXDXM),LDXM,NDXM,LDXTS,NDXTS,
+     .                IFDXTS(MXDXTS),ICDXTS(MXDXTS),IPMSGS(MXDXTS)
 
-      CHARACTER*128 BORT_STR
+      CHARACTER*128 BORT_STR,ERRSTR
       DIMENSION     MBAY(MXMSGLD4)
 
 C-----------------------------------------------------------------------
@@ -105,6 +114,10 @@ C  ----------------------------------------------------------
          MSGP(0) = 0
          MUNIT = 0
          MLAST = 0
+         NDXTS = 0
+         LDXTS = 0
+         NDXM = 0
+         LDXM = 0
       ENDIF
 
       NMSG = MSGP(0)
@@ -112,12 +125,40 @@ C  ----------------------------------------------------------
       IFLG = 0
       ITIM = 0
 
+C     Copy any BUFR dictionary table messages from the beginning of
+C     LUNIT into COMMON /MSGMEM/ for possible later use.  Note that
+C     such a table (if one exists) is already now in scope due to the
+C     prior call to subroutine OPENBF, which in turn would have
+C     automatically called subroutines READDX, RDBFDX and MAKESTAB
+C     for this table.
+
+      ITEMP = NDXTS
+      CALL STATUS(LUNIT,LUN,IL,IM)
+      CALL CEWIND(LUN)   
+      CALL CPDXMM(LUNIT)
+
+C     If a table was indeed present at the beginning of the file,
+C     then set the flag to indicate that this table is now in scope.
+
+      IF ((ITEMP+1).EQ.NDXTS) LDXTS = NDXTS
+
 C  TRANSFER MESSAGES FROM FILE TO MEMORY - SET MESSAGE POINTERS
 C  ------------------------------------------------------------
 
 1     CALL RDMSGW(LUNIT,MBAY,IER)
       IF(IER.EQ.-1) GOTO 100
       IF(IER.EQ.-2) GOTO 900
+
+      IF(IDXMSG(MBAY).EQ.1) THEN
+
+C	New "embedded" BUFR dictionary table messages have been found in
+C	this file.  Copy them into COMMON /MSGMEM/ for later use.
+
+	call backbufr(lun) !BACKSPACE LUNIT
+	CALL CPDXMM(LUNIT)
+	GOTO 1
+      ENDIF
+
       NMSG = NMSG+1
       IF(NMSG      .GT.MAXMSG) IFLG = 1
       LMEM = NMWRD(MBAY)
@@ -148,15 +189,20 @@ C  EMERGENCY ROOM TREATMENT FOR MAXMSG ARRAY OVERFLOW
 C  --------------------------------------------------
 
       IF(IPRT.GE.0) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*,'BUFRLIB: UFBMEM - THE NO. OF MESSAGES REQUIRED TO STORE',
-     . ' ALL MESSAGES INTERNALLY EXCEEDS MAXIMUM (',MAXMSG,') - ',
-     . 'INCOMPLETE READ'
-      PRINT*,'>>>UFBMEM STORED ',MSGP(0),' MESSAGES OUT OF ',NMSG,'<<<'
-      PRINT*,'>>>UFBMEM STORED ',MLAST0,' BYTES OUT OF ',MLAST,'<<<'
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      WRITE ( UNIT=ERRSTR, FMT='(A,A,I8,A)' )
+     . 'BUFRLIB: UFBMEM - THE NO. OF MESSAGES REQUIRED TO STORE ',
+     . 'ALL MESSAGES INTERNALLY EXCEEDS MAXIMUM (', MAXMSG, 
+     . ') - INCOMPLETE READ'
+      CALL ERRWRT(ERRSTR)
+      WRITE ( UNIT=ERRSTR, FMT='(A,I8,A,I8,A)' )
+     . '>>>UFBMEM STORED ', MSGP(0), ' MESSAGES OUT OF ', NMSG, '<<<'
+      CALL ERRWRT(ERRSTR)
+      WRITE ( UNIT=ERRSTR, FMT='(A,I8,A,I8,A)' )
+     . '>>>UFBMEM STORED ', MLAST0, ' BYTES OUT OF ', MLAST, '<<<'
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
       ENDIF
       MLAST=MLAST0
       ENDIF
@@ -167,15 +213,20 @@ C  EMERGENCY ROOM TREATMENT FOR MAXMEM ARRAY OVERFLOW
 C  --------------------------------------------------
 
       IF(IPRT.GE.0) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*,'BUFRLIB: UFBMEM - THE NO. OF BYTES REQUIRED TO STORE',
-     . ' ALL MESSAGES INTERNALLY EXCEEDS MAXIMUM (',MAXMEM,') - ',
-     . 'INCOMPLETE READ'
-      PRINT*,'>>>UFBMEM STORED ',MLAST0,' BYTES OUT OF ',MLAST,'<<<'
-      PRINT*,'>>>UFBMEM STORED ',MSGP(0),' MESSAGES OUT OF ',NMSG,'<<<'
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      WRITE ( UNIT=ERRSTR, FMT='(A,A,I8,A)' )
+     . 'BUFRLIB: UFBMEM - THE NO. OF BYTES REQUIRED TO STORE ',
+     . 'ALL MESSAGES INTERNALLY EXCEEDS MAXIMUM (', MAXMEM, 
+     . ') - INCOMPLETE READ'
+      CALL ERRWRT(ERRSTR)
+      WRITE ( UNIT=ERRSTR, FMT='(A,I8,A,I8,A)' )
+     . '>>>UFBMEM STORED ', MLAST0, ' BYTES OUT OF ', MLAST, '<<<'
+      CALL ERRWRT(ERRSTR)
+      WRITE ( UNIT=ERRSTR, FMT='(A,I8,A,I8,A)' )
+     . '>>>UFBMEM STORED ', MSGP(0), ' MESSAGES OUT OF ', NMSG, '<<<'
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
       ENDIF
       MLAST=MLAST0
       ENDIF

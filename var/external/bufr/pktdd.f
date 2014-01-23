@@ -26,6 +26,7 @@ C                           INTERDEPENDENCIES
 C 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED HISTORY
 C                           DOCUMENTATION; ADDED MORE COMPLETE
 C                           DIAGNOSTIC INFO WHEN UNUSUAL THINGS HAPPEN
+C 2009-04-21  J. ATOR    -- USE ERRWRT
 C
 C USAGE:    CALL PKTDD (ID, LUN, IDN, IRET)
 C   INPUT ARGUMENT LIST:
@@ -47,12 +48,9 @@ C                      -1 = bad counter value or maximum number of
 C                           child mnemonics already stored for this
 C                           parent mnemonic
 C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
-C
 C REMARKS:
-C    THIS ROUTINE CALLS:        IPKM     IUPM
-C    THIS ROUTINE IS CALLED BY: DXINIT   RDBFDX   SEQSDX
+C    THIS ROUTINE CALLS:        ERRWRT   IPKM     IUPM
+C    THIS ROUTINE IS CALLED BY: DXINIT   SEQSDX   STBFDX   STSEQ
 C                               Normally not called by any application
 C                               programs.
 C
@@ -76,6 +74,7 @@ C$$$
       CHARACTER*600 TABD
       CHARACTER*128 TABB
       CHARACTER*128 TABA
+      CHARACTER*128 ERRSTR
       CHARACTER*56  DXSTR
 
 C-----------------------------------------------------------------------
@@ -106,18 +105,20 @@ C     stored thus far for this parent mnemonic.
 
       IF(ND.LT.0 .OR. ND.EQ.MAXCD) THEN
       IF(IPRT.GE.0) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
          IF(ND.LT.0) THEN
-            PRINT*, 'BUFRLIB: PKTDD - BAD COUNTER VALUE (=',ND,
-     .       ') - RETURN WITH IRET = -1'
+            WRITE ( UNIT=ERRSTR, FMT='(A,I4,A)' )
+     .        'BUFRLIB: PKTDD - BAD COUNTER VALUE (=', ND,
+     .        ') - RETURN WITH IRET = -1'
          ELSE
-            PRINT*, 'BUFRLIB: PKTDD - MAXIMUM NUMBER OF CHILD ',
-     .       'MNEMONICS (MAXCD) ALREADY STORED FOR THIS PARENT ',
-     .       'MNEMONIC - RETURN WITH IRET = -1'
+            WRITE ( UNIT=ERRSTR, FMT='(A,I4,A,A)' )
+     .        'BUFRLIB: PKTDD - MAXIMUM NUMBER OF CHILD MNEMONICS (=',
+     .        MAXCD, ') ALREADY STORED FOR THIS PARENT - RETURN WITH ',
+     .        'IRET = -1'
          ENDIF
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
       ENDIF
          IRET = -1
          GOTO 100

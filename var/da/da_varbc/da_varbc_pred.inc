@@ -37,7 +37,8 @@ subroutine da_varbc_pred(iv)
     if (npredmax <= 0) cycle                                ! VarBC instr only
        
     num_rad = iv%instid(inst)%num_rad
-    do n= 1, num_rad                                        ! loop for pixel      	
+    if (iv%instid(inst)%info%n2 < iv%instid(inst)%info%n1) cycle
+    do n = iv%instid(inst)%info%n1, iv%instid(inst)%info%n2  ! loop for pixel
       ! get H&K predictors
       !--------------------
       if (rtm_option==rtm_option_rttov) then

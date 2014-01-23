@@ -235,7 +235,10 @@
                           o3top, o2top, albedo, z, tlev,         & 
                           tlay, airlev, rh, xlwc, o3,            &
                           acb1, acb2, aoc1, aoc2, aant,          & 
-                          aso4, asal, prate, adjcoe, radfld )
+                          aso4, asal, tauaer300, tauaer400, tauaer600, &
+                          tauaer999, waer300, waer400, waer600,  &
+                          waer999, gaer300, gaer400, gaer600,    &
+                          gaer999, aer_ra_feedback, prate, adjcoe, radfld )
 
       use module_wave_data, only : nw, tuv_jmax, deltaw, sflx,   &
                                    c20, c40, c60, c80, sq
@@ -268,6 +271,21 @@
       real(dp), intent(in)    :: aant(nz)
       real(dp), intent(in)    :: aso4(nz)
       real(dp), intent(in)    :: asal(nz)
+! rajesh: declare aerosol optical properties
+      real(dp), intent(in)    :: tauaer300(nz-1)
+      real(dp), intent(in)    :: tauaer400(nz-1)
+      real(dp), intent(in)    :: tauaer600(nz-1)
+      real(dp), intent(in)    :: tauaer999(nz-1)
+      real(dp), intent(in)    :: waer300(nz-1)
+      real(dp), intent(in)    :: waer400(nz-1)
+      real(dp), intent(in)    :: waer600(nz-1)
+      real(dp), intent(in)    :: waer999(nz-1)
+      real(dp), intent(in)    :: gaer300(nz-1)
+      real(dp), intent(in)    :: gaer400(nz-1)
+      real(dp), intent(in)    :: gaer600(nz-1)
+      real(dp), intent(in)    :: gaer999(nz-1)
+      INTEGER, INTENT(IN)     :: aer_ra_feedback
+
       real(dp), intent(out)   :: prate(nz,tuv_jmax)
       real(dp), intent(out)   :: adjcoe(nz,tuv_jmax)
       real(dp), intent(out)   :: radfld(nz,nw-1)
@@ -316,6 +334,8 @@
       real(dp), dimension(nz-1,nw-1) :: dtant, omant, gant
       real(dp), dimension(nz-1,nw-1) :: dtso4, omso4, gso4
       real(dp), dimension(nz-1,nw-1) :: dtsal, omsal, gsal
+! rajesh: declare optical property arrays for aerosols
+      real(dp), dimension(nz-1,nw-1) :: dtaer, omaer, gaer
 !--------------------------------------------------------------
 ! ... spectral irradiance and actinic flux (scalar irradiance):
 !--------------------------------------------------------------
@@ -349,16 +369,32 @@
 !-------------------------------------------------------------
 ! ... aerosol optical depths ...
 !-------------------------------------------------------------
-      call setaer( nz, z, airlev, rh, acb1,        &
-                   acb2, aoc1, aoc2, aant, aso4,   &
-                   asal,                           &
-                   dtcb1, omcb1, gcb1,             &
-                   dtcb2, omcb2, gcb2,             &
-                   dtoc1, omoc1, goc1,             &
-                   dtoc2, omoc2, goc2,             &
-                   dtant, omant, gant,             &
-                   dtso4, omso4, gso4,             &
-                   dtsal, omsal, gsal )
+!      call setaer( nz, z, airlev, rh, acb1,        &
+!                   acb2, aoc1, aoc2, aant, aso4,   &
+!                   asal,                           &
+!                   dtcb1, omcb1, gcb1,             &
+!                   dtcb2, omcb2, gcb2,             &
+!                   dtoc1, omoc1, goc1,             &
+!                   dtoc2, omoc2, goc2,             &
+!                   dtant, omant, gant,             &
+!                   dtso4, omso4, gso4,             &
+!                   dtsal, omsal, gsal )
+
+!------------------------------------------------------------
+! rajesh: Conform Aerosol Optical Properties from 4 wavelengths to 
+! the entire spectra of FTUV
+!------------------------------------------------------------
+! Initialize aerosol optical properties to zero
+      dtaer(:,:) = 0._dp
+      omaer(:,:) = 0._dp
+       gaer(:,:) = 0._dp
+      if(aer_ra_feedback == 1) then 
+       call aer_wrf2ftuv(nz, z, tauaer300, tauaer400,    &
+                         tauaer600, tauaer999, waer300, &
+                         waer400, waer600, waer999,     &
+                         gaer300, gaer400, gaer600,     &
+                         gaer999, dtaer, omaer, gaer    )
+      endif 
 
 !------------------------------------------------------------
 ! ... photo-chemical and photo-biological weigting functions.
@@ -427,13 +463,14 @@
                    dto3,                & ! opt depth of o3
                    dto2,                & ! opt depth of o2
                    dtcld, omcld, gcld,  & ! opt depth of cloud
-                   dtcb1, omcb1, gcb1,  &
-                   dtcb2, omcb2, gcb2,  &
-                   dtoc1, omoc1, goc1,  &
-                   dtoc2, omoc2, goc2,  &
-                   dtant, omant, gant,  &
-                   dtso4, omso4, gso4,  &
-                   dtsal, omsal, gsal,  &
+!                   dtcb1, omcb1, gcb1,  &
+!                   dtcb2, omcb2, gcb2,  &
+!                   dtoc1, omoc1, goc1,  &
+!                   dtoc2, omoc2, goc2,  &
+!                   dtant, omant, gant,  &
+!                   dtso4, omso4, gso4,  &
+!                   dtsal, omsal, gsal,  &
+                   dtaer, omaer, gaer,  &  ! pass aerosol optical properties   
                    radfld )                           ! output of abs. scart flux.
 !----------------------------------------------------------
 ! Interplation the top level
@@ -462,6 +499,87 @@
       end do
 
       end subroutine photoin
+
+!----------------------------------------------------------------------------
+!rajesh: subroutine to convert aerosol optical properties from 4
+!wavelengths 
+! to entire spectra of FTUV
+!-----------------------------------------------------------------------------
+      subroutine aer_wrf2ftuv( nzlev, z, tauaer300, tauaer400,     &
+                               tauaer600, tauaer999,               &
+                               waer300, waer400, waer600, waer999, &
+                               gaer300, gaer400, gaer600, gaer999, &
+                               dtaer, omaer, gaer )
+       use module_wave_data, only : nw, wc
+
+!----------------------------------------------------------------------
+! The routine is based on aerosol treatment in module_ra_rrtmg_sw.F
+! INPUT: 
+! nzlev: number of specified altitude levels in the working grid
+! z: specified altitude working grid   
+! Aerosol optical properties at 300, 400, 600 and 999 nm. 
+!   tauaer300, tauaer400, tauaer600, tauaer999: Layer AODs
+!   waer300, waer400, waer600, waer999: Layer SSAs
+!   gaer300, gaer400, gaer600, gaer999: Layer asymmetry parameters
+
+! OUTPUT:
+! dtaer: Layer AOD at FTUV wavelengths
+! omaer: Layer SSA at FTUV wavelengths
+! gaer : Layer asymmetry parameters at FTUV wavelengths
+!------------------------------------------------------------------------
+      implicit none
+
+!-----------------------------------------------------------------------------
+!       ... Dummy arguments
+!-----------------------------------------------------------------------------
+      integer, intent(in)   :: nzlev
+      real(dp), intent(in)  :: z(nzlev)
+      real(dp), intent(in)  :: tauaer300(nzlev-1), tauaer400(nzlev-1),    &
+                               tauaer600(nzlev-1), tauaer999(nzlev-1)
+      real(dp), intent(in)  :: waer300(nzlev-1), waer400(nzlev-1),        &
+                               waer600(nzlev-1), waer999(nzlev-1)
+      real(dp), intent(in)  :: gaer300(nzlev-1), gaer400(nzlev-1),        &
+                               gaer600(nzlev-1), gaer999(nzlev-1)
+! Output arrays
+      real(dp), intent(out) :: dtaer(nzlev-1,nw-1),                   &
+                               omaer(nzlev-1,nw-1), gaer(nzlev-1,nw-1)
+
+! Local Variables
+      integer     :: k, wn, nloop
+      real(dp)    :: ang, slope
+      real(dp), parameter :: thresh = 1.e-9_dp
+
+      ang   = 0._dp
+      slope = 0._dp
+
+! Start Calculation
+      do wn = 1,nw-1       ! wavelength loop
+       do k = 1,nzlev-1    ! level loop 
+
+! use angstrom exponent to calculate aerosol optical depth; wc is in nm.  
+        if(tauaer300(k) .gt. thresh .and. tauaer999(k) .gt. thresh) then
+         ang = log(tauaer300(k)/tauaer999(k))/log(0.999_dp/0.3_dp)
+         dtaer(k,wn) = tauaer400(k)*(0.4_dp/(wc(wn)*1.e-3_dp))**ang
+!         print *, ang, dtaer(k,wn), tauaer600(k)*(600./wc(wn))**ang
+
+! ssa - use linear interpolation/extrapolation
+         slope = (waer600(k)-waer400(k))/0.2_dp
+         omaer(k,wn) = slope*((wc(wn)*1.e-3_dp)-0.6_dp)+waer600(k)
+         if(omaer(k,wn) .lt. 0.4_dp) omaer(k,wn)=0.4_dp
+         if(omaer(k,wn) .ge. 1.0_dp) omaer(k,wn)=1.0_dp
+
+! asymmetry parameter - use linear interpolation/extrapolation
+         slope = (gaer600(k)-gaer400(k))/0.2_dp
+         gaer(k,wn) = slope*((wc(wn)*1.e-3_dp)-0.6_dp)+gaer600(k)
+         if(gaer(k,wn) .lt. 0.5_dp) gaer(k,wn) = 0.5_dp
+         if(gaer(k,wn) .ge. 1.0_dp) gaer(k,wn) = 1.0_dp
+        endif
+       enddo  ! k 
+      enddo   ! wn
+
+      end subroutine aer_wrf2ftuv
+
+!--------------------------------------------------------------------
 
       subroutine setaer( nzlev, z, airden, rh, acb1,    &
                          acb2, aoc1, aoc2, aant, aso4,  &
@@ -1951,13 +2069,15 @@ WAVE_LENGTH_LOOP : &
                          dto3,                &
                          dto2,                &
                          dtcld, omcld, gcld,  &
-                         dtcb1, omcb1, gcb1,  &
-                         dtcb2, omcb2, gcb2,  &
-                         dtoc1, omoc1, goc1,  &
-                         dtoc2, omoc2, goc2,  &
-                         dtant, omant, gant,  &
-                         dtso4, omso4, gso4,  &
-                         dtsal, omsal, gsal,  &
+!                         dtcb1, omcb1, gcb1,  &
+!                         dtcb2, omcb2, gcb2,  &
+!                         dtoc1, omoc1, goc1,  &
+!                         dtoc2, omoc2, goc2,  &
+!                         dtant, omant, gant,  &
+!                         dtso4, omso4, gso4,  &
+!                         dtsal, omsal, gsal,  &
+! rajesh: pass aerosol optical properties
+                         dtaer, omaer, gaer,  &  
                          radfld )
 
       implicit none
@@ -1975,13 +2095,15 @@ WAVE_LENGTH_LOOP : &
       real(dp), intent(in)    :: dto3(nz-1,nw-1)
       real(dp), intent(in)    :: dto2(nz-1,nw-1)
       real(dp), intent(in)    :: dtcld(nz-1,nw-1), omcld(nz-1,nw-1), gcld(nz-1,nw-1)
-      real(dp), intent(in)    :: dtcb1(nz-1,nw-1), omcb1(nz-1,nw-1), gcb1(nz-1,nw-1)
-      real(dp), intent(in)    :: dtcb2(nz-1,nw-1), omcb2(nz-1,nw-1), gcb2(nz-1,nw-1)
-      real(dp), intent(in)    :: dtoc1(nz-1,nw-1), omoc1(nz-1,nw-1), goc1(nz-1,nw-1)
-      real(dp), intent(in)    :: dtoc2(nz-1,nw-1), omoc2(nz-1,nw-1), goc2(nz-1,nw-1)
-      real(dp), intent(in)    :: dtant(nz-1,nw-1), omant(nz-1,nw-1), gant(nz-1,nw-1)
-      real(dp), intent(in)    :: dtso4(nz-1,nw-1), omso4(nz-1,nw-1), gso4(nz-1,nw-1)
-      real(dp), intent(in)    :: dtsal(nz-1,nw-1), omsal(nz-1,nw-1), gsal(nz-1,nw-1)
+!      real(dp), intent(in)    :: dtcb1(nz-1,nw-1), omcb1(nz-1,nw-1), gcb1(nz-1,nw-1)
+!      real(dp), intent(in)    :: dtcb2(nz-1,nw-1), omcb2(nz-1,nw-1), gcb2(nz-1,nw-1)
+!      real(dp), intent(in)    :: dtoc1(nz-1,nw-1), omoc1(nz-1,nw-1), goc1(nz-1,nw-1)
+!      real(dp), intent(in)    :: dtoc2(nz-1,nw-1), omoc2(nz-1,nw-1), goc2(nz-1,nw-1)
+!      real(dp), intent(in)    :: dtant(nz-1,nw-1), omant(nz-1,nw-1), gant(nz-1,nw-1)
+!      real(dp), intent(in)    :: dtso4(nz-1,nw-1), omso4(nz-1,nw-1), gso4(nz-1,nw-1)
+!      real(dp), intent(in)    :: dtsal(nz-1,nw-1), omsal(nz-1,nw-1), gsal(nz-1,nw-1)
+! rajesh: declare dust optical properties
+      real(dp), intent(in)    :: dtaer(nz-1,nw-1), omaer(nz-1,nw-1), gaer(nz-1,nw-1) 
       real(dp), intent(out)   :: radfld(nz,nw-1)           
 !-----------------------------------------------------------------------
 ! ... local variables
@@ -1990,13 +2112,15 @@ WAVE_LENGTH_LOOP : &
       integer :: i, ii, iw
       real(dp) :: dtsct, dtabs
       real(dp) :: dscld, dacld
-      real(dp) :: dscb1, dacb1
-      real(dp) :: dscb2, dacb2
-      real(dp) :: dsoc1, daoc1
-      real(dp) :: dsoc2, daoc2
-      real(dp) :: dsant, daant
-      real(dp) :: dsso4, daso4
-      real(dp) :: dssal, dasal
+!      real(dp) :: dscb1, dacb1
+!      real(dp) :: dscb2, dacb2
+!      real(dp) :: dsoc1, daoc1
+!      real(dp) :: dsoc2, daoc2
+!      real(dp) :: dsant, daant
+!      real(dp) :: dsso4, daso4
+!      real(dp) :: dssal, dasal
+! rajesh: declare scattering and absorbing optical depths
+      real(dp) :: dsaer, daaer
       real(dp), dimension(nz-1,nw-1) :: dt, om, g
 !-----------------------------------------------------------------------
 ! ... set any coefficients specific to rt scheme
@@ -2007,31 +2131,34 @@ WAVE_LENGTH_LOOP : &
             dscld = dtcld(i,iw)*omcld(i,iw)
             dacld = dtcld(i,iw)*(1._dp - omcld(i,iw))
 
-            dscb1 = dtcb1(i,iw)*omcb1(i,iw)
-            dacb1 = dtcb1(i,iw)*(1._dp - omcb1(i,iw))
+!            dscb1 = dtcb1(i,iw)*omcb1(i,iw)
+!            dacb1 = dtcb1(i,iw)*(1._dp - omcb1(i,iw))
 
-            dscb2 = dtcb2(i,iw)*omcb2(i,iw)
-            dacb2 = dtcb2(i,iw)*(1._dp - omcb2(i,iw))
+!            dscb2 = dtcb2(i,iw)*omcb2(i,iw)
+!            dacb2 = dtcb2(i,iw)*(1._dp - omcb2(i,iw))
 
-            dsoc1 = dtoc1(i,iw)*omoc1(i,iw)
-            daoc1 = dtoc1(i,iw)*(1._dp - omoc1(i,iw))
+!            dsoc1 = dtoc1(i,iw)*omoc1(i,iw)
+!            daoc1 = dtoc1(i,iw)*(1._dp - omoc1(i,iw))
 
-            dsoc2 = dtoc2(i,iw)*omoc2(i,iw)
-            daoc2 = dtoc2(i,iw)*(1._dp - omoc2(i,iw))
+!            dsoc2 = dtoc2(i,iw)*omoc2(i,iw)
+!            daoc2 = dtoc2(i,iw)*(1._dp - omoc2(i,iw))
 
-            dsant = dtant(i,iw)*omant(i,iw)
-            daant = dtant(i,iw)*(1._dp - omant(i,iw))
+!            dsant = dtant(i,iw)*omant(i,iw)
+!            daant = dtant(i,iw)*(1._dp - omant(i,iw))
 
-            dsso4 = dtso4(i,iw)*omso4(i,iw)
-            daso4 = dtso4(i,iw)*(1._dp - omso4(i,iw))
+!            dsso4 = dtso4(i,iw)*omso4(i,iw)
+!            daso4 = dtso4(i,iw)*(1._dp - omso4(i,iw))
 
-            dssal = dtsal(i,iw)*omsal(i,iw)
-            dasal = dtsal(i,iw)*(1._dp - omsal(i,iw))
+!            dssal = dtsal(i,iw)*omsal(i,iw)
+!            dasal = dtsal(i,iw)*(1._dp - omsal(i,iw))
 
-            dtsct = dtrl(i,iw) + dscld +                                   &
-                    dscb1 + dscb2 + dsoc1 + dsoc2 + dsant + dsso4 + dssal
-            dtabs = dto3(i,iw) + dto2(i,iw) + dacld +                      &
-                    dacb1 + dacb2 + daoc1 + daoc2 + daant + daso4 + dasal
+! rajesh: determine scattering and absorption optical depths for dust
+            dsaer = dtaer(i,iw)*omaer(i,iw)
+            daaer = dtaer(i,iw)*(1._dp - omaer(i,iw))
+            dtsct = dtrl(i,iw) + dscld + dsaer 
+!                    dscb1 + dscb2 + dsoc1 + dsoc2 + dsant + dsso4 + dssal
+            dtabs = dto3(i,iw) + dto2(i,iw) + dacld + daaer
+!                    dacb1 + dacb2 + daoc1 + daoc2 + daant + daso4 + dasal
 
             dtabs = max( dtabs,smallest )
             dtsct = max( dtsct,smallest )
@@ -2044,19 +2171,21 @@ WAVE_LENGTH_LOOP : &
             if( dtsct /= smallest ) then
                om(ii,iw) = dtsct/(dtsct + dtabs)
                g(ii,iw) = ( gcld(i,iw)*dscld + &
-                            gcb1(i,iw)*dscb1 + &
-                            gcb2(i,iw)*dscb2 + &
-                            goc1(i,iw)*dsoc1 + &
-                            goc2(i,iw)*dsoc2 + &
-                            gant(i,iw)*dsant + &
-                            gso4(i,iw)*dsso4 + &
-                            gsal(i,iw)*dssal ) / dtsct
+!                            gcb1(i,iw)*dscb1 + &
+!                            gcb2(i,iw)*dscb2 + &
+!                            goc1(i,iw)*dsoc1 + &
+!                            goc2(i,iw)*dsoc2 + &
+!                            gant(i,iw)*dsant + &
+!                            gso4(i,iw)*dsso4 + &
+! rajesh: add aerosol contribution
+                            gaer(i,iw)*dsaer ) / dtsct
                g(ii,iw) = max( smallest, g(ii,iw) )
                g(ii,iw) = min( 1.d0, g(ii,iw) )
             else
                om(ii,iw) = smallest
                g(ii,iw)  = smallest
             end if
+!            print *, dt(ii,iw), om(ii,iw), g(ii,iw)
          end do
       end do
 

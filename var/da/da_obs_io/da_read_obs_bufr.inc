@@ -996,7 +996,7 @@ bufrfile:  do ibufr=1,numbufr
                end if
                fm = 88
                
-         case (582, 583)      ! QuikSCAT 582 and WindSat 583
+         case (581, 582, 583, 584)      ! ERS 581, QuikSCAT 582, WindSat 583, ASCAT 584
                if (.not.use_qscatobs) cycle reports
                
                if (n==1) iv%info(qscat)%ntotal = iv%info(qscat)%ntotal + 1

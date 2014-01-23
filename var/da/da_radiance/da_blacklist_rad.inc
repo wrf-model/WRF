@@ -10,7 +10,7 @@ subroutine da_blacklist_rad (platform_name, satid, sensor_name, nchan, iuse)
 
    implicit none
 
-   character(len=20), intent(in)    :: platform_name, sensor_name
+   character(len=*),  intent(in)    :: platform_name, sensor_name
    integer,           intent(in)    :: satid, nchan
    integer,           intent(inout) :: iuse(nchan)
 
@@ -28,7 +28,7 @@ subroutine da_blacklist_rad (platform_name, satid, sensor_name, nchan, iuse)
       iuse(1)  = -1
       iuse(2)  = -1
       iuse(3)  = -1
-      iuse(4)  = -2
+      iuse(4)  = -1
       iuse(14) = -1   ! NCEP
       iuse(15) = -1
    case ( 'amsub', 'mhs' )
@@ -77,18 +77,18 @@ subroutine da_blacklist_rad (platform_name, satid, sensor_name, nchan, iuse)
             if ( cdate > '20021203' .and. cdate <= '20021216' ) iuse(5:8) = -1
             !to be checked if ( cdate > '20070124' )
             ! most channel noisy due to solar eclipse
-            if ( cdate >= '20090123' .and. cdate < '20090202' ) iuse = -2
+            if ( cdate >= '20090123' .and. cdate < '20090202' ) iuse = -1
             ! unexplained instrument anomaly
-            if ( cdate >= '20090408' .and. cdate < '20090416' ) iuse = -2
-            if ( cdate >  '20090603' ) iuse = -2
+            if ( cdate >= '20090408' .and. cdate < '20090416' ) iuse = -1
+            if ( cdate >  '20090603' ) iuse = -1
          end if   ! end if noaa-16-amsua
          if ( trim(sensor_name) == 'amsub' ) then
-            if ( cdate >= '20070918' ) iuse = -2
+            if ( cdate >= '20070918' ) iuse = -1
          end if   ! end if noaa-16-amsub
       case ( 17 )
          if ( trim(sensor_name) == 'hirs' ) then
             ! channels 2, 3, 4, 5 became suddenly much more noisy
-            if ( cdate >= '20101023' ) iuse(2:5) = -2
+            if ( cdate >= '20101023' ) iuse(2:5) = -1
             ! increase noise, some channels are really bad, compromising cloud detection
             if ( cdate >= '20111204' ) iuse = -1
          end if   ! end if noaa-17-hirs
@@ -99,7 +99,7 @@ subroutine da_blacklist_rad (platform_name, satid, sensor_name, nchan, iuse)
          end if   ! end if noaa-17-amsua
          if ( trim(sensor_name) == 'amsub' ) then
             ! blackbody/space view anomalies
-            if ( cdate > '20091216' ) iuse = -2
+            if ( cdate > '20091216' ) iuse = -1
          end if   ! end if noaa-17-amsub
       case ( 18 )
          if ( trim(sensor_name) == 'hirs' ) then
@@ -109,29 +109,29 @@ subroutine da_blacklist_rad (platform_name, satid, sensor_name, nchan, iuse)
          end if   ! end if noaa-18-hirs
          if ( trim(sensor_name) == 'amsua' ) then
             ! channel 9 briefly noisy
-            if ( cdate > '20071115' .and. cdate < '20071219' ) iuse(9) = -2
-            if ( cdate > '20101215' .and. cdate < '20101226' ) iuse(9) = -2
+            if ( cdate > '20071115' .and. cdate < '20071219' ) iuse(9) = -1
+            if ( cdate > '20101215' .and. cdate < '20101226' ) iuse(9) = -1
             ! orbit too close to noaa-19, so data heavily thnned out.
             ! poor sampling can lead to problems with VarBC
-            !to be checked if ( cdate >= '20090804' .and. cdate < '20091224' ) iuse = -2
+            !to be checked if ( cdate >= '20090804' .and. cdate < '20091224' ) iuse = -1
          end if   ! end if noaa-18-amsua
       case ( 19 )
          ! first noaa-19 data to arrive in opearions: 2009040700
          if ( cdate < '20090407' ) iuse = -1
          if ( cdate >= '20090407' .and. cdate < '20090501' ) iuse = -1
-         if ( cdate >= '20090501' .and. cdate < '20090602' ) iuse = -2
+         if ( cdate >= '20090501' .and. cdate < '20090602' ) iuse = -1
          if ( trim(sensor_name) == 'amsua' ) then
             ! channel 8 excluded due to temporary noise issues
-            if ( cdate >= '20090627' .and. cdate < '20090804' ) iuse(8) = -2
-            if ( cdate >= '20091224' ) iuse(8) = -2
+            if ( cdate >= '20090627' .and. cdate < '20090804' ) iuse(8) = -1
+            if ( cdate >= '20091224' ) iuse(8) = -1
          end if   ! end if noaa-19-amsua
          if ( trim(sensor_name) == 'mhs' ) then
             ! allow bias adjustment after update of antenna pattern correction
-            if ( cdate > '20090621' .and. cdate < '20090627' ) iuse = -2
+            if ( cdate > '20090621' .and. cdate < '20090627' ) iuse = -1
             ! noise has slowly increased to above specifications
-            if ( cdate >= '20090804' .and. cdate < '20100317' ) iuse = -2
+            if ( cdate >= '20090804' .and. cdate < '20100317' ) iuse = -1
             ! noise stayed high for channel 3
-            if ( cdate >= '20100317' ) iuse(3) = -2
+            if ( cdate >= '20100317' ) iuse(3) = -1
          end if   ! end if noaa-19-mhs
       end select
    end if   ! end if noaa
@@ -143,16 +143,16 @@ subroutine da_blacklist_rad (platform_name, satid, sensor_name, nchan, iuse)
             iuse(7) = -1
             !to be checked if ( cdate > '20071001' )
             ! channel 5 noise has slowly increased too much
-            if ( cdate >= '20100502' ) iuse(5) = -2
+            if ( cdate >= '20100502' ) iuse(5) = -1
          end if   ! end if eos-2-amsua
          if ( trim(sensor_name) == 'airs' ) then
             ! airs data first appear on 2002102200
             if ( cdate < '20030401' ) iuse = -1    ! NCEP 200211
             ! data missing for a few days
-            if ( cdate >= '20100101' .and. cdate <= '20100104' ) iuse = -2
+            if ( cdate >= '20100101' .and. cdate <= '20100104' ) iuse = -1
             ! instrument anomaly: stand-by mode on 20100109, instrument restart on 20100121,
             ! data flow resumed on 20100128
-            if ( cdate >= '20100109' .and. cdate < '20100128' ) iuse = -2
+            if ( cdate >= '20100109' .and. cdate < '20100128' ) iuse = -1
             if ( cdate >  '20070324' .and. cdate < '20070403' ) iuse = -1
             ! preventive blacklist of airs from 31 Oct 2003 onwards (solar storm)
             if ( cdate > '20031030' .and. cdate < '20031202' ) iuse = -1
@@ -169,7 +169,7 @@ subroutine da_blacklist_rad (platform_name, satid, sensor_name, nchan, iuse)
                iuse = -1
             else
                ! a few noisy days in Jan 2007
-               if ( cdate < '20070201' ) iuse = -2
+               if ( cdate < '20070201' ) iuse = -1
             end if
          end if   ! end if metop-2-hirs
          if ( trim(sensor_name) == 'amsua' ) then
@@ -184,7 +184,7 @@ subroutine da_blacklist_rad (platform_name, satid, sensor_name, nchan, iuse)
                ! a recalibration period
                if ( cdate < '20070111' .or. &
                     (cdate > '20070521' .and. cdate < '20070528') ) then
-                  iuse = -2
+                  iuse = -1
                end if
             end if
             ! channel 7 gone too noisy
@@ -197,7 +197,7 @@ subroutine da_blacklist_rad (platform_name, satid, sensor_name, nchan, iuse)
             else
                !to be checked, calculate varbc coefficients
                if ( cdate < '20070111' ) then
-                  iuse = -2
+                  iuse = -1
                end if
             end if
          end if   ! end if metop-2-mhs

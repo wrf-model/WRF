@@ -191,6 +191,10 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
        )
 # endif
    nested_grid%intermediate_grid%interp_mp=parent_grid%interp_mp .or. nested_grid%interp_mp
+#if (HWRF == 1)
+  nested_grid%intermediate_grid%pdyn_parent_age=parent_grid%pdyn_parent_age
+  nested_grid%intermediate_grid%pdyn_smooth_age=parent_grid%pdyn_smooth_age
+#endif
 
    ! NOTE: the intermediate grid is a grid with the spatial extent and
    ! processor decomposition of the nest, at the resolution of the

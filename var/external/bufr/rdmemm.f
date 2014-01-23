@@ -53,12 +53,14 @@ C 2004-11-15  D. KEYSER  -- PARAMETER MAXMEM (THE MAXIMUM NUMBER OF
 C                           BYTES REQUIRED TO STORE ALL MESSAGES
 C                           INTERNALLY) WAS INCREASED FROM 16 MBYTES TO
 C                           50 MBYTES
+C 2009-03-23  J. ATOR    -- MODIFIED TO HANDLE EMBEDDED BUFR TABLE
+C                           (DICTIONARY) MESSAGES; USE ERRWRT
+C                          
 C
 C USAGE:    CALL RDMEMM (IMSG, SUBSET, JDATE, IRET)
 C   INPUT ARGUMENT LIST:
 C     IMSG     - INTEGER: POINTER TO BUFR MESSAGE NUMBER (RECORD) IN
-C                         STORAGE
-C                       0 = resets the memory file
+C                STORAGE
 C
 C   OUTPUT ARGUMENT LIST:
 C     SUBSET   - CHARACTER*8: TABLE A MNEMONIC FOR TYPE OF BUFR MESSAGE
@@ -71,15 +73,13 @@ C                       0 = normal return
 C                      -1 = IMSG is either zero or greater than the
 C                           number of messages in memory
 C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
-C
 C REMARKS:
 C    NOTE THAT UFBMEM IS CALLED PRIOR TO THIS TO STORE THE BUFR
 C    MESSAGES INTO INTERNAL MEMORY.
 C
-C    THIS ROUTINE CALLS:        BORT     CKTABA   STATUS   WTSTAT
-C    THIS ROUTINE IS CALLED BY: UFBMMS   UFBMNS   UFBRMS   UFBTAM
+C    THIS ROUTINE CALLS:        BORT     CKTABA   DXINIT   ERRWRT
+C                               MAKESTAB STATUS   STBFDX   WTSTAT
+C    THIS ROUTINE IS CALLED BY: READMM   UFBMMS   UFBRMS   UFBTAM
 C                               Also called by application programs.
 C
 C ATTRIBUTES:
@@ -94,10 +94,17 @@ C$$$
      .                INODE(NFILES),IDATE(NFILES)
       COMMON /BITBUF/ MAXBYT,IBIT,IBAY(MXMSGLD4),MBYT(NFILES),
      .                MBAY(MXMSGLD4,NFILES)
-      COMMON /MSGMEM/ MUNIT,MLAST,MSGP(0:MAXMSG),MSGS(MAXMEM)
+      COMMON /MSGMEM/ MUNIT,MLAST,MSGP(0:MAXMSG),MSGS(MAXMEM),
+     .                MDX(MXDXW),IPDXM(MXDXM),LDXM,NDXM,LDXTS,NDXTS,
+     .                IFDXTS(MXDXTS),ICDXTS(MXDXTS),IPMSGS(MXDXTS)
       COMMON /QUIET / IPRT
 
-      CHARACTER*8 SUBSET
+      DIMENSION	    MSGDX(MXMSGLD4)
+
+      CHARACTER*128 BORT_STR,ERRSTR
+      CHARACTER*8   SUBSET
+
+      LOGICAL KNOWN
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
@@ -114,22 +121,78 @@ C  -----------------------------------------
       IF(IMSG.EQ.0 .OR.IMSG.GT.MSGP(0)) THEN
          CALL WTSTAT(MUNIT,LUN,IL,0)
          IF(IPRT.GE.1) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
             IF(IMSG.EQ.0)  THEN
-               PRINT*, 'BUFRLIB: RDMEMM - REQUESTED MEMORY MESSAGE ',
-     .          'NUMBER {FIRST (INPUT) ARGUMENT} IS 0, RETURN WITH ',
+               ERRSTR = 'BUFRLIB: RDMEMM - REQUESTED MEMORY MESSAGE '//
+     .          'NUMBER {FIRST (INPUT) ARGUMENT} IS 0, RETURN WITH '//
      .          'IRET = -1'
             ELSE
-               PRINT*, 'BUFRLIB: RDMEMM - REQ. MEMORY MESSAGE NO. {',
-     .          IMSG,' - {1ST (INPUT) ARG.} > NO. OF MESSAGES IN ',
-     .          'MEMORY (',MSGP(0),'), RETURN WITH IRET = -1'
+               WRITE ( UNIT=ERRSTR, FMT='(A,I6,A,I6,A)' )
+     .          'BUFRLIB: RDMEMM - REQ. MEMORY MESSAGE #', IMSG,
+     .          ' {= 1ST (INPUT) ARG.} > # OF MESSAGES IN MEMORY (',
+     .          MSGP(0), '), RETURN WITH IRET = -1'
             ENDIF
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+            CALL ERRWRT(ERRSTR)
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
          ENDIF
          IRET = -1
          GOTO 100
+      ENDIF
+
+C  ENSURE THAT THE PROPER DICTIONARY TABLE IS IN SCOPE
+C  ---------------------------------------------------
+
+C     Determine which table applies to this message.
+
+      KNOWN = .FALSE.
+      JJ = NDXTS
+      DO WHILE ((.NOT.KNOWN).AND.(JJ.GE.1))
+	 IF (IPMSGS(JJ).LE.IMSG) THEN
+	    KNOWN = .TRUE.
+	 ELSE
+	    JJ = JJ - 1
+	 ENDIF
+      ENDDO
+      IF (.NOT.KNOWN) GOTO 902
+
+C     Is this table the one that is currently in scope?
+
+      IF (JJ.NE.LDXTS) THEN
+
+C	 No, so reset the software to use the proper table.
+
+	 IF(IPRT.GE.2) THEN
+            CALL ERRWRT('+++++++++++++++++++++++++++++++++++++++++++++')
+            WRITE ( UNIT=ERRSTR, FMT='(A,I3,A,I3,A,I6)' )
+     .	      'BUFRLIB: RDMEMM - RESETTING TO USE DX TABLE #', JJ,
+     .	      ' INSTEAD OF DX TABLE #', LDXTS,
+     .        ' FOR REQUESTED MESSAGE #', IMSG
+            CALL ERRWRT(ERRSTR)
+            CALL ERRWRT('+++++++++++++++++++++++++++++++++++++++++++++')
+            CALL ERRWRT(' ')
+	 ENDIF
+	 CALL DXINIT(LUN,0)
+
+C	 Store each of the DX dictionary messages which constitute
+C	 this table.
+
+	 DO II = IFDXTS(JJ), (IFDXTS(JJ)+ICDXTS(JJ)-1)
+	    IF (II.EQ.NDXM) THEN
+	       NWRD = LDXM - IPDXM(II) + 1
+	    ELSE
+	       NWRD = IPDXM(II+1) - IPDXM(II)
+	    ENDIF
+	    DO KK = 1, NWRD
+	       MSGDX(KK) = MDX(IPDXM(II)+KK-1)
+	    ENDDO
+	    CALL STBFDX(LUN,MSGDX)
+	 ENDDO
+
+C	 Rebuild the internal jump/link table.
+
+	 CALL MAKESTAB
+	 LDXTS = JJ
       ENDIF
 
 C  READ MEMORY MESSAGE NUMBER IMSG INTO A MESSAGE BUFFER
@@ -141,7 +204,7 @@ C  -----------------------------------------------------
       IPTR = IPTR-1
 
       DO I=1,LPTR
-      MBAY(I,LUN) = MSGS(IPTR+I)
+         MBAY(I,LUN) = MSGS(IPTR+I)
       ENDDO
 
 C  PARSE THE MESSAGE SECTION CONTENTS
@@ -158,4 +221,7 @@ C  -----
      . 'MUST BE OPEN FOR INPUT')
 901   CALL BORT('BUFRLIB: RDMEMM - INPUT BUFR FILE IS OPEN FOR '//
      . 'OUTPUT, IT MUST BE OPEN FOR INPUT')
+902   WRITE(BORT_STR,'("BUFRLIB: RDMEMM - UNKNOWN DX TABLE FOR '//
+     . 'REQUESTED MESSAGE #",I5)') IMSG
+      CALL BORT(BORT_STR)
       END

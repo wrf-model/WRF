@@ -1263,7 +1263,8 @@ END MODULE module_quilt_outbuf_ops
     IF ( .NOT. found ) THEN
       num_entries = num_entries + 1
       IF(num_entries > tabsize)THEN
-         WRITE(mess,*) 'Number of entries in outpatch_table has exceeded tabsize (',tabsize,') in module_quilt_outbuf_ops::store_patch_in_outbuf_pnc'
+         WRITE(mess,*) 'Number of entries in outpatch_table has exceeded tabsize (',&
+         tabsize,') in module_quilt_outbuf_ops::store_patch_in_outbuf_pnc'
          CALL wrf_error_fatal(mess)
       END IF
       outpatch_table(num_entries)%npatch = 0

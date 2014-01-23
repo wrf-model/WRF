@@ -265,8 +265,8 @@ if ( ! contains_tok ( halo_define , vname  , ":," ) ) {
             }
             fprintf(fp,"IF ( SIZE( %s%s, %d ) * SIZE( %s%s, %d ) .GT. 1", p->name,tag,xdex+1,p->name,tag,ydex+1 ) ;
         } else {
-          if ( !strcmp( fcn_name, "interp_mask_land_field" ) ||
-              !strcmp( fcn_name, "interp_mask_water_field" ) ) {
+          if ( !strcmp( fcn_name, "interp_mask_land_field" ) || !strcmp( fcn_name, "interp_mask_water_field" ) || 
+               !strcmp( fcn_name, "interp_mask_field")       || !strcmp( fcn_name, "interp_mask_soil") ) {
             fprintf(fp,"IF ( .TRUE.") ;
           } else {
             fprintf(fp,"IF ( SIZE( %s%s, %d ) * SIZE( %s%s, %d ) .GT. 1", grid,vname2,xdex+1,grid,vname2,ydex+1 ) ;
@@ -291,7 +291,8 @@ if ( ! contains_tok ( halo_define , vname  , ":," ) ) {
 #endif
 fprintf(fp,"CALL %s (  &         \n", fcn_name ) ;
 
-if ( !strcmp( fcn_name, "interp_mask_land_field" ) || !strcmp( fcn_name, "interp_mask_water_field" ) ) {
+if ( !strcmp( fcn_name, "interp_mask_land_field" ) || !strcmp( fcn_name, "interp_mask_water_field" ) ||
+     !strcmp( fcn_name, "interp_mask_field")       || !strcmp( fcn_name, "interp_mask_soil") ) {
 fprintf(fp,"  ( SIZE( %s%s , %d )*SIZE( %s%s , %d ) .GT. 1 ), & ! special argument needed because %s has bcasts in it\n",
                                                        grid,vname2,xdex+1,grid,vname2,ydex+1,fcn_name) ;
 }

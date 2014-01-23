@@ -43,6 +43,9 @@ CONTAINS
        ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,            &
        ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,ebio_so2,   &
        ebio_dms,                                                       &
+       ebio_c5h8,ebio_apinene,ebio_bpinene,ebio_toluene,               &
+       ebio_ch3cho,ebio_ch3co2h,ebio_tbut2ene,ebio_c2h5cho, &
+       ebio_nc4h10, &
        ebio_sesq, ebio_mbo,                                            &    
        ebio_alk3, ebio_alk4, ebio_alk5, ebio_ole1, ebio_ole2,          &    
        ebio_aro1, ebio_aro2, ebio_ccho, ebio_meoh,                     &    
@@ -169,6 +172,9 @@ CONTAINS
          ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,          &
          ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,ebio_so2, &
          ebio_dms,                                                     &
+         ebio_c5h8,ebio_apinene,ebio_bpinene,ebio_toluene,             &
+         ebio_ch3cho,ebio_ch3co2h,ebio_tbut2ene,ebio_c2h5cho,          &
+         ebio_nc4h10,                                                  &
          ebio_sesq,ebio_mbo,                                           &
          ebio_alk3, ebio_alk4, ebio_alk5, ebio_ole1, ebio_ole2,        &    
          ebio_aro1, ebio_aro2, ebio_ccho, ebio_meoh,                   &    
@@ -348,6 +354,17 @@ CONTAINS
     ebio_c3h8  ( its:ite , jts:jte ) = 0.0
     ebio_so2   ( its:ite , jts:jte ) = 0.0
     ebio_dms   ( its:ite , jts:jte ) = 0.0
+    ebio_c5h8   ( its:ite , jts:jte ) = 0.0
+    ebio_apinene   ( its:ite , jts:jte ) = 0.0
+    ebio_bpinene   ( its:ite , jts:jte ) = 0.0
+    ebio_toluene   ( its:ite , jts:jte ) = 0.0
+    ebio_hcooh   ( its:ite , jts:jte ) = 0.0
+    ebio_ch3cho   ( its:ite , jts:jte ) = 0.0
+    ebio_c2h5oh   ( its:ite , jts:jte ) = 0.0
+    ebio_ch3co2h   ( its:ite , jts:jte ) = 0.0
+    ebio_tbut2ene   ( its:ite , jts:jte ) = 0.0
+    ebio_c2h5cho   ( its:ite , jts:jte ) = 0.0
+    ebio_nc4h10   ( its:ite , jts:jte ) = 0.0
     ebio_sesq  ( its:ite , jts:jte ) = 0.0
     ebio_mbo   ( its:ite , jts:jte ) = 0.0
     e_bio     ( its:ite , jts:jte , 1:ne_area) = 0.0
@@ -428,8 +445,8 @@ CONTAINS
        ! get p_of_radm2cbmz(:), p_of_radm2(:), and radm2_per_megan(:)
        CALL get_megan2radm2_table
 
-    CASE (RACMSORG_AQ, RACMSORG_AQCHEM, RACM_ESRLSORG_KPP, RACM_KPP, GOCARTRACM_KPP, RACMSORG_KPP, RACM_MIM_KPP, &
-          RACMPM_KPP)
+    CASE (RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, RACM_ESRLSORG_KPP, RACM_KPP, GOCARTRACM_KPP, RACMSORG_KPP, &
+          RACM_MIM_KPP, RACMPM_KPP)
              
        ! get p_of_megan2racm(:), p_of_racm(:), and racm_per_megan(:)
        CALL get_megan2racm_table
@@ -455,6 +472,10 @@ CONTAINS
 
     CASE (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP) ! FIX FOR SAPRC07A
        CALL get_megan2saprcnov_table
+
+    CASE ( CRIMECH_KPP, CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP )
+       ! get p_of_megan2crimech(:), p_of_crimech(:), and crimech_per_megan(:)
+       CALL get_megan2crimech_table
 
     CASE DEFAULT
        
@@ -916,8 +937,8 @@ is_mozcart_species : &
                 
              END DO
 
-           CASE (RACMSORG_AQ, RACMSORG_AQCHEM, RACM_ESRLSORG_KPP, RACM_KPP, GOCARTRACM_KPP, RACMSORG_KPP, RACM_MIM_KPP, &
-                 RACMPM_KPP)
+           CASE (RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, RACM_ESRLSORG_KPP, RACM_KPP, GOCARTRACM_KPP, &
+                 RACMSORG_KPP, RACM_MIM_KPP, RACMPM_KPP)
 
              DO icount = 1, n_megan2racm
 
@@ -1250,6 +1271,107 @@ is_mozcart_species : &
                    END IF !( p_in_chem > param_first_scalar )
 
                 END IF !( p_of_saprcnov(icount) .NE. non_react )
+
+             END DO
+
+          CASE ( CRIMECH_KPP, CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP )
+
+             DO icount = 1, n_megan2crimech
+                IF ( p_of_crimech(icount) .NE. non_react ) THEN
+
+                   ! Get index to chem array for the corresponding crimech
+                   ! species.  
+                   p_in_chem = p_of_crimech(icount)
+                   
+                   ! Check if the species is actually in the mechanism
+                   IF( p_in_chem > param_first_scalar ) THEN
+
+                      ! Emission rate of mechanism species in mol km-2 hr-1
+                      gas_emis =  crimech_per_megan(icount) * E_megan2(p_of_megan2crimech(icount))
+
+                      ! Add emissions to diagnostic output variables.
+                      ! ebio_xxx (mol km-2 hr-1) were originally used by the 
+                      ! BEIS3.11 biogenic emissions module. 
+                      ! I have also borrowed variable e_bio (ppm m min-1).
+                      
+                      IF ( p_in_chem == p_c5h8 ) THEN
+                         ebio_c5h8(i,j) = ebio_c5h8(i,j) + gas_emis
+                         e_bio(i,j,p_c5h8-1)   = e_bio(i,j,p_c5h8-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_no ) THEN
+                         ebio_no(i,j)  = ebio_no(i,j) + gas_emis
+                         e_bio(i,j,p_no-1)   = e_bio(i,j,p_no-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_no2 ) THEN
+                         ebio_no2(i,j)  = ebio_no2(i,j) + gas_emis
+                         e_bio(i,j,p_no2-1)   = e_bio(i,j,p_no2-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_co ) THEN
+                         ebio_co(i,j)  = ebio_co(i,j) + gas_emis
+                         e_bio(i,j,p_co-1)   = e_bio(i,j,p_co-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_hcho ) THEN
+                         ebio_hcho(i,j) = ebio_hcho(i,j) + gas_emis
+                         e_bio(i,j,p_hcho-1)   = e_bio(i,j,p_hcho-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_ket ) THEN
+                         ebio_ket(i,j) = ebio_ket(i,j) + gas_emis
+                         e_bio(i,j,p_ket-1)   = e_bio(i,j,p_ket-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_toluene ) THEN
+                         ebio_toluene(i,j) = ebio_toluene(i,j) + gas_emis
+                         e_bio(i,j,p_toluene-1)   = e_bio(i,j,p_toluene-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_apinene ) THEN
+                         ebio_apinene(i,j) = ebio_apinene(i,j) + gas_emis
+                         e_bio(i,j,p_apinene-1)   = e_bio(i,j,p_apinene-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_bpinene ) THEN
+                         ebio_bpinene(i,j) = ebio_bpinene(i,j) + gas_emis
+                         e_bio(i,j,p_bpinene-1)   = e_bio(i,j,p_bpinene-1)  + gas_emis*convert2                         
+                      ELSE IF ( p_in_chem == p_so2 ) THEN
+                         ebio_so2(i,j) = ebio_so2(i,j) + gas_emis
+                         e_bio(i,j,p_so2-1)   = e_bio(i,j,p_so2-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_dms ) THEN
+                         ebio_dms(i,j) = ebio_dms(i,j) + gas_emis
+                         e_bio(i,j,p_dms-1)   = e_bio(i,j,p_dms-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_nc4h10 ) THEN
+                         ebio_nc4h10(i,j) = ebio_nc4h10(i,j) + gas_emis
+                         e_bio(i,j,p_nc4h10-1)   = e_bio(i,j,p_nc4h10-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_tbut2ene ) THEN
+                         ebio_tbut2ene(i,j) = ebio_tbut2ene(i,j) + gas_emis
+                         e_bio(i,j,p_tbut2ene-1)   = e_bio(i,j,p_tbut2ene-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_nh3 ) THEN
+                         ebio_nh3(i,j) = ebio_nh3(i,j) + gas_emis
+                         e_bio(i,j,p_nh3-1)   = e_bio(i,j,p_nh3-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_ch3oh ) THEN
+                         ebio_ch3oh(i,j) = ebio_ch3oh(i,j) + gas_emis
+                         e_bio(i,j,p_ch3oh-1)   = e_bio(i,j,p_ch3oh-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_c2h5oh ) THEN
+                         ebio_c2h5oh(i,j) = ebio_c2h5oh(i,j) + gas_emis
+                         e_bio(i,j,p_c2h5oh-1)   = e_bio(i,j,p_c2h5oh-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_ch3co2h ) THEN
+                         ebio_ch3co2h(i,j) = ebio_ch3co2h(i,j) + gas_emis
+                         e_bio(i,j,p_ch3co2h-1)   = e_bio(i,j,p_ch3co2h-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_mek ) THEN
+                         ebio_mek(i,j) = ebio_mek(i,j) + gas_emis
+                         e_bio(i,j,p_mek-1)   = e_bio(i,j,p_mek-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_c2h4 ) THEN
+                         ebio_c2h4(i,j) = ebio_c2h4(i,j) + gas_emis
+                         e_bio(i,j,p_c2h4-1)   = e_bio(i,j,p_c2h4-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_c2h6 ) THEN
+                         ebio_c2h6(i,j) = ebio_c2h6(i,j) + gas_emis
+                         e_bio(i,j,p_c2h6-1)   = e_bio(i,j,p_c2h6-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_c3h6 ) THEN
+                         ebio_c3h6(i,j) = ebio_c3h6(i,j) + gas_emis
+                         e_bio(i,j,p_c3h6-1)   = e_bio(i,j,p_c3h6-1)  + gas_emis*convert2
+                      ELSE IF ( p_in_chem == p_c3h8 ) THEN
+                         ebio_c3h8(i,j) = ebio_c3h8(i,j) + gas_emis
+                         e_bio(i,j,p_c3h8-1)   = e_bio(i,j,p_c3h8-1)  + gas_emis*convert2                         
+                      ELSE IF ( p_in_chem == p_ch3cho ) THEN
+                         ebio_ch3cho(i,j) = ebio_ch3cho(i,j) + gas_emis
+                         e_bio(i,j,p_ch3cho-1)   = e_bio(i,j,p_ch3cho-1)  + gas_emis*convert2                        
+                      ELSE IF ( p_in_chem == p_hcooh ) THEN
+                         ebio_hcooh(i,j) = ebio_hcooh(i,j) + gas_emis
+                         e_bio(i,j,p_hcooh-1)   = e_bio(i,j,p_hcooh-1)  + gas_emis*convert2                         
+                      END IF
+
+                   END IF !( p_in_chem > param_first_scalar )
+                   
+
+                END IF !( p_of_crimech(icount) .NE. non_react )
 
              END DO
 

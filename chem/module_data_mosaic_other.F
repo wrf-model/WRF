@@ -36,6 +36,8 @@
 	integer, save :: kh2so4  = -999888777
 	integer, save :: knh3    = -999888777
 	integer, save :: khcl    = -999888777
+	integer, save :: kn2o5   = -999888777
+	integer, save :: kclno2  = -999888777
 	integer, save :: ko3     = -999888777
 	integer, save :: kh2o    = -999888777
 	integer, save :: ktemp   = -999888777

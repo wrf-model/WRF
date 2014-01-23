@@ -23,17 +23,19 @@ C                           INFORMATIONAL PURPOSES
 C 2004-08-09  J. ATOR    -- MAXIMUM MESSAGE LENGTH INCREASED FROM
 C                           20,000 TO 50,000 BYTES
 C 2006-04-14  J. ATOR    -- ADDED MAX0=0 OPTION AND OVERFLOW CHECK
+C 2009-03-23  D. KEYSER  -- NO LONGER PRINTS THE RECORD LENGTH CHANGE
+C                           DIAGNOSTIC IF THE REQUESTED RECORD LENGTH
+C                           PASSED IN AS MAX0 IS ACTUALLY THE SAME AS
+C                           THE PREVIOUS RECORD LENGTH
+C 2009-04-21  J. ATOR    -- USE ERRWRT
 C
 C USAGE:    CALL MAXOUT (MAXO)
 C   INPUT ARGUMENT LIST:
 C     MAXO     - INTEGER: DESIRED MESSAGE LENGTH (BYTES):
 C                       0 = SET RECORD LENGTH TO THE MAXIMUM ALLOWABLE
 C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
-C
 C REMARKS:
-C    THIS ROUTINE CALLS:        None
+C    THIS ROUTINE CALLS:        ERRWRT
 C    THIS ROUTINE IS CALLED BY: None
 C                               Normally called only by application
 C                               programs.
@@ -49,11 +51,15 @@ C$$$
       COMMON /BITBUF/ MAXBYT,IBIT,IBAY(MXMSGLD4),MBYT(NFILES),
      .                MBAY(MXMSGLD4,NFILES)
       COMMON /MAXCMP/ MAXCMB,MAXROW,MAXCOL,NCMSGS,NCSUBS,NCBYTS
-      COMMON /DXTAB / MAXDX,IDXV,NXSTR(10),LDXA(10),LDXB(10),LDXD(10)
-      COMMON /DXTAB / LD30(10),DXSTR(10)
+      COMMON /DXTAB / MAXDX,IDXV,NXSTR(10),LDXA(10),LDXB(10),LDXD(10),
+     .                LD30(10),DXSTR(10)
       COMMON /QUIET / IPRT
 
+      CHARACTER*128   ERRSTR
       CHARACTER*56    DXSTR
+
+C-----------------------------------------------------------------------
+C-----------------------------------------------------------------------
 
       IF((MAXO.EQ.0).OR.(MAXO.GT.MXMSGL)) THEN
          NEWSIZ = MXMSGL
@@ -62,14 +68,16 @@ C$$$
       ENDIF
 
       IF(IPRT.GE.0) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
-      PRINT 101, MAXBYT,NEWSIZ
-101   FORMAT(' BUFRLIB: MAXOUT - THE RECORD LENGTH OF ALL BUFR ',
-     . 'MESSAGES CREATED FROM THIS POINT ON IS BEING CHANGED FROM ',I7,
-     . ' TO ',I7)
-      PRINT*,'+++++++++++++++++BUFR ARCHIVE LIBRARY++++++++++++++++++++'
-      PRINT*
+         IF(MAXBYT.NE.NEWSIZ) THEN
+      CALL ERRWRT('++++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++++')
+      WRITE ( UNIT=ERRSTR, FMT='(A,A,I7,A,I7)' )
+     . 'BUFRLIB: MAXOUT - THE RECORD LENGTH OF ALL BUFR MESSAGES ',
+     . 'CREATED FROM THIS POINT ON IS BEING CHANGED FROM ', MAXBYT,
+     . ' TO ', NEWSIZ
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT('++++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++++')
+      CALL ERRWRT(' ')
+         ENDIF
       ENDIF
 
       MAXBYT = NEWSIZ

@@ -32,6 +32,7 @@ C                           MORE COMPLETE DIAGNOSTIC INFO WHEN ROUTINE
 C                           TERMINATES ABNORMALLY
 C 2004-08-09  J. ATOR    -- MAXIMUM MESSAGE LENGTH INCREASED FROM
 C                           20,000 TO 50,000 BYTES
+C 2009-03-23  J. ATOR    -- USE WRDXTB
 C
 C USAGE:    CALL WRITDX (LUNIT, LUN, LUNDX)
 C   INPUT ARGUMENT LIST:
@@ -45,9 +46,7 @@ C                CREATE INTERNAL TABLES WRITTEN TO LUNIT (SEE READDX);
 C                IF SET EQUAL TO LUNIT, THIS SUBROUTINE CALLS BORT
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        ADN30    BORT     DXMINI   IPKM
-C                               IUPM     MSGWRT   PKB      PKC
-C                               READDX
+C    THIS ROUTINE CALLS:        BORT     READDX   WRDXTB
 C    THIS ROUTINE IS CALLED BY: OPENBF
 C                               Normally not called by any application
 C                               programs.
@@ -58,25 +57,7 @@ C   MACHINE:  PORTABLE TO ALL PLATFORMS
 C
 C$$$
 
-      INCLUDE 'bufrlib.prm'
-
-      COMMON /TABABD/ NTBA(0:NFILES),NTBB(0:NFILES),NTBD(0:NFILES),
-     .                MTAB(MAXTBA,NFILES),IDNA(MAXTBA,NFILES,2),
-     .                IDNB(MAXTBB,NFILES),IDND(MAXTBD,NFILES),
-     .                TABA(MAXTBA,NFILES),TABB(MAXTBB,NFILES),
-     .                TABD(MAXTBD,NFILES)
-      COMMON /DXTAB / MAXDX,IDXV,NXSTR(10),LDXA(10),LDXB(10),LDXD(10),
-     .                LD30(10),DXSTR(10)
-
-      CHARACTER*600 TABD
       CHARACTER*128 BORT_STR
-      CHARACTER*128 TABB
-      CHARACTER*128 TABA
-      CHARACTER*56  DXSTR
-      CHARACTER*6   ADN30
-      CHARACTER*1   MOCT(MXMSGL)
-      DIMENSION     MBAY(MXMSGLD4)
-      EQUIVALENCE   (MOCT(1),MBAY(1))
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
@@ -86,84 +67,15 @@ C  ----------------------------------------------------
 
       IF(LUNIT.EQ.LUNDX) GOTO 900
 
-C  MUST FIRST CALL READDX TO GENERATE INTERNAL DICTIONARY TABLE
-C  ------------------------------------------------------------
+C  MUST FIRST CALL READDX TO GENERATE INTERNAL DICTIONARY TABLE ARRAYS
+C  -------------------------------------------------------------------
 
       CALL READDX(LUNIT,LUN,LUNDX)
 
-C  NEXT CALL DXMINI TO WRITE PRELIMINARY INFO TO BUFR DICTIONARY MESSAGE
-C  ---------------------------------------------------------------------
+C  NOW CALL WRDXTB TO WRITE OUT DICTIONARY MESSAGES FROM THESE ARRAYS
+C  ------------------------------------------------------------------
 
-      CALL DXMINI(LUN,MBAY,MBYT,MBY4,MBYA,MBYB,MBYD)
-
-      LDA = LDXA(IDXV+1)
-      LDB = LDXB(IDXV+1)
-      LDD = LDXD(IDXV+1)
-      L30 = LD30(IDXV+1)
-
-C  COPY TABLE A CONTENTS TO A BUFR DICTIONARY MESSAGE
-C  --------------------------------------------------
-
-      DO I=1,NTBA(LUN)
-      IF(MBYT+LDA+8.GT.MAXDX) THEN
-         CALL MSGWRT(LUNIT,MBAY,MBYT)
-         CALL DXMINI(LUN,MBAY,MBYT,MBY4,MBYA,MBYB,MBYD)
-      ENDIF
-      CALL IPKM(MOCT(MBY4),3,IUPM(MOCT(MBY4),24)+LDA)
-      CALL IPKM(MOCT(MBYA),1,IUPM(MOCT(MBYA), 8)+  1)
-      MBIT = 8*(MBYB-1)
-      CALL PKC(TABA(I,LUN),LDA,MBAY,MBIT)
-      CALL PKB(          0,  8,MBAY,MBIT)
-      CALL PKB(          0,  8,MBAY,MBIT)
-      MBYT = MBYT+LDA
-      MBYB = MBYB+LDA
-      MBYD = MBYD+LDA
-      ENDDO
-
-C  COPY TABLE B CONTENTS TO A BUFR DICTIONARY MESSAGE
-C  --------------------------------------------------
-
-      DO I=1,NTBB(LUN)
-      IF(MBYT+LDB+8.GT.MAXDX) THEN
-         CALL MSGWRT(LUNIT,MBAY,MBYT)
-         CALL DXMINI(LUN,MBAY,MBYT,MBY4,MBYA,MBYB,MBYD)
-      ENDIF
-      CALL IPKM(MOCT(MBY4),3,IUPM(MOCT(MBY4),24)+LDB)
-      CALL IPKM(MOCT(MBYB),1,IUPM(MOCT(MBYB), 8)+  1)
-      MBIT = 8*(MBYD-1)
-      CALL PKC(TABB(I,LUN),LDB,MBAY,MBIT)
-      CALL PKB(          0,  8,MBAY,MBIT)
-      MBYT = MBYT+LDB
-      MBYD = MBYD+LDB
-      ENDDO
-
-C  COPY TABLE D CONTENTS TO A BUFR DICTIONARY MESSAGE
-C  --------------------------------------------------
-
-      DO I=1,NTBD(LUN)
-      NSEQ = IUPM(TABD(I,LUN)(LDD+1:LDD+1),8)
-      LEND = LDD+1 + L30*NSEQ
-      IF(MBYT+LEND+8.GT.MAXDX) THEN
-         CALL MSGWRT(LUNIT,MBAY,MBYT)
-         CALL DXMINI(LUN,MBAY,MBYT,MBY4,MBYA,MBYB,MBYD)
-      ENDIF
-      CALL IPKM(MOCT(MBY4),3,IUPM(MOCT(MBY4),24)+LEND)
-      CALL IPKM(MOCT(MBYD),1,IUPM(MOCT(MBYD), 8)+   1)
-      MBIT = 8*(MBYT-4)
-      CALL PKC(TABD(I,LUN),LDD,MBAY,MBIT)
-      CALL PKB(       NSEQ,  8,MBAY,MBIT)
-         DO J=1,NSEQ
-         JJ  = LDD+2 + (J-1)*2
-         IDN = IUPM(TABD(I,LUN)(JJ:JJ),16)
-         CALL PKC(ADN30(IDN,L30),L30,MBAY,MBIT)
-         ENDDO
-      MBYT = MBYT+LEND
-      ENDDO
-
-C  WRITE THE UNWRITTEN MESSAGE
-C  ---------------------------
-
-      CALL MSGWRT(LUNIT,MBAY,MBYT)
+      CALL WRDXTB(LUNIT,LUNIT)
 
 C  EXITS
 C  -----

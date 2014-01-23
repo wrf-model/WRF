@@ -73,7 +73,7 @@ MODULE module_input_chem_data
     INTEGER :: kx              ! number of vertical levels in temp profile        
     INTEGER :: kxm1
 
-    PARAMETER( kx=16, kxm1=kx-1, logg=200, lo=34) ! Changed value of logg from 100 to 200 for additional gas species
+    PARAMETER( kx=16, kxm1=kx-1, logg=350, lo=34) ! DL (6/2/2013) Changed value of logg from 200 to 350 for additional gas species
    
     INTEGER, DIMENSION(logg)                     :: iref
 
@@ -338,8 +338,8 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
 
   select case(chem_opt)
   case (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
-        RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM,           &
-        RACM_ESRLSORG_KPP, RACMSORG_KPP, RACM_SOA_VBS_KPP,                          &
+        RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM_KPP,       &
+        RACM_ESRLSORG_AQCHEM_KPP, RACM_ESRLSORG_KPP, RACMSORG_KPP, RACM_SOA_VBS_KPP,&
         GOCARTRACM_KPP, GOCARTRADM2,GOCARTRADM2_KPP,CHEM_TRACER, CHEM_TRACE2)
      call setup_gasprofile_map_radm_racm
 
@@ -378,6 +378,9 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
      call wrf_debug("setup_profile_maps: nothing done for volcanic ash")
   case (MOZART_KPP)
      call wrf_debug("setup_profile_maps: nothing done for mozart_kpp")
+
+  case (CRIMECH_KPP, CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
+      call wrf_debug("setup_profile_maps: nothing done for crimech")
 
   case (MOZCART_KPP)
      call wrf_debug("setup_profile_maps: nothing done for mozcart_kpp")
@@ -1571,7 +1574,9 @@ END SUBROUTINE bdy_chem_value_ghg
             config_flags%chem_opt == RACMSORG_KPP .or.      &
             config_flags%chem_opt == RACM_ESRLSORG_KPP .or.      &
             config_flags%chem_opt == RACM_SOA_VBS_KPP .or.      & 
-            config_flags%chem_opt == RACM_MIM_KPP ) then
+            config_flags%chem_opt == RACM_MIM_KPP .or.      & 
+            config_flags%chem_opt == RACMSORG_AQCHEM_KPP .or.      & 
+            config_flags%chem_opt == RACM_ESRLSORG_AQCHEM_KPP ) then
           i_bdy_method = 9
         end if
         if (config_flags%chem_opt == RACMPM_KPP ) then
@@ -1947,7 +1952,9 @@ END SUBROUTINE bdy_chem_value_ghg
             config_flags%chem_opt == RACMSORG_KPP .or.      &
             config_flags%chem_opt == RACM_SOA_VBS_KPP .or.      & 
             config_flags%chem_opt == RACM_ESRLSORG_KPP .or.      &
-            config_flags%chem_opt == RACM_MIM_KPP ) then
+            config_flags%chem_opt == RACM_MIM_KPP .or.      & 
+            config_flags%chem_opt == RACMSORG_AQCHEM_KPP .or.      & 
+            config_flags%chem_opt == RACM_ESRLSORG_AQCHEM_KPP ) then
           i_bdy_method = 9
         end if
         if (config_flags%chem_opt == RACMPM_KPP ) then
@@ -2557,9 +2564,9 @@ END SUBROUTINE bdy_chem_value_ghg
         get_last_gas = 0
 
      case (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
-           RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM,           &
-           RACM_ESRLSORG_KPP, RACMSORG_KPP, RACM_SOA_VBS_KPP, & 
-	   GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
+           RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM_KPP,       &
+           RACM_ESRLSORG_AQCHEM_KPP, RACM_ESRLSORG_KPP, RACMSORG_KPP, RACM_SOA_VBS_KPP,& 
+           GOCARTRACM_KPP,GOCARTRADM2,GOCARTRADM2_KPP)
         get_last_gas = p_ho2
 
      case (CBMZ_MOSAIC_4BIN_VBS2_KPP, SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP)
@@ -2594,6 +2601,9 @@ END SUBROUTINE bdy_chem_value_ghg
         get_last_gas = 0
      case (MOZART_KPP)
         get_last_gas = p_meko2
+
+     case (CRIMECH_KPP, CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
+        GET_LAST_GAS = p_ic3h7no3
 
      case (MOZCART_KPP)
         get_last_gas = p_meko2

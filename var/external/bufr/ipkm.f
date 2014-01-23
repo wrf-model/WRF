@@ -36,7 +36,7 @@ C
 C REMARKS:
 C    THIS ROUTINE CALLS:        BORT     IREV
 C    THIS ROUTINE IS CALLED BY: BFRINI   CHRTRNA  CRBMG    PKC
-C                               PKTDD    UPC      WRITDX
+C                               PKTDD    UPC      WRDXTB   WRTREE
 C                               Normally not called by any application
 C                               programs.
 C
@@ -46,7 +46,7 @@ C   MACHINE:  PORTABLE TO ALL PLATFORMS
 C
 C$$$
 
-      COMMON /HRDWRD/ NBYTW,NBITW,NREV,IORD(8)
+      COMMON /HRDWRD/ NBYTW,NBITW,IORD(8)
 
       CHARACTER*128 BORT_STR
       CHARACTER*8   CBAY,CINT

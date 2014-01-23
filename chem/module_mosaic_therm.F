@@ -605,6 +605,16 @@
 	else
 	    gas(inh3_g) = 0.0
 	end if
+	if (kn2o5 .ge. p1st) then
+	    gas(in2o5_g)   = rsub(kn2o5,k,m)*conv1a
+	else
+	    gas(in2o5_g) = 0.0
+	end if
+	if (kclno2 .ge. p1st) then
+	    gas(iclno2_g)   = rsub(kclno2,k,m)*conv1a
+	else
+	    gas(iclno2_g) = 0.0
+	end if
 
 ! soa gas-phase species -- currently deactivated
         if (kpcg1_b_c .ge. p1st) then
@@ -1721,6 +1731,10 @@
 	    rsub(khcl,k,m)   = gas(ihcl_g)*conv1b
 	if (knh3 .ge. p1st)   &
 	    rsub(knh3,k,m)   = gas(inh3_g)*conv1b
+	if (kn2o5 .ge. p1st)   &
+	    rsub(kn2o5,k,m)   = gas(in2o5_g)*conv1b
+	if (kclno2 .ge. p1st)   &
+	    rsub(kclno2,k,m)   = gas(iclno2_g)*conv1b
 
 ! soa gas-phase species -- currently deactivated
         if (kpcg1_b_c .ge. p1st)   &
@@ -2641,7 +2655,7 @@
       ah2o = rh_pc*0.01
       ah2o_a(ibin) = ah2o
       kelvin(ibin) = 1.0
-      do iv = 1, ngas_volatile
+      do iv = 1, ngas_volatile+ngas_het
         kel(iv,ibin) = 1.0
       enddo
 
@@ -2714,7 +2728,7 @@
       if(jaerosolstate(ibin) .eq. all_liquid)jhyst_leg(ibin) = jhyst_up
 
 ! now compute kelvin effect terms for condensing species (nh3, hno3, and hcl)
-      do iv = 1,  ngas_volatile
+      do iv = 1,  ngas_volatile+ngas_het
         term = 4.*sigma_soln(ibin)*partial_molar_vol(iv)/  &
                        (8.3144e7*T_K*DpmV(ibin))
         kel(iv,ibin) = 1. + term*(1. + 0.5*term*(1. + term/3.))
@@ -4713,6 +4727,11 @@
 ! condense h2so4, msa, and nh3 only
       call ASTEM_non_volatiles(dtchem)	! analytical solution
       if (istat_mosaic_fe1 .lt. 0) return
+
+! DL - 20/11/2012 - recalculate the mass balance to take account of 
+!                   NO3- and Cl- changes from N2O5 het reactions
+	  call overall_massbal_in ! save input mass over all bins
+
 
 ! condense inorganic semi-volatile gases hno3, hcl, nh3, and co2
       call ASTEM_semi_volatiles(dtchem)	! semi-implicit + explicit euler
@@ -7942,6 +7961,11 @@
            delta_h2so4, delta_tmsa, delta_nh3, delta_hno3, delta_hcl, &
            delta_so4(nbin_a), delta_msa(nbin_a), &
            delta_nh4(nbin_a)
+		! DL (10/7/2012) - move N2O5 het uptake into non-volatile subroutine, so that 
+		! 			NH3 uptake to balance acid uptake takes place too 
+      real(kind=8) :: decay_n2o5,   &
+           delta_n2o5, delta_clno2, &
+           delta_no3_rct1(nbin_a), delta_no3_rct2(nbin_a)
       real(kind=8) XT
     
 
@@ -7958,6 +7982,11 @@
         sumkg_nh3   = sumkg_nh3   + kg(inh3_g,ibin)
         sumkg_hno3  = sumkg_hno3  + kg(ihno3_g,ibin)
         sumkg_hcl   = sumkg_hcl   + kg(ihcl_g,ibin)
+      enddo
+		! DL (10/7/2012)
+      sumkg_n2o5  = 0.0
+      do ibin = 1, nbin_a
+        sumkg_n2o5 = sumkg_n2o5 + kg(in2o5_g,ibin)
       enddo
 
 
@@ -8024,6 +8053,71 @@
 
 
 
+	if(n2o5_flag .gt. 0) then
+		! DL (10/7/2012) moved from separate subroutine into involatile subroutine
+		!--------------------------------------
+		! N2O5 uptake, if there is enough gas, and uptake is non-zero
+		!  (currently we only calculate uptake for aqueous particles,
+		!    so in some circumstances we could have aerosol but no reaction)
+		if(gas(in2o5_g) .gt. 1.e-14 .and. sumkg_n2o5 .gt. 0.0)then
+
+			! integrate n2o5 condensation analytically
+			decay_n2o5   = exp(-sumkg_n2o5*dtchem)
+			delta_n2o5   = gas(in2o5_g)*(1.0 - decay_n2o5)
+			gas(in2o5_g) = gas(in2o5_g)*decay_n2o5
+
+
+			! now distribute delta_n2o5 to each bin and conform the particle (may degas by massbal)
+			do ibin = 1, nbin_a
+				if(jaerosolstate(ibin) .ne. no_aerosol)then
+					delta_no3_rct1(ibin) = delta_n2o5*frac_n2o5_h2o(ibin)*kg(in2o5_g,ibin)/sumkg_n2o5
+					delta_no3_rct2(ibin) = delta_n2o5*(1.0-frac_n2o5_h2o(ibin))*kg(in2o5_g,ibin)/sumkg_n2o5
+
+					aer(ino3_a,jtotal,ibin) = aer(ino3_a,jtotal,ibin) + &
+										  (2.0*delta_no3_rct1(ibin)+delta_no3_rct2(ibin))
+					! check to ensure we don't get negative Cl- concentrations
+					! - if this will occur then branch the remaining N2O5 to reaction 1
+					if(aer(icl_a,jtotal,ibin).ge.delta_no3_rct2(ibin))then
+						aer(icl_a,jtotal,ibin)  = aer(icl_a,jtotal,ibin) - &
+												  delta_no3_rct2(ibin)
+						gas(iclno2_g)           = gas(iclno2_g) + &
+												  delta_no3_rct2(ibin)
+					else
+						aer(ino3_a,jtotal,ibin) = aer(ino3_a,jtotal,ibin) + &
+												  (delta_no3_rct2(ibin)-aer(icl_a,jtotal,ibin))
+						gas(iclno2_g)           = gas(iclno2_g) + &
+												  aer(icl_a,jtotal,ibin)
+
+						! record the amount of remaining N2O5 which branches to reaction 1 (this is
+						! for the purposes of determining NH3 uptake later)
+						delta_no3_rct1(ibin) = delta_no3_rct1(ibin) + (delta_no3_rct2(ibin)-aer(icl_a,jtotal,ibin))
+						delta_no3_rct2(ibin) = aer(icl_a,jtotal,ibin)
+
+						aer(icl_a,jtotal,ibin)  = 0.0
+					endif
+				endif
+			enddo
+
+		else
+
+			delta_n2o5 = 0.0
+			do ibin = 1, nbin_a
+				delta_no3_rct1(ibin) = 0.0
+				delta_no3_rct2(ibin) = 0.0
+			enddo
+
+		endif
+	else
+		delta_n2o5 = 0.0	! if we're not using the N2O5 het scheme then set these to zero for ion balance calculations below
+		do ibin = 1, nbin_a
+			delta_no3_rct1(ibin) = 0.0
+			delta_no3_rct2(ibin) = 0.0
+		enddo
+	endif
+
+
+
+
 ! compute max allowable nh3, hno3, and hcl condensation
       delta_nh3 = gas(inh3_g) *(1.0 - exp(-sumkg_nh3*dtchem))
       delta_hno3= gas(ihno3_g)*(1.0 - exp(-sumkg_hno3*dtchem))
@@ -8039,7 +8133,7 @@
       enddo
 
 
-      if(delta_h2so4 .eq. 0.0 .and. delta_tmsa .eq. 0.0)then
+      if(delta_h2so4 .eq. 0.0 .and. delta_tmsa .eq. 0.0 .and. delta_n2o5 .eq. 0.0)then
         iupdate_phase_state = mNO
         goto 100
       endif
@@ -8055,7 +8149,7 @@
            epercent(jcaco3,jtotal,ibin) .eq. 0.0 .and. &
            jaerosolstate(ibin) .ne. no_aerosol)then
         
-          delta_nh4(ibin)=min( (2.*delta_so4(ibin)+delta_msa(ibin)), &
+          delta_nh4(ibin)=min( (2.*delta_so4(ibin)+delta_msa(ibin)+2.*delta_no3_rct1(ibin)+delta_no3_rct2(ibin)), &
                                 delta_nh3_max(ibin) )
      
           aer(inh4_a,jtotal,ibin) = aer(inh4_a,jtotal,ibin) +        &	! update aer-phase
@@ -8116,9 +8210,9 @@
       real(kind=8) cdum, dp, dp_avg, fkn, kn, lnsg, lndpgn, lndp, speed,   &
            sumghq
       real(kind=8) xghq(nghq), wghq(nghq)			! quadrature abscissae and weights
-      real(kind=8) mw_vol(ngas_volatile), v_molar(ngas_volatile), 		     &  ! mw and molar vols of volatile species
-           freepath(ngas_volatile), accom(ngas_volatile),   &
-           dg(ngas_volatile) 				! keep local
+      real(kind=8) mw_vol(ngas_volatile+ngas_het), v_molar(ngas_volatile+ngas_het), 		     &  ! mw and molar vols of volatile species
+           freepath(ngas_volatile+ngas_het), accom(ngas_volatile+ngas_het),   &
+           dg(ngas_volatile+ngas_het) 				! keep local
 !     real(kind=8) fuchs_sutugin				! mosaic func
 !     real(kind=8) gas_diffusivity				! mosaic func
 !     real(kind=8) mean_molecular_speed				! mosaic func
@@ -8132,6 +8226,8 @@
       mw_vol(ihno3_g)  = 63.0
       mw_vol(ihcl_g)   = 36.5
       mw_vol(inh3_g)   = 17.0
+      mw_vol(in2o5_g)  = 108.0
+      mw_vol(iclno2_g) = 81.5
       mw_vol(imsa_g)   = 96.0
       mw_vol(ipcg1_b_c_g) =250.0
       mw_vol(ipcg2_b_c_g) =250.0
@@ -8229,12 +8325,16 @@
       v_molar(ihcl_g)  = 21.48
       v_molar(inh3_g)  = 14.90
       v_molar(imsa_g)  = 58.00
+      v_molar(in2o5_g) = 60.40
+      v_molar(iclno2_g)= 52.70
 
 ! mass accommodation coefficients
       accom(ih2so4_g)  = 0.1
       accom(ihno3_g)   = 0.1
       accom(ihcl_g)    = 0.1
       accom(inh3_g)    = 0.1
+      accom(in2o5_g)   = 0.1  ! dummy variable - will recalc later..
+      accom(iclno2_g)  = 0.1  ! dummy - for convenience of calcs
       accom(imsa_g)    = 0.1
       accom(ipcg1_b_c_g) =0.1
       accom(ipcg2_b_c_g) =0.1
@@ -8357,6 +8457,13 @@
       enddo
       end if
 
+! het-rct gases   ! DL 9/9/2011
+      do iv = (ngas_volatile+1), (ngas_volatile+ngas_het)
+        speed = mean_molecular_speed(t_k,mw_vol(iv))	! cm/s
+		dg(iv) = gas_diffusivity(t_k,p_atm,mw_vol(iv),v_molar(iv)) ! cm^2/s
+		freepath(iv) = 3.*dg(iv)/speed			! cm
+      enddo
+
 
 ! calc mass transfer coefficients for gases over various aerosol bins
 
@@ -8375,7 +8482,20 @@
         cdum   = tworootpi*num_a(ibin)*   &
                  exp(beta*lndpgn + 0.5*(beta*lnsg)**2)
 
-        do 20 iv = 1, ngas_volatile
+        do 20 iv = 1, ngas_volatile + ngas_het
+
+		  if(iv.eq.in2o5_g)then	! recalculate accom coeff for N2O5
+		  						! for each different aerosol composition
+		  						! (use total aerosol composition for now)
+		  	if(n2o5_flag.gt.0)then
+		  		accom(iv) = acc_n2o5_bert_thorn(water_a(ibin),&
+		  							aer(ino3_a,jtotal,ibin),&
+		  							aer(icl_a,jtotal,ibin),&
+		  							vol_wet_a(ibin))
+		  	else
+		  		accom(iv) = 0.0
+		  	endif
+		  end if
 
           sumghq = 0.0
           do 30 iq = 1, nghq	! sum over gauss-hermite quadrature points
@@ -8388,6 +8508,17 @@
 
         kg(iv,ibin) = cdum*dg(iv)*sumghq		! 1/s
 20      continue
+		
+		if(n2o5_flag.gt.0)then
+			! calculate the reaction path splitting for
+	  		! heterogeneous N2O5 reactions
+	  		frac_n2o5_h2o(ibin) = split_n2o5_bert_thorn(water_a(ibin),&
+		  							aer(icl_a,jtotal,ibin),&
+		  							vol_wet_a(ibin))
+		else
+			frac_n2o5_h2o(ibin) = 0.0
+		endif
+			
 10    continue
 
       elseif(msize_framework .eq. msection)then
@@ -8402,13 +8533,34 @@
         dp_avg = dp_wet_a(ibin)
         cdum  = 6.283185*dp_avg*num_a(ibin)
 
-        do 21 iv = 1, ngas_volatile
+        do 21 iv = 1, ngas_volatile+ngas_het
+		  if(iv.eq.in2o5_g)then	! recalculate accom coeff for N2O5
+		  						! for each different aerosol composition
+		  						! (use total aerosol composition for now)
+		  	if(n2o5_flag.gt.0)then
+		  		accom(iv) = acc_n2o5_bert_thorn(water_a(ibin),&
+		  							aer(ino3_a,jtotal,ibin),&
+		  							aer(icl_a,jtotal,ibin),&
+		  							vol_wet_a(ibin))
+		  	else
+		  		accom(iv) = 0.0
+		  	end if
+		  end if
           kn = 2.*freepath(iv)/dp_avg
           fkn = fuchs_sutugin(kn,accom(iv))
           kg(iv,ibin) = cdum*dg(iv)*fkn		! 1/s!Increased by a factor of 10000 by Manish Shrivastava to force to equilibrium
 !           fraceq(iv,ibin)=num_a(ibin)*dp_wet_a(ibin)/(kn/accom(iv)+1)
 21      continue
-
+		if(n2o5_flag.gt.0)then
+			! calculate the reaction path splitting for
+	  		! heterogeneous N2O5 reactions
+	  		frac_n2o5_h2o(ibin) = split_n2o5_bert_thorn(water_a(ibin),&
+		  							aer(icl_a,jtotal,ibin),&
+		  							vol_wet_a(ibin))	
+		else
+			frac_n2o5_h2o(ibin) = 0.0
+		end if
+		
 11    continue
 
       else
@@ -11710,7 +11862,8 @@
       ibiog2_o_g =89
       ibiog3_o_g =90
       ibiog4_o_g =91
-
+      in2o5_g    =92  ! ioa --> NO3-
+      iclno2_g   =93  ! ioa N2O5+Cl- -->
 
 
 !      ico2_g	= 14	! currently not used
@@ -12143,6 +12296,8 @@
       gas_name(ibiog2_o_g)="biog2_o"
       gas_name(ibiog3_o_g)="biog3_o"
       gas_name(ibiog4_o_g)="biog4_o"
+      gas_name(in2o5_g) = "n2o5 "
+      gas_name(iclno2_g)= "clno2"
       
 ! names of electrolytes
       ename(jnh4so4) = 'amso4'
@@ -12762,6 +12917,8 @@
       partial_molar_vol(ibiog2_o_g)=250.0
       partial_molar_vol(ibiog3_o_g)=250.0
       partial_molar_vol(ibiog4_o_g)=250.0
+      partial_molar_vol(in2o5_g)  = 200.0	! assumed...
+      partial_molar_vol(iclno2_g) = 200.0	! assumed...
 
 ! refractive index
       ref_index_a(jnh4so4) = cmplx(1.52,0.)
@@ -15819,6 +15976,139 @@
       return
       end function fuchs_sutugin
 !----------------------------------------------------------
+
+
+
+!----------------------------------------------------------
+    real(kind=8) function acc_n2o5_bert_thorn(mass_h2o,mol_no3,mol_cl,vol)
+	! Composition dependent mass accommodation coefficient. 
+	! After Bertram and Thornton, ACP, 2009
+	!
+	! acc_N2O5 = A*(b-b*exp(-d*[H2O(l)]))
+	!			* (1-1/(1+(k3'*[H2O(l)]/[NO3-])+(k4'*[Cl-]/[NO3-])))
+	! where:
+	! acc_N2O5 = accommodation coefficient of N2O5 on the aerosol
+	! A = factor for experimental conditions = 3.2e-8 s
+	! b = 1.15e6 s^-1
+	! d = 1.3e-1 M^-1
+	! [H2O(l)] = H2O Molarity
+	! k3' (=k3/k2b) = 6.0e-2
+	! k4' (=k4/k2b) = 29e0
+	! [Cl-] = Cl- Molarity
+	! [NO3-] = NO3- Molarity
+
+	! define set factors for scheme
+	real(kind=8), parameter :: A_bt  = 3.2e-8
+	real(kind=8), parameter :: b_bt  = 1.15e6
+	real(kind=8), parameter :: d_bt  = 1.3e-1
+	real(kind=8), parameter :: k3_bt = 6.0e-2
+	real(kind=8), parameter :: k4_bt = 29e0
+
+	! internal conversion factors
+	real(kind=8), parameter :: nmol_mol = 1e-9	! convert nmol->mol
+	real(kind=8), parameter :: m3_litre = 1e3	! convert m3->litre
+	real(kind=8), parameter :: mm_h2o   = 18e-3	! molar mass (kg/mol)
+
+	! input variables
+	real(kind=8) :: mass_h2o	! kg(water)/m^3(air)
+	real(kind=8) :: mol_no3		! nmol/m^3(air?)
+	real(kind=8) :: mol_cl		! nmol/m^3(air?)
+	real(kind=8) :: vol			! cc/cc(air) - wet volume
+
+	! internal variables
+	real(kind=8) :: part_step
+	real(kind=8) :: aer_h2o, aer_no3, aer_cl	! molarity - mol/litre(solution)
+
+
+	! extract and convert aerosol data from inputs to Moles/litre(solution)
+	aer_h2o = mass_h2o / (mm_h2o*vol*m3_litre) 
+	aer_no3 = mol_no3*nmol_mol / (vol*m3_litre)
+	aer_cl  = mol_cl*nmol_mol / (vol*m3_litre)
+	
+	if(n2o5_flag.eq.1)then ! switch off Cl pathway
+		aer_cl = 0.0
+	end if
+	
+	if(aer_h2o .ne. 0.0)then
+		part_step =  b_bt - b_bt * exp(-d_bt*aer_h2o)
+		if(aer_no3 .ne. 0.0)then
+			acc_n2o5_bert_thorn = A_bt * part_step *  &		
+					(1.0 - 1.0 / (                    &
+						1.0 +                         &
+						(k3_bt*aer_h2o/aer_no3) +     &
+						(k4_bt*aer_cl/aer_no3)        &
+					))
+		else
+			acc_n2o5_bert_thorn = A_bt * part_step
+		endif
+	else ! if no aerosol water then don't take up N2O5
+		acc_n2o5_bert_thorn = 0.0
+	endif
+
+	return
+	end function acc_n2o5_bert_thorn
+!-------------------------------------------------------------
+
+
+!-------------------------------------------------------------
+	real(kind=8) function split_n2o5_bert_thorn(mass_h2o,mol_cl,vol)
+	! Hetereogeneous reaction of N2O5 with H2O(l) and Cl-(aq)
+	! after Bertram and Thornton, ACP, 2009
+	! Subroutine for splitting reaction pathways
+	!
+	! R3f = 1 / (1+(k4'[Cl-])/(k3'[H2O(l)])) (H2O pathway)
+	! R4f = 1 / (1+(k3'[H2O(l)])/(k4'[Cl-])) (Cl- pathway)
+	! where:
+	! R3f = fraction of N2O5 that reacts with H2O
+	! R4f = fraction of N2O5 that reacts with Cl-
+	! [H2O(l)] = H2O Molarity
+	! [Cl-] = Cl- Molarity
+	! k3' (=k3/k2b) = 6.0e-2
+	! k4' (=k4/k2b) = 29e0
+	!
+	! This function outputs the fraction of N2O5 which reacts
+	! with H2O
+
+	! define parameters for the scheme
+	real(kind=8), parameter :: k3_bt = 6.0e-2
+	real(kind=8), parameter :: k4_bt = 29e0
+
+	! internal conversion factors
+	real(kind=8), parameter :: nmol_mol = 1e-9	! convert nmol->mol
+	real(kind=8), parameter :: m3_litre = 1e3	! convert m3->litre
+	real(kind=8), parameter :: mm_h2o   = 18e-3	! molar mass (kg/mol)
+
+	! input variables
+	real(kind=8) :: mass_h2o	! kg(water)/m^3(air)
+	real(kind=8) :: mol_cl		! nmol/m^3(air?)
+	real(kind=8) :: vol			! cc/cc(air) - wet volume
+
+	! internal variables
+	real(kind=8) :: part_step
+	real(kind=8) :: aer_h2o, aer_cl	! molarity - mol/litre(solution)
+
+
+	! extract and convert aerosol data from inputs to Moles/litre(solution)
+	aer_h2o = mass_h2o / (mm_h2o*vol*m3_litre) 
+	aer_cl  = mol_cl*nmol_mol / (vol*m3_litre)
+
+	if(n2o5_flag.eq.1)then ! switch off Cl pathway
+		aer_cl = 0.0
+	end if
+
+	if(aer_h2o .ne. 0.0)then
+		split_n2o5_bert_thorn = 1e0 / &
+					( 1e0 + (k4_bt*aer_cl)/(k3_bt*aer_h2o) )	
+	else
+		split_n2o5_bert_thorn = 0.0
+	endif
+
+
+
+	return
+	end function split_n2o5_bert_thorn
+!-------------------------------------------------------------
+
 
 
 

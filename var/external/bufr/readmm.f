@@ -36,6 +36,7 @@ C 2004-11-15  D. KEYSER  -- PARAMETER MAXMEM (THE MAXIMUM NUMBER OF
 C                           BYTES REQUIRED TO STORE ALL MESSAGES
 C                           INTERNALLY) WAS INCREASED FROM 16 MBYTES TO
 C                           50 MBYTES
+C 2009-03-23  J. ATOR    -- REWROTE TO CALL RDMEMM
 C
 C USAGE:    CALL READMM (IMSG, SUBSET, JDATE, IRET)
 C   INPUT ARGUMENT LIST:
@@ -55,14 +56,11 @@ C                       0 = normal return
 C                      -1 = IMSG is either zero or greater than the
 C                           number of messages in memory
 C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
-C
 C REMARKS:
 C    NOTE THAT UFBMEM IS CALLED PRIOR TO THIS TO STORE THE BUFR
 C    MESSAGES INTO INTERNAL MEMORY.
 C
-C    THIS ROUTINE CALLS:        BORT     CKTABA   STATUS   WTSTAT
+C    THIS ROUTINE CALLS:        RDMEMM
 C    THIS ROUTINE IS CALLED BY: IREADMM
 C                               Also called by application programs.
 C
@@ -72,75 +70,14 @@ C   MACHINE:  PORTABLE TO ALL PLATFORMS
 C
 C$$$
 
-      INCLUDE 'bufrlib.prm'
-
-      COMMON /MSGCWD/ NMSG(NFILES),NSUB(NFILES),MSUB(NFILES),
-     .                INODE(NFILES),IDATE(NFILES)
-      COMMON /BITBUF/ MAXBYT,IBIT,IBAY(MXMSGLD4),MBYT(NFILES),
-     .                MBAY(MXMSGLD4,NFILES)
-      COMMON /MSGMEM/ MUNIT,MLAST,MSGP(0:MAXMSG),MSGS(MAXMEM)
-      COMMON /QUIET / IPRT
-
       CHARACTER*8 SUBSET
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
 
-C  CHECK THE MESSAGE REQUEST AND FILE STATUS
-C  -----------------------------------------
+      CALL RDMEMM(IMSG,SUBSET,JDATE,IRET)
 
-      CALL STATUS(MUNIT,LUN,IL,IM)
-      CALL WTSTAT(MUNIT,LUN,IL, 1)
-      IF(IL.EQ.0) GOTO 900
-      IF(IL.GT.0) GOTO 901
-      IRET = 0
-
-      IF(IMSG.EQ.0 .OR.IMSG.GT.MSGP(0)) THEN
-         CALL WTSTAT(MUNIT,LUN,IL,0)
-         IF(IPRT.GE.1) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-            IF(IMSG.EQ.0)  THEN
-               PRINT*, 'BUFRLIB: READMM - REQUESTED MEMORY MESSAGE ',
-     .          'NUMBER {FIRST (INPUT) ARGUMENT} IS 0, RETURN WITH ',
-     .          'IRET = -1'
-            ELSE
-               PRINT*, 'BUFRLIB: READMM - REQ. MEMORY MESSAGE NO. {',
-     .          IMSG,' - {1ST (INPUT) ARG.} > NO. OF MESSAGES IN ',
-     .          'MEMORY (',MSGP(0),'), RETURN WITH IRET = -1'
-            ENDIF
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
-         ENDIF
-         IRET = -1
-         GOTO 100
-      ENDIF
-
-C  READ MESSAGE# IMSG INTO A MESSAGE BUFFER
-C  ----------------------------------------
-
-      IPTR = MSGP(IMSG)
-      IF(IMSG.LT.MSGP(0)) LPTR = MSGP(IMSG+1)-IPTR
-      IF(IMSG.EQ.MSGP(0)) LPTR = MLAST-IPTR+1
-      IPTR = IPTR-1
-
-      DO I=1,LPTR
-      MBAY(I,LUN) = MSGS(IPTR+I)
-      ENDDO
-
-C  PARSE THE MESSAGE SECTION CONTENTS
-C  ----------------------------------
-
-      CALL CKTABA(LUN,SUBSET,JDATE,JRET)
-      NMSG(LUN) = IMSG
       IMSG = IMSG+1
 
-C  EXITS
-C  -----
-
-100   RETURN
-900   CALL BORT('BUFRLIB: READMM - INPUT BUFR FILE IS CLOSED, IT MUST'//
-     . ' BE OPEN FOR INPUT')
-901   CALL BORT('BUFRLIB: READMM - INPUT BUFR FILE IS OPEN FOR OUTPUT'//
-     . ', IT MUST BE OPEN FOR INPUT')
+      RETURN
       END

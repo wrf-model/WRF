@@ -40,11 +40,10 @@ C    THIS SUBROUTINE IS THE INVERSE OF BUFR ARCHIVE LIBRARY ROUTINE
 C    UPB.
 C
 C    THIS ROUTINE CALLS:        IREV
-C    THIS ROUTINE IS CALLED BY: CMSGINI  CNVED4   CPYUPD   DXMINI
-C                               MSGINI   MSGUPD   MSGWRT   MVB
-C                               OVRBS1   PAD      PADMSG   PKBS1
-C                               STNDRD   SUBUPD   WRCMPS   WRITDX
-C                               WRTREE
+C    THIS ROUTINE IS CALLED BY: ATRCPT   CMSGINI  CNVED4   CPYUPD
+C                               DXMINI   MSGINI   MSGUPD   MSGWRT
+C                               MVB      PAD      PADMSG   PKBS1
+C                               STNDRD   WRCMPS   WRDXTB   WRTREE
 C                               Normally not called by any application
 C                               programs.
 C
@@ -54,7 +53,7 @@ C   MACHINE:  PORTABLE TO ALL PLATFORMS
 C
 C$$$
 
-      COMMON /HRDWRD/ NBYTW,NBITW,NREV,IORD(8)
+      COMMON /HRDWRD/ NBYTW,NBITW,IORD(8)
 
       DIMENSION IBAY(*)
 

@@ -34,6 +34,7 @@ C 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED HISTORY
 C                           DOCUMENTATION
 C 2004-08-09  J. ATOR    -- MAXIMUM MESSAGE LENGTH INCREASED FROM
 C                           20,000 TO 50,000 BYTES
+C 2009-03-23  J. ATOR    -- USE MSGFULL AND ERRWRT
 C
 C USAGE:    CALL MSGUPD (LUNIT, LUN)
 C   INPUT ARGUMENT LIST:
@@ -41,14 +42,13 @@ C     LUNIT    - INTEGER: FORTRAN LOGICAL UNIT NUMBER FOR BUFR FILE
 C     LUN      - INTEGER: I/O STREAM INDEX INTO INTERNAL MEMORY ARRAYS
 C                (ASSOCIATED WITH FILE CONNECTED TO LOGICAL UNIT LUNIT)
 C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
-C
 C REMARKS:
-C    THIS ROUTINE CALLS:        IUPB     MSGINI   MSGWRT   MVB
-C                               PAD      PKB      USRTPL
+C    THIS ROUTINE CALLS:        ERRWRT   IUPB     MSGFULL  MSGINI
+C                               MSGWRT   MVB      PAD      PKB
+C                               USRTPL
 C    THIS ROUTINE IS CALLED BY: WRITSA   WRITSB
 C                               Normally not called by any application
+C                               programs.
 C
 C ATTRIBUTES:
 C   LANGUAGE: FORTRAN 77
@@ -65,6 +65,10 @@ C$$$
      .                MBAY(MXMSGLD4,NFILES)
       COMMON /QUIET / IPRT
 
+      LOGICAL MSGFULL
+
+      CHARACTER*128 ERRSTR
+
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
 
@@ -76,13 +80,13 @@ C  ---------------------
 C  SEE IF THE NEW SUBSET FITS
 C  --------------------------
 
-      IF(MBYT(LUN)+IBYT+8.GT.MAXBYT) THEN
+      IF(MSGFULL(MBYT(LUN),IBYT,MAXBYT)) THEN
 c  .... NO it does not fit
          CALL MSGWRT(LUNIT,MBAY(1,LUN),MBYT(LUN))
          CALL MSGINI(LUN)
       ENDIF
 
-      IF(MBYT(LUN)+IBYT+8.GT.MAXBYT) GOTO 900
+      IF(MSGFULL(MBYT(LUN),IBYT,MAXBYT)) GOTO 900
 
 C  SET A BYTE COUNT AND TRANSFER THE SUBSET BUFFER INTO THE MESSAGE
 C  ----------------------------------------------------------------
@@ -122,14 +126,14 @@ C  ON ENCOUTERING OVERLARGE SUBSETS, EXIT GRACEFULLY (SUBSET DISCARDED)
 C  --------------------------------------------------------------------
 
 900   IF(IPRT.GE.0) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*,'BUFRLIB: MSGUPD - SUBSET LONGER THAN ANY POSSIBLE ',
-     . 'MESSAGE {SUBSET LENGTH= ',MBYT(LUN)+IBYT+8,', MESSAGE LENGTH= ',
-     . MAXBYT,'}'
-      PRINT*,'>>>>>>>OVERLARGE SUBSET DISCARDED FROM FILE<<<<<<<<'
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      WRITE ( UNIT=ERRSTR, FMT='(A,A,I7,A)')
+     . 'BUFRLIB: MSGUPD - SUBSET LONGER THAN ANY POSSIBLE MESSAGE ',
+     . '{MAXIMUM MESSAGE LENGTH = ', MAXBYT, '}'
+      CALL ERRWRT(ERRSTR)
+      CALL ERRWRT('>>>>>>>OVERLARGE SUBSET DISCARDED FROM FILE<<<<<<<<')
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
       ENDIF
 
 C  EXIT

@@ -18,6 +18,8 @@ C 2003-11-04  S. BENDER  -- ADDED REMARKS/BUFRLIB ROUTINE
 C                           INTERDEPENDENCIES
 C 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED HISTORY
 C                           DOCUMENTATION
+C 2009-03-23  J. ATOR    -- TREAT NULL CHARACTERS AS BLANKS;
+C                           PREVENT OVERFLOW OF CHR
 C
 C USAGE:    CALL UPC (CHR, NCHR, IBAY, IBIT)
 C   INPUT ARGUMENT LIST:
@@ -51,7 +53,7 @@ C
 C$$$
 
       COMMON /CHARAC/ IASCII,IATOE(0:255),IETOA(0:255)
-      COMMON /HRDWRD/ NBYTW,NBITW,NREV,IORD(8)
+      COMMON /HRDWRD/ NBYTW,NBITW,IORD(8)
 
       CHARACTER*(*) CHR
       CHARACTER*8   CVAL
@@ -62,10 +64,17 @@ C----------------------------------------------------------------------
 C----------------------------------------------------------------------
 
       LB = IORD(NBYTW)
-      DO I=1,NCHR
-      CALL UPB(IVAL(1),8,IBAY,IBIT)
-      CHR(I:I) = CVAL(LB:LB)
-      IF(IASCII.EQ.0) CALL IPKM(CHR(I:I),1,IATOE(IUPM(CHR(I:I),8)))
+      CVAL = ' '
+
+      NUMCHR = MIN(NCHR,LEN(CHR))
+      DO I=1,NUMCHR
+        CALL UPB(IVAL(1),8,IBAY,IBIT)
+        IF(IVAL(1).EQ.0) THEN
+          CHR(I:I) = ' '
+        ELSE 
+          CHR(I:I) = CVAL(LB:LB)
+        ENDIF
+        IF(IASCII.EQ.0) CALL IPKM(CHR(I:I),1,IATOE(IUPM(CHR(I:I),8)))
       ENDDO
 
       RETURN

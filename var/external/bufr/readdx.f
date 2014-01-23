@@ -33,6 +33,7 @@ C                           DOCUMENTATION (INCLUDING HISTORY); OUTPUTS
 C                           MORE COMPLETE DIAGNOSTIC INFO WHEN ROUTINE
 C                           TERMINATES ABNORMALLY OR FOR INFORMATIONAL
 C                           PURPOSES
+C 2009-04-21  J. ATOR    -- USE ERRWRT
 C
 C USAGE:    CALL READDX (LUNIT, LUN, LUNDX)
 C   INPUT ARGUMENT LIST:
@@ -48,8 +49,8 @@ C                ALREADY EMBEDDED IN LUNIT (BUT ONLY IF LUNIT IS BEING
 C                READ)
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT     CPBFDX   RDBFDX   RDUSDX
-C                               STATUS
+C    THIS ROUTINE CALLS:        BORT     CPBFDX   ERRWRT   MAKESTAB
+C                               RDBFDX   RDUSDX   STATUS
 C    THIS ROUTINE IS CALLED BY: OPENBF   WRITDX
 C                               Normally not called by any application
 C                               programs.
@@ -61,6 +62,8 @@ C
 C$$$
 
       COMMON /QUIET/ IPRT
+
+      CHARACTER*128 ERRSTR
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
@@ -75,45 +78,65 @@ C  -------------------------------------------------
 
       IF (LUNIT.EQ.LUNDX) THEN
 c  .... Source is input BUFR file in LUNIT
-         IF(IPRT.GE.2) PRINT100,LUNDX
+         IF(IPRT.GE.2) THEN
+          CALL ERRWRT('++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++')
+          WRITE ( UNIT=ERRSTR, FMT='(A,A,I3,A)' )
+     .     'BUFRLIB: READDX - READING BUFR DICTIONARY TABLE FROM ',
+     .     'INPUT BUFR FILE IN UNIT ', LUNDX, ' INTO INTERNAL ARRAYS'
+          CALL ERRWRT(ERRSTR)
+          CALL ERRWRT('++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++')
+          CALL ERRWRT(' ')
+         ENDIF
          REWIND LUNIT
          CALL RDBFDX(LUNIT,LUN)
       ELSEIF(ILDX.EQ.-1) THEN
 c  .... Source is input BUFR file in LUNDX
-c       BUFR file in LUNIT may be in- or output
-         IF(IPRT.GE.2) PRINT101,LUNDX,LUNIT
+c  .... BUFR file in LUNIT may be input or output
+         IF(IPRT.GE.2) THEN
+          CALL ERRWRT('++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++')
+          WRITE ( UNIT=ERRSTR, FMT='(A,A,I3,A,A,I3)' )
+     .     'BUFRLIB: READDX - COPYING BUFR DCTY TBL FROM INTERNAL ',
+     .     'ARRAYS ASSOC. W/ INPUT UNIT ', LUNDX, ' TO THOSE ASSOC. ',
+     .     'W/ UNIT ', LUNIT
+          CALL ERRWRT(ERRSTR)
+          CALL ERRWRT('++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++')
+          CALL ERRWRT(' ')
+         ENDIF
          CALL CPBFDX(LUD,LUN)
+         CALL MAKESTAB
       ELSEIF(ILDX.EQ.1) THEN
 c  .... Source is output BUFR file in LUNDX
-c       BUFR file in LUNIT may be in- or output
-         IF(IPRT.GE.2) PRINT102,LUNDX,LUNIT
+c  .... BUFR file in LUNIT may be input or output
+         IF(IPRT.GE.2) THEN
+          CALL ERRWRT('++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++')
+          WRITE ( UNIT=ERRSTR, FMT='(A,A,I3,A,A,I3)' )
+     .     'BUFRLIB: READDX - COPYING BUFR DCTY TBL FROM INTERNAL ',
+     .     'ARRAYS ASSOC. W/ OUTPUT UNIT ', LUNDX, ' TO THOSE ASSOC. ',
+     .     'W/ UNIT ', LUNIT
+          CALL ERRWRT(ERRSTR)
+          CALL ERRWRT('++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++')
+          CALL ERRWRT(' ')
+         ENDIF
          CALL CPBFDX(LUD,LUN)
+         CALL MAKESTAB
       ELSEIF(ILDX.EQ.0) THEN
-c  .... Source is user-suppl char. tbl in LUNDX
-c       BUFR file in LUNIT may be in- or output
-         IF(IPRT.GE.2) PRINT103,LUNDX
+c  .... Source is user-supplied character table in LUNDX
+c  .... BUFR file in LUNIT may be input or output
+         IF(IPRT.GE.2) THEN
+          CALL ERRWRT('++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++')
+          WRITE ( UNIT=ERRSTR, FMT='(A,A,I3,A)' )
+     .     'BUFRLIB: READDX - READING BUFR DICTIONARY TABLE FROM ',
+     .     'USER-SUPPLIED TEXT FILE IN UNIT ', LUNDX,
+     .     ' INTO INTERNAL ARRAYS'
+          CALL ERRWRT(ERRSTR)
+          CALL ERRWRT('++++++++++++BUFR ARCHIVE LIBRARY+++++++++++++++')
+          CALL ERRWRT(' ')
+         ENDIF
          REWIND LUNDX
          CALL RDUSDX(LUNDX,LUN)
       ELSE
          GOTO 900
       ENDIF
-
-100   FORMAT(/17('+'),'BUFR ARCHIVE LIBRARY',20('+')/'BUFRLIB: READDX ',
-     . '- READING BUFR DICTIONARY TABLE FROM INPUT BUFR FILE IN UNIT ',
-     . I2,' INTO INTERNAL ARRAYS'/17('+'),'BUFR ARCHIVE LIBRARY',20('+')
-     . /)
-101   FORMAT(/17('+'),'BUFR ARCHIVE LIBRARY',20('+')/'BUFRLIB: READDX ',
-     . '- COPYING BUFR DCTY TBL FROM INTERNAL ARRAYS ASSOC. W/ INPUT ',
-     . 'FILE IN UNIT ',I2,' TO THOSE ASSOC. W/ FILE IN UNIT ',I2/
-     . 17('+'),'BUFR ARCHIVE LIBRARY',20('+')/)
-102   FORMAT(/17('+'),'BUFR ARCHIVE LIBRARY',20('+')/'BUFRLIB: READDX ',
-     . '- COPYING BUFR DCTY TBL FROM INTERNAL ARRAYS ASSOC. W/ OUTPUT ',
-     . 'FILE IN UNIT ',I2,' TO THOSE ASSOC. W/ FILE IN UNIT ',I2/
-     . 17('+'),'BUFR ARCHIVE LIBRARY',20('+')/)
-103   FORMAT(/17('+'),'BUFR ARCHIVE LIBRARY',20('+')/'BUFRLIB: READDX ',
-     . '- READING BUFR DICTIONARY TABLE FROM USER-SUPPLIED TEXT FILE ',
-     . 'IN UNIT ',I2,' INTO INTERNAL ARRAYS'/17('+'),'BUFR ARCHIVE ',
-     . 'LIBRARY',20('+')/)
 
 C  EXITS
 C  -----

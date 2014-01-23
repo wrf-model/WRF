@@ -2961,9 +2961,11 @@ end subroutine uwshcu_readnl
            qtu_top  =  qtu(kpen-1) + (  qt0(kpen) +  ssqt0(kpen) * (-ppen) / 2._r8  - qtu(kpen-1) ) * fer(kpen) * (-ppen)
        else
            thlu_top = ( thl0(kpen) + ssthl0(kpen) / fer(kpen) - ssthl0(kpen) * (-ppen) / 2._r8 ) - &
-                      ( thl0(kpen) + ssthl0(kpen) * (-ppen) / 2._r8 - thlu(kpen-1) + ssthl0(kpen) / fer(kpen) ) * exp(-fer(kpen) * (-ppen))
+                      ( thl0(kpen) + ssthl0(kpen) * (-ppen) / 2._r8 - thlu(kpen-1) + ssthl0(kpen) / fer(kpen) ) * &
+                        exp(-fer(kpen) * (-ppen))
            qtu_top  = ( qt0(kpen)  +  ssqt0(kpen) / fer(kpen) -  ssqt0(kpen) * (-ppen) / 2._r8 ) - &  
-                      ( qt0(kpen)  +  ssqt0(kpen) * (-ppen) / 2._r8 -  qtu(kpen-1) +  ssqt0(kpen) / fer(kpen) ) * exp(-fer(kpen) * (-ppen))
+                      ( qt0(kpen)  +  ssqt0(kpen) * (-ppen) / 2._r8 -  qtu(kpen-1) +  ssqt0(kpen) / fer(kpen) ) * &
+                        exp(-fer(kpen) * (-ppen))
        end if
 
        call conden(ps0(kpen-1)+ppen,thlu_top,qtu_top,thj,qvj,qlj,qij,qse,id_check,qsat)
@@ -4038,7 +4040,8 @@ end subroutine uwshcu_readnl
         ql0_star(:mkx) = ql0(:mkx) + qlten(:mkx) * dt
         qi0_star(:mkx) = qi0(:mkx) + qiten(:mkx) * dt
         s0_star(:mkx)  =  s0(:mkx) +  sten(:mkx) * dt
-        call positive_moisture_single( xlv, xls, mkx, dt, qmin(1), qmin(2), qmin(3), dp0, qv0_star, ql0_star, qi0_star, s0_star, qvten, qlten, qiten, sten )
+        call positive_moisture_single( xlv, xls, mkx, dt, qmin(1), qmin(2), qmin(3), dp0, &
+                                       qv0_star, ql0_star, qi0_star, s0_star, qvten, qlten, qiten, sten )
         qtten(:mkx)    = qvten(:mkx) + qlten(:mkx) + qiten(:mkx)
         slten(:mkx)    = sten(:mkx)  - xlv * qlten(:mkx) - xls * qiten(:mkx)
 

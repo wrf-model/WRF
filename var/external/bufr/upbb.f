@@ -39,7 +39,7 @@ C
 C REMARKS:
 C    THIS ROUTINE CALLS:        IREV
 C    THIS ROUTINE IS CALLED BY: RCSTPL   RDTREE   UFBGET   UFBTAB
-C                               UFBTAM   WRITLC
+C                               UFBTAM   UPB      WRITLC
 C                               Normally not called by any application
 C                               programs.
 C
@@ -49,7 +49,7 @@ C   MACHINE:  PORTABLE TO ALL PLATFORMS
 C
 C$$$
 
-      COMMON /HRDWRD/ NBYTW,NBITW,NREV,IORD(8)
+      COMMON /HRDWRD/ NBYTW,NBITW,IORD(8)
 
       DIMENSION IBAY(*)
 

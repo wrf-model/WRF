@@ -35,10 +35,10 @@ C     LEN5     - LENGTH OF SECTION 5 (= -1 IF NOT UNPACKED)
 C
 C REMARKS:
 C    THIS ROUTINE CALLS:        IUPB     IUPBS01
-C    THIS ROUTINE IS CALLED BY: CKTABA   CNVED4   DUMPBF   MESGBC
-C                               MSGWRT   RDBFDX   UPDS3    WRITLC
-C                               Normally not called by application
-C                               programs but it could be.
+C    THIS ROUTINE IS CALLED BY: ATRCPT   CKTABA   CNVED4   IUPBS3
+C                               MSGWRT   STBFDX   STNDRD   UPDS3
+C                               WRDXTB   WRITLC
+C                               Also called by application programs.
 C
 C ATTRIBUTES:
 C   LANGUAGE: FORTRAN 77

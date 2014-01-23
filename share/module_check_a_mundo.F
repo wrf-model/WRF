@@ -127,7 +127,8 @@
 
                write (wrf_err_message, '(" --- ERROR:   seaice_albedo_opt == 1 works only with ")')
                CALL wrf_message ( TRIM ( wrf_err_message ) )
-               write (wrf_err_message, '("              sf_surface_physics == ", I2, " (Noah) or ", I2, " (Noah-MP).")') LSMSCHEME, NOAHMPSCHEME
+               write (wrf_err_message, '("              sf_surface_physics == ", I2, " (Noah) or ", I2, " (Noah-MP).")') &
+               LSMSCHEME, NOAHMPSCHEME
                call wrf_error_fatal ( TRIM ( wrf_err_message ) )
 
             END IF
@@ -184,7 +185,7 @@
 !-----------------------------------------------------------------------
 ! In program real, if hypsometric_opt = 2, adjust_heights cannot be set to .true. 
 !-----------------------------------------------------------------------
-      IF ( model_config_rec%hypsometric_opt .EQ. 2 \
+      IF ( model_config_rec%hypsometric_opt .EQ. 2 &
            .AND. model_config_rec%adjust_heights ) THEN
            WRITE (wrf_err_message, FMT='(A,A)') '--- NOTE: hypsometric_opt is 2, ', &
                   'setting adjust_heights = F'
@@ -446,6 +447,7 @@
 
       IF ( model_config_rec%use_adaptive_time_step ) THEN
          IF ( ( model_config_rec%cu_physics(1) .EQ. BMJSCHEME     ) .OR. &
+              ( model_config_rec%cu_physics(1) .EQ. MESO_SAS     ) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. SASSCHEME     ) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. OSASSCHEME    ) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. NSASSCHEME    ) .OR. &
@@ -650,7 +652,8 @@
            model_config_rec % num_soil_layers = 4
       IF ( model_config_rec % sf_surface_physics(1) .EQ. NOAHMPSCHEME   ) &
            model_config_rec % num_soil_layers = 4
-      IF ( model_config_rec % sf_surface_physics(1) .EQ. RUCLSMSCHEME) &
+      IF ( model_config_rec % sf_surface_physics(1) .EQ. RUCLSMSCHEME .AND. &
+           (model_config_rec % num_soil_layers .NE. 6 .AND. model_config_rec % num_soil_layers .NE. 9) ) &
            model_config_rec % num_soil_layers = 6
       IF ( model_config_rec % sf_surface_physics(1) .EQ. PXLSMSCHEME ) &
            model_config_rec % num_soil_layers = 2

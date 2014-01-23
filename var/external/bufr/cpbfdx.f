@@ -31,7 +31,7 @@ C                FOR OUTPUT TABLE LOCATION
 C
 C REMARKS:
 C    THIS ROUTINE CALLS:        DXINIT
-C    THIS ROUTINE IS CALLED BY: READDX
+C    THIS ROUTINE IS CALLED BY: MAKESTAB READDX   WRDXTB
 C                               Normally not called by any application
 C                               programs.
 C

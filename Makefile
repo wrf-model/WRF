@@ -561,6 +561,11 @@ nmm_real : nmm_wrf
 # semi-Lagrangian initializations
 
 
+io :
+	@ echo '--------------------------------------'
+	( cd frame ; $(MAKE) io_only )
+	( cd frame ; $(MAKE) module_driver_constants.o pack_utils.o module_machine.o module_internal_header_util.o )
+
 ext :
 	@ echo '--------------------------------------'
 	( cd frame ; $(MAKE) externals )

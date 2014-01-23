@@ -101,7 +101,7 @@
 
  IF ( itimestep * dt .lt. lightning_start_seconds ) RETURN
 
- IF ( MOD((itimestep * dt - lightning_start_seconds), lightning_dt ) .ne. 0 ) RETURN
+! IF ( MOD((itimestep * dt - lightning_start_seconds), lightning_dt ) .ne. 0 ) RETURN
 
  IF ( N_IC .eq. 0. .and. N_CG .eq. 0. ) RETURN
 !-----------------------------------------------------------------

@@ -398,7 +398,7 @@
     END IF
 
 #if (EM_CORE == 1)
-    IF ( switch .EQ. auxinput2_only ) THEN
+    IF ( ( switch .EQ. input_only ) .OR. ( switch .EQ. auxinput2_only ) ) THEN
        ierr = 0
        CALL wrf_get_dom_ti_integer ( fid , 'I_PARENT_START' ,    itmp , 1 , icnt , ierr3 )
        ierr = max( ierr, ierr3 )

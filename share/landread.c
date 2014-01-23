@@ -1,11 +1,14 @@
 #ifndef CRAY
 # ifdef NOUNDERSCORE
 #      define GET_TERRAIN get_terrain
+#      define GET_LANDUSE get_landuse
 # else
 #   ifdef F2CSTYLE
 #      define GET_TERRAIN get_terrain__
+#      define GET_LANDUSE get_landuse__
 #   else
 #      define GET_TERRAIN get_terrain_
+#      define GET_LANDUSE get_landuse_
 #   endif
 # endif
 #endif
@@ -29,12 +32,31 @@ int GET_TERRAIN (        float *adx,
 #ifndef MS_SUA
  fprintf(stderr, "***************************************************************\n" ) ;
  fprintf(stderr, "Access to RSMAS Topo Ingest Code is by Special Arrangement Only\n" ) ;
- fprintf(stderr, "in WRF 2.1 .  Please contact wrfhelp@ucar.edu .                \n" ) ;
+ fprintf(stderr, "in WRF.  Please contact wrfhelp@ucar.edu.                      \n" ) ;
  fprintf(stderr, "***************************************************************\n" ) ;
 #endif
  return(0) ;
 }
 
+int GET_LANDUSE (        float *adx,
+                         float *xlat,
+                         float *xlon,
+                         float       *landuse,
+                         int   *mix,
+                         int   *mjx,
+                         int   *iyyn,
+                         int   *jxxn,
+                         int   *ipath , int * ipathlen ) /* integer coded ASCII string from Funtran and len */
+
+{
+#ifndef MS_SUA
+ fprintf(stderr, "***************************************************************\n" ) ;
+ fprintf(stderr, "Access to RSMAS Topo Ingest Code is by Special Arrangement Only\n" ) ;
+ fprintf(stderr, "in WRF.  Please contact wrfhelp@ucar.edu.                      \n" ) ;
+ fprintf(stderr, "***************************************************************\n" ) ;
+#endif
+ return(0) ;
+}
 #else
 
 #ifdef FSEEKO_OK
@@ -51,8 +73,8 @@ int GET_TERRAIN (        float *adx,
 #else
 # include <malloc/malloc.h>
 #endif
+#include <unistd.h>
 #include <string.h>
-#include "landread.h"
 #define MAXTOPOFILES  100
 #define MAXLEN        4096
 
@@ -68,6 +90,17 @@ typedef struct
   /* Number of entries. */
   int num;
 } TsFileInfo;
+
+static TsFileInfo tsfTopo;
+static TsFileInfo tsfOcean;
+static TsFileInfo tsfLU;
+
+static int   tsFileInfo_initialized = 0 ; 
+//static float last_adx = 0.0 ;
+
+static char tsfTopo_fn[MAXLEN];
+static char tsfLU_fn[MAXLEN];
+static char tsfOcean_fn[MAXLEN];
 
 static float vmiss;
 
@@ -92,21 +125,19 @@ static int    wrapy;
 static XDR  *xdrs;
 static FILE *fp;
 
-#if 0
- int nint(const double x)
+int nint(double x)
 {
   if ( x > 0.0 ) { return( (int)(x + 0.5) ) ; }
   return((int)(x - 0.5));
 }
-#endif
 
-double aint(const double x)
+double aint(double x)
 {
   int ix = (int)(x);
   return((double)(ix));
 }
 
-double anint(const double x)
+double anint(double x)
 {
   if (x > 0.0) return((double)((int)(x + 0.5)));
   return((double)((int)(x - 0.5)));
@@ -141,17 +172,17 @@ static double lonDistNowrap(double lon1, double lon2)
   return(fabs(lon22 - lon11));
 }
 
-int tsLatLonToGridpoint(const double  lat,
-			const double  lon,
+int tsLatLonToGridpoint(double  lat,
+			double  lon,
 			double       *ix,
 			double       *iy)
 {
   *ix = lonDistNowrap(lon0, lon) / dlon;
   *iy = (lat - lat0) / dlat;
-  return(1);
+  return(0);
 }
 
-static int areEqual(const double v1, const double v2)
+static int areEqual(double v1, double v2)
 {
   if (fabs(v1-v2) < 0.001) return(1);
   return(0);
@@ -193,16 +224,16 @@ static int setWrapAroundFlags(void)
       wrapy += 2;
     }
 
-  return(1);
+  return(0);
 }
 
-static int isMissing(const float v)
+static int isMissing(float v)
 {
   if (fabs(vmiss - v) < 0.1) return(1);
   return(0);
 }
 
-float tsGetValueInt(const int aix, const int aiy)
+float tsGetValueInt(int aix, int aiy)
 {
   float f = vmiss;
   
@@ -299,7 +330,7 @@ float tsGetValueInt(const int aix, const int aiy)
   return(f);
 }
 
-float tsGetValue(const double ix, const double iy)
+float tsGetValue(double ix, double iy)
 {
   int i0 = (int)(floor(ix));
   int j0 = (int)(floor(iy));
@@ -328,7 +359,7 @@ float tsGetValue(const double ix, const double iy)
   return(val);
 }
 
-float tsGetValueLatLon(const double lat, const double lon)
+float tsGetValueLatLon(double lat, double lon)
 {
   double ix, iy;
   tsLatLonToGridpoint(lat,lon,&ix,&iy);
@@ -341,31 +372,35 @@ int tsCloseTileSet(void)
     {
       xdr_destroy(xdrs);
       free(xdrs);
-      xdrs = 0;
+      xdrs = NULL;
     }
   
   if (fp)
     {
       fclose(fp);
-      fp = 0;
+      fp = NULL;
     }
 
-  return(1);
+  return(0);
 }
 
-int tsInitTileSet(const char *fn)
+int tsInitTileSet(char *fn)
 {
   vmiss = -100000000.00;
 
-  xdrs = 0;
-  fp   = 0;
+  xdrs = NULL;
+  fp   = NULL;
+
+# if 0
+  fprintf(stderr,"Open %s\n", fn) ;
+# endif
 
   /* fp = (FILE *) fopen64(fn, "r"); */
-  if (( fp = (FILE *) fopen(fn, "r")) == NULL ) {
+  if (( fp = fopen(fn, "r")) == NULL ) {
 #ifndef MS_SUA
-    fprintf(stderr,"tsInitTileSet: cannot open %s\n",fn) ;
+    fprintf(stderr,"tsInitTileSet: can not open %s\n",fn) ;
 #endif
-    exit(2) ;
+    return(1) ;
   }
   xdrs = (XDR *) malloc(sizeof(XDR));
   xdrstdio_create(xdrs, fp, XDR_DECODE);
@@ -388,25 +423,219 @@ int tsInitTileSet(const char *fn)
 
   setWrapAroundFlags();
 
-  return(1);
+  return(0);
 }
 
-int tsPrintTileSetInto(void)
+int tsPrintTileSetInfo()
 {
-  return(1);
+  return(0);
 }
 
-#ifdef TERRAIN_AND_LANDUSE
-int get_terrain_landuse_(const float &adx,
-			 const float *xlat,
-			 const float *xlon,
-			 float       *terrain,
+int tsInitFileInfo (char path[])
+{
+  int i, n;
+  char type[MAXLEN];
+  char  res[MAXLEN];
+  char   fn[MAXLEN];
+  char buff[MAXLEN];
+  float dx;
+
+  tsfTopo.num  = 0;
+  tsfOcean.num = 0;
+  tsfLU.num    = 0;
+
+  tsfLU.dx[0] = 0.;
+  tsfTopo.dx[0] = 0.;
+  tsfOcean.dx[0] = 0. ;
+
+  if (access("RSMAS_Topo_Land.TBL", F_OK) == 0 ) {
+  /* Read in the list of topography/land use filenames. */
+    fp = fopen("RSMAS_Topo_Land.TBL", "r");
+    if ( fp == NULL ) {
+#ifndef MS_SUA
+      fprintf(stderr, "tsInitFileInfo : can not open RSMAS_Topo_Land.TBL\n");
+#endif
+      return(-1);
+    }
+
+    //skipps header
+    fgets(buff, MAXLEN, fp);
+
+    while (fscanf(fp, "%s %s %s", type, res, fn) != EOF) {
+        sscanf(res, "%f", &dx);
+        if (strcmp(type, "landuse") == 0)
+          {
+            if ( tsfLU.num >= MAXTOPOFILES ) {continue;}
+            n = tsfLU.num ;
+            for ( i = 0 ; i < tsfLU.num ; i++ ) {
+              if ( tsfLU.dx[i] > dx ) {
+                n = i ;
+                break;
+              }
+            }
+            for ( i = tsfLU.num ; i > n ; i-- ) {
+               tsfLU.dx[i]=tsfLU.dx[i-1];
+               strcpy(tsfLU.fn[i], tsfLU.fn[i-1]);
+            }
+            tsfLU.dx[n] = dx;
+            strcpy(tsfLU.fn[n], fn);
+            tsfLU.num++;
+          }
+        else if (strcmp(type, "topography") == 0)
+          {
+            if ( tsfTopo.num >= MAXTOPOFILES ) {continue;}
+            n = tsfTopo.num;
+            for ( i = 0 ; i < tsfTopo.num ; i++ ) {
+              if ( tsfTopo.dx[i] > dx ) {
+                n = i ;
+                break;
+              }
+            }
+            for ( i = tsfTopo.num ; i > n ; i-- ) {
+               tsfTopo.dx[i]=tsfTopo.dx[i-1];
+               strcpy(tsfTopo.fn[i], tsfTopo.fn[i-1]);
+            }
+            tsfTopo.dx[n] = dx;
+            strcpy(tsfTopo.fn[n], fn);
+            tsfTopo.num++;
+          }
+        else if (strcmp(type, "bathymetry") == 0)
+          {
+            if ( tsfOcean.num >= MAXTOPOFILES ) {continue;}
+            n = tsfOcean.num;
+            for ( i = 0 ; i < tsfOcean.num ; i++ ) {
+              if ( tsfOcean.dx[i] > dx ) {
+                n = i ;
+                break;
+              }
+            }
+            for ( i = tsfOcean.num ; i > n ; i-- ) {
+               tsfOcean.dx[i]=tsfOcean.dx[i-1];
+               strcpy(tsfOcean.fn[i], tsfOcean.fn[i-1]);
+            }
+            tsfOcean.dx[n] = dx;
+            strcpy(tsfOcean.fn[n], fn);
+            tsfOcean.num++;
+          }
+    }
+
+    fclose(fp);
+
+  } else {
+
+    for ( i = 1; i < 10 ; i++ ) {
+      sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path, i);
+      if (access(tsfTopo.fn[tsfTopo.num], F_OK) == 0) { tsfTopo.dx[tsfTopo.num] = i; tsfTopo.num++ ; }
+    }
+    for ( i = 10; i<=40 ; i += 10 ) {
+      sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path, i);
+      if (access(tsfTopo.fn[tsfTopo.num], F_OK) == 0) { tsfTopo.dx[tsfTopo.num] = i; tsfTopo.num++ ; }
+    }
+
+    for ( i = 1; i < 10 ; i++ ) {
+      sprintf(tsfLU.fn[tsfLU.num], "%s/glcc.usgs20.%02dkm.ts", path, i);
+      if (access(tsfLU.fn[tsfLU.num], F_OK) == 0) { tsfLU.dx[tsfLU.num] = i; tsfLU.num++ ; }
+    }
+    for ( i = 10; i<=40 ; i += 10 ) {
+      sprintf(tsfLU.fn[tsfLU.num], "%s/glcc.usgs20.%02dkm.ts", path, i);
+      if (access(tsfLU.fn[tsfLU.num], F_OK) == 0) { tsfLU.dx[tsfLU.num] = i; tsfLU.num++ ; }
+    }
+
+    for ( i = 1; i < 10 ; i++ ) {
+      sprintf(tsfOcean.fn[tsfOcean.num], "%s/tbase.%02dkm.ts", path, i);
+      if (access(tsfOcean.fn[tsfOcean.num], F_OK) == 0) { tsfOcean.dx[tsfLU.num] = i; tsfOcean.num++ ; }
+    }
+    for ( i = 10; i<=40 ; i += 10 ) {
+      sprintf(tsfOcean.fn[tsfOcean.num], "%s/tbase.%02dkm.ts", path, i);
+      if (access(tsfOcean.fn[tsfOcean.num], F_OK) == 0) { tsfOcean.dx[tsfOcean.num] = i; tsfOcean.num++ ; }
+    }
+  }
+# if 0
+  for ( i = 0 ; i < tsfTopo.num ; i++ ) {
+    fprintf(stderr,"%02d. %s\n",i, tsfTopo.fn[i]) ;
+  }
+  for ( i =0 ; i < tsfLU.num ; i++ ) {
+    fprintf(stderr,"%02d. %s\n",i, tsfLU.fn[i]) ;
+  }
+  for ( i =0 ; i < tsfOcean.num ; i++ ) {
+    fprintf(stderr,"%02d. %s\n",i, tsfOcean.fn[i]) ;
+  }
+# endif
+
+  return(1);
+
+}
+
+int GET_LANDUSE (        float *adx,
+			 float *xlat,
+			 float *xlon,
 			 float       *landuse,
-			 const int   &mix,
-			 const int   &mjx,
-			 const int   &iyyn,
-			 const int   &jxxn)
-#else
+			 int   *mix,
+			 int   *mjx,
+			 int   *iyyn,
+			 int   *jxxn,
+                         int   *ipath , int * ipathlen ) /* integer coded ASCII string from Funtran and len */
+{
+  int i, j ;
+  char path[256];
+  int ix,iy, offset ;
+  float lat, lon, tv;
+  double fix, fiy;
+
+  static float last_adx = 0.0 ;
+
+  if ( tsFileInfo_initialized == 0 ) {
+     for (i = 0 ; i < *ipathlen ; i++ ) {
+       path[i] = ipath[i] ;
+     }
+     path[*ipathlen] = '\0' ;
+     tsFileInfo_initialized = tsInitFileInfo(path);
+     if ( tsFileInfo_initialized == -1 ) { return(1); }
+  }
+
+//if ( fabs(last_adx - *adx)  > 1.0E-6 ) {
+//  last_adx = *adx;
+    if ( tsfLU.num > 0 ) {
+      strcpy(tsfLU_fn, tsfLU.fn[tsfLU.num-1]);
+      for ( i = 0; i < tsfLU.num; i++) {
+# if 0
+          fprintf(stderr,"%d fn %s dx %f adx %f\n",i,tsfLU.fn[i],tsfLU.dx[i],*adx) ;
+# endif
+          if (tsfLU.dx[i] > *adx) {
+              strcpy(tsfLU_fn, tsfLU.fn[i-1]);
+              break;
+            }
+        }
+    } else {
+# ifndef MS_SUA
+        fprintf(stderr, "Not found LANDUSE datasets!\n");
+# endif
+        return(1);
+    }
+//}
+
+  /* Get the land use. */
+  if (tsInitTileSet(tsfLU_fn)) { return(1); }
+
+  for ( j = 0; j < *jxxn; j++) {
+    offset = *mix*j;
+    for ( i = 0; i < *iyyn; i++) {
+      lat = xlat[offset + i];
+      lon = xlon[offset + i];
+
+      tsLatLonToGridpoint(lat,lon,&fix,&fiy);
+      ix = nint(fix);
+      iy = nint(fiy);
+      tv = tsGetValueInt(ix, iy);
+
+      /* Set out-of-range values to water. */
+      if (tv < 0.9 || tv > 24.1) tv = 16.0;
+
+      landuse[offset + i] = tv;
+    }
+  }
+  tsCloseTileSet();
+}
 
 int GET_TERRAIN (        float *adx,
                          float *xlat,
@@ -417,362 +646,222 @@ int GET_TERRAIN (        float *adx,
                          int   *iyyn,
                          int   *jxxn, 
                          int   *ipath , int * ipathlen)  /* integer coded ASCII string from Funtran and len */
-#endif
 {
-  TsFileInfo tsfTopo;
-  TsFileInfo tsfOcean;
-  TsFileInfo tsfLU;
   int i, j ;
-  char path[1024] ;
+  char path[256];
+  int ix, iy, offset ;
+  float lon, lat, tv;
+  double fix, fiy;
 
-  tsfTopo.num  = 0;
-  tsfOcean.num = 0;
-  tsfLU.num    = 0;
+  static float last_adx = 0.0 ;
 
+  if ( tsFileInfo_initialized == 0 ) { 
+     for (i = 0 ; i < *ipathlen ; i++ ) {
+       path[i] = ipath[i] ;
+     }
+     path[*ipathlen] = '\0' ;
+     tsFileInfo_initialized = tsInitFileInfo(path); 
+     if ( tsFileInfo_initialized == -1 ) { return(1); }
+  }
+
+  /* Use the data with the largest spacing less than the grid
+     spacing specified in the argument list. */
+//if ( fabs(last_adx - *adx)  > 1.0E-6 ) {
+//  last_adx = *adx;
+    if ( tsfTopo.num > 0 ) {
+      strcpy(tsfTopo_fn, tsfTopo.fn[tsfTopo.num-1]);
+      for (i = 0; i < tsfTopo.num; i++) {
 #if 0
-  /* Read in the list of topography/land use filenames. */
-  {
-    FILE *fp = fopen("landFilenames", "r");
-
-    for (;;)
-      {
-	char type[MAXLEN];
-	char res[MAXLEN];
-	char fn[MAXLEN];
-
-	if (fscanf(fp, "%s %s %s", type, res, fn) == EOF) break;
-
-	float dx;
-	sscanf(res, "%f", &dx);
-
-	if (strcmp(type, "landuse") == 0)
-	  {
-	    tsfLU.dx[tsfLU.num] = dx;
-	    strcpy(tsfLU.fn[tsfLU.num], fn);
-	    tsfLU.num++;
-	  }
-	else if (strcmp(type, "topography") == 0)
-	  {
-	    tsfTopo.dx[tsfTopo.num] = dx;
-	    strcpy(tsfTopo.fn[tsfTopo.num], fn);
-	    tsfTopo.num++;
-	  }
-	else if (strcmp(type, "bathymetry") == 0)
-	  {
-	    tsfOcean.dx[tsfOcean.num] = dx;
-	    strcpy(tsfOcean.fn[tsfOcean.num], fn);
-	    tsfOcean.num++;
-	  }
-      }
-    fclose(fp);
-  }
-#else
-  for (i = 0 ; i < *ipathlen ; i++ ) {
-    path[i] = ipath[i] ;
-  }
-  path[*ipathlen] = '\0' ;
-
-# if 0
-  fprintf(stderr,"path: %s\n",path) ;
-# endif
-tsfTopo.num  = 0;
-tsfTopo.dx[tsfTopo.num] =  1; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  1); tsfTopo.num++ ;
-tsfTopo.dx[tsfTopo.num] =  2; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  2); tsfTopo.num++ ;
-tsfTopo.dx[tsfTopo.num] =  3; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  3); tsfTopo.num++ ;
-tsfTopo.dx[tsfTopo.num] =  4; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  4); tsfTopo.num++ ;
-tsfTopo.dx[tsfTopo.num] =  5; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  5); tsfTopo.num++ ;
-tsfTopo.dx[tsfTopo.num] =  6; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  6); tsfTopo.num++ ;
-tsfTopo.dx[tsfTopo.num] =  7; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  7); tsfTopo.num++ ;
-tsfTopo.dx[tsfTopo.num] =  8; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  8); tsfTopo.num++ ;
-tsfTopo.dx[tsfTopo.num] =  9; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path,  9); tsfTopo.num++ ;
-tsfTopo.dx[tsfTopo.num] = 10; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path, 10); tsfTopo.num++ ;
-tsfTopo.dx[tsfTopo.num] = 20; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path, 20); tsfTopo.num++ ;
-tsfTopo.dx[tsfTopo.num] = 30; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path, 30); tsfTopo.num++ ;
-tsfTopo.dx[tsfTopo.num] = 40; sprintf(tsfTopo.fn[tsfTopo.num], "%s/topo.%02dkm.ts", path, 40); tsfTopo.num++ ;
-
-# if 0
-  for ( i = 0 ; i < tsfTopo.num ; i++ ) {
-    fprintf(stderr,"%02d. %s\n",i, tsfTopo.fn[i] ) ;
-  }
-# endif
+fprintf(stderr,"%d fn %s dx %f adx %f\n",i,tsfTopo.fn[i],tsfTopo.dx[i],*adx ) ;
 #endif
+	  if ( tsfTopo.dx[i] > *adx) {
+	      strcpy(tsfTopo_fn, tsfTopo.fn[i-1]);
+              break;
+	    }
+        }
+    } else {
+#ifndef MS_SUA
+      fprintf(stderr,"Not found GTOPO datasets\n");
+#endif
+      return(1);
+    }
 
+#ifdef TERRAIN_TBASE
+    if ( tsfOcean.num > 0 ) {
+      strcpy(tsfOcean_fn, tsfOcean.fn[tsfOcean.num-1]);
+      for ( i = 0; i < tsfOcean.num; i++) {
+          if (tsfOcean.dx[i] > *adx) {
+            strcpy(tsfOcean_fn, tsfOcean.fn[i-1]);
+            break;
+          }
+      }
+    } else {
+# ifndef MS_SUA
+        fprintf(stderr, "Not found TBASE datasets!\n");
+# endif
+        return(1);
+    }
+#endif
+//}
 
   /* First get the terrain from GTOPO30. */
-  {
-    /* Use the data with the largest spacing less than the grid
-       spacing specified in the argument list. */
-    float maxdx = 0.0;
-    char fn[MAXLEN];
-    int first = 1;
-    for (i = 0; i < tsfTopo.num; i++)
-      {
-# if 0
-fprintf(stderr,"%d %d file %f adx %f max %f\n",i,first,tsfTopo.dx[i],*adx , maxdx ) ;
-# endif
-	if (tsfTopo.dx[i] < maxdx) continue;
-	if (first || tsfTopo.dx[i] < *adx)
-	  {
-	    first = 0;
-	    maxdx = tsfTopo.dx[i];
-	    strcpy(fn, tsfTopo.fn[i]);
-	  }
-      }
-
-    if (!tsInitTileSet(fn))
-      {
-	return(0);
-      }
+    if (tsInitTileSet(tsfTopo_fn)) { return(1); }
 
     for ( j = 0; j < *jxxn; j++)
-      {
+      { offset = *mix*j;
 	for ( i = 0; i < *iyyn; i++)
 	  {
-	    float lat = xlat[*mix*j + i];
-	    float lon = xlon[*mix*j + i];
+	    lat = xlat[offset + i];
+	    lon = xlon[offset + i];
 	    
-	    double fix;
-	    double fiy;
 	    tsLatLonToGridpoint(lat,lon,&fix,&fiy);
-	    float tv = tsGetValue(fix, fiy);
-	    terrain[*mix*j + i] = tv;
+	    tv = tsGetValue(fix, fiy);
+	    terrain[offset + i] = tv;
 	  }
       }
-
     tsCloseTileSet();
-  }
 
-#ifdef TERRAIN_AND_LANDUSE
+#ifdef TERRAIN_TBASE
   /* Next get the terrain from TBASE. */
-  {
-    /* Use the data with the largest spacing less than the grid
-       spacing specified in the argument list. */
-    float maxdx = 0.0;
-    char fn[MAXLEN];
-    int first = 1;
-    for ( i = 0; i < tsfOcean.num; i++)
-      {
-	if (tsfOcean.dx[i] < maxdx) continue;
-	if (first || tsfOcean.dx[i] < *adx)
-	  {
-	    first = 0;
-	    maxdx = tsfOcean.dx[i];
-	    strcpy(fn, tsfOcean.fn[i]);
-	  }
-      }
-
-    if (!tsInitTileSet(fn))
-      {
-	return(0);
-      }
+    if (tsInitTileSet(tsfOcean_fn)) { return(1); }
 
     for ( j = 0; j < *jxxn; j++)
-      {
+      { offset = *mix*j;
 	for ( i = 0; i < *iyyn; i++)
 	  {
-	    float lat = xlat[*mix*j + i];
-	    float lon = xlon[*mix*j + i];
+	    lat = xlat[offset + i];
+	    lon = xlon[offset + i];
 	    
-	    double fix;
-	    double fiy;
-	    tsLatLonToGridpoint(lat,lon,fix,fiy);
-	    float tv = tsGetValue(fix, fiy);
-	    if (isMissing(terrain[*mix*j+i]))
+	    tsLatLonToGridpoint(lat,lon,&fix,&fiy);
+	    tv = tsGetValue(fix, fiy);
+	    if (isMissing(terrain[offset+i]))
 	      {
 		if (tv < 0.0) tv = 0.0;
-		terrain[*mix*j + i] = tv;
+		terrain[offset + i] = tv;
 	      }
 	  }
       }
     tsCloseTileSet();
-  }
-
-  /* Next get the land use. */
-  {
-    /* Use the data with the largest spacing less than the grid
-       spacing specified in the argument list. */
-    float maxdx = 0.0;
-    char fn[MAXLEN];
-    int first = 1;
-    for ( i = 0; i < tsfLU.num; i++)
-      {
-	if (tsfLU.dx[i] < maxdx) continue;
-	if (first || tsfLU.dx[i] < *adx)
-	  {
-	    first = 0;
-	    maxdx = tsfLU.dx[i];
-	    strcpy(fn, tsfLU.fn[i]);
-	  }
-      }
-
-    if (!tsInitTileSet(fn))
-      {
-	return(0);
-      }
-
-    for ( j = 0; j < *jxxn; j++)
-      {
-	for ( i = 0; i < *iyyn; i++)
-	  {
-	    float lat = xlat[*mix*j + i];
-	    float lon = xlon[*mix*j + i];
-	    
-	    double fix;
-	    double fiy;
-	    tsLatLonToGridpoint(lat,lon,fix,fiy);
-	    int ix = nint(fix);
-	    int iy = nint(fiy);
-	    float tv = tsGetValueInt(ix, iy);
-
-            /* Set out-of-range values to water. */
-            if (tv < 0.9 || tv > 24.1) tv = 16.0;
-
-	    landuse[*mix*j + i] = tv;
-	  }
-      }
-    tsCloseTileSet();
-  }
 #endif
-
-  return(1);
+  return(0);
 }
 
-#ifdef TERRAIN_AND_LANDUSE
-int get_bathymetry_(const float &tadx,
-		    const float *xlat,
-		    const float *xlon,
+#ifdef BATHYMETRY
+int get_bathymetry_(float *tadx,
+		    float *xlat,
+		    float *xlon,
 		    float       *depth,
-		    const int   &mix,
-		    const int   &mjx,
-		    const int   &iyyn,
-		    const int   &jxxn,
-		    const float &mindepth,
-		    const float &zlimww3)
+		    int   *mix,
+		    int   *mjx,
+		    int   *iyyn,
+		    int   *jxxn,
+		    float *mindepth,
+		    float *zlimww3,
+                    int   *ipath , int * ipathlen)  /* integer coded ASCII string from Funtran and len */
 {
+  int i, j;
+  char fn[MAXLEN];
+  char path[1024];
+  float maxdx, tv;
+  double fix, fiy, lat, lon;
+  int ix,iy,nx,ny;
+  int offset;
+
+  nx=*mix;
+  ny=*mjx;
+
   /* Set grid resolution to .1 km to get highest resolution data possible. */
   float adx = 0.1;
 
-  TsFileInfo tsfOcean;
-  TsFileInfo tsfLU;
-
-  tsfOcean.num = 0;
-  tsfLU.num    = 0;
-
-  /* Read in the list of topography/land use filenames. */
-  {
-    FILE *fp = fopen("landFilenames", "r");
-
-    for (;;)
-      {
-	char type[MAXLEN];
-	char res[MAXLEN];
-	char fn[MAXLEN];
-
-	if (fscanf(fp, "%s %s %s", type, res, fn) == EOF) break;
-
-	float dx;
-	sscanf(res, "%f", &dx);
-
-	if (strcmp(type, "landuse") == 0)
-	  {
-	    tsfLU.dx[tsfLU.num] = dx;
-	    strcpy(tsfLU.fn[tsfLU.num], fn);
-	    tsfLU.num++;
-	  }
-	else if (strcmp(type, "bathymetry") == 0)
-	  {
-	    tsfOcean.dx[tsfOcean.num] = dx;
-	    strcpy(tsfOcean.fn[tsfOcean.num], fn);
-	    tsfOcean.num++;
-	  }
-      }
-
-    fclose(fp);
+  if ( tsFileInfo_initialized == 0 ) {
+     for (i = 0 ; i < *ipathlen ; i++ ) {
+       path[i] = ipath[i] ;
+     }
+     path[*ipathlen] = '\0' ;
+     tsFileInfo_initialized = tsInitFileInfo(path);
+     if ( tsFileInfo_initialized == -1 ) { return(1); }
   }
 
   /* Get the water depth from TBASE. */
-  {
+  if ( tsfOcean.num > 0 ) {
     /* Use the data with highest resolution possible. */
-    float maxdx = 0.0;
-    char fn[MAXLEN];
-    int first = 1;
-    for (int i = 0; i < tsfOcean.num; i++)
+    maxdx = 0.0;
+    strcpy(fn, tsfOcean.fn[tsfOcean.num-1]);
+    for ( i = 0; i < tsfOcean.num; i++)
       {
 	if (tsfOcean.dx[i] < maxdx) continue;
-	if (first || tsfOcean.dx[i] < adx)
+	if ( tsfOcean.dx[i] < adx)
 	  {
-	    first = 0;
 	    maxdx = tsfOcean.dx[i];
 	    strcpy(fn, tsfOcean.fn[i]);
 	  }
       }
 
-    if (!tsInitTileSet(fn))
+    if (tsInitTileSet(fn))
       {
-	return(0);
+	return(1);
       }
 
-    for (int i = 0; i < mix*mjx; i++)
+    for ( i = 0; i < nx*ny; i++)
       {
 	depth[i] = vmiss;
       }
     
-    for (int j = 0; j < jxxn; j++)
-      {
-	for (int i = 0; i < iyyn; i++)
+    for ( j = 0; j < *jxxn; j++)
+      { offset = nx * j;
+	for ( i = 0; i < *iyyn; i++)
 	  {
-	    float lat = xlat[mix*j + i];
-	    float lon = xlon[mix*j + i];
+	    lat = xlat[offset + i];
+	    lon = xlon[offset + i];
 	    
-	    double fix;
-	    double fiy;
-	    tsLatLonToGridpoint(lat,lon,fix,fiy);
-	    float tv = tsGetValue(fix, fiy);
-	    if (isMissing(depth[mix*j+i]))
+	    tsLatLonToGridpoint(lat,lon,&fix,&fiy);
+	    tv = tsGetValue(fix, fiy);
+	    if (isMissing(depth[offset+i]))
 	      {
-		depth[mix*j + i] = -tv;
+		depth[offset + i] = -tv;
 	      }
 	  }
       }
     tsCloseTileSet();
+  } else {
+# ifndef MS_SUA
+        fprintf(stderr, "Not found TBASE datasets!\n");
+# endif
+        return(1);
   }
 
   /* Next get the land use. */
-  {
+  if ( tsfLU.num > 0 ) {
     /* Use the data with the largest spacing less than the grid
        spacing specified in the argument list. */
-    float maxdx = 0.0;
-    char fn[MAXLEN];
-    int first = 1;
-    for (int i = 0; i < tsfLU.num; i++)
+    maxdx = 0.0;
+    strcpy(fn, tsfLU.fn[tsfLU.num-1]);
+    for ( i = 0; i < tsfLU.num; i++)
       {
 	if (tsfLU.dx[i] < maxdx) continue;
-	if (first || tsfLU.dx[i] < adx)
+	if (tsfLU.dx[i] < adx)
 	  {
-	    first = 0;
 	    maxdx = tsfLU.dx[i];
 	    strcpy(fn, tsfLU.fn[i]);
 	  }
       }
 
-    if (!tsInitTileSet(fn))
+    if (tsInitTileSet(fn))
       {
-	return(0);
+	return(1);
       }
 
-    for (int j = 0; j < jxxn; j++)
-      {
-	for (int i = 0; i < iyyn; i++)
+    for ( j = 0; j < *jxxn; j++)
+      { offset = nx*j;
+	for ( i = 0; i < *iyyn; i++)
 	  {
-	    float lat = xlat[mix*j + i];
-	    float lon = xlon[mix*j + i];
+	    lat = xlat[offset + i];
+	    lon = xlon[offset + i];
 	    
-	    double fix;
-	    double fiy;
-	    tsLatLonToGridpoint(lat,lon,fix,fiy);
-	    int ix = nint(fix);
-	    int iy = nint(fiy);
-	    float tv = tsGetValueInt(ix, iy);
+	    tsLatLonToGridpoint(lat,lon,&fix,&fiy);
+	    ix = nint(fix);
+	    iy = nint(fiy);
+	    tv = tsGetValueInt(ix, iy);
 
             /* Set out-of-range values to water. */
             if (tv < 0.9 || tv > 24.1) tv = 16.0;
@@ -782,33 +871,37 @@ int get_bathymetry_(const float &tadx,
 		/* Water. */
 		if (1)
 		  {
-		    if (depth[mix*j + i] < mindepth) depth[mix*j + i] = mindepth;
+		    if (depth[offset + i] < *mindepth) depth[offset + i] = *mindepth;
 		  }
 		else
 		  {
-		    if (depth[mix*j + i] < -zlimww3)
+		    if (depth[offset + i] < -(*zlimww3) )
 		      {
 			/* Water depth below zlimww3, so turn this point 
 			   into land. */
-			depth[mix*j + i] = -0.1;		    
+			depth[offset + i] = -0.1;		    
 		      }
-		    else if (depth[mix*j + i] < mindepth)
+		    else if (depth[offset + i] < *mindepth)
 		      {
-			depth[mix*j + i] = mindepth;
+			depth[offset + i] = *mindepth;
 		      }
 		  }
 	      }
 	    else
 	      {
 		/* Land. Set depth to 0.0. */
-		depth[mix*j + i] = 0.0;
+		depth[offset + i] = 0.0;
 	      }
 	  }
       }
     tsCloseTileSet();
+  } else {
+# ifndef MS_SUA
+        fprintf(stderr, "Not found LANDUSE datasets!\n");
+# endif
+        return(1);
   }
-
-  return(1);
+  return(0);
 }
 #endif
 

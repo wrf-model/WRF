@@ -5,8 +5,7 @@ C
 C SUBPROGRAM:    DXINIT
 C   PRGMMR: WOOLLEN          ORG: NP20       DATE: 1994-01-06
 C
-C ABSTRACT: THIS SUBROUTINE INITIALIZES THE MESSAGE CONTROL WORD
-C   PARTITION ARRAYS (COMMON BLOCK /MSGCWD/) AND THE INTERNAL ARRAYS
+C ABSTRACT: THIS SUBROUTINE INITIALIZES THE INTERNAL ARRAYS
 C   (COMMON BLOCK /TABABD/) HOLDING THE DICTIONARY TABLE.  IT THEN
 C   INITIALIZES THE TABLE WITH APRIORI TABLE B AND D ENTRIES
 C   (OPTIONAL).
@@ -23,6 +22,7 @@ C 2003-11-04  S. BENDER  -- ADDED REMARKS/BUFRLIB ROUTINE
 C                           INTERDEPENDENCIES
 C 2003-11-04  D. KEYSER  -- UNIFIED/PORTABLE FOR WRF; ADDED
 C                           DOCUMENTATION (INCLUDING HISTORY)
+C 2009-03-23  J. ATOR    -- REMOVE INITIALIZATION OF COMMON /MSGCWD/
 C
 C USAGE:    CALL DXINIT (LUN, IOI)
 C   INPUT ARGUMENT LIST:
@@ -36,6 +36,7 @@ C
 C REMARKS:
 C    THIS ROUTINE CALLS:        ADN30    IFXY     PKTDD
 C    THIS ROUTINE IS CALLED BY: CPBFDX   OPENBF   RDBFDX   RDUSDX
+C                               READERME READS3
 C                               Normally not called by any application
 C                               programs.
 C
@@ -49,8 +50,6 @@ C$$$
 
       COMMON /PADESC/ IBCT,IPD1,IPD2,IPD3,IPD4
       COMMON /REPTAB/ IDNR(5,2),TYPS(5,2),REPS(5,2),LENS(5)
-      COMMON /MSGCWD/ NMSG(NFILES),NSUB(NFILES),MSUB(NFILES),
-     .                INODE(NFILES),IDATE(NFILES)
       COMMON /TABABD/ NTBA(0:NFILES),NTBB(0:NFILES),NTBD(0:NFILES),
      .                MTAB(MAXTBA,NFILES),IDNA(MAXTBA,NFILES,2),
      .                IDNB(MAXTBB,NFILES),IDND(MAXTBD,NFILES),
@@ -81,15 +80,6 @@ C$$$
 
 C-----------------------------------------------------------------------
 C-----------------------------------------------------------------------
-
-C  CLEAR OUT A MESSAGE CONTROL WORD PARTITION ARRAYS
-C  -------------------------------------------------
-
-      NMSG(LUN)  = 0
-      NSUB(LUN)  = 0
-      MSUB(LUN)  = 0
-      INODE(LUN) = 0
-      IDATE(LUN) = 0
 
 C  CLEAR OUT A TABLE PARTITION
 C  ---------------------------

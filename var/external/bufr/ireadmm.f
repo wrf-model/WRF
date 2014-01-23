@@ -35,9 +35,8 @@ C                           number of messages in memory
 C
 C REMARKS:
 C    THIS ROUTINE CALLS:        READMM
-C    THIS ROUTINE IS CALLED BY: None
-C                               Normally called only by application
-C                               programs.
+C    THIS ROUTINE IS CALLED BY: UFBMNS
+C                               Also called by application programs.
 C
 C ATTRIBUTES:
 C   LANGUAGE: FORTRAN 77
@@ -46,7 +45,12 @@ C
 C$$$
 
       CHARACTER*8 SUBSET
+
+C-----------------------------------------------------------------------
+C-----------------------------------------------------------------------
+
       CALL READMM(IMSG,SUBSET,IDATE,IRET)
       IREADMM = IRET
+
       RETURN
       END

@@ -31,6 +31,10 @@ C                           VERIFICATION VERSION); UNIFIED/PORTABLE FOR
 C                           WRF; ADDED DOCUMENTATION (INCLUDING
 C                           HISTORY); OUTPUTS MORE COMPLETE DIAGNOSTIC
 C                           INFO WHEN ROUTINE TERMINATES ABNORMALLY
+C 2009-06-26  J. ATOR    -- USE IOK2CPY
+C 2009-08-11  J. WOOLLEN -- ADD COMMON UFBCPL TO REMEMBER WHICH UNIT 
+C                           IS COPIED TO WHAT SUBSET BUFFER IN ORDER TO
+C                           TRANSFER LONG STRINGS VIA UFBCPY AND WRTREE
 C
 C USAGE:    CALL UFBCPY (LUBIN, LUBOT)
 C   INPUT ARGUMENT LIST:
@@ -40,7 +44,7 @@ C     LUBOT    - INTEGER: FORTRAN LOGICAL UNIT NUMBER FOR OUTPUT BUFR
 C                FILE
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT     STATUS
+C    THIS ROUTINE CALLS:        BORT     IOK2CPY  STATUS
 C    THIS ROUTINE IS CALLED BY: COPYSB
 C                               Also called by application programs.
 C
@@ -54,7 +58,16 @@ C$$$
 
       COMMON /MSGCWD/ NMSG(NFILES),NSUB(NFILES),MSUB(NFILES),
      .                INODE(NFILES),IDATE(NFILES)
-      COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
+      COMMON /USRINT/ NVAL(NFILES),INV(MAXSS,NFILES),VAL(MAXSS,NFILES)
+      COMMON /TABLES/ MAXTAB,NTAB,TAG(MAXJL),TYP(MAXJL),KNT(MAXJL),
+     .                JUMP(MAXJL),LINK(MAXJL),JMPB(MAXJL),
+     .                IBT(MAXJL),IRF(MAXJL),ISC(MAXJL),
+     .                ITP(MAXJL),VALI(MAXJL),KNTI(MAXJL),
+     .                ISEQ(MAXJL,2),JSEQ(MAXJL)
+      COMMON /UFBCPL/ LUNCPY(NFILES)
+
+      CHARACTER*10 TAG
+      CHARACTER*3  TYP
 
       REAL*8 VAL
 
@@ -75,7 +88,10 @@ C  ----------------------------------
       IF(IL.LT.0) GOTO 905
       IF(IM.EQ.0) GOTO 906
 
-      IF(INODE(LUI).NE.INODE(LUO)) GOTO 907
+      IF(INODE(LUI).NE.INODE(LUO)) THEN
+        IF( (TAG(INODE(LUI)).NE.TAG(INODE(LUO))) .OR.
+     .     (IOK2CPY(LUI,LUO).NE.1) ) GOTO 907
+      ENDIF
 
 C  EVERYTHING OKAY COPY USER ARRAY FROM LUI TO LUO
 C  -----------------------------------------------
@@ -86,6 +102,8 @@ C  -----------------------------------------------
       INV(N,LUO) = INV(N,LUI)
       VAL(N,LUO) = VAL(N,LUI)
       ENDDO
+
+      LUNCPY(LUO)=LUBIN
 
 C  EXITS
 C  -----

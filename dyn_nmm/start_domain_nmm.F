@@ -62,7 +62,9 @@
      &           )
 !----------------------------------------------------------------------
 !
+#ifdef HWRF
       USE MODULE_STATS_FOR_MOVE, only: vorttrak_init
+#endif
       USE MODULE_TIMING
 #ifdef HWRF
       USE MODULE_HIFREQ, only : hifreq_open
@@ -99,6 +101,7 @@
    USE MODULE_GOCART_AEROSOLS, ONLY: SUM_PM_GOCART
    USE MODULE_MOSAIC_DRIVER, ONLY: SUM_PM_MOSAIC
 #endif
+
 !
 !----------------------------------------------------------------------
 !
@@ -149,7 +152,7 @@
      &          ,K,K400,KBI,KBI2,KCCO2,KNT,KNTI                         &
      &          ,LB,LRECBC,L                                            &
      &          ,N,NMAP,NRADLH,NRADSH,NREC,NS,RECL,STAT                 &
-     &          ,STEPBL,STEPCU,STEPRA
+     &          ,STEPBL,STEPCU,STEPRA, KFE,KFS
 !
       INTEGER :: MY_E,MY_N,MY_S,MY_W                                    &
      &          ,MY_NE,MY_NW,MY_SE,MY_SW,MYI,MYJ,NPE
@@ -266,6 +269,7 @@
 !**********************************************************************
 !----------------------------------------------------------------------
 !
+
       call start_timing
 
 #ifdef HWRF
@@ -354,18 +358,6 @@
          CALL WRF_ERROR_FATAL(wrf_err_message)
       END IF
 
-#if (HWRF==1)
-      if(grid%vortex_tracker<1 .or. grid%vortex_tracker>3) then
-         write(wrf_err_message,*)' domain ',grid%id,' has an invalid value ',grid%vortex_tracker,' for grid%vortex_tracker.  It must be 1, 2 or 3.'
-      endif
-#endif
-      
-#if (HWRF==1)
-      if(grid%vortex_tracker<1 .or. grid%vortex_tracker>3) then
-         write(wrf_err_message,*)' domain ',grid%id,' has an invalid value ',grid%vortex_tracker,' for grid%vortex_tracker.  It must be 1, 2 or 3.'
-      endif
-#endif
-      
 !!!!!!tlb
 !!!! For now, set NPES to 1
       NPES=1
@@ -568,8 +560,10 @@
 !
       IFS=IPS
       JFS=JPS
+      KFS=KPS
       JFE=MIN(JPE,JDE-1)
       IFE=MIN(IPE,IDE-1)
+      KFE=MIN(KPE,KDE-1)
 
       if((allowed_to_read.and..not.(restrt)) .or. .not.allowed_to_read) then
          randif: IF(in_use_for_config(grid%id,'random'))THEN
@@ -623,17 +617,20 @@
            write(message,'("Domain ",I0," does not have hifreq out.")') grid%id
         endif
       else
-        write(message,'("Domain ",I0," is not being initialized.")') grid%id
+          write(message,'("Domain ",I0," is not being initialized.")') grid%id
       endif
 ! end of high-freq output
 #endif
 #ifdef HWRF
-! Begin Sam Trahan's doing for vortex_tracker=4 option
+! Begin Sam Trahan's doing for vortex tracker initialization
+    IF ( program_name(1:8) .NE. "REAL_NMM" ) THEN
          call VORTTRAK_INIT(grid,config_flags,       &
+                            (allowed_to_read .and. .not. restrt), &
                             IDS,IDE,JDS,JDE,KDS,KDE, &
                             IMS,IME,JMS,JME,KMS,KME, &
                             ITS,ITE,JTS,JTE,KTS,KTE)
-! End Sam Trahan's doing for vortex_tracker=4 option
+      ENDIF
+! End Sam Trahan's doing for vortex tracker initialization
 #endif
 #ifdef HWRF
 !zhang's doing
@@ -1617,20 +1614,14 @@
 
 #ifdef HWRF
       hwrfx_mslp: if(grid%vortex_tracker /= 1) then
-! XUEJIN's doing
-! add to output MSLP at the initial time
-!
-!    COMPUTATION OF MSLP         ! This is gopal's doing
-!
-
-
      DO J=JFS,JFE
       DO I=IFS,IFE
-         grid%Z(I,J,1)=grid%FIS(I,J)*GI
+         grid%Z(I,J,KFS)=grid%FIS(I,J)*GI
       ENDDO
      ENDDO
 
-     DO K=KPS,2
+     ! Z now correctly calculated after nest move.  Needed by membrane MSLP.
+     DO K=KFS,KFE
       DO J=JFS,JFE
        DO I=IFS,IFE
           APELP      = (grid%PINT(I,J,K+1)+grid%PINT(I,J,K))
@@ -1641,22 +1632,20 @@
       ENDDO
      ENDDO
 
-     grid%MSLP=-9999.99
-     DO J=JFS,JFE
-      DO I=IFS,IFE
-         SFCT      = grid%T(I,J,1)*(1.+D608*grid%Q(I,J,1)) + LAPSR*(grid%Z(I,J,1)+grid%Z(I,J,2))*0.5
-         A         = LAPSR*grid%Z(I,J,1)/SFCT
-         grid%MSLP(I,J) = grid%PINT(I,J,1)*(1-A)**COEF2
+     DO K=KFS,KFE
+      DO J=JFS,JFE
+       DO I=IFS,IFE
+          grid%Z(i,j,k)=(grid%Z(i,j,k)+grid%Z(i,j,k+1))*0.5
+       ENDDO
       ENDDO
      ENDDO
 
-! SET BACK Z AS IN ORIGINAL CODE
-
-     DO K=KPS,KPE
-      DO J=JFS,JFE
-       DO I=IFS,IFE
-         grid%Z(I,J,K)=grid%PINT(I,J,K)
-       ENDDO
+     grid%MSLP=-9999.99
+     DO J=JFS,JFE
+      DO I=IFS,IFE
+         SFCT      = grid%T(I,J,1)*(1.+D608*grid%Q(I,J,1)) + LAPSR*grid%Z(I,J,1)
+         A         = LAPSR*grid%FIS(i,j)*gi/SFCT
+         grid%MSLP(I,J) = grid%PINT(I,J,1)*(1-A)**COEF2
       ENDDO
      ENDDO
 
@@ -1972,6 +1961,8 @@
      &             ,STEPBL,STEPRA,STEPCU                                &
      &             ,grid%w0avg, RAINNC, RAINC, grid%raincv, RAINNCV               &
      &             ,SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV              &
+     &             ,grid%re_cloud, grid%re_ice, grid%re_snow            & ! G. Thompson
+     &             ,grid%has_reqc,grid%has_reqi,grid%has_reqs           & ! G. Thompson
      &             ,NCA,GRID%SWRAD_SCAT                                 &
      &             ,grid%cldefi,LOWLYR                                       &
      &             ,grid%mass_flux                                           &
@@ -2306,7 +2297,8 @@
                 IDS,IDE, JDS,JDE, KDS,KDE,                                  &
                 IMS,IME, JMS,JME, KMS,KME,                                  &
                 ITS,ITE, JTS,JTE, KTS,KTE-1                                 )
-        CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM,RACMSORG_KPP)
+        CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM_KPP, &
+              RACM_ESRLSORG_AQCHEM_KPP,RACMSORG_KPP)
 !!!       write(0,*)'sum pm '
            CALL SUM_PM_SORGAM (                                             &
                 RRI, CHEM, H2OAJ, H2OAI,                              &
@@ -2316,7 +2308,8 @@
                 ITS,ITE, JTS,JTE, KTS,KTE-1                                 )
              
         CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, &
-             CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ)
+             CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
+        	 CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP)
            CALL SUM_PM_MOSAIC (                                             &
                 RRI, CHEM,                                            &
                 PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC, PM10,                 &

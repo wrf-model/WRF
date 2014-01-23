@@ -74,7 +74,7 @@ CONTAINS
      &                 ,RIB                                            &
      &                 ,CHS,CHS2,CQS2,HFX,QFX,FLX_LH,FLHC,FLQC         &
      &                 ,QGH,CPM,CT                                     &
-     &                 ,U10,V10,TSHLTR,TH10,QSHLTR,Q10,PSHLTR          &
+     &                 ,U10,V10,T02,TH02,TSHLTR,TH10,Q02,QSHLTR,Q10,PSHLTR          &
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                        &
      &                 ,IMS,IME,JMS,JME,KMS,KME                        &
      &                 ,ITS,ITE,JTS,JTE,KTS,KTE,SCM_FORCE_FLUX  )
@@ -101,8 +101,8 @@ CONTAINS
      &                                                     ,U,V   
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: PSHLTR,Q10,QSHLTR &
-     &                                              ,TH10,TSHLTR       &
-     &                                              ,U10,V10
+     &                                              ,TH10,TSHLTR,T02   &
+     &                                              ,U10,V10,TH02,Q02
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: FLX_LH,HFX,QFX 
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: AKHS,AKMS       &
@@ -308,13 +308,19 @@ CONTAINS
           RAPA=APESFC
           TH02P=TSHLTR(I,J)
           TH10P=TH10(I,J)
+          TH02(I,J)=TSHLTR(I,J)    !emt
+         IF (SEAMASK.EQ.1.AND.I.EQ.170.AND.J.EQ.20) THEN
+          print*,'HFX_SEA_point',HFX(I,J)
+         END IF
 !
           RAPA02=RAPA-GOCP02/TH02P
           RAPA10=RAPA-GOCP10/TH10P
 !
           T02P=TH02P*RAPA02
           T10P=TH10P*RAPA10
+           T02(I,J) = TH02(I,J)*APESFC  !emt
 !
+
           P02P=(RAPA02**RCAP)*1.E5
           P10P=(RAPA10**RCAP)*1.E5
 !
@@ -323,6 +329,7 @@ CONTAINS
 !
           IF(QSHLTR(I,J)>QS02)QSHLTR(I,J)=QS02
           IF(Q10   (I,J)>QS10)Q10   (I,J)=QS10
+           Q02(I,J)=QSHLTR(I,J)/(1.-QSHLTR(I,J))  !emt
 !----------------------------------------------------------------------
 !
         ENDDO
@@ -454,7 +461,7 @@ CONTAINS
                 THZ0=((WGHTT*THLOW+THS)/(WGHTT+1.)+THZ0)*0.5
                 QZ0=((WGHTQ*QLOW+QS)/(WGHTQ+1.)+QZ0)*0.5
               ELSE
-                THZ0=(WGHTT*THLOW+THS)/(WGHTT+1.)
+                THZ0=(WGHTT*THLOW+THS)/(WGHTT+1.)            
                 QZ0=(WGHTQ*QLOW+QS)/(WGHTQ+1.)
               ENDIF
 !
@@ -959,6 +966,11 @@ CONTAINS
       CHS=AKHS
       CHS2=AKHS02
       CQS2=AKHS02
+     ! IF(SEAMASK.EQ.1) THEN
+     !  print*,'HSFLX=',HSFLX
+     !  print*,'RLOW=',RLOW
+     !  print*,'********'
+     ! END IF
       IF ( PRESENT(SCM_FORCE_FLUX) ) THEN              
          IF (SCM_FORCE_FLUX.EQ.0) THEN              
            HFX=-RLOW*CP*HSFLX

@@ -232,7 +232,6 @@ integer::oops1,oops2
                  ( config_flags%grid_fdda .NE. 0 ) .OR. &
                  ( config_flags%sst_update .EQ. 1 ) .OR. &
                  ( config_flags%all_ic_times ) .OR. &
-                 ( config_flags%smooth_cg_topo ) .OR. &
                  ( config_flags%map_proj .EQ. PROJ_CASSINI )
 
       !  There are a few checks that we need to do when the input data comes in with the middle
@@ -522,13 +521,29 @@ integer::oops1,oops2
          !  in the model betwixt the CG and FG domains.
 
          IF ( ( config_flags%smooth_cg_topo ) .AND. &
+              ( internal_time_loop .EQ. 1 ) .AND. &
               ( grid%id .EQ. 1 ) .AND. &
               ( flag_soilhgt .EQ. 1) ) THEN
             CALL blend_terrain ( grid%toposoil  , grid%ht , &
                                  ids , ide , jds , jde , 1   , 1   , &
                                  ims , ime , jms , jme , 1   , 1   , &
                                  ips , ipe , jps , jpe , 1   , 1   )
+            DO j = jts, MIN(jte,jde-1)
+               DO i = its, MIN(ite,ide-1)
+                  grid%ht_smooth(i,j) = grid%ht(i,j)
+               END DO
+            END DO
 
+         ELSE IF ( ( config_flags%smooth_cg_topo ) .AND. &
+              ( internal_time_loop .NE. 1 ) .AND. &
+              ( grid%id .EQ. 1 ) .AND. &
+              ( flag_soilhgt .EQ. 1) ) THEN
+            DO j = jts, MIN(jte,jde-1)
+               DO i = its, MIN(ite,ide-1)
+                  grid%ht(i,j) = grid%ht_smooth(i,j)
+               END DO
+            END DO
+            
          END IF
 
          !  Filter the input topography if this is a polar projection.

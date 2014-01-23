@@ -154,6 +154,39 @@ CONTAINS
 !      (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.933, 0.067 /) ! as of apr-2005
 !      (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.16,  0.84  /) !  "old"
 
+
+! fraction of TNO black carbon <1um emissions that go into each of 
+! the mosaic 8 "standard" sections     - Doug (4/3/2011)
+   real, save :: fr8b_tno_bc1(8) =   &
+       (/ 0.0494,  0.3795,  0.4714,  0.0967,  0.003,  0.0,  0.0, 0.0 /)
+
+! fraction of TNO elemental carbon 1um-2.5um emissions that go into each of 
+! the mosaic 8 "standard" sections     - Doug (4/3/2011)
+   real, save :: fr8b_tno_ec25(8) =   &
+       (/ 0.0,  0.0,  0.0,  0.0, 0.40, 0.60,  0.0,  0.0 /)
+
+! fraction of TNO organic carbon <2.5um domestic combustion emissions that go into each of 
+! the mosaic 8 "standard" sections     - Doug (4/3/2011)
+   real, save :: fr8b_tno_oc_dom(8) =   &
+       (/ 0.0358, 0.1325, 0.2704, 0.3502, 0.1904, 0.0657, 0.0, 0.0 /)
+
+! fraction of TNO organic carbon <2.5um traffic (and other) emissions that go into each of 
+! the mosaic 8 "standard" sections     - Doug (4/3/2011)
+   real, save :: fr8b_tno_oc_tra(8) =   &
+       (/ 0.0063, 0.0877, 0.3496, 0.4054, 0.1376, 0.0134, 0.0, 0.0 /)
+
+! fraction of TNO "OIN" [PM2.5 minus sum(carbon<2.5)] emissions that go into each of
+! the mosaic 8 "standard" sections     - Doug (4/3/2011)  --- based on mosaic fine mode
+   real, save :: fr8b_tno_mosaic_f(8) =   &
+       (/ 0.060, 0.045, 0.245, 0.400, 0.100, 0.150, 0.0, 0.0/)
+
+! fraction of TNO 2.5-10um emissions that go into each of
+! the mosaic 8 "standard" sections     - Doug (4/3/2011)  --- based on mosaic coarse mode
+   real, save :: fr8b_tno_mosaic_c(8) =   &
+       (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.300, 0.700 /)
+
+
+
 ! following 5 arrays correspond to the above "fr8b_" arrays 
 ! but are set at run time base on input (namelist) parameters:
 !    only the sorgam or mosaic arrays are non-zero, depending on
@@ -165,6 +198,12 @@ CONTAINS
    real :: fr_aem_sorgam_c(8)
    real :: fr_aem_mosaic_f(8)
    real :: fr_aem_mosaic_c(8)
+   real :: fr_tno_bc1(8)
+   real :: fr_tno_ec25(8)
+   real :: fr_tno_oc_dom(8)
+   real :: fr_tno_oc_tra(8)
+   real :: fr_tno_mosaic_f(8)
+   real :: fr_tno_mosaic_c(8)
    double precision :: chem_sum(num_chem)
 
    character*80 msg
@@ -211,6 +250,12 @@ CONTAINS
 	fr_aem_sorgam_c(:) = 0.0
 	fr_aem_mosaic_f(:) = 0.0
 	fr_aem_mosaic_c(:) = 0.0
+	fr_tno_bc1(:) = 0.0
+	fr_tno_ec25(:) = 0.0
+	fr_tno_oc_dom(:) = 0.0
+	fr_tno_oc_tra(:) = 0.0
+	fr_tno_mosaic_f(:) = 0.0
+	fr_tno_mosaic_c(:) = 0.0
 
 	emiss_inpt_select_1: SELECT CASE( config_flags%emiss_inpt_opt )
 
@@ -243,6 +288,31 @@ CONTAINS
 		end do
 	    end if
 
+	  CASE( emiss_inpt_tno )		! Doug - added 4/3/2011
+	    if (nsize_aer(itype) .eq. 8) then
+		fr_tno_bc1(:) = fr8b_tno_bc1(:)
+		fr_tno_ec25(:) = fr8b_tno_ec25(:)
+		fr_tno_oc_dom(:) = fr8b_tno_oc_dom(:)
+		fr_tno_oc_tra(:) = fr8b_tno_oc_tra(:)
+        fr_tno_mosaic_c(:) = fr8b_tno_mosaic_c(:)
+        fr_tno_mosaic_f(:) = fr8b_tno_mosaic_f(:)
+	    else if (nsize_aer(itype) .eq. 4) then
+		do n = 1, nsize_aer(itype)
+		    fr_tno_bc1(n) = fr8b_tno_bc1(2*n-1)   &
+		                  + fr8b_tno_bc1(2*n)
+		    fr_tno_ec25(n) = fr8b_tno_ec25(2*n-1)   &
+		                   + fr8b_tno_ec25(2*n)
+		    fr_tno_oc_dom(n) = fr8b_tno_oc_dom(2*n-1)   &
+		                     + fr8b_tno_oc_dom(2*n)
+		    fr_tno_oc_tra(n) = fr8b_tno_oc_tra(2*n-1)   &
+		                     + fr8b_tno_oc_tra(2*n)
+		    fr_tno_mosaic_c(n) = fr8b_tno_mosaic_c(2*n-1)   &
+		                       + fr8b_tno_mosaic_c(2*n)
+		    fr_tno_mosaic_f(n) = fr8b_tno_mosaic_f(2*n-1)   &
+		                       + fr8b_tno_mosaic_f(2*n)
+		end do
+	    end if
+
 	  CASE DEFAULT
 	    return
 
@@ -256,6 +326,12 @@ CONTAINS
 	    fr_aem_sorgam_c(:) = 0.0
 	    fr_aem_mosaic_f(:) = 0.0
 	    fr_aem_mosaic_c(:) = 0.0
+	    fr_tno_bc1(:) = 0.0
+	    fr_tno_ec25(:) = 0.0
+	    fr_tno_oc_dom(:) = 0.0
+	    fr_tno_oc_tra(:) = 0.0
+	    fr_tno_mosaic_f(:) = 0.0
+	    fr_tno_mosaic_c(:) = 0.0
 	end if
 
 
@@ -307,7 +383,10 @@ CONTAINS
 	aem_oc  = fr_aem_mosaic_f(n)*(emis_ant(i,k,j,p_e_orgj)+ebu(i,k,j,p_ebu_oc))   &
 	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_orgc)   &
 	        + fr_aem_sorgam_i(n)*(emis_ant(i,k,j,p_e_orgi)+0.25*ebu(i,k,j,p_ebu_oc))   &
-	        + fr_aem_sorgam_j(n)*(emis_ant(i,k,j,p_e_orgj)+0.75*ebu(i,k,j,p_ebu_oc))  
+	        + fr_aem_sorgam_j(n)*(emis_ant(i,k,j,p_e_orgj)+0.75*ebu(i,k,j,p_ebu_oc))   &
+	        + fr_tno_oc_dom(n)*emis_ant(i,k,j,p_e_oc_dom)   &
+	        + fr_tno_oc_tra(n)*emis_ant(i,k,j,p_e_oc_tra)   &
+	        + fr_tno_mosaic_c(n)*emis_ant(i,k,j,p_e_oc_25_10)  
 
          chem_select_1 : SELECT CASE( config_flags%chem_opt )
          CASE(CBMZ_MOSAIC_4BIN_VBS2_KPP, SAPRC99_MOSAIC_4BIN_VBS2_KPP) ! Set the oc to zero for VBS
@@ -317,12 +396,18 @@ CONTAINS
 	aem_bc  = fr_aem_mosaic_f(n)*(emis_ant(i,k,j,p_e_ecj)+ebu(i,k,j,p_ebu_bc))   &
 	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_ecc)   &
 	        + fr_aem_sorgam_i(n)*(emis_ant(i,k,j,p_e_eci)+0.25*ebu(i,k,j,p_ebu_bc))   &
-	        + fr_aem_sorgam_j(n)*(emis_ant(i,k,j,p_e_ecj)+0.75*ebu(i,k,j,p_ebu_bc))  
+	        + fr_aem_sorgam_j(n)*(emis_ant(i,k,j,p_e_ecj)+0.75*ebu(i,k,j,p_ebu_bc))    &
+	        + fr_tno_bc1(n)*emis_ant(i,k,j,p_e_bc_1)        &
+	        + fr_tno_ec25(n)*emis_ant(i,k,j,p_e_ec_1_25)      &
+	        + fr_tno_mosaic_c(n)*emis_ant(i,k,j,p_e_ec_25_10)  
 
 	aem_oin = fr_aem_mosaic_f(n)*(emis_ant(i,k,j,p_e_pm25j)+ebu(i,k,j,p_ebu_pm25))   &
 	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_pm_10)   &
 	        + fr_aem_sorgam_i(n)*(emis_ant(i,k,j,p_e_pm25i)+0.25*ebu(i,k,j,p_ebu_pm25))   &
-	        + fr_aem_sorgam_j(n)*(emis_ant(i,k,j,p_e_pm25j)+0.75*ebu(i,k,j,p_ebu_pm25))  
+	        + fr_aem_sorgam_j(n)*(emis_ant(i,k,j,p_e_pm25j)+0.75*ebu(i,k,j,p_ebu_pm25))  &
+	        + fr_tno_mosaic_f(n)*emis_ant(i,k,j,p_e_oin_25) &
+            + fr_tno_mosaic_c(n)*emis_ant(i,k,j,p_e_oin_10) 
+  
 
 ! emissions for these species are currently zero
 	aem_nh4 = 0.0
@@ -416,12 +501,12 @@ CONTAINS
 
 
 ! do seasalt emissions
-	if (seasalt_emiss_active == 1)   &
+	if (seasalt_emiss_active > 0)   &
 	    call mosaic_seasalt_emiss(                                     &
                id, dtstep, u10, v10, alt, dz8w, xland, config_flags, chem, &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
-               its,ite, jts,jte, kts,kte                                   )
+               its,ite, jts,jte, kts,kte, seasalt_emiss_active             )
 
 !       if (seasalt_emiss_active == 2)   &
 !            call mosaic_seasalt_emiss(                                     &
@@ -461,7 +546,7 @@ CONTAINS
                id, dtstep, u10, v10, alt, dz8w, xland, config_flags, chem, &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
-               its,ite, jts,jte, kts,kte                                   )
+               its,ite, jts,jte, kts,kte, seasalt_emiss_active             )
 !
 ! adds seasalt emissions for mosaic aerosol species
 ! (i.e., seasalt emissions tendencies over time dtstep are applied 
@@ -482,6 +567,7 @@ CONTAINS
                                   its,ite, jts,jte, kts,kte
 
    REAL, INTENT(IN   ) ::    dtstep
+   INTEGER, INTENT(IN) ::    seasalt_emiss_active
 
 ! 10-m wind speed components (m/s)
    REAL,  DIMENSION( ims:ime , jms:jme ),                                  &
@@ -497,15 +583,44 @@ CONTAINS
           INTENT(IN   ) ::   alt, dz8w
 
 ! local variables
-	integer i, j, k, l, l_na, l_cl, n
+	integer i, j, k, l, l_na, l_cl, n, l_oc
 	integer iphase, itype
 	integer p1st
 
 	real dum, dumdlo, dumdhi, dumoceanfrac, dumspd10
-	real factaa, factbb, fracna, fraccl
+	real factaa, factbb, fracna, fraccl, fracorg
 
 	real :: ssemfact_numb( maxd_asize, maxd_atype )
 	real :: ssemfact_mass( maxd_asize, maxd_atype )
+
+
+	! Factors for Fuentes et al (ACP, 2011, doi:10.5194/acp-11-2585-2011) 
+	!                                              seasalt emission scheme.
+	! These are for calculating the seawater_OC content dependent factors.
+    real, save :: alpha_f1(4) =   &
+                 (/ 12.328, 38.077, 102.31, 281.65 /)
+    real, save :: alpha_f2(4) =   &
+                 (/ 2.2958, 8.0935, 25.251, 46.80 /)
+    real, save :: alpha_f3(4) =   &
+                 (/ 0.00452, 0.00705, 0.00080, 0.000761 /)
+    real, save :: beta_f1(4) =   &
+                 (/ 0.0311, -0.031633, 0.013154, -0.0017762 /)
+    real, save :: beta_f2(4) =   &
+                 (/ -13.916, 35.73, -9.7651, 1.1665 /)
+    real, save :: beta_f3(4) =   &
+                 (/ 4747.8, 12920.0, 7313.4, 6610.0 /)
+	real :: nti(4), dp0gi(4)
+	! seawater OC<0.2um concentration (in uM) - first is for low activity, the 2nd for high activity
+	!    High activity conc is from the average for RHaMBLe cruise in high activity regions
+	real, save :: oc02um(2) = (/ 0.0, 280.0 /)		
+	! Organic fraction for seasalt emissions (by size bin).
+	! These are estimated from Figure 5 of Fuentes et al (ACP, 2011), assuming a value of 
+	!        2 ug/l for Chl-a for the high activity
+	real, save :: org_frac_low_activity(8) =   &
+       (/ 0.05,  0.05,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0 /)
+	real, save :: org_frac_high_activity(8) =   &
+       (/ 0.2,  0.2,  0.1,  0.01,  0.01,  0.01,  0.01,  0.01 /)
+	
 
     p1st = PARAM_FIRST_SCALAR
 
@@ -513,16 +628,33 @@ CONTAINS
 	itype = 1
 	iphase = ai_phase
 
+	! if using Feuntes et al (2011) then calculate the seawater OC dependent factors
+	if(seasalt_emiss_active .eq. 3 .or. seasalt_emiss_active .eq. 4)then
+		do i=1,4
+			nti(i)   = beta_f1(i) * oc02um(seasalt_emiss_active-2)**2.0 + beta_f2(i) &
+							* oc02um(seasalt_emiss_active-2) + beta_f3(i)
+			dp0gi(i) = alpha_f1(i) + alpha_f2(i) &
+							* exp(-alpha_f3(i)*oc02um(seasalt_emiss_active-2))
+		end do
+	end if
+
+
 !   compute emissions factors for each size bin
-!   (limit emissions to dp > 0.1 micrometer)
 	do n = 1, nsize_aer(itype)
 !     changed the lower bound of the emission size limit to match lowest section edge, Qing.Yang@pnl.gov
-!	    dumdlo = max( dlo_sect(n,itype), 0.1e-4 )
-!	    dumdhi = max( dhi_sect(n,itype), 0.1e-4 )
-	    dumdlo = max( dlo_sect(n,itype), 0.02e-4 )
-	    dumdhi = max( dhi_sect(n,itype), 0.02e-4 )
-	    call seasalt_emitfactors_1bin( 1, dumdlo, dumdhi,   &
-		ssemfact_numb(n,itype), dum, ssemfact_mass(n,itype) )
+	    ! DL - 30/3/2012 - select emission scheme (1=original, 3&4=Feuntes et al, 2011)
+	    if(seasalt_emiss_active == 1)then
+!     		changed the lower bound of the emission size limit to match lowest section edge, Qing.Yang@pnl.gov
+!	    	dumdlo = max( dlo_sect(n,itype), 0.1e-4 )
+!	    	dumdhi = max( dhi_sect(n,itype), 0.1e-4 )
+	    	dumdlo = max( dlo_sect(n,itype), 0.02e-4 )
+	    	dumdhi = max( dhi_sect(n,itype), 0.02e-4 )
+	    	call seasalt_emitfactors_1bin( 1, dumdlo, dumdhi,   &
+			ssemfact_numb(n,itype), dum, ssemfact_mass(n,itype) )
+		elseif(seasalt_emiss_active .eq. 3 .or. seasalt_emiss_active .eq. 4)then
+		    call seasalt_emit_feuntes_1bin( dlo_sect(n,itype), dhi_sect(n,itype),  &
+		        ssemfact_numb(n,itype), dum, ssemfact_mass(n,itype), nti, dp0gi, oc02um(seasalt_emiss_active-2) )
+		endif
 
 !   convert mass emissions factor from (g/m2/s) to (ug/m2/s)
 	    ssemfact_mass(n,itype) = ssemfact_mass(n,itype)*1.0e6
@@ -531,52 +663,95 @@ CONTAINS
 
 !   loop over i,j and apply seasalt emissions
 	k = kts
-	do 1830 j = jts, jte
-	do 1820 i = its, ite
+	do j = jts, jte
+	do i = its, ite
+	
+		! Skip this point if over land. xland=1 for land and 2 for water.
+		! Also, there is no way to differentiate fresh from salt water.
+		! Currently, this assumes all water is salty.
+		if( xland(i,j) < 1.5 ) cycle
+	
+		!wig: As far as I can tell, only real.exe knows the fractional breakdown
+		!     of land use. So, in wrf.exe, dumoceanfrac will always be 1.
+		dumoceanfrac = 1. !fraction of grid i,j that is salt water
+		dumspd10 = dumoceanfrac* &
+			 ( (u10(i,j)*u10(i,j) + v10(i,j)*v10(i,j))**(0.5*3.41) )
+	
+		! factaa is (s*m2/kg-air)
+		! factaa*ssemfact_mass(n) is (s*m2/kg-air)*(ug/m2/s) = ug/kg-air
+		! factaa*ssemfact_numb(n) is (s*m2/kg-air)*( #/m2/s) =  #/kg-air
+		factaa = (dtstep/dz8w(i,k,j))*alt(i,k,j)
+	
+		factbb = factaa * dumspd10
+	
+		if(seasalt_emiss_active == 1)then
+			! apportion seasalt mass emissions assumming that seasalt is pure nacl
+			fracna = mw_na_aer / (mw_na_aer + mw_cl_aer)
+			fraccl = 1.0 - fracna
+		
+			do n = 1, nsize_aer(itype)
+		
+				! only apply emissions if bin has both na and cl species
+				l_na = lptr_na_aer(n,itype,iphase)
+				l_cl = lptr_cl_aer(n,itype,iphase)
+				if ((l_na >= p1st) .and. (l_cl >= p1st)) then
+			
+					chem(i,k,j,l_na) = chem(i,k,j,l_na) +   &
+						factbb * ssemfact_mass(n,itype) * fracna
+			
+					chem(i,k,j,l_cl) = chem(i,k,j,l_cl) +   &
+						factbb * ssemfact_mass(n,itype) * fraccl
+			
+					l = numptr_aer(n,itype,iphase)
+					if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) +   &
+										factbb * ssemfact_numb(n,itype)
+		
+				end if
+				
+			end do ! n = 1, nsize_aer(itype)
+			
+			
+		elseif(seasalt_emiss_active.eq.3 .or. seasalt_emiss_active.eq.4)then
+			do n = 1, nsize_aer(itype)
 
-    !Skip this point if over land. xland=1 for land and 2 for water.
-    !Also, there is no way to differentiate fresh from salt water.
-    !Currently, this assumes all water is salty.
-    if( xland(i,j) < 1.5 ) cycle
+				! apportion seasalt mass emissions assumming that seasalt is a 
+				! simple mix of pure nacl and a single primary organic 
+				if(seasalt_emiss_active.eq.3)then
+					fracorg = org_frac_low_activity(n)
+				elseif(seasalt_emiss_active.eq.4)then
+					fracorg = org_frac_high_activity(n)
+				endif
+				fracna = mw_na_aer / (mw_na_aer + mw_cl_aer)
+				fraccl = 1.0 - fracna
+				fracna = (1.0-fracorg)*fracna
+				fraccl = (1.0-fracorg)*fraccl
+		
+				! only apply emissions if bin has both na and cl species
+				l_na = lptr_na_aer(n,itype,iphase)
+				l_cl = lptr_cl_aer(n,itype,iphase)
+				l_oc = lptr_oc_aer(n,itype,iphase)
+				if ((l_na >= p1st) .and. (l_cl >= p1st) .and. (l_oc >= p1st)) then
+			
+					chem(i,k,j,l_na) = chem(i,k,j,l_na) +   &
+						factbb * ssemfact_mass(n,itype) * fracna
+			
+					chem(i,k,j,l_cl) = chem(i,k,j,l_cl) +   &
+						factbb * ssemfact_mass(n,itype) * fraccl
 
-    !wig: As far as I can tell, only real.exe knows the fractional breakdown
-    !     of land use. So, in wrf.exe, dumoceanfrac will always be 1.
-	dumoceanfrac = 1. !fraction of grid i,j that is salt water
-	dumspd10 = dumoceanfrac* &
-         ( (u10(i,j)*u10(i,j) + v10(i,j)*v10(i,j))**(0.5*3.41) )
+					chem(i,k,j,l_oc) = chem(i,k,j,l_oc) +   &
+						factbb * ssemfact_mass(n,itype) * fracorg
+			
+					l = numptr_aer(n,itype,iphase)
+					if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) +   &
+										factbb * ssemfact_numb(n,itype)
+		
+				end if
+				
+			end do ! n = 1, nsize_aer(itype)
+		endif
 
-!   factaa is (s*m2/kg-air)
-!   factaa*ssemfact_mass(n) is (s*m2/kg-air)*(ug/m2/s) = ug/kg-air
-!   factaa*ssemfact_numb(n) is (s*m2/kg-air)*( #/m2/s) =  #/kg-air
-	factaa = (dtstep/dz8w(i,k,j))*alt(i,k,j)
-
-	factbb = factaa * dumspd10
-
-!   apportion seasalt mass emissions assumming that seasalt is pure nacl
-	fracna = mw_na_aer / (mw_na_aer + mw_cl_aer)
-	fraccl = 1.0 - fracna
-
-	do 1810 n = 1, nsize_aer(itype)
-
-!   only apply emissions if bin has both na and cl species
-	    l_na = lptr_na_aer(n,itype,iphase)
-	    l_cl = lptr_cl_aer(n,itype,iphase)
-	    if ((l_na >= p1st) .and. (l_cl >= p1st)) then
-
-	    chem(i,k,j,l_na) = chem(i,k,j,l_na) +   &
-			factbb * ssemfact_mass(n,itype) * fracna
-
-	    chem(i,k,j,l_cl) = chem(i,k,j,l_cl) +   &
-			factbb * ssemfact_mass(n,itype) * fraccl
-
-	    l = numptr_aer(n,itype,iphase)
-	    if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) +   &
-			factbb * ssemfact_numb(n,itype)
-	    end if
-1810	continue
-
-1820	continue
-1830	continue
+	end do ! i = its, ite
+	end do ! j = jts, jte
 
 	return
 
@@ -828,6 +1003,416 @@ CONTAINS
 
 	return
 	end subroutine seasalt_emitfactors_1bin
+
+
+!c----------------------------------------------------------------------
+!c   Following is an adaption of the subroutine above.
+!c   It has been modified to include flux from Fuentes et al, ACP, 2010
+!c   for dealing with smaller particle emissions.
+!c----------------------------------------------------------------------
+	subroutine seasalt_emit_feuntes_1bin( &
+      		dpdrylo_cm, dpdryhi_cm,	  &
+                emitfact_numb, emitfact_surf, emitfact_mass, nti, dp0gi, oc02um  )
+!c
+!c   computes seasalt emissions factors for a specifed 
+!c   dry particle size range
+!c	dpdrylo_cm  = lower dry diameter (cm)
+!c	dpdryhi_cm  = upper dry diameter (cm)
+!c
+!c   number and mass emissions are then computed as
+!c	number   emissions (#/m2/s)   == emitfact_numb * (spd10*3.41)
+!c	dry-sfc  emissions (cm2/m2/s) == emitfact_surf * (spd10*3.41)
+!c	dry-mass emissions (g/m2/s)   == emitfact_mass * (spd10*3.41)
+!c
+!c   where spd10 = 10 m windspeed in m/s
+!c
+!c  Uses bubble emissions formula (eqn 5a) from 
+!c	Gong et al. [JGR, 1997, p 3805-3818] for particles 
+!c  with dry diameters of 0.45 um or more
+!c
+!c  For smaller particles we use the parameterisation of 
+!c  Fuentes et al, ACP, 2010.
+!c
+
+
+	implicit none
+
+	! subr arguments
+	!integer ireduce_smallr_emit
+	real dpdrylo_cm, dpdryhi_cm,				&
+                emitfact_numb, emitfact_surf, emitfact_mass
+    real, intent(in) :: nti(4), dp0gi(4), oc02um
+
+	! local variables
+	integer isub_bin, nsub_bin, jd, nsub_lower_bin, nsub_upper_bin
+
+	real alnrdrylo
+	real drydens, drydens_43pi_em12, x_4pi_em8, drydens_16pi_em12, x_pi_em8
+	real dum, dumadjust, dumb, dumexpb
+	real dumsum_na, dumsum_ma, dumsum_sa
+	real drwet, dlnrdry, ddwet, ddry, dwet
+	real df0drwet, df0dlnrdry, df0dlnrdry_star
+	real relhum
+	real rdry, rdrylo, rdryhi, rdryaa, rdrybb
+	real rdrylowermost, rdryuppermost, rdry_star
+	real rwet, rwetaa, rwetbb
+	real rdry_cm, rwet_cm
+	real sigmag_star
+	real xmdry, xsdry
+	
+	real ddrylo, ddryhi, alogddrylo
+	real ddrybb, ddry_cm, dwet_cm, dwetbb
+	real ddryaa, dwetaa, dlogddry, df0dlogddry
+
+	real pi
+	parameter (pi = 3.1415936536)
+
+	! c1-c4 are constants for seasalt hygroscopic growth parameterization
+	! in Eqn 3 and Table 2 of Gong et al. [1997]
+	real c1, c2, c3, c4, onethird
+	parameter (c1 = 0.7674)
+	parameter (c2 = 3.079)
+	parameter (c3 = 2.573e-11)
+	parameter (c4 = -1.424)
+	parameter (onethird = 1.0/3.0)
+
+
+	!  constants for seasalt/organic aerosol distribution parameterisation
+	!    from Fuentes et al, ACP, 2010
+	real, save :: width_ssinorg_f(4) = &
+				 (/ 1.55, 1.7, 1.5, 1.7 /)
+	real, save :: width_ssorg_f(4) = &
+				 (/ 1.55, 1.9, 1.5, 1.7 /)
+	real :: width_ss_f(4), frac
+	! scale_factor is a combination of:
+	!   1) (Q)  sweep air flow (58.3 cm3/s)  
+	!   2) (Ab) total surface area covered by bubbles (0.0146 m2)
+	!   4) scaling factor of 3.84e-6 from the whitecap coverage formulation of 
+	!          Monahan and O'Muircheartaigh (1980) - as the Gong et al formulation
+	!          includes a whitecap coverage factor too
+	! this is for converting from dNt to dFp for Fuentes et al (ACP, 2010)
+	real, parameter :: scale_factor = 58.3/(0.0146)*3.84e-6 !0.01533
+
+
+	! select which distribution width to use for Fuentes et al,
+	if(oc02um.gt.0e0)then
+		width_ss_f = width_ssorg_f
+	else
+		width_ss_f = width_ssinorg_f
+	end if
+
+
+	! dry particle density (g/cm3)
+	drydens = 2.165
+	! factor for radius (micrometers) to mass (g)
+	drydens_43pi_em12 = drydens*(4.0/3.0)*pi*1.0e-12
+	! factor for diameter (micrometers) to mass (g)
+	drydens_16pi_em12 = drydens*(1.0/6.0)*pi*1.0e-12
+	! factor for radius (micrometers) to surface (cm2)
+	x_4pi_em8 = 4.0*pi*1.0e-8
+	! factor for diameter (micrometers) to surface (cm2)
+	x_pi_em8 = pi*1.0e-8
+	! bubble emissions formula assume 80% RH
+	relhum = 0.80
+
+	! rdry_star = dry radius (micrometers) below which the
+	! dF0/dr emission formula from Fuentes et al, ACP, 2010
+	! will be used.
+	rdry_star = 0.45 / 2.0
+	!if (ireduce_smallr_emit .le. 0) rdry_star = -1.0e20
+	! sigmag_star = geometric standard deviation used for
+	! rdry < rdry_star
+	sigmag_star = 1.9
+
+	! initialize sums
+	dumsum_na = 0.0
+	dumsum_sa = 0.0
+	dumsum_ma = 0.0
+
+	! rdrylowermost, rdryuppermost = lower and upper 
+	! dry radii (micrometers) for overall integration
+    rdrylowermost = dpdrylo_cm*0.5e4
+    rdryuppermost = dpdryhi_cm*0.5e4
+
+
+	! "section 1"
+	! integrate over rdry > rdry_star, where the dF0/dr emissions 
+	! formula from the original subroutine is applicable
+	!  (so using Gong et al for all emission profile)
+	if (rdrylowermost .ge. rdry_star) then
+
+		! rdrylo, rdryhi = lower and upper dry radii (micrometers) 
+		! for this part of the integration
+        rdrylo = rdrylowermost
+        rdryhi = rdryuppermost
+
+		nsub_bin = 1000
+
+		alnrdrylo = log( rdrylo )
+		dlnrdry = (log( rdryhi ) - alnrdrylo)/nsub_bin
+
+		! compute rdry, rwet (micrometers) at lowest size
+		rdrybb = exp( alnrdrylo )
+		rdry_cm = rdrybb*1.0e-4
+		rwet_cm = ( rdry_cm**3 + (c1*(rdry_cm**c2))/		&
+      			( (c3*(rdry_cm**c4)) - log10(relhum) ) )**onethird
+		rwetbb = rwet_cm*1.0e4
+
+		do isub_bin = 1, nsub_bin
+
+			! rdry, rwet at sub_bin lower boundary are those
+			! at upper boundary of previous sub_bin
+			rdryaa = rdrybb
+			rwetaa = rwetbb
+
+			! compute rdry, rwet (micrometers) at sub_bin upper boundary
+			dum = alnrdrylo + isub_bin*dlnrdry
+			rdrybb = exp( dum )
+
+			rdry_cm = rdrybb*1.0e-4
+			rwet_cm = ( rdry_cm**3 + (c1*(rdry_cm**c2))/		&
+      				( (c3*(rdry_cm**c4)) - log10(relhum) ) )**onethird
+			rwetbb = rwet_cm*1.0e4
+
+			! geometric mean rdry, rwet (micrometers) for sub_bin
+			rdry = sqrt(rdryaa * rdrybb)
+			rwet = sqrt(rwetaa * rwetbb)
+			drwet = rwetbb - rwetaa
+
+			! xmdry is dry mass in g
+			xmdry = drydens_43pi_em12 * (rdry**3.0)
+
+			! xsdry is dry surface in cm2
+			xsdry = x_4pi_em8 * (rdry**2.0)
+
+			! dumb is "B" in Gong's Eqn 5a
+			! df0drwet is "dF0/dr" in Gong's Eqn 5a
+			dumb = ( 0.380 - log10(rwet) ) / 0.650
+			dumexpb = exp( -dumb*dumb)
+			df0drwet = 1.373 * (rwet**(-3.0)) * 			&
+      				(1.0 + 0.057*(rwet**1.05)) * 			&
+      				(10.0**(1.19*dumexpb))
+
+			dumsum_na = dumsum_na + drwet*df0drwet
+			dumsum_ma = dumsum_ma + drwet*df0drwet*xmdry
+			dumsum_sa = dumsum_sa + drwet*df0drwet*xsdry
+
+		end do
+
+
+	! "section 2"
+	! integrate over rdry < rdry_star for old parameterisation, and use
+	! Fuentes et al below that
+	!
+	! 1.  for rdry < rdry_star, use Fuentes et al parameterisation
+	! 2.  for rdry > rdry_star, use Gong et al parameterisation, as above
+	elseif (rdryuppermost .gt. rdry_star) then
+
+		! determine the fraction of size bin below rdry_star
+		frac = (log(rdry_star)-log(rdrylowermost)) / (log(rdryuppermost)-log(rdrylowermost))
+		nsub_lower_bin = floor(frac*1000.0)	 ! calc number of size bins to use for section below rdry_star
+		nsub_upper_bin = 1000-nsub_lower_bin ! use remaining size bins for section above rdry_star
+
+
+	! 1.................
+		! ddrylo, ddryhi = lower and upper dry diameter (micrometers) 
+		! for this part of the integration
+        ddrylo = rdrylowermost*2.0
+        ddryhi = rdry_star*2.0
+
+		nsub_bin = nsub_lower_bin
+
+		alogddrylo = log10( ddrylo )
+		dlogddry = (log10( ddryhi ) - alogddrylo)/nsub_bin
+
+		! compute ddry, dwet (micrometers) at lowest size
+		ddrybb = 10.0**( alogddrylo )
+		ddry_cm = ddrybb*1.0e-4
+		dwet_cm = ( ddry_cm**3 + (c1*(ddry_cm**c2))/		&
+      			( (c3*(ddry_cm**c4)) - log10(relhum) ) )**onethird
+		dwetbb = dwet_cm*1.0e4
+
+		do isub_bin = 1, nsub_bin
+
+			! ddry, dwet at sub_bin lower boundary are those
+			! at upper boundary of previous sub_bin
+			ddryaa = ddrybb
+			!dwetaa = dwetbb
+
+			! compute ddry, dwet (micrometers) at sub_bin upper boundary
+			dum = alogddrylo + isub_bin*dlogddry
+			ddrybb = 10.0**( dum )
+
+			ddry_cm = ddrybb*1.0e-4
+			!dwet_cm = ( ddry_cm**3 + (c1*(ddry_cm**c2))/		&
+      		!		( (c3*(ddry_cm**c4)) - log10(relhum) ) )**onethird
+			!dwetbb = dwet_cm*1.0e4
+
+			! geometric mean rdry, rwet (micrometers) for sub_bin
+			ddry = sqrt(ddryaa * ddrybb)
+			!dwet = sqrt(dwetaa * dwetbb)
+
+			! xmdry is dry mass in g
+			xmdry = drydens_16pi_em12 * (ddry**3.0)
+
+			! xsdry is dry surface in cm2
+			xsdry = x_pi_em8 * (ddry**2.0)
+
+			! Equation 2 from Fuentes et al (ACP, 2011). Wet diameter is scaled by a factor
+			! of 1e3 to convert from um to nm for this calculation
+			df0dlogddry = 0.0
+			do jd = 1, 4
+				df0dlogddry = df0dlogddry + nti(jd)/( (2.0*pi)**0.5 * log10(width_ss_f(jd)) ) &
+							* exp(-1.0/2.0 * (log10(ddry*1e3/dp0gi(jd))/log10(width_ss_f(jd)))**2.0 )
+			end do
+
+			dumsum_na = dumsum_na + dlogddry*df0dlogddry*scale_factor
+			dumsum_ma = dumsum_ma + dlogddry*df0dlogddry*scale_factor*xmdry
+			dumsum_sa = dumsum_sa + dlogddry*df0dlogddry*scale_factor*xsdry
+
+		end do
+
+	
+	! 2................
+		! rdrylo, rdryhi = lower and upper dry radii (micrometers) 
+		! for this part of the integration
+        rdrylo = rdry_star
+        rdryhi = rdryuppermost
+
+		nsub_bin = nsub_upper_bin
+
+		alnrdrylo = log( rdrylo )
+		dlnrdry = (log( rdryhi ) - alnrdrylo)/nsub_bin
+
+		! compute rdry, rwet (micrometers) at lowest size
+		rdrybb = exp( alnrdrylo )
+		rdry_cm = rdrybb*1.0e-4
+		rwet_cm = ( rdry_cm**3 + (c1*(rdry_cm**c2))/		&
+      			( (c3*(rdry_cm**c4)) - log10(relhum) ) )**onethird
+		rwetbb = rwet_cm*1.0e4
+
+		do isub_bin = 1, nsub_bin
+
+			! rdry, rwet at sub_bin lower boundary are those
+			! at upper boundary of previous sub_bin
+			rdryaa = rdrybb
+			rwetaa = rwetbb
+
+			! compute rdry, rwet (micrometers) at sub_bin upper boundary
+			dum = alnrdrylo + isub_bin*dlnrdry
+			rdrybb = exp( dum )
+
+			rdry_cm = rdrybb*1.0e-4
+			rwet_cm = ( rdry_cm**3 + (c1*(rdry_cm**c2))/		&
+      				( (c3*(rdry_cm**c4)) - log10(relhum) ) )**onethird
+			rwetbb = rwet_cm*1.0e4
+
+			! geometric mean rdry, rwet (micrometers) for sub_bin
+			rdry = sqrt(rdryaa * rdrybb)
+			rwet = sqrt(rwetaa * rwetbb)
+			drwet = rwetbb - rwetaa
+
+			! xmdry is dry mass in g
+			xmdry = drydens_43pi_em12 * (rdry**3.0)
+
+			! xsdry is dry surface in cm2
+			xsdry = x_4pi_em8 * (rdry**2.0)
+
+			! dumb is "B" in Gong's Eqn 5a
+			! df0drwet is "dF0/dr" in Gong's Eqn 5a
+			dumb = ( 0.380 - log10(rwet) ) / 0.650
+			dumexpb = exp( -dumb*dumb)
+			df0drwet = 1.373 * (rwet**(-3.0)) * 			&
+      				(1.0 + 0.057*(rwet**1.05)) * 			&
+      				(10.0**(1.19*dumexpb))
+
+			dumsum_na = dumsum_na + drwet*df0drwet
+			dumsum_ma = dumsum_ma + drwet*df0drwet*xmdry
+			dumsum_sa = dumsum_sa + drwet*df0drwet*xsdry
+
+		end do
+
+
+
+	! "section 3"
+	! where rdry < rdry_star for the whole bin we use Fuentes et al 
+	! for all emissions
+	!
+	else
+	
+		! ddrylo, ddryhi = lower and upper dry diameter (micrometers) 
+		! for this part of the integration
+        ddrylo = rdrylowermost*2.0
+        ddryhi = rdryuppermost*2.0
+
+		nsub_bin = 1000
+
+		alogddrylo = log10( ddrylo )
+		dlogddry = (log10( ddryhi ) - alogddrylo)/nsub_bin
+
+		! compute ddry, dwet (micrometers) at lowest size
+		ddrybb = 10.0**( alogddrylo )
+		ddry_cm = ddrybb*1.0e-4
+		dwet_cm = ( ddry_cm**3 + (c1*(ddry_cm**c2))/		&
+      			( (c3*(ddry_cm**c4)) - log10(relhum) ) )**onethird
+		dwetbb = dwet_cm*1.0e4
+
+		do isub_bin = 1, nsub_bin
+
+			! ddry, dwet at sub_bin lower boundary are those
+			! at upper boundary of previous sub_bin
+			ddryaa = ddrybb
+			!dwetaa = dwetbb
+
+			! compute ddry, dwet (micrometers) at sub_bin upper boundary
+			dum = alogddrylo + isub_bin*dlogddry
+			ddrybb = 10.0**( dum )
+
+			ddry_cm = ddrybb*1.0e-4
+			!dwet_cm = ( ddry_cm**3 + (c1*(ddry_cm**c2))/		&
+      		!		( (c3*(ddry_cm**c4)) - log10(relhum) ) )**onethird
+			!dwetbb = dwet_cm*1.0e4
+
+			! geometric mean rdry, rwet (micrometers) for sub_bin
+			ddry = sqrt(ddryaa * ddrybb)
+			!dwet = sqrt(dwetaa * dwetbb)
+
+			! xmdry is dry mass in g
+			xmdry = drydens_16pi_em12 * (ddry**3.0)
+
+			! xsdry is dry surface in cm2
+			xsdry = x_pi_em8 * (ddry**2.0)
+
+			! Equation 2 from Fuentes et al (ACP, 2011). Wet diameter is scaled by a factor
+			! of 1e3 to convert from um to nm for this calculation
+			df0dlogddry = 0.0
+			do jd = 1, 4
+				df0dlogddry = df0dlogddry + nti(jd)/( (2.0*pi)**0.5 * log10(width_ss_f(jd)) ) &
+							* exp(-1.0/2.0 * (log10(ddry*1e3/dp0gi(jd))/log10(width_ss_f(jd)))**2.0 )
+			end do
+
+			dumsum_na = dumsum_na + dlogddry*df0dlogddry*scale_factor
+			dumsum_ma = dumsum_ma + dlogddry*df0dlogddry*scale_factor*xmdry
+			dumsum_sa = dumsum_sa + dlogddry*df0dlogddry*scale_factor*xsdry
+
+		end do
+	
+
+
+	end if
+	!c
+	!c  all done
+	!c	
+	emitfact_numb = dumsum_na
+	emitfact_mass = dumsum_ma
+	emitfact_surf = dumsum_sa
+
+
+	return
+	end subroutine seasalt_emit_feuntes_1bin
+
+
+
 
 
 

@@ -43,84 +43,8 @@ C     NEMO     - CHARACTER*8: MNEMONIC
 C     NUMB     - CHARACTER*6: FXY VALUE ASSOCIATED WITH NEMO
 C     LUN      - INTEGER: I/O STREAM INDEX INTO INTERNAL MEMORY ARRAYS
 C
-C REMARKS:
-C    EXAMPLE SHOWING LAYOUT OF INTERNAL BUFR TABLE B (FROM A DBX DEBUG
-C    SESSION USING "bufrtab.002", AND WHERE LUN = 1)
-C
-C   (dbx) print NTBB[1]
-C   95
-C
-C   (dbx) print TABB[1,1]
-C   0x1003c164 = "063000BYTCNT                                  ",
-C                "                        BYTES                 ",
-C                "  +0  +0         16                 "
-C
-C   (dbx) print TABB[2,1]
-C   0x1003c1e4 = "063255BITPAD                                  ",
-C                "                        NONE                  ",
-C                "  +0  +0         1                  "
-C
-C   (dbx) print TABB[3,1]
-C   0x1003c264 = "031000DRF1BIT                                 ",
-C                "                        NUMERIC               ",
-C                "  +0  +0         1                  "
-C
-C   (dbx) print TABB[8,1]
-C   0x1003c4e4 = "001003WMOR     WMO REGION NUMBER              ",
-C                "                        CODE TABLE            ",
-C                "  +0  +0         3                  "
-C
-C   (dbx) print TABB[11,1]
-C   0x1003c664 = "001194BUHD     BULLETIN HEADER                ",
-C                "                        CCITT IA5             ",
-C                "  +0  +0         64                 "
-C
-C   (dbx) print TABB[21,1]
-C   0x1003cb64 = "004003DAYS     DAY                            ",
-C                "                        DAY                   ",
-C                "  +0  +0         6                  "
-C
-C   (dbx) print TABB[33,1]
-C   0x1003d164 = "005002CLAT     LATITUDE (COARSE ACCURACY)     ",
-C                "                        DEGREES               ",
-C                "  +2  -0000"     15                 "
-C
-C   and so on, up through TABB[95,1] ( = TABB[NTBB[LUN],LUN] )
-C
-C
-C
-C    EXAMPLE SHOWING LAYOUT OF INTERNAL BUFR TABLE D (FROM A DBX DEBUG
-C    SESSION USING "bufrtab.002", AND WHERE LUN = 1)
-C
-C   (dbx) print NTBD[1]
-C   43
-C
-C   (dbx) &TABD[1,1]/14c
-C   1008a364:  '3' '6' '0' '0' '0' '1' 'D' 'R' 'P' '1' '6' 'B' 'I' 'T'
-C
-C   (dbx) &TABD[2,1]/14c
-C   1008a5bc:  '3' '6' '0' '0' '0' '2' 'D' 'R' 'P' '8' 'B' 'I' 'T' ' '
-C
-C   (dbx) &TABD[3,1]/14c
-C   1008a814:  '3' '6' '0' '0' '0' '3' 'D' 'R' 'P' 'S' 'T' 'A' 'K' ' '
-C
-C   (dbx) &TABD[4,1]/14c
-C   1008aa6c:  '3' '6' '0' '0' '0' '4' 'D' 'R' 'P' '1' 'B' 'I' 'T' ' '
-C
-C   (dbx) &TABD[5,1]/14c
-C   1008acc4:  '3' '6' '3' '2' '1' '8' 'N' 'C' '0' '0' '2' '0' '0' '1'
-C
-C   (dbx) &TABD[6,1]/14c
-C   1008af1c:  '3' '6' '3' '2' '1' '9' 'N' 'C' '0' '0' '2' '0' '0' '2'
-C
-C   (dbx) &TABD[24,1]/14c
-C   1008d94c:  '3' '6' '1' '1' '3' '0' 'U' 'A' 'A' 'D' 'F' ' ' ' ' ' '
-C
-C   and so on, up through TABD[43,1] ( = TABD[NTBD[LUN],LUN] )
-C
-C
 C    THIS ROUTINE CALLS:        BORT
-C    THIS ROUTINE IS CALLED BY: RDBFDX   RDUSDX
+C    THIS ROUTINE IS CALLED BY: STBFDX   STNTBI
 C                               Normally not called by any application
 C                               programs.
 C

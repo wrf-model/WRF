@@ -138,6 +138,9 @@
                               ph_hyac, ivgtyp,                         &
                               ph_radfld, ph_adjcoe, ph_prate,          &
                               wc_x, zref_x,                            &
+                              tauaer1, tauaer2, tauaer3, tauaer4,      &    !rajesh
+                              waer1, waer2, waer3, waer4,              &    !rajesh
+                              gaer1, gaer2, gaer3, gaer4,              &    !rajesh
                               ids,ide, jds,jde, kds,kde,               &
                               ims,ime, jms,jme, kms,kme,               &
                               its,ite, jts,jte, kts,kte                )
@@ -184,6 +187,11 @@
                              xlong(ims:ime,jms:jme)
       real, intent(in   ) :: moist(ims:ime,kms:kme,jms:jme,num_moist)
       real, intent(in   ) :: chem(ims:ime,kms:kme,jms:jme,num_chem)
+!rajesh: add arrays for aerosol optical properties
+      real, dimension( ims:ime, kms:kme, jms:jme ),              &
+            intent(in   ) :: tauaer1, tauaer2, tauaer3, tauaer4, &
+                             waer1, waer2, waer3, waer4,         &
+                             gaer1, gaer2, gaer3, gaer4
 
 !----------------------------------------------------
 !     output arguments
@@ -242,6 +250,13 @@
 
       real(dp) :: acb1(kts:kte+1), acb2(kts:kte+1), aoc1(kts:kte+1), aoc2(kts:kte+1)
       real(dp) :: aant(kts:kte+1), aso4(kts:kte+1), asal(kts:kte+1)
+! rajesh: add arrays
+      real(dp) :: tauaer300(kts:kte), tauaer400(kts:kte+1),        &
+                  tauaer600(kts:kte), tauaer999(kts:kte+1)
+      real(dp) :: waer300(kts:kte), waer400(kts:kte),            &
+                  waer600(kts:kte), waer999(kts:kte)
+      real(dp) :: gaer300(kts:kte), gaer400(kts:kte),            &
+                  gaer600(kts:kte), gaer999(kts:kte)
 
       real(dp) :: p_jtop(its:ite,jts:jte)
       real(dp) :: o2_exo_col(its:ite,jts:jte)
@@ -267,7 +282,8 @@
 
       isorg=0
       aer_select: SELECT CASE(config_flags%chem_opt)
-         CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP,RACM_ESRLSORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM,CBMZSORG,CBMZSORG_AQ)
+         CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP,RADM2SORG_AQCHEM,RACM_ESRLSORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM_KPP, &
+               RACM_ESRLSORG_AQCHEM_KPP,CBMZSORG,CBMZSORG_AQ)
              isorg=1
              CALL wrf_debug(15,'SORGAM aerosols initialization ')
          CASE DEFAULT
@@ -364,6 +380,20 @@ level_loop : &
           aant(kp1) = 0._dp
           aso4(kp1) = 0._dp
           asal(kp1) = 0._dp
+! rajesh: initialize aerosol optical properties to zero
+          tauaer300(k) = 0._dp
+          tauaer400(k) = 0._dp
+          tauaer600(k) = 0._dp
+          tauaer999(k) = 0._dp
+          waer300(k) = 0._dp
+          waer400(k) = 0._dp
+          waer600(k) = 0._dp
+          waer999(k) = 0._dp
+          gaer300(k) = 0._dp
+          gaer400(k) = 0._dp
+          gaer600(k) = 0._dp
+          gaer999(k) = 0._dp
+
           if( isorg == 1 ) then
              acb1(kp1) = chem(i,k,j,p_ecj)
 !            acb2(kp1) = 0.0_dp
@@ -375,7 +405,7 @@ level_loop : &
              asal(kp1) = chem(i,k,j,p_seas)
           elseif( config_flags%chem_opt == MOZART_KPP .or. &
                   config_flags%chem_opt == MOZCART_KPP ) then
-             aso4(kp1) = chem(i,k,j,p_sulf)*air(kp1)*real(mw_so4_aer,kind=dp)*kg_per_amu*1.e9_dp
+             aso4(kp1) = chem(i,k,j,p_sulf)*air(kp1)*real(mw_so4_aer,kind=dp)*kg_per_amu*1.e-9_dp
             if( config_flags%chem_opt == MOZCART_KPP ) then
              atm_mass_den = rho_phy(i,k,j)
              acb1(kp1) = chem(i,k,j,p_bc1)*atm_mass_den
@@ -386,6 +416,22 @@ level_loop : &
              asal(kp1) = (chem(i,k,j,p_seas_1) + chem(i,k,j,p_seas_2) &
                           + chem(i,k,j,p_seas_3) + chem(i,k,j,p_seas_4))*atm_mass_den
             endif
+          endif
+! rajesh: Extract column of aerosol optical properties
+          if(config_flags%aer_ra_feedback == 1) then   
+             tauaer300(k) = tauaer1(i,k,j)
+             tauaer400(k) = tauaer2(i,k,j)
+             tauaer600(k) = tauaer3(i,k,j)
+             tauaer999(k) = tauaer4(i,k,j)
+             waer300(k)   = waer1(i,k,j)
+             waer400(k)   = waer2(i,k,j)
+             waer600(k)   = waer3(i,k,j)
+             waer999(k)   = waer4(i,k,j)
+             gaer300(k)   = gaer1(i,k,j)
+             gaer400(k)   = gaer2(i,k,j)
+             gaer600(k)   = gaer3(i,k,j)
+             gaer999(k)   = gaer4(i,k,j)
+          endif
 !         else
 !            acb1(kp1) = 0._dp
 !            acb2(kp1) = 0._dp
@@ -394,7 +440,6 @@ level_loop : &
 !            aant(kp1) = 0._dp
 !            aso4(kp1) = 0._dp
 !            asal(kp1) = 0._dp
-          endif
         enddo level_loop
 
         temp(1) = t8w(i,kts,j)
@@ -410,6 +455,19 @@ level_loop : &
         aant(1) = aant(2)
         aso4(1) = aso4(2)
         asal(1) = asal(2)
+! rajesh
+!        tauaer300(1) = tauaer300(2)
+!        tauaer400(1) = tauaer400(2)
+!        tauaer600(1) = tauaer600(2)
+!        tauaer999(1) = tauaer999(2)
+!        waer300(1)   = waer300(2)
+!        waer400(1)   = waer400(2)
+!        waer600(1)   = waer600(2)
+!        waer999(1)   = waer999(2)
+!        gaer300(1)   = gaer300(2)
+!        gaer400(1)   = gaer400(2)
+!        gaer600(1)   = gaer600(2)
+!        gaer999(1)   = gaer999(2)
 
 !----------------------------------------------------
 !     smooth air density ...
@@ -444,6 +502,14 @@ level_loop : &
                    aant,                 &
                    aso4,                 &
                    asal,                 &
+! rajesh: Add aerosol optical property columns as arguments
+                   tauaer300, tauaer400, &
+                   tauaer600, tauaer999, &
+                   waer300, waer400,     &
+                   waer600, waer999,     &
+                   gaer300, gaer400,     &
+                   gaer600, gaer999,     &
+                   config_flags%aer_ra_feedback, &
                    prate,                &
                    radfld,               &
                    adjcoe,               &
@@ -908,7 +974,10 @@ include 'netcdf.inc'
                         along, o3top, o2top, o3toms, lu, zin, tlevin, &
                         airlevin, rhin, xlwcin, o3in, acb1in, &
                         acb2in, aoc1in, aoc2in, aantin, aso4in, &
-                        asalin, prate, radfld, adjcoe, prate0 )
+                        asalin, tauaer300in,tauaer400in,tauaer600in,tauaer999in, &
+                        waer300in, waer400in, waer600in, waer999in,    &
+                        gaer300in, gaer400in, gaer600in, gaer999in,    &
+                        aer_ra_feedback, prate, radfld, adjcoe, prate0 )
 
       use module_ftuv_subs, only : calc_zenith, photoin
 
@@ -941,6 +1010,21 @@ include 'netcdf.inc'
       real(dp), intent(in) :: aso4in(nlev)
       real(dp), intent(in) :: asalin(nlev)
 
+! rajesh: declare dust variables
+      real(dp), intent(in) :: tauaer300in(nlev-1)
+      real(dp), intent(in) :: tauaer400in(nlev-1)
+      real(dp), intent(in) :: tauaer600in(nlev-1)
+      real(dp), intent(in) :: tauaer999in(nlev-1)
+      real(dp), intent(in) :: waer300in(nlev-1)
+      real(dp), intent(in) :: waer400in(nlev-1)
+      real(dp), intent(in) :: waer600in(nlev-1)
+      real(dp), intent(in) :: waer999in(nlev-1)
+      real(dp), intent(in) :: gaer300in(nlev-1)
+      real(dp), intent(in) :: gaer400in(nlev-1)
+      real(dp), intent(in) :: gaer600in(nlev-1)
+      real(dp), intent(in) :: gaer999in(nlev-1)
+      INTEGER, INTENT(IN)  :: aer_ra_feedback
+
 !----------------------------------------------------
 !     output arguments
 !----------------------------------------------------
@@ -961,6 +1045,14 @@ include 'netcdf.inc'
       real(dp), allocatable :: acb1_ph(:), acb2_ph(:)
       real(dp), allocatable :: aoc1_ph(:), aoc2_ph(:)
       real(dp), allocatable :: aant_ph(:), aso4_ph(:), asal_ph(:)
+
+! rajesh: declare allocatable variables for aerosol optical properties
+      real(dp), allocatable :: tauaer300_ph(:), tauaer400_ph(:),   &
+                               tauaer600_ph(:), tauaer999_ph(:),   &
+                               waer300_ph(:), waer400_ph(:),       &
+                               waer600_ph(:), waer999_ph(:),       &
+                               gaer300_ph(:), gaer400_ph(:),       &
+                               gaer600_ph(:), gaer999_ph(:)
       real(dp), allocatable :: ftuv(:,:)
 
 !-----------------------------------------------------------------------------
@@ -1025,6 +1117,18 @@ include 'netcdf.inc'
       astat = astat + istat
       allocate( aant_ph(nz), aso4_ph(nz), asal_ph(nz), stat=istat )
       astat = astat + istat
+
+! rajesh: allocate memory space to aerosol optical property variables
+      allocate( tauaer300_ph(nz-1), tauaer400_ph(nz-1), tauaer600_ph(nz-1),  &
+                tauaer999_ph(nz-1), stat=istat)
+      astat = astat + istat
+      allocate( waer300_ph(nz-1), waer400_ph(nz-1), waer600_ph(nz-1),  &
+                waer999_ph(nz-1), stat=istat)
+      astat = astat + istat
+      allocate( gaer300_ph(nz-1), gaer400_ph(nz-1), gaer600_ph(nz-1),  &
+                gaer999_ph(nz-1), stat=istat)
+      astat = astat + istat
+   
       if( astat /= 0 ) then
          call wrf_message( 'ftuv_driver: failed to allocate _ph arrays' )
          call wrf_abort
@@ -1039,6 +1143,20 @@ include 'netcdf.inc'
       aant_ph(:) = 0.0_dp
       aso4_ph(:) = 0.0_dp
       asal_ph(:) = 0.0_dp
+
+! rajesh: Initialize variables to zero 
+      tauaer300_ph(:) = 0.0_dp
+      tauaer400_ph(:) = 0.0_dp
+      tauaer600_ph(:) = 0.0_dp
+      tauaer999_ph(:) = 0.0_dp
+      waer300_ph(:) = 0.0_dp
+      waer400_ph(:) = 0.0_dp
+      waer600_ph(:) = 0.0_dp
+      waer999_ph(:) = 0.0_dp
+      gaer300_ph(:) = 0.0_dp
+      gaer400_ph(:) = 0.0_dp
+      gaer600_ph(:) = 0.0_dp
+      gaer999_ph(:) = 0.0_dp
 
 !----------------------------------------------------
 !     assgin vertical profiles
@@ -1057,6 +1175,20 @@ include 'netcdf.inc'
       aant_ph(1:nlev)   = aantin(1:nlev)
       aso4_ph(1:nlev)   = aso4in(1:nlev)
       asal_ph(1:nlev)   = asalin(1:nlev)
+
+! rajesh:
+      tauaer300_ph(1:nlev-1) = tauaer300in(1:nlev-1)
+      tauaer400_ph(1:nlev-1) = tauaer400in(1:nlev-1)
+      tauaer600_ph(1:nlev-1) = tauaer600in(1:nlev-1)
+      tauaer999_ph(1:nlev-1) = tauaer999in(1:nlev-1)
+      waer300_ph(1:nlev-1) = waer300in(1:nlev-1)
+      waer400_ph(1:nlev-1) = waer400in(1:nlev-1)
+      waer600_ph(1:nlev-1) = waer600in(1:nlev-1)
+      waer999_ph(1:nlev-1) = waer999in(1:nlev-1)
+      gaer300_ph(1:nlev-1) = gaer300in(1:nlev-1)
+      gaer400_ph(1:nlev-1) = gaer400in(1:nlev-1)
+      gaer600_ph(1:nlev-1) = gaer600in(1:nlev-1)
+      gaer999_ph(1:nlev-1) = gaer999in(1:nlev-1)      
 
       tlay_ph(1:nlev-1) = 0.5_dp*(tlev_ph(1:nlev-1) + tlev_ph(2:nlev))
 
@@ -1082,7 +1214,12 @@ include 'netcdf.inc'
                     o3top, o2top, albedo(:,lu), z_ph, tlev_ph,   & 
                     tlay_ph, airlev_ph, rh_ph, xlwc_ph, o3_ph,   &
                     acb1_ph, acb2_ph, aoc1_ph, aoc2_ph, aant_ph, & 
-                    aso4_ph, asal_ph, ftuv, adjcoe, radfld )
+                    aso4_ph, asal_ph,                            &
+                    tauaer300_ph, tauaer400_ph, tauaer600_ph,    &
+                    tauaer999_ph, waer300_ph, waer400_ph,        &
+                    waer600_ph, waer999_ph, gaer300_ph,          &
+                    gaer400_ph, gaer600_ph, gaer999_ph,          &
+                    aer_ra_feedback, ftuv, adjcoe, radfld )
 
       do n = 1,njout
         prate(1:nlev-1,n) = ftuv(2:nlev,n)
@@ -1091,7 +1228,9 @@ include 'netcdf.inc'
 
       deallocate( ftuv, z_ph, tlev_ph, tlay_ph, airlev_ph, rh_ph, xlwc_ph, &
                   o3_ph, acb1_ph, acb2_ph, aoc1_ph, aoc2_ph, aant_ph, aso4_ph, &
-                  asal_ph )
+                  asal_ph, tauaer300_ph, tauaer400_ph,tauaer600_ph, tauaer999_ph,  &
+                  waer300_ph, waer400_ph, waer600_ph, waer999_ph, &
+                  gaer300_ph, gaer400_ph, gaer600_ph, gaer999_ph )
        
       end subroutine photo
 

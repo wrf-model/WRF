@@ -14,10 +14,14 @@ CONTAINS
    SUBROUTINE ACMPBL(XTIME,    DTPBL,    ZNW,   SIGMAH,               &
                      U3D,      V3D,      PP3D,  DZ8W, TH3D, T3D,      &
                      QV3D,     QC3D,     QI3D,  RR3D,                 &
+#if (WRF_CHEM == 1)
+                     CHEM3D,   VD3D,     NCHEM,                       &  ! For WRF-Chem
+                     KDVEL, NDVEL, NUM_VERT_MIX,                      &  ! For WRF-Chem
+#endif
                      UST,      HFX,      QFX,   TSK,                  &
                      PSFC,     EP1,      G,                           &
                      ROVCP,    RD,       CPD,                         &
-                     PBLH,     KPBL2D,   REGIME,                      &
+                     PBLH,     KPBL2D,   EXCH_H, REGIME,              &
                      GZ1OZ0,   WSPD,     PSIM, MUT,                   &
                      RUBLTEN,  RVBLTEN,  RTHBLTEN,                    &
                      RQVBLTEN, RQCBLTEN, RQIBLTEN,                    &
@@ -43,6 +47,7 @@ CONTAINS
 !     AX        3/2005   - developed WRF version based on the MM5 PX LSM
 !     RG and JP 7/2006   - Finished WRF adaptation
 !     JP 12/2011 12/2011 - ACM2 modified so it's not dependent on first layer thickness. 
+!     JP        3/2013   - WRFChem version. Mixing of chemical species are added
 !
 !**********************************************************************
 !   ARGUMENT LIST:
@@ -62,6 +67,9 @@ CONTAINS
 !-- QC3D            3D cloud mixing ratio (Kg/Kg)
 !-- QI3D            3D ice mixing ratio (Kg/Kg)
 !-- RR3D            3D dry air density (kg/m^3)
+!-- CHEM3D          Chemical species mixing ratios (ppm)  Optional for WRFChem   
+!-- VD3D            Dry deposition velocity (m/s)         Optional for WRFChem
+!-- NCHEM           Number of chemical species            Optional for WRFChem
 !-- UST             Friction Velocity (m/s)
 !-- HFX		    Upward heat flux at the surface (w/m^2)
 !-- QFX		    Upward moisture flux at the surface (Kg/m^2/s)
@@ -137,17 +145,33 @@ CONTAINS
                                                         RTHBLTEN, RQVBLTEN,  &
                                                         RQCBLTEN, RQIBLTEN
 
+   real,     dimension( ims:ime, kms:kme, jms:jme ),                         &
+             intent(inout)   ::                         exch_h
+
     INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(OUT  ) ::  KPBL2D
 
+ 
+#if (WRF_CHEM == 1)
+!... Chem
+    INTEGER, INTENT(IN   )   ::   nchem, kdvel, ndvel, num_vert_mix
+    REAL,    DIMENSION( ims:ime, kms:kme, jms:jme, nchem ), INTENT(INOUT) :: CHEM3D
+    REAL,    DIMENSION( ims:ime, kdvel, jms:jme, ndvel ), INTENT(IN) :: VD3D
+#endif
 !... Local Variables
 
 !... Integer
-      INTEGER :: J, K
+      INTEGER :: I, J, K, L
 !... Real
       REAL, DIMENSION( kts:kte ) :: DSIGH, DSIGHI, DSIGFI
       REAL, DIMENSION( 0:kte )   :: SIGMAF
       REAL  RDT
       REAL, PARAMETER :: KARMAN = 0.4
+
+#if (WRF_CHEM == 1)
+!... Chem
+    REAL,    DIMENSION( ims:ime, kms:kme, nchem ) :: CHEM2D
+    REAL,    DIMENSION( ims:ime, kdvel, ndvel ) :: VD2D
+#endif
 !...
 
    RDT = 1.0 / DTPBL
@@ -168,13 +192,37 @@ CONTAINS
 
    DSIGFI(kte) = DSIGFI(kte-1)
    
-   DO j = jts,jte
+   DO j = jts,jte   
+#if (WRF_CHEM == 1)
+      DO L = 1, nchem
+      DO K = kms,kme
+      DO I = ims, ime
+        CHEM2D(i,k,l) = chem3d(i,k,j,l)
+      ENDDO
+      ENDDO
+      ENDDO
+
+      DO L = 1, ndvel
+      DO K = 1, kdvel
+      DO I = ims, ime
+        VD2D(i,k,l) = VD3D(i,k,j,l)
+      ENDDO
+      ENDDO
+      ENDDO
+#endif
       CALL ACM2D(j=J,xtime=XTIME, dtpbl=DTPBL, sigmaf=SIGMAF, sigmah=SIGMAH    &
               ,dsigfi=DSIGFI,dsighi=DSIGHI,dsigh=DSIGH             &
               ,us=u3d(ims,kms,j),vs=v3d(ims,kms,j)                 &
               ,theta=th3d(ims,kms,j),tt=t3d(ims,kms,j)             &
               ,qvs=qv3d(ims,kms,j),qcs=qc3d(ims,kms,j)             &
-              ,qis=qi3d(ims,kms,j),dzf=DZ8W(ims,kms,j)             &
+              ,qis=qi3d(ims,kms,j)                                 &
+#if (WRF_CHEM == 1)
+              ,chem=chem2d                                         &
+              ,vd=vd2d                                             &
+              ,nchem=nchem,kdvel=kdvel,ndvel=ndvel                 &
+              ,num_vert_mix=num_vert_mix                           &
+#endif
+              ,dzf=DZ8W(ims,kms,j)                                 &
               ,densx=RR3D(ims,kms,j)                               &
               ,utnp=rublten(ims,kms,j),vtnp=rvblten(ims,kms,j)     &
               ,ttnp=rthblten(ims,kms,j),qvtnp=rqvblten(ims,kms,j)  &
@@ -182,6 +230,7 @@ CONTAINS
               ,cpd=cpd,g=g,rovcp=rovcp,rd=rd,rdt=rdt               &
               ,psfcpa=psfc(ims,j),ust=ust(ims,j)                   &
               ,pbl=pblh(ims,j)                                     &
+              ,exch_hx=exch_h(ims,kms,j)                           &
               ,regime=regime(ims,j),psim=psim(ims,j)               &
               ,hfx=hfx(ims,j),qfx=qfx(ims,j)                       &
               ,tg=tsk(ims,j),gz1oz0=gz1oz0(ims,j)                  &
@@ -191,6 +240,13 @@ CONTAINS
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde   &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme   &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
+#if (WRF_CHEM == 1)
+      DO L = 1, nchem
+      DO I = ims, ime
+        chem3d(i,kms:kme,j,l) = CHEM2D(i,kms:kme,l)
+      ENDDO
+      ENDDO
+#endif
    ENDDO
 
    END SUBROUTINE ACMPBL
@@ -203,9 +259,13 @@ CONTAINS
    SUBROUTINE ACM2D(j,XTIME, DTPBL, sigmaf, sigmah          &
               ,dsigfi,dsighi,dsigh                          &
               ,us,vs,theta,tt,qvs,qcs,qis                   &
+#if (WRF_CHEM == 1)
+              ,chem,  vd, nchem, kdvel, ndvel               &
+              ,num_vert_mix                                 &
+#endif
               ,dzf,densx,utnp,vtnp,ttnp,qvtnp,qctnp,qitnp   &
               ,cpd,g,rovcp,rd,rdt,psfcpa,ust                &
-              ,pbl,regime,psim                              &
+              ,pbl,exch_hx,regime,psim                      &
               ,hfx,qfx,tg,gz1oz0,wspd ,klpbl                &
               ,mut                                          &
               ,ep1,karman                                   &
@@ -241,13 +301,20 @@ CONTAINS
       real,     dimension( ims:ime ), intent(in)      ::   wspd, psim, gz1oz0
       real,     dimension( ims:ime ), intent(in)      ::   hfx, qfx
       real,     dimension( ims:ime ), intent(in)      ::   mut
-
+      real,     dimension( ims:ime, kms:kme ),                    &
+                intent(inout)                         ::   exch_hx
 !... Integer
       INTEGER, DIMENSION( ims:ime ),       INTENT(OUT):: KLPBL
       INTEGER,  INTENT(IN)      ::      XTIME
       integer,  intent(in   )   ::      ids,ide, jds,jde, kds,kde, &
                                         ims,ime, jms,jme, kms,kme, &
                                         its,ite, jts,jte, kts,kte, j
+#if (WRF_CHEM == 1)
+!....Chem
+      INTEGER,  INTENT(IN)      ::      NCHEM, KDVEL,NDVEL,NUM_VERT_MIX
+      REAL , DIMENSION( ims:ime, kms:kme, NCHEM ), INTENT(INOUT)  :: CHEM
+      REAL , DIMENSION( ims:ime, KDVEL, NDVEL ), INTENT(IN)  :: VD
+#endif
 !--------------------------------------------------------------------
 !--Local 
       INTEGER I, K     
@@ -266,7 +333,7 @@ CONTAINS
       REAL,    DIMENSION( its:ite )          :: PBLSIG, MOL
       REAL    ::  FINTT, ZMIX, UMIX, VMIX
       REAL    ::  TMPFX, TMPVTCON, TMPP, TMPTHS, TMPTH1, TMPVCONV, WS1, DTH
-	REAL    ::  A,TST12,RL,ZFUNC
+	REAL    ::  A,TST12,RL,ZFUNC,DENSF
 !    REAL, PARAMETER :: KARMAN = 0.4
 
 !... Integer
@@ -444,9 +511,22 @@ CONTAINS
                  TST, QST,  USTM,   EDDYZ,  DENSX,                  &
                  US,    VS,     THETA,  QVS,    QCS,    QIS,        &
                  UX,    VX,     THETAX, QVX,    QCX,    QIX,        &
+#if (WRF_CHEM == 1)
+                 CHEM,  VD,  NCHEM, KDVEL, NDVEL,NUM_VERT_MIX,      &
+#endif
                  ids,ide, jds,jde, kds,kde,                         &
                  ims,ime, jms,jme, kms,kme,                         &
                  its,ite, jts,jte, kts,kte)
+
+!.. Load exch_h for use in CCN activation
+
+     DO K = kts, kte-1
+       DO I = its, ite
+         DENSF     = 0.5 * (DENSX(I,K+1) + DENSX(I,K))
+         exch_hx(I,K) = EDDYZ(I,K) /( (DENSF * G / PSTAR(I)) ** 2 *  &
+                       DTPBL * DSIGFI(K)*1E-6 )
+       ENDDO
+     ENDDO
 
 !... Calculate tendency due to PBL parameterization
 
@@ -718,6 +798,10 @@ CONTAINS
                    TST, QST,  USTM,   EDDYZ,  DENSX,               &
                    US,    VS,     THETA,  QVS,    QCS,    QIS,     &
                    UX,    VX,     THETAX, QVX,    QCX,    QIX,     &
+#if (WRF_CHEM == 1)
+                   CHEM,  VD, NCHEM, KDVEL, NDVEL,                 &
+                   NUM_VERT_MIX,                                   &
+#endif
                    ids,ide, jds,jde, kds,kde,                      &
                    ims,ime, jms,jme, kms,kme,                      &
                    its,ite, jts,jte, kts,kte)
@@ -728,6 +812,7 @@ CONTAINS
 !---- REVISION HISTORY:
 !   AX     3/2005 - developed WRF version based on ACM2 in the MM5 PX LSM
 !   JP and RG 8/2006 - updates
+!   JP     3/2013 - Chem additions
 !
 !**********************************************************************
 !  ARGUMENTS:
@@ -760,6 +845,9 @@ CONTAINS
 !-- QVX             new water vapor mixing ratio (Kg/Kg)
 !-- QCX             new cloud mixing ratio (Kg/Kg)
 !-- QIX             new ice mixing ratio (Kg/Kg)
+!-- CHEM            Chemical species mixing ratios (ppm)  WRFChem   
+!-- VD              Dry deposition velocity (m/s)         WRFChem
+!-- NCHEM           Number of chemical species            WRFChem
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
 
@@ -787,10 +875,16 @@ CONTAINS
                                                            QVS, QCS, QIS, DENSX
       REAL , DIMENSION( its:ite, kts:kte ), INTENT(OUT) :: UX, VX, THETAX,      &
                                                            QVX, QCX, QIX
+#if (WRF_CHEM == 1)
+!......Chem
+      INTEGER,  INTENT(IN)      ::   NCHEM, KDVEL, NDVEL, NUM_VERT_MIX
+      REAL , DIMENSION( ims:ime, kms:kme, nchem ), INTENT(INOUT)  :: CHEM   
+      REAL , DIMENSION( ims:ime, KDVEL, NDVEL ), INTENT(IN)  :: VD
+#endif
 !.......Local variables
 
 !... Parameters
-      INTEGER, PARAMETER :: NSP   = 6
+      INTEGER, PARAMETER :: NSP   = 6 
 !
 !......ACM2 Parameters
 !     INTEGER, PARAMETER :: IFACM = 0
@@ -800,7 +894,7 @@ CONTAINS
       REAL,    PARAMETER :: KARMAN = 0.4
 
 !... Integer
-      INTEGER :: ILX, KL, KLM, I, K, NSPX, NLP, NL, JJ, L
+      INTEGER :: ILX, KL, KLM, I, K, NSPX, NLP, NL, JJ, L,LL
       INTEGER :: KCBLMX
       INTEGER, DIMENSION( its:ite ) :: KCBL
 
@@ -809,23 +903,35 @@ CONTAINS
       REAL                               :: EKZ, RZ, FM, WSPD, DTS, DTRAT, F1
       REAL, DIMENSION( its:ite )         :: PSTARI, FSACM, DTLIM
       REAL, DIMENSION( kts:kte, its:ite) :: MBARKS, MDWN
-      REAL, DIMENSION( 1:NSP, its:ite )  :: FS, BCBOTN
       REAL, DIMENSION( kts:kte )         :: XPLUS, XMINUS
       REAL  DELC
-      REAL, DIMENSION( 1:NSP,its:ite,kts:kte  ) :: VCI
+      REAL, DIMENSION( kts:kte )                :: AI, BI, CI, EI !, Y
+      REAL, ALLOCATABLE, DIMENSION( : , : )     :: DI, UI    
+      REAL, ALLOCATABLE, DIMENSION( : , : )     :: FS, BCBOTN
+      REAL, ALLOCATABLE, DIMENSION( : , : , : ) :: VCI
 
-      REAL, DIMENSION( kts:kte )               :: AI, BI, CI, EI !, Y
-      REAL, DIMENSION( 1:NSP,kts:kte )         :: DI, UI    
+      CHARACTER*80 :: message
+
 !
 !--Start Exicutable ----
 
       ILX = ite
       KL  = kte
       KLM = kte - 1
+      NSPX = NSP
+#if (WRF_CHEM == 1)
+      NSPX = NSPX + NUM_VERT_MIX 
+#endif
 
       G1000I = 1.0 / G1000
       KCBLMX = 0
       MBMAX  = 0.0
+!...Allocate species variables
+      ALLOCATE (DI( 1:NSPX,kts:kte ))       
+      ALLOCATE (UI( 1:NSPX,kts:kte ))  
+      ALLOCATE (FS( 1:NSPX, its:ite ))
+      ALLOCATE (BCBOTN( 1:NSPX, its:ite ))  
+      ALLOCATE (VCI( 1:NSPX,its:ite,kts:kte  ))
 
 !---COMPUTE ACM MIXING RATE
       DO I = its, ILX
@@ -883,10 +989,13 @@ CONTAINS
           ! IF (IMOISTX.NE.1.AND.IMOISTX.NE.3) THEN  !!! Check other PBL models
           VCI(5,I,K) = QCS(I,K)
           VCI(6,I,K) = QIS(I,K)
+#if (WRF_CHEM == 1)
+          DO L= 7, NSPX
+             VCI(L,I,K) = CHEM(I,K,L-NSP)
+          ENDDO
+#endif
         ENDDO
       ENDDO
-
-      NSPX=6
 
       DO I = its,ILX
         FS(1,I) = -UST(I) * TST(I) * DENSX(I,1) * PSTARI(I)
@@ -897,6 +1006,11 @@ CONTAINS
         FS(4,I) = FM * VS(I,1) / WSPD
         FS(5,I) = 0.0
         FS(6,I) = 0.0                      ! SURFACE FLUXES OF CLOUD WATER AND ICE = 0
+#if (WRF_CHEM == 1)
+        DO L= 7, NSPX
+          FS(L,I) = -VD(I,1,L-NSP) * CHEM(I,1,L-NSP) * DENSX(I,1) * PSTARI(I)
+        ENDDO
+#endif
       ENDDO
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -909,7 +1023,7 @@ CONTAINS
 
 !-- COMPUTE ARRAY ELEMENTS THAT ARE INDEPENDANT OF SPECIES
 
-          DO K = kts,KL
+          DO K = kts,kte
             AI(K) = 0.0
             BI(K) = 0.0
             CI(K) = 0.0
@@ -1025,15 +1139,21 @@ CONTAINS
           QVX(I,K)    = VCI(2,I,K)
           UX(I,K)     = VCI(3,I,K)
           VX(I,K)     = VCI(4,I,K)
-        ENDDO
+          QCX(I,K)    = VCI(5,I,K)
+          QIX(I,K)    = VCI(6,I,K)
+#if (WRF_CHEM == 1)
+          DO LL= 7, NSPX
+             CHEM(I,K,LL-NSP) = VCI(LL,I,K) 
+          ENDDO
+#endif
+      ENDDO
       ENDDO
 
-      DO K = kts,KL
-        DO I = its,ILX
-          QCX(I,K) = VCI(5,I,K)
-          QIX(I,K) = VCI(6,I,K)
-        ENDDO
-      ENDDO
+      DEALLOCATE (DI)       
+      DEALLOCATE (UI)  
+      DEALLOCATE (FS)
+      DEALLOCATE (BCBOTN)  
+      DEALLOCATE (VCI)
 
    END SUBROUTINE ACM
 !-----------------------------------------------------------------------

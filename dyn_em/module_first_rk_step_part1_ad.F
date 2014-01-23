@@ -412,7 +412,7 @@ BENCH_START(a_pbl_driver_tim)
      &        ,HOL=HOL, MOL=grid%mol, REGIME=grid%REGIME                  &
 !mynn mp
      &        ,QKE=scalar(ims,kms,jms,P_qke_adv), tsq=grid%tsq, qsq=grid%qsq  &
-     &        ,cov=grid%cov, EL_MYNN=grid%el_mynn                         &
+     &        ,cov=grid%cov                                               &
      &        ,DQKE=grid%dqke,QWT=grid%qWT                                &
      &        ,QSHEAR=grid%qSHEAR,QBUOY=grid%qBUOY,QDISS=grid%qDISS &
      &        ,bl_mynn_tkebudget=config_flags%bl_mynn_tkebudget           &

@@ -2,10 +2,13 @@
 
 C$$$  SUBPROGRAM DOCUMENTATION BLOCK
 C
-C SUBPROGRAM:    NVNWIN (docblock incomplete)
+C SUBPROGRAM:    NVNWIN
 C   PRGMMR: WOOLLEN          ORG: NP20       DATE: 1994-01-06
 C
-C ABSTRACT: THIS FUNCTION ....
+C ABSTRACT: THIS FUNCTION LOOKS FOR AND RETURNS ALL OCCURRENCES OF A
+C   SPECIFIED NODE WITHIN THE PORTION OF THE CURRENT SUBSET BUFFER
+C   BOUNDED BY THE INDICES INV1 AND INV2.  THE RESULTING LIST IS A
+C   STACK OF "EVENT" INDICES FOR THE REQUESTED NODE. 
 C
 C PROGRAM HISTORY LOG:
 C 1994-01-06  J. WOOLLEN -- ORIGINAL AUTHOR
@@ -22,28 +25,31 @@ C 2003-11-04  D. KEYSER  -- MAXJL (MAXIMUM NUMBER OF JUMP/LINK ENTRIES)
 C                           INCREASED FROM 15000 TO 16000 (WAS IN
 C                           VERIFICATION VERSION); UNIFIED/PORTABLE FOR
 C                           WRF; ADDED DOCUMENTATION (INCLUDING
-C                           HISTORY) (INCOMPLETE); OUTPUTS MORE
-C                           COMPLETE DIAGNOSTIC INFO WHEN ROUTINE
-C                           TERMINATES ABNORMALLY OR UNUSUAL THINGS
-C                           HAPPEN
+C                           HISTORY); OUTPUTS MORE COMPLETE DIAGNOSTIC
+C                           INFO WHEN ROUTINE TERMINATES ABNORMALLY OR
+C                           UNUSUAL THINGS HAPPEN
+C 2009-03-23  J. ATOR    -- USE 1E9 TO PREVENT OVERFLOW WHEN
+C                           INITIALIZING INVN; USE ERRWRT
+C 2009-03-31  J. WOOLLEN -- ADDED DOCUMENTATION
 C
 C USAGE:    NVNWIN (NODE, LUN, INV1, INV2, INVN, NMAX)
 C   INPUT ARGUMENT LIST:
-C     NODE     - INTEGER: ....
+C     NODE     - INTEGER: JUMP/LINK TABLE INDEX TO LOOK FOR
 C     LUN      - INTEGER: I/O STREAM INDEX INTO INTERNAL MEMORY ARRAYS
-C     INV1     - INTEGER: ....
-C     INV2     - INTEGER: ....
-C     NMAX     - INTEGER: LENGTH OF INVN
+C     INV1     - INTEGER: STARTING INDEX OF THE PORTION OF THE SUBSET
+C                BUFFER IN WHICH TO LOOK
+C     INV2     - INTEGER: ENDING INDEX OF THE PORTION OF THE SUBSET
+C                BUFFER IN WHICH TO LOOK
+C     NMAX     - INTEGER: DIMENSIONED SIZE OF INVN; USED BY THE
+C                FUNCTION TO ENSURE THAT IT DOES NOT OVERFLOW THE
+C                INVN ARRAY
 C
 C   OUTPUT ARGUMENT LIST:
-C     INVN     - INTEGER: NMAX-WORD ARRAY ....
-C     NVNWIN   - INTEGER: ....
-C
-C   OUTPUT FILES:
-C     UNIT 06  - STANDARD OUTPUT PRINT
+C     INVN     - INTEGER: ARRAY OF STACK "EVENT" INDICES FOR NODE
+C     NVNWIN   - INTEGER: NUMBER OF INDICES RETURNED WITHIN INVN
 C
 C REMARKS:
-C    THIS ROUTINE CALLS:        BORT
+C    THIS ROUTINE CALLS:        BORT     ERRWRT
 C    THIS ROUTINE IS CALLED BY: UFBEVN
 C                               Normally not called by any application
 C                               programs.
@@ -56,7 +62,7 @@ C$$$
 
       INCLUDE 'bufrlib.prm'
 
-      COMMON /USRINT/ NVAL(NFILES),INV(MAXJL,NFILES),VAL(MAXJL,NFILES)
+      COMMON /USRINT/ NVAL(NFILES),INV(MAXSS,NFILES),VAL(MAXSS,NFILES)
       COMMON /QUIET / IPRT
 
       CHARACTER*128 BORT_STR
@@ -66,38 +72,32 @@ C$$$
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------
 
+      NVNWIN = 0
+
       IF(NODE.EQ.0) THEN
          IF(IPRT.GE.1) THEN
-      PRINT*
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-         PRINT*, 'BUFRLIB: NVNWIN - NODE=0, IMMEDIATE RETURN'
-      PRINT*,'+++++++++++++++++++++++WARNING+++++++++++++++++++++++++'
-      PRINT*
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT('BUFRLIB: NVNWIN - NODE=0, IMMEDIATE RETURN')
+      CALL ERRWRT('+++++++++++++++++++++WARNING+++++++++++++++++++++++')
+      CALL ERRWRT(' ')
          ENDIF
          GOTO 100
       ENDIF
 
-c  .... DK: Shouldn't this be before RETURN above?
-      NVNWIN = 0
-
       DO I=1,NMAX
-!     INVN(I) = BMISS ! comment out for gfortran
-      INVN(I) = -9999999
+         INVN(I) = 1E9
       ENDDO
 
 C  SEARCH BETWEEN INV1 AND INV2
 C  ----------------------------
 
       DO N=INV1,INV2
-      IF(INV(N,LUN).EQ.NODE) THEN
-         NVNWIN = NVNWIN+1
-         INVN(NVNWIN) = N
-      ENDIF
+         IF(INV(N,LUN).EQ.NODE) THEN
+            IF(NVNWIN+1.GT.NMAX) GOTO 900
+            NVNWIN = NVNWIN+1
+            INVN(NVNWIN) = N
+         ENDIF
       ENDDO
-
-c  .... DK: Shouldn't this check be moved into do loop above to
-c            prevent array overflow in INVN ????
-      IF(NVNWIN.GT.NMAX) GOTO 900
 
 C  EXITS
 C  -----

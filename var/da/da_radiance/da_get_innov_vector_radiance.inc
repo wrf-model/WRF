@@ -50,7 +50,10 @@ subroutine da_get_innov_vector_radiance (it, grid, ob, iv)
    !------------------------------------------------------------------------
    if (use_varbc .or. freeze_varbc) then
       call da_varbc_pred(iv)
-      call da_varbc_coldstart(iv)  
+      !varbc coldstart can not be done here when num_fgat_time>1
+      if ( num_fgat_time == 1 ) then
+         call da_varbc_coldstart(iv)  
+      end if
       call da_varbc_direct(iv)      
    else if (biascorr) then
       do inst = 1, iv%num_inst                 ! loop for sensor
@@ -70,7 +73,8 @@ subroutine da_get_innov_vector_radiance (it, grid, ob, iv)
    !------------------------------------------------------------------------
    ! [4.0] Compute preconditioning for Variational bias correction
    !------------------------------------------------------------------------
-   if (use_varbc .and. it == 1) call da_varbc_precond(iv)
+   !varbc preconditioning shoud be done after get_innov_vector is done for all time slots
+   !if (use_varbc .and. it == 1) call da_varbc_precond(iv)  !moved to da_get_innov_vector.inc
    
    !------------------------------------------------------------------------
    ! [5.0] Prepare (QCed) bias statistics files

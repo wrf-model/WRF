@@ -12,10 +12,12 @@ public :: wetscav_mozcart
 
 save
 
-   integer, parameter :: wetscav_tab_cnt = 36
+   integer, parameter :: wetscav_tab_cnt = 37
    real, parameter :: zero = 0.
    real, parameter :: one  = 1.
    real, parameter :: four = 4.
+   real(8), parameter :: oner8  = 1._8
+   real(8), parameter :: fourr8 = 4._8
    real, parameter :: adj_factor = one + 10.*epsilon( one )
    real, parameter :: TICE = 273.
    real, parameter :: TMIX = 258.
@@ -45,7 +47,7 @@ CONTAINS
 
    subroutine wetscav_mozcart_init( id, numgas, config_flags )
 !----------------------------------------------------------------------
-!  Initialize the mozcart, mozcart-xnox wet scavenging module
+!  Initialize the mozart, mozcart wet scavenging module
 !----------------------------------------------------------------------
    use module_scalar_tables, only : chem_dname_table
 
@@ -76,6 +78,9 @@ is_allocated : &
        call wrf_error_fatal("mozcart_wetscav_init: failed to allocate wet_scav_tab")
      endif
 
+!----------------------------------------------------------------------
+!  NOTE: this table does NOT include an entry for SO4
+!----------------------------------------------------------------------
      wet_scav_tab(1) = wet_scav( 'h2o2', p_h2o2, (/8.33e+04, 7379., 2.2e-12, -3730., 0., 0./), 34.0135994, .false. )
      wet_scav_tab(2) = wet_scav( 'hno3', p_hno3, (/0., 0., 2.6e+06, 8700., 0., 0./), 63.0123405, .true. )
      wet_scav_tab(3) = wet_scav( 'hcho', p_hcho, (/6.30e+03, 6425., 0., 0., 0., 0./), 30.0251999, .false. )
@@ -112,6 +117,7 @@ is_allocated : &
      wet_scav_tab(34) = wet_scav( 'xooh', p_xooh, (/90.5, 5607., 0., 0., 0., 0./), 134.126602, .false. )
      wet_scav_tab(35) = wet_scav( 'ch3cooh', p_ch3cooh, (/4.1e3, 6300., 0., 0., 0., 0./), 60.0503998, .false. )
      wet_scav_tab(36) = wet_scav( 'so2', p_so2, (/8.33e+04, 7379., 2.2e-12, -3730., 0., 0./), 34.0135994, .false. )
+     wet_scav_tab(37) = wet_scav( 'h2so4', p_h2so4, (/0., 0., 2.6e+06, 8700., 0., 0./), 98.0784, .false. )
  
    hetcnt = 0
    do m = param_first_scalar,numgas
@@ -1497,9 +1503,13 @@ upper_level : &
 !  Maintain cloud core by reducing NC and AM area going into cloud below
 !-----------------------------------------------------------------------
                RCA = (RCXA*FCXA*CLOLDPCT + RCXB*FCXB*CLNEWPCT + RAX*FAX*AMCLPCT)/FCA
-               DCA = (RCXA*FCXA*CLOLDPCT)/(RCA*FCA)*DCXA + & 
-                     (RCXB*FCXB*CLNEWPCT)/(RCA*FCA)*DCXB + &
-                     (RAX*FAX*AMCLPCT)/(RCA*FCA)*DAX
+               if( RCA > zero ) then
+                 DCA = (RCXA*FCXA*CLOLDPCT)/(RCA*FCA)*DCXA + & 
+                       (RCXB*FCXB*CLNEWPCT)/(RCA*FCA)*DCXB + &
+                       (RAX*FAX*AMCLPCT)/(RCA*FCA)*DAX
+               else
+                 DCA = zero
+               endif
              else
                FCA = zero
                DCA = zero
@@ -1759,29 +1769,44 @@ function DEMPIRICAL( CWATER, RRATE )
 !-----------------------------------------------------------------------
 !  local variables
 !-----------------------------------------------------------------------
-      real :: RRATEX, WX, THETA, PHI, ETA, BETA, ALPHA, BEE
-      real :: GAMTHETA, GAMBETA
+      real(8), parameter :: big_diameter = 100._8            ! mm
+      real(8), parameter :: const0       = .638_8
+      real(8), parameter :: const1       = oner8 + const0
+
+      real(8) :: RRATEX, WX, THETA, PHI, ETA, BETA, ALPHA, BEE
+      real(8) :: GAMTHETA, GAMBETA
+      real(8) :: numer, denom
+      real(8) :: diameter                      ! mm
 
       real :: DEMPIRICAL
 
-      RRATEX = RRATE*3600.       !mm/hr
-      WX     = CWATER*1.0e3      !g/m3
+      if( cwater > 0._8 ) then
+        RRATEX = real(RRATE,kind=8)*3600._8       !mm/hr
+        WX     = real(CWATER,kind=8)*1.0e3_8      !g/m3
 
-      if( RRATEX > 0.04 ) then
-         THETA = exp( -1.43*log10( 7.*RRATEX ) ) + 2.8
+        if( RRATEX > 0.04_8 ) then
+           THETA = exp( -1.43_8*log10( 7._8*RRATEX ) ) + 2.8_8
+        else
+           THETA = 5._8
+        endif
+
+        PHI = RRATEX/(3600._8*10._8) !cgs units
+        ETA = exp( 3.01_8*THETA - 10.5_8 )
+        BETA  = THETA/const1
+        ALPHA = exp( FOURR8*(BETA - 3.5_8) )
+        BEE   = const0*BETA - ONER8
+        GAMTHETA = real( GAMMA( real(THETA,kind=4) ),kind=8 )
+        GAMBETA  = real( GAMMA( real(BETA + ONER8,kind=4) ),kind=8 )
+
+        numer = WX*ETA*GAMTHETA
+        denom = 1.0e6_8*ALPHA*PHI*GAMBETA
+        diameter = ((numer/denom)**(-oner8/BEE))*10._8
+        diameter = min( big_diameter,diameter )
+        DEMPIRICAL = real( diameter )
+!     DEMPIRICAL = (((WX*ETA*GAMTHETA)/(1.0e6*ALPHA*PHI*GAMBETA))** (-one/BEE))*10.  ! in mm (wx/1e6 for cgs)
       else
-         THETA = 5.
+        DEMPIRICAL = 0.
       endif
-
-      PHI = RRATEX/(3600.*10.) !cgs units
-      ETA = exp( 3.01*THETA - 10.5 )
-      BETA  = THETA/(one + 0.638)
-      ALPHA = exp( FOUR*(BETA - 3.5) )
-      BEE   = (.638*THETA)/(one + .638) - ONE
-      GAMTHETA = GAMMA( THETA )
-      GAMBETA  = GAMMA( BETA + ONE )
-
-      DEMPIRICAL = (((WX*ETA*GAMTHETA)/(1.0e6*ALPHA*PHI*GAMBETA))** (-one/BEE))*10.  ! in mm (wx/1e6 for cgs)
 
 end function DEMPIRICAL
 

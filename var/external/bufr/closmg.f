@@ -80,7 +80,8 @@ C
 C REMARKS:
 C    THIS ROUTINE CALLS:        BORT     MSGWRT   STATUS   WRCMPS
 C                               WTSTAT
-C    THIS ROUTINE IS CALLED BY: CLOSBF   OPENMB   OPENMG   WRITSA
+C    THIS ROUTINE IS CALLED BY: CLOSBF   MAKESTAB OPENMB   OPENMG
+C                               WRITSA
 C                               Also called by application programs.
 C
 C ATTRIBUTES:

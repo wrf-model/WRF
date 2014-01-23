@@ -502,7 +502,9 @@ contains
          rt(i,k) = rv(i,k) + rl(i,k)        ! Total water (without ice)
          chi_poisson(i,k) = rcp * (1.+rv(i,k)/ep2) / (1.+rv(i,k)*cpv/cp)
          gam(i,k) = rt(i,k) * r_v / (cp + rt(i,k)*cpv)
-         thetal(i,k) = thx(i,k-1) * ((ep2+rv(i,k))/(ep2+rt(i,k)))**chi_poisson(i,k) * (rv(i,k)/rt(i,k))**(-gam(i,k)) * exp( -xlv*rl(i,k) / ((cp + rt(i,k)*cpv) * tx(i,k)))
+         thetal(i,k) = thx(i,k-1) * ((ep2+rv(i,k))/(ep2+rt(i,k)))**chi_poisson(i,k) * &
+                                    (rv(i,k)/rt(i,k))**(-gam(i,k)) * &
+                                    exp( -xlv*rl(i,k) / ((cp + rt(i,k)*cpv) * tx(i,k)))
          qt(i,k) = qvx(i,k-1) + qcx(i,k-1)
          ! thetav(i,k) = thetal(i,k) * (1. + 0.608*qt(i,k))  ! WA Assumes ql(env)=0, what if it isn't?
          thetav(i,k) = thetal(i,k) * (1. + 0.608*qt(i,k) - qcx(i,k-1))  ! WA 4/6/10 allow environment liquid
@@ -620,9 +622,11 @@ contains
          TKE(i,kt) = te_temfx(i,kt) * (1. - ratio(i,kt))
          ustrtilde(i,kt) = sqrt(ftau(i,kt) * TKE(i,kt))
          if (N2(i,kt) > 0.) then
-            linv(i,kt) = 1./karman / zt(i,kt) + abs(fCor(i)) / (Cf*ustrtilde(i,kt)) + sqrt(N2(i,kt))/(CN*ustrtilde(i,kt)) + 1./lasymp  ! WA Test 11/20/09
+            linv(i,kt) = 1./karman / zt(i,kt) + abs(fCor(i)) / (Cf*ustrtilde(i,kt)) + &
+            sqrt(N2(i,kt))/(CN*ustrtilde(i,kt)) + 1./lasymp  ! WA Test 11/20/09
          else
-            linv(i,kt) = 1./karman / zt(i,kt) + abs(fCor(i)) / (Cf*ustrtilde(i,kt)) + 1./lasymp  ! WA Test 11/20/09
+            linv(i,kt) = 1./karman / zt(i,kt) + abs(fCor(i)) / (Cf*ustrtilde(i,kt)) + &
+                                                  1./lasymp  ! WA Test 11/20/09
          end if
          leps(i,kt) = 1./linv(i,kt)
          leps(i,kt) = max(leps(i,kt),lepsmin(i,kt))
@@ -871,12 +875,18 @@ contains
 
          ! Calculate mass flux contributions to fluxes (defined on turb levels)
          ! Use log interpolation at first level
-         MFCth(i,1) = mf_temfx(i,1) * (thup_temfx(i,1)-thetal(i,1) + (thup_temfx(i,2)-thetal(i,2) - (thup_temfx(i,1)-thetal(i,1))) * log(zt(i,1)/znt(i))/log(zm(i,2)/znt(i)))
-         MFCq(i,1) = mf_temfx(i,1) * (qtup_temfx(i,1)-qt(i,1) + (qtup_temfx(i,2)-qt(i,2) - (qtup_temfx(i,1)-qt(i,1))) * log(zt(i,1)/znt(i))/log(zm(i,2)/znt(i)))
-         MFCu(i,1) = mf_temfx(i,1) * (UUPD(i,1)-u_temf(i,1) + (UUPD(i,2)-u_temf(i,2) - (UUPD(i,1)-u_temf(i,1))) * log(zt(i,1)/znt(i))/log(zm(i,2)/znt(i)))
-         MFCv(i,1) = mf_temfx(i,1) * (VUPD(i,1)-v_temf(i,1) + (VUPD(i,2)-v_temf(i,2) - (VUPD(i,1)-v_temf(i,1))) * log(zt(i,1)/znt(i))/log(zm(i,2)/znt(i)))
-         MFCql(i,1) = mf_temfx(i,1) * (qlUPD(i,1)-qcx(i,1) + (qlUPD(i,2)-qcx(i,2) - (qlUPD(i,1)-qcx(i,1))) * log(zt(i,1)/znt(i))/log(zm(i,2)/znt(i)))
-         MFCTE(i,1) = mf_temfx(i,1) * (TEUPD(i,1)-te_temfx(i,1) + (TEUPD(i,2)-te_temfx(i,2) - (TEUPD(i,1)-te_temfx(i,1))) * log(zt(i,1)/znt(i))/log(zm(i,2)/znt(i)))  ! WA Check this
+         MFCth(i,1) = mf_temfx(i,1) * (thup_temfx(i,1)-thetal(i,1) + &
+         (thup_temfx(i,2)-thetal(i,2) - (thup_temfx(i,1)-thetal(i,1))) * log(zt(i,1)/znt(i))/log(zm(i,2)/znt(i)))
+         MFCq(i,1) = mf_temfx(i,1) * (qtup_temfx(i,1)-qt(i,1) + &
+         (qtup_temfx(i,2)-qt(i,2) - (qtup_temfx(i,1)-qt(i,1))) * log(zt(i,1)/znt(i))/log(zm(i,2)/znt(i)))
+         MFCu(i,1) = mf_temfx(i,1) * (UUPD(i,1)-u_temf(i,1) + &
+         (UUPD(i,2)-u_temf(i,2) - (UUPD(i,1)-u_temf(i,1))) * log(zt(i,1)/znt(i))/log(zm(i,2)/znt(i)))
+         MFCv(i,1) = mf_temfx(i,1) * (VUPD(i,1)-v_temf(i,1) + &
+         (VUPD(i,2)-v_temf(i,2) - (VUPD(i,1)-v_temf(i,1))) * log(zt(i,1)/znt(i))/log(zm(i,2)/znt(i)))
+         MFCql(i,1) = mf_temfx(i,1) * (qlUPD(i,1)-qcx(i,1) + &
+         (qlUPD(i,2)-qcx(i,2) - (qlUPD(i,1)-qcx(i,1))) * log(zt(i,1)/znt(i))/log(zm(i,2)/znt(i)))
+         MFCTE(i,1) = mf_temfx(i,1) * (TEUPD(i,1)-te_temfx(i,1) + &
+         (TEUPD(i,2)-te_temfx(i,2) - (TEUPD(i,1)-te_temfx(i,1))) * log(zt(i,1)/znt(i))/log(zm(i,2)/znt(i)))  ! WA Check this
          do kt = 2,kte-1
             MFCth(i,kt) = mf_temfx(i,kt) * (thup_temfx(i,kt)-thetal(i,kt) + thup_temfx(i,kt+1)-thetal(i,kt+1)) / 2.
             MFCq(i,kt) = mf_temfx(i,kt) * (qtup_temfx(i,kt)-qt(i,kt) + qtup_temfx(i,kt+1)-qt(i,kt+1)) / 2.
@@ -1010,11 +1020,13 @@ contains
       end do
       alpha2(i,1) = 0.61 * (thetal(i,1) + (thetal(i,2)-thetal(i,1)) * (zt(i,2) - znt(i)) / (zm(i,2) - znt(i)))
       alpha2(i,kte) = 0.61 * thetal(i,kte)
-      beta2(i,1) = (100000. / p2di(i,1))**0.286 * 2.45e-6 / 1004.67 - 1.61 * (thetal(i,1) + (thetal(i,2) - thetal(i,1))  * (zt(i,2) - znt(i)) / (zm(i,2) - znt(i)))
+      beta2(i,1) = (100000. / p2di(i,1))**0.286 * 2.45e-6 / 1004.67 - &
+      1.61 * (thetal(i,1) + (thetal(i,2) - thetal(i,1))  * (zt(i,2) - znt(i)) / (zm(i,2) - znt(i)))
       beta2(i,kte) = (100000. / p2di(i,kte))**0.286 * 2.45e-6 / 1004.67 - 1.61 * thetal(i,kte)
       if ( is_convective ) then ! Activate EDMF components
          do kt = 1,kte-1
-            MFCthv(i,kt) = (1. + 0.61 * (qtup_temfx(i,kt)+qtup_temfx(i,kt+1))) / 2. * MFCth(i,kt) + alpha2(i,kt) * MFCq(i,kt) + beta2(i,kt) * MFCql(i,kt)
+            MFCthv(i,kt) = (1. + 0.61 * (qtup_temfx(i,kt)+qtup_temfx(i,kt+1))) / 2. * MFCth(i,kt) + &
+            alpha2(i,kt) * MFCq(i,kt) + beta2(i,kt) * MFCql(i,kt)
          end do
          MFCthv(i,kte) = 0.
       else    ! No MF components
@@ -1034,23 +1046,27 @@ contains
       ! in Matlab code are now handled by WRF outside this PBL context.
 
       u_new(i,:) = u_temf(i,:)
-      call solve_implicit_temf(km(i,kts:kte-1),u_new(i,kts+1:kte),uw_temfx(i,1),dzm(i,kts:kte-1),dzt(i,kts:kte-1),kts,kte-1,dt,.FALSE.)
+      call solve_implicit_temf(km(i,kts:kte-1),u_new(i,kts+1:kte),uw_temfx(i,1),&
+      dzm(i,kts:kte-1),dzt(i,kts:kte-1),kts,kte-1,dt,.FALSE.)
       do k = 2,kte-1
          u_new(i,k) = u_new(i,k) + dt * (-(MFCu(i,k)-MFCu(i,k-1))) / dzm(i,k)
       end do
 
       v_new(i,:) = v_temf(i,:)
-      call solve_implicit_temf(km(i,kts:kte-1),v_new(i,kts+1:kte),vw_temfx(i,1),dzm(i,kts:kte-1),dzt(i,kts:kte-1),kts,kte-1,dt,.FALSE.)
+      call solve_implicit_temf(km(i,kts:kte-1),v_new(i,kts+1:kte),vw_temfx(i,1),&
+      dzm(i,kts:kte-1),dzt(i,kts:kte-1),kts,kte-1,dt,.FALSE.)
       do k = 2,kte-1
          v_new(i,k) = v_new(i,k) + dt * (-(MFCv(i,k)-MFCv(i,k-1))) / dzm(i,k)
       end do
 
-      call solve_implicit_temf(kh(i,kts:kte-1),thetal(i,kts+1:kte),Fz(i,1),dzm(i,kts:kte-1),dzt(i,kts:kte-1),kts,kte-1,dt,.FALSE.)
+      call solve_implicit_temf(kh(i,kts:kte-1),thetal(i,kts+1:kte),Fz(i,1),&
+      dzm(i,kts:kte-1),dzt(i,kts:kte-1),kts,kte-1,dt,.FALSE.)
       do k = 2,kte-1
          thetal(i,k) = thetal(i,k) + dt * (-(MFCth(i,k)-MFCth(i,k-1))) / dzm(i,k)
       end do
 
-      call solve_implicit_temf(kh(i,kts:kte-1),qt(i,kts+1:kte),QFK(i,1),dzm(i,kts:kte-1),dzt(i,kts:kte-1),kts,kte-1,dt,.FALSE.)
+      call solve_implicit_temf(kh(i,kts:kte-1),qt(i,kts+1:kte),QFK(i,1),&
+      dzm(i,kts:kte-1),dzt(i,kts:kte-1),kts,kte-1,dt,.FALSE.)
       do k = 2,kte-1
          qt(i,k) = qt(i,k) + dt * (-(MFCq(i,k)-MFCq(i,k-1))) / dzm(i,k)
       end do
@@ -1101,7 +1117,8 @@ contains
       ! See opposite conversion at top of subroutine
       ! WA this accounts for offset of indexing between
       ! WRF and TEMF, see notes at top of this routine.
-      call thlqt2thqvqc(thetal(i,kts+1:kte),qt(i,kts+1:kte),thx_new(i,kts:kte-1),qvx_new(i,kts:kte-1),qcx_new(i,kts:kte-1),p2d(i,kts:kte-1),pi2d(i,kts:kte-1),kts,kte-1,ep2,xlv,cp)
+      call thlqt2thqvqc(thetal(i,kts+1:kte),qt(i,kts+1:kte),thx_new(i,kts:kte-1),qvx_new(i,kts:kte-1),qcx_new(i,kts:kte-1),&
+      p2d(i,kts:kte-1),pi2d(i,kts:kte-1),kts,kte-1,ep2,xlv,cp)
 
       do k = kts,kte-1
          ! Calculate tendency terms

@@ -35,9 +35,9 @@ C     IUPM     - INTEGER: UNPACKED INTEGER WORD
 C
 C REMARKS:
 C    THIS ROUTINE CALLS:        BORT     IREV
-C    THIS ROUTINE IS CALLED BY: CHRTRNA  CRBMG    DXMINI   PKC
-C                               PKTDD    RDBFDX   UPC      UPTDD
-C                               WRDLEN   WRITDX
+C    THIS ROUTINE IS CALLED BY: CHRTRNA  CRBMG    DXMINI   ICBFMS
+C                               PKC      PKTDD    STBFDX   UPC
+C                               UPTDD    WRDLEN   WRDXTB
 C                               Normally not called by any application
 C                               programs.
 C
@@ -47,7 +47,7 @@ C   MACHINE:  PORTABLE TO ALL PLATFORMS
 C
 C$$$
 
-      COMMON /HRDWRD/ NBYTW,NBITW,NREV,IORD(8)
+      COMMON /HRDWRD/ NBYTW,NBITW,IORD(8)
 
       CHARACTER*128 BORT_STR
       CHARACTER*8   CBAY

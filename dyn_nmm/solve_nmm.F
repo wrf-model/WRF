@@ -41,10 +41,14 @@
       USE MODULE_EXT_INTERNAL
       USE MODULE_PRECIP_ADJUST
       USE MODULE_NEST_UTIL     ! USEs module_MPP (contains MYPE,NPES,MPI_COMM_COMP)
+#ifdef MOVE_NESTS
       USE MODULE_STATS_FOR_MOVE,        ONLY: STATS_FOR_MOVE
+#endif
 #ifdef WRF_CHEM
       USE MODULE_INPUT_CHEM_DATA,       ONLY: GET_LAST_GAS
 #endif
+
+
 !-----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -308,6 +312,9 @@
          ETAMP_PHYSICS=.TRUE.
 !
       ENDIF
+
+
+
 !
 !-----------------------------------------------------------------------
 !***  SET FLAG FOR THE OPERATIONAL PHYSICS SUITE.
@@ -587,12 +594,12 @@
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
 !-----------------------------------------------------------------------
 !
-#ifdef HWRF
-!zhang
-      IF(NTSD_current==0)THEN
-#else
+!!#ifdef HWRF
+!!!zhang
+!!      IF(NTSD_current==0)THEN
+!!#else
       IF(grid%ntsd==0)THEN
-#endif
+!!#endif
         FIRST=.TRUE.
 !       call hpm_init()
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -1545,6 +1552,8 @@
      &                ,grid%z,grid%sice,NUM_AEROSOLC,NUM_OZMIXM                  &
      &                ,GRID,CONFIG_FLAGS                               &
      &                ,RTHRATEN                                        &  
+     &                ,grid%re_cloud,grid%re_ice,grid%re_snow          &  ! G. Thompson
+     &                ,grid%has_reqc,grid%has_reqi,grid%has_reqs       &  ! G. Thompson
 #ifdef WRF_CHEM
      &                ,PM2_5_DRY, PM2_5_WATER, PM2_5_DRY_EC            &
      &                ,TAUAER1, TAUAER2, TAUAER3, TAUAER4              & 
@@ -1627,7 +1636,7 @@
      &            ,grid%czen,grid%czmean,grid%sigt4,grid%rlwin,grid%rswin,grid%radot                 &
      &            ,grid%pd,grid%res,grid%pint,grid%t,grid%q,grid%cwm,grid%f_ice,grid%f_rain,grid%sr                 &
      &            ,grid%q2,grid%u,grid%v,grid%ths,grid%nmm_tsk,grid%sst,grid%prec,grid%sno                     &
-     &            ,grid%fis,grid%z0,grid%z0base,grid%ustar,grid%mixht,grid%pblh,grid%lpbl,grid%el_pbl          &   !PLee (3/07)
+     &            ,grid%fis,grid%z0,grid%mz0,grid%z0base,grid%ustar,grid%mixht,grid%pblh,grid%lpbl,grid%el_pbl    &   !KWON MZ0
      &            ,MOIST,grid%rmol,grid%mol                                      &
      &            ,grid%exch_h,grid%exch_m,grid%f,grid%akhs,grid%akms,grid%akhs_out,grid%akms_out         &
      &            ,grid%thz0,grid%qz0,grid%uz0,grid%vz0,grid%qsh,grid%mavail                         &
@@ -1661,8 +1670,8 @@
      &            ,grid%rc_mf                                          & ! QNSE
      &            ,GRID,CONFIG_FLAGS                                   &
      &            ,grid%ihe,grid%ihw,grid%ive,grid%ivw                 &
-     &            ,GRID%DISHEAT                                        &
-     &            ,GRID%HPBL2D, GRID%EVAP2D, GRID%HEAT2D               &  !S&P Kwon
+     &            ,GRID%DISHEAT,GRID%DKU3D,GRID%DKT3D                          &
+     &            ,GRID%HPBL2D, GRID%EVAP2D, GRID%HEAT2D,GRID%RC2D               &  !S&P Kwon
      &            ,GRID%SFCHEADRT,GRID%INFXSRT,GRID%SOLDRAIN           &  !Hydrology, no-op right now
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
@@ -1786,6 +1795,7 @@
      &   (CONFIG_FLAGS%CU_PHYSICS.eq.KFETASCHEME .or.                     &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME .or.                       &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.NSASSCHEME .or.                       &
+     &   CONFIG_FLAGS%CU_PHYSICS.eq.MESO_SAS .or.                         &   !Kwon
      &   CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN                       ! 
 !
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -1889,6 +1899,7 @@
         IF(MOD(grid%ntsd, GRID%NCNVC).eq.0.and.                 &
      &    (CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME.or.            &
      &     CONFIG_FLAGS%CU_PHYSICS.eq.NSASSCHEME.or.            &
+     &     CONFIG_FLAGS%CU_PHYSICS.eq.MESO_SAS.or.              & !Kwon
      &     CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN 
 !emc_2010_bugfix_h50
 !
@@ -1946,6 +1957,8 @@
      &               ,grid%tbpvs_state                                      &
      &               ,grid%tbpvs0_state                                     &
      &               ,GRID,CONFIG_FLAGS                                &
+     &               ,grid%re_cloud,grid%re_ice,grid%re_snow           &  ! G. Thompson
+     &               ,grid%has_reqc,grid%has_reqi,grid%has_reqs        &  ! G. Thompson
      &               ,IDS,IDF,JDS,JDF,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -2396,13 +2409,7 @@
 !-----------------------------------------------------------------------------
 !
 #ifdef MOVE_NESTS
-   IF(grid%id .NE. 1 .AND. MOD(grid%ntsd,1)==0 .AND. grid%num_moves.EQ.-99)THEN
-!-----------------
-#ifdef DM_PARALLEL
-#    include "HALO_NMM_TRACK.inc"
-#endif
-!-----------------
-
+   IF ( grid%num_moves.EQ.-99 ) THEN
       call start_timing()
       call stats_for_move(grid,config_flags &
                          ,IDS,IDE,JDS,JDE,KDS,KDE &

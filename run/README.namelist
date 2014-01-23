@@ -690,7 +690,7 @@ Namelist variables for controlling the adaptive time step option:
  icloud_cu                                	; sub-grid cloud effect to the optical depth in radiation
                                                   currently it works only for KF scheme
                                                   0 = no sub-grid cloudl effect
-                                                  1 = consider sub-grid cloudl effect
+                                                  1 = consider sub-grid cloud effect
  swrad_scat                          = 1.       ; scattering tuning parameter (default 1. is 1.e-5 m2/kg)
                                                   (works for ra_sw_physics = 1 option only)
  surface_input_source                = 1,	; where landuse and soil category data come from:

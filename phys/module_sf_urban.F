@@ -337,7 +337,6 @@ MODULE module_sf_urban
 
    REAL, INTENT(IN)    :: XLAT ! latitude                               [deg]
    REAL, INTENT(IN)    :: DELT ! time step                              [s]
-   REAL, INTENT(IN)    :: ZNT  ! roughness length                       [m]
    REAL, INTENT(IN)    :: CHS,CHS2 ! CH*U at za and 2 m             [m/s]
 
    REAL, INTENT(INOUT) :: SSGD ! downward direct short wave radiation   [W/m/m]
@@ -346,6 +345,7 @@ MODULE module_sf_urban
    REAL, INTENT(INOUT) :: CHR_URB
    REAL, INTENT(INOUT) :: CMC_URB
    REAL, INTENT(INOUT) :: CHC_URB
+   REAL, INTENT(INOUT) :: ZNT  ! roughness length                       [m]    ! modified by danli
 !-------------------------------------------------------------------------------
 ! I: NUDAPT Input Parameters
 !-------------------------------------------------------------------------------
@@ -1180,6 +1180,7 @@ MODULE module_sf_urban
    Z0 = Z0C 
    Z0H = Z0HC
    Z = ZA - ZDC
+   ZNT = Z0   ! add by Dan Li
 
    XXX = 0.4*9.81*Z*TST/TA/UST/UST
 

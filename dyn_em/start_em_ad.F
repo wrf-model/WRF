@@ -24,7 +24,7 @@
    USE module_comm_dm
 
    USE a_module_physics_init
-   USE module_diagnostics, ONLY : pld
+   USE module_diag_pld, ONLY : pld
 
    USE module_model_constants
 

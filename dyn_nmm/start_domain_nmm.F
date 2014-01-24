@@ -2023,6 +2023,7 @@
      &                zi3d=grid%zi3d, watsat3d=grid%watsat3d, csol3d=grid%csol3d, tkmg3d=grid%tkmg3d,                                               & !lake
      &                tkdry3d=grid%tkdry3d, tksatu3d=grid%tksatu3d, lake2d=grid%lake2d,                                                             & !lake
      &                domainlakedepth=config_flags%domain_lakedepth, lakeminalt=config_flags%lakeminalt, lake_depth=grid%lake_depth,               & !lake
+     &                sf_surface_mosaic=config_flags%sf_surface_mosaic, mosaic_cat=config_flags%mosaic_cat, nlcat=1,     & ! Noah tiling
      &                MAXPATCH=1 & ! CLM
      &                )
 
@@ -2045,14 +2046,20 @@
 !-----------------------------------------------------------------------
 !---- Initialization for gravity wave drag (GWD) & mountain blocking (MB)
 !
-      CALL nl_get_cen_lat(GRID%ID, CEN_LAT)    !-- CEN_LAT in deg
-      CALL nl_get_cen_lon(GRID%ID, CEN_LON)    !-- CEN_LON in deg
-      DTPHS=grid%dt*grid%nphs
-      CALL GWD_init(DTPHS,GRID%DX,GRID%DY,CEN_LAT,CEN_LON,RESTRT        &
+#if (HWRF == 1)
+   IF(grid%gwd_opt .eq. 2 .AND. grid%id .eq. 1 .AND. allowed_to_read) THEN
+#else
+   IF(grid%gwd_opt .eq. 2 ) THEN
+#endif
+        CALL nl_get_cen_lat(GRID%ID, CEN_LAT)    !-- CEN_LAT in deg
+        CALL nl_get_cen_lon(GRID%ID, CEN_LON)    !-- CEN_LON in deg
+        DTPHS=grid%dt*grid%nphs
+        CALL GWD_init(DTPHS,GRID%DX,GRID%DY,CEN_LAT,CEN_LON,RESTRT        &
      &              ,grid%glat,grid%glon,grid%crot,grid%srot,grid%hangl                          &
      &              ,IDS,IDE,JDS,JDE,KDS,KDE                            &
      &              ,IMS,IME,JMS,JME,KMS,KME                            &
      &              ,ITS,ITE,JTS,JTE,KTS,KTE )
+      ENDIF
       IF(.NOT.RESTRT)THEN
         DO J=MYJS,MYJE
         DO I=MYIS,MYIE

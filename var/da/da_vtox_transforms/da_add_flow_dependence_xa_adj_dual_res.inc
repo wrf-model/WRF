@@ -24,10 +24,12 @@ subroutine da_add_flow_dependence_xa_adj_dual_res (ne, ep, grid, vp)
                nims, nime, nkms, nkme, njms, njme, &
                nips, nipe, nkps, nkpe, njps, njpe
 
+#ifdef DM_PARALLEL
    ! HALO STUFF
    integer :: rsl_sendw_p, rsl_sendbeg_p, rsl_recvw_p, rsl_recvbeg_p
    integer :: rsl_sendw_m, rsl_sendbeg_m, rsl_recvw_m, rsl_recvbeg_m
    logical, external :: rsl_comm_iter
+#endif
 
 
    ! Get coarse (ensemble) grid dimensions ( grid%intermediate_gridd)

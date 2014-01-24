@@ -2208,26 +2208,30 @@ end if
 
         if ( ntotal(n)>0 ) then
 
-#ifdef DM_PARALLEL
-            ! Get minimum crit and associated processor index.
             allocate ( in  (thinning_grid_conv(n)%itxmax) )
             allocate ( out (thinning_grid_conv(n)%itxmax) )
             do i = 1, thinning_grid_conv(n)%itxmax
                in(i) = thinning_grid_conv(n)%score_crit(i)
             end do
+#ifdef DM_PARALLEL
+            ! Get minimum crit and associated processor index.
 
             call mpi_reduce(in, out, thinning_grid_conv(n)%itxmax, true_mpi_real, mpi_min, root, comm, ierr)
             call wrf_dm_bcast_real (out, thinning_grid_conv(n)%itxmax)
-
+#else
+            out = in
+#endif
             do i = 1, thinning_grid_conv(n)%itxmax
                if ( abs(out(i)-thinning_grid_conv(n)%score_crit(i)) > 1.0E-10 ) then
                   thinning_grid_conv(n)%ibest_obs(i) = 0
+               else
+                  if(thinning_grid_conv(n)%score_crit(i) < 9.99e6 ) &
+                  iv%info(n)%thin_ntotal=  iv%info(n)%thin_ntotal + 1
                end if
             end do
 
             deallocate( in  )
             deallocate( out )
-#endif
          
             do j = (1+tp(n)), nlocal(n)
                found = .false.
@@ -2235,6 +2239,7 @@ end if
                   if ( thinning_grid_conv(n)%ibest_obs(i) == j .and.         &
                        thinning_grid_conv(n)%score_crit(i) < 9.99e6 ) then
                      found = .true.
+                     iv%info(n)%thin_nlocal =  iv%info(n)%thin_nlocal + 1
                      exit
                   end if
                end do
@@ -2246,6 +2251,18 @@ end if
          tp(n)=nlocal(n) 
          end if
       end do
+       if (num_fgat_time >1 ) then
+          do n = 1, num_ob_indexes
+              iv%info(n)%thin_plocal(kk)=iv%info(n)%thin_nlocal
+              iv%info(n)%thin_ptotal(kk)=iv%info(n)%thin_ntotal
+          end do
+       else
+          do n = 1, num_ob_indexes
+             iv%info(n)%thin_plocal(1)=iv%info(n)%thin_nlocal
+             iv%info(n)%thin_ptotal(1)=iv%info(n)%thin_ntotal
+           end do
+        end if
+
    end if  ! thin_conv
 
  end do  !kk cycle

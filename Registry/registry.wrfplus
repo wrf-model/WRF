@@ -567,6 +567,10 @@ state   real    a_tr17_6     ikjftb  a_tracer        1         -     irh    "a_t
 state   real    a_tr17_7     ikjftb  a_tracer        1         -     irh    "a_tr17_7"         "a_tr17_7"          -
 state   real    a_tr17_8     ikjftb  a_tracer        1         -     irh    "a_tr17_8"         "a_tr17_8"
 
+state    real    g_th_old         ikj   misc        1         -    i01rusd    "g_TH_OLD"        "Old Value of Th"   "K"
+state    real    g_qv_old         ikj   misc        1         -    i01rusd    "g_QV_OLD"        "Old Value of qv"   "kg kg^-1"
+state    real    a_th_old         ikj   misc        1         -    i01rusd    "a_TH_OLD"        "Old Value of Th"   "K"
+state    real    a_qv_old         ikj   misc        1         -    i01rusd    "a_QV_OLD"        "Old Value of qv"   "kg kg^-1"
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 # Package Declarations
@@ -603,6 +607,7 @@ halo_nta      HALO_EM_D3_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,t
 halo_nta      HALO_EM_D3_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist,chem,tracer,scalar;4:mu_1,mu_2
 halo_nta      HALO_EM_E_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
 halo_nta      HALO_EM_E_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
+halo_nta      HALO_EM_SBM dyn_em 8:p_phy,pi_phy,dz8w,th_phy,rho,qv_old,th_old,u_phy,v_phy
 halo_nta      HALO_EM_HYDRO_UV   dyn_em 8:u_2,v_2
 halo_nta      HALO_EM_MOIST_E_3 dyn_em 24:moist
 halo_nta      HALO_EM_MOIST_E_5 dyn_em 48:moist

@@ -402,12 +402,13 @@ subroutine da_write_iv_for_multi_inc(file_index, iv)
                  iv%info(airep)%lat(1,n), &       ! Latitude
                  iv%info(airep)%lon(1,n)          ! Longitude
          do k = 1 , iv%info(airep)%levels(n)
-            write(ounit,'(2E22.13,3(E22.13,i8,3E22.13))')&
+            write(ounit,'(2E22.13,4(E22.13,i8,3E22.13))')&
                      iv%airep(n)%h(k), &
                      iv%airep(n)%p(k), &             ! Obs pressure
                      iv%airep(n)%u(k), &! O-B u
                      iv%airep(n)%v(k), &! O-B v
-                     iv%airep(n)%t(k)
+                     iv%airep(n)%t(k), &
+                     iv%airep(n)%q(k)
          enddo
       end do
       close (ounit)

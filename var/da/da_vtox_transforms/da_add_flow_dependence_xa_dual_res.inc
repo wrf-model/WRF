@@ -28,10 +28,12 @@ subroutine da_add_flow_dependence_xa_dual_res (grid, ne,  ep, vp)
 
    integer :: nj, cj, nk, ck, ni, ci ! for testing
 
+#ifdef DM_PARALLEL
    ! HALO STUFF
    integer :: rsl_sendw_p, rsl_sendbeg_p, rsl_recvw_p, rsl_recvbeg_p
    integer :: rsl_sendw_m, rsl_sendbeg_m, rsl_recvw_m, rsl_recvbeg_m
    logical, external :: rsl_comm_iter
+#endif
 
 
    ! Get coarse (ensemble) grid dimensions ( grid%intermediate_gridd)

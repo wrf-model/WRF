@@ -147,14 +147,34 @@ fprintf(fp,"  %s, INTENT(INOUT) :: %s ( grid%%sm31:grid%%em31,grid%%sm32:grid%%e
               if ( ad == 0 ) 
               {
 /* explicit dummy or actual arguments for i1 arrays */
+#ifdef WRFPLUS
+if ( nta == 0 ) fprintf(fp,"  %s, &\n",varref) ;
+if ( nta == 1 ) {
+  fprintf(fp,"  %s, &\n",varref) ;
+  fprintf(fp,"  g_%s, &\n",varref) ;
+}
+if ( nta == 2 ) fprintf(fp,"  a_%s, &\n",varref) ;
+#else
 fprintf(fp,"  %s, &\n",varref) ;
+#endif
               }
               else
               {
 /* declaration of dummy arguments for i1 arrays */
               strcpy(tmp3,"") ;
               dimspec=dimension_with_ranges( "grid%","(",-1,tmp3,q,")","" ) ;
+#ifdef WRFPLUS
+if ( nta == 0 )
 fprintf(fp,"  %s, INTENT(INOUT) :: %s %s\n", q->type->name , varref , dimspec ) ;
+if ( nta == 1 ) {
+fprintf(fp,"  %s, INTENT(INOUT) :: %s %s\n", q->type->name , varref , dimspec ) ;
+fprintf(fp,"  %s, INTENT(INOUT) :: g_%s %s\n", q->type->name , varref , dimspec ) ;
+}
+if ( nta == 2 )
+fprintf(fp,"  %s, INTENT(INOUT) :: a_%s %s\n", q->type->name , varref , dimspec ) ;
+#else
+fprintf(fp,"  %s, INTENT(INOUT) :: %s %s\n", q->type->name , varref , dimspec ) ;
+#endif
               }
             }
           }

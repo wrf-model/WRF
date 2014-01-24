@@ -31,13 +31,11 @@ subroutine da_write_diagnostics(it, grid,num_qcstat_conv, ob, iv, re, y, j)
    ! [1.0] Calculate innovation vector (O-B) statistics:
    !---------------------------------------------------------------------------
 
-   if (iv%info(sound)%ntotal > 0) then
-      call da_oi_stats_sound     (stats_unit, iv, ob)
-      call da_oi_stats_sonde_sfc (stats_unit, iv, ob)
-   end if
+   if (iv%info(sound)%ntotal    > 0) call da_oi_stats_sound    (stats_unit, iv, ob)
+   if (iv%info(sonde_sfc)%ntotal    > 0) call da_oi_stats_sonde_sfc(stats_unit, iv, ob)
    if (iv%info(mtgirs)%ntotal   > 0) call da_oi_stats_mtgirs   (stats_unit, iv, ob)
    if (iv%info(tamdar)%ntotal   > 0) call da_oi_stats_tamdar   (stats_unit, iv, ob)
-   if (iv%info(tamdar)%ntotal   > 0) call da_oi_stats_tamdar_sfc(stats_unit, iv, ob)
+   if (iv%info(tamdar_sfc)%ntotal   > 0) call da_oi_stats_tamdar_sfc(stats_unit, iv, ob)
    if (iv%info(synop)%ntotal    > 0) call da_oi_stats_synop    (stats_unit, iv, ob)
    if (iv%info(geoamv)%ntotal   > 0) call da_oi_stats_geoamv   (stats_unit, iv, ob)
    if (iv%info(polaramv)%ntotal > 0) call da_oi_stats_polaramv (stats_unit, iv, ob)
@@ -71,13 +69,11 @@ subroutine da_write_diagnostics(it, grid,num_qcstat_conv, ob, iv, re, y, j)
    !---------------------------------------------------------------------------
 if (.not. anal_type_verify) then
 
-   if (iv%info(sound)%ntotal > 0) then
-      call da_ao_stats_sound (stats_unit, iv, re, ob)
-      call da_ao_stats_sonde_sfc (stats_unit, iv, re, ob)
-   end if
+   if (iv%info(sound)%ntotal    > 0) call da_ao_stats_sound    (stats_unit, iv, re, ob)
+   if (iv%info(sonde_sfc)%ntotal    > 0) call da_ao_stats_sonde_sfc (stats_unit, iv, re, ob)
    if (iv%info(mtgirs)%ntotal   > 0) call da_ao_stats_mtgirs   (stats_unit, iv, re, ob)
    if (iv%info(tamdar)%ntotal   > 0) call da_ao_stats_tamdar   (stats_unit, iv, re, ob)
-   if (iv%info(tamdar)%ntotal   > 0) call da_ao_stats_tamdar_sfc(stats_unit, iv, re, ob)
+   if (iv%info(tamdar_sfc)%ntotal   > 0) call da_ao_stats_tamdar_sfc(stats_unit, iv, re, ob)
    if (iv%info(synop)%ntotal    > 0) call da_ao_stats_synop    (stats_unit, iv, re, ob)
    if (iv%info(geoamv)%ntotal   > 0) call da_ao_stats_geoamv   (stats_unit, iv, re, ob)
    if (iv%info(polaramv)%ntotal > 0) call da_ao_stats_polaramv (stats_unit, iv, re, ob)

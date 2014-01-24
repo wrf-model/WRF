@@ -129,6 +129,7 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
          case (35:38) ;
             if (.not.use_soundobs) cycle reports
             nlocal(sound) = nlocal(sound) + 1
+            nlocal(sonde_sfc) = nlocal(sonde_sfc) + 1
 
          case (161) ;
             if (.not.use_mtgirsobs) cycle reports
@@ -166,6 +167,7 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
          case (101) ;
             if (.not.use_tamdarobs) cycle reports
             nlocal(tamdar) = nlocal(tamdar) + 1
+            nlocal(tamdar_sfc) = nlocal(tamdar_sfc) + 1
 
          case (111) ;
          
@@ -231,10 +233,10 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
    ! write counts in the header 
 
    total_obs = nlocal(synop) + nlocal(metar) + nlocal(ships) + &
-      nlocal(buoy) + nlocal(sound) + nlocal(airep) + nlocal(pilot) + &
+      nlocal(buoy) + nlocal(sound) + nlocal(sonde_sfc) + nlocal(airep) + nlocal(pilot) + &
       nlocal(geoamv) + nlocal(polaramv) + nlocal(gpspw) + nlocal(gpsref) + &
       nlocal(profiler) + nlocal(qscat) + nlocal(ssmt1) + nlocal(ssmt2) +  &
-      nlocal(satem)  + nlocal(bogus) +  nlocal(airsr) + nlocal(mtgirs) + nlocal(tamdar) + num_others
+      nlocal(satem)  + nlocal(bogus) +  nlocal(airsr) + nlocal(mtgirs) + nlocal(tamdar) + nlocal(tamdar_sfc) + num_others
 
    write  (unit = filtered_obs_unit, fmt = '(A,I7,A,F8.0,A)')    &
       "TOTAL =",total_obs, ", MISS. =",missing_r,","  
@@ -247,6 +249,7 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
       "SHIP  =",nlocal(ships),", ", &
       "BUOY  =",nlocal(buoy),", ", &
       "TEMP  =",nlocal(sound),", ", &
+      "TEMP_SFC  =",nlocal(sonde_sfc),", ", &
       "AIREP =",nlocal(airep),", ", &
       "PILOT =",nlocal(pilot),", ", &
       "GeAMV =",nlocal(geoamv),", ", &
@@ -262,6 +265,7 @@ subroutine da_count_filtered_obs (ptop, map, ds, phic, xlonc, truelat1, truelat2
       "AIRSR =",nlocal(airsr),", ", &
       "MTGIRS=",nlocal(mtgirs),", ", &
       "TAMDAR=",nlocal(tamdar),", ", &
+      "TAMDAR_SFC=",nlocal(tamdar_sfc),", ", &
       "OTHER =",num_others,", "
 
    ! write reference state info

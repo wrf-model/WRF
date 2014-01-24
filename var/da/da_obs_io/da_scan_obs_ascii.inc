@@ -1,17 +1,20 @@
-subroutine da_scan_obs_ascii (iv, filename)
+subroutine da_scan_obs_ascii (iv, filename, grid)
 
    !---------------------------------------------------------------------------
    ! Purpose: Scan WRFVAR GTS observation file
-   !
+   ! Updates:
    !       Date: 03/19/2009 -        Y.-R. Guo
-   !
    !           Added the time range check when reading in observations.
+   !       Syed RH Rizvi NCAR/NESL/MMM/DAS Date:  02/21/2013 
+   !          Updated with thinning option
    !---------------------------------------------------------------------------
 
    implicit none
 
    type (iv_type),    intent(inout) :: iv
    character(*),      intent(in)    :: filename
+   type(domain),     intent(in)     :: grid     ! first guess state.
+
 
    character (len =  10)   :: fmt_name
    character (len = 160)   :: info_string
@@ -25,11 +28,22 @@ subroutine da_scan_obs_ascii (iv, filename)
    real                    :: height_error
    integer                 :: ndup, n, obs_index
 
-   real*8                :: obs_time
+   real*8                :: obs_time, analysis_time
    integer               :: iyear, imonth, iday, ihour, imin
+   real                  :: tdiff, dlat_earth,dlon_earth,crit
+   integer               :: itt,itx,iout
+   logical               :: iuse, thin_3d, is_surface
+   integer               :: i1,j1,k, nlevels, levs
+   real                  :: dx,dy,dxm,dym,zk
+   real                  :: v_p(kms:kme),v_h(kms:kme)
 
    if (trace_use) call da_trace_entry("da_scan_obs_ascii")
-
+! Initialize 
+      if ( thin_conv ) then
+          do n = 1, num_ob_indexes
+             call cleangrids_conv(n)
+          end do
+      end if
    ! open file
    ! ---------
    call da_get_unit(iunit)
@@ -99,7 +113,6 @@ subroutine da_scan_obs_ascii (iv, filename)
          platform%info%lon,         &
          platform%info%elv,         &
          platform%info%id
-
       if (iost /= 0) then
          ! FIX? This is expected, but its unclear how we handle failure
          ! here without assuming the fortran2003 convention on
@@ -143,6 +156,8 @@ subroutine da_scan_obs_ascii (iv, filename)
 
       ! read each level
 
+      nlevels= platform%info%levels 
+
       do i = 1, platform%info%levels
          platform%each (i) = each_level_type(missing_r, missing, -1.0, & ! height
             field_type(missing_r, missing, missing_r, missing, missing_r), & ! u
@@ -179,17 +194,29 @@ subroutine da_scan_obs_ascii (iv, filename)
       endif
 
       ! Restrict to a range of reports, useful for debugging
-
       if (report < report_start) cycle
       if (report > report_end) exit
 
       call da_llxy (platform%info, platform%loc, outside, outside_all)
+      if( outside_all ) cycle reports
 
       if (platform%info%levels < 1) then
          if (fm /= 111 .and. fm /= 114) then
             cycle reports
          end if
       end if
+
+      read (analysis_date,'(i4,4(1x,i2))') &
+                                    iyear, imonth, iday, ihour, imin
+      call da_get_julian_time (iyear,imonth,iday,ihour,imin,analysis_time)
+      tdiff = abs((obs_time - analysis_time)-0.02)
+      dlat_earth = platform%info%lat
+      dlon_earth = platform%info%lon
+      if (dlon_earth < 0.0) dlon_earth = dlon_earth + 360.0
+      if (dlon_earth >= 360.0) dlon_earth = dlon_earth - 360.0
+      dlat_earth = dlat_earth * deg2rad
+      dlon_earth = dlon_earth * deg2rad
+
 
       ! Loop over duplicating obs for global
       ndup = 1
@@ -204,54 +231,160 @@ subroutine da_scan_obs_ascii (iv, filename)
             if (.not.use_synopobs .or. iv%info(synop)%ntotal == max_synop_input) cycle reports
             if (n==1) iv%info(synop)%ntotal = iv%info(synop)%ntotal + 1
             if (outside) cycle reports
-            iv%info(synop)%nlocal = iv%info(synop)%nlocal + 1
+             if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(synop,dlat_earth,dlon_earth,crit,iv%info(synop)%nlocal,itx,1,itt,iout,iuse)
+                if ( .not. iuse ) cycle reports
+             else
+                iv%info(synop)%nlocal = iv%info(synop)%nlocal + 1
+             end if
 
          case (13, 17) ;    
             if (.not.use_shipsobs .or. iv%info(ships)%ntotal == max_ships_input) cycle reports
             if (n==1) iv%info(ships)%ntotal = iv%info(ships)%ntotal + 1
             if (outside) cycle reports
-            iv%info(ships)%nlocal = iv%info(ships)%nlocal + 1
+             if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(ships,dlat_earth,dlon_earth,crit,iv%info(ships)%nlocal,itx,1,itt,iout,iuse)
+                if ( .not. iuse ) cycle reports
+             else
+                iv%info(ships)%nlocal = iv%info(ships)%nlocal + 1
+             end if
+
 
          case (15:16) ;     
             if (.not.use_metarobs .or. iv%info(metar)%ntotal == max_metar_input) cycle reports
             if (n==1) iv%info(metar)%ntotal = iv%info(metar)%ntotal + 1
             if (outside) cycle reports
-            iv%info(metar)%nlocal = iv%info(metar)%nlocal + 1
+             if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(metar,dlat_earth,dlon_earth,crit,iv%info(metar)%nlocal,itx,1,itt,iout,iuse)
+                if ( .not. iuse ) cycle reports
+             else
+                iv%info(metar)%nlocal = iv%info(metar)%nlocal + 1
+             end if
 
          case (32:34) ;
             if (.not.use_pilotobs .or. iv%info(pilot)%ntotal == max_pilot_input) cycle reports
             if (n==1) iv%info(pilot)%ntotal = iv%info(pilot)%ntotal + 1
             if (outside) cycle reports
-            iv%info(pilot)%nlocal = iv%info(pilot)%nlocal + 1
+             if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(pilot,dlat_earth,dlon_earth,crit,iv%info(pilot)%nlocal,itx,1,itt,iout,iuse)
+                if ( .not. iuse ) cycle reports
+             else
+                iv%info(pilot)%nlocal = iv%info(pilot)%nlocal + 1
+             end if
 
          case (35:38) ;
             if (.not.use_soundobs .or. iv%info(sound)%ntotal == max_sound_input) cycle reports
             if (n==1) iv%info(sound)%ntotal     = iv%info(sound)%ntotal + 1
             if (n==1) iv%info(sonde_sfc)%ntotal = iv%info(sonde_sfc)%ntotal + 1
             if (outside) cycle reports
-            iv%info(sound)%nlocal     = iv%info(sound)%nlocal + 1
-            iv%info(sonde_sfc)%nlocal = iv%info(sonde_sfc)%nlocal + 1
+             if ( thin_conv ) then
+                crit = tdiff
+                call map2grids_conv(sound,dlat_earth,dlon_earth,crit,iv%info(sound)%nlocal,itx,1,itt,iout,iuse)
+                crit = tdiff
+                call map2grids_conv(sonde_sfc,dlat_earth,dlon_earth,crit,iv%info(sonde_sfc)%nlocal,itx,1,itt,iout,iuse)
+                if ( .not. iuse ) cycle reports
+             else
+                iv%info(sound)%nlocal     = iv%info(sound)%nlocal + 1
+                iv%info(sonde_sfc)%nlocal = iv%info(sonde_sfc)%nlocal + 1
+             end if
+
          case (101) ;
             if (.not.use_tamdarobs .or. iv%info(tamdar)%ntotal == max_tamdar_input) cycle reports
-            if (n==1) iv%info(tamdar)%ntotal     = iv%info(tamdar)%ntotal + 1
-            if (n==1) iv%info(tamdar_sfc)%ntotal     = iv%info(tamdar_sfc)%ntotal + 1
-            if (outside) cycle reports
-            iv%info(tamdar)%nlocal         = iv%info(tamdar)%nlocal + 1
-            iv%info(tamdar_sfc)%nlocal     = iv%info(tamdar_sfc)%nlocal + 1
+
+! determine if level corresponds to surface 
+            is_surface=.false.    
+            levs = nlevels
+            do i = 1, nlevels
+               ! if (elevation and height are the same, it is surface.)
+               if (platform%info%elv.ne.missing_r.and.platform%each(i)%height.ne.missing_r)then
+                  if (abs(platform%info%elv - platform%each(i)%height) < 0.1) then
+                     is_surface = .true.
+                     levs = nlevels - 1
+                    exit
+                  end if
+               end if
+            end do
+
+           if( is_surface) then
+
+             if (n==1) iv%info(tamdar_sfc)%ntotal = iv%info(tamdar_sfc)%ntotal + 1
+             if (outside) cycle reports
+             if ( thin_conv ) then
+                crit = tdiff
+                call map2grids_conv(tamdar_sfc,dlat_earth,dlon_earth,crit,iv%info(tamdar_sfc)%nlocal,itx,1,itt,iout,iuse)
+                if ( .not. iuse ) cycle reports
+             else
+                iv%info(tamdar_sfc)%nlocal = iv%info(tamdar_sfc)%nlocal + 1
+             end if
+           else ! not is_surface
+             if ( levs > 0 .and. n==1) iv%info(tamdar)%ntotal = iv%info(tamdar)%ntotal + 1
+             if (outside) cycle reports
+             if( .not. thin_conv ) then
+                iv%info(tamdar)%nlocal         = iv%info(tamdar)%nlocal + 1
+             else  ! if thin_conv
+                thin_3d=.true.
+                i1   = platform%loc%i
+                j1   = platform%loc%j
+                dx   = platform%loc%dx
+                dy   = platform%loc%dy
+                dxm  = platform%loc%dxm
+                dym  = platform%loc%dym
+                do k=kms,kme
+                   v_p(k) = dym*(dxm*grid%xb%p(i1,j1,k)+dx*grid%xb%p(i1+1,j1,k)) + &
+                           dy*(dxm*grid%xb%p(i1,j1+1,k)+dx*grid%xb%p(i1+1,j1+1,k))
+                end do
+                do k=kms,kme
+                   v_h(k) = dym*(dxm*grid%xb%h(i1,j1,k)+dx*grid%xb%h(i1+1,j1,k)) + &
+                           dy*(dxm*grid%xb%h(i1,j1+1,k)+dx*grid%xb%h(i1+1,j1+1,k))
+                end do
+                do k=1,nlevels
+                   zk = missing_r
+                   if( platform%each(k)%p%qc  >= 0 ) then
+                      call da_to_zk(platform%each(k)%p%inv, v_p, v_interp_p, zk)
+                   else if( platform%each(k)%height_qc  >= 0 ) then
+                      call da_to_zk(platform%each(k)%height, v_h, v_interp_h, zk)
+                   else
+                      write(unit=message(1),fmt='(A)')' For tamdar: neither height nor pressure qc is good'
+                      call da_error(__FILE__,__LINE__,message(1:1))
+                   end if
+                   if ( zk == missing_r ) cycle
+                   crit = tdiff
+                   call map2grids_conv(tamdar,dlat_earth,dlon_earth,crit,iv%info(tamdar)%nlocal,itx,1,itt,iout,iuse,zk,thin_3d)
+                   if ( .not. iuse ) cycle
+                end do ! loop over k levels
+             end if ! if over thin_conv
+
+           end if ! if is_surface 
+
          case (161) ;
             if (.not.use_mtgirsobs .or. iv%info(mtgirs)%ntotal == max_mtgirs_input) cycle reports
             if (n==1) iv%info(mtgirs)%ntotal     = iv%info(mtgirs)%ntotal + 1
             if (outside) cycle reports
-            iv%info(mtgirs)%nlocal     = iv%info(mtgirs)%nlocal + 1
+            if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(mtgirs,dlat_earth,dlon_earth,crit,iv%info(mtgirs)%nlocal,itx,1,itt,iout,iuse)
+                if ( .not. iuse ) cycle reports
+            else
+                iv%info(mtgirs)%nlocal     = iv%info(mtgirs)%nlocal + 1
+            end if
+
          case (86) ;
             if (.not.use_satemobs .or. iv%info(satem)%ntotal == max_satem_input) cycle reports
             ! Reject cloudy satem obs.
-            if (platform%loc%pw%inv > 10.0) then
-               cycle reports
-            end if
+            if (platform%loc%pw%inv > 10.0) cycle reports
             if (n==1) iv%info(satem)%ntotal = iv%info(satem)%ntotal + 1
             if (outside) cycle reports
-            iv%info(satem)%nlocal = iv%info(satem)%nlocal + 1
+            if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(satem,dlat_earth,dlon_earth,crit,iv%info(satem)%nlocal,itx,1,itt,iout,iuse)
+                if ( .not. iuse ) cycle reports
+            else
+                iv%info(satem)%nlocal = iv%info(satem)%nlocal + 1
+            end if
 
          case (88)    ;
             ! Geostationary or Polar orbitting Satellite AMVs:
@@ -260,20 +393,67 @@ subroutine da_scan_obs_ascii (iv, filename)
                if (.not.use_polaramvobs .or. iv%info(polaramv)%ntotal == max_polaramv_input) cycle reports
                if (n==1) iv%info(polaramv)%ntotal = iv%info(polaramv)%ntotal + 1
                if (outside) cycle reports
-               iv%info(polaramv)%nlocal = iv%info(polaramv)%nlocal + 1
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(polaramv,dlat_earth,dlon_earth,crit,iv%info(polaramv)%nlocal,itx,1,itt,iout,iuse)
+                  if ( .not. iuse ) cycle reports
+               else
+                   iv%info(polaramv)%nlocal = iv%info(polaramv)%nlocal + 1
+               end if
 	       obs_index = polaramv ! geoamv is the fm_index value for 88
             else
                if (.not.use_geoamvobs .or. iv%info(geoamv)%ntotal == max_geoamv_input) cycle reports
                if (n==1) iv%info(geoamv)%ntotal = iv%info(geoamv)%ntotal + 1
                if (outside) cycle reports
-               iv%info(geoamv)%nlocal = iv%info(geoamv)%nlocal + 1
+               if ( thin_conv ) then
+                  crit = tdiff
+                  call map2grids_conv(geoamv,dlat_earth,dlon_earth,crit,iv%info(geoamv)%nlocal,itx,1,itt,iout,iuse)
+                   if ( .not. iuse ) cycle reports
+               else
+                   iv%info(geoamv)%nlocal = iv%info(geoamv)%nlocal + 1
+               end if
             end if
 
          case (42,96:97) ;
             if (.not.use_airepobs .or. iv%info(airep)%ntotal == max_airep_input) cycle reports
             if (n==1) iv%info(airep)%ntotal = iv%info(airep)%ntotal + 1
             if (outside) cycle reports
-            iv%info(airep)%nlocal = iv%info(airep)%nlocal + 1
+
+            if( .not. thin_conv ) then
+               iv%info(airep)%nlocal         = iv%info(airep)%nlocal + 1
+            else  ! if thin_conv
+               thin_3d=.true.
+               i1   = platform%loc%i
+               j1   = platform%loc%j
+               dx   = platform%loc%dx
+               dy   = platform%loc%dy
+               dxm  = platform%loc%dxm
+               dym  = platform%loc%dym
+               do k=kms,kme
+                  v_p(k) = dym*(dxm*grid%xb%p(i1,j1,k)+dx*grid%xb%p(i1+1,j1,k)) + &
+                           dy*(dxm*grid%xb%p(i1,j1+1,k)+dx*grid%xb%p(i1+1,j1+1,k))
+               end do
+               do k=kms,kme
+                  v_h(k) = dym*(dxm*grid%xb%h(i1,j1,k)+dx*grid%xb%h(i1+1,j1,k)) + &
+                           dy*(dxm*grid%xb%h(i1,j1+1,k)+dx*grid%xb%h(i1+1,j1+1,k))
+               end do
+               do k=1,nlevels
+                  zk = missing_r
+                  if( platform%each(k)%p%qc  >= 0 ) then
+                     call da_to_zk(platform%each(k)%p%inv, v_p, v_interp_p, zk)
+                  else if( platform%each(k)%height_qc  >= 0 ) then
+                     call da_to_zk(platform%each(k)%height, v_h, v_interp_h, zk)
+                  else
+                     write(unit=message(1),fmt='(A)')' For airep: neither height nor pressure qc is good'
+                     call da_error(__FILE__,__LINE__,message(1:1))
+                  end if
+                  if ( zk == missing_r ) cycle
+                  crit = tdiff
+                  call map2grids_conv(airep,dlat_earth,dlon_earth,crit,iv%info(airep)%nlocal,itx,1,itt,iout,iuse,zk,thin_3d)
+                  if ( .not. iuse ) cycle
+               end do ! loop over k levels
+
+            end if ! if over thin_conv
 
          case (111, 114) ;       
             if ( (.not.use_gpspwobs  .and. fm == 111) .or. &
@@ -282,59 +462,113 @@ subroutine da_scan_obs_ascii (iv, filename)
                   iv%info(gpspw)%ntotal == max_gpspw_input) cycle reports
             if (n==1) iv%info(gpspw)%ntotal = iv%info(gpspw)%ntotal + 1
             if (outside) cycle reports
-            iv%info(gpspw)%nlocal = iv%info(gpspw)%nlocal + 1
+            if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(gpspw,dlat_earth,dlon_earth,crit,iv%info(gpspw)%nlocal,itx,1,itt,iout,iuse)
+               if ( .not. iuse ) cycle reports
+            else
+               iv%info(gpspw)%nlocal = iv%info(gpspw)%nlocal + 1
+            end if
 
          case (116) ;
             if (.not.use_gpsrefobs .or. iv%info(gpsref)%ntotal == max_gpsref_input) cycle reports
             if ( ob_format_gpsro /= ob_format_ascii ) cycle reports
             if (n==1) iv%info(gpsref)%ntotal = iv%info(gpsref)%ntotal + 1
             if (outside) cycle reports
-            iv%info(gpsref)%nlocal = iv%info(gpsref)%nlocal + 1
+            if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(gpsref,dlat_earth,dlon_earth,crit,iv%info(gpsref)%nlocal,itx,1,itt,iout,iuse)
+               if ( .not. iuse ) cycle reports
+            else
+               iv%info(gpsref)%nlocal = iv%info(gpsref)%nlocal + 1
+            end if
 
           case (121) ;
             ! SSM/T1 temperatures
             if (.not.use_ssmt1obs .or. iv%info(ssmt1)%ntotal == max_ssmt1_input) cycle reports
             if (n==1) iv%info(ssmt1)%ntotal = iv%info(ssmt1)%ntotal + 1
             if (outside) cycle reports
-            iv%info(ssmt2)%nlocal = iv%info(ssmt2)%nlocal + 1
+            if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(ssmt1,dlat_earth,dlon_earth,crit,iv%info(ssmt1)%nlocal,itx,1,itt,iout,iuse)
+               if ( .not. iuse ) cycle reports
+            else
+               iv%info(ssmt1)%nlocal = iv%info(ssmt1)%nlocal + 1
+            end if
+
 
          case (122) ;
             ! SSM/T2 relative humidities:
             if (.not.use_ssmt2obs .or. iv%info(ssmt2)%ntotal == max_ssmt2_input) cycle reports
             if (n==1) iv%info(ssmt2)%ntotal = iv%info(ssmt2)%ntotal + 1
             if (outside) cycle reports
-            iv%info(ssmt2)%nlocal = iv%info(ssmt2)%nlocal + 1
+            if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(ssmt2,dlat_earth,dlon_earth,crit,iv%info(ssmt2)%nlocal,itx,1,itt,iout,iuse)
+               if ( .not. iuse ) cycle reports
+            else
+               iv%info(ssmt2)%nlocal = iv%info(ssmt2)%nlocal + 1
+            end if
 
          case (281)    ;
             ! Scatterometer:
             if (.not.use_qscatobs .or. iv%info(qscat)%ntotal == max_qscat_input) cycle reports
             if (n==1) iv%info(qscat)%ntotal = iv%info(qscat)%ntotal + 1
             if (outside) cycle reports
-            iv%info(qscat)%nlocal = iv%info(qscat)%nlocal + 1
-
+            if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(qscat,dlat_earth,dlon_earth,crit,iv%info(qscat)%nlocal,itx,1,itt,iout,iuse)
+               if ( .not. iuse ) cycle reports
+            else
+               iv%info(qscat)%nlocal = iv%info(qscat)%nlocal + 1
+            end if
          case (132) ;
             if (.not.use_profilerobs .or. iv%info(profiler)%ntotal == max_profiler_input) cycle reports
             if (n==1) iv%info(profiler)%ntotal = iv%info(profiler)%ntotal + 1
             if (outside) cycle reports
-            iv%info(profiler)%nlocal = iv%info(profiler)%nlocal + 1
+            if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(profiler,dlat_earth,dlon_earth,crit,iv%info(profiler)%nlocal,itx,1,itt,iout,iuse)
+               if ( .not. iuse ) cycle reports
+            else
+               iv%info(profiler)%nlocal = iv%info(profiler)%nlocal + 1
+            end if
 
          case (135) ;
             if (.not.use_bogusobs .or. iv%info(bogus)%ntotal == max_bogus_input) cycle reports
             if (n==1) iv%info(bogus)%ntotal = iv%info(bogus)%ntotal + 1
             if (outside) cycle reports
-            iv%info(bogus)%nlocal = iv%info(bogus)%nlocal + 1
+            if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(bogus,dlat_earth,dlon_earth,crit,iv%info(bogus)%nlocal,itx,1,itt,iout,iuse)
+               if ( .not. iuse ) cycle reports
+            else
+              iv%info(bogus)%nlocal = iv%info(bogus)%nlocal + 1
+            end if
 
          case (18,19) ;             ! buoy
             if (.not.use_buoyobs .or. iv%info(buoy)%ntotal == max_buoy_input) cycle reports
             if (n==1) iv%info(buoy)%ntotal = iv%info(buoy)%ntotal + 1
             if (outside) cycle reports
-            iv%info(buoy)%nlocal = iv%info(buoy)%nlocal + 1
+            if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(buoy,dlat_earth,dlon_earth,crit,iv%info(buoy)%nlocal,itx,1,itt,iout,iuse)
+               if ( .not. iuse ) cycle reports
+            else
+               iv%info(buoy)%nlocal = iv%info(buoy)%nlocal + 1
+            end if
 
          case (133) ;               ! AIRS retrievals
             if (.not.use_airsretobs .or. iv%info(airsr)%ntotal == max_airsr_input) cycle reports
             if (n==1) iv%info(airsr)%ntotal = iv%info(airsr)%ntotal + 1
             if (outside) cycle reports
-            iv%info(airsr)%nlocal = iv%info(airsr)%nlocal + 1
+            if ( thin_conv ) then
+               crit = tdiff
+               call map2grids_conv(airsr,dlat_earth,dlon_earth,crit,iv%info(airsr)%nlocal,itx,1,itt,iout,iuse)
+               if ( .not. iuse ) cycle reports
+            else
+               iv%info(airsr)%nlocal = iv%info(airsr)%nlocal + 1
+            end if
 
          case default;
             write(unit=message(1), fmt='(a)') 'unsaved obs found:'

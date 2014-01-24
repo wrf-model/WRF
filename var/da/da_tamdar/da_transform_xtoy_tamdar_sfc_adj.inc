@@ -26,20 +26,20 @@ subroutine da_transform_xtoy_tamdar_sfc_adj(grid, iv, jo_grad_y, jo_grad_x)
 
    if (sfc_assi_options == sfc_assi_options_1) then
 
-      allocate (model_u(1,iv%info(tamdar)%n1:iv%info(tamdar)%n2))
-      allocate (model_v(1,iv%info(tamdar)%n1:iv%info(tamdar)%n2))
-      allocate (model_t(1,iv%info(tamdar)%n1:iv%info(tamdar)%n2))
-      allocate (model_q(1,iv%info(tamdar)%n1:iv%info(tamdar)%n2))
-      allocate (model_psfc(iv%info(tamdar)%n1:iv%info(tamdar)%n2))
+      allocate (model_u(1,iv%info(tamdar_sfc)%n1:iv%info(tamdar_sfc)%n2))
+      allocate (model_v(1,iv%info(tamdar_sfc)%n1:iv%info(tamdar_sfc)%n2))
+      allocate (model_t(1,iv%info(tamdar_sfc)%n1:iv%info(tamdar_sfc)%n2))
+      allocate (model_q(1,iv%info(tamdar_sfc)%n1:iv%info(tamdar_sfc)%n2))
+      allocate (model_psfc(iv%info(tamdar_sfc)%n1:iv%info(tamdar_sfc)%n2))
 
-      allocate (ub(1,iv%info(tamdar)%n1:iv%info(tamdar)%n2))
-      allocate (vb(1,iv%info(tamdar)%n1:iv%info(tamdar)%n2))
+      allocate (ub(1,iv%info(tamdar_sfc)%n1:iv%info(tamdar_sfc)%n2))
+      allocate (vb(1,iv%info(tamdar_sfc)%n1:iv%info(tamdar_sfc)%n2))
 
       call da_interp_lin_3d (grid%xb%u, iv%info(tamdar_sfc), ub)
       call da_interp_lin_3d (grid%xb%v, iv%info(tamdar_sfc), vb)
 
       ! [1.2] Interpolate horizontally:
-      do n=iv%info(tamdar)%n1,iv%info(tamdar)%n2
+      do n=iv%info(tamdar_sfc)%n1,iv%info(tamdar_sfc)%n2
          model_t(1,n)  = jo_grad_y%tamdar_sfc(n)%t
          model_q(1,n)  = jo_grad_y%tamdar_sfc(n)%q
          model_psfc(n) = jo_grad_y%tamdar_sfc(n)%p

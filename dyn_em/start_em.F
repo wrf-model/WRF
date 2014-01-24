@@ -34,7 +34,7 @@
    USE module_input_tracer, ONLY: initialize_tracer
    USE module_aerosols_soa_vbs, only: sum_pm_soa_vbs
 #endif
-   USE module_diagnostics, ONLY : pld
+   USE module_diag_pld, ONLY : pld
 
 !!debug
 !USE module_compute_geop
@@ -828,8 +828,9 @@ endif
                       grid%zi3d,         grid%watsat3d,     grid%csol3d,     grid%tkmg3d,         & !lake
                       grid%tkdry3d,      grid%tksatu3d,     grid%lake2d,                            & !lake
                       config_flags%domain_lakedepth,        config_flags%lakeminalt, grid%lake_depth,     & !lake
-                      grid%TSK_SAVE,                                                   & !Optional fractional seaice
-              grid%numc,grid%nump,grid%snl,grid%snowdp,&   ! start of CLM variables
+                      config_flags%sf_surface_mosaic, config_flags%mosaic_cat, config_flags%num_land_cat, & ! Noah tiling
+                      config_flags%maxpatch,           &   ! start of CLM variables
+              grid%numc,grid%nump,grid%snl,grid%snowdp,&   !
               grid%wtc,grid%wtp,&
               grid%h2osno,grid%t_grnd,grid%t_veg,grid%h2ocan, &
               grid%h2ocan_col,grid%t2m_max,grid%t2m_min,&
@@ -875,13 +876,14 @@ endif
               grid%h2osoi_vol6,&
               grid%h2osoi_vol7,grid%h2osoi_vol8,&
               grid%h2osoi_vol9,grid%h2osoi_vol10,&
-              grid%ht,config_flags%maxpatch,    &
+              grid%ht,                          &
               grid%ALBEDOsubgrid,grid%LHsubgrid,&
               grid%HFXsubgrid,grid%LWUPsubgrid,&
               grid%Q2subgrid,grid%SABVsubgrid,  &
               grid%SABGsubgrid,grid%NRAsubgrid,&
               grid%SWUPsubgrid,grid%lhsoi, &
               grid%lhveg, grid%lhtran, & !end of CLM variables
+                      grid%TSK_SAVE,                        & !Optional fractional seaice
                       grid%itimestep, grid%fdob,            &
                       t00, p00, a,                      & ! for obs_nudge base state
                       grid%TYR, grid%TYRA, grid%TDLY, grid%TLAG, grid%NYEAR, grid%NDAY,grid%tmn_update, &
@@ -898,6 +900,20 @@ endif
                       ,grid%massflux_EDKF, grid%entr_EDKF, grid%detr_EDKF                & 
                       ,grid%thl_up,grid%thv_up,grid%rt_up                                &
                       ,grid%rv_up,grid%rc_up,grid%u_up,grid%v_up,grid%frac_up            &
+                      ,grid%landusef,grid%landusef2,grid%mosaic_cat_index                            & ! danli mosaic 
+                      ,grid%TSK_mosaic,grid%TSLB_mosaic,grid%SMOIS_mosaic,grid%SH2O_mosaic           & ! danli mosaic
+                      ,grid%CANWAT_mosaic,grid%SNOW_mosaic,grid%SNOWH_mosaic,grid%SNOWC_mosaic       & ! danli mosaic
+                      ,grid%ALBEDO_mosaic,grid%ALBBCK_mosaic, grid%EMISS_mosaic                      & ! danli mosaic
+                      ,grid%EMBCK_mosaic, grid%ZNT_mosaic, grid%Z0_mosaic                            & ! danli mosaic
+                      ,grid%TR_URB2D_mosaic,grid%TB_URB2D_mosaic                                     & ! danli mosaic 
+                      ,grid%TG_URB2D_mosaic,grid%TC_URB2D_mosaic                                     & ! danli mosaic 
+                      ,grid%QC_URB2D_mosaic                                                          & ! danli mosaic
+                      ,grid%TRL_URB3D_mosaic,grid%TBL_URB3D_mosaic                                   & ! danli mosaic 
+                      ,grid%TGL_URB3D_mosaic                                                         & ! danli mosaic 
+                      ,grid%SH_URB2D_mosaic,grid%LH_URB2D_mosaic                                     & ! danli mosaic 
+                      ,grid%G_URB2D_mosaic,grid%RN_URB2D_mosaic                                      & ! danli mosaic 
+                      ,grid%TS_URB2D_mosaic                                                          & ! danli mosaic 
+                      ,grid%TS_RUL2D_mosaic                                                          & ! danli mosaic
                       )
        ENDIF   !tgs
 

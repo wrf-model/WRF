@@ -921,10 +921,10 @@ subroutine da_setup_be_regional(xb, be, grid)
       deallocate ( rfls3_be )
       deallocate ( rfls4_be )
 #ifdef CLOUD_CV
-      deallocate (rfls6_be(1:nk))
-      deallocate (rfls7_be(1:nk))
-      deallocate (rfls8_be(1:nk))
-      deallocate (rfls9_be(1:nk))
+      deallocate (rfls6_be)
+      deallocate (rfls7_be)
+      deallocate (rfls8_be)
+      deallocate (rfls9_be)
 #endif
    ! 3.3.4 Assign the Regression coefficients for model BE:
  

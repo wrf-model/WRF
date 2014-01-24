@@ -73,6 +73,11 @@ MODULE module_driver_constants
 
    INTEGER , PARAMETER :: max_instruments =   30
 
+   !  The maximum number of obs indexes                    
+
+   INTEGER , PARAMETER :: num_ob_indexes  =   28
+
+
    !  The maximum number of bogus storms
 
    INTEGER , PARAMETER :: max_bogus =  5

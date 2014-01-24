@@ -254,15 +254,18 @@ subroutine da_add_noise_to_ob( iv, ob )
          end do
        end if
       end do
-! Now do surface level
+   end if
+
+! Transfer sonde_sfc obs:
+   if ( iv%info(sonde_sfc)%nlocal > 0 ) then
       num_obs = 0
-      do n = 1, iv%info(sound)%nlocal
-       if(iv%info(sound)%proc_domain(1,n)) num_obs = num_obs + 1
+      do n = 1, iv%info(sonde_sfc)%nlocal
+       if(iv%info(sonde_sfc)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
       write(ounit,'(a20,i8)')'sonde_sfc', num_obs   
       num_obs = 0 
-      do n = 1, iv%info(sound)%nlocal
-       if(iv%info(sound)%proc_domain(1,n)) then
+      do n = 1, iv%info(sonde_sfc)%nlocal
+       if(iv%info(sonde_sfc)%proc_domain(1,n)) then
          num_obs = num_obs + 1
          write(ounit,'(i8)') 1
 !           Add random perturbation:
@@ -300,13 +303,15 @@ subroutine da_add_noise_to_ob( iv, ob )
             call da_add_noise( iv % airep(n) % u(k), ob % airep(n) % u(k), z1)
             call da_add_noise( iv % airep(n) % v(k), ob % airep(n) % v(k), z2)
             call da_add_noise( iv % airep(n) % t(k), ob % airep(n) % t(k), z3)
+            call da_add_noise( iv % airep(n) % q(k), ob % airep(n) % q(k), z4)
 
 !           Write out data:
             write(ounit,'(2i8,10e15.7)')num_obs, k, &
                                iv % airep(n) % u(k) % error, z1, &
                                iv % airep(n) % v(k) % error, z2, &
                                iv % airep(n) % t(k) % error, z3, &
-                               dum, dum, dum, dum
+                               iv % airep(n) % q(k) % error, z4, &
+                               dum, dum
          end do
        end if
       end do
@@ -730,15 +735,19 @@ subroutine da_add_noise_to_ob( iv, ob )
          end do
        end if
       end do
-! Now do surface level
+   end if
+
+!  Transfer tamdar_sfc obs:
+
+   if ( iv%info(tamdar_sfc)%nlocal > 0 ) then
       num_obs = 0
-      do n = 1, iv%info(tamdar)%nlocal
-       if(iv%info(tamdar)%proc_domain(1,n)) num_obs = num_obs + 1
+      do n = 1, iv%info(tamdar_sfc)%nlocal
+       if(iv%info(tamdar_sfc)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
       write(ounit,'(a20,i8)')'tamdar_sfc', num_obs
       num_obs = 0
-      do n = 1, iv%info(tamdar)%nlocal
-       if(iv%info(tamdar)%proc_domain(1,n)) then
+      do n = 1, iv%info(tamdar_sfc)%nlocal
+       if(iv%info(tamdar_sfc)%proc_domain(1,n)) then
          num_obs = num_obs + 1
          write(ounit,'(i8)') 1
 !           Add random perturbation:

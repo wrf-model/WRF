@@ -44,7 +44,8 @@ MODULES =                 		\
 	module_sfs_driver.o		\
 	module_sfs_driver_tl.o		\
 	module_sfs_driver_ad.o		\
-	module_stoch.o		\
+	module_stoch.o			\
+	module_after_all_rk_steps.o	\
 	$(CASE_MODULE)
 
 # possible CASE_MODULE settings

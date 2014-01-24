@@ -15,7 +15,7 @@ subroutine da_setup_obs_interp_wts (iv)
    do i=1,num_ob_indexes
       if (i /= radiance .and. iv%info(i)%nlocal > 0) then ! i=22 is radiance , should be excluded here
          if ( ob_format == ob_format_ascii ) then
-            call da_store_obs_grid_info (iv%info(i))
+            call da_store_obs_grid_info_bufr (iv%info(i))
          else if ( ob_format == ob_format_bufr ) then
             call da_store_obs_grid_info_bufr (iv%info(i))
          end if

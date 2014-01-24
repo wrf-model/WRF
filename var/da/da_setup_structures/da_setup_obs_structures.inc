@@ -180,9 +180,13 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
 
    iv%info(:)%nlocal = 0
    iv%info(:)%ntotal = 0
+   iv%info(:)%thin_nlocal = 0
+   iv%info(:)%thin_ntotal = 0
    do i=1,num_ob_indexes
       iv%info(i)%plocal(:) = 0
       iv%info(i)%ptotal(:) = 0
+      iv%info(i)%thin_plocal(:) = 0
+      iv%info(i)%thin_ptotal(:) = 0
    end do
    iv%num_inst  = 0 
 
@@ -239,9 +243,18 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
          else
             ob_name = obs_names(j)
          endif
-         write(unit=stdout, fmt='(6x,a,i10,a,i8,a)') &
+         if(iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1) > 0) then          
+         if( thin_conv) then
+         write(unit=stdout, fmt='(2x,2(a,i6),a,i5,a)') &
+            ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global, ', &
+                     iv%info(j)%thin_ptotal(i) - iv%info(j)%thin_ptotal(i-1), ' global (post-thinning), ', &
+            iv%info(j)%thin_plocal(i) - iv%info(j)%thin_plocal(i-1), ' local (post-thinning)'
+         else
+         write(unit=stdout, fmt='(6x,a,i6,a,i5,a)') &
             ob_name, iv%info(j)%ptotal(i) - iv%info(j)%ptotal(i-1), ' global,', &
             iv%info(j)%plocal(i) - iv%info(j)%plocal(i-1), ' local'
+         end if ! thin_conv
+         end if
       end do
    end do
    write(unit=stdout, fmt='(a)') ' '

@@ -624,7 +624,6 @@ CONTAINS
 
   do j=1,ny_jet
     write(6,*) j, p(1,j),theta(1,j),rho_local(1,j), p(nz_jet,j)
-!    write(6,*) j, p(1,j),theta(1,j)-th_jet(1,j),rho_local(1,j)-rho_jet(1,j)
   enddo
 
   call parray( p, nz_jet, ny_jet)

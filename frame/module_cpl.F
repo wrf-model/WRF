@@ -30,7 +30,7 @@ MODULE module_cpl
    INTEGER, PARAMETER :: charlen = 64
    CHARACTER(charlen), DIMENSION(max_domains,max_extdomains,max_cplfld) :: rcvname, sndname   ! coupling fields names for each nest
 
-   CHARACTER(128) :: cltxt        ! messages or debug string
+   CHARACTER(256) :: cltxt        ! messages or debug string
    INTEGER :: nlevdbg  = 1        ! verbosity level
    INTEGER :: nlevdbg2 = 10       ! verbosity level
 

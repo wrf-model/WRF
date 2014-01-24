@@ -460,7 +460,8 @@ BENCH_END(deform_div_tim)
 #     include "HALO_EM_HELICITY.inc"
 #endif
 
-       IF (config_flags%nwp_diagnostics .eq. 1) THEN
+       IF ( ( config_flags%nwp_diagnostics .eq. 1 ) .OR. &
+            ( ( config_flags%afwa_diag_opt .eq. 1 ) .AND. ( config_flags%afwa_severe_opt .EQ. 1 ) ) ) THEN
 BENCH_START(helicity_tim)
 
        !$OMP PARALLEL DO   &

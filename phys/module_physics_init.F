@@ -128,10 +128,11 @@ CONTAINS
                          z_lake3d,     dz_lake3d,    t_soisno3d, h2osoi_ice3d,   & !lake
                          h2osoi_liq3d, h2osoi_vol3d, z3d,        dz3d,           & !lake
                          zi3d,         watsat3d,     csol3d,     tkmg3d,         & !lake
-                         tkdry3d,      tksatu3d,     lake2d,       domainlakedepth,& !lake
-                         lakeminalt,   lake_depth,                                 & !lake
-                         TSK_SAVE,                               & !Optional for fractional seaice
+                         tkdry3d,      tksatu3d,     lake2d,     domainlakedepth,& !lake
+                         lakeminalt,   lake_depth,                               & !lake
+                         sf_surface_mosaic, mosaic_cat, NLCAT,               & ! Noah tiling
 !CLM variables
+                         maxpatch,                                           &
                          numc,nump,snl,                                      &
                          snowdp,wtc,wtp,h2osno,t_grnd,t_veg,                 &
                          h2ocan,h2ocan_col,t2m_max,t2m_min,t_ref2m,          &
@@ -157,11 +158,12 @@ CONTAINS
                          h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,                &
                          h2osoi_vol7,h2osoi_vol8,                            &
                          h2osoi_vol9,h2osoi_vol10,                           &
-                         ht,maxpatch,                                        &
+                         ht,                                                 &
                          ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
                          Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
                          SWUPsubgrid,lhsoi,lhveg,lhtran,                     &
 ! end of CLM variables
+                         TSK_SAVE,                               & !Optional for fractional seaice
                          itimestep,                              & !Optional obs fdda
 #if ( EM_CORE == 1 )
                          fdob,                                   & !Optional obs fdda
@@ -185,6 +187,19 @@ CONTAINS
                          ,massflux_EDKF, entr_EDKF, detr_EDKF  & ! Optional for qnse
                          ,thl_up, thv_up, rt_up                & ! Optional for qnse
                          ,rv_up, rc_up, u_up, v_up, frac_up    & ! Optional for qnse
+                         ,landusef,landusef2,mosaic_cat_index                                                 & ! danli mosaic
+                         ,TSK_mosaic,TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic                                     & ! danli mosaic
+                         ,CANWAT_mosaic,SNOW_mosaic,SNOWH_mosaic,SNOWC_mosaic                                 & ! danli mosaic
+                         ,ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic      & ! danli mosaic
+                         ,TR_URB2D_mosaic,TB_URB2D_mosaic                                                     & ! danli mosaic 
+                         ,TG_URB2D_mosaic,TC_URB2D_mosaic                                                     & ! danli mosaic 
+                         ,QC_URB2D_mosaic                                                                     & ! danli mosaic
+                         ,TRL_URB3D_mosaic,TBL_URB3D_mosaic                                                   & ! danli mosaic 
+                         ,TGL_URB3D_mosaic                                                                    & ! danli mosaic 
+                         ,SH_URB2D_mosaic,LH_URB2D_mosaic                                                     & ! danli mosaic 
+                         ,G_URB2D_mosaic,RN_URB2D_mosaic                                                      & ! danli mosaic 
+                         ,TS_URB2D_mosaic                                                                     & ! danli mosaic 
+                         ,TS_RUL2D_mosaic                                                                     & ! danli mosaic
                          )
 
 !-----------------------------------------------------------------
@@ -629,6 +644,35 @@ CONTAINS
    INTEGER :: i, j, k, itf, jtf, ktf, n
 integer myproc
 
+!-------------------------------------------------
+! Noah-mosaic related variables are added to declaration  (danli)
+!-------------------------------------------------
+  
+  INTEGER, INTENT(IN) :: sf_surface_mosaic, NLCAT   
+  INTEGER, INTENT(IN) :: mosaic_cat
+  REAL, DIMENSION( ims:ime, NLCAT, jms:jme ) , INTENT(IN) , OPTIONAL::   LANDUSEF
+  REAL, DIMENSION( ims:ime, NLCAT, jms:jme ) , INTENT(INOUT) , OPTIONAL::   LANDUSEF2 
+  INTEGER, DIMENSION( ims:ime, NLCAT, jms:jme ), INTENT(INOUT), OPTIONAL :: mosaic_cat_index 
+
+  REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT):: &
+        TSK_mosaic, CANWAT_mosaic, SNOW_mosaic,SNOWH_mosaic, SNOWC_mosaic
+  REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::                &
+        ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic
+  REAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), OPTIONAL, INTENT(INOUT):: &
+        TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic
+  REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::                &
+        TR_URB2D_mosaic, TB_URB2D_mosaic, TG_URB2D_mosaic, TC_URB2D_mosaic,QC_URB2D_mosaic,    &
+        SH_URB2D_mosaic,LH_URB2D_mosaic,G_URB2D_mosaic,RN_URB2D_mosaic,TS_URB2D_mosaic, TS_RUL2D_mosaic  
+                  
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TRL_URB3D_mosaic
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TBL_URB3D_mosaic
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TGL_URB3D_mosaic  
+   LOGICAL :: IPRINT
+ 
+!-------------------------------------------------
+! End of Noah-mosaic 
+!-------------------------------------------------  
+   
 !-----------------------------------------------------------------
 
    sf_urban_physics=config_flags%sf_urban_physics
@@ -646,6 +690,10 @@ integer myproc
    obs_twindo=config_flags%obs_twindo
    oml_hml0=config_flags%oml_hml0
    sf_ocean_physics=config_flags%sf_ocean_physics
+#else
+   obs_twindo_cg=0
+   obs_twindo=0
+   oml_hml0=0
 #endif
 
 !..Added G. Thompson to determine if we will compute and pass radiative
@@ -1045,6 +1093,24 @@ integer myproc
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
                 SWUPsubgrid,lhsoi,lhveg,lhtran                      &
 ! end of CLM vraiables 
+                ,landusef,landusef2,NLCAT                       & ! danli mosaic
+                ,sf_surface_mosaic, mosaic_cat                  & ! danli mosaic
+                ,mosaic_cat_index                               & ! danli mosaic  
+                ,TSK_mosaic,TSLB_mosaic                         & ! danli mosaic
+                ,SMOIS_mosaic,SH2O_mosaic                       & ! danli mosaic 
+                ,CANWAT_mosaic,SNOW_mosaic                      & ! danli mosaic
+                ,SNOWH_mosaic,SNOWC_mosaic                      & ! danli mosaic
+                ,ALBEDO,ALBBCK, EMISS, EMBCK                    & ! danli mosaic          
+                ,ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic   &         ! danli mosaic
+                ,TR_URB2D_mosaic,TB_URB2D_mosaic                &  !danli mosaic 
+                ,TG_URB2D_mosaic,TC_URB2D_mosaic                &  !danli mosaic 
+                ,QC_URB2D_mosaic                                &  !danli mosaic                  
+                ,TRL_URB3D_mosaic,TBL_URB3D_mosaic              &  !danli mosaic 
+                ,TGL_URB3D_mosaic                               &  !danli mosaic 
+                ,SH_URB2D_mosaic,LH_URB2D_mosaic                &  !danli mosaic 
+                ,G_URB2D_mosaic,RN_URB2D_mosaic                 &  !danli mosaic 
+                ,TS_URB2D_mosaic                                &  !danli mosaic 
+                ,TS_RUL2D_mosaic                                &  !danli mosaic 
                ) 
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to cu_init' )
@@ -1892,6 +1958,24 @@ integer myproc
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
                 SWUPsubgrid,lhsoi,lhveg,lhtran                      &
 ! end of CLM vraiables 
+                ,landusef,landusef2,NLCAT                       & ! danli mosaic
+                ,sf_surface_mosaic, mosaic_cat                  & ! danli mosaic
+                ,mosaic_cat_index                               & ! danli mosaic  
+                ,TSK_mosaic,TSLB_mosaic                         & ! danli mosaic
+                ,SMOIS_mosaic,SH2O_mosaic                       & ! danli mosaic
+                ,CANWAT_mosaic,SNOW_mosaic                      & ! danli mosaic
+                ,SNOWH_mosaic,SNOWC_mosaic                      & ! danli mosaic
+                ,ALBEDO,ALBBCK, EMISS, EMBCK                    & ! danli mosaic 
+                ,ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic   &         ! danli mosaic
+                ,TR_URB2D_mosaic,TB_URB2D_mosaic                &  !danli mosaic 
+                ,TG_URB2D_mosaic,TC_URB2D_mosaic                &  !danli mosaic 
+                ,QC_URB2D_mosaic                                &  !danli mosaic                  
+                ,TRL_URB3D_mosaic,TBL_URB3D_mosaic              &  !danli mosaic 
+                ,TGL_URB3D_mosaic                               &  !danli mosaic 
+                ,SH_URB2D_mosaic,LH_URB2D_mosaic                &  !danli mosaic 
+                ,G_URB2D_mosaic,RN_URB2D_mosaic                 &  !danli mosaic 
+                ,TS_URB2D_mosaic                                &  !danli mosaic 
+                ,TS_RUL2D_mosaic                                &  !danli mosaic  
                                                                 ) !Optional oml
 !--------------------------------------------------------------------
    USE module_sf_sfclay
@@ -2229,6 +2313,37 @@ integer myproc
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
                 SWUPsubgrid,lhsoi,lhtran,lhveg
 
+!-------------------------------------------------
+! Noah-mosaic related variables are added to declaration  (danli)
+!-------------------------------------------------
+  
+  INTEGER, INTENT(IN) :: sf_surface_mosaic, NLCAT   
+  INTEGER, INTENT(IN) :: mosaic_cat
+  REAL, DIMENSION( ims:ime, NLCAT, jms:jme ) , INTENT(IN)::   LANDUSEF
+  REAL, DIMENSION( ims:ime, NLCAT, jms:jme ) , INTENT(INOUT)::   LANDUSEF2
+  INTEGER, DIMENSION( ims:ime, NLCAT, jms:jme ), INTENT(INOUT) :: mosaic_cat_index 
+
+  REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::   TSK_mosaic, CANWAT_mosaic, SNOW_mosaic,SNOWH_mosaic, SNOWC_mosaic 
+  REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ALBEDO,ALBBCK, EMISS, EMBCK 
+
+  REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::   ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic
+  
+  REAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), OPTIONAL, INTENT(INOUT)::   TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic
+  
+  REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::   TR_URB2D_mosaic, TB_URB2D_mosaic, TG_URB2D_mosaic, TC_URB2D_mosaic,QC_URB2D_mosaic,  &
+                                                                                     SH_URB2D_mosaic,LH_URB2D_mosaic,G_URB2D_mosaic,RN_URB2D_mosaic,TS_URB2D_mosaic, TS_RUL2D_mosaic  
+                    
+  REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TRL_URB3D_mosaic
+  REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TBL_URB3D_mosaic
+  REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TGL_URB3D_mosaic  
+   
+   
+  LOGICAL :: IPRINT
+  
+!-------------------------------------------------
+! End of Noah-mosaic related variables 
+!-------------------------------------------------  
+
 #if ( EM_CORE == 1 )
 !local mynn 
    INTEGER :: mynn_closure_level
@@ -2435,6 +2550,42 @@ integer myproc
                 CALL wrf_error_fatal ( 'arguments not present for calling urban model' )
              ENDIF
           ENDIF
+          
+!danli mosaic
+
+          IF (SF_surface_mosaic.eq.1) THEN
+
+CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_flags%ISICE, XLAND, XICE,config_flags%fractional_seaice,TSK,TSLB,SMOIS,SH2O,SNOW,SNOWC,SNOWH,CANWAT,  &                
+                  ids,ide, jds,jde, kds,kde,  &
+                  ims,ime, jms,jme, kms,kme,  &
+                  its,ite, jts,jte, kts,kte, restart,             &
+                  landusef,landusef2,NLCAT,num_soil_layers                  & 
+                  ,sf_surface_mosaic, mosaic_cat                    & 
+                  , mosaic_cat_index                              &   
+                  ,TSK_mosaic,TSLB_mosaic                         &
+                  ,SMOIS_mosaic,SH2O_mosaic                       & 
+                  ,CANWAT_mosaic,SNOW_mosaic                      &
+                  ,SNOWH_mosaic,SNOWC_mosaic                      &
+                  ,ALBEDO,ALBBCK, EMISS, EMBCK,                    &         !danli  
+#if ( NMM_CORE == 1 )
+                                                            Z0, &
+#else
+                                                           ZNT, &
+#endif  
+                  ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic   &         !danli
+                 ,TR_URB2D_mosaic,TB_URB2D_mosaic                &  !danli mosaic 
+                 ,TG_URB2D_mosaic,TC_URB2D_mosaic                &  !danli mosaic 
+                 ,QC_URB2D_mosaic                                &  !danli mosaic                  
+                 ,TRL_URB3D_mosaic,TBL_URB3D_mosaic              &  !danli mosaic 
+                 ,TGL_URB3D_mosaic                               &  !danli mosaic 
+                 ,SH_URB2D_mosaic,LH_URB2D_mosaic                &  !danli mosaic 
+                 ,G_URB2D_mosaic,RN_URB2D_mosaic                 &  !danli mosaic 
+                 ,TS_URB2D_mosaic                                &  !danli mosaic 
+                 ,TS_RUL2D_mosaic                                &  !danli mosaic                        
+                   )
+
+          ENDIF               
+          
 !
 
       CASE (NOAHMPSCHEME)
@@ -2474,9 +2625,10 @@ integer myproc
                      its,ite, jts,jte, kts,kte                     )
 
       CASE (PXLSMSCHEME)
-          if(config_flags%num_land_cat .ne. 20 .and. config_flags%num_land_cat .ne. 24 .and. &
-             config_flags%num_land_cat .ne. 40 .and. config_flags%num_land_cat .ne. 50 ) CALL wrf_error_fatal &
-            ( 'module_physics_init: 24 cat USGS must be used with PX LSM option' )
+          if(config_flags%num_land_cat .ne. 20 .and. config_flags%num_land_cat .ne. 21 .and. & ! MODIS
+             config_flags%num_land_cat .ne. 24 .and. config_flags%num_land_cat .ne. 28 .and. & ! USGS
+             config_flags%num_land_cat .ne. 40 .and. config_flags%num_land_cat .ne. 50 )     & ! NLCD
+          CALL wrf_error_fatal ( 'module_physics_init: PX LSM option requires USGS, MODIS, or NLCD' )
           CALL LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,  &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,        &
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS, &
@@ -2510,8 +2662,9 @@ integer myproc
 #ifdef WRF_USE_CLM
         IF(PRESENT(numc))THEN
         ! added by Jiming Jin 10/14/2012
-        if(config_flags%num_land_cat .ne. 24) CALL wrf_error_fatal &
-            ( 'module_physics_init: 24 cat USGS must be used with CLM option')
+        if((config_flags%num_land_cat .ne. 24) .AND. &
+           (config_flags%num_land_cat .ne. 28)) CALL wrf_error_fatal &
+            ( 'module_physics_init: USGS must be used with CLM option')
 
             CALL CLMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,    &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,            &
@@ -3141,6 +3294,8 @@ integer myproc
    USE module_mp_HWRF
 #endif
    USE module_mp_thompson
+   USE module_mp_full_sbm
+   USE module_mp_fast_sbm
    USE module_mp_morr_two_moment
    USE module_mp_milbrandt2mom
 !  USE module_mp_milbrandt3mom
@@ -3272,6 +3427,14 @@ integer myproc
      CASE (WDM6SCHEME)
           CALL wdm6init(rhoair0,rhowater,rhosnow,cliq,cpv,n_ccn0,allowed_to_read )
 #if (EM_CORE==1)
+    CASE (FULL_KHAIN_LYNN)
+     IF(start_of_simulation.or.restart)THEN
+          CALL full_hucminit(dt)
+     END IF
+    CASE (FAST_KHAIN_LYNN)
+     IF(start_of_simulation.or.restart)THEN
+          CALL fast_hucminit(dt)
+     END IF
      CASE (NSSL_1MOMLFO)
          CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=0,mixphase=0,ihvol=-1) ! no separate hail
      CASE (NSSL_1MOM)
@@ -3879,7 +4042,7 @@ subroutine aerosol_in(aerodm,pina,alevsiz,no_months,no_src_types,XLAT,XLONG,   &
         end do
       close(28)
 
-!-- read in aerosol optical depth lat data
+!-- read in aerosol optical depth lon data
 
       lon_unit = 29
         OPEN(lon_unit, FILE='aerosol_lon.formatted',FORM='FORMATTED',STATUS='OLD')

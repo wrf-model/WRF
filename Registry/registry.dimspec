@@ -47,6 +47,8 @@ dimspec    snly    2     namelist=num_snow_layers          z     snow_layers
 dimspec    l       2     namelist=num_soil_layers          z     soil_layers
 dimspec    snsl    2     namelist=num_snso_layers          z     snso_layers
 dimspec    ulay    2     namelist=num_urban_layers         z     urban_layers
+dimspec    mocat   2     namelist=mosaic_cat               z     mosaic categories  # danli
+dimspec    mocat2  2     namelist=mosaic_cat_soil          z     mosaic categories * soil layers  # danli
 dimspec    uhi     2     namelist=num_urban_hi             z     urban_vertical_layers
 dimspec    udr     2     constant=4                        z     urban_wind_directions
 dimspec    urb     2     constant=132                      z     num_urb_params
@@ -67,9 +69,9 @@ dimspec    ?       -     namelist=ts_buf_size              c     ts_buf_size
 dimspec    !       -     namelist=max_ts_locs              c     max_ts_locs
 dimspec    v       -     constant=1                        z     one
 dimspec    =       -     constant=4                        c     num_bands
-dimspec    5       2     constant=15                       z          snow and soil levels
-dimspec    6       2     constant=16                       z          interface levels
-dimspec    7       2     constant=10                       z          soil levels or lake levels
+dimspec    lake_ssl  2   constant=15                       z     snow_and_soil_levels
+dimspec    lake_intl 2   constant=16                       z     interface_levels
+dimspec    lake_sll  2   constant=10                       z     soil_levels_or_lake_levels
 
 # Dimensions required only for Chemistry
 

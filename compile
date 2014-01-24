@@ -241,6 +241,8 @@ else
       /bin/cat Registry/Registry.CONVERT >> Registry/Registry
     endif
   else if ( $WRF_DA_CORE == 1 )  then
+    setenv BUFR 1
+    setenv CRTM 1
     if ( ! -f Registry/Registry ) then
       set overwrite=1
     else
@@ -357,13 +359,33 @@ else
   endif
 
   echo " "
+  echo "============================================================================================== "
+  echo " "
+  cat inc/version_decl | cut -c 45-54
+  echo " "
   echo -n "Compiling: "
   if ( $WRF_DA_CORE ) echo -n "WRF_DA_CORE "
   if ( $WRF_EM_CORE ) echo -n "WRF_EM_CORE "
   if ( $WRF_NMM_CORE ) echo -n "WRF_NMM_CORE "
   if ( $WRF_COAMPS_CORE ) echo -n "WRF_COAMPS_CORE "
   if ( $WRF_EXP_CORE ) echo -n "WRF_EXP_CORE "
-  echo "."
+  echo " "
+  env | grep LARGE
+  echo " "
+  uname -a
+  echo " "
+  set comp = ( `grep "^SFC" configure.wrf | cut -d"=" -f2-` )
+  if      ( "$comp[1]" == "gfortran" ) then
+    gfortran --version
+  else if ( "$comp[1]" == "pgf90" ) then
+    pgf90 --version
+  else if ( "$comp[1]" == "ifort" ) then
+    ifort -V
+  else
+    echo "Not sure how to figure out the version of this compiler: $comp[1]"
+  endif
+  echo " "
+  echo "============================================================================================== "
   echo " "
 
   if ( ! $?WRF_SRC_ROOT_DIR ) setenv WRF_SRC_ROOT_DIR `pwd`

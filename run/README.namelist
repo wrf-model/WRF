@@ -496,7 +496,10 @@ Namelist variables for controlling the adaptive time step option:
 
  ra_call_offset                      radiation call offset
                                      = 0 (no offset), =-1 (old offset)
-
+ swint_opt                           Interpolation of short-wave radiation based on the updated solar zenith angle 
+                                       between SW call
+                                     = 0, no interpolation
+                                     = 1, use interpolation
  cam_abs_freq_s                      = 21600 default CAM clearsky longwave absorption calculation frequency
                                             (recommended minimum value to speed scheme up)
  levsiz                              = 59 for CAM radiation input ozone levels, set automatically
@@ -510,7 +513,7 @@ Namelist variables for controlling the adaptive time step option:
  aer_opt                             = aerosol input option for radiation (currently rrtmg only)
                                      = 0, none
                                      = 1, using Tegen (1997) data, 
-                                     = 2, using Jararuas method (see other aer_* options) 
+                                     = 2, using J. A. Ruiz-Arias method (see other aer_* options) 
  alevsiz                             = 12 for Tegen aerosol input levels, set automatically
  no_src_types                        = 6 for Tegen aerosols: organic and black carbon, sea salt, sulfalte, dust,
                                        and stratospheric aerosol (volcanic ashes - currently 0), set automatically
@@ -518,12 +521,15 @@ Namelist variables for controlling the adaptive time step option:
                                        between SW call
                                      = 0, no interpolation
                                      = 1, use interpolation
+
+ The following aerosol options allow RRTMG and new Goddard radiation schemes to see it, but the aerosols are
+     constant during the model integration.
  aer_aod550_opt                      = [1,2] :
                                        1 = input constant value for AOD at 550 nm from namelist.
                                            In this case, the value is read from aer_aod550_val;
                                        2 = input value from auxiliary input 5. It is a time-varying 2D grid in netcdf 
                                            wrf-compatible format. The default is aer_aod550_opt=1 and aer_aod550_val=0.12
- aer_aod550_opt                      = 0.12
+ aer_aod550_val                      = 0.12
  aer_angexp_opt                      = [1,2,3] :
                                        1 = input constant value for Angstrom exponent from namelist. In this case, 
                                            the value is read from aer_angexp_val;
@@ -536,7 +542,6 @@ Namelist variables for controlling the adaptive time step option:
  aer_asy_opt                         = [1,2,3] similar to aer_angexp_opt.
  aer_asy_val                         = 0.9
  aer_type                            = [1,2,3] : 1 for rural, 2 is urban and 3 is maritime.
-
 
  sf_sfclay_physics (max_dom)         surface-layer option (old bl_sfclay_physics option)
                                      = 0, no surface-layer
@@ -589,10 +594,11 @@ Namelist variables for controlling the adaptive time step option:
 
  bldt (max_dom)                      = 0,       ; minutes between boundary-layer physics calls
 
- grav_settling                       gravitational settling of fog/cloud droplets (Now works for any PBL scheme)
+ grav_settling (max_dom)             gravitational settling of fog/cloud droplets (Now works for any PBL scheme)
  				     = 0, No settling of cloud droplets
 				     = 1, Settling from Dyunkerke 1991 (in atmos and at surface)
-				     = 2, Fogdes at surface and Dyunkerke in the atmos.
+				     = 2, Fogdes (vegetation & wind speed dependent; Katata et al. 2008) at surface 
+                                          and Dyunkerke in the atmos.
 
  nphs (max_dom)                      = FOR NMM: number of fundamental timesteps between
                                                 calls to turbulence and microphysics;
@@ -608,6 +614,10 @@ Namelist variables for controlling the adaptive time step option:
  bl_mynn_tkeadvect                   = .false., default off; = .true. do MYNN tke advection
  scalar_pblmix                       = 1 ; mix scalar fields consistent with PBL option (exch_h)
  tracer_pblmix                       = 1 ; mix tracer fields consistent with PBL option (exch_h)
+ sf_surface_mosaic                   option to mosaic landuse categories for Noah LSM            
+                                     = 0 ; default; use dominant category only
+                                     = 1 ; use mosaic landuse categories
+ mosaic_cat                          = 3 ; number of mosaic landuse categories in a grid cell
 
  cu_physics (max_dom)                cumulus option
                                      = 0, no cumulus
@@ -673,8 +683,14 @@ Namelist variables for controlling the adaptive time step option:
                                                   0 = without snow-cover effect
  icloud                              = 1,	; cloud effect to the optical depth in radiation
                                                   (only works for ra_sw_physics = 1,4 and ra_lw_physics = 1,4)
-                                                  1 = with cloud effect
+                                                  Since 3.6, this also controls the cloud fraction options
+                                                  1 = with cloud effect, and use cloud fraction option 2
                                                   0 = without cloud effect
+                                                  2 = with cloud effect, and use cloud fraction option 1
+ icloud_cu                                	; sub-grid cloud effect to the optical depth in radiation
+                                                  currently it works only for KF scheme
+                                                  0 = no sub-grid cloudl effect
+                                                  1 = consider sub-grid cloud effect
  swrad_scat                          = 1.       ; scattering tuning parameter (default 1. is 1.e-5 m2/kg)
                                                   (works for ra_sw_physics = 1 option only)
  surface_input_source                = 1,	; where landuse and soil category data come from:
@@ -708,10 +724,11 @@ Namelist variables for controlling the adaptive time step option:
  ensdim                              = 144      ; G-D only
                                                   These are recommended numbers. If you would like to use
                                                   any other number, consult the code, know what you are doing.
- seaice_threshold                    = 271      ; tsk < seaice_threshold, if water point and 5-layer slab
+ seaice_threshold                    = 100.     ; tsk < seaice_threshold, if water point and 5-layer slab
                                                 ; scheme, set to land point and permanent ice; if water point
                                                 ; and Noah scheme, set to land point, permanent ice, set temps
-                                                ; from 3 m to surface, and set smois and sh2o
+                                                ; from 2 m to surface, and set smois and sh2o. The default value has changed
+                                                ; from 271 to 100 K in v3.5.1 to avoid mixed-up use with fractional seaice input
  sst_update                          = 0        ; time-varying sea-surface temp (0=no, 1=yes). If selected real 
                                                 ; puts SST, XICE, ALBEDO and VEGFRA in wrflowinp_d01 file, and wrf updates 
                                                 ; these from it at same interval as boundary file. Also requires

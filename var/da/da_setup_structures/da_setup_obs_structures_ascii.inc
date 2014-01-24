@@ -2,6 +2,9 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
 
    !-------------------------------------------------------------------------
    ! Purpose: Define, allocate and read of observation structure.
+   ! Updates:
+   !          Syed RH Rizvi NCAR/NESL/MMM/DAS Date:  02/21/2013 
+   !          Updated with thinning option
    !-------------------------------------------------------------------------
 
    implicit none
@@ -12,12 +15,74 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
 
    character(len=filename_len)  :: filename
    integer                      :: n, i, j, k
-   logical                      :: outside
+   logical                      :: outside, thin_3d
    logical                      :: uvq_direct=.false.  !cys_add
+   integer  :: istart,iend,jstart,jend
+   real     :: rlonlat(4)
 
    if (trace_use) call da_trace_entry("da_setup_obs_structures_ascii")
+   !-------------------------------
+   ! 0.0 Make thinning grids
+   !------------------------------
+   call init_constants_derived
+   thin_3d=.false.
+   if ( thin_conv ) then
+      rlat_min =  r999
+      rlat_max = -r999
+      rlon_min =  r999
+      rlon_max = -r999
+
+      istart=MINVAL( grid%i_start(1:grid%num_tiles) )
+      iend  =MAXVAL( grid%i_end  (1:grid%num_tiles) )
+      jstart=MINVAL( grid%j_start(1:grid%num_tiles) )
+      jend  =MAXVAL( grid%j_end  (1:grid%num_tiles) )
+
+      do i = istart, iend
+         do j = jstart, jend
+            rlat_min=min(rlat_min, grid%xb%lat(i,j))
+            rlat_max=max(rlat_max, grid%xb%lat(i,j))
+            if( grid%xb%lon(i,j) < 0.0) then
+              rlon_min=min(rlon_min, (r360+grid%xb%lon(i,j)))
+              rlon_max=max(rlon_max, (r360+grid%xb%lon(i,j)))
+            else
+              rlon_min=min(rlon_min, grid%xb%lon(i,j))
+              rlon_max=max(rlon_max, grid%xb%lon(i,j))
+            endif
+         enddo
+      enddo
+
+#ifdef DM_PARALLEL
+      call mpi_reduce(rlat_min, rlonlat(1), 1, true_mpi_real, mpi_min, root, comm, ierr)
+      call mpi_reduce(rlon_min, rlonlat(2), 1, true_mpi_real, mpi_min, root, comm, ierr)
+      call mpi_reduce(rlat_max, rlonlat(3), 1, true_mpi_real, mpi_max, root, comm, ierr)
+      call mpi_reduce(rlon_max, rlonlat(4), 1, true_mpi_real, mpi_max, root, comm, ierr)
+
+      CALL mpi_bcast( rlonlat, 4 , true_mpi_real , root , comm, ierr )
+
+      rlat_min = rlonlat(1)
+      rlon_min = rlonlat(2)
+      rlat_max = rlonlat(3)
+      rlon_max = rlonlat(4)
+#endif
+
+      dlat_grid = rlat_max - rlat_min
+      dlon_grid = rlon_max - rlon_min
+
+      allocate(thinning_grid_conv(num_ob_indexes))
+      do n = 1, num_ob_indexes
+       if( n == radar .or. n == airep .or. n == tamdar ) then
+         thin_3d=.true.
+         call make3grids (n,thin_mesh_conv(n), thin_3d)
+        else
+         call make3grids (n,thin_mesh_conv(n))
+        end if 
+      end do
+   end if
+
 
    !-------------------------------
+
+
    ! Find out if pseudo ob is local
    !-------------------------------
    if (num_pseudo > 0) then
@@ -65,7 +130,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
         write(filename(1:10), fmt='(a, i2.2, a)') 'ob', n,'.ascii'
 
          ! scan main body of gts observation file
-         call da_scan_obs_ascii (iv, filename)
+         call da_scan_obs_ascii (iv, filename,grid)
 
          if (use_ssmiretrievalobs .or. use_ssmitbobs) then
             ! scan SSMI observation file
@@ -76,7 +141,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
          if (use_radarobs) then
             ! scan radar observation file
             write(filename(1:10), fmt='(a, i2.2, a)') 'ob', n,'.radar'
-            call da_scan_obs_radar(iv, filename)
+            call da_scan_obs_radar(iv, filename, grid)
             print*,'scan radar obs ',n,filename(1:10),iv%info(:)%ntotal, iv%info(:)%nlocal
          end if
 
@@ -85,9 +150,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
       end do
    else
       iv%time = 1
-      print*,'scan obs ascii'
-      call da_scan_obs_ascii(iv, 'ob.ascii')
-      print*,'end scan obs ascii'
+      call da_scan_obs_ascii(iv, 'ob.ascii', grid)
       !-----------------------------------------------------------------------
       ! read header of ssmi observation file
       !-----------------------------------------------------------------------
@@ -97,17 +160,17 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
 
       ! scan main body of radar observation file
       if (use_radarobs) then
-         call da_scan_obs_radar(iv, 'ob.radar')
+         call da_scan_obs_radar(iv, 'ob.radar', grid)
       end if
       do i=1,num_ob_indexes
          iv%info(i)%plocal(iv%time) = iv%info(i)%nlocal
          iv%info(i)%ptotal(iv%time) = iv%info(i)%ntotal
       end do
    end if
+
    !--------------------------------------------------------------------------
    ! Allocate the ob based on input number of obs:
    !--------------------------------------------------------------------------
-
    call da_allocate_observations (iv)
 
    if (num_fgat_time > 1) then
@@ -119,7 +182,7 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
          write(filename(1:10), fmt='(a, i2.2, a)') 'ob', n,'.ascii'
 
          ! Read gts observation file
-         call da_read_obs_ascii (iv, filename, uvq_direct)  !cys_change
+         call da_read_obs_ascii (iv, filename, uvq_direct, grid)  !cys_change
 
          if (use_ssmiretrievalobs .or. use_ssmitbobs) then
             ! read ssmi observation file
@@ -130,14 +193,18 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
          if (use_radarobs) then
             ! read radar observation file
             write(filename(1:10), fmt='(a, i2.2, a)') 'ob', n,'.radar'
-            call da_read_obs_radar(iv, filename)
+            call da_read_obs_radar(iv, filename, grid)
          end if
 
+         iv%info(:)%thin_ptotal(n) = iv%info(:)%thin_ntotal
+         iv%info(:)%thin_plocal(n) = iv%info(:)%thin_nlocal
       end do
    else
       iv%time = 1
 
-      call da_read_obs_ascii(iv, 'ob.ascii', uvq_direct)  !cys_change
+      call da_read_obs_ascii(iv, 'ob.ascii', uvq_direct, grid)  !cys_change
+      do i=1,num_ob_indexes
+      end do
 
       if (use_ssmiretrievalobs .or. use_ssmitbobs) then
          ! read ssmi observation file
@@ -146,8 +213,12 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
 
       if (use_radarobs) then
          ! read radar observation file
-         call da_read_obs_radar(iv, 'ob.radar')
+         call da_read_obs_radar(iv, 'ob.radar', grid)
       end if
+      do i=1,num_ob_indexes
+         iv%info(i)%thin_ptotal(iv%time) = iv%info(i)%thin_ntotal
+         iv%info(i)%thin_plocal(iv%time) = iv%info(i)%thin_nlocal
+      end do
    end if
 
    if ( use_gpsrefobs .and. (ob_format_gpsro == ob_format_bufr) ) then
@@ -189,6 +260,26 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
    end if
 
    !--------------------------------------------------------------------------
+   ! [2.5] Set all thinned obs missing  
+   !--------------------------------------------------------------------------
+    if ( thin_conv ) then
+     do i = 1, num_ob_indexes
+
+        if ( iv%info(i)%ntotal > 0 ) then
+            if ( iv%info(i)%nlocal > 0 ) then
+               if ( ANY(iv%info(i)%thinned(:,:)) ) then
+                  if( i == radar .or. i == airep .or. i==tamdar ) then
+                  call da_set_3d_obs_missing(iv,i)  ! assign missing values level-by-level if thinned=true data
+                  else
+                  call da_set_obs_missing(iv,i)  ! assign missing values to those thinned=true data
+                  end if
+               end if
+            end if
+        end if
+     end do
+    end if ! thin_conv
+  
+   !--------------------------------------------------------------------------
    ! [3.0] Calculate innovation vector (O-B) and create (smaller) ob structure:
    !--------------------------------------------------------------------------
 
@@ -200,10 +291,23 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
      call da_fill_obs_structures(iv, ob)
    endif
 
+
+
    iv%time = 1
 
-   if (trace_use) call da_trace_exit("da_setup_obs_structures_ascii")
+   if ( thin_conv ) then
+      do n = 1, num_ob_indexes
+         if( n==radar .or. n == airep .or. n==tamdar ) then
+         thin_3d=.true.
+         call destroygrids_conv (n, thin_3d)
+         else
+         call destroygrids_conv (n)
+         end if
+      end do
+      deallocate(thinning_grid_conv)
+   end if
 
+   if (trace_use) call da_trace_exit("da_setup_obs_structures_ascii")
 end subroutine da_setup_obs_structures_ascii
 
 

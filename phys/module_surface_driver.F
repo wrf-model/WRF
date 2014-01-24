@@ -239,6 +239,20 @@ CONTAINS
      &          ,dl_u_bep                                             &                          
      &          ,tsk_save                                             & !for fractional seaice
      &          ,cldfra                                               & !ssib
+     &          ,sf_surface_mosaic,mosaic_cat,mosaic_cat_index                                    & !danli mosaic
+     &          ,landusef2,TSK_mosaic,QSFC_mosaic,TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic            & !danli mosaic
+     &          ,CANWAT_mosaic,SNOW_mosaic,SNOWH_mosaic,SNOWC_mosaic                              & !danli mosaic
+     &          ,ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic   & !danli mosaic
+     &          ,HFX_mosaic,QFX_mosaic, LH_mosaic, GRDFLX_mosaic,SNOTIME_mosaic                   & !danli mosaic
+     &          ,TR_URB2D_mosaic,TB_URB2D_mosaic                      &  !danli mosaic 
+     &          ,TG_URB2D_mosaic,TC_URB2D_mosaic                      &  !danli mosaic 
+     &          ,QC_URB2D_mosaic,UC_URB2D_mosaic                      &  !danli mosaic                  
+     &          ,TRL_URB3D_mosaic,TBL_URB3D_mosaic                    &  !danli mosaic 
+     &          ,TGL_URB3D_mosaic                                     &  !danli mosaic 
+     &          ,SH_URB2D_mosaic,LH_URB2D_mosaic                      &  !danli mosaic 
+     &          ,G_URB2D_mosaic,RN_URB2D_mosaic                       &  !danli mosaic 
+     &          ,TS_URB2D_mosaic                                      &  !danli mosaic 
+     &          ,TS_RUL2D_mosaic                                      &  !danli mosaic     
      &                                                             )
               
 #if ( ! NMM_CORE == 1 )
@@ -287,7 +301,7 @@ CONTAINS
    USE module_sf_myjsfc
    USE module_sf_qnsesfc
    USE module_sf_gfs
-   USE module_sf_noahdrv, only : lsm
+   USE module_sf_noahdrv                           ! danli mosaic, the " ,only : lsm " needs to be deleted 
    USE module_sf_noahmpdrv, only : noahmplsm
    USE module_sf_noahmp_groundwater
    USE module_sf_noah_seaice_drv
@@ -393,7 +407,7 @@ CONTAINS
 !-- TDLY          accumulated daily mean surface temperature of the current day (K)
 !-- XLAND         land mask (1 for land, 2 for water)
 !-- MAX_EDOM      number of external model domains
-!-- CPLMASK       coupling mask (1 for data read in wrflowinput, 0 data received from the coupler)
+!-- CPLMASK       coupling mask (0 for data read in wrflowinput, 1 data received from the coupler)
 !-- ZNT           thermal time-varying roughness length (m)
 !-- MZNT          momentum time-varying roughness length (m)
 !-- Z0            background roughness length (m)
@@ -1116,6 +1130,36 @@ CONTAINS
      REAL,  DIMENSION( ims:ime, jms:jme )  :: TH2_URB2D   !urban local var
      REAL,  DIMENSION( ims:ime, jms:jme )  :: Q2_URB2D    !urban local var
      REAL,  DIMENSION( ims:ime, jms:jme )  :: UST_URB2D  !urban local var
+     
+!-------------------------------------------------
+! Noah-mosaic related variables are added to declaration  (danli)
+!-------------------------------------------------
+  
+  INTEGER, INTENT(IN) :: sf_surface_mosaic
+  INTEGER, INTENT(IN) :: mosaic_cat
+  INTEGER, DIMENSION( ims:ime, NLCAT, jms:jme ), INTENT(INOUT), OPTIONAL :: mosaic_cat_index
+  REAL,    DIMENSION( ims:ime, NLCAT, jms:jme ), INTENT(INOUT), OPTIONAL :: landusef2
+
+  REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::   &
+        TSK_mosaic, QSFC_mosaic, CANWAT_mosaic, SNOW_mosaic,SNOWH_mosaic, SNOWC_mosaic
+  REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::   &
+        ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic,   &
+        HFX_mosaic,QFX_mosaic, LH_mosaic, GRDFLX_mosaic,SNOTIME_mosaic    
+  REAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), OPTIONAL, INTENT(INOUT)::   &
+        TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic
+
+   REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::  &
+         TR_URB2D_mosaic, TB_URB2D_mosaic, TG_URB2D_mosaic, TC_URB2D_mosaic,QC_URB2D_mosaic, UC_URB2D_mosaic, &
+         SH_URB2D_mosaic,LH_URB2D_mosaic,G_URB2D_mosaic,RN_URB2D_mosaic,TS_URB2D_mosaic, TS_RUL2D_mosaic  
+                  
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TRL_URB3D_mosaic
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TBL_URB3D_mosaic
+   REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TGL_URB3D_mosaic
+     
+!-------------------------------------------------
+! End of Noah-mosaic related variables 
+!-------------------------------------------------     
+     
 !--------fds (06/2010)---------------------------------------------
      REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ),               &
             OPTIONAL, INTENT(IN) ::                                 CLDFRA
@@ -2294,7 +2338,99 @@ CONTAINS
 #endif
 
          CALL wrf_debug(100,'in NOAH DRV')
-         CALL lsm(dz8w,qv_curr,p8w,t_phy,tsk,                 &
+                
+         IF (sf_surface_mosaic == 1) THEN
+          
+           IF ( PRESENT( TSK_mosaic ) .AND. PRESENT( HFX_mosaic ) ) THEN
+             CALL lsm_mosaic(dz8w,qv_curr,p8w,t_phy,tsk,                 &
+                hfx,qfx,lh,grdflx,qgh,gsw,swdown,glw,smstav,smstot,    &
+                sfcrunoff,udrunoff,ivgtyp,isltyp,isurban,isice,vegfra,        &
+                albedo,albbck,znt,z0, tmn,xland,xice,emiss, embck,    &
+                snowc,qsfc,rainbl,                              &
+                mminlu,                                         &
+                num_soil_layers,dtbl,dzs,itimestep,             &
+                smois,tslb,snow,canwat,                         &
+                chs, chs2, cqs2, cpm,rcp,SR,chklowq,lai,qz0,    &
+                myj,frpcpn,                                     &
+		sh2o,snowh,                                     & !h
+                u_phy,v_phy,                                    & !I
+                snoalb,shdmin,shdmax,                           & !i
+                snotime,                                        & !o
+                acsnom,acsnow,                                  & !o
+                snopcx,                                         & !o
+                potevp,                                         & !o
+                smcrel,                                         & !o
+                xice_threshold,                                 &
+                rdlai2d,usemonalb,                              &
+                br,                                             & !?
+                NOAHRES,                                        &
+                NLCAT,landusef,landusef2,                       & ! danli mosaic
+                sf_surface_mosaic,mosaic_cat,mosaic_cat_index,  & ! danli mosaic 
+                TSK_mosaic,QSFC_mosaic,                         & ! danli mosaic 
+                TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic,           & ! danli mosaic 
+                CANWAT_mosaic,SNOW_mosaic,                      & ! danli mosaic
+                SNOWH_mosaic,SNOWC_mosaic,                      & ! danli mosaic 
+                ALBEDO_mosaic,ALBBCK_mosaic,                    & ! danli mosaic
+                EMISS_mosaic, EMBCK_mosaic,                     & ! danli mosaic
+                ZNT_mosaic, Z0_mosaic,                          & ! danli mosaic 
+                HFX_mosaic,QFX_mosaic,                          & ! danli mosaic
+                LH_mosaic, GRDFLX_mosaic, SNOTIME_mosaic,       & ! danli mosaic          
+                ua_phys,flx4,fvb,fbur,fgsn,                     &
+                ids,ide, jds,jde, kds,kde,                      &
+                ims,ime, jms,jme, kms,kme,                      &
+                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
+                sf_urban_physics                                &
+!Optional urban
+                ,cmr_sfcdif,chr_sfcdif,cmc_sfcdif,chc_sfcdif    &
+                ,tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d,  & !H urban
+                uc_urb2d,                                       & !H urban
+                xxxr_urb2d,xxxb_urb2d,xxxg_urb2d,xxxc_urb2d,    & !H urban
+                trl_urb3d,tbl_urb3d,tgl_urb3d,                  & !H urban
+                sh_urb2d,lh_urb2d,g_urb2d,rn_urb2d,ts_urb2d,    & !H urban
+                TR_URB2D_mosaic,TB_URB2D_mosaic,                & !H urban  danli mosaic
+                TG_URB2D_mosaic,TC_URB2D_mosaic,                & !H urban  danli mosaic
+                QC_URB2D_mosaic,UC_URB2D_mosaic,                & !H urban  danli mosaic                  
+                TRL_URB3D_mosaic,TBL_URB3D_mosaic,              & !H urban  danli mosaic
+                TGL_URB3D_mosaic,                               & !H urban  danli mosaic
+                SH_URB2D_mosaic,LH_URB2D_mosaic,                & !H urban  danli mosaic
+                G_URB2D_mosaic,RN_URB2D_mosaic,                 & !H urban  danli mosaic
+                TS_URB2D_mosaic,                                & !H urban  danli mosaic
+                TS_RUL2D_mosaic,                                & !H urban  danli mosaic                
+                psim_urb2d,psih_urb2d,u10_urb2d,v10_urb2d,      & !O urban
+                GZ1OZ0_urb2d, AKMS_URB2D,                       & !O urban
+                th2_urb2d,q2_urb2d,ust_urb2d,                   & !O urban
+                declin,coszen,hrang,                            & !I solar
+                xlat_urb2d,                                     & !I urban
+                num_roof_layers, num_wall_layers,               & !I urban
+                num_road_layers, DZR, DZB, DZG,                 & !I urban
+                FRC_URB2D, UTYPE_URB2D,                         & !I urban
+                num_urban_layers,                               & !I multi-layer urban
+                num_urban_hi,                                   & !I multi-layer urban
+                trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,        & !H multi-layer urban
+                tlev_urb3d,qlev_urb3d,                          & !H multi-layer urban
+                tw1lev_urb3d,tw2lev_urb3d,                      & !H multi-layer urban
+                tglev_urb3d,tflev_urb3d,                        & !H multi-layer urban
+                sf_ac_urb3d,lf_ac_urb3d,cm_ac_urb3d,            & !H multi-layer urban
+                sfvent_urb3d,lfvent_urb3d,                      & !H multi-layer urban
+                sfwin1_urb3d,sfwin2_urb3d,                      & !H multi-layer urban
+                sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,      & !H multi-layer urban
+                lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d,           & !H multi-layer urban
+                mh_urb2d,stdh_urb2D,lf_urb2d,                   & !SLUCM
+                th_phy,rho,p_phy,ust,                           & !I multi-layer urban
+                gmt,julday,xlong,xlat,                          & !I multi-layer urban
+                a_u_bep,a_v_bep,a_t_bep,a_q_bep,                & !O multi-layer urban
+                a_e_bep,b_u_bep,b_v_bep,                        & !O multi-layer urban
+                b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
+                dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
+                ,sfcheadrt,INFXSRT, soldrain)
+
+           ELSE
+               CALL wrf_error_fatal('Lack arguments to call lsm_mosaic')
+           ENDIF
+
+	  ELSEIF (sf_surface_mosaic == 0) THEN
+	                  
+               CALL lsm(dz8w,qv_curr,p8w,t_phy,tsk,                 &
                 hfx,qfx,lh,grdflx,qgh,gsw,swdown,glw,smstav,smstot,    &
                 sfcrunoff,udrunoff,ivgtyp,isltyp,isurban,isice,vegfra,        &
                 albedo,albbck,znt,z0, tmn,xland,xice,emiss, embck,    &
@@ -2355,6 +2491,8 @@ CONTAINS
                 b_t_bep,b_q_bep,b_e_bep,dlg_bep,                & !O multi-layer urban
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
                 ,sfcheadrt,INFXSRT, soldrain)
+
+         ENDIF
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
               &            SEAICE_THICKNESS_DEFAULT, SEAICE_SNOWDEPTH_OPT,             &
@@ -2496,6 +2634,7 @@ CONTAINS
 !          PRESENT(g_urb2d)   .AND. PRESENT(rn_urb2d) .AND.           &
 !          PRESENT(ts_urb2d)                          .AND.           &
 !          PRESENT(frc_urb2d) .AND. PRESENT(utype_urb2d)   .AND.      &
+#if (EM_CORE==1)
            PRESENT(smcwtdxy)       .AND.                              &
            PRESENT(rechxy)         .AND.                              &   
            PRESENT(deeprechxy)     .AND.                              &
@@ -2513,6 +2652,7 @@ CONTAINS
            PRESENT(smoiseq)        .AND.                              &  
            PRESENT(wtddt)          .AND.                              &    
            PRESENT(stepwtd)        .AND.                              &
+#endif
                                                       .TRUE. ) THEN
 !------------------------------------------------------------------
          IF( PRESENT(sr) ) THEN

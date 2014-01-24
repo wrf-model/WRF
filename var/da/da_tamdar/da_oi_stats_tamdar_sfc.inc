@@ -37,7 +37,7 @@ subroutine da_oi_stats_tamdar_sfc (stats_unit, iv, ob)
    stats%average = residual_tamdar_sfc1_type(0.0, 0.0, 0.0, 0.0, 0.0)
    stats%rms_err = stats%average
 
-   do n=1, iv%info(tamdar)%nlocal
+   do n=1, iv%info(tamdar_sfc)%nlocal
       if (iv%info(tamdar_sfc)%proc_domain(1,n)) then
          u_inv = iv%tamdar_sfc(n)%u%inv
          v_inv = iv%tamdar_sfc(n)%v%inv

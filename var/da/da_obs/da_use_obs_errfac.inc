@@ -140,7 +140,11 @@ subroutine da_use_obs_errfac(iv)
             iv % sound(n) % q(k) % error = iv % sound(n) % q(k) % error * &
                                            iv % sound_ef_q
          end do
+      end do
+   end if
 
+   if (iv%info(sonde_sfc)%nlocal > 0) then
+      do n = 1, iv%info(sonde_sfc)%nlocal
          iv % sonde_sfc(n) % u % error = iv % sonde_sfc(n) % u % error * iv % synop_ef_u
          iv % sonde_sfc(n) % v % error = iv % sonde_sfc(n) % v % error * iv % synop_ef_v
          iv % sonde_sfc(n) % t % error = iv % sonde_sfc(n) % t % error * iv % synop_ef_t
@@ -153,7 +157,7 @@ subroutine da_use_obs_errfac(iv)
 
    
    call da_read_errfac('airep', iv % airep_ef_u, iv % airep_ef_v, &
-                        iv % airep_ef_t, d1, d2)
+                        iv % airep_ef_t, iv % airep_ef_q, d1)
 
    if (iv%info(airep)%nlocal > 0) then
       do n = 1, iv%info(airep)%nlocal
@@ -164,6 +168,8 @@ subroutine da_use_obs_errfac(iv)
                                            iv % airep_ef_v
             iv % airep(n) % t(k) % error = iv % airep(n) % t(k) % error * &
                                            iv % airep_ef_t
+            iv % airep(n) % q(k) % error = iv % airep(n) % q(k) % error * &
+                                           iv % airep_ef_q
          end do
       end do
    end if
@@ -383,14 +389,19 @@ subroutine da_use_obs_errfac(iv)
                                            iv % tamdar_ef_t
             iv % tamdar(n) % q(k) % error = iv % tamdar(n) % q(k) % error * &
                                            iv % tamdar_ef_q
-
          end do
+      end do
+    end if
+
+   ! Transfer tamdar_sfc obs:
+
+   if (iv%info(tamdar_sfc)%nlocal > 0) then
+      do n = 1, iv%info(tamdar_sfc)%nlocal
          iv % tamdar_sfc(n) % u % error = iv % tamdar_sfc(n) % u % error * iv % tamdar_sfc_ef_u
          iv % tamdar_sfc(n) % v % error = iv % tamdar_sfc(n) % v % error * iv % tamdar_sfc_ef_v
          iv % tamdar_sfc(n) % t % error = iv % tamdar_sfc(n) % t % error * iv % tamdar_sfc_ef_t
          iv % tamdar_sfc(n) % p % error = iv % tamdar_sfc(n) % p % error * iv % tamdar_sfc_ef_p
          iv % tamdar_sfc(n) % q % error = iv % tamdar_sfc(n) % q % error * iv % tamdar_sfc_ef_q
-
       end do
    end if
 

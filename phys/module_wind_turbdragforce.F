@@ -120,7 +120,7 @@ CONTAINS
             IF(.NOT. kfound) THEN
               z2 = zheightl + 0.5*dz(i,k,j) 
 !
-              IF(hubheight(k) .GE. z2 ) THEN
+              IF(hubheight(kt) .GE. z2 ) THEN
                 kbot=k 
               ELSE
                 ktop=k
@@ -289,8 +289,10 @@ CONTAINS
   ELSE
       fac1=1000./(0.5*1.23*turbws(nkind,nb)**3.*area)
       fac2=1000./(0.5*1.23*turbws(nkind,nu)**3.*area)
-      power = turbpw(nkind,nb)+(turbpw(nkind,nu)-turbpw(nkind,nb))/(turbws(nkind,nu)-turbws(nkind,nb))*(speed-turbws(nkind,nb))
-      powcof = turbpw(nkind,nb)*fac1+(turbpw(nkind,nu)*fac2-turbpw(nkind,nb)*fac1)/(turbws(nkind,nu)-turbws(nkind,nb))*(speed-turbws(nkind,nb))
+      power = turbpw(nkind,nb)+(turbpw(nkind,nu)-turbpw(nkind,nb))/(turbws(nkind,nu)-turbws(nkind,nb)) &
+                               *(speed-turbws(nkind,nb))
+      powcof = turbpw(nkind,nb)*fac1+(turbpw(nkind,nu)*fac2-turbpw(nkind,nb)*fac1)/(turbws(nkind,nu)-turbws(nkind,nb)) &
+                                     *(speed-turbws(nkind,nb))
   ENDIF
 !
   ! tke coefficient calculation 
@@ -300,7 +302,8 @@ CONTAINS
 !
   END SUBROUTINE dragcof
 !
-  SUBROUTINE init_module_wind_turbdragforce(id,config_flags,xlong,xlat,windfarm_initialized,ims,ime,jms,jme,its,ite,jts,jte,ids,ide,jds,jde)
+  SUBROUTINE init_module_wind_turbdragforce(id,config_flags,xlong,xlat,windfarm_initialized,&
+                                            ims,ime,jms,jme,its,ite,jts,jte,ids,ide,jds,jde)
 !
   IMPLICIT NONE
 !
@@ -315,14 +318,16 @@ CONTAINS
    real lat,lon,ts_rx,ts_ry
    REAL :: known_lat, known_lon
    INTEGER i,j,nval,k,id
+
+   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+
+
 !
 ! ... cuenta las turbinas ...
 !
-!      IF (its <= 1 .AND. 1 <= ite .AND. &
-!          jts <= 1 .AND. 1 <= jte) THEN
-      IF (its == 1 .AND. jts == 1 ) THEN
 
-     open(70,file='windturbines.txt',form='formatted',status='old')
+      IF ( wrf_dm_on_monitor() ) THEN
+      open(70,file='windturbines.txt',form='formatted',status='old')
 
      nt=0
  10  read(70,*,end=100) 
@@ -331,6 +336,8 @@ CONTAINS
 !
  100 continue
      rewind (70)
+     END IF
+     CALL wrf_dm_bcast_integer(nt,1)
 !
      if (.not. windfarm_initialized) then
      allocate (nkind(nt),ival(nt,max_domains),jval(nt,max_domains))
@@ -342,6 +349,7 @@ CONTAINS
 !
 ! ... lee los datos de las turbinas ...
 ! 
+     IF ( wrf_dm_on_monitor() ) THEN
      do k=1,nt
      read(70,*)lat,lon,nkind(k)
      write(message_wind,*)'WINDFARM Turbine #',k,': Lat, lon = ',lat,lon,'; Type = ',nkind(k)
@@ -349,17 +357,8 @@ CONTAINS
 
       CALL map_init(ts_proj)
 
-!      IF (its <= 1 .AND. 1 <= ite .AND. &
-!          jts <= 1 .AND. 1 <= jte) THEN
-         known_lat = xlat(its,jts)
-         known_lon = xlong(its,jts)
-!      ELSE
-!         known_lat = 9999.
-!         known_lon = 9999.
-!      END IF
-
-!      known_lat = wrf_dm_min_real(known_lat)
-!      known_lon = wrf_dm_min_real(known_lon)
+      known_lat = xlat(its,jts)
+      known_lon = xlong(its,jts)
 
       ! Mercator
       IF (config_flags%map_proj == PROJ_MERC) THEN
@@ -465,6 +464,7 @@ CONTAINS
 !
 ! ... ...
 !
+      endif
 
         CALL wrf_dm_bcast_integer(ival,nt*max_domains)
         CALL wrf_dm_bcast_integer(jval,nt*max_domains)
@@ -479,7 +479,6 @@ CONTAINS
         CALL wrf_dm_bcast_real(turbtc,maxvals*maxvals2) 
         CALL wrf_dm_bcast_real(turbpw,maxvals*maxvals2) 
 
-      endif
   END SUBROUTINE init_module_wind_turbdragforce
   
 END MODULE module_wind_turbdragforce

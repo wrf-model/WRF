@@ -26,7 +26,7 @@ subroutine da_residual_tamdar_sfc(iv, y, re,np_missing, np_bad_data,np_obs_used,
    n_obs_bad % p % num = number_type(0, 0, 0)
    n_obs_bad % q % num = number_type(0, 0, 0)
 
-   do n=1, iv%info(tamdar)%nlocal
+   do n=1, iv%info(tamdar_sfc)%nlocal
       np_available = np_available + 5
 
       re%tamdar_sfc(n)%u = da_residual(n, 0, y%tamdar_sfc(n)%u, iv%tamdar_sfc(n)%u, n_obs_bad % u)

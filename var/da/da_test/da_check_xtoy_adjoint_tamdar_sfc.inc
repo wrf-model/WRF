@@ -10,18 +10,17 @@ subroutine da_check_xtoy_adjoint_tamdar_sfc(iv, y, adjtest_lhs, pertile_lhs)
    type (y_type) , intent(inout)  :: y             ! y = h (xa)
    real          , intent(inout)  :: adjtest_lhs, pertile_lhs   
 
-   integer :: n             ! Loop counter.
+   integer  :: n             ! Loop counter.
 
    if (trace_use_dull) call da_trace_entry("da_check_xtoy_adjoint_tamdar_sfc")
 
-   do n=iv%info(tamdar)%n1, iv%info(tamdar)%n2
-      if (iv%info(tamdar)%zk(1,n) < 1.0 .and. sfc_assi_options /= 2) then
+   do n=iv%info(tamdar_sfc)%n1, iv%info(tamdar_sfc)%n2
+      if (iv%info(tamdar_sfc)%zk(1,n) < 1.0 .and. sfc_assi_options /= 2) then
          y%tamdar_sfc(n)%u = 0.0
          y%tamdar_sfc(n)%v = 0.0
          y%tamdar_sfc(n)%t = 0.0
          y%tamdar_sfc(n)%p = 0.0
          y%tamdar_sfc(n)%q = 0.0
-
          cycle
       end if
 
@@ -39,21 +38,13 @@ subroutine da_check_xtoy_adjoint_tamdar_sfc(iv, y, adjtest_lhs, pertile_lhs)
       y%tamdar_sfc(n)%p = y%tamdar_sfc(n)%p/typical_p_rms
       y%tamdar_sfc(n)%q = y%tamdar_sfc(n)%q/typical_q_rms
 
-      if (iv%info(tamdar)%proc_domain(1,n)) then
-         adjtest_lhs = adjtest_lhs  &
-                     + (y%tamdar_sfc(n)%u)**2 &
-                     + (y%tamdar_sfc(n)%v)**2 &
-                     + (y%tamdar_sfc(n)%t)**2 &
-                     + (y%tamdar_sfc(n)%p)**2 &
-                     + (y%tamdar_sfc(n)%q)**2
+      if (iv%info(tamdar_sfc)%proc_domain(1,n)) then
+         adjtest_lhs = adjtest_lhs + (y%tamdar_sfc(n)%u)**2 + (y%tamdar_sfc(n)%v)**2 + (y%tamdar_sfc(n)%t)**2 &
+            + (y%tamdar_sfc(n)%p)**2 + (y%tamdar_sfc(n)%q)**2
       end if
 
-      pertile_lhs = pertile_lhs &
-                  + (y%tamdar_sfc(n)%u)**2 &
-                  + (y%tamdar_sfc(n)%v)**2 &
-                  + (y%tamdar_sfc(n)%t)**2 &
-                  + (y%tamdar_sfc(n)%p)**2 &
-                  + (y%tamdar_sfc(n)%q)**2
+      pertile_lhs = pertile_lhs + (y%tamdar_sfc(n)%u)**2 + (y%tamdar_sfc(n)%v)**2 + (y%tamdar_sfc(n)%t)**2 &
+         + (y%tamdar_sfc(n)%p)**2 + (y%tamdar_sfc(n)%q)**2
 
       y%tamdar_sfc(n)%u = y%tamdar_sfc(n)%u/typical_u_rms
       y%tamdar_sfc(n)%v = y%tamdar_sfc(n)%v/typical_v_rms

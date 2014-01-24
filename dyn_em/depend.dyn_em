@@ -229,7 +229,7 @@ start_em.o:     module_bc_em.o \
 		../share/module_bc.o \
 		../share/module_date_time.o \
 		../phys/module_physics_init.o \
-		../phys/module_diagnostics.o \
+		../phys/module_diag_pld.o \
                 ../phys/module_fr_fire_driver_wrf.o \
 		$(CF)
 
@@ -241,6 +241,7 @@ solve_em.o:     module_small_step_em.o \
 		module_big_step_utilities_em.o \
                 module_first_rk_step_part1.o \
                 module_first_rk_step_part2.o \
+                module_after_all_rk_steps.o  \
                 module_avgflx_em.o              \
 		../frame/module_domain.o \
 		../frame/module_configure.o  \
@@ -290,6 +291,12 @@ module_first_rk_step_part2.o : \
 		../frame/module_comm_dm.o \
 		../phys/module_fddaobs_driver.o \
 		../phys/module_fddaobs_driver.o
+
+module_after_all_rk_steps.o : \
+                ../frame/module_state_description.o \
+                ../frame/module_domain.o \
+                ../frame/module_configure.o \
+		../phys/module_diagnostics_driver.o
 
 adapt_timestep_em.o: \
                 module_bc_em.o         \

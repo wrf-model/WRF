@@ -796,9 +796,21 @@ CONTAINS
               allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
               allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
 
-           case default
-
         end select swrad_aerosol_select
+     ELSE
+        swrad_aerosol_select_stub: select case(sw_physics)
+
+           case(GODDARDSWSCHEME)
+              allocate(tauaer_sw(1, 1, 1, 1))
+              allocate(ssaaer_sw(1, 1, 1, 1))
+              allocate(asyaer_sw(1, 1, 1, 1))
+
+           case(RRTMG_SWSCHEME)
+              allocate(tauaer_sw(1, 1, 1, 1))
+              allocate(ssaaer_sw(1, 1, 1, 1))
+              allocate(asyaer_sw(1, 1, 1, 1))
+
+        end select swrad_aerosol_select_stub
      ENDIF
    ENDIF
 
@@ -951,37 +963,23 @@ CONTAINS
 !       ENDDO
 !    endif
 
-!---------------
-! Calculate constant for short wave radiation
+! Choose how to compute cloud fraction (since 3.6)
+! Initialize to zero 
+     DO j=jts,jte
+     DO k=kts,kte
+     DO i=its,ite
+        CLDFRA(i,k,j) = 0.
+     END DO
+     END DO
+     END DO
 
-     lwrad_cldfra_select: SELECT CASE(lw_physics)
-
-        CASE (GFDLLWSCHEME)
-
-!-- Do nothing, since cloud fractions (with partial cloudiness effects) 
-!-- are defined in GFDL LW/SW schemes and do not need to be initialized.
-
-        CASE (CAMLWSCHEME)
-
-     IF ( PRESENT ( CLDFRA ) .AND.                           &
-          PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
-! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
-
-   CALL cal_cldfra2(CLDFRA,qv,qc,qi,qs,                     &
-                   F_QV,F_QC,F_QI,F_QS,t,p,                &
-                   F_ICE_PHY,F_RAIN_PHY,                   &
-                   ids,ide, jds,jde, kds,kde,              &
-                   ims,ime, jms,jme, kms,kme,              &
-                   its,ite, jts,jte, kts,kte               )
-
-     ENDIF
-
-        CASE (RRTMG_LWSCHEME)
+     IF ( ICLOUD == 1 ) THEN
 
      IF ( PRESENT ( CLDFRA ) .AND.                           &
           PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
 ! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
 
+        CALL wrf_debug (1, 'CALL cldfra2')
         CALL cal_cldfra2(CLDFRA,qv,qc,qi,qs,               &
                    F_QV,F_QC,F_QI,F_QS,t,p,                &
                    F_ICE_PHY,F_RAIN_PHY,                   &
@@ -991,6 +989,7 @@ CONTAINS
 
         IF ( PRESENT ( CLDFRA_DP ) ) THEN
           IF ( icloud_cu .EQ. 2 ) THEN
+             CALL wrf_debug (1, 'use kf cldfra')
              DO j = jts,jte
              DO k = kts,kte
              DO i = its,ite
@@ -1012,6 +1011,7 @@ CONTAINS
         IF ( PRESENT (cldfra_mp_all) ) THEN
           IF (is_CAMMGMP_used) THEN
             !BSINGH: cloud fraction from CAMMGMP is being used (Mods by Po-Lun)
+        CALL wrf_debug (1, 'use cammgmp')
             IF (itimestep .NE. 1) THEN
                DO j=jts,jte
                DO k=kts,kte
@@ -1026,7 +1026,7 @@ CONTAINS
         ENDIF
      ENDIF
  
-        CASE DEFAULT
+     ELSE IF ( ICLOUD == 2 ) THEN
 
      IF ( PRESENT ( CLDFRA ) .AND.                           &
           PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
@@ -1036,7 +1036,7 @@ CONTAINS
                        its,ite, jts,jte, kts,kte             )
      ENDIF
 
-     END SELECT lwrad_cldfra_select    
+     END IF
 
 ! ww: Interpolating climatological ozone and aerosol to model time and levels
 !     Adapted from camrad code
@@ -1390,61 +1390,6 @@ CONTAINS
         ENDDO    
           ENDIF
      ENDIF       
-
-!
-     swrad_cldfra_select: SELECT CASE(sw_physics)
-
-        CASE (CAMSWSCHEME)
-
-     IF ( PRESENT ( CLDFRA ) .AND.                           &
-          PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
-! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
-
-   CALL cal_cldfra2(CLDFRA,qv,qc,qi,qs,                     &
-                   F_QV,F_QC,F_QI,F_QS,t,p,                &
-                   F_ICE_PHY,F_RAIN_PHY,                   &
-                   ids,ide, jds,jde, kds,kde,              &
-                   ims,ime, jms,jme, kms,kme,              &
-                   its,ite, jts,jte, kts,kte               )
-     ENDIF
- 
-        CASE (RRTMG_SWSCHEME)
-
-     IF ( PRESENT ( CLDFRA ) .AND.                           &
-          PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
-! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
-
-        CALL cal_cldfra2(CLDFRA,qv,qc,qi,qs,               &
-                   F_QV,F_QC,F_QI,F_QS,t,p,                &
-                   F_ICE_PHY,F_RAIN_PHY,                   &
-                   ids,ide, jds,jde, kds,kde,              &
-                   ims,ime, jms,jme, kms,kme,              &
-                   its,ite, jts,jte, kts,kte               )
-
-        IF ( PRESENT ( CLDFRA_DP ) ) THEN
-          IF ( icloud_cu .EQ. 2 ) THEN
-        DO j = jts,jte
-        DO k = kts,kte
-        DO i = its,ite
-           cldfra_cu(i,k,j)=cldfra_dp(i,k,j)+cldfra_sh(i,k,j)  ! Cu cloud fraction
-           CLDFRA(i,k,j)=(1.-cldfra_cu(i,k,j))*CLDFRA(i,k,j)  ! Update resolved cloud fraction for Cu punch-through
-           CLDFRA(i,k,j)=CLDFRA(i,k,j)+cldfra_cu(i,k,j)       ! New total cloud fraction
-           CLDFRA(i,k,j)=AMIN1(1.0,CLDFRA(i,k,j))
-!wrf-team
-!               qc_save(i,k,j)=qc(i,k,j)
-!               qc(i,k,j) = qc(i,k,j)+qc_adjust(i,k,j)*cldfra_cu(i,k,j)
-!               qi_save(i,k,j)=qi(i,k,j)
-!               qi(i,k,j) = qi(i,k,j)+qi_adjust(i,k,j)*cldfra_cu(i,k,j)
-        ENDDO
-        ENDDO
-        ENDDO
-          ENDIF
-        ENDIF
-     ENDIF
-
-        CASE DEFAULT
-
-     END SELECT swrad_cldfra_select    
 
      IF ( PRESENT( AOD5502D ) ) THEN
      ! jararias, 2013/11
@@ -3529,7 +3474,12 @@ SUBROUTINE aer_p_int(p ,pin, levsiz, aerodt, aerod, no_src, pf, totaod,   &
    end do
    end do
 
-!  totaod = 0.
+   do j=jts,jte
+   do i=its,ite
+      totaod(i,j) = 0.
+   end do
+   end do
+
    do s=1,no_src
    do j=jts,jte
    do k=1,pver

@@ -34,8 +34,8 @@ module da_test
       inv_typ_vp4_sumsq,typical_rho_rms,balance_geo,balance_cyc,balance_type, &
       balance_geocyc, var4d, num_fgat_time,cv_options_hum_specific_humidity, &
       cv_options_hum_relative_humidity, ids, ide, jds, jde, kds, kde, &
-      sound, mtgirs, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
-      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, tamdar,rain, &
+      sound, sonde_sfc, mtgirs, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
+      satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep, tamdar, tamdar_sfc, rain, &
       bogus, buoy, qscat, pseudo, radiance, use_radarobs, use_ssmiretrievalobs,use_rainobs, &
       use_gpsrefobs, use_ssmt1obs, use_ssmitbobs, use_ssmt2obs, use_gpspwobs,&
       use_gpsztdobs, Use_Radar_rf, use_rad, crtm_cloud, cloud_cv_options, &

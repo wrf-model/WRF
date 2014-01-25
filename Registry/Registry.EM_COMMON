@@ -721,8 +721,8 @@ state    real   SSTSK            ij     misc        1         -     rhd=(interp_
 state    real   lake_depth            ij     misc        1         -     rhd=(interp_mask_water_field:lu_index,iswater)   "lake_depth"              "lake depth" "m"
 state    real   DTW              ij     misc        1         -     r   "DTW"              "WARM LAYER TEMP DIFF" "C"
 # Ocean surface currents
-state    real   UOCE            ij     misc        1         -     i0124rhd=(interp_mask_water_field:lu_index,iswater)  "UOCE"  "SEA SURFACE ZONAL CURRENTS" "m s-1"
-state    real   VOCE            ij     misc        1         -     i0124rhd=(interp_mask_water_field:lu_index,iswater)  "VOCE"  "SEA SURFACE MERIDIONAL CURRENTS" "m s-1"
+state    real   UOCE            ij     misc        1         -     i0124rd=(interp_mask_water_field:lu_index,iswater)  "UOCE"  "SEA SURFACE ZONAL CURRENTS" "m s-1"
+state    real   VOCE            ij     misc        1         -     i0124rd=(interp_mask_water_field:lu_index,iswater)  "VOCE"  "SEA SURFACE MERIDIONAL CURRENTS" "m s-1"
 
 # DFI variables
 state   real   hcoeff         {ndfi} misc        1         -     -    "HCOEFF"               "initialization weights"
@@ -1349,10 +1349,10 @@ state    real  RQIBLTEN        ikj      misc        1         -      r        "R
 state    real  RQNIBLTEN       ikj      misc        1         -      r        "RQNIBLTEN"             "COUPLED Q_NI TENDENCY DUE TO PBL PARAMETERIZATION"    "Pa #  kg-1 s-1"
 
 # For Noah UA changes
-state    real   flx4            ij         -        1         -      h        "FLX4"         "sensible heat from canopy"              "W m{-2}"
-state    real   fvb             ij         -        1         -      h        "FVB"          "fraction of vegetation with snow below" ""
-state    real   fbur            ij         -        1         -      h        "FBUR"         "fraction of vegetation covered by snow" ""
-state    real   fgsn            ij         -        1         -      h        "FGSN"         "fraction of ground covered by snow"     ""
+state    real   flx4            ij         -        1         -      -        "FLX4"         "sensible heat from canopy"              "W m{-2}"
+state    real   fvb             ij         -        1         -      -        "FVB"          "fraction of vegetation with snow below" ""
+state    real   fbur            ij         -        1         -      -        "FBUR"         "fraction of vegetation covered by snow" ""
+state    real   fgsn            ij         -        1         -      -        "FGSN"         "fraction of ground covered by snow"     ""
 
 # For Noah-MP
 state   integer isnowxy    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "isnow"      "no. of snow layer"                   "m3 m-3"
@@ -1525,7 +1525,7 @@ state    real  TLAG             i&j     misc        1         -     rd=(interp_m
 state    integer NYEAR          -       misc        1         -     r        "NYEAR"                  "ACCUM DAYS IN A YEAR"                         ""
 state    real    NDAY           -       misc        1         -     r        "NDAY"                  "ACCUM TIMESTEPS IN A DAY"                      ""
 state    real  XLAND            ij      misc        1         -     i02rhd=(interp_fcnm_imask)u=(copy_fcnm)       "XLAND"                 "LAND MASK (1 FOR LAND, 2 FOR WATER)"          ""      
-state    real  cplmask       i{ncpldom}j      misc        1       z        i0r     "CPLMASK"    "COUPLING MASK (1 FOR OBSERVATION, 0 FOR COUPLER), number of external domains"  ""
+state    real  cplmask       i{ncpldom}j      misc        1       z        i0r     "CPLMASK"    "COUPLING MASK (0:VALUE FROM SST UPDATE; 1:VALUE FROM COUPLED OCEAN), vertical dim is number of external domains"  ""
 state    real  ZNT              ij      misc        1         -      i3r      "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"                "m"      
 state    real  CK               ij      misc        1         -      r        "CK"                    "ENTHALPY EXCHANGE COEFF AT 10 m"                      ""
 state    real  CKA              ij      misc        1         -      r        "CKA"                   "ENTHALPY EXCHANGE COEFF AT LOWEST MODEL LVL"          ""
@@ -2024,9 +2024,6 @@ rconfig   integer mp_zero_out             namelist,physics	1             0      
 rconfig   real mp_zero_out_thresh         namelist,physics	1          1.e-8      -      "mp_zero_out_thresh"  "minimum threshold for non-Qv moist fields, below are set to zero"  "kg/kg"
 rconfig   real    seaice_threshold        namelist,physics	1            100       h    "seaice_threshold"  "tsk below which which water points are set to sea ice for slab scheme"   "K"
 rconfig   integer sst_update              namelist,physics	1            0         h    "sst_update"  "update sst from wrflowinp file  0=no, 1=yes"   ""
-rconfig   integer LakeModel               namelist,physics      max_domains  0         h    "LakeModel"     "activate lake model  0=no, 1=yes"   ""
-rconfig   real    domain_lakedepth        namelist,physics      max_domains  50       rh     "domain_lakedepth"                     ""      ""   
-rconfig   real    lakeminalt              namelist,physics      max_domains   5       rh     "lakeminalt"                    ""      ""   
  
 rconfig   integer sst_skin                namelist,physics      1            0         h    "sst_skin" "calculate sst skin temperature 0=no, 1=yes"   ""
 rconfig   integer tmn_update              namelist,physics      1            0         h    "tmn_update" "update tmn from calculation  0=no, 1=yes"   ""
@@ -2515,7 +2512,6 @@ package   camuwpblscheme bl_pbl_physics==9           -             state:tauresx
 package   mrfscheme      bl_pbl_physics==99          -             -
 package   temfpblscheme  bl_pbl_physics==10          -             state:te_temf,kh_temf,km_temf,shf_temf,qf_temf,uw_temf,vw_temf,wupd_temf,mf_temf,thup_temf,qlup_temf,qtup_temf,cf3d_temf,hd_temf,lcl_temf,hct_temf,cfm_temf
 package   gbmpblscheme   bl_pbl_physics==12          -             state:exch_tke,el_pbl,tke_pbl
-package   turbdragforce  windfarm_opt==1             -             -
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -
 package   gdscheme       cu_physics==93              -             -
@@ -2664,6 +2660,10 @@ package   io_pnetcdf  io_form_restart==11                     -             -
 package   no_wrfhydro    wrf_hydro==0                -            -
 package   wrfhydro       wrf_hydro==1                -            state:SOLDRAIN, SFCHEADRT, INFXSRT
 
+#WRF Windfarm
+package   no_windfarm    windfarm_opt==0             -            -
+package   turbdragforce  windfarm_opt==1             -            state:power
+
 #---------------------------------------------------------------------------------------------------------------------------------------
 ## communications                                               
 
@@ -2685,7 +2685,7 @@ halo      HALO_EM_PHYS_SHCU dyn_em       4:rushten,rvshten
 halo      HALO_EM_FDDA dyn_em            4:rundgdten,rvndgdten
 halo      HALO_EM_FDDA_SFC dyn_em 48:z,z_at_w,pblh,regime,znt,odis_ndg_old,odis_ndg_new
 halo      HALO_EM_PHYS_DIFFUSION dyn_em  4:defor11,defor22,defor12,defor13,defor23,div,xkmv,xkmh,xkhv,xkhh,tke_1,tke_2
-halo      HALO_EM_SBM dyn_em 8:p_phy,pi_phy,dz8w,th_phy,rho,qv_old,th_old,u_phy,v_phy
+halo      HALO_EM_SBM dyn_em 8:p_phy,pi_phy,dz8w,th_phy,rho,qv_old,th_old,u_phy,v_phy,moist
 halo      HALO_EM_TKE_ADVECT_3 dyn_em 24:tke_2
 halo      HALO_EM_TKE_ADVECT_5 dyn_em 48:tke_2
 halo      HALO_EM_TKE_A dyn_em 4:ph_2,phb

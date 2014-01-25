@@ -111,10 +111,10 @@ CONTAINS
    USE module_cu_gd     , ONLY : grelldrv
    USE module_cu_gf     , ONLY : gfdrv
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
-   USE module_cu_sas
    USE module_cu_du     , ONLY : DUCU   
-   USE module_cu_osas   
-   USE module_cu_mesosas   
+   USE module_cu_sas    , ONLY : cu_sas
+   USE module_cu_osas   , ONLY : cu_osas
+   USE module_cu_mesosas, ONLY : cu_meso_sas
    USE module_cu_camzm_driver, ONLY : camzm_driver
    USE module_cu_tiedtke, ONLY : cu_tiedtke
    USE module_cu_nsas   , ONLY : cu_nsas

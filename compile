@@ -241,6 +241,8 @@ else
       /bin/cat Registry/Registry.CONVERT >> Registry/Registry
     endif
   else if ( $WRF_DA_CORE == 1 )  then
+    setenv BUFR 1
+    setenv CRTM 1
     if ( ! -f Registry/Registry ) then
       set overwrite=1
     else

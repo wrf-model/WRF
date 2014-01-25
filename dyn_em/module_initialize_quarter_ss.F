@@ -86,7 +86,7 @@ CONTAINS
 
    INTEGER, PARAMETER :: nl_max = 1000
    REAL, DIMENSION(nl_max) :: zk, p_in, theta, rho, u, v, qv, pd_in
-   INTEGER :: nl_in
+   INTEGER :: nl_in , icount
 
 
    INTEGER :: icm,jcm, ii, im1, jj, jm1, loop, error, fid, nxc, nyc
@@ -610,6 +610,46 @@ CONTAINS
      grid%tmn(I,J)=grid%tsk(I,J)-0.5
   ENDDO
   ENDDO
+
+  !  Template for initializing trajectories.  The i, j, and k starting locations
+  !  are specified.  Right now, a small plane in the middle of the domain is
+  !  selected.
+
+  grid%traj_i    = -9999
+  grid%traj_j    = -9999
+  grid%traj_k    = -9999
+  grid%traj_lat  = -9999
+  grid%traj_long = -9999
+   
+  IF (config_flags%num_traj .gt. 0 .and. config_flags%traj_opt .gt. 0) THEN
+     icount = 1
+     DO j = (jde + jds)/2 - 2, (jde + jds)/2 + 2, 1
+        DO i = (ide + ids)/2 - 2, (ide + ids)/2 + 2, 1
+           IF ( its .LE. i    .and. ite .GE. i   .and.  jts .LE. j    .and. jte .GE. j ) THEN
+              grid%traj_i   (icount) = i
+              grid%traj_j   (icount) = j
+              grid%traj_k   (icount) = 10
+              grid%traj_lat (icount) = grid%xlat(i,j)
+              grid%traj_long(icount) = grid%xlong(i,j)
+           END IF
+
+#ifdef DM_PARALLEL
+           grid%traj_i   (icount) = wrf_dm_max_real ( grid%traj_i   (icount) )
+           grid%traj_j   (icount) = wrf_dm_max_real ( grid%traj_j   (icount) )
+           grid%traj_k   (icount) = wrf_dm_max_real ( grid%traj_k   (icount) )
+           grid%traj_lat (icount) = wrf_dm_max_real ( grid%traj_lat (icount) )
+           grid%traj_long(icount) = wrf_dm_max_real ( grid%traj_long(icount) )
+#endif
+
+           icount = icount + 1
+           IF (icount .GT. config_flags%num_traj) THEN
+              EXIT
+           END IF
+        END DO
+     END DO 
+  END IF
+
+
 
  END SUBROUTINE init_domain_rk
 

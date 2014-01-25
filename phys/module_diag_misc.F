@@ -33,7 +33,7 @@ CONTAINS
                      ,diag_print                                      &
                      ,bucket_mm, bucket_J                             &
                      ,prec_acc_c, prec_acc_nc, snow_acc_nc            &
-                     ,snowncv, prec_acc_dt, curr_secs                 &
+                     ,snowncv, prec_acc_dt, curr_secs2                &
                      ,nwp_diagnostics, diagflag                       &
                      ,history_interval                                &
                      ,itimestep                                       &
@@ -76,7 +76,7 @@ CONTAINS
 !-- PREC_ACC_NC   accumulated explicit precip over accumulation time prec_acc_dt
 !-- SNOW_ACC_NC   accumulated explicit snow precip over accumulation time prec_acc_dt
 !-- PREC_ACC_DT   precip accumulation time, default is 60 min
-!-- CURR_SECS     model time in seconds
+!-- CURR_SECS2    Time (s) since the beginning of the restart
 !-- NWP_DIAGNOSTICS  = 1, compute hourly maximum fields
 !-- DIAGFLAG      logical flag to indicate if this is a history output time
 !-- U10, V10      10 m wind components
@@ -174,7 +174,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT) ::&
                       PREC_ACC_C, PREC_ACC_NC, SNOW_ACC_NC
 
-   REAL, OPTIONAL, INTENT(IN)::  PREC_ACC_DT, CURR_SECS
+   REAL, OPTIONAL, INTENT(IN)::  PREC_ACC_DT, CURR_SECS2
 
    INTEGER :: i,j,k,its,ite,jts,jte,ij
    INTEGER :: idp,jdp,irc,jrc,irnc,jrnc,isnh,jsnh
@@ -369,7 +369,7 @@ CONTAINS
 
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
-         IF (mod(curr_secs, 60.* prec_acc_dt) == 0.) THEN
+         IF (mod(curr_secs2, 60.* prec_acc_dt) == 0.) THEN
             prec_acc_c(i,j)  = 0.
             prec_acc_nc(i,j) = 0.
             snow_acc_nc(i,j)  = 0.
@@ -404,7 +404,7 @@ CONTAINS
 !   print *,' xtime            = ', xtime
 
 ! IF ( MOD(itimestep, idump) .eq. 0 ) THEN
-!    WRITE(outstring,*) 'Computing PH0 for this domain with curr_secs = ', curr_secs
+!    WRITE(outstring,*) 'Computing PH0 for this domain with curr_secs2 = ', curr_secs2
 !    CALL wrf_message ( TRIM(outstring) )
 
    IF ( MOD((itimestep - 1), idump) .eq. 0 ) THEN

@@ -33,7 +33,7 @@
    INTEGER :: ncomp_id                                                         ! id returned by oasis_init_comp
    INTEGER :: nlevdbg  = 1                                                     ! verbosity level
    INTEGER :: nlevdbg2 = 10                                                    ! verbosity level
-   CHARACTER(len = 128) :: cltxt                                               ! messages or debug string
+   CHARACTER(len = 256) :: cltxt                                               ! messages or debug string
 
    !! Routine accessibility
    PUBLIC cpl_oasis_init
@@ -305,7 +305,7 @@ CONTAINS
       !!--------------------------------------------------------------------
       !
       WRITE(cltxt,*) 'OASIS_PUT in: kdomwrf, kdomext, kfldid, name, ksec', &
-         kdomwrf, kdomext, kfldid, ' ', TRIM(srcv(kdomwrf,kdomext,kfldid)%clname), ksec
+         kdomwrf, kdomext, kfldid, ' ', TRIM(ssnd(kdomwrf,kdomext,kfldid)%clname), ksec
       CALL wrf_debug(nlevdbg, cltxt)
 
 #if ( RWORDSIZE == 8 )

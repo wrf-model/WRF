@@ -662,6 +662,10 @@ CONTAINS
          c_kms = 1
          c_kme = c_kde
 
+! Default initializations
+         c_sm1x = 1 ; c_em1x = 1 ; c_sm2x = 1 ; c_em2x = 1 ; c_sm3x = 1 ; c_em3x = 1
+         c_sm1y = 1 ; c_em1y = 1 ; c_sm2y = 1 ; c_em2y = 1 ; c_sm3y = 1 ; c_em3y = 1
+
 #if (DA_CORE == 1)
          c_kmsx = c_kpsx 
          c_kmex = c_kpex 
@@ -830,9 +834,6 @@ CONTAINS
          intermediate_grid%nide = ide
          intermediate_grid%njds = jds
          intermediate_grid%njde = jde
-
-!        c_sm1x = 1 ; c_em1x = 1 ; c_sm2x = 1 ; c_em2x = 1 ; c_sm3x = 1 ; c_em3x = 1
-!        c_sm1y = 1 ; c_em1y = 1 ; c_sm2y = 1 ; c_em2y = 1 ; c_sm3y = 1 ; c_em3y = 1
 
          intermediate_grid%sm31x                           = c_sm1x
          intermediate_grid%em31x                           = c_em1x

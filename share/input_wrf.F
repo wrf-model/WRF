@@ -557,6 +557,7 @@
     ! The default is set to 24 somewhere, from the number of categories
     ! in the traditional USGS dataset
 
+    IF ( switch .EQ. input_only ) THEN
     call wrf_get_dom_ti_integer(fid, "NUM_LAND_CAT", num_land_cat_compare, 1, icnt, ierr)
     if ( (ierr .NE. 0) .OR. ( num_land_cat_compare .LT. 1 ) .OR. ( num_land_cat_compare .GT. 1000 ) ) then
        call wrf_debug( 1 , "Must be old WPS data, assuming 24 levels for NUM_LAND_CAT")
@@ -571,6 +572,7 @@
        call wrf_message(wrf_err_message)
        call wrf_error_fatal("Mismatch between namelist and wrf input files for dimension NUM_LAND_CAT")
     endif
+    end if
 
     ! Test here to check that config_flags%num_metgrid_soil_levels in namelist
     ! is equal to what is in the global attributes of the met_em files.  Note that

@@ -205,7 +205,11 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
    if (use_obsgts) then
       ! Conventional obs can be in BUFR or ascii format
       if (ob_format == ob_format_bufr) then
-         call da_message((/'Using BUFR format observation input'/))
+         call da_message((/'Using PREPBUFR format observation input'/))
+         thin_conv = .true.
+         write(unit=message(1), fmt='(a,a)') '!!! thin_conv is forced to be true for PREPBUFR data', &
+            ' to keep only one ob closest to the analysis time at a fix location by thinning !!!'
+         call da_message(message(1:1))
          call da_setup_obs_structures_bufr (grid, ob, iv)
       else if (ob_format == ob_format_ascii) then
          call da_message((/'Using ASCII format observation input'/))

@@ -2626,9 +2626,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      its,ite, jts,jte, kts,kte                     )
 
       CASE (PXLSMSCHEME)
-          if(config_flags%num_land_cat .ne. 20 .and. config_flags%num_land_cat .ne. 24 .and. &
-             config_flags%num_land_cat .ne. 40 .and. config_flags%num_land_cat .ne. 50 ) CALL wrf_error_fatal &
-            ( 'module_physics_init: 24 cat USGS must be used with PX LSM option' )
+          if(config_flags%num_land_cat .ne. 20 .and. config_flags%num_land_cat .ne. 21 .and. & ! MODIS
+             config_flags%num_land_cat .ne. 24 .and. config_flags%num_land_cat .ne. 28 .and. & ! USGS
+             config_flags%num_land_cat .ne. 40 .and. config_flags%num_land_cat .ne. 50 )     & ! NLCD
+          CALL wrf_error_fatal ( 'module_physics_init: PX LSM option requires USGS, MODIS, or NLCD' )
           CALL LSMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,  &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,        &
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS, &
@@ -2662,8 +2663,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 #ifdef WRF_USE_CLM
         IF(PRESENT(numc))THEN
         ! added by Jiming Jin 10/14/2012
-        if(config_flags%num_land_cat .ne. 24) CALL wrf_error_fatal &
-            ( 'module_physics_init: 24 cat USGS must be used with CLM option')
+        if((config_flags%num_land_cat .ne. 24) .AND. &
+           (config_flags%num_land_cat .ne. 28)) CALL wrf_error_fatal &
+            ( 'module_physics_init: USGS must be used with CLM option')
 
             CALL CLMINIT(VEGFRA,SNOW,SNOWC,SNOWH,CANWAT,SMSTAV,    &
                      SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,            &
@@ -4060,7 +4062,7 @@ subroutine aerosol_in(aerodm,pina,alevsiz,no_months,no_src_types,XLAT,XLONG,   &
         end do
       close(28)
 
-!-- read in aerosol optical depth lat data
+!-- read in aerosol optical depth lon data
 
       lon_unit = 29
         OPEN(lon_unit, FILE='aerosol_lon.formatted',FORM='FORMATTED',STATUS='OLD')

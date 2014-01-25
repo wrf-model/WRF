@@ -15,7 +15,7 @@ CONTAINS
                                    moist, chem, tracer, scalar,         &
                                    th_phy, pi_phy, p_phy, rho_phy,      & 
                                    p8w, t8w, dz8w,                      &
-                                   curr_secs, curr_secs2,               &
+                                   curr_secs2,                          &
                                    diag_flag,                           &
                                    ids,  ide,  jds,  jde,  kds,  kde,   &
                                    ims,  ime,  jms,  jme,  kms,  kme,   &
@@ -86,10 +86,6 @@ CONTAINS
                                                                            p8w     , &
                                                                            t8w
 
-      !  Time (s) since the beginning of the simulation, including restarts.
-
-      REAL :: curr_secs
-
       !  Time (s) since the beginning of the restart.
 
       REAL :: curr_secs2
@@ -138,7 +134,7 @@ CONTAINS
                                 moist, chem, tracer, scalar,         &
                                 th_phy, pi_phy, p_phy, rho_phy,      & 
                                 p8w, t8w, dz8w,                      &
-                                curr_secs, curr_secs2,               &
+                                curr_secs2,                          &
                                 diag_flag,                           &
                                 ids,  ide,  jds,  jde,  kds,  kde,   &
                                 ims,  ime,  jms,  jme,  kms,  kme,   &

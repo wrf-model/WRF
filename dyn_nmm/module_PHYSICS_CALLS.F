@@ -1500,6 +1500,8 @@
      &        ,   irbxy=grid%irbxy    ,    trxy=grid%trxy    ,   evcxy=grid%evcxy    &
      &        ,chleafxy=grid%chleafxy ,  chucxy=grid%chucxy                          &                       
      &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &                       
+     &        ,  smoiseq=grid%smoiseq, smcwtdxy=grid%smcwtdxy, rechxy=grid%rechxy    &                       
+     &        ,  deeprechxy=grid%deeprechxy                                          &                       
      &        ,coszen=grid%czen,xlat_urb2d=grid%xlat                                 &
 ! mosaic tiling for Noah
      &        ,sf_surface_mosaic=config_flags%sf_surface_mosaic,  mosaic_cat=config_flags%mosaic_cat      &
@@ -2339,6 +2341,7 @@
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: CLDFRA_DP, CLDFRA_SH
+      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: GD_CLOUD_B, GD_CLOUD2_B
 !
       LOGICAL :: RESTART,WARM_RAIN,ETAMP_Regional
       LOGICAL,DIMENSION(IMS:IME,JMS:JME) :: CU_ACT_FLAG
@@ -2658,6 +2661,7 @@
      &                 ,ITIMESTEP=NTSD,DT=DT,DX=GPS                     &
      &                 ,RAINC=RAINC,RAINCV=RAINCV,NCA=NCA               &
      &                 ,CLDFRA_DP=CLDFRA_DP,CLDFRA_SH=CLDFRA_SH         &
+     &                 ,GD_CLOUD_B=GD_CLOUD_B, GD_CLOUD2_B=GD_CLOUD2_B  &
      &                 ,DZ8W=DZ,P8W=P8W,FORCET=TTEN,FORCEQ=QTEN         &
      &                 ,CLDEFI=CLDEFI,LOWLYR=LOWLYR,XLAND=XLAND         &
      &                 ,CU_ACT_FLAG=CU_ACT_FLAG,WARM_RAIN=WARM_RAIN     &
@@ -3101,6 +3105,7 @@
      &                  TH=TH_PHY,RHO=RR,PI_PHY=PI_PHY,P=P_PHY          &
      &                 ,RAINNC=RAINNC,RAINNCV=RAINNCV                   &
      &                 ,DZ8W=DZ,P8W=P8W,DT=DTPHS,DX=DX,DY=DY            &
+     &                 ,W=grid%W                                        &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
 #ifdef WRF_CHEM
      &                 ,CHEM_OPT=CONFIG_FLAGS%CHEM_OPT                  &

@@ -2149,8 +2149,19 @@ do tjk = 1,config_flags%num_traj
     eta_new = 0.0
     keta=0
     keta_temp=0
-    if (traj_lat(tjk) .ne. -9999.0) then                                                         
-      call latlon_to_ij (proj, traj_lat(tjk),traj_long(tjk),traj_i(tjk),traj_j(tjk))
+    if (traj_i(tjk) .ne. -9999.0) then                                                         
+      if ( ( proj%code .EQ. PROJ_LC           ) .OR. &
+           ( proj%code .EQ. PROJ_PS           ) .OR. &
+           ( proj%code .EQ. PROJ_PS_WGS84     ) .OR. &
+           ( proj%code .EQ. PROJ_ALBERS_NAD83 ) .OR. &
+           ( proj%code .EQ. PROJ_MERC         ) .OR. &
+           ( proj%code .EQ. PROJ_LATLON       ) .OR. &
+           ( proj%code .EQ. PROJ_CYL          ) .OR. &
+           ( proj%code .EQ. PROJ_CASSINI      ) .OR. &
+           ( proj%code .EQ. PROJ_GAUSS        ) .OR. &
+           ( proj%code .EQ. PROJ_ROTLL        ) ) THEN
+         call latlon_to_ij (proj, traj_lat(tjk),traj_long(tjk),traj_i(tjk),traj_j(tjk))
+      end if
       i_traj=floor(traj_i(tjk)) ! find the lower_left_bottom corner for trajectory 
       j_traj=floor(traj_j(tjk)) ! 
       k_traj=floor(traj_k(tjk)) ! 
@@ -2298,7 +2309,18 @@ do tjk = 1,config_flags%num_traj
             traj_k(tjk) = traj_k(tjk)-0.5
         endif
 !! convert i,j,k into lon, lat 
-        call ij_to_latlon (proj, traj_i(tjk), traj_j(tjk),traj_lat(tjk),traj_long(tjk))
+      if ( ( proj%code .EQ. PROJ_LC           ) .OR. &
+           ( proj%code .EQ. PROJ_PS           ) .OR. &
+           ( proj%code .EQ. PROJ_PS_WGS84     ) .OR. &
+           ( proj%code .EQ. PROJ_ALBERS_NAD83 ) .OR. &
+           ( proj%code .EQ. PROJ_MERC         ) .OR. &
+           ( proj%code .EQ. PROJ_LATLON       ) .OR. &
+           ( proj%code .EQ. PROJ_CYL          ) .OR. &
+           ( proj%code .EQ. PROJ_CASSINI      ) .OR. &
+           ( proj%code .EQ. PROJ_GAUSS        ) .OR. &
+           ( proj%code .EQ. PROJ_ROTLL        ) ) THEN
+         call ij_to_latlon (proj, traj_i(tjk), traj_j(tjk),traj_lat(tjk),traj_long(tjk))
+      end if
      else
         traj_i(tjk) = -9999.0
         traj_j(tjk) = -9999.0

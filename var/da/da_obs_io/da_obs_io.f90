@@ -26,7 +26,8 @@ module da_obs_io
       radar, radiance, airsr, sonde_sfc, trace_use_dull, num_fgat_time, time_slots, myproc, &
       qmarker_retain, anal_type_verify, top_km_gpsro, bot_km_gpsro, thin_rainobs, &
       sfc_assi_options, sfc_assi_options_1, sfc_assi_options_2,print_detail_rain,max_rain_input,rain, &
-      var_wind, pi, ob_format_gpsro, ob_format_ascii, analysis_date, kms,kme, v_interp_h, v_interp_p
+      var_wind, pi, ob_format_gpsro, ob_format_ascii, analysis_date, kms,kme, v_interp_h, v_interp_p, &
+      thin_conv
 
    use da_define_structures, only : iv_type, multi_level_type, multi_level_type_BUFR, &
       radar_multi_level_type, y_type, field_type, each_level_type, &
@@ -49,9 +50,7 @@ module da_obs_io
    use da_par_util, only : true_mpi_real
 #endif
 #ifdef BUFR
-   use da_control, only : thin_conv
    use da_grid_definitions, only : da_earth_2_model_wind
-   use da_obs, only : da_set_obs_missing
 #endif
    use da_reporting, only : message, da_message
    use da_interpolation, only : da_to_zk

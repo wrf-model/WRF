@@ -3395,9 +3395,9 @@ call wrf_message(mess)
 
                   grid%ph_2(i,1,j) = grid%phb(i,1,j)
                   DO k = 2,kte
-                     pfu = grid%mu0(i,j)*grid%znw(k)   + grid%p_top
-                     pfd = grid%mu0(i,j)*grid%znw(k-1) + grid%p_top
-                     phm = grid%mu0(i,j)*grid%znu(k-1) + grid%p_top
+                     pfu = ( grid%mub(i,j)+grid%mu_2(i,j))*grid%znw(k)   + grid%p_top
+                     pfd = ( grid%mub(i,j)+grid%mu_2(i,j))*grid%znw(k-1) + grid%p_top
+                     phm = ( grid%mub(i,j)+grid%mu_2(i,j))*grid%znu(k-1) + grid%p_top
                      grid%ph_2(i,k,j) = grid%ph_2(i,k-1,j) + grid%alt(i,k-1,j)*phm*LOG(pfd/pfu)
                   END DO
 

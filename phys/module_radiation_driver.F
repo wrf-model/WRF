@@ -796,9 +796,21 @@ CONTAINS
               allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
               allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
 
-           case default
-
         end select swrad_aerosol_select
+     ELSE
+        swrad_aerosol_select_stub: select case(sw_physics)
+
+           case(GODDARDSWSCHEME)
+              allocate(tauaer_sw(1, 1, 1, 1))
+              allocate(ssaaer_sw(1, 1, 1, 1))
+              allocate(asyaer_sw(1, 1, 1, 1))
+
+           case(RRTMG_SWSCHEME)
+              allocate(tauaer_sw(1, 1, 1, 1))
+              allocate(ssaaer_sw(1, 1, 1, 1))
+              allocate(asyaer_sw(1, 1, 1, 1))
+
+        end select swrad_aerosol_select_stub
      ENDIF
    ENDIF
 
@@ -952,6 +964,14 @@ CONTAINS
 !    endif
 
 ! Choose how to compute cloud fraction (since 3.6)
+! Initialize to zero 
+     DO j=jts,jte
+     DO k=kts,kte
+     DO i=its,ite
+        CLDFRA(i,k,j) = 0.
+     END DO
+     END DO
+     END DO
 
      IF ( ICLOUD == 1 ) THEN
 
@@ -969,7 +989,7 @@ CONTAINS
 
         IF ( PRESENT ( CLDFRA_DP ) ) THEN
           IF ( icloud_cu .EQ. 2 ) THEN
-        CALL wrf_debug (1, 'use kf cldfra')
+             CALL wrf_debug (1, 'use kf cldfra')
              DO j = jts,jte
              DO k = kts,kte
              DO i = its,ite
@@ -3454,7 +3474,12 @@ SUBROUTINE aer_p_int(p ,pin, levsiz, aerodt, aerod, no_src, pf, totaod,   &
    end do
    end do
 
-!  totaod = 0.
+   do j=jts,jte
+   do i=its,ite
+      totaod(i,j) = 0.
+   end do
+   end do
+
    do s=1,no_src
    do j=jts,jte
    do k=1,pver

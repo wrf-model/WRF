@@ -757,8 +757,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
                   PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
                   PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR) .AND.  &
-                  PRESENT( SNOWNC) .AND. PRESENT ( SNOWNCV) .AND.        &
-                  PRESENT( GRAUPELNC) .AND. PRESENT ( GRAUPELNCV) .AND.  &
+!                  PRESENT( SNOWNC) .AND. PRESENT ( SNOWNCV) .AND.        &
+!                  PRESENT( GRAUPELNC) .AND. PRESENT ( GRAUPELNCV) .AND.  &
                   PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) ) THEN
 #ifdef WRF_CHEM
                  qv_b4mp(its:ite,kts:kte,jts:jte) = qv_curr(its:ite,kts:kte,jts:jte)

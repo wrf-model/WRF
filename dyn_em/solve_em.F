@@ -3380,7 +3380,8 @@ BENCH_START(micro_driver_tim)
       &        ,TURBTYPE3D=grid%turbtype3d,SMAW3D=grid%smaw3d             &
       &        ,WSEDL3D=grid%wsedl3d,CLDFRA_OLD_MP=grid%cldfra_old_mp     &
       &        ,CLDFRA_MP=grid%cldfra_mp,CLDFRA_MP_ALL=grid%cldfra_mp_ALL &
-      &        ,CLDFRAI=grid%cldfrai             &
+      &        ,LRADIUS=grid%LRADIUS, IRADIUS=grid%IRADIUS                & !BSINGH(01/20/2014): Added for RRTMG<->CAMMGMP
+      &        ,CLDFRAI=grid%cldfrai                                      &
       &        ,CLDFRAL=grid%cldfral,CLDFRA_CONV=grid%CLDFRA_CONV         &
       &        ,ALT=grid%alt                                              &
       &        ,ACCUM_MODE=config_flags%accum_mode                        &

@@ -162,6 +162,8 @@ state    real  e_ecj_num       i+jf     emis_ant     1         Z      i5      "E
 state    real  e_so4j_num      i+jf     emis_ant     1         Z      i5      "E_SO4J_NUM"          "J-MODE SO4 NUMBER"       "particle/m2/s"
 state    real  e_so4i_num      i+jf     emis_ant     1         Z      i5      "E_SO4I_NUM"          "I-MODE SO4 NUMBER"       "particle/m2/s"
 state    real  e_num_a3        i+jf     emis_ant     1         Z      i5      "E_NUM_A3"            "COARSE MODE NUMBER"      "particle/m2/s"
+state    real  e_dms           i+jf     emis_ant     1         Z      i5r     "E_DMS"               "EMISSIONS"               "mol km^-2 hr^-1"
+
 
 # soiltexturef is texture category fraction for each grid cell
 state    real  ust_t         ij       misc         1         -      i012rh "UST_T"               "Threshold Friction Velocity"          "m s-1"
@@ -2729,7 +2731,7 @@ rconfig   integer kdepvel                  namelist,chem        1              1
 rconfig   integer erosion_dim              namelist,chem        1              3       -       "erosion_dim"          ""      ""
 rconfig   integer    biomass_emiss_opt     namelist,chem        max_domains    0       rh      "biomass_emiss_opt"                   ""    ""
 rconfig   integer cam_mam_mode             namelist,chem        1              3       irh     "cam_mam_mode"                   ""    ""
-rconfig   integer cam_mam_nspec            namelist,chem        1              74      irh     "cam_mam_nspec"                   ""    ""
+rconfig   integer cam_mam_nspec            namelist,chem        1              85      irh     "cam_mam_nspec"                   ""    ""
 rconfig   logical CAM_MP_MAM_cpled         namelist,chem        1            .true.    irh     "CAM_MP_MAM_cpled"                   ""    ""
 # Lightning
 rconfig   integer     lightning_opt       namelist,chem        max_domains        0       rh      "lightning_opt"     ""      ""
@@ -2936,7 +2938,7 @@ package   cbmz_cam_mam3_noaq chem_opt==501               -             chem:so2,
 
 package   cbmz_cam_mam7_noaq chem_opt==502               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,soag,so4_a1,nh4_a1,pom_a1,soa_a1,bc_a1,ncl_a1,wtr_a1,num_a1,so4_a2,nh4_a2,soa_a2,ncl_a2,wtr_a2,num_a2,pom_a3,bc_a3,wtr_a3,num_a3,ncl_a4,so4_a4,nh4_a4,wtr_a4,num_a4,dst_a5,so4_a5,nh4_a5,wtr_a5,num_a5,ncl_a6,so4_a6,nh4_a6,wtr_a6,num_a6,dst_a7,so4_a7,nh4_a7,wtr_a7,num_a7
 
-package   cbmz_cam_mam3_aq chem_opt==503               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,soag,so4_a1,pom_a1,soa_a1,bc_a1,dst_a1,ncl_a1,wtr_a1,num_a1,so4_a2,soa_a2,ncl_a2,wtr_a2,num_a2,dst_a3,ncl_a3,so4_a3,wtr_a3,num_a3,so4_c1,pom_c1,soa_c1,bc_c1,dst_c1,ncl_c1,num_c1,so4_c2,soa_c2,ncl_c2,num_c2,dst_c3,ncl_c3,so4_c3,num_c3
+package   cbmz_cam_mam3_aq chem_opt==503               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,dms,msa,dmso,dmso2,ch3so2h,ch3sch2oo,ch3so2,ch3so3,ch3so2oo,ch3so2ch2oo,mtf,soag,so4_a1,pom_a1,soa_a1,bc_a1,dst_a1,ncl_a1,wtr_a1,num_a1,so4_a2,soa_a2,ncl_a2,wtr_a2,num_a2,dst_a3,ncl_a3,so4_a3,wtr_a3,num_a3,so4_c1,pom_c1,soa_c1,bc_c1,dst_c1,ncl_c1,num_c1,so4_c2,soa_c2,ncl_c2,num_c2,dst_c3,ncl_c3,so4_c3,num_c3
 
 package   cbmz_cam_mam7_aq chem_opt==504               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,soag,so4_a1,nh4_a1,pom_a1,soa_a1,bc_a1,ncl_a1,wtr_a1,num_a1,so4_a2,nh4_a2,soa_a2,ncl_a2,wtr_a2,num_a2,pom_a3,bc_a3,wtr_a3,num_a3,ncl_a4,so4_a4,nh4_a4,wtr_a4,num_a4,dst_a5,so4_a5,nh4_a5,wtr_a5,num_a5,ncl_a6,so4_a6,nh4_a6,wtr_a6,num_a6,dst_a7,so4_a7,nh4_a7,wtr_a7,num_a7,so4_c1,nh4_c1,pom_c1,soa_c1,bc_c1,ncl_c1,num_c1,so4_c2,nh4_c2,soa_c2,ncl_c2,num_c2,pom_c3,bc_c3,num_c3,ncl_c4,so4_c4,nh4_c4,num_c4,dst_c5,so4_c5,nh4_c5,num_c5,ncl_c6,so4_c6,nh4_c6,num_c6,dst_c7,so4_c7,nh4_c7,num_c7
 
@@ -2962,7 +2964,8 @@ package   ecptec          emiss_opt==5                   -             emis_ant:
 package   gocart_ecptec   emiss_opt==6                   -             emis_ant:e_so2,e_sulf,e_bc,e_oc,e_pm_25,e_pm_10
 package   mozem           emiss_opt==7                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16,e_sulf
 package   mozcem          emiss_opt==8                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16,e_pm_10,e_pm_25,e_bc,e_oc,e_sulf
-package   cammam          emiss_opt==9                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_ecj,e_orgj,e_so4i,e_so4j,e_soag_bigene,e_soag_isoprene,e_soag_terpene,e_soag_toluene,e_dust_a1,e_dust_a3,e_ncl_a1,e_ncl_a2,e_ncl_a3,e_orgj_num,e_ecj_num,e_so4j_num,e_so4i_num
+package   cammam          emiss_opt==9                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_dms,e_ecj,e_orgj,e_so4i,e_so4j,e_soag_bigene,e_soag_isoprene,e_soag_terpene,e_soag_toluene,e_dust_a1,e_dust_a3,e_ncl_a1,e_ncl_a2,e_ncl_a3,e_orgj_num,e_ecj_num,e_so4j_num,e_so4i_num
+
 package   mozmem           emiss_opt==10                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_co_a,e_orgj_a,e_co_bb,e_orgj_bb,e_voca,e_vocbb
 package   esaprcnov       emiss_opt==13                  -             emis_ant:e_so2,e_c2h6,e_c3h8,e_c2h2,e_alk3,e_alk4,e_alk5,e_ethene,e_c3h6,e_ole1,e_ole2,e_aro1,e_aro2,e_hcho,e_ccho,e_rcho,e_acet,e_mek,e_isoprene,e_terp,e_sesq,e_co,e_no,e_no2,e_phen,e_cres,e_meoh,e_gly,e_mgly,e_bacl,e_isoprod,e_methacro,e_mvk,e_prod2,e_ch4,e_bald,e_hcooh,e_cco_oh,e_rco_oh,e_nh3,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_orgi_a,e_orgj_a,e_orgi_bb,e_orgj_bb
 # Anthropogenic CO2, CO and CH4 emissions:

@@ -26,8 +26,9 @@ SUBROUTINE microphysics_driver(                                          &
                       !Variables required for CAMMGMP Scheme
                       ,dlf,dlf2,t_phy,p_hyd,p8w_hyd,tke_pbl,z_at_w,qfx   &
                       ,rliq,turbtype3d,smaw3d,wsedl3d,cldfra_old_mp      &
-                      ,cldfra_mp,cldfra_mp_all,cldfrai,cldfral,cldfra_conv&
-                      ,alt       &
+                      ,cldfra_mp,cldfra_mp_all,lradius,iradius           &
+                      ,cldfrai,cldfral,cldfra_conv                       &
+                      ,alt                                               &
                       ,accum_mode,aitken_mode,coarse_mode                &
                       ,icwmrsh3d,icwmrdp3d,shfrc3d,cmfmc3d,cmfmc2_3d     &
                       ,config_flags,fnm,fnp,rh_old_mp,lcd_old_mp         &
@@ -391,11 +392,13 @@ SUBROUTINE microphysics_driver(                                          &
 !outs
 REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
       INTENT(INOUT) , OPTIONAL::                                                 &
-                                                            wsedl3d, &        !Sedimentation velocity of stratiform liquid cloud droplet (m/s) 
+                                                            wsedl3d, &    !Sedimentation velocity of stratiform liquid cloud droplet (m/s) 
                                                           cldfra_mp, &    !Old Cloud fraction for CAMMGMP microphysics only
                                                       cldfra_mp_all, &    !Old Cloud fraction for CAMMGMP microphysics only
                                                             cldfrai, &    !Old Cloud fraction for CAMMGMP microphysics only
-                                                            cldfral, &       !Old Cloud fraction for CAMMGMP microphysics only
+                                                            cldfral, &    !Old Cloud fraction for CAMMGMP microphysics only
+                                                            lradius, &    !Old Cloud fraction for CAMMGMP microphysics only
+                                                            iradius, &    !Old Cloud fraction for CAMMGMP microphysics only                                                            
                                                         cldfra_conv 
 
 #ifdef WRF_CHEM
@@ -1668,8 +1671,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte           &
 !Output variables from CAMMGMP
                      ,TH=th,CLDFRA_OLD_MP=cldfra_old_mp,CLDFRA_MP=cldfra_mp       &
-                     ,CLDFRA_MP_ALL=cldfra_mp_all,CLDFRAI=cldfrai,CLDFRAL=cldfral &
-                     ,CLDFRA_CONV=cldfra_conv,WSEDL3D=wsedl3d           &
+                     ,CLDFRA_MP_ALL=cldfra_mp_all,lradius=lradius,iradius=iradius &
+                     ,CLDFRAI=cldfrai,CLDFRAL=cldfral                             &
+                     ,CLDFRA_CONV=cldfra_conv,WSEDL3D=wsedl3d                     &
                      ,RAINNC=rainnc,RAINNCV=rainncv,SNOWNC=snownc,SNOWNCV=snowncv &
                      ,SR=sr,QV_CURR=qv_curr,QC_CURR=qc_curr,QI_CURR=qi_curr       &
                      ,QS_CURR=qs_curr,QR_CURR=qr_curr,NC3D=qnc_curr               &

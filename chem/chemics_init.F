@@ -216,6 +216,7 @@ call wrf_message("**************************************************************
         numgas_mam = numgas
         CALL wrf_debug(15,'calling CBMZ_CAM_MAM7_NOAQ chemistry from chem_driver')
         call wrf_message("WARNING: CBMZ_CAM_MAM7_NOAQ  chemistry option is highly experimental and not recommended for use.")
+        call wrf_message("WARNING: In CBMZ_CAM_MAM7_NOAQ  chemistry option, DMS is not implemented yet.")
         call wrf_error_fatal("ERROR: It is recommended that you contact phil.rasch at pnnl.gov for information regarding this option")
      CASE (CBMZ_CAM_MAM7_AQ)
         numgas_mam = numgas

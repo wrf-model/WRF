@@ -593,6 +593,13 @@ CONTAINS
   real, intent(in) :: xice_threshold
   character(len=80) :: message_text
 
+
+  FLX4  = 0.0 !BSINGH - Initialized to 0.0
+  FVB   = 0.0 !BSINGH - Initialized to 0.0
+  FBUR  = 0.0 !BSINGH - Initialized to 0.0
+  FGSN  = 0.0 !BSINGH - Initialized to 0.0
+  SOILW = 0.0 !BSINGH - Initialized to 0.0
+
 ! MEK MAY 2007
       FDTLIW=DT/ROWLIW
 ! MEK JUL2007

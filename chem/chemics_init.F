@@ -620,8 +620,13 @@ end if
         endif 
 
         CASE (MOZART_MOSAIC_4BIN_VBS0_KPP)
+! 20130708 acd_alma_bugfix start
+        grid%vbs_nbin=0
+! 20130708 acd_alma_bugfix end
         if(config_flags%chem_in_opt == 0 )then
-                   grid%vbs_nbin=0
+! 20130708 acd_alma_bugfix start
+!                   grid%vbs_nbin=0
+! 20130708 acd_alma_bugfix end
           do j=jts,jte
              do k=kts,kte
                 do i=its,ite

@@ -7208,7 +7208,11 @@ n2o5_flag = n2o5_hetchem
 
 
 	do ll = 1, ncomp_plustracer_aer(itype)
-	    write(msg,9350) 'massptr_aer(), ll',   &
+! 20130116 acd_ck_bugfix start
+! added writeout of name_aer to understand which mastercomps are used
+!	    write(msg,9350) 'massptr_aer(), ll',   &
+	    write(msg,9350) name_aer(ll,itype),   &
+! 20130116 acd_ck_bugfix end
 		(massptr_aer(ll,n,itype,iphase), n=1,nsize_aer(itype)), ll
 	    call peg_message( lunout, msg )
 	end do
@@ -7318,6 +7322,10 @@ n2o5_flag = n2o5_hetchem
         y_biog2_o=0
         y_biog3_o=0
         y_biog4_o=0
+! 20130807 acd_alma_bugfix start
+        y_smpa=0
+        y_smpbb=0
+! 20130807 acd_alma_bugfix end
 
     
 
@@ -7420,6 +7428,10 @@ n2o5_flag = n2o5_hetchem
             if (lptr_biog2_o_aer(n,itype,iphase) .ge. p1st) y_biog2_o = y_biog2_o + 1
             if (lptr_biog3_o_aer(n,itype,iphase) .ge. p1st) y_biog3_o = y_biog3_o + 1
             if (lptr_biog4_o_aer(n,itype,iphase) .ge. p1st) y_biog4_o = y_biog4_o + 1
+! 20130807 acd_alma_bugfix start
+            if (lptr_smpa_aer(n,itype,iphase) .ge. p1st) y_smpa = y_smpa + 1
+            if (lptr_smpbb_aer(n,itype,iphase) .ge. p1st) y_smpbb = y_smpbb + 1
+! 20130807 acd_alma_bugfix end
 
 	end do
 

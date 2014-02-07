@@ -299,9 +299,10 @@ contains
                          DZSNSO ,SH2O   ,SICE   ,PONDING,ZSNSO  ,         & !inout
                          RUNSRF ,RUNSUB ,QSNOW  ,PONDING1       ,PONDING2,QSNBOT,FPICE)  !out
 
-     IF(MAXVAL(SICE) < 0.0001) &
+     IF(MAXVAL(SICE) < 0.0001) THEN
        WRITE(message,*) "GLACIER HAS MELTED AT:",ILOC,JLOC," ARE YOU SURE THIS SHOULD BE A GLACIER POINT?"
-     CALL wrf_debug(10,TRIM(message))
+       CALL wrf_debug(10,TRIM(message))
+     ENDIF
 
 ! water and energy balance check
 

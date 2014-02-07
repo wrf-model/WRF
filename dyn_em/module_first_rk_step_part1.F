@@ -1015,6 +1015,7 @@ BENCH_START(cu_driver_tim)
      &             ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics            &
      &             ,SF_SFCLAY_PHYSICS=config_flags%sf_sfclay_physics      &
      &             ,KFETA_TRIGGER=config_flags%kfeta_trigger              &
+     &             ,NSAS_DX_FACTOR=config_flags%nsas_dx_factor            &
                  ! Dimension arguments
      &             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
      &             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &

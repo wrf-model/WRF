@@ -101,6 +101,7 @@ state    real   sct_dom_gc     ij       dyn_em      1        -     i1  "SCT_DOM"
 state    real   scb_dom_gc     ij       dyn_em      1        -     i1  "SCB_DOM"  "Dominant soil (bottom) category from GEOGRID"  "cat"
 state    real   greenfrac      imj      dyn_em      1        Z     i1  "GREENFRAC" "monthly greenness fraction" "0 - 1 fraction"
 state    real   albedo12m      imj      dyn_em      1        Z     i1  "ALBEDO12M" "background albedo" "0 - 1 fraction"
+state    real   lai12m         imj      dyn_em      1        Z     i1  "LAI12M" "monthly LAI" "m2/m2"
 state    real   pd_gc          igj      dyn_em      1        Z     -   "PD"    "dry pressure"        "Pa"
 state    real   pdrho_gc       igj      dyn_em      1        Z     -   "PDRHO"    "dry pressure for UM data for the variables U and V"   "Pa"
 state    real   psfc_gc        ij       dyn_em      1        -      -  "PSFC_GC"     "surface pressure"            "Pa"
@@ -823,7 +824,7 @@ state    real   ALSWNIRDIF        ij    misc        1         Z      r        "A
 # Additional for P-X PBL and LSM
 state    real   RA               ij     misc        1         -      r        "RA"           "AERODYNAMIC RESISTANCE"   "s m-1"
 state    real   RS               ij     misc        1         -      r        "RS"           "SURFACE RESISTANCE"       "s m-1"
-state    real   LAI              ij     misc        1         -      i0124rh       "LAI"          "Leaf area index"          "area/area"
+state    real   LAI              ij     misc        1         -      i0124rh  "LAI"          "LEAF AREA INDEX"          "m-2/m-2"
 state    real   VEGF_PX          ij     misc        1         -      r        "VEGF_PX"      "Vegetation Fraction for PX LSM"    "area/area"
 state    real   T2OBS            ij     misc        1         -      r        "T2OBS"        "2-m temperature from analysis "          "K"
 state    real   Q2OBS            ij     misc        1         -      r        "Q2OBS"        "2-m mixing ratio from analysis "         "kg/kg"
@@ -838,8 +839,8 @@ i1      real   GZ1OZ0         ij     misc        1         -     -         "GZ1O
 i1      real   BR             ij     misc        1         -     -         "BR"                  "Bulk Richardson"                       ""
 
 # ysupbl variables for grims shallow convection
-state   real   WSTAR_YSU     ij     misc        1         -     -        "WSTAR_YSU"          "mixed-layer velocity scale from ysupbl" "m/s"
-state   real   DELTA_YSU      ij      misc        1         -     -        "DELTA_YSU"           "entrainment layer depth from ysupbl"    "m"
+state   real   WSTAR_YSU      ij     misc        1         -     -        "WSTAR_YSU"           "mixed-layer velocity scale from ysupbl" "m/s"
+state   real   DELTA_YSU      ij     misc        1         -     -        "DELTA_YSU"           "entrainment layer depth from ysupbl"    "m"
 
 # MYJ PBL variables; GBM PBL: EXCH_H, EXCH_M
 state    real   EXCH_H          ikj     misc        1         Z     r         "EXCH_H"               "SCALAR EXCHANGE COEFFICIENTS "

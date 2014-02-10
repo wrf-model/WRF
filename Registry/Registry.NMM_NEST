@@ -204,8 +204,8 @@ state  real   VLON        ij     dyn_nmm     1      -      irh
 state  real   VLAT        ij     dyn_nmm     1      -      irh
 
 #
-rconfig  real wbd0    derived   max_domains    0       - "wbd0"                  "western boundary of the domain"
-rconfig  real sbd0    derived   max_domains    0       - "sbd0"                  "southern boundary of the domain"
+rconfig  real wbd0    derived   max_domains    0       - "wbd0"                  "western boundary of the domain in rotated coordinates"
+rconfig  real sbd0    derived   max_domains    0       - "sbd0"                  "southern boundary of the domain in rotated coordinates"
 #for HWRF: 
 rconfig   logical analysis               namelist,time_control    max_domains        .false.      irh   "days"     "analysis control for the nested domain"
 
